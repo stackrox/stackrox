@@ -127,11 +127,11 @@ func (s *blobTestSuite) TestUpsert() {
 	s.NoError(err)
 
 	// Verify blob was created
-	metadata, exists, err := s.datastore.GetMetadata(s.ctx, blob.Name)
+	metadata, exists, err := s.datastore.GetMetadata(s.ctx, blob.GetName())
 	s.NoError(err)
 	s.True(exists)
-	s.Equal(blob.Name, metadata.Name)
-	s.Equal(blob.Length, metadata.Length)
+	s.Equal(blob.GetName(), metadata.GetName())
+	s.Equal(blob.GetLength(), metadata.GetLength())
 
 	// Test update via upsert
 	updatedTime := time.Now().Add(time.Hour)
@@ -147,11 +147,11 @@ func (s *blobTestSuite) TestUpsert() {
 	s.NoError(err)
 
 	// Verify blob was updated
-	metadata, exists, err = s.datastore.GetMetadata(s.ctx, blob.Name)
+	metadata, exists, err = s.datastore.GetMetadata(s.ctx, blob.GetName())
 	s.NoError(err)
 	s.True(exists)
-	s.Equal(blob.Name, metadata.Name)
-	s.Equal(blob.Length, metadata.Length)
+	s.Equal(blob.GetName(), metadata.GetName())
+	s.Equal(blob.GetLength(), metadata.GetLength())
 
 	// Test upsert with unauthorized context
 	unauthorizedCtx := sac.WithGlobalAccessScopeChecker(context.Background(),
@@ -180,13 +180,13 @@ func (s *blobTestSuite) TestGetBlobWithDataInBuffer() {
 	s.NoError(err)
 
 	// Test GetBlobWithDataInBuffer
-	buffer, metadata, exists, err := s.datastore.GetBlobWithDataInBuffer(s.ctx, blob.Name)
+	buffer, metadata, exists, err := s.datastore.GetBlobWithDataInBuffer(s.ctx, blob.GetName())
 	s.NoError(err)
 	s.True(exists)
 	s.NotNil(buffer)
 	s.NotNil(metadata)
-	s.Equal(blob.Name, metadata.Name)
-	s.Equal(blob.Length, metadata.Length)
+	s.Equal(blob.GetName(), metadata.GetName())
+	s.Equal(blob.GetLength(), metadata.GetLength())
 	s.Equal(originalData, buffer.Bytes())
 
 	// Test with non-existent blob
@@ -213,12 +213,12 @@ func (s *blobTestSuite) TestGetMetadata() {
 	s.NoError(err)
 
 	// Test GetMetadata for existing blob
-	metadata, exists, err := s.datastore.GetMetadata(s.ctx, blob.Name)
+	metadata, exists, err := s.datastore.GetMetadata(s.ctx, blob.GetName())
 	s.NoError(err)
 	s.True(exists)
 	s.NotNil(metadata)
-	s.Equal(blob.Name, metadata.Name)
-	s.Equal(blob.Length, metadata.Length)
+	s.Equal(blob.GetName(), metadata.GetName())
+	s.Equal(blob.GetLength(), metadata.GetLength())
 
 	// Test GetMetadata for non-existent blob
 	metadata, exists, err = s.datastore.GetMetadata(s.ctx, "nonexistent/blob")
@@ -243,7 +243,7 @@ func (s *blobTestSuite) TestGetIDs() {
 
 	expectedIDs := make([]string, len(blobs))
 	for i, blob := range blobs {
-		expectedIDs[i] = blob.Name
+		expectedIDs[i] = blob.GetName()
 	}
 	s.ElementsMatch(expectedIDs, ids)
 }
@@ -265,17 +265,17 @@ func (s *blobTestSuite) TestDelete() {
 	s.NoError(err)
 
 	// Verify blob exists
-	metadata, exists, err := s.datastore.GetMetadata(s.ctx, blob.Name)
+	metadata, exists, err := s.datastore.GetMetadata(s.ctx, blob.GetName())
 	s.NoError(err)
 	s.True(exists)
 	s.NotNil(metadata)
 
 	// Test Delete
-	err = s.datastore.Delete(s.ctx, blob.Name)
+	err = s.datastore.Delete(s.ctx, blob.GetName())
 	s.NoError(err)
 
 	// Verify blob no longer exists
-	metadata, exists, err = s.datastore.GetMetadata(s.ctx, blob.Name)
+	metadata, exists, err = s.datastore.GetMetadata(s.ctx, blob.GetName())
 	s.NoError(err)
 	s.False(exists)
 	s.Nil(metadata)

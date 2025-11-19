@@ -16,6 +16,7 @@ import (
 	"github.com/stackrox/rox/pkg/complianceoperator"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/pkg/k8sapi"
 	"github.com/stackrox/rox/pkg/protoutils"
 	"github.com/stackrox/rox/pkg/retry"
 	"github.com/stackrox/rox/pkg/set"
@@ -101,6 +102,10 @@ func (m *handlerImpl) Capabilities() []centralsensor.SensorCapability {
 		return []centralsensor.SensorCapability{centralsensor.ComplianceV2ScanConfigSync}
 	}
 	return nil
+}
+
+func (m *handlerImpl) Accepts(msg *central.MsgToSensor) bool {
+	return msg.GetComplianceRequest() != nil
 }
 
 func (m *handlerImpl) ProcessMessage(ctx context.Context, msg *central.MsgToSensor) error {
@@ -550,7 +555,7 @@ func generateScanIndex(namespace string, scanName string) string {
 	return fmt.Sprintf("%s-%s", namespace, scanName)
 }
 
-func (m *handlerImpl) getResourcesInCluster(api complianceoperator.APIResource) (map[string]unstructured.Unstructured, error) {
+func (m *handlerImpl) getResourcesInCluster(api k8sapi.APIResource) (map[string]unstructured.Unstructured, error) {
 	resourceInterface := m.client.Resource(api.GroupVersionResource())
 	var resourcesInCluster *unstructured.UnstructuredList
 	err := m.callWithRetry(func(ctx context.Context) error {
@@ -575,7 +580,7 @@ func (m *handlerImpl) reconcileCreateOrUpdateResource(
 	inClusterResources map[string]unstructured.Unstructured,
 	updateFn updateFunction,
 	convertFn convertFunction,
-	api complianceoperator.APIResource,
+	api k8sapi.APIResource,
 ) error {
 	namespaceNameIndex := generateScanIndex(namespace, req.GetScanSettings().GetScanName())
 	if resource, isInCluster := inClusterResources[namespaceNameIndex]; isInCluster {
@@ -611,7 +616,7 @@ func (m *handlerImpl) reconcileCreateOrUpdateResource(
 	return nil
 }
 
-func (m *handlerImpl) reconcileDeleteResource(inCentral set.StringSet, inClusterResources map[string]unstructured.Unstructured, api complianceoperator.APIResource) error {
+func (m *handlerImpl) reconcileDeleteResource(inCentral set.StringSet, inClusterResources map[string]unstructured.Unstructured, api k8sapi.APIResource) error {
 	var errList errorhelpers.ErrorList
 	deletePolicy := v1.DeletePropagationForeground
 	// Delete Resources that are no longer in Central

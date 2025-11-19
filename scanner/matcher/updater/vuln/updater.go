@@ -65,7 +65,7 @@ type Opts struct {
 	MetadataStore postgres.MatcherMetadataStore
 
 	Client         *http.Client
-	URL            string
+	URLs           []string
 	Root           string
 	UpdateInterval time.Duration
 
@@ -88,7 +88,7 @@ type Updater struct {
 	metadataStore postgres.MatcherMetadataStore
 
 	client         *http.Client
-	url            string
+	urls           []string
 	root           string
 	updateInterval time.Duration
 	initialized    atomic.Bool
@@ -126,7 +126,7 @@ func New(ctx context.Context, opts Opts) (*Updater, error) {
 		metadataStore: opts.MetadataStore,
 
 		client:         opts.Client,
-		url:            opts.URL,
+		urls:           opts.URLs,
 		root:           opts.Root,
 		updateInterval: opts.UpdateInterval,
 
@@ -185,8 +185,13 @@ func validate(opts Opts) error {
 	if opts.Store == nil || opts.Locker == nil || opts.MetadataStore == nil {
 		return errors.New("must provide a Store, a Locker, and a MetadataStore")
 	}
-	if _, err := url.Parse(opts.URL); err != nil {
-		return fmt.Errorf("invalid URL: %q", opts.URL)
+	if len(opts.URLs) == 0 {
+		return errors.New("must provide at least one URL")
+	}
+	for _, u := range opts.URLs {
+		if _, err := url.Parse(u); err != nil {
+			return fmt.Errorf("invalid URL: %q", u)
+		}
 	}
 	return nil
 }
@@ -513,37 +518,24 @@ func (u *Updater) fetch(ctx context.Context, prevTimestamp time.Time) (*os.File,
 	ctx = zlog.ContextWithValues(ctx, "component", "matcher/updater/vuln/Updater.fetch")
 
 	var resp *http.Response
-	defer closeResponse(resp)
-	// After this loop, either resp != nil or we will have returned an error.
-	for attempt := 1; attempt <= u.retryMax; attempt++ {
-		zlog.Info(ctx).
-			Str("url", u.url).
-			Int("attempt", attempt).
-			Msg("fetching vuln update")
-		req, err := http.NewRequestWithContext(ctx, http.MethodGet, u.url, nil)
+	var err error
+	for i, vulnURL := range u.urls {
+		resp, err = u.fetchFromURL(ctx, vulnURL, prevTimestamp)
 		if err != nil {
 			return nil, time.Time{}, err
 		}
-		req.Header.Set(ifModifiedSinceHeader, prevTimestamp.Format(http.TimeFormat))
-		req.Header.Set("X-Scanner-V4-Accept", "application/vnd.stackrox.scanner-v4.multi-bundle+zip")
-		resp, err = u.client.Do(req)
-		// If we haven't exhausted our connection refused attempts and the vuln URL is unavailable, retry.
-		if attempt < u.retryMax && isConnectionRefused(err) {
-			zlog.Error(ctx).
-				Err(err).
-				Str("delay", u.retryDelay.String()).
-				Msg("retrying...")
-			time.Sleep(u.retryDelay) // Wait for retryDelay before retrying
-			continue
+		if resp.StatusCode != http.StatusNotFound {
+			// It's intentional to stop on other http statuses, contract is to continue
+			// trying only on 404s.
+			break
 		}
-		// If we have exhausted our retry attempts or there is some other kind of error, do not retry.
-		if err != nil {
-			return nil, time.Time{}, err
-		}
-
-		break // No errors, so don't retry.
+		zlog.Info(ctx).Msgf("skipping vuln URL #%d (%s): it does not exist (404)", i, vulnURL)
+		closeResponse(resp)
 	}
-
+	if resp == nil {
+		panic("this should never happen")
+	}
+	defer closeResponse(resp)
 	switch resp.StatusCode {
 	case http.StatusOK:
 	case http.StatusNotModified:
@@ -586,6 +578,33 @@ func (u *Updater) fetch(ctx context.Context, prevTimestamp time.Time) (*os.File,
 	}
 	succeeded = true
 	return f, timestamp, nil
+}
+
+func (u *Updater) fetchFromURL(ctx context.Context, url string, prevTimestamp time.Time) (*http.Response, error) {
+	var resp *http.Response
+	for attempt := 1; attempt <= u.retryMax; attempt++ {
+		zlog.Info(ctx).
+			Str("url", url).
+			Int("attempt", attempt).
+			Msg("fetching vuln update")
+		req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
+		if err != nil {
+			return nil, err
+		}
+		req.Header.Set(ifModifiedSinceHeader, prevTimestamp.Format(http.TimeFormat))
+		req.Header.Set("X-Scanner-V4-Accept", "application/vnd.stackrox.scanner-v4.multi-bundle+zip")
+		resp, err = u.client.Do(req)
+		if attempt < u.retryMax && isConnectionRefused(err) {
+			zlog.Error(ctx).
+				Err(err).
+				Str("delay", u.retryDelay.String()).
+				Msg("retrying...")
+			time.Sleep(u.retryDelay)
+			continue
+		}
+		return resp, err
+	}
+	return resp, nil
 }
 
 func jitter() time.Duration {

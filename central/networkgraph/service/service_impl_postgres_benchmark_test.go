@@ -160,19 +160,19 @@ func (s *networkGraphServiceBenchmarks) createFlows(b *testing.B, numDeployments
 			Namespace: fixtureconsts.Namespace1,
 		}
 
-		deploymentEnt := testutils.GetDeploymentNetworkEntity(deployment.Id, deployment.Name)
+		deploymentEnt := testutils.GetDeploymentNetworkEntity(deployment.GetId(), deployment.GetName())
 		err := s.deploymentsDataStore.UpsertDeployment(globalWriteAccessCtx, deployment)
 		require.NoError(b, err)
 
 		if i == 0 {
 			// deployment-0 talks to all the entities
 			for _, entity := range entities {
-				flow := testutils.GetNetworkFlow(deploymentEnt, entity.Info, rand.IntN(65565), storage.L4Protocol_L4_PROTOCOL_TCP, &ts)
+				flow := testutils.GetNetworkFlow(deploymentEnt, entity.GetInfo(), rand.IntN(65565), storage.L4Protocol_L4_PROTOCOL_TCP, &ts)
 				flows = append(flows, flow)
 			}
 		} else {
 			for _, entity := range entities[chunkSize*(i-1) : chunkSize*i] {
-				flow := testutils.GetNetworkFlow(deploymentEnt, entity.Info, rand.IntN(65565), storage.L4Protocol_L4_PROTOCOL_TCP, &ts)
+				flow := testutils.GetNetworkFlow(deploymentEnt, entity.GetInfo(), rand.IntN(65565), storage.L4Protocol_L4_PROTOCOL_TCP, &ts)
 				flows = append(flows, flow)
 			}
 		}

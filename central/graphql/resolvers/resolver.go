@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"reflect"
 
-	activeComponent "github.com/stackrox/rox/central/activecomponent/datastore"
 	violationsDatastore "github.com/stackrox/rox/central/alert/datastore"
 	"github.com/stackrox/rox/central/apitoken/backend"
 	"github.com/stackrox/rox/central/audit"
@@ -20,20 +19,17 @@ import (
 	complianceService "github.com/stackrox/rox/central/compliance/service"
 	complianceStandards "github.com/stackrox/rox/central/compliance/standards"
 	complianceOperatorManager "github.com/stackrox/rox/central/complianceoperator/manager"
-	componentCVEEdgeDataStore "github.com/stackrox/rox/central/componentcveedge/datastore"
 	clusterCVEDataStore "github.com/stackrox/rox/central/cve/cluster/datastore"
 	"github.com/stackrox/rox/central/cve/fetcher"
-	imageCVEDataStore "github.com/stackrox/rox/central/cve/image/datastore"
 	imageCVEV2DataStore "github.com/stackrox/rox/central/cve/image/v2/datastore"
 	cveMatcher "github.com/stackrox/rox/central/cve/matcher"
 	nodeCVEDataStore "github.com/stackrox/rox/central/cve/node/datastore"
 	deploymentDatastore "github.com/stackrox/rox/central/deployment/datastore"
 	groupDataStore "github.com/stackrox/rox/central/group/datastore"
 	imageDatastore "github.com/stackrox/rox/central/image/datastore"
-	imageComponentDataStore "github.com/stackrox/rox/central/imagecomponent/datastore"
 	imageComponentV2DataStore "github.com/stackrox/rox/central/imagecomponent/v2/datastore"
-	imageComponentEdgeDataStore "github.com/stackrox/rox/central/imagecomponentedge/datastore"
-	imageCVEEdgeDataStore "github.com/stackrox/rox/central/imagecveedge/datastore"
+	imageV2Datastore "github.com/stackrox/rox/central/imagev2/datastore"
+	imageMapperDatastore "github.com/stackrox/rox/central/imagev2/datastore/mapper/datastore"
 	namespaceDataStore "github.com/stackrox/rox/central/namespace/datastore"
 	nfDS "github.com/stackrox/rox/central/networkgraph/flow/datastore"
 	npDS "github.com/stackrox/rox/central/networkpolicies/datastore"
@@ -75,7 +71,6 @@ import (
 
 // Resolver is the root GraphQL resolver
 type Resolver struct {
-	ActiveComponent               activeComponent.DataStore
 	ComplianceAggregator          aggregation.Aggregator
 	APITokenBackend               backend.Backend
 	ClusterDataStore              clusterDatastore.DataStore
@@ -86,17 +81,13 @@ type Resolver struct {
 	ComplianceManagementService   v1.ComplianceManagementServiceServer
 	ComplianceManager             complianceManager.ComplianceManager
 	ClusterCVEEdgeDataStore       clusterCVEEdgeDataStore.DataStore
-	ComponentCVEEdgeDataStore     componentCVEEdgeDataStore.DataStore
-	ImageCVEDataStore             imageCVEDataStore.DataStore
 	NodeCVEDataStore              nodeCVEDataStore.DataStore
 	DeploymentDataStore           deploymentDatastore.DataStore
 	PodDataStore                  podDatastore.DataStore
 	ImageDataStore                imageDatastore.DataStore
-	ImageComponentDataStore       imageComponentDataStore.DataStore
+	ImageV2DataStore              imageV2Datastore.DataStore
 	NodeComponentDataStore        nodeComponentDataStore.DataStore
 	NodeComponentCVEEdgeDataStore nodeComponentCVEEdgeDataStore.DataStore
-	ImageComponentEdgeDataStore   imageComponentEdgeDataStore.DataStore
-	ImageCVEEdgeDataStore         imageCVEEdgeDataStore.DataStore
 	GroupDataStore                groupDataStore.DataStore
 	NamespaceDataStore            namespaceDataStore.DataStore
 	NetworkFlowDataStore          nfDS.ClusterDataStore
@@ -137,7 +128,6 @@ type Resolver struct {
 // New returns a Resolver wired into the relevant data stores
 func New() *Resolver {
 	resolver := &Resolver{
-		ActiveComponent:               activeComponent.Singleton(),
 		ComplianceAggregator:          aggregation.Singleton(),
 		APITokenBackend:               backend.Singleton(),
 		ComplianceDataStore:           complianceDS.Singleton(),
@@ -147,10 +137,8 @@ func New() *Resolver {
 		ComplianceService:             complianceService.Singleton(),
 		ClusterDataStore:              clusterDatastore.Singleton(),
 		ClusterCVEEdgeDataStore:       clusterCVEEdgeDataStore.Singleton(),
-		ComponentCVEEdgeDataStore:     componentCVEEdgeDataStore.Singleton(),
 		DeploymentDataStore:           deploymentDatastore.Singleton(),
 		PodDataStore:                  podDatastore.Singleton(),
-		ImageDataStore:                imageDatastore.Singleton(),
 		GroupDataStore:                groupDataStore.Singleton(),
 		NamespaceDataStore:            namespaceDataStore.Singleton(),
 		NetworkPoliciesStore:          npDS.Singleton(),
@@ -193,21 +181,21 @@ func New() *Resolver {
 			return platformcve.Singleton()
 		}(),
 	}
-	if features.FlattenCVEData.Enabled() {
-		resolver.ImageCVEFlatView = func() imagecveflat.CveFlatView {
-			return imagecveflat.Singleton()
-		}()
-		resolver.ImageComponentFlatView = func() imagecomponentflat.ComponentFlatView {
-			return imagecomponentflat.Singleton()
-		}()
+	resolver.ImageCVEFlatView = func() imagecveflat.CveFlatView {
+		return imagecveflat.Singleton()
+	}()
+	resolver.ImageComponentFlatView = func() imagecomponentflat.ComponentFlatView {
+		return imagecomponentflat.Singleton()
+	}()
 
-		resolver.ImageComponentV2DataStore = imageComponentV2DataStore.Singleton()
-		resolver.ImageCVEV2DataStore = imageCVEV2DataStore.Singleton()
+	resolver.ImageComponentV2DataStore = imageComponentV2DataStore.Singleton()
+	resolver.ImageCVEV2DataStore = imageCVEV2DataStore.Singleton()
+	if features.FlattenImageData.Enabled() {
+		// Only initialize the ImageV2DataStore if we have the new image data model enabled, otherwise this makes no sense
+		resolver.ImageV2DataStore = imageV2Datastore.Singleton()
+		resolver.ImageDataStore = imageMapperDatastore.Singleton()
 	} else {
-		resolver.ImageComponentDataStore = imageComponentDataStore.Singleton()
-		resolver.ImageComponentEdgeDataStore = imageComponentEdgeDataStore.Singleton()
-		resolver.ImageCVEEdgeDataStore = imageCVEEdgeDataStore.Singleton()
-		resolver.ImageCVEDataStore = imageCVEDataStore.Singleton()
+		resolver.ImageDataStore = imageDatastore.Singleton()
 	}
 
 	return resolver

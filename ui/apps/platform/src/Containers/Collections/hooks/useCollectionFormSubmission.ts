@@ -1,10 +1,12 @@
 import { useState } from 'react';
 
-import { updateCollection, createCollection, Collection } from 'services/CollectionsService';
-import { CollectionPageAction } from '../collections.utils';
+import { createCollection, updateCollection } from 'services/CollectionsService';
+import type { Collection } from 'services/CollectionsService';
+import type { CollectionPageAction } from '../collections.utils';
 import { generateRequest } from '../converter';
-import { CollectionConfigError, parseConfigError } from '../errorUtils';
-import { ClientCollection } from '../types';
+import { parseConfigError } from '../errorUtils';
+import type { CollectionConfigError } from '../errorUtils';
+import type { ClientCollection } from '../types';
 
 export function useCollectionFormSubmission(pageAction: CollectionPageAction) {
     const [configError, setConfigError] = useState<CollectionConfigError | undefined>();

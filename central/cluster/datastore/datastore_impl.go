@@ -3,6 +3,7 @@ package datastore
 import (
 	"context"
 	"fmt"
+	"slices"
 	"strings"
 	"time"
 
@@ -11,6 +12,7 @@ import (
 	clusterStore "github.com/stackrox/rox/central/cluster/store/cluster"
 	clusterHealthStore "github.com/stackrox/rox/central/cluster/store/clusterhealth"
 	compliancePruning "github.com/stackrox/rox/central/complianceoperator/v2/pruner"
+	"github.com/stackrox/rox/central/convert/storagetoeffectiveaccessscope"
 	clusterCVEDS "github.com/stackrox/rox/central/cve/cluster/datastore"
 	deploymentDataStore "github.com/stackrox/rox/central/deployment/datastore"
 	imageIntegrationDataStore "github.com/stackrox/rox/central/imageintegration/datastore"
@@ -41,6 +43,7 @@ import (
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/sac/effectiveaccessscope"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	pkgSearch "github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/paginated"
@@ -164,7 +167,7 @@ func (ds *datastoreImpl) buildCache(ctx context.Context) error {
 	walkFn := func() error {
 		clusterHealthStatuses = make(map[string]*storage.ClusterHealthStatus)
 		return ds.clusterHealthStorage.Walk(ctx, func(healthInfo *storage.ClusterHealthStatus) error {
-			clusterHealthStatuses[healthInfo.Id] = healthInfo
+			clusterHealthStatuses[healthInfo.GetId()] = healthInfo
 			return nil
 		})
 	}
@@ -265,6 +268,9 @@ func (ds *datastoreImpl) searchRawClusters(ctx context.Context, q *v1.Query) ([]
 			clusters = append(clusters, cluster)
 			return nil
 		})
+		slices.SortFunc(clusters, func(a, b *storage.Cluster) int {
+			return strings.Compare(a.GetName(), b.GetName())
+		})
 		if err != nil {
 			return nil, err
 		}
@@ -307,26 +313,8 @@ func (ds *datastoreImpl) GetClusters(ctx context.Context) ([]*storage.Cluster, e
 	return ds.searchRawClusters(ctx, pkgSearch.EmptyQuery())
 }
 
-func (ds *datastoreImpl) GetClustersForSAC(ctx context.Context) ([]*storage.Cluster, error) {
-	ok, err := clusterSAC.ReadAllowed(ctx)
-	if err != nil {
-		return nil, err
-	} else if !ok {
-		return ds.searchRawClusters(ctx, pkgSearch.EmptyQuery())
-	}
-	var clusters []*storage.Cluster
-	walkFn := func() error {
-		clusters = clusters[:0]
-		return ds.clusterStorage.Walk(ctx, func(cluster *storage.Cluster) error {
-			clusters = append(clusters, cluster)
-			return nil
-		})
-	}
-	if err := pgutils.RetryIfPostgres(ctx, walkFn); err != nil {
-		return nil, err
-	}
-
-	return clusters, nil
+func (ds *datastoreImpl) GetClustersForSAC() ([]effectiveaccessscope.Cluster, error) {
+	return storagetoeffectiveaccessscope.Clusters(ds.clusterStorage.GetAllFromCacheForSAC()), nil
 }
 
 func (ds *datastoreImpl) GetClusterName(ctx context.Context, id string) (string, bool, error) {
@@ -391,7 +379,7 @@ func (ds *datastoreImpl) AddCluster(ctx context.Context, cluster *storage.Cluste
 	if err := checkWriteSac(ctx, cluster.GetId()); err != nil {
 		return "", err
 	}
-	_, found := ds.nameToIDCache.Get(cluster.Name)
+	_, found := ds.nameToIDCache.Get(cluster.GetName())
 	if found {
 		return "", errox.AlreadyExists.Newf("the cluster with name %s exists, cannot re-add it", cluster.GetName())
 	}
@@ -579,7 +567,7 @@ func (ds *datastoreImpl) RemoveCluster(ctx context.Context, id string, done *con
 	ds.lock.Lock()
 	defer ds.lock.Unlock()
 
-	// Fetch the cluster an confirm it exists.
+	// Fetch the cluster and confirm it exists.
 	cluster, exists, err := ds.clusterStorage.Get(ctx, id)
 	if !exists {
 		return errors.Errorf("unable to find cluster %q", id)
@@ -605,6 +593,11 @@ func (ds *datastoreImpl) postRemoveCluster(ctx context.Context, cluster *storage
 		ds.cm.CloseConnection(cluster.GetId())
 	}
 	ds.removeClusterImageIntegrations(ctx, cluster)
+
+	// Remove the cluster health since the cluster no longer exists
+	if err := ds.clusterHealthStorage.Delete(ctx, cluster.GetId()); err != nil {
+		log.Errorf("failed to remove health status for cluster %s: %v", cluster.GetId(), err)
+	}
 
 	// Remove ranker record here since removal is not handled in risk store as no entry present for cluster
 	ds.clusterRanker.Remove(cluster.GetId())
@@ -1066,7 +1059,7 @@ func addDefaults(cluster *storage.Cluster) error {
 		cluster.DynamicConfig.DisableAuditLogs = true
 	}
 
-	acConfig := cluster.DynamicConfig.GetAdmissionControllerConfig()
+	acConfig := cluster.GetDynamicConfig().GetAdmissionControllerConfig()
 	if acConfig == nil {
 		acConfig = &storage.AdmissionControllerConfig{
 			Enabled: false,
@@ -1108,7 +1101,7 @@ func configureFromHelmConfig(cluster *storage.Cluster, helmConfig *storage.Compl
 	cluster.SlimCollector = staticConfig.GetSlimCollector()
 	cluster.AdmissionControllerFailOnError = false
 	if features.AdmissionControllerConfig.Enabled() {
-		cluster.AdmissionControllerFailOnError = staticConfig.GetAdmissionControllerFailureOnError()
+		cluster.AdmissionControllerFailOnError = staticConfig.GetAdmissionControllerFailOnError()
 	}
 }
 

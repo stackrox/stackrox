@@ -1,46 +1,73 @@
-import React from 'react';
+import { useEffect, useState } from 'react';
+import type { MouseEvent as ReactMouseEvent, ReactElement, Ref } from 'react';
 import { useFormikContext } from 'formik';
 import {
+    Alert,
+    Button,
+    Chip,
+    ChipGroup,
+    Divider,
     Flex,
     FlexItem,
-    Title,
-    Button,
-    Divider,
-    Grid,
-    GridItem,
     FormGroup,
     FormHelperText,
+    Grid,
+    GridItem,
     HelperText,
     HelperTextItem,
+    MenuToggle,
+    Select,
+    SelectList,
+    SelectOption,
+    TextInputGroup,
+    TextInputGroupMain,
+    TextInputGroupUtilities,
+    Title,
 } from '@patternfly/react-core';
-import { Select, SelectOption } from '@patternfly/react-core/deprecated';
+import type { MenuToggleElement } from '@patternfly/react-core';
+import { TimesIcon } from '@patternfly/react-icons';
 
-import { ClientPolicy } from 'types/policy.proto';
-import { ListImage } from 'types/image.proto';
-import { ListDeployment } from 'types/deployment.proto';
+import type { ClientPolicy } from 'types/policy.proto';
+import type { ListImage } from 'types/image.proto';
+import type { ListDeployment } from 'types/deployment.proto';
 import useFetchClustersForPermissions from 'hooks/useFetchClustersForPermissions';
 import { getImages } from 'services/imageService';
 import { fetchDeploymentsWithProcessInfoLegacy as fetchDeploymentsWithProcessInfo } from 'services/DeploymentsService';
 import PolicyScopeCard from './PolicyScopeCard';
 
-function PolicyScopeForm() {
-    const [isExcludeImagesOpen, setIsExcludeImagesOpen] = React.useState(false);
-    const [images, setImages] = React.useState<ListImage[]>([]);
-    const [deployments, setDeployments] = React.useState<ListDeployment[]>([]);
+function PolicyScopeForm(): ReactElement {
+    const [isExcludeImagesOpen, setIsExcludeImagesOpen] = useState(false);
+    const [filterValue, setFilterValue] = useState('');
+    const [images, setImages] = useState<ListImage[]>([]);
+    const [deployments, setDeployments] = useState<ListDeployment[]>([]);
     const { clusters } = useFetchClustersForPermissions(['Deployment']);
     const { values, setFieldValue } = useFormikContext<ClientPolicy>();
     const { scope, excludedDeploymentScopes, excludedImageNames } = values;
 
     const hasAuditLogEventSource = values.eventSource === 'AUDIT_LOG_EVENT';
+    const hasNodeEventSource = values.eventSource === 'NODE_EVENT';
     const hasBuildLifecycle = values.lifecycleStages.includes('BUILD');
     const hasDeployOrRuntimeLifecycle =
         values.lifecycleStages.includes('DEPLOY') || values.lifecycleStages.includes('RUNTIME');
+
+    // Filter images based on the current filter value
+    const filteredImages = filterValue
+        ? images.filter((image) => image.name.toLowerCase().includes(filterValue.toLowerCase()))
+        : images;
+
+    const shouldShowCreateOption =
+        filterValue && !filteredImages?.some((image) => image.name === filterValue);
+
+    // Check if we have any content to show
+    const hasResults = filteredImages?.length > 0 || shouldShowCreateOption;
+
+    const isAllScopingDisabled = hasNodeEventSource;
 
     function addNewInclusionScope() {
         setFieldValue('scope', [...scope, {}]);
     }
 
-    function deleteInclusionScope(index) {
+    function deleteInclusionScope(index: number) {
         const newScope = scope.filter((_, i) => i !== index);
         setFieldValue('scope', newScope);
     }
@@ -49,22 +76,29 @@ function PolicyScopeForm() {
         setFieldValue('excludedDeploymentScopes', [...excludedDeploymentScopes, {}]);
     }
 
-    function deleteExclusionDeploymentScope(index) {
+    function deleteExclusionDeploymentScope(index: number) {
         const newScope = excludedDeploymentScopes.filter((_, i) => i !== index);
         setFieldValue('excludedDeploymentScopes', newScope);
     }
 
-    function handleChangeMultiSelect(e, selectedImage) {
-        setIsExcludeImagesOpen(false);
+    function handleChangeMultiSelect(
+        _event: ReactMouseEvent | undefined,
+        selectedImage: string | number | undefined
+    ) {
+        if (!selectedImage || typeof selectedImage === 'number') {
+            return;
+        }
+
         if (excludedImageNames.includes(selectedImage)) {
             const newExclusions = excludedImageNames.filter((image) => image !== selectedImage);
             setFieldValue('excludedImageNames', newExclusions);
         } else {
             setFieldValue('excludedImageNames', [...excludedImageNames, selectedImage]);
         }
+        setFilterValue('');
     }
 
-    React.useEffect(() => {
+    useEffect(() => {
         getImages()
             .then((response) => {
                 setImages(response);
@@ -89,6 +123,7 @@ function PolicyScopeForm() {
             });
     }, []);
 
+    // @TODO: Consider using a custom component for the multi-select typeahead dropdown. PolicyCategoriesSelectField.tsx is a good example too.
     return (
         <Flex direction={{ default: 'column' }} spaceItems={{ default: 'spaceItemsNone' }}>
             <FlexItem flex={{ default: 'flex_1' }} className="pf-v5-u-p-lg">
@@ -99,6 +134,15 @@ function PolicyScopeForm() {
                 </div>
             </FlexItem>
             <Divider component="div" />
+            {isAllScopingDisabled && (
+                <Alert
+                    className="pf-v5-u-mt-lg pf-v5-u-mx-lg"
+                    isInline
+                    variant="info"
+                    title="The selected event source does not support scoping."
+                    component="p"
+                />
+            )}
             <Flex direction={{ default: 'column' }} className="pf-v5-u-p-lg">
                 <Flex>
                     <FlexItem flex={{ default: 'flex_1' }}>
@@ -110,7 +154,11 @@ function PolicyScopeForm() {
                         </div>
                     </FlexItem>
                     <FlexItem className="pf-v5-u-pr-md" alignSelf={{ default: 'alignSelfCenter' }}>
-                        <Button variant="secondary" onClick={addNewInclusionScope}>
+                        <Button
+                            variant="secondary"
+                            onClick={addNewInclusionScope}
+                            isDisabled={isAllScopingDisabled}
+                        >
                             Add inclusion scope
                         </Button>
                     </FlexItem>
@@ -147,7 +195,7 @@ function PolicyScopeForm() {
                     <FlexItem className="pf-v5-u-pr-md" alignSelf={{ default: 'alignSelfCenter' }}>
                         <Button
                             variant="secondary"
-                            isDisabled={!hasDeployOrRuntimeLifecycle}
+                            isDisabled={!hasDeployOrRuntimeLifecycle || isAllScopingDisabled}
                             onClick={addNewExclusionDeploymentScope}
                         >
                             Add exclusion scope
@@ -189,24 +237,100 @@ function PolicyScopeForm() {
                         fieldId="exclude-images"
                     >
                         <Select
-                            onToggle={() => setIsExcludeImagesOpen(!isExcludeImagesOpen)}
                             isOpen={isExcludeImagesOpen}
-                            variant="typeaheadmulti"
-                            selections={excludedImageNames}
+                            selected={excludedImageNames}
                             onSelect={handleChangeMultiSelect}
-                            isCreatable
-                            createText="Images starting with "
-                            onCreateOption={() => {}}
-                            isDisabled={hasAuditLogEventSource || !hasBuildLifecycle}
-                            onClear={() => setFieldValue('excludedImageNames', [])}
-                            placeholderText="Select images to exclude"
-                            maxHeight="300px"
+                            onOpenChange={(nextOpen: boolean) => setIsExcludeImagesOpen(nextOpen)}
+                            toggle={(toggleRef: Ref<MenuToggleElement>) => (
+                                <MenuToggle
+                                    variant="typeahead"
+                                    aria-label="Typeahead menu toggle"
+                                    onClick={() => setIsExcludeImagesOpen(!isExcludeImagesOpen)}
+                                    innerRef={toggleRef}
+                                    isExpanded={isExcludeImagesOpen}
+                                    isDisabled={
+                                        hasAuditLogEventSource ||
+                                        !hasBuildLifecycle ||
+                                        isAllScopingDisabled
+                                    }
+                                    className="pf-v5-u-w-100"
+                                >
+                                    <TextInputGroup isPlain>
+                                        <TextInputGroupMain
+                                            value={filterValue}
+                                            onClick={() =>
+                                                setIsExcludeImagesOpen(!isExcludeImagesOpen)
+                                            }
+                                            onChange={(_event, value) => setFilterValue(value)}
+                                            autoComplete="off"
+                                            placeholder="Select images to exclude"
+                                        >
+                                            {excludedImageNames.length > 0 && (
+                                                <ChipGroup>
+                                                    {excludedImageNames.map((image) => (
+                                                        <Chip
+                                                            key={image}
+                                                            onClick={(event) => {
+                                                                event.stopPropagation();
+                                                                handleChangeMultiSelect(
+                                                                    event,
+                                                                    image
+                                                                );
+                                                            }}
+                                                        >
+                                                            {image}
+                                                        </Chip>
+                                                    ))}
+                                                </ChipGroup>
+                                            )}
+                                        </TextInputGroupMain>
+                                        <TextInputGroupUtilities>
+                                            {excludedImageNames.length > 0 && (
+                                                <Button
+                                                    variant="plain"
+                                                    onClick={(event) => {
+                                                        event.stopPropagation();
+                                                        setFieldValue('excludedImageNames', []);
+                                                        setFilterValue('');
+                                                    }}
+                                                    aria-label="Clear input value"
+                                                >
+                                                    <TimesIcon />
+                                                </Button>
+                                            )}
+                                        </TextInputGroupUtilities>
+                                    </TextInputGroup>
+                                </MenuToggle>
+                            )}
                         >
-                            {images?.map((image) => (
-                                <SelectOption key={image.name} value={image.name}>
-                                    {image.name}
-                                </SelectOption>
-                            ))}
+                            <SelectList>
+                                {hasResults ? (
+                                    <>
+                                        {filteredImages?.map((image) => (
+                                            <SelectOption
+                                                key={image.name}
+                                                value={image.name}
+                                                isSelected={excludedImageNames.includes(image.name)}
+                                            >
+                                                {image.name}
+                                            </SelectOption>
+                                        ))}
+                                        {shouldShowCreateOption && (
+                                            <SelectOption
+                                                key={`create-${filterValue}`}
+                                                value={filterValue}
+                                            >
+                                                Create exclusion for images starting with &quot;
+                                                {filterValue}&quot;
+                                            </SelectOption>
+                                        )}
+                                    </>
+                                ) : (
+                                    <SelectOption isDisabled>
+                                        {filterValue ? 'No images found' : 'No images available'}
+                                    </SelectOption>
+                                )}
+                            </SelectList>
                         </Select>
                         <FormHelperText>
                             <HelperText>

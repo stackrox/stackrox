@@ -12,7 +12,6 @@ import (
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/uuid"
-	"github.com/stackrox/rox/sensor/common/clusterid"
 	"github.com/stackrox/rox/sensor/common/store"
 )
 
@@ -24,16 +23,24 @@ type settingsManager struct {
 	hasClusterConfig, hasPolicies bool
 	centralEndpoint               string
 
+	clusterID clusterIDWaiter
+
 	deployments store.DeploymentStore
 	pods        store.PodStore
 }
 
+type clusterIDWaiter interface {
+	Get() string
+}
+
 // NewSettingsManager creates a new settings manager for admission control settings.
-func NewSettingsManager(deployments store.DeploymentStore, pods store.PodStore) SettingsManager {
+func NewSettingsManager(clusterID clusterIDWaiter, deployments store.DeploymentStore, pods store.PodStore) SettingsManager {
 	return &settingsManager{
 		settingsStream:     concurrency.NewValueStream[*sensor.AdmissionControlSettings](nil),
 		sensorEventsStream: concurrency.NewValueStream[*sensor.AdmCtrlUpdateResourceRequest](nil),
 		centralEndpoint:    env.CentralEndpoint.Setting(),
+
+		clusterID: clusterID,
 
 		deployments: deployments,
 		pods:        pods,
@@ -45,7 +52,7 @@ func (p *settingsManager) newSettingsNoLock() *sensor.AdmissionControlSettings {
 	if p.currSettings != nil {
 		settings = p.currSettings.CloneVT()
 	}
-	settings.ClusterId = clusterid.Get()
+	settings.ClusterId = p.clusterID.Get()
 	settings.CentralEndpoint = p.centralEndpoint
 	settings.Timestamp = protocompat.TimestampNow()
 	return settings

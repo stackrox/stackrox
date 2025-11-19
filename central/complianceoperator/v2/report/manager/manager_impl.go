@@ -481,48 +481,41 @@ func (m *managerImpl) handleReadyScan() {
 	if !features.ComplianceReporting.Enabled() || !features.ScanScheduleReportJobs.Enabled() {
 		return
 	}
-	for {
-		select {
-		case <-m.stopper.Flow().StopRequested():
-			return
-		default:
-			if scanWatcherResult := m.readyQueue.PullBlocking(m.stopper.LowLevel().GetStopRequestSignal()); scanWatcherResult != nil {
-				concurrency.WithLock(&m.watchingScansLock, func() {
-					delete(m.watchingScans, scanWatcherResult.WatcherID)
+	for scanWatcherResult := range m.readyQueue.Seq(m.stopper.LowLevel().GetStopRequestSignal()) {
+		concurrency.WithLock(&m.watchingScansLock, func() {
+			delete(m.watchingScans, scanWatcherResult.WatcherID)
 
-					m.maxScansInParallel.Store(int32(len(m.watchingScans)))
-					timeActive := time.Since(m.watchingScansStartTime[scanWatcherResult.WatcherID])
-					scanWatcherActiveTimeMinutes.WithLabelValues(scanWatcherResult.Scan.GetScanName()).
-						Observe(timeActive.Minutes())
-					delete(m.watchingScansStartTime, scanWatcherResult.WatcherID)
-				})
-				if err := watcher.DeleteOldResults(m.automaticReportingCtx, scanWatcherResult, m.checkResultDataStore); err != nil {
-					log.Errorf("unable to delete old CheckResults: %v", err)
-				}
-				if errors.Is(scanWatcherResult.Error, watcher.ErrScanRemoved) {
-					log.Debugf("Scan %s was removed", scanWatcherResult.Scan.GetScanName())
-					continue
-				}
-				log.Debugf("Scan %s done with %d checks", scanWatcherResult.Scan.GetScanName(), len(scanWatcherResult.CheckResults))
-				w, scanConfig, wasAlreadyRunning, err := m.getOrCreateScanConfigWatcher(scanWatcherResult.SensorCtx, scanWatcherResult, m.scanConfigDataStore, m.scanConfigReadyQueue)
-				if errors.Is(err, watcher.ErrScanAlreadyHandled) {
-					continue
-				}
-				if err != nil {
-					log.Errorf("Unable to create the ScanConfigWatcher: %v", err)
-					continue
-				}
-				if !wasAlreadyRunning {
-					// if there are no notifiers configured we need to still push the results as they might be on-demand request
-					if err := m.createAutomaticSnapshotAndSubscribe(m.automaticReportingCtx, scanConfig, w); err != nil && !errors.Is(err, report.ErrNoNotifiersConfigured) {
-						log.Errorf("Unable to create the snapshot: %v", err)
-						continue
-					}
-				}
-				if err := w.PushScanResults(scanWatcherResult); err != nil {
-					log.Errorf("Unable to push scan %s: %v", scanWatcherResult.Scan.GetScanName(), err)
-				}
+			m.maxScansInParallel.Store(int32(len(m.watchingScans)))
+			timeActive := time.Since(m.watchingScansStartTime[scanWatcherResult.WatcherID])
+			scanWatcherActiveTimeMinutes.WithLabelValues(scanWatcherResult.Scan.GetScanName()).
+				Observe(timeActive.Minutes())
+			delete(m.watchingScansStartTime, scanWatcherResult.WatcherID)
+		})
+		if err := watcher.DeleteOldResults(m.automaticReportingCtx, scanWatcherResult, m.checkResultDataStore); err != nil {
+			log.Errorf("unable to delete old CheckResults: %v", err)
+		}
+		if errors.Is(scanWatcherResult.Error, watcher.ErrScanRemoved) {
+			log.Debugf("Scan %s was removed", scanWatcherResult.Scan.GetScanName())
+			continue
+		}
+		log.Debugf("Scan %s done with %d checks", scanWatcherResult.Scan.GetScanName(), len(scanWatcherResult.CheckResults))
+		w, scanConfig, wasAlreadyRunning, err := m.getOrCreateScanConfigWatcher(scanWatcherResult.SensorCtx, scanWatcherResult, m.scanConfigDataStore, m.scanConfigReadyQueue)
+		if errors.Is(err, watcher.ErrScanAlreadyHandled) {
+			continue
+		}
+		if err != nil {
+			log.Errorf("Unable to create the ScanConfigWatcher: %v", err)
+			continue
+		}
+		if !wasAlreadyRunning {
+			// if there are no notifiers configured we need to still push the results as they might be on-demand request
+			if err := m.createAutomaticSnapshotAndSubscribe(m.automaticReportingCtx, scanConfig, w); err != nil && !errors.Is(err, report.ErrNoNotifiersConfigured) {
+				log.Errorf("Unable to create the snapshot: %v", err)
+				continue
 			}
+		}
+		if err := w.PushScanResults(scanWatcherResult); err != nil {
+			log.Errorf("Unable to push scan %s: %v", scanWatcherResult.Scan.GetScanName(), err)
 		}
 	}
 }
@@ -605,22 +598,15 @@ func (m *managerImpl) handleReadyScanConfig() {
 	if !features.ComplianceReporting.Enabled() || !features.ScanScheduleReportJobs.Enabled() {
 		return
 	}
-	for {
-		select {
-		case <-m.stopper.Flow().StopRequested():
-			return
-		default:
-			if scanConfigWatcherResult := m.scanConfigReadyQueue.PullBlocking(m.stopper.LowLevel().GetStopRequestSignal()); scanConfigWatcherResult != nil {
-				log.Debugf("Scan Config %s done with %d scans and %d reports", scanConfigWatcherResult.ScanConfig.GetScanConfigName(), len(scanConfigWatcherResult.ScanResults), len(scanConfigWatcherResult.ReportSnapshot))
-				concurrency.WithLock(&m.watchingScanConfigsLock, func() {
-					delete(m.watchingScanConfigs, scanConfigWatcherResult.WatcherID)
-				})
-				if err := watcher.DeleteOldResultsFromMissingScans(m.automaticReportingCtx, scanConfigWatcherResult, m.profileDataStore, m.scanDataStore, m.checkResultDataStore); err != nil {
-					log.Errorf("unable to delete old CheckResults: %v", err)
-				}
-				m.generateReportsFromWatcherResults(scanConfigWatcherResult)
-			}
+	for scanConfigWatcherResult := range m.scanConfigReadyQueue.Seq(m.stopper.LowLevel().GetStopRequestSignal()) {
+		log.Debugf("Scan Config %s done with %d scans and %d reports", scanConfigWatcherResult.ScanConfig.GetScanConfigName(), len(scanConfigWatcherResult.ScanResults), len(scanConfigWatcherResult.ReportSnapshot))
+		concurrency.WithLock(&m.watchingScanConfigsLock, func() {
+			delete(m.watchingScanConfigs, scanConfigWatcherResult.WatcherID)
+		})
+		if err := watcher.DeleteOldResultsFromMissingScans(m.automaticReportingCtx, scanConfigWatcherResult, m.profileDataStore, m.scanDataStore, m.checkResultDataStore); err != nil {
+			log.Errorf("unable to delete old CheckResults: %v", err)
 		}
+		m.generateReportsFromWatcherResults(scanConfigWatcherResult)
 	}
 }
 
@@ -649,7 +635,7 @@ func (m *managerImpl) generateSingleReportFromWatcherResults(result *watcher.Sca
 	// Update ReportData
 	snapshot.ReportData = m.getReportData(result.ScanConfig)
 	// Populate ClusterData
-	clusterData, err := helpers.GetClusterData(m.automaticReportingCtx, snapshot.ReportData, failedClusters, m.scanDataStore)
+	clusterData, err := helpers.GetClusterData(m.automaticReportingCtx, snapshot.GetReportData(), failedClusters, m.scanDataStore)
 	if err != nil {
 		log.Errorf("unable to populate cluster data: %v", err)
 		if dbErr := helpers.UpdateSnapshotOnError(m.automaticReportingCtx, snapshot, report.ErrReportGeneration, m.snapshotDataStore); dbErr != nil {

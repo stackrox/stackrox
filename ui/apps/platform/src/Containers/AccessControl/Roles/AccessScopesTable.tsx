@@ -1,7 +1,7 @@
-import React, { ChangeEventHandler, ReactElement } from 'react';
-import { Table, Tbody, Td, Thead, Th, Tr } from '@patternfly/react-table';
+import type { ChangeEventHandler, ReactElement } from 'react';
+import { Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 
-import { AccessScope } from 'services/AccessScopesService';
+import type { AccessScope } from 'services/AccessScopesService';
 
 export type AccessScopesTableProps = {
     fieldId: string;

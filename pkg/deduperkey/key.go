@@ -44,6 +44,8 @@ var (
 		&central.SensorEvent_ComplianceOperatorScanV2{},
 		&central.SensorEvent_ComplianceOperatorSuiteV2{},
 		&central.SensorEvent_AlertResults{},
+		&central.SensorEvent_VirtualMachine{},
+		&central.SensorEvent_VirtualMachineIndexReport{},
 	}
 )
 

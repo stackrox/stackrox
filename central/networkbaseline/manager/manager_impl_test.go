@@ -890,7 +890,7 @@ func (suite *ManagerTestSuite) TestBaselineSyncMsg() {
 	// If it stays as locked, and some updates are made to the baseline, then we should also sync to sensor
 	modifiedBaseline := baselineWithPeers(1)
 	modifiedBaseline.Locked = baseline1Copy.GetLocked()
-	modifiedBaseline.ObservationPeriodEnd = baseline1.ObservationPeriodEnd
+	modifiedBaseline.ObservationPeriodEnd = baseline1.GetObservationPeriodEnd()
 	expectOneTimeCallToConnectionManagerWithBaseline(suite, modifiedBaseline)
 	suite.Nil(suite.m.ProcessDeploymentDelete(depID(2)))
 

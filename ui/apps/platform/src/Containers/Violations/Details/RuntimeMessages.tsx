@@ -1,9 +1,10 @@
-import React, { ReactElement } from 'react';
+import type { ReactElement } from 'react';
 
-import { ProcessViolation, Violation } from 'types/alert.proto';
-import ProcessCard from './ProcessCard';
+import type { ProcessViolation, Violation } from 'types/alert.proto';
 import NetworkFlowCard from './NetworkFlowCard';
 import K8sCard from './K8sCard';
+import ProcessCardContent from './ProcessCardContent';
+import TimestampedEventCard from './TimestampedEventCard';
 
 type RuntimeMessagesProps = {
     processViolation: ProcessViolation | null;
@@ -45,9 +46,12 @@ function RuntimeMessages({ processViolation, violations }: RuntimeMessagesProps)
         <>
             {isPlainViolation && plainViolations}
             {!!processViolation?.processes?.length && (
-                <ProcessCard
-                    processes={processViolation.processes}
+                <TimestampedEventCard
                     message={processViolation.message}
+                    events={processViolation.processes}
+                    getTimestamp={(process) => process.signal.time}
+                    getEventKey={(process) => process.signal.id}
+                    ContentComponent={ProcessCardContent}
                 />
             )}
         </>

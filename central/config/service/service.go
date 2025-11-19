@@ -9,9 +9,10 @@ import (
 	"github.com/stackrox/rox/central/config/datastore"
 	"github.com/stackrox/rox/central/convert/storagetov1"
 	"github.com/stackrox/rox/central/convert/v1tostorage"
+	customMetrics "github.com/stackrox/rox/central/metrics/custom"
 	"github.com/stackrox/rox/central/platform/matcher"
 	"github.com/stackrox/rox/central/platform/reprocessor"
-	"github.com/stackrox/rox/central/telemetry/centralclient"
+	phonehome "github.com/stackrox/rox/central/telemetry/centralclient"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
@@ -66,16 +67,18 @@ type Service interface {
 }
 
 // New returns a new Service instance using the given DataStore.
-func New(datastore datastore.DataStore) Service {
+func New(datastore datastore.DataStore, ar customMetrics.Runner) Service {
 	return &serviceImpl{
-		datastore: datastore,
+		datastore:  datastore,
+		aggregator: ar,
 	}
 }
 
 type serviceImpl struct {
 	v1.UnimplementedConfigServiceServer
 
-	datastore datastore.DataStore
+	datastore  datastore.DataStore
+	aggregator customMetrics.Runner
 }
 
 // RegisterServiceServer registers this service with the given gRPC Server.
@@ -131,6 +134,9 @@ func (s *serviceImpl) GetConfig(ctx context.Context, _ *v1.Empty) (*storage.Conf
 
 // PutConfig updates Central's config
 func (s *serviceImpl) PutConfig(ctx context.Context, req *v1.PutConfigRequest) (*storage.Config, error) {
+
+	// Validation:
+
 	if req.GetConfig() == nil {
 		return nil, errors.Wrap(errox.InvalidArgs, "config must be specified")
 	}
@@ -141,10 +147,8 @@ func (s *serviceImpl) PutConfig(ctx context.Context, req *v1.PutConfigRequest) (
 		return nil, errors.Wrap(errox.InvalidArgs, "public config must be specified")
 	}
 
-	if features.UnifiedCVEDeferral.Enabled() {
-		if err := validateExceptionConfigReq(req.GetConfig().GetPrivateConfig().GetVulnerabilityExceptionConfig()); err != nil {
-			return nil, err
-		}
+	if err := validateExceptionConfigReq(req.GetConfig().GetPrivateConfig().GetVulnerabilityExceptionConfig()); err != nil {
+		return nil, err
 	}
 
 	regexes := make([]*regexp.Regexp, 0)
@@ -160,24 +164,35 @@ func (s *serviceImpl) PutConfig(ctx context.Context, req *v1.PutConfigRequest) (
 			regexes = append(regexes, regex)
 		}
 	}
+
+	customMetricsCfg, err := s.aggregator.ValidateConfiguration(
+		req.GetConfig().GetPrivateConfig().GetMetrics())
+	if err != nil {
+		return nil, err
+	}
+
+	// Store:
+
 	if err := s.datastore.UpsertConfig(ctx, req.GetConfig()); err != nil {
 		return nil, err
 	}
+
+	// Application:
+
 	if req.GetConfig().GetPublicConfig().GetTelemetry().GetEnabled() {
-		centralclient.Enable()
+		phonehome.Singleton().Enable()
 	} else {
-		centralclient.Disable()
+		phonehome.Singleton().Disable()
 	}
 	matcher.Singleton().SetRegexes(regexes)
 	go reprocessor.Singleton().RunReprocessor()
+	s.aggregator.Reconfigure(customMetricsCfg)
+
 	return req.GetConfig(), nil
 }
 
 // GetVulnerabilityExceptionConfig returns Central's vulnerability exception configuration.
 func (s *serviceImpl) GetVulnerabilityExceptionConfig(ctx context.Context, _ *v1.Empty) (*v1.GetVulnerabilityExceptionConfigResponse, error) {
-	if !features.UnifiedCVEDeferral.Enabled() {
-		return nil, errors.Errorf("Cannot fulfill request. Environment variable %s=false", features.UnifiedCVEDeferral.EnvVar())
-	}
 	vmExceptionConfig, err := s.datastore.GetVulnerabilityExceptionConfig(ctx)
 	if err != nil {
 		return nil, err
@@ -189,9 +204,6 @@ func (s *serviceImpl) GetVulnerabilityExceptionConfig(ctx context.Context, _ *v1
 
 // UpdateVulnerabilityExceptionConfig updates Central's vulnerability exception configuration.
 func (s *serviceImpl) UpdateVulnerabilityExceptionConfig(ctx context.Context, req *v1.UpdateVulnerabilityExceptionConfigRequest) (*v1.UpdateVulnerabilityExceptionConfigResponse, error) {
-	if !features.UnifiedCVEDeferral.Enabled() {
-		return nil, errors.Errorf("Cannot fulfill request. Environment variable %s=false", features.UnifiedCVEDeferral.EnvVar())
-	}
 	if req == nil {
 		return nil, errors.Wrap(errox.InvalidArgs, "request cannot be nil")
 	}
@@ -247,7 +259,7 @@ func (s *serviceImpl) UpdatePlatformComponentConfig(ctx context.Context, req *v1
 		}
 		regexes = append(regexes, regex)
 	}
-	config, err := s.datastore.UpsertPlatformComponentConfigRules(ctx, req.Rules)
+	config, err := s.datastore.UpsertPlatformComponentConfigRules(ctx, req.GetRules())
 	if err != nil {
 		return nil, err
 	}

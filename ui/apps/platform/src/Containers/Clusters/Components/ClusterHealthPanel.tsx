@@ -1,12 +1,12 @@
-import React, { ReactNode } from 'react';
-import { Panel, PanelHeader, PanelMain, PanelMainBody, Divider } from '@patternfly/react-core';
+import type { ReactElement, ReactNode } from 'react';
+import { Divider, Panel, PanelHeader, PanelMain, PanelMainBody } from '@patternfly/react-core';
 
 type ClusterHealthPanelProps = {
     children: ReactNode;
     header: ReactNode;
 };
 
-function ClusterHealthPanel({ children, header }: ClusterHealthPanelProps) {
+function ClusterHealthPanel({ children, header }: ClusterHealthPanelProps): ReactElement {
     return (
         <Panel variant="bordered" className="pf-v5-u-h-100">
             <PanelHeader>{header}</PanelHeader>

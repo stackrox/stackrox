@@ -128,6 +128,11 @@ func (s *{{$namePrefix}}StoreSuite) TestStore() {
 
 	s.NoError(store.UpsertMany(ctx, {{.TrimmedType|lowerCamelCase}}s))
 
+	found{{.TrimmedType|upperCamelCase}}s, missing, err := store.GetMany(ctx, {{$name}}IDs)
+	s.NoError(err)
+	s.Empty(missing)
+	protoassert.ElementsMatch(s.T(), {{.TrimmedType|lowerCamelCase}}s, found{{.TrimmedType|upperCamelCase}}s)
+
 	{{.TrimmedType|lowerCamelCase}}Count, err = store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)
 	s.Equal(200, {{.TrimmedType|lowerCamelCase}}Count)
@@ -323,6 +328,7 @@ func (s *{{$namePrefix}}StoreSuite) TestSACWalk() {
 	}
 }
 
+{{ if .SearchCategory -}}
 func (s *{{$namePrefix}}StoreSuite) TestSACGetByQueryFn() {
 	objA, objB, testCases := s.getTestData(storage.Access_READ_ACCESS)
 	s.Require().NoError(s.store.Upsert(withAllAccessCtx, objA))
@@ -341,6 +347,7 @@ func (s *{{$namePrefix}}StoreSuite) TestSACGetByQueryFn() {
 		})
 	}
 }
+{{- end }}
 
 func (s *{{$namePrefix}}StoreSuite) TestSACGetIDs() {
 	objA, objB, testCases := s.getTestData(storage.Access_READ_ACCESS)

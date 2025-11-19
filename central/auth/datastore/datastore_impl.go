@@ -270,8 +270,8 @@ func (d *datastoreImpl) configureConfigControllerAccess(kubeSAIssuer string, kub
 	}
 
 	var mappingFound bool
-	for _, mapping := range kubeSAConfig.Mappings {
-		if mapping.Key == "sub" && mapping.ValueExpression == configControllerServiceAccountName && mapping.Role == "Configuration Controller" {
+	for _, mapping := range kubeSAConfig.GetMappings() {
+		if mapping.GetKey() == "sub" && mapping.GetValueExpression() == configControllerServiceAccountName && mapping.GetRole() == "Configuration Controller" {
 			mappingFound = true
 			break
 		}

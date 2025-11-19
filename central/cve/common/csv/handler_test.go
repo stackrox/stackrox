@@ -9,7 +9,7 @@ import (
 	deploymentMocks "github.com/stackrox/rox/central/deployment/datastore/mocks"
 	"github.com/stackrox/rox/central/graphql/resolvers"
 	imageMocks "github.com/stackrox/rox/central/image/datastore/mocks"
-	componentMocks "github.com/stackrox/rox/central/imagecomponent/datastore/mocks"
+	componentV2Mocks "github.com/stackrox/rox/central/imagecomponent/v2/datastore/mocks"
 	nsMocks "github.com/stackrox/rox/central/namespace/datastore/mocks"
 	nodeMocks "github.com/stackrox/rox/central/node/datastore/mocks"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -28,16 +28,16 @@ func TestCVEScoping(t *testing.T) {
 
 type CVEScopingTestSuite struct {
 	suite.Suite
-	ctx                 context.Context
-	mockCtrl            *gomock.Controller
-	clusterDataStore    *clusterMocks.MockDataStore
-	nsDataStore         *nsMocks.MockDataStore
-	deploymentDataStore *deploymentMocks.MockDataStore
-	imageDataStore      *imageMocks.MockDataStore
-	nodeDataStore       *nodeMocks.MockDataStore
-	componentDataStore  *componentMocks.MockDataStore
-	resolver            *resolvers.Resolver
-	handler             *HandlerImpl
+	ctx                  context.Context
+	mockCtrl             *gomock.Controller
+	clusterDataStore     *clusterMocks.MockDataStore
+	nsDataStore          *nsMocks.MockDataStore
+	deploymentDataStore  *deploymentMocks.MockDataStore
+	imageDataStore       *imageMocks.MockDataStore
+	nodeDataStore        *nodeMocks.MockDataStore
+	componentV2DataStore *componentV2Mocks.MockDataStore
+	resolver             *resolvers.Resolver
+	handler              *HandlerImpl
 }
 
 func (suite *CVEScopingTestSuite) SetupTest() {
@@ -47,19 +47,19 @@ func (suite *CVEScopingTestSuite) SetupTest() {
 	suite.deploymentDataStore = deploymentMocks.NewMockDataStore(suite.mockCtrl)
 	suite.imageDataStore = imageMocks.NewMockDataStore(suite.mockCtrl)
 	suite.nodeDataStore = nodeMocks.NewMockDataStore(suite.mockCtrl)
-	suite.componentDataStore = componentMocks.NewMockDataStore(suite.mockCtrl)
+	suite.componentV2DataStore = componentV2Mocks.NewMockDataStore(suite.mockCtrl)
 	notifierMock := notifierMocks.NewMockProcessor(suite.mockCtrl)
 
 	notifierMock.EXPECT().HasEnabledAuditNotifiers().Return(false).AnyTimes()
 
 	suite.resolver = &resolvers.Resolver{
-		ClusterDataStore:        suite.clusterDataStore,
-		NamespaceDataStore:      suite.nsDataStore,
-		DeploymentDataStore:     suite.deploymentDataStore,
-		ImageDataStore:          suite.imageDataStore,
-		NodeDataStore:           suite.nodeDataStore,
-		ImageComponentDataStore: suite.componentDataStore,
-		AuditLogger:             audit.New(notifierMock),
+		ClusterDataStore:          suite.clusterDataStore,
+		NamespaceDataStore:        suite.nsDataStore,
+		DeploymentDataStore:       suite.deploymentDataStore,
+		ImageDataStore:            suite.imageDataStore,
+		NodeDataStore:             suite.nodeDataStore,
+		ImageComponentV2DataStore: suite.componentV2DataStore,
+		AuditLogger:               audit.New(notifierMock),
 	}
 
 	suite.handler = newTestHandler(suite.resolver)
@@ -151,8 +151,8 @@ func newTestHandler(resolver *resolvers.Resolver) *HandlerImpl {
 		resolver,
 		// CVEs must be scoped from lowest entities to highest entities. DO NOT CHANGE THE ORDER.
 		[]*SearchWrapper{
-			NewSearchWrapper(v1.SearchCategory_IMAGE_COMPONENTS, schema.ImageComponentsSchema.OptionsMap,
-				resolver.ImageComponentDataStore),
+			NewSearchWrapper(v1.SearchCategory_IMAGE_COMPONENTS_V2, schema.ImageComponentV2Schema.OptionsMap,
+				resolver.ImageComponentV2DataStore),
 			NewSearchWrapper(v1.SearchCategory_IMAGES, ImageOnlyOptionsMap, resolver.ImageDataStore),
 			NewSearchWrapper(v1.SearchCategory_DEPLOYMENTS, DeploymentOnlyOptionsMap, resolver.DeploymentDataStore),
 			NewSearchWrapper(v1.SearchCategory_NAMESPACES, NamespaceOnlyOptionsMap, resolver.NamespaceDataStore),

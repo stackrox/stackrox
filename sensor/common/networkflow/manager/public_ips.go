@@ -149,8 +149,8 @@ func (s sortableIPv6Slice) Swap(i, j int) {
 }
 
 func normalizeIPsList(listProto *sensor.IPAddressList) {
-	sliceutils.NaturalSort(listProto.Ipv4Addresses)
-	sort.Sort(sortableIPv6Slice(listProto.Ipv6Addresses))
+	sliceutils.NaturalSort(listProto.GetIpv4Addresses())
+	sort.Sort(sortableIPv6Slice(listProto.GetIpv6Addresses()))
 }
 
 func ipsListsEqual(a, b *sensor.IPAddressList) bool {

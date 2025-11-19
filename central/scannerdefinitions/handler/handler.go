@@ -20,7 +20,6 @@ import (
 	blob "github.com/stackrox/rox/central/blob/datastore"
 	"github.com/stackrox/rox/central/blob/snapshot"
 	"github.com/stackrox/rox/central/scannerdefinitions/file"
-	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/buildinfo"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/errox"
@@ -29,8 +28,6 @@ import (
 	"github.com/stackrox/rox/pkg/httputil"
 	"github.com/stackrox/rox/pkg/httputil/proxy"
 	"github.com/stackrox/rox/pkg/logging"
-	"github.com/stackrox/rox/pkg/protocompat"
-	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/pkg/version"
@@ -134,6 +131,9 @@ type httpHandler struct {
 	// This is meant to protect from concurrent uploads which may overwrite each other.
 	// Concurrent uploads are not expected nor supported.
 	uploadInProgress atomic.Bool
+
+	// offlineFiles coordinates reads and updates to offline files.
+	offlineFiles *offlineFileManager
 }
 
 func init() {
@@ -165,12 +165,17 @@ func New(blobStore blob.Datastore, opts handlerOpts) http.Handler {
 	dataDir, err := os.MkdirTemp("", tmpDirPattern)
 	utils.CrashOnError(err) // Fundamental problem if we cannot create a temp directory.
 
+	offlineFiles := newOfflineFileManager(blobStore, dataDir)
+	offlineFiles.Register(offlineScannerV2DefsBlobName)
+	offlineFiles.Register(offlineScannerV4DefsBlobName)
+
 	h := &httpHandler{
 		online:          !env.OfflineModeEnv.BooleanSetting(),
 		updaterInterval: env.ScannerVulnUpdateInterval.DurationSetting(),
 		dataDir:         dataDir,
 		uploadPath:      filepath.Join(dataDir, tmpUploadFile),
 		blobStore:       blobStore,
+		offlineFiles:    offlineFiles,
 	}
 
 	if !h.online {
@@ -320,7 +325,7 @@ func (h *httpHandler) openDefinitions(ctx context.Context, t updaterType, opts o
 // If the offline file does not exist, it is not an error, and (nil, nil) is returned.
 func (h *httpHandler) openOfflineDefinitions(ctx context.Context, t updaterType, opts openOpts) (*vulDefFile, error) {
 	log.Debugf("Fetching offline data for updater: type %s: options: %#v", t, opts)
-	offlineBlob, err := h.openOfflineBlob(ctx, opts.offlineBlobName)
+	offlineBlob, err := h.offlineFiles.Open(ctx, opts.offlineBlobName)
 	if err != nil {
 		return nil, fmt.Errorf("opening offline definitions: %s: %w", opts.offlineBlobName, err)
 	}
@@ -389,25 +394,6 @@ func (h *httpHandler) openOfflineDefinitions(ctx context.Context, t updaterType,
 
 	success = true
 	return offlineFile, nil
-}
-
-// openOfflineBlob opens the offline scanner data identified by the given blobName.
-// If the blob does not exist, then no file nor error is returned (nil, nil).
-func (h *httpHandler) openOfflineBlob(ctx context.Context, blobName string) (*vulDefFile, error) {
-	snap, err := snapshot.TakeBlobSnapshot(sac.WithAllAccess(ctx), h.blobStore, blobName)
-	if err != nil {
-		// If the blob does not exist, return no reader.
-		if errors.Is(err, snapshot.ErrBlobNotExist) {
-			return nil, nil
-		}
-		log.Warnf("Cannnot take a snapshot of Blob %q: %v", blobName, err)
-		return nil, err
-	}
-	modTime := time.Time{}
-	if t := protocompat.NilOrTime(snap.GetBlob().ModifiedTime); t != nil {
-		modTime = *t
-	}
-	return &vulDefFile{snap.File, modTime, snap.Close}, nil
 }
 
 // errNotExist is a wrapper meant to turn an error into a fs.ErrNotExist error.
@@ -653,24 +639,10 @@ func (h *httpHandler) handleZipContentsFromVulnDump(ctx context.Context) error {
 }
 
 func (h *httpHandler) handleScannerDefsFile(ctx context.Context, zipF *zip.File, blobName string) error {
-	r, err := zipF.Open()
-	if err != nil {
-		return errors.Wrap(err, "opening compressed file")
-	}
-	defer utils.IgnoreError(r.Close)
-
-	b := &storage.Blob{
-		Name:         blobName,
-		LastUpdated:  protocompat.TimestampNow(),
-		ModifiedTime: protocompat.TimestampNow(),
-		Length:       zipF.FileInfo().Size(),
-	}
-
-	if err := h.blobStore.Upsert(sac.WithAllAccess(ctx), b, r); err != nil {
-		return errors.Wrap(err, "writing scanner definitions")
-	}
-
-	return nil
+	return h.offlineFiles.Upsert(ctx, blobName, time.Now(), func() (io.ReadCloser, int64, error) {
+		reader, err := zipF.Open()
+		return reader, zipF.FileInfo().Size(), err
+	})
 }
 
 // openFromArchive returns the associated file for the given name within the ZIP archiveFile

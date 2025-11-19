@@ -12,7 +12,6 @@ const autoCompleteURL = `${baseUrl}/autocomplete`;
 // prettier-ignore
 export type SearchCategory =
     | 'SEARCH_UNSET'
-    | 'ACTIVE_COMPONENT'
     | 'ALERTS'
     | 'CLUSTER_HEALTH'
     | 'CLUSTER_VULN_EDGE'
@@ -55,6 +54,7 @@ export type SearchCategory =
     | 'SECRETS'
     | 'SERVICE_ACCOUNTS'
     | 'SUBJECTS'
+    | 'VIRTUAL_MACHINES'
     | 'VULN_REQUEST'
     | 'VULNERABILITIES'
     ;

@@ -454,7 +454,7 @@ func (s *PlatformCVEViewTestSuite) testCases() []testCase {
 			q: search.NewQueryBuilder().
 				AddStrings(search.CVSS, ">7.0").ProtoQuery(),
 			matchFilter: matchAllFilter().withCVEPartsFilter(func(cveParts converterV2.ClusterCVEParts) bool {
-				return cveParts.CVE.Cvss > 7.0
+				return cveParts.CVE.GetCvss() > 7.0
 			}),
 		},
 		{

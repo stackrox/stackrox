@@ -61,8 +61,8 @@ func (w *workerQueue) push(msg *central.MsgFromSensor) {
 	// The zeroth index is reserved for objects that do not match the if statement below
 	// w.indexFromKey returns (hashed value % poolSize) + 1 so it cannot return a 0 index
 	var idx int
-	if msg.HashKey != "" {
-		idx = w.indexFromKey(msg.HashKey)
+	if msg.GetHashKey() != "" {
+		idx = w.indexFromKey(msg.GetHashKey())
 	}
 
 	w.queues[idx].Push(msg)
@@ -82,11 +82,11 @@ func (w *workerQueue) runWorker(ctx context.Context, idx int, stopSig *concurren
 				if pgutils.IsTransientError(err) {
 					msgFromSensor.ProcessingAttempt++
 
-					if msgFromSensor.ProcessingAttempt == maxHandlerAttempts {
+					if msgFromSensor.GetProcessingAttempt() == maxHandlerAttempts {
 						log.Errorf("Error handling sensor message %T permanently: %v", msgFromSensor.GetEvent().GetResource(), err)
 						continue
 					}
-					reprocessingDuration := time.Duration(msgFromSensor.ProcessingAttempt) * handlerRetryInterval
+					reprocessingDuration := time.Duration(msgFromSensor.GetProcessingAttempt()) * handlerRetryInterval
 					log.Warnf("Reprocessing sensor message %T in %d minutes: %v", msgFromSensor.GetEvent().GetResource(), int(reprocessingDuration.Minutes()), err)
 					concurrency.AfterFunc(reprocessingDuration, func() {
 						w.injector.InjectMessageIntoQueue(msgFromSensor)

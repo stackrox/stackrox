@@ -43,12 +43,12 @@ func ConvertTypedServiceCertificateSetToFileMap(certSet *storage.TypedServiceCer
 		fileMap[caCertKey] = string(caCert)
 	}
 	for _, cert := range serviceCerts {
-		serviceName := services.ServiceTypeToSlugName(cert.ServiceType)
+		serviceName := services.ServiceTypeToSlugName(cert.GetServiceType())
 		if serviceName == "" {
-			return nil, errors.Errorf("failed to obtain slug-name for service type %v", cert.ServiceType)
+			return nil, errors.Errorf("failed to obtain slug-name for service type %v", cert.GetServiceType())
 		}
-		fileMap[serviceName+"-cert.pem"] = string(cert.Cert.CertPem)
-		fileMap[serviceName+"-key.pem"] = string(cert.Cert.KeyPem)
+		fileMap[serviceName+"-cert.pem"] = string(cert.GetCert().GetCertPem())
+		fileMap[serviceName+"-key.pem"] = string(cert.GetCert().GetKeyPem())
 	}
 	return fileMap, nil
 }
@@ -113,10 +113,10 @@ func ConvertFileMapToTypedServiceCertificateSet(fileMap map[string]string) (*sto
 			serviceCertMap[serviceType].KeyPem = keyPem
 		}
 		// When certificate and key have been retrieved from the file map, validate them against the CA.
-		if len(serviceCertMap[serviceType].CertPem) > 0 && len(serviceCertMap[serviceType].KeyPem) > 0 {
+		if len(serviceCertMap[serviceType].GetCertPem()) > 0 && len(serviceCertMap[serviceType].GetKeyPem()) > 0 {
 			keyAndCert := map[string][]byte{
-				mtls.ServiceCertFileName: serviceCertMap[serviceType].CertPem,
-				mtls.ServiceKeyFileName:  serviceCertMap[serviceType].KeyPem,
+				mtls.ServiceCertFileName: serviceCertMap[serviceType].GetCertPem(),
+				mtls.ServiceKeyFileName:  serviceCertMap[serviceType].GetKeyPem(),
 			}
 			err = certgen.VerifyServiceCertAndKey(keyAndCert, "", ca, serviceType, nil)
 			if err != nil {
@@ -132,10 +132,10 @@ func ConvertFileMapToTypedServiceCertificateSet(fileMap map[string]string) (*sto
 	}
 	typedServiceCerts = make([]*storage.TypedServiceCertificate, 0, len(serviceCertMap))
 	for serviceType, serviceCert := range serviceCertMap {
-		if len(serviceCert.CertPem) == 0 {
+		if len(serviceCert.GetCertPem()) == 0 {
 			return nil, nil, errors.Errorf("missing certificate for service %s in file map", serviceType.String())
 		}
-		if len(serviceCert.KeyPem) == 0 {
+		if len(serviceCert.GetKeyPem()) == 0 {
 			return nil, nil, errors.Errorf("missing key for service %s in file map", serviceType.String())
 		}
 		typedServiceCerts = append(typedServiceCerts, &storage.TypedServiceCertificate{

@@ -88,7 +88,7 @@ func (idl *imageV2LoaderImpl) FullImageWithID(ctx context.Context, id string) (*
 		return nil, err
 	}
 	// Load the full image if full scan is not available.
-	if image.GetComponentCount() == 0 || len(image.GetScan().GetComponents()) > 0 {
+	if image.GetScanStats().GetComponentCount() == 0 || len(image.GetScan().GetComponents()) > 0 {
 		return image, nil
 	}
 

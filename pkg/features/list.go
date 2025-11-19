@@ -9,35 +9,17 @@ var (
 	// StoreEventHashes stores the hashes of successfully processed objects we receive from Sensor into the database
 	StoreEventHashes = registerFeature("Store Event Hashes", "ROX_STORE_EVENT_HASHES", enabled, unchangeableInProd)
 
-	// PreventSensorRestartOnDisconnect enables a new behavior in Sensor where it avoids restarting when the gRPC connection with Central ends.
-	PreventSensorRestartOnDisconnect = registerFeature("Prevent Sensor restart on disconnect", "ROX_PREVENT_SENSOR_RESTART_ON_DISCONNECT", enabled, unchangeableInProd)
-
 	// ComplianceEnhancements enables APIs and UI pages for Compliance 2.0
 	ComplianceEnhancements = registerFeature("Compliance enhancements", "ROX_COMPLIANCE_ENHANCEMENTS", enabled)
 
-	// ActiveVulnMgmt defines if the active vuln mgmt feature is enabled
-	ActiveVulnMgmt = registerFeature("Enable Active Vulnerability Management", "ROX_ACTIVE_VULN_MGMT")
-
-	// UnifiedCVEDeferral enables APIs and UI pages for unified deferral workflow.
-	UnifiedCVEDeferral = registerFeature("Enable new unified Vulnerability deferral workflow", "ROX_VULN_MGMT_UNIFIED_CVE_DEFERRAL", enabled)
-
 	// ClusterAwareDeploymentCheck enables roxctl deployment check to check deployments on the cluster level.
 	ClusterAwareDeploymentCheck = registerFeature("Enables cluster level check for the 'roxctl deployment check' command.", "ROX_CLUSTER_AWARE_DEPLOYMENT_CHECK", enabled)
-
-	// SensorReconciliationOnReconnect enables sensors to support reconciliation when reconnecting
-	SensorReconciliationOnReconnect = registerFeature("Enable Sensors to support reconciliation on reconnect", "ROX_SENSOR_RECONCILIATION", enabled)
-
-	// AuthMachineToMachine allows to exchange ID tokens for Central tokens without requiring user interaction.
-	AuthMachineToMachine = registerFeature("Enable Auth Machine to Machine functionalities", "ROX_AUTH_MACHINE_TO_MACHINE", enabled)
 
 	// PolicyCriteriaModal enables a modal for selecting policy criteria when editing a policy
 	PolicyCriteriaModal = registerFeature("Enable modal to select policy criteria when editing a policy", "ROX_POLICY_CRITERIA_MODAL")
 
 	// SensorDeploymentBuildOptimization enables a performance improvement by skipping deployments processing when no dependency or spec changed
 	SensorDeploymentBuildOptimization = registerFeature("Enables a performance improvement by skipping deployments processing when no dependency or spec changed", "ROX_DEPLOYMENT_BUILD_OPTIMIZATION", enabled)
-
-	// SensorCapturesIntermediateEvents enables sensor to capture intermediate events when it is disconnected from central
-	SensorCapturesIntermediateEvents = registerFeature("Enables sensor to capture intermediate events when it is disconnected from central", "ROX_CAPTURE_INTERMEDIATE_EVENTS", enabled)
 
 	// VulnMgmtLegacySnooze enables APIs and UI for the legacy VM 1.0 "snooze CVE" functionality in the new VM 2.0 sections
 	VulnMgmtLegacySnooze = registerFeature("Enables the ability to snooze Node and Platform CVEs in VM 2.0", "ROX_VULN_MGMT_LEGACY_SNOOZE")
@@ -57,9 +39,6 @@ var (
 	// SensorAggregateDeploymentReferenceOptimization enables a performance improvement by aggregating deployment references when the same reference is queued for processing
 	SensorAggregateDeploymentReferenceOptimization = registerFeature("Enables a performance improvement by aggregating deployment references when the same reference is queued for processing", "ROX_AGGREGATE_DEPLOYMENT_REFERENCE_OPTIMIZATION")
 
-	// ACSCSEmailNotifier enables support for the ACSCS email notifier integration
-	ACSCSEmailNotifier = registerFeature("Enable support for ACSCS Email notifier type", "ROX_ACSCS_EMAIL_NOTIFIER", enabled)
-
 	// AttemptManifestDigest enables attempting to pull manifest digests from registries that historically did not
 	// support it but now appear to (ie: Nexus and RHEL).
 	AttemptManifestDigest = registerFeature("Enables attempts to pull manifest digests for all registry integrations", "ROX_ATTEMPT_MANIFEST_DIGEST", enabled)
@@ -68,16 +47,10 @@ var (
 	// on the delegated scanning config.
 	DelegateWatchedImageReprocessing = registerFeature("Enables delegating scans for watched images during reprocessing", "ROX_DELEGATE_WATCHED_IMAGE_REPROCESSING", enabled)
 
-	// CollectorRuntimeConfig enables filtering of runtime events.
-	CollectorRuntimeConfig = registerFeature("Enable collector runtime configuration", "ROX_COLLECTOR_RUNTIME_CONFIG")
-
 	// SensorSingleScanPerImage when set to enabled forces Sensor to allow only a single scan per image to be active at any given
 	// time. Will only have an affect if UnqualifiedSearchRegistries is also enabled.
 	// TODO(ROX-24641): Remove dependency on the UnqualifiedSearchRegistries feature so that this is enabled by default.
 	SensorSingleScanPerImage = registerFeature("Sensor will only allow a single active scan per image", "ROX_SENSOR_SINGLE_SCAN", enabled)
-
-	// MicrosoftSentinelNotifier enables the Microsoft Sentinel notifier.
-	MicrosoftSentinelNotifier = registerFeature("Enable the Microsoft Sentinel notifier", "ROX_MICROSOFT_SENTINEL", enabled)
 
 	// ScanScheduleReportJobs enables support for compliance scan schedule report jobs
 	ScanScheduleReportJobs = registerFeature("Enables support for compliance scan schedule report jobs", "ROX_SCAN_SCHEDULE_REPORT_JOBS", enabled)
@@ -86,7 +59,7 @@ var (
 	PlatformComponents = registerFeature("Introduce the concept of platform collections and filtered views across the app", "ROX_PLATFORM_COMPONENTS", enabled)
 
 	// Display clusters page patternfly redesign.
-	ClustersPageMigrationUI = registerFeature("Display clusters page patternfly redesign", "ROX_CLUSTERS_PAGE_MIGRATION_UI")
+	ClustersPageMigrationUI = registerFeature("Display clusters page patternfly redesign", "ROX_CLUSTERS_PAGE_MIGRATION_UI", enabled)
 
 	// ClusterRegistrationSecrets enables support for Cluster Registration Secrets (CRS), the next-gen init-bundles.
 	ClusterRegistrationSecrets = registerFeature("Enable support for Cluster Registration Secrets (CRS)", "ROX_CLUSTER_REGISTRATION_SECRETS", enabled)
@@ -94,6 +67,9 @@ var (
 	// SensorPullSecretsByName when set to enabled will cause Sensor to capture pull secrets by secret name and registry host instead of just
 	// registry host.
 	SensorPullSecretsByName = registerFeature("Sensor will capture pull secrets by name and registry host instead of just registry host", "ROX_SENSOR_PULL_SECRETS_BY_NAME", enabled)
+
+	// OptimizedBaselineMemory enables optimized memory usage for baseline detector through process set deduplication
+	OptimizedBaselineMemory = registerFeature("Enable optimized memory usage for baseline detector through process set deduplication", "ROX_OPTIMIZED_BASELINE_MEMORY")
 
 	// ExternalIPs enables storing detailed discovered external IPs
 	ExternalIPs = registerFeature("Central will work with discovered external IPs", "ROX_EXTERNAL_IPS", enabled)
@@ -105,35 +81,34 @@ var (
 	// Will aggregate to one edge per unique port/protocol/direction instead of one edge per unique IP/port/protocol/direction.
 	NetworkGraphAggregateExternalIPs = registerFeature("Aggregate all external IP graph edges, showing only unique port/protocol pairs", "ROX_NETWORK_GRAPH_AGGREGATE_EXT_IPS")
 
-	// Display Exploit Prediction Scoring System (EPSS) score.
-	EPSSScore = registerFeature("Display Exploit Prediction Scoring System (EPSS) score", "ROX_EPSS_SCORE", enabled)
-
-	// Add the ability to generate an SBOM from an image
-	SBOMGeneration = registerFeature("Add the ability to generate an SBOM from an image", "ROX_SBOM_GENERATION", enabled)
-
-	// Splits Image CVEs into Workload CVE and Platform CVE sections in the UI
-	PlatformCVESplit = registerFeature("Splits Image CVEs into Workload CVE and Platform CVE sections in the UI", "ROX_PLATFORM_CVE_SPLIT", enabled)
-
 	// Flattens CVE Data Model for improved accuracy and performance
 	FlattenCVEData = registerFeature("Uses a flattened CVE Data Model improved accuracy and performance", "ROX_FLATTEN_CVE_DATA", enabled)
 
 	// Flattens Image Data Model for improved accuracy and performance
 	FlattenImageData = registerFeature("Uses a flattened Image Data Model for improved accuracy and performance", "ROX_FLATTEN_IMAGE_DATA")
 
-	// Adds the ability to generate on-demand vulnerability reports based on filter views
-	VulnerabilityOnDemandReports = registerFeature("Adds the ability to generate on-demand vulnerability reports based on filter views", "ROX_VULNERABILITY_ON_DEMAND_REPORTS")
+	// Adds the ability to generate view-based vulnerability reports
+	VulnerabilityViewBasedReports = registerFeature("Adds the ability to generate view-based vulnerability reports", "ROX_VULNERABILITY_VIEW_BASED_REPORTS", enabled)
 
 	// Adds the ability to customize the regex rules for identifying platform components
 	CustomizablePlatformComponents = registerFeature("Adds the ability to customize the regex rules for identifying platform components", "ROX_CUSTOMIZABLE_PLATFORM_COMPONENTS", enabled)
 
 	// Provides only necessary configuration options for admission controller
-	AdmissionControllerConfig = registerFeature("Provides only necessary configuration options for admission controller", "ROX_ADMISSION_CONTROLLER_CONFIG")
+	AdmissionControllerConfig = registerFeature("Provides only necessary configuration options for admission controller", "ROX_ADMISSION_CONTROLLER_CONFIG", enabled)
 
-	// Intgrate with LLM for risk recommendations
-	LLMRiskRecommendation = registerFeature("Intgrate with LLM for risk recommendations", "ROX_LLM_RISK_RECOMMENDATION")
+	// Locks process baselines when their deployments leave the observation period
+	AutoLockProcessBaselines = registerFeature("Locks process baselines when their deployments leave the observation period", "ROX_AUTO_LOCK_PROCESS_BASELINES", enabled)
 
-	// Adds built-in policy to ensure that Red Hat images are signed by Red Hat Release Key
-	RedHatImagesSignedPolicy = registerFeature("Adds built-in policy to ensure that Red Hat images are signed by the Red Hat release key", "ROX_RED_HAT_IMAGES_SIGNED_POLICY", unchangeableInProd)
+	// KnownExploitedVulnerabilities enables support for CISA Known Exploited Vulnerabilities (KEV) data.
+	//
+	// This must be enabled in Central and Scanner V4 Matcher to have any effect.
+	KnownExploitedVulnerabilities = registerFeature("Display CISA Known Exploited Vulnerabilities (KEV) data", "ROX_CISA_KEV")
+
+	// SensitiveFileActivity enables monitoring of sensitive files.
+	SensitiveFileActivity = registerFeature("Enable sensitive file monitoring", "ROX_SENSITIVE_FILE_ACTIVITY")
+
+	// CVEFixTimestampCriteria enables the new CVE Fix timestamp criteria
+	CVEFixTimestampCriteria = registerFeature("Enable grace period criteria based on CVE fix timestamp", "ROX_CVE_FIX_TIMESTAMP")
 )
 
 // The following feature flags are related to Scanner V4.
@@ -175,4 +150,7 @@ var (
 	ScannerV4MavenSearch = registerFeature("Enables Scanner V4 to reach out to ROX_SCANNER_V4_MAVEN_SEARCH_URL for additional information about Java packages", "ROX_SCANNER_V4_MAVEN_SEARCH")
 
 	VirtualMachines = registerFeature("Enables virtual machine management", "ROX_VIRTUAL_MACHINES")
+
+	// ScannerV4StoreExternalIndexReports enables storing index reports from delegated scans to Central's Scanner V4 Indexer.
+	ScannerV4StoreExternalIndexReports = registerFeature("Enables storing index reports from delegated scans to Central's Scanner V4 Indexer", "ROX_SCANNER_V4_STORE_EXTERNAL_INDEX_REPORTS", enabled)
 )

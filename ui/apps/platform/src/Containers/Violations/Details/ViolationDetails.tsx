@@ -1,8 +1,8 @@
-import React, { ReactElement } from 'react';
+import type { ReactElement } from 'react';
 import { Divider, Flex, FlexItem, Title } from '@patternfly/react-core';
 
-import { LifecycleStage } from 'types/policy.proto';
-import { ProcessViolation, Violation } from 'types/alert.proto';
+import type { LifecycleStage } from 'types/policy.proto';
+import type { ProcessViolation, Violation } from 'types/alert.proto';
 
 import DeploytimeMessages from './DeploytimeMessages';
 import RuntimeMessages from './RuntimeMessages';

@@ -1,5 +1,4 @@
-import React, { ReactElement } from 'react';
-import { useSelector } from 'react-redux';
+import type { ReactElement } from 'react';
 import {
     Button,
     Flex,
@@ -12,67 +11,64 @@ import {
 } from '@patternfly/react-core';
 import { OutlinedQuestionCircleIcon } from '@patternfly/react-icons';
 
-import { SystemConfig } from 'types/config.proto';
-import { selectors } from 'reducers';
-
 import PopoverBodyContent from 'Components/PopoverBodyContent';
+import useTelemetryConfig from 'hooks/useTelemetryConfig';
+import type { SystemConfig } from 'types/config.proto';
+
 import PrivateConfigDataRetentionDetails from './PrivateConfigDataRetentionDetails';
 import PublicConfigBannerDetails from './PublicConfigBannerDetails';
 import PublicConfigLoginDetails from './PublicConfigLoginDetails';
 import PublicConfigTelemetryDetails from './PublicConfigTelemetryDetails';
 import PlatformComponentsConfigDetails from './PlatformComponentsConfigDetails';
+import PrivateConfigPrometheusMetricsDetails from './PrivateConfigPrometheusMetricsDetails';
 
 export type SystemConfigDetailsProps = {
     systemConfig: SystemConfig;
     isClustersRoutePathRendered: boolean;
-    isCustomizingPlatformComponentsEnabled: boolean;
 };
 
 function SystemConfigDetails({
     systemConfig,
     isClustersRoutePathRendered,
-    isCustomizingPlatformComponentsEnabled,
 }: SystemConfigDetailsProps): ReactElement {
-    const isTelemetryConfigured = useSelector(selectors.getIsTelemetryConfigured);
+    const { isTelemetryConfigured } = useTelemetryConfig();
 
     return (
         <>
-            {isCustomizingPlatformComponentsEnabled && (
-                <PageSection data-testid="platform-components-config">
-                    <Flex direction={{ default: 'row' }} spaceItems={{ default: 'spaceItemsMd' }}>
-                        <Title headingLevel="h2" className="pf-v5-u-mb-md">
-                            Platform components configuration
-                        </Title>
-                        <Popover
-                            aria-label="Platform components config info"
-                            bodyContent={
-                                <PopoverBodyContent
-                                    headerContent="What is a platform component?"
-                                    bodyContent="Platform components include the underlying infrastructure, operators, and third-party services that support application development. Defining these components allow for categorization of security findings and segments them by area of responsibility."
-                                />
-                            }
+            <PageSection data-testid="platform-components-config">
+                <Flex direction={{ default: 'row' }} spaceItems={{ default: 'spaceItemsMd' }}>
+                    <Title headingLevel="h2" className="pf-v5-u-mb-md">
+                        Platform components configuration
+                    </Title>
+                    <Popover
+                        aria-label="Platform components config info"
+                        bodyContent={
+                            <PopoverBodyContent
+                                headerContent="What is a platform component?"
+                                bodyContent="Platform components include the underlying infrastructure, operators, and third-party services that support application development. Defining these components allow for categorization of security findings and segments them by area of responsibility."
+                            />
+                        }
+                    >
+                        <Button
+                            variant="plain"
+                            isInline
+                            aria-label="Show platform components config info"
+                            className="pf-v5-u-p-0"
                         >
-                            <Button
-                                variant="plain"
-                                isInline
-                                aria-label="Show platform components config info"
-                                className="pf-v5-u-p-0"
-                            >
-                                <OutlinedQuestionCircleIcon />
-                            </Button>
-                        </Popover>
-                    </Flex>
-                    <Text>
-                        Define platform components using namespaces to segment platform security
-                        findings from user workloads
-                    </Text>
-                    <div className="pf-v5-u-mt-lg">
-                        <PlatformComponentsConfigDetails
-                            platformComponentConfig={systemConfig.platformComponentConfig}
-                        />
-                    </div>
-                </PageSection>
-            )}
+                            <OutlinedQuestionCircleIcon />
+                        </Button>
+                    </Popover>
+                </Flex>
+                <Text>
+                    Define platform components using namespaces to segment platform security
+                    findings from user workloads
+                </Text>
+                <div className="pf-v5-u-mt-lg">
+                    <PlatformComponentsConfigDetails
+                        platformComponentConfig={systemConfig.platformComponentConfig}
+                    />
+                </div>
+            </PageSection>
             <PageSection data-testid="private-data-retention-config">
                 <Title headingLevel="h2" className="pf-v5-u-mb-md">
                     Private data retention configuration
@@ -81,6 +77,21 @@ function SystemConfigDetails({
                     isClustersRoutePathRendered={isClustersRoutePathRendered}
                     privateConfig={systemConfig?.privateConfig}
                 />
+            </PageSection>
+            <PageSection data-testid="private-prometheus-config">
+                <Title headingLevel="h2" className="pf-v5-u-mb-md">
+                    Prometheus metrics configuration
+                </Title>
+                <Text>
+                    The following Prometheus metrics are exposed on the API endpoint at the{' '}
+                    <code>/metrics</code> path. Scrape requests require permissions to view
+                    Administration resources and are subject for the scoped access control.
+                </Text>
+                <Grid hasGutter>
+                    <PrivateConfigPrometheusMetricsDetails
+                        privateConfig={systemConfig?.privateConfig}
+                    />
+                </Grid>
             </PageSection>
             <PageSection data-testid="public-config">
                 <Title headingLevel="h2" className="pf-v5-u-mb-md">

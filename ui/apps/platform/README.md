@@ -1,8 +1,7 @@
 # StackRox Kubernetes Security Platform Web Application (UI)
 
-Single-page application (SPA) for StackRox Kubernetes Security Platform. This
-application was bootstrapped with
-[Create React App](https://github.com/facebookincubator/create-react-app).
+Single-page application (SPA) for StackRox Kubernetes Security Platform. Built with
+React 18, TypeScript, and Vite.
 
 ## Development
 
@@ -132,8 +131,8 @@ _Note: At this time https is not supported for local plugin development._
 
 #### Unit Tests
 
-Use `npm run test` to run all unit tests and show test coverage. To run tests and
-continuously watch for changes use `npm run test-watch`.
+Use `npm run test` to run all unit tests and show test coverage. To run specific tests,
+use `npm run test -- --testNamePattern="TestName"` or `npm run test -- src/path/to/test.test.ts`.
 
 #### End-to-end Tests (Cypress)
 
@@ -141,6 +140,36 @@ To bring up [Cypress](https://www.cypress.io/) UI use `npm run cypress-open`. To
 run all end-to-end tests in a headless mode use `npm run test-e2e-local`. To run
 one test suite specifically in headless mode, use
 `npm run cypress-spec <spec-file>`.
+
+#### End-to-end Tests (Cypress targeting console plugin)
+
+To run Cypress against the OCP console for dynamic plugin tests, there are two scenarios that are supported.
+
+1. Running against a locally deployed version of the development console with bridge authentication off
+
+```sh
+# If necessary, export the target URL
+export OPENSHIFT_CONSOLE_URL=<url-to-web-console-ui>
+# Set ORCHESTRATOR_FLAVOR, which is typically only available in CI
+export ORCHESTRATOR_FLAVOR='openshift'
+# Runs Cypress OCP tests ignoring authentication
+OCP_BRIDGE_AUTH_DISABLED=true npm run cypress-open:ocp
+```
+
+2. Running against a deployed version of the console with username/password credentials
+
+```sh
+# If necessary, export the target URL
+export OPENSHIFT_CONSOLE_URL=<url-to-web-console-ui>
+# Set ORCHESTRATOR_FLAVOR, which is typically only available in CI
+export ORCHESTRATOR_FLAVOR='openshift'
+# export credentials
+export OPENSHIFT_CONSOLE_USERNAME='kubeadmin'
+export OPENSHIFT_CONSOLE_PASSWORD=<password>
+
+# Runs Cypress OCP tests with a session initialization step
+npm run cypress-open:ocp
+```
 
 ### Feature flags
 
@@ -154,6 +183,8 @@ Given a feature flag environment variable `"ROX_WHATEVER"` in pkg/features/list.
 ```
 
 1. Add `'ROX_WHATEVER'` to string enumeration type `FeatureFlagEnvVar` in ui/apps/platform/src/types/featureFlag.ts
+
+    Add string in alphabetical order on its own line to minimize merge conflicts when multiple people add or delete strings.
 
 2. To include frontend code when the feature flag is enabled, do any of the following:
 
@@ -234,7 +265,7 @@ Given a feature flag environment variable `"ROX_WHATEVER"` in pkg/features/list.
     * Add `ci_export ROX_WHATEVER "${ROX_WHATEVER:-true}"` to `export_test_environment` function in tests/e2e/lib.sh
     * Add code below to `deploy_central_via_operator` function in tests/e2e/lib.sh
 
-        ```
+        ```sh
         customize_envVars+=$'\n      - name: ROX_WHATEVER'
         customize_envVars+=$'\n        value: "true"'
         ```
@@ -332,7 +363,7 @@ Given a feature flag environment variable `"ROX_WHATEVER"` in pkg/features/list.
     * Delete `ci_export ROX_WHATEVER "${ROX_WHATEVER:-true}"` from `export_test_environment` function in tests/e2e/lib.sh
     * Delete code below from `deploy_central_via_operator` function in tests/e2e/lib.sh
 
-        ```
+        ```sh
         customize_envVars+=$'\n      - name: ROX_WHATEVER'
         customize_envVars+=$'\n        value: "true"'
         ```
@@ -395,7 +426,7 @@ Read and obey comments to add strings or properties **in alphabetical order to m
         },
         ```
 
-3. Edit ui/apps/platform/src/Containers/MainPage/Sidebar/NavigationSidebar.tsx file, **if** the route has a link.
+3. Edit ui/apps/platform/src/Containers/MainPage/Navigation/NavigationSidebar.tsx file, **if** the route has a link.
 
     * Import a path **without params**.
 

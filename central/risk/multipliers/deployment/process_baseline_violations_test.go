@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/stackrox/rox/central/processbaseline/evaluator/mocks"
+	"github.com/stackrox/rox/central/processindicator/views"
 	"github.com/stackrox/rox/central/risk/multipliers"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/protoassert"
@@ -17,7 +18,7 @@ func TestProcessBaselines(t *testing.T) {
 	deployment := multipliers.GetMockDeployment()
 	cases := []struct {
 		name               string
-		violatingProcesses []*storage.ProcessIndicator
+		violatingProcesses []*views.ProcessIndicatorRiskView
 		evaluatorErr       error
 		expected           *storage.Risk_Result
 	}{
@@ -26,21 +27,19 @@ func TestProcessBaselines(t *testing.T) {
 		},
 		{
 			name: "Evaluator error",
-			violatingProcesses: []*storage.ProcessIndicator{
+			violatingProcesses: []*views.ProcessIndicatorRiskView{
 				{
-					Id: "SHOULD BE IGNORED",
+					ID: "SHOULD BE IGNORED",
 				},
 			},
 			evaluatorErr: errors.New("here's an error"),
 		},
 		{
 			name: "One violating process",
-			violatingProcesses: []*storage.ProcessIndicator{
+			violatingProcesses: []*views.ProcessIndicatorRiskView{
 				{
-					Signal: &storage.ProcessSignal{
-						Name: "apt-get",
-						Args: "install nmap",
-					},
+					SignalName:    "apt-get",
+					SignalArgs:    "install nmap",
 					ContainerName: deployment.GetContainers()[0].GetName(),
 				},
 			},
@@ -54,19 +53,15 @@ func TestProcessBaselines(t *testing.T) {
 		},
 		{
 			name: "Two violating processes",
-			violatingProcesses: []*storage.ProcessIndicator{
+			violatingProcesses: []*views.ProcessIndicatorRiskView{
 				{
-					Signal: &storage.ProcessSignal{
-						Name: "apt-get",
-						Args: "install nmap",
-					},
+					SignalName:    "apt-get",
+					SignalArgs:    "install nmap",
 					ContainerName: deployment.GetContainers()[0].GetName(),
 				},
 				{
-					Signal: &storage.ProcessSignal{
-						Name: "curl",
-						Args: "badssl.com",
-					},
+					SignalName:    "curl",
+					SignalArgs:    "badssl.com",
 					ContainerName: deployment.GetContainers()[0].GetName(),
 				},
 			},

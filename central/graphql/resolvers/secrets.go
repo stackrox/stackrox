@@ -83,7 +83,7 @@ func (resolver *secretResolver) Deployments(ctx context.Context, args PaginatedQ
 	if err := readDeployments(ctx); err != nil {
 		return nil, err
 	}
-	if len(resolver.data.Relationship.GetDeploymentRelationships()) == 0 {
+	if len(resolver.data.GetRelationship().GetDeploymentRelationships()) == 0 {
 		return nil, nil
 	}
 
@@ -107,7 +107,7 @@ func (resolver *secretResolver) DeploymentCount(ctx context.Context, args RawQue
 		return 0, err
 	}
 
-	if len(resolver.data.Relationship.GetDeploymentRelationships()) == 0 {
+	if len(resolver.data.GetRelationship().GetDeploymentRelationships()) == 0 {
 		return 0, nil
 	}
 
@@ -130,7 +130,7 @@ func (resolver *secretResolver) getDeploymentQuery(query *v1.Query) (*v1.Query, 
 	secret := resolver.data
 	deploymentIDs := set.NewStringSet()
 
-	for _, dr := range secret.Relationship.GetDeploymentRelationships() {
+	for _, dr := range secret.GetRelationship().GetDeploymentRelationships() {
 		deploymentIDs.Add(dr.GetId())
 	}
 	deploymentIDQuery := search.NewQueryBuilder().AddDocIDSet(deploymentIDs).ProtoQuery()
@@ -163,8 +163,8 @@ func (resolver *Resolver) getDeploymentRelationships(ctx context.Context, secret
 	var deployments []*storage.SecretDeploymentRelationship
 	for _, r := range deploymentResults {
 		deployments = append(deployments, &storage.SecretDeploymentRelationship{
-			Id:   r.Id,
-			Name: r.Name,
+			Id:   r.GetId(),
+			Name: r.GetName(),
 		})
 	}
 	secret.Relationship = &storage.SecretRelationship{

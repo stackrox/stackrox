@@ -71,11 +71,6 @@ var (
 		schema.SetSearchScope([]v1.SearchCategory{
 			v1.SearchCategory_IMAGE_VULNERABILITIES_V2,
 			v1.SearchCategory_IMAGE_COMPONENTS_V2,
-			v1.SearchCategory_IMAGE_VULNERABILITIES,
-			v1.SearchCategory_COMPONENT_VULN_EDGE,
-			v1.SearchCategory_IMAGE_COMPONENTS,
-			v1.SearchCategory_IMAGE_COMPONENT_EDGE,
-			v1.SearchCategory_IMAGE_VULN_EDGE,
 			v1.SearchCategory_IMAGES,
 			v1.SearchCategory_IMAGES_V2,
 			v1.SearchCategory_DEPLOYMENTS,
@@ -140,7 +135,7 @@ type DeploymentsContainers struct {
 	ImageNameRemote                       string          `gorm:"column:image_name_remote;type:varchar"`
 	ImageNameTag                          string          `gorm:"column:image_name_tag;type:varchar"`
 	ImageNameFullName                     string          `gorm:"column:image_name_fullname;type:varchar"`
-	ImageIDV2                             string          `gorm:"column:image_idv2;type:uuid;index:deploymentscontainers_image_idv2,type:btree"`
+	ImageIDV2                             string          `gorm:"column:image_idv2;type:varchar;index:deploymentscontainers_image_idv2,type:btree"`
 	SecurityContextPrivileged             bool            `gorm:"column:securitycontext_privileged;type:bool"`
 	SecurityContextDropCapabilities       *pq.StringArray `gorm:"column:securitycontext_dropcapabilities;type:text[]"`
 	SecurityContextAddCapabilities        *pq.StringArray `gorm:"column:securitycontext_addcapabilities;type:text[]"`

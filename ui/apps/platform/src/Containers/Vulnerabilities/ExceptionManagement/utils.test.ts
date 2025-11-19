@@ -1,4 +1,7 @@
-import { ExceptionStatus, VulnerabilityException } from 'services/VulnerabilityExceptionService';
+import type {
+    ExceptionStatus,
+    VulnerabilityException,
+} from 'services/VulnerabilityExceptionService';
 import { getImageScopeSearchValue, getVulnerabilityState } from './utils';
 
 describe('ExceptionManagement utils', () => {

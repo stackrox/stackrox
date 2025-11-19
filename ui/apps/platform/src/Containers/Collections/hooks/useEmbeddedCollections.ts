@@ -1,7 +1,9 @@
-import { useReducer, useEffect, Dispatch } from 'react';
+import { useEffect, useReducer } from 'react';
+import type { Dispatch } from 'react';
 import sortBy from 'lodash/sortBy';
 
-import { Collection, listCollections } from 'services/CollectionsService';
+import { listCollections } from 'services/CollectionsService';
+import type { Collection } from 'services/CollectionsService';
 import { ensureExhaustive } from 'utils/type.utils';
 
 type CollectionMap = Record<string, Collection>;

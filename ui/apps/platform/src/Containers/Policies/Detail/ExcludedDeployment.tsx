@@ -1,9 +1,9 @@
-import React, { ReactElement } from 'react';
+import type { ReactElement } from 'react';
 import { DescriptionList } from '@patternfly/react-core';
 
 import DescriptionListItem from 'Components/DescriptionListItem';
-import { ClusterScopeObject } from 'services/RolesService';
-import { PolicyExcludedDeployment } from 'types/policy.proto';
+import type { ClusterScopeObject } from 'services/RolesService';
+import type { PolicyExcludedDeployment } from 'types/policy.proto';
 
 import { getClusterName } from '../policies.utils';
 

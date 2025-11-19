@@ -1,4 +1,4 @@
-import React, { useContext } from 'react';
+import { useContext } from 'react';
 import { useLocation } from 'react-router-dom-v5-compat';
 import { gql } from '@apollo/client';
 import queryService from 'utils/queryService';
@@ -12,7 +12,7 @@ import useWorkflowMatch from 'hooks/useWorkflowMatch';
 import isGQLLoading from 'utils/gqlLoading';
 import Widget from 'Components/Widget';
 import searchContext from 'Containers/searchContext';
-import { entityComponentPropTypes, entityComponentDefaultProps } from 'constants/entityPageProps';
+import { entityComponentDefaultProps, entityComponentPropTypes } from 'constants/entityPageProps';
 import NodesWithFailedControls from './widgets/NodesWithFailedControls';
 import ConfigManagementListNodes from '../List/ConfigManagementListNodes';
 

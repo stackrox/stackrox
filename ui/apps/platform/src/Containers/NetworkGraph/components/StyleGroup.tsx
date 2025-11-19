@@ -1,10 +1,8 @@
-import React, { useMemo } from 'react';
+import { useMemo } from 'react';
 import type { ComponentClass, FunctionComponent, PropsWithChildren, ReactNode } from 'react';
-import {
-    DefaultGroup,
+import { DefaultGroup, ScaleDetailsLevel, observer } from '@patternfly/react-topology';
+import type {
     Node,
-    observer,
-    ScaleDetailsLevel,
     ShapeProps,
     WithDragNodeProps,
     WithSelectionProps,
@@ -12,8 +10,8 @@ import {
 import AlternateIcon from '@patternfly/react-icons/dist/esm/icons/regions-icon';
 import DefaultIcon from '@patternfly/react-icons/dist/esm/icons/builder-image-icon';
 import useDetailsLevel from '@patternfly/react-topology/dist/esm/hooks/useDetailsLevel';
-import { SVGIconProps } from '@patternfly/react-icons/dist/js/createIcon';
-import { CustomGroupNodeData } from '../types/topology.type';
+import type { SVGIconProps } from '@patternfly/react-icons/dist/js/createIcon';
+import type { CustomGroupNodeData } from '../types/topology.type';
 
 const ICON_PADDING = 20;
 
@@ -90,12 +88,6 @@ const StyleGroup: FunctionComponent<PropsWithChildren<StyleGroupProps>> = ({
     className = `${className} ${passedData?.isFadedOut ? 'pf-topology-node-faded' : ''}`.trim();
 
     return (
-        /*
-        (dv 2024-05-01)
-        Upgrading to React types 18 causes a type error below as React 18 no longer includes `children`
-        as a prop of `React.FC` by default
-
-        @ts-expect-error DefaultGroup does not expect children as a prop */
         <DefaultGroup
             element={element}
             collapsedWidth={collapsedWidth}

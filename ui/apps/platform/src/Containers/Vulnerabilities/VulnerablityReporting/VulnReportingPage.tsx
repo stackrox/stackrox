@@ -1,4 +1,3 @@
-import React from 'react';
 import { Navigate, Route, Routes } from 'react-router-dom-v5-compat';
 
 import usePageAction from 'hooks/usePageAction';
@@ -9,7 +8,7 @@ import EditVulnReportPage from './ModifyVulnReport/EditVulnReportPage';
 import CloneVulnReportPage from './ModifyVulnReport/CloneVulnReportPage';
 import ViewVulnReportPage from './ViewVulnReport/ViewVulnReportPage';
 import ConfigReportsTab from './VulnReports/ConfigReportsTab';
-import OnDemandReportsTab from './VulnReports/OnDemandReportsTab';
+import ViewBasedReportsTab from './VulnReports/ViewBasedReportsTab';
 import VulnReportingLayout from './VulnReports/VulnReportingLayout';
 
 import './VulnReportingPage.css';
@@ -39,7 +38,7 @@ function VulnReportingPage() {
             >
                 <Route index element={<Navigate to="configuration" replace />} />
                 <Route path="configuration" element={<ConfigReportsTab />} />
-                <Route path="on-demand" element={<OnDemandReportsTab />} />
+                <Route path="view-based" element={<ViewBasedReportsTab />} />
             </Route>
             <Route
                 path="/configuration/:reportId"

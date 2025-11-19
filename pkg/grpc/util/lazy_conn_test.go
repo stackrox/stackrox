@@ -61,7 +61,7 @@ func TestLazyConn(t *testing.T) {
 		resp, err := client.SayHello(ctx, &helloworld.HelloRequest{Name: "Lazy Hazard"})
 
 		require.NoError(t, err)
-		assert.Equal(t, "Hello Lazy Hazard", resp.Message)
+		assert.Equal(t, "Hello Lazy Hazard", resp.GetMessage())
 		successSignal.Signal()
 	}(successCtx)
 

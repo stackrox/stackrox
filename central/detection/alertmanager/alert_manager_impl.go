@@ -219,7 +219,7 @@ func mergeProcessesFromOldIntoNew(old, newAlert *storage.Alert) (newAlertHasNewP
 		newProcessesSlice = newProcessesSlice[:maxRunTimeViolationsPerAlert]
 	}
 	newAlert.ProcessViolation.Processes = newProcessesSlice
-	printer.UpdateProcessAlertViolationMessage(newAlert.ProcessViolation)
+	printer.UpdateProcessAlertViolationMessage(newAlert.GetProcessViolation())
 	return
 }
 

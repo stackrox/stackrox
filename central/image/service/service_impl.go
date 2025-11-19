@@ -435,6 +435,13 @@ func (s *serviceImpl) ScanImage(ctx context.Context, request *v1.ScanImageReques
 
 	img, err := enricher.EnrichImageByName(ctx, s.enricher, enrichmentCtx, request.GetImageName())
 	if err != nil {
+		if env.AdministrationEventsAdHocScans.BooleanSetting() {
+			log.Errorw("Enriching image",
+				logging.ImageName(request.GetImageName()),
+				logging.Err(err),
+				logging.Bool("ad_hoc", true),
+			)
+		}
 		return nil, err
 	}
 
@@ -556,7 +563,7 @@ func (s *serviceImpl) EnrichLocalImageInternal(ctx context.Context, request *v1.
 
 	imgID := request.GetImageId()
 	var hasErrors bool
-	if request.Error != "" {
+	if request.GetError() != "" {
 		// If errors occurred we continue processing so that the failed image scan may be saved in
 		// the central datastore. Without this users would not have an indication that scans from
 		// secured clusters are failing.
@@ -576,7 +583,8 @@ func (s *serviceImpl) EnrichLocalImageInternal(ctx context.Context, request *v1.
 	forceScanUpdate := true
 	// Always pull the image from the store if the ID != "" and rescan is not forced. Central will manage the reprocessing over the images.
 	if imgID != "" && !request.GetForce() {
-		existingImg, imgExists, err := s.datastore.GetImage(ctx, imgID)
+		var err error
+		existingImg, imgExists, err = s.datastore.GetImage(ctx, imgID)
 		if err != nil {
 			s.informScanWaiter(request.GetRequestId(), nil, err)
 			return nil, err
@@ -821,7 +829,7 @@ func (s *serviceImpl) WatchImage(ctx context.Context, request *v1.WatchImageRequ
 			ErrorType:    v1.WatchImageResponse_INVALID_IMAGE_NAME,
 		}, nil
 	}
-	if containerImage.Id != "" {
+	if containerImage.GetId() != "" {
 		return &v1.WatchImageResponse{
 			ErrorMessage: fmt.Sprintf("name %s contains a digest, but watch does not handle images with digests", request.GetName()),
 			ErrorType:    v1.WatchImageResponse_INVALID_IMAGE_NAME,
@@ -836,6 +844,13 @@ func (s *serviceImpl) WatchImage(ctx context.Context, request *v1.WatchImageRequ
 	}
 	enrichmentResult, err := s.enricher.EnrichImage(ctx, enrichCtx, img)
 	if err != nil {
+		if env.AdministrationEventsAdHocScans.BooleanSetting() {
+			log.Errorw("Enriching image",
+				logging.ImageName(request.GetName()),
+				logging.Err(err),
+				logging.Bool("ad_hoc", true),
+			)
+		}
 		return &v1.WatchImageResponse{
 			ErrorMessage: fmt.Sprintf("failed to scan image: %v", err),
 			ErrorType:    v1.WatchImageResponse_SCAN_FAILED,

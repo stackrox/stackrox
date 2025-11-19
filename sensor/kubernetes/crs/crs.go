@@ -148,6 +148,17 @@ func temporarilyStoreRegistrantSecret(crs *crs.CRS) error {
 	return nil
 }
 
+// dummyClusterIDPeekSetter is a dummy clusterid.handlerImpl
+// This is needed because SetCentralConnectionWithRetries expects it,
+// but it is not really used in the CRD container
+type dummyClusterIDPeekSetter struct{}
+
+func (d *dummyClusterIDPeekSetter) GetNoWait() string {
+	return ""
+}
+
+func (d *dummyClusterIDPeekSetter) Set(_ string) {}
+
 func openCentralConnection() (*grpcUtil.LazyClientConn, error) {
 	// Create central client.
 	centralEndpoint := env.CentralEndpoint.Setting()
@@ -159,7 +170,7 @@ func openCentralConnection() (*grpcUtil.LazyClientConn, error) {
 	centralConnFactory := centralclient.NewCentralConnectionFactory(centralClient)
 	centralConnection := grpcUtil.NewLazyClientConn()
 	certLoader := centralclient.RemoteCertLoader(centralClient)
-	go centralConnFactory.SetCentralConnectionWithRetries(centralConnection, certLoader)
+	go centralConnFactory.SetCentralConnectionWithRetries(&dummyClusterIDPeekSetter{}, centralConnection, certLoader)
 
 	log.Infof("Connecting to Central server %s", centralEndpoint)
 
@@ -280,7 +291,7 @@ func persistCertificates(ctx context.Context, certsFileMap map[string]string, k8
 func getServiceTypeNames(serviceCertificates []*storage.TypedServiceCertificate) []string {
 	serviceTypeNames := make([]string, 0, len(serviceCertificates))
 	for _, c := range serviceCertificates {
-		serviceTypeNames = append(serviceTypeNames, c.ServiceType.String())
+		serviceTypeNames = append(serviceTypeNames, c.GetServiceType().String())
 	}
 	return serviceTypeNames
 }

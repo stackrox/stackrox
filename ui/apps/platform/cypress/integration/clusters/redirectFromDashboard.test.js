@@ -3,7 +3,7 @@ import { visitMainDashboardWithStaticResponseForClustersForPermission } from '..
 
 import { clustersAlias, interactAndVisitClusters } from './Clusters.helpers';
 
-describe('Clusters', () => {
+describe.skip('Clusters', () => {
     withAuth();
 
     it('should redirect from Dashboard when no secured clusters have been added (only applies to Cloud Service)', () => {

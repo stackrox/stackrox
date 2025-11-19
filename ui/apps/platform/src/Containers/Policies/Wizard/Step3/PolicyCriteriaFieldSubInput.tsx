@@ -1,9 +1,9 @@
-import React from 'react';
+import type { ReactElement } from 'react';
 import { useField } from 'formik';
-import { TextInput, FormGroup } from '@patternfly/react-core';
-import { Select, SelectOption } from '@patternfly/react-core/deprecated';
+import { FormGroup, SelectOption, TextInput } from '@patternfly/react-core';
 
-import { SubComponent } from './policyCriteriaDescriptors';
+import SelectSingle from 'Components/SelectSingle/SelectSingle';
+import type { SubComponent } from './policyCriteriaDescriptors';
 
 type PolicyCriteriaFieldSubInputProps = {
     subComponent: SubComponent;
@@ -15,19 +15,13 @@ function PolicyCriteriaFieldSubInput({
     subComponent,
     readOnly = false,
     name,
-}: PolicyCriteriaFieldSubInputProps): React.ReactElement {
+}: PolicyCriteriaFieldSubInputProps): ReactElement {
     const [field, , helper] = useField(name);
-    const [isSelectOpen, setIsSelectOpen] = React.useState(false);
     const { value } = field;
     const { setValue } = helper;
 
-    function handleChangeSelect(e, val) {
-        setIsSelectOpen(false);
-        setValue(val);
-    }
-
-    function handleOnToggleSelect() {
-        setIsSelectOpen(!isSelectOpen);
+    function handleSelectChange(name: string, value: string) {
+        setValue(value);
     }
 
     /* eslint-disable default-case */
@@ -66,12 +60,11 @@ function PolicyCriteriaFieldSubInput({
                     className="pf-v5-u-flex-1 pf-v5-u-w-0"
                     data-testid="policy-criteria-value-select"
                 >
-                    <Select
-                        onToggle={handleOnToggleSelect}
-                        onSelect={handleChangeSelect}
-                        isOpen={isSelectOpen}
+                    <SelectSingle
+                        id={name}
+                        value={value || ''}
+                        handleSelect={handleSelectChange}
                         isDisabled={readOnly}
-                        selections={value}
                         placeholderText={subComponent.placeholder || 'Select an option'}
                         menuAppendTo={() => document.body}
                     >
@@ -84,7 +77,7 @@ function PolicyCriteriaFieldSubInput({
                                 {option.label}
                             </SelectOption>
                         ))}
-                    </Select>
+                    </SelectSingle>
                 </FormGroup>
             );
     }

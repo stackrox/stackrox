@@ -1,4 +1,3 @@
-import React from 'react';
 import { Alert, Button, Flex, Modal, Text } from '@patternfly/react-core';
 
 import { unwatchImage } from 'services/imageService';

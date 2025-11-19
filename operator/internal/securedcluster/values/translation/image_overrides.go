@@ -10,5 +10,6 @@ var (
 		images.ScannerSlimDB: "image.scannerDb.fullRef",
 		images.ScannerV4DB:   "image.scannerV4DB.fullRef",
 		images.ScannerV4:     "image.scannerV4.fullRef",
+		images.Fact:          "image.fact.fullRef",
 	}
 )

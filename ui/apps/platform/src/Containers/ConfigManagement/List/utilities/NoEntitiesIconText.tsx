@@ -1,4 +1,4 @@
-import React, { ReactElement } from 'react';
+import type { ReactElement } from 'react';
 import { ExclamationTriangleIcon } from '@patternfly/react-icons';
 import { Icon } from '@patternfly/react-core';
 

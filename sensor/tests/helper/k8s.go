@@ -35,13 +35,9 @@ func (c *TestContext) AssertResourceDoesExist(ctx context.Context, t *testing.T,
 	client, err := dynamic.NewForConfig(c.r.GetConfig())
 	require.NoError(t, err)
 
-	var cli dynamic.ResourceInterface
 	var obj *unstructured.Unstructured
+	cli := clientForResource(client, api, namespace)
 	require.Eventuallyf(t, func() bool {
-		cli = client.Resource(getGVR(api))
-		if namespace != "" {
-			cli = client.Resource(getGVR(api)).Namespace(namespace)
-		}
 		obj, err = cli.Get(ctx, resourceName, apiMetaV1.GetOptions{})
 		return err == nil
 	}, 30*time.Second, 10*time.Millisecond, "Resource %s/%s of kind %s should exist", namespace, resourceName, api.Kind)
@@ -54,13 +50,9 @@ func (c *TestContext) AssertResourceWasUpdated(ctx context.Context, t *testing.T
 	client, err := dynamic.NewForConfig(c.r.GetConfig())
 	require.NoError(t, err)
 
-	var cli dynamic.ResourceInterface
 	var obj *unstructured.Unstructured
+	cli := clientForResource(client, api, namespace)
 	require.Eventuallyf(t, func() bool {
-		cli = client.Resource(getGVR(api))
-		if namespace != "" {
-			cli = client.Resource(getGVR(api)).Namespace(namespace)
-		}
 		obj, err = cli.Get(ctx, resourceName, apiMetaV1.GetOptions{})
 		return err == nil && obj.GetResourceVersion() != oldResourceVersion
 	}, 30*time.Second, 10*time.Millisecond, "Resource %s/%s of kind %s should be updated (old version: %s)", namespace, resourceName, api.Kind, oldResourceVersion)
@@ -73,12 +65,8 @@ func (c *TestContext) AssertResourceDoesNotExist(ctx context.Context, t *testing
 	client, err := dynamic.NewForConfig(c.r.GetConfig())
 	require.NoError(t, err)
 
-	var cli dynamic.ResourceInterface
+	cli := clientForResource(client, api, namespace)
 	require.Eventuallyf(t, func() bool {
-		cli = client.Resource(getGVR(api))
-		if namespace != "" {
-			cli = client.Resource(getGVR(api)).Namespace(namespace)
-		}
 		_, err = cli.Get(ctx, resourceName, apiMetaV1.GetOptions{})
 		return err != nil && kubeAPIErr.IsNotFound(err)
 	}, 30*time.Second, 10*time.Millisecond, "Resource %s/%s of kind %s should not exist", namespace, resourceName, api.Kind)
@@ -90,13 +78,9 @@ func (c *TestContext) WaitForResourceDelete(ctx context.Context, t *testing.T, r
 	client, err := dynamic.NewForConfig(c.r.GetConfig())
 	require.NoError(t, err)
 
-	var cli dynamic.ResourceInterface
 	var obj *unstructured.Unstructured
+	cli := clientForResource(client, api, namespace)
 	require.Eventuallyf(t, func() bool {
-		cli = client.Resource(getGVR(api))
-		if namespace != "" {
-			cli = client.Resource(getGVR(api)).Namespace(namespace)
-		}
 		obj, err = cli.Get(ctx, resourceName, apiMetaV1.GetOptions{})
 		return err == nil || kubeAPIErr.IsNotFound(err)
 	}, 30*time.Second, 10*time.Millisecond, "Resource %s/%s of kind %s should be deleted or not found", namespace, resourceName, api.Kind)
@@ -231,4 +215,11 @@ func (c *TestContext) GetIPFromService(obj k8s.Object) string {
 			return srv.Spec.ClusterIP
 		}
 	}
+}
+
+func clientForResource(client *dynamic.DynamicClient, api apiMetaV1.APIResource, namespace string) dynamic.ResourceInterface {
+	if namespace != "" {
+		return client.Resource(getGVR(api)).Namespace(namespace)
+	}
+	return client.Resource(getGVR(api))
 }

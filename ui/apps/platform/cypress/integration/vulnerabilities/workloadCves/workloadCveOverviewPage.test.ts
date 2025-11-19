@@ -5,8 +5,8 @@ import { graphql } from '../../../constants/apiEndpoints';
 import {
     applyDefaultFilters,
     applyLocalSeverityFilters,
-    interactAndWaitForImageList,
     interactAndWaitForDeploymentList,
+    interactAndWaitForImageList,
     selectEntityTab,
     visitWorkloadCveOverview,
 } from './WorkloadCves.helpers';
@@ -18,11 +18,11 @@ import {
     verifyColumnManagement,
 } from '../../../helpers/tableHelpers';
 import {
-    getRouteMatcherMapForGraphQL,
     expectRequestedSort,
-    interceptAndWatchRequests,
-    interceptAndOverridePermissions,
+    getRouteMatcherMapForGraphQL,
     interceptAndOverrideFeatureFlags,
+    interceptAndOverridePermissions,
+    interceptAndWatchRequests,
 } from '../../../helpers/request';
 
 const visitFromMoreViewsDropdown = visitFromHorizontalNavExpandable('More Views');
@@ -31,6 +31,7 @@ describe('Workload CVE overview page tests', () => {
     withAuth();
 
     it('should satisfy initial page load defaults', () => {
+        cy.spyTelemetry();
         visitWorkloadCveOverview();
 
         // TODO Test that the default tab is set to "Observed"
@@ -51,6 +52,19 @@ describe('Workload CVE overview page tests', () => {
             'aria-pressed',
             'true'
         );
+        cy.getTelemetryEvents().should((telemetryEvents) => {
+            // TODO - This is not working as expected. We should only have one page view event, but the page view event is being emitted twice.
+            expect(telemetryEvents.page).to.have.length(2);
+
+            expect(telemetryEvents.page[0].properties.path).to.contain(
+                '/main/vulnerabilities/platform'
+            );
+
+            expect(telemetryEvents.track).to.have.length(1);
+            expect(telemetryEvents.track[0].event).to.equal('Workload CVE Entity Context View');
+            expect(telemetryEvents.track[0].properties.type).to.equal('CVE');
+            expect(telemetryEvents.track[0].properties.page).to.equal('Overview');
+        });
     });
 
     it('should correctly handle applied filters across entity tabs', () => {
@@ -96,11 +110,11 @@ describe('Workload CVE overview page tests', () => {
     });
 
     it('should apply the correct baseline filters when switching between built in views using the user-workload based template', () => {
+        visitWorkloadCveOverview({ clearFiltersOnVisit: false });
+
         interceptAndWatchRequests(
             getRouteMatcherMapForGraphQL(['getImageCVEList', 'getImageList'])
         ).then(({ waitForRequests, waitAndYieldRequestBodyVariables }) => {
-            visitWorkloadCveOverview();
-            waitForRequests(['getImageCVEList']); // Wait for the initial request to complete
             applyDefaultFilters(['Critical', 'Important'], ['Fixable']); // Set the default filters to none to prevent multiple requests on each page visit
             waitForRequests(['getImageCVEList']); // Wait for the third request after the filters have been changed to complete
 
@@ -234,7 +248,7 @@ describe('Workload CVE overview page tests', () => {
             }
 
             function assertCveElementsAreNotPresent() {
-                cy.get(cvesBySeverityHeader).should('not.exist');
+                cy.get(cvesBySeverityHeader).should('not.be.visible');
                 cy.get(prioritizeByNamespaceButton).should('not.exist');
                 cy.get(defaultFiltersButton).should('not.exist');
                 cy.get(selectors.severityDropdown).should('not.exist');

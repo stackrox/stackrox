@@ -79,6 +79,22 @@ export function visit(pageUrl, routeMatcherMap, staticResponseMap, waitOptions) 
 }
 
 /**
+ * @param {string} pageUrl
+ * @param {Record<string, RouteMatcherOptions>} [routeMatcherMap]
+ * @param {Record<string, RouteHandler>} [staticResponseMap]
+ * @param {WaitOptions} [waitOptions]
+ * @returns {Cypress.Chainable<Interception[] | Interception}
+ */
+export function visitConsole(pageUrl, routeMatcherMap, staticResponseMap, waitOptions) {
+    interceptRequests(undefined); // TODO Determine route matcher map for console
+    interceptRequests(routeMatcherMap, staticResponseMap);
+
+    cy.visit(pageUrl);
+
+    waitForResponses(undefined); // TODO Determine route matcher map for console
+    return waitForResponses(routeMatcherMap, waitOptions);
+}
+/**
  * Visit page to test conditional rendering for authentication status specified as response or fixture.
  *
  * { body: { resourceToAccess: { … } } }

@@ -5,6 +5,7 @@ import (
 
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/testutils/goleak"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stackrox/rox/sensor/common/clusterentities"
 	"github.com/stackrox/rox/sensor/common/message"
@@ -12,7 +13,6 @@ import (
 	"github.com/stackrox/rox/sensor/common/store"
 	"github.com/stackrox/rox/sensor/common/store/mocks"
 	"github.com/stretchr/testify/suite"
-	"go.uber.org/goleak"
 	"go.uber.org/mock/gomock"
 )
 
@@ -46,17 +46,8 @@ func (s *ComponentTestSuite) SetupTest() {
 }
 
 func (s *ComponentTestSuite) TearDownTest() {
-	defer assertNoGoroutineLeaks(s.T())
+	goleak.AssertNoGoroutineLeaks(s.T())
 	s.T().Cleanup(s.mockCtrl.Finish)
-}
-
-func assertNoGoroutineLeaks(t *testing.T) {
-	goleak.VerifyNone(t,
-		// Ignore a known leak: https://github.com/DataDog/dd-trace-go/issues/1469
-		goleak.IgnoreTopFunction("github.com/golang/glog.(*fileSink).flushDaemon"),
-		// Ignore a known leak caused by importing the GCP cscc SDK.
-		goleak.IgnoreTopFunction("go.opencensus.io/stats/view.(*worker).start"),
-	)
 }
 
 func (s *ComponentTestSuite) TestComponentLifecycle() {

@@ -1,17 +1,22 @@
-import React, { ReactNode } from 'react';
-import { Toolbar, ToolbarGroup, ToolbarContent } from '@patternfly/react-core';
+import type { ReactElement, ReactNode } from 'react';
+import { Toolbar, ToolbarContent, ToolbarGroup } from '@patternfly/react-core';
 import { uniq } from 'lodash';
 
-import CompoundSearchFilter, {
-    CompoundSearchFilterProps,
-} from 'Components/CompoundSearchFilter/components/CompoundSearchFilter';
-import { OnSearchPayload } from 'Components/CompoundSearchFilter/types';
+import CompoundSearchFilter from 'Components/CompoundSearchFilter/components/CompoundSearchFilter';
+import type { CompoundSearchFilterProps } from 'Components/CompoundSearchFilter/components/CompoundSearchFilter';
+import type { OnSearchPayload } from 'Components/CompoundSearchFilter/types';
 import { makeFilterChipDescriptors } from 'Components/CompoundSearchFilter/utils/utils';
 import SearchFilterChips, { FilterChip } from 'Components/PatternFly/SearchFilterChips';
-import { SearchFilter } from 'types/search';
+import type { SearchFilter } from 'types/search';
 import { getHasSearchApplied, searchValueAsArray } from 'utils/searchUtils';
 
-import { DefaultFilters } from '../types';
+import type { DefaultFilters } from '../types';
+import {
+    cveSeverityFilterDescriptor,
+    cveSnoozedDescriptor,
+    cveStatusClusterFixableDescriptor,
+    cveStatusFixableDescriptor,
+} from '../filterChipDescriptor';
 import CVESeverityDropdown from './CVESeverityDropdown';
 import CVEStatusDropdown from './CVEStatusDropdown';
 
@@ -64,34 +69,25 @@ function AdvancedFiltersToolbar({
     defaultSearchFilterEntity,
     additionalContextFilter,
     children,
-}: AdvancedFiltersToolbarProps) {
-    const filterChipGroupDescriptors = makeFilterChipDescriptors(searchFilterConfig)
-        .concat({
-            displayName: 'CVE snoozed',
-            searchFilterName: 'CVE Snoozed',
-        })
-        .concat(
-            includeCveSeverityFilters
-                ? makeDefaultFilterDescriptor(defaultFilters, {
-                      displayName: 'CVE severity',
-                      searchFilterName: 'SEVERITY',
-                  })
-                : []
-        )
-        .concat(
-            includeCveStatusFilters
-                ? [
-                      makeDefaultFilterDescriptor(defaultFilters, {
-                          displayName: 'CVE status',
-                          searchFilterName: 'FIXABLE',
-                      }),
-                      makeDefaultFilterDescriptor(defaultFilters, {
-                          displayName: 'CVE status',
-                          searchFilterName: 'CLUSTER CVE FIXABLE',
-                      }),
-                  ]
-                : []
-        );
+}: AdvancedFiltersToolbarProps): ReactElement {
+    const baseDescriptors = makeFilterChipDescriptors(searchFilterConfig);
+
+    const severityDescriptors = includeCveSeverityFilters
+        ? [makeDefaultFilterDescriptor(defaultFilters, cveSeverityFilterDescriptor)]
+        : [];
+
+    const statusDescriptors = includeCveStatusFilters
+        ? [
+              makeDefaultFilterDescriptor(defaultFilters, cveStatusFixableDescriptor),
+              makeDefaultFilterDescriptor(defaultFilters, cveStatusClusterFixableDescriptor),
+          ]
+        : [];
+
+    const filterChipGroupDescriptors = baseDescriptors.concat(
+        cveSnoozedDescriptor,
+        severityDescriptors,
+        statusDescriptors
+    );
 
     function onFilterApplied({ category, value, action }: OnSearchPayload) {
         const selectedSearchFilter = searchValueAsArray(searchFilter[category]);

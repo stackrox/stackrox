@@ -1,4 +1,4 @@
-import React from 'react';
+import type { FormEvent } from 'react';
 import { Button, NumberInput, SelectOption } from '@patternfly/react-core';
 import { ArrowRightIcon } from '@patternfly/react-icons';
 import clamp from 'lodash/clamp';
@@ -70,14 +70,14 @@ function ConditionNumber({ value, onChange, onSearch }: ConditionNumberProps) {
                 value={value.number || minValue}
                 min={0}
                 max={10}
-                onChange={(event: React.FormEvent<HTMLInputElement>) => {
+                onChange={(event: FormEvent<HTMLInputElement>) => {
                     const { value: newNumber } = event.target as HTMLInputElement;
                     onChange({
                         ...value,
                         number: Number(newNumber),
                     });
                 }}
-                onBlur={(event: React.FormEvent<HTMLInputElement>) => {
+                onBlur={(event: FormEvent<HTMLInputElement>) => {
                     const target = event.target as HTMLInputElement;
                     const normalizedNumber = clamp(
                         Number.isNaN(+target.value)

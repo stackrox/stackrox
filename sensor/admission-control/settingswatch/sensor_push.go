@@ -89,7 +89,7 @@ func (w *sensorPushWatch) runWithStream(stream sensor.AdmissionControlManagement
 }
 
 func (w *sensorPushWatch) dispatchMsg(msg *sensor.MsgToAdmissionControl) error {
-	switch m := msg.Msg.(type) {
+	switch m := msg.GetMsg().(type) {
 	case *sensor.MsgToAdmissionControl_SettingsPush:
 		select {
 		case <-w.ctx.Done():

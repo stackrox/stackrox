@@ -1,4 +1,4 @@
-import { DelegatedRegistryCluster } from 'services/DelegatedRegistryConfigService';
+import type { DelegatedRegistryCluster } from 'services/DelegatedRegistryConfigService';
 
 // Caller is responsible to handle special case of empty string.
 export function getClusterName(clusters: DelegatedRegistryCluster[], clusterId: string) {

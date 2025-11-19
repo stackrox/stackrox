@@ -44,7 +44,7 @@ func (c CVEType) ToStorageCVEType() storage.CVE_CVEType {
 }
 
 // ProtoCVEToEmbeddedCVE coverts a Proto CVEs to Embedded Vuln
-// It converts all the fields except except Fixed By which gets set depending on the CVE
+// It converts all the fields except Fixed By which gets set depending on the CVE
 func ProtoCVEToEmbeddedCVE(protoCVE *storage.CVE) *storage.EmbeddedVulnerability {
 	embeddedCVE := &storage.EmbeddedVulnerability{
 		Cve:                   protoCVE.GetId(),
@@ -59,11 +59,9 @@ func ProtoCVEToEmbeddedCVE(protoCVE *storage.CVE) *storage.EmbeddedVulnerability
 		Suppressed:            protoCVE.GetSuppressed(),
 		SuppressActivation:    protoCVE.GetSuppressActivation(),
 		SuppressExpiry:        protoCVE.GetSuppressExpiry(),
-
-		// In dackbox, when reading out the image vulnerabilities, severity is overwritten during merge.
-		Severity: protoCVE.GetSeverity(),
+		Severity:              protoCVE.GetSeverity(),
 	}
-	if protoCVE.CvssV3 != nil {
+	if protoCVE.GetCvssV3() != nil {
 		embeddedCVE.ScoreVersion = storage.EmbeddedVulnerability_V3
 	} else {
 		embeddedCVE.ScoreVersion = storage.EmbeddedVulnerability_V2
@@ -151,12 +149,12 @@ func EmbeddedCVEToProtoCVE(os string, from *storage.EmbeddedVulnerability, postg
 		SuppressExpiry:     from.GetSuppressExpiry(),
 	}
 	if postgresEnabled {
-		ret.Id = ID(ret.Id, os)
+		ret.Id = ID(ret.GetId(), os)
 	}
-	if ret.CvssV3 != nil {
+	if ret.GetCvssV3() != nil {
 		ret.ScoreVersion = storage.CVE_V3
 		ret.ImpactScore = from.GetCvssV3().GetImpactScore()
-	} else if ret.CvssV2 != nil {
+	} else if ret.GetCvssV2() != nil {
 		ret.ScoreVersion = storage.CVE_V2
 		ret.ImpactScore = from.GetCvssV2().GetImpactScore()
 	}

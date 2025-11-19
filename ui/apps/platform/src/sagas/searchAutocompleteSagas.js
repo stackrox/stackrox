@@ -1,4 +1,4 @@
-import { take, call, fork, put } from 'redux-saga/effects';
+import { call, fork, put, take } from 'redux-saga/effects';
 
 import { fetchAutoCompleteResults as serviceFetchAutoCompleteResults } from 'services/SearchService';
 import { actions, types } from 'reducers/searchAutocomplete';

@@ -1,4 +1,4 @@
-import React, { useContext } from 'react';
+import { useContext } from 'react';
 import { Navigate, Route, Routes } from 'react-router-dom-v5-compat';
 import { Alert, Bullseye, Spinner } from '@patternfly/react-core';
 

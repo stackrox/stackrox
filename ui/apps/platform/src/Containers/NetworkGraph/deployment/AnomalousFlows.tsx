@@ -1,9 +1,8 @@
-import React from 'react';
 import { FlexItem, Label } from '@patternfly/react-core';
 import { ExclamationCircleIcon, ExclamationTriangleIcon } from '@patternfly/react-icons';
 import pluralize from 'pluralize';
 
-import { Flow } from '../types/flow.type';
+import type { Flow } from '../types/flow.type';
 import {
     getNumAnomalousExternalFlows,
     getNumAnomalousInternalFlows,

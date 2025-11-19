@@ -5,7 +5,9 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"maps"
 	"reflect"
+	"slices"
 	"strings"
 
 	"github.com/pkg/errors"
@@ -22,7 +24,6 @@ import (
 	"github.com/stackrox/rox/roxctl/declarativeconfig/k8sobject"
 	"github.com/stackrox/rox/roxctl/declarativeconfig/lint"
 	"go.yaml.in/yaml/v3"
-	"golang.org/x/exp/maps"
 )
 
 var (
@@ -258,7 +259,7 @@ func retrieveRequirement(s string) (*declarativeconfig.Requirement, error) {
 			op, ok := storage.SetBasedLabelSelector_Operator_value[kv[1]]
 			if !ok {
 				return nil, fmt.Errorf("operator %s must be one of the allowed values: [%s]", kvPair,
-					strings.Join(maps.Keys(storage.SetBasedLabelSelector_Operator_value), ","))
+					strings.Join(slices.Collect(maps.Keys(storage.SetBasedLabelSelector_Operator_value)), ","))
 			}
 			requirement.Operator = declarativeconfig.Operator(op)
 		case "values":

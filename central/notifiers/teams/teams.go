@@ -68,7 +68,7 @@ func (t *teams) getAlertSection(alert *storage.Alert) section {
 		facts = append(facts, fact{Name: "ID", Value: alertID})
 	}
 
-	alertLink := notifiers.AlertLink(t.Notifier.UiEndpoint, alert)
+	alertLink := notifiers.AlertLink(t.Notifier.GetUiEndpoint(), alert)
 	if len(alertLink) > 0 {
 		facts = append(facts, fact{Name: "URL", Value: alertLink})
 	}
@@ -388,7 +388,7 @@ func (t *teams) Test(ctx context.Context) *notifiers.NotifierError {
 }
 
 func (t *teams) postMessage(ctx context.Context, url string, jsonPayload []byte) error {
-	req, err := http.NewRequestWithContext(ctx, "POST", url, bytes.NewBuffer(jsonPayload))
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, url, bytes.NewBuffer(jsonPayload))
 	if err != nil {
 		return err
 	}

@@ -93,6 +93,11 @@ func (s *ClusterInitBundlesStoreSuite) TestStore() {
 
 	s.NoError(store.UpsertMany(ctx, initBundleMetas))
 
+	foundInitBundleMetas, missing, err := store.GetMany(ctx, initBundleMetaIDs)
+	s.NoError(err)
+	s.Empty(missing)
+	protoassert.ElementsMatch(s.T(), initBundleMetas, foundInitBundleMetas)
+
 	initBundleMetaCount, err = store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)
 	s.Equal(200, initBundleMetaCount)

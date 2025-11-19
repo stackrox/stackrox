@@ -25,7 +25,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/utils/pointer"
+	"k8s.io/utils/ptr"
 	ctrlClient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -83,7 +83,7 @@ func TestReadBaseValues(t *testing.T) {
 func TestTranslateShouldCreateConfigFingerprint(t *testing.T) {
 	sc := platform.SecuredCluster{
 		Spec: platform.SecuredClusterSpec{
-			ClusterName: "my-cluster",
+			ClusterName: ptr.To("my-cluster"),
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: "stackrox",
@@ -127,7 +127,7 @@ func (s *TranslationTestSuite) TestTranslate() {
 				client: newDefaultFakeClient(t),
 				sc: platform.SecuredCluster{
 					Spec: platform.SecuredClusterSpec{
-						ClusterName: "test-cluster",
+						ClusterName: ptr.To("test-cluster"),
 						ScannerV4: &platform.LocalScannerV4ComponentSpec{
 							ScannerComponent: platform.LocalScannerV4ComponentDefault.Pointer(),
 						},
@@ -146,14 +146,6 @@ func (s *TranslationTestSuite) TestTranslate() {
 				"clusterName":   "test-cluster",
 				"ca":            map[string]string{"cert": "ca central content"},
 				"createSecrets": false,
-				"admissionControl": map[string]interface{}{
-					"dynamic": map[string]interface{}{
-						"enforceOnCreates": true,
-						"enforceOnUpdates": true,
-					},
-					"listenOnCreates": true,
-					"listenOnUpdates": true,
-				},
 				"scanner": map[string]interface{}{
 					"disable": false,
 				},
@@ -184,7 +176,7 @@ func (s *TranslationTestSuite) TestTranslate() {
 				client: newDefaultFakeClient(t),
 				sc: platform.SecuredCluster{
 					Spec: platform.SecuredClusterSpec{
-						ClusterName: "test-cluster",
+						ClusterName: ptr.To("test-cluster"),
 					},
 					ObjectMeta: metav1.ObjectMeta{
 						Namespace: "stackrox",
@@ -200,14 +192,6 @@ func (s *TranslationTestSuite) TestTranslate() {
 				"clusterName":   "test-cluster",
 				"ca":            map[string]string{"cert": "ca central content"},
 				"createSecrets": false,
-				"admissionControl": map[string]interface{}{
-					"dynamic": map[string]interface{}{
-						"enforceOnCreates": true,
-						"enforceOnUpdates": true,
-					},
-					"listenOnCreates": true,
-					"listenOnUpdates": true,
-				},
 				"scanner": map[string]interface{}{
 					"disable": false,
 				},
@@ -239,7 +223,7 @@ func (s *TranslationTestSuite) TestTranslate() {
 				client: newDefaultFakeClient(t),
 				sc: platform.SecuredCluster{
 					Spec: platform.SecuredClusterSpec{
-						ClusterName: "test-cluster",
+						ClusterName: ptr.To("test-cluster"),
 					},
 					ObjectMeta: metav1.ObjectMeta{
 						Namespace: "stackrox",
@@ -255,14 +239,6 @@ func (s *TranslationTestSuite) TestTranslate() {
 				"clusterName":   "test-cluster",
 				"ca":            map[string]string{"cert": "ca central content"},
 				"createSecrets": false,
-				"admissionControl": map[string]interface{}{
-					"dynamic": map[string]interface{}{
-						"enforceOnCreates": true,
-						"enforceOnUpdates": true,
-					},
-					"listenOnCreates": true,
-					"listenOnUpdates": true,
-				},
 				"scanner": map[string]interface{}{
 					"disable": false,
 				},
@@ -287,7 +263,7 @@ func (s *TranslationTestSuite) TestTranslate() {
 				sc: platform.SecuredCluster{
 					ObjectMeta: metav1.ObjectMeta{Namespace: "stackrox"},
 					Spec: platform.SecuredClusterSpec{
-						ClusterName: "test-cluster",
+						ClusterName: ptr.To("test-cluster"),
 					},
 				},
 			},
@@ -295,14 +271,6 @@ func (s *TranslationTestSuite) TestTranslate() {
 				"clusterName":   "test-cluster",
 				"ca":            map[string]string{"cert": "ca central content"},
 				"createSecrets": false,
-				"admissionControl": map[string]interface{}{
-					"dynamic": map[string]interface{}{
-						"enforceOnCreates": true,
-						"enforceOnUpdates": true,
-					},
-					"listenOnCreates": true,
-					"listenOnUpdates": true,
-				},
 				"scanner": map[string]interface{}{
 					"disable": false,
 				},
@@ -324,7 +292,7 @@ func (s *TranslationTestSuite) TestTranslate() {
 				sc: platform.SecuredCluster{
 					ObjectMeta: metav1.ObjectMeta{Namespace: "stackrox"},
 					Spec: platform.SecuredClusterSpec{
-						ClusterName: "test-cluster",
+						ClusterName: ptr.To("test-cluster"),
 						Scanner: &platform.LocalScannerComponentSpec{
 							ScannerComponent: platform.LocalScannerComponentDisabled.Pointer(),
 						},
@@ -338,14 +306,6 @@ func (s *TranslationTestSuite) TestTranslate() {
 				"clusterName":   "test-cluster",
 				"ca":            map[string]string{"cert": "ca central content"},
 				"createSecrets": false,
-				"admissionControl": map[string]interface{}{
-					"dynamic": map[string]interface{}{
-						"enforceOnCreates": true,
-						"enforceOnUpdates": true,
-					},
-					"listenOnCreates": true,
-					"listenOnUpdates": true,
-				},
 				"scanner": map[string]interface{}{
 					"disable": true,
 				},
@@ -366,7 +326,7 @@ func (s *TranslationTestSuite) TestTranslate() {
 				sc: platform.SecuredCluster{
 					ObjectMeta: metav1.ObjectMeta{Namespace: "stackrox"},
 					Spec: platform.SecuredClusterSpec{
-						ClusterName: "test-cluster",
+						ClusterName: ptr.To("test-cluster"),
 					},
 					Defaults: platform.SecuredClusterSpec{
 						ScannerV4: &platform.LocalScannerV4ComponentSpec{
@@ -379,14 +339,6 @@ func (s *TranslationTestSuite) TestTranslate() {
 				"clusterName":   "test-cluster",
 				"ca":            map[string]string{"cert": "ca central content"},
 				"createSecrets": false,
-				"admissionControl": map[string]interface{}{
-					"dynamic": map[string]interface{}{
-						"enforceOnCreates": true,
-						"enforceOnUpdates": true,
-					},
-					"listenOnCreates": true,
-					"listenOnUpdates": true,
-				},
 				"scanner": map[string]interface{}{
 					"disable": false,
 				},
@@ -416,7 +368,7 @@ func (s *TranslationTestSuite) TestTranslate() {
 				sc: platform.SecuredCluster{
 					ObjectMeta: metav1.ObjectMeta{Namespace: "stackrox"},
 					Spec: platform.SecuredClusterSpec{
-						ClusterName: "test-cluster",
+						ClusterName: ptr.To("test-cluster"),
 					},
 				},
 			},
@@ -424,14 +376,6 @@ func (s *TranslationTestSuite) TestTranslate() {
 				"clusterName":   "test-cluster",
 				"ca":            map[string]string{"cert": "ca central content"},
 				"createSecrets": false,
-				"admissionControl": map[string]interface{}{
-					"dynamic": map[string]interface{}{
-						"enforceOnCreates": true,
-						"enforceOnUpdates": true,
-					},
-					"listenOnCreates": true,
-					"listenOnUpdates": true,
-				},
 				"scanner": map[string]interface{}{
 					"disable": false,
 				},
@@ -456,8 +400,8 @@ func (s *TranslationTestSuite) TestTranslate() {
 						Namespace: "stackrox",
 					},
 					Spec: platform.SecuredClusterSpec{
-						ClusterName:     "test-cluster",
-						CentralEndpoint: "central.test:443",
+						ClusterName:     ptr.To("test-cluster"),
+						CentralEndpoint: ptr.To("central.test:443"),
 						Sensor: &platform.SensorComponentSpec{
 							DeploymentSpec: platform.DeploymentSpec{
 								Tolerations: []*v1.Toleration{
@@ -473,12 +417,9 @@ func (s *TranslationTestSuite) TestTranslate() {
 							},
 						},
 						AdmissionControl: &platform.AdmissionControlComponentSpec{
-							ListenOnCreates:      pointer.Bool(true),
-							ListenOnUpdates:      pointer.Bool(false),
-							ListenOnEvents:       pointer.Bool(true),
-							ContactImageScanners: platform.ScanIfMissing.Pointer(),
-							TimeoutSeconds:       pointer.Int32(4),
-							Bypass:               platform.BypassBreakGlassAnnotation.Pointer(),
+							Enforcement:   ptr.To(platform.PolicyEnforcementEnabled),
+							Bypass:        platform.BypassBreakGlassAnnotation.Pointer(),
+							FailurePolicy: ptr.To(platform.FailurePolicyFail),
 							DeploymentSpec: platform.DeploymentSpec{
 								Resources: &v1.ResourceRequirements{
 									Limits: v1.ResourceList{
@@ -525,8 +466,7 @@ func (s *TranslationTestSuite) TestTranslate() {
 						},
 						PerNode: &platform.PerNodeSpec{
 							Collector: &platform.CollectorContainerSpec{
-								ImageFlavor: platform.ImageFlavorRegular.Pointer(),
-								Collection:  platform.CollectionCOREBPF.Pointer(),
+								Collection: platform.CollectionCOREBPF.Pointer(),
 							},
 							TaintToleration: platform.TaintTolerate.Pointer(),
 							Compliance: &platform.ContainerSpec{
@@ -550,7 +490,7 @@ func (s *TranslationTestSuite) TestTranslate() {
 						},
 						Monitoring: &platform.GlobalMonitoring{
 							OpenShiftMonitoring: &platform.OpenShiftMonitoring{
-								Enabled: true,
+								Enabled: ptr.To(true),
 							},
 						},
 						Scanner: &platform.LocalScannerComponentSpec{
@@ -655,8 +595,8 @@ func (s *TranslationTestSuite) TestTranslate() {
 							DB: &platform.ScannerV4DB{
 								Persistence: &platform.ScannerV4Persistence{
 									PersistentVolumeClaim: &platform.ScannerV4PersistentVolumeClaim{
-										ClaimName:        pointer.String("scanner-v4-db-pvc"),
-										StorageClassName: pointer.String("test-sc1"),
+										ClaimName:        ptr.To("scanner-v4-db-pvc"),
+										StorageClassName: ptr.To("test-sc1"),
 									},
 								},
 								DeploymentSpec: platform.DeploymentSpec{
@@ -710,7 +650,7 @@ func (s *TranslationTestSuite) TestTranslate() {
 								},
 							},
 						},
-						RegistryOverride: "my.registry.override.com",
+						RegistryOverride: ptr.To("my.registry.override.com"),
 					},
 				},
 			},
@@ -754,15 +694,10 @@ func (s *TranslationTestSuite) TestTranslate() {
 				},
 				"admissionControl": map[string]interface{}{
 					"dynamic": map[string]interface{}{
-						"enforceOnCreates": true,
-						"enforceOnUpdates": false,
-						"scanInline":       true,
-						"disableBypass":    false,
-						"timeout":          4,
+						"disableBypass": false,
 					},
-					"listenOnCreates": true,
-					"listenOnUpdates": false,
-					"listenOnEvents":  true,
+					"enforce":       true,
+					"failurePolicy": "Fail",
 					"nodeSelector": map[string]interface{}{
 						"admission-ctrl-node-selector1": "admission-ctrl-node-selector-val1",
 						"admission-ctrl-node-selector2": "admission-ctrl-node-selector-val2",
@@ -1000,11 +935,10 @@ func (s *TranslationTestSuite) TestTranslate() {
 				sc: platform.SecuredCluster{
 					ObjectMeta: metav1.ObjectMeta{Namespace: "stackrox"},
 					Spec: platform.SecuredClusterSpec{
-						ClusterName: "test-cluster",
+						ClusterName: ptr.To("test-cluster"),
 						PerNode: &platform.PerNodeSpec{
 							Collector: &platform.CollectorContainerSpec{
-								ImageFlavor: platform.ImageFlavorRegular.Pointer(),
-								Collection:  platform.CollectionEBPF.Pointer(),
+								Collection: platform.CollectionEBPF.Pointer(),
 							},
 						},
 					},
@@ -1018,14 +952,6 @@ func (s *TranslationTestSuite) TestTranslate() {
 					"forceCollectionMethod": true,
 					"collectionMethod":      "CORE_BPF",
 				},
-				"admissionControl": map[string]interface{}{
-					"dynamic": map[string]interface{}{
-						"enforceOnCreates": true,
-						"enforceOnUpdates": true,
-					},
-					"listenOnCreates": true,
-					"listenOnUpdates": true,
-				},
 				"scanner": map[string]interface{}{
 					"disable": false,
 				},
@@ -1038,6 +964,76 @@ func (s *TranslationTestSuite) TestTranslate() {
 					"openshift": map[string]interface{}{
 						"enabled": true,
 					},
+				},
+			},
+		},
+		"process baseline auto-locking enabled": {
+			args: args{
+				client: newDefaultFakeClient(t),
+				sc: platform.SecuredCluster{
+					ObjectMeta: metav1.ObjectMeta{Namespace: "stackrox"},
+					Spec: platform.SecuredClusterSpec{
+						ClusterName: ptr.To("test-cluster"),
+						ProcessBaselines: &platform.ProcessBaselinesSpec{
+							AutoLock: platform.ProcessBaselinesAutoLockModeEnabled.Pointer(),
+						},
+					},
+				},
+			},
+			want: chartutil.Values{
+				"clusterName":   "test-cluster",
+				"ca":            map[string]string{"cert": "ca central content"},
+				"createSecrets": false,
+				"scanner": map[string]interface{}{
+					"disable": false,
+				},
+				"sensor": map[string]interface{}{
+					"localImageScanning": map[string]string{
+						"enabled": "true",
+					},
+				},
+				"monitoring": map[string]interface{}{
+					"openshift": map[string]interface{}{
+						"enabled": true,
+					},
+				},
+				"autoLockProcessBaselines": map[string]interface{}{
+					"enabled": true,
+				},
+			},
+		},
+		"process baseline auto-locking disabled": {
+			args: args{
+				client: newDefaultFakeClient(t),
+				sc: platform.SecuredCluster{
+					ObjectMeta: metav1.ObjectMeta{Namespace: "stackrox"},
+					Spec: platform.SecuredClusterSpec{
+						ClusterName: ptr.To("test-cluster"),
+						ProcessBaselines: &platform.ProcessBaselinesSpec{
+							AutoLock: platform.ProcessBaselinesAutoLockModeDisabled.Pointer(),
+						},
+					},
+				},
+			},
+			want: chartutil.Values{
+				"clusterName":   "test-cluster",
+				"ca":            map[string]string{"cert": "ca central content"},
+				"createSecrets": false,
+				"scanner": map[string]interface{}{
+					"disable": false,
+				},
+				"sensor": map[string]interface{}{
+					"localImageScanning": map[string]string{
+						"enabled": "true",
+					},
+				},
+				"monitoring": map[string]interface{}{
+					"openshift": map[string]interface{}{
+						"enabled": true,
+					},
+				},
+				"autoLockProcessBaselines": map[string]interface{}{
+					"enabled": false,
 				},
 			},
 		},
@@ -1300,7 +1296,9 @@ func (s *TranslationTestSuite) TestTranslateWithCABundle() {
 
 			sc := platform.SecuredCluster{
 				ObjectMeta: metav1.ObjectMeta{Namespace: testNamespace},
-				Spec:       platform.SecuredClusterSpec{ClusterName: "test-cluster"},
+				Spec: platform.SecuredClusterSpec{
+					ClusterName: ptr.To("test-cluster"),
+				},
 			}
 
 			result, err := translator.translate(context.Background(), sc)

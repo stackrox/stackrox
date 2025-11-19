@@ -3,16 +3,19 @@ package complianceoperator
 import (
 	"context"
 	"testing"
+	"time"
 
 	"github.com/ComplianceAsCode/compliance-operator/pkg/apis/compliance/v1alpha1"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/complianceoperator"
 	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/sensor/tests/helper"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"go.uber.org/zap/zapcore"
 	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -25,7 +28,8 @@ const (
 )
 
 var (
-	coDeployment = helper.K8sResourceInfo{Kind: "Deployment", YamlFile: "co-deployment.yaml", Name: "compliance-operator"}
+	helloMessageTimeout = 20 * time.Second
+	coDeployment        = helper.K8sResourceInfo{Kind: "Deployment", YamlFile: "co-deployment.yaml", Name: "compliance-operator"}
 
 	testScanConfig = &central.ApplyComplianceScanConfigRequest{
 		ScanRequest: &central.ApplyComplianceScanConfigRequest_UpdateScan{
@@ -70,6 +74,7 @@ var (
 )
 
 func Test_ComplianceOperatorScanConfigSync(t *testing.T) {
+	logging.SetGlobalLogLevel(zapcore.DebugLevel)
 	t.Setenv(env.ConnectionRetryInitialInterval.EnvVar(), "1s")
 	t.Setenv(env.ConnectionRetryMaxInterval.EnvVar(), "2s")
 
@@ -88,6 +93,11 @@ func Test_ComplianceOperatorScanConfigSync(t *testing.T) {
 
 	c.RunTest(t, helper.WithTestCase(func(t *testing.T, tc *helper.TestContext, _ map[string]k8s.Object) {
 		ctx := context.Background()
+
+		t.Log("Wait for the first sync")
+		tc.WaitForSyncEvent(t, 10*time.Second)
+		tc.GetFakeCentral().ClearReceivedBuffer()
+
 		t.Log("Creating Compliance Operator CRDs")
 		deleteCRDsFn, err := tc.ApplyWithManifestDir(context.Background(), "../../../tests/complianceoperator/crds", "*")
 		t.Cleanup(func() {
@@ -104,6 +114,9 @@ func Test_ComplianceOperatorScanConfigSync(t *testing.T) {
 
 		require.NoError(t, err)
 
+		t.Log("Sensor should sync again after the CRDs are detected")
+		tc.WaitForSyncEventf(t, 10*time.Second, "expected restart connection after CRDs are detected")
+
 		t.Log("Sending initial SyncScanConfigs message")
 		tc.GetFakeCentral().StubMessage(createSyncScanConfigsMessage(testScanConfig))
 
@@ -115,7 +128,7 @@ func Test_ComplianceOperatorScanConfigSync(t *testing.T) {
 		assertScanSettingBinding(t, testScanConfig, scanSettingBinding)
 
 		t.Log("Restarting fake Central connection")
-		tc.RestartFakeCentralConnection(centralCaps...)
+		restartAndWaitForHello(t, tc, centralCaps)
 
 		t.Log("Sending updated SyncScanConfigs message with multiple scan configs")
 		tc.GetFakeCentral().StubMessage(createSyncScanConfigsMessage(updatedTestScanConfig, testScanConfig2))
@@ -135,7 +148,7 @@ func Test_ComplianceOperatorScanConfigSync(t *testing.T) {
 		assertScanSettingBinding(t, testScanConfig2, scanSettingBinding)
 
 		t.Log("Restarting fake Central connection again")
-		tc.RestartFakeCentralConnection(centralCaps...)
+		restartAndWaitForHello(t, tc, centralCaps)
 
 		t.Log("Sending empty SyncScanConfigs message to delete all resources")
 		tc.GetFakeCentral().StubMessage(createSyncScanConfigsMessage())
@@ -146,6 +159,13 @@ func Test_ComplianceOperatorScanConfigSync(t *testing.T) {
 		tc.AssertResourceDoesNotExist(ctx, t, testScanConfig2.GetUpdateScan().GetScanSettings().GetScanName(), coNamespace, complianceoperator.ScanSetting.APIResource)
 		tc.AssertResourceDoesNotExist(ctx, t, testScanConfig2.GetUpdateScan().GetScanSettings().GetScanName(), coNamespace, complianceoperator.ScanSettingBinding.APIResource)
 	}))
+}
+
+func restartAndWaitForHello(t *testing.T, tc *helper.TestContext, centralCaps []string) {
+	tc.GetFakeCentral().ClearReceivedBuffer()
+	tc.RestartFakeCentralConnection(centralCaps...)
+	t.Log("Wait for Hello message")
+	tc.WaitForHello(t, helloMessageTimeout)
 }
 
 func createSyncScanConfigsMessage(scanConfigs ...*central.ApplyComplianceScanConfigRequest) *central.MsgToSensor {

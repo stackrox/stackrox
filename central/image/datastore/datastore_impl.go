@@ -15,7 +15,6 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/errorhelpers"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/images/enricher"
 	imageTypes "github.com/stackrox/rox/pkg/images/types"
 	"github.com/stackrox/rox/pkg/logging"
@@ -363,33 +362,17 @@ func (ds *datastoreImpl) updateListImagePriority(images ...*storage.ListImage) {
 func (ds *datastoreImpl) updateImagePriority(images ...*storage.Image) {
 	for _, image := range images {
 		image.Priority = ds.imageRanker.GetRankForID(image.GetId())
-		for _, component := range image.GetScan().GetComponents() {
-			if features.FlattenCVEData.Enabled() {
-				componentID, err := scancomponent.ComponentIDV2(component, image.GetId())
-				if err != nil {
-					log.Error(err)
-					continue
-				}
-				component.Priority = ds.imageComponentRanker.GetRankForID(componentID)
-			} else {
-				component.Priority = ds.imageComponentRanker.GetRankForID(scancomponent.ComponentID(component.GetName(), component.GetVersion(), image.GetScan().GetOperatingSystem()))
-			}
+		for index, component := range image.GetScan().GetComponents() {
+			componentID := scancomponent.ComponentIDV2(component, image.GetId(), index)
+			component.Priority = ds.imageComponentRanker.GetRankForID(componentID)
 		}
 	}
 }
 
 func (ds *datastoreImpl) updateComponentRisk(image *storage.Image) {
-	for _, component := range image.GetScan().GetComponents() {
-		if features.FlattenCVEData.Enabled() {
-			componentID, err := scancomponent.ComponentIDV2(component, image.GetId())
-			if err != nil {
-				log.Error(err)
-				continue
-			}
-			component.RiskScore = ds.imageComponentRanker.GetScoreForID(componentID)
-		} else {
-			component.RiskScore = ds.imageComponentRanker.GetScoreForID(scancomponent.ComponentID(component.GetName(), component.GetVersion(), image.GetScan().GetOperatingSystem()))
-		}
+	for index, component := range image.GetScan().GetComponents() {
+		componentID := scancomponent.ComponentIDV2(component, image.GetId(), index)
+		component.RiskScore = ds.imageComponentRanker.GetScoreForID(componentID)
 	}
 }
 

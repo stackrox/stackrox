@@ -1,6 +1,6 @@
-import React, { ReactElement } from 'react';
+import type { ReactElement } from 'react';
 
-import { ResourceName } from 'types/roleResources';
+import type { ResourceName } from 'types/roleResources';
 
 // Description for permission resource types. 'Read:' and 'Write:' tokens have
 // special meaning and mark parts related to respective operations.

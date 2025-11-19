@@ -1,11 +1,10 @@
-import React from 'react';
 import { Flex, Label, Tooltip, capitalize } from '@patternfly/react-core';
 import { EllipsisHIcon } from '@patternfly/react-icons';
 
 import SeverityIcons from 'Components/PatternFly/SeverityIcons';
 import { noViolationsClassName, noViolationsColor } from 'constants/severityColors';
 
-import { VulnerabilitySeverityLabel } from '../types';
+import type { VulnerabilitySeverityLabel } from '../types';
 
 import './SeverityCountLabels.css';
 

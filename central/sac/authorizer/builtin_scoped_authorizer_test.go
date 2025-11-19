@@ -29,21 +29,25 @@ var (
 	allResourcesView = mapResourcesToAccess(resources.AllResourcesViewPermissions())
 	allResourcesEdit = mapResourcesToAccess(resources.AllResourcesModifyPermissions())
 
-	clusters = []*storage.Cluster{
-		{Id: firstClusterID, Name: firstClusterName},
-		{Id: secondClusterID, Name: secondClusterName},
+	clusters = []effectiveaccessscope.Cluster{
+		&storage.Cluster{Id: firstClusterID, Name: firstClusterName},
+		&storage.Cluster{Id: secondClusterID, Name: secondClusterName},
 	}
-	namespaces = []*storage.NamespaceMetadata{{
-		Id:          "namespace-1",
-		Name:        firstNamespaceName,
-		ClusterId:   firstClusterID,
-		ClusterName: firstClusterName,
-	}, {
-		Id:          "namespace-2",
-		Name:        secondNamespaceName,
-		ClusterId:   firstClusterID,
-		ClusterName: firstClusterName,
-	}}
+
+	namespaces = []effectiveaccessscope.Namespace{
+		&storage.NamespaceMetadata{
+			Id:          "namespace-1",
+			Name:        firstNamespaceName,
+			ClusterId:   firstClusterID,
+			ClusterName: firstClusterName,
+		},
+		&storage.NamespaceMetadata{
+			Id:          "namespace-2",
+			Name:        secondNamespaceName,
+			ClusterId:   firstClusterID,
+			ClusterName: firstClusterName,
+		},
+	}
 )
 
 func TestBuiltInScopeAuthorizerWithTracing(t *testing.T) {

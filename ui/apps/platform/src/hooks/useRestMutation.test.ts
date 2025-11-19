@@ -1,4 +1,4 @@
-import { renderHook, act } from '@testing-library/react';
+import { act, renderHook } from '@testing-library/react';
 
 import waitForNextUpdate from 'test-utils/waitForNextUpdate';
 import useRestMutation from './useRestMutation';

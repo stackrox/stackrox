@@ -250,7 +250,7 @@
     {{ include "srox.fail" (printf "Invalid non-string contents kind %s at index %d (%q) of additionalCAs" (kindOf $elem.contents) $idx $elem.name) }}
   {{ end }}
   {{/* In a k8s secret, no characters other than alphanumeric, '.', '_' and '-' are allowed. Also, for the
-       update-ca-certificates script to work, the file names must end in '.crt'. */}}
+       import-additional-cas script to work, the file names must end in '.crt'. */}}
 
   {{ $normalizedName := printf "%02d-%s.crt" $idx (regexReplaceAll "[^[:alnum:]._-]" $elem.name "-" | trimSuffix ".crt") }}
   {{ $_ := set $additionalCAs $normalizedName $elem.contents }}
@@ -402,6 +402,10 @@ The following block checks for the validity of the provided init bundle. (`helm 
      set of all referenced images first. */}}
 {{ include "srox.configureImagePullSecrets" (list $ "mainImagePullSecrets" $._rox.mainImagePullSecrets "secured-cluster-services-main" (list "stackrox") $._rox._namespace) }}
 {{ include "srox.configureImagePullSecrets" (list $ "collectorImagePullSecrets" $._rox.collectorImagePullSecrets "secured-cluster-services-collector" (list "stackrox" "collector-stackrox") $._rox._namespace) }}
+
+{{/* Derive internal representation of specific chart configuration settings. */}}
+
+{{ $_ := set $._rox.admissionControl "_failOnError" (eq $._rox.admissionControl.failurePolicy "Fail") }}
 
 {{ end }}
 

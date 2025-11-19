@@ -1,9 +1,9 @@
-import React, { ReactElement } from 'react';
+import type { ReactElement } from 'react';
 import { Tooltip } from '@patternfly/react-core';
 
 import IconText from 'Components/PatternFly/IconText/IconText';
 
-import { ClusterStatusObject } from '../compliance.coverage.utils';
+import type { ClusterStatusObject } from '../compliance.coverage.utils';
 
 export type StatusIconProps = {
     clusterStatusObject: ClusterStatusObject;

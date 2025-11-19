@@ -3,6 +3,8 @@ package booleanpolicy
 import (
 	"fmt"
 	"regexp"
+	"slices"
+	"testing"
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
@@ -11,6 +13,7 @@ import (
 	"github.com/stackrox/rox/pkg/booleanpolicy/query"
 	"github.com/stackrox/rox/pkg/booleanpolicy/querybuilders"
 	"github.com/stackrox/rox/pkg/booleanpolicy/violationmessages"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/sync"
 )
@@ -34,6 +37,13 @@ func FieldMetadataSingleton() *FieldMetadata {
 	return &fieldMetadataInstance
 }
 
+// ResetFieldMetadataSingleton is for testing purposes only, and can be
+// used to ensure that criteria are added / removed when feature flags
+// are enabled / disabled respectively.
+func ResetFieldMetadataSingleton(_ *testing.T) {
+	fieldMetadataInstanceInit = sync.Once{}
+}
+
 type option int
 
 const (
@@ -53,6 +63,8 @@ const (
 	NetworkFlow = "networkFlow"
 	// KubeEvent for an admission controller based runtime event
 	KubeEvent = "kubeEvent"
+	// FileAccess for a file-based runtime event
+	FileAccess = "fileAccess"
 )
 
 type metadataAndQB struct {
@@ -99,6 +111,20 @@ func (f *FieldMetadata) IsAuditLogEventField(fieldName string) bool {
 	return f.FieldIsOfType(fieldName, AuditLogEvent)
 }
 
+// IsFileEventField returns true if the field is a node event field
+func (f *FieldMetadata) IsFileEventField(fieldName string) bool {
+	return f.FieldIsOfType(fieldName, FileAccess)
+}
+
+func (f *FieldMetadata) IsFromEventSource(fieldName string, eventSource storage.EventSource) bool {
+	field := f.fieldsToQB[fieldName]
+	if field == nil {
+		log.Warnf("policy field %s not found", fieldName)
+		return false
+	}
+	return slices.Contains(field.eventSourceContext, eventSource)
+}
+
 // findFieldMetadata searches for a policy criteria field by name and returns the field metadata
 func (f *FieldMetadata) findFieldMetadata(fieldName string, _ *validateConfiguration) (*metadataAndQB, error) {
 	field := f.fieldsToQB[fieldName]
@@ -138,22 +164,10 @@ func (f *FieldMetadata) ensureFieldIsUnique(fieldName string) {
 
 func (f *FieldMetadata) registerFieldMetadata(fieldName string, qb querybuilders.QueryBuilder,
 	contextFields violationmessages.ContextQueryFields,
-	valueRegex func(configuration *validateConfiguration) *regexp.Regexp,
+	regex func(configuration *validateConfiguration) *regexp.Regexp,
 	source []storage.EventSource, fieldTypes []RuntimeFieldType, options ...option) {
 	f.ensureFieldIsUnique(fieldName)
-
-	m := newFieldMetadata(qb, contextFields, valueRegex, source, fieldTypes, options...)
-	f.fieldsToQB[fieldName] = m
-}
-
-func (f *FieldMetadata) registerFieldMetadataConditionally(
-	fieldName string,
-	qb querybuilders.QueryBuilder, contextFields violationmessages.ContextQueryFields,
-	conditionalRegexp func(*validateConfiguration) *regexp.Regexp,
-	source []storage.EventSource, fieldTypes []RuntimeFieldType, options ...option) {
-	f.ensureFieldIsUnique(fieldName)
-	f.fieldsToQB[fieldName] = newFieldMetadata(qb, contextFields, conditionalRegexp, source, fieldTypes, options...)
-
+	f.fieldsToQB[fieldName] = newFieldMetadata(qb, contextFields, regex, source, fieldTypes, options...)
 }
 
 func initializeFieldMetadata() FieldMetadata {
@@ -330,8 +344,7 @@ func initializeFieldMetadata() FieldMetadata {
 		[]storage.EventSource{storage.EventSource_NOT_APPLICABLE},
 		[]RuntimeFieldType{}, negationForbidden)
 
-	f.registerFieldMetadataConditionally(
-		fieldnames.EnvironmentVariable,
+	f.registerFieldMetadata(fieldnames.EnvironmentVariable,
 		querybuilders.ForCompound(augmentedobjs.EnvironmentVarCustomTag, 3),
 		violationmessages.EnvVarContextFields,
 		func(c *validateConfiguration) *regexp.Regexp {
@@ -550,7 +563,7 @@ func initializeFieldMetadata() FieldMetadata {
 		[]RuntimeFieldType{Process})
 
 	f.registerFieldMetadata(fieldnames.ProcessArguments,
-		querybuilders.ForFieldLabelRegex(search.ProcessArguments),
+		querybuilders.ForFieldLabelContainsRegex(search.ProcessArguments),
 		nil,
 		func(*validateConfiguration) *regexp.Regexp {
 			return stringValueRegex
@@ -739,20 +752,17 @@ func initializeFieldMetadata() FieldMetadata {
 		[]storage.EventSource{storage.EventSource_NOT_APPLICABLE},
 		[]RuntimeFieldType{}, negationForbidden, operatorsForbidden)
 
-	f.registerFieldMetadataConditionally(fieldnames.KubeAPIVerb,
+	f.registerFieldMetadata(fieldnames.KubeAPIVerb,
 		querybuilders.ForFieldLabel(augmentedobjs.KubernetesAPIVerbCustomTag),
 		nil,
 		func(c *validateConfiguration) *regexp.Regexp {
-			if c != nil && c.sourceIsAuditLogEvents {
-				return auditEventAPIVerbValueRegex
-			}
-			return kubernetesAPIVerbValueRegex
-		}, []storage.EventSource{storage.EventSource_DEPLOYMENT_EVENT, storage.EventSource_AUDIT_LOG_EVENT},
-		[]RuntimeFieldType{AuditLogEvent, KubeEvent},
+			return auditEventAPIVerbValueRegex
+		}, []storage.EventSource{storage.EventSource_AUDIT_LOG_EVENT},
+		[]RuntimeFieldType{AuditLogEvent},
 		negationForbidden,
 	)
 
-	f.registerFieldMetadataConditionally(fieldnames.KubeResource,
+	f.registerFieldMetadata(fieldnames.KubeResource,
 		querybuilders.ForFieldLabel(augmentedobjs.KubernetesResourceCustomTag),
 		nil,
 		func(c *validateConfiguration) *regexp.Regexp {
@@ -761,7 +771,7 @@ func initializeFieldMetadata() FieldMetadata {
 			}
 			return kubernetesResourceValueRegex
 		}, []storage.EventSource{storage.EventSource_DEPLOYMENT_EVENT, storage.EventSource_AUDIT_LOG_EVENT},
-		[]RuntimeFieldType{AuditLogEvent, KubeEvent},
+		[]RuntimeFieldType{KubeEvent, AuditLogEvent},
 		negationForbidden,
 	)
 
@@ -771,8 +781,8 @@ func initializeFieldMetadata() FieldMetadata {
 		func(*validateConfiguration) *regexp.Regexp {
 			return kubernetesNameRegex
 		},
-		[]storage.EventSource{storage.EventSource_AUDIT_LOG_EVENT},
-		[]RuntimeFieldType{AuditLogEvent},
+		[]storage.EventSource{storage.EventSource_DEPLOYMENT_EVENT, storage.EventSource_AUDIT_LOG_EVENT},
+		[]RuntimeFieldType{KubeEvent, AuditLogEvent},
 	)
 
 	f.registerFieldMetadata(
@@ -781,8 +791,8 @@ func initializeFieldMetadata() FieldMetadata {
 		func(*validateConfiguration) *regexp.Regexp {
 			return kubernetesNameRegex
 		},
-		[]storage.EventSource{storage.EventSource_AUDIT_LOG_EVENT},
-		[]RuntimeFieldType{AuditLogEvent},
+		[]storage.EventSource{storage.EventSource_DEPLOYMENT_EVENT, storage.EventSource_AUDIT_LOG_EVENT},
+		[]RuntimeFieldType{KubeEvent, AuditLogEvent},
 	)
 
 	f.registerFieldMetadata(
@@ -873,6 +883,28 @@ func initializeFieldMetadata() FieldMetadata {
 		[]storage.EventSource{storage.EventSource_NOT_APPLICABLE},
 		[]RuntimeFieldType{}, operatorsForbidden,
 	)
+
+	if features.SensitiveFileActivity.Enabled() {
+		f.registerFieldMetadata(fieldnames.NodeFilePath,
+			querybuilders.ForFieldLabel(search.NodeFilePath), nil,
+			func(*validateConfiguration) *regexp.Regexp {
+				// TODO(ROX-31449): change to an absolute path regex when arbitrary
+				// paths are supported
+				return allowedFilePathRegex
+			},
+			[]storage.EventSource{storage.EventSource_NODE_EVENT},
+			[]RuntimeFieldType{FileAccess}, negationForbidden,
+		)
+
+		f.registerFieldMetadata(fieldnames.FileOperation,
+			querybuilders.ForFieldLabel(search.FileOperation), nil,
+			func(*validateConfiguration) *regexp.Regexp {
+				return fileOperationRegex
+			},
+			[]storage.EventSource{storage.EventSource_NODE_EVENT},
+			[]RuntimeFieldType{FileAccess},
+		)
+	}
 
 	return f
 }

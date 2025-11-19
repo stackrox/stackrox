@@ -9,6 +9,7 @@ import (
 	deploymentDataStore "github.com/stackrox/rox/central/deployment/datastore"
 	imageDataStore "github.com/stackrox/rox/central/image/datastore"
 	imageIntegrationDataStore "github.com/stackrox/rox/central/imageintegration/datastore"
+	imageV2Datastore "github.com/stackrox/rox/central/imagev2/datastore"
 	namespaceDataStore "github.com/stackrox/rox/central/namespace/datastore"
 	nodeDataStore "github.com/stackrox/rox/central/node/datastore"
 	policyDataStore "github.com/stackrox/rox/central/policy/datastore"
@@ -19,6 +20,7 @@ import (
 	secretDataStore "github.com/stackrox/rox/central/secret/datastore"
 	serviceAccountDataStore "github.com/stackrox/rox/central/serviceaccount/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/grpc"
 	"github.com/stackrox/rox/pkg/logging"
 )
@@ -41,6 +43,7 @@ type Builder interface {
 	WithAlertStore(store alertDataStore.DataStore) Builder
 	WithDeploymentStore(store deploymentDataStore.DataStore) Builder
 	WithImageStore(store imageDataStore.DataStore) Builder
+	WithImageV2Store(store imageV2Datastore.DataStore) Builder
 	WithPolicyStore(store policyDataStore.DataStore) Builder
 	WithSecretStore(store secretDataStore.DataStore) Builder
 	WithServiceAccountStore(store serviceAccountDataStore.DataStore) Builder
@@ -61,6 +64,7 @@ type serviceBuilder struct {
 	alerts            alertDataStore.DataStore
 	deployments       deploymentDataStore.DataStore
 	images            imageDataStore.DataStore
+	imagesV2          imageV2Datastore.DataStore
 	policies          policyDataStore.DataStore
 	secrets           secretDataStore.DataStore
 	serviceAccounts   serviceAccountDataStore.DataStore
@@ -91,7 +95,18 @@ func (b *serviceBuilder) WithDeploymentStore(store deploymentDataStore.DataStore
 }
 
 func (b *serviceBuilder) WithImageStore(store imageDataStore.DataStore) Builder {
+	if features.FlattenImageData.Enabled() {
+		return b
+	}
 	b.images = store
+	return b
+}
+
+func (b *serviceBuilder) WithImageV2Store(store imageV2Datastore.DataStore) Builder {
+	if !features.FlattenImageData.Enabled() {
+		return b
+	}
+	b.imagesV2 = store
 	return b
 }
 
@@ -160,6 +175,7 @@ func (b *serviceBuilder) Build() Service {
 		alerts:            b.alerts,
 		deployments:       b.deployments,
 		images:            b.images,
+		imagesV2:          b.imagesV2,
 		policies:          b.policies,
 		secrets:           b.secrets,
 		serviceaccounts:   b.serviceAccounts,
@@ -183,6 +199,7 @@ func NewService() Service {
 		WithAlertStore(alertDataStore.Singleton()).
 		WithDeploymentStore(deploymentDataStore.Singleton()).
 		WithImageStore(imageDataStore.Singleton()).
+		WithImageV2Store(imageV2Datastore.Singleton()).
 		WithPolicyStore(policyDataStore.Singleton()).
 		WithSecretStore(secretDataStore.Singleton()).
 		WithServiceAccountStore(serviceAccountDataStore.Singleton()).

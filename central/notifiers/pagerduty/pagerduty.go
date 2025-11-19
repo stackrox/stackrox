@@ -81,7 +81,7 @@ func newPagerDuty(notifier *storage.Notifier, cryptoCodec cryptocodec.CryptoCode
 
 // Validate PagerDuty notifier
 func Validate(conf *storage.PagerDuty, validateSecret bool) error {
-	if validateSecret && len(conf.ApiKey) == 0 {
+	if validateSecret && len(conf.GetApiKey()) == 0 {
 		return errors.New("PagerDuty API key must be specified")
 	}
 	return nil
@@ -194,7 +194,7 @@ func (p *pagerDuty) createPagerDutyEvent(alert *storage.Alert, eventType string)
 		Action:     eventType,
 		RoutingKey: p.routingKey,
 		Client:     client,
-		ClientURL:  notifiers.AlertLink(p.Notifier.UiEndpoint, alert),
+		ClientURL:  notifiers.AlertLink(p.Notifier.GetUiEndpoint(), alert),
 		DedupKey:   alert.GetId(),
 		Payload:    payload,
 	}, nil

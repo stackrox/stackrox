@@ -48,7 +48,7 @@ func addDefaults(s policyCategoryStore.Store) {
 	utils.CrashOnError(err)
 
 	for _, dc := range defaultCategories {
-		if existingCategoriesSet.Contains(dc.Name) {
+		if existingCategoriesSet.Contains(dc.GetName()) {
 			continue
 		}
 		if err := s.Upsert(policyCategoryCtx, dc); err != nil {

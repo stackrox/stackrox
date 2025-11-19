@@ -95,7 +95,7 @@ func newComplianceHandler(complianceDS datastore.DataStore, getClusterIDs func(c
 						}
 					}
 
-					for controlID, clusterValue := range d.ClusterResults.GetControlResults() {
+					for controlID, clusterValue := range d.GetClusterResults().GetControlResults() {
 						controlName := controlID
 						if control, ok := controls[controlID]; ok {
 							controlName = control.GetName()
@@ -106,7 +106,7 @@ func newComplianceHandler(complianceDS datastore.DataStore, getClusterIDs func(c
 							ObjectType: "Cluster",
 							ObjectName: d.GetDomain().GetCluster().GetName(),
 							Control:    controlName,
-							State:      stateToString(clusterValue.OverallState),
+							State:      stateToString(clusterValue.GetOverallState()),
 							Evidence:   getMessageLines(clusterValue.GetEvidence()),
 						}
 						if err := arrayWriter.WriteObject(res); err != nil {
@@ -129,7 +129,7 @@ func newComplianceHandler(complianceDS datastore.DataStore, getClusterIDs func(c
 								ObjectType: "Deployment",
 								ObjectName: deployment.GetName(),
 								Control:    controlName,
-								State:      stateToString(result.OverallState),
+								State:      stateToString(result.GetOverallState()),
 								Evidence:   getMessageLines(result.GetEvidence()),
 							}
 							if err := arrayWriter.WriteObject(res); err != nil {
@@ -152,7 +152,7 @@ func newComplianceHandler(complianceDS datastore.DataStore, getClusterIDs func(c
 								ObjectType: "Node",
 								ObjectName: node.GetName(),
 								Control:    controlName,
-								State:      stateToString(result.OverallState),
+								State:      stateToString(result.GetOverallState()),
 								Evidence:   getMessageLines(result.GetEvidence()),
 							}
 							if err := arrayWriter.WriteObject(res); err != nil {
@@ -173,7 +173,7 @@ func newComplianceHandler(complianceDS datastore.DataStore, getClusterIDs func(c
 								ObjectType: "Machine Config",
 								ObjectName: machineKey,
 								Control:    controlName,
-								State:      stateToString(result.OverallState),
+								State:      stateToString(result.GetOverallState()),
 								Evidence:   getMessageLines(result.GetEvidence()),
 							}
 							if err := arrayWriter.WriteObject(res); err != nil {

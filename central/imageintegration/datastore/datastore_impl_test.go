@@ -686,27 +686,27 @@ func (suite *ImageIntegrationDataStoreTestSuite) TestSearchImageIntegrationsWith
 				// Should return all 3 integrations
 				returnedIDs := make(map[string]bool)
 				for _, searchResult := range searchResults {
-					suite.Equal(v1.SearchCategory_IMAGE_INTEGRATIONS, searchResult.Category, "Category should be IMAGE_INTEGRATIONS")
-					suite.NotEmpty(searchResult.Id, "SearchResult should have an ID")
-					suite.NotEmpty(searchResult.Name, "SearchResult should have a name")
+					suite.Equal(v1.SearchCategory_IMAGE_INTEGRATIONS, searchResult.GetCategory(), "Category should be IMAGE_INTEGRATIONS")
+					suite.NotEmpty(searchResult.GetId(), "SearchResult should have an ID")
+					suite.NotEmpty(searchResult.GetName(), "SearchResult should have a name")
 
-					integration := integrationByID[searchResult.Id]
+					integration := integrationByID[searchResult.GetId()]
 					suite.NotNil(integration, "Integration should exist")
-					suite.Equal(integration.GetName(), searchResult.Name, "SearchResult name should match integration name")
-					returnedIDs[searchResult.Id] = true
+					suite.Equal(integration.GetName(), searchResult.GetName(), "SearchResult name should match integration name")
+					returnedIDs[searchResult.GetId()] = true
 				}
 				suite.Len(returnedIDs, 3, "Should return all 3 unique integration IDs")
 
 			case "SearchImageIntegrations - by cluster ID":
 				// Should return integrations from searchCluster1ID
 				for _, searchResult := range searchResults {
-					suite.Equal(v1.SearchCategory_IMAGE_INTEGRATIONS, searchResult.Category, "Category should be IMAGE_INTEGRATIONS")
-					suite.NotEmpty(searchResult.Id, "SearchResult should have an ID")
-					suite.NotEmpty(searchResult.Name, "SearchResult should have a name")
+					suite.Equal(v1.SearchCategory_IMAGE_INTEGRATIONS, searchResult.GetCategory(), "Category should be IMAGE_INTEGRATIONS")
+					suite.NotEmpty(searchResult.GetId(), "SearchResult should have an ID")
+					suite.NotEmpty(searchResult.GetName(), "SearchResult should have a name")
 
-					integration := integrationByID[searchResult.Id]
+					integration := integrationByID[searchResult.GetId()]
 					suite.NotNil(integration, "Integration should exist")
-					suite.Equal(integration.GetName(), searchResult.Name, "SearchResult name should match integration name")
+					suite.Equal(integration.GetName(), searchResult.GetName(), "SearchResult name should match integration name")
 					suite.Equal(searchCluster1ID, integration.GetClusterId(), "Integration should be from search-cluster-1")
 				}
 
@@ -714,9 +714,9 @@ func (suite *ImageIntegrationDataStoreTestSuite) TestSearchImageIntegrationsWith
 				// Should return exactly the third integration (integrations[2])
 				suite.Len(searchResults, 1, "Should return exactly one result")
 				searchResult := searchResults[0]
-				suite.Equal(v1.SearchCategory_IMAGE_INTEGRATIONS, searchResult.Category, "Category should be IMAGE_INTEGRATIONS")
-				suite.Equal(integrations[2].GetId(), searchResult.Id, "Should return the correct integration ID")
-				suite.Equal(integrations[2].GetName(), searchResult.Name, "Should return the correct integration name")
+				suite.Equal(v1.SearchCategory_IMAGE_INTEGRATIONS, searchResult.GetCategory(), "Category should be IMAGE_INTEGRATIONS")
+				suite.Equal(integrations[2].GetId(), searchResult.GetId(), "Should return the correct integration ID")
+				suite.Equal(integrations[2].GetName(), searchResult.GetName(), "Should return the correct integration name")
 
 			case "SearchImageIntegrations - no matches":
 				// Should return empty results - already verified by length check
@@ -724,13 +724,13 @@ func (suite *ImageIntegrationDataStoreTestSuite) TestSearchImageIntegrationsWith
 			default:
 				// For any other test cases, verify structure and data consistency
 				for _, searchResult := range searchResults {
-					suite.Equal(v1.SearchCategory_IMAGE_INTEGRATIONS, searchResult.Category, "Category should be IMAGE_INTEGRATIONS")
-					suite.NotEmpty(searchResult.Id, "SearchResult should have an ID")
-					suite.NotEmpty(searchResult.Name, "SearchResult should have a name")
+					suite.Equal(v1.SearchCategory_IMAGE_INTEGRATIONS, searchResult.GetCategory(), "Category should be IMAGE_INTEGRATIONS")
+					suite.NotEmpty(searchResult.GetId(), "SearchResult should have an ID")
+					suite.NotEmpty(searchResult.GetName(), "SearchResult should have a name")
 
-					integration := integrationByID[searchResult.Id]
+					integration := integrationByID[searchResult.GetId()]
 					suite.NotNil(integration, "Integration should exist")
-					suite.Equal(integration.GetName(), searchResult.Name, "SearchResult name should match integration name")
+					suite.Equal(integration.GetName(), searchResult.GetName(), "SearchResult name should match integration name")
 				}
 			}
 		})
@@ -799,7 +799,7 @@ func (suite *ImageIntegrationDataStoreTestSuite) TestSearchConsistencyBetweenMet
 
 	searchImageIntegrationIDs := make(map[string]bool)
 	for _, result := range searchImageIntegrations {
-		searchImageIntegrationIDs[result.Id] = true
+		searchImageIntegrationIDs[result.GetId()] = true
 	}
 
 	suite.Equal(searchIDs, searchImageIntegrationIDs, "IDs returned by Search and SearchImageIntegrations should be identical")
@@ -821,18 +821,18 @@ func (suite *ImageIntegrationDataStoreTestSuite) TestSearchConsistencyBetweenMet
 
 	// Verify SearchImageIntegrations returns correct data structure and content
 	for _, searchResult := range searchImageIntegrations {
-		suite.Equal(v1.SearchCategory_IMAGE_INTEGRATIONS, searchResult.Category, "Category should be IMAGE_INTEGRATIONS")
+		suite.Equal(v1.SearchCategory_IMAGE_INTEGRATIONS, searchResult.GetCategory(), "Category should be IMAGE_INTEGRATIONS")
 
 		// Find the corresponding integration
 		var foundIntegration *storage.ImageIntegration
 		for _, integration := range integrations {
-			if integration.GetId() == searchResult.Id {
+			if integration.GetId() == searchResult.GetId() {
 				foundIntegration = integration
 				break
 			}
 		}
 		suite.NotNil(foundIntegration, "SearchResult should correspond to a test integration")
-		suite.Equal(foundIntegration.GetName(), searchResult.Name, "SearchResult name should match integration name")
+		suite.Equal(foundIntegration.GetName(), searchResult.GetName(), "SearchResult name should match integration name")
 		suite.Equal(consistencyClusterID, foundIntegration.GetClusterId(), "Integration should be from the consistency cluster")
 	}
 }
@@ -959,11 +959,11 @@ func (suite *ImageIntegrationDataStoreTestSuite) TestSearchWithAccessControlScen
 					}
 
 					for _, searchResult := range searchImageIntegrations {
-						suite.Equal(v1.SearchCategory_IMAGE_INTEGRATIONS, searchResult.Category, "Category should be IMAGE_INTEGRATIONS")
+						suite.Equal(v1.SearchCategory_IMAGE_INTEGRATIONS, searchResult.GetCategory(), "Category should be IMAGE_INTEGRATIONS")
 
-						integration := integrationByID[searchResult.Id]
+						integration := integrationByID[searchResult.GetId()]
 						suite.NotNil(integration, "SearchResult should correspond to a test integration")
-						suite.Equal(integration.GetName(), searchResult.Name, "SearchResult name should match integration name")
+						suite.Equal(integration.GetName(), searchResult.GetName(), "SearchResult name should match integration name")
 					}
 				}
 			}

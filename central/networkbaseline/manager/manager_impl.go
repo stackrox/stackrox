@@ -755,13 +755,13 @@ func (m *manager) initFromStore() error {
 				// Mark seen
 				seenClusterAndNamespace[curPair] = struct{}{}
 
-				policies, err := m.networkPolicyDS.GetNetworkPolicies(managerCtx, baseline.ClusterId, baseline.Namespace)
+				policies, err := m.networkPolicyDS.GetNetworkPolicies(managerCtx, baseline.GetClusterId(), baseline.GetNamespace())
 				if err != nil {
 					return err
 				}
 				for _, policy := range policies {
 					// On start treat all policies as have just been created.
-					hash, err := m.getHashOfNetworkPolicyWithResourceAction(central.ResourceAction_CREATE_RESOURCE, policy)
+					hash, err := getHashOfNetworkPolicyWithResourceAction(central.ResourceAction_CREATE_RESOURCE, policy)
 					if err != nil {
 						return err
 					}
@@ -1061,8 +1061,8 @@ func (m *manager) putFlowsInMap(newFlows []*storage.NetworkFlow) map[networkgrap
 	out := make(map[networkgraph.NetworkConnIndicator]timestamp.MicroTS, len(newFlows))
 	now := timestamp.Now()
 	for _, newFlow := range newFlows {
-		t := timestamp.FromProtobuf(newFlow.LastSeenTimestamp)
-		if newFlow.LastSeenTimestamp == nil {
+		t := timestamp.FromProtobuf(newFlow.GetLastSeenTimestamp())
+		if newFlow.GetLastSeenTimestamp() == nil {
 			t = now
 		}
 
@@ -1073,12 +1073,12 @@ func (m *manager) putFlowsInMap(newFlows []*storage.NetworkFlow) map[networkgrap
 
 func (m *manager) enrichFlows(listDeployment *storage.ListDeployment, flows []*storage.NetworkFlow) []*storage.NetworkFlow {
 	networkTree := tree.NewMultiNetworkTree(
-		m.treeManager.GetReadOnlyNetworkTree(managerCtx, listDeployment.ClusterId),
+		m.treeManager.GetReadOnlyNetworkTree(managerCtx, listDeployment.GetClusterId()),
 		m.treeManager.GetDefaultNetworkTree(managerCtx),
 	)
 
 	listDeploymentMap := map[string]*storage.ListDeployment{
-		listDeployment.Id: listDeployment,
+		listDeployment.GetId(): listDeployment,
 	}
 
 	flows, missingInfoFlows := networkgraph.UpdateFlowsWithEntityDesc(flows, listDeploymentMap,

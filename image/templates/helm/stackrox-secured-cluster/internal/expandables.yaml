@@ -29,6 +29,8 @@ collector:
   complianceResources: true
   nodeScanningResources: true
   nodeSelector: true
+fact:
+  resources: true
 scanner:
   resources: true
   dbResources: true

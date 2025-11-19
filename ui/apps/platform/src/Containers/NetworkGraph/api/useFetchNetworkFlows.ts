@@ -2,9 +2,9 @@ import { useEffect, useState } from 'react';
 
 import { fetchNetworkBaselineStatuses } from 'services/NetworkService';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
-import { EdgeState } from '../components/EdgeStateSelect';
-import { BaselineStatus, BaselineStatusType, Flow } from '../types/flow.type';
-import { CustomEdgeModel, CustomNodeModel } from '../types/topology.type';
+import type { EdgeState } from '../components/EdgeStateSelect';
+import type { BaselineStatus, BaselineStatusType, Flow } from '../types/flow.type';
+import type { CustomEdgeModel, CustomNodeModel } from '../types/topology.type';
 import {
     getNetworkFlows,
     getUniqueIdFromFlow,

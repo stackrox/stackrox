@@ -526,7 +526,7 @@ class Kubernetes {
         Timer t = new Timer(30, 5)
         while (t.IsValid()) {
             try {
-                client.apps().deployments().inNamespace(ns).withName(name).scale(replicas)
+                client.apps().deployments().inNamespace(ns).withName(name).scale(replicas, true)
                 mostRecentException = null
                 break
             } catch (Exception e) {
@@ -1962,14 +1962,14 @@ class Kubernetes {
         def running = client.apps().deployments()
                 .inNamespace("stackrox")
                 .withName("sensor")
-                .get().status.readyReplicas < 1
+                .get().status.readyReplicas > 0
         while (!running && (System.currentTimeMillis() - start) < 30000) {
             log.debug "waiting for sensor to come back online. Trying again in 1s..."
             sleep 1000
             running = client.apps().deployments()
                     .inNamespace("stackrox")
                     .withName("sensor")
-                    .get().status.readyReplicas < 1
+                    .get().status.readyReplicas > 0
         }
         if (!running) {
             log.debug "Failed to detect sensor came back up within 30s... Future tests may be impacted."

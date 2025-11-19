@@ -1,4 +1,4 @@
-import React, { ReactElement } from 'react';
+import type { ReactElement } from 'react';
 import { useLocation, useParams } from 'react-router-dom-v5-compat';
 import qs from 'qs';
 

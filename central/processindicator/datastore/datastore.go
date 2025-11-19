@@ -8,6 +8,7 @@ import (
 	"github.com/stackrox/rox/central/processindicator/pruner"
 	"github.com/stackrox/rox/central/processindicator/store"
 	pgStore "github.com/stackrox/rox/central/processindicator/store/postgres"
+	"github.com/stackrox/rox/central/processindicator/views"
 	plopStore "github.com/stackrox/rox/central/processlisteningonport/store/postgres"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -34,7 +35,10 @@ type DataStore interface {
 	RemoveProcessIndicators(ctx context.Context, ids []string) error
 	PruneProcessIndicators(ctx context.Context, ids []string) (int, error)
 
-	WalkAll(ctx context.Context, fn func(pi *storage.ProcessIndicator) error) error
+	WalkByQuery(ctx context.Context, query *v1.Query, fn func(obj *storage.ProcessIndicator) error) error
+
+	// IterateOverProcessIndicatorsRiskView iterates over minimal fields from process indicator for risk evaluation
+	IterateOverProcessIndicatorsRiskView(ctx context.Context, q *v1.Query, fn func(*views.ProcessIndicatorRiskView) error) error
 
 	// Stop signals all goroutines associated with this object to terminate.
 	Stop()
@@ -44,8 +48,9 @@ type DataStore interface {
 }
 
 // New returns a new instance of DataStore using the input store, and searcher.
-func New(store store.Store, plopStorage plopStore.Store, prunerFactory pruner.Factory) DataStore {
+func New(db postgres.DB, store store.Store, plopStorage plopStore.Store, prunerFactory pruner.Factory) DataStore {
 	d := &datastoreImpl{
+		db:                    db,
 		storage:               store,
 		plopStorage:           plopStorage,
 		prunerFactory:         prunerFactory,
@@ -64,5 +69,5 @@ func New(store store.Store, plopStorage plopStore.Store, prunerFactory pruner.Fa
 func GetTestPostgresDataStore(_ testing.TB, pool postgres.DB) DataStore {
 	dbstore := pgStore.New(pool)
 	plopDBstore := plopStore.New(pool)
-	return New(dbstore, plopDBstore, nil)
+	return New(pool, dbstore, plopDBstore, nil)
 }

@@ -3,7 +3,6 @@
  * The rest of the files can be either TypeScript (.ts or .tsx) or JavaScript (.js).
  */
 
-import React from 'react';
 import { createRoot } from 'react-dom/client';
 import { Provider } from 'react-redux';
 
@@ -17,8 +16,8 @@ import { CompatRouter } from 'react-router-dom-v5-compat';
 import { ConnectedRouter } from 'connected-react-router';
 import { createBrowserHistory as createHistory } from 'history';
 
-import { AnyAction } from 'redux';
-import { ThunkAction, ThunkDispatch } from 'redux-thunk';
+import type { AnyAction } from 'redux';
+import type { ThunkAction, ThunkDispatch } from 'redux-thunk';
 import { ApolloProvider } from '@apollo/client';
 
 import 'css.imports';
@@ -32,8 +31,10 @@ import installRaven from 'init/installRaven';
 import configureApollo from 'init/configureApolloClient';
 import { FeatureFlagsProvider } from 'providers/FeatureFlagProvider';
 import { PublicConfigProvider } from 'providers/PublicConfigProvider';
+import { TelemetryConfigProvider } from 'providers/TelemetryConfigProvider';
+import { MetadataProvider } from 'providers/MetadataProvider';
 import ReduxUserPermissionProvider from 'Containers/ReduxUserPermissionProvider';
-import { fetchCentralCapabilitiesThunk } from './reducers/centralCapabilities';
+import { fetchCentralCapabilitiesThunk } from 'reducers/centralCapabilities';
 
 // We need to call this MobX utility function, to prevent the error
 //   Uncaught Error: [MobX] There are multiple, different versions of MobX active. Make sure MobX is loaded only once or use `configure({ isolateGlobalState: true })`
@@ -59,20 +60,24 @@ dispatch(fetchCentralCapabilitiesThunk());
 
 root.render(
     <Provider store={store}>
-        <FeatureFlagsProvider>
-            <ReduxUserPermissionProvider>
-                <PublicConfigProvider>
-                    <ApolloProvider client={apolloClient}>
-                        <ConnectedRouter history={history}>
-                            <CompatRouter>
-                                <ErrorBoundary>
-                                    <AppPage />
-                                </ErrorBoundary>
-                            </CompatRouter>
-                        </ConnectedRouter>
-                    </ApolloProvider>
-                </PublicConfigProvider>
-            </ReduxUserPermissionProvider>
-        </FeatureFlagsProvider>
+        <ApolloProvider client={apolloClient}>
+            <ConnectedRouter history={history}>
+                <CompatRouter>
+                    <ErrorBoundary>
+                        <FeatureFlagsProvider>
+                            <ReduxUserPermissionProvider>
+                                <PublicConfigProvider>
+                                    <TelemetryConfigProvider>
+                                        <MetadataProvider>
+                                            <AppPage />
+                                        </MetadataProvider>
+                                    </TelemetryConfigProvider>
+                                </PublicConfigProvider>
+                            </ReduxUserPermissionProvider>
+                        </FeatureFlagsProvider>
+                    </ErrorBoundary>
+                </CompatRouter>
+            </ConnectedRouter>
+        </ApolloProvider>
     </Provider>
 );

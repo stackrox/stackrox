@@ -65,7 +65,7 @@ func (s *AlertDatastoreImplSuite) TearDownTest() {
 
 // Helper method to create an alert and track it for cleanup
 func (s *AlertDatastoreImplSuite) createAndTrackAlert(alert *storage.Alert) {
-	s.createdAlertIDs = append(s.createdAlertIDs, alert.Id)
+	s.createdAlertIDs = append(s.createdAlertIDs, alert.GetId())
 	err := s.datastore.UpsertAlert(ctx, alert)
 	s.NoError(err)
 }
@@ -139,9 +139,9 @@ func (s *AlertDatastoreImplSuite) TestSearchResolved() {
 		if i >= 2 {
 			alert.State = storage.ViolationState_RESOLVED
 		} else {
-			unresolvedAlertIds[alert.Id] = true
+			unresolvedAlertIds[alert.GetId()] = true
 		}
-		allAlertIds[alert.Id] = true
+		allAlertIds[alert.GetId()] = true
 		s.NoError(s.datastore.UpsertAlert(ctx, alert))
 		foundAlert, exists, err := s.datastore.GetAlert(ctx, id)
 		s.True(exists)
@@ -370,7 +370,7 @@ func (s *AlertDatastoreImplSuite) TestSearchListAlerts() {
 	returnedAlert := listAlerts[0]
 	var matchingCreatedAlert *storage.Alert
 	for _, created := range createdAlerts {
-		if created.Id == returnedAlert.Id {
+		if created.GetId() == returnedAlert.GetId() {
 			matchingCreatedAlert = created
 			break
 		}
@@ -409,7 +409,7 @@ func (s *AlertDatastoreImplSuite) TestConvertAlert() {
 	} {
 		s.T().Run(testCase.desc, func(t *testing.T) {
 			res := convertAlert(testCase.alert, search.Result{})
-			assert.Equal(t, testCase.expectedLocation, res.Location)
+			assert.Equal(t, testCase.expectedLocation, res.GetLocation())
 		})
 	}
 }
@@ -616,11 +616,11 @@ func (s *AlertDatastoreImplSuite) TestUpsert_PlatformComponentAndEntityTypeAssig
 	s.createAndTrackAlert(resourceAlert)
 
 	// Verify alert was stored with correct entity type and platform component flag
-	storedAlert, exists, err := s.datastore.GetAlert(ctx, resourceAlert.Id)
+	storedAlert, exists, err := s.datastore.GetAlert(ctx, resourceAlert.GetId())
 	s.NoError(err)
 	s.True(exists)
-	s.Equal(storage.Alert_RESOURCE, storedAlert.EntityType)
-	s.False(storedAlert.PlatformComponent)
+	s.Equal(storage.Alert_RESOURCE, storedAlert.GetEntityType())
+	s.False(storedAlert.GetPlatformComponent())
 
 	// Test Case 2: Container image alert
 	imageAlert := &storage.Alert{
@@ -643,11 +643,11 @@ func (s *AlertDatastoreImplSuite) TestUpsert_PlatformComponentAndEntityTypeAssig
 	s.createAndTrackAlert(imageAlert)
 
 	// Verify alert was stored with correct entity type and platform component flag
-	storedAlert, exists, err = s.datastore.GetAlert(ctx, imageAlert.Id)
+	storedAlert, exists, err = s.datastore.GetAlert(ctx, imageAlert.GetId())
 	s.NoError(err)
 	s.True(exists)
-	s.Equal(storage.Alert_CONTAINER_IMAGE, storedAlert.EntityType)
-	s.False(storedAlert.PlatformComponent)
+	s.Equal(storage.Alert_CONTAINER_IMAGE, storedAlert.GetEntityType())
+	s.False(storedAlert.GetPlatformComponent())
 
 	// Test Case 3: Deployment alert not matching platform rules
 	deploymentAlert := &storage.Alert{
@@ -670,11 +670,11 @@ func (s *AlertDatastoreImplSuite) TestUpsert_PlatformComponentAndEntityTypeAssig
 	s.createAndTrackAlert(deploymentAlert)
 
 	// Verify alert was stored with correct entity type and platform component flag
-	storedAlert, exists, err = s.datastore.GetAlert(ctx, deploymentAlert.Id)
+	storedAlert, exists, err = s.datastore.GetAlert(ctx, deploymentAlert.GetId())
 	s.NoError(err)
 	s.True(exists)
-	s.Equal(storage.Alert_DEPLOYMENT, storedAlert.EntityType)
-	s.False(storedAlert.PlatformComponent)
+	s.Equal(storage.Alert_DEPLOYMENT, storedAlert.GetEntityType())
+	s.False(storedAlert.GetPlatformComponent())
 
 	// Test Case 4: Deployment alert matching platform rules
 	platformDeploymentAlert := &storage.Alert{
@@ -697,9 +697,9 @@ func (s *AlertDatastoreImplSuite) TestUpsert_PlatformComponentAndEntityTypeAssig
 	s.createAndTrackAlert(platformDeploymentAlert)
 
 	// Verify alert was stored with correct entity type and platform component flag
-	storedAlert, exists, err = s.datastore.GetAlert(ctx, platformDeploymentAlert.Id)
+	storedAlert, exists, err = s.datastore.GetAlert(ctx, platformDeploymentAlert.GetId())
 	s.NoError(err)
 	s.True(exists)
-	s.Equal(storage.Alert_DEPLOYMENT, storedAlert.EntityType)
-	s.True(storedAlert.PlatformComponent)
+	s.Equal(storage.Alert_DEPLOYMENT, storedAlert.GetEntityType())
+	s.True(storedAlert.GetPlatformComponent())
 }

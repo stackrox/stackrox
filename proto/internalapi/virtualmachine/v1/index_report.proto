@@ -1,0 +1,23 @@
+syntax = "proto3";
+
+package virtualmachine.v1;
+
+import "internalapi/scanner/v4/index_report.proto";
+
+option go_package = "./internalapi/virtualmachine/v1;v1";
+
+// The index report is collected from the virtual machine agent and contains
+// the package information.
+message IndexReport {
+  string vsock_cid = 1;
+  scanner.v4.IndexReport index_v4 = 2;
+}
+
+// The index report event is sent to Central and contains additional information
+// to match the index report to a virtual machine.
+message IndexReportEvent {
+  // This is the id of the virtual machine resource that matches the vsock_cid
+  // of the report.
+  string id = 1;
+  IndexReport index = 2;
+}

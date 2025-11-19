@@ -4,6 +4,48 @@ const rules = {
     // ESLint naming convention for positive rules:
     // If your rule is enforcing the inclusion of something, use a short name without a special prefix.
 
+    'Label-in-Popover-isClickable': {
+        // PatternFly Label in (wrapped by) Popover needs visual indication that it is clickable.
+        // PatternFly 5 use style={{ cursor: 'pointer' }} prop.
+        // TODO Update if PatternFly 6 isClickable prop has the same effect.
+        meta: {
+            type: 'problem',
+            docs: {
+                description: 'Label in Popover needs visual indication that it is clickable',
+            },
+            schema: [],
+        },
+        create(context) {
+            return {
+                JSXElement(node) {
+                    if (node.openingElement?.name?.name === 'Label') {
+                        const ancestors = context.sourceCode.getAncestors(node);
+                        if (
+                            ancestors.length >= 1 &&
+                            ancestors[ancestors.length - 1].openingElement?.name?.name ===
+                                'Popover' &&
+                            !node.openingElement?.attributes.some(
+                                (attribute) =>
+                                    attribute.name?.name === 'style' &&
+                                    Array.isArray(attribute.value?.expression?.properties) &&
+                                    attribute.value?.expression?.properties.length === 1 &&
+                                    attribute.value?.expression?.properties?.[0]?.key?.name ===
+                                        'cursor' &&
+                                    attribute.value?.expression?.properties?.[0]?.value?.value ===
+                                        'pointer'
+                            )
+                        ) {
+                            context.report({
+                                node,
+                                message:
+                                    "Label in Popover needs visual indication that it is clickable via style={{ cursor: 'pointer' }} prop",
+                            });
+                        }
+                    }
+                },
+            };
+        },
+    },
     'Td-dataLabel-Th-text': {
         // Require that if Td element has dataLabel prop with string value,
         // then Th element with same index has corresponding text (or screenReaderText).
@@ -269,6 +311,69 @@ const rules = {
     // If your rule only disallows something, prefix it with no.
     // However, we can write forbid instead of disallow as the verb in description and message.
 
+    'no-Label-in-Link': {
+        // PatternFly Label in (wrapped by) React Router Link element which is in LabelGroup
+        // affects the height other Label element that is wrapped in `Tooltip` element.
+        // Text in (wrapped by) Link has side effect to display underline on mouse hover
+        // compared to lack of visual indication for Label in Link.
+        meta: {
+            type: 'problem',
+            docs: {
+                description: 'Move React Router Link inside PatternFly Label element',
+            },
+            schema: [],
+        },
+        create(context) {
+            return {
+                JSXElement(node) {
+                    if (node.openingElement?.name?.name === 'Label') {
+                        const ancestors = context.sourceCode.getAncestors(node);
+                        if (
+                            ancestors.length >= 1 &&
+                            ancestors[ancestors.length - 1].openingElement?.name?.name === 'Link'
+                        ) {
+                            context.report({
+                                node,
+                                message: 'Move React Router Link inside PatternFly Label element',
+                            });
+                        }
+                    }
+                },
+            };
+        },
+    },
+    'no-Label-in-Button-in-Popover': {
+        // PatternFly Label in (wrapped by) in Button (wrapped by) in Popover which is in LabelGroup
+        // affects the height other Label elements.
+        meta: {
+            type: 'problem',
+            docs: {
+                description: 'Do not wrap Label in unneeded Button to wrap it in Popover',
+            },
+            schema: [],
+        },
+        create(context) {
+            return {
+                JSXElement(node) {
+                    if (node.openingElement?.name?.name === 'Label') {
+                        const ancestors = context.sourceCode.getAncestors(node);
+                        if (
+                            ancestors.length >= 2 &&
+                            ancestors[ancestors.length - 1].openingElement?.name?.name ===
+                                'Button' &&
+                            ancestors[ancestors.length - 2].openingElement?.name?.name === 'Popover'
+                        ) {
+                            context.report({
+                                node,
+                                message:
+                                    'Do not wrap Label in unneeded Button to wrap it in Popover',
+                            });
+                        }
+                    }
+                },
+            };
+        },
+    },
     'no-Td-data-label': {
         // Although Td element renders prop as data-label attribute,
         // require dataLabel prop to simplify other lint rules.

@@ -1,5 +1,3 @@
-import React from 'react';
-
 import ComponentTestProvider from 'test-utils/ComponentTestProvider';
 
 import ViolationsByPolicyCategory from './ViolationsByPolicyCategory';
@@ -74,6 +72,7 @@ describe(Cypress.spec.relative, () => {
         cy.findByLabelText('Options').click();
 
         // Toggle on low and medium violations, which are disabled by default
+        // Pin "@patternfly/react-charts": "7.2.2" because "7.4.9" does not call onLegendClick function.
         cy.findByText('Low').click();
         cy.findByText('Medium').click();
 

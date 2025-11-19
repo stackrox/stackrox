@@ -211,6 +211,6 @@ func TestGetScan(t *testing.T) {
 	scan, err := clair.GetScan(testImage.image)
 	assert.NoError(t, err)
 	expected := testImage.expected
-	protoassert.ElementsMatch(t, expected.Components, scan.Components)
-	assert.Equal(t, expected.OperatingSystem, scan.OperatingSystem)
+	protoassert.ElementsMatch(t, expected.GetComponents(), scan.GetComponents())
+	assert.Equal(t, expected.GetOperatingSystem(), scan.GetOperatingSystem())
 }

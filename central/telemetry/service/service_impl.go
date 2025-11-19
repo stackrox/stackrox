@@ -4,12 +4,11 @@ import (
 	"context"
 
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
-	"github.com/stackrox/rox/central/telemetry/centralclient"
+	phonehome "github.com/stackrox/rox/central/telemetry/centralclient"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
-	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
@@ -52,6 +51,7 @@ func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName strin
 
 // GetTelemetryConfiguration used to tell whether periodic telemetry collection
 // (previous implementation) was enabled. Returns false unconditionally.
+//
 // Deprecated: the previous implementation is not used for periodic collection.
 func (s *serviceImpl) GetTelemetryConfiguration(_ context.Context, _ *v1.Empty) (*storage.TelemetryConfiguration, error) {
 	return &storage.TelemetryConfiguration{
@@ -60,27 +60,32 @@ func (s *serviceImpl) GetTelemetryConfiguration(_ context.Context, _ *v1.Empty) 
 }
 
 // ConfigureTelemetry used to enable or disable periodic telemetry collection.
+//
 // Deprecated: the previous implementation is not used for periodic collection.
 func (s *serviceImpl) ConfigureTelemetry(_ context.Context, _ *v1.ConfigureTelemetryRequest) (*storage.TelemetryConfiguration, error) {
 	return &storage.TelemetryConfiguration{Enabled: false}, nil
 }
 
 func (s *serviceImpl) GetConfig(ctx context.Context, _ *v1.Empty) (*central.TelemetryConfig, error) {
-	cfg := centralclient.GetConfig()
-	if cfg == nil {
-		return nil, errox.NotFound.New("telemetry collection is disabled")
-	}
+	c := phonehome.Singleton()
 	id, err := authn.IdentityFromContext(ctx)
 	if err != nil {
 		return nil, err
 	}
+	if c.Client.IsEnabled() {
+		return &central.TelemetryConfig{
+			UserId:       c.HashUserAuthID(id),
+			Endpoint:     c.GetEndpoint(),
+			StorageKeyV1: c.GetStorageKey(),
+		}, nil
+	}
 	return &central.TelemetryConfig{
-		UserId:       cfg.HashUserAuthID(id),
-		Endpoint:     cfg.Endpoint,
-		StorageKeyV1: cfg.StorageKey,
+		UserId:       c.HashUserAuthID(id),
+		Endpoint:     c.GetEndpoint(),
+		StorageKeyV1: "",
 	}, nil
 }
 
-func (s *serviceImpl) PostConfigReload(ctx context.Context, _ *v1.Empty) (*v1.Empty, error) {
-	return nil, centralclient.Reload()
+func (s *serviceImpl) PostConfigReload(_ context.Context, _ *v1.Empty) (*v1.Empty, error) {
+	return nil, phonehome.Singleton().Reconfigure()
 }

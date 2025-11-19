@@ -1,4 +1,3 @@
-import React from 'react';
 import { scaleLinear } from 'd3-scale';
 
 import D3Anchor from 'Components/D3Anchor';

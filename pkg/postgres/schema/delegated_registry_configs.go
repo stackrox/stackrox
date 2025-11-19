@@ -16,6 +16,9 @@ var (
 	CreateTableDelegatedRegistryConfigsStmt = &postgres.CreateStmts{
 		GormModel: (*DelegatedRegistryConfigs)(nil),
 		Children:  []*postgres.CreateStmts{},
+		PostStmts: []string{
+			"ALTER TABLE delegated_registry_configs REPLICA IDENTITY FULL",
+		},
 	}
 
 	// DelegatedRegistryConfigsSchema is the go schema for table `delegated_registry_configs`.

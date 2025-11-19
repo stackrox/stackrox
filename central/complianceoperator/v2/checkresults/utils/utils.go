@@ -28,8 +28,8 @@ func GetLastScanTime(ctx context.Context, clusterID string, profileName string, 
 
 	var lastScanTime *types.Timestamp
 	for _, scan := range scans {
-		if types.CompareTimestamps(scan.LastExecutedTime, lastScanTime) > 0 {
-			lastScanTime = scan.LastExecutedTime
+		if types.CompareTimestamps(scan.GetLastExecutedTime(), lastScanTime) > 0 {
+			lastScanTime = scan.GetLastExecutedTime()
 		}
 	}
 

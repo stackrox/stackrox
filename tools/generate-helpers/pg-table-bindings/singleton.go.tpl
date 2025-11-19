@@ -118,7 +118,7 @@ func (s *storeImpl) retryableUpsert(ctx context.Context, obj *{{.Type}}) error {
 	}
 	defer release()
 
-	tx, err := conn.Begin(ctx)
+	tx, ctx, err := conn.Begin(ctx)
 	if err != nil {
         return err
 	}
@@ -209,9 +209,11 @@ func (s *storeImpl) retryableDelete(ctx context.Context) error {
 	return nil
 }
 
+{{ if .GenerateDataModelHelpers -}}
 // Used for Testing
 
 // Destroy drops the tables associated with the target object type.
 func Destroy(ctx context.Context, db postgres.DB) {
     _, _ = db.Exec(ctx, "DROP TABLE IF EXISTS {{.Schema.Table}} CASCADE")
 }
+{{- end }}

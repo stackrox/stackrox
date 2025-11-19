@@ -1,39 +1,32 @@
-import qs from 'qs';
-import { cloneDeep } from 'lodash';
+import type { ParsedQs } from 'qs';
 
-import { vulnerabilitiesNodeCvesPath, vulnerabilitiesPlatformCvesPath } from 'routePaths';
 import {
-    VulnerabilitySeverity,
-    VulnerabilityState,
-    vulnerabilitySeverities,
-} from 'types/cve.proto';
-import { SearchFilter } from 'types/search';
+    vulnerabilitiesNodeCvesPath,
+    vulnerabilitiesPlatformCvesPath,
+    vulnerabilitiesVirtualMachineCvesPath,
+} from 'routePaths';
+import { vulnerabilitySeverities } from 'types/cve.proto';
+import type { VulnerabilitySeverity, VulnerabilityState } from 'types/cve.proto';
+import type { SearchFilter } from 'types/search';
 import { getQueryString } from 'utils/queryStringUtils';
-import { searchValueAsArray, getRequestQueryStringForSearchFilter } from 'utils/searchUtils';
+import {
+    applyRegexSearchModifiers,
+    getRequestQueryStringForSearchFilter,
+    searchValueAsArray,
+} from 'utils/searchUtils';
 import { ensureExhaustive } from 'utils/type.utils';
 
 import { ensureStringArray } from 'utils/ensure';
 
-import {
-    nodeSearchFilterConfig,
-    nodeComponentSearchFilterConfig,
-    imageSearchFilterConfig,
-    imageCVESearchFilterConfig,
-    imageComponentSearchFilterConfig,
-    deploymentSearchFilterConfig,
-    namespaceSearchFilterConfig,
-    clusterSearchFilterConfig,
-} from '../searchFilterConfig';
-
-import {
+import { isFixableStatus, isVulnerabilitySeverityLabel } from '../types';
+import type {
     FixableStatus,
     NodeEntityTab,
     PlatformEntityTab,
     QuerySearchFilter,
+    VirtualMachineEntityTab,
     VulnerabilitySeverityLabel,
     WorkloadEntityTab,
-    isFixableStatus,
-    isVulnerabilitySeverityLabel,
 } from '../types';
 
 export type OverviewPageSearch = {
@@ -42,12 +35,14 @@ export type OverviewPageSearch = {
     | { entityTab?: WorkloadEntityTab; vulnerabilityState: VulnerabilityState }
     | { entityTab?: NodeEntityTab }
     | { entityTab?: PlatformEntityTab }
+    | { entityTab?: VirtualMachineEntityTab }
 );
 
 const baseUrlForCveMap = {
     Workload: '', // base URL provided by calling context
     Node: vulnerabilitiesNodeCvesPath,
     Platform: vulnerabilitiesPlatformCvesPath,
+    VirtualMachine: vulnerabilitiesVirtualMachineCvesPath,
 } as const;
 
 export function getNamespaceViewPagePath(): string {
@@ -55,7 +50,7 @@ export function getNamespaceViewPagePath(): string {
 }
 
 export function getOverviewPagePath(
-    cveBase: 'Workload' | 'Node' | 'Platform',
+    cveBase: 'Workload' | 'Node' | 'Platform' | 'VirtualMachine',
     pageSearch: OverviewPageSearch
 ): string {
     return `${baseUrlForCveMap[cveBase]}${getQueryString(pageSearch)}`;
@@ -65,7 +60,7 @@ export function getWorkloadEntityPagePath(
     workloadCveEntity: WorkloadEntityTab,
     id: string,
     vulnerabilityState: VulnerabilityState,
-    queryOptions?: qs.ParsedQs
+    queryOptions?: ParsedQs
 ): string {
     const queryString = getQueryString({ ...queryOptions, vulnerabilityState });
     switch (workloadCveEntity) {
@@ -83,7 +78,7 @@ export function getWorkloadEntityPagePath(
 export function getPlatformEntityPagePath(
     platformCveEntity: PlatformEntityTab,
     id: string,
-    queryOptions?: qs.ParsedQs
+    queryOptions?: ParsedQs
 ): string {
     const queryString = getQueryString(queryOptions);
     switch (platformCveEntity) {
@@ -100,7 +95,7 @@ export function getPlatformEntityPagePath(
 export function getNodeEntityPagePath(
     nodeCveEntity: NodeEntityTab,
     id: string,
-    queryOptions?: qs.ParsedQs
+    queryOptions?: ParsedQs
 ): string {
     const queryString = getQueryString(queryOptions);
     switch (nodeCveEntity) {
@@ -110,6 +105,22 @@ export function getNodeEntityPagePath(
             return `${vulnerabilitiesNodeCvesPath}/nodes/${id}${queryString}`;
         default:
             return ensureExhaustive(nodeCveEntity);
+    }
+}
+
+export function getVirtualMachineEntityPagePath(
+    virtualMachineCveEntity: VirtualMachineEntityTab,
+    id: string,
+    queryOptions?: ParsedQs
+): string {
+    const queryString = getQueryString(queryOptions);
+    switch (virtualMachineCveEntity) {
+        case 'CVE':
+            return `${vulnerabilitiesVirtualMachineCvesPath}/cves/${id}${queryString}`;
+        case 'VirtualMachine':
+            return `${vulnerabilitiesVirtualMachineCvesPath}/virtualmachines/${id}${queryString}`;
+        default:
+            return ensureExhaustive(virtualMachineCveEntity);
     }
 }
 
@@ -240,38 +251,4 @@ export function getStatusesForExceptionCount(
     vulnerabilityState: VulnerabilityState | undefined
 ): string[] {
     return vulnerabilityState === 'OBSERVED' ? ['PENDING'] : ['APPROVED_PENDING_UPDATE'];
-}
-
-/*
- Search terms that will default to regex search.
-
- We only convert to regex search if the search field is of type 'text' or 'autocomplete'
-*/
-const regexSearchOptions = [
-    nodeSearchFilterConfig,
-    nodeComponentSearchFilterConfig,
-    imageSearchFilterConfig,
-    imageCVESearchFilterConfig,
-    imageComponentSearchFilterConfig,
-    deploymentSearchFilterConfig,
-    namespaceSearchFilterConfig,
-    clusterSearchFilterConfig,
-]
-    .flatMap((config) => config.attributes)
-    .filter(({ inputType }) => inputType === 'text' || inputType === 'autocomplete')
-    .map(({ searchTerm }) => searchTerm);
-
-/**
- * Adds the regex search modifier to the search filter for any search options that support it.
- */
-export function applyRegexSearchModifiers(searchFilter: SearchFilter): SearchFilter {
-    const regexSearchFilter = cloneDeep(searchFilter);
-
-    Object.entries(regexSearchFilter).forEach(([key, value]) => {
-        if (regexSearchOptions.some((option) => option.toLowerCase() === key.toLowerCase())) {
-            regexSearchFilter[key] = searchValueAsArray(value).map((val) => `r/${val}`);
-        }
-    });
-
-    return regexSearchFilter;
 }

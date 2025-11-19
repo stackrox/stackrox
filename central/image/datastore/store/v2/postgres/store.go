@@ -5,9 +5,9 @@ import (
 	"time"
 
 	"github.com/jackc/pgx/v5"
-	"github.com/mitchellh/hashstructure/v2"
 	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
+	"github.com/stackrox/hashstructure"
 	convertutils "github.com/stackrox/rox/central/cve/converter/utils"
 	"github.com/stackrox/rox/central/image/datastore/store"
 	"github.com/stackrox/rox/central/image/datastore/store/common/v2"
@@ -30,13 +30,12 @@ import (
 )
 
 const (
-	imagesTable                      = pkgSchema.ImagesTableName
-	imageComponentsV2Table           = pkgSchema.ImageComponentV2TableName
-	imageComponentsV2CVEsTable       = pkgSchema.ImageCvesV2TableName
-	imageCVEsLegacyTable             = pkgSchema.ImageCvesTableName
-	imageCVEEdgesLegacyTable         = pkgSchema.ImageCveEdgesTableName
-	cveCreatedAtFieldName            = "cveBaseInfo_CVE"
-	cveFirstImageOccurrenceFieldName = "FirstImageOccurrence"
+	imagesTable                = pkgSchema.ImagesTableName
+	imageComponentsV2Table     = pkgSchema.ImageComponentV2TableName
+	imageComponentsV2CVEsTable = pkgSchema.ImageCvesV2TableName
+	// TODO(ROX-29911): really need cache table for the dates.
+	imageCVEsLegacyTable     = "image_cves"
+	imageCVEEdgesLegacyTable = "image_cve_edges"
 
 	getImageMetaStmt = "SELECT serialized FROM " + imagesTable + " WHERE Id = $1"
 )
@@ -44,6 +43,9 @@ const (
 var (
 	log    = logging.LoggerForModule()
 	schema = pkgSchema.ImagesSchema
+
+	// Assume it exists
+	legacyCVEExists = true
 )
 
 type imagePartsAsSlice struct {
@@ -400,7 +402,7 @@ func (s *storeImpl) isUpdated(oldImage, image *storage.Image) (bool, bool, error
 
 	// We skip rewriting components and cves if scan is not newer, hence we do not need to merge.
 	if protocompat.CompareTimestamps(oldImage.GetScan().GetScanTime(), image.GetScan().GetScanTime()) > 0 {
-		image.Scan = oldImage.Scan
+		image.Scan = oldImage.GetScan()
 	} else {
 		scanUpdated = true
 	}
@@ -421,7 +423,7 @@ type hashWrapper struct {
 }
 
 func populateImageScanHash(scan *storage.ImageScan) error {
-	hash, err := hashstructure.Hash(hashWrapper{scan.GetComponents()}, hashstructure.FormatV2, &hashstructure.HashOptions{ZeroNil: true})
+	hash, err := hashstructure.Hash(hashWrapper{scan.GetComponents()}, &hashstructure.HashOptions{ZeroNil: true})
 	if err != nil {
 		return errors.Wrap(err, "calculating hash for image scan")
 	}
@@ -482,7 +484,7 @@ func (s *storeImpl) upsert(ctx context.Context, obj *storage.Image) error {
 		}
 		defer release()
 
-		tx, err := conn.Begin(ctx)
+		tx, ctx, err := conn.Begin(ctx)
 		if err != nil {
 			return err
 		}
@@ -560,7 +562,7 @@ func (s *storeImpl) retryableGet(ctx context.Context, id string) (*storage.Image
 	}
 	defer release()
 
-	tx, err := conn.Begin(ctx)
+	tx, ctx, err := conn.Begin(ctx)
 	if err != nil {
 		return nil, false, err
 	}
@@ -573,7 +575,7 @@ func (s *storeImpl) retryableGet(ctx context.Context, id string) (*storage.Image
 }
 
 func (s *storeImpl) populateImage(ctx context.Context, tx *postgres.Tx, image *storage.Image) error {
-	components, err := getImageComponents(ctx, tx, image.Id)
+	components, err := getImageComponents(ctx, tx, image.GetId())
 	if err != nil {
 		return err
 	}
@@ -687,6 +689,22 @@ func getImageCVEs(ctx context.Context, tx *postgres.Tx, imageID string) ([]*stor
 func getLegacyImageCVEs(ctx context.Context, tx *postgres.Tx, imageID string) ([]*storage.EmbeddedVulnerability, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Get, "ImageCVEs")
 
+	if !legacyCVEExists {
+		return nil, nil
+	}
+
+	existenceRow := tx.QueryRow(ctx, "SELECT EXISTS (SELECT 1 FROM information_schema.tables WHERE "+
+		"table_name = $1 AND table_schema = ANY(current_schemas(FALSE)))", imageCVEsLegacyTable)
+	var exists bool
+	if err := existenceRow.Scan(&exists); err != nil {
+		return nil, err
+	}
+	// Old tables do not exist so newer installation.  Set global var  so we skip these checks.
+	if !exists {
+		legacyCVEExists = false
+		return nil, nil
+	}
+
 	// Using this method instead of accessing the legacy image CVE and component stores because the legacy stores
 	// would not be initialized when the new data model is enabled
 	cveRows, err := tx.Query(ctx, "SELECT "+imageCVEsLegacyTable+".serialized FROM "+imageCVEsLegacyTable+
@@ -754,7 +772,7 @@ func (s *storeImpl) retryableDelete(ctx context.Context, id string) error {
 	}
 	defer release()
 
-	tx, err := conn.Begin(ctx)
+	tx, ctx, err := conn.Begin(ctx)
 	if err != nil {
 		return err
 	}
@@ -803,7 +821,7 @@ func (s *storeImpl) retryableGetByIDs(ctx context.Context, ids []string) ([]*sto
 	}
 	defer release()
 
-	tx, err := conn.Begin(ctx)
+	tx, ctx, err := conn.Begin(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -843,7 +861,7 @@ func (s *storeImpl) WalkByQuery(ctx context.Context, q *v1.Query, fn func(image 
 	}
 	defer release()
 
-	tx, err := conn.Begin(ctx)
+	tx, ctx, err := conn.Begin(ctx)
 	if err != nil {
 		return err
 	}
@@ -948,7 +966,7 @@ func (s *storeImpl) retryableUpdateVulnState(ctx context.Context, cve string, im
 	}
 	defer release()
 
-	tx, err := conn.Begin(ctx)
+	tx, ctx, err := conn.Begin(ctx)
 	if err != nil {
 		return err
 	}

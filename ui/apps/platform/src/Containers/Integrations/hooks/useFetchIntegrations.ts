@@ -5,7 +5,7 @@ import { actions as authActions } from 'reducers/auth';
 import { actions as apitokensActions } from 'reducers/apitokens';
 import { actions as machineAccessConfigsActions } from 'reducers/machineAccessConfigs';
 import { actions as cloudSourcesActions } from 'reducers/cloudSources';
-import { IntegrationSource } from '../utils/integrationUtils';
+import type { IntegrationSource } from '../utils/integrationUtils';
 
 const fetchIntegrationsActionMap = {
     authProviders: authActions.fetchAuthProviders.request(),

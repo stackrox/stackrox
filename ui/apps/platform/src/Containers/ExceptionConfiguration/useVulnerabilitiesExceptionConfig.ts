@@ -1,10 +1,11 @@
-import useRestMutation, { UseRestMutationReturn } from 'hooks/useRestMutation';
+import useRestMutation from 'hooks/useRestMutation';
+import type { UseRestMutationReturn } from 'hooks/useRestMutation';
 import useRestQuery from 'hooks/useRestQuery';
 import {
-    VulnerabilitiesExceptionConfig,
     fetchVulnerabilitiesExceptionConfig,
     updateVulnerabilitiesExceptionConfig,
 } from 'services/ExceptionConfigService';
+import type { VulnerabilitiesExceptionConfig } from 'services/ExceptionConfigService';
 
 export type UseVulnerabilitiesExceptionConfigReturn = {
     config: VulnerabilitiesExceptionConfig | undefined;

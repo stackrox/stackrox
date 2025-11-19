@@ -39,4 +39,6 @@ const (
 	ComplianceOperatorSuiteV2
 	ComplianceOperatorRemediationV2
 	NodeIndex
+	VirtualMachineIndex
+	VirtualMachine
 )

@@ -1,5 +1,3 @@
-import React from 'react';
-
 import CentralDatabaseHealthCard from './CentralDatabaseHealthCard';
 
 function patchDatabaseStatusResponse(overrides = {}) {

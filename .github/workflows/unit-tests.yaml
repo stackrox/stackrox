@@ -27,7 +27,7 @@ jobs:
       new-jiras: ${{ steps.junit2jira.outputs.new-jiras }}
     container:
       image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.4.9-3-g197bcc25d6
-      volumes:  # job-preamble deletes unused host runner files under /mnt
+      volumes:
         - /usr:/mnt/usr
         - /opt:/mnt/opt
     steps:
@@ -92,13 +92,13 @@ jobs:
       fail-fast: false
       matrix:
         gotags: [ 'GOTAGS=""', 'GOTAGS=release' ]
-        pg: [ '13', '15' ]
+        pg: [ '15' ]
     runs-on: ubuntu-latest
     outputs:
       new-jiras: ${{ steps.junit2jira.outputs.new-jiras }}
     container:
       image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.4.9-3-g197bcc25d6
-      volumes:  # job-preamble deletes unused host runner files under /mnt
+      volumes:
         - /usr:/mnt/usr
         - /opt:/mnt/opt
     steps:
@@ -158,7 +158,7 @@ jobs:
     runs-on: ubuntu-latest
     container:
       image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.4.9-3-g197bcc25d6
-      volumes:  # job-preamble deletes unused host runner files under /mnt
+      volumes:
         - /usr:/mnt/usr
         - /opt:/mnt/opt
     steps:
@@ -293,7 +293,7 @@ jobs:
       new-jiras: ${{ steps.junit2jira.outputs.new-jiras }}
     container:
       image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.4.9-3-g197bcc25d6
-      volumes:  # job-preamble deletes unused host runner files under /mnt
+      volumes:
         - /usr:/mnt/usr
         - /opt:/mnt/opt
     steps:

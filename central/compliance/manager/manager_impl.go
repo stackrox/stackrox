@@ -195,7 +195,7 @@ func (m *manager) GetRecentRun(ctx context.Context, id string) (*v1.ComplianceRu
 	}
 
 	// Check read access to the cluster the run is for.
-	if ok, err := complianceSAC.ReadAllowed(ctx, sac.ClusterScopeKey(run.ClusterId)); err != nil {
+	if ok, err := complianceSAC.ReadAllowed(ctx, sac.ClusterScopeKey(run.GetClusterId())); err != nil {
 		return nil, err
 	} else if !ok {
 		return nil, errox.NotFound

@@ -92,7 +92,7 @@ func TestGetPods(t *testing.T) {
 
 			results, err := service.GetPods(ctx, &v1.RawQuery{})
 			assert.NoError(t, err)
-			protoassert.ElementsMatch(t, results.Pods, c.pods)
+			protoassert.ElementsMatch(t, results.GetPods(), c.pods)
 		})
 	}
 }

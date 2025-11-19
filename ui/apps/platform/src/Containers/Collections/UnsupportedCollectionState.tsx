@@ -1,9 +1,8 @@
-import React from 'react';
 import { ExpandableSection, List, ListItem } from '@patternfly/react-core';
 import { InfoCircleIcon } from '@patternfly/react-icons';
 
 import EmptyStateTemplate from 'Components/EmptyStateTemplate';
-import { CollectionParseError } from './converter';
+import type { CollectionParseError } from './converter';
 
 export type UnsupportedCollectionStateProps = {
     errors: CollectionParseError['errors'];

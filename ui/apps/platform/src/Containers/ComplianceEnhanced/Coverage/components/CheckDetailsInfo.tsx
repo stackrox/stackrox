@@ -1,4 +1,3 @@
-import React from 'react';
 import {
     Alert,
     Bullseye,
@@ -11,7 +10,7 @@ import {
     Spinner,
 } from '@patternfly/react-core';
 
-import {
+import type {
     ComplianceCheckResult,
     ComplianceClusterCheckStatus,
 } from 'services/ComplianceResultsService';

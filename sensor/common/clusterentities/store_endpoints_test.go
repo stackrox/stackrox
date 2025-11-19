@@ -1,11 +1,11 @@
 package clusterentities
 
 import (
+	"maps"
 	"slices"
 
 	"github.com/stackrox/rox/pkg/net"
 	"github.com/stackrox/rox/pkg/networkgraph"
-	"golang.org/x/exp/maps"
 )
 
 type expectation struct {
@@ -263,7 +263,8 @@ func (s *ClusterEntitiesStoreTestSuite) TestMemoryAboutPastEndpoints() {
 				}
 			}()
 
-			for tickNo := 0; tickNo < slices.Max(maps.Keys(tCase.lookupResultsAfterTick))+1; tickNo++ {
+			ticks := slices.Max(slices.Collect(maps.Keys(tCase.lookupResultsAfterTick))) + 1
+			for tickNo := 0; tickNo < ticks; tickNo++ {
 				expectations := tCase.lookupResultsAfterTick[tickNo]
 				// Add entities to the store (mimic data arriving from the K8s informers)
 				if updatesForTick, ok := tCase.entityUpdates[tickNo]; ok {

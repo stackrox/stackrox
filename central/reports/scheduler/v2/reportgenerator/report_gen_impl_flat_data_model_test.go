@@ -19,7 +19,6 @@ import (
 	imagesView "github.com/stackrox/rox/central/views/images"
 	watchedImageDS "github.com/stackrox/rox/central/watchedimage/datastore"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	postgresSchema "github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/sac"
@@ -61,10 +60,6 @@ func (s *NewDataModelEnhancedReportingTestSuite) TearDownTest() {
 }
 
 func (s *NewDataModelEnhancedReportingTestSuite) SetupSuite() {
-	if !features.FlattenCVEData.Enabled() {
-		s.T().Skip()
-	}
-
 	s.ctx = loaders.WithLoaderContext(sac.WithAllAccess(context.Background()))
 	mockCtrl := gomock.NewController(s.T())
 	s.testDB = pgtest.ForT(s.T())
@@ -80,7 +75,7 @@ func (s *NewDataModelEnhancedReportingTestSuite) SetupSuite() {
 		resolvers.CreateTestDeploymentDatastore(s.T(), s.testDB, mockCtrl, imageDataStore),
 		deploymentsView.NewDeploymentView(s.testDB.DB),
 	)
-	collectionStore := collectionPostgres.CreateTableAndNewStore(s.ctx, s.testDB.DB, s.testDB.GetGormDB(s.T()))
+	collectionStore := collectionPostgres.New(s.testDB)
 	_, collectionQueryResolver, err := collectionDS.New(collectionStore)
 	s.NoError(err)
 	s.clusterDatastore = clusterDSMocks.NewMockDataStore(mockCtrl)
@@ -123,11 +118,11 @@ func (s *NewDataModelEnhancedReportingTestSuite) SetupSuite() {
 
 	s.reportGenerator = newReportGeneratorImpl(s.testDB, nil, resolver.DeploymentDataStore,
 		s.watchedImageDatastore, collectionQueryResolver, nil, blobStore, s.clusterDatastore,
-		s.namespaceDatastore, resolver.ImageCVEDataStore, resolver.ImageCVEV2DataStore, schema)
+		s.namespaceDatastore, resolver.ImageCVEV2DataStore, schema)
 }
 func (s *NewDataModelEnhancedReportingTestSuite) upsertManyWatchedImages(images []*storage.Image) {
 	for _, img := range images {
-		err := s.watchedImageDatastore.UpsertWatchedImage(s.ctx, img.Name.FullName)
+		err := s.watchedImageDatastore.UpsertWatchedImage(s.ctx, img.GetName().GetFullName())
 		s.NoError(err)
 	}
 }

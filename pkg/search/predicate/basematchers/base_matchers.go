@@ -11,20 +11,18 @@ import (
 	"github.com/stackrox/rox/pkg/protoreflect"
 	"github.com/stackrox/rox/pkg/regexutils"
 	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/stringutils"
 	"google.golang.org/protobuf/types/descriptorpb"
 )
 
 // ForString returns a matcher for a string.
 func ForString(value string) (func(string) bool, error) {
-	negated := strings.HasPrefix(value, search.NegationPrefix)
-	if negated {
-		value = strings.TrimPrefix(value, search.NegationPrefix)
-	}
-	if strings.HasPrefix(value, search.RegexPrefix) {
-		value = strings.TrimPrefix(value, search.RegexPrefix)
+	negated := stringutils.ConsumePrefix(&value, search.NegationPrefix)
+
+	if stringutils.ConsumePrefix(&value, search.RegexPrefix) {
 		return forStringRegexMatch(value, negated)
-	} else if strings.HasPrefix(value, `"`) && strings.HasSuffix(value, `"`) && len(value) > 1 {
-		return forStringExactMatch(value[1:len(value)-1], negated)
+	} else if stringutils.ConsumePrefix(&value, `"`) && stringutils.ConsumeSuffix(&value, `"`) && len(value) > 1 {
+		return forStringExactMatch(value, negated)
 	}
 	return forStringPrefixMatch(value, negated)
 }
@@ -206,14 +204,20 @@ func MapEnumValues(enumDesc *descriptorpb.EnumDescriptorProto) (nameToNumber map
 }
 
 func forStringRegexMatch(regex string, negated bool) (func(string) bool, error) {
-	matcher, err := regexutils.CompileWholeStringMatcher(regex, regexutils.Flags{CaseInsensitive: true})
+	var err error
+	var matcher regexutils.StringMatcher
+	if stringutils.ConsumePrefix(&regex, search.ContainsPrefix) {
+		matcher, err = regexutils.CompileContainsStringMatcher(regex, regexutils.Flags{CaseInsensitive: true})
+	} else {
+		matcher, err = regexutils.CompileWholeStringMatcher(regex, regexutils.Flags{CaseInsensitive: true})
+	}
 	if err != nil {
 		return nil, errors.Wrapf(err, "invalid regex: %q", regex)
 	}
 
 	return func(instance string) bool {
 		// matched != negated is equivalent to (matched XOR negated), which is what we want here
-		return matcher.MatchWholeString(instance) != negated
+		return matcher.MatchString(instance) != negated
 	}, nil
 }
 

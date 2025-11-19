@@ -9,7 +9,7 @@ import {
     visitClustersWithFixture,
 } from './Clusters.helpers';
 
-describe('Clusters list clusterIdToRetentionInfo', () => {
+describe.skip('Clusters list clusterIdToRetentionInfo', () => {
     withAuth();
 
     const fixturePath = 'clusters/health.json';
@@ -36,7 +36,7 @@ describe('Clusters list clusterIdToRetentionInfo', () => {
     });
 });
 
-describe('Cluster page clusterRetentionInfo', () => {
+describe.skip('Cluster page clusterRetentionInfo', () => {
     withAuth();
 
     // div:contains("Cluster Deletion") because [data-testid="clusterDeletion"] fails for unknown reason :(

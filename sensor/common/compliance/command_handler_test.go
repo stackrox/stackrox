@@ -8,6 +8,7 @@ import (
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/internalapi/compliance"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/testutils/goleak"
 	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/compliance/mocks"
 	"github.com/stackrox/rox/sensor/common/message"
@@ -43,7 +44,7 @@ func (s *CommandHandlerTestSuite) SetupTest() {
 }
 
 func (s *CommandHandlerTestSuite) TearDownTest() {
-	defer assertNoGoroutineLeaks(s.T())
+	goleak.AssertNoGoroutineLeaks(s.T())
 	_ = s.cHandler.Stopped().Wait()
 }
 
@@ -67,7 +68,7 @@ func (s *CommandHandlerTestSuite) getScrapeUpdate() {
 		message := update.GetMsg()
 		scrapeUpdate, ok := message.(*central.MsgFromSensor_ScrapeUpdate)
 		s.Require().True(ok)
-		s.Assert().Equal("foo", scrapeUpdate.ScrapeUpdate.ScrapeId)
+		s.Assert().Equal("foo", scrapeUpdate.ScrapeUpdate.GetScrapeId())
 	case <-time.After(time.Second * 2):
 		s.Require().Fail("Timed out waiting for update")
 	}

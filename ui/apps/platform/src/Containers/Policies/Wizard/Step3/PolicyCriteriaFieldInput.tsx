@@ -1,11 +1,21 @@
-import React from 'react';
-import { useField } from 'formik';
-import { TextInput, ToggleGroup, ToggleGroupItem, FormGroup } from '@patternfly/react-core';
-import { Select, SelectOption } from '@patternfly/react-core/deprecated';
+import type { ReactElement } from 'react';
+import { useField, useFormikContext } from 'formik';
+import {
+    FormGroup,
+    SelectOption,
+    TextInput,
+    ToggleGroup,
+    ToggleGroupItem,
+} from '@patternfly/react-core';
 
-import { Descriptor } from './policyCriteriaDescriptors';
+import SelectSingle from 'Components/SelectSingle/SelectSingle';
+import CheckboxSelect from 'Components/PatternFly/CheckboxSelect';
+import type { ClientPolicy } from 'types/policy.proto';
+
+import type { Descriptor } from './policyCriteriaDescriptors';
 import PolicyCriteriaFieldSubInput from './PolicyCriteriaFieldSubInput';
 import TableModalFieldInput from './TableModalFieldInput';
+import { getAvailableOptionsForField } from './policyCriteriaUtils';
 
 type PolicyCriteriaFieldInputProps = {
     descriptor: Descriptor;
@@ -17,36 +27,26 @@ function PolicyCriteriaFieldInput({
     descriptor,
     readOnly = false,
     name,
-}: PolicyCriteriaFieldInputProps): React.ReactElement {
+}: PolicyCriteriaFieldInputProps): ReactElement {
     const [field, , helper] = useField(name);
-    const [isSelectOpen, setIsSelectOpen] = React.useState(false);
     const { value } = field;
     const { setValue } = helper;
+    const { values } = useFormikContext<ClientPolicy>();
 
-    function handleChangeValue(val) {
+    function handleChangeValue(val: string | string[] | boolean | number) {
         setValue({ value: val });
     }
 
-    function handleChangeSelectedValue(selectedVal) {
+    function handleChangeSelectedValue(selectedVal: string | string[] | boolean | number) {
         return () => handleChangeValue(selectedVal);
     }
 
-    function handleChangeSelect(e, val) {
-        setIsSelectOpen(false);
+    function handleChangeSelect(_id: string, val: string) {
         handleChangeValue(val);
     }
 
-    function handleChangeSelectMultiple(e, selection) {
-        if (value.value?.includes(selection)) {
-            handleChangeValue(value.value.filter((item) => item !== selection));
-        } else {
-            handleChangeValue([...value.value, selection]);
-        }
-        setIsSelectOpen(false);
-    }
-
-    function handleOnToggleSelect() {
-        setIsSelectOpen(!isSelectOpen);
+    function handleChangeSelectMultiple(newSelections: string[]) {
+        handleChangeValue(newSelections);
     }
 
     /* eslint-disable default-case */
@@ -109,7 +109,9 @@ function PolicyCriteriaFieldInput({
                     data-testid="policy-criteria-value-number-input"
                 />
             );
-        case 'select':
+        case 'select': {
+            const availableOptions = getAvailableOptionsForField(descriptor.options, name, values);
+
             return (
                 <FormGroup
                     label={descriptor.label}
@@ -117,16 +119,14 @@ function PolicyCriteriaFieldInput({
                     className="pf-v5-u-flex-1"
                     data-testid="policy-criteria-value-select"
                 >
-                    <Select
-                        onToggle={handleOnToggleSelect}
-                        onSelect={handleChangeSelect}
-                        isOpen={isSelectOpen}
+                    <SelectSingle
+                        id={descriptor.name}
+                        value={value.value || ''}
+                        handleSelect={handleChangeSelect}
                         isDisabled={readOnly}
-                        selections={value.value}
                         placeholderText={descriptor.placeholder || 'Select an option'}
-                        menuAppendTo={() => document.body}
                     >
-                        {descriptor?.options?.map((option) => (
+                        {availableOptions.map((option) => (
                             <SelectOption
                                 key={option.value}
                                 value={option.value}
@@ -135,9 +135,10 @@ function PolicyCriteriaFieldInput({
                                 {option.label}
                             </SelectOption>
                         ))}
-                    </Select>
+                    </SelectSingle>
                 </FormGroup>
             );
+        }
         case 'multiselect':
             return (
                 <FormGroup
@@ -146,16 +147,12 @@ function PolicyCriteriaFieldInput({
                     className="pf-v5-u-flex-1"
                     data-testid="policy-criteria-value-multiselect"
                 >
-                    <Select
-                        onToggle={handleOnToggleSelect}
-                        onSelect={handleChangeSelectMultiple}
-                        isOpen={isSelectOpen}
+                    <CheckboxSelect
+                        selections={(value.value as string[]) || []}
+                        onChange={handleChangeSelectMultiple}
                         isDisabled={readOnly}
-                        selections={value.value === '' ? [] : value.value}
-                        onClear={handleChangeSelectedValue([])}
                         placeholderText={descriptor.placeholder || 'Select one or more options'}
-                        variant="typeaheadmulti"
-                        menuAppendTo={() => document.body}
+                        ariaLabel={descriptor.label || 'Checkbox select menu'}
                     >
                         {descriptor.options?.map((option) => (
                             <SelectOption
@@ -165,8 +162,8 @@ function PolicyCriteriaFieldInput({
                             >
                                 {option.label}
                             </SelectOption>
-                        ))}
-                    </Select>
+                        )) || []}
+                    </CheckboxSelect>
                 </FormGroup>
             );
         case 'group': {

@@ -29,7 +29,7 @@ func TestNoUpgraderLeftBehind(t *testing.T) {
 
 func SetupUpgradersForTest(_ *testing.T) {
 	simpleUpgrader := func(policy *storage.Policy) {
-		v, _ := strconv.ParseFloat(policy.PolicyVersion, 64)
+		v, _ := strconv.ParseFloat(policy.GetPolicyVersion(), 64)
 		policy.PolicyVersion = fmt.Sprintf("%.1f", v+1.0)
 	}
 

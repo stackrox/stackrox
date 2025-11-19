@@ -45,6 +45,10 @@ type NetworkWorkload struct {
 	FlowInterval              time.Duration `yaml:"flowInterval"`
 	BatchSize                 int           `yaml:"batchSize"`
 	GenerateUnclosedEndpoints bool          `yaml:"generateUnclosedEndpoints"`
+	// OpenPortReuseProbability is the probability of reusing an existing open endpoint
+	// by a different process without closing the endpoint.
+	// In releases 4.8 and older, this was not configurable and was always set to 1.0.
+	OpenPortReuseProbability float64 `yaml:"openPortReuseProbability"`
 }
 
 // PodWorkload defines the workload and lifecycle of the pods within a deployment

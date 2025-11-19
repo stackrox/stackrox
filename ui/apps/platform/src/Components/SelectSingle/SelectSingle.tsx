@@ -1,12 +1,8 @@
-import React, { ReactElement, useState } from 'react';
-import {
-    Select,
-    MenuToggle,
-    MenuToggleElement,
-    SelectList,
-    MenuFooter,
-    SelectOptionProps,
-} from '@patternfly/react-core';
+import type { FocusEventHandler, ReactElement, ReactNode, Ref } from 'react';
+import { MenuFooter, MenuToggle, Select, SelectList } from '@patternfly/react-core';
+import type { MenuToggleElement, MenuToggleProps, SelectOptionProps } from '@patternfly/react-core';
+
+import useSelectToggleState from './useSelectToggleState';
 
 export type SelectSingleProps = {
     toggleIcon?: ReactElement;
@@ -15,13 +11,17 @@ export type SelectSingleProps = {
     value: string;
     handleSelect: (name: string, value: string) => void;
     isDisabled?: boolean;
+    isFullWidth?: boolean; // TODO make prop required
     children: ReactElement<SelectOptionProps>[];
     direction?: 'up' | 'down';
     placeholderText?: string;
-    onBlur?: React.FocusEventHandler<HTMLDivElement>;
+    onBlur?: FocusEventHandler<HTMLDivElement>;
     menuAppendTo?: () => HTMLElement;
-    footer?: React.ReactNode;
+    footer?: ReactNode;
     maxHeight?: string;
+    maxWidth?: string;
+    variant?: MenuToggleProps['variant'];
+    className?: string;
 };
 
 function SelectSingle({
@@ -31,29 +31,21 @@ function SelectSingle({
     value,
     handleSelect,
     isDisabled = false,
+    isFullWidth = true, // TODO make prop required
     children,
     direction = 'down',
     placeholderText = '',
     onBlur,
     menuAppendTo = undefined,
     footer,
-    maxHeight = '300px',
+    maxHeight = '50vh',
+    maxWidth = '100%',
+    variant = 'default',
+    className,
 }: SelectSingleProps): ReactElement {
-    const [isOpen, setIsOpen] = useState(false);
-
-    function onSelect(
-        _event: React.MouseEvent<Element, MouseEvent> | undefined,
-        selection: string | number | undefined
-    ) {
-        if (typeof selection === 'string') {
-            setIsOpen(false);
-            handleSelect(id, selection);
-        }
-    }
-
-    function onToggle() {
-        setIsOpen(!isOpen);
-    }
+    const { isOpen, setIsOpen, onSelect, onToggle } = useSelectToggleState((selection) =>
+        handleSelect(id, selection)
+    );
 
     // Find the display text for the selected value
     const getDisplayText = (): string => {
@@ -68,24 +60,27 @@ function SelectSingle({
         return (selectedChild?.props.children as string) || value;
     };
 
-    const toggle = (toggleRef: React.Ref<MenuToggleElement>) => (
+    const toggle = (toggleRef: Ref<MenuToggleElement>) => (
         <MenuToggle
             ref={toggleRef}
             onClick={onToggle}
             isExpanded={isOpen}
             isDisabled={isDisabled}
-            icon={toggleIcon}
+            isFullWidth={isFullWidth}
             aria-label={toggleAriaLabel}
             id={id}
-            variant="default"
-            className="pf-v5-u-w-100"
+            variant={variant}
         >
-            {getDisplayText()}
+            <span className="pf-v5-u-display-flex pf-v5-u-align-items-center">
+                {toggleIcon && <span className="pf-v5-u-mr-sm">{toggleIcon}</span>}
+                <span>{getDisplayText()}</span>
+            </span>
         </MenuToggle>
     );
 
     return (
         <Select
+            className={className}
             aria-label={toggleAriaLabel}
             isOpen={isOpen}
             selected={value}
@@ -100,7 +95,7 @@ function SelectSingle({
             }}
             onBlur={onBlur}
         >
-            <SelectList style={{ maxHeight, overflowY: 'auto' }}>{children}</SelectList>
+            <SelectList style={{ maxHeight, maxWidth, overflowY: 'auto' }}>{children}</SelectList>
             {footer && <MenuFooter>{footer}</MenuFooter>}
         </Select>
     );

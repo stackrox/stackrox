@@ -213,7 +213,7 @@ func (s *NetworkGraphServiceTestSuite) TestGetExternalNetworkFlows() {
 	flows, err := s.tested.GetExternalNetworkFlows(ctx, &req)
 	s.NoError(err)
 
-	result := flows.Flows
+	result := flows.GetFlows()
 	s.Len(result, 2)
 
 	for _, flow := range result {
@@ -221,8 +221,8 @@ func (s *NetworkGraphServiceTestSuite) TestGetExternalNetworkFlows() {
 		s.NotNil(flow.GetProps().GetSrcEntity())
 	}
 
-	protoassert.Equal(s.T(), entities[0].Info, result[0].GetProps().GetDstEntity())
-	protoassert.Equal(s.T(), entities[1].Info, result[1].GetProps().GetDstEntity())
+	protoassert.Equal(s.T(), entities[0].GetInfo(), result[0].GetProps().GetDstEntity())
+	protoassert.Equal(s.T(), entities[1].GetInfo(), result[1].GetProps().GetDstEntity())
 }
 
 func (s *NetworkGraphServiceTestSuite) TestGenerateNetworkGraphWithSAC() {

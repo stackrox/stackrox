@@ -1,4 +1,4 @@
-import React, { ReactElement, CSSProperties } from 'react';
+import type { CSSProperties, ReactElement } from 'react';
 import {
     Badge,
     Card,

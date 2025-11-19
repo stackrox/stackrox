@@ -1,9 +1,11 @@
-import { ReactElement } from 'react';
-import { Location, matchPath } from 'react-router-dom-v5-compat';
+import type { ReactElement } from 'react';
+import { matchPath } from 'react-router-dom-v5-compat';
+import type { Location } from 'react-router-dom-v5-compat';
 
-import { isRouteEnabled, RouteKey } from 'routePaths';
-import { IsFeatureFlagEnabled } from 'hooks/useFeatureFlags';
-import { HasReadAccess } from 'hooks/usePermissions';
+import { isRouteEnabled } from 'routePaths';
+import type { RouteKey } from 'routePaths';
+import type { IsFeatureFlagEnabled } from 'hooks/useFeatureFlags';
+import type { HasReadAccess } from 'hooks/usePermissions';
 
 // Child example; Compliance (1.0) if Compliance (2.0) is rendered and Compliance otherwise.
 // Parent example: Vulnerability Management (1.0) if Vulnerability Management (2.0) is rendered and so on.

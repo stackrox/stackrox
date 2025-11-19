@@ -251,6 +251,17 @@
       ],
       "default": "UNSET"
     },
+    "GroupLabels": {
+      "type": "object",
+      "properties": {
+        "labels": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
     "PlatformComponentConfigRule": {
       "type": "object",
       "properties": {
@@ -463,9 +474,45 @@
         },
         "administrationEventsConfig": {
           "$ref": "#/definitions/storageAdministrationEventsConfig"
+        },
+        "metrics": {
+          "$ref": "#/definitions/storagePrometheusMetrics",
+          "description": "This field defines groups of custom Prometheus metrics to be exposed by the\nbackend on the API endpoint."
         }
       },
-      "title": "next available tag:9"
+      "title": "next available tag: 10"
+    },
+    "storagePrometheusMetrics": {
+      "type": "object",
+      "properties": {
+        "imageVulnerabilities": {
+          "$ref": "#/definitions/storagePrometheusMetricsGroup"
+        },
+        "policyViolations": {
+          "$ref": "#/definitions/storagePrometheusMetricsGroup"
+        },
+        "nodeVulnerabilities": {
+          "$ref": "#/definitions/storagePrometheusMetricsGroup"
+        }
+      },
+      "title": "next available tag: 4"
+    },
+    "storagePrometheusMetricsGroup": {
+      "type": "object",
+      "properties": {
+        "gatheringPeriodMinutes": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "descriptors": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/definitions/GroupLabels"
+          },
+          "description": "Metric descriptors is a map of metric names to the list of allowed\nlabels."
+        }
+      },
+      "description": "A group is a collection of metrics that are computed by the same\naggregator. Metrics in a group may use different subsets of a complete list\nof labels supported by the aggregator."
     },
     "storagePublicConfig": {
       "type": "object",

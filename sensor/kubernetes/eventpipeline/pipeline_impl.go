@@ -16,7 +16,6 @@ import (
 	"github.com/stackrox/rox/sensor/common/message"
 	"github.com/stackrox/rox/sensor/common/reprocessor"
 	"github.com/stackrox/rox/sensor/common/store/resolver"
-	"github.com/stackrox/rox/sensor/common/trace"
 	"github.com/stackrox/rox/sensor/kubernetes/eventpipeline/component"
 )
 
@@ -48,6 +47,10 @@ func (p *eventPipeline) Name() string {
 // Capabilities implements common.SensorComponent
 func (*eventPipeline) Capabilities() []centralsensor.SensorCapability {
 	return nil
+}
+
+func (p *eventPipeline) Accepts(msg *central.MsgToSensor) bool {
+	return msg.GetPolicySync() != nil || msg.GetUpdatedImage() != nil || msg.GetReprocessDeployments() != nil || msg.GetReprocessDeployment() != nil || msg.GetInvalidateImageCache() != nil
 }
 
 // ProcessMessage implements common.SensorComponent
@@ -89,7 +92,7 @@ func (p *eventPipeline) getCurrentContext() context.Context {
 func (p *eventPipeline) createNewContext() {
 	p.contextMtx.Lock()
 	defer p.contextMtx.Unlock()
-	p.context, p.cancelContext = context.WithCancel(trace.Background())
+	p.context, p.cancelContext = context.WithCancel(context.Background())
 }
 
 // Start implements common.SensorComponent

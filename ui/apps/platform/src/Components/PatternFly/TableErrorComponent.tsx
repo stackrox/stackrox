@@ -1,4 +1,3 @@
-import React from 'react';
 import { Bullseye } from '@patternfly/react-core';
 import { ExclamationCircleIcon } from '@patternfly/react-icons';
 

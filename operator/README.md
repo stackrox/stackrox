@@ -251,6 +251,9 @@ and kuttl from its [release page](https://github.com/kudobuilder/kuttl/releases)
 
 #### Pull Secret
 
+If you are deploying on an OpenShift cluster created with [StackRox Infra](https://infra.rox.systems/), you can skip this section.
+Necessary pull secret is already included cluster-wide.
+
 You'll also need a Quay pull secret configured in `~/.docker/config.json`.
 This can be retrieved on quay.io by:
 
@@ -264,7 +267,11 @@ This can be retrieved on quay.io by:
 #### Clean Repo
 
 If `git describe --dirty` shows a `-dirty` suffix, you'll need to clean up your repo until git considers it "clean".
-Otherwise the make targets below will add `-dirty` to the image tag, and it likely won't be found.
+Otherwise, the make targets below will add `-dirty` to the image tag, and it likely won't be found.
+
+#### Images
+
+Push your changes to a GitHub PR (draft is OK) to let CI build and push images for you.
 
 ### Deploy
 

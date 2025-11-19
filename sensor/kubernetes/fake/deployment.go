@@ -20,10 +20,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-var (
-	processPool = newProcessPool()
-)
-
 // ProcessPool stores processes by containerID using a map
 type ProcessPool struct {
 	Processes map[string][]*storage.ProcessSignal
@@ -45,13 +41,13 @@ func (p *ProcessPool) add(val *storage.ProcessSignal) {
 	defer p.lock.Unlock()
 
 	if p.Size < p.Capacity {
-		p.Processes[val.ContainerId] = append(p.Processes[val.ContainerId], val)
+		p.Processes[val.GetContainerId()] = append(p.Processes[val.GetContainerId()], val)
 		p.Size++
 	} else {
-		nprocess := len(p.Processes[val.ContainerId])
+		nprocess := len(p.Processes[val.GetContainerId()])
 		if nprocess > 0 {
 			randIdx := rand.Intn(nprocess)
-			p.Processes[val.ContainerId][randIdx] = val
+			p.Processes[val.GetContainerId()][randIdx] = val
 		}
 	}
 }
@@ -126,7 +122,7 @@ func (w *WorkloadManager) getDeployment(workload DeploymentWorkload, idx int, de
 		namespace = "default"
 	}
 
-	labelsPool.add(namespace, labels)
+	w.labelsPool.add(namespace, labels)
 	namespacesWithDeploymentsPool.add(namespace)
 
 	var serviceAccount string
@@ -214,7 +210,7 @@ func (w *WorkloadManager) getDeployment(workload DeploymentWorkload, idx int, de
 
 	var pods []*corev1.Pod
 	for i := 0; i < workload.PodWorkload.NumPods; i++ {
-		pod := getPod(rs, getID(podIDs, i+idx*workload.PodWorkload.NumPods))
+		pod := getPod(rs, getID(podIDs, i+idx*workload.PodWorkload.NumPods), w.ipPool, w.containerPool)
 		w.writeID(podPrefix, pod.UID)
 		pods = append(pods, pod)
 	}
@@ -260,7 +256,7 @@ func getReplicaSet(deployment *appsv1.Deployment, id string) *appsv1.ReplicaSet 
 	}
 }
 
-func getPod(replicaSet *appsv1.ReplicaSet, id string) *corev1.Pod {
+func getPod(replicaSet *appsv1.ReplicaSet, id string, ipPool *pool, containerPool *pool) *corev1.Pod {
 	pod := &corev1.Pod{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "Pod",
@@ -288,10 +284,10 @@ func getPod(replicaSet *appsv1.ReplicaSet, id string) *corev1.Pod {
 			StartTime: &metav1.Time{
 				Time: time.Now(),
 			},
-			PodIP: generateAndAddIPToPool(),
+			PodIP: generateAndAddIPToPool(ipPool),
 		},
 	}
-	populatePodContainerStatuses(pod)
+	populatePodContainerStatuses(pod, containerPool)
 	return pod
 }
 
@@ -462,7 +458,7 @@ func (w *WorkloadManager) manageDeploymentLifecycle(ctx context.Context, resourc
 	}
 }
 
-func populatePodContainerStatuses(pod *corev1.Pod) {
+func populatePodContainerStatuses(pod *corev1.Pod, containerPool *pool) {
 	statuses := make([]corev1.ContainerStatus, 0, len(pod.Spec.Containers))
 	for _, container := range pod.Spec.Containers {
 		status := corev1.ContainerStatus{
@@ -492,10 +488,10 @@ func (w *WorkloadManager) managePod(ctx context.Context, deploymentSig *concurre
 			log.Errorf("error deleting pod: %v", err)
 		}
 		w.deleteID(podPrefix, pod.UID)
-		ipPool.remove(pod.Status.PodIP)
+		w.ipPool.remove(pod.Status.PodIP)
 
 		for _, cs := range pod.Status.ContainerStatuses {
-			containerPool.remove(getShortContainerID(cs.ContainerID))
+			w.removeContainerAndAssociatedObjects(getShortContainerID(cs.ContainerID))
 		}
 		podSig.Signal()
 	}
@@ -513,8 +509,8 @@ func (w *WorkloadManager) managePod(ctx context.Context, deploymentSig *concurre
 			// New pod name and UUID
 			pod.Name = randString()
 			pod.UID = newUUID()
-			pod.Status.PodIP = generateAndAddIPToPool()
-			populatePodContainerStatuses(pod)
+			pod.Status.PodIP = generateAndAddIPToPool(w.ipPool)
+			populatePodContainerStatuses(pod, w.containerPool)
 
 			if _, err := client.Create(ctx, pod, metav1.CreateOptions{}); err != nil {
 				log.Errorf("error creating pod: %v", err)
@@ -525,6 +521,13 @@ func (w *WorkloadManager) managePod(ctx context.Context, deploymentSig *concurre
 			podDeadline = newTimerWithJitter(podWorkload.LifecycleDuration)
 		}
 	}
+}
+
+func (w *WorkloadManager) removeContainerAndAssociatedObjects(containerID string) {
+	w.containerPool.remove(containerID)
+	// Clean up process and endpoint pools when container is removed
+	w.processPool.remove(containerID)
+	w.endpointPool.remove(containerID)
 }
 
 func getShortContainerID(id string) string {
@@ -558,7 +561,7 @@ func (w *WorkloadManager) manageProcessesForPod(podSig *concurrency.Signal, podW
 			if processWorkload.ActiveProcesses {
 				for _, process := range getActiveProcesses(containerID) {
 					w.processes.Process(process)
-					processPool.add(process)
+					w.processPool.add(process)
 				}
 			} else {
 				// If less than the rate, then it's a bad process
@@ -567,7 +570,7 @@ func (w *WorkloadManager) manageProcessesForPod(podSig *concurrency.Signal, podW
 				} else {
 					goodProcess := getGoodProcess(containerID)
 					w.processes.Process(goodProcess)
-					processPool.add(goodProcess)
+					w.processPool.add(goodProcess)
 				}
 			}
 		case <-podSig.Done():

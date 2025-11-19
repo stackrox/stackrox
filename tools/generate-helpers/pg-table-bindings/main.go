@@ -103,6 +103,9 @@ type properties struct {
 	// Indicates the store should be mirrored in memory.
 	CachedStore bool
 
+	// Indicates the store is used for SAC.
+	ForSAC bool
+
 	// Provides default sort option field
 	DefaultSortField string
 
@@ -111,6 +114,9 @@ type properties struct {
 
 	// Provides options map for sort option transforms
 	TransformSortOptions string
+
+	// Generates helper functions to create/destroy tables and store
+	GenerateDataModelHelpers bool
 }
 
 type parsedReference struct {
@@ -142,6 +148,7 @@ func main() {
 	c.Flags().BoolVar(&props.SingletonStore, "singleton", false, "indicates that we should just generate the singleton store")
 	c.Flags().StringSliceVar(&props.SearchScope, "search-scope", []string{}, "if set, the search is scoped to specified search categories. comma seperated of search categories")
 	c.Flags().BoolVar(&props.CachedStore, "cached-store", false, "if true, ensure the store is mirrored in a memory cache (can be dangerous on high cardinality stores, use with care)")
+	c.Flags().BoolVar(&props.ForSAC, "for-sac", false, "if true, exposes special methods to optimize read on cache store (use with care)")
 	c.Flags().StringVar(&props.DefaultSortField, "default-sort", "", "if set, provides a default sort for search if one is not present")
 	c.Flags().BoolVar(&props.ReverseDefaultSort, "reverse-default-sort", false, "if true, reverses the default sort")
 	c.Flags().StringVar(&props.TransformSortOptions, "transform-sort-options", "", "if set, provides an option map for sort transforms")
@@ -149,6 +156,8 @@ func main() {
 
 	c.Flags().StringVar(&props.Cycle, "cycle", "", "indicates that there is a cyclical foreign key reference, should be the path to the embedded foreign key")
 	c.Flags().BoolVar(&props.ConversionFuncs, "conversion-funcs", false, "indicates that we should generate conversion functions between protobuf types to/from Gorm model")
+
+	c.Flags().BoolVar(&props.GenerateDataModelHelpers, "generate-data-model-helpers", false, "if true, generates CreateTableAndNewStore and Destroy functions")
 	c.RunE = func(*cobra.Command, []string) error {
 		typ := stringutils.OrDefault(props.RegisteredType, props.Type)
 		fmt.Println(readable.Time(time.Now()), "Generating for", typ)
@@ -219,11 +228,15 @@ func main() {
 			"RegisterSchema":       !props.ConversionFuncs,
 			"FeatureFlag":          props.FeatureFlag,
 			"CachedStore":          props.CachedStore,
+			"ForSAC":               props.ForSAC,
 			"DefaultSortStore":     defaultSort != "",
 			"DefaultSort":          defaultSort,
 			"ReverseDefaultSort":   props.ReverseDefaultSort,
 			"TransformSortOptions": props.TransformSortOptions,
 			"DefaultTransform":     props.TransformSortOptions != "",
+			"Singleton":            props.SingletonStore,
+
+			"GenerateDataModelHelpers": props.GenerateDataModelHelpers,
 		}
 
 		if err := common.RenderFile(templateMap, schemaTemplate, getSchemaFileName(props.SchemaDirectory, schema.Table)); err != nil {

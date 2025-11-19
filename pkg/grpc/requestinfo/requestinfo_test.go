@@ -29,7 +29,7 @@ var insecureSkipVerify = credentials.NewTLS(insecureTLSConfig)
 const userAgentKey = "User-Agent"
 
 func makeTestRequest(url string) *http.Request {
-	req, _ := http.NewRequest("GET", url, nil)
+	req, _ := http.NewRequest(http.MethodGet, url, nil)
 	req.Header.Add("test-key", "test value")
 	req.Header.Add(userAgentKey, "test agent")
 	return req
@@ -75,7 +75,7 @@ func Test_PureGRPC(t *testing.T) {
 	c := pb.NewPingServiceClient(conn)
 	resp, err := c.Ping(context.Background(), &pb.Empty{})
 	require.NoError(t, err)
-	require.Equal(t, "pong", resp.Status)
+	require.Equal(t, "pong", resp.GetStatus())
 
 	ri := serviceInstance.ri
 	require.NotNil(t, ri)

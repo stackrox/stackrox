@@ -4,17 +4,21 @@ import (
 	"context"
 
 	"github.com/stackrox/rox/pkg/logging"
-	"github.com/stackrox/rox/sensor/common/clusterid"
 	"google.golang.org/grpc/metadata"
 )
 
-func withClusterID(ctx context.Context) context.Context {
+type clusterIDPeeker interface {
+	GetNoWait() string
+}
+
+// ContextWithClusterID enhances a given context with the Cluster ID
+func ContextWithClusterID(ctx context.Context, clusterID clusterIDPeeker) context.Context {
 	return metadata.NewOutgoingContext(ctx,
-		metadata.Pairs(logging.ClusterIDContextValue, clusterid.GetNoWait()),
+		metadata.Pairs(logging.ClusterIDContextValue, clusterID.GetNoWait()),
 	)
 }
 
 // Background creates a context based on context.Background with enriched trace values.
-func Background() context.Context {
-	return withClusterID(context.Background())
+func Background(clusterID clusterIDPeeker) context.Context {
+	return ContextWithClusterID(context.Background(), clusterID)
 }

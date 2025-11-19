@@ -125,9 +125,7 @@ func (s *serviceImpl) Communicate(server central.SensorService_CommunicateServer
 
 		capabilities := sliceutils.StringSlice(eventPipeline.Capabilities()...)
 		capabilities = append(capabilities, centralsensor.SecuredClusterCertificatesReissue)
-		if features.SensorReconciliationOnReconnect.Enabled() {
-			capabilities = append(capabilities, centralsensor.SendDeduperStateOnReconnect)
-		}
+		capabilities = append(capabilities, centralsensor.SendDeduperStateOnReconnect)
 		if features.ComplianceEnhancements.Enabled() {
 			capabilities = append(capabilities, centralsensor.ComplianceV2Integrations)
 		}
@@ -155,7 +153,7 @@ func (s *serviceImpl) Communicate(server central.SensorService_CommunicateServer
 		if err := safe.RunE(func() error {
 			sensorNamespace := sensorHello.GetDeploymentIdentification().GetAppNamespace()
 			certificateSet, err := securedclustercertgen.IssueSecuredClusterCerts(
-				sensorNamespace, clusterID, isCARotationSupported(sensorHello))
+				sensorNamespace, clusterID, isCARotationSupported(sensorHello), "")
 			if err != nil {
 				return errors.Wrapf(err, "issuing a certificate bundle for cluster %s", cluster.GetName())
 			}
@@ -246,7 +244,7 @@ func (s *serviceImpl) getClusterForConnection(sensorHello *central.SensorHello, 
 		}
 	}
 
-	cluster, err := s.clusters.LookupOrCreateClusterFromConfig(clusterDSSAC, clusterID, serviceID.InitBundleId, sensorHello)
+	cluster, err := s.clusters.LookupOrCreateClusterFromConfig(clusterDSSAC, clusterID, serviceID.GetInitBundleId(), sensorHello)
 	if err != nil {
 		return nil, errors.Errorf("could not fetch cluster for sensor: %v", err)
 	}

@@ -6,10 +6,13 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"maps"
+	"slices"
 	"time"
 
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/central/administration/events"
 	clusterDatastore "github.com/stackrox/rox/central/cluster/datastore"
 	clusterUtil "github.com/stackrox/rox/central/cluster/util"
 	centralDetection "github.com/stackrox/rox/central/detection"
@@ -49,7 +52,6 @@ import (
 	"github.com/stackrox/rox/pkg/sac/resources"
 	pkgUtils "github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/pkg/uuid"
-	"golang.org/x/exp/maps"
 	"google.golang.org/grpc"
 	coreV1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -71,7 +73,7 @@ var (
 		},
 	})
 
-	log = logging.LoggerForModule()
+	log = logging.LoggerForModule(events.EnableAdministrationEvents())
 
 	workloadScheme = k8sRuntime.NewScheme()
 
@@ -182,6 +184,13 @@ func (s *serviceImpl) DetectBuildTime(ctx context.Context, req *apiV1.BuildDetec
 
 	enrichResult, err := s.imageEnricher.EnrichImage(ctx, enrichmentContext, img)
 	if err != nil {
+		if env.AdministrationEventsAdHocScans.BooleanSetting() {
+			log.Errorw("Enriching image",
+				logging.ImageName(image.GetName().GetFullName()),
+				logging.Err(err),
+				logging.Bool("ad_hoc", true),
+			)
+		}
 		return nil, err
 	}
 	if enrichResult.ImageUpdated {
@@ -464,7 +473,7 @@ func (s *serviceImpl) DetectDeployTimeFromYAML(ctx context.Context, req *apiV1.D
 	return &apiV1.DeployDetectionResponse{
 		Runs:              runs,
 		IgnoredObjectRefs: ignoredObjectRefs,
-		Remarks:           maps.Values(remarks),
+		Remarks:           slices.Collect(maps.Values(remarks)),
 	}, nil
 }
 

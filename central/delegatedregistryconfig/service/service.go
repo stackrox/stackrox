@@ -155,25 +155,25 @@ func (s *serviceImpl) UpdateConfig(ctx context.Context, config *v1.DelegatedRegi
 }
 
 func (s *serviceImpl) validate(config *v1.DelegatedRegistryConfig, validClusters set.Set[string]) error {
-	if config.EnabledFor == v1.DelegatedRegistryConfig_NONE {
+	if config.GetEnabledFor() == v1.DelegatedRegistryConfig_NONE {
 		// ignore rest of config, values will not be used
 		return nil
 	}
 
 	var errorList []error
-	if config.DefaultClusterId != "" && !validClusters.Contains(config.DefaultClusterId) {
-		errorList = append(errorList, fmt.Errorf("default cluster %q is not valid", config.DefaultClusterId))
+	if config.GetDefaultClusterId() != "" && !validClusters.Contains(config.GetDefaultClusterId()) {
+		errorList = append(errorList, fmt.Errorf("default cluster %q is not valid", config.GetDefaultClusterId()))
 	}
 
 	// validate the registries / clusters
-	for _, r := range config.Registries {
+	for _, r := range config.GetRegistries() {
 
 		// if a cluster id was provided, check if its valid
-		if r.ClusterId != "" && !validClusters.Contains(r.ClusterId) {
-			errorList = append(errorList, fmt.Errorf("cluster %q is not valid", r.ClusterId))
+		if r.GetClusterId() != "" && !validClusters.Contains(r.GetClusterId()) {
+			errorList = append(errorList, fmt.Errorf("cluster %q is not valid", r.GetClusterId()))
 		}
 
-		if r.Path == "" {
+		if r.GetPath() == "" {
 			errorList = append(errorList, errors.New("missing registry path"))
 		}
 	}
@@ -200,8 +200,8 @@ func (s *serviceImpl) getClusters(ctx context.Context) ([]*v1.DelegatedRegistryC
 		conn := s.connManager.GetConnection(c.GetId())
 
 		res[i] = &v1.DelegatedRegistryCluster{
-			Id:      c.Id,
-			Name:    c.Name,
+			Id:      c.GetId(),
+			Name:    c.GetName(),
 			IsValid: deleConnection.ValidForDelegation(conn),
 		}
 	}
@@ -218,8 +218,8 @@ func (s *serviceImpl) getValidClusterIDs(ctx context.Context) (set.Set[string], 
 
 	validClusterIDs := set.NewStringSet()
 	for _, c := range clusters {
-		if c.IsValid {
-			validClusterIDs.Add(c.Id)
+		if c.GetIsValid() {
+			validClusterIDs.Add(c.GetId())
 		}
 	}
 

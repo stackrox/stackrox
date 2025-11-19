@@ -1,33 +1,33 @@
 import { EdgeStyle, EdgeTerminalType, NodeShape } from '@patternfly/react-topology';
 
-import {
+import type {
     DeploymentNetworkEntityInfo,
+    EdgeProperties,
     ExternalSourceNetworkEntityInfo,
+    InternalNetworkEntitiesInfo,
     InternetNetworkEntityInfo,
+    L4Protocol,
     NetworkEntityInfo,
     Node,
     OutEdges,
-    L4Protocol,
-    EdgeProperties,
-    InternalNetworkEntitiesInfo,
 } from 'types/networkFlow.proto';
 import { ensureExhaustive } from 'utils/type.utils';
-import {
-    CustomModel,
-    CustomNodeModel,
-    ExternalGroupNodeModel,
-    ExternalGroupData,
-    NamespaceData,
-    NamespaceNodeModel,
-    DeploymentNodeModel,
-    ExtraneousNodeModel,
-    NetworkPolicyState,
-    ExternalEntitiesNodeModel,
+import type {
+    CIDRBlockData,
     CIDRBlockNodeModel,
     CustomEdgeModel,
+    CustomModel,
+    CustomNodeModel,
     DeploymentData,
-    CIDRBlockData,
+    DeploymentNodeModel,
+    ExternalEntitiesNodeModel,
+    ExternalGroupData,
+    ExternalGroupNodeModel,
+    ExtraneousNodeModel,
     InternalEntitiesNodeModel,
+    NamespaceData,
+    NamespaceNodeModel,
+    NetworkPolicyState,
 } from '../types/topology.type';
 import { protocolLabel } from './flowUtils';
 

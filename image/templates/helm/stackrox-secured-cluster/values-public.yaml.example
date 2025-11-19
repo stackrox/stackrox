@@ -189,22 +189,6 @@
 ## Admission Control specific configuration.
 #admissionControl:
 #
-#  # This setting controls whether the cluster is configured to contact the StackRox
-#  # Kubernetes Security Platform with `AdmissionReview` requests for create events on
-#  # Kubernetes objects.
-#  listenOnCreates: false
-#
-#  # This setting controls whether the cluster is configured to contact the StackRox Kubernetes
-#  # Security Platform with `AdmissionReview` requests for update events on Kubernetes objects.
-#  listenOnUpdates: false
-#
-#  # This setting controls whether the cluster is configured to contact the StackRox
-#  # Kubernetes Security Platform with `AdmissionReview` requests for update Kubernetes events
-#  # like exec and portforward.
-#  #
-#  # Defaults to `false` on OpenShift, to `true` otherwise.
-#  listenOnEvents: true
-#
 #  # Use a nodeSelector for admission control pods
 #  nodeSelector
 #    environment: production
@@ -251,27 +235,8 @@
 #  # the frontend.
 #  dynamic:
 #
-#    # It controls whether the StackRox Kubernetes Security Platform evaluates policies for object
-#    # updates; if it’s disabled, all `AdmissionReview` requests are automatically accepted. You must
-#    # specify `listenOnUpdates` as `true` for this to work.
-#    enforceOnUpdates: false
-#
-#    # Controls whether the StackRox Kubernetes Security Platform evaluates policies.
-#    # If disabled, all AdmissionReview requests are automatically accepted. You must specify
-#    # `listenOnCreates` as `true` for this to work.
-#    enforceOnCreates: false
-#
-#    scanInline: false
-#
 #    # If enabled, bypassing the Admission Controller is disabled.
 #    disableBypass: false
-#
-#    # The maximum time in seconds, the StackRox Kubernetes Security Platform should wait while
-#    # evaluating admission review requests. Use it to set request timeouts when you enable image scanning.
-#    # If the image scan runs longer than the specified time, the StackRox Kubernetes Security Platform
-#    # accepts the request. Other enforcement options, such as scaling the deployment to zero replicas,
-#    # are still applied later if the image violates applicable policies.
-#    timeout: 3
 #
 #  # Kubernetes image pull policy for Admission Control.
 #  imagePullPolicy: IfNotPresent
@@ -296,6 +261,9 @@
 #  # Failure Policy from the admission configuration
 #  # Available values: Ignore|Fail
 #  failurePolicy: Ignore
+#
+#  # Set to false, to opt-out of enforcement of policies. This is not recommended.
+#  enforce: true
 #
 ## Collector specific configuration.
 #collector:

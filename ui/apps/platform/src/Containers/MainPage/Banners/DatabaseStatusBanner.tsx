@@ -1,4 +1,5 @@
-import React, { useState, useEffect, ReactElement } from 'react';
+import { useEffect, useState } from 'react';
+import type { ReactElement } from 'react';
 import { useSelector } from 'react-redux';
 import { Banner } from '@patternfly/react-core';
 

@@ -28,13 +28,11 @@ var (
 // NewBuiltInScopeChecker returns a new SAC-aware scope checker for the given
 // list of roles.
 func NewBuiltInScopeChecker(ctx context.Context, roles []permissions.ResolvedRole) (sac.ScopeCheckerCore, error) {
-	adminCtx := sac.WithGlobalAccessScopeChecker(ctx, sac.AllowAllAccessScopeChecker())
-
-	clusters, err := clusterStore.Singleton().GetClustersForSAC(adminCtx)
+	clusters, err := clusterStore.Singleton().GetClustersForSAC()
 	if err != nil {
 		return nil, errors.Wrap(err, "reading all clusters")
 	}
-	namespaces, err := namespaceStore.Singleton().GetNamespacesForSAC(adminCtx)
+	namespaces, err := namespaceStore.Singleton().GetNamespacesForSAC()
 	if err != nil {
 		return nil, errors.Wrap(err, "reading all namespaces")
 	}
@@ -42,7 +40,7 @@ func NewBuiltInScopeChecker(ctx context.Context, roles []permissions.ResolvedRol
 	return newGlobalScopeCheckerCore(clusters, namespaces, roles, observe.AuthzTraceFromContext(ctx)), nil
 }
 
-func newGlobalScopeCheckerCore(clusters []*storage.Cluster, namespaces []*storage.NamespaceMetadata, roles []permissions.ResolvedRole, trace *observe.AuthzTrace) sac.ScopeCheckerCore {
+func newGlobalScopeCheckerCore(clusters []effectiveaccessscope.Cluster, namespaces []effectiveaccessscope.Namespace, roles []permissions.ResolvedRole, trace *observe.AuthzTrace) sac.ScopeCheckerCore {
 	scc := &globalScopeChecker{
 		roles: roles,
 		trace: trace,
@@ -283,8 +281,8 @@ func errorScopeChecker(level interface{}, scopeKey sac.ScopeKey) sac.ScopeChecke
 
 type authorizerDataCache struct {
 	lock                      sync.RWMutex
-	clusters                  []*storage.Cluster
-	namespaces                []*storage.NamespaceMetadata
+	clusters                  []effectiveaccessscope.Cluster
+	namespaces                []effectiveaccessscope.Namespace
 	effectiveAccessScopesByID map[string]*effectiveaccessscope.ScopeTree
 
 	// Should be nil unless authorization tracing is enabled for this instance.
@@ -324,10 +322,10 @@ func (c *authorizerDataCache) computeEffectiveAccessScope(accessScope *storage.S
 	//   is replicated in central/reports/common/utils.go for access scoping vulnerability reports for reporting 2.0 feature.
 	//   Vulnerability report config stores the access scope rules of the user that creates the config and uses those
 	//   rules for scoping future scheduled reports. If the below behavior changes, central/reports/common/utils.go should be updated as well.
-	if accessScope == nil || accessScope.Id == rolePkg.AccessScopeExcludeAll.Id {
+	if accessScope == nil || accessScope.GetId() == rolePkg.AccessScopeExcludeAll.GetId() {
 		return effectiveaccessscope.DenyAllEffectiveAccessScope(), nil
 	}
-	if accessScope.Id == rolePkg.AccessScopeIncludeAll.Id {
+	if accessScope.GetId() == rolePkg.AccessScopeIncludeAll.GetId() {
 		return effectiveaccessscope.UnrestrictedEffectiveAccessScope(), nil
 	}
 	eas, err := effectiveaccessscope.ComputeEffectiveAccessScope(accessScope.GetRules(), c.clusters, c.namespaces, v1.ComputeEffectiveAccessScopeRequest_MINIMAL)

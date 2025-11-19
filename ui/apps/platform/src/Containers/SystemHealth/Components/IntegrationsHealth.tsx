@@ -1,8 +1,8 @@
-import React, { ReactElement } from 'react';
+import type { ReactElement } from 'react';
 import { getDateTime } from 'utils/dateUtils';
 
 import { Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
-import { IntegrationMergedItem } from '../utils/integrations';
+import type { IntegrationMergedItem } from '../utils/integrations';
 
 type Props = {
     integrations: IntegrationMergedItem[];

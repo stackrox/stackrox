@@ -1,13 +1,13 @@
 import {
     addBrandedTimestampToString,
     displayDateTimeAsISO8601,
-    getDateTime,
     getDate,
-    getTime,
-    getTimeHoursMinutes,
+    getDateTime,
     getDayOfMonthWithOrdinal,
     getDayOfWeek,
     getDistanceStrictAsPhrase,
+    getTime,
+    getTimeHoursMinutes,
 } from './dateUtils';
 
 describe('dateUtils', () => {

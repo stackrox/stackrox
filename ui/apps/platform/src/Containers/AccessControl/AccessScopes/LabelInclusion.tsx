@@ -1,9 +1,10 @@
-import React, { ReactElement, useState } from 'react';
-import { Badge, Tab, TabContent, Tabs, TabTitleText } from '@patternfly/react-core';
+import { useState } from 'react';
+import type { ReactElement } from 'react';
+import { Badge, Tab, TabContent, TabTitleText, Tabs } from '@patternfly/react-core';
 
-import { LabelSelector, LabelSelectorsKey } from 'services/AccessScopesService';
+import type { LabelSelector, LabelSelectorsKey } from 'services/AccessScopesService';
 
-import { LabelSelectorsEditingState } from './accessScopes.utils';
+import type { LabelSelectorsEditingState } from './accessScopes.utils';
 import LabelSelectorCards from './LabelSelectorCards';
 
 export type LabelInclusionProps = {

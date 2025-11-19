@@ -7,6 +7,7 @@ import (
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/pkg/errors"
 	clusterDS "github.com/stackrox/rox/central/cluster/datastore"
+	"github.com/stackrox/rox/central/convert/storagetoeffectiveaccessscope"
 	namespaceDS "github.com/stackrox/rox/central/namespace/datastore"
 	rolePkg "github.com/stackrox/rox/central/role"
 	"github.com/stackrox/rox/central/role/datastore"
@@ -316,13 +317,20 @@ func (s *serviceImpl) ComputeEffectiveAccessScope(ctx context.Context, req *v1.C
 	if err != nil {
 		return nil, errors.Errorf("failed to compute effective access scope: %v", err)
 	}
+	sacClusters := storagetoeffectiveaccessscope.Clusters(clusters)
 
 	namespaces, err := s.namespaceDataStore.GetAllNamespaces(readScopesCtx)
 	if err != nil {
 		return nil, errors.Errorf("failed to compute effective access scope: %v", err)
 	}
+	sacNamespaces := storagetoeffectiveaccessscope.Namespaces(namespaces)
 
-	response, err := effectiveAccessScopeForSimpleAccessScope(req.GetAccessScope().GetSimpleRules(), clusters, namespaces, req.GetDetail())
+	response, err := effectiveAccessScopeForSimpleAccessScope(
+		req.GetAccessScope().GetSimpleRules(),
+		sacClusters,
+		sacNamespaces,
+		req.GetDetail(),
+	)
 	if err != nil {
 		return nil, errors.Errorf("failed to compute effective access scope: %v", err)
 	}
@@ -365,7 +373,12 @@ func (s *serviceImpl) GetNamespacesForClusterAndPermissions(ctx context.Context,
 
 // effectiveAccessScopeForSimpleAccessScope computes the effective access scope
 // for the given rules and converts it to the desired response.
-func effectiveAccessScopeForSimpleAccessScope(scopeRules *storage.SimpleAccessScope_Rules, clusters []*storage.Cluster, namespaces []*storage.NamespaceMetadata, detail v1.ComputeEffectiveAccessScopeRequest_Detail) (*storage.EffectiveAccessScope, error) {
+func effectiveAccessScopeForSimpleAccessScope(
+	scopeRules *storage.SimpleAccessScope_Rules,
+	clusters []effectiveaccessscope.Cluster,
+	namespaces []effectiveaccessscope.Namespace,
+	detail v1.ComputeEffectiveAccessScopeRequest_Detail,
+) (*storage.EffectiveAccessScope, error) {
 	tree, err := effectiveaccessscope.ComputeEffectiveAccessScope(scopeRules, clusters, namespaces, detail)
 	if err != nil {
 		return nil, err

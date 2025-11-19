@@ -88,7 +88,7 @@ func (s *clusterInitBackendTestSuite) TestInitBundleLifecycle() {
 	s.Require().NotNil(initBundle.CertBundle[storage.ServiceType_SENSOR_SERVICE])
 	s.Require().NotNil(initBundle.CertBundle[storage.ServiceType_ADMISSION_CONTROL_SERVICE])
 	s.Require().NotNil(initBundle.CertBundle[storage.ServiceType_COLLECTOR_SERVICE])
-	id := initBundle.Meta.Id
+	id := initBundle.Meta.GetId()
 
 	err = s.backend.CheckRevoked(ctx, id)
 	s.Require().NoErrorf(err, "newly generated init bundle %q is revoked", id)
@@ -190,7 +190,7 @@ func (s *clusterInitBackendTestSuite) TestInitBundleLifecycle() {
 	oldInitBundleMetasLength := len(initBundleMetas)
 	var initBundleMeta *storage.InitBundleMeta
 	for _, m := range initBundleMetas {
-		if m.Id == id {
+		if m.GetId() == id {
 			initBundleMeta = m
 			break
 		}
@@ -199,7 +199,7 @@ func (s *clusterInitBackendTestSuite) TestInitBundleLifecycle() {
 	protoassert.Equal(s.T(), initBundle.Meta, initBundleMeta, "init bundle meta data changed between generation and listing")
 
 	// Verify it is not revoked.
-	s.Require().False(initBundleMeta.IsRevoked, "newly generated init bundle is revoked")
+	s.Require().False(initBundleMeta.GetIsRevoked(), "newly generated init bundle is revoked")
 
 	// Verify it can be revoked.
 	err = s.backend.Revoke(ctx, id)
@@ -214,7 +214,7 @@ func (s *clusterInitBackendTestSuite) TestInitBundleLifecycle() {
 
 	initBundleMeta = nil
 	for _, m := range initBundleMetas {
-		if m.Id == id {
+		if m.GetId() == id {
 			initBundleMeta = m
 			break
 		}
@@ -237,7 +237,7 @@ func (s *clusterInitBackendTestSuite) TestCRSNameMustBeUnique() {
 }
 
 func (s *clusterInitBackendTestSuite) TestCRSDefaultExpiration() {
-	expectedNotAfter := time.Now().UTC().Add(1 * time.Hour)
+	expectedNotAfter := time.Now().UTC().Add(24 * time.Hour)
 
 	crsWithMeta, err := s.backend.IssueCRS(s.ctx, "crs-default-expiration", time.Time{}.UTC())
 	s.Require().NoError(err)
@@ -277,7 +277,7 @@ func (s *clusterInitBackendTestSuite) TestCRSLifecycle() {
 	// Issue new CRS.
 	crsWithMeta, err := s.backend.IssueCRS(ctx, crsName, time.Time{})
 	s.Require().NoError(err)
-	id := crsWithMeta.Meta.Id
+	id := crsWithMeta.Meta.GetId()
 
 	s.Require().Equal(crsWithMeta.CRS.Version, currentCrsVersion)
 	err = s.backend.CheckRevoked(ctx, id)
@@ -339,7 +339,7 @@ func (s *clusterInitBackendTestSuite) TestCRSLifecycle() {
 	protoassert.Equal(s.T(), crsWithMeta.Meta, crsMeta, "CRS meta data changed between generation and listing")
 
 	// Verify it is not revoked.
-	s.Require().False(crsMeta.IsRevoked, "newly generated CRS is revoked")
+	s.Require().False(crsMeta.GetIsRevoked(), "newly generated CRS is revoked")
 
 	// Verify it can be revoked.
 	err = s.backend.Revoke(ctx, id)
@@ -407,14 +407,14 @@ func (s *clusterInitBackendTestSuite) TestValidateClientCertificate() {
 	s.Require().NoError(err)
 
 	certs := []mtls.CertInfo{
-		{Subject: pkix.Name{Organization: []string{meta.Meta.Id}}},
+		{Subject: pkix.Name{Organization: []string{meta.Meta.GetId()}}},
 	}
 
 	// Success for valid init bundles
 	err = s.backend.ValidateClientCertificate(ctxWithoutSAC, certs)
 	s.Require().NoError(err)
 
-	err = s.backend.Revoke(s.ctx, meta.Meta.Id)
+	err = s.backend.Revoke(s.ctx, meta.Meta.GetId())
 	s.Require().NoError(err)
 
 	// Fail for a revoked init bundles

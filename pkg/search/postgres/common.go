@@ -16,12 +16,10 @@ import (
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/errox"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/pointers"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
-	pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/random"
 	searchPkg "github.com/stackrox/rox/pkg/search"
@@ -38,16 +36,6 @@ var (
 	emptyQueryErr = errox.InvalidArgs.New("empty query")
 
 	cursorDefaultTimeout = env.PostgresDefaultCursorTimeout.DurationSetting()
-
-	tableWithImageIDToField = map[string]string{
-		pkgSchema.ImagesTableName:              "Id",
-		pkgSchema.ImageComponentEdgesTableName: "ImageId",
-	}
-
-	tableWithImageCVEIDToField = map[string]string{
-		pkgSchema.ImageCvesTableName:              "Id",
-		pkgSchema.ImageComponentCveEdgesTableName: "ImageCveId",
-	}
 )
 
 const cursorBatchSize = 1000
@@ -291,7 +279,7 @@ func (q *query) AsSQL() string {
 	querySB.WriteString(" from ")
 	querySB.WriteString(q.From)
 
-	for i, join := range q.Joins {
+	for _, join := range q.Joins {
 		if join.joinType == Inner {
 			querySB.WriteString(" inner join ")
 		} else {
@@ -299,25 +287,6 @@ func (q *query) AsSQL() string {
 		}
 		querySB.WriteString(join.rightTable)
 		querySB.WriteString(" on")
-
-		if env.ImageCVEEdgeCustomJoin.BooleanSetting() && !features.FlattenCVEData.Enabled() {
-			if (i == len(q.Joins)-1) && (join.rightTable == pkgSchema.ImageCveEdgesTableName) {
-				// Step 4: Join image_cve_edges table such that both its ImageID and ImageCveId columns are matched with the joins so far
-				imageIDTable := findImageIDTableAndField(q.Joins)
-				imageCVEIDTable := findImageCVEIDTableAndField(q.Joins)
-				if imageIDTable != "" && imageCVEIDTable != "" {
-					imageIDField := tableWithImageIDToField[imageIDTable]
-					imageCVEIDField := tableWithImageCVEIDToField[imageCVEIDTable]
-					querySB.WriteString(fmt.Sprintf("(%s.%s = %s.%s and %s.%s = %s.%s)",
-						imageIDTable, imageIDField, pkgSchema.ImageCveEdgesTableName, "ImageId",
-						imageCVEIDTable, imageCVEIDField, pkgSchema.ImageCveEdgesTableName, "ImageCveId"))
-					continue
-				} else {
-					log.Error("Could not find tables to match both ImageId and ImageCveId columns on image_cve_edges table. " +
-						"Continuing with incomplete join")
-				}
-			}
-		}
 
 		for i, columnNamePair := range join.columnNamePairs {
 			if i > 0 {
@@ -457,34 +426,6 @@ func (p *parsedPaginationQuery) hasAnyOrdering() bool {
 	return len(p.OrderBys) > 0
 }
 
-func findImageIDTableAndField(joins []Join) string {
-	for _, join := range joins {
-		_, found := tableWithImageIDToField[join.leftTable]
-		if found {
-			return join.leftTable
-		}
-		_, found = tableWithImageIDToField[join.rightTable]
-		if found {
-			return join.rightTable
-		}
-	}
-	return ""
-}
-
-func findImageCVEIDTableAndField(joins []Join) string {
-	for _, join := range joins {
-		_, found := tableWithImageCVEIDToField[join.leftTable]
-		if found {
-			return join.leftTable
-		}
-		_, found = tableWithImageCVEIDToField[join.rightTable]
-		if found {
-			return join.rightTable
-		}
-	}
-	return ""
-}
-
 type parsedPaginationQuery struct {
 	OrderBys []orderByEntry
 	Limit    int
@@ -531,13 +472,6 @@ func standardizeQueryAndPopulatePath(ctx context.Context, q *v1.Query, schema *w
 	standardizeFieldNamesInQuery(q)
 	joins, dbFields := getJoinsAndFields(schema, q)
 
-	if env.ImageCVEEdgeCustomJoin.BooleanSetting() && !features.FlattenCVEData.Enabled() {
-		joins, err = handleImageCveEdgesTableInJoins(schema, joins)
-		if err != nil {
-			return nil, err
-		}
-	}
-
 	queryEntry, err := compileQueryToPostgres(schema, q, dbFields, nowForQuery)
 	if err != nil {
 		return nil, err
@@ -576,6 +510,13 @@ func standardizeQueryAndPopulatePath(ctx context.Context, q *v1.Query, schema *w
 		return nil, err
 	}
 
+	// If selects are provided in a SEARCH query, process them to enable single-pass SearchResult construction (ROX-29943)
+	if len(q.GetSelects()) > 0 && queryType == SEARCH {
+		if err := populateSelect(parsedQuery, schema, q.GetSelects(), dbFields, nowForQuery); err != nil {
+			return nil, errors.Wrapf(err, "failed to parse select portion of query -- %s --", q.String())
+		}
+	}
+
 	// Populate primary key select fields once so that we do not have to evaluate multiple times.
 	parsedQuery.populatePrimaryKeySelectFields()
 
@@ -584,48 +525,6 @@ func standardizeQueryAndPopulatePath(ctx context.Context, q *v1.Query, schema *w
 	}
 
 	return parsedQuery, nil
-}
-
-func handleImageCveEdgesTableInJoins(schema *walker.Schema, joins []Join) ([]Join, error) {
-	// By avoiding ImageCveEdgesSchema as long as possible in getJoinsAndFields, we should have ensured that
-	// unless ImageCveEdgesSchema is the src schema, it is not a leftTable in any of the inner joins. This means that
-	// we have found an alternative route (via image_components) to join image and image_cves tables and if present,
-	// image_cve_edges table is only there because of its required fields. In other words, it is not being used to join
-	// any two distant tables.
-	// But we validate the same just to be safe here
-	if schema != pkgSchema.ImageCveEdgesSchema {
-		idx, isLeftTable := findTableInJoins(joins, func(join Join) bool {
-			return join.leftTable == pkgSchema.ImageCveEdgesTableName
-		})
-
-		if isLeftTable {
-			return nil, errors.Wrapf(errox.InvariantViolation,
-				"Even though '%s' is not the root table in the query, it is the left table in inner join '%v'",
-				pkgSchema.ImageCveEdgesTableName, joins[idx])
-		}
-	}
-
-	// Step 3: If image_cve_edges table is the right table of any inner join, move that join to the end of the list.
-	// When building SQL query, this will ensure that we have already joined tables needed to match both CVEId and
-	// ImageId columns from image_cve_edges table.
-	idx, isRightTable := findTableInJoins(joins, func(join Join) bool {
-		return join.rightTable == pkgSchema.ImageCveEdgesTableName
-	})
-	if isRightTable {
-		elem := joins[idx]
-		joins = append(joins[:idx], joins[idx+1:]...)
-		joins = append(joins, elem)
-	}
-	return joins, nil
-}
-
-func findTableInJoins(innerJoins []Join, matchTables func(join Join) bool) (int, bool) {
-	for i, join := range innerJoins {
-		if matchTables(join) {
-			return i, true
-		}
-	}
-	return -1, false
 }
 
 // combineDisjunction tries to optimize disjunction queries with `IN` operator when possible.
@@ -752,7 +651,7 @@ func compileQueryToPostgres(schema *walker.Schema, q *v1.Query, queryFields map[
 
 	switch sub := q.GetQuery().(type) {
 	case *v1.Query_BaseQuery:
-		switch subBQ := q.GetBaseQuery().Query.(type) {
+		switch subBQ := q.GetBaseQuery().GetQuery().(type) {
 		case *v1.BaseQuery_DocIdQuery:
 			cast := "::text[]"
 			if schema.ID().SQLType == "uuid" {
@@ -779,7 +678,7 @@ func compileQueryToPostgres(schema *walker.Schema, q *v1.Query, queryFields map[
 			return pgsearch.NewFalseQuery(), nil
 		case *v1.BaseQuery_MatchLinkedFieldsQuery:
 			var entries []*pgsearch.QueryEntry
-			for _, q := range subBQ.MatchLinkedFieldsQuery.Query {
+			for _, q := range subBQ.MatchLinkedFieldsQuery.GetQuery() {
 				queryFieldMetadata := queryFields[q.GetField()]
 				qe, err := pgsearch.MatchFieldQuery(queryFieldMetadata.baseField, queryFieldMetadata.derivedMetadata, q.GetValue(), q.GetHighlight(), nowForQuery)
 				if err != nil {
@@ -794,19 +693,19 @@ func compileQueryToPostgres(schema *walker.Schema, q *v1.Query, queryFields map[
 			panic("unsupported")
 		}
 	case *v1.Query_Conjunction:
-		entries, err := entriesFromQueries(schema, sub.Conjunction.Queries, queryFields, nowForQuery)
+		entries, err := entriesFromQueries(schema, sub.Conjunction.GetQueries(), queryFields, nowForQuery)
 		if err != nil {
 			return nil, err
 		}
 		return combineQueryEntries(entries, " and "), nil
 	case *v1.Query_Disjunction:
-		entries, err := entriesFromQueries(schema, sub.Disjunction.Queries, queryFields, nowForQuery)
+		entries, err := entriesFromQueries(schema, sub.Disjunction.GetQueries(), queryFields, nowForQuery)
 		if err != nil {
 			return nil, err
 		}
 		return combineDisjunction(entries), nil
 	case *v1.Query_BooleanQuery:
-		entries, err := entriesFromQueries(schema, sub.BooleanQuery.Must.Queries, queryFields, nowForQuery)
+		entries, err := entriesFromQueries(schema, sub.BooleanQuery.GetMust().GetQueries(), queryFields, nowForQuery)
 		if err != nil {
 			return nil, err
 		}
@@ -815,7 +714,7 @@ func compileQueryToPostgres(schema *walker.Schema, q *v1.Query, queryFields map[
 			cqe = pgsearch.NewTrueQuery()
 		}
 
-		entries, err = entriesFromQueries(schema, sub.BooleanQuery.MustNot.Queries, queryFields, nowForQuery)
+		entries, err = entriesFromQueries(schema, sub.BooleanQuery.GetMustNot().GetQueries(), queryFields, nowForQuery)
 		if err != nil {
 			return nil, err
 		}
@@ -833,8 +732,18 @@ func compileQueryToPostgres(schema *walker.Schema, q *v1.Query, queryFields map[
 	return nil, nil
 }
 
-func valueFromStringPtrInterface(value interface{}) string {
-	return *(value.(*string))
+func valueFromStringPtrInterface(val interface{}) string {
+	if val == nil {
+		return ""
+	}
+	strPtr, ok := val.(*string)
+	if !ok {
+		return ""
+	}
+	if strPtr == nil {
+		return ""
+	}
+	return *strPtr
 }
 
 func standardizeFieldNamesInQuery(q *v1.Query) {
@@ -848,12 +757,12 @@ func standardizeFieldNamesInQuery(q *v1.Query) {
 	// without access to the options map.
 	// TODO: this could be made cleaner by refactoring the v1.Query object to directly have FieldLabels.
 	searchPkg.ApplyFnToAllBaseQueries(q, func(bq *v1.BaseQuery) {
-		switch bq := bq.Query.(type) {
+		switch bq := bq.GetQuery().(type) {
 		case *v1.BaseQuery_MatchFieldQuery:
-			bq.MatchFieldQuery.Field = strings.ToLower(bq.MatchFieldQuery.Field)
+			bq.MatchFieldQuery.Field = strings.ToLower(bq.MatchFieldQuery.GetField())
 		case *v1.BaseQuery_MatchLinkedFieldsQuery:
-			for _, q := range bq.MatchLinkedFieldsQuery.Query {
-				q.Field = strings.ToLower(q.Field)
+			for _, q := range bq.MatchLinkedFieldsQuery.GetQuery() {
+				q.Field = strings.ToLower(q.GetField())
 			}
 		}
 	})
@@ -863,7 +772,7 @@ func standardizeFieldNamesInQuery(q *v1.Query) {
 	}
 
 	for _, sortOption := range q.GetPagination().GetSortOptions() {
-		sortOption.Field = strings.ToLower(sortOption.Field)
+		sortOption.Field = strings.ToLower(sortOption.GetField())
 	}
 }
 
@@ -966,8 +875,9 @@ func retryableRunSearchRequestForSchema(ctx context.Context, query *query, schem
 			idx = len(searchResults)
 			recordIDIdxMap[id] = idx
 			searchResults = append(searchResults, searchPkg.Result{
-				ID:      IDFromPks(idParts), // TODO: figure out what separator to use
-				Matches: make(map[string][]string),
+				ID:          IDFromPks(idParts), // TODO: figure out what separator to use
+				Matches:     make(map[string][]string),
+				FieldValues: make(map[string]string),
 			})
 		}
 		result := searchResults[idx]
@@ -978,8 +888,16 @@ func retryableRunSearchRequestForSchema(ctx context.Context, query *query, schem
 				if field.PostTransform != nil {
 					returnedValue = field.PostTransform(returnedValue)
 				}
-				if matches := mustPrintForDataType(field.FieldType, returnedValue); len(matches) > 0 {
-					result.Matches[field.FieldPath] = append(result.Matches[field.FieldPath], matches...)
+				if printedValues := mustPrintForDataType(field.FieldType, returnedValue); len(printedValues) > 0 {
+					// Only add to Matches if this field is from a query constraint (not just a selected field)
+					// Fields selected only for SearchResult proto construction (ROX-29943) should not affect Matches
+					if field.IncludeInMatches {
+						result.Matches[field.FieldPath] = append(result.Matches[field.FieldPath], printedValues...)
+					}
+					// Always populate FieldValues for SearchResult proto construction
+					if len(printedValues) > 0 {
+						result.FieldValues[field.FieldPath] = printedValues[0]
+					}
 				}
 			}
 		}
@@ -1172,6 +1090,11 @@ func retryableGetCursorSession(ctx context.Context, schema *walker.Schema, q *v1
 		return nil, err
 	}
 
+	// The query that was passed did not make sense given the context of the query, so we return nothing
+	if preparedQuery == nil {
+		return nil, nil
+	}
+
 	queryStr := preparedQuery.AsSQL()
 
 	tx, err := db.Begin(ctx)
@@ -1214,17 +1137,34 @@ func RunCursorQueryForSchemaFn[T any, PT pgutils.Unmarshaler[T]](ctx context.Con
 	if err != nil {
 		return errors.Wrap(err, "prepare cursor")
 	}
+	if cursor == nil {
+		return nil
+	}
 	defer cursor.close()
 
+	rowsData := make([]PT, 0, cursorBatchSize)
 	for {
+		rowsData = rowsData[:0]
 		rows, err := cursor.tx.Query(ctx, fmt.Sprintf("FETCH %d FROM %s", cursorBatchSize, cursor.id))
 		if err != nil {
 			return errors.Wrap(err, "advancing in cursor")
 		}
 
-		rowsAffected, err := handleRowsWithCallback(ctx, rows, callback)
+		rowsAffected, err := handleRowsWithCallback(ctx, rows, func(obj PT) error {
+			rowsData = append(rowsData, obj)
+			return nil
+		})
 		if err != nil {
-			return errors.Wrap(err, "processing rows")
+			return errors.Wrap(err, "reading rows from cursor")
+		}
+
+		for _, obj := range rowsData {
+			if ctx.Err() != nil {
+				return errors.Wrap(ctx.Err(), "iterating over rows")
+			}
+			if err := callback(obj); err != nil {
+				return errors.Wrap(err, "processing rows")
+			}
 		}
 
 		if rowsAffected != cursorBatchSize {
@@ -1323,7 +1263,7 @@ func qualifyColumn(table, column, cast string) string {
 }
 
 // getAggregateFunction returns the appropriate aggregate function based on field type and sort direction
-func getAggregateFunction(fieldType postgres.DataType, descending bool) string {
+func getAggregateFunction(_ postgres.DataType, descending bool) string {
 	// Fallback to standard MIN/MAX logic for unknown types
 	if descending {
 		return "MAX"

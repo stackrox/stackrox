@@ -105,7 +105,7 @@ func NewDockerRegistryWithConfig(cfg *Config, integration *storage.ImageIntegrat
 func NewDockerRegistry(integration *storage.ImageIntegration, disableRepoList bool,
 	metricsHandler *types.MetricsHandler,
 ) (*Registry, error) {
-	dockerConfig, ok := integration.IntegrationConfig.(*storage.ImageIntegration_Docker)
+	dockerConfig, ok := integration.GetIntegrationConfig().(*storage.ImageIntegration_Docker)
 	if !ok {
 		return nil, errors.New("Docker configuration required")
 	}

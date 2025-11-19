@@ -1,4 +1,4 @@
-import React, { ReactElement } from 'react';
+import type { ReactElement } from 'react';
 import { Alert } from '@patternfly/react-core';
 
 export type FormResponseMessage = {

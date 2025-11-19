@@ -108,9 +108,10 @@ func (h *resourceEventHandlerImpl) sendResourceEvent(obj, oldObj interface{}, ac
 		kubernetes.TrimAnnotations(metaObj)
 	}
 
-	message := h.dispatcher.ProcessEvent(obj, oldObj, action)
-	message.Context = h.context
-	h.resolver.Send(message)
+	if message := h.dispatcher.ProcessEvent(obj, oldObj, action); message != nil {
+		message.Context = h.context
+		h.resolver.Send(message)
+	}
 }
 
 func getObjUID(newObj interface{}) types.UID {

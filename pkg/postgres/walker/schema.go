@@ -496,6 +496,10 @@ type foreignKeyRef struct {
 	// time.
 	OtherSchema *Schema
 	ColumnName  string
+
+	// If true, the constraint on this foreign key allows for NULL meaning the relationship does not
+	// exist for this row
+	Nullable bool
 }
 
 // FieldInOtherSchema returns the `Field` in the other schema that has the specific column name.

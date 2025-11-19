@@ -10,7 +10,6 @@ import (
 	clusterDSMocks "github.com/stackrox/rox/central/cluster/datastore/mocks"
 	notifierDSMocks "github.com/stackrox/rox/central/notifier/datastore/mocks"
 	policyStore "github.com/stackrox/rox/central/policy/store"
-	pgStore "github.com/stackrox/rox/central/policy/store/postgres"
 	policyCategoryDS "github.com/stackrox/rox/central/policycategory/datastore"
 	policyCategoryMocks "github.com/stackrox/rox/central/policycategory/datastore/mocks"
 	categoryPostgres "github.com/stackrox/rox/central/policycategory/store/postgres"
@@ -26,7 +25,6 @@ import (
 	pkgSearch "github.com/stackrox/rox/pkg/search"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
-	"gorm.io/gorm"
 )
 
 func TestPolicyDataStoreWithPostgres(t *testing.T) {
@@ -38,7 +36,6 @@ type PolicyPostgresDataStoreTestSuite struct {
 
 	ctx            context.Context
 	db             postgres.DB
-	gormDB         *gorm.DB
 	mockClusterDS  *clusterDSMocks.MockDataStore
 	mockNotifierDS *notifierDSMocks.MockDataStore
 
@@ -50,30 +47,18 @@ type PolicyPostgresDataStoreTestSuite struct {
 }
 
 func (s *PolicyPostgresDataStoreTestSuite) SetupSuite() {
-
 	s.ctx = context.Background()
-
-	source := pgtest.GetConnectionString(s.T())
-	config, err := postgres.ParseConfig(source)
-	s.Require().NoError(err)
-
-	pool, err := postgres.New(s.ctx, config)
-	s.NoError(err)
-	s.gormDB = pgtest.OpenGormDB(s.T(), source)
-	s.db = pool
 }
 
 func (s *PolicyPostgresDataStoreTestSuite) SetupTest() {
-	pgStore.Destroy(s.ctx, s.db)
-	categoryPostgres.Destroy(s.ctx, s.db)
-	edgePostgres.Destroy(s.ctx, s.db)
+	s.db = pgtest.ForT(s.T())
 
 	s.mockClusterDS = clusterDSMocks.NewMockDataStore(gomock.NewController(s.T()))
 	s.mockNotifierDS = notifierDSMocks.NewMockDataStore(gomock.NewController(s.T()))
 
-	categoryStorage := categoryPostgres.CreateTableAndNewStore(s.ctx, s.db, s.gormDB)
+	categoryStorage := categoryPostgres.New(s.db)
 
-	edgeStorage := edgePostgres.CreateTableAndNewStore(s.ctx, s.db, s.gormDB)
+	edgeStorage := edgePostgres.New(s.db)
 
 	s.categoryDS = policyCategoryDS.New(categoryStorage, policyCategoryEdgeDS.New(edgeStorage))
 
@@ -84,9 +69,8 @@ func (s *PolicyPostgresDataStoreTestSuite) SetupTest() {
 	s.datastoreWithMockCategoryDS = New(policyStorage, s.mockClusterDS, s.mockNotifierDS, s.mockCategoryDS)
 }
 
-func (s *PolicyPostgresDataStoreTestSuite) TearDownSuite() {
+func (s *PolicyPostgresDataStoreTestSuite) TearDownTest() {
 	s.db.Close()
-	pgtest.CloseGormDB(s.T(), s.gormDB)
 }
 
 func (s *PolicyPostgresDataStoreTestSuite) TestInsertUpdatePolicy() {
@@ -263,8 +247,8 @@ func (s *PolicyPostgresDataStoreTestSuite) TestImportOverwriteDefaultPolicy() {
 			s.Require().NoError(err) // It's not an error just a failure?
 			s.Require().False(allSucceeded)
 			s.Require().Len(responses, 1)
-			s.Require().Len(responses[0].Errors, 1)
-			s.Require().Equal(responses[0].Errors[0].Type, c.expectedImportError)
+			s.Require().Len(responses[0].GetErrors(), 1)
+			s.Require().Equal(responses[0].GetErrors()[0].GetType(), c.expectedImportError)
 
 			// Now try to import with overwrite true
 			responses, allSucceeded, err = s.datastore.ImportPolicies(ctx, []*storage.Policy{c.newPolicy}, true)
@@ -273,8 +257,8 @@ func (s *PolicyPostgresDataStoreTestSuite) TestImportOverwriteDefaultPolicy() {
 				s.Require().NoError(err) // It's not an error just a failure?
 				s.Require().False(allSucceeded)
 				s.Require().Len(responses, 1)
-				s.Require().Len(responses[0].Errors, 1)
-				s.Require().Equal(responses[0].Errors[0].Type, c.expectedImportError) // ... should the error be different?
+				s.Require().Len(responses[0].GetErrors(), 1)
+				s.Require().Equal(responses[0].GetErrors()[0].GetType(), c.expectedImportError) // ... should the error be different?
 
 				// Find the existing policy and validate the name and id
 				result, _, err := s.datastore.GetPolicy(ctx, c.existingPolicy.GetId())
@@ -287,7 +271,7 @@ func (s *PolicyPostgresDataStoreTestSuite) TestImportOverwriteDefaultPolicy() {
 				s.NoError(err) // It's not an error just a failure?
 				s.True(allSucceeded)
 				s.Require().Len(responses, 1)
-				s.Empty(responses[0].Errors)
+				s.Empty(responses[0].GetErrors())
 
 				// Find the new policy and validate the name and id
 				result, _, err := s.datastore.GetPolicy(ctx, c.newPolicy.GetId())
@@ -342,7 +326,7 @@ func (s *PolicyPostgresDataStoreTestSuite) TestSearchRawPolicies() {
 	policies, err := s.datastore.SearchRawPolicies(ctx, pkgSearch.EmptyQuery())
 	s.NoError(err)
 	s.Len(policies, 1)
-	s.Len(policies[0].Categories, 3)
+	s.Len(policies[0].GetCategories(), 3)
 }
 
 func (s *PolicyPostgresDataStoreTestSuite) TestTransactionRollbacks() {

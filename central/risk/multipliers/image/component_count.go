@@ -47,6 +47,28 @@ func (c *componentCountMultiplier) Score(_ context.Context, image *storage.Image
 	}
 }
 
+// ScoreV2 takes an image and evaluates its risk based on component counts.
+func (c *componentCountMultiplier) ScoreV2(_ context.Context, image *storage.ImageV2) *storage.Risk_Result {
+	// Get the number of components in the image.
+	components := set.NewStringSet()
+	for _, component := range image.GetScan().GetComponents() {
+		components.Add(componentKey(component))
+	}
+	count := components.Cardinality()
+	score := GetComponentCountRiskScore(count)
+	if score == 0.0 {
+		return nil
+	}
+	message := GetComponentCountRiskFactorMsg(image.GetName().GetFullName(), count)
+	return &storage.Risk_Result{
+		Name: ComponentCountHeading,
+		Factors: []*storage.Risk_Result_Factor{
+			{Message: message},
+		},
+		Score: score,
+	}
+}
+
 func componentKey(comp *storage.EmbeddedImageScanComponent) string {
 	return fmt.Sprintf("%s:%s", comp.GetName(), comp.GetVersion())
 }

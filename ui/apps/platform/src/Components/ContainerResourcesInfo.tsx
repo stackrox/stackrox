@@ -1,4 +1,3 @@
-import React from 'react';
 import {
     Card,
     CardBody,
@@ -9,7 +8,7 @@ import {
     DescriptionListTerm,
 } from '@patternfly/react-core';
 
-import { ContainerResources } from 'types/deployment.proto';
+import type { ContainerResources } from 'types/deployment.proto';
 
 type ContainerResourcesInfoProps = {
     resources: ContainerResources;
@@ -28,7 +27,7 @@ function ContainerResourcesInfo({ resources }: ContainerResourcesInfoProps) {
                         </DescriptionListDescription>
                     </DescriptionListGroup>
                     <DescriptionListGroup>
-                        <DescriptionListTerm>CPU limet (cores)</DescriptionListTerm>
+                        <DescriptionListTerm>CPU limit (cores)</DescriptionListTerm>
                         <DescriptionListDescription>
                             {resources.cpuCoresLimit}
                         </DescriptionListDescription>

@@ -110,7 +110,7 @@ func (suite *PipelineTestSuite) TestReconcile() {
 	expectedQuery := search.NewQueryBuilder().AddExactMatches(search.ClusterID, clusterID).ProtoQuery()
 	expectedPod := fixtures.GetPod()
 	result := search.NewResult()
-	result.ID = expectedPod.Id
+	result.ID = expectedPod.GetId()
 	suite.pods.EXPECT().Search(ctx, expectedQuery).Return([]search.Result{*result}, nil)
 	suite.pods.EXPECT().RemovePod(ctx, expectedPod.GetId()).Return(nil)
 	suite.NoError(suite.pipeline.Reconcile(ctx, clusterID, reconciliation.NewStoreMap()))

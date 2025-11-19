@@ -85,6 +85,11 @@ func Test_shouldRetry(t *testing.T) {
 			expected: false,
 		},
 		{
+			name:     "GRPC Deadline Exceeded",
+			err:      status.Error(codes.DeadlineExceeded, "context deadline exceeded"),
+			expected: true,
+		},
+		{
 			name:     "GRPC Unavailable Error",
 			err:      status.Error(codes.Unavailable, "service unavailable"),
 			expected: true,

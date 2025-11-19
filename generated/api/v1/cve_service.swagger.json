@@ -6,9 +6,6 @@
   },
   "tags": [
     {
-      "name": "ImageCVEService"
-    },
-    {
       "name": "NodeCVEService"
     },
     {
@@ -85,72 +82,6 @@
         ],
         "tags": [
           "ClusterCVEService"
-        ]
-      }
-    },
-    "/v1/imagecves/suppress": {
-      "patch": {
-        "summary": "SuppressCVE suppresses image cves.",
-        "operationId": "ImageCVEService_SuppressCVEs",
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/v1Empty"
-            }
-          },
-          "default": {
-            "description": "An unexpected error response.",
-            "schema": {
-              "$ref": "#/definitions/googlerpcStatus"
-            }
-          }
-        },
-        "parameters": [
-          {
-            "name": "body",
-            "in": "body",
-            "required": true,
-            "schema": {
-              "$ref": "#/definitions/v1SuppressCVERequest"
-            }
-          }
-        ],
-        "tags": [
-          "ImageCVEService"
-        ]
-      }
-    },
-    "/v1/imagecves/unsuppress": {
-      "patch": {
-        "summary": "UnsuppressCVE unsuppresses image cves.",
-        "operationId": "ImageCVEService_UnsuppressCVEs",
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/v1Empty"
-            }
-          },
-          "default": {
-            "description": "An unexpected error response.",
-            "schema": {
-              "$ref": "#/definitions/googlerpcStatus"
-            }
-          }
-        },
-        "parameters": [
-          {
-            "name": "body",
-            "in": "body",
-            "required": true,
-            "schema": {
-              "$ref": "#/definitions/v1UnsuppressCVERequest"
-            }
-          }
-        ],
-        "tags": [
-          "ImageCVEService"
         ]
       }
     },

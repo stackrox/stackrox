@@ -50,36 +50,6 @@ const defaultWaitTime = 600 * time.Second
 const defaultSleepTime = 10 * time.Second
 const defaultTickTime = 2 * time.Second
 
-type collectT struct {
-	t *testing.T
-	c *assert.CollectT
-}
-
-func (c *collectT) Fatalf(format string, args ...interface{}) {
-	if c.t != nil {
-		c.t.Fatalf(format, args...)
-	}
-}
-
-func (c *collectT) Errorf(format string, args ...interface{}) {
-	if c.c != nil {
-		c.c.Errorf(format, args...)
-	}
-}
-
-func (c *collectT) FailNow() {
-	if c.c != nil {
-		c.c.FailNow()
-	}
-}
-
-func wrapCollectT(t *testing.T, c *assert.CollectT) *collectT {
-	return &collectT{
-		t: t,
-		c: c,
-	}
-}
-
 func getCurrentComplianceResults(t testutils.T) (rhcos, ocp *storage.ComplianceRunResults) {
 	conn := centralgrpc.GRPCConnectionToCentral(t)
 	managementService := v1.NewComplianceManagementServiceClient(conn)
@@ -93,7 +63,7 @@ func getCurrentComplianceResults(t testutils.T) (rhcos, ocp *storage.ComplianceR
 	require.NoError(t, err)
 
 	var rhcosRun, ocpRun *v1.ComplianceRun
-	for _, run := range resp.StartedRuns {
+	for _, run := range resp.GetStartedRuns() {
 		// Ensure the profile not referenced by a scan setting binding is not run
 		assert.NotEqual(t, unusedProfile, run.GetStandardId())
 		switch run.GetStandardId() {

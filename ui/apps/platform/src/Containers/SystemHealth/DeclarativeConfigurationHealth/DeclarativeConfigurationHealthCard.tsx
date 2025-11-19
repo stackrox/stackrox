@@ -1,4 +1,5 @@
-import React, { useState, useEffect, ReactElement } from 'react';
+import { useEffect, useState } from 'react';
+import type { ReactElement } from 'react';
 import {
     Alert,
     Card,
@@ -8,15 +9,15 @@ import {
     Flex,
     FlexItem,
 } from '@patternfly/react-core';
-import { Table, Tbody, Td, Thead, Th, Tr } from '@patternfly/react-table';
+import { Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 import pluralize from 'pluralize';
 
 import { fetchDeclarativeConfigurationsHealth } from 'services/DeclarativeConfigHealthService';
+import type { DeclarativeConfigHealth } from 'types/declarativeConfigHealth.proto';
 import { getDateTime } from 'utils/dateUtils';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 
-import { ErrorIcon, healthIconMap, SpinnerIcon } from '../CardHeaderIcons';
-import { DeclarativeConfigHealth } from '../../../types/declarativeConfigHealth.proto';
+import { ErrorIcon, SpinnerIcon, healthIconMap } from '../CardHeaderIcons';
 
 type DeclarativeConfigurationHealthCardProps = {
     pollingCount: number;

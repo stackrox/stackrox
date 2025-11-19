@@ -1,4 +1,3 @@
-import React from 'react';
 import { Flex, PageSection, Text, Title } from '@patternfly/react-core';
 
 function CoveragesPageHeader() {

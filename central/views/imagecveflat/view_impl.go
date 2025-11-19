@@ -10,6 +10,8 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/contextutil"
 	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/sac/resources"
@@ -21,6 +23,7 @@ import (
 
 var (
 	queryTimeout = env.PostgresVMStatementTimeout.DurationSetting()
+	log          = logging.LoggerForModule()
 )
 
 type imageCVEFlatViewImpl struct {
@@ -62,12 +65,14 @@ func (v *imageCVEFlatViewImpl) Get(ctx context.Context, q *v1.Query, options vie
 	if err := common.ValidateQuery(q); err != nil {
 		return nil, err
 	}
-
 	var err error
 	// Avoid changing the passed query
 	cloned := q.CloneVT()
+	// Update the sort options to use aggregations if necessary as we are grouping by CVEs
+	cloned = common.UpdateSortAggs(cloned)
 	cloned, err = common.WithSACFilter(ctx, resources.Image, cloned)
 	if err != nil {
+		log.Error(err)
 		return nil, err
 	}
 
@@ -76,6 +81,7 @@ func (v *imageCVEFlatViewImpl) Get(ctx context.Context, q *v1.Query, options vie
 	if cloned.GetPagination().GetLimit() > 0 || cloned.GetPagination().GetOffset() > 0 {
 		cveIDsToFilter, err = v.getFilteredCVEs(ctx, cloned)
 		if err != nil {
+			log.Error(err)
 			return nil, err
 		}
 
@@ -92,6 +98,7 @@ func (v *imageCVEFlatViewImpl) Get(ctx context.Context, q *v1.Query, options vie
 	var results []*imageCVEFlatResponse
 	results, err = pgSearch.RunSelectRequestForSchema[imageCVEFlatResponse](queryCtx, v.db, v.schema, withSelectCVEFlatResponseQuery(cloned, cveIDsToFilter, options))
 	if err != nil {
+		log.Error(err)
 		return nil, err
 	}
 
@@ -113,38 +120,6 @@ func withSelectCVEIdentifiersQuery(q *v1.Query) *v1.Query {
 	}
 	cloned.GroupBy = &v1.QueryGroupBy{
 		Fields: []string{search.CVE.String()},
-	}
-
-	// We are prefetching IDs, so we only want to aggregate and sort on items being sorted on at this time.
-	// Once we have the subset of IDs we will to back and get the rest of the data.
-	for _, sortOption := range cloned.GetPagination().GetSortOptions() {
-		if sortOption.Field == search.Severity.String() {
-			sortOption.Field = search.SeverityMax.String()
-		}
-		if sortOption.Field == search.CVSS.String() {
-			sortOption.Field = search.CVSSMax.String()
-		}
-		if sortOption.Field == search.CVECreatedTime.String() {
-			sortOption.Field = search.CVECreatedTimeMin.String()
-		}
-		if sortOption.Field == search.EPSSProbablity.String() {
-			sortOption.Field = search.EPSSProbablityMax.String()
-		}
-		if sortOption.Field == search.ImpactScore.String() {
-			sortOption.Field = search.ImpactScoreMax.String()
-		}
-		if sortOption.Field == search.FirstImageOccurrenceTimestamp.String() {
-			sortOption.Field = search.FirstImageOccurrenceTimestampMin.String()
-		}
-		if sortOption.Field == search.CVEPublishedOn.String() {
-			sortOption.Field = search.CVEPublishedOnMin.String()
-		}
-		if sortOption.Field == search.VulnerabilityState.String() {
-			sortOption.Field = search.VulnerabilityStateMax.String()
-		}
-		if sortOption.Field == search.NVDCVSS.String() {
-			sortOption.Field = search.NVDCVSSMax.String()
-		}
 	}
 
 	return cloned
@@ -169,8 +144,14 @@ func withSelectCVEFlatResponseQuery(q *v1.Query, cveIDsToFilter []string, option
 	if !options.SkipGetTopCVSS {
 		cloned.Selects = append(cloned.Selects, search.NewQuerySelect(search.CVSS).AggrFunc(aggregatefunc.Max).Proto())
 	}
+	var searchField search.FieldLabel
+	if features.FlattenImageData.Enabled() {
+		searchField = search.ImageID
+	} else {
+		searchField = search.ImageSHA
+	}
 	if !options.SkipGetAffectedImages {
-		cloned.Selects = append(cloned.Selects, search.NewQuerySelect(search.ImageSHA).AggrFunc(aggregatefunc.Count).Distinct().Proto())
+		cloned.Selects = append(cloned.Selects, search.NewQuerySelect(searchField).AggrFunc(aggregatefunc.Count).Distinct().Proto())
 	}
 	if !options.SkipGetFirstDiscoveredInSystem {
 		cloned.Selects = append(cloned.Selects, search.NewQuerySelect(search.CVECreatedTime).AggrFunc(aggregatefunc.Min).Proto())
@@ -184,39 +165,6 @@ func withSelectCVEFlatResponseQuery(q *v1.Query, cveIDsToFilter []string, option
 
 	cloned.GroupBy = &v1.QueryGroupBy{
 		Fields: []string{search.CVE.String()},
-	}
-
-	// This is to minimize UI change and hide an implementation detail that the schema is denormalized.
-	// Now that these fields are aggregations, in order to sort on them, we have to set the sort field as such to match
-	// the query field.
-	for _, sortOption := range cloned.GetPagination().GetSortOptions() {
-		if sortOption.Field == search.Severity.String() {
-			sortOption.Field = search.SeverityMax.String()
-		}
-		if sortOption.Field == search.CVSS.String() {
-			sortOption.Field = search.CVSSMax.String()
-		}
-		if sortOption.Field == search.CVECreatedTime.String() {
-			sortOption.Field = search.CVECreatedTimeMin.String()
-		}
-		if sortOption.Field == search.EPSSProbablity.String() {
-			sortOption.Field = search.EPSSProbablityMax.String()
-		}
-		if sortOption.Field == search.ImpactScore.String() {
-			sortOption.Field = search.ImpactScoreMax.String()
-		}
-		if sortOption.Field == search.FirstImageOccurrenceTimestamp.String() {
-			sortOption.Field = search.FirstImageOccurrenceTimestampMin.String()
-		}
-		if sortOption.Field == search.CVEPublishedOn.String() {
-			sortOption.Field = search.CVEPublishedOnMin.String()
-		}
-		if sortOption.Field == search.VulnerabilityState.String() {
-			sortOption.Field = search.VulnerabilityStateMax.String()
-		}
-		if sortOption.Field == search.NVDCVSS.String() {
-			sortOption.Field = search.NVDCVSSMax.String()
-		}
 	}
 
 	return cloned
@@ -234,6 +182,7 @@ func (v *imageCVEFlatViewImpl) getFilteredCVEs(ctx context.Context, q *v1.Query)
 	var identifiersList []*imageCVEFlatResponse
 	identifiersList, err := pgSearch.RunSelectRequestForSchema[imageCVEFlatResponse](queryCtx, v.db, v.schema, withSelectCVEIdentifiersQuery(q))
 	if err != nil {
+		log.Error(err)
 		return nil, err
 	}
 

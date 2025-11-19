@@ -191,10 +191,10 @@ func migrateScans(database *types.Databases) error {
 		// Add the profile ref id and scan ref id
 		scanProto.ProductType = scanTypeToString[scanProto.GetScanType()]
 		scanProto.ScanRefId = buildDeterministicID(scanProto.GetClusterId(), scanProto.GetScanName())
-		if scanProto.Profile == nil {
+		if scanProto.GetProfile() == nil {
 			return errors.Wrapf(err, "failed to set profile %+v to proto", scan)
 		}
-		scanProto.Profile.ProfileRefId = createProfileRefID(scanProto.GetClusterId(), scanProto.Profile.ProfileId, scanProto.GetProductType())
+		scanProto.Profile.ProfileRefId = createProfileRefID(scanProto.GetClusterId(), scanProto.GetProfile().GetProfileId(), scanProto.GetProductType())
 
 		converted, err := newSchema.ConvertComplianceOperatorScanV2FromProto(scanProto)
 		if err != nil {

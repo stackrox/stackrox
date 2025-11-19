@@ -6,10 +6,10 @@ import (
 	"time"
 
 	"github.com/stackrox/rox/pkg/env"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/net"
 	"github.com/stackrox/rox/pkg/networkgraph"
 	"github.com/stackrox/rox/pkg/timestamp"
+	"github.com/stackrox/rox/sensor/common/networkflow/manager/indicator"
 	"github.com/stretchr/testify/assert"
 	"go.uber.org/mock/gomock"
 )
@@ -95,7 +95,7 @@ func TestEnrichConnection_BusinessLogicPaths(t *testing.T) {
 		setupFeatureFlags  func(*testing.T)
 		expectedResult     EnrichmentResult
 		expectedReason     EnrichmentReasonConn
-		validateEnrichment func(*testing.T, map[networkConnIndicator]timestamp.MicroTS)
+		validateEnrichment func(*testing.T, map[indicator.NetworkConn]timestamp.MicroTS)
 	}{
 		"IP parsing error caused by malformed address should yield result EnrichmentResultInvalidInput with reason EnrichmentReasonConnParsingIPFailed": {
 			setupConnection: func() (*connection, *connStatus) {
@@ -126,10 +126,10 @@ func TestEnrichConnection_BusinessLogicPaths(t *testing.T) {
 			},
 			expectedResult: EnrichmentResultSuccess,
 			expectedReason: EnrichmentReasonConnSuccess,
-			validateEnrichment: func(t *testing.T, enriched map[networkConnIndicator]timestamp.MicroTS) {
+			validateEnrichment: func(t *testing.T, enriched map[indicator.NetworkConn]timestamp.MicroTS) {
 				assert.Len(t, enriched, 1, "Should have one enriched connection")
 				for indicator := range enriched {
-					assert.Equal(t, "external-network-id", indicator.dstEntity.ID, "Should use external source entity")
+					assert.Equal(t, "external-network-id", indicator.DstEntity.ID, "Should use external source entity")
 				}
 			},
 		},
@@ -165,10 +165,10 @@ func TestEnrichConnection_BusinessLogicPaths(t *testing.T) {
 			},
 			expectedResult: EnrichmentResultSuccess,
 			expectedReason: EnrichmentReasonConnSuccess,
-			validateEnrichment: func(t *testing.T, enriched map[networkConnIndicator]timestamp.MicroTS) {
+			validateEnrichment: func(t *testing.T, enriched map[indicator.NetworkConn]timestamp.MicroTS) {
 				assert.Len(t, enriched, 1, "Should have one enriched connection")
 				for indicator := range enriched {
-					assert.Equal(t, networkgraph.InternetEntity().ID, indicator.dstEntity.ID, "Should use Internet entity")
+					assert.Equal(t, networkgraph.InternetEntity().ID, indicator.DstEntity.ID, "Should use Internet entity")
 				}
 			},
 		},
@@ -186,41 +186,14 @@ func TestEnrichConnection_BusinessLogicPaths(t *testing.T) {
 			},
 			expectedResult: EnrichmentResultSuccess,
 			expectedReason: EnrichmentReasonConnSuccess,
-			validateEnrichment: func(t *testing.T, enriched map[networkConnIndicator]timestamp.MicroTS) {
+			validateEnrichment: func(t *testing.T, enriched map[indicator.NetworkConn]timestamp.MicroTS) {
 				assert.Len(t, enriched, 1, "Should have one enriched connection")
 				// For internal connections without external source, it creates a fallback entity
 				// This tests the fallback behavior for unknown internal addresses
 				for indicator := range enriched {
 					// Should enrich successfully regardless of entity type
-					assert.NotEmpty(t, indicator.dstEntity.ID, "Should have a valid destination entity")
+					assert.NotEmpty(t, indicator.DstEntity.ID, "Should have a valid destination entity")
 				}
-			},
-		},
-		"Connection with SensorCapturesIntermediateEvents disabled should yield result EnrichmentResultSuccess with reason EnrichmentReasonConnSuccess": {
-			setupConnection: func() (*connection, *connStatus) {
-				conn := &connection{
-					containerID: "test-container",
-					incoming:    false,
-					remote:      createEndpoint("8.8.8.8", 80),
-				}
-				status := &connStatus{
-					firstSeen:             timestamp.Now().Add(-time.Minute),
-					lastSeen:              timestamp.InfiniteFuture, // active connection
-					enrichmentConsumption: enrichmentConsumption{},
-				}
-				return conn, status
-			},
-			setupMocks: func(m *mockExpectations) {
-				m.expectContainerFound("test-deployment").expectEndpointFound("cluster-endpoint-id", 80)
-			},
-			setupFeatureFlags: func(t *testing.T) {
-				t.Setenv(features.SensorCapturesIntermediateEvents.EnvVar(), "false")
-			},
-			expectedResult: EnrichmentResultSuccess,
-			expectedReason: EnrichmentReasonConnSuccess,
-			validateEnrichment: func(t *testing.T, enriched map[networkConnIndicator]timestamp.MicroTS) {
-				// Should still enrich even with feature disabled
-				assert.Len(t, enriched, 1, "Should have one enriched connection")
 			},
 		},
 	}
@@ -247,7 +220,7 @@ func TestEnrichConnection_BusinessLogicPaths(t *testing.T) {
 
 			// Setup test data
 			conn, status := tt.setupConnection()
-			enrichedConnections := make(map[networkConnIndicator]timestamp.MicroTS)
+			enrichedConnections := make(map[indicator.NetworkConn]timestamp.MicroTS)
 
 			// Execute the enrichment
 			result, reason := m.enrichConnection(timestamp.Now(), conn, status, enrichedConnections)
@@ -290,14 +263,14 @@ func TestEnrichContainerEndpoint_EdgeCases(t *testing.T) {
 		expectedResultNG   EnrichmentResult
 		expectedResultPLOP EnrichmentResult
 		expectedReasonNG   EnrichmentReasonEp
-		prePopulateData    func(*testing.T, map[containerEndpointIndicator]timestamp.MicroTS, map[processListeningIndicator]timestamp.MicroTS)
+		prePopulateData    func(*testing.T, map[indicator.ContainerEndpoint]*indicator.ProcessListeningWithTimestamp)
 	}{
 		"Fresh endpoint with no process info should yield result EnrichmentResultSuccess for Network Graph and EnrichmentResultInvalidInput for PLOP": {
 			setupEndpoint: func() (*containerEndpoint, *connStatus) {
 				ep := &containerEndpoint{
 					endpoint:    commonEndpoint,
 					containerID: "test-container",
-					processKey:  processInfo{}, // empty process info
+					processKey:  indicator.ProcessInfo{}, // empty process info
 				}
 				return ep, freshConnStatus
 			},
@@ -323,14 +296,31 @@ func TestEnrichContainerEndpoint_EdgeCases(t *testing.T) {
 			expectedResultNG:   EnrichmentResultSuccess,
 			expectedResultPLOP: EnrichmentResultSuccess,
 			expectedReasonNG:   EnrichmentReasonEpDuplicate,
-			prePopulateData: func(t *testing.T, enrichedEndpoints map[containerEndpointIndicator]timestamp.MicroTS, processesListening map[processListeningIndicator]timestamp.MicroTS) {
+			prePopulateData: func(t *testing.T, data map[indicator.ContainerEndpoint]*indicator.ProcessListeningWithTimestamp) {
 				// Pre-populate with newer timestamp to trigger duplicate detection
-				indicator := containerEndpointIndicator{
-					entity:   networkgraph.EntityForDeployment("test-deployment"),
-					port:     80,
-					protocol: net.TCP.ToProtobuf(),
+				endpointIndicator := indicator.ContainerEndpoint{
+					Entity:   networkgraph.EntityForDeployment("test-deployment"),
+					Port:     80,
+					Protocol: net.TCP.ToProtobuf(),
 				}
-				enrichedEndpoints[indicator] = timestamp.Now() // newer timestamp
+				processIndicator := indicator.ProcessListening{
+					ContainerName: "test-container",
+					DeploymentID:  "test-deployment",
+					Process: indicator.ProcessInfo{
+						ProcessName: "test-process",
+						ProcessArgs: "test-args",
+						ProcessExec: "test-exec",
+					},
+					Port:      80,
+					Protocol:  net.TCP.ToProtobuf(),
+					PodID:     "test-pod",
+					PodUID:    "test-pod-uid",
+					Namespace: "test-namespace",
+				}
+				data[endpointIndicator] = &indicator.ProcessListeningWithTimestamp{
+					ProcessListening: &processIndicator,
+					LastSeen:         timestamp.Now(), // a newer timestamp
+				}
 			},
 		},
 	}
@@ -352,18 +342,17 @@ func TestEnrichContainerEndpoint_EdgeCases(t *testing.T) {
 
 			// Setup test data
 			ep, status := tt.setupEndpoint()
-			enrichedEndpoints := make(map[containerEndpointIndicator]timestamp.MicroTS)
-			processesListening := make(map[processListeningIndicator]timestamp.MicroTS)
+			enrichedEndpointsProcesses := make(map[indicator.ContainerEndpoint]*indicator.ProcessListeningWithTimestamp)
 
 			// Pre-populate data if validation function needs it
 			if tt.prePopulateData != nil {
-				tt.prePopulateData(t, enrichedEndpoints, processesListening)
+				tt.prePopulateData(t, enrichedEndpointsProcesses)
 			}
 
 			// Execute the enrichment
 			now := timestamp.Now()
 			resultNG, resultPLOP, reasonNG, _ := m.enrichContainerEndpoint(
-				now, ep, status, enrichedEndpoints, processesListening, now)
+				now, ep, status, enrichedEndpointsProcesses, now)
 
 			// Assert results
 			assert.Equal(t, tt.expectedResultNG, resultNG, "Network graph enrichment result mismatch")
@@ -371,6 +360,105 @@ func TestEnrichContainerEndpoint_EdgeCases(t *testing.T) {
 			assert.Equal(t, tt.expectedReasonNG, reasonNG, "Network graph enrichment reason mismatch")
 
 			// Additional validation can be added here for specific test cases
+		})
+	}
+}
+
+func Test_connStatus_checkRemoveCondition(t *testing.T) {
+	tests := map[string]struct {
+		rotten     bool
+		closed     bool
+		useLegacy  bool
+		isConsumed bool
+		want       bool
+	}{
+		// Legacy
+		"Legacy shall remove closed, consumed EEs": {
+			rotten:     false,
+			closed:     true,
+			useLegacy:  true,
+			isConsumed: true,
+			want:       true,
+		},
+		"Legacy shall keep closed, unconsumed EEs": {
+			rotten:     false,
+			closed:     true,
+			useLegacy:  true,
+			isConsumed: false,
+			want:       false,
+		},
+		"Legacy shall keep open, consumed EEs": {
+			rotten:     false,
+			closed:     false,
+			useLegacy:  true,
+			isConsumed: true,
+			want:       false,
+		},
+		"Legacy shall keep open, unconsumed EEs": {
+			rotten:     false,
+			closed:     false,
+			useLegacy:  true,
+			isConsumed: false,
+			want:       false,
+		},
+		// TransitionBased (current impl),
+		"Current impl shall remove closed, consumed EEs": {
+			rotten:     false,
+			closed:     true,
+			useLegacy:  false,
+			isConsumed: true,
+			want:       true,
+		},
+		"Current impl shall keep closed, unconsumed EEs": {
+			rotten:     false,
+			closed:     true,
+			useLegacy:  false,
+			isConsumed: false,
+			want:       false,
+		},
+		"Current impl shall remove open, consumed EEs": { // difference to legacy
+			rotten:     false,
+			closed:     false,
+			useLegacy:  false,
+			isConsumed: true,
+			want:       true,
+		},
+		"Current impl shall keep open, unconsumed EEs": {
+			rotten:     false,
+			closed:     false,
+			useLegacy:  false,
+			isConsumed: false,
+			want:       false,
+		},
+		// Rotten
+		"Legacy shall remove rotten": {
+			rotten:     true,
+			closed:     false,
+			useLegacy:  true,
+			isConsumed: false,
+			want:       true,
+		},
+		"Current impl shall remove rotten": {
+			rotten:     true,
+			closed:     false,
+			useLegacy:  false,
+			isConsumed: false,
+			want:       true,
+		},
+	}
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			ts := timestamp.InfiniteFuture
+			if tt.closed {
+				ts = timestamp.Now()
+			}
+			c := &connStatus{
+				rotten:   tt.rotten,
+				lastSeen: ts,
+			}
+			assert.Equalf(t, tt.want,
+				c.checkRemoveCondition(tt.useLegacy, tt.isConsumed),
+				"checkRemoveCondition(%v, %v)", tt.useLegacy, tt.isConsumed)
 		})
 	}
 }

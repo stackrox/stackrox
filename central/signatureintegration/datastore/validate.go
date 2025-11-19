@@ -10,6 +10,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/sigstore/sigstore/pkg/cryptoutils"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/signatures"
 	"github.com/stackrox/rox/pkg/uuid"
 )
@@ -44,6 +45,10 @@ func ValidateSignatureIntegration(integration *storage.SignatureIntegration) err
 		multiErr = multierror.Append(multiErr, err)
 	}
 	if err := validateTransparencyLogVerification(integration.GetTransparencyLog()); err != nil {
+		multiErr = multierror.Append(multiErr, err)
+	}
+
+	if err := validateTraits(integration); err != nil {
 		multiErr = multierror.Append(multiErr, err)
 	}
 
@@ -146,4 +151,22 @@ func validateTransparencyLogVerification(config *storage.TransparencyLogVerifica
 	}
 
 	return multiErr
+}
+
+// validateTraits validates the traits on a signature integration.
+//
+// We use the DEFAULT origin trait internally to protect built-in signature integrations, however
+// declarative configuration is not supported for signature integrations. To avoid user confusion
+// and potential issues when/if declarative configuration support is added, traits are rejected for
+// user-provided integrations.
+func validateTraits(integration *storage.SignatureIntegration) error {
+	if integration.GetTraits() == nil {
+		return nil
+	}
+
+	if integration.GetTraits().GetOrigin() == storage.Traits_DEFAULT {
+		return errox.InvalidArgs.New("built-in signature integrations cannot be created or modified")
+	}
+
+	return errox.InvalidArgs.New("user-provided traits are not supported")
 }

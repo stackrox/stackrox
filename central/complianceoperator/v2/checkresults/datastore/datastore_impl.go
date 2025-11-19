@@ -368,8 +368,7 @@ func (d *datastoreImpl) CountCheckResults(ctx context.Context, q *v1.Query) (int
 
 func (d *datastoreImpl) DeleteResultsByCluster(ctx context.Context, clusterID string) error {
 	query := search.NewQueryBuilder().AddStrings(search.ClusterID, clusterID).ProtoQuery()
-	_, err := d.store.DeleteByQuery(ctx, query)
-	return err
+	return d.store.DeleteByQuery(ctx, query)
 }
 
 func (d *datastoreImpl) DeleteResultsByScanConfigAndCluster(ctx context.Context, scanConfigName string, clusterIDs []string) error {
@@ -378,9 +377,7 @@ func (d *datastoreImpl) DeleteResultsByScanConfigAndCluster(ctx context.Context,
 	}
 
 	query := search.NewQueryBuilder().AddExactMatches(search.ComplianceOperatorScanConfigName, scanConfigName).AddExactMatches(search.ClusterID, clusterIDs...).ProtoQuery()
-	_, err := d.store.DeleteByQuery(ctx, query)
-
-	return err
+	return d.store.DeleteByQuery(ctx, query)
 }
 
 func (d *datastoreImpl) DeleteResultsByScans(ctx context.Context, scanRefIds []string) error {
@@ -389,9 +386,7 @@ func (d *datastoreImpl) DeleteResultsByScans(ctx context.Context, scanRefIds []s
 	}
 
 	query := search.NewQueryBuilder().AddExactMatches(search.ComplianceOperatorScanRef, scanRefIds...).ProtoQuery()
-	_, err := d.store.DeleteByQuery(ctx, query)
-
-	return err
+	return d.store.DeleteByQuery(ctx, query)
 }
 
 func withCountQuery(q *v1.Query, field search.FieldLabel) *v1.Query {

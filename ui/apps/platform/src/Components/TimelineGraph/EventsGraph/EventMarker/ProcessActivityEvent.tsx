@@ -1,4 +1,4 @@
-import React, { forwardRef } from 'react';
+import { forwardRef } from 'react';
 
 type ProcessActivityEventProps = {
     inBaseline?: boolean;

@@ -31,7 +31,7 @@ func TestBackup(t *testing.T) {
 	}
 	deploymentName := fmt.Sprintf("test-backup-%d", rand.Intn(10000))
 
-	setupDeployment(t, "nginx", deploymentName)
+	setupDeployment(t, "quay.io/rhacs-eng/qa-multi-arch:nginx-1.21.1", deploymentName)
 	defer teardownDeploymentWithoutCheck(t, deploymentName)
 	waitForDeployment(t, deploymentName)
 
@@ -68,7 +68,7 @@ func doTestBackup(t *testing.T, includeCerts bool, certsOnly bool) {
 	ctx, cancel := context.WithTimeout(context.Background(), backupTimeout)
 	defer cancel()
 
-	req, err := http.NewRequestWithContext(ctx, "GET", endpoint, nil)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, endpoint, nil)
 	require.NoError(t, err)
 	resp, err := client.Do(req)
 	require.NoError(t, err)

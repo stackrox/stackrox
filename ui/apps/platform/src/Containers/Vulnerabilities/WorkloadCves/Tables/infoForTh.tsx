@@ -1,6 +1,5 @@
-import React from 'react';
 import { Flex, FlexItem } from '@patternfly/react-core';
-import { ThProps } from '@patternfly/react-table';
+import type { ThProps } from '@patternfly/react-table';
 
 import ExternalLink from 'Components/PatternFly/IconText/ExternalLink';
 import PopoverBodyContent from 'Components/PopoverBodyContent';

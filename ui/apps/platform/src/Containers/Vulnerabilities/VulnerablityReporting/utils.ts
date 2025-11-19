@@ -1,4 +1,4 @@
-import {
+import type {
     Fixability,
     ImageType,
     ReportConfiguration,
@@ -6,10 +6,10 @@ import {
     VulnerabilityReportFilters,
     VulnerabilityReportFiltersBase,
 } from 'services/ReportsService.types';
-import { DayOfMonth, DayOfWeek } from 'Components/PatternFly/DayPickerDropdown';
+import type { DayOfMonth, DayOfWeek } from 'Components/PatternFly/DayPickerDropdown';
 import { getDate } from 'utils/dateUtils';
-import { ReportStatus } from 'types/reportJob';
-import {
+import type { ReportStatus } from 'types/reportJob';
+import type {
     CVESDiscoveredSince,
     CVESDiscoveredStartDate,
     ReportFormValues,
@@ -60,6 +60,7 @@ export function getReportConfigurationFromFormValues(
         imageTypes: reportParameters.imageType,
         includeAdvisory: reportParameters.includeAdvisory,
         includeEpssProbability: reportParameters.includeEpssProbability,
+        // Ross CISA KEV includeExploitable
         includeNvdCvss: reportParameters.includeNvdCvss,
     };
     let vulnReportFilters: VulnerabilityReportFilters;
@@ -191,6 +192,7 @@ export function getReportFormValuesFromConfiguration(
             cvesDiscoveredStartDate,
             includeAdvisory: vulnReportFilters.includeAdvisory,
             includeEpssProbability: vulnReportFilters.includeEpssProbability,
+            // Ross CISA KEV includeExploitable
             includeNvdCvss: vulnReportFilters.includeNvdCvss,
             reportScope: {
                 id: resourceScope.collectionScope.collectionId,

@@ -15,7 +15,6 @@ func init() {
 	utils.Must(
 		// NOTE: This list is and should remain alphabetically ordered
 		schema.AddType("EmbeddedImageScanComponent", []string{
-			"activeState(query: String): ActiveState",
 			"deploymentCount(query: String, scopeQuery: String): Int!",
 			"deployments(query: String, scopeQuery: String, pagination: Pagination): [Deployment!]!",
 			"fixedIn: String!",

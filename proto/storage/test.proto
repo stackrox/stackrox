@@ -148,7 +148,7 @@ message TestStruct {
     ENUM2 = 2;
   }
   string key1 = 1; // @gotags: sql:"pk,id" search:"Test Key"
-  string key2 = 2; // @gotags: search:"Test Key 2,store,hidden"
+  string key2 = 2; // @gotags: search:"Test Key 2,hidden"
 
   repeated string string_slice = 3; // @gotags: search:"Test String Slice"
 

@@ -1,4 +1,4 @@
-import React from 'react';
+import type { ReactElement, ReactNode } from 'react';
 import {
     DescriptionList,
     DescriptionListDescription,
@@ -8,7 +8,7 @@ import {
     Title,
 } from '@patternfly/react-core';
 
-import { Schedule } from 'services/ComplianceScanConfigurationService';
+import type { Schedule } from 'services/ComplianceScanConfigurationService';
 import { formatScanSchedule } from '../compliance.scanConfigs.utils';
 
 type ScanConfigParametersViewProps = {
@@ -16,7 +16,7 @@ type ScanConfigParametersViewProps = {
     scanName: string;
     description?: string;
     scanSchedule: Schedule;
-    children?: React.ReactNode;
+    children?: ReactNode;
 };
 
 function ScanConfigParametersView({
@@ -25,7 +25,7 @@ function ScanConfigParametersView({
     scanName,
     scanSchedule,
     children,
-}: ScanConfigParametersViewProps): React.ReactElement {
+}: ScanConfigParametersViewProps): ReactElement {
     return (
         <Flex direction={{ default: 'column' }}>
             <Title headingLevel={headingLevel}>Parameters</Title>

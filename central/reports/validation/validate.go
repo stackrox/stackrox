@@ -2,7 +2,10 @@ package validation
 
 import (
 	"context"
+	"fmt"
 	"net/mail"
+	"strings"
+	"time"
 
 	"github.com/pkg/errors"
 	notifierDS "github.com/stackrox/rox/central/notifier/datastore"
@@ -11,6 +14,7 @@ import (
 	reportGen "github.com/stackrox/rox/central/reports/scheduler/v2/reportgenerator"
 	snapshotDS "github.com/stackrox/rox/central/reports/snapshot/datastore"
 	collectionDS "github.com/stackrox/rox/central/resourcecollection/datastore"
+	vulnRequestCommon "github.com/stackrox/rox/central/vulnmgmt/vulnerabilityrequest/common"
 	apiV2 "github.com/stackrox/rox/generated/api/v2"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/env"
@@ -19,6 +23,7 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/stringutils"
+	"github.com/stackrox/rox/pkg/uuid"
 )
 
 // Use this context only to
@@ -323,4 +328,84 @@ func generateReportSnapshot(
 	}
 	snapshot.Notifiers = notifierSnaps
 	return snapshot
+}
+
+// generateViewBasedRequestName generates request name for view based reports
+func generateViewBasedRequestName(user *storage.SlimUser) string {
+	shortName := getShortName(user)
+	now := time.Now()
+	date := now.Format("Jan02")
+	year := now.Format("2006")
+	shortUUID := strings.Split(uuid.NewV4().String(), "-")[0]
+	return fmt.Sprintf("%s-%s-%s-%s", shortName, strings.ToLower(date), year, shortUUID)
+}
+
+func getShortName(user *storage.SlimUser) string {
+	if user == nil {
+		return vulnRequestCommon.DefaultUserShortName
+	}
+
+	name := strings.ToUpper(user.GetName())
+	parts := strings.Split(name, " ")
+	for i := 0; i < len(parts); i++ {
+		parts[i] = strings.TrimSpace(parts[i])
+	}
+
+	firstName := stringutils.FirstNonEmpty(parts...)
+	lastName := stringutils.LastNonEmpty(parts...)
+	if firstName != "" && lastName != "" {
+		return fmt.Sprintf("%c%c", firstName[0], lastName[0])
+	}
+	return vulnRequestCommon.DefaultUserShortName
+}
+
+// ValidateAndGenerateViewBasedReportRequest validates a view-based report request and constructs the scheduler payload.
+func (v *Validator) ValidateAndGenerateViewBasedReportRequest(
+	req *apiV2.ReportRequestViewBased,
+	requesterID authn.Identity,
+) (*reportGen.ReportRequest, error) {
+	if req == nil {
+		return nil, errors.Wrap(errox.InvalidArgs, "Empty request")
+	}
+
+	// Currently only vulnerability view-based reports are supported.
+	if req.GetType() != apiV2.ReportRequestViewBased_VULNERABILITY {
+		return nil, errors.Wrap(errox.InvalidArgs, "unsupported report type")
+	}
+
+	// Validate filters.
+	vbFilters := req.GetViewBasedVulnReportFilters()
+	if vbFilters == nil {
+		return nil, errors.Wrap(errox.InvalidArgs, "view-based vulnerability report filters must be provided")
+	}
+
+	// Convert API filters to storage filters.
+	storageFilters := &storage.ViewBasedVulnerabilityReportFilters{
+		Query:            vbFilters.GetQuery(),
+		AccessScopeRules: common.ExtractAccessScopeRules(requesterID),
+	}
+	requester := &storage.SlimUser{
+		Id:   requesterID.UID(),
+		Name: stringutils.FirstNonEmpty(requesterID.FullName(), requesterID.FriendlyName()),
+	}
+
+	// Build report snapshot.
+	snapshot := &storage.ReportSnapshot{
+		Name:          generateViewBasedRequestName(requester),
+		Type:          storage.ReportSnapshot_VULNERABILITY,
+		AreaOfConcern: req.GetAreaOfConcern(),
+		ReportStatus: &storage.ReportStatus{
+			RunState:                 storage.ReportStatus_WAITING,
+			ReportRequestType:        storage.ReportStatus_VIEW_BASED,
+			ReportNotificationMethod: storage.ReportStatus_DOWNLOAD,
+		},
+		Filter: &storage.ReportSnapshot_ViewBasedVulnReportFilters{
+			ViewBasedVulnReportFilters: storageFilters,
+		},
+		Requester: requester,
+	}
+
+	return &reportGen.ReportRequest{
+		ReportSnapshot: snapshot,
+	}, nil
 }

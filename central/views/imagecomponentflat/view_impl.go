@@ -59,6 +59,8 @@ func (v *imageComponentFlatViewImpl) Get(ctx context.Context, q *v1.Query) ([]Co
 	var err error
 	// Avoid changing the passed query
 	cloned := q.CloneVT()
+	// Update the sort options to use aggregations if necessary as we are grouping by CVEs
+	cloned = common.UpdateSortAggs(cloned)
 	cloned, err = common.WithSACFilter(ctx, resources.Image, cloned)
 	if err != nil {
 		return nil, err
@@ -98,18 +100,6 @@ func withSelectComponentCoreResponseQuery(q *v1.Query) *v1.Query {
 
 	cloned.GroupBy = &v1.QueryGroupBy{
 		Fields: []string{search.Component.String(), search.ComponentVersion.String(), search.OperatingSystem.String()},
-	}
-
-	// This is to minimize UI change and hide an implementation detail that the schema is denormalized.
-	// Now that these fields are aggregations, in order to sort on them, we have to set the sort field as such to match
-	// the query field.
-	for _, sortOption := range cloned.GetPagination().GetSortOptions() {
-		if sortOption.Field == search.ComponentTopCVSS.String() {
-			sortOption.Field = search.ComponentTopCVSSMax.String()
-		}
-		if sortOption.Field == search.ComponentPriority.String() {
-			sortOption.Field = search.ComponentPriorityMax.String()
-		}
 	}
 
 	return cloned

@@ -1,4 +1,4 @@
-import React, { type ReactNode } from 'react';
+import type { ReactNode } from 'react';
 import { UserPermissionContext } from 'hooks/usePermissions';
 
 import { fetchUserRolePermissions } from 'services/RolesService';

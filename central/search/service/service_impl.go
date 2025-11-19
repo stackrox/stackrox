@@ -18,6 +18,7 @@ import (
 	"github.com/stackrox/rox/central/globalindex/mapping"
 	imageDataStore "github.com/stackrox/rox/central/image/datastore"
 	imageIntegrationDataStore "github.com/stackrox/rox/central/imageintegration/datastore"
+	imageV2Datastore "github.com/stackrox/rox/central/imagev2/datastore"
 	namespaceDataStore "github.com/stackrox/rox/central/namespace/datastore"
 	nodeDataStore "github.com/stackrox/rox/central/node/datastore"
 	policyDataStore "github.com/stackrox/rox/central/policy/datastore"
@@ -32,6 +33,7 @@ import (
 	serviceAccountDataStore "github.com/stackrox/rox/central/serviceaccount/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/errox"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
@@ -74,7 +76,6 @@ func (s *serviceImpl) getSearchFuncs() map[v1.SearchCategory]SearchFunc {
 	searchfuncs := map[v1.SearchCategory]SearchFunc{
 		v1.SearchCategory_ALERTS:             s.alerts.SearchAlerts,
 		v1.SearchCategory_DEPLOYMENTS:        s.deployments.SearchDeployments,
-		v1.SearchCategory_IMAGES:             s.images.SearchImages,
 		v1.SearchCategory_POLICIES:           s.policies.SearchPolicies,
 		v1.SearchCategory_SECRETS:            s.secrets.SearchSecrets,
 		v1.SearchCategory_NAMESPACES:         s.namespaces.SearchResults,
@@ -86,6 +87,11 @@ func (s *serviceImpl) getSearchFuncs() map[v1.SearchCategory]SearchFunc {
 		v1.SearchCategory_SUBJECTS:           service.NewSubjectSearcher(s.bindings).SearchSubjects,
 		v1.SearchCategory_IMAGE_INTEGRATIONS: s.imageIntegrations.SearchImageIntegrations,
 		v1.SearchCategory_POLICY_CATEGORIES:  s.categories.SearchPolicyCategories,
+	}
+	if features.FlattenImageData.Enabled() {
+		searchfuncs[v1.SearchCategory_IMAGES_V2] = s.imagesV2.SearchImages
+	} else {
+		searchfuncs[v1.SearchCategory_IMAGES] = s.images.SearchImages
 	}
 
 	return searchfuncs
@@ -110,6 +116,11 @@ func (s *serviceImpl) getAutocompleteSearchers() map[v1.SearchCategory]search.Se
 		v1.SearchCategory_IMAGE_INTEGRATIONS: s.imageIntegrations,
 		v1.SearchCategory_POLICY_CATEGORIES:  s.categories,
 	}
+	if features.FlattenImageData.Enabled() {
+		searchers[v1.SearchCategory_IMAGES_V2] = s.imagesV2
+	} else {
+		searchers[v1.SearchCategory_IMAGES] = s.images
+	}
 
 	return searchers
 }
@@ -129,6 +140,7 @@ type serviceImpl struct {
 	alerts            alertDataStore.DataStore
 	deployments       deploymentDataStore.DataStore
 	images            imageDataStore.DataStore
+	imagesV2          imageV2Datastore.DataStore
 	policies          policyDataStore.DataStore
 	secrets           secretDataStore.DataStore
 	serviceaccounts   serviceAccountDataStore.DataStore
@@ -326,11 +338,11 @@ func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName strin
 // TODO(cgorman) rework the options for global search to allow for transitive connections (policy <-> deployment, etc)
 func shouldProcessAlerts(q *v1.Query) (shouldProcess bool) {
 	fn := func(bq *v1.BaseQuery) {
-		mfq, ok := bq.Query.(*v1.BaseQuery_MatchFieldQuery)
+		mfq, ok := bq.GetQuery().(*v1.BaseQuery_MatchFieldQuery)
 		if !ok {
 			return
 		}
-		if _, ok := mappings.OptionsMap.Get(mfq.MatchFieldQuery.Field); ok {
+		if _, ok := mappings.OptionsMap.Get(mfq.MatchFieldQuery.GetField()); ok {
 			shouldProcess = true
 		}
 	}
@@ -370,7 +382,7 @@ func GlobalSearch(ctx context.Context, query string, categories []v1.SearchCateg
 		results = append(results, resultsFromCategory...)
 	}
 	// Sort from highest score to lowest
-	sort.SliceStable(results, func(i, j int) bool { return results[i].Score > results[j].Score })
+	sort.SliceStable(results, func(i, j int) bool { return results[i].GetScore() > results[j].GetScore() })
 	return
 }
 

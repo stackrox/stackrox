@@ -3,6 +3,7 @@ package postgres
 import (
 	"context"
 	"fmt"
+	"slices"
 	"strings"
 	"time"
 
@@ -17,15 +18,12 @@ import (
 	ops "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
-	pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/protoconv"
 	pgSearch "github.com/stackrox/rox/pkg/search/postgres"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/timestamp"
-	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/pkg/uuid"
-	"gorm.io/gorm"
 )
 
 // This Flow is custom to match the existing interface and how the functionality works through the system.
@@ -35,8 +33,6 @@ import (
 // can be handled via query and become much more efficient.  In order to really see the benefits of Postgres for
 // this store, we will need to refactor how it is used.
 const (
-	networkFlowsTable = pkgSchema.NetworkFlowsTableName
-
 	// The store now uses a serial primary key id so that the store can quickly insert rows.  As such, in order
 	// to get the most recent row or a count of distinct rows we need to do a self join to match the fields AND
 	// the largest Flow_id.  The Flow_id is not included in the object and is purely handled by postgres.  Since flows
@@ -128,6 +124,8 @@ const (
 		(SELECT 1 FROM %s flow WHERE
 			flow.Props_DstEntity_Type = 4 AND flow.Props_DstEntity_Id = entity.Info_Id)
 		RETURNING entity.Info_Id;`
+
+	orphanedEntitiesPruningBatchSize = 100
 )
 
 var (
@@ -139,8 +137,6 @@ var (
 	deleteTimeout = env.PostgresDefaultNetworkFlowDeleteTimeout.DurationSetting()
 
 	queryTimeout = env.PostgresDefaultNetworkFlowQueryTimeout.DurationSetting()
-
-	orphanedEntitiesPruningBatchSize = 100
 )
 
 // FlowStore stores all of the flows for a single cluster.
@@ -288,7 +284,7 @@ func (s *flowStoreImpl) copyFrom(ctx context.Context, lastUpdateTS timestamp.Mic
 	}
 	defer release()
 
-	tx, err := conn.Begin(ctx)
+	tx, ctx, err := conn.Begin(ctx)
 	if err != nil {
 		return err
 	}
@@ -313,7 +309,7 @@ func (s *flowStoreImpl) upsert(ctx context.Context, lastUpdateTS timestamp.Micro
 	defer release()
 
 	// Moved the transaction outside the loop which greatly improved the performance of these individual inserts.
-	tx, err := conn.Begin(ctx)
+	tx, ctx, err := conn.Begin(ctx)
 	if err != nil {
 		return err
 	}
@@ -406,7 +402,7 @@ func (s *flowStoreImpl) readRows(rows pgx.Rows, pred func(*storage.NetworkFlowPr
 		}
 
 		// Apply the predicate function.  Will phase out as we move away form Rocks to where clause
-		if pred == nil || pred(flow.Props) {
+		if pred == nil || pred(flow.GetProps()) {
 			flows = append(flows, flow)
 		}
 	}
@@ -481,7 +477,7 @@ func (s *flowStoreImpl) removeDeploymentFlows(ctx context.Context, deleteStmt st
 	ctx, cancel := context.WithTimeout(ctx, deleteTimeout)
 	defer cancel()
 
-	tx, err := conn.Begin(ctx)
+	tx, ctx, err := conn.Begin(ctx)
 	if err != nil {
 		return err
 	}
@@ -507,7 +503,7 @@ func (s *flowStoreImpl) removeAndReturnDeploymentFlows(ctx context.Context, dele
 	ctx, cancel := context.WithTimeout(ctx, deleteTimeout)
 	defer cancel()
 
-	tx, err := conn.Begin(ctx)
+	tx, ctx, err := conn.Begin(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -661,7 +657,7 @@ func (s *flowStoreImpl) delete(ctx context.Context, objs ...*storage.NetworkFlow
 	defer release()
 
 	// Moved the transaction outside the loop which greatly improved the performance of these individual inserts.
-	tx, err := conn.Begin(ctx)
+	tx, ctx, err := conn.Begin(ctx)
 	if err != nil {
 		return err
 	}
@@ -731,34 +727,32 @@ func (s *flowStoreImpl) pruneOrphanExternalEntities(ctx context.Context, srcFlow
 	// srcFlows contains flows where src is the deployment,
 	// so prune external flows based on the dst entity
 	if len(srcFlows) != 0 {
-		err := utils.BatchProcess(srcFlows, orphanedEntitiesPruningBatchSize, func(flows []*storage.NetworkFlow) error {
-			entities := make([]string, 0, len(flows))
-			for _, flow := range flows {
+		for flowBatch := range slices.Chunk(srcFlows, orphanedEntitiesPruningBatchSize) {
+			entities := make([]string, 0, len(flowBatch))
+			for _, flow := range flowBatch {
 				entities = append(entities, flow.GetProps().GetDstEntity().GetId())
 			}
 
 			pruneStmt := fmt.Sprintf(pruneOrphanExternalNetworkEntitiesStmt, s.partitionName, s.partitionName)
-			return s.pruneEntities(ctx, pruneStmt, entities)
-		})
-		if err != nil {
-			return err
+			if err := s.pruneEntities(ctx, pruneStmt, entities); err != nil {
+				return err
+			}
 		}
 	}
 
 	// dstFlows contains flows where dst is the deployment,
 	// so prune external flows based on the src entity
 	if len(dstFlows) != 0 {
-		err := utils.BatchProcess(dstFlows, orphanedEntitiesPruningBatchSize, func(flows []*storage.NetworkFlow) error {
-			entities := make([]string, 0, len(flows))
-			for _, flow := range flows {
+		for flowBatch := range slices.Chunk(dstFlows, orphanedEntitiesPruningBatchSize) {
+			entities := make([]string, 0, len(flowBatch))
+			for _, flow := range flowBatch {
 				entities = append(entities, flow.GetProps().GetSrcEntity().GetId())
 			}
 
 			pruneStmt := fmt.Sprintf(pruneOrphanExternalNetworkEntitiesStmt, s.partitionName, s.partitionName)
-			return s.pruneEntities(ctx, pruneStmt, entities)
-		})
-		if err != nil {
-			return err
+			if err := s.pruneEntities(ctx, pruneStmt, entities); err != nil {
+				return err
+			}
 		}
 	}
 
@@ -855,21 +849,4 @@ func (s *flowStoreImpl) RemoveStaleFlows(ctx context.Context) error {
 	_, err = conn.Exec(ctx, prune)
 
 	return err
-}
-
-//// Used for testing
-
-func dropTableNetworkflow(ctx context.Context, db postgres.DB) {
-	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS network_flows_v2 CASCADE")
-}
-
-// Destroy destroys the tables
-func Destroy(ctx context.Context, db postgres.DB) {
-	dropTableNetworkflow(ctx, db)
-}
-
-// CreateTableAndNewStore returns a new Store instance for testing
-func CreateTableAndNewStore(ctx context.Context, db postgres.DB, gormDB *gorm.DB, clusterID string, networktreeMgr networktree.Manager) FlowStore {
-	pkgSchema.ApplySchemaForTable(ctx, gormDB, networkFlowsTable)
-	return New(db, clusterID, networktreeMgr)
 }

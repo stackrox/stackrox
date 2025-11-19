@@ -16,9 +16,11 @@ import (
 
 	"github.com/cloudflare/cfssl/csr"
 	"github.com/cloudflare/cfssl/initca"
+	cTLS "github.com/google/certificate-transparency-go/tls"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/certgen"
+	"github.com/stackrox/rox/pkg/cryptoutils"
 	"github.com/stackrox/rox/pkg/cryptoutils/mocks"
 	"github.com/stackrox/rox/pkg/mtls"
 	"github.com/stretchr/testify/suite"
@@ -90,7 +92,7 @@ func (t *ClientTestSuite) newSelfSignedCertificate(commonName string) *tls.Certi
 	req := csr.CertificateRequest{
 		CN:         commonName,
 		KeyRequest: csr.NewKeyRequest(),
-		Hosts:      []string{"host"},
+		Hosts:      []string{"host", "central.stackrox", "central.stackrox.svc"}, // Include required SANs
 	}
 
 	caCert, _, caKey, err := initca.New(&req)
@@ -181,7 +183,7 @@ func (t *ClientTestSuite) TestGetTLSTrustedCerts_ErrorHandling() {
 			mockNonceGenerator.EXPECT().Nonce().Times(1).Return(exampleChallengeToken, nil)
 			c.nonceGenerator = mockNonceGenerator
 
-			_, err = c.GetTLSTrustedCerts(context.Background())
+			_, _, err = c.GetTLSTrustedCerts(context.Background())
 			if testCase.Error != nil {
 				t.Require().ErrorIs(err, testCase.Error)
 			} else {
@@ -222,11 +224,16 @@ func (t *ClientTestSuite) TestGetTLSTrustedCerts_GetCertificate() {
 	mockNonceGenerator.EXPECT().Nonce().Times(1).Return(exampleChallengeToken, nil)
 	c.nonceGenerator = mockNonceGenerator
 
-	certs, err := c.GetTLSTrustedCerts(context.Background())
+	certs, internalCerts, err := c.GetTLSTrustedCerts(context.Background())
 	t.Require().NoError(err)
 
-	t.Require().Len(certs, 1)
+	t.Require().Len(certs, 2)
 	t.Equal("Root LoadBalancer Certificate Authority", certs[0].Subject.CommonName)
+	t.Equal("StackRox Certificate Authority", certs[1].Subject.CommonName)
+
+	t.Require().Len(internalCerts, 1)
+	t.Equal("StackRox Certificate Authority", internalCerts[0].Subject.CommonName)
+	t.Equal(certs[1].Raw, internalCerts[0].Raw)
 }
 
 func (t *ClientTestSuite) TestGetTLSTrustedCerts_WithSignatureSignedByAnotherPrivateKey_ShouldFail() {
@@ -241,7 +248,7 @@ func (t *ClientTestSuite) TestGetTLSTrustedCerts_WithSignatureSignedByAnotherPri
 	c, err := NewClient(ts.URL)
 	t.Require().NoError(err)
 
-	_, err = c.GetTLSTrustedCerts(context.Background())
+	_, _, err = c.GetTLSTrustedCerts(context.Background())
 	t.Require().Error(err)
 	t.Require().ErrorIs(err, errInvalidTrustInfoSignature)
 }
@@ -258,7 +265,7 @@ func (t *ClientTestSuite) TestGetTLSTrustedCerts_WithInvalidTrustInfo() {
 	c, err := NewClient(ts.URL)
 	t.Require().NoError(err)
 
-	_, err = c.GetTLSTrustedCerts(context.Background())
+	_, _, err = c.GetTLSTrustedCerts(context.Background())
 	t.Require().Error(err)
 }
 
@@ -274,7 +281,7 @@ func (t *ClientTestSuite) TestGetTLSTrustedCerts_WithInvalidSignature() {
 	c, err := NewClient(ts.URL)
 	t.Require().NoError(err)
 
-	_, err = c.GetTLSTrustedCerts(context.Background())
+	_, _, err = c.GetTLSTrustedCerts(context.Background())
 	t.Require().Error(err)
 	t.Require().ErrorIs(err, errInvalidTrustInfoSignature)
 }
@@ -292,9 +299,246 @@ func (t *ClientTestSuite) TestGetTLSTrustedCertsWithDifferentSensorChallengeShou
 	mockNonceGenerator.EXPECT().Nonce().Times(1).Return("some_token", nil)
 	c.nonceGenerator = mockNonceGenerator
 
-	_, err = c.GetTLSTrustedCerts(context.Background())
+	_, _, err = c.GetTLSTrustedCerts(context.Background())
 	t.Require().Error(err)
 	t.Contains(err.Error(), fmt.Sprintf(`validating Central response failed: Sensor token "some_token" did not match received token %q`, exampleChallengeToken))
+}
+
+func (t *ClientTestSuite) TestGetTLSTrustedCerts_SecondaryCA() {
+	// Base setup: primary chain must fail verification so the code evaluates the secondary path
+	// This generates a self-signed primary CA that is not trusted by Sensor.
+	primaryCA := t.newSelfSignedCertificate(mtls.ServiceCACommonName)
+	primaryLeaf := primaryCA // use the primary CA as the leaf cert for simplicity
+
+	// Load trusted secondary chain from testdata (used in cases where we want secondary verify to succeed)
+	trustedCACertPEM, err := testdata.ReadFile("testdata/central/ca.pem")
+	t.Require().NoError(err)
+	trustedCAKeyPEM, err := testdata.ReadFile("testdata/central/ca-key.pem")
+	t.Require().NoError(err)
+	trustedLeafCertPEM, err := testdata.ReadFile("testdata/central/cert.pem")
+	t.Require().NoError(err)
+	trustedLeafKeyPEM, err := testdata.ReadFile("testdata/central/key.pem")
+	t.Require().NoError(err)
+
+	goodSecondaryCA, err := tls.X509KeyPair(trustedCACertPEM, trustedCAKeyPEM)
+	t.Require().NoError(err)
+	goodSecondaryLeaf, err := tls.X509KeyPair(trustedLeafCertPEM, trustedLeafKeyPEM)
+	t.Require().NoError(err)
+
+	createSignature := func(cert *tls.Certificate, data []byte) []byte {
+		sign, err := cTLS.CreateSignature(cryptoutils.DerefPrivateKey(cert.PrivateKey), cTLS.SHA256, data)
+		t.Require().NoError(err)
+		return sign.Signature
+	}
+
+	// Untrusted secondary chain (verification will fail)
+	badSecondaryCA := t.newSelfSignedCertificate("Untrusted Secondary CA")
+	badSecondaryLeaf := badSecondaryCA
+
+	testCases := []struct {
+		name                string
+		secondaryChain      [][]byte
+		buildSecondarySign  func(trustInfoBytes []byte) []byte
+		expectedErrContains string
+		expectSuccess       bool
+	}{
+		{
+			name: "secondary fallback succeeds",
+			secondaryChain: [][]byte{
+				goodSecondaryLeaf.Certificate[0],
+				goodSecondaryCA.Certificate[0],
+			},
+			buildSecondarySign: func(b []byte) []byte { return createSignature(&goodSecondaryLeaf, b) },
+			expectSuccess:      true,
+		},
+		{
+			name:                "secondary chain empty when primary verification failed",
+			secondaryChain:      [][]byte{},
+			buildSecondarySign:  func(_ []byte) []byte { return nil },
+			expectedErrContains: "validating primary Central certificate chain (no secondary certificate chain present)",
+		},
+		{
+			name: "verifying secondary certificate chain fails",
+			secondaryChain: [][]byte{
+				badSecondaryLeaf.Certificate[0],
+				badSecondaryCA.Certificate[0],
+			},
+			buildSecondarySign:  func(b []byte) []byte { return createSignature(badSecondaryLeaf, b) },
+			expectedErrContains: "verifying secondary Central certificate chain",
+		},
+		{
+			name: "validating payload signature with secondary CA fails",
+			secondaryChain: [][]byte{
+				goodSecondaryLeaf.Certificate[0],
+				goodSecondaryCA.Certificate[0],
+			},
+			buildSecondarySign: func(b []byte) []byte {
+				// Sign with a different key to trigger signature validation failure
+				other := t.newSelfSignedCertificate("Different Signer")
+				return createSignature(other, b)
+			},
+			expectedErrContains: "verifying payload signature with secondary CA",
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func() {
+			// Build TrustInfo with failing primary chain and scenario-specific secondary chain
+			trustInfo := &v1.TrustInfo{
+				SensorChallenge:  exampleChallengeToken,
+				CentralChallenge: "central-challenge",
+				CertChain: [][]byte{
+					primaryLeaf.Certificate[0],
+					primaryCA.Certificate[0],
+				},
+				SecondaryCertChain: tc.secondaryChain,
+			}
+
+			trustInfoBytes, err := trustInfo.MarshalVT()
+			t.Require().NoError(err)
+
+			primarySignature := createSignature(primaryLeaf, trustInfoBytes)
+			secondarySignature := tc.buildSecondarySign(trustInfoBytes)
+
+			// Test server that returns the TLSChallengeResponse built above
+			ts := httptest.NewUnstartedServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				t.Contains(r.URL.String(), "/v1/tls-challenge?challengeToken=")
+				_ = json.NewEncoder(w).Encode(map[string]interface{}{
+					"trustInfoSerialized":  base64.StdEncoding.EncodeToString(trustInfoBytes),
+					"signature":            base64.StdEncoding.EncodeToString(primarySignature),
+					"signatureSecondaryCa": base64.StdEncoding.EncodeToString(secondarySignature),
+				})
+			}))
+
+			ts.TLS = &tls.Config{Certificates: []tls.Certificate{*primaryCA}}
+			ts.StartTLS()
+			defer ts.Close()
+
+			c, err := NewClient(ts.URL)
+			t.Require().NoError(err)
+
+			mockNonceGenerator := mocks.NewMockNonceGenerator(t.mockCtrl)
+			mockNonceGenerator.EXPECT().Nonce().Times(1).Return(exampleChallengeToken, nil)
+			c.nonceGenerator = mockNonceGenerator
+
+			certs, internalCAs, err := c.GetTLSTrustedCerts(context.Background())
+			if tc.expectSuccess {
+				t.Require().NoError(err)
+				t.Require().Len(certs, 2)
+				t.Require().Len(internalCAs, 2)
+				t.ElementsMatch(certs, internalCAs)
+
+				// Verify that internalCAs contains the exact certificates from the TrustInfo
+				expectedCAs := [][]byte{
+					trustInfo.GetCertChain()[1],
+					trustInfo.GetSecondaryCertChain()[1],
+				}
+				actualCAs := [][]byte{
+					internalCAs[0].Raw,
+					internalCAs[1].Raw,
+				}
+				t.ElementsMatch(expectedCAs, actualCAs)
+			} else {
+				t.Require().Error(err)
+				t.Contains(err.Error(), tc.expectedErrContains)
+			}
+		})
+	}
+}
+
+func (t *ClientTestSuite) TestExtractCentralCAsFromTrustInfo() {
+	primaryCert := t.newSelfSignedCertificate("Primary CA")
+	secondaryCert := t.newSelfSignedCertificate("Secondary CA")
+
+	testCases := []struct {
+		name                    string
+		trustInfo               *v1.TrustInfo
+		expectedCACount         int
+		expectedPrimaryCAName   string
+		expectedSecondaryCAName string
+	}{
+		{
+			name: "with both chains",
+			trustInfo: &v1.TrustInfo{
+				CertChain: [][]byte{
+					[]byte("leaf-cert-der"),
+					primaryCert.Certificate[0],
+				},
+				SecondaryCertChain: [][]byte{
+					[]byte("secondary-leaf-cert-der"),
+					secondaryCert.Certificate[0],
+				},
+			},
+			expectedCACount:         2,
+			expectedPrimaryCAName:   "Primary CA",
+			expectedSecondaryCAName: "Secondary CA",
+		},
+		{
+			name: "only primary chain",
+			trustInfo: &v1.TrustInfo{
+				CertChain: [][]byte{
+					[]byte("leaf-cert-der"),
+					primaryCert.Certificate[0],
+				},
+				SecondaryCertChain: [][]byte{},
+			},
+			expectedCACount:       1,
+			expectedPrimaryCAName: "Primary CA",
+		},
+		{
+			name: "short chains",
+			trustInfo: &v1.TrustInfo{
+				CertChain: [][]byte{
+					[]byte("only-leaf-cert-der"),
+				},
+				SecondaryCertChain: [][]byte{
+					[]byte("only-secondary-leaf-cert-der"),
+				},
+			},
+			expectedCACount: 0,
+		},
+		{
+			name: "empty CA fields",
+			trustInfo: &v1.TrustInfo{
+				CertChain: [][]byte{
+					[]byte("leaf-cert-der"),
+					{},
+				},
+				SecondaryCertChain: [][]byte{
+					[]byte("secondary-leaf-cert-der"),
+					{},
+				},
+			},
+			expectedCACount: 0,
+		},
+		{
+			name: "invalid CA cert",
+			trustInfo: &v1.TrustInfo{
+				CertChain: [][]byte{
+					[]byte("leaf-cert-der"),
+					[]byte("invalid-ca-cert-data"),
+				},
+				SecondaryCertChain: [][]byte{},
+			},
+			expectedCACount: 0,
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func() {
+			centralCAs := extractCentralCAsFromTrustInfo(tc.trustInfo)
+
+			t.Require().Len(centralCAs, tc.expectedCACount)
+
+			if tc.expectedCACount >= 1 && tc.expectedPrimaryCAName != "" {
+				t.Equal(tc.expectedPrimaryCAName, centralCAs[0].Subject.CommonName)
+			}
+
+			if tc.expectedCACount >= 2 && tc.expectedSecondaryCAName != "" {
+				t.Equal(tc.expectedSecondaryCAName, centralCAs[1].Subject.CommonName)
+			}
+		})
+	}
 }
 
 func (t *ClientTestSuite) TestNewClientReplacesProtocols() {

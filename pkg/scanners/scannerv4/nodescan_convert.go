@@ -22,7 +22,7 @@ const (
 
 func toNodeScan(r *v4.VulnerabilityReport, osImageRef string) *storage.NodeScan {
 	// TODO(ROX-26593): Instead of fixing notes here, add RHCOS DistributionScanner to ClairCore
-	fixedNotes := fixNotes(toStorageNotes(r.Notes), osImageRef)
+	fixedNotes := fixNotes(toStorageNotes(r.GetNotes()), osImageRef)
 
 	convertedOS := toOperatingSystem(osImageRef)
 	if convertedOS == "" {
@@ -48,10 +48,17 @@ func toOperatingSystem(ref string) string {
 
 func toStorageComponents(r *v4.VulnerabilityReport) []*storage.EmbeddedNodeScanComponent {
 	packages := r.GetContents().GetPackages()
+	if len(packages) == 0 {
+		packages = make(map[string]*v4.Package, len(r.GetContents().GetPackagesDEPRECATED()))
+		// Fallback to the deprecated slice, if needed.
+		for _, pkg := range r.GetContents().GetPackagesDEPRECATED() {
+			packages[pkg.GetId()] = pkg
+		}
+	}
 	result := make([]*storage.EmbeddedNodeScanComponent, 0, len(packages))
 
-	for _, pkg := range packages {
-		vulns := getPackageVulns(pkg.GetId(), r)
+	for id, pkg := range packages {
+		vulns := getPackageVulns(id, r)
 		result = append(result, createEmbeddedComponent(pkg, vulns))
 	}
 	return result
@@ -70,7 +77,7 @@ func getPackageVulns(packageID string, r *v4.VulnerabilityReport) []*storage.Emb
 			// Already processed this vulnerability, skip it
 			continue
 		}
-		vulnerability, ok := r.Vulnerabilities[vulnID]
+		vulnerability, ok := r.GetVulnerabilities()[vulnID]
 		if !ok {
 			log.Debugf("Mapping for package %s contains a vulnerability with unknown ID %s. This vulnerability won't be stored", packageID, vulnID)
 			continue

@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import React, { ReactElement, useState } from 'react';
+import { useState } from 'react';
+import type { FocusEvent, FormEvent, ReactElement } from 'react';
 import {
     Alert,
     Checkbox,
@@ -10,12 +11,12 @@ import {
     TextInput,
 } from '@patternfly/react-core';
 import { HelpIcon } from '@patternfly/react-icons';
-import { FormikErrors, FormikTouched } from 'formik';
+import type { FormikErrors, FormikTouched } from 'formik';
 
 import SelectSingle from 'Components/SelectSingle';
 import AnnotationKeyLabelIcon from 'Containers/Integrations/IntegrationForm//AnnotationKeyLabelIcon';
 import FormLabelGroup from 'Containers/Integrations/IntegrationForm/FormLabelGroup';
-import { EmailIntegrationFormValues } from 'Containers/Integrations/IntegrationForm/Forms/EmailIntegrationForm';
+import type { EmailIntegrationFormValues } from 'Containers/Integrations/IntegrationForm/Forms/EmailIntegrationForm';
 
 const startTLSAuthMethods = [
     {
@@ -35,7 +36,7 @@ const startTLSAuthMethods = [
 export type EmailNotifierFormProps = {
     values: EmailIntegrationFormValues;
     setFieldValue: (field: string, value: any, shouldValidate?: boolean) => void;
-    handleBlur: (e: React.FocusEvent<any, Element>) => void;
+    handleBlur: (e: FocusEvent<any, Element>) => void;
     errors: FormikErrors<any>;
     touched: FormikTouched<any>;
 };
@@ -49,18 +50,18 @@ function EmailNotifierForm({
 }: EmailNotifierFormProps): ReactElement {
     const [storedUsername, setStoredUsername] = useState('');
     const { allowUnauthenticatedSmtp } = values.notifier.email;
-    function onChange(value, event) {
-        setFieldValue(event.target.id, value);
+    function onChange(value: string, event: FormEvent<HTMLInputElement>) {
+        setFieldValue(event.currentTarget.id, value);
     }
 
-    function updateStartTLSAuthMethodOnChange(value, event) {
-        setFieldValue(event.target.id, value);
+    function updateStartTLSAuthMethodOnChange(value: boolean, event: FormEvent<HTMLInputElement>) {
+        setFieldValue(event.currentTarget.id, value);
         if (value === false && values.notifier.email.startTLSAuthMethod !== 'DISABLED') {
             setFieldValue('notifier.email.startTLSAuthMethod', 'DISABLED');
         }
     }
 
-    function onUpdateUnauthenticatedChange(isChecked) {
+    function onUpdateUnauthenticatedChange(isChecked: boolean) {
         if (isChecked) {
             setStoredUsername(values.notifier.email.username);
             setFieldValue('notifier.email.username', '');
@@ -313,6 +314,26 @@ function EmailNotifierForm({
                                 values.notifier.email.disableTLS &&
                                 values.notifier.email.startTLSAuthMethod === 'DISABLED'
                             }
+                        />
+                    </FormLabelGroup>
+                    <FormLabelGroup
+                        label="Hostname for SMTP HELO/EHLO"
+                        fieldId="notifier.email.hostnameHeloEhlo"
+                        helperText={
+                            <span className="pf-v5-u-font-size-sm">
+                                If left blank, localhost will be used
+                            </span>
+                        }
+                        touched={touched}
+                        errors={errors}
+                    >
+                        <TextInput
+                            type="text"
+                            id="notifier.email.hostnameHeloEhlo"
+                            value={values.notifier.email.hostnameHeloEhlo}
+                            placeholder="example, smtp.client.com"
+                            onChange={(event, value) => onChange(value, event)}
+                            onBlur={handleBlur}
                         />
                     </FormLabelGroup>
                 </Form>
