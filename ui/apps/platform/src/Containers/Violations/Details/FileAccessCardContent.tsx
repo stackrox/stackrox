@@ -1,5 +1,5 @@
 import type { ReactElement } from 'react';
-import { DescriptionList, Divider, Flex, FlexItem, Title } from '@patternfly/react-core';
+import { DescriptionList, Divider, Flex, Title } from '@patternfly/react-core';
 import lowerCase from 'lodash/lowerCase';
 import upperFirst from 'lodash/upperFirst';
 
@@ -22,11 +22,9 @@ function FileAccessCardContent({ event }: FileAccessCardContentProps): ReactElem
     return (
         <Flex direction={{ default: 'column' }} spaceItems={{ default: 'spaceItemsMd' }}>
             <Divider component="div" />
-            <FlexItem>
-                <span className="pf-v5-u-background-color-warning pf-v5-u-p-md pf-v5-u-py-sm">
-                    {file.nodePath}
-                </span>
-            </FlexItem>
+            <Title headingLevel="h3" className="pf-v5-u-pb-sm">
+                {file.nodePath}
+            </Title>
             <DescriptionList columnModifier={{ default: '2Col' }}>
                 <DescriptionListItem term="File operation" desc={formatOperation(operation)} />
                 <DescriptionListItem term="Time" desc={getDateTime(timestamp)} />
