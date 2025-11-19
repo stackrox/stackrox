@@ -8,7 +8,7 @@ import {
     PageSectionVariants,
     Title,
 } from '@patternfly/react-core';
-import { ActionsColumn, Table, Td, Th, Thead, Tr } from '@patternfly/react-table';
+import { ActionsColumn, Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 import { Link, useNavigate } from 'react-router-dom-v5-compat';
 import pluralize from 'pluralize';
 
@@ -196,59 +196,64 @@ function IntegrationsTable({
                                     return !actionItem?.isHidden;
                                 });
                                 return (
-                                    <Tr key={integration.id}>
-                                        {hasMultipleDelete && !isReadOnly && (
-                                            <Td
-                                                key={integration.id}
-                                                select={{
-                                                    rowIndex,
-                                                    onSelect,
-                                                    isSelected: selected[rowIndex],
-                                                }}
-                                            />
-                                        )}
-                                        {columns.map((column) => {
-                                            if (
-                                                column.Header === 'Name' ||
-                                                (type === 'machineAccess' &&
-                                                    column.Header === 'Configuration')
-                                            ) {
+                                    <Tbody key={integration.id}>
+                                        <Tr>
+                                            {hasMultipleDelete && !isReadOnly && (
+                                                <Td
+                                                    key={integration.id}
+                                                    select={{
+                                                        rowIndex,
+                                                        onSelect,
+                                                        isSelected: selected[rowIndex],
+                                                    }}
+                                                />
+                                            )}
+                                            {columns.map((column) => {
+                                                if (
+                                                    column.Header === 'Name' ||
+                                                    (type === 'machineAccess' &&
+                                                        column.Header === 'Configuration')
+                                                ) {
+                                                    return (
+                                                        <Td key="name" dataLabel={column.Header}>
+                                                            <Link
+                                                                to={getPathToViewDetails(
+                                                                    source,
+                                                                    type,
+                                                                    id
+                                                                )}
+                                                            >
+                                                                <TableCellValue
+                                                                    row={integration}
+                                                                    column={column}
+                                                                />
+                                                            </Link>
+                                                        </Td>
+                                                    );
+                                                }
                                                 return (
-                                                    <Td key="name" dataLabel={column.Header}>
-                                                        <Link
-                                                            to={getPathToViewDetails(
-                                                                source,
-                                                                type,
-                                                                id
-                                                            )}
-                                                        >
-                                                            <TableCellValue
-                                                                row={integration}
-                                                                column={column}
-                                                            />
-                                                        </Link>
+                                                    <Td
+                                                        key={column.Header}
+                                                        dataLabel={column.Header}
+                                                    >
+                                                        <TableCellValue
+                                                            row={integration}
+                                                            column={column}
+                                                        />
                                                     </Td>
                                                 );
-                                            }
-                                            return (
-                                                <Td key={column.Header} dataLabel={column.Header}>
-                                                    <TableCellValue
-                                                        row={integration}
-                                                        column={column}
-                                                    />
-                                                </Td>
-                                            );
-                                        })}
-                                        <Td isActionCell>
-                                            <ActionsColumn
-                                                isDisabled={
-                                                    !permissions[source].write ||
-                                                    !isUserResource(integration.traits)
-                                                }
-                                                items={actionItems}
-                                            />
-                                        </Td>
-                                    </Tr>
+                                            })}
+                                            <Td isActionCell>
+                                                <ActionsColumn
+                                                    isDisabled={
+                                                        !permissions[source].write ||
+                                                        !isUserResource(integration.traits)
+                                                    }
+                                                    items={actionItems}
+                                                />
+                                            </Td>
+                                        </Tr>
+                                    </Tbody>
                                 );
                             })
                         }
