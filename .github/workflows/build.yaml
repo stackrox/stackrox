@@ -234,10 +234,10 @@ jobs:
         run: |
           if [[ "${{ matrix.arch }}" != "amd64" ]]; then
             echo "Building non-amd binary"
-            GOOS=linux GOARCH=${{ matrix.arch }} GODEBUG=fips140=only CGO_ENABLED=0 make build-prep main-build-nodeps
+            GOOS=linux GOARCH=${{ matrix.arch }} GOFIPS140=latest GODEBUG=fips140=on CGO_ENABLED=0 make build-prep main-build-nodeps
           else
             echo "Building amd binary"
-            GOOS=linux GOARCH=${{ matrix.arch }} GODEBUG=fips140=only CGO_ENABLED=0 make build-prep main-build-nodeps
+            GOOS=linux GOARCH=${{ matrix.arch }} GOFIPS140=latest GODEBUG=fips140=on CGO_ENABLED=0 make build-prep main-build-nodeps
           fi
 
       - name: Bundle the build to preserve permissions
@@ -644,7 +644,7 @@ jobs:
 
       - name: Build Operator image
         run: |
-          GODEBUG=fips140=only CGO_ENABLED=0 GOARCH=${{ matrix.arch }} scripts/lib.sh retry 6 true make -C operator/ build docker-build
+          GOFIPS140=latest GODEBUG=fips140=on CGO_ENABLED=0 GOARCH=${{ matrix.arch }} scripts/lib.sh retry 6 true make -C operator/ build docker-build
 
       - name: Set up QEMU
         if: matrix.arch != 'amd64'

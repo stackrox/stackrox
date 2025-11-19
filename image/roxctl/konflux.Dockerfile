@@ -22,7 +22,7 @@ ENV CI=1 GOFLAGS=""
 ENV GOTAGS="release"
 ENV GOEXPERIMENT=""
 
-RUN RACE=0 GODEBUG=fips140=only CGO_ENABLED=0 GOOS=linux GOARCH=$(go env GOARCH) scripts/go-build.sh ./roxctl && \
+RUN RACE=0 GOFIPS140=latest GODEBUG=fips140=on CGO_ENABLED=0 GOOS=linux GOARCH=$(go env GOARCH) scripts/go-build.sh ./roxctl && \
     cp bin/linux_$(go env GOARCH)/roxctl image/bin/roxctl
 
 

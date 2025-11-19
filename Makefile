@@ -394,9 +394,9 @@ roxctl_%: build-prep
 	$(eval   os := $(firstword $(w)))
 	$(eval arch := $(lastword  $(w)))
 ifdef SKIP_CLI_BUILD
-	test -f bin/$(os)_$(arch)/roxctl || RACE=0 GODEBUG=fips140=only CGO_ENABLED=0 GOOS=$(os) GOARCH=$(arch) $(GOBUILD) ./roxctl
+	test -f bin/$(os)_$(arch)/roxctl || RACE=0 GOFIPS140=latest GODEBUG=fips140=on CGO_ENABLED=0 GOOS=$(os) GOARCH=$(arch) $(GOBUILD) ./roxctl
 else
-	RACE=0 GODEBUG=fips140=only CGO_ENABLED=0 GOOS=$(os) GOARCH=$(arch) $(GOBUILD) ./roxctl
+	RACE=0 GOFIPS140=latest GODEBUG=fips140=on CGO_ENABLED=0 GOOS=$(os) GOARCH=$(arch) $(GOBUILD) ./roxctl
 endif
 
 roxctl-install:
@@ -420,9 +420,9 @@ roxagent_%: build-prep
 	$(eval   os := $(firstword $(w)))
 	$(eval arch := $(lastword  $(w)))
 ifdef SKIP_CLI_BUILD
-	test -f bin/$(os)_$(arch)/roxagent || RACE=0 GODEBUG=fips140=only CGO_ENABLED=0 GOOS=$(os) GOARCH=$(arch) $(GOBUILD) ./compliance/virtualmachines/roxagent
+	test -f bin/$(os)_$(arch)/roxagent || RACE=0 GOFIPS140=latest GODEBUG=fips140=on CGO_ENABLED=0 GOOS=$(os) GOARCH=$(arch) $(GOBUILD) ./compliance/virtualmachines/roxagent
 else
-	RACE=0 GODEBUG=fips140=only CGO_ENABLED=0 GOOS=$(os) GOARCH=$(arch) $(GOBUILD) ./compliance/virtualmachines/roxagent
+	RACE=0 GOFIPS140=latest GODEBUG=fips140=on CGO_ENABLED=0 GOOS=$(os) GOARCH=$(arch) $(GOBUILD) ./compliance/virtualmachines/roxagent
 endif
 
 .PHONY: roxagent
@@ -471,7 +471,7 @@ sensor-kubernetes-build-dockerized: build-volumes
 .PHONY: sensor-build
 sensor-build:
 	$(GOBUILD) sensor/kubernetes sensor/admission-control
-	GODEBUG=fips140=only CGO_ENABLED=0 $(GOBUILD) sensor/upgrader
+	GOFIPS140=latest GODEBUG=fips140=on CGO_ENABLED=0 $(GOBUILD) sensor/upgrader
 
 .PHONY: sensor-kubernetes-build
 sensor-kubernetes-build:
@@ -494,23 +494,23 @@ main-build-nodeps:
 		sensor/kubernetes \
 		sensor/upgrader
 ifndef CI
-	GODEBUG=fips140=only CGO_ENABLED=0 $(GOBUILD) roxctl
+	GOFIPS140=latest GODEBUG=fips140=on CGO_ENABLED=0 $(GOBUILD) roxctl
 endif
 
 .PHONY: scale-build
 scale-build: build-prep
 	@echo "+ $@"
-	GODEBUG=fips140=only CGO_ENABLED=0 $(GOBUILD) scale/profiler scale/chaos
+	GOFIPS140=latest GODEBUG=fips140=on CGO_ENABLED=0 $(GOBUILD) scale/profiler scale/chaos
 
 .PHONY: webhookserver-build
 webhookserver-build: build-prep
 	@echo "+ $@"
-	GODEBUG=fips140=only CGO_ENABLED=0 $(GOBUILD) webhookserver
+	GOFIPS140=latest GODEBUG=fips140=on CGO_ENABLED=0 $(GOBUILD) webhookserver
 
 .PHONY: syslog-build
 syslog-build:build-prep
 	@echo "+ $@"
-	GODEBUG=fips140=only CGO_ENABLED=0 $(GOBUILD) qa-tests-backend/test-images/syslog
+	GOFIPS140=latest GODEBUG=fips140=on CGO_ENABLED=0 $(GOBUILD) qa-tests-backend/test-images/syslog
 
 .PHONY: gendocs
 gendocs: $(GENERATED_API_DOCS)
@@ -532,21 +532,21 @@ test-prep:
 .PHONY: go-unit-tests
 go-unit-tests: build-prep test-prep
 	set -o pipefail ; \
-	GODEBUG=fips140=only CGO_ENABLED=0 MUTEX_WATCHDOG_TIMEOUT_SECS=30 GOTAGS=$(GOTAGS),test scripts/go-test.sh -timeout 15m -cover -coverprofile test-output/coverage.out -v \
+	GOFIPS140=latest GODEBUG=fips140=on CGO_ENABLED=0 MUTEX_WATCHDOG_TIMEOUT_SECS=30 GOTAGS=$(GOTAGS),test scripts/go-test.sh -timeout 15m -cover -coverprofile test-output/coverage.out -v \
 		$(shell git ls-files -- '*_test.go' | sed -e 's@^@./@g' | xargs -n 1 dirname | sort | uniq | xargs go list| grep -v '^github.com/stackrox/rox/tests$$' | grep -Ev $(UNIT_TEST_IGNORE)) \
 		| tee $(GO_TEST_OUTPUT_PATH)
 	# Exercise the logging package for all supported logging levels to make sure that initialization works properly
 	@echo "Run log tests"
 	for encoding in console json; do \
 		for level in debug info warn error fatal panic; do \
-			LOGENCODING=$$encoding LOGLEVEL=$$level GODEBUG=fips140=only CGO_ENABLED=0 MUTEX_WATCHDOG_TIMEOUT_SECS=30 GOTAGS=$(GOTAGS),test scripts/go-test.sh -p 4 -v ./pkg/logging/... | grep -v "iteration"; \
+			LOGENCODING=$$encoding LOGLEVEL=$$level GOFIPS140=latest GODEBUG=fips140=on CGO_ENABLED=0 MUTEX_WATCHDOG_TIMEOUT_SECS=30 GOTAGS=$(GOTAGS),test scripts/go-test.sh -p 4 -v ./pkg/logging/... | grep -v "iteration"; \
 		done; \
 	done
 
 .PHONY: sensor-integration-test
 sensor-integration-test: build-prep test-prep
 	set -o pipefail ; \
-	GODEBUG=fips140=only CGO_ENABLED=0 MUTEX_WATCHDOG_TIMEOUT_SECS=30 LOGLEVEL=debug GOTAGS=$(GOTAGS),test scripts/go-test.sh -timeout 15m -v -p 1 ./sensor/tests/... | tee $(GO_TEST_OUTPUT_PATH)
+	GOFIPS140=latest GODEBUG=fips140=on CGO_ENABLED=0 MUTEX_WATCHDOG_TIMEOUT_SECS=30 LOGLEVEL=debug GOTAGS=$(GOTAGS),test scripts/go-test.sh -timeout 15m -v -p 1 ./sensor/tests/... | tee $(GO_TEST_OUTPUT_PATH)
 
 sensor-pipeline-benchmark: build-prep test-prep
 	LOGLEVEL="panic" go test -bench=. -run=^# -benchtime=30s -count=5 ./sensor/tests/pipeline | tee $(CURDIR)/test-output/pipeline.results.txt
@@ -554,19 +554,19 @@ sensor-pipeline-benchmark: build-prep test-prep
 .PHONY: go-postgres-unit-tests
 go-postgres-unit-tests: build-prep test-prep
 	set -o pipefail ; \
-	GODEBUG=fips140=only CGO_ENABLED=0 MUTEX_WATCHDOG_TIMEOUT_SECS=30 GOTAGS=$(GOTAGS),test,sql_integration scripts/go-test.sh -timeout 15m  -cover -coverprofile test-output/coverage.out -v \
+	GOFIPS140=latest GODEBUG=fips140=on CGO_ENABLED=0 MUTEX_WATCHDOG_TIMEOUT_SECS=30 GOTAGS=$(GOTAGS),test,sql_integration scripts/go-test.sh -timeout 15m  -cover -coverprofile test-output/coverage.out -v \
 		$(shell git grep -rl "//go:build sql_integration" central pkg tools | sed -e 's@^@./@g' | xargs -n 1 dirname | sort | uniq | xargs go list -tags sql_integration | grep -v '^github.com/stackrox/rox/tests$$' | grep -Ev $(UNIT_TEST_IGNORE)) \
 		| tee $(GO_TEST_OUTPUT_PATH)
 	@# The -p 1 passed to go test is required to ensure that tests of different packages are not run in parallel, so as to avoid conflicts when interacting with the DB.
 	set -o pipefail ; \
-	GODEBUG=fips140=only CGO_ENABLED=0 MUTEX_WATCHDOG_TIMEOUT_SECS=30 GOTAGS=$(GOTAGS),test,sql_integration scripts/go-test.sh -p 1 -cover -coverprofile test-output/migrator-coverage.out -v \
+	GOFIPS140=latest GODEBUG=fips140=on CGO_ENABLED=0 MUTEX_WATCHDOG_TIMEOUT_SECS=30 GOTAGS=$(GOTAGS),test,sql_integration scripts/go-test.sh -p 1 -cover -coverprofile test-output/migrator-coverage.out -v \
 		$(shell git grep -rl "//go:build sql_integration" migrator | sed -e 's@^@./@g' | xargs -n 1 dirname | sort | uniq | xargs go list -tags sql_integration | grep -v '^github.com/stackrox/rox/tests$$' | grep -Ev $(UNIT_TEST_IGNORE)) \
 		| tee -a $(GO_TEST_OUTPUT_PATH)
 
 .PHONY: go-postgres-bench-tests
 go-postgres-bench-tests: build-prep test-prep
 	set -o pipefail ; \
-	GODEBUG=fips140=only CGO_ENABLED=0 MUTEX_WATCHDOG_TIMEOUT_SECS=30 GOTAGS=$(GOTAGS),test,sql_integration scripts/go-test.sh -run=nonthing -bench=. -benchtime=$(BENCHTIME) -benchmem -timeout $(BENCHTIMEOUT) -count $(BENCHCOUNT) -v \
+	GOFIPS140=latest GODEBUG=fips140=on CGO_ENABLED=0 MUTEX_WATCHDOG_TIMEOUT_SECS=30 GOTAGS=$(GOTAGS),test,sql_integration scripts/go-test.sh -run=nonthing -bench=. -benchtime=$(BENCHTIME) -benchmem -timeout $(BENCHTIMEOUT) -count $(BENCHCOUNT) -v \
   $(shell git grep -rl "testing.B" central pkg migrator tools | sed -e 's@^@./@g' | xargs -n 1 dirname | sort | uniq | xargs go list -tags sql_integration | grep -v '^github.com/stackrox/rox/tests$$' | grep -Ev $(UNIT_TEST_IGNORE)) \
 		| tee $(GO_TEST_OUTPUT_PATH)
 
@@ -842,13 +842,13 @@ endif
 .PHONY: policyutil
 policyutil:
 	@echo "+ $@"
-	GODEBUG=fips140=only CGO_ENABLED=0 GOOS=$(HOST_OS) $(GOBUILD) ./tools/policyutil
+	GOFIPS140=latest GODEBUG=fips140=on CGO_ENABLED=0 GOOS=$(HOST_OS) $(GOBUILD) ./tools/policyutil
 	go install ./tools/policyutil
 
 .PHONY: mitre
 mitre:
 	@echo "+ $@"
-	GODEBUG=fips140=only CGO_ENABLED=0 GOOS=$(HOST_OS) $(GOBUILD) ./tools/mitre
+	GOFIPS140=latest GODEBUG=fips140=on CGO_ENABLED=0 GOOS=$(HOST_OS) $(GOBUILD) ./tools/mitre
 	go install ./tools/mitre
 
 .PHONY: bootstrap_migration
