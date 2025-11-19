@@ -15,7 +15,6 @@ os.environ["ORCHESTRATOR_FLAVOR"] = "k8s"
 os.environ["POSTGRES_VERSION"] = "17"
 os.environ["BYODB_TEST"] = "true"
 
-os.environ["ROX_ACTIVE_VULN_MGMT"] = "true"
 os.environ["ROX_RISK_REPROCESSING_INTERVAL"] = "15s"
 os.environ["ROX_SENSOR_CONNECTION_RETRY_MAX_INTERVAL"] = "30s"
 

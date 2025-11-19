@@ -30,10 +30,6 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"stsEnabled: Boolean!",
 	}))
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.Access(0)))
-	utils.Must(builder.AddType("ActiveComponent_ActiveContext", []string{
-		"containerName: String!",
-		"imageId: String!",
-	}))
 	utils.Must(builder.AddType("AdmissionControlHealthInfo", []string{
 		"statusErrors: [String!]!",
 	}))
@@ -1746,58 +1742,6 @@ func toAccesses(values *[]string) []storage.Access {
 		output[i] = toAccess(&v)
 	}
 	return output
-}
-
-type activeComponent_ActiveContextResolver struct {
-	ctx  context.Context
-	root *Resolver
-	data *storage.ActiveComponent_ActiveContext
-}
-
-func (resolver *Resolver) wrapActiveComponent_ActiveContext(value *storage.ActiveComponent_ActiveContext, ok bool, err error) (*activeComponent_ActiveContextResolver, error) {
-	if !ok || err != nil || value == nil {
-		return nil, err
-	}
-	return &activeComponent_ActiveContextResolver{root: resolver, data: value}, nil
-}
-
-func (resolver *Resolver) wrapActiveComponent_ActiveContexts(values []*storage.ActiveComponent_ActiveContext, err error) ([]*activeComponent_ActiveContextResolver, error) {
-	if err != nil || len(values) == 0 {
-		return nil, err
-	}
-	output := make([]*activeComponent_ActiveContextResolver, len(values))
-	for i, v := range values {
-		output[i] = &activeComponent_ActiveContextResolver{root: resolver, data: v}
-	}
-	return output, nil
-}
-
-func (resolver *Resolver) wrapActiveComponent_ActiveContextWithContext(ctx context.Context, value *storage.ActiveComponent_ActiveContext, ok bool, err error) (*activeComponent_ActiveContextResolver, error) {
-	if !ok || err != nil || value == nil {
-		return nil, err
-	}
-	return &activeComponent_ActiveContextResolver{ctx: ctx, root: resolver, data: value}, nil
-}
-
-func (resolver *Resolver) wrapActiveComponent_ActiveContextsWithContext(ctx context.Context, values []*storage.ActiveComponent_ActiveContext, err error) ([]*activeComponent_ActiveContextResolver, error) {
-	if err != nil || len(values) == 0 {
-		return nil, err
-	}
-	output := make([]*activeComponent_ActiveContextResolver, len(values))
-	for i, v := range values {
-		output[i] = &activeComponent_ActiveContextResolver{ctx: ctx, root: resolver, data: v}
-	}
-	return output, nil
-}
-
-func (resolver *activeComponent_ActiveContextResolver) ContainerName(ctx context.Context) string {
-	value := resolver.data.GetContainerName()
-	return value
-}
-
-func (resolver *activeComponent_ActiveContextResolver) ImageId(ctx context.Context) string {
-	value := resolver.data.GetImageId()
-	return value
 }
 
 type admissionControlHealthInfoResolver struct {

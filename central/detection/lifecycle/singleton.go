@@ -2,7 +2,6 @@ package lifecycle
 
 import (
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/central/activecomponent/updater/aggregator"
 	clusterDatastore "github.com/stackrox/rox/central/cluster/datastore"
 	"github.com/stackrox/rox/central/deployment/cache"
 	deploymentDatastore "github.com/stackrox/rox/central/deployment/datastore"
@@ -38,7 +37,6 @@ func initialize() {
 		reprocessor.Singleton(),
 		cache.DeletedDeploymentsSingleton(),
 		filter.Singleton(),
-		aggregator.Singleton(),
 		connection.ManagerSingleton(),
 	)
 
