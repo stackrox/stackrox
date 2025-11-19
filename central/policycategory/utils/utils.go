@@ -20,8 +20,8 @@ func GetCategoryNameToIDs(categories []*storage.PolicyCategory) map[string]strin
 		// ROX-31406
 		// If the entry exists, but the one we're looking at doesn't match the titleCase spec, we want to use this, as
 		// it's likely "more uppercase" than the current candidate for this name.
-		if entry, found := lowerNameIDMap[strings.ToLower(c.GetName())]; found && titleCase.String(c.GetName()) != entry.GetName() {
-			lowerNameIDMap[strings.ToLower(entry.GetName())] = c
+		if _, found := lowerNameIDMap[strings.ToLower(c.GetName())]; found && titleCase.String(c.GetName()) != c.GetName() {
+			lowerNameIDMap[strings.ToLower(c.GetName())] = c
 		} else if !found {
 			lowerNameIDMap[strings.ToLower(c.GetName())] = c
 		}
