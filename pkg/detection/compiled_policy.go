@@ -66,6 +66,7 @@ func newCompiledPolicy(policy *storage.Policy) (CompiledPolicy, error) {
 		// set predicates
 		switch policy.GetEventSource() {
 		case storage.EventSource_NODE_EVENT:
+			// TODO(ROX-31891): support scopes and exclusions for node events
 			compiled.predicates = append(compiled.predicates, &fileAccessPredicate{})
 		case storage.EventSource_AUDIT_LOG_EVENT:
 			compiled.predicates = append(compiled.predicates, &auditEventPredicate{scopes: scopes, exclusions: exclusions})
