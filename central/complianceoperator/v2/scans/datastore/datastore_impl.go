@@ -39,11 +39,7 @@ func (d *datastoreImpl) GetScansByCluster(ctx context.Context, clusterID string)
 // DeleteScanByCluster deletes scans by cluster
 func (d *datastoreImpl) DeleteScanByCluster(ctx context.Context, clusterID string) error {
 	query := search.NewQueryBuilder().AddStrings(search.ClusterID, clusterID).ProtoQuery()
-	_, err := d.store.DeleteByQuery(ctx, query)
-	if err != nil {
-		return err
-	}
-	return nil
+	return d.store.DeleteByQuery(ctx, query)
 }
 
 // SearchScans returns the scans for the given query

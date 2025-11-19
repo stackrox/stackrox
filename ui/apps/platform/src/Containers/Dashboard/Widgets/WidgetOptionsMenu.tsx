@@ -1,4 +1,4 @@
-import React, { ReactNode } from 'react';
+import type { ReactNode } from 'react';
 import { Button, Popover, PopoverPosition } from '@patternfly/react-core';
 import { CaretDownIcon, CogIcon } from '@patternfly/react-icons';
 

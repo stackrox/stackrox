@@ -93,6 +93,11 @@ func (s *TestShortCircuitsStoreSuite) TestStore() {
 
 	s.NoError(store.UpsertMany(ctx, testShortCircuits))
 
+	foundTestShortCircuits, missing, err := store.GetMany(ctx, testShortCircuitIDs)
+	s.NoError(err)
+	s.Empty(missing)
+	protoassert.ElementsMatch(s.T(), testShortCircuits, foundTestShortCircuits)
+
 	testShortCircuitCount, err = store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)
 	s.Equal(200, testShortCircuitCount)

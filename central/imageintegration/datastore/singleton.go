@@ -5,7 +5,6 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/globaldb"
-	"github.com/stackrox/rox/central/imageintegration/search"
 	"github.com/stackrox/rox/central/imageintegration/store"
 	pgStore "github.com/stackrox/rox/central/imageintegration/store/postgres"
 	"github.com/stackrox/rox/generated/storage"
@@ -139,7 +138,7 @@ func createDefaultScannerV4Integration(ctx context.Context, iiStore store.Store)
 		return
 	}
 
-	log.Infof("Upserting default Scanner V4 integration %q (%v)", store.DefaultScannerV4Integration.GetName(), store.DefaultScannerV4Integration.GetId())
+	log.Infof("Upserting default Scanner V4 integration %q (%s)", store.DefaultScannerV4Integration.GetName(), store.DefaultScannerV4Integration.GetId())
 	err := iiStore.Upsert(ctx, store.DefaultScannerV4Integration)
 	utils.Should(errors.Wrap(err, "unable to upsert default ScannerV4 integration"))
 }
@@ -178,8 +177,7 @@ func initialize() {
 	storage := pgStore.New(globaldb.GetPostgres())
 
 	initializeIntegrations(storage)
-	searcher := search.New(storage)
-	dataStore = New(storage, searcher)
+	dataStore = New(storage)
 }
 
 // Singleton provides the interface for non-service external interaction.

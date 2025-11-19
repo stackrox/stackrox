@@ -23,6 +23,6 @@ export function checkInviteUsersModal() {
 
     // check role field
     getSelectButtonByLabel('Role').click();
-    cy.get(`.pf-v5-c-select__menu-item`).should('have.length', 7);
+    cy.get(`.pf-v5-c-menu .pf-v5-c-menu__list .pf-v5-c-menu__item`).should('have.length', 7);
     getSelectOption('Network Graph Viewer').click();
 }

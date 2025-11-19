@@ -22,7 +22,6 @@ const (
 )
 
 func TestMapper(t *testing.T) {
-	t.Parallel()
 	suite.Run(t, new(MapperTestSuite))
 }
 
@@ -73,7 +72,7 @@ func (s *MapperTestSuite) TestMapperSuccessForRoleAbsence() {
 			},
 		},
 	}
-	s.mockUsers.EXPECT().GetUser(s.requestContext, expectedUser.Id).Times(1).Return(nil, nil)
+	s.mockUsers.EXPECT().GetUser(s.requestContext, expectedUser.GetId()).Times(1).Return(nil, nil)
 	s.mockUsers.EXPECT().Upsert(s.requestContext, expectedUser).Times(1).Return(nil)
 
 	expectedAttributes := map[string][]string{
@@ -108,7 +107,7 @@ func (s *MapperTestSuite) TestMapperSuccessForSingleRole() {
 			},
 		},
 	}
-	s.mockUsers.EXPECT().GetUser(s.requestContext, expectedUser.Id).Times(1).Return(nil, nil)
+	s.mockUsers.EXPECT().GetUser(s.requestContext, expectedUser.GetId()).Times(1).Return(nil, nil)
 	s.mockUsers.EXPECT().Upsert(s.requestContext, expectedUser).Times(1).Return(nil)
 
 	// Expect the user to have a group mapping for a role.
@@ -162,7 +161,7 @@ func (s *MapperTestSuite) TestMapperSuccessForOnlyNoneRole() {
 			},
 		},
 	}
-	s.mockUsers.EXPECT().GetUser(s.requestContext, expectedUser.Id).Times(1).Return(nil, nil)
+	s.mockUsers.EXPECT().GetUser(s.requestContext, expectedUser.GetId()).Times(1).Return(nil, nil)
 	s.mockUsers.EXPECT().Upsert(s.requestContext, expectedUser).Times(1).Return(nil)
 
 	// Expect the user to have a group mapping to the None role.
@@ -216,7 +215,7 @@ func (s *MapperTestSuite) TestMapperSuccessForMultiRole() {
 			},
 		},
 	}
-	s.mockUsers.EXPECT().GetUser(s.requestContext, expectedUser.Id).Times(1).Return(nil, nil)
+	s.mockUsers.EXPECT().GetUser(s.requestContext, expectedUser.GetId()).Times(1).Return(nil, nil)
 	s.mockUsers.EXPECT().Upsert(s.requestContext, expectedUser).Times(1).Return(nil)
 
 	// Expect the user to have a two group mappings for two roles.
@@ -288,7 +287,7 @@ func (s *MapperTestSuite) TestMapperSuccessForMultipleRolesIncludingNone() {
 			},
 		},
 	}
-	s.mockUsers.EXPECT().GetUser(s.requestContext, expectedUser.Id).Times(1).Return(nil, nil)
+	s.mockUsers.EXPECT().GetUser(s.requestContext, expectedUser.GetId()).Times(1).Return(nil, nil)
 	s.mockUsers.EXPECT().Upsert(s.requestContext, expectedUser).Times(1).Return(nil)
 
 	// Expect the user to have multiple group mappings for roles including None.
@@ -358,7 +357,7 @@ func (s *MapperTestSuite) TestUserUpsertFailureDoesntMatter() {
 			},
 		},
 	}
-	s.mockUsers.EXPECT().GetUser(s.requestContext, expectedUser.Id).Times(1).Return(nil, nil)
+	s.mockUsers.EXPECT().GetUser(s.requestContext, expectedUser.GetId()).Times(1).Return(nil, nil)
 	s.mockUsers.EXPECT().Upsert(s.requestContext, expectedUser).Times(1).Return(errors.New("error that shouldnt matter"))
 
 	// Expect the user to have a group mapping for a role.
@@ -413,7 +412,7 @@ func (s *MapperTestSuite) TestGroupWalkFailureCausesError() {
 			},
 		},
 	}
-	s.mockUsers.EXPECT().GetUser(s.requestContext, expectedUser.Id).Times(1).Return(nil, nil)
+	s.mockUsers.EXPECT().GetUser(s.requestContext, expectedUser.GetId()).Times(1).Return(nil, nil)
 	s.mockUsers.EXPECT().Upsert(s.requestContext, expectedUser).Times(1).Return(nil)
 
 	// Expect the user to have a group mapping for a role.
@@ -449,7 +448,7 @@ func (s *MapperTestSuite) TestRoleFetchFailureCausesError() {
 			},
 		},
 	}
-	s.mockUsers.EXPECT().GetUser(s.requestContext, expectedUser.Id).Times(1).Return(nil, nil)
+	s.mockUsers.EXPECT().GetUser(s.requestContext, expectedUser.GetId()).Times(1).Return(nil, nil)
 	s.mockUsers.EXPECT().Upsert(s.requestContext, expectedUser).Times(1).Return(nil)
 
 	// Expect the user to have a group mapping for a role.

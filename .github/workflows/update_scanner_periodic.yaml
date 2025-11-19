@@ -5,14 +5,15 @@ on:
   - cron: 0 5 * * 1
 jobs:
   update-scanner:
+    if:  ${{ github.repository_owner == 'stackrox' }}
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v5
       with:
         ref: master # this is our target branch
         fetch-depth: 0 # we need to fetch all branches
     - name: Checkout scanner repo
-      uses: actions/checkout@v4
+      uses: actions/checkout@v5
       with:
         repository: stackrox/scanner
         path: deps/scanner

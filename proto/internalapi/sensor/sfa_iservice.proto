@@ -1,0 +1,13 @@
+syntax = "proto3";
+
+package sensor;
+
+import "google/protobuf/empty.proto";
+import "internalapi/sensor/sfa.proto";
+
+option cc_enable_arenas = true;
+option go_package = "./internalapi/sensor;sensor";
+
+service FileActivityService {
+  rpc Communicate(stream FileActivity) returns (google.protobuf.Empty);
+}

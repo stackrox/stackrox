@@ -1,21 +1,23 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import {
     Button,
     Flex,
-    FormGroup,
     Form,
-    Tabs,
+    FormGroup,
     Tab,
-    TextArea,
-    Text,
     TabContent,
+    Tabs,
+    Text,
+    TextArea,
 } from '@patternfly/react-core';
-import { FormikHelpers, useFormik } from 'formik';
-import * as yup from 'yup';
+import { useFormik } from 'formik';
+import type { FormikHelpers } from 'formik';
+import type * as yup from 'yup';
 
-import { ScopeContext, ExceptionValues } from './utils';
+import type { ExceptionValues, ScopeContext } from './utils';
 import ExceptionScopeField, { ALL } from './ExceptionScopeField';
-import CveSelections, { CveSelectionsProps } from './CveSelections';
+import CveSelections from './CveSelections';
+import type { CveSelectionsProps } from './CveSelections';
 import ExpiryField from './ExpiryField';
 
 function getDefaultValues(cves: string[], scopeContext: ScopeContext): ExceptionValues {

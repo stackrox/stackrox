@@ -3,8 +3,10 @@ package datastore
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/central/convert/storagetoeffectiveaccessscope"
 	deploymentDataStore "github.com/stackrox/rox/central/deployment/datastore"
 	"github.com/stackrox/rox/central/namespace/datastore/internal/store"
 	"github.com/stackrox/rox/central/ranking"
@@ -12,10 +14,10 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/sac/effectiveaccessscope"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/paginated"
-	pkgPostgres "github.com/stackrox/rox/pkg/search/scoped/postgres"
 	"github.com/stackrox/rox/pkg/search/sorted"
 )
 
@@ -25,7 +27,7 @@ import (
 type DataStore interface {
 	GetNamespace(ctx context.Context, id string) (*storage.NamespaceMetadata, bool, error)
 	GetAllNamespaces(ctx context.Context) ([]*storage.NamespaceMetadata, error)
-	GetNamespacesForSAC(ctx context.Context) ([]*storage.NamespaceMetadata, error)
+	GetNamespacesForSAC() ([]effectiveaccessscope.Namespace, error)
 	GetManyNamespaces(ctx context.Context, id []string) ([]*storage.NamespaceMetadata, error)
 
 	AddNamespace(context.Context, *storage.NamespaceMetadata) error
@@ -41,26 +43,19 @@ type DataStore interface {
 // New returns a new DataStore instance using the provided store.
 func New(nsStore store.Store, deploymentDataStore deploymentDataStore.DataStore, namespaceRanker *ranking.Ranker) DataStore {
 	return &datastoreImpl{
-		store:             nsStore,
-		deployments:       deploymentDataStore,
-		namespaceRanker:   namespaceRanker,
-		formattedSearcher: formatSearcherV2(nsStore, namespaceRanker),
+		store:           nsStore,
+		deployments:     deploymentDataStore,
+		namespaceRanker: namespaceRanker,
 	}
 }
 
 var (
 	namespaceSAC = sac.ForResource(resources.Namespace)
-
-	defaultSortOption = &v1.QuerySortOption{
-		Field:    search.Namespace.String(),
-		Reversed: false,
-	}
 )
 
 type datastoreImpl struct {
-	store             store.Store
-	formattedSearcher search.Searcher
-	namespaceRanker   *ranking.Ranker
+	store           store.Store
+	namespaceRanker *ranking.Ranker
 
 	deployments deploymentDataStore.DataStore
 }
@@ -104,30 +99,8 @@ func (b *datastoreImpl) GetAllNamespaces(ctx context.Context) ([]*storage.Namesp
 }
 
 // GetNamespacesForSAC retrieves namespaces matching the request
-func (b *datastoreImpl) GetNamespacesForSAC(ctx context.Context) ([]*storage.NamespaceMetadata, error) {
-	ok, err := namespaceSAC.ReadAllowed(ctx)
-	if err != nil {
-		return nil, err
-	} else if !ok {
-		return b.SearchNamespaces(ctx, search.EmptyQuery())
-	}
-	var allowedNamespaces []*storage.NamespaceMetadata
-	walkFn := func() error {
-		allowedNamespaces = allowedNamespaces[:0]
-		return b.store.Walk(ctx, func(namespace *storage.NamespaceMetadata) error {
-			scopeKeys := []sac.ScopeKey{sac.ClusterScopeKey(namespace.GetClusterId()), sac.NamespaceScopeKey(namespace.GetName())}
-			if !namespaceSAC.ScopeChecker(ctx, storage.Access_READ_ACCESS, scopeKeys...).
-				IsAllowed() {
-				return nil
-			}
-			allowedNamespaces = append(allowedNamespaces, namespace)
-			return nil
-		})
-	}
-	if err := pgutils.RetryIfPostgres(ctx, walkFn); err != nil {
-		return nil, err
-	}
-	return allowedNamespaces, nil
+func (b *datastoreImpl) GetNamespacesForSAC() ([]effectiveaccessscope.Namespace, error) {
+	return storagetoeffectiveaccessscope.Namespaces(b.store.GetAllFromCacheForSAC()), nil
 }
 
 func (b *datastoreImpl) GetManyNamespaces(ctx context.Context, ids []string) ([]*storage.NamespaceMetadata, error) {
@@ -187,36 +160,80 @@ func (b *datastoreImpl) RemoveNamespace(ctx context.Context, id string) error {
 }
 
 func (b *datastoreImpl) Search(ctx context.Context, q *v1.Query) ([]search.Result, error) {
-	return b.formattedSearcher.Search(ctx, q)
+	// Need to check if we are sorting by priority.
+	validPriorityQuery, err := sorted.IsValidPriorityQuery(q, search.NamespacePriority)
+	if err != nil {
+		return nil, err
+	}
+	if validPriorityQuery {
+		priorityQuery, reversed, err := sorted.RemovePrioritySortFromQuery(q, search.NamespacePriority)
+		if err != nil {
+			return nil, err
+		}
+		results, err := b.store.Search(ctx, priorityQuery)
+		if err != nil {
+			return nil, err
+		}
+
+		sortedResults := sorted.SortResults(results, reversed, b.namespaceRanker)
+		return paginated.PageResults(sortedResults, q)
+	}
+
+	return b.store.Search(ctx, q)
 }
 
 // Count returns the number of search results from the query
 func (b *datastoreImpl) Count(ctx context.Context, q *v1.Query) (int, error) {
-	return b.formattedSearcher.Count(ctx, q)
+	return b.store.Count(ctx, q)
 }
 
 func (b *datastoreImpl) SearchResults(ctx context.Context, q *v1.Query) ([]*v1.SearchResult, error) {
-	namespaces, results, err := b.searchNamespaces(ctx, q)
+	if q == nil {
+		q = search.EmptyQuery()
+	}
+	// Clone the query and add select fields for SearchResult construction
+	clonedQuery := q.CloneVT()
+
+	// Add required fields for SearchResult proto: name (namespace name) and location (cluster/namespace)
+	// ForSearchResults will add these as select fields to the query
+	selectSelects := []*v1.QuerySelect{
+		search.NewQuerySelect(search.Namespace).Proto(),
+		search.NewQuerySelect(search.Cluster).Proto(),
+	}
+	clonedQuery.Selects = append(clonedQuery.GetSelects(), selectSelects...)
+
+	results, err := b.Search(ctx, clonedQuery)
 	if err != nil {
 		return nil, err
 	}
 
-	searchResults := make([]*v1.SearchResult, 0, len(namespaces))
-	for i, r := range results {
-		namespace := namespaces[i]
-		searchResults = append(searchResults, &v1.SearchResult{
-			Id:             r.ID,
-			Name:           namespace.GetName(),
-			Category:       v1.SearchCategory_NAMESPACES,
-			Score:          r.Score,
-			FieldToMatches: search.GetProtoMatchesMap(r.Matches),
-			Location:       fmt.Sprintf("%s/%s", namespace.GetClusterName(), namespace.GetName()),
-		})
+	// Build name and location strings from selected fields
+	for i := range results {
+		var clusterName string
+		var namespaceName string
+
+		// Extract values from FieldValues if available
+		// Keys are lowercase versions of the field names (e.g., "cluster", "namespace")
+		// Values are already converted to strings by the postgres framework
+		if results[i].FieldValues != nil {
+			if cluster, ok := results[i].FieldValues[strings.ToLower(search.Cluster.String())]; ok {
+				clusterName = cluster
+			}
+			if namespace, ok := results[i].FieldValues[strings.ToLower(search.Namespace.String())]; ok {
+				namespaceName = namespace
+			}
+		}
+
+		results[i].Name = namespaceName
+		results[i].Location = fmt.Sprintf("%s/%s", clusterName, namespaceName)
 	}
-	return searchResults, nil
+
+	// Convert search Results directly to SearchResult protos without a second database pass
+	return search.ResultsToSearchResultProtos(results, &NamespaceSearchResultConverter{}), nil
 }
 
 func (b *datastoreImpl) searchNamespaces(ctx context.Context, q *v1.Query) ([]*storage.NamespaceMetadata, []search.Result, error) {
+	// TODO(ROX-29943): remove unnecessary calls to database
 	results, err := b.Search(ctx, q)
 	if err != nil {
 		return nil, nil, err
@@ -254,13 +271,18 @@ func (b *datastoreImpl) updateNamespacePriority(nss ...*storage.NamespaceMetadat
 	}
 }
 
-// Helper functions which format our searching.
-///////////////////////////////////////////////
+// NamespaceSearchResultConverter implements search.SearchResultConverter for namespace search results.
+// This enables single-pass query construction for SearchResult protos.
+type NamespaceSearchResultConverter struct{}
 
-func formatSearcherV2(searcher search.Searcher, namespaceRanker *ranking.Ranker) search.Searcher {
-	scopedSearcher := pkgPostgres.WithScoping(searcher)
-	prioritySortedSearcher := sorted.Searcher(scopedSearcher, search.NamespacePriority, namespaceRanker)
-	// This is currently required due to the priority searcher
-	paginatedSearcher := paginated.Paginated(prioritySortedSearcher)
-	return paginated.WithDefaultSortOption(paginatedSearcher, defaultSortOption)
+func (c *NamespaceSearchResultConverter) BuildName(result *search.Result) string {
+	return result.Name
+}
+
+func (c *NamespaceSearchResultConverter) BuildLocation(result *search.Result) string {
+	return result.Location
+}
+
+func (c *NamespaceSearchResultConverter) GetCategory() v1.SearchCategory {
+	return v1.SearchCategory_NAMESPACES
 }

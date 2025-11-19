@@ -8,7 +8,6 @@ import (
 	metautils "github.com/grpc-ecosystem/go-grpc-middleware/v2/metadata"
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/internalapi/compliance"
 	"github.com/stackrox/rox/generated/internalapi/sensor"
 	"github.com/stackrox/rox/generated/storage"
@@ -22,11 +21,13 @@ import (
 	"github.com/stackrox/rox/sensor/common/compliance/index"
 	"github.com/stackrox/rox/sensor/common/message"
 	"github.com/stackrox/rox/sensor/common/orchestrator"
+	"github.com/stackrox/rox/sensor/common/unimplemented"
 	"google.golang.org/grpc"
 )
 
 // ComplianceService is the struct that manages the compliance results and audit log events
 type serviceImpl struct {
+	unimplemented.Receiver
 	sensor.UnimplementedComplianceServiceServer
 
 	output           chan *compliance.ComplianceReturn
@@ -75,10 +76,6 @@ func (s *serviceImpl) Stop() {
 }
 
 func (s *serviceImpl) Capabilities() []centralsensor.SensorCapability {
-	return nil
-}
-
-func (s *serviceImpl) ProcessMessage(_ *central.MsgToSensor) error {
 	return nil
 }
 
@@ -239,7 +236,7 @@ func (s *serviceImpl) Communicate(server sensor.ComplianceService_CommunicateSer
 			stopper.Client().Stop()
 			return errors.Wrapf(err, "receiving from compliance %q", hostname)
 		}
-		switch t := msg.Msg.(type) {
+		switch t := msg.GetMsg().(type) {
 		case *sensor.MsgFromCompliance_Return:
 			log.Infof("Received compliance return from %q", msg.GetNode())
 			s.output <- t.Return
@@ -255,8 +252,11 @@ func (s *serviceImpl) Communicate(server sensor.ComplianceService_CommunicateSer
 		case *sensor.MsgFromCompliance_NodeInventory:
 			s.nodeInventories <- t.NodeInventory
 		case *sensor.MsgFromCompliance_IndexReport:
-			log.Infof("Received index report from %q with %d packages",
-				msg.GetNode(), len(msg.GetIndexReport().GetContents().GetPackages()))
+			log.Infof("Received index report from %q with %d packages (%d deprecated)",
+				msg.GetNode(),
+				len(msg.GetIndexReport().GetContents().GetPackages()),
+				len(msg.GetIndexReport().GetContents().GetPackagesDEPRECATED()),
+			)
 			s.indexReportWraps <- &index.IndexReportWrap{
 				NodeName:    msg.GetNode(),
 				IndexReport: t.IndexReport,

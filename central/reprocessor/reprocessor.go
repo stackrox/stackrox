@@ -5,7 +5,6 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
-	activeComponentsUpdater "github.com/stackrox/rox/central/activecomponent/updater"
 	administrationEvents "github.com/stackrox/rox/central/administration/events"
 	deploymentDatastore "github.com/stackrox/rox/central/deployment/datastore"
 	"github.com/stackrox/rox/central/enrichment"
@@ -84,7 +83,7 @@ func Singleton() Loop {
 	once.Do(func() {
 		loop = NewLoop(connection.ManagerSingleton(), enrichment.ImageEnricherSingleton(), enrichment.NodeEnricherSingleton(),
 			deploymentDatastore.Singleton(), imageDatastore.Singleton(), nodeDatastore.Singleton(), manager.Singleton(),
-			watchedImageDataStore.Singleton(), activeComponentsUpdater.Singleton())
+			watchedImageDataStore.Singleton())
 	})
 	return loop
 }
@@ -104,11 +103,10 @@ type Loop interface {
 // NewLoop returns a new instance of a Loop.
 func NewLoop(connManager connection.Manager, imageEnricher imageEnricher.ImageEnricher, nodeEnricher nodeEnricher.NodeEnricher,
 	deployments deploymentDatastore.DataStore, images imageDatastore.DataStore, nodes nodeDatastore.DataStore,
-	risk manager.Manager, watchedImages watchedImageDataStore.DataStore, acUpdater activeComponentsUpdater.Updater) Loop {
+	risk manager.Manager, watchedImages watchedImageDataStore.DataStore) Loop {
 	return newLoopWithDuration(
 		connManager, imageEnricher, nodeEnricher, deployments, images, nodes, risk,
-		watchedImages, env.ReprocessInterval.DurationSetting(), env.RiskReprocessInterval.DurationSetting(),
-		env.ActiveVulnRefreshInterval.DurationSetting(), acUpdater)
+		watchedImages, env.ReprocessInterval.DurationSetting(), env.RiskReprocessInterval.DurationSetting())
 }
 
 // newLoopWithDuration returns a loop that ticks at the given duration.
@@ -116,8 +114,7 @@ func NewLoop(connManager connection.Manager, imageEnricher imageEnricher.ImageEn
 // to enable testing.
 func newLoopWithDuration(connManager connection.Manager, imageEnricher imageEnricher.ImageEnricher, nodeEnricher nodeEnricher.NodeEnricher,
 	deployments deploymentDatastore.DataStore, images imageDatastore.DataStore, nodes nodeDatastore.DataStore,
-	risk manager.Manager, watchedImages watchedImageDataStore.DataStore, enrichAndDetectDuration, deploymentRiskDuration,
-	activeComponentTickerDuration time.Duration, acUpdater activeComponentsUpdater.Updater) *loopImpl {
+	risk manager.Manager, watchedImages watchedImageDataStore.DataStore, enrichAndDetectDuration, deploymentRiskDuration time.Duration) *loopImpl {
 	return &loopImpl{
 		enrichAndDetectTickerDuration: enrichAndDetectDuration,
 		deploymentRiskTickerDuration:  deploymentRiskDuration,
@@ -130,10 +127,6 @@ func newLoopWithDuration(connManager connection.Manager, imageEnricher imageEnri
 
 		deployments:       deployments,
 		deploymentRiskSet: set.NewStringSet(),
-
-		activeComponentTickerDuration: activeComponentTickerDuration,
-		activeComponentStopped:        concurrency.NewSignal(),
-		acUpdater:                     acUpdater,
 
 		nodeEnricher: nodeEnricher,
 		nodes:        nodes,
@@ -172,11 +165,6 @@ type loopImpl struct {
 	deploymentRiskTicker         *time.Ticker
 	deploymentRiskTickerDuration time.Duration
 
-	activeComponentStopped        concurrency.Signal
-	activeComponentTicker         *time.Ticker
-	activeComponentTickerDuration time.Duration
-	acUpdater                     activeComponentsUpdater.Updater
-
 	nodes        nodeDatastore.DataStore
 	nodeEnricher nodeEnricher.NodeEnricher
 
@@ -208,9 +196,6 @@ func (l *loopImpl) Start() {
 
 	go l.riskLoop()
 	go l.enrichLoop()
-
-	l.activeComponentTicker = time.NewTicker(l.activeComponentTickerDuration)
-	go l.activeComponentLoop()
 }
 
 // Stop stops the enrich and detect loop.
@@ -218,7 +203,6 @@ func (l *loopImpl) Stop() {
 	l.stopSig.Signal()
 	l.riskStopped.Wait()
 	l.enrichmentStopped.Wait()
-	l.activeComponentStopped.Wait()
 }
 
 func (l *loopImpl) ShortCircuit() {
@@ -253,7 +237,7 @@ func (l *loopImpl) sendDeployments(deploymentIDs []string) {
 	}
 
 	for _, r := range results {
-		clusterIDs := r.FieldToMatches[path.FieldPath].GetValues()
+		clusterIDs := r.GetFieldToMatches()[path.GetFieldPath()].GetValues()
 		if len(clusterIDs) == 0 {
 			log.Error("no cluster id found in fields")
 			continue
@@ -264,16 +248,16 @@ func (l *loopImpl) sendDeployments(deploymentIDs []string) {
 			continue
 		}
 
-		dedupeKey := uuid.NewV5(riskDedupeNamespace, r.Id).String()
+		dedupeKey := uuid.NewV5(riskDedupeNamespace, r.GetId()).String()
 
 		msg := &central.MsgFromSensor{
-			HashKey:   r.Id,
+			HashKey:   r.GetId(),
 			DedupeKey: dedupeKey,
 			Msg: &central.MsgFromSensor_Event{
 				Event: &central.SensorEvent{
 					Resource: &central.SensorEvent_ReprocessDeployment{
 						ReprocessDeployment: &central.ReprocessDeploymentRisk{
-							DeploymentId: r.Id,
+							DeploymentId: r.GetId(),
 						},
 					},
 				},
@@ -658,20 +642,6 @@ func (l *loopImpl) riskLoop() {
 					l.deploymentRiskSet.Clear()
 				}
 			})
-		}
-	}
-}
-
-func (l *loopImpl) activeComponentLoop() {
-	defer l.activeComponentStopped.Signal()
-	defer l.activeComponentTicker.Stop()
-
-	for !l.stopSig.IsDone() {
-		select {
-		case <-l.stopSig.Done():
-			return
-		case <-l.activeComponentTicker.C:
-			l.acUpdater.Update()
 		}
 	}
 }

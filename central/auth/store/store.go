@@ -9,6 +9,8 @@ import (
 )
 
 // Store is the interface to the auth machine to machine data layer.
+//
+//go:generate mockgen-wrapper
 type Store interface {
 	Get(ctx context.Context, id string) (*storage.AuthMachineToMachineConfig, bool, error)
 	Upsert(ctx context.Context, obj *storage.AuthMachineToMachineConfig) error

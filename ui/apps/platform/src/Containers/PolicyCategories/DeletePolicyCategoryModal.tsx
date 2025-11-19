@@ -1,15 +1,15 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
+    Button,
+    Flex,
+    FlexItem,
+    List,
+    ListComponent,
+    ListItem,
     Modal,
     ModalBoxBody,
     ModalBoxFooter,
-    Button,
-    List,
-    ListItem,
-    ListComponent,
     OrderType,
-    Flex,
-    FlexItem,
     Panel,
     PanelMain,
     PanelMainBody,
@@ -17,10 +17,10 @@ import {
 
 import { getPolicies } from 'services/PoliciesService';
 import { deletePolicyCategory } from 'services/PolicyCategoriesService';
-import { PolicyCategory, ListPolicy } from 'types/policy.proto';
+import type { ListPolicy, PolicyCategory } from 'types/policy.proto';
 import { getRequestQueryStringForSearchFilter } from 'utils/searchUtils';
 
-type DeletePolicyCategoryModalType = {
+type DeletePolicyCategoryModalProps = {
     isOpen: boolean;
     onClose: () => void;
     addToast: (toast) => void;
@@ -36,7 +36,7 @@ function DeletePolicyCategoryModal({
     refreshPolicyCategories,
     selectedCategory,
     setSelectedCategory,
-}: DeletePolicyCategoryModalType) {
+}: DeletePolicyCategoryModalProps) {
     const [affectedPolicies, setAffectedPolicies] = useState<ListPolicy[]>([]);
 
     function handleDelete() {

@@ -8,7 +8,6 @@ import (
 )
 
 func TestCompareExposureLevel(t *testing.T) {
-	t.Parallel()
 
 	assert.True(t, CompareExposureLevel(storage.PortConfig_INTERNAL, storage.PortConfig_EXTERNAL) < 0)
 	assert.True(t, CompareExposureLevel(storage.PortConfig_NODE, storage.PortConfig_INTERNAL) > 0)

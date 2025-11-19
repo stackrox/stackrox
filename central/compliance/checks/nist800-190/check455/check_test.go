@@ -191,8 +191,8 @@ func (s *suiteImpl) TestFail() {
 			},
 			Entity: &storage.ListAlert_Deployment{
 				Deployment: &storage.ListAlertDeployment{
-					Id:   testDeployments[0].Id,
-					Name: testDeployments[0].Name,
+					Id:   testDeployments[0].GetId(),
+					Name: testDeployments[0].GetName(),
 				},
 			},
 		},

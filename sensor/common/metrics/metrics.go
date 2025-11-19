@@ -3,6 +3,7 @@ package metrics
 import (
 	"reflect"
 	"strings"
+	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stackrox/rox/generated/internalapi/central"
@@ -10,8 +11,12 @@ import (
 	"github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/version"
 	"github.com/stackrox/rox/sensor/common/centralid"
-	"github.com/stackrox/rox/sensor/common/clusterid"
 	"github.com/stackrox/rox/sensor/common/installmethod"
+)
+
+const (
+	ComponentName = "ComponentName"
+	Operation     = "Operation"
 )
 
 var (
@@ -93,46 +98,11 @@ var (
 		Help:      "Total number of entities not found when processing Network Flows",
 	}, []string{"kind", "orientation"})
 
-	totalNetworkFlowsSentCounter = prometheus.NewCounter(prometheus.CounterOpts{
-		Namespace: metrics.PrometheusNamespace,
-		Subsystem: metrics.SensorSubsystem.String(),
-		Name:      "total_network_flows_sent_counter",
-		Help:      "A counter of the total number of network flows sent to Central by Sensor",
-	})
-
 	totalNetworkFlowsReceivedCounter = prometheus.NewCounter(prometheus.CounterOpts{
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.SensorSubsystem.String(),
 		Name:      "total_network_flows_sensor_received_counter",
 		Help:      "A counter of the total number of network flows received by Sensor from Collector",
-	})
-
-	totalNetworkEndpointsSentCounter = prometheus.NewCounter(prometheus.CounterOpts{
-		Namespace: metrics.PrometheusNamespace,
-		Subsystem: metrics.SensorSubsystem.String(),
-		Name:      "total_network_endpoints_sent_counter",
-		Help:      "A counter of the total number of network endpoints sent to Central by Sensor",
-	})
-
-	totalNetworkEndpointsReceivedCounter = prometheus.NewCounter(prometheus.CounterOpts{
-		Namespace: metrics.PrometheusNamespace,
-		Subsystem: metrics.SensorSubsystem.String(),
-		Name:      "total_network_endpoints_received_counter",
-		Help:      "A counter of the total number of network endpoints received by Sensor from Collector",
-	})
-
-	totalProcessesSentCounter = prometheus.NewCounter(prometheus.CounterOpts{
-		Namespace: metrics.PrometheusNamespace,
-		Subsystem: metrics.SensorSubsystem.String(),
-		Name:      "total_processes_sent_counter",
-		Help:      "A counter of the total number of processes sent to Central by Sensor",
-	})
-
-	totalProcessesReceivedCounter = prometheus.NewCounter(prometheus.CounterOpts{
-		Namespace: metrics.PrometheusNamespace,
-		Subsystem: metrics.SensorSubsystem.String(),
-		Name:      "total_processes_received_counter",
-		Help:      "A counter of the total number of processes received by Sensor from Collector",
 	})
 
 	processSignalBufferGauge = prometheus.NewGauge(prometheus.GaugeOpts{
@@ -289,13 +259,49 @@ var (
 		[]string{"central_id", "hosting", "install_method", "sensor_id"},
 	)
 
+	telemetryComplianceOperatorVersion = prometheus.NewGaugeVec(
+		prometheus.GaugeOpts{
+			Namespace:   metrics.PrometheusNamespace,
+			Subsystem:   metrics.SensorSubsystem.String(),
+			Name:        "compliance_operator_version_info",
+			Help:        "Version of compliance operator reported in label with constant value of 1",
+			ConstLabels: telemetryLabels,
+		},
+		[]string{"central_id", "hosting", "install_method", "sensor_id", "compliance_operator_version"},
+	)
+
 	// responsesChannelOperationCount a counter to track the operations in the responses channel
 	responsesChannelOperationCount = prometheus.NewCounterVec(prometheus.CounterOpts{
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.SensorSubsystem.String(),
 		Name:      "num_messages_waiting_for_transmission_to_central",
 		Help:      "A counter that tracks the operations in the responses channel",
-	}, []string{"Operation", "MessageType"})
+	}, []string{Operation, "MessageType"})
+
+	// componentProcessMessageDurationSeconds tracks the duration of ProcessMessage calls for each component
+	componentProcessMessageDurationSeconds = prometheus.NewHistogramVec(prometheus.HistogramOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.SensorSubsystem.String(),
+		Name:      "component_process_message_duration_seconds",
+		Help:      "Time taken to process messages from Central in each sensor component",
+		Buckets:   prometheus.ExponentialBuckets(0.001, 2, 12), // 1ms to ~4s
+	}, []string{ComponentName})
+
+	// ComponentQueueOperations keeps track of the operations of the component queue buffer.
+	ComponentQueueOperations = prometheus.NewCounterVec(prometheus.CounterOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.SensorSubsystem.String(),
+		Name:      "component_queue_operations_total",
+		Help:      "A counter that tracks the number of ADD and REMOVE operations on the component buffer queue. Current size of the queue can be calculated by subtracting the number of remove operations from the add operations",
+	}, []string{ComponentName, Operation})
+
+	// componentProcessMessageErrorsCount tracks the number of errors during ProcessMessage calls for each component
+	componentProcessMessageErrorsCount = prometheus.NewCounterVec(prometheus.CounterOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.SensorSubsystem.String(),
+		Name:      "component_process_message_errors_total",
+		Help:      "Number of errors encountered while processing messages from Central in each sensor component",
+	}, []string{ComponentName})
 )
 
 // IncrementEntityNotFound increments an instance of entity not found
@@ -361,34 +367,9 @@ func SetNetworkFlowBufferSizeGauge(v int) {
 	networkFlowBufferGauge.Set(float64(v))
 }
 
-// IncrementTotalNetworkFlowsSentCounter registers the total number of flows processed
-func IncrementTotalNetworkFlowsSentCounter(numberOfFlows int) {
-	totalNetworkFlowsSentCounter.Add(float64(numberOfFlows))
-}
-
 // IncrementTotalNetworkFlowsReceivedCounter registers the total number of flows received
 func IncrementTotalNetworkFlowsReceivedCounter(numberOfFlows int) {
 	totalNetworkFlowsReceivedCounter.Add(float64(numberOfFlows))
-}
-
-// IncrementTotalNetworkEndpointsSentCounter increments the total number of endpoints sent
-func IncrementTotalNetworkEndpointsSentCounter(numberOfEndpoints int) {
-	totalNetworkEndpointsSentCounter.Add(float64(numberOfEndpoints))
-}
-
-// IncrementTotalNetworkEndpointsReceivedCounter increments the total number of endpoints received
-func IncrementTotalNetworkEndpointsReceivedCounter(numberOfEndpoints int) {
-	totalNetworkEndpointsReceivedCounter.Add(float64(numberOfEndpoints))
-}
-
-// IncrementTotalProcessesSentCounter increments the total number of endpoints sent
-func IncrementTotalProcessesSentCounter(numberOfProcesses int) {
-	totalProcessesSentCounter.Add(float64(numberOfProcesses))
-}
-
-// IncrementTotalProcessesReceivedCounter increments the total number of endpoints received
-func IncrementTotalProcessesReceivedCounter(numberOfProcesses int) {
-	totalProcessesReceivedCounter.Add(float64(numberOfProcesses))
 }
 
 // SetProcessSignalBufferSizeGauge set process signal buffer size gauge.
@@ -456,7 +437,7 @@ func getResponsesChannelLabel(op string, msg *central.MsgFromSensor) prometheus.
 	}
 	return prometheus.Labels{
 		"MessageType": msgType,
-		"Operation":   op,
+		Operation:     op,
 	}
 }
 
@@ -476,12 +457,12 @@ func ResponsesChannelDrop(msg *central.MsgFromSensor) {
 }
 
 // SetTelemetryMetrics sets the cluster metrics for the telemetry metrics.
-func SetTelemetryMetrics(cm *central.ClusterMetrics) {
+func SetTelemetryMetrics(clusterIDPeeker func() string, cm *central.ClusterMetrics) {
 	labels := []string{
 		centralid.Get(),
 		getHosting(),
 		installmethod.Get(),
-		clusterid.GetNoWait(),
+		clusterIDPeeker(),
 	}
 
 	telemetryInfo.Reset()
@@ -492,4 +473,21 @@ func SetTelemetryMetrics(cm *central.ClusterMetrics) {
 
 	telemetrySecuredVCPU.Reset()
 	telemetrySecuredVCPU.WithLabelValues(labels...).Set(float64(cm.GetCpuCapacity()))
+
+	telemetryComplianceOperatorVersion.Reset()
+	telemetryComplianceOperatorVersion.WithLabelValues(append(labels, cm.GetComplianceOperatorVersion())...).Set(1)
+}
+
+// ObserveCentralReceiverProcessMessageDuration records the duration of a ProcessMessage call
+func ObserveCentralReceiverProcessMessageDuration(componentName string, duration time.Duration) {
+	componentProcessMessageDurationSeconds.With(prometheus.Labels{
+		ComponentName: componentName,
+	}).Observe(duration.Seconds())
+}
+
+// IncrementCentralReceiverProcessMessageErrors increments the error count for a component's ProcessMessage call
+func IncrementCentralReceiverProcessMessageErrors(componentName string) {
+	componentProcessMessageErrorsCount.With(prometheus.Labels{
+		ComponentName: componentName,
+	}).Inc()
 }

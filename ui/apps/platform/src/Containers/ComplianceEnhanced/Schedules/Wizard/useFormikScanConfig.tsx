@@ -1,4 +1,5 @@
-import { FormikProps, useFormik } from 'formik';
+import { useFormik } from 'formik';
+import type { FormikProps } from 'formik';
 import * as yup from 'yup';
 
 import {
@@ -6,7 +7,7 @@ import {
     customSubjectValidation,
 } from 'Components/EmailTemplate/EmailTemplate.utils';
 
-import { ScanConfigFormValues } from '../compliance.scanConfigs.utils';
+import type { ScanConfigFormValues } from '../compliance.scanConfigs.utils';
 
 export const defaultScanConfigFormValues: ScanConfigFormValues = {
     parameters: {

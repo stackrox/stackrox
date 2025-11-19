@@ -218,7 +218,7 @@ func TestGetInitBundlesShouldReturnBundlesWithImpactedClusters(t *testing.T) {
 	for i, bundle := range bundles.GetItems() {
 		assert.Equal(t, expected[i].GetId(), bundle.GetId())
 		assert.Equal(t, expected[i].GetName(), bundle.GetName())
-		protoassert.ElementsMatch(t, expected[i].ImpactedClusters, bundle.ImpactedClusters)
+		protoassert.ElementsMatch(t, expected[i].GetImpactedClusters(), bundle.GetImpactedClusters())
 	}
 }
 

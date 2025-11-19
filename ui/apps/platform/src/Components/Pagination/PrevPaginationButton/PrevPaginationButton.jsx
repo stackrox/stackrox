@@ -1,4 +1,3 @@
-import React from 'react';
 import PropTypes from 'prop-types';
 import clamp from 'lodash/clamp';
 import { ChevronLeft } from 'react-feather';

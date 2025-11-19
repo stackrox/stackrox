@@ -4,7 +4,6 @@ import (
 	"context"
 
 	alertDataStore "github.com/stackrox/rox/central/alert/datastore"
-	"github.com/stackrox/rox/central/cluster/datastore/internal/search"
 	clusterStore "github.com/stackrox/rox/central/cluster/store/cluster"
 	clusterHealthStore "github.com/stackrox/rox/central/cluster/store/clusterhealth"
 	compliancePruning "github.com/stackrox/rox/central/complianceoperator/v2/pruner"
@@ -30,6 +29,7 @@ import (
 	"github.com/stackrox/rox/pkg/logging"
 	notifierProcessor "github.com/stackrox/rox/pkg/notifier"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/sac/effectiveaccessscope"
 	pkgSearch "github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/simplecache"
 )
@@ -45,7 +45,7 @@ type DataStore interface {
 	GetCluster(ctx context.Context, id string) (*storage.Cluster, bool, error)
 	GetClusterName(ctx context.Context, id string) (string, bool, error)
 	GetClusters(ctx context.Context) ([]*storage.Cluster, error)
-	GetClustersForSAC(ctx context.Context) ([]*storage.Cluster, error)
+	GetClustersForSAC() ([]effectiveaccessscope.Cluster, error)
 	CountClusters(ctx context.Context) (int, error)
 	Exists(ctx context.Context, id string) (bool, error)
 	WalkClusters(ctx context.Context, fn func(obj *storage.Cluster) error) error
@@ -121,7 +121,6 @@ func New(
 		compliancePruner:          compliancePruner,
 	}
 
-	ds.searcher = search.NewV2(clusterStorage, clusterRanker)
 	if err := ds.buildCache(sac.WithAllAccess(context.Background())); err != nil {
 		return ds, err
 	}

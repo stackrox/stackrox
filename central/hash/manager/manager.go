@@ -75,6 +75,10 @@ func (m *managerImpl) flushHashes(ctx context.Context) {
 
 func (m *managerImpl) Start(ctx context.Context) {
 	if flushInterval == 0 {
+		err := m.datastore.TruncateHashes(ctx)
+		if err != nil {
+			log.Errorf("unable to truncate hashes: %v", err)
+		}
 		return
 	}
 	t := time.NewTicker(flushInterval)
@@ -107,9 +111,9 @@ func (m *managerImpl) GetDeduper(ctx context.Context, clusterID string) Deduper 
 		log.Errorf("could not get hashes from database for cluster %q: %v", clusterID, err)
 	}
 	if !exists {
-		d = NewDeduper(make(map[string]uint64))
+		d = NewDeduper(make(map[string]uint64), clusterID)
 	} else {
-		d = NewDeduper(hash.GetHashes())
+		d = NewDeduper(hash.GetHashes(), clusterID)
 	}
 
 	m.dedupersLock.Lock()

@@ -16,6 +16,9 @@ var (
 	CreateTableNotificationSchedulesStmt = &postgres.CreateStmts{
 		GormModel: (*NotificationSchedules)(nil),
 		Children:  []*postgres.CreateStmts{},
+		PostStmts: []string{
+			"ALTER TABLE notification_schedules REPLICA IDENTITY FULL",
+		},
 	}
 
 	// NotificationSchedulesSchema is the go schema for table `notification_schedules`.

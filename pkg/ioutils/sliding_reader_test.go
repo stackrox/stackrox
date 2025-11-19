@@ -13,7 +13,6 @@ import (
 )
 
 func TestSlidingReader_ReadAll(t *testing.T) {
-	t.Parallel()
 
 	rwr, err := NewSlidingReader(func() io.Reader { return strings.NewReader("foobarbazqux") }, 4, func() hash.Hash { return crc32.NewIEEE() })
 	require.NoError(t, err)
@@ -26,7 +25,6 @@ func TestSlidingReader_ReadAll(t *testing.T) {
 }
 
 func TestSlidingReader_RewindInBuffer(t *testing.T) {
-	t.Parallel()
 
 	readerCreations := 0
 	rwr, err := NewSlidingReader(func() io.Reader {
@@ -54,7 +52,6 @@ func TestSlidingReader_RewindInBuffer(t *testing.T) {
 }
 
 func TestSlidingReader_RewindOutOfBuffer(t *testing.T) {
-	t.Parallel()
 
 	readerCreations := 0
 	rwr, err := NewSlidingReader(func() io.Reader {
@@ -82,7 +79,6 @@ func TestSlidingReader_RewindOutOfBuffer(t *testing.T) {
 }
 
 func TestSlidingReader_RewindOutOfBuffer_WithSeeker(t *testing.T) {
-	t.Parallel()
 
 	readerCreations := 0
 	rwr, err := NewSlidingReader(func() io.Reader {
@@ -110,7 +106,6 @@ func TestSlidingReader_RewindOutOfBuffer_WithSeeker(t *testing.T) {
 }
 
 func TestSlidingReader_FastForwardNear(t *testing.T) {
-	t.Parallel()
 
 	readerCreations := 0
 	rwr, err := NewSlidingReader(func() io.Reader {
@@ -139,7 +134,6 @@ func TestSlidingReader_FastForwardNear(t *testing.T) {
 }
 
 func TestSlidingReader_FastForwardFar(t *testing.T) {
-	t.Parallel()
 
 	readerCreations := 0
 	rwr, err := NewSlidingReader(func() io.Reader {

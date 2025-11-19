@@ -1,13 +1,13 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { ActionGroup, Alert, Button, Flex, Form, FormGroup } from '@patternfly/react-core';
 import { PlusCircleIcon } from '@patternfly/react-icons';
 import { useFormik } from 'formik';
 import * as yup from 'yup';
 
-import {
+import { updateDelegatedRegistryConfig } from 'services/DelegatedRegistryConfigService';
+import type {
     DelegatedRegistryCluster,
     DelegatedRegistryConfig,
-    updateDelegatedRegistryConfig,
 } from 'services/DelegatedRegistryConfigService';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 

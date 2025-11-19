@@ -9,7 +9,6 @@ import {
 } from 'Components/Table';
 import DateTimeField from 'Components/DateTimeField';
 import TableCellLink from 'Components/TableCellLink';
-import ClusterTableCountLinks from 'Components/workflow/ClusterTableCountLinks';
 import entityTypes from 'constants/entityTypes';
 import CVEStackedPill from 'Components/CVEStackedPill';
 
@@ -21,6 +20,7 @@ import removeEntityContextColumns from 'utils/tableUtils';
 import { vulMgmtPolicyQuery } from '../../Entity/VulnMgmtPolicyQueryUtil';
 import { getVulnMgmtPathForEntitiesAndId } from '../../VulnMgmt.utils/entities';
 import WorkflowListPage from '../WorkflowListPage';
+import ClusterTableCountLinks from './ClusterTableCountLinks';
 
 export const defaultClusterSort = [
     {

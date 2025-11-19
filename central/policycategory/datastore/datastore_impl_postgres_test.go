@@ -6,10 +6,8 @@ import (
 	"context"
 	"testing"
 
-	policyCategorySearch "github.com/stackrox/rox/central/policycategory/search"
 	pgStore "github.com/stackrox/rox/central/policycategory/store/postgres"
 	edgeDataStore "github.com/stackrox/rox/central/policycategoryedge/datastore"
-	policyCategoryEdgeSearch "github.com/stackrox/rox/central/policycategoryedge/search"
 	policyCategoryEdgePostgres "github.com/stackrox/rox/central/policycategoryedge/store/postgres"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres"
@@ -18,7 +16,6 @@ import (
 	"github.com/stackrox/rox/pkg/sac/resources"
 	pkgSearch "github.com/stackrox/rox/pkg/search"
 	"github.com/stretchr/testify/suite"
-	"gorm.io/gorm"
 )
 
 func TestPolicyCategoryDataStoreWithPostgres(t *testing.T) {
@@ -30,7 +27,6 @@ type PolicyCategoryPostgresDataStoreTestSuite struct {
 
 	ctx           context.Context
 	db            postgres.DB
-	gormDB        *gorm.DB
 	datastore     DataStore
 	edgeDatastore edgeDataStore.DataStore
 }
@@ -38,32 +34,20 @@ type PolicyCategoryPostgresDataStoreTestSuite struct {
 func (s *PolicyCategoryPostgresDataStoreTestSuite) SetupSuite() {
 
 	s.ctx = context.Background()
-
-	source := pgtest.GetConnectionString(s.T())
-	config, err := postgres.ParseConfig(source)
-	s.Require().NoError(err)
-
-	pool, err := postgres.New(s.ctx, config)
-	s.NoError(err)
-	s.gormDB = pgtest.OpenGormDB(s.T(), source)
-	s.db = pool
 }
 
 func (s *PolicyCategoryPostgresDataStoreTestSuite) SetupTest() {
-	pgStore.Destroy(s.ctx, s.db)
-	policyCategoryEdgePostgres.Destroy(s.ctx, s.db)
+	s.db = pgtest.ForT(s.T())
 
-	policyCategoryEdgeStorage := policyCategoryEdgePostgres.CreateTableAndNewStore(s.ctx, s.db, s.gormDB)
-	policyCategorySearcher := policyCategoryEdgeSearch.New(policyCategoryEdgeStorage)
-	s.edgeDatastore = edgeDataStore.New(policyCategoryEdgeStorage, policyCategorySearcher)
+	policyCategoryEdgeStorage := policyCategoryEdgePostgres.New(s.db)
+	s.edgeDatastore = edgeDataStore.New(policyCategoryEdgeStorage)
 
-	policyCategoryStore := pgStore.CreateTableAndNewStore(s.ctx, s.db, s.gormDB)
-	s.datastore = New(policyCategoryStore, policyCategorySearch.New(policyCategoryStore), s.edgeDatastore)
+	policyCategoryStore := pgStore.New(s.db)
+	s.datastore = New(policyCategoryStore, s.edgeDatastore)
 }
 
-func (s *PolicyCategoryPostgresDataStoreTestSuite) TearDownSuite() {
+func (s *PolicyCategoryPostgresDataStoreTestSuite) TearDownTest() {
 	s.db.Close()
-	pgtest.CloseGormDB(s.T(), s.gormDB)
 }
 
 func (s *PolicyCategoryPostgresDataStoreTestSuite) TestSearchWithPostgres() {

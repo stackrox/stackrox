@@ -12,6 +12,7 @@ import (
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/message"
+	"github.com/stackrox/rox/sensor/common/unimplemented"
 )
 
 const (
@@ -19,8 +20,13 @@ const (
 )
 
 // auditLogCollectionManagerImpl manages the lifecycle of audit log collection within the cluster
+// This component doesn't actually process or handle any messages sent to Sensor. It uses the sensor component
+// so that the lifecycle (start, stop) can be handled when Sensor starts up. The actual messages from central to
+// enable/disable audit log collection is handled as part of the dynamic config in config.Handler which then calls
+// the specific APIs in this manager.
 type auditLogCollectionManagerImpl struct {
-	clusterIDGetter func() string
+	unimplemented.Receiver
+	clusterID clusterIDWaiter
 
 	enabled                         concurrency.Flag
 	receivedInitialStateFromCentral concurrency.Flag
@@ -70,14 +76,6 @@ func (a *auditLogCollectionManagerImpl) Notify(e common.SensorComponentEvent) {
 
 func (a *auditLogCollectionManagerImpl) Capabilities() []centralsensor.SensorCapability {
 	return []centralsensor.SensorCapability{centralsensor.AuditLogEventsCap}
-}
-
-func (a *auditLogCollectionManagerImpl) ProcessMessage(_ *central.MsgToSensor) error {
-	// This component doesn't actually process or handle any messages sent to Sensor. It uses the sensor component
-	// so that the lifecycle (start, stop) can be handled when Sensor starts up. The actual messages from central to
-	// enable/disable audit log collection is handled as part of the dynamic config in config.Handler which then calls
-	// the specific APIs in this manager.
-	return nil
 }
 
 func (a *auditLogCollectionManagerImpl) ResponsesC() <-chan *message.ExpiringMessage {
@@ -172,8 +170,8 @@ func (a *auditLogCollectionManagerImpl) getLatestFileStates() map[string]*storag
 
 func (a *auditLogCollectionManagerImpl) getCentralUpdateMsg(fileStates map[string]*storage.AuditLogFileState) *message.ExpiringMessage {
 	return message.New(&central.MsgFromSensor{
-		HashKey:   a.clusterIDGetter(),
-		DedupeKey: a.clusterIDGetter(),
+		HashKey:   a.clusterID.Get(),
+		DedupeKey: a.clusterID.Get(),
 		Msg: &central.MsgFromSensor_AuditLogStatusInfo{
 			AuditLogStatusInfo: &central.AuditLogStatusInfo{
 				NodeAuditLogFileStates: fileStates,
@@ -239,7 +237,7 @@ func (a *auditLogCollectionManagerImpl) startCollectionOnNodeNoFileStateLock(nod
 			AuditLogCollectionRequest: &sensor.MsgToCompliance_AuditLogCollectionRequest{
 				Req: &sensor.MsgToCompliance_AuditLogCollectionRequest_StartReq{
 					StartReq: &sensor.MsgToCompliance_AuditLogCollectionRequest_StartRequest{
-						ClusterId: a.clusterIDGetter(),
+						ClusterId: a.clusterID.Get(),
 					},
 				},
 			},

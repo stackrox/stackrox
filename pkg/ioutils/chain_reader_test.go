@@ -51,7 +51,6 @@ func (r *testReader) Close() error {
 }
 
 func TestChainReadersFull(t *testing.T) {
-	t.Parallel()
 
 	r := ChainReadersEager(
 		strings.NewReader("foo"),
@@ -72,7 +71,6 @@ func TestChainReadersFull(t *testing.T) {
 }
 
 func TestChainReadersEager_AllAreClosed(t *testing.T) {
-	t.Parallel()
 
 	trs := []*testReader{
 		newTestReader("foo"),
@@ -98,7 +96,6 @@ func TestChainReadersEager_AllAreClosed(t *testing.T) {
 }
 
 func TestChainReadersLazy_FutureAreNotClosed(t *testing.T) {
-	t.Parallel()
 
 	trs := []*testReader{
 		newTestReader("foo"),
@@ -124,7 +121,6 @@ func TestChainReadersLazy_FutureAreNotClosed(t *testing.T) {
 }
 
 func TestChainReaders_CloseErrorPropagation(t *testing.T) {
-	t.Parallel()
 
 	trs := []*testReader{
 		newTestReader("foo"),

@@ -1,9 +1,9 @@
-import React, { ReactElement, ReactNode } from 'react';
+import type { ComponentType, PropsWithChildren, ReactElement, ReactNode } from 'react';
 import {
     EmptyState,
-    EmptyStateIcon,
     EmptyStateBody,
     EmptyStateHeader,
+    EmptyStateIcon,
 } from '@patternfly/react-core';
 import { CubesIcon } from '@patternfly/react-icons';
 
@@ -11,7 +11,7 @@ export type EmptyStateTemplateProps = {
     children?: ReactNode;
     title: string;
     headingLevel: 'h1' | 'h2' | 'h3' | 'h4';
-    icon?: React.ComponentType<React.PropsWithChildren<unknown>>;
+    icon?: ComponentType<PropsWithChildren<unknown>>;
     iconClassName?: string;
 };
 

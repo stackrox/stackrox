@@ -63,7 +63,6 @@ var (
 )
 
 func TestConfigure(t *testing.T) {
-	t.Parallel()
 	ctx := zlog.Test(context.Background(), t)
 
 	noopConfig := func(_ interface{}) error { return nil }

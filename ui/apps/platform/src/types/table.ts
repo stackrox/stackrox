@@ -1,4 +1,3 @@
-import { ReactElement } from 'react';
 import * as yup from 'yup';
 
 export type { ThProps } from '@patternfly/react-table';
@@ -30,10 +29,3 @@ export function isSortOption(val: unknown): val is SortOption {
         return false;
     }
 }
-
-export type TableColumn = {
-    Header: string;
-    accessor: string;
-    Cell?: ({ original, value }) => ReactElement | string;
-    sortField?: string;
-};

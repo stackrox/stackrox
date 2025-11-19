@@ -1,21 +1,20 @@
-import React from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom-v5-compat';
 import {
-    PageSection,
-    Title,
+    Breadcrumb,
+    BreadcrumbItem,
     Divider,
     Flex,
     FlexItem,
-    Breadcrumb,
-    BreadcrumbItem,
+    PageSection,
+    Title,
 } from '@patternfly/react-core';
 
 import { vulnerabilityConfigurationReportsPath } from 'routePaths';
-import useReportFormValues from 'Containers/Vulnerabilities/VulnerablityReporting/forms/useReportFormValues';
-
 import PageTitle from 'Components/PageTitle';
 import BreadcrumbItemLink from 'Components/BreadcrumbItemLink';
+
 import useCreateReport from '../api/useCreateReport';
+import useReportFormValues from '../forms/useReportFormValues';
 import ReportFormErrorAlert from './ReportFormErrorAlert';
 import ReportFormWizard from './ReportFormWizard';
 

@@ -267,7 +267,6 @@ func (b *backendImpl) ValidateClientCertificate(ctx context.Context, chain []mtl
 	bundleID := leaf.Subject.Organization
 	// check if leaf cert is part of an init bundle
 	if len(bundleID) == 0 {
-		log.Debugf("Init bundle ID was not found in certificate %q", leaf.Subject.OrganizationalUnit)
 		return nil
 	}
 

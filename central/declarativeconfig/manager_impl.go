@@ -10,8 +10,8 @@ import (
 	"time"
 
 	"github.com/hashicorp/go-multierror"
-	"github.com/mitchellh/hashstructure/v2"
 	"github.com/pkg/errors"
+	"github.com/stackrox/hashstructure"
 	declarativeConfigHealth "github.com/stackrox/rox/central/declarativeconfig/health/datastore"
 	"github.com/stackrox/rox/central/declarativeconfig/types"
 	"github.com/stackrox/rox/central/declarativeconfig/updater"
@@ -31,7 +31,6 @@ import (
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/telemetry/phonehome"
 	"github.com/stackrox/rox/pkg/utils"
-	"golang.org/x/exp/maps"
 )
 
 const (
@@ -72,15 +71,6 @@ type managerImpl struct {
 	updaters map[reflect.Type]updater.ResourceUpdater
 
 	numberOfWatchHandlers atomic.Int32
-}
-
-var protoTypesOrder = []reflect.Type{
-	types.AccessScopeType,
-	types.PermissionSetType,
-	types.RoleType,
-	types.AuthProviderType,
-	types.GroupType,
-	types.NotifierType,
 }
 
 // New creates a new instance of Manager.
@@ -245,7 +235,7 @@ func (m *managerImpl) runReconciliation() {
 }
 
 func (m *managerImpl) reconcileTransformedMessages(transformedMessagesByHandler map[string]protoMessagesByType) {
-	log.Debugf("Run reconciliation for the next handlers: %v", maps.Keys(transformedMessagesByHandler))
+	log.Debugf("Run reconciliation for the next handlers: %d", len(transformedMessagesByHandler))
 
 	hasChanges := m.calculateHashAndIndicateChanges(transformedMessagesByHandler)
 
@@ -272,7 +262,8 @@ func (m *managerImpl) reconcileTransformedMessages(transformedMessagesByHandler 
 
 func (m *managerImpl) doUpsert(transformedMessagesByHandler map[string]protoMessagesByType) {
 	var failureInUpsert bool
-	for _, protoType := range protoTypesOrder {
+	orderedProtoTypes := types.GetSupportedProtobufTypesInProcessingOrder()
+	for _, protoType := range orderedProtoTypes {
 		for handler, protoMessagesByType := range transformedMessagesByHandler {
 			messages, hasMessages := protoMessagesByType[protoType]
 			if !hasMessages {
@@ -292,7 +283,8 @@ func (m *managerImpl) doUpsert(transformedMessagesByHandler map[string]protoMess
 }
 
 func (m *managerImpl) doDeletion(transformedMessagesByHandler map[string]protoMessagesByType) {
-	reversedProtoTypes := sliceutils.Reversed(protoTypesOrder)
+	orderedProtoTypes := types.GetSupportedProtobufTypesInProcessingOrder()
+	reversedProtoTypes := sliceutils.Reversed(orderedProtoTypes)
 	var failureInDeletion bool
 	var allProtoIDsToSkip []string
 	for _, protoType := range reversedProtoTypes {
@@ -312,7 +304,7 @@ func (m *managerImpl) doDeletion(transformedMessagesByHandler map[string]protoMe
 		// Otherwise, the reason why the deletion failed will not be visible to users while the resource may still
 		// exist.
 		if err != nil {
-			log.Debugf("The following IDs failed deletion: [%s]", strings.Join(failedDeletionIDs, ","))
+			log.Warnf("The following IDs failed deletion: [%s]", strings.Join(failedDeletionIDs, ","))
 			allProtoIDsToSkip = append(allProtoIDsToSkip, failedDeletionIDs...)
 			failureInDeletion = true
 		}
@@ -390,7 +382,7 @@ func (m *managerImpl) removeStaleHealthStatuses(idsToSkip []string) error {
 }
 
 func (m *managerImpl) verifyUpdaters() error {
-	for _, protoType := range protoTypesOrder {
+	for _, protoType := range types.GetSupportedProtobufTypesInProcessingOrder() {
 		if updater, ok := m.updaters[protoType]; !ok {
 			return errox.InvariantViolation.Newf("found no updater for proto type %v", protoType)
 		} else if updater == nil {
@@ -404,8 +396,7 @@ func (m *managerImpl) calculateHashAndIndicateChanges(transformedMessagesByHandl
 	// Create a hash from the transformed messages by handler map.
 	// Setting the option ZeroNil will ensure empty byte arrays will be treated as a zero value instead of using
 	// the pointer's value.
-	hash, err := hashstructure.Hash(transformedMessagesByHandler, hashstructure.FormatV2,
-		&hashstructure.HashOptions{ZeroNil: true})
+	hash, err := hashstructure.Hash(transformedMessagesByHandler, &hashstructure.HashOptions{ZeroNil: true})
 
 	// If we received an error for hash generation, log it and _always_ run the deletion. This way we ensure
 	// we don't mistakenly skip reconciliation runs where we shouldn't (e.g. consecutive errors).

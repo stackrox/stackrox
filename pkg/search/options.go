@@ -202,13 +202,19 @@ var (
 	PodLabel = newFieldLabel("Pod Label")
 
 	// ProcessIndicator Search fields
-	ProcessID           = newFieldLabel("Process ID")
-	ProcessExecPath     = newFieldLabel("Process Path")
-	ProcessName         = newFieldLabel("Process Name")
-	ProcessArguments    = newFieldLabel("Process Arguments")
-	ProcessAncestor     = newFieldLabel("Process Ancestor")
-	ProcessUID          = newFieldLabel("Process UID")
-	ProcessCreationTime = newFieldLabel("Process Creation Time")
+	ProcessID                 = newFieldLabel("Process ID")
+	ProcessExecPath           = newFieldLabel("Process Path")
+	ProcessName               = newFieldLabel("Process Name")
+	ProcessArguments          = newFieldLabel("Process Arguments")
+	ProcessAncestor           = newFieldLabel("Process Ancestor")
+	ProcessUID                = newFieldLabel("Process UID")
+	ProcessCreationTime       = newFieldLabel("Process Creation Time")
+	ProcessContainerStartTime = newFieldLabel("Process Container Start Time")
+
+	// FileActivity Search fields
+	MountedFilePath = newFieldLabel("Mounted File Path")
+	NodeFilePath    = newFieldLabel("Node File Path")
+	FileOperation   = newFieldLabel("File Operation")
 
 	// ProcessListeningOnPort Search fields
 	Closed     = newFieldLabel("Closed")
@@ -389,6 +395,8 @@ var (
 	ReportName     = newFieldLabel("Report Name")
 	ReportType     = newFieldLabel("Report Type")
 	ReportConfigID = newFieldLabel("Report Configuration ID")
+	// View Based report search fields
+	AreaOfConcern = newFieldLabel("Area Of Concern")
 
 	// Resource alerts search fields
 	ResourceName = newFieldLabel("Resource")
@@ -463,6 +471,10 @@ var (
 
 	// AuthProvider fields.
 	AuthProviderName = newFieldLabel("AuthProvider Name")
+
+	// Virtual Machine fields.
+	VirtualMachineID   = newFieldLabel("Virtual Machine ID")
+	VirtualMachineName = newFieldLabel("Virtual Machine Name")
 
 	// Test Search Fields
 	TestKey               = newFieldLabel("Test Key")
@@ -605,6 +617,10 @@ func newDerivedFieldLabelWithType(s string, derivedFrom FieldLabel, derivationTy
 
 func (f FieldLabel) String() string {
 	return string(f)
+}
+
+func (f FieldLabel) ToUpper() string {
+	return strings.ToUpper(string(f))
 }
 
 func (f FieldLabel) Alias() string {

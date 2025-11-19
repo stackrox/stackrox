@@ -3,7 +3,6 @@ package datastore
 import (
 	"context"
 
-	"github.com/stackrox/rox/central/nodecomponentedge/search"
 	"github.com/stackrox/rox/central/nodecomponentedge/store"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -25,9 +24,8 @@ type DataStore interface {
 }
 
 // New returns a new instance of a DataStore.
-func New(storage store.Store, searcher search.Searcher) DataStore {
+func New(storage store.Store) DataStore {
 	return &datastoreImpl{
-		storage:  storage,
-		searcher: searcher,
+		storage: storage,
 	}
 }

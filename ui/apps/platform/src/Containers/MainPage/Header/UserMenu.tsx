@@ -1,10 +1,10 @@
-import React, { CSSProperties } from 'react';
+import type { CSSProperties, ReactElement } from 'react';
 import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
 import { createStructuredSelector } from 'reselect';
 import { Divider, DropdownItem } from '@patternfly/react-core';
 import initials from 'initials';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom-v5-compat';
 
 import MenuDropdown from 'Components/PatternFly/MenuDropdown';
 import useAnalytics, { INVITE_USERS_MODAL_OPENED } from 'hooks/useAnalytics';
@@ -20,7 +20,7 @@ const userMenuStyleConstant = {
     pointerEvents: 'none',
 } as CSSProperties;
 
-function UserMenu({ logout, setInviteModalVisibility, userData }) {
+function UserMenu({ logout, setInviteModalVisibility, userData }): ReactElement {
     const navigate = useNavigate();
     const { analyticsTrack } = useAnalytics();
     const { hasReadWriteAccess } = usePermissions();

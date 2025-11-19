@@ -29,7 +29,7 @@ func BenchmarkNodes(b *testing.B) {
 	nodes := make([]*storage.Node, 100)
 	for i := 0; i < 100; i++ {
 		fakeNode.Id = uuid.NewV4().String()
-		fakeNode.ClusterId = fakeNode.Id
+		fakeNode.ClusterId = fakeNode.GetId()
 		fakeNode.ClusterName = fmt.Sprintf("c-%d", i)
 		fakeNode.Name = fmt.Sprintf("node-%d", i)
 		nodes[i] = fakeNode
@@ -38,14 +38,14 @@ func BenchmarkNodes(b *testing.B) {
 
 	// Stored node is read because it contains new scan.
 	b.Run("upsertNodeWithOldScan", func(b *testing.B) {
-		fakeNode.Scan.ScanTime.Seconds = fakeNode.Scan.ScanTime.Seconds - 500
+		fakeNode.Scan.ScanTime.Seconds = fakeNode.GetScan().GetScanTime().GetSeconds() - 500
 		for i := 0; i < b.N; i++ {
 			require.NoError(b, nodeDS.UpsertNode(ctx, fakeNode))
 		}
 	})
 
 	b.Run("upsertNodeWithNewScan", func(b *testing.B) {
-		fakeNode.Scan.ScanTime.Seconds = fakeNode.Scan.ScanTime.Seconds + 500
+		fakeNode.Scan.ScanTime.Seconds = fakeNode.GetScan().GetScanTime().GetSeconds() + 500
 		for i := 0; i < b.N; i++ {
 			require.NoError(b, nodeDS.UpsertNode(ctx, fakeNode))
 		}
@@ -58,7 +58,7 @@ func BenchmarkNodes(b *testing.B) {
 	})
 
 	b.Run("searchForCluster", func(b *testing.B) {
-		results, err := nodeDS.SearchRawNodes(ctx, search.NewQueryBuilder().AddExactMatches(search.ClusterID, nodes[0].ClusterId).ProtoQuery())
+		results, err := nodeDS.SearchRawNodes(ctx, search.NewQueryBuilder().AddExactMatches(search.ClusterID, nodes[0].GetClusterId()).ProtoQuery())
 		require.NoError(b, err)
 		require.NotNil(b, results)
 	})
@@ -66,7 +66,7 @@ func BenchmarkNodes(b *testing.B) {
 	b.Run("deleteForClusters", func(b *testing.B) {
 		for i := 0; i < b.N; i++ {
 			idx := i % len(nodes)
-			err := nodeDS.DeleteAllNodesForCluster(ctx, nodes[idx].ClusterId)
+			err := nodeDS.DeleteAllNodesForCluster(ctx, nodes[idx].GetClusterId())
 			require.NoError(b, err)
 		}
 	})

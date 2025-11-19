@@ -85,12 +85,19 @@ func (h *commandHandler) run() {
 	}
 }
 
-func (h *commandHandler) ProcessMessage(msg *central.MsgToSensor) error {
+func (h *commandHandler) Accepts(msg *central.MsgToSensor) bool {
+	return msg.GetNetworkPoliciesCommand() != nil
+}
+
+func (h *commandHandler) ProcessMessage(ctx context.Context, msg *central.MsgToSensor) error {
 	cmd := msg.GetNetworkPoliciesCommand()
 	if cmd == nil {
 		return nil
 	}
 	select {
+	case <-ctx.Done():
+		// TODO(ROX-30333): pass the context together with `cmd` to `h.commandsC`
+		return errors.Wrapf(ctx.Err(), "message processing in component %s", h.Name())
 	case h.commandsC <- cmd:
 		return nil
 	case <-h.stopSig.Done():

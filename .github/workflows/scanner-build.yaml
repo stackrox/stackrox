@@ -1,6 +1,12 @@
 name: Scanner build and push images
 
 on:
+  workflow_dispatch:
+    inputs:
+      commit:
+        description: 'Commit SHA to build'
+        required: true
+        type: string
   workflow_call:
   push:
     tags:
@@ -26,9 +32,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - name: Checkout
-      uses: actions/checkout@v4
+      uses: actions/checkout@v5
       with:
-        ref: ${{ github.event.pull_request.head.sha }}
+        ref: ${{ inputs.commit || github.event.pull_request.head.sha }}
 
     - name: Define the matrix for build jobs
       id: define-scanner-job-matrix
@@ -83,10 +89,10 @@ jobs:
       image: quay.io/stackrox-io/apollo-ci:scanner-test-0.4.9
     steps:
     - name: Checkout
-      uses: actions/checkout@v4
+      uses: actions/checkout@v5
       with:
         fetch-depth: 0
-        ref: ${{ github.event.pull_request.head.sha }}
+        ref: ${{ inputs.commit || github.event.pull_request.head.sha }}
 
     - uses: ./.github/actions/job-preamble
       with:
@@ -143,10 +149,10 @@ jobs:
       ARTIFACT_DIR: junit-reports/
     steps:
     - name: Checkout
-      uses: actions/checkout@v4
+      uses: actions/checkout@v5
       with:
         fetch-depth: 1
-        ref: ${{ github.event.pull_request.head.sha }}
+        ref: ${{ inputs.commit || github.event.pull_request.head.sha }}
 
     - uses: ./.github/actions/job-preamble
       with:
@@ -199,10 +205,10 @@ jobs:
         QUAY_STACKROX_IO_RW_PASSWORD: ${{ secrets.QUAY_STACKROX_IO_RW_PASSWORD }}
     steps:
     - name: Checkout
-      uses: actions/checkout@v4
+      uses: actions/checkout@v5
       with:
         fetch-depth: 0
-        ref: ${{ github.event.pull_request.head.sha }}
+        ref: ${{ inputs.commit || github.event.pull_request.head.sha }}
 
     - uses: ./.github/actions/job-preamble
       with:
@@ -211,6 +217,9 @@ jobs:
 
     - name: Login to docker.io to mitigate rate limiting on downloading images
       uses: docker/login-action@v3
+      # Skip for external contributions.
+      if: |
+        github.event_name == 'push' || !github.event.pull_request.head.repo.fork
       with:
         username: ${{ secrets.DOCKERHUB_CI_ACCOUNT_USERNAME }}
         password: ${{ secrets.DOCKERHUB_CI_ACCOUNT_PASSWORD }}
@@ -271,10 +280,10 @@ jobs:
         QUAY_STACKROX_IO_RW_PASSWORD: ${{ secrets.QUAY_STACKROX_IO_RW_PASSWORD }}
     steps:
     - name: Checkout
-      uses: actions/checkout@v4
+      uses: actions/checkout@v5
       with:
         fetch-depth: 0
-        ref: ${{ github.event.pull_request.head.sha }}
+        ref: ${{ inputs.commit || github.event.pull_request.head.sha }}
 
     - name: Ignore dubious repository ownership
       run: |
@@ -327,10 +336,10 @@ jobs:
       matrix: ${{ fromJson(needs.define-scanner-job-matrix.outputs.matrix).scan_images_with_roxctl }}
     steps:
     - name: Checkout
-      uses: actions/checkout@v4
+      uses: actions/checkout@v5
       with:
         fetch-depth: 0
-        ref: ${{ github.event.pull_request.head.sha }}
+        ref: ${{ inputs.commit || github.event.pull_request.head.sha }}
 
     - uses: ./.github/actions/job-preamble
       with:

@@ -1,12 +1,12 @@
-import React, { ReactElement } from 'react';
-import { Link } from 'react-router-dom';
+import type { ReactElement } from 'react';
+import { Link } from 'react-router-dom-v5-compat';
 import {
     Bullseye,
     Button,
     EmptyState,
     EmptyStateBody,
-    EmptyStateHeader,
     EmptyStateFooter,
+    EmptyStateHeader,
 } from '@patternfly/react-core';
 
 export type NotFoundMessageProps = {

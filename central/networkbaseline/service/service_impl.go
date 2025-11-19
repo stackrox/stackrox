@@ -2,6 +2,8 @@ package service
 
 import (
 	"context"
+	"slices"
+	"strings"
 	"time"
 
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
@@ -129,10 +131,17 @@ func (s *serviceImpl) GetNetworkBaselineStatusForExternalFlows(ctx context.Conte
 	totalAnomalous := len(anomalousFlows)
 	totalBaseline := len(baselineFlows)
 
+	// sort prior to pagination to ensure a consistent result
+	compareNames := func(a, b *v1.NetworkBaselinePeerStatus) int {
+		return strings.Compare(a.GetPeer().GetEntity().GetName(), b.GetPeer().GetEntity().GetName())
+	}
+	slices.SortFunc(anomalousFlows, compareNames)
+	slices.SortFunc(baselineFlows, compareNames)
+
 	pg := request.GetPagination()
 	if pg != nil {
-		anomalousFlows = paginated.PaginateSlice(int(pg.Offset), int(pg.Limit), anomalousFlows)
-		baselineFlows = paginated.PaginateSlice(int(pg.Offset), int(pg.Limit), baselineFlows)
+		anomalousFlows = paginated.PaginateSlice(int(pg.GetOffset()), int(pg.GetLimit()), anomalousFlows)
+		baselineFlows = paginated.PaginateSlice(int(pg.GetOffset()), int(pg.GetLimit()), baselineFlows)
 	}
 
 	return &v1.NetworkBaselineExternalStatusResponse{
@@ -283,7 +292,7 @@ func (s *serviceImpl) ModifyBaselineStatusForPeers(ctx context.Context, request 
 }
 
 func (s *serviceImpl) LockNetworkBaseline(ctx context.Context, request *v1.ResourceByID) (*v1.Empty, error) {
-	err := s.manager.ProcessBaselineLockUpdate(ctx, request.Id, true)
+	err := s.manager.ProcessBaselineLockUpdate(ctx, request.GetId(), true)
 	if err != nil {
 		return nil, err
 	}
@@ -291,7 +300,7 @@ func (s *serviceImpl) LockNetworkBaseline(ctx context.Context, request *v1.Resou
 }
 
 func (s *serviceImpl) UnlockNetworkBaseline(ctx context.Context, request *v1.ResourceByID) (*v1.Empty, error) {
-	err := s.manager.ProcessBaselineLockUpdate(ctx, request.Id, false)
+	err := s.manager.ProcessBaselineLockUpdate(ctx, request.GetId(), false)
 	if err != nil {
 		return nil, err
 	}

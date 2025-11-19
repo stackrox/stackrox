@@ -1,0 +1,40 @@
+syntax = "proto3";
+package v2;
+
+import "api/v2/vulnerability.proto";
+
+option go_package = "./api/v2;v2";
+option java_package = "io.stackrox.proto.api.v2";
+
+message ScanComponent {
+  string name = 1;
+  string version = 2;
+  oneof set_top_cvss {
+    float top_cvss = 3;
+  }
+  float risk_score = 4;
+  string architecture = 5;
+  repeated EmbeddedVulnerability vulns = 6;
+  SourceType source = 7;
+  // Note specifies a conditional status of the scan component.
+  enum Note {
+    UNSPECIFIED = 0;
+    // Scan components remain unscanned if the corresponding package is not
+    // associated with a valid Common Platform Enumeration (CPE).
+    UNSCANNED = 1;
+  }
+  repeated Note notes = 8;
+
+  // TODO (ROX-30352): Review the use of executable and if it applies to virtual machines
+}
+
+enum SourceType {
+  OS = 0;
+  PYTHON = 1;
+  JAVA = 2;
+  RUBY = 3;
+  NODEJS = 4;
+  GO = 7;
+  DOTNETCORERUNTIME = 5;
+  INFRASTRUCTURE = 6;
+}

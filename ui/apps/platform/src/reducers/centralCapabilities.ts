@@ -1,8 +1,10 @@
-import { Reducer, combineReducers } from 'redux';
+import { combineReducers } from 'redux';
+import type { Reducer } from 'redux';
 import isEqual from 'lodash/isEqual';
 
-import { PrefixedAction } from 'utils/fetchingReduxRoutines';
-import { fetchCentralCapabilities, CentralServicesCapabilities } from 'services/MetadataService';
+import { fetchCentralCapabilities } from 'services/MetadataService';
+import type { CentralServicesCapabilities } from 'services/MetadataService';
+import type { PrefixedAction } from 'utils/fetchingReduxRoutines';
 
 // Types
 

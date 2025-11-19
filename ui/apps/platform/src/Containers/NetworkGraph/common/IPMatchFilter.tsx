@@ -1,9 +1,10 @@
-import React, { ReactElement, useState } from 'react';
+import { useState } from 'react';
+import type { ReactElement } from 'react';
 import { Flex, SearchInput } from '@patternfly/react-core';
 
 import { onURLSearch } from 'Components/CompoundSearchFilter/utils/utils';
-import { SetSearchFilter } from 'hooks/useURLSearch';
-import { SearchFilter } from 'types/search';
+import type { SetSearchFilter } from 'hooks/useURLSearch';
+import type { SearchFilter } from 'types/search';
 import { isValidCidrBlock } from 'utils/urlUtils';
 
 import { EXTERNAL_SOURCE_ADDRESS_QUERY } from '../NetworkGraph.constants';

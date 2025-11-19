@@ -22,7 +22,7 @@ jobs:
           - scanner-v4-db
     steps:
       - name: Checkout repo
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           fetch-depth: 0
           ref: "${{ github.event.pull_request.head.sha }}"
@@ -48,7 +48,7 @@ jobs:
       SCANNER_E2E_REDHAT_PASSWORD: ${{ secrets.REDHAT_PASSWORD }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           fetch-depth: 0
           ref: "${{ github.event.pull_request.head.sha }}"

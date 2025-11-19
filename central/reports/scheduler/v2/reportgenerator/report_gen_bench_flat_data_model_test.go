@@ -13,13 +13,11 @@ import (
 	"github.com/stackrox/rox/central/graphql/resolvers/loaders"
 	namespaceDSMocks "github.com/stackrox/rox/central/namespace/datastore/mocks"
 	collectionDS "github.com/stackrox/rox/central/resourcecollection/datastore"
-	collectionSearch "github.com/stackrox/rox/central/resourcecollection/datastore/search"
 	collectionPostgres "github.com/stackrox/rox/central/resourcecollection/datastore/store/postgres"
 	deploymentsView "github.com/stackrox/rox/central/views/deployments"
 	imagesView "github.com/stackrox/rox/central/views/images"
 	watchedImageDS "github.com/stackrox/rox/central/watchedimage/datastore"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/uuid"
@@ -42,9 +40,6 @@ type FlatDataModelReportGeneratorBenchmarkTestSuite struct {
 }
 
 func BenchmarkFlatDataModelReportGenerator(b *testing.B) {
-	if !features.FlattenCVEData.Enabled() {
-		b.Skip()
-	}
 	bts := &FlatDataModelReportGeneratorBenchmarkTestSuite{b: b}
 	bts.setupTestSuite()
 
@@ -108,15 +103,15 @@ func (bts *FlatDataModelReportGeneratorBenchmarkTestSuite) setupTestSuite() {
 		resolvers.CreateTestDeploymentDatastore(bts.b, bts.testDB, mockCtrl, imageDataStore),
 		deploymentsView.NewDeploymentView(bts.testDB.DB),
 	)
-	collectionStore := collectionPostgres.CreateTableAndNewStore(bts.ctx, bts.testDB.DB, bts.testDB.GetGormDB(bts.b))
-	_, collectionQueryResolver, err := collectionDS.New(collectionStore, collectionSearch.New(collectionStore))
+	collectionStore := collectionPostgres.New(bts.testDB)
+	_, collectionQueryResolver, err := collectionDS.New(collectionStore)
 	require.NoError(bts.b, err)
 	bts.clusterDatastore = clusterDSMocks.NewMockDataStore(mockCtrl)
 	bts.namespaceDatastore = namespaceDSMocks.NewMockDataStore(mockCtrl)
 
 	bts.reportGenerator = newReportGeneratorImpl(bts.testDB, nil, bts.resolver.DeploymentDataStore,
 		bts.watchedImageDatastore, collectionQueryResolver, nil, nil, bts.clusterDatastore,
-		bts.namespaceDatastore, bts.resolver.ImageCVEDataStore, bts.resolver.ImageCVEV2DataStore, schema)
+		bts.namespaceDatastore, bts.resolver.ImageCVEV2DataStore, schema)
 }
 
 func (bts *FlatDataModelReportGeneratorBenchmarkTestSuite) upsertManyImages(images []*storage.Image) {
@@ -128,7 +123,7 @@ func (bts *FlatDataModelReportGeneratorBenchmarkTestSuite) upsertManyImages(imag
 
 func (bts *FlatDataModelReportGeneratorBenchmarkTestSuite) upsertManyWatchedImages(images []*storage.Image) {
 	for _, img := range images {
-		err := bts.watchedImageDatastore.UpsertWatchedImage(bts.ctx, img.Name.FullName)
+		err := bts.watchedImageDatastore.UpsertWatchedImage(bts.ctx, img.GetName().GetFullName())
 		require.NoError(bts.b, err)
 	}
 }

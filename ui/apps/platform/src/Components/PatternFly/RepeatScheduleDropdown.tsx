@@ -1,16 +1,16 @@
-import React, { ReactElement } from 'react';
-import { SelectOption } from '@patternfly/react-core/deprecated';
+import type { FocusEventHandler, ReactElement } from 'react';
+import { SelectOption } from '@patternfly/react-core';
 
 import SelectSingle from 'Components/SelectSingle';
 
 export type RepeatScheduleDropdownProps = {
     fieldId: string;
     value: string;
-    handleSelect: (id, selection) => void;
+    handleSelect: (id: string, selection: string) => void;
     isEditable?: boolean;
     showNoResultsOption?: boolean;
     includeDailyOption?: boolean;
-    onBlur?: React.FocusEventHandler<HTMLTextAreaElement>;
+    onBlur?: FocusEventHandler<HTMLDivElement>;
 };
 
 function RepeatScheduleDropdown({
@@ -39,7 +39,7 @@ function RepeatScheduleDropdown({
     ];
     if (showNoResultsOption) {
         options = [
-            <SelectOption key="none" isNoResultsOption>
+            <SelectOption key="none" value="">
                 None
             </SelectOption>,
             ...options,

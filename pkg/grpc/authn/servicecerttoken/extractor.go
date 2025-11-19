@@ -69,6 +69,11 @@ func NewExtractorWithCertValidation(maxLeeway time.Duration, validator authn.Val
 	trustPool := x509.NewCertPool()
 	trustPool.AddCert(ca)
 
+	secondaryCA, _, err := mtls.SecondaryCACert()
+	if err == nil {
+		trustPool.AddCert(secondaryCA)
+	}
+
 	verifyOpts := x509.VerifyOptions{
 		Roots: trustPool,
 	}

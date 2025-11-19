@@ -55,8 +55,8 @@ func (s *graphQLClusterTestSuite) SetupSuite() {
 
 func (s *graphQLClusterTestSuite) addClusterScopeObject(cluster *storage.Cluster) {
 	scopeObject := &v1.ScopeObject{
-		Id:   cluster.Id,
-		Name: cluster.Name,
+		Id:   cluster.GetId(),
+		Name: cluster.GetName(),
 	}
 	s.scopeObjects = append(s.scopeObjects, scopeObject)
 }
@@ -91,7 +91,7 @@ func (s *graphQLClusterTestSuite) TestClustersForPermission() {
 				sac.AllowFixedScopes(
 					sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
 					sac.ResourceScopeKeys(resources.Compliance),
-					sac.ClusterScopeKeys(s.clusters[1].Id, s.clusters[2].Id, s.clusters[4].Id),
+					sac.ClusterScopeKeys(s.clusters[1].GetId(), s.clusters[2].GetId(), s.clusters[4].GetId()),
 				),
 			),
 			targetResource:       resources.Compliance,
@@ -103,7 +103,7 @@ func (s *graphQLClusterTestSuite) TestClustersForPermission() {
 				sac.AllowFixedScopes(
 					sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
 					sac.ResourceScopeKeys(resources.Compliance),
-					sac.ClusterScopeKeys(s.clusters[3].Id),
+					sac.ClusterScopeKeys(s.clusters[3].GetId()),
 				),
 			),
 			targetResource:       resources.Compliance,
@@ -154,4 +154,22 @@ func (s *graphQLClusterTestSuite) TestClustersForPermission() {
 			protoassert.ElementsMatch(s.T(), testCase.expectedScopeObjects, scopeObjects)
 		})
 	}
+
+	s.Run("Full access, restricting query, target cluster retrieved", func() {
+		ctx := sac.WithAllAccess(context.Background())
+		queryTest := "Cluster:Test cluster 1"
+		query := PaginatedQuery{
+			Query: &queryTest,
+		}
+		targetResource := resources.Node
+
+		expectedScopeObjects := []*v1.ScopeObject{s.scopeObjects[0]}
+		objectResolvers, err := s.resolver.clustersForReadPermission(ctx, query, targetResource)
+		s.NoError(err)
+		scopeObjects := make([]*v1.ScopeObject, 0, len(objectResolvers))
+		for _, objectResolver := range objectResolvers {
+			scopeObjects = append(scopeObjects, objectResolver.data)
+		}
+		protoassert.ElementsMatch(s.T(), expectedScopeObjects, scopeObjects)
+	})
 }

@@ -1,6 +1,6 @@
-import React, { useCallback } from 'react';
-import { Link } from 'react-router-dom';
-import { Table, Thead, Tbody, Tr, Th, Td } from '@patternfly/react-table';
+import { useCallback } from 'react';
+import { Link } from 'react-router-dom-v5-compat';
+import { Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 import { Form } from '@patternfly/react-core';
 import { useField } from 'formik';
 

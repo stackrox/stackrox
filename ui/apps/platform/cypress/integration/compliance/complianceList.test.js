@@ -14,7 +14,8 @@ import { selectors } from './Compliance.selectors';
 describe('Compliance entities list', () => {
     withAuth();
 
-    it('should filter namespaces table with passing controls', () => {
+    // TODO: ROX-30939: fix test for OCP4.20 "1 namespace" (openshift-cloud-credential-operator)
+    it.skip('should filter namespaces table with passing controls', () => {
         triggerScan(); // in case complianceDashboard.test.js is skipped
         visitComplianceEntities('namespaces');
 

@@ -117,6 +117,7 @@ const (
 	ScanSucceeded
 )
 
+// TODO(ROX-30117): Remove this and use the ImageEnricherV2 interface after ImageV2 model is fully rolled out.
 // ImageEnricher provides functions for enriching images with integrations.
 //
 //go:generate mockgen-wrapper
@@ -133,9 +134,13 @@ type ImageEnricher interface {
 
 // CVESuppressor provides enrichment for suppressed CVEs for an image's components.
 type CVESuppressor interface {
+	// TODO(ROX-30117): Remove this and use the EnrichImageV2WithSuppressedCVEs after ImageV2 model is fully rolled out.
 	EnrichImageWithSuppressedCVEs(image *storage.Image)
+
+	EnrichImageV2WithSuppressedCVEs(image *storage.ImageV2)
 }
 
+// TODO(ROX-30117): Remove this and use ImageGetterV2 after ImageV2 model is fully rolled out.
 // ImageGetter will be used to retrieve a specific image from the datastore.
 type ImageGetter func(ctx context.Context, id string) (*storage.Image, bool, error)
 
@@ -148,11 +153,10 @@ type signatureVerifierForIntegrations func(ctx context.Context, integrations []*
 
 // New returns a new ImageEnricher instance for the given subsystem.
 // (The subsystem is just used for Prometheus metrics.)
-func New(cvesSuppressor CVESuppressor, cvesSuppressorV2 CVESuppressor, is integration.Set, subsystem pkgMetrics.Subsystem, metadataCache cache.ImageMetadata,
+func New(cvesSuppressorV2 CVESuppressor, is integration.Set, subsystem pkgMetrics.Subsystem, metadataCache cache.ImageMetadata,
 	imageGetter ImageGetter, healthReporter integrationhealth.Reporter,
 	signatureIntegrationGetter SignatureIntegrationGetter, scanDelegator delegatedregistry.Delegator) ImageEnricher {
 	enricher := &enricherImpl{
-		cvesSuppressor:   cvesSuppressor,
 		cvesSuppressorV2: cvesSuppressorV2,
 		integrations:     is,
 

@@ -4,6 +4,7 @@ import (
 	"bytes"
 
 	"github.com/pkg/errors"
+	commonLabels "github.com/stackrox/rox/pkg/labels"
 	"helm.sh/helm/v3/pkg/kube"
 	"helm.sh/helm/v3/pkg/postrender"
 	"k8s.io/apimachinery/pkg/api/meta"
@@ -12,12 +13,18 @@ import (
 )
 
 var defaultLabels = map[string]string{
-	"app.stackrox.io/managed-by": "operator",
+	commonLabels.ManagedByLabelKey: commonLabels.ManagedByOperator,
 }
+
+// CacheLabelKey is the label that is used to select objects that are cached by the Operator.
+var CacheLabelKey = commonLabels.ManagedByLabelKey
+
+// CacheLabelValues are the values that are used to select objects that are cached by the Operator.
+var CacheLabelValues = []string{commonLabels.ManagedByOperator, commonLabels.ManagedBySensor}
 
 func TLSSecretLabels() map[string]string {
 	labels := DefaultLabels()
-	labels["rhacs.redhat.com/tls"] = "true"
+	labels[commonLabels.TLSSecretLabelKey] = "true"
 	return labels
 }
 

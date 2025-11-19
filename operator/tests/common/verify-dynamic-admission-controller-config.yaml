@@ -1,0 +1,9 @@
+# Default helm-cluster-config
+apiVersion: kuttl.dev/v1beta1
+kind: TestStep
+commands:
+  - script: |
+      set -eu # shell in CI does not grok -o pipefail
+      ret=0
+      helm-cluster-config-assert.sh .dynamicConfig.admissionControllerConfig.scanInline true || ret=1
+      exit $ret

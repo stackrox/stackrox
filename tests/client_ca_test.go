@@ -98,13 +98,13 @@ func validateAuthStatusResponseForClientCert(t *testing.T, cert *x509.Certificat
 	assert.Equal(t, "userpki", authStatus.GetAuthProvider().GetType())
 	fingerprint := cryptoutils.CertFingerprint(cert)
 
-	userIDAttributeIdx := slices.IndexFunc(authStatus.UserAttributes, func(attr *v1.UserAttribute) bool {
-		return attr.Key == "userid"
+	userIDAttributeIdx := slices.IndexFunc(authStatus.GetUserAttributes(), func(attr *v1.UserAttribute) bool {
+		return attr.GetKey() == "userid"
 	})
 	assert.True(t, userIDAttributeIdx >= 0, "couldn't find userid attribute in resp %+v", authStatus)
-	userIDAttr := authStatus.UserAttributes[userIDAttributeIdx]
-	require.Len(t, userIDAttr.Values, 1, "unexpected number of values for userid attr in resp %+v", authStatus)
-	assert.Equal(t, fmt.Sprintf("userpki:%s", fingerprint), userIDAttr.Values[0])
+	userIDAttr := authStatus.GetUserAttributes()[userIDAttributeIdx]
+	require.Len(t, userIDAttr.GetValues(), 1, "unexpected number of values for userid attr in resp %+v", authStatus)
+	assert.Equal(t, fmt.Sprintf("userpki:%s", fingerprint), userIDAttr.GetValues()[0])
 }
 
 func getAuthStatus(t *testing.T, tlsConf *tls.Config, token string) (*v1.AuthStatus, error) {
@@ -219,7 +219,6 @@ func TestClientCAAuthWithMultipleVerifiedChains(t *testing.T) {
 }
 
 func TestClientCARequested(t *testing.T) {
-	t.Parallel()
 
 	clientCAFile := mustGetEnv(t, "CLIENT_CA_PATH")
 	pemBytes, err := os.ReadFile(clientCAFile)

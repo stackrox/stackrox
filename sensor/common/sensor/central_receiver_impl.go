@@ -1,6 +1,7 @@
 package sensor
 
 import (
+	"context"
 	"io"
 
 	"github.com/stackrox/rox/generated/internalapi/central"
@@ -20,6 +21,7 @@ func (s *centralReceiverImpl) Start(stream central.SensorService_CommunicateClie
 }
 
 func (s *centralReceiverImpl) Stop() {
+	log.Debug("Stopping CentralReceiver")
 	s.stopper.Client().Stop()
 }
 
@@ -29,7 +31,17 @@ func (s *centralReceiverImpl) Stopped() concurrency.ReadOnlyErrorSignal {
 
 // Take in data processed by central, run post-processing, then send it to the output channel.
 func (s *centralReceiverImpl) receive(stream central.SensorService_CommunicateClient, onStops ...func()) {
+	ctx, cancel := context.WithCancel(stream.Context())
+
+	componentsQueues := make([]*ComponentQueue, 0, len(s.receivers))
+	for _, c := range s.receivers {
+		componentQueue := NewComponentQueue(c)
+		componentQueue.Start(ctx)
+		componentsQueues = append(componentsQueues, componentQueue)
+	}
+
 	defer func() {
+		cancel()
 		s.stopper.Flow().ReportStopped()
 		runAll(onStops...)
 		s.finished.Done()
@@ -41,9 +53,9 @@ func (s *centralReceiverImpl) receive(stream central.SensorService_CommunicateCl
 			log.Info("Stop flow requested")
 			return
 
-		case <-stream.Context().Done():
+		case <-ctx.Done():
 			log.Info("Context done")
-			s.stopper.Flow().StopWithError(stream.Context().Err())
+			s.stopper.Flow().StopWithError(ctx.Err())
 			return
 
 		default:
@@ -58,10 +70,8 @@ func (s *centralReceiverImpl) receive(stream central.SensorService_CommunicateCl
 				s.stopper.Flow().StopWithError(err)
 				return
 			}
-			for _, r := range s.receivers {
-				if err := r.ProcessMessage(msg); err != nil {
-					log.Error(err)
-				}
+			for _, q := range componentsQueues {
+				q.Push(msg)
 			}
 		}
 	}

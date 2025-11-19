@@ -119,7 +119,7 @@ func TestAlertNotify(t *testing.T) {
 
 	assert.Contains(t, msgStr, fmt.Sprintf("Subject: %s\r\n", expectedSubject))
 	assert.Contains(t, msgStr, "Content-Type: text/plain")
-	assert.Contains(t, msgStr, fmt.Sprintf("Alert ID: %s", inputAlert.Id))
+	assert.Contains(t, msgStr, fmt.Sprintf("Alert ID: %s", inputAlert.GetId()))
 	assert.NotContains(t, msgStr, "From:")
 	assert.NotContains(t, msgStr, "To:")
 }

@@ -17,7 +17,9 @@ type Store interface {
 
 	Get(ctx context.Context, id string) (*storage.ProcessBaseline, bool, error)
 	GetMany(ctx context.Context, ids []string) ([]*storage.ProcessBaseline, []int, error)
+	GetByQueryFn(ctx context.Context, query *v1.Query, fn func(obj *storage.ProcessBaseline) error) error
 	Walk(ctx context.Context, fn func(baseline *storage.ProcessBaseline) error) error
+	WalkByQuery(ctx context.Context, query *v1.Query, fn func(obj *storage.ProcessBaseline) error) error
 
 	Upsert(ctx context.Context, baseline *storage.ProcessBaseline) error
 	UpsertMany(ctx context.Context, objs []*storage.ProcessBaseline) error

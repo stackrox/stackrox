@@ -1,16 +1,16 @@
-import React, { ReactElement } from 'react';
-import { Select, SelectOption } from '@patternfly/react-core/deprecated';
+import type { FocusEventHandler, ReactElement } from 'react';
+import { SelectOption } from '@patternfly/react-core';
 
-import useMultiSelect from 'hooks/useMultiSelect';
-import { IntervalType } from 'services/ComplianceScanConfigurationService';
+import CheckboxSelect from 'Components/PatternFly/CheckboxSelect';
+import type { IntervalType } from 'services/ComplianceScanConfigurationService';
 
 export type DayPickerDropdownProps = {
     fieldId: string;
     value: string[];
-    handleSelect: (id, selection) => void;
+    handleSelect: (id: string, selection: string[]) => void;
     isEditable?: boolean;
     intervalType: IntervalType | null;
-    onBlur?: React.FocusEventHandler<HTMLTextAreaElement>;
+    onBlur?: FocusEventHandler<HTMLDivElement>;
     toggleId?: string;
 };
 
@@ -45,14 +45,9 @@ function DayPickerDropdown({
     toggleId,
 }: DayPickerDropdownProps): ReactElement {
     const selectSafeValue = value.map((item) => item.toString());
-    const {
-        isOpen: isDaySelectOpen,
-        onToggle: onToggleDaySelect,
-        onSelect: onSelectDay,
-    } = useMultiSelect(handleDaySelect, selectSafeValue, false);
 
-    function handleDaySelect(selection) {
-        handleSelect(fieldId, selection);
+    function onChange(newSelections: string[]) {
+        handleSelect(fieldId, newSelections);
     }
 
     let selectOptions: ReactElement[] = [];
@@ -94,21 +89,18 @@ function DayPickerDropdown({
     }
 
     return (
-        <Select
-            variant="checkbox"
-            aria-label="Select one or more days"
-            onToggle={onToggleDaySelect}
-            onSelect={onSelectDay}
+        <CheckboxSelect
+            id={fieldId}
             selections={selectSafeValue}
-            isOpen={isDaySelectOpen}
-            isDisabled={!isEditable}
-            placeholderText={value.length ? 'Selected days' : 'Select days'}
-            menuAppendTo={() => document.body}
+            onChange={onChange}
             onBlur={onBlur}
+            ariaLabel="Select one or more days"
+            placeholderText={value.length ? 'Selected days' : 'Select days'}
             toggleId={toggleId}
+            isDisabled={!isEditable}
         >
             {selectOptions}
-        </Select>
+        </CheckboxSelect>
     );
 }
 

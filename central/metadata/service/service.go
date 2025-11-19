@@ -24,8 +24,14 @@ type Service interface {
 
 // New returns a new instance of service.
 func New() Service {
+	return NewWithCertificateProvider(&defaultCertificateProvider{})
+}
+
+// NewWithCertificateProvider returns a new instance of service with a custom certificate provider.
+func NewWithCertificateProvider(certProvider CertificateProvider) Service {
 	return &serviceImpl{
 		db:              globaldb.GetPostgres(),
 		systemInfoStore: systemInfoStorage.Singleton(),
+		certProvider:    certProvider,
 	}
 }

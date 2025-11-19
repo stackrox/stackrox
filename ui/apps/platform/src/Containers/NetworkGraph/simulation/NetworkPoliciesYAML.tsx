@@ -1,6 +1,6 @@
-import React, { CSSProperties, ReactNode } from 'react';
+import type { CSSProperties, ReactNode } from 'react';
 
-import { CodeBlockAction, Button } from '@patternfly/react-core';
+import { Button, CodeBlockAction } from '@patternfly/react-core';
 import { DownloadIcon } from '@patternfly/react-icons';
 
 import CodeViewer from 'Components/CodeViewer';
@@ -10,13 +10,13 @@ import { getPropertiesForAnalytics } from '../utils/networkGraphURLUtils';
 
 import { useSearchFilter } from '../NetworkGraphURLStateContext';
 
-type NetworkPoliciesYAMLProp = {
+type NetworkPoliciesYAMLProps = {
     yaml: string;
     style?: CSSProperties;
     additionalControls?: ReactNode;
 };
 
-function NetworkPoliciesYAML({ yaml, style, additionalControls }: NetworkPoliciesYAMLProp) {
+function NetworkPoliciesYAML({ yaml, style, additionalControls }: NetworkPoliciesYAMLProps) {
     const { analyticsTrack } = useAnalytics();
     const { searchFilter } = useSearchFilter();
 

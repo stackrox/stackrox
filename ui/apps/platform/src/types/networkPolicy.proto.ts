@@ -1,4 +1,4 @@
-import { LabelSelector, MatchLabelsSelector } from './labels.proto';
+import type { LabelSelector, MatchLabelsSelector } from './labels.proto';
 
 export type NetworkPolicy = {
     id: string;

@@ -32,7 +32,7 @@ curl_cfg() { # Use built-in echo to not expose $2 in the process list.
 roxcurl() {
     local url="$1"
     shift
-    curl -sk --config <(curl_cfg user "admin:${ROX_ADMIN_PASSWORD}") -k "https://${API_ENDPOINT}${url}" "$@"
+    curl -sSfk --config <(curl_cfg user "admin:${ROX_ADMIN_PASSWORD}") "https://${API_ENDPOINT}${url}" "$@"
 }
 
 is_release_version() {

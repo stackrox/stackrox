@@ -10,7 +10,6 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/env"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/sensor/debugger/collector"
 	"github.com/stackrox/rox/sensor/tests/helper"
 	"github.com/stackrox/rox/sensor/testutils"
@@ -29,10 +28,6 @@ var (
 )
 
 func Test_SensorIntermediateRuntimeEvents(t *testing.T) {
-	t.Setenv(features.PreventSensorRestartOnDisconnect.EnvVar(), "true")
-	t.Setenv(features.SensorReconciliationOnReconnect.EnvVar(), "true")
-	t.Setenv(features.SensorCapturesIntermediateEvents.EnvVar(), "true")
-
 	t.Setenv(env.ConnectionRetryInitialInterval.EnvVar(), "1s")
 	t.Setenv(env.ConnectionRetryMaxInterval.EnvVar(), "2s")
 
@@ -115,7 +110,7 @@ func Test_SensorIntermediateRuntimeEvents(t *testing.T) {
 		expectedNetworkFlows := []helper.ExpectedNetworkConnectionMessageFn{
 			func(msg *sensor.NetworkConnectionInfoMessage) bool {
 				for _, conn := range msg.GetInfo().GetUpdatedConnections() {
-					if conn.Protocol == storage.L4Protocol_L4_PROTOCOL_TCP && conn.ContainerId == talkContainerIds[0] && conn.GetRemoteAddress().GetPort() == 80 {
+					if conn.GetProtocol() == storage.L4Protocol_L4_PROTOCOL_TCP && conn.GetContainerId() == talkContainerIds[0] && conn.GetRemoteAddress().GetPort() == 80 {
 						return true
 					}
 				}

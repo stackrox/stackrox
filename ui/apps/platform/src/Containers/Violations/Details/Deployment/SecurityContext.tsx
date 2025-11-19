@@ -1,8 +1,8 @@
-import React, { ReactElement } from 'react';
+import type { ReactElement } from 'react';
 import { Card, CardBody, CardTitle, DescriptionList } from '@patternfly/react-core';
 
 import DescriptionListItem from 'Components/DescriptionListItem';
-import { Deployment } from 'types/deployment.proto';
+import type { Deployment } from 'types/deployment.proto';
 
 export type SecurityContextProps = {
     deployment: Deployment | null;

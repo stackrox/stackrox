@@ -81,6 +81,13 @@ export function addNumericFilter(
     cy.get('[aria-label="Apply condition and number input to search"]').click();
 }
 
+export function addCheckboxSelectFilter(entity: string, attribute: string, value: string) {
+    selectEntity(entity);
+    selectAttribute(attribute);
+    cy.get('[aria-label^="Filter by"]').click();
+    cy.get('[role="menuitem"]').contains(value).click();
+}
+
 export function clearFilters() {
     cy.get('button').contains('Clear filters').click();
 }

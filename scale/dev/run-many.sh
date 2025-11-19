@@ -1,6 +1,9 @@
 #!/bin/bash
 
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd)"
+export ROX_DIR="$( cd "${DIR}" && git rev-parse --show-toplevel)"
+
+export LOCAL_PORT=${LOCAL_PORT:-8000}
 
 if [[ -z "$1" ]]; then
   >&2 echo "usage: $0 <workload name> <num sensors>"
@@ -8,13 +11,12 @@ if [[ -z "$1" ]]; then
 fi
 
 if ! kubectl -n stackrox get deploy/central; then
-  "$DIR"/launch_central.sh
+  "$DIR"/launch_central.sh "${LOCAL_PORT}"
   kubectl -n stackrox wait --for=condition=ready pod -l app=central --timeout 5m
 else
   kubectl -n stackrox wait --for=condition=ready pod -l app=central --timeout 5m
-  killpf 8000
-  "$DIR"/port-forward.sh 8000
-  sleep 5 # Allow port-forwards to initialize
+  killpf "${LOCAL_PORT}"
+  "$DIR"/port-forward.sh "${LOCAL_PORT}"
 fi
 echo "Set retention settings"
 roxcurl v1/config -X PUT -d @config.json

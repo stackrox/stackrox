@@ -1,3 +1,3 @@
 package postgres
 
-//go:generate pg-table-bindings-wrapper --type=storage.Secret --search-category SECRETS
+//go:generate pg-table-bindings-wrapper --type=storage.Secret --search-category SECRETS --default-sort search.CreatedTime.String()

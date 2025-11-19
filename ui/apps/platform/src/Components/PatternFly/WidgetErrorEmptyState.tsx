@@ -1,7 +1,7 @@
-import React, { ReactNode } from 'react';
+import type { ReactElement, ReactNode } from 'react';
 import { Flex } from '@patternfly/react-core';
 import { ExclamationCircleIcon } from '@patternfly/react-icons';
-import { SVGIconProps } from '@patternfly/react-icons/dist/js/createIcon';
+import type { SVGIconProps } from '@patternfly/react-icons/dist/js/createIcon';
 
 import EmptyStateTemplate from 'Components/EmptyStateTemplate';
 
@@ -24,7 +24,7 @@ export default function WidgetErrorEmptyState({
     children,
     title,
     height,
-}: WidgetErrorEmptyStateProps) {
+}: WidgetErrorEmptyStateProps): ReactElement {
     return (
         <>
             <Flex

@@ -6,6 +6,6 @@ import (
 
 // Stream is an interface for the administration events stream.
 type Stream interface {
-	Consume(waitable concurrency.Waitable) *AdministrationEvent
+	Consume(waitable concurrency.Waitable) func(yield func(*AdministrationEvent) bool)
 	Produce(event *AdministrationEvent)
 }

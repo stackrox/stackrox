@@ -5,7 +5,6 @@ import (
 	"fmt"
 
 	errorsPkg "github.com/pkg/errors"
-	"github.com/stackrox/rox/central/policycategory/search"
 	"github.com/stackrox/rox/central/policycategory/store"
 	"github.com/stackrox/rox/central/policycategoryedge/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -16,6 +15,7 @@ import (
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	searchPkg "github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/search/policycategory"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/uuid"
@@ -26,17 +26,17 @@ import (
 var (
 	log               = logging.LoggerForModule()
 	policyCategorySAC = sac.ForResource(resources.WorkflowAdministration)
-	titleCase         = cases.Title(language.English)
 
 	policyCategoryCtx = sac.WithGlobalAccessScopeChecker(context.Background(),
 		sac.AllowFixedScopes(
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
 			sac.ResourceScopeKeys(resources.WorkflowAdministration)))
+
+	titleCase = cases.Title(language.English, cases.NoLower)
 )
 
 type datastoreImpl struct {
 	storage              store.Store
-	searcher             search.Searcher
 	policyCategoryEdgeDS datastore.DataStore
 	categoryMutex        sync.Mutex
 
@@ -131,7 +131,7 @@ func (ds *datastoreImpl) Search(ctx context.Context, q *v1.Query) ([]searchPkg.R
 	if ok, err := policyCategorySAC.ReadAllowed(ctx); err != nil || !ok {
 		return nil, err
 	}
-	return ds.searcher.Search(ctx, q)
+	return ds.storage.Search(ctx, policycategory.TransformCategoryNameFieldsQuery(q))
 }
 
 // Count returns the number of search results from the query
@@ -139,7 +139,7 @@ func (ds *datastoreImpl) Count(ctx context.Context, q *v1.Query) (int, error) {
 	if ok, err := policyCategorySAC.ReadAllowed(ctx); err != nil || !ok {
 		return 0, err
 	}
-	return ds.searcher.Count(ctx, q)
+	return ds.storage.Count(ctx, q)
 }
 
 // GetPolicyCategory get a policy category by id
@@ -160,7 +160,34 @@ func (ds *datastoreImpl) GetPolicyCategory(ctx context.Context, id string) (*sto
 
 // SearchPolicyCategories returns search results that match the provided query
 func (ds *datastoreImpl) SearchPolicyCategories(ctx context.Context, q *v1.Query) ([]*v1.SearchResult, error) {
-	return ds.searcher.SearchCategories(ctx, q)
+	// TODO(ROX-29943): remove 2 pass database calls
+	results, err := ds.Search(ctx, q)
+	if err != nil {
+		return nil, err
+	}
+
+	var categories []*storage.PolicyCategory
+	var newResults []searchPkg.Result
+	for _, result := range results {
+		category, exists, err := ds.storage.Get(ctx, result.ID)
+		if err != nil {
+			return nil, err
+		}
+		// The result may not exist if the object was deleted after the search
+		if !exists {
+			continue
+		}
+		categories = append(categories, category)
+		// Because of using 2 calls we are at risk of a race condition causing a mismatch in results
+		// and policies.  So we have to make sure we match for building the output below.
+		newResults = append(newResults, result)
+	}
+
+	protoResults := make([]*v1.SearchResult, 0, len(categories))
+	for i, c := range categories {
+		protoResults = append(protoResults, convertCategory(c, newResults[i]))
+	}
+	return protoResults, nil
 }
 
 // SearchRawPolicyCategories returns policy category objects that match the provided query
@@ -169,7 +196,17 @@ func (ds *datastoreImpl) SearchRawPolicyCategories(ctx context.Context, q *v1.Qu
 		return nil, err
 	}
 
-	return ds.searcher.SearchRawCategories(ctx, q)
+	q = policycategory.TransformCategoryNameFieldsQuery(q)
+	var cats []*storage.PolicyCategory
+	err := ds.storage.GetByQueryFn(ctx, q, func(cat *storage.PolicyCategory) error {
+		cats = append(cats, cat)
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return cats, nil
 }
 
 // GetAllPolicyCategories lists all policy categories
@@ -199,7 +236,7 @@ func (ds *datastoreImpl) AddPolicyCategory(ctx context.Context, category *storag
 	} else if !ok {
 		return nil, sac.ErrResourceAccessDenied
 	}
-	if category.Id == "" {
+	if category.GetId() == "" {
 		category.Id = uuid.NewV4().String()
 	}
 	// Any category added after startup must be marked custom category.
@@ -285,4 +322,15 @@ func (ds *datastoreImpl) DeletePolicyCategory(ctx context.Context, id string) er
 	}
 	delete(ds.categoryNameIDMap, category.GetName())
 	return nil
+}
+
+// convertCategory returns proto search result from a category object and the internal search result
+func convertCategory(category *storage.PolicyCategory, result searchPkg.Result) *v1.SearchResult {
+	return &v1.SearchResult{
+		Category:       v1.SearchCategory_POLICY_CATEGORIES,
+		Id:             category.GetId(),
+		Name:           category.GetName(),
+		FieldToMatches: searchPkg.GetProtoMatchesMap(result.Matches),
+		Score:          result.Score,
+	}
 }

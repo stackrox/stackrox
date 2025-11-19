@@ -74,6 +74,8 @@ type ClusterPostgresDataStoreTestSuite struct {
 	roleBindingDatastore      k8sRoleBindingDataStore.DataStore
 	imageIntegrationDatastore imageIntegrationDataStore.DataStore
 	clusterDatastore          DataStore
+
+	clusterHealthDBStore clusterHealthPostgresStore.Store
 }
 
 func (s *ClusterPostgresDataStoreTestSuite) SetupTest() {
@@ -81,7 +83,7 @@ func (s *ClusterPostgresDataStoreTestSuite) SetupTest() {
 	s.ctx = sac.WithAllAccess(context.Background())
 	s.db = pgtest.ForT(s.T())
 	clusterDBStore := clusterPostgresStore.New(s.db)
-	clusterHealthDBStore := clusterHealthPostgresStore.New(s.db)
+	s.clusterHealthDBStore = clusterHealthPostgresStore.New(s.db)
 	nodeStore := nodeDataStore.GetTestPostgresDataStore(s.T(), s.db)
 	netFlowStore, err := netFlowsDataStore.GetTestPostgresClusterDataStore(s.T(), s.db)
 	s.NoError(err)
@@ -105,7 +107,7 @@ func (s *ClusterPostgresDataStoreTestSuite) SetupTest() {
 	s.roleDatastore = k8sRoleDataStore.GetTestPostgresDataStore(s.T(), s.db.DB)
 	s.roleBindingDatastore = k8sRoleBindingDataStore.GetTestPostgresDataStore(s.T(), s.db.DB)
 	s.imageIntegrationDatastore = imageIntegrationDataStore.GetTestPostgresDataStore(s.T(), s.db.DB)
-	s.clusterDatastore, err = New(clusterDBStore, clusterHealthDBStore, clusterCVEStore,
+	s.clusterDatastore, err = New(clusterDBStore, s.clusterHealthDBStore, clusterCVEStore,
 		s.alertDatastore, s.imageIntegrationDatastore, s.nsDatastore, s.deploymentDatastore,
 		nodeStore, s.podDatastore, s.secretDatastore, netFlowStore, netEntityStore,
 		s.serviceAccountDatastore, s.roleDatastore, s.roleBindingDatastore, sensorCnxMgr, nil,
@@ -130,7 +132,7 @@ func (s *ClusterPostgresDataStoreTestSuite) TestRemoveCluster() {
 	s.NotEmpty(clusterId)
 	s.NoError(clusterAddErr)
 
-	testDeployment := &storage.Deployment{Id: fixtureconsts.Deployment1, ClusterId: clusterId, ClusterName: testCluster.Name}
+	testDeployment := &storage.Deployment{Id: fixtureconsts.Deployment1, ClusterId: clusterId, ClusterName: testCluster.GetName()}
 	deploymentUpsertErr := s.deploymentDatastore.UpsertDeployment(ctx, testDeployment)
 	s.NoError(deploymentUpsertErr)
 
@@ -138,23 +140,23 @@ func (s *ClusterPostgresDataStoreTestSuite) TestRemoveCluster() {
 	podUpsertErr := s.podDatastore.UpsertPod(ctx, testPod)
 	s.NoError(podUpsertErr)
 
-	testAlert := &storage.Alert{Id: fixtureconsts.Alert1, ClusterId: clusterId, ClusterName: testCluster.Name, Entity: convert.ToAlertDeployment(testDeployment)}
+	testAlert := &storage.Alert{Id: fixtureconsts.Alert1, ClusterId: clusterId, ClusterName: testCluster.GetName(), Entity: convert.ToAlertDeployment(testDeployment)}
 	alertUpsertErr := s.alertDatastore.UpsertAlert(ctx, testAlert)
 	s.NoError(alertUpsertErr)
 
-	testSecret := &storage.Secret{Id: fixtureconsts.AlertFake, ClusterId: clusterId, ClusterName: testCluster.Name}
+	testSecret := &storage.Secret{Id: fixtureconsts.AlertFake, ClusterId: clusterId, ClusterName: testCluster.GetName()}
 	secretUpsertErr := s.secretDatastore.UpsertSecret(ctx, testSecret)
 	s.NoError(secretUpsertErr)
 
-	testServiceAccount := &storage.ServiceAccount{Id: fixtureconsts.ServiceAccount1, ClusterId: clusterId, ClusterName: testCluster.Name}
+	testServiceAccount := &storage.ServiceAccount{Id: fixtureconsts.ServiceAccount1, ClusterId: clusterId, ClusterName: testCluster.GetName()}
 	serviceAccountUpsertErr := s.serviceAccountDatastore.UpsertServiceAccount(ctx, testServiceAccount)
 	s.NoError(serviceAccountUpsertErr)
 
-	testRole := &storage.K8SRole{Id: fixtureconsts.Role1, ClusterId: clusterId, ClusterName: testCluster.Name}
+	testRole := &storage.K8SRole{Id: fixtureconsts.Role1, ClusterId: clusterId, ClusterName: testCluster.GetName()}
 	roleUpsertErr := s.roleDatastore.UpsertRole(ctx, testRole)
 	s.NoError(roleUpsertErr)
 
-	testRoleBinding := &storage.K8SRoleBinding{Id: fixtureconsts.RoleBinding1, ClusterId: clusterId, ClusterName: testCluster.Name}
+	testRoleBinding := &storage.K8SRoleBinding{Id: fixtureconsts.RoleBinding1, ClusterId: clusterId, ClusterName: testCluster.GetName()}
 	roleBindingUpsertErr := s.roleBindingDatastore.UpsertRoleBinding(ctx, testRoleBinding)
 	s.NoError(roleBindingUpsertErr)
 
@@ -168,6 +170,10 @@ func (s *ClusterPostgresDataStoreTestSuite) TestRemoveCluster() {
 	clusterRemoveErr := s.clusterDatastore.RemoveCluster(ctx, clusterId, &doneSignal)
 	s.NoError(clusterRemoveErr)
 	s.True(concurrency.WaitWithTimeout(&doneSignal, 10*time.Second))
+
+	_, clusterHealthFound, clusterHealthGetErr := s.clusterHealthDBStore.Get(ctx, testDeployment.GetId())
+	s.NoError(clusterHealthGetErr)
+	s.False(clusterHealthFound)
 
 	_, deploymentFound, deploymentGetErr := s.deploymentDatastore.GetDeployment(ctx, testDeployment.GetId())
 	s.NoError(deploymentGetErr)
@@ -228,7 +234,7 @@ func (s *ClusterPostgresDataStoreTestSuite) TestPopulateClusterHealthInfo() {
 	results, err := s.clusterDatastore.SearchRawClusters(ctx, pkgSearch.EmptyQuery())
 	s.NoError(err)
 	for _, result := range results {
-		protoassert.Equal(s.T(), expectedHealths[result.Name], result.HealthStatus)
+		protoassert.Equal(s.T(), expectedHealths[result.GetName()], result.GetHealthStatus())
 	}
 }
 
@@ -446,7 +452,7 @@ func (s *ClusterPostgresDataStoreTestSuite) TestLookupOrCreateClusterFromConfig(
 			if c.cluster != nil {
 				c.cluster.Name = clusterName
 			}
-			if helmCfg := c.sensorHello.GetHelmManagedConfigInit(); helmCfg != nil && helmCfg.ClusterName == "" {
+			if helmCfg := c.sensorHello.GetHelmManagedConfigInit(); helmCfg != nil && helmCfg.GetClusterName() == "" {
 				helmCfg.ClusterName = clusterName
 			}
 
@@ -468,13 +474,13 @@ func (s *ClusterPostgresDataStoreTestSuite) TestLookupOrCreateClusterFromConfig(
 				s.NoError(lookupErr)
 			}
 			if c.expectedManagerType != 0 {
-				s.Equal(c.expectedManagerType, cluster.ManagedBy)
+				s.Equal(c.expectedManagerType, cluster.GetManagedBy())
 			}
 			if c.expectedHelmConfig != nil {
 				protoassert.Equal(s.T(), c.expectedHelmConfig, cluster.GetHelmConfig())
 			}
 			if c.expectedSensorCapabilities != nil {
-				s.Equal(c.expectedSensorCapabilities, cluster.SensorCapabilities)
+				s.Equal(c.expectedSensorCapabilities, cluster.GetSensorCapabilities())
 			}
 		})
 	}
@@ -546,7 +552,7 @@ func (s *ClusterPostgresDataStoreTestSuite) TestUpdateAuditLogFileStatesLeaveUnm
 	s.NoError(err)
 	s.True(exists)
 
-	protoassert.MapEqual(s.T(), expectedStates, realCluster.AuditLogState)
+	protoassert.MapEqual(s.T(), expectedStates, realCluster.GetAuditLogState())
 }
 
 func (s *ClusterPostgresDataStoreTestSuite) TestUpdateAuditLogFileStatesErrorConditions() {
@@ -948,7 +954,7 @@ func (s *ClusterPostgresDataStoreTestSuite) TestAddDefaults() {
 		s.Require().NotNil(tc)
 		s.True(tc.GetDisabled())
 		s.Equal(int64(10), cluster.GetPriority())
-		s.True(cluster.SlimCollector)
+		s.True(cluster.GetSlimCollector())
 		s.NotNil(cluster.GetHelmConfig())
 		s.Equal("someId", cluster.GetInitBundleId())
 		s.Equal(storage.ManagerType_MANAGER_TYPE_KUBERNETES_OPERATOR, cluster.GetManagedBy())
@@ -993,6 +999,74 @@ func (s *ClusterPostgresDataStoreTestSuite) TestAddDefaults() {
 	})
 }
 
+func (s *ClusterPostgresDataStoreTestSuite) TestSearchRawClustersConsistentOrder() {
+	ctx := sac.WithAllAccess(context.Background())
+
+	// Create multiple clusters to test ordering consistency
+	clusterNames := []string{"cluster-alpha", "cluster-beta", "cluster-gamma", "cluster-delta", "cluster-epsilon"}
+	clusterIDs := make([]string, len(clusterNames))
+
+	for i, name := range clusterNames {
+		cluster := &storage.Cluster{
+			Name:               name,
+			MainImage:          mainImage,
+			CentralApiEndpoint: centralEndpoint,
+			Labels:             map[string]string{"test": "ordering"},
+		}
+		clusterID, err := s.clusterDatastore.AddCluster(ctx, cluster)
+		s.Require().NoError(err)
+		s.Require().NotEmpty(clusterID)
+		clusterIDs[i] = clusterID
+	}
+
+	// Call SearchRawClusters multiple times and verify consistent ordering
+	const numIterations = 10
+	var firstResults []*storage.Cluster
+
+	for i := 0; i < numIterations; i++ {
+		results, err := s.clusterDatastore.SearchRawClusters(ctx, pkgSearch.EmptyQuery())
+		s.Require().NoError(err)
+		s.Require().NotEmpty(results)
+
+		if i == 0 {
+			firstResults = results
+		} else {
+			// Verify that the order is consistent across calls
+			s.Require().Equal(len(firstResults), len(results), "Number of results should be consistent")
+
+			for j, cluster := range results {
+				s.Require().Equal(firstResults[j].GetId(), cluster.GetId(),
+					"Cluster at position %d should be consistent across calls (iteration %d)", j, i+1)
+				s.Require().Equal(firstResults[j].GetName(), cluster.GetName(),
+					"Cluster name at position %d should be consistent across calls (iteration %d)", j, i+1)
+			}
+		}
+	}
+
+	// Also test with a specific query to ensure consistency with filtered results
+	query := pkgSearch.NewQueryBuilder().AddMapQuery(pkgSearch.ClusterLabel, "test", "ordering").ProtoQuery()
+	var firstFilteredResults []*storage.Cluster
+
+	for i := 0; i < numIterations; i++ {
+		results, err := s.clusterDatastore.SearchRawClusters(ctx, query)
+		s.Require().NoError(err)
+		s.Require().Len(results, len(clusterNames), "Should return all test clusters")
+
+		if i == 0 {
+			firstFilteredResults = results
+		} else {
+			s.Require().Equal(len(firstFilteredResults), len(results), "Number of filtered results should be consistent")
+
+			for j, cluster := range results {
+				s.Require().Equal(firstFilteredResults[j].GetId(), cluster.GetId(),
+					"Filtered cluster at position %d should be consistent across calls (iteration %d)", j, i+1)
+				s.Require().Equal(firstFilteredResults[j].GetName(), cluster.GetName(),
+					"Filtered cluster name at position %d should be consistent across calls (iteration %d)", j, i+1)
+			}
+		}
+	}
+}
+
 func (s *ClusterPostgresDataStoreTestSuite) TestSearchWithPostgres() {
 	ctx := sac.WithAllAccess(context.Background())
 
@@ -1024,11 +1098,12 @@ func (s *ClusterPostgresDataStoreTestSuite) TestSearchWithPostgres() {
 	s.NoError(s.nsDatastore.UpdateNamespace(ctx, ns1C2))
 
 	for _, tc := range []struct {
-		desc        string
-		ctx         context.Context
-		query       *v1.Query
-		expectedIDs []string
-		queryNs     bool
+		desc          string
+		ctx           context.Context
+		query         *v1.Query
+		expectedIDs   []string
+		queryNs       bool
+		expectedError string
 	}{
 		{
 			desc:  "Search clusters with empty query",
@@ -1036,6 +1111,21 @@ func (s *ClusterPostgresDataStoreTestSuite) TestSearchWithPostgres() {
 			query: pkgSearch.EmptyQuery(),
 
 			expectedIDs: []string{c1ID, c2ID},
+		},
+		{
+			desc:  "Search clusters sorted by priority",
+			ctx:   ctx,
+			query: pkgSearch.NewQueryBuilder().WithPagination(pkgSearch.NewPagination().AddSortOption(pkgSearch.NewSortOption(pkgSearch.ClusterPriority))).ProtoQuery(),
+
+			expectedIDs: []string{c1ID, c2ID},
+		},
+		{
+			desc:  "Search clusters sorted by priority and name",
+			ctx:   ctx,
+			query: pkgSearch.NewQueryBuilder().WithPagination(pkgSearch.NewPagination().AddSortOption(pkgSearch.NewSortOption(pkgSearch.ClusterPriority)).AddSortOption(pkgSearch.NewSortOption(pkgSearch.Cluster))).ProtoQuery(),
+
+			expectedIDs:   []string{},
+			expectedError: "query field Cluster Risk Priority not supported with other sort options",
 		},
 		{
 			desc:  "Search clusters with cluster query",
@@ -1094,21 +1184,21 @@ func (s *ClusterPostgresDataStoreTestSuite) TestSearchWithPostgres() {
 		},
 		{
 			desc:  "Search clusters with namespace scope",
-			ctx:   scoped.Context(ctx, scoped.Scope{IDs: []string{ns1C1.Id}, Level: v1.SearchCategory_NAMESPACES}),
+			ctx:   scoped.Context(ctx, scoped.Scope{IDs: []string{ns1C1.GetId()}, Level: v1.SearchCategory_NAMESPACES}),
 			query: pkgSearch.EmptyQuery(),
 
 			expectedIDs: []string{c1ID},
 		},
 		{
 			desc:  "Search clusters with namespace scope and in-scope cluster query",
-			ctx:   scoped.Context(ctx, scoped.Scope{IDs: []string{ns1C1.Id}, Level: v1.SearchCategory_NAMESPACES}),
+			ctx:   scoped.Context(ctx, scoped.Scope{IDs: []string{ns1C1.GetId()}, Level: v1.SearchCategory_NAMESPACES}),
 			query: pkgSearch.NewQueryBuilder().AddMapQuery(pkgSearch.ClusterLabel, "env", "prod").ProtoQuery(),
 
 			expectedIDs: []string{c1ID},
 		},
 		{
 			desc:  "Search clusters with namespace scope and out-of-scope cluster query",
-			ctx:   scoped.Context(ctx, scoped.Scope{IDs: []string{ns1C1.Id}, Level: v1.SearchCategory_NAMESPACES}),
+			ctx:   scoped.Context(ctx, scoped.Scope{IDs: []string{ns1C1.GetId()}, Level: v1.SearchCategory_NAMESPACES}),
 			query: pkgSearch.NewQueryBuilder().AddMapQuery(pkgSearch.ClusterLabel, "env", "test").ProtoQuery(),
 
 			expectedIDs: []string{},
@@ -1119,14 +1209,14 @@ func (s *ClusterPostgresDataStoreTestSuite) TestSearchWithPostgres() {
 			ctx:   ctx,
 			query: pkgSearch.EmptyQuery(),
 
-			expectedIDs: []string{ns1C1.Id, ns2C1.Id, ns1C2.Id},
+			expectedIDs: []string{ns1C1.GetId(), ns2C1.GetId(), ns1C2.GetId()},
 			queryNs:     true,
 		},
 		{
 			desc:        "Search namespaces with cluster query",
 			ctx:         ctx,
 			query:       pkgSearch.NewQueryBuilder().AddMapQuery(pkgSearch.ClusterLabel, "env", "test").ProtoQuery(),
-			expectedIDs: []string{ns1C2.Id},
+			expectedIDs: []string{ns1C2.GetId()},
 			queryNs:     true,
 		},
 		{
@@ -1134,7 +1224,7 @@ func (s *ClusterPostgresDataStoreTestSuite) TestSearchWithPostgres() {
 			ctx:   ctx,
 			query: pkgSearch.NewQueryBuilder().AddExactMatches(pkgSearch.Namespace, "n1").AddMapQuery(pkgSearch.ClusterLabel, "team", "team").ProtoQuery(),
 
-			expectedIDs: []string{ns1C1.Id, ns1C2.Id},
+			expectedIDs: []string{ns1C1.GetId(), ns1C2.GetId()},
 			queryNs:     true,
 		},
 		{
@@ -1147,23 +1237,23 @@ func (s *ClusterPostgresDataStoreTestSuite) TestSearchWithPostgres() {
 		},
 		{
 			desc:  "Search namespace with namespace scope",
-			ctx:   scoped.Context(ctx, scoped.Scope{IDs: []string{ns1C1.Id}, Level: v1.SearchCategory_NAMESPACES}),
+			ctx:   scoped.Context(ctx, scoped.Scope{IDs: []string{ns1C1.GetId()}, Level: v1.SearchCategory_NAMESPACES}),
 			query: pkgSearch.EmptyQuery(),
 
-			expectedIDs: []string{ns1C1.Id},
+			expectedIDs: []string{ns1C1.GetId()},
 			queryNs:     true,
 		},
 		{
 			desc:  "Search namespace with namespace scope and in-scope cluster query",
-			ctx:   scoped.Context(ctx, scoped.Scope{IDs: []string{ns1C1.Id}, Level: v1.SearchCategory_NAMESPACES}),
+			ctx:   scoped.Context(ctx, scoped.Scope{IDs: []string{ns1C1.GetId()}, Level: v1.SearchCategory_NAMESPACES}),
 			query: pkgSearch.NewQueryBuilder().AddMapQuery(pkgSearch.ClusterLabel, "env", "prod").ProtoQuery(),
 
-			expectedIDs: []string{ns1C1.Id},
+			expectedIDs: []string{ns1C1.GetId()},
 			queryNs:     true,
 		},
 		{
 			desc:  "Search namespace with namespace scope and out-of-scope cluster query",
-			ctx:   scoped.Context(ctx, scoped.Scope{IDs: []string{ns1C1.Id}, Level: v1.SearchCategory_NAMESPACES}),
+			ctx:   scoped.Context(ctx, scoped.Scope{IDs: []string{ns1C1.GetId()}, Level: v1.SearchCategory_NAMESPACES}),
 			query: pkgSearch.NewQueryBuilder().AddMapQuery(pkgSearch.ClusterLabel, "env", "test").ProtoQuery(),
 
 			expectedIDs: []string{},
@@ -1171,15 +1261,15 @@ func (s *ClusterPostgresDataStoreTestSuite) TestSearchWithPostgres() {
 		},
 		{
 			desc:  "Search namespace with namespace scope and in-scope namespace query",
-			ctx:   scoped.Context(ctx, scoped.Scope{IDs: []string{ns1C1.Id}, Level: v1.SearchCategory_NAMESPACES}),
+			ctx:   scoped.Context(ctx, scoped.Scope{IDs: []string{ns1C1.GetId()}, Level: v1.SearchCategory_NAMESPACES}),
 			query: pkgSearch.NewQueryBuilder().AddExactMatches(pkgSearch.Namespace, "n1").ProtoQuery(),
 
-			expectedIDs: []string{ns1C1.Id},
+			expectedIDs: []string{ns1C1.GetId()},
 			queryNs:     true,
 		},
 		{
 			desc:  "Search namespace with namespace scope and out-of-scope namespace query",
-			ctx:   scoped.Context(ctx, scoped.Scope{IDs: []string{ns1C1.Id}, Level: v1.SearchCategory_NAMESPACES}),
+			ctx:   scoped.Context(ctx, scoped.Scope{IDs: []string{ns1C1.GetId()}, Level: v1.SearchCategory_NAMESPACES}),
 			query: pkgSearch.NewQueryBuilder().AddExactMatches(pkgSearch.Namespace, "n2").ProtoQuery(),
 
 			expectedIDs: []string{},
@@ -1190,7 +1280,7 @@ func (s *ClusterPostgresDataStoreTestSuite) TestSearchWithPostgres() {
 			ctx:   scoped.Context(ctx, scoped.Scope{IDs: []string{c1ID}, Level: v1.SearchCategory_CLUSTERS}),
 			query: pkgSearch.EmptyQuery(),
 
-			expectedIDs: []string{ns1C1.Id, ns2C1.Id},
+			expectedIDs: []string{ns1C1.GetId(), ns2C1.GetId()},
 			queryNs:     true,
 		},
 		{
@@ -1198,7 +1288,7 @@ func (s *ClusterPostgresDataStoreTestSuite) TestSearchWithPostgres() {
 			ctx:   scoped.Context(ctx, scoped.Scope{IDs: []string{c1ID}, Level: v1.SearchCategory_CLUSTERS}),
 			query: pkgSearch.NewQueryBuilder().AddMapQuery(pkgSearch.ClusterLabel, "env", "prod").ProtoQuery(),
 
-			expectedIDs: []string{ns1C1.Id, ns2C1.Id},
+			expectedIDs: []string{ns1C1.GetId(), ns2C1.GetId()},
 			queryNs:     true,
 		},
 		{
@@ -1213,7 +1303,7 @@ func (s *ClusterPostgresDataStoreTestSuite) TestSearchWithPostgres() {
 			desc: "Search namespaces with cluster+namespace scope",
 			ctx: scoped.Context(ctx,
 				scoped.Scope{
-					IDs:   []string{ns1C1.Id},
+					IDs:   []string{ns1C1.GetId()},
 					Level: v1.SearchCategory_NAMESPACES,
 					Parent: &scoped.Scope{
 						IDs:   []string{c1ID},
@@ -1223,14 +1313,14 @@ func (s *ClusterPostgresDataStoreTestSuite) TestSearchWithPostgres() {
 			),
 			query: pkgSearch.NewQueryBuilder().AddMapQuery(pkgSearch.ClusterLabel, "env", "prod").ProtoQuery(),
 
-			expectedIDs: []string{ns1C1.Id},
+			expectedIDs: []string{ns1C1.GetId()},
 			queryNs:     true,
 		},
 		{
 			desc: "Search namespaces with cluster+namespace scope and out-of-scope cluster query",
 			ctx: scoped.Context(ctx,
 				scoped.Scope{
-					IDs:   []string{ns1C1.Id},
+					IDs:   []string{ns1C1.GetId()},
 					Level: v1.SearchCategory_NAMESPACES,
 					Parent: &scoped.Scope{
 						IDs:   []string{c1ID},
@@ -1252,7 +1342,11 @@ func (s *ClusterPostgresDataStoreTestSuite) TestSearchWithPostgres() {
 			} else {
 				actual, err = s.clusterDatastore.Search(tc.ctx, tc.query)
 			}
-			assert.NoError(t, err)
+			if tc.expectedError == "" {
+				assert.NoError(t, err)
+			} else {
+				assert.EqualError(t, err, tc.expectedError)
+			}
 			assert.Len(t, actual, len(tc.expectedIDs))
 			actualIDs := pkgSearch.ResultsToIDs(actual)
 			assert.ElementsMatch(t, tc.expectedIDs, actualIDs)

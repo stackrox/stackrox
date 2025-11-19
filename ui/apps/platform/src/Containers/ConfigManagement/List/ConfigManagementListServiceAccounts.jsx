@@ -1,14 +1,13 @@
-import React from 'react';
-import { useLocation } from 'react-router-dom';
+import { useLocation } from 'react-router-dom-v5-compat';
 import pluralize from 'pluralize';
 
 import {
-    defaultHeaderClassName,
     defaultColumnClassName,
+    defaultHeaderClassName,
     nonSortableHeaderClassName,
 } from 'Components/Table';
 import TableCellLink from 'Components/TableCellLink';
-import { entityListPropTypes, entityListDefaultprops } from 'constants/entityPageProps';
+import { entityListDefaultprops, entityListPropTypes } from 'constants/entityPageProps';
 import { serviceAccountSortFields } from 'constants/sortFields';
 import useWorkflowMatch from 'hooks/useWorkflowMatch';
 import { SERVICE_ACCOUNTS_QUERY } from 'queries/serviceAccount';

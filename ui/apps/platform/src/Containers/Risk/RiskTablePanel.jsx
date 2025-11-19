@@ -1,26 +1,26 @@
-import React, { useContext, useState, useCallback } from 'react';
+import { useCallback, useContext, useState } from 'react';
 import PropTypes from 'prop-types';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom-v5-compat';
 import useDeepCompareEffect from 'use-deep-compare-effect';
 import { Bullseye } from '@patternfly/react-core';
 import { ExclamationTriangleIcon } from '@patternfly/react-icons';
 
 import EmptyStateTemplate from 'Components/EmptyStateTemplate/EmptyStateTemplate';
 import TableHeader from 'Components/TableHeader';
-import { PanelNew, PanelBody, PanelHead, PanelHeadEnd } from 'Components/Panel';
+import { PanelBody, PanelHead, PanelHeadEnd, PanelNew } from 'Components/Panel';
 import TablePagination from 'Components/TablePagination';
 import { DEFAULT_PAGE_SIZE } from 'Components/Table';
-import { searchParams, sortParams, pagingParams } from 'constants/searchParams';
+import { pagingParams, searchParams, sortParams } from 'constants/searchParams';
 import workflowStateContext from 'Containers/workflowStateContext';
 import {
-    fetchDeploymentsWithProcessInfoLegacy as fetchDeploymentsWithProcessInfo,
     fetchDeploymentsCountLegacy,
+    fetchDeploymentsWithProcessInfoLegacy as fetchDeploymentsWithProcessInfo,
 } from 'services/DeploymentsService';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 import {
-    convertToRestSearch,
     convertSortToGraphQLFormat,
     convertSortToRestFormat,
+    convertToRestSearch,
 } from 'utils/searchUtils';
 import RiskTable from './RiskTable';
 

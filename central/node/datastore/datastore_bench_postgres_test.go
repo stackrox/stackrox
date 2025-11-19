@@ -6,14 +6,13 @@ import (
 	"context"
 	"testing"
 
-	"github.com/stackrox/rox/central/node/datastore/search"
 	pgStore "github.com/stackrox/rox/central/node/datastore/store/postgres"
 	"github.com/stackrox/rox/central/ranking"
 	mockRisks "github.com/stackrox/rox/central/risk/datastore/mocks"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/nodes/converter"
-	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/uuid"
@@ -25,23 +24,12 @@ func BenchmarkGetManyNodes(b *testing.B) {
 
 	ctx := sac.WithAllAccess(context.Background())
 
-	source := pgtest.GetConnectionString(b)
-	config, err := postgres.ParseConfig(source)
-	require.NoError(b, err)
+	pool := pgtest.ForT(b)
+	defer pool.Close()
 
-	pool, err := postgres.New(ctx, config)
-	require.NoError(b, err)
-	gormDB := pgtest.OpenGormDB(b, source)
-	defer pgtest.CloseGormDB(b, gormDB)
-
-	db := pool
-	defer db.Close()
-
-	pgStore.Destroy(ctx, db)
 	mockRisk := mockRisks.NewMockDataStore(gomock.NewController(b))
-	store := pgStore.CreateTableAndNewStore(ctx, b, db, gormDB, false)
-	searcher := search.NewV2(store)
-	datastore := NewWithPostgres(store, searcher, mockRisk, ranking.NewRanker(), ranking.NewRanker())
+	store := pgStore.New(pool, false, concurrency.NewKeyFence())
+	datastore := NewWithPostgres(store, mockRisk, ranking.NewRanker(), ranking.NewRanker())
 
 	ids := make([]string, 0, 100)
 	nodes := make([]*storage.Node, 0, 100)
@@ -58,6 +46,8 @@ func BenchmarkGetManyNodes(b *testing.B) {
 	for _, node := range nodes {
 		require.NoError(b, datastore.UpsertNode(ctx, node))
 	}
+
+	var err error
 
 	b.Run("GetNodesBatch", func(b *testing.B) {
 		for i := 0; i < b.N; i++ {

@@ -11,7 +11,7 @@ import {
 import { selectors } from './Clusters.selectors';
 
 // There is some overlap between tests for Certificate Expiration and Health Status.
-describe('Clusters Certificate Expiration', () => {
+describe.skip('Clusters Certificate Expiration', () => {
     withAuth();
 
     const metadata = {

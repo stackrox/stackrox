@@ -1,8 +1,8 @@
-import React, { ReactElement } from 'react';
+import type { ReactElement } from 'react';
 import { Alert, Card, CardBody } from '@patternfly/react-core';
 import { Table, Tbody, Th, Tr } from '@patternfly/react-table';
 
-import { Cluster } from 'types/cluster.proto';
+import type { Cluster } from 'types/cluster.proto';
 
 import { getClusterBecauseOfStatusCounts, getClusterStatusCounts } from './ClustersHealth.utils';
 import ClustersHealthCardHeader from './ClustersHealthCardHeader';
@@ -11,12 +11,12 @@ import {
     TdHealthy,
     TdTotal,
     TdUnavailable,
-    TdUninitialized,
     TdUnhealthy,
+    TdUninitialized,
     TheadClustersHealth,
 } from './ClustersHealthTable';
 
-export type ClusterStatusTableProps = {
+export type ClusterStatusCardProps = {
     clusters: Cluster[];
     isFetchingInitialRequest: boolean;
     errorMessageFetching: string;
@@ -26,7 +26,7 @@ function ClusterStatusCard({
     clusters,
     isFetchingInitialRequest,
     errorMessageFetching,
-}: ClusterStatusTableProps): ReactElement {
+}: ClusterStatusCardProps): ReactElement {
     const countsOverall =
         !isFetchingInitialRequest && !errorMessageFetching
             ? getClusterStatusCounts(clusters)

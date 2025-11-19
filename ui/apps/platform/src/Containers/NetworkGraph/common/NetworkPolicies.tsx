@@ -1,4 +1,5 @@
-import React, { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import type { ReactElement, ReactNode } from 'react';
 import {
     Alert,
     AlertGroup,
@@ -6,12 +7,12 @@ import {
     Button,
     Divider,
     EmptyState,
+    EmptyStateHeader,
+    SelectOption,
     Spinner,
     Stack,
     StackItem,
-    EmptyStateHeader,
 } from '@patternfly/react-core';
-import { SelectOption } from '@patternfly/react-core/deprecated';
 
 import download from 'utils/download';
 import CodeViewer from 'Components/CodeViewer';
@@ -31,7 +32,7 @@ type NetworkPolicyYAML = {
 
 const allNetworkPoliciesId = 'All network policies';
 
-function NetworkPolicies({ entityName, policyIds }: NetworkPoliciesProps): React.ReactElement {
+function NetworkPolicies({ entityName, policyIds }: NetworkPoliciesProps): ReactElement {
     const { networkPolicies, networkPolicyErrors, isLoading, error } =
         useFetchNetworkPolicies(policyIds);
 
@@ -43,7 +44,7 @@ function NetworkPolicies({ entityName, policyIds }: NetworkPoliciesProps): React
         [networkPolicies]
     );
 
-    const [selectedNetworkPolicy, setSelectedNetworkPolicy] = React.useState<
+    const [selectedNetworkPolicy, setSelectedNetworkPolicy] = useState<
         NetworkPolicyYAML | undefined
     >(allNetworkPoliciesYAML);
 
@@ -93,7 +94,7 @@ function NetworkPolicies({ entityName, policyIds }: NetworkPoliciesProps): React
         );
     }
 
-    let policyErrorBanner: React.ReactNode = null;
+    let policyErrorBanner: ReactNode = null;
 
     if (networkPolicyErrors.length > 0) {
         policyErrorBanner = (
@@ -136,7 +137,7 @@ function NetworkPolicies({ entityName, policyIds }: NetworkPoliciesProps): React
                         handleSelect={handleSelectedNetworkPolicy}
                         placeholderText="Select a network policy"
                     >
-                        <SelectOption value={allNetworkPoliciesId}>
+                        <SelectOption key={allNetworkPoliciesId} value={allNetworkPoliciesId}>
                             All network policies
                         </SelectOption>
                         <Divider component="li" />

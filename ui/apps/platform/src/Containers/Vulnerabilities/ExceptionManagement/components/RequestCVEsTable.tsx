@@ -1,4 +1,3 @@
-import React from 'react';
 import {
     Flex,
     PageSection,
@@ -11,14 +10,14 @@ import {
 } from '@patternfly/react-core';
 import { ExpandableRowContent, Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 import { gql, useQuery } from '@apollo/client';
-import { Link } from 'react-router-dom';
+import { Link } from 'react-router-dom-v5-compat';
 import pluralize from 'pluralize';
 
-import { vulnerabilitiesWorkloadCvesPath } from 'routePaths';
-import { SetResult } from 'hooks/useSet';
+import { vulnerabilitiesAllImagesPath } from 'routePaths';
+import type { SetResult } from 'hooks/useSet';
 import useURLPagination from 'hooks/useURLPagination';
 import useURLSort from 'hooks/useURLSort';
-import {
+import type {
     VulnerabilityExceptionScope,
     VulnerabilityState,
 } from 'services/VulnerabilityExceptionService';
@@ -33,16 +32,14 @@ import {
     aggregateByCreatedTime,
     aggregateByDistinctCount,
     getScoreVersionsForTopCVSS,
-    sortCveDistroList,
-    getWorkloadCveOverviewSortFields,
-    getWorkloadCveOverviewDefaultSortOption,
     getSeveritySortOptions,
+    getWorkloadCveOverviewDefaultSortOption,
+    getWorkloadCveOverviewSortFields,
+    sortCveDistroList,
 } from '../../utils/sortUtils';
-import {
-    CVEListQueryResult,
-    cveListQuery,
-} from '../../WorkloadCves/Tables/WorkloadCVEOverviewTable';
-import { VulnerabilitySeverityLabel } from '../../types';
+import { cveListQuery } from '../../WorkloadCves/Tables/WorkloadCVEOverviewTable';
+import type { CVEListQueryResult } from '../../WorkloadCves/Tables/WorkloadCVEOverviewTable';
+import type { VulnerabilitySeverityLabel } from '../../types';
 import { DEFAULT_VM_PAGE_SIZE } from '../../constants';
 import { getWorkloadEntityPagePath } from '../../utils/searchUtils';
 import SeverityCountLabels from '../../components/SeverityCountLabels';
@@ -200,7 +197,7 @@ function RequestCVEsTable({
                                     },
                                 };
 
-                                const cveURL = `${vulnerabilitiesWorkloadCvesPath}/${getWorkloadEntityPagePath(
+                                const cveURL = `${vulnerabilitiesAllImagesPath}/${getWorkloadEntityPagePath(
                                     'CVE',
                                     cve,
                                     vulnerabilityState,

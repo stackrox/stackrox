@@ -2,6 +2,7 @@ package images
 
 import (
 	"github.com/stackrox/rox/central/globaldb"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/sync"
@@ -16,6 +17,12 @@ var (
 // NewImageView returns the interface ImageView
 // that provides methods for searching images stored in the database.
 func NewImageView(db postgres.DB) ImageView {
+	if features.FlattenImageData.Enabled() {
+		return &imageCoreViewImpl{
+			db:     db,
+			schema: schema.ImagesV2Schema,
+		}
+	}
 	return &imageCoreViewImpl{
 		db:     db,
 		schema: schema.ImagesSchema,

@@ -5,7 +5,6 @@ import (
 
 	clusterDS "github.com/stackrox/rox/central/cluster/datastore"
 	notifierDS "github.com/stackrox/rox/central/notifier/datastore"
-	"github.com/stackrox/rox/central/policy/search"
 	"github.com/stackrox/rox/central/policy/store"
 	categoriesDataStore "github.com/stackrox/rox/central/policycategory/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -36,13 +35,12 @@ type DataStore interface {
 }
 
 // New returns a new instance of DataStore using the input store, and searcher.
-func New(storage store.Store, searcher search.Searcher,
+func New(storage store.Store,
 	clusterDatastore clusterDS.DataStore,
 	notifierDatastore notifierDS.DataStore,
 	categoriesDatastore categoriesDataStore.DataStore) DataStore {
 	ds := &datastoreImpl{
 		storage:             storage,
-		searcher:            searcher,
 		clusterDatastore:    clusterDatastore,
 		notifierDatastore:   notifierDatastore,
 		categoriesDatastore: categoriesDatastore,
@@ -52,11 +50,10 @@ func New(storage store.Store, searcher search.Searcher,
 
 // newWithoutDefaults should be used only for testing purposes.
 func newWithoutDefaults(storage store.Store,
-	searcher search.Searcher, clusterDatastore clusterDS.DataStore, notifierDatastore notifierDS.DataStore,
+	clusterDatastore clusterDS.DataStore, notifierDatastore notifierDS.DataStore,
 	categoriesDatastore categoriesDataStore.DataStore) DataStore {
 	return &datastoreImpl{
 		storage:             storage,
-		searcher:            searcher,
 		clusterDatastore:    clusterDatastore,
 		notifierDatastore:   notifierDatastore,
 		categoriesDatastore: categoriesDatastore,

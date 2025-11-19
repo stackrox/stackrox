@@ -1,5 +1,5 @@
-import React, { ReactElement, useState } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
+import { useState } from 'react';
+import type { ReactElement } from 'react';
 import {
     Alert,
     Button,
@@ -18,6 +18,7 @@ import {
     GridItem,
     HelperText,
     HelperTextItem,
+    SelectOption,
     Split,
     SplitItem,
     Switch,
@@ -26,24 +27,25 @@ import {
     TextInput,
     Title,
 } from '@patternfly/react-core';
-import { SelectOption } from '@patternfly/react-core/deprecated';
 import { useFormik } from 'formik';
 import * as yup from 'yup';
 
 import ColorPicker from 'Components/ColorPicker';
 import ClusterLabelsTable from 'Containers/Clusters/ClusterLabelsTable';
-import { PublicConfigAction } from 'reducers/publicConfig';
 import { saveSystemConfig } from 'services/SystemConfigService';
-import { PlatformComponentsConfig, PublicConfig, SystemConfig } from 'types/config.proto';
+import type { PlatformComponentsConfig, PublicConfig, SystemConfig } from 'types/config.proto';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
-import { selectors } from 'reducers';
 import { initializeAnalytics } from 'init/initializeAnalytics';
+import usePublicConfig from 'hooks/usePublicConfig';
+import useTelemetryConfig from 'hooks/useTelemetryConfig';
 
 import FormSelect from './FormSelect';
 import { convertBetweenBytesAndMB } from '../SystemConfig.utils';
-import { getPlatformComponentsConfigRules, PlatformComponentsConfigRules } from '../configUtils';
-import { Values } from './formTypes';
+import { getPlatformComponentsConfigRules } from '../configUtils';
+import type { PlatformComponentsConfigRules } from '../configUtils';
+import type { Values } from './formTypes';
 import PlatformComponentsConfigForm from './PlatformComponentsConfigForm';
+import { PrometheusMetricsForm } from '../Details/components/PrometheusMetricsCard';
 
 function getCompletePublicConfig(systemConfig: SystemConfig): PublicConfig {
     return {
@@ -75,7 +77,6 @@ export type SystemConfigFormProps = {
     systemConfig: SystemConfig;
     setSystemConfig: (systemConfig: SystemConfig) => void;
     setIsNotEditing: () => void;
-    isCustomizingPlatformComponentsEnabled: boolean;
     defaultRedHatLayeredProductsRule: string;
 };
 
@@ -110,14 +111,11 @@ const SystemConfigForm = ({
     systemConfig,
     setSystemConfig,
     setIsNotEditing,
-    isCustomizingPlatformComponentsEnabled,
     defaultRedHatLayeredProductsRule,
 }: SystemConfigFormProps): ReactElement => {
-    const dispatch = useDispatch();
     const [errorMessage, setErrorMessage] = useState<string | null>(null);
-    const isTelemetryConfigured = useSelector(selectors.getIsTelemetryConfigured);
-    const telemetryConfig = useSelector(selectors.getTelemetryConfig);
-
+    const { isTelemetryConfigured, telemetryConfig } = useTelemetryConfig();
+    const { refetchPublicConfig } = usePublicConfig();
     const { privateConfig } = systemConfig;
     const publicConfig = getCompletePublicConfig(systemConfig);
     const platformComponentConfigRules = getPlatformComponentsConfigRules(
@@ -146,10 +144,7 @@ const SystemConfigForm = ({
                 (rule) => rule.name === '' || rule.namespaceRule.regex === ''
             );
 
-            if (
-                isCustomizingPlatformComponentsEnabled &&
-                (isRedHatLayeredProductsRuleEmpty || hasEmptyCustomRule)
-            ) {
+            if (isRedHatLayeredProductsRuleEmpty || hasEmptyCustomRule) {
                 setSubmitting(false);
                 if (isRedHatLayeredProductsRuleEmpty) {
                     setErrorMessage('The Red Hat layered products rule cannot be empty.');
@@ -161,9 +156,7 @@ const SystemConfigForm = ({
                 return;
             }
 
-            const platformComponentConfig = isCustomizingPlatformComponentsEnabled
-                ? convertConfigRulesToComponentConfig(rules)
-                : systemConfig.platformComponentConfig;
+            const platformComponentConfig = convertConfigRulesToComponentConfig(rules);
 
             // Payload for privateConfig allows strings as number values.
             saveSystemConfig({
@@ -172,20 +165,13 @@ const SystemConfigForm = ({
                 platformComponentConfig,
             })
                 .then((data) => {
-                    // Simulate fetchPublicConfig response to update Redux state.
-                    const action: PublicConfigAction = {
-                        type: 'config/FETCH_PUBLIC_CONFIG_SUCCESS',
-                        response: data.publicConfig || {
-                            footer: null,
-                            header: null,
-                            loginNotice: null,
-                            telemetry: null,
-                        },
-                    };
+                    // Refetch public config to update the Context state
+                    refetchPublicConfig();
 
                     const isTelemetryEnabledCurr = data.publicConfig?.telemetry?.enabled;
                     const isTelemetryEnabledPrev = publicConfig.telemetry?.enabled;
-                    if (isTelemetryEnabledCurr && isTelemetryConfigured) {
+
+                    if (isTelemetryEnabledCurr && isTelemetryConfigured && telemetryConfig) {
                         initializeAnalytics(
                             telemetryConfig.storageKeyV1,
                             telemetryConfig.endpoint,
@@ -193,7 +179,6 @@ const SystemConfigForm = ({
                         );
                     }
 
-                    dispatch(action);
                     setSystemConfig(data);
                     setErrorMessage(null);
                     setSubmitting(false);
@@ -248,14 +233,12 @@ const SystemConfigForm = ({
                     </Alert>
                 )}
                 <Form>
-                    {isCustomizingPlatformComponentsEnabled && (
-                        <PlatformComponentsConfigForm
-                            values={values}
-                            onChange={onChange}
-                            onCustomChange={onCustomChange}
-                            defaultRedHatLayeredProductsRule={defaultRedHatLayeredProductsRule}
-                        />
-                    )}
+                    <PlatformComponentsConfigForm
+                        values={values}
+                        onChange={onChange}
+                        onCustomChange={onCustomChange}
+                        defaultRedHatLayeredProductsRule={defaultRedHatLayeredProductsRule}
+                    />
                     <Title headingLevel="h2">Private data retention configuration</Title>
                     <Grid hasGutter md={6}>
                         <GridItem>
@@ -360,7 +343,7 @@ const SystemConfigForm = ({
                         </GridItem>
                         <GridItem>
                             <FormGroup
-                                label="Images no longer deployed"
+                                label="Images no longer deployed or watched"
                                 isRequired
                                 fieldId="privateConfig.imageRetentionDurationDays"
                             >
@@ -542,6 +525,30 @@ const SystemConfigForm = ({
                             </FormGroup>
                         </GridItem>
                     </Grid>
+                    <Title headingLevel="h2">Prometheus metrics configuration</Title>
+                    <Grid hasGutter>
+                        <PrometheusMetricsForm
+                            pcfg={values?.privateConfig}
+                            category="imageVulnerabilities"
+                            title="Image vulnerabilities"
+                            onChange={onChange}
+                            onCustomChange={onCustomChange}
+                        />
+                        <PrometheusMetricsForm
+                            pcfg={values?.privateConfig}
+                            category="nodeVulnerabilities"
+                            title="Node vulnerabilities"
+                            onChange={onChange}
+                            onCustomChange={onCustomChange}
+                        />
+                        <PrometheusMetricsForm
+                            pcfg={values?.privateConfig}
+                            category="policyViolations"
+                            title="Policy violations"
+                            onChange={onChange}
+                            onCustomChange={onCustomChange}
+                        />
+                    </Grid>
                     <Title headingLevel="h2">Public configuration</Title>
                     <Grid hasGutter>
                         <GridItem sm={12} md={6}>
@@ -624,9 +631,15 @@ const SystemConfigForm = ({
                                                         }
                                                         onChange={onCustomChange}
                                                     >
-                                                        <SelectOption key={0} value="SMALL" />
-                                                        <SelectOption key={1} value="MEDIUM" />
-                                                        <SelectOption key={2} value="LARGE" />
+                                                        <SelectOption key={0} value="SMALL">
+                                                            SMALL
+                                                        </SelectOption>
+                                                        <SelectOption key={1} value="MEDIUM">
+                                                            MEDIUM
+                                                        </SelectOption>
+                                                        <SelectOption key={2} value="LARGE">
+                                                            LARGE
+                                                        </SelectOption>
                                                     </FormSelect>
                                                 </FormGroup>
                                             </GridItem>
@@ -732,9 +745,15 @@ const SystemConfigForm = ({
                                                         }
                                                         onChange={onCustomChange}
                                                     >
-                                                        <SelectOption key={0} value="SMALL" />
-                                                        <SelectOption key={1} value="MEDIUM" />
-                                                        <SelectOption key={2} value="LARGE" />
+                                                        <SelectOption key={0} value="SMALL">
+                                                            SMALL
+                                                        </SelectOption>
+                                                        <SelectOption key={1} value="MEDIUM">
+                                                            MEDIUM
+                                                        </SelectOption>
+                                                        <SelectOption key={2} value="LARGE">
+                                                            LARGE
+                                                        </SelectOption>
                                                     </FormSelect>
                                                 </FormGroup>
                                             </GridItem>

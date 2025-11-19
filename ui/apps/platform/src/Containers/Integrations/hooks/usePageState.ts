@@ -1,4 +1,4 @@
-import { useLocation, useMatch } from 'react-router-dom';
+import { useLocation, useMatch } from 'react-router-dom-v5-compat';
 import {
     integrationCreatePath,
     integrationDetailsPath,
@@ -6,7 +6,7 @@ import {
     integrationsListPath,
     integrationsPath,
 } from 'routePaths';
-import { IntegrationSource, IntegrationType } from '../utils/integrationUtils';
+import type { IntegrationSource, IntegrationType } from '../utils/integrationUtils';
 
 type Params = {
     source: IntegrationSource;

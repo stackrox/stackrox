@@ -325,7 +325,7 @@ func (d *deploymentCheckCommand) printResults(alerts []*storage.Alert, ignoredOb
 func printRemarks(remarks []*v1.DeployDetectionRemark, out logger.Logger) {
 	out.PrintfLn("Additional remarks:")
 	for _, r := range remarks {
-		out.PrintfLn("Deployment: %s, Permission Level: %s, Applied Network Policies: %s", r.Name, r.PermissionLevel, strings.Join(r.AppliedNetworkPolicies, ", "))
+		out.PrintfLn("Deployment: %s, Permission Level: %s, Applied Network Policies: %s", r.GetName(), r.GetPermissionLevel(), strings.Join(r.GetAppliedNetworkPolicies(), ", "))
 	}
 }
 

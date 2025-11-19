@@ -116,6 +116,14 @@ func (suite *ResourceEventHandlerImplTestSuite) TestIDsAddedToSyncSet() {
 	suite.Empty(handler.missingInitialIDs)
 }
 
+func (suite *ResourceEventHandlerImplTestSuite) TestNilMessageDoesNotPanic() {
+	handler := suite.newHandlerImplWithContext(context.Background())
+	obj := randomID()
+	suite.dispatcher.EXPECT().ProcessEvent(obj, nil, central.ResourceAction_SYNC_RESOURCE).
+		Return(nil)
+	handler.OnAdd(obj, false)
+}
+
 func (suite *ResourceEventHandlerImplTestSuite) TestContextIsPassed() {
 	ctx := context.WithValue(context.Background(), ctxKeyTest, "abc")
 	handler := suite.newHandlerImplWithContext(ctx)

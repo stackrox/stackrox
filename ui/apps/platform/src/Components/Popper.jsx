@@ -1,8 +1,8 @@
-import React, { Component } from 'react';
+import { Component } from 'react';
 import PropTypes from 'prop-types';
 import onClickOutside from 'react-onclickoutside';
 
-import { Manager, Target, Popper } from 'react-popper';
+import { Manager, Popper, Target } from 'react-popper';
 
 class CustomPopper extends Component {
     static propTypes = {
@@ -79,4 +79,7 @@ const CustomPopperContainer = (props) => {
     );
 };
 
+// Encapsulate CustomPotter and CustomPopperContainer as implementation details,
+// especially since Popper appears in Find results.
+// eslint-disable-next-line limited/react-export-default
 export default CustomPopperContainer;

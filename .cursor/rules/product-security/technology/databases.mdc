@@ -1,0 +1,12 @@
+---
+description: Secure coding rules for Databases 🗄️
+globs:
+  - "**/database*"
+  - "**/*.sql"
+alwaysApply: false
+---
+
+- Encrypt communication and data at rest.
+- Enable auditing and separate test from production databases.
+- Use least privilege for application database access.
+- Store connection strings securely and encrypted.

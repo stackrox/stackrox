@@ -16,6 +16,9 @@ var (
 	CreateTableSensorUpgradeConfigsStmt = &postgres.CreateStmts{
 		GormModel: (*SensorUpgradeConfigs)(nil),
 		Children:  []*postgres.CreateStmts{},
+		PostStmts: []string{
+			"ALTER TABLE sensor_upgrade_configs REPLICA IDENTITY FULL",
+		},
 	}
 
 	// SensorUpgradeConfigsSchema is the go schema for table `sensor_upgrade_configs`.

@@ -1,29 +1,32 @@
-import React, { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
+import type { ReactElement } from 'react';
 import {
-    PageSection,
+    Alert,
+    AlertActionCloseButton,
+    AlertGroup,
     Bullseye,
-    Spinner,
-    Divider,
     Button,
+    Divider,
     Flex,
+    PageSection,
+    Spinner,
     Toolbar,
     ToolbarContent,
     ToolbarItem,
-    AlertGroup,
-    Alert,
-    AlertActionCloseButton,
 } from '@patternfly/react-core';
 
+import PageTitle from 'Components/PageTitle';
 import usePermissions from 'hooks/usePermissions';
-import useToasts, { Toast } from 'hooks/patternfly/useToasts';
+import useToasts from 'hooks/patternfly/useToasts';
+import type { Toast } from 'hooks/patternfly/useToasts';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
-import { PolicyCategory } from 'types/policy.proto';
+import type { PolicyCategory } from 'types/policy.proto';
 import { getPolicyCategories } from 'services/PolicyCategoriesService';
 import PolicyManagementHeader from 'Containers/PolicyManagement/PolicyManagementHeader';
 import PolicyCategoriesListSection from './PolicyCategoriesListSection';
 import CreatePolicyCategoryModal from './CreatePolicyCategoryModal';
 
-function PolicyCategoriesPage(): React.ReactElement {
+function PolicyCategoriesPage(): ReactElement {
     const { hasReadWriteAccess } = usePermissions();
     const hasWriteAccessForPolicy = hasReadWriteAccess('WorkflowAdministration');
 
@@ -84,6 +87,7 @@ function PolicyCategoriesPage(): React.ReactElement {
 
     return (
         <>
+            <PageTitle title="Policy management - Policy categories" />
             <PolicyManagementHeader currentTabTitle="Policy categories" />
             <Divider component="div" />
             <PageSection variant="light" className="pf-v5-u-py-0">

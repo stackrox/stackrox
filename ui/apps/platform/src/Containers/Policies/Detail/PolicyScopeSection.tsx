@@ -1,8 +1,8 @@
-import React from 'react';
-import { Title, Grid, GridItem, Card, CardBody, List, ListItem } from '@patternfly/react-core';
+import type { ReactElement } from 'react';
+import { Card, CardBody, Grid, GridItem, List, ListItem, Title } from '@patternfly/react-core';
 
 import useFetchClustersForPermissions from 'hooks/useFetchClustersForPermissions';
-import { PolicyScope, PolicyExclusion } from 'types/policy.proto';
+import type { PolicyExclusion, PolicyScope } from 'types/policy.proto';
 import Restriction from './Restriction';
 import ExcludedDeployment from './ExcludedDeployment';
 import { getExcludedDeployments, getExcludedImageNames } from '../policies.utils';
@@ -12,7 +12,7 @@ type PolicyScopeSectionProps = {
     exclusions: PolicyExclusion[];
 };
 
-function PolicyScopeSection({ scope, exclusions }: PolicyScopeSectionProps): React.ReactElement {
+function PolicyScopeSection({ scope, exclusions }: PolicyScopeSectionProps): ReactElement {
     const { clusters } = useFetchClustersForPermissions(['Deployment']);
 
     const excludedDeploymentScopes = getExcludedDeployments(exclusions);

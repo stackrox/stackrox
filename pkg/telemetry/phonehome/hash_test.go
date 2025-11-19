@@ -9,9 +9,9 @@ import (
 	"go.uber.org/mock/gomock"
 )
 
-func TestConfig_HashUserID(t *testing.T) {
-	cfg := &Config{
-		ClientID: "test-client",
+func Test_config_HashUserID(t *testing.T) {
+	cfg := &config{
+		clientID: "test-client",
 	}
 	h := cfg.HashUserID("test-user", "test-provider")
 	assert.Equal(t, hash("test-client:test-provider:test-user"), h)
@@ -21,9 +21,9 @@ func TestConfig_HashUserID(t *testing.T) {
 	assert.Equal(t, hash("unknown:test-provider:test-user"), h)
 }
 
-func TestConfig_HashUserAuthID(t *testing.T) {
-	cfg := &Config{
-		ClientID: "test-client",
+func Test_config_HashUserAuthID(t *testing.T) {
+	cfg := &config{
+		clientID: "test-client",
 	}
 	h := cfg.HashUserAuthID(nil)
 	assert.Equal(t, hash("test-client:unknown:unauthenticated"), h)
@@ -45,7 +45,7 @@ func TestConfig_HashUserAuthID(t *testing.T) {
 	assert.Equal(t, hash("test-client:test-provider:test-id"), h)
 }
 
-func TestConfig_HashAdminUserID(t *testing.T) {
+func Test_config_HashAdminUserID(t *testing.T) {
 	admin := "2a3e1829-8f84-40c1-a761-006f07a59666:4df1b98c-24ed-4073-a9ad-356aec6bb62d:admin"
 	assert.Equal(t, "+5GOIqkMuJMFDqJcMKvAGvbSRtCUjqdCB+UeU1hOqQA=", hash(admin))
 }

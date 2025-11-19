@@ -1,9 +1,9 @@
 import React, { useContext, useState } from 'react';
 import PropTypes from 'prop-types';
 import { gql } from '@apollo/client';
-import * as Icon from 'react-feather';
+import { Archive, Bell, BellOff, Plus, Zap } from 'react-feather';
 import { connect } from 'react-redux';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom-v5-compat';
 
 import {
     defaultHeaderClassName,
@@ -17,7 +17,6 @@ import VulnerabilityFixableIconText from 'Components/PatternFly/IconText/Vulnera
 import VulnerabilitySeverityIconText from 'Components/PatternFly/IconText/VulnerabilitySeverityIconText';
 import Menu from 'Components/Menu';
 import TableCellLink from 'Components/TableCellLink';
-import TableCountLinks from 'Components/workflow/TableCountLinks';
 import TopCvssLabel from 'Components/TopCvssLabel';
 import PanelButton from 'Components/PanelButton';
 import workflowStateContext from 'Containers/workflowStateContext';
@@ -49,6 +48,7 @@ import { entityCountNounOrdinaryCase } from '../../entitiesForVulnerabilityManag
 import { getVulnMgmtPathForEntitiesAndId } from '../../VulnMgmt.utils/entities';
 import WorkflowListPage from '../WorkflowListPage';
 import { getFilteredCVEColumns, parseCveNamesFromIds } from './ListCVEs.utils';
+import TableCountLinks from '../../TableCountLinks';
 
 export const defaultCveSort = [
     {
@@ -123,18 +123,6 @@ export function getCveTableColumns(workflowState, isFeatureFlagEnabled) {
             id: cveSortFields.FIXABLE,
             accessor: 'isFixable',
             sortField: cveSortFields.FIXABLE,
-            sortable: false,
-        },
-        {
-            Header: `Active`,
-            headerClassName: `w-1/10 ${nonSortableHeaderClassName}`,
-            className: `w-1/10 ${defaultColumnClassName}`,
-            Cell: ({ original }) => {
-                return original.activeState?.state || 'Undetermined';
-            },
-            id: cveSortFields.ACTIVE,
-            accessor: 'isActive',
-            sortField: cveSortFields.ACTIVE,
             sortable: false,
         },
         {
@@ -508,7 +496,7 @@ const VulnMgmtCves = ({
                           <RowActionButton
                               text="Add to policy"
                               onClick={addToPolicy(cve)}
-                              icon={<Icon.Plus className="my-1 h-4 w-4" />}
+                              icon={<Plus className="my-1 h-4 w-4" />}
                           />
                       )}
                       {hasWriteAccessForRiskAcceptance &&
@@ -517,7 +505,7 @@ const VulnMgmtCves = ({
                               <RowActionMenu
                                   className="h-full min-w-30"
                                   border="border-l-2 border-base-400"
-                                  icon={<Icon.BellOff className="h-4 w-4" />}
+                                  icon={<BellOff className="h-4 w-4" />}
                                   options={snoozeOptions(cve)}
                                   text="Defer and approve CVE"
                               />
@@ -529,7 +517,7 @@ const VulnMgmtCves = ({
                                   text="Reobserve CVE"
                                   border="border-l-2 border-base-400"
                                   onClick={unsuppressCves(cve)}
-                                  icon={<Icon.Bell className="my-1 h-4 w-4" />}
+                                  icon={<Bell className="my-1 h-4 w-4" />}
                               />
                           )}
                   </div>
@@ -542,7 +530,7 @@ const VulnMgmtCves = ({
         <>
             {hasWriteAccessForAddToPolicy && cveType === entityTypes.IMAGE_CVE && (
                 <PanelButton
-                    icon={<Icon.Plus className="h-4 w-4" />}
+                    icon={<Plus className="h-4 w-4" />}
                     className="btn-icon btn-tertiary"
                     onClick={addToPolicy()}
                     disabled={selectedCveIds.length === 0}
@@ -559,7 +547,7 @@ const VulnMgmtCves = ({
                         menuClassName="bg-base-100 min-w-28"
                         buttonClass="btn-icon btn-tertiary"
                         buttonText="Defer and approve"
-                        buttonIcon={<Icon.BellOff className="h-4 w-4 mr-2" />}
+                        buttonIcon={<BellOff className="h-4 w-4 mr-2" />}
                         options={snoozeOptions()}
                         disabled={selectedCveIds.length === 0}
                         tooltip="Defer and approve selected CVEs"
@@ -570,7 +558,7 @@ const VulnMgmtCves = ({
                 viewingSuppressed &&
                 shouldRenderGlobalSnoozeAction && (
                     <PanelButton
-                        icon={<Icon.Bell className="h-4 w-4" />}
+                        icon={<Bell className="h-4 w-4" />}
                         className="btn-icon btn-tertiary ml-2"
                         onClick={unsuppressCves()}
                         disabled={selectedCveIds.length === 0}
@@ -585,9 +573,9 @@ const VulnMgmtCves = ({
                 <PanelButton
                     icon={
                         viewingSuppressed ? (
-                            <Icon.Zap className="h-4 w-4" />
+                            <Zap className="h-4 w-4" />
                         ) : (
-                            <Icon.Archive className="h-4 w-4" />
+                            <Archive className="h-4 w-4" />
                         )
                     }
                     className="btn-icon btn-tertiary ml-2"

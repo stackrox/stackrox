@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import {
     Card,
     CardBody,
@@ -13,17 +13,17 @@ import {
     StackItem,
 } from '@patternfly/react-core';
 
-import { ContainerVolume } from 'types/deployment.proto';
+import type { ContainerVolume } from 'types/deployment.proto';
 
-type ContainerVolumeInfoProps = {
+type ContainerVolumesInfoProps = {
     volumes: ContainerVolume[];
 };
 
-function ContainerVolumesInfo({ volumes }: ContainerVolumeInfoProps) {
+function ContainerVolumesInfo({ volumes }: ContainerVolumesInfoProps) {
     const initialToggleValues = Array.from({ length: volumes.length }, () => true);
     const [volumeToggles, setVolumeToggles] = useState(initialToggleValues);
 
-    function setToggleAtIndex(i) {
+    function setToggleAtIndex(i: number) {
         const newToggles = [...volumeToggles];
         newToggles[i] = !newToggles[i];
 

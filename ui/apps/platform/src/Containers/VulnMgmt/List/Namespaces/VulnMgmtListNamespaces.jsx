@@ -3,7 +3,6 @@ import { gql } from '@apollo/client';
 
 import queryService from 'utils/queryService';
 import TableCellLink from 'Components/TableCellLink';
-import TableCountLink from 'Components/workflow/TableCountLink';
 import CVEStackedPill from 'Components/CVEStackedPill';
 import DateTimeField from 'Components/DateTimeField';
 import {
@@ -20,6 +19,7 @@ import { namespaceSortFields } from 'constants/sortFields';
 import { vulMgmtPolicyQuery } from '../../Entity/VulnMgmtPolicyQueryUtil';
 import { getVulnMgmtPathForEntitiesAndId } from '../../VulnMgmt.utils/entities';
 import WorkflowListPage from '../WorkflowListPage';
+import TableCountLink from '../../TableCountLink';
 
 export const defaultNamespaceSort = [
     {

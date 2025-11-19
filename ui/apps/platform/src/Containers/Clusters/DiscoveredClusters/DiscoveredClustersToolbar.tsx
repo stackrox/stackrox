@@ -1,4 +1,4 @@
-import React, { ReactElement } from 'react';
+import type { ReactElement } from 'react';
 import {
     Pagination,
     Toolbar,
@@ -11,8 +11,6 @@ import {
 
 import SearchFilterChips from 'Components/PatternFly/SearchFilterChips';
 import {
-    DiscoveredClusterStatus,
-    DiscoveredClusterType,
     getDiscoveredClustersFilter,
     isStatus,
     isType,
@@ -20,7 +18,11 @@ import {
     replaceSearchFilterStatuses,
     replaceSearchFilterTypes,
 } from 'services/DiscoveredClusterService';
-import { SearchFilter } from 'types/search';
+import type {
+    DiscoveredClusterStatus,
+    DiscoveredClusterType,
+} from 'services/DiscoveredClusterService';
+import type { SearchFilter } from 'types/search';
 
 import SearchFilterTypes from './SearchFilterTypes';
 // import SearchFilterNames from './SearchFilterNames';

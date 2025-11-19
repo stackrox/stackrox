@@ -15,7 +15,6 @@ import (
 )
 
 func TestVersions(t *testing.T) {
-	t.Parallel()
 
 	client := centralgrpc.HTTPClientForCentral(t)
 

@@ -19,7 +19,6 @@ import (
 
 // Separate tests for testing that things are rejected by SAC.
 func TestSACEnforceAuthProviderDataStore(t *testing.T) {
-	t.Parallel()
 	suite.Run(t, new(authProviderDataStoreEnforceTestSuite))
 }
 
@@ -117,7 +116,6 @@ func (s *authProviderDataStoreEnforceTestSuite) TestEnforcesRemove() {
 
 // Test for things that should be allowed by SAC and to confirm storage is used correctly.
 func TestAuthProviderDataStore(t *testing.T) {
-	t.Parallel()
 	suite.Run(t, new(authProviderDataStoreTestSuite))
 }
 

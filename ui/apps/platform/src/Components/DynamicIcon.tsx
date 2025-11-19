@@ -1,7 +1,6 @@
-import React from 'react';
 import { Icon, Label, Tooltip } from '@patternfly/react-core';
 import { FilterIcon } from '@patternfly/react-icons';
-import { SVGIconProps } from '@patternfly/react-icons/dist/esm/createIcon';
+import type { SVGIconProps } from '@patternfly/react-icons/dist/esm/createIcon';
 
 export function DynamicIcon(props: SVGIconProps) {
     return (

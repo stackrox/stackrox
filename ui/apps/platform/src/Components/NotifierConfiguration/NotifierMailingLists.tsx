@@ -1,15 +1,13 @@
-import React, { useState, ReactElement } from 'react';
-import { Button, Flex, FlexItem, TextInput } from '@patternfly/react-core';
-import { SelectOption } from '@patternfly/react-core/deprecated';
-import { FormikErrors } from 'formik';
+import { useState } from 'react';
+import type { ReactElement } from 'react';
+import { Button, Flex, FlexItem, SelectOption, TextInput } from '@patternfly/react-core';
+import type { FormikErrors } from 'formik';
 
 import EmailNotifierModal from 'Components/EmailNotifier/EmailNotifierModal';
 import SelectSingle from 'Components/SelectSingle';
 import FormLabelGroup from 'Components/PatternFly/FormLabelGroup';
-import {
-    NotifierIntegrationBase,
-    fetchNotifierIntegrations,
-} from 'services/NotifierIntegrationsService';
+import { fetchNotifierIntegrations } from 'services/NotifierIntegrationsService';
+import type { NotifierIntegrationBase } from 'services/NotifierIntegrationsService';
 
 function isEmailNotifier(notifier: NotifierIntegrationBase) {
     return notifier.type === 'email';
@@ -48,11 +46,15 @@ function NotifierMailingLists({
 }: NotifierMailingListsProps): ReactElement {
     const [isEmailNotifierModalOpen, setIsEmailNotifierModalOpen] = useState(false);
 
-    function updateNotifierList(notifierAdded: NotifierIntegrationBase) {
+    function updateNotifierList(notifierIdAdded: string) {
         fetchNotifierIntegrations()
             .then((notifiersFetched) => {
-                setNotifiers(notifiersFetched.filter(isEmailNotifier));
-                setNotifier(notifierAdded);
+                const emailNotifiers = notifiersFetched.filter(isEmailNotifier);
+                setNotifiers(emailNotifiers);
+                const notifierAdded = emailNotifiers.find((n) => n.id === notifierIdAdded);
+                if (notifierAdded) {
+                    setNotifier(notifierAdded);
+                }
                 setIsEmailNotifierModalOpen(false);
             })
             .catch(() => {
@@ -64,7 +66,7 @@ function NotifierMailingLists({
         setIsEmailNotifierModalOpen((current) => !current);
     }
 
-    function onSelectNotifier(_id, selectionId) {
+    function onSelectNotifier(_id: string, selectionId: string) {
         const notifierSelected = notifiers.find((notifier) => notifier.id === selectionId);
         if (notifierSelected) {
             setNotifier(notifierSelected);

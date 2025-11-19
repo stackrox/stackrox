@@ -33,6 +33,9 @@ test_e2e() {
     setup_default_TLS_certs
     info "Creating mocked compliance operator data for compliance v1 tests"
     "$ROOT/tests/complianceoperator/create.sh"
+    kubectl get compliancecheckresults.compliance.openshift.io -n openshift-compliance
+
+    image_prefetcher_prebuilt_await
 
     # If deploy_optional_e2e_components is called after deploy_stackrox it causes an unnecessary Sensor restart
     deploy_optional_e2e_components

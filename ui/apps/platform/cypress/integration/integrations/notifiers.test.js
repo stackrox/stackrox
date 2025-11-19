@@ -11,8 +11,8 @@ import {
     clickCreateNewIntegrationInTable,
     deleteIntegrationInTable,
     saveCreatedIntegrationInForm,
-    testIntegrationInFormWithoutStoredCredentials,
     testIntegrationInFormWithStoredCredentials,
+    testIntegrationInFormWithoutStoredCredentials,
     visitIntegrationsTable,
 } from './integrations.helpers';
 import { selectors } from './integrations.selectors';
@@ -169,6 +169,7 @@ describe('Notifier Integrations', () => {
             });
             getInputByLabel('Annotation key for recipient').clear().type('email');
             getInputByLabel('Disable TLS (insecure)').click();
+            getInputByLabel('Hostname for SMTP HELO/EHLO').type('client.example.com');
 
             testIntegrationInFormWithStoredCredentials(
                 integrationSource,

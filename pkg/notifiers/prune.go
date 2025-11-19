@@ -104,7 +104,7 @@ func PruneAlert(alert *storage.Alert, maxSize int) {
 	currSize := len(data)
 	filterDeploymentMaps(alert.GetDeployment(), maxSize, &currSize)
 
-	if alert.ProcessViolation != nil {
+	if alert.GetProcessViolation() != nil {
 		alert.ProcessViolation.Processes = filterProcesses(alert.GetProcessViolation().GetProcesses(), maxSize, &currSize)
 	}
 	alert.Violations = filterViolations(alert.GetViolations(), maxSize, &currSize)

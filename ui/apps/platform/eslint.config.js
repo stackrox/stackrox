@@ -5,8 +5,10 @@ const path = require('node:path');
 const parserTypeScriptESLint = require('@typescript-eslint/parser');
 
 const pluginCypress = require('eslint-plugin-cypress');
+const pluginCSS = require('@eslint/css').default;
 const pluginESLint = require('@eslint/js'); // eslint-disable-line import/no-extraneous-dependencies
 const pluginJSON = require('@eslint/json').default;
+const pluginMarkdown = require('@eslint/markdown').default; // ECMAScript module requires Node.js 22.12.0 or later
 const pluginESLintComments = require('eslint-plugin-eslint-comments');
 const pluginImport = require('eslint-plugin-import');
 const pluginJestDOM = require('eslint-plugin-jest-dom');
@@ -21,6 +23,7 @@ const { browser: browserGlobals, node: nodeGlobals, vitest: vitestGlobals } = re
 
 const pluginAccessibility = require('./eslint-plugins/pluginAccessibility');
 const pluginGeneric = require('./eslint-plugins/pluginGeneric');
+const pluginLimited = require('./eslint-plugins/pluginLimited');
 const pluginPatternFly = require('./eslint-plugins/pluginPatternFly');
 
 const parserAndOptions = {
@@ -45,6 +48,26 @@ module.exports = [
         ],
     },
     {
+        // Only for lint commands.
+        // ESLint extension for VSCode does not probe css files.
+        files: ['src/**/*.css'],
+        ignores: ['src/app.tw.css'],
+
+        language: 'css/css',
+
+        plugins: {
+            css: pluginCSS,
+        },
+        rules: {
+            // https://github.com/eslint/css/blob/main/src/index.js
+            ...pluginCSS.configs.recommended.rules,
+
+            'css/no-important': 'off',
+            'css/no-invalid-properties': ['error', { allowUnknownVariables: true }], // allow --pf variables
+            'css/use-baseline': ['error', { available: 'newly' }],
+        },
+    },
+    {
         files: ['*.json', 'cypress/**/*.json', 'src/**/*.json'], // JSON without comments
         ignores: [
             'package-lock.json', // ignore because it is auto-generated
@@ -65,6 +88,20 @@ module.exports = [
 
         // https://github.com/eslint/json/blob/main/src/index.js
         ...pluginJSON.configs.recommended,
+    },
+    {
+        files: ['*.md', 'src/**/*.md'],
+        // Beware that ui/README.md file is outside of scope of application lint.
+
+        language: 'markdown/gfm',
+
+        plugins: {
+            markdown: pluginMarkdown,
+        },
+        rules: {
+            // https://github.com/eslint/markdown/blob/main/src/index.js
+            ...pluginMarkdown.configs.recommended[0].rules, // recommended is array!
+        },
     },
     {
         files: ['**/*.{js,jsx,ts,tsx}'], // generic configuration
@@ -133,7 +170,7 @@ module.exports = [
             'grouped-accessor-pairs': 'error',
             'guard-for-in': 'error',
             'max-classes-per-file': ['error', 1],
-            'no-alert': 'warn',
+            'no-alert': 'error', // instead of 'warn'
             'no-caller': 'error',
             'no-constructor-return': 'error',
             'no-else-return': ['error', { allowElseIf: false }], // TODO
@@ -264,7 +301,7 @@ module.exports = [
             'no-async-promise-executor': 'error',
             'no-compare-neg-zero': 'error',
             'no-cond-assign': ['error', 'always'],
-            'no-constant-condition': 'warn',
+            'no-constant-condition': 'error', // instead of 'warn'
             'no-control-regex': 'error',
             'no-debugger': 'error',
             'no-dupe-args': 'error',
@@ -379,7 +416,6 @@ module.exports = [
             'import/first': 'error',
             'import/newline-after-import': 'error',
             'import/no-absolute-path': 'error',
-            'import/no-cycle': ['error', { maxDepth: '∞' }],
             'import/no-duplicates': 'error',
             'import/no-dynamic-require': 'error',
             // 'import/no-extraneous-dependencies' is specified in a more specific configuration
@@ -392,7 +428,6 @@ module.exports = [
             'import/no-self-import': 'error',
             'import/no-useless-path-segments': ['error', { commonjs: true }],
             'import/no-webpack-loader-syntax': 'error',
-            'import/order': ['error', { groups: [['builtin', 'external', 'internal']] }],
             // 'import/prefer-default-export' is intentional omission
 
             // Turn on rules from airbnb style config that are not in ESLint recommended.
@@ -475,6 +510,12 @@ module.exports = [
             // 'no-shadow': 'error', // fix 15 errors
             'no-undef-init': 'error',
 
+            // Turn on rules not from (or with difference options than) airbnb config.
+            'import/no-empty-named-blocks': 'error',
+            'import/order': [
+                'error',
+                { groups: [['builtin', 'external', 'internal', 'parent', 'sibling']] },
+            ],
             'prettier/prettier': 'error',
         },
 
@@ -673,7 +714,7 @@ module.exports = [
             // https://github.com/facebook/react/blob/main/packages/eslint-plugin-react-hooks/src/index.js
             ...pluginReactHooks.configs.recommended.rules,
 
-            // 'react-hooks/exhaustive-deps': 'warn', // TODO fix errors and then change from default warn to error?
+            'react-hooks/exhaustive-deps': 'error', // instead of 'warn'
         },
     },
     {
@@ -684,6 +725,7 @@ module.exports = [
         // Key of plugin is namespace of its rules.
         plugins: {
             '@typescript-eslint': pluginTypeScriptESLint,
+            import: pluginImport,
         },
         rules: {
             // https://github.com/typescript-eslint/typescript-eslint/blob/main/packages/eslint-plugin/src/configs/eslint-recommended.ts
@@ -707,6 +749,195 @@ module.exports = [
 
             '@typescript-eslint/array-type': 'error',
             '@typescript-eslint/consistent-type-exports': 'error',
+
+            'import/consistent-type-specifier-style': ['error', 'prefer-top-level'],
+        },
+    },
+    // Limited rules have specific files or have ignores for specific files or folders.
+    {
+        files: ['src/types/featureFlag.ts'],
+
+        // languageOptions from previous configuration object
+
+        // Key of plugin is namespace of its rules.
+        plugins: {
+            limited: pluginLimited,
+        },
+        rules: {
+            'limited/feature-flags': 'error',
+        },
+    },
+    {
+        files: ['src/*/**/*.{jsx,ts,tsx}'], // product files, except for unit tests (including test-utils folder)
+        ignores: ['src/Containers/Compliance/**'],
+
+        // languageOptions from previous configuration object
+
+        // Key of plugin is namespace of its rules.
+        plugins: {
+            limited: pluginLimited,
+        },
+        rules: {
+            'import/no-cycle': ['error', { maxDepth: '∞' }], // classic compliance has 7 errors
+            'limited/react-export-default': 'error',
+        },
+    },
+    {
+        files: ['**/*.{js,jsx,ts,tsx}'], // generic configuration includes cypress and src folders
+        ignores: [
+            'src/Containers/Compliance/**', // deprecated
+            'src/Containers/VulnMgmt/**', // deprecated
+        ],
+
+        // languageOptions from previous configuration object
+
+        // Key of plugin is namespace of its rules.
+        plugins: {
+            limited: pluginLimited,
+        },
+
+        // Separate from the following configuration to limit size of contributions.
+        rules: {
+            'limited/sort-named-imports': 'error',
+        },
+    },
+    {
+        files: ['src/**/*.{js,jsx,ts,tsx}'],
+        ignores: [
+            'src/Containers/Compliance/**', // deprecated
+            'src/Containers/VulnMgmt/**', // deprecated
+            'src/Containers/Workflow/**', // deprecated
+        ],
+
+        // After deprecated folders have been deleted:
+        // Move jsxPragma property to languageOptions at module scope.
+        // Move react rules into appropriate configuration objects.
+
+        // Set parserOptions and turn off rules explicitly,
+        // instead of implicitlu via jsx-runtime configuration of eslint-plugin-react package.
+
+        languageOptions: {
+            parserOptions: {
+                // https://typescript-eslint.io/packages/parser/#jsxpragma
+                // If you are using the new JSX transform you can set this to null.
+                jsxPragma: null,
+            },
+        },
+
+        plugins: {
+            limited: pluginLimited,
+            react: pluginReact,
+        },
+        rules: {
+            'limited/no-qualified-name-react': 'error',
+            'react/jsx-uses-react': 'off',
+            'react/react-in-jsx-scope': 'off',
+        },
+    },
+    {
+        files: ['src/**/*.{ts,tsx}'],
+        ignores: [
+            'src/Containers/Compliance/**', // deprecated
+            'src/Containers/VulnMgmt/**', // deprecated
+        ],
+
+        // languageOptions from previous configuration object
+
+        // Key of plugin is namespace of its rules.
+        plugins: {
+            '@typescript-eslint': pluginTypeScriptESLint,
+        },
+        rules: {
+            '@typescript-eslint/consistent-type-imports': 'error',
+        },
+    },
+    {
+        files: ['src/*/**/*.{js,jsx,ts,tsx}'],
+        ignores: [
+            'src/Containers/Compliance/**', // deprecated
+            'src/Containers/VulnMgmt/**', // deprecated
+            'src/Containers/Workflow/**', // deprecated
+        ],
+
+        // languageOptions from previous configuration object
+
+        // Key of plugin is namespace of its rules.
+        plugins: {
+            limited: pluginLimited,
+        },
+        rules: {
+            'limited/no-absolute-path-within-container-in-import': 'error',
+            'limited/no-relative-path-to-src-in-import': 'error',
+        },
+    },
+    {
+        files: ['src/**/*.{js,jsx,ts,tsx}'],
+        ignores: [
+            'src/Components/*.{js,jsx}', // deprecated
+            'src/Components/Menu.tsx', // deprecated
+
+            'src/Components/BinderTabs/**', // deprecated
+            'src/Components/Button/**', // deprecated
+            'src/Components/ButtonLink/**', // deprecated
+            'src/Components/CVEStackedPill/**', // deprecated
+            'src/Components/CollapsibleSection/**', // deprecated
+            'src/Components/CveType/**', // deprecated
+            'src/Components/DashboardLayout/**', // deprecated
+            'src/Components/DashboardMenu/**', // deprecated
+            'src/Components/FixableCVECount/**', // deprecated
+            'src/Components/HeaderWithSubText/**', // deprecated
+            'src/Components/Labeled/**', // deprecated
+            'src/Components/KeyValue/**', // fix errors, and then delete
+            'src/Components/Menu/**', // deprecated
+            'src/Components/Metadata/**', // deprecated
+            'src/Components/MetadataStatsList/**', // deprecated
+            'src/Components/NoComponentVulnMessage/**', // deprecated
+            'src/Components/PageHeader/**', // deprecated
+            'src/Components/Pagination/**', // deprecated
+            'src/Components/PanelButton/**', // deprecated
+            'src/Components/RiskScore/**', // deprecated
+            'src/Components/RowActionButton/**', // deprecated
+            'src/Components/StatsList/**', // deprecated
+            'src/Components/RadioButtonGroup/**', // deprecated
+            'src/Components/ReactSelect/**', // deprecated
+            'src/Components/ResourceCountPopper/**', // deprecated
+            'src/Components/SidePanelAbsoluteArea.tsx', // deprecated
+            'src/Components/SidePanelAdjacentArea.tsx', // deprecated
+            'src/Components/TableCellLink/**', // deprecated
+            'src/Components/TextSelect/**', // deprecated
+            'src/Components/TileContent/**', // deprecated
+            'src/Components/TileLink/**', // deprecated
+            'src/Components/TimelineGraph/**', // deprecated
+            'src/Components/TimelineOverview/**', // deprecated
+            'src/Components/ToggleSwitch/**', // deprecated
+            'src/Components/TooltipFieldValue/**', // deprecated
+            'src/Components/TopCvssLabel/**', // deprecated
+            'src/Components/Widget/**', // deprecated
+            'src/Components/animations/**', // deprecated
+            'src/Components/forms/**', // replace when we rewrite Login in PatternFly, and then delete
+            'src/Components/visuals/**', // deprecated
+            'src/Components/workflow/**', // deprecated
+
+            'src/Containers/Clusters/**', // fix errors, and then delete; also in tailwind.config.js file
+            'src/Containers/Compliance/**', // deprecated
+            'src/Containers/ConfigManagement/**',
+            'src/Containers/Images/**', // deprecated
+            'src/Containers/Login/**', // rewrite in PatternFly, and then delete; also in tailwind.config.js file
+            'src/Containers/MainPage/**', // fix errors, and then delete; also in tailwind.config.js file
+            'src/Containers/Risk/**', // rewrite in PatternFly, and then delete; also in tailwind.config.js file
+            'src/Containers/Violations/Details/ProcessCardContent.jsx', // fix error and then delete; also in tailwind.config.js file
+            'src/Containers/VulnMgmt/**', // deprecated
+            'src/Containers/Workflow/**', // deprecated
+        ],
+
+        // languageOptions from previous configuration object
+
+        // Key of plugin is namespace of its rules.
+        plugins: {
+            limited: pluginLimited,
+        },
+        rules: {
+            'limited/no-Tailwind': 'error',
         },
     },
     {
@@ -732,7 +963,9 @@ module.exports = [
                         path.join(__dirname, 'eslint.config.js'),
                         path.join(__dirname, 'postcss.config.js'),
                         path.join(__dirname, 'tailwind.config.js'), // only for @tailwindcss/forms
+                        path.join(__dirname, 'webpack.ocp-plugin.config.js'),
                         path.join(__dirname, 'vite.config.js'),
+                        path.join(__dirname, 'cypress.config.js'),
                     ],
                 },
             ],

@@ -13,7 +13,6 @@ import (
 
 // TestTokenManager asserts the credentials get is called twice when we expire the token.
 func TestTokenManager(t *testing.T) {
-	t.Parallel()
 	controller := gomock.NewController(t)
 
 	mockCredManager := authMocks.NewMockCredentialsManager(controller)

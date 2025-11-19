@@ -1,4 +1,3 @@
-import React from 'react';
 import { Popover, TabAction } from '@patternfly/react-core';
 import { HelpIcon } from '@patternfly/react-icons';
 

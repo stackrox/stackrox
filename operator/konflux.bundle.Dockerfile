@@ -1,4 +1,4 @@
-FROM registry.access.redhat.com/ubi9/python-39:latest@sha256:9eb89c743533d3f830c040a650a8506dd648bd240d598d38aba857d88d3db6b5 AS builder
+FROM registry.access.redhat.com/ubi9/python-39:latest@sha256:dee7605bfc0cc89b83075937cd48ff7b61bf5e396f8bd2ae13e7f7299be53326 AS builder
 
 # Because 'default' user cannot create build/ directory and errrors like:
 # mkdir: cannot create directory ‘build/’: Permission denied
@@ -56,21 +56,11 @@ ARG RELATED_IMAGE_CENTRAL_DB
 ENV RELATED_IMAGE_CENTRAL_DB=$RELATED_IMAGE_CENTRAL_DB
 RUN echo "Checking required RELATED_IMAGE_CENTRAL_DB"; [[ "${RELATED_IMAGE_CENTRAL_DB}" != "" ]]
 
-RUN mkdir -p build/ && \
-    rm -rf build/bundle && \
-    cp -a bundle build/ && \
-    cp -v ../config-controller/config/crd/bases/config.stackrox.io_securitypolicies.yaml build/bundle/manifests/ && \
-    ./bundle_helpers/patch-csv.py \
-      --use-version "${OPERATOR_IMAGE_TAG}" \
-      --first-version 4.0.0 \
-      --related-images-mode=konflux \
-      --operator-image "${OPERATOR_IMAGE_REF}" \
-      --add-supported-arch amd64 \
-      --add-supported-arch arm64 \
-      --add-supported-arch ppc64le \
-      --add-supported-arch s390x \
-      < bundle/manifests/rhacs-operator.clusterserviceversion.yaml \
-      > build/bundle/manifests/rhacs-operator.clusterserviceversion.yaml
+RUN ./bundle_helpers/prepare-bundle-manifests.sh \
+      --use-version="${OPERATOR_IMAGE_TAG}" \
+      --first-version=4.0.0 \
+      --operator-image="${OPERATOR_IMAGE_REF}" \
+      --related-images-mode=konflux
 
 FROM scratch
 
@@ -85,7 +75,7 @@ LABEL io.k8s.description="Operator Bundle Image for Red Hat Advanced Cluster Sec
 LABEL io.k8s.display-name="operator-bundle"
 LABEL io.openshift.tags="rhacs,operator-bundle,stackrox"
 LABEL maintainer="Red Hat, Inc."
-LABEL name="rhacs-operator-bundle"
+LABEL name="advanced-cluster-security/rhacs-operator-bundle"
 # Custom Snapshot creation in `operator-bundle-pipeline` depends on source-location label to be set correctly.
 LABEL source-location="https://github.com/stackrox/stackrox"
 LABEL summary="Operator Bundle Image for Red Hat Advanced Cluster Security for Kubernetes"

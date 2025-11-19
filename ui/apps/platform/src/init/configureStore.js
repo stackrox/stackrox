@@ -1,6 +1,6 @@
-import { createStore, applyMiddleware, compose } from 'redux';
-import { createReduxHistoryContext } from 'redux-first-history';
-import { createBrowserHistory } from 'history';
+import { applyMiddleware, compose, createStore } from 'redux';
+import { routerMiddleware } from 'connected-react-router';
+
 import createSagaMiddleware from 'redux-saga';
 import createRavenMiddleware from 'raven-for-redux';
 import Raven from 'raven-js';
@@ -9,22 +9,19 @@ import thunk from 'redux-thunk';
 import rootSaga from 'sagas';
 import createRootReducer from 'reducers';
 import { actions as authActions } from 'reducers/auth';
-import * as AuthService from 'services/AuthService';
+import { addAuthInterceptors as authServiceAddAuthInterceptors } from 'services/AuthService';
 import registerServerErrorHandler from 'services/serverErrorHandler';
-
-const { createReduxHistory, routerMiddleware, routerReducer } = createReduxHistoryContext({
-    history: createBrowserHistory(),
-});
 
 const sagaMiddleware = createSagaMiddleware({
     onError: (error) => Raven.captureException(error),
 });
 
 // Omit Redux state to reduce size of payload in /api/logimbue request.
+
 const ravenMiddleware = createRavenMiddleware(Raven, { stateTransformer: () => null });
 
-export default function configureStore(initialState = {}) {
-    const middlewares = [sagaMiddleware, routerMiddleware, ravenMiddleware, thunk];
+export default function configureStore(initialState = {}, history) {
+    const middlewares = [sagaMiddleware, routerMiddleware(history), ravenMiddleware, thunk];
     const enhancers = [applyMiddleware(...middlewares)];
 
     const composeEnhancers =
@@ -34,10 +31,11 @@ export default function configureStore(initialState = {}) {
             ? window.__REDUX_DEVTOOLS_EXTENSION_COMPOSE__({ shouldHotReload: false })
             : compose;
 
-    const rootReducer = createRootReducer(routerReducer);
+    const rootReducer = createRootReducer(history);
+
     const store = createStore(rootReducer, initialState, composeEnhancers(...enhancers));
 
-    AuthService.addAuthInterceptors((error) =>
+    authServiceAddAuthInterceptors((error) =>
         store.dispatch(authActions.handleAuthHttpError(error))
     );
 
@@ -48,7 +46,5 @@ export default function configureStore(initialState = {}) {
 
     sagaMiddleware.run(rootSaga);
 
-    const history = createReduxHistory(store);
-
-    return { store, history };
+    return store;
 }

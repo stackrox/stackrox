@@ -1,6 +1,6 @@
-import { ReportStatus } from 'types/reportJob';
-import { getReportStatusText, getCVEsDiscoveredSinceText } from './utils';
-import { ReportParametersFormValues } from './forms/useReportFormValues';
+import type { ReportStatus } from 'types/reportJob';
+import { getCVEsDiscoveredSinceText, getReportStatusText } from './utils';
+import type { ReportParametersFormValues } from './forms/useReportFormValues';
 
 // @TODO: Consider making a more unique name for general utils file under Vulnerability Reporting
 describe('utils', () => {
@@ -83,6 +83,7 @@ describe('utils', () => {
                 imageType: [],
                 includeAdvisory: false,
                 includeEpssProbability: false,
+                // Ross CISA KEV includeExploitable
                 includeNvdCvss: false,
                 cvesDiscoveredSince: 'ALL_VULN',
                 cvesDiscoveredStartDate: undefined,
@@ -103,6 +104,7 @@ describe('utils', () => {
                 imageType: [],
                 includeAdvisory: false,
                 includeEpssProbability: false,
+                // Ross CISA KEV includeExploitable
                 includeNvdCvss: false,
                 cvesDiscoveredSince: 'SINCE_LAST_REPORT',
                 cvesDiscoveredStartDate: undefined,
@@ -123,6 +125,7 @@ describe('utils', () => {
                 imageType: [],
                 includeAdvisory: false,
                 includeEpssProbability: false,
+                // Ross CISA KEV includeExploitable
                 includeNvdCvss: false,
                 cvesDiscoveredSince: 'START_DATE',
                 cvesDiscoveredStartDate: '2023-10-02',

@@ -92,6 +92,7 @@ test_custom() {
     #Used to run tests with "PZDebug" tag.Convenient for executing only desirable tests in CI.
     #test_target="pz-test-debug"
 
+    setup_gcp
     set_ci_shared_export "test_target" "${test_target}"
 
     make -C qa-tests-backend "${test_target}" || touch FAIL
@@ -112,6 +113,7 @@ test_specific() {
     export CLUSTER="${ORCHESTRATOR_FLAVOR^^}"
     #Specify the particular tests inside this array
     declare -a STACKROX_TESTNAMES=()
+    setup_gcp
     set_ci_shared_export "test_target" "PZ-specific-tests"
     #Initialize variables
     interval_sec=20

@@ -20,6 +20,7 @@ import (
 	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/centralcaps"
 	"github.com/stackrox/rox/sensor/common/message"
+	"github.com/stackrox/rox/sensor/common/unimplemented"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 )
@@ -44,6 +45,8 @@ var (
 )
 
 type updaterImpl struct {
+	unimplemented.Receiver
+
 	client         kubernetes.Interface
 	updates        chan *message.ExpiringMessage
 	stopSig        concurrency.Signal
@@ -82,10 +85,6 @@ func (u *updaterImpl) Notify(e common.SensorComponentEvent) {
 
 func (u *updaterImpl) Capabilities() []centralsensor.SensorCapability {
 	return []centralsensor.SensorCapability{centralsensor.HealthMonitoringCap}
-}
-
-func (u *updaterImpl) ProcessMessage(_ *central.MsgToSensor) error {
-	return nil
 }
 
 func (u *updaterImpl) ResponsesC() <-chan *message.ExpiringMessage {
@@ -155,12 +154,12 @@ func (u *updaterImpl) getCollectorInfo() *storage.CollectorHealthInfo {
 		for _, container := range collectorDS.Spec.Template.Spec.Containers {
 			if container.Name == collectorContainerName {
 				result.Version = stringutils.GetAfterLast(container.Image, ":")
-				result.Version = strings.TrimSuffix(result.Version, "-slim")
-				result.Version = strings.TrimSuffix(result.Version, "-latest")
+				result.Version = strings.TrimSuffix(result.GetVersion(), "-slim")
+				result.Version = strings.TrimSuffix(result.GetVersion(), "-latest")
 				break
 			}
 		}
-		if result.Version == "" {
+		if result.GetVersion() == "" {
 			result.StatusErrors = append(result.StatusErrors, "unable to determine collector version")
 		}
 
@@ -172,8 +171,8 @@ func (u *updaterImpl) getCollectorInfo() *storage.CollectorHealthInfo {
 		}
 	}
 
-	if len(result.StatusErrors) > 0 {
-		log.Errorf("Errors while getting collector info: %v", result.StatusErrors)
+	if len(result.GetStatusErrors()) > 0 {
+		log.Errorf("Errors while getting collector info: %v", result.GetStatusErrors())
 	}
 
 	return &result
@@ -195,8 +194,8 @@ func (u *updaterImpl) getAdmissionControlInfo() *storage.AdmissionControlHealthI
 		}
 	}
 
-	if len(result.StatusErrors) > 0 {
-		log.Errorf("Errors while getting admission control info: %v", result.StatusErrors)
+	if len(result.GetStatusErrors()) > 0 {
+		log.Errorf("Errors while getting admission control info: %v", result.GetStatusErrors())
 	}
 	return &result
 }
@@ -219,8 +218,8 @@ func (u *updaterImpl) getLocalScannerInfo() *storage.ScannerHealthInfo {
 	}
 
 	result := u.getScannerHealthInfo(analyzerDeploymentName, dbDeploymentName)
-	if len(result.StatusErrors) > 0 {
-		log.Errorf("Errors while getting local scanner info: %v", result.StatusErrors)
+	if len(result.GetStatusErrors()) > 0 {
+		log.Errorf("Errors while getting local scanner info: %v", result.GetStatusErrors())
 	}
 
 	return result

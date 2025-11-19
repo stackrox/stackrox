@@ -7,14 +7,6 @@
   "shortName": "CIS-OCP",
   "profiles": [
     {
-      "profileName": "ocp4-cis",
-      "profileVersion": "latest"
-    },
-    {
-      "profileName": "ocp4-cis-node",
-      "profileVersion": "latest"
-    },
-    {
       "profileName": "ocp4-cis-1-5",
       "profileVersion": "1.5.0"
     },

@@ -1,54 +1,54 @@
-import React, { ReactElement, useState } from 'react';
-import { useNavigate, useParams, generatePath } from 'react-router-dom';
+import { useState } from 'react';
+import type { ReactElement } from 'react';
+import { generatePath, useNavigate, useParams } from 'react-router-dom-v5-compat';
 import {
     Alert,
     AlertActionCloseButton,
     AlertGroup,
-    PageSection,
-    Title,
-    Divider,
-    Flex,
-    FlexItem,
     Breadcrumb,
     BreadcrumbItem,
     Bullseye,
-    Spinner,
-    Tabs,
-    Tab,
-    TabTitleText,
     Card,
     CardBody,
+    Divider,
     DropdownItem,
+    Flex,
+    FlexItem,
+    PageSection,
+    Spinner,
+    Tab,
+    TabTitleText,
+    Tabs,
+    Title,
 } from '@patternfly/react-core';
 
-import { vulnerabilityConfigurationReportDetailsPath } from 'Containers/Vulnerabilities/VulnerablityReporting/pathsForVulnerabilityReporting';
 import { vulnerabilityConfigurationReportsPath } from 'routePaths';
-import { getReportFormValuesFromConfiguration } from 'Containers/Vulnerabilities/VulnerablityReporting/utils';
-import useFetchReport from 'Containers/Vulnerabilities/VulnerablityReporting/api/useFetchReport';
-import useDeleteModal, {
-    isErrorDeleteResult,
-} from 'Containers/Vulnerabilities/VulnerablityReporting/hooks/useDeleteModal';
 
-import { TemplatePreviewArgs } from 'Components/EmailTemplate/EmailTemplateModal';
+import type { TemplatePreviewArgs } from 'Components/EmailTemplate/EmailTemplateModal';
 import NotifierConfigurationView from 'Components/NotifierConfiguration/NotifierConfigurationView';
 import DeleteModal from 'Components/PatternFly/DeleteModal';
 import PageTitle from 'Components/PageTitle';
 import BreadcrumbItemLink from 'Components/BreadcrumbItemLink';
 import NotFoundMessage from 'Components/NotFoundMessage/NotFoundMessage';
 import usePermissions from 'hooks/usePermissions';
-import useToasts, { Toast } from 'hooks/patternfly/useToasts';
+import useToasts from 'hooks/patternfly/useToasts';
+import type { Toast } from 'hooks/patternfly/useToasts';
 
 import MenuDropdown from 'Components/PatternFly/MenuDropdown';
 import ReportJobsHelpAction from 'Components/ReportJob/ReportJobsHelpAction';
-import { JobContextTab } from 'Components/ReportJob/types';
+import type { JobContextTab } from 'Components/ReportJob/types';
 import { ensureJobContextTab } from 'Components/ReportJob/utils';
 import EmailTemplatePreview from '../components/EmailTemplatePreview';
 import ReportParametersDetails from '../components/ReportParametersDetails';
 import ScheduleDetails from '../components/ScheduleDetails';
 import { defaultEmailBody, getDefaultEmailSubject } from '../forms/emailTemplateFormUtils';
 import ReportJobs from './ReportJobs';
+import useFetchReport from '../api/useFetchReport';
 import useRunReport from '../api/useRunReport';
 import { useWatchLastSnapshotForReports } from '../api/useWatchLastSnapshotForReports';
+import useDeleteModal, { isErrorDeleteResult } from '../hooks/useDeleteModal';
+import { vulnerabilityConfigurationReportDetailsPath } from '../pathsForVulnerabilityReporting';
+import { getReportFormValuesFromConfiguration } from '../utils';
 
 export type TabTitleProps = {
     icon?: ReactElement;

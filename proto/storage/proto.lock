@@ -1,79 +1,6 @@
 {
   "definitions": [
     {
-      "protopath": "active_component.proto",
-      "def": {
-        "messages": [
-          {
-            "name": "ActiveComponent",
-            "fields": [
-              {
-                "id": 1,
-                "name": "id",
-                "type": "string"
-              },
-              {
-                "id": 3,
-                "name": "deployment_id",
-                "type": "string"
-              },
-              {
-                "id": 4,
-                "name": "component_id",
-                "type": "string"
-              },
-              {
-                "id": 5,
-                "name": "active_contexts_slice",
-                "type": "ActiveContext",
-                "is_repeated": true
-              }
-            ],
-            "maps": [
-              {
-                "key_type": "string",
-                "field": {
-                  "id": 2,
-                  "name": "DEPRECATED_active_contexts",
-                  "type": "ActiveContext"
-                }
-              }
-            ],
-            "messages": [
-              {
-                "name": "ActiveContext",
-                "fields": [
-                  {
-                    "id": 1,
-                    "name": "container_name",
-                    "type": "string"
-                  },
-                  {
-                    "id": 2,
-                    "name": "image_id",
-                    "type": "string"
-                  }
-                ]
-              }
-            ]
-          }
-        ],
-        "package": {
-          "name": "storage"
-        },
-        "options": [
-          {
-            "name": "go_package",
-            "value": "./storage;storage"
-          },
-          {
-            "name": "java_package",
-            "value": "io.stackrox.proto.storage"
-          }
-        ]
-      }
-    },
-    {
       "protopath": "administration_event.proto",
       "def": {
         "enums": [
@@ -344,6 +271,10 @@
               {
                 "name": "RESOURCE",
                 "integer": 3
+              },
+              {
+                "name": "NODE",
+                "integer": 4
               }
             ]
           },
@@ -464,6 +395,12 @@
                 "oneof_parent": "Entity"
               },
               {
+                "id": 24,
+                "name": "node",
+                "type": "Node",
+                "oneof_parent": "Entity"
+              },
+              {
                 "id": 5,
                 "name": "violations",
                 "type": "Violation",
@@ -473,6 +410,11 @@
                 "id": 13,
                 "name": "process_violation",
                 "type": "ProcessViolation"
+              },
+              {
+                "id": 25,
+                "name": "file_access_violation",
+                "type": "FileAccessViolation"
               },
               {
                 "id": 6,
@@ -640,6 +582,21 @@
                 ]
               },
               {
+                "name": "Node",
+                "fields": [
+                  {
+                    "id": 1,
+                    "name": "id",
+                    "type": "string"
+                  },
+                  {
+                    "id": 2,
+                    "name": "name",
+                    "type": "string"
+                  }
+                ]
+              },
+              {
                 "name": "Violation",
                 "fields": [
                   {
@@ -774,6 +731,22 @@
                 ]
               },
               {
+                "name": "FileAccessViolation",
+                "fields": [
+                  {
+                    "id": 1,
+                    "name": "message",
+                    "type": "string"
+                  },
+                  {
+                    "id": 2,
+                    "name": "accesses",
+                    "type": "FileAccess",
+                    "is_repeated": true
+                  }
+                ]
+              },
+              {
                 "name": "Enforcement",
                 "fields": [
                   {
@@ -844,6 +817,12 @@
                 "name": "resource",
                 "type": "ResourceEntity",
                 "oneof_parent": "Entity"
+              },
+              {
+                "id": 12,
+                "name": "node",
+                "type": "NodeEntity",
+                "oneof_parent": "Entity"
               }
             ],
             "reserved_ids": [
@@ -882,6 +861,16 @@
               },
               {
                 "name": "ResourceEntity",
+                "fields": [
+                  {
+                    "id": 1,
+                    "name": "name",
+                    "type": "string"
+                  }
+                ]
+              },
+              {
+                "name": "NodeEntity",
                 "fields": [
                   {
                     "id": 1,
@@ -1019,6 +1008,9 @@
           },
           {
             "path": "storage/deployment.proto"
+          },
+          {
+            "path": "storage/file_access.proto"
           },
           {
             "path": "storage/network_flow.proto"
@@ -1167,6 +1159,11 @@
                 "id": 5,
                 "name": "issuer",
                 "type": "string"
+              },
+              {
+                "id": 6,
+                "name": "traits",
+                "type": "Traits"
               }
             ],
             "messages": [
@@ -1191,6 +1188,11 @@
                 ]
               }
             ]
+          }
+        ],
+        "imports": [
+          {
+            "path": "storage/traits.proto"
           }
         ],
         "package": {
@@ -1987,6 +1989,21 @@
                 "id": 10,
                 "name": "admission_controller_events",
                 "type": "bool"
+              },
+              {
+                "id": 11,
+                "name": "admission_controller_fail_on_error",
+                "type": "bool"
+              }
+            ]
+          },
+          {
+            "name": "AutoLockProcessBaselinesConfig",
+            "fields": [
+              {
+                "id": 1,
+                "name": "enabled",
+                "type": "bool"
               }
             ]
           },
@@ -2007,6 +2024,11 @@
                 "id": 3,
                 "name": "disable_audit_logs",
                 "type": "bool"
+              },
+              {
+                "id": 4,
+                "name": "auto_lock_process_baselines_config",
+                "type": "AutoLockProcessBaselinesConfig"
               }
             ]
           },
@@ -2194,6 +2216,11 @@
                 "name": "sensor_capabilities",
                 "type": "string",
                 "is_repeated": true
+              },
+              {
+                "id": 32,
+                "name": "admission_controller_fail_on_error",
+                "type": "bool"
               }
             ],
             "maps": [
@@ -5190,6 +5217,61 @@
             ]
           },
           {
+            "name": "PrometheusMetrics",
+            "fields": [
+              {
+                "id": 1,
+                "name": "image_vulnerabilities",
+                "type": "Group"
+              },
+              {
+                "id": 2,
+                "name": "policy_violations",
+                "type": "Group"
+              },
+              {
+                "id": 3,
+                "name": "node_vulnerabilities",
+                "type": "Group"
+              }
+            ],
+            "messages": [
+              {
+                "name": "Group",
+                "fields": [
+                  {
+                    "id": 1,
+                    "name": "gathering_period_minutes",
+                    "type": "uint32"
+                  }
+                ],
+                "maps": [
+                  {
+                    "key_type": "string",
+                    "field": {
+                      "id": 2,
+                      "name": "descriptors",
+                      "type": "Labels"
+                    }
+                  }
+                ],
+                "messages": [
+                  {
+                    "name": "Labels",
+                    "fields": [
+                      {
+                        "id": 1,
+                        "name": "labels",
+                        "type": "string",
+                        "is_repeated": true
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          {
             "name": "PrivateConfig",
             "fields": [
               {
@@ -5233,6 +5315,11 @@
                 "id": 8,
                 "name": "administration_events_config",
                 "type": "AdministrationEventsConfig"
+              },
+              {
+                "id": 9,
+                "name": "metrics",
+                "type": "PrometheusMetrics"
               }
             ]
           },
@@ -6582,6 +6669,10 @@
               {
                 "name": "NOTIFIER",
                 "integer": 6
+              },
+              {
+                "name": "AUTH_MACHINE_TO_MACHINE_CONFIG",
+                "integer": 7
               }
             ]
           }
@@ -7984,6 +8075,155 @@
         "imports": [
           {
             "path": "storage/schedule.proto"
+          }
+        ],
+        "package": {
+          "name": "storage"
+        },
+        "options": [
+          {
+            "name": "go_package",
+            "value": "./storage;storage"
+          },
+          {
+            "name": "java_package",
+            "value": "io.stackrox.proto.storage"
+          }
+        ]
+      }
+    },
+    {
+      "protopath": "file_access.proto",
+      "def": {
+        "enums": [
+          {
+            "name": "FileAccess.Operation",
+            "enum_fields": [
+              {
+                "name": "CREATE"
+              },
+              {
+                "name": "UNLINK",
+                "integer": 1
+              },
+              {
+                "name": "RENAME",
+                "integer": 2
+              },
+              {
+                "name": "PERMISSION_CHANGE",
+                "integer": 3
+              },
+              {
+                "name": "OWNERSHIP_CHANGE",
+                "integer": 4
+              },
+              {
+                "name": "WRITE",
+                "integer": 5
+              },
+              {
+                "name": "OPEN",
+                "integer": 6
+              }
+            ]
+          }
+        ],
+        "messages": [
+          {
+            "name": "FileAccess",
+            "fields": [
+              {
+                "id": 1,
+                "name": "file",
+                "type": "File"
+              },
+              {
+                "id": 2,
+                "name": "operation",
+                "type": "Operation"
+              },
+              {
+                "id": 3,
+                "name": "moved",
+                "type": "File"
+              },
+              {
+                "id": 4,
+                "name": "timestamp",
+                "type": "google.protobuf.Timestamp"
+              },
+              {
+                "id": 5,
+                "name": "process",
+                "type": "ProcessIndicator"
+              },
+              {
+                "id": 6,
+                "name": "hostname",
+                "type": "string"
+              }
+            ],
+            "messages": [
+              {
+                "name": "FileMetadata",
+                "fields": [
+                  {
+                    "id": 1,
+                    "name": "uid",
+                    "type": "uint32"
+                  },
+                  {
+                    "id": 2,
+                    "name": "gid",
+                    "type": "uint32"
+                  },
+                  {
+                    "id": 3,
+                    "name": "mode",
+                    "type": "uint32"
+                  },
+                  {
+                    "id": 4,
+                    "name": "username",
+                    "type": "string"
+                  },
+                  {
+                    "id": 5,
+                    "name": "group",
+                    "type": "string"
+                  }
+                ]
+              },
+              {
+                "name": "File",
+                "fields": [
+                  {
+                    "id": 1,
+                    "name": "mounted_path",
+                    "type": "string"
+                  },
+                  {
+                    "id": 2,
+                    "name": "node_path",
+                    "type": "string"
+                  },
+                  {
+                    "id": 3,
+                    "name": "meta",
+                    "type": "FileMetadata"
+                  }
+                ]
+              }
+            ]
+          }
+        ],
+        "imports": [
+          {
+            "path": "google/protobuf/timestamp.proto"
+          },
+          {
+            "path": "storage/process_indicator.proto"
           }
         ],
         "package": {
@@ -9625,7 +9865,7 @@
               },
               {
                 "id": 2,
-                "name": "sha",
+                "name": "digest",
                 "type": "string"
               },
               {
@@ -9655,105 +9895,165 @@
               },
               {
                 "id": 8,
-                "name": "component_count",
-                "type": "int32"
+                "name": "scan_stats",
+                "type": "ScanStats"
               },
               {
                 "id": 9,
-                "name": "cve_count",
-                "type": "int32"
-              },
-              {
-                "id": 10,
-                "name": "fixable_cve_count",
-                "type": "int32"
-              },
-              {
-                "id": 11,
-                "name": "unknown_cve_count",
-                "type": "int32"
-              },
-              {
-                "id": 12,
-                "name": "fixable_unknown_cve_count",
-                "type": "int32"
-              },
-              {
-                "id": 13,
-                "name": "critical_cve_count",
-                "type": "int32"
-              },
-              {
-                "id": 14,
-                "name": "fixable_critical_cve_count",
-                "type": "int32"
-              },
-              {
-                "id": 15,
-                "name": "important_cve_count",
-                "type": "int32"
-              },
-              {
-                "id": 16,
-                "name": "fixable_important_cve_count",
-                "type": "int32"
-              },
-              {
-                "id": 17,
-                "name": "moderate_cve_count",
-                "type": "int32"
-              },
-              {
-                "id": 18,
-                "name": "fixable_moderate_cve_count",
-                "type": "int32"
-              },
-              {
-                "id": 19,
-                "name": "low_cve_count",
-                "type": "int32"
-              },
-              {
-                "id": 20,
-                "name": "fixable_low_cve_count",
-                "type": "int32"
-              },
-              {
-                "id": 21,
                 "name": "last_updated",
                 "type": "google.protobuf.Timestamp"
               },
               {
-                "id": 22,
+                "id": 10,
                 "name": "not_pullable",
                 "type": "bool"
               },
               {
-                "id": 23,
+                "id": 11,
                 "name": "is_cluster_local",
                 "type": "bool"
               },
               {
-                "id": 24,
+                "id": 12,
                 "name": "priority",
                 "type": "int64"
               },
               {
-                "id": 25,
+                "id": 13,
                 "name": "risk_score",
                 "type": "float"
               },
               {
-                "id": 26,
+                "id": 14,
                 "name": "top_cvss",
                 "type": "float"
               },
               {
-                "id": 27,
+                "id": 15,
                 "name": "notes",
                 "type": "Note",
                 "is_repeated": true
               }
+            ],
+            "messages": [
+              {
+                "name": "ScanStats",
+                "fields": [
+                  {
+                    "id": 1,
+                    "name": "component_count",
+                    "type": "int32"
+                  },
+                  {
+                    "id": 2,
+                    "name": "cve_count",
+                    "type": "int32"
+                  },
+                  {
+                    "id": 3,
+                    "name": "fixable_cve_count",
+                    "type": "int32"
+                  },
+                  {
+                    "id": 4,
+                    "name": "unknown_cve_count",
+                    "type": "int32"
+                  },
+                  {
+                    "id": 5,
+                    "name": "fixable_unknown_cve_count",
+                    "type": "int32"
+                  },
+                  {
+                    "id": 6,
+                    "name": "critical_cve_count",
+                    "type": "int32"
+                  },
+                  {
+                    "id": 7,
+                    "name": "fixable_critical_cve_count",
+                    "type": "int32"
+                  },
+                  {
+                    "id": 8,
+                    "name": "important_cve_count",
+                    "type": "int32"
+                  },
+                  {
+                    "id": 9,
+                    "name": "fixable_important_cve_count",
+                    "type": "int32"
+                  },
+                  {
+                    "id": 10,
+                    "name": "moderate_cve_count",
+                    "type": "int32"
+                  },
+                  {
+                    "id": 11,
+                    "name": "fixable_moderate_cve_count",
+                    "type": "int32"
+                  },
+                  {
+                    "id": 12,
+                    "name": "low_cve_count",
+                    "type": "int32"
+                  },
+                  {
+                    "id": 13,
+                    "name": "fixable_low_cve_count",
+                    "type": "int32"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "name": "ListImageV2",
+            "fields": [
+              {
+                "id": 7,
+                "name": "id",
+                "type": "string"
+              },
+              {
+                "id": 2,
+                "name": "name",
+                "type": "string"
+              },
+              {
+                "id": 3,
+                "name": "component_count",
+                "type": "int32"
+              },
+              {
+                "id": 4,
+                "name": "cve_count",
+                "type": "int32"
+              },
+              {
+                "id": 5,
+                "name": "fixable_cve_count",
+                "type": "int32"
+              },
+              {
+                "id": 6,
+                "name": "created",
+                "type": "google.protobuf.Timestamp"
+              },
+              {
+                "id": 8,
+                "name": "last_updated",
+                "type": "google.protobuf.Timestamp"
+              },
+              {
+                "id": 10,
+                "name": "priority",
+                "type": "int64"
+              }
+            ],
+            "reserved_ids": [
+              9
             ]
           }
         ],
@@ -12358,6 +12658,11 @@
                 "id": 10,
                 "name": "skipTLSVerify",
                 "type": "bool"
+              },
+              {
+                "id": 11,
+                "name": "hostname_helo_ehlo",
+                "type": "string"
               }
             ]
           },
@@ -12795,6 +13100,10 @@
               {
                 "name": "AUDIT_LOG_EVENT",
                 "integer": 2
+              },
+              {
+                "name": "NODE_EVENT",
+                "integer": 3
               }
             ]
           },
@@ -14721,6 +15030,22 @@
                 "oneof_parent": "scope_reference"
               }
             ]
+          },
+          {
+            "name": "ViewBasedVulnerabilityReportFilters",
+            "fields": [
+              {
+                "id": 1,
+                "name": "query",
+                "type": "string"
+              },
+              {
+                "id": 2,
+                "name": "access_scope_rules",
+                "type": "SimpleAccessScope.Rules",
+                "is_repeated": true
+              }
+            ]
           }
         ],
         "imports": [
@@ -14878,6 +15203,10 @@
               {
                 "name": "SCHEDULED",
                 "integer": 1
+              },
+              {
+                "name": "VIEW_BASED",
+                "integer": 2
               }
             ]
           }
@@ -14918,6 +15247,12 @@
                 "oneof_parent": "filter"
               },
               {
+                "id": 12,
+                "name": "view_based_vuln_report_filters",
+                "type": "ViewBasedVulnerabilityReportFilters",
+                "oneof_parent": "filter"
+              },
+              {
                 "id": 7,
                 "name": "collection",
                 "type": "CollectionSnapshot"
@@ -14942,6 +15277,11 @@
                 "id": 11,
                 "name": "requester",
                 "type": "SlimUser"
+              },
+              {
+                "id": 13,
+                "name": "area_of_concern",
+                "type": "string"
               }
             ]
           },
@@ -16512,6 +16852,11 @@
                 "name": "service_certs",
                 "type": "TypedServiceCertificate",
                 "is_repeated": true
+              },
+              {
+                "id": 3,
+                "name": "ca_bundle_pem",
+                "type": "bytes"
               }
             ]
           }
@@ -16563,6 +16908,11 @@
                 "id": 5,
                 "name": "transparency_log",
                 "type": "TransparencyLogVerification"
+              },
+              {
+                "id": 6,
+                "name": "traits",
+                "type": "Traits"
               }
             ]
           },
@@ -16663,6 +17013,11 @@
                 "type": "string"
               }
             ]
+          }
+        ],
+        "imports": [
+          {
+            "path": "storage/traits.proto"
           }
         ],
         "package": {
@@ -18148,6 +18503,360 @@
             "value": "io.stackrox.proto.storage"
           }
         ]
+      }
+    },
+    {
+      "protopath": "virtual_machine.proto",
+      "def": {
+        "enums": [
+          {
+            "name": "VirtualMachine.Note",
+            "enum_fields": [
+              {
+                "name": "MISSING_METADATA"
+              },
+              {
+                "name": "MISSING_SCAN_DATA",
+                "integer": 1
+              },
+              {
+                "name": "MISSING_SIGNATURE",
+                "integer": 2
+              },
+              {
+                "name": "MISSING_SIGNATURE_VERIFICATION_DATA",
+                "integer": 3
+              }
+            ]
+          },
+          {
+            "name": "VirtualMachine.State",
+            "enum_fields": [
+              {
+                "name": "UNKNOWN"
+              },
+              {
+                "name": "STOPPED",
+                "integer": 1
+              },
+              {
+                "name": "RUNNING",
+                "integer": 2
+              }
+            ]
+          },
+          {
+            "name": "VirtualMachineScan.Note",
+            "enum_fields": [
+              {
+                "name": "UNSET"
+              },
+              {
+                "name": "OS_UNKNOWN",
+                "integer": 1
+              },
+              {
+                "name": "OS_UNSUPPORTED",
+                "integer": 2
+              }
+            ]
+          },
+          {
+            "name": "EmbeddedVirtualMachineScanComponent.Note",
+            "enum_fields": [
+              {
+                "name": "UNSPECIFIED"
+              },
+              {
+                "name": "UNSCANNED",
+                "integer": 1
+              }
+            ]
+          }
+        ],
+        "messages": [
+          {
+            "name": "VirtualMachine",
+            "fields": [
+              {
+                "id": 1,
+                "name": "id",
+                "type": "string"
+              },
+              {
+                "id": 2,
+                "name": "namespace",
+                "type": "string"
+              },
+              {
+                "id": 3,
+                "name": "name",
+                "type": "string"
+              },
+              {
+                "id": 4,
+                "name": "cluster_id",
+                "type": "string"
+              },
+              {
+                "id": 5,
+                "name": "cluster_name",
+                "type": "string"
+              },
+              {
+                "id": 7,
+                "name": "last_updated",
+                "type": "google.protobuf.Timestamp"
+              },
+              {
+                "id": 8,
+                "name": "notes",
+                "type": "Note",
+                "is_repeated": true
+              },
+              {
+                "id": 9,
+                "name": "vsock_cid",
+                "type": "int32"
+              },
+              {
+                "id": 10,
+                "name": "state",
+                "type": "State"
+              },
+              {
+                "id": 11,
+                "name": "scan",
+                "type": "VirtualMachineScan"
+              }
+            ],
+            "maps": [
+              {
+                "key_type": "string",
+                "field": {
+                  "id": 6,
+                  "name": "facts",
+                  "type": "string"
+                }
+              }
+            ]
+          },
+          {
+            "name": "VirtualMachineScan",
+            "fields": [
+              {
+                "id": 1,
+                "name": "scan_time",
+                "type": "google.protobuf.Timestamp"
+              },
+              {
+                "id": 2,
+                "name": "operating_system",
+                "type": "string"
+              },
+              {
+                "id": 3,
+                "name": "notes",
+                "type": "Note",
+                "is_repeated": true
+              },
+              {
+                "id": 4,
+                "name": "components",
+                "type": "EmbeddedVirtualMachineScanComponent",
+                "is_repeated": true
+              }
+            ]
+          },
+          {
+            "name": "EmbeddedVirtualMachineScanComponent",
+            "fields": [
+              {
+                "id": 1,
+                "name": "name",
+                "type": "string"
+              },
+              {
+                "id": 2,
+                "name": "version",
+                "type": "string"
+              },
+              {
+                "id": 3,
+                "name": "top_cvss",
+                "type": "float",
+                "oneof_parent": "set_top_cvss"
+              },
+              {
+                "id": 4,
+                "name": "risk_score",
+                "type": "float"
+              },
+              {
+                "id": 5,
+                "name": "vulnerabilities",
+                "type": "VirtualMachineVulnerability",
+                "is_repeated": true
+              },
+              {
+                "id": 6,
+                "name": "source",
+                "type": "SourceType"
+              },
+              {
+                "id": 7,
+                "name": "notes",
+                "type": "Note",
+                "is_repeated": true
+              }
+            ]
+          },
+          {
+            "name": "VirtualMachineVulnerability",
+            "fields": [
+              {
+                "id": 1,
+                "name": "cve_base_info",
+                "type": "VirtualMachineCVEInfo"
+              },
+              {
+                "id": 2,
+                "name": "severity",
+                "type": "VulnerabilitySeverity"
+              },
+              {
+                "id": 3,
+                "name": "fixed_by",
+                "type": "string",
+                "oneof_parent": "set_fixed_by"
+              },
+              {
+                "id": 4,
+                "name": "cvss",
+                "type": "float"
+              }
+            ]
+          },
+          {
+            "name": "VirtualMachineCVEInfo",
+            "fields": [
+              {
+                "id": 1,
+                "name": "cve",
+                "type": "string"
+              },
+              {
+                "id": 2,
+                "name": "summary",
+                "type": "string"
+              },
+              {
+                "id": 3,
+                "name": "link",
+                "type": "string"
+              },
+              {
+                "id": 4,
+                "name": "published_on",
+                "type": "google.protobuf.Timestamp"
+              },
+              {
+                "id": 5,
+                "name": "created_at",
+                "type": "google.protobuf.Timestamp"
+              },
+              {
+                "id": 6,
+                "name": "last_modified",
+                "type": "google.protobuf.Timestamp"
+              },
+              {
+                "id": 7,
+                "name": "references",
+                "type": "Reference",
+                "is_repeated": true
+              },
+              {
+                "id": 8,
+                "name": "cvss_metrics",
+                "type": "CVSSScore",
+                "is_repeated": true
+              },
+              {
+                "id": 9,
+                "name": "epss",
+                "type": "VirtualMachineEPSS"
+              },
+              {
+                "id": 10,
+                "name": "advisory",
+                "type": "VirtualMachineAdvisory"
+              }
+            ],
+            "messages": [
+              {
+                "name": "Reference",
+                "fields": [
+                  {
+                    "id": 1,
+                    "name": "URI",
+                    "type": "string"
+                  },
+                  {
+                    "id": 2,
+                    "name": "tags",
+                    "type": "string",
+                    "is_repeated": true
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "name": "VirtualMachineEPSS",
+            "fields": [
+              {
+                "id": 1,
+                "name": "epss_probability",
+                "type": "float"
+              },
+              {
+                "id": 2,
+                "name": "epss_percentile",
+                "type": "float"
+              }
+            ]
+          },
+          {
+            "name": "VirtualMachineAdvisory",
+            "fields": [
+              {
+                "id": 1,
+                "name": "name",
+                "type": "string"
+              },
+              {
+                "id": 2,
+                "name": "link",
+                "type": "string"
+              }
+            ]
+          }
+        ],
+        "imports": [
+          {
+            "path": "google/protobuf/timestamp.proto"
+          },
+          {
+            "path": "storage/cve.proto"
+          },
+          {
+            "path": "storage/image.proto"
+          }
+        ],
+        "package": {
+          "name": "storage"
+        }
       }
     },
     {

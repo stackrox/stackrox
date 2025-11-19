@@ -1,6 +1,4 @@
-import React from 'react';
-
-import ComponentTestProviders from 'test-utils/ComponentProviders';
+import ComponentTestProvider from 'test-utils/ComponentTestProvider';
 import { graphqlUrl } from 'test-utils/apiEndpoints';
 
 import { standardEntityTypes } from 'constants/entityTypes';
@@ -47,9 +45,9 @@ const setup = () => {
     });
 
     cy.mount(
-        <ComponentTestProviders>
+        <ComponentTestProvider>
             <ComplianceLevelsByStandard />
-        </ComponentTestProviders>
+        </ComponentTestProvider>
     );
 };
 

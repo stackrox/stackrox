@@ -121,7 +121,7 @@ func validateNotifier(notifier *storage.Notifier) error {
 	if notifier.GetUiEndpoint() == "" {
 		errorList.AddString("notifier UI endpoint must be defined")
 	}
-	if err := endpoints.ValidateEndpoints(notifier.Config); err != nil {
+	if err := endpoints.ValidateEndpoints(notifier.GetConfig()); err != nil {
 		errorList.AddWrap(err, "invalid endpoint")
 	}
 	return errorList.ToError()
@@ -196,7 +196,7 @@ func (s *serviceImpl) PostNotifier(ctx context.Context, request *storage.Notifie
 	request.Id = id
 	s.processor.UpdateNotifier(ctx, notifier)
 
-	if err = s.reporter.Register(request.Id, request.Name, storage.IntegrationHealth_NOTIFIER); err != nil {
+	if err = s.reporter.Register(request.GetId(), request.GetName(), storage.IntegrationHealth_NOTIFIER); err != nil {
 		return nil, err
 	}
 	return request, nil

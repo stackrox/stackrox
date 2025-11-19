@@ -2,7 +2,7 @@ import axios from './instance';
 
 const url = '/v1/telemetry/config';
 
-type TelemetryConfig = {
+export type TelemetryConfig = {
     userId: string;
     endpoint: string;
     storageKeyV1: string;
@@ -11,10 +11,6 @@ type TelemetryConfig = {
 /**
  * Fetches telemetry data for analytics.
  */
-export function fetchTelemetryConfig(): Promise<{
-    response: { telemetryConfig: TelemetryConfig };
-}> {
-    return axios.get<{ telemetryConfig: TelemetryConfig }>(url).then((response) => ({
-        response: response.data,
-    }));
+export function fetchTelemetryConfig(): Promise<TelemetryConfig> {
+    return axios.get<TelemetryConfig>(url).then(({ data }) => data);
 }

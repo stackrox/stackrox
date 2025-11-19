@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { getNamespacesForClusterAndPermissions } from 'services/RolesService';
 import type { NamespaceScopeObject } from 'services/RolesService';
 import type { ResourceName } from 'types/roleResources';

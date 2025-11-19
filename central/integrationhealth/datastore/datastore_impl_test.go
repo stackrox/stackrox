@@ -18,7 +18,6 @@ import (
 )
 
 func TestIntegrationHealthDatastore(t *testing.T) {
-	t.Parallel()
 	suite.Run(t, new(integrationHealthDatastoreTestSuite))
 }
 

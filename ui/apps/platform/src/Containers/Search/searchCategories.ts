@@ -1,9 +1,8 @@
 import cloneDeep from 'lodash/cloneDeep';
 
-import { IsRouteEnabled } from 'hooks/useIsRouteEnabled';
-import { SearchResultCategory } from 'services/SearchService';
+import type { IsRouteEnabled } from 'hooks/useIsRouteEnabled';
+import type { SearchResultCategory } from 'services/SearchService';
 import {
-    RouteKey,
     clustersBasePath,
     configManagementPath,
     policiesBasePath,
@@ -11,10 +10,10 @@ import {
     violationsBasePath,
     vulnerabilitiesAllImagesPath,
     vulnerabilitiesNodeCvesPath,
-    vulnerabilitiesWorkloadCvesPath,
 } from 'routePaths';
+import type { RouteKey } from 'routePaths';
 import { getQueryString } from 'utils/queryStringUtils';
-import { IsFeatureFlagEnabled } from 'hooks/useFeatureFlags';
+import type { IsFeatureFlagEnabled } from 'hooks/useFeatureFlags';
 
 const configManagementRolesPath = `${configManagementPath}/roles`;
 const configManagementSecretsPath = `${configManagementPath}/secrets`;
@@ -58,7 +57,7 @@ export type SearchResultCategoryMap = Record<SearchResultCategory, SearchResultC
 // Therefore update that property if response ever adds search categories.
 
 function getSearchResultCategoryMap(
-    isFeatureFlagEnabled: IsFeatureFlagEnabled
+    isFeatureFlagEnabled: IsFeatureFlagEnabled // eslint-disable-line @typescript-eslint/no-unused-vars
 ): SearchResultCategoryMap {
     return {
         ALERTS: {
@@ -101,7 +100,7 @@ function getSearchResultCategoryMap(
             },
             viewLinks: [
                 {
-                    basePath: `${vulnerabilitiesWorkloadCvesPath}/images/:id`,
+                    basePath: `${vulnerabilitiesAllImagesPath}/images/:id`,
                     linkText: 'Images',
                     routeKey: 'vulnerability-management',
                 },
@@ -111,11 +110,7 @@ function getSearchResultCategoryMap(
             filterOn: null,
             viewLinks: [
                 {
-                    basePath: `${
-                        isFeatureFlagEnabled('ROX_PLATFORM_CVE_SPLIT')
-                            ? vulnerabilitiesAllImagesPath
-                            : vulnerabilitiesWorkloadCvesPath
-                    }/namespace-view${getQueryString({
+                    basePath: `${vulnerabilitiesAllImagesPath}/namespace-view${getQueryString({
                         s: {
                             Namespace: ['^:name$'],
                             Cluster: ['^:locationTextForCategory$'],

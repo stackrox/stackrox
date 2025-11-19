@@ -14,13 +14,11 @@ import (
 )
 
 func TestNetwork(t *testing.T) {
-	t.Parallel()
 
 	assert.Equal(t, Network, pipeAddr.Network())
 }
 
 func TestPipeListener_Connections(t *testing.T) {
-	t.Parallel()
 
 	lis, dialCtx := NewPipeListener()
 
@@ -88,7 +86,6 @@ func TestPipeListener_Connections(t *testing.T) {
 }
 
 func TestPipeListener_Close(t *testing.T) {
-	t.Parallel()
 
 	lis, dialCtx := NewPipeListener()
 

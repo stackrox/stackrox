@@ -5,9 +5,9 @@ import (
 	"testing"
 
 	"github.com/stackrox/rox/central/deployment/cache"
-	"github.com/stackrox/rox/central/deployment/datastore/internal/search"
 	pgStore "github.com/stackrox/rox/central/deployment/datastore/internal/store/postgres"
 	imageDS "github.com/stackrox/rox/central/image/datastore"
+	imageV2DS "github.com/stackrox/rox/central/imagev2/datastore"
 	nfDS "github.com/stackrox/rox/central/networkgraph/flow/datastore"
 	platformmatcher "github.com/stackrox/rox/central/platform/matcher"
 	pbDS "github.com/stackrox/rox/central/processbaseline/datastore"
@@ -24,6 +24,7 @@ import (
 // parameters used to initialize a test datastore for Deployment objects.
 type DeploymentTestStoreParams struct {
 	ImagesDataStore                   imageDS.DataStore
+	ImagesV2DataStore                 imageV2DS.DataStore
 	ProcessBaselinesDataStore         pbDS.DataStore
 	NetworkGraphFlowClustersDataStore nfDS.ClusterDataStore
 	RisksDataStore                    riskDS.DataStore
@@ -44,12 +45,11 @@ func NewTestDataStore(
 		return nil, errors.New("NewTestDataStore called without testing")
 	}
 	deploymentStore := pgStore.FullStoreWrap(pgStore.New(testDB.DB))
-	searcher := search.NewV2(deploymentStore)
 	mockCtrl := gomock.NewController(t)
 	ds := newDatastoreImpl(
 		deploymentStore,
-		searcher,
 		storeParams.ImagesDataStore,
+		storeParams.ImagesV2DataStore,
 		storeParams.ProcessBaselinesDataStore,
 		storeParams.NetworkGraphFlowClustersDataStore,
 		storeParams.RisksDataStore,
@@ -68,8 +68,8 @@ func NewTestDataStore(
 // GetTestPostgresDataStore provides a datastore connected to postgres for testing purposes.
 func GetTestPostgresDataStore(t testing.TB, pool postgres.DB) (DataStore, error) {
 	dbStore := pgStore.FullStoreWrap(pgStore.New(pool))
-	searcher := search.NewV2(dbStore)
 	imageStore := imageDS.GetTestPostgresDataStore(t, pool)
+	imageV2Store := imageV2DS.GetTestPostgresDataStore(t, pool)
 	processBaselineStore := pbDS.GetTestPostgresDataStore(t, pool)
 	networkFlowClusterStore, err := nfDS.GetTestPostgresClusterDataStore(t, pool)
 	if err != nil {
@@ -83,8 +83,8 @@ func GetTestPostgresDataStore(t testing.TB, pool postgres.DB) (DataStore, error)
 	mockCtrl := gomock.NewController(t)
 	return newDatastoreImpl(
 		dbStore,
-		searcher,
 		imageStore,
+		imageV2Store,
 		processBaselineStore,
 		networkFlowClusterStore,
 		riskStore,

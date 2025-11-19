@@ -87,10 +87,13 @@ type Sensor struct {
 	notifyList []common.Notifiable
 	reconnect  atomic.Bool
 	reconcile  atomic.Bool
+
+	clusterID clusterIDPeekSetter
 }
 
 // NewSensor initializes a Sensor, including reading configurations from the environment.
 func NewSensor(
+	clusterID clusterIDPeekSetter,
 	configHandler config.Handler,
 	detector detector.Detector,
 	imageService image.Service,
@@ -100,6 +103,7 @@ func NewSensor(
 	components ...common.SensorComponent,
 ) *Sensor {
 	return &Sensor{
+		clusterID:          clusterID,
 		centralEndpoint:    env.CentralEndpoint.Setting(),
 		advertisedEndpoint: env.AdvertisedEndpoint.Setting(),
 
@@ -175,7 +179,7 @@ func (s *Sensor) Start() {
 	// reuse certificates between GRPC and HTTP clients for initial connection
 	centralCertificates := s.certLoader()
 
-	go s.centralConnectionFactory.SetCentralConnectionWithRetries(s.centralConnection, centralclient.StaticCertLoader(centralCertificates))
+	go s.centralConnectionFactory.SetCentralConnectionWithRetries(s.clusterID, s.centralConnection, centralclient.StaticCertLoader(centralCertificates))
 
 	for _, c := range s.components {
 		s.AddNotifiable(c)
@@ -280,9 +284,6 @@ func (s *Sensor) Start() {
 	}
 	log.Info("All components have started")
 
-	okSig := s.centralConnectionFactory.OkSignal()
-	errSig := s.centralConnectionFactory.StopSignal()
-
 	err = s.pubSub.Subscribe(internalmessage.SensorMessageSoftRestart, func(message *internalmessage.SensorInternalMessage) {
 		if message.IsExpired() {
 			return
@@ -302,25 +303,8 @@ func (s *Sensor) Start() {
 		log.Warnf("Failed to register subscription to sensor internal message: %q", err)
 	}
 
-	if features.PreventSensorRestartOnDisconnect.Enabled() {
-		log.Info("Running Sensor with connection retry: preventing sensor restart on disconnect")
-		go s.communicationWithCentralWithRetries(&centralReachable)
-	} else {
-		log.Info("Running Sensor without connection retries: sensor will restart on disconnect")
-		// This has to be checked only if retries are not enabled. With retries, this signal will be checked
-		// inside communicationWithCentralWithRetries since it has to be re-checked on reconnects, and not
-		// crash if it fails.
-		select {
-		case <-errSig.Done():
-			s.stoppedSig.SignalWithErrorWrap(errSig.Err(), "getting connection from connection factory")
-			return
-		case <-okSig.Done():
-			s.changeState(common.SensorComponentEventCentralReachableHTTP)
-		case <-s.stoppedSig.Done():
-			return
-		}
-		go s.communicationWithCentral(&centralReachable)
-	}
+	log.Info("Running Sensor with connection retry: preventing sensor restart on disconnect")
+	go s.communicationWithCentralWithRetries(&centralReachable)
 }
 
 // newScannerDefinitionsRoute returns a custom route that serves scanner
@@ -341,14 +325,7 @@ func (s *Sensor) newScannerDefinitionsRoute(centralEndpoint string, centralCerti
 
 // Stop shuts down background tasks.
 func (s *Sensor) Stop() {
-	if features.PreventSensorRestartOnDisconnect.Enabled() {
-		s.stoppedSig.Signal()
-	} else {
-		// Stop communication with central.
-		if s.centralConnection != nil {
-			s.centralCommunication.Stop()
-		}
-	}
+	s.stoppedSig.Signal()
 
 	for _, c := range s.components {
 		c.Stop()
@@ -371,22 +348,6 @@ func (s *Sensor) Stop() {
 	}
 
 	log.Info("Sensor shutdown complete")
-}
-
-func (s *Sensor) communicationWithCentral(centralReachable *concurrency.Flag) {
-	s.centralCommunication = NewCentralCommunication(false, false, s.components...)
-
-	syncDone := concurrency.NewSignal()
-	s.centralCommunication.Start(central.NewSensorServiceClient(s.centralConnection), centralReachable, &syncDone, s.configHandler, s.detector)
-	go s.notifySyncDone(&syncDone, s.centralCommunication)
-
-	if err := s.centralCommunication.Stopped().Wait(); err != nil {
-		log.Errorf("Sensor reported an error: %v", err)
-		s.stoppedSig.SignalWithError(err)
-	} else {
-		log.Info("Terminating central connection.")
-		s.stoppedSig.Signal()
-	}
 }
 
 func (s *Sensor) changeState(state common.SensorComponentEvent) {
@@ -463,14 +424,14 @@ func (s *Sensor) communicationWithCentralWithRetries(centralReachable *concurren
 			// Save the error before retrying
 			err := wrapOrNewError(s.centralConnectionFactory.StopSignal().Err(), "communication stopped")
 			// Connection is still broken, report and try again
-			go s.centralConnectionFactory.SetCentralConnectionWithRetries(s.centralConnection, s.certLoader)
+			go s.centralConnectionFactory.SetCentralConnectionWithRetries(s.clusterID, s.centralConnection, s.certLoader)
 			return err
 		}
 
 		// At this point, we know that connection factory reported that connection is up.
 		// Try to create a central communication component. This component will fail (Stopped() signal) if the connection
 		// suddenly broke.
-		centralCommunication := NewCentralCommunication(s.reconnect.Load(), s.reconcile.Load(), s.components...)
+		centralCommunication := NewCentralCommunication(s.clusterID, s.reconnect.Load(), s.reconcile.Load(), s.components...)
 		syncDone := concurrency.NewSignal()
 		concurrency.WithLock(s.centralCommunicationLock, func() {
 			s.centralCommunication = centralCommunication
@@ -502,7 +463,7 @@ func (s *Sensor) communicationWithCentralWithRetries(centralReachable *concurren
 			s.reconnect.Store(true)
 			// Trigger goroutine that will attempt the connection. s.centralConnectionFactory.*Signal() should be
 			// checked to probe connection state.
-			go s.centralConnectionFactory.SetCentralConnectionWithRetries(s.centralConnection, s.certLoader)
+			go s.centralConnectionFactory.SetCentralConnectionWithRetries(s.clusterID, s.centralConnection, s.certLoader)
 			return wrapOrNewError(s.centralCommunication.Stopped().Err(), "communication stopped")
 		case <-s.stoppedSig.WaitC():
 			// This means sensor was signaled to finish, this error shouldn't be retried

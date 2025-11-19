@@ -21,7 +21,6 @@ import (
 	"github.com/stackrox/rox/sensor/common/centralcaps"
 	"github.com/stackrox/rox/sensor/common/centralid"
 	"github.com/stackrox/rox/sensor/common/certdistribution"
-	"github.com/stackrox/rox/sensor/common/clusterid"
 	"github.com/stackrox/rox/sensor/common/config"
 	"github.com/stackrox/rox/sensor/common/detector"
 	"github.com/stackrox/rox/sensor/common/managedcentral"
@@ -50,6 +49,12 @@ type centralCommunicationImpl struct {
 	allFinished *sync.WaitGroup
 
 	isReconnect bool
+	clusterID   clusterIDPeekSetter
+}
+
+type clusterIDPeekSetter interface {
+	Set(string)
+	GetNoWait() string
 }
 
 var (
@@ -165,7 +170,7 @@ func (s *centralCommunicationImpl) sendEvents(client central.SensorServiceClient
 	}
 
 	// Prepare outgoing context
-	ctx := metadata.AppendToOutgoingContext(trace.Background(), centralsensor.SensorHelloMetadataKey, "true")
+	ctx := metadata.AppendToOutgoingContext(trace.Background(s.clusterID), centralsensor.SensorHelloMetadataKey, "true")
 	ctx, err := centralsensor.AppendSensorHelloInfoToOutgoingMetadata(ctx, sensorHello)
 	if err != nil {
 		s.stopper.Flow().StopWithError(err)
@@ -234,7 +239,7 @@ func (s *centralCommunicationImpl) initialSync(ctx context.Context, stream centr
 	}
 
 	clusterID := centralHello.GetClusterId()
-	clusterid.Set(clusterID)
+	s.clusterID.Set(clusterID)
 
 	if centralHello.GetManagedCentral() {
 		log.Info("Central is managed")
@@ -255,7 +260,7 @@ func (s *centralCommunicationImpl) initialSync(ctx context.Context, stream centr
 		strconv.FormatBool(centralcaps.Has(centralsensor.SendDeduperStateOnReconnect)),
 		strconv.FormatBool(centralHello.GetSendDeduperState()))
 
-	if hello.HelmManagedConfigInit != nil {
+	if hello.GetHelmManagedConfigInit() != nil {
 		if err := helmconfig.StoreCachedClusterID(clusterID); err != nil {
 			log.Warnf("Could not cache cluster ID: %v", err)
 		}
@@ -268,7 +273,7 @@ func (s *centralCommunicationImpl) initialSync(ctx context.Context, stream centr
 	}
 
 	// DO NOT CHANGE THE ORDER. Please refer to `Run()` at `central/sensor/service/connection/connection_impl.go`
-	if err := s.initialConfigSync(stream, configHandler); err != nil {
+	if err := s.initialConfigSync(ctx, stream, configHandler); err != nil {
 		return err
 	}
 
@@ -333,16 +338,16 @@ func (s *centralCommunicationImpl) initialDeduperSync(stream central.SensorServi
 	return nil
 }
 
-func (s *centralCommunicationImpl) initialConfigSync(stream central.SensorService_CommunicateClient, handler config.Handler) error {
+func (s *centralCommunicationImpl) initialConfigSync(ctx context.Context, stream central.SensorService_CommunicateClient, handler config.Handler) error {
 	msg, err := stream.Recv()
 	if err != nil {
 		return errors.Wrap(err, "receiving initial cluster config")
 	}
 	if msg.GetClusterConfig() == nil {
-		return errors.Errorf("initial message received from Sensor was not a cluster config: %T", msg.Msg)
+		return errors.Errorf("initial message received from Sensor was not a cluster config: %T", msg.GetMsg())
 	}
 	// Send the initial cluster config to the config handler
-	if err := handler.ProcessMessage(msg); err != nil {
+	if err := handler.ProcessMessage(ctx, msg); err != nil {
 		return errors.Wrap(err, "processing initial cluster config")
 	}
 	return nil
@@ -357,7 +362,7 @@ func (s *centralCommunicationImpl) initialPolicySync(ctx context.Context,
 		return errors.Wrap(err, "receiving initial policies")
 	}
 	if msg.GetPolicySync() == nil {
-		return errors.Errorf("second message received from Sensor was not a policy sync: %T", msg.Msg)
+		return errors.Errorf("second message received from Sensor was not a policy sync: %T", msg.GetMsg())
 	}
 	if err := detector.ProcessPolicySync(ctx, msg.GetPolicySync()); err != nil {
 		return errors.Wrap(err, "policy sync could not be successfully processed")
@@ -368,7 +373,7 @@ func (s *centralCommunicationImpl) initialPolicySync(ctx context.Context,
 	if err != nil {
 		return errors.Wrap(err, "receiving initial baselines")
 	}
-	if err := detector.ProcessMessage(msg); err != nil {
+	if err := detector.ProcessMessage(ctx, msg); err != nil {
 		return errors.Wrap(err, "process baselines could not be successfully processed")
 	}
 
@@ -378,9 +383,9 @@ func (s *centralCommunicationImpl) initialPolicySync(ctx context.Context,
 		return errors.Wrap(err, "receiving network baseline sync")
 	}
 	if msg.GetNetworkBaselineSync() == nil {
-		return errors.Errorf("expected NetworkBaseline message but received %t", msg.Msg)
+		return errors.Errorf("expected NetworkBaseline message but received %t", msg.GetMsg())
 	}
-	if err := detector.ProcessMessage(msg); err != nil {
+	if err := detector.ProcessMessage(ctx, msg); err != nil {
 		return errors.Wrap(err, "network baselines could not be successfully processed")
 	}
 	return nil

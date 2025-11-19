@@ -105,6 +105,18 @@ func (s *PolicyValueValidator) TestRegex() {
 			invalid: []string{"", " "},
 			r:       portExposureValueRegex,
 		},
+		{
+			name:    "allowed file path",
+			valid:   []string{"/etc/passwd", "/etc/shadow", "/etc/sudoers", "/etc/ssh/sshd_config"},
+			invalid: []string{"", " ", "bin", "/usr/bin", "/etc/", "/etc/../etc/shadow", "~/home", "C:\\Windows", "relative/path"},
+			r:       allowedFilePathRegex,
+		},
+		{
+			name:    "file operation",
+			valid:   []string{"OPEN", "CREATE", "RENAME", "UNLINK", "OWNERSHIP_CHANGED", "PERMISSIONS_CHANGED", "open", "create", "rename", "unlink", "ownership_changed", "permissions_changed", "Open", "Create"},
+			invalid: []string{"", " ", "READ", "WRITE", "DELETE", "INVALID_OPERATION", "MODIFY", "ACCESS"},
+			r:       fileOperationRegex,
+		},
 	}
 
 	for _, c := range cases {

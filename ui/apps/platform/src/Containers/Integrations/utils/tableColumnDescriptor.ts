@@ -1,14 +1,15 @@
-import { BaseBackupIntegration } from 'types/externalBackup.proto';
-import { FeatureFlagEnvVar } from 'types/featureFlag';
-import {
-    BaseImageIntegration,
+import type { ApiToken } from 'types/apiToken.proto';
+import type { BaseBackupIntegration } from 'types/externalBackup.proto';
+import type { FeatureFlagEnvVar } from 'types/featureFlag';
+import type {
     AzureImageIntegration,
+    BaseImageIntegration,
     ClairifyImageIntegration,
     DockerImageIntegration,
     GoogleImageIntegration,
     QuayImageIntegration,
 } from 'types/imageIntegration.proto';
-import {
+import type {
     AuthProviderIntegration,
     AuthProviderType,
     BackupIntegrationType,
@@ -17,22 +18,23 @@ import {
     NotifierIntegrationType,
     SignatureIntegrationType,
 } from 'types/integration';
-import {
+import type {
     BaseNotifierIntegration,
     SumoLogicNotifierIntegration,
     SyslogNotifierIntegration,
 } from 'types/notifier.proto';
-import { SignatureIntegration } from 'types/signatureIntegration.proto';
+import type { SignatureIntegration } from 'types/signatureIntegration.proto';
 
-import { getOriginLabel } from 'Containers/AccessControl/traits';
-import { AuthMachineToMachineConfig } from 'services/MachineAccessService';
-import { CloudSourceIntegration } from 'services/CloudSourceService';
+import { getOriginLabel } from 'utils/traits.utils';
+import type { AuthMachineToMachineConfig } from 'services/MachineAccessService';
+import type { CloudSourceIntegration } from 'services/CloudSourceService';
 import {
     backupScheduleDescriptor,
     categoriesUtilsForClairifyScanner,
     categoriesUtilsForRegistryScanner,
     transformDurationLongForm,
 } from './integrationUtils';
+import { getDateTime } from 'utils/dateUtils';
 
 const { getCategoriesText: getCategoriesTextForClairifyScanner } =
     categoriesUtilsForClairifyScanner;
@@ -101,6 +103,15 @@ const tableColumnDescriptor: Readonly<IntegrationTableColumnDescriptorMap> = {
         apitoken: [
             { accessor: 'name', Header: 'Name' },
             { accessor: 'role', Header: 'Role' },
+            {
+                accessor: (config) => {
+                    const objectConfig = <ApiToken>config;
+                    return objectConfig.expiration
+                        ? getDateTime(objectConfig.expiration)
+                        : 'Unknown';
+                },
+                Header: 'Expiration',
+            },
         ],
         machineAccess: [
             {
@@ -119,6 +130,7 @@ const tableColumnDescriptor: Readonly<IntegrationTableColumnDescriptorMap> = {
                 },
                 Header: 'Configuration',
             },
+            originColumnDescriptor,
             { accessor: 'issuer', Header: 'Issuer' },
             {
                 accessor: (config) => {

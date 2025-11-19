@@ -21,7 +21,6 @@ const (
 )
 
 func TestSecretInformer(t *testing.T) {
-	t.Parallel()
 	cases := map[string]struct {
 		setupFn             func(k8sClient *fake.Clientset) error
 		expectedOnAddCnt    int
@@ -110,30 +109,27 @@ func TestSecretInformer(t *testing.T) {
 
 	for name, c := range cases {
 		t.Run(name, func(t *testing.T) {
-			t.Parallel()
 			k8sClient := fake.NewSimpleClientset()
-			var onAddCnt, onUpdateCnt, onDeleteCnt int
-			var mutex sync.RWMutex
+
+			var wgAdd, wgUp, wgDel sync.WaitGroup
+			wgAdd.Add(c.expectedOnAddCnt)
+			wgUp.Add(c.expectedOnUpdateCnt)
+			wgDel.Add(c.expectedOnDeleteCnt)
+
 			informer := NewSecretInformer(
 				namespace,
 				secretName,
 				k8sClient,
 				func(s *v1.Secret) {
-					mutex.Lock()
-					defer mutex.Unlock()
-					onAddCnt++
 					assert.Equal(t, c.expectedData, string(s.Data[secretKey]))
+					wgAdd.Done()
 				},
 				func(s *v1.Secret) {
-					mutex.Lock()
-					defer mutex.Unlock()
-					onUpdateCnt++
 					assert.Equal(t, c.expectedData, string(s.Data[secretKey]))
+					wgUp.Done()
 				},
 				func() {
-					mutex.Lock()
-					defer mutex.Unlock()
-					onDeleteCnt++
+					wgDel.Done()
 				},
 			)
 
@@ -144,13 +140,10 @@ func TestSecretInformer(t *testing.T) {
 			err = c.setupFn(k8sClient)
 			require.NoError(t, err)
 
-			assert.EventuallyWithT(t, func(t *assert.CollectT) {
-				mutex.RLock()
-				defer mutex.RUnlock()
-				assert.Equal(t, c.expectedOnAddCnt, onAddCnt)
-				assert.Equal(t, c.expectedOnUpdateCnt, onUpdateCnt)
-				assert.Equal(t, c.expectedOnDeleteCnt, onDeleteCnt)
-			}, 5*time.Second, 100*time.Millisecond)
+			wgAdd.Wait()
+			wgUp.Wait()
+			wgDel.Wait()
+			// Test is OK if not killed after timeout.
 		})
 	}
 }

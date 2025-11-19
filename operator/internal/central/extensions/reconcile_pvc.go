@@ -11,6 +11,7 @@ import (
 	"github.com/pkg/errors"
 	platform "github.com/stackrox/rox/operator/api/v1alpha1"
 	"github.com/stackrox/rox/operator/internal/central/common"
+	"github.com/stackrox/rox/operator/internal/common/rendercache"
 	utils "github.com/stackrox/rox/operator/internal/utils"
 	"github.com/stackrox/rox/pkg/sliceutils"
 	corev1 "k8s.io/api/core/v1"
@@ -53,62 +54,6 @@ var (
 	DefaultBackupPVCSize = resource.MustParse("200Gi") // 2*DefaultPVCSize
 )
 
-func convertDBPersistenceToPersistence(p *platform.DBPersistence, target PVCTarget) (*platform.Persistence, error) {
-	if p == nil {
-		return nil, nil
-	}
-	if p.HostPath != nil {
-		return &platform.Persistence{
-			HostPath: p.HostPath,
-		}, nil
-	}
-	pvc := p.GetPersistentVolumeClaim()
-	if pvc == nil {
-		return &platform.Persistence{}, nil
-	}
-
-	claimName := pvc.ClaimName
-	pvcSize := pvc.Size
-
-	if target == PVCTargetCentralDBBackup {
-		if claimName != nil {
-			// If a ClaimName is specified, derive the backup PVC ClamName from
-			// it as well. We don't want to modify the pointer in place, make a
-			// copy instead -- otherwise the next reconciliation will repeat the
-			// modification, duplicating the suffix.
-			backupName := common.GetBackupClaimName(*claimName)
-			claimName = &backupName
-		}
-
-		if pvcSize != nil {
-			// If a Size is specified, derive the backup PVC Size from it as
-			// well, the rule of thumb is that it should be twice as large, to
-			// accomodate the backup and one restore copy.
-			//
-			// The same as above, we don't want to modify the pointer in place,
-			// make a copy instead -- otherwise the next reconciliation will
-			// repeat the modification, duplicating the suffix.
-			quantity, err := resource.ParseQuantity(*pvcSize)
-
-			if err != nil {
-				return nil, errors.Wrap(err, "failed to calculate backup volume size")
-			} else {
-				quantity.Mul(2)
-				backupSize := quantity.String()
-				pvcSize = &backupSize
-			}
-		}
-	}
-
-	return &platform.Persistence{
-		PersistentVolumeClaim: &platform.PersistentVolumeClaim{
-			ClaimName:        claimName,
-			Size:             pvcSize,
-			StorageClassName: pvc.StorageClassName,
-		},
-	}, nil
-}
-
 // getPersistenceByTarget retrieves the persistence configuration for the given
 // PVC target:
 //   - PVCTargetCentral -- the embedded persistent volume on which RocksDB is
@@ -119,23 +64,58 @@ func convertDBPersistenceToPersistence(p *platform.DBPersistence, target PVCTarg
 //     database backups
 //
 // A nil return value indicates that no persistent volume should be provisioned for the respective target.
-func getPersistenceByTarget(central *platform.Central, target PVCTarget, log logr.Logger) (*platform.Persistence, error) {
+func getPersistenceByTarget(central *platform.CentralComponentSpec, target PVCTarget) (*platform.DBPersistence, error) {
 	switch target {
 	case PVCTargetCentral:
 		return nil, nil
 	case PVCTargetCentralDB, PVCTargetCentralDBBackup:
-		if !central.Spec.Central.ShouldManageDB() {
+		if !central.ShouldManageDB() {
 			return nil, nil
 		}
-		dbPersistence := central.Spec.Central.GetDB().GetPersistence()
-		if dbPersistence == nil {
-			dbPersistence = &platform.DBPersistence{}
+		p := central.GetDB().GetPersistence()
+		if p == nil {
+			p = &platform.DBPersistence{} // important semantically, see func description
 		}
 
-		return convertDBPersistenceToPersistence(dbPersistence, target)
+		if p.HostPath != nil {
+			return &platform.DBPersistence{
+				HostPath: p.HostPath,
+			}, nil
+		}
+		if target == PVCTargetCentralDBBackup {
+			return getBackupDBPersistence(p.GetPersistentVolumeClaim().DeepCopy())
+		}
+		return p.DeepCopy(), nil
 	default:
 		return nil, errors.Errorf("unknown pvc target %q", target)
 	}
+}
+
+// getBackupDBPersistence returns the DBPersistence for the _backup_ central-db volume, based on a copy of the
+// _main_ central-db volume config. It is free to trash or reuse the provided pvc object.
+func getBackupDBPersistence(pvc *platform.DBPersistentVolumeClaim) (*platform.DBPersistence, error) {
+	if pvc != nil && pvc.ClaimName != nil {
+		// If a ClaimName is specified, derive the backup PVC ClaimName from it.
+		backupName := common.GetBackupClaimName(*pvc.ClaimName)
+		pvc.ClaimName = &backupName
+	}
+
+	if pvc != nil && pvc.Size != nil {
+		// If a Size is specified, derive the backup PVC Size from it as
+		// well, the rule of thumb is that it should be twice as large, to
+		// accommodate the backup and one restore copy.
+		quantity, err := resource.ParseQuantity(*pvc.Size)
+		if err != nil {
+			return nil, errors.Wrapf(err, "failed to calculate backup volume size: parsing main central-db PVC size %q failed", *pvc.Size)
+		}
+		quantity.Mul(2)
+		backupSize := quantity.String()
+		pvc.Size = &backupSize
+	}
+
+	return &platform.DBPersistence{
+		PersistentVolumeClaim: pvc,
+	}, nil
 }
 
 // ReconcilePVCExtension reconciles PVCs created by the operator. The PVC is not managed by a Helm chart
@@ -143,18 +123,18 @@ func getPersistenceByTarget(central *platform.Central, target PVCTarget, log log
 // On uninstall the owner reference is removed from the PVC objects.
 func ReconcilePVCExtension(client ctrlClient.Client, direct ctrlClient.Reader, target PVCTarget, defaultClaimName string, opts ...PVCOption) extensions.ReconcileExtension {
 
-	fn := func(ctx context.Context, central *platform.Central, client ctrlClient.Client, direct ctrlClient.Reader, _ func(statusFunc updateStatusFunc), log logr.Logger) error {
-		persistence, err := getPersistenceByTarget(central, target, log)
+	fn := func(ctx context.Context, central *platform.Central, client ctrlClient.Client, direct ctrlClient.Reader, _ func(statusFunc updateStatusFunc), log logr.Logger, _ *rendercache.RenderCache) error {
+		persistence, err := getPersistenceByTarget(central.Spec.Central, target)
 		if err != nil {
 			return err
 		}
 
 		return reconcilePVC(ctx, central, persistence, target, defaultClaimName, client, log, opts...)
 	}
-	return wrapExtension(fn, client, direct)
+	return wrapExtension(fn, client, direct, nil)
 }
 
-func reconcilePVC(ctx context.Context, central *platform.Central, persistence *platform.Persistence, target PVCTarget, defaultClaimName string, client ctrlClient.Client, log logr.Logger, opts ...PVCOption) error {
+func reconcilePVC(ctx context.Context, central *platform.Central, persistence *platform.DBPersistence, target PVCTarget, defaultClaimName string, client ctrlClient.Client, log logr.Logger, opts ...PVCOption) error {
 	ext := reconcilePVCExtensionRun{
 		ctx:              ctx,
 		namespace:        central.GetNamespace(),
@@ -179,7 +159,7 @@ type reconcilePVCExtensionRun struct {
 	namespace        string
 	client           ctrlClient.Client
 	centralObj       *platform.Central
-	persistence      *platform.Persistence
+	persistence      *platform.DBPersistence
 	defaultClaimSize resource.Quantity
 	defaultClaimName string
 	target           PVCTarget
@@ -208,7 +188,7 @@ func (r *reconcilePVCExtensionRun) Execute() error {
 
 	pvcConfig := r.persistence.GetPersistentVolumeClaim()
 	if pvcConfig == nil {
-		pvcConfig = &platform.PersistentVolumeClaim{}
+		pvcConfig = &platform.DBPersistentVolumeClaim{}
 	}
 
 	claimName := pointer.StringDeref(pvcConfig.ClaimName, r.defaultClaimName)
@@ -266,7 +246,7 @@ func (r *reconcilePVCExtensionRun) handleDelete() error {
 	return nil
 }
 
-func (r *reconcilePVCExtensionRun) handleCreate(claimName string, pvcConfig *platform.PersistentVolumeClaim) error {
+func (r *reconcilePVCExtensionRun) handleCreate(claimName string, pvcConfig *platform.DBPersistentVolumeClaim) error {
 	// Before creating a PVC, verify if prerequisites are met. Currently there
 	// is only one requirement, a default storage class must exists or a
 	// storage class has to be specified explicitly. Since it's highly specific
@@ -332,7 +312,7 @@ func (r *reconcilePVCExtensionRun) handleCreate(claimName string, pvcConfig *pla
 	return nil
 }
 
-func (r *reconcilePVCExtensionRun) handleReconcile(existingPVC *corev1.PersistentVolumeClaim, pvcConfig *platform.PersistentVolumeClaim) error {
+func (r *reconcilePVCExtensionRun) handleReconcile(existingPVC *corev1.PersistentVolumeClaim, pvcConfig *platform.DBPersistentVolumeClaim) error {
 	shouldUpdate := false
 
 	if pvcSize := pointer.StringDeref(pvcConfig.Size, ""); pvcSize != "" {

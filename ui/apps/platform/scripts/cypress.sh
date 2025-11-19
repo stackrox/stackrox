@@ -14,11 +14,11 @@ curl_cfg() { # Use built-in echo to not expose $2 in the process list.
 }
 
 if [[ -n "$ROX_ADMIN_PASSWORD" ]]; then
-  readarray -t arr < <(curl -sk --config <(curl_cfg user "admin:$ROX_ADMIN_PASSWORD") ${api_endpoint}/v1/featureflags | jq -cr '.featureFlags[] | {name: .envVar, enabled: .enabled}')
+  readarray -t arr < <(curl -sk --config <(curl_cfg user "admin:$ROX_ADMIN_PASSWORD") "${api_endpoint}"/v1/featureflags | jq -cr '.featureFlags[] | {name: .envVar, enabled: .enabled}')
   for i in "${arr[@]}"; do
-    name=$(echo $i | jq -rc .name)
-    val=$(echo $i | jq -rc .enabled)
-    export CYPRESS_${name}=${val}
+    name=$(echo "$i" | jq -rc .name)
+    val=$(echo "$i" | jq -rc .enabled)
+    export CYPRESS_"${name}"="${val}"
   done
 fi
 export CYPRESS_ROX_AUTH_TOKEN=$(./scripts/get-auth-token.sh)
@@ -31,15 +31,31 @@ if [[ -n "${UI_BASE_URL}" ]]; then
   export CYPRESS_BASE_URL="${UI_BASE_URL}"
 fi
 
+export CYPRESS_SPEC_PATTERN='cypress/integration/**/*.test.{js,ts}'
+
 # be able to skip tests that are not relevant, for example: openshift
 export CYPRESS_ORCHESTRATOR_FLAVOR="${ORCHESTRATOR_FLAVOR}"
 
-if [ $2 == "--spec" ]; then
-    if [ $# -ne 3 ]; then
-        echo "usage: npm run cypress-spec <spec-file>"
+if [ "$2" == "--spec" ]; then
+    if [ $# -lt 3 ]; then
+        echo "usage: npm run cypress-spec <spec-file> [<spec-file> ...]"
         exit 1
     fi
-    cypress run --spec "cypress/integration/$3"
+    # Collect all spec arguments (everything after --spec)
+    shift 2  # Remove script name and --spec
+    all_specs="$*"
+
+    # Support multiple comma-separated spec files by prefixing each individually
+    IFS=',' read -ra specs <<< "$all_specs"
+    prefixed_specs=()
+    for spec in "${specs[@]}"; do
+        # Trim whitespace from each spec
+        spec=$(echo "$spec" | xargs)
+        prefixed_specs+=("cypress/integration/$spec")
+    done
+    # Join with commas for Cypress
+    spec_list=$(IFS=,; echo "${prefixed_specs[*]}")
+    cypress run --spec "$spec_list"
 else
     DEBUG="cypress*" NO_COLOR=1 cypress "$@" 2> /dev/null
 fi

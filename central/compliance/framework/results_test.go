@@ -10,7 +10,6 @@ import (
 )
 
 func TestWithResults(t *testing.T) {
-	t.Parallel()
 
 	results := newResults()
 	stopSig := concurrency.NewErrorSignal()

@@ -53,6 +53,20 @@ func (mr *MockSetMockRecorder) Clear() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Clear", reflect.TypeOf((*MockSet)(nil).Clear))
 }
 
+// Get mocks base method.
+func (m *MockSet) Get(id string) types.ImageRegistry {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Get", id)
+	ret0, _ := ret[0].(types.ImageRegistry)
+	return ret0
+}
+
+// Get indicates an expected call of Get.
+func (mr *MockSetMockRecorder) Get(id any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Get", reflect.TypeOf((*MockSet)(nil).Get), id)
+}
+
 // GetAll mocks base method.
 func (m *MockSet) GetAll() []types.ImageRegistry {
 	m.ctrl.T.Helper()

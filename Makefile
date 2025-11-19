@@ -36,33 +36,6 @@ SILENT ?= @
 # TODO: [ROX-19070] Update postgres store test generation to work for foreign keys
 UNIT_TEST_IGNORE := "stackrox/rox/sensor/tests|stackrox/rox/operator/tests|stackrox/rox/central/reports/config/store/postgres|stackrox/rox/central/complianceoperator/v2/scanconfigurations/store/postgres|stackrox/rox/central/auth/store/postgres|stackrox/rox/scanner/e2etests"
 
-ifeq ($(TAG),)
-TAG=$(shell git describe --tags --abbrev=10 --dirty --long --exclude '*-nightly-*')
-endif
-
-# Set expiration on Quay.io for non-release tags.
-ifeq ($(findstring x,$(TAG)),x)
-QUAY_TAG_EXPIRATION=13w
-else
-QUAY_TAG_EXPIRATION=never
-endif
-
-ROX_PRODUCT_BRANDING ?= STACKROX_BRANDING
-
-# ROX_IMAGE_FLAVOR is an ARG used in Dockerfiles that defines the default registries for main, scanner, and collector images.
-# ROX_IMAGE_FLAVOR valid values are: development_build, rhacs, opensource.
-ROX_IMAGE_FLAVOR ?= $(shell \
-	if [[ "$(ROX_PRODUCT_BRANDING)" == "STACKROX_BRANDING" ]]; then \
-	  echo "opensource"; \
-	else \
-	  echo "development_build"; \
-	fi)
-
-DEFAULT_IMAGE_REGISTRY := quay.io/stackrox-io
-ifeq ($(ROX_PRODUCT_BRANDING),RHACS_BRANDING)
-	DEFAULT_IMAGE_REGISTRY := quay.io/rhacs-eng
-endif
-
 GOBUILD := $(CURDIR)/scripts/go-build.sh
 DOCKERBUILD := $(CURDIR)/scripts/docker-build.sh
 GO_TEST_OUTPUT_PATH=$(CURDIR)/test-output/test.log
@@ -409,26 +382,14 @@ endif
 build-prep: deps
 	mkdir -p bin/{darwin_amd64,darwin_arm64,linux_amd64,linux_arm64,linux_ppc64le,linux_s390x,windows_amd64}
 
-.PHONY: cli-build
-cli-build: cli-linux cli-darwin cli-windows
+.PHONY: roxctl-build
+roxctl-build: roxctl-linux roxctl-darwin roxctl-windows
 
-.PHONY: cli-install
-cli-install:
-	# Workaround a bug on MacOS
-	rm -f $(GOPATH)/bin/roxctl
-	# Copy the user's specific OS into gopath
-	mkdir -p $(GOPATH)/bin
-	cp bin/$(HOST_OS)_$(GOARCH)/roxctl $(GOPATH)/bin/roxctl
-	chmod u+w $(GOPATH)/bin/roxctl
+roxctl-linux: roxctl_linux-amd64 roxctl_linux-arm64 roxctl_linux-ppc64le roxctl_linux-s390x
+roxctl-darwin: roxctl_darwin-amd64 roxctl_darwin-arm64
+roxctl-windows: roxctl_windows-amd64
 
-.PHONY: cli
-cli: cli-build cli-install
-
-cli-linux: cli_linux-amd64 cli_linux-arm64 cli_linux-ppc64le cli_linux-s390x
-cli-darwin: cli_darwin-amd64 cli_darwin-arm64
-cli-windows: cli_windows-amd64
-
-cli_%: build-prep
+roxctl_%: build-prep
 	$(eval    w := $(subst -, ,$*))
 	$(eval   os := $(firstword $(w)))
 	$(eval arch := $(lastword  $(w)))
@@ -438,8 +399,46 @@ else
 	RACE=0 CGO_ENABLED=0 GOOS=$(os) GOARCH=$(arch) $(GOBUILD) ./roxctl
 endif
 
+roxctl-install:
+	# Workaround a bug on MacOS
+	rm -f $(GOPATH)/bin/roxctl
+	# Copy the user's specific OS into gopath
+	mkdir -p $(GOPATH)/bin
+	cp bin/$(HOST_OS)_$(GOARCH)/roxctl $(GOPATH)/bin/roxctl
+	chmod u+w $(GOPATH)/bin/roxctl
+
+.PHONY: roxctl
+roxctl: roxctl-build roxctl-install
+
+.PHONY: roxagent-build
+roxagent-build: roxagent-linux
+
+roxagent-linux: roxagent_linux-amd64 roxagent_linux-arm64 roxagent_linux-ppc64le roxagent_linux-s390x
+
+roxagent_%: build-prep
+	$(eval    w := $(subst -, ,$*))
+	$(eval   os := $(firstword $(w)))
+	$(eval arch := $(lastword  $(w)))
+ifdef SKIP_CLI_BUILD
+	test -f bin/$(os)_$(arch)/roxagent || RACE=0 CGO_ENABLED=0 GOOS=$(os) GOARCH=$(arch) $(GOBUILD) ./compliance/virtualmachines/roxagent
+else
+	RACE=0 CGO_ENABLED=0 GOOS=$(os) GOARCH=$(arch) $(GOBUILD) ./compliance/virtualmachines/roxagent
+endif
+
+.PHONY: roxagent
+roxagent: roxagent-build
+
+.PHONY: cli-build
+cli-build: roxctl-build roxagent-build
+
+.PHONY: cli-install
+cli-install: roxctl-install
+
+.PHONY: cli
+cli: cli-build cli-install
+
 .PHONY: cli_host-arch
-cli_host-arch: cli_$(HOST_OS)-$(GOARCH)
+cli_host-arch: roxctl_$(HOST_OS)-$(GOARCH) roxagent_$(HOST_OS)-$(GOARCH)
 
 central: bin/$(HOST_OS)_$(GOARCH)/central
 
@@ -591,12 +590,8 @@ go-unit-tests: build-prep test-prep
 
 .PHONY: sensor-integration-test
 sensor-integration-test: build-prep test-prep
-	set -eo pipefail ; \
-	rm -rf  $(GO_TEST_OUTPUT_PATH); \
-	for package in $(shell git ls-files ./sensor/tests | grep '_test.go' | xargs -n 1 dirname | uniq | sort | sed -e 's/sensor\/tests\///'); do \
-		CGO_ENABLED=1 GOEXPERIMENT=cgocheck2 MUTEX_WATCHDOG_TIMEOUT_SECS=30 LOGLEVEL=debug GOTAGS=$(GOTAGS),test scripts/go-test.sh -p 4 -race -cover -coverprofile test-output/coverage.out -v ./sensor/tests/$$package \
-		| tee -a $(GO_TEST_OUTPUT_PATH); \
-	done \
+	set -o pipefail ; \
+	CGO_ENABLED=1 GOEXPERIMENT=cgocheck2 MUTEX_WATCHDOG_TIMEOUT_SECS=30 LOGLEVEL=debug GOTAGS=$(GOTAGS),test scripts/go-test.sh -timeout 15m -race -v -p 1 ./sensor/tests/... | tee $(GO_TEST_OUTPUT_PATH)
 
 sensor-pipeline-benchmark: build-prep test-prep
 	LOGLEVEL="panic" go test -bench=. -run=^# -benchtime=30s -count=5 ./sensor/tests/pipeline | tee $(CURDIR)/test-output/pipeline.results.txt
@@ -844,6 +839,10 @@ ossls-notice: deps
 .PHONY: collector-tag
 collector-tag:
 	@echo "$$(cat COLLECTOR_VERSION)"
+
+.PHONY: fact-tag
+fact-tag:
+	@echo "$$(cat FACT_VERSION)"
 
 .PHONY: scanner-tag
 scanner-tag:

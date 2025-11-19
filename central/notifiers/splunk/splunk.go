@@ -128,7 +128,7 @@ func (s *splunk) getSplunkEvent(msg protocompat.Message, sourceTypeKey string) (
 	return &wrapper.SplunkEvent{
 		Event:      e,
 		Source:     source,
-		Sourcetype: s.conf.SourceTypes[sourceTypeKey],
+		Sourcetype: s.conf.GetSourceTypes()[sourceTypeKey],
 	}, nil
 }
 
@@ -207,7 +207,7 @@ func (s *splunk) getHTTPToken() (string, error) {
 	}
 
 	if !env.EncNotifierCreds.BooleanSetting() {
-		s.creds = s.conf.HttpToken
+		s.creds = s.conf.GetHttpToken()
 		return s.creds, nil
 	}
 
@@ -269,17 +269,17 @@ func Validate(conf *storage.Splunk, validateSecret bool) error {
 		return errors.New("Splunk configuration required")
 	}
 	errorList := errorhelpers.NewErrorList("Splunk config validation")
-	if validateSecret && len(conf.HttpToken) == 0 {
+	if validateSecret && len(conf.GetHttpToken()) == 0 {
 		errorList.AddString("Splunk HTTP Event Collector(HEC) token must be specified")
 	}
-	if len(conf.HttpEndpoint) == 0 {
+	if len(conf.GetHttpEndpoint()) == 0 {
 		errorList.AddString("Splunk HTTP endpoint must be specified")
 	}
 	if conf.GetTruncate() == 0 {
 		conf.Truncate = splunkHECDefaultDataLimit
 	}
 	for sourceTypeKey := range defaultSourceTypeMap {
-		if _, ok := conf.SourceTypes[sourceTypeKey]; !ok {
+		if _, ok := conf.GetSourceTypes()[sourceTypeKey]; !ok {
 			errorList.AddStringf("Source type key %s must be specified", sourceTypeKey)
 		}
 	}

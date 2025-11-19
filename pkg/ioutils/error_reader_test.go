@@ -9,7 +9,6 @@ import (
 )
 
 func TestErrorReader_SomeError(t *testing.T) {
-	t.Parallel()
 
 	readErr := errors.New("some error during read")
 
@@ -21,7 +20,6 @@ func TestErrorReader_SomeError(t *testing.T) {
 }
 
 func TestErrorReader_NilError(t *testing.T) {
-	t.Parallel()
 
 	var buf [1]byte
 	r := ErrorReader(nil)

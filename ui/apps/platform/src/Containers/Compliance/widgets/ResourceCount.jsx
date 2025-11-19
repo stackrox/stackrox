@@ -12,7 +12,7 @@ import useWorkflowMatch from 'hooks/useWorkflowMatch';
 import { SEARCH_WITH_CONTROLS as QUERY } from 'queries/search';
 import queryService from 'utils/queryService';
 import { getResourceCountFromAggregatedResults } from 'utils/complianceUtils';
-import { useLocation } from 'react-router-dom';
+import { useLocation } from 'react-router-dom-v5-compat';
 import useCases from 'constants/useCaseTypes';
 import searchContext from 'Containers/searchContext';
 

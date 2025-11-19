@@ -47,8 +47,12 @@ func CreateEnhancer(provider store.Provider) common.SensorComponent {
 	}
 }
 
+func (d *DeploymentEnhancer) Accepts(msg *central.MsgToSensor) bool {
+	return msg.GetDeploymentEnhancementRequest() != nil
+}
+
 // ProcessMessage takes an incoming message and queues it for enhancement
-func (d *DeploymentEnhancer) ProcessMessage(msg *central.MsgToSensor) error {
+func (d *DeploymentEnhancer) ProcessMessage(_ context.Context, msg *central.MsgToSensor) error {
 	toEnhance := msg.GetDeploymentEnhancementRequest()
 	if toEnhance == nil {
 		return nil

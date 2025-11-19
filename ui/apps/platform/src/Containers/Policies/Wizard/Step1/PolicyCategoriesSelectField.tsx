@@ -1,35 +1,65 @@
-import React, { useState, useEffect, ReactElement } from 'react';
-import { FormGroup, FormHelperText, HelperText, HelperTextItem } from '@patternfly/react-core';
-import { Select, SelectOption } from '@patternfly/react-core/deprecated';
+import { useEffect, useState } from 'react';
+import type { FormEvent, MouseEvent as ReactMouseEvent, ReactElement, Ref } from 'react';
+import {
+    Button,
+    Chip,
+    ChipGroup,
+    FormGroup,
+    FormHelperText,
+    HelperText,
+    HelperTextItem,
+    MenuToggle,
+    Select,
+    SelectList,
+    SelectOption,
+    TextInputGroup,
+    TextInputGroupMain,
+    TextInputGroupUtilities,
+} from '@patternfly/react-core';
+import type { MenuToggleElement } from '@patternfly/react-core';
 import { useField } from 'formik';
 
 import { getPolicyCategories } from 'services/PolicyCategoriesService';
-import { PolicyCategory } from 'types/policy.proto';
+import type { PolicyCategory } from 'types/policy.proto';
+import { TimesIcon } from '@patternfly/react-icons';
 
 function PolicyCategoriesSelectField(): ReactElement {
     const [policyCategories, setPolicyCategories] = useState<PolicyCategory[]>([]);
-    // manage state for Categories select below
-    const [isCategoriesOpen, setIsCategoriesOpen] = useState(false);
-
+    const [isOpen, setIsOpen] = useState(false);
+    const [inputValue, setInputValue] = useState('');
     const [field, , helpers] = useField('categories');
+    // Used to temporarily prevent dropdown from closing after selecting an item to maintain multi-select UX
+    const [preventClose, setPreventClose] = useState(false);
 
-    function onCategoriesToggle(isOpen) {
-        setIsCategoriesOpen(isOpen);
-    }
+    const selectedCategories: string[] = (field.value as string[]) || [];
 
-    function onSelectHandler(selectedCategories) {
-        return (event, selection) => {
-            const newSelectedCategories = selectedCategories.includes(selection)
-                ? selectedCategories.filter((item) => item !== selection)
-                : [...selectedCategories, selection];
-            helpers.setValue(newSelectedCategories);
-        };
-    }
+    const onToggle = () => {
+        setIsOpen(!isOpen);
+    };
 
-    function clearSelection() {
-        setIsCategoriesOpen(false);
+    const onSelect = (
+        _event: ReactMouseEvent<Element, MouseEvent> | undefined,
+        value: string | number | undefined
+    ) => {
+        if (typeof value === 'string' && !selectedCategories.includes(value)) {
+            helpers.setValue([...selectedCategories, value]);
+            setPreventClose(true);
+        }
+        setInputValue('');
+    };
+
+    const onRemoveChip = (categoryToRemove: string) => {
+        helpers.setValue(selectedCategories.filter((category) => category !== categoryToRemove));
+    };
+
+    const onClearAll = () => {
         helpers.setValue([]);
-    }
+        setInputValue('');
+    };
+
+    const onInputChange = (value: string) => {
+        setInputValue(value);
+    };
 
     useEffect(() => {
         getPolicyCategories()
@@ -39,23 +69,102 @@ function PolicyCategoriesSelectField(): ReactElement {
             .catch(() => {});
     }, []);
 
+    // Filter available options based on input and already selected items
+    const filteredOptions = policyCategories
+        .filter(
+            ({ name }) =>
+                name.toLowerCase().includes(inputValue.toLowerCase()) &&
+                !selectedCategories.includes(name)
+        )
+        .map(({ id, name }) => (
+            <SelectOption key={id} value={name}>
+                {name}
+            </SelectOption>
+        ));
+
+    const toggle = (toggleRef: Ref<MenuToggleElement>) => (
+        <MenuToggle
+            variant="typeahead"
+            onClick={onToggle}
+            innerRef={toggleRef}
+            isExpanded={isOpen}
+            className="pf-v5-u-w-100"
+        >
+            <TextInputGroup isPlain>
+                <TextInputGroupMain
+                    value={inputValue}
+                    onClick={onToggle}
+                    onChange={(_event: FormEvent<HTMLInputElement>, value: string) =>
+                        onInputChange(value)
+                    }
+                    autoComplete="off"
+                    placeholder="Select categories"
+                    role="combobox"
+                    isExpanded={isOpen}
+                    aria-controls="select-multi-typeahead-listbox"
+                >
+                    <ChipGroup>
+                        {selectedCategories.map((category) => (
+                            <Chip
+                                key={category}
+                                onClick={(event: ReactMouseEvent) => {
+                                    event.stopPropagation();
+                                    onRemoveChip(category);
+                                }}
+                                aria-label={`Remove ${category} category`}
+                            >
+                                {category}
+                            </Chip>
+                        ))}
+                    </ChipGroup>
+                </TextInputGroupMain>
+                <TextInputGroupUtilities>
+                    {selectedCategories.length > 0 && (
+                        <Button
+                            variant="plain"
+                            onClick={onClearAll}
+                            aria-label="Clear all selected categories"
+                            type="button"
+                        >
+                            <TimesIcon aria-hidden />
+                        </Button>
+                    )}
+                </TextInputGroupUtilities>
+            </TextInputGroup>
+        </MenuToggle>
+    );
+
+    // @TODO: Look into creating a custom component for this, as it's a bit complex and could be reused in other places
     return (
         <FormGroup fieldId="policy-categories" label="Categories" isRequired>
             <Select
-                variant="typeaheadmulti"
-                name={field.name}
-                value={field.value}
-                isOpen={isCategoriesOpen}
-                selections={field.value}
-                onSelect={onSelectHandler(field.value)}
-                onToggle={(_event, isOpen) => onCategoriesToggle(isOpen)}
-                onClear={clearSelection}
-                isCreatable={false}
-                maxHeight="300px"
+                id="policy-categories-select"
+                isOpen={isOpen}
+                selected={selectedCategories}
+                onSelect={onSelect}
+                onOpenChange={(nextOpen: boolean) => {
+                    // If we just selected an item, keep the dropdown open
+                    if (!nextOpen && preventClose) {
+                        setPreventClose(false);
+                    } else {
+                        setIsOpen(nextOpen);
+                    }
+                }}
+                toggle={toggle}
+                aria-label="Policy categories multi-select"
             >
-                {policyCategories.map(({ id, name }) => (
-                    <SelectOption key={id} value={name} />
-                ))}
+                <SelectList
+                    id="select-multi-typeahead-listbox"
+                    style={{ maxHeight: '300px', overflowY: 'auto' }}
+                >
+                    {filteredOptions.length > 0 ? (
+                        filteredOptions
+                    ) : (
+                        <SelectOption isDisabled key="no-results">
+                            No categories found
+                        </SelectOption>
+                    )}
+                </SelectList>
             </Select>
             <FormHelperText>
                 <HelperText>

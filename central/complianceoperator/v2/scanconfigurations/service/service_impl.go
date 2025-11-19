@@ -45,7 +45,7 @@ const (
 
 var (
 	authorizer = perrpc.FromMap(map[authz.Authorizer][]string{
-		user.With(permissions.View(resources.Compliance)): {
+		user.With(permissions.View(resources.Compliance), permissions.View(resources.Cluster)): {
 			v2.ComplianceScanConfigurationService_ListComplianceScanConfigurations_FullMethodName,
 			v2.ComplianceScanConfigurationService_GetComplianceScanConfiguration_FullMethodName,
 			v2.ComplianceScanConfigurationService_ListComplianceScanConfigProfiles_FullMethodName,
@@ -53,7 +53,7 @@ var (
 			v2.ComplianceScanConfigurationService_GetReportHistory_FullMethodName,
 			v2.ComplianceScanConfigurationService_GetMyReportHistory_FullMethodName,
 		},
-		user.With(permissions.Modify(resources.Compliance)): {
+		user.With(permissions.Modify(resources.Compliance), permissions.View(resources.Cluster)): {
 			v2.ComplianceScanConfigurationService_CreateComplianceScanConfiguration_FullMethodName,
 			v2.ComplianceScanConfigurationService_DeleteComplianceScanConfiguration_FullMethodName,
 			v2.ComplianceScanConfigurationService_RunComplianceScanConfiguration_FullMethodName,
@@ -128,7 +128,6 @@ func (s *serviceImpl) CreateComplianceScanConfiguration(ctx context.Context, req
 	}
 
 	validName := configNameRegexp.MatchString(req.GetScanName())
-
 	if !validName {
 		return nil, errors.Wrapf(errox.InvalidArgs, "Scan configuration name %q is not a valid name", req.GetScanName())
 	}

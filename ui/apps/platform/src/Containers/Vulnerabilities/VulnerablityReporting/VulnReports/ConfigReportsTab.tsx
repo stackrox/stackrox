@@ -1,53 +1,46 @@
-import React, { useState } from 'react';
-import { Link, generatePath, useNavigate } from 'react-router-dom';
+import { useState } from 'react';
+import { Link, generatePath, useNavigate } from 'react-router-dom-v5-compat';
 import isEmpty from 'lodash/isEmpty';
 import {
     Alert,
     AlertActionCloseButton,
     AlertGroup,
-    PageSection,
-    Flex,
-    FlexItem,
+    Bullseye,
     Button,
     Card,
     CardBody,
-    Bullseye,
-    Spinner,
+    DropdownItem,
     EmptyState,
-    EmptyStateIcon,
     EmptyStateBody,
+    EmptyStateHeader,
+    EmptyStateIcon,
+    Flex,
+    FlexItem,
+    PageSection,
+    Pagination,
+    SearchInput,
+    Spinner,
     Text,
     Toolbar,
     ToolbarContent,
     ToolbarItem,
-    SearchInput,
-    Pagination,
-    EmptyStateHeader,
-    DropdownItem,
 } from '@patternfly/react-core';
 import { ActionsColumn, Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 import { ExclamationCircleIcon, FileIcon, SearchIcon } from '@patternfly/react-icons';
 
 import { vulnerabilityConfigurationReportsPath } from 'routePaths';
-import { vulnerabilityConfigurationReportDetailsPath } from 'Containers/Vulnerabilities/VulnerablityReporting/pathsForVulnerabilityReporting';
-import useFetchReports from 'Containers/Vulnerabilities/VulnerablityReporting/api/useFetchReports';
 import useIsRouteEnabled from 'hooks/useIsRouteEnabled';
 import usePermissions from 'hooks/usePermissions';
 import useURLPagination from 'hooks/useURLPagination';
-import useRunReport from 'Containers/Vulnerabilities/VulnerablityReporting/api/useRunReport';
-import useDeleteModal, {
-    isErrorDeleteResult,
-    isSuccessDeleteResult,
-} from 'Containers/Vulnerabilities/VulnerablityReporting/hooks/useDeleteModal';
 import useURLSearch from 'hooks/useURLSearch';
 import useURLSort from 'hooks/useURLSort';
-import { useWatchLastSnapshotForReports } from 'Containers/Vulnerabilities/VulnerablityReporting/api/useWatchLastSnapshotForReports';
 
 import DeleteModal from 'Components/PatternFly/DeleteModal';
 import PageTitle from 'Components/PageTitle';
 import EmptyStateTemplate from 'Components/EmptyStateTemplate/EmptyStateTemplate';
 import CollectionsFormModal from 'Containers/Collections/CollectionsFormModal';
-import useToasts, { Toast } from 'hooks/patternfly/useToasts';
+import useToasts from 'hooks/patternfly/useToasts';
+import type { Toast } from 'hooks/patternfly/useToasts';
 import MenuDropdown from 'Components/PatternFly/MenuDropdown';
 import useTableSelection from 'hooks/useTableSelection';
 import pluralize from 'pluralize';
@@ -56,6 +49,15 @@ import JobStatusPopoverContent from 'Components/ReportJob/JobStatusPopoverConten
 import MyLastJobStatus from 'Components/ReportJob/MyLastJobStatus';
 import useAuthStatus from 'hooks/useAuthStatus';
 import { reportDownloadURL } from 'services/ReportsService';
+
+import useFetchReports from '../api/useFetchReports';
+import useRunReport from '../api/useRunReport';
+import { useWatchLastSnapshotForReports } from '../api/useWatchLastSnapshotForReports';
+import useDeleteModal, {
+    isErrorDeleteResult,
+    isSuccessDeleteResult,
+} from '../hooks/useDeleteModal';
+import { vulnerabilityConfigurationReportDetailsPath } from '../pathsForVulnerabilityReporting';
 
 const CreateReportsButton = () => {
     return (

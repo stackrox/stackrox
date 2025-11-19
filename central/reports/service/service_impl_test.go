@@ -22,14 +22,14 @@ func TestConfigSeparation(t *testing.T) {
 
 	// Error on v2 config
 	configV2 := fixtures.GetValidReportConfigWithMultipleNotifiersV2()
-	reportConfigStore.EXPECT().GetReportConfiguration(gomock.Any(), configV2.Id).Return(configV2, true, nil).Times(1)
-	_, err := service.RunReport(ctx, &apiV1.ResourceByID{Id: configV2.Id})
+	reportConfigStore.EXPECT().GetReportConfiguration(gomock.Any(), configV2.GetId()).Return(configV2, true, nil).Times(1)
+	_, err := service.RunReport(ctx, &apiV1.ResourceByID{Id: configV2.GetId()})
 	assert.Error(t, err)
 
 	// No error on v1 config
 	configV1 := fixtures.GetValidReportConfigWithMultipleNotifiersV1()
-	reportConfigStore.EXPECT().GetReportConfiguration(gomock.Any(), configV1.Id).Return(configV1, true, nil).Times(1)
+	reportConfigStore.EXPECT().GetReportConfiguration(gomock.Any(), configV1.GetId()).Return(configV1, true, nil).Times(1)
 	manager.EXPECT().RunReport(gomock.Any(), gomock.Any()).Return(nil).Times(1)
-	_, err = service.RunReport(ctx, &apiV1.ResourceByID{Id: configV1.Id})
+	_, err = service.RunReport(ctx, &apiV1.ResourceByID{Id: configV1.GetId()})
 	assert.NoError(t, err)
 }

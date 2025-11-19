@@ -2,7 +2,6 @@ package postgres
 
 import (
 	"context"
-	"testing"
 	"time"
 
 	"github.com/jackc/pgx/v5"
@@ -23,9 +22,10 @@ import (
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/search/paginated"
 	pgSearch "github.com/stackrox/rox/pkg/search/postgres"
+	"github.com/stackrox/rox/pkg/search/sortfields"
 	"github.com/stackrox/rox/pkg/set"
-	"gorm.io/gorm"
 )
 
 const (
@@ -529,7 +529,7 @@ func (s *storeImpl) isUpdated(ctx context.Context, node *storage.Node) (bool, er
 	// We skip rewriting components and vulnerabilities if the node scan is older.
 	scanUpdated := protocompat.CompareTimestamps(oldNode.GetScan().GetScanTime(), node.GetScan().GetScanTime()) <= 0
 	if !scanUpdated {
-		node.Scan = oldNode.Scan
+		node.Scan = oldNode.GetScan()
 		node.RiskScore = oldNode.GetRiskScore()
 		node.SetComponents = oldNode.GetSetComponents()
 		node.SetCves = oldNode.GetSetCves()
@@ -560,7 +560,7 @@ func (s *storeImpl) upsert(ctx context.Context, obj *storage.Node) error {
 		}
 		defer release()
 
-		tx, err := conn.Begin(ctx)
+		tx, ctx, err := conn.Begin(ctx)
 		if err != nil {
 			return err
 		}
@@ -600,6 +600,8 @@ func (s *storeImpl) retryableCount(ctx context.Context, q *v1.Query) (int, error
 // Search returns the result matching the query.
 func (s *storeImpl) Search(ctx context.Context, q *v1.Query) ([]search.Result, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Search, "Node")
+
+	q = applyDefaultSort(q)
 
 	return pgutils.Retry2(ctx, func() ([]search.Result, error) {
 		return s.retryableSearch(ctx, q)
@@ -644,7 +646,7 @@ func (s *storeImpl) retryableGet(ctx context.Context, id string) (*storage.Node,
 	}
 	defer release()
 
-	tx, err := conn.Begin(ctx)
+	tx, ctx, err := conn.Begin(ctx)
 	if err != nil {
 		return nil, false, err
 	}
@@ -826,7 +828,7 @@ func (s *storeImpl) retryableDelete(ctx context.Context, id string) error {
 	}
 	defer release()
 
-	tx, err := conn.Begin(ctx)
+	tx, ctx, err := conn.Begin(ctx)
 	if err != nil {
 		return err
 	}
@@ -874,7 +876,7 @@ func (s *storeImpl) retryableGetMany(ctx context.Context, ids []string) ([]*stor
 	}
 	defer release()
 
-	tx, err := conn.Begin(ctx)
+	tx, ctx, err := conn.Begin(ctx)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -917,13 +919,15 @@ func (s *storeImpl) retryableGetMany(ctx context.Context, ids []string) ([]*stor
 func (s *storeImpl) WalkByQuery(ctx context.Context, q *v1.Query, fn func(node *storage.Node) error) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.WalkByQuery, "Node")
 
+	q = applyDefaultSort(q)
+
 	conn, release, err := s.acquireConn(ctx, ops.WalkByQuery, "Node")
 	if err != nil {
 		return err
 	}
 	defer release()
 
-	tx, err := conn.Begin(ctx)
+	tx, ctx, err := conn.Begin(ctx)
 	if err != nil {
 		return err
 	}
@@ -1042,51 +1046,6 @@ func (s *storeImpl) retryableGetManyNodeMetadata(ctx context.Context, ids []stri
 
 //// Used for testing
 
-// CreateTableAndNewStore returns a new Store instance for testing
-func CreateTableAndNewStore(ctx context.Context, _ testing.TB, db postgres.DB, gormDB *gorm.DB, noUpdateTimestamps bool) Store {
-	pgutils.CreateTableFromModel(ctx, gormDB, pkgSchema.CreateTableClustersStmt)
-	pgutils.CreateTableFromModel(ctx, gormDB, pkgSchema.CreateTableNodesStmt)
-	pgutils.CreateTableFromModel(ctx, gormDB, pkgSchema.CreateTableNodeComponentsStmt)
-	pgutils.CreateTableFromModel(ctx, gormDB, pkgSchema.CreateTableNodeCvesStmt)
-	pgutils.CreateTableFromModel(ctx, gormDB, pkgSchema.CreateTableNodeComponentEdgesStmt)
-	pgutils.CreateTableFromModel(ctx, gormDB, pkgSchema.CreateTableNodeComponentsCvesEdgesStmt)
-	return New(db, noUpdateTimestamps, concurrency.NewKeyFence())
-}
-
-func dropTableNodes(ctx context.Context, db postgres.DB) {
-	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS nodes CASCADE")
-	dropTableNodesTaints(ctx, db)
-	dropTableNodesComponents(ctx, db)
-	dropTableNodeCVEs(ctx, db)
-	dropTableNodeComponentEdges(ctx, db)
-	dropTableComponentCVEEdges(ctx, db)
-}
-
-func dropTableNodesTaints(ctx context.Context, db postgres.DB) {
-	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS nodes_taints CASCADE")
-}
-
-func dropTableNodesComponents(ctx context.Context, db postgres.DB) {
-	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS "+nodeComponentsTable+" CASCADE")
-}
-
-func dropTableNodeCVEs(ctx context.Context, db postgres.DB) {
-	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS "+nodeCVEsTable+" CASCADE")
-}
-
-func dropTableComponentCVEEdges(ctx context.Context, db postgres.DB) {
-	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS "+componentCVEEdgesTable+" CASCADE")
-}
-
-func dropTableNodeComponentEdges(ctx context.Context, db postgres.DB) {
-	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS "+nodeComponentEdgesTable+" CASCADE")
-}
-
-// Destroy drops all node tree tables.
-func Destroy(ctx context.Context, db postgres.DB) {
-	dropTableNodes(ctx, db)
-}
-
 func getCVEs(ctx context.Context, tx *postgres.Tx, cveIDs []string) (map[string]*storage.NodeCVE, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetMany, "NodeCVEs")
 
@@ -1122,4 +1081,14 @@ func gatherKeys(parts *nodePartsAsSlice) [][]byte {
 		keys = append(keys, []byte(vuln.GetId()))
 	}
 	return keys
+}
+
+func applyDefaultSort(q *v1.Query) *v1.Query {
+	q = sortfields.TransformSortOptions(q, pkgSchema.NodesSchema.OptionsMap)
+
+	defaultSortOption := &v1.QuerySortOption{
+		Field: search.LastUpdatedTime.String(),
+	}
+	// Add pagination sort order if needed.
+	return paginated.FillDefaultSortOption(q, defaultSortOption.CloneVT())
 }

@@ -8,7 +8,6 @@ import (
 )
 
 func TestChanWriter_WriteSingle(t *testing.T) {
-	t.Parallel()
 
 	ch := make(chan []byte, 1)
 	w := NewChanWriter(context.Background(), ch)
@@ -34,7 +33,6 @@ func TestChanWriter_WriteSingle(t *testing.T) {
 }
 
 func TestChanWriter_WriteMultiNoAlias(t *testing.T) {
-	t.Parallel()
 
 	ch := make(chan []byte, 2)
 	w := NewChanWriter(context.Background(), ch)
@@ -64,7 +62,6 @@ func TestChanWriter_WriteMultiNoAlias(t *testing.T) {
 }
 
 func TestChanWriter_Close(t *testing.T) {
-	t.Parallel()
 
 	ch := make(chan []byte, 1)
 	w := NewChanWriter(context.Background(), ch)
@@ -79,7 +76,6 @@ func TestChanWriter_Close(t *testing.T) {
 }
 
 func TestChanWriter_ContextError(t *testing.T) {
-	t.Parallel()
 
 	ch := make(chan []byte)
 	ctx, cancel := context.WithCancel(context.Background())

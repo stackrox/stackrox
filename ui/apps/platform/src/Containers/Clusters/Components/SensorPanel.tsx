@@ -1,12 +1,11 @@
-import React from 'react';
 import {
     DescriptionList,
+    DescriptionListDescription,
     DescriptionListGroup,
     DescriptionListTerm,
-    DescriptionListDescription,
 } from '@patternfly/react-core';
 
-import { ClusterHealthStatus } from 'types/cluster.proto';
+import type { ClusterHealthStatus } from 'types/cluster.proto';
 import { getDateTime } from 'utils/dateUtils';
 
 import { buildStatusMessage } from '../cluster.helpers';

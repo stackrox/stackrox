@@ -1,12 +1,14 @@
-import React, { ReactElement, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
+import type { ReactElement } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { useNavigate } from 'react-router-dom';
-import { Page, Button } from '@patternfly/react-core';
+import { useNavigate } from 'react-router-dom-v5-compat';
+import { Button, Page } from '@patternfly/react-core';
 import { OutlinedCommentsIcon } from '@patternfly/react-icons';
 
 import LoadingSection from 'Components/PatternFly/LoadingSection';
 import useFeatureFlags from 'hooks/useFeatureFlags';
 import usePermissions from 'hooks/usePermissions';
+import usePublicConfig from 'hooks/usePublicConfig';
 import { selectors } from 'reducers';
 import { actions } from 'reducers/feedback';
 import { getClustersForPermissions } from 'services/RolesService';
@@ -26,7 +28,7 @@ function MainPage(): ReactElement {
 
     const { isFeatureFlagEnabled, isLoadingFeatureFlags } = useFeatureFlags();
     const { hasReadAccess, hasReadWriteAccess, isLoadingPermissions } = usePermissions();
-    const isLoadingPublicConfig = useSelector(selectors.isLoadingPublicConfigSelector);
+    const { publicConfig, isLoadingPublicConfig } = usePublicConfig();
     const isLoadingCentralCapabilities = useSelector(selectors.getIsLoadingCentralCapabilities);
     const [isLoadingClustersCount, setIsLoadingClustersCount] = useState(false);
     const showFeedbackModal = useSelector(selectors.feedbackSelector);
@@ -62,7 +64,7 @@ function MainPage(): ReactElement {
     if (
         isLoadingFeatureFlags ||
         isLoadingPermissions ||
-        isLoadingPublicConfig ||
+        (isLoadingPublicConfig && !publicConfig) ||
         isLoadingCentralCapabilities ||
         isLoadingClustersCount
     ) {

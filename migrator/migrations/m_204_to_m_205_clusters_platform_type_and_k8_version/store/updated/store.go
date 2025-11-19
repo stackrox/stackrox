@@ -44,6 +44,8 @@ func New(db postgres.DB) Store {
 
 		isUpsertAllowed,
 		targetResource,
+		nil,
+		nil,
 	)
 }
 

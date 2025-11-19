@@ -94,7 +94,7 @@ func (s *matcherServiceTestSuite) Test_matcherService_GetVulnerabilities_empty_c
 		ir := &claircore.IndexReport{Success: true}
 		s.indexerMock.
 			EXPECT().
-			GetIndexReport(gomock.Any(), gomock.Eq(hashID)).
+			GetIndexReport(gomock.Any(), gomock.Eq(hashID), false).
 			Return(ir, true, nil)
 		s.matcherMock.
 			EXPECT().
@@ -114,15 +114,18 @@ func (s *matcherServiceTestSuite) Test_matcherService_GetVulnerabilities_empty_c
 			Contents: nil,
 		})
 		s.NoError(err)
-		protoassert.Equal(s.T(), res, &v4.VulnerabilityReport{
+		protoassert.Equal(s.T(), &v4.VulnerabilityReport{
 			HashId: hashID,
 			Contents: &v4.Contents{
-				Packages: []*v4.Package{
+				Packages: map[string]*v4.Package{
+					"1": {Id: "1", Name: "Foobar", Cpe: emptyCPE, NormalizedVersion: &emptyNormalizedVersion},
+				},
+				PackagesDEPRECATED: []*v4.Package{
 					{Id: "1", Name: "Foobar", Cpe: emptyCPE, NormalizedVersion: &emptyNormalizedVersion},
 				},
 			},
 			Notes: []v4.VulnerabilityReport_Note{v4.VulnerabilityReport_NOTE_OS_UNKNOWN},
-		})
+		}, res)
 
 	})
 
@@ -146,20 +149,25 @@ func (s *matcherServiceTestSuite) Test_matcherService_GetVulnerabilities_empty_c
 		srv := NewMatcherService(s.matcherMock, nil)
 		res, err := srv.GetVulnerabilities(s.ctx, &v4.GetVulnerabilitiesRequest{
 			HashId: hashID,
-			Contents: &v4.Contents{Packages: []*v4.Package{
-				{Id: "1", Name: "Foobar", Cpe: emptyCPE},
-			}},
+			Contents: &v4.Contents{
+				Packages: map[string]*v4.Package{
+					"1": {Id: "1", Name: "Foobar", Cpe: emptyCPE},
+				},
+			},
 		})
 		s.NoError(err)
-		protoassert.Equal(s.T(), res, &v4.VulnerabilityReport{
+		protoassert.Equal(s.T(), &v4.VulnerabilityReport{
 			HashId: hashID,
 			Contents: &v4.Contents{
-				Packages: []*v4.Package{
+				Packages: map[string]*v4.Package{
+					"1": {Id: "1", Name: "Foobar", Cpe: emptyCPE, NormalizedVersion: &emptyNormalizedVersion},
+				},
+				PackagesDEPRECATED: []*v4.Package{
 					{Id: "1", Name: "Foobar", Cpe: emptyCPE, NormalizedVersion: &emptyNormalizedVersion},
 				},
 			},
 			Notes: []v4.VulnerabilityReport_Note{v4.VulnerabilityReport_NOTE_OS_UNKNOWN},
-		})
+		}, res)
 
 	})
 }
@@ -243,8 +251,8 @@ func (s *matcherServiceTestSuite) Test_matcherService_notes() {
 		Return(dists)
 	notes := srv.notes(s.ctx, &v4.VulnerabilityReport{
 		Contents: &v4.Contents{
-			Distributions: []*v4.Distribution{
-				{
+			Distributions: map[string]*v4.Distribution{
+				"0": {
 					Did:       "alpine",
 					VersionId: "3.18",
 				},
@@ -260,8 +268,8 @@ func (s *matcherServiceTestSuite) Test_matcherService_notes() {
 		Return(dists)
 	notes = srv.notes(s.ctx, &v4.VulnerabilityReport{
 		Contents: &v4.Contents{
-			Distributions: []*v4.Distribution{
-				{
+			Distributions: map[string]*v4.Distribution{
+				"1": {
 					Did:       "debian",
 					VersionId: "8",
 				},
@@ -277,8 +285,8 @@ func (s *matcherServiceTestSuite) Test_matcherService_notes() {
 		Return([]claircore.Distribution{})
 	notes = srv.notes(s.ctx, &v4.VulnerabilityReport{
 		Contents: &v4.Contents{
-			Distributions: []*v4.Distribution{
-				{
+			Distributions: map[string]*v4.Distribution{
+				"2": {
 					Did:       "alpine",
 					VersionId: "3.18",
 				},
@@ -290,12 +298,12 @@ func (s *matcherServiceTestSuite) Test_matcherService_notes() {
 	// Unknown OS.
 	notes = srv.notes(s.ctx, &v4.VulnerabilityReport{
 		Contents: &v4.Contents{
-			Distributions: []*v4.Distribution{
-				{
+			Distributions: map[string]*v4.Distribution{
+				"2": {
 					Did:       "alpine",
 					VersionId: "3.18",
 				},
-				{
+				"3": {
 					Did:       "alpine",
 					VersionId: "3.19",
 				},
@@ -369,6 +377,6 @@ func (s *matcherServiceTestSuite) Test_matcherService_GetSBOM() {
 			Contents: &v4.Contents{},
 		})
 		s.Require().NoError(err)
-		s.Equal(res.Sbom, fakeSbomB)
+		s.Equal(res.GetSbom(), fakeSbomB)
 	})
 }

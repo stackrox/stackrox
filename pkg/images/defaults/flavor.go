@@ -79,6 +79,10 @@ type ImageFlavor struct {
 	CollectorImageName string
 	CollectorImageTag  string
 
+	FactRegistry  string
+	FactImageName string
+	FactImageTag  string
+
 	// ScannerImageTag is used for all scanner* images (scanner, scanner-db, scanner-slim and scanner-db-slim)
 	ScannerImageTag        string
 	ScannerImageName       string
@@ -115,6 +119,10 @@ func DevelopmentBuildImageFlavor() ImageFlavor {
 		CollectorImageName: "collector",
 		CollectorImageTag:  collectorTag,
 
+		FactRegistry:  "quay.io/rhacs-eng",
+		FactImageName: "fact",
+		FactImageTag:  v.FactVersion,
+
 		ScannerImageName:       "scanner",
 		ScannerSlimImageName:   "scanner-slim",
 		ScannerImageTag:        v.ScannerVersion,
@@ -150,6 +158,10 @@ func RHACSReleaseImageFlavor() ImageFlavor {
 		CollectorRegistry:  "registry.redhat.io/advanced-cluster-security",
 		CollectorImageName: "rhacs-collector-rhel8",
 		CollectorImageTag:  v.CollectorVersion,
+
+		FactRegistry:  "registry.redhat.io/advanced-cluster-security",
+		FactImageName: "rhacs-fact-rhel8",
+		FactImageTag:  v.FactVersion,
 
 		ScannerImageName:       "rhacs-scanner-rhel8",
 		ScannerSlimImageName:   "rhacs-scanner-slim-rhel8",
@@ -195,6 +207,10 @@ func OpenSourceImageFlavor() ImageFlavor {
 		CollectorRegistry:  "quay.io/stackrox-io",
 		CollectorImageName: "collector",
 		CollectorImageTag:  collectorTag,
+
+		FactRegistry:  "quay.io/stackrox-io",
+		FactImageName: "fact",
+		FactImageTag:  v.FactVersion,
 
 		ScannerImageName:       "scanner",
 		ScannerSlimImageName:   "scanner-slim",
@@ -291,7 +307,7 @@ func panicImageFlavorEnv(err error) {
 
 // IsImageDefaultMain checks if provided image matches main image defined in flavor.
 func (f *ImageFlavor) IsImageDefaultMain(img *storage.ImageName) bool {
-	overrideImageNoTag := fmt.Sprintf("%s/%s", img.Registry, img.Remote)
+	overrideImageNoTag := fmt.Sprintf("%s/%s", img.GetRegistry(), img.GetRemote())
 	return f.MainImageNoTag() == overrideImageNoTag
 }
 

@@ -13,7 +13,6 @@ import services.GraphQLService
 import services.ImageService
 import util.Env
 
-import spock.lang.IgnoreIf
 import spock.lang.Tag
 import spock.lang.Unroll
 
@@ -82,7 +81,6 @@ class CSVTest extends BaseSpecification {
 
     private static final Map<String, String> QUERIES = [
             "FIXABLE_CVES_IN_IMAGE_QUERY"     : FIXABLE_CVES_IN_IMAGE_QUERY,
-            "FIXABLE_CVES_IN_COMPONENT_QUERY" : FIXABLE_CVES_IN_COMPONENT_QUERY,
             "FIXABLE_CVES_IN_DEPLOYMENT_QUERY": FIXABLE_CVES_IN_DEPLOYMENT_QUERY,
     ]
 
@@ -132,14 +130,6 @@ class CSVTest extends BaseSpecification {
         return 7
     }
 
-    def getComponentId() {
-        return "openssl#1.1.1d-0+deb10u7#debian:10"
-    }
-
-    def getComponentQuery() {
-        return "COMPONENT ID:" + getComponentId() + "+Fixable:true"
-    }
-
     def getCVETypeImageQuery() {
         return "CVE Type:IMAGE_CVE+"
     }
@@ -156,8 +146,6 @@ class CSVTest extends BaseSpecification {
     }
 
     @Tag("BAT")
-    // TODO(ROX-29220): Fix the test for fixable cves in component query
-    @IgnoreIf({ Env.ROX_FLATTEN_CVE_DATA == "true" })
     def "Verify CVE CSV data scoped by entity is correct #description"() {
         given:
         def graphQLPayload = payload(id)
@@ -241,7 +229,6 @@ class CSVTest extends BaseSpecification {
 
         description                        | id                           | query
         "FIXABLE_CVES_IN_IMAGE_QUERY"      | TEST_IMAGE_SHA               | "Image Sha:${TEST_IMAGE_SHA}+Fixable:true"
-        "FIXABLE_CVES_IN_COMPONENT_QUERY"  | getComponentId()             | getComponentQuery()
         "FIXABLE_CVES_IN_DEPLOYMENT_QUERY" | CVE_DEPLOYMENT.deploymentUid |
                 "Deployment ID:${CVE_DEPLOYMENT.deploymentUid}+Fixable:true"
     }

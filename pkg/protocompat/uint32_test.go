@@ -14,7 +14,7 @@ func TestProtoUInt32Value(t *testing.T) {
 	}
 
 	val1 := ProtoUInt32Value(input1)
-	assert.Equal(t, expectedVal1.Value, val1.Value)
+	assert.Equal(t, expectedVal1.GetValue(), val1.GetValue())
 
 	input2 := uint32(1234567890)
 	expectedVal2 := &wrapperspb.UInt32Value{
@@ -22,5 +22,5 @@ func TestProtoUInt32Value(t *testing.T) {
 	}
 
 	val2 := ProtoUInt32Value(input2)
-	assert.Equal(t, expectedVal2.Value, val2.Value)
+	assert.Equal(t, expectedVal2.GetValue(), val2.GetValue())
 }

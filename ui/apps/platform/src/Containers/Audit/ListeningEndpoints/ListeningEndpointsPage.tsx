@@ -1,12 +1,19 @@
-import React, { useCallback, useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
+import type { MouseEvent as ReactMouseEvent, Ref } from 'react';
 import {
     Bullseye,
     Button,
     Divider,
+    MenuToggle,
     PageSection,
     Pagination,
+    Select,
+    SelectList,
+    SelectOption,
     Spinner,
     Text,
+    TextInputGroup,
+    TextInputGroupMain,
     Title,
     Toolbar,
     ToolbarContent,
@@ -14,7 +21,7 @@ import {
     ToolbarItem,
     debounce,
 } from '@patternfly/react-core';
-import { Select, SelectOption } from '@patternfly/react-core/deprecated';
+import type { MenuToggleElement } from '@patternfly/react-core';
 import { ExclamationCircleIcon } from '@patternfly/react-icons';
 import { useQuery } from '@apollo/client';
 import cloneDeep from 'lodash/cloneDeep';
@@ -22,17 +29,22 @@ import cloneDeep from 'lodash/cloneDeep';
 import PageTitle from 'Components/PageTitle';
 import EmptyStateTemplate from 'Components/EmptyStateTemplate/EmptyStateTemplate';
 import SearchFilterChips from 'Components/PatternFly/SearchFilterChips';
+import SelectSingle from 'Components/SelectSingle/SelectSingle';
 import { searchCategories } from 'constants/entityTypes';
+import { toggleItemInArray } from 'utils/arrayUtils';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
-import { searchValueAsArray } from 'utils/searchUtils';
+import {
+    applyRegexSearchModifiers,
+    getRequestQueryStringForSearchFilter,
+    searchValueAsArray,
+} from 'utils/searchUtils';
 import useURLPagination from 'hooks/useURLPagination';
 import useURLSort from 'hooks/useURLSort';
 import useURLSearch from 'hooks/useURLSearch';
 import useRestQuery from 'hooks/useRestQuery';
-import useSelectToggle from 'hooks/patternfly/useSelectToggle';
 import SEARCH_AUTOCOMPLETE_QUERY from 'queries/searchAutocomplete';
 import { fetchDeploymentsCount } from 'services/DeploymentsService';
-import { SearchFilter } from 'types/search';
+import type { SearchFilter } from 'types/search';
 import { useDeploymentListeningEndpoints } from './hooks/useDeploymentListeningEndpoints';
 import ListeningEndpointsTable from './ListeningEndpointsTable';
 
@@ -68,10 +80,14 @@ export function getRequestQueryStringForAutocomplete(
     //      filter in the query string
     delete filter[category];
 
-    return Object.entries(filter)
-        .map(([key, val]) => `${key}:${Array.isArray(val) ? val.join(',') : (val ?? '')}`)
-        .concat(`${category}:${value}`)
-        .join('+');
+    const contextQueryString = getRequestQueryStringForSearchFilter(
+        applyRegexSearchModifiers(filter)
+    );
+    const autocompleteSearchString = `${category}:${value ? `r/${value}` : ''}`;
+
+    return contextQueryString
+        ? `${contextQueryString}+${autocompleteSearchString}`
+        : autocompleteSearchString;
 }
 
 const sortOptions = {
@@ -83,7 +99,6 @@ function ListeningEndpointsPage() {
     const { page, perPage, setPage, setPerPage } = useURLPagination(10);
     const { sortOption, getSortParams } = useURLSort(sortOptions);
     const { searchFilter, setSearchFilter } = useURLSearch();
-    const [searchValue, setSearchValue] = useState('');
     const [entity, setEntity] = useState('Deployment');
 
     const deploymentCountFetcher = useCallback(
@@ -100,36 +115,84 @@ function ListeningEndpointsPage() {
         perPage
     );
 
-    const entityToggle = useSelectToggle();
-    const autocompleteToggle = useSelectToggle();
+    const [autocompleteOpen, setAutocompleteOpen] = useState(false);
+    const [autocompleteInputValue, setAutocompleteInputValue] = useState('');
+    const [debouncedSearchValue, setDebouncedSearchValue] = useState('');
 
     const [areAllRowsExpanded, setAllRowsExpanded] = useState(false);
 
     const variables = {
-        query: getRequestQueryStringForAutocomplete(searchFilter, entity, searchValue),
+        query: getRequestQueryStringForAutocomplete(searchFilter, entity, debouncedSearchValue),
         categories: searchCategories[entity.toUpperCase()],
     };
 
     const { data: autoCompleteData } = useQuery(SEARCH_AUTOCOMPLETE_QUERY, { variables });
 
-    function onEntitySelect(e, selection) {
-        setSearchValue('');
+    function onEntitySelect(_id: string, selection: string) {
+        setAutocompleteInputValue('');
+        setDebouncedSearchValue('');
         setEntity(selection);
     }
 
     const updateSearchValue = useMemo(
-        () => debounce((value: string) => setSearchValue(value), 800),
+        () => debounce((value: string) => setDebouncedSearchValue(value), 800),
         []
     );
 
-    function onSelectAutocompleteValue(value) {
-        const oldValue = searchValueAsArray(searchFilter[entity]);
-        const newValue = oldValue.includes(value)
-            ? oldValue.filter((f) => f !== value)
-            : [...oldValue, value];
-        setSearchValue('');
-        setSearchFilter({ ...searchFilter, [entity]: newValue });
+    function onSearchFilterChange(searchFilter: SearchFilter) {
+        setSearchFilter(searchFilter);
+        setPage(1);
+        setAutocompleteInputValue('');
+        setDebouncedSearchValue('');
     }
+
+    function onSelectAutocompleteValue(
+        _event: ReactMouseEvent | undefined,
+        value: string | number | undefined
+    ) {
+        if (typeof value === 'string') {
+            const oldValue = searchValueAsArray(searchFilter[entity]);
+            const newValue = toggleItemInArray(oldValue, value);
+            setAutocompleteInputValue('');
+            setDebouncedSearchValue('');
+            setSearchFilter({ ...searchFilter, [entity]: newValue });
+        }
+    }
+
+    const selectedValues = searchValueAsArray(searchFilter[entity]);
+    const autocompleteOptions = autoCompleteData?.searchAutocomplete || [];
+
+    // Show create option if user has typed something that doesn't exist
+    const shouldShowCreateOption =
+        autocompleteInputValue &&
+        !autocompleteOptions.includes(autocompleteInputValue) &&
+        !selectedValues.includes(autocompleteInputValue);
+
+    const autocompleteToggle = (toggleRef: Ref<MenuToggleElement>) => (
+        <MenuToggle
+            ref={toggleRef}
+            variant="typeahead"
+            onClick={() => setAutocompleteOpen(!autocompleteOpen)}
+            isExpanded={autocompleteOpen}
+            isFullWidth
+        >
+            <TextInputGroup isPlain>
+                <TextInputGroupMain
+                    value={autocompleteInputValue}
+                    onClick={() => setAutocompleteOpen(!autocompleteOpen)}
+                    onChange={(_event, value) => {
+                        setAutocompleteInputValue(value);
+                        updateSearchValue(value);
+                    }}
+                    id="autocomplete-input"
+                    placeholder={`Filter results by ${entity}`}
+                    role="combobox"
+                    isExpanded={autocompleteOpen}
+                    aria-controls="autocomplete-listbox"
+                />
+            </TextInputGroup>
+        </MenuToggle>
+    );
 
     return (
         <>
@@ -153,15 +216,12 @@ function ListeningEndpointsPage() {
                                 variant="search-filter"
                                 className="pf-v5-u-display-flex pf-v5-u-flex-grow-1"
                             >
-                                <Select
-                                    variant="single"
+                                <SelectSingle
+                                    id="entity-filter"
+                                    value={entity}
+                                    handleSelect={onEntitySelect}
                                     toggleAriaLabel="Search entity selection menu toggle"
-                                    aria-label="Select an entity to filter by"
-                                    onToggle={(_e, v) => entityToggle.onToggle(v)}
-                                    onSelect={onEntitySelect}
-                                    selections={entity}
-                                    isOpen={entityToggle.isOpen}
-                                    className="pf-v5-u-flex-basis-0"
+                                    isFullWidth={false}
                                 >
                                     <SelectOption key="Deployment" value="Deployment">
                                         Deployment
@@ -172,28 +232,37 @@ function ListeningEndpointsPage() {
                                     <SelectOption key="Cluster" value="Cluster">
                                         Cluster
                                     </SelectOption>
-                                </Select>
+                                </SelectSingle>
                                 <Select
-                                    typeAheadAriaLabel={`Search by ${entity}`}
-                                    aria-label={`Filter by ${entity}`}
-                                    onSelect={(_e, value) => {
-                                        onSelectAutocompleteValue(value);
-                                    }}
-                                    onToggle={(_e, v) => autocompleteToggle.onToggle(v)}
-                                    isOpen={autocompleteToggle.isOpen}
-                                    placeholderText={`Filter results by ${entity}`}
-                                    variant="typeaheadmulti"
-                                    isCreatable
-                                    createText="Add"
-                                    selections={searchFilter[entity]}
-                                    onTypeaheadInputChanged={(val: string) => {
-                                        updateSearchValue(val);
-                                    }}
+                                    id="autocomplete-filter"
+                                    isOpen={autocompleteOpen}
+                                    selected={selectedValues}
+                                    onSelect={onSelectAutocompleteValue}
+                                    onOpenChange={(isOpen) => setAutocompleteOpen(isOpen)}
+                                    toggle={autocompleteToggle}
                                     className="pf-v5-u-flex-grow-1"
                                 >
-                                    {autoCompleteData?.searchAutocomplete?.map((value) => (
-                                        <SelectOption key={value} value={value} />
-                                    ))}
+                                    <SelectList id="autocomplete-listbox">
+                                        {autocompleteOptions.length > 0 ? (
+                                            <>
+                                                {autocompleteOptions.map((value) => (
+                                                    <SelectOption key={value} value={value}>
+                                                        {value}
+                                                    </SelectOption>
+                                                ))}
+                                            </>
+                                        ) : shouldShowCreateOption ? (
+                                            <SelectOption value={autocompleteInputValue}>
+                                                Add &quot;{autocompleteInputValue}&quot;
+                                            </SelectOption>
+                                        ) : (
+                                            <SelectOption isDisabled>
+                                                {autocompleteInputValue
+                                                    ? 'No results found'
+                                                    : 'Start typing to search'}
+                                            </SelectOption>
+                                        )}
+                                    </SelectList>
                                 </Select>
                             </ToolbarItem>
                         </ToolbarGroup>
@@ -214,7 +283,7 @@ function ListeningEndpointsPage() {
                         <ToolbarGroup className="pf-v5-u-w-100">
                             <SearchFilterChips
                                 searchFilter={searchFilter}
-                                onFilterChange={setSearchFilter}
+                                onFilterChange={onSearchFilterChange}
                                 filterChipGroupDescriptors={[
                                     { displayName: 'Deployment', searchFilterName: 'Deployment' },
                                     { displayName: 'Namespace', searchFilterName: 'Namespace' },
@@ -255,7 +324,8 @@ function ListeningEndpointsPage() {
                                             variant="link"
                                             onClick={() => {
                                                 setPage(1);
-                                                setSearchValue('');
+                                                setAutocompleteInputValue('');
+                                                setDebouncedSearchValue('');
                                                 setSearchFilter({});
                                             }}
                                         >

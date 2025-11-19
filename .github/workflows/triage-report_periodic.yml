@@ -5,10 +5,11 @@ on:
   - cron: 0 15 * * 3,5
 jobs:
   triage-report:
+    if:  ${{ github.repository_owner == 'stackrox' }}
     runs-on: ubuntu-latest
     steps:
     - name: Checkout
-      uses: actions/checkout@v4
+      uses: actions/checkout@v5
     - name: Report to Slack
       env:
         JIRA_TOKEN: ${{ secrets.JIRA_TOKEN }}

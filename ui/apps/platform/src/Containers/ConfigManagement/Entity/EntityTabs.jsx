@@ -1,11 +1,10 @@
-import React from 'react';
 import PropTypes from 'prop-types';
 import entityTypes from 'constants/entityTypes';
 import useWorkflowMatch from 'hooks/useWorkflowMatch';
 import entityLabels from 'messages/entity';
 import pluralize from 'pluralize';
 import URLService from 'utils/URLService';
-import { useLocation } from 'react-router-dom';
+import { useLocation } from 'react-router-dom-v5-compat';
 import GroupedTabs from 'Components/GroupedTabs';
 import entityTabsMap from '../entityTabRelationships';
 

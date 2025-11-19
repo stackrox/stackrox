@@ -1,5 +1,5 @@
-import React, { useContext } from 'react';
-import { Link } from 'react-router-dom';
+import { useContext } from 'react';
+import { Link } from 'react-router-dom-v5-compat';
 import { gql } from '@apollo/client';
 
 import Query from 'Components/ThrowingQuery';
@@ -10,7 +10,7 @@ import PolicySeverityIconText from 'Components/PatternFly/IconText/PolicySeverit
 import Widget from 'Components/Widget';
 import Metadata from 'Components/Metadata';
 import RelatedEntityListCount from 'Components/RelatedEntityListCount';
-import { entityComponentPropTypes, entityComponentDefaultProps } from 'constants/entityPageProps';
+import { entityComponentDefaultProps, entityComponentPropTypes } from 'constants/entityPageProps';
 import searchContext from 'Containers/searchContext';
 import { formatLifecycleStages } from 'Containers/Policies/policies.utils';
 import useIsRouteEnabled from 'hooks/useIsRouteEnabled';

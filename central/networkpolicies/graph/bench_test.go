@@ -40,7 +40,7 @@ func matchIngress(np *storage.NetworkPolicy, dep *storage.Deployment) {
 
 func matchEgress(np *storage.NetworkPolicy, dep *storage.Deployment) {
 	spec := np.GetSpec()
-	newRule := &storage.NetworkPolicyEgressRule{To: getPeer(dep.Id)}
+	newRule := &storage.NetworkPolicyEgressRule{To: getPeer(dep.GetId())}
 	spec.Egress = append(spec.Egress, newRule)
 }
 

@@ -1,6 +1,6 @@
-import { useLocation, matchPath } from 'react-router-dom';
+import { matchPath, useLocation } from 'react-router-dom-v5-compat';
 
-import { workflowPaths, validPageEntityListTypes, validPageEntityTypes } from 'routePaths';
+import { validPageEntityListTypes, validPageEntityTypes, workflowPaths } from 'routePaths';
 
 function useWorkflowMatch() {
     const location = useLocation();

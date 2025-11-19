@@ -15,7 +15,6 @@ import (
 )
 
 func TestSacFilter(t *testing.T) {
-	t.Parallel()
 	suite.Run(t, new(sacFilterTestSuite))
 }
 

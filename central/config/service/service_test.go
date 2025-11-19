@@ -10,7 +10,6 @@ import (
 	"github.com/stackrox/rox/central/convert/storagetov1"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/sac"
@@ -63,16 +62,10 @@ type configServiceTestSuite struct {
 }
 
 func (s *configServiceTestSuite) SetupSuite() {
-	s.T().Setenv(features.UnifiedCVEDeferral.EnvVar(), "true")
-	if !features.UnifiedCVEDeferral.Enabled() {
-		s.T().Skipf("Skip test because %s=false", features.UnifiedCVEDeferral.EnvVar())
-		s.T().SkipNow()
-	}
-
 	s.ctx = sac.WithAllAccess(context.Background())
 	s.db = pgtest.ForT(s.T())
 	s.dataStore = datastore.NewForTest(s.T(), s.db.DB)
-	s.srv = New(s.dataStore)
+	s.srv = New(s.dataStore, nil)
 
 	// Not found because Singleton() was not called and default configuration was not initialize.
 	cfg, err := s.srv.GetVulnerabilityExceptionConfig(s.ctx, &v1.Empty{})

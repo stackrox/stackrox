@@ -1,4 +1,4 @@
-import { AdvancedFlowsFilterType, FilterValue } from './types';
+import type { AdvancedFlowsFilterType, FilterValue } from './types';
 
 function isValidPort(port: string): boolean {
     const portNum = parseInt(port, 10);

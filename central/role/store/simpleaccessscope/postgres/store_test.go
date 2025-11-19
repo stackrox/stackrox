@@ -93,6 +93,11 @@ func (s *SimpleAccessScopesStoreSuite) TestStore() {
 
 	s.NoError(store.UpsertMany(ctx, simpleAccessScopes))
 
+	foundSimpleAccessScopes, missing, err := store.GetMany(ctx, simpleAccessScopeIDs)
+	s.NoError(err)
+	s.Empty(missing)
+	protoassert.ElementsMatch(s.T(), simpleAccessScopes, foundSimpleAccessScopes)
+
 	simpleAccessScopeCount, err = store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)
 	s.Equal(200, simpleAccessScopeCount)

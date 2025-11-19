@@ -1,6 +1,6 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom-v5-compat';
 import lowerCase from 'lodash/lowerCase';
 import pluralize from 'pluralize';
 
@@ -12,8 +12,6 @@ import searchContext from 'Containers/searchContext';
 import { searchParams } from 'constants/searchParams';
 import useWorkflowMatch from 'hooks/useWorkflowMatch';
 import ListTable from './Table';
-// TODO: this exception will be unnecessary once Compliance pages are re-structured like Config Management
-/* eslint-disable-next-line import/no-cycle */
 import SidePanel from './SidePanel';
 import ComplianceSearchInput from '../ComplianceSearchInput';
 

@@ -15,7 +15,6 @@ import (
 )
 
 func TestEventsHandler(t *testing.T) {
-	t.Parallel()
 	suite.Run(t, new(handlerTestSuite))
 }
 

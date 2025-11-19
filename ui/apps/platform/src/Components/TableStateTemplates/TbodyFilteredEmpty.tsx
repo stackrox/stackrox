@@ -1,9 +1,9 @@
-import React from 'react';
-import { Button, ButtonProps, Text } from '@patternfly/react-core';
+import { Button, Text } from '@patternfly/react-core';
+import type { ButtonProps } from '@patternfly/react-core';
 import { SearchIcon } from '@patternfly/react-icons';
 
 import EmptyStateTemplate from 'Components/EmptyStateTemplate';
-import { EmptyStateTemplateProps } from 'Components/EmptyStateTemplate/EmptyStateTemplate';
+import type { EmptyStateTemplateProps } from 'Components/EmptyStateTemplate/EmptyStateTemplate';
 
 import { TbodyFullCentered } from './TbodyFullCentered';
 

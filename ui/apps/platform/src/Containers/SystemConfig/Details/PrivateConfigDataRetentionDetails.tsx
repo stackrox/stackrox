@@ -1,4 +1,4 @@
-import React, { ReactElement } from 'react';
+import type { ReactElement } from 'react';
 import { Link } from 'react-router-dom';
 import pluralize from 'pluralize';
 import {
@@ -11,13 +11,14 @@ import {
     GridItem,
     Popover,
     Title,
+    Tooltip,
 } from '@patternfly/react-core';
+import { HelpIcon } from '@patternfly/react-icons';
 
 import ClusterLabelsTable from 'Containers/Clusters/ClusterLabelsTable';
-import { PrivateConfig } from 'types/config.proto';
+import type { PrivateConfig } from 'types/config.proto';
 import { clustersBasePath } from 'routePaths';
 
-import { HelpIcon } from '@patternfly/react-icons';
 import { convertBetweenBytesAndMB } from '../SystemConfig.utils';
 
 type DataRetentionValueProps = {
@@ -116,7 +117,11 @@ const PrivateConfigDataRetentionDetails = ({
             </GridItem>
             <GridItem>
                 <Card isFlat className="pf-v5-u-h-100">
-                    <CardTitle>Images no longer deployed</CardTitle>
+                    <CardTitle>
+                        <Tooltip content={<div>Images no longer active</div>} position="auto">
+                            <div>Images no longer deployed or watched</div>
+                        </Tooltip>
+                    </CardTitle>
                     <CardBody>
                         <DataRetentionValue
                             value={privateConfig?.imageRetentionDurationDays}

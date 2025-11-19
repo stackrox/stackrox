@@ -1,5 +1,4 @@
-import React from 'react';
-import { Link } from 'react-router-dom';
+import { Link } from 'react-router-dom-v5-compat';
 import pluralize from 'pluralize';
 import {
     Button,
@@ -14,11 +13,13 @@ import {
 
 import { exceptionManagementPath } from 'routePaths';
 import {
+    isDeferralException,
+    isFalsePositiveException,
+} from 'services/VulnerabilityExceptionService';
+import type {
     ExceptionExpiry,
     VulnerabilityException,
     VulnerabilityExceptionComment,
-    isDeferralException,
-    isFalsePositiveException,
 } from 'services/VulnerabilityExceptionService';
 import { getDate, getDateTime, getDistanceStrictAsPhrase } from 'utils/dateUtils';
 import useModal from 'hooks/useModal';

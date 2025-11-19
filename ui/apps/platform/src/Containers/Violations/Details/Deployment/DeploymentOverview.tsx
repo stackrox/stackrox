@@ -1,16 +1,11 @@
-import React, { ReactElement } from 'react';
-import { Link } from 'react-router-dom';
+import type { ReactElement } from 'react';
+import { Link } from 'react-router-dom-v5-compat';
 import { DescriptionList } from '@patternfly/react-core';
 
 import DescriptionListItem from 'Components/DescriptionListItem';
-import {
-    vulnerabilitiesPlatformPath,
-    vulnerabilitiesUserWorkloadsPath,
-    vulnerabilitiesWorkloadCvesPath,
-} from 'routePaths';
-import useFeatureFlags from 'hooks/useFeatureFlags';
-import { AlertDeployment } from 'types/alert.proto';
-import { Deployment } from 'types/deployment.proto';
+import { vulnerabilitiesPlatformPath, vulnerabilitiesUserWorkloadsPath } from 'routePaths';
+import type { AlertDeployment } from 'types/alert.proto';
+import type { Deployment } from 'types/deployment.proto';
 import { getDateTime } from 'utils/dateUtils';
 
 import FlatObjectDescriptionList from './FlatObjectDescriptionList';
@@ -24,7 +19,6 @@ function DeploymentOverview({
     alertDeployment,
     deployment,
 }: DeploymentOverviewProps): ReactElement {
-    const { isFeatureFlagEnabled } = useFeatureFlags();
     const hasPlatformWorkloadCveLink = deployment && deployment.platformComponent;
     return (
         <DescriptionList isCompact isHorizontal>
@@ -33,11 +27,9 @@ function DeploymentOverview({
                 desc={
                     <Link
                         to={
-                            !isFeatureFlagEnabled('ROX_PLATFORM_CVE_SPLIT')
-                                ? `${vulnerabilitiesWorkloadCvesPath}/deployments/${alertDeployment.id}`
-                                : hasPlatformWorkloadCveLink
-                                  ? `${vulnerabilitiesPlatformPath}/deployments/${alertDeployment.id}`
-                                  : `${vulnerabilitiesUserWorkloadsPath}/deployments/${alertDeployment.id}`
+                            hasPlatformWorkloadCveLink
+                                ? `${vulnerabilitiesPlatformPath}/deployments/${alertDeployment.id}`
+                                : `${vulnerabilitiesUserWorkloadsPath}/deployments/${alertDeployment.id}`
                         }
                     >
                         {alertDeployment.id}

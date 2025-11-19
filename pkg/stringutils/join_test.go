@@ -8,7 +8,6 @@ import (
 )
 
 func TestJoinNonEmpty(t *testing.T) {
-	t.Parallel()
 
 	cases := []struct {
 		parts    []string

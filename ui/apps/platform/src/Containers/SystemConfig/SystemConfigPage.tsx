@@ -1,4 +1,5 @@
-import React, { ReactElement, ReactNode, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
+import type { ReactElement, ReactNode } from 'react';
 import {
     Alert,
     Bullseye,
@@ -14,13 +15,12 @@ import {
 import { clustersBasePath, getIsRoutePathRendered } from 'routePaths';
 */
 import usePermissions from 'hooks/usePermissions';
-import useFeatureFlags from 'hooks/useFeatureFlags';
 import useRestQuery from 'hooks/useRestQuery';
 import {
     fetchDefaultRedHatLayeredProductsRule,
     fetchSystemConfig,
 } from 'services/SystemConfigService';
-import { SystemConfig } from 'types/config.proto';
+import type { SystemConfig } from 'types/config.proto';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 
 import SystemConfigDetails from './Details/SystemConfigDetails';
@@ -39,11 +39,6 @@ const SystemConfigPage = (): ReactElement => {
     })(clustersBasePath);
     */
     const isClustersRoutePathRendered = true; // TODO replace with the preceding after #2105 has been merged
-
-    const { isFeatureFlagEnabled } = useFeatureFlags();
-    const isCustomizingPlatformComponentsEnabled = isFeatureFlagEnabled(
-        'ROX_CUSTOMIZABLE_PLATFORM_COMPONENTS'
-    );
 
     const [isEditing, setIsEditing] = useState(false);
 
@@ -95,7 +90,6 @@ const SystemConfigPage = (): ReactElement => {
                     systemConfig={systemConfig}
                     setSystemConfig={setSystemConfig}
                     setIsNotEditing={setIsNotEditing}
-                    isCustomizingPlatformComponentsEnabled={isCustomizingPlatformComponentsEnabled}
                     defaultRedHatLayeredProductsRule={defaultRedHatLayeredProductsRule || ''}
                 />
             </PageSection>
@@ -103,7 +97,6 @@ const SystemConfigPage = (): ReactElement => {
             <SystemConfigDetails
                 systemConfig={systemConfig}
                 isClustersRoutePathRendered={isClustersRoutePathRendered}
-                isCustomizingPlatformComponentsEnabled={isCustomizingPlatformComponentsEnabled}
             />
         );
     } else {

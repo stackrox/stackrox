@@ -1,11 +1,10 @@
-import React from 'react';
-import { Toolbar, ToolbarGroup, ToolbarContent, ToolbarItem } from '@patternfly/react-core';
+import { Toolbar, ToolbarContent, ToolbarGroup, ToolbarItem } from '@patternfly/react-core';
 
-import { SearchFilter } from 'types/search';
+import type { SearchFilter } from 'types/search';
 import useAnalytics from 'hooks/useAnalytics';
 import { createFilterTracker } from 'utils/analyticsEventTracking';
 import { makeFilterChipDescriptors } from 'Components/CompoundSearchFilter/utils/utils';
-import {
+import type {
     CompoundSearchFilterConfig,
     OnSearchCallback,
     OnSearchPayload,
@@ -14,31 +13,31 @@ import SearchFilterChips from 'Components/PatternFly/SearchFilterChips';
 import CompoundSearchFilter from 'Components/CompoundSearchFilter/components/CompoundSearchFilter';
 import {
     Category as PolicyCategory,
-    Name as PolicyName,
     LifecycleStage as PolicyLifecycleStage,
+    Name as PolicyName,
     Severity as PolicySeverity,
 } from 'Components/CompoundSearchFilter/attributes/policy';
 import {
-    ViolationTime as AlertViolationTime,
     EntityType as AlertEntityType,
+    ViolationTime as AlertViolationTime,
 } from 'Components/CompoundSearchFilter/attributes/alert';
 import {
-    Name as ClusterName,
-    ID as ClusterID,
-    Label as ClusterLabel,
+    clusterIdAttribute,
+    clusterLabelAttribute,
+    clusterNameAttribute,
 } from 'Components/CompoundSearchFilter/attributes/cluster';
 import {
-    ID as NamespaceID,
-    Name as NamespaceName,
-    Label as NamespaceLabel,
     Annotation as NamespaceAnnotation,
+    ID as NamespaceID,
+    Label as NamespaceLabel,
+    Name as NamespaceName,
 } from 'Components/CompoundSearchFilter/attributes/namespace';
 import {
+    Annotation as DeploymentAnnotation,
     ID as DeploymentID,
-    Name as DeploymentName,
     Inactive as DeploymentInactive,
     Label as DeploymentLabel,
-    Annotation as DeploymentAnnotation,
+    Name as DeploymentName,
 } from 'Components/CompoundSearchFilter/attributes/deployment';
 import { Name as ResourceName } from 'Components/CompoundSearchFilter/attributes/resource';
 
@@ -56,7 +55,7 @@ const searchFilterConfig: CompoundSearchFilterConfig = [
     {
         displayName: 'Cluster',
         searchCategory: 'ALERTS',
-        attributes: [ClusterName, ClusterID, ClusterLabel],
+        attributes: [clusterNameAttribute, clusterIdAttribute, clusterLabelAttribute],
     },
     {
         displayName: 'Namespace',

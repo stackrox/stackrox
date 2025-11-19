@@ -7,10 +7,9 @@ import (
 	"github.com/pkg/errors"
 )
 
-// A WholeStringMatcher is something that can match a string against a regex, but only matches
-// strings where the entire string matches the regex.
-type WholeStringMatcher interface {
-	MatchWholeString(s string) bool
+// A StringMatcher is something that can match a string against a regex
+type StringMatcher interface {
+	MatchString(s string) bool
 }
 
 // Flags represents regex flags.
@@ -31,23 +30,36 @@ func (f *Flags) regexRepr() string {
 	return ""
 }
 
-// CompileWholeStringMatcher takes a regex and compiles it into a WholeStringMatcher.
+// CompileWholeStringMatcher takes a regex and compiles it into a StringMatcher for whole strings that match the regex pattern.
 // An empty regex matches _all_ strings.
-func CompileWholeStringMatcher(re string, flags Flags) (WholeStringMatcher, error) {
+func CompileWholeStringMatcher(re string, flags Flags) (StringMatcher, error) {
 	if re == "" {
-		return &wholeStringMatcher{}, nil
+		return &stringMatcher{}, nil
 	}
 	compiled, err := regexp.Compile(fmt.Sprintf("^(?%s:%s)$", flags.regexRepr(), re))
 	if err != nil {
 		return nil, errors.Wrap(err, "invalid regex")
 	}
-	return &wholeStringMatcher{r: compiled}, nil
+	return &stringMatcher{r: compiled}, nil
 }
 
-type wholeStringMatcher struct {
+// CompileContainsStringMatcher takes a regex and compiles it into a StringMatcher for strings containing the regex pattern.
+// An empty regex matches _all_ strings.
+func CompileContainsStringMatcher(re string, flags Flags) (StringMatcher, error) {
+	if re == "" {
+		return &stringMatcher{}, nil
+	}
+	compiled, err := regexp.Compile(fmt.Sprintf("(?%s:%s)", flags.regexRepr(), re))
+	if err != nil {
+		return nil, errors.Wrap(err, "invalid regex")
+	}
+	return &stringMatcher{r: compiled}, nil
+}
+
+type stringMatcher struct {
 	r *regexp.Regexp
 }
 
-func (w *wholeStringMatcher) MatchWholeString(s string) bool {
+func (w *stringMatcher) MatchString(s string) bool {
 	return w.r == nil || w.r.MatchString(s)
 }

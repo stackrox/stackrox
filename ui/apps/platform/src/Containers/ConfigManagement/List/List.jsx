@@ -1,13 +1,13 @@
-import React, { useState, useContext } from 'react';
+import { useContext, useState } from 'react';
 import PropTypes from 'prop-types';
-import { useLocation, useNavigate } from 'react-router-dom'; // Updated imports
+import { useLocation, useNavigate } from 'react-router-dom-v5-compat'; // Updated imports
 import pluralize from 'pluralize';
 import resolvePath from 'object-resolve-path';
 
 import Query from 'Components/ThrowingQuery';
 import Loader from 'Components/Loader';
 import PageNotFound from 'Components/PageNotFound';
-import { PanelNew, PanelBody, PanelHead, PanelHeadEnd, PanelTitle } from 'Components/Panel';
+import { PanelBody, PanelHead, PanelHeadEnd, PanelNew, PanelTitle } from 'Components/Panel';
 import Table from 'Components/Table';
 import TablePagination from 'Components/TablePagination';
 import URLSearchInput from 'Components/URLSearchInput';

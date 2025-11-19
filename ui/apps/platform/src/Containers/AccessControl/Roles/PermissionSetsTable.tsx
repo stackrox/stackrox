@@ -1,7 +1,7 @@
-import React, { ChangeEventHandler, ReactElement } from 'react';
-import { Table, Tbody, Td, Thead, Th, Tr } from '@patternfly/react-table';
+import type { ChangeEventHandler, ReactElement } from 'react';
+import { Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 
-import { PermissionSet } from 'services/RolesService';
+import type { PermissionSet } from 'services/RolesService';
 
 export type PermissionSetsTableProps = {
     fieldId: string;

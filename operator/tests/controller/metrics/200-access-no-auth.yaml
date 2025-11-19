@@ -11,7 +11,7 @@ spec:
   containers:
   - name: run
     # PREFETCH-THIS-IMAGE <-- a CI script looks for this marker
-    image: registry.access.redhat.com/ubi9/ubi-minimal:latest@sha256:383329bf9c4f968e87e85d30ba3a5cb988a3bbde28b8e4932dcd3a025fd9c98c
+    image: registry.access.redhat.com/ubi9/ubi-minimal:latest@sha256:0d7cfb0704f6d389942150a01a20cb182dc8ca872004ebf19010e2b622818926
     args:
     - bash
     - "-c"

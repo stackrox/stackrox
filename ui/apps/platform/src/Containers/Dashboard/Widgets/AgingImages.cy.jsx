@@ -1,6 +1,4 @@
-import React from 'react';
-
-import ComponentTestProviders from 'test-utils/ComponentProviders';
+import ComponentTestProvider from 'test-utils/ComponentTestProvider';
 import { graphqlUrl } from 'test-utils/apiEndpoints';
 
 import AgingImages from './AgingImages';
@@ -28,9 +26,9 @@ function setup() {
     cy.intercept('POST', graphqlUrl('agingImagesQuery'), (req) => req.reply(mock));
 
     cy.mount(
-        <ComponentTestProviders>
+        <ComponentTestProvider>
             <AgingImages />
-        </ComponentTestProviders>
+        </ComponentTestProvider>
     );
 }
 

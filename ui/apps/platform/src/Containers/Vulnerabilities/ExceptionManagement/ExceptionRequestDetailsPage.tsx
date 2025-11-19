@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import { useCallback, useState } from 'react';
 import {
     Alert,
     AlertActionCloseButton,
@@ -17,7 +17,7 @@ import {
     Title,
     pluralize,
 } from '@patternfly/react-core';
-import { useParams } from 'react-router-dom';
+import { useParams } from 'react-router-dom-v5-compat';
 
 import { exceptionManagementPath } from 'routePaths';
 import useSet from 'hooks/useSet';
@@ -27,11 +27,11 @@ import useURLStringUnion from 'hooks/useURLStringUnion';
 import useAuthStatus from 'hooks/useAuthStatus';
 import { ensureExhaustive } from 'utils/type.utils';
 import {
-    VulnerabilityException,
     fetchVulnerabilityExceptionById,
     isDeferralException,
     isFalsePositiveException,
 } from 'services/VulnerabilityExceptionService';
+import type { VulnerabilityException } from 'services/VulnerabilityExceptionService';
 
 import PageTitle from 'Components/PageTitle';
 import NotFoundMessage from 'Components/NotFoundMessage';

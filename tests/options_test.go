@@ -17,7 +17,6 @@ import (
 )
 
 func TestOptionsMapExist(t *testing.T) {
-	t.Parallel()
 
 	conn := centralgrpc.GRPCConnectionToCentral(t)
 	service := v1.NewSearchServiceClient(conn)
@@ -32,7 +31,6 @@ func TestOptionsMapExist(t *testing.T) {
 	} {
 		cat := categories
 		t.Run(fmt.Sprintf("%v", categories), func(t *testing.T) {
-			t.Parallel()
 			ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 			resp, err := service.Options(ctx, &v1.SearchOptionsRequest{Categories: cat})
 			cancel()
@@ -56,7 +54,7 @@ func TestOptionsMap(t *testing.T) {
 		"Image Remote", "Image Scan Time", "Image Tag", "Image Top CVSS", "Image User", "Image Volumes",
 		"Max Exposure Level", "Memory Limit (MB)", "Memory Request (MB)", "NVD CVSS", "Namespace", "Namespace ID",
 		"Orchestrator Component", "Platform Component", "Pod Label", "Port", "Port Protocol", "Privileged", "Process Arguments",
-		"Process Name", "Process Path", "Process UID", "Read Only Root Filesystem", "Secret", "Secret Path",
+		"Process Container Start Time", "Process Name", "Process Path", "Process UID", "Read Only Root Filesystem", "Secret", "Secret Path",
 		"Service Account", "Service Account Permission Level", "Volume Destination", "Volume Name", "Volume ReadOnly",
 		"Volume Source", "Volume Type", "Vulnerability State",
 	}
@@ -75,7 +73,6 @@ func TestOptionsMap(t *testing.T) {
 	}
 	for _, category := range categories {
 		t.Run(category.String(), func(t *testing.T) {
-			t.Parallel()
 			options := options.GetOptions([]v1.SearchCategory{v1.SearchCategory_DEPLOYMENTS})
 			assert.Equal(t, expectedOptions, options)
 		})

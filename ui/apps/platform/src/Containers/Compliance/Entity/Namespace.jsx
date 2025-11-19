@@ -7,8 +7,6 @@ import Query from 'Components/CacheFirstQuery';
 import IconWidget from 'Components/IconWidget';
 import Cluster from 'images/cluster.svg';
 import Widget from 'Components/Widget';
-// TODO: this exception will be unnecessary once Compliance pages are re-structured like Config Management
-/* eslint-disable-next-line import/no-cycle */
 import ComplianceList from 'Containers/Compliance/List/List';
 import ResourceCount from 'Containers/Compliance/widgets/ResourceCount';
 import PageNotFound from 'Components/PageNotFound';

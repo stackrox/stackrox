@@ -1,10 +1,13 @@
-import { all, take, call, fork, put, takeLatest } from 'redux-saga/effects';
+import { all, call, fork, put, take, takeLatest } from 'redux-saga/effects';
 import Raven from 'raven-js';
 
 import { integrationsPath } from 'routePaths';
-import * as service from 'services/IntegrationsService';
-import * as AuthService from 'services/AuthService';
-import * as BackupIntegrationsService from 'services/BackupIntegrationsService';
+import {
+    deleteIntegrations as serviceDeleteIntegrations,
+    fetchIntegration as serviceFetchIntegration,
+} from 'services/IntegrationsService';
+import { deleteAuthProviders } from 'services/AuthService';
+import { triggerBackup as serviceTriggerBackup } from 'services/BackupIntegrationsService';
 import { actions, types } from 'reducers/integrations';
 import { actions as notificationActions } from 'reducers/notifications';
 import { actions as apiTokenActions } from 'reducers/apitokens';
@@ -22,7 +25,7 @@ const fetchIntegrationsActionMap = {
 // with the given action type.
 function* fetchIntegrationWrapper(source, action) {
     try {
-        const result = yield call(service.fetchIntegration, source);
+        const result = yield call(serviceFetchIntegration, source);
         yield put(action.success(result.response));
     } catch (error) {
         yield put(action.failure(error));
@@ -88,14 +91,14 @@ function* watchFetchRequest() {
 function* deleteIntegrations({ source, sourceType, ids }) {
     try {
         if (source === 'authProviders') {
-            yield call(AuthService.deleteAuthProviders, ids);
+            yield call(deleteAuthProviders, ids);
             if (sourceType === 'apitoken') {
                 yield put(fetchIntegrationsActionMap[sourceType]);
             } else {
                 yield put(fetchIntegrationsActionMap[source]);
             }
         } else {
-            yield call(service.deleteIntegrations, source, ids);
+            yield call(serviceDeleteIntegrations, source, ids);
             yield put(fetchIntegrationsActionMap[source]);
         }
         const toastMessage = `Successfully deleted ${ids.length} integration${
@@ -111,7 +114,7 @@ function* deleteIntegrations({ source, sourceType, ids }) {
 function* triggerBackup(action) {
     const { id } = action;
     try {
-        yield call(BackupIntegrationsService.triggerBackup, id);
+        yield call(serviceTriggerBackup, id);
         yield put(notificationActions.addNotification('Backup was successful'));
         yield put(notificationActions.removeOldestNotification());
     } catch (error) {

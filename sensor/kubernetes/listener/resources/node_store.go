@@ -88,7 +88,7 @@ func (s *nodeStoreImpl) removeNode(node *storage.Node) {
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
 
-	delete(s.nodes, node.Name)
+	delete(s.nodes, node.GetName())
 }
 
 // getNode returns nodeWrap with a given name

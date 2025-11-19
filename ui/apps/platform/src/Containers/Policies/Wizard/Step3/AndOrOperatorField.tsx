@@ -1,4 +1,3 @@
-import React from 'react';
 import { useField } from 'formik';
 import { Button } from '@patternfly/react-core';
 

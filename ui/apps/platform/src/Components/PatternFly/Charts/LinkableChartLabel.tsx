@@ -1,6 +1,6 @@
-import React from 'react';
-import { Link } from 'react-router-dom';
-import { ChartLabel, ChartLabelProps } from '@patternfly/react-charts';
+import { Link } from 'react-router-dom-v5-compat';
+import { ChartLabel } from '@patternfly/react-charts';
+import type { ChartLabelProps } from '@patternfly/react-charts';
 
 export type LinkableChartLabelProps = ChartLabelProps & {
     /**

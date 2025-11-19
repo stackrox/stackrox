@@ -1,5 +1,5 @@
-import React, { ReactElement } from 'react';
-import { Button, Icon, Popover, List, ListItem } from '@patternfly/react-core';
+import type { ReactElement } from 'react';
+import { Button, Icon, List, ListItem, Popover } from '@patternfly/react-core';
 import { CheckCircleIcon, ExclamationCircleIcon } from '@patternfly/react-icons';
 
 import IconText from 'Components/PatternFly/IconText/IconText';

@@ -11,49 +11,56 @@ import (
 
 var (
 	log = logging.LoggerForModule()
-
-	once           sync.Once
-	clusterID      string
-	clusterIDMutex sync.RWMutex
-
-	clusterIDAvailable = concurrency.NewSignal()
 )
 
-func clusterIDFromCert() string {
-	id, err := clusterid.ParseClusterIDFromServiceCert(storage.ServiceType_SENSOR_SERVICE)
-	if err != nil {
-		log.Fatalf("Error parsing cluster id from certificate: %v", err)
+type handlerImpl struct {
+	once                          sync.Once
+	clusterID                     string
+	clusterIDMutex                sync.RWMutex
+	clusterIDAvailable            concurrency.Signal
+	isInitCertClusterID           func(string) bool
+	getClusterID                  func(string, string) (string, error)
+	parseClusterIDFromServiceCert func(storage.ServiceType) (string, error)
+}
+
+// NewHandler creates a new clusterID handler
+// This should be treated as a singleton unless it's called in a test
+func NewHandler() *handlerImpl {
+	return &handlerImpl{
+		clusterIDAvailable:            concurrency.NewSignal(),
+		isInitCertClusterID:           centralsensor.IsInitCertClusterID,
+		getClusterID:                  centralsensor.GetClusterID,
+		parseClusterIDFromServiceCert: clusterid.ParseClusterIDFromServiceCert,
 	}
-	return id
 }
 
 // Get returns the cluster id parsed from the service certificate
-func Get() string {
-	once.Do(func() {
-		id := clusterIDFromCert()
-		if centralsensor.IsInitCertClusterID(id) {
+func (c *handlerImpl) Get() string {
+	c.once.Do(func() {
+		id := c.clusterIDFromCert()
+		if c.isInitCertClusterID(id) {
 			log.Infof("Certificate has wildcard subject %s. Waiting to receive cluster ID from central...", id)
-			clusterIDAvailable.Wait()
+			c.clusterIDAvailable.Wait()
 		} else {
-			clusterIDMutex.Lock()
-			defer clusterIDMutex.Unlock()
-			clusterID = id
-			clusterIDAvailable.Signal()
+			concurrency.WithLock(&c.clusterIDMutex, func() {
+				c.clusterID = id
+				c.clusterIDAvailable.Signal()
+			})
 		}
 	})
-	return GetNoWait()
+	return c.GetNoWait()
 }
 
 // GetNoWait returns the cluster id without waiting until it is available.
-func GetNoWait() string {
-	clusterIDMutex.RLock()
-	defer clusterIDMutex.RUnlock()
-	return clusterID
+func (c *handlerImpl) GetNoWait() string {
+	c.clusterIDMutex.RLock()
+	defer c.clusterIDMutex.RUnlock()
+	return c.clusterID
 }
 
 // Set sets the global cluster ID value.
-func Set(value string) {
-	effectiveClusterID, err := centralsensor.GetClusterID(value, clusterIDFromCert())
+func (c *handlerImpl) Set(value string) {
+	effectiveClusterID, err := c.getClusterID(value, c.clusterIDFromCert())
 	if err != nil {
 		log.Panicf("Invalid dynamic cluster ID value %q: %v", value, err)
 	}
@@ -61,13 +68,21 @@ func Set(value string) {
 		log.Infof("Received dynamic cluster ID %q", value)
 	}
 
-	clusterIDMutex.Lock()
-	defer clusterIDMutex.Unlock()
+	c.clusterIDMutex.Lock()
+	defer c.clusterIDMutex.Unlock()
 
-	if clusterID == "" {
-		clusterID = effectiveClusterID
-		clusterIDAvailable.Signal()
-	} else if clusterID != effectiveClusterID {
-		log.Panicf("Newly set cluster ID value %q conflicts with previous value %q", effectiveClusterID, clusterID)
+	if c.clusterID == "" {
+		c.clusterID = effectiveClusterID
+		c.clusterIDAvailable.Signal()
+	} else if c.clusterID != effectiveClusterID {
+		log.Panicf("Newly set cluster ID value %q conflicts with previous value %q", effectiveClusterID, c.clusterID)
 	}
+}
+
+func (c *handlerImpl) clusterIDFromCert() string {
+	id, err := c.parseClusterIDFromServiceCert(storage.ServiceType_SENSOR_SERVICE)
+	if err != nil {
+		log.Panicf("Error parsing cluster id from certificate: %v", err)
+	}
+	return id
 }

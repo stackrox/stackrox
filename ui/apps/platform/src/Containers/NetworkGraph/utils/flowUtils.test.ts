@@ -1,6 +1,6 @@
-import { AdvancedFlowsFilterType } from '../common/AdvancedFlowsFilter/types';
-import { Flow, Peer } from '../types/flow.type';
-import { CustomEdgeModel, CustomNodeModel } from '../types/topology.type';
+import type { AdvancedFlowsFilterType } from '../common/AdvancedFlowsFilter/types';
+import type { Flow, Peer } from '../types/flow.type';
+import type { CustomEdgeModel, CustomNodeModel } from '../types/topology.type';
 import {
     filterNetworkFlows,
     getAllUniquePorts,

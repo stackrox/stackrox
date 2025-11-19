@@ -1,4 +1,4 @@
-import React, { CSSProperties } from 'react';
+import type { CSSProperties } from 'react';
 import {
     Bullseye,
     Divider,
@@ -9,23 +9,30 @@ import {
     Text,
 } from '@patternfly/react-core';
 import { gql, useQuery } from '@apollo/client';
-import { Pagination as PaginationParam } from 'services/types';
+import type { Pagination as PaginationParam } from 'services/types';
 
 import TableErrorComponent from 'Components/PatternFly/TableErrorComponent';
-import { UseURLPaginationResult } from 'hooks/useURLPagination';
+import { overrideManagedColumns, useManagedColumns } from 'hooks/useManagedColumns';
+import type { ColumnConfigOverrides } from 'hooks/useManagedColumns';
+import type { UseURLPaginationResult } from 'hooks/useURLPagination';
 import useURLSort from 'hooks/useURLSort';
 import useSelectToggle from 'hooks/patternfly/useSelectToggle';
 
 import { getPaginationParams, getRequestQueryStringForSearchFilter } from 'utils/searchUtils';
 import DeploymentResourceTable, {
-    DeploymentResources,
     deploymentResourcesFragment,
+    deploymentResourcesTableId,
+    defaultColumns as deploymentResourcesDefaultColumns,
 } from './DeploymentResourceTable';
+import type { DeploymentResources } from './DeploymentResourceTable';
 import useWorkloadCveViewContext from '../hooks/useWorkloadCveViewContext';
 
 export type ImagePageResourcesProps = {
     imageId: string;
     pagination: UseURLPaginationResult;
+    deploymentResourceColumnOverrides: ColumnConfigOverrides<
+        keyof typeof deploymentResourcesDefaultColumns
+    >;
 };
 
 const imageResourcesQuery = gql`
@@ -38,7 +45,11 @@ const imageResourcesQuery = gql`
     }
 `;
 
-function ImagePageResources({ imageId, pagination }: ImagePageResourcesProps) {
+function ImagePageResources({
+    imageId,
+    pagination,
+    deploymentResourceColumnOverrides,
+}: ImagePageResourcesProps) {
     const { baseSearchFilter } = useWorkloadCveViewContext();
     const { page, perPage, setPage, setPerPage } = pagination;
     const { sortOption, getSortParams } = useURLSort({
@@ -62,6 +73,16 @@ function ImagePageResources({ imageId, pagination }: ImagePageResourcesProps) {
 
     const imageResourcesData = data?.image ?? previousData?.image;
     const deploymentCount = imageResourcesData?.deploymentCount ?? 0;
+
+    const deploymentResourceColumnState = useManagedColumns(
+        deploymentResourcesTableId,
+        deploymentResourcesDefaultColumns
+    );
+
+    const deploymentResourceColumnConfig = overrideManagedColumns(
+        deploymentResourceColumnState.columns,
+        deploymentResourceColumnOverrides
+    );
 
     return (
         <>
@@ -111,6 +132,7 @@ function ImagePageResources({ imageId, pagination }: ImagePageResourcesProps) {
                             <DeploymentResourceTable
                                 data={imageResourcesData}
                                 getSortParams={getSortParams}
+                                columnVisibilityState={deploymentResourceColumnConfig}
                             />
                         </div>
                     </ExpandableSection>

@@ -48,20 +48,20 @@ message ProcessListeningOnPortStorage {
   // generator assume an id has to be a string.
   string id = 1; // @gotags: sql:"pk,type(uuid)"
 
-  uint32 port = 2; // @gotags: search:"Port,store"
-  L4Protocol protocol = 3; // @gotags: search:"Port Protocol,store"
+  uint32 port = 2; // @gotags: search:"Port"
+  L4Protocol protocol = 3; // @gotags: search:"Port Protocol"
   google.protobuf.Timestamp close_timestamp = 4; // @gotags: search:"Closed Time,hidden"
 
-  string process_indicator_id = 5; // @gotags: search:"Process ID,store" sql:"fk(ProcessIndicator:id),no-fk-constraint,index=btree,type(uuid)"
+  string process_indicator_id = 5; // @gotags: search:"Process ID" sql:"fk(ProcessIndicator:id),no-fk-constraint,index=btree,type(uuid)"
 
   // XXX: Make it a partial index on only active, not closed, PLOP
-  bool closed = 6; // @gotags: search:"Closed,store" sql:"index=btree"
+  bool closed = 6; // @gotags: search:"Closed" sql:"index=btree"
 
   // ProcessIndicator will be not empty only for those cases when we were not
   // able to find references process in the database
   ProcessIndicatorUniqueKey process = 7;
 
-  string deployment_id = 8; // @gotags: search:"Deployment ID,store" sql:"fk(Deployment:id),no-fk-constraint,index=btree,type(uuid)"
+  string deployment_id = 8; // @gotags: search:"Deployment ID" sql:"fk(Deployment:id),no-fk-constraint,index=btree,type(uuid)"
 
   string pod_uid = 9; // @gotags: search:"Pod UID,hidden" sql:"fk(Pod:id),no-fk-constraint,index=hash,type(uuid)"
 

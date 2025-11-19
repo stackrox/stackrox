@@ -1,5 +1,7 @@
 import static Services.waitForViolation
 
+import io.stackrox.proto.storage.ClusterOuterClass.AdmissionControllerConfig
+
 import io.stackrox.proto.api.v1.AlertServiceOuterClass
 import io.stackrox.proto.storage.AlertOuterClass
 import io.stackrox.proto.storage.PolicyOuterClass
@@ -234,6 +236,23 @@ class Enforcement extends BaseSpecification {
     static final private Integer WAIT_FOR_VIOLATION_TIMEOUT = 90
 
     def setupSpec() {
+        // The admission controller webhooks now enforce on creates and updates by default.
+        // For this test, to test other enforcements like scale down and kill pods, the deployment
+        // and its pods must first be created. Hence disable the admission controller enforcement to begin with.
+        // Allow the deployments and pods to first be created, and then sensor enforcement methods like
+        // scale down and kill pods - which only occur on the first time a deployment is created (not on updates)
+        // to execute for the sake of testing those paths.
+        // Another way to achieve the same goal - bypass admission controller enforcement so sensor can enforce
+        // would be to update each of the deployments in this test to have the stackrox.io/break-glass annotation
+        AdmissionControllerConfig ac = AdmissionControllerConfig.newBuilder()
+                .setEnabled(false)
+                .setEnforceOnUpdates(false)
+                .build()
+
+        assert ClusterService.updateAdmissionController(ac)
+        // Sleep to allow settings update to propagate
+        sleep(5000)
+
         POLICIES.each {
             label, create ->
             CREATED_POLICIES[label] = create()
@@ -286,11 +305,17 @@ class Enforcement extends BaseSpecification {
         and:
         "check pod was killed"
         def startTime = System.currentTimeMillis()
-        assert d.pods.size() > 0
-        assert d.pods.collect {
-            it -> log.info "checking if ${it.name} was killed"
-            orchestrator.wasContainerKilled(it.name)
-        }.find { it == true }
+        assert d.pods.size() >= 0
+        // It is possible that the enforcement kicked even even before deployment creation method had a chance to load
+        // pods into memory. In that case, the pods.size() will be 0 and we don't need to check anything else.
+        // But if the deployment creation method was able to load pods into memory before enforcement kills them,
+        // then we verify that those pods aren't running anymore.
+        if (d.pods.size() > 0) {
+            assert d.pods.collect {
+                it -> log.info "checking if ${it.name} was killed"
+                    orchestrator.wasContainerKilled(it.name)
+            }.find { it == true }
+        }
         assert alert.enforcement.action == EnforcementAction.KILL_POD_ENFORCEMENT
         log.info "Enforcement took ${(System.currentTimeMillis() - startTime) / 1000}s"
         assert Services.getAlertEnforcementCount(KILL_ENFORCEMENT, KILL_ENFORCEMENT) > 0

@@ -67,7 +67,7 @@ const VulnMgmtEntityImage = ({
                         name
                     }
                     notes
-                    components: imageComponents {
+                    imageComponents {
                         id
                         priority
                         name
@@ -75,7 +75,7 @@ const VulnMgmtEntityImage = ({
                         version
                         source
                         location
-                        vulns: imageVulnerabilities {
+                        imageVulnerabilities {
                             ...cveFields
                         }
                     }

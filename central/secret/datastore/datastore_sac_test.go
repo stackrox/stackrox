@@ -76,7 +76,7 @@ func (s *secretDatastoreSACTestSuite) cleanupSecret(ID string) {
 }
 
 func (s *secretDatastoreSACTestSuite) TestUpsertSecret() {
-	cases := testutils.GenericGlobalSACUpsertTestCases(s.T(), testutils.VerbUpsert)
+	cases := testutils.GenericNamespaceSACUpsertTestCases(s.T(), testutils.VerbUpsert)
 
 	for name, c := range cases {
 		s.Run(name, func() {
@@ -88,7 +88,8 @@ func (s *secretDatastoreSACTestSuite) TestUpsertSecret() {
 			if !c.ExpectError {
 				s.NoError(err)
 			} else {
-				s.Equal(c.ExpectedError, err)
+				s.Error(err)
+				s.ErrorIs(err, c.ExpectedError)
 			}
 		})
 	}
@@ -120,7 +121,7 @@ func (s *secretDatastoreSACTestSuite) TestGetSecret() {
 }
 
 func (s *secretDatastoreSACTestSuite) TestRemoveSecret() {
-	cases := testutils.GenericGlobalSACDeleteTestCases(s.T())
+	cases := testutils.GenericNamespaceSACDeleteTestCases(s.T())
 
 	for name, c := range cases {
 		s.Run(name, func() {
@@ -132,10 +133,15 @@ func (s *secretDatastoreSACTestSuite) TestRemoveSecret() {
 			defer s.cleanupSecret(testSecret.GetId())
 			s.NoError(err)
 			err = s.datastore.RemoveSecret(ctx, testSecret.GetId())
-			if !c.ExpectError {
-				s.NoError(err)
+			s.NoError(err)
+			fetchedSecret, found, err := s.datastore.GetSecret(s.testContexts[testutils.UnrestrictedReadWriteCtx], testSecret.GetId())
+			s.NoError(err)
+			if !c.ExpectedFound {
+				s.False(found)
+				s.Nil(fetchedSecret)
 			} else {
-				s.Equal(c.ExpectedError, err)
+				s.True(found)
+				protoassert.Equal(s.T(), testSecret, fetchedSecret)
 			}
 		})
 	}
@@ -311,30 +317,6 @@ func (s *secretDatastoreSACTestSuite) TestSecretUnrestrictedCount() {
 	for name, c := range secretUnrestrictedSACObjectSearchTestCases {
 		s.Run(name, func() {
 			s.runCountTest(c)
-		})
-	}
-}
-
-func (s *secretDatastoreSACTestSuite) runCountSecretsTest(testParams secretSACSearchResult) {
-	ctx := s.testContexts[testParams.scopeKey]
-	resultCount, err := s.datastore.CountSecrets(ctx)
-	s.NoError(err)
-	expectedResultCount := testutils.AggregateCounts(s.T(), testParams.resultCounts)
-	s.Equal(expectedResultCount, resultCount)
-}
-
-func (s *secretDatastoreSACTestSuite) TestSecretScopedCountSecrets() {
-	for name, c := range secretScopedSACSearchTestCases {
-		s.Run(name, func() {
-			s.runCountSecretsTest(c)
-		})
-	}
-}
-
-func (s *secretDatastoreSACTestSuite) TestSecretUnrestrictedCountSecrets() {
-	for name, c := range secretUnrestrictedSACObjectSearchTestCases {
-		s.Run(name, func() {
-			s.runCountSecretsTest(c)
 		})
 	}
 }

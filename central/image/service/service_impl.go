@@ -99,8 +99,9 @@ var (
 type serviceImpl struct {
 	v1.UnimplementedImageServiceServer
 
-	datastore   datastore.DataStore
-	riskManager manager.Manager
+	datastore        datastore.DataStore
+	mappingDatastore datastore.DataStore
+	riskManager      manager.Manager
 
 	metadataCache cache.ImageMetadata
 
@@ -140,7 +141,7 @@ func (s *serviceImpl) GetImage(ctx context.Context, request *v1.GetImageRequest)
 
 	id := types.NewDigest(request.GetId()).Digest()
 
-	image, exists, err := s.datastore.GetImage(ctx, id)
+	image, exists, err := s.mappingDatastore.GetImage(ctx, id)
 	if err != nil {
 		return nil, err
 	}
@@ -168,7 +169,7 @@ func (s *serviceImpl) CountImages(ctx context.Context, request *v1.RawQuery) (*v
 		return nil, errors.Wrap(errox.InvalidArgs, err.Error())
 	}
 
-	numImages, err := s.datastore.Count(ctx, parsedQuery)
+	numImages, err := s.mappingDatastore.Count(ctx, parsedQuery)
 	if err != nil {
 		return nil, err
 	}
@@ -186,7 +187,7 @@ func (s *serviceImpl) ListImages(ctx context.Context, request *v1.RawQuery) (*v1
 	// Fill in pagination.
 	paginated.FillPagination(parsedQuery, request.GetPagination(), maxImagesReturned)
 
-	images, err := s.datastore.SearchListImages(ctx, parsedQuery)
+	images, err := s.mappingDatastore.SearchListImages(ctx, parsedQuery)
 	if err != nil {
 		return nil, err
 	}
@@ -207,7 +208,7 @@ func (s *serviceImpl) ExportImages(req *v1.ExportImageRequest, srv v1.ImageServi
 		ctx, cancel = context.WithTimeout(srv.Context(), time.Duration(timeout)*time.Second)
 		defer cancel()
 	}
-	return s.datastore.WalkByQuery(ctx, parsedQuery, func(image *storage.Image) error {
+	return s.mappingDatastore.WalkByQuery(ctx, parsedQuery, func(image *storage.Image) error {
 		if err := srv.Send(&v1.ExportImageResponse{Image: image}); err != nil {
 			return err
 		}
@@ -239,9 +240,8 @@ func (s *serviceImpl) saveImage(img *storage.Image) error {
 
 // ScanImageInternal handles an image request from Sensor and Admission Controller.
 func (s *serviceImpl) ScanImageInternal(ctx context.Context, request *v1.ScanImageInternalRequest) (*v1.ScanImageInternalResponse, error) {
-	err := s.acquireScanSemaphore(ctx)
-	if err != nil {
-		log.Errorw("Failed to acquire scan semaphore",
+	if err := s.acquireScanSemaphore(ctx); err != nil {
+		log.Debugw("Failed to acquire scan semaphore",
 			logging.FromContext(ctx),
 			logging.ImageName(request.GetImage().GetName().GetFullName()),
 			logging.ImageID(request.GetImage().GetId()),
@@ -435,6 +435,13 @@ func (s *serviceImpl) ScanImage(ctx context.Context, request *v1.ScanImageReques
 
 	img, err := enricher.EnrichImageByName(ctx, s.enricher, enrichmentCtx, request.GetImageName())
 	if err != nil {
+		if env.AdministrationEventsAdHocScans.BooleanSetting() {
+			log.Errorw("Enriching image",
+				logging.ImageName(request.GetImageName()),
+				logging.Err(err),
+				logging.Bool("ad_hoc", true),
+			)
+		}
 		return nil, err
 	}
 
@@ -456,9 +463,8 @@ func (s *serviceImpl) ScanImage(ctx context.Context, request *v1.ScanImageReques
 // specified by the given components and scan notes.
 // This is meant to be called by Sensor.
 func (s *serviceImpl) GetImageVulnerabilitiesInternal(ctx context.Context, request *v1.GetImageVulnerabilitiesInternalRequest) (*v1.ScanImageInternalResponse, error) {
-	err := s.acquireScanSemaphore(ctx)
-	if err != nil {
-		log.Errorw("Failed to acquire scan semaphore",
+	if err := s.acquireScanSemaphore(ctx); err != nil {
+		log.Debugw("Failed to acquire scan semaphore",
 			logging.FromContext(ctx),
 			logging.ImageName(request.GetImageName().GetFullName()),
 			logging.ImageID(request.GetImageId()),
@@ -495,7 +501,7 @@ func (s *serviceImpl) GetImageVulnerabilitiesInternal(ctx context.Context, reque
 	}
 
 	comps := scannerTypes.NewScanComponents("", request.GetComponents(), nil)
-	_, err = s.enricher.EnrichWithVulnerabilities(img, comps, request.GetNotes())
+	_, err := s.enricher.EnrichWithVulnerabilities(img, comps, request.GetNotes())
 	if err != nil {
 		return nil, err
 	}
@@ -540,9 +546,8 @@ func (s *serviceImpl) acquireScanSemaphore(ctx context.Context) error {
 }
 
 func (s *serviceImpl) EnrichLocalImageInternal(ctx context.Context, request *v1.EnrichLocalImageInternalRequest) (*v1.ScanImageInternalResponse, error) {
-	err := s.acquireScanSemaphore(ctx)
-	if err != nil {
-		log.Errorw("Failed to acquire scan semaphore",
+	if err := s.acquireScanSemaphore(ctx); err != nil {
+		log.Debugw("Failed to acquire scan semaphore",
 			logging.FromContext(ctx),
 			logging.ImageName(request.GetImageName().GetFullName()),
 			logging.ImageID(request.GetImageId()),
@@ -558,7 +563,7 @@ func (s *serviceImpl) EnrichLocalImageInternal(ctx context.Context, request *v1.
 
 	imgID := request.GetImageId()
 	var hasErrors bool
-	if request.Error != "" {
+	if request.GetError() != "" {
 		// If errors occurred we continue processing so that the failed image scan may be saved in
 		// the central datastore. Without this users would not have an indication that scans from
 		// secured clusters are failing.
@@ -578,6 +583,7 @@ func (s *serviceImpl) EnrichLocalImageInternal(ctx context.Context, request *v1.
 	forceScanUpdate := true
 	// Always pull the image from the store if the ID != "" and rescan is not forced. Central will manage the reprocessing over the images.
 	if imgID != "" && !request.GetForce() {
+		var err error
 		existingImg, imgExists, err = s.datastore.GetImage(ctx, imgID)
 		if err != nil {
 			s.informScanWaiter(request.GetRequestId(), nil, err)
@@ -674,6 +680,7 @@ func (s *serviceImpl) EnrichLocalImageInternal(ctx context.Context, request *v1.
 		_ = s.saveImage(img)
 	}
 
+	var err error
 	if hasErrors && request.GetRequestId() != "" {
 		// Send an actual error to the waiter so that error handling can be done (ie: retry)
 		// Without this a bare image is returned that will have notes such as MISSING_METADATA
@@ -822,7 +829,7 @@ func (s *serviceImpl) WatchImage(ctx context.Context, request *v1.WatchImageRequ
 			ErrorType:    v1.WatchImageResponse_INVALID_IMAGE_NAME,
 		}, nil
 	}
-	if containerImage.Id != "" {
+	if containerImage.GetId() != "" {
 		return &v1.WatchImageResponse{
 			ErrorMessage: fmt.Sprintf("name %s contains a digest, but watch does not handle images with digests", request.GetName()),
 			ErrorType:    v1.WatchImageResponse_INVALID_IMAGE_NAME,
@@ -837,6 +844,13 @@ func (s *serviceImpl) WatchImage(ctx context.Context, request *v1.WatchImageRequ
 	}
 	enrichmentResult, err := s.enricher.EnrichImage(ctx, enrichCtx, img)
 	if err != nil {
+		if env.AdministrationEventsAdHocScans.BooleanSetting() {
+			log.Errorw("Enriching image",
+				logging.ImageName(request.GetName()),
+				logging.Err(err),
+				logging.Bool("ad_hoc", true),
+			)
+		}
 		return &v1.WatchImageResponse{
 			ErrorMessage: fmt.Sprintf("failed to scan image: %v", err),
 			ErrorType:    v1.WatchImageResponse_SCAN_FAILED,

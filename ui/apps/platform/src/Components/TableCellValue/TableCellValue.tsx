@@ -1,15 +1,15 @@
-import React from 'react';
+import type { ReactElement } from 'react';
 import resolvePath from 'object-resolve-path';
 
-type TableCellProps<T> = {
+type TableCellValueProps<T> = {
     row: T;
     column: {
         Header: string;
-        accessor: ((data) => string) | string;
+        accessor: ((data: T) => string) | string;
     };
 };
 
-function TableCellValue<T>({ row, column }: TableCellProps<T>): React.ReactElement {
+function TableCellValue<T>({ row, column }: TableCellValueProps<T>): ReactElement {
     let value: string;
     if (typeof column.accessor === 'function') {
         value = column.accessor(row).toString();

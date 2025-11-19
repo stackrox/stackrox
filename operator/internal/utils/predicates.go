@@ -32,3 +32,31 @@ func (c CreateAndDeleteOnlyPredicate[T]) Update(_ event.TypedUpdateEvent[T]) boo
 func (c CreateAndDeleteOnlyPredicate[T]) Generic(_ event.TypedGenericEvent[T]) bool {
 	return false
 }
+
+// ResourceWithNamePredicate triggers reconciliation on Create, Update, and Delete events
+// for an object that has a specific name.
+type ResourceWithNamePredicate[T ctrlClient.Object] struct {
+	Name string
+}
+
+var _ predicate.Predicate = (*ResourceWithNamePredicate[ctrlClient.Object])(nil)
+
+func (p *ResourceWithNamePredicate[T]) Create(e event.TypedCreateEvent[T]) bool {
+	return e.Object.GetName() == p.Name
+}
+
+func (p *ResourceWithNamePredicate[T]) Update(e event.TypedUpdateEvent[T]) bool {
+	if e.ObjectNew.GetName() != p.Name {
+		return false
+	}
+
+	return e.ObjectOld.GetResourceVersion() != e.ObjectNew.GetResourceVersion()
+}
+
+func (p *ResourceWithNamePredicate[T]) Delete(e event.TypedDeleteEvent[T]) bool {
+	return e.Object.GetName() == p.Name
+}
+
+func (p *ResourceWithNamePredicate[T]) Generic(_ event.TypedGenericEvent[T]) bool {
+	return false
+}

@@ -156,7 +156,7 @@ class ImageScanningTest extends BaseSpecification {
         orchestrator.deleteNamespace(TEST_NAMESPACE)
 
         ImageIntegrationService.addStackroxScannerIntegration()
-        addGCRImagePullSecret()
+        addGCRImagePullSecret(orchestrator)
 
         for (Policy policy : policiesScopedForTest) {
             PolicyService.deletePolicy(policy.getId())
@@ -453,17 +453,17 @@ class ImageScanningTest extends BaseSpecification {
         where:
         "Data inputs are: "
 
-        scanner                          | component                  | version                       | idx | cve              | image           | registry
-        new StackroxScannerIntegration() | "openssl-libs"             | "1:1.0.2k-12.el7"             | 0   | "RHSA-2019:0483" | RHEL7_IMAGE     | ""
-        new StackroxScannerIntegration() | "openssl-libs"             | "1:1.0.2k-12.el7"             | 0   | "CVE-2018-0735"  | RHEL7_IMAGE     | ""
-        new StackroxScannerIntegration() | "systemd"                  | "229-4ubuntu21.29"            | 0   | "CVE-2021-33910" | OCI_IMAGE       | ""
-        new StackroxScannerIntegration() | "glibc"                    | "2.35-0ubuntu3.1"             | 4   | "CVE-2016-20013" | LIST_IMAGE_OCI_MANIFEST | ""
-        new ClairScannerIntegration()    | "apt"                      | "1.4.8"                       | 0   | "CVE-2011-3374"  | NGINX_IMAGE     | ""
-        new ClairScannerIntegration()    | "bash"                     | "4.4-5"                       | 0   | "CVE-2019-18276" | NGINX_IMAGE     | ""
-        new ClairV4ScannerIntegration()  | "openssl-libs"             | "1:1.1.1-8.el8"               | 0   | "RHSA-2021:1024" | UBI8_0_IMAGE    | ""
-        new ClairV4ScannerIntegration()  | "platform-python-pip"      | "9.0.3-13.el8"                | 0   | "RHSA-2020:4432" | UBI8_0_IMAGE    | ""
-        new StackroxScannerIntegration() | "java-17-openjdk-headless" | "1:17.0.11.0.9-2.el8.x86_64"  | 135 | ""               | LINEAGE_IMAGE_A | ""
-        new StackroxScannerIntegration() | "java-17-openjdk-headless" | "1:17.0.13.0.11-3.el8.x86_64" | 137 | ""               | LINEAGE_IMAGE_B | ""
+        scanner                          | component                  | version                       | idx | cve              | image                   | registry
+        new StackroxScannerIntegration() | "openssl-libs"             | "1:1.0.2k-12.el7"             | 0   | "RHSA-2019:0483" | RHEL7_IMAGE             | ""
+        new StackroxScannerIntegration() | "openssl-libs"             | "1:1.0.2k-12.el7"             | 0   | "CVE-2018-0735"  | RHEL7_IMAGE             | ""
+        new StackroxScannerIntegration() | "systemd"                  | "229-4ubuntu21.29"            | 0   | "CVE-2021-33910" | OCI_IMAGE               | ""
+        new StackroxScannerIntegration() | "glibc"                    | "2.35-0ubuntu3.1"             | 4   | "CVE-2023-4911"  | LIST_IMAGE_OCI_MANIFEST | ""
+        new ClairScannerIntegration()    | "apt"                      | "1.4.8"                       | 0   | "CVE-2011-3374"  | NGINX_IMAGE             | ""
+        new ClairScannerIntegration()    | "bash"                     | "4.4-5"                       | 0   | "CVE-2019-18276" | NGINX_IMAGE             | ""
+        new ClairV4ScannerIntegration()  | "openssl-libs"             | "1:1.1.1-8.el8"               | 0   | "RHSA-2021:1024" | UBI8_0_IMAGE            | ""
+        new ClairV4ScannerIntegration()  | "platform-python-pip"      | "9.0.3-13.el8"                | 0   | "RHSA-2020:4432" | UBI8_0_IMAGE            | ""
+        new StackroxScannerIntegration() | "java-17-openjdk-headless" | "1:17.0.11.0.9-2.el8.x86_64"  | 135 | ""               | LINEAGE_IMAGE_A         | ""
+        new StackroxScannerIntegration() | "java-17-openjdk-headless" | "1:17.0.13.0.11-3.el8.x86_64" | 137 | ""               | LINEAGE_IMAGE_B         | ""
     }
 
     @Unroll

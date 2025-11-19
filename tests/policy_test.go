@@ -101,7 +101,7 @@ func exportPolicy(t *testing.T, service v1.PolicyServiceClient, id string) *stor
 	require.Len(t, resp.GetPolicies(), 1)
 	require.Equal(t, id, resp.GetPolicies()[0].GetId())
 
-	return resp.Policies[0]
+	return resp.GetPolicies()[0]
 }
 
 func validateExportFails(t *testing.T, service v1.PolicyServiceClient, _ string, expectedErrors []*v1.PolicyOperationError) {
@@ -228,7 +228,7 @@ func validateExclusionOrScopeOrNotifierRemoved(t *testing.T, importResp *v1.Impo
 	protoassert.Equal(t, expectedPolicy, importPolicyResponse.GetPolicy())
 	require.Len(t, importPolicyResponse.GetErrors(), 1)
 
-	policyErrors := importResp.GetResponses()[0].Errors
+	policyErrors := importResp.GetResponses()[0].GetErrors()
 	require.Len(t, policyErrors, 1)
 	policyError := policyErrors[0]
 	require.Equal(t, removedClustersOrNotifiers, policyError.GetType())

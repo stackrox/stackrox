@@ -1,13 +1,15 @@
 import {
-    getViewStateFromSearch,
-    convertToRestSearch,
     convertSortToGraphQLFormat,
     convertSortToRestFormat,
+    convertToExactMatch,
+    convertToRestSearch,
+    deleteKeysCaseInsensitive,
     getListQueryParams,
     getPaginationParams,
-    searchValueAsArray,
-    convertToExactMatch,
+    getSearchFilterFromSearchString,
+    getViewStateFromSearch,
     hasSearchKeyValue,
+    searchValueAsArray,
 } from './searchUtils';
 
 describe('searchUtils', () => {
@@ -372,6 +374,58 @@ describe('searchUtils', () => {
                 true
             );
             expect(hasSearchKeyValue('?a=s+s&key=a+value&b=t+x', 'key', 'a value')).toBe(true);
+        });
+    });
+
+    describe('getSearchFilterFromSearchString', () => {
+        it('handles empty/null inputs', () => {
+            expect(getSearchFilterFromSearchString('')).toEqual({});
+            // Test invalid inputs that might occur at runtime.
+            expect(getSearchFilterFromSearchString(null as unknown as string)).toEqual({});
+            // Test invalid inputs that might occur at runtime.
+            expect(getSearchFilterFromSearchString(undefined as unknown as string)).toEqual({});
+        });
+
+        it('parses a single filter with a single value', () => {
+            const result = getSearchFilterFromSearchString('Severity:Critical');
+            expect(result).toEqual({ Severity: 'Critical' });
+        });
+
+        it('parses a single filter with multiple values', () => {
+            const result = getSearchFilterFromSearchString('Severity:Critical,Important');
+            expect(result).toEqual({ Severity: ['Critical', 'Important'] });
+        });
+
+        it('parses multiple filters', () => {
+            const query = 'Severity:Critical,Important+Image CVE Count:>0';
+            const result = getSearchFilterFromSearchString(query);
+            expect(result).toEqual({
+                Severity: ['Critical', 'Important'],
+                'Image CVE Count': '>0',
+            });
+        });
+
+        it('ignores malformed pairs', () => {
+            const result = getSearchFilterFromSearchString(
+                'Severity:Critical+:BadValue+NoColon+Key:'
+            );
+            expect(result).toEqual({ Severity: 'Critical' });
+        });
+    });
+
+    describe('deleteKeysFromSearchFilter', () => {
+        it('deletes the keys from the search filter regardless of case', () => {
+            const searchFilter = { Namespace: 'test', Cluster: 'test', cluster: 'test' };
+            const keysToDelete = ['Namespace', 'cluster'];
+            const result = deleteKeysCaseInsensitive(searchFilter, keysToDelete);
+            expect(result).toEqual({});
+        });
+
+        it('does not delete the keys that are not in the search filter', () => {
+            const searchFilter = { Namespace: 'test', Cluster: 'test' };
+            const keysToDelete = ['Deployment'];
+            const result = deleteKeysCaseInsensitive(searchFilter, keysToDelete);
+            expect(result).toEqual({ Namespace: 'test', Cluster: 'test' });
         });
     });
 });

@@ -15,8 +15,11 @@ output_dir="/rpms"
 mkdir $output_dir
 
 if [[ "$arch" == "s390x" ]]; then
+  # TODO(ROX-30647): Builds are failing due to UBI9:latest not containing the
+  #  necessary version of openssl-libs to build postgresql-contrib.
+  pg_build_version="0:16.8-1.module_el9+1209+bd6e4013.s390x"
   dnf module enable -y postgresql:16
-  dnf install -y --downloadonly --downloaddir=/tmp postgresql postgresql-private-libs postgresql-server postgresql-contrib
+  dnf install -y --downloadonly --downloaddir=/tmp "postgresql-${pg_build_version}" "postgresql-private-libs-${pg_build_version}" "postgresql-server-${pg_build_version}" "postgresql-contrib-${pg_build_version}"
   mv /tmp/postgresql-contrib-*.rpm "${output_dir}/postgres-contrib.rpm"
   mv /tmp/postgresql-server-*.rpm "${output_dir}/postgres-server.rpm"
   mv /tmp/postgresql-private-libs-*.rpm "${output_dir}/postgres-libs.rpm"

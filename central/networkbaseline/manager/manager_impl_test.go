@@ -890,7 +890,7 @@ func (suite *ManagerTestSuite) TestBaselineSyncMsg() {
 	// If it stays as locked, and some updates are made to the baseline, then we should also sync to sensor
 	modifiedBaseline := baselineWithPeers(1)
 	modifiedBaseline.Locked = baseline1Copy.GetLocked()
-	modifiedBaseline.ObservationPeriodEnd = baseline1.ObservationPeriodEnd
+	modifiedBaseline.ObservationPeriodEnd = baseline1.GetObservationPeriodEnd()
 	expectOneTimeCallToConnectionManagerWithBaseline(suite, modifiedBaseline)
 	suite.Nil(suite.m.ProcessDeploymentDelete(depID(2)))
 
@@ -923,8 +923,17 @@ func (suite *ManagerTestSuite) TestGetExternalNetworkPeers() {
 		testutils.ExtFlow("entity1", fixtureconsts.Deployment1),
 		testutils.ExtFlow("entity2", fixtureconsts.Deployment1),
 		testutils.ExtFlow("entity3", fixtureconsts.Deployment1),
+		// duplicate flow to test name aggregation
+		testutils.ExtFlow("entity3", fixtureconsts.Deployment1),
 	}
 
+	mockTree := tree.NewDefaultNetworkTreeWrapper()
+	for _, entity := range entities {
+		suite.NoError(mockTree.Insert(entity.GetInfo()))
+	}
+
+	suite.treeManager.EXPECT().GetReadOnlyNetworkTree(gomock.Any(), fixtureconsts.Cluster1).Return(mockTree).AnyTimes()
+	suite.treeManager.EXPECT().GetDefaultNetworkTree(gomock.Any()).Return(nil).AnyTimes()
 	suite.networkEntities.EXPECT().GetEntityByQuery(gomock.Any(), gomock.Any()).Return(entities, nil)
 	suite.clusterFlows.EXPECT().GetFlowStore(gomock.Any(), fixtureconsts.Cluster1).Return(suite.flowStore, nil).AnyTimes()
 	suite.flowStore.EXPECT().GetMatchingFlows(gomock.Any(), gomock.Any(), gomock.Any()).Return(flows, nil, nil).AnyTimes()

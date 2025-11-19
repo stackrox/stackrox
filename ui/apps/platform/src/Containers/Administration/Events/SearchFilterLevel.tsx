@@ -1,52 +1,54 @@
-import React, { useState } from 'react';
-import { Divider } from '@patternfly/react-core';
-import { Select, SelectOption } from '@patternfly/react-core/deprecated';
+import { Divider, SelectOption } from '@patternfly/react-core';
+import SelectSingle from 'Components/SelectSingle/SelectSingle';
 
-import { AdministrationEventLevel, levels } from 'services/AdministrationEventsService';
+import { levels } from 'services/AdministrationEventsService';
+import type { AdministrationEventLevel } from 'services/AdministrationEventsService';
 
 import { getLevelText } from './AdministrationEvent';
 
-const optionAll = 'All';
+const optionAll = 'All levels';
 
 type SearchFilterLevelProps = {
     isDisabled: boolean;
     level: AdministrationEventLevel | undefined;
-    setLevel: (level: AdministrationEventLevel) => void;
+    setLevel: (level: AdministrationEventLevel | undefined) => void;
 };
 
 function SearchFilterLevel({ isDisabled, level, setLevel }: SearchFilterLevelProps) {
-    const [isOpen, setIsOpen] = useState(false);
+    const displayValue = level ? getLevelText(level) : optionAll;
 
-    function onSelect(_event, selection) {
-        setLevel(selection === optionAll ? undefined : selection);
-        setIsOpen(false);
+    function onSelect(_id: string, selection: string) {
+        if (selection === optionAll) {
+            setLevel(undefined);
+        } else {
+            const selectedLevel = levels.find((lv) => getLevelText(lv) === selection);
+            setLevel(selectedLevel || undefined);
+        }
     }
 
-    const options = levels.map((levelArg) => (
-        <SelectOption key={levelArg} value={levelArg}>
-            {getLevelText(levelArg)}
-        </SelectOption>
-    ));
-    options.push(
+    const options = [
+        <SelectOption key="All" value={optionAll}>
+            {optionAll}
+        </SelectOption>,
         <Divider key="Divider" />,
-        <SelectOption key="All" value={optionAll} isPlaceholder>
-            All levels
-        </SelectOption>
-    );
+        ...levels.map((levelArg) => (
+            <SelectOption key={levelArg} value={getLevelText(levelArg)}>
+                {getLevelText(levelArg)}
+            </SelectOption>
+        )),
+    ];
 
     return (
-        <Select
-            variant="single"
-            aria-label="Level filter menu items"
-            toggleAriaLabel="Level filter menu toggle"
-            onToggle={(_event, val) => setIsOpen(val)}
-            onSelect={onSelect}
-            selections={level ?? optionAll}
+        <SelectSingle
+            id="level-filter"
+            value={displayValue}
+            handleSelect={onSelect}
             isDisabled={isDisabled}
-            isOpen={isOpen}
+            placeholderText="Select level"
+            toggleAriaLabel="Level filter menu toggle"
         >
             {options}
-        </Select>
+        </SelectSingle>
     );
 }
 

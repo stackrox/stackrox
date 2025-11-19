@@ -1,5 +1,6 @@
-import React, { ReactElement } from 'react';
-import { Location, matchPath, useLocation } from 'react-router-dom';
+import type { ReactElement } from 'react';
+import { matchPath, useLocation } from 'react-router-dom-v5-compat';
+import type { Location } from 'react-router-dom-v5-compat';
 import {
     Nav,
     NavExpandable,
@@ -9,8 +10,8 @@ import {
     PageSidebarBody,
 } from '@patternfly/react-core';
 
-import { IsFeatureFlagEnabled } from 'hooks/useFeatureFlags';
-import { HasReadAccess } from 'hooks/usePermissions';
+import type { IsFeatureFlagEnabled } from 'hooks/useFeatureFlags';
+import type { HasReadAccess } from 'hooks/usePermissions';
 
 // Import path variables in alphabetical order to minimize merge conflicts when multiple people add routes.
 import {
@@ -42,13 +43,14 @@ import {
     vulnerabilitiesPlatformPath,
     vulnerabilitiesUserWorkloadsPath,
     vulnerabilitiesViewPath,
-    vulnerabilitiesWorkloadCvesPath,
+    vulnerabilitiesVirtualMachineCvesPath,
     vulnerabilityReportsPath,
 } from 'routePaths';
 
 import NavigationContent from './NavigationContent';
 import NavigationItem from './NavigationItem';
-import { NavDescription, ChildDescription, isActiveLink, filterNavDescriptions } from './utils';
+import { filterNavDescriptions, isActiveLink } from './utils';
+import type { ChildDescription, NavDescription } from './utils';
 
 import './NavigationSidebar.css';
 
@@ -59,103 +61,56 @@ const keyForPlatformConfiguration = 'Platform Configuration';
 const keyForCompliance = 'Compliance';
 const keyForVulnerabilities = 'Vulnerability Management';
 
-function getNavDescriptions(isFeatureFlagEnabled: IsFeatureFlagEnabled): NavDescription[] {
-    const isPlatformCveSplitEnabled = isFeatureFlagEnabled('ROX_PLATFORM_CVE_SPLIT');
+function getNavDescriptions(
+    isFeatureFlagEnabled: IsFeatureFlagEnabled // eslint-disable-line @typescript-eslint/no-unused-vars
+): NavDescription[] {
+    const vulnerabilityManagementChildren: ChildDescription[] = [
+        {
+            type: 'link',
+            content: 'Results',
+            path: vulnerabilitiesUserWorkloadsPath,
+            routeKey: 'vulnerabilities/user-workloads',
+            isActive: (location: Location) => {
+                const pathsToMatch = [
+                    vulnerabilitiesNodeCvesPath,
+                    vulnerabilitiesUserWorkloadsPath,
+                    vulnerabilitiesPlatformPath,
+                    vulnerabilitiesAllImagesPath,
+                    vulnerabilitiesInactiveImagesPath,
+                    vulnerabilitiesImagesWithoutCvesPath,
+                    vulnerabilitiesViewPath,
+                    vulnerabilitiesPlatformCvesPath,
+                    vulnerabilitiesVirtualMachineCvesPath,
+                ];
 
-    const vulnerabilityManagementChildren: ChildDescription[] = isPlatformCveSplitEnabled
-        ? [
-              {
-                  type: 'link',
-                  content: 'Results',
-                  path: vulnerabilitiesUserWorkloadsPath,
-                  routeKey: 'vulnerabilities/user-workloads',
-                  isActive: (location: Location) => {
-                      const pathsToMatch = [
-                          vulnerabilitiesWorkloadCvesPath,
-                          vulnerabilitiesNodeCvesPath,
-                          vulnerabilitiesUserWorkloadsPath,
-                          vulnerabilitiesPlatformPath,
-                          vulnerabilitiesAllImagesPath,
-                          vulnerabilitiesInactiveImagesPath,
-                          vulnerabilitiesImagesWithoutCvesPath,
-                          vulnerabilitiesViewPath,
-                          vulnerabilitiesPlatformCvesPath,
-                      ];
-
-                      return pathsToMatch.some((path) =>
-                          matchPath({ path: `${path}/*` }, location.pathname)
-                      );
-                  },
-              },
-              {
-                  type: 'link',
-                  content: 'Exception Management',
-                  path: exceptionManagementPath,
-                  routeKey: 'vulnerabilities/exception-management',
-              },
-              {
-                  type: 'link',
-                  content: 'Vulnerability Reporting',
-                  path: vulnerabilityReportsPath,
-                  routeKey: 'vulnerabilities/reports',
-              },
-              {
-                  type: 'separator',
-                  key: 'following-workload-cves',
-              },
-              {
-                  type: 'link',
-                  content: <NavigationContent variant="Deprecated">Dashboard</NavigationContent>,
-                  path: vulnManagementPath,
-                  routeKey: 'vulnerability-management',
-              },
-          ]
-        : [
-              {
-                  type: 'link',
-                  content: 'Workload CVEs',
-                  path: vulnerabilitiesWorkloadCvesPath,
-                  routeKey: 'vulnerabilities/workload-cves',
-              },
-              {
-                  type: 'link',
-                  content: 'Exception Management',
-                  path: exceptionManagementPath,
-                  routeKey: 'vulnerabilities/exception-management',
-              },
-              {
-                  type: 'link',
-                  content: 'Vulnerability Reporting',
-                  path: vulnerabilityReportsPath,
-                  routeKey: 'vulnerabilities/reports',
-              },
-              {
-                  type: 'separator',
-                  key: 'following-workload-cves',
-              },
-              {
-                  type: 'link',
-                  content: 'Platform CVEs',
-                  path: vulnerabilitiesPlatformCvesPath,
-                  routeKey: 'vulnerabilities/platform-cves',
-              },
-              {
-                  type: 'link',
-                  content: 'Node CVEs',
-                  path: vulnerabilitiesNodeCvesPath,
-                  routeKey: 'vulnerabilities/node-cves',
-              },
-              {
-                  type: 'separator',
-                  key: 'following-node-cves',
-              },
-              {
-                  type: 'link',
-                  content: <NavigationContent variant="Deprecated">Dashboard</NavigationContent>,
-                  path: vulnManagementPath,
-                  routeKey: 'vulnerability-management',
-              },
-          ];
+                return pathsToMatch.some((path) =>
+                    matchPath({ path: `${path}/*` }, location.pathname)
+                );
+            },
+        },
+        {
+            type: 'link',
+            content: 'Exception Management',
+            path: exceptionManagementPath,
+            routeKey: 'vulnerabilities/exception-management',
+        },
+        {
+            type: 'link',
+            content: 'Vulnerability Reporting',
+            path: vulnerabilityReportsPath,
+            routeKey: 'vulnerabilities/reports',
+        },
+        {
+            type: 'separator',
+            key: 'following-workload-cves',
+        },
+        {
+            type: 'link',
+            content: <NavigationContent variant="Deprecated">Dashboard</NavigationContent>,
+            path: vulnManagementPath,
+            routeKey: 'vulnerability-management',
+        },
+    ];
 
     return [
         {

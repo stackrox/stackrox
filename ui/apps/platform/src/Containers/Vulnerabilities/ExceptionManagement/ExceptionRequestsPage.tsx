@@ -1,4 +1,3 @@
-import React from 'react';
 import {
     Flex,
     FlexItem,
@@ -8,7 +7,7 @@ import {
     Tabs,
     Title,
 } from '@patternfly/react-core';
-import { Route, Routes, Navigate, useLocation, useNavigate } from 'react-router-dom';
+import { Navigate, Route, Routes, useLocation, useNavigate } from 'react-router-dom-v5-compat';
 
 import { exceptionManagementPath } from 'routePaths';
 

@@ -19,6 +19,9 @@ const (
 	// RegexPrefix is the prefix for regex queries.
 	RegexPrefix = "r/"
 
+	// ContainsPrefix is the prefix for regex contained queries.
+	ContainsPrefix = "c/"
+
 	// WildcardString represents the string we use for wildcard queries.
 	WildcardString = "*"
 
@@ -263,6 +266,17 @@ func (qb *QueryBuilder) WithSelectFields(selects ...*Select) *QueryBuilder {
 // AddSelectFields adds fields to select.
 func (qb *QueryBuilder) AddSelectFields(selects ...*Select) *QueryBuilder {
 	qb.selectFields = append(qb.selectFields, selects...)
+	return qb
+}
+
+// ForSearchResults is a convenience method that adds select fields commonly needed for
+// constructing SearchResult protos (name and location fields).
+// This enables single-pass queries instead of the traditional 2-pass pattern.
+// Example: qb.ForSearchResults(search.ImageName, search.ImageRegistry)
+func (qb *QueryBuilder) ForSearchResults(fields ...FieldLabel) *QueryBuilder {
+	for _, field := range fields {
+		qb.AddSelectFields(NewQuerySelect(field))
+	}
 	return qb
 }
 

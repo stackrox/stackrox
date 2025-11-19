@@ -1,11 +1,8 @@
-import { getProductBranding } from 'constants/productBranding';
-
 import {
     findUpgradeState,
-    formatSensorVersion,
     formatBuildDate,
-    formatKubernetesVersion,
     formatCloudProvider,
+    formatKubernetesVersion,
     getCredentialExpirationStatus,
     getUpgradeableClusters,
 } from './cluster.helpers';
@@ -203,43 +200,6 @@ describe('cluster helpers', () => {
         });
     });
 
-    describe('formatSensorVersion', () => {
-        it('should return sensor version string if passed a status object with a sensorVersion field', () => {
-            const sensorVersion = 'sensorVersion';
-            const testCluster = {
-                status: {
-                    sensorVersion,
-                },
-            };
-
-            const displayValue = formatSensorVersion(testCluster.status?.sensorVersion);
-
-            expect(displayValue).toEqual(sensorVersion);
-        });
-
-        it('should return a "Not Running" if passed a status object with null sensorVersion field', () => {
-            const testCluster = {
-                status: {
-                    sensorVersion: null,
-                },
-            };
-
-            const displayValue = formatSensorVersion(testCluster.status?.sensorVersion);
-
-            expect(displayValue).toEqual('Not Running');
-        });
-
-        it('should return a "Not Running" if passed a status object with null status field', () => {
-            const testCluster = {
-                status: null,
-            };
-
-            const displayValue = formatSensorVersion(testCluster.status?.sensorVersion);
-
-            expect(displayValue).toEqual('Not Running');
-        });
-    });
-
     describe('getUpgradeableClusters', () => {
         it('should return 0 when no clusters are unpgradeable', () => {
             const clusters = [
@@ -340,7 +300,7 @@ describe('cluster helpers', () => {
             expect(received).toEqual(expected);
         });
 
-        it(`should return "Secured cluster version is not managed by ${getProductBranding().shortName}." if upgradeStatus -> upgradability is MANUAL_UPGRADE_REQUIRED`, () => {
+        it(`should return "Sensor is not running the same version as Central" if upgradeStatus -> upgradability is MANUAL_UPGRADE_REQUIRED`, () => {
             const testUpgradeStatus = {
                 upgradability: 'MANUAL_UPGRADE_REQUIRED',
             };
@@ -348,7 +308,7 @@ describe('cluster helpers', () => {
             const received = findUpgradeState(testUpgradeStatus);
 
             const expected = {
-                displayValue: `Secured cluster version is not managed by ${getProductBranding().shortName}.`,
+                displayValue: 'Sensor is not running the same version as Central',
                 type: 'intervention',
             };
             expect(received).toEqual(expected);
@@ -362,8 +322,9 @@ describe('cluster helpers', () => {
             const received = findUpgradeState(testUpgradeStatus);
 
             const expected = {
+                displayValue: 'Downgrade possible',
                 type: 'download',
-                actionText: 'Downgrade possible',
+                actionText: 'Downgrade sensor',
             };
             expect(received).toEqual(expected);
         });
@@ -376,8 +337,9 @@ describe('cluster helpers', () => {
             const received = findUpgradeState(testUpgradeStatus);
 
             const expected = {
+                displayValue: 'Upgrade available',
                 type: 'download',
-                actionText: 'Upgrade available',
+                actionText: 'Upgrade sensor',
             };
             expect(received).toEqual(expected);
         });
@@ -396,8 +358,9 @@ describe('cluster helpers', () => {
             const received = findUpgradeState(testUpgradeStatus);
 
             const expected = {
+                displayValue: 'Upgrade available',
                 type: 'download',
-                actionText: 'Upgrade available',
+                actionText: 'Upgrade sensor',
             };
             expect(received).toEqual(expected);
         });

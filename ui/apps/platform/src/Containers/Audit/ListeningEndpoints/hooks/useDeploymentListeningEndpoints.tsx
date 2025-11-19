@@ -2,7 +2,7 @@ import { useCallback } from 'react';
 import { listDeployments } from 'services/DeploymentsService';
 import { getListeningEndpointsForDeployment } from 'services/ProcessListeningOnPortsService';
 import useRestQuery from 'hooks/useRestQuery';
-import { ApiSortOption, SearchFilter } from 'types/search';
+import type { ApiSortOption, SearchFilter } from 'types/search';
 
 /**
  * Returns a paginated list of deployments with their listening endpoints.

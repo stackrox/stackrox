@@ -58,7 +58,7 @@ func Test_SensorReconnects(t *testing.T) {
 	c.RunTest(t, helper.WithTestCase(func(t *testing.T, testContext *helper.TestContext, _ map[string]k8s.Object) {
 
 		// This test case will make sure that:
-		//  1) Sensor does not crash when ROX_PREVENT_SENSOR_RESTART_ON_DISCONNECT is set.
+		//  1) Sensor does not crash when connection to Central is interrupted.
 		//  2) After Central reconnects, events can continue streaming messages
 		//
 		// Since this a base test, which will be used to test further features in the ROX-9776 epic, there are some

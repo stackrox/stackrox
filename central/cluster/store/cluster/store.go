@@ -20,4 +20,7 @@ type Store interface {
 	GetMany(ctx context.Context, ids []string) ([]*storage.Cluster, []int, error)
 
 	Walk(ctx context.Context, fn func(obj *storage.Cluster) error) error
+	WalkByQuery(ctx context.Context, query *v1.Query, fn func(obj *storage.Cluster) error) error
+
+	GetAllFromCacheForSAC() []*storage.Cluster
 }

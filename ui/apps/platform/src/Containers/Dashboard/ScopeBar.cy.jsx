@@ -1,6 +1,4 @@
-import React from 'react';
-
-import ComponentTestProviders from 'test-utils/ComponentProviders';
+import ComponentTestProvider from 'test-utils/ComponentTestProvider';
 import { graphqlUrl } from 'test-utils/apiEndpoints';
 
 import ScopeBar from './ScopeBar';
@@ -42,9 +40,9 @@ function setup() {
     window.history.pushState({}, document.title, window.location.pathname);
 
     cy.mount(
-        <ComponentTestProviders>
+        <ComponentTestProvider>
             <ScopeBar />
-        </ComponentTestProviders>
+        </ComponentTestProvider>
     );
 }
 

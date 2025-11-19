@@ -14,7 +14,6 @@ import (
 )
 
 func TestCheck(t *testing.T) {
-	t.Parallel()
 	suite.Run(t, new(suiteImpl))
 }
 

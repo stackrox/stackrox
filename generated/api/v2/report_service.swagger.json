@@ -585,16 +585,191 @@
           "ReportService"
         ]
       }
+    },
+    "/v2/reports/view-based/history": {
+      "get": {
+        "operationId": "ReportService_GetViewBasedReportHistory",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v2ReportHistoryResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "reportParamQuery.query",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "reportParamQuery.pagination.limit",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "reportParamQuery.pagination.offset",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "reportParamQuery.pagination.sortOption.field",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "reportParamQuery.pagination.sortOption.reversed",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
+          },
+          {
+            "name": "reportParamQuery.pagination.sortOption.aggregateBy.aggrFunc",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "enum": [
+              "UNSET",
+              "COUNT",
+              "MIN",
+              "MAX"
+            ],
+            "default": "UNSET"
+          },
+          {
+            "name": "reportParamQuery.pagination.sortOption.aggregateBy.distinct",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
+          }
+        ],
+        "tags": [
+          "ReportService"
+        ]
+      }
+    },
+    "/v2/reports/view-based/my-history": {
+      "get": {
+        "operationId": "ReportService_GetViewBasedMyReportHistory",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v2ReportHistoryResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "reportParamQuery.query",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "reportParamQuery.pagination.limit",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "reportParamQuery.pagination.offset",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "reportParamQuery.pagination.sortOption.field",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "reportParamQuery.pagination.sortOption.reversed",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
+          },
+          {
+            "name": "reportParamQuery.pagination.sortOption.aggregateBy.aggrFunc",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "enum": [
+              "UNSET",
+              "COUNT",
+              "MIN",
+              "MAX"
+            ],
+            "default": "UNSET"
+          },
+          {
+            "name": "reportParamQuery.pagination.sortOption.aggregateBy.distinct",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
+          }
+        ],
+        "tags": [
+          "ReportService"
+        ]
+      }
+    },
+    "/v2/reports/view-based/run": {
+      "post": {
+        "operationId": "ReportService_PostViewBasedReport",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v2RunReportResponseViewBased"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/v2ReportRequestViewBased"
+            }
+          }
+        ],
+        "tags": [
+          "ReportService"
+        ]
+      }
     }
   },
   "definitions": {
-    "ReportConfigurationReportType": {
-      "type": "string",
-      "enum": [
-        "VULNERABILITY"
-      ],
-      "default": "VULNERABILITY"
-    },
     "ReportServiceUpdateReportConfigurationBody": {
       "type": "object",
       "properties": {
@@ -605,7 +780,7 @@
           "type": "string"
         },
         "type": {
-          "$ref": "#/definitions/ReportConfigurationReportType"
+          "$ref": "#/definitions/v2ReportConfigurationReportType"
         },
         "vulnReportFilters": {
           "$ref": "#/definitions/v2VulnerabilityReportFilters"
@@ -641,17 +816,6 @@
         "WATCHED"
       ],
       "default": "DEPLOYED"
-    },
-    "VulnerabilityReportFiltersVulnerabilitySeverity": {
-      "type": "string",
-      "enum": [
-        "UNKNOWN_VULNERABILITY_SEVERITY",
-        "LOW_VULNERABILITY_SEVERITY",
-        "MODERATE_VULNERABILITY_SEVERITY",
-        "IMPORTANT_VULNERABILITY_SEVERITY",
-        "CRITICAL_VULNERABILITY_SEVERITY"
-      ],
-      "default": "UNKNOWN_VULNERABILITY_SEVERITY"
     },
     "protobufAny": {
       "type": "object",
@@ -836,7 +1000,7 @@
           "type": "string"
         },
         "type": {
-          "$ref": "#/definitions/ReportConfigurationReportType"
+          "$ref": "#/definitions/v2ReportConfigurationReportType"
         },
         "vulnReportFilters": {
           "$ref": "#/definitions/v2VulnerabilityReportFilters"
@@ -856,6 +1020,13 @@
         }
       }
     },
+    "v2ReportConfigurationReportType": {
+      "type": "string",
+      "enum": [
+        "VULNERABILITY"
+      ],
+      "default": "VULNERABILITY"
+    },
     "v2ReportHistoryResponse": {
       "type": "object",
       "properties": {
@@ -867,6 +1038,27 @@
           }
         }
       }
+    },
+    "v2ReportRequestViewBased": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "$ref": "#/definitions/v2ReportRequestViewBasedReportType"
+        },
+        "viewBasedVulnReportFilters": {
+          "$ref": "#/definitions/v2ViewBasedVulnerabilityReportFilters"
+        },
+        "areaOfConcern": {
+          "type": "string"
+        }
+      }
+    },
+    "v2ReportRequestViewBasedReportType": {
+      "type": "string",
+      "enum": [
+        "VULNERABILITY"
+      ],
+      "default": "VULNERABILITY"
     },
     "v2ReportSchedule": {
       "type": "object",
@@ -943,6 +1135,9 @@
         "vulnReportFilters": {
           "$ref": "#/definitions/v2VulnerabilityReportFilters"
         },
+        "viewBasedVulnReportFilters": {
+          "$ref": "#/definitions/v2ViewBasedVulnerabilityReportFilters"
+        },
         "collectionSnapshot": {
           "$ref": "#/definitions/v2CollectionSnapshot"
         },
@@ -964,6 +1159,9 @@
         },
         "isDownloadAvailable": {
           "type": "boolean"
+        },
+        "areaOfConcern": {
+          "type": "string"
         }
       }
     },
@@ -1045,6 +1243,17 @@
         }
       }
     },
+    "v2RunReportResponseViewBased": {
+      "type": "object",
+      "properties": {
+        "reportID": {
+          "type": "string"
+        },
+        "requestName": {
+          "type": "string"
+        }
+      }
+    },
     "v2SlimUser": {
       "type": "object",
       "properties": {
@@ -1071,6 +1280,15 @@
         }
       }
     },
+    "v2ViewBasedVulnerabilityReportFilters": {
+      "type": "object",
+      "properties": {
+        "query": {
+          "type": "string"
+        }
+      },
+      "title": "filter for ondemand view based reports"
+    },
     "v2VulnerabilityReportFilters": {
       "type": "object",
       "properties": {
@@ -1080,7 +1298,7 @@
         "severities": {
           "type": "array",
           "items": {
-            "$ref": "#/definitions/VulnerabilityReportFiltersVulnerabilitySeverity"
+            "$ref": "#/definitions/v2VulnerabilityReportFiltersVulnerabilitySeverity"
           }
         },
         "imageTypes": {
@@ -1109,6 +1327,17 @@
           "type": "boolean"
         }
       }
+    },
+    "v2VulnerabilityReportFiltersVulnerabilitySeverity": {
+      "type": "string",
+      "enum": [
+        "UNKNOWN_VULNERABILITY_SEVERITY",
+        "LOW_VULNERABILITY_SEVERITY",
+        "MODERATE_VULNERABILITY_SEVERITY",
+        "IMPORTANT_VULNERABILITY_SEVERITY",
+        "CRITICAL_VULNERABILITY_SEVERITY"
+      ],
+      "default": "UNKNOWN_VULNERABILITY_SEVERITY"
     }
   }
 }

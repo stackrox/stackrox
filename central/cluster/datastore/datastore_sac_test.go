@@ -346,23 +346,14 @@ func (s *clusterDatastoreSACSuite) TestGetClustersForSAC() {
 	clusterID2, err := s.datastore.AddCluster(s.testContexts[testutils.UnrestrictedReadWriteCtx], cluster2)
 	defer s.deleteCluster(clusterID2)
 	s.Require().NoError(err)
-	cluster2.Id = clusterID2
-	otherClusterID := testconsts.Cluster3
 
-	cases := getMultiClusterTestCases(context.Background(), clusterID1, clusterID2, otherClusterID)
-
-	for _, c := range cases {
-		s.Run(c.Name, func() {
-			ctx := c.Context
-			clusters, err := s.datastore.GetClustersForSAC(ctx)
-			s.NoError(err)
-			clusterNames := make([]string, 0, len(clusters))
-			for _, cluster := range clusters {
-				clusterNames = append(clusterNames, cluster.GetName())
-			}
-			s.ElementsMatch(c.ExpectedClusterNames, clusterNames)
-		})
+	clusters, err := s.datastore.GetClustersForSAC()
+	s.NoError(err)
+	clusterNames := make([]string, 0, len(clusters))
+	for _, cluster := range clusters {
+		clusterNames = append(clusterNames, cluster.GetName())
 	}
+	s.ElementsMatch([]string{testconsts.Cluster1, testconsts.Cluster2}, clusterNames)
 }
 
 func (s *clusterDatastoreSACSuite) TestRemoveCluster() {
@@ -613,7 +604,7 @@ func (s *clusterDatastoreSACSuite) TestUpdateClusterCertExpiryStatus() {
 		SensorCertExpiry:    oldSensorExpiry,
 		SensorCertNotBefore: oldSensorCertNotBefore,
 	}
-	if oldCluster.Status == nil {
+	if oldCluster.GetStatus() == nil {
 		oldCluster.Status = &storage.ClusterStatus{
 			SensorVersion:         "3.71.x-88-g9798e675e5-dirty",
 			DEPRECATEDLastContact: nil,

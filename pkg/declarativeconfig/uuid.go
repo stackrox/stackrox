@@ -8,6 +8,7 @@ const (
 	permissionSetUUIDNS string = "permission-set"
 	accessScopeUUIDNS   string = "access-scope"
 	notifierUUIDNS      string = "notifier"
+	authM2MConfigUUIDNS string = "auth-machine-to-machine-config"
 	handlerUUIDNS       string = "handler"
 )
 
@@ -39,6 +40,10 @@ func NewDeclarativeAccessScopeUUID(name string) uuid.UUID {
 // The returned UUID will be deterministic.
 func NewDeclarativeNotifierUUID(name string) uuid.UUID {
 	return uuid.NewV5FromNonUUIDs(notifierUUIDNS, name)
+}
+
+func NewDeclarativeM2MAuthConfigUUID(name string) uuid.UUID {
+	return uuid.NewV5FromNonUUIDs(authM2MConfigUUIDNS, name)
 }
 
 // NewDeclarativeHandlerUUID creates a UUID from the name of a declarative configuration handler.

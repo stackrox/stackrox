@@ -1,25 +1,24 @@
-import React, { useEffect, useCallback, useRef } from 'react';
-import { useLocation, useNavigate, useParams } from 'react-router-dom';
+import { useCallback, useEffect, useRef } from 'react';
+import { useLocation, useNavigate, useParams } from 'react-router-dom-v5-compat';
 import { Popover } from '@patternfly/react-core';
 import {
     SELECTION_EVENT,
-    SelectionEventListener,
-    useEventListener,
+    TopologyControlBar,
     TopologySideBar,
     TopologyView,
+    VisualizationSurface,
     createTopologyControlButtons,
     defaultControlButtonsOptions,
-    TopologyControlBar,
+    useEventListener,
     useVisualizationController,
-    VisualizationSurface,
 } from '@patternfly/react-topology';
+import type { SelectionEventListener } from '@patternfly/react-topology';
 
 import { networkBasePath } from 'routePaths';
-import useFeatureFlags from 'hooks/useFeatureFlags';
 import usePermissions from 'hooks/usePermissions';
 import useFetchDeploymentCount from 'hooks/useFetchDeploymentCount';
 import { getQueryString } from 'utils/queryStringUtils';
-import { QueryValue } from 'hooks/useURLParameter';
+import type { QueryValue } from 'hooks/useURLParameter';
 import DeploymentSideBar from './deployment/DeploymentSideBar';
 import NamespaceSideBar from './namespace/NamespaceSideBar';
 import GenericEntitiesSideBar from './genericEntities/GenericEntitiesSideBar';
@@ -29,23 +28,20 @@ import NetworkPolicySimulatorSidePanel, {
     clearSidePanelQuery,
 } from './simulation/NetworkPolicySimulatorSidePanel';
 import { getExternalEntitiesNode, getNodeById } from './utils/networkGraphUtils';
-import { CustomModel, CustomNodeModel, isNodeOfType } from './types/topology.type';
-import { Simulation } from './utils/getSimulation';
+import { isNodeOfType } from './types/topology.type';
+import type { CustomModel, CustomNodeModel } from './types/topology.type';
+import type { Simulation } from './utils/getSimulation';
 import LegendContent from './components/LegendContent';
 
-import { EdgeState } from './components/EdgeStateSelect';
+import type { EdgeState } from './components/EdgeStateSelect';
 import EmptyUnscopedState from './components/EmptyUnscopedState';
-import {
+import type {
     NetworkPolicySimulator,
     SetNetworkPolicyModification,
 } from './hooks/useNetworkPolicySimulator';
-import { NetworkScopeHierarchy } from './types/networkScopeHierarchy';
+import type { NetworkScopeHierarchy } from './types/networkScopeHierarchy';
 import { getSearchFilterFromScopeHierarchy } from './utils/simulatorUtils';
-import {
-    CidrBlockIcon,
-    ExternalEntitiesIcon,
-    InternalEntitiesIcon,
-} from './common/NetworkGraphIcons';
+import { CidrBlockIcon, InternalEntitiesIcon } from './common/NetworkGraphIcons';
 import { DEFAULT_NETWORK_GRAPH_PAGE_SIZE } from './NetworkGraph.constants';
 
 import {
@@ -94,9 +90,6 @@ const TopologyComponent = ({
     edgeState,
     scopeHierarchy,
 }: TopologyComponentProps) => {
-    const { isFeatureFlagEnabled } = useFeatureFlags();
-    const isNetworkGraphExternalIpsEnabled = isFeatureFlagEnabled('ROX_NETWORK_GRAPH_EXTERNAL_IPS');
-
     const { hasReadAccess } = usePermissions();
     const hasReadAccessForNetworkPolicy = hasReadAccess('NetworkPolicy');
 
@@ -195,8 +188,12 @@ const TopologyComponent = ({
     }
 
     const resetViewCallback = useCallback(() => {
-        controller.getGraph().reset();
-        controller.getGraph().layout();
+        const graph = controller.getGraph();
+        graph.reset();
+        // only layout if there are nodes to layout, otherwise it will throw an error
+        if (graph.getNodes().length > 0) {
+            graph.layout();
+        }
     }, [controller]);
 
     const panNodeIntoView = useCallback(
@@ -316,31 +313,18 @@ const TopologyComponent = ({
                             flowTableLabel="Cidr block flows"
                         />
                     )}
-                    {selectedNode &&
-                        isNodeOfType('EXTERNAL_ENTITIES', selectedNode) &&
-                        (isNetworkGraphExternalIpsEnabled ? (
-                            <ExternalEntitiesSideBar
-                                labelledById={labelledById}
-                                id={selectedNode.id}
-                                nodes={model?.nodes || []}
-                                edges={model?.edges || []}
-                                scopeHierarchy={scopeHierarchy}
-                                selectedExternalIP={selectedExternalIP}
-                                onNodeSelect={onNodeSelect}
-                                onExternalIPSelect={onExternalIPSelect}
-                            />
-                        ) : (
-                            <GenericEntitiesSideBar
-                                labelledById={labelledById}
-                                id={selectedNode.id}
-                                nodes={model?.nodes || []}
-                                edges={model?.edges || []}
-                                onNodeSelect={onNodeSelect}
-                                EntityHeaderIcon={<ExternalEntitiesIcon />}
-                                sidebarTitle={'Connected entities outside your cluster'}
-                                flowTableLabel="External entities flows"
-                            />
-                        ))}
+                    {selectedNode && isNodeOfType('EXTERNAL_ENTITIES', selectedNode) && (
+                        <ExternalEntitiesSideBar
+                            labelledById={labelledById}
+                            id={selectedNode.id}
+                            nodes={model?.nodes || []}
+                            edges={model?.edges || []}
+                            scopeHierarchy={scopeHierarchy}
+                            selectedExternalIP={selectedExternalIP}
+                            onNodeSelect={onNodeSelect}
+                            onExternalIPSelect={onExternalIPSelect}
+                        />
+                    )}
                     {selectedNode && isNodeOfType('INTERNAL_ENTITIES', selectedNode) && (
                         <GenericEntitiesSideBar
                             labelledById={labelledById}

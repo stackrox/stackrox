@@ -2,8 +2,10 @@ package fixtures
 
 import (
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/nodes/converter"
 	"github.com/stackrox/rox/pkg/protocompat"
+	"github.com/stackrox/rox/pkg/uuid"
 )
 
 ///////////////////////////////
@@ -722,6 +724,182 @@ func GetImageDoctorJekyll2() *storage.Image {
 	}
 }
 
+// GetImageV2SherlockHolmes1 provides a pseudo-realistic image (ImageV2) for connected datastore integration testing.
+func GetImageV2SherlockHolmes1() *storage.ImageV2 {
+	imageName := "baker.st/sherlock/holmes:v1"
+	imageSha := "sha256:50fa59cca653c51d194974830826ff7a9d9095175f78caf40d5423d3fb12c4f7"
+	return &storage.ImageV2{
+		Id:     uuid.NewV5FromNonUUIDs(imageName, imageSha).String(),
+		Digest: imageSha,
+		Name: &storage.ImageName{
+			Registry: "baker.st",
+			Remote:   "sherlock/holmes",
+			Tag:      "v1",
+			FullName: imageName,
+		},
+		Metadata: &storage.ImageMetadata{
+			V1: &storage.V1Metadata{
+				Digest:  "sha256:0a488a3872bfcd9e79a3575b5c273b01c01a21b16e86213a26eb7f3ab540eb84",
+				Created: protocompat.GetProtoTimestampFromSecondsAndNanos(1553642092, 227945051),
+				Author:  "Sir Arthur Conan Doyle",
+				Layers: []*storage.ImageLayer{
+					{
+						Instruction: "COPY",
+						Value:       "/ / # buildkit",
+						Created:     protocompat.GetProtoTimestampFromSecondsAndNanos(1553640086, 106246179),
+					},
+					{
+						Instruction: " /usr/local/bin/ # buildkit",
+						Value:       "file:4fc310c0cb879c876c5c0f571af765a0d24d36cb9253e0f53a0cda2f7e4c1844 in /",
+						Created:     protocompat.GetProtoTimestampFromSecondsAndNanos(1553640126, 263243615),
+					},
+					{
+						Instruction: "ADD",
+						Value:       "file:4fc310c0cb879c876c5c0f571af765a0d24d36cb9253e0f53a0cda2f7e4c1844 in /",
+						Created:     protocompat.GetProtoTimestampFromSecondsAndNanos(1553640134, 213199897),
+					},
+				},
+				User:       "root",
+				Command:    nil,
+				Entrypoint: nil,
+				Volumes:    nil,
+				Labels:     nil,
+			},
+			V2: &storage.V2Metadata{Digest: "sha256:4d818f38fa9dcbf41e7c255f276a72e5c471c1523b6f755a344bac04652351dd"},
+			LayerShas: []string{
+				"sha256:50fa59cca653c51d194974830826ff7a9d9095175f78caf40d5423d3fb12c4f7",
+				"sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+				"sha256:8e2ee98ae01ebe81fe221f5a444cab18c8f7a26cd00ce1ef23cf7432feef99b4",
+			},
+			DataSource: &storage.DataSource{
+				Id:   "13e92196-8216-4714-9ac7-fac779bb973b",
+				Name: "Sir Arthur Conan Doyle",
+			},
+			Version: 0,
+		},
+		Scan: &storage.ImageScan{
+			ScannerVersion: "2.24.0-11-g05cf175999",
+			ScanTime:       protocompat.GetProtoTimestampFromSecondsAndNanos(1654154310, 970783800),
+			Components: []*storage.EmbeddedImageScanComponent{
+				GetEmbeddedImageComponent1x1(),
+				GetEmbeddedImageComponent1x2(),
+				GetEmbeddedImageComponent1s2x3(),
+			},
+			OperatingSystem: "crime-stories",
+			DataSource: &storage.DataSource{
+				Id:   "169b0d3f-8277-4900-bbce-1127077defae",
+				Name: "Stackrox Scanner",
+			},
+			Notes: []storage.ImageScan_Note{},
+		},
+		SignatureVerificationData: nil,
+		Signature:                 nil,
+		ScanStats: &storage.ImageV2_ScanStats{
+			ComponentCount:  3,
+			CveCount:        5,
+			FixableCveCount: 1,
+		},
+		LastUpdated:    protocompat.GetProtoTimestampFromSecondsAndNanos(1654154313, 67882700),
+		NotPullable:    false,
+		IsClusterLocal: false,
+		Priority:       0,
+		RiskScore:      1.5,
+		TopCvss:        7.5,
+		Notes: []storage.ImageV2_Note{
+			storage.ImageV2_MISSING_SIGNATURE_VERIFICATION_DATA,
+			storage.ImageV2_MISSING_SIGNATURE,
+		},
+	}
+}
+
+// GetImageV2DoctorJekyll2 provides a pseudo-realistic image (ImageV2) for connected datastore integration testing.
+func GetImageV2DoctorJekyll2() *storage.ImageV2 {
+	imageName := "book.worm/doctor/jekyll:v2"
+	imageSha := "sha256:835762dc5388a591ecf31540eaeb14ec8bc96ad48a3bd11fdef77b7106111eec"
+	return &storage.ImageV2{
+		Id: uuid.NewV5FromNonUUIDs(imageName, imageSha).String(),
+		Name: &storage.ImageName{
+			Registry: "book.worm",
+			Remote:   "doctor/jekyll",
+			Tag:      "v2",
+			FullName: imageName,
+		},
+		Digest: imageSha,
+		Metadata: &storage.ImageMetadata{
+			V1: &storage.V1Metadata{
+				Digest:  "sha256:9fe0366ee2eead5a66948f853ebedae5464361b5ffb166980db355d294a971ff",
+				Created: protocompat.GetProtoTimestampFromSecondsAndNanos(1553642392, 877872600),
+				Author:  "Sir Arthur Conan Doyle",
+				Layers: []*storage.ImageLayer{
+					{
+						Instruction: "COPY",
+						Value:       "/ / # buildkit",
+						Created:     protocompat.GetProtoTimestampFromSecondsAndNanos(1553641386, 227945051),
+					},
+					{
+						Instruction: " /usr/local/bin/ # buildkit",
+						Value:       "file:4fc310c0cb879c876c5c0f571af765a0d24d36cb9253e0f53a0cda2f7e4c1844 in /",
+						Created:     protocompat.GetProtoTimestampFromSecondsAndNanos(1553641426, 106246179),
+					},
+					{
+						Instruction: "ADD",
+						Value:       "file:4fc310c0cb879c876c5c0f571af765a0d24d36cb9253e0f53a0cda2f7e4c1844 in /",
+						Created:     protocompat.GetProtoTimestampFromSecondsAndNanos(1553641534, 302497847),
+					},
+				},
+				User:       "root",
+				Command:    nil,
+				Entrypoint: nil,
+				Volumes:    nil,
+				Labels:     nil,
+			},
+			V2: &storage.V2Metadata{Digest: "sha256:1e0ccd4630c681f887d799677a5d846d13e7fb69d4c4e25b899ba12ce804ac06"},
+			LayerShas: []string{
+				"sha256:8d5041d30882e1fff9d4f4f90a72bd22896c8e365ad6095189d70d605bf7d3bd",
+				"sha256:9bc15005c6e7e93dcbe4c05f61dae53fcd72ce81aa44b3ae3d989e910ac682b9",
+				"sha256:e83e783ca7567afba7ea4541e6233032ca0303b43811539453c36b11c497eda8",
+			},
+			DataSource: &storage.DataSource{
+				Id:   "28eacb99-4e61-8be8-c316e6875184",
+				Name: "Robert Louis Stevenson",
+			},
+			Version: 0,
+		},
+		Scan: &storage.ImageScan{
+			ScannerVersion: "2.24.0-11-g05cf175999",
+			ScanTime:       protocompat.GetProtoTimestampFromSecondsAndNanos(1654154710, 67882700),
+			Components: []*storage.EmbeddedImageScanComponent{
+				GetEmbeddedImageComponent1s2x3(),
+				GetEmbeddedImageComponent2x4(),
+				GetEmbeddedImageComponent2x5(),
+			},
+			OperatingSystem: "crime-stories",
+			DataSource: &storage.DataSource{
+				Id:   "169b0d3f-8277-4900-bbce-1127077defae",
+				Name: "Stackrox Scanner",
+			},
+			Notes: []storage.ImageScan_Note{},
+		},
+		SignatureVerificationData: nil,
+		Signature:                 nil,
+		ScanStats: &storage.ImageV2_ScanStats{
+			ComponentCount:  3,
+			CveCount:        5,
+			FixableCveCount: 2,
+		},
+		LastUpdated:    protocompat.GetProtoTimestampFromSecondsAndNanos(1654154413, 970783800),
+		NotPullable:    false,
+		IsClusterLocal: false,
+		Priority:       0,
+		RiskScore:      2.375,
+		TopCvss:        7.8,
+		Notes: []storage.ImageV2_Note{
+			storage.ImageV2_MISSING_SIGNATURE_VERIFICATION_DATA,
+			storage.ImageV2_MISSING_SIGNATURE,
+		},
+	}
+}
+
 // GetDeploymentSherlockHolmes1 provides a pseudo-realistic deployment for connected datastore integration testing.
 func GetDeploymentSherlockHolmes1(id string, namespace *storage.NamespaceMetadata) *storage.Deployment {
 	return &storage.Deployment{
@@ -746,8 +924,24 @@ func GetDeploymentSherlockHolmes1(id string, namespace *storage.NamespaceMetadat
 					Args: []string{"--investigate-dubious-story"},
 				},
 				Image: &storage.ContainerImage{
-					Id:             GetImageSherlockHolmes1().GetId(),
-					Name:           GetImageSherlockHolmes1().GetName(),
+					Id: func() string {
+						if !features.FlattenImageData.Enabled() {
+							return GetImageSherlockHolmes1().GetId()
+						}
+						return ""
+					}(),
+					IdV2: func() string {
+						if !features.FlattenImageData.Enabled() {
+							return ""
+						}
+						return GetImageV2SherlockHolmes1().GetId()
+					}(),
+					Name: func() *storage.ImageName {
+						if !features.FlattenImageData.Enabled() {
+							return GetImageSherlockHolmes1().GetName()
+						}
+						return GetImageV2SherlockHolmes1().GetName()
+					}(),
 					NotPullable:    false,
 					IsClusterLocal: false,
 				},
@@ -811,8 +1005,24 @@ func GetDeploymentDoctorJekyll2(id string, namespace *storage.NamespaceMetadata)
 					Args: []string{"--tries-to-find-refined-special-crystals"},
 				},
 				Image: &storage.ContainerImage{
-					Id:             GetImageDoctorJekyll2().GetId(),
-					Name:           GetImageDoctorJekyll2().GetName(),
+					Id: func() string {
+						if !features.FlattenImageData.Enabled() {
+							return GetImageDoctorJekyll2().GetId()
+						}
+						return ""
+					}(),
+					IdV2: func() string {
+						if !features.FlattenImageData.Enabled() {
+							return ""
+						}
+						return GetImageV2DoctorJekyll2().GetId()
+					}(),
+					Name: func() *storage.ImageName {
+						if !features.FlattenImageData.Enabled() {
+							return GetImageDoctorJekyll2().GetName()
+						}
+						return GetImageV2DoctorJekyll2().GetName()
+					}(),
 					NotPullable:    false,
 					IsClusterLocal: false,
 				},

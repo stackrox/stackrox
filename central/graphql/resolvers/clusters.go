@@ -513,7 +513,7 @@ func (resolver *clusterResolver) Subject(ctx context.Context, args struct{ Name 
 	return resolver.root.wrapSubject(k8srbac.GetSubject(subjectName, bindings))
 }
 
-func (resolver *clusterResolver) Images(ctx context.Context, args PaginatedQuery) ([]*imageResolver, error) {
+func (resolver *clusterResolver) Images(ctx context.Context, args PaginatedQuery) ([]ImageResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Cluster, "Images")
 	return resolver.root.Images(resolver.clusterScopeContext(ctx), args)
 }

@@ -1,24 +1,24 @@
-import React, { ReactElement, useEffect, useState } from 'react';
+import { useState } from 'react';
+import type { ReactElement } from 'react';
 import {
-    PageSection,
-    PageSectionVariants,
-    Title,
     Breadcrumb,
     BreadcrumbItem,
     Divider,
     Flex,
+    PageSection,
+    PageSectionVariants,
+    Title,
 } from '@patternfly/react-core';
-import { useParams, useNavigate } from 'react-router-dom';
 import { connect } from 'react-redux';
 
 import BreadcrumbItemLink from 'Components/BreadcrumbItemLink';
 import PageTitle from 'Components/PageTitle';
 import ConfirmationModal from 'Components/PatternFly/ConfirmationModal';
-import useCentralCapabilities from 'hooks/useCentralCapabilities';
 import { actions as integrationsActions } from 'reducers/integrations';
 import { actions as apitokensActions } from 'reducers/apitokens';
 import { actions as machineAccessActions } from 'reducers/machineAccessConfigs';
 import { actions as cloudSourcesActions } from 'reducers/cloudSources';
+import { getTableUIState } from 'utils/getTableUIState';
 import { integrationsPath } from 'routePaths';
 
 import TechPreviewLabel from 'Components/PatternFly/TechPreviewLabel';
@@ -28,11 +28,10 @@ import {
     getIsAPIToken,
     getIsCloudSource,
     getIsMachineAccessConfig,
-    getIsSignatureIntegration,
     getIsScannerV4,
-    IntegrationSource,
-    IntegrationType,
+    getIsSignatureIntegration,
 } from '../utils/integrationUtils';
+import type { IntegrationSource, IntegrationType } from '../utils/integrationUtils';
 
 import {
     DeleteAPITokensConfirmationText,
@@ -40,28 +39,36 @@ import {
 } from './ConfirmationTexts';
 import IntegrationsTable from './IntegrationsTable';
 
+export type IntegrationsListPageProps = {
+    source: IntegrationSource;
+    type: IntegrationType;
+    // TODO replace actions and connect with service functions.
+    deleteIntegrations: (source: IntegrationSource, type: IntegrationType, ids: string[]) => void;
+    triggerBackup: () => void;
+    revokeAPITokens: (ids: string[]) => void;
+    deleteMachineAccessConfigs: (ids: string[]) => void;
+    deleteCloudSources: (ids: string[]) => void;
+};
+
 function IntegrationsListPage({
+    source,
+    type,
+    // TODO replace actions and connect with service functions.
     deleteIntegrations,
     triggerBackup,
     revokeAPITokens,
     deleteMachineAccessConfigs,
     deleteCloudSources,
-}): ReactElement {
-    const { source, type } = useParams() as { source: IntegrationSource; type: IntegrationType };
+}: IntegrationsListPageProps): ReactElement {
     const integrations = useIntegrations({ source, type });
     const [deletingIntegrationIds, setDeletingIntegrationIds] = useState([]);
 
-    const navigate = useNavigate();
-
-    const { isCentralCapabilityAvailable } = useCentralCapabilities();
-    const canUseCloudBackupIntegrations = isCentralCapabilityAvailable(
-        'centralCanUseCloudBackupIntegrations'
-    );
-    useEffect(() => {
-        if (!canUseCloudBackupIntegrations && source === 'backups') {
-            navigate(integrationsPath, { replace: true });
-        }
-    }, [canUseCloudBackupIntegrations, source, navigate]);
+    const tableState = getTableUIState({
+        isLoading: false,
+        data: integrations,
+        error: undefined,
+        searchFilter: {},
+    });
 
     const typeLabel = getIntegrationLabel(source, type);
     const isAPIToken = getIsAPIToken(source, type);
@@ -122,11 +129,13 @@ function IntegrationsListPage({
             </PageSection>
             <PageSection variant="default">
                 <IntegrationsTable
-                    integrations={integrations}
+                    tableState={tableState}
                     hasMultipleDelete
                     onDeleteIntegrations={onDeleteIntegrations}
                     onTriggerBackup={triggerBackup}
                     isReadOnly={isScannerV4}
+                    source={source}
+                    type={type}
                 />
             </PageSection>
             {isAPIToken && (

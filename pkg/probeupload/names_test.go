@@ -7,7 +7,6 @@ import (
 )
 
 func TestIsValidModuleVersion_Valid(t *testing.T) {
-	t.Parallel()
 
 	values := []string{
 		"1123dde0458e72a49880b06922e135dbcd36fb784fed530ab84ddfa8924e5c05",
@@ -29,7 +28,6 @@ func TestIsValidModuleVersion_Valid(t *testing.T) {
 }
 
 func TestIsValidModuleVersion_Invalid(t *testing.T) {
-	t.Parallel()
 
 	values := []string{
 		"",
@@ -53,7 +51,6 @@ func TestIsValidModuleVersion_Invalid(t *testing.T) {
 }
 
 func TestIsValidProbeName_Valid(t *testing.T) {
-	t.Parallel()
 
 	values := []string{
 		"collector-4.9.24-coreos.ko.gz",
@@ -70,7 +67,6 @@ func TestIsValidProbeName_Valid(t *testing.T) {
 }
 
 func TestIsValidProbeName_Invalid(t *testing.T) {
-	t.Parallel()
 
 	values := []string{
 		"",
@@ -89,7 +85,6 @@ func TestIsValidProbeName_Invalid(t *testing.T) {
 }
 
 func TestIsValidFilePath_Valid(t *testing.T) {
-	t.Parallel()
 
 	values := []string{
 		"1123dde0458e72a49880b06922e135dbcd36fb784fed530ab84ddfa8924e5c05/collector-4.9.24-coreos.ko.gz",
@@ -106,7 +101,6 @@ func TestIsValidFilePath_Valid(t *testing.T) {
 }
 
 func TestIsValidFilePath_Invalid(t *testing.T) {
-	t.Parallel()
 
 	values := []string{
 		"",

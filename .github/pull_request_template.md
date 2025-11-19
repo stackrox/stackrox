@@ -1,4 +1,4 @@
-### Description
+## Description
 
 <!--
 A detailed explanation of the changes in your PR. Feel free to remove this
@@ -9,17 +9,17 @@ about contributing to this project, check "*.md" files under:
 
 change me!
 
-### User-facing documentation
+## User-facing documentation
 
 - [ ] [CHANGELOG.md](https://github.com/stackrox/stackrox/blob/master/CHANGELOG.md) is updated **OR** update is not needed
 - [ ] [documentation PR](https://spaces.redhat.com/display/StackRox/Submitting+a+User+Documentation+Pull+Request) is created and is linked above **OR** is not needed
 
-### Testing and quality
+## Testing and quality
 
 - [ ] the change is production ready: the change is [GA](https://github.com/stackrox/stackrox/blob/master/PR_GA.md), or otherwise the functionality is gated by a [feature flag](https://github.com/stackrox/stackrox/blob/master/pkg/features/README.md)
 - [ ] CI results are [inspected](https://docs.google.com/document/d/1d5ga073jkv4CO1kAJqp8MPGpC6E1bwyrCGZ7S5wKg3w/edit?tab=t.0#heading=h.w4ercgtcg0xp)
 
-#### Automated testing
+### Automated testing
 
 <!--
 If no tests have been contributed, please explain why unless it's obvious,
@@ -32,7 +32,7 @@ e.g., the PR is a one-line comment change.
 - [ ] added compatibility tests
 - [ ] modified existing tests
 
-#### How I validated my change
+### How I validated my change
 
 <!--
 Use this space to explain **how you validated** that **your change functions

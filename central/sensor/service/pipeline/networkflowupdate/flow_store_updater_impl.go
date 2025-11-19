@@ -30,11 +30,11 @@ func (s *flowPersisterImpl) update(ctx context.Context, newFlows []*storage.Netw
 	if features.ExternalIPs.Enabled() {
 		// Sensor may have forwarded unknown NetworkEntities that we want to learn
 		for _, newFlow := range newFlows {
-			err := s.fixupExternalNetworkEntityIdIfDiscovered(ctx, newFlow.GetProps().DstEntity)
+			err := s.fixupExternalNetworkEntityIdIfDiscovered(ctx, newFlow.GetProps().GetDstEntity())
 			if err != nil {
 				return err
 			}
-			err = s.fixupExternalNetworkEntityIdIfDiscovered(ctx, newFlow.GetProps().SrcEntity)
+			err = s.fixupExternalNetworkEntityIdIfDiscovered(ctx, newFlow.GetProps().GetSrcEntity())
 			if err != nil {
 				return err
 			}
@@ -80,11 +80,11 @@ func (s *flowPersisterImpl) update(ctx context.Context, newFlows []*storage.Netw
 	if features.ExternalIPs.Enabled() {
 		for _, newFlow := range upsertedFlows {
 			props := newFlow.GetProps()
-			err := s.updateExternalNetworkEntityIfDiscovered(ctx, props.DstEntity)
+			err := s.updateExternalNetworkEntityIfDiscovered(ctx, props.GetDstEntity())
 			if err != nil {
 				return err
 			}
-			err = s.updateExternalNetworkEntityIfDiscovered(ctx, props.SrcEntity)
+			err = s.updateExternalNetworkEntityIfDiscovered(ctx, props.GetSrcEntity())
 			if err != nil {
 				return err
 			}
@@ -127,8 +127,8 @@ func getFlowsByIndicator(newFlows []*storage.NetworkFlow, updateTS, now timestam
 	out := make(map[networkgraph.NetworkConnIndicator]timestamp.MicroTS, len(newFlows))
 	tsOffset := now - updateTS
 	for _, newFlow := range newFlows {
-		t := timestamp.FromProtobuf(newFlow.LastSeenTimestamp)
-		if newFlow.LastSeenTimestamp != nil {
+		t := timestamp.FromProtobuf(newFlow.GetLastSeenTimestamp())
+		if newFlow.GetLastSeenTimestamp() != nil {
 			t = t + tsOffset
 		}
 		out[networkgraph.GetNetworkConnIndicator(newFlow)] = t

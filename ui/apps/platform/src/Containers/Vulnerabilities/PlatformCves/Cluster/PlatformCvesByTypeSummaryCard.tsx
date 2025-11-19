@@ -1,6 +1,5 @@
-import React from 'react';
 import { gql } from '@apollo/client';
-import { Card, CardTitle, CardBody, Flex, FlexItem, Text, pluralize } from '@patternfly/react-core';
+import { Card, CardBody, CardTitle, Flex, FlexItem, Text, pluralize } from '@patternfly/react-core';
 
 const statusDisplays = [
     {

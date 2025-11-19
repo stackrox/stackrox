@@ -13,9 +13,11 @@ import (
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
+	k8sWatch "k8s.io/apimachinery/pkg/watch"
 	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/dynamic/dynamicinformer"
 	"k8s.io/client-go/dynamic/fake"
+	clienttesting "k8s.io/client-go/testing"
 )
 
 const (
@@ -45,9 +47,26 @@ func TestWatcherSuite(t *testing.T) {
 	suite.Run(t, new(watcherSuite))
 }
 
-func (s *watcherSuite) setupDynamicClient() {
+func (s *watcherSuite) setupDynamicClient(watcherStartedC chan struct{}) {
 	scheme := runtime.NewScheme()
-	s.dynamicClient = fake.NewSimpleDynamicClientWithCustomListKinds(scheme, map[schema.GroupVersionResource]string{gvr: customResourceDefinitionListName})
+	cli := fake.NewSimpleDynamicClientWithCustomListKinds(scheme, map[schema.GroupVersionResource]string{gvr: customResourceDefinitionListName})
+	s.dynamicClient = cli
+	if watcherStartedC == nil {
+		return
+	}
+	// Add a catch-all watch reactor. This will allow us to close the
+	// watcherStartedC after the informer establishes the watcher.
+	// This signals the informer is fully started, so we can start faking events.
+	cli.PrependWatchReactor("*", func(action clienttesting.Action) (handled bool, ret k8sWatch.Interface, err error) {
+		resourceGvr := action.GetResource()
+		ns := action.GetNamespace()
+		trackerWatch, err := cli.Tracker().Watch(resourceGvr, ns)
+		if err != nil {
+			return false, nil, err
+		}
+		close(watcherStartedC)
+		return true, trackerWatch, nil
+	})
 }
 
 func (s *watcherSuite) createWatcher(stopSig *concurrency.Signal) *crdWatcher {
@@ -121,25 +140,38 @@ func (s *watcherSuite) Test_CreateDeleteCRD() {
 	}
 	for tName, tCase := range cases {
 		s.Run(tName, func() {
-			s.setupDynamicClient()
+			watcherStartedC := make(chan struct{})
+			s.setupDynamicClient(watcherStartedC)
 			stopSig := concurrency.NewSignal()
-			callbackC := make(chan *watcher.Status)
 			// Create fake CRDs before starting the watcher
 			s.createFakeCRDs(tCase.resourcesToCreateBeforeWatch...)
 			w := s.createWatcher(&stopSig)
 			defer func() {
 				stopSig.Signal()
-				close(callbackC)
 				w.sif.Shutdown()
 			}()
 			for _, rName := range tCase.resourcesToCreateBeforeWatch {
-				s.Assert().NoError(w.AddResourceToWatch(rName))
+				s.NoError(w.AddResourceToWatch(rName))
 			}
 			for _, rName := range tCase.resourcesToCreateAfterWatch {
-				s.Assert().NoError(w.AddResourceToWatch(rName))
+				s.NoError(w.AddResourceToWatch(rName))
 			}
-			s.Assert().NoError(w.Watch(callbackC))
+			callbackC := make(chan *watcher.Status)
+			defer close(callbackC)
+			err := w.Watch(func(st *watcher.Status) {
+				callbackC <- st
+			})
+			s.NoError(err)
 
+			// The fake client doesn't support resource version. Any writes to the client
+			// after the informer's initial LIST and before the informer establishing the
+			// watcher will be missed by the informer. Therefore we wait until the watcher
+			// starts.
+			select {
+			case <-watcherStartedC:
+			case <-time.After(defaultTimeout):
+				s.FailNow("timeout waiting for the resource watcher to start")
+			}
 			// Create fake CRDs after starting the watcher
 			s.createFakeCRDs(tCase.resourcesToCreateAfterWatch...)
 			// Wait for all resources to be created
@@ -147,16 +179,12 @@ func (s *watcherSuite) Test_CreateDeleteCRD() {
 
 			select {
 			case <-time.NewTimer(defaultTimeout).C:
-				s.Fail("timeout reached waiting for watcher to report")
+				s.FailNow("timeout reached waiting for watcher to report")
 			case st, ok := <-callbackC:
-				s.Assert().True(ok)
-				s.Assert().True(st.Available)
-				for _, rName := range tCase.resourcesToCreateBeforeWatch {
-					s.Assert().Contains(st.Resources, rName)
-				}
-				for _, rName := range tCase.resourcesToCreateAfterWatch {
-					s.Assert().Contains(st.Resources, rName)
-				}
+				s.True(ok)
+				s.True(st.Available)
+				s.Subset(st.Resources.AsSlice(), tCase.resourcesToCreateBeforeWatch)
+				s.Subset(st.Resources.AsSlice(), tCase.resourcesToCreateAfterWatch)
 			}
 
 			s.removeFakeCRDs(tCase.resourcesToCreateBeforeWatch...)
@@ -166,31 +194,40 @@ func (s *watcherSuite) Test_CreateDeleteCRD() {
 
 			select {
 			case <-time.NewTimer(defaultTimeout).C:
-				s.Fail("timeout reached waiting for watcher to report")
+				s.FailNow("timeout reached waiting for watcher to report")
 			case st, ok := <-callbackC:
-				s.Assert().True(ok)
-				s.Assert().False(st.Available)
-				for _, rName := range tCase.resourcesToCreateBeforeWatch {
-					s.Assert().Contains(st.Resources, rName)
-				}
-				for _, rName := range tCase.resourcesToCreateAfterWatch {
-					s.Assert().Contains(st.Resources, rName)
-				}
+				s.True(ok)
+				s.False(st.Available)
+				s.Subset(st.Resources.AsSlice(), tCase.resourcesToCreateBeforeWatch)
+				s.Subset(st.Resources.AsSlice(), tCase.resourcesToCreateAfterWatch)
 			}
 		})
 	}
 }
 
 func (s *watcherSuite) Test_AddResourceAfterWatchFails() {
-	s.setupDynamicClient()
+	s.setupDynamicClient(nil)
 	stopSig := concurrency.NewSignal()
-	callbackC := make(chan *watcher.Status)
 	w := s.createWatcher(&stopSig)
 	defer func() {
 		stopSig.Signal()
-		close(callbackC)
 		w.sif.Shutdown()
 	}()
-	s.Assert().NoError(w.Watch(callbackC))
-	s.Assert().Error(w.AddResourceToWatch(crdName))
+	err := w.Watch(nil)
+	s.NoError(err)
+	s.Error(w.AddResourceToWatch(crdName))
+}
+
+func (s *watcherSuite) Test_WatchAfterWatchFails() {
+	s.setupDynamicClient(nil)
+	stopSig := concurrency.NewSignal()
+	w := s.createWatcher(&stopSig)
+	defer func() {
+		stopSig.Signal()
+		w.sif.Shutdown()
+	}()
+	err := w.Watch(nil)
+	s.NoError(err)
+	err = w.Watch(nil)
+	s.Error(err)
 }

@@ -9,7 +9,6 @@ import (
 )
 
 func TestCompileSelector_NilMatchesNothing(t *testing.T) {
-	t.Parallel()
 
 	sel, err := CompileSelector(nil)
 	require.NoError(t, err)
@@ -20,7 +19,6 @@ func TestCompileSelector_NilMatchesNothing(t *testing.T) {
 }
 
 func TestCompileSelector_EmptyMatchesEverything(t *testing.T) {
-	t.Parallel()
 
 	sel, err := CompileSelector(&storage.LabelSelector{})
 	require.NoError(t, err)
@@ -31,7 +29,6 @@ func TestCompileSelector_EmptyMatchesEverything(t *testing.T) {
 }
 
 func TestCompileSelector_Simple(t *testing.T) {
-	t.Parallel()
 	sel := &storage.LabelSelector{
 		MatchLabels: map[string]string{
 			"foo": "bar",
@@ -59,7 +56,6 @@ func TestCompileSelector_Simple(t *testing.T) {
 }
 
 func TestCompileSelector_WithRequirements(t *testing.T) {
-	t.Parallel()
 	sel := &storage.LabelSelector{
 		MatchLabels: map[string]string{
 			"foo": "bar",

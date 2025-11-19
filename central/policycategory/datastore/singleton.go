@@ -4,7 +4,6 @@ import (
 	"context"
 
 	"github.com/stackrox/rox/central/globaldb"
-	"github.com/stackrox/rox/central/policycategory/search"
 	policyCategoryStore "github.com/stackrox/rox/central/policycategory/store"
 	policyCategoryPostgres "github.com/stackrox/rox/central/policycategory/store/postgres"
 	policyCategoryEdgeDS "github.com/stackrox/rox/central/policycategoryedge/datastore"
@@ -25,8 +24,7 @@ var (
 func initialize() {
 	store := policyCategoryPostgres.New(globaldb.GetPostgres())
 	addDefaults(store)
-	searcher := search.New(store)
-	ad = New(store, searcher, policyCategoryEdgeDS.Singleton())
+	ad = New(store, policyCategoryEdgeDS.Singleton())
 
 }
 
@@ -50,7 +48,7 @@ func addDefaults(s policyCategoryStore.Store) {
 	utils.CrashOnError(err)
 
 	for _, dc := range defaultCategories {
-		if existingCategoriesSet.Contains(dc.Name) {
+		if existingCategoriesSet.Contains(dc.GetName()) {
 			continue
 		}
 		if err := s.Upsert(policyCategoryCtx, dc); err != nil {

@@ -55,7 +55,6 @@ type testCase struct {
 }
 
 func TestCheckAC14(t *testing.T) {
-	t.Parallel()
 
 	acceptableRole, acceptableBinding := createRoleAndBindToSubject(true, "", systemUnauthenticatedSubject, storage.SubjectKind_GROUP, []*storage.PolicyRule{
 		{

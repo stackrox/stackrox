@@ -7,7 +7,7 @@ import {
     HorizontalBarSeries,
     LabelSeries,
 } from 'react-vis';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom-v5-compat';
 import PropTypes from 'prop-types';
 import merge from 'deepmerge';
 

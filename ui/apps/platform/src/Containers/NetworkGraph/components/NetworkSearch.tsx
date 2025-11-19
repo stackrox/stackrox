@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 
 import SearchFilterInput from 'Components/SearchFilterInput';
 import searchOptionsToQuery from 'services/searchOptionsToQuery';
@@ -61,7 +61,7 @@ function NetworkSearch({
 
     return (
         <SearchFilterInput
-            className="pf-v5-u-w-100 theme-light pf-search-shim"
+            className="pf-v5-u-w-100 pf-search-shim"
             placeholder="Filter deployments"
             searchFilter={searchFilter}
             searchCategory="DEPLOYMENTS"

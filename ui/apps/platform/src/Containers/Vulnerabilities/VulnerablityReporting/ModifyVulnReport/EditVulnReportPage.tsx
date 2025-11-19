@@ -1,25 +1,25 @@
-import React, { useEffect } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useEffect } from 'react';
+import { useNavigate, useParams } from 'react-router-dom-v5-compat';
 import {
-    PageSection,
-    Title,
-    Divider,
-    Flex,
-    FlexItem,
     Breadcrumb,
     BreadcrumbItem,
     Bullseye,
+    Divider,
+    Flex,
+    FlexItem,
+    PageSection,
     Spinner,
+    Title,
 } from '@patternfly/react-core';
 
 import { vulnerabilityConfigurationReportsPath } from 'routePaths';
-import useReportFormValues from 'Containers/Vulnerabilities/VulnerablityReporting/forms/useReportFormValues';
-import useSaveReport from 'Containers/Vulnerabilities/VulnerablityReporting/api/useSaveReport';
-import useFetchReport from 'Containers/Vulnerabilities/VulnerablityReporting/api/useFetchReport';
-
 import PageTitle from 'Components/PageTitle';
 import BreadcrumbItemLink from 'Components/BreadcrumbItemLink';
 import NotFoundMessage from 'Components/NotFoundMessage/NotFoundMessage';
+
+import useFetchReport from '../api/useFetchReport';
+import useReportFormValues from '../forms/useReportFormValues';
+import useSaveReport from '../api/useSaveReport';
 import { getReportFormValuesFromConfiguration } from '../utils';
 import ReportFormErrorAlert from './ReportFormErrorAlert';
 import ReportFormWizard from './ReportFormWizard';
@@ -38,12 +38,15 @@ function EditVulnReportPage() {
     });
 
     // We fetch the report configuration for the edittable report and then populate the form values
+    /* eslint-disable react-hooks/exhaustive-deps */
     useEffect(() => {
         if (reportConfiguration) {
             const reportFormValues = getReportFormValuesFromConfiguration(reportConfiguration);
             formik.setValues(reportFormValues);
         }
     }, [reportConfiguration, formik.setValues]);
+    // formik
+    /* eslint-enable react-hooks/exhaustive-deps */
 
     function onSave() {
         saveReport(reportId, formik.values);

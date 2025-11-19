@@ -19,12 +19,10 @@ import (
 
 	"github.com/stackrox/rox/central/blob/datastore"
 	"github.com/stackrox/rox/central/blob/datastore/store"
-	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/buildinfo"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
-	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stretchr/testify/suite"
@@ -50,7 +48,7 @@ func (s *handlerTestSuite) SetupSuite() {
 	s.ctx = sac.WithAllAccess(context.Background())
 	s.testDB = pgtest.ForT(s.T())
 	blobStore := store.New(s.testDB.DB)
-	s.datastore = datastore.NewDatastore(blobStore, nil)
+	s.datastore = datastore.NewDatastore(blobStore)
 	s.T().Setenv("TMPDIR", s.T().TempDir())
 }
 
@@ -80,16 +78,13 @@ func (s *handlerTestSuite) postRequestV4(body io.Reader) *http.Request {
 	return req
 }
 
-func (s *handlerTestSuite) mustWriteV2Blob(content string, modTime time.Time) {
-	modifiedTime, err := protocompat.ConvertTimeToTimestampOrError(modTime)
+func (s *handlerTestSuite) mustWriteV2Blob(content string, modTime time.Time, h http.Handler) {
+	hh, ok := h.(*httpHandler)
+	s.Require().True(ok)
+	err := hh.offlineFiles.Upsert(s.ctx, offlineScannerV2DefsBlobName, modTime, func() (io.ReadCloser, int64, error) {
+		return io.NopCloser(bytes.NewBuffer([]byte(content))), int64(len(content)), nil
+	})
 	s.Require().NoError(err)
-	blob := &storage.Blob{
-		Name:         offlineScannerV2DefsBlobName,
-		Length:       int64(len(content)),
-		ModifiedTime: modifiedTime,
-		LastUpdated:  protocompat.TimestampNow(),
-	}
-	s.Require().NoError(s.datastore.Upsert(s.ctx, blob, bytes.NewBuffer([]byte(content))))
 }
 
 func (s *handlerTestSuite) getRequestUUID() *http.Request {
@@ -132,28 +127,18 @@ func (s *handlerTestSuite) getRequestBadUUID() *http.Request {
 	return req
 }
 
-func (s *handlerTestSuite) upsertBlob(zipF *zip.File, blobName string) error {
-	r, err := zipF.Open()
-	s.Require().NoError(err)
-	defer utils.IgnoreError(r.Close)
-
-	b := &storage.Blob{
-		Name:         blobName,
-		LastUpdated:  protocompat.TimestampNow(),
-		ModifiedTime: protocompat.TimestampNow(),
-		Length:       zipF.FileInfo().Size(),
-	}
-
-	return s.datastore.Upsert(s.ctx, b, r)
-}
-
-func (s *handlerTestSuite) upsertV4ZipFile(zipPath string) error {
+func (s *handlerTestSuite) upsertV4ZipFile(zipPath string, h http.Handler) error {
 	zipR, err := zip.OpenReader(zipPath)
 	s.Require().NoError(err)
 	defer utils.IgnoreError(zipR.Close)
 	for _, zipF := range zipR.File {
 		if strings.HasPrefix(zipF.Name, scannerV4DefsPrefix) {
-			err = s.upsertBlob(zipF, offlineScannerV4DefsBlobName)
+			hh, ok := h.(*httpHandler)
+			s.Require().True(ok)
+			err := hh.offlineFiles.Upsert(s.ctx, offlineScannerV4DefsBlobName, time.Now(), func() (io.ReadCloser, int64, error) {
+				reader, err := zipF.Open()
+				return reader, zipF.FileInfo().Size(), err
+			})
 			s.Require().NoError(err)
 			return nil
 		}
@@ -274,7 +259,7 @@ func (s *handlerTestSuite) TestServeHTTP_Online_Get_V2() {
 
 	// Write offline definitions, directly.
 	// Set the offline dump's modified time to later than the online update's.
-	s.mustWriteV2Blob(content1, time.Now().Add(time.Hour))
+	s.mustWriteV2Blob(content1, time.Now().Add(time.Hour), h)
 
 	// Serve the offline dump, as it is more recent.
 	req = s.getRequestUUID()
@@ -284,7 +269,7 @@ func (s *handlerTestSuite) TestServeHTTP_Online_Get_V2() {
 	s.Equal(content1, w.Body.String())
 
 	// Set the offline dump's modified time to earlier than the online update's.
-	s.mustWriteV2Blob(content2, nov23)
+	s.mustWriteV2Blob(content2, nov23, h)
 
 	// Serve the online dump, as it is now more recent.
 	w = httptest.NewRecorder()
@@ -483,7 +468,7 @@ func (s *handlerTestSuite) TestServeHTTP_Offline_Get_V4() {
 	utils.IgnoreError(outFile.Close)
 
 	// Upload offline vulns, directly.
-	err = s.upsertV4ZipFile(filePath)
+	err = s.upsertV4ZipFile(filePath, h)
 	s.Require().NoError(err)
 
 	s.T().Run("get 4.5", func(t *testing.T) {

@@ -3,6 +3,7 @@ package utils
 import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/cve"
+	"github.com/stackrox/rox/pkg/features"
 )
 
 // ImageCVEV2ToEmbeddedVulnerability coverts a `*storage.ImageCVEV2` to an `*storage.EmbeddedVulnerability`.
@@ -33,7 +34,7 @@ func ImageCVEV2ToEmbeddedVulnerability(vuln *storage.ImageCVEV2) *storage.Embedd
 		State:                 vuln.GetState(),
 	}
 
-	if vuln.IsFixable {
+	if vuln.GetIsFixable() {
 		ret.SetFixedBy = &storage.EmbeddedVulnerability_FixedBy{
 			FixedBy: vuln.GetFixedBy(),
 		}
@@ -50,7 +51,7 @@ func ImageCVEV2ToEmbeddedVulnerability(vuln *storage.ImageCVEV2) *storage.Embedd
 }
 
 // EmbeddedVulnerabilityToImageCVEV2 converts *storage.EmbeddedVulnerability object to *storage.ImageCVEV2 object
-func EmbeddedVulnerabilityToImageCVEV2(imageID string, componentID string, from *storage.EmbeddedVulnerability) (*storage.ImageCVEV2, error) {
+func EmbeddedVulnerabilityToImageCVEV2(imageID string, componentID string, index int, from *storage.EmbeddedVulnerability) (*storage.ImageCVEV2, error) {
 	var nvdCvss float32
 	nvdVersion := storage.CvssScoreVersion_UNKNOWN_VERSION
 	for _, score := range from.GetCvssMetrics() {
@@ -75,10 +76,7 @@ func EmbeddedVulnerabilityToImageCVEV2(imageID string, componentID string, from 
 		impactScore = from.GetCvssV2().GetImpactScore()
 	}
 
-	cveID, err := cve.IDV2(from, componentID)
-	if err != nil {
-		return nil, err
-	}
+	cveID := cve.IDV2(from, componentID, index)
 
 	ret := &storage.ImageCVEV2{
 		Id:          cveID,
@@ -100,12 +98,16 @@ func EmbeddedVulnerabilityToImageCVEV2(imageID string, componentID string, from 
 		Nvdcvss:              nvdCvss,
 		NvdScoreVersion:      nvdVersion,
 		Severity:             from.GetSeverity(),
-		ImageId:              imageID,
 		FirstImageOccurrence: from.GetFirstImageOccurrence(),
 		State:                from.GetState(),
 		IsFixable:            from.GetFixedBy() != "",
 		ImpactScore:          impactScore,
 		Advisory:             from.GetAdvisory(),
+	}
+	if !features.FlattenImageData.Enabled() {
+		ret.ImageId = imageID
+	} else {
+		ret.ImageIdV2 = imageID
 	}
 
 	if from.GetFixedBy() != "" {

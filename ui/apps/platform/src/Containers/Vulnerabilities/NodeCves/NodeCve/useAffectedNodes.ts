@@ -1,7 +1,8 @@
 import { gql, useQuery } from '@apollo/client';
-import { ClientPagination, Pagination } from 'services/types';
+import type { ClientPagination, Pagination } from 'services/types';
 import { getPaginationParams } from 'utils/searchUtils';
-import { affectedNodeFragment, AffectedNode } from './AffectedNodesTable';
+import { affectedNodeFragment } from './AffectedNodesTable';
+import type { AffectedNode } from './AffectedNodesTable';
 
 const affectedNodesQuery = gql`
     ${affectedNodeFragment}

@@ -46,7 +46,7 @@ export const selectors = scopeSelectors('main', {
         authProvider: scopeSelectors('form', {
             selectAuthProviderType: `${getFormGroupControlForLabel(
                 'Auth provider type'
-            )} .pf-v5-c-select button`,
+            )} .pf-v5-c-menu-toggle`,
 
             auth0: {
                 inputAuth0Tenant: `${getFormGroupControlForLabel('Auth0 tenant')} input`,
@@ -55,10 +55,10 @@ export const selectors = scopeSelectors('main', {
             oidc: {
                 selectCallbackMode: `${getFormGroupControlForLabel(
                     'Callback mode'
-                )} .pf-v5-c-select button`,
+                )} .pf-v5-c-menu-toggle`,
                 selectCallbackModeItem: `${getFormGroupControlForLabel(
                     'Callback mode'
-                )} .pf-v5-c-select button + ul button`,
+                )} .pf-v5-c-menu .pf-v5-c-menu__list .pf-v5-c-menu__item`,
                 inputIssuer: `${getFormGroupControlForLabel('Issuer')} input`,
                 inputClientID: `${getFormGroupControlForLabel('Client ID')} input`,
                 inputClientSecret: `${getFormGroupControlForLabel('Client Secret')} input`, // TODO sentence case?
@@ -71,7 +71,7 @@ export const selectors = scopeSelectors('main', {
                 )} input`, // TODO sentence case?
                 selectConfiguration: `${getFormGroupControlForLabel(
                     'Configuration'
-                )} .pf-v5-c-select button`,
+                )} .pf-v5-c-menu-toggle`,
                 inputMetadataURL: `${getFormGroupControlForLabel('IdP Metadata URL')} input`, // TODO sentence case?
             },
             userpki: {
@@ -87,10 +87,10 @@ export const selectors = scopeSelectors('main', {
         minimumAccessRole: scopeSelectors('form', {
             selectMinimumAccessRole: `${getFormGroupControlForLabel(
                 'Minimum access role'
-            )} .pf-v5-c-select button`,
+            )} .pf-v5-c-menu-toggle`,
             selectMinimumAccessRoleItem: `${getFormGroupControlForLabel(
                 'Minimum access role'
-            )} .pf-v5-c-select button + ul button`,
+            )} .pf-v5-c-menu .pf-v5-c-menu__list .pf-v5-c-menu__item`,
         }),
 
         role: scopeSelectors('#role-form', {
@@ -112,7 +112,7 @@ export const selectors = scopeSelectors('main', {
             getWriteAccessIconForResource: (resource, index = 0) =>
                 `td[data-label="Resource"]:has('p:first-child:contains("${resource}")'):eq(${index}) ~ td[data-label="Write"] svg`,
             getAccessLevelSelectForResource: (resource, index = 0) =>
-                `td[data-label="Resource"]:has('p:first-child:contains("${resource}")'):eq(${index}) ~ td[data-label="Access level"] .pf-v5-c-select__toggle`,
+                `td[data-label="Resource"]:has('p:first-child:contains("${resource}")'):eq(${index}) ~ td[data-label="Access level"] .pf-v5-c-menu-toggle`,
         }),
 
         accessScope: scopeSelectors('#access-scope-form', {}),

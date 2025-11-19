@@ -279,10 +279,10 @@ func TestReprocessImagesAndResyncDeployments_SkipBrokenSensor(t *testing.T) {
 	results := []search.Result{}
 	for _, img := range imgs {
 		results = append(results, search.Result{
-			ID: img.Id,
+			ID: img.GetId(),
 			Matches: map[string][]string{
 				// Last character of image ID is the cluster.
-				imageClusterIDFieldPath: {img.Id[len(img.Id)-1:]},
+				imageClusterIDFieldPath: {img.GetId()[len(img.GetId())-1:]},
 			}},
 		)
 	}
@@ -305,7 +305,7 @@ func TestReprocessImagesAndResyncDeployments_SkipBrokenSensor(t *testing.T) {
 
 		imageDS.EXPECT().Search(gomock.Any(), gomock.Any()).AnyTimes().Return(results, nil)
 		for _, img := range imgs {
-			imageDS.EXPECT().GetImage(gomock.Any(), img.Id).AnyTimes().Return(img, true, nil)
+			imageDS.EXPECT().GetImage(gomock.Any(), img.GetId()).AnyTimes().Return(img, true, nil)
 		}
 
 		riskManager.EXPECT().CalculateRiskAndUpsertImage(gomock.Any()).AnyTimes().Return(nil)

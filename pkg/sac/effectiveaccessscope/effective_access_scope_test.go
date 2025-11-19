@@ -766,16 +766,20 @@ func TestComputeEffectiveAccessScope(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.desc, func(t *testing.T) {
 			var clonedClusters []*storage.Cluster
+			inputClusters := make([]Cluster, 0, len(clusters))
 			for _, c := range clusters {
 				clonedClusters = append(clonedClusters, c.CloneVT())
+				inputClusters = append(inputClusters, c)
 			}
 
 			var clonedNamespaces []*storage.NamespaceMetadata
+			inputNamespaces := make([]Namespace, 0, len(namespaces))
 			for _, ns := range namespaces {
 				clonedNamespaces = append(clonedNamespaces, ns.CloneVT())
+				inputNamespaces = append(inputNamespaces, ns)
 			}
 
-			result, err := ComputeEffectiveAccessScope(tc.scope.GetRules(), clusters, namespaces, tc.detail)
+			result, err := ComputeEffectiveAccessScope(tc.scope.GetRules(), inputClusters, inputNamespaces, tc.detail)
 			assert.Truef(t, tc.hasError == (err != nil), "error: %v", err)
 			assert.Equal(t, tc.expected, result, tc.scopeDesc)
 			protoassert.SlicesEqual(t, clusters, clonedClusters, "clusters have been modified")
@@ -797,7 +801,6 @@ func TestComputeEffectiveAccessScope(t *testing.T) {
 }
 
 func TestMergeScopeTree(t *testing.T) {
-	t.Parallel()
 	testCases := []struct {
 		name    string
 		a, b, c *ScopeTree
@@ -1071,7 +1074,6 @@ func TestMergeScopeTree(t *testing.T) {
 	for _, tc := range testCases {
 		a, b, c := tc.a, tc.b, tc.c
 		t.Run(tc.name, func(t *testing.T) {
-			t.Parallel()
 
 			a.Merge(b)
 

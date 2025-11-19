@@ -1,6 +1,4 @@
-import React from 'react';
-
-import ComponentTestProviders from 'test-utils/ComponentProviders';
+import ComponentTestProvider from 'test-utils/ComponentTestProvider';
 
 import HorizontalSubnav from './HorizontalSubnav';
 
@@ -14,12 +12,12 @@ function setup(pathname) {
     window.history.pushState({}, document.title, pathname);
 
     cy.mount(
-        <ComponentTestProviders>
+        <ComponentTestProvider>
             <HorizontalSubnav
                 hasReadAccess={mockRoutePredicates.hasReadAccess}
                 isFeatureFlagEnabled={mockRoutePredicates.isFeatureFlagEnabled}
             />
-        </ComponentTestProviders>
+        </ComponentTestProvider>
     );
 }
 

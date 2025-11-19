@@ -1,17 +1,21 @@
-import React, { ReactElement } from 'react';
+import type { ReactElement } from 'react';
+import { useParams } from 'react-router-dom-v5-compat';
 
-import usePageState from './hooks/usePageState';
 import useIntegrations from './hooks/useIntegrations';
 
 import IntegrationPage from './IntegrationPage';
 import IntegrationForm from './IntegrationForm';
 import IntegrationsNotFoundPage from './IntegrationsNotFoundPage';
 import { getIsMachineAccessConfig } from './utils/integrationUtils';
+import type { IntegrationSource, IntegrationType } from './utils/integrationUtils';
 
-function EditIntegrationPage(): ReactElement {
-    const {
-        params: { source, type, id },
-    } = usePageState();
+export type EditIntegrationPageProps = {
+    source: IntegrationSource;
+    type: IntegrationType;
+};
+
+function EditIntegrationPage({ source, type }: EditIntegrationPageProps): ReactElement {
+    const { id } = useParams();
     const integrations = useIntegrations({ source, type });
     const integration = integrations.find((datum) => datum.id === id);
 

@@ -1,4 +1,5 @@
-import { Reducer, combineReducers } from 'redux';
+import { combineReducers } from 'redux';
+import type { Reducer } from 'redux';
 
 // Action types
 

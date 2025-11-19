@@ -2,8 +2,6 @@ package datastore
 
 import (
 	"github.com/stackrox/rox/central/globaldb"
-	pgStore "github.com/stackrox/rox/central/secret/internal/store/postgres"
-	"github.com/stackrox/rox/central/secret/search"
 	"github.com/stackrox/rox/pkg/sync"
 )
 
@@ -14,8 +12,7 @@ var (
 )
 
 func initialize() {
-	storage := pgStore.New(globaldb.GetPostgres())
-	ad = New(storage, search.New(storage))
+	ad = newPostgres(globaldb.GetPostgres())
 }
 
 // Singleton provides the interface for non-service external interaction.

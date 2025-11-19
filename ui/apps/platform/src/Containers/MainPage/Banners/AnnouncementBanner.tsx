@@ -1,4 +1,5 @@
-import React, { ReactElement, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
+import type { ReactElement } from 'react';
 import { Banner, Button } from '@patternfly/react-core';
 
 import { fetchDatabaseStatus } from 'services/DatabaseService';

@@ -1,23 +1,24 @@
-import React, { useState } from 'react';
+import type { ReactElement } from 'react';
 import {
+    Button,
     Card,
+    CardBody,
     CardHeader,
     CardTitle,
-    CardBody,
     Divider,
-    Button,
-    TextInput,
     Flex,
     FlexItem,
     Form,
     FormGroup,
+    TextInput,
 } from '@patternfly/react-core';
-import { Select, SelectOption } from '@patternfly/react-core/deprecated';
 import { TrashIcon } from '@patternfly/react-icons';
 import { useField } from 'formik';
 
-import { ClusterScopeObject } from 'services/RolesService';
-import { ListDeployment } from 'types/deployment.proto';
+import TypeaheadSelect from 'Components/TypeaheadSelect/TypeaheadSelect';
+import type { TypeaheadSelectOption } from 'Components/TypeaheadSelect/TypeaheadSelect';
+import type { ClusterScopeObject } from 'services/RolesService';
+import type { ListDeployment } from 'types/deployment.proto';
 
 type PolicyScopeCardProps = {
     type: 'exclusion' | 'inclusion';
@@ -35,26 +36,32 @@ function PolicyScopeCard({
     deployments = [],
     onDelete,
     hasAuditLogEventSource = false,
-}: PolicyScopeCardProps): React.ReactElement {
+}: PolicyScopeCardProps): ReactElement {
     const [field, , helper] = useField(name);
-    const [isClusterSelectOpen, setIsClusterSelectOpen] = useState(false);
-    const [isDeploymentSelectOpen, setIsDeploymentSelectOpen] = useState(false);
     const { value } = field;
     const { scope } = value || {};
     const { setValue } = helper;
 
-    function handleChangeCluster(e, val) {
-        setIsClusterSelectOpen(false);
+    const clusterOptions: TypeaheadSelectOption[] = clusters.map((cluster) => ({
+        value: cluster.id,
+        label: cluster.name,
+    }));
+
+    const deploymentOptions: TypeaheadSelectOption[] = deployments.map((deployment) => ({
+        value: deployment.name,
+        label: deployment.name,
+    }));
+
+    function handleChangeCluster(selectedValue: string) {
         if (type === 'exclusion') {
-            setValue({ ...value, scope: { ...scope, cluster: val } });
+            setValue({ ...value, scope: { ...scope, cluster: selectedValue } });
         } else {
-            setValue({ ...value, cluster: val });
+            setValue({ ...value, cluster: selectedValue });
         }
     }
 
-    function handleChangeDeployment(e, val) {
-        setIsDeploymentSelectOpen(false);
-        setValue({ ...value, name: val });
+    function handleChangeDeployment(selectedValue: string) {
+        setValue({ ...value, name: selectedValue });
     }
 
     function handleChangeLabelKey(key) {
@@ -115,21 +122,15 @@ function PolicyScopeCard({
                     <Flex direction={{ default: 'column' }}>
                         <FlexItem>
                             <FormGroup label="Cluster" fieldId={`${name}-cluster`}>
-                                <Select
-                                    onToggle={() => setIsClusterSelectOpen(!isClusterSelectOpen)}
-                                    onSelect={handleChangeCluster}
-                                    isOpen={isClusterSelectOpen}
-                                    selections={value.cluster || scope?.cluster}
-                                    placeholderText="Select a cluster"
-                                    hasInlineFilter
+                                <TypeaheadSelect
+                                    id={`${name}-cluster`}
+                                    value={value.cluster || scope?.cluster || ''}
+                                    onChange={handleChangeCluster}
+                                    options={clusterOptions}
+                                    placeholder="Select a cluster"
                                     maxHeight="300px"
-                                >
-                                    {clusters.map((cluster) => (
-                                        <SelectOption key={cluster.name} value={cluster.id}>
-                                            {cluster.name}
-                                        </SelectOption>
-                                    ))}
-                                </Select>
+                                    className="pf-v5-u-w-100"
+                                />
                             </FormGroup>
                         </FlexItem>
                         <FlexItem>
@@ -148,27 +149,16 @@ function PolicyScopeCard({
                         {type === 'exclusion' && (
                             <FlexItem>
                                 <FormGroup label="Deployment" fieldId={`${name}-deployment`}>
-                                    <Select
-                                        onToggle={() =>
-                                            setIsDeploymentSelectOpen(!isDeploymentSelectOpen)
-                                        }
-                                        onSelect={handleChangeDeployment}
-                                        isOpen={isDeploymentSelectOpen}
-                                        selections={value.name}
-                                        placeholderText="Select a deployment"
+                                    <TypeaheadSelect
+                                        id={`${name}-deployment`}
+                                        value={value.name || ''}
+                                        onChange={handleChangeDeployment}
+                                        options={deploymentOptions}
+                                        placeholder="Select a deployment"
                                         isDisabled={hasAuditLogEventSource}
-                                        hasInlineFilter
                                         maxHeight="300px"
-                                    >
-                                        {deployments.map((deployment) => (
-                                            <SelectOption
-                                                key={deployment.id}
-                                                value={deployment.name}
-                                            >
-                                                {deployment.name}
-                                            </SelectOption>
-                                        ))}
-                                    </Select>
+                                        className="pf-v5-u-w-100"
+                                    />
                                 </FormGroup>
                             </FlexItem>
                         )}

@@ -20,7 +20,6 @@ import (
 )
 
 func TestGroupDataStore(t *testing.T) {
-	t.Parallel()
 	suite.Run(t, new(groupDataStoreTestSuite))
 }
 

@@ -1,6 +1,4 @@
-import React from 'react';
-
-import { ClusterHealthStatus } from 'types/cluster.proto';
+import type { ClusterHealthStatus } from 'types/cluster.proto';
 
 import {
     delayedScannerStatusStyle,

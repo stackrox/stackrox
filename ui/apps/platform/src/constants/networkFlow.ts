@@ -1,4 +1,4 @@
-import { L4Protocol } from 'types/networkFlow.proto';
+import type { L4Protocol } from 'types/networkFlow.proto';
 
 export const l4ProtocolLabels: Record<L4Protocol, string> = {
     L4_PROTOCOL_UNKNOWN: 'Unknown',

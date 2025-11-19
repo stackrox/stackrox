@@ -9,6 +9,7 @@ import (
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/timestamp"
 	"github.com/stackrox/rox/sensor/common"
+	"github.com/stackrox/rox/sensor/common/networkflow/manager/indicator"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
 )
@@ -99,7 +100,7 @@ func (s *NetworkFlowPurgerTestSuite) TestPurgerWithManager() {
 		lastUpdateTime       time.Duration
 		purgerMaxAge         time.Duration
 		isKnownEndpoint      bool
-		expectedEndpoint     *containerEndpointIndicator
+		expectedEndpoint     *indicator.ContainerEndpoint
 		expectedNumEndpoints int
 	}{
 		"Purger should purge something": {
@@ -165,7 +166,7 @@ func (s *NetworkFlowPurgerTestSuite) TestPurgerHostConnsEndpoints() {
 		purgerMaxAge      time.Duration
 		isKnownEndpoint   bool
 		foundContainerID  bool
-		expectedEndpoint  *containerEndpointIndicator
+		expectedEndpoint  *indicator.ContainerEndpoint
 		expectedPurgedEps int
 	}{
 		"Endpoints-maxAge: should purge old endpoints": {
@@ -352,7 +353,7 @@ func (s *NetworkFlowPurgerTestSuite) TestPurgerActiveConnections() {
 			pair := createConnectionPair().
 				firstSeen(timestamp.FromGoTime(now.Add(-tc.firstSeen))).
 				tsAdded(lastUpdateTS)
-			dummy := sync.Mutex{}
+			dummy := sync.RWMutex{}
 			activeConns := map[connection]*networkConnIndicatorWithAge{
 				*pair.conn: {lastUpdate: lastUpdateTS},
 			}
@@ -440,7 +441,7 @@ func (s *NetworkFlowPurgerTestSuite) TestPurgerActiveEndpoints() {
 			expectationsEndpointPurger(mockEntityStore, tc.isKnownEndpoint, tc.foundContainerID, tc.containerIDHistorical)
 
 			ep := createEndpointPair(timestamp.FromGoTime(now.Add(-tc.firstSeen)), lastUpdateTS)
-			dummy := sync.Mutex{}
+			dummy := sync.RWMutex{}
 			activeEndpoints := map[containerEndpoint]*containerEndpointIndicatorWithAge{
 				*ep.endpoint: {lastUpdate: lastUpdateTS},
 			}

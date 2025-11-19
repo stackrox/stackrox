@@ -15,7 +15,8 @@ var (
 // Singleton returns the singleton Hash datastore
 func Singleton() Datastore {
 	once.Do(func() {
-		ds = NewDatastore(postgres.New(globaldb.GetPostgres()))
+		db := globaldb.GetPostgres()
+		ds = NewDatastore(postgres.New(db), db)
 	})
 	return ds
 }

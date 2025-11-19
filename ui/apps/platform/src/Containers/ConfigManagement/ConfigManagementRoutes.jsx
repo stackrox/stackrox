@@ -1,5 +1,5 @@
-import React from 'react';
-import { Route, Routes } from 'react-router-dom';
+import { memo } from 'react';
+import { Route, Routes } from 'react-router-dom-v5-compat';
 import isEqual from 'lodash/isEqual';
 import PageNotFound from 'Components/PageNotFound';
 import searchContext from 'Containers/searchContext';
@@ -44,4 +44,4 @@ const ConfigManagementRoutes = () => (
     </searchContext.Provider>
 );
 
-export default React.memo(ConfigManagementRoutes, isEqual);
+export default memo(ConfigManagementRoutes, isEqual);

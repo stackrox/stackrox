@@ -367,13 +367,13 @@ func TestBaselineCheck(t *testing.T) {
 				ClusterId:     testClusterID,
 				Namespace:     testNamespace,
 				DeploymentId:  testDeploymentID,
-				ContainerName: c.nameContainerGroup.ContainerName,
+				ContainerName: c.nameContainerGroup.GetContainerName(),
 			}
 			deployments.EXPECT().GetDeployment(gomock.Any(), testDeploymentID).Return(deployment, true, nil)
 			baselines.EXPECT().GetProcessBaseline(gomock.Any(), key).Return(baseline, true, nil)
 			err := service.setSuspicious(hasReadCtx, []*v1.ProcessNameAndContainerNameGroup{c.nameContainerGroup}, testDeploymentID)
 			assert.NoError(t, err)
-			assert.Equal(t, c.expectedSuspicious, c.nameContainerGroup.Suspicious)
+			assert.Equal(t, c.expectedSuspicious, c.nameContainerGroup.GetSuspicious())
 		})
 	}
 }

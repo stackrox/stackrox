@@ -9,7 +9,6 @@ import (
 	clusterDS "github.com/stackrox/rox/central/cluster/datastore"
 	"github.com/stackrox/rox/central/metrics"
 	notifierDS "github.com/stackrox/rox/central/notifier/datastore"
-	"github.com/stackrox/rox/central/policy/search"
 	"github.com/stackrox/rox/central/policy/store"
 	categoriesDataStore "github.com/stackrox/rox/central/policycategory/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -22,6 +21,7 @@ import (
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	searchPkg "github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/search/policycategory"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/uuid"
@@ -68,7 +68,6 @@ func (i *NameConflictError) Error() string {
 
 type datastoreImpl struct {
 	storage     store.Store
-	searcher    search.Searcher
 	policyMutex sync.Mutex
 
 	clusterDatastore    clusterDS.DataStore
@@ -80,7 +79,7 @@ func (ds *datastoreImpl) Search(ctx context.Context, q *v1.Query) ([]searchPkg.R
 	if ok, err := workflowAdministrationSAC.ReadAllowed(ctx); err != nil || !ok {
 		return nil, err
 	}
-	return ds.searcher.Search(ctx, q)
+	return ds.storage.Search(ctx, policycategory.TransformCategoryNameFieldsQuery(q))
 }
 
 // Count returns the number of search results from the query
@@ -88,20 +87,54 @@ func (ds *datastoreImpl) Count(ctx context.Context, q *v1.Query) (int, error) {
 	if ok, err := workflowAdministrationSAC.ReadAllowed(ctx); err != nil || !ok {
 		return 0, err
 	}
-	return ds.searcher.Count(ctx, q)
+	return ds.storage.Count(ctx, q)
 }
 
 // SearchPolicies
 func (ds *datastoreImpl) SearchPolicies(ctx context.Context, q *v1.Query) ([]*v1.SearchResult, error) {
-	return ds.searcher.SearchPolicies(ctx, q)
+	// TODO(ROX-29943): remove 2 pass database calls
+	results, err := ds.Search(ctx, q)
+	if err != nil {
+		return nil, err
+	}
+
+	var policies []*storage.Policy
+	var newResults []searchPkg.Result
+	for _, result := range results {
+		policy, exists, err := ds.storage.Get(ctx, result.ID)
+		if err != nil {
+			return nil, errorsPkg.Wrapf(err, "error retrieving policy %q", result.ID)
+		}
+		// The result may not exist if the object was deleted after the search
+		if !exists {
+			continue
+		}
+		policies = append(policies, policy)
+		// Because of using 2 calls we are at risk of a race condition causing a mismatch in results
+		// and policies.  So we have to make sure we match for building the output below.
+		newResults = append(newResults, result)
+	}
+
+	protoResults := make([]*v1.SearchResult, 0, len(policies))
+	for i, policy := range policies {
+		protoResults = append(protoResults, convertPolicy(policy, newResults[i]))
+	}
+	return protoResults, nil
 }
 
 // SearchRawPolicies
 func (ds *datastoreImpl) SearchRawPolicies(ctx context.Context, q *v1.Query) ([]*storage.Policy, error) {
-	policies, err := ds.searcher.SearchRawPolicies(ctx, q)
+	q = policycategory.TransformCategoryNameFieldsQuery(q)
+
+	var policies []*storage.Policy
+	err := ds.storage.GetByQueryFn(ctx, q, func(policy *storage.Policy) error {
+		policies = append(policies, policy)
+		return nil
+	})
 	if err != nil {
 		return nil, err
 	}
+
 	for _, p := range policies {
 		categories, err := ds.categoriesDatastore.GetPolicyCategoriesForPolicy(ctx, p.GetId())
 		if err != nil {
@@ -170,14 +203,15 @@ func (ds *datastoreImpl) GetAllPolicies(ctx context.Context) ([]*storage.Policy,
 	var policies []*storage.Policy
 	err := ds.storage.Walk(ctx, func(policy *storage.Policy) error {
 		policies = append(policies, policy)
-		err := ds.fillCategoryNames(ctx, policy)
-		if err != nil {
-			return errorsPkg.Wrap(err, "failed to fill category names")
-		}
 		return nil
 	})
 	if err != nil {
 		return nil, err
+	}
+
+	err = ds.fillCategoryNames(ctx, policies...)
+	if err != nil {
+		return nil, errorsPkg.Wrap(err, "failed to fill category names")
 	}
 
 	return policies, err
@@ -214,7 +248,7 @@ func (ds *datastoreImpl) AddPolicy(ctx context.Context, policy *storage.Policy) 
 		return "", sac.ErrResourceAccessDenied
 	}
 
-	if policy.Id == "" {
+	if policy.GetId() == "" {
 		policy.Id = uuid.NewV4().String()
 	}
 
@@ -263,11 +297,11 @@ func (ds *datastoreImpl) AddPolicy(ctx context.Context, policy *storage.Policy) 
 		return "", ds.wrapWithRollback(ctx, tx, err)
 	}
 
-	if clonedPolicy.Source == storage.PolicySource_DECLARATIVE {
+	if clonedPolicy.GetSource() == storage.PolicySource_DECLARATIVE {
 		metrics.IncrementTotalExternalPoliciesGauge()
 	}
 
-	return clonedPolicy.Id, nil
+	return clonedPolicy.GetId(), nil
 }
 
 // UpdatePolicy updates a policy from the storage.
@@ -278,7 +312,7 @@ func (ds *datastoreImpl) UpdatePolicy(ctx context.Context, policy *storage.Polic
 		return sac.ErrResourceAccessDenied
 	}
 
-	if policy.Id == "" {
+	if policy.GetId() == "" {
 		return errors.New("policy id not specified")
 	}
 
@@ -321,7 +355,7 @@ func (ds *datastoreImpl) RemovePolicy(ctx context.Context, policy *storage.Polic
 
 	err := ds.removePolicyNoLock(ctx, policy.GetId())
 
-	if err == nil && policy.Source == storage.PolicySource_DECLARATIVE {
+	if err == nil && policy.GetSource() == storage.PolicySource_DECLARATIVE {
 		metrics.DecrementTotalExternalPoliciesGauge()
 	}
 
@@ -366,7 +400,7 @@ func (ds *datastoreImpl) ImportPolicies(ctx context.Context, importPolicies []*s
 	responses := make([]*v1.ImportPolicyResponse, len(importPolicies))
 	for i, policy := range importPolicies {
 		response := ds.importPolicy(ctx, policy, overwrite, policyNameToPolicyMap)
-		if !response.Succeeded {
+		if !response.GetSucceeded() {
 			allSucceeded = false
 		}
 		if changedIndices.Contains(i) {
@@ -642,4 +676,15 @@ func (ds *datastoreImpl) wrapWithRollback(ctx context.Context, tx *pgPkg.Tx, err
 		err = errorsPkg.Wrap(err, "There was an issue rolling back changes in the database")
 	}
 	return err
+}
+
+// convertPolicy returns proto search result from a policy object and the internal search result
+func convertPolicy(policy *storage.Policy, result searchPkg.Result) *v1.SearchResult {
+	return &v1.SearchResult{
+		Category:       v1.SearchCategory_POLICIES,
+		Id:             policy.GetId(),
+		Name:           policy.GetName(),
+		FieldToMatches: searchPkg.GetProtoMatchesMap(result.Matches),
+		Score:          result.Score,
+	}
 }

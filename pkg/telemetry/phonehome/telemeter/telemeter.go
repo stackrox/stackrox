@@ -1,5 +1,7 @@
 package telemeter
 
+import "maps"
+
 // CallOptions defines optional features for a Telemeter call.
 type CallOptions struct {
 	UserID          string
@@ -47,8 +49,8 @@ func WithClient(clientID string, clientType, clientVersion string) Option {
 	}
 }
 
-// WithGroups appends the groups for an event.
-func WithGroups(groupType string, groupID string) Option {
+// WithGroup appends the provided group to the list of client groups.
+func WithGroup(groupType string, groupID string) Option {
 	return func(o *CallOptions) {
 		if o.Groups == nil {
 			o.Groups = make(map[string][]string, 1)
@@ -60,7 +62,11 @@ func WithGroups(groupType string, groupID string) Option {
 // WithTraits sets the user properties to be updated with the call.
 func WithTraits(traits map[string]any) Option {
 	return func(o *CallOptions) {
-		o.Traits = traits
+		if o.Traits == nil {
+			o.Traits = traits
+		} else {
+			maps.Copy(o.Traits, traits)
+		}
 	}
 }
 
@@ -86,10 +92,10 @@ type Telemeter interface {
 	// the buffers.
 	Stop()
 	// Identify updates user traits.
-	Identify(props map[string]any, opts ...Option)
+	Identify(opts ...Option)
 	// Track registers an event, caused by a user.
 	Track(event string, props map[string]any, opts ...Option)
-	// Group adds a user to a group, supplying group specific properties.
-	// The group must be provided with a WithGroups option.
-	Group(props map[string]any, opts ...Option)
+	// Group adds a user to a group, supplying group specific traits.
+	// The groups must be provided with a WithGroup options.
+	Group(opts ...Option)
 }

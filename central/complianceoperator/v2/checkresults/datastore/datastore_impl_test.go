@@ -1015,7 +1015,7 @@ func (s *complianceCheckResultDataStoreTestSuite) TestWalkByQueryCheckResult() {
 	rec2.CheckName = "test-check2"
 	s.Require().NoError(s.dataStore.UpsertResult(s.hasWriteCtx, rec2))
 	parsedQuery := search.NewQueryBuilder().AddExactMatches(search.ComplianceOperatorScanConfigName, rec1.GetScanConfigName()).
-		AddExactMatches(search.ClusterID, rec1.ClusterId).
+		AddExactMatches(search.ClusterID, rec1.GetClusterId()).
 		ProtoQuery()
 	type repResults struct {
 		ClusterName string

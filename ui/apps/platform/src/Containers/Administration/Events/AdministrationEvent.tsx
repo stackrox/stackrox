@@ -1,4 +1,4 @@
-import React, { ReactElement } from 'react';
+import type { ReactElement } from 'react';
 import {
     BellIcon,
     CheckCircleIcon,
@@ -8,7 +8,7 @@ import {
 } from '@patternfly/react-icons';
 import { Icon } from '@patternfly/react-core';
 
-import {
+import type {
     AdministrationEventLevel,
     AdministrationEventType,
 } from 'services/AdministrationEventsService';

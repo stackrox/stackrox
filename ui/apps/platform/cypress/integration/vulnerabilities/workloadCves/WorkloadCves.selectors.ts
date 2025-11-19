@@ -13,10 +13,10 @@ export const selectors = {
     searchOptionsValueMenuItem: (searchOption) =>
         `.pf-v5-c-toolbar ul[aria-label="Filter by ${searchOption}"] button`,
     severityDropdown: '.pf-v5-c-toolbar button[aria-label="CVE severity filter menu toggle"]',
-    severityMenuItems: '.pf-v5-c-toolbar ul[aria-label="CVE severity filter menu items"]',
+    severityMenuItems: '.pf-v5-c-toolbar [aria-label="CVE severity filter menu items"] ul',
     severityMenuItem: (severity) => `${selectors.severityMenuItems} label:contains("${severity}")`,
     fixabilityDropdown: '.pf-v5-c-toolbar button[aria-label="CVE status filter menu toggle"]',
-    fixabilityMenuItems: '.pf-v5-c-toolbar ul[aria-label="CVE status filter menu items"]',
+    fixabilityMenuItems: '.pf-v5-c-toolbar [aria-label="CVE status filter menu items"] ul',
     fixabilityMenuItem: (fixability) =>
         `${selectors.fixabilityMenuItems} label:contains("${fixability}")`,
     filterChipGroup: `${filterChipSection} .pf-v5-c-chip-group`,
@@ -58,8 +58,6 @@ export const selectors = {
     // Data table selectors
     isUpdatingTable: '*[aria-busy="true"] table',
     tableWithLoadingSpinner: 'table tbody svg[aria-label="Loading table data"]',
-    nthTableRow: (n) =>
-        `.workload-cves-table-container > table > tbody:nth-of-type(${n}) > tr:nth-of-type(1)`,
     firstTableRow: 'table tbody:nth-of-type(1) tr:nth-of-type(1)',
     allTableRows: 'table tbody tr',
     tableRowSelectCheckbox: 'td input[type="checkbox"][aria-label^="Select row"]',

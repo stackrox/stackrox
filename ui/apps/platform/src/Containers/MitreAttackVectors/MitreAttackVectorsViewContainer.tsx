@@ -1,8 +1,9 @@
-import React, { ReactElement } from 'react';
+import { useEffect, useState } from 'react';
+import type { ReactElement } from 'react';
 import { gql, useQuery } from '@apollo/client';
 
 import { fetchMitreAttackVectors } from 'services/MitreService';
-import { MitreAttackVector } from 'types/mitre.proto';
+import type { MitreAttackVector } from 'types/mitre.proto';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 
 import {
@@ -40,7 +41,7 @@ type GetMitreAttackVectorsVars = {
     id: string;
 };
 
-type MitreAttackVectorsViewProps = {
+type MitreAttackVectorsViewContainerProps = {
     policyId?: string;
     policyFormMitreAttackVectors?: {
         tactic: string;
@@ -51,7 +52,7 @@ type MitreAttackVectorsViewProps = {
 function MitreAttackVectorsViewContainer({
     policyId,
     policyFormMitreAttackVectors,
-}: MitreAttackVectorsViewProps): ReactElement {
+}: MitreAttackVectorsViewContainerProps): ReactElement {
     const {
         loading: isLoading,
         data,
@@ -62,12 +63,10 @@ function MitreAttackVectorsViewContainer({
         },
     });
 
-    const [allMitreAttackVectors, setAllMitreAttackVectors] = React.useState<MitreAttackVector[]>(
-        []
-    );
-    const [mitreAttackVectorsError, setMitreAttackVectorsError] = React.useState('');
+    const [allMitreAttackVectors, setAllMitreAttackVectors] = useState<MitreAttackVector[]>([]);
+    const [mitreAttackVectorsError, setMitreAttackVectorsError] = useState('');
 
-    React.useEffect(() => {
+    useEffect(() => {
         fetchMitreAttackVectors()
             .then((mitreAttackVectors) => {
                 setAllMitreAttackVectors(mitreAttackVectors);

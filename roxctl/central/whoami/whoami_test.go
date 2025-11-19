@@ -20,7 +20,6 @@ import (
 )
 
 func TestCentralWhoAmICommand(t *testing.T) {
-	t.Parallel()
 	suite.Run(t, new(centralWhoAmITestSuite))
 }
 
@@ -40,7 +39,7 @@ type mockAuthServiceServer struct {
 func (m *mockAuthServiceServer) GetAuthStatus(_ context.Context, _ *v1.Empty) (*v1.AuthStatus, error) {
 	return &v1.AuthStatus{
 		Id: &v1.AuthStatus_UserId{
-			UserId: m.userInfo.Username,
+			UserId: m.userInfo.GetUsername(),
 		},
 		UserInfo: m.userInfo,
 	}, nil

@@ -1,4 +1,4 @@
-import { IntegrationBase } from 'services/IntegrationsService';
+import type { IntegrationBase } from 'services/IntegrationsService';
 
 interface IdNameInterface {
     id: string;

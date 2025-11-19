@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
     Alert,
     Divider,
@@ -12,14 +12,14 @@ import {
     ToolbarContent,
     ToolbarItem,
 } from '@patternfly/react-core';
-import { Table, Thead, Tr, Th, Tbody, Td } from '@patternfly/react-table';
+import { Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 import pluralize from 'pluralize';
 
 import ConfirmationModal from 'Components/PatternFly/ConfirmationModal';
 import SearchFilterChips from 'Components/PatternFly/SearchFilterChips';
 import useSelectToggle from 'hooks/patternfly/useSelectToggle';
 import { markNetworkBaselineStatuses } from 'services/NetworkService';
-import { NetworkBaselinePeerStatus, PeerStatus } from 'types/networkBaseline.proto';
+import type { NetworkBaselinePeerStatus, PeerStatus } from 'types/networkBaseline.proto';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 
 import FlowsTableHeaderText from '../common/FlowsTableHeaderText';

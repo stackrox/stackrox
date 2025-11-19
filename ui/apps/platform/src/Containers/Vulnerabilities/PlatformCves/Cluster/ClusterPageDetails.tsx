@@ -1,4 +1,3 @@
-import React from 'react';
 import {
     Bullseye,
     Card,
@@ -19,7 +18,8 @@ import { getDateTime } from 'utils/dateUtils';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 
 import ExpandableLabelSection from '../../components/ExpandableLabelSection';
-import useClusterExtendedDetails, { ProviderMetadata } from './useClusterExtendedDetails';
+import useClusterExtendedDetails from './useClusterExtendedDetails';
+import type { ProviderMetadata } from './useClusterExtendedDetails';
 import { displayClusterType } from '../utils/stringUtils';
 
 function getCloudProviderText(providerMetadata: ProviderMetadata | undefined): string | null {

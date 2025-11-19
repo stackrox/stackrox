@@ -1,4 +1,4 @@
-import React, { useContext } from 'react';
+import { useContext } from 'react';
 import URLService from 'utils/URLService';
 import Widget from 'Components/Widget';
 import Sunburst from 'Components/visuals/Sunburst';
@@ -6,10 +6,10 @@ import Query from 'Components/ThrowingQuery';
 import Loader from 'Components/Loader';
 import networkStatuses from 'constants/networkStatuses';
 import useWorkflowMatch from 'hooks/useWorkflowMatch';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom-v5-compat';
 import { gql } from '@apollo/client';
 import max from 'lodash/max';
-import { severityValues, severities } from 'constants/severities';
+import { severities, severityValues } from 'constants/severities';
 import { policySeverityColorMap } from 'constants/severityColors';
 import { severityLabels as policySeverityLabels } from 'messages/common';
 import { policySeverities } from 'types/policy.proto';

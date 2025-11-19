@@ -3,7 +3,9 @@ package sensor
 import (
 	"context"
 	"io"
+	"time"
 
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/sensor/queue"
 	"github.com/stackrox/rox/sensor/common/centralclient"
@@ -14,6 +16,7 @@ import (
 // CreateOptions represents the custom configuration that can be provided when creating sensor
 // using CreateSensor.
 type CreateOptions struct {
+	clusterIDHandler                   clusterIDHandler
 	workloadManager                    *fake.WorkloadManager
 	centralConnFactory                 centralclient.CentralConnectionFactory
 	certLoader                         centralclient.CertLoader
@@ -26,6 +29,14 @@ type CreateOptions struct {
 	signalServiceAuthFuncOverride      func(context.Context, string) (context.Context, error)
 	networkFlowWriter                  io.Writer
 	processIndicatorWriter             io.Writer
+	networkFlowTicker                  <-chan time.Time
+	deploymentIdentification           *storage.SensorDeploymentIdentification
+}
+
+type clusterIDHandler interface {
+	Set(string)
+	Get() string
+	GetNoWait() string
 }
 
 // ConfigWithDefaults creates a new config object with default properties.
@@ -48,7 +59,16 @@ func ConfigWithDefaults() *CreateOptions {
 		signalServiceAuthFuncOverride:      nil,
 		networkFlowWriter:                  nil,
 		processIndicatorWriter:             nil,
+		networkFlowTicker:                  nil,
+		clusterIDHandler:                   nil,
 	}
+}
+
+// WithClusterIDHandler sets the Handler.
+// Default: nil
+func (cfg *CreateOptions) WithClusterIDHandler(handler clusterIDHandler) *CreateOptions {
+	cfg.clusterIDHandler = handler
+	return cfg
 }
 
 // WithK8sClient sets the k8s client.
@@ -132,5 +152,20 @@ func (cfg *CreateOptions) WithNetworkFlowTraceWriter(writer io.Writer) *CreateOp
 // Default: nil
 func (cfg *CreateOptions) WithProcessIndicatorTraceWriter(writer io.Writer) *CreateOptions {
 	cfg.processIndicatorWriter = writer
+	return cfg
+}
+
+// WithNetworkFlowTicker sets the ticker for network flow enrichment.
+// Default: nil
+func (cfg *CreateOptions) WithNetworkFlowTicker(ticker <-chan time.Time) *CreateOptions {
+	cfg.networkFlowTicker = ticker
+	return cfg
+}
+
+// WithDeploymentIdentification overrides the deployment identification.
+// This is primarily used by local-sensor to provide explicit namespace when running outside a pod.
+// Default: nil (will call FetchDeploymentIdentification)
+func (cfg *CreateOptions) WithDeploymentIdentification(deploymentID *storage.SensorDeploymentIdentification) *CreateOptions {
+	cfg.deploymentIdentification = deploymentID
 	return cfg
 }

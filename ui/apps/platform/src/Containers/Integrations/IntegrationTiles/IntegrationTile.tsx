@@ -1,4 +1,4 @@
-import React, { ReactElement, CSSProperties } from 'react';
+import type { CSSProperties, ReactElement } from 'react';
 import {
     Badge,
     Card,
@@ -9,7 +9,7 @@ import {
     GalleryItem,
     Truncate,
 } from '@patternfly/react-core';
-import { Link } from 'react-router-dom';
+import { Link } from 'react-router-dom-v5-compat';
 
 import TechPreviewLabel from 'Components/PatternFly/TechPreviewLabel';
 

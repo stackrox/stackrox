@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import {
     Card,
     CardBody,
@@ -7,18 +7,18 @@ import {
     Flex,
     Form,
     FormGroup,
+    FormHelperText,
     Grid,
     GridItem,
+    HelperText,
+    HelperTextItem,
     Radio,
     Switch,
     Title,
-    FormHelperText,
-    HelperText,
-    HelperTextItem,
 } from '@patternfly/react-core';
 import { useFormikContext } from 'formik';
 
-import { ClientPolicy, LifecycleStage } from 'types/policy.proto';
+import type { ClientPolicy, LifecycleStage } from 'types/policy.proto';
 
 import DownloadCLIDropdown from './DownloadCLIDropdown';
 import {
@@ -50,13 +50,24 @@ function PolicyEnforcementForm() {
         );
     }
 
-    const responseMethodHelperText = showEnforcement
-        ? 'Inform and enforce will execute enforcement behavior at the stages you select.'
-        : 'Inform will always include violations for this policy in the violations list.';
-
     const hasBuild = values.lifecycleStages.includes('BUILD');
     const hasDeploy = values.lifecycleStages.includes('DEPLOY');
     const hasRuntime = values.lifecycleStages.includes('RUNTIME');
+    const hasAuditLog = values.eventSource === 'AUDIT_LOG_EVENT';
+    const hasNodeEvent = values.eventSource === 'NODE_EVENT';
+
+    let responseMethodHelperText = showEnforcement
+        ? 'Inform and enforce will execute enforcement behavior at the stages you select.'
+        : 'Inform will always include violations for this policy in the violations list.';
+
+    if (hasAuditLog) {
+        responseMethodHelperText = 'Enforcement is not available for audit log event sources.';
+    }
+    if (hasNodeEvent) {
+        responseMethodHelperText = 'Enforcement is not available for node event sources.';
+    }
+
+    const isEnforcementDisabled = hasAuditLog || hasNodeEvent;
 
     return (
         <Form>
@@ -67,6 +78,7 @@ function PolicyEnforcementForm() {
                         isChecked={!showEnforcement}
                         id="policy-response-inform"
                         name="inform"
+                        isDisabled={isEnforcementDisabled}
                         onChange={() => {
                             setShowEnforcement(false);
                             setFieldValue('enforcementActions', [], false); // do not validate, because code changes the value
@@ -77,6 +89,7 @@ function PolicyEnforcementForm() {
                         isChecked={showEnforcement}
                         id="policy-response-inform-enforce"
                         name="enforce"
+                        isDisabled={isEnforcementDisabled}
                         onChange={() => setShowEnforcement(true)}
                     />
                 </Flex>
@@ -159,7 +172,7 @@ function PolicyEnforcementForm() {
                                             'RUNTIME',
                                             values.enforcementActions
                                         )}
-                                        isDisabled={!hasRuntime}
+                                        isDisabled={!hasRuntime || isEnforcementDisabled}
                                         onChange={(_event, isChecked) => {
                                             onChangeEnforcementActions('RUNTIME', isChecked);
                                         }}

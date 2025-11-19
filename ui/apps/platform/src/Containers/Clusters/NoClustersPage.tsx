@@ -1,19 +1,20 @@
-import React, { ReactElement, useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { useEffect, useState } from 'react';
+import type { ReactElement } from 'react';
+import { Link } from 'react-router-dom-v5-compat';
 import {
     Alert,
     Bullseye,
     Button,
     EmptyState,
     EmptyStateBody,
+    EmptyStateFooter,
+    EmptyStateHeader,
     EmptyStateIcon,
     Flex,
     FlexItem,
     PageSection,
     Spinner,
     Text,
-    EmptyStateHeader,
-    EmptyStateFooter,
 } from '@patternfly/react-core';
 import { CloudSecurityIcon } from '@patternfly/react-icons';
 

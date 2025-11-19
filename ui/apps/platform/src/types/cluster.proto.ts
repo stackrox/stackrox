@@ -74,12 +74,19 @@ export type StaticClusterConfig = {
     tolerationsConfig: TolerationsConfig;
     slimCollector: boolean;
     admissionControllerEvents: boolean;
+    admissionControllerFailOnError: boolean;
+};
+
+export type AutoLockProcessBaselinesConfig = {
+    // More fields can be added later to control the feature at the namespace level
+    enabled: boolean;
 };
 
 export type DynamicClusterConfig = {
     admissionControllerConfig: AdmissionControllerConfig;
     registryOverride: string;
     disableAuditLogs: boolean;
+    autoLockProcessBaselinesConfig: AutoLockProcessBaselinesConfig | null;
 };
 
 // Encodes a complete cluster configuration minus ID/Name identifiers
@@ -116,7 +123,7 @@ export type Cluster = {
     admissionController: boolean;
     admissionControllerUpdates: boolean;
     admissionControllerEvents: boolean;
-    status: ClusterStatus;
+    status: ClusterStatus; // TODO fix errors so be able to add: | null
     dynamicConfig: DynamicClusterConfig;
     tolerationsConfig: TolerationsConfig;
     priority: string; // int64
@@ -137,6 +144,7 @@ export type Cluster = {
 
     initBundleId: string;
     managedBy: ClusterManagerType;
+    admissionControllerFailOnError: boolean; // false means Fail open and true means Fail closed
 };
 
 export type ClusterManagerType =

@@ -1,26 +1,19 @@
-import React from 'react';
-import { useQuery } from '@apollo/client';
 import { Divider, ToolbarItem } from '@patternfly/react-core';
 
-import useURLSort from 'hooks/useURLSort';
-import useURLPagination from 'hooks/useURLPagination';
+import type useURLSort from 'hooks/useURLSort';
+import type useURLPagination from 'hooks/useURLPagination';
 
 import { getTableUIState } from 'utils/getTableUIState';
-import { getPaginationParams } from 'utils/searchUtils';
-import { SearchFilter } from 'types/search';
-import { useManagedColumns } from 'hooks/useManagedColumns';
+import type { SearchFilter } from 'types/search';
+import { overrideManagedColumns, useManagedColumns } from 'hooks/useManagedColumns';
+import type { ColumnConfigOverrides } from 'hooks/useManagedColumns';
 import ColumnManagementButton from 'Components/ColumnManagementButton';
-import ImageOverviewTable, {
-    Image,
-    ImageOverviewTableProps,
-    defaultColumns,
-    imageListQuery,
-    tableId,
-} from '../Tables/ImageOverviewTable';
-import { VulnerabilitySeverityLabel } from '../../types';
-import TableEntityToolbar, { TableEntityToolbarProps } from '../../components/TableEntityToolbar';
-
-export { imageListQuery } from '../Tables/ImageOverviewTable';
+import ImageOverviewTable, { defaultColumns, tableId } from '../Tables/ImageOverviewTable';
+import type { ImageOverviewTableProps } from '../Tables/ImageOverviewTable';
+import type { VulnerabilitySeverityLabel } from '../../types';
+import TableEntityToolbar from '../../components/TableEntityToolbar';
+import type { TableEntityToolbarProps } from '../../components/TableEntityToolbar';
+import { useImages } from './useImages';
 
 type ImagesTableContainerProps = {
     searchFilter: SearchFilter;
@@ -35,7 +28,7 @@ type ImagesTableContainerProps = {
     hasWriteAccessForWatchedImage: boolean;
     onWatchImage: ImageOverviewTableProps['onWatchImage'];
     onUnwatchImage: ImageOverviewTableProps['onUnwatchImage'];
-    showCveDetailFields: boolean;
+    imageTableColumnOverrides: ColumnConfigOverrides<keyof typeof defaultColumns>;
 };
 
 function ImagesTableContainer({
@@ -51,18 +44,14 @@ function ImagesTableContainer({
     hasWriteAccessForWatchedImage,
     onWatchImage,
     onUnwatchImage,
-    showCveDetailFields,
+    imageTableColumnOverrides,
 }: ImagesTableContainerProps) {
-    const { page, perPage } = pagination;
     const { sortOption, getSortParams } = sort;
 
-    const { error, loading, data } = useQuery<{
-        images: Image[];
-    }>(imageListQuery, {
-        variables: {
-            query: workloadCvesScopedQueryString,
-            pagination: getPaginationParams({ page, perPage, sortOption }),
-        },
+    const { error, loading, data } = useImages({
+        query: workloadCvesScopedQueryString,
+        pagination,
+        sortOption,
     });
 
     const tableState = getTableUIState({
@@ -72,7 +61,12 @@ function ImagesTableContainer({
         searchFilter,
     });
 
-    const managedColumns = useManagedColumns(tableId, defaultColumns);
+    const managedColumnState = useManagedColumns(tableId, defaultColumns);
+
+    const columnConfig = overrideManagedColumns(
+        managedColumnState.columns,
+        imageTableColumnOverrides
+    );
 
     return (
         <>
@@ -84,12 +78,15 @@ function ImagesTableContainer({
                 isFiltered={isFiltered}
             >
                 <ToolbarItem align={{ default: 'alignRight' }}>
-                    <ColumnManagementButton managedColumnState={managedColumns} />
+                    <ColumnManagementButton
+                        columnConfig={columnConfig}
+                        onApplyColumns={managedColumnState.setVisibility}
+                    />
                 </ToolbarItem>
             </TableEntityToolbar>
             <Divider component="div" />
             <div
-                className="workload-cves-table-container"
+                style={{ overflowX: 'auto' }}
                 aria-live="polite"
                 aria-busy={loading ? 'true' : 'false'}
             >
@@ -101,12 +98,11 @@ function ImagesTableContainer({
                     hasWriteAccessForWatchedImage={hasWriteAccessForWatchedImage}
                     onWatchImage={onWatchImage}
                     onUnwatchImage={onUnwatchImage}
-                    showCveDetailFields={showCveDetailFields}
                     onClearFilters={() => {
                         onFilterChange({});
                         pagination.setPage(1);
                     }}
-                    columnVisibilityState={managedColumns.columns}
+                    columnVisibilityState={columnConfig}
                 />
             </div>
         </>

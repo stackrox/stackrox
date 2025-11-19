@@ -1,4 +1,4 @@
-import React, { ReactElement } from 'react';
+import type { ReactElement } from 'react';
 import { isValid, parse } from 'date-fns';
 import { getDateTime } from 'utils/dateUtils';
 

@@ -4,14 +4,14 @@ import (
 	"context"
 	"testing"
 
-	"github.com/stackrox/rox/central/activecomponent/updater"
-	updaterMocks "github.com/stackrox/rox/central/activecomponent/updater/mocks"
 	clusterDatastoreMocks "github.com/stackrox/rox/central/cluster/datastore/mocks"
 	nodeCVEDataStoreMocks "github.com/stackrox/rox/central/cve/node/datastore/mocks"
 	"github.com/stackrox/rox/central/deployment/datastore"
 	"github.com/stackrox/rox/central/deployment/datastore/mocks"
 	imageDS "github.com/stackrox/rox/central/image/datastore"
 	imageStoreMock "github.com/stackrox/rox/central/image/datastore/mocks"
+	imageV2DS "github.com/stackrox/rox/central/imagev2/datastore"
+	imageV2StoreMock "github.com/stackrox/rox/central/imagev2/datastore/mocks"
 	nodeDatastoreMocks "github.com/stackrox/rox/central/node/datastore/mocks"
 	"github.com/stackrox/rox/central/ranking"
 	riskStoreMock "github.com/stackrox/rox/central/risk/datastore/mocks"
@@ -84,8 +84,8 @@ func Test_TwoPipelines_Run(t *testing.T) {
 		cveDatastore      *nodeCVEDataStoreMocks.MockDataStore
 		deploymentStorage datastore.DataStore
 		imageStorage      imageDS.DataStore
+		imageV2Storage    imageV2DS.DataStore
 		riskStorage       *riskStoreMock.MockDataStore
-		updater           updater.Updater
 	}
 	tests := map[string]struct {
 		mocks                     *usedMocks
@@ -161,7 +161,7 @@ func Test_TwoPipelines_Run(t *testing.T) {
 					// node arrives
 					m.clusterStore.EXPECT().GetClusterName(gomock.Any(), gomock.Eq(clusterID)).Return(clusterID, true, nil),
 					m.cveDatastore.EXPECT().EnrichNodeWithSuppressedCVEs(gomock.Any()),
-					m.riskStorage.EXPECT().UpsertRisk(gomock.Any(), gomock.Any()).Times(2).Return(nil),
+					m.riskStorage.EXPECT().UpsertRisk(gomock.Any(), gomock.Any()).Times(1).Return(nil),
 					m.nodeDatastore.EXPECT().UpsertNode(gomock.Any(), gomock.Any()).Return(nil),
 
 					// check what got stored in the DB
@@ -182,13 +182,14 @@ func Test_TwoPipelines_Run(t *testing.T) {
 				cveDatastore:      nodeCVEDataStoreMocks.NewMockDataStore(ctrl),
 				deploymentStorage: mocks.NewMockDataStore(ctrl),
 				imageStorage:      imageStoreMock.NewMockDataStore(ctrl),
+				imageV2Storage:    imageV2StoreMock.NewMockDataStore(ctrl),
 				riskStorage:       riskStoreMock.NewMockDataStore(ctrl),
-				updater:           updaterMocks.NewMockUpdater(ctrl),
 			}
 			tt.riskManager = manager.New(
 				tt.mocks.nodeDatastore,
 				tt.mocks.deploymentStorage,
 				tt.mocks.imageStorage,
+				tt.mocks.imageV2Storage,
 				tt.mocks.riskStorage,
 				&mockNodeScorer{},
 				&mockComponentScorer{},
@@ -200,8 +201,6 @@ func Test_TwoPipelines_Run(t *testing.T) {
 				ranking.NamespaceRanker(),
 				ranking.ComponentRanker(),
 				ranking.NodeComponentRanker(),
-
-				tt.mocks.updater,
 
 				nil,
 			)
@@ -385,7 +384,7 @@ func (m *mockComponentScorer) Score(_ context.Context, _ scancomponent.ScanCompo
 
 type mockImageComponentScorer struct{}
 
-func (m *mockImageComponentScorer) Score(_ context.Context, _ scancomponent.ScanComponent, _ string, _ *storage.EmbeddedImageScanComponent, _ string) *storage.Risk {
+func (m *mockImageComponentScorer) Score(_ context.Context, _ scancomponent.ScanComponent, _ string, _ *storage.EmbeddedImageScanComponent, _ string, _ int) *storage.Risk {
 	return getDummyRisk()
 }
 
@@ -398,5 +397,9 @@ func (m *mockDeploymentScorer) Score(_ context.Context, _ *storage.Deployment, _
 type mockImageScorer struct{}
 
 func (m *mockImageScorer) Score(_ context.Context, _ *storage.Image) *storage.Risk {
+	return getDummyRisk()
+}
+
+func (m *mockImageScorer) ScoreV2(_ context.Context, _ *storage.ImageV2) *storage.Risk {
 	return getDummyRisk()
 }

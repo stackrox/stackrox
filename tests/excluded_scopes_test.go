@@ -24,7 +24,7 @@ func TestExcludedScopes(t *testing.T) {
 	}
 	deploymentName := fmt.Sprintf("test-excluded-scopes-%d", rand.Intn(10000))
 
-	setupDeployment(t, "nginx", deploymentName)
+	setupDeployment(t, "quay.io/rhacs-eng/qa-multi-arch-nginx:latest", deploymentName)
 	defer teardownDeploymentWithoutCheck(t, deploymentName)
 	waitForDeployment(t, deploymentName)
 
@@ -65,7 +65,7 @@ func verifyNoAlertForExcludedScopes(t *testing.T, deploymentName string) {
 	})
 	cancel()
 	require.NoError(t, err)
-	require.Len(t, resp.Policies, 1)
+	require.Len(t, resp.GetPolicies(), 1)
 
 	ctx, cancel = context.WithTimeout(context.Background(), time.Minute)
 	latestPolicy, err := service.GetPolicy(ctx, &v1.ResourceByID{
@@ -105,7 +105,7 @@ func verifyAlertForExcludedScopesRemoval(t *testing.T, deploymentName string) {
 	})
 	cancel()
 	require.NoError(t, err)
-	require.Len(t, resp.Policies, 1)
+	require.Len(t, resp.GetPolicies(), 1)
 
 	ctx, cancel = context.WithTimeout(context.Background(), time.Minute)
 	latestPolicy, err := service.GetPolicy(ctx, &v1.ResourceByID{

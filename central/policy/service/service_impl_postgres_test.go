@@ -10,13 +10,10 @@ import (
 	lifecycleMocks "github.com/stackrox/rox/central/detection/lifecycle/mocks"
 	notifierDatastore "github.com/stackrox/rox/central/notifier/datastore"
 	policyDatastore "github.com/stackrox/rox/central/policy/datastore"
-	"github.com/stackrox/rox/central/policy/search"
 	policyStore "github.com/stackrox/rox/central/policy/store"
 	policyCategoryDatastore "github.com/stackrox/rox/central/policycategory/datastore"
-	categorySearch "github.com/stackrox/rox/central/policycategory/search"
 	categoryPostgres "github.com/stackrox/rox/central/policycategory/store/postgres"
 	edgeDataStore "github.com/stackrox/rox/central/policycategoryedge/datastore"
-	edgeSearch "github.com/stackrox/rox/central/policycategoryedge/search"
 	edgePostgres "github.com/stackrox/rox/central/policycategoryedge/store/postgres"
 	connectionMocks "github.com/stackrox/rox/central/sensor/service/connection/mocks"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -57,16 +54,14 @@ func (s *PolicyServicePostgresSuite) SetupSuite() {
 	notifierDS := notifierDatastore.GetTestPostgresDataStore(s.T(), s.db)
 
 	categoryStorage := categoryPostgres.New(s.db)
-	categorySearcher := categorySearch.New(categoryStorage)
 
 	edgeStorage := edgePostgres.New(s.db)
-	edgeSearcher := edgeSearch.New(edgeStorage)
 
-	edgeDatastore := edgeDataStore.New(edgeStorage, edgeSearcher)
+	edgeDatastore := edgeDataStore.New(edgeStorage)
 
-	s.categories = policyCategoryDatastore.New(categoryStorage, categorySearcher, edgeDatastore)
+	s.categories = policyCategoryDatastore.New(categoryStorage, edgeDatastore)
 
-	s.policies = policyDatastore.New(policyStorage, search.New(policyStorage), s.clusters, notifierDS, s.categories)
+	s.policies = policyDatastore.New(policyStorage, s.clusters, notifierDS, s.categories)
 
 	var err error
 	s.clusters, err = clusterDatastore.GetTestPostgresDataStore(s.T(), s.db)

@@ -1,8 +1,8 @@
-import React, { ReactElement } from 'react';
-import { Link } from 'react-router-dom';
+import type { ReactElement } from 'react';
+import { Link } from 'react-router-dom-v5-compat';
 import { Button, Flex, FlexItem, ModalBoxBody, ModalBoxFooter } from '@patternfly/react-core';
 
-import { ListPolicy } from 'types/policy.proto';
+import type { ListPolicy } from 'types/policy.proto';
 import { policiesBasePath } from 'routePaths';
 
 type ImportPolicyJSONSuccessProps = {

@@ -13,7 +13,6 @@ import (
 )
 
 func TestContextBoundReader_ReadNormal(t *testing.T) {
-	t.Parallel()
 
 	input := strings.NewReader("foobar")
 	cbr := NewContextBoundReader(context.Background(), input)
@@ -31,7 +30,6 @@ func TestContextBoundReader_ReadNormal(t *testing.T) {
 }
 
 func TestContextBoundReader_ReadWithSequentialInterrupt(t *testing.T) {
-	t.Parallel()
 
 	input := strings.NewReader("foobar")
 	ctx, cancel := context.WithCancel(context.Background())
@@ -52,7 +50,6 @@ func TestContextBoundReader_ReadWithSequentialInterrupt(t *testing.T) {
 }
 
 func TestContextBoundReader_ReadWithParallelInterrupt(t *testing.T) {
-	t.Parallel()
 
 	cr := newChunkReader()
 
