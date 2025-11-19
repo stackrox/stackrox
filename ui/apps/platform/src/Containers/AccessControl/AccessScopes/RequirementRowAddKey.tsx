@@ -74,7 +74,7 @@ function RequirementRowAddKey({
                                 icon={
                                     <Icon>
                                         <ArrowCircleDownIcon
-                                            color="var(--pf-t--temp--dev--tbd)" /* CODEMODS: original v5 color was --pf-v5-global--primary-color--100 */
+                                            color="var(--pf-t--global--icon--color--brand--default)"
                                             style={{ transform: 'rotate(-90deg)' }}
                                         />
                                     </Icon>

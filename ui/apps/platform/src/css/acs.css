@@ -63,7 +63,7 @@ a[href="/main/search"] {
  */
 .chrome-picker input,
 .chrome-picker label {
-    color: var(--pf-t--temp--dev--tbd /* CODEMODS: original v5 color was:--pf-v5-global--Color--100 */) !important; /* instead of #969696 */
+    color: var(--pf-t--global--text--color--regular) !important; /* instead of #969696 */
 }
 
 

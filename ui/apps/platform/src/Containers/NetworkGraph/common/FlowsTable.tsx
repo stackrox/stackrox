@@ -76,12 +76,12 @@ function getBaselineSimulatedRowStyle(
     if (baselineSimulationDiffState === 'ADDED') {
         customStyle = {
             backgroundColor:
-                'var(--pf-t--temp--dev--tbd)' /* CODEMODS: original v5 color was --pf-v5-global--palette--green-50 */,
+                'var(--pf-t--color--green--10)',
         };
     } else if (baselineSimulationDiffState === 'REMOVED') {
         customStyle = {
             backgroundColor:
-                'var(--pf-t--temp--dev--tbd)' /* CODEMODS: original v5 color was --pf-v5-global--palette--red-50 */,
+                'var(--pf-t--color--red--10)',
         };
     } else {
         customStyle = {};
