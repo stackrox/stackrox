@@ -60,7 +60,7 @@ type Collections struct {
 // CollectionsEmbeddedCollections holds the Gorm model for Postgres table `collections_embedded_collections`.
 type CollectionsEmbeddedCollections struct {
 	CollectionsID       string      `gorm:"column:collections_id;type:varchar;primaryKey"`
-	Idx                 int         `gorm:"column:idx;type:integer;primaryKey;index:collectionsembeddedcollections_idx,type:btree"`
+	Idx                 int         `gorm:"column:idx;type:integer;primaryKey;index:collectionsembeddedcollections_idx,type:btree,option:CONCURRENTLY"`
 	ID                  string      `gorm:"column:id;type:varchar"`
 	CollectionsRef      Collections `gorm:"foreignKey:collections_id;references:id;belongsTo;constraint:OnDelete:CASCADE"`
 	CollectionsCycleRef Collections `gorm:"foreignKey:id;references:id;belongsTo;constraint:OnDelete:RESTRICT"`

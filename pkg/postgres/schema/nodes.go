@@ -90,7 +90,7 @@ type Nodes struct {
 // NodesTaints holds the Gorm model for Postgres table `nodes_taints`.
 type NodesTaints struct {
 	NodesID     string              `gorm:"column:nodes_id;type:uuid;primaryKey"`
-	Idx         int                 `gorm:"column:idx;type:integer;primaryKey;index:nodestaints_idx,type:btree"`
+	Idx         int                 `gorm:"column:idx;type:integer;primaryKey;index:nodestaints_idx,type:btree,option:CONCURRENTLY"`
 	Key         string              `gorm:"column:key;type:varchar"`
 	Value       string              `gorm:"column:value;type:varchar"`
 	TaintEffect storage.TaintEffect `gorm:"column:tainteffect;type:integer"`

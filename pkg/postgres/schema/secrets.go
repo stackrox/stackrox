@@ -60,9 +60,9 @@ const (
 type Secrets struct {
 	ID          string     `gorm:"column:id;type:uuid;primaryKey"`
 	Name        string     `gorm:"column:name;type:varchar"`
-	ClusterID   string     `gorm:"column:clusterid;type:uuid;index:secrets_sac_filter,type:btree"`
+	ClusterID   string     `gorm:"column:clusterid;type:uuid;index:secrets_sac_filter,type:btree,option:CONCURRENTLY"`
 	ClusterName string     `gorm:"column:clustername;type:varchar"`
-	Namespace   string     `gorm:"column:namespace;type:varchar;index:secrets_sac_filter,type:btree"`
+	Namespace   string     `gorm:"column:namespace;type:varchar;index:secrets_sac_filter,type:btree,option:CONCURRENTLY"`
 	CreatedAt   *time.Time `gorm:"column:createdat;type:timestamp"`
 	Serialized  []byte     `gorm:"column:serialized;type:bytea"`
 }
@@ -70,7 +70,7 @@ type Secrets struct {
 // SecretsFiles holds the Gorm model for Postgres table `secrets_files`.
 type SecretsFiles struct {
 	SecretsID   string             `gorm:"column:secrets_id;type:uuid;primaryKey"`
-	Idx         int                `gorm:"column:idx;type:integer;primaryKey;index:secretsfiles_idx,type:btree"`
+	Idx         int                `gorm:"column:idx;type:integer;primaryKey;index:secretsfiles_idx,type:btree,option:CONCURRENTLY"`
 	Type        storage.SecretType `gorm:"column:type;type:integer"`
 	CertEndDate *time.Time         `gorm:"column:cert_enddate;type:timestamp"`
 	SecretsRef  Secrets            `gorm:"foreignKey:secrets_id;references:id;belongsTo;constraint:OnDelete:CASCADE"`
@@ -80,7 +80,7 @@ type SecretsFiles struct {
 type SecretsFilesRegistries struct {
 	SecretsID       string       `gorm:"column:secrets_id;type:uuid;primaryKey"`
 	SecretsFilesIdx int          `gorm:"column:secrets_files_idx;type:integer;primaryKey"`
-	Idx             int          `gorm:"column:idx;type:integer;primaryKey;index:secretsfilesregistries_idx,type:btree"`
+	Idx             int          `gorm:"column:idx;type:integer;primaryKey;index:secretsfilesregistries_idx,type:btree,option:CONCURRENTLY"`
 	Name            string       `gorm:"column:name;type:varchar"`
 	SecretsFilesRef SecretsFiles `gorm:"foreignKey:secrets_id,secrets_files_idx;references:secrets_id,idx;belongsTo;constraint:OnDelete:CASCADE"`
 }
