@@ -1,4 +1,4 @@
-# These versions should match those used in the current CI test image (stackrox-test-0.4.9-3-g197bcc25d6).
+# These versions should match those used in the current CI test image (stackrox-test-0.5.0-4-g8a36701699).
 # See .github/workflows/{lint,style}.yaml for that.
 # And the stackrox/rox-ci-image repo for the original source and pinned versions.
 pycodestyle==2.14.0

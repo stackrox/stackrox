@@ -246,7 +246,7 @@ jobs:
     outputs:
       new-jiras: ${{ steps.junit2jira.outputs.new-jiras }}
     container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-ui-test-0.4.9-3-g197bcc25d6
+      image: quay.io/stackrox-io/apollo-ci:stackrox-ui-test-0.5.0-4-g8a36701699
       volumes:  # job-preamble deletes unused host runner files under /mnt
       - /usr:/mnt/usr
       - /opt:/mnt/opt
