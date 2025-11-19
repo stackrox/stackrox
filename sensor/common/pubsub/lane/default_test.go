@@ -6,11 +6,11 @@ import (
 
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/sync"
+	"github.com/stackrox/rox/pkg/testutils/goleak"
 	"github.com/stackrox/rox/sensor/common/pubsub"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
-	"go.uber.org/goleak"
 )
 
 type defaultLaneSuite struct {
@@ -22,7 +22,7 @@ func TestDefaultLane(t *testing.T) {
 }
 
 func (s *defaultLaneSuite) TestNewLaneOptions() {
-	defer goleak.VerifyNone(s.T())
+	defer goleak.AssertNoGoroutineLeaks(s.T())
 	s.Run("with default options", func() {
 		config := NewDefaultLane(pubsub.DefaultLane)
 		assert.Equal(s.T(), pubsub.DefaultLane, config.LaneID())
@@ -44,10 +44,53 @@ func (s *defaultLaneSuite) TestNewLaneOptions() {
 		require.True(s.T(), ok)
 		assert.Equal(s.T(), laneSize, cap(laneImpl.ch))
 	})
+	s.Run("with negative lane size", func() {
+		laneSize := -1
+		config := NewDefaultLane(pubsub.DefaultLane, WithDefaultLaneSize(laneSize))
+		assert.Equal(s.T(), pubsub.DefaultLane, config.LaneID())
+		lane := config.NewLane()
+		assert.NotNil(s.T(), lane)
+		defer lane.Stop()
+		laneImpl, ok := lane.(*defaultLane)
+		require.True(s.T(), ok)
+		assert.Equal(s.T(), 0, cap(laneImpl.ch))
+	})
+	s.Run("with custom consumer", func() {
+		config := NewDefaultLane(pubsub.DefaultLane, WithDefaultLaneConsumer(newTestConsumer))
+		assert.Equal(s.T(), pubsub.DefaultLane, config.LaneID())
+		lane := config.NewLane()
+		assert.NotNil(s.T(), lane)
+		defer lane.Stop()
+		laneImpl, ok := lane.(*defaultLane)
+		require.True(s.T(), ok)
+		assert.NotNil(s.T(), laneImpl.newConsumerFn)
+		assert.Len(s.T(), laneImpl.consumerOpts, 0)
+	})
+	s.Run("with custom consumer and consumer options", func() {
+		config := NewDefaultLane(pubsub.DefaultLane, WithDefaultLaneConsumer(newTestConsumer, func(_ pubsub.Consumer) {}))
+		assert.Equal(s.T(), pubsub.DefaultLane, config.LaneID())
+		lane := config.NewLane()
+		assert.NotNil(s.T(), lane)
+		defer lane.Stop()
+		laneImpl, ok := lane.(*defaultLane)
+		require.True(s.T(), ok)
+		assert.NotNil(s.T(), laneImpl.newConsumerFn)
+		assert.Len(s.T(), laneImpl.consumerOpts, 1)
+	})
+}
+
+func (s *defaultLaneSuite) TestRegisterConsumer() {
+	defer goleak.AssertNoGoroutineLeaks(s.T())
+	s.Run("should error on nil callback", func() {
+		lane := NewDefaultLane(pubsub.DefaultLane).NewLane()
+		assert.NotNil(s.T(), lane)
+		assert.Error(s.T(), lane.RegisterConsumer(pubsub.DefaultTopic, nil))
+		lane.Stop()
+	})
 }
 
 func (s *defaultLaneSuite) TestPublish() {
-	defer goleak.VerifyNone(s.T())
+	defer goleak.AssertNoGoroutineLeaks(s.T())
 	s.Run("publish with blocking consumer should block", func() {
 		lane := NewDefaultLane(pubsub.DefaultLane).NewLane()
 		assert.NotNil(s.T(), lane)
@@ -74,7 +117,6 @@ func (s *defaultLaneSuite) TestPublish() {
 		}
 		unblockSig.Signal()
 		wg.Wait()
-		time.Sleep(500 * time.Millisecond)
 	})
 	s.Run("publish with no consumer should not block", func() {
 		lane := NewDefaultLane(pubsub.DefaultLane).NewLane()
@@ -99,6 +141,35 @@ func (s *defaultLaneSuite) TestPublish() {
 		assert.NoError(s.T(), lane.Publish(&testEvent{data: data}))
 		<-consumeSignal.Done()
 		lane.Stop()
+	})
+	s.Run("stop should unblock publish", func() {
+		lane := NewDefaultLane(pubsub.DefaultLane).NewLane()
+		assert.NotNil(s.T(), lane)
+		unblockSig := concurrency.NewSignal()
+		wg := sync.WaitGroup{}
+		wg.Add(1)
+		assert.NoError(s.T(), lane.RegisterConsumer(pubsub.DefaultTopic, blockingCallback(&wg, &unblockSig)))
+		publishDone := concurrency.NewSignal()
+		firstPublishCallDone := concurrency.NewSignal()
+		go func() {
+			defer publishDone.Signal()
+			assert.NoError(s.T(), lane.Publish(&testEvent{}))
+			firstPublishCallDone.Signal()
+			assert.Error(s.T(), lane.Publish(&testEvent{}))
+		}()
+		select {
+		case <-time.After(100 * time.Millisecond):
+			s.FailNow("The fist call to publish should not block")
+		case <-firstPublishCallDone.Done():
+		}
+		lane.Stop()
+		select {
+		case <-time.After(100 * time.Millisecond):
+			s.FailNow("Publish should unblock after Stop")
+		case <-publishDone.Done():
+		}
+		unblockSig.Signal()
+		wg.Wait()
 	})
 }
 
@@ -127,3 +198,18 @@ func (t *testEvent) Topic() pubsub.Topic {
 func (t *testEvent) Lane() pubsub.LaneID {
 	return pubsub.DefaultLane
 }
+
+func newTestConsumer(_ pubsub.EventCallback, _ ...pubsub.ConsumerOption) pubsub.Consumer {
+	return &testCustomConsumer{}
+}
+
+type testCustomConsumer struct {
+}
+
+func (c *testCustomConsumer) Consume(_ concurrency.Waitable, _ pubsub.Event) <-chan error {
+	errC := make(chan error)
+	defer close(errC)
+	return errC
+}
+
+func (c *testCustomConsumer) Stop() {}

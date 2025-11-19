@@ -1,6 +1,8 @@
 package lane
 
 import (
+	"github.com/pkg/errors"
+
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/sync"
@@ -19,11 +21,14 @@ func WithDefaultLaneSize(size int) pubsub.LaneOption {
 		if !ok {
 			return
 		}
+		if size < 0 {
+			return
+		}
 		laneImpl.size = size
 	}
 }
 
-func WithConsumer(consumer pubsub.NewConsumer, opts ...pubsub.ConsumerOption) pubsub.LaneOption {
+func WithDefaultLaneConsumer(consumer pubsub.NewConsumer, opts ...pubsub.ConsumerOption) pubsub.LaneOption {
 	return func(lane pubsub.Lane) {
 		laneImpl, ok := lane.(*defaultLane)
 		if !ok {
@@ -76,7 +81,7 @@ func (l *defaultLane) Publish(event pubsub.Event) error {
 	defer l.mu.Unlock()
 	select {
 	case <-l.stopper.Flow().StopRequested():
-		return pubsubErrors.NewPublishOnStoppedLaneErr(l.id)
+		return errors.Wrap(pubsubErrors.NewPublishOnStoppedLaneErr(l.id), "unable to publish event")
 	default:
 		return l.publish(event)
 	}
@@ -85,7 +90,7 @@ func (l *defaultLane) Publish(event pubsub.Event) error {
 func (l *defaultLane) publish(event pubsub.Event) error {
 	select {
 	case <-l.stopper.Flow().StopRequested():
-		return pubsubErrors.NewPublishOnStoppedLaneErr(l.id)
+		return errors.Wrap(pubsubErrors.NewPublishOnStoppedLaneErr(l.id), "unable to publish event")
 	case l.ch <- event:
 		return nil
 	}
@@ -113,7 +118,7 @@ func (l *defaultLane) handleEvent(event pubsub.Event) error {
 	defer l.consumerLock.RUnlock()
 	consumers, ok := l.consumers[event.Topic()]
 	if !ok {
-		return pubsubErrors.NewConsumersNotFoundForTopicErr(event.Topic(), l.id)
+		return errors.Wrap(pubsubErrors.NewConsumersNotFoundForTopicErr(event.Topic(), l.id), "unable to handle event")
 	}
 	errList := errorhelpers.NewErrorList("handle event")
 	for _, c := range consumers {
@@ -129,6 +134,9 @@ func (l *defaultLane) handleEvent(event pubsub.Event) error {
 }
 
 func (l *defaultLane) RegisterConsumer(topic pubsub.Topic, callback pubsub.EventCallback) error {
+	if callback == nil {
+		return errors.New("cannot register a 'nil' callback")
+	}
 	l.consumerLock.Lock()
 	defer l.consumerLock.Unlock()
 	l.consumers[topic] = append(l.consumers[topic], l.newConsumerFn(callback, l.consumerOpts...))

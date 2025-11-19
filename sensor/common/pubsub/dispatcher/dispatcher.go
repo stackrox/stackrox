@@ -11,7 +11,7 @@ type Option func(*dispatcher)
 
 func WithLaneConfigs(laneConfigs []pubsub.LaneConfig) Option {
 	return func(ps *dispatcher) {
-		if len(laneConfigs) <= 0 {
+		if len(laneConfigs) == 0 {
 			return
 		}
 		ps.laneConfigs = laneConfigs
@@ -49,10 +49,13 @@ func (d *dispatcher) Publish(event pubsub.Event) error {
 	if err != nil {
 		return errors.Wrap(err, "unable to find lane for the given event")
 	}
-	return lane.Publish(event)
+	return errors.Wrap(lane.Publish(event), "unable to publish event")
 }
 
 func (d *dispatcher) RegisterConsumer(topic pubsub.Topic, callback pubsub.EventCallback) error {
+	if callback == nil {
+		return errors.New("cannot register a 'nil' callback")
+	}
 	d.laneLock.RLock()
 	defer d.laneLock.RUnlock()
 	errList := errorhelpers.NewErrorList("register consumer")
@@ -83,7 +86,7 @@ func (d *dispatcher) getLane(id pubsub.LaneID) (pubsub.Lane, error) {
 }
 
 func (d *dispatcher) registerConsumerToLane(topic pubsub.Topic, lane pubsub.Lane, callback pubsub.EventCallback) error {
-	return lane.RegisterConsumer(topic, callback)
+	return errors.Wrap(lane.RegisterConsumer(topic, callback), "unable to register consumer")
 }
 
 func (d *dispatcher) createLanes() error {
@@ -95,7 +98,12 @@ func (d *dispatcher) createLanes() error {
 			errList.AddError(errors.Errorf("duplicated lane %q configured", config.LaneID().String()))
 			continue
 		}
-		d.lanes[config.LaneID()] = config.NewLane()
+		lane := config.NewLane()
+		if lane == nil {
+			errList.AddErrors(errors.Errorf("unable to create lane %q", config.LaneID().String()))
+			continue
+		}
+		d.lanes[config.LaneID()] = lane
 	}
 	return errList.ToError()
 }
