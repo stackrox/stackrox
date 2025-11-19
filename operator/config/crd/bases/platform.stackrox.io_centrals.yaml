@@ -14,7 +14,23 @@ spec:
     singular: central
   scope: Namespaced
   versions:
-  - name: v1alpha1
+  - additionalPrinterColumns:
+    - jsonPath: .status.reconciledVersion
+      name: Version
+      type: string
+    - jsonPath: .spec.central.adminPasswordSecret.name
+      name: AdminPassword
+      type: string
+    - jsonPath: .status.conditions[?(@.type=="Deployed")].message
+      name: Message
+      type: string
+    - jsonPath: .status.conditions[?(@.type=="Progressing")].status
+      name: Progressing
+      type: string
+    - jsonPath: .status.conditions[?(@.type=="Available")].status
+      name: Available
+      type: string
+    name: v1alpha1
     schema:
       openAPIV3Schema:
         description: |-
@@ -1854,8 +1870,16 @@ spec:
                   version:
                     type: string
                 type: object
+              observedGeneration:
+                description: ObservedGeneration is the generation most recently observed
+                  by the controller.
+                format: int64
+                type: integer
               productVersion:
                 description: The deployed version of the product.
+                type: string
+              reconciledVersion:
+                description: The version of the reconciled release.
                 type: string
             required:
             - conditions
