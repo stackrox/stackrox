@@ -381,6 +381,7 @@ func (s *PruningTestSuite) generateClusterDataStructures() (configDatastore.Data
 	mockRiskDatastore.EXPECT().RemoveRisk(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
 	mockBaselineDataStore.EXPECT().RemoveProcessBaselinesByDeployment(gomock.Any(), gomock.Any()).AnyTimes().Return(nil)
 	clusterFlows.EXPECT().GetFlowStore(gomock.Any(), gomock.Any()).AnyTimes().Return(flows, nil)
+	clusterFlows.EXPECT().RemoveFlowStore(gomock.Any(), gomock.Any()).AnyTimes().Return(nil)
 	flows.EXPECT().RemoveFlowsForDeployment(gomock.Any(), gomock.Any()).AnyTimes().Return(nil)
 	mockFilter.EXPECT().Delete(gomock.Any()).AnyTimes()
 	clusterCVEs.EXPECT().DeleteClusterCVEsInternal(gomock.Any(), gomock.Any()).AnyTimes()
