@@ -21,6 +21,7 @@ import type { MenuToggleElement } from '@patternfly/react-core';
 import useSelectToggle from 'hooks/patternfly/useSelectToggle';
 
 type RoleSelectorProps = {
+    id?: string;
     roles?: string[];
     selectedRoles?: string[];
     isEditable: boolean;
@@ -31,6 +32,7 @@ type RoleSelectorProps = {
 };
 
 function RoleSelector({
+    id,
     roles = [],
     selectedRoles = [],
     isEditable,
@@ -105,6 +107,7 @@ function RoleSelector({
     const toggle = (toggleRef: Ref<MenuToggleElement>) => (
         <MenuToggle
             ref={toggleRef}
+            id={id}
             onClick={() => toggleIsRoleOpen(!isRoleOpen)}
             isExpanded={isRoleOpen}
             isDisabled={roles.length === 0 || !isEditable || isGenerated}

@@ -181,6 +181,7 @@ function ApiTokenIntegrationForm({
                             errors={errors}
                         >
                             <RoleSelector
+                                id="roles"
                                 roles={roleNames}
                                 selectedRoles={values.roles}
                                 isEditable={isEditable}
