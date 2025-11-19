@@ -91,7 +91,7 @@ var (
 		Protocol: storage.L4Protocol_L4_PROTOCOL_TCP,
 	}
 
-	open = timestamp.InfiniteFuture
+	open   = timestamp.InfiniteFuture
 	closed = timestamp.Now()
 )
 
