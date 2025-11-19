@@ -2,7 +2,7 @@ module github.com/stackrox/rox/operator/tools/kuttl
 
 go 1.24.0
 
-require github.com/kudobuilder/kuttl v0.22.1-0.20251119080640-abe45e0634c4
+require github.com/kudobuilder/kuttl v0.23.0
 
 require (
 	al.essio.dev/pkg/shellescape v1.5.1 // indirect
