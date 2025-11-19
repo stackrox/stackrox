@@ -67,7 +67,6 @@ func IsTransientError(err error) bool {
 	if pgErr := (*pgconn.PgError)(nil); errors.As(err, &pgErr) {
 		return transientPGCodes.Contains(pgErr.Code)
 	}
-	// https://github.com/jackc/pgx/blame/e4a063e7cb0fe9dd022fb1171d7655f6e837c98e/pgconn/pgconn.go#L734
 	if pgconn.SafeToRetry(err) {
 		return true
 	}
