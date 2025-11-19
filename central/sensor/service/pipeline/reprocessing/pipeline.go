@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/stackrox/rox/central/deployment/datastore"
+	"github.com/stackrox/rox/central/deployment/utils"
 	"github.com/stackrox/rox/central/detection/lifecycle"
 	countMetrics "github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/central/reprocessor"
@@ -13,6 +14,7 @@ import (
 	"github.com/stackrox/rox/central/sensor/service/pipeline/reconciliation"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/centralsensor"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/search"
 )
@@ -71,6 +73,11 @@ func (s *pipelineImpl) Run(ctx context.Context, _ string, msg *central.MsgFromSe
 	deployment, exists, err := s.deployments.GetDeployment(ctx, reprocessMsg.GetDeploymentId())
 	if err != nil || !exists {
 		return err
+	}
+
+	if features.FlattenImageData.Enabled() {
+		// IDV2s may not be set if sensor is running an older version
+		utils.PopulateContainerImageIDV2s(deployment)
 	}
 
 	s.riskManager.ReprocessDeploymentRisk(deployment)
