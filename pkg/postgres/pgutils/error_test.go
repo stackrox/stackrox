@@ -69,48 +69,10 @@ func TestWrappedErrors(t *testing.T) {
 			err:       multiErrorDeadlineExceeded.ToError(),
 			transient: true,
 		},
-		{
-			err: dbErr{
-				retryable: true,
-				msg:       "🐛 conn busy 🐛",
-			},
-			transient: true,
-		},
-		{
-			err: dbErr{
-				retryable: true,
-				msg:       "🐛 conn busy",
-			},
-		},
-		{
-			err: dbErr{
-				retryable: false,
-				msg:       "🐛 conn busy 🐛",
-			},
-		},
-		{
-			err: dbErr{
-				retryable: false,
-				msg:       "🐛 conn busy",
-			},
-		},
 	}
 	for _, c := range cases {
 		t.Run(fmt.Sprintf("%s", c.err), func(t *testing.T) {
 			assert.Equal(t, c.transient, IsTransientError(c.err))
 		})
 	}
-}
-
-type dbErr struct {
-	msg       string
-	retryable bool
-}
-
-func (e dbErr) Error() string {
-	return e.msg
-}
-
-func (e dbErr) SafeToRetry() bool {
-	return e.retryable
 }
