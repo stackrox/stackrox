@@ -34,6 +34,7 @@ import (
 	"github.com/stackrox/rox/sensor/common/detector/unified"
 	"github.com/stackrox/rox/sensor/common/enforcer"
 	"github.com/stackrox/rox/sensor/common/externalsrcs"
+	fsUtils "github.com/stackrox/rox/sensor/common/filesystem/utils"
 	"github.com/stackrox/rox/sensor/common/image/cache"
 	"github.com/stackrox/rox/sensor/common/message"
 	"github.com/stackrox/rox/sensor/common/metrics"
@@ -105,7 +106,7 @@ func New(clusterID clusterIDPeekWaiter, enforcer enforcer.Enforcer, admCtrlSetti
 
 	fileAccessQueue := queue.NewQueue[*queue.FileAccessQueueItem](
 		detectorStopper,
-		"FilesQueue",
+		"FileAccessQueue",
 		fileAccessQueueSize,
 		detectorMetrics.DetectorFileAccessQueueOperations,
 		detectorMetrics.DetectorFileAccessDroppedCount,
@@ -849,7 +850,7 @@ func (d *detectorImpl) pushFileAccess(ctx context.Context, access *storage.FileA
 		Access: access,
 	}
 
-	if access.GetProcess().GetDeploymentId() != "" {
+	if fsUtils.IsDeploymentFileAccess(access) {
 		deployment := d.deploymentStore.GetSnapshot(access.GetProcess().GetDeploymentId())
 		if deployment == nil {
 			log.Debugf("Deployment has already been removed: %+v", access.GetProcess())
@@ -883,9 +884,9 @@ func (d *detectorImpl) processFileAccess() {
 			}
 
 			var alerts []*storage.Alert
-			if item.Node != nil {
+			if fsUtils.IsNodeFileAccess(item.Access) {
 				alerts = d.unifiedDetector.DetectNodeFileAccess(item.Node, item.Access)
-			} else if item.Deployment != nil {
+			} else if fsUtils.IsDeploymentFileAccess(item.Access) {
 				// TODO(ROX-30806): wire up deployment-based detection
 				log.Debug("Deployment-based file access detection not yet implemented")
 				continue
