@@ -59,6 +59,20 @@ func (mr *MockDataStoreMockRecorder) AddPolicyCategory(arg0, arg1 any) *gomock.C
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddPolicyCategory", reflect.TypeOf((*MockDataStore)(nil).AddPolicyCategory), arg0, arg1)
 }
 
+// CleanupCategories mocks base method.
+func (m *MockDataStore) CleanupCategories(ctx context.Context) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CleanupCategories", ctx)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// CleanupCategories indicates an expected call of CleanupCategories.
+func (mr *MockDataStoreMockRecorder) CleanupCategories(ctx any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CleanupCategories", reflect.TypeOf((*MockDataStore)(nil).CleanupCategories), ctx)
+}
+
 // Count mocks base method.
 func (m *MockDataStore) Count(ctx context.Context, q *v1.Query) (int, error) {
 	m.ctrl.T.Helper()

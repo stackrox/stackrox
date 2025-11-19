@@ -91,7 +91,10 @@ func addDefaults(s policyStore.Store, categoriesDS categoriesDS.DataStore, fullS
 			panic(err)
 		}
 	}
-	categoriesDS.CleanupCategories(sac.WithAllAccess(context.Background()))
+	err = categoriesDS.CleanupCategories(sac.WithAllAccess(context.Background()))
+	if err != nil {
+		panic(err)
+	}
 
 	// Preload the default policies.
 	defaultPolicies, err := policies.DefaultPolicies()
