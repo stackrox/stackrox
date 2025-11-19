@@ -1,14 +1,15 @@
 package utils
 
 import (
-	"regexp"
 	"strings"
 
 	"github.com/stackrox/rox/generated/storage"
+	"golang.org/x/text/cases"
+	"golang.org/x/text/language"
 )
 
 var (
-	uppercaseRegex = regexp.MustCompile("[A-Z]")
+	titleCase = cases.Title(language.English)
 )
 
 // GetCategoryNameToIDs gets a map of category name to category id
@@ -16,7 +17,10 @@ func GetCategoryNameToIDs(categories []*storage.PolicyCategory) map[string]strin
 	lowerNameIDMap := make(map[string]*storage.PolicyCategory)
 	nameIDMap := make(map[string]string, len(categories))
 	for _, c := range categories {
-		if entry, found := lowerNameIDMap[strings.ToLower(c.GetName())]; found && IsMoreUppercase(entry.GetName(), c.GetName()) {
+		// ROX-31406
+		// If the entry exists, but the one we're looking at doesn't match the titleCase spec, we want to use this, as
+		// it's likely "more uppercase" than the current candidate for this name.
+		if entry, found := lowerNameIDMap[strings.ToLower(c.GetName())]; found && titleCase.String(c.GetName()) != entry.GetName() {
 			lowerNameIDMap[strings.ToLower(entry.GetName())] = c
 		} else if !found {
 			lowerNameIDMap[strings.ToLower(c.GetName())] = c
@@ -35,8 +39,4 @@ func GetCategoryIDToNames(categories []*storage.PolicyCategory) map[string]strin
 		idNameMap[c.GetId()] = c.GetName()
 	}
 	return idNameMap
-}
-
-func IsMoreUppercase(current string, contender string) bool {
-	return len(uppercaseRegex.FindAllStringIndex(contender, -1)) >= len(uppercaseRegex.FindAllStringIndex(current, -1))
 }

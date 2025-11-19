@@ -7,7 +7,6 @@ import (
 
 	errorsPkg "github.com/pkg/errors"
 	"github.com/stackrox/rox/central/policycategory/store"
-	"github.com/stackrox/rox/central/policycategory/utils"
 	"github.com/stackrox/rox/central/policycategory/views"
 	"github.com/stackrox/rox/central/policycategoryedge/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -36,7 +35,8 @@ var (
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
 			sac.ResourceScopeKeys(resources.WorkflowAdministration)))
 
-	titleCase = cases.Title(language.English, cases.NoLower)
+	titleCase          = cases.Title(language.English, cases.NoLower)
+	incorrectTitleCase = cases.Title(language.English)
 )
 
 type datastoreImpl struct {
@@ -360,22 +360,22 @@ func (ds *datastoreImpl) GetDuplicatePolicyCategories(ctx context.Context) ([]*v
 
 func (ds *datastoreImpl) CleanupCategories(ctx context.Context) error {
 	categories := make(map[string]*struct {
-		mostUppercase string
-		list          []*storage.PolicyCategory
+		trueCategory string
+		list         []*storage.PolicyCategory
 	})
 	err := ds.storage.Walk(ctx, func(c *storage.PolicyCategory) error {
 		lowerName := strings.ToLower(c.GetName())
 		if _, found := categories[lowerName]; !found {
 			categories[lowerName] = &struct {
-				mostUppercase string
-				list          []*storage.PolicyCategory
+				trueCategory string
+				list         []*storage.PolicyCategory
 			}{
-				mostUppercase: "",
-				list:          make([]*storage.PolicyCategory, 0),
+				trueCategory: "",
+				list:         make([]*storage.PolicyCategory, 0),
 			}
 		}
-		if utils.IsMoreUppercase(categories[lowerName].mostUppercase, c.GetName()) {
-			categories[lowerName].mostUppercase = c.GetName()
+		if incorrectTitleCase.String(c.GetName()) != c.GetName() {
+			categories[lowerName].trueCategory = c.GetName()
 		}
 		categories[lowerName].list = append(categories[lowerName].list, c)
 		return nil
@@ -386,7 +386,7 @@ func (ds *datastoreImpl) CleanupCategories(ctx context.Context) error {
 	toDelete := make([]string, 0)
 	for _, entry := range categories {
 		for _, category := range entry.list {
-			if category.GetName() != entry.mostUppercase {
+			if category.GetName() != entry.trueCategory {
 				toDelete = append(toDelete, category.GetId())
 			}
 		}
