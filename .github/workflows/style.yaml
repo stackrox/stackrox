@@ -24,7 +24,7 @@ jobs:
       ARTIFACT_DIR: junit-reports/
     runs-on: ubuntu-latest
     container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.4.9-3-g197bcc25d6
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.0-4-g8a36701699
     steps:
     - name: Checkout
       uses: actions/checkout@v5
@@ -50,7 +50,7 @@ jobs:
       ARTIFACT_DIR: junit-reports/
     runs-on: ubuntu-latest
     container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.4.9-3-g197bcc25d6
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.0-4-g8a36701699
     steps:
     - name: Checkout
       uses: actions/checkout@v5
@@ -91,7 +91,7 @@ jobs:
   style-check:
     runs-on: ubuntu-latest
     container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.4.9-3-g197bcc25d6
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.0-4-g8a36701699
       volumes:
         - /usr:/mnt/usr
         - /opt:/mnt/opt
@@ -126,7 +126,7 @@ jobs:
     timeout-minutes: 240
     runs-on: ubuntu-latest
     container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.4.9-3-g197bcc25d6
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.0-4-g8a36701699
       volumes:
         - /usr:/mnt/usr
         - /opt:/mnt/opt
@@ -237,7 +237,7 @@ jobs:
   openshift-ci-lint:
     runs-on: ubuntu-latest
     container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.4.9-3-g197bcc25d6
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.0-4-g8a36701699
     steps:
       - name: Checkout
         uses: actions/checkout@v5
