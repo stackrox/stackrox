@@ -71,8 +71,7 @@ const statusDisplays = [
     },
 ] as const;
 
-const disabledColor100 =
-    'var(--pf-t--temp--dev--tbd)'; /* CODEMODS: original v5 color was --pf-v5-global--disabled-color--100 */
+const disabledColor = 'var(--pf-t--global--text--color--disabled)';
 
 const statusHiddenText = {
     Fixable: 'Fixable hidden',
@@ -106,7 +105,7 @@ function CvesByStatusSummaryCard({
                                     <Content
                                         component="p"
                                         style={{
-                                            color: isHidden ? disabledColor100 : 'inherit',
+                                            color: isHidden ? disabledColor : 'inherit',
                                         }}
                                     >
                                         {isHidden

@@ -56,7 +56,7 @@
 }
 
 .pf-ri-topology__node__background.pf-m-selected {
-    fill: var(--pf-t--temp--dev--tbd /* CODEMODS: original v5 color was:--pf-v5-global--active-color--100 */);
+    fill: var(--pf-t--global--focus-ring--color--default);
 }
 
 .pf-ri-topology__node__background.pf-m-hover {

@@ -112,11 +112,6 @@ button[data-testid="related-entity-value"]:hover,
     pointer-events: none;
 }
 
-/* SimpleListItem in policy categories: specify color instead of depending on opacity. */
-.pf-v6-c-simple-list button:disabled {
-    color: var(--pf-t--temp--dev--tbd /* CODEMODS: original v5 color was:--pf-v5-global--disabled-color--100 */);
-}
-
 .pf-v6-c-select__toggle:not(.pf-m-plain)::before {
     position: absolute;
     top: 0;
@@ -222,11 +217,6 @@ select {
 .pf-v6-c-form__group input[type="checkbox"]:disabled {
     cursor: not-allowed;
     border-color: revert;
-}
-.pf-v6-c-table__check input[type="checkbox"]:checked:disabled,
-.pf-v6-c-form__group input[type="checkbox"]:checked:disabled {
-    background-color: var(--pf-t--temp--dev--tbd /* CODEMODS: original v5 color was:--pf-v5-global--disabled-color--200 */);
-    border-color: transparent;
 }
 
 /* fixes flattened radio buttons caused by tailwind appearance when using pf standalone radio button */

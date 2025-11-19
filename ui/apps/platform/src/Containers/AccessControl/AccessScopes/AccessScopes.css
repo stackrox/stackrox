@@ -80,8 +80,8 @@ table .pf-v6-c-dropdown__toggle.pf-m-plain svg {
  * Disabled primary Dropdown needs same colors as Button.
  */
 #access-scope-form .pf-v6-c-dropdown__toggle.pf-m-primary[disabled] {
-    background-color: var(--pf-t--temp--dev--tbd /* CODEMODS: original v5 color was:--pf-v5-global--disabled-color--200 */);
-    color: var(--pf-t--temp--dev--tbd /* CODEMODS: original v5 color was:--pf-v5-global--disabled-color--100 */);
+    background-color: var(--pf-t--global--background--color--disabled--default);
+    color: var(--pf-t--global--text--color--on-disabled);
 }
 
 /*
