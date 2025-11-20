@@ -419,14 +419,10 @@ func (w *WorkloadManager) manageDeployment(ctx context.Context, resources *deplo
 }
 
 func (w *WorkloadManager) manageDeploymentLifecycle(ctx context.Context, resources *deploymentResourcesToBeManaged) {
-	lifecycleDelay := resources.workload.LifecycleDuration / 2
-	if resources.workload.LifecycleDuration > 0 {
-		lifecycleDelay += time.Duration(rand.Int63n(int64(resources.workload.LifecycleDuration)))
-	}
-	lifecycleCh := time.After(calculateDurationWithJitter(lifecycleDelay))
+	lifecycleTimer := newTimerWithJitter(resources.workload.LifecycleDuration/2 + time.Duration(rand.Int63n(int64(resources.workload.LifecycleDuration))))
+	defer lifecycleTimer.Stop()
 
-	var updateCh <-chan time.Time
-	updateCh = time.After(calculateDurationWithJitter(resources.workload.UpdateInterval))
+	deploymentNextUpdate := calculateDurationWithJitter(resources.workload.UpdateInterval)
 
 	deployment := resources.deployment
 	replicaset := resources.replicaSet
@@ -444,7 +440,7 @@ func (w *WorkloadManager) manageDeploymentLifecycle(ctx context.Context, resourc
 		case <-ctx.Done():
 			stopSig.Signal()
 			return
-		case <-lifecycleCh:
+		case <-lifecycleTimer.C:
 			stopSig.Signal()
 			if err := deploymentClient.Delete(ctx, deployment.Name, metav1.DeleteOptions{}); err != nil {
 				log.Error(err)
@@ -455,7 +451,9 @@ func (w *WorkloadManager) manageDeploymentLifecycle(ctx context.Context, resourc
 			}
 			w.deleteID(replicaSetPrefix, replicaset.UID)
 			return
-		case <-updateCh:
+		case <-time.After(deploymentNextUpdate):
+			deploymentNextUpdate = calculateDurationWithJitter(resources.workload.UpdateInterval)
+
 			annotations := createRandMap(16, 3)
 
 			deployment.Annotations = annotations
