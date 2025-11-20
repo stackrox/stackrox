@@ -103,9 +103,7 @@ function ClusterLabelsTable({
                                 <Tooltip content="Delete value">
                                     <Button
                                         icon={
-                                            <TimesCircleIcon
-                                                color="var(--pf-t--global--color--status--danger--default)"
-                                            />
+                                            <TimesCircleIcon color="var(--pf-t--global--color--status--danger--default)" />
                                         }
                                         aria-label="Delete value"
                                         variant="plain"
@@ -128,7 +126,7 @@ function ClusterLabelsTable({
                                 ref={refKeyInput}
                             />
                             {validatedKey === ValidatedOptions.error && (
-                                <p className="pf-v6-u-font-size-sm pf-v6-u-danger-color-100">
+                                <p className="pf-v6-u-font-size-sm pf-v6-u-text-color-status-danger">
                                     Invalid label key
                                 </p>
                             )}
@@ -147,7 +145,7 @@ function ClusterLabelsTable({
                                 onKeyPress={onKeyPressValue}
                             />
                             {validatedValue === ValidatedOptions.error && (
-                                <p className="pf-v6-u-font-size-sm pf-v6-u-danger-color-100">
+                                <p className="pf-v6-u-font-size-sm pf-v6-u-text-color-status-danger">
                                     {valueInput.length === 0
                                         ? 'Label value is required'
                                         : 'Invalid label value'}
