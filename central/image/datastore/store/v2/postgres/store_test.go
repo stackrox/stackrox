@@ -13,6 +13,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/fixtures"
+	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/protoassert"
@@ -282,6 +283,13 @@ func (s *ImagesStoreSuite) TestGetManyImageMetadata() {
 	returnedImages, err = s.store.GetManyImageMetadata(s.ctx, searchedIndexes)
 	s.NoError(err)
 	s.Equal(2, len(returnedImages))
+
+	tx, err := s.testDB.Begin(s.ctx)
+	defer tx.Rollback(s.ctx)
+	ctx := postgres.ContextWithTx(s.ctx, tx)
+	_, ok, err := s.store.GetImageMetadata(ctx, image.GetId())
+	s.NoError(err)
+	s.True(ok)
 }
 
 func (s *ImagesStoreSuite) TestWalkByQuery() {
@@ -309,6 +317,11 @@ func (s *ImagesStoreSuite) TestWalkByQuery() {
 
 	q := search.NewQueryBuilder().AddExactMatches(search.ImageSHA, image.GetId()).ProtoQuery()
 	s.NoError(s.store.WalkByQuery(s.ctx, q, walkFn))
+
+	tx, err := s.testDB.Begin(s.ctx)
+	defer tx.Rollback(s.ctx)
+	ctx := postgres.ContextWithTx(s.ctx, tx)
+	s.NoError(s.store.WalkByQuery(ctx, q, walkFn))
 }
 
 func (s *ImagesStoreSuite) TestGetMany() {
