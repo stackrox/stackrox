@@ -69,13 +69,7 @@ func (s *storeImpl) get(ctx context.Context) (*storage.SystemInfo, bool, error) 
 		return nil, false, errox.NotAuthorized
 	}
 
-	conn, release, err := s.acquireConn(ctx, ops.Get, "SystemInfo")
-	if err != nil {
-		return nil, false, err
-	}
-	defer release()
-
-	row := conn.QueryRow(ctx, getStmt)
+	row := s.db.QueryRow(ctx, getStmt)
 	var data []byte
 	if err := row.Scan(&data); err != nil {
 		return nil, false, pgutils.ErrNilIfNoRows(err)
@@ -93,31 +87,25 @@ func (s *storeImpl) retryableUpsert(ctx context.Context, obj *storage.SystemInfo
 		return err
 	}
 
-	conn, release, err := s.acquireConn(ctx, ops.Get, "Version")
-	if err != nil {
-		return err
-	}
-	defer release()
-
-	tx, ctx, err := conn.Begin(ctx)
+	tx, ctx, err := s.begin(ctx)
 	if err != nil {
 		return err
 	}
 
 	if _, err := tx.Exec(ctx, deleteStmt); err != nil {
+		if errTx := tx.Rollback(ctx); errTx != nil {
+			return errTx
+		}
 		return err
 	}
 
 	if err := insert(ctx, tx, obj); err != nil {
-		if err := tx.Rollback(ctx); err != nil {
-			return err
+		if errTx := tx.Rollback(ctx); errTx != nil {
+			return errTx
 		}
 		return err
 	}
-	if err := tx.Commit(ctx); err != nil {
-		return err
-	}
-	return nil
+	return tx.Commit(ctx)
 }
 
 func (s *storeImpl) retryableDelete(ctx context.Context) error {
@@ -126,25 +114,12 @@ func (s *storeImpl) retryableDelete(ctx context.Context) error {
 		return sac.ErrResourceAccessDenied
 	}
 
-	conn, release, err := s.acquireConn(ctx, ops.Remove, "SystemInfo")
-	if err != nil {
-		return err
-	}
-	defer release()
-
-	if _, err := conn.Exec(ctx, deleteStmt); err != nil {
-		return err
-	}
-	return nil
+	_, err := s.db.Exec(ctx, deleteStmt)
+	return err
 }
 
-func (s *storeImpl) acquireConn(ctx context.Context, op ops.Op, typ string) (*postgres.Conn, func(), error) {
-	defer metrics.SetAcquireDBConnDuration(time.Now(), op, typ)
-	conn, err := s.db.Acquire(ctx)
-	if err != nil {
-		return nil, nil, err
-	}
-	return conn, conn.Release, nil
+func (s *storeImpl) begin(ctx context.Context) (*postgres.Tx, context.Context, error) {
+	return postgres.NewTransactionOrFromContext(ctx, s.db)
 }
 
 func insert(ctx context.Context, tx *postgres.Tx, obj *storage.SystemInfo) error {
