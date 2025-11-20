@@ -407,13 +407,6 @@ func (w *WorkloadManager) reverifyAfterDelay(cids []uint32, delay time.Duration,
 	}
 }
 
-func min(a, b int) int {
-	if a < b {
-		return a
-	}
-	return b
-}
-
 // Stop gracefully stops all background goroutines managed by WorkloadManager.
 // This should be called before shutting down the process pipeline to prevent
 // sending signals on closed channels.
