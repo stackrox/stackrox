@@ -29,6 +29,7 @@ operator/tests/img/*.png
 pkg/booleanpolicy/default_policies_test.go
 pkg/branding/files/red_hat_acs_logo_rgb.png
 pkg/branding/files/stackrox_integration_logo.png
+pkg/continuousprofiling/docs/img/*.png
 pkg/cve/testdata_IDV2Golden.txt
 pkg/docker/types/types_easyjson.go
 pkg/fixtures/graph.go
