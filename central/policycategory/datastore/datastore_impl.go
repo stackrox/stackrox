@@ -374,7 +374,7 @@ func (ds *datastoreImpl) CleanupCategories(ctx context.Context) error {
 				list:         make([]*storage.PolicyCategory, 0),
 			}
 		}
-		if incorrectTitleCase.String(c.GetName()) != c.GetName() {
+		if len(categories[lowerName].list) == 0 || incorrectTitleCase.String(c.GetName()) != c.GetName() {
 			categories[lowerName].trueCategory = c.GetName()
 		}
 		categories[lowerName].list = append(categories[lowerName].list, c)
