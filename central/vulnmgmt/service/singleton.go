@@ -1,8 +1,8 @@
 package service
 
 import (
-	"github.com/stackrox/rox/central/globaldb"
 	deploymentDS "github.com/stackrox/rox/central/deployment/datastore"
+	"github.com/stackrox/rox/central/globaldb"
 	imageDS "github.com/stackrox/rox/central/imagev2/datastore/mapper/datastore"
 	podDS "github.com/stackrox/rox/central/pod/datastore"
 	"github.com/stackrox/rox/pkg/sync"
