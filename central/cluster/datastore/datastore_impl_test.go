@@ -521,6 +521,199 @@ func (s *clusterDataStoreTestSuite) TestPostRemoveCluster_allErrors() {
 		Return(nil, testError)
 
 	// 7. Remove pods
+	s.podDS.EXPECT().
+		Search(gomock.Any(), matchClusterIDSearchQuery).
+		Times(1).
+		Return(nil, testError)
+
+	// 8. Delete all nodes for cluster
+	s.nodeDS.EXPECT().
+		DeleteAllNodesForCluster(gomock.Any(), clusterID).
+		Times(1).
+		Return(testError)
+
+	// 9. Delete external network entities for cluster
+	s.networkEntityDS.EXPECT().
+		DeleteExternalNetworkEntitiesForCluster(gomock.Any(), clusterID).
+		Times(1).
+		Return(testError)
+
+	// 10. Remove flow store
+	s.networkFlowClusterDS.EXPECT().
+		RemoveFlowStore(gomock.Any(), clusterID).
+		Times(1).
+		Return(testError)
+
+	// 11. Remove compliance resources (if feature enabled)
+	if features.ComplianceEnhancements.Enabled() {
+		s.compliancePruner.EXPECT().
+			RemoveComplianceResourcesByCluster(gomock.Any(), clusterID).
+			Times(1)
+	}
+
+	// 12. Process network baseline deletion
+	s.networkBaselineMgr.EXPECT().
+		ProcessPostClusterDelete([]string{deployment1ID, deployment2ID}).
+		Times(1).
+		Return(testError)
+
+	// 13. Remove secrets
+	secretID1 := uuid.NewTestUUID(8).String()
+	listSecret1 := &storage.ListSecret{Id: secretID1}
+	s.secretDS.EXPECT().
+		SearchListSecrets(gomock.Any(), matchClusterIDSearchQuery).
+		Times(1).
+		Return(
+			[]*storage.ListSecret{
+				listSecret1,
+			},
+			testError,
+		)
+	s.secretDS.EXPECT().
+		RemoveSecret(gomock.Any(), secretID1).
+		Times(1).
+		Return(testError)
+
+	// 14. Remove service accounts
+	s.serviceAccountDS.EXPECT().
+		Search(gomock.Any(), matchClusterIDSearchQuery).
+		Times(1).
+		Return(nil, testError)
+
+	// 15. Remove K8S roles
+	s.k8sRoleDS.EXPECT().
+		Search(gomock.Any(), matchClusterIDSearchQuery).
+		Times(1).
+		Return(nil, testError)
+
+	// 16. Remove role bindings
+	s.k8sRoleBindingDS.EXPECT().
+		Search(gomock.Any(), matchClusterIDSearchQuery).
+		Times(1).
+		Return(nil, testError)
+
+	// 17. Delete cluster CVEs
+	s.clusterCVEDS.EXPECT().
+		DeleteClusterCVEsInternal(gomock.Any(), clusterID).
+		Times(1).
+		Return(testError)
+
+	ctx := sac.WithAllAccess(s.T().Context())
+	doneSignal := concurrency.NewSignal()
+	s.datastore.postRemoveCluster(ctx, removedCluster, &doneSignal)
+
+	doneSignal.Wait()
+}
+
+func (s *clusterDataStoreTestSuite) TestPostRemoveCluster_searchSuccessRemovalErrors() {
+	clusterID := fixtureconsts.Cluster1
+	removedCluster := &storage.Cluster{
+		Id: clusterID,
+	}
+
+	clusterIDSearchQuery := pkgSearch.NewQueryBuilder().AddExactMatches(pkgSearch.ClusterID, clusterID).ProtoQuery()
+	matchClusterIDSearchQuery := protomock.GoMockMatcherEqualMessage(clusterIDSearchQuery)
+
+	testError := errors.New("test error")
+
+	// Set up expectations for postRemoveCluster calls
+	// 1. Close connection
+	s.sensorConnectionMgr.EXPECT().CloseConnection(clusterID).Times(1)
+
+	// 2. Remove image integrations
+	s.imageIntegrationDS.EXPECT().
+		Search(gomock.Any(), matchClusterIDSearchQuery).
+		Times(1).
+		Return(nil, testError)
+
+	// 3. Delete cluster health
+	s.clusterHealthStore.EXPECT().
+		Delete(gomock.Any(), clusterID).
+		Times(1).
+		Return(testError)
+
+	// 4. Remove from ranker (no mock needed, it's a real object)
+	// s.clusterRanker.Remove(clusterID) - will be called
+
+	// 5. Remove namespaces
+	namespace1ID := fixtureconsts.Namespace1
+	s.namespaceDS.EXPECT().
+		Search(gomock.Any(), matchClusterIDSearchQuery).
+		Times(1).
+		Return(
+			[]pkgSearch.Result{
+				{ID: namespace1ID},
+			},
+			testError,
+		)
+	s.namespaceDS.EXPECT().
+		RemoveNamespace(gomock.Any(), namespace1ID).
+		Times(1).
+		Return(testError)
+
+	// 6. Remove deployments
+	deployment1ID := uuid.NewTestUUID(3).String()
+	deployment2ID := uuid.NewTestUUID(4).String()
+	s.deploymentDS.EXPECT().
+		Search(gomock.Any(), matchClusterIDSearchQuery).
+		Times(1).
+		Return(
+			[]pkgSearch.Result{
+				{ID: deployment1ID},
+				{ID: deployment2ID},
+			},
+			testError,
+		)
+
+	s.deploymentDS.EXPECT().
+		RemoveDeployment(gomock.Any(), clusterID, deployment1ID).
+		Times(1).
+		Return(testError)
+	s.deploymentDS.EXPECT().
+		RemoveDeployment(gomock.Any(), clusterID, deployment2ID).
+		Times(1).
+		Return(testError)
+
+	// For each deployment, get alerts and mark them stale
+	alert1ID := uuid.NewTestUUID(5).String()
+	alert1 := &storage.Alert{Id: alert1ID}
+	matchAlert1 := protomock.GoMockMatcherEqualMessage(alert1)
+	deployment1AlertQuery := pkgSearch.NewQueryBuilder().
+		AddExactMatches(pkgSearch.ViolationState, storage.ViolationState_ACTIVE.String()).
+		AddExactMatches(pkgSearch.DeploymentID, deployment1ID).ProtoQuery()
+	matchDeployment1AlertQuery := protomock.GoMockMatcherEqualMessage(deployment1AlertQuery)
+	s.alertDS.EXPECT().
+		SearchRawAlerts(gomock.Any(), matchDeployment1AlertQuery, true).
+		Times(1).
+		Return(
+			[]*storage.Alert{
+				alert1,
+			},
+			nil,
+		)
+	s.alertDS.EXPECT().
+		MarkAlertsResolvedBatch(gomock.Any(), alert1ID).
+		Times(1).
+		Return(
+			[]*storage.Alert{
+				alert1,
+			},
+			nil,
+		)
+	s.notifierProcessor.EXPECT().
+		ProcessAlert(gomock.Any(), matchAlert1).
+		Times(1)
+
+	deployment2AlertQuery := pkgSearch.NewQueryBuilder().
+		AddExactMatches(pkgSearch.ViolationState, storage.ViolationState_ACTIVE.String()).
+		AddExactMatches(pkgSearch.DeploymentID, deployment2ID).ProtoQuery()
+	matchDeployment2AlertQuery := protomock.GoMockMatcherEqualMessage(deployment2AlertQuery)
+	s.alertDS.EXPECT().
+		SearchRawAlerts(gomock.Any(), matchDeployment2AlertQuery, true).
+		Times(1).
+		Return(nil, testError)
+
+	// 7. Remove pods
 	podID1 := uuid.NewTestUUID(7).String()
 	s.podDS.EXPECT().
 		Search(gomock.Any(), matchClusterIDSearchQuery).
@@ -529,7 +722,7 @@ func (s *clusterDataStoreTestSuite) TestPostRemoveCluster_allErrors() {
 			[]pkgSearch.Result{
 				{ID: podID1},
 			},
-			testError,
+			nil,
 		)
 	s.podDS.EXPECT().
 		RemovePod(gomock.Any(), podID1).
@@ -595,7 +788,7 @@ func (s *clusterDataStoreTestSuite) TestPostRemoveCluster_allErrors() {
 				{ID: serviceAccount1ID},
 				{ID: serviceAccount2ID},
 			},
-			testError,
+			nil,
 		)
 	s.serviceAccountDS.EXPECT().
 		RemoveServiceAccount(gomock.Any(), serviceAccount1ID).
@@ -615,7 +808,7 @@ func (s *clusterDataStoreTestSuite) TestPostRemoveCluster_allErrors() {
 			[]pkgSearch.Result{
 				{ID: k8sRole1ID},
 			},
-			testError,
+			nil,
 		)
 	s.k8sRoleDS.EXPECT().
 		RemoveRole(gomock.Any(), k8sRole1ID).
@@ -631,7 +824,7 @@ func (s *clusterDataStoreTestSuite) TestPostRemoveCluster_allErrors() {
 			[]pkgSearch.Result{
 				{ID: k8soleBinding1ID},
 			},
-			testError,
+			nil,
 		)
 	s.k8sRoleBindingDS.EXPECT().
 		RemoveRoleBinding(gomock.Any(), k8soleBinding1ID).
