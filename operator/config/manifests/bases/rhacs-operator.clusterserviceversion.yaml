@@ -128,6 +128,15 @@ spec:
           The default is: Enabled.
         displayName: Config as Code component
         path: configAsCode.configAsCodeComponent
+      - description: |-
+          Pin all Deployment-based components to specific node types. This is a convenience setting
+          that automatically configures both nodeSelector and tolerations with predefined values.
+          Use this for common scenarios like running on OpenShift infrastructure nodes.
+          For custom node selection, use the explicit nodeSelector and tolerations fields instead.
+          Cannot be used together with nodeSelector or tolerations fields.
+          The default is: None.
+        displayName: Pin To Nodes
+        path: customize.deploymentDefaults.pinToNodes
       - description: Custom labels to set on all managed objects.
         displayName: Labels
         path: customize.labels
@@ -294,6 +303,12 @@ spec:
       - description: Custom annotations to set on all managed objects.
         displayName: Annotations
         path: customize.annotations
+      - description: |-
+          Default nodeSelector applied to all Deployment-based components. Use this for custom node
+          selection criteria.
+          Cannot be used together with pinToNodes.
+        displayName: Node Selector
+        path: customize.deploymentDefaults.nodeSelector
       - description: Resource kind.
         displayName: Kind
         path: overlays[0].kind
@@ -387,6 +402,12 @@ spec:
           Defaults to the Central certificate authority.
         displayName: Destination CA Certificate
         path: central.exposure.route.reencrypt.tls.destinationCACertificate
+      - description: |-
+          Default tolerations applied to all Deployment-based components. Use this when your target
+          nodes have custom taints that pods must tolerate.
+          Cannot be used together with pinToNodes.
+        displayName: Tolerations
+        path: customize.deploymentDefaults.tolerations
       - description: Custom environment variables to set on managed pods' containers.
         displayName: Environment Variables
         path: customize.envVars
@@ -451,6 +472,11 @@ spec:
           Prometheus compatible format.
         displayName: Monitoring
         path: central.monitoring
+      - description: |-
+          Global nodeSelector and tolerations for Deployment-based components. DaemonSets (Collector) are not affected.
+          Component-level nodeSelector and tolerations settings override these defaults on a field-by-field basis.
+        displayName: Deployment Defaults
+        path: customize.deploymentDefaults
       - description: Settings related to outgoing network traffic.
         displayName: Egress
         path: egress
@@ -905,6 +931,15 @@ spec:
           and re-create this object in order to register a cluster with a new name.
         displayName: Cluster Name
         path: clusterName
+      - description: |-
+          Pin all Deployment-based components to specific node types. This is a convenience setting
+          that automatically configures both nodeSelector and tolerations with predefined values.
+          Use this for common scenarios like running on OpenShift infrastructure nodes.
+          For custom node selection, use the explicit nodeSelector and tolerations fields instead.
+          Cannot be used together with nodeSelector or tolerations fields.
+          The default is: None.
+        displayName: Pin To Nodes
+        path: customize.deploymentDefaults.pinToNodes
       - description: Custom labels to set on all managed objects.
         displayName: Labels
         path: customize.labels
@@ -1039,6 +1074,12 @@ spec:
       - description: Custom annotations to set on all managed objects.
         displayName: Annotations
         path: customize.annotations
+      - description: |-
+          Default nodeSelector applied to all Deployment-based components. Use this for custom node
+          selection criteria.
+          Cannot be used together with pinToNodes.
+        displayName: Node Selector
+        path: customize.deploymentDefaults.nodeSelector
       - description: Resource kind.
         displayName: Kind
         path: overlays[0].kind
@@ -1091,6 +1132,12 @@ spec:
           The default is: Ignore.
         displayName: Failure Policy
         path: admissionControl.failurePolicy
+      - description: |-
+          Default tolerations applied to all Deployment-based components. Use this when your target
+          nodes have custom taints that pods must tolerate.
+          Cannot be used together with pinToNodes.
+        displayName: Tolerations
+        path: customize.deploymentDefaults.tolerations
       - description: Custom environment variables to set on managed pods' containers.
         displayName: Environment Variables
         path: customize.envVars
@@ -1146,6 +1193,11 @@ spec:
           and for Kubernetes event monitoring.
         displayName: Admission Control Settings
         path: admissionControl
+      - description: |-
+          Global nodeSelector and tolerations for Deployment-based components. DaemonSets (Collector) are not affected.
+          Component-level nodeSelector and tolerations settings override these defaults on a field-by-field basis.
+        displayName: Deployment Defaults
+        path: customize.deploymentDefaults
       - description: |-
           Optional marks the overlay as optional.
           When Optional is true, and the specified resource does not exist in the output manifests, the overlay will be skipped, and a warning will be logged.
