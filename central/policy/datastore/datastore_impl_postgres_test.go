@@ -497,7 +497,7 @@ func (s *PolicyPostgresDataStoreTestSuite) TestGetAllPoliciesReturnsFilledCatego
 		{
 			name:               "Policy With Multiple Categories",
 			categories:         []string{"DevOps Best Practices", "Security Best Practices"},
-			expectedCategories: []string{"Devops Best Practices", "Security Best Practices"},
+			expectedCategories: []string{"DevOps Best Practices", "Security Best Practices"},
 		},
 		{
 			name:               "Policy With Single Category",
