@@ -28,7 +28,6 @@ import (
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/sensor/common/centralclient"
 	"github.com/stackrox/rox/sensor/common/clusterid"
-	"github.com/stackrox/rox/sensor/common/processsignal"
 	commonSensor "github.com/stackrox/rox/sensor/common/sensor"
 	centralDebug "github.com/stackrox/rox/sensor/debugger/central"
 	"github.com/stackrox/rox/sensor/debugger/certs"
@@ -235,7 +234,7 @@ func writeMemoryProfile() {
 
 // stopSensorAndWorkload stops the workload manager and sensor in the correct order.
 // This function is idempotent and safe to call multiple times.
-func stopSensorAndWorkload(workloadManager *fake.WorkloadManager, sensor *commonSensor.Sensor, pipeline *processsignal.Pipeline) {
+func stopSensorAndWorkload(workloadManager *fake.WorkloadManager, sensor *commonSensor.Sensor, pipeline sensor.ProcessPipelineHandle) {
 	// Stop fake workload goroutines before shutting down sensor to prevent sending on closed channels
 	// Stop() is idempotent - canceling an already-canceled context is safe, and WaitGroup.Wait()
 	// on an already-waited WaitGroup returns immediately.
@@ -252,7 +251,7 @@ func stopSensorAndWorkload(workloadManager *fake.WorkloadManager, sensor *common
 	}
 }
 
-func registerHostKillSignals(startTime time.Time, fakeCentral *centralDebug.FakeService, writeMemProfile bool, outfile string, outputFormat string, cancelFunc context.CancelFunc, sensor *commonSensor.Sensor, workloadManager *fake.WorkloadManager, pipeline *processsignal.Pipeline) {
+func registerHostKillSignals(startTime time.Time, fakeCentral *centralDebug.FakeService, writeMemProfile bool, outfile string, outputFormat string, cancelFunc context.CancelFunc, sensor *commonSensor.Sensor, workloadManager *fake.WorkloadManager, pipeline sensor.ProcessPipelineHandle) {
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
 	<-ctx.Done()
@@ -295,7 +294,7 @@ func main() {
 	}
 	var (
 		workloadManager *fake.WorkloadManager
-		processPipeline *processsignal.Pipeline
+		processPipeline sensor.ProcessPipelineHandle
 	)
 	// if we are using a fake workload we don't want to connect to a real K8s cluster
 	if localConfig.FakeWorkloadFile != "" {
@@ -354,7 +353,7 @@ func main() {
 		WithCertLoader(certLoader).
 		WithLocalSensor(true).
 		WithWorkloadManager(workloadManager).
-		WithProcessPipelineObserver(func(p *processsignal.Pipeline) {
+		WithProcessPipelineObserver(func(p sensor.ProcessPipelineHandle) {
 			processPipeline = p
 		})
 

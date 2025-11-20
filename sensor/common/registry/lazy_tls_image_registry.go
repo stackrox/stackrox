@@ -13,7 +13,6 @@ import (
 	"github.com/stackrox/rox/pkg/tlscheckcache"
 	"github.com/stackrox/rox/pkg/urlfmt"
 	"github.com/stackrox/rox/pkg/utils"
-
 	pkgerrors "github.com/pkg/errors"
 )
 

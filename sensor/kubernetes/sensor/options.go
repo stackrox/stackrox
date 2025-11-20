@@ -9,7 +9,6 @@ import (
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/sensor/queue"
 	"github.com/stackrox/rox/sensor/common/centralclient"
-	"github.com/stackrox/rox/sensor/common/processsignal"
 	"github.com/stackrox/rox/sensor/kubernetes/client"
 	"github.com/stackrox/rox/sensor/kubernetes/fake"
 )
@@ -32,7 +31,12 @@ type CreateOptions struct {
 	processIndicatorWriter             io.Writer
 	networkFlowTicker                  <-chan time.Time
 	deploymentIdentification           *storage.SensorDeploymentIdentification
-	processPipelineObserver            func(*processsignal.Pipeline)
+	processPipelineObserver            func(ProcessPipelineHandle)
+}
+
+// ProcessPipelineHandle exposes the subset of process pipeline functionality external callers need.
+type ProcessPipelineHandle interface {
+	WaitForShutdown() error
 }
 
 type clusterIDHandler interface {
@@ -160,7 +164,7 @@ func (cfg *CreateOptions) WithProcessIndicatorTraceWriter(writer io.Writer) *Cre
 // WithProcessPipelineObserver exposes the created process pipeline (used by local-sensor).
 // Without this hook, local-sensor cannot await pipeline shutdown and would continue to log
 // errors or panic on late-arriving process signals after Ctrl-C.
-func (cfg *CreateOptions) WithProcessPipelineObserver(observer func(*processsignal.Pipeline)) *CreateOptions {
+func (cfg *CreateOptions) WithProcessPipelineObserver(observer func(ProcessPipelineHandle)) *CreateOptions {
 	cfg.processPipelineObserver = observer
 	return cfg
 }
