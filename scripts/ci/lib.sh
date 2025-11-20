@@ -83,21 +83,25 @@ handle_dangling_processes() {
     info "Process state at exit:"
     ps -e -O ppid
 
-    local psline this_pid pid
-    ps -e -O ppid | while read -r psline; do
+    local psline pid ppid
+    ps -e -O ppid | while read -r pid ppid psline; do
+        # Example output:
+        #     PID    PPID S TTY          TIME COMMAND
+        #       1       0 S ?        00:00:00 /tmp/entrypoint-wrapper/entrypoint-wrapper /tools/entrypoint
+        # [...]
+        #  179283      25 R ?        00:00:00 ps -e -O ppid
+
         # trim leading whitespace
-        psline="$(echo "$psline" | xargs)"
-        if [[ "$psline" =~ ^PID ]]; then
+        psline="$pid $ppid $psline"
+        if [[ "$pid" == "PID" ]]; then
             # Ignoring header
             continue
         fi
-        this_pid="$$"
-        if [[ "$psline" =~ ^$this_pid ]]; then
+        if [[ "$pid" == "$$" ]]; then
             echo "Ignoring self: $psline"
             continue
         fi
-        # shellcheck disable=SC1087
-        if [[ "$psline" =~ [[:space:]]$this_pid[[:space:]] ]]; then
+        if [[ "$ppid" == "$$" ]]; then
             echo "Ignoring child: $psline"
             continue
         fi
@@ -106,7 +110,6 @@ handle_dangling_processes() {
             continue
         fi
         echo "A candidate to kill: $psline"
-        pid="$(echo "$psline" | cut -d' ' -f1)"
         echo "Will kill $pid"
         kill "$pid" || {
             echo "Error killing $pid"
