@@ -235,9 +235,8 @@ func writeMemoryProfile() {
 // stopSensorAndWorkload stops the workload manager and sensor in the correct order.
 // This function is idempotent and safe to call multiple times.
 func stopSensorAndWorkload(workloadManager *fake.WorkloadManager, sensor *commonSensor.Sensor, pipeline sensor.ProcessPipelineHandle) {
-	// Stop fake workload goroutines before shutting down sensor to prevent sending on closed channels
-	// Stop() is idempotent - canceling an already-canceled context is safe, and WaitGroup.Wait()
-	// on an already-waited WaitGroup returns immediately.
+	// Stop fake workload goroutines before shutting down sensor to prevent sending on closed channels.
+	// Stop() is idempotent and can be called multiple times.
 	if workloadManager != nil {
 		workloadManager.Stop()
 	}
