@@ -30,8 +30,9 @@ const _Stage_name = "UnsetStageCleanupForeignStateStageSnapshotForRollForwardSta
 var _Stage_index = [...]uint16{0, 10, 34, 61, 85, 107, 123, 145, 162, 187, 201, 221, 233, 250, 270, 289}
 
 func (i Stage) String() string {
-	if i < 0 || i >= Stage(len(_Stage_index)-1) {
+	idx := int(i) - 0
+	if i < 0 || idx >= len(_Stage_index)-1 {
 		return "Stage(" + strconv.FormatInt(int64(i), 10) + ")"
 	}
-	return _Stage_name[_Stage_index[i]:_Stage_index[i+1]]
+	return _Stage_name[_Stage_index[idx]:_Stage_index[idx+1]]
 }

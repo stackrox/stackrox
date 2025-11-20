@@ -21,8 +21,9 @@ const _DerivationType_name = "CountDerivationTypeSimpleReverseSortDerivationType
 var _DerivationType_index = [...]uint8{0, 19, 50, 67, 82, 99, 127}
 
 func (i DerivationType) String() string {
-	if i < 0 || i >= DerivationType(len(_DerivationType_index)-1) {
+	idx := int(i) - 0
+	if i < 0 || idx >= len(_DerivationType_index)-1 {
 		return "DerivationType(" + strconv.FormatInt(int64(i), 10) + ")"
 	}
-	return _DerivationType_name[_DerivationType_index[i]:_DerivationType_index[i+1]]
+	return _DerivationType_name[_DerivationType_index[idx]:_DerivationType_index[idx+1]]
 }
