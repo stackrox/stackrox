@@ -417,7 +417,7 @@ func TestSetScannerV4ComponentValues(t *testing.T) {
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
 			vb := NewValuesBuilder()
-			SetScannerV4ComponentValues(&vb, tt.componentKey, tt.component)
+			SetScannerV4ComponentValues(&vb, tt.componentKey, tt.component, nil, nil)
 			values, err := vb.Build()
 			if tt.wantErr {
 				require.NotNil(t, err)
@@ -644,7 +644,7 @@ func TestSetScannerV4DBValues(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			vb := NewValuesBuilder()
 			client := fkClient.NewFakeClient(tt.fakeObjects...)
-			SetScannerV4DBValues(context.Background(), &vb, tt.db, tt.kind, "test-namespace", client)
+			SetScannerV4DBValues(context.Background(), &vb, tt.db, tt.kind, "test-namespace", client, nil, nil)
 			values, err := vb.Build()
 			if tt.wantErr {
 				require.NotNil(t, err)
@@ -767,6 +767,219 @@ func TestGetNetworkComponentValues(t *testing.T) {
 			require.NoError(t, err, "error in test specification: cannot translate `want` specification to Helm values")
 
 			assert.Equal(t, wantAsValues, values)
+		})
+	}
+}
+
+func TestGetDeploymentDefaults(t *testing.T) {
+	tests := map[string]struct {
+		customize        *platform.CustomizeSpec
+		wantNodeSelector map[string]string
+		wantTolerations  []*corev1.Toleration
+	}{
+		"nil customize": {
+			customize:        nil,
+			wantNodeSelector: nil,
+			wantTolerations:  nil,
+		},
+		"nil deploymentDefaults": {
+			customize: &platform.CustomizeSpec{
+				DeploymentDefaults: nil,
+			},
+			wantNodeSelector: nil,
+			wantTolerations:  nil,
+		},
+		"pinToNodes None": {
+			customize: &platform.CustomizeSpec{
+				DeploymentDefaults: &platform.DeploymentDefaultsSpec{
+					PinToNodes: pointers.Pointer(platform.PinToNodesNone),
+				},
+			},
+			wantNodeSelector: nil,
+			wantTolerations:  nil,
+		},
+		"pinToNodes InfraRole": {
+			customize: &platform.CustomizeSpec{
+				DeploymentDefaults: &platform.DeploymentDefaultsSpec{
+					PinToNodes: pointers.Pointer(platform.PinToNodesInfraRole),
+				},
+			},
+			wantNodeSelector: map[string]string{
+				"node-role.kubernetes.io/infra": "",
+			},
+			wantTolerations: []*corev1.Toleration{
+				{
+					Key:      "node-role.kubernetes.io/infra",
+					Value:    "reserved",
+					Effect:   corev1.TaintEffectNoSchedule,
+					Operator: corev1.TolerationOpEqual,
+				},
+				{
+					Key:      "node-role.kubernetes.io/infra",
+					Value:    "reserved",
+					Effect:   corev1.TaintEffectNoExecute,
+					Operator: corev1.TolerationOpEqual,
+				},
+			},
+		},
+		"explicit nodeSelector only": {
+			customize: &platform.CustomizeSpec{
+				DeploymentDefaults: &platform.DeploymentDefaultsSpec{
+					NodeSelector: map[string]string{
+						"global-node-selector-label1": "global-node-selector-value1",
+					},
+				},
+			},
+			wantNodeSelector: map[string]string{
+				"global-node-selector-label1": "global-node-selector-value1",
+			},
+			wantTolerations: nil,
+		},
+		"explicit tolerations only": {
+			customize: &platform.CustomizeSpec{
+				DeploymentDefaults: &platform.DeploymentDefaultsSpec{
+					Tolerations: []*corev1.Toleration{
+						{Key: "node.stackrox.io", Value: "false", Operator: corev1.TolerationOpEqual},
+					},
+				},
+			},
+			wantNodeSelector: nil,
+			wantTolerations: []*corev1.Toleration{
+				{Key: "node.stackrox.io", Value: "false", Operator: corev1.TolerationOpEqual},
+			},
+		},
+		"explicit nodeSelector and tolerations": {
+			customize: &platform.CustomizeSpec{
+				DeploymentDefaults: &platform.DeploymentDefaultsSpec{
+					NodeSelector: map[string]string{
+						"global-node-selector-label1": "global-node-selector-value1",
+					},
+					Tolerations: []*corev1.Toleration{
+						{Key: "node.stackrox.io", Value: "false", Operator: corev1.TolerationOpEqual},
+					},
+				},
+			},
+			wantNodeSelector: map[string]string{
+				"global-node-selector-label1": "global-node-selector-value1",
+			},
+			wantTolerations: []*corev1.Toleration{
+				{Key: "node.stackrox.io", Value: "false", Operator: corev1.TolerationOpEqual},
+			},
+		},
+	}
+
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			nodeSelector, tolerations := GetDeploymentDefaults(tc.customize)
+			assert.Equal(t, tc.wantNodeSelector, nodeSelector)
+			assert.Equal(t, tc.wantTolerations, tolerations)
+		})
+	}
+}
+
+func TestGetSchedulingValuesWithFallback(t *testing.T) {
+	tests := map[string]struct {
+		componentNodeSelector map[string]string
+		componentTolerations  []*corev1.Toleration
+		defaultNodeSelector   map[string]string
+		defaultTolerations    []*corev1.Toleration
+		wantNodeSelector      map[string]string
+		wantTolerations       []*corev1.Toleration
+	}{
+		"all nil": {
+			componentNodeSelector: nil,
+			componentTolerations:  nil,
+			defaultNodeSelector:   nil,
+			defaultTolerations:    nil,
+			wantNodeSelector:      nil,
+			wantTolerations:       nil,
+		},
+		"component set, defaults nil": {
+			componentNodeSelector: map[string]string{"component-label": "component-value"},
+			componentTolerations: []*corev1.Toleration{
+				{Key: "component-taint", Operator: corev1.TolerationOpExists},
+			},
+			defaultNodeSelector: nil,
+			defaultTolerations:  nil,
+			wantNodeSelector:    map[string]string{"component-label": "component-value"},
+			wantTolerations: []*corev1.Toleration{
+				{Key: "component-taint", Operator: corev1.TolerationOpExists},
+			},
+		},
+		"component nil, defaults set": {
+			componentNodeSelector: nil,
+			componentTolerations:  nil,
+			defaultNodeSelector:   map[string]string{"default-label": "default-value"},
+			defaultTolerations: []*corev1.Toleration{
+				{Key: "default-taint", Operator: corev1.TolerationOpExists},
+			},
+			wantNodeSelector: map[string]string{"default-label": "default-value"},
+			wantTolerations: []*corev1.Toleration{
+				{Key: "default-taint", Operator: corev1.TolerationOpExists},
+			},
+		},
+		"both set - component wins": {
+			componentNodeSelector: map[string]string{"component-label": "component-value"},
+			componentTolerations: []*corev1.Toleration{
+				{Key: "component-taint", Operator: corev1.TolerationOpExists},
+			},
+			defaultNodeSelector: map[string]string{"default-label": "default-value"},
+			defaultTolerations: []*corev1.Toleration{
+				{Key: "default-taint", Operator: corev1.TolerationOpExists},
+			},
+			wantNodeSelector: map[string]string{"component-label": "component-value"},
+			wantTolerations: []*corev1.Toleration{
+				{Key: "component-taint", Operator: corev1.TolerationOpExists},
+			},
+		},
+		"field-by-field: component nodeSelector, default tolerations": {
+			componentNodeSelector: map[string]string{"component-label": "component-value"},
+			componentTolerations:  nil,
+			defaultNodeSelector:   map[string]string{"default-label": "default-value"},
+			defaultTolerations: []*corev1.Toleration{
+				{Key: "default-taint", Operator: corev1.TolerationOpExists},
+			},
+			wantNodeSelector: map[string]string{"component-label": "component-value"},
+			wantTolerations: []*corev1.Toleration{
+				{Key: "default-taint", Operator: corev1.TolerationOpExists},
+			},
+		},
+		"field-by-field: default nodeSelector, component tolerations": {
+			componentNodeSelector: nil,
+			componentTolerations: []*corev1.Toleration{
+				{Key: "component-taint", Operator: corev1.TolerationOpExists},
+			},
+			defaultNodeSelector: map[string]string{"default-label": "default-value"},
+			defaultTolerations: []*corev1.Toleration{
+				{Key: "default-taint", Operator: corev1.TolerationOpExists},
+			},
+			wantNodeSelector: map[string]string{"default-label": "default-value"},
+			wantTolerations: []*corev1.Toleration{
+				{Key: "component-taint", Operator: corev1.TolerationOpExists},
+			},
+		},
+		"empty component maps override defaults": {
+			componentNodeSelector: map[string]string{},
+			componentTolerations:  []*corev1.Toleration{},
+			defaultNodeSelector:   map[string]string{"default-label": "default-value"},
+			defaultTolerations: []*corev1.Toleration{
+				{Key: "default-taint", Operator: corev1.TolerationOpExists},
+			},
+			wantNodeSelector: map[string]string{},
+			wantTolerations:  []*corev1.Toleration{},
+		},
+	}
+
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			nodeSelector, tolerations := GetSchedulingValuesWithFallback(
+				tc.componentNodeSelector,
+				tc.componentTolerations,
+				tc.defaultNodeSelector,
+				tc.defaultTolerations,
+			)
+			assert.Equal(t, tc.wantNodeSelector, nodeSelector)
+			assert.Equal(t, tc.wantTolerations, tolerations)
 		})
 	}
 }

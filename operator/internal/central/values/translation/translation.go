@@ -94,6 +94,7 @@ func (t Translator) translate(ctx context.Context, c platform.Central) (chartuti
 
 	customize := translation.NewValuesBuilder()
 	customize.AddAllFrom(translation.GetCustomize(c.Spec.Customize))
+	defaultNodeSelector, defaultTolerations := translation.GetDeploymentDefaults(c.Spec.Customize)
 
 	centralSpec := c.Spec.Central
 	if centralSpec == nil {
@@ -102,7 +103,7 @@ func (t Translator) translate(ctx context.Context, c platform.Central) (chartuti
 
 	monitoring := c.Spec.Monitoring
 	v.AddChild("monitoring", translation.GetGlobalMonitoring(monitoring))
-	central, err := getCentralComponentValues(ctx, centralSpec, c.GetNamespace(), t.client)
+	central, err := getCentralComponentValues(ctx, centralSpec, c.GetNamespace(), t.client, defaultNodeSelector, defaultTolerations)
 	if err != nil {
 		return nil, err
 	}
@@ -110,11 +111,11 @@ func (t Translator) translate(ctx context.Context, c platform.Central) (chartuti
 	v.AddChild("central", central)
 
 	if c.Spec.Scanner != nil {
-		v.AddChild("scanner", getCentralScannerComponentValues(c.Spec.Scanner))
+		v.AddChild("scanner", getCentralScannerComponentValues(c.Spec.Scanner, defaultNodeSelector, defaultTolerations))
 	}
 
 	if c.Spec.ScannerV4 != nil {
-		v.AddChild("scannerV4", getCentralScannerV4ComponentValues(ctx, c.Spec.ScannerV4, c.GetNamespace(), t.client))
+		v.AddChild("scannerV4", getCentralScannerV4ComponentValues(ctx, c.Spec.ScannerV4, c.GetNamespace(), t.client, defaultNodeSelector, defaultTolerations))
 	}
 
 	v.AddChild("customize", &customize)
@@ -226,7 +227,7 @@ func getCentralDBPersistenceValues(ctx context.Context, p *platform.DBPersistenc
 	return &persistence
 }
 
-func getCentralComponentValues(ctx context.Context, c *platform.CentralComponentSpec, namespace string, client ctrlClient.Client) (*translation.ValuesBuilder, error) {
+func getCentralComponentValues(ctx context.Context, c *platform.CentralComponentSpec, namespace string, client ctrlClient.Client, defaultNodeSelector map[string]string, defaultTolerations []*corev1.Toleration) (*translation.ValuesBuilder, error) {
 	cv := translation.NewValuesBuilder()
 
 	cv.AddChild(translation.ResourcesKey, translation.GetResources(c.Resources))
@@ -235,8 +236,10 @@ func getCentralComponentValues(ctx context.Context, c *platform.CentralComponent
 	}
 
 	cv.SetBoolValue("exposeMonitoring", c.Monitoring.IsEnabled())
-	cv.SetStringMap("nodeSelector", c.NodeSelector)
-	cv.AddAllFrom(translation.GetTolerations(translation.TolerationsKey, c.Tolerations))
+
+	nodeSelector, tolerations := translation.GetSchedulingValuesWithFallback(c.NodeSelector, c.Tolerations, defaultNodeSelector, defaultTolerations)
+	cv.SetStringMap("nodeSelector", nodeSelector)
+	cv.AddAllFrom(translation.GetTolerations(translation.TolerationsKey, tolerations))
 
 	if c.Exposure != nil {
 		exposure := translation.NewValuesBuilder()
@@ -261,7 +264,7 @@ func getCentralComponentValues(ctx context.Context, c *platform.CentralComponent
 		cv.AddAllFrom(translation.GetHostAliases(translation.HostAliasesKey, c.HostAliases))
 	}
 
-	cv.AddChild("db", getCentralDBComponentValues(ctx, c.DB, namespace, client))
+	cv.AddChild("db", getCentralDBComponentValues(ctx, c.DB, namespace, client, defaultNodeSelector, defaultTolerations))
 	cv.AddChild("telemetry", getTelemetryValues(c.Telemetry))
 
 	cv.AddChild("declarativeConfiguration", getDeclarativeConfigurationValues(c.DeclarativeConfiguration))
@@ -275,7 +278,7 @@ func getCentralComponentValues(ctx context.Context, c *platform.CentralComponent
 	return &cv, nil
 }
 
-func getCentralDBComponentValues(ctx context.Context, c *platform.CentralDBSpec, namespace string, client ctrlClient.Client) *translation.ValuesBuilder {
+func getCentralDBComponentValues(ctx context.Context, c *platform.CentralDBSpec, namespace string, client ctrlClient.Client, defaultNodeSelector map[string]string, defaultTolerations []*corev1.Toleration) *translation.ValuesBuilder {
 	cv := translation.NewValuesBuilder()
 	if c == nil {
 		c = &platform.CentralDBSpec{}
@@ -300,8 +303,10 @@ func getCentralDBComponentValues(ctx context.Context, c *platform.CentralDBSpec,
 
 	cv.AddChild("source", &source)
 	cv.AddChild(translation.ResourcesKey, translation.GetResources(c.Resources))
-	cv.SetStringMap("nodeSelector", c.NodeSelector)
-	cv.AddAllFrom(translation.GetTolerations(translation.TolerationsKey, c.Tolerations))
+
+	nodeSelector, tolerations := translation.GetSchedulingValuesWithFallback(c.NodeSelector, c.Tolerations, defaultNodeSelector, defaultTolerations)
+	cv.SetStringMap("nodeSelector", nodeSelector)
+	cv.AddAllFrom(translation.GetTolerations(translation.TolerationsKey, tolerations))
 	cv.AddChild("persistence", getCentralDBPersistenceValues(ctx, c.GetPersistence(), namespace, client))
 	if len(c.HostAliases) > 0 {
 		cv.AddAllFrom(translation.GetHostAliases(translation.HostAliasesKey, c.HostAliases))
@@ -365,24 +370,23 @@ func getDeclarativeConfigurationValues(c *platform.DeclarativeConfiguration) *tr
 	return &declarativeConfig
 }
 
-func getCentralScannerComponentValues(s *platform.ScannerComponentSpec) *translation.ValuesBuilder {
+func getCentralScannerComponentValues(s *platform.ScannerComponentSpec, defaultNodeSelector map[string]string, defaultTolerations []*corev1.Toleration) *translation.ValuesBuilder {
 	sv := translation.NewValuesBuilder()
 
 	translation.SetScannerComponentDisableValue(&sv, s.ScannerComponent)
-	translation.SetScannerAnalyzerValues(&sv, s.GetAnalyzer())
-	translation.SetScannerDBValues(&sv, s.DB)
-
+	translation.SetScannerAnalyzerValues(&sv, s.GetAnalyzer(), defaultNodeSelector, defaultTolerations)
+	translation.SetScannerDBValues(&sv, s.DB, defaultNodeSelector, defaultTolerations)
 	sv.SetBoolValue("exposeMonitoring", s.Monitoring.IsEnabled())
 
 	return &sv
 }
 
-func getCentralScannerV4ComponentValues(ctx context.Context, s *platform.ScannerV4Spec, namespace string, client ctrlClient.Client) *translation.ValuesBuilder {
+func getCentralScannerV4ComponentValues(ctx context.Context, s *platform.ScannerV4Spec, namespace string, client ctrlClient.Client, defaultNodeSelector map[string]string, defaultTolerations []*corev1.Toleration) *translation.ValuesBuilder {
 	sv := translation.NewValuesBuilder()
 	translation.SetScannerV4DisableValue(&sv, s.ScannerComponent)
-	translation.SetScannerV4ComponentValues(&sv, "indexer", s.Indexer)
-	translation.SetScannerV4ComponentValues(&sv, "matcher", s.Matcher)
-	translation.SetScannerV4DBValues(ctx, &sv, s.DB, platform.CentralGVK.Kind, namespace, client)
+	translation.SetScannerV4ComponentValues(&sv, "indexer", s.Indexer, defaultNodeSelector, defaultTolerations)
+	translation.SetScannerV4ComponentValues(&sv, "matcher", s.Matcher, defaultNodeSelector, defaultTolerations)
+	translation.SetScannerV4DBValues(ctx, &sv, s.DB, platform.CentralGVK.Kind, namespace, client, defaultNodeSelector, defaultTolerations)
 
 	if s.Monitoring != nil {
 		sv.SetBoolValue("exposeMonitoring", s.Monitoring.IsEnabled())

@@ -116,6 +116,7 @@ func (t Translator) translate(ctx context.Context, sc platform.SecuredCluster) (
 	v.AddAllFrom(translation.GetImagePullSecrets(sc.Spec.ImagePullSecrets))
 
 	customize := translation.NewValuesBuilder()
+	defaultNodeSelector, defaultTolerations := translation.GetDeploymentDefaults(sc.Spec.Customize)
 
 	scannerAutoSenseConfig, err := scanner.AutoSenseLocalScannerConfig(ctx, t.client, sc)
 	if err != nil {
@@ -127,10 +128,10 @@ func (t Translator) translate(ctx context.Context, sc platform.SecuredCluster) (
 		return nil, err
 	}
 
-	v.AddChild("sensor", t.getSensorValues(sc.Spec.Sensor, scannerAutoSenseConfig, scannerV4AutoSenseConfig))
+	v.AddChild("sensor", t.getSensorValues(sc.Spec.Sensor, scannerAutoSenseConfig, scannerV4AutoSenseConfig, defaultNodeSelector, defaultTolerations))
 
 	if sc.Spec.AdmissionControl != nil {
-		v.AddChild("admissionControl", t.getAdmissionControlValues(sc.Spec.AdmissionControl))
+		v.AddChild("admissionControl", t.getAdmissionControlValues(sc.Spec.AdmissionControl, defaultNodeSelector, defaultTolerations))
 	}
 
 	if sc.Spec.AuditLogs != nil {
@@ -141,9 +142,9 @@ func (t Translator) translate(ctx context.Context, sc platform.SecuredCluster) (
 		v.AddChild("collector", t.getCollectorValues(sc.Spec.PerNode))
 	}
 
-	v.AddChild("scanner", t.getLocalScannerComponentValues(sc, scannerAutoSenseConfig))
+	v.AddChild("scanner", t.getLocalScannerComponentValues(sc, scannerAutoSenseConfig, defaultNodeSelector, defaultTolerations))
 	if sc.Spec.ScannerV4 != nil {
-		v.AddChild("scannerV4", t.getLocalScannerV4ComponentValues(ctx, sc, scannerV4AutoSenseConfig))
+		v.AddChild("scannerV4", t.getLocalScannerV4ComponentValues(ctx, sc, scannerV4AutoSenseConfig, defaultNodeSelector, defaultTolerations))
 	}
 
 	customize.AddAllFrom(translation.GetCustomize(sc.Spec.Customize))
@@ -296,13 +297,16 @@ func (t Translator) checkInitBundleSecret(ctx context.Context, sc platform.Secur
 	return nil
 }
 
-func (t Translator) getSensorValues(sensor *platform.SensorComponentSpec, scannerAutosense scanner.AutoSenseResult, scannerV4Autosense scanner.AutoSenseResult) *translation.ValuesBuilder {
+func (t Translator) getSensorValues(sensor *platform.SensorComponentSpec, scannerAutosense scanner.AutoSenseResult, scannerV4Autosense scanner.AutoSenseResult, defaultNodeSelector map[string]string, defaultTolerations []*corev1.Toleration) *translation.ValuesBuilder {
 	sv := translation.NewValuesBuilder()
 
 	if sensor != nil {
 		sv.AddChild(translation.ResourcesKey, translation.GetResources(sensor.Resources))
-		sv.SetStringMap("nodeSelector", sensor.NodeSelector)
-		sv.AddAllFrom(translation.GetTolerations(translation.TolerationsKey, sensor.Tolerations))
+
+		nodeSelector, tolerations := translation.GetSchedulingValuesWithFallback(sensor.NodeSelector, sensor.Tolerations, defaultNodeSelector, defaultTolerations)
+		sv.SetStringMap("nodeSelector", nodeSelector)
+		sv.AddAllFrom(translation.GetTolerations(translation.TolerationsKey, tolerations))
+
 		if len(sensor.HostAliases) > 0 {
 			sv.AddAllFrom(translation.GetHostAliases(translation.HostAliasesKey, sensor.HostAliases))
 		}
@@ -315,7 +319,7 @@ func (t Translator) getSensorValues(sensor *platform.SensorComponentSpec, scanne
 	return &sv
 }
 
-func (t Translator) getAdmissionControlValues(admissionControl *platform.AdmissionControlComponentSpec) *translation.ValuesBuilder {
+func (t Translator) getAdmissionControlValues(admissionControl *platform.AdmissionControlComponentSpec, defaultNodeSelector map[string]string, defaultTolerations []*corev1.Toleration) *translation.ValuesBuilder {
 	acv := translation.NewValuesBuilder()
 
 	acv.AddChild(translation.ResourcesKey, translation.GetResources(admissionControl.Resources))
@@ -346,8 +350,11 @@ func (t Translator) getAdmissionControlValues(admissionControl *platform.Admissi
 	}
 	acv.SetString("failurePolicy", (*string)(admissionControl.FailurePolicy))
 	acv.AddChild("dynamic", &dynamic)
-	acv.SetStringMap("nodeSelector", admissionControl.NodeSelector)
-	acv.AddAllFrom(translation.GetTolerations(translation.TolerationsKey, admissionControl.Tolerations))
+
+	nodeSelector, tolerations := translation.GetSchedulingValuesWithFallback(admissionControl.NodeSelector, admissionControl.Tolerations, defaultNodeSelector, defaultTolerations)
+	acv.SetStringMap("nodeSelector", nodeSelector)
+	acv.AddAllFrom(translation.GetTolerations(translation.TolerationsKey, tolerations))
+
 	if len(admissionControl.HostAliases) > 0 {
 		acv.AddAllFrom(translation.GetHostAliases(translation.HostAliasesKey, admissionControl.HostAliases))
 	}
@@ -458,26 +465,25 @@ func (t Translator) getNodeInventoryContainerValues(nodeInventory *platform.Cont
 	return &cv
 }
 
-func (t Translator) getLocalScannerComponentValues(securedCluster platform.SecuredCluster, config scanner.AutoSenseResult) *translation.ValuesBuilder {
+func (t Translator) getLocalScannerComponentValues(securedCluster platform.SecuredCluster, config scanner.AutoSenseResult, defaultNodeSelector map[string]string, defaultTolerations []*corev1.Toleration) *translation.ValuesBuilder {
 	sv := translation.NewValuesBuilder()
 	s := securedCluster.Spec.Scanner
 
 	sv.SetBoolValue("disable", !config.DeployScannerResources)
-
-	translation.SetScannerAnalyzerValues(&sv, s.Analyzer)
-	translation.SetScannerDBValues(&sv, s.DB)
+	translation.SetScannerAnalyzerValues(&sv, s.Analyzer, defaultNodeSelector, defaultTolerations)
+	translation.SetScannerDBValues(&sv, s.DB, defaultNodeSelector, defaultTolerations)
 
 	return &sv
 }
 
-func (t Translator) getLocalScannerV4ComponentValues(ctx context.Context, securedCluster platform.SecuredCluster, config scanner.AutoSenseResult) *translation.ValuesBuilder {
+func (t Translator) getLocalScannerV4ComponentValues(ctx context.Context, securedCluster platform.SecuredCluster, config scanner.AutoSenseResult, defaultNodeSelector map[string]string, defaultTolerations []*corev1.Toleration) *translation.ValuesBuilder {
 	sv := translation.NewValuesBuilder()
 	s := securedCluster.Spec.ScannerV4
 	sv.SetBoolValue("disable", !config.EnableLocalImageScanning)
 
 	if config.DeployScannerResources {
-		translation.SetScannerV4ComponentValues(&sv, "indexer", s.Indexer)
-		translation.SetScannerV4DBValues(ctx, &sv, s.DB, platform.SecuredClusterGVK.Kind, securedCluster.GetNamespace(), t.client)
+		translation.SetScannerV4ComponentValues(&sv, "indexer", s.Indexer, defaultNodeSelector, defaultTolerations)
+		translation.SetScannerV4DBValues(ctx, &sv, s.DB, platform.SecuredClusterGVK.Kind, securedCluster.GetNamespace(), t.client, defaultNodeSelector, defaultTolerations)
 	} else if config.EnableLocalImageScanning {
 		translation.DisableScannerV4Component(&sv, "indexer")
 	}

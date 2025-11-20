@@ -189,25 +189,29 @@ func SetScannerV4DisableValue(sv *ValuesBuilder, scannerV4Component *platform.Sc
 }
 
 // SetScannerAnalyzerValues sets values in "sv" based on "analyzer".
-func SetScannerAnalyzerValues(sv *ValuesBuilder, analyzer *platform.ScannerAnalyzerComponent) {
+func SetScannerAnalyzerValues(sv *ValuesBuilder, analyzer *platform.ScannerAnalyzerComponent, defaultNodeSelector map[string]string, defaultTolerations []*corev1.Toleration) {
 	if analyzer == nil {
 		return
 	}
 	setScannerComponentScaling(sv, analyzer.GetScaling())
-	sv.SetStringMap("nodeSelector", analyzer.NodeSelector)
+
+	nodeSelector, tolerations := GetSchedulingValuesWithFallback(analyzer.NodeSelector, analyzer.Tolerations, defaultNodeSelector, defaultTolerations)
+	sv.SetStringMap("nodeSelector", nodeSelector)
 	sv.AddChild(ResourcesKey, GetResources(analyzer.Resources))
-	sv.AddAllFrom(GetTolerations(TolerationsKey, analyzer.DeploymentSpec.Tolerations))
+	sv.AddAllFrom(GetTolerations(TolerationsKey, tolerations))
+
 	if len(analyzer.HostAliases) > 0 {
 		sv.AddAllFrom(GetHostAliases(HostAliasesKey, analyzer.HostAliases))
 	}
 }
 
 // SetScannerDBValues sets values in "sv" based on "db".
-func SetScannerDBValues(sv *ValuesBuilder, db *platform.DeploymentSpec) {
+func SetScannerDBValues(sv *ValuesBuilder, db *platform.DeploymentSpec, defaultNodeSelector map[string]string, defaultTolerations []*corev1.Toleration) {
 	if db != nil {
-		sv.SetStringMap("dbNodeSelector", db.NodeSelector)
+		nodeSelector, tolerations := GetSchedulingValuesWithFallback(db.NodeSelector, db.Tolerations, defaultNodeSelector, defaultTolerations)
+		sv.SetStringMap("dbNodeSelector", nodeSelector)
 		sv.AddChild("dbResources", GetResources(db.Resources))
-		sv.AddAllFrom(GetTolerations("dbTolerations", db.Tolerations))
+		sv.AddAllFrom(GetTolerations("dbTolerations", tolerations))
 		if len(db.HostAliases) > 0 {
 			sv.AddAllFrom(GetHostAliases("dbHostAliases", db.HostAliases))
 		}
@@ -223,7 +227,7 @@ func SetScannerDBValues(sv *ValuesBuilder, db *platform.DeploymentSpec) {
 // that the extension prevents central DB's PVC deletion on deletion of the CR.
 // Since Scanner V4's DB contains data which recovers by itself it is safe to remove the PVC
 // through the helm uninstall if a CR is deleted.
-func SetScannerV4DBValues(ctx context.Context, sv *ValuesBuilder, db *platform.ScannerV4DB, objKind string, namespace string, client ctrlClient.Reader) {
+func SetScannerV4DBValues(ctx context.Context, sv *ValuesBuilder, db *platform.ScannerV4DB, objKind string, namespace string, client ctrlClient.Reader, defaultNodeSelector map[string]string, defaultTolerations []*corev1.Toleration) {
 	dbVB := NewValuesBuilder()
 	persistenceVB := NewValuesBuilder()
 
@@ -241,9 +245,10 @@ func SetScannerV4DBValues(ctx context.Context, sv *ValuesBuilder, db *platform.S
 	}
 
 	if db != nil {
-		dbVB.SetStringMap("nodeSelector", db.NodeSelector)
+		nodeSelector, tolerations := GetSchedulingValuesWithFallback(db.NodeSelector, db.Tolerations, defaultNodeSelector, defaultTolerations)
+		dbVB.SetStringMap("nodeSelector", nodeSelector)
 		dbVB.AddChild(ResourcesKey, GetResources(db.Resources))
-		dbVB.AddAllFrom(GetTolerations(TolerationsKey, db.Tolerations))
+		dbVB.AddAllFrom(GetTolerations(TolerationsKey, tolerations))
 		if len(db.HostAliases) > 0 {
 			dbVB.AddAllFrom(GetHostAliases(HostAliasesKey, db.HostAliases))
 		}
@@ -346,16 +351,20 @@ func hasScannerV4DBPVC(ctx context.Context, client ctrlClient.Reader, pvcName st
 }
 
 // SetScannerV4ComponentValues sets values in "sv" based on "component"
-func SetScannerV4ComponentValues(sv *ValuesBuilder, componentKey string, component *platform.ScannerV4Component) {
+// SetScannerV4ComponentValues sets values in "sv" based on "component". For indexer and matcher.
+func SetScannerV4ComponentValues(sv *ValuesBuilder, componentKey string, component *platform.ScannerV4Component, defaultNodeSelector map[string]string, defaultTolerations []*corev1.Toleration) {
 	if component == nil {
 		return
 	}
 
 	componentVB := NewValuesBuilder()
 	setScannerComponentScaling(&componentVB, component.Scaling)
-	componentVB.SetStringMap("nodeSelector", component.NodeSelector)
+
+	nodeSelector, tolerations := GetSchedulingValuesWithFallback(component.NodeSelector, component.Tolerations, defaultNodeSelector, defaultTolerations)
+	componentVB.SetStringMap("nodeSelector", nodeSelector)
 	componentVB.AddChild(ResourcesKey, GetResources(component.Resources))
-	componentVB.AddAllFrom(GetTolerations(TolerationsKey, component.Tolerations))
+	componentVB.AddAllFrom(GetTolerations(TolerationsKey, tolerations))
+
 	if len(component.HostAliases) > 0 {
 		componentVB.AddAllFrom(GetHostAliases(HostAliasesKey, component.HostAliases))
 	}
@@ -408,4 +417,65 @@ func GetConfigAsCode(c *platform.ConfigAsCodeSpec) *ValuesBuilder {
 		sv.SetBoolValue("enabled", *c.ComponentPolicy == v1alpha1.ConfigAsCodeComponentEnabled)
 	}
 	return &sv
+}
+
+// GetDeploymentDefaults returns the default nodeSelector and tolerations for all Deployments.
+// If pinToNodes is set, it expands it to the default nodeSelector and tolerations.
+func GetDeploymentDefaults(customize *platform.CustomizeSpec) (map[string]string, []*corev1.Toleration) {
+	if customize == nil || customize.DeploymentDefaults == nil {
+		return nil, nil
+	}
+
+	defaults := customize.DeploymentDefaults
+	nodeSelector, tolerations := expandPinToNodes(defaults.PinToNodes)
+	if nodeSelector != nil || tolerations != nil {
+		return nodeSelector, tolerations
+	}
+
+	return defaults.NodeSelector, defaults.Tolerations
+}
+
+func expandPinToNodes(pinToNodes *platform.PinToNodesPolicy) (map[string]string, []*corev1.Toleration) {
+	if pinToNodes == nil {
+		return nil, nil
+	}
+
+	if *pinToNodes == platform.PinToNodesInfraRole {
+		nodeSelector := map[string]string{
+			"node-role.kubernetes.io/infra": "",
+		}
+		tolerations := []*corev1.Toleration{
+			{
+				Key:      "node-role.kubernetes.io/infra",
+				Value:    "reserved",
+				Effect:   corev1.TaintEffectNoSchedule,
+				Operator: corev1.TolerationOpEqual,
+			},
+			{
+				Key:      "node-role.kubernetes.io/infra",
+				Value:    "reserved",
+				Effect:   corev1.TaintEffectNoExecute,
+				Operator: corev1.TolerationOpEqual,
+			},
+		}
+		return nodeSelector, tolerations
+	}
+
+	return nil, nil
+}
+
+// GetSchedulingValuesWithFallback returns the scheduling values for a component with fallback to defaults.
+func GetSchedulingValuesWithFallback(componentNodeSelector map[string]string, componentTolerations []*corev1.Toleration,
+	defaultNodeSelector map[string]string, defaultTolerations []*corev1.Toleration) (map[string]string, []*corev1.Toleration) {
+	nodeSelector := componentNodeSelector
+	if nodeSelector == nil && defaultNodeSelector != nil {
+		nodeSelector = defaultNodeSelector
+	}
+
+	tolerations := componentTolerations
+	if tolerations == nil && defaultTolerations != nil {
+		tolerations = defaultTolerations
+	}
+
+	return nodeSelector, tolerations
 }
