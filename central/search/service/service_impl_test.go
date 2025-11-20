@@ -23,7 +23,6 @@ import (
 	policyStore "github.com/stackrox/rox/central/policy/store"
 	categoryDataStoreMocks "github.com/stackrox/rox/central/policycategory/datastore/mocks"
 	policyCategoryEdgeDataStoreMocks "github.com/stackrox/rox/central/policycategoryedge/datastore/mocks"
-
 	"github.com/stackrox/rox/central/ranking"
 	roleMocks "github.com/stackrox/rox/central/rbac/k8srole/datastore/mocks"
 	roleBindingsMocks "github.com/stackrox/rox/central/rbac/k8srolebinding/datastore/mocks"
