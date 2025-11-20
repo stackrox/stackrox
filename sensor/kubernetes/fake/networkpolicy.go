@@ -75,12 +75,10 @@ func (w *WorkloadManager) manageNetworkPolicy(ctx context.Context, resources *ne
 }
 
 func (w *WorkloadManager) manageNetworkPolicyLifecycle(ctx context.Context, resources *networkPolicyToBeManaged) {
-	lifecycleDelay := resources.workload.LifecycleDuration / 2
-	if resources.workload.LifecycleDuration > 0 {
-		lifecycleDelay += time.Duration(rand.Int63n(int64(resources.workload.LifecycleDuration)))
-	}
-	deleteCh := time.After(calculateDurationWithJitter(lifecycleDelay))
-	updateCh := time.After(calculateDurationWithJitter(resources.workload.UpdateInterval))
+	timer := newTimerWithJitter(resources.workload.LifecycleDuration/2 + time.Duration(rand.Int63n(int64(resources.workload.LifecycleDuration))))
+	defer timer.Stop()
+
+	npNextUpdate := calculateDurationWithJitter(resources.workload.UpdateInterval)
 
 	np := resources.networkPolicy
 	npClient := w.client.Kubernetes().NetworkingV1().NetworkPolicies(np.Namespace)
@@ -89,20 +87,21 @@ func (w *WorkloadManager) manageNetworkPolicyLifecycle(ctx context.Context, reso
 		select {
 		case <-ctx.Done():
 			return
-		case <-deleteCh:
+		case <-timer.C:
 			if err := npClient.Delete(ctx, np.Name, metav1.DeleteOptions{}); err != nil {
 				log.Error(err)
 			}
 			w.deleteID(networkPolicyPrefix, np.UID)
 			return
-		case <-updateCh:
-			np.Annotations = createRandMap(16, 3)
+		case <-time.After(npNextUpdate):
+			npNextUpdate = calculateDurationWithJitter(resources.workload.UpdateInterval)
+
+			annotations := createRandMap(16, 3)
+			np.Annotations = annotations
 
 			if _, err := npClient.Update(ctx, np, metav1.UpdateOptions{}); err != nil {
 				log.Error(err)
 			}
-
-			updateCh = time.After(calculateDurationWithJitter(resources.workload.UpdateInterval))
 		}
 	}
 }
