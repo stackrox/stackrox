@@ -59,6 +59,8 @@ func (h *handlerImpl) Send(ctx context.Context, vm *v1.IndexReport) error {
 	h.lock.RLock()
 	defer h.lock.RUnlock()
 	select {
+	case <-h.stopper.Client().Stopped().Done():
+		return errox.InvariantViolation.CausedBy(errInputChanClosed)
 	case <-ctx.Done():
 		if err := ctx.Err(); errors.Is(err, context.DeadlineExceeded) {
 			metrics.IndexReportsSent.With(metrics.StatusTimeoutLabels).Inc()
@@ -121,18 +123,17 @@ func (h *handlerImpl) Start() error {
 }
 
 func (h *handlerImpl) Stop() {
-	// Stop the stopper FIRST so Send() will see it as stopped and return early
-	// before we close the channel. This prevents panics from sending on closed channel.
+	// Stop the stopper - this signals Send() to stop accepting new messages
+	// We do NOT close the indexReports channel because:
+	// 1. Multiple Send() goroutines can hold RLock concurrently
+	// 2. A Send() could pass the stopper check, then get blocked on channel send
+	// 3. If we close the channel while a send is blocked, we get a panic
+	// Instead, we rely on the run() goroutine to exit when it sees the stopper signal,
+	// and the channel will be garbage collected when there are no more references.
 	if !h.stopper.Client().Stopped().IsDone() {
 		defer utils.IgnoreError(h.stopper.Client().Stopped().Wait)
 		h.stopper.Client().Stop()
 	}
-	// Acquire write lock to prevent concurrent Send() calls from racing with channel close
-	h.lock.Lock()
-	defer h.lock.Unlock()
-	// Now close the channel - this will cause the run() goroutine to exit
-	// (it checks for closed channel on line 146)
-	close(h.indexReports)
 }
 
 // run handles the virtual machine data and forwards it to Central.
@@ -150,11 +151,7 @@ func (h *handlerImpl) run() (toCentral <-chan *message.ExpiringMessage) {
 			select {
 			case <-h.stopper.Flow().StopRequested():
 				return
-			case indexReport, ok := <-h.indexReports:
-				if !ok {
-					h.stopper.Flow().StopWithError(errInputChanClosed)
-					return
-				}
+			case indexReport := <-h.indexReports:
 				h.handleIndexReport(ch2Central, indexReport)
 			}
 		}

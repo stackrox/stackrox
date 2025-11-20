@@ -107,7 +107,13 @@ func (p *Pipeline) Process(signal *storage.ProcessSignal) {
 	metrics.IncrementProcessEnrichmentHits()
 	populateIndicatorFromCachedContainer(indicator, metadata)
 	normalize.Indicator(indicator)
-	p.enrichedIndicators <- indicator
+
+	// Use select to avoid panic if channel is closed during shutdown
+	select {
+	case p.enrichedIndicators <- indicator:
+	case <-p.stopper.Client().Stopped().Done():
+		// Pipeline is shutting down, drop the indicator
+	}
 }
 
 func (p *Pipeline) sendIndicatorEvent() {
