@@ -232,7 +232,7 @@ func writeMemoryProfile() {
 	log.Printf("Wrote memory profile")
 }
 
-func registerHostKillSignals(startTime time.Time, fakeCentral *centralDebug.FakeService, writeMemProfile bool, outfile string, outputFormat string, cancelFunc context.CancelFunc, sensor *commonSensor.Sensor) {
+func registerHostKillSignals(startTime time.Time, fakeCentral *centralDebug.FakeService, writeMemProfile bool, outfile string, outputFormat string, cancelFunc context.CancelFunc, sensor *commonSensor.Sensor, workloadManager *fake.WorkloadManager) {
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
 	<-ctx.Done()
@@ -241,6 +241,10 @@ func registerHostKillSignals(startTime time.Time, fakeCentral *centralDebug.Fake
 	endTime := time.Now()
 	if writeMemProfile {
 		writeMemoryProfile()
+	}
+	// Stop fake workload goroutines before shutting down sensor to prevent sending on closed channels
+	if workloadManager != nil {
+		workloadManager.Stop()
 	}
 	sensor.Stop()
 	pprof.StopCPUProfile()
@@ -405,7 +409,7 @@ func main() {
 	}
 
 	go s.Start()
-	go registerHostKillSignals(startTime, spyCentral, !localConfig.NoMemProfile, localConfig.CentralOutput, localConfig.OutputFormat, cancelFunc, s)
+	go registerHostKillSignals(startTime, spyCentral, !localConfig.NoMemProfile, localConfig.CentralOutput, localConfig.OutputFormat, cancelFunc, s, workloadManager)
 
 	if spyCentral != nil {
 		spyCentral.ConnectionStarted.Wait()
@@ -421,6 +425,10 @@ func main() {
 	log.Printf("Running scenario for %f minutes\n", localConfig.Duration.Minutes())
 	select {
 	case <-time.Tick(localConfig.Duration):
+		// Stop fake workload goroutines before shutting down sensor to prevent sending on closed channels
+		if workloadManager != nil {
+			workloadManager.Stop()
+		}
 		s.Stop()
 		break
 	case <-s.Stopped().Done():

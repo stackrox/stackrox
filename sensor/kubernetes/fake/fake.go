@@ -109,6 +109,10 @@ type WorkloadManager struct {
 	servicesInitialized concurrency.Signal
 	processes           signal.Pipeline
 	networkManager      manager.Manager
+
+	// shutdown coordination
+	shutdownCtx    context.Context
+	shutdownCancel context.CancelFunc
 }
 
 // WorkloadManagerConfig WorkloadManager's configuration
@@ -212,6 +216,7 @@ func NewWorkloadManager(config *WorkloadManagerConfig) *WorkloadManager {
 			log.Panic("could not open id storage")
 		}
 	}
+	shutdownCtx, shutdownCancel := context.WithCancel(context.Background())
 	mgr := &WorkloadManager{
 		db:                  db,
 		workload:            &workload,
@@ -223,6 +228,8 @@ func NewWorkloadManager(config *WorkloadManagerConfig) *WorkloadManager {
 		containerPool:       config.containerPool,
 		processPool:         config.processPool,
 		servicesInitialized: concurrency.NewSignal(),
+		shutdownCtx:         shutdownCtx,
+		shutdownCancel:      shutdownCancel,
 	}
 	mgr.initializePreexistingResources()
 
@@ -254,13 +261,28 @@ func (w *WorkloadManager) SetSignalHandlers(processPipeline signal.Pipeline, net
 	w.servicesInitialized.Signal()
 }
 
+// Stop gracefully stops all background goroutines managed by WorkloadManager.
+// This should be called before shutting down the process pipeline to prevent
+// sending signals on closed channels.
+func (w *WorkloadManager) Stop() {
+	if w.shutdownCancel != nil {
+		w.shutdownCancel()
+	}
+}
+
 // clearActions periodically cleans up the fake client we're using. This needs to exist because we aren't
 // using the client for its original purpose of unit testing. Essentially, it stores the actions
 // so you can check which actions were run. We don't care about these actions so clear them every 10s
 func (w *WorkloadManager) clearActions() {
 	t := time.NewTicker(10 * time.Second)
-	for range t.C {
-		w.fakeClient.ClearActions()
+	defer t.Stop()
+	for {
+		select {
+		case <-t.C:
+			w.fakeClient.ClearActions()
+		case <-w.shutdownCtx.Done():
+			return
+		}
 	}
 }
 
@@ -345,13 +367,13 @@ func (w *WorkloadManager) initializePreexistingResources() {
 
 	// Fork management of deployment resources
 	for _, resource := range resources {
-		go w.manageDeployment(context.Background(), resource)
+		go w.manageDeployment(w.shutdownCtx, resource)
 	}
 
 	// Fork management of networkPolicy resources
 	for _, resource := range npResources {
-		go w.manageNetworkPolicy(context.Background(), resource)
+		go w.manageNetworkPolicy(w.shutdownCtx, resource)
 	}
 
-	go w.manageFlows(context.Background())
+	go w.manageFlows(w.shutdownCtx)
 }

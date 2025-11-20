@@ -92,7 +92,16 @@ func (p *Pipeline) Notify(e common.SensorComponentEvent) {
 }
 
 // Process defines processes to process a ProcessIndicator
+// If the pipeline is shutting down, the signal is dropped to prevent sending on closed channels.
 func (p *Pipeline) Process(signal *storage.ProcessSignal) {
+	// Check if shutdown has been requested before processing
+	select {
+	case <-p.stopper.Flow().StopRequested():
+		// Pipeline is shutting down, drop the signal to avoid panic from sending on closed channel
+		return
+	default:
+	}
+
 	indicator := &storage.ProcessIndicator{
 		Id:     uuid.NewV4().String(),
 		Signal: signal,
@@ -107,7 +116,14 @@ func (p *Pipeline) Process(signal *storage.ProcessSignal) {
 	metrics.IncrementProcessEnrichmentHits()
 	populateIndicatorFromCachedContainer(indicator, metadata)
 	normalize.Indicator(indicator)
-	p.enrichedIndicators <- indicator
+
+	// Use select to avoid sending on closed channel if shutdown happens between check and send
+	select {
+	case p.enrichedIndicators <- indicator:
+	case <-p.stopper.Flow().StopRequested():
+		// Pipeline shutdown occurred during send, drop the indicator
+		return
+	}
 }
 
 func (p *Pipeline) sendIndicatorEvent() {
