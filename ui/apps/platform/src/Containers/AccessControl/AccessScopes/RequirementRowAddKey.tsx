@@ -89,7 +89,9 @@ function RequirementRowAddKey({
                     </span>
                 </div>
                 {keyInput.length !== 0 && isInvalidKey && (
-                    <p className="pf-v6-u-font-size-sm pf-v6-u-danger-color-100">Invalid key</p>
+                    <p className="pf-v6-u-font-size-sm pf-v6-u-text-color-status-danger">
+                        Invalid key
+                    </p>
                 )}
             </Td>
             <Td dataLabel="Operator" />
