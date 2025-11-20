@@ -11,6 +11,7 @@ import (
 	"html/template"
 	"io"
 	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 	"text/tabwriter"
@@ -29,7 +30,6 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/docker/config"
 	imgUtils "github.com/stackrox/rox/pkg/images/utils"
-	pkgTar "github.com/stackrox/rox/pkg/tar"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
@@ -426,6 +426,65 @@ func (d *deleScanTestUtils) getDigestFromImageStreamTag(t *testing.T, ctx contex
 	return digest
 }
 
+// addDirectoryToTar walks a directory and adds all regular files to the tar writer.
+// This replaces the pkg/tar.FromPath functionality using standard archive/tar.
+func addDirectoryToTar(srcPath string, tw *tar.Writer) error {
+	// Resolve symlinks to get the real path
+	resolvedPath, err := filepath.EvalSymlinks(srcPath)
+	if err != nil {
+		return err
+	}
+
+	// Walk the directory tree
+	return filepath.WalkDir(resolvedPath, func(filePath string, d os.DirEntry, err error) error {
+		if err != nil {
+			return err
+		}
+
+		// Skip directories
+		if d.IsDir() {
+			return nil
+		}
+
+		// Get file info
+		info, err := d.Info()
+		if err != nil {
+			return err
+		}
+
+		// Skip non-regular files (symlinks, devices, etc.)
+		if !info.Mode().IsRegular() {
+			return nil
+		}
+
+		// Create tar header
+		header, err := tar.FileInfoHeader(info, "")
+		if err != nil {
+			return err
+		}
+
+		// Set relative path in tar (remove the source directory prefix)
+		relPath := strings.TrimPrefix(filePath, resolvedPath)
+		relPath = strings.TrimPrefix(relPath, string(filepath.Separator))
+		header.Name = relPath
+
+		// Write header
+		if err := tw.WriteHeader(header); err != nil {
+			return err
+		}
+
+		// Write file content
+		f, err := os.Open(filePath)
+		if err != nil {
+			return err
+		}
+		defer utils.IgnoreError(f.Close)
+
+		_, err = io.Copy(tw, f)
+		return err
+	})
+}
+
 // buildAndPushImage will build an image, wait for it to complete, and push it to the OCP internal registry.
 func (d *deleScanTestUtils) buildAndPushImage(t *testing.T, ctx context.Context, namespace, name, fromImage string) string {
 	buf := new(bytes.Buffer)
@@ -445,7 +504,7 @@ func (d *deleScanTestUtils) buildAndPushImage(t *testing.T, ctx context.Context,
 	require.NoError(t, err)
 
 	dir := "testdata/delegatedscanning/image-build"
-	require.NoError(t, pkgTar.FromPath(dir, tw))
+	require.NoError(t, addDirectoryToTar(dir, tw))
 	utils.IgnoreError(tw.Close)
 
 	buildV1Client, err := buildv1client.NewForConfig(d.restCfg)
