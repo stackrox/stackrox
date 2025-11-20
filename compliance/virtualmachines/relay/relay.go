@@ -19,6 +19,7 @@ import (
 	"github.com/stackrox/rox/pkg/retry"
 	"golang.org/x/sync/semaphore"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
 	"google.golang.org/protobuf/proto"
 )
 
@@ -312,7 +313,16 @@ func sendReportToSensor(ctx context.Context, report *v1.IndexReport, sensorClien
 			}
 		}
 
-		policy := retry.DefaultGrpcRetryPolicy()
+		// Retry transient gRPC errors: unavailable, resource exhausted, internal, and deadline exceeded
+		// (unless deadline exceeded is due to context cancellation).
+		policy := retry.NoCodesRetriedGrpcRetryPolicy().WithRetryableCodes(
+			codes.Unavailable, codes.ResourceExhausted, codes.Internal, codes.DeadlineExceeded)
+
+		// Don't retry if the context was canceled
+		if errors.Is(err, context.Canceled) {
+			return err
+		}
+
 		if policy.ShouldRetry(err) {
 			err = retry.MakeRetryable(err)
 		}

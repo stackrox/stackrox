@@ -81,8 +81,8 @@ func fetchCertificateFromSensor(ctx context.Context, token string) (*sensor.Fetc
 	certDistClient := sensor.NewCertDistributionServiceClient(conn)
 	var fetchResult *sensor.FetchCertificateResponse
 
-	// Use custom policy to retry NotFound - certificate might not exist yet but will be created
-	policy := retry.DefaultGrpcRetryPolicy().WithRetryableCodes(codes.NotFound)
+	// Only retry unavailable, deadline exceeded, and not found errors. These might resolve over time.
+	policy := retry.NoCodesRetriedGrpcRetryPolicy().WithRetryableCodes(codes.Unavailable, codes.DeadlineExceeded, codes.NotFound)
 
 	err = retry.WithRetry(
 		func() error {
