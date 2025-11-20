@@ -2,5 +2,16 @@
   "base": {
     "name": "master",
     "hash": "1f1d627dab2c10a20a510f4119728058aa57bb5c"
+  },
+  "upstream": {
+    "branch": "master-base/gualvare/fix-fake-workloads-style-issues"
+  },
+  "change": {
+    "github": {
+      "pr": {
+        "number": 17895,
+        "gqlID": "PR_kwDOGd6UEM60mlyH"
+      }
+    }
   }
 }
