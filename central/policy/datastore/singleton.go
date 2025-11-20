@@ -58,6 +58,7 @@ func addDefaults(s policyStore.Store, categoriesDS categoriesDS.DataStore, fullS
 			lowerCategoryNameToProperName[strings.ToLower(category.Name)] = category.Name
 		}
 	}
+	policiesToCheck := make([]*storage.Policy, 0)
 	toReupsert := make([]*storage.Policy, 0)
 	policyIDSet := set.NewStringSet()
 	err = s.Walk(workflowAdministrationCtx, func(p *storage.Policy) error {
@@ -66,6 +67,11 @@ func addDefaults(s policyStore.Store, categoriesDS categoriesDS.DataStore, fullS
 		if p.GetSource() == storage.PolicySource_DECLARATIVE {
 			metrics.IncrementTotalExternalPoliciesGauge()
 		}
+		policiesToCheck = append(policiesToCheck, p)
+		return nil
+	})
+	// Do this outside of the Walk because of DB connection leaks by doing nested DB ops while a connection is being used
+	for _, p := range policiesToCheck {
 		var categories []*storage.PolicyCategory
 		categories, err = categoriesDS.GetPolicyCategoriesForPolicy(workflowAdministrationCtx, p.GetId())
 		shouldReupsert := false
@@ -80,8 +86,7 @@ func addDefaults(s policyStore.Store, categoriesDS categoriesDS.DataStore, fullS
 		if shouldReupsert {
 			toReupsert = append(toReupsert, p)
 		}
-		return nil
-	})
+	}
 	if err != nil {
 		panic(err)
 	}
