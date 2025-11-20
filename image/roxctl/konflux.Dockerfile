@@ -1,14 +1,12 @@
-# openshift-golang-builder is the only way to get more recent Go version than the official ubi8/go-toolset provides.
-# See https://issues.redhat.com/browse/RHELPLAN-167618
-# Using that has few known issues:
-# - https://issues.redhat.com/browse/RHTAPBUGS-864 - deprecated-base-image-check behaves incorrectly.
-# - https://issues.redhat.com/browse/RHTAPBUGS-865 - openshift-golang-builder is not considered to be a valid base image.
-#
-FROM brew.registry.redhat.io/rh-osbs/openshift-golang-builder:rhel_8_golang_1.24@sha256:c52f52b73cc121327416b3fe8d64d682eb48b2c86298a4d645d7169251700cd5 AS builder
+FROM registry.access.redhat.com/ubi9/go-toolset:1.24@sha256:c06c8764041cceae3ef35962b44043bfea534ad336d2cb14cafb5d0c384a5b5e AS builder
 
-WORKDIR /go/src/github.com/stackrox/rox/app
+# Build rootless using $APP_ROOT which is accessible to the default user
+# $APP_ROOT is typically /opt/app-root/ in UBI images
+ENV GOPATH=${APP_ROOT:-/opt/app-root/}/src
+WORKDIR ${GOPATH}/github.com/stackrox/rox/app
 
-COPY . .
+# Copy files with ownership set to default user so we have permissions to create directories
+COPY --chown=default . .
 
 RUN mkdir -p image/bin
 
@@ -26,9 +24,9 @@ RUN RACE=0 CGO_ENABLED=1 GOOS=linux GOARCH=$(go env GOARCH) scripts/go-build.sh 
     cp bin/linux_$(go env GOARCH)/roxctl image/bin/roxctl
 
 
-FROM registry.access.redhat.com/ubi8/ubi-minimal:latest@sha256:951ee3cabb74246821ae31c2b808b7789310f5509882c153b7b178aaaeefa2d3
+FROM registry.access.redhat.com/ubi9/ubi-minimal:latest@sha256:2ddd6e10383981c7d10e4966a7c0edce7159f8ca91b1691cafabc78bae79d8f8
 
-COPY --from=builder /go/src/github.com/stackrox/rox/app/image/bin/roxctl /usr/bin/roxctl
+COPY --from=builder /opt/app-root/src/github.com/stackrox/rox/app/image/bin/roxctl /usr/bin/roxctl
 
 RUN microdnf clean all && \
     rpm --verbose -e --nodeps $(rpm -qa curl '*rpm*' '*dnf*' '*libsolv*' '*hawkey*' 'yum*') && \
