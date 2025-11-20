@@ -6,8 +6,6 @@ import (
 	"net/http"
 	"sync/atomic"
 
-	pkgerrors "github.com/pkg/errors"
-
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/registries/types"
@@ -15,6 +13,8 @@ import (
 	"github.com/stackrox/rox/pkg/tlscheckcache"
 	"github.com/stackrox/rox/pkg/urlfmt"
 	"github.com/stackrox/rox/pkg/utils"
+
+	pkgerrors "github.com/pkg/errors"
 )
 
 // lazyTLSCheckRegistry is a wrapper around a registry that performs
