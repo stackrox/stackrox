@@ -98,6 +98,7 @@ type localSensorConfig struct {
 	CentralEndpoint    string
 	FakeCollector      bool
 	Namespace          string
+	OperatorInstall    bool
 }
 
 const (
@@ -168,6 +169,7 @@ func mustGetCommandLineArgs() localSensorConfig {
 		CentralEndpoint:    "",
 		FakeCollector:      false,
 		Namespace:          certs.DefaultNamespace,
+		OperatorInstall:    false,
 	}
 	flag.BoolVar(&sensorConfig.NoCPUProfile, "no-cpu-prof", sensorConfig.NoCPUProfile, "disables producing CPU profile for performance analysis")
 	flag.BoolVar(&sensorConfig.NoMemProfile, "no-mem-prof", sensorConfig.NoMemProfile, "disables producing memory profile for performance analysis")
@@ -188,6 +190,7 @@ func mustGetCommandLineArgs() localSensorConfig {
 	flag.StringVar(&sensorConfig.CentralEndpoint, "connect-central", sensorConfig.CentralEndpoint, "connects to a Central instance rather than a fake Central")
 	flag.StringVar(&sensorConfig.Namespace, "namespace", sensorConfig.Namespace, "namespace where sensor is deployed (used for certificate generation when connecting to real Central)")
 	flag.BoolVar(&sensorConfig.FakeCollector, "with-fake-collector", sensorConfig.FakeCollector, "enables sensor to allow connections from a fake collector")
+	flag.BoolVar(&sensorConfig.OperatorInstall, "operator-install", sensorConfig.OperatorInstall, "use together with connect-central, indicates that the remote ACS was installed with the Operator")
 	flag.Parse()
 
 	sensorConfig.CentralOutput = path.Clean(sensorConfig.CentralOutput)
@@ -335,7 +338,7 @@ func main() {
 	// When connecting to real Central, override deployment identification with explicit namespace
 	// to avoid panic during certificate generation (namespace is required but cannot be detected
 	// when running outside a Kubernetes pod without service account files)
-	if !isFakeCentral {
+	if !isFakeCentral && !localConfig.OperatorInstall {
 		deploymentID := createDeploymentIdentificationWithNamespace(localConfig.Namespace)
 		sensorConfig = sensorConfig.WithDeploymentIdentification(deploymentID)
 	}
@@ -448,7 +451,15 @@ func createDeploymentIdentificationWithNamespace(namespace string) *storage.Sens
 }
 
 func setupCentralWithRealConnection(cli client.Interface, localConfig localSensorConfig) (centralclient.CentralConnectionFactory, centralclient.CertLoader) {
-	certFetcher := certs.NewCertificateFetcher(cli, certs.WithOutputDir("tmp/"))
+	certFetcherOpts := []certs.OptionFunc{
+		certs.WithOutputDir("tmp/"),
+		certs.WithNamespace(localConfig.Namespace),
+	}
+	// Operator installations do not have the clusterNameSecret (usually 'helm-effective-cluster-name')
+	if localConfig.OperatorInstall {
+		certFetcherOpts = append(certFetcherOpts, certs.WithClusterName("", "", ""))
+	}
+	certFetcher := certs.NewCertificateFetcher(cli, certFetcherOpts...)
 	if err := certFetcher.FetchCertificatesAndSetEnvironment(); err != nil {
 		utils.CrashOnError(errors.Wrap(err, "failed to retrieve sensor's certificates"))
 	}
