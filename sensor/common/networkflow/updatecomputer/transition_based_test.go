@@ -12,6 +12,9 @@ import (
 )
 
 func TestTransitionBasedComputeUpdatedProcesses(t *testing.T) {
+	// Disable feature flags to test the original behavior
+	t.Setenv("ROX_NETFLOW_BATCHING", "false")
+	t.Setenv("ROX_NETFLOW_CACHE_LIMITING", "false")
 
 	proc1 := indicator.ProcessInfo{
 		ProcessName: "foo",
