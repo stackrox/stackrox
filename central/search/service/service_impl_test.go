@@ -22,6 +22,8 @@ import (
 	policyMocks "github.com/stackrox/rox/central/policy/datastore/mocks"
 	policyStore "github.com/stackrox/rox/central/policy/store"
 	categoryDataStoreMocks "github.com/stackrox/rox/central/policycategory/datastore/mocks"
+	policyCategoryEdgeDataStoreMocks "github.com/stackrox/rox/central/policycategoryedge/datastore/mocks"
+
 	"github.com/stackrox/rox/central/ranking"
 	roleMocks "github.com/stackrox/rox/central/rbac/k8srole/datastore/mocks"
 	roleBindingsMocks "github.com/stackrox/rox/central/rbac/k8srolebinding/datastore/mocks"
@@ -253,9 +255,10 @@ func (s *SearchOperationsTestSuite) TestAutocompleteForEnums() {
 	var ds policyDatastore.DataStore
 
 	categoriesDS := categoryDataStoreMocks.NewMockDataStore(s.mockCtrl)
+	edgeDS := policyCategoryEdgeDataStoreMocks.NewMockDataStore(s.mockCtrl)
 	policyStorage := policyStore.New(s.pool)
 	s.NoError(policyStorage.Upsert(ctx, fixtures.GetPolicy()))
-	ds = policyDatastore.New(policyStorage, nil, nil, categoriesDS)
+	ds = policyDatastore.New(policyStorage, nil, nil, categoriesDS, edgeDS)
 
 	builder := NewBuilder().
 		WithAlertStore(alertMocks.NewMockDataStore(s.mockCtrl)).
