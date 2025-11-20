@@ -622,6 +622,7 @@ func (s *PolicyValueValidator) TestValidateFileOperationRequiresFilePath() {
 	s.Error(Validate(&storage.Policy{
 		Name:          "Operation Without Path",
 		PolicyVersion: policyversion.CurrentVersion().String(),
+		EventSource:   storage.EventSource_NODE_EVENT,
 		PolicySections: []*storage.PolicySection{
 			{
 				SectionName: "bad",
@@ -638,6 +639,7 @@ func (s *PolicyValueValidator) TestValidateFileOperationRequiresFilePath() {
 	s.Error(Validate(&storage.Policy{
 		Name:          "Operation With Path In Different Section",
 		PolicyVersion: policyversion.CurrentVersion().String(),
+		EventSource:   storage.EventSource_NODE_EVENT,
 		PolicySections: []*storage.PolicySection{
 			{
 				SectionName: "bad1",
@@ -663,6 +665,7 @@ func (s *PolicyValueValidator) TestValidateFileOperationRequiresFilePath() {
 	s.NoError(Validate(&storage.Policy{
 		Name:          "Valid Section",
 		PolicyVersion: policyversion.CurrentVersion().String(),
+		EventSource:   storage.EventSource_NODE_EVENT,
 		PolicySections: []*storage.PolicySection{
 			{
 				SectionName: "good",

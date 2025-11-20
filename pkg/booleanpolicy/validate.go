@@ -113,8 +113,9 @@ func validatePolicySection(s *storage.PolicySection, configuration *validateConf
 	errorList := errorhelpers.NewErrorList(fmt.Sprintf("validation of section %q", s.GetSectionName()))
 
 	seenFields := set.NewStringSet()
+	metadata := FieldMetadataSingleton()
 	for _, g := range s.GetPolicyGroups() {
-		m, err := FieldMetadataSingleton().findFieldMetadata(g.GetFieldName(), configuration)
+		m, err := metadata.findFieldMetadata(g.GetFieldName(), configuration)
 		switch err {
 		case nil:
 			// All good, proceed
@@ -123,6 +124,13 @@ func validatePolicySection(s *storage.PolicySection, configuration *validateConf
 			continue
 		default:
 			errorList.AddWrapf(err, "failed to resolve metadata for field %q", g.GetFieldName())
+			continue
+		}
+
+		// For fields that apply to an event source, validate that they match
+		// the policy's event source.
+		if !m.IsNotApplicableEventSource() && !m.IsFromEventSource(eventSource) {
+			errorList.AddStringf("%q is not supported for event source %q", g.GetFieldName(), eventSource)
 			continue
 		}
 

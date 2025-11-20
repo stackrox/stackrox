@@ -77,9 +77,34 @@ type metadataAndQB struct {
 	fieldTypes         []RuntimeFieldType
 }
 
+func (m *metadataAndQB) IsOfType(expectedType RuntimeFieldType) bool {
+	return slices.Contains(m.fieldTypes, expectedType)
+}
+
+func (m *metadataAndQB) IsDeploymentEventField() bool {
+	return m.IsOfType(Process) || m.IsOfType(NetworkFlow) || m.IsOfType(KubeEvent)
+}
+
+func (m *metadataAndQB) IsAuditLogEventField() bool {
+	return m.IsOfType(AuditLogEvent)
+}
+
+func (m *metadataAndQB) IsFileEventField() bool {
+	return m.IsOfType(FileAccess)
+}
+
+func (m *metadataAndQB) IsFromEventSource(eventSource storage.EventSource) bool {
+	return slices.Contains(m.eventSourceContext, eventSource)
+}
+
+func (m *metadataAndQB) IsNotApplicableEventSource() bool {
+	return m.IsFromEventSource(storage.EventSource_NOT_APPLICABLE)
+}
+
 func (f *FieldMetadata) findField(fieldName string) (*metadataAndQB, error) {
 	field := f.fieldsToQB[fieldName]
 	if field == nil {
+		log.Warnf("policy field %s not found", fieldName)
 		return nil, errNoSuchField
 	}
 	return field, nil
@@ -87,42 +112,57 @@ func (f *FieldMetadata) findField(fieldName string) (*metadataAndQB, error) {
 
 // FieldIsOfType returns true if the specified field is of the specified type
 func (f *FieldMetadata) FieldIsOfType(fieldName string, expectedType RuntimeFieldType) bool {
-	field := f.fieldsToQB[fieldName]
+	field, _ := f.findField(fieldName)
 	if field == nil {
-		log.Warnf("policy field %s not found", fieldName)
 		return false
 	}
-	for _, fieldType := range field.fieldTypes {
-		if fieldType == expectedType {
-			return true
-		}
-	}
-	return false
+	return field.IsOfType(expectedType)
 }
 
 // IsDeploymentEventField returns true if the field is an deployment event field
 func (f *FieldMetadata) IsDeploymentEventField(fieldName string) bool {
-	return f.FieldIsOfType(fieldName, Process) || f.FieldIsOfType(fieldName, NetworkFlow) ||
-		f.FieldIsOfType(fieldName, KubeEvent)
+	field, _ := f.findField(fieldName)
+	if field == nil {
+		return false
+	}
+
+	return field.IsDeploymentEventField()
 }
 
 // IsAuditLogEventField returns true if the field is an audit log field
 func (f *FieldMetadata) IsAuditLogEventField(fieldName string) bool {
-	return f.FieldIsOfType(fieldName, AuditLogEvent)
+	field, _ := f.findField(fieldName)
+	if field == nil {
+		return false
+	}
+
+	return field.IsAuditLogEventField()
 }
 
 // IsFileEventField returns true if the field is a node event field
 func (f *FieldMetadata) IsFileEventField(fieldName string) bool {
-	return f.FieldIsOfType(fieldName, FileAccess)
+	field, _ := f.findField(fieldName)
+	if field == nil {
+		return false
+	}
+
+	return field.IsFileEventField()
 }
 
 func (f *FieldMetadata) IsFromEventSource(fieldName string, eventSource storage.EventSource) bool {
-	field := f.fieldsToQB[fieldName]
+	field, _ := f.findField(fieldName)
 	if field == nil {
-		log.Warnf("policy field %s not found", fieldName)
 		return false
 	}
-	return slices.Contains(field.eventSourceContext, eventSource)
+	return field.IsFromEventSource(eventSource)
+}
+
+func (f *FieldMetadata) IsNotApplicableEventSource(fieldName string) bool {
+	field, _ := f.findField(fieldName)
+	if field == nil {
+		return false
+	}
+	return field.IsNotApplicableEventSource()
 }
 
 // findFieldMetadata searches for a policy criteria field by name and returns the field metadata
