@@ -88,8 +88,13 @@ func (p *Pipeline) Shutdown() {
 // WaitForShutdown waits for the pipeline shutdown to complete.
 // This is useful for tests that need to ensure shutdown has fully completed.
 func (p *Pipeline) WaitForShutdown() error {
-	_ = p.enricher.Stopped().Wait()
-	return p.stopper.Client().Stopped().Wait()
+	if err := p.enricher.Stopped().Wait(); err != nil {
+		return errors.Wrap(err, "waiting for enricher to stop")
+	}
+	if err := p.stopper.Client().Stopped().Wait(); err != nil {
+		return errors.Wrap(err, "waiting for pipeline stopper")
+	}
+	return nil
 }
 
 // Notify allows the component state to be propagated to the pipeline
