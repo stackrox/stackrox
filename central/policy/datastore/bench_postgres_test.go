@@ -9,9 +9,7 @@ import (
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stretchr/testify/require"
-
 	policyStore "github.com/stackrox/rox/central/policy/store"
-
 	policyCategoryDS "github.com/stackrox/rox/central/policycategory/datastore"
 	policyCategoryStore "github.com/stackrox/rox/central/policycategory/store/postgres"
 	policyCategoryEdgeDS "github.com/stackrox/rox/central/policycategoryedge/datastore"

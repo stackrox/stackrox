@@ -13,7 +13,6 @@ import (
 	"github.com/stackrox/rox/central/policy/store"
 	categoriesDataStore "github.com/stackrox/rox/central/policycategory/datastore"
 	policyCategoryEdgeDS "github.com/stackrox/rox/central/policycategoryedge/datastore"
-
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/errorhelpers"
@@ -135,7 +134,10 @@ func (ds *datastoreImpl) SearchRawPolicies(ctx context.Context, q *v1.Query) ([]
 		return nil, err
 	}
 
-	ds.fillCategoryNames(ctx, policies...)
+	err = ds.fillCategoryNames(ctx, policies...)
+	if err != nil {
+		return nil, err
+	}
 
 	return policies, nil
 }
@@ -168,12 +170,12 @@ func (ds *datastoreImpl) fillCategoryNames(ctx context.Context, policies ...*sto
 
 	policyIDToCategoryNames := make(map[string][]string, len(policies))
 	for _, edge := range allEdges {
-		policyID := edge.PolicyId
+		policyID := edge.GetPolicyId()
 		if _, keyExists := policyIDToCategoryNames[policyID]; !keyExists {
 			policyIDToCategoryNames[policyID] = []string{}
 		}
 
-		category, exist, err := ds.categoriesDatastore.GetPolicyCategory(ctx, edge.CategoryId)
+		category, exist, err := ds.categoriesDatastore.GetPolicyCategory(ctx, edge.GetCategoryId())
 		if err != nil {
 			return err
 		}
@@ -184,7 +186,7 @@ func (ds *datastoreImpl) fillCategoryNames(ctx context.Context, policies ...*sto
 	}
 
 	for _, p := range policies {
-		p.Categories = policyIDToCategoryNames[p.Id]
+		p.Categories = policyIDToCategoryNames[p.GetId()]
 	}
 
 	return nil
