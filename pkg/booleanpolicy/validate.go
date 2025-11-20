@@ -183,13 +183,8 @@ func validatePolicySection(s *storage.PolicySection, configuration *validateConf
 // combinations of fields, as outlined in the fieldDependencies map.
 func validateFieldDependencies(s *storage.PolicySection, seenFields *set.StringSet) error {
 	errorList := errorhelpers.NewErrorList(fmt.Sprintf("validation field dependencies for %q", s.GetSectionName()))
-	for _, field := range seenFields.AsSlice() {
-		dependencies, found := fieldDependencies[field]
-		if !found {
-			continue
-		}
-
-		if !slices.ContainsFunc(dependencies.AsSlice(), func(dep string) bool {
+	for field, dependencies := range fieldDependencies {
+		if seenFields.Contains(field) && !slices.ContainsFunc(dependencies.AsSlice(), func(dep string) bool {
 			return seenFields.Contains(dep)
 		}) {
 			errorList.AddStringf("policy sections with %s must also contain %s", field, strings.Join(dependencies.AsSlice(), " or "))
