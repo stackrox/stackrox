@@ -158,8 +158,8 @@ func (ds *datastoreImpl) GetPolicy(ctx context.Context, id string) (*storage.Pol
 	return policy, true, nil
 }
 
-// fillCategoryNames presumes that both policyCategoryEdgeDatastore and categoriesDatastore to be cacheStore
-// if those stores get changed and are not cached anymore we're sending a DB query per PolicyCategoryEdge
+// fillCategoryNames presumes both policyCategoryEdgeDatastore and categoriesDatastore to be cachedStore
+// if those stores are not cached anymore we're sending a DB query per PolicyCategoryEdge
 func (ds *datastoreImpl) fillCategoryNames(ctx context.Context, policies ...*storage.Policy) error {
 	allEdges, err := ds.policyCategoryEdgeDatastore.GetAll(ctx)
 	if err != nil {

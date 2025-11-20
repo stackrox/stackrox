@@ -20,23 +20,16 @@ import (
 
 func BenchmarkGetAllPolcies(b *testing.B) {
 	ctx := sac.WithAllAccess(context.Background())
-	b.Setenv("CI", "true")
-	b.Setenv("POSTGRES_PASSWORD", "postgres")
 	testDB := pgtest.ForT(b)
 	defer testDB.Close()
 
-	db := testDB.DB
-	defer db.Close()
-	gormDB := testDB.GetGormDB(b)
-	defer pgtest.CloseGormDB(b, gormDB)
-
-	edgeStore := policyCategoryEdgeStore.New(db)
+	edgeStore := policyCategoryEdgeStore.New(testDB)
 	edgeDS := policyCategoryEdgeDS.New(edgeStore)
 
-	categoryStore := policyCategoryStore.New(db)
+	categoryStore := policyCategoryStore.New(testDB)
 	categoryDS := policyCategoryDS.New(categoryStore, edgeDS)
 
-	storage := policyStore.New(db)
+	storage := policyStore.New(testDB)
 	policyDS := New(storage, nil, nil, categoryDS, edgeDS)
 	seedPolicies(b, ctx, 100, policyDS)
 
