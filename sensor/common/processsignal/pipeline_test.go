@@ -301,8 +301,9 @@ func TestProcessPipelineShutdownRace(t *testing.T) {
 	// Shutdown the pipeline
 	p.Shutdown()
 
-	// Wait a bit to ensure shutdown completes
-	time.Sleep(50 * time.Millisecond)
+	// Wait for shutdown to complete deterministically by waiting on stopper completion
+	// This ensures all goroutines have exited and channels are closed before testing Process()
+	require.NoError(t, p.WaitForShutdown())
 
 	// Attempt to process a signal after shutdown - this should not panic
 	// The signal should be dropped silently

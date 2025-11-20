@@ -232,6 +232,20 @@ func writeMemoryProfile() {
 	log.Printf("Wrote memory profile")
 }
 
+// stopSensorAndWorkload stops the workload manager and sensor in the correct order.
+// This function is idempotent and safe to call multiple times.
+func stopSensorAndWorkload(workloadManager *fake.WorkloadManager, sensor *commonSensor.Sensor) {
+	// Stop fake workload goroutines before shutting down sensor to prevent sending on closed channels
+	// Stop() is idempotent - canceling an already-canceled context is safe, and WaitGroup.Wait()
+	// on an already-waited WaitGroup returns immediately.
+	if workloadManager != nil {
+		workloadManager.Stop()
+	}
+	if sensor != nil {
+		sensor.Stop()
+	}
+}
+
 func registerHostKillSignals(startTime time.Time, fakeCentral *centralDebug.FakeService, writeMemProfile bool, outfile string, outputFormat string, cancelFunc context.CancelFunc, sensor *commonSensor.Sensor, workloadManager *fake.WorkloadManager) {
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
@@ -242,11 +256,7 @@ func registerHostKillSignals(startTime time.Time, fakeCentral *centralDebug.Fake
 	if writeMemProfile {
 		writeMemoryProfile()
 	}
-	// Stop fake workload goroutines before shutting down sensor to prevent sending on closed channels
-	if workloadManager != nil {
-		workloadManager.Stop()
-	}
-	sensor.Stop()
+	stopSensorAndWorkload(workloadManager, sensor)
 	pprof.StopCPUProfile()
 	if fakeCentral != nil {
 		allMessages := fakeCentral.GetAllMessages()
@@ -425,11 +435,7 @@ func main() {
 	log.Printf("Running scenario for %f minutes\n", localConfig.Duration.Minutes())
 	select {
 	case <-time.Tick(localConfig.Duration):
-		// Stop fake workload goroutines before shutting down sensor to prevent sending on closed channels
-		if workloadManager != nil {
-			workloadManager.Stop()
-		}
-		s.Stop()
+		stopSensorAndWorkload(workloadManager, s)
 		break
 	case <-s.Stopped().Done():
 		break

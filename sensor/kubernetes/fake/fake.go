@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"math"
 	"os"
+	"sync"
 	"time"
 
 	"github.com/cockroachdb/pebble/v2"
@@ -113,6 +114,7 @@ type WorkloadManager struct {
 	// shutdown coordination
 	shutdownCtx    context.Context
 	shutdownCancel context.CancelFunc
+	wg             sync.WaitGroup
 }
 
 // WorkloadManagerConfig WorkloadManager's configuration
@@ -264,16 +266,20 @@ func (w *WorkloadManager) SetSignalHandlers(processPipeline signal.Pipeline, net
 // Stop gracefully stops all background goroutines managed by WorkloadManager.
 // This should be called before shutting down the process pipeline to prevent
 // sending signals on closed channels.
+// Stop waits for all background goroutines to exit before returning.
 func (w *WorkloadManager) Stop() {
 	if w.shutdownCancel != nil {
 		w.shutdownCancel()
 	}
+	// Wait for all background goroutines to exit
+	w.wg.Wait()
 }
 
 // clearActions periodically cleans up the fake client we're using. This needs to exist because we aren't
 // using the client for its original purpose of unit testing. Essentially, it stores the actions
 // so you can check which actions were run. We don't care about these actions so clear them every 10s
 func (w *WorkloadManager) clearActions() {
+	defer w.wg.Done()
 	t := time.NewTicker(10 * time.Second)
 	defer t.Stop()
 	for {
@@ -363,17 +369,21 @@ func (w *WorkloadManager) initializePreexistingResources() {
 	initializeOpenshiftClients(clientSet)
 	w.client = clientSet
 
+	w.wg.Add(1)
 	go w.clearActions()
 
 	// Fork management of deployment resources
 	for _, resource := range resources {
+		w.wg.Add(1)
 		go w.manageDeployment(w.shutdownCtx, resource)
 	}
 
 	// Fork management of networkPolicy resources
 	for _, resource := range npResources {
+		w.wg.Add(1)
 		go w.manageNetworkPolicy(w.shutdownCtx, resource)
 	}
 
+	w.wg.Add(1)
 	go w.manageFlows(w.shutdownCtx)
 }

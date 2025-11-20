@@ -52,9 +52,16 @@ func (w *WorkloadManager) getNetworkPolicy(workload NetworkPolicyWorkload, id st
 }
 
 func (w *WorkloadManager) manageNetworkPolicy(ctx context.Context, resources *networkPolicyToBeManaged) {
+	defer w.wg.Done()
 	w.manageNetworkPolicyLifecycle(ctx, resources)
+	if ctx.Err() != nil {
+		return
+	}
 
 	for count := 0; resources.workload.NumLifecycles == 0 || count < resources.workload.NumLifecycles; count++ {
+		if ctx.Err() != nil {
+			return
+		}
 		resources = w.getNetworkPolicy(resources.workload, "")
 		if _, err := w.client.Kubernetes().NetworkingV1().NetworkPolicies(resources.networkPolicy.Namespace).Create(ctx, resources.networkPolicy, metav1.CreateOptions{}); err != nil {
 			log.Errorf("error creating networkPolicy: %v", err)
@@ -65,10 +72,11 @@ func (w *WorkloadManager) manageNetworkPolicy(ctx context.Context, resources *ne
 }
 
 func (w *WorkloadManager) manageNetworkPolicyLifecycle(ctx context.Context, resources *networkPolicyToBeManaged) {
-	timer := newTimerWithJitter(resources.workload.LifecycleDuration/2 + time.Duration(rand.Int63n(int64(resources.workload.LifecycleDuration))))
-	defer timer.Stop()
+	lifecycleTimer := newTimerWithJitter(resources.workload.LifecycleDuration/2 + time.Duration(rand.Int63n(int64(resources.workload.LifecycleDuration))))
+	defer lifecycleTimer.Stop()
 
-	npNextUpdate := calculateDurationWithJitter(resources.workload.UpdateInterval)
+	updateTimer := time.NewTimer(calculateDurationWithJitter(resources.workload.UpdateInterval))
+	defer updateTimer.Stop()
 
 	np := resources.networkPolicy
 	stopSig := concurrency.NewSignal()
@@ -76,22 +84,31 @@ func (w *WorkloadManager) manageNetworkPolicyLifecycle(ctx context.Context, reso
 
 	for {
 		select {
-		case <-timer.C:
+		case <-ctx.Done():
+			stopSig.Signal()
+			return
+		case <-lifecycleTimer.C:
 			stopSig.Signal()
 			if err := npClient.Delete(ctx, np.Name, metav1.DeleteOptions{}); err != nil {
 				log.Error(err)
 			}
 			w.deleteID(networkPolicyPrefix, np.UID)
 			return
-		case <-time.After(npNextUpdate):
-			npNextUpdate = calculateDurationWithJitter(resources.workload.UpdateInterval)
-
+		case <-updateTimer.C:
 			annotations := createRandMap(16, 3)
 			np.Annotations = annotations
 
 			if _, err := npClient.Update(ctx, np, metav1.UpdateOptions{}); err != nil {
 				log.Error(err)
 			}
+
+			if !updateTimer.Stop() {
+				select {
+				case <-updateTimer.C:
+				default:
+				}
+			}
+			updateTimer.Reset(calculateDurationWithJitter(resources.workload.UpdateInterval))
 		}
 	}
 }
