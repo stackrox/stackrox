@@ -399,11 +399,6 @@ func (w *WorkloadManager) manageDeployment(ctx context.Context, resources *deplo
 		default:
 		}
 
-		// If the lifecycle count is bounded and we've completed the required iterations, stop.
-		if resources.workload.NumLifecycles != 0 && count+1 >= resources.workload.NumLifecycles {
-			return
-		}
-
 		resources = w.getDeployment(resources.workload, 0, nil, nil, nil)
 		deployment, replicaSet, pods := resources.deployment, resources.replicaSet, resources.pods
 		if _, err := w.client.Kubernetes().AppsV1().Deployments(deployment.Namespace).Create(ctx, deployment, metav1.CreateOptions{}); err != nil {
