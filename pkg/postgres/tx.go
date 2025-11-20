@@ -108,3 +108,16 @@ func (t *Tx) UseInContext() {
 		utils.Must(errors.New("it is not allowed to use one tx in two or more contexts"))
 	}
 }
+
+// NewTransactionOrFromContext returns a new transaction or one from context.
+func NewTransactionOrFromContext(ctx context.Context, db DB) (*Tx, context.Context, error) {
+	tx, err := db.Begin(ctx)
+	if err != nil {
+		return nil, nil, err
+	}
+	if HasTxInContext(ctx) {
+		return tx, ctx, nil
+	}
+	ctxWithTx := ContextWithTx(ctx, tx)
+	return tx, ctxWithTx, nil
+}
