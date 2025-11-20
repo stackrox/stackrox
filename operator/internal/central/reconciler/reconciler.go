@@ -47,6 +47,7 @@ func RegisterNewReconciler(mgr ctrl.Manager, selector string) error {
 		pkgReconciler.WithPreExtension(proxy.ReconcileProxySecretExtension(mgr.GetClient(), mgr.GetAPIReader(), proxyEnv)),
 		pkgReconciler.WithPreExtension(commonExtensions.CheckForbiddenNamespacesExtension(commonExtensions.IsSystemNamespace)),
 		pkgReconciler.WithPreExtension(commonExtensions.ReconcileProductVersionStatusExtension(version.GetMainVersion())),
+		pkgReconciler.WithPreExtension(commonExtensions.ValidateDeploymentDefaultsExtension()),
 	}
 
 	opts := make([]pkgReconciler.Option, 0, len(otherPreExtensions)+7)
