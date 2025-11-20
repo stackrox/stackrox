@@ -5,15 +5,15 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/postgres/pgtest"
-	"github.com/stackrox/rox/pkg/sac"
-	"github.com/stretchr/testify/require"
 	policyStore "github.com/stackrox/rox/central/policy/store"
 	policyCategoryDS "github.com/stackrox/rox/central/policycategory/datastore"
 	policyCategoryStore "github.com/stackrox/rox/central/policycategory/store/postgres"
 	policyCategoryEdgeDS "github.com/stackrox/rox/central/policycategoryedge/datastore"
 	policyCategoryEdgeStore "github.com/stackrox/rox/central/policycategoryedge/store/postgres"
+	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/postgres/pgtest"
+	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stretchr/testify/require"
 )
 
 func BenchmarkGetAllPolcies(b *testing.B) {
@@ -32,7 +32,10 @@ func BenchmarkGetAllPolcies(b *testing.B) {
 	seedPolicies(b, ctx, 100, policyDS)
 
 	for i := 0; i < b.N; i++ {
-		policyDS.GetAllPolicies(ctx)
+		_, err := policyDS.GetAllPolicies(ctx)
+		if err != nil {
+			b.Fatalf("error getting policies: %v", err)
+		}
 	}
 
 }
