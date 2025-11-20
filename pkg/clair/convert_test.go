@@ -5,7 +5,6 @@ import (
 
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/clair/mock"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/protoassert"
 	clairV1 "github.com/stackrox/scanner/api/v1"
 	"github.com/stackrox/scanner/pkg/component"
@@ -21,8 +20,6 @@ func TestConvertVulnerability(t *testing.T) {
 }
 
 func TestConvertFeatures(t *testing.T) {
-	t.Setenv(features.ActiveVulnMgmt.EnvVar(), "true")
-
 	clairFeatures, protoComponents := mock.GetTestFeatures()
 	protoassert.SlicesEqual(t, protoComponents, ConvertFeatures(nil, clairFeatures, ""))
 }
@@ -47,8 +44,6 @@ func componentWithLayerIndex(name string, idx int32) *storage.EmbeddedImageScanC
 }
 
 func TestConvertFeaturesWithLayerIndexes(t *testing.T) {
-	t.Setenv(features.ActiveVulnMgmt.EnvVar(), "true")
-
 	var cases = []struct {
 		name               string
 		metadata           *storage.ImageMetadata

@@ -17,18 +17,6 @@ import (
 var (
 	log = logging.LoggerForModule()
 
-	// TODO(ROX-28123): Clean up
-	normalizedSkipMap = set.NewStringSet(
-		v1.SearchCategory_IMAGE_VULNERABILITIES.String(),
-		v1.SearchCategory_COMPONENT_VULN_EDGE.String(),
-		v1.SearchCategory_IMAGE_COMPONENTS.String(),
-		v1.SearchCategory_IMAGE_COMPONENT_EDGE.String(),
-		v1.SearchCategory_IMAGE_VULN_EDGE.String())
-
-	flattenedSkipMap = set.NewStringSet(
-		v1.SearchCategory_IMAGE_VULNERABILITIES_V2.String(),
-		v1.SearchCategory_IMAGE_COMPONENTS_V2.String())
-
 	// TODO(ROX-30117): Clean up
 	normalizedImageSkipMap = set.NewStringSet(
 		v1.SearchCategory_IMAGES.String(),
@@ -173,14 +161,8 @@ func (s *Schema) SetOptionsMap(optionsMap search.OptionsMap) {
 func (s *Schema) SetSearchScope(searchCategories ...v1.SearchCategory) {
 	s.SearchScope = make(map[v1.SearchCategory]struct{})
 	for _, cat := range searchCategories {
-		// The flattened CVE schema and the original interfere with each other.  We only want
+		// The flattened image schema and the original interfere with each other.  We only want
 		// to register the proper search tags depending upon the feature flag.
-		if features.FlattenCVEData.Enabled() && normalizedSkipMap.Contains(cat.String()) {
-			continue
-		}
-		if !features.FlattenCVEData.Enabled() && flattenedSkipMap.Contains(cat.String()) {
-			continue
-		}
 		if features.FlattenImageData.Enabled() && normalizedImageSkipMap.Contains(cat.String()) {
 			continue
 		}

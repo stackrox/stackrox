@@ -57,7 +57,7 @@ require (
 	github.com/godbus/dbus/v5 v5.2.0
 	github.com/golang-jwt/jwt/v4 v4.5.2
 	github.com/google/certificate-transparency-go v1.3.2
-	github.com/google/gnostic-models v0.7.0
+	github.com/google/gnostic-models v0.7.1
 	github.com/google/go-cmp v0.7.0
 	github.com/google/go-containerregistry v0.20.6
 	github.com/google/go-github/v60 v60.0.0
@@ -106,7 +106,7 @@ require (
 	github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2
 	github.com/prometheus/client_golang v1.23.2
 	github.com/prometheus/client_model v0.6.2
-	github.com/prometheus/common v0.67.2
+	github.com/prometheus/common v0.67.3
 	github.com/quay/claircore v1.5.44
 	github.com/quay/claircore/toolkit v1.3.0
 	github.com/quay/zlog v1.1.9
