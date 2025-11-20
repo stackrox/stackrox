@@ -53,17 +53,15 @@ func (w *WorkloadManager) getNetworkPolicy(workload NetworkPolicyWorkload, id st
 func (w *WorkloadManager) manageNetworkPolicy(ctx context.Context, resources *networkPolicyToBeManaged) {
 	defer w.wg.Done()
 
-	for count := 0; resources.workload.NumLifecycles == 0 || count < resources.workload.NumLifecycles; count++ {
+	// NumLifecycles+1 is to handle the initial startup. These start up resources
+	// are like deploying Sensor into a new environment and syncing all objects.
+	for count := 0; resources.workload.NumLifecycles == 0 || count < resources.workload.NumLifecycles+1; count++ {
 		w.manageNetworkPolicyLifecycle(ctx, resources)
 
 		select {
 		case <-ctx.Done():
 			return
 		default:
-		}
-
-		if resources.workload.NumLifecycles != 0 && count+1 >= resources.workload.NumLifecycles {
-			return
 		}
 
 		resources = w.getNetworkPolicy(resources.workload, "")
