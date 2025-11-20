@@ -419,8 +419,8 @@ func (w *WorkloadManager) manageDeployment(ctx context.Context, resources *deplo
 }
 
 func (w *WorkloadManager) manageDeploymentLifecycle(ctx context.Context, resources *deploymentResourcesToBeManaged) {
-	lifecycleTimer := newTimerWithJitter(resources.workload.LifecycleDuration/2 + time.Duration(rand.Int63n(int64(resources.workload.LifecycleDuration))))
-	defer lifecycleTimer.Stop()
+	timer := newTimerWithJitter(resources.workload.LifecycleDuration/2 + time.Duration(rand.Int63n(int64(resources.workload.LifecycleDuration))))
+	defer timer.Stop()
 
 	deploymentNextUpdate := calculateDurationWithJitter(resources.workload.UpdateInterval)
 
@@ -440,7 +440,7 @@ func (w *WorkloadManager) manageDeploymentLifecycle(ctx context.Context, resourc
 		case <-ctx.Done():
 			stopSig.Signal()
 			return
-		case <-lifecycleTimer.C:
+		case <-timer.C:
 			stopSig.Signal()
 			if err := deploymentClient.Delete(ctx, deployment.Name, metav1.DeleteOptions{}); err != nil {
 				log.Error(err)
@@ -465,8 +465,6 @@ func (w *WorkloadManager) manageDeploymentLifecycle(ctx context.Context, resourc
 			if _, err := replicaSetClient.Update(ctx, replicaset, metav1.UpdateOptions{}); err != nil {
 				log.Errorf("error updating replica set: %v", err)
 			}
-
-			updateCh = time.After(calculateDurationWithJitter(resources.workload.UpdateInterval))
 		}
 	}
 }
