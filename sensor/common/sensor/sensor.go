@@ -4,7 +4,6 @@ import (
 	"context"
 	"crypto/x509"
 	"net/http"
-	"os"
 	"strconv"
 	"sync/atomic"
 	"time"
@@ -45,9 +44,9 @@ const (
 	// The 127.0.0.1 ensures we do not expose it externally and must be port-forwarded to
 	pprofServer = "127.0.0.1:6060"
 
-	defaultPublicAPIEndpoint = ":8443"
+	publicAPIEndpoint = ":8443"
 
-	defaultPublicWebhookEndpoint = ":9443"
+	publicWebhookEndpoint = ":9443"
 
 	scannerDefinitionsRoute = "/scanner/definitions"
 )
@@ -55,24 +54,6 @@ const (
 var (
 	log = logging.LoggerForModule()
 )
-
-// getPublicAPIEndpoint returns the public API endpoint from environment variable
-// SENSOR_PUBLIC_API_ENDPOINT or the default ":8443" if not set.
-func getPublicAPIEndpoint() string {
-	if endpoint := os.Getenv("SENSOR_PUBLIC_API_ENDPOINT"); endpoint != "" {
-		return endpoint
-	}
-	return defaultPublicAPIEndpoint
-}
-
-// getPublicWebhookEndpoint returns the public webhook endpoint from environment variable
-// SENSOR_PUBLIC_WEBHOOK_ENDPOINT or the default ":9443" if not set.
-func getPublicWebhookEndpoint() string {
-	if endpoint := os.Getenv("SENSOR_PUBLIC_WEBHOOK_ENDPOINT"); endpoint != "" {
-		return endpoint
-	}
-	return defaultPublicWebhookEndpoint
-}
 
 // A Sensor object configures a StackRox Sensor.
 // Its functions execute common tasks across supported platforms.
@@ -266,7 +247,7 @@ func (s *Sensor) Start() {
 		IdentityExtractors: []authn.IdentityExtractor{mtlsServiceIDExtractor},
 		Endpoints: []*pkgGRPC.EndpointConfig{
 			{
-				ListenEndpoint: getPublicAPIEndpoint(),
+				ListenEndpoint: publicAPIEndpoint,
 				TLS:            verifier.NonCA{},
 				ServeGRPC:      true,
 				ServeHTTP:      true,
@@ -285,7 +266,7 @@ func (s *Sensor) Start() {
 		CustomRoutes: []routes.CustomRoute{legacyAdmissionControllerRoute, readinessRoute},
 		Endpoints: []*pkgGRPC.EndpointConfig{
 			{
-				ListenEndpoint: getPublicWebhookEndpoint(),
+				ListenEndpoint: publicWebhookEndpoint,
 				TLS:            verifier.NonCA{},
 				ServeHTTP:      true,
 			},
