@@ -32,3 +32,53 @@ func readPath(t *testing.T, values chartutil.Values, path string) interface{} {
 	require.NoError(t, err)
 	return v
 }
+
+// InfraScheduling is the expected scheduling for infrastructure nodes used in tests.
+var InfraScheduling = SchedulingExpectation{
+	NodeSelector: map[string]any{"node-role.kubernetes.io/infra": ""},
+	Tolerations: []any{
+		map[string]any{"effect": "NoSchedule", "key": "node-role.kubernetes.io/infra", "operator": "Equal", "value": "reserved"},
+		map[string]any{"effect": "NoExecute", "key": "node-role.kubernetes.io/infra", "operator": "Equal", "value": "reserved"},
+	},
+}
+
+// GlobalScheduling is a generic global scheduling expectation used in tests.
+var GlobalScheduling = SchedulingExpectation{
+	NodeSelector: map[string]any{"global-label": "global-value"},
+	Tolerations:  []any{map[string]any{"key": "global-taint", "operator": "Exists"}},
+}
+
+// ComponentPath defines the Helm value paths for a component's scheduling fields.
+type ComponentPath struct {
+	Name             string
+	NodeSelectorPath string
+	TolerationsPath  string
+}
+
+// SchedulingExpectation defines expected scheduling values for a component.
+type SchedulingExpectation struct {
+	NodeSelector map[string]any
+	Tolerations  []any
+}
+
+// SchedulingExpectations maps component names to their expected scheduling values.
+type SchedulingExpectations map[string]SchedulingExpectation
+
+// NewSchedulingExpectations creates expectations where all components have the same scheduling values.
+func NewSchedulingExpectations(paths []ComponentPath, expectation SchedulingExpectation) SchedulingExpectations {
+	expectations := make(SchedulingExpectations, len(paths))
+	for _, path := range paths {
+		expectations[path.Name] = expectation
+	}
+	return expectations
+}
+
+// WithOverride returns a copy of the expectations with the specified component's values overridden.
+func (e SchedulingExpectations) WithOverride(name string, expectation SchedulingExpectation) SchedulingExpectations {
+	result := make(SchedulingExpectations, len(e))
+	for k, v := range e {
+		result[k] = v
+	}
+	result[name] = expectation
+	return result
+}
