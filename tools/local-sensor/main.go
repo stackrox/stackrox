@@ -21,13 +21,17 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/clientconn"
+	"github.com/stackrox/rox/pkg/clusterid"
+	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/continuousprofiling"
 	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/metrics"
+	pkgSync "github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/sensor/common/centralclient"
-	"github.com/stackrox/rox/sensor/common/clusterid"
 	commonSensor "github.com/stackrox/rox/sensor/common/sensor"
 	centralDebug "github.com/stackrox/rox/sensor/debugger/central"
 	"github.com/stackrox/rox/sensor/debugger/certs"
@@ -49,6 +53,78 @@ import (
 // gRPC connection to central. This was introduced for testing and debugging purposes. At its current form,
 // it does not connect to a real central, but instead it dumps all gRPC messages that would be sent to central in a file.
 
+var (
+	handlerLog = logging.LoggerForModule()
+)
+
+// localClusterIDHandler provides an implementation of clusterIDHandler for local-sensor.
+// This implements the same logic as sensor/common/clusterid but using only imports allowed for tools.
+type localClusterIDHandler struct {
+	once               pkgSync.Once
+	clusterID          string
+	clusterIDMutex     pkgSync.RWMutex
+	clusterIDAvailable concurrency.Signal
+}
+
+func newLocalClusterIDHandler() *localClusterIDHandler {
+	return &localClusterIDHandler{
+		clusterIDAvailable: concurrency.NewSignal(),
+	}
+}
+
+// Get returns the cluster id, blocking if necessary until it's available.
+func (h *localClusterIDHandler) Get() string {
+	h.once.Do(func() {
+		id := h.clusterIDFromCert()
+		if centralsensor.IsInitCertClusterID(id) {
+			handlerLog.Infof("Certificate has wildcard subject %s. Waiting to receive cluster ID from central...", id)
+			h.clusterIDAvailable.Wait()
+		} else {
+			concurrency.WithLock(&h.clusterIDMutex, func() {
+				h.clusterID = id
+				h.clusterIDAvailable.Signal()
+			})
+		}
+	})
+	return h.GetNoWait()
+}
+
+// GetNoWait returns the cluster id without waiting until it is available.
+func (h *localClusterIDHandler) GetNoWait() string {
+	h.clusterIDMutex.RLock()
+	defer h.clusterIDMutex.RUnlock()
+	return h.clusterID
+}
+
+// Set sets the global cluster ID value.
+func (h *localClusterIDHandler) Set(value string) {
+	effectiveClusterID, err := centralsensor.GetClusterID(value, h.clusterIDFromCert())
+	if err != nil {
+		handlerLog.Panicf("Invalid dynamic cluster ID value %q: %v", value, err)
+	}
+	if value != "" {
+		handlerLog.Infof("Received dynamic cluster ID %q", value)
+	}
+
+	h.clusterIDMutex.Lock()
+	defer h.clusterIDMutex.Unlock()
+
+	if h.clusterID == "" {
+		h.clusterID = effectiveClusterID
+		h.clusterIDAvailable.Signal()
+	} else if h.clusterID != effectiveClusterID {
+		handlerLog.Panicf("Newly set cluster ID value %q conflicts with previous value %q", effectiveClusterID, h.clusterID)
+	}
+}
+
+func (h *localClusterIDHandler) clusterIDFromCert() string {
+	id, err := clusterid.ParseClusterIDFromServiceCert(storage.ServiceType_SENSOR_SERVICE)
+	if err != nil {
+		handlerLog.Panicf("Error parsing cluster id from certificate: %v", err)
+	}
+	return id
+}
+
 func createConnectionAndStartServer(fakeCentral *centralDebug.FakeService) (*grpc.ClientConn, *centralDebug.FakeService, func()) {
 	buffer := 1024 * 1024
 	listener := bufconn.Listen(buffer)
@@ -62,9 +138,11 @@ func createConnectionAndStartServer(fakeCentral *centralDebug.FakeService) (*grp
 		})
 	}()
 
-	conn, err := grpc.DialContext(context.Background(), "", grpc.WithContextDialer(func(ctx context.Context, s string) (net.Conn, error) {
-		return listener.Dial()
-	}), grpc.WithTransportCredentials(insecure.NewCredentials()))
+	conn, err := grpc.NewClient("passthrough:///local",
+		grpc.WithContextDialer(func(ctx context.Context, s string) (net.Conn, error) {
+			return listener.Dial()
+		}),
+		grpc.WithTransportCredentials(insecure.NewCredentials()))
 
 	if err != nil {
 		panic(err)
@@ -313,7 +391,7 @@ func main() {
 	var connection centralclient.CentralConnectionFactory
 	var certLoader centralclient.CertLoader
 	var spyCentral *centralDebug.FakeService
-	clusterIDHandler := clusterid.NewHandler()
+	clusterIDHandler := newLocalClusterIDHandler()
 	if isFakeCentral {
 		connection, certLoader, spyCentral = setupCentralWithFakeConnection(localConfig)
 		defer spyCentral.Stop()
