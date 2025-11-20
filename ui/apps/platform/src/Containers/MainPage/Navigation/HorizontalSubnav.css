@@ -3,7 +3,6 @@
 * and that dropdown entries are not obscured by content
 */
 nav.pf-v6-c-nav.pf-m-horizontal-subnav.acs-pf-horizontal-subnav {
-  background-color: var(--pf-t--temp--dev--tbd /* CODEMODS: original v5 color was:--pf-v5-global--BackgroundColor--dark-300 */);
   position: sticky;
   overflow: visible;
   z-index: 9999;
@@ -27,13 +26,12 @@ nav.pf-v6-c-nav.pf-m-horizontal-subnav.acs-pf-horizontal-subnav .pf-v6-c-menu-to
 nav.pf-v6-c-nav.pf-m-horizontal-subnav.acs-pf-horizontal-subnav .pf-v6-c-menu-toggle:after {
   border-left-width: 1px;
   border-left-style: solid;
-  border-left-color: var(--pf-t--temp--dev--tbd /* CODEMODS: original v5 color was:--pf-v5-global--BackgroundColor--dark-200 */);
+  border-left-color: var(--pf-t--global--background--color--inverse--default);
 }
 
 nav.pf-v6-c-nav.pf-m-horizontal-subnav.acs-pf-horizontal-subnav .pf-v6-c-menu {
   max-width: 300px;
   white-space: break-spaces;
-  --pf-v6-c-menu__item-description--Color: var(--pf-t--temp--dev--tbd /* CODEMODS: original v5 color was:--pf-v5-global--Color--light-300 */);
 }
 
 /*

@@ -174,7 +174,7 @@ function ImagePage({
                         title={getAxiosErrorMessage(error)}
                         headingLevel="h2"
                         icon={ExclamationCircleIcon}
-                        iconClassName="pf-v6-u-danger-color-100"
+                        iconClassName="pf-v6-u-text-color-status-danger"
                     />
                 </Bullseye>
             </PageSection>

@@ -139,7 +139,7 @@ class ExportButton extends Component {
                     className="bg-base-100 rounded"
                     style={{
                         borderColor:
-                            'var(--pf-t--temp--dev--tbd)' /* CODEMODS: original v5 color was --pf-v5-global--primary-color--100 */,
+                            'var(--pf-t--global--icon--color--brand--default)',
                         borderWidth: 2,
                     }}
                 >
