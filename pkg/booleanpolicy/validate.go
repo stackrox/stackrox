@@ -3,12 +3,25 @@ package booleanpolicy
 import (
 	"errors"
 	"fmt"
+	"slices"
+	"strings"
 
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/booleanpolicy/fieldnames"
 	"github.com/stackrox/rox/pkg/booleanpolicy/policyversion"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/set"
+)
+
+var (
+	// fieldDependencies defines the dependencies between fields in a policy
+	// section. For each key field name in the map, the values is the set of
+	// one OR more fields that must also exist to pass the validation
+	fieldDependencies = map[string]set.StringSet{
+		fieldnames.FileOperation: set.NewStringSet(
+			fieldnames.NodeFilePath,
+		),
+	}
 )
 
 type validateConfiguration struct {
@@ -132,6 +145,11 @@ func validatePolicySection(s *storage.PolicySection, configuration *validateConf
 		}
 	}
 
+	err := validateFieldDependencies(s, &seenFields)
+	if err != nil {
+		errorList.AddError(err)
+	}
+
 	if eventSource == storage.EventSource_AUDIT_LOG_EVENT {
 		// For Audit Log source based policies, both the k8s resource and verb must be provided.
 		if !seenFields.Contains(fieldnames.KubeResource) {
@@ -147,6 +165,26 @@ func validatePolicySection(s *storage.PolicySection, configuration *validateConf
 			if !seenFields.Contains(fieldnames.KubeResource) {
 				errorList.AddString("kubernetes events policy must have the `Kubernetes Action` criteria")
 			}
+		}
+	}
+
+	return errorList.ToError()
+}
+
+// validateFieldDependencies validates a policy section with respect to required
+// combinations of fields, as outlined in the fieldDependencies map.
+func validateFieldDependencies(s *storage.PolicySection, seenFields *set.StringSet) error {
+	errorList := errorhelpers.NewErrorList(fmt.Sprintf("validation field dependencies for %q", s.GetSectionName()))
+	for _, field := range seenFields.AsSlice() {
+		dependencies, found := fieldDependencies[field]
+		if !found {
+			continue
+		}
+
+		if !slices.ContainsFunc(dependencies.AsSlice(), func(dep string) bool {
+			return seenFields.Contains(dep)
+		}) {
+			errorList.AddStringf("policy sections with %s must also contain %s", field, strings.Join(dependencies.AsSlice(), " or "))
 		}
 	}
 
