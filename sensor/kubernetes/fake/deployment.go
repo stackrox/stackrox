@@ -387,19 +387,21 @@ func newTimerWithJitter(duration time.Duration) *time.Timer {
 // this function should be called with go w.manageDeployment
 func (w *WorkloadManager) manageDeployment(ctx context.Context, resources *deploymentResourcesToBeManaged) {
 	defer w.wg.Done()
-	// Handle resources that were initialized for initial startup. These start up resources
-	// are like deploying Sensor into a new environment and syncing all objects
-	w.manageDeploymentLifecycle(ctx, resources)
-	if ctx.Err() != nil {
-		return
-	}
 
-	// The previous function returning means that the deployments, replicaset and pods were all deleted
-	// Now we recreate the objects again
 	for count := 0; resources.workload.NumLifecycles == 0 || count < resources.workload.NumLifecycles; count++ {
-		if ctx.Err() != nil {
+		w.manageDeploymentLifecycle(ctx, resources)
+
+		select {
+		case <-ctx.Done():
+			return
+		default:
+		}
+
+		// If the lifecycle count is bounded and we've completed the required iterations, stop.
+		if resources.workload.NumLifecycles != 0 && count+1 >= resources.workload.NumLifecycles {
 			return
 		}
+
 		resources = w.getDeployment(resources.workload, 0, nil, nil, nil)
 		deployment, replicaSet, pods := resources.deployment, resources.replicaSet, resources.pods
 		if _, err := w.client.Kubernetes().AppsV1().Deployments(deployment.Namespace).Create(ctx, deployment, metav1.CreateOptions{}); err != nil {
@@ -413,17 +415,18 @@ func (w *WorkloadManager) manageDeployment(ctx context.Context, resources *deplo
 				log.Errorf("error creating pod: %v", err)
 			}
 		}
-		w.manageDeploymentLifecycle(ctx, resources)
 	}
 }
 
 func (w *WorkloadManager) manageDeploymentLifecycle(ctx context.Context, resources *deploymentResourcesToBeManaged) {
-	lifecycleTimer := newTimerWithJitter(resources.workload.LifecycleDuration/2 + time.Duration(rand.Int63n(int64(resources.workload.LifecycleDuration))))
-	defer lifecycleTimer.Stop()
+	lifecycleDelay := resources.workload.LifecycleDuration / 2
+	if resources.workload.LifecycleDuration > 0 {
+		lifecycleDelay += time.Duration(rand.Int63n(int64(resources.workload.LifecycleDuration)))
+	}
+	lifecycleCh := time.After(calculateDurationWithJitter(lifecycleDelay))
 
-	// Timer controlling update cadence
-	updateTimer := time.NewTimer(calculateDurationWithJitter(resources.workload.UpdateInterval))
-	defer updateTimer.Stop()
+	var updateCh <-chan time.Time
+	updateCh = time.After(calculateDurationWithJitter(resources.workload.UpdateInterval))
 
 	deployment := resources.deployment
 	replicaset := resources.replicaSet
@@ -441,7 +444,7 @@ func (w *WorkloadManager) manageDeploymentLifecycle(ctx context.Context, resourc
 		case <-ctx.Done():
 			stopSig.Signal()
 			return
-		case <-lifecycleTimer.C:
+		case <-lifecycleCh:
 			stopSig.Signal()
 			if err := deploymentClient.Delete(ctx, deployment.Name, metav1.DeleteOptions{}); err != nil {
 				log.Error(err)
@@ -452,7 +455,7 @@ func (w *WorkloadManager) manageDeploymentLifecycle(ctx context.Context, resourc
 			}
 			w.deleteID(replicaSetPrefix, replicaset.UID)
 			return
-		case <-updateTimer.C:
+		case <-updateCh:
 			annotations := createRandMap(16, 3)
 
 			deployment.Annotations = annotations
@@ -465,14 +468,7 @@ func (w *WorkloadManager) manageDeploymentLifecycle(ctx context.Context, resourc
 				log.Errorf("error updating replica set: %v", err)
 			}
 
-			// Reset update timer
-			if !updateTimer.Stop() {
-				select {
-				case <-updateTimer.C:
-				default:
-				}
-			}
-			updateTimer.Reset(calculateDurationWithJitter(resources.workload.UpdateInterval))
+			updateCh = time.After(calculateDurationWithJitter(resources.workload.UpdateInterval))
 		}
 	}
 }

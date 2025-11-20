@@ -109,7 +109,7 @@ func (p *Pipeline) Process(signal *storage.ProcessSignal) {
 	// Check if shutdown has been requested before processing
 	select {
 	case <-p.stopper.Flow().StopRequested():
-		// Pipeline is shutting down, drop the signal to avoid panic from sending on closed channel
+		p.dropIndicator(signal, "pipeline shutting down before enrichment")
 		return
 	default:
 	}
@@ -133,8 +133,17 @@ func (p *Pipeline) Process(signal *storage.ProcessSignal) {
 	select {
 	case p.enrichedIndicators <- indicator:
 	case <-p.stopper.Flow().StopRequested():
-		// Pipeline shutdown occurred during send, drop the indicator
+		p.dropIndicator(indicator.GetSignal(), "pipeline shutting down during send")
 		return
+	}
+}
+
+func (p *Pipeline) dropIndicator(signal *storage.ProcessSignal, reason string) {
+	metrics.IncrementProcessSignalDroppedCount()
+	if signal != nil {
+		log.Debugf("Dropping process signal for container %s: %s", signal.GetContainerId(), reason)
+	} else {
+		log.Debugf("Dropping process signal: %s", reason)
 	}
 }
 

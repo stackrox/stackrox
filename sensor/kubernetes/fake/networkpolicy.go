@@ -5,7 +5,6 @@ import (
 	"math/rand"
 	"time"
 
-	"github.com/stackrox/rox/pkg/concurrency"
 	networkingV1 "k8s.io/api/networking/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -53,62 +52,57 @@ func (w *WorkloadManager) getNetworkPolicy(workload NetworkPolicyWorkload, id st
 
 func (w *WorkloadManager) manageNetworkPolicy(ctx context.Context, resources *networkPolicyToBeManaged) {
 	defer w.wg.Done()
-	w.manageNetworkPolicyLifecycle(ctx, resources)
-	if ctx.Err() != nil {
-		return
-	}
 
 	for count := 0; resources.workload.NumLifecycles == 0 || count < resources.workload.NumLifecycles; count++ {
-		if ctx.Err() != nil {
+		w.manageNetworkPolicyLifecycle(ctx, resources)
+
+		select {
+		case <-ctx.Done():
+			return
+		default:
+		}
+
+		if resources.workload.NumLifecycles != 0 && count+1 >= resources.workload.NumLifecycles {
 			return
 		}
+
 		resources = w.getNetworkPolicy(resources.workload, "")
 		if _, err := w.client.Kubernetes().NetworkingV1().NetworkPolicies(resources.networkPolicy.Namespace).Create(ctx, resources.networkPolicy, metav1.CreateOptions{}); err != nil {
 			log.Errorf("error creating networkPolicy: %v", err)
 		}
 		w.writeID(networkPolicyPrefix, resources.networkPolicy.UID)
-		w.manageNetworkPolicyLifecycle(ctx, resources)
 	}
 }
 
 func (w *WorkloadManager) manageNetworkPolicyLifecycle(ctx context.Context, resources *networkPolicyToBeManaged) {
-	lifecycleTimer := newTimerWithJitter(resources.workload.LifecycleDuration/2 + time.Duration(rand.Int63n(int64(resources.workload.LifecycleDuration))))
-	defer lifecycleTimer.Stop()
-
-	updateTimer := time.NewTimer(calculateDurationWithJitter(resources.workload.UpdateInterval))
-	defer updateTimer.Stop()
+	lifecycleDelay := resources.workload.LifecycleDuration / 2
+	if resources.workload.LifecycleDuration > 0 {
+		lifecycleDelay += time.Duration(rand.Int63n(int64(resources.workload.LifecycleDuration)))
+	}
+	deleteCh := time.After(calculateDurationWithJitter(lifecycleDelay))
+	updateCh := time.After(calculateDurationWithJitter(resources.workload.UpdateInterval))
 
 	np := resources.networkPolicy
-	stopSig := concurrency.NewSignal()
 	npClient := w.client.Kubernetes().NetworkingV1().NetworkPolicies(np.Namespace)
 
 	for {
 		select {
 		case <-ctx.Done():
-			stopSig.Signal()
 			return
-		case <-lifecycleTimer.C:
-			stopSig.Signal()
+		case <-deleteCh:
 			if err := npClient.Delete(ctx, np.Name, metav1.DeleteOptions{}); err != nil {
 				log.Error(err)
 			}
 			w.deleteID(networkPolicyPrefix, np.UID)
 			return
-		case <-updateTimer.C:
-			annotations := createRandMap(16, 3)
-			np.Annotations = annotations
+		case <-updateCh:
+			np.Annotations = createRandMap(16, 3)
 
 			if _, err := npClient.Update(ctx, np, metav1.UpdateOptions{}); err != nil {
 				log.Error(err)
 			}
 
-			if !updateTimer.Stop() {
-				select {
-				case <-updateTimer.C:
-				default:
-				}
-			}
-			updateTimer.Reset(calculateDurationWithJitter(resources.workload.UpdateInterval))
+			updateCh = time.After(calculateDurationWithJitter(resources.workload.UpdateInterval))
 		}
 	}
 }

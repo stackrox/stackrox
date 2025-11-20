@@ -28,6 +28,7 @@ import (
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/sensor/common/centralclient"
 	"github.com/stackrox/rox/sensor/common/clusterid"
+	"github.com/stackrox/rox/sensor/common/processsignal"
 	commonSensor "github.com/stackrox/rox/sensor/common/sensor"
 	centralDebug "github.com/stackrox/rox/sensor/debugger/central"
 	"github.com/stackrox/rox/sensor/debugger/certs"
@@ -234,7 +235,7 @@ func writeMemoryProfile() {
 
 // stopSensorAndWorkload stops the workload manager and sensor in the correct order.
 // This function is idempotent and safe to call multiple times.
-func stopSensorAndWorkload(workloadManager *fake.WorkloadManager, sensor *commonSensor.Sensor) {
+func stopSensorAndWorkload(workloadManager *fake.WorkloadManager, sensor *commonSensor.Sensor, pipeline *processsignal.Pipeline) {
 	// Stop fake workload goroutines before shutting down sensor to prevent sending on closed channels
 	// Stop() is idempotent - canceling an already-canceled context is safe, and WaitGroup.Wait()
 	// on an already-waited WaitGroup returns immediately.
@@ -244,9 +245,14 @@ func stopSensorAndWorkload(workloadManager *fake.WorkloadManager, sensor *common
 	if sensor != nil {
 		sensor.Stop()
 	}
+	if pipeline != nil {
+		if err := pipeline.WaitForShutdown(); err != nil {
+			log.Printf("warning: waiting for process pipeline shutdown failed: %v", err)
+		}
+	}
 }
 
-func registerHostKillSignals(startTime time.Time, fakeCentral *centralDebug.FakeService, writeMemProfile bool, outfile string, outputFormat string, cancelFunc context.CancelFunc, sensor *commonSensor.Sensor, workloadManager *fake.WorkloadManager) {
+func registerHostKillSignals(startTime time.Time, fakeCentral *centralDebug.FakeService, writeMemProfile bool, outfile string, outputFormat string, cancelFunc context.CancelFunc, sensor *commonSensor.Sensor, workloadManager *fake.WorkloadManager, pipeline *processsignal.Pipeline) {
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
 	<-ctx.Done()
@@ -256,7 +262,7 @@ func registerHostKillSignals(startTime time.Time, fakeCentral *centralDebug.Fake
 	if writeMemProfile {
 		writeMemoryProfile()
 	}
-	stopSensorAndWorkload(workloadManager, sensor)
+	stopSensorAndWorkload(workloadManager, sensor, pipeline)
 	pprof.StopCPUProfile()
 	if fakeCentral != nil {
 		allMessages := fakeCentral.GetAllMessages()
@@ -287,7 +293,10 @@ func main() {
 	if localConfig.ReplayK8sEnabled {
 		k8sClient = k8s.MakeFakeClient()
 	}
-	var workloadManager *fake.WorkloadManager
+	var (
+		workloadManager *fake.WorkloadManager
+		processPipeline *processsignal.Pipeline
+	)
 	// if we are using a fake workload we don't want to connect to a real K8s cluster
 	if localConfig.FakeWorkloadFile != "" {
 		workloadManager = fake.NewWorkloadManager(fake.ConfigDefaults().
@@ -344,7 +353,10 @@ func main() {
 		WithCentralConnectionFactory(connection).
 		WithCertLoader(certLoader).
 		WithLocalSensor(true).
-		WithWorkloadManager(workloadManager)
+		WithWorkloadManager(workloadManager).
+		WithProcessPipelineObserver(func(p *processsignal.Pipeline) {
+			processPipeline = p
+		})
 
 	// When connecting to real Central, override deployment identification with explicit namespace
 	// to avoid panic during certificate generation (namespace is required but cannot be detected
@@ -419,7 +431,7 @@ func main() {
 	}
 
 	go s.Start()
-	go registerHostKillSignals(startTime, spyCentral, !localConfig.NoMemProfile, localConfig.CentralOutput, localConfig.OutputFormat, cancelFunc, s, workloadManager)
+	go registerHostKillSignals(startTime, spyCentral, !localConfig.NoMemProfile, localConfig.CentralOutput, localConfig.OutputFormat, cancelFunc, s, workloadManager, processPipeline)
 
 	if spyCentral != nil {
 		spyCentral.ConnectionStarted.Wait()
@@ -435,7 +447,7 @@ func main() {
 	log.Printf("Running scenario for %f minutes\n", localConfig.Duration.Minutes())
 	select {
 	case <-time.Tick(localConfig.Duration):
-		stopSensorAndWorkload(workloadManager, s)
+		stopSensorAndWorkload(workloadManager, s, processPipeline)
 		break
 	case <-s.Stopped().Done():
 		break
