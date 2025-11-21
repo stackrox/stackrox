@@ -651,6 +651,10 @@ type CentralStatus struct {
 	ProductVersion string `json:"productVersion,omitempty"`
 	//+operator-sdk:csv:customresourcedefinitions:type=status,order=2
 	Central *CentralComponentStatus `json:"central,omitempty"`
+
+	// ObservedGeneration is the generation most recently observed by the controller.
+	//+operator-sdk:csv:customresourcedefinitions:type=status,order=4
+	ObservedGeneration int64 `json:"observedGeneration,omitempty"`
 }
 
 // AdminPasswordStatus shows status related to the admin password.
@@ -673,6 +677,11 @@ type CentralComponentStatus struct {
 //+kubebuilder:object:root=true
 //+kubebuilder:subresource:status
 //+operator-sdk:csv:customresourcedefinitions:resources={{Deployment,v1,""},{Secret,v1,""},{Service,v1,""},{Route,v1,""}}
+//+kubebuilder:printcolumn:name="Version",type=string,JSONPath=`.status.productVersion`
+//+kubebuilder:printcolumn:name="AdminPassword",type=string,JSONPath=`.status.central.adminPassword.adminPasswordSecretReference`
+//+kubebuilder:printcolumn:name="Message",type=string,JSONPath=`.status.conditions[?(@.type=="Deployed")].message`
+//+kubebuilder:printcolumn:name="Progressing",type=string,JSONPath=`.status.conditions[?(@.type=="Progressing")].status`
+//+kubebuilder:printcolumn:name="Available",type=string,JSONPath=`.status.conditions[?(@.type=="Available")].status`
 //+genclient
 
 // Central is the configuration template for the central services. This includes the API server, persistent storage,
