@@ -22,7 +22,7 @@ type MockVsockConn struct {
 	readDeadline time.Time
 }
 
-func NewMockVsockConn() *MockVsockConn {
+func NewMockVsockConn(_ testing.TB) *MockVsockConn {
 	return &MockVsockConn{}
 }
 
