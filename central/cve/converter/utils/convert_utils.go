@@ -309,10 +309,15 @@ func EmbeddedVulnerabilityToImageCVE(os string, from *storage.EmbeddedVulnerabil
 		SnoozeExpiry:    from.GetSuppressExpiry(),
 		CvssMetrics:     from.GetCvssMetrics(),
 	}
-	if ret.GetCveBaseInfo().GetCvssV3() != nil {
+	// Determine the CVSS score version based on available CVSS data.
+	// Only set a specific version (V2 or V3) if the score is greater than 0.
+	// A score of 0 indicates that the CVSS score is not available for this CVE,
+	// in which case we should return UNKNOWN to avoid confusion.
+	ret.CveBaseInfo.ScoreVersion = storage.CVEInfo_UNKNOWN // Default to UNKNOWN
+	if ret.GetCveBaseInfo().GetCvssV3() != nil && ret.GetCveBaseInfo().GetCvssV3().GetScore() > 0 {
 		ret.CveBaseInfo.ScoreVersion = storage.CVEInfo_V3
 		ret.ImpactScore = from.GetCvssV3().GetImpactScore()
-	} else if ret.GetCveBaseInfo().GetCvssV2() != nil {
+	} else if ret.GetCveBaseInfo().GetCvssV2() != nil && ret.GetCveBaseInfo().GetCvssV2().GetScore() > 0 {
 		ret.CveBaseInfo.ScoreVersion = storage.CVEInfo_V2
 		ret.ImpactScore = from.GetCvssV2().GetImpactScore()
 	}
@@ -340,10 +345,15 @@ func EmbeddedVulnerabilityToClusterCVE(cveType storage.CVE_CVEType, from *storag
 		SnoozeExpiry: from.GetSuppressExpiry(),
 		Type:         cveType,
 	}
-	if ret.GetCveBaseInfo().GetCvssV3() != nil {
+	// Determine the CVSS score version based on available CVSS data.
+	// Only set a specific version (V2 or V3) if the score is greater than 0.
+	// A score of 0 indicates that the CVSS score is not available for this CVE,
+	// in which case we should return UNKNOWN to avoid confusion.
+	ret.CveBaseInfo.ScoreVersion = storage.CVEInfo_UNKNOWN // Default to UNKNOWN
+	if ret.GetCveBaseInfo().GetCvssV3() != nil && ret.GetCveBaseInfo().GetCvssV3().GetScore() > 0 {
 		ret.CveBaseInfo.ScoreVersion = storage.CVEInfo_V3
 		ret.ImpactScore = from.GetCvssV3().GetImpactScore()
-	} else if ret.GetCveBaseInfo().GetCvssV2() != nil {
+	} else if ret.GetCveBaseInfo().GetCvssV2() != nil && ret.GetCveBaseInfo().GetCvssV2().GetScore() > 0 {
 		ret.CveBaseInfo.ScoreVersion = storage.CVEInfo_V2
 		ret.ImpactScore = from.GetCvssV2().GetImpactScore()
 	}
