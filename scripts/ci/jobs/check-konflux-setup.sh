@@ -8,58 +8,13 @@ set -euo pipefail
 FAIL_FLAG="$(mktemp)"
 trap 'rm -f $FAIL_FLAG' EXIT
 
-check_create_snapshot_runs_last() {
-    local -r pipeline_path=".tekton/operator-bundle-pipeline.yaml"
-    local -r task_name="create-acs-style-snapshot"
-
-    local expected_runafter
-    expected_runafter="$(yq eval '.spec.tasks[] | select(.name != '\"${task_name}\"') | .name' "${pipeline_path}" | sort)"
-
-    local actual_runafter
-    actual_runafter="$(yq eval '.spec.tasks[] | select(.name == '\"${task_name}\"') | .runAfter[]' "${pipeline_path}")"
-
-    echo
-    echo "➤ ${pipeline_path} // checking ${task_name}: task's runAfter contents shall match the expected ones."
-    if ! compare "${expected_runafter}" "${actual_runafter}"; then
-        echo >&2 -e "How to resolve:
-1. Open ${pipeline_path} and locate the ${task_name} task
-2. Update the runAfter attribute of this task to the following list (all previous tasks in the pipeline, sorted alphabetically):
-${expected_runafter}"
-        record_failure "${FUNCNAME[0]}"
-    fi
-}
-
-check_all_components_are_part_of_custom_snapshot() {
-    local -r pipeline_path=".tekton/operator-bundle-pipeline.yaml"
-    local -r task_name="create-acs-style-snapshot"
-
-    # Actual components are based on the COMPONENTS parameter and stored as sorted multi-line string.
-    local actual_components
-    actual_components="$(yq eval '.spec.tasks[] | select(.name == '\"${task_name}\"') | .params[] | select(.name == "COMPONENTS") | .value' "${pipeline_path}" | yq eval '.[].name' - | tr " " "\n" | sort)"
-
-    # Expected components are based on the wait-for-*-image task plus the operator-bundle and stored as a sorted multi-line string.
-    local expected_components_from_images
-    local expected_components
-    expected_components_from_images="$(yq eval '.spec.tasks[] | select(.name == "wait-for-*-image") | .name | sub("(wait-for-|-image)", "")' ${pipeline_path})"
-    expected_components=$(echo "${expected_components_from_images} operator-bundle" | tr " " "\n" | sort)
-
-    echo
-    echo "➤ ${pipeline_path} // checking ${task_name}: COMPONENTS contents shall include all ACS images."
-    if ! compare "${expected_components}" "${actual_components}"; then
-        echo >&2 -e "How to resolve:
-1. Open ${pipeline_path} and locate the ${task_name} task
-2. Update the COMPONENTS parameter of this task to include entries for the missing components or delete references to removed components. COMPONENTS should include entries for (sorted alphabetically):
-${expected_components}"
-        record_failure "${FUNCNAME[0]}"
-    fi
-}
-
 check_example_rpmdb_files_are_ignored() {
     # At the time of this writing, Konflux uses syft to generate SBOMs for built containers.
     # If we happen to have test rpmdb databases in the repo, syft will union their contents with RPMs that it finds
     # installed in the container resulting in a misleading SBOM.
     # This check is to make sure the exclusion list in Syft config enumerates all such rpmdbs.
     # Ref https://github.com/anchore/syft/wiki/configuration
+    # TODO: the check can be removed after KONFLUX-3515 is implemented.
 
     local -r syft_config=".syft.yaml"
     local -r exclude_attribute=".exclude"
@@ -99,8 +54,6 @@ record_failure() {
 }
 
 echo "Checking our Konflux pipelines and builds setup."
-check_create_snapshot_runs_last
-check_all_components_are_part_of_custom_snapshot
 check_example_rpmdb_files_are_ignored
 
 if [[ -s "$FAIL_FLAG" ]]; then

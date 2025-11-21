@@ -1,0 +1,265 @@
+apiVersion: tekton.dev/v1
+kind: PipelineRun
+
+metadata:
+  annotations:
+    build.appstudio.openshift.io/repo: https://github.com/stackrox/stackrox?rev={{revision}}
+    build.appstudio.redhat.com/commit_sha: '{{revision}}'
+    build.appstudio.redhat.com/pull_request_number: '{{pull_request_number}}'
+    build.appstudio.redhat.com/target_branch: '{{target_branch}}'
+    pipelinesascode.tekton.dev/max-keep-runs: "500"
+    # TODO(ROX-21073): re-enable for all PR branches
+    pipelinesascode.tekton.dev/on-cel-expression: |
+      (
+        event == "push" && target_branch.matches("^(master|release-.*|refs/tags/.*)$")
+      ) || (
+        event == "pull_request" && (
+          target_branch.startsWith("release-") ||
+          source_branch.matches("(konflux|renovate|appstudio|rhtap)") ||
+          (has(body.pull_request) && has(body.pull_request.labels) && body.pull_request.labels.exists(l, l.name == "konflux-build"))
+        ) && body.action != "ready_for_review"
+      )
+    # The empty `on-label` annotation is a workaround to make sure the pipeline gets triggered when the label gets first
+    # added to the PR. See the Slack tread linked from ROX-30580.
+    pipelinesascode.tekton.dev/on-label: "[]"
+  labels:
+    appstudio.openshift.io/application: acs-4-9
+  name: create-custom-snapshot
+  namespace: rh-acs-tenant
+
+spec:
+
+  params:
+
+  taskRunTemplate:
+    serviceAccountName: build-pipeline-operator-bundle-4-9
+
+  timeouts:
+    tasks: 3h30m
+    # Reserve time for final tasks to run.
+    finally: 10m
+    pipeline: 3h40m
+
+  workspaces:
+  - name: git-auth
+    secret:
+      secretName: '{{ git_auth_secret }}'
+
+  pipelineSpec:
+
+    finally:
+    - name: slack-notification
+      params:
+      - name: message
+        value: ':x: `{{event_type}}` pipeline for <https://console.redhat.com/application-pipeline/workspaces/rh-acs/applications/acs/pipelineruns/$(context.pipelineRun.name)|$(context.pipelineRun.name)> (revision <$(params.git-url)/commit/$(params.revision)|$(params.revision)>) has failed.'
+      - name: key-name
+        value: 'acs-konflux-notifications'
+      when:
+      # Run when any task has Failed
+      - input: $(tasks.status)
+        operator: in
+        values: [ "Failed" ]
+      taskRef:
+        params:
+        - name: name
+          value: slack-webhook-notification
+        - name: bundle
+          value: quay.io/konflux-ci/tekton-catalog/task-slack-webhook-notification:0.1@sha256:69945a30c11387a766e3d0ae33991b68e865a290c09da1fea44f193d358926ba
+        - name: kind
+          value: task
+        resolver: bundles
+
+    - name: post-metric-end
+      params:
+      - name: AGGREGATE_TASKS_STATUS
+        value: $(tasks.status)
+      taskRef: &post-bigquery-metrics-ref
+        params:
+        - name: name
+          value: post-bigquery-metrics
+        - name: bundle
+          value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:dfbf22954b6979293cb7e37025b5ee2da7f0193e75c5e9760a882d0e1f6f30df
+        - name: kind
+          value: task
+        resolver: bundles
+
+    params:
+    - name: integration-test-scenario
+      default: "acs-conforma-prod-like"
+      description: Name of the IntegrationTestScenario to trigger for the created Snapshot.
+      type: string
+    - name: git-url
+      default: "{{source_url}}"
+      description: Source Repository URL.
+      type: string
+    - name: revision
+      default: "{{revision}}"
+      description: Revision of the Source Repository.
+      type: string
+    - name: bundle-image-repo
+      default: quay.io/rhacs-eng/release-operator-bundle
+      description: Repo of the operator bundle image, used to store OCI artifact with source code.
+      type: string
+    - name: oci-artifact-expires-after
+      default: "1d"
+      description: This sets the expiration time for intermediate OCI artifacts produced and used during builds after
+        which they can be garbage collected.
+      type: string
+    - name: output-tag-suffix
+      default: "-fast"
+      description: Suffix that's appended to the operator-bundle's image tag.
+      type: string
+
+    results:
+    - description: Name of the custom Snapshot created.
+      name: SNAPSHOT_NAME
+      value: $(tasks.create-acs-style-snapshot.results.SNAPSHOT_NAME)
+
+    workspaces:
+    - name: git-auth
+
+    tasks:
+
+    - name: post-metric-start
+      taskRef: *post-bigquery-metrics-ref
+
+    - name: clone-repository
+      params:
+      - name: url
+        value: $(params.git-url)
+      - name: revision
+        value: $(params.revision)
+      - name: depth
+        value: "0"
+      - name: fetchTags
+        value: "true"
+      - name: ociStorage
+        value: $(params.bundle-image-repo):konflux-custom-snapshot-$(params.revision).git
+      - name: ociArtifactExpiresAfter
+        value: $(params.oci-artifact-expires-after)
+      taskRef:
+        params:
+        - name: name
+          value: git-clone-oci-ta
+        - name: bundle
+          value: quay.io/konflux-ci/tekton-catalog/task-git-clone-oci-ta:0.1@sha256:3dc39eae48745a96097c07c577b944d6203a91c35d3f71d9ed5feab41d327a6a
+        - name: kind
+          value: task
+        resolver: bundles
+      workspaces:
+      - name: basic-auth
+        workspace: git-auth
+
+    - name: determine-image-tag
+      params:
+      - name: TAG_SUFFIX
+        value: $(params.output-tag-suffix)
+      - name: SOURCE_ARTIFACT
+        value: $(tasks.clone-repository.results.SOURCE_ARTIFACT)
+      taskRef:
+        params:
+        - name: name
+          value: determine-image-tag
+        - name: bundle
+          value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:dfbf22954b6979293cb7e37025b5ee2da7f0193e75c5e9760a882d0e1f6f30df
+        - name: kind
+          value: task
+        resolver: bundles
+
+    - name: wait-for-bundle-image
+      params:
+      - name: IMAGE
+        value: "$(params.bundle-image-repo):v$(tasks.determine-image-tag.results.IMAGE_TAG)"
+      taskRef:
+        params:
+        - name: name
+          value: wait-for-image
+        - name: bundle
+          value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:dfbf22954b6979293cb7e37025b5ee2da7f0193e75c5e9760a882d0e1f6f30df
+        - name: kind
+          value: task
+        resolver: bundles
+      # The timemout should be kept in sync with the pipeline timeout in the operator-bundle-build.yaml
+      timeout: 3h25m
+
+    - name: create-acs-style-snapshot
+      params:
+      - name: OPERATOR_BUNDLE_IMAGE
+        value: $(params.bundle-image-repo)@$(tasks.wait-for-bundle-image.results.IMAGE_DIGEST)
+      - name: PRODUCT_VERSION
+        value: $(tasks.determine-image-tag.results.IMAGE_TAG)
+      - name: INTEGRATION_TEST_SCENARIO
+        value: $(params.integration-test-scenario)
+      - name: COMPONENT_MAPPINGS
+        value: |
+          [
+            {
+              "externalRepo": "registry.redhat.io/advanced-cluster-security/rhacs-central-db-rhel8",
+              "internalRepo": "quay.io/rhacs-eng/release-central-db",
+              "component": "central-db"
+            },
+            {
+              "externalRepo": "registry.redhat.io/advanced-cluster-security/rhacs-collector-rhel8",
+              "internalRepo": "quay.io/rhacs-eng/release-collector",
+              "component": "collector"
+            },
+            {
+              "externalRepo": "registry.redhat.io/advanced-cluster-security/rhacs-main-rhel8",
+              "internalRepo": "quay.io/rhacs-eng/release-main",
+              "component": "main"
+            },
+            {
+              "externalRepo": "registry.redhat.io/advanced-cluster-security/rhacs-operator-bundle",
+              "internalRepo": "quay.io/rhacs-eng/release-operator-bundle",
+              "component": "operator-bundle"
+            },
+            {
+              "externalRepo": "registry.redhat.io/advanced-cluster-security/rhacs-rhel8-operator",
+              "internalRepo": "quay.io/rhacs-eng/release-operator",
+              "component": "operator"
+            },
+            {
+              "externalRepo": "registry.redhat.io/advanced-cluster-security/rhacs-roxctl-rhel8",
+              "internalRepo": "quay.io/rhacs-eng/release-roxctl",
+              "component": "roxctl"
+            },
+            {
+              "externalRepo": "registry.redhat.io/advanced-cluster-security/rhacs-scanner-db-rhel8",
+              "internalRepo": "quay.io/rhacs-eng/release-scanner-db",
+              "component": "scanner-db"
+            },
+            {
+              "externalRepo": "registry.redhat.io/advanced-cluster-security/rhacs-scanner-db-slim-rhel8",
+              "internalRepo": "quay.io/rhacs-eng/release-scanner-db-slim",
+              "component": "scanner-db-slim"
+            },
+            {
+              "externalRepo": "registry.redhat.io/advanced-cluster-security/rhacs-scanner-rhel8",
+              "internalRepo": "quay.io/rhacs-eng/release-scanner",
+              "component": "scanner"
+            },
+            {
+              "externalRepo": "registry.redhat.io/advanced-cluster-security/rhacs-scanner-slim-rhel8",
+              "internalRepo": "quay.io/rhacs-eng/release-scanner-slim",
+              "component": "scanner-slim"
+            },
+            {
+              "externalRepo": "registry.redhat.io/advanced-cluster-security/rhacs-scanner-v4-db-rhel8",
+              "internalRepo": "quay.io/rhacs-eng/release-scanner-v4-db",
+              "component": "scanner-v4-db"
+            },
+            {
+              "externalRepo": "registry.redhat.io/advanced-cluster-security/rhacs-scanner-v4-rhel8",
+              "internalRepo": "quay.io/rhacs-eng/release-scanner-v4",
+              "component": "scanner-v4"
+            }
+          ]
+      taskRef:
+        params:
+        - name: name
+          value: create-snapshot-from-bundle
+        - name: bundle
+          value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:dfbf22954b6979293cb7e37025b5ee2da7f0193e75c5e9760a882d0e1f6f30df
+        - name: kind
+          value: task
+        resolver: bundles
