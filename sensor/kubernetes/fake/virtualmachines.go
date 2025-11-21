@@ -8,7 +8,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/stackrox/rox/pkg/sync"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -28,23 +27,6 @@ func setNestedField(obj *unstructured.Unstructured, value interface{}, fields ..
 	if err := unstructured.SetNestedField(obj.Object, value, fields...); err != nil {
 		log.Warnf("failed to set nested field %s: %v", strings.Join(fields, "."), err)
 	}
-}
-
-const (
-	defaultVMLifecycleDuration = 30 * time.Second
-	defaultVMUpdateInterval    = 10 * time.Second
-)
-
-func validateVMWorkload(workload VirtualMachineWorkload) VirtualMachineWorkload {
-	if workload.LifecycleDuration <= 0 {
-		log.Warnf("virtualMachineWorkload.lifecycleDuration not set or <= 0; defaulting to %s", defaultVMLifecycleDuration)
-		workload.LifecycleDuration = defaultVMLifecycleDuration
-	}
-	if workload.UpdateInterval <= 0 {
-		log.Warnf("virtualMachineWorkload.updateInterval not set or <= 0; defaulting to %s", defaultVMUpdateInterval)
-		workload.UpdateInterval = defaultVMUpdateInterval
-	}
-	return workload
 }
 
 func sanitizeJSONNumbers(value interface{}) interface{} {
@@ -83,22 +65,33 @@ func sanitizeJSONNumbers(value interface{}) interface{} {
 	}
 }
 
+const (
+	defaultVMLifecycleDuration = 30 * time.Second
+	defaultVMUpdateInterval    = 10 * time.Second
+)
+
+func validateVMWorkload(workload VirtualMachineWorkload) VirtualMachineWorkload {
+	if workload.LifecycleDuration <= 0 {
+		log.Warnf("virtualMachineWorkload.lifecycleDuration not set or <= 0; defaulting to %s", defaultVMLifecycleDuration)
+		workload.LifecycleDuration = defaultVMLifecycleDuration
+	}
+	if workload.UpdateInterval <= 0 {
+		log.Warnf("virtualMachineWorkload.updateInterval not set or <= 0; defaulting to %s", defaultVMUpdateInterval)
+		workload.UpdateInterval = defaultVMUpdateInterval
+	}
+	return workload
+}
+
 // vmTemplatePool holds a fixed-size pool of VM/VMI templates
 type vmTemplatePool struct {
 	templates []*vmTemplate
-	lock      sync.RWMutex
 }
 
 type vmTemplate struct {
-	// Base fields that remain constant
 	baseName      string
 	baseNamespace string
-	baseUID       string
 	vsockCID      uint32
 	guestOS       string
-
-	// Counter for generating unique variations
-	variationCounter int
 }
 
 func newVMTemplatePool(poolSize int, guestOSPool []string, vsockBaseCID uint32) *vmTemplatePool {
@@ -115,7 +108,6 @@ func newVMTemplatePool(poolSize int, guestOSPool []string, vsockBaseCID uint32) 
 		pool.templates[i] = &vmTemplate{
 			baseName:      fmt.Sprintf("vm-%d", i),
 			baseNamespace: "default",
-			baseUID:       string(newUUID()),
 			vsockCID:      vsockBaseCID + uint32(i),
 			guestOS:       guestOS,
 		}
@@ -125,8 +117,6 @@ func newVMTemplatePool(poolSize int, guestOSPool []string, vsockBaseCID uint32) 
 }
 
 func (p *vmTemplatePool) getTemplate(idx int) *vmTemplate {
-	p.lock.RLock()
-	defer p.lock.RUnlock()
 	if idx < 0 || idx >= len(p.templates) {
 		return nil
 	}
@@ -134,18 +124,12 @@ func (p *vmTemplatePool) getTemplate(idx int) *vmTemplate {
 }
 
 func (p *vmTemplatePool) size() int {
-	p.lock.RLock()
-	defer p.lock.RUnlock()
 	return len(p.templates)
 }
 
-// createVMObject creates a VirtualMachine CRD object with randomized metadata
-func (t *vmTemplate) createVMObject() *unstructured.Unstructured {
-	t.variationCounter++
-
-	// Randomize metadata to make each instance look unique
-	vmUID := string(newUUID())
-	vmName := fmt.Sprintf("%s-%d", t.baseName, t.variationCounter)
+func (t *vmTemplate) instantiate(iteration int) (*unstructured.Unstructured, *unstructured.Unstructured) {
+	vmUID := types.UID(newUUID())
+	vmName := fmt.Sprintf("%s-%d", t.baseName, iteration)
 
 	vm := &kubeVirtV1.VirtualMachine{
 		TypeMeta: metav1.TypeMeta{
@@ -155,7 +139,7 @@ func (t *vmTemplate) createVMObject() *unstructured.Unstructured {
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      vmName,
 			Namespace: t.baseNamespace,
-			UID:       types.UID(vmUID),
+			UID:       vmUID,
 			CreationTimestamp: metav1.Time{
 				Time: time.Now(),
 			},
@@ -167,16 +151,8 @@ func (t *vmTemplate) createVMObject() *unstructured.Unstructured {
 		},
 	}
 
-	return toUnstructuredVM(vm)
-}
-
-// createVMIObject creates a VirtualMachineInstance CRD object with randomized metadata
-func (t *vmTemplate) createVMIObject(vmUID types.UID, vmName string) *unstructured.Unstructured {
-	t.variationCounter++
-
-	vmiUID := string(newUUID())
-	vmiName := fmt.Sprintf("%s-%d", t.baseName, t.variationCounter)
-
+	vmiUID := types.UID(newUUID())
+	vmiName := fmt.Sprintf("%s-%d-vmi", t.baseName, iteration)
 	vsockCID := t.vsockCID
 	vmi := &kubeVirtV1.VirtualMachineInstance{
 		TypeMeta: metav1.TypeMeta{
@@ -186,7 +162,7 @@ func (t *vmTemplate) createVMIObject(vmUID types.UID, vmName string) *unstructur
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      vmiName,
 			Namespace: t.baseNamespace,
-			UID:       types.UID(vmiUID),
+			UID:       vmiUID,
 			CreationTimestamp: metav1.Time{
 				Time: time.Now(),
 			},
@@ -210,9 +186,10 @@ func (t *vmTemplate) createVMIObject(vmUID types.UID, vmName string) *unstructur
 		},
 	}
 
-	obj := toUnstructuredVMI(vmi)
-	setJSONSafeVSOCKCID(obj, t.vsockCID)
-	return obj
+	vmObj := toUnstructuredVM(vm)
+	vmiObj := toUnstructuredVMI(vmi)
+	setJSONSafeVSOCKCID(vmiObj, t.vsockCID)
+	return vmObj, vmiObj
 }
 
 // updateVMObject updates VM metadata while keeping base structure
@@ -249,16 +226,30 @@ func (t *vmTemplate) updateVMIObject(vmi *unstructured.Unstructured) {
 
 // toUnstructuredVM converts a VirtualMachine to unstructured.Unstructured
 func toUnstructuredVM(vm *kubeVirtV1.VirtualMachine) *unstructured.Unstructured {
-	unstructuredObj, _ := runtime.DefaultUnstructuredConverter.ToUnstructured(vm)
-	sanitized := sanitizeJSONNumbers(unstructuredObj).(map[string]interface{})
-	return &unstructured.Unstructured{Object: sanitized}
+	unstructuredObj, err := runtime.DefaultUnstructuredConverter.ToUnstructured(vm)
+	if err != nil {
+		log.Warnf("failed to convert VM %s to unstructured object: %v", vm.GetName(), err)
+		return &unstructured.Unstructured{Object: map[string]interface{}{}}
+	}
+	if sanitizedMap, ok := sanitizeJSONNumbers(unstructuredObj).(map[string]interface{}); ok {
+		return &unstructured.Unstructured{Object: sanitizedMap}
+	}
+	log.Warnf("sanitizeJSONNumbers returned non-map for VM %s; using original object", vm.GetName())
+	return &unstructured.Unstructured{Object: unstructuredObj}
 }
 
 // toUnstructuredVMI converts a VirtualMachineInstance to unstructured.Unstructured
 func toUnstructuredVMI(vmi *kubeVirtV1.VirtualMachineInstance) *unstructured.Unstructured {
-	unstructuredObj, _ := runtime.DefaultUnstructuredConverter.ToUnstructured(vmi)
-	sanitized := sanitizeJSONNumbers(unstructuredObj).(map[string]interface{})
-	return &unstructured.Unstructured{Object: sanitized}
+	unstructuredObj, err := runtime.DefaultUnstructuredConverter.ToUnstructured(vmi)
+	if err != nil {
+		log.Warnf("failed to convert VMI %s to unstructured object: %v", vmi.GetName(), err)
+		return &unstructured.Unstructured{Object: map[string]interface{}{}}
+	}
+	if sanitizedMap, ok := sanitizeJSONNumbers(unstructuredObj).(map[string]interface{}); ok {
+		return &unstructured.Unstructured{Object: sanitizedMap}
+	}
+	log.Warnf("sanitizeJSONNumbers returned non-map for VMI %s; using original object", vmi.GetName())
+	return &unstructured.Unstructured{Object: unstructuredObj}
 }
 
 type vmResourcesToBeManaged struct {
@@ -269,47 +260,36 @@ type vmResourcesToBeManaged struct {
 }
 
 func (w *WorkloadManager) getVMResources(workload VirtualMachineWorkload, templateIdx int, templatePool *vmTemplatePool) *vmResourcesToBeManaged {
-	workload = validateVMWorkload(workload)
-
 	template := templatePool.getTemplate(templateIdx)
 	if template == nil {
 		return nil
 	}
 
-	vm := template.createVMObject()
-	vmi := template.createVMIObject(types.UID(vm.GetUID()), vm.GetName())
-
 	return &vmResourcesToBeManaged{
 		workload: workload,
 		template: template,
-		vm:       vm,
-		vmi:      vmi,
 	}
 }
 
-// manageVirtualMachine manages a single VM/VMI lifecycle
+// manageVirtualMachine manages repeated VM/VMI lifecycles for a single template.
 func (w *WorkloadManager) manageVirtualMachine(ctx context.Context, resources *vmResourcesToBeManaged) {
 	defer w.wg.Done()
 
-	// NumLifecycles+1 handles initial startup
-	for count := 0; resources.workload.NumLifecycles == 0 || count < resources.workload.NumLifecycles+1; count++ {
-		w.manageVirtualMachineLifecycle(ctx, resources)
-
-		select {
-		case <-ctx.Done():
-			return
-		default:
-		}
-
-		// Recreate resources with new UIDs/metadata
-		vm := resources.template.createVMObject()
-		vmi := resources.template.createVMIObject(types.UID(vm.GetUID()), vm.GetName())
+	lifecycles := resources.workload.NumLifecycles
+	for iteration := 0; lifecycles <= 0 || iteration <= lifecycles; iteration++ {
+		vm, vmi := resources.template.instantiate(iteration)
 		resources.vm = vm
 		resources.vmi = vmi
+
+		if w.manageVirtualMachineLifecycleOnce(ctx, resources) {
+			return
+		}
 	}
 }
 
-func (w *WorkloadManager) manageVirtualMachineLifecycle(ctx context.Context, resources *vmResourcesToBeManaged) {
+// manageVirtualMachineLifecycleOnce runs a single VM/VMI lifecycle.
+// It returns true if the caller should stop spawning further lifecycles (e.g., context cancelled or setup failed).
+func (w *WorkloadManager) manageVirtualMachineLifecycleOnce(ctx context.Context, resources *vmResourcesToBeManaged) bool {
 	timer := newTimerWithJitter(resources.workload.LifecycleDuration/2 + time.Duration(rand.Int63n(int64(resources.workload.LifecycleDuration))))
 	defer timer.Stop()
 
@@ -334,7 +314,7 @@ func (w *WorkloadManager) manageVirtualMachineLifecycle(ctx context.Context, res
 	vmName := resources.vm.GetName()
 	if _, err := vmClient.Create(ctx, resources.vm, metav1.CreateOptions{}); err != nil {
 		log.Errorf("error creating VirtualMachine: %v", err)
-		return
+		return true
 	}
 	w.writeID(virtualMachinePrefix, vmUID)
 
@@ -348,7 +328,7 @@ func (w *WorkloadManager) manageVirtualMachineLifecycle(ctx context.Context, res
 	for {
 		select {
 		case <-ctx.Done():
-			return
+			return true
 		case <-timer.C:
 			// Delete resources
 			if err := vmiClient.Delete(ctx, resources.vmi.GetName(), metav1.DeleteOptions{}); err != nil {
@@ -362,7 +342,7 @@ func (w *WorkloadManager) manageVirtualMachineLifecycle(ctx context.Context, res
 			} else {
 				w.deleteID(virtualMachinePrefix, vmUID)
 			}
-			return
+			return false
 		case <-time.After(updateNextUpdate):
 			updateNextUpdate = calculateDurationWithJitter(resources.workload.UpdateInterval)
 
@@ -379,4 +359,5 @@ func (w *WorkloadManager) manageVirtualMachineLifecycle(ctx context.Context, res
 			}
 		}
 	}
+	return false
 }
