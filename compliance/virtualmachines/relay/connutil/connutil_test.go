@@ -1,12 +1,10 @@
 package connutil
 
 import (
-	"io"
-	"net"
-	"os"
 	"testing"
 	"time"
 
+	relaytest "github.com/stackrox/rox/compliance/virtualmachines/relay/testutils"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -58,7 +56,7 @@ func (s *connutilTestSuite) TestReadFromConn() {
 
 	for name, c := range cases {
 		s.Run(name, func() {
-			conn := newMockConn().withData(data).withDelay(c.delay)
+			conn := relaytest.NewMockVsockConn().WithData(data).WithDelay(c.delay)
 
 			readData, err := ReadFromConn(conn, c.maxSize, c.readTimeout)
 			if c.shouldError {
@@ -70,59 +68,3 @@ func (s *connutilTestSuite) TestReadFromConn() {
 		})
 	}
 }
-
-type mockConn struct {
-	closed       bool
-	data         []byte
-	delay        time.Duration
-	readErr      error
-	remoteAddr   net.Addr
-	readDeadline time.Time
-}
-
-func newMockConn() *mockConn {
-	return &mockConn{}
-}
-
-func (c *mockConn) withData(data []byte) *mockConn {
-	c.data = data
-	return c
-}
-
-func (c *mockConn) withDelay(delay time.Duration) *mockConn {
-	c.delay = delay
-	return c
-}
-
-func (c *mockConn) Read(b []byte) (n int, err error) {
-	time.Sleep(c.delay)
-	if !c.readDeadline.IsZero() && time.Now().After(c.readDeadline) {
-		return 0, os.ErrDeadlineExceeded
-	}
-	if c.readErr != nil {
-		return 0, c.readErr
-	}
-	n = copy(b, c.data)
-	if n == len(c.data) {
-		return n, io.EOF
-	}
-	return n, nil
-}
-
-func (c *mockConn) RemoteAddr() net.Addr {
-	return c.remoteAddr
-}
-
-func (c *mockConn) Close() error {
-	c.closed = true
-	return nil
-}
-
-func (c *mockConn) Write([]byte) (int, error)   { return 0, nil }
-func (c *mockConn) LocalAddr() net.Addr         { return nil }
-func (c *mockConn) SetDeadline(time.Time) error { return nil }
-func (c *mockConn) SetReadDeadline(t time.Time) error {
-	c.readDeadline = t
-	return nil
-}
-func (c *mockConn) SetWriteDeadline(time.Time) error { return nil }

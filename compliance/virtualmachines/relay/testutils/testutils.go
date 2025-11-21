@@ -16,8 +16,10 @@ import (
 
 // MockVsockConn implements net.Conn and allows tests to craft vsock-backed connections easily.
 type MockVsockConn struct {
+	closed       bool
 	data         []byte
 	delay        time.Duration
+	readErr      error
 	remoteAddr   net.Addr
 	readDeadline time.Time
 }
@@ -50,10 +52,17 @@ func (c *MockVsockConn) WithDelay(delay time.Duration) *MockVsockConn {
 	return c
 }
 
+func (c *MockVsockConn) SetRemoteAddr(addr net.Addr) {
+	c.remoteAddr = addr
+}
+
 func (c *MockVsockConn) Read(b []byte) (int, error) {
 	time.Sleep(c.delay)
 	if !c.readDeadline.IsZero() && time.Now().After(c.readDeadline) {
 		return 0, os.ErrDeadlineExceeded
+	}
+	if c.readErr != nil {
+		return 0, c.readErr
 	}
 	n := copy(b, c.data)
 	if n == len(c.data) {
@@ -67,6 +76,7 @@ func (c *MockVsockConn) RemoteAddr() net.Addr {
 }
 
 func (c *MockVsockConn) Close() error {
+	c.closed = true
 	return nil
 }
 
