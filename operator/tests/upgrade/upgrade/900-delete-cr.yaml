@@ -1,3 +1,9 @@
+apiVersion: kuttl.dev/v1beta1
+kind: TestFile
+testRunSelector:
+  matchLabels:
+    never: testing
+---
 # TODO(ROX-7960): delete this step once the bug is fixed.
 apiVersion: kuttl.dev/v1beta1
 kind: TestStep

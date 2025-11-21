@@ -5,7 +5,17 @@ testRunSelector:
   matchLabels:
     openshift: "true"
 ---
-# The following resources are obtained by following the instructions in delete-central-errors.yaml
+# The following resources are obtained by following the instructions in delete-central-errors.gotmpl.yaml
+apiVersion: authorization.openshift.io/v1
+kind: ClusterRole
+metadata:
+  name: stackrox-{{ .Namespace }}-central-psp
+---
+apiVersion: authorization.openshift.io/v1
+kind: ClusterRole
+metadata:
+  name: stackrox-{{ .Namespace }}-scanner-psp
+---
 apiVersion: authorization.openshift.io/v1
 kind: RoleBinding
 metadata:
