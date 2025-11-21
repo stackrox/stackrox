@@ -68,6 +68,12 @@ function getSrcAliases() {
 
 export default defineConfig(async () => {
     const sslOptions = getSslOptions();
+
+    const serverConfig = {
+        proxy: viteProxy(),
+        ...(sslOptions?.localHttpsConfig ?? {}),
+    };
+
     return {
         build: {
             assetsDir: './static',
@@ -87,7 +93,6 @@ export default defineConfig(async () => {
                         ],
                         react: ['react', 'react-dom'],
                         apollo: ['@apollo/client'],
-                        patternfly: ['@patternfly/react-core', '@patternfly/react-styles'],
                     },
                 },
             },
@@ -104,13 +109,16 @@ export default defineConfig(async () => {
             global: 'window',
         },
         plugins: [react(), svgr(), ...(sslOptions?.basicSsl ? [sslOptions.basicSsl()] : [])],
+        preview: {
+            ...serverConfig,
+            port: 3000,
+        },
         resolve: {
             alias: getSrcAliases(),
         },
         server: {
-            proxy: viteProxy(),
+            ...serverConfig,
             port: 3000,
-            ...(sslOptions?.localHttpsConfig ?? {}),
         },
         test: {
             environment: 'jsdom',
