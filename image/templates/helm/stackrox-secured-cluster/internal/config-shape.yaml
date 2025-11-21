@@ -134,6 +134,7 @@ collector:
   complianceImagePullPolicy: null # string
   complianceResources: null # string | dict
   nodeScanningResources: null # string | dict
+  sfaEnabled: null # bool
   sfaScanningResources: null # string | dict
   serviceTLS:
     cert: null # string

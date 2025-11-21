@@ -459,12 +459,13 @@ func (t Translator) getNodeInventoryContainerValues(nodeInventory *platform.Cont
 	return &cv
 }
 
-func (t Translator) getSFAContainerValues(sfaContainerSpec *platform.ContainerSpec) *translation.ValuesBuilder {
+func (t Translator) getSFAContainerValues(sfaContainerSpec *platform.SFAContainerSpec) *translation.ValuesBuilder {
 	if sfaContainerSpec == nil {
 		return nil
 	}
 
 	cv := translation.NewValuesBuilder()
+	cv.SetBoolValue("sfaEnabled", *sfaContainerSpec.Enabled)
 	cv.AddChild("sfaResources", translation.GetResources(sfaContainerSpec.Resources))
 
 	return &cv

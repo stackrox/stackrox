@@ -269,7 +269,7 @@ type PerNodeSpec struct {
 	// Settings for the Sensitive File Activity container, which is
 	// responsible for file activity monitoring on the Node.
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=4,displayName="SFA"
-	SFA *ContainerSpec `json:"sfa,omitempty"`
+	SFA *SFAContainerSpec `json:"sfa,omitempty"`
 
 	// To ensure comprehensive monitoring of your cluster activity, Red Hat Advanced Cluster Security
 	// will run services on every node in the cluster, including tainted nodes by default. If you do
@@ -368,6 +368,17 @@ type CollectorContainerSpec struct {
 	ForceCollection *bool `json:"forceCollection,omitempty"`
 
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=4
+	ContainerSpec `json:",inline"`
+}
+
+// SFAContainerSpec defines settings for the Sensitive File Activity agent container.
+type SFAContainerSpec struct {
+	// Specifies whether Sensitive File Activity agent is deployed.
+	// The default is: false.
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=1,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:booleanSwitch"}
+	Enabled *bool `json:"enabled,omitempty"`
+
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=2
 	ContainerSpec `json:",inline"`
 }
 
