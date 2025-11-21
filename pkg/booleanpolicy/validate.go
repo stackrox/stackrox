@@ -17,6 +17,10 @@ var (
 	// fieldDependencies defines the dependencies between fields in a policy
 	// section. For each key field name in the map, the values is the set of
 	// one OR more fields that must also exist to pass the validation
+	//
+	// Note that the Key -> [Values] dependency exists, but the reverse
+	// is not valid. The values can exist on their own in a policy without
+	// requiring the key to also exist.
 	fieldDependencies = map[string]set.StringSet{
 		fieldnames.FileOperation: set.NewStringSet(
 			fieldnames.NodeFilePath,
@@ -35,6 +39,12 @@ var (
 		storage.EventSource_AUDIT_LOG_EVENT: set.NewStringSet(
 			fieldnames.KubeResource,
 			fieldnames.KubeAPIVerb,
+		),
+		// FileAccess fields are currently the only ones supported for
+		// node events. In the future, when more node events are supported,
+		// this constraint can be relaxed.
+		storage.EventSource_NODE_EVENT: set.NewStringSet(
+			fieldnames.NodeFilePath,
 		),
 	}
 )
@@ -183,10 +193,9 @@ func validatePolicySection(s *storage.PolicySection, configuration *validateConf
 // as outlined in the fieldDependencies map.
 func validateFieldDependencies(s *storage.PolicySection, seenFields *set.StringSet) error {
 	errorList := errorhelpers.NewErrorList(fmt.Sprintf("validating field dependencies for %q", s.GetSectionName()))
+
 	for field, dependencies := range fieldDependencies {
-		if seenFields.Contains(field) && !slices.ContainsFunc(dependencies.AsSlice(), func(dep string) bool {
-			return seenFields.Contains(dep)
-		}) {
+		if seenFields.Contains(field) && !slices.ContainsFunc(dependencies.AsSlice(), seenFields.Contains) {
 			errorList.AddStringf("policy sections with %s must also contain %s", field, strings.Join(dependencies.AsSlice(), " or "))
 		}
 	}

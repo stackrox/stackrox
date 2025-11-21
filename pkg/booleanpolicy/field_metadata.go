@@ -82,6 +82,7 @@ func (m *metadataAndQB) IsOfType(expectedType RuntimeFieldType) bool {
 }
 
 func (m *metadataAndQB) IsDeploymentEventField() bool {
+	// TODO(ROX-30809): update with m.IsOfType(FileAccess)
 	return m.IsOfType(Process) || m.IsOfType(NetworkFlow) || m.IsOfType(KubeEvent)
 }
 
@@ -101,68 +102,61 @@ func (m *metadataAndQB) IsNotApplicableEventSource() bool {
 	return m.IsFromEventSource(storage.EventSource_NOT_APPLICABLE)
 }
 
-func (f *FieldMetadata) findField(fieldName string) (*metadataAndQB, error) {
+func (f *FieldMetadata) findField(fieldName string) *metadataAndQB {
 	field := f.fieldsToQB[fieldName]
 	if field == nil {
 		log.Warnf("policy field %s not found", fieldName)
-		return nil, errNoSuchField
 	}
-	return field, nil
+	return field
 }
 
 // FieldIsOfType returns true if the specified field is of the specified type
 func (f *FieldMetadata) FieldIsOfType(fieldName string, expectedType RuntimeFieldType) bool {
-	field, _ := f.findField(fieldName)
-	if field == nil {
-		return false
+	if field := f.findField(fieldName); field != nil {
+		return field.IsOfType(expectedType)
 	}
-	return field.IsOfType(expectedType)
+	return false
 }
 
 // IsDeploymentEventField returns true if the field is an deployment event field
 func (f *FieldMetadata) IsDeploymentEventField(fieldName string) bool {
-	field, _ := f.findField(fieldName)
-	if field == nil {
-		return false
+	if field := f.findField(fieldName); field != nil {
+		return field.IsDeploymentEventField()
 	}
+	return false
 
-	return field.IsDeploymentEventField()
 }
 
 // IsAuditLogEventField returns true if the field is an audit log field
 func (f *FieldMetadata) IsAuditLogEventField(fieldName string) bool {
-	field, _ := f.findField(fieldName)
-	if field == nil {
-		return false
+	if field := f.findField(fieldName); field != nil {
+		return field.IsAuditLogEventField()
 	}
+	return false
 
-	return field.IsAuditLogEventField()
 }
 
 // IsFileEventField returns true if the field is a node event field
 func (f *FieldMetadata) IsFileEventField(fieldName string) bool {
-	field, _ := f.findField(fieldName)
-	if field == nil {
-		return false
+	if field := f.findField(fieldName); field != nil {
+		return field.IsFileEventField()
 	}
 
-	return field.IsFileEventField()
+	return false
 }
 
 func (f *FieldMetadata) IsFromEventSource(fieldName string, eventSource storage.EventSource) bool {
-	field, _ := f.findField(fieldName)
-	if field == nil {
-		return false
+	if field := f.findField(fieldName); field != nil {
+		return field.IsFromEventSource(eventSource)
 	}
-	return field.IsFromEventSource(eventSource)
+	return false
 }
 
 func (f *FieldMetadata) IsNotApplicableEventSource(fieldName string) bool {
-	field, _ := f.findField(fieldName)
-	if field == nil {
-		return false
+	if field := f.findField(fieldName); field != nil {
+		return field.IsNotApplicableEventSource()
 	}
-	return field.IsNotApplicableEventSource()
+	return false
 }
 
 // findFieldMetadata searches for a policy criteria field by name and returns the field metadata
