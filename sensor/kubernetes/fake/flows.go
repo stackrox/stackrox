@@ -265,6 +265,7 @@ func (w *WorkloadManager) getFakeNetworkConnectionInfo() *sensor.NetworkConnecti
 
 // manageFlows should be called via `go manageFlows` as it will run forever
 func (w *WorkloadManager) manageFlows(ctx context.Context) {
+	defer w.wg.Done()
 	if w.workload.NetworkWorkload.FlowInterval == 0 {
 		return
 	}

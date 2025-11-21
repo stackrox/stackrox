@@ -130,6 +130,9 @@ func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 	// Create Process Pipeline
 	indicators := make(chan *message.ExpiringMessage, queue.ScaleSizeOnNonDefault(env.ProcessIndicatorBufferSize))
 	processPipeline := processsignal.NewProcessPipeline(indicators, storeProvider.Entities(), processfilter.Singleton(), policyDetector)
+	if cfg.processPipelineObserver != nil {
+		cfg.processPipelineObserver(processPipeline)
+	}
 	var processSignals signalService.Service
 	if cfg.signalServiceAuthFuncOverride != nil && cfg.localSensor {
 		processSignals = signalService.New(processPipeline, indicators,
