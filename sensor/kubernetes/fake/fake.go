@@ -24,6 +24,7 @@ import (
 	"github.com/stackrox/rox/sensor/kubernetes/client"
 	vmStore "github.com/stackrox/rox/sensor/kubernetes/listener/resources/virtualmachine/store"
 	"go.yaml.in/yaml/v3"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/version"
@@ -81,6 +82,8 @@ func (r *vmReadiness) Wait(ctx context.Context) bool {
 
 var (
 	log = logging.LoggerForModule()
+
+	defaultGuestOSPool = []string{"linux", "windows", "rhel", "ubuntu"}
 )
 
 func init() {
@@ -486,10 +489,46 @@ func (w *WorkloadManager) initializePreexistingResources() {
 		Resource: "customresourcedefinitions",
 	}
 
+	// Add kubevirt GVRs for dynamic client
+	vmGVR := schema.GroupVersionResource{
+		Group:    "kubevirt.io",
+		Version:  "v1",
+		Resource: "virtualmachines",
+	}
+	vmiGVR := schema.GroupVersionResource{
+		Group:    "kubevirt.io",
+		Version:  "v1",
+		Resource: "virtualmachineinstances",
+	}
+
+	customListKinds := map[schema.GroupVersionResource]string{
+		gvr:    "CustomResourceDefinitionList",
+		vmGVR:  "VirtualMachineList",
+		vmiGVR: "VirtualMachineInstanceList",
+	}
+
 	clientSet := &clientSetImpl{
 		kubernetes: w.fakeClient,
-		dynamic:    fakeDynamic.NewSimpleDynamicClientWithCustomListKinds(scheme, map[schema.GroupVersionResource]string{gvr: "CustomResourceDefinitionList"}),
+		dynamic:    fakeDynamic.NewSimpleDynamicClientWithCustomListKinds(scheme, customListKinds),
 	}
+
+	// Seed discovery API with kubevirt resources if VM workload is configured
+	if w.workload.VirtualMachineWorkload.PoolSize > 0 {
+		fakeDiscovery := w.fakeClient.Discovery().(*fakediscovery.FakeDiscovery)
+		vmGV := vmPkg.GetGroupVersion()
+		vmResources := vmPkg.GetRequiredResources()
+
+		// Add kubevirt API group to discovery
+		apiResourceList := &metav1.APIResourceList{
+			GroupVersion: vmGV.String(),
+			APIResources: make([]metav1.APIResource, 0, len(vmResources)),
+		}
+		for _, res := range vmResources {
+			apiResourceList.APIResources = append(apiResourceList.APIResources, res.APIResource)
+		}
+		fakeDiscovery.Resources = append(fakeDiscovery.Resources, apiResourceList)
+	}
+
 	initializeOpenshiftClients(clientSet)
 	w.client = clientSet
 
