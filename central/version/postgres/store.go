@@ -5,7 +5,6 @@ import (
 	"time"
 
 	"github.com/stackrox/rox/generated/storage"
-	ops "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stackrox/rox/pkg/protocompat"
