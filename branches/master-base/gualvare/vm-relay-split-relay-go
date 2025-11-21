@@ -1,7 +1,7 @@
 {
   "base": {
     "name": "master",
-    "hash": "62a3c0262238dff1a9fa23fbbb1f0e37ce197ba0"
+    "hash": "1f1d627dab2c10a20a510f4119728058aa57bb5c"
   },
   "upstream": {
     "branch": "master-base/gualvare/vm-relay-split-relay-go"
