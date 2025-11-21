@@ -134,6 +134,8 @@ collector:
   complianceImagePullPolicy: null # string
   complianceResources: null # string | dict
   nodeScanningResources: null # string | dict
+  sfaEnabled: null # bool
+  sfaScanningResources: null # string | dict
   serviceTLS:
     cert: null # string
     key: null # string
@@ -149,8 +151,6 @@ collector:
     enabled: null # bool
   runtimeConfig:
     enabled: null # bool
-fact:
-  resources: null # string | dict
 auditLogs:
   disableCollection: null # bool
 autoLockProcessBaselines:
