@@ -83,7 +83,7 @@ func (p *GrpcRetryPolicy) WithNonRetryableCodes(statusCodes ...codes.Code) *Grpc
 	}
 
 	for _, code := range statusCodes {
-		newRetryable[code] = false
+		delete(newRetryable, code)
 	}
 
 	return &GrpcRetryPolicy{retryableCodes: newRetryable}
