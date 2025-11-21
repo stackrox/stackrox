@@ -1,0 +1,26 @@
+package datastore
+
+import (
+	"sync"
+
+	pgStore "github.com/stackrox/rox/central/cve/times/datastore/store/postgres"
+	"github.com/stackrox/rox/central/globaldb"
+)
+
+var (
+	once sync.Once
+
+	ds DataStore
+)
+
+func initialize() {
+	storage := pgStore.New(globaldb.GetPostgres())
+
+	ds = New(storage)
+}
+
+// Singleton returns a singleton instance of cve time datastore
+func Singleton() DataStore {
+	once.Do(initialize)
+	return ds
+}
