@@ -261,6 +261,7 @@ func NewWorkloadManager(config *WorkloadManagerConfig) *WorkloadManager {
 	if err := yaml.Unmarshal(data, &workload); err != nil {
 		log.Panicf("could not unmarshal workload from file due to error (%v): %s", err, data)
 	}
+	workload.VirtualMachineWorkload = validateVMWorkload(workload.VirtualMachineWorkload)
 
 	var db *pebble.DB
 	if config.storagePath != "" {
