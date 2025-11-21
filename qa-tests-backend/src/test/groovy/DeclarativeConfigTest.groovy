@@ -153,6 +153,7 @@ class DeclarativeConfigTest extends BaseSpecification {
                      "mode"         : "fragment",
                      "client_id"    : "SOMECLIENTID",
                      "client_secret": "",
+                     "extra_scopes" : "",
                     ])
             .setTraits(Traits.newBuilder().setOrigin(Traits.Origin.DECLARATIVE))
             .build()
