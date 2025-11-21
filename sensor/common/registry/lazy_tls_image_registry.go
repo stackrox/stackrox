@@ -84,25 +84,37 @@ func (l *lazyTLSCheckRegistry) Match(image *storage.ImageName) bool {
 	return urlfmt.TrimHTTPPrefixes(l.registryHostname) == image.GetRegistry()
 }
 
-func (l *lazyTLSCheckRegistry) Metadata(image *storage.Image) (*storage.ImageMetadata, error) {
-	// Attempt initialization since Metadata interacts with the registry.
+// initialize attempts lazy initialization and returns an error if initialization failed.
+func (l *lazyTLSCheckRegistry) initialize() error {
 	l.lazyInit()
-
 	// initError is modified while the write lock is held, to avoid a race
 	// grab the read lock.
-	err := concurrency.WithRLock1(&l.initializedMutex, func() error {
-		return l.initError
+	return concurrency.WithRLock1(&l.initializedMutex, func() error {
+		return pkgerrors.Wrap(l.initError, "lazy TLS registry initialization")
 	})
-	if err != nil {
-		return nil, pkgerrors.Wrap(err, "lazy TLS registry initialization")
+}
+
+func (l *lazyTLSCheckRegistry) Metadata(image *storage.Image) (*storage.ImageMetadata, error) {
+	if err := l.initialize(); err != nil {
+		return nil, err
 	}
 
-	// At this point lazy init has successfully completed.
 	meta, err := l.registry.Metadata(image)
 	if err != nil {
 		return nil, pkgerrors.Wrapf(err, "fetching metadata for image %s", image.GetName())
 	}
 	return meta, nil
+}
+
+func (l *lazyTLSCheckRegistry) ListTags(ctx context.Context, repository string) ([]string, error) {
+	if err := l.initialize(); err != nil {
+		return nil, err
+	}
+	tags, err := l.registry.ListTags(ctx, repository)
+	if err != nil {
+		return nil, pkgerrors.Wrapf(err, "listing tags for repository %s", repository)
+	}
+	return tags, nil
 }
 
 func (l *lazyTLSCheckRegistry) Name() string {
