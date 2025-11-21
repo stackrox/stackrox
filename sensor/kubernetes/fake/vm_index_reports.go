@@ -9,42 +9,114 @@ import (
 	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
 	v1 "github.com/stackrox/rox/generated/internalapi/virtualmachine/v1"
 	"github.com/stackrox/rox/pkg/centralsensor"
+	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/sensor/common/centralcaps"
 )
 
-func generateFakeIndexReport(vm *vmInfo, numPackages, numRepos int) *v1.IndexReport {
-	packages := make(map[string]*v4.Package)
-	repositories := make(map[string]*v4.Repository)
+const precomputedReportVariants = 5
 
-	// Generate repositories first
-	for i := 0; i < numRepos; i++ {
-		repoID := fmt.Sprintf("repo-%s-%d", vm.id, i)
-		repositories[repoID] = &v4.Repository{
-			Id:   repoID,
-			Name: fmt.Sprintf("repository-%d", i),
-			Uri:  fmt.Sprintf("https://repo%d.example.com", i),
-			Key:  fmt.Sprintf("key-%d", i),
+type templateKey struct {
+	numPackages int
+	numRepos    int
+}
+
+type reportTemplate struct {
+	packages     map[string]*v4.Package
+	repositories map[string]*v4.Repository
+}
+
+type reportTemplateSet struct {
+	templates []reportTemplate
+}
+
+var (
+	reportTemplateCache   = make(map[templateKey]*reportTemplateSet)
+	reportTemplateCacheMu sync.RWMutex
+)
+
+func getReportTemplateSet(numPackages, numRepos int) *reportTemplateSet {
+	key := templateKey{
+		numPackages: numPackages,
+		numRepos:    numRepos,
+	}
+
+	cached, ok := concurrency.WithRLock2(&reportTemplateCacheMu, func() (*reportTemplateSet, bool) {
+		cached, ok := reportTemplateCache[key]
+		return cached, ok
+	})
+	if ok {
+		return cached
+	}
+
+	reportTemplateCacheMu.Lock()
+	defer reportTemplateCacheMu.Unlock()
+	set := buildReportTemplateSet(numPackages, numRepos)
+	reportTemplateCache[key] = set
+	return set
+}
+
+func buildReportTemplateSet(numPackages, numRepos int) *reportTemplateSet {
+	variantCount := precomputedReportVariants
+	if variantCount <= 0 {
+		variantCount = 1
+	}
+
+	templates := make([]reportTemplate, variantCount)
+	for variant := 0; variant < variantCount; variant++ {
+		repositories := make(map[string]*v4.Repository, numRepos)
+		for i := 0; i < numRepos; i++ {
+			repoID := fmt.Sprintf("repo-template-%d-%d", variant, i)
+			repositories[repoID] = &v4.Repository{
+				Id:   repoID,
+				Name: fmt.Sprintf("repository-%d", i),
+				Uri:  fmt.Sprintf("https://repo%d.example.com", i),
+				Key:  fmt.Sprintf("key-%d", i),
+			}
+		}
+
+		packages := make(map[string]*v4.Package, numPackages)
+		for i := 0; i < numPackages; i++ {
+			pkgID := fmt.Sprintf("pkg-template-%d-%d", variant, i)
+			repoHint := ""
+			if numRepos > 0 {
+				repoHint = fmt.Sprintf("repo-template-%d-%d", variant, i%numRepos)
+			}
+
+			packages[pkgID] = &v4.Package{
+				Id:             pkgID,
+				Name:           fmt.Sprintf("package%d", i),
+				Version:        fmt.Sprintf("1.%d.%d", i/10, i%10),
+				Kind:           "binary",
+				Arch:           "amd64",
+				RepositoryHint: repoHint,
+			}
+		}
+
+		templates[variant] = reportTemplate{
+			packages:     packages,
+			repositories: repositories,
 		}
 	}
 
-	// Generate packages
-	for i := 0; i < numPackages; i++ {
-		pkgID := fmt.Sprintf("pkg-%s-%d", vm.id, i)
-		repoHint := ""
-		if numRepos > 0 {
-			repoHint = fmt.Sprintf("repo-%s-%d", vm.id, i%numRepos)
-		}
+	return &reportTemplateSet{
+		templates: templates,
+	}
+}
 
-		packages[pkgID] = &v4.Package{
-			Id:             pkgID,
-			Name:           fmt.Sprintf("package%d", i),
-			Version:        fmt.Sprintf("1.%d.%d", i/10, i%10),
-			Kind:           "binary",
-			Arch:           "amd64",
-			RepositoryHint: repoHint,
+func generateFakeIndexReport(vm *vmInfo, numPackages, numRepos int) *v1.IndexReport {
+	templateSet := getReportTemplateSet(numPackages, numRepos)
+	numTemplates := len(templateSet.templates)
+	var template reportTemplate
+	if numTemplates == 0 {
+		template = reportTemplate{
+			packages:     make(map[string]*v4.Package),
+			repositories: make(map[string]*v4.Repository),
 		}
+	} else {
+		template = templateSet.templates[vm.templateIdx%numTemplates]
+		vm.templateIdx++
 	}
 
 	return &v1.IndexReport{
@@ -54,8 +126,8 @@ func generateFakeIndexReport(vm *vmInfo, numPackages, numRepos int) *v1.IndexRep
 			State:   "IndexFinished",
 			Success: true,
 			Contents: &v4.Contents{
-				Packages:     packages,
-				Repositories: repositories,
+				Packages:     template.packages,
+				Repositories: template.repositories,
 			},
 		},
 	}

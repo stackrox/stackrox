@@ -34,12 +34,12 @@ rbacWorkload:
 vmIndexReportWorkload:
   # Number of VMs to simulate
   # Each VM will have a unique ID and VSOCK CID
-  numVMs: 1000
+  numVMs: 10000
 
   # Interval between reports for each VM
   # Lower values = higher load (e.g., 100ms = 10 reports/second per VM)
   # With 1000 VMs at 100ms interval, this generates ~10,000 reports/second total
-  reportInterval: 100ms
+  reportInterval: 60s
 
   # Number of packages to include in each IndexReport
   # Higher values = larger message size and more processing overhead

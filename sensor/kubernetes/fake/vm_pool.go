@@ -5,9 +5,10 @@ import (
 )
 
 type vmInfo struct {
-	id       string
-	vsockCID uint32
-	name     string
+	id          string
+	vsockCID    uint32
+	name        string
+	templateIdx int
 }
 
 type vmPool struct {
