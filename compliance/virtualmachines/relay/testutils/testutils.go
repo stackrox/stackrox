@@ -84,7 +84,7 @@ type MockSensorClient struct {
 	response         *sensor.UpsertVirtualMachineIndexReportResponse
 }
 
-func NewMockSensorClient() *MockSensorClient {
+func NewMockSensorClient(_ testing.TB) *MockSensorClient {
 	return &MockSensorClient{
 		response: &sensor.UpsertVirtualMachineIndexReportResponse{Success: true},
 	}
