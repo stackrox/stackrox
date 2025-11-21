@@ -13,7 +13,7 @@ import (
 )
 
 func TestMockVsockConn(t *testing.T) {
-	conn := NewMockVsockConn().
+	conn := NewMockVsockConn(t).
 		WithVsockCID(1234).
 		WithData([]byte("hello")).
 		WithDelay(10 * time.Millisecond)
@@ -28,7 +28,7 @@ func TestMockVsockConn(t *testing.T) {
 }
 
 func TestMockSensorClient(t *testing.T) {
-	client := NewMockSensorClient()
+	client := NewMockSensorClient(t)
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 

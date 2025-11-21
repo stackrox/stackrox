@@ -76,9 +76,9 @@ func (s *handlerTestSuite) TestHandle_RejectsMismatchingVsockCID() {
 	for name, c := range cases {
 		s.Run(name, func() {
 			indexReport := &v1.IndexReport{VsockCid: strconv.Itoa(c.indexReportVsockCID)}
-			conn, err := relaytest.NewMockVsockConn().WithVsockCID(uint32(c.connVsockCID)).WithIndexReport(indexReport)
+			conn, err := relaytest.NewMockVsockConn(s.T()).WithVsockCID(uint32(c.connVsockCID)).WithIndexReport(indexReport)
 			s.Require().NoError(err)
-			client := relaytest.NewMockSensorClient()
+			client := relaytest.NewMockSensorClient(s.T())
 
 			handler := New(client)
 			err = handler.Handle(s.ctx, conn)
@@ -95,8 +95,8 @@ func (s *handlerTestSuite) TestHandle_RejectsMismatchingVsockCID() {
 }
 
 func (s *handlerTestSuite) TestHandle_RejectsMalformedData() {
-	conn := relaytest.NewMockVsockConn().WithVsockCID(1234).WithData([]byte("malformed-data"))
-	client := relaytest.NewMockSensorClient()
+	conn := relaytest.NewMockVsockConn(s.T()).WithVsockCID(1234).WithData([]byte("malformed-data"))
+	client := relaytest.NewMockSensorClient(s.T())
 	handler := New(client)
 
 	err := handler.Handle(s.ctx, conn)
@@ -105,11 +105,11 @@ func (s *handlerTestSuite) TestHandle_RejectsMalformedData() {
 
 func (s *handlerTestSuite) TestHandle_HandlesContextCancellation() {
 	indexReport := &v1.IndexReport{VsockCid: "1234"}
-	conn, err := relaytest.NewMockVsockConn().WithVsockCID(1234).WithIndexReport(indexReport)
+	conn, err := relaytest.NewMockVsockConn(s.T()).WithVsockCID(1234).WithIndexReport(indexReport)
 	s.Require().NoError(err)
 
 	// Set up a sensor client that only returns after 500 ms
-	client := relaytest.NewMockSensorClient().WithDelay(500 * time.Millisecond)
+	client := relaytest.NewMockSensorClient(s.T()).WithDelay(500 * time.Millisecond)
 
 	// Set up a context that will be canceled after 100 ms
 	cancellableCtx, cancel := context.WithCancel(s.ctx)

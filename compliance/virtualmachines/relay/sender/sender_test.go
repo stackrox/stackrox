@@ -28,7 +28,7 @@ func (s *senderTestSuite) SetupTest() {
 }
 
 func (s *senderTestSuite) TestSendReportToSensor_HandlesContextCancellation() {
-	client := relaytest.NewMockSensorClient()
+	client := relaytest.NewMockSensorClient(s.T())
 	ctx, cancel := context.WithCancel(s.ctx)
 	cancel()
 
@@ -61,7 +61,7 @@ func (s *senderTestSuite) TestSendReportToSensor_RetriesOnRetryableErrors() {
 	}
 	for name, c := range cases {
 		s.Run(name, func() {
-			client := relaytest.NewMockSensorClient().WithError(c.err)
+			client := relaytest.NewMockSensorClient(s.T()).WithError(c.err)
 			if !c.respSuccess {
 				client = client.WithUnsuccessfulResponse()
 			}

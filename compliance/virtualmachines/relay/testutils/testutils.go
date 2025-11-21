@@ -5,6 +5,7 @@ import (
 	"io"
 	"net"
 	"os"
+	"testing"
 	"time"
 
 	"github.com/mdlayher/vsock"
