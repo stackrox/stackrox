@@ -50,15 +50,14 @@ function ReportParametersDetails({
         );
     }
     /*
-    // Ross CISA KEV
     if (
         isFeatureFlagEnabled('ROX_SCANNER_V4') &&
-        isFeatureFlagEnabled('ROX_KEV_EXPLOIT') &&
-        formValues.reportParameters.includeExploitable
+        isFeatureFlagEnabled('ROX_CISA_KEV') &&
+        formValues.reportParameters.includeKnownExploit
     ) {
         optionalColumnsDescriptions.push(
-            <DescriptionListDescription key="includeExploitable">
-                TBD
+            <DescriptionListDescription key="includeKnownExploit">
+                Known Exploit and Known Ransomware Campaign
             </DescriptionListDescription>
         );
     }
