@@ -574,14 +574,6 @@ func (s *storeImpl) retryableExists(ctx context.Context, id string) (bool, error
 	return count == 1, nil
 }
 
-func wrapRollback(ctx context.Context, tx *postgres.Tx, err error) error {
-	rollbackErr := tx.Rollback(ctx)
-	if rollbackErr != nil {
-		return errors.Wrapf(rollbackErr, "rolling back due to err: %v", err)
-	}
-	return err
-}
-
 // Get returns the object, if it exists from the store.
 func (s *storeImpl) Get(ctx context.Context, id string) (*storage.ImageV2, bool, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Get, "ImageV2")
