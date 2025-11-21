@@ -80,6 +80,15 @@ type ServiceWorkload struct {
 	NumLoadBalancers int `yaml:"numLoadBalancers"`
 }
 
+// VMIndexReportWorkload defines the virtual machine index report generation workload
+type VMIndexReportWorkload struct {
+	NumVMs           int           `yaml:"numVMs"`
+	ReportInterval   time.Duration `yaml:"reportInterval"`
+	NumPackages      int           `yaml:"numPackages"`
+	NumRepositories  int           `yaml:"numRepositories"`
+	PackageVariation float64       `yaml:"packageVariation"` // 0.0-1.0, variation in package counts per report
+}
+
 // Workload is the definition of a scale workload
 type Workload struct {
 	DeploymentWorkload    []DeploymentWorkload    `yaml:"deploymentWorkload"`
@@ -88,6 +97,7 @@ type Workload struct {
 	NetworkWorkload       NetworkWorkload         `yaml:"networkWorkload"`
 	RBACWorkload          RBACWorkload            `yaml:"rbacWorkload"`
 	ServiceWorkload       ServiceWorkload         `yaml:"serviceWorkload"`
+	VMIndexReportWorkload VMIndexReportWorkload   `yaml:"vmIndexReportWorkload"`
 	NumNamespaces         int                     `yaml:"numNamespaces"`
 	MatchLabels           bool                    `yaml:"matchLabels"`
 }

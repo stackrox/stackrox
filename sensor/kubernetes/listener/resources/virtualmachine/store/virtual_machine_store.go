@@ -42,8 +42,10 @@ func (s *VirtualMachineStore) AddOrUpdate(vm *virtualmachine.Info) *virtualmachi
 	if oldVM != nil {
 		vm.Running = oldVM.Running
 		if oldVM.VSOCKCID != nil {
-			vSockCID := *oldVM.VSOCKCID
-			vm.VSOCKCID = &vSockCID
+			vSockCIDValue := *oldVM.VSOCKCID
+			vSockCIDPtr := new(uint32)
+			*vSockCIDPtr = vSockCIDValue
+			vm.VSOCKCID = vSockCIDPtr
 		}
 		vm.GuestOS = oldVM.GuestOS
 	}
@@ -100,7 +102,11 @@ func (s *VirtualMachineStore) OnNamespaceDeleted(namespace string) {
 func (s *VirtualMachineStore) Get(id virtualmachine.VMID) *virtualmachine.Info {
 	s.lock.RLock()
 	defer s.lock.RUnlock()
-	return s.virtualMachines[id].Copy()
+	vm := s.virtualMachines[id]
+	if vm == nil {
+		return nil
+	}
+	return vm.Copy()
 }
 
 // Has returns true if the store contains the VirtualMachine with the given ID
@@ -116,7 +122,11 @@ func (s *VirtualMachineStore) GetFromCID(cid uint32) *virtualmachine.Info {
 	if !ok {
 		return nil
 	}
-	return s.virtualMachines[uid].Copy()
+	vm := s.virtualMachines[uid]
+	if vm == nil {
+		return nil
+	}
+	return vm.Copy()
 }
 
 func (s *VirtualMachineStore) addOrUpdateNoLock(vm *virtualmachine.Info) {
@@ -162,9 +172,10 @@ func (s *VirtualMachineStore) addOrUpdateVSOCKInfoNoLock(id virtualmachine.VMID,
 	}
 	s.idToCID[id] = *vsockCID
 	s.cidToID[*vsockCID] = id
-	// copy value before return
-	val := *vsockCID
-	return &val
+	// Allocate on the heap to avoid dangling pointer (same issue as in AddOrUpdate)
+	valPtr := new(uint32)
+	*valPtr = *vsockCID
+	return valPtr
 }
 
 func (s *VirtualMachineStore) removeVSOCKInfoNoLock(id virtualmachine.VMID, vsockCID *uint32) {
@@ -187,8 +198,11 @@ func (s *VirtualMachineStore) replaceVSOCKInfoNoLock(vm *virtualmachine.Info) *u
 		vm.VSOCKCID = prev.VSOCKCID
 	}
 	// Upsert VSOCKCID info
+	// CRITICAL: We must use the heap-allocated pointer returned by addOrUpdateVSOCKInfoNoLock,
+	// not the original vm.VSOCKCID pointer, which may point to a local variable that goes out of scope.
+	// This prevents dangling pointer bugs where the stored VM.VSOCKCID points to invalid memory.
 	if vm.VSOCKCID != nil {
-		_ = s.addOrUpdateVSOCKInfoNoLock(vm.ID, vm.VSOCKCID)
+		return s.addOrUpdateVSOCKInfoNoLock(vm.ID, vm.VSOCKCID)
 	}
 	return vm.VSOCKCID
 }
