@@ -241,7 +241,7 @@ func (w *WorkloadManager) manageVirtualMachine(ctx context.Context, resources *v
 	defer w.wg.Done()
 
 	lifecycles := resources.workload.NumLifecycles
-	for iteration := 0; lifecycles <= 0 || iteration <= lifecycles; iteration++ {
+	for iteration := 0; lifecycles <= 0 || iteration < lifecycles; iteration++ {
 		vm, vmi := resources.template.instantiate(iteration)
 		resources.vm = vm
 		resources.vmi = vmi
