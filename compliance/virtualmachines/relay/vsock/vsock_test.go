@@ -3,9 +3,8 @@ package vsock
 import (
 	"net"
 	"testing"
-	"time"
 
-	"github.com/mdlayher/vsock"
+	relaytest "github.com/stackrox/rox/compliance/virtualmachines/relay/testutils"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -19,8 +18,8 @@ type vsockTestSuite struct {
 
 func (s *vsockTestSuite) TestExtractVsockCIDFromConnection() {
 
-	connWrongAddrType := newMockVsockConn().withVsockCID(1234)
-	connWrongAddrType.remoteAddr = &net.TCPAddr{}
+	connWrongAddrType := relaytest.NewMockVsockConn().WithVsockCID(1234)
+	connWrongAddrType.SetRemoteAddr(&net.TCPAddr{})
 
 	cases := map[string]struct {
 		conn             net.Conn
@@ -33,12 +32,12 @@ func (s *vsockTestSuite) TestExtractVsockCIDFromConnection() {
 			expectedVsockCID: 0,
 		},
 		"reserved vsock CID fails": {
-			conn:             newMockVsockConn().withVsockCID(2),
+			conn:             relaytest.NewMockVsockConn().WithVsockCID(2),
 			shouldError:      true,
 			expectedVsockCID: 0,
 		},
 		"valid vsock CID succeeds": {
-			conn:             newMockVsockConn().withVsockCID(42),
+			conn:             relaytest.NewMockVsockConn().WithVsockCID(42),
 			shouldError:      false,
 			expectedVsockCID: 42,
 		},
@@ -56,25 +55,3 @@ func (s *vsockTestSuite) TestExtractVsockCIDFromConnection() {
 		})
 	}
 }
-
-type mockVsockConn struct {
-	remoteAddr net.Addr
-}
-
-func newMockVsockConn() *mockVsockConn {
-	return &mockVsockConn{}
-}
-
-func (c *mockVsockConn) withVsockCID(vsockCID uint32) *mockVsockConn {
-	c.remoteAddr = &vsock.Addr{ContextID: vsockCID}
-	return c
-}
-
-func (c *mockVsockConn) RemoteAddr() net.Addr               { return c.remoteAddr }
-func (c *mockVsockConn) Read([]byte) (int, error)           { return 0, nil }
-func (c *mockVsockConn) Write([]byte) (int, error)          { return 0, nil }
-func (c *mockVsockConn) Close() error                       { return nil }
-func (c *mockVsockConn) LocalAddr() net.Addr                { return nil }
-func (c *mockVsockConn) SetDeadline(t time.Time) error      { return nil }
-func (c *mockVsockConn) SetReadDeadline(t time.Time) error  { return nil }
-func (c *mockVsockConn) SetWriteDeadline(t time.Time) error { return nil }
