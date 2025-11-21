@@ -16,6 +16,7 @@ import (
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sync"
+	vmPkg "github.com/stackrox/rox/pkg/virtualmachine"
 	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/networkflow/manager"
 	"github.com/stackrox/rox/sensor/common/signal"
@@ -24,6 +25,7 @@ import (
 	"github.com/stackrox/rox/sensor/kubernetes/client"
 	vmStore "github.com/stackrox/rox/sensor/kubernetes/listener/resources/virtualmachine/store"
 	"go.yaml.in/yaml/v3"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/version"
@@ -41,8 +43,12 @@ const (
 	defaultNamespaceNum = 30
 )
 
+const defaultVSOCKBaseCID = uint32(1000)
+
 var (
 	log = logging.LoggerForModule()
+
+	defaultGuestOSPool = []string{"linux", "windows", "rhel", "ubuntu"}
 )
 
 func init() {
@@ -221,6 +227,7 @@ func NewWorkloadManager(config *WorkloadManagerConfig) *WorkloadManager {
 	if err := yaml.Unmarshal(data, &workload); err != nil {
 		log.Panicf("could not unmarshal workload from file due to error (%v): %s", err, data)
 	}
+	workload.VirtualMachineWorkload = validateVMWorkload(workload.VirtualMachineWorkload)
 
 	var db *pebble.DB
 	if config.storagePath != "" {
@@ -506,10 +513,46 @@ func (w *WorkloadManager) initializePreexistingResources() {
 		Resource: "customresourcedefinitions",
 	}
 
+	// Add kubevirt GVRs for dynamic client
+	vmGVR := schema.GroupVersionResource{
+		Group:    "kubevirt.io",
+		Version:  "v1",
+		Resource: "virtualmachines",
+	}
+	vmiGVR := schema.GroupVersionResource{
+		Group:    "kubevirt.io",
+		Version:  "v1",
+		Resource: "virtualmachineinstances",
+	}
+
+	customListKinds := map[schema.GroupVersionResource]string{
+		gvr:    "CustomResourceDefinitionList",
+		vmGVR:  "VirtualMachineList",
+		vmiGVR: "VirtualMachineInstanceList",
+	}
+
 	clientSet := &clientSetImpl{
 		kubernetes: w.fakeClient,
-		dynamic:    fakeDynamic.NewSimpleDynamicClientWithCustomListKinds(scheme, map[schema.GroupVersionResource]string{gvr: "CustomResourceDefinitionList"}),
+		dynamic:    fakeDynamic.NewSimpleDynamicClientWithCustomListKinds(scheme, customListKinds),
 	}
+
+	// Seed discovery API with kubevirt resources if VM workload is configured
+	if w.workload.VirtualMachineWorkload.PoolSize > 0 {
+		fakeDiscovery := w.fakeClient.Discovery().(*fakediscovery.FakeDiscovery)
+		vmGV := vmPkg.GetGroupVersion()
+		vmResources := vmPkg.GetRequiredResources()
+
+		// Add kubevirt API group to discovery
+		apiResourceList := &metav1.APIResourceList{
+			GroupVersion: vmGV.String(),
+			APIResources: make([]metav1.APIResource, 0, len(vmResources)),
+		}
+		for _, res := range vmResources {
+			apiResourceList.APIResources = append(apiResourceList.APIResources, res.APIResource)
+		}
+		fakeDiscovery.Resources = append(fakeDiscovery.Resources, apiResourceList)
+	}
+
 	initializeOpenshiftClients(clientSet)
 	w.client = clientSet
 
@@ -536,5 +579,28 @@ func (w *WorkloadManager) initializePreexistingResources() {
 		w.workload.VMIndexReportWorkload.ReportInterval > 0 {
 		w.wg.Add(1)
 		go w.manageVMIndexReportsWithPopulation(w.shutdownCtx)
+	}
+
+	// Start VirtualMachine/VirtualMachineInstance workload if configured
+	if w.workload.VirtualMachineWorkload.PoolSize > 0 {
+		templatePool := newVMTemplatePool(
+			w.workload.VirtualMachineWorkload.PoolSize,
+			defaultGuestOSPool,
+			defaultVSOCKBaseCID,
+		)
+
+		var vmResources []*vmResourcesToBeManaged
+		for i := 0; i < templatePool.size(); i++ {
+			resource := w.getVMResources(w.workload.VirtualMachineWorkload, i, templatePool)
+			if resource != nil {
+				vmResources = append(vmResources, resource)
+			}
+		}
+
+		// Fork management of VM/VMI resources
+		for _, resource := range vmResources {
+			w.wg.Add(1)
+			go w.manageVirtualMachine(w.shutdownCtx, resource)
+		}
 	}
 }
