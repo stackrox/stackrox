@@ -240,7 +240,6 @@ func (s *NodesStoreSuite) TestGetWithTransactionContext() {
 	// Create explicit transaction
 	tx, err := s.pool.Begin(s.ctx)
 	s.NoError(err)
-	defer tx.Rollback(s.ctx)
 
 	// Pass transaction context to Get
 	ctx := postgres.ContextWithTx(s.ctx, tx)
@@ -249,6 +248,7 @@ func (s *NodesStoreSuite) TestGetWithTransactionContext() {
 	s.NoError(err)
 	s.True(ok)
 	s.Equal(node.GetId(), retrieved.GetId())
+	s.NoError(tx.Rollback(s.ctx))
 }
 
 func (s *NodesStoreSuite) TestGetManyWithTransactionContext() {
@@ -273,7 +273,6 @@ func (s *NodesStoreSuite) TestGetManyWithTransactionContext() {
 	// Create explicit transaction
 	tx, err := s.pool.Begin(s.ctx)
 	s.NoError(err)
-	defer tx.Rollback(s.ctx)
 
 	// Pass transaction context to GetMany
 	ctx := postgres.ContextWithTx(s.ctx, tx)
@@ -282,6 +281,7 @@ func (s *NodesStoreSuite) TestGetManyWithTransactionContext() {
 	s.NoError(err)
 	s.Empty(missing)
 	s.Len(nodes, 2)
+	s.NoError(tx.Rollback(s.ctx))
 }
 
 func (s *NodesStoreSuite) TestWalkByQueryWithTransactionContext() {
@@ -299,7 +299,6 @@ func (s *NodesStoreSuite) TestWalkByQueryWithTransactionContext() {
 	// Create explicit transaction
 	tx, err := s.pool.Begin(s.ctx)
 	s.NoError(err)
-	defer tx.Rollback(s.ctx)
 
 	// Pass transaction context to WalkByQuery
 	ctx := postgres.ContextWithTx(s.ctx, tx)
@@ -313,4 +312,5 @@ func (s *NodesStoreSuite) TestWalkByQueryWithTransactionContext() {
 	q := search.NewQueryBuilder().AddExactMatches(search.NodeID, node.GetId()).ProtoQuery()
 	s.NoError(store.WalkByQuery(ctx, q, walkFn))
 	s.Equal(1, count)
+	s.NoError(tx.Rollback(s.ctx))
 }
