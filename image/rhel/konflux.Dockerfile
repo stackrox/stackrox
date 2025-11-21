@@ -59,7 +59,7 @@ ENV UI_PKG_INSTALL_EXTRA_ARGS="--ignore-scripts"
 RUN make -C ui build
 
 
-FROM registry.access.redhat.com/ubi8/ubi:latest@sha256:2741982b4f3eb0dc24f8a6e1cdbf3694ebacc2575f31fc9c97bf85d44d86a670 AS dependency_builder
+FROM registry.access.redhat.com/ubi8/ubi:latest@sha256:7d7ca86d832d1dc7aba4583414475c15686291b1c2cf75fe63ca03526c3b89ae AS dependency_builder
 
 ARG PG_VERSION
 
@@ -93,7 +93,7 @@ RUN mkdir -p /out/etc/pki/ca-trust/source/anchors /out/etc/ssl && \
     chown -R 4000:4000 /out/var/lib/stackrox /out/var/log/stackrox /out/var/cache/stackrox /out/tmp
 
 
-FROM registry.access.redhat.com/ubi8/ubi-micro:latest@sha256:25c9b68db2e23ca6552d21e09714a1c987438e03f0ca64a5cf291e6bfd831ad8
+FROM registry.access.redhat.com/ubi8/ubi-micro:latest@sha256:37552f11d3b39b3360f7be7c13f6a617e468f39be915cd4f8c8a8531ffc9d43d
 
 COPY --from=dependency_builder /out/ /
 
