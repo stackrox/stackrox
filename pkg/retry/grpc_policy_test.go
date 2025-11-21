@@ -74,6 +74,7 @@ func TestNoCodesRetriedGrpcRetryPolicy(t *testing.T) {
 	err = status.Error(codes.Internal, "internal")
 	assert.False(t, policy.ShouldRetry(err))
 }
+
 func TestGrpcRetryPolicy_WithRetryableCodes(t *testing.T) {
 	t.Run("add_single_code", func(t *testing.T) {
 		policy := DefaultGrpcRetryPolicy().WithRetryableCodes(codes.NotFound)
