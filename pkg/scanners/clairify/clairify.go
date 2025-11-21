@@ -56,6 +56,7 @@ var (
 
 	log             = logging.LoggerForModule()
 	scannerEndpoint = fmt.Sprintf("scanner.%s.svc", env.Namespace.Setting())
+	grpcRetryPolicy = retry.NoCodesRetriedGrpcRetryPolicy().WithRetryableCodes(codes.Aborted, codes.Unavailable)
 )
 
 // GetScannerEndpoint returns the scanner endpoint with a configured namespace. env.ScannerGRPCEndpoint is only used by Sensor.
@@ -427,15 +428,13 @@ func (c *clairify) GetVulnerabilities(image *storage.Image, components *scannerT
 }
 
 func retryOnGRPCErrors(ctx context.Context, name string, f func() error) error {
-	policy := retry.NoCodesRetriedGrpcRetryPolicy().WithRetryableCodes(codes.Aborted, codes.Unavailable)
-
 	op := func() error {
 		err := f()
 		if err == nil {
 			return nil
 		}
 
-		if policy.ShouldRetry(err) {
+		if grpcRetryPolicy.ShouldRetry(err) {
 			return err
 		}
 

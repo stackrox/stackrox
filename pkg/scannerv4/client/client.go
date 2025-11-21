@@ -28,6 +28,8 @@ import (
 var (
 	errIndexerNotConfigured = errors.New("indexer not configured")
 	errMatcherNotConfigured = errors.New("matcher not configured")
+
+	grpcRetryPolicy = retry.NoCodesRetriedGrpcRetryPolicy().WithRetryableCodes(codes.Aborted, codes.Unavailable, codes.Internal)
 )
 
 // callOptions contains optional data and gRPC parameters for the underlying
@@ -462,7 +464,6 @@ func getImageManifestID(ref name.Digest) string {
 // retryable gRPC codes.
 func retryWithBackoff(ctx context.Context, b backoff.BackOff, rpc string, op backoff.Operation) error {
 	ctx = zlog.ContextWithValues(ctx, "rpc", rpc)
-	policy := retry.NoCodesRetriedGrpcRetryPolicy().WithRetryableCodes(codes.Aborted, codes.Unavailable, codes.Internal)
 
 	f := func() error {
 		err := op()
@@ -470,7 +471,7 @@ func retryWithBackoff(ctx context.Context, b backoff.BackOff, rpc string, op bac
 			return nil
 		}
 
-		if policy.ShouldRetry(err) {
+		if grpcRetryPolicy.ShouldRetry(err) {
 			return err
 		}
 
