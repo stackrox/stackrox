@@ -16,52 +16,9 @@ import (
 	kubeVirtV1 "kubevirt.io/api/core/v1"
 )
 
-// setJSONSafeVSOCKCID normalizes the vsock CID so the fake dynamic client can deep-copy the object.
-// client-go's DeepCopyJSONValue only supports JSON-compatible scalars; unsigned ints (uint32/uint64)
-// cause a panic. Converting to int64 before enqueueing keeps the fake informer pipeline happy.
-func setJSONSafeVSOCKCID(obj *unstructured.Unstructured, vsockCID uint32) {
-	setNestedField(obj, int64(vsockCID), "status", "vsockCID")
-}
-
 func setNestedField(obj *unstructured.Unstructured, value interface{}, fields ...string) {
 	if err := unstructured.SetNestedField(obj.Object, value, fields...); err != nil {
 		log.Warnf("failed to set nested field %s: %v", strings.Join(fields, "."), err)
-	}
-}
-
-func sanitizeJSONNumbers(value interface{}) interface{} {
-	switch v := value.(type) {
-	case map[string]interface{}:
-		for key, elem := range v {
-			v[key] = sanitizeJSONNumbers(elem)
-		}
-		return v
-	case []interface{}:
-		for i, elem := range v {
-			v[i] = sanitizeJSONNumbers(elem)
-		}
-		return v
-	case uint:
-		return int64(v)
-	case uint8:
-		return int64(v)
-	case uint16:
-		return int64(v)
-	case uint32:
-		return int64(v)
-	case uint64:
-		if v > uint64(math.MaxInt64) {
-			return int64(math.MaxInt64)
-		}
-		return int64(v)
-	case uintptr:
-		val := uint64(v)
-		if val > uint64(math.MaxInt64) {
-			return int64(math.MaxInt64)
-		}
-		return int64(val)
-	default:
-		return value
 	}
 }
 
@@ -188,7 +145,6 @@ func (t *vmTemplate) instantiate(iteration int) (*unstructured.Unstructured, *un
 
 	vmObj := toUnstructuredVM(vm)
 	vmiObj := toUnstructuredVMI(vmi)
-	setJSONSafeVSOCKCID(vmiObj, t.vsockCID)
 	return vmObj, vmiObj
 }
 
@@ -231,10 +187,6 @@ func toUnstructuredVM(vm *kubeVirtV1.VirtualMachine) *unstructured.Unstructured 
 		log.Warnf("failed to convert VM %s to unstructured object: %v", vm.GetName(), err)
 		return &unstructured.Unstructured{Object: map[string]interface{}{}}
 	}
-	if sanitizedMap, ok := sanitizeJSONNumbers(unstructuredObj).(map[string]interface{}); ok {
-		return &unstructured.Unstructured{Object: sanitizedMap}
-	}
-	log.Warnf("sanitizeJSONNumbers returned non-map for VM %s; using original object", vm.GetName())
 	return &unstructured.Unstructured{Object: unstructuredObj}
 }
 
@@ -245,11 +197,24 @@ func toUnstructuredVMI(vmi *kubeVirtV1.VirtualMachineInstance) *unstructured.Uns
 		log.Warnf("failed to convert VMI %s to unstructured object: %v", vmi.GetName(), err)
 		return &unstructured.Unstructured{Object: map[string]interface{}{}}
 	}
-	if sanitizedMap, ok := sanitizeJSONNumbers(unstructuredObj).(map[string]interface{}); ok {
-		return &unstructured.Unstructured{Object: sanitizedMap}
+	obj := &unstructured.Unstructured{Object: unstructuredObj}
+	normalizeVMIUnsignedFields(obj, vmi.Status)
+	return obj
+}
+
+// normalizeVMIUnsignedFields rewrites known unsigned VMI status fields so DeepCopyJSONValue does not panic.
+func normalizeVMIUnsignedFields(obj *unstructured.Unstructured, status kubeVirtV1.VirtualMachineInstanceStatus) {
+	setNestedField(obj, jsonSafeUint64(status.RuntimeUser), "status", "runtimeUser")
+	if status.VSOCKCID != nil {
+		setNestedField(obj, int64(*status.VSOCKCID), "status", "vsockCID")
 	}
-	log.Warnf("sanitizeJSONNumbers returned non-map for VMI %s; using original object", vmi.GetName())
-	return &unstructured.Unstructured{Object: unstructuredObj}
+}
+
+func jsonSafeUint64(value uint64) int64 {
+	if value > math.MaxInt64 {
+		return math.MaxInt64
+	}
+	return int64(value)
 }
 
 type vmResourcesToBeManaged struct {
@@ -359,5 +324,4 @@ func (w *WorkloadManager) manageVirtualMachineLifecycleOnce(ctx context.Context,
 			}
 		}
 	}
-	return false
 }
