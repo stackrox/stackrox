@@ -2,6 +2,8 @@ syntax = "proto3";
 
 package storage;
 
+import "google/protobuf/timestamp.proto";
+
 option go_package = "./storage;storage";
 option java_package = "io.stackrox.proto.storage";
 
@@ -20,6 +22,17 @@ message Risk {
     float score = 3;
   }
   repeated Result results = 4;
+  UserRankingAdjustment user_ranking_adjustment = 5;
+}
+
+message UserRankingAdjustment {
+  // Adjusted risk score after user ranking changes
+  // No limits - can be negative or exceed 10.0
+  float adjusted_score = 1;
+  // Timestamp of last adjustment
+  google.protobuf.Timestamp last_adjusted = 2;
+  // User ID who made the last adjustment
+  string last_adjusted_by = 3;
 }
 
 message RiskSubject {
