@@ -37,29 +37,7 @@ RUN mkdir -p image/rhel/docs/api/v1 && \
 RUN make copy-go-binaries-to-image-dir
 
 
-FROM registry.access.redhat.com/ubi9/nodejs-20:latest@sha256:71a3810707370f30bc0958aea14c3a5af564a3962ae0819bf16fdde7df9b4378 AS ui-builder
-
-WORKDIR /go/src/github.com/stackrox/rox/app
-
-COPY --chown=default . .
-
-# This sets branding during UI build time. This is to make sure UI is branded as commercial RHACS (not StackRox).
-# ROX_PRODUCT_BRANDING is also set in the resulting image so that Central Go code knows its RHACS.
-ENV ROX_PRODUCT_BRANDING="RHACS_BRANDING"
-
-# Default execution of the `npm ci` command causes postinstall scripts to run and spawn a new child process
-# for each script. When building in konflux for s390x and ppc64le architectures, spawing
-# these child processes causes excessive memory usage and ENOMEM errors, resulting
-# in build failures. Currently the only postinstall scripts that run for the UI dependencies are:
-#   `core-js` prints a banner with links for donations
-#   `cypress` downloads the Cypress binary from the internet
-# In the case of building the `rhacs-main-container`, all of these install scripts can be safely ignored.
-ENV UI_PKG_INSTALL_EXTRA_ARGS="--ignore-scripts"
-
-RUN make -C ui build
-
-
-FROM registry.access.redhat.com/ubi8/ubi:latest@sha256:7d7ca86d832d1dc7aba4583414475c15686291b1c2cf75fe63ca03526c3b89ae AS dependency_builder
+FROM registry.access.redhat.com/ubi8/ubi:latest@sha256:7d7ca86d832d1dc7aba4583414475c15686291b1c2cf75fe63ca03526c3b89ae AS rpm_installer
 
 ARG PG_VERSION
 
@@ -93,9 +71,31 @@ RUN mkdir -p /out/etc/pki/ca-trust/source/anchors /out/etc/ssl && \
     chown -R 4000:4000 /out/var/lib/stackrox /out/var/log/stackrox /out/var/cache/stackrox /out/tmp
 
 
+FROM registry.access.redhat.com/ubi9/nodejs-20:latest@sha256:c3afeb6716306b239d0f1bc3c567bd899cb102cf70b6dd48b9a11e7339482f3f AS ui-builder
+
+WORKDIR /go/src/github.com/stackrox/rox/app
+
+COPY --chown=default . .
+
+# This sets branding during UI build time. This is to make sure UI is branded as commercial RHACS (not StackRox).
+# ROX_PRODUCT_BRANDING is also set in the resulting image so that Central Go code knows its RHACS.
+ENV ROX_PRODUCT_BRANDING="RHACS_BRANDING"
+
+# Default execution of the `npm ci` command causes postinstall scripts to run and spawn a new child process
+# for each script. When building in konflux for s390x and ppc64le architectures, spawing
+# these child processes causes excessive memory usage and ENOMEM errors, resulting
+# in build failures. Currently the only postinstall scripts that run for the UI dependencies are:
+#   `core-js` prints a banner with links for donations
+#   `cypress` downloads the Cypress binary from the internet
+# In the case of building the `rhacs-main-container`, all of these install scripts can be safely ignored.
+ENV UI_PKG_INSTALL_EXTRA_ARGS="--ignore-scripts"
+
+RUN make -C ui build
+
+
 FROM registry.access.redhat.com/ubi8/ubi-micro:latest@sha256:37552f11d3b39b3360f7be7c13f6a617e468f39be915cd4f8c8a8531ffc9d43d
 
-COPY --from=dependency_builder /out/ /
+COPY --from=rpm_installer /out/ /
 
 COPY --from=ui-builder /go/src/github.com/stackrox/rox/app/ui/build /ui/
 
