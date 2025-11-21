@@ -21,8 +21,9 @@ const _QueryType_name = "SEARCHGETCOUNTDELETESELECTDELETERETURNINGIDS"
 var _QueryType_index = [...]uint8{0, 6, 9, 14, 20, 26, 44}
 
 func (i QueryType) String() string {
-	if i < 0 || i >= QueryType(len(_QueryType_index)-1) {
+	idx := int(i) - 0
+	if i < 0 || idx >= len(_QueryType_index)-1 {
 		return "QueryType(" + strconv.FormatInt(int64(i), 10) + ")"
 	}
-	return _QueryType_name[_QueryType_index[i]:_QueryType_index[i+1]]
+	return _QueryType_name[_QueryType_index[idx]:_QueryType_index[idx+1]]
 }
