@@ -18,7 +18,7 @@ type vsockTestSuite struct {
 
 func (s *vsockTestSuite) TestExtractVsockCIDFromConnection() {
 
-	connWrongAddrType := relaytest.NewMockVsockConn().WithVsockCID(1234)
+	connWrongAddrType := relaytest.NewMockVsockConn(s.T()).WithVsockCID(1234)
 	connWrongAddrType.SetRemoteAddr(&net.TCPAddr{})
 
 	cases := map[string]struct {
@@ -32,12 +32,12 @@ func (s *vsockTestSuite) TestExtractVsockCIDFromConnection() {
 			expectedVsockCID: 0,
 		},
 		"reserved vsock CID fails": {
-			conn:             relaytest.NewMockVsockConn().WithVsockCID(2),
+			conn:             relaytest.NewMockVsockConn(s.T()).WithVsockCID(2),
 			shouldError:      true,
 			expectedVsockCID: 0,
 		},
 		"valid vsock CID succeeds": {
-			conn:             relaytest.NewMockVsockConn().WithVsockCID(42),
+			conn:             relaytest.NewMockVsockConn(s.T()).WithVsockCID(42),
 			shouldError:      false,
 			expectedVsockCID: 42,
 		},

@@ -56,7 +56,7 @@ func (s *connutilTestSuite) TestReadFromConn() {
 
 	for name, c := range cases {
 		s.Run(name, func() {
-			conn := relaytest.NewMockVsockConn().WithData(data).WithDelay(c.delay)
+			conn := relaytest.NewMockVsockConn(s.T()).WithData(data).WithDelay(c.delay)
 
 			readData, err := ReadFromConn(conn, c.maxSize, c.readTimeout)
 			if c.shouldError {
