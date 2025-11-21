@@ -20,7 +20,6 @@ import (
 	"golang.org/x/sync/semaphore"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/proto"
 )
 
@@ -257,22 +256,6 @@ func extractVsockCIDFromConnection(conn net.Conn) (uint32, error) {
 	return remoteAddr.ContextID, nil
 }
 
-func isRetryableGRPCError(err error) bool {
-	grpcErr, ok := status.FromError(err)
-	if !ok {
-		return false
-	}
-	code := grpcErr.Code()
-	switch code {
-	case codes.DeadlineExceeded:
-		return !errors.Is(err, context.Canceled)
-	case codes.Unavailable, codes.ResourceExhausted, codes.Internal:
-		return true
-	default:
-		return false
-	}
-}
-
 func parseIndexReport(data []byte) (*v1.IndexReport, error) {
 	report := &v1.IndexReport{}
 
@@ -330,7 +313,17 @@ func sendReportToSensor(ctx context.Context, report *v1.IndexReport, sensorClien
 			}
 		}
 
-		if isRetryableGRPCError(err) {
+		// Retry transient gRPC errors: unavailable, resource exhausted, internal, and deadline exceeded
+		// (unless deadline exceeded is due to context cancellation).
+		policy := retry.NoCodesRetriedGrpcRetryPolicy().WithRetryableCodes(
+			codes.Unavailable, codes.ResourceExhausted, codes.Internal, codes.DeadlineExceeded)
+
+		// Don't retry if the context was canceled
+		if errors.Is(err, context.Canceled) {
+			return err
+		}
+
+		if policy.ShouldRetry(err) {
 			err = retry.MakeRetryable(err)
 		}
 
