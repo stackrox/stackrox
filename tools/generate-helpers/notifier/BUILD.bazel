@@ -1,0 +1,22 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library")
+
+go_library(
+    name = "notifier_lib",
+    srcs = ["main.go"],
+    importpath = "github.com/stackrox/rox/tools/generate-helpers/notifier",
+    visibility = ["//visibility:private"],
+    deps = [
+        "//pkg/set",
+        "//pkg/utils",
+        "//tools/generate-helpers/notifier/files",
+        "//tools/generate-helpers/notifier/operations",
+        "@com_github_dave_jennifer//jen",
+        "@com_github_spf13_cobra//:cobra",
+    ],
+)
+
+go_binary(
+    name = "notifier",
+    embed = [":notifier_lib"],
+    visibility = ["//visibility:public"],
+)

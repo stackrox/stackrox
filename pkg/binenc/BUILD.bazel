@@ -1,0 +1,29 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "binenc",
+    srcs = [
+        "byte_slice_list.go",
+        "ints.go",
+        "varint.go",
+    ],
+    importpath = "github.com/stackrox/rox/pkg/binenc",
+    visibility = ["//visibility:public"],
+    deps = ["@com_github_pkg_errors//:errors"],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":binenc",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "binenc_test",
+    srcs = ["byte_slice_list_test.go"],
+    embed = [":binenc"],
+    deps = [
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+    ],
+)

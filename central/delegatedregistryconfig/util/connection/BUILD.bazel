@@ -1,0 +1,18 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "connection",
+    srcs = ["connection.go"],
+    importpath = "github.com/stackrox/rox/central/delegatedregistryconfig/util/connection",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//central/sensor/service/connection",
+        "//pkg/centralsensor",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":connection",
+    visibility = ["//visibility:public"],
+)

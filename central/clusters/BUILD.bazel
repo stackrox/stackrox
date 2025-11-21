@@ -1,0 +1,62 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "clusters",
+    srcs = [
+        "cert_bundle.go",
+        "common.go",
+        "deployer.go",
+        "identity.go",
+    ],
+    importpath = "github.com/stackrox/rox/central/clusters",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//central/serviceidentities/datastore",
+        "//generated/storage",
+        "//pkg/buildinfo",
+        "//pkg/centralsensor",
+        "//pkg/env",
+        "//pkg/features",
+        "//pkg/helm/charts",
+        "//pkg/images/defaults",
+        "//pkg/images/utils",
+        "//pkg/mtls",
+        "//pkg/namespaces",
+        "//pkg/sac",
+        "//pkg/sac/resources",
+        "//pkg/services",
+        "//pkg/set",
+        "//pkg/urlfmt",
+        "//pkg/utils",
+        "//pkg/uuid",
+        "@com_github_pkg_errors//:errors",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":clusters",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "clusters_test",
+    srcs = [
+        "cert_bundle_test.go",
+        "deployer_test.go",
+        "identity_test.go",
+    ],
+    embed = [":clusters"],
+    deps = [
+        "//generated/storage",
+        "//pkg/buildinfo",
+        "//pkg/helm/charts",
+        "//pkg/images/defaults",
+        "//pkg/images/defaults/testutils",
+        "//pkg/mtls",
+        "//pkg/mtls/testutils",
+        "//pkg/version/testutils",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//suite",
+    ],
+)

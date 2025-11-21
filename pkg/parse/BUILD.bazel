@@ -1,0 +1,21 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "parse",
+    srcs = ["bool.go"],
+    importpath = "github.com/stackrox/rox/pkg/parse",
+    visibility = ["//visibility:public"],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":parse",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "parse_test",
+    srcs = ["bool_test.go"],
+    embed = [":parse"],
+    deps = ["@com_github_stretchr_testify//assert"],
+)

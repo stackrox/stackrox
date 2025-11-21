@@ -1,0 +1,73 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "rbac",
+    srcs = [
+        "binding_fetcher.go",
+        "conversions.go",
+        "dispatcher.go",
+        "evaluator.go",
+        "namespaced_binding.go",
+        "namespaced_role.go",
+        "store.go",
+        "store_impl.go",
+    ],
+    importpath = "github.com/stackrox/rox/sensor/kubernetes/listener/resources/rbac",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//generated/internalapi/central",
+        "//generated/storage",
+        "//pkg/errorhelpers",
+        "//pkg/k8srbac",
+        "//pkg/kubernetes",
+        "//pkg/logging",
+        "//pkg/protoconv",
+        "//pkg/retry",
+        "//pkg/set",
+        "//pkg/sync",
+        "//pkg/utils",
+        "//sensor/common/rbac",
+        "//sensor/common/store/resolver",
+        "//sensor/kubernetes/eventpipeline/component",
+        "@com_github_pkg_errors//:errors",
+        "@io_k8s_api//rbac/v1:rbac",
+        "@io_k8s_apimachinery//pkg/apis/meta/v1:meta",
+        "@io_k8s_client_go//kubernetes",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":rbac",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "rbac_test",
+    srcs = [
+        "binding_fetcher_test.go",
+        "namespaced_binding_test.go",
+        "store_impl_test.go",
+    ],
+    embed = [":rbac"],
+    deps = [
+        "//generated/internalapi/central",
+        "//generated/storage",
+        "//pkg/protoassert",
+        "//pkg/protoconv",
+        "//pkg/uuid",
+        "//sensor/common/store/mocks",
+        "//sensor/common/store/resolver",
+        "@com_github_pkg_errors//:errors",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+        "@io_k8s_api//rbac/v1:rbac",
+        "@io_k8s_apimachinery//pkg/apis/meta/v1:meta",
+        "@io_k8s_apimachinery//pkg/runtime",
+        "@io_k8s_apimachinery//pkg/types",
+        "@io_k8s_client_go//kubernetes/fake",
+        "@io_k8s_client_go//kubernetes/typed/rbac/v1/fake",
+        "@io_k8s_client_go//testing",
+        "@org_uber_go_mock//gomock",
+    ],
+)

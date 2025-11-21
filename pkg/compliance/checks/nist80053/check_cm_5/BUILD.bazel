@@ -1,0 +1,18 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "check_cm_5",
+    srcs = ["check.go"],
+    importpath = "github.com/stackrox/rox/pkg/compliance/checks/nist80053/check_cm_5",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//pkg/compliance/checks/common",
+        "//pkg/compliance/checks/standards",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":check_cm_5",
+    visibility = ["//visibility:public"],
+)

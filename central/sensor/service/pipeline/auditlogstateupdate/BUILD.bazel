@@ -1,0 +1,38 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "auditlogstateupdate",
+    srcs = ["pipeline.go"],
+    importpath = "github.com/stackrox/rox/central/sensor/service/pipeline/auditlogstateupdate",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//central/cluster/datastore",
+        "//central/sensor/service/common",
+        "//central/sensor/service/pipeline",
+        "//central/sensor/service/pipeline/reconciliation",
+        "//generated/internalapi/central",
+        "//pkg/centralsensor",
+        "//pkg/logging",
+        "//pkg/protoutils",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":auditlogstateupdate",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "auditlogstateupdate_test",
+    srcs = ["pipeline_test.go"],
+    embed = [":auditlogstateupdate"],
+    deps = [
+        "//central/cluster/datastore/mocks",
+        "//generated/internalapi/central",
+        "//generated/storage",
+        "//pkg/protocompat",
+        "@com_github_stretchr_testify//suite",
+        "@org_uber_go_mock//gomock",
+    ],
+)

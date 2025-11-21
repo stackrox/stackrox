@@ -1,0 +1,36 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "nist80053",
+    srcs = ["all.go"],
+    importpath = "github.com/stackrox/rox/central/compliance/checks/nist80053",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//central/compliance/checks/nist80053/check_ac_14",
+        "//central/compliance/checks/nist80053/check_ca_9",
+        "//central/compliance/checks/nist80053/check_cm_11",
+        "//central/compliance/checks/nist80053/check_cm_2",
+        "//central/compliance/checks/nist80053/check_cm_3",
+        "//central/compliance/checks/nist80053/check_cm_5",
+        "//central/compliance/checks/nist80053/check_cm_6",
+        "//central/compliance/checks/nist80053/check_cm_7",
+        "//central/compliance/checks/nist80053/check_cm_8",
+        "//central/compliance/checks/nist80053/check_ir_4_5",
+        "//central/compliance/checks/nist80053/check_ir_5",
+        "//central/compliance/checks/nist80053/check_ir_6_1",
+        "//central/compliance/checks/nist80053/check_ra_3",
+        "//central/compliance/checks/nist80053/check_ra_5",
+        "//central/compliance/checks/nist80053/check_sa_10",
+        "//central/compliance/checks/nist80053/check_sc_6",
+        "//central/compliance/checks/nist80053/check_sc_7",
+        "//central/compliance/checks/nist80053/check_si_2_2",
+        "//central/compliance/checks/nist80053/check_si_3_8",
+        "//central/compliance/checks/nist80053/check_si_4",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":nist80053",
+    visibility = ["//visibility:public"],
+)

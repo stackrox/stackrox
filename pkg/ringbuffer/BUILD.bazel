@@ -1,0 +1,22 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "ringbuffer",
+    srcs = ["ring_buffer.go"],
+    importpath = "github.com/stackrox/rox/pkg/ringbuffer",
+    visibility = ["//visibility:public"],
+    deps = ["@com_github_pkg_errors//:errors"],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":ringbuffer",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "ringbuffer_test",
+    srcs = ["ring_buffer_test.go"],
+    embed = [":ringbuffer"],
+    deps = ["@com_github_stretchr_testify//assert"],
+)

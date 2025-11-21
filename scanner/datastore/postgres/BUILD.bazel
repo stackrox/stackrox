@@ -1,0 +1,40 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "postgres",
+    srcs = [
+        "connect.go",
+        "distributions.go",
+        "external_index_report.go",
+        "external_index_store.go",
+        "indexer_metadata_store.go",
+        "manifest_metadata.go",
+        "matcher_metadata_store.go",
+        "matcher_store.go",
+        "reindex_gc.go",
+        "vuln_update.go",
+    ],
+    importpath = "github.com/stackrox/rox/scanner/datastore/postgres",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//pkg/retry",
+        "//pkg/utils",
+        "//scanner/datastore/postgres/migrations",
+        "@com_github_jackc_pgx_v5//:pgx",
+        "@com_github_jackc_pgx_v5//pgxpool",
+        "@com_github_jackc_pgx_v5//stdlib",
+        "@com_github_pkg_errors//:errors",
+        "@com_github_quay_claircore//:claircore",
+        "@com_github_quay_claircore//datastore",
+        "@com_github_quay_claircore//datastore/postgres",
+        "@com_github_quay_claircore//indexer",
+        "@com_github_quay_zlog//:zlog",
+        "@com_github_remind101_migrate//:migrate",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":postgres",
+    visibility = ["//visibility:public"],
+)

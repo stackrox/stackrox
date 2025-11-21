@@ -1,0 +1,37 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "categories",
+    srcs = ["categories.go"],
+    embedsrcs = [
+        "files/anomalous_activity.json",
+        "files/cryptocurrency_mining.json",
+        "files/devops_best_practices.json",
+        "files/docker_cis.json",
+        "files/kubernetes.json",
+        "files/kubernetes_events.json",
+        "files/network_tools.json",
+        "files/package_management.json",
+        "files/privileges.json",
+        "files/security_best_practices.json",
+        "files/supply_chain_security.json",
+        "files/system_modification.json",
+        "files/vulnerability_management.json",
+        "files/zero_trust.json",
+    ],
+    importpath = "github.com/stackrox/rox/pkg/defaults/categories",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//generated/storage",
+        "//pkg/errorhelpers",
+        "//pkg/jsonutil",
+        "//pkg/logging",
+        "//pkg/utils",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":categories",
+    visibility = ["//visibility:public"],
+)

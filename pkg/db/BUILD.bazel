@@ -1,0 +1,15 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "db",
+    srcs = ["crud.go"],
+    importpath = "github.com/stackrox/rox/pkg/db",
+    visibility = ["//visibility:public"],
+    deps = ["//pkg/protocompat"],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":db",
+    visibility = ["//visibility:public"],
+)

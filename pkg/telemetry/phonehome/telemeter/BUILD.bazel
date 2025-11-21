@@ -1,0 +1,21 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "telemeter",
+    srcs = ["telemeter.go"],
+    importpath = "github.com/stackrox/rox/pkg/telemetry/phonehome/telemeter",
+    visibility = ["//visibility:public"],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":telemeter",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "telemeter_test",
+    srcs = ["telemeter_test.go"],
+    embed = [":telemeter"],
+    deps = ["@com_github_stretchr_testify//assert"],
+)

@@ -1,0 +1,40 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "tests",
+    srcs = ["testutils.go"],
+    importpath = "github.com/stackrox/rox/pkg/sac/tests",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//generated/storage",
+        "//pkg/auth/permissions",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":tests",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "tests_test",
+    srcs = [
+        "allow_fixed_scopes_checker_core_test.go",
+        "for_resources_helpers_test.go",
+        "scope_checker_or_test.go",
+        "test_scope_checker_core_test.go",
+    ],
+    embed = [":tests"],
+    deps = [
+        "//generated/storage",
+        "//pkg/auth/permissions",
+        "//pkg/sac",
+        "//pkg/sac/effectiveaccessscope",
+        "//pkg/sac/mocks",
+        "//pkg/sac/resources",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//suite",
+        "@org_uber_go_mock//gomock",
+    ],
+)

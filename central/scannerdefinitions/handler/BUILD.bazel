@@ -1,0 +1,65 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "handler",
+    srcs = [
+        "handler.go",
+        "offline.go",
+        "options.go",
+        "scanner_definition.go",
+        "singleton.go",
+        "updater.go",
+        "updatertype_string.go",
+    ],
+    importpath = "github.com/stackrox/rox/central/scannerdefinitions/handler",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//central/blob/datastore",
+        "//central/blob/snapshot",
+        "//central/scannerdefinitions/file",
+        "//generated/storage",
+        "//pkg/buildinfo",
+        "//pkg/concurrency",
+        "//pkg/env",
+        "//pkg/errox",
+        "//pkg/features",
+        "//pkg/fileutils",
+        "//pkg/httputil",
+        "//pkg/httputil/proxy",
+        "//pkg/logging",
+        "//pkg/protocompat",
+        "//pkg/sac",
+        "//pkg/sync",
+        "//pkg/utils",
+        "//pkg/version",
+        "@com_github_pkg_errors//:errors",
+        "@org_golang_google_grpc//codes",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":handler",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "handler_test",
+    srcs = [
+        "offline_test.go",
+        "updater_test.go",
+    ],
+    embed = [":handler"],
+    deps = [
+        "//central/blob/datastore/mocks",
+        "//central/scannerdefinitions/file",
+        "//generated/storage",
+        "//pkg/buildinfo",
+        "//pkg/fileutils",
+        "//pkg/utils",
+        "@com_github_pkg_errors//:errors",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+        "@org_uber_go_mock//gomock",
+    ],
+)

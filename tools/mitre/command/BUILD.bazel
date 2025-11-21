@@ -1,0 +1,25 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "command",
+    srcs = ["fetch.go"],
+    importpath = "github.com/stackrox/rox/tools/mitre/command",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//generated/storage",
+        "//pkg/httputil",
+        "//pkg/jsonutil",
+        "//pkg/mitre",
+        "//pkg/utils",
+        "//tools/mitre/common",
+        "@com_github_hashicorp_go_multierror//:go-multierror",
+        "@com_github_pkg_errors//:errors",
+        "@com_github_spf13_cobra//:cobra",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":command",
+    visibility = ["//visibility:public"],
+)

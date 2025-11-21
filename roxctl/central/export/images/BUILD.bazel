@@ -1,0 +1,50 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "images",
+    srcs = ["images.go"],
+    importpath = "github.com/stackrox/rox/roxctl/central/export/images",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//generated/api/v1:api",
+        "//pkg/jsonutil",
+        "//pkg/roxctl/common",
+        "//pkg/utils",
+        "//roxctl/common",
+        "//roxctl/common/environment",
+        "//roxctl/common/flags",
+        "@com_github_grpc_ecosystem_go_grpc_middleware_v2//interceptors/retry",
+        "@com_github_pkg_errors//:errors",
+        "@com_github_spf13_cobra//:cobra",
+        "@org_golang_google_grpc//codes",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":images",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "images_test",
+    srcs = ["images_test.go"],
+    embed = [":images"],
+    embedsrcs = ["serialized_test_image.json"],
+    deps = [
+        "//generated/api/v1:api",
+        "//generated/storage",
+        "//pkg/errox",
+        "//pkg/fixtures",
+        "//pkg/grpc",
+        "//pkg/protocompat",
+        "//roxctl/common/environment/mocks",
+        "//roxctl/common/flags",
+        "//roxctl/common/io/mocks",
+        "@com_github_spf13_cobra//:cobra",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+        "@org_golang_google_grpc//:grpc",
+        "@org_uber_go_mock//gomock",
+    ],
+)

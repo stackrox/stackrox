@@ -1,0 +1,26 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "replicationcontroller",
+    srcs = [
+        "node_constraint.go",
+        "zero_replica.go",
+    ],
+    importpath = "github.com/stackrox/rox/sensor/kubernetes/enforcer/replicationcontroller",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//generated/internalapi/central",
+        "//pkg/retry",
+        "//sensor/kubernetes/enforcer/common",
+        "@io_k8s_api//autoscaling/v1:autoscaling",
+        "@io_k8s_api//core/v1:core",
+        "@io_k8s_apimachinery//pkg/apis/meta/v1:meta",
+        "@io_k8s_client_go//kubernetes",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":replicationcontroller",
+    visibility = ["//visibility:public"],
+)

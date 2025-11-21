@@ -1,0 +1,14 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "envtest_lib",
+    srcs = ["noop.go"],
+    importpath = "github.com/stackrox/rox/operator/tools/envtest",
+    visibility = ["//visibility:public"],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":envtest_lib",
+    visibility = ["//visibility:public"],
+)

@@ -1,0 +1,23 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "availability",
+    srcs = ["checker.go"],
+    importpath = "github.com/stackrox/rox/sensor/kubernetes/listener/watcher/availability",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//pkg/k8sapi",
+        "//sensor/kubernetes/client",
+        "//sensor/kubernetes/listener/utils",
+        "@com_github_pkg_errors//:errors",
+        "@io_k8s_apimachinery//pkg/api/errors",
+        "@io_k8s_apimachinery//pkg/apis/meta/v1:meta",
+        "@io_k8s_apimachinery//pkg/runtime/schema",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":availability",
+    visibility = ["//visibility:public"],
+)

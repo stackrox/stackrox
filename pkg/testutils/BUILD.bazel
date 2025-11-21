@@ -1,0 +1,54 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "testutils",
+    srcs = [
+        "certs.go",
+        "ci.go",
+        "feature_flag.go",
+        "full_init.go",
+        "http.go",
+        "matchers.go",
+        "retry.go",
+        "verify_in_test_only.go",
+        "workspace.go",
+    ],
+    importpath = "github.com/stackrox/rox/pkg/testutils",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//pkg/features",
+        "//pkg/logging",
+        "//pkg/protocompat",
+        "//pkg/sync",
+        "//pkg/utils",
+        "//pkg/uuid",
+        "@com_github_cloudflare_cfssl//csr",
+        "@com_github_cloudflare_cfssl//initca",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+        "@org_uber_go_mock//gomock",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":testutils",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "testutils_test",
+    srcs = [
+        "ci_test.go",
+        "full_init_test.go",
+        "matchers_test.go",
+        "retry_test.go",
+    ],
+    embed = [":testutils"],
+    deps = [
+        "//pkg/protocompat",
+        "//pkg/uuid",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+    ],
+)

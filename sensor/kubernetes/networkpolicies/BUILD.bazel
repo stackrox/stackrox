@@ -1,0 +1,40 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "networkpolicies",
+    srcs = [
+        "apply.go",
+        "apply_tx.go",
+        "command_handler.go",
+        "modification.go",
+    ],
+    importpath = "github.com/stackrox/rox/sensor/kubernetes/networkpolicies",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//generated/internalapi/central",
+        "//generated/storage",
+        "//pkg/centralsensor",
+        "//pkg/concurrency",
+        "//pkg/errorhelpers",
+        "//pkg/k8sutil",
+        "//pkg/kubernetes",
+        "//pkg/logging",
+        "//pkg/protocompat",
+        "//pkg/protoconv/networkpolicy",
+        "//sensor/common",
+        "//sensor/common/message",
+        "@com_github_pkg_errors//:errors",
+        "@io_k8s_api//networking/v1:networking",
+        "@io_k8s_apimachinery//pkg/api/errors",
+        "@io_k8s_apimachinery//pkg/apis/meta/v1:meta",
+        "@io_k8s_apimachinery//pkg/util/json",
+        "@io_k8s_client_go//kubernetes",
+        "@io_k8s_client_go//kubernetes/typed/networking/v1:networking",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":networkpolicies",
+    visibility = ["//visibility:public"],
+)

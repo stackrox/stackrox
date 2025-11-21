@@ -1,0 +1,15 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "ignore",
+    srcs = ["rules.go"],
+    importpath = "github.com/stackrox/rox/pkg/helm/util/internal/ignore",
+    visibility = ["//pkg/helm/util:__subpackages__"],
+    deps = ["@com_github_pkg_errors//:errors"],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":ignore",
+    visibility = ["//pkg/helm/util:__subpackages__"],
+)

@@ -1,0 +1,47 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "k8scfgwatch",
+    srcs = [
+        "cfg_watcher.go",
+        "contents_mtime.go",
+        "error_deduplicating_handler.go",
+        "handler.go",
+        "poll_watcher.go",
+        "watch.go",
+    ],
+    importpath = "github.com/stackrox/rox/pkg/k8scfgwatch",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//pkg/concurrency",
+        "//pkg/contextutil",
+        "//pkg/logging",
+        "@com_github_pkg_errors//:errors",
+        "@io_k8s_api//core/v1:core",
+        "@io_k8s_apimachinery//pkg/apis/meta/v1:meta",
+        "@io_k8s_apimachinery//pkg/watch",
+        "@io_k8s_client_go//kubernetes",
+        "@io_k8s_client_go//testing",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":k8scfgwatch",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "k8scfgwatch_test",
+    srcs = ["cfg_watcher_test.go"],
+    embed = [":k8scfgwatch"],
+    deps = [
+        "//pkg/sync",
+        "@com_github_stretchr_testify//assert",
+        "@io_k8s_api//core/v1:core",
+        "@io_k8s_apimachinery//pkg/apis/meta/v1:meta",
+        "@io_k8s_apimachinery//pkg/watch",
+        "@io_k8s_client_go//kubernetes/fake",
+        "@io_k8s_client_go//testing",
+    ],
+)

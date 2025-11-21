@@ -1,0 +1,15 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "deployments",
+    srcs = ["options.go"],
+    importpath = "github.com/stackrox/rox/pkg/search/options/deployments",
+    visibility = ["//visibility:public"],
+    deps = ["//pkg/postgres/schema"],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":deployments",
+    visibility = ["//visibility:public"],
+)

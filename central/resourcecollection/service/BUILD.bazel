@@ -1,0 +1,41 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "service",
+    srcs = [
+        "service.go",
+        "service_impl.go",
+        "singleton.go",
+    ],
+    importpath = "github.com/stackrox/rox/central/resourcecollection/service",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//central/deployment/datastore",
+        "//central/reports/config/datastore",
+        "//central/resourcecollection/datastore",
+        "//generated/api/v1:api",
+        "//generated/storage",
+        "//pkg/auth/permissions",
+        "//pkg/errox",
+        "//pkg/grpc",
+        "//pkg/grpc/authn",
+        "//pkg/grpc/authz",
+        "//pkg/grpc/authz/or",
+        "//pkg/grpc/authz/perrpc",
+        "//pkg/grpc/authz/user",
+        "//pkg/protoconv",
+        "//pkg/sac/resources",
+        "//pkg/search",
+        "//pkg/search/paginated",
+        "//pkg/sync",
+        "@com_github_grpc_ecosystem_grpc_gateway_v2//runtime",
+        "@com_github_pkg_errors//:errors",
+        "@org_golang_google_grpc//:grpc",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":service",
+    visibility = ["//visibility:public"],
+)

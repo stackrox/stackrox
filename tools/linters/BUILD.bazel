@@ -1,0 +1,14 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "linters",
+    srcs = ["tools.go"],
+    importpath = "github.com/stackrox/rox/tools/linters",
+    visibility = ["//visibility:public"],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":linters",
+    visibility = ["//visibility:public"],
+)

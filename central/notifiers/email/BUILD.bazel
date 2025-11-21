@@ -1,0 +1,44 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "email",
+    srcs = ["email.go"],
+    importpath = "github.com/stackrox/rox/central/notifiers/email",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//central/notifiers/metadatagetter",
+        "//central/notifiers/utils",
+        "//generated/storage",
+        "//pkg/administration/events/codes",
+        "//pkg/administration/events/option",
+        "//pkg/branding",
+        "//pkg/concurrency",
+        "//pkg/cryptoutils/cryptocodec",
+        "//pkg/env",
+        "//pkg/errorhelpers",
+        "//pkg/httputil/proxy",
+        "//pkg/logging",
+        "//pkg/mitre/datastore",
+        "//pkg/notifiers",
+        "//pkg/utils",
+        "@com_github_mitchellh_go_wordwrap//:go-wordwrap",
+        "@com_github_pkg_errors//:errors",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":email",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "email_test",
+    srcs = ["email_test.go"],
+    embed = [":email"],
+    deps = [
+        "@com_github_pkg_errors//:errors",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+    ],
+)

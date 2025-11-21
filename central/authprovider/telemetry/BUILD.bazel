@@ -1,0 +1,26 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "telemetry",
+    srcs = ["telemetry.go"],
+    importpath = "github.com/stackrox/rox/central/authprovider/telemetry",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//central/authprovider/datastore",
+        "//central/group/datastore",
+        "//generated/storage",
+        "//pkg/sac",
+        "//pkg/sac/resources",
+        "//pkg/set",
+        "//pkg/telemetry/phonehome",
+        "@com_github_pkg_errors//:errors",
+        "@org_golang_x_text//cases",
+        "@org_golang_x_text//language",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":telemetry",
+    visibility = ["//visibility:public"],
+)

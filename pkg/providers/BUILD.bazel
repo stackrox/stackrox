@@ -1,0 +1,22 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "providers",
+    srcs = ["metadata.go"],
+    importpath = "github.com/stackrox/rox/pkg/providers",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//generated/storage",
+        "//pkg/cloudproviders/aws",
+        "//pkg/cloudproviders/azure",
+        "//pkg/cloudproviders/gcp",
+        "//pkg/errorhelpers",
+        "//pkg/logging",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":providers",
+    visibility = ["//visibility:public"],
+)

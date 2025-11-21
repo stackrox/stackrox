@@ -1,0 +1,23 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "types",
+    srcs = [
+        "databases.go",
+        "migration.go",
+    ],
+    importpath = "github.com/stackrox/rox/migrator/types",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//generated/storage",
+        "//pkg/env",
+        "//pkg/postgres",
+        "@io_gorm_gorm//:gorm",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":types",
+    visibility = ["//visibility:public"],
+)

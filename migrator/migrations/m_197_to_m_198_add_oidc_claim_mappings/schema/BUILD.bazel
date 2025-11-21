@@ -1,0 +1,23 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "schema",
+    srcs = [
+        "auth_providers.go",
+        "groups.go",
+    ],
+    importpath = "github.com/stackrox/rox/migrator/migrations/m_197_to_m_198_add_oidc_claim_mappings/schema",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//generated/storage",
+        "//pkg/postgres",
+        "//pkg/postgres/walker",
+        "//pkg/sac/resources",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":schema",
+    visibility = ["//visibility:public"],
+)

@@ -1,0 +1,38 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "netutil",
+    srcs = [
+        "cidr.go",
+        "default_port.go",
+        "endpoint.go",
+        "ephemeral_port.go",
+        "ip.go",
+        "local.go",
+        "private_subnet.go",
+    ],
+    importpath = "github.com/stackrox/rox/pkg/netutil",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//pkg/utils",
+        "@com_github_pkg_errors//:errors",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":netutil",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "netutil_test",
+    srcs = [
+        "cidr_test.go",
+        "default_port_test.go",
+        "endpoint_test.go",
+        "local_test.go",
+    ],
+    embed = [":netutil"],
+    deps = ["@com_github_stretchr_testify//assert"],
+)

@@ -1,0 +1,32 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "errox",
+    srcs = [
+        "errors.go",
+        "roxerror.go",
+        "utils.go",
+    ],
+    importpath = "github.com/stackrox/rox/pkg/errox",
+    visibility = ["//visibility:public"],
+    deps = ["@com_github_pkg_errors//:errors"],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":errox",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "errox_test",
+    srcs = [
+        "roxerror_test.go",
+        "utils_test.go",
+    ],
+    embed = [":errox"],
+    deps = [
+        "@com_github_pkg_errors//:errors",
+        "@com_github_stretchr_testify//assert",
+    ],
+)

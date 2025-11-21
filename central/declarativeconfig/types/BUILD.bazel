@@ -1,0 +1,37 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "types",
+    srcs = [
+        "accepted_types.go",
+        "extractors.go",
+    ],
+    importpath = "github.com/stackrox/rox/central/declarativeconfig/types",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//generated/storage",
+        "//pkg/errox",
+        "//pkg/protocompat",
+        "//pkg/utils",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":types",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "types_test",
+    srcs = [
+        "accepted_types_test.go",
+        "extractors_test.go",
+    ],
+    embed = [":types"],
+    deps = [
+        "//generated/storage",
+        "//pkg/protocompat",
+        "@com_github_stretchr_testify//assert",
+    ],
+)

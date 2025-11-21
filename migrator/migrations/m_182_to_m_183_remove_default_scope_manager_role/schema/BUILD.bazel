@@ -1,0 +1,26 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "schema",
+    srcs = [
+        "api_tokens.go",
+        "groups.go",
+        "permission_sets.go",
+        "roles.go",
+    ],
+    importpath = "github.com/stackrox/rox/migrator/migrations/m_182_to_m_183_remove_default_scope_manager_role/schema",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//generated/api/v1:api",
+        "//generated/storage",
+        "//pkg/postgres",
+        "//pkg/postgres/walker",
+        "//pkg/search",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":schema",
+    visibility = ["//visibility:public"],
+)

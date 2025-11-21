@@ -1,0 +1,31 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "nexus",
+    srcs = ["nexus.go"],
+    importpath = "github.com/stackrox/rox/pkg/registries/nexus",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//generated/storage",
+        "//pkg/registries/docker",
+        "//pkg/registries/types",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":nexus",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "nexus_test",
+    srcs = ["nexus_integration_test.go"],
+    embed = [":nexus"],
+    deps = [
+        "//generated/storage",
+        "//pkg/registries/types",
+        "//pkg/urlfmt",
+        "@com_github_stretchr_testify//require",
+    ],
+)

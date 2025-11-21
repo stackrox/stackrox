@@ -1,0 +1,45 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "securedclustercertgen",
+    srcs = ["certificates.go"],
+    importpath = "github.com/stackrox/rox/central/securedclustercertgen",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//generated/storage",
+        "//pkg/certgen",
+        "//pkg/cryptoutils",
+        "//pkg/features",
+        "//pkg/logging",
+        "//pkg/mtls",
+        "//pkg/set",
+        "@com_github_hashicorp_go_multierror//:go-multierror",
+        "@com_github_pkg_errors//:errors",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":securedclustercertgen",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "securedclustercertgen_test",
+    srcs = ["certificates_test.go"],
+    embed = [":securedclustercertgen"],
+    deps = [
+        "//generated/storage",
+        "//pkg/certgen",
+        "//pkg/cryptoutils",
+        "//pkg/features",
+        "//pkg/mtls",
+        "//pkg/mtls/testutils",
+        "//pkg/set",
+        "//pkg/testutils",
+        "@com_github_cloudflare_cfssl//csr",
+        "@com_github_cloudflare_cfssl//helpers",
+        "@com_github_cloudflare_cfssl//initca",
+        "@com_github_stretchr_testify//suite",
+    ],
+)

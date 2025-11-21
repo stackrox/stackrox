@@ -1,0 +1,19 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "collector",
+    srcs = ["command.go"],
+    importpath = "github.com/stackrox/rox/roxctl/collector",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//roxctl/collector/supportpackages",
+        "//roxctl/common/environment",
+        "@com_github_spf13_cobra//:cobra",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":collector",
+    visibility = ["//visibility:public"],
+)

@@ -1,0 +1,42 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "user",
+    srcs = [
+        "attribute_verifier.go",
+        "required_attribute_verifier.go",
+        "util.go",
+    ],
+    importpath = "github.com/stackrox/rox/pkg/auth/user",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//generated/api/v1:api",
+        "//generated/storage",
+        "//pkg/auth/permissions/utils",
+        "//pkg/jsonutil",
+        "//pkg/logging",
+        "//pkg/protocompat",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":user",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "user_test",
+    srcs = [
+        "required_attribute_verifier_test.go",
+        "util_test.go",
+    ],
+    embed = [":user"],
+    deps = [
+        "//generated/api/v1:api",
+        "//generated/storage",
+        "//pkg/logging",
+        "//pkg/protoconv",
+        "@com_github_stretchr_testify//assert",
+    ],
+)

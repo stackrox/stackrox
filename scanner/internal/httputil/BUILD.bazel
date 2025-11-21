@@ -1,0 +1,46 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "httputil",
+    srcs = [
+        "doc.go",
+        "transport.go",
+        "transport_deny.go",
+        "transport_mux.go",
+    ],
+    importpath = "github.com/stackrox/rox/scanner/internal/httputil",
+    visibility = ["//scanner:__subpackages__"],
+    deps = [
+        "//pkg/clientconn",
+        "//pkg/env",
+        "//pkg/httputil",
+        "//pkg/httputil/proxy",
+        "//pkg/mtls",
+        "//pkg/urlfmt",
+        "//pkg/utils",
+        "@com_github_pkg_errors//:errors",
+        "@com_github_quay_zlog//:zlog",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":httputil",
+    visibility = ["//scanner:__subpackages__"],
+)
+
+go_test(
+    name = "httputil_test",
+    srcs = [
+        "transport_mux_test.go",
+        "transport_test.go",
+    ],
+    embed = [":httputil"],
+    deps = [
+        "//pkg/buildinfo",
+        "//pkg/env",
+        "//pkg/httputil",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+    ],
+)

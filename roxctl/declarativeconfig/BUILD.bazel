@@ -1,0 +1,21 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "declarativeconfig",
+    srcs = ["declarativeconfig.go"],
+    importpath = "github.com/stackrox/rox/roxctl/declarativeconfig",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//roxctl/common/environment",
+        "//roxctl/common/flags",
+        "//roxctl/declarativeconfig/create",
+        "//roxctl/declarativeconfig/lint",
+        "@com_github_spf13_cobra//:cobra",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":declarativeconfig",
+    visibility = ["//visibility:public"],
+)

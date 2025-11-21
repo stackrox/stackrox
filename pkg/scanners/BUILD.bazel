@@ -1,0 +1,52 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "scanners",
+    srcs = [
+        "creator.go",
+        "factory.go",
+        "factory_impl.go",
+        "set.go",
+        "set_impl.go",
+        "vulndef_provider.go",
+    ],
+    importpath = "github.com/stackrox/rox/pkg/scanners",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//generated/api/v1:api",
+        "//generated/storage",
+        "//pkg/features",
+        "//pkg/registries",
+        "//pkg/scanners/clair",
+        "//pkg/scanners/clairify",
+        "//pkg/scanners/clairv4",
+        "//pkg/scanners/google",
+        "//pkg/scanners/quay",
+        "//pkg/scanners/scannerv4",
+        "//pkg/scanners/types",
+        "//pkg/sync",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":scanners",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "scanners_test",
+    srcs = ["set_impl_test.go"],
+    embed = [":scanners"],
+    deps = [
+        "//generated/api/v1:api",
+        "//generated/storage",
+        "//pkg/scanners/mocks",
+        "//pkg/scanners/types",
+        "//pkg/testutils",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+        "@org_golang_x_sync//semaphore",
+        "@org_uber_go_mock//gomock",
+    ],
+)

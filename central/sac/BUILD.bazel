@@ -1,0 +1,24 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "sac",
+    srcs = ["root_scope_checker_core_context_enricher.go"],
+    importpath = "github.com/stackrox/rox/central/sac",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//central/auth/userpass",
+        "//central/sac/authorizer",
+        "//pkg/contextutil",
+        "//pkg/grpc/authn",
+        "//pkg/sac",
+        "//pkg/sac/observe",
+        "//pkg/sync",
+        "@com_github_pkg_errors//:errors",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":sac",
+    visibility = ["//visibility:public"],
+)

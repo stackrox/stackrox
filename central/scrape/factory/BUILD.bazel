@@ -1,0 +1,27 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "factory",
+    srcs = [
+        "factory.go",
+        "factory_impl.go",
+        "singleton.go",
+    ],
+    importpath = "github.com/stackrox/rox/central/scrape/factory",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//central/compliance/framework",
+        "//central/sensor/service/connection",
+        "//generated/internalapi/compliance",
+        "//pkg/centralsensor",
+        "//pkg/concurrency",
+        "//pkg/set",
+        "//pkg/sync",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":factory",
+    visibility = ["//visibility:public"],
+)

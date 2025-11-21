@@ -1,0 +1,34 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "waiter",
+    srcs = [
+        "manager.go",
+        "waiter.go",
+    ],
+    importpath = "github.com/stackrox/rox/pkg/waiter",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//pkg/concurrency",
+        "//pkg/logging",
+        "//pkg/sync",
+        "//pkg/uuid",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":waiter",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "waiter_test",
+    srcs = ["waiter_test.go"],
+    embed = [":waiter"],
+    deps = [
+        "//pkg/sync",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+    ],
+)

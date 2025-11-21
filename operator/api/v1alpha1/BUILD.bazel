@@ -1,0 +1,49 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "v1alpha1",
+    srcs = [
+        "central_defaults.go",
+        "central_types.go",
+        "common_types.go",
+        "defaults_merging.go",
+        "groupversion_info.go",
+        "overlay_types.go",
+        "securedcluster_defaults.go",
+        "securedcluster_types.go",
+        "zz_generated.deepcopy.go",
+    ],
+    importpath = "github.com/stackrox/rox/operator/api/v1alpha1",
+    visibility = ["//visibility:public"],
+    deps = [
+        "@cat_dario_mergo//:mergo",
+        "@com_github_pkg_errors//:errors",
+        "@io_k8s_api//core/v1:core",
+        "@io_k8s_apimachinery//pkg/apis/meta/v1:meta",
+        "@io_k8s_apimachinery//pkg/apis/meta/v1/unstructured",
+        "@io_k8s_apimachinery//pkg/runtime",
+        "@io_k8s_apimachinery//pkg/runtime/schema",
+        "@io_k8s_sigs_controller_runtime//pkg/scheme",
+        "@io_k8s_utils//pointer",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":v1alpha1",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "v1alpha1_test",
+    srcs = [
+        "central_defaults_test.go",
+        "common_types_test.go",
+    ],
+    embed = [":v1alpha1"],
+    deps = [
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+        "@io_k8s_utils//ptr",
+    ],
+)

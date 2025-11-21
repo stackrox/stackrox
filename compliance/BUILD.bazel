@@ -1,0 +1,38 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "compliance",
+    srcs = ["compliance.go"],
+    importpath = "github.com/stackrox/rox/compliance",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//compliance/collection/auditlog",
+        "//compliance/collection/compliance_checks",
+        "//compliance/collection/metrics",
+        "//compliance/node",
+        "//compliance/virtualmachines/relay",
+        "//generated/internalapi/scanner/v4:scanner",
+        "//generated/internalapi/sensor",
+        "//generated/storage",
+        "//pkg/clientconn",
+        "//pkg/concurrency",
+        "//pkg/env",
+        "//pkg/features",
+        "//pkg/k8sutil",
+        "//pkg/logging",
+        "//pkg/metrics",
+        "//pkg/mtls",
+        "//pkg/protoutils",
+        "//pkg/utils",
+        "//pkg/version",
+        "@com_github_cenkalti_backoff_v3//:backoff",
+        "@com_github_pkg_errors//:errors",
+        "@org_golang_google_grpc//metadata",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":compliance",
+    visibility = ["//visibility:public"],
+)

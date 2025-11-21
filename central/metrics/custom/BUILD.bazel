@@ -1,0 +1,61 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "custom",
+    srcs = [
+        "runner.go",
+        "singleton.go",
+    ],
+    importpath = "github.com/stackrox/rox/central/metrics/custom",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//central/alert/datastore",
+        "//central/cluster/datastore",
+        "//central/config/datastore",
+        "//central/credentialexpiry/service",
+        "//central/deployment/datastore",
+        "//central/metrics",
+        "//central/metrics/custom/clusters",
+        "//central/metrics/custom/expiry",
+        "//central/metrics/custom/image_vulnerabilities",
+        "//central/metrics/custom/node_vulnerabilities",
+        "//central/metrics/custom/policies",
+        "//central/metrics/custom/policy_violations",
+        "//central/metrics/custom/tracker",
+        "//central/node/datastore",
+        "//central/policy/datastore",
+        "//central/telemetry/centralclient",
+        "//generated/storage",
+        "//pkg/grpc/authn",
+        "//pkg/httputil",
+        "//pkg/logging",
+        "//pkg/sac",
+        "//pkg/sync",
+        "//pkg/telemetry/phonehome/telemeter",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":custom",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "custom_test",
+    srcs = ["runner_test.go"],
+    embed = [":custom"],
+    deps = [
+        "//central/alert/datastore/mocks",
+        "//central/config/datastore/mocks",
+        "//central/deployment/datastore/mocks",
+        "//generated/api/v1:api",
+        "//generated/storage",
+        "//pkg/auth/authproviders",
+        "//pkg/grpc/authn/basic",
+        "//pkg/uuid",
+        "@com_github_pkg_errors//:errors",
+        "@com_github_stretchr_testify//assert",
+        "@org_uber_go_mock//gomock",
+    ],
+)

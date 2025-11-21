@@ -1,0 +1,39 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "gjson",
+    srcs = [
+        "modifiers.go",
+        "row.go",
+        "slices.go",
+        "utils.go",
+    ],
+    importpath = "github.com/stackrox/rox/pkg/gjson",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//pkg/errox",
+        "//pkg/set",
+        "//pkg/utils",
+        "@com_github_tidwall_gjson//:gjson",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":gjson",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "gjson_test",
+    srcs = [
+        "modifiers_test.go",
+        "row_test.go",
+    ],
+    embed = [":gjson"],
+    deps = [
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+        "@com_github_tidwall_gjson//:gjson",
+    ],
+)

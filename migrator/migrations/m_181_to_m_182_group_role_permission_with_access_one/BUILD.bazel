@@ -1,0 +1,24 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "m_181_to_m_182_group_role_permission_with_access_one",
+    srcs = [
+        "migration.go",
+        "migration_impl.go",
+    ],
+    importpath = "github.com/stackrox/rox/migrator/migrations/m_181_to_m_182_group_role_permission_with_access_one",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//generated/storage",
+        "//migrator/migrations",
+        "//migrator/migrations/m_181_to_m_182_group_role_permission_with_access_one/permissionsetstore",
+        "//migrator/types",
+        "//pkg/sac",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":m_181_to_m_182_group_role_permission_with_access_one",
+    visibility = ["//visibility:public"],
+)

@@ -1,0 +1,22 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "conn",
+    srcs = ["conn.go"],
+    importpath = "github.com/stackrox/rox/pkg/postgres/pgtest/conn",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//pkg/postgres/pgutils",
+        "@com_github_stretchr_testify//require",
+        "@io_gorm_driver_postgres//:postgres",
+        "@io_gorm_gorm//:gorm",
+        "@io_gorm_gorm//logger",
+        "@io_k8s_utils//env",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":conn",
+    visibility = ["//visibility:public"],
+)

@@ -1,0 +1,59 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "tracker",
+    srcs = [
+        "aggregator.go",
+        "configuration.go",
+        "finding.go",
+        "tracker_base.go",
+        "validator.go",
+    ],
+    importpath = "github.com/stackrox/rox/central/metrics/custom/tracker",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//central/metrics",
+        "//central/telemetry/centralclient",
+        "//generated/storage",
+        "//pkg/errox",
+        "//pkg/grpc/authn",
+        "//pkg/logging",
+        "//pkg/set",
+        "//pkg/sync",
+        "//pkg/telemetry/phonehome/telemeter",
+        "@com_github_pkg_errors//:errors",
+        "@com_github_prometheus_client_golang//prometheus",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":tracker",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "tracker_test",
+    srcs = [
+        "aggregator_test.go",
+        "finding_test.go",
+        "testing_test.go",
+        "tracker_base_test.go",
+        "validator_test.go",
+    ],
+    embed = [":tracker"],
+    deps = [
+        "//central/metrics",
+        "//central/metrics/mocks",
+        "//generated/storage",
+        "//pkg/auth/authproviders",
+        "//pkg/errox",
+        "//pkg/grpc/authn",
+        "//pkg/grpc/authn/basic",
+        "//pkg/uuid",
+        "@com_github_prometheus_client_golang//prometheus",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+        "@org_uber_go_mock//gomock",
+    ],
+)

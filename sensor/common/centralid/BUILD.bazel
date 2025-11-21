@@ -1,0 +1,15 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "centralid",
+    srcs = ["centralid.go"],
+    importpath = "github.com/stackrox/rox/sensor/common/centralid",
+    visibility = ["//visibility:public"],
+    deps = ["//pkg/sync"],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":centralid",
+    visibility = ["//visibility:public"],
+)

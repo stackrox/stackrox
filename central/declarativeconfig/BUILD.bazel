@@ -1,0 +1,74 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "declarativeconfig",
+    srcs = [
+        "manager.go",
+        "manager_impl.go",
+        "singleton.go",
+        "watch_handler.go",
+    ],
+    importpath = "github.com/stackrox/rox/central/declarativeconfig",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//central/declarativeconfig/health/datastore",
+        "//central/declarativeconfig/types",
+        "//central/declarativeconfig/updater",
+        "//central/declarativeconfig/utils",
+        "//generated/storage",
+        "//pkg/concurrency",
+        "//pkg/declarativeconfig",
+        "//pkg/declarativeconfig/transform",
+        "//pkg/env",
+        "//pkg/errox",
+        "//pkg/k8scfgwatch",
+        "//pkg/logging",
+        "//pkg/maputil",
+        "//pkg/protocompat",
+        "//pkg/sac",
+        "//pkg/sac/resources",
+        "//pkg/set",
+        "//pkg/sliceutils",
+        "//pkg/sync",
+        "//pkg/telemetry/phonehome",
+        "//pkg/utils",
+        "@com_github_hashicorp_go_multierror//:go-multierror",
+        "@com_github_pkg_errors//:errors",
+        "@com_github_stackrox_hashstructure//:hashstructure",
+        "@in_yaml_go_yaml_v3//:yaml",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":declarativeconfig",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "declarativeconfig_test",
+    srcs = [
+        "manager_impl_test.go",
+        "watch_handler_test.go",
+    ],
+    embed = [":declarativeconfig"],
+    deps = [
+        "//central/declarativeconfig/health/datastore/mocks",
+        "//central/declarativeconfig/mocks",
+        "//central/declarativeconfig/types",
+        "//central/declarativeconfig/updater",
+        "//central/declarativeconfig/updater/mocks",
+        "//generated/storage",
+        "//pkg/declarativeconfig",
+        "//pkg/declarativeconfig/transform/mocks",
+        "//pkg/errox",
+        "//pkg/k8scfgwatch",
+        "//pkg/protocompat",
+        "//pkg/utils",
+        "@com_github_pkg_errors//:errors",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+        "@in_yaml_go_yaml_v3//:yaml",
+        "@org_uber_go_mock//gomock",
+    ],
+)

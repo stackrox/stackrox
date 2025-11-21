@@ -1,0 +1,77 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "printer",
+    srcs = [
+        "automountserviceaccounttoken.go",
+        "capabilities.go",
+        "container.go",
+        "container_name.go",
+        "env.go",
+        "gen.go",
+        "gen-registrations.go",
+        "host_ipc.go",
+        "host_network.go",
+        "host_pid.go",
+        "kube_event.go",
+        "line.go",
+        "map.go",
+        "namespace.go",
+        "network_baseline.go",
+        "network_policy.go",
+        "port.go",
+        "port_exposure.go",
+        "probes.go",
+        "process.go",
+        "process_baseline.go",
+        "rbac.go",
+        "registry.go",
+        "replicas.go",
+        "resources.go",
+        "runtime_class.go",
+        "service_account.go",
+        "types.go",
+        "unscanned_image.go",
+        "util.go",
+        "volume.go",
+        "vuln.go",
+    ],
+    importpath = "github.com/stackrox/rox/pkg/booleanpolicy/violationmessages/printer",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//generated/storage",
+        "//pkg/booleanpolicy/augmentedobjs",
+        "//pkg/booleanpolicy/fieldnames",
+        "//pkg/protocompat",
+        "//pkg/search",
+        "//pkg/set",
+        "//pkg/stringutils",
+        "//pkg/sync",
+        "//pkg/utils",
+        "@com_github_pkg_errors//:errors",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":printer",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "printer_test",
+    srcs = [
+        "env_test.go",
+        "kube_event_test.go",
+        "port_exposure_test.go",
+        "process_test.go",
+    ],
+    embed = [":printer"],
+    deps = [
+        "//generated/storage",
+        "//pkg/protoassert",
+        "//pkg/protocompat",
+        "//pkg/uuid",
+        "@com_github_stretchr_testify//assert",
+    ],
+)

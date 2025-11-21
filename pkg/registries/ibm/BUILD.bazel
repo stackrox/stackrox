@@ -1,0 +1,20 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "ibm",
+    srcs = ["ibm.go"],
+    importpath = "github.com/stackrox/rox/pkg/registries/ibm",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//generated/storage",
+        "//pkg/errorhelpers",
+        "//pkg/registries/docker",
+        "//pkg/registries/types",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":ibm",
+    visibility = ["//visibility:public"],
+)

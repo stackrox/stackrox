@@ -1,0 +1,20 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "connectivity",
+    srcs = ["connectivity.go"],
+    importpath = "github.com/stackrox/rox/roxctl/netpol/connectivity",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//roxctl/common/environment",
+        "//roxctl/netpol/connectivity/diff",
+        "//roxctl/netpol/connectivity/map",
+        "@com_github_spf13_cobra//:cobra",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":connectivity",
+    visibility = ["//visibility:public"],
+)

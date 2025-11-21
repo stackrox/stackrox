@@ -1,0 +1,43 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "certdistribution",
+    srcs = [
+        "env.go",
+        "persist.go",
+        "service.go",
+        "service_impl.go",
+    ],
+    importpath = "github.com/stackrox/rox/sensor/common/certdistribution",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//generated/internalapi/sensor",
+        "//generated/storage",
+        "//pkg/centralsensor",
+        "//pkg/env",
+        "//pkg/errox",
+        "//pkg/fileutils",
+        "//pkg/grpc",
+        "//pkg/grpc/authn",
+        "//pkg/grpc/authz/allow",
+        "//pkg/jwt",
+        "//pkg/services",
+        "@com_github_grpc_ecosystem_grpc_gateway_v2//runtime",
+        "@com_github_hashicorp_go_multierror//:go-multierror",
+        "@com_github_pkg_errors//:errors",
+        "@io_k8s_api//authentication/v1:authentication",
+        "@io_k8s_apimachinery//pkg/apis/meta/v1:meta",
+        "@io_k8s_client_go//kubernetes",
+        "@io_k8s_client_go//kubernetes/typed/authentication/v1:authentication",
+        "@org_golang_google_grpc//:grpc",
+        "@org_golang_google_grpc//codes",
+        "@org_golang_google_grpc//status",
+        "@org_golang_x_time//rate",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":certdistribution",
+    visibility = ["//visibility:public"],
+)

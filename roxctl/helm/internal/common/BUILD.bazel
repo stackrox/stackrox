@@ -1,0 +1,15 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "common",
+    srcs = ["chartnames.go"],
+    importpath = "github.com/stackrox/rox/roxctl/helm/internal/common",
+    visibility = ["//roxctl/helm:__subpackages__"],
+    deps = ["//image"],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":common",
+    visibility = ["//roxctl/helm:__subpackages__"],
+)

@@ -1,0 +1,68 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "translation",
+    srcs = [
+        "image_overrides.go",
+        "translation.go",
+    ],
+    embedsrcs = ["base-values.yaml"],
+    importpath = "github.com/stackrox/rox/operator/internal/securedcluster/values/translation",
+    visibility = ["//operator:__subpackages__"],
+    deps = [
+        "//generated/storage",
+        "//operator/api/v1alpha1",
+        "//operator/internal/images",
+        "//operator/internal/securedcluster",
+        "//operator/internal/securedcluster/scanner",
+        "//operator/internal/values/translation",
+        "//pkg/crs",
+        "//pkg/helm/util",
+        "//pkg/kubernetes",
+        "//pkg/pointers",
+        "//pkg/utils",
+        "@com_github_hashicorp_go_multierror//:go-multierror",
+        "@com_github_pkg_errors//:errors",
+        "@io_k8s_api//core/v1:core",
+        "@io_k8s_apimachinery//pkg/api/errors",
+        "@io_k8s_apimachinery//pkg/apis/meta/v1/unstructured",
+        "@io_k8s_apimachinery//pkg/runtime",
+        "@io_k8s_sigs_controller_runtime//pkg/client",
+        "@io_k8s_sigs_yaml//:yaml",
+        "@sh_helm_helm_v3//pkg/chartutil",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":translation",
+    visibility = ["//operator:__subpackages__"],
+)
+
+go_test(
+    name = "translation_test",
+    srcs = ["translation_test.go"],
+    embed = [":translation"],
+    deps = [
+        "//operator/api/v1alpha1",
+        "//operator/internal/images",
+        "//operator/internal/utils",
+        "//operator/internal/utils/testutils",
+        "//operator/internal/values/testing",
+        "//operator/internal/values/translation",
+        "//pkg/kubernetes",
+        "@com_github_jeremywohl_flatten//:flatten",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+        "@com_github_stretchr_testify//suite",
+        "@io_k8s_api//core/v1:core",
+        "@io_k8s_api//storage/v1:storage",
+        "@io_k8s_apimachinery//pkg/api/resource",
+        "@io_k8s_apimachinery//pkg/apis/meta/v1:meta",
+        "@io_k8s_apimachinery//pkg/apis/meta/v1/unstructured",
+        "@io_k8s_apimachinery//pkg/runtime",
+        "@io_k8s_sigs_controller_runtime//pkg/client",
+        "@io_k8s_utils//ptr",
+        "@sh_helm_helm_v3//pkg/chartutil",
+    ],
+)

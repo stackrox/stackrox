@@ -1,0 +1,37 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "old",
+    srcs = [
+        "clusters.go",
+        "convert_clusters.go",
+    ],
+    importpath = "github.com/stackrox/rox/migrator/migrations/m_204_to_m_205_clusters_platform_type_and_k8_version/schema/old",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//generated/api/v1:api",
+        "//generated/storage",
+        "//pkg/postgres",
+        "//pkg/postgres/walker",
+        "//pkg/sac/resources",
+        "//pkg/search",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":old",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "old_test",
+    srcs = ["convert_clusters_test.go"],
+    embed = [":old"],
+    deps = [
+        "//generated/storage",
+        "//pkg/protoassert",
+        "//pkg/testutils",
+        "@com_github_stretchr_testify//assert",
+    ],
+)

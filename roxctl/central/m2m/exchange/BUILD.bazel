@@ -1,0 +1,49 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "exchange",
+    srcs = ["exchange.go"],
+    importpath = "github.com/stackrox/rox/roxctl/central/m2m/exchange",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//generated/api/v1:api",
+        "//pkg/errox",
+        "//pkg/jsonutil",
+        "//roxctl/common",
+        "//roxctl/common/auth",
+        "//roxctl/common/config",
+        "//roxctl/common/environment",
+        "//roxctl/common/flags",
+        "//roxctl/common/util",
+        "@com_github_pkg_errors//:errors",
+        "@com_github_spf13_cobra//:cobra",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":exchange",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "exchange_test",
+    srcs = ["exchange_test.go"],
+    embed = [":exchange"],
+    deps = [
+        "//generated/api/v1:api",
+        "//pkg/jsonutil",
+        "//pkg/utils",
+        "//roxctl/common",
+        "//roxctl/common/auth",
+        "//roxctl/common/config",
+        "//roxctl/common/config/mocks",
+        "//roxctl/common/environment",
+        "//roxctl/common/environment/mocks",
+        "//roxctl/common/io",
+        "//roxctl/common/printer",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+        "@org_uber_go_mock//gomock",
+    ],
+)

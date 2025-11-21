@@ -1,0 +1,44 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "storagetov1",
+    srcs = [
+        "auth_m2m_config.go",
+        "cloud_source.go",
+        "config_service.go",
+        "discovered_cluster.go",
+        "traits.go",
+    ],
+    importpath = "github.com/stackrox/rox/central/convert/storagetov1",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//generated/api/v1:api",
+        "//generated/storage",
+        "//pkg/secrets",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":storagetov1",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "storagetov1_test",
+    srcs = [
+        "auth_m2m_config_test.go",
+        "cloud_source_test.go",
+        "traits_test.go",
+    ],
+    embed = [":storagetov1"],
+    deps = [
+        "//central/convert/testutils",
+        "//generated/api/v1:api",
+        "//generated/storage",
+        "//pkg/secrets",
+        "//pkg/testutils",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+    ],
+)

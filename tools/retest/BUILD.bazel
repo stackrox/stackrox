@@ -1,0 +1,33 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library", "go_test")
+
+go_library(
+    name = "retest_lib",
+    srcs = [
+        "github.go",
+        "main.go",
+    ],
+    importpath = "github.com/stackrox/rox/tools/retest",
+    visibility = ["//visibility:private"],
+    deps = ["@com_github_google_go_github_v60//github"],
+)
+
+go_binary(
+    name = "retest",
+    embed = [":retest_lib"],
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "retest_test",
+    srcs = [
+        "main_integration_test.go",
+        "main_test.go",
+    ],
+    data = glob(["testdata/**"]),
+    embed = [":retest_lib"],
+    embedsrcs = ["testdata/statuses.json"],
+    deps = [
+        "@com_github_google_go_github_v60//github",
+        "@com_github_stretchr_testify//assert",
+    ],
+)

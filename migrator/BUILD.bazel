@@ -1,0 +1,37 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library")
+
+go_library(
+    name = "migrator_lib",
+    srcs = [
+        "main.go",
+        "upgrade.go",
+    ],
+    importpath = "github.com/stackrox/rox/migrator",
+    visibility = ["//visibility:private"],
+    deps = [
+        "//migrator/clone",
+        "//migrator/log",
+        "//migrator/postgreshelper",
+        "//migrator/runner",
+        "//migrator/types",
+        "//migrator/version",
+        "//pkg/config",
+        "//pkg/grpc/routes",
+        "//pkg/migrations",
+        "//pkg/postgres",
+        "//pkg/postgres/pgadmin",
+        "//pkg/postgres/pgconfig",
+        "//pkg/postgres/schema",
+        "//pkg/retry",
+        "//pkg/sac",
+        "//pkg/version",
+        "@com_github_pkg_errors//:errors",
+        "@io_gorm_gorm//:gorm",
+    ],
+)
+
+go_binary(
+    name = "migrator",
+    embed = [":migrator_lib"],
+    visibility = ["//visibility:public"],
+)

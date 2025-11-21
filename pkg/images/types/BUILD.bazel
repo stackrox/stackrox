@@ -1,0 +1,32 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "types",
+    srcs = [
+        "digest.go",
+        "from_containers.go",
+        "slice_wrapper.go",
+        "type.go",
+        "wrapper.go",
+    ],
+    importpath = "github.com/stackrox/rox/pkg/images/types",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//generated/storage",
+        "//pkg/features",
+        "//pkg/images/utils",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":types",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "types_test",
+    srcs = ["digest_test.go"],
+    embed = [":types"],
+    deps = ["@com_github_stretchr_testify//assert"],
+)

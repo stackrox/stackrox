@@ -1,0 +1,21 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_test")
+
+go_test(
+    name = "service_test",
+    srcs = ["service_test.go"],
+    deps = [
+        "//generated/internalapi/central",
+        "//generated/storage",
+        "//pkg/utils",
+        "//sensor/tests/helper",
+        "//sensor/testutils",
+        "@com_github_pkg_errors//:errors",
+        "@com_github_stretchr_testify//require",
+        "@com_github_stretchr_testify//suite",
+        "@io_k8s_api//apps/v1:apps",
+        "@io_k8s_api//core/v1:core",
+        "@io_k8s_apimachinery//pkg/apis/meta/v1:meta",
+        "@io_k8s_apimachinery//pkg/util/intstr",
+        "@io_k8s_sigs_e2e_framework//klient/k8s",
+    ],
+)

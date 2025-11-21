@@ -1,0 +1,38 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "schema",
+    srcs = [
+        "convert_listening_endpoints.go",
+        "listening_endpoints.go",
+    ],
+    importpath = "github.com/stackrox/rox/migrator/migrations/m_190_to_m_191_plop_add_closed_time_column/schema",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//generated/api/v1:api",
+        "//generated/storage",
+        "//pkg/postgres",
+        "//pkg/postgres/walker",
+        "//pkg/protocompat",
+        "//pkg/sac/resources",
+        "//pkg/search",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":schema",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "schema_test",
+    srcs = ["convert_listening_endpoints_test.go"],
+    embed = [":schema"],
+    deps = [
+        "//generated/storage",
+        "//pkg/protoassert",
+        "//pkg/testutils",
+        "@com_github_stretchr_testify//assert",
+    ],
+)

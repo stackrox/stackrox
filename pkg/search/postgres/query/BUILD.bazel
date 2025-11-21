@@ -1,0 +1,58 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "query",
+    srcs = [
+        "array_query.go",
+        "bool_query.go",
+        "cidr_query.go",
+        "common.go",
+        "enum_query.go",
+        "map_query.go",
+        "numeric_query.go",
+        "query_functions.go",
+        "string_query.go",
+        "time_query.go",
+        "uuid_query.go",
+    ],
+    importpath = "github.com/stackrox/rox/pkg/search/postgres/query",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//pkg/errox",
+        "//pkg/logging",
+        "//pkg/parse",
+        "//pkg/postgres",
+        "//pkg/postgres/walker",
+        "//pkg/readable",
+        "//pkg/search",
+        "//pkg/search/enumregistry",
+        "//pkg/stringutils",
+        "//pkg/utils",
+        "//pkg/uuid",
+        "@com_github_pkg_errors//:errors",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":query",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "query_test",
+    srcs = [
+        "cidr_query_test.go",
+        "enum_query_test.go",
+        "numeric_query_test.go",
+        "string_query_test.go",
+        "time_query_test.go",
+    ],
+    embed = [":query"],
+    deps = [
+        "//pkg/search",
+        "//pkg/timeutil",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+    ],
+)

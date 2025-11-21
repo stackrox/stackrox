@@ -1,0 +1,49 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "azure",
+    srcs = [
+        "azure.go",
+        "transport.go",
+    ],
+    importpath = "github.com/stackrox/rox/pkg/registries/azure",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//generated/storage",
+        "//pkg/concurrency",
+        "//pkg/errorhelpers",
+        "//pkg/httputil/proxy",
+        "//pkg/logging",
+        "//pkg/registries/docker",
+        "//pkg/registries/types",
+        "//pkg/sync",
+        "//pkg/urlfmt",
+        "@com_github_azure_azure_sdk_for_go_sdk_azcore//:azcore",
+        "@com_github_azure_azure_sdk_for_go_sdk_azcore//policy",
+        "@com_github_azure_azure_sdk_for_go_sdk_azidentity//:azidentity",
+        "@com_github_azure_azure_sdk_for_go_sdk_containers_azcontainerregistry//:azcontainerregistry",
+        "@com_github_heroku_docker_registry_client//registry",
+        "@com_github_pkg_errors//:errors",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":azure",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "azure_test",
+    srcs = [
+        "azure_test.go",
+        "transport_test.go",
+    ],
+    embed = [":azure"],
+    deps = [
+        "//generated/storage",
+        "//pkg/protoassert",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+    ],
+)

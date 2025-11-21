@@ -1,0 +1,36 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "common",
+    srcs = [
+        "events.go",
+        "node_constraint.go",
+    ],
+    importpath = "github.com/stackrox/rox/sensor/kubernetes/enforcer/common",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//pkg/detection/deploytime",
+        "@com_github_pkg_errors//:errors",
+        "@io_k8s_api//core/v1:core",
+        "@io_k8s_client_go//tools/record",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":common",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "common_test",
+    srcs = ["node_constraint_test.go"],
+    embed = [":common"],
+    deps = [
+        "//pkg/detection/deploytime",
+        "//pkg/kubernetes",
+        "@com_github_stretchr_testify//assert",
+        "@io_k8s_api//apps/v1:apps",
+        "@io_k8s_api//core/v1:core",
+    ],
+)

@@ -1,0 +1,23 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "processbaseline",
+    srcs = ["baselineutils.go"],
+    importpath = "github.com/stackrox/rox/central/processbaseline",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//central/processindicator/views",
+        "//generated/storage",
+        "//pkg/protocompat",
+        "//pkg/protoutils",
+        "//pkg/set",
+        "//pkg/utils",
+        "@com_github_pkg_errors//:errors",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":processbaseline",
+    visibility = ["//visibility:public"],
+)

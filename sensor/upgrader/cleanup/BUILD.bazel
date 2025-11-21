@@ -1,0 +1,28 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "cleanup",
+    srcs = [
+        "cleaner.go",
+        "cleanup.go",
+    ],
+    importpath = "github.com/stackrox/rox/sensor/upgrader/cleanup",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//pkg/k8sutil/k8sobjects",
+        "//pkg/kubernetes",
+        "//pkg/logging",
+        "//sensor/upgrader/common",
+        "//sensor/upgrader/resources",
+        "//sensor/upgrader/upgradectx",
+        "@com_github_pkg_errors//:errors",
+        "@io_k8s_apimachinery//pkg/api/errors",
+        "@io_k8s_apimachinery//pkg/apis/meta/v1:meta",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":cleanup",
+    visibility = ["//visibility:public"],
+)

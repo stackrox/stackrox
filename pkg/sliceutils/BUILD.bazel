@@ -1,0 +1,47 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "sliceutils",
+    srcs = [
+        "clone.go",
+        "concat.go",
+        "convert.go",
+        "diff.go",
+        "filter.go",
+        "map.go",
+        "reverse.go",
+        "select.go",
+        "sort.go",
+        "string.go",
+        "unique.go",
+    ],
+    importpath = "github.com/stackrox/rox/pkg/sliceutils",
+    visibility = ["//visibility:public"],
+    deps = ["@com_github_pkg_errors//:errors"],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":sliceutils",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "sliceutils_test",
+    srcs = [
+        "clone_test.go",
+        "convert_test.go",
+        "diff_test.go",
+        "map_test.go",
+        "reverse_test.go",
+        "select_test.go",
+        "sort_test.go",
+        "string_test.go",
+        "unique_test.go",
+    ],
+    embed = [":sliceutils"],
+    deps = [
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+    ],
+)

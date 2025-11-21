@@ -1,0 +1,37 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "template",
+    srcs = [
+        "chart_template.go",
+        "extra_funcs.go",
+    ],
+    importpath = "github.com/stackrox/rox/pkg/helm/template",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//pkg/helm/charts",
+        "//pkg/helm/util",
+        "//pkg/stringutils",
+        "@com_github_masterminds_sprig_v3//:sprig",
+        "@com_github_pkg_errors//:errors",
+        "@sh_helm_helm_v3//pkg/chart",
+        "@sh_helm_helm_v3//pkg/chart/loader",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":template",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "template_test",
+    srcs = ["extra_funcs_test.go"],
+    embed = [":template"],
+    deps = [
+        "//pkg/templates",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+    ],
+)

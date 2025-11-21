@@ -1,0 +1,21 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "cmd",
+    srcs = ["cmd.go"],
+    importpath = "github.com/stackrox/rox/compliance/virtualmachines/roxagent/cmd",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//compliance/virtualmachines/roxagent/common",
+        "//compliance/virtualmachines/roxagent/index",
+        "//compliance/virtualmachines/roxagent/vsock",
+        "//pkg/logging",
+        "@com_github_spf13_cobra//:cobra",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":cmd",
+    visibility = ["//visibility:public"],
+)

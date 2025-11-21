@@ -1,0 +1,31 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "check_si_4",
+    srcs = ["check.go"],
+    importpath = "github.com/stackrox/rox/central/compliance/checks/nist80053/check_si_4",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//central/compliance/framework",
+        "//pkg/compliance/framework",
+        "//pkg/protocompat",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":check_si_4",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "check_si_4_test",
+    srcs = ["check_test.go"],
+    embed = [":check_si_4"],
+    deps = [
+        "//central/compliance/checks/testutils",
+        "//generated/storage",
+        "//pkg/protoconv",
+        "@org_uber_go_mock//gomock",
+    ],
+)

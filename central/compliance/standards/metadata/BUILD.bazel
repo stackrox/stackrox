@@ -1,0 +1,21 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "metadata",
+    srcs = [
+        "cis_kubernetes.go",
+        "hipaa_164.go",
+        "metadata.go",
+        "nist_800_190.go",
+        "nist_800_53.go",
+        "pci_dss_3_2.go",
+    ],
+    importpath = "github.com/stackrox/rox/central/compliance/standards/metadata",
+    visibility = ["//visibility:public"],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":metadata",
+    visibility = ["//visibility:public"],
+)

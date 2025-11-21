@@ -1,0 +1,19 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "all",
+    srcs = ["all.go"],
+    importpath = "github.com/stackrox/rox/central/externalbackups/plugins/all",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//central/externalbackups/plugins/gcs",
+        "//central/externalbackups/plugins/s3/compatible",
+        "//central/externalbackups/plugins/s3/std",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":all",
+    visibility = ["//visibility:public"],
+)

@@ -1,0 +1,30 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "policypostgresstore",
+    srcs = ["store.go"],
+    importpath = "github.com/stackrox/rox/migrator/migrations/m_170_to_m_171_create_policy_categories_and_edges/policypostgresstore",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//generated/api/v1:api",
+        "//generated/storage",
+        "//migrator/migrations/frozenschema/v74:frozenschema",
+        "//pkg/logging",
+        "//pkg/metrics",
+        "//pkg/postgres",
+        "//pkg/postgres/pgutils",
+        "//pkg/protocompat",
+        "//pkg/search",
+        "//pkg/search/postgres",
+        "//pkg/sync",
+        "@com_github_hashicorp_go_multierror//:go-multierror",
+        "@com_github_jackc_pgx_v5//:pgx",
+        "@com_github_pkg_errors//:errors",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":policypostgresstore",
+    visibility = ["//visibility:public"],
+)
