@@ -3,6 +3,7 @@ package registry
 import (
 	"context"
 	"errors"
+	"fmt"
 	"net/http"
 	"sync/atomic"
 
@@ -89,9 +90,13 @@ func (l *lazyTLSCheckRegistry) initialize() error {
 	l.lazyInit()
 	// initError is modified while the write lock is held, to avoid a race
 	// grab the read lock.
-	return concurrency.WithRLock1(&l.initializedMutex, func() error {
-		return pkgerrors.Wrap(l.initError, "lazy TLS registry initialization")
+	err := concurrency.WithRLock1(&l.initializedMutex, func() error {
+		return l.initError
 	})
+	if err != nil {
+		return fmt.Errorf("lazy TLS registry initialization: %w", err)
+	}
+	return nil
 }
 
 func (l *lazyTLSCheckRegistry) Metadata(image *storage.Image) (*storage.ImageMetadata, error) {
