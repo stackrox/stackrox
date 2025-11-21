@@ -34,7 +34,7 @@ function MastheadToolbar(): ReactElement {
     return (
         <Flex spaceItems={{ default: 'spaceItemsSm' }}>
             {showOrchestratorComponentsToggle && (
-                <FlexItem>
+                <FlexItem spacer={{ default: 'spacerLg' }}>
                     <OrchestratorComponentsToggle />
                 </FlexItem>
             )}

@@ -36,3 +36,12 @@ body {
   overflow: hidden;
   position: relative;
 }
+
+#BodyRoutes {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: auto;
+  position: relative;
+  width: 100%;
+}

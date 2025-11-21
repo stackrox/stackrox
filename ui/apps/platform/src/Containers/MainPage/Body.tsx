@@ -329,7 +329,7 @@ function Body({ hasReadAccess, isFeatureFlagEnabled }: BodyProps): ReactElement 
     const routePredicates = { hasReadAccess, isFeatureFlagEnabled };
 
     return (
-        <div className="flex flex-col h-full w-full relative overflow-auto bg-base-100">
+        <div id="BodyRoutes">
             <ErrorBoundary>
                 <Routes>
                     <Route path="/" element={<Navigate to={dashboardPath} replace />} />
