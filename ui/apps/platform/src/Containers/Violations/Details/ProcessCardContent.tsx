@@ -1,5 +1,5 @@
 import type { ReactElement } from 'react';
-import { DescriptionList, Divider, Flex } from '@patternfly/react-core';
+import { DescriptionList, Divider, Flex, Title } from '@patternfly/react-core';
 
 import DescriptionListItem from 'Components/DescriptionListItem';
 import { getDateTime } from 'utils/dateUtils';
@@ -14,33 +14,27 @@ function ProcessCardContent({ event }: ProcessCardContentProps): ReactElement {
     const timeFormat = time ? getDateTime(new Date(time)) : 'N/A';
 
     return (
-        <div>
-            <Flex
-                justifyContent={{ default: 'justifyContentSpaceBetween' }}
-                alignItems={{ default: 'alignItemsFlexStart' }}
-            >
-                <Divider component="div" />
-                <span className="pf-v5-u-background-color-warning pf-v5-u-px-md pf-v5-u-py-sm">
-                    {execFilePath}
-                </span>
-            </Flex>
+        <Flex direction={{ default: 'column' }} spaceItems={{ default: 'spaceItemsMd' }}>
+            <Divider component="div" />
+            <Title headingLevel="h3" className="pf-v5-u-pb-sm">
+                {execFilePath}
+            </Title>
             <DescriptionList
                 columnModifier={{
                     default: '2Col',
                 }}
-                className="pf-v5-u-my-md"
             >
                 <DescriptionListItem term="Container ID" desc={containerId} />
                 <DescriptionListItem term="Time" desc={timeFormat} />
                 <DescriptionListItem term="User ID" desc={uid} />
             </DescriptionList>
-            <DescriptionList className="pf-v5-u-mb-md">
+            <DescriptionList>
                 <DescriptionListItem term="Arguments" desc={args} />
-                {Array.isArray(lineage) && lineage.length && (
+                {Array.isArray(lineage) && lineage.length ? (
                     <DescriptionListItem term="Ancestors" desc={lineage.join(', ')} />
-                )}
+                ) : null}
             </DescriptionList>
-        </div>
+        </Flex>
     );
 }
 

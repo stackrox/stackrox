@@ -1,17 +1,23 @@
 import type { ReactElement } from 'react';
 
-import type { ProcessViolation, Violation } from 'types/alert.proto';
+import type { FileAccessViolation, ProcessViolation, Violation } from 'types/alert.proto';
 import NetworkFlowCard from './NetworkFlowCard';
 import K8sCard from './K8sCard';
-import ProcessCardContent from './ProcessCardContent';
 import TimestampedEventCard from './TimestampedEventCard';
+import ProcessCardContent from './ProcessCardContent';
+import FileAccessCardContent from './FileAccessCardContent';
 
 type RuntimeMessagesProps = {
     processViolation: ProcessViolation | null;
+    fileAccessViolation: FileAccessViolation | null;
     violations?: Violation[];
 };
 
-function RuntimeMessages({ processViolation, violations }: RuntimeMessagesProps): ReactElement {
+function RuntimeMessages({
+    processViolation,
+    fileAccessViolation,
+    violations,
+}: RuntimeMessagesProps): ReactElement {
     const isPlainViolation = !!violations?.length;
     const plainViolations: ReactElement[] = [];
 
@@ -52,6 +58,17 @@ function RuntimeMessages({ processViolation, violations }: RuntimeMessagesProps)
                     getTimestamp={(process) => process.signal.time}
                     getEventKey={(process) => process.signal.id}
                     ContentComponent={ProcessCardContent}
+                />
+            )}
+            {!!fileAccessViolation?.accesses?.length && (
+                <TimestampedEventCard
+                    message={fileAccessViolation.message}
+                    events={fileAccessViolation.accesses}
+                    getTimestamp={(access) => access.timestamp}
+                    ContentComponent={FileAccessCardContent}
+                    getEventKey={(access) =>
+                        `${access.timestamp}-${access.operation}-${access.file.nodePath}`
+                    }
                 />
             )}
         </>

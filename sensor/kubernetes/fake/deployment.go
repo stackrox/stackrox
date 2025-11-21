@@ -386,13 +386,19 @@ func newTimerWithJitter(duration time.Duration) *time.Timer {
 // manageDeployment takes in the initial resources and then will recreate them when they are deleted
 // this function should be called with go w.manageDeployment
 func (w *WorkloadManager) manageDeployment(ctx context.Context, resources *deploymentResourcesToBeManaged) {
-	// Handle resources that were initialized for initial startup. These start up resources
-	// are like deploying Sensor into a new environment and syncing all objects
-	w.manageDeploymentLifecycle(ctx, resources)
+	defer w.wg.Done()
 
-	// The previous function returning means that the deployments, replicaset and pods were all deleted
-	// Now we recreate the objects again
-	for count := 0; resources.workload.NumLifecycles == 0 || count < resources.workload.NumLifecycles; count++ {
+	// NumLifecycles+1 is to handle the initial startup. These start up resources
+	// are like deploying Sensor into a new environment and syncing all objects.
+	for count := 0; resources.workload.NumLifecycles == 0 || count < resources.workload.NumLifecycles+1; count++ {
+		w.manageDeploymentLifecycle(ctx, resources)
+
+		select {
+		case <-ctx.Done():
+			return
+		default:
+		}
+
 		resources = w.getDeployment(resources.workload, 0, nil, nil, nil)
 		deployment, replicaSet, pods := resources.deployment, resources.replicaSet, resources.pods
 		if _, err := w.client.Kubernetes().AppsV1().Deployments(deployment.Namespace).Create(ctx, deployment, metav1.CreateOptions{}); err != nil {
@@ -406,7 +412,6 @@ func (w *WorkloadManager) manageDeployment(ctx context.Context, resources *deplo
 				log.Errorf("error creating pod: %v", err)
 			}
 		}
-		w.manageDeploymentLifecycle(ctx, resources)
 	}
 }
 
@@ -429,6 +434,9 @@ func (w *WorkloadManager) manageDeploymentLifecycle(ctx context.Context, resourc
 
 	for {
 		select {
+		case <-ctx.Done():
+			stopSig.Signal()
+			return
 		case <-timer.C:
 			stopSig.Signal()
 			if err := deploymentClient.Delete(ctx, deployment.Name, metav1.DeleteOptions{}); err != nil {
@@ -480,7 +488,7 @@ func (w *WorkloadManager) managePod(ctx context.Context, deploymentSig *concurre
 	defer podDeadline.Stop()
 
 	podSig := concurrency.NewSignal()
-	go w.manageProcessesForPod(&podSig, podWorkload, pod)
+	go w.manageProcessesForPod(ctx, &podSig, podWorkload, pod)
 
 	client := w.client.Kubernetes().CoreV1().Pods(pod.Namespace)
 	cleanupPodFn := func(pod *corev1.Pod) {
@@ -498,6 +506,7 @@ func (w *WorkloadManager) managePod(ctx context.Context, deploymentSig *concurre
 	for {
 		select {
 		case <-ctx.Done():
+			podSig.Signal()
 			return
 		case <-deploymentSig.Done():
 			// Deployment has been deleted so delete pod
@@ -517,7 +526,7 @@ func (w *WorkloadManager) managePod(ctx context.Context, deploymentSig *concurre
 			}
 			w.writeID(podPrefix, pod.UID)
 			podSig = concurrency.NewSignal()
-			go w.manageProcessesForPod(&podSig, podWorkload, pod)
+			go w.manageProcessesForPod(ctx, &podSig, podWorkload, pod)
 			podDeadline = newTimerWithJitter(podWorkload.LifecycleDuration)
 		}
 	}
@@ -535,7 +544,7 @@ func getShortContainerID(id string) string {
 	return containerid.ShortContainerIDFromInstanceID(runtimeID)
 }
 
-func (w *WorkloadManager) manageProcessesForPod(podSig *concurrency.Signal, podWorkload PodWorkload, pod *corev1.Pod) {
+func (w *WorkloadManager) manageProcessesForPod(ctx context.Context, podSig *concurrency.Signal, podWorkload PodWorkload, pod *corev1.Pod) {
 	processWorkload := podWorkload.ProcessWorkload
 
 	if processWorkload.ProcessInterval == 0 {
@@ -551,6 +560,9 @@ func (w *WorkloadManager) manageProcessesForPod(podSig *concurrency.Signal, podW
 	}
 	for {
 		select {
+		case <-ctx.Done():
+			podSig.Signal()
+			return
 		case <-ticker.C:
 			if !w.servicesInitialized.IsDone() {
 				continue
