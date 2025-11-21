@@ -59,14 +59,15 @@ func (s *PolicyPostgresDataStoreTestSuite) SetupTest() {
 	categoryStorage := categoryPostgres.New(s.db)
 
 	edgeStorage := edgePostgres.New(s.db)
+	edgeDS := policyCategoryEdgeDS.New(edgeStorage)
 
-	s.categoryDS = policyCategoryDS.New(categoryStorage, policyCategoryEdgeDS.New(edgeStorage))
+	s.categoryDS = policyCategoryDS.New(categoryStorage, edgeDS)
 
 	policyStorage := policyStore.New(s.db)
-	s.datastore = New(policyStorage, s.mockClusterDS, s.mockNotifierDS, s.categoryDS)
+	s.datastore = New(policyStorage, s.mockClusterDS, s.mockNotifierDS, s.categoryDS, edgeDS)
 
 	s.mockCategoryDS = policyCategoryMocks.NewMockDataStore(gomock.NewController(s.T()))
-	s.datastoreWithMockCategoryDS = New(policyStorage, s.mockClusterDS, s.mockNotifierDS, s.mockCategoryDS)
+	s.datastoreWithMockCategoryDS = New(policyStorage, s.mockClusterDS, s.mockNotifierDS, s.mockCategoryDS, edgeDS)
 }
 
 func (s *PolicyPostgresDataStoreTestSuite) TearDownTest() {
@@ -356,4 +357,74 @@ func (s *PolicyPostgresDataStoreTestSuite) TestTransactionRollbacks() {
 
 	// Clean up policy
 	_ = s.datastoreWithMockCategoryDS.RemovePolicy(ctx, policy)
+}
+
+func (s *PolicyPostgresDataStoreTestSuite) TestGetAllPoliciesReturnsFilledCategories() {
+	ctx := sac.WithGlobalAccessScopeChecker(context.Background(), sac.AllowFixedScopes(
+		sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
+		sac.ResourceScopeKeys(resources.WorkflowAdministration, resources.Cluster),
+	))
+
+	testCases := []struct {
+		name               string
+		categories         []string
+		expectedCategories []string // Expected after title case normalization
+	}{
+		{
+			name:               "Policy With Multiple Categories",
+			categories:         []string{"DevOps Best Practices", "Security Best Practices"},
+			expectedCategories: []string{"DevOps Best Practices", "Security Best Practices"},
+		},
+		{
+			name:               "Policy With Single Category",
+			categories:         []string{"Anomalous Activity"},
+			expectedCategories: []string{"Anomalous Activity"},
+		},
+		{
+			name:               "Test Policy With No Categories",
+			categories:         []string{},
+			expectedCategories: []string{},
+		},
+	}
+
+	// Create input polcies from testCases
+	var inputPolcies []*storage.Policy
+	for _, tc := range testCases {
+		policy := fixtures.GetPolicy()
+		policy.Id = "" // Clear ID so AddPolicy generates a new one
+		policy.Name = tc.name
+		policy.Categories = tc.categories
+
+		id, err := s.datastore.AddPolicy(ctx, policy)
+		s.NoError(err)
+		policy.Id = id
+		inputPolcies = append(inputPolcies, policy)
+	}
+
+	outputPolicies, err := s.datastore.GetAllPolicies(ctx)
+	s.NoError(err)
+	s.Require().Len(outputPolicies, len(testCases))
+
+	// Build a map by policy ID for easier verification
+	outputPoliciesMap := make(map[string]*storage.Policy)
+	for _, p := range outputPolicies {
+		outputPoliciesMap[p.GetId()] = p
+	}
+
+	// Verify each policy has the expected categories filled
+	for i, tc := range testCases {
+		policy := inputPolcies[i]
+		retrievedPolicy := outputPoliciesMap[policy.GetId()]
+		s.Require().NotNil(retrievedPolicy, "policy %q should be in GetAllPolicies result", tc.name)
+		s.Require().Len(retrievedPolicy.GetCategories(), len(tc.expectedCategories), "policy %q should have %d categories", tc.name, len(tc.expectedCategories))
+
+		for _, expectedCategory := range tc.expectedCategories {
+			s.Contains(retrievedPolicy.GetCategories(), expectedCategory, "policy %q should contain category %q", tc.name, expectedCategory)
+		}
+	}
+
+	// Cleanup
+	for _, policy := range inputPolcies {
+		s.NoError(s.datastore.RemovePolicy(ctx, policy))
+	}
 }

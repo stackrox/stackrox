@@ -7,6 +7,8 @@ import (
 	notifierDS "github.com/stackrox/rox/central/notifier/datastore"
 	"github.com/stackrox/rox/central/policy/store"
 	categoriesDataStore "github.com/stackrox/rox/central/policycategory/datastore"
+	categoryEdgeDS "github.com/stackrox/rox/central/policycategoryedge/datastore"
+	policyCategoryEdgeDS "github.com/stackrox/rox/central/policycategoryedge/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	searchPkg "github.com/stackrox/rox/pkg/search"
@@ -38,12 +40,15 @@ type DataStore interface {
 func New(storage store.Store,
 	clusterDatastore clusterDS.DataStore,
 	notifierDatastore notifierDS.DataStore,
-	categoriesDatastore categoriesDataStore.DataStore) DataStore {
+	categoriesDatastore categoriesDataStore.DataStore,
+	categoriesEdgeDatastore categoryEdgeDS.DataStore,
+) DataStore {
 	ds := &datastoreImpl{
-		storage:             storage,
-		clusterDatastore:    clusterDatastore,
-		notifierDatastore:   notifierDatastore,
-		categoriesDatastore: categoriesDatastore,
+		storage:                     storage,
+		clusterDatastore:            clusterDatastore,
+		notifierDatastore:           notifierDatastore,
+		categoriesDatastore:         categoriesDatastore,
+		policyCategoryEdgeDatastore: categoriesEdgeDatastore,
 	}
 	return ds
 }
@@ -51,11 +56,13 @@ func New(storage store.Store,
 // newWithoutDefaults should be used only for testing purposes.
 func newWithoutDefaults(storage store.Store,
 	clusterDatastore clusterDS.DataStore, notifierDatastore notifierDS.DataStore,
-	categoriesDatastore categoriesDataStore.DataStore) DataStore {
+	categoriesDatastore categoriesDataStore.DataStore,
+	policyCategoryEdgeDatastore policyCategoryEdgeDS.DataStore) DataStore {
 	return &datastoreImpl{
-		storage:             storage,
-		clusterDatastore:    clusterDatastore,
-		notifierDatastore:   notifierDatastore,
-		categoriesDatastore: categoriesDatastore,
+		storage:                     storage,
+		clusterDatastore:            clusterDatastore,
+		notifierDatastore:           notifierDatastore,
+		categoriesDatastore:         categoriesDatastore,
+		policyCategoryEdgeDatastore: policyCategoryEdgeDatastore,
 	}
 }

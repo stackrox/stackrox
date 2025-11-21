@@ -11,6 +11,7 @@ import (
 	notifierDS "github.com/stackrox/rox/central/notifier/datastore"
 	"github.com/stackrox/rox/central/policy/store"
 	categoriesDataStore "github.com/stackrox/rox/central/policycategory/datastore"
+	policyCategoryEdgeDS "github.com/stackrox/rox/central/policycategoryedge/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/errorhelpers"
@@ -70,9 +71,10 @@ type datastoreImpl struct {
 	storage     store.Store
 	policyMutex sync.Mutex
 
-	clusterDatastore    clusterDS.DataStore
-	notifierDatastore   notifierDS.DataStore
-	categoriesDatastore categoriesDataStore.DataStore
+	clusterDatastore            clusterDS.DataStore
+	notifierDatastore           notifierDS.DataStore
+	categoriesDatastore         categoriesDataStore.DataStore
+	policyCategoryEdgeDatastore policyCategoryEdgeDS.DataStore
 }
 
 func (ds *datastoreImpl) Search(ctx context.Context, q *v1.Query) ([]searchPkg.Result, error) {
@@ -135,16 +137,11 @@ func (ds *datastoreImpl) SearchRawPolicies(ctx context.Context, q *v1.Query) ([]
 		return nil, err
 	}
 
-	for _, p := range policies {
-		categories, err := ds.categoriesDatastore.GetPolicyCategoriesForPolicy(ctx, p.GetId())
-		if err != nil {
-			log.Errorf("Failed to find categories associated with policy %s: %q. Error: %v", p.GetId(), p.GetName(), err)
-			continue
-		}
-		for _, c := range categories {
-			p.Categories = append(p.Categories, c.GetName())
-		}
+	err = ds.fillCategoryNames(ctx, policies...)
+	if err != nil {
+		return nil, err
 	}
+
 	return policies, nil
 }
 
@@ -166,16 +163,35 @@ func (ds *datastoreImpl) GetPolicy(ctx context.Context, id string) (*storage.Pol
 	return policy, true, nil
 }
 
+// fillCategoryNames presumes both policyCategoryEdgeDatastore and categoriesDatastore to be cachedStore
+// if those stores are not cached anymore we're sending a DB query per PolicyCategoryEdge
 func (ds *datastoreImpl) fillCategoryNames(ctx context.Context, policies ...*storage.Policy) error {
-	for _, p := range policies {
-		categories, err := ds.categoriesDatastore.GetPolicyCategoriesForPolicy(ctx, p.GetId())
+	allEdges, err := ds.policyCategoryEdgeDatastore.GetAll(ctx)
+	if err != nil {
+		return err
+	}
+
+	policyIDToCategoryNames := make(map[string][]string, len(policies))
+	for _, edge := range allEdges {
+		policyID := edge.GetPolicyId()
+		if _, keyExists := policyIDToCategoryNames[policyID]; !keyExists {
+			policyIDToCategoryNames[policyID] = []string{}
+		}
+
+		category, exist, err := ds.categoriesDatastore.GetPolicyCategory(ctx, edge.GetCategoryId())
 		if err != nil {
 			return err
 		}
-		for _, c := range categories {
-			p.Categories = append(p.Categories, c.GetName())
+
+		if exist {
+			policyIDToCategoryNames[policyID] = append(policyIDToCategoryNames[policyID], category.GetName())
 		}
 	}
+
+	for _, p := range policies {
+		p.Categories = policyIDToCategoryNames[p.GetId()]
+	}
+
 	return nil
 }
 func (ds *datastoreImpl) GetPolicies(ctx context.Context, ids []string) ([]*storage.Policy, []int, error) {
