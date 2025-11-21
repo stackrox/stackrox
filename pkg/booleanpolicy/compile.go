@@ -55,10 +55,10 @@ func policyGroupToFieldQueries(group *storage.PolicyGroup) ([]*query.FieldQuery,
 
 	metadata := FieldMetadataSingleton().findField(group.GetFieldName())
 	if metadata == nil {
-		return nil, errors.Errorf("no QB known for group %q", group.GetFieldName())
+		return nil, errors.Errorf("unknown field %q", group.GetFieldName())
 	}
 
-	if metadata == nil || metadata.qb == nil {
+	if metadata.qb == nil {
 		return nil, errors.Errorf("no QB known for group %q", group.GetFieldName())
 	}
 
