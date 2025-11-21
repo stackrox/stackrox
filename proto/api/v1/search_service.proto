@@ -90,6 +90,7 @@ enum SearchCategory {
   VIRTUAL_MACHINES = 77;
   BASE_IMAGES = 78;
   BASE_IMAGE_LAYERS = 79;
+  IMAGE_CVE_TIMES = 80;
 }
 
 enum SearchDataType {

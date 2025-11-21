@@ -123,7 +123,8 @@
                 "IMAGES_V2",
                 "VIRTUAL_MACHINES",
                 "BASE_IMAGES",
-                "BASE_IMAGE_LAYERS"
+                "BASE_IMAGE_LAYERS",
+                "IMAGE_CVE_TIMES"
               ]
             },
             "collectionFormat": "multi"
@@ -239,9 +240,7 @@
                 "IMAGE_COMPONENTS_V2",
                 "IMAGE_VULNERABILITIES_V2",
                 "IMAGES_V2",
-                "VIRTUAL_MACHINES",
-                "BASE_IMAGES",
-                "BASE_IMAGE_LAYERS"
+                "VIRTUAL_MACHINES"
               ]
             },
             "collectionFormat": "multi"
@@ -351,9 +350,7 @@
                 "IMAGE_COMPONENTS_V2",
                 "IMAGE_VULNERABILITIES_V2",
                 "IMAGES_V2",
-                "VIRTUAL_MACHINES",
-                "BASE_IMAGES",
-                "BASE_IMAGE_LAYERS"
+                "VIRTUAL_MACHINES"
               ]
             },
             "collectionFormat": "multi"
@@ -506,9 +503,7 @@
         "IMAGE_COMPONENTS_V2",
         "IMAGE_VULNERABILITIES_V2",
         "IMAGES_V2",
-        "VIRTUAL_MACHINES",
-        "BASE_IMAGES",
-        "BASE_IMAGE_LAYERS"
+        "VIRTUAL_MACHINES"
       ],
       "default": "SEARCH_UNSET",
       "title": "Next available tag: 78"

@@ -8,7 +8,7 @@ import (
 	"github.com/stackrox/rox/pkg/search"
 )
 
-// Store provides storage functionality for CVEs.
+// Store provides storage functionality for ImageCVETimes.
 //
 //go:generate mockgen-wrapper
 type Store interface {
