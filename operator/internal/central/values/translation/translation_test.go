@@ -1641,3 +1641,81 @@ func makeSecret(name string, stringData map[string]string) *corev1.Secret {
 		Data:       data,
 	}
 }
+
+func TestDeploymentDefaults(t *testing.T) {
+	tests := map[string]struct {
+		central              platform.Central
+		expectedNodeSelector map[string]interface{}
+	}{
+		"pinToNodes InfraRole": {
+			central: platform.Central{
+				ObjectMeta: metav1.ObjectMeta{Namespace: "stackrox"},
+				Spec: platform.CentralSpec{
+					Customize: &platform.CustomizeSpec{
+						DeploymentDefaults: &platform.DeploymentDefaultsSpec{
+							PinToNodes: ptr.To(platform.PinToNodesInfraRole),
+						},
+					},
+				},
+			},
+			expectedNodeSelector: map[string]interface{}{
+				"node-role.kubernetes.io/infra": "",
+			},
+		},
+		"explicit nodeSelector": {
+			central: platform.Central{
+				ObjectMeta: metav1.ObjectMeta{Namespace: "stackrox"},
+				Spec: platform.CentralSpec{
+					Customize: &platform.CustomizeSpec{
+						DeploymentDefaults: &platform.DeploymentDefaultsSpec{
+							NodeSelector: map[string]string{
+								"global-label": "global-value",
+							},
+						},
+					},
+				},
+			},
+			expectedNodeSelector: map[string]interface{}{
+				"global-label": "global-value",
+			},
+		},
+		"component-specific overrides global": {
+			central: platform.Central{
+				ObjectMeta: metav1.ObjectMeta{Namespace: "stackrox"},
+				Spec: platform.CentralSpec{
+					Central: &platform.CentralComponentSpec{
+						DeploymentSpec: platform.DeploymentSpec{
+							NodeSelector: map[string]string{
+								"component-label": "component-value",
+							},
+						},
+					},
+					Customize: &platform.CustomizeSpec{
+						DeploymentDefaults: &platform.DeploymentDefaultsSpec{
+							NodeSelector: map[string]string{
+								"global-label": "global-value",
+							},
+						},
+					},
+				},
+			},
+			expectedNodeSelector: map[string]interface{}{
+				"component-label": "component-value",
+			},
+		},
+	}
+
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			translator := Translator{client: fkClient.NewClientBuilder().Build()}
+			values, err := translator.translate(context.Background(), tt.central)
+			require.NoError(t, err)
+
+			// Verify Central deployment inherits deployment defaults
+			centralValues, ok := values["central"].(map[string]interface{})
+			require.True(t, ok, "central should be a map")
+			nodeSelector, _ := centralValues["nodeSelector"].(map[string]interface{})
+			assert.Equal(t, tt.expectedNodeSelector, nodeSelector)
+		})
+	}
+}

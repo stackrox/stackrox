@@ -128,6 +128,13 @@ spec:
           The default is: Enabled.
         displayName: Config as Code component
         path: configAsCode.configAsCodeComponent
+      - description: |-
+          Pin workloads to specific node types. This is a convenience setting that configures
+          both nodeSelector and tolerations. If set, nodeSelector and tolerations fields
+          must not be set at this level.
+          The default is: None.
+        displayName: Pin To Nodes
+        path: customize.deploymentDefaults.pinToNodes
       - description: Custom labels to set on all managed objects.
         displayName: Labels
         path: customize.labels
@@ -294,6 +301,11 @@ spec:
       - description: Custom annotations to set on all managed objects.
         displayName: Annotations
         path: customize.annotations
+      - description: |-
+          Default nodeSelector to apply to all Deployment resources. Components can override
+          by specifying their own nodeSelector. Cannot be used together with pinToNodes.
+        displayName: Node Selector
+        path: customize.deploymentDefaults.nodeSelector
       - description: Resource kind.
         displayName: Kind
         path: overlays[0].kind
@@ -387,6 +399,11 @@ spec:
           Defaults to the Central certificate authority.
         displayName: Destination CA Certificate
         path: central.exposure.route.reencrypt.tls.destinationCACertificate
+      - description: |-
+          Default tolerations to apply to all Deployment resources. Components can override
+          by specifying their own tolerations. Cannot be used together with pinToNodes.
+        displayName: Tolerations
+        path: customize.deploymentDefaults.tolerations
       - description: Custom environment variables to set on managed pods' containers.
         displayName: Environment Variables
         path: customize.envVars
@@ -451,6 +468,11 @@ spec:
           Prometheus compatible format.
         displayName: Monitoring
         path: central.monitoring
+      - description: |-
+          Default scheduling constraints for Deployment resources. These settings apply to
+          all Deployments but not DaemonSets.
+        displayName: Deployment Defaults
+        path: customize.deploymentDefaults
       - description: Settings related to outgoing network traffic.
         displayName: Egress
         path: egress
@@ -880,6 +902,13 @@ spec:
           and re-create this object in order to register a cluster with a new name.
         displayName: Cluster Name
         path: clusterName
+      - description: |-
+          Pin workloads to specific node types. This is a convenience setting that configures
+          both nodeSelector and tolerations. If set, nodeSelector and tolerations fields
+          must not be set at this level.
+          The default is: None.
+        displayName: Pin To Nodes
+        path: customize.deploymentDefaults.pinToNodes
       - description: Custom labels to set on all managed objects.
         displayName: Labels
         path: customize.labels
@@ -1009,6 +1038,11 @@ spec:
       - description: Custom annotations to set on all managed objects.
         displayName: Annotations
         path: customize.annotations
+      - description: |-
+          Default nodeSelector to apply to all Deployment resources. Components can override
+          by specifying their own nodeSelector. Cannot be used together with pinToNodes.
+        displayName: Node Selector
+        path: customize.deploymentDefaults.nodeSelector
       - description: Resource kind.
         displayName: Kind
         path: overlays[0].kind
@@ -1061,6 +1095,11 @@ spec:
           The default is: Ignore.
         displayName: Failure Policy
         path: admissionControl.failurePolicy
+      - description: |-
+          Default tolerations to apply to all Deployment resources. Components can override
+          by specifying their own tolerations. Cannot be used together with pinToNodes.
+        displayName: Tolerations
+        path: customize.deploymentDefaults.tolerations
       - description: Custom environment variables to set on managed pods' containers.
         displayName: Environment Variables
         path: customize.envVars
@@ -1116,6 +1155,11 @@ spec:
           and for Kubernetes event monitoring.
         displayName: Admission Control Settings
         path: admissionControl
+      - description: |-
+          Default scheduling constraints for Deployment resources. These settings apply to
+          all Deployments but not DaemonSets.
+        displayName: Deployment Defaults
+        path: customize.deploymentDefaults
       - description: |-
           Optional marks the overlay as optional.
           When Optional is true, and the specified resource does not exist in the output manifests, the overlay will be skipped, and a warning will be logged.

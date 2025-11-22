@@ -3,6 +3,7 @@
 package v1alpha1
 
 import (
+	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/utils/pointer"
@@ -17,6 +18,38 @@ type MiscSpec struct {
 	CreateSCCs *bool `json:"createSCCs,omitempty"`
 }
 
+// PinToNodesPolicy defines preset node pinning configurations
+// +kubebuilder:validation:Enum=None;InfraRole
+type PinToNodesPolicy string
+
+const (
+	// PinToNodesNone does not apply any node constraints
+	PinToNodesNone PinToNodesPolicy = "None"
+	// PinToNodesInfraRole pins deployments to OpenShift infrastructure nodes
+	PinToNodesInfraRole PinToNodesPolicy = "InfraRole"
+)
+
+// DeploymentDefaultsSpec defines default settings that apply to all Deployment resources
+type DeploymentDefaultsSpec struct {
+	// Pin workloads to specific node types. This is a convenience setting that configures
+	// both nodeSelector and tolerations. If set, nodeSelector and tolerations fields
+	// must not be set at this level.
+	// The default is: None.
+	//+kubebuilder:validation:Enum=None;InfraRole
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=1
+	PinToNodes *PinToNodesPolicy `json:"pinToNodes,omitempty"`
+
+	// Default nodeSelector to apply to all Deployment resources. Components can override
+	// by specifying their own nodeSelector. Cannot be used together with pinToNodes.
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Node Selector",order=2
+	NodeSelector map[string]string `json:"nodeSelector,omitempty"`
+
+	// Default tolerations to apply to all Deployment resources. Components can override
+	// by specifying their own tolerations. Cannot be used together with pinToNodes.
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=3
+	Tolerations []*corev1.Toleration `json:"tolerations,omitempty"`
+}
+
 // CustomizeSpec defines customizations to apply.
 type CustomizeSpec struct {
 	// Custom labels to set on all managed objects.
@@ -29,6 +62,11 @@ type CustomizeSpec struct {
 	// Custom environment variables to set on managed pods' containers.
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=3,displayName="Environment Variables"
 	EnvVars []corev1.EnvVar `json:"envVars,omitempty"`
+
+	// Default scheduling constraints for Deployment resources. These settings apply to
+	// all Deployments but not DaemonSets.
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=4,displayName="Deployment Defaults"
+	DeploymentDefaults *DeploymentDefaultsSpec `json:"deploymentDefaults,omitempty"`
 }
 
 // DeploymentSpec defines settings that affect a deployment.
@@ -354,4 +392,18 @@ type GlobalNetworkSpec struct {
 	// The default is: Enabled.
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=1,displayName="Network Policies"
 	Policies *NetworkPolicies `json:"policies,omitempty"`
+}
+
+// ValidateDeploymentDefaults checks for conflicting configuration
+func (c *CustomizeSpec) ValidateDeploymentDefaults() error {
+	if c == nil || c.DeploymentDefaults == nil {
+		return nil
+	}
+	d := c.DeploymentDefaults
+	if d.PinToNodes != nil && *d.PinToNodes != PinToNodesNone {
+		if len(d.NodeSelector) > 0 || len(d.Tolerations) > 0 {
+			return errors.New("spec.customize.deploymentDefaults.pinToNodes cannot be used together with nodeSelector or tolerations")
+		}
+	}
+	return nil
 }

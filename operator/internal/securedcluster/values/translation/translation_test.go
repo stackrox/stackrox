@@ -1396,3 +1396,93 @@ func createCaBundleConfigMap(namespace string, data map[string]string) *v1.Confi
 		Data: data,
 	}
 }
+
+func TestDeploymentDefaults(t *testing.T) {
+	tests := map[string]struct {
+		securedCluster       platform.SecuredCluster
+		expectedNodeSelector map[string]interface{}
+	}{
+		"pinToNodes InfraRole": {
+			securedCluster: platform.SecuredCluster{
+				ObjectMeta: metav1.ObjectMeta{Namespace: "stackrox"},
+				Spec: platform.SecuredClusterSpec{
+					ClusterName:      ptr.To("test-cluster"),
+					AdmissionControl: &platform.AdmissionControlComponentSpec{},
+					Customize: &platform.CustomizeSpec{
+						DeploymentDefaults: &platform.DeploymentDefaultsSpec{
+							PinToNodes: ptr.To(platform.PinToNodesInfraRole),
+						},
+					},
+				},
+			},
+			expectedNodeSelector: map[string]interface{}{
+				"node-role.kubernetes.io/infra": "",
+			},
+		},
+		"explicit nodeSelector": {
+			securedCluster: platform.SecuredCluster{
+				ObjectMeta: metav1.ObjectMeta{Namespace: "stackrox"},
+				Spec: platform.SecuredClusterSpec{
+					ClusterName:      ptr.To("test-cluster"),
+					AdmissionControl: &platform.AdmissionControlComponentSpec{},
+					Customize: &platform.CustomizeSpec{
+						DeploymentDefaults: &platform.DeploymentDefaultsSpec{
+							NodeSelector: map[string]string{
+								"global-label": "global-value",
+							},
+						},
+					},
+				},
+			},
+			expectedNodeSelector: map[string]interface{}{
+				"global-label": "global-value",
+			},
+		},
+		"component-specific overrides global": {
+			securedCluster: platform.SecuredCluster{
+				ObjectMeta: metav1.ObjectMeta{Namespace: "stackrox"},
+				Spec: platform.SecuredClusterSpec{
+					ClusterName: ptr.To("test-cluster"),
+					AdmissionControl: &platform.AdmissionControlComponentSpec{
+						DeploymentSpec: platform.DeploymentSpec{
+							NodeSelector: map[string]string{
+								"component-label": "component-value",
+							},
+						},
+					},
+					Customize: &platform.CustomizeSpec{
+						DeploymentDefaults: &platform.DeploymentDefaultsSpec{
+							NodeSelector: map[string]string{
+								"global-label": "global-value",
+							},
+						},
+					},
+				},
+			},
+			expectedNodeSelector: map[string]interface{}{
+				"component-label": "component-value",
+			},
+		},
+	}
+
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			translator := Translator{client: newDefaultFakeClient(t), direct: newDefaultFakeClient(t)}
+			values, err := translator.translate(context.Background(), tt.securedCluster)
+			require.NoError(t, err)
+
+			// Verify AdmissionControl (Deployment) inherits deployment defaults
+			admissionCtlValues, ok := values["admissionControl"].(map[string]interface{})
+			require.True(t, ok, "admissionControl should be a map")
+			nodeSelector, _ := admissionCtlValues["nodeSelector"].(map[string]interface{})
+			assert.Equal(t, tt.expectedNodeSelector, nodeSelector)
+
+			// Verify Collector (DaemonSet) does NOT inherit deployment defaults
+			collectorValues, ok := values["collector"].(map[string]interface{})
+			if ok {
+				assert.NotContains(t, collectorValues, "nodeSelector",
+					"collector (DaemonSet) should not inherit nodeSelector from deploymentDefaults")
+			}
+		})
+	}
+}

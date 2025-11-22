@@ -532,6 +532,35 @@ spec:
       - description: Custom environment variables to set on managed pods' containers.
         displayName: Environment Variables
         path: customize.envVars
+      - description: 'Default scheduling constraints for Deployment resources. These
+          settings apply to
+
+          all Deployments but not DaemonSets.'
+        displayName: Deployment Defaults
+        path: customize.deploymentDefaults
+      - description: 'Pin workloads to specific node types. This is a convenience
+          setting that configures
+
+          both nodeSelector and tolerations. If set, nodeSelector and tolerations
+          fields
+
+          must not be set at this level.
+
+          The default is: None.'
+        displayName: Pin To Nodes
+        path: customize.deploymentDefaults.pinToNodes
+      - description: 'Default nodeSelector to apply to all Deployment resources. Components
+          can override
+
+          by specifying their own nodeSelector. Cannot be used together with pinToNodes.'
+        displayName: Node Selector
+        path: customize.deploymentDefaults.nodeSelector
+      - description: 'Default tolerations to apply to all Deployment resources. Components
+          can override
+
+          by specifying their own tolerations. Cannot be used together with pinToNodes.'
+        displayName: Tolerations
+        path: customize.deploymentDefaults.tolerations
       - description: 'Configures whether Red Hat Advanced Cluster Security should
           run in online or offline (disconnected) mode.
 
@@ -1174,6 +1203,35 @@ spec:
       - description: Custom environment variables to set on managed pods' containers.
         displayName: Environment Variables
         path: customize.envVars
+      - description: 'Default scheduling constraints for Deployment resources. These
+          settings apply to
+
+          all Deployments but not DaemonSets.'
+        displayName: Deployment Defaults
+        path: customize.deploymentDefaults
+      - description: 'Pin workloads to specific node types. This is a convenience
+          setting that configures
+
+          both nodeSelector and tolerations. If set, nodeSelector and tolerations
+          fields
+
+          must not be set at this level.
+
+          The default is: None.'
+        displayName: Pin To Nodes
+        path: customize.deploymentDefaults.pinToNodes
+      - description: 'Default nodeSelector to apply to all Deployment resources. Components
+          can override
+
+          by specifying their own nodeSelector. Cannot be used together with pinToNodes.'
+        displayName: Node Selector
+        path: customize.deploymentDefaults.nodeSelector
+      - description: 'Default tolerations to apply to all Deployment resources. Components
+          can override
+
+          by specifying their own tolerations. Cannot be used together with pinToNodes.'
+        displayName: Tolerations
+        path: customize.deploymentDefaults.tolerations
       - description: The name of the referenced secret.
         displayName: Name
         path: imagePullSecrets[0].name
