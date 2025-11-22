@@ -110,8 +110,7 @@ func executeSingleDefaultingFlow(logger logr.Logger, central *platform.Central, 
 }
 
 func patchCentralAnnotations(ctx context.Context, logger logr.Logger, client ctrlClient.Client, central *platform.Central, annotations map[string]string) (string, error) {
-	// MergeFromWithOptimisticLock causes the resourceVersion to be checked prior to patching.
-	patch := ctrlClient.MergeFromWithOptions(central, ctrlClient.MergeFromWithOptimisticLock{})
+	patch := ctrlClient.MergeFromWithOptions(central)
 	newCentral := central.DeepCopy()
 	newCentral.SetAnnotations(annotations)
 	if err := client.Patch(ctx, newCentral, patch); err != nil {
