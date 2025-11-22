@@ -80,6 +80,9 @@ func (s *ImagesStoreSuite) TestStore() {
 			vuln.SuppressActivation = nil
 			vuln.SuppressExpiry = nil
 			vuln.Advisory = nil
+			// TODO: Can be removed after the new CVE table and ImageCVE to EmbeddedVulnerability conversion to populate
+			// the two timestamps (FirstOccurenceInSystem and FixAvailable)
+			vuln.FixAvailableTimestamp = nil
 		}
 		comp.License = nil
 	}
@@ -135,6 +138,7 @@ func (s *ImagesStoreSuite) TestNVDCVSS() {
 	for _, component := range image.GetScan().GetComponents() {
 		for _, vuln := range component.GetVulns() {
 			vuln.CvssMetrics = []*storage.CVSSScore{nvdCvss}
+			vuln.FixAvailableTimestamp = nil
 		}
 
 	}

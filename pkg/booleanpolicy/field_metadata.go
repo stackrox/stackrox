@@ -305,6 +305,17 @@ func initializeFieldMetadata() FieldMetadata {
 		[]storage.EventSource{storage.EventSource_NOT_APPLICABLE},
 		[]RuntimeFieldType{}, negationForbidden, operatorsForbidden)
 
+	if features.CVEFixTimestampCriteria.Enabled() {
+		f.registerFieldMetadata(fieldnames.DaysSinceFixAvailable,
+			querybuilders.ForDays(search.CVEFixAvailable),
+			violationmessages.VulnContextFields,
+			func(*validateConfiguration) *regexp.Regexp {
+				return integerValueRegex
+			},
+			[]storage.EventSource{storage.EventSource_NOT_APPLICABLE},
+			[]RuntimeFieldType{}, negationForbidden, operatorsForbidden)
+	}
+
 	f.registerFieldMetadata(fieldnames.DisallowedAnnotation,
 		querybuilders.ForFieldLabelMap(search.DeploymentAnnotation, query.MapShouldContain),
 		nil,
