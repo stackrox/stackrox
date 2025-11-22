@@ -711,10 +711,10 @@ module.exports = [
             'react/style-prop-object': 'error',
             'react/void-dom-elements-no-children': 'error',
 
-            // https://github.com/facebook/react/blob/main/packages/eslint-plugin-react-hooks/src/index.js
-            ...pluginReactHooks.configs.recommended.rules,
-
+            // Explicit configuration because recommended includes React Compiler rules.
+            // Core hooks rules
             'react-hooks/exhaustive-deps': 'error', // instead of 'warn'
+            'react-hooks/rules-of-hooks': 'error',
         },
     },
     {
