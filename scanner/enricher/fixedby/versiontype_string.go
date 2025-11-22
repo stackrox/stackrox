@@ -20,8 +20,9 @@ const _versionType_name = "unknownVersionTypenormalVersionTypeurlEncodedVersionT
 var _versionType_index = [...]uint8{0, 18, 35, 56, 73, 92}
 
 func (i versionType) String() string {
-	if i < 0 || i >= versionType(len(_versionType_index)-1) {
+	idx := int(i) - 0
+	if i < 0 || idx >= len(_versionType_index)-1 {
 		return "versionType(" + strconv.FormatInt(int64(i), 10) + ")"
 	}
-	return _versionType_name[_versionType_index[i]:_versionType_index[i+1]]
+	return _versionType_name[_versionType_index[idx]:_versionType_index[idx+1]]
 }
