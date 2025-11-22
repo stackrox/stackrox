@@ -112,31 +112,26 @@ func (s *storeImpl) Upsert(ctx context.Context, obj *{{.Type}}) error {
 }
 
 func (s *storeImpl) retryableUpsert(ctx context.Context, obj *{{.Type}}) error {
-    conn, release, err := s.acquireConn(ctx, ops.Get, "{{.TrimmedType}}")
+	tx, ctx, err := s.begin(ctx)
 	if err != nil {
-	    return err
-	}
-	defer release()
-
-	tx, ctx, err := conn.Begin(ctx)
-	if err != nil {
-        return err
+		return err
 	}
 
-    if _, err := tx.Exec(ctx, deleteStmt); err != nil {
-        return err
-    }
+	if _, err := tx.Exec(ctx, deleteStmt); err != nil {
+		if errTx := tx.Rollback(ctx); errTx != nil {
+			return errors.Wrapf(errTx, "rolling back transaction due to: %v", err)
+		}
+		return errors.Wrap(err, "deleting from {{.Table}}")
+	}
 
 	if err := {{ template "insertFunctionName" .Schema }}(ctx, tx, obj); err != nil {
-	    if err := tx.Rollback(ctx); err != nil {
-		    return err
+		if errTx := tx.Rollback(ctx); errTx != nil {
+			return errors.Wrapf(errTx, "rolling back transaction due to: %v", err)
 		}
-		return err
-    }
-    if err := tx.Commit(ctx); err != nil {
-        return err
-    }
-    return nil
+		return errors.Wrap(err, "inserting into {{.Table}}")
+	}
+
+	return tx.Commit(ctx)
 }
 
 // Get returns the object, if it exists from the store.
@@ -154,13 +149,18 @@ func (s *storeImpl) Get(ctx context.Context) (*{{.Type}}, bool, error) {
 }
 
 func (s *storeImpl) retryableGet(ctx context.Context) (*{{.Type}}, bool, error) {
-	conn, release, err := s.acquireConn(ctx, ops.Get, "{{.TrimmedType}}")
+	tx, ctx, err := s.begin(ctx)
 	if err != nil {
-	    return nil, false, err
+		return nil, false, err
 	}
-	defer release()
+	defer func() {
+		// No changes are made to the database, so COMMIT or ROLLBACK have the same effect.
+		if err := tx.Commit(ctx); err != nil {
+			log.Errorf("failed to commit tx: %v", err)
+		}
+	}()
 
-	row := conn.QueryRow(ctx, getStmt)
+	row := tx.QueryRow(ctx, getStmt)
 	var data []byte
 	if err := row.Scan(&data); err != nil {
 		return nil, false, pgutils.ErrNilIfNoRows(err)
@@ -168,18 +168,13 @@ func (s *storeImpl) retryableGet(ctx context.Context) (*{{.Type}}, bool, error) 
 
 	var msg {{.Type}}
 	if err := msg.UnmarshalVTUnsafe(data); err != nil {
-        return nil, false, err
+		return nil, false, err
 	}
 	return &msg, true, nil
 }
 
-func (s *storeImpl) acquireConn(ctx context.Context, op ops.Op, typ string) (*postgres.Conn, func(), error) {
-	defer metrics.SetAcquireDBConnDuration(time.Now(), op, typ)
-	conn, err := s.db.Acquire(ctx)
-	if err != nil {
-	    return nil, nil, err
-	}
-	return conn, conn.Release, nil
+func (s *storeImpl) begin(ctx context.Context) (*postgres.Tx, context.Context, error) {
+	return postgres.NewTransactionOrFromContext(ctx, s.db)
 }
 
 // Delete removes the singleton from the store
@@ -197,16 +192,18 @@ func (s *storeImpl) Delete(ctx context.Context) error {
 }
 
 func (s *storeImpl) retryableDelete(ctx context.Context) error {
-    conn, release, err := s.acquireConn(ctx, ops.Remove, "{{.TrimmedType}}")
+	tx, ctx, err := s.begin(ctx)
 	if err != nil {
-	    return err
-	}
-	defer release()
-
-	if _, err := conn.Exec(ctx, deleteStmt); err != nil {
 		return err
 	}
-	return nil
+
+	if _, err := tx.Exec(ctx, deleteStmt); err != nil {
+		if errTx := tx.Rollback(ctx); errTx != nil {
+			return errors.Wrapf(errTx, "rolling back transaction due to: %v", err)
+		}
+		return errors.Wrap(err, "deleting from {{.Table}}")
+	}
+	return tx.Commit(ctx)
 }
 
 {{ if .GenerateDataModelHelpers -}}
