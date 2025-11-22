@@ -9,6 +9,7 @@ import (
 	notifierDS "github.com/stackrox/rox/central/notifier/datastore"
 	policyStore "github.com/stackrox/rox/central/policy/store"
 	categoriesDS "github.com/stackrox/rox/central/policycategory/datastore"
+	policyCategoriesEdgeDS "github.com/stackrox/rox/central/policycategoryedge/datastore"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/defaults/policies"
 	"github.com/stackrox/rox/pkg/policyutils"
@@ -30,8 +31,9 @@ func initialize() {
 	clusterDatastore := clusterDS.Singleton()
 	notifierDatastore := notifierDS.Singleton()
 	categoriesDatastore := categoriesDS.Singleton()
+	categoriesEdgeDatastore := policyCategoriesEdgeDS.Singleton()
 
-	ad = New(storage, clusterDatastore, notifierDatastore, categoriesDatastore)
+	ad = New(storage, clusterDatastore, notifierDatastore, categoriesDatastore, categoriesEdgeDatastore)
 	addDefaults(storage, categoriesDatastore)
 }
 

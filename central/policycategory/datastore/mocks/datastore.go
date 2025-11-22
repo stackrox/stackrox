@@ -102,21 +102,6 @@ func (mr *MockDataStoreMockRecorder) GetAllPolicyCategories(ctx any) *gomock.Cal
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAllPolicyCategories", reflect.TypeOf((*MockDataStore)(nil).GetAllPolicyCategories), ctx)
 }
 
-// GetPolicyCategoriesForPolicy mocks base method.
-func (m *MockDataStore) GetPolicyCategoriesForPolicy(ctx context.Context, policyID string) ([]*storage.PolicyCategory, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetPolicyCategoriesForPolicy", ctx, policyID)
-	ret0, _ := ret[0].([]*storage.PolicyCategory)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// GetPolicyCategoriesForPolicy indicates an expected call of GetPolicyCategoriesForPolicy.
-func (mr *MockDataStoreMockRecorder) GetPolicyCategoriesForPolicy(ctx, policyID any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPolicyCategoriesForPolicy", reflect.TypeOf((*MockDataStore)(nil).GetPolicyCategoriesForPolicy), ctx, policyID)
-}
-
 // GetPolicyCategory mocks base method.
 func (m *MockDataStore) GetPolicyCategory(ctx context.Context, id string) (*storage.PolicyCategory, bool, error) {
 	m.ctrl.T.Helper()
