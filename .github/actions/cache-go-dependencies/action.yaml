@@ -28,3 +28,11 @@ runs:
     - name: Download Go modules
       run: make deps --always-make
       shell: bash
+
+    - name: GOMODCACHE
+      run: du -sh ${{ steps.cache-paths.outputs.GOMODCACHE }}
+      shell: bash
+
+    - name: GOCACHE
+      run: du -sh ${{ steps.cache-paths.outputs.GOCACHE }}
+      shell: bash
