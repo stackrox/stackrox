@@ -140,6 +140,7 @@ func (c *clientSetImpl) OpenshiftOperator() operatorVersioned.Interface {
 type WorkloadManager struct {
 	db                        *pebble.DB
 	fakeClient                *fake.Clientset
+	dynamicClient             *fakeDynamic.FakeDynamicClient
 	client                    client.Interface
 	processPool               *ProcessPool
 	labelsPool                *labelsPoolPerNamespace
@@ -414,10 +415,41 @@ func (w *WorkloadManager) clearActions() {
 		select {
 		case <-t.C:
 			w.fakeClient.ClearActions()
+			if w.dynamicClient != nil {
+				w.dynamicClient.ClearActions()
+			}
 		case <-w.shutdownCtx.Done():
 			return
 		}
 	}
+}
+
+// cleanupVMHistory trims dynamic fake tracker state after a VM lifecycle ends to prevent runaway memory use.
+func (w *WorkloadManager) cleanupVMHistory(namespace, vmName, vmiName string) {
+	if w.dynamicClient == nil {
+		return
+	}
+
+	vmGVR := schema.GroupVersionResource{
+		Group:    "kubevirt.io",
+		Version:  "v1",
+		Resource: "virtualmachines",
+	}
+	vmiGVR := schema.GroupVersionResource{
+		Group:    "kubevirt.io",
+		Version:  "v1",
+		Resource: "virtualmachineinstances",
+	}
+
+	tracker := w.dynamicClient.Tracker()
+	if vmName != "" {
+		_ = tracker.Delete(vmGVR, namespace, vmName, metav1.DeleteOptions{})
+	}
+	if vmiName != "" {
+		_ = tracker.Delete(vmiGVR, namespace, vmiName, metav1.DeleteOptions{})
+	}
+
+	w.dynamicClient.ClearActions()
 }
 
 func (w *WorkloadManager) initializePreexistingResources() {
@@ -508,10 +540,13 @@ func (w *WorkloadManager) initializePreexistingResources() {
 		vmiGVR: "VirtualMachineInstanceList",
 	}
 
+	dynClient := fakeDynamic.NewSimpleDynamicClientWithCustomListKinds(scheme, customListKinds)
+
 	clientSet := &clientSetImpl{
 		kubernetes: w.fakeClient,
-		dynamic:    fakeDynamic.NewSimpleDynamicClientWithCustomListKinds(scheme, customListKinds),
+		dynamic:    dynClient,
 	}
+	w.dynamicClient = dynClient
 
 	// Seed discovery API with kubevirt resources if VM workload is configured
 	if w.workload.VirtualMachineWorkload.PoolSize > 0 {
