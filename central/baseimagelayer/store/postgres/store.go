@@ -13,7 +13,6 @@ import (
 	"github.com/stackrox/rox/pkg/logging"
 	ops "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/postgres"
-	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
@@ -21,22 +20,22 @@ import (
 )
 
 const (
-	baseTable = "image_component_v2"
-	storeName = "ImageComponentV2"
+	baseTable = "base_image_layers"
+	storeName = "BaseImageLayer"
 )
 
 var (
 	log            = logging.LoggerForModule()
-	schema         = pkgSchema.ImageComponentV2Schema
-	targetResource = resources.Image
+	schema         = pkgSchema.BaseImageLayersSchema
+	targetResource = resources.BaseImageLayer
 )
 
 type (
-	storeType = storage.ImageComponentV2
+	storeType = storage.BaseImageLayer
 	callback  = func(obj *storeType) error
 )
 
-// Store is the interface to interact with the storage for storage.ImageComponentV2
+// Store is the interface to interact with the storage for storage.BaseImageLayer
 type Store interface {
 	Upsert(ctx context.Context, obj *storeType) error
 	UpsertMany(ctx context.Context, objs []*storeType) error
@@ -67,13 +66,13 @@ func New(db postgres.DB) Store {
 		db,
 		schema,
 		pkGetter,
-		insertIntoImageComponentV2,
-		copyFromImageComponentV2,
+		insertIntoBaseImageLayers,
+		copyFromBaseImageLayers,
 		metricsSetAcquireDBConnDuration,
 		metricsSetPostgresOperationDurationTime,
 		targetResource,
-		pgSearch.GetDefaultSort(search.Component.String(), false),
-		pkgSchema.ImagesSchema.OptionsMap,
+		nil,
+		nil,
 	)
 }
 
@@ -91,7 +90,7 @@ func metricsSetAcquireDBConnDuration(start time.Time, op ops.Op) {
 	metrics.SetAcquireDBConnDuration(start, op, storeName)
 }
 
-func insertIntoImageComponentV2(batch *pgx.Batch, obj *storage.ImageComponentV2) error {
+func insertIntoBaseImageLayers(batch *pgx.Batch, obj *storage.BaseImageLayer) error {
 
 	serialized, marshalErr := obj.MarshalVT()
 	if marshalErr != nil {
@@ -101,27 +100,19 @@ func insertIntoImageComponentV2(batch *pgx.Batch, obj *storage.ImageComponentV2)
 	values := []interface{}{
 		// parent primary keys start
 		obj.GetId(),
-		obj.GetName(),
-		obj.GetVersion(),
-		obj.GetPriority(),
-		obj.GetSource(),
-		obj.GetRiskScore(),
-		obj.GetTopCvss(),
-		obj.GetOperatingSystem(),
-		obj.GetImageId(),
-		obj.GetLocation(),
-		pgutils.NilOrString(obj.GetImageIdV2()),
-		obj.GetBaseImage(),
+		obj.GetBaseImageId(),
+		obj.GetLayerDigest(),
+		obj.GetLevel(),
 		serialized,
 	}
 
-	finalStr := "INSERT INTO image_component_v2 (Id, Name, Version, Priority, Source, RiskScore, TopCvss, OperatingSystem, ImageId, Location, ImageIdV2, BaseImage, serialized) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Name = EXCLUDED.Name, Version = EXCLUDED.Version, Priority = EXCLUDED.Priority, Source = EXCLUDED.Source, RiskScore = EXCLUDED.RiskScore, TopCvss = EXCLUDED.TopCvss, OperatingSystem = EXCLUDED.OperatingSystem, ImageId = EXCLUDED.ImageId, Location = EXCLUDED.Location, ImageIdV2 = EXCLUDED.ImageIdV2, BaseImage = EXCLUDED.BaseImage, serialized = EXCLUDED.serialized"
+	finalStr := "INSERT INTO base_image_layers (Id, BaseImageId, LayerDigest, Level, serialized) VALUES($1, $2, $3, $4, $5) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, BaseImageId = EXCLUDED.BaseImageId, LayerDigest = EXCLUDED.LayerDigest, Level = EXCLUDED.Level, serialized = EXCLUDED.serialized"
 	batch.Queue(finalStr, values...)
 
 	return nil
 }
 
-func copyFromImageComponentV2(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, objs ...*storage.ImageComponentV2) error {
+func copyFromBaseImageLayers(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, objs ...*storage.BaseImageLayer) error {
 	if len(objs) == 0 {
 		return nil
 	}
@@ -140,17 +131,9 @@ func copyFromImageComponentV2(ctx context.Context, s pgSearch.Deleter, tx *postg
 
 	copyCols := []string{
 		"id",
-		"name",
-		"version",
-		"priority",
-		"source",
-		"riskscore",
-		"topcvss",
-		"operatingsystem",
-		"imageid",
-		"location",
-		"imageidv2",
-		"baseimage",
+		"baseimageid",
+		"layerdigest",
+		"level",
 		"serialized",
 	}
 
@@ -169,22 +152,14 @@ func copyFromImageComponentV2(ctx context.Context, s pgSearch.Deleter, tx *postg
 
 		return []interface{}{
 			obj.GetId(),
-			obj.GetName(),
-			obj.GetVersion(),
-			obj.GetPriority(),
-			obj.GetSource(),
-			obj.GetRiskScore(),
-			obj.GetTopCvss(),
-			obj.GetOperatingSystem(),
-			obj.GetImageId(),
-			obj.GetLocation(),
-			pgutils.NilOrString(obj.GetImageIdV2()),
-			obj.GetBaseImage(),
+			obj.GetBaseImageId(),
+			obj.GetLayerDigest(),
+			obj.GetLevel(),
 			serialized,
 		}, nil
 	})
 
-	if _, err := tx.CopyFrom(ctx, pgx.Identifier{"image_component_v2"}, copyCols, inputRows); err != nil {
+	if _, err := tx.CopyFrom(ctx, pgx.Identifier{"base_image_layers"}, copyCols, inputRows); err != nil {
 		return err
 	}
 
