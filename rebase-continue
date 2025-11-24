@@ -1,11 +1,3 @@
 {
-  "continuations": [
-    {
-      "command": [
-        "branch",
-        "restack"
-      ],
-      "branch": "master-base/gualvare/ROX-31814-fake-workload-vm-index-report"
-    }
-  ]
+  "continuations": null
 }
