@@ -307,6 +307,8 @@ func (w *WorkloadManager) manageVirtualMachineLifecycleOnce(ctx context.Context,
 			} else {
 				w.deleteID(virtualMachinePrefix, vmUID)
 			}
+			// Drop the fake tracker entries so unstructured DeepCopy payloads do not accumulate indefinitely.
+			w.cleanupVMHistory(resources.vm.GetNamespace(), vmName, resources.vmi.GetName())
 			return false
 		case <-time.After(updateNextUpdate):
 			updateNextUpdate = calculateDurationWithJitter(resources.workload.UpdateInterval)
