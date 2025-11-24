@@ -64,7 +64,7 @@ export function FlowTable({
                         <Th>Direction</Th>
                         <Th>Port / protocol</Th>
                         <Th>
-                            <span className="pf-v5-screen-reader">Row actions</span>
+                            <span className="pf-v6-screen-reader">Row actions</span>
                         </Th>
                     </Tr>
                 </Thead>

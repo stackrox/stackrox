@@ -58,7 +58,7 @@ describe('Access Control Auth providers', () => {
         cy.get('th:contains("Type")');
         cy.get('th:contains("Minimum access role")');
         cy.get('th:contains("Assigned rules")');
-        cy.get(`th:has('span.pf-v5-screen-reader:contains("Row actions")')`);
+        cy.get(`th:has('span.pf-v6-screen-reader:contains("Row actions")')`);
     });
 
     it('add Auth0', () => {

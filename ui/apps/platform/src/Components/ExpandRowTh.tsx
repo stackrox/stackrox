@@ -15,7 +15,7 @@ export default function ExpandRowTh(props: ThProps) {
                 ...props.style,
             }}
         >
-            <span className="pf-v5-screen-reader">Row expansion</span>
+            <span className="pf-v6-screen-reader">Row expansion</span>
         </Th>
     );
 }
