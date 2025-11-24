@@ -343,7 +343,7 @@ func (w *WorkloadManager) initializePreexistingResources() {
 		}
 	}
 
-	w.fakeClient = fake.NewSimpleClientset(objects...)
+	w.fakeClient = fake.NewClientset(objects...)
 	w.fakeClient.Discovery().(*fakediscovery.FakeDiscovery).FakedServerVersion = &version.Info{
 		Major:        "1",
 		Minor:        "14",
