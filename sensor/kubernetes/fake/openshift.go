@@ -14,10 +14,10 @@ import (
 func initializeOpenshiftClients(clientSet *clientSetImpl) {
 	// Set up fake Openshift clients if we are in Openshift
 	if env.OpenshiftAPI.BooleanSetting() {
-		clientSet.openshiftApps = fakeAppVersioned.NewSimpleClientset()
-		clientSet.openshiftConfig = fakeConfigVersioned.NewSimpleClientset(getConfig()...)
-		clientSet.openshiftOperator = fakeOperatorVersioned.NewSimpleClientset()
-		clientSet.openshiftRoute = fakeRouteVersioned.NewSimpleClientset()
+		clientSet.openshiftApps = fakeAppVersioned.NewClientset()
+		clientSet.openshiftConfig = fakeConfigVersioned.NewClientset(getConfig()...)
+		clientSet.openshiftOperator = fakeOperatorVersioned.NewClientset()
+		clientSet.openshiftRoute = fakeRouteVersioned.NewClientset()
 	}
 }
 

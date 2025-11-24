@@ -59,7 +59,7 @@ func (t *testClient) OpenshiftOperator() operatorVersioned.Interface {
 }
 
 func createTestClient(secrets ...*v1.Secret) client.Interface {
-	fakeClient := fake.NewSimpleClientset()
+	fakeClient := fake.NewClientset()
 	for _, secret := range secrets {
 		_, _ = fakeClient.CoreV1().Secrets(secret.Namespace).Create(context.Background(), secret, metav1.CreateOptions{})
 	}
