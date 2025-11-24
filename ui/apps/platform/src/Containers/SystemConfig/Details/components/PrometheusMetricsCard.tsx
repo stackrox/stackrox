@@ -72,6 +72,7 @@ const predefinedMetrics: Record<
     policyViolations: {
         namespace_severity: {
             labels: ['Cluster', 'Namespace', 'IsPlatformComponent', 'Action', 'Severity'],
+            filters: { State: 'RESOLVED' },
         },
         deployment_severity: {
             labels: [
@@ -82,6 +83,7 @@ const predefinedMetrics: Record<
                 'Action',
                 'Severity',
             ],
+            filters: { State: 'RESOLVED' },
         },
     },
 };
@@ -93,6 +95,20 @@ function labelGroup(labels: PrometheusMetricsLabels): ReactElement {
                 return (
                     <Label isCompact key={label}>
                         {label}
+                    </Label>
+                );
+            })}
+        </LabelGroup>
+    );
+}
+
+function filterGroup(labels: PrometheusMetricsLabels): ReactElement {
+    return (
+        <LabelGroup isCompact numLabels={Infinity}>
+            {Object.entries(labels.filters || {}).map(([label, pattern]) => {
+                return (
+                    <Label isCompact key={label}>
+                        {label}: {pattern}
                     </Label>
                 );
             })}
@@ -139,6 +155,9 @@ function predefinedMetricTableRow(
             <Td key={`${category}-${metric}-descriptors`}>
                 {labelGroup(predefinedMetrics[category][metric])}
             </Td>
+            <Td key={`${category}-${metric}-filters`}>
+                {filterGroup(predefinedMetrics[category][metric])}
+            </Td>
         </Tr>
     );
 }
@@ -151,8 +170,15 @@ function hasMetric(
     labels: PrometheusMetricsLabels
 ): boolean {
     const cfgLabels = descriptors?.[metric]?.labels || [];
+    const cfgFilters = descriptors?.[metric]?.filters || {};
     const ll = labels.labels;
-    return cfgLabels.length === ll.length && cfgLabels.every((label) => ll.includes(label));
+    const lf = labels.filters;
+    return (
+        cfgLabels.length === ll.length &&
+        cfgLabels.every((label) => ll.includes(label)) &&
+        Object.keys(cfgFilters).length === Object.keys(lf || {}).length &&
+        Object.entries(cfgFilters).every(([label, pattern]) => lf?.[label] === pattern)
+    );
 }
 
 type PrometheusMetricsTableProps = {
@@ -176,6 +202,7 @@ function PrometheusMetricsTable({
                     <Th width={30}>Metric name</Th>
                     <Th width={10}>Origin</Th>
                     <Th>Labels</Th>
+                    <Th>Filters</Th>
                 </Tr>
             </Thead>
             <Tbody>
@@ -226,6 +253,7 @@ function PrometheusMetricsTable({
                             </Td>
                             <Td>Custom</Td>
                             <Td>{labelGroup(labels)}</Td>
+                            <Td>{filterGroup(labels)}</Td>
                         </Tr>
                     );
                 })}
