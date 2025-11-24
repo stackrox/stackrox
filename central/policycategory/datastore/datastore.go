@@ -6,6 +6,7 @@ import (
 	"github.com/stackrox/rox/central/policycategory/search"
 	"github.com/stackrox/rox/central/policycategory/store"
 	categoryUtils "github.com/stackrox/rox/central/policycategory/utils"
+	"github.com/stackrox/rox/central/policycategory/views"
 	policyCategoryEdgeDS "github.com/stackrox/rox/central/policycategoryedge/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -30,6 +31,9 @@ type DataStore interface {
 	AddPolicyCategory(context.Context, *storage.PolicyCategory) (*storage.PolicyCategory, error)
 	RenamePolicyCategory(ctx context.Context, id, newName string) (*storage.PolicyCategory, error)
 	DeletePolicyCategory(ctx context.Context, id string) error
+	GetDuplicatePolicyCategories(ctx context.Context) ([]*views.DuplicateCategoryView, error)
+
+	CleanupCategories(ctx context.Context) error
 }
 
 // New returns a new instance of DataStore using the input store, and searcher.

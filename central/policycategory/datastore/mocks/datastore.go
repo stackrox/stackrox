@@ -13,6 +13,7 @@ import (
 	context "context"
 	reflect "reflect"
 
+	views "github.com/stackrox/rox/central/policycategory/views"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	storage "github.com/stackrox/rox/generated/storage"
 	search "github.com/stackrox/rox/pkg/search"
@@ -58,6 +59,20 @@ func (mr *MockDataStoreMockRecorder) AddPolicyCategory(arg0, arg1 any) *gomock.C
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddPolicyCategory", reflect.TypeOf((*MockDataStore)(nil).AddPolicyCategory), arg0, arg1)
 }
 
+// CleanupCategories mocks base method.
+func (m *MockDataStore) CleanupCategories(ctx context.Context) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CleanupCategories", ctx)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// CleanupCategories indicates an expected call of CleanupCategories.
+func (mr *MockDataStoreMockRecorder) CleanupCategories(ctx any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CleanupCategories", reflect.TypeOf((*MockDataStore)(nil).CleanupCategories), ctx)
+}
+
 // Count mocks base method.
 func (m *MockDataStore) Count(ctx context.Context, q *v1.Query) (int, error) {
 	m.ctrl.T.Helper()
@@ -100,6 +115,21 @@ func (m *MockDataStore) GetAllPolicyCategories(ctx context.Context) ([]*storage.
 func (mr *MockDataStoreMockRecorder) GetAllPolicyCategories(ctx any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAllPolicyCategories", reflect.TypeOf((*MockDataStore)(nil).GetAllPolicyCategories), ctx)
+}
+
+// GetDuplicatePolicyCategories mocks base method.
+func (m *MockDataStore) GetDuplicatePolicyCategories(ctx context.Context) ([]*views.DuplicateCategoryView, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetDuplicatePolicyCategories", ctx)
+	ret0, _ := ret[0].([]*views.DuplicateCategoryView)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetDuplicatePolicyCategories indicates an expected call of GetDuplicatePolicyCategories.
+func (mr *MockDataStoreMockRecorder) GetDuplicatePolicyCategories(ctx any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetDuplicatePolicyCategories", reflect.TypeOf((*MockDataStore)(nil).GetDuplicatePolicyCategories), ctx)
 }
 
 // GetPolicyCategoriesForPolicy mocks base method.
