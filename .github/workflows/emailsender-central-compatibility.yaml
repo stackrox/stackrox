@@ -34,9 +34,6 @@ jobs:
         uses: n1hility/cancel-previous-runs@v3
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-      - uses: ./.github/actions/job-preamble
-        with:
-          free-disk-space: 40
       - name: Set up Go 1.24
         uses: actions/setup-go@v5
         with:
@@ -68,6 +65,9 @@ jobs:
           ref: ${{ github.event.pull_request.head.sha }}
           path: stackrox
           fetch-depth: 0
+      - uses: ./stackrox/.github/actions/job-preamble
+        with:
+          free-disk-space: 40
       - name: Create Kind cluster"
         uses: helm/kind-action@v1
         with:
