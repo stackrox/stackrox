@@ -41,8 +41,8 @@ FROM registry.access.redhat.com/ubi8/ubi:latest@sha256:7d7ca86d832d1dc7aba458341
 
 ARG PG_VERSION
 
-RUN dnf -y module enable postgresql:${PG_VERSION} && \
-    dnf install \
+RUN dnf -y module enable postgresql:${PG_VERSION}
+RUN dnf install \
     --installroot=/out/ \
     --releasever=8 \
     --setopt=install_weak_deps=0 \
@@ -54,9 +54,9 @@ RUN dnf -y module enable postgresql:${PG_VERSION} && \
     ca-certificates \
     curl \
     bash \
-    coreutils && \
-    dnf --installroot=/out/ clean all && \
-    rm -rf /out/var/cache/dnf /out/var/cache/yum
+    coreutils
+RUN dnf --installroot=/out/ clean all
+RUN rm -rf /out/var/cache/dnf /out/var/cache/yum
 
 COPY --from=go-builder /go/src/github.com/stackrox/rox/app/image/rhel/static-bin/* /out/stackrox/
 
