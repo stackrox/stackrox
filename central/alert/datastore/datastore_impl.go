@@ -288,23 +288,15 @@ func (ds *datastoreImpl) PruneAlerts(ctx context.Context, ids ...string) error {
 }
 
 func sacKeyForAlert(alert *storage.Alert) []sac.ScopeKey {
-	scopedObj := getNSScopedObjectFromAlert(alert)
-	if scopedObj == nil {
-		return sac.GlobalScopeKey()
-	}
-	return sac.KeyForNSScopedObj(scopedObj)
-}
-
-func getNSScopedObjectFromAlert(alert *storage.Alert) sac.NamespaceScopedObject {
 	switch alert.GetEntity().(type) {
 	case *storage.Alert_Deployment_:
-		return alert.GetDeployment()
+		return sac.KeyForNSScopedObj(alert.GetDeployment())
 	case *storage.Alert_Resource_:
-		return alert.GetResource()
+		return sac.KeyForNSScopedObj(alert.GetResource())
 	case *storage.Alert_Image:
 		return nil // This is theoretically possible even though image doesn't have a ns/cluster
 	case *storage.Alert_Node_:
-		return nil
+		return sac.ClusterScopeKeys(alert.GetNode().GetId())
 	default:
 		log.Errorf("UNEXPECTED: Alert Entity %s unknown", alert.GetEntity())
 	}
