@@ -363,6 +363,9 @@ func (s *DeploymentPostgresDataStoreTestSuite) TestSearchWithPostgres() {
 				}
 			} else {
 				actual, err = s.deploymentDatastore.Search(tc.ctx, tc.query)
+				searchRes, errRes := s.deploymentDatastore.SearchDeployments(tc.ctx, tc.query)
+				assert.NoError(t, errRes)
+				assert.Len(t, searchRes, len(tc.expectedIDs))
 			}
 			assert.NoError(t, err)
 			assert.Len(t, actual, len(tc.expectedIDs))
