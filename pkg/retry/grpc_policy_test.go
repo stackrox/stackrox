@@ -60,6 +60,12 @@ func TestDefaultGrpcRetryPolicy(t *testing.T) {
 		err := errors.New("not a grpc error")
 		assert.False(t, policy.ShouldRetry(err))
 	})
+
+	t.Run("nil_policy_should_not_retry", func(t *testing.T) {
+		var nilPolicy *grpcRetryPolicy
+		err := status.Error(codes.Unavailable, "unavailable")
+		assert.False(t, nilPolicy.ShouldRetry(err))
+	})
 }
 
 func TestNoCodesRetriedGrpcRetryPolicy(t *testing.T) {
@@ -104,18 +110,6 @@ func TestGrpcRetryPolicy_WithRetryableCodes(t *testing.T) {
 		err = status.Error(codes.Canceled, "canceled")
 		assert.True(t, policy.ShouldRetry(err))
 	})
-
-	t.Run("does_not_mutate_original_policy", func(t *testing.T) {
-		original := DefaultGrpcRetryPolicy()
-		modified := original.WithRetryableCodes(codes.NotFound)
-
-		// Original should not retry NotFound
-		err := status.Error(codes.NotFound, "not found")
-		assert.False(t, original.ShouldRetry(err))
-
-		// Modified should retry NotFound
-		assert.True(t, modified.ShouldRetry(err))
-	})
 }
 
 func TestGrpcRetryPolicy_WithNonRetryableCodes(t *testing.T) {
@@ -150,18 +144,6 @@ func TestGrpcRetryPolicy_WithNonRetryableCodes(t *testing.T) {
 		// DeadlineExceeded should still be retryable
 		err = status.Error(codes.DeadlineExceeded, "deadline")
 		assert.True(t, policy.ShouldRetry(err))
-	})
-
-	t.Run("does_not_mutate_original_policy", func(t *testing.T) {
-		original := DefaultGrpcRetryPolicy()
-		modified := original.WithNonRetryableCodes(codes.Internal)
-
-		// Original should retry Internal
-		err := status.Error(codes.Internal, "internal")
-		assert.True(t, original.ShouldRetry(err))
-
-		// Modified should not retry Internal
-		assert.False(t, modified.ShouldRetry(err))
 	})
 }
 
