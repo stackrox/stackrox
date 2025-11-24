@@ -888,14 +888,7 @@ func (s *storeImpl) WalkMetadataByQuery(ctx context.Context, q *v1.Query, fn fun
 
 	q = applyDefaultSort(q)
 
-	callback := func(image *storage.Image) error {
-		if err := fn(image); err != nil {
-			return errors.Wrap(err, "failed to process image")
-		}
-		return nil
-	}
-
-	err := pgSearch.RunCursorQueryForSchemaFn(ctx, pkgSchema.ImagesSchema, q, s.db, callback)
+	err := pgSearch.RunCursorQueryForSchemaFn(ctx, pkgSchema.ImagesSchema, q, s.db, fn)
 	if err != nil {
 		return errors.Wrap(err, "cursor by query")
 	}
