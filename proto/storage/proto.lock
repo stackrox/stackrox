@@ -6859,6 +6859,26 @@
                 "type": "Severity"
               }
             ]
+          },
+          {
+            "name": "ImageCVETime",
+            "fields": [
+              {
+                "id": 1,
+                "name": "id",
+                "type": "string"
+              },
+              {
+                "id": 4,
+                "name": "fixed_date",
+                "type": "google.protobuf.Timestamp"
+              },
+              {
+                "id": 9,
+                "name": "first_image_occurrence",
+                "type": "google.protobuf.Timestamp"
+              }
+            ]
           }
         ],
         "imports": [
