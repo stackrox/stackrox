@@ -6,6 +6,11 @@ import (
 	"time"
 )
 
+// Policy determines whether an error should be retried.
+type Policy interface {
+	ShouldRetry(err error) bool
+}
+
 // WithRetry allows you to call an error returning function with a suite of retry options and modifiers.
 func WithRetry(f func() error, retriableOptions ...OptionsModifier) error {
 	r := new(retryOptions)

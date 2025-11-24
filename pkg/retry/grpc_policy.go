@@ -5,11 +5,6 @@ import (
 	"google.golang.org/grpc/status"
 )
 
-// Policy determines whether an error should be retried.
-type Policy interface {
-	ShouldRetry(err error) bool
-}
-
 // grpcRetryPolicy reports whether a gRPC error should be retried.
 type grpcRetryPolicy struct {
 	retryableCodes map[codes.Code]bool
