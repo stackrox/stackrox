@@ -49,12 +49,18 @@ RUN dnf install \
     --nodocs \
     -y \
     findutils \
-    postgresql \
     util-linux \
     ca-certificates \
     curl \
     bash \
     coreutils
+RUN dnf install \
+    --installroot=/out/ \
+    --releasever=8 \
+    --setopt=install_weak_deps=0 \
+    --nodocs \
+    -y \
+    postgresql
 RUN dnf --installroot=/out/ clean all
 RUN rm -rf /out/var/cache/dnf /out/var/cache/yum
 
