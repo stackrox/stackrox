@@ -19,7 +19,6 @@ import (
 	"github.com/stackrox/rox/pkg/crs"
 	helmUtil "github.com/stackrox/rox/pkg/helm/util"
 	pkgKubernetes "github.com/stackrox/rox/pkg/kubernetes"
-	"github.com/stackrox/rox/pkg/pointers"
 	"github.com/stackrox/rox/pkg/utils"
 	"helm.sh/helm/v3/pkg/chartutil"
 	corev1 "k8s.io/api/core/v1"
@@ -493,15 +492,6 @@ func (t Translator) getLocalScannerV4ComponentValues(ctx context.Context, secure
 // Only defaults that result in behaviour different from the Helm chart defaults should be included here.
 func (t Translator) setDefaults(sc *platform.SecuredCluster) {
 	scanner.SetScannerDefaults(&sc.Spec)
-	if sc.Spec.AdmissionControl == nil {
-		sc.Spec.AdmissionControl = &platform.AdmissionControlComponentSpec{}
-	}
-	if sc.Spec.AdmissionControl.ListenOnCreates == nil {
-		sc.Spec.AdmissionControl.ListenOnCreates = pointers.Bool(true)
-	}
-	if sc.Spec.AdmissionControl.ListenOnUpdates == nil {
-		sc.Spec.AdmissionControl.ListenOnUpdates = pointers.Bool(true)
-	}
 }
 
 func getMetaValues(sc platform.SecuredCluster) *translation.ValuesBuilder {
