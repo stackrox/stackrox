@@ -109,7 +109,7 @@ func (tracker *TrackerBase[F]) NewConfiguration(cfg *storage.PrometheusMetrics_G
 		current = &Configuration{}
 	}
 
-	md, err := tracker.translateStorageConfiguration(cfg.GetDescriptors())
+	md, lf, err := tracker.translateStorageConfiguration(cfg.GetDescriptors())
 	if err != nil {
 		return nil, err
 	}
@@ -120,6 +120,7 @@ func (tracker *TrackerBase[F]) NewConfiguration(cfg *storage.PrometheusMetrics_G
 
 	return &Configuration{
 		metrics:  md,
+		filters:  lf,
 		toAdd:    toAdd,
 		toDelete: toDelete,
 		period:   time.Minute * time.Duration(cfg.GetGatheringPeriodMinutes()),
@@ -198,11 +199,11 @@ func (tracker *TrackerBase[Finding]) setConfiguration(config *Configuration) *Co
 }
 
 // track aggregates the fetched findings and updates the gauges.
-func (tracker *TrackerBase[Finding]) track(ctx context.Context, registry metrics.CustomRegistry, metrics MetricDescriptors) error {
+func (tracker *TrackerBase[Finding]) track(ctx context.Context, registry metrics.CustomRegistry, metrics MetricDescriptors, filters LabelFilters) error {
 	if len(metrics) == 0 {
 		return nil
 	}
-	aggregator := makeAggregator(metrics, tracker.getters)
+	aggregator := makeAggregator(metrics, filters, tracker.getters)
 	for finding, err := range tracker.generator(ctx, metrics) {
 		if err != nil {
 			return err
@@ -243,7 +244,7 @@ func (tracker *TrackerBase[Finding]) Gather(ctx context.Context) {
 		return
 	}
 	begin := time.Now()
-	if err := tracker.track(ctx, gatherer.registry, cfg.metrics); err != nil {
+	if err := tracker.track(ctx, gatherer.registry, cfg.metrics, cfg.filters); err != nil {
 		log.Errorf("Failed to gather %s metrics: %v", tracker.description, err)
 	}
 	end := time.Now()

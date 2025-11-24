@@ -70,6 +70,7 @@ message PrometheusMetrics {
   message Group {
     message Labels {
       repeated string labels = 1;
+      map<string, string> filters = 2;
     }
     uint32 gathering_period_minutes = 1;
     // Metric descriptors is a map of metric names to the list of allowed

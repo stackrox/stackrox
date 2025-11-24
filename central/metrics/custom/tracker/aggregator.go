@@ -1,6 +1,7 @@
 package tracker
 
 import (
+	"regexp"
 	"strings"
 
 	"github.com/prometheus/client_golang/prometheus"
@@ -37,15 +38,16 @@ type aggregatedRecord struct {
 type aggregator[F Finding] struct {
 	result  map[MetricName]map[aggregationKey]*aggregatedRecord
 	md      MetricDescriptors
+	lf      LabelFilters
 	getters LazyLabelGetters[F]
 }
 
-func makeAggregator[F Finding](md MetricDescriptors, getters LazyLabelGetters[F]) *aggregator[F] {
+func makeAggregator[F Finding](md MetricDescriptors, lf LabelFilters, getters LazyLabelGetters[F]) *aggregator[F] {
 	aggregated := make(map[MetricName]map[aggregationKey]*aggregatedRecord)
 	for metric := range md {
 		aggregated[metric] = make(map[aggregationKey]*aggregatedRecord)
 	}
-	return &aggregator[F]{aggregated, md, getters}
+	return &aggregator[F]{aggregated, md, lf, getters}
 }
 
 // count the finding in the aggregation result.
@@ -56,6 +58,12 @@ func (a *aggregator[F]) count(finding F) {
 	}
 
 	for metric, labels := range a.md {
+		// Apply label filters. It could, e.g., drop all "RESOLVED" alerts.
+		if a.filteredOut(finding, a.lf[metric]) {
+			// Ignore this finding for this metric.
+			continue
+		}
+
 		key, labels := a.makeAggregationKey(labels, finding)
 		if rec, ok := a.result[metric][key]; ok {
 			rec.total += increment
@@ -63,6 +71,20 @@ func (a *aggregator[F]) count(finding F) {
 			a.result[metric][key] = &aggregatedRecord{labels, increment}
 		}
 	}
+}
+
+// filteredOut checks if the finding needs to be ignored according to the
+// filtering label expressions.
+func (a *aggregator[F]) filteredOut(finding F, filters map[Label]*regexp.Regexp) bool {
+	if filters == nil {
+		return false
+	}
+	for label, pattern := range filters {
+		if pattern.MatchString(a.getters[label](finding)) {
+			return true
+		}
+	}
+	return false
 }
 
 // makeAggregationKey computes an aggregation key according to the provided

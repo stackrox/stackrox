@@ -5265,6 +5265,16 @@
                         "type": "string",
                         "is_repeated": true
                       }
+                    ],
+                    "maps": [
+                      {
+                        "key_type": "string",
+                        "field": {
+                          "id": 2,
+                          "name": "filters",
+                          "type": "string"
+                        }
+                      }
                     ]
                   }
                 ]
