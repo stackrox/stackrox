@@ -17,6 +17,7 @@ runs:
       if: |
         github.event_name == 'push' || !github.event.pull_request.head.repo.fork
       uses: 'google-github-actions/auth@v3'
+      continue-on-error: true
       with:
         credentials_json: '${{ inputs.gcp-account }}'
         export_environment_variables: true
