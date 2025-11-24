@@ -101,14 +101,10 @@ jobs:
     outputs:
       new-jiras: ${{ steps.junit2jira.outputs.new-jiras }}
     container:
-<<<<<<< HEAD
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.4.9
+      image: ${{ needs.define-ci-versions.outputs.apollo-ci-test-image }}
       volumes:
         - /usr:/mnt/usr
         - /opt:/mnt/opt
-=======
-      image: ${{ needs.define-ci-versions.outputs.apollo-ci-test-image }}
->>>>>>> 6fd3b02683 (X-Smart-Squash: Squashed 6 commits:)
     steps:
     - name: Set Postgres version
       run: |
@@ -166,14 +162,10 @@ jobs:
     needs: define-ci-versions
     runs-on: ubuntu-latest
     container:
-<<<<<<< HEAD
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.4.9
+      image: ${{ needs.define-ci-versions.outputs.apollo-ci-test-image }}
       volumes:
         - /usr:/mnt/usr
         - /opt:/mnt/opt
-=======
-      image: ${{ needs.define-ci-versions.outputs.apollo-ci-test-image }}
->>>>>>> 6fd3b02683 (X-Smart-Squash: Squashed 6 commits:)
     steps:
     - name: Set Postgres version
       run: |
@@ -302,14 +294,10 @@ jobs:
     outputs:
       new-jiras: ${{ steps.junit2jira.outputs.new-jiras }}
     container:
-<<<<<<< HEAD
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.4.9
+      image: ${{ needs.define-ci-versions.outputs.apollo-ci-test-image }}
       volumes:
         - /usr:/mnt/usr
         - /opt:/mnt/opt
-=======
-      image: ${{ needs.define-ci-versions.outputs.apollo-ci-test-image }}
->>>>>>> 6fd3b02683 (X-Smart-Squash: Squashed 6 commits:)
     steps:
     - name: Checkout
       uses: actions/checkout@v5
