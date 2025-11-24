@@ -1,7 +1,7 @@
 {
   "base": {
     "name": "master-base/gualvare/vm-relay-split-relay-go",
-    "hash": "e0feeed212296e887e5920ae1bb7862441f656b4"
+    "hash": "36b754268a24f958ace0bbada3e26ab6d5ee4684"
   },
   "upstream": {
     "branch": "master-base/gualvare/relay-refactor-send-sensor"
