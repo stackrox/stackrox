@@ -152,10 +152,10 @@ runs:
         run: >
           echo "started_at=${EPOCHSECONDS:-$(date -u +%s)}" >> "$GITHUB_OUTPUT"
         post: >
-          source scripts/ci/lib.sh;
+          source scripts/ci/lib.sh || true;
           save_job_record "${{ github.job }}" "gha" \
             outcome "${{ job.status }}" \
-            started_at "${{ steps.record_job_info.outputs.started_at }}";
+            started_at "${{ steps.record_job_info.outputs.started_at }}" || true;
           free=$(df -BGB --output=avail / | tail -1);
           echo "Free disk space before: ${{ steps.disk-check-cleaned.outputs.free }} [${{ steps.disk-check.outputs.free }} before cleanup], and after: ${free}.";
           if [[ ${free%GB} -lt 5 ]]; then\
