@@ -152,6 +152,7 @@ class ReconciliationTest extends BaseSpecification {
 
             busyboxDeployment = new Deployment()
                     .setNamespace(ns)
+                    .setImagePrefetcherAffinity()
                     .setName("testing123")
                     .setImage("quay.io/rhacs-eng/qa:busybox")
                     .addPort(22)
