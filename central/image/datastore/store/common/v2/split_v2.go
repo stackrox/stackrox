@@ -3,15 +3,11 @@ package common
 import (
 	"github.com/stackrox/rox/central/cve/converter/utils"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/scancomponent"
 )
 
 // SplitV2 splits the input image into a set of parts.
 func SplitV2(image *storage.Image, withComponents bool) (ImageParts, error) {
-	if !features.FlattenCVEData.Enabled() {
-		return ImageParts{}, nil
-	}
 	parts := ImageParts{
 		Image:         image.CloneVT(),
 		ImageCVEEdges: make(map[string]*storage.ImageCVEEdge),

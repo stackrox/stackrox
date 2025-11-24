@@ -910,6 +910,11 @@
           "format": "date-time",
           "description": "Time when the CVE was first seen in this image."
         },
+        "fixAvailableTimestamp": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Timestamp when the fix for this CVE was made available according to the sources\nor the timestamp of the first scan after this field was introduced\nwhich discovered this CVE as fixable, if it is."
+        },
         "severity": {
           "$ref": "#/definitions/storageVulnerabilitySeverity"
         },
@@ -932,7 +937,7 @@
           "$ref": "#/definitions/storageEPSS"
         }
       },
-      "title": "Next Tag: 25"
+      "title": "Next Tag: 26"
     },
     "storageEmbeddedVulnerabilityScoreVersion": {
       "type": "string",

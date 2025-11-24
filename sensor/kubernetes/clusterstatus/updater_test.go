@@ -64,12 +64,12 @@ func (c *fakeClientSet) OpenshiftOperator() operatorVersioned.Interface {
 
 func (s *updaterSuite) createUpdater(getProviders func(context.Context) *storage.ProviderMetadata,
 	getMetadata providerMetadataFromOpenShift, configClient ...*configFake.Clientset) {
-	config := configFake.NewSimpleClientset()
+	config := configFake.NewClientset()
 	if len(configClient) != 0 {
 		config = configClient[0]
 	}
 	s.updater = NewUpdater(&fakeClientSet{
-		k8s:    fake.NewSimpleClientset(),
+		k8s:    fake.NewClientset(),
 		config: config,
 	})
 	s.updater.(*updaterImpl).getProviders = getProviders
@@ -478,9 +478,9 @@ func (s *updaterSuite) Test_GetCloudProviderMetadata() {
 	for name, tc := range cases {
 		s.Run(name, func() {
 			s.T().Setenv(env.OpenshiftAPI.EnvVar(), strconv.FormatBool(tc.openshift))
-			config := configFake.NewSimpleClientset()
+			config := configFake.NewClientset()
 			if tc.infra != nil {
-				config = configFake.NewSimpleClientset(tc.infra, tc.cv)
+				config = configFake.NewClientset(tc.infra, tc.cv)
 			}
 			s.createUpdater(tc.getProviders, getProviderMetadataFromOpenShiftConfig, config)
 			u := s.updater.(*updaterImpl)
