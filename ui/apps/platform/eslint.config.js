@@ -936,6 +936,7 @@ module.exports = [
         },
         rules: {
             'limited/no-Tailwind': 'error',
+            'limited/no-feather-icons': 'error',
         },
     },
     {

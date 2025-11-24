@@ -1,7 +1,7 @@
 import type { ReactElement, ReactNode } from 'react';
 import { Button, Chip, ChipGroup, Flex, FlexItem } from '@patternfly/react-core';
 import type { ToolbarChip } from '@patternfly/react-core';
-import { Globe } from 'react-feather';
+import { Globe } from 'react-feather'; // eslint-disable-line limited/no-feather-icons
 
 import type { SearchFilter } from 'types/search';
 import { searchValueAsArray } from 'utils/searchUtils';
