@@ -834,7 +834,7 @@ func (s *storeImpl) WalkByQuery(ctx context.Context, q *v1.Query, fn func(image 
 	}
 	defer func() {
 		if err := tx.Commit(ctx); err != nil {
-			log.Errorf("error rolling back: %v", err)
+			log.Errorf("error comitting transaction: %v", err)
 		}
 	}()
 

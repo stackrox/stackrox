@@ -328,7 +328,9 @@ func (s *ImagesStoreSuite) TestWalkByQuery() {
 	s.NoError(err)
 	ctx := postgres.ContextWithTx(s.ctx, tx)
 	s.NoError(s.store.WalkByQuery(ctx, q, walkFn))
+	s.NoError(s.ctx.Err())
 	s.NoError(s.store.WalkByQuery(ctx, q, walkFn))
+	s.NoError(s.ctx.Err())
 	assert.NoError(s.T(), tx.Commit(s.ctx))
 }
 
