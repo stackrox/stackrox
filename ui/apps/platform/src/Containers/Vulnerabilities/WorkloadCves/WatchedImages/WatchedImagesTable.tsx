@@ -46,7 +46,7 @@ function WatchedImagesTable({
                         <Tr>
                             <Th>Image</Th>
                             <Th>
-                                <span className="pf-v5-screen-reader">Row action</span>
+                                <span className="pf-v6-screen-reader">Row action</span>
                             </Th>
                         </Tr>
                     </Thead>
@@ -60,9 +60,7 @@ function WatchedImagesTable({
                                         isInline
                                         icon={
                                             <Icon>
-                                                <MinusCircleIcon
-                                                    color="var(--pf-t--global--color--status--danger--default)"
-                                                />
+                                                <MinusCircleIcon color="var(--pf-t--global--color--status--danger--default)" />
                                             </Icon>
                                         }
                                         onClick={() => unwatchImage(name)}
