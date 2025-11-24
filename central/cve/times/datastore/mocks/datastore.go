@@ -149,7 +149,7 @@ func (mr *MockDataStoreMockRecorder) Upsert(ctx, cve any) *gomock.Call {
 }
 
 // UpsertMany mocks base method.
-func (m *MockDataStore) UpsertMany(ctx context.Context, cve *storage.ImageCVETime) error {
+func (m *MockDataStore) UpsertMany(ctx context.Context, cve []*storage.ImageCVETime) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "UpsertMany", ctx, cve)
 	ret0, _ := ret[0].(error)
