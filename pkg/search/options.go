@@ -118,6 +118,19 @@ var (
 	LowCVECount                    = newFieldLabel("Low CVE Count")
 	FixableLowCVECount             = newFieldLabel("Fixable Low CVE Count")
 
+	// Base Image
+	BaseImageId               = newFieldLabel("Base Image Id")
+	BaseImageRepoPatternId    = newFieldLabel("Base Image Repo Pattern Id")
+	BaseImageRepository       = newFieldLabel("Base Image Repository")
+	BaseImageTag              = newFieldLabel("Base Image Tag")
+	BaseImageFullReference    = newFieldLabel("Base Image Full Reference")
+	BaseImageActive           = newFieldLabel("Base Image Active")
+	BaseImageManifestDigest   = newFieldLabel("Base Image Manifest Digest")
+	BaseImageFirstLayerDigest = newFieldLabel("Base Image First Layer Digest")
+	BaseImageLayerDigest      = newFieldLabel("Base Image Layer Digest")
+	BaseImageLevel            = newFieldLabel("Base Image Level")
+	BaseImageDiscoveredAt     = newFieldLabel("Base Image Discovered At")
+
 	// Deployment related fields
 	AddCapabilities              = newFieldLabel("Add Capabilities")
 	AllowPrivilegeEscalation     = newFieldLabel("Allow Privilege Escalation")

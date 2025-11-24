@@ -88,6 +88,8 @@ enum SearchCategory {
   IMAGE_VULNERABILITIES_V2 = 75;
   IMAGES_V2 = 76;
   VIRTUAL_MACHINES = 77;
+  BASE_IMAGES = 78;
+  BASE_IMAGE_LAYERS = 79;
 }
 
 enum SearchDataType {

@@ -1,0 +1,30 @@
+syntax = "proto3";
+
+package storage;
+
+import "google/protobuf/timestamp.proto";
+
+option go_package = "./storage;storage";
+option java_package = "io.stackrox.proto.storage";
+
+message BaseImage {
+  string id = 1; // @gotags: search:"Base Image Id,store,hidden" sql:"pk"
+  // TODO fk to repo pattern table
+  string repo_pattern_id = 2; // @gotags: search:"Repo Pattern Id,hidden" sql:"null"
+  string repository = 3; //        @gotags: search:"Repository,store" sql:"not null,index"
+  string tag = 4; //               @gotags: search:"Tag,hidden" sql:"not null"
+  string manifest_digest = 5; //   @gotags: search:"Manifest Digest,store"
+  string full_reference = 6; //    @gotags: search:"Full Reference,store"
+  google.protobuf.Timestamp discovered_at = 7; // @gotags: search:"Discovered At,hidden" sql:"index"
+  bool active = 8; //              @gotags: search:"Active,hidden" sql:"default:true"
+  string first_layer_digest = 9; // @gotags: search:"First Layer Digest,hidden,index=btree"
+  // image id can be null until this base image gets scanned
+  string image_id = 10; // @gotags: sql:"fk(ImageV2:id),no-fk-constraint,null"
+}
+
+message BaseImageLayer {
+  string id = 1; // @gotags: sql:"pk"
+  string image_id = 2; // @gotags: sql:"fk(BaseImage:id),cascade-delete"
+  string layer_digest = 3; // @gotags: search:"Base Image Layer Digest,hidden"
+  int32 level = 4; // @gotags: search:"Base Image Level,hidden"
+}
