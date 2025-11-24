@@ -5,8 +5,8 @@ import (
 	"google.golang.org/grpc/status"
 )
 
-// RetryPolicy determines whether an error should be retried.
-type RetryPolicy interface {
+// Policy determines whether an error should be retried.
+type Policy interface {
 	ShouldRetry(err error) bool
 }
 
