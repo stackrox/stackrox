@@ -866,6 +866,12 @@ func (s *storeImpl) WalkByQuery(ctx context.Context, q *v1.Query, fn func(image 
 		return err
 	}
 
+	defer func() {
+		if err := tx.Rollback(ctx); err != nil {
+			log.Errorf("error rolling back: %v", err)
+		}
+	}()
+
 	callback := func(image *storage.Image) error {
 		err := s.populateImage(ctx, tx, image)
 		if err != nil {

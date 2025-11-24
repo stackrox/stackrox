@@ -932,6 +932,12 @@ func (s *storeImpl) WalkByQuery(ctx context.Context, q *v1.Query, fn func(node *
 		return err
 	}
 
+	defer func() {
+		if err := tx.Rollback(ctx); err != nil {
+			log.Errorf("error rolling back: %v", err)
+		}
+	}()
+
 	callback := func(node *storage.Node) error {
 		err := s.populateNode(ctx, tx, node)
 		if err != nil {
