@@ -14,6 +14,9 @@ import (
 // ExtractVsockCIDFromConnection extracts and validates the vsock context ID.
 // Rejects CIDs ≤2 which are reserved (0=ANY, 1=LOCAL, 2=HOST per vsock spec).
 func ExtractVsockCIDFromConnection(conn net.Conn) (uint32, error) {
+	if env.VirtualMachinesRelayTestMode.BooleanSetting() {
+		return vsock.Local, nil
+	}
 	remoteAddr, ok := conn.RemoteAddr().(*vsock.Addr)
 	if !ok {
 		return 0, fmt.Errorf("failed to extract remote address from vsock connection: unexpected type %T, value: %v",
@@ -28,13 +31,41 @@ func ExtractVsockCIDFromConnection(conn net.Conn) (uint32, error) {
 	return remoteAddr.ContextID, nil
 }
 
-// NewListener creates a vsock listener on the host context ID (vsock.Host) using the port
-// from VirtualMachinesVsockPort env var. Caller must close the returned listener.
+// NewListener creates a vsock listener using the port from VirtualMachinesVsockPort env var.
+// When VirtualMachinesRelayTestMode is enabled, binds to local CID (vsock.Local) for loopback testing.
+// Otherwise, binds to host CID (vsock.Host) for production. Caller must close the returned listener.
 func NewListener() (net.Listener, error) {
 	port := env.VirtualMachinesVsockPort.IntegerSetting()
-	listener, err := vsock.ListenContextID(vsock.Host, uint32(port), nil)
+
+	var contextID uint32 = vsock.Host
+	if env.VirtualMachinesRelayTestMode.BooleanSetting() {
+		contextID = vsock.Local
+	}
+
+	listener, err := vsock.ListenContextID(contextID, uint32(port), nil)
 	if err != nil {
-		return nil, errors.Wrapf(err, "listening on vsock port %d", port)
+		return nil, errors.Wrapf(err, "listening on vsock port %d with context ID %d", port, contextID)
 	}
 	return listener, nil
+}
+
+// DialHost establishes a vsock connection to the host context ID using the configured port.
+func DialHost() (net.Conn, error) {
+	port := env.VirtualMachinesVsockPort.IntegerSetting()
+	conn, err := vsock.Dial(vsock.Host, uint32(port), nil)
+	if err != nil {
+		return nil, errors.Wrapf(err, "dialing host vsock port %d", port)
+	}
+	return conn, nil
+}
+
+// DialLocal establishes a vsock loopback connection using the configured port.
+// This is intended for local load testing when both client and server run on the same host.
+func DialLocal() (net.Conn, error) {
+	port := env.VirtualMachinesVsockPort.IntegerSetting()
+	conn, err := vsock.Dial(vsock.Local, uint32(port), nil)
+	if err != nil {
+		return nil, errors.Wrapf(err, "dialing local vsock port %d", port)
+	}
+	return conn, nil
 }

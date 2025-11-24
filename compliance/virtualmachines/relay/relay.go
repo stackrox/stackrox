@@ -9,6 +9,7 @@ import (
 	"github.com/stackrox/rox/compliance/virtualmachines/relay/server"
 	"github.com/stackrox/rox/compliance/virtualmachines/relay/vsock"
 	"github.com/stackrox/rox/generated/internalapi/sensor"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/logging"
 	"google.golang.org/grpc"
 )
@@ -46,6 +47,11 @@ func NewRelay(conn grpc.ClientConnInterface) (*Relay, error) {
 
 func (r *Relay) Run(ctx context.Context) error {
 	log.Info("Starting virtual machine relay")
+
+	if env.VirtualMachinesRelayTestMode.BooleanSetting() {
+		log.Warn("VM relay test mode is enabled; vsock CID validation is bypassed. Use only for load testing.")
+	}
+
 	// The server handles shutdown by closing its listener when ctx is cancelled
 	return r.server.Run(ctx, r.handler.Handle)
 }

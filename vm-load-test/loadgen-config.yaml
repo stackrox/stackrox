@@ -1,0 +1,41 @@
+# Vsock Load Generator Configuration
+# This file configures the vsock load generation parameters
+# Mount this as a ConfigMap and vsock-loadgen will read it on startup
+#
+# Architecture:
+# Each goroutine simulates a single VM with a specific CID, sending index
+# reports periodically at the configured interval. This accurately models
+# real-world VM behavior where VMs independently report their state.
+#
+# CID Assignment:
+# CIDs are automatically assigned sequentially starting from 3 (the first
+# valid vsock CID). With vmCount=1000, CIDs will range from [3-1002].
+# Note: CID 0=hypervisor, 1=loopback, 2=host
+#
+# Performance Optimization:
+# The load generator pre-generates and pre-marshals all reports at startup.
+# This eliminates per-request protobuf cloning and marshaling overhead,
+# significantly improving throughput during load testing.
+
+loadgen:
+  # Number of VMs to simulate (max 1000, each VM = 1 goroutine with a unique CID)
+  vmCount: 1000
+
+  # Interval at which each VM sends index reports (e.g., 30s, 1m, 5m)
+  # This simulates the periodic reporting behavior of real VMs
+  reportInterval: 30s
+
+  # Payload size for index reports: small (~2.3MB), avg (~10MB), large (~50MB)
+  payloadSize: avg
+
+  # Stats reporting interval (e.g., 30s, 1m, 5m)
+  statsInterval: 30s
+
+  # Vsock port to connect to (relay listens on 818)
+  port: 818
+
+  # Metrics server port (0 = disabled)
+  metricsPort: 9090
+
+  # Per-request vsock deadline (e.g., 10s, 30s)
+  requestTimeout: 10s

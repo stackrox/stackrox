@@ -99,6 +99,9 @@ func parseIndexReport(data []byte) (*v1.IndexReport, error) {
 
 // validateReportedVsockCID ensures the report's vsock CID matches the connection.
 func validateReportedVsockCID(indexReport *v1.IndexReport, connVsockCID uint32) error {
+	if env.VirtualMachinesRelayTestMode.BooleanSetting() {
+		return nil
+	}
 	if indexReport.GetVsockCid() != strconv.FormatUint(uint64(connVsockCID), 10) {
 		metrics.IndexReportsMismatchingVsockCID.Inc()
 		return errors.Errorf("mismatch between reported (%s) and real (%d) vsock CIDs", indexReport.GetVsockCid(), connVsockCID)

@@ -20,4 +20,11 @@ var (
 	// connections carrying virtual machine index reports.
 	VirtualMachinesVsockPort = RegisterIntegerSetting("ROX_VIRTUAL_MACHINES_VSOCK_PORT", 818).
 					WithMaximum(65535).WithMinimum(0)
+
+	// VirtualMachinesRelayTestMode bypasses vsock CID validation in the relay. Use only for load testing scenarios.
+	VirtualMachinesRelayTestMode = RegisterBooleanSetting("ROX_VM_RELAY_TEST_MODE", false)
+
+	// VirtualMachinesSensorTestMode bypasses VM store lookups in sensor for artificial load testing.
+	// When enabled, sensor will silently drop index reports for unknown VMs instead of logging errors.
+	VirtualMachinesSensorTestMode = RegisterBooleanSetting("ROX_VM_SENSOR_TEST_MODE", false)
 )
