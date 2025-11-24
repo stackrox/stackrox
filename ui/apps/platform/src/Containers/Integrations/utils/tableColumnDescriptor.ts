@@ -26,7 +26,7 @@ import type {
     SyslogNotifierIntegration,
 } from 'types/notifier.proto';
 import type { SignatureIntegration } from 'types/signatureIntegration.proto';
-import { formatRecurringSchedule } from 'utils/dateUtils';
+import { formatRecurringSchedule, getDateTime } from 'utils/dateUtils';
 import { getOriginLabel } from 'utils/traits.utils';
 
 import {
@@ -34,7 +34,6 @@ import {
     categoriesUtilsForRegistryScanner,
     transformDurationLongForm,
 } from './integrationUtils';
-import { getDateTime } from 'utils/dateUtils';
 
 const { getCategoriesText: getCategoriesTextForClairifyScanner } =
     categoriesUtilsForClairifyScanner;
