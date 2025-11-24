@@ -22,6 +22,8 @@ func init() {
 		&storage.AuthProvider{}:                                 resources.Access,
 		&storage.BaseImage{}:                                    resources.Administration,
 		&storage.BaseImageLayer{}:                               resources.Administration,
+		&storage.BaseImageRepository{}:                          resources.Administration,
+		&storage.BaseImageTag{}:                                 resources.Administration,
 		&storage.Blob{}:                                         resources.Administration,
 		&storage.CloudSource{}:                                  resources.Integration,
 		&storage.ClusterHealthStatus{}:                          resources.Cluster,
