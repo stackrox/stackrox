@@ -130,13 +130,13 @@ const APIVerbs: DescriptorOption[] = ['CREATE', 'DELETE', 'GET', 'PATCH', 'UPDAT
 }));
 
 const fileOperationOptions: DescriptorOption[] = [
-    'OPEN',
-    'CREATE',
-    'UNLINK',
-    'RENAME',
-    'PERMISSION_CHANGE',
-    'OWNERSHIP_CHANGE',
-].map((operation) => ({ label: operation, value: operation }));
+    ['OPEN', 'Open'],
+    ['CREATE', 'Create'],
+    ['UNLINK', 'Delete'],
+    ['RENAME', 'Rename'],
+    ['PERMISSION_CHANGE', 'Permission change'],
+    ['OWNERSHIP_CHANGE', 'Ownership change'],
+].map(([value, label]) => ({ value, label }));
 
 const fileActivityPathOptions: DescriptorOption[] = [
     '/etc/passwd',
