@@ -34,6 +34,9 @@ jobs:
         uses: n1hility/cancel-previous-runs@v3
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
+      - uses: ./.github/actions/job-preamble
+        with:
+          free-disk-space: 40
       - name: Set up Go 1.24
         uses: actions/setup-go@v5
         with:
