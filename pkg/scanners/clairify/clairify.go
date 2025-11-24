@@ -56,7 +56,7 @@ var (
 
 	log             = logging.LoggerForModule()
 	scannerEndpoint = fmt.Sprintf("scanner.%s.svc", env.Namespace.Setting())
-	grpcRetryPolicy = retry.NoCodesRetriedGrpcRetryPolicy().WithRetryableCodes(codes.Aborted, codes.Unavailable)
+	grpcRetryPolicy = retry.NoGrpcCodesRetriedPolicy().WithRetryableCodes(codes.Aborted, codes.Unavailable)
 )
 
 // GetScannerEndpoint returns the scanner endpoint with a configured namespace. env.ScannerGRPCEndpoint is only used by Sensor.

@@ -5,21 +5,27 @@ import (
 	"google.golang.org/grpc/status"
 )
 
+type GrpcPolicy interface {
+	Policy
+	WithRetryableCodes(...codes.Code) GrpcPolicy
+	WithNonRetryableCodes(...codes.Code) GrpcPolicy
+}
+
 // grpcRetryPolicy reports whether a gRPC error should be retried.
 type grpcRetryPolicy struct {
 	retryableCodes map[codes.Code]bool
 }
 
-// NoCodesRetriedGrpcRetryPolicy creates an empty policy that retries no status codes
+// NoGrpcCodesRetriedPolicy creates an empty policy that retries no status codes
 // until WithRetryableCodes is applied.
-func NoCodesRetriedGrpcRetryPolicy() *grpcRetryPolicy {
+func NoGrpcCodesRetriedPolicy() GrpcPolicy {
 	return &grpcRetryPolicy{retryableCodes: make(map[codes.Code]bool)}
 }
 
-// AllCodesRetriedGrpcRetryPolicy retries every gRPC code; callers can then remove
+// AllGrpcCodesRetriedPolicy retries every gRPC code; callers can then remove
 // codes via WithNonRetryableCodes to document which ones are intentionally
 // excluded.
-func AllCodesRetriedGrpcRetryPolicy() *grpcRetryPolicy {
+func AllGrpcCodesRetriedPolicy() GrpcPolicy {
 	retryable := make(map[codes.Code]bool)
 	for i := codes.Code(0); i <= codes.Unauthenticated; i++ {
 		retryable[i] = true
@@ -27,10 +33,10 @@ func AllCodesRetriedGrpcRetryPolicy() *grpcRetryPolicy {
 	return &grpcRetryPolicy{retryableCodes: retryable}
 }
 
-// DefaultGrpcRetryPolicy retries server or transient errors and skips obvious
+// DefaultGrpcPolicy retries server or transient errors and skips obvious
 // client errors (InvalidArgument, PermissionDenied, etc.).
-func DefaultGrpcRetryPolicy() *grpcRetryPolicy {
-	return AllCodesRetriedGrpcRetryPolicy().WithNonRetryableCodes(
+func DefaultGrpcPolicy() GrpcPolicy {
+	return AllGrpcCodesRetriedPolicy().WithNonRetryableCodes(
 		codes.OK,
 		codes.InvalidArgument,
 		codes.NotFound,
@@ -47,7 +53,7 @@ func DefaultGrpcRetryPolicy() *grpcRetryPolicy {
 // WithRetryableCodes marks the provided codes as retryable and returns the policy
 // for chaining. Since policies are created via constructors, this mutates the policy
 // in place.
-func (p *grpcRetryPolicy) WithRetryableCodes(statusCodes ...codes.Code) *grpcRetryPolicy {
+func (p *grpcRetryPolicy) WithRetryableCodes(statusCodes ...codes.Code) GrpcPolicy {
 	for _, code := range statusCodes {
 		p.retryableCodes[code] = true
 	}
@@ -57,7 +63,7 @@ func (p *grpcRetryPolicy) WithRetryableCodes(statusCodes ...codes.Code) *grpcRet
 // WithNonRetryableCodes marks the provided codes as non-retryable and returns the
 // policy for chaining. Since policies are created via constructors, this mutates
 // the policy in place.
-func (p *grpcRetryPolicy) WithNonRetryableCodes(statusCodes ...codes.Code) *grpcRetryPolicy {
+func (p *grpcRetryPolicy) WithNonRetryableCodes(statusCodes ...codes.Code) GrpcPolicy {
 	for _, code := range statusCodes {
 		delete(p.retryableCodes, code)
 	}

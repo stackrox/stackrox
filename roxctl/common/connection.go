@@ -101,7 +101,7 @@ func shouldRetry(err error) bool {
 		return false
 	}
 
-	policy := retry.DefaultGrpcRetryPolicy()
+	policy := retry.DefaultGrpcPolicy()
 	if policy.ShouldRetry(err) {
 		return true
 	}

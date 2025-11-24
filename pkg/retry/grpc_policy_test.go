@@ -10,7 +10,7 @@ import (
 )
 
 func TestDefaultGrpcRetryPolicy(t *testing.T) {
-	policy := DefaultGrpcRetryPolicy()
+	policy := DefaultGrpcPolicy()
 
 	// Test retryable codes (server errors and transient errors)
 	retryableCodes := []codes.Code{
@@ -69,7 +69,7 @@ func TestDefaultGrpcRetryPolicy(t *testing.T) {
 }
 
 func TestNoCodesRetriedGrpcRetryPolicy(t *testing.T) {
-	policy := NoCodesRetriedGrpcRetryPolicy().WithRetryableCodes(codes.Aborted, codes.Unavailable)
+	policy := NoGrpcCodesRetriedPolicy().WithRetryableCodes(codes.Aborted, codes.Unavailable)
 
 	err := status.Error(codes.Aborted, "aborted")
 	assert.True(t, policy.ShouldRetry(err))
@@ -83,7 +83,7 @@ func TestNoCodesRetriedGrpcRetryPolicy(t *testing.T) {
 
 func TestGrpcRetryPolicy_WithRetryableCodes(t *testing.T) {
 	t.Run("add_single_code", func(t *testing.T) {
-		policy := DefaultGrpcRetryPolicy().WithRetryableCodes(codes.NotFound)
+		policy := DefaultGrpcPolicy().WithRetryableCodes(codes.NotFound)
 
 		// NotFound should now be retryable
 		err := status.Error(codes.NotFound, "not found")
@@ -99,7 +99,7 @@ func TestGrpcRetryPolicy_WithRetryableCodes(t *testing.T) {
 	})
 
 	t.Run("add_multiple_codes", func(t *testing.T) {
-		policy := DefaultGrpcRetryPolicy().WithRetryableCodes(
+		policy := DefaultGrpcPolicy().WithRetryableCodes(
 			codes.NotFound,
 			codes.Canceled,
 		)
@@ -114,7 +114,7 @@ func TestGrpcRetryPolicy_WithRetryableCodes(t *testing.T) {
 
 func TestGrpcRetryPolicy_WithNonRetryableCodes(t *testing.T) {
 	t.Run("remove_single_code", func(t *testing.T) {
-		policy := DefaultGrpcRetryPolicy().WithNonRetryableCodes(codes.Internal)
+		policy := DefaultGrpcPolicy().WithNonRetryableCodes(codes.Internal)
 
 		// Internal should now not be retryable
 		err := status.Error(codes.Internal, "internal error")
@@ -130,7 +130,7 @@ func TestGrpcRetryPolicy_WithNonRetryableCodes(t *testing.T) {
 	})
 
 	t.Run("remove_multiple_codes", func(t *testing.T) {
-		policy := DefaultGrpcRetryPolicy().WithNonRetryableCodes(
+		policy := DefaultGrpcPolicy().WithNonRetryableCodes(
 			codes.Internal,
 			codes.Unavailable,
 		)
@@ -149,7 +149,7 @@ func TestGrpcRetryPolicy_WithNonRetryableCodes(t *testing.T) {
 
 func TestGrpcRetryPolicy_Chaining(t *testing.T) {
 	t.Run("add_and_remove_codes", func(t *testing.T) {
-		policy := DefaultGrpcRetryPolicy().
+		policy := DefaultGrpcPolicy().
 			WithRetryableCodes(codes.NotFound).
 			WithNonRetryableCodes(codes.Internal)
 
@@ -172,7 +172,7 @@ func TestGrpcRetryPolicy_Chaining(t *testing.T) {
 
 	t.Run("order_matters_last_wins", func(t *testing.T) {
 		// Add NotFound, then remove it
-		policy1 := DefaultGrpcRetryPolicy().
+		policy1 := DefaultGrpcPolicy().
 			WithRetryableCodes(codes.NotFound).
 			WithNonRetryableCodes(codes.NotFound)
 
@@ -180,7 +180,7 @@ func TestGrpcRetryPolicy_Chaining(t *testing.T) {
 		assert.False(t, policy1.ShouldRetry(err), "Last operation (remove) takes precedence")
 
 		// Remove Internal, then add it back
-		policy2 := DefaultGrpcRetryPolicy().
+		policy2 := DefaultGrpcPolicy().
 			WithNonRetryableCodes(codes.Internal).
 			WithRetryableCodes(codes.Internal)
 
@@ -191,7 +191,7 @@ func TestGrpcRetryPolicy_Chaining(t *testing.T) {
 
 func TestGrpcRetryPolicy_Integration(t *testing.T) {
 	t.Run("default_policy_retries_unavailable", func(t *testing.T) {
-		policy := DefaultGrpcRetryPolicy()
+		policy := DefaultGrpcPolicy()
 		callCount := 0
 
 		err := WithRetry(func() error {
@@ -211,7 +211,7 @@ func TestGrpcRetryPolicy_Integration(t *testing.T) {
 	})
 
 	t.Run("default_policy_does_not_retry_invalid_argument", func(t *testing.T) {
-		policy := DefaultGrpcRetryPolicy()
+		policy := DefaultGrpcPolicy()
 		callCount := 0
 
 		err := WithRetry(func() error {
@@ -229,7 +229,7 @@ func TestGrpcRetryPolicy_Integration(t *testing.T) {
 	})
 
 	t.Run("custom_policy_retries_not_found", func(t *testing.T) {
-		policy := DefaultGrpcRetryPolicy().WithRetryableCodes(codes.NotFound)
+		policy := DefaultGrpcPolicy().WithRetryableCodes(codes.NotFound)
 		callCount := 0
 
 		err := WithRetry(func() error {
@@ -249,7 +249,7 @@ func TestGrpcRetryPolicy_Integration(t *testing.T) {
 	})
 
 	t.Run("custom_policy_does_not_retry_internal", func(t *testing.T) {
-		policy := DefaultGrpcRetryPolicy().WithNonRetryableCodes(codes.Internal)
+		policy := DefaultGrpcPolicy().WithNonRetryableCodes(codes.Internal)
 		callCount := 0
 
 		err := WithRetry(func() error {
@@ -266,7 +266,7 @@ func TestGrpcRetryPolicy_Integration(t *testing.T) {
 	})
 
 	t.Run("policy_respects_nil_errors", func(t *testing.T) {
-		policy := DefaultGrpcRetryPolicy()
+		policy := DefaultGrpcPolicy()
 		callCount := 0
 
 		err := WithRetry(func() error {
@@ -282,7 +282,7 @@ func TestGrpcRetryPolicy_Integration(t *testing.T) {
 	})
 
 	t.Run("policy_with_non_grpc_errors", func(t *testing.T) {
-		policy := DefaultGrpcRetryPolicy()
+		policy := DefaultGrpcPolicy()
 		callCount := 0
 
 		err := WithRetry(func() error {

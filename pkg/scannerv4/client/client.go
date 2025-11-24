@@ -29,7 +29,7 @@ var (
 	errIndexerNotConfigured = errors.New("indexer not configured")
 	errMatcherNotConfigured = errors.New("matcher not configured")
 
-	grpcRetryPolicy = retry.NoCodesRetriedGrpcRetryPolicy().WithRetryableCodes(codes.Aborted, codes.Unavailable, codes.Internal)
+	grpcRetryPolicy = retry.NoGrpcCodesRetriedPolicy().WithRetryableCodes(codes.Aborted, codes.Unavailable, codes.Internal)
 )
 
 // callOptions contains optional data and gRPC parameters for the underlying
