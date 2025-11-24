@@ -1,0 +1,37 @@
+syntax = "proto3";
+
+package storage;
+
+import "google/protobuf/timestamp.proto";
+
+option go_package = "./storage;storage";
+option java_package = "io.stackrox.proto.storage";
+
+// BaseImage represents a discovered base image from the tag watcher.
+// Next tag: 8
+message BaseImage {
+  // Unique identifier for this discovered base image.
+  string id = 1; // @gotags: sql:"pk,type(uuid)" search:"Base Image ID,hidden"
+
+  // Foreign key to the base image repository where this image was found.
+  string base_image_repository_id = 2; // @gotags: sql:"fk(BaseImageRepository:id),type(uuid),index=hash"
+
+  // Registry repository path of this base image.
+  string repository = 3; // @gotags: search:"Base Image Repository"
+
+  // Specific base image tag.
+  string tag = 4; // @gotags: search:"Base Image Tag"
+
+  // SHA256 digest of the platform-specific image manifest.
+  // For single-arch tags, this is the image manifest digest.
+  // For multi-arch tags, this is one platform's manifest digest from the manifest list.
+  // Multiple BaseImage records exist for multi-arch tags (one per platform).
+  string manifest_digest = 5;
+
+  // Timestamp when this tag was first discovered by the base image repository watcher.
+  google.protobuf.Timestamp discovered_at = 6;
+
+  // Array of layer SHA256 digests for base image layer matching.
+  // These are the platform-specific layers from the image manifest.
+  repeated string layer_digests = 7;
+}
