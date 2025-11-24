@@ -20,7 +20,6 @@ import (
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/sensor/admission-control/common"
 	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
 )
 
 const (
@@ -82,6 +81,9 @@ func fetchCertificateFromSensor(ctx context.Context, token string) (*sensor.Fetc
 	certDistClient := sensor.NewCertDistributionServiceClient(conn)
 	var fetchResult *sensor.FetchCertificateResponse
 
+	// Only retry unavailable, deadline exceeded, and not found errors. These might resolve over time.
+	policy := retry.NoCodesRetriedGrpcRetryPolicy().WithRetryableCodes(codes.Unavailable, codes.DeadlineExceeded, codes.NotFound)
+
 	err = retry.WithRetry(
 		func() error {
 			ctx, cancel := context.WithTimeout(ctx, attemptTimeout)
@@ -89,9 +91,7 @@ func fetchCertificateFromSensor(ctx context.Context, token string) (*sensor.Fetc
 
 			fetchResult, err = certDistClient.FetchCertificate(ctx, req)
 			if err != nil {
-				spb, ok := status.FromError(err)
-				// Only retry unavailable, deadline exceeded, and not found errors. These might resolve over time.
-				if ok && (spb.Code() == codes.Unavailable || spb.Code() == codes.DeadlineExceeded || spb.Code() == codes.NotFound) {
+				if policy.ShouldRetry(err) {
 					return retry.MakeRetryable(err)
 				}
 				return errors.Wrap(err, "fetching certificate using RPC")

@@ -1,8 +1,6 @@
 package common
 
 import (
-	"slices"
-
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/retry"
 	"google.golang.org/grpc/codes"
@@ -19,32 +17,32 @@ var (
 		return errox.InvalidArgs.Newf("specified deprecated flag %q and new flag %q at the same time", oldFlag, newFlag)
 	}
 
-	nonRetryCodes = []codes.Code{
+	roxctlGrpcRetryPolicy = retry.AllCodesRetriedGrpcRetryPolicy().WithNonRetryableCodes(
 		codes.Unauthenticated,
 		codes.AlreadyExists,
 		codes.PermissionDenied,
 		codes.InvalidArgument,
-	}
+	)
 )
 
-// MakeRetryable makes an error retryable based on the error type.
 func MakeRetryable(err error) error {
 	// Specific sentinel errors shouldn't be retried.
 	if errox.IsAny(err, ErrInvalidCommandOption, errox.InvalidArgs, errox.NotAuthorized, errox.NoCredentials) {
 		return err
 	}
 
-	s, ok := status.FromError(err)
-	// Retry all errors that cannot be mapped to a GRPC code and aren't already explicitly skipped already.
+	// Check if this is a gRPC error
+	_, ok := status.FromError(err)
 	if !ok {
+		// Not a gRPC error - retry all non-gRPC errors
 		return retry.MakeRetryable(err)
 	}
 
-	// Do not retry errors with specific GRPC codes such as unauthenticated etc.
-	if slices.Contains(nonRetryCodes, s.Code()) {
-		return err
+	// It's a gRPC error - check if it's retryable
+	if roxctlGrpcRetryPolicy.ShouldRetry(err) {
+		return retry.MakeRetryable(err)
 	}
 
-	// Mark all other errors as retryable.
-	return retry.MakeRetryable(err)
+	// Non-retryable gRPC error
+	return err
 }

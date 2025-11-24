@@ -13,14 +13,13 @@ import (
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/grpc/alpn"
 	"github.com/stackrox/rox/pkg/mtls"
+	"github.com/stackrox/rox/pkg/retry"
 	"github.com/stackrox/rox/pkg/roxctl/common"
 	"github.com/stackrox/rox/roxctl/common/auth"
 	"github.com/stackrox/rox/roxctl/common/flags"
 	http1DowngradeClient "golang.stackrox.io/grpc-http1/client"
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
-	"google.golang.org/grpc/status"
 )
 
 // GRPCOption encodes behavior of a gRPC connection.
@@ -97,18 +96,17 @@ func shouldRetry(err error) bool {
 	if errors.Is(err, context.DeadlineExceeded) || errors.Is(err, context.Canceled) {
 		return false
 	}
+
 	if strings.Contains(err.Error(), "x509: certificate") {
 		return false
 	}
-	if grpcErr, ok := status.FromError(err); ok {
-		code := grpcErr.Code()
-		if code == codes.DeadlineExceeded {
-			return true
-		}
-		if code != codes.Unavailable && code != codes.ResourceExhausted {
-			return false
-		}
+
+	policy := retry.DefaultGrpcRetryPolicy()
+	if policy.ShouldRetry(err) {
+		return true
 	}
+
+	// Retry non-gRPC errors
 	return true
 }
 
