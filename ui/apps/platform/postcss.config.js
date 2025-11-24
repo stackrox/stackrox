@@ -6,7 +6,7 @@ module.exports = {
             // If Tailwind is entirely removed, this plugin should be removed as well.
             postcssPlugin: 'conditional-tailwindcss',
             async Once(root, { result }) {
-                const filePath = result.opts.from || '';
+                const filePath = result?.opts?.from ?? '';
                 const isTailwind = filePath.includes('app.tw.css');
 
                 // Only apply tailwind postcss plugin to our single tailwind entry file.
