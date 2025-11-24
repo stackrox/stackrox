@@ -182,7 +182,7 @@ func (ds *datastoreImpl) UpdateAlertBatch(ctx context.Context, alert *storage.Al
 			return
 		}
 
-		if !hasSameScope(getNSScopedObjectFromAlert(alert), getNSScopedObjectFromAlert(oldAlert)) {
+		if !hasSameScope(alert, oldAlert) {
 			c <- fmt.Errorf("cannot change the cluster or namespace of an existing alert %q", alert.GetId())
 			return
 		}
@@ -322,8 +322,18 @@ func (ds *datastoreImpl) updateAlertNoLock(ctx context.Context, alerts ...*stora
 	return ds.storage.UpsertMany(ctx, alerts)
 }
 
-func hasSameScope(o1, o2 sac.NamespaceScopedObject) bool {
-	return o1 != nil && o2 != nil && o1.GetClusterId() == o2.GetClusterId() && o1.GetNamespace() == o2.GetNamespace()
+func hasSameScope(alert1, alert2 *storage.Alert) bool {
+	if alert1.GetClusterId() != alert2.GetClusterId() {
+		return false
+	}
+
+	// For namespace-scoped entities, also check namespace
+	switch alert1.GetEntity().(type) {
+	case *storage.Alert_Deployment_, *storage.Alert_Resource_:
+		return alert1.GetNamespace() == alert2.GetNamespace()
+	}
+
+	return true
 }
 
 func (ds *datastoreImpl) WalkByQuery(ctx context.Context, q *v1.Query, fn func(alert *storage.Alert) error) error {
