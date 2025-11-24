@@ -1,10 +1,9 @@
 package datastore
 
 import (
-	"sync"
-
 	pgStore "github.com/stackrox/rox/central/cve/times/datastore/store/postgres"
 	"github.com/stackrox/rox/central/globaldb"
+	"github.com/stackrox/rox/pkg/sync"
 )
 
 var (
