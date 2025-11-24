@@ -291,9 +291,11 @@ func (d *detectorImpl) Notify(e common.SensorComponentEvent) {
 	case common.SensorComponentEventCentralReachable:
 		d.indicatorsQueue.Resume()
 		d.networkFlowsQueue.Resume()
+		d.fileAccessQueue.Resume()
 	case common.SensorComponentEventOfflineMode:
 		d.indicatorsQueue.Pause()
 		d.networkFlowsQueue.Pause()
+		d.fileAccessQueue.Pause()
 	}
 }
 
