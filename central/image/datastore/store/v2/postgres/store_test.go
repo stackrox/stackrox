@@ -329,6 +329,7 @@ func (s *ImagesStoreSuite) TestWalkByQuery() {
 	ctx := postgres.ContextWithTx(s.ctx, tx)
 	s.NoError(s.store.WalkByQuery(ctx, q, walkFn))
 	s.NoError(s.ctx.Err())
+	// The second walk is here to check if transaction and context are still active
 	s.NoError(s.store.WalkByQuery(ctx, q, walkFn))
 	s.NoError(s.ctx.Err())
 	assert.NoError(s.T(), tx.Commit(s.ctx))
