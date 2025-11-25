@@ -47,6 +47,7 @@ RUN dnf install \
     --releasever=8 \
     --setopt=install_weak_deps=0 \
     --nodocs \
+    --nogpgcheck \
     -y \
     findutils \
     util-linux \
@@ -59,6 +60,7 @@ RUN dnf install \
     --releasever=8 \
     --setopt=install_weak_deps=0 \
     --nodocs \
+    --nogpgcheck \
     -y \
     postgresql
 RUN dnf --installroot=/out/ clean all
