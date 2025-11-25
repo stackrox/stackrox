@@ -905,6 +905,9 @@ func onConflictErrorWrapper(fn onConflictCall) onRetriableCallError {
 		if !kubeAPIErr.IsConflict(parentErr) && !retry.IsRetryable(parentErr) {
 			return nil
 		}
+		if fn == nil {
+			return errors.New("onConflictCall is 'nil'")
+		}
 		return fn(ctx)
 	}
 }
@@ -922,6 +925,9 @@ func (m *handlerImpl) callWithRetryWithOnConflictCallback(fn retriableCall, onCo
 }
 
 func (m *handlerImpl) callWithRetryWithOnErrorCallback(retryCtx context.Context, fn retriableCall, onErrFn onRetriableCallError) error {
+	if fn == nil {
+		return errors.New("retriableCall is 'nil'")
+	}
 	return retry.WithRetry(func() error {
 		callCtx, callCancel := context.WithTimeout(retryCtx, m.handlerAPICallTimeout)
 		defer callCancel()
@@ -930,7 +936,8 @@ func (m *handlerImpl) callWithRetryWithOnErrorCallback(retryCtx context.Context,
 			errCallCtx, errCallCancel := context.WithTimeout(retryCtx, m.handlerAPICallTimeout)
 			defer errCallCancel()
 			if onErr := onErrFn(errCallCtx, err); onErr != nil {
-				return errors.Wrapf(err, "callback error: %v", onErr)
+				// propagate the onErrFn callback failure and keep the conflict as context
+				return errors.Wrapf(onErr, "callback error: %v", err)
 			}
 		}
 		return err
