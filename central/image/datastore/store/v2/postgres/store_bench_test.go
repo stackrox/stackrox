@@ -37,7 +37,7 @@ func BenchmarkWalkComparison(b *testing.B) {
 	}
 
 	b.Run("WalkByQuery", func(b *testing.B) {
-		for i := 0; i < b.N; i++ {
+		for b.Loop() {
 			count := 0
 			err := store.WalkByQuery(ctx, search.EmptyQuery(), func(image *storage.Image) error {
 				count++
@@ -48,7 +48,7 @@ func BenchmarkWalkComparison(b *testing.B) {
 	})
 
 	b.Run("WalkMetadataByQuery", func(b *testing.B) {
-		for i := 0; i < b.N; i++ {
+		for b.Loop() {
 			count := 0
 			err := store.WalkMetadataByQuery(ctx, search.EmptyQuery(), func(image *storage.Image) error {
 				count++
