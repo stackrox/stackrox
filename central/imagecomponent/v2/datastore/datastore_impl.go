@@ -3,7 +3,6 @@ package datastore
 import (
 	"context"
 
-	"github.com/pkg/errors"
 	pgStore "github.com/stackrox/rox/central/imagecomponent/v2/datastore/store/postgres"
 	"github.com/stackrox/rox/central/ranking"
 	riskDataStore "github.com/stackrox/rox/central/risk/datastore"
@@ -13,6 +12,7 @@ import (
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	pkgSearch "github.com/stackrox/rox/pkg/search"
+	"google.golang.org/protobuf/proto"
 )
 
 var (
@@ -36,17 +36,20 @@ func (ds *datastoreImpl) Count(ctx context.Context, q *v1.Query) (int, error) {
 }
 
 func (ds *datastoreImpl) SearchImageComponents(ctx context.Context, q *v1.Query) ([]*v1.SearchResult, error) {
+	// Clone the query and ensure it includes Component in select fields to populate result names
+	if q == nil {
+		q = pkgSearch.EmptyQuery()
+	} else {
+		q = proto.Clone(q).(*v1.Query)
+	}
+	q.Selects = append(q.GetSelects(), pkgSearch.NewQuerySelect(pkgSearch.Component).Proto())
+
 	results, err := ds.Search(ctx, q)
 	if err != nil {
 		return nil, err
 	}
 
-	components, missingIndices, err := ds.storage.GetMany(ctx, pkgSearch.ResultsToIDs(results))
-	if err != nil {
-		return nil, err
-	}
-	results = pkgSearch.RemoveMissingResults(results, missingIndices)
-	return convertMany(components, results)
+	return pkgSearch.ResultsToSearchResultProtos(results, &ImageComponentSearchResultConverter{}), nil
 }
 
 func (ds *datastoreImpl) SearchRawImageComponents(ctx context.Context, q *v1.Query) ([]*storage.ImageComponentV2, error) {
@@ -114,24 +117,22 @@ func (ds *datastoreImpl) updateImageComponentPriority(ics ...*storage.ImageCompo
 	}
 }
 
-func convertMany(components []*storage.ImageComponentV2, results []pkgSearch.Result) ([]*v1.SearchResult, error) {
-	if len(components) != len(results) {
-		return nil, errors.Errorf("expected %d components but got %d", len(results), len(components))
-	}
+// ImageComponentSearchResultConverter converts image component search results to proto search results
+type ImageComponentSearchResultConverter struct{}
 
-	outputResults := make([]*v1.SearchResult, len(components))
-	for index, sar := range components {
-		outputResults[index] = convertOne(sar, &results[index])
-	}
-	return outputResults, nil
+func (c *ImageComponentSearchResultConverter) BuildName(result *pkgSearch.Result) string {
+	return result.Name
 }
 
-func convertOne(component *storage.ImageComponentV2, result *pkgSearch.Result) *v1.SearchResult {
-	return &v1.SearchResult{
-		Category:       v1.SearchCategory_IMAGE_COMPONENTS_V2,
-		Id:             component.GetId(),
-		Name:           component.GetName(),
-		FieldToMatches: pkgSearch.GetProtoMatchesMap(result.Matches),
-		Score:          result.Score,
-	}
+func (c *ImageComponentSearchResultConverter) BuildLocation(result *pkgSearch.Result) string {
+	// Image components do not have a location
+	return ""
+}
+
+func (c *ImageComponentSearchResultConverter) GetCategory() v1.SearchCategory {
+	return v1.SearchCategory_IMAGE_COMPONENTS_V2
+}
+
+func (c *ImageComponentSearchResultConverter) GetScore(result *pkgSearch.Result) float64 {
+	return result.Score
 }
