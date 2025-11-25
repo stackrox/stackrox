@@ -6,6 +6,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"os"
 	"testing"
 	"time"
 
@@ -18,6 +19,7 @@ import (
 	"github.com/stackrox/rox/pkg/protoconv/schedule"
 	"github.com/stackrox/rox/pkg/retry"
 	"github.com/stackrox/rox/pkg/set"
+	"github.com/stackrox/rox/pkg/stringutils"
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stackrox/rox/pkg/testutils/centralgrpc"
 	"github.com/stackrox/rox/pkg/uuid"
@@ -40,16 +42,16 @@ import (
 
 const (
 	coNamespaceV2     = "openshift-compliance"
-	stackroxNamespace = "rhacs-operator" // "stackrox"
 	defaultTimeout    = 90 * time.Second
 	eventuallyTimeout = 120 * time.Second
 )
 
 var (
-	scanName        = "sync-test"
-	initialProfiles = []string{"ocp4-cis"}
-	updatedProfiles = []string{"ocp4-high", "ocp4-cis-node"}
-	initialSchedule = &v2.Schedule{
+	stackroxNamespace = stringutils.FirstNonEmpty(os.Getenv("STACKROX_NAMESPACE"), "stackrox")
+	scanName          = "sync-test"
+	initialProfiles   = []string{"ocp4-cis"}
+	updatedProfiles   = []string{"ocp4-high", "ocp4-cis-node"}
+	initialSchedule   = &v2.Schedule{
 		Hour:         12,
 		Minute:       0,
 		IntervalType: v2.Schedule_DAILY,
