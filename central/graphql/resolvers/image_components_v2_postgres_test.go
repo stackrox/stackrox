@@ -43,7 +43,6 @@ Remaining TODO tasks:
 	- from clusters
 	- from namespace
 - sub resolvers
-	- ActiveState
 	- LastScanned
 	- LayerIndex
 	- Location

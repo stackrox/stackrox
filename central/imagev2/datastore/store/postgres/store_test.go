@@ -92,6 +92,7 @@ func (s *ImagesV2StoreSuite) TestStore() {
 			vuln.SuppressActivation = nil
 			vuln.SuppressExpiry = nil
 			vuln.Advisory = nil
+			vuln.FixAvailableTimestamp = nil
 		}
 		comp.License = nil
 	}
@@ -147,6 +148,7 @@ func (s *ImagesV2StoreSuite) TestNVDCVSS() {
 	for _, component := range image.GetScan().GetComponents() {
 		for _, vuln := range component.GetVulns() {
 			vuln.CvssMetrics = []*storage.CVSSScore{nvdCvss}
+			vuln.FixAvailableTimestamp = nil
 		}
 
 	}

@@ -663,9 +663,8 @@ module.exports = {
     //     './src/Containers/ConfigManagement/**/*.{js,jsx,ts,tsx}',
     //     './src/Containers/Images/**/*.{js,jsx,ts,tsx}', // deprecated
     //     './src/Containers/Login/**/*.{js,jsx,ts,tsx}', // fix errors, and then delete
-    //     './src/Containers/MainPage/**/*.{js,jsx,ts,tsx}', // fix errors, and then delete
+    //     './src/Containers/MainPage/Header/Header.tsx', // investigate ignore-react-onclickoutside
     //     './src/Containers/Risk/**/*.{js,jsx,ts,tsx}', // rewrite in PatternFly, and then delete
-    //     './src/Containers/Violations/Details/ProcessCardContent.jsx', // fix error and then delete
     //     './src/Containers/VulnMgmt/**/*.{js,jsx,ts,tsx}', // deprecated
     //     './src/Containers/Workflow/**/*.{js,jsx,ts,tsx}', // deprecated
     // ],

@@ -65,9 +65,6 @@ deploy_stackrox() {
     echo "Sensor deployed. Waiting for sensor to be up"
     sensor_wait "${sensor_namespace}"
 
-    # Bounce collectors to avoid restarts on initial module pull
-    kubectl -n "${sensor_namespace}" delete pod -l app=collector --grace-period=0
-
     sensor_wait "${sensor_namespace}"
 
     wait_for_collectors_to_be_operational "${sensor_namespace}"
@@ -182,7 +179,6 @@ export_test_environment() {
     ci_export ROX_EXTERNAL_IPS "${ROX_EXTERNAL_IPS:-true}"
     ci_export ROX_NETWORK_GRAPH_AGGREGATE_EXT_IPS "${ROX_NETWORK_GRAPH_AGGREGATE_EXT_IPS:-true}"
     ci_export ROX_NETWORK_GRAPH_EXTERNAL_IPS "${ROX_NETWORK_GRAPH_EXTERNAL_IPS:-false}"
-    ci_export ROX_FLATTEN_CVE_DATA "${ROX_FLATTEN_CVE_DATA:-true}"
     ci_export ROX_FLATTEN_IMAGE_DATA "${ROX_FLATTEN_IMAGE_DATA:-false}"
     ci_export ROX_VULNERABILITY_VIEW_BASED_REPORTS "${ROX_VULNERABILITY_VIEW_BASED_REPORTS:-true}"
     ci_export ROX_CUSTOMIZABLE_PLATFORM_COMPONENTS "${ROX_CUSTOMIZABLE_PLATFORM_COMPONENTS:-true}"
@@ -323,8 +319,6 @@ deploy_central_via_operator() {
     customize_envVars+=$'\n      - name: ROX_NETWORK_GRAPH_EXTERNAL_IPS'
     customize_envVars+=$'\n        value: "false"'
     customize_envVars+=$'\n      - name: ROX_NETWORK_GRAPH_AGGREGATE_EXT_IPS'
-    customize_envVars+=$'\n        value: "true"'
-    customize_envVars+=$'\n      - name: ROX_FLATTEN_CVE_DATA'
     customize_envVars+=$'\n        value: "true"'
     customize_envVars+=$'\n      - name: ROX_FLATTEN_IMAGE_DATA'
     customize_envVars+=$'\n        value: "false"'

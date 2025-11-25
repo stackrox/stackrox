@@ -78,7 +78,7 @@ func Test_getCentralPod(t *testing.T) {
 	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			core := fake.NewSimpleClientset(tt.objs...).CoreV1()
+			core := fake.NewClientset(tt.objs...).CoreV1()
 
 			got, err := getCentralPod(context.Background(), core, ns)
 			if (err != nil) != tt.wantErr {
