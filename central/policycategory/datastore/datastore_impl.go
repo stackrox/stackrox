@@ -294,7 +294,7 @@ func (ds *datastoreImpl) DeletePolicyCategory(ctx context.Context, id string) er
 
 func (ds *datastoreImpl) GetDuplicatePolicyCategories(ctx context.Context) ([]*views.DuplicateCategoryView, error) {
 	seenCategories := make(map[string][]*storage.PolicyCategory)
-	err := ds.storage.GetByQueryFn(ctx, searchPkg.EmptyQuery(), func(category *storage.PolicyCategory) error {
+	err := ds.storage.Walk(ctx, func(category *storage.PolicyCategory) error {
 		lowerCategoryName := strings.ToLower(category.GetName())
 		if _, found := seenCategories[lowerCategoryName]; !found {
 			seenCategories[lowerCategoryName] = make([]*storage.PolicyCategory, 0)
