@@ -97,7 +97,7 @@ func (t Translator) translate(ctx context.Context, sc platform.SecuredCluster) (
 	if err := platform.MergeSecuredClusterDefaultsIntoSpec(&sc); err != nil {
 		return nil, err
 	}
-	t.setDefaults(&sc)
+	scanner.SetScannerDefaults(&sc.Spec)
 
 	v := translation.NewValuesBuilder()
 
@@ -486,12 +486,6 @@ func (t Translator) getLocalScannerV4ComponentValues(ctx context.Context, secure
 	}
 
 	return &sv
-}
-
-// Sets defaults that might not be applied on the resource due to ROX-8046.
-// Only defaults that result in behaviour different from the Helm chart defaults should be included here.
-func (t Translator) setDefaults(sc *platform.SecuredCluster) {
-	scanner.SetScannerDefaults(&sc.Spec)
 }
 
 func getMetaValues(sc platform.SecuredCluster) *translation.ValuesBuilder {
