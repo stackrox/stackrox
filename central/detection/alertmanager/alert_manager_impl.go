@@ -174,6 +174,14 @@ func lastTime(processes []*storage.ProcessIndicator) (*time.Time, error) {
 	return lastTime, nil
 }
 
+func lastFileTime(files []*storage.FileAccess) (*time.Time, error) {
+	if len(files) == 0 {
+		return nil, errors.New("Unexpected: no files found in the alert")
+	}
+	lastTime := protocompat.ConvertTimestampToTimeOrNil(files[len(files)-1].GetTimestamp())
+	return lastTime, nil
+}
+
 // Some processes in the old alert might have been deleted from the process store because of our pruning,
 // which means they only exist in the old alert, and will not be in the new generated alert.
 // We don't want to lose them, though, so we keep all the processes from the old alert, and add ones from the new, if any.
@@ -229,12 +237,55 @@ func mergeNetworkFlowViolations(old, new *storage.Alert) bool {
 	return mergeAlertsByLatestFirst(old, new, storage.Alert_Violation_NETWORK_FLOW)
 }
 
+func mergeFileAccessViolations(oldAlert, newAlert *storage.Alert) bool {
+	if len(newAlert.GetFileAccessViolation().GetAccesses()) == 0 {
+		return false
+	}
+
+	if len(oldAlert.GetFileAccessViolation().GetAccesses()) >= maxRunTimeViolationsPerAlert {
+		return false
+	}
+
+	newFileAccesses := oldAlert.GetFileAccessViolation().GetAccesses()
+	lastAccessTime, err := lastFileTime(oldAlert.GetFileAccessViolation().GetAccesses())
+	if err != nil {
+		log.Errorf(
+			"Failed to merge alerts. "+
+				"New alert %s (policy=%s) has %d file accesses and old alert %s (policy=%s) has %d file accesses: %v",
+			newAlert.GetId(), newAlert.GetPolicy().GetName(), len(newAlert.GetProcessViolation().GetProcesses()),
+			oldAlert.GetId(), oldAlert.GetPolicy().GetName(), len(oldAlert.GetFileAccessViolation().GetAccesses()), err,
+		)
+		// At this point, we know that the new alert has non-zero process violations but it cannot be merged.
+		return true
+	}
+
+	result := false
+	for _, access := range newAlert.GetFileAccessViolation().GetAccesses() {
+		if protocompat.CompareTimestampToTime(access.GetTimestamp(), lastAccessTime) > 0 {
+			result = true
+			newFileAccesses = append(newFileAccesses, access)
+		}
+	}
+	// If there are no new processes, we'll just use the old alert.
+	if !result {
+		return result
+	}
+
+	if len(newFileAccesses) > maxRunTimeViolationsPerAlert {
+		newFileAccesses = newFileAccesses[:maxRunTimeViolationsPerAlert]
+	}
+	newAlert.FileAccessViolation.Accesses = newFileAccesses
+	printer.UpdateFileAccessAlertViolationMessage(newAlert.GetFileAccessViolation())
+	return result
+}
+
 // mergeRunTimeAlerts merges run-time alerts, and returns true if new alert has at least one new run-time violation.
 func mergeRunTimeAlerts(old, newAlert *storage.Alert) bool {
 	newAlertHasNewProcesses := mergeProcessesFromOldIntoNew(old, newAlert)
 	newAlertHasNewEventViolations := mergeK8sEventViolations(old, newAlert)
 	newAlertHasNewNetworkFlowViolations := mergeNetworkFlowViolations(old, newAlert)
-	return newAlertHasNewProcesses || newAlertHasNewEventViolations || newAlertHasNewNetworkFlowViolations
+	newAlertHasNewFileAccessViolations := mergeFileAccessViolations(old, newAlert)
+	return newAlertHasNewProcesses || newAlertHasNewEventViolations || newAlertHasNewNetworkFlowViolations || newAlertHasNewFileAccessViolations
 }
 
 // Given the nature of an event, each event it anticipated to generate exactly one alert (one or more violations).
@@ -444,6 +495,8 @@ func alertsAreForSamePolicyAndEntity(a1, a2 *storage.Alert) bool {
 		return a1.GetDeployment().GetId() == a2.GetDeployment().GetId()
 	} else if a1.GetResource() != nil && a2.GetResource() != nil {
 		return alertsAreForSameResource(a1.GetResource(), a2.GetResource())
+	} else if a1.GetNode() != nil && a2.GetNode() != nil {
+		return alertsAreForSameNode(a1.GetNode(), a2.GetNode())
 	}
 	return false
 }
@@ -453,4 +506,10 @@ func alertsAreForSameResource(a1, a2 *storage.Alert_Resource) bool {
 		a1.GetName() == a2.GetName() &&
 		a1.GetClusterId() == a2.GetClusterId() &&
 		a1.GetNamespace() == a2.GetNamespace()
+}
+
+func alertsAreForSameNode(a1, a2 *storage.Alert_Node) bool {
+	return a1.GetId() == a2.GetId() &&
+		a1.GetName() == a2.GetName() &&
+		a1.GetClusterId() == a2.GetClusterId()
 }

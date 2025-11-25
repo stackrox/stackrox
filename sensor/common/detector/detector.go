@@ -585,6 +585,7 @@ func createAlertResultsMsg(ctx context.Context, action central.ResourceAction, a
 						DeploymentId: alertResults.GetDeploymentId(),
 						Alerts:       alertResults.GetAlerts(),
 						Stage:        alertResults.GetStage(),
+						Source:       alertResults.GetSource(),
 					},
 				},
 			},
@@ -886,8 +887,10 @@ func (d *detectorImpl) processFileAccess() {
 			}
 
 			var alerts []*storage.Alert
+			var source central.AlertResults_Source
 			if fsUtils.IsNodeFileAccess(item.Access) {
 				alerts = d.unifiedDetector.DetectNodeFileAccess(item.Node, item.Access)
+				source = central.AlertResults_NODE_EVENT
 			} else if fsUtils.IsDeploymentFileAccess(item.Access) {
 				// TODO(ROX-30806): wire up deployment-based detection
 				log.Debug("Deployment-based file access detection not yet implemented")
@@ -903,6 +906,7 @@ func (d *detectorImpl) processFileAccess() {
 				DeploymentId: item.Access.GetProcess().GetDeploymentId(),
 				Alerts:       alerts,
 				Stage:        storage.LifecycleStage_RUNTIME,
+				Source:       source,
 			}
 
 			select {

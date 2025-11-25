@@ -487,6 +487,19 @@ func (m *managerImpl) HandleResourceAlerts(clusterID string, alerts []*storage.A
 	return nil
 }
 
+func (m *managerImpl) HandleNodeAlerts(clusterID string, alerts []*storage.Alert, stage storage.LifecycleStage) error {
+	m.filterOutDisabledPolicies(&alerts)
+	if len(alerts) == 0 && stage == storage.LifecycleStage_RUNTIME {
+		return nil
+	}
+
+	if _, err := m.alertManager.AlertAndNotify(lifecycleMgrCtx, alerts,
+		alertmanager.WithClusterID(clusterID), alertmanager.WithLifecycleStage(stage)); err != nil {
+		return err
+	}
+	return nil
+}
+
 func (m *managerImpl) UpsertPolicy(policy *storage.Policy) error {
 	m.policyAlertsLock.Lock()
 	defer m.policyAlertsLock.Unlock()

@@ -1151,8 +1151,10 @@ func (x *Alert_Resource) GetNamespaceId() string {
 
 type Alert_Node struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" search:"Node ID"`     // @gotags: search:"Node ID"
-	Name          string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty" search:"Node"` // @gotags: search:"Node"
+	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" search:"Node ID"`                                      // @gotags: search:"Node ID"
+	Name          string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty" search:"Node"`                                  // @gotags: search:"Node"
+	ClusterId     string                 `protobuf:"bytes,3,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty"`       // This field has to be duplicated in Alert for scope management and search.
+	ClusterName   string                 `protobuf:"bytes,4,opt,name=cluster_name,json=clusterName,proto3" json:"cluster_name,omitempty"` // This field has to be duplicated in Alert for scope management and search.
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1197,6 +1199,20 @@ func (x *Alert_Node) GetId() string {
 func (x *Alert_Node) GetName() string {
 	if x != nil {
 		return x.Name
+	}
+	return ""
+}
+
+func (x *Alert_Node) GetClusterId() string {
+	if x != nil {
+		return x.ClusterId
+	}
+	return ""
+}
+
+func (x *Alert_Node) GetClusterName() string {
+	if x != nil {
+		return x.ClusterName
 	}
 	return ""
 }
@@ -1964,7 +1980,7 @@ var File_storage_alert_proto protoreflect.FileDescriptor
 
 const file_storage_alert_proto_rawDesc = "" +
 	"\n" +
-	"\x13storage/alert.proto\x12\astorage\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x18storage/deployment.proto\x1a\x19storage/file_access.proto\x1a\x1astorage/network_flow.proto\x1a\x14storage/policy.proto\x1a\x1fstorage/process_indicator.proto\"\x98\x1c\n" +
+	"\x13storage/alert.proto\x12\astorage\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x18storage/deployment.proto\x1a\x19storage/file_access.proto\x1a\x1astorage/network_flow.proto\x1a\x14storage/policy.proto\x1a\x1fstorage/process_indicator.proto\"\xda\x1c\n" +
 	"\x05Alert\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12'\n" +
 	"\x06policy\x18\x02 \x01(\v2\x0f.storage.PolicyR\x06policy\x12@\n" +
@@ -2039,10 +2055,13 @@ const file_storage_alert_proto_rawDesc = "" +
 	"\x15CLUSTER_ROLE_BINDINGS\x10\x04\x12\x14\n" +
 	"\x10NETWORK_POLICIES\x10\x05\x12 \n" +
 	"\x1cSECURITY_CONTEXT_CONSTRAINTS\x10\x06\x12\x14\n" +
-	"\x10EGRESS_FIREWALLS\x10\a\x1a*\n" +
+	"\x10EGRESS_FIREWALLS\x10\a\x1al\n" +
 	"\x04Node\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
-	"\x04name\x18\x02 \x01(\tR\x04name\x1a\xe4\a\n" +
+	"\x04name\x18\x02 \x01(\tR\x04name\x12\x1d\n" +
+	"\n" +
+	"cluster_id\x18\x03 \x01(\tR\tclusterId\x12!\n" +
+	"\fcluster_name\x18\x04 \x01(\tR\vclusterName\x1a\xe4\a\n" +
 	"\tViolation\x12\x18\n" +
 	"\amessage\x18\x01 \x01(\tR\amessage\x12P\n" +
 	"\x0fkey_value_attrs\x18\x04 \x01(\v2&.storage.Alert.Violation.KeyValueAttrsH\x00R\rkeyValueAttrs\x12V\n" +

@@ -91,12 +91,23 @@ func (s *pipelineImpl) Run(ctx context.Context, clusterID string, msg *central.M
 			a.Namespace = resource.GetNamespace()
 			a.NamespaceId = resource.GetNamespaceId()
 		}
+		if node := a.GetNode(); node != nil {
+			node.ClusterId = clusterID
+			node.ClusterName = clusterName
+		}
 	}
 
 	// All alerts in an `alertResults` message will correspond to just one source (ie, either audit event or deployment), by construction.
 	if alertResults.GetSource() == central.AlertResults_AUDIT_EVENT {
 		if err := s.lifecycleManager.HandleResourceAlerts(clusterID, alertResults.GetAlerts(), alertResults.GetStage()); err != nil {
 			return errors.Wrap(err, "error handling resource alerts")
+		}
+		return nil
+	}
+
+	if alertResults.GetSource() == central.AlertResults_NODE_EVENT {
+		if err := s.lifecycleManager.HandleNodeAlerts(clusterID, alertResults.GetAlerts(), alertResults.GetStage()); err != nil {
+			return errors.Wrap(err, "error handling node alerts")
 		}
 		return nil
 	}
