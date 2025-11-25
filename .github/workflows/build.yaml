@@ -723,6 +723,7 @@ jobs:
   push-operator-manifests:
     runs-on: ubuntu-latest
     needs:
+    - define-ci-versions
     - define-job-matrix
     - build-and-push-operator
     # This step will run even if some of the build-and-push-matrix steps failed.
@@ -739,7 +740,7 @@ jobs:
     env:
       ROX_PRODUCT_BRANDING: ""
     container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.4.9
+      image: ${{ needs.define-ci-versions.outputs.apollo-ci-test-image }}
       volumes:
         - /usr:/mnt/usr
         - /opt:/mnt/opt
