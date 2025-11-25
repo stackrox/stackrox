@@ -328,13 +328,6 @@ func (s *scannerv4) GetVirtualMachineScan(
 	vm *storage.VirtualMachine,
 	indexReport *v4.IndexReport,
 ) (*storage.VirtualMachineScan, error) {
-	return s.GetVirtualMachineInventoryScan(vm, indexReport)
-}
-
-func (s *scannerv4) GetVirtualMachineInventoryScan(
-	vm *storage.VirtualMachine,
-	indexReport *v4.IndexReport,
-) (*storage.VirtualMachineScan, error) {
 	if s.scannerClient == nil {
 		return nil, errors.New("Scanner V4 client not available for VM enrichment")
 	}
@@ -407,13 +400,11 @@ func newNodeScanner(integration *storage.NodeIntegration) (*scannerv4, error) {
 
 // NewVirtualMachineScanner provides a scannerv4 instance that is able to scan virtual machines
 func NewVirtualMachineScanner() (types.VirtualMachineScanner, error) {
-	indexerEndpoint := DefaultIndexerEndpoint
 	matcherEndpoint := DefaultMatcherEndpoint
 
 	ctx := context.Background()
 	scannerClient, err := client.NewGRPCScanner(
 		ctx,
-		client.WithIndexerAddress(indexerEndpoint),
 		client.WithMatcherAddress(matcherEndpoint),
 	)
 	if err != nil {

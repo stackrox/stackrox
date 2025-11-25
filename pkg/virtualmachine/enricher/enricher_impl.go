@@ -38,7 +38,7 @@ func (e *enricherImpl) EnrichVirtualMachineWithVulnerabilities(vm *storage.Virtu
 		// The function signature could be changed to return the note to be added to the
 		// virtual machine notes
 		vm.Notes = append(vm.Notes, storage.VirtualMachine_MISSING_SCAN_DATA)
-		return err
+		return errors.Wrap(err, "getting scan for VM")
 	}
 
 	vm.Scan = scan
