@@ -93,7 +93,7 @@ function ReportJobsTable<T extends Snapshot>({
                         const rowActions = [
                             {
                                 title: (
-                                    <span className="pf-v6-u-danger-color-100">
+                                    <span className="pf-v6-u-text-color-status-danger">
                                         Delete download
                                     </span>
                                 ),

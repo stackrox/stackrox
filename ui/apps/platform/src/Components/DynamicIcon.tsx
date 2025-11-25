@@ -6,8 +6,7 @@ export function DynamicIcon(props: SVGIconProps) {
     return (
         <Icon>
             <FilterIcon
-                color="var(--pf-t--temp--dev--tbd)"
-                /* CODEMODS: original v5 color was --pf-v5-global--palette--blue-300 */ {...props}
+                color="var(--pf-t--color--blue--30)" {...props}
             />
         </Icon>
     );

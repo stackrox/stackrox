@@ -19,7 +19,7 @@ import { AccessControlEntityLink } from '../AccessControlLinks';
 const unselectedRowStyle = {};
 const selectedRowStyle = {
     borderLeft:
-        'var(--pf-t--temp--dev--tbd)' /* CODEMODS: original v5 color was --pf-v5-global--primary-color--100 */,
+        'var(--pf-t--global--icon--color--brand--default)',
 };
 
 function getAuthProviderTypeLabel(type: string, availableTypes: AuthProviderInfo[]): string {

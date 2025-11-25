@@ -68,7 +68,7 @@ function ClusterPageDetails({ clusterId }: ClusterPageDetailsProps) {
                                     title="There was an error loading the cluster details"
                                     headingLevel="h2"
                                     icon={ExclamationCircleIcon}
-                                    iconClassName="pf-v6-u-danger-color-100"
+                                    iconClassName="pf-v6-u-text-color-status-danger"
                                 >
                                     {getAxiosErrorMessage(error)}
                                 </EmptyStateTemplate>

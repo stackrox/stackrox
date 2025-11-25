@@ -173,7 +173,7 @@ function IntegrationsTable({
                                     },
                                     {
                                         title: (
-                                            <div className="pf-v6-u-danger-color-100">
+                                            <div className="pf-v6-u-text-color-status-danger">
                                                 Delete Integration
                                             </div>
                                         ),

@@ -42,7 +42,7 @@ function ExceptionConfigurationPage() {
                                     title="Error loading vulnerability exception configuration"
                                     headingLevel="h2"
                                     icon={ExclamationCircleIcon}
-                                    iconClassName="pf-v6-u-danger-color-100"
+                                    iconClassName="pf-v6-u-text-color-status-danger"
                                 >
                                     {getAxiosErrorMessage(configLoadError)}
                                 </EmptyStateTemplate>
