@@ -224,7 +224,8 @@ func mergeProcessesFromOldIntoNew(old, newAlert *storage.Alert) (newAlertHasNewP
 		return
 	}
 	if len(newProcessesSlice) > maxRunTimeViolationsPerAlert {
-		newProcessesSlice = newProcessesSlice[:maxRunTimeViolationsPerAlert]
+		// prioritize newer events over old ones
+		newProcessesSlice = newProcessesSlice[len(newProcessesSlice)-maxRunTimeViolationsPerAlert:]
 	}
 	newAlert.ProcessViolation.Processes = newProcessesSlice
 	printer.UpdateProcessAlertViolationMessage(newAlert.GetProcessViolation())
@@ -275,7 +276,8 @@ func mergeFileAccessViolations(oldAlert, newAlert *storage.Alert) bool {
 	}
 
 	if len(mergedFileAccesses) > maxRunTimeViolationsPerAlert {
-		mergedFileAccesses = mergedFileAccesses[:maxRunTimeViolationsPerAlert]
+		// prioritize newer events over old ones
+		mergedFileAccesses = mergedFileAccesses[len(mergedFileAccesses)-maxRunTimeViolationsPerAlert:]
 	}
 
 	newAlert.FileAccessViolation.Accesses = mergedFileAccesses
