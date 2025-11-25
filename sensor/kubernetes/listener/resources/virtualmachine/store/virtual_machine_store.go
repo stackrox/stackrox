@@ -1,6 +1,9 @@
 package store
 
 import (
+	"fmt"
+	"time"
+
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sync"
@@ -220,4 +223,66 @@ func (s *VirtualMachineStore) clearStatusNoLock(id virtualmachine.VMID) {
 	vm.VSOCKCID = nil
 	// If the instance is removed the VirtualMachine will transition to Stopped
 	vm.Running = false
+}
+
+// PrepopulateTestData populates the store with fake VMs for load testing.
+// This should only be called when ROX_VM_SENSOR_TEST_MODE is enabled.
+// Creates VMs with sequential vsock CIDs starting from 3 (the first valid CID).
+// The number of VMs is controlled by ROX_VM_SENSOR_TEST_VM_COUNT.
+func (s *VirtualMachineStore) PrepopulateTestData(vmCount int) {
+	const (
+		startCID      = 3 // First valid vsock CID (0=hypervisor, 1=loopback, 2=host)
+		batchSize     = 10000
+		testNamespace = "vm-load-test"
+	)
+
+	endCID := startCID + vmCount - 1
+	log.Infof("Prepopulating VM store with %d test VMs (CIDs %d-%d) for load testing...", vmCount, startCID, endCID)
+	start := time.Now()
+
+	s.lock.Lock()
+	defer s.lock.Unlock()
+
+	// Pre-allocate maps with exact capacity to avoid resizing during population
+	s.virtualMachines = make(map[virtualmachine.VMID]*virtualmachine.Info, vmCount)
+	s.cidToID = make(map[uint32]virtualmachine.VMID, vmCount)
+	s.idToCID = make(map[virtualmachine.VMID]uint32, vmCount)
+	s.namespaceToID = make(map[string]set.Set[virtualmachine.VMID])
+
+	// Create namespace set once
+	nsSet := set.NewSet[virtualmachine.VMID]()
+	s.namespaceToID[testNamespace] = nsSet
+
+	// Batch insert VMs
+	for i := 0; i < vmCount; i++ {
+		cid := uint32(startCID + i)
+
+		// Create VM ID and info
+		vmID := virtualmachine.VMID(fmt.Sprintf("test-vm-%d", cid))
+		vsockCID := new(uint32)
+		*vsockCID = cid
+
+		vm := &virtualmachine.Info{
+			ID:        vmID,
+			Name:      fmt.Sprintf("test-vm-%d", cid),
+			Namespace: testNamespace,
+			VSOCKCID:  vsockCID,
+			Running:   true,
+			GuestOS:   "linux",
+		}
+
+		// Direct insertion without locking (we already hold the lock)
+		s.virtualMachines[vmID] = vm
+		s.cidToID[cid] = vmID
+		s.idToCID[vmID] = cid
+		nsSet.Add(vmID)
+
+		// Progress logging every batch
+		if (i+1)%batchSize == 0 {
+			log.Infof("Prepopulated %d/%d test VMs...", i+1, vmCount)
+		}
+	}
+
+	elapsed := time.Since(start)
+	log.Infof("Successfully prepopulated %d test VMs in %v (%.0f VMs/sec)", vmCount, elapsed, float64(vmCount)/elapsed.Seconds())
 }

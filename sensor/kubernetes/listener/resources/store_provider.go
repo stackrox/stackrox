@@ -1,6 +1,7 @@
 package resources
 
 import (
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/registrymirror"
 	"github.com/stackrox/rox/sensor/common/clusterentities"
 	"github.com/stackrox/rox/sensor/common/registry"
@@ -52,6 +53,14 @@ func InitializeStore(hm clusterentities.HeritageManager) *StoreProvider {
 	}
 
 	endpointManager := newEndpointManager(svcStore, deployStore, podStore, nodeStore, entityStore)
+	virtualMachineStore := vmStore.NewVirtualMachineStore()
+
+	// Prepopulate VM store with fake data for load testing if test mode is enabled
+	if env.VirtualMachinesSensorTestMode.BooleanSetting() {
+		vmCount := env.VirtualMachinesSensorTestVMCount.IntegerSetting()
+		virtualMachineStore.PrepopulateTestData(vmCount)
+	}
+
 	p := &StoreProvider{
 		deploymentStore:        deployStore,
 		podStore:               podStore,
@@ -66,7 +75,7 @@ func InitializeStore(hm clusterentities.HeritageManager) *StoreProvider {
 		registryStore:          registry.NewRegistryStore(nil),
 		registryMirrorStore:    registrymirror.NewFileStore(),
 		nsStore:                newNamespaceStore(),
-		vmStore:                vmStore.NewVirtualMachineStore(),
+		vmStore:                virtualMachineStore,
 	}
 
 	p.cleanableStores = []CleanableStore{

@@ -27,4 +27,9 @@ var (
 	// VirtualMachinesSensorTestMode bypasses VM store lookups in sensor for artificial load testing.
 	// When enabled, sensor will silently drop index reports for unknown VMs instead of logging errors.
 	VirtualMachinesSensorTestMode = RegisterBooleanSetting("ROX_VM_SENSOR_TEST_MODE", false)
+
+	// VirtualMachinesSensorTestVMCount configures the number of VMs to prepopulate in test mode.
+	// VMs are assigned sequential CIDs starting from 3. Max 100000 VMs.
+	VirtualMachinesSensorTestVMCount = RegisterIntegerSetting("ROX_VM_SENSOR_TEST_VM_COUNT", 100000).
+						WithMinimum(1).WithMaximum(100000)
 )
