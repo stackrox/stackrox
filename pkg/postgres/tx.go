@@ -63,7 +63,7 @@ func (t *Tx) QueryRow(ctx context.Context, sql string, args ...interface{}) pgx.
 	return t.Tx.QueryRow(ctx, sql, args...)
 }
 
-// Commit wraps pgx.Tx Commit
+// Commit wraps pgx.Tx Commit but is a NOOP for inner transaction
 func (t *Tx) Commit(ctx context.Context) error {
 	defer t.cancelFunc()
 	if t.mode == inner {
@@ -77,7 +77,9 @@ func (t *Tx) Commit(ctx context.Context) error {
 	return nil
 }
 
-// Rollback wraps pgx.Tx Rollback
+// Rollback wraps pgx.Tx Rollback safe to use even if inner transaction was reverted.
+// In case Rollback or Commit might have the same effect (e.g. read only transaction)
+// prefer Commit.
 func (t *Tx) Rollback(ctx context.Context) error {
 	defer t.cancelFunc()
 
@@ -125,4 +127,14 @@ func NewTransactionOrFromContext(ctx context.Context, db DB) (*Tx, context.Conte
 	}
 	ctxWithTx := ContextWithTx(ctx, tx)
 	return tx, ctxWithTx, nil
+}
+
+// FinishReadOnlyTransaction commits the transaction and log error.
+// Since context might be already done it uses its own background context.
+func FinishReadOnlyTransaction(tx interface {
+	Commit(ctx context.Context) error
+}) {
+	if err := tx.Commit(context.Background()); err != nil {
+		log.Errorf("failed to commit transaction: %v", err)
+	}
 }

@@ -554,12 +554,7 @@ func (s *storeImpl) retryableGet(ctx context.Context, id string) (*storage.Image
 	if err != nil {
 		return nil, false, err
 	}
-	defer func() {
-		// No changes are made to the database, so COMMIT or ROLLBACK have the same effect.
-		if err := tx.Commit(ctx); err != nil {
-			log.Errorf("failed to commit transaction: %v", err)
-		}
-	}()
+	defer postgres.FinishReadOnlyTransaction(tx)
 
 	image, found, err := s.getFullImage(ctx, tx, id)
 
@@ -800,12 +795,7 @@ func (s *storeImpl) retryableGetByIDs(ctx context.Context, ids []string) ([]*sto
 	if err != nil {
 		return nil, err
 	}
-	defer func() {
-		// No changes are made to the database, so COMMIT or ROLLBACK have the same effect.
-		if err := tx.Commit(ctx); err != nil {
-			log.Errorf("failed to commit tx: %v", err)
-		}
-	}()
+	defer postgres.FinishReadOnlyTransaction(tx)
 
 	elems := make([]*storage.Image, 0, len(ids))
 	for _, id := range ids {

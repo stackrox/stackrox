@@ -638,12 +638,7 @@ func (s *storeImpl) retryableGet(ctx context.Context, id string) (*storage.Node,
 	if err != nil {
 		return nil, false, err
 	}
-	defer func() {
-		// No changes are made to the database, so COMMIT or ROLLBACK have the same effect.
-		if err := tx.Commit(ctx); err != nil {
-			log.Errorf("failed to commit tx: %v", err)
-		}
-	}()
+	defer postgres.FinishReadOnlyTransaction(tx)
 
 	node, found, err := s.getFullNode(ctx, tx, id)
 	return node, found, err
@@ -854,12 +849,7 @@ func (s *storeImpl) retryableGetMany(ctx context.Context, ids []string) ([]*stor
 	if err != nil {
 		return nil, nil, err
 	}
-	defer func() {
-		// No changes are made to the database, so COMMIT or ROLLBACK have the same effect.
-		if err := tx.Commit(ctx); err != nil {
-			log.Errorf("failed to commit tx: %v", err)
-		}
-	}()
+	defer postgres.FinishReadOnlyTransaction(tx)
 
 	resultsByID := make(map[string]*storage.Node)
 	for _, id := range ids {
@@ -897,12 +887,7 @@ func (s *storeImpl) WalkByQuery(ctx context.Context, q *v1.Query, fn func(node *
 	if err != nil {
 		return err
 	}
-	defer func() {
-		// No changes are made to the database, so COMMIT or ROLLBACK have the same effect.
-		if err := tx.Commit(ctx); err != nil {
-			log.Errorf("failed to commit tx: %v", err)
-		}
-	}()
+	defer postgres.FinishReadOnlyTransaction(tx)
 
 	callback := func(node *storage.Node) error {
 		err := s.populateNode(ctx, tx, node)

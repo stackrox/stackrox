@@ -125,12 +125,7 @@ func (s *storeImpl) retryableGet(ctx context.Context) (*storage.DelegatedRegistr
 	if err != nil {
 		return nil, false, err
 	}
-	defer func() {
-		// No changes are made to the database, so COMMIT or ROLLBACK have the same effect.
-		if err := tx.Commit(ctx); err != nil {
-			log.Errorf("failed to commit tx: %v", err)
-		}
-	}()
+	defer postgres.FinishReadOnlyTransaction(tx)
 
 	row := tx.QueryRow(ctx, getStmt)
 	var data []byte
