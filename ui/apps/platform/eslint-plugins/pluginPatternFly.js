@@ -124,7 +124,7 @@ const rules = {
                                                         (attribute) =>
                                                             attribute.name?.name === 'className' &&
                                                             attribute.value?.value ===
-                                                                'pf-v5-screen-reader'
+                                                                'pf-v6-screen-reader'
                                                     ) &&
                                                     hasValueAsText(child)
                                             );

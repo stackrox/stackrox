@@ -18,8 +18,7 @@ import { AccessControlEntityLink } from '../AccessControlLinks';
 // TODO import from where?
 const unselectedRowStyle = {};
 const selectedRowStyle = {
-    borderLeft:
-        'var(--pf-t--global--icon--color--brand--default)',
+    borderLeft: 'var(--pf-t--global--icon--color--brand--default)',
 };
 
 function getAuthProviderTypeLabel(type: string, availableTypes: AuthProviderInfo[]): string {
@@ -75,7 +74,7 @@ function AuthProvidersList({ entityId, authProviders }: AuthProvidersListProps):
                         <Th width={20}>Minimum access role</Th>
                         <Th width={25}>Assigned rules</Th>
                         <Th width={10}>
-                            <span className="pf-v5-screen-reader">Row actions</span>
+                            <span className="pf-v6-screen-reader">Row actions</span>
                         </Th>
                     </Tr>
                 </Thead>

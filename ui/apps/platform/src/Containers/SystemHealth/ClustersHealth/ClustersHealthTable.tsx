@@ -20,7 +20,7 @@ export function TheadClustersHealth({
         <Thead>
             <Tr>
                 <Th width={35}>
-                    <span className="pf-v5-screen-reader">Clusters</span>
+                    <span className="pf-v6-screen-reader">Clusters</span>
                 </Th>
                 <Th width={10} className="pf-v6-u-text-align-right">
                     {dataLabelHealthy || 'Healthy'}
@@ -67,9 +67,7 @@ export function TdUnhealthy({ count, dataLabel }: TdStatusWithDataLabelProps): R
                 <IconText
                     icon={
                         <Icon>
-                            <ExclamationCircleIcon
-                                color="var(--pf-t--global--color--status--danger--default)"
-                            />
+                            <ExclamationCircleIcon color="var(--pf-t--global--color--status--danger--default)" />
                         </Icon>
                     }
                     text={String(count)}
@@ -88,9 +86,7 @@ export function TdDegraded({ count, dataLabel }: TdStatusWithDataLabelProps): Re
                 <IconText
                     icon={
                         <Icon>
-                            <ExclamationTriangleIcon
-                                color="var(--pf-t--global--icon--color--status--warning--hover)"
-                            />
+                            <ExclamationTriangleIcon color="var(--pf-t--global--icon--color--status--warning--hover)" />
                         </Icon>
                     }
                     text={String(count)}

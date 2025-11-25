@@ -78,7 +78,7 @@ function DelegatedRegistriesTable({
                     <Th width={40}>Destination cluster (CLI/API only)</Th>
                     {isEditing && (
                         <Th>
-                            <span className="pf-v5-screen-reader">Row action</span>
+                            <span className="pf-v6-screen-reader">Row action</span>
                         </Th>
                     )}
                 </Tr>
@@ -170,9 +170,7 @@ function DelegatedRegistriesTable({
                                         variant="link"
                                         isInline
                                         icon={
-                                            <MinusCircleIcon
-                                                color="var(--pf-t--global--color--status--danger--default)"
-                                            />
+                                            <MinusCircleIcon color="var(--pf-t--global--color--status--danger--default)" />
                                         }
                                         onClick={() => deleteRegistry(rowIndex)}
                                     >
