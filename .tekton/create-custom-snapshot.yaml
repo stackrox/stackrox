@@ -23,7 +23,7 @@ metadata:
     # added to the PR. See the Slack tread linked from ROX-30580.
     pipelinesascode.tekton.dev/on-label: "[]"
   labels:
-    appstudio.openshift.io/application: acs
+    appstudio.openshift.io/application: acs-4-8
   name: create-custom-snapshot
   namespace: rh-acs-tenant
 
@@ -32,7 +32,7 @@ spec:
   params:
 
   taskRunTemplate:
-    serviceAccountName: build-pipeline-operator-bundle
+    serviceAccountName: build-pipeline-operator-bundle-4-8
 
   timeouts:
     tasks: 3h30m
