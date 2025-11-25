@@ -593,6 +593,16 @@
                     "id": 2,
                     "name": "name",
                     "type": "string"
+                  },
+                  {
+                    "id": 3,
+                    "name": "cluster_id",
+                    "type": "string"
+                  },
+                  {
+                    "id": 4,
+                    "name": "cluster_name",
+                    "type": "string"
                   }
                 ]
               },
