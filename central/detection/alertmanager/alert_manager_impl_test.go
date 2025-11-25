@@ -43,6 +43,10 @@ var (
 
 	firstNetworkFlowViolation  = getNetworkFlowViolation("1", yesterday)
 	secondNetworkFlowViolation = getNetworkFlowViolation("2", now)
+
+	nowFileAccessViolation        = getFileAccess(now)
+	yesterdayFileAccessViolation  = getFileAccess(yesterday)
+	twoDaysAgoFileAccessViolation = getFileAccess(twoDaysAgo)
 )
 
 func getKubeEventViolation(msg string, violationTime time.Time) *storage.Alert_Violation {
@@ -76,6 +80,27 @@ func getProcessIndicator(processTime time.Time) *storage.ProcessIndicator {
 			Name: "apt-get",
 			Time: protocompat.ConvertTimeToTimestampOrNil(&processTime),
 		},
+	}
+}
+
+func getFileAccess(accessTime time.Time) *storage.FileAccess {
+	return &storage.FileAccess{
+		File: &storage.FileAccess_File{
+			NodePath:    "/etc/passwd",
+			MountedPath: "/etc/passwd",
+		},
+		Operation: storage.FileAccess_OPEN,
+		Timestamp: protocompat.ConvertTimeToTimestampOrNil(&accessTime),
+		Process:   getProcessIndicator(accessTime),
+	}
+}
+
+func getFakeFileAccessAlert(accesses ...*storage.FileAccess) *storage.Alert {
+	v := &storage.Alert_FileAccessViolation{Accesses: accesses}
+	printer.UpdateFileAccessAlertViolationMessage(v)
+	return &storage.Alert{
+		LifecycleStage:      storage.LifecycleStage_RUNTIME,
+		FileAccessViolation: v,
 	}
 }
 
@@ -571,6 +596,52 @@ func TestMergeProcessesFromOldIntoNew(t *testing.T) {
 	} {
 		t.Run(c.desc, func(t *testing.T) {
 			out := mergeProcessesFromOldIntoNew(c.old, c.new)
+			assert.Equal(t, c.expectedOutput, out)
+			if c.expectedNew != nil {
+				protoassert.Equal(t, c.expectedNew, c.new)
+			}
+		})
+	}
+}
+
+func TestMergeFileAccessAlerts(t *testing.T) {
+	for _, c := range []struct {
+		desc           string
+		old            *storage.Alert
+		new            *storage.Alert
+		expectedNew    *storage.Alert
+		expectedOutput bool
+	}{
+		{
+			desc:           "Equal",
+			old:            getFakeFileAccessAlert(yesterdayFileAccessViolation),
+			new:            getFakeFileAccessAlert(yesterdayFileAccessViolation),
+			expectedNew:    nil,
+			expectedOutput: false,
+		},
+		{
+			desc:           "Equal with two",
+			old:            getFakeFileAccessAlert(yesterdayFileAccessViolation, nowFileAccessViolation),
+			new:            getFakeFileAccessAlert(yesterdayFileAccessViolation, nowFileAccessViolation),
+			expectedOutput: false,
+		},
+		{
+			desc:           "New has new",
+			old:            getFakeFileAccessAlert(yesterdayFileAccessViolation),
+			new:            getFakeFileAccessAlert(nowFileAccessViolation),
+			expectedNew:    getFakeFileAccessAlert(yesterdayFileAccessViolation, nowFileAccessViolation),
+			expectedOutput: true,
+		},
+		{
+			desc:           "New has many new",
+			old:            getFakeFileAccessAlert(twoDaysAgoFileAccessViolation, yesterdayFileAccessViolation),
+			new:            getFakeFileAccessAlert(yesterdayFileAccessViolation, nowFileAccessViolation),
+			expectedNew:    getFakeFileAccessAlert(twoDaysAgoFileAccessViolation, yesterdayFileAccessViolation, nowFileAccessViolation),
+			expectedOutput: true,
+		},
+	} {
+		t.Run(c.desc, func(t *testing.T) {
+			out := mergeFileAccessViolations(c.old, c.new)
 			assert.Equal(t, c.expectedOutput, out)
 			if c.expectedNew != nil {
 				protoassert.Equal(t, c.expectedNew, c.new)
