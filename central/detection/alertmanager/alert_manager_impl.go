@@ -238,45 +238,49 @@ func mergeNetworkFlowViolations(old, new *storage.Alert) bool {
 }
 
 func mergeFileAccessViolations(oldAlert, newAlert *storage.Alert) bool {
-	if len(newAlert.GetFileAccessViolation().GetAccesses()) == 0 {
+	newViolations := newAlert.GetFileAccessViolation()
+	oldViolations := oldAlert.GetFileAccessViolation()
+
+	numNewAccesses := len(newViolations.GetAccesses())
+	numOldAccesses := len(oldViolations.GetAccesses())
+
+	if numNewAccesses == 0 || numOldAccesses >= maxRunTimeViolationsPerAlert {
 		return false
 	}
 
-	if len(oldAlert.GetFileAccessViolation().GetAccesses()) >= maxRunTimeViolationsPerAlert {
-		return false
-	}
-
-	newFileAccesses := oldAlert.GetFileAccessViolation().GetAccesses()
-	lastAccessTime, err := lastFileTime(oldAlert.GetFileAccessViolation().GetAccesses())
+	// start with old violations and merge with new
+	mergedFileAccesses := oldViolations.GetAccesses()
+	lastAccessTime, err := lastFileTime(mergedFileAccesses)
 	if err != nil {
 		log.Errorf(
 			"Failed to merge alerts. "+
 				"New alert %s (policy=%s) has %d file accesses and old alert %s (policy=%s) has %d file accesses: %v",
-			newAlert.GetId(), newAlert.GetPolicy().GetName(), len(newAlert.GetProcessViolation().GetProcesses()),
-			oldAlert.GetId(), oldAlert.GetPolicy().GetName(), len(oldAlert.GetFileAccessViolation().GetAccesses()), err,
+			newAlert.GetId(), newAlert.GetPolicy().GetName(), numNewAccesses,
+			oldAlert.GetId(), oldAlert.GetPolicy().GetName(), numOldAccesses, err,
 		)
-		// At this point, we know that the new alert has non-zero process violations but it cannot be merged.
+		// At this point, we know that the new alert has non-zero file violations but it cannot be merged.
 		return true
 	}
 
-	result := false
-	for _, access := range newAlert.GetFileAccessViolation().GetAccesses() {
+	hasNewAccesses := false
+	for _, access := range newViolations.GetAccesses() {
 		if protocompat.CompareTimestampToTime(access.GetTimestamp(), lastAccessTime) > 0 {
-			result = true
-			newFileAccesses = append(newFileAccesses, access)
+			hasNewAccesses = true
+			mergedFileAccesses = append(mergedFileAccesses, access)
 		}
 	}
-	// If there are no new processes, we'll just use the old alert.
-	if !result {
-		return result
+	// If there are no new accesses, we'll just use the old alert.
+	if !hasNewAccesses {
+		return hasNewAccesses
 	}
 
-	if len(newFileAccesses) > maxRunTimeViolationsPerAlert {
-		newFileAccesses = newFileAccesses[:maxRunTimeViolationsPerAlert]
+	if len(mergedFileAccesses) > maxRunTimeViolationsPerAlert {
+		mergedFileAccesses = mergedFileAccesses[:maxRunTimeViolationsPerAlert]
 	}
-	newAlert.FileAccessViolation.Accesses = newFileAccesses
+
+	newAlert.FileAccessViolation.Accesses = mergedFileAccesses
 	printer.UpdateFileAccessAlertViolationMessage(newAlert.GetFileAccessViolation())
-	return result
+	return true
 }
 
 // mergeRunTimeAlerts merges run-time alerts, and returns true if new alert has at least one new run-time violation.
