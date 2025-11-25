@@ -74,9 +74,9 @@ func (tracker *TrackerBase[F]) translateStorageConfiguration(config map[string]*
 			return nil, nil, err
 		}
 
-		if len(labels.Filters) > 0 {
+		if len(labels.GetFilters()) > 0 {
 			patterns := make(map[Label]*regexp.Regexp)
-			for label, pattern := range labels.Filters {
+			for label, pattern := range labels.GetFilters() {
 				validated, err := tracker.validateLabel(label, metricName)
 				if err != nil {
 					return nil, nil, err
