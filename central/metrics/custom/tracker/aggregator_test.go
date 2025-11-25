@@ -110,10 +110,10 @@ func Test_aggregator(t *testing.T) {
 
 func Test_filter(t *testing.T) {
 	clusterFilter := make(map[Label]*regexp.Regexp)
-	clusterFilter[Label("Cluster")] = regexp.MustCompile("^.* 5$")
+	clusterFilter[Label("Cluster")] = regexp.MustCompile("^cluster [^5]$")
 
 	severityFilter := make(map[Label]*regexp.Regexp)
-	severityFilter[Label("Severity")] = regexp.MustCompile("^L.*$")
+	severityFilter[Label("Severity")] = regexp.MustCompile("^CRITICAL|HIGH$")
 
 	lf := make(LabelFilters)
 	lf[MetricName("test_Test_filter_metric1")] = severityFilter

@@ -58,8 +58,8 @@ func (a *aggregator[F]) count(finding F) {
 	}
 
 	for metric, labels := range a.md {
-		// Apply label filters. It could, e.g., drop all "RESOLVED" alerts.
-		if a.filteredOut(finding, a.lf[metric]) {
+		// Apply label filters. It could, e.g., keep only "ACTIVE" alerts.
+		if !a.pass(finding, a.lf[metric]) {
 			// Ignore this finding for this metric.
 			continue
 		}
@@ -73,18 +73,14 @@ func (a *aggregator[F]) count(finding F) {
 	}
 }
 
-// filteredOut checks if the finding needs to be ignored according to the
-// filtering label expressions.
-func (a *aggregator[F]) filteredOut(finding F, filters map[Label]*regexp.Regexp) bool {
-	if filters == nil {
-		return false
-	}
+// pass checks if the finding labels pass the filters.
+func (a *aggregator[F]) pass(finding F, filters map[Label]*regexp.Regexp) bool {
 	for label, pattern := range filters {
-		if pattern.MatchString(a.getters[label](finding)) {
-			return true
+		if !pattern.MatchString(a.getters[label](finding)) {
+			return false
 		}
 	}
-	return false
+	return true
 }
 
 // makeAggregationKey computes an aggregation key according to the provided

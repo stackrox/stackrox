@@ -72,7 +72,7 @@ const predefinedMetrics: Record<
     policyViolations: {
         namespace_severity: {
             labels: ['Cluster', 'Namespace', 'IsPlatformComponent', 'Action', 'Severity'],
-            filters: { State: 'RESOLVED' },
+            filters: { State: 'ACTIVE' },
         },
         deployment_severity: {
             labels: [
@@ -83,7 +83,7 @@ const predefinedMetrics: Record<
                 'Action',
                 'Severity',
             ],
-            filters: { State: 'RESOLVED' },
+            filters: { State: 'ACTIVE' },
         },
     },
 };
