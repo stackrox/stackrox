@@ -2,6 +2,7 @@ package watcher
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/stackrox/rox/central/baseimage/datastore"
@@ -9,6 +10,8 @@ import (
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/sync"
 	"golang.org/x/sync/semaphore"
 )
@@ -28,7 +31,7 @@ type watcherImpl struct {
 func New(ds datastore.DataStore) Watcher {
 	return &watcherImpl{
 		datastore:    ds,
-		pollInterval: env.BaseImagePollInterval.DurationSetting(),
+		pollInterval: env.BaseImageWatcherPollInterval.DurationSetting(),
 		stopper:      concurrency.NewStopper(),
 	}
 }
@@ -73,42 +76,56 @@ func (w *watcherImpl) run() {
 	}
 }
 
-// pollOnce executes a single poll cycle, processing all repositories.
+// pollOnce executes a single poll cycle with metric tracking.
 func (w *watcherImpl) pollOnce() {
-	log.Info("Starting base image watcher poll cycle")
 	start := time.Now()
+	err := w.doPoll()
+	recordPollDuration(time.Since(start).Seconds(), err)
+	if err != nil {
+		log.Errorf("Base image watcher poll cycle failed in %v: %v", time.Since(start), err)
+	} else {
+		log.Infof("Base image watcher poll cycle completed in %v", time.Since(start))
+	}
+}
+
+// doPoll contains the core poll logic.
+func (w *watcherImpl) doPoll() error {
+	log.Info("Starting base image watcher poll cycle")
 
 	ctx := concurrency.AsContext(w.stopper.LowLevel().GetStopRequestSignal())
 
+	// Wrap context with SAC scope checker for Administration resource.
+	// Base image repositories are administration-level resources requiring READ_ACCESS.
+	ctx = sac.WithGlobalAccessScopeChecker(ctx,
+		sac.AllowFixedScopes(
+			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
+			sac.ResourceScopeKeys(resources.Administration),
+		))
+
 	repos, err := w.datastore.ListRepositories(ctx)
 	if err != nil {
-		log.Errorf("Failed to list repositories: %v", err)
-		recordPollError("list_repositories")
-		return
+		return fmt.Errorf("listing repositories: %w", err)
 	}
 
 	if len(repos) == 0 {
 		log.Info("No base image repositories configured, skipping poll cycle")
 		recordRepositoryCount(0)
-		return
+		return nil
 	}
 
 	log.Infof("Processing %d base image repositories", len(repos))
 	recordRepositoryCount(len(repos))
 
-	// Process repositories concurrently with bounded parallelism
-	maxConcurrent := env.BaseImageMaxConcurrentRepositories.IntegerSetting()
+	// Process repositories concurrently with bounded parallelism.
+	maxConcurrent := env.BaseImageWatcherMaxConcurrentRepositories.IntegerSetting()
 	sem := semaphore.NewWeighted(int64(maxConcurrent))
 	wg := &sync.WaitGroup{}
 
 	for _, repo := range repos {
 		wg.Add(1)
-
-		// Acquire semaphore with context cancellation
 		if err := sem.Acquire(ctx, 1); err != nil {
-			log.Warnf("Poll cycle interrupted during semaphore acquire: %v", err)
 			wg.Done()
-			break
+			return fmt.Errorf("interrupted during semaphore acquire: %w", err)
 		}
 
 		go func(r *storage.BaseImageRepository) {
@@ -119,10 +136,7 @@ func (w *watcherImpl) pollOnce() {
 	}
 
 	wg.Wait()
-
-	duration := time.Since(start)
-	log.Infof("Poll cycle completed in %v", duration)
-	recordPollDuration(duration.Seconds())
+	return nil
 }
 
 // processRepository processes a single repository.

@@ -378,7 +378,9 @@ func startServices() {
 	reprocessor.Singleton().Start()
 	suppress.Singleton().Start()
 	pruning.Singleton().Start()
-	baseImageWatcher.Singleton().Start()
+	if env.BaseImageWatcherEnabled.BooleanSetting() {
+		baseImageWatcher.Singleton().Start()
+	}
 	gatherer.Singleton().Start()
 	vulnRequestManager.Singleton().Start()
 	apiTokenExpiration.Singleton().Start()
@@ -982,7 +984,6 @@ func waitForTerminationSignal() {
 		{reprocessor.Singleton(), "reprocessor loop"},
 		{suppress.Singleton(), "cve unsuppress loop"},
 		{pruning.Singleton(), "garbage collector"},
-		{baseImageWatcher.Singleton(), "base image watcher"},
 		{gatherer.Singleton(), "network graph default external sources gatherer"},
 		{vulnRequestManager.Singleton(), "vuln deferral requests expiry loop"},
 		{phonehomeClient.Singleton().Gatherer(), "telemetry gatherer"},
@@ -992,6 +993,10 @@ func waitForTerminationSignal() {
 		{gcp.Singleton(), "GCP cloud credentials manager"},
 		{cloudSourcesManager.Singleton(), "cloud sources manager"},
 		{administrationEventHandler.Singleton(), "administration events handler"},
+	}
+
+	if env.BaseImageWatcherEnabled.BooleanSetting() {
+		stoppables = append(stoppables, stoppableWithName{baseImageWatcher.Singleton(), "base image watcher"})
 	}
 
 	stoppables = append(stoppables,

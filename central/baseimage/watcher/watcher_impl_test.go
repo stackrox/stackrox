@@ -103,11 +103,9 @@ func TestWatcher_ProcessesMultipleRepositories(t *testing.T) {
 		stopper:      concurrency.NewStopper(),
 	}
 
-	// Run one poll cycle
-	w.pollOnce()
-
-	// Verify no panics, all repositories processed
-	assert.True(t, true)
+	assert.NotPanics(t, func() {
+		w.pollOnce()
+	})
 }
 
 func TestWatcher_HandlesDatastoreError(t *testing.T) {
@@ -124,10 +122,9 @@ func TestWatcher_HandlesDatastoreError(t *testing.T) {
 		stopper:      concurrency.NewStopper(),
 	}
 
-	// Should not panic on datastore error
-	w.pollOnce()
-
-	assert.True(t, true)
+	assert.NotPanics(t, func() {
+		w.pollOnce()
+	})
 }
 
 func TestWatcher_StartIsIdempotent(t *testing.T) {
