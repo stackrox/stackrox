@@ -121,13 +121,7 @@ func (s *storeImpl) Get(ctx context.Context) (*storage.NotificationSchedule, boo
 }
 
 func (s *storeImpl) retryableGet(ctx context.Context) (*storage.NotificationSchedule, bool, error) {
-	tx, ctx, err := s.begin(ctx)
-	if err != nil {
-		return nil, false, err
-	}
-	defer postgres.FinishReadOnlyTransaction(tx)
-
-	row := tx.QueryRow(ctx, getStmt)
+	row := s.db.QueryRow(ctx, getStmt)
 	var data []byte
 	if err := row.Scan(&data); err != nil {
 		return nil, false, pgutils.ErrNilIfNoRows(err)

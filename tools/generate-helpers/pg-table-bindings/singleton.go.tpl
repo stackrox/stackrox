@@ -149,18 +149,7 @@ func (s *storeImpl) Get(ctx context.Context) (*{{.Type}}, bool, error) {
 }
 
 func (s *storeImpl) retryableGet(ctx context.Context) (*{{.Type}}, bool, error) {
-	tx, ctx, err := s.begin(ctx)
-	if err != nil {
-		return nil, false, err
-	}
-	defer func() {
-		// No changes are made to the database, so COMMIT or ROLLBACK have the same effect.
-		if err := tx.Commit(ctx); err != nil {
-			log.Errorf("failed to commit tx: %v", err)
-		}
-	}()
-
-	row := tx.QueryRow(ctx, getStmt)
+	row := s.db.QueryRow(ctx, getStmt)
 	var data []byte
 	if err := row.Scan(&data); err != nil {
 		return nil, false, pgutils.ErrNilIfNoRows(err)
@@ -174,7 +163,7 @@ func (s *storeImpl) retryableGet(ctx context.Context) (*{{.Type}}, bool, error) 
 }
 
 func (s *storeImpl) begin(ctx context.Context) (*postgres.Tx, context.Context, error) {
-	return postgres.NewTransactionOrFromContext(ctx, s.db)
+	return postgres.GetTransaction(ctx, s.db)
 }
 
 // Delete removes the singleton from the store
