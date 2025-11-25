@@ -27,10 +27,8 @@ type scannerV4DefaultingTestCase struct {
 }
 
 var (
-	nonEmptyStatus = platform.CentralStatus{
-		DeployedRelease: &platform.StackRoxRelease{
-			Version: "some-version-string",
-		},
+	postInstallStatus = platform.CentralStatus{
+		ProductVersion: "some-version-string",
 	}
 )
 
@@ -46,7 +44,7 @@ func TestReconcileScannerV4FeatureDefaultsExtension(t *testing.T) {
 		},
 		"upgrade: disabled by default": {
 			Spec:            platform.CentralSpec{},
-			Status:          nonEmptyStatus,
+			Status:          postInstallStatus,
 			ExpectedDefault: &platform.ScannerV4Disabled,
 			ExpectedAnnotations: map[string]string{
 				common.FeatureDefaultKeyScannerV4: string(platform.ScannerV4ComponentDisabled),
@@ -71,7 +69,7 @@ func TestReconcileScannerV4FeatureDefaultsExtension(t *testing.T) {
 			ExpectedDefault: nil,
 		},
 		"upgrade: pick up previously persisted default (Enabled)": {
-			Status: nonEmptyStatus,
+			Status: postInstallStatus,
 			Annotations: map[string]string{
 				common.FeatureDefaultKeyScannerV4: string(platform.ScannerV4ComponentEnabled),
 			},
@@ -81,7 +79,7 @@ func TestReconcileScannerV4FeatureDefaultsExtension(t *testing.T) {
 			},
 		},
 		"upgrade: pick up previously persisted default (Disabled)": {
-			Status: nonEmptyStatus,
+			Status: postInstallStatus,
 			Annotations: map[string]string{
 				common.FeatureDefaultKeyScannerV4: string(platform.ScannerV4ComponentDisabled),
 			},
@@ -91,7 +89,7 @@ func TestReconcileScannerV4FeatureDefaultsExtension(t *testing.T) {
 			},
 		},
 		"upgrade: ignoring bogus persisted default": {
-			Status: nonEmptyStatus,
+			Status: postInstallStatus,
 			Annotations: map[string]string{
 				common.FeatureDefaultKeyScannerV4: "foo",
 			},
