@@ -790,7 +790,7 @@ func getComponentCVEEdges(ctx context.Context, tx *postgres.Tx, componentIDs []s
 }
 
 func (s *storeImpl) begin(ctx context.Context) (*postgres.Tx, context.Context, error) {
-	return postgres.NewTransactionOrFromContext(ctx, s.db)
+	return postgres.GetTransaction(ctx, s.db)
 }
 
 // Delete removes the specified ID from the store

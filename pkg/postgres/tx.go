@@ -111,8 +111,8 @@ func (t *Tx) UseInContext() {
 	}
 }
 
-// NewTransactionOrFromContext returns a new transaction or one from context.
-func NewTransactionOrFromContext(ctx context.Context, db DB) (*Tx, context.Context, error) {
+// GetTransaction returns a new transaction or one from context.
+func GetTransaction(ctx context.Context, db DB) (*Tx, context.Context, error) {
 	if tx, ok := TxFromContext(ctx); ok {
 		return &Tx{
 			Tx:         tx.Tx,

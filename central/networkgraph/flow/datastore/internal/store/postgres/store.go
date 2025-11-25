@@ -332,7 +332,7 @@ func (s *flowStoreImpl) retryableUpsertFlows(ctx context.Context, flows []*stora
 }
 
 func (s *flowStoreImpl) begin(ctx context.Context) (*postgres.Tx, context.Context, error) {
-	return postgres.NewTransactionOrFromContext(ctx, s.db)
+	return postgres.GetTransaction(ctx, s.db)
 }
 
 func (s *flowStoreImpl) readRows(rows pgx.Rows, pred func(*storage.NetworkFlowProperties) bool) ([]*storage.NetworkFlow, error) {

@@ -141,7 +141,7 @@ func (s *storeImpl) retryableGet(ctx context.Context) (*storage.Config, bool, er
 }
 
 func (s *storeImpl) begin(ctx context.Context) (*postgres.Tx, context.Context, error) {
-	return postgres.NewTransactionOrFromContext(ctx, s.db)
+	return postgres.GetTransaction(ctx, s.db)
 }
 
 // Delete removes the singleton from the store

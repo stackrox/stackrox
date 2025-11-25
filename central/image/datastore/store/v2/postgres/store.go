@@ -614,7 +614,7 @@ func (s *storeImpl) getFullImage(ctx context.Context, tx *postgres.Tx, imageID s
 }
 
 func (s *storeImpl) begin(ctx context.Context) (*postgres.Tx, context.Context, error) {
-	return postgres.NewTransactionOrFromContext(ctx, s.db)
+	return postgres.GetTransaction(ctx, s.db)
 }
 
 func getImageComponents(ctx context.Context, tx *postgres.Tx, imageID string) ([]*storage.ImageComponentV2, error) {

@@ -116,7 +116,7 @@ func (s *storeImpl) retryableDelete(ctx context.Context) error {
 }
 
 func (s *storeImpl) begin(ctx context.Context) (*postgres.Tx, context.Context, error) {
-	return postgres.NewTransactionOrFromContext(ctx, s.db)
+	return postgres.GetTransaction(ctx, s.db)
 }
 
 func insert(ctx context.Context, tx *postgres.Tx, obj *storage.SystemInfo) error {

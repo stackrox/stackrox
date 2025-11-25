@@ -156,7 +156,7 @@ func (s *storeImpl) retryableGetPrevious(ctx context.Context) (*storage.Version,
 }
 
 func (s *storeImpl) begin(ctx context.Context) (*postgres.Tx, context.Context, error) {
-	return postgres.NewTransactionOrFromContext(ctx, s.db)
+	return postgres.GetTransaction(ctx, s.db)
 }
 
 // Delete removes the specified ID from the store
