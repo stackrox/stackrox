@@ -3,6 +3,7 @@ package postgres
 import (
 	"context"
 
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/postgres"
@@ -91,14 +92,14 @@ func (s *storeImpl) retryableUpsert(ctx context.Context, obj *storage.SystemInfo
 
 	if _, err := tx.Exec(ctx, deleteStmt); err != nil {
 		if errTx := tx.Rollback(ctx); errTx != nil {
-			return errTx
+			return errors.Wrapf(errTx, "rolling back transaction due to: %v", err)
 		}
 		return err
 	}
 
 	if err := insert(ctx, tx, obj); err != nil {
 		if errTx := tx.Rollback(ctx); errTx != nil {
-			return errTx
+			return errors.Wrapf(errTx, "rolling back transaction due to: %v", err)
 		}
 		return err
 	}

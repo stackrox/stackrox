@@ -4,6 +4,7 @@ import (
 	"context"
 	"time"
 
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
@@ -76,14 +77,14 @@ func (s *storeImpl) retryableUpsert(ctx context.Context, obj *storage.Version) e
 
 	if _, err := tx.Exec(ctx, deleteStmt); err != nil {
 		if errTx := tx.Rollback(ctx); errTx != nil {
-			return errTx
+			return errors.Wrapf(errTx, "rolling back transaction due to: %v", err)
 		}
 		return err
 	}
 
 	if err := insertIntoVersions(ctx, tx, obj); err != nil {
 		if errTx := tx.Rollback(ctx); errTx != nil {
-			return errTx
+			return errors.Wrapf(errTx, "rolling back transaction due to: %v", err)
 		}
 		return err
 	}
@@ -179,7 +180,7 @@ func (s *storeImpl) retryableDelete(ctx context.Context) error {
 
 	if _, err := tx.Exec(ctx, deleteStmt); err != nil {
 		if errTx := tx.Rollback(ctx); errTx != nil {
-			return errTx
+			return errors.Wrapf(errTx, "rolling back transaction due to: %v", err)
 		}
 		return err
 	}
