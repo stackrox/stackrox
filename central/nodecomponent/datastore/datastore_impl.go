@@ -2,8 +2,8 @@ package datastore
 
 import (
 	"context"
+	"strings"
 
-	"github.com/pkg/errors"
 	pgStore "github.com/stackrox/rox/central/nodecomponent/datastore/store/postgres"
 	"github.com/stackrox/rox/central/ranking"
 	riskDataStore "github.com/stackrox/rox/central/risk/datastore"
@@ -13,6 +13,7 @@ import (
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	pkgSearch "github.com/stackrox/rox/pkg/search"
+	"google.golang.org/protobuf/proto"
 )
 
 var (
@@ -36,18 +37,27 @@ func (ds *datastoreImpl) Count(ctx context.Context, q *v1.Query) (int, error) {
 }
 
 func (ds *datastoreImpl) SearchNodeComponents(ctx context.Context, q *v1.Query) ([]*v1.SearchResult, error) {
-	// TODO(ROX-29943): remove 2 pass database queries
+	if q == nil {
+		q = pkgSearch.EmptyQuery()
+	} else {
+		q = proto.Clone(q).(*v1.Query)
+	}
+
+	q.Selects = append(q.GetSelects(), pkgSearch.NewQuerySelect(pkgSearch.Component).Proto())
 	results, err := ds.Search(ctx, q)
 	if err != nil {
 		return nil, err
 	}
 
-	components, missingIndices, err := ds.storage.GetMany(ctx, pkgSearch.ResultsToIDs(results))
-	if err != nil {
-		return nil, err
+	for i := range results {
+		if results[i].FieldValues != nil {
+			if nameVal, ok := results[i].FieldValues[strings.ToLower(pkgSearch.Component.String())]; ok {
+				results[i].Name = nameVal
+			}
+		}
 	}
-	results = pkgSearch.RemoveMissingResults(results, missingIndices)
-	return convertMany(components, results)
+
+	return pkgSearch.ResultsToSearchResultProtos(results, &NodeComponentSearchResultConverter{}), nil
 }
 
 func (ds *datastoreImpl) SearchRawNodeComponents(ctx context.Context, q *v1.Query) ([]*storage.NodeComponent, error) {
@@ -115,24 +125,21 @@ func (ds *datastoreImpl) updateNodeComponentPriority(ics ...*storage.NodeCompone
 	}
 }
 
-func convertMany(components []*storage.NodeComponent, results []pkgSearch.Result) ([]*v1.SearchResult, error) {
-	if len(components) != len(results) {
-		return nil, errors.Errorf("expected %d components but got %d", len(results), len(components))
-	}
+// NodeComponentSearchResultConverter converts node component search results to proto search results
+type NodeComponentSearchResultConverter struct{}
 
-	outputResults := make([]*v1.SearchResult, len(components))
-	for index, sar := range components {
-		outputResults[index] = convertOne(sar, &results[index])
-	}
-	return outputResults, nil
+func (c *NodeComponentSearchResultConverter) BuildName(result *pkgSearch.Result) string {
+	return result.Name
 }
 
-func convertOne(component *storage.NodeComponent, result *pkgSearch.Result) *v1.SearchResult {
-	return &v1.SearchResult{
-		Category:       v1.SearchCategory_NODE_COMPONENTS,
-		Id:             component.GetId(),
-		Name:           component.GetName(),
-		FieldToMatches: pkgSearch.GetProtoMatchesMap(result.Matches),
-		Score:          result.Score,
-	}
+func (c *NodeComponentSearchResultConverter) BuildLocation(result *pkgSearch.Result) string {
+	return ""
+}
+
+func (c *NodeComponentSearchResultConverter) GetCategory() v1.SearchCategory {
+	return v1.SearchCategory_NODE_COMPONENTS
+}
+
+func (c *NodeComponentSearchResultConverter) GetScore(result *pkgSearch.Result) float64 {
+	return result.Score
 }
