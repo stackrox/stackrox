@@ -111,12 +111,17 @@ func (t *Tx) UseInContext() {
 
 // NewTransactionOrFromContext returns a new transaction or one from context.
 func NewTransactionOrFromContext(ctx context.Context, db DB) (*Tx, context.Context, error) {
+	if tx, ok := TxFromContext(ctx); ok {
+		return &Tx{
+			Tx:         tx.Tx,
+			cancelFunc: tx.cancelFunc,
+			mode:       inner,
+		}, ctx, nil
+	}
+
 	tx, err := db.Begin(ctx)
 	if err != nil {
 		return nil, nil, err
-	}
-	if HasTxInContext(ctx) {
-		return tx, ctx, nil
 	}
 	ctxWithTx := ContextWithTx(ctx, tx)
 	return tx, ctxWithTx, nil
