@@ -772,7 +772,7 @@ func TestComplianceV2ScheduleRescan(t *testing.T) {
 	waitForComplianceSuiteToComplete(t, scanConfig.ScanName, 2*time.Second, 5*time.Minute)
 }
 
-func TestBenchmarkConfigFiles(t *testing.T) {
+func TestComplianceV2BenchmarkConfigFiles(t *testing.T) {
 	conn := centralgrpc.GRPCConnectionToCentral(t)
 	client := v2.NewComplianceProfileServiceClient(conn)
 	clusterClient := v1.NewClustersServiceClient(conn)
