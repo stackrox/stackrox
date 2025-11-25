@@ -138,6 +138,7 @@ import (
 	"github.com/stackrox/rox/central/pruning"
 	rbacService "github.com/stackrox/rox/central/rbac/service"
 	vulnReportV2Scheduler "github.com/stackrox/rox/central/reports/scheduler/v2"
+	baseImageWatcher "github.com/stackrox/rox/central/baseimage/watcher"
 	reportServiceV2 "github.com/stackrox/rox/central/reports/service/v2"
 	v2Service "github.com/stackrox/rox/central/reports/service/v2"
 	"github.com/stackrox/rox/central/reprocessor"
@@ -377,6 +378,7 @@ func startServices() {
 	reprocessor.Singleton().Start()
 	suppress.Singleton().Start()
 	pruning.Singleton().Start()
+	baseImageWatcher.Singleton().Start()
 	gatherer.Singleton().Start()
 	vulnRequestManager.Singleton().Start()
 	apiTokenExpiration.Singleton().Start()
@@ -980,6 +982,7 @@ func waitForTerminationSignal() {
 		{reprocessor.Singleton(), "reprocessor loop"},
 		{suppress.Singleton(), "cve unsuppress loop"},
 		{pruning.Singleton(), "garbage collector"},
+		{baseImageWatcher.Singleton(), "base image watcher"},
 		{gatherer.Singleton(), "network graph default external sources gatherer"},
 		{vulnRequestManager.Singleton(), "vuln deferral requests expiry loop"},
 		{phonehomeClient.Singleton().Gatherer(), "telemetry gatherer"},
