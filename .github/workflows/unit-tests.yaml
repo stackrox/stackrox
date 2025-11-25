@@ -234,13 +234,14 @@ jobs:
       run: make ui-test
 
     - name: Publish Test Report
+      if: matrix.arch != 'arm64' # TODO(ROX-30487)
       uses: test-summary/action@v2
       if: always()
       with:
         paths: 'ui/apps/platform/test-results/reports/*.xml'
 
     - name: Report junit failures in jira
-      if: (!cancelled())
+      if: (!cancelled()) && matrix.arch != 'arm64' # TODO(ROX-30487) junit2jira needs arm release
       id: junit2jira
       uses: ./.github/actions/junit2jira
       with:
@@ -275,6 +276,7 @@ jobs:
       run: make ui-component-tests
 
     - name: Upload Cypress test result artifacts
+      if: matrix.arch != 'arm64' # TODO(ROX-30487)
       uses: ./.github/actions/upload-artifact-with-retry
       if: always()
       with:
@@ -282,13 +284,14 @@ jobs:
         path: ui/apps/platform/cypress/test-results/
 
     - name: Publish Test Report
+      if: matrix.arch != 'arm64' # TODO(ROX-30487)
       uses: test-summary/action@v2
       if: always()
       with:
         paths: 'ui/apps/platform/cypress/test-results/reports/**/*.xml'
 
     - name: Report junit failures in jira
-      if: (!cancelled())
+      if: (!cancelled()) && matrix.arch != 'arm64' # TODO(ROX-30487) junit2jira needs arm release
       id: junit2jira
       uses: ./.github/actions/junit2jira
       with:
