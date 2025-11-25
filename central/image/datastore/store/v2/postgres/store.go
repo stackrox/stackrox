@@ -557,7 +557,7 @@ func (s *storeImpl) retryableGet(ctx context.Context, id string) (*storage.Image
 	defer func() {
 		// No changes are made to the database, so COMMIT or ROLLBACK have the same effect.
 		if err := tx.Commit(ctx); err != nil {
-			log.Errorf("failed to commit tx: %v", err)
+			log.Errorf("failed to commit transaction: %v", err)
 		}
 	}()
 
