@@ -213,8 +213,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        gotags: [ 'GOTAGS=""', 'GOTAGS=release' ]
         arch: [amd64, arm64]
+    runs-on: ubuntu-24.04${{ (matrix.arch == 'arm64' && '-arm') || '' }}
     outputs:
       new-jiras: ${{ steps.junit2jira.outputs.new-jiras }}
     container:
@@ -254,7 +254,6 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        gotags: [ 'GOTAGS=""', 'GOTAGS=release' ]
         arch: [amd64, arm64]
     runs-on: ubuntu-24.04${{ (matrix.arch == 'arm64' && '-arm') || '' }}
     outputs:
