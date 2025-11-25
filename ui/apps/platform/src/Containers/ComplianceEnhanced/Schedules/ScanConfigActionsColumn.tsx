@@ -87,7 +87,7 @@ function ScanConfigActionsColumn({
         },
         {
             title: (
-                <span className={/* isScanning ? '' : */ 'pf-v5-u-danger-color-100'}>
+                <span className={/* isScanning ? '' : */ 'pf-v6-u-danger-color-100'}>
                     Delete scan schedule
                 </span>
             ),

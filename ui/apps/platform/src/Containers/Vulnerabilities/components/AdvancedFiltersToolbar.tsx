@@ -107,7 +107,7 @@ function AdvancedFiltersToolbar({
             <ToolbarContent>
                 <ToolbarGroup
                     variant="filter-group"
-                    className="pf-v5-u-display-flex pf-v5-u-flex-grow-1"
+                    className="pf-v6-u-display-flex pf-v6-u-flex-grow-1"
                 >
                     <CompoundSearchFilter
                         config={searchFilterConfig}
@@ -148,7 +148,7 @@ function AdvancedFiltersToolbar({
                 )}
                 {children}
                 {getHasSearchApplied(searchFilter) && (
-                    <ToolbarGroup aria-label="applied search filters" className="pf-v5-u-w-100">
+                    <ToolbarGroup aria-label="applied search filters" className="pf-v6-u-w-100">
                         <SearchFilterChips
                             searchFilter={searchFilter}
                             onFilterChange={onFilterChange}

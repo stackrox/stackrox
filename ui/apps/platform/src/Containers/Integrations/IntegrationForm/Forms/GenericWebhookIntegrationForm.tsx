@@ -149,7 +149,7 @@ function GenericWebhookIntegrationForm({
 
     return (
         <>
-            <PageSection variant="light" isFilled hasOverflowScroll>
+            <PageSection hasBodyWrapper={false} isFilled hasOverflowScroll>
                 <FormMessage message={message} />
                 <Form isWidthLimited>
                     <FormikProvider value={formik}>
@@ -298,7 +298,7 @@ function GenericWebhookIntegrationForm({
                                 }
                             />
                         </FormLabelGroup>
-                        <FormSection title="Headers" titleElement="h3" className="pf-v5-u-mt-0">
+                        <FormSection title="Headers" titleElement="h3" className="pf-v6-u-mt-0">
                             <FieldArray
                                 name="notifier.generic.headers"
                                 render={(arrayHelpers) => (
@@ -360,6 +360,7 @@ function GenericWebhookIntegrationForm({
                                                         {isEditable && (
                                                             <FlexItem>
                                                                 <Button
+                                                                    icon={<TrashIcon />}
                                                                     variant="plain"
                                                                     aria-label="Delete header key/value pair"
                                                                     style={{
@@ -369,9 +370,7 @@ function GenericWebhookIntegrationForm({
                                                                     onClick={() =>
                                                                         arrayHelpers.remove(index)
                                                                     }
-                                                                >
-                                                                    <TrashIcon />
-                                                                </Button>
+                                                                />
                                                             </FlexItem>
                                                         )}
                                                     </Flex>
@@ -384,7 +383,7 @@ function GenericWebhookIntegrationForm({
                                                         variant="link"
                                                         isInline
                                                         icon={
-                                                            <PlusCircleIcon className="pf-v5-u-mr-sm" />
+                                                            <PlusCircleIcon className="pf-v6-u-mr-sm" />
                                                         }
                                                         onClick={() =>
                                                             arrayHelpers.push({
@@ -405,7 +404,7 @@ function GenericWebhookIntegrationForm({
                         <FormSection
                             title="Extra Fields"
                             titleElement="h3"
-                            className="pf-v5-u-mt-0"
+                            className="pf-v6-u-mt-0"
                         >
                             <FieldArray
                                 name="notifier.generic.extraFields"
@@ -469,6 +468,7 @@ function GenericWebhookIntegrationForm({
                                                         {isEditable && (
                                                             <FlexItem>
                                                                 <Button
+                                                                    icon={<TrashIcon />}
                                                                     variant="plain"
                                                                     aria-label="Delete extra field key/value pair"
                                                                     style={{
@@ -478,9 +478,7 @@ function GenericWebhookIntegrationForm({
                                                                     onClick={() =>
                                                                         arrayHelpers.remove(index)
                                                                     }
-                                                                >
-                                                                    <TrashIcon />
-                                                                </Button>
+                                                                />
                                                             </FlexItem>
                                                         )}
                                                     </Flex>
@@ -493,7 +491,7 @@ function GenericWebhookIntegrationForm({
                                                         variant="link"
                                                         isInline
                                                         icon={
-                                                            <PlusCircleIcon className="pf-v5-u-mr-sm" />
+                                                            <PlusCircleIcon className="pf-v6-u-mr-sm" />
                                                         }
                                                         onClick={() =>
                                                             arrayHelpers.push({

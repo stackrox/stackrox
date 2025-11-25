@@ -4,11 +4,11 @@ import {
     AlertActionCloseButton,
     AlertGroup,
     Button,
+    Content,
     Divider,
     Flex,
     FlexItem,
     PageSection,
-    Text,
     Title,
 } from '@patternfly/react-core';
 
@@ -82,13 +82,13 @@ function CollectionsTablePage({ hasWriteAccessForCollections }: CollectionsTable
     return (
         <>
             <PageTitle title="Collections" />
-            <PageSection variant="light">
+            <PageSection hasBodyWrapper={false}>
                 <Flex alignItems={{ default: 'alignItemsCenter' }}>
                     <FlexItem flex={{ default: 'flex_1' }}>
                         <Title headingLevel="h1">Collections</Title>
-                        <Text>
+                        <Content component="p">
                             Configure deployment collections to associate with other workflows
-                        </Text>
+                        </Content>
                     </FlexItem>
                     {hasWriteAccessForCollections && (
                         <FlexItem align={{ default: 'alignRight' }}>
@@ -104,7 +104,7 @@ function CollectionsTablePage({ hasWriteAccessForCollections }: CollectionsTable
                 </Flex>
             </PageSection>
             <Divider component="div" />
-            <PageSection>
+            <PageSection hasBodyWrapper={false}>
                 <CollectionsTable
                     isLoading={isLoading}
                     error={loadError}

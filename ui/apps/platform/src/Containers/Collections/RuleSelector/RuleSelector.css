@@ -1,11 +1,11 @@
 .rule-selector {
-  --rule-selector-spacer: var(--pf-v5-global--spacer--md);
-  padding: var(--pf-v5-global--spacer--lg);
-  border: 1px solid var(--pf-v5-global--BorderColor--100);
+  --rule-selector-spacer: var(--pf-t--global--spacer--md);
+  padding: var(--pf-t--global--spacer--lg);
+  border: 1px solid var(--pf-t--temp--dev--tbd /* CODEMODS: original v5 color was:--pf-v5-global--BorderColor--100 */);
 }
 
 /* Allows rule form elements to shrink further to avoid overlap in constrained screen sizes */
-.rule-selector .pf-v5-c-select__toggle-typeahead {
+.rule-selector .pf-v6-c-select__toggle-typeahead {
   flex-basis: unset;
   min-width: unset;
 }
@@ -23,7 +23,7 @@
 }
 
 .rule-selector-list {
-  border-left: solid 1px var(--pf-v5-global--BorderColor--100);
+  border-left: solid 1px var(--pf-t--temp--dev--tbd /* CODEMODS: original v5 color was:--pf-v5-global--BorderColor--100 */);
   margin-left: var(--rule-selector-spacer);
 }
 
@@ -41,11 +41,11 @@
   bottom: var(--rule-selector-spacer);
   height: 1px;
   width: var(--rule-selector-spacer);
-  background-color: var(--pf-v5-global--BorderColor--100);
+  background-color: var(--pf-t--temp--dev--tbd /* CODEMODS: original v5 color was:--pf-v5-global--BorderColor--100 */);
 }
 
 .rule-selector-delete-value-button {
-  margin-top: var(--pf-v5-global--spacer--xs);
+  margin-top: var(--pf-t--global--spacer--xs);
 }
 
 .rule-selector-add-value-button {
@@ -59,7 +59,7 @@
 }
 
 .rule-selector-label-rule-separator:after {
-  border-bottom: 2px dashed var(--pf-v5-global--Color--light-300);
+  border-bottom: 2px dashed var(--pf-t--temp--dev--tbd /* CODEMODS: original v5 color was:--pf-v5-global--Color--light-300 */);
   flex: 1 1 0;
   content: "";
   display: inline-block;

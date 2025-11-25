@@ -101,16 +101,16 @@ function PolicyEnforcementForm() {
             </FormGroup>
             {showEnforcement && (
                 <div>
-                    <Title headingLevel="h2" className="pf-v5-u-mt-md">
+                    <Title headingLevel="h2" className="pf-v6-u-mt-md">
                         Configure enforcement behavior
                     </Title>
-                    <div className="pf-v5-u-mb-lg pf-v5-u-mt-sm">
+                    <div className="pf-v6-u-mb-lg pf-v6-u-mt-sm">
                         Based on the fields selected in your policy configuration, you may choose to
                         apply enforcement at the following stages.
                     </div>
                     <Grid hasGutter>
                         <GridItem span={4}>
-                            <Card className="pf-v5-u-h-100 policy-enforcement-card">
+                            <Card className="pf-v6-u-h-100 policy-enforcement-card">
                                 <CardHeader>
                                     <CardTitle component="h3">Build</CardTitle>
                                 </CardHeader>
@@ -126,7 +126,7 @@ function PolicyEnforcementForm() {
                                         }}
                                         label="Enforce on Build"
                                     />
-                                    <p className="pf-v5-u-pt-md pf-v5-u-pb-md">
+                                    <p className="pf-v6-u-pt-md pf-v6-u-pb-md">
                                         If enabled, your CI builds will be failed when images
                                         violate this policy. Download the CLI to get started.
                                     </p>
@@ -151,7 +151,7 @@ function PolicyEnforcementForm() {
                                         }}
                                         label="Enforce on Deploy"
                                     />
-                                    <p className="pf-v5-u-pt-md">
+                                    <p className="pf-v6-u-pt-md">
                                         If enabled, creation of deployments that violate this policy
                                         will be blocked. In clusters with the admission controller
                                         enabled, the Kubernetes API server will block deployments
@@ -178,7 +178,7 @@ function PolicyEnforcementForm() {
                                         }}
                                         label="Enforce on Runtime"
                                     />
-                                    <p className="pf-v5-u-pt-md">
+                                    <p className="pf-v6-u-pt-md">
                                         If enabled, executions within a pod that violate this policy
                                         will result in the pod being deleted. Actions taken through
                                         the API server that violate this policy will be blocked.

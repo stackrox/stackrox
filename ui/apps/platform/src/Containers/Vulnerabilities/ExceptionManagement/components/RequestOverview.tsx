@@ -28,7 +28,7 @@ function RequestOverview({ exception, context }: RequestOverviewProps) {
     const latestComment = exception.comments.at(-1);
 
     return (
-        <PageSection variant="light">
+        <PageSection hasBodyWrapper={false}>
             <Flex direction={{ default: 'column' }}>
                 <Title headingLevel="h2">Overview</Title>
                 <DescriptionList className="vulnerability-exception-request-overview">

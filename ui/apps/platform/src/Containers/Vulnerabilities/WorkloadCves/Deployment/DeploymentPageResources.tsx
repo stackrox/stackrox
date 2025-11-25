@@ -1,12 +1,12 @@
 import type { CSSProperties } from 'react';
 import {
     Bullseye,
+    Content,
     Divider,
     ExpandableSection,
     PageSection,
     Pagination,
     Spinner,
-    Text,
 } from '@patternfly/react-core';
 import { gql, useQuery } from '@apollo/client';
 import type { Pagination as PaginationParam } from 'services/types';
@@ -63,12 +63,19 @@ function DeploymentPageResources({ deploymentId, pagination }: DeploymentPageRes
 
     return (
         <>
-            <PageSection component="div" variant="light" className="pf-v5-u-py-md pf-v5-u-px-xl">
-                <Text>Navigate to resources associated with this deployment</Text>
+            <PageSection
+                hasBodyWrapper={false}
+                component="div"
+                className="pf-v6-u-py-md pf-v6-u-px-xl"
+            >
+                <Content component="p">
+                    Navigate to resources associated with this deployment
+                </Content>
             </PageSection>
             <Divider component="div" />
             <PageSection
-                className="pf-v5-u-display-flex pf-v5-u-flex-direction-column pf-v5-u-flex-grow-1"
+                hasBodyWrapper={false}
+                className="pf-v6-u-display-flex pf-v6-u-flex-direction-column pf-v6-u-flex-grow-1"
                 component="div"
             >
                 {error && (
@@ -90,11 +97,11 @@ function DeploymentPageResources({ deploymentId, pagination }: DeploymentPageRes
                         style={
                             {
                                 '--pf-v5-c-expandable-section__content--MarginTop':
-                                    'var(--pf-v5-global--spacer--xs)',
+                                    'var(--pf-t--global--spacer--xs)',
                             } as CSSProperties
                         }
                     >
-                        <div className="pf-v5-u-background-color-100 pf-v5-u-pt-sm">
+                        <div className="pf-v6-u-background-color-100 pf-v6-u-pt-sm">
                             <Pagination
                                 itemCount={imageCount}
                                 page={page}

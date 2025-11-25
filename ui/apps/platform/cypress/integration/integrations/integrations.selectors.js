@@ -1,5 +1,5 @@
 export const selectors = {
-    breadcrumbItem: '.pf-v5-c-breadcrumb__item',
+    breadcrumbItem: '.pf-v6-c-breadcrumb__item',
     tableRowNameLink: 'tbody td a', // TODO td[data-label="Name"] would be even better, but no dataLabel prop yet
     buttons: {
         test: 'button:contains("Test")',

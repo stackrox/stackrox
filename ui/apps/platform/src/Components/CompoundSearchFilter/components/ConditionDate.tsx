@@ -70,6 +70,7 @@ function ConditionDate({ value, onChange, onSearch }: ConditionDateProps) {
                 invalidFormatText="Enter valid date: MM/DD/YYYY"
             />
             <Button
+                icon={<ArrowRightIcon />}
                 variant="control"
                 aria-label="Apply condition and date input to search"
                 onClick={() => {
@@ -79,9 +80,7 @@ function ConditionDate({ value, onChange, onSearch }: ConditionDateProps) {
                         onChange({ ...value, date: '' });
                     }
                 }}
-            >
-                <ArrowRightIcon />
-            </Button>
+            ></Button>
         </Flex>
     );
 }

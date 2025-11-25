@@ -1,6 +1,6 @@
 import type { ReactElement, ReactNode } from 'react';
-import { Button, Chip, ChipGroup, Flex, FlexItem } from '@patternfly/react-core';
-import type { ToolbarChip } from '@patternfly/react-core';
+import { Button, Chip, ChipGroup, Flex, FlexItem, Label, LabelGroup } from '@patternfly/react-core';
+import type { ToolbarChip, ToolbarLabel } from '@patternfly/react-core';
 import { Globe } from 'react-feather'; // eslint-disable-line limited/no-feather-icons
 
 import type { SearchFilter } from 'types/search';
@@ -56,7 +56,7 @@ function SearchFilterChips({
         onFilterChange(newFilter);
     }
 
-    function onDelete(category: string, chip: ToolbarChip | string) {
+    function onDelete(category: string, chip: ToolbarLabel | string) {
         const newSearchFilter = { ...searchFilter };
         const newSearchFilterValues = searchValueAsArray(searchFilter[category]);
         const chipKey = typeof chip === 'string' ? chip : chip.key;
@@ -87,22 +87,23 @@ function SearchFilterChips({
                     return null;
                 }
                 return (
-                    <FlexItem key={searchFilterName} className="pf-v5-u-pt-xs">
-                        <ChipGroup
+                    <FlexItem key={searchFilterName} className="pf-v6-u-pt-xs">
+                        <LabelGroup
                             categoryName={displayName}
                             isClosable
                             onClick={() => onDeleteGroup(searchFilterName)}
                         >
                             {filters.map((filter) => (
-                                <Chip
+                                <Label
+                                    variant="outline"
                                     closeBtnAriaLabel="Remove filter"
                                     key={filter}
-                                    onClick={() => onDelete(searchFilterName, filter)}
+                                    onClose={() => onDelete(searchFilterName, filter)}
                                 >
                                     {render ? render(filter) : filter}
-                                </Chip>
+                                </Label>
                             ))}
-                        </ChipGroup>
+                        </LabelGroup>
                     </FlexItem>
                 );
             })}

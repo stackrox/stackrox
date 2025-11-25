@@ -21,7 +21,7 @@ function AccessControlBreadcrumbs({
 
     return (
         <>
-            <PageSection variant="light" className="pf-v5-u-py-md">
+            <PageSection hasBodyWrapper={false} className="pf-v6-u-py-md">
                 <Breadcrumb>
                     <BreadcrumbItemLink to={getEntityPath(entityType)}>
                         {entityTypeLabel}

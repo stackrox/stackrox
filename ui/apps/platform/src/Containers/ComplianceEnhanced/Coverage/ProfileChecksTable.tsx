@@ -1,10 +1,10 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom-v5-compat';
 import {
+    Content,
+    ContentVariants,
     Divider,
     Pagination,
-    Text,
-    TextVariants,
     Toolbar,
     ToolbarContent,
     ToolbarItem,
@@ -89,7 +89,7 @@ function ProfileChecksTable({
                     <ToolbarItem>
                         <ProfilesTableToggleGroup activeToggle="checks" />
                     </ToolbarItem>
-                    <ToolbarItem variant="pagination" align={{ default: 'alignRight' }}>
+                    <ToolbarItem variant="pagination" align={{ default: 'alignEnd' }}>
                         <Pagination
                             itemCount={profileChecksResultsCount}
                             page={page}
@@ -177,12 +177,12 @@ function ProfileChecksTable({
                                                         is not used here because it displays a tooltip on hover
                                                     */}
                                                     <div style={{ display: 'grid' }}>
-                                                        <Text
-                                                            component={TextVariants.small}
-                                                            className="pf-v5-u-color-200 pf-v5-u-text-truncate"
+                                                        <Content
+                                                            component={ContentVariants.small}
+                                                            className="pf-v6-u-color-200 pf-v6-u-text-truncate"
                                                         >
                                                             {rationale}
-                                                        </Text>
+                                                        </Content>
                                                     </div>
                                                 </Td>
                                                 <Td

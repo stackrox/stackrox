@@ -24,7 +24,7 @@ function ScanConfigsPage() {
 
     return (
         <>
-            <Banner variant="blue" className="pf-v5-u-text-align-center">
+            <Banner color="blue" className="pf-v6-u-text-align-center">
                 This feature is only available for clusters running Compliance Operator v.1.6 or
                 newer
             </Banner>

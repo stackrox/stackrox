@@ -1,4 +1,4 @@
-import { Card, CardBody, CardTitle, Flex, Grid, GridItem, Text } from '@patternfly/react-core';
+import { Card, CardBody, CardTitle, Content, Flex, Grid, GridItem } from '@patternfly/react-core';
 
 import SeverityIcons from 'Components/PatternFly/SeverityIcons';
 
@@ -29,7 +29,8 @@ const severityToHiddenText = {
     UNKNOWN_VULNERABILITY_SEVERITY: 'Unknown hidden',
 } as const;
 
-const fadedTextColor = 'var(--pf-v5-global--Color--200)';
+const fadedTextColor =
+    'var(--pf-t--temp--dev--tbd)'; /* CODEMODS: original v5 color was --pf-v5-global--Color--200 */
 
 export type ResourceCountsByCveSeverity = {
     critical: { total: number };
@@ -53,10 +54,10 @@ function BySeveritySummaryCard({
     hiddenSeverities,
 }: BySeveritySummaryCardProps) {
     return (
-        <Card className={className} isCompact isFlat isFullHeight>
+        <Card className={className} isCompact isFullHeight>
             <CardTitle>{title}</CardTitle>
             <CardBody>
-                <Grid className="pf-v5-u-pl-sm">
+                <Grid className="pf-v6-u-pl-sm">
                     {severitiesDescendingCriticality.map((severity) => {
                         const querySeverityKey = severityToQuerySeverityKeys[severity];
                         const count = severityCounts[querySeverityKey];
@@ -70,7 +71,7 @@ function BySeveritySummaryCard({
                         return (
                             <GridItem key={severity} span={6}>
                                 <Flex
-                                    className="pf-v5-u-pt-sm"
+                                    className="pf-v6-u-pt-sm"
                                     spaceItems={{ default: 'spaceItemsSm' }}
                                     alignItems={{ default: 'alignItemsCenter' }}
                                 >
@@ -78,7 +79,9 @@ function BySeveritySummaryCard({
                                         title={vulnerabilitySeverityLabels[severity]}
                                         color={isHidden ? textColor : undefined}
                                     />
-                                    <Text style={{ color: textColor }}>{text}</Text>
+                                    <Content component="p" style={{ color: textColor }}>
+                                        {text}
+                                    </Content>
                                 </Flex>
                             </GridItem>
                         );

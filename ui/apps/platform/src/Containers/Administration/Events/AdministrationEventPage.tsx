@@ -51,7 +51,7 @@ function AdministrationEventPage({ id }: AdministrationEventPageProps): ReactEle
     return (
         <>
             <PageTitle title={`Administration events - ${h1}`} />
-            <PageSection component="div" variant="light">
+            <PageSection hasBodyWrapper={false} component="div">
                 <Flex direction={{ default: 'column' }} spaceItems={{ default: 'spaceItemsXl' }}>
                     <Flex direction={{ default: 'column' }}>
                         <Breadcrumb>
