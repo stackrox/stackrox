@@ -11,6 +11,7 @@ import (
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stackrox/rox/sensor/common/clusterentities"
 	"github.com/stackrox/rox/sensor/common/detector"
+	fsUtils "github.com/stackrox/rox/sensor/common/filesystem/utils"
 )
 
 var (
@@ -113,6 +114,10 @@ func (p *Pipeline) translate(fs *sensorAPI.FileActivity) *storage.FileAccess {
 	default:
 		log.Warn("Not implemented file activity type")
 		return nil
+	}
+
+	if fsUtils.IsNodeFileAccess(access) {
+		access.File.NodePath = access.File.MountedPath
 	}
 
 	return access
