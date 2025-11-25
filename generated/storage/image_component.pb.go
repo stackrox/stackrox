@@ -192,7 +192,7 @@ type ImageComponentV2 struct {
 	Location      string                           `protobuf:"bytes,12,opt,name=location,proto3" json:"location,omitempty" search:"Component Location,hidden"` // @gotags: search:"Component Location,hidden"
 	Architecture  string                           `protobuf:"bytes,13,opt,name=architecture,proto3" json:"architecture,omitempty"`
 	ImageIdV2     string                           `protobuf:"bytes,14,opt,name=image_id_v2,json=imageIdV2,proto3" json:"image_id_v2,omitempty" sql:"fk(ImageV2:id),index=btree,allow-null"` // @gotags: sql:"fk(ImageV2:id),index=btree,allow-null"
-	BaseImage     bool                             `protobuf:"varint,15,opt,name=base_image,json=baseImage,proto3" json:"base_image,omitempty" search:"Component Base Image,hidden" sql:"default:false"`  //    @gotags: search:"Component Base Image,hidden" sql:"default:false"
+	BaseImage     bool                             `protobuf:"varint,15,opt,name=base_image,json=baseImage,proto3" json:"base_image,omitempty" search:"Component Base Image,hidden"`  //    @gotags: search:"Component Base Image,hidden"
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }

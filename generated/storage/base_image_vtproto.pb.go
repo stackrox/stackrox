@@ -36,7 +36,7 @@ func (m *BaseImage) CloneVT() *BaseImage {
 	r.DiscoveredAt = (*timestamppb.Timestamp)((*timestamppb1.Timestamp)(m.DiscoveredAt).CloneVT())
 	r.Active = m.Active
 	r.FirstLayerDigest = m.FirstLayerDigest
-	r.ImageId = m.ImageId
+	r.ImageIdV2 = m.ImageIdV2
 	if len(m.unknownFields) > 0 {
 		r.unknownFields = make([]byte, len(m.unknownFields))
 		copy(r.unknownFields, m.unknownFields)
@@ -54,7 +54,7 @@ func (m *BaseImageLayer) CloneVT() *BaseImageLayer {
 	}
 	r := new(BaseImageLayer)
 	r.Id = m.Id
-	r.ImageId = m.ImageId
+	r.BaseImageId = m.BaseImageId
 	r.LayerDigest = m.LayerDigest
 	r.Level = m.Level
 	if len(m.unknownFields) > 0 {
@@ -101,7 +101,7 @@ func (this *BaseImage) EqualVT(that *BaseImage) bool {
 	if this.FirstLayerDigest != that.FirstLayerDigest {
 		return false
 	}
-	if this.ImageId != that.ImageId {
+	if this.ImageIdV2 != that.ImageIdV2 {
 		return false
 	}
 	return string(this.unknownFields) == string(that.unknownFields)
@@ -123,7 +123,7 @@ func (this *BaseImageLayer) EqualVT(that *BaseImageLayer) bool {
 	if this.Id != that.Id {
 		return false
 	}
-	if this.ImageId != that.ImageId {
+	if this.BaseImageId != that.BaseImageId {
 		return false
 	}
 	if this.LayerDigest != that.LayerDigest {
@@ -172,10 +172,10 @@ func (m *BaseImage) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 		i -= len(m.unknownFields)
 		copy(dAtA[i:], m.unknownFields)
 	}
-	if len(m.ImageId) > 0 {
-		i -= len(m.ImageId)
-		copy(dAtA[i:], m.ImageId)
-		i = protohelpers.EncodeVarint(dAtA, i, uint64(len(m.ImageId)))
+	if len(m.ImageIdV2) > 0 {
+		i -= len(m.ImageIdV2)
+		copy(dAtA[i:], m.ImageIdV2)
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(len(m.ImageIdV2)))
 		i--
 		dAtA[i] = 0x52
 	}
@@ -293,10 +293,10 @@ func (m *BaseImageLayer) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 		i--
 		dAtA[i] = 0x1a
 	}
-	if len(m.ImageId) > 0 {
-		i -= len(m.ImageId)
-		copy(dAtA[i:], m.ImageId)
-		i = protohelpers.EncodeVarint(dAtA, i, uint64(len(m.ImageId)))
+	if len(m.BaseImageId) > 0 {
+		i -= len(m.BaseImageId)
+		copy(dAtA[i:], m.BaseImageId)
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(len(m.BaseImageId)))
 		i--
 		dAtA[i] = 0x12
 	}
@@ -351,7 +351,7 @@ func (m *BaseImage) SizeVT() (n int) {
 	if l > 0 {
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
-	l = len(m.ImageId)
+	l = len(m.ImageIdV2)
 	if l > 0 {
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
@@ -369,7 +369,7 @@ func (m *BaseImageLayer) SizeVT() (n int) {
 	if l > 0 {
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
-	l = len(m.ImageId)
+	l = len(m.BaseImageId)
 	if l > 0 {
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
@@ -695,7 +695,7 @@ func (m *BaseImage) UnmarshalVT(dAtA []byte) error {
 			iNdEx = postIndex
 		case 10:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field ImageId", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field ImageIdV2", wireType)
 			}
 			var stringLen uint64
 			for shift := uint(0); ; shift += 7 {
@@ -723,7 +723,7 @@ func (m *BaseImage) UnmarshalVT(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.ImageId = string(dAtA[iNdEx:postIndex])
+			m.ImageIdV2 = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
@@ -810,7 +810,7 @@ func (m *BaseImageLayer) UnmarshalVT(dAtA []byte) error {
 			iNdEx = postIndex
 		case 2:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field ImageId", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field BaseImageId", wireType)
 			}
 			var stringLen uint64
 			for shift := uint(0); ; shift += 7 {
@@ -838,7 +838,7 @@ func (m *BaseImageLayer) UnmarshalVT(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.ImageId = string(dAtA[iNdEx:postIndex])
+			m.BaseImageId = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
 		case 3:
 			if wireType != 2 {
@@ -1252,7 +1252,7 @@ func (m *BaseImage) UnmarshalVTUnsafe(dAtA []byte) error {
 			iNdEx = postIndex
 		case 10:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field ImageId", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field ImageIdV2", wireType)
 			}
 			var stringLen uint64
 			for shift := uint(0); ; shift += 7 {
@@ -1284,7 +1284,7 @@ func (m *BaseImage) UnmarshalVTUnsafe(dAtA []byte) error {
 			if intStringLen > 0 {
 				stringValue = unsafe.String(&dAtA[iNdEx], intStringLen)
 			}
-			m.ImageId = stringValue
+			m.ImageIdV2 = stringValue
 			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
@@ -1375,7 +1375,7 @@ func (m *BaseImageLayer) UnmarshalVTUnsafe(dAtA []byte) error {
 			iNdEx = postIndex
 		case 2:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field ImageId", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field BaseImageId", wireType)
 			}
 			var stringLen uint64
 			for shift := uint(0); ; shift += 7 {
@@ -1407,7 +1407,7 @@ func (m *BaseImageLayer) UnmarshalVTUnsafe(dAtA []byte) error {
 			if intStringLen > 0 {
 				stringValue = unsafe.String(&dAtA[iNdEx], intStringLen)
 			}
-			m.ImageId = stringValue
+			m.BaseImageId = stringValue
 			iNdEx = postIndex
 		case 3:
 			if wireType != 2 {

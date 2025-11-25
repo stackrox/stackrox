@@ -338,6 +338,7 @@ var (
 	ImageRiskScore      = newFieldLabel("Image Risk Score")
 	ComponentRiskScore  = newFieldLabel("Component Risk Score")
 	RiskSubjectType     = newFieldLabel("Risk Subject Type")
+	ComponentBaseImage  = newFieldLabel("Component Base Image")
 
 	PolicyLastUpdated = newFieldLabel("Policy Last Updated")
 
