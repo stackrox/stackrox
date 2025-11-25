@@ -490,6 +490,17 @@ func (s *ImageV2DataStoreTestSuite) TestGetManyImageMetadata() {
 	protoassert.ElementsMatch(s.T(), []*storage.ImageV2{testImage1, testImage2, testImage3}, storedImages)
 }
 
+func (s *ImageV2DataStoreTestSuite) TestGetImageIdsAndDigest() {
+	ctx := sac.WithAllAccess(context.Background())
+	testImage1 := fixtures.GetImageV2()
+	s.NoError(s.datastore.UpsertImage(ctx, testImage1))
+	results, err := s.datastore.GetImageIDsAndDigests(ctx, pkgSearch.EmptyQuery())
+	s.NoError(err)
+	s.Len(results, 1)
+	s.Equal(testImage1.GetId(), results[0].ImageID)
+	s.Equal(testImage1.GetDigest(), results[0].Digest)
+}
+
 func (s *ImageV2DataStoreTestSuite) truncateTable(name string) {
 	sql := fmt.Sprintf("TRUNCATE %s CASCADE", name)
 	_, err := s.testDB.Exec(s.ctx, sql)

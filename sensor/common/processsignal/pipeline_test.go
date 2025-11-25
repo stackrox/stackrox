@@ -275,3 +275,54 @@ func deleteStore(deploymentID string, mockStore *clusterentities.Store) {
 	}
 	mockStore.Apply(updates, false)
 }
+
+// TestProcessPipelineShutdownRace tests that Process() does not panic when called after Shutdown()
+// This prevents the "send on closed channel" panic that occurs when fake workload goroutines
+// continue sending signals after the pipeline has been shut down.
+func TestProcessPipelineShutdownRace(t *testing.T) {
+	sensorEvents := make(chan *message.ExpiringMessage, 10)
+
+	mockCtrl := gomock.NewController(t)
+	defer mockCtrl.Finish()
+
+	mockStore := clusterentities.NewStore(0, nil, false)
+	mockDetector := mocks.NewMockDetector(mockCtrl)
+
+	p := NewProcessPipeline(sensorEvents, mockStore, filter.NewFilter(5, 5, []int{10, 10, 10}),
+		mockDetector)
+
+	containerID := "test-container-id"
+	containerMetadata := clusterentities.ContainerMetadata{
+		DeploymentID: "test-deployment",
+		ContainerID:  containerID,
+	}
+	updateStore(containerID, "test-deployment", containerMetadata, mockStore)
+
+	// Shutdown the pipeline
+	p.Shutdown()
+
+	// Wait for shutdown to complete deterministically by waiting on stopper completion
+	// This ensures all goroutines have exited and channels are closed before testing Process()
+	require.NoError(t, p.WaitForShutdown())
+
+	// Attempt to process a signal after shutdown - this should not panic
+	// The signal should be dropped silently
+	signal := &storage.ProcessSignal{
+		ContainerId: containerID,
+	}
+
+	// This should not panic even though the channel is closed
+	require.NotPanics(t, func() {
+		p.Process(signal)
+	})
+
+	// Verify no message was sent (channel should be empty or closed)
+	select {
+	case <-sensorEvents:
+		t.Error("Expected no message to be sent after shutdown")
+	default:
+		// Expected: channel is empty or closed
+	}
+
+	close(sensorEvents)
+}

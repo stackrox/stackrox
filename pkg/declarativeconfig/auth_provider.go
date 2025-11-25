@@ -21,14 +21,23 @@ type Group struct {
 
 // OIDCConfig contains config values for OIDC auth provider.
 type OIDCConfig struct {
+	// The OIDC issuer according to https://openid.net/specs/openid-connect-core-1_0.html#IssuerIdentifier.
 	Issuer string `yaml:"issuer,omitempty"`
 	// Depending on callback mode, different OAuth 2.0 would be preferred.
 	// Possible values are: auto, post, query, fragment.
 	CallbackMode string `yaml:"mode,omitempty"`
-	ClientID     string `yaml:"clientID,omitempty"`
+	// The client ID according to https://www.rfc-editor.org/rfc/rfc6749.html#section-2.2.
+	ClientID string `yaml:"clientID,omitempty"`
+	// The client secret according to https://www.rfc-editor.org/rfc/rfc6749.html#section-2.3.1.
 	ClientSecret string `yaml:"clientSecret,omitempty"`
-	// Disables request for "offline_access" scope from OIDC identity provider.
+	// Set to "true" if you want to create a configuration with only a client ID and no client secret.
+	DoNotUseClientSecret bool `yaml:"doNotUseClientSecret,omitempty"`
+	// Disables request for "offline_access" scope from OIDC identity provider,
+	// set to "true" if no offline tokens shall be issued.
 	DisableOfflineAccessScope bool `yaml:"disableOfflineAccessScope,omitempty"`
+	// A space-delimited string of additional scopes to request in addition to "openid profile email"
+	// according to https://www.rfc-editor.org/rfc/rfc6749.html#section-3.3.
+	ExtraScopes string `yaml:"extraScopes,omitempty"`
 }
 
 // SAMLConfig contains config values for SAML 2.0 auth provider.

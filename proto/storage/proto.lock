@@ -1,79 +1,6 @@
 {
   "definitions": [
     {
-      "protopath": "active_component.proto",
-      "def": {
-        "messages": [
-          {
-            "name": "ActiveComponent",
-            "fields": [
-              {
-                "id": 1,
-                "name": "id",
-                "type": "string"
-              },
-              {
-                "id": 3,
-                "name": "deployment_id",
-                "type": "string"
-              },
-              {
-                "id": 4,
-                "name": "component_id",
-                "type": "string"
-              },
-              {
-                "id": 5,
-                "name": "active_contexts_slice",
-                "type": "ActiveContext",
-                "is_repeated": true
-              }
-            ],
-            "maps": [
-              {
-                "key_type": "string",
-                "field": {
-                  "id": 2,
-                  "name": "DEPRECATED_active_contexts",
-                  "type": "ActiveContext"
-                }
-              }
-            ],
-            "messages": [
-              {
-                "name": "ActiveContext",
-                "fields": [
-                  {
-                    "id": 1,
-                    "name": "container_name",
-                    "type": "string"
-                  },
-                  {
-                    "id": 2,
-                    "name": "image_id",
-                    "type": "string"
-                  }
-                ]
-              }
-            ]
-          }
-        ],
-        "package": {
-          "name": "storage"
-        },
-        "options": [
-          {
-            "name": "go_package",
-            "value": "./storage;storage"
-          },
-          {
-            "name": "java_package",
-            "value": "io.stackrox.proto.storage"
-          }
-        ]
-      }
-    },
-    {
       "protopath": "administration_event.proto",
       "def": {
         "enums": [
@@ -19445,6 +19372,11 @@
               {
                 "id": 16,
                 "name": "first_image_occurrence",
+                "type": "google.protobuf.Timestamp"
+              },
+              {
+                "id": 25,
+                "name": "fix_available_timestamp",
                 "type": "google.protobuf.Timestamp"
               },
               {

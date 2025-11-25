@@ -44,7 +44,7 @@ export type ReportParametersFormValues = {
     cvesDiscoveredStartDate: CVESDiscoveredStartDate;
     includeAdvisory: boolean;
     includeEpssProbability: boolean;
-    // Ross CISA KEV includeExploitable
+    // includeKnownExploit: boolean; // ROX_CISA_KEV
     includeNvdCvss: boolean;
     reportScope: ReportScope | null;
 };
@@ -76,7 +76,7 @@ export const defaultReportFormValues: ReportFormValues = {
         cvesDiscoveredStartDate: undefined,
         includeAdvisory: false,
         includeEpssProbability: false,
-        // Ross CISA KEV includeExploitable
+        // includeKnownExploit: false, // ROX_CISA_KEV
         includeNvdCvss: false,
         reportScope: null,
     },

@@ -45,7 +45,7 @@ type expectedHealthInfo struct {
 }
 
 func (s *UpdaterTestSuite) SetupTest() {
-	s.client = fake.NewSimpleClientset()
+	s.client = fake.NewClientset()
 	s.T().Setenv(namespaceVar, "stackrox-mock-ns")
 }
 

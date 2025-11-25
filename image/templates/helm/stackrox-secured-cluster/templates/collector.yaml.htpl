@@ -129,6 +129,8 @@ spec:
           value: "https://{{ ._rox.sensor.endpoint }}"
         - name: FACT_CERTS
           value: "/var/run/secrets/stackrox.io/certs/"
+        - name: FACT_HOST_MOUNT
+          value: "/host"
         {{- include "srox.envVars" (list . "daemonset" "fact" "fact") | nindent 8 }}
         resources:
           {{- ._rox.fact._resources | nindent 10 }}
@@ -146,6 +148,14 @@ spec:
         - mountPath: /run/secrets/stackrox.io/certs/
           name: certs
           readOnly: true
+        - mountPath: /host/proc
+          name: proc-ro
+          readOnly: true
+          mountPropagation: HostToContainer
+        - mountPath: /host/etc
+          name: etc-ro
+          readOnly: true
+          mountPropagation: HostToContainer
       [<- end >]
 
       - command:

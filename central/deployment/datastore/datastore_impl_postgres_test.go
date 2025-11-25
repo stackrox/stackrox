@@ -353,13 +353,6 @@ func (s *DeploymentPostgresDataStoreTestSuite) TestSearchWithPostgres() {
 		},
 	} {
 		s.T().Run(tc.desc, func(t *testing.T) {
-			// TODO(ROX-28123): remove this if check
-			// Doing this with simple if string comparison because it is temporary
-			if !features.FlattenCVEData.Enabled() &&
-				(tc.desc == "Search deployments with image component scope" ||
-					tc.desc == "Search deployments with image vuln scope") {
-				t.Skip()
-			}
 			var actual []pkgSearch.Result
 			var err error
 			if tc.queryImages {

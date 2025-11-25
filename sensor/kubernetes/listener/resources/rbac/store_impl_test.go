@@ -121,7 +121,7 @@ func TestStore_DispatcherEvents(t *testing.T) {
 	}
 
 	tested := NewStore().(*storeImpl)
-	fakeClient := fake.NewSimpleClientset()
+	fakeClient := fake.NewClientset()
 	dispatcher := NewDispatcher(tested, fakeClient)
 
 	eventsInOrder := []struct {
@@ -517,7 +517,7 @@ func TestStore_DeploymentRelationship(t *testing.T) {
 	for name, testCase := range testCases {
 		t.Run(name, func(t *testing.T) {
 			tested := NewStore().(*storeImpl)
-			fakeClient := fake.NewSimpleClientset()
+			fakeClient := fake.NewClientset()
 			dispatcher := NewDispatcher(tested, fakeClient)
 			var ref []resolver.DeploymentResolution
 			for _, update := range testCase.orderedUpdates {

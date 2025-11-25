@@ -18,6 +18,7 @@ import { actions as integrationsActions } from 'reducers/integrations';
 import { actions as apitokensActions } from 'reducers/apitokens';
 import { actions as machineAccessActions } from 'reducers/machineAccessConfigs';
 import { actions as cloudSourcesActions } from 'reducers/cloudSources';
+import { getTableUIState } from 'utils/getTableUIState';
 import { integrationsPath } from 'routePaths';
 
 import TechPreviewLabel from 'Components/PatternFly/TechPreviewLabel';
@@ -61,6 +62,13 @@ function IntegrationsListPage({
 }: IntegrationsListPageProps): ReactElement {
     const integrations = useIntegrations({ source, type });
     const [deletingIntegrationIds, setDeletingIntegrationIds] = useState([]);
+
+    const tableState = getTableUIState({
+        isLoading: false,
+        data: integrations,
+        error: undefined,
+        searchFilter: {},
+    });
 
     const typeLabel = getIntegrationLabel(source, type);
     const isAPIToken = getIsAPIToken(source, type);
@@ -121,7 +129,7 @@ function IntegrationsListPage({
             </PageSection>
             <PageSection variant="default">
                 <IntegrationsTable
-                    integrations={integrations}
+                    tableState={tableState}
                     hasMultipleDelete
                     onDeleteIntegrations={onDeleteIntegrations}
                     onTriggerBackup={triggerBackup}

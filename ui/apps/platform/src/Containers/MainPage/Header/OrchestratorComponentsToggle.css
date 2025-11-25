@@ -1,0 +1,4 @@
+.pf-v5-c-masthead__content .pf-v5-c-switch__label {
+    --pf-v5-c-switch__input--checked__label--Color: var(--pf-v5-global--Color--100);
+    --pf-v5-c-switch__input--not-checked__label--Color: var(--pf-v5-global--Color--100);
+}

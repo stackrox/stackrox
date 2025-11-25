@@ -116,7 +116,7 @@ func (s *serviceCertificatesRepoSecretsImplSuite) TestGetDifferentCAsFailure() {
 				},
 			}
 			secrets := map[storage.ServiceType]*v1.Secret{scannerServiceType: secret1, unknownServiceType: secret2}
-			clientSet := fake.NewSimpleClientset(secret1, secret2)
+			clientSet := fake.NewClientset(secret1, secret2)
 			secretsClient := clientSet.CoreV1().Secrets(namespace)
 			repo := newTestRepo(secrets, secretsClient)
 
@@ -319,9 +319,9 @@ func (s *serviceCertificatesRepoSecretsImplSuite) newFixture(config certSecretsR
 	secrets := map[storage.ServiceType]*v1.Secret{scannerServiceType: secret}
 	var clientSet *fake.Clientset
 	if config.skipSecretCreation {
-		clientSet = fake.NewSimpleClientset(sensorDeployment)
+		clientSet = fake.NewClientset(sensorDeployment)
 	} else {
-		clientSet = fake.NewSimpleClientset(sensorDeployment, secret)
+		clientSet = fake.NewClientset(sensorDeployment, secret)
 	}
 	secretsClient := clientSet.CoreV1().Secrets(namespace)
 	clientSet.CoreV1().(*fakecorev1.FakeCoreV1).PrependReactor(config.k8sAPIVerbToError, "secrets", func(action k8sTesting.Action) (handled bool, ret runtime.Object, err error) {

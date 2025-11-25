@@ -22,7 +22,7 @@ func TestGetMetadata_NotOnAzure(t *testing.T) {
 func TestGetClusterMetadata(t *testing.T) {
 
 	ctx := context.Background()
-	k8sClient := fake.NewSimpleClientset()
+	k8sClient := fake.NewClientset()
 	expectedClusterName := "my-rg_my-cluster"
 	expectedClusterID := "1234_MC_my-rg_my-cluster_eastus"
 

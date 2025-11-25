@@ -52,9 +52,9 @@ func TestReadFromK8sObject_ConfigMap(t *testing.T) {
 
 	for name, c := range cases {
 		t.Run(name, func(t *testing.T) {
-			client := fake.NewSimpleClientset()
+			client := fake.NewClientset()
 			if c.cm != nil {
-				client = fake.NewSimpleClientset(c.cm)
+				client = fake.NewClientset(c.cm)
 			}
 			contents, err := readConfigMap(context.Background(), client, c.configMap, c.namespace)
 			if c.fail {
@@ -133,9 +133,9 @@ func TestWriteToK8sObject_ConfigMap(t *testing.T) {
 
 	for name, c := range cases {
 		t.Run(name, func(t *testing.T) {
-			client := fake.NewSimpleClientset()
+			client := fake.NewClientset()
 			if c.cm != nil {
-				client = fake.NewSimpleClientset(c.cm)
+				client = fake.NewClientset(c.cm)
 			}
 			err := writeConfigMap(context.Background(), client, c.configMap, c.namespace, c.key, c.write)
 			if c.fail {
@@ -192,9 +192,9 @@ func TestReadFromK8sObject_Secret(t *testing.T) {
 
 	for name, c := range cases {
 		t.Run(name, func(t *testing.T) {
-			client := fake.NewSimpleClientset()
+			client := fake.NewClientset()
 			if c.sec != nil {
-				client = fake.NewSimpleClientset(c.sec)
+				client = fake.NewClientset(c.sec)
 			}
 			contents, err := readSecret(context.Background(), client, c.secret, c.namespace)
 			if c.fail {
@@ -273,9 +273,9 @@ func TestWriteToK8sObject_Secret(t *testing.T) {
 
 	for name, c := range cases {
 		t.Run(name, func(t *testing.T) {
-			client := fake.NewSimpleClientset()
+			client := fake.NewClientset()
 			if c.sec != nil {
-				client = fake.NewSimpleClientset(c.sec)
+				client = fake.NewClientset(c.sec)
 			}
 			err := writeSecret(context.Background(), client, c.secret, c.namespace, c.key, c.write)
 			if c.fail {

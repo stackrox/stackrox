@@ -122,7 +122,7 @@ func TestCredentialManager(t *testing.T) {
 
 	for name, c := range cases {
 		t.Run(name, func(t *testing.T) {
-			k8sClient := fake.NewSimpleClientset()
+			k8sClient := fake.NewClientset()
 			var wg sync.WaitGroup
 			wg.Add(c.changes)
 			manager := newCredentialsManagerImpl(k8sClient, namespace, secretName, func() {

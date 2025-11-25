@@ -17,7 +17,6 @@ var typeRegistry = make(map[string]string)
 func init() {
 	// KEEP THE FOLLOWING LIST SORTED IN LEXICOGRAPHIC ORDER (case-sensitive).
 	for s, r := range map[protocompat.Message]permissions.ResourceHandle{
-		&storage.ActiveComponent{}:                              resources.Deployment,
 		&storage.AdministrationEvent{}:                          resources.Administration,
 		&storage.AuthMachineToMachineConfig{}:                   resources.Access,
 		&storage.AuthProvider{}:                                 resources.Access,
@@ -48,7 +47,6 @@ func init() {
 		&storage.ComplianceRunMetadata{}:                        resources.Compliance,
 		&storage.ComplianceRunResults{}:                         resources.Compliance,
 		&storage.ComplianceStrings{}:                            resources.Compliance,
-		&storage.ComponentCVEEdge{}:                             resources.Image,
 		&storage.Config{}:                                       resources.Administration,
 		&storage.DeclarativeConfigHealth{}:                      resources.Integration,
 		&storage.DelegatedRegistryConfig{}:                      resources.Administration,
@@ -56,12 +54,8 @@ func init() {
 		&storage.ExternalBackup{}:                               resources.Integration,
 		&storage.Group{}:                                        resources.Access,
 		&storage.Hash{}:                                         resources.Hash,
-		&storage.ImageComponent{}:                               resources.Image,
 		&storage.ImageComponentV2{}:                             resources.Image,
-		&storage.ImageComponentEdge{}:                           resources.Image,
-		&storage.ImageCVE{}:                                     resources.Image,
 		&storage.ImageCVEV2{}:                                   resources.Image,
-		&storage.ImageCVEEdge{}:                                 resources.Image,
 		&storage.ImageIntegration{}:                             resources.Integration,
 		&storage.ImageV2{}:                                      resources.Image,
 		&storage.IntegrationHealth{}:                            resources.Integration,

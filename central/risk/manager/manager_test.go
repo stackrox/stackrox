@@ -5,9 +5,15 @@ import (
 	"testing"
 
 	"github.com/pkg/errors"
+	deploymentDS "github.com/stackrox/rox/central/deployment/datastore/mocks"
 	imageDSMocks "github.com/stackrox/rox/central/image/datastore/mocks"
 	iiStore "github.com/stackrox/rox/central/imageintegration/store"
 	imageV2DSMocks "github.com/stackrox/rox/central/imagev2/datastore/mocks"
+	evaluatorMocks "github.com/stackrox/rox/central/processbaseline/evaluator/mocks"
+	"github.com/stackrox/rox/central/ranking"
+	riskDS "github.com/stackrox/rox/central/risk/datastore/mocks"
+	"github.com/stackrox/rox/central/risk/getters"
+	deploymentScorer "github.com/stackrox/rox/central/risk/scorer/deployment"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/images/integration"
@@ -284,6 +290,99 @@ func TestSkipImageV2Upsert(t *testing.T) {
 				require.NoError(t, err)
 				assert.Equal(t, !tc.upsertExpected, skip)
 			}
+		})
+	}
+}
+
+func TestReprocessDeploymentRiskUsesCorrectImageID(t *testing.T) {
+	testCases := []struct {
+		name                    string
+		flattenImageDataEnabled bool
+		containerImageID        string
+		containerImageIDV2      string
+		expectedImageIDUsed     string
+	}{
+		{
+			name:                    "uses container image ID when FlattenImageData is disabled",
+			flattenImageDataEnabled: false,
+			containerImageID:        "sha256:abc123",
+			containerImageIDV2:      "uuid-v5-id",
+			expectedImageIDUsed:     "sha256:abc123",
+		},
+		{
+			name:                    "uses container image IDV2 when FlattenImageData is enabled",
+			flattenImageDataEnabled: true,
+			containerImageID:        "sha256:abc123",
+			containerImageIDV2:      "uuid-v5-id",
+			expectedImageIDUsed:     "uuid-v5-id",
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			pkgTestUtils.MustUpdateFeature(t, features.FlattenImageData, tc.flattenImageDataEnabled)
+			ctrl := gomock.NewController(t)
+
+			deployment := &storage.Deployment{
+				Id:   "deployment-id",
+				Name: "test-deployment",
+				Containers: []*storage.Container{
+					{
+						Image: &storage.ContainerImage{
+							Id:   tc.containerImageID,
+							IdV2: tc.containerImageIDV2,
+							Name: &storage.ImageName{FullName: "nginx:latest"},
+						},
+					},
+				},
+			}
+
+			riskStorageMock := riskDS.NewMockDataStore(ctrl)
+
+			// Expect GetRiskForDeployment to be called
+			riskStorageMock.EXPECT().
+				GetRiskForDeployment(gomock.Any(), deployment).
+				Return(nil, false, nil)
+
+			// Expect GetRisk to be called with the correct image ID based on feature flag
+			riskStorageMock.EXPECT().
+				GetRisk(gomock.Any(), tc.expectedImageIDUsed, storage.RiskSubjectType_IMAGE).
+				Return(&storage.Risk{Score: 5.0}, true, nil)
+
+			// Expect UpsertRisk to be called
+			riskStorageMock.EXPECT().
+				UpsertRisk(gomock.Any(), gomock.Any()).
+				Return(nil)
+
+			deploymentStorageMock := deploymentDS.NewMockDataStore(ctrl)
+			deploymentStorageMock.EXPECT().
+				UpsertDeployment(gomock.Any(), gomock.Any()).
+				Return(nil)
+
+			// Create mock alert searcher that returns nil results
+			mockAlertSearcher := &getters.MockAlertsSearcher{
+				Alerts: nil,
+			}
+
+			// Create mock evaluator that returns nil results
+			mockEvaluator := evaluatorMocks.NewMockEvaluator(ctrl)
+			mockEvaluator.EXPECT().
+				EvaluateBaselinesAndPersistResult(gomock.Any()).
+				Return(nil, nil).
+				AnyTimes()
+
+			// Create the actual deployment scorer with mocked dependencies
+			scorer := deploymentScorer.NewDeploymentScorer(mockAlertSearcher, mockEvaluator)
+
+			manager := &managerImpl{
+				riskStorage:       riskStorageMock,
+				deploymentScorer:  scorer,
+				deploymentStorage: deploymentStorageMock,
+				clusterRanker:     ranking.NewRanker(),
+				nsRanker:          ranking.NewRanker(),
+			}
+
+			manager.ReprocessDeploymentRisk(deployment)
 		})
 	}
 }

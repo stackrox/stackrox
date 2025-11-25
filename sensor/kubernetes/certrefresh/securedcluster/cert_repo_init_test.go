@@ -36,7 +36,7 @@ var (
 )
 
 func TestEnsureServiceCertificates(t *testing.T) {
-	clientSet := fake.NewSimpleClientset(sensorDeployment)
+	clientSet := fake.NewClientset(sensorDeployment)
 	secretsClient := clientSet.CoreV1().Secrets(namespace)
 	ctx := context.Background()
 

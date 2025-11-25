@@ -31,6 +31,12 @@ type CreateOptions struct {
 	processIndicatorWriter             io.Writer
 	networkFlowTicker                  <-chan time.Time
 	deploymentIdentification           *storage.SensorDeploymentIdentification
+	processPipelineObserver            func(ProcessPipelineHandle)
+}
+
+// ProcessPipelineHandle exposes the subset of process pipeline functionality external callers need.
+type ProcessPipelineHandle interface {
+	WaitForShutdown() error
 }
 
 type clusterIDHandler interface {
@@ -152,6 +158,14 @@ func (cfg *CreateOptions) WithNetworkFlowTraceWriter(writer io.Writer) *CreateOp
 // Default: nil
 func (cfg *CreateOptions) WithProcessIndicatorTraceWriter(writer io.Writer) *CreateOptions {
 	cfg.processIndicatorWriter = writer
+	return cfg
+}
+
+// WithProcessPipelineObserver exposes the created process pipeline (used by local-sensor).
+// Without this hook, local-sensor cannot await pipeline shutdown and would continue to log
+// errors or panic on late-arriving process signals after Ctrl-C.
+func (cfg *CreateOptions) WithProcessPipelineObserver(observer func(ProcessPipelineHandle)) *CreateOptions {
+	cfg.processPipelineObserver = observer
 	return cfg
 }
 

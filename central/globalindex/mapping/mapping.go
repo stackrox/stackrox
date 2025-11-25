@@ -5,7 +5,6 @@ import (
 	"github.com/stackrox/rox/central/compliance/standards/index"
 	subjectMapping "github.com/stackrox/rox/central/rbac/service/mapping"
 	v1 "github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/search"
 )
@@ -22,17 +21,6 @@ func GetEntityOptionsMap() map[v1.SearchCategory]search.OptionsMap {
 		schema.DeploymentsSchema.OptionsMap,
 		schema.ImagesSchema.OptionsMap,
 		schema.ProcessIndicatorsSchema.OptionsMap,
-	)
-
-	// Deprecated
-	imageToVulnerabilitySearchOptions := search.CombineOptionsMaps(
-		schema.ImageCvesSchema.OptionsMap,
-		schema.ImageCveEdgesSchema.OptionsMap,
-		schema.ImageComponentCveEdgesSchema.OptionsMap,
-		schema.ImageComponentsSchema.OptionsMap,
-		schema.ImageComponentEdgesSchema.OptionsMap,
-		schema.ImagesSchema.OptionsMap,
-		schema.DeploymentsSchema.OptionsMap,
 	)
 
 	imageToVulnerabilityV2SearchOptions := search.CombineOptionsMaps(
@@ -62,7 +50,6 @@ func GetEntityOptionsMap() map[v1.SearchCategory]search.OptionsMap {
 	// EntityOptionsMap is a mapping from search categories to the options map for that category.
 	// search document maps are also built off this map
 	entityOptionsMap := map[v1.SearchCategory]search.OptionsMap{
-		v1.SearchCategory_ACTIVE_COMPONENT:        schema.ActiveComponentsSchema.OptionsMap,
 		v1.SearchCategory_ALERTS:                  alertSearchOptions,
 		v1.SearchCategory_CLUSTER_VULN_EDGE:       clusterToVulnerabilitySearchOptions,
 		v1.SearchCategory_CLUSTER_VULNERABILITIES: clusterToVulnerabilitySearchOptions,
@@ -99,18 +86,9 @@ func GetEntityOptionsMap() map[v1.SearchCategory]search.OptionsMap {
 	)
 	entityOptionsMap[v1.SearchCategory_REPORT_CONFIGURATIONS] = reportConfigurationSearchOptions
 
-	if !features.FlattenCVEData.Enabled() {
-		entityOptionsMap[v1.SearchCategory_IMAGE_COMPONENT_EDGE] = imageToVulnerabilitySearchOptions
-		entityOptionsMap[v1.SearchCategory_IMAGE_COMPONENTS] = imageToVulnerabilitySearchOptions
-		entityOptionsMap[v1.SearchCategory_IMAGE_VULN_EDGE] = imageToVulnerabilitySearchOptions
-		entityOptionsMap[v1.SearchCategory_IMAGE_VULNERABILITIES] = imageToVulnerabilitySearchOptions
-		entityOptionsMap[v1.SearchCategory_IMAGES] = imageToVulnerabilitySearchOptions
-		entityOptionsMap[v1.SearchCategory_COMPONENT_VULN_EDGE] = imageToVulnerabilitySearchOptions
-	} else {
-		entityOptionsMap[v1.SearchCategory_IMAGE_COMPONENTS_V2] = imageToVulnerabilityV2SearchOptions
-		entityOptionsMap[v1.SearchCategory_IMAGE_VULNERABILITIES_V2] = imageToVulnerabilityV2SearchOptions
-		entityOptionsMap[v1.SearchCategory_IMAGES] = imageToVulnerabilityV2SearchOptions
-	}
+	entityOptionsMap[v1.SearchCategory_IMAGE_COMPONENTS_V2] = imageToVulnerabilityV2SearchOptions
+	entityOptionsMap[v1.SearchCategory_IMAGE_VULNERABILITIES_V2] = imageToVulnerabilityV2SearchOptions
+	entityOptionsMap[v1.SearchCategory_IMAGES] = imageToVulnerabilityV2SearchOptions
 
 	return entityOptionsMap
 }

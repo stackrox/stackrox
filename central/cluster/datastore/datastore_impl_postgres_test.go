@@ -1341,12 +1341,23 @@ func (s *ClusterPostgresDataStoreTestSuite) TestSearchWithPostgres() {
 				actual, err = s.nsDatastore.Search(tc.ctx, tc.query)
 			} else {
 				actual, err = s.clusterDatastore.Search(tc.ctx, tc.query)
+				// verify search results
+				searchRes, searchErr := s.clusterDatastore.SearchResults(tc.ctx, tc.query)
+				assert.Len(t, searchRes, len(tc.expectedIDs))
+				if tc.expectedError != "" {
+					assert.EqualError(t, searchErr, tc.expectedError)
+				} else {
+					assert.NoError(t, searchErr)
+				}
 			}
 			if tc.expectedError == "" {
 				assert.NoError(t, err)
+
 			} else {
 				assert.EqualError(t, err, tc.expectedError)
+
 			}
+
 			assert.Len(t, actual, len(tc.expectedIDs))
 			actualIDs := pkgSearch.ResultsToIDs(actual)
 			assert.ElementsMatch(t, tc.expectedIDs, actualIDs)

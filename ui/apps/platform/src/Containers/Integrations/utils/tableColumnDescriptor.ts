@@ -1,3 +1,4 @@
+import type { ApiToken } from 'types/apiToken.proto';
 import type { BaseBackupIntegration } from 'types/externalBackup.proto';
 import type { FeatureFlagEnvVar } from 'types/featureFlag';
 import type {
@@ -33,6 +34,7 @@ import {
     categoriesUtilsForRegistryScanner,
     transformDurationLongForm,
 } from './integrationUtils';
+import { getDateTime } from 'utils/dateUtils';
 
 const { getCategoriesText: getCategoriesTextForClairifyScanner } =
     categoriesUtilsForClairifyScanner;
@@ -101,6 +103,15 @@ const tableColumnDescriptor: Readonly<IntegrationTableColumnDescriptorMap> = {
         apitoken: [
             { accessor: 'name', Header: 'Name' },
             { accessor: 'role', Header: 'Role' },
+            {
+                accessor: (config) => {
+                    const objectConfig = <ApiToken>config;
+                    return objectConfig.expiration
+                        ? getDateTime(objectConfig.expiration)
+                        : 'Unknown';
+                },
+                Header: 'Expiration',
+            },
         ],
         machineAccess: [
             {

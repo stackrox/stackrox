@@ -54,6 +54,7 @@ var (
 	CVE                = newFieldLabel("CVE")
 	CVEType            = newFieldLabel("CVE Type")
 	CVEPublishedOn     = newFieldLabel("CVE Published On")
+	CVEFixAvailable    = newFieldLabel("CVE Fix Available Timestamp")
 	CVECreatedTime     = newFieldLabel("CVE Created Time")
 	CVESuppressed      = newFieldLabel("CVE Snoozed")
 	CVESuppressExpiry  = newFieldLabel("CVE Snooze Expiry")

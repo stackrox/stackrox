@@ -7,12 +7,12 @@ import (
 	"io"
 	"net/http"
 	"os"
-	"path"
 	"path/filepath"
 	"strings"
 	"time"
 
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/pkg/fileutils"
 	"github.com/stackrox/rox/pkg/ioutils"
 	"github.com/stackrox/rox/pkg/roxctl"
 	"github.com/stackrox/rox/pkg/utils"
@@ -32,12 +32,23 @@ func extractZipToFolder(contents io.ReaderAt, contentsLength int64, bundleType, 
 		return errors.Wrap(err, "could not read from zip")
 	}
 
+	// Pre-create output directory because os.OpenRoot requires it to exist.
+	// Note: While archive/zip can detect insecure paths via GODEBUG=zipinsecurepath=0,
+	// we use os.Root for enforcement (not just detection). os.Root provides OS-level
+	// confinement that physically prevents path traversal, even if code has bugs.
 	if err := os.MkdirAll(outputDir, 0755); err != nil {
 		return errors.Wrapf(err, "Unable to create folder %q", outputDir)
 	}
 
+	// Create a secured root directory to prevent path traversal attacks
+	root, err := os.OpenRoot(outputDir)
+	if err != nil {
+		return errors.Wrapf(err, "Unable to open root directory %q", outputDir)
+	}
+	defer utils.IgnoreError(root.Close)
+
 	for _, f := range reader.File {
-		if err := extractFile(f, outputDir); err != nil {
+		if err := extractFile(f, root); err != nil {
 			return err
 		}
 	}
@@ -46,26 +57,27 @@ func extractZipToFolder(contents io.ReaderAt, contentsLength int64, bundleType, 
 	return nil
 }
 
-func extractFile(f *zip.File, outputDir string) error {
-	fileReader, err := f.Open()
+func extractFile(f *zip.File, root *os.Root) error {
+	// Handle directory entries - preserve only basic permissions, not special bits
+	// (setuid/setgid/sticky) for security when extracting potentially untrusted archives
+	if f.FileInfo().IsDir() {
+		if err := fileutils.MkdirAllInRoot(root, f.Name, f.Mode().Perm()); err != nil {
+			return errors.Wrapf(err, "Unable to create directory %q", f.Name)
+		}
+		return nil
+	}
+
+	// Skip non-regular files (symlinks, etc.)
+	// Note: os.Root doesn't support symlinks anyway (by design for security)
+	if !f.Mode().IsRegular() {
+		return nil
+	}
+
+	rc, err := f.Open()
 	if err != nil {
 		return errors.Wrapf(err, "Unable to open file %q", f.Name)
 	}
-	defer utils.IgnoreError(fileReader.Close)
-
-	outputFilePath := filepath.Join(outputDir, f.Name)
-	folder := path.Dir(outputFilePath)
-	if err := os.MkdirAll(folder, 0755); err != nil {
-		return errors.Wrapf(err, "Unable to create folder %q", folder)
-	}
-
-	outFile, err := os.OpenFile(outputFilePath, os.O_CREATE|os.O_WRONLY|os.O_EXCL, f.Mode())
-	if err != nil {
-		return errors.Wrapf(err, "Unable to create output file %q", outputFilePath)
-	}
-	defer utils.IgnoreError(outFile.Close)
-
-	if _, err := io.Copy(outFile, fileReader); err != nil {
+	if err := fileutils.WriteFileInRoot(root, f.Name, f.Mode(), rc); err != nil {
 		return errors.Wrapf(err, "Unable to write file %q", f.Name)
 	}
 	return nil

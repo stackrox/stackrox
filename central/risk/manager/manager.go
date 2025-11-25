@@ -5,7 +5,6 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
-	acUpdater "github.com/stackrox/rox/central/activecomponent/updater"
 	deploymentDS "github.com/stackrox/rox/central/deployment/datastore"
 	imageDS "github.com/stackrox/rox/central/image/datastore"
 	iiStore "github.com/stackrox/rox/central/imageintegration/store"
@@ -68,8 +67,6 @@ type managerImpl struct {
 	imageComponentRanker *ranking.Ranker
 	nodeComponentRanker  *ranking.Ranker
 
-	acUpdater acUpdater.Updater
-
 	iiSet integration.Set
 }
 
@@ -88,7 +85,6 @@ func New(nodeStorage nodeDS.DataStore,
 	nsRanker *ranking.Ranker,
 	componentRanker *ranking.Ranker,
 	nodeComponentRanker *ranking.Ranker,
-	acUpdater acUpdater.Updater,
 	iiSet integration.Set,
 ) Manager {
 	m := &managerImpl{
@@ -108,7 +104,6 @@ func New(nodeStorage nodeDS.DataStore,
 		nsRanker:             nsRanker,
 		imageComponentRanker: componentRanker,
 		nodeComponentRanker:  nodeComponentRanker,
-		acUpdater:            acUpdater,
 
 		iiSet: iiSet,
 	}
@@ -127,7 +122,13 @@ func (e *managerImpl) ReprocessDeploymentRisk(deployment *storage.Deployment) {
 	// Get Image Risk
 	imageRisks := make([]*storage.Risk, 0, len(deployment.GetContainers()))
 	for _, container := range deployment.GetContainers() {
-		if imgID := container.GetImage().GetId(); imgID != "" {
+		var imgID string
+		if features.FlattenImageData.Enabled() {
+			imgID = container.GetImage().GetIdV2()
+		} else {
+			imgID = container.GetImage().GetId()
+		}
+		if imgID != "" {
 			risk, exists, err := e.riskStorage.GetRisk(allAccessCtx, imgID, storage.RiskSubjectType_IMAGE)
 			if err != nil {
 				log.Errorf("error getting risk for image %s: %v", imgID, err)
@@ -241,9 +242,6 @@ func (e *managerImpl) CalculateRiskAndUpsertImage(image *storage.Image) error {
 		return errors.Wrapf(err, "upserting image %s", image.GetName().GetFullName())
 	}
 
-	if err := e.acUpdater.PopulateExecutableCache(riskReprocessorCtx, image); err != nil {
-		return errors.Wrapf(err, "populating executable cache for image %s", image.GetId())
-	}
 	return nil
 }
 

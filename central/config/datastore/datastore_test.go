@@ -444,10 +444,10 @@ func TestValidateConfigAndPopulateMissingDefaults(t *testing.T) {
 			upsertedConfig: nil,
 		},
 		"Missing private config gets fully configured when Features activated": {
-			enabledFlags: []string{features.UnifiedCVEDeferral.EnvVar()},
 			initialConfig: &storage.Config{
-				PublicConfig:  samplePublicConfig,
-				PrivateConfig: nil,
+				PublicConfig:            samplePublicConfig,
+				PlatformComponentConfig: samplePlatformConfig,
+				PrivateConfig:           nil,
 			},
 			upsertedConfig: &storage.Config{
 				PublicConfig: samplePublicConfig,
@@ -458,26 +458,6 @@ func TestValidateConfigAndPopulateMissingDefaults(t *testing.T) {
 					DecommissionedClusterRetention:      defaultDecommissionedClusterRetention,
 					ReportRetentionConfig:               defaultReportRetentionConfig,
 					VulnerabilityExceptionConfig:        defaultVulnerabilityDeferralConfig,
-					AdministrationEventsConfig:          defaultAdministrationEventsConfig,
-				},
-				PlatformComponentConfig: samplePlatformConfig,
-			},
-		},
-		"Missing private config gets partially configured when Features deactivated": {
-			disabledFlags: []string{features.UnifiedCVEDeferral.EnvVar()},
-			initialConfig: &storage.Config{
-				PublicConfig:  samplePublicConfig,
-				PrivateConfig: nil,
-			},
-			upsertedConfig: &storage.Config{
-				PublicConfig: samplePublicConfig,
-				PrivateConfig: &storage.PrivateConfig{
-					AlertRetention:                      defaultAlertRetention,
-					ImageRetentionDurationDays:          DefaultImageRetention,
-					ExpiredVulnReqRetentionDurationDays: DefaultExpiredVulnReqRetention,
-					DecommissionedClusterRetention:      defaultDecommissionedClusterRetention,
-					ReportRetentionConfig:               defaultReportRetentionConfig,
-					VulnerabilityExceptionConfig:        nil,
 					AdministrationEventsConfig:          defaultAdministrationEventsConfig,
 				},
 				PlatformComponentConfig: samplePlatformConfig,
@@ -538,7 +518,6 @@ func TestValidateConfigAndPopulateMissingDefaults(t *testing.T) {
 			},
 		},
 		"Configure vulnerability exception management when missing and Feature activated": {
-			enabledFlags: []string{features.UnifiedCVEDeferral.EnvVar()},
 			initialConfig: &storage.Config{
 				PublicConfig: samplePublicConfig,
 				PrivateConfig: &storage.PrivateConfig{
@@ -550,6 +529,7 @@ func TestValidateConfigAndPopulateMissingDefaults(t *testing.T) {
 					VulnerabilityExceptionConfig:        nil,
 					AdministrationEventsConfig:          customAdministrationEventsConfig,
 				},
+				PlatformComponentConfig: samplePlatformConfig,
 			},
 			upsertedConfig: &storage.Config{
 				PublicConfig: samplePublicConfig,
@@ -565,25 +545,8 @@ func TestValidateConfigAndPopulateMissingDefaults(t *testing.T) {
 				PlatformComponentConfig: samplePlatformConfig,
 			},
 		},
-		"No update when vulnerability exception management is missing and Feature deactivated": {
-			disabledFlags: []string{features.UnifiedCVEDeferral.EnvVar()},
-			initialConfig: &storage.Config{
-				PublicConfig: samplePublicConfig,
-				PrivateConfig: &storage.PrivateConfig{
-					AlertRetention:                      customAlertRetention,
-					ImageRetentionDurationDays:          DefaultImageRetention + 1,
-					ExpiredVulnReqRetentionDurationDays: DefaultExpiredVulnReqRetention + 1,
-					DecommissionedClusterRetention:      customDecommissionedClusterRetention,
-					ReportRetentionConfig:               customReportRetentionConfig,
-					VulnerabilityExceptionConfig:        nil,
-					AdministrationEventsConfig:          customAdministrationEventsConfig,
-				},
-				PlatformComponentConfig: samplePlatformConfig,
-			},
-			upsertedConfig: nil,
-		},
 		"Configure administration event management when missing": {
-			enabledFlags: []string{features.UnifiedCVEDeferral.EnvVar()},
+			enabledFlags: []string{features.PlatformComponents.EnvVar()},
 			initialConfig: &storage.Config{
 				PublicConfig: samplePublicConfig,
 				PrivateConfig: &storage.PrivateConfig{

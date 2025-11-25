@@ -45,8 +45,9 @@ const _Op_name = "AddAddManyCountDedupeExistsGetGetAllGetManyGetExternalFlowsFor
 var _Op_index = [...]uint16{0, 3, 10, 15, 21, 27, 30, 36, 43, 72, 93, 103, 113, 138, 142, 147, 152, 158, 164, 174, 197, 203, 207, 213, 223, 229, 238, 242, 253, 258, 265}
 
 func (i Op) String() string {
-	if i < 0 || i >= Op(len(_Op_index)-1) {
+	idx := int(i) - 0
+	if i < 0 || idx >= len(_Op_index)-1 {
 		return "Op(" + strconv.FormatInt(int64(i), 10) + ")"
 	}
-	return _Op_name[_Op_index[i]:_Op_index[i+1]]
+	return _Op_name[_Op_index[idx]:_Op_index[idx+1]]
 }

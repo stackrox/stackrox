@@ -399,6 +399,9 @@ func (m *networkFlowManager) send(result *enrichmentResult) {
 			// Inform the updateComputer that sending has succeeded
 			m.updateComputer.OnSuccessfulSendConnections(result.currentConns)
 			m.updateComputer.OnSuccessfulSendEndpoints(result.currentEndpointsProcesses)
+		} else {
+			m.updateComputer.OnSendConnectionsFailure(result.updatedConns)
+			m.updateComputer.OnSendEndpointsFailure(result.updatedEndpoints)
 		}
 	}
 

@@ -33,8 +33,9 @@ const (
 	imagesV2Table              = pkgSchema.ImagesV2TableName
 	imageComponentsV2Table     = pkgSchema.ImageComponentV2TableName
 	imageComponentsV2CVEsTable = pkgSchema.ImageCvesV2TableName
-	imageCVEsLegacyTable       = pkgSchema.ImageCvesTableName
-	imageCVEEdgesLegacyTable   = pkgSchema.ImageCveEdgesTableName
+	// TODO(ROX-29911): really need cache table for the dates.
+	imageCVEsLegacyTable     = "image_cves"
+	imageCVEEdgesLegacyTable = "image_cve_edges"
 )
 
 var (
@@ -44,6 +45,8 @@ var (
 	defaultSortOption = &v1.QuerySortOption{
 		Field: search.LastUpdatedTime.String(),
 	}
+	// Assume it exists
+	legacyCVEExists = true
 )
 
 type imagePartsAsSlice struct {
@@ -732,6 +735,22 @@ func getImageCVEs(ctx context.Context, tx *postgres.Tx, imageID string) ([]*stor
 func getLegacyImageCVEs(ctx context.Context, tx *postgres.Tx, imageSha string) ([]*storage.EmbeddedVulnerability, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Get, "ImageCVEs")
 
+	if !legacyCVEExists {
+		return nil, nil
+	}
+
+	existenceRow := tx.QueryRow(ctx, "SELECT EXISTS (SELECT 1 FROM information_schema.tables WHERE "+
+		"table_name = $1 AND table_schema = ANY(current_schemas(FALSE)))", imageCVEsLegacyTable)
+	var exists bool
+	if err := existenceRow.Scan(&exists); err != nil {
+		return nil, err
+	}
+	// Old tables do not exist so newer installation.  Set global var  so we skip these checks.
+	if !exists {
+		legacyCVEExists = false
+		return nil, nil
+	}
+
 	// Using this method instead of accessing the legacy image CVE and component stores because the legacy stores
 	// would not be initialized when the new data model is enabled
 	cveRows, err := tx.Query(ctx, "SELECT "+imageCVEsLegacyTable+".serialized FROM "+imageCVEsLegacyTable+
@@ -954,6 +973,24 @@ func (s *storeImpl) GetImagesRiskView(ctx context.Context, q *v1.Query) ([]*view
 		log.Errorf("unable to initialize image ranking: %v", err)
 	}
 
+	return results, err
+}
+
+// GetImagesIdAndDigestView retrieves an image id and digest for pruning purposes
+func (s *storeImpl) GetImagesIdAndDigestView(ctx context.Context, q *v1.Query) ([]*views.ImageIDAndDigestView, error) {
+	selects := []*v1.QuerySelect{
+		search.NewQuerySelect(search.ImageID).Proto(),
+		search.NewQuerySelect(search.ImageSHA).Proto(),
+	}
+	q.Selects = selects
+	var results []*views.ImageIDAndDigestView
+	err := pgSearch.RunSelectRequestForSchemaFn[views.ImageIDAndDigestView](ctx, s.db, pkgSchema.ImagesV2Schema, q, func(row *views.ImageIDAndDigestView) error {
+		results = append(results, row)
+		return nil
+	})
+	if err != nil {
+		log.Errorf("unable to retrieve image id and digests: %v", err)
+	}
 	return results, err
 }
 

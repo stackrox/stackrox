@@ -75,7 +75,7 @@ func (s *NewDataModelEnhancedReportingTestSuite) SetupSuite() {
 		resolvers.CreateTestDeploymentDatastore(s.T(), s.testDB, mockCtrl, imageDataStore),
 		deploymentsView.NewDeploymentView(s.testDB.DB),
 	)
-	collectionStore := collectionPostgres.CreateTableAndNewStore(s.ctx, s.testDB.DB, s.testDB.GetGormDB(s.T()))
+	collectionStore := collectionPostgres.New(s.testDB)
 	_, collectionQueryResolver, err := collectionDS.New(collectionStore)
 	s.NoError(err)
 	s.clusterDatastore = clusterDSMocks.NewMockDataStore(mockCtrl)

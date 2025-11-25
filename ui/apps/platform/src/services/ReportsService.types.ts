@@ -29,6 +29,7 @@ export type VulnerabilityReportFiltersBase = {
     imageTypes: ImageType[];
     includeAdvisory: boolean;
     includeEpssProbability: boolean;
+    // includeKnownExploit: boolean; // ROX_CISA_KEV
     includeNvdCvss: boolean;
 };
 
