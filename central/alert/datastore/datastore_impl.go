@@ -294,7 +294,7 @@ func sacKeyForAlert(alert *storage.Alert) []sac.ScopeKey {
 	case *storage.Alert_Resource_:
 		return sac.KeyForNSScopedObj(alert.GetResource())
 	case *storage.Alert_Image:
-		return nil // This is theoretically possible even though image doesn't have a ns/cluster
+		return sac.GlobalScopeKey() // This is theoretically possible even though image doesn't have a ns/cluster
 	case *storage.Alert_Node_:
 		return sac.ClusterScopeKeys(alert.GetClusterId())
 	default:
