@@ -390,6 +390,11 @@ const (
 	SFAAgentDisabled DeploySFAAgent = "Disabled"
 )
 
+// Pointer returns the given DeploySFAAgent value as a pointer, needed in k8s resource structs.
+func (v DeploySFAAgent) Pointer() *DeploySFAAgent {
+	return &v
+}
+
 // ContainerSpec defines container settings.
 type ContainerSpec struct {
 	// Allows overriding the default resource settings for this component. Please consult the documentation
