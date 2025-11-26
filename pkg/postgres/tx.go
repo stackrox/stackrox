@@ -66,7 +66,6 @@ func (t *Tx) QueryRow(ctx context.Context, sql string, args ...interface{}) pgx.
 // Commit wraps pgx.Tx Commit
 func (t *Tx) Commit(ctx context.Context) error {
 	defer t.cancelFunc()
-
 	if t.mode == inner {
 		return nil
 	}
