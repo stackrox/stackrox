@@ -639,6 +639,64 @@ func TestMergeFileAccessAlerts(t *testing.T) {
 			expectedNew:    getFakeFileAccessAlert(twoDaysAgoFileAccessViolation, yesterdayFileAccessViolation, nowFileAccessViolation),
 			expectedOutput: true,
 		},
+		{
+			desc:           "Empty old alert; non-empty new alert",
+			old:            getFakeFileAccessAlert(),
+			new:            getFakeFileAccessAlert(yesterdayFileAccessViolation),
+			expectedOutput: true,
+		},
+		{
+			desc:           "Empty old alert; non-empty new alert; again",
+			old:            getFakeFileAccessAlert(),
+			new:            getFakeFileAccessAlert(yesterdayFileAccessViolation, nowFileAccessViolation),
+			expectedOutput: true,
+		},
+		{
+			desc: "New has many that exceed max",
+			old: func() *storage.Alert {
+				accesses := make([]*storage.FileAccess, 30)
+				for i := 0; i < 30; i++ {
+					accesses[i] = getFileAccess(twoDaysAgo.Add(time.Duration(i) * time.Minute))
+				}
+				return getFakeFileAccessAlert(accesses...)
+			}(),
+			new: func() *storage.Alert {
+				accesses := make([]*storage.FileAccess, 20)
+				for i := 0; i < 20; i++ {
+					accesses[i] = getFileAccess(yesterday.Add(time.Duration(i) * time.Minute))
+				}
+				return getFakeFileAccessAlert(accesses...)
+			}(),
+			expectedNew: func() *storage.Alert {
+				// Should keep only the newest 40 (prioritize new over old)
+				// After merging: 30 old + 20 new = 50 total
+				// Slice keeps last 40: indices [10:50]
+				// This is old[10:30] (20 old accesses) + new[0:20] (20 new accesses)
+				accesses := make([]*storage.FileAccess, maxRunTimeViolationsPerAlert)
+				// 20 from old (indices 10-29, the most recent old ones)
+				for i := 0; i < 20; i++ {
+					accesses[i] = getFileAccess(twoDaysAgo.Add(time.Duration(10+i) * time.Minute))
+				}
+				// All 20 from new
+				for i := 0; i < 20; i++ {
+					accesses[20+i] = getFileAccess(yesterday.Add(time.Duration(i) * time.Minute))
+				}
+				return getFakeFileAccessAlert(accesses...)
+			}(),
+			expectedOutput: true,
+		},
+		{
+			desc: "Old at max; new access",
+			old: func() *storage.Alert {
+				accesses := make([]*storage.FileAccess, maxRunTimeViolationsPerAlert)
+				for i := 0; i < maxRunTimeViolationsPerAlert; i++ {
+					accesses[i] = getFileAccess(twoDaysAgo.Add(time.Duration(i) * time.Minute))
+				}
+				return getFakeFileAccessAlert(accesses...)
+			}(),
+			new:            getFakeFileAccessAlert(nowFileAccessViolation),
+			expectedOutput: false,
+		},
 	} {
 		t.Run(c.desc, func(t *testing.T) {
 			out := mergeFileAccessViolations(c.old, c.new)
@@ -881,6 +939,43 @@ func TestFindAlert(t *testing.T) {
 			toFind:   resourceAlertWithAltPolicy,
 			alerts:   append(getAlerts(), resourceAlertWithAltPolicy),
 			expected: resourceAlertWithAltPolicy,
+		},
+		// ------ Node alerts
+		{
+			desc:     "Same policy, same node, Same state, Alert found",
+			toFind:   getNodeAlerts()[0],
+			alerts:   getNodeAlerts(),
+			expected: getNodeAlerts()[0],
+		},
+		{
+			desc:     "Same policy, Diff node (node ID), Same state, No alert found",
+			toFind:   getNodeAlerts()[1],
+			alerts:   []*storage.Alert{getNodeAlerts()[0]},
+			expected: nil,
+		},
+		{
+			desc:     "Same policy, Diff node (node name), Same state, No alert found",
+			toFind:   getNodeAlerts()[2],
+			alerts:   []*storage.Alert{getNodeAlerts()[0]},
+			expected: nil,
+		},
+		{
+			desc:     "Same policy, Diff node (cluster), Same state, No alert found",
+			toFind:   getNodeAlerts()[3],
+			alerts:   []*storage.Alert{getNodeAlerts()[0]},
+			expected: nil,
+		},
+		{
+			desc:     "Node alert in a list of resource alerts, No alert found",
+			toFind:   getNodeAlerts()[0],
+			alerts:   getResourceAlerts(),
+			expected: nil,
+		},
+		{
+			desc:     "Node alert in a list of deployment alerts, No alert found",
+			toFind:   getNodeAlerts()[0],
+			alerts:   getAlerts(),
+			expected: nil,
 		},
 	} {
 		t.Run(c.desc, func(t *testing.T) {
@@ -1125,4 +1220,51 @@ func getResources() []*storage.Alert_Resource {
 			NamespaceId:  "namespace-id-alt",
 		},
 	}
+}
+
+// Each node after the 0th one is different in one property: id, name, or cluster
+func getNodes() []*storage.Alert_Node {
+	return []*storage.Alert_Node{
+		{
+			Id:          "node-id",
+			Name:        "node-name",
+			ClusterId:   "cluster-id",
+			ClusterName: "prod cluster",
+		},
+		{
+			Id:          "node-id-alt",
+			Name:        "node-name",
+			ClusterId:   "cluster-id",
+			ClusterName: "prod cluster",
+		},
+		{
+			Id:          "node-id",
+			Name:        "node-name-alt",
+			ClusterId:   "cluster-id",
+			ClusterName: "prod cluster",
+		},
+		{
+			Id:          "node-id",
+			Name:        "node-name",
+			ClusterId:   "cluster-id-alt",
+			ClusterName: "prod cluster-alt",
+		},
+	}
+}
+
+// Each alert is for a different node where each node after the 0th one is different in one property:
+// id, name, or cluster
+func getNodeAlerts() []*storage.Alert {
+	nodes := getNodes()
+	alerts := make([]*storage.Alert, 0, len(nodes))
+	for i, node := range nodes {
+		alerts = append(alerts, &storage.Alert{
+			Id:             fmt.Sprintf("node-alert%d", i+1),
+			Policy:         fixtures.GetAuditLogEventSourcePolicy(),
+			Entity:         &storage.Alert_Node_{Node: node},
+			LifecycleStage: storage.LifecycleStage_RUNTIME,
+			Time:           protocompat.GetProtoTimestampFromSeconds(int64((i + 1) * 100)),
+		})
+	}
+	return alerts
 }
