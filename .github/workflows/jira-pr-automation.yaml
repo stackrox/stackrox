@@ -89,10 +89,10 @@ jobs:
           JIRA_API_TOKEN: ${{ secrets.JIRA_TOKEN }}
         run: |
           mkdir -p ~/.config/jira
-          cat > ~/.config/jira/.config.yml <<'EOF'
-server: https://issues.redhat.com
-auth_type: bearer
-EOF
+          {
+            echo "server: https://issues.redhat.com"
+            echo "auth_type: bearer"
+          } > ~/.config/jira/.config.yml
           echo "Config file created:"
           cat ~/.config/jira/.config.yml
 
@@ -184,10 +184,10 @@ EOF
           JIRA_API_TOKEN: ${{ secrets.JIRA_TOKEN }}
         run: |
           mkdir -p ~/.config/jira
-          cat > ~/.config/jira/.config.yml <<'EOF'
-server: https://issues.redhat.com
-auth_type: bearer
-EOF
+          {
+            echo "server: https://issues.redhat.com"
+            echo "auth_type: bearer"
+          } > ~/.config/jira/.config.yml
           echo "Config file created:"
           cat ~/.config/jira/.config.yml
 
