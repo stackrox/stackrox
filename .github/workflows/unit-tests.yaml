@@ -269,6 +269,7 @@ jobs:
         gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
     - name: Cache UI dependencies
+      if: matrix.arch != 'arm64' # TODO(ROX-30487)
       uses: ./.github/actions/cache-ui-dependencies
 
     - name: UI Component Tests
