@@ -190,7 +190,7 @@ For certain use-cases some data types are recommended, in particular:
 * In the past we had tolerated these, but these days we have a stronger stance on this topic.
 * The additional reason is that they provide for a poor UX in the OpenShift console operator form-based web UI, now that we stopped using static in-schema defaults.
 * The specific problem is that when a boolean field does not have a schema-level default, it will show as "off" in the UI.
-  However, if its runtime default value is `true`, then there is no real way in the UI to switch it off.
+  However, if its runtime default value is `true`, then there is no obvious way in the UI to switch it off, and - once specified - no real way to make it "unspecified" such that the default kick in.
   This is because lack of value and false value are expressed in the same way in the UI.
 
 Some data types are discouraged, in particular:
