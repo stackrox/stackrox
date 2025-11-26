@@ -62,7 +62,20 @@ func (r *Reconciler[T]) runReconciliationFlow(ctx context.Context, log logr.Logg
 		return ctrlClient.IgnoreNotFound(err)
 	}
 
-	// Update status in obj here.
+	// Update condition "Progressing".
+	progressingChanged := r.updateProgressing(ctx, obj)
+	if progressingChanged {
+		progCond := obj.GetCondition(platform.ConditionProgressing)
+		if progCond != nil {
+			log.Info("Progressing condition updated", "status", progCond.Status, "reason", progCond.Reason)
+		}
+	}
+
+	// If nothing changed, skip the status update.
+	if !progressingChanged {
+		log.V(1).Info("No status changes detected, skipping update")
+		return nil
+	}
 
 	// Update status subresource.
 	// Conflicts are handled by the retry mechanism in the Reconcile function.
@@ -120,4 +133,49 @@ func (r *Reconciler[T]) SetupWithManager(mgr ctrl.Manager) error {
 	}
 
 	return nil
+}
+
+// updateProgressing updates the Progressing condition based on helm reconciliation state.
+// Returns true if the condition changed.
+func (r *Reconciler[T]) updateProgressing(_ context.Context, obj T) bool {
+	prorgressingStatus, reason, message := r.determineProgressingState(obj)
+
+	return obj.SetCondition(platform.StackRoxCondition{
+		Type:    platform.ConditionProgressing,
+		Status:  prorgressingStatus,
+		Reason:  reason,
+		Message: message,
+		// LastTransitionTime: metav1.Time{Time: time.Now()},
+	})
+}
+
+// determineProgressingState infers if Helm reconciliation is in progress.
+// Returns (isProgressing, reason, message).
+func (r *Reconciler[T]) determineProgressingState(obj T) (platform.ConditionStatus, platform.ConditionReason, string) {
+	// Check observedGeneration.
+	// If metadata.generation > status.observedGeneration, spec has changed and reconcile is pending
+	if obj.GetGeneration() > obj.GetObservedGeneration() {
+		return platform.StatusTrue, "Reconciling", "Spec changes pending reconciliation"
+	}
+
+	// If Deployed condition is Unknown, helm is working
+	cond := obj.GetCondition(platform.ConditionDeployed)
+	if cond.Type == platform.ConditionDeployed && cond.Status != platform.StatusTrue {
+		return platform.StatusTrue, "Reconciling", "Helm reconciliation in progress"
+	}
+
+	// If ReleaseFailed is True, reconciliation failed but might retry
+	cond = obj.GetCondition(platform.ConditionReleaseFailed)
+	if cond.Type == platform.ConditionReleaseFailed && cond.Status == platform.StatusTrue {
+		return platform.StatusTrue, "ReleaseFailed", cond.Message
+	}
+
+	// If Irreconcilable is True, there's a problem
+	cond = obj.GetCondition(platform.ConditionIrreconcilable)
+	if cond.Type == platform.ConditionIrreconcilable && cond.Status == platform.StatusTrue {
+		return platform.StatusTrue, "Irreconcilable", cond.Message
+	}
+
+	// No signs of active reconciliation.
+	return platform.StatusFalse, "ReconcileSuccessful", "Reconciliation completed"
 }
