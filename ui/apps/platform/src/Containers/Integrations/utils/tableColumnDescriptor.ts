@@ -105,7 +105,7 @@ const tableColumnDescriptor: Readonly<IntegrationTableColumnDescriptorMap> = {
             { accessor: 'role', Header: 'Role' },
             {
                 accessor: (config) => {
-                    const objectConfig = <ApiToken>config;
+                    const objectConfig = config as ApiToken;
                     return objectConfig.expiration
                         ? getDateTime(objectConfig.expiration)
                         : 'Unknown';
@@ -116,7 +116,7 @@ const tableColumnDescriptor: Readonly<IntegrationTableColumnDescriptorMap> = {
         machineAccess: [
             {
                 accessor: (config) => {
-                    const { type } = <AuthMachineToMachineConfig>config;
+                    const { type } = config as AuthMachineToMachineConfig;
                     if (type === 'GENERIC') {
                         return 'Generic';
                     }
@@ -135,7 +135,7 @@ const tableColumnDescriptor: Readonly<IntegrationTableColumnDescriptorMap> = {
             {
                 accessor: (config) => {
                     return transformDurationLongForm(
-                        (<AuthMachineToMachineConfig>config).tokenExpirationDuration
+                        (config as AuthMachineToMachineConfig).tokenExpirationDuration
                     );
                 },
                 Header: 'Token lifetime',
