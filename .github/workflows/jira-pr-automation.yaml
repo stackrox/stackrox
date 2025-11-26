@@ -95,6 +95,7 @@ jobs:
           } > ~/.config/jira/.config.yml
           echo "Config file created:"
           cat ~/.config/jira/.config.yml
+          jira me
 
       - name: Create Jira issue and update PR
         env:
