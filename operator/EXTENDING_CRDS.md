@@ -10,9 +10,9 @@ Let us assume that there is a new (fictitious) feature "Low Energy Consumption M
 ### 1. Add the new setting to the API
 
 Add a new setting for the feature to the appropriate structs within `operator/api/<VERSION>/securedcluster_types.go` and/or `operator/api/<VERSION>/central_types.go`.
-Note the [style recommendations](#style-recommendations) below.
+**Do note** the [style recommendations](#style-recommendations) below first, do not just reuse a pattern from another field without reading them.
 
-For example:
+Here is an example of an string-enum-typed field:
 
 ```go
 // EnergyConsumptionMode is a type for values of spec.energyConsumptionMode.
@@ -185,11 +185,18 @@ For certain use-cases some data types are recommended, in particular:
 * `ObjectReference` to refer to specific objects, see [API conventions](https://book.kubebuilder.io/cronjob-tutorial/api-design.html).
 * Use integers with specific width, see [API conventions](https://github.com/kubernetes/community/blob/master/contributors/devel/sig-architecture/api-conventions.md#primitive-types).
 
+**Booleans are forbidden for new fields.**
+* See [API conventions](https://github.com/kubernetes/community/blob/master/contributors/devel/sig-architecture/api-conventions.md#primitive-types) for some of the reasons for discouraging them.
+* In the past we had tolerated these, but these days we have a stronger stance on this topic.
+* The additional reason is that they provide for a poor UX in the OpenShift console operator form-based web UI, now that we stopped using static in-schema defaults.
+* The specific problem is that when a boolean field does not have a schema-level default, it will show as "off" in the UI.
+  However, if its runtime default value is `true`, then there is no obvious way in the UI to switch it off, and - once specified - no real way to make it "unspecified" such that the default kick in.
+  This is because lack of value and false value are expressed in the same way in the UI.
+
 Some data types are discouraged, in particular:
 * Avoid floats in spec, avoid floats in status if possible.
 * Avoid unsigned integers.
 * Avoid iota-based enums, prefer named string constants instead.
-* Think twice about booleans: See [API conventions](https://github.com/kubernetes/community/blob/master/contributors/devel/sig-architecture/api-conventions.md#primitive-types).
 * Maps: See [API conventions](https://github.com/kubernetes/community/blob/master/contributors/devel/sig-architecture/api-conventions.md#lists-of-named-subobjects-preferred-over-maps).
 
 ### Other considerations related to data types:
