@@ -133,7 +133,7 @@ spec:
           value: "/var/run/secrets/stackrox.io/certs/"
         - name: FACT_HOST_MOUNT
           value: "/host"
-        {{- include "srox.envVars" (list . "daemonset" "fact" "fact") | nindent 8 }}
+        {{- include "srox.envVars" (list . "daemonset" "collector" "fact") | nindent 8 }}
         resources:
           {{- ._rox.collector._sfaResources | nindent 10 }}
         securityContext:
