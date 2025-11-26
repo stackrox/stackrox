@@ -28,7 +28,6 @@ jobs:
     permissions:
       id-token: write
       contents: read
-    environment: development
     steps:
       - name: Cancel Previous Runs
         uses: n1hility/cancel-previous-runs@v3
