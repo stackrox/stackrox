@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	appsv1 "k8s.io/api/apps/v1"
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/client-go/util/retry"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -71,8 +72,17 @@ func (r *Reconciler[T]) runReconciliationFlow(ctx context.Context, log logr.Logg
 		}
 	}
 
+	// Update condition "Available".
+	availableChanged := r.updateAvailable(ctx, obj)
+	if availableChanged {
+		availCond := obj.GetCondition(platform.ConditionAvailable)
+		if availCond != nil {
+			log.Info("Available condition updated", "status", availCond.Status, "reason", availCond.Reason)
+		}
+	}
+
 	// If nothing changed, skip the status update.
-	if !progressingChanged {
+	if !(progressingChanged || availableChanged) {
 		log.V(1).Info("No status changes detected, skipping update")
 		return nil
 	}
@@ -178,4 +188,67 @@ func (r *Reconciler[T]) determineProgressingState(obj T) (platform.ConditionStat
 
 	// No signs of active reconciliation.
 	return platform.StatusFalse, "ReconcileSuccessful", "Reconciliation completed"
+}
+
+// updateAvailable updates the Available condition based on deployment readiness.
+// Returns true if the condition changed.
+func (r *Reconciler[T]) updateAvailable(ctx context.Context, obj T) bool {
+	log := log.FromContext(ctx)
+
+	// List all deployments owned by the resource currently under reconciliation.
+	deployments := &appsv1.DeploymentList{}
+	err := r.List(ctx, deployments,
+		ctrlClient.InNamespace(obj.GetNamespace()),
+		ctrlClient.MatchingLabels{
+			"app.kubernetes.io/instance": obj.GetName(),
+			"app.stackrox.io/managed-by": "operator",
+		},
+	)
+	if err != nil {
+		log.Error(err, "Failed to list deployments")
+		return false
+	}
+
+	availableStatus, reason, message := determineAvailableState(deployments.Items)
+
+	return obj.SetCondition(platform.StackRoxCondition{
+		Type:    platform.ConditionAvailable,
+		Status:  availableStatus,
+		Reason:  reason,
+		Message: message,
+		// LastTransitionTime: metav1.Time{Time: time.Now()},
+	})
+}
+
+// determineAvailableState checks if all deployments are available.
+func determineAvailableState(deployments []appsv1.Deployment) (platform.ConditionStatus, platform.ConditionReason, string) {
+	if len(deployments) == 0 {
+		return platform.StatusFalse, "NoDeployments", "No deployments found"
+	}
+
+	allReady := true
+	notReadyCount := 0
+	for _, dep := range deployments {
+		if !isDeploymentReady(&dep) {
+			allReady = false
+			notReadyCount++
+		}
+	}
+
+	if allReady {
+		return platform.StatusTrue, "DeploymentsReady", "All deployments are ready"
+	}
+
+	return platform.StatusFalse, "DeploymentsNotReady",
+		fmt.Sprintf("%d of %d deployments are not ready", notReadyCount, len(deployments))
+}
+
+// isDeploymentReady checks if a deployment has all replicas available.
+func isDeploymentReady(dep *appsv1.Deployment) bool {
+	for _, cond := range dep.Status.Conditions {
+		if cond.Type == appsv1.DeploymentAvailable {
+			return cond.Status == corev1.ConditionTrue
+		}
+	}
+	return false
 }
