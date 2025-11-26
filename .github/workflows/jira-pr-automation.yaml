@@ -3,11 +3,11 @@ name: "Jira PR Automation"
 on:
   pull_request:
     types:
-      - opened
-      - labeled
-      - ready_for_review
-      - converted_to_draft
-      - edited
+#      - opened
+#      - labeled
+#      - ready_for_review
+#      - converted_to_draft
+#      - edited
 
 permissions:
   pull-requests: write
