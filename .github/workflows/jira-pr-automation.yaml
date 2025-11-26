@@ -16,6 +16,7 @@ permissions:
 env:
   GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
   GH_NO_UPDATE_NOTIFIER: 1
+  JIRA_CONFIG_FILE: /tmp/config.yml
 
 # Prevent concurrent runs for the same PR
 concurrency:
@@ -88,13 +89,12 @@ jobs:
         env:
           JIRA_API_TOKEN: ${{ secrets.JIRA_TOKEN }}
         run: |
-          mkdir -p ~/.config/jira
           {
             echo "server: https://issues.redhat.com"
             echo "auth_type: bearer"
-          } > ~/.config/jira/.config.yml
+          } > $JIRA_CONFIG_FILE
           echo "Config file created:"
-          cat ~/.config/jira/.config.yml
+          cat $JIRA_CONFIG_FILE
           jira me
 
       - name: Create Jira issue and update PR
