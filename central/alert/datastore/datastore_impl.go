@@ -300,7 +300,7 @@ func sacKeyForAlert(alert *storage.Alert) []sac.ScopeKey {
 	default:
 		log.Errorf("UNEXPECTED: Alert Entity %s unknown", alert.GetEntity())
 	}
-	return nil
+	return sac.GlobalScopeKey()
 }
 
 func (ds *datastoreImpl) updateAlertNoLock(ctx context.Context, alerts ...*storage.Alert) error {
