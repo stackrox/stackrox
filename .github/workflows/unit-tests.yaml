@@ -236,7 +236,6 @@ jobs:
     - name: Publish Test Report
       if: matrix.arch != 'arm64' # TODO(ROX-30487)
       uses: test-summary/action@v2
-      if: always()
       with:
         paths: 'ui/apps/platform/test-results/reports/*.xml'
 
@@ -278,7 +277,6 @@ jobs:
     - name: Upload Cypress test result artifacts
       if: matrix.arch != 'arm64' # TODO(ROX-30487)
       uses: ./.github/actions/upload-artifact-with-retry
-      if: always()
       with:
         name: Cypress test results
         path: ui/apps/platform/cypress/test-results/
@@ -286,7 +284,6 @@ jobs:
     - name: Publish Test Report
       if: matrix.arch != 'arm64' # TODO(ROX-30487)
       uses: test-summary/action@v2
-      if: always()
       with:
         paths: 'ui/apps/platform/cypress/test-results/reports/**/*.xml'
 
