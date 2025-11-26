@@ -114,19 +114,29 @@ jobs:
 
           # Create Jira issue
           echo "Creating Jira issue in ROX project..."
-          ISSUE_KEY=$(jira issue create \
+          CREATE_OUTPUT=$(jira issue create \
             --project ROX \
             --type Task \
             --summary "$PR_TITLE" \
             --body "$DESCRIPTION" \
             --no-input \
-            --plain 2>&1 | grep -oE 'ROX-[0-9]+' | head -1)
+            --plain 2>&1)
+
+          echo "Jira CLI output:"
+          echo "$CREATE_OUTPUT"
+
+          ISSUE_KEY=$(echo "$CREATE_OUTPUT" | grep -oE 'ROX-[0-9]+' | head -1)
 
           if [ -z "$ISSUE_KEY" ]; then
             echo "::error::Failed to create Jira issue"
             gh pr comment "$PR_NUMBER" --repo "${{ github.repository }}" --body ":warning: **Jira Automation Failed**
 
           Failed to create Jira issue for this PR.
+
+          Error output:
+          \`\`\`
+          $CREATE_OUTPUT
+          \`\`\`
 
           Please manually create a Jira issue and update the PR title with the issue key."
             exit 1
