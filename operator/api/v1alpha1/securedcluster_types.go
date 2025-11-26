@@ -374,13 +374,22 @@ type CollectorContainerSpec struct {
 // SFAContainerSpec defines settings for the Sensitive File Activity agent container.
 type SFAContainerSpec struct {
 	// Specifies whether Sensitive File Activity agent is deployed.
-	// The default is: false.
-	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=1,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:booleanSwitch"}
-	Enabled *bool `json:"enabled,omitempty"`
+	// The default is: Disabled.
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=1,displayName="SFA Agent"
+	Agent *DeploySFAAgent `json:"agent,omitempty"`
 
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=2
 	ContainerSpec `json:",inline"`
 }
+
+// DeploySFAAgent is a type for values of spec.perNode.sfa.agent
+// +kubebuilder:validation:Enum=Enabled;Disabled
+type DeploySFAAgent string
+
+const (
+	SFAAgentEnabled  DeploySFAAgent = "Enabled"
+	SFAAgentDisabled DeploySFAAgent = "Disabled"
+)
 
 // ContainerSpec defines container settings.
 type ContainerSpec struct {
