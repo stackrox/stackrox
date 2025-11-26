@@ -471,7 +471,7 @@ func (t Translator) getSFAContainerValues(sfaContainerSpec *platform.SFAContaine
 	case platform.SFAAgentDisabled:
 		cv.SetBoolValue("sfaEnabled", false)
 	default:
-		return cv.SetError(errors.Errorf("invalid spec.perNode.sfa setting %q", *sfaContainerSpec.Agent))
+		return cv.SetError(errors.Errorf("invalid spec.perNode.sfa.agent setting %q", *sfaContainerSpec.Agent))
 	}
 
 	cv.AddChild("sfaResources", translation.GetResources(sfaContainerSpec.Resources))
