@@ -120,6 +120,7 @@ func (r *Reconciler[T]) SetupWithManager(mgr ctrl.Manager) error {
 	err = c.Watch(
 		source.Kind(mgr.GetCache(), emptyCR,
 			&handler.TypedEnqueueRequestForObject[T]{},
+			SkipStatusControllerUpdates[T]{},
 		),
 	)
 	if err != nil {
