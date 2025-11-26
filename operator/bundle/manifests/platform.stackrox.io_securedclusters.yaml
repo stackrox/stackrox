@@ -782,9 +782,8 @@ spec:
                         type: object
                     type: object
                   sfa:
-                    description: |-
-                      Settings for the Sensitive File Activity container, which is
-                      responsible for file activity monitoring on the Node.
+                    description: Settings for the Sensitive File Activity container,
+                      which is responsible for file activity monitoring on the Node.
                     properties:
                       agent:
                         description: |-

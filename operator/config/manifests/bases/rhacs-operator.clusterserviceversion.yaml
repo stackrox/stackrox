@@ -1127,8 +1127,7 @@ spec:
           When Optional is false, and the specified resource does not exist in the output manifests, an error will be thrown.
         displayName: Optional
         path: overlays[0].optional
-      - description: |-
-          Settings for the Sensitive File Activity container, which is
+      - description: Settings for the Sensitive File Activity container, which is
           responsible for file activity monitoring on the Node.
         displayName: SFA
         path: perNode.sfa

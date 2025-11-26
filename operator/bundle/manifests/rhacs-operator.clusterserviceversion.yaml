@@ -1266,9 +1266,8 @@ spec:
           for scanning the Nodes' filesystem.
         displayName: Node Scanning Settings
         path: perNode.nodeInventory
-      - description: 'Settings for the Sensitive File Activity container, which is
-
-          responsible for file activity monitoring on the Node.'
+      - description: Settings for the Sensitive File Activity container, which is
+          responsible for file activity monitoring on the Node.
         displayName: SFA
         path: perNode.sfa
       - description: 'To ensure comprehensive monitoring of your cluster activity,
