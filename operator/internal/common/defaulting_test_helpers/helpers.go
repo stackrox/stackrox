@@ -8,6 +8,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"helm.sh/helm/v3/pkg/chartutil"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -127,7 +128,10 @@ func checkNoDefaultsInSchema(t *testing.T, schema chartutil.Values) {
 	requireNoDefaultProperty(t, schema)
 	desc, err := schema.PathValue("description")
 	require.NoError(t, err)
-	require.False(t, strings.HasPrefix(desc.(string), defaultPrefix))
+	for i, line := range strings.Split(desc.(string), "\n") {
+		t.Logf("checking line %d: %s", i+1, line)
+		assert.False(t, strings.HasPrefix(line, defaultPrefix), "Line %d of description mentions a default, but none is set in the runtime code: %q", i+1, line)
+	}
 }
 
 func getJSONName(t *testing.T, structField reflect.StructField) (field string, embedded bool) {
