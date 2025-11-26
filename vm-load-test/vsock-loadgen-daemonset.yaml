@@ -33,13 +33,14 @@ spec:
 
       containers:
       - name: loadgen
-        # Use the same collector image that contains vsock-loadgen binary
-        image: quay.io/gualvare/stackrox/main:loopback-fix-v3
-        imagePullPolicy: IfNotPresent
+        # Use dedicated vsock-loadgen image (minimal distroless-based image)
+        # Override with VSOCK_LOADGEN_IMAGE and VSOCK_LOADGEN_TAG env vars if needed
+        image: quay.io/gualvare/stackrox/vsock-loadgen:latest
+        imagePullPolicy: Always
 
         # Auto-start load generation from config file
         command:
-          - /stackrox/bin/vsock-loadgen
+          - /usr/local/bin/vsock-loadgen
           - --config
           - /etc/loadgen/config.yaml
 
@@ -65,9 +66,6 @@ spec:
           requests:
             memory: "512Mi"
             cpu: "500m"
-          limits:
-            memory: "8Gi"
-            cpu: "4"
 
         securityContext:
           # Required for vsock device access

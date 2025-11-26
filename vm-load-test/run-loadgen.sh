@@ -11,6 +11,10 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 CONFIG_FILE="${1:-${SCRIPT_DIR}/loadgen-config.yaml}"
 MANIFEST="${SCRIPT_DIR}/vsock-loadgen-daemonset.yaml"
 
+IMAGE_NAME="${VSOCK_LOADGEN_IMAGE:-quay.io/gualvare/stackrox/vsock-loadgen}"
+IMAGE_TAG="${VSOCK_LOADGEN_TAG:-latest}"
+FULL_IMAGE="${IMAGE_NAME}:${IMAGE_TAG}"
+
 if [[ ! -f "$CONFIG_FILE" ]]; then
     echo "Error: Config file not found: $CONFIG_FILE"
     echo ""
@@ -25,6 +29,7 @@ echo "║  Vsock Load Generator Deployment                             ║"
 echo "╚═══════════════════════════════════════════════════════════════╝"
 echo ""
 echo "📝 Config file: $CONFIG_FILE"
+echo "📦 Image: $FULL_IMAGE"
 echo ""
 
 # Show config
