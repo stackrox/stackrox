@@ -6,6 +6,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/utils/pointer"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 // MiscSpec defines miscellaneous settings for custom resources.
@@ -354,4 +355,13 @@ type GlobalNetworkSpec struct {
 	// The default is: Enabled.
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=1,displayName="Network Policies"
 	Policies *NetworkPolicies `json:"policies,omitempty"`
+}
+
+// +kubebuilder:object:generate=false
+type ObjectForStatusController interface {
+	client.Object
+	GetCondition(condType ConditionType) *StackRoxCondition
+	SetCondition(StackRoxCondition) bool
+	GetGeneration() int64
+	GetObservedGeneration() int64
 }
