@@ -8,7 +8,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestCreateRoxClaimsFromGenericClaims(t *testing.T) {
+func Test_genericClaimExtractor(t *testing.T) {
 	testCases := []struct {
 		subject      string
 		unstructured map[string]interface{}

@@ -8,7 +8,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func Test_newClaimsExtractorFromConfig(t *testing.T) {
+func Test_newClaimExtractorFromConfig(t *testing.T) {
 	testNotImplementedErr := errox.NotImplemented
 
 	t.Run("GitHub Actions", func(t *testing.T) {
