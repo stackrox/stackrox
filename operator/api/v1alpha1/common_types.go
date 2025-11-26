@@ -78,6 +78,10 @@ const (
 	ConditionReleaseFailed  ConditionType = "ReleaseFailed"
 	ConditionIrreconcilable ConditionType = "Irreconcilable"
 
+	// These are specifically owned by the status controllers.
+	ConditionProgressing ConditionType = "Progressing"
+	ConditionAvailable   ConditionType = "Available"
+
 	StatusTrue    ConditionStatus = "True"
 	StatusFalse   ConditionStatus = "False"
 	StatusUnknown ConditionStatus = "Unknown"
