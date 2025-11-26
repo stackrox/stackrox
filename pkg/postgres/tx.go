@@ -65,13 +65,7 @@ func (t *Tx) QueryRow(ctx context.Context, sql string, args ...interface{}) pgx.
 
 // Commit wraps pgx.Tx Commit
 func (t *Tx) Commit(ctx context.Context) error {
-	// Only cancel the context for outer transactions to prevent resource leaks.
-	// Inner transactions share the context with their outer transaction.
-	defer func() {
-		if t.mode == outer {
-			t.cancelFunc()
-		}
-	}()
+	defer t.cancelFunc()
 
 	if t.mode == inner {
 		return nil
@@ -86,13 +80,7 @@ func (t *Tx) Commit(ctx context.Context) error {
 
 // Rollback wraps pgx.Tx Rollback
 func (t *Tx) Rollback(ctx context.Context) error {
-	// Only cancel the context for outer transactions to prevent resource leaks.
-	// Inner transactions share the context with their outer transaction.
-	defer func() {
-		if t.mode == outer {
-			t.cancelFunc()
-		}
-	}()
+	defer t.cancelFunc()
 
 	if err := t.Tx.Rollback(ctx); err != nil {
 		if t.mode == outer && errors.Is(err, pgx.ErrTxClosed) {
