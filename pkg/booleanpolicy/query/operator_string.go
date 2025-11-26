@@ -18,8 +18,9 @@ const _Operator_name = "UnsetAndOr"
 var _Operator_index = [...]uint8{0, 5, 8, 10}
 
 func (i Operator) String() string {
-	if i < 0 || i >= Operator(len(_Operator_index)-1) {
+	idx := int(i) - 0
+	if i < 0 || idx >= len(_Operator_index)-1 {
 		return "Operator(" + strconv.FormatInt(int64(i), 10) + ")"
 	}
-	return _Operator_name[_Operator_index[i]:_Operator_index[i+1]]
+	return _Operator_name[_Operator_index[idx]:_Operator_index[idx+1]]
 }
