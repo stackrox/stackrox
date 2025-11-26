@@ -79,8 +79,8 @@ jobs:
     steps:
       - name: Install jira-cli
         run: |
-          VERSION="v1.5.1"
-          curl -sSL "https://github.com/ankitpokhrel/jira-cli/releases/download/${VERSION}/jira_${VERSION}_linux_x86_64.tar.gz" | tar -xz
+          VERSION="1.5.1"
+          curl -sSL "https://github.com/ankitpokhrel/jira-cli/releases/download/v${VERSION}/jira_${VERSION}_linux_x86_64.tar.gz" | tar -xz
           sudo mv bin/jira /usr/local/bin/
           jira version
 
@@ -163,8 +163,8 @@ jobs:
     steps:
       - name: Install jira-cli
         run: |
-          VERSION="v1.5.1"
-          curl -sSL "https://github.com/ankitpokhrel/jira-cli/releases/download/${VERSION}/jira_${VERSION}_linux_x86_64.tar.gz" | tar -xz
+          VERSION="1.5.1"
+          curl -sSL "https://github.com/ankitpokhrel/jira-cli/releases/download/v${VERSION}/jira_${VERSION}_linux_x86_64.tar.gz" | tar -xz
           sudo mv bin/jira /usr/local/bin/
           jira version
 
