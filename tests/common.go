@@ -337,7 +337,10 @@ func createK8sClientWithConfig(t T, restCfg *rest.Config) kubernetes.Interface {
 	retryClient.RetryWaitMax = 2 * time.Second
 	retryClient.Logger = logWrapper{t: t}
 	if restCfg.Timeout == 0 {
-		restCfg.Timeout = 10 * time.Second
+		// Increased from 10s to 30s to handle slower API responses, especially
+		// in compatibility test scenarios with mixed versions (e.g., old Central
+		// with new Sensor).
+		restCfg.Timeout = 30 * time.Second
 	}
 	// Set retryable timeout to 90% of rest config timeout to allow retries
 	retryClient.HTTPClient.Timeout = (9 * restCfg.Timeout) / 10
