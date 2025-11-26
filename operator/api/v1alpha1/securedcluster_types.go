@@ -266,8 +266,7 @@ type PerNodeSpec struct {
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=3,displayName="Node Scanning Settings"
 	NodeInventory *ContainerSpec `json:"nodeInventory,omitempty"`
 
-	// Settings for the Sensitive File Activity container, which is
-	// responsible for file activity monitoring on the Node.
+	// Settings for the Sensitive File Activity container, which is responsible for file activity monitoring on the Node.
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=4,displayName="SFA"
 	SFA *SFAContainerSpec `json:"sfa,omitempty"`
 
