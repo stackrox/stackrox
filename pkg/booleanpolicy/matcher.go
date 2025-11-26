@@ -10,13 +10,14 @@ import (
 )
 
 var (
-	deploymentEvalFactory = evaluator.MustCreateNewFactory(augmentedobjs.DeploymentMeta)
-	processEvalFactory    = evaluator.MustCreateNewFactory(augmentedobjs.ProcessMeta)
-	imageEvalFactory      = evaluator.MustCreateNewFactory(augmentedobjs.ImageMeta)
-	kubeEventFactory      = evaluator.MustCreateNewFactory(augmentedobjs.KubeEventMeta)
-	networkFlowFactory    = evaluator.MustCreateNewFactory(augmentedobjs.NetworkFlowMeta)
-	nodeEvalFactory       = evaluator.MustCreateNewFactory(augmentedobjs.NodeMeta)
-	fileAccessFactory     = evaluator.MustCreateNewFactory(augmentedobjs.FileAccessMeta)
+	deploymentEvalFactory       = evaluator.MustCreateNewFactory(augmentedobjs.DeploymentMeta)
+	deploymentFileAccessFactory = evaluator.MustCreateNewFactory(augmentedobjs.DeploymentFileAccessMeta)
+	processEvalFactory          = evaluator.MustCreateNewFactory(augmentedobjs.ProcessMeta)
+	imageEvalFactory            = evaluator.MustCreateNewFactory(augmentedobjs.ImageMeta)
+	kubeEventFactory            = evaluator.MustCreateNewFactory(augmentedobjs.KubeEventMeta)
+	networkFlowFactory          = evaluator.MustCreateNewFactory(augmentedobjs.NetworkFlowMeta)
+	nodeEvalFactory             = evaluator.MustCreateNewFactory(augmentedobjs.NodeMeta)
+	fileAccessFactory           = evaluator.MustCreateNewFactory(augmentedobjs.FileAccessMeta)
 )
 
 // A CacheReceptacle is an optional argument that can be passed to the Match* functions of the Matchers below, that
@@ -243,8 +244,9 @@ func BuildDeploymentWithNetworkFlowMatcher(p *storage.Policy, options ...Validat
 }
 
 func BuildDeploymentWithFileAccessMatcher(p *storage.Policy, options ...ValidateOption) (DeploymentWithFileAccessMatcher, error) {
-	sectionsAndEvals, err := getSectionsAndEvals(&deploymentEvalFactory, p, storage.LifecycleStage_DEPLOY, options...)
+	sectionsAndEvals, err := getSectionsAndEvals(&deploymentFileAccessFactory, p, storage.LifecycleStage_DEPLOY, options...)
 	if err != nil {
+		log.Error(err)
 		return nil, err
 	}
 

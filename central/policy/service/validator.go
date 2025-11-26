@@ -369,8 +369,15 @@ func (s *policyValidator) compilesForRunTime(policy *storage.Policy, options ...
 	} else if s.isNodeEventPolicy(policy) {
 		_, err = booleanpolicy.BuildNodeEventMatcher(policy, options...)
 	} else {
-		// build a deployment matcher to check for all runtime fields that are evaluated against a deployment
-		_, err = booleanpolicy.BuildDeploymentMatcher(policy, options...)
+		if booleanpolicy.ContainsOneOf(policy, booleanpolicy.FileAccess) {
+			// FileAccesses are handled slightly differently and can't use the default
+			// deployment matcher because it is not aware of file access fields.
+			// Look at pkg/booleanpolicy/augmentedobjs/meta.go for more details.
+			_, err = booleanpolicy.BuildDeploymentWithFileAccessMatcher(policy, options...)
+		} else {
+			// build a deployment matcher to check for all runtime fields that are evaluated against a deployment
+			_, err = booleanpolicy.BuildDeploymentMatcher(policy, options...)
+		}
 	}
 	if err != nil {
 		return errors.Wrap(err, "policy configuration is invalid for runtime")
