@@ -89,11 +89,12 @@ jobs:
           JIRA_API_TOKEN: ${{ secrets.JIRA_TOKEN }}
         run: |
           mkdir -p ~/.config/jira
-          cat > ~/.config/jira/.config.yml <<EOF
-          server: https://issues.redhat.com
-          auth_type: bearer
-          login: api-token
-          EOF
+          cat > ~/.config/jira/.config.yml <<'EOF'
+server: https://issues.redhat.com
+auth_type: bearer
+EOF
+          echo "Config file created:"
+          cat ~/.config/jira/.config.yml
 
       - name: Create Jira issue and update PR
         env:
@@ -183,11 +184,12 @@ jobs:
           JIRA_API_TOKEN: ${{ secrets.JIRA_TOKEN }}
         run: |
           mkdir -p ~/.config/jira
-          cat > ~/.config/jira/.config.yml <<EOF
-          server: https://issues.redhat.com
-          auth_type: bearer
-          login: api-token
-          EOF
+          cat > ~/.config/jira/.config.yml <<'EOF'
+server: https://issues.redhat.com
+auth_type: bearer
+EOF
+          echo "Config file created:"
+          cat ~/.config/jira/.config.yml
 
       - name: Transition issues
         env:
