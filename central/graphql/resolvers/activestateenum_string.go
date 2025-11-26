@@ -19,8 +19,9 @@ const _ActiveStateEnum_name = "UndeterminedInactiveActiveFeatureDisabled"
 var _ActiveStateEnum_index = [...]uint8{0, 12, 20, 26, 41}
 
 func (i ActiveStateEnum) String() string {
-	if i < 0 || i >= ActiveStateEnum(len(_ActiveStateEnum_index)-1) {
+	idx := int(i) - 0
+	if i < 0 || idx >= len(_ActiveStateEnum_index)-1 {
 		return "ActiveStateEnum(" + strconv.FormatInt(int64(i), 10) + ")"
 	}
-	return _ActiveStateEnum_name[_ActiveStateEnum_index[i]:_ActiveStateEnum_index[i+1]]
+	return _ActiveStateEnum_name[_ActiveStateEnum_index[idx]:_ActiveStateEnum_index[idx+1]]
 }
