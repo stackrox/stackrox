@@ -30,7 +30,7 @@ protobuf-java = { module = "com.google.protobuf:protobuf-java", version.ref = "p
 protobuf-java-util = { module = "com.google.protobuf:protobuf-java-util", version.ref = "protobuf" }
 kubernetes-client = { module = "io.fabric8:kubernetes-client", version.ref = "fabric8" }
 openshift-client = { module = "io.fabric8:openshift-client", version.ref = "fabric8" }
-client-java = { module = "io.kubernetes:client-java", version = "24.0.0-legacy" }
+client-java = { module = "io.kubernetes:client-java", version = "25.0.0-legacy" }
 commons-httpclient = { module = "commons-httpclient:commons-httpclient", version = "3.1" }
 httpclient = { module = "org.apache.httpcomponents:httpclient", version = "4.5.14" }
 opencsv = { module = "com.opencsv:opencsv", version = "5.12.0" }
