@@ -45,13 +45,13 @@ jobs:
           # Check for jira label
           LABELS=$(gh pr view "$PR_NUMBER" --repo "${{ github.repository }}" --json labels --jq '.labels[].name')
           HAS_JIRA_LABEL=false
-          if echo "$LABELS" | grep -qx "jira"; then
+          if echo "$LABELS" | grep -qx "jira" || false; then
             HAS_JIRA_LABEL=true
           fi
           echo "should-run=$HAS_JIRA_LABEL" >> "$GITHUB_OUTPUT"
 
           # Extract Jira keys from title
-          JIRA_KEYS=$(echo "$PR_TITLE" | grep -oE '[A-Z]+-[0-9]+' | tr '\n' ',' | sed 's/,$//')
+          JIRA_KEYS=$(echo "$PR_TITLE" | grep -oE '[A-Z]+-[0-9]+' | tr '\n' ',' | sed 's/,$//' || true)
           echo "jira-keys=$JIRA_KEYS" >> "$GITHUB_OUTPUT"
 
           HAS_JIRA_KEY=false
