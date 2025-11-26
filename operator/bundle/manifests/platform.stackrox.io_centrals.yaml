@@ -14,7 +14,17 @@ spec:
     singular: central
   scope: Namespaced
   versions:
-  - name: v1alpha1
+  - additionalPrinterColumns:
+    - jsonPath: .status.productVersion
+      name: Version
+      type: string
+    - jsonPath: .status.central.adminPassword.adminPasswordSecretReference
+      name: AdminPassword
+      type: string
+    - jsonPath: .status.conditions[?(@.type=="Deployed")].message
+      name: Message
+      type: string
+    name: v1alpha1
     schema:
       openAPIV3Schema:
         description: |-
