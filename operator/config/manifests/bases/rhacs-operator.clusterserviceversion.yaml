@@ -930,11 +930,9 @@ spec:
         - urn:alm:descriptor:com.tectonic.ui:select:NoCollection
       - description: |-
           Specifies whether Sensitive File Activity agent is deployed.
-          The default is: false.
-        displayName: Enabled
-        path: perNode.sfa.enabled
-        x-descriptors:
-        - urn:alm:descriptor:com.tectonic.ui:booleanSwitch
+          The default is: Disabled.
+        displayName: SFA Agent
+        path: perNode.sfa.agent
       - description: |-
           Should process baselines be automatically locked when the observation period (1 hour by default) ends.
           The default is: Disabled.

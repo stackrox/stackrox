@@ -1340,11 +1340,9 @@ spec:
         - urn:alm:descriptor:com.tectonic.ui:resourceRequirements
       - description: 'Specifies whether Sensitive File Activity agent is deployed.
 
-          The default is: false.'
-        displayName: Enabled
-        path: perNode.sfa.enabled
-        x-descriptors:
-        - urn:alm:descriptor:com.tectonic.ui:booleanSwitch
+          The default is: Disabled.'
+        displayName: SFA Agent
+        path: perNode.sfa.agent
       - description: 'Allows overriding the default resource settings for this component.
           Please consult the documentation
 

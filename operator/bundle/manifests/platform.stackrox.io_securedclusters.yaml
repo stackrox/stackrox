@@ -786,11 +786,14 @@ spec:
                       Settings for the Sensitive File Activity container, which is
                       responsible for file activity monitoring on the Node.
                     properties:
-                      enabled:
+                      agent:
                         description: |-
                           Specifies whether Sensitive File Activity agent is deployed.
-                          The default is: false.
-                        type: boolean
+                          The default is: Disabled.
+                        enum:
+                        - Enabled
+                        - Disabled
+                        type: string
                       resources:
                         description: |-
                           Allows overriding the default resource settings for this component. Please consult the documentation
