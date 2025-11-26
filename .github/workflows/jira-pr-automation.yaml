@@ -1,0 +1,263 @@
+name: "Jira PR Automation"
+
+on:
+  pull_request:
+    types:
+      - opened
+      - labeled
+      - ready_for_review
+      - converted_to_draft
+      - edited
+
+permissions:
+  pull-requests: write
+  contents: read
+
+env:
+  GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  GH_NO_UPDATE_NOTIFIER: 1
+
+# Prevent concurrent runs for the same PR
+concurrency:
+  group: jira-pr-automation-${{ github.event.pull_request.number }}
+  cancel-in-progress: false
+
+jobs:
+  check-prerequisites:
+    name: Check prerequisites
+    runs-on: ubuntu-latest
+    # Skip for bot PRs
+    if: github.actor != 'dependabot[bot]'
+    outputs:
+      should-run: ${{ steps.check.outputs.should-run }}
+      has-jira-key: ${{ steps.check.outputs.has-jira-key }}
+      pr-state: ${{ steps.check.outputs.pr-state }}
+      jira-keys: ${{ steps.check.outputs.jira-keys }}
+    steps:
+      - name: Check if workflow should run
+        id: check
+        env:
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          PR_TITLE: ${{ github.event.pull_request.title }}
+        run: |
+          set -euo pipefail
+
+          # Check for jira label
+          LABELS=$(gh pr view "$PR_NUMBER" --repo "${{ github.repository }}" --json labels --jq '.labels[].name')
+          HAS_JIRA_LABEL=false
+          if echo "$LABELS" | grep -qx "jira"; then
+            HAS_JIRA_LABEL=true
+          fi
+          echo "should-run=$HAS_JIRA_LABEL" >> "$GITHUB_OUTPUT"
+
+          # Extract Jira keys from title
+          JIRA_KEYS=$(echo "$PR_TITLE" | grep -oE '[A-Z]+-[0-9]+' | tr '\n' ',' | sed 's/,$//')
+          echo "jira-keys=$JIRA_KEYS" >> "$GITHUB_OUTPUT"
+
+          HAS_JIRA_KEY=false
+          if [ -n "$JIRA_KEYS" ]; then
+            HAS_JIRA_KEY=true
+          fi
+          echo "has-jira-key=$HAS_JIRA_KEY" >> "$GITHUB_OUTPUT"
+
+          # Determine PR state
+          IS_DRAFT=$(gh pr view "$PR_NUMBER" --repo "${{ github.repository }}" --json isDraft --jq '.isDraft')
+          PR_STATE="ready"
+          if [ "$IS_DRAFT" = "true" ]; then
+            PR_STATE="draft"
+          fi
+          echo "pr-state=$PR_STATE" >> "$GITHUB_OUTPUT"
+
+          # Log results
+          echo "::notice::Jira label: $HAS_JIRA_LABEL, Has Jira key: $HAS_JIRA_KEY, PR state: $PR_STATE"
+
+  auto-create-jira-issue:
+    name: Auto-create Jira issue
+    needs: check-prerequisites
+    if: needs.check-prerequisites.outputs.should-run == 'true' && needs.check-prerequisites.outputs.has-jira-key == 'false'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Install jira-cli
+        run: |
+          VERSION="v1.5.1"
+          curl -sSL "https://github.com/ankitpokhrel/jira-cli/releases/download/${VERSION}/jira_${VERSION}_linux_x86_64.tar.gz" | tar -xz
+          sudo mv bin/jira /usr/local/bin/
+          jira version
+
+      - name: Configure jira-cli
+        env:
+          JIRA_API_TOKEN: ${{ secrets.JIRA_TOKEN }}
+        run: |
+          mkdir -p ~/.config/jira
+          cat > ~/.config/jira/.config.yml <<EOF
+          server: https://issues.redhat.com
+          auth_type: bearer
+          login: api-token
+          EOF
+
+      - name: Create Jira issue and update PR
+        env:
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          PR_TITLE: ${{ github.event.pull_request.title }}
+          PR_URL: ${{ github.event.pull_request.html_url }}
+          PR_AUTHOR: ${{ github.event.pull_request.user.login }}
+          JIRA_API_TOKEN: ${{ secrets.JIRA_TOKEN }}
+        run: |
+          set -euo pipefail
+
+          # Create description
+          DESCRIPTION="Automatically created for PR #${PR_NUMBER}
+
+          Pull Request: ${PR_URL}
+          Author: @${PR_AUTHOR}
+          "
+
+          # Create Jira issue
+          echo "Creating Jira issue in ROX project..."
+          ISSUE_KEY=$(jira issue create \
+            --project ROX \
+            --type Task \
+            --summary "$PR_TITLE" \
+            --body "$DESCRIPTION" \
+            --no-input \
+            --plain 2>&1 | grep -oE 'ROX-[0-9]+' | head -1)
+
+          if [ -z "$ISSUE_KEY" ]; then
+            echo "::error::Failed to create Jira issue"
+            gh pr comment "$PR_NUMBER" --repo "${{ github.repository }}" --body ":warning: **Jira Automation Failed**
+
+          Failed to create Jira issue for this PR.
+
+          Please manually create a Jira issue and update the PR title with the issue key."
+            exit 1
+          fi
+
+          echo "Created Jira issue: $ISSUE_KEY"
+
+          # Construct new title
+          NEW_TITLE="${ISSUE_KEY}: ${PR_TITLE}"
+
+          # Check title length
+          TITLE_LENGTH=${#NEW_TITLE}
+          if [ "$TITLE_LENGTH" -gt 70 ]; then
+            echo "::warning::New title would be $TITLE_LENGTH chars (max 70). Truncating..."
+            MAX_SUMMARY_LENGTH=$((70 - ${#ISSUE_KEY} - 5))  # Account for "KEY: " and "..."
+            TRUNCATED_TITLE="${PR_TITLE:0:$MAX_SUMMARY_LENGTH}..."
+            NEW_TITLE="${ISSUE_KEY}: ${TRUNCATED_TITLE}"
+          fi
+
+          # Update PR title
+          echo "Updating PR title to: $NEW_TITLE"
+          gh pr edit "$PR_NUMBER" --repo "${{ github.repository }}" --title "$NEW_TITLE"
+
+          # Comment on PR
+          gh pr comment "$PR_NUMBER" --repo "${{ github.repository }}" --body "Automatically created Jira issue: https://issues.redhat.com/browse/$ISSUE_KEY"
+
+          echo "::notice::Successfully created $ISSUE_KEY and updated PR title"
+
+  transition-jira-issues:
+    name: Transition Jira issues
+    needs: check-prerequisites
+    if: needs.check-prerequisites.outputs.should-run == 'true' && needs.check-prerequisites.outputs.has-jira-key == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Install jira-cli
+        run: |
+          VERSION="v1.5.1"
+          curl -sSL "https://github.com/ankitpokhrel/jira-cli/releases/download/${VERSION}/jira_${VERSION}_linux_x86_64.tar.gz" | tar -xz
+          sudo mv bin/jira /usr/local/bin/
+          jira version
+
+      - name: Configure jira-cli
+        env:
+          JIRA_API_TOKEN: ${{ secrets.JIRA_TOKEN }}
+        run: |
+          mkdir -p ~/.config/jira
+          cat > ~/.config/jira/.config.yml <<EOF
+          server: https://issues.redhat.com
+          auth_type: bearer
+          login: api-token
+          EOF
+
+      - name: Transition issues
+        env:
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          PR_STATE: ${{ needs.check-prerequisites.outputs.pr-state }}
+          JIRA_KEYS_CSV: ${{ needs.check-prerequisites.outputs.jira-keys }}
+          JIRA_API_TOKEN: ${{ secrets.JIRA_TOKEN }}
+        run: |
+          set -euo pipefail
+
+          # Determine target status
+          case "$PR_STATE" in
+            ready)
+              JIRA_STATUS="Review"
+              ;;
+            draft)
+              JIRA_STATUS="In Progress"
+              ;;
+            *)
+              echo "::error::Unknown PR state: $PR_STATE"
+              exit 1
+              ;;
+          esac
+
+          echo "Target Jira status: $JIRA_STATUS (PR state: $PR_STATE)"
+
+          # Convert CSV to array
+          IFS=',' read -ra JIRA_KEYS <<< "$JIRA_KEYS_CSV"
+
+          FAILED_KEYS=""
+          SUCCESS_KEYS=""
+
+          for KEY in "${JIRA_KEYS[@]}"; do
+            echo "Processing $KEY..."
+
+            # Check if issue exists
+            if ! jira issue view "$KEY" --plain &>/dev/null; then
+              echo "::warning::Jira issue $KEY not found"
+              FAILED_KEYS="$FAILED_KEYS $KEY (not found)"
+              continue
+            fi
+
+            # Get current status
+            CURRENT_STATUS=$(jira issue view "$KEY" --plain --columns status 2>/dev/null | tail -n1 | awk '{print $2}' || echo "Unknown")
+
+            # Skip if already in target status
+            if [ "$CURRENT_STATUS" = "$JIRA_STATUS" ]; then
+              echo "Issue $KEY already in $JIRA_STATUS status"
+              SUCCESS_KEYS="$SUCCESS_KEYS $KEY (already $JIRA_STATUS)"
+              continue
+            fi
+
+            # Perform transition
+            if jira issue move "$KEY" "$JIRA_STATUS" --no-input 2>&1; then
+              echo "✓ Transitioned $KEY: $CURRENT_STATUS → $JIRA_STATUS"
+              SUCCESS_KEYS="$SUCCESS_KEYS $KEY"
+            else
+              echo "✗ Failed to transition $KEY to $JIRA_STATUS"
+              FAILED_KEYS="$FAILED_KEYS $KEY"
+            fi
+          done
+
+          # Report results
+          if [ -n "$SUCCESS_KEYS" ]; then
+            echo "::notice::Successfully transitioned:$SUCCESS_KEYS"
+          fi
+
+          if [ -n "$FAILED_KEYS" ]; then
+            echo "::warning::Failed to transition:$FAILED_KEYS"
+            gh pr comment "$PR_NUMBER" --repo "${{ github.repository }}" --body ":warning: **Jira Automation Partial Failure**
+
+          Failed to transition the following Jira issues:$FAILED_KEYS
+
+          Current PR state: **$PR_STATE**
+          Expected Jira status: **$JIRA_STATUS**
+
+          Possible reasons:
+          - Issue does not exist in Jira
+          - Transition not available in the Jira workflow
+          - Insufficient permissions
+
+          Please manually update the issue status in Jira."
+          fi
