@@ -25,7 +25,8 @@ jobs:
       fail-fast: false
       matrix:
         gotags: [ 'GOTAGS=""', 'GOTAGS=release' ]
-    runs-on: ubuntu-latest
+        arch: [amd64, arm64]
+    runs-on: ubuntu-24.04${{ (matrix.arch == 'arm64' && '-arm') || '' }}
     outputs:
       new-jiras: ${{ steps.junit2jira.outputs.new-jiras }}
     container:
@@ -81,7 +82,7 @@ jobs:
         paths: 'junit-reports/report.xml'
 
     - name: Report test failures to Jira
-      if: (!cancelled())
+      if: (!cancelled()) && matrix.arch != 'arm64' # TODO(ROX-30487) junit2jira needs arm release
       id: junit2jira
       uses: ./.github/actions/junit2jira
       with:
@@ -209,7 +210,11 @@ jobs:
 
   ui:
     needs: define-ci-versions
-    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        arch: [amd64, arm64]
+    runs-on: ubuntu-24.04${{ (matrix.arch == 'arm64' && '-arm') || '' }}
     outputs:
       new-jiras: ${{ steps.junit2jira.outputs.new-jiras }}
     container:
@@ -229,13 +234,13 @@ jobs:
       run: make ui-test
 
     - name: Publish Test Report
+      if: matrix.arch != 'arm64' # TODO(ROX-30487)
       uses: test-summary/action@v2
-      if: always()
       with:
         paths: 'ui/apps/platform/test-results/reports/*.xml'
 
     - name: Report junit failures in jira
-      if: (!cancelled())
+      if: (!cancelled()) && matrix.arch != 'arm64' # TODO(ROX-30487) junit2jira needs arm release
       id: junit2jira
       uses: ./.github/actions/junit2jira
       with:
@@ -246,7 +251,11 @@ jobs:
 
   ui-component:
     needs: define-ci-versions
-    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        arch: [amd64, arm64]
+    runs-on: ubuntu-24.04${{ (matrix.arch == 'arm64' && '-arm') || '' }}
     outputs:
       new-jiras: ${{ steps.junit2jira.outputs.new-jiras }}
     container:
@@ -260,26 +269,27 @@ jobs:
         gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
     - name: Cache UI dependencies
+      if: matrix.arch != 'arm64' # TODO(ROX-30487)
       uses: ./.github/actions/cache-ui-dependencies
 
     - name: UI Component Tests
       run: make ui-component-tests
 
     - name: Upload Cypress test result artifacts
+      if: matrix.arch != 'arm64' # TODO(ROX-30487)
       uses: ./.github/actions/upload-artifact-with-retry
-      if: always()
       with:
         name: Cypress test results
         path: ui/apps/platform/cypress/test-results/
 
     - name: Publish Test Report
+      if: matrix.arch != 'arm64' # TODO(ROX-30487)
       uses: test-summary/action@v2
-      if: always()
       with:
         paths: 'ui/apps/platform/cypress/test-results/reports/**/*.xml'
 
     - name: Report junit failures in jira
-      if: (!cancelled())
+      if: (!cancelled()) && matrix.arch != 'arm64' # TODO(ROX-30487) junit2jira needs arm release
       id: junit2jira
       uses: ./.github/actions/junit2jira
       with:

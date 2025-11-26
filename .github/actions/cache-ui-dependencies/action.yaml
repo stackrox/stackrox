@@ -15,4 +15,4 @@ runs:
           /github/home/.npm
           /github/home/.cache/Cypress
           /usr/local/share/.cache
-        key: npm-v2-${{ hashFiles(inputs.lockFile) }}
+        key: npm-v2-${{ runner.arch }}-${{ hashFiles(inputs.lockFile) }}
