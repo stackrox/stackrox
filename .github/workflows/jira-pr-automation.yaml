@@ -2,12 +2,12 @@ name: "Jira PR Automation"
 
 on:
   pull_request:
-#    types:
-#      - opened
-#      - labeled
-#      - ready_for_review
-#      - converted_to_draft
-#      - edited
+    types:
+      - opened
+      - labeled
+      - ready_for_review
+      - converted_to_draft
+      - edited
 
 permissions:
   pull-requests: write
@@ -16,7 +16,6 @@ permissions:
 env:
   GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
   GH_NO_UPDATE_NOTIFIER: 1
-  JIRA_CONFIG_FILE: /tmp/config.yml
 
 # Prevent concurrent runs for the same PR
 concurrency:
@@ -89,12 +88,14 @@ jobs:
         env:
           JIRA_API_TOKEN: ${{ secrets.JIRA_TOKEN }}
         run: |
+          mkdir -p ~/.config/.jira
           {
             echo "server: https://issues.redhat.com"
             echo "auth_type: bearer"
-          } > $JIRA_CONFIG_FILE
-          echo "Config file created:"
-          cat $JIRA_CONFIG_FILE
+          } > ~/.config/.jira/.config.yml
+          echo "Config file created at ~/.config/.jira/.config.yml:"
+          cat ~/.config/.jira/.config.yml
+          echo "Testing jira-cli authentication..."
           jira me
 
       - name: Create Jira issue and update PR
