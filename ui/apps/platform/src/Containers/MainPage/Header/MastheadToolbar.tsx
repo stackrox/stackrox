@@ -12,11 +12,6 @@ import ClusterStatusProblems from './ClusterStatusProblems';
 import GlobalSearchButton from './GlobalSearchButton';
 import HelpMenu from './HelpMenu';
 import OrchestratorComponentsToggle from './OrchestratorComponentsToggle';
-/*
- * TODO: remove this comment, which hides the light-mode/dark-mode toggle import,
- *       after we update to use PatternFly themes for dark mode
-import ThemeToggleButton from './ThemeToggleButton';
- */
 import UserMenu from './UserMenu';
 
 function MastheadToolbar(): ReactElement {
@@ -34,7 +29,7 @@ function MastheadToolbar(): ReactElement {
     return (
         <Flex spaceItems={{ default: 'spaceItemsSm' }}>
             {showOrchestratorComponentsToggle && (
-                <FlexItem>
+                <FlexItem spacer={{ default: 'spacerLg' }}>
                     <OrchestratorComponentsToggle />
                 </FlexItem>
             )}

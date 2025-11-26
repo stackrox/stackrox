@@ -134,6 +134,10 @@ jobs:
     - name: Checkout
       uses: actions/checkout@v5
 
+    - uses: ./.github/actions/job-preamble
+      with:
+        gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
+
     - uses: actions/setup-go@v5
       with:
         go-version-file: 'tools/linters/go.mod'

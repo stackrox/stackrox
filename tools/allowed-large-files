@@ -29,6 +29,7 @@ operator/tests/img/*.png
 pkg/booleanpolicy/default_policies_test.go
 pkg/branding/files/red_hat_acs_logo_rgb.png
 pkg/branding/files/stackrox_integration_logo.png
+pkg/continuousprofiling/docs/img/*.png
 pkg/cve/testdata_IDV2Golden.txt
 pkg/docker/types/types_easyjson.go
 pkg/fixtures/graph.go
@@ -69,5 +70,6 @@ tests/performance/scale/config/metrics-acs.yml
 tests/performance/scale/config/metrics-full.yml
 ui/apps/platform/package-lock.json
 ui/apps/platform/src/Containers/Integrations/IntegrationForm/Forms/SignatureIntegrationForm.tsx
+ui/apps/platform/src/Containers/Policies/Wizard/Step3/policyCriteriaDescriptors.tsx
 ui/apps/platform/src/fonts/Open_Sans_Regular.json
 ui/apps/platform/src/images/globalSearchEmptyState.svg

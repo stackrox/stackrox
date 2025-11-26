@@ -556,7 +556,7 @@ func TestTranslate(t *testing.T) {
 						},
 					},
 				},
-				clientSet: fake.NewSimpleClientset(
+				clientSet: fake.NewClientset(
 					makeSecret("central-tls-spec-secret",
 						map[string]string{
 							"key":  "central-tls-spec-secret-key-content",

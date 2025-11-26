@@ -159,15 +159,12 @@ jobs:
         run: |
           git tag --annotate --message "Upstream automation" \
             "${{needs.variables.outputs.release}}.${{needs.variables.outputs.patch}}-rc.0" HEAD
-      - name: Update the changelog
-        if: steps.check-existing.outputs.branch-exists == 'false'
+      - name: Update the changelog on the release branch
         run: |
-          sed -i "s/## \[NEXT RELEASE\]/## [${{inputs.version}}]/" CHANGELOG.md
-          git add CHANGELOG.md
-          if ! git diff-index --quiet HEAD; then
-            git commit --message "Changelog for ${{inputs.version}}"
-            echo "\`CHANGELOG.md\` has been updated on the release branch." >> "$GITHUB_STEP_SUMMARY"
-          fi
+          set -uo pipefail
+          gh api -H "$ACCEPT_RAW" "${{env.script_url}}" | bash -s -- \
+            patch-release-changelog \
+            "${{inputs.version}}"
       - name: Tag ${{env.main_branch}} for next release
         if: steps.check-existing.outputs.branch-exists == 'false'
         run: |
@@ -180,20 +177,13 @@ jobs:
           git tag --annotate --message "Upstream automation" \
             "${{needs.variables.outputs.next-minor-release}}.x" HEAD
       - name: Push changes
-        if: env.DRY_RUN == 'false' && steps.check-existing.outputs.branch-exists == 'false'
+        if: env.DRY_RUN == 'false'
         env:
           GH_TOKEN: "${{ secrets.RHACS_BOT_GITHUB_TOKEN }}"
         run: |
           git switch "${{needs.variables.outputs.branch}}"
           # This command pushes all new tags, not just the ones on the current branch. Therefore, it will push the tag we put on ${{env.main_branch}}.
           git push --follow-tags --set-upstream origin "${{needs.variables.outputs.branch}}"
-      - name: Push rc.0 tag when release branch exists
-        if: env.DRY_RUN == 'false' && steps.check-existing.outputs.branch-exists == 'true'
-        env:
-          GH_TOKEN: "${{ secrets.RHACS_BOT_GITHUB_TOKEN }}"
-        run: |
-          # When the release branch already exists we only push the newly created rc.0 tag.
-          git push origin "${{needs.variables.outputs.release}}.${{needs.variables.outputs.patch}}-rc.0"
 
   ci:
     name: Configure OpenShift CI jobs
@@ -264,8 +254,8 @@ jobs:
 
           echo ":arrow_right: Review and merge the [PR]($PR_URL) that has been created for the \`openshift/release\` repository." >> "$GITHUB_STEP_SUMMARY"
 
-  patch-changelog:
-    name: Patch CHANGELOG.md
+  patch-main-changelog:
+    name: Patch CHANGELOG.md on the default branch
     needs: [variables, branch, start-sha]
     if: needs.variables.outputs.patch == 0
     runs-on: ubuntu-latest
@@ -286,7 +276,7 @@ jobs:
         run: |
           set -uo pipefail
           gh api -H "$ACCEPT_RAW" "${{env.script_url}}" | bash -s -- \
-            patch-changelog \
+            patch-main-changelog \
             "${{needs.variables.outputs.release}}.${{needs.variables.outputs.patch}}" \
             "${{ needs.start-sha.outputs.start-sha }}" \
             "${{needs.variables.outputs.branch}}"

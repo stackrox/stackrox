@@ -64,6 +64,77 @@ oidc:
 	assert.Equal(t, "https://stackrox.com", ap.OIDCConfig.Issuer)
 	assert.True(t, ap.OIDCConfig.DisableOfflineAccessScope)
 
+	assert.False(t, ap.OIDCConfig.DoNotUseClientSecret)
+	assert.Empty(t, ap.OIDCConfig.ExtraScopes)
+
+	bytes, err := yaml.Marshal(&ap)
+	assert.NoError(t, err)
+	assert.Equal(t, string(data), string(bytes))
+}
+
+func TestAuthProviderYAMLTransformation_OIDC2(t *testing.T) {
+	data := []byte(`name: test-name
+minimumRole: None
+uiEndpoint: localhost:8000
+extraUIEndpoints:
+    - localhost:8001
+groups:
+    - key: email
+      value: admin@stackrox.com
+      role: Admin
+    - key: email
+      value: someone@stackrox.com
+      role: Analyst
+requiredAttributes:
+    - key: groups
+      value: stackrox
+oidc:
+    issuer: https://stackrox.com
+    mode: auto
+    clientID: some-client-id
+    clientSecret: some-client-secret
+    doNotUseClientSecret: true
+    disableOfflineAccessScope: true
+    extraScopes: some extra scope keys
+`)
+	ap := AuthProvider{}
+
+	err := yaml.Unmarshal(data, &ap)
+	assert.NoError(t, err)
+	assert.Equal(t, "test-name", ap.Name)
+	assert.Equal(t, "None", ap.MinimumRoleName)
+	assert.Equal(t, "localhost:8000", ap.UIEndpoint)
+
+	assert.Len(t, ap.ExtraUIEndpoints, 1)
+	assert.Equal(t, "localhost:8001", ap.ExtraUIEndpoints[0])
+
+	assert.Len(t, ap.Groups, 2)
+	assert.Equal(t, "email", ap.Groups[0].AttributeKey)
+	assert.Equal(t, "admin@stackrox.com", ap.Groups[0].AttributeValue)
+	assert.Equal(t, "Admin", ap.Groups[0].RoleName)
+
+	assert.Equal(t, "email", ap.Groups[1].AttributeKey)
+	assert.Equal(t, "someone@stackrox.com", ap.Groups[1].AttributeValue)
+	assert.Equal(t, "Analyst", ap.Groups[1].RoleName)
+
+	assert.Len(t, ap.RequiredAttributes, 1)
+	assert.Equal(t, "groups", ap.RequiredAttributes[0].AttributeKey)
+	assert.Equal(t, "stackrox", ap.RequiredAttributes[0].AttributeValue)
+
+	assert.Len(t, ap.ClaimMappings, 0)
+	assert.Nil(t, ap.SAMLConfig)
+
+	assert.NotNil(t, ap.OIDCConfig)
+	assert.Equal(t, "some-client-id", ap.OIDCConfig.ClientID)
+	assert.Equal(t, "some-client-secret", ap.OIDCConfig.ClientSecret)
+	assert.Equal(t, "auto", ap.OIDCConfig.CallbackMode)
+	assert.Equal(t, "https://stackrox.com", ap.OIDCConfig.Issuer)
+	assert.True(t, ap.OIDCConfig.DisableOfflineAccessScope)
+
+	assert.True(t, ap.OIDCConfig.DoNotUseClientSecret)
+
+	assert.Equal(t, "some extra scope keys", ap.OIDCConfig.ExtraScopes)
+
 	bytes, err := yaml.Marshal(&ap)
 	assert.NoError(t, err)
 	assert.Equal(t, string(data), string(bytes))

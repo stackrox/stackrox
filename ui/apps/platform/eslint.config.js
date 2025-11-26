@@ -887,7 +887,6 @@ module.exports = [
             'src/Components/FixableCVECount/**', // deprecated
             'src/Components/HeaderWithSubText/**', // deprecated
             'src/Components/Labeled/**', // deprecated
-            'src/Components/KeyValue/**', // fix errors, and then delete
             'src/Components/Menu/**', // deprecated
             'src/Components/Metadata/**', // deprecated
             'src/Components/MetadataStatsList/**', // deprecated
@@ -923,9 +922,8 @@ module.exports = [
             'src/Containers/ConfigManagement/**',
             'src/Containers/Images/**', // deprecated
             'src/Containers/Login/**', // rewrite in PatternFly, and then delete; also in tailwind.config.js file
-            'src/Containers/MainPage/**', // fix errors, and then delete; also in tailwind.config.js file
+            'src/Containers/MainPage/Header/Header.tsx', // investigate ignore-react-onclickoutside
             'src/Containers/Risk/**', // rewrite in PatternFly, and then delete; also in tailwind.config.js file
-            'src/Containers/Violations/Details/ProcessCardContent.jsx', // fix error and then delete; also in tailwind.config.js file
             'src/Containers/VulnMgmt/**', // deprecated
             'src/Containers/Workflow/**', // deprecated
         ],
@@ -938,6 +936,7 @@ module.exports = [
         },
         rules: {
             'limited/no-Tailwind': 'error',
+            'limited/no-feather-icons': 'error',
         },
     },
     {
