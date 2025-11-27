@@ -753,8 +753,20 @@ module.exports = [
             'import/consistent-type-specifier-style': ['error', 'prefer-top-level'],
         },
     },
-    // Limited rules have ignores for specific files or folders.
-    // When ESLint plugin for Visual Studio Code has support for suppressions, they might supersede limited rules.
+    // Limited rules have specific files or have ignores for specific files or folders.
+    {
+        files: ['src/types/featureFlag.ts'],
+
+        // languageOptions from previous configuration object
+
+        // Key of plugin is namespace of its rules.
+        plugins: {
+            limited: pluginLimited,
+        },
+        rules: {
+            'limited/feature-flags': 'error',
+        },
+    },
     {
         files: ['src/*/**/*.{jsx,ts,tsx}'], // product files, except for unit tests (including test-utils folder)
         ignores: ['src/Containers/Compliance/**'],
@@ -875,7 +887,6 @@ module.exports = [
             'src/Components/FixableCVECount/**', // deprecated
             'src/Components/HeaderWithSubText/**', // deprecated
             'src/Components/Labeled/**', // deprecated
-            'src/Components/KeyValue/**', // fix errors, and then delete
             'src/Components/Menu/**', // deprecated
             'src/Components/Metadata/**', // deprecated
             'src/Components/MetadataStatsList/**', // deprecated
@@ -911,9 +922,8 @@ module.exports = [
             'src/Containers/ConfigManagement/**',
             'src/Containers/Images/**', // deprecated
             'src/Containers/Login/**', // rewrite in PatternFly, and then delete; also in tailwind.config.js file
-            'src/Containers/MainPage/**', // fix errors, and then delete; also in tailwind.config.js file
+            'src/Containers/MainPage/Header/Header.tsx', // investigate ignore-react-onclickoutside
             'src/Containers/Risk/**', // rewrite in PatternFly, and then delete; also in tailwind.config.js file
-            'src/Containers/Violations/Details/ProcessCardContent.jsx', // fix error and then delete; also in tailwind.config.js file
             'src/Containers/VulnMgmt/**', // deprecated
             'src/Containers/Workflow/**', // deprecated
         ],
@@ -926,6 +936,7 @@ module.exports = [
         },
         rules: {
             'limited/no-Tailwind': 'error',
+            'limited/no-feather-icons': 'error',
         },
     },
     {

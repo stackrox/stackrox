@@ -1142,15 +1142,29 @@ func RunCursorQueryForSchemaFn[T any, PT pgutils.Unmarshaler[T]](ctx context.Con
 	}
 	defer cursor.close()
 
+	rowsData := make([]PT, 0, cursorBatchSize)
 	for {
+		rowsData = rowsData[:0]
 		rows, err := cursor.tx.Query(ctx, fmt.Sprintf("FETCH %d FROM %s", cursorBatchSize, cursor.id))
 		if err != nil {
 			return errors.Wrap(err, "advancing in cursor")
 		}
 
-		rowsAffected, err := handleRowsWithCallback(ctx, rows, callback)
+		rowsAffected, err := handleRowsWithCallback(ctx, rows, func(obj PT) error {
+			rowsData = append(rowsData, obj)
+			return nil
+		})
 		if err != nil {
-			return errors.Wrap(err, "processing rows")
+			return errors.Wrap(err, "reading rows from cursor")
+		}
+
+		for _, obj := range rowsData {
+			if ctx.Err() != nil {
+				return errors.Wrap(ctx.Err(), "iterating over rows")
+			}
+			if err := callback(obj); err != nil {
+				return errors.Wrap(err, "processing rows")
+			}
 		}
 
 		if rowsAffected != cursorBatchSize {

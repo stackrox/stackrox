@@ -202,9 +202,9 @@ describe('Violations', () => {
         visitViolationWithFixture('alerts/alertFirstInAlerts.json');
 
         cy.get(selectors.details.policyTab).click();
-        cy.get('h3:contains("Policy overview")');
-        cy.get('h3:contains("Policy behavior")');
-        cy.get('h3:contains("Policy criteria")');
+        cy.get('h2:contains("Policy overview")');
+        cy.get('h2:contains("Policy behavior")');
+        cy.get('h2:contains("Policy criteria")');
         // Conditionally rendered: Policy scope
     });
 

@@ -15,6 +15,7 @@ import (
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/sensor/common/networkflow/manager"
 	"github.com/stackrox/rox/sensor/common/signal"
 	"github.com/stackrox/rox/sensor/kubernetes/client"
@@ -109,6 +110,11 @@ type WorkloadManager struct {
 	servicesInitialized concurrency.Signal
 	processes           signal.Pipeline
 	networkManager      manager.Manager
+
+	// shutdown coordination
+	shutdownCtx    context.Context
+	shutdownCancel context.CancelFunc
+	wg             sync.WaitGroup
 }
 
 // WorkloadManagerConfig WorkloadManager's configuration
@@ -212,6 +218,7 @@ func NewWorkloadManager(config *WorkloadManagerConfig) *WorkloadManager {
 			log.Panic("could not open id storage")
 		}
 	}
+	shutdownCtx, shutdownCancel := context.WithCancel(context.Background())
 	mgr := &WorkloadManager{
 		db:                  db,
 		workload:            &workload,
@@ -223,6 +230,8 @@ func NewWorkloadManager(config *WorkloadManagerConfig) *WorkloadManager {
 		containerPool:       config.containerPool,
 		processPool:         config.processPool,
 		servicesInitialized: concurrency.NewSignal(),
+		shutdownCtx:         shutdownCtx,
+		shutdownCancel:      shutdownCancel,
 	}
 	mgr.initializePreexistingResources()
 
@@ -254,13 +263,32 @@ func (w *WorkloadManager) SetSignalHandlers(processPipeline signal.Pipeline, net
 	w.servicesInitialized.Signal()
 }
 
+// Stop gracefully stops all background goroutines managed by WorkloadManager.
+// This should be called before shutting down the process pipeline to prevent
+// sending signals on closed channels.
+// Stop waits for all background goroutines to exit before returning.
+func (w *WorkloadManager) Stop() {
+	if w.shutdownCancel != nil {
+		w.shutdownCancel()
+	}
+	// Wait for all background goroutines to exit
+	w.wg.Wait()
+}
+
 // clearActions periodically cleans up the fake client we're using. This needs to exist because we aren't
 // using the client for its original purpose of unit testing. Essentially, it stores the actions
 // so you can check which actions were run. We don't care about these actions so clear them every 10s
 func (w *WorkloadManager) clearActions() {
+	defer w.wg.Done()
 	t := time.NewTicker(10 * time.Second)
-	for range t.C {
-		w.fakeClient.ClearActions()
+	defer t.Stop()
+	for {
+		select {
+		case <-t.C:
+			w.fakeClient.ClearActions()
+		case <-w.shutdownCtx.Done():
+			return
+		}
 	}
 }
 
@@ -315,7 +343,7 @@ func (w *WorkloadManager) initializePreexistingResources() {
 		}
 	}
 
-	w.fakeClient = fake.NewSimpleClientset(objects...)
+	w.fakeClient = fake.NewClientset(objects...)
 	w.fakeClient.Discovery().(*fakediscovery.FakeDiscovery).FakedServerVersion = &version.Info{
 		Major:        "1",
 		Minor:        "14",
@@ -341,17 +369,21 @@ func (w *WorkloadManager) initializePreexistingResources() {
 	initializeOpenshiftClients(clientSet)
 	w.client = clientSet
 
+	w.wg.Add(1)
 	go w.clearActions()
 
 	// Fork management of deployment resources
 	for _, resource := range resources {
-		go w.manageDeployment(context.Background(), resource)
+		w.wg.Add(1)
+		go w.manageDeployment(w.shutdownCtx, resource)
 	}
 
 	// Fork management of networkPolicy resources
 	for _, resource := range npResources {
-		go w.manageNetworkPolicy(context.Background(), resource)
+		w.wg.Add(1)
+		go w.manageNetworkPolicy(w.shutdownCtx, resource)
 	}
 
-	go w.manageFlows(context.Background())
+	w.wg.Add(1)
+	go w.manageFlows(w.shutdownCtx)
 }

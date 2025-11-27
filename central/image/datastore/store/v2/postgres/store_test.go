@@ -10,11 +10,10 @@ import (
 
 	cveStore "github.com/stackrox/rox/central/cve/image/v2/datastore/store/postgres"
 	"github.com/stackrox/rox/central/image/datastore/store"
-	v1Store "github.com/stackrox/rox/central/image/datastore/store/postgres"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/fixtures"
+	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/protoassert"
@@ -22,23 +21,24 @@ import (
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/testutils"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
 
+// TODO(ROX-31640): Add tests for using old legacy times back in unless ROX-29911 gets implemented
+// TODO(ROX-29911): add tests.
 var (
 	lastWeek  = time.Now().Add(-7 * 24 * time.Hour)
 	yesterday = time.Now().Add(-24 * time.Hour)
-	nextWeek  = time.Now().Add(7 * 24 * time.Hour)
 )
 
 type ImagesStoreSuite struct {
 	suite.Suite
 
-	ctx         context.Context
-	testDB      *pgtest.TestPostgres
-	store       store.Store
-	legacyStore store.Store
-	cvePgStore  cveStore.Store
+	ctx        context.Context
+	testDB     *pgtest.TestPostgres
+	store      store.Store
+	cvePgStore cveStore.Store
 }
 
 func TestImagesStore(t *testing.T) {
@@ -46,15 +46,10 @@ func TestImagesStore(t *testing.T) {
 }
 
 func (s *ImagesStoreSuite) SetupSuite() {
-	if !features.FlattenCVEData.Enabled() {
-		s.T().Setenv("ROX_FLATTEN_CVE_DATA", "true")
-	}
-
 	s.ctx = sac.WithAllAccess(context.Background())
 	s.testDB = pgtest.ForT(s.T())
 
 	s.store = New(s.testDB.DB, false, concurrency.NewKeyFence())
-	s.legacyStore = v1Store.NewForTest(s.T(), s.testDB.DB, false, concurrency.NewKeyFence())
 	s.cvePgStore = cveStore.New(s.testDB.DB)
 }
 
@@ -65,15 +60,6 @@ func (s *ImagesStoreSuite) SetupTest() {
 	s.Require().NoError(err)
 	_, err = s.testDB.DB.Exec(s.ctx, "TRUNCATE "+pkgSchema.ImagesTableName+" CASCADE")
 	s.Require().NoError(err)
-	_, err = s.testDB.DB.Exec(s.ctx, "TRUNCATE "+pkgSchema.ImageCvesTableName+" CASCADE")
-	s.Require().NoError(err)
-	_, err = s.testDB.DB.Exec(s.ctx, "TRUNCATE "+pkgSchema.ImageComponentsTableName+" CASCADE")
-	s.Require().NoError(err)
-}
-
-func (s *ImagesStoreSuite) TearDownSuite() {
-
-	s.T().Setenv("ROX_FLATTEN_CVE_DATA", "false")
 }
 
 func (s *ImagesStoreSuite) TestCountCVEs() {
@@ -96,6 +82,9 @@ func (s *ImagesStoreSuite) TestStore() {
 			vuln.SuppressActivation = nil
 			vuln.SuppressExpiry = nil
 			vuln.Advisory = nil
+			// TODO: Can be removed after the new CVE table and ImageCVE to EmbeddedVulnerability conversion to populate
+			// the two timestamps (FirstOccurenceInSystem and FixAvailable)
+			vuln.FixAvailableTimestamp = nil
 		}
 		comp.License = nil
 	}
@@ -151,6 +140,7 @@ func (s *ImagesStoreSuite) TestNVDCVSS() {
 	for _, component := range image.GetScan().GetComponents() {
 		for _, vuln := range component.GetVulns() {
 			vuln.CvssMetrics = []*storage.CVSSScore{nvdCvss}
+			vuln.FixAvailableTimestamp = nil
 		}
 
 	}
@@ -171,68 +161,6 @@ func (s *ImagesStoreSuite) TestNVDCVSS() {
 	s.Equal(float32(10), imageCve.GetNvdcvss())
 	s.Require().NotEmpty(imageCve.GetCveBaseInfo().GetCvssMetrics())
 	protoassert.Equal(s.T(), nvdCvss, imageCve.GetCveBaseInfo().GetCvssMetrics()[0])
-}
-
-func (s *ImagesStoreSuite) TestUpsertLegacyToNew() {
-	image := getTestImage("image1")
-
-	// Upsert image using legacy store. This will insert CVEs and components into the old tables and set created at and
-	// first image occurrence timestamps to current time
-	s.NoError(s.legacyStore.Upsert(s.ctx, image))
-	foundImage, exists, err := s.legacyStore.Get(s.ctx, image.GetId())
-	s.NoError(err)
-	s.True(exists)
-	cloned := image.CloneVT()
-
-	// Reconcile created at and first image occurrence timestamps from the CVEs inserted into the old model
-	for i, comp := range foundImage.GetScan().GetComponents() {
-		for j, vuln := range comp.GetVulns() {
-			cloned.GetScan().GetComponents()[i].GetVulns()[j].FirstSystemOccurrence = vuln.GetFirstSystemOccurrence()
-			cloned.GetScan().GetComponents()[i].GetVulns()[j].FirstImageOccurrence = vuln.GetFirstImageOccurrence()
-		}
-	}
-
-	// Set the created and first image occurrence timestamps in the test image to a future value
-	for _, comp := range image.GetScan().GetComponents() {
-		for _, vuln := range comp.GetVulns() {
-			vuln.FirstSystemOccurrence = protocompat.ConvertTimeToTimestampOrNil(&nextWeek)
-			vuln.FirstImageOccurrence = protocompat.ConvertTimeToTimestampOrNil(&nextWeek)
-		}
-	}
-	// Re-upsert the image into v2 data model store
-	s.NoError(s.store.Upsert(s.ctx, image))
-	foundImage, exists, err = s.legacyStore.Get(s.ctx, image.GetId())
-	s.NoError(err)
-	s.True(exists)
-
-	// Note that we will just compare time fields because the old model can mess up other things like
-	// severity, published time, CVSS, etc. because of over normalization.
-	expectedTimestamps := make(map[string]*timeFields)
-	for _, comp := range cloned.GetScan().GetComponents() {
-		for _, vuln := range comp.GetVulns() {
-			if _, ok := expectedTimestamps[vuln.GetCve()]; !ok {
-				expectedTimestamps[vuln.GetCve()] = &timeFields{
-					createdAt:            vuln.GetFirstSystemOccurrence().AsTime(),
-					firstImageOccurrence: vuln.GetFirstImageOccurrence().AsTime(),
-				}
-			}
-		}
-	}
-
-	actualTimestamps := make(map[string]*timeFields)
-	for _, comp := range foundImage.GetScan().GetComponents() {
-		for _, vuln := range comp.GetVulns() {
-			if _, ok := actualTimestamps[vuln.GetCve()]; !ok {
-				actualTimestamps[vuln.GetCve()] = &timeFields{
-					createdAt:            vuln.GetFirstSystemOccurrence().AsTime(),
-					firstImageOccurrence: vuln.GetFirstImageOccurrence().AsTime(),
-				}
-			}
-		}
-	}
-
-	// Created at and first image occurrence timestamps should not have changed to the future ones.
-	s.Assert().Equal(expectedTimestamps, actualTimestamps)
 }
 
 func (s *ImagesStoreSuite) TestUpsert() {
@@ -360,6 +288,14 @@ func (s *ImagesStoreSuite) TestGetManyImageMetadata() {
 	returnedImages, err = s.store.GetManyImageMetadata(s.ctx, searchedIndexes)
 	s.NoError(err)
 	s.Equal(2, len(returnedImages))
+
+	tx, err := s.testDB.Begin(s.ctx)
+	s.NoError(err)
+	ctx := postgres.ContextWithTx(s.ctx, tx)
+	_, ok, err := s.store.GetImageMetadata(ctx, image.GetId())
+	s.NoError(err)
+	s.True(ok)
+	assert.NoError(s.T(), tx.Rollback(s.ctx))
 }
 
 func (s *ImagesStoreSuite) TestWalkByQuery() {
@@ -387,6 +323,16 @@ func (s *ImagesStoreSuite) TestWalkByQuery() {
 
 	q := search.NewQueryBuilder().AddExactMatches(search.ImageSHA, image.GetId()).ProtoQuery()
 	s.NoError(s.store.WalkByQuery(s.ctx, q, walkFn))
+
+	tx, err := s.testDB.Begin(s.ctx)
+	s.NoError(err)
+	ctx := postgres.ContextWithTx(s.ctx, tx)
+	s.NoError(s.store.WalkByQuery(ctx, q, walkFn))
+	s.NoError(s.ctx.Err())
+	// The second walk is here to check if transaction and context are still active
+	s.NoError(s.store.WalkByQuery(ctx, q, walkFn))
+	s.NoError(s.ctx.Err())
+	assert.NoError(s.T(), tx.Commit(s.ctx))
 }
 
 func (s *ImagesStoreSuite) TestGetMany() {

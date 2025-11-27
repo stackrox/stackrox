@@ -78,7 +78,7 @@ func (s *ReportingWithCollectionsTestSuite) SetupSuite() {
 	)
 
 	var err error
-	collectionStore := collectionPostgres.CreateTableAndNewStore(s.ctx, s.testDB.DB, s.testDB.GetGormDB(s.T()))
+	collectionStore := collectionPostgres.New(s.testDB)
 	s.collectionDatastore, s.collectionQueryResolver, err = collectionDS.New(collectionStore)
 	s.NoError(err)
 
