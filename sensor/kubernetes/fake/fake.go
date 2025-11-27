@@ -39,6 +39,10 @@ const (
 	workloadPath = "/var/scale/stackrox/workload.yaml"
 
 	defaultNamespaceNum = 30
+
+	// Starting CID for VM population. In reality, only several first IDs are reserved.
+	// Here, the number is an ID and a part of the name and it's value does not matter as long as it's unique.
+	vmBaseVSOCKCID = uint32(1000)
 )
 
 // vmReadiness encapsulates the three readiness signals needed before VM workload can start
@@ -335,11 +339,6 @@ func (w *WorkloadManager) Notify(e common.SensorComponentEvent) {
 	}
 }
 
-const (
-	// VM population constants
-	vmBaseVSOCKCID = uint32(1000)
-)
-
 // populateFakeVMs creates and verifies fake VMs in the store
 func (w *WorkloadManager) populateFakeVMs() {
 	if w.vmStore == nil || w.workload.VMIndexReportWorkload.NumVMs == 0 {
@@ -393,9 +392,9 @@ func (w *WorkloadManager) reverifyAfterDelayOnce(cids []uint32) {
 	}
 
 	const (
-		reverifyDelay     = 200 * time.Millisecond
-		maxCheckByCID     = 5
-		maxCheckByID      = 3
+		reverifyDelay = 200 * time.Millisecond
+		maxCheckByCID = 5
+		maxCheckByID  = 3
 	)
 
 	time.Sleep(reverifyDelay)
