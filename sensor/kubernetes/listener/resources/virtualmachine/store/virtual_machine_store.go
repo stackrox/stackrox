@@ -42,8 +42,10 @@ func (s *VirtualMachineStore) AddOrUpdate(vm *virtualmachine.Info) *virtualmachi
 	if oldVM != nil {
 		vm.Running = oldVM.Running
 		if oldVM.VSOCKCID != nil {
-			vSockCID := *oldVM.VSOCKCID
-			vm.VSOCKCID = &vSockCID
+			vSockCIDValue := *oldVM.VSOCKCID
+			vSockCIDPtr := new(uint32)
+			*vSockCIDPtr = vSockCIDValue
+			vm.VSOCKCID = vSockCIDPtr
 		}
 		vm.GuestOS = oldVM.GuestOS
 	}
@@ -162,9 +164,10 @@ func (s *VirtualMachineStore) addOrUpdateVSOCKInfoNoLock(id virtualmachine.VMID,
 	}
 	s.idToCID[id] = *vsockCID
 	s.cidToID[*vsockCID] = id
-	// copy value before return
-	val := *vsockCID
-	return &val
+	// Allocate on the heap to avoid dangling pointer (same issue as in AddOrUpdate)
+	valPtr := new(uint32)
+	*valPtr = *vsockCID
+	return valPtr
 }
 
 func (s *VirtualMachineStore) removeVSOCKInfoNoLock(id virtualmachine.VMID, vsockCID *uint32) {

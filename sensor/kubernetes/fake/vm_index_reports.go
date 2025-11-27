@@ -1,0 +1,297 @@
+package fake
+
+import (
+	"context"
+	"errors"
+	"fmt"
+	"math/rand"
+	"time"
+
+	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
+	v1 "github.com/stackrox/rox/generated/internalapi/virtualmachine/v1"
+	"github.com/stackrox/rox/pkg/centralsensor"
+	"github.com/stackrox/rox/pkg/errox"
+	"github.com/stackrox/rox/pkg/sync"
+	"github.com/stackrox/rox/sensor/common/centralcaps"
+)
+
+const (
+	precomputedReportVariants = 5
+	// reportIntervalJitterPercent defines the percentage of random jitter to apply to report intervals.
+	// With 0.05 (5%), a 60s interval will vary between 57s-63s, making timing more realistic.
+	reportIntervalJitterPercent = 0.05
+)
+
+type vmInfo struct {
+	id          string
+	vsockCID    uint32
+	name        string
+	templateIdx int
+}
+
+type reportTemplate struct {
+	packages     map[string]*v4.Package
+	repositories map[string]*v4.Repository
+}
+
+// reportGenerator generates fake VM index reports using pre-built templates
+type reportGenerator struct {
+	templates []reportTemplate
+}
+
+func newReportGenerator(numPackages, numRepos int) *reportGenerator {
+	variantCount := precomputedReportVariants
+	if variantCount <= 0 {
+		variantCount = 1
+	}
+
+	templates := make([]reportTemplate, variantCount)
+	for variant := 0; variant < variantCount; variant++ {
+		repositories := make(map[string]*v4.Repository, numRepos)
+		for i := 0; i < numRepos; i++ {
+			repoID := fmt.Sprintf("repo-template-%d-%d", variant, i)
+			repositories[repoID] = &v4.Repository{
+				Id:   repoID,
+				Name: fmt.Sprintf("repository-%d", i),
+				Uri:  fmt.Sprintf("https://repo%d.example.com", i),
+				Key:  fmt.Sprintf("key-%d", i),
+			}
+		}
+
+		packages := make(map[string]*v4.Package, numPackages)
+		for i := 0; i < numPackages; i++ {
+			pkgID := fmt.Sprintf("pkg-template-%d-%d", variant, i)
+			repoHint := ""
+			if numRepos > 0 {
+				repoHint = fmt.Sprintf("repo-template-%d-%d", variant, i%numRepos)
+			}
+
+			packages[pkgID] = &v4.Package{
+				Id:             pkgID,
+				Name:           fmt.Sprintf("package%d", i),
+				Version:        fmt.Sprintf("1.%d.%d", i/10, i%10),
+				Kind:           "binary",
+				Arch:           "amd64",
+				RepositoryHint: repoHint,
+			}
+		}
+
+		templates[variant] = reportTemplate{
+			packages:     packages,
+			repositories: repositories,
+		}
+	}
+
+	return &reportGenerator{
+		templates: templates,
+	}
+}
+
+func (g *reportGenerator) nextTemplate(idx int) reportTemplate {
+	if len(g.templates) == 0 {
+		return reportTemplate{
+			packages:     make(map[string]*v4.Package),
+			repositories: make(map[string]*v4.Repository),
+		}
+	}
+	return g.templates[idx%len(g.templates)]
+}
+
+// manageVMIndexReportsWithPopulation waits for the store to be set, populates fake VMs, then starts report generation
+func (w *WorkloadManager) manageVMIndexReportsWithPopulation(ctx context.Context) {
+	defer w.wg.Done()
+	if w.workload.VMIndexReportWorkload.NumVMs == 0 ||
+		w.workload.VMIndexReportWorkload.ReportInterval == 0 {
+		return
+	}
+
+	// Wait for all VM prerequisites (handler, store, and central reachability)
+	if !w.vmReady.Wait(ctx) {
+		log.Infof("VM report manager exiting before start: context cancelled")
+		return
+	}
+
+	// Verify capability is set after Central becomes reachable
+	if !centralcaps.Has(centralsensor.VirtualMachinesSupported) {
+		log.Warnf("Central is reachable but VirtualMachinesSupported capability not set. VM reports may fail.")
+	}
+	log.Infof("All VM prerequisites ready (handler, store, central), waiting for listener restart to complete before populating fake VMs")
+
+	// CRITICAL RACE CONDITION FIX:
+	// When SensorComponentEventCentralReachable is received, the event pipeline (in pipeline_impl.go:Notify)
+	// synchronously stops and restarts the listener. This restart sequence:
+	//   1. Calls listener.Stop() which triggers CleanupStores() - clearing ALL stores including VM store
+	//   2. Creates a new context
+	//   3. Calls listener.StartWithContext() to restart the listener
+	//
+	// The WorkloadManager receives the same SensorComponentEventCentralReachable event and immediately
+	// starts populating VMs. This creates a race condition:
+	//   - If populateFakeVMs() runs BEFORE listener.Stop() → VMs get added, then immediately cleared
+	//   - If populateFakeVMs() runs AFTER listener.Stop() but BEFORE listener.StartWithContext() → VMs get cleared
+	//   - If populateFakeVMs() runs AFTER listener.StartWithContext() → VMs persist correctly
+	//
+	// The listener restart happens synchronously in the event pipeline's Notify() handler, so a short
+	// delay ensures the restart sequence completes before we populate VMs. The 2s delay is chosen
+	// to be longer than typical listener restart time (~100-200ms) to provide a safety margin. This
+	// is acceptable for fake workload code (not production).
+	const listenerRestartDelay = 2 * time.Second
+	select {
+	case <-ctx.Done():
+		return
+	case <-time.After(listenerRestartDelay):
+		// Listener restart should be complete now
+	}
+
+	log.Infof("Populating fake VMs after listener restart delay")
+
+	// Populate fake VMs now that Central is reachable and listener restart has completed
+	// populateFakeVMs is synchronous and includes verification, so VMs should be available immediately after it returns
+	w.populateFakeVMs()
+
+	// Quick verification that at least the first VM is present
+	// This is a sanity check - populateFakeVMs should have already verified the VMs
+	firstVsockCID := vmBaseVSOCKCID
+	if w.vmStore.GetFromCID(firstVsockCID) == nil {
+		log.Errorf("VM store population failed: first VM (vsockCID %d) not found after populateFakeVMs returned. Store=%p.", firstVsockCID, w.vmStore)
+		return
+	}
+	log.Infof("VM store populated (found vsockCID %d), starting VM index report generation", firstVsockCID)
+
+	// Initialize the report generator with the configured package/repo counts
+	w.vmReportGen = newReportGenerator(
+		w.workload.VMIndexReportWorkload.NumPackages,
+		w.workload.VMIndexReportWorkload.NumRepositories,
+	)
+
+	// Now start the actual report generation loop
+	w.manageVMIndexReports(ctx)
+}
+
+func (w *WorkloadManager) manageVMIndexReports(ctx context.Context) {
+	// This function assumes VMs are already populated in the store
+	// It starts a goroutine for each VM, each sending reports at the configured interval
+
+	numVMs := w.workload.VMIndexReportWorkload.NumVMs
+	reportInterval := w.workload.VMIndexReportWorkload.ReportInterval
+
+	// Calculate total rate for logging
+	totalRate := float64(numVMs) / reportInterval.Seconds()
+	log.Infof("Starting VM index report generation: %d VMs, interval %s per VM, %d packages, %d repos",
+		numVMs,
+		reportInterval,
+		w.workload.VMIndexReportWorkload.NumPackages,
+		w.workload.VMIndexReportWorkload.NumRepositories)
+	log.Infof("Total report rate: %.0f reports/second (%.2f reports/second per VM)",
+		totalRate, totalRate/float64(numVMs))
+
+	// Create VM info structures
+	vms := make([]*vmInfo, numVMs)
+	for i := 0; i < numVMs; i++ {
+		vms[i] = &vmInfo{
+			id:       fmt.Sprintf("vm-%d", i),
+			vsockCID: vmBaseVSOCKCID + uint32(i),
+			name:     fmt.Sprintf("fake-vm-%d", i),
+		}
+	}
+
+	// Start a goroutine for each VM with jittered initial delay to spread reports across time.
+	// This prevents all VMs from sending reports simultaneously (thundering herd).
+	// Each VM gets an evenly distributed delay in [0, reportInterval), ensuring uniform
+	// report distribution while maintaining the target aggregate rate.
+	var wg sync.WaitGroup
+	for i, vm := range vms {
+		// Calculate initial delay to spread VMs evenly across the report interval
+		initialDelay := time.Duration(float64(i) / float64(numVMs) * float64(reportInterval))
+		wg.Add(1)
+		go func(vm *vmInfo, delay time.Duration) {
+			defer wg.Done()
+			w.manageVMReportsForSingleVM(ctx, vm, reportInterval, delay)
+		}(vm, initialDelay)
+	}
+
+	// Wait for all goroutines to finish (when context is cancelled)
+	wg.Wait()
+	log.Debugf("All VM report generation goroutines stopped")
+}
+
+func (w *WorkloadManager) sendVMIndexReport(ctx context.Context, vm *vmInfo) bool {
+	// Check context before attempting to send
+	if ctx.Err() != nil {
+		return false
+	}
+
+	report := w.generateFakeIndexReport(vm)
+
+	if err := w.vmIndexReportHandler.Send(ctx, report); err != nil {
+		// Handle shutdown gracefully: if handler is stopped or context is cancelled, exit silently
+		if errors.Is(err, errox.InvariantViolation) || errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded) {
+			return false
+		}
+		// Log other errors (e.g., capability not supported, VM not found) at error level
+		log.Errorf("Failed to send VM index report for %s: %v", vm.id, err)
+		return true
+	}
+	log.Debugf("Sent VM index report for %s (vsockCID: %d)", vm.id, vm.vsockCID)
+	return true
+}
+
+func (w *WorkloadManager) generateFakeIndexReport(vm *vmInfo) *v1.IndexReport {
+	template := w.vmReportGen.nextTemplate(vm.templateIdx)
+	vm.templateIdx++
+
+	return &v1.IndexReport{
+		VsockCid: fmt.Sprintf("%d", vm.vsockCID),
+		IndexV4: &v4.IndexReport{
+			HashId:  fmt.Sprintf("hash-%s", vm.id),
+			State:   "IndexFinished",
+			Success: true,
+			Contents: &v4.Contents{
+				Packages:     template.packages,
+				Repositories: template.repositories,
+			},
+		},
+	}
+}
+
+// jitteredInterval returns a duration with random jitter applied.
+// The result is in the range [interval * (1 - jitterPercent), interval * (1 + jitterPercent)].
+// For example, with interval=60s and jitterPercent=0.05, returns a value between 57s and 63s.
+func jitteredInterval(interval time.Duration, jitterPercent float64) time.Duration {
+	// Calculate jitter range: interval * jitterPercent
+	jitterRange := float64(interval) * jitterPercent
+	// Random value in [-jitterRange, +jitterRange]
+	jitter := (rand.Float64()*2 - 1) * jitterRange
+	// Return interval with jitter applied
+	return time.Duration(float64(interval) + jitter)
+}
+
+func (w *WorkloadManager) manageVMReportsForSingleVM(ctx context.Context, vm *vmInfo, interval, initialDelay time.Duration) {
+	// Apply initial delay to spread reports across time (startup jitter)
+	if initialDelay > 0 {
+		select {
+		case <-ctx.Done():
+			return
+		case <-time.After(initialDelay):
+		}
+	}
+
+	// Send first report after the initial delay
+	if !w.sendVMIndexReport(ctx, vm) {
+		return
+	}
+
+	// Continue sending reports with jittered intervals to simulate realistic timing variance
+	for {
+		// Calculate next report time with jitter
+		nextInterval := jitteredInterval(interval, reportIntervalJitterPercent)
+
+		select {
+		case <-ctx.Done():
+			return
+		case <-time.After(nextInterval):
+			if !w.sendVMIndexReport(ctx, vm) {
+				return
+			}
+		}
+	}
+}
