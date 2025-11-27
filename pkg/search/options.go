@@ -78,6 +78,7 @@ var (
 	DockerfileInstructionValue     = newFieldLabel("Dockerfile Instruction Value")
 	FirstImageOccurrenceTimestamp  = newFieldLabel("First Image Occurrence Timestamp")
 	FirstSystemOccurrenceTimestamp = newFieldLabel("First System Occurrence Timestamp")
+	FixableSinceTimestamp          = newFieldLabel("Fixable Since Timestamp")
 	HostIPC                        = newFieldLabel("Host IPC")
 	HostNetwork                    = newFieldLabel("Host Network")
 	HostPID                        = newFieldLabel("Host PID")
