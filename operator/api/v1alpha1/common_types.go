@@ -369,3 +369,32 @@ type ObjectForStatusController interface {
 	GetGeneration() int64
 	GetObservedGeneration() int64
 }
+
+// GetCondition returns a specific condition by type, or nil if not found.
+func GetCondition(conditions []StackRoxCondition, condType ConditionType) *StackRoxCondition {
+	for i := range conditions {
+		if conditions[i].Type == condType {
+			return &conditions[i]
+		}
+	}
+	return nil
+}
+
+// UpdateCondition updates or adds a condition. Returns true if the condition changed.
+func UpdateCondition(conditions []StackRoxCondition, updatedCond StackRoxCondition) ([]StackRoxCondition, bool) {
+	for i, cond := range conditions {
+		if cond.Type == updatedCond.Type {
+			// Check if update is needed.
+			if cond.Status == updatedCond.Status &&
+				cond.Reason == updatedCond.Reason &&
+				cond.Message == updatedCond.Message {
+				return conditions, false
+			}
+			// Update existing condition.
+			conditions[i] = updatedCond
+			return conditions, true
+		}
+	}
+	// Condition doesn't exist, add it.
+	return append(conditions, updatedCond), true
+}
