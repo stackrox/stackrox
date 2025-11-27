@@ -10,5 +10,5 @@ data:
     [workload]
     type = "endpoints"
     distribution = "zipf"
-    n_ports = 2000
+    n_ports = 200
     exponent = 1.4
