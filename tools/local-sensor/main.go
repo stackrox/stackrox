@@ -21,6 +21,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/clientconn"
 	"github.com/stackrox/rox/pkg/continuousprofiling"
 	"github.com/stackrox/rox/pkg/env"
@@ -82,6 +83,7 @@ type localSensorConfig struct {
 	Duration           time.Duration
 	OutputFormat       string
 	CentralOutput      string
+	SkipCentralOutput  bool
 	RecordK8sEnabled   bool
 	RecordK8sFile      string
 	ReplayK8sEnabled   bool
@@ -153,6 +155,7 @@ func mustGetCommandLineArgs() localSensorConfig {
 		Duration:           0,
 		OutputFormat:       "json",
 		CentralOutput:      "central-out.json",
+		SkipCentralOutput:  false,
 		RecordK8sEnabled:   false,
 		RecordK8sFile:      "k8s-trace.jsonl",
 		ReplayK8sEnabled:   false,
@@ -175,6 +178,7 @@ func mustGetCommandLineArgs() localSensorConfig {
 	flag.BoolVar(&sensorConfig.Verbose, "verbose", sensorConfig.Verbose, "prints all messages to stdout as well as to the output file")
 	flag.DurationVar(&sensorConfig.Duration, "duration", sensorConfig.Duration, "duration that the scenario should run (leave it empty to run it without timeout)")
 	flag.StringVar(&sensorConfig.CentralOutput, "central-out", sensorConfig.CentralOutput, "file to store the events that would be sent to central")
+	flag.BoolVar(&sensorConfig.SkipCentralOutput, "skip-central-output", sensorConfig.SkipCentralOutput, "disables recording fake central messages and writing central output files")
 	flag.StringVar(&sensorConfig.OutputFormat, "format", sensorConfig.OutputFormat, "format of sensor's events file: 'raw' or 'json'")
 	flag.BoolVar(&sensorConfig.RecordK8sEnabled, "record", sensorConfig.RecordK8sEnabled, "whether to record a trace with k8s events")
 	flag.StringVar(&sensorConfig.RecordK8sFile, "record-out", sensorConfig.RecordK8sFile, "a file where recorded trace would be stored")
@@ -209,6 +213,10 @@ func mustGetCommandLineArgs() localSensorConfig {
 
 	if !isValidOutputFormat(sensorConfig.OutputFormat) {
 		log.Fatalf("invalid format '%s'", sensorConfig.OutputFormat)
+	}
+
+	if sensorConfig.CentralEndpoint != "" && sensorConfig.SkipCentralOutput {
+		log.Fatalf("-skip-central-output cannot be used together with -connect-central")
 	}
 
 	if errs := validation.IsDNS1123Label(sensorConfig.Namespace); len(errs) > 0 {
@@ -250,7 +258,7 @@ func stopSensorAndWorkload(workloadManager *fake.WorkloadManager, sensor *common
 	}
 }
 
-func registerHostKillSignals(startTime time.Time, fakeCentral *centralDebug.FakeService, writeMemProfile bool, outfile string, outputFormat string, cancelFunc context.CancelFunc, sensor *commonSensor.Sensor, workloadManager *fake.WorkloadManager, pipeline sensor.ProcessPipelineHandle) {
+func registerHostKillSignals(startTime time.Time, fakeCentral *centralDebug.FakeService, writeMemProfile bool, dumpCentralOutput bool, outfile string, outputFormat string, cancelFunc context.CancelFunc, sensor *commonSensor.Sensor, workloadManager *fake.WorkloadManager, pipeline sensor.ProcessPipelineHandle) {
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
 	<-ctx.Done()
@@ -262,7 +270,7 @@ func registerHostKillSignals(startTime time.Time, fakeCentral *centralDebug.Fake
 	}
 	stopSensorAndWorkload(workloadManager, sensor, pipeline)
 	pprof.StopCPUProfile()
-	if fakeCentral != nil {
+	if fakeCentral != nil && dumpCentralOutput {
 		allMessages := fakeCentral.GetAllMessages()
 		dumpMessages(allMessages, startTime, endTime, outfile, outputFormat)
 	}
@@ -340,6 +348,10 @@ func main() {
 		defer spyCentral.Stop()
 	} else {
 		connection, certLoader = setupCentralWithRealConnection(k8sClient, localConfig)
+	}
+
+	if spyCentral != nil {
+		spyCentral.SetMessageRecording(!localConfig.SkipCentralOutput)
 	}
 
 	ctx, cancelFunc := context.WithCancel(context.Background())
@@ -423,13 +435,15 @@ func main() {
 		}()
 	}
 
+	// CreateSensor will set up the workload manager handlers (SetSignalHandlers, SetVMIndexReportHandler, SetVMStore)
+	// if workloadManager is not nil and VirtualMachines feature is enabled
 	s, err := sensor.CreateSensor(sensorConfig)
 	if err != nil {
 		panic(err)
 	}
 
 	go s.Start()
-	go registerHostKillSignals(startTime, spyCentral, !localConfig.NoMemProfile, localConfig.CentralOutput, localConfig.OutputFormat, cancelFunc, s, workloadManager, processPipeline)
+	go registerHostKillSignals(startTime, spyCentral, !localConfig.NoMemProfile, !localConfig.SkipCentralOutput, localConfig.CentralOutput, localConfig.OutputFormat, cancelFunc, s, workloadManager, processPipeline)
 
 	if spyCentral != nil {
 		spyCentral.ConnectionStarted.Wait()
@@ -452,10 +466,11 @@ func main() {
 	}
 
 	if spyCentral != nil {
-		endTime := time.Now()
-		allMessages := spyCentral.GetAllMessages()
-		dumpMessages(allMessages, startTime, endTime, localConfig.CentralOutput, localConfig.OutputFormat)
-
+		if !localConfig.SkipCentralOutput {
+			endTime := time.Now()
+			allMessages := spyCentral.GetAllMessages()
+			dumpMessages(allMessages, startTime, endTime, localConfig.CentralOutput, localConfig.OutputFormat)
+		}
 		spyCentral.KillSwitch.Signal()
 	}
 }
