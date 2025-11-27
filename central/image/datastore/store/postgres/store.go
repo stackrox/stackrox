@@ -1218,6 +1218,19 @@ func (s *storeImpl) WalkByQuery(ctx context.Context, q *v1.Query, fn func(image 
 	return nil
 }
 
+// This store is no longer used with the new CVE data model. Added this method to satisfy the store interface.
+func (s *storeImpl) WalkMetadataByQuery(ctx context.Context, q *v1.Query, fn func(img *storage.Image) error) error {
+	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.WalkMetadataByQuery, "Image")
+
+	q = applyDefaultSort(q)
+
+	err := pgSearch.RunCursorQueryForSchemaFn(ctx, pkgSchema.ImagesSchema, q, s.db, fn)
+	if err != nil {
+		return errors.Wrap(err, "cursor by query")
+	}
+	return nil
+}
+
 //// Used for testing
 
 func dropAllTablesInImageTree(ctx context.Context, db postgres.DB) {
