@@ -253,8 +253,17 @@ func main() {
 	)
 	// if we are using a fake workload we don't want to connect to a real K8s cluster
 	if localConfig.FakeWorkloadFile != "" {
+		if _, err := os.Stat(localConfig.FakeWorkloadFile); err != nil {
+			if os.IsNotExist(err) {
+				log.Fatalf("fake workload profile %q not found", localConfig.FakeWorkloadFile)
+			}
+			log.Fatalf("unable to access fake workload profile %q: %v", localConfig.FakeWorkloadFile, err)
+		}
 		workloadManager = fake.NewWorkloadManager(fake.ConfigDefaults().
 			WithWorkloadFile(localConfig.FakeWorkloadFile))
+		if workloadManager == nil {
+			log.Fatalf("failed to initialize fake workload manager from workload profile %q", localConfig.FakeWorkloadFile)
+		}
 		k8sClient = workloadManager.Client()
 	}
 	if k8sClient == nil {
