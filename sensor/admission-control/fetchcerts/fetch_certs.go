@@ -82,7 +82,7 @@ func fetchCertificateFromSensor(ctx context.Context, token string) (*sensor.Fetc
 	var fetchResult *sensor.FetchCertificateResponse
 
 	// Only retry unavailable, deadline exceeded, and not found errors. These might resolve over time.
-	policy := retry.NoGrpcCodesRetriedPolicy().WithRetryableCodes(codes.Unavailable, codes.DeadlineExceeded, codes.NotFound)
+	policy := retry.NoGrpcCodesPolicy().WithRetryableCodes(codes.Unavailable, codes.DeadlineExceeded, codes.NotFound)
 
 	err = retry.WithRetry(
 		func() error {

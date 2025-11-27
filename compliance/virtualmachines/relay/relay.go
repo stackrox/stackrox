@@ -315,7 +315,7 @@ func sendReportToSensor(ctx context.Context, report *v1.IndexReport, sensorClien
 
 		// Retry transient gRPC errors: unavailable, resource exhausted, internal, and deadline exceeded
 		// (unless deadline exceeded is due to context cancellation).
-		policy := retry.NoGrpcCodesRetriedPolicy().WithRetryableCodes(
+		policy := retry.NoGrpcCodesPolicy().WithRetryableCodes(
 			codes.Unavailable, codes.ResourceExhausted, codes.Internal, codes.DeadlineExceeded)
 
 		// Don't retry if the context was canceled

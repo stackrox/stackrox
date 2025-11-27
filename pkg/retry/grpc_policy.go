@@ -16,16 +16,16 @@ type grpcRetryPolicy struct {
 	retryableCodes map[codes.Code]bool
 }
 
-// NoGrpcCodesRetriedPolicy creates an empty policy that retries no status codes
+// NoGrpcCodesPolicy creates an empty policy that retries no status codes
 // until WithRetryableCodes is applied.
-func NoGrpcCodesRetriedPolicy() GrpcPolicy {
+func NoGrpcCodesPolicy() GrpcPolicy {
 	return &grpcRetryPolicy{retryableCodes: make(map[codes.Code]bool)}
 }
 
-// AllGrpcCodesRetriedPolicy retries every gRPC code; callers can then remove
+// AllGrpcCodesPolicy retries every gRPC code; callers can then remove
 // codes via WithNonRetryableCodes to document which ones are intentionally
 // excluded.
-func AllGrpcCodesRetriedPolicy() GrpcPolicy {
+func AllGrpcCodesPolicy() GrpcPolicy {
 	retryable := make(map[codes.Code]bool)
 	for i := codes.Code(0); i <= codes.Unauthenticated; i++ {
 		retryable[i] = true
@@ -36,7 +36,7 @@ func AllGrpcCodesRetriedPolicy() GrpcPolicy {
 // DefaultGrpcPolicy retries server or transient errors and skips obvious
 // client errors (InvalidArgument, PermissionDenied, etc.).
 func DefaultGrpcPolicy() GrpcPolicy {
-	return AllGrpcCodesRetriedPolicy().WithNonRetryableCodes(
+	return AllGrpcCodesPolicy().WithNonRetryableCodes(
 		codes.OK,
 		codes.InvalidArgument,
 		codes.NotFound,

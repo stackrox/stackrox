@@ -69,7 +69,7 @@ func TestDefaultGrpcRetryPolicy(t *testing.T) {
 }
 
 func TestNoCodesRetriedGrpcRetryPolicy(t *testing.T) {
-	policy := NoGrpcCodesRetriedPolicy().WithRetryableCodes(codes.Aborted, codes.Unavailable)
+	policy := NoGrpcCodesPolicy().WithRetryableCodes(codes.Aborted, codes.Unavailable)
 
 	err := status.Error(codes.Aborted, "aborted")
 	assert.True(t, policy.ShouldRetry(err))

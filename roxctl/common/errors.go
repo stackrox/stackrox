@@ -17,7 +17,7 @@ var (
 		return errox.InvalidArgs.Newf("specified deprecated flag %q and new flag %q at the same time", oldFlag, newFlag)
 	}
 
-	roxctlGrpcRetryPolicy = retry.AllGrpcCodesRetriedPolicy().WithNonRetryableCodes(
+	roxctlGrpcRetryPolicy = retry.AllGrpcCodesPolicy().WithNonRetryableCodes(
 		codes.Unauthenticated,
 		codes.AlreadyExists,
 		codes.PermissionDenied,
