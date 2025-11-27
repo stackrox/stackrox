@@ -5,12 +5,14 @@ import (
 	"fmt"
 	"reflect"
 	"strings"
+	"time"
 
 	"github.com/go-logr/logr"
 	platform "github.com/stackrox/rox/operator/api/v1alpha1"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/util/retry"
 	ctrl "sigs.k8s.io/controller-runtime"
 	ctrlClient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -151,11 +153,11 @@ func (r *Reconciler[T]) updateProgressing(_ context.Context, obj T) *platform.St
 	prorgressingStatus, reason, message := r.determineProgressingState(obj)
 
 	newCond := platform.StackRoxCondition{
-		Type:    platform.ConditionProgressing,
-		Status:  prorgressingStatus,
-		Reason:  reason,
-		Message: message,
-		// LastTransitionTime: metav1.Time{Time: time.Now()},
+		Type:               platform.ConditionProgressing,
+		Status:             prorgressingStatus,
+		Reason:             reason,
+		Message:            message,
+		LastTransitionTime: metav1.Time{Time: time.Now()},
 	}
 
 	condChanged := obj.SetCondition(newCond)
@@ -218,11 +220,11 @@ func (r *Reconciler[T]) updateAvailable(ctx context.Context, obj T) *platform.St
 	availableStatus, reason, message := determineAvailableState(deployments.Items)
 
 	newCond := platform.StackRoxCondition{
-		Type:    platform.ConditionAvailable,
-		Status:  availableStatus,
-		Reason:  reason,
-		Message: message,
-		// LastTransitionTime: metav1.Time{Time: time.Now()},
+		Type:               platform.ConditionAvailable,
+		Status:             availableStatus,
+		Reason:             reason,
+		Message:            message,
+		LastTransitionTime: metav1.Time{Time: time.Now()},
 	}
 
 	condChanged := obj.SetCondition(newCond)
