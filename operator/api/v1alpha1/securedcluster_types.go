@@ -561,3 +561,25 @@ var (
 	LocalScannerV4AutoSense = LocalScannerV4ComponentAutoSense
 	LocalScannerV4Disabled  = LocalScannerV4ComponentDisabled
 )
+
+// GetCondition returns a specific condition by type, or nil if not found.
+func (c *SecuredCluster) GetCondition(condType ConditionType) *StackRoxCondition {
+	return GetCondition(c.Status.Conditions, condType)
+}
+
+// SetCondition updates or adds a condition. Returns true if the condition changed.
+func (c *SecuredCluster) SetCondition(updatedCond StackRoxCondition) bool {
+	var updated bool
+	c.Status.Conditions, updated = UpdateCondition(c.Status.Conditions, updatedCond)
+	return updated
+}
+
+// GetGeneration returns the metadata.generation of the Central resource.
+func (c *SecuredCluster) GetGeneration() int64 {
+	return c.ObjectMeta.GetGeneration()
+}
+
+// GetObservedGeneration returns the observedGeneration of the Central status sub-resource.
+func (c *SecuredCluster) GetObservedGeneration() int64 {
+	return c.Status.ObservedGeneration
+}
