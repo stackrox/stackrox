@@ -803,7 +803,7 @@ func (t *tracedRows) Err() error {
 	return t.Rows.Err()
 }
 
-func tracedQuery(ctx context.Context, pool postgres.DB, sql string, args ...interface{}) (*tracedRows, error) {
+func tracedQuery(ctx context.Context, pool postgres.Queryable, sql string, args ...interface{}) (*tracedRows, error) {
 	t := time.Now()
 	rows, err := pool.Query(ctx, sql, args...)
 	return &tracedRows{
@@ -812,14 +812,14 @@ func tracedQuery(ctx context.Context, pool postgres.DB, sql string, args ...inte
 	}, err
 }
 
-func tracedQueryRow(ctx context.Context, pool postgres.DB, sql string, args ...interface{}) pgx.Row {
+func tracedQueryRow(ctx context.Context, pool postgres.Queryable, sql string, args ...interface{}) pgx.Row {
 	t := time.Now()
 	row := pool.QueryRow(ctx, sql, args...)
 	postgres.AddTracedQuery(ctx, t, sql, args)
 	return row
 }
 
-func retryableRunSearchRequestForSchema(ctx context.Context, query *query, schema *walker.Schema, db postgres.DB) ([]searchPkg.Result, error) {
+func retryableRunSearchRequestForSchema(ctx context.Context, query *query, schema *walker.Schema, db postgres.Queryable) ([]searchPkg.Result, error) {
 	queryStr := query.AsSQL()
 
 	// Assumes that ids are strings.
@@ -938,9 +938,16 @@ func RunSearchRequestForSchema(ctx context.Context, schema *walker.Schema, q *v1
 	if query == nil {
 		return nil, nil
 	}
+
+	var pool postgres.Queryable
+	pool = db
+	if tx, parentTxExists := postgres.TxFromContext(ctx); parentTxExists {
+		pool = tx
+	}
+
 	return pgutils.Retry2(ctx, func() ([]searchPkg.Result, error) {
 
-		return retryableRunSearchRequestForSchema(ctx, query, schema, db)
+		return retryableRunSearchRequestForSchema(ctx, query, schema, pool)
 	})
 }
 
@@ -956,9 +963,15 @@ func RunCountRequestForSchema(ctx context.Context, schema *walker.Schema, q *v1.
 	}
 	queryStr := query.AsSQL()
 
+	var pool postgres.Queryable
+	pool = db
+	if tx, parentTxExists := postgres.TxFromContext(ctx); parentTxExists {
+		pool = tx
+	}
+
 	return pgutils.Retry2(ctx, func() (int, error) {
 		var count int
-		row := tracedQueryRow(ctx, db, queryStr, query.Data...)
+		row := tracedQueryRow(ctx, pool, queryStr, query.Data...)
 		if err := row.Scan(&count); err != nil {
 			log.Errorf("Query issue: %s: %v", queryStr, err)
 			return 0, errors.Wrap(err, "error executing query")
@@ -982,14 +995,20 @@ func RunGetQueryForSchema[T any, PT pgutils.Unmarshaler[T]](ctx context.Context,
 	}
 	queryStr := query.AsSQL()
 
+	var pool postgres.Queryable
+	pool = db
+	if tx, parentTxExists := postgres.TxFromContext(ctx); parentTxExists {
+		pool = tx
+	}
+
 	return pgutils.Retry2(ctx, func() (*T, error) {
 
-		row := tracedQueryRow(ctx, db, queryStr, query.Data...)
+		row := tracedQueryRow(ctx, pool, queryStr, query.Data...)
 		return pgutils.Unmarshal[T, PT](row)
 	})
 }
 
-func retryableRunGetManyQueryForSchema[T any, PT pgutils.Unmarshaler[T]](ctx context.Context, query *query, db postgres.DB) ([]*T, error) {
+func retryableRunGetManyQueryForSchema[T any, PT pgutils.Unmarshaler[T]](ctx context.Context, query *query, db postgres.Queryable) ([]*T, error) {
 	queryStr := query.AsSQL()
 	rows, err := tracedQuery(ctx, db, queryStr, query.Data...)
 	if err != nil {
@@ -1015,9 +1034,15 @@ func RunGetManyQueryForSchema[T any, PT pgutils.Unmarshaler[T]](ctx context.Cont
 		return nil, emptyQueryErr
 	}
 
+	var pool postgres.Queryable
+	pool = db
+	if tx, parentTxExists := postgres.TxFromContext(ctx); parentTxExists {
+		pool = tx
+	}
+
 	return pgutils.Retry2(ctx, func() ([]*T, error) {
 
-		return retryableRunGetManyQueryForSchema[T, PT](ctx, query, db)
+		return retryableRunGetManyQueryForSchema[T, PT](ctx, query, pool)
 	})
 }
 
@@ -1051,7 +1076,7 @@ func handleRowsWithCallback[T any, PT pgutils.Unmarshaler[T]](ctx context.Contex
 	return tag.RowsAffected(), err
 }
 
-func retryableGetRows(ctx context.Context, schema *walker.Schema, q *v1.Query, db postgres.DB) (*tracedRows, error) {
+func retryableGetRows(ctx context.Context, schema *walker.Schema, q *v1.Query, db postgres.Queryable) (*tracedRows, error) {
 	preparedQuery, err := prepareQuery(ctx, schema, q)
 	if err != nil {
 		return nil, err
@@ -1065,9 +1090,15 @@ func retryableGetRows(ctx context.Context, schema *walker.Schema, q *v1.Query, d
 	return tracedQuery(ctx, db, queryStr, preparedQuery.Data...)
 }
 
-func RunQueryForSchemaFn[T any, PT pgutils.Unmarshaler[T]](ctx context.Context, schema *walker.Schema, q *v1.Query, db postgres.DB, callback func(obj PT) error) error {
+func RunQueryForSchemaFn[T any, PT pgutils.Unmarshaler[T]](ctx context.Context, schema *walker.Schema, q *v1.Query, db postgres.Queryable, callback func(obj PT) error) error {
+	var pool postgres.Queryable
+	pool = db
+	if tx, parentTxExists := postgres.TxFromContext(ctx); parentTxExists {
+		pool = tx
+	}
+
 	rows, err := pgutils.Retry2(ctx, func() (*tracedRows, error) {
-		return retryableGetRows(ctx, schema, q, db)
+		return retryableGetRows(ctx, schema, q, pool)
 	})
 	if err != nil {
 		return err
@@ -1097,13 +1128,21 @@ func retryableGetCursorSession(ctx context.Context, schema *walker.Schema, q *v1
 
 	queryStr := preparedQuery.AsSQL()
 
-	tx, err := db.Begin(ctx)
-	if err != nil {
-		return nil, errors.Wrap(err, "creating transaction")
+	tx, parentTxExists := postgres.TxFromContext(ctx)
+	if !parentTxExists {
+		tx, err = db.Begin(ctx)
+		if err != nil {
+			return nil, errors.Wrap(err, "creating transaction")
+		}
 	}
 
 	// We have to ensure that cleanup function is called if exit early.
 	cleanupFunc := func() {
+		if parentTxExists {
+			return
+		}
+		ctx, cancel := contextutil.ContextWithTimeoutIfNotExists(context.Background(), cursorDefaultTimeout)
+		defer cancel()
 		if err := tx.Commit(ctx); err != nil {
 			log.Errorf("error committing cursor transaction: %v", err)
 		}
@@ -1168,7 +1207,7 @@ func RunCursorQueryForSchemaFn[T any, PT pgutils.Unmarshaler[T]](ctx context.Con
 		}
 
 		if rowsAffected != cursorBatchSize {
-			return nil
+			return ctx.Err()
 		}
 	}
 }
@@ -1185,8 +1224,15 @@ func RunDeleteRequestForSchema(ctx context.Context, schema *walker.Schema, q *v1
 	}
 
 	queryStr := query.AsSQL()
+
+	var pool postgres.Executable
+	pool = db
+	if tx, parentTxExists := postgres.TxFromContext(ctx); parentTxExists {
+		pool = tx
+	}
+
 	return pgutils.Retry(ctx, func() error {
-		_, err := db.Exec(ctx, queryStr, query.Data...)
+		_, err := pool.Exec(ctx, queryStr, query.Data...)
 		if err != nil {
 			log.Errorf("Query issue: %s: %v", queryStr, err)
 			return errors.Wrap(err, "could not delete from database")

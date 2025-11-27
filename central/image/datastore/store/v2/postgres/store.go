@@ -755,7 +755,7 @@ func (s *storeImpl) retryableDelete(ctx context.Context, id string) error {
 
 	if err := s.deleteImageTree(ctx, tx, id); err != nil {
 		if errTx := tx.Rollback(ctx); errTx != nil {
-			return errors.Wrapf(errTx, "rolbacing transaction due to previous error: %v", err)
+			return errors.Wrapf(errTx, "rollbacking transaction due to previous error: %v", err)
 		}
 		return errors.Wrap(err, "deleting image tree")
 	}
