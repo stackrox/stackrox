@@ -112,7 +112,7 @@ func (r *Reconciler[T]) SetupWithManager(mgr ctrl.Manager) error {
 		return err
 	}
 
-	// Watch CRs with predicate to filter status-only updates
+	// Watch CRs with a predicate to filter away status-only updates
 	typeOfT := reflect.TypeOf(new(T)).Elem()
 	typeOfDerefT := typeOfT.Elem()
 	emptyCR := reflect.New(typeOfDerefT).Interface().(T)
