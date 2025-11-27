@@ -1,0 +1,22 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "migrations",
+    srcs = ["migrations.go"],
+    embedsrcs = [
+        "indexer/01-init.sql",
+        "indexer/02-external-index-report.sql",
+        "matcher/01-init.sql",
+        "matcher/02-update-timestamp-column-last-vuln-update-down.sql",
+        "matcher/02-update-timestamp-column-last-vuln-update-up.sql",
+    ],
+    importpath = "github.com/stackrox/rox/scanner/datastore/postgres/migrations",
+    visibility = ["//visibility:public"],
+    deps = ["@com_github_remind101_migrate//:migrate"],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":migrations",
+    visibility = ["//visibility:public"],
+)

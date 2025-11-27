@@ -1,0 +1,38 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "paginated",
+    srcs = [
+        "options.go",
+        "paginated.go",
+    ],
+    importpath = "github.com/stackrox/rox/pkg/search/paginated",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//generated/api/v1:api",
+        "//generated/api/v2:api",
+        "//pkg/search",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":paginated",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "paginated_test",
+    srcs = ["paginated_test.go"],
+    embed = [":paginated"],
+    deps = [
+        "//generated/api/v1:api",
+        "//generated/api/v2:api",
+        "//pkg/protoassert",
+        "//pkg/search",
+        "//pkg/search/mocks",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//suite",
+        "@org_uber_go_mock//gomock",
+    ],
+)

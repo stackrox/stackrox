@@ -1,0 +1,44 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "v2tostorage",
+    srcs = [
+        "user.go",
+        "vuln_exception_service.go",
+        "vulnerability.go",
+    ],
+    importpath = "github.com/stackrox/rox/central/convert/v2tostorage",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//generated/api/v2:api",
+        "//generated/storage",
+        "//pkg/grpc/authn",
+        "//pkg/protocompat",
+        "//pkg/utils",
+        "//pkg/uuid",
+        "@com_github_pkg_errors//:errors",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":v2tostorage",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "v2tostorage_test",
+    srcs = ["vuln_exception_service_test.go"],
+    embed = [":v2tostorage"],
+    deps = [
+        "//central/convert/testutils",
+        "//generated/api/v2:api",
+        "//generated/storage",
+        "//pkg/grpc/authn",
+        "//pkg/grpc/authn/mocks",
+        "//pkg/protoassert",
+        "//pkg/sac",
+        "@com_github_stretchr_testify//assert",
+        "@org_uber_go_mock//gomock",
+    ],
+)

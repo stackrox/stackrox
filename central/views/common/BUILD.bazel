@@ -1,0 +1,31 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "common",
+    srcs = [
+        "db_response.go",
+        "empty.go",
+        "queries.go",
+        "sac.go",
+        "types.go",
+        "validate.go",
+    ],
+    importpath = "github.com/stackrox/rox/central/views/common",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//generated/api/v1:api",
+        "//generated/storage",
+        "//pkg/auth/permissions",
+        "//pkg/sac",
+        "//pkg/sac/resources",
+        "//pkg/search",
+        "//pkg/search/postgres/aggregatefunc",
+        "@com_github_pkg_errors//:errors",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":common",
+    visibility = ["//visibility:public"],
+)

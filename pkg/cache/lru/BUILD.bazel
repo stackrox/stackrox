@@ -1,0 +1,14 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "lru",
+    srcs = ["lru.go"],
+    importpath = "github.com/stackrox/rox/pkg/cache/lru",
+    visibility = ["//visibility:public"],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":lru",
+    visibility = ["//visibility:public"],
+)

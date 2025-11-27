@@ -1,0 +1,54 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "authn",
+    srcs = [
+        "context.go",
+        "extractor.go",
+        "identity.go",
+        "interceptor.go",
+        "none.go",
+        "util.go",
+    ],
+    importpath = "github.com/stackrox/rox/pkg/grpc/authn",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//generated/storage",
+        "//pkg/auth",
+        "//pkg/auth/authproviders",
+        "//pkg/auth/permissions",
+        "//pkg/contextutil",
+        "//pkg/errox",
+        "//pkg/grpc/requestinfo",
+        "//pkg/logging",
+        "//pkg/mtls",
+        "//pkg/stringutils",
+        "@com_github_go_jose_go_jose_v4//jwt",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":authn",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "authn_test",
+    srcs = [
+        "context_test.go",
+        "extractor_test.go",
+        "util_test.go",
+    ],
+    embed = [":authn"],
+    deps = [
+        "//pkg/errox",
+        "//pkg/grpc/authn/mocks",
+        "//pkg/grpc/requestinfo",
+        "@com_github_go_jose_go_jose_v4//jwt",
+        "@com_github_pkg_errors//:errors",
+        "@com_github_stretchr_testify//assert",
+        "@org_golang_google_grpc//metadata",
+        "@org_uber_go_mock//gomock",
+    ],
+)

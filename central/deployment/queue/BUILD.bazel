@@ -1,0 +1,15 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "queue",
+    srcs = ["observation_queue.go"],
+    importpath = "github.com/stackrox/rox/central/deployment/queue",
+    visibility = ["//visibility:public"],
+    deps = ["//pkg/sync"],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":queue",
+    visibility = ["//visibility:public"],
+)

@@ -1,0 +1,33 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "file",
+    srcs = ["file.go"],
+    importpath = "github.com/stackrox/rox/central/scannerdefinitions/file",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//central/blob/datastore",
+        "//pkg/protocompat",
+        "//pkg/utils",
+        "@com_github_pkg_errors//:errors",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":file",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "file_test",
+    srcs = ["file_test.go"],
+    embed = [":file"],
+    deps = [
+        "//central/blob/datastore/mocks",
+        "//generated/storage",
+        "//pkg/protocompat",
+        "@com_github_stretchr_testify//require",
+        "@org_uber_go_mock//gomock",
+    ],
+)

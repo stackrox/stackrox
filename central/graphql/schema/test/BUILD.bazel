@@ -1,0 +1,11 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_test")
+
+go_test(
+    name = "test_test",
+    srcs = ["schema_test.go"],
+    deps = [
+        "//central/graphql/resolvers",
+        "@com_github_graph_gophers_graphql_go//:graphql-go",
+        "@com_github_stretchr_testify//require",
+    ],
+)

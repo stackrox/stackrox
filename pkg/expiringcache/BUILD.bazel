@@ -1,0 +1,36 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "expiringcache",
+    srcs = [
+        "cache.go",
+        "clock.go",
+        "mapped_queue.go",
+    ],
+    importpath = "github.com/stackrox/rox/pkg/expiringcache",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//pkg/concurrency",
+        "//pkg/sync",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":expiringcache",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "expiringcache_test",
+    srcs = [
+        "cache_test.go",
+        "mapped_queue_test.go",
+    ],
+    embed = [":expiringcache"],
+    deps = [
+        "//pkg/expiringcache/mocks",
+        "@com_github_stretchr_testify//assert",
+        "@org_uber_go_mock//gomock",
+    ],
+)

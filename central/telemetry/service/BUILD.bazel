@@ -1,0 +1,34 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "service",
+    srcs = [
+        "service.go",
+        "service_impl.go",
+        "singleton.go",
+    ],
+    importpath = "github.com/stackrox/rox/central/telemetry/service",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//central/telemetry/centralclient",
+        "//generated/api/v1:api",
+        "//generated/internalapi/central",
+        "//generated/storage",
+        "//pkg/auth/permissions",
+        "//pkg/grpc",
+        "//pkg/grpc/authn",
+        "//pkg/grpc/authz",
+        "//pkg/grpc/authz/perrpc",
+        "//pkg/grpc/authz/user",
+        "//pkg/sac/resources",
+        "//pkg/sync",
+        "@com_github_grpc_ecosystem_grpc_gateway_v2//runtime",
+        "@org_golang_google_grpc//:grpc",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":service",
+    visibility = ["//visibility:public"],
+)

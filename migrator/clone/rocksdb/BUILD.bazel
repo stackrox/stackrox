@@ -1,0 +1,26 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "rocksdb",
+    srcs = [
+        "db_clone_manager.go",
+        "db_clone_manager_impl.go",
+    ],
+    importpath = "github.com/stackrox/rox/migrator/clone/rocksdb",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//migrator/clone/metadata",
+        "//pkg/fileutils",
+        "//pkg/logging",
+        "//pkg/migrations",
+        "//pkg/set",
+        "//pkg/version",
+        "@com_github_pkg_errors//:errors",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":rocksdb",
+    visibility = ["//visibility:public"],
+)

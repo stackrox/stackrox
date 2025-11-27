@@ -1,0 +1,47 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "manager",
+    srcs = [
+        "manager.go",
+        "singleton.go",
+    ],
+    importpath = "github.com/stackrox/rox/central/cloudsources/manager",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//central/cloudsources/datastore",
+        "//central/cluster/datastore",
+        "//central/convert/storagetotype",
+        "//central/discoveredclusters/datastore",
+        "//generated/storage",
+        "//pkg/cloudsources",
+        "//pkg/cloudsources/discoveredclusters",
+        "//pkg/concurrency",
+        "//pkg/logging",
+        "//pkg/sac",
+        "//pkg/sac/resources",
+        "//pkg/set",
+        "//pkg/sync",
+        "@com_github_pkg_errors//:errors",
+        "@org_golang_x_time//rate",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":manager",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "manager_test",
+    srcs = ["manager_test.go"],
+    embed = [":manager"],
+    deps = [
+        "//central/cluster/datastore",
+        "//generated/storage",
+        "//pkg/cloudsources/discoveredclusters",
+        "//pkg/set",
+        "@com_github_stretchr_testify//assert",
+    ],
+)

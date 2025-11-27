@@ -1,0 +1,29 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "testutils",
+    srcs = ["export.go"],
+    importpath = "github.com/stackrox/rox/central/testutils",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//central/deployment/datastore",
+        "//central/image/datastore",
+        "//central/pod/datastore",
+        "//central/views/deployments",
+        "//central/views/images",
+        "//generated/storage",
+        "//pkg/jsonutil",
+        "//pkg/logging",
+        "//pkg/postgres/pgtest",
+        "//pkg/random",
+        "//pkg/sac",
+        "//pkg/sac/resources",
+        "//pkg/testutils",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":testutils",
+    visibility = ["//visibility:public"],
+)

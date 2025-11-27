@@ -1,0 +1,18 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "grpc",
+    srcs = ["mapping.go"],
+    importpath = "github.com/stackrox/rox/pkg/errox/grpc",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//pkg/errox",
+        "@org_golang_google_grpc//codes",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":grpc",
+    visibility = ["//visibility:public"],
+)

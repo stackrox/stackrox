@@ -1,0 +1,26 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "listener",
+    srcs = [
+        "listener.go",
+        "singleton.go",
+    ],
+    importpath = "github.com/stackrox/rox/central/systeminfo/listener",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//central/systeminfo/store/postgres",
+        "//generated/storage",
+        "//pkg/grpc/authn",
+        "//pkg/protocompat",
+        "//pkg/sac",
+        "//pkg/sync",
+        "@com_github_cloudflare_cfssl//log",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":listener",
+    visibility = ["//visibility:public"],
+)

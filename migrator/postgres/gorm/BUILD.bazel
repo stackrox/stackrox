@@ -1,0 +1,30 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "gorm",
+    srcs = [
+        "config.go",
+        "mock.go",
+    ],
+    importpath = "github.com/stackrox/rox/migrator/postgres/gorm",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//migrator/log",
+        "//pkg/config",
+        "//pkg/postgres/pgconfig",
+        "//pkg/postgres/pgtest/conn",
+        "//pkg/postgres/pgutils",
+        "//pkg/sync",
+        "//pkg/utils",
+        "@com_github_pkg_errors//:errors",
+        "@io_gorm_driver_postgres//:postgres",
+        "@io_gorm_gorm//:gorm",
+        "@io_gorm_gorm//logger",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":gorm",
+    visibility = ["//visibility:public"],
+)

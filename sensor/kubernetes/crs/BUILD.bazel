@@ -1,0 +1,43 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "crs",
+    srcs = ["crs.go"],
+    importpath = "github.com/stackrox/rox/sensor/kubernetes/crs",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//generated/internalapi/central",
+        "//generated/storage",
+        "//pkg/booleanpolicy/policyversion",
+        "//pkg/centralsensor",
+        "//pkg/clientconn",
+        "//pkg/crs",
+        "//pkg/env",
+        "//pkg/grpc/util",
+        "//pkg/k8sutil",
+        "//pkg/logging",
+        "//pkg/mtls",
+        "//pkg/pods",
+        "//pkg/protoconv/certs",
+        "//pkg/protoutils",
+        "//pkg/set",
+        "//pkg/version",
+        "//sensor/common/centralclient",
+        "//sensor/common/sensor",
+        "//sensor/kubernetes/certrefresh",
+        "//sensor/kubernetes/certrefresh/securedcluster",
+        "//sensor/kubernetes/helm",
+        "//sensor/kubernetes/sensor",
+        "@com_github_grpc_ecosystem_go_grpc_middleware_v2//metadata",
+        "@com_github_pkg_errors//:errors",
+        "@io_k8s_apimachinery//pkg/util/wait",
+        "@io_k8s_client_go//kubernetes",
+        "@org_golang_google_grpc//metadata",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":crs",
+    visibility = ["//visibility:public"],
+)

@@ -1,0 +1,54 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "datastore",
+    srcs = [
+        "datastore.go",
+        "datastore_impl.go",
+        "singleton.go",
+        "telemetry.go",
+    ],
+    importpath = "github.com/stackrox/rox/central/notifier/datastore",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//central/globaldb",
+        "//central/notifier/datastore/internal/store",
+        "//central/notifier/datastore/internal/store/postgres",
+        "//generated/storage",
+        "//pkg/declarativeconfig",
+        "//pkg/errox",
+        "//pkg/notifiers",
+        "//pkg/postgres",
+        "//pkg/sac",
+        "//pkg/sac/resources",
+        "//pkg/secrets",
+        "//pkg/sync",
+        "//pkg/telemetry/phonehome",
+        "//pkg/uuid",
+        "@com_github_pkg_errors//:errors",
+        "@org_golang_x_text//cases",
+        "@org_golang_x_text//language",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":datastore",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "datastore_test",
+    srcs = ["datastsore_test.go"],
+    embed = [":datastore"],
+    deps = [
+        "//central/notifier/datastore/internal/store/mocks",
+        "//generated/storage",
+        "//pkg/declarativeconfig",
+        "//pkg/errox",
+        "//pkg/sac",
+        "//pkg/sac/resources",
+        "@com_github_stretchr_testify//suite",
+        "@org_uber_go_mock//gomock",
+    ],
+)

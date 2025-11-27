@@ -1,0 +1,55 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "postgres",
+    srcs = ["store.go"],
+    importpath = "github.com/stackrox/rox/central/compliance/datastore/internal/store/postgres",
+    visibility = ["//central/compliance/datastore:__subpackages__"],
+    deps = [
+        "//central/compliance",
+        "//central/compliance/datastore/internal/store",
+        "//central/compliance/datastore/internal/store/postgres/compliance_config",
+        "//central/compliance/datastore/internal/store/postgres/domain",
+        "//central/compliance/datastore/internal/store/postgres/metadata",
+        "//central/compliance/datastore/internal/store/postgres/results",
+        "//central/compliance/datastore/internal/store/postgres/strings",
+        "//central/compliance/datastore/types",
+        "//central/globaldb",
+        "//generated/storage",
+        "//pkg/auth/permissions",
+        "//pkg/concurrency",
+        "//pkg/errox",
+        "//pkg/expiringcache",
+        "//pkg/logging",
+        "//pkg/postgres",
+        "//pkg/sac",
+        "//pkg/sac/effectiveaccessscope",
+        "//pkg/sac/resources",
+        "//pkg/search",
+        "//pkg/sync",
+        "//pkg/utils",
+        "@com_github_hashicorp_golang_lru_v2//:golang-lru",
+        "@com_github_hashicorp_golang_lru_v2//expirable",
+        "@com_github_pkg_errors//:errors",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":postgres",
+    visibility = ["//central/compliance/datastore:__subpackages__"],
+)
+
+go_test(
+    name = "postgres_test",
+    srcs = ["store_test.go"],
+    embed = [":postgres"],
+    deps = [
+        "//generated/storage",
+        "//pkg/postgres/mocks",
+        "//pkg/sac",
+        "//pkg/sac/resources",
+        "@com_github_stretchr_testify//assert",
+        "@org_uber_go_mock//gomock",
+    ],
+)

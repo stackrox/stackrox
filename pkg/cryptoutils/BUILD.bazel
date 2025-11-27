@@ -1,0 +1,33 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "cryptoutils",
+    srcs = [
+        "fingerprint.go",
+        "format.go",
+        "nonce_generator.go",
+        "nonce_pool.go",
+        "utils.go",
+    ],
+    importpath = "github.com/stackrox/rox/pkg/cryptoutils",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//pkg/sync",
+        "//pkg/timeutil",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":cryptoutils",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "cryptoutils_test",
+    srcs = [
+        "fingerprint_test.go",
+        "format_test.go",
+    ],
+    embed = [":cryptoutils"],
+)

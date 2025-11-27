@@ -1,0 +1,23 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "clustertype",
+    srcs = [
+        "flag.go",
+        "wrapper.go",
+    ],
+    importpath = "github.com/stackrox/rox/roxctl/scanner/clustertype",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//generated/storage",
+        "//pkg/errox",
+        "//pkg/utils",
+        "@com_github_spf13_pflag//:pflag",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":clustertype",
+    visibility = ["//visibility:public"],
+)

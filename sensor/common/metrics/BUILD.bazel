@@ -1,0 +1,35 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "metrics",
+    srcs = [
+        "counting_events.go",
+        "info.go",
+        "init.go",
+        "metrics.go",
+        "sizing_events.go",
+        "timing_events.go",
+    ],
+    importpath = "github.com/stackrox/rox/sensor/common/metrics",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//generated/internalapi/central",
+        "//pkg/branding",
+        "//pkg/metrics",
+        "//pkg/reflectutils",
+        "//pkg/sensor/event",
+        "//pkg/version",
+        "//sensor/common/centralid",
+        "//sensor/common/installmethod",
+        "//sensor/common/managedcentral",
+        "//sensor/common/messagestream",
+        "@com_github_pkg_errors//:errors",
+        "@com_github_prometheus_client_golang//prometheus",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":metrics",
+    visibility = ["//visibility:public"],
+)

@@ -1,0 +1,66 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "docker",
+    srcs = [
+        "config.go",
+        "docker.go",
+        "metadata_v1.go",
+        "metadata_v2.go",
+        "registry_without_digest_call.go",
+    ],
+    importpath = "github.com/stackrox/rox/pkg/registries/docker",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//generated/storage",
+        "//pkg/concurrency",
+        "//pkg/env",
+        "//pkg/errorhelpers",
+        "//pkg/features",
+        "//pkg/httputil/proxy",
+        "//pkg/images/utils",
+        "//pkg/logging",
+        "//pkg/protocompat",
+        "//pkg/protoconv",
+        "//pkg/registries/types",
+        "//pkg/set",
+        "//pkg/sync",
+        "//pkg/urlfmt",
+        "//pkg/utils",
+        "@com_github_docker_distribution//manifest/manifestlist",
+        "@com_github_docker_distribution//manifest/schema1",
+        "@com_github_docker_distribution//manifest/schema2",
+        "@com_github_heroku_docker_registry_client//registry",
+        "@com_github_opencontainers_go_digest//:go-digest",
+        "@com_github_opencontainers_image_spec//specs-go/v1:specs-go",
+        "@com_github_pkg_errors//:errors",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":docker",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "docker_test",
+    srcs = [
+        "docker_test.go",
+        "metadata_v2_test.go",
+        "registry_without_digest_call_test.go",
+    ],
+    embed = [":docker"],
+    deps = [
+        "//generated/storage",
+        "//pkg/features",
+        "//pkg/images/types",
+        "//pkg/images/utils",
+        "//pkg/set",
+        "//pkg/testutils",
+        "//pkg/urlfmt",
+        "@com_github_opencontainers_go_digest//:go-digest",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+    ],
+)

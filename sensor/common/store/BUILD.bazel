@@ -1,0 +1,30 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "store",
+    srcs = [
+        "deployment_dependency.go",
+        "types.go",
+    ],
+    importpath = "github.com/stackrox/rox/sensor/common/store",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//generated/internalapi/central",
+        "//generated/storage",
+        "//pkg/deduperkey",
+        "//pkg/set",
+        "//sensor/common/clusterentities",
+        "//sensor/common/rbac",
+        "//sensor/common/registry",
+        "//sensor/common/selector",
+        "//sensor/common/service",
+        "@com_github_pkg_errors//:errors",
+        "@com_github_stackrox_hashstructure//:hashstructure",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":store",
+    visibility = ["//visibility:public"],
+)

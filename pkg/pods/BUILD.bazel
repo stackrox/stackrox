@@ -1,0 +1,18 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "pods",
+    srcs = ["namespace.go"],
+    importpath = "github.com/stackrox/rox/pkg/pods",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//pkg/logging",
+        "//pkg/namespaces",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":pods",
+    visibility = ["//visibility:public"],
+)

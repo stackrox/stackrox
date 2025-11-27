@@ -1,0 +1,22 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "internalmessage",
+    srcs = [
+        "internal_message_pubsub.go",
+        "message.go",
+    ],
+    importpath = "github.com/stackrox/rox/sensor/common/internalmessage",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//pkg/concurrency",
+        "//pkg/sync",
+        "@com_github_pkg_errors//:errors",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":internalmessage",
+    visibility = ["//visibility:public"],
+)

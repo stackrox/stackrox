@@ -1,0 +1,14 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "cas",
+    srcs = ["certificates.go"],
+    importpath = "github.com/stackrox/rox/central/globaldb/v2backuprestore/backup/generators/cas",
+    visibility = ["//visibility:public"],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":cas",
+    visibility = ["//visibility:public"],
+)

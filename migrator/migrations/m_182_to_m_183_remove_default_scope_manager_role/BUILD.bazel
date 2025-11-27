@@ -1,0 +1,29 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "m_182_to_m_183_remove_default_scope_manager_role",
+    srcs = [
+        "migration.go",
+        "migration_impl.go",
+    ],
+    importpath = "github.com/stackrox/rox/migrator/migrations/m_182_to_m_183_remove_default_scope_manager_role",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//generated/storage",
+        "//migrator/migrations",
+        "//migrator/migrations/m_182_to_m_183_remove_default_scope_manager_role/apitokenstore",
+        "//migrator/migrations/m_182_to_m_183_remove_default_scope_manager_role/groupstore",
+        "//migrator/migrations/m_182_to_m_183_remove_default_scope_manager_role/permissionsetstore",
+        "//migrator/migrations/m_182_to_m_183_remove_default_scope_manager_role/rolestore",
+        "//migrator/types",
+        "//pkg/logging",
+        "//pkg/sac",
+        "@com_github_hashicorp_go_multierror//:go-multierror",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":m_182_to_m_183_remove_default_scope_manager_role",
+    visibility = ["//visibility:public"],
+)

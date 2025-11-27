@@ -1,0 +1,30 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "validators",
+    srcs = ["validators.go"],
+    importpath = "github.com/stackrox/rox/scanner/services/validators",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//generated/internalapi/scanner/v4:scanner",
+        "//pkg/errox",
+        "@com_github_google_go_containerregistry//pkg/name",
+        "@com_github_quay_claircore_toolkit//types/cpe",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":validators",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "validators_test",
+    srcs = ["validators_test.go"],
+    embed = [":validators"],
+    deps = [
+        "//generated/internalapi/scanner/v4:scanner",
+        "@com_github_stretchr_testify//assert",
+    ],
+)

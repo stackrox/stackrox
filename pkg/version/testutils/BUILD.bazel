@@ -1,0 +1,22 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "testutils",
+    srcs = [
+        "empty.go",
+        "set_version.go",
+    ],
+    importpath = "github.com/stackrox/rox/pkg/version/testutils",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//pkg/testutils",
+        "//pkg/version",
+        "//pkg/version/internal",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":testutils",
+    visibility = ["//visibility:public"],
+)

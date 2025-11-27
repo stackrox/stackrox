@@ -1,0 +1,22 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "enhancements",
+    srcs = ["pipeline.go"],
+    importpath = "github.com/stackrox/rox/central/sensor/service/pipeline/enhancements",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//central/sensor/enhancement",
+        "//central/sensor/service/common",
+        "//central/sensor/service/pipeline",
+        "//central/sensor/service/pipeline/reconciliation",
+        "//generated/internalapi/central",
+        "//pkg/centralsensor",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":enhancements",
+    visibility = ["//visibility:public"],
+)

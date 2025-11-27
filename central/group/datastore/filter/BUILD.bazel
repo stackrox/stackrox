@@ -1,0 +1,26 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "filter",
+    srcs = [
+        "filter.go",
+        "filter_test_constructors.go",
+    ],
+    importpath = "github.com/stackrox/rox/central/group/datastore/filter",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//central/globaldb",
+        "//central/group/datastore/internal/store",
+        "//central/group/datastore/internal/store/postgres",
+        "//generated/storage",
+        "//pkg/postgres",
+        "//pkg/postgres/pgutils",
+        "//pkg/sync",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":filter",
+    visibility = ["//visibility:public"],
+)

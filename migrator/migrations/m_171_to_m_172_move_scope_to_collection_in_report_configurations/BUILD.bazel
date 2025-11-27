@@ -1,0 +1,32 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "m_171_to_m_172_move_scope_to_collection_in_report_configurations",
+    srcs = ["migration.go"],
+    importpath = "github.com/stackrox/rox/migrator/migrations/m_171_to_m_172_move_scope_to_collection_in_report_configurations",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//generated/storage",
+        "//migrator/migrations",
+        "//migrator/migrations/frozenschema/v74:frozenschema",
+        "//migrator/migrations/m_171_to_m_172_move_scope_to_collection_in_report_configurations/accessScopePostgresStore",
+        "//migrator/migrations/m_171_to_m_172_move_scope_to_collection_in_report_configurations/collectionPostgresStore",
+        "//migrator/migrations/m_171_to_m_172_move_scope_to_collection_in_report_configurations/reportConfigurationPostgresStore",
+        "//migrator/types",
+        "//pkg/logging",
+        "//pkg/postgres",
+        "//pkg/postgres/pgutils",
+        "//pkg/protoconv",
+        "//pkg/sac",
+        "//pkg/search",
+        "//pkg/uuid",
+        "@com_github_pkg_errors//:errors",
+        "@io_gorm_gorm//:gorm",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":m_171_to_m_172_move_scope_to_collection_in_report_configurations",
+    visibility = ["//visibility:public"],
+)

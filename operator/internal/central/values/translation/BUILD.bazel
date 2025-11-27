@@ -1,0 +1,64 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "translation",
+    srcs = [
+        "image_overrides.go",
+        "translation.go",
+    ],
+    embedsrcs = ["base-values.yaml"],
+    importpath = "github.com/stackrox/rox/operator/internal/central/values/translation",
+    visibility = ["//operator:__subpackages__"],
+    deps = [
+        "//operator/api/v1alpha1",
+        "//operator/internal/central/common",
+        "//operator/internal/images",
+        "//operator/internal/values/translation",
+        "//pkg/helm/util",
+        "//pkg/telemetry/phonehome",
+        "//pkg/utils",
+        "//pkg/version",
+        "@com_github_pkg_errors//:errors",
+        "@io_k8s_api//core/v1:core",
+        "@io_k8s_apimachinery//pkg/api/errors",
+        "@io_k8s_apimachinery//pkg/apis/meta/v1/unstructured",
+        "@io_k8s_apimachinery//pkg/runtime",
+        "@io_k8s_sigs_controller_runtime//pkg/client",
+        "@io_k8s_utils//pointer",
+        "@sh_helm_helm_v3//pkg/chartutil",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":translation",
+    visibility = ["//operator:__subpackages__"],
+)
+
+go_test(
+    name = "translation_test",
+    srcs = ["translation_test.go"],
+    embed = [":translation"],
+    deps = [
+        "//operator/api/v1alpha1",
+        "//operator/internal/central/common",
+        "//operator/internal/central/extensions",
+        "//operator/internal/values/translation",
+        "//pkg/buildinfo",
+        "//pkg/telemetry/phonehome",
+        "//pkg/version/testutils",
+        "@com_github_jeremywohl_flatten//:flatten",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+        "@io_k8s_api//core/v1:core",
+        "@io_k8s_apimachinery//pkg/api/resource",
+        "@io_k8s_apimachinery//pkg/apis/meta/v1:meta",
+        "@io_k8s_client_go//kubernetes",
+        "@io_k8s_client_go//kubernetes/fake",
+        "@io_k8s_sigs_controller_runtime//pkg/client",
+        "@io_k8s_sigs_controller_runtime//pkg/client/fake",
+        "@io_k8s_utils//pointer",
+        "@io_k8s_utils//ptr",
+        "@sh_helm_helm_v3//pkg/chartutil",
+    ],
+)

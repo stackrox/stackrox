@@ -1,0 +1,60 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "resolver",
+    srcs = [
+        "resolver.go",
+        "resolver_impl.go",
+    ],
+    importpath = "github.com/stackrox/rox/sensor/kubernetes/eventpipeline/resolver",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//generated/internalapi/central",
+        "//generated/storage",
+        "//pkg/concurrency",
+        "//pkg/dedupingqueue",
+        "//pkg/features",
+        "//pkg/logging",
+        "//pkg/set",
+        "//sensor/common/metrics",
+        "//sensor/common/store",
+        "//sensor/kubernetes/eventpipeline/component",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":resolver",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "resolver_test",
+    srcs = [
+        "resolver_bench_test.go",
+        "resolver_test.go",
+    ],
+    embed = [":resolver"],
+    deps = [
+        "//generated/internalapi/central",
+        "//generated/storage",
+        "//pkg/concurrency",
+        "//pkg/features",
+        "//pkg/protoutils",
+        "//pkg/set",
+        "//pkg/sync",
+        "//sensor/common/clusterentities",
+        "//sensor/common/registry",
+        "//sensor/common/service",
+        "//sensor/common/store",
+        "//sensor/common/store/mocks",
+        "//sensor/common/store/resolver",
+        "//sensor/kubernetes/eventpipeline/component",
+        "//sensor/kubernetes/eventpipeline/component/mocks",
+        "@com_github_pkg_errors//:errors",
+        "@com_github_stretchr_testify//suite",
+        "@io_k8s_api//core/v1:core",
+        "@io_k8s_apimachinery//pkg/util/intstr",
+        "@org_uber_go_mock//gomock",
+    ],
+)

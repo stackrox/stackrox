@@ -1,0 +1,22 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "registry",
+    srcs = ["singleton.go"],
+    importpath = "github.com/stackrox/rox/central/authprovider/registry",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//central/authprovider/datastore",
+        "//central/group/datastore",
+        "//central/jwt",
+        "//central/role/mapper",
+        "//pkg/auth/authproviders",
+        "//pkg/sync",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":registry",
+    visibility = ["//visibility:public"],
+)

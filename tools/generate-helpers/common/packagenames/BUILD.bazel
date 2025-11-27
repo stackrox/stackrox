@@ -1,0 +1,17 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "packagenames",
+    srcs = [
+        "list.go",
+        "rox.go",
+    ],
+    importpath = "github.com/stackrox/rox/tools/generate-helpers/common/packagenames",
+    visibility = ["//visibility:public"],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":packagenames",
+    visibility = ["//visibility:public"],
+)

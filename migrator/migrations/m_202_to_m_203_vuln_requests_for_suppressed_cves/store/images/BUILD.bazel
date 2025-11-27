@@ -1,0 +1,25 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "images",
+    srcs = ["store.go"],
+    importpath = "github.com/stackrox/rox/migrator/migrations/m_202_to_m_203_vuln_requests_for_suppressed_cves/store/images",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//generated/api/v1:api",
+        "//generated/storage",
+        "//migrator/migrations/m_202_to_m_203_vuln_requests_for_suppressed_cves/schema",
+        "//pkg/logging",
+        "//pkg/postgres",
+        "//pkg/protocompat",
+        "//pkg/sac/resources",
+        "//pkg/search/postgres",
+        "@com_github_jackc_pgx_v5//:pgx",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":images",
+    visibility = ["//visibility:public"],
+)

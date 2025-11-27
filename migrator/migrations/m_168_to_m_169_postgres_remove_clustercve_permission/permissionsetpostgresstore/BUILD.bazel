@@ -1,0 +1,29 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "permissionsetpostgresstore",
+    srcs = ["postgres_plugin.go"],
+    importpath = "github.com/stackrox/rox/migrator/migrations/m_168_to_m_169_postgres_remove_clustercve_permission/permissionsetpostgresstore",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//generated/api/v1:api",
+        "//generated/storage",
+        "//migrator/migrations/frozenschema/v74:frozenschema",
+        "//pkg/logging",
+        "//pkg/metrics",
+        "//pkg/postgres",
+        "//pkg/postgres/pgutils",
+        "//pkg/search",
+        "//pkg/search/postgres",
+        "//pkg/sync",
+        "@com_github_hashicorp_go_multierror//:go-multierror",
+        "@com_github_jackc_pgx_v5//:pgx",
+        "@com_github_pkg_errors//:errors",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":permissionsetpostgresstore",
+    visibility = ["//visibility:public"],
+)

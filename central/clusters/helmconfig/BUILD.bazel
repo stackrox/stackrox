@@ -1,0 +1,25 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "helmconfig",
+    srcs = ["yaml.go"],
+    importpath = "github.com/stackrox/rox/central/clusters/helmconfig",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//central/cluster/datastore",
+        "//pkg/apiparams",
+        "//pkg/helm/config",
+        "//pkg/httputil",
+        "//pkg/images/defaults",
+        "//pkg/zip",
+        "@com_github_pkg_errors//:errors",
+        "@in_yaml_go_yaml_v3//:yaml",
+        "@org_golang_google_grpc//codes",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":helmconfig",
+    visibility = ["//visibility:public"],
+)

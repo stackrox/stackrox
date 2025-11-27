@@ -1,0 +1,43 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "x509utils",
+    srcs = [
+        "chains.go",
+        "convert.go",
+        "file.go",
+    ],
+    importpath = "github.com/stackrox/rox/pkg/x509utils",
+    visibility = ["//visibility:public"],
+    deps = [
+        "@com_github_cloudflare_cfssl//helpers",
+        "@com_github_pkg_errors//:errors",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":x509utils",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "x509utils_test",
+    srcs = [
+        "chains_test.go",
+        "convert_test.go",
+    ],
+    data = glob(["testdata/**"]),
+    embed = [":x509utils"],
+    embedsrcs = [
+        "testdata/cert-chain.pem",
+        "testdata/verification-time",
+    ],
+    deps = [
+        "//pkg/timeutil",
+        "//pkg/utils",
+        "@com_github_cloudflare_cfssl//helpers",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+    ],
+)

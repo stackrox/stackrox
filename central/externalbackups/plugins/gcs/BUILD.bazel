@@ -1,0 +1,29 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "gcs",
+    srcs = ["gcs.go"],
+    importpath = "github.com/stackrox/rox/central/externalbackups/plugins/gcs",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//central/cloudproviders/gcp",
+        "//central/externalbackups/plugins",
+        "//central/externalbackups/plugins/types",
+        "//generated/storage",
+        "//pkg/administration/events/codes",
+        "//pkg/administration/events/option",
+        "//pkg/cloudproviders/gcp/utils",
+        "//pkg/errorhelpers",
+        "//pkg/logging",
+        "@com_github_pkg_errors//:errors",
+        "@com_google_cloud_go_storage//:storage",
+        "@org_golang_google_api//googleapi",
+        "@org_golang_google_api//iterator",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":gcs",
+    visibility = ["//visibility:public"],
+)

@@ -1,0 +1,37 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "inputtypes",
+    srcs = [
+        "pagination.go",
+        "sort_option.go",
+        "vuln_req.go",
+    ],
+    importpath = "github.com/stackrox/rox/central/graphql/resolvers/inputtypes",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//generated/api/v1:api",
+        "//generated/storage",
+        "//pkg/protoconv",
+        "//pkg/search/postgres/aggregatefunc",
+        "@com_github_graph_gophers_graphql_go//:graphql-go",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":inputtypes",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "inputtypes_test",
+    srcs = ["vuln_req_test.go"],
+    embed = [":inputtypes"],
+    deps = [
+        "//generated/storage",
+        "//pkg/protoconv",
+        "@com_github_graph_gophers_graphql_go//:graphql-go",
+        "@com_github_stretchr_testify//suite",
+    ],
+)

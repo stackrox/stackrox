@@ -1,0 +1,52 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "matcher",
+    srcs = [
+        "matcher.go",
+        "singleton.go",
+    ],
+    importpath = "github.com/stackrox/rox/central/cve/matcher",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//central/cluster/datastore",
+        "//central/cve/converter/utils",
+        "//central/image/datastore",
+        "//central/namespace/datastore",
+        "//generated/storage",
+        "//pkg/errorhelpers",
+        "//pkg/logging",
+        "//pkg/search",
+        "//pkg/set",
+        "//pkg/stringutils",
+        "//pkg/sync",
+        "//pkg/utils",
+        "@com_github_facebookincubator_nvdtools//cvefeed/nvd/schema",
+        "@com_github_hashicorp_go_version//:go-version",
+        "@com_github_pkg_errors//:errors",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":matcher",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "matcher_test",
+    srcs = ["matcher_test.go"],
+    embed = [":matcher"],
+    deps = [
+        "//central/cluster/datastore/mocks",
+        "//central/image/datastore/mocks",
+        "//central/namespace/datastore/mocks",
+        "//generated/storage",
+        "//pkg/sac",
+        "//pkg/sac/resources",
+        "//pkg/search",
+        "@com_github_facebookincubator_nvdtools//cvefeed/nvd/schema",
+        "@com_github_stretchr_testify//suite",
+        "@org_uber_go_mock//gomock",
+    ],
+)

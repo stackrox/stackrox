@@ -1,0 +1,71 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "generator",
+    srcs = [
+        "report_gen.go",
+        "report_gen_impl.go",
+        "singleton.go",
+    ],
+    importpath = "github.com/stackrox/rox/central/complianceoperator/v2/report/manager/generator",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//central/blob/datastore",
+        "//central/complianceoperator/v2/benchmarks/datastore",
+        "//central/complianceoperator/v2/checkresults/datastore",
+        "//central/complianceoperator/v2/profiles/datastore",
+        "//central/complianceoperator/v2/remediations/datastore",
+        "//central/complianceoperator/v2/report",
+        "//central/complianceoperator/v2/report/datastore",
+        "//central/complianceoperator/v2/report/manager/format",
+        "//central/complianceoperator/v2/report/manager/helpers",
+        "//central/complianceoperator/v2/report/manager/results",
+        "//central/complianceoperator/v2/report/manager/sender",
+        "//central/complianceoperator/v2/rules/datastore",
+        "//central/complianceoperator/v2/scans/datastore",
+        "//central/notifier/processor",
+        "//central/reports/common",
+        "//generated/storage",
+        "//pkg/concurrency",
+        "//pkg/logging",
+        "//pkg/notifier",
+        "//pkg/protocompat",
+        "//pkg/sac",
+        "//pkg/sync",
+        "@com_github_pkg_errors//:errors",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":generator",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "generator_test",
+    srcs = ["report_gen_impl_test.go"],
+    embed = [":generator"],
+    deps = [
+        "//central/blob/datastore/mocks",
+        "//central/complianceoperator/v2/checkresults/datastore/mocks",
+        "//central/complianceoperator/v2/profiles/datastore/mocks",
+        "//central/complianceoperator/v2/remediations/datastore/mocks",
+        "//central/complianceoperator/v2/report",
+        "//central/complianceoperator/v2/report/datastore/mocks",
+        "//central/complianceoperator/v2/report/manager/generator/mocks",
+        "//central/complianceoperator/v2/report/manager/sender",
+        "//central/complianceoperator/v2/rules/datastore/mocks",
+        "//central/graphql/resolvers/loaders",
+        "//generated/storage",
+        "//pkg/concurrency",
+        "//pkg/features",
+        "//pkg/notifier/mocks",
+        "//pkg/sac",
+        "//pkg/sac/resources",
+        "@com_github_pkg_errors//:errors",
+        "@com_github_stretchr_testify//require",
+        "@com_github_stretchr_testify//suite",
+        "@org_uber_go_mock//gomock",
+    ],
+)

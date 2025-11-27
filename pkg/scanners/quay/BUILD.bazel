@@ -1,0 +1,55 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "quay",
+    srcs = [
+        "convert.go",
+        "image_scan.go",
+        "quay.go",
+    ],
+    importpath = "github.com/stackrox/rox/pkg/scanners/quay",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//generated/api/v1:api",
+        "//generated/internalapi/scanner/v4:scanner",
+        "//generated/storage",
+        "//pkg/clair",
+        "//pkg/httputil/proxy",
+        "//pkg/images/types",
+        "//pkg/images/utils",
+        "//pkg/protocompat",
+        "//pkg/registries/quay",
+        "//pkg/registries/types",
+        "//pkg/scanners/types",
+        "//pkg/stringutils",
+        "//pkg/urlfmt",
+        "//pkg/utils",
+        "@com_github_pkg_errors//:errors",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":quay",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "quay_test",
+    srcs = [
+        "convert_test.go",
+        "image_scan_test.go",
+        "quay_test.go",
+    ],
+    embed = [":quay"],
+    deps = [
+        "//generated/internalapi/scanner/v4:scanner",
+        "//generated/storage",
+        "//pkg/clair/mock",
+        "//pkg/features",
+        "//pkg/protoassert",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+        "@com_github_stretchr_testify//suite",
+    ],
+)

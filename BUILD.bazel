@@ -1,0 +1,103 @@
+# Root BUILD file for StackRox
+# This file defines top-level targets and Gazelle configuration
+
+load("@bazel_gazelle//:def.bzl", "gazelle")
+
+# ============================================================================
+# Gazelle Configuration
+# ============================================================================
+
+# gazelle:prefix github.com/stackrox/rox
+# Disable proto for now - generated code already exists in generated/
+# We'll use existing Make-generated protos
+# gazelle:proto disable
+# gazelle:exclude bazel_poc
+# gazelle:exclude vendor
+# gazelle:exclude ui/node_modules
+# gazelle:exclude ui/build
+# gazelle:exclude bin
+# gazelle:exclude linux-gocache
+# gazelle:exclude test-output
+# gazelle:exclude junit-reports
+# gazelle:exclude .proto
+# gazelle:exclude third_party
+
+# Scanner package resolution - NO EXTERNAL SCANNER
+# All scanner imports resolve to local generated code in generated/internalapi/scanner/v4
+# This avoids the circular dependency with the external scanner module
+# gazelle:resolve go github.com/stackrox/scanner/api/v1 //generated/internalapi/scanner/v4:scanner
+# gazelle:resolve go github.com/stackrox/scanner/api/v1/convert //generated/internalapi/scanner/v4:scanner
+# gazelle:resolve go github.com/stackrox/scanner/pkg/clairify/client //generated/internalapi/scanner/v4:scanner
+# gazelle:resolve go github.com/stackrox/scanner/pkg/clairify/client/metadata //generated/internalapi/scanner/v4:scanner
+# gazelle:resolve go github.com/stackrox/scanner/pkg/clairify/types //generated/internalapi/scanner/v4:scanner
+# gazelle:resolve go github.com/stackrox/scanner/pkg/component //generated/internalapi/scanner/v4:scanner
+# gazelle:resolve go github.com/stackrox/scanner/generated/scanner/api/v1 //generated/internalapi/scanner/v4:scanner
+
+# Generate and update BUILD.bazel files for Go code
+gazelle(
+    name = "gazelle",
+    args = [
+        "-go_naming_convention",
+        "import_alias",
+    ],
+)
+
+# Update go_repository rules in go_deps.bzl based on go.mod
+gazelle(
+    name = "gazelle-update-repos",
+    args = [
+        "-from_file=go.mod",
+        "-to_macro=go_deps.bzl%go_dependencies",
+        "-prune",
+    ],
+    command = "update-repos",
+)
+
+# ============================================================================
+# Code Formatting
+# ============================================================================
+
+# Format all BUILD files
+sh_binary(
+    name = "buildifier",
+    srcs = ["@com_github_bazelbuild_buildtools//buildifier"],
+)
+
+# ============================================================================
+# Top-Level Targets
+# ============================================================================
+
+# Placeholder for top-level build targets
+# These will be defined as we migrate components
+
+# Empty target for testing Bazel setup
+filegroup(
+    name = "empty",
+    srcs = [],
+    visibility = ["//visibility:public"],
+)
+
+# Collect all main binaries (to be populated during migration)
+filegroup(
+    name = "all_binaries",
+    srcs = [
+        # Will be populated with:
+        # "//central:central",
+        # "//migrator:migrator",
+        # "//roxctl:roxctl",
+        # "//sensor/kubernetes:kubernetes",
+        # etc.
+    ],
+    visibility = ["//visibility:public"],
+)
+
+# ============================================================================
+# Documentation
+# ============================================================================
+
+exports_files([
+    "README.md",
+    "BAZEL_MIGRATION_PLAN.md",
+    "go.mod",
+    "go.sum",
+])

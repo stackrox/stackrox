@@ -1,0 +1,34 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "permissions",
+    srcs = [
+        "permission.go",
+        "resolved_role.go",
+        "resource.go",
+        "role.go",
+        "role_mapper.go",
+    ],
+    importpath = "github.com/stackrox/rox/pkg/auth/permissions",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//generated/storage",
+        "@com_github_pkg_errors//:errors",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":permissions",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "permissions_test",
+    srcs = ["resource_test.go"],
+    embed = [":permissions"],
+    deps = [
+        "//generated/storage",
+        "@com_github_stretchr_testify//assert",
+    ],
+)

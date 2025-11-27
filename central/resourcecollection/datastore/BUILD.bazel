@@ -1,0 +1,38 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "datastore",
+    srcs = [
+        "datastore.go",
+        "datastore_impl.go",
+        "singleton.go",
+    ],
+    importpath = "github.com/stackrox/rox/central/resourcecollection/datastore",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//central/globaldb",
+        "//central/metrics",
+        "//central/resourcecollection/datastore/store",
+        "//central/resourcecollection/datastore/store/postgres",
+        "//generated/api/v1:api",
+        "//generated/storage",
+        "//pkg/errox",
+        "//pkg/postgres",
+        "//pkg/sac",
+        "//pkg/sac/resources",
+        "//pkg/search",
+        "//pkg/set",
+        "//pkg/stringutils",
+        "//pkg/sync",
+        "//pkg/utils",
+        "//pkg/uuid",
+        "@com_github_heimdalr_dag//:dag",
+        "@com_github_pkg_errors//:errors",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":datastore",
+    visibility = ["//visibility:public"],
+)

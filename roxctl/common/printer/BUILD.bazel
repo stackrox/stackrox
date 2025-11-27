@@ -1,0 +1,67 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "printer",
+    srcs = [
+        "colorprinter.go",
+        "jsonprinter_factory.go",
+        "junitprinter_factory.go",
+        "objectprinter.go",
+        "objectprinter_factory.go",
+        "sarifprinter_factory.go",
+        "tabularprinter_factory.go",
+    ],
+    importpath = "github.com/stackrox/rox/roxctl/common/printer",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//pkg/errox",
+        "//pkg/printers",
+        "//pkg/set",
+        "//pkg/utils",
+        "@com_github_fatih_color//:color",
+        "@com_github_hashicorp_go_multierror//:go-multierror",
+        "@com_github_pkg_errors//:errors",
+        "@com_github_spf13_cobra//:cobra",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":printer",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "printer_test",
+    srcs = [
+        "colorprinter_test.go",
+        "jsonprinter_factory_test.go",
+        "junitprinter_factory_test.go",
+        "objectprinter_factory_test.go",
+        "sarifprinter_factory_test.go",
+        "tabularprinter_factory_test.go",
+    ],
+    embed = [":printer"],
+    deps = [
+        "//pkg/errox",
+        "//pkg/printers",
+        "//pkg/sliceutils",
+        "@com_github_spf13_cobra//:cobra",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+    ] + select({
+        "@io_bazel_rules_go//go/platform:android": [
+            "@com_github_fatih_color//:color",
+        ],
+        "@io_bazel_rules_go//go/platform:darwin": [
+            "@com_github_fatih_color//:color",
+        ],
+        "@io_bazel_rules_go//go/platform:ios": [
+            "@com_github_fatih_color//:color",
+        ],
+        "@io_bazel_rules_go//go/platform:linux": [
+            "@com_github_fatih_color//:color",
+        ],
+        "//conditions:default": [],
+    }),
+)

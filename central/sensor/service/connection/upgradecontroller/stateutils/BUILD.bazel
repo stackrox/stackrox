@@ -1,0 +1,46 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "stateutils",
+    srcs = [
+        "all_transitions.go",
+        "matchers.go",
+        "state_machine.go",
+        "transitioner.go",
+        "well_known_stage_groups.go",
+        "well_known_state_groups.go",
+    ],
+    importpath = "github.com/stackrox/rox/central/sensor/service/connection/upgradecontroller/stateutils",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//generated/storage",
+        "//pkg/pointers",
+        "//pkg/sensorupgrader",
+        "//pkg/set",
+        "//pkg/utils",
+        "@com_github_pkg_errors//:errors",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":stateutils",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "stateutils_test",
+    srcs = [
+        "all_transitions_test.go",
+        "state_machine_test.go",
+    ],
+    embed = [":stateutils"],
+    deps = [
+        "//generated/storage",
+        "//pkg/concurrency",
+        "//pkg/sensorupgrader",
+        "//pkg/sliceutils",
+        "//pkg/sync",
+        "@com_github_stretchr_testify//assert",
+    ],
+)

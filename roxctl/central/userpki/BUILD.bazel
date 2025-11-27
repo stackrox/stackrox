@@ -1,0 +1,21 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "userpki",
+    srcs = ["userpki.go"],
+    importpath = "github.com/stackrox/rox/roxctl/central/userpki",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//roxctl/central/userpki/create",
+        "//roxctl/central/userpki/delete",
+        "//roxctl/central/userpki/list",
+        "//roxctl/common/environment",
+        "@com_github_spf13_cobra//:cobra",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":userpki",
+    visibility = ["//visibility:public"],
+)

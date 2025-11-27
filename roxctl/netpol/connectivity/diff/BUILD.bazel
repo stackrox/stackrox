@@ -1,0 +1,46 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "diff",
+    srcs = [
+        "command.go",
+        "diff.go",
+    ],
+    importpath = "github.com/stackrox/rox/roxctl/netpol/connectivity/diff",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//pkg/errox",
+        "//roxctl/common/environment",
+        "//roxctl/common/npg",
+        "//roxctl/netpol/resources",
+        "@com_github_np_guard_netpol_analyzer//pkg/netpol/diff",
+        "@com_github_pkg_errors//:errors",
+        "@com_github_spf13_cobra//:cobra",
+        "@io_k8s_cli_runtime//pkg/resource",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":diff",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "diff_test",
+    srcs = [
+        "command_test.go",
+        "diff_output_test.go",
+        "diff_test.go",
+    ],
+    data = glob(["testdata/**"]),
+    embed = [":diff"],
+    deps = [
+        "//pkg/errox",
+        "//roxctl/common/environment/mocks",
+        "//roxctl/common/npg",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+        "@com_github_stretchr_testify//suite",
+    ],
+)

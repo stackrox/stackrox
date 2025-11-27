@@ -1,0 +1,48 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "list",
+    srcs = ["list.go"],
+    importpath = "github.com/stackrox/rox/roxctl/central/userpki/list",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//generated/api/v1:api",
+        "//generated/storage",
+        "//pkg/auth/authproviders/userpki",
+        "//pkg/jsonutil",
+        "//pkg/roxctl/common",
+        "//pkg/utils",
+        "//roxctl/common",
+        "//roxctl/common/environment",
+        "//roxctl/common/flags",
+        "//roxctl/common/logger",
+        "@com_github_cloudflare_cfssl//helpers",
+        "@com_github_pkg_errors//:errors",
+        "@com_github_spf13_cobra//:cobra",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":list",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "list_test",
+    srcs = ["list_test.go"],
+    embed = [":list"],
+    deps = [
+        "//generated/api/v1:api",
+        "//generated/storage",
+        "//pkg/auth/authproviders/userpki",
+        "//pkg/errox",
+        "//pkg/grpc",
+        "//roxctl/common/environment/mocks",
+        "//roxctl/common/io/mocks",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+        "@org_golang_google_grpc//:grpc",
+        "@org_uber_go_mock//gomock",
+    ],
+)

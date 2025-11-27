@@ -1,0 +1,58 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "datastore",
+    srcs = [
+        "datastore.go",
+        "datastore_impl.go",
+        "singleton.go",
+    ],
+    importpath = "github.com/stackrox/rox/central/policycategory/datastore",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//central/globaldb",
+        "//central/policycategory/store",
+        "//central/policycategory/store/postgres",
+        "//central/policycategory/utils",
+        "//central/policycategoryedge/datastore",
+        "//generated/api/v1:api",
+        "//generated/storage",
+        "//pkg/defaults/categories",
+        "//pkg/errox",
+        "//pkg/logging",
+        "//pkg/postgres/pgutils",
+        "//pkg/sac",
+        "//pkg/sac/resources",
+        "//pkg/search",
+        "//pkg/search/policycategory",
+        "//pkg/set",
+        "//pkg/sync",
+        "//pkg/utils",
+        "//pkg/uuid",
+        "@com_github_pkg_errors//:errors",
+        "@org_golang_x_text//cases",
+        "@org_golang_x_text//language",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":datastore",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "datastore_test",
+    srcs = ["datastore_impl_test.go"],
+    embed = [":datastore"],
+    deps = [
+        "//central/policycategory/store/mocks",
+        "//central/policycategoryedge/datastore/mocks",
+        "//generated/storage",
+        "//pkg/fixtures",
+        "//pkg/sac",
+        "//pkg/sac/resources",
+        "@com_github_stretchr_testify//suite",
+        "@org_uber_go_mock//gomock",
+    ],
+)

@@ -1,0 +1,24 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_test")
+
+go_test(
+    name = "test_test",
+    srcs = ["manager_test.go"],
+    deps = [
+        "//central/cluster/datastore/mocks",
+        "//central/compliance",
+        "//central/compliance/data/mocks",
+        "//central/compliance/datastore/mocks",
+        "//central/compliance/manager",
+        "//central/compliance/standards",
+        "//central/compliance/standards/metadata",
+        "//central/deployment/datastore/mocks",
+        "//central/node/datastore/mocks",
+        "//central/pod/datastore/mocks",
+        "//central/scrape/factory/mocks",
+        "//generated/storage",
+        "//pkg/sac",
+        "//pkg/sac/resources",
+        "@com_github_stretchr_testify//suite",
+        "@org_uber_go_mock//gomock",
+    ],
+)

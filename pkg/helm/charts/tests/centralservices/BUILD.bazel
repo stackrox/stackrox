@@ -1,0 +1,31 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_test")
+
+go_test(
+    name = "centralservices_test",
+    srcs = [
+        "base_suite_test.go",
+        "customize_test.go",
+        "helmtest_test.go",
+        "multi_namespace_test.go",
+    ],
+    data = glob(["testdata/**"]),
+    embedsrcs = [
+        "testdata/all-values-explicit.yaml",
+        "testdata/autogenerate-all.yaml",
+    ],
+    deps = [
+        "//image",
+        "//pkg/helm/charts/testutils",
+        "//pkg/helm/util",
+        "//pkg/k8sutil/k8sobjects",
+        "//pkg/maputil",
+        "//pkg/set",
+        "//pkg/uuid",
+        "@com_github_stretchr_testify//suite",
+        "@io_k8s_apimachinery//pkg/apis/meta/v1/unstructured",
+        "@io_k8s_apimachinery//pkg/util/yaml",
+        "@sh_helm_helm_v3//pkg/chart",
+        "@sh_helm_helm_v3//pkg/chartutil",
+        "@sh_helm_helm_v3//pkg/strvals",
+    ],
+)

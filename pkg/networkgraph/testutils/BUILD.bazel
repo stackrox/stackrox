@@ -1,0 +1,23 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "testutils",
+    srcs = ["utils.go"],
+    importpath = "github.com/stackrox/rox/pkg/networkgraph/testutils",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//generated/storage",
+        "//pkg/net",
+        "//pkg/networkgraph",
+        "//pkg/networkgraph/externalsrcs",
+        "//pkg/protocompat",
+        "//pkg/sac",
+        "//pkg/utils",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":testutils",
+    visibility = ["//visibility:public"],
+)

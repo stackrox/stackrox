@@ -1,0 +1,19 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "mocks",
+    srcs = ["datastore.go"],
+    importpath = "github.com/stackrox/rox/central/role/datastore/mocks",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//generated/storage",
+        "//pkg/auth/permissions",
+        "@org_uber_go_mock//gomock",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":mocks",
+    visibility = ["//visibility:public"],
+)

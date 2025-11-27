@@ -1,0 +1,33 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "transformer",
+    srcs = [
+        "external.go",
+        "transformer.go",
+    ],
+    importpath = "github.com/stackrox/rox/central/networkgraph/transformer",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//generated/storage",
+        "//pkg/networkgraph",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":transformer",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "transformer_test",
+    srcs = ["transformer_test.go"],
+    embed = [":transformer"],
+    deps = [
+        "//generated/storage",
+        "//pkg/networkgraph",
+        "//pkg/networkgraph/testutils",
+        "//pkg/protoassert",
+    ],
+)

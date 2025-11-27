@@ -1,0 +1,31 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "mocks",
+    srcs = [
+        "connection.go",
+        "manager.go",
+    ],
+    importpath = "github.com/stackrox/rox/central/sensor/service/connection/mocks",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//central/scrape",
+        "//central/sensor/networkentities",
+        "//central/sensor/networkpolicies",
+        "//central/sensor/service/common",
+        "//central/sensor/service/connection",
+        "//central/sensor/service/pipeline",
+        "//central/sensor/telemetry",
+        "//generated/internalapi/central",
+        "//generated/storage",
+        "//pkg/centralsensor",
+        "//pkg/concurrency",
+        "@org_uber_go_mock//gomock",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":mocks",
+    visibility = ["//visibility:public"],
+)

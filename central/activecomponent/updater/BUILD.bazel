@@ -1,0 +1,65 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "updater",
+    srcs = [
+        "singleton.go",
+        "updater.go",
+        "updater_impl.go",
+    ],
+    importpath = "github.com/stackrox/rox/central/activecomponent/updater",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//central/activecomponent/converter",
+        "//central/activecomponent/datastore",
+        "//central/activecomponent/updater/aggregator",
+        "//central/deployment/datastore",
+        "//central/image/datastore",
+        "//central/processindicator/datastore",
+        "//generated/storage",
+        "//pkg/features",
+        "//pkg/logging",
+        "//pkg/sac",
+        "//pkg/sac/resources",
+        "//pkg/search",
+        "//pkg/set",
+        "//pkg/simplecache",
+        "//pkg/sync",
+        "//pkg/utils",
+        "@com_github_pkg_errors//:errors",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":updater",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "updater_test",
+    srcs = ["updater_impl_test.go"],
+    embed = [":updater"],
+    deps = [
+        "//central/activecomponent/converter",
+        "//central/activecomponent/datastore/mocks",
+        "//central/activecomponent/updater/aggregator",
+        "//central/activecomponent/updater/aggregator/mocks",
+        "//central/deployment/datastore/mocks",
+        "//central/image/datastore/mocks",
+        "//central/processindicator/datastore/mocks",
+        "//generated/api/v1:api",
+        "//generated/storage",
+        "//pkg/features",
+        "//pkg/protoconv",
+        "//pkg/scancomponent",
+        "//pkg/search",
+        "//pkg/search/postgres",
+        "//pkg/set",
+        "//pkg/simplecache",
+        "//pkg/uuid",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//suite",
+        "@org_uber_go_mock//gomock",
+    ],
+)

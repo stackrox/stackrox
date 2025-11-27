@@ -1,0 +1,36 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "securedcluster",
+    srcs = ["cert_repo_init.go"],
+    importpath = "github.com/stackrox/rox/sensor/kubernetes/certrefresh/securedcluster",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//generated/storage",
+        "//pkg/securedcluster",
+        "//sensor/kubernetes/certrefresh/certrepo",
+        "@io_k8s_apimachinery//pkg/apis/meta/v1:meta",
+        "@io_k8s_client_go//kubernetes/typed/core/v1:core",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":securedcluster",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "securedcluster_test",
+    srcs = ["cert_repo_init_test.go"],
+    embed = [":securedcluster"],
+    deps = [
+        "//generated/storage",
+        "//pkg/protoassert",
+        "//pkg/securedcluster",
+        "@com_github_stretchr_testify//assert",
+        "@io_k8s_api//apps/v1:apps",
+        "@io_k8s_apimachinery//pkg/apis/meta/v1:meta",
+        "@io_k8s_client_go//kubernetes/fake",
+    ],
+)

@@ -1,0 +1,22 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "pod",
+    srcs = ["kill.go"],
+    importpath = "github.com/stackrox/rox/sensor/kubernetes/enforcer/pod",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//generated/internalapi/central",
+        "//pkg/kubernetes",
+        "//pkg/retry",
+        "@io_k8s_apimachinery//pkg/api/errors",
+        "@io_k8s_apimachinery//pkg/apis/meta/v1:meta",
+        "@io_k8s_client_go//kubernetes",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":pod",
+    visibility = ["//visibility:public"],
+)

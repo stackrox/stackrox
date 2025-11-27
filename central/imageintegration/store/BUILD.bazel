@@ -1,0 +1,27 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "store",
+    srcs = [
+        "defaults.go",
+        "store.go",
+    ],
+    importpath = "github.com/stackrox/rox/central/imageintegration/store",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//generated/api/v1:api",
+        "//generated/storage",
+        "//pkg/registries/types",
+        "//pkg/scanners",
+        "//pkg/scanners/clairify",
+        "//pkg/scanners/scannerv4",
+        "//pkg/scanners/types",
+        "//pkg/search",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":store",
+    visibility = ["//visibility:public"],
+)

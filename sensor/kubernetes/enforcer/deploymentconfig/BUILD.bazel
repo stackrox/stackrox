@@ -1,0 +1,21 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "deploymentconfig",
+    srcs = ["zero_replica.go"],
+    importpath = "github.com/stackrox/rox/sensor/kubernetes/enforcer/deploymentconfig",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//generated/internalapi/central",
+        "//pkg/retry",
+        "@com_github_openshift_client_go//apps/clientset/versioned",
+        "@io_k8s_api//extensions/v1beta1",
+        "@io_k8s_apimachinery//pkg/apis/meta/v1:meta",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":deploymentconfig",
+    visibility = ["//visibility:public"],
+)

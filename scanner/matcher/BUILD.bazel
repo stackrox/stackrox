@@ -1,0 +1,48 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "matcher",
+    srcs = ["matcher.go"],
+    importpath = "github.com/stackrox/rox/scanner/matcher",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//pkg/buildinfo",
+        "//pkg/features",
+        "//scanner/config",
+        "//scanner/datastore/postgres",
+        "//scanner/enricher/csaf",
+        "//scanner/enricher/fixedby",
+        "//scanner/enricher/nvd",
+        "//scanner/internal/httputil",
+        "//scanner/matcher/updater/vuln",
+        "//scanner/sbom",
+        "@com_github_jackc_pgx_v5//pgxpool",
+        "@com_github_quay_claircore//:claircore",
+        "@com_github_quay_claircore//alpine",
+        "@com_github_quay_claircore//aws",
+        "@com_github_quay_claircore//debian",
+        "@com_github_quay_claircore//enricher/epss",
+        "@com_github_quay_claircore//gobin",
+        "@com_github_quay_claircore//java",
+        "@com_github_quay_claircore//libvuln",
+        "@com_github_quay_claircore//libvuln/driver",
+        "@com_github_quay_claircore//matchers/registry",
+        "@com_github_quay_claircore//nodejs",
+        "@com_github_quay_claircore//oracle",
+        "@com_github_quay_claircore//photon",
+        "@com_github_quay_claircore//pkg/ctxlock/v2:ctxlock",
+        "@com_github_quay_claircore//python",
+        "@com_github_quay_claircore//rhel",
+        "@com_github_quay_claircore//rhel/rhcc",
+        "@com_github_quay_claircore//ruby",
+        "@com_github_quay_claircore//suse",
+        "@com_github_quay_claircore//ubuntu",
+        "@com_github_quay_zlog//:zlog",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":matcher",
+    visibility = ["//visibility:public"],
+)

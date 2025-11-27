@@ -1,0 +1,41 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "notifier",
+    srcs = [
+        "alert_set.go",
+        "loop.go",
+        "notifier_set.go",
+        "processor.go",
+        "util.go",
+    ],
+    importpath = "github.com/stackrox/rox/pkg/notifier",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//generated/api/v1:api",
+        "//generated/storage",
+        "//pkg/expiringcache",
+        "//pkg/logging",
+        "//pkg/notifiers",
+        "//pkg/sync",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":notifier",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "notifier_test",
+    srcs = ["notifier_set_test.go"],
+    embed = [":notifier"],
+    deps = [
+        "//generated/storage",
+        "//pkg/notifiers",
+        "//pkg/notifiers/mocks",
+        "@com_github_stretchr_testify//suite",
+        "@org_uber_go_mock//gomock",
+    ],
+)

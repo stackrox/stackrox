@@ -1,0 +1,40 @@
+# StackRox Bazel PoC - Simplified Build File
+# Focusing on Go binary builds to demonstrate caching
+
+load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library")
+
+# Simplified central binary for PoC
+go_library(
+    name = "central_lib",
+    srcs = ["central_main.go"],
+    importpath = "github.com/stackrox/rox/bazel_poc/central",
+    visibility = ["//visibility:private"],
+)
+
+go_binary(
+    name = "central",
+    embed = [":central_lib"],
+    visibility = ["//visibility:public"],
+)
+
+# Additional binary to show parallel builds
+go_library(
+    name = "migrator_lib",
+    srcs = ["migrator_main.go"],
+    importpath = "github.com/stackrox/rox/bazel_poc/migrator",
+    visibility = ["//visibility:private"],
+)
+
+go_binary(
+    name = "migrator",
+    embed = [":migrator_lib"],
+    visibility = ["//visibility:public"],
+)
+
+# Build all binaries
+alias(
+    name = "all",
+    actual = select({
+        "//conditions:default": ":central",
+    }),
+)

@@ -1,0 +1,28 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "transfer",
+    srcs = [
+        "progress_bar.go",
+        "transfer.go",
+        "watchdog.go",
+    ],
+    importpath = "github.com/stackrox/rox/roxctl/central/db/transfer",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//pkg/concurrency",
+        "//pkg/errox",
+        "//pkg/timestamp",
+        "//roxctl/common",
+        "@com_github_pkg_errors//:errors",
+        "@com_github_vbauerster_mpb_v4//:mpb",
+        "@com_github_vbauerster_mpb_v4//decor",
+        "@org_golang_x_term//:term",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":transfer",
+    visibility = ["//visibility:public"],
+)

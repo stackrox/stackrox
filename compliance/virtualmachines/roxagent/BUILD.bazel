@@ -1,0 +1,18 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library")
+
+go_library(
+    name = "roxagent_lib",
+    srcs = ["main.go"],
+    importpath = "github.com/stackrox/rox/compliance/virtualmachines/roxagent",
+    visibility = ["//visibility:private"],
+    deps = [
+        "//compliance/virtualmachines/roxagent/cmd",
+        "//pkg/logging",
+    ],
+)
+
+go_binary(
+    name = "roxagent",
+    embed = [":roxagent_lib"],
+    visibility = ["//visibility:public"],
+)

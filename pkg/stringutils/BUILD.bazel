@@ -1,0 +1,48 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "stringutils",
+    srcs = [
+        "builder_wrapper.go",
+        "consume.go",
+        "default.go",
+        "empty.go",
+        "join.go",
+        "longest_common_prefix.go",
+        "match.go",
+        "normalize.go",
+        "prefix.go",
+        "split.go",
+        "suffix.go",
+        "truncate.go",
+        "uppercaseacronyms.go",
+        "whitespace.go",
+        "wrap.go",
+    ],
+    importpath = "github.com/stackrox/rox/pkg/stringutils",
+    visibility = ["//visibility:public"],
+    deps = ["@com_github_mitchellh_go_wordwrap//:go-wordwrap"],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":stringutils",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "stringutils_test",
+    srcs = [
+        "consume_test.go",
+        "default_test.go",
+        "join_test.go",
+        "longest_common_prefix_test.go",
+        "normalize_test.go",
+        "prefix_test.go",
+        "split_test.go",
+        "truncate_test.go",
+        "whitespace_test.go",
+    ],
+    embed = [":stringutils"],
+    deps = ["@com_github_stretchr_testify//assert"],
+)

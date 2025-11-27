@@ -1,0 +1,17 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "reflectutils",
+    srcs = [
+        "isnil.go",
+        "types.go",
+    ],
+    importpath = "github.com/stackrox/rox/pkg/reflectutils",
+    visibility = ["//visibility:public"],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":reflectutils",
+    visibility = ["//visibility:public"],
+)

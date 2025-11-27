@@ -1,0 +1,68 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "m2m",
+    srcs = [
+        "claims.go",
+        "exchanger.go",
+        "id_token.go",
+        "kube_service_account.go",
+        "provider.go",
+        "role_mapper.go",
+        "set.go",
+        "verifier.go",
+    ],
+    importpath = "github.com/stackrox/rox/central/auth/m2m",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//central/role/datastore",
+        "//generated/storage",
+        "//pkg/auth",
+        "//pkg/auth/authproviders",
+        "//pkg/auth/permissions",
+        "//pkg/auth/tokens",
+        "//pkg/auth/user",
+        "//pkg/errox",
+        "//pkg/grpc/authn",
+        "//pkg/httputil/proxy",
+        "//pkg/jwt",
+        "//pkg/logging",
+        "//pkg/sac",
+        "//pkg/sac/resources",
+        "//pkg/set",
+        "//pkg/stringutils",
+        "//pkg/sync",
+        "//pkg/utils",
+        "@com_github_coreos_go_oidc_v3//oidc",
+        "@com_github_go_jose_go_jose_v4//jwt",
+        "@com_github_golang_jwt_jwt_v4//:jwt",
+        "@com_github_pkg_errors//:errors",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":m2m",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "m2m_test",
+    srcs = [
+        "claims_test.go",
+        "exchanger_test.go",
+        "id_token_test.go",
+        "kube_service_account_test.go",
+        "role_mapper_test.go",
+    ],
+    embed = [":m2m"],
+    deps = [
+        "//central/role/datastore/mocks",
+        "//generated/storage",
+        "//pkg/auth/permissions",
+        "//pkg/auth/tokens",
+        "//pkg/grpc/authn",
+        "@com_github_stretchr_testify//assert",
+        "@org_uber_go_mock//gomock",
+    ],
+)

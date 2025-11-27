@@ -1,0 +1,38 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "tlscheckcache",
+    srcs = [
+        "tlscheckcache.go",
+        "tlscheckcache_metrics.go",
+    ],
+    importpath = "github.com/stackrox/rox/pkg/tlscheckcache",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//pkg/expiringcache",
+        "//pkg/metrics",
+        "//pkg/sync",
+        "//pkg/tlscheck",
+        "//pkg/utils",
+        "@com_github_pkg_errors//:errors",
+        "@com_github_prometheus_client_golang//prometheus",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":tlscheckcache",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "tlscheckcache_test",
+    srcs = ["tlscheckcache_test.go"],
+    embed = [":tlscheckcache"],
+    deps = [
+        "//pkg/sync",
+        "@com_github_pkg_errors//:errors",
+        "@com_github_prometheus_client_golang//prometheus/testutil",
+        "@com_github_stretchr_testify//assert",
+    ],
+)

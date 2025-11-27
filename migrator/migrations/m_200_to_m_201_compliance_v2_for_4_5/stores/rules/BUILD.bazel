@@ -1,0 +1,25 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "rules",
+    srcs = ["store.go"],
+    importpath = "github.com/stackrox/rox/migrator/migrations/m_200_to_m_201_compliance_v2_for_4_5/stores/rules",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//generated/storage",
+        "//migrator/migrations/m_200_to_m_201_compliance_v2_for_4_5/schema/new",
+        "//pkg/logging",
+        "//pkg/metrics",
+        "//pkg/postgres",
+        "//pkg/postgres/pgutils",
+        "//pkg/sac/resources",
+        "//pkg/search/postgres",
+        "@com_github_jackc_pgx_v5//:pgx",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":rules",
+    visibility = ["//visibility:public"],
+)

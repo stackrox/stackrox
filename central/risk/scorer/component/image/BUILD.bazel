@@ -1,0 +1,34 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "image",
+    srcs = ["scorer.go"],
+    importpath = "github.com/stackrox/rox/central/risk/scorer/component/image",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//central/risk/multipliers/component/image",
+        "//central/risk/scorer/component",
+        "//generated/storage",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":image",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "image_test",
+    srcs = ["scorer_test.go"],
+    embed = [":image"],
+    deps = [
+        "//central/risk/multipliers/component/image",
+        "//central/risk/scorer",
+        "//generated/storage",
+        "//pkg/protoassert",
+        "//pkg/scancomponent",
+        "@com_github_stretchr_testify//assert",
+        "@org_uber_go_mock//gomock",
+    ],
+)

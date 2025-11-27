@@ -1,0 +1,15 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "loghelper",
+    srcs = ["log.go"],
+    importpath = "github.com/stackrox/rox/migrator/migrations/loghelper",
+    visibility = ["//visibility:public"],
+    deps = ["//migrator/log"],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":loghelper",
+    visibility = ["//visibility:public"],
+)

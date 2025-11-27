@@ -1,0 +1,22 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "scancomponent",
+    srcs = [
+        "component_id.go",
+        "scan_component.go",
+    ],
+    importpath = "github.com/stackrox/rox/pkg/scancomponent",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//generated/storage",
+        "//pkg/cvss",
+        "//pkg/search/postgres",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":scancomponent",
+    visibility = ["//visibility:public"],
+)

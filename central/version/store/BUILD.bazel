@@ -1,0 +1,23 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "store",
+    srcs = [
+        "store.go",
+        "store_impl.go",
+    ],
+    importpath = "github.com/stackrox/rox/central/version/store",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//central/version/postgres",
+        "//generated/storage",
+        "//pkg/postgres",
+        "//pkg/sac",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":store",
+    visibility = ["//visibility:public"],
+)

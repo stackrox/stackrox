@@ -1,0 +1,29 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "m_204_to_m_205_clusters_platform_type_and_k8_version",
+    srcs = [
+        "migration.go",
+        "migration_impl.go",
+    ],
+    importpath = "github.com/stackrox/rox/migrator/migrations/m_204_to_m_205_clusters_platform_type_and_k8_version",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//generated/storage",
+        "//migrator/migrations",
+        "//migrator/migrations/m_204_to_m_205_clusters_platform_type_and_k8_version/schema/new",
+        "//migrator/types",
+        "//pkg/logging",
+        "//pkg/postgres/pgutils",
+        "//pkg/sac",
+        "@com_github_pkg_errors//:errors",
+        "@io_gorm_gorm//:gorm",
+        "@io_gorm_gorm//clause",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":m_204_to_m_205_clusters_platform_type_and_k8_version",
+    visibility = ["//visibility:public"],
+)

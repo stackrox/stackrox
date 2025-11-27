@@ -1,0 +1,14 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "scans",
+    srcs = ["scans.go"],
+    importpath = "github.com/stackrox/rox/pkg/scans",
+    visibility = ["//visibility:public"],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":scans",
+    visibility = ["//visibility:public"],
+)

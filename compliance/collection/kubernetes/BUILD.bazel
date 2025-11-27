@@ -1,0 +1,25 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "kubernetes",
+    srcs = ["kubelet.go"],
+    importpath = "github.com/stackrox/rox/compliance/collection/kubernetes",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//compliance/utils",
+        "//pkg/compliance/checks/standards",
+        "//pkg/pointers",
+        "//pkg/set",
+        "@com_github_pkg_errors//:errors",
+        "@io_k8s_apimachinery//pkg/apis/meta/v1:meta",
+        "@io_k8s_apimachinery//pkg/runtime/serializer",
+        "@io_k8s_client_go//kubernetes/scheme",
+        "@io_k8s_kubelet//config/v1beta1",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":kubernetes",
+    visibility = ["//visibility:public"],
+)

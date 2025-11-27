@@ -1,0 +1,45 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "google",
+    srcs = [
+        "google.go",
+        "transport.go",
+    ],
+    importpath = "github.com/stackrox/rox/pkg/registries/google",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//generated/storage",
+        "//pkg/cloudproviders/gcp/auth",
+        "//pkg/cloudproviders/gcp/utils",
+        "//pkg/concurrency",
+        "//pkg/errorhelpers",
+        "//pkg/logging",
+        "//pkg/registries/docker",
+        "//pkg/registries/types",
+        "//pkg/stringutils",
+        "//pkg/sync",
+        "@com_github_heroku_docker_registry_client//registry",
+        "@com_github_pkg_errors//:errors",
+        "@com_google_cloud_go_artifactregistry//apiv1",
+        "@org_golang_x_oauth2//:oauth2",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":google",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "google_test",
+    srcs = ["google_test.go"],
+    embed = [":google"],
+    deps = [
+        "//generated/storage",
+        "//pkg/registries/docker",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+    ],
+)

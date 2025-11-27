@@ -1,0 +1,29 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "postgresv1",
+    srcs = [
+        "format.go",
+        "postgres.go",
+    ],
+    importpath = "github.com/stackrox/rox/central/globaldb/v2backuprestore/formats/postgresv1",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//central/globaldb/v2backuprestore/common",
+        "//central/globaldb/v2backuprestore/formats",
+        "//central/globaldb/v2backuprestore/restore",
+        "//pkg/backup",
+        "//pkg/env",
+        "//pkg/logging",
+        "//pkg/migrations",
+        "//pkg/postgres/pgadmin",
+        "//pkg/postgres/pgconfig",
+        "@com_github_pkg_errors//:errors",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":postgresv1",
+    visibility = ["//visibility:public"],
+)

@@ -1,0 +1,53 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "audit",
+    srcs = ["audit.go"],
+    importpath = "github.com/stackrox/rox/central/audit",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//generated/api/v1:api",
+        "//generated/storage",
+        "//pkg/audit",
+        "//pkg/env",
+        "//pkg/grpc/authn",
+        "//pkg/grpc/authz/interceptor",
+        "//pkg/grpc/requestinfo",
+        "//pkg/httputil",
+        "//pkg/notifier",
+        "//pkg/protocompat",
+        "//pkg/protoutils",
+        "//pkg/sac",
+        "//pkg/utils",
+        "@com_github_pkg_errors//:errors",
+        "@org_golang_google_grpc//:grpc",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":audit",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "audit_test",
+    srcs = ["audit_test.go"],
+    embed = [":audit"],
+    deps = [
+        "//generated/api/v1:api",
+        "//generated/storage",
+        "//pkg/grpc/authn",
+        "//pkg/grpc/authn/mocks",
+        "//pkg/grpc/authz/interceptor",
+        "//pkg/notifier/mocks",
+        "//pkg/protoassert",
+        "//pkg/sac",
+        "//pkg/sac/resources",
+        "//pkg/sync",
+        "@com_github_pkg_errors//:errors",
+        "@com_github_stretchr_testify//suite",
+        "@org_golang_google_grpc//:grpc",
+        "@org_uber_go_mock//gomock",
+    ],
+)

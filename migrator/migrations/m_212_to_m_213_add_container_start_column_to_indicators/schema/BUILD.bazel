@@ -1,0 +1,39 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "schema",
+    srcs = [
+        "clusters.go",
+        "convert_process_indicators.go",
+        "process_indicators.go",
+    ],
+    importpath = "github.com/stackrox/rox/migrator/migrations/m_212_to_m_213_add_container_start_column_to_indicators/schema",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//generated/api/v1:api",
+        "//generated/storage",
+        "//pkg/postgres",
+        "//pkg/postgres/walker",
+        "//pkg/protocompat",
+        "//pkg/sac/resources",
+        "//pkg/search",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":schema",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "schema_test",
+    srcs = ["convert_process_indicators_test.go"],
+    embed = [":schema"],
+    deps = [
+        "//generated/storage",
+        "//pkg/protoassert",
+        "//pkg/testutils",
+        "@com_github_stretchr_testify//assert",
+    ],
+)

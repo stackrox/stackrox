@@ -1,0 +1,59 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "plan",
+    srcs = [
+        "actions.go",
+        "normalize_object.go",
+        "order.go",
+        "plan.go",
+        "planner.go",
+        "preserve.go",
+        "unstructured_util.go",
+    ],
+    importpath = "github.com/stackrox/rox/sensor/upgrader/plan",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//pkg/k8sutil",
+        "//pkg/k8sutil/k8sobjects",
+        "//pkg/logging",
+        "//pkg/utils",
+        "//sensor/upgrader/common",
+        "//sensor/upgrader/upgradectx",
+        "@com_github_hashicorp_go_multierror//:go-multierror",
+        "@com_github_pkg_errors//:errors",
+        "@io_k8s_apimachinery//pkg/apis/meta/v1:meta",
+        "@io_k8s_apimachinery//pkg/apis/meta/v1/unstructured",
+        "@io_k8s_apimachinery//pkg/runtime",
+        "@io_k8s_apimachinery//pkg/runtime/schema",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":plan",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "plan_test",
+    srcs = [
+        "normalize_object_test.go",
+        "preserve_test.go",
+    ],
+    embed = [":plan"],
+    deps = [
+        "//pkg/k8sutil",
+        "//sensor/upgrader/common",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+        "@io_k8s_api//apps/v1:apps",
+        "@io_k8s_api//core/v1:core",
+        "@io_k8s_apimachinery//pkg/api/resource",
+        "@io_k8s_apimachinery//pkg/apis/meta/v1:meta",
+        "@io_k8s_apimachinery//pkg/apis/meta/v1/unstructured",
+        "@io_k8s_apimachinery//pkg/runtime",
+        "@io_k8s_apimachinery//pkg/runtime/schema",
+        "@io_k8s_client_go//kubernetes/scheme",
+    ],
+)

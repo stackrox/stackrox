@@ -1,0 +1,19 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "m2m",
+    srcs = ["m2m.go"],
+    importpath = "github.com/stackrox/rox/roxctl/central/m2m",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//roxctl/central/m2m/exchange",
+        "//roxctl/common/environment",
+        "@com_github_spf13_cobra//:cobra",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":m2m",
+    visibility = ["//visibility:public"],
+)

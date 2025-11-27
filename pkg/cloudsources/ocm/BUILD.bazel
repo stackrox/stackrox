@@ -1,0 +1,42 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "ocm",
+    srcs = ["client.go"],
+    importpath = "github.com/stackrox/rox/pkg/cloudsources/ocm",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//generated/storage",
+        "//pkg/administration/events/codes",
+        "//pkg/administration/events/option",
+        "//pkg/clientconn",
+        "//pkg/cloudsources/discoveredclusters",
+        "//pkg/cloudsources/opts",
+        "//pkg/logging",
+        "//pkg/set",
+        "//pkg/urlfmt",
+        "@com_github_openshift_online_ocm_sdk_go//:ocm-sdk-go",
+        "@com_github_openshift_online_ocm_sdk_go//accountsmgmt/v1:accountsmgmt",
+        "@com_github_pkg_errors//:errors",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":ocm",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "ocm_test",
+    srcs = ["client_test.go"],
+    data = glob(["testdata/**"]),
+    embed = [":ocm"],
+    deps = [
+        "//generated/storage",
+        "//pkg/cloudsources/discoveredclusters",
+        "@com_github_openshift_online_ocm_sdk_go//accountsmgmt/v1:accountsmgmt",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+    ],
+)

@@ -1,0 +1,25 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "selector",
+    srcs = ["selector.go"],
+    importpath = "github.com/stackrox/rox/sensor/common/selector",
+    visibility = ["//visibility:public"],
+    deps = ["@io_k8s_apimachinery//pkg/labels"],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":selector",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "selector_test",
+    srcs = ["selector_test.go"],
+    embed = [":selector"],
+    deps = [
+        "@com_github_stretchr_testify//suite",
+        "@io_k8s_apimachinery//pkg/labels",
+    ],
+)

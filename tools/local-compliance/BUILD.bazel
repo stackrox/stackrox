@@ -1,0 +1,30 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library")
+
+go_library(
+    name = "local-compliance_lib",
+    srcs = [
+        "load_generating_node_indexer.go",
+        "load_generating_node_scanner.go",
+        "main.go",
+    ],
+    importpath = "github.com/stackrox/rox/tools/local-compliance",
+    visibility = ["//visibility:private"],
+    deps = [
+        "//compliance",
+        "//compliance/node",
+        "//compliance/utils",
+        "//generated/internalapi/scanner/v4:scanner",
+        "//generated/internalapi/sensor",
+        "//generated/storage",
+        "//pkg/env",
+        "//pkg/logging",
+        "//pkg/protocompat",
+        "//pkg/retry/handler",
+    ],
+)
+
+go_binary(
+    name = "local-compliance",
+    embed = [":local-compliance_lib"],
+    visibility = ["//visibility:public"],
+)

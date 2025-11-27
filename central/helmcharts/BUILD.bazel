@@ -1,0 +1,29 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "helmcharts",
+    srcs = [
+        "service.go",
+        "service_impl.go",
+    ],
+    importpath = "github.com/stackrox/rox/central/helmcharts",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//image",
+        "//pkg/grpc",
+        "//pkg/grpc/authz/user",
+        "//pkg/grpc/routes",
+        "//pkg/helm/charts",
+        "//pkg/images/defaults",
+        "//pkg/zip",
+        "@com_github_grpc_ecosystem_grpc_gateway_v2//runtime",
+        "@com_github_pkg_errors//:errors",
+        "@org_golang_google_grpc//:grpc",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":helmcharts",
+    visibility = ["//visibility:public"],
+)

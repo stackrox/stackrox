@@ -1,0 +1,39 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "probeupload",
+    srcs = [
+        "analyze_manifest.go",
+        "names.go",
+        "server_handler.go",
+    ],
+    importpath = "github.com/stackrox/rox/pkg/probeupload",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//generated/api/v1:api",
+        "//pkg/concurrency",
+        "//pkg/errorhelpers",
+        "//pkg/logging",
+        "//pkg/utils",
+        "@com_github_pkg_errors//:errors",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":probeupload",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "probeupload_test",
+    srcs = [
+        "names_test.go",
+        "server_handler_test.go",
+    ],
+    embed = [":probeupload"],
+    deps = [
+        "@com_github_pkg_errors//:errors",
+        "@com_github_stretchr_testify//assert",
+    ],
+)

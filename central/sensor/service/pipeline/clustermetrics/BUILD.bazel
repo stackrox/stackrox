@@ -1,0 +1,45 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "clustermetrics",
+    srcs = ["pipeline.go"],
+    importpath = "github.com/stackrox/rox/central/sensor/service/pipeline/clustermetrics",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//central/administration/usage/datastore/securedunits",
+        "//central/cluster/datastore",
+        "//central/metrics",
+        "//central/metrics/telemetry",
+        "//central/sensor/service/common",
+        "//central/sensor/service/pipeline",
+        "//central/sensor/service/pipeline/reconciliation",
+        "//generated/internalapi/central",
+        "//generated/storage",
+        "//pkg/centralsensor",
+        "//pkg/logging",
+        "//pkg/sac",
+        "//pkg/sac/resources",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":clustermetrics",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "clustermetrics_test",
+    srcs = ["pipeline_test.go"],
+    embed = [":clustermetrics"],
+    deps = [
+        "//central/administration/usage/datastore/securedunits/mocks",
+        "//central/metrics/telemetry/mocks",
+        "//central/sensor/service/pipeline/clustermetrics/mocks",
+        "//generated/internalapi/central",
+        "//generated/storage",
+        "//pkg/fixtures",
+        "@com_github_stretchr_testify//suite",
+        "@org_uber_go_mock//gomock",
+    ],
+)

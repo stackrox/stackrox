@@ -1,0 +1,35 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "fileutils",
+    srcs = [
+        "copy.go",
+        "dir_empty.go",
+        "exists.go",
+        "size.go",
+        "sym_link.go",
+    ],
+    importpath = "github.com/stackrox/rox/pkg/fileutils",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//pkg/logging",
+        "//pkg/utils",
+        "@com_github_pkg_errors//:errors",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":fileutils",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "fileutils_test",
+    srcs = ["dir_empty_test.go"],
+    embed = [":fileutils"],
+    deps = [
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+    ],
+)
