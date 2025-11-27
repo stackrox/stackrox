@@ -172,7 +172,7 @@ func (r *Reconciler[T]) determineProgressingState(obj T) (platform.ConditionStat
 	// If Deployed condition is Unknown, helm is working
 	cond := obj.GetCondition(platform.ConditionDeployed)
 	if cond.Type == platform.ConditionDeployed && cond.Status != platform.StatusTrue {
-		return platform.StatusTrue, "Reconciling", "Helm reconciliation in progress"
+		return platform.StatusTrue, "Reconciling", "Reconciliation in progress"
 	}
 
 	// If ReleaseFailed is True, reconciliation failed but might retry
