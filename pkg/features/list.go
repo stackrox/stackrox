@@ -108,7 +108,7 @@ var (
 	KnownExploitedVulnerabilities = registerFeature("Display CISA Known Exploited Vulnerabilities (KEV) data", "ROX_CISA_KEV")
 
 	// SensitiveFileActivity enables monitoring of sensitive files.
-	SensitiveFileActivity = registerFeature("Enable sensitive file monitoring", "ROX_SENSITIVE_FILE_ACTIVITY")
+	SensitiveFileActivity = registerFeature("Enable sensitive file monitoring", "ROX_SENSITIVE_FILE_ACTIVITY", enabled)
 
 	// CVEFixTimestampCriteria enables the new CVE Fix timestamp criteria
 	CVEFixTimestampCriteria = registerFeature("Enable grace period criteria based on CVE fix timestamp", "ROX_CVE_FIX_TIMESTAMP")
