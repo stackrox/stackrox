@@ -599,7 +599,7 @@ func (w *WorkloadManager) initializePreexistingResources() {
 		templatePool := newVMTemplatePool(
 			w.workload.VirtualMachineWorkload.PoolSize,
 			defaultGuestOSPool,
-			defaultVSOCKBaseCID,
+			vmBaseVSOCKCID,
 		)
 
 		var vmResources []*vmResourcesToBeManaged
