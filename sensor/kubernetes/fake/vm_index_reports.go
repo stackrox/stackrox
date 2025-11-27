@@ -23,10 +23,10 @@ const (
 )
 
 type vmInfo struct {
-	id          string
-	vsockCID    uint32
-	name        string
-	templateIdx int
+	id                       string
+	vsockCID                 uint32
+	name                     string
+	currentReportTemplateIdx uint32
 }
 
 type reportTemplate struct {
@@ -87,27 +87,23 @@ func newReportGenerator(numPackages, numRepos int) *reportGenerator {
 	}
 }
 
-func (g *reportGenerator) nextTemplate(idx int) reportTemplate {
+func (g *reportGenerator) nextTemplate(currentTemplateIdx uint32) reportTemplate {
 	if len(g.templates) == 0 {
 		return reportTemplate{
 			packages:     make(map[string]*v4.Package),
 			repositories: make(map[string]*v4.Repository),
 		}
 	}
-	return g.templates[idx%len(g.templates)]
+	return g.templates[currentTemplateIdx%uint32(len(g.templates))]
 }
 
 // manageVMIndexReportsWithPopulation waits for the store to be set, populates fake VMs, then starts report generation
 func (w *WorkloadManager) manageVMIndexReportsWithPopulation(ctx context.Context) {
 	defer w.wg.Done()
-	if w.workload.VMIndexReportWorkload.NumVMs == 0 ||
-		w.workload.VMIndexReportWorkload.ReportInterval == 0 {
-		return
-	}
 
 	// Wait for all VM prerequisites (handler, store, and central reachability)
-	if !w.vmReady.Wait(ctx) {
-		log.Infof("VM report manager exiting before start: context cancelled")
+	if !w.vmPrerequisitesReady.Wait(ctx) {
+		log.Error("Prerequisites not ready for VM index report WorkloadManager")
 		return
 	}
 
@@ -115,41 +111,29 @@ func (w *WorkloadManager) manageVMIndexReportsWithPopulation(ctx context.Context
 	if !centralcaps.Has(centralsensor.VirtualMachinesSupported) {
 		log.Warnf("Central is reachable but VirtualMachinesSupported capability not set. VM reports may fail.")
 	}
-	log.Infof("All VM prerequisites ready (handler, store, central), waiting for listener restart to complete before populating fake VMs")
+	log.Infof("All VM prerequisites ready (handler, store, online mode), waiting for listener restart to complete before populating fake VMs")
 
-	// CRITICAL RACE CONDITION FIX:
-	// When SensorComponentEventCentralReachable is received, the event pipeline (in pipeline_impl.go:Notify)
-	// synchronously stops and restarts the listener. This restart sequence:
-	//   1. Calls listener.Stop() which triggers CleanupStores() - clearing ALL stores including VM store
-	//   2. Creates a new context
-	//   3. Calls listener.StartWithContext() to restart the listener
-	//
-	// The WorkloadManager receives the same SensorComponentEventCentralReachable event and immediately
-	// starts populating VMs. This creates a race condition:
-	//   - If populateFakeVMs() runs BEFORE listener.Stop() → VMs get added, then immediately cleared
-	//   - If populateFakeVMs() runs AFTER listener.Stop() but BEFORE listener.StartWithContext() → VMs get cleared
-	//   - If populateFakeVMs() runs AFTER listener.StartWithContext() → VMs persist correctly
-	//
-	// The listener restart happens synchronously in the event pipeline's Notify() handler, so a short
-	// delay ensures the restart sequence completes before we populate VMs. The 2s delay is chosen
-	// to be longer than typical listener restart time (~100-200ms) to provide a safety margin. This
-	// is acceptable for fake workload code (not production).
+	// RACE CONDITION FIX (only impacts local-sensor and integration tests in practice):
+	// There is a race condition between the WorkloadManager and the event pipeline when traversing to Online mode.
+	// If the WorkloadManager is faster than the event pipeline, it will populate the VM store before the listener is restarted.
+	// When the listener restarts, it will clear the VM store. Thus, we must be sure that we wait with populating VMs until the listener restart is complete.
+	// The 2s delay is chosen to be longer than typical listener restart time (~100-200ms) to provide a safety margin.
+	// This is acceptable for fake workload code (but not the production code).
 	const listenerRestartDelay = 2 * time.Second
 	select {
 	case <-ctx.Done():
 		return
 	case <-time.After(listenerRestartDelay):
-		// Listener restart should be complete now
+		// Wait for listener restart (eventPipeline.Notify()) to complete.
 	}
 
 	log.Infof("Populating fake VMs after listener restart delay")
 
 	// Populate fake VMs now that Central is reachable and listener restart has completed
-	// populateFakeVMs is synchronous and includes verification, so VMs should be available immediately after it returns
+	// populateFakeVMs is synchronous, so VMs should be available immediately after it returns.
 	w.populateFakeVMs()
 
-	// Quick verification that at least the first VM is present
-	// This is a sanity check - populateFakeVMs should have already verified the VMs
+	// A sanity check verification that at least one VM is present in the store.
 	firstVsockCID := vmBaseVSOCKCID
 	if w.vmStore.GetFromCID(firstVsockCID) == nil {
 		log.Errorf("VM store population failed: first VM (vsockCID %d) not found after populateFakeVMs returned. Store=%p.", firstVsockCID, w.vmStore)
@@ -162,8 +146,6 @@ func (w *WorkloadManager) manageVMIndexReportsWithPopulation(ctx context.Context
 		w.workload.VMIndexReportWorkload.NumPackages,
 		w.workload.VMIndexReportWorkload.NumRepositories,
 	)
-
-	// Now start the actual report generation loop
 	w.manageVMIndexReports(ctx)
 }
 
@@ -236,8 +218,8 @@ func (w *WorkloadManager) sendVMIndexReport(ctx context.Context, vm *vmInfo) boo
 }
 
 func (w *WorkloadManager) generateFakeIndexReport(vm *vmInfo) *v1.IndexReport {
-	template := w.vmReportGen.nextTemplate(vm.templateIdx)
-	vm.templateIdx++
+	template := w.vmReportGen.nextTemplate(vm.currentReportTemplateIdx)
+	vm.currentReportTemplateIdx = (vm.currentReportTemplateIdx + 1) % uint32(len(w.vmReportGen.templates))
 
 	return &v1.IndexReport{
 		VsockCid: fmt.Sprintf("%d", vm.vsockCID),
