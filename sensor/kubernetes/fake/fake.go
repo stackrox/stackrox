@@ -157,7 +157,7 @@ type WorkloadManager struct {
 	vmReportGen          *reportGenerator
 
 	// VM readiness coordinator
-	vmReady *vmReadiness
+	vmPrerequisitesReady *vmReadiness
 
 	// shutdown coordination
 	shutdownCtx    context.Context
@@ -268,19 +268,19 @@ func NewWorkloadManager(config *WorkloadManagerConfig) *WorkloadManager {
 	}
 	shutdownCtx, shutdownCancel := context.WithCancel(context.Background())
 	mgr := &WorkloadManager{
-		db:                  db,
-		workload:            &workload,
-		originatorCache:     NewOriginatorCache(),
-		labelsPool:          config.labelsPool,
-		endpointPool:        config.endpointPool,
-		ipPool:              config.ipPool,
-		externalIpPool:      config.externalIpPool,
-		containerPool:       config.containerPool,
-		processPool:         config.processPool,
-		servicesInitialized: concurrency.NewSignal(),
-		vmReady:             newVMReadiness(),
-		shutdownCtx:         shutdownCtx,
-		shutdownCancel:      shutdownCancel,
+		db:                   db,
+		workload:             &workload,
+		originatorCache:      NewOriginatorCache(),
+		labelsPool:           config.labelsPool,
+		endpointPool:         config.endpointPool,
+		ipPool:               config.ipPool,
+		externalIpPool:       config.externalIpPool,
+		containerPool:        config.containerPool,
+		processPool:          config.processPool,
+		servicesInitialized:  concurrency.NewSignal(),
+		vmPrerequisitesReady: newVMReadiness(),
+		shutdownCtx:          shutdownCtx,
+		shutdownCancel:       shutdownCancel,
 	}
 	mgr.initializePreexistingResources()
 
@@ -315,7 +315,7 @@ func (w *WorkloadManager) SetSignalHandlers(processPipeline signal.Pipeline, net
 // SetVMIndexReportHandler sets the handler that will accept VM index reports
 func (w *WorkloadManager) SetVMIndexReportHandler(handler index.Handler) {
 	w.vmIndexReportHandler = handler
-	w.vmReady.signalHandlerReady()
+	w.vmPrerequisitesReady.signalHandlerReady()
 }
 
 // SetVMStore sets the VirtualMachineStore
@@ -323,7 +323,7 @@ func (w *WorkloadManager) SetVMIndexReportHandler(handler index.Handler) {
 func (w *WorkloadManager) SetVMStore(store *vmStore.VirtualMachineStore) {
 	log.Debugf("SetVMStore called: store=%p, workload.NumVMs=%d", store, w.workload.VMIndexReportWorkload.NumVMs)
 	w.vmStore = store
-	w.vmReady.signalStoreReady()
+	w.vmPrerequisitesReady.signalStoreReady()
 	log.Debugf("SetVMStore completed (VMs will be populated by manageVMIndexReportsWithPopulation)")
 }
 
@@ -332,34 +332,26 @@ func (w *WorkloadManager) Notify(e common.SensorComponentEvent) {
 	switch e {
 	case common.SensorComponentEventCentralReachable:
 		log.Debugf("WorkloadManager: Central is reachable, signaling VM report generation can start")
-		w.vmReady.signalCentralReady()
+		w.vmPrerequisitesReady.signalCentralReady()
 	case common.SensorComponentEventOfflineMode:
 		log.Debugf("WorkloadManager: Central went offline, resetting reachability signal")
-		w.vmReady.resetCentralReady()
+		w.vmPrerequisitesReady.resetCentralReady()
 	}
 }
 
-// populateFakeVMs creates and verifies fake VMs in the store
+// populateFakeVMs creates and populates the internal in-memory store with fake VMs.
 func (w *WorkloadManager) populateFakeVMs() {
-	if w.vmStore == nil || w.workload.VMIndexReportWorkload.NumVMs == 0 {
+	numVMs := w.workload.VMIndexReportWorkload.NumVMs
+
+	if w.vmStore == nil || numVMs == 0 {
 		log.Warnf("populateFakeVMs: nothing to do (store=%p, numVMs=%d)",
-			w.vmStore, w.workload.VMIndexReportWorkload.NumVMs)
+			w.vmStore, numVMs)
 		return
 	}
 
-	numVMs := w.workload.VMIndexReportWorkload.NumVMs
 	log.Infof("Populating VirtualMachineStore with %d fake VMs", numVMs)
-
-	cids := w.createAndVerifyFakeVMs(numVMs)
-	w.reverifyAfterDelayOnce(cids)
-
-	log.Infof("Successfully populated VirtualMachineStore with %d fake VMs", len(cids))
-}
-
-// createAndVerifyFakeVMs combines AddOrUpdate + immediate verify
-func (w *WorkloadManager) createAndVerifyFakeVMs(num int) []uint32 {
-	cids := make([]uint32, 0, num)
-	for i := 0; i < num; i++ {
+	numAdded := 0
+	for i := range numVMs {
 		cid := vmBaseVSOCKCID + uint32(i)
 		vsock := new(uint32)
 		*vsock = cid
@@ -376,45 +368,9 @@ func (w *WorkloadManager) createAndVerifyFakeVMs(num int) []uint32 {
 			log.Errorf("failed to AddOrUpdate VM %s", info.ID)
 			continue
 		}
-		if w.vmStore.GetFromCID(cid) == nil {
-			log.Errorf("VM %s (CID %d) not found immediately after AddOrUpdate", info.ID, cid)
-			continue
-		}
-		cids = append(cids, cid)
+		numAdded++
 	}
-	return cids
-}
-
-// reverifyAfterDelayOnce performs optional post-delay verification with fixed internal constants
-func (w *WorkloadManager) reverifyAfterDelayOnce(cids []uint32) {
-	if len(cids) == 0 {
-		return
-	}
-
-	const (
-		reverifyDelay = 200 * time.Millisecond
-		maxCheckByCID = 5
-		maxCheckByID  = 3
-	)
-
-	time.Sleep(reverifyDelay)
-
-	for i, cid := range cids {
-		if i >= maxCheckByCID {
-			break
-		}
-		if vm := w.vmStore.GetFromCID(cid); vm == nil {
-			log.Errorf("post-delay verify missing CID %d", cid)
-		}
-	}
-
-	for i := 0; i < maxCheckByID && i < len(cids); i++ {
-		id := virtualmachine.VMID(fmt.Sprintf("vm-%d", i))
-		vm := w.vmStore.Get(id)
-		if vm == nil {
-			log.Errorf("post-delay missing ID %s", id)
-		}
-	}
+	log.Infof("Successfully populated VirtualMachineStore with %d/%d fake VMs", numAdded, numVMs)
 }
 
 // Stop gracefully stops all background goroutines managed by WorkloadManager.
