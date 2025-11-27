@@ -36,5 +36,7 @@ func ReadFromConn(conn net.Conn, maxSize int, timeout time.Duration) ([]byte, er
 		return nil, errors.Errorf("data size exceeds the limit (%d bytes, remote: %v)", maxSize, conn.RemoteAddr())
 	}
 
+	log.Debugf("Read %.2f MB from connection (remote: %v)", float64(len(data))/(1024*1024), conn.RemoteAddr())
+
 	return data, nil
 }
