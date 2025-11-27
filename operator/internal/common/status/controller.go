@@ -61,26 +61,28 @@ func (r *Reconciler[T]) runReconciliationFlow(ctx context.Context, log logr.Logg
 		return ctrlClient.IgnoreNotFound(err)
 	}
 
+	anyChanges := false
+
 	// Update condition "Progressing".
-	progressingChanged := r.updateProgressing(ctx, obj)
-	if progressingChanged {
-		progCond := obj.GetCondition(platform.ConditionProgressing)
-		if progCond != nil {
-			log.Info("Progressing condition updated", "status", progCond.Status, "reason", progCond.Reason)
-		}
+	updatedProgressingCond := r.updateProgressing(ctx, obj)
+	if updatedProgressingCond != nil {
+		log.Info("Progressing condition updated",
+			"status", updatedProgressingCond.Status,
+			"reason", updatedProgressingCond.Reason)
+		anyChanges = true
 	}
 
 	// Update condition "Available".
-	availableChanged := r.updateAvailable(ctx, obj)
-	if availableChanged {
-		availCond := obj.GetCondition(platform.ConditionAvailable)
-		if availCond != nil {
-			log.Info("Available condition updated", "status", availCond.Status, "reason", availCond.Reason)
-		}
+	updatedAvailableCond := r.updateAvailable(ctx, obj)
+	if updatedAvailableCond != nil {
+		log.Info("Available condition updated",
+			"status", updatedAvailableCond.Status,
+			"reason", updatedAvailableCond.Reason)
+		anyChanges = true
 	}
 
 	// If nothing changed, skip the status update.
-	if !(progressingChanged || availableChanged) {
+	if !anyChanges {
 		log.V(1).Info("No status changes detected, skipping update")
 		return nil
 	}
@@ -144,17 +146,23 @@ func (r *Reconciler[T]) SetupWithManager(mgr ctrl.Manager) error {
 }
 
 // updateProgressing updates the Progressing condition based on helm reconciliation state.
-// Returns true if the condition changed.
-func (r *Reconciler[T]) updateProgressing(_ context.Context, obj T) bool {
+// Returns nil if the condition is unchanged, otherwise returns the new condition.
+func (r *Reconciler[T]) updateProgressing(_ context.Context, obj T) *platform.StackRoxCondition {
 	prorgressingStatus, reason, message := r.determineProgressingState(obj)
 
-	return obj.SetCondition(platform.StackRoxCondition{
+	newCond := platform.StackRoxCondition{
 		Type:    platform.ConditionProgressing,
 		Status:  prorgressingStatus,
 		Reason:  reason,
 		Message: message,
 		// LastTransitionTime: metav1.Time{Time: time.Now()},
-	})
+	}
+
+	condChanged := obj.SetCondition(newCond)
+	if condChanged {
+		return &newCond
+	}
+	return nil
 }
 
 // determineProgressingState infers if Helm reconciliation is in progress.
@@ -190,7 +198,7 @@ func (r *Reconciler[T]) determineProgressingState(obj T) (platform.ConditionStat
 
 // updateAvailable updates the Available condition based on deployment readiness.
 // Returns true if the condition changed.
-func (r *Reconciler[T]) updateAvailable(ctx context.Context, obj T) bool {
+func (r *Reconciler[T]) updateAvailable(ctx context.Context, obj T) *platform.StackRoxCondition {
 	log := log.FromContext(ctx)
 
 	// List all deployments owned by the resource currently under reconciliation.
@@ -204,18 +212,24 @@ func (r *Reconciler[T]) updateAvailable(ctx context.Context, obj T) bool {
 	)
 	if err != nil {
 		log.Error(err, "Failed to list deployments")
-		return false
+		return nil
 	}
 
 	availableStatus, reason, message := determineAvailableState(deployments.Items)
 
-	return obj.SetCondition(platform.StackRoxCondition{
+	newCond := platform.StackRoxCondition{
 		Type:    platform.ConditionAvailable,
 		Status:  availableStatus,
 		Reason:  reason,
 		Message: message,
 		// LastTransitionTime: metav1.Time{Time: time.Now()},
-	})
+	}
+
+	condChanged := obj.SetCondition(newCond)
+	if condChanged {
+		return &newCond
+	}
+	return nil
 }
 
 // determineAvailableState checks if all deployments are available.
