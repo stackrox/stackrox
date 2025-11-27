@@ -6,6 +6,8 @@ import (
 	"reflect"
 	"strings"
 
+	"github.com/go-logr/logr"
+	platform "github.com/stackrox/rox/operator/api/v1alpha1"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -16,8 +18,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/source"
-	"github.com/go-logr/logr"
-	platform "github.com/stackrox/rox/operator/api/v1alpha1"
 )
 
 // Reconciler reconciles deployment status and Helm reconciliation state in the CR status.
@@ -25,16 +25,15 @@ import (
 // Progressing conditions.
 type Reconciler[T platform.ObjectForStatusController] struct {
 	ctrlClient.Client
-	name          string
-	lowercaseName string
+	name string
 }
 
 // New creates a new status reconciler.
 func New[T platform.ObjectForStatusController](c ctrlClient.Client, name string) *Reconciler[T] {
+	name = fmt.Sprintf("%s-status-controller", strings.ToLower(name))
 	return &Reconciler[T]{
-		Client:        c,
-		name:          name,
-		lowercaseName: strings.ToLower(name),
+		Client: c,
+		name:   name,
 	}
 }
 
@@ -42,7 +41,7 @@ func New[T platform.ObjectForStatusController](c ctrlClient.Client, name string)
 // It implements a retry mechanism for conflict errors using the standard Kubernetes retry utilities.
 func (r *Reconciler[T]) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	log := log.FromContext(ctx)
-	log = log.WithName("FOO")
+	log = log.WithName(r.name)
 	log.Info("Status reconciliation initiated")
 
 	err := retry.RetryOnConflict(retry.DefaultRetry, func() error {
@@ -103,8 +102,7 @@ func (r *Reconciler[T]) runReconciliationFlow(ctx context.Context, log logr.Logg
 // SetupWithManager sets up the controller with the Manager.
 func (r *Reconciler[T]) SetupWithManager(mgr ctrl.Manager) error {
 	// Create controller using low-level API to avoid extra logging fields
-	controllerName := fmt.Sprintf("%s-status-controller", r.lowercaseName)
-	c, err := controller.New(controllerName, mgr, controller.Options{
+	c, err := controller.New(r.name, mgr, controller.Options{
 		Reconciler: r,
 	})
 	if err != nil {
