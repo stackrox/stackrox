@@ -137,8 +137,8 @@ func (s *FakeService) startCentralStub(stream central.SensorService_CommunicateS
 func (s *FakeService) startInputIngestion(stream central.SensorService_CommunicateServer) {
 	s.ConnectionStarted.Wait()
 	for {
-		msg := new(central.MsgFromSensor)
-		err := stream.RecvMsg(msg)
+		var msg central.MsgFromSensor
+		err := stream.RecvMsg(&msg)
 		if err != nil {
 			if err == io.EOF {
 				break
@@ -154,7 +154,7 @@ func (s *FakeService) startInputIngestion(stream central.SensorService_Communica
 			go s.ingestMessageWithLock(msgCopy)
 			continue
 		}
-		go s.invokeMessageCallback(msg)
+		go s.invokeMessageCallback(&msg)
 	}
 
 }
