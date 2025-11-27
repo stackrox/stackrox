@@ -12,9 +12,6 @@ kind: TestAssert
 commands:
 # Test that Central auth reader rolebinding exists in kube-system.
 - command: retry-kubectl.sh get rolebinding rhacs-central-auth-reader-${NAMESPACE} -n kube-system
----
-apiVersion: kuttl.dev/v1beta1
-kind: TestAssert
 resourceRefs:
 - apiVersion: platform.stackrox.io/v1alpha1
   kind: Central
