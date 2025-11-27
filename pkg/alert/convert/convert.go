@@ -33,8 +33,6 @@ func AlertToListAlert(alert *storage.Alert) *storage.ListAlert {
 		populateListAlertEntityInfoForResource(listAlert, alert.GetResource())
 	} else if alert.GetNode() != nil {
 		populateListAlertEntityInfoForNode(listAlert, alert)
-	} else if alert.GetImage() != nil {
-		populateListAlertEntityInfoForImage(listAlert, alert)
 	}
 
 	return listAlert
@@ -88,17 +86,6 @@ func populateListAlertEntityInfoForNode(listAlert *storage.ListAlert, alert *sto
 	listAlert.CommonEntityInfo = &storage.ListAlert_CommonEntityInfo{
 		ClusterName: alert.GetClusterName(),
 		ClusterId:   alert.GetClusterId(),
-	}
-}
-
-func populateListAlertEntityInfoForImage(listAlert *storage.ListAlert, alert *storage.Alert) {
-	// Image alerts use top-level fields from the alert for scoping
-	listAlert.CommonEntityInfo = &storage.ListAlert_CommonEntityInfo{
-		ClusterName:  alert.GetClusterName(),
-		ClusterId:    alert.GetClusterId(),
-		Namespace:    alert.GetNamespace(),
-		NamespaceId:  alert.GetNamespaceId(),
-		ResourceType: storage.ListAlert_DEPLOYMENT,
 	}
 }
 

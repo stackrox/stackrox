@@ -574,7 +574,7 @@ var alertUnrestrictedSACObjectSearchTestCases = map[string]alertSACSearchResult{
 			testconsts.Cluster3: {
 				"": 1, // Node alert
 			},
-			fixtureconsts.Cluster1: {"stackrox": 1}, // Image alert
+			"": {"": 1},
 		},
 	},
 	"full read-write access should see all alerts": {
@@ -593,7 +593,7 @@ var alertUnrestrictedSACObjectSearchTestCases = map[string]alertSACSearchResult{
 			testconsts.Cluster3: {
 				"": 1, // Node alert
 			},
-			fixtureconsts.Cluster1: {"stackrox": 1}, // Image alert
+			"": {"": 1},
 		},
 	},
 }
@@ -795,10 +795,6 @@ func countSearchRawAlertsResultsPerClusterAndNamespace(results []*storage.Alert)
 			// Node alerts are cluster-scoped, use top-level fields
 			clusterID = result.GetClusterId()
 			namespace = result.GetNamespace() // Should be empty for node alerts
-		case *storage.Alert_Image:
-			// Image alerts have no cluster/namespace scope
-			clusterID = result.GetClusterId()
-			namespace = result.GetNamespace()
 		}
 		if _, clusterIDExists := resultDistribution[clusterID]; !clusterIDExists {
 			resultDistribution[clusterID] = make(map[string]int, 0)
