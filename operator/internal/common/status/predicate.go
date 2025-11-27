@@ -20,7 +20,7 @@ type SkipStatusControllerUpdates[T ctrlClient.Object] struct {
 }
 
 // Update implements predicate.TypedPredicate.
-// Returns true to allow the update event to trigger reconciliation, false to block it.
+// Returns true to allow the update event to trigger reconciliation, false to skip it.
 func (p SkipStatusControllerUpdates[T]) Update(e event.TypedUpdateEvent[T]) bool {
 	// Check for nil using reflection to handle the interface nil gotcha.
 	if reflectutils.IsNil(e.ObjectOld) || reflectutils.IsNil(e.ObjectNew) {
