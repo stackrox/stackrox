@@ -199,12 +199,12 @@ func (tracker *TrackerBase[Finding]) setConfiguration(config *Configuration) *Co
 }
 
 // track aggregates the fetched findings and updates the gauges.
-func (tracker *TrackerBase[Finding]) track(ctx context.Context, registry metrics.CustomRegistry, metrics MetricDescriptors, filters LabelFilters) error {
-	if len(metrics) == 0 {
+func (tracker *TrackerBase[Finding]) track(ctx context.Context, registry metrics.CustomRegistry, cfg *Configuration) error {
+	if len(cfg.metrics) == 0 {
 		return nil
 	}
-	aggregator := makeAggregator(metrics, filters, tracker.getters)
-	for finding, err := range tracker.generator(ctx, metrics) {
+	aggregator := makeAggregator(cfg.metrics, cfg.filters, tracker.getters)
+	for finding, err := range tracker.generator(ctx, cfg.metrics) {
 		if err != nil {
 			return err
 		}
@@ -244,7 +244,7 @@ func (tracker *TrackerBase[Finding]) Gather(ctx context.Context) {
 		return
 	}
 	begin := time.Now()
-	if err := tracker.track(ctx, gatherer.registry, cfg.metrics, cfg.filters); err != nil {
+	if err := tracker.track(ctx, gatherer.registry, cfg); err != nil {
 		log.Errorf("Failed to gather %s metrics: %v", tracker.description, err)
 	}
 	end := time.Now()

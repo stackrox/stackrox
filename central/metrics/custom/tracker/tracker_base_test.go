@@ -192,7 +192,7 @@ func TestTrackerBase_Track(t *testing.T) {
 	tracker.config = &Configuration{
 		metrics: makeTestMetricDescriptors(t),
 	}
-	assert.NoError(t, tracker.track(context.Background(), rf, tracker.config.metrics, tracker.config.filters))
+	assert.NoError(t, tracker.track(context.Background(), rf, tracker.config))
 
 	if assert.Len(t, result, 2) &&
 		assert.Contains(t, result, "test_TestTrackerBase_Track_metric1") &&
@@ -252,7 +252,7 @@ func TestTrackerBase_error(t *testing.T) {
 	tracker.config = &Configuration{
 		metrics: makeTestMetricDescriptors(t),
 	}
-	assert.ErrorIs(t, tracker.track(context.Background(), rf, tracker.config.metrics, tracker.config.filters),
+	assert.ErrorIs(t, tracker.track(context.Background(), rf, tracker.config),
 		errox.InvariantViolation)
 }
 
