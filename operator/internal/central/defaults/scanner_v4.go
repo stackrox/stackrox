@@ -45,7 +45,7 @@ func CentralScannerV4ComponentPolicy(logger logr.Logger, status *platform.Centra
 	// No or unexpected default set in the annotations.
 
 	if isNewInstallation(status) {
-		logger.Info("assuming new installation due to incomplete status.")
+		logger.Info("Assuming new installation due to incomplete status.")
 		return defaultForNewInstallations, true
 	}
 
