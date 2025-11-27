@@ -42,11 +42,11 @@ func (p SkipStatusControllerUpdates[T]) Update(e event.TypedUpdateEvent[T]) bool
 		return true
 	}
 
-	statusControllerConditionsUnchanged :=
-		!(conditionsChanged(objOldT, objNewT, platform.ConditionProgressing) ||
-			conditionsChanged(objOldT, objNewT, platform.ConditionAvailable))
+	statusControllerConditionsChanged :=
+		conditionsChanged(objOldT, objNewT, platform.ConditionProgressing) ||
+			conditionsChanged(objOldT, objNewT, platform.ConditionAvailable)
 
-	return statusControllerConditionsUnchanged
+	return !statusControllerConditionsChanged
 }
 
 // conditionsChanged returns true if the conditions are different.
