@@ -2,7 +2,6 @@ package store
 
 import (
 	"testing"
-	"unsafe"
 
 	"github.com/stackrox/rox/sensor/common/virtualmachine"
 	"github.com/stretchr/testify/assert"
@@ -321,7 +320,7 @@ func (s *storeSuite) Test_replaceVSOCKInfoNoLockCopiesIncomingPointer() {
 
 	s.Require().NotNil(storePtr, "replaceVSOCKInfoNoLock should always hand back a pointer owned by the store")
 	s.Equal(uint32(123), *storePtr, "store copy must preserve the original vsock value before caller mutates their pointer")
-	s.NotEqual(uintptr(unsafe.Pointer(&vsock)), uintptr(unsafe.Pointer(storePtr)), "store copy must not point to the informer-supplied pointer")
+	s.False(&vsock == storePtr, "store copy must not point to the informer-supplied pointer")
 
 	vsock = 456
 	s.Equal(uint32(123), *storePtr, "store-managed pointer should remain unchanged even if informer pointer is mutated")
