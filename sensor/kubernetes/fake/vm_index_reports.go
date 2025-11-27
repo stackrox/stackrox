@@ -73,6 +73,19 @@ func newReportGenerator(numPackages, numRepos int) *reportGenerator {
 				Kind:           "binary",
 				Arch:           "amd64",
 				RepositoryHint: repoHint,
+				Cpe:            "cpe:2.3:o:redhat:enterprise_linux:9:*:fastdatapath:*:*:*:*:*", // valid CPE to also load scanner V4 matcher.
+				PackageDb:      "sqlite:usr/share/rpm",
+				Source: &v4.Package{
+					Id:      pkgID,
+					Name:    fmt.Sprintf("package%d", i),
+					Version: fmt.Sprintf("1.%d.%d", i/10, i%10),
+					Kind:    "source",
+				},
+				NormalizedVersion: &v4.NormalizedVersion{
+					Kind: "rpm",
+					V:    []int32{1, 0, 0},
+				},
+				Module: fmt.Sprintf("module%d", i),
 			}
 		}
 
