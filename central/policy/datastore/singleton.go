@@ -2,6 +2,7 @@ package datastore
 
 import (
 	"context"
+	"strings"
 
 	clusterDS "github.com/stackrox/rox/central/cluster/datastore"
 	"github.com/stackrox/rox/central/globaldb"
@@ -32,7 +33,7 @@ func initialize() {
 	categoriesDatastore := categoriesDS.Singleton()
 
 	ad = New(storage, clusterDatastore, notifierDatastore, categoriesDatastore)
-	addDefaults(storage, categoriesDatastore)
+	addDefaults(storage, categoriesDatastore, ad)
 }
 
 // Singleton provides the interface for non-service external interaction.
@@ -44,16 +45,58 @@ func Singleton() DataStore {
 // addDefaults adds the default policies into the postgres table for policies.
 // TODO: ROX-11279: Data migration for postgres should take care of removing default policies in the bolt bucket named removed_default_policies
 // from the policies table in postgres
-func addDefaults(s policyStore.Store, categoriesDS categoriesDS.DataStore) {
+func addDefaults(s policyStore.Store, categoriesDS categoriesDS.DataStore, fullStore DataStore) {
+	// This is unrelated to default policies, but since we're already looping through all the policies here,
+	// this was a good place to add it.
+	duplicateCategories, err := categoriesDS.GetDuplicatePolicyCategories(workflowAdministrationCtx)
+	if err != nil {
+		panic(err)
+	}
+	lowerCategoryNameToProperName := make(map[string]string)
+	for _, category := range duplicateCategories {
+		if category.TrueCategory {
+			lowerCategoryNameToProperName[strings.ToLower(category.Name)] = category.Name
+		}
+	}
+	policiesToCheck := make([]*storage.Policy, 0)
+	toReupsert := make([]*storage.Policy, 0)
 	policyIDSet := set.NewStringSet()
-	err := s.Walk(workflowAdministrationCtx, func(p *storage.Policy) error {
+	err = s.Walk(workflowAdministrationCtx, func(p *storage.Policy) error {
 		policyIDSet.Add(p.GetId())
 		// Unrelated to adding/checking default policies, this was put here to prevent looping through all policies a second time
 		if p.Source == storage.PolicySource_DECLARATIVE {
 			metrics.IncrementTotalExternalPoliciesGauge()
 		}
+		policiesToCheck = append(policiesToCheck, p)
 		return nil
 	})
+	// Do this outside of the Walk because of DB connection leaks by doing nested DB ops while a connection is being used
+	for _, p := range policiesToCheck {
+		var categories []*storage.PolicyCategory
+		categories, err = categoriesDS.GetPolicyCategoriesForPolicy(workflowAdministrationCtx, p.GetId())
+		shouldReupsert := false
+		for _, category := range categories {
+			if correctCategory, found := lowerCategoryNameToProperName[strings.ToLower(category.GetName())]; found {
+				p.Categories = append(p.Categories, correctCategory)
+				shouldReupsert = true
+			} else {
+				p.Categories = append(p.Categories, category.GetName())
+			}
+		}
+		if shouldReupsert {
+			toReupsert = append(toReupsert, p)
+		}
+	}
+	if err != nil {
+		panic(err)
+	}
+	for _, policy := range toReupsert {
+		err = fullStore.UpdatePolicy(sac.WithAllAccess(context.Background()), policy)
+		if err != nil {
+			panic(err)
+		}
+	}
+	err = categoriesDS.CleanupCategories(sac.WithAllAccess(context.Background()))
 	if err != nil {
 		panic(err)
 	}
