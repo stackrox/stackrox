@@ -1,7 +1,7 @@
 package status
 
 import (
-	"sigs.k8s.io/controller-runtime/pkg/client"
+	ctrlClient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 
@@ -14,8 +14,8 @@ import (
 //
 // This can be instantiated with either:
 //   - A specific CR type (e.g., SkipStatusControllerUpdates[*Central]{}) for typed usage in controller.go.
-//   - client.Object (e.g., SkipStatusControllerUpdates[client.Object]{}) for untyped usage as predicate.Predicate in reconciler.go.
-type SkipStatusControllerUpdates[T client.Object] struct {
+//   - ctrlClient.Object (e.g., SkipStatusControllerUpdates[ctrlClient.Object]{}) for untyped usage as predicate.Predicate in reconciler.go.
+type SkipStatusControllerUpdates[T ctrlClient.Object] struct {
 	predicate.TypedFuncs[T]
 }
 
@@ -30,7 +30,7 @@ func (p SkipStatusControllerUpdates[T]) Update(e event.TypedUpdateEvent[T]) bool
 
 	// Type assert to ObjectForStatusController to access GetCondition method.
 	// This allows the same struct to work with both specific types (for controller.go)
-	// and client.Object (for reconciler.go as predicate.Predicate).
+	// and ctrlClient.Object (for reconciler.go as predicate.Predicate).
 	objOldT, ok := any(e.ObjectOld).(platform.ObjectForStatusController)
 	if !ok {
 		// Not an ObjectForStatusController, allow reconciliation.
