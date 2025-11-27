@@ -10,7 +10,7 @@ import (
 )
 
 // SkipStatusControllerUpdates filters events triggered by status controller updates to prevent unnecessary reconciliations.
-// It blocks reconciliation when status controller owned conditions (Available, Progressing) have changed.
+// It skips reconciliation when status controller owned conditions (Available, Progressing) have changed.
 //
 // This can be instantiated with either:
 //   - A specific CR type (e.g., SkipStatusControllerUpdates[*Central]{}) for typed usage in controller.go.
