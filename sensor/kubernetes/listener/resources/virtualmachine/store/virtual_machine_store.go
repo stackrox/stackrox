@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sync"
@@ -80,6 +81,13 @@ func (s *VirtualMachineStore) ClearState(id virtualmachine.VMID) {
 func (s *VirtualMachineStore) Cleanup() {
 	s.lock.Lock()
 	defer s.lock.Unlock()
+
+	// In test mode, preserve prepopulated test VMs in the vm-load-test namespace
+	if env.VirtualMachinesSensorTestMode.BooleanSetting() {
+		log.Debug("Skipping VM store cleanup in test mode to preserve prepopulated VMs")
+		return
+	}
+
 	clear(s.virtualMachines)
 	clear(s.namespaceToID)
 	clear(s.cidToID)

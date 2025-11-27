@@ -24,8 +24,8 @@ var (
 	// VirtualMachinesRelayTestMode bypasses vsock CID validation in the relay. Use only for load testing scenarios.
 	VirtualMachinesRelayTestMode = RegisterBooleanSetting("ROX_VM_RELAY_TEST_MODE", false)
 
-	// VirtualMachinesSensorTestMode bypasses VM store lookups in sensor for artificial load testing.
-	// When enabled, sensor will silently drop index reports for unknown VMs instead of logging errors.
+	// VirtualMachinesSensorTestMode enables test mode for artificial load testing in sensor.
+	// When enabled, sensor prepopulates the VM store with fake VMs during initialization.
 	VirtualMachinesSensorTestMode = RegisterBooleanSetting("ROX_VM_SENSOR_TEST_MODE", false)
 
 	// VirtualMachinesSensorTestVMCount configures the number of VMs to prepopulate in test mode.
