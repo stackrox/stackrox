@@ -18,9 +18,6 @@ collectors:
 - command: retry-kubectl.sh describe pod -n $NAMESPACE -l app=scanner
 - command: retry-kubectl.sh describe pod -n $NAMESPACE -l app=scanner-db
 timeout: 1500
----
-apiVersion: kuttl.dev/v1beta1
-kind: TestAssert
 resourceRefs:
 - apiVersion: platform.stackrox.io/v1alpha1
   kind: Central
