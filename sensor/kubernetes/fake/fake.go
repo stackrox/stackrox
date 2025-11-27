@@ -16,6 +16,7 @@ import (
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sync"
+	vmPkg "github.com/stackrox/rox/pkg/virtualmachine"
 	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/networkflow/manager"
 	"github.com/stackrox/rox/sensor/common/signal"
@@ -591,5 +592,28 @@ func (w *WorkloadManager) initializePreexistingResources() {
 		w.workload.VMIndexReportWorkload.ReportInterval > 0 {
 		w.wg.Add(1)
 		go w.manageVMIndexReportsWithPopulation(w.shutdownCtx)
+	}
+
+	// Start VirtualMachine/VirtualMachineInstance workload if configured
+	if w.workload.VirtualMachineWorkload.PoolSize > 0 {
+		templatePool := newVMTemplatePool(
+			w.workload.VirtualMachineWorkload.PoolSize,
+			defaultGuestOSPool,
+			defaultVSOCKBaseCID,
+		)
+
+		var vmResources []*vmResourcesToBeManaged
+		for i := 0; i < templatePool.size(); i++ {
+			resource := w.getVMResources(w.workload.VirtualMachineWorkload, i, templatePool)
+			if resource != nil {
+				vmResources = append(vmResources, resource)
+			}
+		}
+
+		// Fork management of VM/VMI resources
+		for _, resource := range vmResources {
+			w.wg.Add(1)
+			go w.manageVirtualMachine(w.shutdownCtx, resource)
+		}
 	}
 }
