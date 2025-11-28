@@ -182,7 +182,7 @@ func (ds *datastoreImpl) UpdateAlertBatch(ctx context.Context, alert *storage.Al
 			return
 		}
 
-		if !hasSameScope(getNSScopedObjectFromAlert(alert), getNSScopedObjectFromAlert(oldAlert)) {
+		if !hasSameScope(alert, oldAlert) {
 			c <- fmt.Errorf("cannot change the cluster or namespace of an existing alert %q", alert.GetId())
 			return
 		}
@@ -288,27 +288,19 @@ func (ds *datastoreImpl) PruneAlerts(ctx context.Context, ids ...string) error {
 }
 
 func sacKeyForAlert(alert *storage.Alert) []sac.ScopeKey {
-	scopedObj := getNSScopedObjectFromAlert(alert)
-	if scopedObj == nil {
-		return sac.GlobalScopeKey()
-	}
-	return sac.KeyForNSScopedObj(scopedObj)
-}
-
-func getNSScopedObjectFromAlert(alert *storage.Alert) sac.NamespaceScopedObject {
 	switch alert.GetEntity().(type) {
 	case *storage.Alert_Deployment_:
-		return alert.GetDeployment()
+		return sac.KeyForNSScopedObj(alert.GetDeployment())
 	case *storage.Alert_Resource_:
-		return alert.GetResource()
+		return sac.KeyForNSScopedObj(alert.GetResource())
 	case *storage.Alert_Image:
-		return nil // This is theoretically possible even though image doesn't have a ns/cluster
+		return sac.GlobalScopeKey() // This is theoretically possible even though image doesn't have a ns/cluster
 	case *storage.Alert_Node_:
-		return nil
+		return sac.ClusterScopeKeys(alert.GetClusterId())
 	default:
 		log.Errorf("UNEXPECTED: Alert Entity %s unknown", alert.GetEntity())
 	}
-	return nil
+	return sac.GlobalScopeKey()
 }
 
 func (ds *datastoreImpl) updateAlertNoLock(ctx context.Context, alerts ...*storage.Alert) error {
@@ -330,8 +322,18 @@ func (ds *datastoreImpl) updateAlertNoLock(ctx context.Context, alerts ...*stora
 	return ds.storage.UpsertMany(ctx, alerts)
 }
 
-func hasSameScope(o1, o2 sac.NamespaceScopedObject) bool {
-	return o1 != nil && o2 != nil && o1.GetClusterId() == o2.GetClusterId() && o1.GetNamespace() == o2.GetNamespace()
+func hasSameScope(alert1, alert2 *storage.Alert) bool {
+	if alert1.GetClusterId() != alert2.GetClusterId() {
+		return false
+	}
+
+	// For namespace-scoped entities, also check namespace
+	switch alert1.GetEntity().(type) {
+	case *storage.Alert_Deployment_, *storage.Alert_Resource_:
+		return alert1.GetNamespace() == alert2.GetNamespace()
+	}
+
+	return true
 }
 
 func (ds *datastoreImpl) WalkByQuery(ctx context.Context, q *v1.Query, fn func(alert *storage.Alert) error) error {
