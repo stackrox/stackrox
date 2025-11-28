@@ -1,0 +1,30 @@
+name: Tag more reviewers
+
+on:
+  pull_request:
+    types:
+    - review_requested
+
+jobs:
+  tag-konflux-maintainers:
+    # We have lots of PR traffic from MintMaker (acting as `red-hat-konflux[bot]`), and so it's unsustainable to go
+    # through these emails every day. Therefore, the notifications are disabled for `konflux-maintainers-no-email`
+    # team that's set as owner in CODEOWNERS for the Konflux stuff.
+    # At the same time, we want to be notified when humans, not the bot, request reviews (which happens automatically
+    # again through CODEOWNERS) for the Konflux-related files. This job invites `konflux-maintainers` team for review
+    # for such cases.
+    if: |
+      github.event.requested_team.name == 'konflux-maintainers-no-email' &&
+      github.event.pull_request.user.login != 'red-hat-konflux[bot]'
+    env:
+      GH_TOKEN: ${{ secrets.RHACS_BOT_GITHUB_TOKEN }}
+    runs-on: ubuntu-latest
+    steps:
+    - name: Tag Konflux Maintainers for review
+      run: |
+        exec gh api \
+          --method POST \
+          -H "Accept: application/vnd.github+json" \
+          -H "X-GitHub-Api-Version: 2022-11-28" \
+          "/repos/${{ github.repository }}/pulls/${{ github.event.pull_request.number }}/requested_reviewers" \
+          --input - <<< '{ "team_reviewers": [ "konflux-maintainers" ] }'
