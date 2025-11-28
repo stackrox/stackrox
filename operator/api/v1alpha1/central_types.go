@@ -651,6 +651,10 @@ type CentralStatus struct {
 	ProductVersion string `json:"productVersion,omitempty"`
 	//+operator-sdk:csv:customresourcedefinitions:type=status,order=2
 	Central *CentralComponentStatus `json:"central,omitempty"`
+
+	// ObservedGeneration is the generation most recently observed by the controller.
+	//+operator-sdk:csv:customresourcedefinitions:type=status,order=4
+	ObservedGeneration int64 `json:"observedGeneration,omitempty"`
 }
 
 // AdminPasswordStatus shows status related to the admin password.
@@ -676,6 +680,8 @@ type CentralComponentStatus struct {
 //+kubebuilder:printcolumn:name="Version",type=string,JSONPath=`.status.productVersion`
 //+kubebuilder:printcolumn:name="AdminPassword",type=string,JSONPath=`.status.central.adminPassword.adminPasswordSecretReference`
 //+kubebuilder:printcolumn:name="Message",type=string,JSONPath=`.status.conditions[?(@.type=="Deployed")].message`
+//+kubebuilder:printcolumn:name="Progressing",type=string,JSONPath=`.status.conditions[?(@.type=="Progressing")].status`
+//+kubebuilder:printcolumn:name="Available",type=string,JSONPath=`.status.conditions[?(@.type=="Available")].status`
 //+genclient
 
 // Central is the configuration template for the central services. This includes the API server, persistent storage,
@@ -689,6 +695,28 @@ type Central struct {
 
 	// This field will never be serialized, it is used for attaching defaulting decisions to a Central struct during reconciliation.
 	Defaults CentralSpec `json:"-"`
+}
+
+// GetCondition returns a specific condition by type, or nil if not found.
+func (c *Central) GetCondition(condType ConditionType) *StackRoxCondition {
+	return GetCondition(c.Status.Conditions, condType)
+}
+
+// SetCondition updates or adds a condition. Returns true if the condition changed.
+func (c *Central) SetCondition(updatedCond StackRoxCondition) bool {
+	var updated bool
+	c.Status.Conditions, updated = UpdateCondition(c.Status.Conditions, updatedCond)
+	return updated
+}
+
+// GetGeneration returns the metadata.generation of the Central resource.
+func (c *Central) GetGeneration() int64 {
+	return c.ObjectMeta.GetGeneration()
+}
+
+// GetObservedGeneration returns the observedGeneration of the Central status sub-resource.
+func (c *Central) GetObservedGeneration() int64 {
+	return c.Status.ObservedGeneration
 }
 
 //+kubebuilder:object:root=true

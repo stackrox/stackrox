@@ -6,6 +6,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/utils/pointer"
+	ctrlClient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 // MiscSpec defines miscellaneous settings for custom resources.
@@ -76,6 +77,10 @@ const (
 	ConditionDeployed       ConditionType = "Deployed"
 	ConditionReleaseFailed  ConditionType = "ReleaseFailed"
 	ConditionIrreconcilable ConditionType = "Irreconcilable"
+
+	// These are specifically owned by the status controllers.
+	ConditionProgressing ConditionType = "Progressing"
+	ConditionAvailable   ConditionType = "Available"
 
 	StatusTrue    ConditionStatus = "True"
 	StatusFalse   ConditionStatus = "False"
@@ -354,4 +359,42 @@ type GlobalNetworkSpec struct {
 	// The default is: Enabled.
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=1,displayName="Network Policies"
 	Policies *NetworkPolicies `json:"policies,omitempty"`
+}
+
+// +kubebuilder:object:generate=false
+type ObjectForStatusController interface {
+	ctrlClient.Object
+	GetCondition(condType ConditionType) *StackRoxCondition
+	SetCondition(StackRoxCondition) bool
+	GetGeneration() int64
+	GetObservedGeneration() int64
+}
+
+// GetCondition returns a specific condition by type, or nil if not found.
+func GetCondition(conditions []StackRoxCondition, condType ConditionType) *StackRoxCondition {
+	for i := range conditions {
+		if conditions[i].Type == condType {
+			return &conditions[i]
+		}
+	}
+	return nil
+}
+
+// UpdateCondition updates or adds a condition. Returns true if the condition changed.
+func UpdateCondition(conditions []StackRoxCondition, updatedCond StackRoxCondition) ([]StackRoxCondition, bool) {
+	for i, cond := range conditions {
+		if cond.Type == updatedCond.Type {
+			// Check if update is needed.
+			if cond.Status == updatedCond.Status &&
+				cond.Reason == updatedCond.Reason &&
+				cond.Message == updatedCond.Message {
+				return conditions, false
+			}
+			// Update existing condition.
+			conditions[i] = updatedCond
+			return conditions, true
+		}
+	}
+	// Condition doesn't exist, add it.
+	return append(conditions, updatedCond), true
 }
