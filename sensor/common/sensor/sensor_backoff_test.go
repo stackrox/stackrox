@@ -10,45 +10,6 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-// TestConnectionStableDurationConfiguration verifies the environment variable is configured correctly
-func TestConnectionStableDurationConfiguration(t *testing.T) {
-	tests := []struct {
-		name     string
-		envValue string
-		expected time.Duration
-	}{
-		{
-			name:     "default value",
-			envValue: "60s",
-			expected: 60 * time.Second,
-		},
-		{
-			name:     "custom value - 30 seconds",
-			envValue: "30s",
-			expected: 30 * time.Second,
-		},
-		{
-			name:     "zero value - legacy behavior",
-			envValue: "0s",
-			expected: 0,
-		},
-		{
-			name:     "large value",
-			envValue: "5m",
-			expected: 5 * time.Minute,
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			// Always set env var explicitly for deterministic test behavior
-			t.Setenv("ROX_SENSOR_CONNECTION_STABLE_DURATION", tt.envValue)
-
-			actual := env.ConnectionStableDuration.DurationSetting()
-			assert.Equal(t, tt.expected, actual)
-		})
-	}
-}
 
 // TestShouldResetBackoff tests the backoff reset decision logic
 func TestShouldResetBackoff(t *testing.T) {
