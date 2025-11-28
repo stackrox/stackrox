@@ -37,6 +37,48 @@ RUN mkdir -p image/rhel/docs/api/v1 && \
 RUN make copy-go-binaries-to-image-dir
 
 
+FROM registry.access.redhat.com/ubi8/ubi:latest@sha256:7d7ca86d832d1dc7aba4583414475c15686291b1c2cf75fe63ca03526c3b89ae AS rpm_installer
+
+ARG PG_VERSION
+
+RUN dnf -y module enable postgresql:${PG_VERSION}
+RUN dnf install \
+    --installroot=/out/ \
+    --releasever=8 \
+    --setopt=install_weak_deps=0 \
+    --nodocs \
+    --nogpgcheck \
+    -y \
+    findutils \
+    util-linux \
+    ca-certificates \
+    curl \
+    bash \
+    coreutils
+RUN dnf install \
+    --installroot=/out/ \
+    --releasever=8 \
+    --setopt=install_weak_deps=0 \
+    --nodocs \
+    --nogpgcheck \
+    -y \
+    postgresql
+RUN dnf --installroot=/out/ clean all
+RUN rm -rf /out/var/cache/dnf /out/var/cache/yum
+
+COPY --from=go-builder /go/src/github.com/stackrox/rox/app/image/rhel/static-bin/* /out/stackrox/
+
+# The contents of paths mounted as emptyDir volumes in Kubernetes are saved
+# by the script `save-dir-contents` during the image build. The directory
+# contents are then restored by the script `restore-all-dir-contents`
+# during the container start.
+RUN mkdir -p /out/etc/pki/ca-trust/source/anchors /out/etc/ssl && \
+    chown -R 4000:4000 /out/etc/pki/ca-trust /out/etc/ssl && \
+    chroot /out /stackrox/save-dir-contents /etc/pki/ca-trust /etc/ssl && \
+    mkdir -p /out/var/lib/stackrox /out/var/log/stackrox /out/var/cache/stackrox && \
+    chown -R 4000:4000 /out/var/lib/stackrox /out/var/log/stackrox /out/var/cache/stackrox /out/tmp
+
+
 FROM registry.access.redhat.com/ubi9/nodejs-20:latest@sha256:c3afeb6716306b239d0f1bc3c567bd899cb102cf70b6dd48b9a11e7339482f3f AS ui-builder
 
 WORKDIR /go/src/github.com/stackrox/rox/app
@@ -59,16 +101,9 @@ ENV UI_PKG_INSTALL_EXTRA_ARGS="--ignore-scripts"
 RUN make -C ui build
 
 
-FROM registry.access.redhat.com/ubi8/ubi-minimal:latest@sha256:951ee3cabb74246821ae31c2b808b7789310f5509882c153b7b178aaaeefa2d3
+FROM registry.access.redhat.com/ubi8/ubi-micro:latest@sha256:37552f11d3b39b3360f7be7c13f6a617e468f39be915cd4f8c8a8531ffc9d43d
 
-ARG PG_VERSION
-
-RUN microdnf -y module enable postgresql:${PG_VERSION} && \
-    # find is used in /stackrox/import-additional-cas \
-    microdnf -y install findutils postgresql && \
-    microdnf -y clean all && \
-    rpm --verbose -e --nodeps $(rpm -qa curl '*rpm*' '*dnf*' '*libsolv*' '*hawkey*' 'yum*') && \
-    rm -rf /var/cache/dnf /var/cache/yum
+COPY --from=rpm_installer /out/ /
 
 COPY --from=ui-builder /go/src/github.com/stackrox/rox/app/ui/build /ui/
 
@@ -123,12 +158,5 @@ COPY --from=go-builder /go/src/github.com/stackrox/rox/app/image/rhel/docs/api/v
 COPY --from=go-builder /go/src/github.com/stackrox/rox/app/image/rhel/docs/api/v2/swagger.json /stackrox/static-data/docs/api/v2/swagger.json
 
 COPY LICENSE /licenses/LICENSE
-
-# The following paths are written to in Central.
-RUN chown -R 4000:4000 /etc/pki/ca-trust /etc/ssl && save-dir-contents /etc/pki/ca-trust /etc/ssl && \
-    mkdir -p /var/lib/stackrox && chown -R 4000:4000 /var/lib/stackrox && \
-    mkdir -p /var/log/stackrox && chown -R 4000:4000 /var/log/stackrox && \
-    mkdir -p /var/cache/stackrox && chown -R 4000:4000 /var/cache/stackrox && \
-    chown -R 4000:4000 /tmp
 
 USER 4000:4000
