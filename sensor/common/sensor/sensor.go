@@ -462,7 +462,7 @@ func handleReconnectionError(err error) bool {
 	disableReconcile := false
 	if errors.Is(err, errCantReconcile) {
 		if errors.Is(err, errLargePayload) {
-			log.Warnf("Deduper payload is too large for sensor to handle. Sensor will reconnect without client reconciliation." +
+			log.Warnf("Deduper payload is too large for sensor to handle. Sensor will reconnect without client reconciliation. " +
 				"Consider increasing the maximum receive message size in sensor 'ROX_GRPC_MAX_MESSAGE_SIZE'")
 		} else {
 			log.Warnf("Sensor cannot reconcile due to: %v", err)
@@ -470,7 +470,9 @@ func handleReconnectionError(err error) bool {
 		disableReconcile = true
 		log.Infof("Communication with Central stopped with error: %v. Retrying.", err)
 	}
-	log.Infof("Communication with Central stopped: %v. Retrying.", err)
+	if !errors.Is(err, errCantReconcile) {
+		log.Infof("Communication with Central stopped: %v. Retrying.", err)
+	}
 	return disableReconcile
 }
 
