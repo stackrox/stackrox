@@ -9,7 +9,7 @@ status:
     type: Deployed
   - status: "True"
     type: Initialized
-  - status: "True"
+  - status: "False"
     type: Irreconcilable
   - status: "False"
     type: Paused
