@@ -37,17 +37,16 @@ type aggregatedRecord struct {
 //	}
 type aggregator[F Finding] struct {
 	result  map[MetricName]map[aggregationKey]*aggregatedRecord
-	md      MetricDescriptors
-	lf      LabelFilters
+	cfg     *Configuration
 	getters LazyLabelGetters[F]
 }
 
-func makeAggregator[F Finding](md MetricDescriptors, lf LabelFilters, getters LazyLabelGetters[F]) *aggregator[F] {
+func makeAggregator[F Finding](cfg *Configuration, getters LazyLabelGetters[F]) *aggregator[F] {
 	aggregated := make(map[MetricName]map[aggregationKey]*aggregatedRecord)
-	for metric := range md {
+	for metric := range cfg.GetMetricDescriptors() {
 		aggregated[metric] = make(map[aggregationKey]*aggregatedRecord)
 	}
-	return &aggregator[F]{aggregated, md, lf, getters}
+	return &aggregator[F]{aggregated, cfg, getters}
 }
 
 // count the finding in the aggregation result.
@@ -57,9 +56,9 @@ func (a *aggregator[F]) count(finding F) {
 		increment = f.GetIncrement()
 	}
 
-	for metric, labels := range a.md {
+	for metric, labels := range a.cfg.GetMetricDescriptors() {
 		// Apply label filters. It could, e.g., keep only "ACTIVE" alerts.
-		if !a.pass(finding, a.lf[metric]) {
+		if !a.pass(finding, a.cfg.GetLabelFilters()[metric]) {
 			// Ignore this finding for this metric.
 			continue
 		}

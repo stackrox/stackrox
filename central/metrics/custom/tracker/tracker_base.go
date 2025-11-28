@@ -60,7 +60,7 @@ type Tracker interface {
 type FindingErrorSequence[F Finding] = iter.Seq2[F, error]
 
 // FindingGenerator returns an iterator to the sequence of findings.
-type FindingGenerator[F Finding] func(context.Context, MetricDescriptors) FindingErrorSequence[F]
+type FindingGenerator[F Finding] func(context.Context, *Configuration) FindingErrorSequence[F]
 
 type gatherer struct {
 	http.Handler
@@ -203,8 +203,8 @@ func (tracker *TrackerBase[Finding]) track(ctx context.Context, registry metrics
 	if len(cfg.metrics) == 0 {
 		return nil
 	}
-	aggregator := makeAggregator(cfg.metrics, cfg.filters, tracker.getters)
-	for finding, err := range tracker.generator(ctx, cfg.metrics) {
+	aggregator := makeAggregator(cfg, tracker.getters)
+	for finding, err := range tracker.generator(ctx, cfg) {
 		if err != nil {
 			return err
 		}

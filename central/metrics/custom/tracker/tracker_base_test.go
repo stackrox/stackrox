@@ -21,12 +21,12 @@ import (
 	"go.uber.org/mock/gomock"
 )
 
-func nilGatherFunc(context.Context, MetricDescriptors) FindingErrorSequence[testFinding] {
+func nilGatherFunc(context.Context, *Configuration) FindingErrorSequence[testFinding] {
 	return func(yield func(testFinding, error) bool) {}
 }
 
 func makeTestGatherFunc(data []map[Label]string) FindingGenerator[testFinding] {
-	return func(context.Context, MetricDescriptors) FindingErrorSequence[testFinding] {
+	return func(context.Context, *Configuration) FindingErrorSequence[testFinding] {
 		return func(yield func(testFinding, error) bool) {
 			var finding testFinding
 			for range data {
@@ -239,7 +239,7 @@ func TestTrackerBase_error(t *testing.T) {
 
 	tracker := MakeTrackerBase("test", "Test",
 		testLabelGetters,
-		func(context.Context, MetricDescriptors) FindingErrorSequence[testFinding] {
+		func(context.Context, *Configuration) FindingErrorSequence[testFinding] {
 			return func(yield func(testFinding, error) bool) {
 				if !yield(testFinding(0xbadf00d), errox.InvariantViolation.CausedBy("bad finding")) {
 					return

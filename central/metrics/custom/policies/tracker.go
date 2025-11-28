@@ -13,7 +13,7 @@ func New(ds policyDS.DataStore) *tracker.TrackerBase[*finding] {
 		"cfg",
 		"policies",
 		LazyLabels,
-		func(ctx context.Context, _ tracker.MetricDescriptors) tracker.FindingErrorSequence[*finding] {
+		func(ctx context.Context, _ *tracker.Configuration) tracker.FindingErrorSequence[*finding] {
 			return track(ctx, ds)
 		},
 	)

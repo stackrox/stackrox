@@ -14,7 +14,7 @@ func New(s service.Service) *tracker.TrackerBase[*finding] {
 		"cert_exp",
 		"certificate expiry",
 		LazyLabels,
-		func(ctx context.Context, _ tracker.MetricDescriptors) tracker.FindingErrorSequence[*finding] {
+		func(ctx context.Context, _ *tracker.Configuration) tracker.FindingErrorSequence[*finding] {
 			return track(ctx, s)
 		},
 	)

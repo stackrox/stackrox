@@ -14,7 +14,7 @@ func New(ds deploymentDS.DataStore) *tracker.TrackerBase[*finding] {
 		"image_vuln",
 		"image vulnerabilities",
 		lazyLabels,
-		func(ctx context.Context, md tracker.MetricDescriptors) tracker.FindingErrorSequence[*finding] {
+		func(ctx context.Context, _ *tracker.Configuration) tracker.FindingErrorSequence[*finding] {
 			return track(ctx, ds)
 		},
 	)

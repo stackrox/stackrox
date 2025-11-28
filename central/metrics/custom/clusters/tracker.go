@@ -12,7 +12,7 @@ func New(ds clusterDS.DataStore) *tracker.TrackerBase[*finding] {
 		"health",
 		"clusters",
 		LazyLabels,
-		func(ctx context.Context, _ tracker.MetricDescriptors) tracker.FindingErrorSequence[*finding] {
+		func(ctx context.Context, _ *tracker.Configuration) tracker.FindingErrorSequence[*finding] {
 			return track(ctx, ds)
 		},
 	)

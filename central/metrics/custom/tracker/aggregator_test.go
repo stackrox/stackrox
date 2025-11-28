@@ -14,7 +14,9 @@ func Test_aggregator(t *testing.T) {
 		"Cluster":   func(tf testFinding) string { return testData[tf]["Cluster"] },
 		"Namespace": func(tf testFinding) string { return testData[tf]["Namespace"] },
 	}
-	a := makeAggregator(makeTestMetricDescriptors(t), nil, getters)
+	a := makeAggregator(&Configuration{
+		metrics: makeTestMetricDescriptors(t), filters: makeTestLabelFilters(t)},
+		getters)
 	assert.NotNil(t, a)
 	assert.Equal(t, map[MetricName]map[aggregationKey]*aggregatedRecord{
 		"test_Test_aggregator_metric1": {},
@@ -120,7 +122,7 @@ func Test_filter(t *testing.T) {
 	lf[MetricName("test_Test_filter_metric2")] = clusterFilter
 
 	md := makeTestMetricDescriptors(t)
-	a := makeAggregator(md, lf, testLabelGetters)
+	a := makeAggregator(&Configuration{metrics: md, filters: lf}, testLabelGetters)
 
 	// Count all test data:
 	for i := range testData {
@@ -158,7 +160,7 @@ func Test_filter(t *testing.T) {
 
 func Test_makeAggregationKey(t *testing.T) {
 	md := makeTestMetricDescriptors(t)
-	a := makeAggregator(md, nil, testLabelGetters)
+	a := makeAggregator(&Configuration{metrics: md}, testLabelGetters)
 
 	var metric = MetricName("test_" + t.Name() + "_metric1")
 	key, labels := a.makeAggregationKey(
@@ -210,8 +212,8 @@ func TestFinding_GetIncrement(t *testing.T) {
 	getters := LazyLabelGetters[*withIncrement]{
 		"l1": func(tf *withIncrement) string { return "v1" },
 	}
-	a := makeAggregator(
-		MetricDescriptors{"m1": []Label{"l1"}}, nil,
+	a := makeAggregator(&Configuration{
+		metrics: MetricDescriptors{"m1": []Label{"l1"}}},
 		getters)
 	a.count(&f)
 	f.n = 7

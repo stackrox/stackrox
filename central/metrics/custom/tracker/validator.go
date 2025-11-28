@@ -81,13 +81,7 @@ func (tracker *TrackerBase[F]) translateStorageConfiguration(config map[string]*
 				if err != nil {
 					return nil, nil, err
 				}
-				if !strings.HasPrefix(pattern, "^") {
-					pattern = "^" + pattern
-				}
-				if !strings.HasSuffix(pattern, "$") {
-					pattern = pattern + "$"
-				}
-				patterns[validated], err = regexp.Compile(pattern)
+				patterns[validated], err = regexp.Compile(fullMatchPattern(pattern))
 				if err != nil {
 					return nil, nil, errInvalidConfiguration.CausedByf(
 						"bad filter expression for metric %q label %q: %v",
@@ -99,4 +93,14 @@ func (tracker *TrackerBase[F]) translateStorageConfiguration(config map[string]*
 		result[MetricName(metricName)] = metricLabels
 	}
 	return result, filters, nil
+}
+
+func fullMatchPattern(pattern string) string {
+	if !strings.HasPrefix(pattern, "^") {
+		pattern = "^" + pattern
+	}
+	if !strings.HasSuffix(pattern, "$") {
+		pattern = pattern + "$"
+	}
+	return pattern
 }

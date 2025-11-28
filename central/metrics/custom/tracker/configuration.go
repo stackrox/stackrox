@@ -40,3 +40,36 @@ type Configuration struct {
 	toDelete []MetricName
 	period   time.Duration
 }
+
+func (c *Configuration) GetMetricDescriptors() MetricDescriptors {
+	if c != nil {
+		return c.metrics
+	}
+	return nil
+}
+
+func (c *Configuration) GetLabelFilters() LabelFilters {
+	if c != nil {
+		return c.filters
+	}
+	return nil
+}
+
+// AllMetricsHaveFilter checks if all metrics in the configuration have a filter
+// for the given label that matches the given pattern.
+func (c *Configuration) AllMetricsHaveFilter(label Label, pattern string) bool {
+	pattern = fullMatchPattern(pattern)
+	if c == nil {
+		return false
+	}
+	for metricName := range c.metrics {
+		labelFilters, ok := c.filters[metricName]
+		if !ok {
+			return false
+		}
+		if expr, ok := labelFilters[label]; !ok || expr.String() != pattern {
+			return false
+		}
+	}
+	return len(c.metrics) != 0
+}
