@@ -114,7 +114,7 @@ spec:
 
       [<- if .FeatureFlags.ROX_SENSITIVE_FILE_ACTIVITY >]
 
-      {{- if ._rox.collector._sfaEnabled }}
+      {{- if ._rox.collector.sfaEnabled }}
       - name: fact
         image: {{ quote ._rox.image.fact.fullRef }}
         imagePullPolicy: {{ ._rox.fact.imagePullPolicy }}
