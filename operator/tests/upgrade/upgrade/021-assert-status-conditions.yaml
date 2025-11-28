@@ -22,6 +22,7 @@ assertAll:
 # Assert that SecuredCluster CR status conditions are as expected post-upgrade
 - celExpr: "securedcluster_cr.status.clusterName == 'testing-cluster'"
 - celExpr: "securedcluster_cr.status.conditions.filter(c, c.type=='Deployed').exists(c, c.status=='True')"
+- celExpr: "securedcluster_cr.status.conditions.filter(c, c.type=='Deployed').exists(c, c.message.contains('installed'))"
 - celExpr: "securedcluster_cr.status.conditions.filter(c, c.type=='Initialized').exists(c, c.status=='True')"
 - celExpr: "securedcluster_cr.status.conditions.filter(c, c.type=='Irreconcilable').exists(c, c.status=='False')"
 - celExpr: "securedcluster_cr.status.conditions.filter(c, c.type=='ProxyConfigFailed').exists(c, c.status=='False')"
