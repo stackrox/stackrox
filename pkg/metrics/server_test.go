@@ -126,7 +126,7 @@ func TestMetricsServerPanic(t *testing.T) {
 				assert.NotPanics(t, func() { server.RunForever() })
 				return
 			}
-			// TODO: Reenable afer refactoring the test.
+			// TODO(ROX-31964): Reenable afer refactoring the test.
 			// This panics if the tests are running longer than 5 seconds.
 			// This is due to the hard panic delay in the panic/hard_panic.go file.
 			t.Skipf("Skipping test due to hard panic delay")
