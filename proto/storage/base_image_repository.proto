@@ -1,0 +1,102 @@
+syntax = "proto3";
+
+package storage;
+
+import "google/protobuf/timestamp.proto";
+
+option go_package = "./storage;storage";
+option java_package = "io.stackrox.proto.storage";
+
+// BaseImageRepository configures automatic tag discovery for a base image repository.
+// Defines which repository to watch, what tag patterns to match, and health tracking.
+// Next tag: 8
+message BaseImageRepository {
+  // Unique identifier for this repository pattern configuration.
+  string id = 1; // @gotags: sql:"pk,type(uuid)" search:"Base Image Repository ID,hidden"
+
+  // Full repository path including registry.
+  string repository_path = 2; // @gotags: search:"Base Image Repository Path"
+
+  // Glob pattern for tag filtering.
+  string tag_pattern = 3; // @gotags: search:"Base Image Tag Pattern"
+
+  // Timestamp of last successful poll.
+  google.protobuf.Timestamp last_poll_at = 4;
+
+  // Count of consecutive poll failures (for health tracking).
+  int32 failure_count = 5;
+
+  // Health status of this repository pattern
+  enum HealthStatus {
+    HEALTHY = 0; // Pattern polling successfully.
+    UNHEALTHY = 1; // Pattern experiencing failures.
+    DISABLED = 2; // Pattern disabled by operator.
+  }
+  HealthStatus health_status = 6; // @gotags: search:"Base Image Repository Health"
+
+  // SHA256 hash of tag_pattern for cache invalidation detection
+  // (when pattern changes, hash differs, triggering cache flush).
+  string pattern_hash = 7;
+}
+
+// TagCacheEntry stores metadata for repository tag caching.
+// Next tag: 5
+message TagCacheEntry {
+  // SHA256 digest of the image manifest (or manifest list for multi-arch).
+  string manifest_digest = 1;
+
+  // The tag timestamp extracted from manifest config blob.
+  // For manifest lists, this is the maximum timestamp across all manifests.
+  google.protobuf.Timestamp created = 2;
+
+  // Indicates whether this tag points to a manifest list/index.
+  bool is_manifest_list = 3;
+
+  // Map of platform to platform-specific manifest digest.
+  // Key format: "os/architecture" (e.g., "linux/amd64", "linux/arm64").
+  // Used for incremental updates: only refetch manifests for platforms whose
+  // digest changed or are new.
+  map<string, string> list_digests = 4;
+}
+
+// TagMetadata contains tag information extracted from the registry.
+// Handles both single-arch images and multi-arch images (manifest lists).
+// Next tag: 6
+message TagMetadata {
+  // Tag name.
+  string name = 1;
+
+  // Current SHA256 digest of the image manifest or manifest list.
+  string digest = 2;
+
+  // Manifest creation timestamp from config blob.
+  google.protobuf.Timestamp created = 3;
+
+  // Platform contains platform-specific manifest information
+  // when the tag is a manifest lists / OCI image indexes.
+  // Next tag: 5
+  message Platform {
+    // Architecture identifier (e.g., "amd64", "arm64", "ppc64le").
+    string architecture = 1;
+
+    // OS identifier (e.g., "linux").
+    string os = 2;
+
+    // Current SHA256 digest of the image manifest or manifest list.
+    string digest = 3;
+
+    // Manifest creation timestamp from config blob.
+    google.protobuf.Timestamp created = 4;
+
+    // Layer SHA256 digests.
+    repeated string layer_digests = 5;
+  }
+
+  // Layer SHA256 digests for single-arch images (image manifest).
+  // Empty when architectures is populated (manifest list).
+  repeated string layer_digests = 4;
+
+  // Platform-specific metadata for multi-arch images (manifest list).
+  // Empty when layer_digests is populated (image manifest).
+  repeated Platform architectures = 5;
+}
