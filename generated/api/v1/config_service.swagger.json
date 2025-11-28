@@ -259,6 +259,12 @@
           "items": {
             "type": "string"
           }
+        },
+        "filters": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
         }
       }
     },

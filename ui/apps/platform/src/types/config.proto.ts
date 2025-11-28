@@ -54,6 +54,7 @@ export type AdministrationEventsConfig = {
 
 export type PrometheusMetricsLabels = {
     labels: string[];
+    filters?: Record<string, string>;
 };
 
 export type PrometheusMetricsGroup = {
