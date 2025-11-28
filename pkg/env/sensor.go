@@ -32,6 +32,12 @@ var (
 	// ConnectionRetryMaxInterval defines the maximum interval between retries after the gRPC connection disconnects.
 	ConnectionRetryMaxInterval = registerDurationSetting("ROX_SENSOR_CONNECTION_RETRY_MAX_INTERVAL", 5*time.Minute)
 
+	// ConnectionStableDuration defines how long a connection must remain stable before the exponential backoff is reset.
+	// This prevents rapid reconnection attempts when initial connection setup succeeds but gRPC stream establishment
+	// or initial sync (config, policy, deduper state) fails. Setting this to 0 disables the feature and resets
+	// backoff immediately after connection factory signals OK (legacy behavior).
+	ConnectionStableDuration = registerDurationSetting("ROX_SENSOR_CONNECTION_STABLE_DURATION", 60*time.Second, WithDurationZeroAllowed())
+
 	// DelegatedScanningDisabled disables the capabilities associated with delegated image scanning.
 	// This is meant to be a 'kill switch' that allows for local scanning to continue (ie: for OCP internal repos)
 	// in the event the delegated scanning capabilities are causing unforeseen issues.
