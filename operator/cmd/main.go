@@ -29,6 +29,7 @@ import (
 	platform "github.com/stackrox/rox/operator/api/v1alpha1"
 	centralReconciler "github.com/stackrox/rox/operator/internal/central/reconciler"
 	commonLabels "github.com/stackrox/rox/operator/internal/common/labels"
+	status "github.com/stackrox/rox/operator/internal/common/status"
 	securedClusterReconciler "github.com/stackrox/rox/operator/internal/securedcluster/reconciler"
 	"github.com/stackrox/rox/operator/internal/utils"
 	"github.com/stackrox/rox/pkg/buildinfo"
@@ -62,6 +63,7 @@ const (
 	envSecuredClusterLabelSelector     = "SECURED_CLUSTER_LABEL_SELECTOR"
 	envCentralReconcilerEnabled        = "CENTRAL_RECONCILER_ENABLED"
 	envSecuredClusterReconcilerEnabled = "SECURED_CLUSTER_RECONCILER_ENABLED"
+	envCentralStatusControllerEnabled  = "CENTRAL_STATUS_CONTROLLER_ENABLED"
 )
 
 var (
@@ -85,6 +87,8 @@ var (
 	centralReconcilerEnabled = env.RegisterBooleanSetting(envCentralReconcilerEnabled, true)
 	// securedClusterReconcilerEnabled enables registering secured cluster reconciler if set to true otherwise skips it
 	securedClusterReconcilerEnabled = env.RegisterBooleanSetting(envSecuredClusterReconcilerEnabled, true)
+	// centralStatusControllerEnabled enables registering central status controller if set to true otherwise skips it
+	centralStatusControllerEnabled = env.RegisterBooleanSetting(envCentralStatusControllerEnabled, true)
 )
 
 func init() {
@@ -211,6 +215,16 @@ func run() error {
 	if centralReconcilerEnabled.BooleanSetting() {
 		if err = centralReconciler.RegisterNewReconciler(mgr, centralLabelSelector); err != nil {
 			return errors.Wrap(err, "unable to set up Central reconciler")
+		}
+
+		// Register the Central status controller for real-time status updates.
+		if centralStatusControllerEnabled.BooleanSetting() {
+			statusReconciler := status.New[*platform.Central](mgr.GetClient(), "Central")
+			if err = statusReconciler.SetupWithManager(mgr); err != nil {
+				return errors.Wrap(err, "unable to set up Central status controller")
+			}
+		} else {
+			setupLog.Info("skip registering central status controller because " + envCentralStatusControllerEnabled + "==false")
 		}
 	} else {
 		setupLog.Info("skip registering central reconciler because " + envCentralReconcilerEnabled + "==false")

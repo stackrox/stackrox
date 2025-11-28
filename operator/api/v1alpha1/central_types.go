@@ -651,6 +651,10 @@ type CentralStatus struct {
 	ProductVersion string `json:"productVersion,omitempty"`
 	//+operator-sdk:csv:customresourcedefinitions:type=status,order=2
 	Central *CentralComponentStatus `json:"central,omitempty"`
+
+	// ObservedGeneration is the generation most recently observed by the controller.
+	//+operator-sdk:csv:customresourcedefinitions:type=status,order=4
+	ObservedGeneration int64 `json:"observedGeneration,omitempty"`
 }
 
 // AdminPasswordStatus shows status related to the admin password.
@@ -676,6 +680,8 @@ type CentralComponentStatus struct {
 //+kubebuilder:printcolumn:name="Version",type=string,JSONPath=`.status.productVersion`
 //+kubebuilder:printcolumn:name="AdminPassword",type=string,JSONPath=`.status.central.adminPassword.adminPasswordSecretReference`
 //+kubebuilder:printcolumn:name="Message",type=string,JSONPath=`.status.conditions[?(@.type=="Deployed")].message`
+//+kubebuilder:printcolumn:name="Progressing",type=string,JSONPath=`.status.conditions[?(@.type=="Progressing")].status`
+//+kubebuilder:printcolumn:name="Available",type=string,JSONPath=`.status.conditions[?(@.type=="Available")].status`
 //+genclient
 
 // Central is the configuration template for the central services. This includes the API server, persistent storage,
@@ -689,6 +695,46 @@ type Central struct {
 
 	// This field will never be serialized, it is used for attaching defaulting decisions to a Central struct during reconciliation.
 	Defaults CentralSpec `json:"-"`
+}
+
+// GetCondition returns a specific condition by type, or nil if not found.
+func (c *Central) GetCondition(condType ConditionType) *StackRoxCondition {
+	for i := range c.Status.Conditions {
+		if c.Status.Conditions[i].Type == condType {
+			return &c.Status.Conditions[i]
+		}
+	}
+	return nil
+}
+
+// SetCondition updates or adds a condition. Returns true if the condition changed.
+func (c *Central) SetCondition(updatedCond StackRoxCondition) bool {
+	for i, cond := range c.Status.Conditions {
+		if cond.Type == updatedCond.Type {
+			// Check if update is needed.
+			if cond.Status == updatedCond.Status &&
+				cond.Reason == updatedCond.Reason &&
+				cond.Message == updatedCond.Message {
+				return false
+			}
+			// Update existing condition.
+			c.Status.Conditions[i] = updatedCond
+			return true
+		}
+	}
+	// Condition doesn't exist, add it.
+	c.Status.Conditions = append(c.Status.Conditions, updatedCond)
+	return true
+}
+
+// GetGeneration returns the metadata.generation of the Central resource.
+func (c *Central) GetGeneration() int64 {
+	return c.ObjectMeta.Generation
+}
+
+// GetObservedGeneration returns the observedGeneration of the Central status sub-resource.
+func (c *Central) GetObservedGeneration() int64 {
+	return c.Status.ObservedGeneration
 }
 
 //+kubebuilder:object:root=true
