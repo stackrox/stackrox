@@ -438,8 +438,41 @@ func (s *Sensor) communicationWithCentralWithRetries(centralReachable *concurren
 		})
 		centralCommunication.Start(central.NewSensorServiceClient(s.centralConnection), centralReachable, &syncDone, s.configHandler, s.detector)
 		go s.notifySyncDone(&syncDone, centralCommunication)
-		// Reset the exponential back-off if the connection succeeds
-		exponential.Reset()
+
+		// Track connection start time to determine when to reset backoff.
+		// We only reset backoff after the connection has been stable for the configured duration.
+		// This prevents rapid retries when initial sync (config, policy, deduper state) fails.
+		// See ROX-29270: Sensor backoff reset DoS issue.
+		connectionStartTime := time.Now()
+		stableDuration := env.ConnectionStableDuration.DurationSetting()
+		backoffResetDone := make(chan struct{})
+
+		// Monitor connection stability in background goroutine
+		go func() {
+			defer close(backoffResetDone)
+
+			if stableDuration == 0 {
+				// Feature disabled (legacy behavior) - reset immediately
+				exponential.Reset()
+				log.Info("Connection stable duration is 0, resetting exponential backoff immediately (legacy behavior)")
+				return
+			}
+
+			select {
+			case <-time.After(stableDuration):
+				// Connection has been stable for the required duration - reset backoff
+				exponential.Reset()
+				elapsed := time.Since(connectionStartTime)
+				log.Infof("Connection stable for %s (threshold: %s), resetting exponential backoff",
+					elapsed.Round(time.Second), stableDuration)
+			case <-centralCommunication.Stopped().Done():
+				// Connection stopped before reaching stable duration - preserve backoff
+				elapsed := time.Since(connectionStartTime)
+				log.Warnf("Connection failed after %s (before stable duration %s), preserving exponential backoff to prevent rapid retries",
+					elapsed.Round(time.Second), stableDuration)
+			}
+		}()
+
 		select {
 		case <-s.centralCommunication.Stopped().WaitC():
 			if err := s.centralCommunication.Stopped().Err(); err != nil {
@@ -461,6 +494,9 @@ func (s *Sensor) communicationWithCentralWithRetries(centralReachable *concurren
 			// Send notification to all components that we are running in offline mode
 			s.changeState(common.SensorComponentEventOfflineMode)
 			s.reconnect.Store(true)
+			// Wait for the backoff reset monitoring goroutine to complete before retrying.
+			// This ensures the backoff decision (reset or preserve) is finalized.
+			<-backoffResetDone
 			// Trigger goroutine that will attempt the connection. s.centralConnectionFactory.*Signal() should be
 			// checked to probe connection state.
 			go s.centralConnectionFactory.SetCentralConnectionWithRetries(s.clusterID, s.centralConnection, s.certLoader)
@@ -469,6 +505,8 @@ func (s *Sensor) communicationWithCentralWithRetries(centralReachable *concurren
 			// This means sensor was signaled to finish, this error shouldn't be retried
 			log.Info("Received stop signal from Sensor. Stopping without retrying")
 			s.centralCommunication.Stop()
+			// Wait for monitoring goroutine to finish for clean shutdown
+			<-backoffResetDone
 			return backoff.Permanent(wrapOrNewError(s.stoppedSig.Err(), "received sensor stop signal"))
 		}
 	}, exponential, func(err error, d time.Duration) {
