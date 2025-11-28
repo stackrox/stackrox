@@ -149,39 +149,3 @@ func TestExpectedRetryIntervals(t *testing.T) {
 			"Reset backoff allows faster recovery")
 	})
 }
-
-// TestROX29270DoSScenario documents the specific bug that was fixed
-func TestROX29270DoSScenario(t *testing.T) {
-	// Original Bug (before fix):
-	// 1. Sensor HTTP ping succeeds → OkSignal fired
-	// 2. exponential.Reset() called IMMEDIATELY (line 442)
-	// 3. gRPC stream establishment or initial sync fails
-	// 4. Retry happens with RESET backoff (10s, not exponential)
-	// 5. Steps 1-4 repeat rapidly
-	// 6. Multiple sensors (7 in incident) × rapid retries = DoS
-	//
-	// Result: 7 sensors used 2-3 CPUs on ingress nodes (vs 200-300m normally)
-	//
-	// Fix:
-	// 1. Sensor HTTP ping succeeds → OkSignal fired
-	// 2. Connection start time recorded
-	// 3. Monitoring goroutine started: wait 60s OR connection stop
-	// 4. gRPC stream establishment or initial sync fails (before 60s)
-	// 5. Monitoring goroutine detects early stop → backoff PRESERVED
-	// 6. Retry happens with EXPONENTIAL backoff (10s → 20s → 40s → ...)
-	// 7. Retry intervals increase, preventing DoS
-	//
-	// Verification: Integration tests simulate this scenario
-
-	t.Run("incident parameters", func(t *testing.T) {
-		failingSensors := 7
-		normalCPU := 300 // millicores
-		incidentCPU := 2500 // millicores (2.5 CPUs)
-
-		// With the fix, even with 7 failing sensors, CPU should stay reasonable
-		// because retry intervals increase exponentially instead of resetting
-
-		assert.Greater(t, incidentCPU, failingSensors*normalCPU,
-			"Incident CPU usage was significantly higher than normal")
-	})
-}
