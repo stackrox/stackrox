@@ -5,7 +5,12 @@ resourceRefs:
   kind: Central
   name: stackrox-central-services
   ref: central_cr
+- apiVersion: platform.stackrox.io/v1alpha1
+  kind: SecuredCluster
+  name: stackrox-secured-cluster-services
+  ref: securedcluster_cr
 assertAll:
+# Assert that Central CR status conditions are as expected post-upgrade
 - celExpr: "central_cr.status.conditions.filter(c, c.type=='Deployed').exists(c, c.status=='True')"
 - celExpr: "central_cr.status.conditions.filter(c, c.type=='Initialized').exists(c, c.status=='True')"
 - celExpr: "central_cr.status.conditions.filter(c, c.type=='Irreconcilable').exists(c, c.status=='False')"
@@ -14,23 +19,13 @@ assertAll:
 - celExpr: "central_cr.status.conditions.filter(c, c.type=='Paused').exists(c, c.status=='False')"
 - celExpr: "central_cr.status.conditions.filter(c, c.type=='Progressing').exists(c, c.status=='False')"
 - celExpr: "central_cr.status.conditions.filter(c, c.type=='Available').exists(c, c.status=='True')"
----
-apiVersion: platform.stackrox.io/v1alpha1
-kind: SecuredCluster
-metadata:
-  name: stackrox-secured-cluster-services
-status:
-  clusterName: testing-cluster
-  conditions:
-  - status: "True"
-    type: Deployed
-  - status: "True"
-    type: Initialized
-  - status: "False"
-    type: Irreconcilable
-  - status: "False"
-    type: Paused
-  - status: "False"
-    type: ProxyConfigFailed
-  - status: "False"
-    type: ReleaseFailed
+# Assert that SecuredCluster CR status conditions are as expected post-upgrade
+- celExpr: "securedcluster_cr.status.clusterName == 'testing-cluster'"
+- celExpr: "securedcluster_cr.status.conditions.filter(c, c.type=='Deployed').exists(c, c.status=='True')"
+- celExpr: "securedcluster_cr.status.conditions.filter(c, c.type=='Initialized').exists(c, c.status=='True')"
+- celExpr: "securedcluster_cr.status.conditions.filter(c, c.type=='Irreconcilable').exists(c, c.status=='False')"
+- celExpr: "securedcluster_cr.status.conditions.filter(c, c.type=='ProxyConfigFailed').exists(c, c.status=='False')"
+- celExpr: "securedcluster_cr.status.conditions.filter(c, c.type=='ReleaseFailed').exists(c, c.status=='False')"
+- celExpr: "securedcluster_cr.status.conditions.filter(c, c.type=='Paused').exists(c, c.status=='False')"
+- celExpr: "securedcluster_cr.status.conditions.filter(c, c.type=='Progressing').exists(c, c.status=='False')"
+- celExpr: "securedcluster_cr.status.conditions.filter(c, c.type=='Available').exists(c, c.status=='True')"
