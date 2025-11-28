@@ -1,0 +1,75 @@
+# OpenShift Security Context Constraint for ML Risk Service
+# This is a fallback option if dynamic UID assignment doesn't work
+# Requires cluster admin privileges to apply
+apiVersion: security.openshift.io/v1
+kind: SecurityContextConstraints
+metadata:
+  name: ml-risk-service-scc
+  labels:
+    app.kubernetes.io/name: ml-risk-service
+    app.kubernetes.io/component: ml-service
+    app.kubernetes.io/part-of: stackrox
+annotations:
+  kubernetes.io/description: "SCC for ML Risk Service that allows specific UID/GID ranges"
+  include.release.openshift.io/ibm-cloud-managed: "true"
+  include.release.openshift.io/self-managed-high-availability: "true"
+  include.release.openshift.io/single-node-developer: "true"
+allowHostDirVolumePlugin: false
+allowHostIPC: false
+allowHostNetwork: false
+allowHostPID: false
+allowHostPorts: false
+allowPrivilegedContainer: false
+allowedCapabilities: null
+defaultAddCapabilities: null
+defaultAllowPrivilegeEscalation: false
+forbiddenSysctls:
+  - "*"
+fsGroup:
+  type: MustRunAs
+  ranges:
+    - min: 1000
+      max: 65535
+priority: 10
+readOnlyRootFilesystem: true
+requiredDropCapabilities:
+  - ALL
+runAsUser:
+  type: MustRunAs
+  uidRangeMin: 1000
+  uidRangeMax: 65535
+seLinuxContext:
+  type: MustRunAs
+supplementalGroups:
+  type: MustRunAs
+  ranges:
+    - min: 1000
+      max: 65535
+users: []
+groups: []
+volumes:
+  - configMap
+  - downwardAPI
+  - emptyDir
+  - persistentVolumeClaim
+  - projected
+  - secret
+
+---
+# Role binding to associate the SCC with the service account
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: ml-risk-service-scc-binding
+  labels:
+    app.kubernetes.io/name: ml-risk-service
+    app.kubernetes.io/component: ml-service
+    app.kubernetes.io/part-of: stackrox
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: system:openshift:scc:ml-risk-service-scc
+subjects:
+  - kind: ServiceAccount
+    name: ml-risk-service
+    namespace: stackrox

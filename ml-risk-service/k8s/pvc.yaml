@@ -1,0 +1,32 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: ml-risk-models
+  namespace: stackrox
+  labels:
+    app.kubernetes.io/name: ml-risk-service
+    app.kubernetes.io/component: ml-service
+    app.kubernetes.io/part-of: stackrox
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Gi
+
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: ml-risk-reports
+  namespace: stackrox
+  labels:
+    app.kubernetes.io/name: ml-risk-service
+    app.kubernetes.io/component: ml-service
+    app.kubernetes.io/part-of: stackrox
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 5Gi
