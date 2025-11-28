@@ -10,7 +10,8 @@ import (
 	"github.com/pkg/errors"
 	alertDS "github.com/stackrox/rox/central/alert/datastore/mocks"
 	configDS "github.com/stackrox/rox/central/config/datastore/mocks"
-	deploymentDS "github.com/stackrox/rox/central/deployment/datastore/mocks"
+	cveDS "github.com/stackrox/rox/central/cve/image/v2/datastore/mocks"
+	"github.com/stackrox/rox/central/cve/image/v2/datastore/store"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/authproviders"
@@ -97,29 +98,18 @@ func TestRunner_ServeHTTP(t *testing.T) {
 					}}}},
 		nil)
 
-	dds := deploymentDS.NewMockDataStore(ctrl)
+	cveds := cveDS.NewMockDataStore(ctrl)
 
-	dds.EXPECT().WalkByQuery(gomock.Any(), gomock.Any(), gomock.Any()).
+	cveds.EXPECT().WalkDeploymentVulnFindings(gomock.Any(), gomock.Any()).
 		Times(1).
-		Do(func(_ context.Context, _ *v1.Query, f func(*storage.Deployment) error) {
-			_ = f(&storage.Deployment{
-				Name:        "deployment1",
-				ClusterName: "cluster1",
+		Do(func(_ context.Context, f func(*store.DeploymentVulnFinding) error) {
+			_ = f(&store.DeploymentVulnFinding{
+				DeploymentName: "deployment1",
+				ClusterName:    "cluster1",
+				Severity:       storage.VulnerabilitySeverity_IMPORTANT_VULNERABILITY_SEVERITY,
 			})
 		}).
 		Return(nil)
-
-	dds.EXPECT().GetImagesForDeployment(gomock.Any(), gomock.Any()).
-		Times(1).Return([]*storage.Image{{
-		Names: []*storage.ImageName{{FullName: "fullname1"}},
-		Scan: &storage.ImageScan{
-			Components: []*storage.EmbeddedImageScanComponent{{
-				Vulns: []*storage.EmbeddedVulnerability{{
-					Severity: storage.VulnerabilitySeverity_IMPORTANT_VULNERABILITY_SEVERITY,
-				}},
-			}},
-		}},
-	}, nil)
 
 	ads := alertDS.NewMockDataStore(ctrl)
 
@@ -141,7 +131,7 @@ func TestRunner_ServeHTTP(t *testing.T) {
 		}).
 		Return(nil)
 
-	runner := makeRunner(&runnerDatastores{deployments: dds, alerts: ads})
+	runner := makeRunner(&runnerDatastores{cves: cveds, alerts: ads})
 	runner.initialize(cds)
 	runner[0].Gather(makeAdminContext(t))
 	runner[1].Gather(makeAdminContext(t))
