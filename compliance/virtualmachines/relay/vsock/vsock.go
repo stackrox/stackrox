@@ -38,3 +38,24 @@ func NewListener() (net.Listener, error) {
 	}
 	return listener, nil
 }
+
+// DialHost establishes a vsock connection to the host context ID using the configured port.
+func DialHost() (net.Conn, error) {
+	port := env.VirtualMachinesVsockPort.IntegerSetting()
+	conn, err := vsock.Dial(vsock.Host, uint32(port), nil)
+	if err != nil {
+		return nil, errors.Wrapf(err, "dialing host vsock port %d", port)
+	}
+	return conn, nil
+}
+
+// DialLocal establishes a vsock loopback connection using the configured port.
+// This is intended for local load testing when both client and server run on the same host.
+func DialLocal() (net.Conn, error) {
+	port := env.VirtualMachinesVsockPort.IntegerSetting()
+	conn, err := vsock.Dial(vsock.Local, uint32(port), nil)
+	if err != nil {
+		return nil, errors.Wrapf(err, "dialing local vsock port %d", port)
+	}
+	return conn, nil
+}
