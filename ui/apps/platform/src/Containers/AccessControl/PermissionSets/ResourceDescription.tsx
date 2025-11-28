@@ -34,6 +34,8 @@ const resourceDescriptions: Record<ResourceName, string> = {
     Node: 'Read: View Kubernetes nodes in secured clusters. Write: N/A',
     Secret: 'Read: View metadata about secrets in secured clusters. Write: N/A',
     ServiceAccount: 'Read: List Kubernetes service accounts in secured clusters. Write: N/A',
+    VirtualMachine:
+        'Read: View virtual machines, their packages, and their vulnerabilities. Write: N/A',
     VulnerabilityManagementApprovals:
         'Read: View all pending deferral or false positive requests for vulnerabilities. Write: Approve or deny any pending deferral or false positive requests and move any previously approved requests back to observed.',
     VulnerabilityManagementRequests:
