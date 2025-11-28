@@ -49,6 +49,7 @@ class IntegrationsTest extends BaseSpecification {
     static final private List<Deployment> DEPLOYMENTS = [
             new Deployment()
                     .setName(NOTIFIERDEPLOYMENT)
+                    .setImagePrefetcherAffinity()
                     .setImage("quay.io/rhacs-eng/qa-multi-arch-nginx:latest")
                     .addLabel("app", NOTIFIERDEPLOYMENT),
     ]

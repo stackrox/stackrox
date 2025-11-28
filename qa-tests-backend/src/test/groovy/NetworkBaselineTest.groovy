@@ -108,6 +108,7 @@ class NetworkBaselineTest extends BaseSpecification {
 
     private static final MULTIPLE_EXTERNAL_DEP = createAndRegisterDeployment()
                     .setName(MULTIPLE_EXTERNALDESTINATION)
+                    .setImagePrefetcherAffinity()
                     .setImage("quay.io/rhacs-eng/qa-multi-arch:nginx-1-15-4-alpine")
                     .addLabel("app", MULTIPLE_EXTERNALDESTINATION)
                     .setCommand(["/bin/sh", "-c",])

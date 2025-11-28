@@ -74,6 +74,7 @@ class NetworkFlowTest extends BaseSpecification {
         return [
             new Deployment()
                     .setName(UDPCONNECTIONTARGET)
+                    .setImagePrefetcherAffinity()
                     .setImage("quay.io/rhacs-eng/qa-multi-arch:socat")
                     .addPort(8080, "UDP")
                     .addLabel("app", UDPCONNECTIONTARGET)
@@ -82,6 +83,7 @@ class NetworkFlowTest extends BaseSpecification {
                     .setArgs(["socat "+SOCAT_DEBUG+" UDP-RECV:8080 STDOUT",]),
             new Deployment()
                     .setName(TCPCONNECTIONTARGET)
+                    .setImagePrefetcherAffinity()
                     .setImage("quay.io/rhacs-eng/qa-multi-arch:socat")
                     .addPort(80)
                     .addPort(8080)
@@ -92,6 +94,7 @@ class NetworkFlowTest extends BaseSpecification {
                                       "socat "+SOCAT_DEBUG+" TCP-LISTEN:8080,fork STDOUT)" as String,]),
             new Deployment()
                     .setName(NGINXCONNECTIONTARGET)
+                    .setImagePrefetcherAffinity()
                     .setImage("quay.io/rhacs-eng/qa-multi-arch:nginx")
                     .addPort(80)
                     .addLabel("app", NGINXCONNECTIONTARGET)
@@ -110,10 +113,12 @@ class NetworkFlowTest extends BaseSpecification {
         return [
             new Deployment()
                     .setName(NOCONNECTIONSOURCE)
+                    .setImagePrefetcherAffinity()
                     .setImage("quay.io/rhacs-eng/qa-multi-arch:nginx")
                     .addLabel("app", NOCONNECTIONSOURCE),
             new Deployment()
                     .setName(SHORTCONSISTENTSOURCE)
+                    .setImagePrefetcherAffinity()
                     .setImage("quay.io/rhacs-eng/qa-multi-arch:nginx-1-15-4-alpine")
                     .addLabel("app", SHORTCONSISTENTSOURCE)
                     .setCommand(["/bin/sh", "-c",])
@@ -122,6 +127,7 @@ class NetworkFlowTest extends BaseSpecification {
                                       "done" as String,]),
             new Deployment()
                     .setName(SINGLECONNECTIONSOURCE)
+                    .setImagePrefetcherAffinity()
                     .setImage("quay.io/rhacs-eng/qa-multi-arch:nginx-1-15-4-alpine")
                     .addLabel("app", SINGLECONNECTIONSOURCE)
                     .setCommand(["/bin/sh", "-c",])
@@ -129,6 +135,7 @@ class NetworkFlowTest extends BaseSpecification {
                                       "while sleep 30; do echo hello; done" as String,]),
             new Deployment()
                     .setName(UDPCONNECTIONSOURCE)
+                    .setImagePrefetcherAffinity()
                     .setImage("quay.io/rhacs-eng/qa-multi-arch:socat")
                     .addLabel("app", UDPCONNECTIONSOURCE)
                     .setCommand(["/bin/sh", "-c",])
@@ -138,6 +145,7 @@ class NetworkFlowTest extends BaseSpecification {
                                       "done" as String,]),
             new Deployment()
                     .setName(TCPCONNECTIONSOURCE)
+                    .setImagePrefetcherAffinity()
                     .setImage("quay.io/rhacs-eng/qa-multi-arch:socat")
                     .addLabel("app", TCPCONNECTIONSOURCE)
                     .setCommand(["/bin/sh", "-c",])
@@ -147,6 +155,7 @@ class NetworkFlowTest extends BaseSpecification {
                                       "done" as String,]),
             new Deployment()
                     .setName(MULTIPLEPORTSCONNECTION)
+                    .setImagePrefetcherAffinity()
                     .setImage("quay.io/rhacs-eng/qa-multi-arch:socat")
                     .addLabel("app", MULTIPLEPORTSCONNECTION)
                     .setCommand(["/bin/sh", "-c",])
@@ -158,6 +167,7 @@ class NetworkFlowTest extends BaseSpecification {
                                       "done" as String,]),
             new Deployment()
                     .setName(EXTERNALDESTINATION)
+                    .setImagePrefetcherAffinity()
                     .setImage("quay.io/rhacs-eng/qa-multi-arch:nginx-1-15-4-alpine")
                     .addLabel("app", EXTERNALDESTINATION)
                     .setCommand(["/bin/sh", "-c",])
@@ -167,6 +177,7 @@ class NetworkFlowTest extends BaseSpecification {
             new Deployment()
                     .setName("${TCPCONNECTIONSOURCE}-qa2")
                     .setNamespace(OTHER_NAMESPACE)
+                    .setImagePrefetcherAffinity()
                     .setImage("quay.io/rhacs-eng/qa-multi-arch:socat")
                     .addLabel("app", "${TCPCONNECTIONSOURCE}-qa2")
                     .setCommand(["/bin/sh", "-c",])
