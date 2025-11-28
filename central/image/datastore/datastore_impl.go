@@ -125,7 +125,7 @@ func (ds *datastoreImpl) SearchListImages(ctx context.Context, q *v1.Query) ([]*
 	defer metrics.SetDatastoreFunctionDuration(time.Now(), "Image", "SearchListImages")
 
 	var imgs []*storage.ListImage
-	err := ds.storage.WalkByQuery(ctx, q, func(img *storage.Image) error {
+	err := ds.storage.WalkMetadataByQuery(ctx, q, func(img *storage.Image) error {
 		imgs = append(imgs, imageTypes.ConvertImageToListImage(img))
 		return nil
 	})
