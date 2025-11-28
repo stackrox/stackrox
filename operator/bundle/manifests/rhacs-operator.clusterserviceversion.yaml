@@ -1266,6 +1266,10 @@ spec:
           for scanning the Nodes' filesystem.
         displayName: Node Scanning Settings
         path: perNode.nodeInventory
+      - description: Settings for the Sensitive File Activity container, which is
+          responsible for file activity monitoring on the Node.
+        displayName: SFA
+        path: perNode.sfa
       - description: 'To ensure comprehensive monitoring of your cluster activity,
           Red Hat Advanced Cluster Security
 
@@ -1331,6 +1335,19 @@ spec:
           for an overview of default resource requirements and a sizing guide.'
         displayName: Resources
         path: perNode.nodeInventory.resources
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:resourceRequirements
+      - description: 'Specifies whether Sensitive File Activity agent is deployed.
+
+          The default is: Disabled.'
+        displayName: SFA Agent
+        path: perNode.sfa.agent
+      - description: 'Allows overriding the default resource settings for this component.
+          Please consult the documentation
+
+          for an overview of default resource requirements and a sizing guide.'
+        displayName: Resources
+        path: perNode.sfa.resources
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:resourceRequirements
       - description: 'Should process baselines be automatically locked when the observation
