@@ -402,6 +402,16 @@ func (s *Sensor) notifyAllOnSignal(signal *concurrency.Signal, centralCommunicat
 	}
 }
 
+// shouldResetBackoff determines whether exponential backoff should be reset
+// based on connection stability duration.
+func shouldResetBackoff(connectionStart time.Time, stableDuration time.Duration) bool {
+	if stableDuration == 0 {
+		return true // Legacy behavior
+	}
+	elapsed := time.Since(connectionStart)
+	return elapsed >= stableDuration
+}
+
 func (s *Sensor) communicationWithCentralWithRetries(centralReachable *concurrency.Flag) {
 	// Attempt a simple restart strategy: if connection broke, re-establish the connection with exponential back-offs.
 	// This approach does not consider messages that were already sent to central_sender but weren't written to the stream.
@@ -451,16 +461,15 @@ func (s *Sensor) communicationWithCentralWithRetries(centralReachable *concurren
 			elapsed := time.Since(connectionStartTime)
 			err := s.centralCommunication.Stopped().Err()
 
-			switch {
-			case stableDuration == 0:
-				// Legacy behavior: immediate reset for rollback compatibility
+			if shouldResetBackoff(connectionStartTime, stableDuration) {
 				exponential.Reset()
-				log.Info("Connection stable duration is 0, resetting exponential backoff immediately (legacy behavior)")
-			case elapsed >= stableDuration:
-				exponential.Reset()
-				log.Infof("Connection stable for %s (threshold: %s), resetting exponential backoff",
-					elapsed.Round(time.Second), stableDuration)
-			default:
+				if stableDuration == 0 {
+					log.Info("Connection stable duration is 0, resetting exponential backoff immediately (legacy behavior)")
+				} else {
+					log.Infof("Connection stable for %s (threshold: %s), resetting exponential backoff",
+						elapsed.Round(time.Second), stableDuration)
+				}
+			} else {
 				// Preserve backoff to prevent rapid retries; distinguish intentional shutdowns from failures
 				if err != nil && errors.Is(err, context.Canceled) {
 					log.Infof("Connection stopped after %s (before stable duration %s); intentional shutdown, preserving exponential backoff state",
