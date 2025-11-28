@@ -7,6 +7,7 @@ import (
 	clusterDS "github.com/stackrox/rox/central/cluster/datastore"
 	configDS "github.com/stackrox/rox/central/config/datastore"
 	expiryS "github.com/stackrox/rox/central/credentialexpiry/service"
+	cveDS "github.com/stackrox/rox/central/cve/image/v2/datastore"
 	deploymentDS "github.com/stackrox/rox/central/deployment/datastore"
 	nodeDS "github.com/stackrox/rox/central/node/datastore"
 	policyDS "github.com/stackrox/rox/central/policy/datastore"
@@ -33,12 +34,13 @@ type Runner interface {
 func Singleton() Runner {
 	onceRunner.Do(func() {
 		runner = makeRunner(&runnerDatastores{
-			deploymentDS.Singleton(),
-			alertDS.Singleton(),
-			nodeDS.Singleton(),
-			clusterDS.Singleton(),
-			policyDS.Singleton(),
-			expiryS.Singleton(),
+			deployments: deploymentDS.Singleton(),
+			alerts:      alertDS.Singleton(),
+			nodes:       nodeDS.Singleton(),
+			clusters:    clusterDS.Singleton(),
+			policies:    policyDS.Singleton(),
+			expiry:      expiryS.Singleton(),
+			cves:        cveDS.Singleton(),
 		})
 		go runner.initialize(configDS.Singleton())
 	})
