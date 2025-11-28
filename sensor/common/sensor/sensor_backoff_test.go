@@ -55,8 +55,8 @@ func TestBackoffBehaviorDocumentation(t *testing.T) {
 	t.Run("early failure preserves backoff", func(t *testing.T) {
 		// When connection fails before stable duration (e.g., during initial sync):
 		// - Connection start time is recorded
-		// - Monitoring goroutine waits for stable duration OR connection stop
-		// - If connection stops first, backoff is NOT reset
+		// - When connection stops, elapsed time is checked against stable duration
+		// - If elapsed < stable duration, backoff is NOT reset
 		// - Log message: "Connection failed after Xs (before stable duration 60s), preserving exponential backoff"
 
 		stableDuration := 60 * time.Second
@@ -68,7 +68,7 @@ func TestBackoffBehaviorDocumentation(t *testing.T) {
 
 	t.Run("stable connection resets backoff", func(t *testing.T) {
 		// When connection remains stable for >= stable duration:
-		// - Monitoring goroutine's timer fires after stable duration
+		// - When connection stops, elapsed time >= stable duration
 		// - exponential.Reset() is called
 		// - Log message: "Connection stable for 60s (threshold: 60s), resetting exponential backoff"
 

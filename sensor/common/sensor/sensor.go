@@ -448,24 +448,20 @@ func (s *Sensor) communicationWithCentralWithRetries(centralReachable *concurren
 
 		select {
 		case <-s.centralCommunication.Stopped().WaitC():
-			// Determine backoff reset policy based on connection stability
 			elapsed := time.Since(connectionStartTime)
 			err := s.centralCommunication.Stopped().Err()
 
-			// Decide whether to reset or preserve backoff
 			switch {
 			case stableDuration == 0:
-				// Legacy behavior: always reset immediately
+				// Legacy behavior: immediate reset for rollback compatibility
 				exponential.Reset()
 				log.Info("Connection stable duration is 0, resetting exponential backoff immediately (legacy behavior)")
 			case elapsed >= stableDuration:
-				// Connection was stable long enough: reset backoff
 				exponential.Reset()
 				log.Infof("Connection stable for %s (threshold: %s), resetting exponential backoff",
 					elapsed.Round(time.Second), stableDuration)
 			default:
-				// Connection stopped too early: preserve backoff
-				// Distinguish intentional shutdowns from failures
+				// Preserve backoff to prevent rapid retries; distinguish intentional shutdowns from failures
 				if err != nil && errors.Is(err, context.Canceled) {
 					log.Infof("Connection stopped after %s (before stable duration %s); intentional shutdown, preserving exponential backoff state",
 						elapsed.Round(time.Second), stableDuration)
@@ -478,7 +474,6 @@ func (s *Sensor) communicationWithCentralWithRetries(centralReachable *concurren
 				}
 			}
 
-			// Existing error handling continues below
 			if err != nil {
 				if errors.Is(err, errCantReconcile) {
 					if errors.Is(err, errLargePayload) {
@@ -494,12 +489,10 @@ func (s *Sensor) communicationWithCentralWithRetries(centralReachable *concurren
 			} else {
 				log.Info("Communication with Central stopped. Retrying.")
 			}
-			// Communication either ended or there was an error. Either way we should retry.
-			// Send notification to all components that we are running in offline mode
+
 			s.changeState(common.SensorComponentEventOfflineMode)
 			s.reconnect.Store(true)
-			// Trigger goroutine that will attempt the connection. s.centralConnectionFactory.*Signal() should be
-			// checked to probe connection state.
+			// Check s.centralConnectionFactory.*Signal() to probe connection state
 			go s.centralConnectionFactory.SetCentralConnectionWithRetries(s.clusterID, s.centralConnection, s.certLoader)
 			return wrapOrNewError(err, "communication stopped")
 		case <-s.stoppedSig.WaitC():
