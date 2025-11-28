@@ -71,7 +71,7 @@ require (
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.27.3
 	github.com/hashicorp/go-multierror v1.1.1
 	github.com/hashicorp/go-retryablehttp v0.7.8
-	github.com/hashicorp/go-version v1.7.0
+	github.com/hashicorp/go-version v1.8.0
 	github.com/hashicorp/golang-lru/v2 v2.0.7
 	github.com/heimdalr/dag v1.5.0
 	github.com/helm/helm-mapkubeapis v0.6.1
