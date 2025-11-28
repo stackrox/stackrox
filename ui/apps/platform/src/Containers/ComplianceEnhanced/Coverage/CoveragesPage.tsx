@@ -17,11 +17,11 @@ import ComplianceUsageDisclaimer, {
     COMPLIANCE_DISCLAIMER_KEY,
 } from 'Components/ComplianceUsageDisclaimer';
 import CompoundSearchFilter from 'Components/CompoundSearchFilter/components/CompoundSearchFilter';
+import type { OnSearchCallback } from 'Components/CompoundSearchFilter/types';
 import {
     makeFilterChipDescriptors,
-    onURLSearch,
+    updateSearchFilter,
 } from 'Components/CompoundSearchFilter/utils/utils';
-import type { OnSearchPayload } from 'Components/CompoundSearchFilter/types';
 import PageTitle from 'Components/PageTitle';
 import SearchFilterChips from 'Components/PatternFly/SearchFilterChips';
 import { useBooleanLocalStorage } from 'hooks/useLocalStorage';
@@ -92,8 +92,8 @@ function CoveragesPage() {
         navigateWithScanConfigQuery(coverageProfileChecksPath, { profileName: selectedProfile });
     }
 
-    const onSearch = (payload: OnSearchPayload) => {
-        onURLSearch(searchFilter, setSearchFilter, payload);
+    const onSearch: OnSearchCallback = (payload) => {
+        setSearchFilter(updateSearchFilter(searchFilter, payload));
     };
 
     const onCheckStatusSelect = (
@@ -104,7 +104,7 @@ function CoveragesPage() {
         const action = checked ? 'ADD' : 'REMOVE';
         const category = filterType;
         const value = selection;
-        onSearch({ action, category, value });
+        onSearch([{ action, category, value }]);
     };
 
     const selectedProfileDetails = scanConfigProfilesResponse?.profiles.find(

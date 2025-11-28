@@ -12,7 +12,7 @@ import CheckboxSelect from 'Components/CheckboxSelect';
 import { ensureString, ensureStringArray } from 'utils/ensure';
 import type { SelectedEntity } from './EntitySelector';
 import type { SelectedAttribute } from './AttributeSelector';
-import type { CompoundSearchFilterConfig, OnSearchPayload } from '../types';
+import type { CompoundSearchFilterConfig, OnSearchCallback } from '../types';
 import {
     conditionMap,
     dateConditionMap,
@@ -44,7 +44,7 @@ export type CompoundSearchFilterInputFieldProps = {
     value: InputFieldValue;
     searchFilter: SearchFilter;
     additionalContextFilter?: SearchFilter;
-    onSearch: ({ action, category, value }: OnSearchPayload) => void;
+    onSearch: OnSearchCallback;
     onChange: InputFieldOnChange;
     config: CompoundSearchFilterConfig;
 };
@@ -79,11 +79,13 @@ function CompoundSearchFilterInputField({
                 value={ensureString(value)}
                 onChange={(_event, _value) => onChange(_value)}
                 onSearch={(_event, _value) => {
-                    onSearch({
-                        action: 'ADD',
-                        category: attribute.searchTerm,
-                        value: _value,
-                    });
+                    onSearch([
+                        {
+                            action: 'ADD',
+                            category: attribute.searchTerm,
+                            value: _value,
+                        },
+                    ]);
                     onChange('');
                 }}
                 onClear={() => onChange('')}
@@ -100,11 +102,13 @@ function CompoundSearchFilterInputField({
                 }}
                 onSearch={(newValue) => {
                     const { condition, date } = newValue;
-                    onSearch({
-                        action: 'ADD',
-                        category: attribute.searchTerm,
-                        value: `${dateConditionMap[condition]}${date}`,
-                    });
+                    onSearch([
+                        {
+                            action: 'ADD',
+                            category: attribute.searchTerm,
+                            value: `${dateConditionMap[condition]}${date}`,
+                        },
+                    ]);
                     onChange({ ...newValue, date: '' });
                 }}
             />
@@ -120,11 +124,13 @@ function CompoundSearchFilterInputField({
                 onSearch={(newValue) => {
                     const { condition, number } = newValue;
                     onChange(newValue);
-                    onSearch({
-                        action: 'ADD',
-                        category: attribute.searchTerm,
-                        value: `${conditionMap[condition]}${number}`,
-                    });
+                    onSearch([
+                        {
+                            action: 'ADD',
+                            category: attribute.searchTerm,
+                            value: `${conditionMap[condition]}${number}`,
+                        },
+                    ]);
                 }}
             />
         );
@@ -135,11 +141,13 @@ function CompoundSearchFilterInputField({
                 inputProps={attribute.inputProps}
                 onSearch={(internalConditionText) => {
                     // onChange(newValue); // inputText seems unused in CompoundSearchFilter
-                    onSearch({
-                        action: 'ADD',
-                        category: attribute.searchTerm,
-                        value: internalConditionText,
-                    });
+                    onSearch([
+                        {
+                            action: 'ADD',
+                            category: attribute.searchTerm,
+                            value: internalConditionText,
+                        },
+                    ]);
                 }}
             />
         );
@@ -157,11 +165,13 @@ function CompoundSearchFilterInputField({
                     onChange(newValue);
                 }}
                 onSearch={(newValue) => {
-                    onSearch({
-                        action: 'ADD',
-                        category: attribute.searchTerm,
-                        value: newValue,
-                    });
+                    onSearch([
+                        {
+                            action: 'ADD',
+                            category: attribute.searchTerm,
+                            value: newValue,
+                        },
+                    ]);
                     onChange('');
                 }}
                 textLabel={textLabel}
@@ -231,11 +241,13 @@ function CompoundSearchFilterInputField({
                 selection={selection}
                 onChange={(checked, _value) => {
                     onChange(value);
-                    onSearch({
-                        action: checked ? 'ADD' : 'REMOVE',
-                        category: attribute.searchTerm,
-                        value: _value,
-                    });
+                    onSearch([
+                        {
+                            action: checked ? 'ADD' : 'REMOVE',
+                            category: attribute.searchTerm,
+                            value: _value,
+                        },
+                    ]);
                 }}
                 ariaLabelMenu={`Filter by ${attributeLabel} select menu`}
                 toggleLabel={`Filter by ${attributeLabel}`}

@@ -1,5 +1,6 @@
 import type { SearchCategory } from 'services/SearchService';
 import type { FeatureFlagEnvVar } from 'types/featureFlag';
+import type { NonEmptyArray } from 'utils/type.utils';
 import type { ConditionTextInputProps } from './components/ConditionText';
 
 // Compound search filter types
@@ -48,11 +49,17 @@ export type CompoundSearchFilterEntity = {
 
 export type CompoundSearchFilterConfig = CompoundSearchFilterEntity[];
 
-// Misc
+// Compound search filter interaction types
 
 export type OnSearchCallback = (payload: OnSearchPayload) => void;
 
-export type OnSearchPayload = {
+export type OnSearchPayload = NonEmptyArray<OnSearchPayloadItem>;
+
+export function isOnSearchPayload(payload: OnSearchPayloadItem[]): payload is OnSearchPayload {
+    return payload.length !== 0;
+}
+
+export type OnSearchPayloadItem = {
     action: 'ADD' | 'REMOVE';
     category: string;
     value: string;
