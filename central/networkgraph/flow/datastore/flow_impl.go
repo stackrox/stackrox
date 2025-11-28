@@ -2,6 +2,7 @@ package datastore
 
 import (
 	"context"
+	"slices"
 	"time"
 
 	"github.com/pkg/errors"
@@ -10,13 +11,18 @@ import (
 	graphConfigDS "github.com/stackrox/rox/central/networkgraph/config/datastore"
 	"github.com/stackrox/rox/central/networkgraph/flow/datastore/internal/store"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/timestamp"
 )
 
 var (
+	log = logging.LoggerForModule()
+
 	networkGraphSAC = sac.ForResource(resources.NetworkGraph)
+
+	addBatchSize = 5000
 )
 
 type flowDataStoreImpl struct {
@@ -109,8 +115,14 @@ func (fds *flowDataStoreImpl) UpsertFlows(ctx context.Context, flows []*storage.
 		filtered = append(filtered, flow)
 	}
 
-	if err := fds.storage.UpsertFlows(ctx, filtered, lastUpdateTS); err != nil {
-		return nil, err
+	for flowBatch := range slices.Chunk(filtered, addBatchSize) {
+		err := fds.storage.UpsertFlows(ctx, flowBatch, lastUpdateTS)
+		if err != nil {
+			// TODO:  remove from the output.
+			log.Warnf("error adding a batch of network flows: %v", err)
+		} else {
+			log.Debugf("successfully added a batch of %d network flows", len(flowBatch))
+		}
 	}
 
 	return filtered, nil
