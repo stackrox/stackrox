@@ -97,6 +97,9 @@ func (s *ImageFlatPostgresDataStoreTestSuite) TestSearchWithPostgres() {
 	results, err = s.datastore.Search(ctx, q)
 	s.NoError(err)
 	s.Len(results, 1)
+	serachRes, errRes := s.datastore.SearchImages(ctx, q)
+	s.NoError(errRes)
+	s.Len(serachRes, 1)
 
 	// Sort by impact score
 	q = pkgSearch.EmptyQuery()
@@ -541,6 +544,9 @@ func (s *ImageFlatPostgresDataStoreTestSuite) truncateTable(name string) {
 func getTestImage(id string) *storage.Image {
 	return &storage.Image{
 		Id: id,
+		Name: &storage.ImageName{
+			FullName: "remote1/repo1:tag1",
+		},
 		Scan: &storage.ImageScan{
 			OperatingSystem: "blah",
 			ScanTime:        protocompat.TimestampNow(),
