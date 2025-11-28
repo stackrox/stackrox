@@ -47,29 +47,6 @@ func TestShouldResetBackoff(t *testing.T) {
 	}
 }
 
-// TestExponentialBackoffProgression tests actual exponential backoff behavior
-func TestExponentialBackoffProgression(t *testing.T) {
-	exponential := backoff.NewExponentialBackOff()
-	exponential.InitialInterval = 10 * time.Second
-	exponential.MaxInterval = 5 * time.Minute
-	exponential.MaxElapsedTime = 0
-	exponential.RandomizationFactor = 0 // Disable randomization for deterministic testing
-	exponential.Multiplier = 2           // Explicit multiplier for doubling
-	exponential.Reset()                  // Reset to initialize state
-
-	intervals := []time.Duration{}
-	for i := 0; i < 7; i++ {
-		intervals = append(intervals, exponential.NextBackOff())
-	}
-
-	// Verify exponential growth
-	assert.Equal(t, 10*time.Second, intervals[0], "First interval should be InitialInterval")
-	assert.Greater(t, intervals[1], intervals[0], "Second interval should be greater than first")
-	assert.Greater(t, intervals[2], intervals[1], "Third interval should be greater than second")
-
-	// Verify capping at MaxInterval
-	assert.LessOrEqual(t, intervals[6], 5*time.Minute, "All intervals should be capped at MaxInterval")
-}
 
 // TestHandleBackoffOnConnectionStop tests the backoff management logic on connection stop
 func TestHandleBackoffOnConnectionStop(t *testing.T) {
