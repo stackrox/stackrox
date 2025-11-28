@@ -12,7 +12,7 @@ jobs:
       REPOMAPPING_DIR: repomapping
     steps:
     - name: Checkout repository
-      uses: actions/checkout@v5
+      uses: actions/checkout@v6
 
     - name: Authenticate with Google Cloud
       uses: google-github-actions/auth@v3
