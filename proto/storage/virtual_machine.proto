@@ -36,6 +36,17 @@ message VirtualMachine {
   VirtualMachineScan scan = 11;
 }
 
+// VirtualMachineScan duplicates most of the ImageScan or NodeScan
+// data structure tree, trimming down fields considered not needed for now.
+// An important consideration is that no field in this data structure tree has
+// any search tag. The goal was to ensure the whole Virtual Machine scan
+// could be stored in the `serialized` column from
+// the `virtual_machines` table.
+// This trade-off was made in order to be able to deliver the data flow, and to
+// avoid leaving dead data in customer databases, should
+// the virtual machine data model have to be re-visited later on.
+//
+// TODO(ROX-30352): Adjust the data model here or remove the comment above.
 message VirtualMachineScan {
   google.protobuf.Timestamp scan_time = 1;
   string operating_system = 2;
