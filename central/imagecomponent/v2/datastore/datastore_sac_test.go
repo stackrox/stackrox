@@ -13,6 +13,7 @@ import (
 	"github.com/stackrox/rox/pkg/sac/resources"
 	sacTestUtils "github.com/stackrox/rox/pkg/sac/testutils"
 	"github.com/stackrox/rox/pkg/scancomponent"
+	pkgSearch "github.com/stackrox/rox/pkg/search"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -318,7 +319,7 @@ func (s *componentV2DataStoreSACTestSuite) TestSACImageComponentCount() {
 	s.runImageTest("TestSACImageComponentCount", func(c componentTestCase) {
 
 		testCtx := s.imageTestContexts[c.contextKey]
-		count, err := s.imageComponentStore.Count(testCtx, nil)
+		count, err := s.imageComponentStore.Count(testCtx, pkgSearch.EmptyQuery())
 		s.NoError(err)
 		expectedCount := 0
 		for _, visible := range c.expectedComponentFound {
@@ -358,7 +359,7 @@ func (s *componentV2DataStoreSACTestSuite) TestSACImageComponentSearchImageCompo
 	s.runImageTest("TestSACImageComponentSearchImageComponents", func(c componentTestCase) {
 
 		testCtx := s.imageTestContexts[c.contextKey]
-		results, err := s.imageComponentStore.SearchImageComponents(testCtx, nil)
+		results, err := s.imageComponentStore.SearchImageComponents(testCtx, pkgSearch.EmptyQuery())
 		s.NoError(err)
 		expectedComponentIDs := make([]string, 0, len(c.expectedComponentFound))
 		for ID, visible := range c.expectedComponentFound {

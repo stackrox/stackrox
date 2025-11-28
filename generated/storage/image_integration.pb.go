@@ -78,7 +78,7 @@ func (ImageIntegrationCategory) EnumDescriptor() ([]byte, []int) {
 type ImageIntegration struct {
 	state      protoimpl.MessageState     `protogen:"open.v1"`
 	Id         string                     `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" sql:"pk,type(uuid)"`     // @gotags: sql:"pk,type(uuid)"
-	Name       string                     `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty" sql:"unique"` // @gotags: sql:"unique"
+	Name       string                     `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty" sql:"unique" search:"Integration Name,hidden"` // @gotags: sql:"unique" search:"Integration Name,hidden"
 	Type       string                     `protobuf:"bytes,3,opt,name=type,proto3" json:"type,omitempty"`
 	Categories []ImageIntegrationCategory `protobuf:"varint,6,rep,packed,name=categories,proto3,enum=storage.ImageIntegrationCategory" json:"categories,omitempty"`
 	// Custom configuration based on the image integration type.
