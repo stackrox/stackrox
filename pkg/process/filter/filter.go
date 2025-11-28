@@ -72,7 +72,8 @@ func (f *filterImpl) siftNoLock(level *level, args []string, levelNum int) bool 
 		return true
 	}
 	// Truncate the current argument to the max size to avoid large arguments taking up a lot of space
-	currentArg := stringutils.Truncate(args[0], maxArgSize)
+	// Clone to avoid retaining references to the ProcessIndicator protobuf object
+	currentArg := strings.Clone(stringutils.Truncate(args[0], maxArgSize))
 	nextLevel := level.children[currentArg]
 	if nextLevel == nil {
 		// If this level has already hit its max fan out then return false
@@ -119,14 +120,19 @@ func (f *filterImpl) Add(indicator *storage.ProcessIndicator) bool {
 
 	rootLevel := f.getOrAddRootLevelNoLock(indicator)
 
+	// Clone the exec file path to avoid retaining a reference to the ProcessIndicator
+	// protobuf object. Without this copy, the map key would hold a reference to the
+	// string within the protobuf, preventing garbage collection of the entire protobuf object.
+	execFilePath := strings.Clone(indicator.GetSignal().GetExecFilePath())
+
 	// Handle the process level independently as we will never reject a new process
-	processLevel := rootLevel.children[indicator.GetSignal().GetExecFilePath()]
+	processLevel := rootLevel.children[execFilePath]
 	if processLevel == nil {
 		if len(rootLevel.children) >= f.maxUniqueProcesses {
 			return false
 		}
 		processLevel = newLevel()
-		rootLevel.children[indicator.GetSignal().GetExecFilePath()] = processLevel
+		rootLevel.children[execFilePath] = processLevel
 	}
 
 	return f.siftNoLock(processLevel, strings.Fields(indicator.GetSignal().GetArgs()), 0)
