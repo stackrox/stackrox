@@ -8,9 +8,10 @@ import (
 	"testing"
 
 	"github.com/pkg/errors"
-	alertDS "github.com/stackrox/rox/central/alert/datastore/mocks"
-	configDS "github.com/stackrox/rox/central/config/datastore/mocks"
-	deploymentDS "github.com/stackrox/rox/central/deployment/datastore/mocks"
+	alertDSmocks "github.com/stackrox/rox/central/alert/datastore/mocks"
+	configDSmocks "github.com/stackrox/rox/central/config/datastore/mocks"
+	"github.com/stackrox/rox/central/views/deploymentcve"
+	deploymentcvemocks "github.com/stackrox/rox/central/views/deploymentcve/mocks"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/authproviders"
@@ -23,7 +24,7 @@ import (
 func TestRunner_makeRunner(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	t.Run("nil configuration", func(t *testing.T) {
-		cds := configDS.NewMockDataStore(ctrl)
+		cds := configDSmocks.NewMockDataStore(ctrl)
 		cds.EXPECT().GetPrivateConfig(gomock.Any()).Times(1).Return(
 			&storage.PrivateConfig{
 				Metrics: nil,
@@ -49,7 +50,7 @@ func TestRunner_makeRunner(t *testing.T) {
 	})
 
 	t.Run("err configuration", func(t *testing.T) {
-		cds := configDS.NewMockDataStore(ctrl)
+		cds := configDSmocks.NewMockDataStore(ctrl)
 		cds.EXPECT().GetPrivateConfig(gomock.Any()).Times(1).Return(
 			nil,
 			errors.New("DB error"))
@@ -76,7 +77,7 @@ func TestRunner_makeRunner(t *testing.T) {
 func TestRunner_ServeHTTP(t *testing.T) {
 	ctrl := gomock.NewController(t)
 
-	cds := configDS.NewMockDataStore(ctrl)
+	cds := configDSmocks.NewMockDataStore(ctrl)
 
 	cds.EXPECT().GetPrivateConfig(gomock.Any()).Times(1).Return(
 		&storage.PrivateConfig{
@@ -97,31 +98,20 @@ func TestRunner_ServeHTTP(t *testing.T) {
 					}}}},
 		nil)
 
-	dds := deploymentDS.NewMockDataStore(ctrl)
+	cveds := deploymentcvemocks.NewMockCveView(ctrl)
 
-	dds.EXPECT().WalkByQuery(gomock.Any(), gomock.Any(), gomock.Any()).
+	cveds.EXPECT().WalkVulnFindings(gomock.Any(), gomock.Any()).
 		Times(1).
-		Do(func(_ context.Context, _ *v1.Query, f func(*storage.Deployment) error) {
-			_ = f(&storage.Deployment{
-				Name:        "deployment1",
-				ClusterName: "cluster1",
+		Do(func(_ context.Context, f func(*deploymentcve.VulnFinding) error) {
+			_ = f(&deploymentcve.VulnFinding{
+				DeploymentName: "deployment1",
+				ClusterName:    "cluster1",
+				Severity:       storage.VulnerabilitySeverity_IMPORTANT_VULNERABILITY_SEVERITY,
 			})
 		}).
 		Return(nil)
 
-	dds.EXPECT().GetImagesForDeployment(gomock.Any(), gomock.Any()).
-		Times(1).Return([]*storage.Image{{
-		Names: []*storage.ImageName{{FullName: "fullname1"}},
-		Scan: &storage.ImageScan{
-			Components: []*storage.EmbeddedImageScanComponent{{
-				Vulns: []*storage.EmbeddedVulnerability{{
-					Severity: storage.VulnerabilitySeverity_IMPORTANT_VULNERABILITY_SEVERITY,
-				}},
-			}},
-		}},
-	}, nil)
-
-	ads := alertDS.NewMockDataStore(ctrl)
+	ads := alertDSmocks.NewMockDataStore(ctrl)
 
 	ads.EXPECT().WalkByQuery(gomock.Any(), gomock.Any(), gomock.Any()).
 		Times(1).
@@ -141,7 +131,7 @@ func TestRunner_ServeHTTP(t *testing.T) {
 		}).
 		Return(nil)
 
-	runner := makeRunner(&runnerDatastores{deployments: dds, alerts: ads})
+	runner := makeRunner(&runnerDatastores{deploymentCves: cveds, alerts: ads})
 	runner.initialize(cds)
 	runner[0].Gather(makeAdminContext(t))
 	runner[1].Gather(makeAdminContext(t))
