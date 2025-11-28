@@ -5,6 +5,8 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/cve/image/v2/datastore/store"
+	pgStore "github.com/stackrox/rox/central/cve/image/v2/datastore/store/postgres"
+	"github.com/stackrox/rox/central/globaldb"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	pkgSearch "github.com/stackrox/rox/pkg/search"
@@ -93,4 +95,8 @@ func convertOne(cve *storage.ImageCVEV2, result *pkgSearch.Result) *v1.SearchRes
 		FieldToMatches: pkgSearch.GetProtoMatchesMap(result.Matches),
 		Score:          result.Score,
 	}
+}
+
+func (ds *datastoreImpl) WalkDeploymentVulnFindings(ctx context.Context, fn func(*store.DeploymentVulnFinding) error) error {
+	return pgStore.WalkDeploymentVulnFindings(ctx, globaldb.GetPostgres(), fn)
 }

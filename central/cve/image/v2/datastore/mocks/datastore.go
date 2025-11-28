@@ -13,6 +13,7 @@ import (
 	context "context"
 	reflect "reflect"
 
+	store "github.com/stackrox/rox/central/cve/image/v2/datastore/store"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	storage "github.com/stackrox/rox/generated/storage"
 	search "github.com/stackrox/rox/pkg/search"
@@ -147,4 +148,18 @@ func (m *MockDataStore) SearchRawImageCVEs(ctx context.Context, q *v1.Query) ([]
 func (mr *MockDataStoreMockRecorder) SearchRawImageCVEs(ctx, q any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SearchRawImageCVEs", reflect.TypeOf((*MockDataStore)(nil).SearchRawImageCVEs), ctx, q)
+}
+
+// WalkDeploymentVulnFindings mocks base method.
+func (m *MockDataStore) WalkDeploymentVulnFindings(ctx context.Context, fn func(*store.DeploymentVulnFinding) error) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "WalkDeploymentVulnFindings", ctx, fn)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// WalkDeploymentVulnFindings indicates an expected call of WalkDeploymentVulnFindings.
+func (mr *MockDataStoreMockRecorder) WalkDeploymentVulnFindings(ctx, fn any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "WalkDeploymentVulnFindings", reflect.TypeOf((*MockDataStore)(nil).WalkDeploymentVulnFindings), ctx, fn)
 }

@@ -251,3 +251,17 @@ func (mr *MockDataStoreMockRecorder) WalkByQuery(ctx, query, fn any) *gomock.Cal
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "WalkByQuery", reflect.TypeOf((*MockDataStore)(nil).WalkByQuery), ctx, query, fn)
 }
+
+// WalkByQueryWithBatchedImages mocks base method.
+func (m *MockDataStore) WalkByQueryWithBatchedImages(ctx context.Context, query *v1.Query, fn func(*storage.Deployment, func() []*storage.ImageV2) error) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "WalkByQueryWithBatchedImages", ctx, query, fn)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// WalkByQueryWithBatchedImages indicates an expected call of WalkByQueryWithBatchedImages.
+func (mr *MockDataStoreMockRecorder) WalkByQueryWithBatchedImages(ctx, query, fn any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "WalkByQueryWithBatchedImages", reflect.TypeOf((*MockDataStore)(nil).WalkByQueryWithBatchedImages), ctx, query, fn)
+}

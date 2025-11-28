@@ -8,6 +8,7 @@ import (
 	clusterDS "github.com/stackrox/rox/central/cluster/datastore"
 	configDS "github.com/stackrox/rox/central/config/datastore"
 	expiryS "github.com/stackrox/rox/central/credentialexpiry/service"
+	cveDS "github.com/stackrox/rox/central/cve/image/v2/datastore"
 	deploymentDS "github.com/stackrox/rox/central/deployment/datastore"
 	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/central/metrics/custom/clusters"
@@ -48,6 +49,7 @@ type runnerDatastores struct {
 	clusters    clusterDS.DataStore
 	policies    policyDS.DataStore
 	expiry      expiryS.Service
+	cves        cveDS.DataStore
 }
 
 func withHardcodedConfiguration(period uint32, descriptors map[string][]string) func(*storage.PrometheusMetrics) *storage.PrometheusMetrics_Group {
@@ -69,7 +71,7 @@ func withHardcodedConfiguration(period uint32, descriptors map[string][]string) 
 
 func makeRunner(ds *runnerDatastores) trackerRunner {
 	return trackerRunner{{
-		image_vulnerabilities.New(ds.deployments),
+		image_vulnerabilities.New(ds.cves),
 		(*storage.PrometheusMetrics).GetImageVulnerabilities,
 	}, {
 		policy_violations.New(ds.alerts),

@@ -24,6 +24,8 @@ type DataStore interface {
 	Get(ctx context.Context, id string) (*storage.ImageCVEV2, bool, error)
 	Count(ctx context.Context, q *v1.Query) (int, error)
 	GetBatch(ctx context.Context, id []string) ([]*storage.ImageCVEV2, error)
+
+	WalkDeploymentVulnFindings(ctx context.Context, fn func(*store.DeploymentVulnFinding) error) error
 }
 
 // New returns a new instance of a DataStore.
