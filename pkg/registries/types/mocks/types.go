@@ -71,6 +71,21 @@ func (mr *MockRegistryMockRecorder) HTTPClient() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "HTTPClient", reflect.TypeOf((*MockRegistry)(nil).HTTPClient))
 }
 
+// ListTags mocks base method.
+func (m *MockRegistry) ListTags(ctx context.Context, repository string) ([]string, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ListTags", ctx, repository)
+	ret0, _ := ret[0].([]string)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ListTags indicates an expected call of ListTags.
+func (mr *MockRegistryMockRecorder) ListTags(ctx, repository any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListTags", reflect.TypeOf((*MockRegistry)(nil).ListTags), ctx, repository)
+}
+
 // Match mocks base method.
 func (m *MockRegistry) Match(image *storage.ImageName) bool {
 	m.ctrl.T.Helper()
@@ -192,6 +207,21 @@ func (m *MockImageRegistry) HTTPClient() *http.Client {
 func (mr *MockImageRegistryMockRecorder) HTTPClient() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "HTTPClient", reflect.TypeOf((*MockImageRegistry)(nil).HTTPClient))
+}
+
+// ListTags mocks base method.
+func (m *MockImageRegistry) ListTags(ctx context.Context, repository string) ([]string, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ListTags", ctx, repository)
+	ret0, _ := ret[0].([]string)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ListTags indicates an expected call of ListTags.
+func (mr *MockImageRegistryMockRecorder) ListTags(ctx, repository any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListTags", reflect.TypeOf((*MockImageRegistry)(nil).ListTags), ctx, repository)
 }
 
 // Match mocks base method.

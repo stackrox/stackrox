@@ -52,6 +52,10 @@ func (m *mockRegistry) HTTPClient() *http.Client {
 	return http.DefaultClient
 }
 
+func (m *mockRegistry) ListTags(_ context.Context, _ string) ([]string, error) {
+	panic("unsupported")
+}
+
 var (
 	_ http.Handler = (*noopHandler)(nil)
 	_ http.Handler = (*mockClair)(nil)
