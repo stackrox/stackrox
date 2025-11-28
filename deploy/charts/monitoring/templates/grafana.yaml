@@ -43,6 +43,7 @@ data:
         type: prometheus
         access: proxy
         orgId: 1
+        uid: PBFA97CFB590B2093
         url: http://localhost:9090
         isDefault: true
         version: 1
@@ -91,3 +92,5 @@ data:
 {{ .Files.Get "dashboards/enrichment-endpoints.json" | indent 4 }}
   enrichment-updatecomputer.json: |-
 {{ .Files.Get "dashboards/enrichment-updatecomputer.json" | indent 4 }}
+  vm-relay-metrics.json: |-
+{{ .Files.Get "dashboards/vm-relay-metrics.json" | indent 4 }}

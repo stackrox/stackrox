@@ -75,6 +75,31 @@ data:
             action: replace
             target_label: node_name
 
+      - job_name: collector-vm-metrics
+        kubernetes_sd_configs:
+          - role: pod
+            namespaces:
+              own_namespace: true
+        relabel_configs:
+          - source_labels: [__meta_kubernetes_pod_label_app]
+            action: keep
+            regex: collector
+          - source_labels: [__meta_kubernetes_pod_container_port_name]
+            action: keep
+            regex: monitoring
+          - source_labels: [__meta_kubernetes_pod_container_port_number]
+            action: keep
+            regex: "9091"
+          - source_labels: [__meta_kubernetes_namespace]
+            action: replace
+            target_label: namespace
+          - source_labels: [__meta_kubernetes_pod_name]
+            action: replace
+            target_label: pod
+          - source_labels: [__meta_kubernetes_pod_node_name]
+            action: replace
+            target_label: node_name
+
   rules_alerts_kubernetes.yml: |-
     groups:
     - name: Kubernetes
