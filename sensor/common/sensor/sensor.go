@@ -412,6 +412,68 @@ func shouldResetBackoff(connectionStart time.Time, stableDuration time.Duration)
 	return elapsed >= stableDuration
 }
 
+// handleBackoffOnConnectionStop manages backoff reset and logging based on connection stability.
+// Returns true if backoff was reset, false if preserved.
+func handleBackoffOnConnectionStop(exponential *backoff.ExponentialBackOff, connectionStart time.Time, stableDuration time.Duration, err error) bool {
+	elapsed := time.Since(connectionStart)
+
+	if shouldResetBackoff(connectionStart, stableDuration) {
+		exponential.Reset()
+		if stableDuration == 0 {
+			log.Info("Connection stable duration is 0, resetting exponential backoff immediately (legacy behavior)")
+		} else {
+			log.Infof("Connection stable for %s (threshold: %s), resetting exponential backoff",
+				elapsed.Round(time.Second), stableDuration)
+		}
+		return true
+	}
+
+	// Preserve backoff to prevent rapid retries; distinguish intentional shutdowns from failures
+	if err != nil && errors.Is(err, context.Canceled) {
+		log.Infof("Connection stopped after %s (before stable duration %s); intentional shutdown, preserving exponential backoff state",
+			elapsed.Round(time.Second), stableDuration)
+	} else if err != nil {
+		log.Warnf("Connection failed after %s (before stable duration %s), preserving exponential backoff to prevent rapid retries",
+			elapsed.Round(time.Second), stableDuration)
+	} else {
+		log.Infof("Connection stopped after %s (before stable duration %s), preserving exponential backoff state",
+			elapsed.Round(time.Second), stableDuration)
+	}
+	return false
+}
+
+// shouldDisableReconcile determines if client reconciliation should be disabled based on the error.
+// Returns true if reconciliation should be disabled.
+func shouldDisableReconcile(err error) bool {
+	if err == nil {
+		return false
+	}
+	return errors.Is(err, errCantReconcile)
+}
+
+// handleReconnectionError logs appropriate messages for reconnection errors and determines
+// if reconciliation should be disabled. Returns true if reconciliation should be disabled.
+func handleReconnectionError(err error) bool {
+	if err == nil {
+		log.Info("Communication with Central stopped. Retrying.")
+		return false
+	}
+
+	disableReconcile := false
+	if errors.Is(err, errCantReconcile) {
+		if errors.Is(err, errLargePayload) {
+			log.Warnf("Deduper payload is too large for sensor to handle. Sensor will reconnect without client reconciliation." +
+				"Consider increasing the maximum receive message size in sensor 'ROX_GRPC_MAX_MESSAGE_SIZE'")
+		} else {
+			log.Warnf("Sensor cannot reconcile due to: %v", err)
+		}
+		disableReconcile = true
+		log.Infof("Communication with Central stopped with error: %v. Retrying.", err)
+	}
+	log.Infof("Communication with Central stopped: %v. Retrying.", err)
+	return disableReconcile
+}
+
 func (s *Sensor) communicationWithCentralWithRetries(centralReachable *concurrency.Flag) {
 	// Attempt a simple restart strategy: if connection broke, re-establish the connection with exponential back-offs.
 	// This approach does not consider messages that were already sent to central_sender but weren't written to the stream.
@@ -458,45 +520,14 @@ func (s *Sensor) communicationWithCentralWithRetries(centralReachable *concurren
 
 		select {
 		case <-s.centralCommunication.Stopped().WaitC():
-			elapsed := time.Since(connectionStartTime)
 			err := s.centralCommunication.Stopped().Err()
 
-			if shouldResetBackoff(connectionStartTime, stableDuration) {
-				exponential.Reset()
-				if stableDuration == 0 {
-					log.Info("Connection stable duration is 0, resetting exponential backoff immediately (legacy behavior)")
-				} else {
-					log.Infof("Connection stable for %s (threshold: %s), resetting exponential backoff",
-						elapsed.Round(time.Second), stableDuration)
-				}
-			} else {
-				// Preserve backoff to prevent rapid retries; distinguish intentional shutdowns from failures
-				if err != nil && errors.Is(err, context.Canceled) {
-					log.Infof("Connection stopped after %s (before stable duration %s); intentional shutdown, preserving exponential backoff state",
-						elapsed.Round(time.Second), stableDuration)
-				} else if err != nil {
-					log.Warnf("Connection failed after %s (before stable duration %s), preserving exponential backoff to prevent rapid retries",
-						elapsed.Round(time.Second), stableDuration)
-				} else {
-					log.Infof("Connection stopped after %s (before stable duration %s), preserving exponential backoff state",
-						elapsed.Round(time.Second), stableDuration)
-				}
-			}
+			// Handle backoff reset decision and logging
+			handleBackoffOnConnectionStop(exponential, connectionStartTime, stableDuration, err)
 
-			if err != nil {
-				if errors.Is(err, errCantReconcile) {
-					if errors.Is(err, errLargePayload) {
-						log.Warnf("Deduper payload is too large for sensor to handle. Sensor will reconnect without client reconciliation." +
-							"Consider increasing the maximum receive message size in sensor 'ROX_GRPC_MAX_MESSAGE_SIZE'")
-					} else {
-						log.Warnf("Sensor cannot reconcile due to: %v", err)
-					}
-					s.reconcile.Store(false)
-					log.Infof("Communication with Central stopped with error: %v. Retrying.", err)
-				}
-				log.Infof("Communication with Central stopped: %v. Retrying.", err)
-			} else {
-				log.Info("Communication with Central stopped. Retrying.")
+			// Handle reconnection error logging and reconciliation decision
+			if handleReconnectionError(err) {
+				s.reconcile.Store(false)
 			}
 
 			s.changeState(common.SensorComponentEventOfflineMode)
