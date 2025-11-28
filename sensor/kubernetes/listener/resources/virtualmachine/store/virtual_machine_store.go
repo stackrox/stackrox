@@ -100,11 +100,7 @@ func (s *VirtualMachineStore) OnNamespaceDeleted(namespace string) {
 func (s *VirtualMachineStore) Get(id virtualmachine.VMID) *virtualmachine.Info {
 	s.lock.RLock()
 	defer s.lock.RUnlock()
-	vm := s.virtualMachines[id]
-	if vm == nil {
-		return nil
-	}
-	return vm.Copy()
+	return s.virtualMachines[id].Copy()
 }
 
 // Has returns true if the store contains the VirtualMachine with the given ID
@@ -120,11 +116,7 @@ func (s *VirtualMachineStore) GetFromCID(cid uint32) *virtualmachine.Info {
 	if !ok {
 		return nil
 	}
-	vm := s.virtualMachines[uid]
-	if vm == nil {
-		return nil
-	}
-	return vm.Copy()
+	return s.virtualMachines[uid].Copy()
 }
 
 func (s *VirtualMachineStore) addOrUpdateNoLock(vm *virtualmachine.Info) {
