@@ -63,6 +63,9 @@ jobs:
           ref: ${{ github.event.pull_request.head.sha }}
           path: stackrox
           fetch-depth: 0
+      - uses: ./stackrox/.github/actions/job-preamble
+        with:
+          free-disk-space: 40
       - name: Create Kind cluster"
         uses: helm/kind-action@v1
         with:
