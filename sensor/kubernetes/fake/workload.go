@@ -88,15 +88,28 @@ type VMIndexReportWorkload struct {
 	NumRepositories int           `yaml:"numRepositories"`
 }
 
+// VirtualMachineWorkload defines the workload for VirtualMachine and VirtualMachineInstance CRDs
+type VirtualMachineWorkload struct {
+	// PoolSize is the number of VM/VMI templates to maintain in the pool
+	PoolSize int `yaml:"poolSize"`
+	// UpdateInterval is how often to update VM/VMI metadata (annotations, labels)
+	UpdateInterval time.Duration `yaml:"updateInterval"`
+	// LifecycleDuration is how long each VM/VMI lifecycle lasts before recreation
+	LifecycleDuration time.Duration `yaml:"lifecycleDuration"`
+	// NumLifecycles is the number of times to recreate VMs/VMIs (0 = infinite)
+	NumLifecycles int `yaml:"numLifecycles"`
+}
+
 // Workload is the definition of a scale workload
 type Workload struct {
-	DeploymentWorkload    []DeploymentWorkload    `yaml:"deploymentWorkload"`
-	NetworkPolicyWorkload []NetworkPolicyWorkload `yaml:"networkPolicyWorkload"`
-	NodeWorkload          NodeWorkload            `yaml:"nodeWorkload"`
-	NetworkWorkload       NetworkWorkload         `yaml:"networkWorkload"`
-	RBACWorkload          RBACWorkload            `yaml:"rbacWorkload"`
-	ServiceWorkload       ServiceWorkload         `yaml:"serviceWorkload"`
-	VMIndexReportWorkload VMIndexReportWorkload   `yaml:"vmIndexReportWorkload"`
-	NumNamespaces         int                     `yaml:"numNamespaces"`
-	MatchLabels           bool                    `yaml:"matchLabels"`
+	DeploymentWorkload     []DeploymentWorkload    `yaml:"deploymentWorkload"`
+	NetworkPolicyWorkload  []NetworkPolicyWorkload `yaml:"networkPolicyWorkload"`
+	NodeWorkload           NodeWorkload            `yaml:"nodeWorkload"`
+	NetworkWorkload        NetworkWorkload         `yaml:"networkWorkload"`
+	RBACWorkload           RBACWorkload            `yaml:"rbacWorkload"`
+	ServiceWorkload        ServiceWorkload         `yaml:"serviceWorkload"`
+	VMIndexReportWorkload  VMIndexReportWorkload   `yaml:"vmIndexReportWorkload"`
+	VirtualMachineWorkload VirtualMachineWorkload  `yaml:"virtualMachineWorkload"`
+	NumNamespaces          int                     `yaml:"numNamespaces"`
+	MatchLabels            bool                    `yaml:"matchLabels"`
 }

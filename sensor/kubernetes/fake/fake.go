@@ -16,6 +16,7 @@ import (
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sync"
+	vmPkg "github.com/stackrox/rox/pkg/virtualmachine"
 	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/networkflow/manager"
 	"github.com/stackrox/rox/sensor/common/signal"
@@ -24,6 +25,7 @@ import (
 	"github.com/stackrox/rox/sensor/kubernetes/client"
 	vmStore "github.com/stackrox/rox/sensor/kubernetes/listener/resources/virtualmachine/store"
 	"go.yaml.in/yaml/v3"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/version"
@@ -81,6 +83,8 @@ func (r *vmReadiness) Wait(ctx context.Context) bool {
 
 var (
 	log = logging.LoggerForModule()
+
+	defaultGuestOSPool = []string{"linux", "windows", "rhel", "ubuntu"}
 )
 
 func init() {
@@ -137,6 +141,7 @@ func (c *clientSetImpl) OpenshiftOperator() operatorVersioned.Interface {
 type WorkloadManager struct {
 	db                        *pebble.DB
 	fakeClient                *fake.Clientset
+	dynamicClient             *fakeDynamic.FakeDynamicClient
 	client                    client.Interface
 	processPool               *ProcessPool
 	labelsPool                *labelsPoolPerNamespace
@@ -258,6 +263,7 @@ func NewWorkloadManager(config *WorkloadManagerConfig) *WorkloadManager {
 	if err := yaml.Unmarshal(data, &workload); err != nil {
 		log.Panicf("could not unmarshal workload from file due to error (%v): %s", err, data)
 	}
+	workload.VirtualMachineWorkload = validateVMWorkload(workload.VirtualMachineWorkload)
 
 	var db *pebble.DB
 	if config.storagePath != "" {
@@ -396,10 +402,41 @@ func (w *WorkloadManager) clearActions() {
 		select {
 		case <-t.C:
 			w.fakeClient.ClearActions()
+			if w.dynamicClient != nil {
+				w.dynamicClient.ClearActions()
+			}
 		case <-w.shutdownCtx.Done():
 			return
 		}
 	}
+}
+
+// cleanupVMHistory trims dynamic fake tracker state after a VM lifecycle ends to prevent runaway memory use.
+func (w *WorkloadManager) cleanupVMHistory(namespace, vmName, vmiName string) {
+	if w.dynamicClient == nil {
+		return
+	}
+
+	vmGVR := schema.GroupVersionResource{
+		Group:    "kubevirt.io",
+		Version:  "v1",
+		Resource: "virtualmachines",
+	}
+	vmiGVR := schema.GroupVersionResource{
+		Group:    "kubevirt.io",
+		Version:  "v1",
+		Resource: "virtualmachineinstances",
+	}
+
+	tracker := w.dynamicClient.Tracker()
+	if vmName != "" {
+		_ = tracker.Delete(vmGVR, namespace, vmName, metav1.DeleteOptions{})
+	}
+	if vmiName != "" {
+		_ = tracker.Delete(vmiGVR, namespace, vmiName, metav1.DeleteOptions{})
+	}
+
+	w.dynamicClient.ClearActions()
 }
 
 func (w *WorkloadManager) initializePreexistingResources() {
@@ -472,10 +509,49 @@ func (w *WorkloadManager) initializePreexistingResources() {
 		Resource: "customresourcedefinitions",
 	}
 
+	// Add kubevirt GVRs for dynamic client
+	vmGVR := schema.GroupVersionResource{
+		Group:    "kubevirt.io",
+		Version:  "v1",
+		Resource: "virtualmachines",
+	}
+	vmiGVR := schema.GroupVersionResource{
+		Group:    "kubevirt.io",
+		Version:  "v1",
+		Resource: "virtualmachineinstances",
+	}
+
+	customListKinds := map[schema.GroupVersionResource]string{
+		gvr:    "CustomResourceDefinitionList",
+		vmGVR:  "VirtualMachineList",
+		vmiGVR: "VirtualMachineInstanceList",
+	}
+
+	dynClient := fakeDynamic.NewSimpleDynamicClientWithCustomListKinds(scheme, customListKinds)
+
 	clientSet := &clientSetImpl{
 		kubernetes: w.fakeClient,
-		dynamic:    fakeDynamic.NewSimpleDynamicClientWithCustomListKinds(scheme, map[schema.GroupVersionResource]string{gvr: "CustomResourceDefinitionList"}),
+		dynamic:    dynClient,
 	}
+	w.dynamicClient = dynClient
+
+	// Seed discovery API with kubevirt resources if VM workload is configured
+	if w.workload.VirtualMachineWorkload.PoolSize > 0 {
+		fakeDiscovery := w.fakeClient.Discovery().(*fakediscovery.FakeDiscovery)
+		vmGV := vmPkg.GetGroupVersion()
+		vmResources := vmPkg.GetRequiredResources()
+
+		// Add kubevirt API group to discovery
+		apiResourceList := &metav1.APIResourceList{
+			GroupVersion: vmGV.String(),
+			APIResources: make([]metav1.APIResource, 0, len(vmResources)),
+		}
+		for _, res := range vmResources {
+			apiResourceList.APIResources = append(apiResourceList.APIResources, res.APIResource)
+		}
+		fakeDiscovery.Resources = append(fakeDiscovery.Resources, apiResourceList)
+	}
+
 	initializeOpenshiftClients(clientSet)
 	w.client = clientSet
 
@@ -502,5 +578,28 @@ func (w *WorkloadManager) initializePreexistingResources() {
 		w.workload.VMIndexReportWorkload.ReportInterval > 0 {
 		w.wg.Add(1)
 		go w.manageVMIndexReportsWithPopulation(w.shutdownCtx)
+	}
+
+	// Start VirtualMachine/VirtualMachineInstance workload if configured
+	if w.workload.VirtualMachineWorkload.PoolSize > 0 {
+		templatePool := newVMTemplatePool(
+			w.workload.VirtualMachineWorkload.PoolSize,
+			defaultGuestOSPool,
+			vmBaseVSOCKCID,
+		)
+
+		var vmResources []*vmResourcesToBeManaged
+		for i := 0; i < templatePool.size(); i++ {
+			resource := w.getVMResources(w.workload.VirtualMachineWorkload, i, templatePool)
+			if resource != nil {
+				vmResources = append(vmResources, resource)
+			}
+		}
+
+		// Fork management of VM/VMI resources
+		for _, resource := range vmResources {
+			w.wg.Add(1)
+			go w.manageVirtualMachine(w.shutdownCtx, resource)
+		}
 	}
 }
