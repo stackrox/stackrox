@@ -25,6 +25,9 @@ defaults:
     shell: bash
 
 jobs:
+  define-ci-versions:
+    uses: ./.github/workflows/define-ci-versions.yaml
+
   define-job-matrix:
     outputs:
       matrix: ${{ steps.define-job-matrix.outputs.matrix }}
@@ -104,6 +107,7 @@ jobs:
           echo "matrix=$condensed" >> "$GITHUB_OUTPUT"
 
   pre-build-ui:
+    needs: define-ci-versions
     strategy:
       fail-fast: false
       matrix:
@@ -114,7 +118,7 @@ jobs:
       UI_PKG_INSTALL_EXTRA_ARGS: --ignore-scripts
     runs-on: ubuntu-latest
     container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.4.9
+      image: ${{ needs.define-ci-versions.outputs.apollo-ci-test-image }}
       volumes:
         - /usr:/mnt/usr
         - /opt:/mnt/opt
@@ -147,9 +151,10 @@ jobs:
             ui/apps/platform/package-lock.json
 
   pre-build-cli:
+    needs: define-ci-versions
     runs-on: ubuntu-latest
     container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.4.9
+      image: ${{ needs.define-ci-versions.outputs.apollo-ci-test-image }}
       volumes:
         - /usr:/mnt/usr
         - /opt:/mnt/opt
@@ -187,10 +192,10 @@ jobs:
       # prerelease - built with GOTAGS=release
       # race-condition-debug - built with -race
       matrix: ${{ fromJson(needs.define-job-matrix.outputs.matrix).pre_build_go_binaries }}
-    needs: define-job-matrix
+    needs: [define-ci-versions, define-job-matrix]
     runs-on: ubuntu-latest
     container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.4.9
+      image: ${{ needs.define-ci-versions.outputs.apollo-ci-test-image }}
       volumes:
         - /usr:/mnt/usr
         - /opt:/mnt/opt
@@ -258,9 +263,10 @@ jobs:
           path: go-binaries-build.tgz
 
   pre-build-docs:
+    needs: define-ci-versions
     runs-on: ubuntu-latest
     container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.4.9
+      image: ${{ needs.define-ci-versions.outputs.apollo-ci-test-image }}
       volumes:
         - /usr:/mnt/usr
         - /opt:/mnt/opt
@@ -298,6 +304,7 @@ jobs:
   build-and-push-main:
     runs-on: ubuntu-latest
     needs:
+      - define-ci-versions
       - define-job-matrix
       - pre-build-ui
       - pre-build-cli
@@ -320,7 +327,7 @@ jobs:
       GO_BINARIES_BUILD_ARTIFACT: ""
       ROX_PRODUCT_BRANDING: ""
     container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.4.9
+      image: ${{ needs.define-ci-versions.outputs.apollo-ci-test-image }}
       volumes:
         - /usr:/mnt/usr
         - /opt:/mnt/opt
@@ -485,6 +492,7 @@ jobs:
   push-main-manifests:
     runs-on: ubuntu-latest
     needs:
+    - define-ci-versions
     - define-job-matrix
     - build-and-push-main
     # This step will run even if some of the build-and-push-matrix steps failed.
@@ -504,7 +512,7 @@ jobs:
     env:
       ROX_PRODUCT_BRANDING: ""
     container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.4.9
+      image: ${{ needs.define-ci-versions.outputs.apollo-ci-test-image }}
       volumes:
         - /usr:/mnt/usr
         - /opt:/mnt/opt
@@ -597,9 +605,10 @@ jobs:
   build-and-push-operator:
     runs-on: ubuntu-latest
     needs:
+      - define-ci-versions
       - define-job-matrix
     container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.4.9
+      image: ${{ needs.define-ci-versions.outputs.apollo-ci-test-image }}
       volumes:
         - /usr:/mnt/usr
         - /opt:/mnt/opt
@@ -787,8 +796,9 @@ jobs:
       ARTIFACT_DIR: junit-reports/
     runs-on: ubuntu-latest
     container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.4.9
+      image: ${{ needs.define-ci-versions.outputs.apollo-ci-test-image }}
     needs:
+    - define-ci-versions
     - pre-build-cli
     - pre-build-go-binaries
     steps:
