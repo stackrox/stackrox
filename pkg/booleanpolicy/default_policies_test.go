@@ -3956,7 +3956,7 @@ func BenchmarkProcessPolicies(b *testing.B) {
 			require.NoError(b, err)
 
 			b.ResetTimer()
-			for i := 0; i < b.N; i++ {
+			for b.Loop() {
 				for _, dep := range []*storage.Deployment{privilegedDep, nonPrivilegedDep} {
 					for _, key := range []string{aptGetKey, aptGet2Key, curlKey, bashKey} {
 						_, err := m.MatchDeploymentWithProcess(nil, enhancedDeployment(dep, images), indicators[dep.GetId()][key], processesNotInBaseline[dep.GetId()].Contains(key))
@@ -3977,7 +3977,7 @@ func BenchmarkProcessPolicies(b *testing.B) {
 			b.Run(fmt.Sprintf("benchmark caching: %s/%s", dep.GetId(), key), func(b *testing.B) {
 				var resNoCaching Violations
 				b.Run("no caching", func(b *testing.B) {
-					for i := 0; i < b.N; i++ {
+					for b.Loop() {
 						var err error
 						resNoCaching, err = m.MatchDeploymentWithProcess(nil, enhancedDeployment(privilegedDep, images), indicator, notInBaseline)
 						require.NoError(b, err)
@@ -3987,7 +3987,7 @@ func BenchmarkProcessPolicies(b *testing.B) {
 				var resWithCaching Violations
 				b.Run("with caching", func(b *testing.B) {
 					var cache CacheReceptacle
-					for i := 0; i < b.N; i++ {
+					for b.Loop() {
 						var err error
 						resWithCaching, err = m.MatchDeploymentWithProcess(&cache, enhancedDeployment(privilegedDep, images), indicator, notInBaseline)
 						require.NoError(b, err)
