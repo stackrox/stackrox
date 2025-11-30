@@ -15,6 +15,7 @@ import (
 	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/centralcaps"
 	"github.com/stackrox/rox/sensor/common/message"
+	"github.com/stackrox/rox/sensor/common/virtualmachine"
 	"github.com/stackrox/rox/sensor/common/virtualmachine/metrics"
 )
 
@@ -120,6 +121,16 @@ func (h *handlerImpl) Start() error {
 	return nil
 }
 
+func (h *handlerImpl) sendFakeVMIndexReport(toCentral chan *message.ExpiringMessage) {
+	ir := &v1.IndexReport{
+		VsockCid: "666",
+		IndexV4:  getHardcodedIndexReport(),
+	}
+	log.Infof("Sending one fake v1.IndexReport to Central...")
+	h.handleIndexReport(toCentral, ir)
+	log.Infof("Sent one fake v1.IndexReport to Central")
+}
+
 func (h *handlerImpl) Stop() {
 	// Stop the stopper FIRST so Send() will see it as stopped and return early
 	// before we close the channel. This prevents panics from sending on closed channel.
@@ -164,6 +175,9 @@ func (h *handlerImpl) run(indexReports <-chan *v1.IndexReport) (toCentral <-chan
 			}
 		}
 	}()
+	go func() {
+		h.sendFakeVMIndexReport(ch2Central)
+	}()
 	return ch2Central
 }
 
@@ -193,7 +207,15 @@ func (h *handlerImpl) newMessageToCentral(indexReport *v1.IndexReport) (*message
 	}
 
 	vmInfo := h.store.GetFromCID(uint32(cid))
-	if vmInfo == nil {
+	if cid == 666 {
+		var vsockID uint32
+		vsockID = 666
+		vmInfo = &virtualmachine.Info{
+			ID:        "666",
+			Name:      "Fake-machine",
+			Namespace: "fake-namespace",
+			VSOCKCID:  &vsockID}
+	} else if vmInfo == nil {
 		// Return retryable error if the virtual machine is not yet known to Sensor.
 		return nil, errors.Wrapf(errVirtualMachineNotFound, "VirtualMachine with Vsock CID %q not found", indexReport.GetVsockCid())
 	}
