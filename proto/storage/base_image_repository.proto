@@ -1,0 +1,23 @@
+syntax = "proto3";
+
+package storage;
+
+import "google/protobuf/timestamp.proto";
+
+option go_package = "./storage;storage";
+option java_package = "io.stackrox.proto.storage";
+
+message BaseImageRepository {
+  enum Status {
+    HEALTHY = 0;
+    UNHEALTHY = 1;
+    DISABLED = 2;
+  }
+  string id = 1; // @gotags: search:"Baseimage Repository Id,store,hidden" sql:"pk"
+  string repository_path = 2; // @gotags: search:"Baseimage Repository Pattern Path"
+  string tag_pattern = 3; // @gotags: search:"Baseimage Repository Tag Pattern"
+  int32 tag_limit = 4; // @gotags: search:"Baseimage Repository Tag Limit"
+  google.protobuf.Timestamp last_poll_at = 5; // @gotags: search:"Baseimage Last Poll At"
+  int32 failure_count = 6; // @gotags: search:"Baseimage Repository Failure Count"
+  Status health_status = 7; // @gotags: search:"Baseimage Repository Health Status"
+}
