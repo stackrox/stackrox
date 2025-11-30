@@ -339,6 +339,36 @@ func (s *ImagesStoreSuite) TestWalkByQuery() {
 	assert.NoError(s.T(), tx.Commit(s.ctx))
 }
 
+func (s *ImagesStoreSuite) TestWalkMetadataByQuery() {
+	image := getTestImage("image1")
+	image2 := getTestImage("image2")
+
+	// Add an image
+	s.NoError(s.store.Upsert(s.ctx, image))
+	_, exists, err := s.store.Get(s.ctx, image.GetId())
+	s.NoError(err)
+	s.True(exists)
+
+	// Add a second image
+	s.NoError(s.store.Upsert(s.ctx, image2))
+	_, exists, err = s.store.Get(s.ctx, image2.GetId())
+	s.NoError(err)
+	s.True(exists)
+
+	walkFn := func(obj *storage.Image) error {
+		if obj.GetId() != image.GetId() {
+			return fmt.Errorf("expected image1 but got %s", obj.GetId())
+		}
+		if obj.GetScan().GetComponents() != nil {
+			return fmt.Errorf("expected scan components to be nil but got %d components", len(obj.GetScan().GetComponents()))
+		}
+		return nil
+	}
+
+	q := search.NewQueryBuilder().AddExactMatches(search.ImageSHA, image.GetId()).ProtoQuery()
+	s.NoError(s.store.WalkMetadataByQuery(s.ctx, q, walkFn))
+}
+
 func (s *ImagesStoreSuite) TestGetMany() {
 	image := getTestImage("image1")
 	image2 := getTestImage("image2")

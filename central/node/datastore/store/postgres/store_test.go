@@ -4,6 +4,7 @@ package postgres
 
 import (
 	"context"
+	"fmt"
 	"testing"
 	"time"
 
@@ -94,6 +95,29 @@ func (s *NodesStoreSuite) TestStore() {
 	s.NoError(err)
 	s.False(exists)
 	s.Nil(foundNode)
+}
+
+func (s *NodesStoreSuite) TestWalkByQuery() {
+	store := New(s.pool, false, concurrency.NewKeyFence())
+
+	node := &storage.Node{}
+	s.NoError(testutils.FullInit(node, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
+
+	node2 := node.CloneVT()
+	node2.Id = uuid.NewDummy().String()
+
+	s.NoError(store.Upsert(s.ctx, node))
+	s.NoError(store.Upsert(s.ctx, node2))
+
+	walkFn := func(obj *storage.Node) error {
+		if obj.GetId() != node.GetId() {
+			return fmt.Errorf("expected node1 but got %s", obj.GetId())
+		}
+		return nil
+	}
+
+	q := search.NewQueryBuilder().AddExactMatches(search.NodeID, node.GetId()).ProtoQuery()
+	s.NoError(store.WalkByQuery(s.ctx, q, walkFn))
 }
 
 func (s *NodesStoreSuite) TestStore_UpsertWithoutScan() {
