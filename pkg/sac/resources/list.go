@@ -52,8 +52,9 @@ var (
 	Detection = newResourceMetadata("Detection", permissions.GlobalScope)
 	Image     = newResourceMetadata("Image", permissions.NamespaceScope)
 
-	BaseImage      = newResourceMetadata("BaseImage", permissions.GlobalScope)
-	BaseImageLayer = newResourceMetadata("BaseImageLayer", permissions.GlobalScope)
+	BaseImage           = newResourceMetadata("BaseImage", permissions.GlobalScope)
+	BaseImageLayer      = newResourceMetadata("BaseImageLayer", permissions.GlobalScope)
+	BaseImageRepository = newResourceMetadata("BaseImageRepository", permissions.GlobalScope)
 
 	// Integration groups all integration-related resources. It aims to cover
 	// integrations and their configuration. For instance, it has replaced:
