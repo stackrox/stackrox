@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/set"
@@ -266,7 +267,9 @@ func (s *VirtualMachineStore) PrepopulateTestData(vmCount int) {
 		cid := uint32(startCID + i)
 
 		// Create VM ID and info
-		vmID := virtualmachine.VMID(fmt.Sprintf("test-vm-%d", cid))
+		// Generate deterministic UUID based on CID for test mode
+		// This ensures VMs with the same CID get the same UUID across restarts
+		vmID := virtualmachine.VMID(generateDeterministicUUID(cid).String())
 		vsockCID := new(uint32)
 		*vsockCID = cid
 
@@ -293,4 +296,15 @@ func (s *VirtualMachineStore) PrepopulateTestData(vmCount int) {
 
 	elapsed := time.Since(start)
 	log.Infof("Successfully prepopulated %d test VMs in %v (%.0f VMs/sec)", vmCount, elapsed, float64(vmCount)/elapsed.Seconds())
+}
+
+// generateDeterministicUUID creates a deterministic UUID v5 based on the vsock CID.
+// This ensures the same CID always produces the same UUID, which is useful for
+// test scenarios where VMs may be recreated with the same CID.
+func generateDeterministicUUID(cid uint32) uuid.UUID {
+	// Use a namespace UUID for StackRox VM test mode
+	// This is a custom namespace UUID for "stackrox.io/vm-test"
+	namespace := uuid.MustParse("6ba7b810-9dad-11d1-80b4-00c04fd430c8")
+	// Generate UUID v5 using the CID as the name
+	return uuid.NewSHA1(namespace, []byte(fmt.Sprintf("vm-cid-%d", cid)))
 }
