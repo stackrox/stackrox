@@ -75,3 +75,10 @@ jobs:
         env:
           IMG_WAIT_TIMEOUT_SECONDS: 2100
         run: acs-fleet-manager/scripts/ci/central_compatibility/entrypoint.sh
+      - name: Upload logs
+        uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: logs-directory-${{ github.sha }}
+          path: logs/
+          retention-days: 3
