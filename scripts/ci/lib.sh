@@ -687,6 +687,7 @@ image_prefetcher_start_set() {
         --k8s-flavor="$flavor" \
         --secret=stackrox \
         --collect-metrics \
+        --namespace="$ns" \
         "$name" > "$manifest"
 
     # image list
@@ -694,7 +695,7 @@ image_prefetcher_start_set() {
     image_list=$(mktemp)
     populate_prefetcher_image_list "$name" "${image_list}"
     echo "---" >> "$manifest"
-    kubectl create --dry-run=client -o yaml --namespace=$ns configmap "$name" --from-file="images.txt=$image_list" >> "$manifest"
+    kubectl create --dry-run=client -o yaml configmap "$name" --from-file="images.txt=$image_list" >> "$manifest"
 
     # pull secret
     REGISTRY_PASSWORD="${QUAY_RHACS_ENG_RO_PASSWORD}" \

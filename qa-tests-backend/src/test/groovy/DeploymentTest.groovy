@@ -33,12 +33,14 @@ class DeploymentTest extends BaseSpecification {
 
     private static final Deployment DEPLOYMENT = new Deployment()
             .setName(DEPLOYMENT_NAME)
+            .setImagePrefetcherAffinity()
             .setImage(DEPLOYMENT_IMAGE_NAME)
             .addLabel("app", "test")
             .setCommand(["sh", "-c", "apt-get -y update || true && sleep 600"])
 
     private static final Job JOB = new Job()
             .setName("test-job-pi")
+            .setImagePrefetcherAffinity()
             .setImage("quay.io/rhacs-eng/qa-multi-arch:perl-5-32-1")
             .addLabel("app", "test")
             .setCommand(["perl",  "-Mbignum=bpi", "-wle", "print bpi(2000)"])
