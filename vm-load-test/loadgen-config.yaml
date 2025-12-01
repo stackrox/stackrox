@@ -1,0 +1,31 @@
+# Vsock Load Generator Configuration
+# This file configures the vsock load generation parameters
+# Mount this as a ConfigMap and vsock-loadgen will read it on startup
+
+loadgen:
+  # Number of concurrent workers sending requests
+  concurrency: 1000
+
+  # Total requests to send (0 = infinite, run until stopped)
+  totalRequests: 0
+
+  # Rate limit in requests per second (0 = unlimited)
+  rateLimit: 0
+
+  # Payload size for index reports: small (~2.3MB), avg (~10MB), large (~50MB)
+  payloadSize: avg
+
+  # Starting CID for synthetic VMs
+  startCID: 100000
+
+  # Stats reporting interval (e.g., 30s, 1m, 5m)
+  statsInterval: 30s
+
+  # Vsock port to connect to (relay listens on 818)
+  port: 818
+
+  # Metrics server port (0 = disabled)
+  metricsPort: 9090
+
+  # Per-request vsock deadline (e.g., 10s, 30s)
+  # requestTimeout: 10s
