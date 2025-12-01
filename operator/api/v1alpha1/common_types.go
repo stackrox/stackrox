@@ -380,8 +380,9 @@ func GetCondition(conditions []StackRoxCondition, condType ConditionType) *Stack
 	return nil
 }
 
-// UpdateCondition updates or adds a condition. Returns true if the condition changed.
-func UpdateCondition(conditions []StackRoxCondition, updatedCond StackRoxCondition) ([]StackRoxCondition, bool) {
+// updateCondition updates or adds a condition. Returns the updated condition list alongside
+// a boolean indicating if the condition has changed.
+func updateCondition(conditions []StackRoxCondition, updatedCond StackRoxCondition) ([]StackRoxCondition, bool) {
 	for i, cond := range conditions {
 		if cond.Type == updatedCond.Type {
 			// Check if update is needed.

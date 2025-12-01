@@ -576,7 +576,7 @@ func (c *SecuredCluster) GetCondition(condType ConditionType) *StackRoxCondition
 // SetCondition updates or adds a condition. Returns true if the condition changed.
 func (c *SecuredCluster) SetCondition(updatedCond StackRoxCondition) bool {
 	var updated bool
-	c.Status.Conditions, updated = UpdateCondition(c.Status.Conditions, updatedCond)
+	c.Status.Conditions, updated = updateCondition(c.Status.Conditions, updatedCond)
 	return updated
 }
 
