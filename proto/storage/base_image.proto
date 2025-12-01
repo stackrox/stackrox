@@ -23,7 +23,7 @@ message BaseImage {
 
 message BaseImageLayer {
   string id = 1; // @gotags: sql:"pk"
-  string base_image_id = 2; // @gotags: sql:"fk(BaseImage:id),cascade-delete"
+  string base_image_id = 2; // @gotags: sql:"fk(BaseImage:id),no-fk-constraint"
   string layer_digest = 3; // @gotags: search:"Base Image Layer Digest,hidden"
   int32 level = 4; // @gotags: search:"Base Image Level,hidden"
 }

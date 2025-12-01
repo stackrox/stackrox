@@ -142,7 +142,7 @@ func (x *BaseImage) GetImageIdV2() string {
 type BaseImageLayer struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" sql:"pk"`                                        // @gotags: sql:"pk"
-	BaseImageId   string                 `protobuf:"bytes,2,opt,name=base_image_id,json=baseImageId,proto3" json:"base_image_id,omitempty" sql:"fk(BaseImage:id),cascade-delete"` // @gotags: sql:"fk(BaseImage:id),cascade-delete"
+	BaseImageId   string                 `protobuf:"bytes,2,opt,name=base_image_id,json=baseImageId,proto3" json:"base_image_id,omitempty" sql:"fk(BaseImage:id),no-fk-constraint"` // @gotags: sql:"fk(BaseImage:id),no-fk-constraint"
 	LayerDigest   string                 `protobuf:"bytes,3,opt,name=layer_digest,json=layerDigest,proto3" json:"layer_digest,omitempty" search:"Base Image Layer Digest,hidden"`   // @gotags: search:"Base Image Layer Digest,hidden"
 	Level         int32                  `protobuf:"varint,4,opt,name=level,proto3" json:"level,omitempty" search:"Base Image Level,hidden"`                                 // @gotags: search:"Base Image Level,hidden"
 	unknownFields protoimpl.UnknownFields
