@@ -1,3 +1,86 @@
+---
+# ServiceAccount for vsock-loadgen
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: vsock-loadgen
+  namespace: stackrox
+  labels:
+    app: vsock-loadgen
+    component: load-testing
+
+---
+# ClusterRole to list nodes (needed for CID range partitioning)
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: vsock-loadgen-node-reader
+  labels:
+    app: vsock-loadgen
+    component: load-testing
+rules:
+- apiGroups: [""]
+  resources: ["nodes"]
+  verbs: ["get", "list"]
+
+---
+# ClusterRoleBinding to bind the role to the service account
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: vsock-loadgen-node-reader
+  labels:
+    app: vsock-loadgen
+    component: load-testing
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: vsock-loadgen-node-reader
+subjects:
+- kind: ServiceAccount
+  name: vsock-loadgen
+  namespace: stackrox
+
+---
+# Role to use privileged SCC (OpenShift only)
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: vsock-loadgen-use-privileged-scc
+  namespace: stackrox
+  labels:
+    app: vsock-loadgen
+    component: load-testing
+rules:
+- apiGroups:
+  - security.openshift.io
+  resources:
+  - securitycontextconstraints
+  resourceNames:
+  - privileged
+  verbs:
+  - use
+
+---
+# RoleBinding to allow vsock-loadgen to use privileged SCC
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: vsock-loadgen-use-privileged-scc
+  namespace: stackrox
+  labels:
+    app: vsock-loadgen
+    component: load-testing
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: vsock-loadgen-use-privileged-scc
+subjects:
+- kind: ServiceAccount
+  name: vsock-loadgen
+  namespace: stackrox
+
+---
 apiVersion: apps/v1
 kind: DaemonSet
 metadata:
@@ -24,8 +107,8 @@ spec:
       nodeSelector:
         node-role.kubernetes.io/worker: ""
 
-      # Use the same service account as collector for consistency
-      serviceAccountName: collector
+      # Use dedicated service account with node read permissions
+      serviceAccountName: vsock-loadgen
 
       # Required for vsock device access
       hostNetwork: true
