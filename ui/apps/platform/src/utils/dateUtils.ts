@@ -53,17 +53,8 @@ function formatLocalizedDateTime(
  * Returns a human readable label for a recurring schedule.
  * @param schedule - A `Schedule` object describing the interval and time
  * @returns A formatted string such as "Daily at 05:00 UTC" or "Every Mon and Wed at 13:30 UTC"
- *
- * @example formatRecurringSchedule({ intervalType: 'DAILY', hour: 5, minute: 0 })
- * // returns "Daily at 05:00 UTC"
- * @example formatRecurringSchedule({ intervalType: 'WEEKLY', hour: 13, minute: 30, daysOfWeek: { days: [1, 3, 5] } })
- * // returns "Every Mon, Wed, and Fri at 13:30 UTC"
- * @example formatRecurringSchedule({ intervalType: 'MONTHLY', hour: 2, minute: 15, daysOfMonth: { days: [1, 15] } })
- * // returns "Monthly on the 1st and 15th at 02:15 UTC"
  */
 export function formatRecurringSchedule(schedule: Schedule) {
-    const daysOfWeekMap = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-
     const formatDays = (days: string[]): string => {
         if (days.length === 1) {
             return days[0];
@@ -80,7 +71,7 @@ export function formatRecurringSchedule(schedule: Schedule) {
         case 'DAILY':
             return `Daily at ${timeString}`;
         case 'WEEKLY': {
-            const daysOfWeek = schedule.daysOfWeek.days.map((day) => daysOfWeekMap[day]);
+            const daysOfWeek = schedule.daysOfWeek.days.map((day) => daysOfWeekAbbreviated[day]);
             return `Every ${formatDays(daysOfWeek)} at ${timeString}`;
         }
         case 'MONTHLY': {
@@ -202,6 +193,8 @@ const daysOfWeek = [
     'Friday',
     'Saturday',
 ] as const;
+
+const daysOfWeekAbbreviated = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'] as const;
 
 /**
  * Given an ISO 8601 string, return the day of the week.
