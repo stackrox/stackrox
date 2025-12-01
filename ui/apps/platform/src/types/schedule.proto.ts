@@ -1,25 +1,24 @@
-export type Schedule = UnsetSchedule | DailySchedule | WeeklySchedule;
-
-export type ScheduleIntervalType = 'UNSET' | 'DAILY' | 'WEEKLY'; // | 'MONTHLY'
-
-export type UnsetSchedule = {
-    intervalType: 'UNSET';
-} & BaseSchedule;
-
-export type DailySchedule = {
-    intervalType: 'DAILY';
-} & BaseSchedule;
-
-export type WeeklySchedule = {
-    intervalType: 'WEEKLY';
-    // Sunday = 0, Monday = 1, .... Saturday =  6
-    weekly: {
-        day: number; // int32
-    };
-} & BaseSchedule;
-
-export type BaseSchedule = {
-    intervalType: ScheduleIntervalType;
+export type ScheduleBase = {
     hour: number;
     minute: number;
 };
+
+export type UnsetSchedule = ScheduleBase & {
+    intervalType: 'UNSET';
+};
+
+export type DailySchedule = ScheduleBase & {
+    intervalType: 'DAILY';
+};
+
+export type WeeklySchedule = ScheduleBase & {
+    intervalType: 'WEEKLY';
+    daysOfWeek: { days: number[] };
+};
+
+export type MonthlySchedule = ScheduleBase & {
+    intervalType: 'MONTHLY';
+    daysOfMonth: { days: number[] };
+};
+
+export type Schedule = UnsetSchedule | DailySchedule | WeeklySchedule | MonthlySchedule;
