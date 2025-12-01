@@ -26,12 +26,13 @@ import (
 var (
 	log               = logging.LoggerForModule()
 	policyCategorySAC = sac.ForResource(resources.WorkflowAdministration)
-	titleCase         = cases.Title(language.English)
 
 	policyCategoryCtx = sac.WithGlobalAccessScopeChecker(context.Background(),
 		sac.AllowFixedScopes(
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
 			sac.ResourceScopeKeys(resources.WorkflowAdministration)))
+
+	titleCase = cases.Title(language.English, cases.NoLower)
 )
 
 type datastoreImpl struct {
