@@ -266,15 +266,19 @@ type PerNodeSpec struct {
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=3,displayName="Node Scanning Settings"
 	NodeInventory *ContainerSpec `json:"nodeInventory,omitempty"`
 
+	// Settings for the Sensitive File Activity container, which is responsible for file activity monitoring on the Node.
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=4,displayName="SFA"
+	SFA *SFAContainerSpec `json:"sfa,omitempty"`
+
 	// To ensure comprehensive monitoring of your cluster activity, Red Hat Advanced Cluster Security
 	// will run services on every node in the cluster, including tainted nodes by default. If you do
 	// not want this behavior, please select 'AvoidTaints' here.
 	// The default is: TolerateTaints.
-	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=4
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=5
 	TaintToleration *TaintTolerationPolicy `json:"taintToleration,omitempty"`
 
 	// HostAliases allows configuring additional hostnames to resolve in the pod's hosts file.
-	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=5,displayName="Host Aliases"
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=6,displayName="Host Aliases"
 	HostAliases []corev1.HostAlias `json:"hostAliases,omitempty"`
 }
 
@@ -364,6 +368,31 @@ type CollectorContainerSpec struct {
 
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=4
 	ContainerSpec `json:",inline"`
+}
+
+// SFAContainerSpec defines settings for the Sensitive File Activity agent container.
+type SFAContainerSpec struct {
+	// Specifies whether Sensitive File Activity agent is deployed.
+	// The default is: Disabled.
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=1,displayName="SFA Agent"
+	Agent *DeploySFAAgent `json:"agent,omitempty"`
+
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=2
+	ContainerSpec `json:",inline"`
+}
+
+// DeploySFAAgent is a type for values of spec.perNode.sfa.agent
+// +kubebuilder:validation:Enum=Enabled;Disabled
+type DeploySFAAgent string
+
+const (
+	SFAAgentEnabled  DeploySFAAgent = "Enabled"
+	SFAAgentDisabled DeploySFAAgent = "Disabled"
+)
+
+// Pointer returns the given DeploySFAAgent value as a pointer, needed in k8s resource structs.
+func (v DeploySFAAgent) Pointer() *DeploySFAAgent {
+	return &v
 }
 
 // ContainerSpec defines container settings.

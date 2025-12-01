@@ -116,22 +116,34 @@ func (h *handlerImpl) Start() error {
 		return errStartMoreThanOnce
 	}
 	h.indexReports = make(chan *v1.IndexReport, indexReportsBufferedChannelSize)
-	h.toCentral = h.run()
+	h.toCentral = h.run(h.indexReports)
 	return nil
 }
 
 func (h *handlerImpl) Stop() {
-	close(h.indexReports)
-	if !h.stopper.Client().Stopped().IsDone() {
-		defer utils.IgnoreError(h.stopper.Client().Stopped().Wait)
+	// Stop the stopper FIRST so Send() will see it as stopped and return early
+	// before we close the channel. This prevents panics from sending on closed channel.
+	// Matters mainly for local-sensor, as we care that local-sensor stops cleanly before saving the data to a file.
+	client := h.stopper.Client()
+	if !client.Stopped().IsDone() {
+		defer utils.IgnoreError(client.Stopped().Wait)
+		client.Stop()
 	}
-	h.stopper.Client().Stop()
+	// Acquire write lock to prevent concurrent Send() calls from racing with channel close
+	h.lock.Lock()
+	defer h.lock.Unlock()
+	// Now close the channel - this will cause the run() goroutine to exit.
+	// Guard against closing an already-closed channel to make Stop() idempotent
+	if h.indexReports != nil {
+		close(h.indexReports)
+		h.indexReports = nil
+	}
 }
 
 // run handles the virtual machine data and forwards it to Central.
 // This is the only goroutine that writes into the toCentral channel, thus it is
 // responsible for creating and closing that chan.
-func (h *handlerImpl) run() (toCentral <-chan *message.ExpiringMessage) {
+func (h *handlerImpl) run(indexReports <-chan *v1.IndexReport) (toCentral <-chan *message.ExpiringMessage) {
 	ch2Central := make(chan *message.ExpiringMessage)
 	go func() {
 		defer func() {
@@ -143,7 +155,7 @@ func (h *handlerImpl) run() (toCentral <-chan *message.ExpiringMessage) {
 			select {
 			case <-h.stopper.Flow().StopRequested():
 				return
-			case indexReport, ok := <-h.indexReports:
+			case indexReport, ok := <-indexReports:
 				if !ok {
 					h.stopper.Flow().StopWithError(errInputChanClosed)
 					return

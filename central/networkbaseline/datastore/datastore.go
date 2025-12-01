@@ -23,4 +23,12 @@ type DataStore interface {
 	UpsertNetworkBaselines(ctx context.Context, baselines []*storage.NetworkBaseline) error
 	DeleteNetworkBaseline(ctx context.Context, deploymentID string) error
 	DeleteNetworkBaselines(ctx context.Context, deploymentIDs []string) error
+	Begin(ctx context.Context) (context.Context, Tx, error)
+}
+
+// Tx is an interface for db transaction
+//
+//go:generate mockgen-wrapper
+type Tx interface {
+	Commit(ctx context.Context) error
 }
