@@ -1,6 +1,9 @@
+import type { Schedule } from 'types/schedule.proto';
+
 import {
     addBrandedTimestampToString,
     displayDateTimeAsISO8601,
+    formatRecurringSchedule,
     getDate,
     getDateTime,
     getDayOfMonthWithOrdinal,
@@ -109,5 +112,39 @@ describe('getDistanceStrictAsPhrase', () => {
         expect(
             getDistanceStrictAsPhrase(new Date().getTime() - 3600 * 1000 * 24 * 365 * 2, new Date())
         ).toBe('2 years ago');
+    });
+});
+
+describe('formatRecurringSchedule', () => {
+    it('should format DAILY schedules like "Daily at hh:mm UTC"', () => {
+        const schedule: Schedule = {
+            intervalType: 'DAILY',
+            hour: 5,
+            minute: 0,
+        };
+
+        expect(formatRecurringSchedule(schedule)).toBe('Daily at 05:00 UTC');
+    });
+
+    it('should format WEEKLY schedules like "Every Mon, Wed, and Fri at hh:mm UTC"', () => {
+        const schedule: Schedule = {
+            intervalType: 'WEEKLY',
+            hour: 13,
+            minute: 30,
+            daysOfWeek: { days: [1, 3, 5] }, // Mon, Wed, Fri
+        };
+
+        expect(formatRecurringSchedule(schedule)).toBe('Every Mon, Wed, and Fri at 13:30 UTC');
+    });
+
+    it('should format MONTHLY schedules like "Monthly on the 1st and 15th at 02:15 UTC"', () => {
+        const schedule: Schedule = {
+            intervalType: 'MONTHLY',
+            hour: 2,
+            minute: 15,
+            daysOfMonth: { days: [1, 15] },
+        };
+
+        expect(formatRecurringSchedule(schedule)).toBe('Monthly on the 1st and 15th at 02:15 UTC');
     });
 });
