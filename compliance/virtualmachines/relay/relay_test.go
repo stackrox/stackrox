@@ -43,7 +43,7 @@ func (s *relayTestSuite) TestRelay_Integration() {
 	}
 
 	// Create relay with mock dependencies using the public constructor
-	relay := NewRelay(mockReportProvider, mockReportSender)
+	relay := New(mockReportProvider, mockReportSender)
 
 	// Run relay in background
 	ctx, cancel := context.WithTimeout(s.ctx, 5*time.Second)
@@ -93,7 +93,7 @@ func (s *relayTestSuite) TestRelay_SenderErrorsDoNotStopProcessing() {
 		},
 	}
 
-	relay := NewRelay(mockReportProvider, mockReportSender)
+	relay := New(mockReportProvider, mockReportSender)
 
 	ctx, cancel := context.WithTimeout(s.ctx, 5*time.Second)
 	defer cancel()
@@ -138,7 +138,7 @@ func (s *relayTestSuite) TestRelay_ContextCancellation() {
 		failOnIndex: -1, // never fail
 	}
 
-	relay := NewRelay(mockReportProvider, mockReportSender)
+	relay := New(mockReportProvider, mockReportSender)
 
 	ctx, cancel := context.WithCancel(s.ctx)
 

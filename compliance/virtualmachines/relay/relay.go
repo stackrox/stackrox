@@ -16,8 +16,8 @@ type Relay struct {
 	reportSender   sender.ReportSender
 }
 
-// NewRelay creates a Relay with the given provider and sender.
-func NewRelay(reportProvider provider.ReportProvider, reportSender sender.ReportSender) *Relay {
+// New creates a Relay with the given provider and sender.
+func New(reportProvider provider.ReportProvider, reportSender sender.ReportSender) *Relay {
 	return &Relay{
 		reportProvider: reportProvider,
 		reportSender:   reportSender,
