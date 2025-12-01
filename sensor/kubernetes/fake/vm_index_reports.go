@@ -55,6 +55,7 @@ func newReportGenerator(numPackages, numRepos int) *reportGenerator {
 				Name: fmt.Sprintf("repository-%d", i),
 				Uri:  fmt.Sprintf("https://repo%d.example.com", i),
 				Key:  fmt.Sprintf("key-%d", i),
+				Cpe:  "cpe:2.3:o:redhat:enterprise_linux:9:*:fastdatapath:*:*:*:*:*", // valid CPE to also load scanner V4 matcher.
 			}
 		}
 
@@ -243,6 +244,17 @@ func (w *WorkloadManager) generateFakeIndexReport(vm *vmInfo) *v1.IndexReport {
 			Contents: &v4.Contents{
 				Packages:     template.packages,
 				Repositories: template.repositories,
+				Environments: map[string]*v4.Environment_List{
+					"1": {
+						Environments: []*v4.Environment{
+							{
+								PackageDb:     "sqlite:usr/share/rpm",
+								IntroducedIn:  "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+								RepositoryIds: []string{"cpe:/o:redhat:enterprise_linux:9::fastdatapath", "cpe:/a:redhat:openshift:4.16::el9"},
+							},
+						},
+					},
+				},
 			},
 		},
 	}
