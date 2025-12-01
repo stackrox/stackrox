@@ -43,22 +43,23 @@ export const policySectionValidators: PolicySectionValidator[] = [
         },
     },
     {
-        name: 'File operation requires mounted file path (Deploy)',
+        name: 'File operation requires file path (Deploy)',
         appliesTo: (context) =>
             context.lifecycleStages.includes('RUNTIME') &&
             context.eventSource === 'DEPLOYMENT_EVENT',
         validate: ({ policyGroups }) => {
             const hasFileOperation = policyGroupsHasCriterion(policyGroups, 'File Operation');
             const hasMountedFilePath = policyGroupsHasCriterion(policyGroups, 'Mounted File Path');
+            const hasNodeFilePath = policyGroupsHasCriterion(policyGroups, 'Node File Path');
 
-            if (hasFileOperation && !hasMountedFilePath) {
-                return 'Criterion must be present with at least one value when using File operation: Mounted file path';
+            if (hasFileOperation && !hasMountedFilePath && !hasNodeFilePath) {
+                return 'Criterion must be present with at least one value when using File operation: Mounted file path or Node file path';
             }
             return undefined;
         },
     },
     {
-        name: 'File operation requires node file path (Node)',
+        name: 'File operation requires file path (Node)',
         appliesTo: (context) =>
             context.lifecycleStages.includes('RUNTIME') && context.eventSource === 'NODE_EVENT',
         validate: ({ policyGroups }) => {
