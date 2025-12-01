@@ -19,6 +19,29 @@ import (
 
 var log = logging.LoggerForModule()
 
+// ReportSender sends index reports to Sensor.
+type ReportSender interface {
+	Send(ctx context.Context, report *v1.IndexReport) error
+}
+
+type senderImpl struct {
+	sensorClient sensor.VirtualMachineIndexReportServiceClient
+}
+
+var _ ReportSender = (*senderImpl)(nil)
+
+// New creates a ReportSender that sends reports to Sensor with retry logic.
+func New(sensorClient sensor.VirtualMachineIndexReportServiceClient) ReportSender {
+	return &senderImpl{
+		sensorClient: sensorClient,
+	}
+}
+
+// Send sends the report to Sensor, retrying on transient errors.
+func (s *senderImpl) Send(ctx context.Context, report *v1.IndexReport) error {
+	return SendReportToSensor(ctx, report, s.sensorClient)
+}
+
 // SendReportToSensor sends the passed report to sensor using the provided VirtualMachineIndexReportServiceClient,
 // retrying when applicable.
 func SendReportToSensor(ctx context.Context, report *v1.IndexReport, sensorClient sensor.VirtualMachineIndexReportServiceClient) error {

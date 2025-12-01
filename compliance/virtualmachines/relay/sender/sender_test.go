@@ -79,3 +79,20 @@ func (s *senderTestSuite) TestSendReportToSensor_RetriesOnRetryableErrors() {
 		})
 	}
 }
+
+func (s *senderTestSuite) TestReportSender_Send() {
+	client := relaytest.NewMockSensorClient(s.T())
+	sender := New(client)
+
+	err := sender.Send(s.ctx, &v1.IndexReport{VsockCid: "42"})
+	s.Require().NoError(err)
+	s.Len(client.CapturedRequests(), 1)
+}
+
+func (s *senderTestSuite) TestReportSender_SendHandlesErrors() {
+	client := relaytest.NewMockSensorClient(s.T()).WithError(errox.NotImplemented)
+	sender := New(client)
+
+	err := sender.Send(s.ctx, &v1.IndexReport{VsockCid: "42"})
+	s.Require().Error(err)
+}
