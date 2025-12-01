@@ -22,6 +22,13 @@ var log = logging.LoggerForModule()
 // SendReportToSensor sends the passed report to sensor using the provided VirtualMachineIndexReportServiceClient,
 // retrying when applicable.
 func SendReportToSensor(ctx context.Context, report *v1.IndexReport, sensorClient sensor.VirtualMachineIndexReportServiceClient) error {
+	startTime := time.Now()
+	defer func() {
+		duration := time.Since(startTime)
+		metrics.SenderDuration.Observe(duration.Seconds())
+		log.Debugf("Sender took %v to send report to sensor (vsockCID: %s)", duration, report.GetVsockCid())
+	}()
+
 	log.Infof("Sending index report to sensor (vsockCID: %s)", report.GetVsockCid())
 
 	// This is the sending logic that will be retried if needed

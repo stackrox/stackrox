@@ -43,6 +43,13 @@ func New(sensorClient sensor.VirtualMachineIndexReportServiceClient) Handler {
 }
 
 func (h *handlerImpl) Handle(ctx context.Context, conn net.Conn) error {
+	startTime := time.Now()
+	defer func() {
+		duration := time.Since(startTime)
+		metrics.HandlerDuration.Observe(duration.Seconds())
+		log.Debugf("Handler processing took %v for connection from %s", duration, conn.RemoteAddr())
+	}()
+
 	log.Infof("Handling connection from %s", conn.RemoteAddr())
 
 	indexReport, err := h.receiveAndValidateIndexReport(conn)
@@ -72,11 +79,18 @@ func (h *handlerImpl) receiveAndValidateIndexReport(conn net.Conn) (*v1.IndexRep
 		return nil, errors.Wrapf(err, "reading from connection (vsock CID: %d)", vsockCID)
 	}
 
-	log.Debugf("Parsing index report (vsock CID: %d)", vsockCID)
+	log.Debugf("Parsing index report (vsock CID: %d, size: %d bytes)", vsockCID, len(data))
 	indexReport, err := parseIndexReport(data)
 	if err != nil {
 		return nil, errors.Wrapf(err, "parsing index report data (vsock CID: %d)", vsockCID)
 	}
+
+	// Log report statistics
+	numPackages := len(indexReport.GetIndexV4().GetContents().GetPackages())
+	numRepos := len(indexReport.GetIndexV4().GetContents().GetRepositories())
+	log.Debugf("Received index report (vsock CID: %d, packages: %d, repos: %d, size: %d bytes)",
+		vsockCID, numPackages, numRepos, len(data))
+
 	metrics.IndexReportsReceived.Inc()
 
 	err = validateReportedVsockCID(indexReport, vsockCID)

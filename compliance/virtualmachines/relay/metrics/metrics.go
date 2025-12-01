@@ -77,6 +77,28 @@ var SemaphoreQueueSize = prometheus.NewGauge(
 		Help:      "Number of connections waiting to be handled",
 	})
 
+// HandlerDuration is a histogram for tracking how long the relay handler takes to process a connection.
+var HandlerDuration = prometheus.NewHistogram(
+	prometheus.HistogramOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.ComplianceSubsystem.String(),
+		Name:      "virtual_machine_relay_handler_duration_seconds",
+		Help:      "Duration in seconds for the relay handler to process a connection",
+		Buckets:   prometheus.DefBuckets,
+	},
+)
+
+// SenderDuration is a histogram for tracking how long the sender takes to send a report to sensor.
+var SenderDuration = prometheus.NewHistogram(
+	prometheus.HistogramOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.ComplianceSubsystem.String(),
+		Name:      "virtual_machine_relay_sender_duration_seconds",
+		Help:      "Duration in seconds for the sender to send a report to sensor (including retries)",
+		Buckets:   prometheus.DefBuckets,
+	},
+)
+
 func init() {
 	prometheus.MustRegister(
 		IndexReportsMismatchingVsockCID,
@@ -86,5 +108,7 @@ func init() {
 		SemaphoreAcquisitionFailures,
 		SemaphoreHoldingSize,
 		SemaphoreQueueSize,
+		HandlerDuration,
+		SenderDuration,
 	)
 }

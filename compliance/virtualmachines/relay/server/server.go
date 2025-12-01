@@ -42,6 +42,10 @@ var _ Server = (*serverImpl)(nil)
 func New(listener net.Listener) Server {
 	maxConcurrentConnections := env.VirtualMachinesMaxConcurrentVsockConnections.IntegerSetting()
 	semaphoreTimeout := env.VirtualMachinesConcurrencyTimeout.DurationSetting()
+
+	log.Infof("VM relay server configured with max concurrent connections: %d, semaphore timeout: %v",
+		maxConcurrentConnections, semaphoreTimeout)
+
 	return &serverImpl{
 		listener:              listener,
 		semaphore:             semaphore.NewWeighted(int64(maxConcurrentConnections)),
