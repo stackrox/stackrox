@@ -14,6 +14,8 @@ import (
 	cmetrics "github.com/stackrox/rox/compliance/collection/metrics"
 	"github.com/stackrox/rox/compliance/node"
 	"github.com/stackrox/rox/compliance/virtualmachines/relay"
+	"github.com/stackrox/rox/compliance/virtualmachines/relay/provider"
+	"github.com/stackrox/rox/compliance/virtualmachines/relay/sender"
 	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
 	"github.com/stackrox/rox/generated/internalapi/sensor"
 	"github.com/stackrox/rox/generated/storage"
@@ -127,11 +129,17 @@ func (c *Compliance) Start() {
 		defer wg.Add(-1)
 		if features.VirtualMachines.Enabled() {
 			log.Infof("Virtual machine relay enabled")
-			vmRelay, err := relay.NewRelay(conn)
+
+			reportProvider, err := provider.New()
 			if err != nil {
-				log.Errorf("Error creating virtual machine relay: %v", err)
+				log.Errorf("Error creating report provider: %v", err)
 				return
 			}
+
+			sensorClient := sensor.NewVirtualMachineIndexReportServiceClient(conn)
+			reportSender := sender.New(sensorClient)
+
+			vmRelay := relay.NewRelay(reportProvider, reportSender)
 			if err := vmRelay.Run(ctx); err != nil {
 				log.Errorf("Error running virtual machine relay: %v", err)
 			}

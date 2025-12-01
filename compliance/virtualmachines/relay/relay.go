@@ -6,9 +6,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/compliance/virtualmachines/relay/provider"
 	"github.com/stackrox/rox/compliance/virtualmachines/relay/sender"
-	"github.com/stackrox/rox/generated/internalapi/sensor"
 	"github.com/stackrox/rox/pkg/logging"
-	"google.golang.org/grpc"
 )
 
 var log = logging.LoggerForModule()
@@ -18,18 +16,12 @@ type Relay struct {
 	reportSender   sender.ReportSender
 }
 
-func NewRelay(conn grpc.ClientConnInterface) (*Relay, error) {
-	sensorClient := sensor.NewVirtualMachineIndexReportServiceClient(conn)
-
-	reportProvider, err := provider.New()
-	if err != nil {
-		return nil, errors.Wrap(err, "creating report provider")
-	}
-
+// NewRelay creates a Relay with the given provider and sender.
+func NewRelay(reportProvider provider.ReportProvider, reportSender sender.ReportSender) *Relay {
 	return &Relay{
 		reportProvider: reportProvider,
-		reportSender:   sender.New(sensorClient),
-	}, nil
+		reportSender:   reportSender,
+	}
 }
 
 func (r *Relay) Run(ctx context.Context) error {
