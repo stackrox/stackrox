@@ -49,6 +49,12 @@ assertAll:
     (has(central_cr.spec.central.adminPasswordSecret)
        ? central_cr.spec.central.adminPasswordSecret.name
        : 'central-htpasswd')
+- celExpr: |
+    central_cr.status.productVersion.startsWith('4.9.') ||
+    central_cr.status.conditions.filter(c, c.type=='Progressing').exists(c, c.status=='False')
+- celExpr: |
+    central_cr.status.productVersion.startsWith('4.9.') ||
+    central_cr.status.conditions.filter(c, c.type=='Available').exists(c, c.status=='True')
 timeout: 1500
 ---
 apiVersion: apps/v1
