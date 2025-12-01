@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/sliceutils"
 )
 
 const (
@@ -40,8 +41,8 @@ func UpdateFileAccessAlertViolationMessage(v *storage.Alert_FileAccessViolation)
 
 	parts := make([]string, 0, len(pathToOperation))
 	for _, path := range paths {
-		parts = append(parts, fmt.Sprintf("'%v' accessed (%s)", path, strings.Join(pathToOperation[path], ", ")))
+		parts = append(parts, fmt.Sprintf("'%v' accessed (%s)", path, strings.Join(sliceutils.Unique(pathToOperation[path]), ", ")))
 	}
 
-	v.Message = fmt.Sprintf("%s", strings.Join(parts, "; "))
+	v.Message = strings.Join(parts, "; ")
 }

@@ -247,6 +247,24 @@ func TestUpdateFileAccessMessage(t *testing.T) {
 			},
 			expected: "'/test/file' accessed (OPEN)",
 		},
+		{
+			desc: "same file, many opens",
+			activity: []*storage.FileAccess{
+				{
+					File:      &storage.FileAccess_File{NodePath: "/test/file"},
+					Operation: storage.FileAccess_OPEN,
+				},
+				{
+					File:      &storage.FileAccess_File{NodePath: "/test/file"},
+					Operation: storage.FileAccess_OPEN,
+				},
+				{
+					File:      &storage.FileAccess_File{NodePath: "/test/file"},
+					Operation: storage.FileAccess_OPEN,
+				},
+			},
+			expected: "'/test/file' accessed (OPEN)",
+		},
 	}
 
 	for _, tc := range testCases {
