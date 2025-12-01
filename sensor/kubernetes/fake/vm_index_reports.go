@@ -48,7 +48,7 @@ func newReportGenerator(numPackages, numRepos int) *reportGenerator {
 	templates := make([]reportTemplate, variantCount)
 	for variant := 0; variant < variantCount; variant++ {
 		repositories := make(map[string]*v4.Repository, numRepos)
-		for i := 0; i < numRepos; i++ {
+		for i := range numRepos {
 			repoID := fmt.Sprintf("repo-template-%d-%d", variant, i)
 			repositories[repoID] = &v4.Repository{
 				Id:   repoID,
@@ -60,12 +60,8 @@ func newReportGenerator(numPackages, numRepos int) *reportGenerator {
 		}
 
 		packages := make(map[string]*v4.Package, numPackages)
-		for i := 0; i < numPackages; i++ {
+		for i := range numPackages {
 			pkgID := fmt.Sprintf("pkg-template-%d-%d", variant, i)
-			repoHint := ""
-			if numRepos > 0 {
-				repoHint = fmt.Sprintf("repo-template-%d-%d", variant, i%numRepos)
-			}
 
 			packages[pkgID] = &v4.Package{
 				Id:             pkgID,
@@ -73,7 +69,7 @@ func newReportGenerator(numPackages, numRepos int) *reportGenerator {
 				Version:        fmt.Sprintf("1.%d.%d", i/10, i%10),
 				Kind:           "binary",
 				Arch:           "amd64",
-				RepositoryHint: repoHint,
+				RepositoryHint: "hash:sha256:f52ca767328e6919ec11a1da654e92743587bd3c008f0731f8c4de3af19c1830|key:199e2f91fd431d51",
 				Cpe:            "cpe:2.3:o:redhat:enterprise_linux:9:*:fastdatapath:*:*:*:*:*", // valid CPE to also load scanner V4 matcher.
 				PackageDb:      "sqlite:usr/share/rpm",
 				Source: &v4.Package{
