@@ -13,6 +13,12 @@ os.environ["ORCHESTRATOR_FLAVOR"] = "openshift"
 # Workload identities are only set up for `openshift-4` infra clusters.
 if 'openshift-4' in os.environ.get('CLUSTER_FLAVOR_VARIANT', ''):
     os.environ["SETUP_WORKLOAD_IDENTITIES"] = "true"
+
+# SFA Agent supports OCP starting from 4.16, since we test oldest (4.12) and
+# latest (4.20 at the moment), exclude the former one.
+if 'openshift-4-ocp/stable-4.12' not in os.environ.get('CLUSTER_FLAVOR_VARIANT', ''):
+    os.environ["SFA_AGENT"] = "Enabled"
+
 os.environ["ROX_RISK_REPROCESSING_INTERVAL"] = "15s"
 os.environ["ROX_SENSOR_CONNECTION_RETRY_MAX_INTERVAL"] = "30s"
 
