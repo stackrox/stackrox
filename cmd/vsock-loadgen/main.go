@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"sort"
 	"strings"
 	"sync"
 	"sync/atomic"
@@ -24,6 +25,9 @@ import (
 	v1 "github.com/stackrox/rox/generated/internalapi/virtualmachine/v1"
 	"google.golang.org/protobuf/proto"
 	"gopkg.in/yaml.v3"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/rest"
 )
 
 type config struct {
@@ -70,7 +74,21 @@ func main() {
 		log.Fatalf("loading payload: %v", err)
 	}
 
-	payloads, err := newPayloadProvider(baseReport, cfg)
+	// Calculate CID range based on node index to avoid overlap between DaemonSet pods
+	nodeName := os.Getenv("NODE_NAME")
+	if nodeName == "" {
+		log.Fatalf("NODE_NAME environment variable not set")
+	}
+
+	startCID, endCID, nodeIndex, totalNodes, vmsThisNode, err := calculateCIDRange(ctx, nodeName, cfg.vmCount)
+	if err != nil {
+		log.Fatalf("calculating CID range: %v", err)
+	}
+
+	log.Printf("Node %s (index %d/%d) assigned CID range [%d-%d] for %d VMs (total cluster: %d VMs)",
+		nodeName, nodeIndex, totalNodes, startCID, endCID, vmsThisNode, cfg.vmCount)
+
+	payloads, err := newPayloadProviderWithRange(baseReport, vmsThisNode, startCID)
 	if err != nil {
 		log.Fatalf("creating payload provider: %v", err)
 	}
@@ -82,12 +100,10 @@ func main() {
 		go serveMetrics(ctx, cfg.metricsPort)
 	}
 
-	const startCID = 3 // First valid vsock CID
-
-	// Spawn one goroutine per VM, each with a unique CID
+	// Spawn one goroutine per VM, each with a unique CID from our assigned range
 	var vms sync.WaitGroup
-	for i := 0; i < cfg.vmCount; i++ {
-		cid := uint32(startCID) + uint32(i)
+	for i := 0; i < vmsThisNode; i++ {
+		cid := startCID + uint32(i)
 		vms.Add(1)
 		go func(vmCID uint32) {
 			defer vms.Done()
@@ -95,9 +111,8 @@ func main() {
 		}(cid)
 	}
 
-	endCID := startCID + cfg.vmCount - 1
 	log.Printf("vsock-loadgen starting: vms=%d report-interval=%s duration=%s payload=%s cid-range=[%d-%d] port=%d",
-		cfg.vmCount, cfg.reportInterval, cfg.duration, describePayload(cfg), startCID, endCID, cfg.port)
+		vmsThisNode, cfg.reportInterval, cfg.duration, describePayload(cfg), startCID, endCID, cfg.port)
 
 	ticker := time.NewTicker(cfg.statsInterval)
 	defer ticker.Stop()
@@ -156,8 +171,8 @@ func parseConfig() config {
 	if cfg.vmCount <= 0 {
 		log.Fatalf("vm-count must be > 0")
 	}
-	if cfg.vmCount > 1000 {
-		log.Fatalf("vm-count must be <= 1000")
+	if cfg.vmCount > 100000 {
+		log.Fatalf("vm-count must be <= 100000")
 	}
 	if cfg.reportInterval <= 0 {
 		log.Fatalf("report-interval must be > 0")
@@ -265,6 +280,96 @@ func setupSignalHandler(cancel context.CancelFunc) {
 	}()
 }
 
+// calculateCIDRange determines the CID range for this pod based on its node's index
+// in the sorted list of worker nodes. This ensures no overlap between DaemonSet pods.
+// vmCountTotal is the total number of VMs across ALL nodes in the cluster.
+// Returns: startCID, endCID, nodeIndex, totalNodes, vmsThisNode, error
+func calculateCIDRange(ctx context.Context, nodeName string, vmCountTotal int) (startCID, endCID uint32, nodeIndex, totalNodes, vmsThisNode int, err error) {
+	const (
+		firstValidCID  = 3     // First valid vsock CID (0=hypervisor, 1=loopback, 2=host)
+		vmsPerNodeSlot = 10000 // Max VMs per node partition (for spacing)
+	)
+
+	// Get in-cluster config
+	config, err := rest.InClusterConfig()
+	if err != nil {
+		return 0, 0, 0, 0, 0, fmt.Errorf("get cluster config: %w", err)
+	}
+
+	// Create clientset
+	clientset, err := kubernetes.NewForConfig(config)
+	if err != nil {
+		return 0, 0, 0, 0, 0, fmt.Errorf("create clientset: %w", err)
+	}
+
+	// List all worker nodes
+	nodes, err := clientset.CoreV1().Nodes().List(ctx, metav1.ListOptions{
+		LabelSelector: "node-role.kubernetes.io/worker",
+	})
+	if err != nil {
+		return 0, 0, 0, 0, 0, fmt.Errorf("list nodes: %w", err)
+	}
+
+	if len(nodes.Items) == 0 {
+		return 0, 0, 0, 0, 0, fmt.Errorf("no worker nodes found")
+	}
+
+	// Sort nodes by name for deterministic ordering
+	nodeNames := make([]string, 0, len(nodes.Items))
+	for _, node := range nodes.Items {
+		nodeNames = append(nodeNames, node.Name)
+	}
+	sort.Strings(nodeNames)
+	totalNodes = len(nodeNames)
+
+	// Find current node's index
+	nodeIndex = -1
+	for i, name := range nodeNames {
+		if name == nodeName {
+			nodeIndex = i
+			break
+		}
+	}
+
+	if nodeIndex == -1 {
+		return 0, 0, 0, 0, 0, fmt.Errorf("node %s not found in worker node list", nodeName)
+	}
+
+	// Divide total VMs evenly across all nodes
+	vmsPerNode := vmCountTotal / totalNodes
+	remainder := vmCountTotal % totalNodes
+
+	// Distribute remainder VMs to first nodes (0, 1, 2, ...)
+	// Each pod independently evaluates this condition based on its own nodeIndex,
+	// so only the first 'remainder' nodes (by sorted name) get an extra VM.
+	// Example: 1000 VMs / 3 nodes = 333 per node, 1 remainder
+	//   Node 0: 0 < 1 = true  → 333 + 1 = 334 VMs
+	//   Node 1: 1 < 1 = false → 333 VMs
+	//   Node 2: 2 < 1 = false → 333 VMs
+	vmsThisNode = vmsPerNode
+	if nodeIndex < remainder {
+		vmsThisNode++
+	}
+
+	// Validate per-node capacity
+	if vmsThisNode > vmsPerNodeSlot {
+		return 0, 0, 0, 0, 0, fmt.Errorf("too many VMs per node: %d VMs/node exceeds capacity of %d (reduce vmCount or add more nodes)", vmsThisNode, vmsPerNodeSlot)
+	}
+
+	// Calculate CID range based on node index
+	// Each node gets a partition of vmsPerNodeSlot to ensure no overlap
+	startCID = uint32(firstValidCID) + uint32(nodeIndex*vmsPerNodeSlot)
+	endCID = startCID + uint32(vmsThisNode) - 1
+
+	// Validate CID overflow
+	const maxCID = uint32(4294967295) // uint32 max
+	if endCID > maxCID {
+		return 0, 0, 0, 0, 0, fmt.Errorf("CID overflow: endCID %d exceeds maximum %d (too many nodes or VMs)", endCID, maxCID)
+	}
+
+	return startCID, endCID, nodeIndex, totalNodes, vmsThisNode, nil
+}
+
 func serveMetrics(ctx context.Context, port int) {
 	mux := http.NewServeMux()
 	mux.Handle("/metrics", promhttp.Handler())
@@ -291,18 +396,17 @@ type payloadProvider struct {
 	payloads map[uint32][]byte // CID -> pre-marshaled payload
 }
 
-func newPayloadProvider(base *v1.IndexReport, cfg config) (*payloadProvider, error) {
-	const startCID = 3 // First valid vsock CID (0=hypervisor, 1=loopback, 2=host)
-	endCID := startCID + cfg.vmCount - 1
+func newPayloadProviderWithRange(base *v1.IndexReport, vmCount int, startCID uint32) (*payloadProvider, error) {
+	endCID := startCID + uint32(vmCount) - 1
 
-	log.Printf("pre-generating %d unique reports for CID range [%d-%d]...", cfg.vmCount, startCID, endCID)
+	log.Printf("pre-generating %d unique reports for CID range [%d-%d]...", vmCount, startCID, endCID)
 	start := time.Now()
 
 	rng := rand.New(rand.NewSource(time.Now().UnixNano()))
 	payloads := make(map[uint32][]byte)
 
-	for i := 0; i < cfg.vmCount; i++ {
-		cid := uint32(startCID + i)
+	for i := 0; i < vmCount; i++ {
+		cid := startCID + uint32(i)
 
 		// Clone base report and customize for this CID
 		report := proto.Clone(base).(*v1.IndexReport)
