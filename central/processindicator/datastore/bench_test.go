@@ -2,6 +2,7 @@ package datastore
 
 import (
 	"context"
+	"math/rand"
 	"testing"
 
 	postgresStore "github.com/stackrox/rox/central/processindicator/store/postgres"
@@ -39,20 +40,22 @@ func BenchmarkAddIndicator(b *testing.B) {
 }
 
 func BenchmarkSearchIndicator(b *testing.B) {
+	// Create a randomized distribution of deployments (55/25/20)
+	deployments := make([]string, 0, 10000)
+	deployments = append(deployments, makeStringSlice(fixtureconsts.Deployment1, 5500)...)
+	deployments = append(deployments, makeStringSlice(fixtureconsts.Deployment2, 2500)...)
+	deployments = append(deployments, makeStringSlice(fixtureconsts.Deployment3, 2000)...)
+
+	// Shuffle to randomize the distribution
+	rand.Shuffle(len(deployments), func(i, j int) {
+		deployments[i], deployments[j] = deployments[j], deployments[i]
+	})
+
 	var indicators []*storage.ProcessIndicator
 	for i := 0; i < 10000; i++ {
 		pi := fixtures.GetProcessIndicator()
 		pi.Id = uuid.NewV4().String()
-		// spreading these across some deployments to set up search test
-		switch i % 3 {
-		case 0:
-			pi.DeploymentId = fixtureconsts.Deployment1
-		case 1:
-			pi.DeploymentId = fixtureconsts.Deployment2
-		case 2:
-			pi.DeploymentId = fixtureconsts.Deployment3
-		}
-
+		pi.DeploymentId = deployments[i]
 		indicators = append(indicators, pi)
 	}
 
@@ -67,11 +70,107 @@ func BenchmarkSearchIndicator(b *testing.B) {
 	err := datastore.AddProcessIndicators(ctx, indicators...)
 	require.NoError(b, err)
 
-	b.ResetTimer()
-	query := search.NewQueryBuilder().AddExactMatches(search.DeploymentID, fixtureconsts.Deployment1).ProtoQuery()
-	for i := 0; i < b.N; i++ {
-		results, err := datastore.SearchRawProcessIndicators(ctx, query)
-		require.NoError(b, err)
-		require.True(b, len(results) > 0)
+	b.Run("Deployment1", func(b *testing.B) {
+		query := search.NewQueryBuilder().AddExactMatches(search.DeploymentID, fixtureconsts.Deployment1).ProtoQuery()
+		b.ResetTimer()
+		for i := 0; i < b.N; i++ {
+			results, err := datastore.SearchRawProcessIndicators(ctx, query)
+			require.NoError(b, err)
+			require.True(b, len(results) > 0)
+		}
+	})
+
+	b.Run("Deployment2", func(b *testing.B) {
+		query := search.NewQueryBuilder().AddExactMatches(search.DeploymentID, fixtureconsts.Deployment2).ProtoQuery()
+		b.ResetTimer()
+		for i := 0; i < b.N; i++ {
+			results, err := datastore.SearchRawProcessIndicators(ctx, query)
+			require.NoError(b, err)
+			require.True(b, len(results) > 0)
+		}
+	})
+
+	b.Run("Deployment3", func(b *testing.B) {
+		query := search.NewQueryBuilder().AddExactMatches(search.DeploymentID, fixtureconsts.Deployment3).ProtoQuery()
+		b.ResetTimer()
+		for i := 0; i < b.N; i++ {
+			results, err := datastore.SearchRawProcessIndicators(ctx, query)
+			require.NoError(b, err)
+			require.True(b, len(results) > 0)
+		}
+	})
+}
+
+func BenchmarkSearchIndicatorByPodID(b *testing.B) {
+	podID1 := uuid.NewV4().String()
+	podID2 := uuid.NewV4().String()
+	podID3 := uuid.NewV4().String()
+
+	// Create a randomized distribution of pod IDs (55/25/20)
+	podIDs := make([]string, 0, 10000)
+	podIDs = append(podIDs, makeStringSlice(podID1, 5500)...)
+	podIDs = append(podIDs, makeStringSlice(podID2, 2500)...)
+	podIDs = append(podIDs, makeStringSlice(podID3, 2000)...)
+
+	// Shuffle to randomize the distribution
+	rand.Shuffle(len(podIDs), func(i, j int) {
+		podIDs[i], podIDs[j] = podIDs[j], podIDs[i]
+	})
+
+	var indicators []*storage.ProcessIndicator
+	for i := 0; i < 10000; i++ {
+		pi := fixtures.GetProcessIndicator()
+		pi.Id = uuid.NewV4().String()
+		pi.PodUid = podIDs[i]
+		indicators = append(indicators, pi)
 	}
+
+	db := pgtest.ForT(b)
+	store := postgresStore.New(db)
+	plopStore := plopStore.New(db)
+
+	datastore := New(db, store, plopStore, nil)
+
+	ctx := sac.WithAllAccess(context.Background())
+	// Add the data first.
+	err := datastore.AddProcessIndicators(ctx, indicators...)
+	require.NoError(b, err)
+
+	b.Run("PodID1", func(b *testing.B) {
+		query := search.NewQueryBuilder().AddExactMatches(search.PodUID, podID1).ProtoQuery()
+		b.ResetTimer()
+		for i := 0; i < b.N; i++ {
+			results, err := datastore.SearchRawProcessIndicators(ctx, query)
+			require.NoError(b, err)
+			require.True(b, len(results) > 0)
+		}
+	})
+
+	b.Run("PodID2", func(b *testing.B) {
+		query := search.NewQueryBuilder().AddExactMatches(search.PodUID, podID2).ProtoQuery()
+		b.ResetTimer()
+		for i := 0; i < b.N; i++ {
+			results, err := datastore.SearchRawProcessIndicators(ctx, query)
+			require.NoError(b, err)
+			require.True(b, len(results) > 0)
+		}
+	})
+
+	b.Run("PodID3", func(b *testing.B) {
+		query := search.NewQueryBuilder().AddExactMatches(search.PodUID, podID3).ProtoQuery()
+		b.ResetTimer()
+		for i := 0; i < b.N; i++ {
+			results, err := datastore.SearchRawProcessIndicators(ctx, query)
+			require.NoError(b, err)
+			require.True(b, len(results) > 0)
+		}
+	})
+}
+
+func makeStringSlice(s string, count int) []string {
+	result := make([]string, count)
+	for i := 0; i < count; i++ {
+		result[i] = s
+	}
+	return result
 }
