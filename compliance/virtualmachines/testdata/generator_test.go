@@ -77,19 +77,19 @@ func TestPayloadSizesWithinBounds(t *testing.T) {
 		{
 			name:     "small",
 			opts:     Options{NumPackages: 500, NumRepositories: 50},
-			minBytes: 2_200_000,
+			minBytes: 2_000_000,
 			maxBytes: 3_000_000,
 		},
 		{
 			name:     "average",
 			opts:     Options{NumPackages: 700, NumRepositories: 70},
-			minBytes: 3_200_000,
+			minBytes: 2_800_000,
 			maxBytes: 4_200_000,
 		},
 		{
 			name:     "large",
 			opts:     Options{NumPackages: 1500, NumRepositories: 150},
-			minBytes: 6_500_000,
+			minBytes: 6_000_000,
 			maxBytes: 8_400_000,
 		},
 	}
@@ -148,4 +148,71 @@ func TestEmbeddedFixtures(t *testing.T) {
 
 	_, err = EmbeddedFixture("unknown")
 	require.Error(t, err)
+}
+
+func TestGenerateValidCPE(t *testing.T) {
+	tests := []struct {
+		name      string
+		idx       int
+		randomize bool
+		wantMatch string
+	}{
+		{
+			name:      "deterministic CPE format",
+			idx:       42,
+			randomize: false,
+			wantMatch: "cpe:2.3:a:vendor42:product42:1.4.2:*:*:*:*:*:*:*",
+		},
+		{
+			name:      "first package",
+			idx:       0,
+			randomize: false,
+			wantMatch: "cpe:2.3:a:vendor0:product0:1.0.0:*:*:*:*:*:*:*",
+		},
+		{
+			name:      "package 100",
+			idx:       100,
+			randomize: false,
+			wantMatch: "cpe:2.3:a:vendor0:product100:1.10.0:*:*:*:*:*:*:*",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			cpe := generateValidCPE(tt.idx, tt.randomize, nil)
+			require.Equal(t, tt.wantMatch, cpe)
+		})
+	}
+}
+
+func TestCPEInGeneratedReport(t *testing.T) {
+	opts := Options{
+		VsockCID:        100,
+		NumPackages:     10,
+		NumRepositories: 3,
+		Randomize:       false,
+	}
+
+	report, err := GenerateIndexReport(opts)
+	require.NoError(t, err)
+
+	packages := report.GetIndexV4().GetContents().GetPackages()
+	require.Len(t, packages, 10)
+
+	// Verify CPE format in generated packages
+	pkg0 := packages["pkg-0"]
+	require.Equal(t, "cpe:2.3:a:vendor0:product0:1.0.0:*:*:*:*:*:*:*", pkg0.GetCpe())
+
+	pkg5 := packages["pkg-5"]
+	require.Equal(t, "cpe:2.3:a:vendor5:product5:1.0.5:*:*:*:*:*:*:*", pkg5.GetCpe())
+
+	// Verify CPE format in repositories
+	repositories := report.GetIndexV4().GetContents().GetRepositories()
+	require.Len(t, repositories, 3)
+
+	repo0 := repositories["repo-0"]
+	require.Equal(t, "cpe:2.3:a:vendor0:product0:1.0.0:*:*:*:*:*:*:*", repo0.GetCpe())
+
+	repo2 := repositories["repo-2"]
+	require.Equal(t, "cpe:2.3:a:vendor2:product2:1.0.2:*:*:*:*:*:*:*", repo2.GetCpe())
 }

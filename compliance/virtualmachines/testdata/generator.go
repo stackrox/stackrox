@@ -66,7 +66,7 @@ func GenerateIndexReport(opts Options) (*v1.IndexReport, error) {
 	}
 
 	rng := rand.New(rand.NewSource(opts.Seed))
-	moduleLen, packageDBLen, cpeLen := fieldLengths(opts.NumPackages)
+	moduleLen, packageDBLen := fieldLengths(opts.NumPackages)
 	repositories := make(map[string]*v4.Repository, opts.NumRepositories)
 	for i := 0; i < opts.NumRepositories; i++ {
 		repoID := fmt.Sprintf("repo-%d", i)
@@ -75,6 +75,7 @@ func GenerateIndexReport(opts Options) (*v1.IndexReport, error) {
 			Name: fmt.Sprintf("repository-%d", i),
 			Uri:  fmt.Sprintf("https://repo%d.example.com", i),
 			Key:  fmt.Sprintf("key-%d", i),
+			Cpe:  generateValidCPE(i, opts.Randomize, rng),
 		}
 	}
 
@@ -90,7 +91,7 @@ func GenerateIndexReport(opts Options) (*v1.IndexReport, error) {
 		version := fmt.Sprintf("1.%d.%d", i/10, i%10)
 		module := paddedField("module", i, moduleLen)
 		packageDB := paddedField("pkgdb", i, packageDBLen)
-		cpe := paddedField("cpe", i, cpeLen)
+		cpe := generateValidCPE(i, opts.Randomize, rng)
 		fixedIn := fmt.Sprintf("1.%d.%d", (i+5)/10, (i+7)%10)
 
 		if opts.Randomize {
@@ -98,7 +99,6 @@ func GenerateIndexReport(opts Options) (*v1.IndexReport, error) {
 			version = fmt.Sprintf("1.%d.%d", rng.Intn(20), rng.Intn(100))
 			module = paddedField(fmt.Sprintf("module-rand-%d", rng.Intn(1000)), i, moduleLen)
 			packageDB = paddedField(fmt.Sprintf("pkgdb-rand-%d", rng.Intn(500)), i, packageDBLen)
-			cpe = paddedField(fmt.Sprintf("cpe-rand-%d", rng.Intn(500)), i, cpeLen)
 			fixedIn = fmt.Sprintf("1.%d.%d", rng.Intn(20), rng.Intn(100))
 		}
 
@@ -110,6 +110,9 @@ func GenerateIndexReport(opts Options) (*v1.IndexReport, error) {
 				int32((i % 50) + 1),
 			},
 		}
+
+		// Generate CPE for source package (using same index to keep it deterministic)
+		srcCPE := generateValidCPE(i, opts.Randomize, rng)
 
 		packages[pkgID] = &v4.Package{
 			Id:                pkgID,
@@ -129,6 +132,7 @@ func GenerateIndexReport(opts Options) (*v1.IndexReport, error) {
 				Version: version,
 				Kind:    defaultPackageKind,
 				Arch:    defaultArch,
+				Cpe:     srcCPE,
 			},
 		}
 	}
@@ -212,13 +216,32 @@ func paddedField(prefix string, idx int, length int) string {
 	return result
 }
 
-func fieldLengths(numPackages int) (moduleLen, packageDBLen, cpeLen int) {
+func fieldLengths(numPackages int) (moduleLen, packageDBLen int) {
 	switch {
 	case numPackages >= 1500:
-		return 2880, 1440, 1008
+		return 2880, 1440
 	case numPackages >= 700:
-		return 3072, 1536, 1024
+		return 3072, 1536
 	default:
-		return 2560, 1280, 896
+		return 2560, 1280
 	}
+}
+
+// generateValidCPE creates a valid CPE 2.3 formatted string for load testing.
+// CPE format: cpe:2.3:part:vendor:product:version:update:edition:language:sw_edition:target_sw:target_hw:other
+// All fields use '*' for ANY except vendor, product, and version which are populated with test values.
+func generateValidCPE(idx int, randomize bool, rng *rand.Rand) string {
+	vendor := fmt.Sprintf("vendor%d", idx%100)
+	product := fmt.Sprintf("product%d", idx)
+	version := fmt.Sprintf("1.%d.%d", idx/10, idx%10)
+
+	if randomize {
+		vendor = fmt.Sprintf("vendor%d", rng.Intn(1000))
+		product = fmt.Sprintf("product%d", rng.Intn(10000))
+		version = fmt.Sprintf("%d.%d.%d", rng.Intn(10), rng.Intn(100), rng.Intn(100))
+	}
+
+	// CPE 2.3 format with minimal fields populated
+	// part=a (application), rest are wildcards (*)
+	return fmt.Sprintf("cpe:2.3:a:%s:%s:%s:*:*:*:*:*:*:*", vendor, product, version)
 }
