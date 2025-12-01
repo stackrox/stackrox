@@ -12,6 +12,8 @@ import (
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/centralsensor"
+	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/metrics"
@@ -97,12 +99,22 @@ func (p *pipelineImpl) Run(ctx context.Context, _ string, msg *central.MsgFromSe
 		return errors.Wrapf(err, "failed to enrich VM %s with vulnerabilities", index.GetId())
 	}
 
-	// Store enriched VM
-	if err := p.vmDatastore.UpdateVirtualMachineScan(ctx, vm.GetId(), vm.GetScan()); err != nil {
-		return errors.Wrapf(err, "failed to upsert VM %s to datastore", index.GetId())
+	// Try to update scan on existing VM first
+	err = p.vmDatastore.UpdateVirtualMachineScan(ctx, vm.GetId(), vm.GetScan())
+	if err != nil {
+		// If VM doesn't exist and test mode is enabled, auto-create it
+		if errors.Is(err, errox.NotFound) && env.VirtualMachinesCentralTestMode.BooleanSetting() {
+			log.Debugf("VM %s not found in database - auto-creating VM record with scan data (test mode enabled)", vm.GetId())
+			if upsertErr := p.vmDatastore.UpsertVirtualMachine(ctx, vm); upsertErr != nil {
+				return errors.Wrapf(upsertErr, "failed to create VM %s in datastore", index.GetId())
+			}
+			log.Debugf("Successfully auto-created VM %s with %d components from index report", vm.GetId(), len(vm.GetScan().GetComponents()))
+		} else {
+			return errors.Wrapf(err, "failed to update VM %s scan in datastore", index.GetId())
+		}
 	}
 
-	log.Infof("Successfully enriched and stored VM %s with %d components",
+	log.Debugf("Successfully enriched and stored VM %s with %d components",
 		vm.GetId(), len(vm.GetScan().GetComponents()))
 
 	return nil

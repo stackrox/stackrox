@@ -32,4 +32,8 @@ var (
 	// VMs are assigned sequential CIDs starting from 3. Max 100000 VMs.
 	VirtualMachinesSensorTestVMCount = RegisterIntegerSetting("ROX_VM_SENSOR_TEST_VM_COUNT", 100000).
 						WithMinimum(1).WithMaximum(100000)
+
+	// VirtualMachinesCentralTestMode enables test mode in central for load testing.
+	// When enabled, central auto-creates missing VMs when receiving index reports.
+	VirtualMachinesCentralTestMode = RegisterBooleanSetting("ROX_VM_CENTRAL_TEST_MODE", false)
 )
