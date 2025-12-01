@@ -139,7 +139,7 @@ func (c *Compliance) Start() {
 			sensorClient := sensor.NewVirtualMachineIndexReportServiceClient(conn)
 			reportSender := sender.New(sensorClient)
 
-			vmRelay := relay.NewRelay(reportProvider, reportSender)
+			vmRelay := relay.New(reportProvider, reportSender)
 			if err := vmRelay.Run(ctx); err != nil {
 				log.Errorf("Error running virtual machine relay: %v", err)
 			}
