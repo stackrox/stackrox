@@ -105,7 +105,7 @@ function labelGroup(labels: PrometheusMetricsLabels): ReactElement {
 function filterGroup(labels: PrometheusMetricsLabels): ReactElement {
     return (
         <LabelGroup isCompact numLabels={Infinity}>
-            {Object.entries(labels.filters || {}).map(([label, pattern]) => {
+            {Object.entries(labels.filters ?? {}).map(([label, pattern]) => {
                 return (
                     <Label isCompact key={label}>
                         {label}: {pattern}
@@ -176,7 +176,7 @@ function hasMetric(
     return (
         cfgLabels.length === ll.length &&
         cfgLabels.every((label) => ll.includes(label)) &&
-        Object.keys(cfgFilters).length === Object.keys(lf || {}).length &&
+        Object.keys(cfgFilters).length === Object.keys(lf ?? {}).length &&
         Object.entries(cfgFilters).every(([label, pattern]) => lf?.[label] === pattern)
     );
 }
