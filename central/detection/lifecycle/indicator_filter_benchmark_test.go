@@ -17,6 +17,7 @@ import (
 	"github.com/stackrox/rox/pkg/process/filter"
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap/zapcore"
@@ -103,7 +104,7 @@ func seedBenchmarkData(
 					PodId:         podID,
 					ContainerName: "main-container",
 					ClusterId:     clusterID,
-					Namespace:     deployment.Namespace,
+					Namespace:     deployment.GetNamespace(),
 					Signal: &storage.ProcessSignal{
 						Id:           uuid.NewV4().String(),
 						ContainerId:  containerID,
@@ -214,7 +215,7 @@ func BenchmarkBuildIndicatorFilterMemory(b *testing.B) {
 	if err != nil {
 		b.Fatal(err)
 	}
-	defer f.Close()
+	defer utils.Must(f.Close())
 
 	err = pprof.Lookup("heap").WriteTo(f, 0)
 	if err != nil {
