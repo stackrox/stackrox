@@ -2,6 +2,7 @@ package relaytest
 
 import (
 	"context"
+	"errors"
 	"io"
 	"net"
 	"os"
@@ -14,6 +15,9 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/protobuf/proto"
 )
+
+// ErrTest is a generic test error for use in mock implementations
+var ErrTest = errors.New("test error")
 
 // MockVsockConn implements net.Conn and allows tests to craft vsock-backed connections easily.
 type MockVsockConn struct {
