@@ -506,6 +506,28 @@ const rules = {
     // If your rule only disallows something, prefix it with no.
     // However, we can write forbid instead of disallow as the verb in description and message.
 
+    'no-TSTypeAssertion': {
+        // Inconsistent with TSAsExpression which is project convention.
+        // TypeScript with erasableSyntaxOnly configuration option reports error for TSTypeAssertion.
+        meta: {
+            type: 'problem',
+            docs: {
+                description: 'Replace TSTypeAssertion with TSAsExpression',
+            },
+            schema: [],
+        },
+        create(context) {
+            return {
+                TSTypeAssertion(node) {
+                    const name = node.typeAnnotation?.typeName?.name ?? 'Whatever';
+                    context.report({
+                        node,
+                        message: `Replace TSTypeAssertion with TSAsExpression: as ${name}`,
+                    });
+                },
+            };
+        },
+    },
     'no-anchor-href-docs-string': {
         // Full path string lacks what getVersionedDocs function provides:
         // Include version number so doc page corresponds to product version.
