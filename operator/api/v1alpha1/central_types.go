@@ -625,6 +625,9 @@ type ConfigAsCodeSpec struct {
 	// The default is: Enabled.
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=1,displayName="Config as Code component"
 	ComponentPolicy *ConfigAsCodeComponentPolicy `json:"configAsCodeComponent,omitempty"`
+
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=99
+	DeploymentSpec `json:",inline"`
 }
 
 // ConfigAsCodeComponentPolicy is a type for values of spec.configAsCode.configAsCodeComponent
