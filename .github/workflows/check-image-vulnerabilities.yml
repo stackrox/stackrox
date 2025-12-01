@@ -26,7 +26,7 @@ jobs:
           } >> "$GITHUB_STEP_SUMMARY"
 
   check-image-vulnerabilities-upstream:
-    name: Check ${{ matrix.image }}:${{ inputs.version }}
+    name: "Upstream: ${{ matrix.image }}:${{ inputs.version }}"
     runs-on: ubuntu-latest
     permissions:
       # Needed for stackrox/central-login to create the JWT token.
@@ -63,7 +63,7 @@ jobs:
       - name: Scan images for vulnerabilities
         run: |
           {
-            echo "### ${{ matrix.image }}:${{ inputs.version }}"
+            echo "### Upstream: ${{ matrix.image }}:${{ inputs.version }}"
             echo "<details><summary>Click to expand</summary>"
             echo ""
             # We need a monospaced font for the table layout, and `terraform` has
@@ -92,7 +92,7 @@ jobs:
           fi
 
   check-image-vulnerabilities-konflux:
-    name: Check ${{ matrix.image }}:${{ inputs.version }} (konflux)
+    name: "Konflux: Check ${{ matrix.image }}:${{ inputs.version }}"
     runs-on: ubuntu-latest
     permissions:
       # Needed for stackrox/central-login to create the JWT token.
@@ -129,7 +129,7 @@ jobs:
       - name: Scan images for vulnerabilities
         run: |
           {
-            echo "### ${{ matrix.image }}:${{ inputs.version }}"
+            echo "### Konflux: ${{ matrix.image }}:${{ inputs.version }}"
             echo "<details><summary>Click to expand</summary>"
             echo ""
             # We need a monospaced font for the table layout, and `terraform` has
