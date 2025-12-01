@@ -370,8 +370,8 @@ type ObjectForStatusController interface {
 	GetObservedGeneration() int64
 }
 
-// GetCondition returns a specific condition by type, or nil if not found.
-func GetCondition(conditions []StackRoxCondition, condType ConditionType) *StackRoxCondition {
+// getCondition returns a specific condition by type, or nil if not found.
+func getCondition(conditions []StackRoxCondition, condType ConditionType) *StackRoxCondition {
 	for i := range conditions {
 		if conditions[i].Type == condType {
 			return &conditions[i]

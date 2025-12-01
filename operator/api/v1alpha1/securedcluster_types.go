@@ -570,7 +570,7 @@ var (
 
 // GetCondition returns a specific condition by type, or nil if not found.
 func (c *SecuredCluster) GetCondition(condType ConditionType) *StackRoxCondition {
-	return GetCondition(c.Status.Conditions, condType)
+	return getCondition(c.Status.Conditions, condType)
 }
 
 // SetCondition updates or adds a condition. Returns true if the condition changed.
