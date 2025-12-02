@@ -153,8 +153,16 @@ func (p *VsockIndexReportProvider) handleConnection(ctx context.Context, conn ne
 
 	log.Infof("Finished handling connection from %s", conn.RemoteAddr())
 
-	// Send validated report to channel (never blocks - buffer sized to concurrency limit)
-	reportChan <- indexReport
+	// Send validated report to channel. Use select to avoid blocking during shutdown
+	// when the relay stops reading from the channel.
+	select {
+	case reportChan <- indexReport:
+		// Report sent successfully
+	case <-ctx.Done():
+		// Context cancelled during send - exit without blocking to allow defers to execute
+		log.Debug("Context cancelled while sending report, skipping send")
+		return
+	}
 }
 
 func (p *VsockIndexReportProvider) receiveAndValidateIndexReport(conn net.Conn) (*v1.IndexReport, error) {
