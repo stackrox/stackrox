@@ -352,7 +352,12 @@ func (w *WorkloadManager) populateFakeVMs() {
 	numAdded := 0
 	for i := range numVMs {
 		cid := vmBaseVSOCKCID + uint32(i)
+		if cid == 0 || cid == 1 || cid == 2 {
+			log.Debugf("CID %d is reserved for kube-virt, skipping", cid)
+			continue
+		}
 		vsock := new(uint32)
+		// cid is reused every iteration, so we need to create a new pointer for each VM and copy the value.
 		*vsock = cid
 		info := &virtualmachine.Info{
 			ID:        virtualmachine.VMID(fmt.Sprintf("vm-%d", i)),
