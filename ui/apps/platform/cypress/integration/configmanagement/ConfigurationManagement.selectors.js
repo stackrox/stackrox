@@ -16,8 +16,8 @@ export const dashboardSelectors = {
             value: '[data-testid="compliance-by-controls"] .react-select__single-value',
             options: '[data-testid="compliance-by-controls"] .react-select__option',
         },
-        passingControlsLink: 'a[title*="Controls Passing"]',
-        failingControlsLinks: 'a[title*="Controls Failing"]',
+        passingControlsLink: 'a:contains("Controls Passing")',
+        failingControlsLinks: 'a:contains("Controls Failing")',
     },
     horizontalBars: '.rv-xy-plot__series.rv-xy-plot__series--bar > rect',
 };
