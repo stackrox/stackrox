@@ -30,12 +30,11 @@ function PolicyCriteriaFieldValue({
                 {/* only show remove button if there is more than one value */}
                 {!readOnly && length > 1 && (
                     <Button
+                        icon={<TimesIcon />}
                         onClick={handleRemoveValue}
                         variant="tertiary"
                         title="Delete value of policy field"
-                    >
-                        <TimesIcon />
-                    </Button>
+                    ></Button>
                 )}
             </Flex>
         </div>

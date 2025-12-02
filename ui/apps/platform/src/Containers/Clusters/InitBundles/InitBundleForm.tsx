@@ -120,7 +120,7 @@ function InitBundleForm(): ReactElement {
         <>
             <InitBundlesHeader title="Create bundle" />
             <Divider component="div" />
-            <PageSection variant="light">
+            <PageSection hasBodyWrapper={false}>
                 <Flex direction={{ default: 'column' }}>
                     <Form>
                         <FormLabelGroup

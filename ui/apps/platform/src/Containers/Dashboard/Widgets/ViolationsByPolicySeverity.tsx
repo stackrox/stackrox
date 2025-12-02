@@ -148,7 +148,7 @@ function ViolationsByPolicySeverity() {
             {alertCountData && recentAlertsData && (
                 <Stack>
                     <PolicyViolationTiles searchFilter={searchFilter} counts={counts} />
-                    <Divider component="div" className="pf-v5-u-my-lg" />
+                    <Divider component="div" className="pf-v6-u-my-lg" />
                     <StackItem isFilled>
                         <MostRecentViolations alerts={recentAlertsData.alerts} />
                     </StackItem>

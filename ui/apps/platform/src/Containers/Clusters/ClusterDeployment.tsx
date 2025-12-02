@@ -1,5 +1,5 @@
 import type { ReactElement } from 'react';
-import { Alert, Button, Flex, FlexItem, Switch, Text, Title } from '@patternfly/react-core';
+import { Alert, Button, Content, Flex, FlexItem, Switch, Title } from '@patternfly/react-core';
 import { DownloadIcon } from '@patternfly/react-icons';
 import { CheckCircle } from 'react-feather';
 import { ClipLoader } from 'react-spinners';
@@ -55,20 +55,21 @@ function ClusterDeployment({
                         spaceItems={{ default: 'spaceItemsMd' }}
                     >
                         <Title headingLevel="h3">1. Configure possibility of future upgrades</Title>
-                        <Text>
+                        <Content component="p">
                             Configuring clusters for future upgrades creates a powerful service
                             account in your secured cluster that will be used to perform the
                             upgrades. This is a prerequisite for automated or on-click upgrades of
                             legacy-installed Secured Clusters to work.
-                        </Text>
+                        </Content>
                         <Switch
                             label="Configured for upgrades: Secured Clusters can be upgraded to match Central’s version."
-                            labelOff="Not configured for upgrades: Attempts to upgrade Secured Clusters will fail."
                             onChange={toggleSA}
                             isChecked={createUpgraderSA}
                         />
                         <Title headingLevel="h3">2. Download files</Title>
-                        <Text>Download the required configuration files, keys, and scripts.</Text>
+                        <Content component="p">
+                            Download the required configuration files, keys, and scripts.
+                        </Content>
                         <Flex
                             direction={{ default: 'column' }}
                             spaceItems={{ default: 'spaceItemsSm' }}
@@ -87,13 +88,19 @@ function ClusterDeployment({
                                     Download YAML file and keys
                                 </Button>
                             </FlexItem>
-                            <Text>Modify the YAML files to suit your environment if needed.</Text>
-                            <Text>Do not reuse this bundle for more than one cluster.</Text>
+                            <Content component="p">
+                                Modify the YAML files to suit your environment if needed.
+                            </Content>
+                            <Content component="p">
+                                Do not reuse this bundle for more than one cluster.
+                            </Content>
                         </Flex>
                     </Flex>
                     <Flex direction={{ default: 'column' }}>
                         <Title headingLevel="h3">3. Deploy</Title>
-                        <Text>Use the deploy script inside the bundle to set up your cluster.</Text>
+                        <Content component="p">
+                            Use the deploy script inside the bundle to set up your cluster.
+                        </Content>
                     </Flex>
                 </>
             )}

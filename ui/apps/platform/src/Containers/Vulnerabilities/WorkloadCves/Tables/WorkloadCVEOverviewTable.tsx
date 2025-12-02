@@ -12,7 +12,7 @@ import {
     Tr,
 } from '@patternfly/react-table';
 import type { IAction } from '@patternfly/react-table';
-import { LabelGroup, Text } from '@patternfly/react-core';
+import { Content, LabelGroup } from '@patternfly/react-core';
 
 import useFeatureFlags from 'hooks/useFeatureFlags';
 import type { UseURLSortResult } from 'hooks/useURLSort';
@@ -517,7 +517,7 @@ function WorkloadCVEOverviewTable({
                                         <Td colSpan={colSpan - 1}>
                                             <ExpandableRowContent>
                                                 {summary ? (
-                                                    <Text>{summary}</Text>
+                                                    <Content component="p">{summary}</Content>
                                                 ) : (
                                                     <PartialCVEDataAlert />
                                                 )}

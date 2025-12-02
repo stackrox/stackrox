@@ -25,7 +25,7 @@ function AccessControlHeaderActionBar({
 }: AccessControlHeaderActionBarProps): ReactElement {
     return (
         <>
-            <PageSection variant="light" className="pf-v5-u-py-md">
+            <PageSection hasBodyWrapper={false} className="pf-v6-u-py-md">
                 <Split>
                     <SplitItem isFilled>{displayComponent}</SplitItem>
                     {inviteComponent && <SplitItem>{inviteComponent}</SplitItem>}

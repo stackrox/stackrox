@@ -19,17 +19,19 @@ export function DeploymentNameColumn({ original }: DeploymentNameColumnProps) {
     // Borrow layout from IconText component.
     return (
         <div className="flex items-center">
-            <span className="pf-v5-u-display-inline-flex pf-v5-u-align-items-center">
+            <span className="pf-v6-u-display-inline-flex pf-v6-u-align-items-center">
                 {isSuspicious ? (
                     <Tooltip content="Abnormal processes discovered">
-                        <ExclamationCircleIcon color="var(--pf-v5-global--danger-color--100)" />
+                        <ExclamationCircleIcon
+                            color="var(--pf-t--temp--dev--tbd)" /* CODEMODS: original v5 color was --pf-v5-global--danger-color--100 */
+                        />
                     </Tooltip>
                 ) : (
                     <Tooltip content="No abnormal processes discovered">
                         <CheckIcon />
                     </Tooltip>
                 )}
-                <span className="pf-v5-u-pl-sm pf-v5-u-text-nowrap">
+                <span className="pf-v6-u-pl-sm pf-v6-u-text-nowrap">
                     <Link to={`${riskBasePath}/${original.deployment.id}`}>
                         {original.deployment.name}
                     </Link>

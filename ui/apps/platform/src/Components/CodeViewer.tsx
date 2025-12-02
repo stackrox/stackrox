@@ -97,7 +97,7 @@ export default function CodeViewer({
     // TODO - When Tailwind is removed, we likely need to get rid of this font size override
     return (
         <CodeBlock
-            className={`${theme === 'light' ? '' : 'pf-v5-theme-dark'} pf-v5-u-p-0 pf-v5-u-font-size-xs pf-v5-u-max-height ${className}`}
+            className={`${theme === 'light' ? '' : 'pf-v5-theme-dark'} pf-v6-u-p-0 pf-v6-u-font-size-xs pf-v6-u-max-height ${className}`}
             style={{ ...defaultStyle, ...style }}
             actions={actions}
         >

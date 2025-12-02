@@ -14,7 +14,7 @@ import {
     debounce,
 } from '@patternfly/react-core';
 import type { MenuToggleElement, SelectOptionProps } from '@patternfly/react-core';
-import { SearchIcon, TimesIcon } from '@patternfly/react-icons';
+import { ArrowRightIcon, SearchIcon, TimesIcon } from '@patternfly/react-icons';
 import { useQuery } from '@apollo/client';
 import SEARCH_AUTOCOMPLETE_QUERY from 'queries/searchAutocomplete';
 import type { SearchAutocompleteQueryResponse } from 'queries/searchAutocomplete';
@@ -275,6 +275,7 @@ function AutocompleteSelect({
                 <TextInputGroupUtilities>
                     {!!value && (
                         <Button
+                            icon={<TimesIcon aria-hidden />}
                             variant="plain"
                             onClick={() => {
                                 onChange('');
@@ -283,9 +284,7 @@ function AutocompleteSelect({
                             }}
                             aria-label="Clear input value"
                             isDisabled={isDisabled}
-                        >
-                            <TimesIcon aria-hidden />
-                        </Button>
+                        />
                     )}
                 </TextInputGroupUtilities>
             </TextInputGroup>

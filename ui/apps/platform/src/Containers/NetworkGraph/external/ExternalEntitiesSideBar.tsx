@@ -1,11 +1,11 @@
 import type { ReactElement } from 'react';
 import {
+    Content,
     Divider,
     Flex,
     FlexItem,
     Stack,
     StackItem,
-    Text,
     Title,
     ToggleGroup,
     ToggleGroupItem,
@@ -101,20 +101,20 @@ function ExternalEntitiesSideBar({
     return (
         <Stack>
             <StackItem>
-                <Flex direction={{ default: 'row' }} className="pf-v5-u-p-md pf-v5-u-mb-0">
+                <Flex direction={{ default: 'row' }} className="pf-v6-u-p-md pf-v6-u-mb-0">
                     <FlexItem>
                         <ExternalEntitiesIcon />
                     </FlexItem>
                     <FlexItem>
                         <EntityTitleText text={entityNode?.label} id={labelledById} />
-                        <Text className="pf-v5-u-font-size-sm pf-v5-u-color-200">
+                        <Content component="p" className="pf-v6-u-font-size-sm pf-v6-u-color-200">
                             Connected entities outside your cluster
-                        </Text>
+                        </Content>
                     </FlexItem>
                 </Flex>
             </StackItem>
             <Divider component="hr" />
-            <StackItem className="pf-v5-u-p-md">
+            <StackItem className="pf-v6-u-p-md">
                 <ToggleGroup aria-label="Toggle between external IPs and workload flows view">
                     <ToggleGroupItem
                         text="External IPs"
@@ -132,7 +132,7 @@ function ExternalEntitiesSideBar({
             </StackItem>
             <Divider component="hr" />
             <StackItem isFilled style={{ overflow: 'auto' }}>
-                <Stack className="pf-v5-u-p-md">
+                <Stack className="pf-v6-u-p-md">
                     {selectedView === 'EXTERNAL_IPS' ? (
                         <ExternalIpsContainer
                             scopeHierarchy={scopeHierarchy}

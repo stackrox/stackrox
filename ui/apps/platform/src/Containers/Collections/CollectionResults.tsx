@@ -2,17 +2,15 @@ import { useCallback, useEffect, useState } from 'react';
 import type { FormEvent, ReactNode } from 'react';
 import {
     Button,
+    Content,
     Divider,
     EmptyState,
     EmptyStateFooter,
-    EmptyStateHeader,
-    EmptyStateIcon,
     Flex,
     FlexItem,
     SearchInput,
     SelectOption,
     Skeleton,
-    Text,
     Title,
 } from '@patternfly/react-core';
 import { ExclamationCircleIcon, ListIcon, SyncAltIcon } from '@patternfly/react-icons';
@@ -45,15 +43,15 @@ function fetchMatchingDeployments(
 
 function DeploymentSkeleton() {
     return (
-        <Flex className="pf-v5-u-mb-0">
+        <Flex className="pf-v6-u-mb-0">
             <FlexItem style={{ flex: '0 1 24px' }}>
                 <Skeleton />
             </FlexItem>
-            <FlexItem className="pf-v5-u-flex-grow-1">
-                <Skeleton className="pf-v5-u-mb-sm" fontSize="sm" />
+            <FlexItem className="pf-v6-u-flex-grow-1">
+                <Skeleton className="pf-v6-u-mb-sm" fontSize="sm" />
                 <Skeleton fontSize="sm" />
             </FlexItem>
-            <Divider component="div" className="pf-v5-u-mt-xs" />
+            <Divider component="div" className="pf-v6-u-mt-xs" />
         </Flex>
     );
 }
@@ -67,13 +65,13 @@ function DeploymentResult({ deployment }: { deployment: ListDeployment }) {
                 </FlexItem>
                 <FlexItem>
                     <div>{deployment.name}</div>
-                    <span className="pf-v5-u-color-300 pf-v5-u-font-size-xs">
+                    <span className="pf-v6-u-color-300 pf-v6-u-font-size-xs">
                         In &quot;{deployment.cluster} / {deployment.namespace}
                         &quot;
                     </span>
                 </FlexItem>
             </Flex>
-            <Divider className="pf-v5-u-mt-sm" />
+            <Divider className="pf-v6-u-mt-sm" />
         </>
     );
 }
@@ -152,15 +150,7 @@ function CollectionResults({
 
     if (configError) {
         content = (
-            <EmptyState variant="xs">
-                <EmptyStateHeader
-                    icon={
-                        <EmptyStateIcon
-                            style={{ color: 'var(--pf-v5-global--danger-color--200)' }}
-                            icon={ExclamationCircleIcon}
-                        />
-                    }
-                />
+            <EmptyState icon={ExclamationCircleIcon} variant="xs">
                 <EmptyStateFooter>
                     <Flex
                         spaceItems={{ default: 'spaceItemsMd' }}
@@ -176,8 +166,7 @@ function CollectionResults({
         );
     } else if (!selectorRulesExist) {
         content = (
-            <EmptyState variant="xs">
-                <EmptyStateHeader icon={<EmptyStateIcon icon={ListIcon} />} />
+            <EmptyState icon={ListIcon} variant="xs">
                 <EmptyStateFooter>
                     <p>
                         Add selector rules or attach existing collections to view resource matches
@@ -190,7 +179,7 @@ function CollectionResults({
             <Flex
                 direction={{ default: 'column' }}
                 grow={{ default: 'grow' }}
-                className="pf-v5-u-mt-lg"
+                className="pf-v6-u-mt-lg"
             >
                 {isRefreshingResults ? (
                     <>
@@ -209,14 +198,14 @@ function CollectionResults({
                             <Button
                                 variant="link"
                                 isInline
-                                className="pf-v5-u-text-align-center"
+                                className="pf-v6-u-text-align-center"
                                 isLoading={isFetchingNextPage}
                                 onClick={() => fetchNextPage(true)}
                             >
                                 View more
                             </Button>
                         ) : (
-                            <span className="pf-v5-u-color-300 pf-v5-u-text-align-center pf-v5-u-font-size-sm">
+                            <span className="pf-v6-u-color-300 pf-v6-u-text-align-center pf-v6-u-font-size-sm">
                                 end of results
                             </span>
                         )}
@@ -228,23 +217,22 @@ function CollectionResults({
 
     return (
         <>
-            <div className="pf-v5-u-p-lg pf-v5-u-display-flex pf-v5-u-align-items-center">
-                <div className="pf-v5-u-display-flex pf-v5-u-flex-direction-column pf-v5-u-flex-grow-1">
+            <div className="pf-v6-u-p-lg pf-v6-u-display-flex pf-v6-u-align-items-center">
+                <div className="pf-v6-u-display-flex pf-v6-u-flex-direction-column pf-v6-u-flex-grow-1">
                     <Title headingLevel="h2">Collection results</Title>
-                    <Text>See a preview of current matches.</Text>
+                    <Content component="p">See a preview of current matches.</Content>
                 </div>
                 <Button
+                    icon={<SyncAltIcon />}
                     variant="plain"
                     onClick={refreshResults}
                     title="Refresh results"
                     isDisabled={isRefreshingResults}
-                >
-                    <SyncAltIcon />
-                </Button>
+                />
                 {headerContent}
             </div>
             <Divider />
-            <div className="pf-v5-u-h-100 pf-v5-u-p-lg" style={{ overflow: 'auto' }}>
+            <div className="pf-v6-u-h-100 pf-v6-u-p-lg" style={{ overflow: 'auto' }}>
                 <Flex
                     spaceItems={{ default: 'spaceItemsNone' }}
                     alignItems={{ default: 'alignItemsStretch' }}
@@ -265,7 +253,7 @@ function CollectionResults({
                                 <SelectOption value="Cluster">Cluster</SelectOption>
                             </SelectSingle>
                         </FlexItem>
-                        <div className="pf-v5-u-flex-grow-1 pf-v5-u-flex-basis-0">
+                        <div className="pf-v6-u-flex-grow-1 pf-v6-u-flex-basis-0">
                             <SearchInput
                                 aria-label="Filter by name"
                                 placeholder="Filter by name"
