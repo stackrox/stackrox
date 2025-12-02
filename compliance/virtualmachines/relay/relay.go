@@ -4,20 +4,28 @@ import (
 	"context"
 
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/compliance/virtualmachines/relay/provider"
 	"github.com/stackrox/rox/compliance/virtualmachines/relay/sender"
+	v1 "github.com/stackrox/rox/generated/internalapi/virtualmachine/v1"
 	"github.com/stackrox/rox/pkg/logging"
 )
 
 var log = logging.LoggerForModule()
 
+// IndexReportProvider manages report collection and produces validated reports.
+type IndexReportProvider interface {
+	// Start begins accepting connections and returns a channel of validated reports.
+	// The channel is currently not closed to avoid races during shutdown.
+	// TODO: Implement proper shutdown logic that closes the channel.
+	Start(ctx context.Context) (<-chan *v1.IndexReport, error)
+}
+
 type Relay struct {
-	reportProvider provider.ReportProvider
+	reportProvider IndexReportProvider
 	reportSender   sender.ReportSender
 }
 
 // New creates a Relay with the given provider and sender.
-func New(reportProvider provider.ReportProvider, reportSender sender.ReportSender) *Relay {
+func New(reportProvider IndexReportProvider, reportSender sender.ReportSender) *Relay {
 	return &Relay{
 		reportProvider: reportProvider,
 		reportSender:   reportSender,

@@ -35,7 +35,7 @@ func (s *relayTestSuite) TestRelay_Integration() {
 	}
 
 	// Create mock provider that produces test reports
-	mockReportProvider := &mockReportProvider{
+	mockIndexReportProvider := &mockIndexReportProvider{
 		reports: []*v1.IndexReport{
 			{VsockCid: "100"},
 			{VsockCid: "200"},
@@ -43,7 +43,7 @@ func (s *relayTestSuite) TestRelay_Integration() {
 	}
 
 	// Create relay with mock dependencies using the public constructor
-	relay := New(mockReportProvider, mockReportSender)
+	relay := New(mockIndexReportProvider, mockReportSender)
 
 	// Run relay in background
 	ctx, cancel := context.WithTimeout(s.ctx, 5*time.Second)
@@ -85,7 +85,7 @@ func (s *relayTestSuite) TestRelay_SenderErrorsDoNotStopProcessing() {
 		expectedCount: 3,
 	}
 
-	mockReportProvider := &mockReportProvider{
+	mockIndexReportProvider := &mockIndexReportProvider{
 		reports: []*v1.IndexReport{
 			{VsockCid: "100"},
 			{VsockCid: "200"},
@@ -93,7 +93,7 @@ func (s *relayTestSuite) TestRelay_SenderErrorsDoNotStopProcessing() {
 		},
 	}
 
-	relay := New(mockReportProvider, mockReportSender)
+	relay := New(mockIndexReportProvider, mockReportSender)
 
 	ctx, cancel := context.WithTimeout(s.ctx, 5*time.Second)
 	defer cancel()
@@ -126,7 +126,7 @@ func (s *relayTestSuite) TestRelay_SenderErrorsDoNotStopProcessing() {
 func (s *relayTestSuite) TestRelay_ContextCancellation() {
 	// Provider signals when first report is sent
 	startedChan := make(chan struct{})
-	mockReportProvider := &mockReportProvider{
+	mockIndexReportProvider := &mockIndexReportProvider{
 		reports: []*v1.IndexReport{
 			{VsockCid: "100"},
 			{VsockCid: "200"}, // Second report will never be processed
@@ -138,7 +138,7 @@ func (s *relayTestSuite) TestRelay_ContextCancellation() {
 		failOnIndex: -1, // never fail
 	}
 
-	relay := New(mockReportProvider, mockReportSender)
+	relay := New(mockIndexReportProvider, mockReportSender)
 
 	ctx, cancel := context.WithCancel(s.ctx)
 
@@ -164,12 +164,12 @@ func (s *relayTestSuite) TestRelay_ContextCancellation() {
 
 // Mock implementations
 
-type mockReportProvider struct {
+type mockIndexReportProvider struct {
 	reports     []*v1.IndexReport
 	startedChan chan struct{} // signals when first report is sent
 }
 
-func (m *mockReportProvider) Start(ctx context.Context) (<-chan *v1.IndexReport, error) {
+func (m *mockIndexReportProvider) Start(ctx context.Context) (<-chan *v1.IndexReport, error) {
 	reportChan := make(chan *v1.IndexReport, len(m.reports))
 
 	go func() {
