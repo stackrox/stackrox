@@ -23,7 +23,6 @@ import (
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/scancomponent"
 	pkgSearch "github.com/stackrox/rox/pkg/search"
-	"google.golang.org/protobuf/proto"
 )
 
 var (
@@ -74,8 +73,13 @@ func (ds *datastoreImpl) Count(ctx context.Context, q *v1.Query) (int, error) {
 func (ds *datastoreImpl) SearchImages(ctx context.Context, q *v1.Query) ([]*v1.SearchResult, error) {
 	defer metrics.SetDatastoreFunctionDuration(time.Now(), "Image", "SearchImages")
 
-	q = proto.Clone(q).(*v1.Query)
-	q.Selects = append(q.GetSelects(), pkgSearch.NewQuerySelect(pkgSearch.ImageName).Proto())
+	if q == nil {
+		q = pkgSearch.EmptyQuery()
+	}
+
+	// Clone the query and add select fields for SearchResult construction
+	clonedQuery := q.CloneVT()
+	clonedQuery.Selects = append(q.GetSelects(), pkgSearch.NewQuerySelect(pkgSearch.ImageName).Proto())
 
 	results, err := ds.Search(ctx, q)
 	if err != nil {
@@ -87,6 +91,7 @@ func (ds *datastoreImpl) SearchImages(ctx context.Context, q *v1.Query) ([]*v1.S
 				results[i].Name = nameVal
 			}
 		}
+		results[i].ID = imageTypes.NewDigest(results[i].ID).Digest()
 	}
 
 	return pkgSearch.ResultsToSearchResultProtos(results, &ImageSearchResultConverter{}), nil
