@@ -21,7 +21,7 @@ type StatusCountIconProps = {
 };
 
 function getStatusIcon(status: Status, count: number, disabled: boolean) {
-    let color = 'var(pf-t--global--icon--color--subtle)';
+    let color = 'var(--pf-t--global--icon--color--disabled)';
     if (!disabled && count > 0) {
         switch (status) {
             case 'fail':
