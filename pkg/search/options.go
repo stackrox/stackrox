@@ -331,13 +331,13 @@ var (
 	Inactive = newFieldLabel("Inactive Deployment")
 
 	// Risk Search Fields
-	RiskScore           = newFieldLabel("Risk Score")
-	NodeRiskScore       = newFieldLabel("Node Risk Score")
-	DeploymentRiskScore = newFieldLabel("Deployment Risk Score")
-	ImageRiskScore      = newFieldLabel("Image Risk Score")
-	ComponentRiskScore  = newFieldLabel("Component Risk Score")
-	RiskSubjectType     = newFieldLabel("Risk Subject Type")
-	ComponentBaseImage  = newFieldLabel("Component Base Image")
+	RiskScore              = newFieldLabel("Risk Score")
+	NodeRiskScore          = newFieldLabel("Node Risk Score")
+	DeploymentRiskScore    = newFieldLabel("Deployment Risk Score")
+	ImageRiskScore         = newFieldLabel("Image Risk Score")
+	ComponentRiskScore     = newFieldLabel("Component Risk Score")
+	RiskSubjectType        = newFieldLabel("Risk Subject Type")
+	ComponentFromBaseImage = newFieldLabel("Component From Base Image")
 
 	PolicyLastUpdated = newFieldLabel("Policy Last Updated")
 

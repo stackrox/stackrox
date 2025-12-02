@@ -78,7 +78,7 @@ func (m *ImageComponentV2) CloneVT() *ImageComponentV2 {
 	r.Location = m.Location
 	r.Architecture = m.Architecture
 	r.ImageIdV2 = m.ImageIdV2
-	r.BaseImage = m.BaseImage
+	r.FromBaseImage = m.FromBaseImage
 	if m.SetTopCvss != nil {
 		r.SetTopCvss = m.SetTopCvss.(interface {
 			CloneVT() isImageComponentV2_SetTopCvss
@@ -256,7 +256,7 @@ func (this *ImageComponentV2) EqualVT(that *ImageComponentV2) bool {
 	if this.ImageIdV2 != that.ImageIdV2 {
 		return false
 	}
-	if this.BaseImage != that.BaseImage {
+	if this.FromBaseImage != that.FromBaseImage {
 		return false
 	}
 	return string(this.unknownFields) == string(that.unknownFields)
@@ -467,9 +467,9 @@ func (m *ImageComponentV2) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 		}
 		i -= size
 	}
-	if m.BaseImage {
+	if m.FromBaseImage {
 		i--
-		if m.BaseImage {
+		if m.FromBaseImage {
 			dAtA[i] = 1
 		} else {
 			dAtA[i] = 0
@@ -696,7 +696,7 @@ func (m *ImageComponentV2) SizeVT() (n int) {
 	if l > 0 {
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
-	if m.BaseImage {
+	if m.FromBaseImage {
 		n += 2
 	}
 	n += len(m.unknownFields)
@@ -1427,7 +1427,7 @@ func (m *ImageComponentV2) UnmarshalVT(dAtA []byte) error {
 			iNdEx = postIndex
 		case 15:
 			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field BaseImage", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field FromBaseImage", wireType)
 			}
 			var v int
 			for shift := uint(0); ; shift += 7 {
@@ -1444,7 +1444,7 @@ func (m *ImageComponentV2) UnmarshalVT(dAtA []byte) error {
 					break
 				}
 			}
-			m.BaseImage = bool(v != 0)
+			m.FromBaseImage = bool(v != 0)
 		default:
 			iNdEx = preIndex
 			skippy, err := protohelpers.Skip(dAtA[iNdEx:])
@@ -2229,7 +2229,7 @@ func (m *ImageComponentV2) UnmarshalVTUnsafe(dAtA []byte) error {
 			iNdEx = postIndex
 		case 15:
 			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field BaseImage", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field FromBaseImage", wireType)
 			}
 			var v int
 			for shift := uint(0); ; shift += 7 {
@@ -2246,7 +2246,7 @@ func (m *ImageComponentV2) UnmarshalVTUnsafe(dAtA []byte) error {
 					break
 				}
 			}
-			m.BaseImage = bool(v != 0)
+			m.FromBaseImage = bool(v != 0)
 		default:
 			iNdEx = preIndex
 			skippy, err := protohelpers.Skip(dAtA[iNdEx:])
