@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import type { ReactElement } from 'react';
 import { connect } from 'react-redux';
-import { Button, Flex, FlexItem, Text, Title } from '@patternfly/react-core';
+import { Button, Content, Flex, FlexItem, Title } from '@patternfly/react-core';
 import { DownloadIcon } from '@patternfly/react-icons';
 
 import useAnalytics, { LEGACY_CLUSTER_DOWNLOAD_HELM_VALUES } from 'hooks/useAnalytics';
@@ -40,7 +40,7 @@ const DownloadHelmValues = ({
     return (
         <Flex direction={{ default: 'column' }}>
             <Title headingLevel="h2">Download helm values</Title>
-            <Text>{description}</Text>
+            <Content component="p">{description}</Content>
             <FlexItem>
                 <Button
                     variant="secondary"

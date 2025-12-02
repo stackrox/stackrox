@@ -54,13 +54,15 @@ function WatchedImagesTable({
                         {watchedImages.map(({ name }) => (
                             <Tr key={name}>
                                 <Td dataLabel="Image">{name}</Td>
-                                <Td dataLabel="Row action" className="pf-v5-u-text-align-right">
+                                <Td dataLabel="Row action" className="pf-v6-u-text-align-right">
                                     <Button
                                         variant="link"
                                         isInline
                                         icon={
                                             <Icon>
-                                                <MinusCircleIcon color="var(--pf-v5-global--danger-color--100)" />
+                                                <MinusCircleIcon
+                                                    color="var(--pf-t--temp--dev--tbd)" /* CODEMODS: original v5 color was --pf-v5-global--danger-color--100 */
+                                                />
                                             </Icon>
                                         }
                                         onClick={() => unwatchImage(name)}

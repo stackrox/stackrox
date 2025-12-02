@@ -4,12 +4,12 @@ import {
     Alert,
     Button,
     Checkbox,
+    Content,
     ExpandableSection,
     Flex,
     FlexItem,
     Form,
     PageSection,
-    Text,
     TextArea,
     TextInput,
 } from '@patternfly/react-core';
@@ -194,26 +194,26 @@ function SignatureIntegrationForm({
 
     return (
         <>
-            <PageSection variant="light" isFilled hasOverflowScroll>
+            <PageSection hasBodyWrapper={false} isFilled hasOverflowScroll>
                 <Alert
                     title="Verifying image signatures"
                     component="p"
                     variant="info"
                     isInline
-                    className="pf-v5-u-mb-lg"
+                    className="pf-v6-u-mb-lg"
                 >
                     <Flex direction={{ default: 'column' }}>
                         <FlexItem>
-                            <Text>
+                            <Content component="p">
                                 Image signatures are verified by ensuring that their signature has
                                 been signed by a trusted image signer. Configure at least one
                                 trusted image signer by specifying a Cosign public encryption key or
                                 a Cosign certificate chain. Multiple image signers may be combined
                                 in a single signature integration.
-                            </Text>
+                            </Content>
                         </FlexItem>
                         <FlexItem>
-                            <Text>
+                            <Content component="p">
                                 For more information, see{' '}
                                 <ExternalLink>
                                     <a
@@ -227,7 +227,7 @@ function SignatureIntegrationForm({
                                         RHACS documentation
                                     </a>
                                 </ExternalLink>
-                            </Text>
+                            </Content>
                         </FlexItem>
                     </Flex>
                 </Alert>
@@ -367,6 +367,7 @@ function SignatureIntegrationForm({
                                                             {isEditable && (
                                                                 <FlexItem>
                                                                     <Button
+                                                                        icon={<TrashIcon />}
                                                                         variant="plain"
                                                                         aria-label="Delete public key"
                                                                         style={{
@@ -378,9 +379,7 @@ function SignatureIntegrationForm({
                                                                                 index
                                                                             )
                                                                         }
-                                                                    >
-                                                                        <TrashIcon />
-                                                                    </Button>
+                                                                    />
                                                                 </FlexItem>
                                                             )}
                                                         </Flex>
@@ -556,7 +555,7 @@ function SignatureIntegrationForm({
                                                                                 helpTitle="Certificate chain (PEM encoded)"
                                                                                 helpText={
                                                                                     <>
-                                                                                        <Text>
+                                                                                        <Content component="p">
                                                                                             The
                                                                                             trusted
                                                                                             certificate
@@ -572,7 +571,7 @@ function SignatureIntegrationForm({
                                                                                             roots
                                                                                             are
                                                                                             used.
-                                                                                        </Text>
+                                                                                        </Content>
                                                                                     </>
                                                                                 }
                                                                                 ariaLabel="Help for certificate chain PEM encoded"
@@ -622,7 +621,7 @@ function SignatureIntegrationForm({
                                                                                 helpTitle="Intermediate certificate (PEM encoded)"
                                                                                 helpText={
                                                                                     <>
-                                                                                        <Text>
+                                                                                        <Content component="p">
                                                                                             The
                                                                                             trusted
                                                                                             signer
@@ -640,7 +639,7 @@ function SignatureIntegrationForm({
                                                                                             chain is
                                                                                             used for
                                                                                             verification.
-                                                                                        </Text>
+                                                                                        </Content>
                                                                                     </>
                                                                                 }
                                                                                 ariaLabel="Help for certificate chain PEM encoded"
@@ -688,14 +687,14 @@ function SignatureIntegrationForm({
                                                                         fieldId={`cosignCertificates[${index}].certificateTransparencyLog.enabled`}
                                                                         helperText={
                                                                             <>
-                                                                                <Text>
+                                                                                <Content component="p">
                                                                                     Validate the
                                                                                     proof of
                                                                                     inclusion into
                                                                                     the certificate
                                                                                     transparency
                                                                                     log.
-                                                                                </Text>
+                                                                                </Content>
                                                                             </>
                                                                         }
                                                                         touched={touched}
@@ -732,7 +731,7 @@ function SignatureIntegrationForm({
                                                                         fieldId={`cosignCertificates[${index}].certificateTransparencyLog.publicKeyPemEnc`}
                                                                         helperText={
                                                                             <>
-                                                                                <Text>
+                                                                                <Content component="p">
                                                                                     The public key
                                                                                     that is used to
                                                                                     validate the
@@ -741,14 +740,14 @@ function SignatureIntegrationForm({
                                                                                     the certificate
                                                                                     transparency
                                                                                     log.
-                                                                                </Text>
-                                                                                <Text>
+                                                                                </Content>
+                                                                                <Content component="p">
                                                                                     Leave empty to
                                                                                     use the key of
                                                                                     the public
                                                                                     Sigstore
                                                                                     instance.
-                                                                                </Text>
+                                                                                </Content>
                                                                             </>
                                                                         }
                                                                         touched={touched}
@@ -799,6 +798,7 @@ function SignatureIntegrationForm({
                                                             {isEditable && (
                                                                 <FlexItem>
                                                                     <Button
+                                                                        icon={<TrashIcon />}
                                                                         variant="plain"
                                                                         aria-label="Delete certificate verification data"
                                                                         style={{
@@ -810,9 +810,7 @@ function SignatureIntegrationForm({
                                                                                 index
                                                                             )
                                                                         }
-                                                                    >
-                                                                        <TrashIcon />
-                                                                    </Button>
+                                                                    />
                                                                 </FlexItem>
                                                             )}
                                                         </Flex>
@@ -854,14 +852,14 @@ function SignatureIntegrationForm({
                                         fieldId="transparencyLog.enabled"
                                         helperText={
                                             <>
-                                                <Text>
+                                                <Content component="p">
                                                     Validate the inclusion of the signature in a
                                                     transparency log.
-                                                </Text>
-                                                <Text>
+                                                </Content>
+                                                <Content component="p">
                                                     Required when signatures contain short-lived
                                                     certificates as they are issued by Fulcio.
-                                                </Text>
+                                                </Content>
                                             </>
                                         }
                                         touched={touched}
@@ -883,15 +881,15 @@ function SignatureIntegrationForm({
                                         fieldId="transparencyLog.url"
                                         helperText={
                                             <>
-                                                <Text>
+                                                <Content component="p">
                                                     The URL under which the Rekor transparency log
                                                     is available. Defaults to the public Rekor
                                                     instance of Sigstore.
-                                                </Text>
-                                                <Text>
+                                                </Content>
+                                                <Content component="p">
                                                     Required for online confirmation of the
                                                     inclusion into the transparency log.
-                                                </Text>
+                                                </Content>
                                             </>
                                         }
                                         touched={touched}
@@ -918,12 +916,12 @@ function SignatureIntegrationForm({
                                         touched={touched}
                                         helperText={
                                             <>
-                                                <Text>
+                                                <Content component="p">
                                                     Force offline validation of the signature proof
                                                     of inclusion into the transparency log. Do not
                                                     fall back to request confirmation from the
                                                     transparency log over network.
-                                                </Text>
+                                                </Content>
                                             </>
                                         }
                                         errors={errors}
@@ -946,15 +944,15 @@ function SignatureIntegrationForm({
                                         fieldId={'transparencyLog.publicKeyPemEnc'}
                                         helperText={
                                             <>
-                                                <Text>
+                                                <Content component="p">
                                                     The public key that is used to validate the
                                                     signature proof of inclusion into the Rekor
                                                     transparency log.
-                                                </Text>
-                                                <Text>
+                                                </Content>
+                                                <Content component="p">
                                                     Leave empty to use the key of the public
                                                     Sigstore instance.
-                                                </Text>
+                                                </Content>
                                             </>
                                         }
                                         touched={touched}

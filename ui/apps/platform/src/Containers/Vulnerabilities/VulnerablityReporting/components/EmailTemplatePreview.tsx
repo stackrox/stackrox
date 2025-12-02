@@ -4,11 +4,10 @@ import {
     CardBody,
     CardFooter,
     CardTitle,
+    Content,
+    ContentVariants,
     Flex,
     FlexItem,
-    Text,
-    TextContent,
-    TextVariants,
     ToggleGroup,
     ToggleGroupItem,
 } from '@patternfly/react-core';
@@ -36,20 +35,20 @@ function EmailTemplatePreview({
 
     return (
         <Flex
-            className="pf-v5-u-py-lg"
+            className="pf-v6-u-py-lg"
             spaceItems={{ default: 'spaceItemsMd' }}
             direction={{ default: 'column' }}
         >
             <FlexItem>
-                <TextContent>
-                    <Text component={TextVariants.small}>
+                <Content>
+                    <Content component={ContentVariants.small}>
                         This preview displays modifications to the email subject and body only. Data
                         shown in the report parameters are sample data meant solely for
                         illustration. For any actual data, please check the email attachment in the
                         real report. Please not that an attachment of the report data will not be
                         provided if no CVEs are found.
-                    </Text>
-                </TextContent>
+                    </Content>
+                </Content>
             </FlexItem>
             <FlexItem>
                 <ToggleGroup aria-label="Preview with or without CVEs found">
@@ -66,7 +65,7 @@ function EmailTemplatePreview({
                 </ToggleGroup>
             </FlexItem>
             <FlexItem>
-                <Card isFlat>
+                <Card>
                     <CardTitle>{emailSubject || defaultEmailSubject}</CardTitle>
                     <CardBody>
                         {emailBody ||

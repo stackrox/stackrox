@@ -91,7 +91,7 @@ function ClusterRegistrationSecretForm(): ReactElement {
         <>
             <ClusterRegistrationSecretsHeader title="Create cluster registration secret" />
             <Divider component="div" />
-            <PageSection variant="light">
+            <PageSection hasBodyWrapper={false}>
                 <Flex direction={{ default: 'column' }}>
                     <Form>
                         <FormLabelGroup

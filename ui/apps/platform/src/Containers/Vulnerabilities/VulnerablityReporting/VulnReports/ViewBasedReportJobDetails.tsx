@@ -1,11 +1,11 @@
 import {
-    Chip,
-    ChipGroup,
     DescriptionList,
     DescriptionListDescription,
     DescriptionListGroup,
     DescriptionListTerm,
     Flex,
+    Label,
+    LabelGroup,
     Stack,
     Title,
 } from '@patternfly/react-core';
@@ -68,13 +68,13 @@ function ViewBasedReportJobDetails({ reportSnapshot }: ViewBasedReportJobDetails
         const values = typeof value === 'string' ? [value] : value;
 
         return (
-            <ChipGroup key={key} categoryName={categoryName}>
+            <LabelGroup key={key} categoryName={categoryName}>
                 {values.map((currentValue) => (
-                    <Chip key={currentValue} isReadOnly>
+                    <Label variant="outline" key={currentValue}>
                         {descriptor?.render ? descriptor.render(currentValue) : currentValue}
-                    </Chip>
+                    </Label>
                 ))}
-            </ChipGroup>
+            </LabelGroup>
         );
     });
 

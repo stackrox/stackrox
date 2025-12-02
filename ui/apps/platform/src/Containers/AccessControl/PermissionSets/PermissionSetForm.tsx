@@ -122,7 +122,7 @@ function PermissionSetForm({
 
     return (
         <Form id="permission-set-form">
-            <Toolbar inset={{ default: 'insetNone' }} className="pf-v5-u-pt-0">
+            <Toolbar inset={{ default: 'insetNone' }} className="pf-v6-u-pt-0">
                 <ToolbarContent>
                     <ToolbarItem>
                         <Title headingLevel="h1">
@@ -135,7 +135,7 @@ function PermissionSetForm({
                         </ToolbarItem>
                     )}
                     {action !== 'create' && (
-                        <ToolbarGroup variant="button-group" align={{ default: 'alignRight' }}>
+                        <ToolbarGroup variant="action-group" align={{ default: 'alignEnd' }}>
                             <ToolbarItem>
                                 {isActionable ? (
                                     <Button
@@ -201,7 +201,7 @@ function PermissionSetForm({
                     </p>
                     <p>
                         <strong>{defaultMinimalReadAccessResources.join(', ')}</strong>
-                        <Badge isRead className="pf-v5-u-ml-sm">
+                        <Badge isRead className="pf-v6-u-ml-sm">
                             {defaultMinimalReadAccessResources.length}
                         </Badge>
                     </p>
@@ -217,7 +217,7 @@ function PermissionSetForm({
             {hasAction && (
                 <Toolbar inset={{ default: 'insetNone' }}>
                     <ToolbarContent>
-                        <ToolbarGroup variant="button-group">
+                        <ToolbarGroup variant="action-group">
                             <ToolbarItem>
                                 <Button
                                     variant="primary"

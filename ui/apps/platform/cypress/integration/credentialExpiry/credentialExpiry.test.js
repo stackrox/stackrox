@@ -9,8 +9,8 @@ import {
     visitSystemConfigurationWithScannerCredentialExpiryBanner,
 } from './credentialExpiry.helpers';
 
-const centralCredentialExpiryBanner = '.pf-v5-c-banner:contains("Central certificate")';
-const scannerCredentialExpiryBanner = '.pf-v5-c-banner:contains("Scanner certificate")';
+const centralCredentialExpiryBanner = '.pf-v6-c-banner:contains("Central certificate")';
+const scannerCredentialExpiryBanner = '.pf-v6-c-banner:contains("Scanner certificate")';
 
 describe('Credential expiry', () => {
     withAuth();

@@ -96,7 +96,7 @@ function TestLoginResultsPage({ authProviderTestResults }) {
     return (
         <>
             <div className="flex flex-col items-center justify-center h-full theme-light">
-                <div className="flex flex-col items-center pf-v5-u-background-color-100 w-4/5 relative">
+                <div className="flex flex-col items-center pf-v6-u-background-color-100 w-4/5 relative">
                     <div className="p-4 w-full">
                         <Alert variant={variant} isInline title={title} component="p">
                             {messageBody}

@@ -11,16 +11,16 @@ type TabNavProps = {
 
 function TabNav({ tabLinks, currentTabTitle, isDisabled }: TabNavProps) {
     return (
-        <nav className="pf-v5-c-nav pf-m-tertiary">
-            <ul className="pf-v5-c-nav__list">
+        <nav className="pf-v6-c-nav pf-m-tertiary">
+            <ul className="pf-v6-c-nav__list">
                 {tabLinks.map(({ title, href }) => {
                     const isCurrent = currentTabTitle === title;
                     const className = isCurrent
-                        ? 'pf-v5-c-nav__link pf-m-current'
-                        : 'pf-v5-c-nav__link';
+                        ? 'pf-v6-c-nav__link pf-m-current'
+                        : 'pf-v6-c-nav__link';
 
                     return (
-                        <li key={title} className="pf-v5-c-nav__item">
+                        <li key={title} className="pf-v6-c-nav__item">
                             {isDisabled ? (
                                 <span className={className}>{title}</span>
                             ) : isCurrent ? (

@@ -14,11 +14,11 @@ export type SummaryCountProps = {
 function SummaryCount({ count, href, noun, tooltip }: SummaryCountProps): ReactElement {
     const content = (
         <Button variant="link" component={LinkShim} href={href}>
-            <Stack className="pf-v5-u-px-xs pf-v5-u-px-sm-on-xl pf-v5-u-align-items-center">
-                <span className="pf-v5-u-font-size-lg-on-md pf-v5-u-font-size-sm pf-v5-u-font-weight-bold">
+            <Stack className="pf-v6-u-px-xs pf-v6-u-px-sm-on-xl pf-v6-u-align-items-center">
+                <span className="pf-v6-u-font-size-lg-on-md pf-v6-u-font-size-sm pf-v6-u-font-weight-bold">
                     {count}
                 </span>
-                <span className="pf-v5-u-font-size-md-on-md pf-v5-u-font-size-xs">
+                <span className="pf-v6-u-font-size-md-on-md pf-v6-u-font-size-xs">
                     {pluralize(noun, count)}
                 </span>
             </Stack>

@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom-v5-compat';
-import { Text } from '@patternfly/react-core';
+import { Content } from '@patternfly/react-core';
 import {
     ActionsColumn,
     ExpandableRowContent,
@@ -235,7 +235,7 @@ function CVEsTable({
                                     <Td colSpan={colSpan - 1}>
                                         <ExpandableRowContent>
                                             {summary ? (
-                                                <Text>{summary}</Text>
+                                                <Content component="p">{summary}</Content>
                                             ) : (
                                                 <PartialCVEDataAlert />
                                             )}

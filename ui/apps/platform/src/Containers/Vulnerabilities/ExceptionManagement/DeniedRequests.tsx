@@ -82,7 +82,7 @@ function DeniedRequests() {
 
     if (tableState.type === 'ERROR') {
         return (
-            <PageSection variant="light">
+            <PageSection hasBodyWrapper={false}>
                 <TableErrorComponent
                     error={tableState.error}
                     message="An error occurred. Try refreshing again"
@@ -92,7 +92,7 @@ function DeniedRequests() {
     }
 
     return (
-        <PageSection>
+        <PageSection hasBodyWrapper={false}>
             <PageTitle title="Exception Management - Denied Requests" />
             <AdvancedFiltersToolbar
                 searchFilterConfig={vulnRequestSearchFilterConfig}
@@ -101,7 +101,7 @@ function DeniedRequests() {
                 includeCveSeverityFilters={false}
                 includeCveStatusFilters={false}
             >
-                <ToolbarItem variant="pagination" align={{ default: 'alignRight' }}>
+                <ToolbarItem variant="pagination" align={{ default: 'alignEnd' }}>
                     <Pagination
                         toggleTemplate={({ firstIndex, lastIndex }) => (
                             <span>

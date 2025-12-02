@@ -153,7 +153,7 @@ function AdvancedFlowsFilter({
                     </SelectOption>
                 </SelectGroup>
                 <SelectGroup label="Ports">
-                    <div className="pf-v5-u-p-md">
+                    <div className="pf-v6-u-p-md">
                         <TextInputGroup>
                             <TextInputGroupMain
                                 value={portsFilterValue}

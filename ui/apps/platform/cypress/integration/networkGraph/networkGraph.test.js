@@ -55,45 +55,45 @@ describe('Network Graph smoke tests', () => {
         cy.get(networkGraphSelectors.toolbarItem).contains('Legend').click();
 
         // check Legend content
-        cy.get('.pf-v5-c-popover__content [data-testid="legend-title"]:contains("Legend")');
+        cy.get('.pf-v6-c-popover__content [data-testid="legend-title"]:contains("Legend")');
 
-        cy.get('.pf-v5-c-popover__content [data-testid="node-types-title"]:contains("Node types")');
-        cy.get('.pf-v5-c-popover__content .pf-v5-c-description-list__text:contains("Deployment")');
+        cy.get('.pf-v6-c-popover__content [data-testid="node-types-title"]:contains("Node types")');
+        cy.get('.pf-v6-c-popover__content .pf-v6-c-description-list__text:contains("Deployment")');
         cy.get(
-            '.pf-v5-c-popover__content .pf-v5-c-description-list__text:contains("External CIDR block")'
-        );
-
-        cy.get(
-            '.pf-v5-c-popover__content [data-testid="namespace-types-title"]:contains("Namespace types")'
-        );
-        cy.get(
-            '.pf-v5-c-popover__content .pf-v5-c-description-list__text:contains("Related namespace")'
-        );
-        cy.get(
-            '.pf-v5-c-popover__content .pf-v5-c-description-list__text:contains("Filtered namespace")'
+            '.pf-v6-c-popover__content .pf-v6-c-description-list__text:contains("External CIDR block")'
         );
 
         cy.get(
-            '.pf-v5-c-popover__content [data-testid="deployment-badges-title"]:contains("Deployment badges")'
+            '.pf-v6-c-popover__content [data-testid="namespace-types-title"]:contains("Namespace types")'
         );
         cy.get(
-            '.pf-v5-c-popover__content .pf-v5-c-description-list__text:contains("Connected to external entities")'
+            '.pf-v6-c-popover__content .pf-v6-c-description-list__text:contains("Related namespace")'
         );
         cy.get(
-            '.pf-v5-c-popover__content .pf-v5-c-description-list__text:contains("Isolated by network policy rules")'
+            '.pf-v6-c-popover__content .pf-v6-c-description-list__text:contains("Filtered namespace")'
+        );
+
+        cy.get(
+            '.pf-v6-c-popover__content [data-testid="deployment-badges-title"]:contains("Deployment badges")'
         );
         cy.get(
-            '.pf-v5-c-popover__content .pf-v5-c-description-list__text:contains("All traffic allowed (No network policies)")'
+            '.pf-v6-c-popover__content .pf-v6-c-description-list__text:contains("Connected to external entities")'
         );
         cy.get(
-            '.pf-v5-c-popover__content .pf-v5-c-description-list__text:contains("Only has an egress network policy")'
+            '.pf-v6-c-popover__content .pf-v6-c-description-list__text:contains("Isolated by network policy rules")'
         );
         cy.get(
-            '.pf-v5-c-popover__content .pf-v5-c-description-list__text:contains("Only has an ingress network policy")'
+            '.pf-v6-c-popover__content .pf-v6-c-description-list__text:contains("All traffic allowed (No network policies)")'
+        );
+        cy.get(
+            '.pf-v6-c-popover__content .pf-v6-c-description-list__text:contains("Only has an egress network policy")'
+        );
+        cy.get(
+            '.pf-v6-c-popover__content .pf-v6-c-description-list__text:contains("Only has an ingress network policy")'
         );
 
         // close the Legend
-        cy.get('.pf-v5-c-popover__content [aria-label="Close"]').click();
+        cy.get('.pf-v6-c-popover__content [aria-label="Close"]').click();
     });
 
     it('should correctly display entities when scope and filters are applied', () => {

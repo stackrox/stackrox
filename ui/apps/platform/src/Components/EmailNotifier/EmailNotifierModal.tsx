@@ -1,5 +1,6 @@
 import type { ReactElement } from 'react';
-import { Flex, Modal, Title } from '@patternfly/react-core';
+import { Flex, Title } from '@patternfly/react-core';
+import { Modal } from '@patternfly/react-core/deprecated';
 
 import FormSaveButton from 'Components/PatternFly/FormSaveButton';
 import FormCancelButton from 'Components/PatternFly/FormCancelButton';

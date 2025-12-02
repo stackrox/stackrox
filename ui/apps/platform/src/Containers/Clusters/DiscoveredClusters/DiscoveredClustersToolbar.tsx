@@ -119,7 +119,7 @@ function DiscoveredClustersToolbar({
                         />
                     </ToolbarItem>
                 </ToolbarGroup>
-                <ToolbarGroup variant="button-group" align={{ default: 'alignRight' }}>
+                <ToolbarGroup variant="action-group" align={{ default: 'alignEnd' }}>
                     <ToolbarItem variant="pagination">
                         <Pagination
                             isCompact
@@ -135,7 +135,7 @@ function DiscoveredClustersToolbar({
                         />
                     </ToolbarItem>
                 </ToolbarGroup>
-                <ToolbarGroup className="pf-v5-u-w-100">
+                <ToolbarGroup className="pf-v6-u-w-100">
                     <SearchFilterChips
                         searchFilter={searchFilter}
                         onFilterChange={setSearchFilter}

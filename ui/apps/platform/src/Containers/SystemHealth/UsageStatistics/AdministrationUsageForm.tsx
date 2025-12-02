@@ -77,7 +77,7 @@ function AdministrationUsageForm(): ReactElement {
                 <Alert isInline title={errorFetchingMax} component="p" variant="danger" />
             )}
             <Title headingLevel="h2">Currently secured</Title>
-            <Divider className="pf-v5-u-pt-xs pf-v5-u-pb-sm" />
+            <Divider className="pf-v6-u-pt-xs pf-v6-u-pb-sm" />
             <DescriptionList
                 columnModifier={{
                     default: '2Col',
@@ -95,11 +95,11 @@ function AdministrationUsageForm(): ReactElement {
                 </DescriptionListGroup>
             </DescriptionList>
 
-            <Title headingLevel="h2" className="pf-v5-u-pt-sm">
+            <Title headingLevel="h2" className="pf-v6-u-pt-sm">
                 Maximum secured
             </Title>
-            <Divider className="pf-v5-u-pt-xs pf-v5-u-pb-sm" />
-            <Flex className="pf-v5-u-pb-xl">
+            <Divider className="pf-v6-u-pt-xs pf-v6-u-pb-sm" />
+            <Flex className="pf-v6-u-pb-xl">
                 <FlexItem>
                     <Title headingLevel="h4">Start date</Title>
                     <DatePicker
@@ -151,7 +151,7 @@ function AdministrationUsageForm(): ReactElement {
                     </DescriptionListDescription>
                 </DescriptionListGroup>
             </DescriptionList>
-            <Grid hasGutter className="pf-v5-u-pt-md">
+            <Grid hasGutter className="pf-v6-u-pt-md">
                 <GridItem span={12}>
                     <Button
                         onClick={() => {

@@ -122,7 +122,7 @@ function AccessScopeFormWrapper({
 
     return (
         <>
-            <Toolbar inset={{ default: 'insetNone' }} className="pf-v5-u-pt-0">
+            <Toolbar inset={{ default: 'insetNone' }} className="pf-v6-u-pt-0">
                 <ToolbarContent>
                     <ToolbarItem>
                         <Title headingLevel="h1">
@@ -135,7 +135,7 @@ function AccessScopeFormWrapper({
                         </ToolbarItem>
                     )}
                     {action !== 'create' && (
-                        <ToolbarGroup variant="button-group" align={{ default: 'alignRight' }}>
+                        <ToolbarGroup variant="action-group" align={{ default: 'alignEnd' }}>
                             <ToolbarItem>
                                 {isActionable ? (
                                     <Button
@@ -162,9 +162,9 @@ function AccessScopeFormWrapper({
                 // setLabelSelectorsEditingState={setLabelSelectorsEditingState}
             />
             {hasAction && (
-                <Toolbar inset={{ default: 'insetNone' }} className="pf-v5-u-pb-0">
+                <Toolbar inset={{ default: 'insetNone' }} className="pf-v6-u-pb-0">
                     <ToolbarContent>
-                        <ToolbarGroup variant="button-group">
+                        <ToolbarGroup variant="action-group">
                             <ToolbarItem>
                                 <Button
                                     variant="primary"

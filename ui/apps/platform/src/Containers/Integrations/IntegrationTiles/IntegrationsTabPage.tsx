@@ -28,7 +28,7 @@ function IntegrationsTabPage({
     return (
         <>
             <PageTitle title={`Integrations - ${sourceTitle}`} />
-            <PageSection variant="light" component="div">
+            <PageSection hasBodyWrapper={false} component="div">
                 <Flex direction={{ default: 'column' }} spaceItems={{ default: 'spaceItemsLg' }}>
                     <Title headingLevel="h1">Integrations</Title>
                     {/*TODO(ROX-25633): Remove the banner again.*/}

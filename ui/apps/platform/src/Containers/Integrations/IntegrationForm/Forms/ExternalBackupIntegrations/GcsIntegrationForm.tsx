@@ -2,10 +2,10 @@
 import type { ReactElement } from 'react';
 import {
     Checkbox,
+    Content,
     Form,
     FormSelect,
     PageSection,
-    Text,
     TextArea,
     TextInput,
 } from '@patternfly/react-core';
@@ -174,7 +174,7 @@ function GcsIntegrationForm({
 
     return (
         <>
-            <PageSection variant="light" isFilled hasOverflowScroll>
+            <PageSection hasBodyWrapper={false} isFilled hasOverflowScroll>
                 <FormMessage message={message} />
                 <Form isWidthLimited>
                     <FormLabelGroup
@@ -318,11 +318,11 @@ function GcsIntegrationForm({
                                 helpTitle="GCP workload identity"
                                 helpText={
                                     <>
-                                        <Text>
+                                        <Content component="p">
                                             Enables authentication via short-lived tokens using GCP
                                             workload identities.
-                                        </Text>
-                                        <Text>
+                                        </Content>
+                                        <Content component="p">
                                             For more information, see{' '}
                                             <ExternalLink>
                                                 <a
@@ -336,7 +336,7 @@ function GcsIntegrationForm({
                                                     RHACS documentation
                                                 </a>
                                             </ExternalLink>
-                                        </Text>
+                                        </Content>
                                     </>
                                 }
                                 ariaLabel="Help for short-lived tokens"

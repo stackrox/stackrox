@@ -1,9 +1,10 @@
 import { gql } from '@apollo/client';
-import { Card, CardBody, CardTitle, Flex, Text, pluralize } from '@patternfly/react-core';
+import { Card, CardBody, CardTitle, Content, Flex, pluralize } from '@patternfly/react-core';
 import { MinusIcon, WrenchIcon } from '@patternfly/react-icons';
 import type { FixableStatus } from '../../types';
 
-const disabledColor100 = 'var(--pf-v5-global--disabled-color--100)';
+const disabledColor100 =
+    'var(--pf-t--temp--dev--tbd)'; /* CODEMODS: original v5 color was --pf-v5-global--disabled-color--100 */
 
 const statusDisplays = [
     {
@@ -49,7 +50,7 @@ function PlatformCvesByStatusSummaryCard({
     hiddenStatuses,
 }: PlatformCvesByStatusSummaryCardProps) {
     return (
-        <Card isCompact isFlat isFullHeight>
+        <Card isCompact isFullHeight>
             <CardTitle>CVEs by status</CardTitle>
             <CardBody>
                 <Flex direction={{ default: 'column' }}>
@@ -62,9 +63,12 @@ function PlatformCvesByStatusSummaryCard({
                                 alignItems={{ default: 'alignItemsCenter' }}
                             >
                                 <Icon />
-                                <Text style={{ color: isHidden ? disabledColor100 : 'inherit' }}>
+                                <Content
+                                    component="p"
+                                    style={{ color: isHidden ? disabledColor100 : 'inherit' }}
+                                >
                                     {isHidden ? statusHiddenText[status] : text(data)}
-                                </Text>
+                                </Content>
                             </Flex>
                         );
                     })}

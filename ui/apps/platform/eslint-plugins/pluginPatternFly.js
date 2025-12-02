@@ -255,7 +255,7 @@ const rules = {
         },
         create(context) {
             const findErrorMessage = (value) => {
-                const versionExpected = '5';
+                const versionExpected = '6';
                 // Include capturing group for digits in each regular expression.
                 const pfRegExpArray = [
                     /^var\(--pf-v(\d+)-/, // variable inside var (at beginning of string)

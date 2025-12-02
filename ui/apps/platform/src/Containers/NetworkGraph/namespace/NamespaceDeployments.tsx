@@ -1,14 +1,13 @@
 import { useState } from 'react';
 import {
     Button,
+    Content,
     Flex,
     FlexItem,
     Pagination,
     SearchInput,
     Stack,
     StackItem,
-    Text,
-    TextContent,
 } from '@patternfly/react-core';
 import { Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 import usePagination from 'hooks/patternfly/usePagination';
@@ -35,7 +34,7 @@ function NamespaceDeployments({ deployments, onNodeSelect }: NamespaceDeployment
     });
 
     return (
-        <div className="pf-v5-u-h-100 pf-v5-u-p-md">
+        <div className="pf-v6-u-h-100 pf-v6-u-p-md">
             <Stack hasGutter>
                 <StackItem>
                     <SearchInput
@@ -51,11 +50,11 @@ function NamespaceDeployments({ deployments, onNodeSelect }: NamespaceDeployment
                         alignItems={{ default: 'alignItemsCenter' }}
                     >
                         <FlexItem flex={{ default: 'flex_1' }}>
-                            <TextContent>
-                                <Text component="h2">
+                            <Content>
+                                <Content component="h2">
                                     {filteredDeployments.length} results found
-                                </Text>
-                            </TextContent>
+                                </Content>
+                            </Content>
                         </FlexItem>
                         <FlexItem>
                             <Pagination

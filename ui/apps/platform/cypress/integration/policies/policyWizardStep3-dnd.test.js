@@ -35,7 +35,7 @@ function addPolicyFieldCard(index) {
 
 function clickPolicyKeyGroup(categoryName) {
     cy.get(
-        `${selectors.step3.policyCriteria.keyGroup}:contains(${categoryName}) .pf-v5-c-expandable-section__toggle`
+        `${selectors.step3.policyCriteria.keyGroup}:contains(${categoryName}) .pf-v6-c-expandable-section__toggle`
     ).click();
 }
 

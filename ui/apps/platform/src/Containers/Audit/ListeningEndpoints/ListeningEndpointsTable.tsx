@@ -1,6 +1,6 @@
 import type { Dispatch, SetStateAction } from 'react';
 import { Link } from 'react-router-dom-v5-compat';
-import { Card, Text } from '@patternfly/react-core';
+import { Card, Content } from '@patternfly/react-core';
 import { Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 
 import { riskBasePath } from 'routePaths';
@@ -118,17 +118,17 @@ function ListeningEndpointsTable({
                         </Tr>
                         <Tr isExpanded={isExpanded}>
                             <Td colSpan={5}>
-                                <Card className="pf-v5-u-m-md" isFlat>
+                                <Card className="pf-v6-u-m-md">
                                     {count > 0 ? (
                                         <EmbeddedTable
                                             deploymentId={id}
                                             listeningEndpoints={listeningEndpoints}
                                         />
                                     ) : (
-                                        <Text className="pf-v5-u-p-md">
+                                        <Content component="p" className="pf-v6-u-p-md">
                                             This deployment does not have any reported listening
                                             endpoints
-                                        </Text>
+                                        </Content>
                                     )}
                                 </Card>
                             </Td>

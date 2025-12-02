@@ -197,7 +197,7 @@ function WorkloadCvesPage({ view }: WorkloadCvesPageProps) {
                 <Route
                     path="*"
                     element={
-                        <PageSection variant="light">
+                        <PageSection hasBodyWrapper={false}>
                             <PageTitle title={`${context.pageTitle} - Not Found`} />
                             <PageNotFound />
                         </PageSection>

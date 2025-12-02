@@ -205,10 +205,10 @@ function PoliciesTable({
     // dropdownItems={hasWriteAccessForPolicy ? [Enable, Disable, Export, Delete] : [Export]} see PolicyDetail.tsx
     return (
         <>
-            <PageSection isFilled id="policies-table">
+            <PageSection hasBodyWrapper={false} isFilled id="policies-table">
                 <Toolbar>
                     <ToolbarContent>
-                        <ToolbarItem className="pf-v5-u-w-100">
+                        <ToolbarItem className="pf-v6-u-w-100">
                             <CompoundSearchFilter
                                 config={searchFilterConfig}
                                 searchFilter={searchFilter}
@@ -221,7 +221,7 @@ function PoliciesTable({
                                 defaultAttribute={'Name'}
                             />
                         </ToolbarItem>
-                        <ToolbarItem className="pf-v5-u-w-100">
+                        <ToolbarItem className="pf-v6-u-w-100">
                             <SearchFilterChips
                                 searchFilter={searchFilter}
                                 onFilterChange={handleChangeSearchFilter}
@@ -230,11 +230,7 @@ function PoliciesTable({
                                 )}
                             />
                         </ToolbarItem>
-                        <ToolbarGroup
-                            align={{ default: 'alignRight' }}
-                            spaceItems={{ default: 'spaceItemsSm' }}
-                            variant="button-group"
-                        >
+                        <ToolbarGroup align={{ default: 'alignEnd' }} variant="action-group">
                             {hasWriteAccessForPolicy && (
                                 <ToolbarItem>
                                     <MenuDropdown
@@ -325,7 +321,7 @@ function PoliciesTable({
                                 </Tooltip>
                             </ToolbarItem>
                         </ToolbarGroup>
-                        <ToolbarItem variant="pagination" align={{ default: 'alignRight' }}>
+                        <ToolbarItem variant="pagination" align={{ default: 'alignEnd' }}>
                             <Pagination
                                 isCompact
                                 isDisabled
@@ -525,7 +521,7 @@ function PoliciesTable({
                                                                         key={
                                                                             notifierCountWithLabelString
                                                                         }
-                                                                        className="pf-v5-u-text-nowrap"
+                                                                        className="pf-v6-u-text-nowrap"
                                                                     >
                                                                         {
                                                                             notifierCountWithLabelString
@@ -612,7 +608,7 @@ function PoliciesTable({
                     <FlexItem>
                         <strong>Important</strong>: If you are committing the saved custom resource
                         to a source control repository, replace the policy name in the{' '}
-                        <code className="pf-v5-u-font-family-monospace">policyName</code> field to
+                        <code className="pf-v6-u-font-family-monospace">policyName</code> field to
                         avoid overwriting existing policies.
                     </FlexItem>
                 </Flex>

@@ -89,7 +89,7 @@ function NamespaceSelector({
                     >
                         <span>
                             <NamespaceIcon />
-                            <span className="pf-v5-u-mx-xs" data-testid="namespace-name">
+                            <span className="pf-v6-u-mx-xs" data-testid="namespace-name">
                                 {namespace.name}
                             </span>
                         </span>
@@ -139,7 +139,7 @@ function NamespaceSelector({
                     />
                 </MenuSearchInput>
             </MenuSearch>
-            <Divider className="pf-v5-u-m-0" />
+            <Divider className="pf-v6-u-m-0" />
             <MenuContent>
                 <MenuList className="network-graph-menu-list">
                     {filteredDeploymentSelectMenuItems.length === 0 && (

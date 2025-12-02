@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom-v5-compat';
 import {
+    Content,
+    ContentVariants,
     Pagination,
-    Text,
-    TextVariants,
     Toolbar,
     ToolbarContent,
     ToolbarGroup,
@@ -87,8 +87,8 @@ function ClusterDetailsTable({
         <>
             <Toolbar>
                 <ToolbarContent>
-                    <ToolbarGroup className="pf-v5-u-w-100">
-                        <ToolbarItem className="pf-v5-u-flex-1">
+                    <ToolbarGroup className="pf-v6-u-w-100">
+                        <ToolbarItem className="pf-v6-u-flex-1">
                             <CompoundSearchFilter
                                 config={searchFilterConfig}
                                 searchFilter={searchFilter}
@@ -101,7 +101,7 @@ function ClusterDetailsTable({
                                 onSelect={onCheckStatusSelect}
                             />
                         </ToolbarItem>
-                        <ToolbarItem variant="pagination" align={{ default: 'alignRight' }}>
+                        <ToolbarItem variant="pagination" align={{ default: 'alignEnd' }}>
                             <Pagination
                                 itemCount={checkResultsCount}
                                 page={page}
@@ -111,7 +111,7 @@ function ClusterDetailsTable({
                             />
                         </ToolbarItem>
                     </ToolbarGroup>
-                    <ToolbarGroup className="pf-v5-u-w-100">
+                    <ToolbarGroup className="pf-v6-u-w-100">
                         <SearchFilterChips
                             searchFilter={searchFilter}
                             onFilterChange={onFilterChange}
@@ -179,12 +179,12 @@ function ClusterDetailsTable({
                                                     is not used here because it displays a tooltip on hover
                                                 */}
                                                 <div style={{ display: 'grid' }}>
-                                                    <Text
-                                                        component={TextVariants.small}
-                                                        className="pf-v5-u-color-200 pf-v5-u-text-truncate"
+                                                    <Content
+                                                        component={ContentVariants.small}
+                                                        className="pf-v6-u-color-200 pf-v6-u-text-truncate"
                                                     >
                                                         {rationale}
-                                                    </Text>
+                                                    </Content>
                                                 </div>
                                             </Td>
                                             <Td

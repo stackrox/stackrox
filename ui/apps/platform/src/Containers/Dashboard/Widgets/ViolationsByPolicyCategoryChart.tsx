@@ -10,7 +10,7 @@ import {
     ChartTooltip,
     getInteractiveLegendEvents,
     getInteractiveLegendItemStyles,
-} from '@patternfly/react-charts';
+} from '@patternfly/react-charts/victory';
 import type { ChartLabelProps } from '@patternfly/react-charts';
 import sortBy from 'lodash/sortBy';
 

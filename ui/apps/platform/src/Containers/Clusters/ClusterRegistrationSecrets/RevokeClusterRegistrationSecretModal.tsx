@@ -7,8 +7,8 @@ import {
     DescriptionListGroup,
     DescriptionListTerm,
     Flex,
-    Modal,
 } from '@patternfly/react-core';
+import { Modal } from '@patternfly/react-core/deprecated';
 
 import useAnalytics, { REVOKE_CLUSTER_REGISTRATION_SECRET } from 'hooks/useAnalytics';
 import useRestMutation from 'hooks/useRestMutation';

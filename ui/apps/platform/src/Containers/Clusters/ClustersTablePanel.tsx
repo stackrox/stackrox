@@ -2,9 +2,9 @@ import { useCallback, useEffect, useMemo, useReducer, useState } from 'react';
 import { useNavigate } from 'react-router-dom-v5-compat';
 import {
     Button,
+    Content,
     DropdownItem,
     PageSection,
-    Text,
     Title,
     Toolbar,
     ToolbarContent,
@@ -278,14 +278,14 @@ function ClustersTablePanel({ selectedClusterId }: ClustersTablePanelProps) {
     // Conditionally render a subsequent error in addition to most recent successful respnse.
     return (
         <>
-            <PageSection variant="light" component="div">
-                <Toolbar inset={{ default: 'insetNone' }} className="pf-v5-u-pb-0">
+            <PageSection hasBodyWrapper={false} component="div">
+                <Toolbar inset={{ default: 'insetNone' }} className="pf-v6-u-pb-0">
                     <ToolbarContent>
                         <Title headingLevel="h1">Clusters</Title>
                         <ToolbarGroup
-                            className="pf-v5-u-flex-wrap"
-                            variant="button-group"
-                            align={{ default: 'alignRight' }}
+                            className="pf-v6-u-flex-wrap"
+                            variant="action-group"
+                            align={{ default: 'alignEnd' }}
                         >
                             {hasReadAccessForAdministration && (
                                 <ToolbarItem>
@@ -388,18 +388,18 @@ function ClustersTablePanel({ selectedClusterId }: ClustersTablePanelProps) {
                         </ToolbarGroup>
                     </ToolbarContent>
                 </Toolbar>
-                <Text className="pf-v5-u-font-size-md">
+                <Content component="p" className="pf-v6-u-font-size-md">
                     View the status of secured cluster services
-                </Text>
+                </Content>
             </PageSection>
-            <PageSection>
+            <PageSection hasBodyWrapper={false}>
                 <Toolbar>
                     <ToolbarContent>
                         <ToolbarGroup
                             variant="filter-group"
-                            className="pf-v5-u-flex-grow-1 pf-v5-u-flex-shrink-1"
+                            className="pf-v6-u-flex-grow-1 pf-v6-u-flex-shrink-1"
                         >
-                            <ToolbarItem variant="search-filter" className="pf-v5-u-w-100">
+                            <ToolbarItem className="pf-v6-u-w-100">
                                 <CompoundSearchFilter
                                     config={searchFilterConfig}
                                     searchFilter={searchFilter}
@@ -409,9 +409,9 @@ function ClustersTablePanel({ selectedClusterId }: ClustersTablePanelProps) {
                                 />
                             </ToolbarItem>
                         </ToolbarGroup>
-                        <ToolbarGroup variant="button-group" align={{ default: 'alignRight' }}>
+                        <ToolbarGroup variant="action-group" align={{ default: 'alignEnd' }}>
                             {hasWriteAccessForAdministration && (
-                                <ToolbarItem className="pf-v5-u-align-self-center">
+                                <ToolbarItem className="pf-v6-u-align-self-center">
                                     <AutoUpgradeToggle />
                                 </ToolbarItem>
                             )}
@@ -442,7 +442,7 @@ function ClustersTablePanel({ selectedClusterId }: ClustersTablePanelProps) {
                                 </ToolbarItem>
                             )}
                         </ToolbarGroup>
-                        <ToolbarGroup className="pf-v5-u-w-100">
+                        <ToolbarGroup className="pf-v6-u-w-100">
                             <SearchFilterChips
                                 searchFilter={searchFilter}
                                 onFilterChange={setSearchFilter}

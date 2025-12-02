@@ -122,7 +122,7 @@ function VulnerabilitiesOverview({
 
     const filterToolbar = (
         <AdvancedFiltersToolbar
-            className="pf-v5-u-py-md"
+            className="pf-v6-u-py-md"
             searchFilterConfig={searchFilterConfig}
             searchFilter={searchFilter}
             additionalContextFilter={{
@@ -158,7 +158,7 @@ function VulnerabilitiesOverview({
                     direction={{ default: 'row' }}
                     alignItems={{ default: 'alignItemsCenter' }}
                     justifyContent={{ default: 'justifyContentSpaceBetween' }}
-                    className="pf-v5-u-px-md pf-v5-u-pb-sm"
+                    className="pf-v6-u-px-md pf-v6-u-pb-sm"
                 >
                     {additionalHeaderItems}
                 </Flex>

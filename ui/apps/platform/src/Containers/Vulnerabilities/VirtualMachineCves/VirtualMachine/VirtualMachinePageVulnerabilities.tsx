@@ -115,10 +115,10 @@ function VirtualMachinePageVulnerabilities({
     }
 
     return (
-        <PageSection variant="light" isFilled padding={{ default: 'padding' }}>
+        <PageSection hasBodyWrapper={false} isFilled padding={{ default: 'padding' }}>
             <VirtualMachineScanScopeAlert />
             <AdvancedFiltersToolbar
-                className="pf-v5-u-px-sm pf-v5-u-pb-0"
+                className="pf-v6-u-px-sm pf-v6-u-pb-0"
                 searchFilter={searchFilter}
                 searchFilterConfig={searchFilterConfig}
                 onFilterChange={(newFilter) => {
@@ -152,8 +152,8 @@ function VirtualMachinePageVulnerabilities({
                     )}
                 />
             </SummaryCardLayout>
-            <div className="pf-v5-u-flex-grow-1 pf-v5-u-background-color-100 pf-v5-u-p-lg">
-                <Split className="pf-v5-u-pb-lg pf-v5-u-align-items-baseline">
+            <div className="pf-v6-u-flex-grow-1 pf-v6-u-background-color-100 pf-v6-u-p-lg">
+                <Split className="pf-v6-u-pb-lg pf-v6-u-align-items-baseline">
                     <SplitItem isFilled>
                         <Flex alignItems={{ default: 'alignItemsCenter' }}>
                             <Title headingLevel="h2">
