@@ -16,7 +16,7 @@ function ErrorIcon(props: SVGIconProps) {
         <ExclamationCircleIcon
             {...props}
             style={{
-                color: 'var(--pf-t--global--color--status--danger--default)',
+                color: 'var(--pf-t--global--icon--color--status--danger--default)',
             }}
         />
     );

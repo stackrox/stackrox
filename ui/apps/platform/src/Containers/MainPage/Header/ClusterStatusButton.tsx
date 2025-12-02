@@ -1,4 +1,4 @@
-import type { CSSProperties, ReactElement } from 'react';
+import type { ReactElement } from 'react';
 import { useNavigate } from 'react-router-dom-v5-compat';
 import { Button, Flex, FlexItem, Tooltip } from '@patternfly/react-core';
 import {
@@ -60,21 +60,9 @@ const ClusterStatusButton = ({
         );
     };
 
-    // On masthead, black text on white background like a dropdown menu.
-    const styleTooltip = {
-        '--pf-v5-c-tooltip__content--Color': 'var(--pf-t--global--text--color--regular)',
-        '--pf-v5-c-tooltip__content--BackgroundColor':
-            'var(--pf-t--global--background--color--primary--default)',
-    } as CSSProperties;
-
     // Using aria-label for accessibility instead of title to avoid two tooltips.
     return (
-        <Tooltip
-            content={contentElement}
-            isContentLeftAligned
-            position="bottom"
-            style={styleTooltip}
-        >
+        <Tooltip content={contentElement} isContentLeftAligned position="bottom">
             <Button variant="plain" aria-label="Cluster status problems" onClick={onClick}>
                 <Flex
                     direction={{ default: 'row' }}

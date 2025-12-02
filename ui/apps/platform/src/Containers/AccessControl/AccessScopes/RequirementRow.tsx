@@ -94,7 +94,7 @@ function RequirementRow({
                                         <Button
                                             icon={
                                                 <Icon>
-                                                    <MinusCircleIcon color="var(--pf-t--global--color--status--danger--default)" />
+                                                    <MinusCircleIcon color="var(--pf-t--global--icon--color--status--danger--default)" />
                                                 </Icon>
                                             }
                                             aria-label="Delete value"
@@ -208,7 +208,7 @@ function RequirementRow({
                                 <Button
                                     icon={
                                         <Icon>
-                                            <MinusCircleIcon color="var(--pf-t--global--color--status--danger--default)" />
+                                            <MinusCircleIcon color="var(--pf-t--global--icon--color--status--danger--default)" />
                                         </Icon>
                                     }
                                     aria-label="Delete rule"

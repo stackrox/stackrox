@@ -149,9 +149,7 @@ function CollectionsFormPage({
                         </Button>
                         {collectionErrorId === id ? (
                             <Tooltip content="This collection forms a loop with its parent and cannot be attached">
-                                <ExclamationCircleIcon
-                                    color="var(--pf-t--global--color--status--danger--default)"
-                                />
+                                <ExclamationCircleIcon color="var(--pf-t--global--icon--color--status--danger--default)" />
                             </Tooltip>
                         ) : null}
                     </Flex>

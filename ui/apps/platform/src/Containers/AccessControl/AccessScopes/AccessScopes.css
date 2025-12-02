@@ -44,7 +44,7 @@
  * Replace primary blue with success green like included state.
  */
 #access-scope-form .pf-v6-c-switch.acs-m-manual-inclusion {
-    --pf-v6-c-switch__input--checked__toggle--BackgroundColor: var(--pf-t--global--icon--color--status--success--default);
+    --pf-v6-c-switch__input--checked__toggle--BackgroundColor: var(--pf-t--global--color--status--success--default);
 }
 
 /*

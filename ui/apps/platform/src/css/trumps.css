@@ -52,7 +52,7 @@ button[data-testid="related-entity-value"],
 }
 
 button[data-testid="related-entity-list-count-value"]:hover {
-    color: var(--pf-t--global--text--color--link--default);
+    color: var(--pf-t--global--text--color--link--hover);
     /* but no underline */
 }
 
@@ -65,7 +65,7 @@ button[data-testid="related-entity-value"]:hover,
 .rt-td a:hover,
 .pf-v6-c-table td a:hover,
 .pf-v6-c-popover a:hover {
-    color: var(--pf-t--global--text--color--link--default);
+    color: var(--pf-t--global--text--color--link--hover);
     text-decoration: var(--pf-t--global--text-decoration--link--line--hover);
 }
 

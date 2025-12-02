@@ -43,15 +43,11 @@ function BacklogTable<Item>({
     const actionIcon =
         type === 'selected' ? (
             <Icon>
-                <MinusCircleIcon
-                    color="var(--pf-t--global--color--status--danger--default)"
-                />
+                <MinusCircleIcon color="var(--pf-t--global--icon--color--status--danger--default)" />
             </Icon>
         ) : (
             <Icon>
-                <PlusCircleIcon
-                    color="var(--pf-t--global--icon--color--brand--default)"
-                />
+                <PlusCircleIcon color="var(--pf-t--global--icon--color--brand--default)" />
             </Icon>
         );
 

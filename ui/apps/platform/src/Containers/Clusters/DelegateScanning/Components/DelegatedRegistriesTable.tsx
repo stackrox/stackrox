@@ -170,9 +170,7 @@ function DelegatedRegistriesTable({
                                         variant="link"
                                         isInline
                                         icon={
-                                            <MinusCircleIcon
-                                                color="var(--pf-t--global--color--status--danger--default)"
-                                            />
+                                            <MinusCircleIcon color="var(--pf-t--global--icon--color--status--danger--default)" />
                                         }
                                         onClick={() => deleteRegistry(rowIndex)}
                                     >

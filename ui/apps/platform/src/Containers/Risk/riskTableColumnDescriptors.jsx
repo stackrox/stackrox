@@ -18,9 +18,7 @@ function DeploymentNameColumn({ original }) {
             <span className="pf-v6-u-display-inline-flex pf-v6-u-align-items-center">
                 {isSuspicious ? (
                     <Tooltip content="Abnormal processes discovered">
-                        <ExclamationCircleIcon
-                            color="var(--pf-t--global--color--status--danger--default)"
-                        />
+                        <ExclamationCircleIcon color="var(--pf-t--global--icon--color--status--danger--default)" />
                     </Tooltip>
                 ) : (
                     <Tooltip content="No abnormal processes discovered">

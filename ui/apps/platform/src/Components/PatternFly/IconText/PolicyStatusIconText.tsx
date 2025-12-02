@@ -12,15 +12,11 @@ export type PolicyStatusIconTextProps = {
 function PolicyStatusIconText({ isPass, isTextOnly }: PolicyStatusIconTextProps): ReactElement {
     const icon = isPass ? (
         <Icon>
-            <CheckCircleIcon
-                color="var(--pf-t--global--icon--color--status--success--default)"
-            />
+            <CheckCircleIcon color="var(--pf-t--global--icon--color--status--success--default)" />
         </Icon>
     ) : (
         <Icon>
-            <ExclamationCircleIcon
-                color="var(--pf-t--global--color--status--danger--default)"
-            />
+            <ExclamationCircleIcon color="var(--pf-t--global--icon--color--status--danger--default)" />
         </Icon>
     );
     const text = isPass ? 'Pass' : 'Fail';

@@ -88,7 +88,7 @@ function ClusterLabelsTable({
                         style={{
                             backgroundColor:
                                 key === keyInput
-                                    ? 'var(--pf-t--global--icon--color--status--warning--hover)'
+                                    ? 'var(--pf-t--global--color--status--warning--default)'
                                     : 'transparent',
                         }}
                     >
@@ -103,7 +103,7 @@ function ClusterLabelsTable({
                                 <Tooltip content="Delete value">
                                     <Button
                                         icon={
-                                            <TimesCircleIcon color="var(--pf-t--global--color--status--danger--default)" />
+                                            <TimesCircleIcon color="var(--pf-t--global--icon--color--status--danger--default)" />
                                         }
                                         aria-label="Delete value"
                                         variant="plain"
@@ -160,7 +160,7 @@ function ClusterLabelsTable({
                                             <PlusCircleIcon
                                                 color={
                                                     isReplace
-                                                        ? 'var(--pf-t--global--icon--color--status--warning--hover)'
+                                                        ? 'var(--pf-t--global--icon--color--status--warning--default)'
                                                         : 'var(--pf-t--global--icon--color--status--success--default)'
                                                 }
                                             />

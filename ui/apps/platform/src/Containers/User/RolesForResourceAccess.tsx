@@ -8,14 +8,16 @@ import { userBasePath } from 'routePaths';
 const forbiddenIcon = (
     <Icon size="sm">
         <TimesIcon
-            color="var(--pf-t--global--color--status--danger--default)" aria-label="forbidden"
+            color="var(--pf-t--global--icon--color--status--danger--default)"
+            aria-label="forbidden"
         />
     </Icon>
 );
 const permittedIcon = (
     <Icon size="sm">
         <CheckIcon
-            color="var(--pf-t--global--icon--color--status--success--default)" aria-label="permitted"
+            color="var(--pf-t--global--icon--color--status--success--default)"
+            aria-label="permitted"
         />
     </Icon>
 );

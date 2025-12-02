@@ -300,16 +300,7 @@ function EffectiveAccessScopeTable({
                     <Thead>
                         <Tr>
                             <Th width={40}>Cluster name</Th>
-                            <Th
-                                modifier="fitContent"
-                                className={
-                                    counterComputing === 0
-                                        ? ''
-                                        : '--pf-t--global--text--color--subtle'
-                                }
-                            >
-                                Allowed
-                            </Th>
+                            <Th modifier="fitContent">Allowed</Th>
                             <Th modifier="fitContent">Manual selection</Th>
                             <Th>Labels</Th>
                         </Tr>

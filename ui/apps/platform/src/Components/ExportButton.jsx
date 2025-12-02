@@ -138,8 +138,7 @@ class ExportButton extends Component {
                 <ul
                     className="bg-base-100 rounded"
                     style={{
-                        borderColor:
-                            'var(--pf-t--global--icon--color--brand--default)',
+                        borderColor: 'var(--pf-t--global--border--color--brand--default)',
                         borderWidth: 2,
                     }}
                 >

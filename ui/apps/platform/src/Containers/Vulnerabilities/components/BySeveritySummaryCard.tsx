@@ -29,8 +29,7 @@ const severityToHiddenText = {
     UNKNOWN_VULNERABILITY_SEVERITY: 'Unknown hidden',
 } as const;
 
-const fadedTextColor =
-    'var(--pf-t--global--text--color--subtle)';
+const fadedTextColor = 'var(--pf-t--global--text--color--subtle)';
 
 export type ResourceCountsByCveSeverity = {
     critical: { total: number };

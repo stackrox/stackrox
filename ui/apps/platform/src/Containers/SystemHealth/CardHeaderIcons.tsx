@@ -20,23 +20,17 @@ export const ErrorIcon = <MinusIcon />;
 // Icons to render for health after request succeeds.
 export const DangerIcon = (
     <Icon>
-        <ExclamationCircleIcon
-            color="var(--pf-t--global--color--status--danger--default)"
-        />
+        <ExclamationCircleIcon color="var(--pf-t--global--icon--color--status--danger--default)" />
     </Icon>
 );
 export const SuccessIcon = (
     <Icon>
-        <CheckCircleIcon
-            color="var(--pf-t--global--icon--color--status--success--default)"
-        />
+        <CheckCircleIcon color="var(--pf-t--global--icon--color--status--success--default)" />
     </Icon>
 );
 export const WarningIcon = (
     <Icon>
-        <ExclamationTriangleIcon
-            color="var(--pf-t--global--icon--color--status--warning--hover)"
-        />
+        <ExclamationTriangleIcon color="var(--pf-t--global--icon--color--status--warning--default)" />
     </Icon>
 );
 

@@ -8,7 +8,8 @@ import { Icon } from '@patternfly/react-core';
 export const DangerIcon = (props: SVGIconProps) => (
     <Icon>
         <ExclamationCircleIcon
-            color="var(--pf-t--global--color--status--danger--default)" {...props}
+            color="var(--pf-t--global--icon--color--status--danger--default)"
+            {...props}
         />
     </Icon>
 );
@@ -16,7 +17,8 @@ export const DangerIcon = (props: SVGIconProps) => (
 export const WarningIcon = (props: SVGIconProps) => (
     <Icon>
         <ExclamationTriangleIcon
-            color="var(--pf-t--global--icon--color--status--warning--hover)" {...props}
+            color="var(--pf-t--global--icon--color--status--warning--default)"
+            {...props}
         />
     </Icon>
 );

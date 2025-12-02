@@ -41,7 +41,7 @@
   bottom: var(--rule-selector-spacer);
   height: 1px;
   width: var(--rule-selector-spacer);
-  background-color: var(--pf-t--global--border--color--default);
+  background-color: var(--pf-t--global--border--color--default); /* border--color, because the background simulates a border */
 }
 
 .rule-selector-delete-value-button {

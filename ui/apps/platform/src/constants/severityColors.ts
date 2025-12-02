@@ -2,7 +2,7 @@ import type { VulnerabilitySeverity } from 'types/cve.proto';
 import type { PolicySeverity } from 'types/policy.proto';
 
 export const noViolationsClassName = 'pf-v6-u-color-200';
-export const noViolationsColor = 'var(--pf-t--global--text--color--disabled)';
+export const noViolationsColor = 'var(--pf-t--global--icon--color--disabled)';
 
 /*
  * Export individual constants for consistency in pseudo-severity use cases like compliance.

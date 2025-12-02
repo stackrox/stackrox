@@ -5,9 +5,7 @@ import type { SVGIconProps } from '@patternfly/react-icons/dist/esm/createIcon';
 export function DynamicIcon(props: SVGIconProps) {
     return (
         <Icon>
-            <FilterIcon
-                color="var(--pf-t--color--blue--30)" {...props}
-            />
+            <FilterIcon color="var(--pf-t--color--blue--30)" {...props} />
         </Icon>
     );
 }
