@@ -286,7 +286,7 @@ function CollectionSelection({
                             )}
                             {showLoadingSpinner && (
                                 <SelectOption isDisabled isAriaDisabled>
-                                    <div className="pf-v5-u-text-align-center pf-v5-u-p-sm">
+                                    <div className="pf-v6-u-text-align-center pf-v6-u-p-sm">
                                         <Spinner size="md" />
                                     </div>
                                 </SelectOption>
@@ -298,7 +298,7 @@ function CollectionSelection({
                                         handleFetchNextPage();
                                     }}
                                 >
-                                    <div className="pf-v5-u-text-align-center">
+                                    <div className="pf-v6-u-text-align-center">
                                         <Button
                                             variant="link"
                                             isInline

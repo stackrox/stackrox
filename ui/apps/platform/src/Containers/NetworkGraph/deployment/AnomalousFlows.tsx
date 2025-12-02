@@ -32,7 +32,7 @@ function AnomalousFlows({ networkFlows }: AnomalousFlowsProps) {
             )}
             {numAnomalousInternalFlows !== 0 && (
                 <FlexItem>
-                    <Label variant="outline" color="gold" icon={<ExclamationTriangleIcon />}>
+                    <Label variant="outline" color="yellow" icon={<ExclamationTriangleIcon />}>
                         {numAnomalousInternalFlows} internal{' '}
                         {pluralize('flow', numAnomalousInternalFlows)}
                     </Label>

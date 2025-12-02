@@ -25,7 +25,7 @@ const PublicConfigLoginDetails = ({
     const loginNoticeText = publicConfig?.loginNotice?.text || 'None';
 
     return (
-        <Card isFlat data-testid="login-notice-config">
+        <Card data-testid="login-notice-config">
             <CardHeader
                 actions={{
                     actions: (

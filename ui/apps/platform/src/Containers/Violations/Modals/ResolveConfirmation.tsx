@@ -1,6 +1,7 @@
 import type { ReactElement } from 'react';
 import pluralize from 'pluralize';
-import { Button, Modal } from '@patternfly/react-core';
+import { Button } from '@patternfly/react-core';
+import { Modal } from '@patternfly/react-core/deprecated';
 
 import { resolveAlerts } from 'services/AlertsService';
 

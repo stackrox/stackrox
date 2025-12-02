@@ -150,7 +150,7 @@ function NamespaceViewPage() {
     return (
         <>
             <PageTitle title={`${pageTitle} - Namespace view`} />
-            <PageSection variant="light" className="pf-v5-u-py-md">
+            <PageSection hasBodyWrapper={false} className="pf-v6-u-py-md">
                 <Breadcrumb>
                     <BreadcrumbItemLink to={urlBuilder.vulnMgmtBase('')}>
                         {pageTitle}
@@ -159,19 +159,19 @@ function NamespaceViewPage() {
                 </Breadcrumb>
             </PageSection>
             <Divider component="div" />
-            <PageSection variant="light">
+            <PageSection hasBodyWrapper={false}>
                 <Flex
                     direction={{ default: 'column' }}
                     alignItems={{ default: 'alignItemsFlexStart' }}
                 >
-                    <Title headingLevel="h1" className="pf-v5-u-mb-sm">
+                    <Title headingLevel="h1" className="pf-v6-u-mb-sm">
                         Namespace view
                     </Title>
                     <FlexItem>Discover and prioritize namespaces by risk priority</FlexItem>
                 </Flex>
             </PageSection>
             <Divider component="div" />
-            <PageSection>
+            <PageSection hasBodyWrapper={false}>
                 <Toolbar>
                     <ToolbarContent>
                         <CompoundSearchFilter
@@ -179,7 +179,7 @@ function NamespaceViewPage() {
                             searchFilter={searchFilter}
                             onSearch={onSearch}
                         />
-                        <ToolbarItem variant="pagination" align={{ default: 'alignRight' }}>
+                        <ToolbarItem variant="pagination" align={{ default: 'alignEnd' }}>
                             <Pagination
                                 toggleTemplate={({ firstIndex, lastIndex }) => (
                                     <span>
@@ -196,7 +196,7 @@ function NamespaceViewPage() {
                                 isCompact
                             />
                         </ToolbarItem>
-                        <ToolbarGroup aria-label="applied search filters" className="pf-v5-u-w-100">
+                        <ToolbarGroup aria-label="applied search filters" className="pf-v6-u-w-100">
                             <SearchFilterChips
                                 searchFilter={searchFilter}
                                 onFilterChange={onFilterChange}

@@ -20,17 +20,23 @@ export const ErrorIcon = <MinusIcon />;
 // Icons to render for health after request succeeds.
 export const DangerIcon = (
     <Icon>
-        <ExclamationCircleIcon color="var(--pf-v5-global--danger-color--100)" />
+        <ExclamationCircleIcon
+            color="var(--pf-t--temp--dev--tbd)" /* CODEMODS: original v5 color was --pf-v5-global--danger-color--100 */
+        />
     </Icon>
 );
 export const SuccessIcon = (
     <Icon>
-        <CheckCircleIcon color="var(--pf-v5-global--success-color--100)" />
+        <CheckCircleIcon
+            color="var(--pf-t--temp--dev--tbd)" /* CODEMODS: original v5 color was --pf-v5-global--success-color--100 */
+        />
     </Icon>
 );
 export const WarningIcon = (
     <Icon>
-        <ExclamationTriangleIcon color="var(--pf-v5-global--warning-color--100)" />
+        <ExclamationTriangleIcon
+            color="var(--pf-t--temp--dev--tbd)" /* CODEMODS: original v5 color was --pf-v5-global--warning-color--100 */
+        />
     </Icon>
 );
 

@@ -79,10 +79,10 @@ function ExternalFlowsTable({
                     </FlexItem>
                 </Flex>
             </StackItem>
-            <Divider component="hr" className="pf-v5-u-py-md" />
-            <StackItem className="pf-v5-u-pb-md">
-                <Toolbar className="pf-v5-u-p-0">
-                    <ToolbarContent className="pf-v5-u-px-0">
+            <Divider component="hr" className="pf-v6-u-py-md" />
+            <StackItem className="pf-v6-u-pb-md">
+                <Toolbar className="pf-v6-u-p-0">
+                    <ToolbarContent className="pf-v6-u-px-0">
                         <ToolbarItem>
                             <FlowsTableHeaderText type="active" numFlows={numFlows} />
                         </ToolbarItem>

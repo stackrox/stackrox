@@ -1,5 +1,6 @@
 import type { ReactElement } from 'react';
-import { Alert, Modal } from '@patternfly/react-core';
+import { Alert } from '@patternfly/react-core';
+import { Modal } from '@patternfly/react-core/deprecated';
 
 export type ManageStandardsErrorProps = {
     onClose: () => void;

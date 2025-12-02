@@ -1,5 +1,5 @@
 import type { ReactElement, ReactNode } from 'react';
-import { Flex, Text } from '@patternfly/react-core';
+import { Content, Flex } from '@patternfly/react-core';
 import { FileAltIcon } from '@patternfly/react-icons';
 
 import EmptyStateTemplate from 'Components/EmptyStateTemplate/EmptyStateTemplate';
@@ -26,7 +26,7 @@ export function TbodyEmpty({
         <TbodyFullCentered colSpan={colSpan}>
             <EmptyStateTemplate headingLevel={headingLevel} title={title} icon={FileAltIcon}>
                 <Flex direction={{ default: 'column' }}>
-                    <Text>{message}</Text>
+                    <Content component="p">{message}</Content>
                     {children}
                 </Flex>
             </EmptyStateTemplate>

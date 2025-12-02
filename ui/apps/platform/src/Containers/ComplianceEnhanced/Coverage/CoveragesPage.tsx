@@ -124,7 +124,7 @@ function CoveragesPage() {
             {!isDisclaimerAccepted && (
                 <ComplianceUsageDisclaimer onAccept={() => setIsDisclaimerAccepted(true)} />
             )}
-            <PageSection>
+            <PageSection hasBodyWrapper={false}>
                 {isLoadingScanConfigProfiles ? (
                     <Bullseye>
                         <Spinner />
@@ -139,7 +139,7 @@ function CoveragesPage() {
                         <Divider component="div" />
                         <Flex
                             alignItems={{ default: 'alignItemsStretch' }}
-                            className="pf-v5-u-background-color-100"
+                            className="pf-v6-u-background-color-100"
                             columnGap={{ default: 'columnGapNone' }}
                             direction={{ default: 'column', md: 'row' }}
                             flexWrap={{ default: 'nowrap' }}
@@ -177,11 +177,11 @@ function CoveragesPage() {
                             )}
                         </Flex>
                         <Divider component="div" />
-                        <PageSection variant="light" className="pf-v5-u-p-0" component="div">
+                        <PageSection hasBodyWrapper={false} className="pf-v6-u-p-0" component="div">
                             <Toolbar>
                                 <ToolbarContent>
-                                    <ToolbarGroup className="pf-v5-u-w-100">
-                                        <ToolbarItem className="pf-v5-u-flex-1">
+                                    <ToolbarGroup className="pf-v6-u-w-100">
+                                        <ToolbarItem className="pf-v6-u-flex-1">
                                             <CompoundSearchFilter
                                                 config={searchFilterConfig}
                                                 searchFilter={searchFilter}
@@ -195,7 +195,7 @@ function CoveragesPage() {
                                             />
                                         </ToolbarItem>
                                     </ToolbarGroup>
-                                    <ToolbarGroup className="pf-v5-u-w-100">
+                                    <ToolbarGroup className="pf-v6-u-w-100">
                                         <SearchFilterChips
                                             searchFilter={searchFilter}
                                             onFilterChange={setSearchFilter}

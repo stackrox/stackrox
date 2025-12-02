@@ -3,7 +3,7 @@ to a checkbox. Specifically with a checkbox as the first element in a <Tr> when 
 an expandable section and the expandable section is open. This appears to be fixed
 in patternfly 5. */
 @media (max-width: 768px) {
-    .pf-v5-c-table tbody > tr > :first-child::after {
+    .pf-v6-c-table tbody > tr > :first-child::after {
         content: none;
         border-left: none;
     }

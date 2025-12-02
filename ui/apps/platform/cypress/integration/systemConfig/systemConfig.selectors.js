@@ -3,14 +3,14 @@ export const selectors = {
         widget: '[data-testid="header-config"]',
         state: '[data-testid="header-state"]',
         config: {
-            toggle: '[data-testid="header-config"] .pf-v5-c-switch input',
+            toggle: '[data-testid="header-config"] .pf-v6-c-switch input',
             textInput: '[data-testid="header-config"] textarea',
             backgroundColorPickerButton: 'button[aria-label="Background color of header"]',
             colorPickerButton: 'button[aria-label="Text color of header"]',
             colorInput: '[data-testid="header-config"] .chrome-picker input',
             size: {
-                input: '[data-testid="header-config"] button.pf-v5-c-menu-toggle[id="publicConfig.header.size"]',
-                options: '[data-testid="header-config"] .pf-v5-c-menu .pf-v5-c-menu__list-item',
+                input: '[data-testid="header-config"] button.pf-v6-c-menu-toggle[id="publicConfig.header.size"]',
+                options: '[data-testid="header-config"] .pf-v6-c-menu .pf-v6-c-menu__list-item',
             },
         },
         banner: '[data-testid="public-config-header"]',
@@ -19,14 +19,14 @@ export const selectors = {
         widget: '[data-testid="footer-config"]',
         state: '[data-testid="footer-state"]',
         config: {
-            toggle: '[data-testid="footer-config"] .pf-v5-c-switch input',
+            toggle: '[data-testid="footer-config"] .pf-v6-c-switch input',
             textInput: '[data-testid="footer-config"] textarea',
             backgroundColorPickerButton: 'button[aria-label="Background color of footer"]',
             colorPickerButton: 'button[aria-label="Text color of footer"]',
             colorInput: '[data-testid="footer-config"] .chrome-picker input',
             size: {
-                input: '[data-testid="footer-config"] button.pf-v5-c-menu-toggle[id="publicConfig.footer.size"]',
-                options: '[data-testid="footer-config"] .pf-v5-c-menu .pf-v5-c-menu__list-item',
+                input: '[data-testid="footer-config"] button.pf-v6-c-menu-toggle[id="publicConfig.footer.size"]',
+                options: '[data-testid="footer-config"] .pf-v6-c-menu .pf-v6-c-menu__list-item',
             },
         },
         banner: '[data-testid="public-config-footer"]',
@@ -35,18 +35,18 @@ export const selectors = {
         widget: '[data-testid="login-notice-config"]',
         state: '[data-testid="login-notice-state"]',
         config: {
-            toggle: '[data-testid="login-notice-config"] .pf-v5-c-switch input',
+            toggle: '[data-testid="login-notice-config"] .pf-v6-c-switch input',
             textInput: '[data-testid="login-notice-config"] textarea',
         },
         banner: '[data-testid="login-notice"]',
     },
     dataRetention: {
         widget: '[data-testid="private-data-retention-config"]',
-        allRuntimeViolationsBox: '.pf-v5-c-card:contains("All runtime violations")',
+        allRuntimeViolationsBox: '.pf-v6-c-card:contains("All runtime violations")',
         deletedRuntimeViolationsBox:
-            '.pf-v5-c-card:contains("Runtime violations for deleted deployments")',
-        resolvedDeployViolationsBox: '.pf-v5-c-card:contains("Resolved deploy-phase violations")',
-        imagesBox: '.pf-v5-c-card:contains("Images no longer deployed or watched")',
+            '.pf-v6-c-card:contains("Runtime violations for deleted deployments")',
+        resolvedDeployViolationsBox: '.pf-v6-c-card:contains("Resolved deploy-phase violations")',
+        imagesBox: '.pf-v6-c-card:contains("Images no longer deployed or watched")',
     },
 };
 

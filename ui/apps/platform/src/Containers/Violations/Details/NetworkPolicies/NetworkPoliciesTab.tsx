@@ -29,10 +29,10 @@ function NetworkPoliciesTab({ clusterId, namespaceName }: NetworkPoliciesTabProp
     }, [clusterId, namespaceName, setNamespacePolicies]);
 
     return (
-        <Card isFlat>
+        <Card>
             <CardTitle component="h3">Network policies</CardTitle>
             <CardBody>
-                <div className="pf-v5-u-mb-md">{`Namespace: ${namespaceName}`}</div>
+                <div className="pf-v6-u-mb-md">{`Namespace: ${namespaceName}`}</div>
                 {namespacePolicies.length > 0 ? (
                     <>
                         {selectedNetworkPolicy && (

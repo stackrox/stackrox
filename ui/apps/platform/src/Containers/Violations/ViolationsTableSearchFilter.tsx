@@ -106,8 +106,8 @@ function ViolationsTableSearchFilter({
     return (
         <Toolbar>
             <ToolbarContent>
-                <ToolbarGroup className="pf-v5-u-w-100">
-                    <ToolbarItem className="pf-v5-u-flex-1">
+                <ToolbarGroup className="pf-v6-u-w-100">
+                    <ToolbarItem className="pf-v6-u-flex-1">
                         <CompoundSearchFilter
                             config={searchFilterConfig}
                             searchFilter={searchFilter}
@@ -116,7 +116,7 @@ function ViolationsTableSearchFilter({
                         />
                     </ToolbarItem>
                 </ToolbarGroup>
-                <ToolbarGroup className="pf-v5-u-w-100">
+                <ToolbarGroup className="pf-v6-u-w-100">
                     <SearchFilterChips
                         searchFilter={searchFilter}
                         onFilterChange={onFilterChange}

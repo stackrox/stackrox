@@ -58,10 +58,10 @@ describe('Workload CVE Image Single page', () => {
         const cardSelector = vulnSelectors.summaryCard('CVEs by severity');
         cy.get(
             [
-                `${cardSelector} span.pf-v5-c-icon:contains("Critical") ~ p`,
-                `${cardSelector} span.pf-v5-c-icon:contains("Important") ~ p`,
-                `${cardSelector} span.pf-v5-c-icon:contains("Moderate") ~ p`,
-                `${cardSelector} span.pf-v5-c-icon:contains("Low") ~ p`,
+                `${cardSelector} span.pf-v6-c-icon:contains("Critical") ~ p`,
+                `${cardSelector} span.pf-v6-c-icon:contains("Important") ~ p`,
+                `${cardSelector} span.pf-v6-c-icon:contains("Moderate") ~ p`,
+                `${cardSelector} span.pf-v6-c-icon:contains("Low") ~ p`,
             ].join(',')
         ).then(($severityTotals) => {
             const severityTotal = $severityTotals.toArray().reduce((acc, $el) => {

@@ -8,7 +8,6 @@ import {
     DescriptionListTerm,
     EmptyState,
     EmptyStateBody,
-    EmptyStateHeader,
     Flex,
     FlexItem,
     Nav,
@@ -27,7 +26,7 @@ import User from 'utils/User';
 import UserPermissionsForRolesTable from './UserPermissionsForRolesTable';
 import UserPermissionsTable from './UserPermissionsTable';
 
-const spacerPageSection = 'var(--pf-v5-global--spacer--md)';
+const spacerPageSection = 'var(--pf-t--global--spacer--md)';
 
 const stylePageSection = {
     '--pf-v5-c-page__main-section--PaddingTop': spacerPageSection,
@@ -55,8 +54,7 @@ function UserPage({ resourceToAccessByRole, userData }) {
         }
 
         return (
-            <EmptyState>
-                <EmptyStateHeader titleText="Role not found for user" headingLevel="h4" />
+            <EmptyState headingLevel="h4" titleText="Role not found for user">
                 <EmptyStateBody>{`Role name: ${roleName}`}</EmptyStateBody>
             </EmptyState>
         );
@@ -64,10 +62,10 @@ function UserPage({ resourceToAccessByRole, userData }) {
 
     return (
         <>
-            <PageSection variant="light" style={stylePageSection}>
+            <PageSection hasBodyWrapper={false} style={stylePageSection}>
                 <Title headingLevel="h1">User Profile</Title>
             </PageSection>
-            <PageSection variant="light" style={stylePageSection}>
+            <PageSection hasBodyWrapper={false} style={stylePageSection}>
                 <DescriptionListCompact isHorizontal>
                     <DescriptionListGroup>
                         <DescriptionListTerm>User name</DescriptionListTerm>
@@ -80,18 +78,18 @@ function UserPage({ resourceToAccessByRole, userData }) {
                         </DescriptionListGroup>
                     )}
                     <DescriptionListGroup>
-                        <DescriptionListTerm className="pf-v5-u-text-nowrap">
+                        <DescriptionListTerm className="pf-v6-u-text-nowrap">
                             Auth provider
                         </DescriptionListTerm>
                         <DescriptionListDescription>{authProviderName}</DescriptionListDescription>
                     </DescriptionListGroup>
                 </DescriptionListCompact>
             </PageSection>
-            <PageSection variant="light" style={stylePageSection} isFilled>
+            <PageSection hasBodyWrapper={false} style={stylePageSection} isFilled>
                 <Flex>
                     <FlexItem>
-                        <div className="pf-v5-u-background-color-200">
-                            <Nav aria-label="Roles" theme="light">
+                        <div className="pf-v6-u-background-color-200">
+                            <Nav aria-label="Roles">
                                 <NavList>
                                     <NavItem isActive={isUserPathActive}>
                                         <NavLink to={userBasePath} end>

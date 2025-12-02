@@ -1,10 +1,10 @@
 .resource-icon {
   display: inline-block;
-  color: var(--pf-v5-global--palette--white);
+  color: var(--pf-t--temp--dev--tbd /* CODEMODS: original v5 color was:--pf-v5-global--palette--white */);
   border-radius: 20px;
   padding: 1px 6px;
   text-align: center;
   vertical-align: 1px;
-  margin-right: var(--pf-v5-global--spacer--xs);
-  font-size: var(--pf-v5-global--FontSize--xs);
+  margin-right: var(--pf-t--global--spacer--xs);
+  font-size: var(--pf-t--global--font--size--xs);
 }

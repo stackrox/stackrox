@@ -102,7 +102,7 @@ function RiskTablePanel({
                             title="Unable to load deployments"
                             headingLevel="h2"
                             icon={ExclamationTriangleIcon}
-                            iconClassName="pf-v5-u-warning-color-100"
+                            iconClassName="pf-v6-u-warning-color-100"
                         >
                             {errorMessageDeployments}
                         </EmptyStateTemplate>

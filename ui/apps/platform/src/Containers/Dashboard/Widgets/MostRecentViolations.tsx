@@ -17,7 +17,7 @@ export type MostRecentViolationsProps = {
 function MostRecentViolations({ alerts }: MostRecentViolationsProps) {
     return (
         <>
-            <Title headingLevel="h3" className="pf-v5-u-mb-sm">
+            <Title headingLevel="h3" className="pf-v6-u-mb-sm">
                 Most recent violations with critical severity
             </Title>
             {alerts.length > 0 ? (
@@ -27,11 +27,11 @@ function MostRecentViolations({ alerts }: MostRecentViolationsProps) {
                             const { id, time, policy } = alert;
 
                             // The "Unknown" case should never occur, but we use it here as a safety fallback
-                            let icon = <ResourceIcon className="pf-v5-u-mr-sm" kind="Unknown" />;
+                            let icon = <ResourceIcon className="pf-v6-u-mr-sm" kind="Unknown" />;
                             let name = <Truncate content="Unknown Violation" />;
 
                             if (isDeploymentAlert(alert)) {
-                                icon = <ResourceIcon className="pf-v5-u-mr-sm" kind="Deployment" />;
+                                icon = <ResourceIcon className="pf-v6-u-mr-sm" kind="Deployment" />;
                                 name = <Truncate content={alert.deployment.name} />;
                             } else if (isResourceAlert(alert)) {
                                 const resourceTypeToKind = {
@@ -45,15 +45,15 @@ function MostRecentViolations({ alerts }: MostRecentViolationsProps) {
                                     EGRESS_FIREWALLS: 'EgressFirewalls',
                                 } as const;
                                 const kind = resourceTypeToKind[alert.resource.resourceType];
-                                icon = <ResourceIcon className="pf-v5-u-mr-sm" kind={kind} />;
+                                icon = <ResourceIcon className="pf-v6-u-mr-sm" kind={kind} />;
                                 name = <Truncate content={alert.resource.name} />;
                             }
 
                             const PolicySeverityIcon = policySeverityIconMap[policy.severity];
                             return (
                                 <Tr key={id}>
-                                    <Td className="pf-v5-u-p-0" dataLabel="Severity icon">
-                                        <PolicySeverityIcon className="pf-v5-u-display-inline" />
+                                    <Td className="pf-v6-u-p-0" dataLabel="Severity icon">
+                                        <PolicySeverityIcon className="pf-v6-u-display-inline" />
                                     </Td>
                                     <Td dataLabel="Violation name">
                                         <Link to={`${violationsBasePath}/${id}`}>
@@ -71,7 +71,7 @@ function MostRecentViolations({ alerts }: MostRecentViolationsProps) {
                                     </Td>
                                     <Td
                                         modifier="nowrap"
-                                        className="pf-v5-u-pr-0 pf-v5-u-text-align-right-on-md"
+                                        className="pf-v6-u-pr-0 pf-v6-u-text-align-right-on-md"
                                         dataLabel="Time of last violation occurrence"
                                     >
                                         {getDateTime(time)}

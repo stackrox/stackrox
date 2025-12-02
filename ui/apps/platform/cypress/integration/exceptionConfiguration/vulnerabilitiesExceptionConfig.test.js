@@ -72,7 +72,7 @@ describe('Vulnerabilities Exception Configuration', () => {
         cy.get(selectors.indefiniteOptionEnabledSwitch).check({ force: true });
 
         cy.get(selectors.saveButton).click();
-        cy.get('.pf-v5-c-alert:contains("The configuration was updated successfully")');
+        cy.get('.pf-v6-c-alert:contains("The configuration was updated successfully")');
 
         // Refresh the page to make sure options are persisted
         visitExceptionConfig('vulnerabilities');
@@ -104,7 +104,7 @@ describe('Vulnerabilities Exception Configuration', () => {
         cy.get(selectors.indefiniteOptionEnabledSwitch).check({ force: true });
 
         cy.get(selectors.saveButton).click();
-        cy.get('.pf-v5-c-alert:contains("The configuration was updated successfully")');
+        cy.get('.pf-v6-c-alert:contains("The configuration was updated successfully")');
 
         // Mock the CVE list response on the Workload CVE page to prevent flakiness when no CVEs are reported
         interactAndWaitForCveList(() => {
@@ -133,7 +133,7 @@ describe('Vulnerabilities Exception Configuration', () => {
             cy.get(selectors.indefiniteOptionEnabledSwitch).uncheck({ force: true });
 
             cy.get(selectors.saveButton).click();
-            cy.get('.pf-v5-c-alert:contains("The configuration was updated successfully")');
+            cy.get('.pf-v6-c-alert:contains("The configuration was updated successfully")');
 
             // Revisit Workload CVEs and verify that the updated options are available
             visitWorkloadCveOverview();

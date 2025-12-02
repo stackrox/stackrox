@@ -56,7 +56,7 @@ function ExpiryField({ formik }: ExpiryFieldProps) {
                     headingLevel="h2"
                     title="There was an error loading the vulnerability exception configuration"
                     icon={ExclamationCircleIcon}
-                    iconClassName="pf-v5-u-danger-color-100"
+                    iconClassName="pf-v6-u-danger-color-100"
                 >
                     {getAxiosErrorMessage(error)}
                 </EmptyStateTemplate>
@@ -149,7 +149,7 @@ function ExpiryField({ formik }: ExpiryFieldProps) {
                             <HelperTextItem
                                 variant="error"
                                 icon={<ExclamationCircleIcon />}
-                                className="pf-v5-u-display-flex pf-v5-u-align-items-center"
+                                className="pf-v6-u-display-flex pf-v6-u-align-items-center"
                             >
                                 {errors.expiry}
                             </HelperTextItem>

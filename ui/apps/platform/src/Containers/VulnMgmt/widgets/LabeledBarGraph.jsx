@@ -32,7 +32,10 @@ function getLabelData(data) {
         url,
         yOffset: -13,
         xOffset: 10,
-        style: { fill: 'var(--pf-v5-global--link--Color)', cursor: 'pointer' },
+        style: {
+            fill: 'var(--pf-t--temp--dev--tbd)' /* CODEMODS: original v5 color was --pf-v5-global--link--Color */,
+            cursor: 'pointer',
+        },
     }));
 }
 

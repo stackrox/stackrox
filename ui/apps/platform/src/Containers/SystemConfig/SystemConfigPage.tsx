@@ -85,7 +85,7 @@ const SystemConfigPage = (): ReactElement => {
         );
     } else if (systemConfig) {
         content = isEditing ? (
-            <PageSection variant="light" padding={{ default: 'noPadding' }}>
+            <PageSection hasBodyWrapper={false} padding={{ default: 'noPadding' }}>
                 <SystemConfigForm
                     systemConfig={systemConfig}
                     setSystemConfig={setSystemConfig}
@@ -114,7 +114,7 @@ const SystemConfigPage = (): ReactElement => {
 
     return (
         <>
-            <PageSection variant="light">
+            <PageSection hasBodyWrapper={false}>
                 <Flex>
                     <FlexItem flex={{ default: 'flex_1' }}>
                         <Title headingLevel="h1">System Configuration</Title>
