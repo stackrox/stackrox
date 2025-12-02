@@ -228,16 +228,16 @@ function ExternalFlows({ deploymentId }: ExternalFlowsProps) {
         <>
             <Stack>
                 <StackItem>
-                    <Toolbar className="pf-v5-u-pb-md pf-v5-u-pt-0">
-                        <ToolbarContent className="pf-v5-u-px-0">
-                            <ToolbarItem className="pf-v5-u-w-100 pf-v5-u-mr-0">
+                    <Toolbar className="pf-v6-u-pb-md pf-v6-u-pt-0">
+                        <ToolbarContent className="pf-v6-u-px-0">
+                            <ToolbarItem className="pf-v6-u-w-100 pf-v6-u-mr-0">
                                 <IPMatchFilter
                                     attribute={attributeForExternalSourceAddress}
                                     searchFilter={searchFilter}
                                     setSearchFilter={setSearchFilter}
                                 />
                             </ToolbarItem>
-                            <ToolbarItem className="pf-v5-u-w-100">
+                            <ToolbarItem className="pf-v6-u-w-100">
                                 <CompoundSearchFilterLabels
                                     attributesSeparateFromConfig={[
                                         attributeForExternalSourceAddress,
@@ -252,8 +252,8 @@ function ExternalFlows({ deploymentId }: ExternalFlowsProps) {
                 </StackItem>
                 <Divider />
                 <StackItem>
-                    <Toolbar className="pf-v5-u-pt-md">
-                        <ToolbarContent className="pf-v5-u-px-0">
+                    <Toolbar className="pf-v6-u-pt-md">
+                        <ToolbarContent className="pf-v6-u-px-0">
                             <ToolbarItem>
                                 <FlowsTableHeaderText
                                     type={'total'}
@@ -389,7 +389,7 @@ function ExternalFlows({ deploymentId }: ExternalFlowsProps) {
                 >
                     {pendingStatusChange.error && (
                         <Alert
-                            className="pf-v5-u-mb-sm"
+                            className="pf-v6-u-mb-sm"
                             component="p"
                             isInline
                             title={pendingStatusChange.error}

@@ -1,6 +1,12 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom-v5-compat';
-import { Chart, ChartAxis, ChartBar, ChartContainer, ChartGroup } from '@patternfly/react-charts';
+import {
+    Chart,
+    ChartAxis,
+    ChartBar,
+    ChartContainer,
+    ChartGroup,
+} from '@patternfly/react-charts/victory';
 import type { ChartLabelProps } from '@patternfly/react-charts';
 
 import { LinkableChartLabel } from 'Components/PatternFly/Charts/LinkableChartLabel';

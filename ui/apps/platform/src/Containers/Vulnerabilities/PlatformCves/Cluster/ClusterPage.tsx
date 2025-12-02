@@ -64,7 +64,7 @@ function ClusterPage() {
     return (
         <>
             <PageTitle title={`Platform CVEs - Cluster ${clusterName}`} />
-            <PageSection variant="light" className="pf-v5-u-py-md">
+            <PageSection hasBodyWrapper={false} className="pf-v6-u-py-md">
                 <Breadcrumb>
                     <BreadcrumbItemLink to={platformCvesClusterOverviewPath}>
                         Clusters
@@ -78,29 +78,29 @@ function ClusterPage() {
             </PageSection>
             <Divider component="div" />
             {error ? (
-                <PageSection variant="light">
+                <PageSection hasBodyWrapper={false}>
                     <Bullseye>
                         <EmptyStateTemplate
                             title={getAxiosErrorMessage(error)}
                             headingLevel="h2"
                             icon={ExclamationCircleIcon}
-                            iconClassName="pf-v5-u-danger-color-100"
+                            iconClassName="pf-v6-u-danger-color-100"
                         />
                     </Bullseye>
                 </PageSection>
             ) : (
                 <>
-                    <PageSection variant="light">
+                    <PageSection hasBodyWrapper={false}>
                         <ClusterPageHeader data={data?.cluster} />
                     </PageSection>
-                    <PageSection padding={{ default: 'noPadding' }}>
+                    <PageSection hasBodyWrapper={false} padding={{ default: 'noPadding' }}>
                         <Tabs
                             activeKey={activeTabKey}
                             onSelect={(e, key) => {
                                 setActiveTabKey(key);
                                 // pagination.setPage(1);
                             }}
-                            className="pf-v5-u-pl-md pf-v5-u-background-color-100"
+                            className="pf-v6-u-pl-md pf-v6-u-background-color-100"
                         >
                             <Tab
                                 eventKey={vulnTabKey}
@@ -115,9 +115,10 @@ function ClusterPage() {
                         </Tabs>
                     </PageSection>
                     <PageSection
+                        hasBodyWrapper={false}
                         isFilled
                         padding={{ default: 'noPadding' }}
-                        className="pf-v5-u-display-flex pf-v5-u-flex-direction-column"
+                        className="pf-v6-u-display-flex pf-v6-u-flex-direction-column"
                     >
                         {activeTabKey === vulnTabKey && (
                             <TabContent id={idVulnerabilities}>

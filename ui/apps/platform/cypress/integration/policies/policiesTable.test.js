@@ -225,8 +225,8 @@ describe('Policies table', () => {
 
         // Policy table
         cy.location('search').should('eq', '');
-        cy.get(`.pf-v5-c-title:contains('Policy management')`);
-        cy.get(`.pf-v5-c-nav__link.pf-m-current:contains("Policies")`);
+        cy.get(`.pf-v6-c-title:contains('Policy management')`);
+        cy.get(`.pf-v6-c-nav__link.pf-m-current:contains("Policies")`);
     });
 
     it('should have row action to clone policy and then cancel', () => {
@@ -236,8 +236,8 @@ describe('Policies table', () => {
 
         // Policy table
         cy.location('search').should('eq', '');
-        cy.get(`.pf-v5-c-title:contains('Policy management')`);
-        cy.get(`.pf-v5-c-nav__link.pf-m-current:contains("Policies")`);
+        cy.get(`.pf-v6-c-title:contains('Policy management')`);
+        cy.get(`.pf-v6-c-nav__link.pf-m-current:contains("Policies")`);
     });
 
     it('should have row action to disable policy that has enabled status and then enable it again', () => {
@@ -296,16 +296,16 @@ describe('Policies table', () => {
 
         deletePolicyInTable({ policyName, actionText: 'Delete policy' });
 
-        cy.get(`.pf-v5-c-title:contains('Policy management')`);
-        cy.get(`.pf-v5-c-nav__link.pf-m-current:contains("Policies")`);
+        cy.get(`.pf-v6-c-title:contains('Policy management')`);
+        cy.get(`.pf-v6-c-nav__link.pf-m-current:contains("Policies")`);
         cy.get(`${selectors.table.policyLink}:contains("${policyName}")`).should('not.exist');
     });
 
     it('should have no detectable accessibility violations', () => {
         visitPolicies();
 
-        cy.get('table .pf-v5-c-table__toggle-icon').first().click();
-        cy.get('table .pf-v5-c-menu-toggle').first().click();
+        cy.get('table .pf-v6-c-table__toggle-icon').first().click();
+        cy.get('table .pf-v6-c-menu-toggle').first().click();
 
         cy.checkAccessibility();
     });

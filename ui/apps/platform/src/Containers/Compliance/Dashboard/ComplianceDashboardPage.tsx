@@ -184,11 +184,11 @@ function ComplianceDashboardPage(): ReactElement {
                 {!isDisclaimerAccepted && (
                     <ComplianceUsageDisclaimer
                         onAccept={() => setIsDisclaimerAccepted(true)}
-                        className="pf-v5-u-mb-lg"
+                        className="pf-v6-u-mb-lg"
                     />
                 )}
                 {(inProgressScanDetected || !!error) && (
-                    <div className="pf-v5-u-pb-lg">
+                    <div className="pf-v6-u-pb-lg">
                         {error ? (
                             <Alert
                                 variant="danger"
@@ -203,7 +203,7 @@ function ComplianceDashboardPage(): ReactElement {
                     </div>
                 )}
                 <div
-                    className="grid grid-gap-6 xxxl:grid-gap-8 md:grid-auto-fit xxl:grid-auto-fit-wide md:grid-dense pf-v5-u-pb-lg"
+                    className="grid grid-gap-6 xxxl:grid-gap-8 md:grid-auto-fit xxl:grid-auto-fit-wide md:grid-dense pf-v6-u-pb-lg"
                     // style={{ '--min-tile-height': '160px' }}
                 >
                     <StandardsAcrossEntity

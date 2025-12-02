@@ -1,4 +1,4 @@
-import { Flex, FlexItem, Label, Popover, Text } from '@patternfly/react-core';
+import { Content, Flex, FlexItem, Label, Popover } from '@patternfly/react-core';
 
 import useMetadata from 'hooks/useMetadata';
 import { getProductBranding } from 'constants/productBranding';
@@ -52,19 +52,19 @@ function SignatureCountLabel({ count }: SignatureCountLabelProps) {
                     bodyContent={
                         <Flex direction={{ default: 'column' }}>
                             <FlexItem>
-                                <Text>
+                                <Content component="p">
                                     Image signatures increase the security and transparency of
                                     container images.
-                                </Text>
+                                </Content>
                             </FlexItem>
                             <FlexItem>
-                                <Text>
+                                <Content component="p">
                                     Create at least one image signature integration to download and
                                     verify image signatures.
-                                </Text>
+                                </Content>
                             </FlexItem>
                             <FlexItem>
-                                <Text>
+                                <Content component="p">
                                     For more information, see{' '}
                                     <ExternalLink>
                                         <a
@@ -78,7 +78,7 @@ function SignatureCountLabel({ count }: SignatureCountLabelProps) {
                                             {shortName} documentation
                                         </a>
                                     </ExternalLink>
-                                </Text>
+                                </Content>
                             </FlexItem>
                         </Flex>
                     }

@@ -296,7 +296,7 @@ function AuthProviderForm({
 
     return (
         <Form>
-            <Toolbar inset={{ default: 'insetNone' }} className="pf-v5-u-pt-0">
+            <Toolbar inset={{ default: 'insetNone' }} className="pf-v6-u-pt-0">
                 <ToolbarContent>
                     <ToolbarItem>
                         <Title headingLevel="h1">{formTitle}</Title>
@@ -307,12 +307,9 @@ function AuthProviderForm({
                         </ToolbarItem>
                     )}
                     {isActionable && (
-                        <ToolbarGroup
-                            align={{ default: 'alignRight' }}
-                            spaceItems={{ default: 'spaceItemsLg' }}
-                        >
+                        <ToolbarGroup align={{ default: 'alignEnd' }}>
                             {hasAction ? (
-                                <ToolbarGroup variant="button-group">
+                                <ToolbarGroup variant="action-group">
                                     <ToolbarItem>
                                         <Button
                                             variant="primary"
@@ -336,12 +333,12 @@ function AuthProviderForm({
                                     </ToolbarItem>
                                 </ToolbarGroup>
                             ) : (
-                                <ToolbarGroup variant="button-group">
+                                <ToolbarGroup variant="action-group">
                                     <ToolbarItem>
                                         <Link
                                             to="/main/access-control/auth-providers"
                                             aria-current="page"
-                                            className="pf-v5-u-font-size-sm"
+                                            className="pf-v6-u-font-size-sm"
                                         >
                                             Return to auth providers list
                                         </Link>
@@ -426,7 +423,7 @@ function AuthProviderForm({
                 />
             )}
             <FormikProvider value={formik}>
-                <FormSection title="Configuration" titleElement="h2" className="pf-v5-u-mt-0">
+                <FormSection title="Configuration" titleElement="h2" className="pf-v6-u-mt-0">
                     <Grid hasGutter>
                         <GridItem span={12} lg={6}>
                             <FormGroup label="Name" fieldId="name" isRequired>
@@ -488,7 +485,7 @@ function AuthProviderForm({
                     titleElement="h2"
                 >
                     <FormGroup
-                        className="pf-v5-u-w-100 pf-v5-u-w-75-on-md pf-v5-u-w-50-on-lg"
+                        className="pf-v6-u-w-100 pf-v6-u-w-75-on-md pf-v6-u-w-50-on-lg"
                         label="Minimum access role"
                         fieldId="minimumAccessRole"
                         isRequired
@@ -581,6 +578,7 @@ function AuthProviderForm({
                                                         {!isDisabled && (
                                                             <FlexItem>
                                                                 <Button
+                                                                    icon={<TrashIcon />}
                                                                     variant="plain"
                                                                     aria-label="Delete required attribute"
                                                                     style={{
@@ -590,9 +588,7 @@ function AuthProviderForm({
                                                                     onClick={() =>
                                                                         arrayHelpers.remove(index)
                                                                     }
-                                                                >
-                                                                    <TrashIcon />
-                                                                </Button>
+                                                                />
                                                             </FlexItem>
                                                         )}
                                                         {!isUserResource(
@@ -601,15 +597,14 @@ function AuthProviderForm({
                                                             <FlexItem>
                                                                 <Tooltip content="Auth provider is managed declaratively and can only be edited declaratively.">
                                                                     <Button
+                                                                        icon={<InfoCircleIcon />}
                                                                         variant="plain"
                                                                         aria-label="Information button"
                                                                         style={{
                                                                             transform:
                                                                                 'translate(0, 42px)',
                                                                         }}
-                                                                    >
-                                                                        <InfoCircleIcon />
-                                                                    </Button>
+                                                                    />
                                                                 </Tooltip>
                                                             </FlexItem>
                                                         )}
@@ -623,7 +618,7 @@ function AuthProviderForm({
                                                         variant="link"
                                                         isInline
                                                         icon={
-                                                            <PlusCircleIcon className="pf-v5-u-mr-sm" />
+                                                            <PlusCircleIcon className="pf-v6-u-mr-sm" />
                                                         }
                                                         onClick={() =>
                                                             arrayHelpers.push({
@@ -696,6 +691,7 @@ function AuthProviderForm({
                                                     {!isDisabled && (
                                                         <FlexItem>
                                                             <Button
+                                                                icon={<TrashIcon />}
                                                                 variant="plain"
                                                                 aria-label="Delete claim mapping"
                                                                 style={{
@@ -704,9 +700,7 @@ function AuthProviderForm({
                                                                 onClick={() =>
                                                                     arrayHelpers.remove(index)
                                                                 }
-                                                            >
-                                                                <TrashIcon />
-                                                            </Button>
+                                                            />
                                                         </FlexItem>
                                                     )}
                                                     {!isUserResource(
@@ -715,15 +709,14 @@ function AuthProviderForm({
                                                         <FlexItem>
                                                             <Tooltip content="Auth provider is managed declaratively and can only be edited declaratively.">
                                                                 <Button
+                                                                    icon={<InfoCircleIcon />}
                                                                     variant="plain"
                                                                     aria-label="Information button"
                                                                     style={{
                                                                         transform:
                                                                             'translate(0, 42px)',
                                                                     }}
-                                                                >
-                                                                    <InfoCircleIcon />
-                                                                </Button>
+                                                                />
                                                             </Tooltip>
                                                         </FlexItem>
                                                     )}
@@ -736,7 +729,7 @@ function AuthProviderForm({
                                                         variant="link"
                                                         isInline
                                                         icon={
-                                                            <PlusCircleIcon className="pf-v5-u-mr-sm" />
+                                                            <PlusCircleIcon className="pf-v6-u-mr-sm" />
                                                         }
                                                         onClick={() => arrayHelpers.push(['', ''])}
                                                     >
@@ -750,7 +743,7 @@ function AuthProviderForm({
                             />
                         </FormSection>
                     )}
-                    <FormSection title="Rules" titleElement="h2" className="pf-v5-u-mt-0">
+                    <FormSection title="Rules" titleElement="h2" className="pf-v6-u-mt-0">
                         <RuleGroups
                             authProviderId={selectedAuthProvider.id}
                             groups={values.groups}
