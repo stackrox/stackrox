@@ -10,7 +10,7 @@ option java_package = "io.stackrox.proto.storage";
 message BaseImage {
   string id = 1; // @gotags: search:"Base Image Id,store,hidden" sql:"pk"
   // TODO add base image repo table and add FK to base image repo table
-  string repo_pattern_id = 2; // @gotags: search:"Base Image Repo Pattern Id,store"
+  string base_image_repository_id = 2; // @gotags: search:"Base Image Repository Id,store"
   string repository = 3; // @gotags: search:"Base Image Repository,store"
   string tag = 4; // @gotags: search:"Base Image Tag,hidden"
   string manifest_digest = 5; // @gotags: search:"Base Image Manifest Digest,store"

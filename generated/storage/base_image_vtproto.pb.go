@@ -28,7 +28,7 @@ func (m *BaseImage) CloneVT() *BaseImage {
 	}
 	r := new(BaseImage)
 	r.Id = m.Id
-	r.RepoPatternId = m.RepoPatternId
+	r.BaseImageRepositoryId = m.BaseImageRepositoryId
 	r.Repository = m.Repository
 	r.Tag = m.Tag
 	r.ManifestDigest = m.ManifestDigest
@@ -75,7 +75,7 @@ func (this *BaseImage) EqualVT(that *BaseImage) bool {
 	if this.Id != that.Id {
 		return false
 	}
-	if this.RepoPatternId != that.RepoPatternId {
+	if this.BaseImageRepositoryId != that.BaseImageRepositoryId {
 		return false
 	}
 	if this.Repository != that.Repository {
@@ -212,10 +212,10 @@ func (m *BaseImage) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 		i--
 		dAtA[i] = 0x1a
 	}
-	if len(m.RepoPatternId) > 0 {
-		i -= len(m.RepoPatternId)
-		copy(dAtA[i:], m.RepoPatternId)
-		i = protohelpers.EncodeVarint(dAtA, i, uint64(len(m.RepoPatternId)))
+	if len(m.BaseImageRepositoryId) > 0 {
+		i -= len(m.BaseImageRepositoryId)
+		copy(dAtA[i:], m.BaseImageRepositoryId)
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(len(m.BaseImageRepositoryId)))
 		i--
 		dAtA[i] = 0x12
 	}
@@ -298,7 +298,7 @@ func (m *BaseImage) SizeVT() (n int) {
 	if l > 0 {
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
-	l = len(m.RepoPatternId)
+	l = len(m.BaseImageRepositoryId)
 	if l > 0 {
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
@@ -417,7 +417,7 @@ func (m *BaseImage) UnmarshalVT(dAtA []byte) error {
 			iNdEx = postIndex
 		case 2:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field RepoPatternId", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field BaseImageRepositoryId", wireType)
 			}
 			var stringLen uint64
 			for shift := uint(0); ; shift += 7 {
@@ -445,7 +445,7 @@ func (m *BaseImage) UnmarshalVT(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.RepoPatternId = string(dAtA[iNdEx:postIndex])
+			m.BaseImageRepositoryId = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
 		case 3:
 			if wireType != 2 {
@@ -886,7 +886,7 @@ func (m *BaseImage) UnmarshalVTUnsafe(dAtA []byte) error {
 			iNdEx = postIndex
 		case 2:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field RepoPatternId", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field BaseImageRepositoryId", wireType)
 			}
 			var stringLen uint64
 			for shift := uint(0); ; shift += 7 {
@@ -918,7 +918,7 @@ func (m *BaseImage) UnmarshalVTUnsafe(dAtA []byte) error {
 			if intStringLen > 0 {
 				stringValue = unsafe.String(&dAtA[iNdEx], intStringLen)
 			}
-			m.RepoPatternId = stringValue
+			m.BaseImageRepositoryId = stringValue
 			iNdEx = postIndex
 		case 3:
 			if wireType != 2 {

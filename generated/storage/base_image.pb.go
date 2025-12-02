@@ -26,15 +26,15 @@ type BaseImage struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	Id    string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" search:"Base Image Id,store,hidden" sql:"pk"` // @gotags: search:"Base Image Id,store,hidden" sql:"pk"
 	// TODO add base image repo table and add FK to base image repo table
-	RepoPatternId    string                 `protobuf:"bytes,2,opt,name=repo_pattern_id,json=repoPatternId,proto3" json:"repo_pattern_id,omitempty" search:"Base Image Repo Pattern Id,store"`          // @gotags: search:"Base Image Repo Pattern Id,store"
-	Repository       string                 `protobuf:"bytes,3,opt,name=repository,proto3" json:"repository,omitempty" search:"Base Image Repository,store"`                                       // @gotags: search:"Base Image Repository,store"
-	Tag              string                 `protobuf:"bytes,4,opt,name=tag,proto3" json:"tag,omitempty" search:"Base Image Tag,hidden"`                                                     // @gotags: search:"Base Image Tag,hidden"
-	ManifestDigest   string                 `protobuf:"bytes,5,opt,name=manifest_digest,json=manifestDigest,proto3" json:"manifest_digest,omitempty" search:"Base Image Manifest Digest,store"`         // @gotags: search:"Base Image Manifest Digest,store"
-	DiscoveredAt     *timestamppb.Timestamp `protobuf:"bytes,6,opt,name=discovered_at,json=discoveredAt,proto3" json:"discovered_at,omitempty" search:"Base Image Discovered At,hidden"`               // @gotags: search:"Base Image Discovered At,hidden"
-	Active           bool                   `protobuf:"varint,7,opt,name=active,proto3" json:"active,omitempty" search:"Base Image Active,hidden"`                                              // @gotags: search:"Base Image Active,hidden"
-	FirstLayerDigest string                 `protobuf:"bytes,8,opt,name=first_layer_digest,json=firstLayerDigest,proto3" json:"first_layer_digest,omitempty" search:"Base Image First Layer Digest,hidden" sql:"index=btree"` // @gotags: search:"Base Image First Layer Digest,hidden" sql:"index=btree"
-	unknownFields    protoimpl.UnknownFields
-	sizeCache        protoimpl.SizeCache
+	BaseImageRepositoryId string                 `protobuf:"bytes,2,opt,name=base_image_repository_id,json=baseImageRepositoryId,proto3" json:"base_image_repository_id,omitempty" search:"Base Image Repository Id,store"` // @gotags: search:"Base Image Repository Id,store"
+	Repository            string                 `protobuf:"bytes,3,opt,name=repository,proto3" json:"repository,omitempty" search:"Base Image Repository,store"`                                                        // @gotags: search:"Base Image Repository,store"
+	Tag                   string                 `protobuf:"bytes,4,opt,name=tag,proto3" json:"tag,omitempty" search:"Base Image Tag,hidden"`                                                                      // @gotags: search:"Base Image Tag,hidden"
+	ManifestDigest        string                 `protobuf:"bytes,5,opt,name=manifest_digest,json=manifestDigest,proto3" json:"manifest_digest,omitempty" search:"Base Image Manifest Digest,store"`                          // @gotags: search:"Base Image Manifest Digest,store"
+	DiscoveredAt          *timestamppb.Timestamp `protobuf:"bytes,6,opt,name=discovered_at,json=discoveredAt,proto3" json:"discovered_at,omitempty" search:"Base Image Discovered At,hidden"`                                // @gotags: search:"Base Image Discovered At,hidden"
+	Active                bool                   `protobuf:"varint,7,opt,name=active,proto3" json:"active,omitempty" search:"Base Image Active,hidden"`                                                               // @gotags: search:"Base Image Active,hidden"
+	FirstLayerDigest      string                 `protobuf:"bytes,8,opt,name=first_layer_digest,json=firstLayerDigest,proto3" json:"first_layer_digest,omitempty" search:"Base Image First Layer Digest,hidden" sql:"index=btree"`                  // @gotags: search:"Base Image First Layer Digest,hidden" sql:"index=btree"
+	unknownFields         protoimpl.UnknownFields
+	sizeCache             protoimpl.SizeCache
 }
 
 func (x *BaseImage) Reset() {
@@ -74,9 +74,9 @@ func (x *BaseImage) GetId() string {
 	return ""
 }
 
-func (x *BaseImage) GetRepoPatternId() string {
+func (x *BaseImage) GetBaseImageRepositoryId() string {
 	if x != nil {
-		return x.RepoPatternId
+		return x.BaseImageRepositoryId
 	}
 	return ""
 }
@@ -195,10 +195,10 @@ var File_storage_base_image_proto protoreflect.FileDescriptor
 
 const file_storage_base_image_proto_rawDesc = "" +
 	"\n" +
-	"\x18storage/base_image.proto\x12\astorage\x1a\x1fgoogle/protobuf/timestamp.proto\"\xa5\x02\n" +
+	"\x18storage/base_image.proto\x12\astorage\x1a\x1fgoogle/protobuf/timestamp.proto\"\xb6\x02\n" +
 	"\tBaseImage\x12\x0e\n" +
-	"\x02id\x18\x01 \x01(\tR\x02id\x12&\n" +
-	"\x0frepo_pattern_id\x18\x02 \x01(\tR\rrepoPatternId\x12\x1e\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\x127\n" +
+	"\x18base_image_repository_id\x18\x02 \x01(\tR\x15baseImageRepositoryId\x12\x1e\n" +
 	"\n" +
 	"repository\x18\x03 \x01(\tR\n" +
 	"repository\x12\x10\n" +
