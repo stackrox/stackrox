@@ -101,6 +101,6 @@ func GenerateImageComponentV2(os string, image *storage.ImageV2, index int, from
 		}
 	}
 	// TODO ROX-31847 compute image component base image layer type
-	ret.BaseImage = false
+	ret.FromBaseImage = false
 	return ret, nil
 }

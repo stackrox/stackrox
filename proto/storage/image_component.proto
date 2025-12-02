@@ -51,5 +51,5 @@ message ImageComponentV2 {
   string architecture = 13;
 
   string image_id_v2 = 14; // @gotags: sql:"fk(ImageV2:id),index=btree,allow-null"
-  bool base_image = 15; //    @gotags: search:"Component Base Image,hidden"
+  bool from_base_image = 15; //    @gotags: search:"Component From Base Image,hidden"
 }
