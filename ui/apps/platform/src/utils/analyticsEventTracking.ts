@@ -1,4 +1,5 @@
 import type { OnSearchPayload } from 'Components/CompoundSearchFilter/types';
+import { payloadItemFiltererForTracking } from 'Components/CompoundSearchFilter/utils/utils';
 import { isSearchCategoryWithFilter } from 'hooks/useAnalytics';
 import type {
     AnalyticsEvent,
@@ -18,16 +19,16 @@ type FilterAppliedEvent =
 
 export function createFilterTracker(analyticsTrack: (analyticsEvent: AnalyticsEvent) => void) {
     return function trackAppliedFilter(event: FilterAppliedEvent, payload?: OnSearchPayload) {
-        if (!payload || payload.action !== 'ADD') {
-            // Only track when a filter is applied, not removed
-            return;
+        if (Array.isArray(payload)) {
+            payload.filter(payloadItemFiltererForTracking).forEach((payloadItem) => {
+                const { category, value: filter } = payloadItem;
+
+                const telemetryEvent = isSearchCategoryWithFilter(category)
+                    ? { event, properties: { category, filter } }
+                    : { event, properties: { category } };
+
+                analyticsTrack(telemetryEvent);
+            });
         }
-        const { category, value: filter } = payload;
-
-        const telemetryEvent = isSearchCategoryWithFilter(category)
-            ? { event, properties: { category, filter } }
-            : { event, properties: { category } };
-
-        analyticsTrack(telemetryEvent);
     };
 }
