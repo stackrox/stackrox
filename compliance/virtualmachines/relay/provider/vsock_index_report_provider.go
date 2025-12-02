@@ -25,13 +25,14 @@ import (
 var log = logging.LoggerForModule()
 
 type VsockIndexReportProvider struct {
-	listener              net.Listener
-	semaphore             *semaphore.Weighted
-	semaphoreTimeout      time.Duration
-	connectionReadTimeout time.Duration
-	waitAfterFailedAccept time.Duration
-	maxSizeBytes          int
-	stopOnce              sync.Once
+	listener                 net.Listener
+	semaphore                *semaphore.Weighted
+	maxConcurrentConnections int
+	semaphoreTimeout         time.Duration
+	connectionReadTimeout    time.Duration
+	waitAfterFailedAccept    time.Duration
+	maxSizeBytes             int
+	stopOnce                 sync.Once
 }
 
 // New creates a VsockIndexReportProvider with a vsock listener.
@@ -48,12 +49,13 @@ func New() (*VsockIndexReportProvider, error) {
 	maxSizeBytes := env.VirtualMachinesVsockConnMaxSizeKB.IntegerSetting() * 1024
 
 	return &VsockIndexReportProvider{
-		listener:              listener,
-		semaphore:             semaphore.NewWeighted(int64(maxConcurrentConnections)),
-		semaphoreTimeout:      semaphoreTimeout,
-		connectionReadTimeout: 10 * time.Second,
-		waitAfterFailedAccept: time.Second,
-		maxSizeBytes:          maxSizeBytes,
+		listener:                 listener,
+		semaphore:                semaphore.NewWeighted(int64(maxConcurrentConnections)),
+		maxConcurrentConnections: maxConcurrentConnections,
+		semaphoreTimeout:         semaphoreTimeout,
+		connectionReadTimeout:    10 * time.Second,
+		waitAfterFailedAccept:    time.Second,
+		maxSizeBytes:             maxSizeBytes,
 	}, nil
 }
 
@@ -68,9 +70,15 @@ func (p *VsockIndexReportProvider) Start(ctx context.Context) (<-chan *v1.IndexR
 	}
 
 	// Buffer size = concurrency limit to allow provider goroutines to complete
-	// without blocking on sender
-	bufferSize := env.VirtualMachinesMaxConcurrentVsockConnections.IntegerSetting()
-	reportChan := make(chan *v1.IndexReport, bufferSize)
+	// without blocking on sender. Use the already-derived maxConcurrentConnections
+	// to keep this as the single source of truth.
+	reportChan := make(chan *v1.IndexReport, p.maxConcurrentConnections)
+
+	// Single place that shuts down the listener when the context is done.
+	go func() {
+		<-ctx.Done()
+		p.stop()
+	}()
 
 	// Start the accept loop in a goroutine
 	go p.acceptLoop(ctx, reportChan)
@@ -79,15 +87,8 @@ func (p *VsockIndexReportProvider) Start(ctx context.Context) (<-chan *v1.IndexR
 }
 
 func (p *VsockIndexReportProvider) acceptLoop(ctx context.Context, reportChan chan<- *v1.IndexReport) {
-	defer p.stop()
-
-	go func() {
-		<-ctx.Done()
-		p.stop()
-	}()
-
 	for {
-		// Accept() is blocking, but it will return when ctx is cancelled and the above goroutine calls p.stop()
+		// Accept() is blocking, but it will return when ctx is cancelled and the goroutine in Start() calls p.stop()
 		conn, err := p.listener.Accept()
 		if err != nil {
 			if ctx.Err() != nil {
