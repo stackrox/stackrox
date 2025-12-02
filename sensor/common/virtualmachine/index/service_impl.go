@@ -64,7 +64,7 @@ func (s *serviceImpl) UpsertVirtualMachineIndexReport(ctx context.Context, req *
 	if err := s.handler.Send(timeoutCtx, ir); err != nil {
 		return &sensor.UpsertVirtualMachineIndexReportResponse{
 			Success: false,
-		}, errors.Wrapf(err, "sending virtual machine index report with vsock_cid=%q to Central", req.GetIndexReport().GetVsockCid())
+		}, errors.Wrapf(err, "sending virtual machine index report with vsock_cid=%q to Central", ir.GetVsockCid())
 	}
 	return &sensor.UpsertVirtualMachineIndexReportResponse{
 		Success: true,

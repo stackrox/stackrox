@@ -198,12 +198,13 @@ func (h *handlerImpl) handleIndexReport(
 			Observe(time.Since(startTime).Seconds())
 	}()
 
-	log.Debugf("Handling virtual machine index report with vsock_cid=%q...", indexReport.GetVsockCid())
 	if indexReport == nil {
 		outcome = metrics.IndexReportProcessingOutcomeNilReport
 		log.Warn("Received nil virtual machine index report: not sending to Central")
 		return
 	}
+	log.Debugf("Handling virtual machine index report with vsock_cid=%q...", indexReport.GetVsockCid())
+
 	msg, err := h.newMessageToCentral(indexReport)
 	if err != nil {
 		outcome = metrics.IndexReportProcessingOutcomeBuildError
