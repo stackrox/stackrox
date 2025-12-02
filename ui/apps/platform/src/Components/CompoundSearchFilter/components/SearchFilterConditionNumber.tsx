@@ -92,6 +92,7 @@ function SearchFilterConditionNumber({ attribute, onSearch }: SearchFilterCondit
                 plusBtnAriaLabel="Condition value plus button"
             />
             <Button
+                icon={<ArrowRightIcon />}
                 variant="control"
                 aria-label="Apply condition and number input to search"
                 onClick={() => {
@@ -106,9 +107,7 @@ function SearchFilterConditionNumber({ attribute, onSearch }: SearchFilterCondit
                         ]);
                     }
                 }}
-            >
-                <ArrowRightIcon />
-            </Button>
+            ></Button>
         </>
     );
 }

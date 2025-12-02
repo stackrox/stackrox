@@ -74,7 +74,7 @@ function EmailNotifierForm({
 
     return (
         <>
-            <PageSection variant="light" isFilled hasOverflowScroll>
+            <PageSection hasBodyWrapper={false} isFilled hasOverflowScroll>
                 <Form isWidthLimited>
                     <FormLabelGroup
                         label="Integration name"
@@ -116,7 +116,7 @@ function EmailNotifierForm({
                         errors={errors}
                     >
                         <>
-                            <div className="pf-v5-u-display-flex pf-v5-u-align-items-flex-start">
+                            <div className="pf-v6-u-display-flex pf-v6-u-align-items-flex-start">
                                 <Checkbox
                                     label="Enable unauthenticated SMTP"
                                     id="notifier.email.unauthenticated"
@@ -135,7 +135,7 @@ function EmailNotifierForm({
                                         type="button"
                                         aria-label="More info on unauthenticated SMTP field"
                                         onClick={(e) => e.preventDefault()}
-                                        className="pf-v5-c-form__group-label-help"
+                                        className="pf-v6-c-form__group-label-help"
                                     >
                                         <HelpIcon />
                                     </button>
@@ -143,7 +143,7 @@ function EmailNotifierForm({
                             </div>
                             {allowUnauthenticatedSmtp && (
                                 <Alert
-                                    className="pf-v5-u-mt-md"
+                                    className="pf-v6-u-mt-md"
                                     title="Security Warning"
                                     component="p"
                                     variant="warning"
@@ -206,7 +206,7 @@ function EmailNotifierForm({
                         touched={touched}
                         errors={errors}
                         helperText={
-                            <span className="pf-v5-u-font-size-sm">
+                            <span className="pf-v6-u-font-size-sm">
                                 Specifies the email FROM header
                             </span>
                         }
@@ -227,7 +227,7 @@ function EmailNotifierForm({
                         touched={touched}
                         errors={errors}
                         helperText={
-                            <span className="pf-v5-u-font-size-sm">
+                            <span className="pf-v6-u-font-size-sm">
                                 Specifies the email SENDER header
                             </span>
                         }
@@ -320,7 +320,7 @@ function EmailNotifierForm({
                         label="Hostname for SMTP HELO/EHLO"
                         fieldId="notifier.email.hostnameHeloEhlo"
                         helperText={
-                            <span className="pf-v5-u-font-size-sm">
+                            <span className="pf-v6-u-font-size-sm">
                                 If left blank, localhost will be used
                             </span>
                         }

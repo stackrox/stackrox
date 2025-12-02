@@ -105,11 +105,11 @@ function MitreAttackVectorsFormSection(): ReactElement {
     return (
         <div
             id="mitre-attack-vectors-form-section"
-            className="pf-v5-c-tree-view pf-m-compact pf-m-no-background"
+            className="pf-v6-c-tree-view pf-m-compact pf-m-no-background"
         >
             {mitreAttackVectorsError && (
                 <Alert
-                    className="pf-v5-u-my-md"
+                    className="pf-v6-u-my-md"
                     title="Request failed"
                     component="p"
                     variant="warning"
@@ -118,7 +118,7 @@ function MitreAttackVectorsFormSection(): ReactElement {
                     {mitreAttackVectorsError}
                 </Alert>
             )}
-            <ul className="pf-v5-c-tree-view__list mitre-tactics-list">
+            <ul className="pf-v6-c-tree-view__list mitre-tactics-list">
                 {policyAttackVectors.map(({ tactic: tacticId, techniques: techniqueIds }) => {
                     const {
                         tactic: { description: tacticDescription },
@@ -141,12 +141,12 @@ function MitreAttackVectorsFormSection(): ReactElement {
                     return (
                         <li
                             key={tacticId}
-                            className="pf-v5-c-tree-view__list-item mitre-tactic-item"
+                            className="pf-v6-c-tree-view__list-item mitre-tactic-item"
                         >
                             <TreeViewContent>
                                 <Flex flexWrap={{ default: 'nowrap' }}>
                                     <MitreTacticSelect
-                                        className="pf-v5-u-flex-grow-1 pf-v5-u-flex-shrink-1"
+                                        className="pf-v6-u-flex-grow-1 pf-v6-u-flex-shrink-1"
                                         getIsDisabledOption={getPolicyHasTactic}
                                         handleSelectOption={(tacticIdNext) => {
                                             handleReplaceTactic(tacticId, tacticIdNext);
@@ -157,16 +157,15 @@ function MitreAttackVectorsFormSection(): ReactElement {
                                         tacticId={tacticId}
                                     />
                                     <Button
+                                        icon={<TrashIcon />}
                                         aria-label="Delete tactic"
-                                        className="pf-v5-u-flex-shrink-0"
+                                        className="pf-v6-u-flex-shrink-0"
                                         onClick={() => handleDeleteTactic(tacticId)}
                                         variant="plain"
-                                    >
-                                        <TrashIcon />
-                                    </Button>
+                                    />
                                 </Flex>
                                 <p className="description">{tacticDescription}</p>
-                                <ul className="pf-v5-c-tree-view__list mitre-techniques-list">
+                                <ul className="pf-v6-c-tree-view__list mitre-techniques-list">
                                     {techniqueIds.map((techniqueId) => {
                                         const { description: techniqueDescription } =
                                             getMitreTechnique(mitreTechniques, techniqueId);
@@ -174,12 +173,12 @@ function MitreAttackVectorsFormSection(): ReactElement {
                                         return (
                                             <li
                                                 key={techniqueId}
-                                                className="pf-v5-c-tree-view__list-item mitre-technique-item"
+                                                className="pf-v6-c-tree-view__list-item mitre-technique-item"
                                             >
                                                 <TreeViewContent>
                                                     <Flex flexWrap={{ default: 'nowrap' }}>
                                                         <MitreTechniqueSelect
-                                                            className="pf-v5-u-flex-grow-1 pf-v5-u-flex-shrink-1"
+                                                            className="pf-v6-u-flex-grow-1 pf-v6-u-flex-shrink-1"
                                                             getIsDisabledOption={
                                                                 getPolicyTacticHasTechnique
                                                             }
@@ -197,8 +196,9 @@ function MitreAttackVectorsFormSection(): ReactElement {
                                                             techniqueId={techniqueId}
                                                         />
                                                         <Button
+                                                            icon={<TrashIcon />}
                                                             aria-label="Delete technique"
-                                                            className="pf-v5-u-flex-shrink-0"
+                                                            className="pf-v6-u-flex-shrink-0"
                                                             onClick={() => {
                                                                 handleDeleteTechnique(
                                                                     tacticId,
@@ -206,9 +206,7 @@ function MitreAttackVectorsFormSection(): ReactElement {
                                                                 );
                                                             }}
                                                             variant="plain"
-                                                        >
-                                                            <TrashIcon />
-                                                        </Button>
+                                                        />
                                                     </Flex>
                                                     <p className="description">
                                                         {techniqueDescription}
@@ -219,12 +217,12 @@ function MitreAttackVectorsFormSection(): ReactElement {
                                     })}
                                     <li
                                         key="Add technique"
-                                        className="pf-v5-c-tree-view__list-item mitre-technique-item"
+                                        className="pf-v6-c-tree-view__list-item mitre-technique-item"
                                     >
                                         <TreeViewContent>
                                             <Flex flexWrap={{ default: 'nowrap' }}>
                                                 <MitreTechniqueSelect
-                                                    className="pf-v5-u-flex-grow-1 pf-v5-u-flex-shrink-1"
+                                                    className="pf-v6-u-flex-grow-1 pf-v6-u-flex-shrink-1"
                                                     getIsDisabledOption={
                                                         getPolicyTacticHasTechnique
                                                     }
@@ -243,11 +241,11 @@ function MitreAttackVectorsFormSection(): ReactElement {
                         </li>
                     );
                 })}
-                <li key="Add tactic" className="pf-v5-c-tree-view__list-item mitre-tactic-item">
+                <li key="Add tactic" className="pf-v6-c-tree-view__list-item mitre-tactic-item">
                     <TreeViewContent>
                         <Flex flexWrap={{ default: 'nowrap' }}>
                             <MitreTacticSelect
-                                className="pf-v5-u-flex-grow-1 pf-v5-u-flex-shrink-1"
+                                className="pf-v6-u-flex-grow-1 pf-v6-u-flex-shrink-1"
                                 getIsDisabledOption={getPolicyHasTactic}
                                 handleSelectOption={(tacticId) => {
                                     handleAddTactic(tacticId);
@@ -267,10 +265,10 @@ function MitreAttackVectorsFormSection(): ReactElement {
 
 function TreeViewContent({ children }) {
     return (
-        <div className="pf-v5-c-tree-view__content">
-            <div className="pf-v5-c-tree-view__node">
-                <div className="pf-v5-c-tree-view__node-container">
-                    <div className="pf-v5-c-tree-view__node-content">{children}</div>
+        <div className="pf-v6-c-tree-view__content">
+            <div className="pf-v6-c-tree-view__node">
+                <div className="pf-v6-c-tree-view__node-container">
+                    <div className="pf-v6-c-tree-view__node-content">{children}</div>
                 </div>
             </div>
         </div>

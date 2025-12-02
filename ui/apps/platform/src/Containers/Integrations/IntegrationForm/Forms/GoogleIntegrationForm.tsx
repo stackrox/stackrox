@@ -2,9 +2,9 @@ import type { ReactElement } from 'react';
 import {
     Alert,
     Checkbox,
+    Content,
     Form,
     PageSection,
-    Text,
     TextArea,
     TextInput,
     ToggleGroup,
@@ -151,20 +151,22 @@ function GoogleIntegrationForm({
 
     return (
         <>
-            <PageSection variant="light" isFilled hasOverflowScroll>
+            <PageSection hasBodyWrapper={false} isFilled hasOverflowScroll>
                 <Alert
                     title="Deprecation notice"
                     component="p"
                     variant={'warning'}
                     isInline
-                    className="pf-v5-u-mb-lg"
+                    className="pf-v6-u-mb-lg"
                 >
-                    <Text>Google Container Registry will be removed in a future release.</Text>
-                    <Text>
+                    <Content component="p">
+                        Google Container Registry will be removed in a future release.
+                    </Content>
+                    <Content component="p">
                         It is recommended to use Google Artifact Registry as a registry replacement
                         and Scanner V4 as a scanner replacement.
-                    </Text>
-                    <Text>
+                    </Content>
+                    <Content component="p">
                         See the{' '}
                         <ExternalLink>
                             <a
@@ -176,7 +178,7 @@ function GoogleIntegrationForm({
                             </a>
                         </ExternalLink>
                         for more information.
-                    </Text>
+                    </Content>
                 </Alert>
                 <FormMessage message={message} />
                 <Form isWidthLimited>

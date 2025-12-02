@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { FormikProvider, useFormik } from 'formik';
-import { Alert, Bullseye, Button, Flex, Modal, Spinner } from '@patternfly/react-core';
+import { Alert, Bullseye, Button, Flex, Spinner } from '@patternfly/react-core';
+import { Modal } from '@patternfly/react-core/deprecated';
 import * as yup from 'yup';
 
 import { isValidCidrBlock } from 'utils/urlUtils';
@@ -224,7 +225,7 @@ function CIDRFormModal({ selectedClusterId, isOpen, onClose }: CIDRFormModalProp
                             variant={formCallout.type}
                             title={formCallout.message}
                             component="p"
-                            className="pf-v5-u-mb-md"
+                            className="pf-v6-u-mb-md"
                         />
                     )}
                     <Flex fullWidth={{ default: 'fullWidth' }}>

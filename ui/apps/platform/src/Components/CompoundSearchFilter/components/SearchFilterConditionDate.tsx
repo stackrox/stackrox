@@ -71,6 +71,7 @@ function SearchFilterConditionDate({ attribute, onSearch }: SearchFilterConditio
                 invalidFormatText="Enter valid date: MM/DD/YYYY"
             />
             <Button
+                icon={<ArrowRightIcon />}
                 variant="control"
                 aria-label="Apply condition and date input to search"
                 onClick={() => {
@@ -87,9 +88,7 @@ function SearchFilterConditionDate({ attribute, onSearch }: SearchFilterConditio
                         setDateString('');
                     }
                 }}
-            >
-                <ArrowRightIcon />
-            </Button>
+            ></Button>
         </Flex>
     );
 }

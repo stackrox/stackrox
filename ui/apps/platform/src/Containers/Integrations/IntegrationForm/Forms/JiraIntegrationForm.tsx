@@ -171,7 +171,7 @@ function JiraIntegrationForm({
 
     return (
         <>
-            <PageSection variant="light" isFilled hasOverflowScroll>
+            <PageSection hasBodyWrapper={false} isFilled hasOverflowScroll>
                 <FormMessage message={message} />
                 <Form isWidthLimited>
                     <FormikProvider value={formik}>
@@ -368,7 +368,7 @@ function JiraIntegrationForm({
                                                                 <TextInput
                                                                     isRequired
                                                                     tabIndex={-1}
-                                                                    className="pf-v5-u-background-color-200"
+                                                                    className="pf-v6-u-background-color-200"
                                                                     type="text"
                                                                     id={`notifier.jira.priorityMappings[${index}].severity`}
                                                                     value={

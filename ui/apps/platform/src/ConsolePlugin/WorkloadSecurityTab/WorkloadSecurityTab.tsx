@@ -31,7 +31,7 @@ export function WorkloadSecurityTab() {
                     headingLevel={'h2'}
                     title={`Unable to find security data for workload "${name}" in namespace "${ns}"`}
                     icon={ExclamationCircleIcon}
-                    iconClassName="pf-v5-u-danger-color-100"
+                    iconClassName="pf-v6-u-danger-color-100"
                 >
                     {error.message ?? getAxiosErrorMessage(error)}
                 </EmptyStateTemplate>

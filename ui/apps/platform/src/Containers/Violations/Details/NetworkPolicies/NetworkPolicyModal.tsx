@@ -1,4 +1,5 @@
-import { Button, Flex, Modal } from '@patternfly/react-core';
+import { Button, Flex } from '@patternfly/react-core';
+import { Modal } from '@patternfly/react-core/deprecated';
 
 import type { NetworkPolicy } from 'types/networkPolicy.proto';
 import download from 'utils/download';
@@ -22,7 +23,7 @@ function NetworkPolicyModal({ networkPolicy, isOpen, onClose }: NetworkPolicyMod
             isOpen={isOpen}
             onClose={onClose}
             actions={[
-                <Button className="pf-v5-u-display-inline-block" onClick={exportYAMLHandler}>
+                <Button className="pf-v6-u-display-inline-block" onClick={exportYAMLHandler}>
                     Export YAML
                 </Button>,
             ]}

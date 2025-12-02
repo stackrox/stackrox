@@ -3,6 +3,7 @@ import type { CSSProperties, ReactElement } from 'react';
 import {
     Alert,
     Bullseye,
+    Content,
     Flex,
     FlexItem,
     Spinner,
@@ -12,7 +13,6 @@ import {
     TabContent,
     TabTitleText,
     Tabs,
-    Text,
     Title,
 } from '@patternfly/react-core';
 
@@ -142,7 +142,7 @@ function DeploymentSideBar({
         return (
             <Stack>
                 <StackItem>
-                    <Flex direction={{ default: 'row' }} className="pf-v5-u-p-md pf-v5-u-mb-0">
+                    <Flex direction={{ default: 'row' }} className="pf-v6-u-p-md pf-v6-u-mb-0">
                         <FlexItem>
                             <DeploymentIcon />
                         </FlexItem>
@@ -153,7 +153,7 @@ function DeploymentSideBar({
                         variant="danger"
                         title={error.toString()}
                         component="p"
-                        className="pf-v5-u-my-lg pf-v5-u-mx-lg"
+                        className="pf-v6-u-my-lg pf-v6-u-mx-lg"
                     />
                 </StackItem>
             </Stack>
@@ -163,7 +163,7 @@ function DeploymentSideBar({
     return (
         <Stack>
             <StackItem>
-                <Flex direction={{ default: 'row' }} className="pf-v5-u-p-md pf-v5-u-mb-0">
+                <Flex direction={{ default: 'row' }} className="pf-v6-u-p-md pf-v6-u-mb-0">
                     <FlexItem>
                         <DeploymentIcon />
                     </FlexItem>
@@ -171,18 +171,19 @@ function DeploymentSideBar({
                         <Title
                             headingLevel="h2"
                             id={labelledById}
-                            className="pf-v5-u-max-width"
+                            className="pf-v6-u-max-width"
                             style={sidebarHeadingStyleConstant}
                             data-testid="drawer-title"
                         >
                             {deployment?.name}
                         </Title>
-                        <Text
-                            className="pf-v5-u-font-size-sm pf-v5-u-color-200"
+                        <Content
+                            component="p"
+                            className="pf-v6-u-font-size-sm pf-v6-u-color-200"
                             data-testid="drawer-subtitle"
                         >
                             in &quot;{deployment?.clusterName} / {deployment?.namespace}&quot;
-                        </Text>
+                        </Content>
                     </FlexItem>
                 </Flex>
             </StackItem>
@@ -264,7 +265,7 @@ function DeploymentSideBar({
                                 eventKey={'BASELINE'}
                                 id={'BASELINE'}
                                 hidden={activeTab !== 'BASELINE'}
-                                className="pf-v5-u-h-100"
+                                className="pf-v6-u-h-100"
                             >
                                 {activeTab === 'BASELINE' && (
                                     <DeploymentBaseline
