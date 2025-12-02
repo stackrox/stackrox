@@ -23,10 +23,9 @@ const (
 )
 
 type vmInfo struct {
-	id                       string
-	vsockCID                 uint32
-	name                     string
-	currentReportTemplateIdx uint32
+	id       string
+	vsockCID uint32
+	name     string
 }
 
 type reportTemplate struct {
@@ -36,7 +35,8 @@ type reportTemplate struct {
 
 // reportGenerator generates fake VM index reports using pre-built templates
 type reportGenerator struct {
-	templates []reportTemplate
+	templates          []reportTemplate
+	currentTemplateIdx uint32
 }
 
 func newReportGenerator(numPackages, numRepos int) *reportGenerator {
@@ -46,7 +46,7 @@ func newReportGenerator(numPackages, numRepos int) *reportGenerator {
 	}
 
 	templates := make([]reportTemplate, variantCount)
-	for variant := 0; variant < variantCount; variant++ {
+	for variant := range variantCount {
 		repositories := make(map[string]*v4.Repository, numRepos)
 		for i := range numRepos {
 			repoID := fmt.Sprintf("repo-template-%d-%d", variant, i)
@@ -97,14 +97,16 @@ func newReportGenerator(numPackages, numRepos int) *reportGenerator {
 	}
 }
 
-func (g *reportGenerator) nextTemplate(currentTemplateIdx uint32) reportTemplate {
+func (g *reportGenerator) nextTemplate() reportTemplate {
 	if len(g.templates) == 0 {
 		return reportTemplate{
 			packages:     make(map[string]*v4.Package),
 			repositories: make(map[string]*v4.Repository),
 		}
 	}
-	return g.templates[currentTemplateIdx%uint32(len(g.templates))]
+	idx := g.currentTemplateIdx % uint32(len(g.templates))
+	g.currentTemplateIdx++
+	return g.templates[idx]
 }
 
 // manageVMIndexReportsWithPopulation waits for the store to be set, populates fake VMs, then starts report generation
@@ -212,7 +214,7 @@ func (w *WorkloadManager) sendVMIndexReport(ctx context.Context, vm *vmInfo) boo
 		return false
 	}
 
-	report := w.generateFakeIndexReport(vm)
+	report := w.generateFakeIndexReport(vm.vsockCID, vm.id)
 
 	if err := w.vmIndexReportHandler.Send(ctx, report); err != nil {
 		// Handle shutdown gracefully: if handler is stopped or context is cancelled, exit silently
@@ -227,14 +229,13 @@ func (w *WorkloadManager) sendVMIndexReport(ctx context.Context, vm *vmInfo) boo
 	return true
 }
 
-func (w *WorkloadManager) generateFakeIndexReport(vm *vmInfo) *v1.IndexReport {
-	template := w.vmReportGen.nextTemplate(vm.currentReportTemplateIdx)
-	vm.currentReportTemplateIdx = (vm.currentReportTemplateIdx + 1) % uint32(len(w.vmReportGen.templates))
+func (w *WorkloadManager) generateFakeIndexReport(vsockCID uint32, vmID string) *v1.IndexReport {
+	template := w.vmReportGen.nextTemplate()
 
 	return &v1.IndexReport{
-		VsockCid: fmt.Sprintf("%d", vm.vsockCID),
+		VsockCid: fmt.Sprintf("%d", vsockCID),
 		IndexV4: &v4.IndexReport{
-			HashId:  fmt.Sprintf("hash-%s", vm.id),
+			HashId:  fmt.Sprintf("hash-%s", vmID),
 			State:   "IndexFinished",
 			Success: true,
 			Contents: &v4.Contents{
