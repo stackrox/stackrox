@@ -3,6 +3,7 @@ package index
 import (
 	"context"
 	"strconv"
+	"time"
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/central"
@@ -58,12 +59,30 @@ func (h *handlerImpl) Send(ctx context.Context, vm *v1.IndexReport) error {
 
 	h.lock.RLock()
 	defer h.lock.RUnlock()
+
+	enqueueStart := time.Now()
+	enqueueOutcome := metrics.IndexReportEnqueueOutcomeSuccess
+	defer func() {
+		metrics.IndexReportEnqueueDurationSeconds.
+			WithLabelValues(enqueueOutcome).
+			Observe(time.Since(enqueueStart).Seconds())
+	}()
+
+	select {
+	case h.indexReports <- vm:
+		return nil
+	default:
+		metrics.IndexReportEnqueueBlockedTotal.Inc()
+	}
+
 	select {
 	case <-ctx.Done():
 		if err := ctx.Err(); errors.Is(err, context.DeadlineExceeded) {
+			enqueueOutcome = metrics.IndexReportEnqueueOutcomeTimeout
 			metrics.IndexReportsSent.With(metrics.StatusTimeoutLabels).Inc()
 			return err //nolint:wrapcheck
 		}
+		enqueueOutcome = metrics.IndexReportEnqueueOutcomeCanceled
 		metrics.IndexReportsSent.With(metrics.StatusErrorLabels).Inc()
 		return ctx.Err() //nolint:wrapcheck
 	case h.indexReports <- vm:
@@ -171,13 +190,23 @@ func (h *handlerImpl) handleIndexReport(
 	toCentral chan *message.ExpiringMessage,
 	indexReport *v1.IndexReport,
 ) {
+	startTime := time.Now()
+	outcome := metrics.IndexReportProcessingOutcomeSuccess
+	defer func() {
+		metrics.IndexReportProcessingDurationSeconds.
+			WithLabelValues(outcome).
+			Observe(time.Since(startTime).Seconds())
+	}()
+
 	log.Debugf("Handling virtual machine index report with vsock_cid=%q...", indexReport.GetVsockCid())
 	if indexReport == nil {
+		outcome = metrics.IndexReportProcessingOutcomeNilReport
 		log.Warn("Received nil virtual machine index report: not sending to Central")
 		return
 	}
 	msg, err := h.newMessageToCentral(indexReport)
 	if err != nil {
+		outcome = metrics.IndexReportProcessingOutcomeBuildError
 		// TODO: send a message the sensor relay to retry later if the VM was not found
 		log.Warnf("unable to send index report message for the virtual machine with vsock cid %q to central: %v", indexReport.GetVsockCid(), err)
 		return
