@@ -26,7 +26,8 @@ var log = logging.LoggerForModule()
 // ReportProvider manages the vsock server and produces validated reports.
 type ReportProvider interface {
 	// Start begins accepting connections and returns a channel of validated reports.
-	// The channel will be closed when the context is cancelled or an unrecoverable error occurs.
+	// The channel is currently not closed to avoid races during shutdown.
+	// TODO: Implement proper shutdown logic that closes the channel.
 	Start(ctx context.Context) (<-chan *v1.IndexReport, error)
 }
 
