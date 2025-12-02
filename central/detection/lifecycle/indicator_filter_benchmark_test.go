@@ -161,11 +161,7 @@ func BenchmarkBuildIndicatorFilterPerformance(b *testing.B) {
 	manager := createTestManager(setup.deploymentDS, setup.processDS)
 
 	// Start timing the actual benchmark
-	b.ResetTimer()
-	b.StartTimer()
-
-	// Run the benchmark b.N times
-	for i := 0; i < b.N; i++ {
+	for b.Loop() {
 		// Reset filter to empty state before each iteration
 		manager.processFilter = filter.NewFilter(
 			1000,
