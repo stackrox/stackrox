@@ -81,9 +81,9 @@ operator/**/* @stackrox/install
 /sensor/kubernetes/listener/resources/secrets*            @stackrox/scanner
 /SCANNER_VERSION                                          @stackrox/scanner
 
-# The Konflux maintainers for ACS review all changes related to the Konflux pipelines, Dockerfiles, etc.
-# Release engineers need to merge MintMaker PRs at the time of release.
-# rhacs-bot needs ability to auto-approve MintMaker PRs for automated task and security updates.
+# Konflux maintainers for ACS review all changes related to the Konflux pipelines, Dockerfiles, etc.
+# Release engineers need to merge MintMaker PRs at the time of the release.
+# rhacs-bot needs an ability to auto-approve MintMaker PRs for automated task and security updates.
 **/konflux.*Dockerfile  @stackrox/konflux-maintainers-no-email @stackrox/release-mgmt-no-email @rhacs-bot
 /.tekton/               @stackrox/konflux-maintainers-no-email @stackrox/release-mgmt-no-email @rhacs-bot
 rpms.*                  @stackrox/konflux-maintainers-no-email @stackrox/release-mgmt-no-email @rhacs-bot
