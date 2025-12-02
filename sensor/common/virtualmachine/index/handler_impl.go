@@ -61,14 +61,18 @@ func (h *handlerImpl) Send(ctx context.Context, vm *v1.IndexReport) error {
 	defer h.lock.RUnlock()
 
 	enqueueStart := time.Now()
-	enqueueOutcome := metrics.IndexReportEnqueueOutcomeSuccess
+	outcome := metrics.IndexReportEnqueueOutcomeSuccess
 	defer func() {
 		metrics.IndexReportEnqueueDurationSeconds.
-			WithLabelValues(enqueueOutcome).
+			WithLabelValues(outcome).
 			Observe(time.Since(enqueueStart).Seconds())
+		metrics.IndexReportsSent.WithLabelValues(outcome).Inc()
 	}()
 
+	// Fast-path select to detect blocking on the channel for metrics
 	select {
+	case <-ctx.Done():
+		// Handled in the next select statement
 	case h.indexReports <- vm:
 		return nil
 	default:
@@ -78,12 +82,10 @@ func (h *handlerImpl) Send(ctx context.Context, vm *v1.IndexReport) error {
 	select {
 	case <-ctx.Done():
 		if err := ctx.Err(); errors.Is(err, context.DeadlineExceeded) {
-			enqueueOutcome = metrics.IndexReportEnqueueOutcomeTimeout
-			metrics.IndexReportsSent.With(metrics.StatusTimeoutLabels).Inc()
+			outcome = metrics.IndexReportEnqueueOutcomeTimeout
 			return err //nolint:wrapcheck
 		}
-		enqueueOutcome = metrics.IndexReportEnqueueOutcomeCanceled
-		metrics.IndexReportsSent.With(metrics.StatusErrorLabels).Inc()
+		outcome = metrics.IndexReportEnqueueOutcomeCanceled
 		return ctx.Err() //nolint:wrapcheck
 	case h.indexReports <- vm:
 		return nil
