@@ -15,8 +15,9 @@ import type { ClusterCheckStatus } from 'services/ComplianceResultsService';
 import type { TableUIState } from 'utils/getTableUIState';
 
 import CompoundSearchFilter from 'Components/CompoundSearchFilter/components/CompoundSearchFilter';
-import { makeFilterChipDescriptors } from 'Components/CompoundSearchFilter/utils/utils';
-import SearchFilterChips from 'Components/PatternFly/SearchFilterChips';
+import SearchFilterChips, {
+    makeFilterChipDescriptors,
+} from 'Components/CompoundSearchFilter/components/SearchFilterChips';
 import type {
     CompoundSearchFilterConfig,
     OnSearchCallback,

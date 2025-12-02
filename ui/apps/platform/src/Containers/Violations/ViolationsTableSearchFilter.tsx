@@ -7,9 +7,10 @@ import type {
     CompoundSearchFilterConfig,
     OnSearchCallback,
 } from 'Components/CompoundSearchFilter/types';
-import { makeFilterChipDescriptors } from 'Components/CompoundSearchFilter/utils/utils';
-import SearchFilterChips from 'Components/PatternFly/SearchFilterChips';
 import CompoundSearchFilter from 'Components/CompoundSearchFilter/components/CompoundSearchFilter';
+import SearchFilterChips, {
+    makeFilterChipDescriptors,
+} from 'Components/CompoundSearchFilter/components/SearchFilterChips';
 import {
     Category as PolicyCategory,
     LifecycleStage as PolicyLifecycleStage,

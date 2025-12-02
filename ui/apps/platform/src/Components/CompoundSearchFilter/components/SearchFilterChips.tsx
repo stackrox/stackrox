@@ -3,9 +3,13 @@ import { Button, Chip, ChipGroup, Flex, FlexItem } from '@patternfly/react-core'
 import type { ToolbarChip } from '@patternfly/react-core';
 import { Globe } from 'react-feather'; // eslint-disable-line limited/no-feather-icons
 
-import { updateSearchFilter } from 'Components/CompoundSearchFilter/utils/utils';
 import type { SearchFilter } from 'types/search';
 import { searchValueAsArray } from 'utils/searchUtils';
+
+import type { CompoundSearchFilterConfig, CompoundSearchFilterEntity } from '../types';
+import { hasGroupedSelectOptions, isSelectType, updateSearchFilter } from '../utils/utils';
+
+import { convertFromInternalToExternalConditionText } from './ConditionText';
 
 import './SearchFilterChips.css';
 
@@ -34,6 +38,59 @@ export type FilterChipGroupDescriptor = {
     /** Optional render function for the chip. Defaults to rendering plain text inside a PatternFly `Chip` component */
     render?: (filter: string) => ReactNode;
 };
+
+/**
+ * Helper function to convert a search filter config object into an
+ * array of FilterChipGroupDescriptor objects for use in the SearchFilterChips component
+ *
+ * @param searchFilterConfig Config object for the search filter
+ * @returns An array of FilterChipGroupDescriptor objects
+ */
+export function makeFilterChipDescriptors(
+    config: CompoundSearchFilterConfig
+): FilterChipGroupDescriptor[] {
+    const filterChipDescriptors = config.flatMap(
+        ({ attributes = [] }: CompoundSearchFilterEntity) =>
+            attributes.map((attribute) => {
+                const baseConfig = {
+                    displayName: attribute.filterChipLabel,
+                    searchFilterName: attribute.searchTerm,
+                };
+
+                if (isSelectType(attribute)) {
+                    const options = hasGroupedSelectOptions(attribute.inputProps)
+                        ? attribute.inputProps.groupOptions.flatMap((group) => group.options)
+                        : attribute.inputProps.options;
+                    return {
+                        ...baseConfig,
+                        render: (filter: string) => {
+                            const option = options.find((option) => option.value === filter);
+                            return <FilterChip name={option?.label || 'N/A'} />;
+                        },
+                    };
+                }
+
+                if (attribute.inputType === 'condition-text') {
+                    return {
+                        ...baseConfig,
+                        render: (filter: string) => {
+                            return (
+                                <FilterChip
+                                    name={convertFromInternalToExternalConditionText(
+                                        attribute.inputProps,
+                                        filter
+                                    )}
+                                />
+                            );
+                        },
+                    };
+                }
+
+                return baseConfig;
+            })
+    );
+    return filterChipDescriptors;
+}
 
 export type SearchFilterChipsProps = {
     /** The search filter categories to display */

@@ -16,7 +16,7 @@ import { Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 import pluralize from 'pluralize';
 
 import ConfirmationModal from 'Components/PatternFly/ConfirmationModal';
-import SearchFilterChips from 'Components/PatternFly/SearchFilterChips';
+import SearchFilterChips from 'Components/CompoundSearchFilter/components/SearchFilterChips';
 import useSelectToggle from 'hooks/patternfly/useSelectToggle';
 import { markNetworkBaselineStatuses } from 'services/NetworkService';
 import type { NetworkBaselinePeerStatus, PeerStatus } from 'types/networkBaseline.proto';

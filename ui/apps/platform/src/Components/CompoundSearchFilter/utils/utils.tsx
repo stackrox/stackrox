@@ -1,5 +1,3 @@
-import { FilterChip } from 'Components/PatternFly/SearchFilterChips';
-import type { FilterChipGroupDescriptor } from 'Components/PatternFly/SearchFilterChips';
 import type { SearchFilter } from 'types/search';
 import type { IsFeatureFlagEnabled } from 'hooks/useFeatureFlags';
 import { searchValueAsArray } from 'utils/searchUtils';
@@ -14,7 +12,6 @@ import type {
     SelectSearchFilterGroupedOptions,
     SelectSearchFilterOptions,
 } from '../types';
-import { convertFromInternalToExternalConditionText } from '../components/ConditionText';
 
 export const conditionMap = {
     'Is greater than': '>',
@@ -139,59 +136,6 @@ export function hasSelectOptions(
     inputProps: SelectSearchFilterAttribute['inputProps']
 ): inputProps is SelectSearchFilterOptions {
     return 'options' in inputProps;
-}
-
-/**
- * Helper function to convert a search filter config object into an
- * array of FilterChipGroupDescriptor objects for use in the SearchFilterChips component
- *
- * @param searchFilterConfig Config object for the search filter
- * @returns An array of FilterChipGroupDescriptor objects
- */
-export function makeFilterChipDescriptors(
-    config: CompoundSearchFilterConfig
-): FilterChipGroupDescriptor[] {
-    const filterChipDescriptors = config.flatMap(
-        ({ attributes = [] }: CompoundSearchFilterEntity) =>
-            attributes.map((attribute) => {
-                const baseConfig = {
-                    displayName: attribute.filterChipLabel,
-                    searchFilterName: attribute.searchTerm,
-                };
-
-                if (isSelectType(attribute)) {
-                    const options = hasGroupedSelectOptions(attribute.inputProps)
-                        ? attribute.inputProps.groupOptions.flatMap((group) => group.options)
-                        : attribute.inputProps.options;
-                    return {
-                        ...baseConfig,
-                        render: (filter: string) => {
-                            const option = options.find((option) => option.value === filter);
-                            return <FilterChip name={option?.label || 'N/A'} />;
-                        },
-                    };
-                }
-
-                if (attribute.inputType === 'condition-text') {
-                    return {
-                        ...baseConfig,
-                        render: (filter: string) => {
-                            return (
-                                <FilterChip
-                                    name={convertFromInternalToExternalConditionText(
-                                        attribute.inputProps,
-                                        filter
-                                    )}
-                                />
-                            );
-                        },
-                    };
-                }
-
-                return baseConfig;
-            })
-    );
-    return filterChipDescriptors;
 }
 
 // Pure function returns searchFilter updated according to payload from interactions.

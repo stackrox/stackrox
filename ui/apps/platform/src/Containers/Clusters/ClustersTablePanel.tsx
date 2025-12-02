@@ -15,13 +15,12 @@ import {
 import MenuDropdown from 'Components/PatternFly/MenuDropdown';
 import CloseButton from 'Components/CloseButton';
 import CompoundSearchFilter from 'Components/CompoundSearchFilter/components/CompoundSearchFilter';
-import {
+import SearchFilterChips, {
     makeFilterChipDescriptors,
-    updateSearchFilter,
-} from 'Components/CompoundSearchFilter/utils/utils';
+} from 'Components/CompoundSearchFilter/components/SearchFilterChips';
+import { updateSearchFilter } from 'Components/CompoundSearchFilter/utils/utils';
 import Dialog from 'Components/Dialog';
 import LinkShim from 'Components/PatternFly/LinkShim';
-import SearchFilterChips from 'Components/PatternFly/SearchFilterChips';
 import useAnalytics, {
     LEGACY_SECURE_A_CLUSTER_LINK_CLICKED,
     SECURE_A_CLUSTER_LINK_CLICKED,

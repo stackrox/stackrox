@@ -17,13 +17,12 @@ import ComplianceUsageDisclaimer, {
     COMPLIANCE_DISCLAIMER_KEY,
 } from 'Components/ComplianceUsageDisclaimer';
 import CompoundSearchFilter from 'Components/CompoundSearchFilter/components/CompoundSearchFilter';
-import type { OnSearchCallback } from 'Components/CompoundSearchFilter/types';
-import {
+import SearchFilterChips, {
     makeFilterChipDescriptors,
-    updateSearchFilter,
-} from 'Components/CompoundSearchFilter/utils/utils';
+} from 'Components/CompoundSearchFilter/components/SearchFilterChips';
+import type { OnSearchCallback } from 'Components/CompoundSearchFilter/types';
+import { updateSearchFilter } from 'Components/CompoundSearchFilter/utils/utils';
 import PageTitle from 'Components/PageTitle';
-import SearchFilterChips from 'Components/PatternFly/SearchFilterChips';
 import { useBooleanLocalStorage } from 'hooks/useLocalStorage';
 import useRestQuery from 'hooks/useRestQuery';
 import useURLSearch from 'hooks/useURLSearch';
