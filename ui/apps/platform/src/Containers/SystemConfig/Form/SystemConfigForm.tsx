@@ -7,6 +7,7 @@ import {
     CardBody,
     CardHeader,
     CardTitle,
+    Content,
     Divider,
     Flex,
     FlexItem,
@@ -22,7 +23,6 @@ import {
     Split,
     SplitItem,
     Switch,
-    Text,
     TextArea,
     TextInput,
     Title,
@@ -220,14 +220,14 @@ const SystemConfigForm = ({
 
     return (
         <Flex>
-            <FlexItem grow={{ default: 'grow' }} className="pf-v5-u-p-lg">
+            <FlexItem grow={{ default: 'grow' }} className="pf-v6-u-p-lg">
                 {typeof errorMessage === 'string' && (
                     <Alert
                         variant="danger"
                         isInline
                         title="Failed to save system configuration"
                         component="p"
-                        className="pf-v5-u-mb-md"
+                        className="pf-v6-u-mb-md"
                     >
                         {errorMessage}
                     </Alert>
@@ -423,7 +423,7 @@ const SystemConfigForm = ({
                                 isRequired
                                 fieldId="privateConfig.reportRetentionConfig.downloadableReportGlobalRetentionBytes"
                             >
-                                <Split hasGutter className="pf-v5-u-align-items-center">
+                                <Split hasGutter className="pf-v6-u-align-items-center">
                                     <SplitItem isFilled>
                                         <TextInput
                                             isRequired
@@ -447,7 +447,7 @@ const SystemConfigForm = ({
                                         />
                                     </SplitItem>
                                     <SplitItem>
-                                        <Text>MB</Text>
+                                        <Content component="p">MB</Content>
                                     </SplitItem>
                                 </Split>
                                 <FormHelperText>
@@ -552,7 +552,7 @@ const SystemConfigForm = ({
                     <Title headingLevel="h2">Public configuration</Title>
                     <Grid hasGutter>
                         <GridItem sm={12} md={6}>
-                            <Card isFlat data-testid="header-config">
+                            <Card data-testid="header-config">
                                 <CardHeader
                                     actions={{
                                         actions: (
@@ -560,7 +560,6 @@ const SystemConfigForm = ({
                                                 <Switch
                                                     id="publicConfig.header.enabled"
                                                     label="Enabled"
-                                                    labelOff="Disabled"
                                                     isChecked={
                                                         values?.publicConfig?.header?.enabled
                                                     }
@@ -666,7 +665,7 @@ const SystemConfigForm = ({
                             </Card>
                         </GridItem>
                         <GridItem sm={12} md={6}>
-                            <Card isFlat data-testid="footer-config">
+                            <Card data-testid="footer-config">
                                 <CardHeader
                                     actions={{
                                         actions: (
@@ -674,7 +673,6 @@ const SystemConfigForm = ({
                                                 <Switch
                                                     id="publicConfig.footer.enabled"
                                                     label="Enabled"
-                                                    labelOff="Disabled"
                                                     isChecked={
                                                         values?.publicConfig?.footer?.enabled
                                                     }
@@ -780,7 +778,7 @@ const SystemConfigForm = ({
                             </Card>
                         </GridItem>
                         <GridItem md={6}>
-                            <Card isFlat data-testid="login-notice-config">
+                            <Card data-testid="login-notice-config">
                                 <CardHeader
                                     actions={{
                                         actions: (
@@ -788,7 +786,6 @@ const SystemConfigForm = ({
                                                 <Switch
                                                     id="publicConfig.loginNotice.enabled"
                                                     label="Enabled"
-                                                    labelOff="Disabled"
                                                     isChecked={
                                                         values?.publicConfig?.loginNotice?.enabled
                                                     }
@@ -832,7 +829,7 @@ const SystemConfigForm = ({
                         </GridItem>
                         {isTelemetryConfigured && (
                             <GridItem md={6}>
-                                <Card isFlat data-testid="telemetry-config">
+                                <Card data-testid="telemetry-config">
                                     <CardHeader
                                         actions={{
                                             actions: (
@@ -840,7 +837,6 @@ const SystemConfigForm = ({
                                                     <Switch
                                                         id="publicConfig.telemetry.enabled"
                                                         label="Enabled"
-                                                        labelOff="Disabled"
                                                         isChecked={
                                                             values?.publicConfig?.telemetry?.enabled
                                                         }
@@ -864,7 +860,7 @@ const SystemConfigForm = ({
                                     </CardHeader>
                                     <Divider component="div" />
                                     <CardBody>
-                                        <p className="pf-v5-u-mb-sm">
+                                        <p className="pf-v6-u-mb-sm">
                                             Online telemetry data collection allows Red Hat to use
                                             anonymized information to enhance your user experience.
                                             Consult the documentation to see what is collected, and
@@ -879,13 +875,13 @@ const SystemConfigForm = ({
             </FlexItem>
             <FlexItem
                 style={{ position: 'sticky', bottom: 0, zIndex: 100 }}
-                className="pf-v5-u-w-100 pf-v5-u-background-color-100"
+                className="pf-v6-u-w-100 pf-v6-u-background-color-100"
             >
                 <Divider component="div" />
                 <Flex
                     justifyContent={{ default: 'justifyContentFlexStart' }}
                     spaceItems={{ default: 'spaceItemsMd' }}
-                    className="pf-v5-u-mx-lg pf-v5-u-p-md"
+                    className="pf-v6-u-mx-lg pf-v6-u-p-md"
                 >
                     <FlexItem>
                         <Button

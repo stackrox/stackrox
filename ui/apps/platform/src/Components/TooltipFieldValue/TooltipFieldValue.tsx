@@ -7,20 +7,26 @@ import { Icon } from '@patternfly/react-core';
 
 export const DangerIcon = (props: SVGIconProps) => (
     <Icon>
-        <ExclamationCircleIcon color="var(--pf-v5-global--danger-color--100)" {...props} />
+        <ExclamationCircleIcon
+            color="var(--pf-t--temp--dev--tbd)"
+            /* CODEMODS: original v5 color was --pf-v5-global--danger-color--100 */ {...props}
+        />
     </Icon>
 );
 
 export const WarningIcon = (props: SVGIconProps) => (
     <Icon>
-        <ExclamationTriangleIcon color="var(--pf-v5-global--warning-color--100)" {...props} />
+        <ExclamationTriangleIcon
+            color="var(--pf-t--temp--dev--tbd)"
+            /* CODEMODS: original v5 color was --pf-v5-global--warning-color--100 */ {...props}
+        />
     </Icon>
 );
 
 type IconType = 'danger' | 'warning';
 
 function getIcon(type?: IconType): ReactElement | null {
-    const className = 'pf-v5-u-display-inline pf-v5-u-ml-sm';
+    const className = 'pf-v6-u-display-inline pf-v6-u-ml-sm';
 
     switch (type) {
         case 'danger':

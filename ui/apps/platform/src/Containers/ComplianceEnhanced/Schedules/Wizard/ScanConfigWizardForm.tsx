@@ -1,15 +1,9 @@
 import { useCallback, useRef, useState } from 'react';
 import type { ReactElement, RefObject } from 'react';
 import { useNavigate } from 'react-router-dom-v5-compat';
-import {
-    Button,
-    Modal,
-    Wizard,
-    WizardFooter,
-    WizardStep,
-    useWizardContext,
-} from '@patternfly/react-core';
+import { Button, Wizard, WizardFooter, WizardStep, useWizardContext } from '@patternfly/react-core';
 import type { WizardStepType } from '@patternfly/react-core';
+import { Modal } from '@patternfly/react-core/deprecated';
 import { FormikProvider } from 'formik';
 import { complianceEnhancedSchedulesPath } from 'routePaths';
 import isEqual from 'lodash/isEqual';

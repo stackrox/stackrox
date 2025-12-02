@@ -31,7 +31,7 @@ export type DeploymentPageHeaderProps = {
 function DeploymentPageHeader({ data }: DeploymentPageHeaderProps) {
     return data ? (
         <Flex direction={{ default: 'column' }} alignItems={{ default: 'alignItemsFlexStart' }}>
-            <Title headingLevel="h1" className="pf-v5-u-mb-sm">
+            <Title headingLevel="h1" className="pf-v6-u-mb-sm">
                 {data.name}
             </Title>
             <LabelGroup numLabels={3}>

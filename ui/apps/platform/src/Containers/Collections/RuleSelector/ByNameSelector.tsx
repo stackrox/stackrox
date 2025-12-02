@@ -103,7 +103,7 @@ function ByNameSelector({
                     const inputAriaLabel = `Select value ${index + 1} of ${
                         scopedResourceSelector.rule.values.length
                     } for the ${lowerCaseEntity} name`;
-                    const inputClassName = 'pf-v5-u-flex-grow-1 pf-v5-u-w-auto';
+                    const inputClassName = 'pf-v6-u-flex-grow-1 pf-v6-u-w-auto';
                     const inputOnChange = onChangeValue(scopedResourceSelector, index);
                     const errorMessage = parseInlineRuleError(validationErrors, index);
                     const inputValidated = errorMessage
@@ -151,19 +151,20 @@ function ByNameSelector({
                             </div>
                             {!isDisabled && (
                                 <Button
+                                    icon={
+                                        <Icon>
+                                            <TrashIcon
+                                                color="var(--pf-t--temp--dev--tbd)" /* CODEMODS: original v5 color was --pf-v5-global--Color--dark-200 */
+                                                className="pf-v6-u-flex-shrink-1"
+                                                style={{ cursor: 'pointer' }}
+                                            />
+                                        </Icon>
+                                    }
                                     className="rule-selector-delete-value-button"
                                     aria-label={`Delete ${value}`}
                                     variant="plain"
                                     onClick={() => onDeleteValue(index)}
-                                >
-                                    <Icon>
-                                        <TrashIcon
-                                            color="var(--pf-v5-global--Color--dark-200)"
-                                            className="pf-v5-u-flex-shrink-1"
-                                            style={{ cursor: 'pointer' }}
-                                        />
-                                    </Icon>
-                                </Button>
+                                />
                             )}
                         </div>
                     );

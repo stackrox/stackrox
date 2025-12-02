@@ -1,10 +1,10 @@
 .vulnerability-exception-request-overview {
   display: grid !important;
   grid-template-columns: 1fr 2fr 1fr 1fr 2fr 1fr; /* Creates 6 columns */
-  gap: var(--pf-v5-global--spacer--md);
+  gap: var(--pf-t--global--spacer--md);
 }
 
-.vulnerability-exception-request-overview .pf-v5-c-description-list__group:nth-child(7) {
+.vulnerability-exception-request-overview .pf-v6-c-description-list__group:nth-child(7) {
   grid-column: 1 / -1; /* Span all columns */
 }
 

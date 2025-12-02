@@ -121,11 +121,11 @@ function VirtualMachinePagePackages({
     };
 
     return (
-        <PageSection variant="light" isFilled padding={{ default: 'padding' }}>
+        <PageSection hasBodyWrapper={false} isFilled padding={{ default: 'padding' }}>
             <Toolbar>
                 <ToolbarContent>
-                    <ToolbarGroup className="pf-v5-u-w-100">
-                        <ToolbarItem className="pf-v5-u-flex-1">
+                    <ToolbarGroup className="pf-v6-u-w-100">
+                        <ToolbarItem className="pf-v6-u-flex-1">
                             <CompoundSearchFilter
                                 config={searchFilterConfig}
                                 searchFilter={searchFilter}
@@ -139,7 +139,7 @@ function VirtualMachinePagePackages({
                             />
                         </ToolbarItem>
                     </ToolbarGroup>
-                    <ToolbarGroup className="pf-v5-u-w-100">
+                    <ToolbarGroup className="pf-v6-u-w-100">
                         <SearchFilterChips
                             searchFilter={searchFilter}
                             onFilterChange={setSearchFilter}
@@ -152,8 +152,8 @@ function VirtualMachinePagePackages({
                     </ToolbarGroup>
                 </ToolbarContent>
             </Toolbar>
-            <div className="pf-v5-u-flex-grow-1 pf-v5-u-background-color-100 pf-v5-u-p-lg">
-                <Split className="pf-v5-u-pb-lg pf-v5-u-align-items-baseline">
+            <div className="pf-v6-u-flex-grow-1 pf-v6-u-background-color-100 pf-v6-u-p-lg">
+                <Split className="pf-v6-u-pb-lg pf-v6-u-align-items-baseline">
                     <SplitItem isFilled>
                         <Flex alignItems={{ default: 'alignItemsCenter' }}>
                             <Title headingLevel="h2">

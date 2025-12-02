@@ -83,7 +83,7 @@ function PendingRequests() {
 
     if (tableState.type === 'ERROR') {
         return (
-            <PageSection variant="light">
+            <PageSection hasBodyWrapper={false}>
                 <TableErrorComponent
                     error={tableState.error}
                     message="An error occurred. Try refreshing again"
@@ -93,7 +93,7 @@ function PendingRequests() {
     }
 
     return (
-        <PageSection>
+        <PageSection hasBodyWrapper={false}>
             <PageTitle title="Exception Management - Pending Requests" />
             <AdvancedFiltersToolbar
                 searchFilterConfig={vulnRequestSearchFilterConfig}
@@ -102,7 +102,7 @@ function PendingRequests() {
                 includeCveSeverityFilters={false}
                 includeCveStatusFilters={false}
             >
-                <ToolbarItem variant="pagination" align={{ default: 'alignRight' }}>
+                <ToolbarItem variant="pagination" align={{ default: 'alignEnd' }}>
                     <Pagination
                         toggleTemplate={({ firstIndex, lastIndex }) => (
                             <span>

@@ -3,6 +3,7 @@ import type { MouseEvent as ReactMouseEvent, Ref } from 'react';
 import {
     Bullseye,
     Button,
+    Content,
     Divider,
     MenuToggle,
     PageSection,
@@ -11,7 +12,6 @@ import {
     SelectList,
     SelectOption,
     Spinner,
-    Text,
     TextInputGroup,
     TextInputGroupMain,
     Title,
@@ -197,25 +197,23 @@ function ListeningEndpointsPage() {
     return (
         <>
             <PageTitle title="Listening Endpoints" />
-            <PageSection variant="light">
+            <PageSection hasBodyWrapper={false}>
                 <Title headingLevel="h1">Listening endpoints</Title>
-                <Text className="pf-v5-u-pt-xs">
+                <Content component="p" className="pf-v6-u-pt-xs">
                     Audit listening endpoints of deployments in your clusters
-                </Text>
+                </Content>
             </PageSection>
             <Divider component="div" />
             <PageSection
+                hasBodyWrapper={false}
                 id="listening-endpoints-page"
                 isFilled
-                className="pf-v5-u-display-flex pf-v5-u-flex-direction-column"
+                className="pf-v6-u-display-flex pf-v6-u-flex-direction-column"
             >
                 <Toolbar>
                     <ToolbarContent>
-                        <ToolbarGroup className="pf-v5-u-flex-grow-1">
-                            <ToolbarItem
-                                variant="search-filter"
-                                className="pf-v5-u-display-flex pf-v5-u-flex-grow-1"
-                            >
+                        <ToolbarGroup className="pf-v6-u-flex-grow-1">
+                            <ToolbarItem className="pf-v6-u-display-flex pf-v6-u-flex-grow-1">
                                 <SelectSingle
                                     id="entity-filter"
                                     value={entity}
@@ -240,7 +238,7 @@ function ListeningEndpointsPage() {
                                     onSelect={onSelectAutocompleteValue}
                                     onOpenChange={(isOpen) => setAutocompleteOpen(isOpen)}
                                     toggle={autocompleteToggle}
-                                    className="pf-v5-u-flex-grow-1"
+                                    className="pf-v6-u-flex-grow-1"
                                 >
                                     <SelectList id="autocomplete-listbox">
                                         {autocompleteOptions.length > 0 ? (
@@ -267,7 +265,7 @@ function ListeningEndpointsPage() {
                             </ToolbarItem>
                         </ToolbarGroup>
                         <ToolbarGroup>
-                            <ToolbarItem variant="pagination" align={{ default: 'alignRight' }}>
+                            <ToolbarItem variant="pagination" align={{ default: 'alignEnd' }}>
                                 <Pagination
                                     itemCount={countQuery.data ?? 0}
                                     page={page}
@@ -280,7 +278,7 @@ function ListeningEndpointsPage() {
                             </ToolbarItem>
                         </ToolbarGroup>
 
-                        <ToolbarGroup className="pf-v5-u-w-100">
+                        <ToolbarGroup className="pf-v6-u-w-100">
                             <SearchFilterChips
                                 searchFilter={searchFilter}
                                 onFilterChange={onSearchFilterChange}
@@ -293,14 +291,14 @@ function ListeningEndpointsPage() {
                         </ToolbarGroup>
                     </ToolbarContent>
                 </Toolbar>
-                <div className="pf-v5-u-background-color-100">
+                <div className="pf-v6-u-background-color-100">
                     {error && (
                         <Bullseye>
                             <EmptyStateTemplate
                                 title="Error loading deployments with listening endpoints"
                                 headingLevel="h2"
                                 icon={ExclamationCircleIcon}
-                                iconClassName="pf-v5-u-danger-color-100"
+                                iconClassName="pf-v6-u-danger-color-100"
                             >
                                 {getAxiosErrorMessage(error.message)}
                             </EmptyStateTemplate>
@@ -319,7 +317,9 @@ function ListeningEndpointsPage() {
                                         title="No deployments with listening endpoints found"
                                         headingLevel="h2"
                                     >
-                                        <Text>Clear any search value and try again</Text>
+                                        <Content component="p">
+                                            Clear any search value and try again
+                                        </Content>
                                         <Button
                                             variant="link"
                                             onClick={() => {

@@ -85,5 +85,5 @@ function getToggleSelector(label) {
 export function selectFilter(label, item) {
     const toggleSelector = getToggleSelector(label);
     cy.get(toggleSelector).click();
-    cy.get(`button.pf-v5-c-menu__item:contains("${item}")`).click();
+    cy.get(`button.pf-v6-c-menu__item:contains("${item}")`).click();
 }

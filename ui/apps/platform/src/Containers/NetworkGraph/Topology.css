@@ -5,35 +5,35 @@
     overflow: hidden;
 }
 
-.pf-ri__topology-section .pf-v5-c-tab-content {
+.pf-ri__topology-section .pf-v6-c-tab-content {
     display: flex;
     flex-direction: column;
     flex-grow: 1;
 }
 
-.pf-ri__topology-section .pf-v5-c-tab-content:focus {
+.pf-ri__topology-section .pf-v6-c-tab-content:focus {
     outline: none;
 }
 
-.pf-ri__topology-section .pf-v5-c-toolbar {
+.pf-ri__topology-section .pf-v6-c-toolbar {
     --pf-v5-c-toolbar__expandable-content--lg--PaddingBottom: 0;
-    --pf-v5-c-toolbar--PaddingBottom: 0;
+    --pf-v6-c-toolbar--PaddingBlockEnd: 0;
 }
 
-.pf-ri__topology-section .pf-v5-c-toolbar__item .pf-v5-l-flex {
-    --pf-v5-l-flex--FlexWrap: no-wrap;
+.pf-ri__topology-section .pf-v6-c-toolbar__item .pf-v6-l-flex {
+    --pf-v6-l-flex--FlexWrap: no-wrap;
 }
 
-.pf-ri__topology-section .pf-v5-c-toolbar__item .pf-v5-l-flex>* {
-    --pf-v5-l-flex--spacer: 8px;
+.pf-ri__topology-section .pf-v6-c-toolbar__item .pf-v6-l-flex>* {
+    --pf-v6-l-flex--spacer: 8px;
 }
 
 /* override custom topology css when pf-m-space-items-none is specifically set on PF flex component */
-.pf-ri__topology-section .pf-v5-l-flex.pf-m-space-items-none > * {
-    --pf-v5-l-flex--spacer: 0px;
+.pf-ri__topology-section .pf-v6-l-flex.pf-m-space-items-none > * {
+    --pf-v6-l-flex--spacer: 0px;
 }
 
-.pf-ri__topology-section .pf-v5-c-toolbar__item .pf-v5-c-form-control {
+.pf-ri__topology-section .pf-v6-c-toolbar__item .pf-v6-c-form-control {
     width: 85px;
 }
 
@@ -41,7 +41,7 @@
     z-index: 1050;
 }
 
-.pf-ri-topology-context-menu__kebab-wrapper.pf-v5-c-dropdown__menu-item {
+.pf-ri-topology-context-menu__kebab-wrapper.pf-v6-c-dropdown__menu-item {
     padding: 0;
 }
 
@@ -50,33 +50,33 @@
 }
 
 .pf-ri-topology__node__background {
-    fill: var(--pf-v5-global--palette--black-400);
+    fill: var(--pf-t--temp--dev--tbd /* CODEMODS: original v5 color was:--pf-v5-global--palette--black-400 */);
     stroke-width: 1px;
-    stroke: var(--pf-v5-global--palette--black-1000);
+    stroke: var(--pf-t--temp--dev--tbd /* CODEMODS: original v5 color was:--pf-v5-global--palette--black-1000 */);
 }
 
 .pf-ri-topology__node__background.pf-m-selected {
-    fill: var(--pf-v5-global--active-color--100);
+    fill: var(--pf-t--temp--dev--tbd /* CODEMODS: original v5 color was:--pf-v5-global--active-color--100 */);
 }
 
 .pf-ri-topology__node__background.pf-m-hover {
-    fill: var(--pf-v5-global--palette--green-300);
+    fill: var(--pf-t--temp--dev--tbd /* CODEMODS: original v5 color was:--pf-v5-global--palette--green-300 */);
 }
 
 .pf-ri-topology__node__background.pf-m-drop-target {
-    fill: var(--pf-v5-global--palette--light-blue-200);
+    fill: var(--pf-t--temp--dev--tbd /* CODEMODS: original v5 color was:--pf-v5-global--palette--light-blue-200 */);
 }
 
-.pf-v5-c-page__main-section#\/topology-section-page-section,
-.pf-v5-c-page__main-section#\/topology-pipelines-demo-page-section,
-.pf-v5-c-page__main-section#\/topology-sidepanel-demo-page-section {
-    --pf-v5-c-page__main-section--PaddingTop: 0;
-    --pf-v5-c-page__main-section--PaddingRight: 0;
-    --pf-v5-c-page__main-section--PaddingLeft: 0;
-    --pf-v5-c-page__main-section--PaddingBottom: 0;
+.pf-v6-c-page__main-section#\/topology-section-page-section,
+.pf-v6-c-page__main-section#\/topology-pipelines-demo-page-section,
+.pf-v6-c-page__main-section#\/topology-sidepanel-demo-page-section {
+    --pf-v6-c-page__main-section--PaddingBlockStart: 0;
+    --pf-v6-c-page__main-section--PaddingInlineEnd: 0;
+    --pf-v6-c-page__main-section--PaddingInlineStart: 0;
+    --pf-v6-c-page__main-section--PaddingBlockEnd: 0;
 }
 
-.pf-v5-c-tab-content[hidden] {
+.pf-v6-c-tab-content[hidden] {
     display: none !important;
 }
 
@@ -84,12 +84,12 @@ g.pf-topology__edge {
     cursor: default;
 }
 
-.pf-topology-control-bar .pf-v5-c-toolbar__group {
+.pf-topology-control-bar .pf-v6-c-toolbar__group {
     display: flex;
     align-self: stretch;
 }
 
-.pf-topology-control-bar .pf-v5-c-toolbar__item, .pf-topology-control-bar button {
+.pf-topology-control-bar .pf-v6-c-toolbar__item, .pf-topology-control-bar button {
     height: 100%;
 }
 

@@ -1,5 +1,6 @@
 import type { ReactElement } from 'react';
-import { Button, Flex, Modal, ModalBoxBody, ModalBoxFooter } from '@patternfly/react-core';
+import { Button, Flex } from '@patternfly/react-core';
+import { Modal, ModalBoxBody, ModalBoxFooter } from '@patternfly/react-core/deprecated';
 import { DownloadIcon } from '@patternfly/react-icons';
 import { useFormik } from 'formik';
 

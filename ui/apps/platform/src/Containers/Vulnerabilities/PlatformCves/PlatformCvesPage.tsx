@@ -24,7 +24,7 @@ function PlatformCvesPage() {
                 <Route
                     path="*"
                     element={
-                        <PageSection variant="light">
+                        <PageSection hasBodyWrapper={false}>
                             <PageTitle title="Platform CVEs - Not Found" />
                             <PageNotFound />
                         </PageSection>

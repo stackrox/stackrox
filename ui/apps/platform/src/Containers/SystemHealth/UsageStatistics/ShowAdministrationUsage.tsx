@@ -1,5 +1,6 @@
 import type { ReactElement } from 'react';
-import { Button, Modal, ModalBoxBody } from '@patternfly/react-core';
+import { Button } from '@patternfly/react-core';
+import { Modal, ModalBoxBody } from '@patternfly/react-core/deprecated';
 import useModal from 'hooks/useModal';
 import AdministrationUsageForm from './AdministrationUsageForm';
 

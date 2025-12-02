@@ -247,7 +247,7 @@ describe.skip('Clusters Health Status', () => {
             );
 
             const nameInputSelector = hasFeatureFlag('ROX_ADMISSION_CONTROLLER_CONFIG')
-                ? `.pf-v5-c-form__group-label:contains("Cluster name") + .pf-v5-c-form__group-control input`
+                ? `.pf-v6-c-form__group-label:contains("Cluster name") + .pf-v6-c-form__group-control input`
                 : selectors.clusterForm.nameInput;
             cy.get(nameInputSelector).should('have.value', clusterName);
 

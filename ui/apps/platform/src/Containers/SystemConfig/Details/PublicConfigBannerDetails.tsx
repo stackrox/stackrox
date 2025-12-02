@@ -38,7 +38,7 @@ const PublicConfigBannerDetails = ({
     const title = `${capitalize(type)} configuration`;
 
     return (
-        <Card isFlat data-testid={`${type}-config`}>
+        <Card data-testid={`${type}-config`}>
             <CardHeader
                 actions={{
                     actions: (

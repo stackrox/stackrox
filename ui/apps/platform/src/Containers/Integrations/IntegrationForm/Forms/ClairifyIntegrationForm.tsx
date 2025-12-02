@@ -1,9 +1,9 @@
 import type { ReactElement } from 'react';
 import {
     Alert,
+    Content,
     Form,
     PageSection,
-    Text,
     TextInput,
     ToggleGroup,
     ToggleGroupItem,
@@ -88,17 +88,21 @@ function ClairifyIntegrationForm({
 
     return (
         <>
-            <PageSection variant="light" isFilled hasOverflowScroll>
+            <PageSection hasBodyWrapper={false} isFilled hasOverflowScroll>
                 <Alert
                     title="Deprecation notice"
                     component="p"
                     variant={'warning'}
                     isInline
-                    className="pf-v5-u-mb-lg"
+                    className="pf-v6-u-mb-lg"
                 >
-                    <Text>StackRox Scanner will be removed in a future release.</Text>
-                    <Text>No new enhancements for StackRox Scanner will be done or accepted.</Text>
-                    <Text>It is recommended to use Scanner V4, instead.</Text>
+                    <Content component="p">
+                        StackRox Scanner will be removed in a future release.
+                    </Content>
+                    <Content component="p">
+                        No new enhancements for StackRox Scanner will be done or accepted.
+                    </Content>
+                    <Content component="p">It is recommended to use Scanner V4, instead.</Content>
                 </Alert>
                 <FormMessage message={message} />
                 <Form isWidthLimited>

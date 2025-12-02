@@ -70,7 +70,7 @@ function VirtualMachinesCvesTable() {
     return (
         <>
             <AdvancedFiltersToolbar
-                className="pf-v5-u-px-sm pf-v5-u-pb-0"
+                className="pf-v6-u-px-sm pf-v6-u-pb-0"
                 includeCveSeverityFilters={false}
                 includeCveStatusFilters={false}
                 searchFilter={searchFilter}
@@ -80,8 +80,8 @@ function VirtualMachinesCvesTable() {
                     setPage(1, 'replace');
                 }}
             />
-            <div className="pf-v5-u-flex-grow-1 pf-v5-u-background-color-100 pf-v5-u-p-lg">
-                <Split className="pf-v5-u-pb-lg pf-v5-u-align-items-baseline">
+            <div className="pf-v6-u-flex-grow-1 pf-v6-u-background-color-100 pf-v6-u-p-lg">
+                <Split className="pf-v6-u-pb-lg pf-v6-u-align-items-baseline">
                     <SplitItem isFilled>
                         <Flex alignItems={{ default: 'alignItemsCenter' }}>
                             <Title headingLevel="h2">

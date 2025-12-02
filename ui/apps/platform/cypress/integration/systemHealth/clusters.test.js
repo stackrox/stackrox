@@ -13,7 +13,7 @@ function visitSystemHealthWithClustersFixtureFilteredByNames(fixturePath, cluste
 }
 
 function getCardHeaderDescendantSelector(cardTitle, descendant) {
-    return `.pf-v5-c-card__header:has('h2:contains("${cardTitle}")') ${descendant}`;
+    return `.pf-v6-c-card__header:has('h2:contains("${cardTitle}")') ${descendant}`;
 }
 
 const clustersLink = 'a:contains("View clusters")';
@@ -47,7 +47,7 @@ describe('System Health Clusters without fixture', () => {
 });
 
 function getCardBodyDescendantSelector(cardTitle, descendant) {
-    return `.pf-v5-c-card:has('h2:contains("${cardTitle}")') .pf-v5-c-card__body ${descendant}`;
+    return `.pf-v6-c-card:has('h2:contains("${cardTitle}")') .pf-v6-c-card__body ${descendant}`;
 }
 
 function getTableCellContainsSelector(cardTitle, nthRow, dataLabel, contents) {

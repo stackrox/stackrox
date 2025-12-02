@@ -58,7 +58,7 @@ function ScanConfigurationSelect({
 
     return (
         <Flex
-            className="pf-v5-u-px-lg pf-v5-u-py-sm"
+            className="pf-v6-u-px-lg pf-v6-u-py-sm"
             justifyContent={{ default: 'justifyContentSpaceBetween' }}
         >
             <Select

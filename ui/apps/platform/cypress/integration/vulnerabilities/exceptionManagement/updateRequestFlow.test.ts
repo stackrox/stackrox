@@ -60,7 +60,7 @@ describe('Exception Management Request Details Page', () => {
 
         cy.get('button:contains("Close")').click();
         cy.get('div[role="dialog"]').should('not.exist');
-        cy.get('div.pf-v5-c-alert.pf-m-success').should(
+        cy.get('div.pf-v6-c-alert.pf-m-success').should(
             'contain',
             'The vulnerability request was successfully updated.'
         );

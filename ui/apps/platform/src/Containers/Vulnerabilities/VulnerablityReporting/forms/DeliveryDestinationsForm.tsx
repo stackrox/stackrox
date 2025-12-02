@@ -77,8 +77,8 @@ function DeliveryDestinationsForm({ title, formik }: DeliveryDestinationsFormPro
 
     return (
         <>
-            <PageSection variant="light" padding={{ default: 'noPadding' }}>
-                <Flex direction={{ default: 'column' }} className="pf-v5-u-py-lg pf-v5-u-px-lg">
+            <PageSection hasBodyWrapper={false} padding={{ default: 'noPadding' }}>
+                <Flex direction={{ default: 'column' }} className="pf-v6-u-py-lg pf-v6-u-px-lg">
                     <FlexItem>
                         <Title headingLevel="h2">{title}</Title>
                     </FlexItem>
@@ -93,8 +93,8 @@ function DeliveryDestinationsForm({ title, formik }: DeliveryDestinationsFormPro
                     component="p"
                 />
             )}
-            <PageSection variant="light" padding={{ default: 'noPadding' }}>
-                <Form className="pf-v5-u-py-lg pf-v5-u-px-lg">
+            <PageSection hasBodyWrapper={false} padding={{ default: 'noPadding' }}>
+                <Form className="pf-v6-u-py-lg pf-v6-u-px-lg">
                     <Flex direction={{ default: 'column' }}>
                         <FlexItem flex={{ default: 'flexNone' }}>
                             <NotifierConfigurationForm

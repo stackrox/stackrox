@@ -5,16 +5,14 @@ import {
     Alert,
     Bullseye,
     Button,
+    Content,
     EmptyState,
     EmptyStateBody,
     EmptyStateFooter,
-    EmptyStateHeader,
-    EmptyStateIcon,
     Flex,
     FlexItem,
     PageSection,
     Spinner,
-    Text,
 } from '@patternfly/react-core';
 import { CloudSecurityIcon } from '@patternfly/react-icons';
 
@@ -98,7 +96,7 @@ function NoClustersPage({ isModalOpen, setIsModalOpen }): ReactElement {
                 component="p"
                 isInline
             />
-            <PageSection variant="light">
+            <PageSection hasBodyWrapper={false}>
                 {isLoading ? (
                     <Bullseye>
                         <Spinner />
@@ -113,12 +111,12 @@ function NoClustersPage({ isModalOpen, setIsModalOpen }): ReactElement {
                         {errorMessage}
                     </Alert>
                 ) : (
-                    <EmptyState variant="xl">
-                        <EmptyStateHeader
-                            titleText="Secure clusters with a reusable init bundle"
-                            icon={<EmptyStateIcon icon={CloudSecurityIcon} />}
-                            headingLevel={headingLevel}
-                        />
+                    <EmptyState
+                        headingLevel={headingLevel}
+                        icon={CloudSecurityIcon}
+                        titleText="Secure clusters with a reusable init bundle"
+                        variant="xl"
+                    >
                         <EmptyStateBody>
                             <Flex
                                 direction={{ default: 'column' }}
@@ -126,23 +124,23 @@ function NoClustersPage({ isModalOpen, setIsModalOpen }): ReactElement {
                             >
                                 {initBundlesCount === 0 ? (
                                     <FlexItem>
-                                        <Text component="p">
+                                        <Content component="p">
                                             {`You have successfully deployed a ${basePageTitle} platform.`}
-                                        </Text>
-                                        <Text component="p">
+                                        </Content>
+                                        <Content component="p">
                                             Before you can secure clusters, create an init bundle.
-                                        </Text>
+                                        </Content>
                                     </FlexItem>
                                 ) : (
                                     <FlexItem>
-                                        <Text component="p">
+                                        <Content component="p">
                                             Use your preferred method to install secured cluster
                                             services.
-                                        </Text>
-                                        <Text component="p">
+                                        </Content>
+                                        <Content component="p">
                                             After successful installation, it might take a few
                                             moments for this page to display secured clusters.
-                                        </Text>
+                                        </Content>
                                     </FlexItem>
                                 )}
                             </Flex>
@@ -178,7 +176,7 @@ function NoClustersPage({ isModalOpen, setIsModalOpen }): ReactElement {
                                     View installation methods
                                 </Button>
                             )}
-                            <Flex direction={{ default: 'column' }} className="pf-v5-u-mt-xl">
+                            <Flex direction={{ default: 'column' }} className="pf-v6-u-mt-xl">
                                 <Link
                                     to={`${clustersBasePath}/new`}
                                     onClick={() => {
@@ -191,7 +189,7 @@ function NoClustersPage({ isModalOpen, setIsModalOpen }): ReactElement {
                                     Legacy installation method
                                 </Link>
                                 {initBundlesCount !== 0 && (
-                                    <Text component="p" className="pf-v5-u-w-50vw">
+                                    <Content component="p" className="pf-v6-u-w-50vw">
                                         If you misplaced your init bundle, we recommend locating the
                                         previously downloaded YAML on your device first by the name
                                         of the{' '}
@@ -199,7 +197,7 @@ function NoClustersPage({ isModalOpen, setIsModalOpen }): ReactElement {
                                             generated init bundle
                                         </Link>
                                         , or you may need to create a new init bundle.
-                                    </Text>
+                                    </Content>
                                 )}
                             </Flex>
                             <SecureClusterModal

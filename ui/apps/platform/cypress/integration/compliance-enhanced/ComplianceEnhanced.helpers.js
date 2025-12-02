@@ -42,5 +42,5 @@ export function visitComplianceEnhancedScanConfigs(staticResponseMap) {
         staticResponseMap
     );
 
-    cy.get('a.pf-v5-c-nav__link:contains("Schedules")').should('have.class', 'pf-m-current');
+    cy.get('a.pf-v6-c-nav__link:contains("Schedules")').should('have.class', 'pf-m-current');
 }
