@@ -115,8 +115,7 @@ func executeSingleDefaultingFlow(logger logr.Logger, securedCluster *platform.Se
 }
 
 func patchSecuredClusterAnnotations(ctx context.Context, logger logr.Logger, client ctrlClient.Client, securedCluster *platform.SecuredCluster, annotations map[string]string) (string, error) {
-	// MergeFromWithOptimisticLock causes the resourceVersion to be checked prior to patching.
-	patch := ctrlClient.MergeFromWithOptions(securedCluster, ctrlClient.MergeFromWithOptimisticLock{})
+	patch := ctrlClient.MergeFromWithOptions(securedCluster)
 	newSecuredCluster := securedCluster.DeepCopy()
 	newSecuredCluster.SetAnnotations(annotations)
 	if err := client.Patch(ctx, newSecuredCluster, patch); err != nil {
