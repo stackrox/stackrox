@@ -22,7 +22,7 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-// Health status of this repository pattern
+// Health status of this repository pattern.
 type BaseImageRepository_HealthStatus int32
 
 const (
@@ -78,16 +78,17 @@ func (BaseImageRepository_HealthStatus) EnumDescriptor() ([]byte, []int) {
 type BaseImageRepository struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// Unique identifier for this repository pattern configuration.
-	Id string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" sql:"pk,type(uuid)" search:"Base Image Repository ID,hidden"` // @gotags: sql:"pk,type(uuid)" search:"Base Image Repository ID,hidden"
-	// Full repository path including registry.
-	RepositoryPath string `protobuf:"bytes,2,opt,name=repository_path,json=repositoryPath,proto3" json:"repository_path,omitempty" search:"Base Image Repository Path"` // @gotags: search:"Base Image Repository Path"
-	// Glob pattern for tag filtering.
-	TagPattern string `protobuf:"bytes,3,opt,name=tag_pattern,json=tagPattern,proto3" json:"tag_pattern,omitempty" search:"Base Image Tag Pattern"` // @gotags: search:"Base Image Tag Pattern"
+	Id string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" sql:"pk,type(uuid)"` // @gotags: sql:"pk,type(uuid)"
+	// Full repository path including registry (e.g., "registry.redhat.io/ubi8/ubi").
+	// Must be unique - one tag pattern per repository.
+	RepositoryPath string `protobuf:"bytes,2,opt,name=repository_path,json=repositoryPath,proto3" json:"repository_path,omitempty" sql:"unique"` // @gotags: sql:"unique"
+	// Glob pattern for tag filtering (e.g., "8.10-*").
+	TagPattern string `protobuf:"bytes,3,opt,name=tag_pattern,json=tagPattern,proto3" json:"tag_pattern,omitempty"`
 	// Timestamp of last successful poll.
 	LastPollAt *timestamppb.Timestamp `protobuf:"bytes,4,opt,name=last_poll_at,json=lastPollAt,proto3" json:"last_poll_at,omitempty"`
 	// Count of consecutive poll failures (for health tracking).
 	FailureCount int32                            `protobuf:"varint,5,opt,name=failure_count,json=failureCount,proto3" json:"failure_count,omitempty"`
-	HealthStatus BaseImageRepository_HealthStatus `protobuf:"varint,6,opt,name=health_status,json=healthStatus,proto3,enum=storage.BaseImageRepository_HealthStatus" json:"health_status,omitempty" search:"Base Image Repository Health"` // @gotags: search:"Base Image Repository Health"
+	HealthStatus BaseImageRepository_HealthStatus `protobuf:"varint,6,opt,name=health_status,json=healthStatus,proto3,enum=storage.BaseImageRepository_HealthStatus" json:"health_status,omitempty" sql:"index=btree"` // @gotags: sql:"index=btree"
 	// SHA256 hash of tag_pattern for cache invalidation detection
 	// (when pattern changes, hash differs, triggering cache flush).
 	PatternHash   string `protobuf:"bytes,7,opt,name=pattern_hash,json=patternHash,proto3" json:"pattern_hash,omitempty"`
@@ -174,40 +175,43 @@ func (x *BaseImageRepository) GetPatternHash() string {
 	return ""
 }
 
-// TagCacheEntry stores metadata for repository tag caching.
-// Next tag: 5
-type TagCacheEntry struct {
+// BaseImageTag stores cached base image tag metadata.
+// Persisting cache data across Central restarts avoids cold-start refetches during base
+// image repository scanning.
+// Next tag: 7
+type BaseImageTag struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	// SHA256 digest of the image manifest (or manifest list for multi-arch).
-	ManifestDigest string `protobuf:"bytes,1,opt,name=manifest_digest,json=manifestDigest,proto3" json:"manifest_digest,omitempty"`
-	// The tag timestamp extracted from manifest config blob.
-	// For manifest lists, this is the maximum timestamp across all manifests.
-	Created *timestamppb.Timestamp `protobuf:"bytes,2,opt,name=created,proto3" json:"created,omitempty"`
-	// Indicates whether this tag points to a manifest list/index.
-	IsManifestList bool `protobuf:"varint,3,opt,name=is_manifest_list,json=isManifestList,proto3" json:"is_manifest_list,omitempty"`
-	// Map of platform to platform-specific manifest digest.
-	// Key format: "os/architecture" (e.g., "linux/amd64", "linux/arm64").
-	// Used for incremental updates: only refetch manifests for platforms whose
-	// digest changed or are new.
-	ListDigests   map[string]string `protobuf:"bytes,4,rep,name=list_digests,json=listDigests,proto3" json:"list_digests,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	// Foreign key to the repository pattern.
+	BaseImageRepositoryId string `protobuf:"bytes,1,opt,name=base_image_repository_id,json=baseImageRepositoryId,proto3" json:"base_image_repository_id,omitempty" sql:"pk,fk(BaseImageRepository:id),type(uuid)"` // @gotags: sql:"pk,fk(BaseImageRepository:id),type(uuid)"
+	// Tag name (e.g., "8.10-1234").
+	Tag string `protobuf:"bytes,2,opt,name=tag,proto3" json:"tag,omitempty" sql:"pk"` // @gotags: sql:"pk"
+	// SHA256 digest of the manifest (or manifest list for multi-arch).
+	ManifestDigest string `protobuf:"bytes,3,opt,name=manifest_digest,json=manifestDigest,proto3" json:"manifest_digest,omitempty"`
+	// Image creation timestamp from config blob.
+	Created *timestamppb.Timestamp `protobuf:"bytes,4,opt,name=created,proto3" json:"created,omitempty"`
+	// Whether this tag points to a manifest list (multi-platform).
+	IsManifestList bool `protobuf:"varint,5,opt,name=is_manifest_list,json=isManifestList,proto3" json:"is_manifest_list,omitempty"`
+	// Map of "os/arch" to platform-specific manifest digest,
+	// to only refetch platforms whose digest changed.
+	ListDigests   map[string]string `protobuf:"bytes,6,rep,name=list_digests,json=listDigests,proto3" json:"list_digests,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *TagCacheEntry) Reset() {
-	*x = TagCacheEntry{}
+func (x *BaseImageTag) Reset() {
+	*x = BaseImageTag{}
 	mi := &file_storage_base_image_repository_proto_msgTypes[1]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *TagCacheEntry) String() string {
+func (x *BaseImageTag) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*TagCacheEntry) ProtoMessage() {}
+func (*BaseImageTag) ProtoMessage() {}
 
-func (x *TagCacheEntry) ProtoReflect() protoreflect.Message {
+func (x *BaseImageTag) ProtoReflect() protoreflect.Message {
 	mi := &file_storage_base_image_repository_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -219,205 +223,49 @@ func (x *TagCacheEntry) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use TagCacheEntry.ProtoReflect.Descriptor instead.
-func (*TagCacheEntry) Descriptor() ([]byte, []int) {
+// Deprecated: Use BaseImageTag.ProtoReflect.Descriptor instead.
+func (*BaseImageTag) Descriptor() ([]byte, []int) {
 	return file_storage_base_image_repository_proto_rawDescGZIP(), []int{1}
 }
 
-func (x *TagCacheEntry) GetManifestDigest() string {
+func (x *BaseImageTag) GetBaseImageRepositoryId() string {
+	if x != nil {
+		return x.BaseImageRepositoryId
+	}
+	return ""
+}
+
+func (x *BaseImageTag) GetTag() string {
+	if x != nil {
+		return x.Tag
+	}
+	return ""
+}
+
+func (x *BaseImageTag) GetManifestDigest() string {
 	if x != nil {
 		return x.ManifestDigest
 	}
 	return ""
 }
 
-func (x *TagCacheEntry) GetCreated() *timestamppb.Timestamp {
+func (x *BaseImageTag) GetCreated() *timestamppb.Timestamp {
 	if x != nil {
 		return x.Created
 	}
 	return nil
 }
 
-func (x *TagCacheEntry) GetIsManifestList() bool {
+func (x *BaseImageTag) GetIsManifestList() bool {
 	if x != nil {
 		return x.IsManifestList
 	}
 	return false
 }
 
-func (x *TagCacheEntry) GetListDigests() map[string]string {
+func (x *BaseImageTag) GetListDigests() map[string]string {
 	if x != nil {
 		return x.ListDigests
-	}
-	return nil
-}
-
-// TagMetadata contains tag information extracted from the registry.
-// Handles both single-arch images and multi-arch images (manifest lists).
-// Next tag: 6
-type TagMetadata struct {
-	state protoimpl.MessageState `protogen:"open.v1"`
-	// Tag name.
-	Name string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
-	// Current SHA256 digest of the image manifest or manifest list.
-	Digest string `protobuf:"bytes,2,opt,name=digest,proto3" json:"digest,omitempty"`
-	// Manifest creation timestamp from config blob.
-	Created *timestamppb.Timestamp `protobuf:"bytes,3,opt,name=created,proto3" json:"created,omitempty"`
-	// Layer SHA256 digests for single-arch images (image manifest).
-	// Empty when architectures is populated (manifest list).
-	LayerDigests []string `protobuf:"bytes,4,rep,name=layer_digests,json=layerDigests,proto3" json:"layer_digests,omitempty"`
-	// Platform-specific metadata for multi-arch images (manifest list).
-	// Empty when layer_digests is populated (image manifest).
-	Architectures []*TagMetadata_Platform `protobuf:"bytes,5,rep,name=architectures,proto3" json:"architectures,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *TagMetadata) Reset() {
-	*x = TagMetadata{}
-	mi := &file_storage_base_image_repository_proto_msgTypes[2]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *TagMetadata) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*TagMetadata) ProtoMessage() {}
-
-func (x *TagMetadata) ProtoReflect() protoreflect.Message {
-	mi := &file_storage_base_image_repository_proto_msgTypes[2]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use TagMetadata.ProtoReflect.Descriptor instead.
-func (*TagMetadata) Descriptor() ([]byte, []int) {
-	return file_storage_base_image_repository_proto_rawDescGZIP(), []int{2}
-}
-
-func (x *TagMetadata) GetName() string {
-	if x != nil {
-		return x.Name
-	}
-	return ""
-}
-
-func (x *TagMetadata) GetDigest() string {
-	if x != nil {
-		return x.Digest
-	}
-	return ""
-}
-
-func (x *TagMetadata) GetCreated() *timestamppb.Timestamp {
-	if x != nil {
-		return x.Created
-	}
-	return nil
-}
-
-func (x *TagMetadata) GetLayerDigests() []string {
-	if x != nil {
-		return x.LayerDigests
-	}
-	return nil
-}
-
-func (x *TagMetadata) GetArchitectures() []*TagMetadata_Platform {
-	if x != nil {
-		return x.Architectures
-	}
-	return nil
-}
-
-// Platform contains platform-specific manifest information
-// when the tag is a manifest lists / OCI image indexes.
-// Next tag: 5
-type TagMetadata_Platform struct {
-	state protoimpl.MessageState `protogen:"open.v1"`
-	// Architecture identifier (e.g., "amd64", "arm64", "ppc64le").
-	Architecture string `protobuf:"bytes,1,opt,name=architecture,proto3" json:"architecture,omitempty"`
-	// OS identifier (e.g., "linux").
-	Os string `protobuf:"bytes,2,opt,name=os,proto3" json:"os,omitempty"`
-	// Current SHA256 digest of the image manifest or manifest list.
-	Digest string `protobuf:"bytes,3,opt,name=digest,proto3" json:"digest,omitempty"`
-	// Manifest creation timestamp from config blob.
-	Created *timestamppb.Timestamp `protobuf:"bytes,4,opt,name=created,proto3" json:"created,omitempty"`
-	// Layer SHA256 digests.
-	LayerDigests  []string `protobuf:"bytes,5,rep,name=layer_digests,json=layerDigests,proto3" json:"layer_digests,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *TagMetadata_Platform) Reset() {
-	*x = TagMetadata_Platform{}
-	mi := &file_storage_base_image_repository_proto_msgTypes[4]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *TagMetadata_Platform) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*TagMetadata_Platform) ProtoMessage() {}
-
-func (x *TagMetadata_Platform) ProtoReflect() protoreflect.Message {
-	mi := &file_storage_base_image_repository_proto_msgTypes[4]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use TagMetadata_Platform.ProtoReflect.Descriptor instead.
-func (*TagMetadata_Platform) Descriptor() ([]byte, []int) {
-	return file_storage_base_image_repository_proto_rawDescGZIP(), []int{2, 0}
-}
-
-func (x *TagMetadata_Platform) GetArchitecture() string {
-	if x != nil {
-		return x.Architecture
-	}
-	return ""
-}
-
-func (x *TagMetadata_Platform) GetOs() string {
-	if x != nil {
-		return x.Os
-	}
-	return ""
-}
-
-func (x *TagMetadata_Platform) GetDigest() string {
-	if x != nil {
-		return x.Digest
-	}
-	return ""
-}
-
-func (x *TagMetadata_Platform) GetCreated() *timestamppb.Timestamp {
-	if x != nil {
-		return x.Created
-	}
-	return nil
-}
-
-func (x *TagMetadata_Platform) GetLayerDigests() []string {
-	if x != nil {
-		return x.LayerDigests
 	}
 	return nil
 }
@@ -440,27 +288,17 @@ const file_storage_base_image_repository_proto_rawDesc = "" +
 	"\fHealthStatus\x12\v\n" +
 	"\aHEALTHY\x10\x00\x12\r\n" +
 	"\tUNHEALTHY\x10\x01\x12\f\n" +
-	"\bDISABLED\x10\x02\"\xa4\x02\n" +
-	"\rTagCacheEntry\x12'\n" +
-	"\x0fmanifest_digest\x18\x01 \x01(\tR\x0emanifestDigest\x124\n" +
-	"\acreated\x18\x02 \x01(\v2\x1a.google.protobuf.TimestampR\acreated\x12(\n" +
-	"\x10is_manifest_list\x18\x03 \x01(\bR\x0eisManifestList\x12J\n" +
-	"\flist_digests\x18\x04 \x03(\v2'.storage.TagCacheEntry.ListDigestsEntryR\vlistDigests\x1a>\n" +
+	"\bDISABLED\x10\x02\"\xed\x02\n" +
+	"\fBaseImageTag\x127\n" +
+	"\x18base_image_repository_id\x18\x01 \x01(\tR\x15baseImageRepositoryId\x12\x10\n" +
+	"\x03tag\x18\x02 \x01(\tR\x03tag\x12'\n" +
+	"\x0fmanifest_digest\x18\x03 \x01(\tR\x0emanifestDigest\x124\n" +
+	"\acreated\x18\x04 \x01(\v2\x1a.google.protobuf.TimestampR\acreated\x12(\n" +
+	"\x10is_manifest_list\x18\x05 \x01(\bR\x0eisManifestList\x12I\n" +
+	"\flist_digests\x18\x06 \x03(\v2&.storage.BaseImageTag.ListDigestsEntryR\vlistDigests\x1a>\n" +
 	"\x10ListDigestsEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
-	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"\x8d\x03\n" +
-	"\vTagMetadata\x12\x12\n" +
-	"\x04name\x18\x01 \x01(\tR\x04name\x12\x16\n" +
-	"\x06digest\x18\x02 \x01(\tR\x06digest\x124\n" +
-	"\acreated\x18\x03 \x01(\v2\x1a.google.protobuf.TimestampR\acreated\x12#\n" +
-	"\rlayer_digests\x18\x04 \x03(\tR\flayerDigests\x12C\n" +
-	"\rarchitectures\x18\x05 \x03(\v2\x1d.storage.TagMetadata.PlatformR\rarchitectures\x1a\xb1\x01\n" +
-	"\bPlatform\x12\"\n" +
-	"\farchitecture\x18\x01 \x01(\tR\farchitecture\x12\x0e\n" +
-	"\x02os\x18\x02 \x01(\tR\x02os\x12\x16\n" +
-	"\x06digest\x18\x03 \x01(\tR\x06digest\x124\n" +
-	"\acreated\x18\x04 \x01(\v2\x1a.google.protobuf.TimestampR\acreated\x12#\n" +
-	"\rlayer_digests\x18\x05 \x03(\tR\flayerDigestsB.\n" +
+	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01B.\n" +
 	"\x19io.stackrox.proto.storageZ\x11./storage;storageb\x06proto3"
 
 var (
@@ -476,29 +314,24 @@ func file_storage_base_image_repository_proto_rawDescGZIP() []byte {
 }
 
 var file_storage_base_image_repository_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
-var file_storage_base_image_repository_proto_msgTypes = make([]protoimpl.MessageInfo, 5)
+var file_storage_base_image_repository_proto_msgTypes = make([]protoimpl.MessageInfo, 3)
 var file_storage_base_image_repository_proto_goTypes = []any{
 	(BaseImageRepository_HealthStatus)(0), // 0: storage.BaseImageRepository.HealthStatus
 	(*BaseImageRepository)(nil),           // 1: storage.BaseImageRepository
-	(*TagCacheEntry)(nil),                 // 2: storage.TagCacheEntry
-	(*TagMetadata)(nil),                   // 3: storage.TagMetadata
-	nil,                                   // 4: storage.TagCacheEntry.ListDigestsEntry
-	(*TagMetadata_Platform)(nil),          // 5: storage.TagMetadata.Platform
-	(*timestamppb.Timestamp)(nil),         // 6: google.protobuf.Timestamp
+	(*BaseImageTag)(nil),                  // 2: storage.BaseImageTag
+	nil,                                   // 3: storage.BaseImageTag.ListDigestsEntry
+	(*timestamppb.Timestamp)(nil),         // 4: google.protobuf.Timestamp
 }
 var file_storage_base_image_repository_proto_depIdxs = []int32{
-	6, // 0: storage.BaseImageRepository.last_poll_at:type_name -> google.protobuf.Timestamp
+	4, // 0: storage.BaseImageRepository.last_poll_at:type_name -> google.protobuf.Timestamp
 	0, // 1: storage.BaseImageRepository.health_status:type_name -> storage.BaseImageRepository.HealthStatus
-	6, // 2: storage.TagCacheEntry.created:type_name -> google.protobuf.Timestamp
-	4, // 3: storage.TagCacheEntry.list_digests:type_name -> storage.TagCacheEntry.ListDigestsEntry
-	6, // 4: storage.TagMetadata.created:type_name -> google.protobuf.Timestamp
-	5, // 5: storage.TagMetadata.architectures:type_name -> storage.TagMetadata.Platform
-	6, // 6: storage.TagMetadata.Platform.created:type_name -> google.protobuf.Timestamp
-	7, // [7:7] is the sub-list for method output_type
-	7, // [7:7] is the sub-list for method input_type
-	7, // [7:7] is the sub-list for extension type_name
-	7, // [7:7] is the sub-list for extension extendee
-	0, // [0:7] is the sub-list for field type_name
+	4, // 2: storage.BaseImageTag.created:type_name -> google.protobuf.Timestamp
+	3, // 3: storage.BaseImageTag.list_digests:type_name -> storage.BaseImageTag.ListDigestsEntry
+	4, // [4:4] is the sub-list for method output_type
+	4, // [4:4] is the sub-list for method input_type
+	4, // [4:4] is the sub-list for extension type_name
+	4, // [4:4] is the sub-list for extension extendee
+	0, // [0:4] is the sub-list for field type_name
 }
 
 func init() { file_storage_base_image_repository_proto_init() }
@@ -512,7 +345,7 @@ func file_storage_base_image_repository_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_storage_base_image_repository_proto_rawDesc), len(file_storage_base_image_repository_proto_rawDesc)),
 			NumEnums:      1,
-			NumMessages:   5,
+			NumMessages:   3,
 			NumExtensions: 0,
 			NumServices:   0,
 		},
