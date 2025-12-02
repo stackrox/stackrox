@@ -1,5 +1,5 @@
 import type { ReactElement } from 'react';
-import { Checkbox, Form, FormSelect, PageSection, TextInput } from '@patternfly/react-core';
+import { Checkbox, Form, PageSection, SelectOption, TextInput } from '@patternfly/react-core';
 import * as yup from 'yup';
 import merge from 'lodash/merge';
 
@@ -9,6 +9,7 @@ import FormMessage from 'Components/PatternFly/FormMessage';
 import FormTestButton from 'Components/PatternFly/FormTestButton';
 import FormSaveButton from 'Components/PatternFly/FormSaveButton';
 import FormCancelButton from 'Components/PatternFly/FormCancelButton';
+import SelectSingle from 'Components/SelectSingle';
 
 import usePageState from '../../hooks/usePageState';
 import useIntegrationForm from '../useIntegrationForm';
@@ -16,7 +17,7 @@ import type { IntegrationFormProps } from '../integrationFormTypes';
 
 import IntegrationFormActions from '../IntegrationFormActions';
 import FormLabelGroup from '../FormLabelGroup';
-import AwsRegionOptions from '../AwsRegionOptions';
+import { regionOptions } from '../awsRegionOptions';
 
 export type AwsSecurityHubIntegration = {
     awsSecurityHub: {
@@ -103,7 +104,7 @@ export const defaultValues: AwsSecurityHubIntegrationFormValues = {
         name: '',
         awsSecurityHub: {
             accountId: '',
-            region: '',
+            region: 'us-east-1',
             credentials: {
                 accessKeyId: '',
                 secretAccessKey: '',
@@ -208,15 +209,19 @@ function AwsSecurityHubIntegrationForm({
                         touched={touched}
                         errors={errors}
                     >
-                        <FormSelect
+                        <SelectSingle
                             id="notifier.awsSecurityHub.region"
                             value={values.notifier.awsSecurityHub.region}
-                            onChange={(event, value) => onChange(value, event)}
-                            onBlur={handleBlur}
+                            handleSelect={setFieldValue}
                             isDisabled={!isEditable}
+                            placeholderText="Choose one..."
                         >
-                            <AwsRegionOptions />
-                        </FormSelect>
+                            {regionOptions.map((option) => (
+                                <SelectOption key={option.value} value={option.value}>
+                                    {option.label}
+                                </SelectOption>
+                            ))}
+                        </SelectSingle>
                     </FormLabelGroup>
                     {!isCreating && isEditable && (
                         <FormLabelGroup
