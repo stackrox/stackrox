@@ -162,8 +162,8 @@ function PolicyDetail({
 
     return (
         <>
-            <PageSection variant="light" isFilled id="policy-page" className="pf-v5-u-pb-0">
-                <Breadcrumb className="pf-v5-u-mb-md">
+            <PageSection hasBodyWrapper={false} isFilled id="policy-page" className="pf-v6-u-pb-0">
+                <Breadcrumb className="pf-v6-u-mb-md">
                     <BreadcrumbItemLink to={policiesBasePath}>Policies</BreadcrumbItemLink>
                     <BreadcrumbItem isActive>{name}</BreadcrumbItem>
                 </Breadcrumb>
@@ -179,7 +179,7 @@ function PolicyDetail({
                                 <Label color="green">Enabled</Label>
                             )}
                         </ToolbarItem>
-                        <ToolbarItem align={{ default: 'alignRight' }}>
+                        <ToolbarItem align={{ default: 'alignEnd' }}>
                             <MenuDropdown
                                 popperProps={{
                                     position: 'end',
@@ -242,12 +242,12 @@ function PolicyDetail({
                     </ToolbarContent>
                 </Toolbar>
             </PageSection>
-            <PageSection variant="light" isFilled className="pf-v5-u-pt-0">
+            <PageSection hasBodyWrapper={false} isFilled className="pf-v6-u-pt-0">
                 {requestError}
-                <Title headingLevel="h2" className="pf-v5-u-mb-md">
+                <Title headingLevel="h2" className="pf-v6-u-mb-md">
                     Policy details
                 </Title>
-                <Divider component="div" className="pf-v5-u-pb-md" />
+                <Divider component="div" className="pf-v6-u-pb-md" />
                 <PolicyDetailContent policy={policy} />
                 <AlertGroup isToast isLiveRegion>
                     {toasts.map(({ key, variant, title, children }: Toast) => (
@@ -310,7 +310,7 @@ function PolicyDetail({
                     <FlexItem>
                         <strong>Important</strong>: If you are committing the saved custom resource
                         to a source control repository, replace the policy name in the{' '}
-                        <code className="pf-v5-u-font-family-monospace">policyName</code> field to
+                        <code className="pf-v6-u-font-family-monospace">policyName</code> field to
                         avoid overwriting existing policies.
                     </FlexItem>
                 </Flex>

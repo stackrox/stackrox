@@ -9,7 +9,7 @@ import { selectors as vulnSelectors } from './vulnerabilities.selectors';
  */
 export function getSeverityLabelCounts(labelParentElement: HTMLElement) {
     const labelValues = Array.from(
-        labelParentElement.querySelectorAll('.severity-count-labels > div .pf-v5-c-label__text')
+        labelParentElement.querySelectorAll('.severity-count-labels > div .pf-v6-c-label__text')
     ).map((el) => {
         const value = parseInt(el.textContent ?? '', 10);
         return Number.isNaN(value) ? null : value;

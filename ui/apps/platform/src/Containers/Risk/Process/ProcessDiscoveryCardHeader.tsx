@@ -54,7 +54,12 @@ function ProcessDiscoveryCardHeader({
     }
 
     const trimmedName = name.length > 48 ? `${name.substring(0, 48)}...` : name;
-    const style = suspicious ? { backgroundColor: 'var(--pf-v5-global--palette--red-50)' } : {};
+    const style = suspicious
+        ? {
+              backgroundColor:
+                  'var(--pf-t--temp--dev--tbd)' /* CODEMODS: original v5 color was --pf-v5-global--palette--red-50 */,
+          }
+        : {};
     return (
         <div className={`${titleClassName} ${headerClassName}`} style={style}>
             <div className="p-3 text-base-600 flex flex-col">
@@ -63,7 +68,7 @@ function ProcessDiscoveryCardHeader({
                     {suspicious && (
                         <ExclamationCircleIcon
                             className="ml-4"
-                            color="var(--pf-v5-global--danger-color--100)"
+                            color="var(--pf-t--temp--dev--tbd)" /* CODEMODS: original v5 color was --pf-v5-global--danger-color--100 */
                         />
                     )}
                 </div>

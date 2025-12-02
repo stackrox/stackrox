@@ -1,8 +1,8 @@
-.network-graph.pf-v5-c-page__main-section.no-padding {
-    --pf-v5-c-page__main-section--PaddingTop: 0;
-    --pf-v5-c-page__main-section--PaddingBottom: 0;
-    --pf-v5-c-page__main-section--PaddingLeft: 0;
-    --pf-v5-c-page__main-section--PaddingRight: 0;
+.network-graph.pf-v6-c-page__main-section.no-padding {
+    --pf-v6-c-page__main-section--PaddingBlockStart: 0;
+    --pf-v6-c-page__main-section--PaddingBlockEnd: 0;
+    --pf-v6-c-page__main-section--PaddingInlineStart: 0;
+    --pf-v6-c-page__main-section--PaddingInlineEnd: 0;
 }
 
 /* Prevent the network graph from overflowing the parent flex container */
@@ -17,13 +17,13 @@
 }
 
 /* simple solution to prevent user from making sidebar too narrow */
-.pf-v5-c-drawer__panel.pf-m-resizable {
+.pf-v6-c-drawer__panel.pf-m-resizable {
     min-width: 430px !important;
 }
 
-.pf-v5-c-drawer__panel .pf-v5-c-dropdown__toggle.pf-m-plain:not(.pf-m-text) {
-    padding-left: var(--pf-v5-global--spacer--xs) !important;
-    padding-right: var(--pf-v5-global--spacer--xs) !important;
+.pf-v6-c-drawer__panel .pf-v6-c-dropdown__toggle.pf-m-plain:not(.pf-m-text) {
+    padding-left: var(--pf-t--global--spacer--xs) !important;
+    padding-right: var(--pf-t--global--spacer--xs) !important;
 }
 
 /* Create a stacking context that is higher than the context for the network-graph-toolbar component
@@ -44,7 +44,7 @@
 }
 
 /* Restore grayed out background for disabled checkboxes */
-.network-graph-selector-bar .pf-v5-c-check__input:disabled {
+.network-graph-selector-bar .pf-v6-c-check__input:disabled {
     background-color: rgba(59, 59, 59, 0.3);
 }
 
@@ -70,13 +70,13 @@ div#topology-resize-panel table td {
     stroke-dasharray: 5;
 }
 
-.pf-v5-c-check__input {
+.pf-v6-c-check__input {
     height: 16px;
     width: 16px;
 }
 
-.namespace-select .pf-v5-c-select__menu,
-.deployment-select .pf-v5-c-select__menu {
+.namespace-select .pf-v6-c-select__menu,
+.deployment-select .pf-v6-c-select__menu {
     padding-top: 0;
     padding-bottom: 0;
     min-width: 220px;

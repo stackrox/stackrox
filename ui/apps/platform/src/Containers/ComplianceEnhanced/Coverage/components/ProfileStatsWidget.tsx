@@ -1,5 +1,11 @@
 import { useState } from 'react';
-import { Chart, ChartAxis, ChartBar, ChartContainer, ChartLabel } from '@patternfly/react-charts';
+import {
+    Chart,
+    ChartAxis,
+    ChartBar,
+    ChartContainer,
+    ChartLabel,
+} from '@patternfly/react-charts/victory';
 import { Bullseye, Spinner } from '@patternfly/react-core';
 import { ExclamationCircleIcon } from '@patternfly/react-icons';
 
@@ -52,7 +58,7 @@ function ProfileStatsWidget({ error, isLoading, profileScanStats }: ProfileStats
                     title="Error loading profile stats"
                     headingLevel="h3"
                     icon={ExclamationCircleIcon}
-                    iconClassName="pf-v5-u-danger-color-100"
+                    iconClassName="pf-v6-u-danger-color-100"
                 >
                     {getAxiosErrorMessage(error.message)}
                 </EmptyStateTemplate>

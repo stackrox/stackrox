@@ -16,7 +16,7 @@ export type VirtualMachinePageDetailsProps = {
 function VirtualMachinePageDetails({ virtualMachine }: VirtualMachinePageDetailsProps) {
     const facts = virtualMachine?.facts ?? {};
     return (
-        <PageSection variant="light" isFilled padding={{ default: 'padding' }}>
+        <PageSection hasBodyWrapper={false} isFilled padding={{ default: 'padding' }}>
             <DescriptionList>
                 <DescriptionListGroup>
                     <DescriptionListTerm>Status</DescriptionListTerm>

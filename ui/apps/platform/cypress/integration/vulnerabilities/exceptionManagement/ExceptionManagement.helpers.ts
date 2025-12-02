@@ -141,7 +141,7 @@ export function approveRequest() {
     getInputByLabel('Approval rationale').type('Approved');
     cy.get('div[role="dialog"] button:contains("Approve")').click();
     cy.get('div[role="dialog"]').should('not.exist');
-    cy.get('div.pf-v5-c-alert.pf-m-success').should(
+    cy.get('div.pf-v6-c-alert.pf-m-success').should(
         'contain',
         'The vulnerability request was successfully approved.'
     );
@@ -154,7 +154,7 @@ export function denyRequest() {
     getInputByLabel('Denial rationale').type('Denied');
     cy.get('div[role="dialog"] button:contains("Deny")').click();
     cy.get('div[role="dialog"]').should('not.exist');
-    cy.get('div.pf-v5-c-alert.pf-m-success').should(
+    cy.get('div.pf-v6-c-alert.pf-m-success').should(
         'contain',
         'The vulnerability request was successfully denied.'
     );

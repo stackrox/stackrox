@@ -2,10 +2,10 @@ import type { ReactElement, ReactNode } from 'react';
 import {
     Breadcrumb,
     BreadcrumbItem,
+    Content,
     Flex,
     FlexItem,
     PageSection,
-    Text,
     Title,
 } from '@patternfly/react-core';
 
@@ -25,7 +25,7 @@ function ClusterRegistrationSecretsHeader({
     title,
 }: ClusterRegistrationSecretsHeaderProps): ReactElement {
     return (
-        <PageSection component="div" variant="light">
+        <PageSection hasBodyWrapper={false} component="div">
             <PageTitle title={title} />
             <Flex direction={{ default: 'column' }}>
                 <Breadcrumb>
@@ -43,10 +43,10 @@ function ClusterRegistrationSecretsHeader({
                         spaceItems={{ default: 'spaceItemsSm' }}
                     >
                         <Title headingLevel="h1">{title}</Title>
-                        <Text>
+                        <Content component="p">
                             Cluster registration secrets contain secrets for secured cluster
                             services to establish initial trust with Central.
-                        </Text>
+                        </Content>
                     </Flex>
                     {headerActions && (
                         <FlexItem align={{ default: 'alignRight' }}>{headerActions}</FlexItem>

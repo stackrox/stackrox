@@ -1,15 +1,15 @@
 import {
     Alert,
     Button,
+    Content,
     DescriptionList,
     DescriptionListDescription,
     DescriptionListGroup,
     DescriptionListTerm,
     Flex,
-    Modal,
-    Text,
     Title,
 } from '@patternfly/react-core';
+import { Modal } from '@patternfly/react-core/deprecated';
 import Raven from 'raven-js';
 
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
@@ -60,7 +60,7 @@ function GenerateSbomModal(props: GenerateSbomModalProps) {
             variant="medium"
             header={
                 <Flex
-                    className="pf-v5-u-mr-md"
+                    className="pf-v6-u-mr-md"
                     justifyContent={{ default: 'justifyContentSpaceBetween' }}
                     alignItems={{ default: 'alignItemsCenter' }}
                 >
@@ -82,11 +82,11 @@ function GenerateSbomModal(props: GenerateSbomModalProps) {
             ]}
         >
             <Flex direction={{ default: 'column' }} spaceItems={{ default: 'spaceItemsLg' }}>
-                <Text>
+                <Content component="p">
                     Generate and download the Software Bill of Materials (SBOM) in SPDX 2.3 format.
                     This file contains a detailed list of all components and dependencies included
                     in the image.
-                </Text>
+                </Content>
                 <DescriptionList isHorizontal>
                     <DescriptionListGroup>
                         <DescriptionListTerm>Selected image:</DescriptionListTerm>

@@ -383,7 +383,7 @@ function ImageCvePage({
             <PageTitle
                 title={`${pageTitle} - ImageCVE ${metadataRequest.data?.imageCVE?.cve ?? ''}`}
             />
-            <PageSection variant="light" className="pf-v5-u-py-md">
+            <PageSection hasBodyWrapper={false} className="pf-v6-u-py-md">
                 <Breadcrumb>
                     <BreadcrumbItemLink to={workloadCveOverviewCvePath}>CVEs</BreadcrumbItemLink>
                     {!metadataRequest.error && (
@@ -396,7 +396,7 @@ function ImageCvePage({
                 </Breadcrumb>
             </PageSection>
             <Divider component="div" />
-            <PageSection variant="light">
+            <PageSection hasBodyWrapper={false}>
                 {metadataRequest.error ? (
                     <TableErrorComponent
                         error={metadataRequest.error}
@@ -410,8 +410,9 @@ function ImageCvePage({
             </PageSection>
             <Divider component="div" />
             <PageSection
+                hasBodyWrapper={false}
                 id={vulnStateTabContentId}
-                className="pf-v5-u-display-flex pf-v5-u-flex-direction-column pf-v5-u-flex-grow-1"
+                className="pf-v6-u-display-flex pf-v6-u-flex-direction-column pf-v6-u-flex-grow-1"
             >
                 {showVulnerabilityStateTabs && (
                     <VulnerabilityStateTabs
@@ -423,10 +424,10 @@ function ImageCvePage({
                         }}
                     />
                 )}
-                <div className="pf-v5-u-background-color-100">
-                    <div className="pf-v5-u-px-sm">
+                <div className="pf-v6-u-background-color-100">
+                    <div className="pf-v6-u-px-sm">
                         <AdvancedFiltersToolbar
-                            className="pf-v5-u-py-md"
+                            className="pf-v6-u-py-md"
                             searchFilterConfig={searchFilterConfig}
                             defaultSearchFilterEntity="Image"
                             searchFilter={searchFilter}
@@ -452,7 +453,7 @@ function ImageCvePage({
                             loadingText="Loading image CVE summary data"
                             renderer={({ data }) => (
                                 <AffectedImages
-                                    className="pf-v5-u-h-100"
+                                    className="pf-v6-u-h-100"
                                     affectedImageCount={severitySummary.affectedImageCount}
                                     totalImagesCount={data.totalImageCount}
                                 />
@@ -472,10 +473,10 @@ function ImageCvePage({
                     </SummaryCardLayout>
                 </div>
                 <Divider />
-                <div className="pf-v5-u-background-color-100 pf-v5-u-flex-grow-1">
+                <div className="pf-v6-u-background-color-100 pf-v6-u-flex-grow-1">
                     <Split
                         hasGutter
-                        className="pf-v5-u-px-lg pf-v5-u-py-md pf-v5-u-align-items-baseline"
+                        className="pf-v6-u-px-lg pf-v6-u-py-md pf-v6-u-align-items-baseline"
                     >
                         <SplitItem isFilled>
                             <Flex alignItems={{ default: 'alignItemsCenter' }}>
@@ -517,7 +518,7 @@ function ImageCvePage({
                         </SplitItem>
                     </Split>
                     <Divider />
-                    <div className="pf-v5-u-px-lg" style={{ overflowX: 'auto' }}>
+                    <div className="pf-v6-u-px-lg" style={{ overflowX: 'auto' }}>
                         {entityTab === 'Image' && (
                             <AffectedImagesTable
                                 tableState={imageTableState}

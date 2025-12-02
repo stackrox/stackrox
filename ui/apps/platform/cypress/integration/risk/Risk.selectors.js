@@ -58,12 +58,12 @@ export const selectors = {
     eventTimeline: eventTimelineSelectors,
     tooltip: {
         ...tooltipSelectors,
-        legendContents: `${tooltipSelectors.overlay} .pf-v5-c-tooltip__content`,
+        legendContents: `${tooltipSelectors.overlay} .pf-v6-c-tooltip__content`,
         legendContent: {
             event: eventSelectors,
         },
         getUidFieldIconSelector: (type) =>
-            `.pf-v5-c-tooltip__content svg[color="var(--pf-v5-global--${type}-color--100)"]`,
+            `.pf-v6-c-tooltip__content svg[color="var(--pf-v5-global--${type}-color--100)"]`,
         bodyContent: scopeSelectors(tooltipSelectors.body, {
             eventDetails: 'ul > li',
         }),

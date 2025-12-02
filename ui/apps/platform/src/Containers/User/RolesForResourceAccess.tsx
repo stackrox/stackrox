@@ -7,12 +7,18 @@ import { userBasePath } from 'routePaths';
 
 const forbiddenIcon = (
     <Icon size="sm">
-        <TimesIcon color="var(--pf-v5-global--danger-color--100)" aria-label="forbidden" />
+        <TimesIcon
+            color="var(--pf-t--temp--dev--tbd)"
+            /* CODEMODS: original v5 color was --pf-v5-global--danger-color--100 */ aria-label="forbidden"
+        />
     </Icon>
 );
 const permittedIcon = (
     <Icon size="sm">
-        <CheckIcon color="var(--pf-v5-global--success-color--100)" aria-label="permitted" />
+        <CheckIcon
+            color="var(--pf-t--temp--dev--tbd)"
+            /* CODEMODS: original v5 color was --pf-v5-global--success-color--100 */ aria-label="permitted"
+        />
     </Icon>
 );
 
@@ -27,7 +33,7 @@ function RolesForResourceAccess({ roleNames }: RolesForResourceAccessProps): Rea
         return (
             <Flex spaceItems={{ default: 'spaceItemsSm' }}>
                 {forbiddenIcon}
-                <span className="pf-v5-u-text-nowrap">No roles</span>
+                <span className="pf-v6-u-text-nowrap">No roles</span>
             </Flex>
         );
     }

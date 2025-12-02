@@ -260,7 +260,10 @@ function Roles(): ReactElement {
                     entityName={action === 'create' ? 'Create role' : role?.name}
                 />
             )}
-            <PageSection variant={isList ? PageSectionVariants.default : PageSectionVariants.light}>
+            <PageSection
+                hasBodyWrapper={false}
+                variant={isList ? PageSectionVariants.default : PageSectionVariants.light}
+            >
                 {alertRoles}
                 {alertPermissionSets}
                 {alertAccessScopes}

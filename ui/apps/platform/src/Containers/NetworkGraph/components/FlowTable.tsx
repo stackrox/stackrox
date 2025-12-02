@@ -40,7 +40,7 @@ export function FlowTable({
     return (
         <>
             <ToolbarContent>
-                <ToolbarItem variant="pagination" align={{ default: 'alignRight' }}>
+                <ToolbarItem variant="pagination" align={{ default: 'alignEnd' }}>
                     <Pagination
                         itemCount={flowCount}
                         page={page}

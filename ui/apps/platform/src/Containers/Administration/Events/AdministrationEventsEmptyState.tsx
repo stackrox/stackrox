@@ -1,14 +1,5 @@
 import type { ReactElement } from 'react';
-import {
-    Bullseye,
-    EmptyState,
-    EmptyStateBody,
-    EmptyStateHeader,
-    EmptyStateIcon,
-    Flex,
-    Text,
-    Title,
-} from '@patternfly/react-core';
+import { Bullseye, Content, EmptyState, EmptyStateBody, Flex, Title } from '@patternfly/react-core';
 import { SearchIcon } from '@patternfly/react-icons';
 import { Tbody, Td, Tr } from '@patternfly/react-table';
 
@@ -27,14 +18,15 @@ function AdministrationEventsEmptyState({
                 <Td colSpan={colSpan}>
                     <Bullseye>
                         {hasFilter ? (
-                            <EmptyState>
-                                <EmptyStateHeader icon={<EmptyStateIcon icon={SearchIcon} />} />
+                            <EmptyState icon={SearchIcon}>
                                 <EmptyStateBody>
                                     <Flex direction={{ default: 'column' }}>
                                         <Title headingLevel="h2">
                                             No administration events found
                                         </Title>
-                                        <Text>Modify filters and try again</Text>
+                                        <Content component="p">
+                                            Modify filters and try again
+                                        </Content>
                                     </Flex>
                                 </EmptyStateBody>
                             </EmptyState>

@@ -28,9 +28,9 @@ function DeploymentsAtMostRiskTable({
         <Table aria-label="Deployments at most risk" variant="compact" borders={false}>
             <Thead>
                 <Tr>
-                    <Th className="pf-v5-u-pl-0">Deployment</Th>
+                    <Th className="pf-v6-u-pl-0">Deployment</Th>
                     <Th>Resource location</Th>
-                    <Th className="pf-v5-u-pr-0 pf-v5-u-text-align-center-on-md">Risk priority</Th>
+                    <Th className="pf-v6-u-pr-0 pf-v6-u-text-align-center-on-md">Risk priority</Th>
                 </Tr>
             </Thead>
             <Tbody>
@@ -42,7 +42,7 @@ function DeploymentsAtMostRiskTable({
                     });
                     return (
                         <Tr key={deploymentId}>
-                            <Td className="pf-v5-u-pl-0" dataLabel="Deployment">
+                            <Td className="pf-v6-u-pl-0" dataLabel="Deployment">
                                 <Link
                                     to={riskPageLinkToDeployment(deploymentId, name, searchFilter)}
                                 >
@@ -58,7 +58,7 @@ function DeploymentsAtMostRiskTable({
                             </Td>
                             <Td
                                 width={20}
-                                className="pf-v5-u-pr-0 pf-v5-u-text-align-center-on-md"
+                                className="pf-v6-u-pr-0 pf-v6-u-text-align-center-on-md"
                                 dataLabel="Risk priority"
                             >
                                 {priority}
