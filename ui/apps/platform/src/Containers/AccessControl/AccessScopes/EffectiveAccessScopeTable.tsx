@@ -305,7 +305,7 @@ function EffectiveAccessScopeTable({
                                 className={
                                     counterComputing === 0
                                         ? ''
-                                        : '--pf-t--temp--dev--tbd' /* CODEMODS: original v5 color was --pf-v5-global--Color--200 */
+                                        : '--pf-t--global--text--color--subtle'
                                 }
                             >
                                 Allowed

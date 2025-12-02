@@ -28,7 +28,7 @@
 }
 
 #search-page .pf-v6-c-nav__link {
-    color: var(--pf-t--temp--dev--tbd /* CODEMODS: original v5 color was:--pf-v5-global--Color--100 */); /* instead of blue to avoid confusion with links in table */
+    color: var(--pf-t--global--text--color--regular); /* instead of blue to avoid confusion with links in table */
     /* font-size and spacing of sub nav link which is compatible with table row */
     font-size: var(--pf-t--global--font--size--sm);
     padding-top: var(--pf-t--global--spacer--sm);

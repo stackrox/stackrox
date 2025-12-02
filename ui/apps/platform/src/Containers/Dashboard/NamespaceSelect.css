@@ -6,7 +6,7 @@ what cluster the visible namespaces belong to.
 .namespace-select .pf-v6-c-select__menu-group-title {
   position: sticky;
   top: calc(var(--pf-v5-c-select__menu--PaddingTop) * -1);
-  border-bottom: 1px solid var(--pf-t--temp--dev--tbd /* CODEMODS: original v5 color was:--pf-v5-global--BorderColor--100 */);
+  border-bottom: 1px solid var(--pf-t--global--border--color--default);
   background-color: var(--pf-v5-c-select__menu--BackgroundColor);
   z-index: 1;
 }

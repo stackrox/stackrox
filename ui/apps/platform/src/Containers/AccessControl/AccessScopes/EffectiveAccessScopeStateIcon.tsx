@@ -11,11 +11,11 @@ import {
 import type { EffectiveAccessScopeState } from 'services/AccessScopesService';
 
 const notAllowedColor =
-    'var(--pf-t--temp--dev--tbd)'; /* CODEMODS: original v5 color was --pf-v5-global--danger-color--100 */
+    'var(--pf-t--global--color--status--danger--default)';
 const allowedColor =
-    'var(--pf-t--temp--dev--tbd)'; /* CODEMODS: original v5 color was --pf-v5-global--success-color--100 */
+    'var(--pf-t--global--icon--color--status--success--default)';
 const unknownColor =
-    'var(--pf-t--temp--dev--tbd)'; /* CODEMODS: original v5 color was --pf-v5-global--warning-color--100 */
+    'var(--pf-t--global--icon--color--status--warning--hover)';
 
 /*
  * Tooltip has key prop to replace the previous tooltip if status changes.

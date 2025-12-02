@@ -223,7 +223,7 @@ function ViewVulnReportPage() {
                                 <Divider component="li" key="execution-danger-separator" />
                                 <DropdownItem
                                     key="Delete report"
-                                    className="pf-v6-u-danger-color-100"
+                                    className="pf-v6-u-text-color-status-danger"
                                     onClick={() => {
                                         openDeleteModal([reportConfiguration.id]);
                                     }}

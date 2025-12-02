@@ -20,7 +20,7 @@ function ComponentLocation({ location, source }: ComponentLocationProps) {
                         <Tooltip content="Location is unavailable for operating system packages">
                             <Icon>
                                 <InfoCircleIcon
-                                    color="var(--pf-t--temp--dev--tbd)" /* CODEMODS: original v5 color was --pf-v5-global--info-color--100 */
+                                    color="var(--pf-t--global--color--status--info--default)"
                                 />
                             </Icon>
                         </Tooltip>
