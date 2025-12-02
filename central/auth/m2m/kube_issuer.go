@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"os"
 	"strings"
 	"testing"
 
@@ -14,6 +15,8 @@ import (
 	"github.com/stackrox/rox/pkg/utils"
 	"k8s.io/client-go/rest"
 )
+
+const k8sSATokenFile = "/var/run/secrets/kubernetes.io/serviceaccount/token"
 
 var (
 	serviceAccountIssuer      string
@@ -75,4 +78,8 @@ func getKubernetesIssuer() (string, error) {
 	}
 
 	return discovery.Issuer, nil
+}
+
+func k8sSATokenReader() ([]byte, error) {
+	return os.ReadFile(k8sSATokenFile)
 }

@@ -27,6 +27,11 @@ func tokenVerifierFromConfig(ctx context.Context, config *storage.AuthMachineToM
 		return nil, errors.Wrap(err, "creating TLS config for token verification")
 	}
 	roundTripper := proxy.RoundTripper(proxy.WithTLSConfig(tlsConfig))
+	if config.GetType() == storage.AuthMachineToMachineConfig_KUBE_SERVICE_ACCOUNT {
+		// By default k8s requires authentication to fetch the OIDC resources for service account tokens
+		// https://kubernetes.io/docs/tasks/configure-pod-container/configure-service-account/#service-account-issuer-discovery
+		roundTripper = &authenticatedRoundTripper{roundTripper, k8sSATokenReader}
+	}
 	provider, err := oidc.NewProvider(
 		oidc.ClientContext(ctx, &http.Client{Timeout: time.Minute, Transport: roundTripper}),
 		config.GetIssuer(),
