@@ -22,9 +22,5 @@ jobs:
     steps:
     - name: Tag Konflux Maintainers for review
       run: |
-        exec gh api \
-          --method POST \
-          -H "Accept: application/vnd.github+json" \
-          -H "X-GitHub-Api-Version: 2022-11-28" \
-          "/repos/${{ github.repository }}/pulls/${{ github.event.pull_request.number }}/requested_reviewers" \
-          --input - <<< '{ "team_reviewers": [ "konflux-maintainers" ] }'
+        gh pr --repo "${{ github.repository }}" edit "${{ github.event.pull_request.number }}" \
+          --add-reviewer stackrox/konflux-maintainers
