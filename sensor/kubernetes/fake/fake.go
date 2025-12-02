@@ -40,8 +40,8 @@ const (
 
 	defaultNamespaceNum = 30
 
-	// Starting CID for VM population. In reality, only several first IDs are reserved.
-	// Here, the number is an ID and a part of the name and it's value does not matter as long as it's unique.
+	// Starting CID for VM population. This is used as a part of the name and its value does not matter
+	// as long as it is unique and different than 0, 1, and 2 (reserved values).
 	vmBaseVSOCKCID = uint32(1000)
 )
 
@@ -319,7 +319,6 @@ func (w *WorkloadManager) SetVMIndexReportHandler(handler index.Handler) {
 }
 
 // SetVMStore sets the VirtualMachineStore
-// Note: populateFakeVMs is now called in manageVMIndexReportsWithPopulation
 func (w *WorkloadManager) SetVMStore(store *vmStore.VirtualMachineStore) {
 	log.Debugf("SetVMStore called: store=%p, workload.NumVMs=%d", store, w.workload.VMIndexReportWorkload.NumVMs)
 	w.vmStore = store

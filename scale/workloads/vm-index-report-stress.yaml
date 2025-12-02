@@ -1,6 +1,6 @@
 # VM Index Report Stress Test Workload
 # This workload focuses on stress-testing the VM index report processing pipeline
-# by generating a high volume of VM index reports with varying configurations.
+# by generating a stream of VM index reports.
 # It includes a small background load from other system components to simulate
 # a more realistic production environment.
 
