@@ -1,6 +1,7 @@
 import {
     Bullseye,
     Card,
+    Content,
     DescriptionList,
     DescriptionListDescription,
     DescriptionListGroup,
@@ -10,7 +11,6 @@ import {
     FlexItem,
     PageSection,
     Spinner,
-    Text,
 } from '@patternfly/react-core';
 import { gql, useQuery } from '@apollo/client';
 
@@ -87,12 +87,17 @@ function DeploymentPageDetails({ deploymentId }: DeploymentPageDetailsProps) {
 
     return (
         <>
-            <PageSection component="div" variant="light" className="pf-v5-u-py-md pf-v5-u-px-xl">
-                <Text>View details about this deployment</Text>
+            <PageSection
+                hasBodyWrapper={false}
+                component="div"
+                className="pf-v6-u-py-md pf-v6-u-px-xl"
+            >
+                <Content component="p">View details about this deployment</Content>
             </PageSection>
             <Divider component="div" />
             <PageSection
-                className="pf-v5-u-display-flex pf-v5-u-flex-direction-column pf-v5-u-flex-grow-1"
+                hasBodyWrapper={false}
+                className="pf-v6-u-display-flex pf-v6-u-flex-direction-column pf-v6-u-flex-grow-1"
                 component="div"
             >
                 {error && (
@@ -107,7 +112,7 @@ function DeploymentPageDetails({ deploymentId }: DeploymentPageDetailsProps) {
                     </Bullseye>
                 )}
                 {deploymentDetailsData && (
-                    <Card className="pf-v5-u-m-md pf-v5-u-p-md" isFlat>
+                    <Card className="pf-v6-u-m-md pf-v6-u-p-md">
                         <Flex
                             direction={{ default: 'column' }}
                             spaceItems={{ default: 'spaceItemsLg' }}

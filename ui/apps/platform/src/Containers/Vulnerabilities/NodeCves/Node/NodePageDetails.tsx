@@ -2,6 +2,7 @@ import {
     Bullseye,
     Card,
     CardBody,
+    Content,
     DescriptionList,
     DescriptionListDescription,
     DescriptionListGroup,
@@ -9,7 +10,6 @@ import {
     Flex,
     PageSection,
     Spinner,
-    Text,
 } from '@patternfly/react-core';
 import { ExclamationCircleIcon } from '@patternfly/react-icons';
 
@@ -28,10 +28,18 @@ function NodePageDetails({ nodeId }: NodePageDetailsProps) {
 
     return (
         <>
-            <PageSection component="div" variant="light" className="pf-v5-u-py-md pf-v5-u-px-xl">
-                <Text>View details about this node</Text>
+            <PageSection
+                hasBodyWrapper={false}
+                component="div"
+                className="pf-v6-u-py-md pf-v6-u-px-xl"
+            >
+                <Content component="p">View details about this node</Content>
             </PageSection>
-            <PageSection isFilled className="pf-v5-u-display-flex pf-v5-u-flex-direction-column">
+            <PageSection
+                hasBodyWrapper={false}
+                isFilled
+                className="pf-v6-u-display-flex pf-v6-u-flex-direction-column"
+            >
                 <Card>
                     <CardBody>
                         {error ? (
@@ -40,7 +48,7 @@ function NodePageDetails({ nodeId }: NodePageDetailsProps) {
                                     title="There was an error loading the node details"
                                     headingLevel="h2"
                                     icon={ExclamationCircleIcon}
-                                    iconClassName="pf-v5-u-danger-color-100"
+                                    iconClassName="pf-v6-u-danger-color-100"
                                 >
                                     {getAxiosErrorMessage(error)}
                                 </EmptyStateTemplate>

@@ -6,7 +6,7 @@ import {
 } from '../../helpers/systemHealth';
 
 const statusSelector =
-    'div:has(.pf-v5-c-card__header:contains("StackRox Scanner Vulnerability Definitions"))';
+    'div:has(.pf-v6-c-card__header:contains("StackRox Scanner Vulnerability Definitions"))';
 
 describe('System Health Vulnerability Definitions', () => {
     withAuth();

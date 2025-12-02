@@ -1,14 +1,8 @@
 import { useCallback, useState } from 'react';
 import type { ReactElement } from 'react';
 import { Link } from 'react-router-dom-v5-compat';
-import {
-    Button,
-    Modal,
-    ModalBoxBody,
-    ModalBoxFooter,
-    PageSection,
-    TextInput,
-} from '@patternfly/react-core';
+import { Button, PageSection, TextInput } from '@patternfly/react-core';
+import { Modal, ModalBoxBody, ModalBoxFooter } from '@patternfly/react-core/deprecated';
 import { Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 import isEqual from 'lodash/isEqual';
 import pluralize from 'pluralize';
@@ -90,7 +84,7 @@ function TableModal({
                 hasNoBodyWrapper
             >
                 <ModalBoxBody>
-                    <PageSection variant="light">
+                    <PageSection hasBodyWrapper={false}>
                         {!!rows.length && (
                             <>
                                 Select {typeText}s from the table below.

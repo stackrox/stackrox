@@ -150,18 +150,18 @@ function DeploymentBaseline({ deployment, deploymentId, onNodeSelect }: Deployme
     }
 
     return (
-        <div className="pf-v5-u-h-100 pf-v5-u-p-md">
+        <div className="pf-v6-u-h-100 pf-v6-u-p-md">
             {errorMessage && (
                 <Alert
                     isInline
                     variant="danger"
                     title={errorMessage}
                     component="p"
-                    className="pf-v5-u-mb-sm"
+                    className="pf-v6-u-mb-sm"
                 />
             )}
             <Stack>
-                <StackItem className="pf-v5-u-pb-md">
+                <StackItem className="pf-v6-u-pb-md">
                     <Flex alignItems={{ default: 'alignItemsCenter' }}>
                         <FlexItem>
                             <Switch
@@ -183,7 +183,7 @@ function DeploymentBaseline({ deployment, deploymentId, onNodeSelect }: Deployme
                                     </div>
                                 }
                             >
-                                <HelpIcon className="pf-v5-u-color-200" />
+                                <HelpIcon className="pf-v6-u-color-200" />
                             </Tooltip>
                         </FlexItem>
                     </Flex>
@@ -205,15 +205,15 @@ function DeploymentBaseline({ deployment, deploymentId, onNodeSelect }: Deployme
                         </FlexItem>
                     </Flex>
                 </StackItem>
-                <Divider component="hr" className="pf-v5-u-py-md" />
-                <StackItem className="pf-v5-u-pb-md">
-                    <Toolbar className="pf-v5-u-p-0">
-                        <ToolbarContent className="pf-v5-u-px-0">
+                <Divider component="hr" className="pf-v6-u-py-md" />
+                <StackItem className="pf-v6-u-pb-md">
+                    <Toolbar className="pf-v6-u-p-0">
+                        <ToolbarContent className="pf-v6-u-px-0">
                             <ToolbarItem>
                                 <FlowsTableHeaderText type="baseline" numFlows={numBaselines} />
                             </ToolbarItem>
                             {hasWriteAccessForActions && (
-                                <ToolbarItem align={{ default: 'alignRight' }}>
+                                <ToolbarItem align={{ default: 'alignEnd' }}>
                                     <FlowsBulkActions
                                         type="baseline"
                                         selectedRows={selectedRows}
@@ -241,9 +241,9 @@ function DeploymentBaseline({ deployment, deploymentId, onNodeSelect }: Deployme
                         onSelectFlow={onSelectFlow}
                     />
                 </StackItem>
-                <StackItem className="pf-v5-u-pt-md">
+                <StackItem className="pf-v6-u-pt-md">
                     <Flex
-                        className="pf-v5-u-pb-md"
+                        className="pf-v6-u-pb-md"
                         direction={{ default: 'column' }}
                         spaceItems={{ default: 'spaceItemsMd' }}
                         alignItems={{ default: 'alignItemsCenter' }}

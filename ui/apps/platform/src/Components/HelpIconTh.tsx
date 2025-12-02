@@ -22,13 +22,12 @@ function HelpIconTh({ children, sort, popoverContent }: HelpIconThProps) {
                 <FlexItem>
                     <Popover aria-label="Table column info" bodyContent={popoverContent}>
                         <Button
+                            icon={<OutlinedQuestionCircleIcon />}
                             variant="plain"
                             isInline
                             aria-label="Show table column info"
-                            className="pf-v5-u-p-0"
-                        >
-                            <OutlinedQuestionCircleIcon />
-                        </Button>
+                            className="pf-v6-u-p-0"
+                        />
                     </Popover>
                 </FlexItem>
             </Flex>

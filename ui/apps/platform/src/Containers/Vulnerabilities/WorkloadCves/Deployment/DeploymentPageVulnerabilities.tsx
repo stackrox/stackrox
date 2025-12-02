@@ -235,8 +235,9 @@ function DeploymentPageVulnerabilities({
     return (
         <>
             <PageSection
+                hasBodyWrapper={false}
                 id={vulnStateTabContentId}
-                className="pf-v5-u-display-flex pf-v5-u-flex-direction-column pf-v5-u-flex-grow-1"
+                className="pf-v6-u-display-flex pf-v6-u-flex-direction-column pf-v6-u-flex-grow-1"
                 component="div"
             >
                 {showVulnerabilityStateTabs && (
@@ -248,9 +249,9 @@ function DeploymentPageVulnerabilities({
                         }}
                     />
                 )}
-                <div className="pf-v5-u-px-sm pf-v5-u-background-color-100">
+                <div className="pf-v6-u-px-sm pf-v6-u-background-color-100">
                     <AdvancedFiltersToolbar
-                        className="pf-v5-u-pt-lg pf-v5-u-pb-0"
+                        className="pf-v6-u-pt-lg pf-v6-u-pb-0"
                         searchFilterConfig={searchFilterConfig}
                         defaultSearchFilterEntity="CVE"
                         searchFilter={searchFilter}
@@ -291,9 +292,9 @@ function DeploymentPageVulnerabilities({
                     />
                 </SummaryCardLayout>
                 <Divider />
-                <div className="pf-v5-u-flex-grow-1 pf-v5-u-background-color-100">
-                    <div className="pf-v5-u-p-lg">
-                        <Split hasGutter className="pf-v5-u-pb-lg pf-v5-u-align-items-baseline">
+                <div className="pf-v6-u-flex-grow-1 pf-v6-u-background-color-100">
+                    <div className="pf-v6-u-p-lg">
+                        <Split hasGutter className="pf-v6-u-pb-lg pf-v6-u-align-items-baseline">
                             <SplitItem isFilled>
                                 <Flex alignItems={{ default: 'alignItemsCenter' }}>
                                     <Title headingLevel="h2">
