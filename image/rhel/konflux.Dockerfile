@@ -41,7 +41,6 @@ FROM registry.access.redhat.com/ubi8/ubi:latest@sha256:7d7ca86d832d1dc7aba458341
 
 ARG PG_VERSION
 
-RUN dnf -y module enable postgresql:${PG_VERSION}
 RUN dnf install \
     --installroot=/out/ \
     --releasever=8 \
@@ -55,6 +54,7 @@ RUN dnf install \
     curl \
     bash \
     coreutils
+RUN dnf -y --installroot=/out/ module enable postgresql:${PG_VERSION}
 RUN dnf install \
     --installroot=/out/ \
     --releasever=8 \
