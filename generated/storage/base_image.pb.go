@@ -30,11 +30,9 @@ type BaseImage struct {
 	Repository       string                 `protobuf:"bytes,3,opt,name=repository,proto3" json:"repository,omitempty" search:"Base Image Repository,store"`                                       // @gotags: search:"Base Image Repository,store"
 	Tag              string                 `protobuf:"bytes,4,opt,name=tag,proto3" json:"tag,omitempty" search:"Base Image Tag,hidden"`                                                     // @gotags: search:"Base Image Tag,hidden"
 	ManifestDigest   string                 `protobuf:"bytes,5,opt,name=manifest_digest,json=manifestDigest,proto3" json:"manifest_digest,omitempty" search:"Base Image Manifest Digest,store"`         // @gotags: search:"Base Image Manifest Digest,store"
-	FullReference    string                 `protobuf:"bytes,6,opt,name=full_reference,json=fullReference,proto3" json:"full_reference,omitempty" search:"Base Image Full Reference,store"`            // @gotags: search:"Base Image Full Reference,store"
-	DiscoveredAt     *timestamppb.Timestamp `protobuf:"bytes,7,opt,name=discovered_at,json=discoveredAt,proto3" json:"discovered_at,omitempty" search:"Base Image Discovered At,hidden"`               // @gotags: search:"Base Image Discovered At,hidden"
-	Active           bool                   `protobuf:"varint,8,opt,name=active,proto3" json:"active,omitempty" search:"Base Image Active,hidden"`                                              // @gotags: search:"Base Image Active,hidden"
-	FirstLayerDigest string                 `protobuf:"bytes,9,opt,name=first_layer_digest,json=firstLayerDigest,proto3" json:"first_layer_digest,omitempty" search:"Base Image First Layer Digest,hidden" sql:"index=btree"` // @gotags: search:"Base Image First Layer Digest,hidden" sql:"index=btree"
-	ImageIdV2        string                 `protobuf:"bytes,10,opt,name=image_id_v2,json=imageIdV2,proto3" json:"image_id_v2,omitempty" sql:"fk(ImageV2:id),no-fk-constraint,allow-null"`                     // @gotags: sql:"fk(ImageV2:id),no-fk-constraint,allow-null"
+	DiscoveredAt     *timestamppb.Timestamp `protobuf:"bytes,6,opt,name=discovered_at,json=discoveredAt,proto3" json:"discovered_at,omitempty" search:"Base Image Discovered At,hidden"`               // @gotags: search:"Base Image Discovered At,hidden"
+	Active           bool                   `protobuf:"varint,7,opt,name=active,proto3" json:"active,omitempty" search:"Base Image Active,hidden"`                                              // @gotags: search:"Base Image Active,hidden"
+	FirstLayerDigest string                 `protobuf:"bytes,8,opt,name=first_layer_digest,json=firstLayerDigest,proto3" json:"first_layer_digest,omitempty" search:"Base Image First Layer Digest,hidden" sql:"index=btree"` // @gotags: search:"Base Image First Layer Digest,hidden" sql:"index=btree"
 	unknownFields    protoimpl.UnknownFields
 	sizeCache        protoimpl.SizeCache
 }
@@ -104,13 +102,6 @@ func (x *BaseImage) GetManifestDigest() string {
 	return ""
 }
 
-func (x *BaseImage) GetFullReference() string {
-	if x != nil {
-		return x.FullReference
-	}
-	return ""
-}
-
 func (x *BaseImage) GetDiscoveredAt() *timestamppb.Timestamp {
 	if x != nil {
 		return x.DiscoveredAt
@@ -132,19 +123,12 @@ func (x *BaseImage) GetFirstLayerDigest() string {
 	return ""
 }
 
-func (x *BaseImage) GetImageIdV2() string {
-	if x != nil {
-		return x.ImageIdV2
-	}
-	return ""
-}
-
 type BaseImageLayer struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" sql:"pk"`                                        // @gotags: sql:"pk"
 	BaseImageId   string                 `protobuf:"bytes,2,opt,name=base_image_id,json=baseImageId,proto3" json:"base_image_id,omitempty" sql:"fk(BaseImage:id),no-fk-constraint"` // @gotags: sql:"fk(BaseImage:id),no-fk-constraint"
 	LayerDigest   string                 `protobuf:"bytes,3,opt,name=layer_digest,json=layerDigest,proto3" json:"layer_digest,omitempty" search:"Base Image Layer Digest,hidden"`   // @gotags: search:"Base Image Layer Digest,hidden"
-	Level         int32                  `protobuf:"varint,4,opt,name=level,proto3" json:"level,omitempty" search:"Base Image Level,hidden"`                                 // @gotags: search:"Base Image Level,hidden"
+	Index         int32                  `protobuf:"varint,4,opt,name=index,proto3" json:"index,omitempty" search:"Base Image Index,hidden"`                                 // @gotags: search:"Base Image Index,hidden"
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -200,9 +184,9 @@ func (x *BaseImageLayer) GetLayerDigest() string {
 	return ""
 }
 
-func (x *BaseImageLayer) GetLevel() int32 {
+func (x *BaseImageLayer) GetIndex() int32 {
 	if x != nil {
-		return x.Level
+		return x.Index
 	}
 	return 0
 }
@@ -211,7 +195,7 @@ var File_storage_base_image_proto protoreflect.FileDescriptor
 
 const file_storage_base_image_proto_rawDesc = "" +
 	"\n" +
-	"\x18storage/base_image.proto\x12\astorage\x1a\x1fgoogle/protobuf/timestamp.proto\"\xec\x02\n" +
+	"\x18storage/base_image.proto\x12\astorage\x1a\x1fgoogle/protobuf/timestamp.proto\"\xa5\x02\n" +
 	"\tBaseImage\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12&\n" +
 	"\x0frepo_pattern_id\x18\x02 \x01(\tR\rrepoPatternId\x12\x1e\n" +
@@ -219,18 +203,15 @@ const file_storage_base_image_proto_rawDesc = "" +
 	"repository\x18\x03 \x01(\tR\n" +
 	"repository\x12\x10\n" +
 	"\x03tag\x18\x04 \x01(\tR\x03tag\x12'\n" +
-	"\x0fmanifest_digest\x18\x05 \x01(\tR\x0emanifestDigest\x12%\n" +
-	"\x0efull_reference\x18\x06 \x01(\tR\rfullReference\x12?\n" +
-	"\rdiscovered_at\x18\a \x01(\v2\x1a.google.protobuf.TimestampR\fdiscoveredAt\x12\x16\n" +
-	"\x06active\x18\b \x01(\bR\x06active\x12,\n" +
-	"\x12first_layer_digest\x18\t \x01(\tR\x10firstLayerDigest\x12\x1e\n" +
-	"\vimage_id_v2\x18\n" +
-	" \x01(\tR\timageIdV2\"}\n" +
+	"\x0fmanifest_digest\x18\x05 \x01(\tR\x0emanifestDigest\x12?\n" +
+	"\rdiscovered_at\x18\x06 \x01(\v2\x1a.google.protobuf.TimestampR\fdiscoveredAt\x12\x16\n" +
+	"\x06active\x18\a \x01(\bR\x06active\x12,\n" +
+	"\x12first_layer_digest\x18\b \x01(\tR\x10firstLayerDigest\"}\n" +
 	"\x0eBaseImageLayer\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\"\n" +
 	"\rbase_image_id\x18\x02 \x01(\tR\vbaseImageId\x12!\n" +
 	"\flayer_digest\x18\x03 \x01(\tR\vlayerDigest\x12\x14\n" +
-	"\x05level\x18\x04 \x01(\x05R\x05levelB.\n" +
+	"\x05index\x18\x04 \x01(\x05R\x05indexB.\n" +
 	"\x19io.stackrox.proto.storageZ\x11./storage;storageb\x06proto3"
 
 var (

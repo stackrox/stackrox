@@ -14,16 +14,14 @@ message BaseImage {
   string repository = 3; // @gotags: search:"Base Image Repository,store"
   string tag = 4; // @gotags: search:"Base Image Tag,hidden"
   string manifest_digest = 5; // @gotags: search:"Base Image Manifest Digest,store"
-  string full_reference = 6; // @gotags: search:"Base Image Full Reference,store"
-  google.protobuf.Timestamp discovered_at = 7; // @gotags: search:"Base Image Discovered At,hidden"
-  bool active = 8; // @gotags: search:"Base Image Active,hidden"
-  string first_layer_digest = 9; // @gotags: search:"Base Image First Layer Digest,hidden" sql:"index=btree"
-  string image_id_v2 = 10; // @gotags: sql:"fk(ImageV2:id),no-fk-constraint,allow-null"
+  google.protobuf.Timestamp discovered_at = 6; // @gotags: search:"Base Image Discovered At,hidden"
+  bool active = 7; // @gotags: search:"Base Image Active,hidden"
+  string first_layer_digest = 8; // @gotags: search:"Base Image First Layer Digest,hidden" sql:"index=btree"
 }
 
 message BaseImageLayer {
   string id = 1; // @gotags: sql:"pk"
   string base_image_id = 2; // @gotags: sql:"fk(BaseImage:id),no-fk-constraint"
   string layer_digest = 3; // @gotags: search:"Base Image Layer Digest,hidden"
-  int32 level = 4; // @gotags: search:"Base Image Level,hidden"
+  int32 index = 4; // @gotags: search:"Base Image Index,hidden"
 }

@@ -58,6 +58,6 @@ type BaseImageLayers struct {
 	ID          string `gorm:"column:id;type:varchar;primaryKey"`
 	BaseImageID string `gorm:"column:baseimageid;type:varchar"`
 	LayerDigest string `gorm:"column:layerdigest;type:varchar"`
-	Level       int32  `gorm:"column:level;type:integer"`
+	Index       int32  `gorm:"column:index;type:integer"`
 	Serialized  []byte `gorm:"column:serialized;type:bytea"`
 }
