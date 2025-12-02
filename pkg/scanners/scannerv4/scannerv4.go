@@ -340,6 +340,9 @@ func (s *scannerv4) GetVirtualMachineScan(
 	vm *storage.VirtualMachine,
 	indexReport *v4.IndexReport,
 ) (*storage.VirtualMachineScan, error) {
+	if s.scannerClient == nil {
+		return nil, errors.New("Scanner V4 client not available for VM enrichment")
+	}
 	if indexReport == nil {
 		return nil, errors.New("index report is required for VM scanning")
 	}
