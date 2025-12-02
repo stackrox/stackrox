@@ -21,8 +21,8 @@ message BaseImageRepository {
   // Glob pattern for tag filtering (e.g., "8.10-*").
   string tag_pattern = 3;
 
-  // Timestamp of last successful poll.
-  google.protobuf.Timestamp last_poll_at = 4;
+  // Timestamp of last update (successful poll or configuration change).
+  google.protobuf.Timestamp updated_at = 4;
 
   // Count of consecutive poll failures (for health tracking).
   int32 failure_count = 5;
@@ -59,11 +59,11 @@ message BaseImageTag {
   // SHA256 digest of the manifest (or manifest list for multi-arch).
   string manifest_digest = 4;
 
-  // Image creation timestamp from config blob.
-  google.protobuf.Timestamp created = 5;
-
   // Whether this tag points to a manifest list (multi-platform).
   bool is_manifest_list = 6;
+
+  // Image creation timestamp from config blob.
+  google.protobuf.Timestamp created = 5;
 
   // Map of "os/arch" to platform-specific manifest digest,
   // to only refetch platforms whose digest changed.

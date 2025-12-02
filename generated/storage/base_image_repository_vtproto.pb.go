@@ -30,7 +30,7 @@ func (m *BaseImageRepository) CloneVT() *BaseImageRepository {
 	r.Id = m.Id
 	r.RepositoryPath = m.RepositoryPath
 	r.TagPattern = m.TagPattern
-	r.LastPollAt = (*timestamppb.Timestamp)((*timestamppb1.Timestamp)(m.LastPollAt).CloneVT())
+	r.UpdatedAt = (*timestamppb.Timestamp)((*timestamppb1.Timestamp)(m.UpdatedAt).CloneVT())
 	r.FailureCount = m.FailureCount
 	r.HealthStatus = m.HealthStatus
 	r.PatternHash = m.PatternHash
@@ -54,8 +54,8 @@ func (m *BaseImageTag) CloneVT() *BaseImageTag {
 	r.BaseImageRepositoryId = m.BaseImageRepositoryId
 	r.Tag = m.Tag
 	r.ManifestDigest = m.ManifestDigest
-	r.Created = (*timestamppb.Timestamp)((*timestamppb1.Timestamp)(m.Created).CloneVT())
 	r.IsManifestList = m.IsManifestList
+	r.Created = (*timestamppb.Timestamp)((*timestamppb1.Timestamp)(m.Created).CloneVT())
 	if rhs := m.ListDigests; rhs != nil {
 		tmpContainer := make(map[string]string, len(rhs))
 		for k, v := range rhs {
@@ -89,7 +89,7 @@ func (this *BaseImageRepository) EqualVT(that *BaseImageRepository) bool {
 	if this.TagPattern != that.TagPattern {
 		return false
 	}
-	if !(*timestamppb1.Timestamp)(this.LastPollAt).EqualVT((*timestamppb1.Timestamp)(that.LastPollAt)) {
+	if !(*timestamppb1.Timestamp)(this.UpdatedAt).EqualVT((*timestamppb1.Timestamp)(that.UpdatedAt)) {
 		return false
 	}
 	if this.FailureCount != that.FailureCount {
@@ -204,8 +204,8 @@ func (m *BaseImageRepository) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 		i--
 		dAtA[i] = 0x28
 	}
-	if m.LastPollAt != nil {
-		size, err := (*timestamppb1.Timestamp)(m.LastPollAt).MarshalToSizedBufferVT(dAtA[:i])
+	if m.UpdatedAt != nil {
+		size, err := (*timestamppb1.Timestamp)(m.UpdatedAt).MarshalToSizedBufferVT(dAtA[:i])
 		if err != nil {
 			return 0, err
 		}
@@ -356,8 +356,8 @@ func (m *BaseImageRepository) SizeVT() (n int) {
 	if l > 0 {
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
-	if m.LastPollAt != nil {
-		l = (*timestamppb1.Timestamp)(m.LastPollAt).SizeVT()
+	if m.UpdatedAt != nil {
+		l = (*timestamppb1.Timestamp)(m.UpdatedAt).SizeVT()
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
 	if m.FailureCount != 0 {
@@ -542,7 +542,7 @@ func (m *BaseImageRepository) UnmarshalVT(dAtA []byte) error {
 			iNdEx = postIndex
 		case 4:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field LastPollAt", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field UpdatedAt", wireType)
 			}
 			var msglen int
 			for shift := uint(0); ; shift += 7 {
@@ -569,10 +569,10 @@ func (m *BaseImageRepository) UnmarshalVT(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			if m.LastPollAt == nil {
-				m.LastPollAt = &timestamppb.Timestamp{}
+			if m.UpdatedAt == nil {
+				m.UpdatedAt = &timestamppb.Timestamp{}
 			}
-			if err := (*timestamppb1.Timestamp)(m.LastPollAt).UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := (*timestamppb1.Timestamp)(m.UpdatedAt).UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -1169,7 +1169,7 @@ func (m *BaseImageRepository) UnmarshalVTUnsafe(dAtA []byte) error {
 			iNdEx = postIndex
 		case 4:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field LastPollAt", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field UpdatedAt", wireType)
 			}
 			var msglen int
 			for shift := uint(0); ; shift += 7 {
@@ -1196,10 +1196,10 @@ func (m *BaseImageRepository) UnmarshalVTUnsafe(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			if m.LastPollAt == nil {
-				m.LastPollAt = &timestamppb.Timestamp{}
+			if m.UpdatedAt == nil {
+				m.UpdatedAt = &timestamppb.Timestamp{}
 			}
-			if err := (*timestamppb1.Timestamp)(m.LastPollAt).UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
+			if err := (*timestamppb1.Timestamp)(m.UpdatedAt).UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex

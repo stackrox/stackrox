@@ -84,8 +84,8 @@ type BaseImageRepository struct {
 	RepositoryPath string `protobuf:"bytes,2,opt,name=repository_path,json=repositoryPath,proto3" json:"repository_path,omitempty" sql:"unique"` // @gotags: sql:"unique"
 	// Glob pattern for tag filtering (e.g., "8.10-*").
 	TagPattern string `protobuf:"bytes,3,opt,name=tag_pattern,json=tagPattern,proto3" json:"tag_pattern,omitempty"`
-	// Timestamp of last successful poll.
-	LastPollAt *timestamppb.Timestamp `protobuf:"bytes,4,opt,name=last_poll_at,json=lastPollAt,proto3" json:"last_poll_at,omitempty"`
+	// Timestamp of last update (successful poll or configuration change).
+	UpdatedAt *timestamppb.Timestamp `protobuf:"bytes,4,opt,name=updated_at,json=updatedAt,proto3" json:"updated_at,omitempty"`
 	// Count of consecutive poll failures (for health tracking).
 	FailureCount int32                            `protobuf:"varint,5,opt,name=failure_count,json=failureCount,proto3" json:"failure_count,omitempty"`
 	HealthStatus BaseImageRepository_HealthStatus `protobuf:"varint,6,opt,name=health_status,json=healthStatus,proto3,enum=storage.BaseImageRepository_HealthStatus" json:"health_status,omitempty" sql:"index=btree"` // @gotags: sql:"index=btree"
@@ -147,9 +147,9 @@ func (x *BaseImageRepository) GetTagPattern() string {
 	return ""
 }
 
-func (x *BaseImageRepository) GetLastPollAt() *timestamppb.Timestamp {
+func (x *BaseImageRepository) GetUpdatedAt() *timestamppb.Timestamp {
 	if x != nil {
-		return x.LastPollAt
+		return x.UpdatedAt
 	}
 	return nil
 }
@@ -191,10 +191,10 @@ type BaseImageTag struct {
 	Tag string `protobuf:"bytes,3,opt,name=tag,proto3" json:"tag,omitempty" search:"Base Image Tag,hidden" sql:"index=category:unique;name:base_image_tags_repo_tag"` // @gotags: search:"Base Image Tag,hidden" sql:"index=category:unique;name:base_image_tags_repo_tag"
 	// SHA256 digest of the manifest (or manifest list for multi-arch).
 	ManifestDigest string `protobuf:"bytes,4,opt,name=manifest_digest,json=manifestDigest,proto3" json:"manifest_digest,omitempty"`
-	// Image creation timestamp from config blob.
-	Created *timestamppb.Timestamp `protobuf:"bytes,5,opt,name=created,proto3" json:"created,omitempty"`
 	// Whether this tag points to a manifest list (multi-platform).
 	IsManifestList bool `protobuf:"varint,6,opt,name=is_manifest_list,json=isManifestList,proto3" json:"is_manifest_list,omitempty"`
+	// Image creation timestamp from config blob.
+	Created *timestamppb.Timestamp `protobuf:"bytes,5,opt,name=created,proto3" json:"created,omitempty"`
 	// Map of "os/arch" to platform-specific manifest digest,
 	// to only refetch platforms whose digest changed.
 	ListDigests   map[string]string `protobuf:"bytes,7,rep,name=list_digests,json=listDigests,proto3" json:"list_digests,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
@@ -260,18 +260,18 @@ func (x *BaseImageTag) GetManifestDigest() string {
 	return ""
 }
 
-func (x *BaseImageTag) GetCreated() *timestamppb.Timestamp {
-	if x != nil {
-		return x.Created
-	}
-	return nil
-}
-
 func (x *BaseImageTag) GetIsManifestList() bool {
 	if x != nil {
 		return x.IsManifestList
 	}
 	return false
+}
+
+func (x *BaseImageTag) GetCreated() *timestamppb.Timestamp {
+	if x != nil {
+		return x.Created
+	}
+	return nil
 }
 
 func (x *BaseImageTag) GetListDigests() map[string]string {
@@ -285,14 +285,14 @@ var File_storage_base_image_repository_proto protoreflect.FileDescriptor
 
 const file_storage_base_image_repository_proto_rawDesc = "" +
 	"\n" +
-	"#storage/base_image_repository.proto\x12\astorage\x1a\x1fgoogle/protobuf/timestamp.proto\"\xff\x02\n" +
+	"#storage/base_image_repository.proto\x12\astorage\x1a\x1fgoogle/protobuf/timestamp.proto\"\xfc\x02\n" +
 	"\x13BaseImageRepository\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12'\n" +
 	"\x0frepository_path\x18\x02 \x01(\tR\x0erepositoryPath\x12\x1f\n" +
 	"\vtag_pattern\x18\x03 \x01(\tR\n" +
-	"tagPattern\x12<\n" +
-	"\flast_poll_at\x18\x04 \x01(\v2\x1a.google.protobuf.TimestampR\n" +
-	"lastPollAt\x12#\n" +
+	"tagPattern\x129\n" +
+	"\n" +
+	"updated_at\x18\x04 \x01(\v2\x1a.google.protobuf.TimestampR\tupdatedAt\x12#\n" +
 	"\rfailure_count\x18\x05 \x01(\x05R\ffailureCount\x12N\n" +
 	"\rhealth_status\x18\x06 \x01(\x0e2).storage.BaseImageRepository.HealthStatusR\fhealthStatus\x12!\n" +
 	"\fpattern_hash\x18\a \x01(\tR\vpatternHash\"8\n" +
@@ -304,9 +304,9 @@ const file_storage_base_image_repository_proto_rawDesc = "" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x127\n" +
 	"\x18base_image_repository_id\x18\x02 \x01(\tR\x15baseImageRepositoryId\x12\x10\n" +
 	"\x03tag\x18\x03 \x01(\tR\x03tag\x12'\n" +
-	"\x0fmanifest_digest\x18\x04 \x01(\tR\x0emanifestDigest\x124\n" +
-	"\acreated\x18\x05 \x01(\v2\x1a.google.protobuf.TimestampR\acreated\x12(\n" +
-	"\x10is_manifest_list\x18\x06 \x01(\bR\x0eisManifestList\x12I\n" +
+	"\x0fmanifest_digest\x18\x04 \x01(\tR\x0emanifestDigest\x12(\n" +
+	"\x10is_manifest_list\x18\x06 \x01(\bR\x0eisManifestList\x124\n" +
+	"\acreated\x18\x05 \x01(\v2\x1a.google.protobuf.TimestampR\acreated\x12I\n" +
 	"\flist_digests\x18\a \x03(\v2&.storage.BaseImageTag.ListDigestsEntryR\vlistDigests\x1a>\n" +
 	"\x10ListDigestsEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
@@ -335,7 +335,7 @@ var file_storage_base_image_repository_proto_goTypes = []any{
 	(*timestamppb.Timestamp)(nil),         // 4: google.protobuf.Timestamp
 }
 var file_storage_base_image_repository_proto_depIdxs = []int32{
-	4, // 0: storage.BaseImageRepository.last_poll_at:type_name -> google.protobuf.Timestamp
+	4, // 0: storage.BaseImageRepository.updated_at:type_name -> google.protobuf.Timestamp
 	0, // 1: storage.BaseImageRepository.health_status:type_name -> storage.BaseImageRepository.HealthStatus
 	4, // 2: storage.BaseImageTag.created:type_name -> google.protobuf.Timestamp
 	3, // 3: storage.BaseImageTag.list_digests:type_name -> storage.BaseImageTag.ListDigestsEntry
