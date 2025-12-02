@@ -101,7 +101,7 @@ func insertIntoBaseImages(batch *pgx.Batch, obj *storage.BaseImage) error {
 	values := []interface{}{
 		// parent primary keys start
 		obj.GetId(),
-		obj.GetRepoPatternId(),
+		obj.GetBaseImageRepositoryId(),
 		obj.GetRepository(),
 		obj.GetTag(),
 		obj.GetManifestDigest(),
@@ -111,7 +111,7 @@ func insertIntoBaseImages(batch *pgx.Batch, obj *storage.BaseImage) error {
 		serialized,
 	}
 
-	finalStr := "INSERT INTO base_images (Id, RepoPatternId, Repository, Tag, ManifestDigest, DiscoveredAt, Active, FirstLayerDigest, serialized) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, RepoPatternId = EXCLUDED.RepoPatternId, Repository = EXCLUDED.Repository, Tag = EXCLUDED.Tag, ManifestDigest = EXCLUDED.ManifestDigest, DiscoveredAt = EXCLUDED.DiscoveredAt, Active = EXCLUDED.Active, FirstLayerDigest = EXCLUDED.FirstLayerDigest, serialized = EXCLUDED.serialized"
+	finalStr := "INSERT INTO base_images (Id, BaseImageRepositoryId, Repository, Tag, ManifestDigest, DiscoveredAt, Active, FirstLayerDigest, serialized) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, BaseImageRepositoryId = EXCLUDED.BaseImageRepositoryId, Repository = EXCLUDED.Repository, Tag = EXCLUDED.Tag, ManifestDigest = EXCLUDED.ManifestDigest, DiscoveredAt = EXCLUDED.DiscoveredAt, Active = EXCLUDED.Active, FirstLayerDigest = EXCLUDED.FirstLayerDigest, serialized = EXCLUDED.serialized"
 	batch.Queue(finalStr, values...)
 
 	return nil
@@ -136,7 +136,7 @@ func copyFromBaseImages(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx
 
 	copyCols := []string{
 		"id",
-		"repopatternid",
+		"baseimagerepositoryid",
 		"repository",
 		"tag",
 		"manifestdigest",
@@ -161,7 +161,7 @@ func copyFromBaseImages(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx
 
 		return []interface{}{
 			obj.GetId(),
-			obj.GetRepoPatternId(),
+			obj.GetBaseImageRepositoryId(),
 			obj.GetRepository(),
 			obj.GetTag(),
 			obj.GetManifestDigest(),

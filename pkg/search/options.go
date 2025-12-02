@@ -120,7 +120,7 @@ var (
 
 	// Base Image
 	BaseImageId               = newFieldLabel("Base Image Id")
-	BaseImageRepoPatternId    = newFieldLabel("Base Image Repo Pattern Id")
+	BaseImageRepositoryId     = newFieldLabel("Base Image Repository Id")
 	BaseImageRepository       = newFieldLabel("Base Image Repository")
 	BaseImageTag              = newFieldLabel("Base Image Tag")
 	BaseImageActive           = newFieldLabel("Base Image Active")

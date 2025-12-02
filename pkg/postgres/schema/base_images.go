@@ -61,13 +61,13 @@ const (
 
 // BaseImages holds the Gorm model for Postgres table `base_images`.
 type BaseImages struct {
-	ID               string     `gorm:"column:id;type:varchar;primaryKey"`
-	RepoPatternID    string     `gorm:"column:repopatternid;type:varchar"`
-	Repository       string     `gorm:"column:repository;type:varchar"`
-	Tag              string     `gorm:"column:tag;type:varchar"`
-	ManifestDigest   string     `gorm:"column:manifestdigest;type:varchar"`
-	DiscoveredAt     *time.Time `gorm:"column:discoveredat;type:timestamp"`
-	Active           bool       `gorm:"column:active;type:bool"`
-	FirstLayerDigest string     `gorm:"column:firstlayerdigest;type:varchar;index:baseimages_firstlayerdigest,type:btree"`
-	Serialized       []byte     `gorm:"column:serialized;type:bytea"`
+	ID                    string     `gorm:"column:id;type:varchar;primaryKey"`
+	BaseImageRepositoryID string     `gorm:"column:baseimagerepositoryid;type:varchar"`
+	Repository            string     `gorm:"column:repository;type:varchar"`
+	Tag                   string     `gorm:"column:tag;type:varchar"`
+	ManifestDigest        string     `gorm:"column:manifestdigest;type:varchar"`
+	DiscoveredAt          *time.Time `gorm:"column:discoveredat;type:timestamp"`
+	Active                bool       `gorm:"column:active;type:bool"`
+	FirstLayerDigest      string     `gorm:"column:firstlayerdigest;type:varchar;index:baseimages_firstlayerdigest,type:btree"`
+	Serialized            []byte     `gorm:"column:serialized;type:bytea"`
 }
