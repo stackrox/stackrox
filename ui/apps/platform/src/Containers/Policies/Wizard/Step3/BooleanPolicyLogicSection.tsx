@@ -49,7 +49,7 @@ function BooleanPolicyLogicSection({ readOnly = false }: BooleanPolicyLogicSecti
                                     className="or-divider-container"
                                 >
                                     <div className="or-divider" />
-                                    <div className="pf-v5-u-align-self-center">OR</div>
+                                    <div className="pf-v6-u-align-self-center">OR</div>
                                     <div className="or-divider" />
                                 </Flex>
                             )}
@@ -73,7 +73,7 @@ function BooleanPolicyLogicSection({ readOnly = false }: BooleanPolicyLogicSecti
                                 className="or-divider-container"
                             >
                                 <div className="or-divider" />
-                                <div className="pf-v5-u-align-self-center">OR</div>
+                                <div className="pf-v6-u-align-self-center">OR</div>
                                 <div className="or-divider" />
                             </Flex>
                         )}

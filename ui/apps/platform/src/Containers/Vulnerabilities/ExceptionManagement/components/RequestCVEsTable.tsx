@@ -1,8 +1,8 @@
 import {
+    Content,
     Flex,
     PageSection,
     Pagination,
-    Text,
     Title,
     Toolbar,
     ToolbarContent,
@@ -104,10 +104,10 @@ function RequestCVEsTable({
     const colSpan = 6;
 
     return (
-        <PageSection variant="light">
+        <PageSection hasBodyWrapper={false}>
             <Flex direction={{ default: 'column' }}>
                 <Toolbar>
-                    <ToolbarContent className="pf-v5-u-justify-content-space-between">
+                    <ToolbarContent className="pf-v6-u-justify-content-space-between">
                         <ToolbarItem variant="label">
                             <Title headingLevel="h2">
                                 {countQuery.data?.imageCVECount || 0} results found
@@ -250,7 +250,7 @@ function RequestCVEsTable({
                                             <Td colSpan={colSpan - 1}>
                                                 <ExpandableRowContent>
                                                     {prioritizedDistros.length > 0 && (
-                                                        <Text>{summary}</Text>
+                                                        <Content component="p">{summary}</Content>
                                                     )}
                                                 </ExpandableRowContent>
                                             </Td>

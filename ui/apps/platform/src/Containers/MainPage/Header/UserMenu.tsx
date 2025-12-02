@@ -56,7 +56,7 @@ function UserMenu({ logout, setInviteModalVisibility, userData }): ReactElement 
             <DropdownItem
                 key="user"
                 description={<span data-testid="menu-user-roles">{displayRoles}</span>}
-                className="pf-v5-u-min-width"
+                className="pf-v6-u-min-width"
                 style={userMenuStyleConstant}
             >
                 {displayName}

@@ -46,8 +46,8 @@ function ReviewConfig({ clusters, errorMessage }: ReviewConfigProps) {
 
     return (
         <>
-            <PageSection variant="light" padding={{ default: 'noPadding' }}>
-                <Flex direction={{ default: 'column' }} className="pf-v5-u-py-lg pf-v5-u-px-lg">
+            <PageSection hasBodyWrapper={false} padding={{ default: 'noPadding' }}>
+                <Flex direction={{ default: 'column' }} className="pf-v6-u-py-lg pf-v6-u-px-lg">
                     <FlexItem>
                         <Title headingLevel="h2">Review</Title>
                     </FlexItem>
@@ -68,7 +68,7 @@ function ReviewConfig({ clusters, errorMessage }: ReviewConfigProps) {
             <Flex
                 direction={{ default: 'column' }}
                 spaceItems={{ default: 'spaceItemsLg' }}
-                className="pf-v5-u-pt-lg pf-v5-u-px-lg"
+                className="pf-v6-u-pt-lg pf-v6-u-px-lg"
             >
                 <ScanConfigParametersView
                     headingLevel={headingLevel}

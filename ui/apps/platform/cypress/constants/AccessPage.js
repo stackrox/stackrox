@@ -24,7 +24,7 @@ export const selectors = {
         authProviders: '[data-testid="tab"]:contains("Auth Provider Rules")',
         roles: '[data-testid="tab"]:contains("Roles and Permissions")',
     },
-    message: '.pf-v5-c-alert',
+    message: '.pf-v6-c-alert',
     modal: {
         deleteButton: 'div.ReactModalPortal button:contains("Delete")',
     },
