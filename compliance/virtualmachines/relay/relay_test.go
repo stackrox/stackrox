@@ -29,8 +29,8 @@ func (s *relayTestSuite) SetupTest() {
 func (s *relayTestSuite) TestRelay_Integration() {
 	// Create mock sender that signals when reports are received
 	mockReportSender := &mockReportSender{
-		failOnIndex: -1, // never fail
-		doneChan:    make(chan struct{}),
+		failOnIndex:   -1, // never fail
+		doneChan:      make(chan struct{}),
 		expectedCount: 2,
 	}
 
@@ -67,8 +67,8 @@ func (s *relayTestSuite) TestRelay_Integration() {
 	// Verify all reports were sent
 	mockReportSender.mu.Lock()
 	s.Require().Len(mockReportSender.sentReports, 2)
-	s.Equal("100", mockReportSender.sentReports[0].VsockCid)
-	s.Equal("200", mockReportSender.sentReports[1].VsockCid)
+	s.Equal("100", mockReportSender.sentReports[0].GetVsockCid())
+	s.Equal("200", mockReportSender.sentReports[1].GetVsockCid())
 	mockReportSender.mu.Unlock()
 
 	// Verify relay exited cleanly
@@ -194,7 +194,7 @@ type mockReportSender struct {
 	sentReports   []*v1.IndexReport
 	failOnIndex   int           // Index to fail on (0-based), use -1 to never fail
 	doneChan      chan struct{} // signals when expectedCount reports are received
-	expectedCount int            // number of reports expected before signaling done
+	expectedCount int           // number of reports expected before signaling done
 }
 
 func (m *mockReportSender) Send(_ context.Context, report *v1.IndexReport) error {
