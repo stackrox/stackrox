@@ -7,6 +7,12 @@ Entries in this file should be limited to:
 - Obscure side-effects that are not obviously apparent based on the JIRA associated with the changes.
 Please avoid adding duplicate information across this changelog and JIRA/doc input pages.
 
+## [4.7.9]
+
+**Full Changelog**: [4.7.8...4.7.9](https://github.com/stackrox/stackrox/compare/4.7.8...4.7.9)
+
+For a description of the changes, review the [Release Notes](https://docs.redhat.com/en/documentation/red_hat_advanced_cluster_security_for_kubernetes/4.7/html/release_notes/index) on the Red Hat Documentation portal.
+
 ## [4.7.8]
 
 ### Technical Changes
