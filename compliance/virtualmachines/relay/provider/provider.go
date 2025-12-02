@@ -7,6 +7,7 @@ import (
 	"context"
 	"net"
 	"strconv"
+	"sync"
 	"time"
 
 	"github.com/pkg/errors"
@@ -30,6 +31,7 @@ type VsockIndexReportProvider struct {
 	connectionReadTimeout time.Duration
 	waitAfterFailedAccept time.Duration
 	maxSizeBytes          int
+	stopOnce              sync.Once
 }
 
 // New creates a VsockIndexReportProvider with a vsock listener.
@@ -200,12 +202,14 @@ func validateReportedVsockCID(indexReport *v1.IndexReport, connVsockCID uint32) 
 }
 
 func (p *VsockIndexReportProvider) stop() {
-	log.Info("Stopping connection server")
-	if p.listener != nil {
-		if err := p.listener.Close(); err != nil {
-			log.Errorf("Error closing listener: %v", err)
+	p.stopOnce.Do(func() {
+		log.Info("Stopping connection server")
+		if p.listener != nil {
+			if err := p.listener.Close(); err != nil {
+				log.Errorf("Error closing listener: %v", err)
+			}
 		}
-	}
+	})
 }
 
 func (p *VsockIndexReportProvider) acquireSemaphore(parentCtx context.Context) error {
