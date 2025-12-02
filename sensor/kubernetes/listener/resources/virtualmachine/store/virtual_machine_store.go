@@ -108,6 +108,13 @@ func (s *VirtualMachineStore) Has(id virtualmachine.VMID) bool {
 	return s.Get(id) != nil
 }
 
+// Size returns the number of VirtualMachines in the store
+func (s *VirtualMachineStore) Size() int {
+	s.lock.RLock()
+	defer s.lock.RUnlock()
+	return len(s.virtualMachines)
+}
+
 // GetFromCID returns the VirtualMachineInfo associated with a given VSOCK CID
 func (s *VirtualMachineStore) GetFromCID(cid uint32) *virtualmachine.Info {
 	s.lock.RLock()

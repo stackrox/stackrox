@@ -20,6 +20,11 @@ const (
 	// reportIntervalJitterPercent defines the percentage of random jitter to apply to report intervals.
 	// With 0.05 (5%), a 60s interval will vary between 57s-63s, making timing more realistic.
 	reportIntervalJitterPercent = 0.05
+
+	// listenerRestartDelay is the time to wait for the listener restart to complete before populating VMs.
+	// The 2s delay is chosen to be longer than typical listener restart time (~100-200ms) to provide a safety margin.
+	// This is acceptable for fake workload code (but not production code).
+	listenerRestartDelay = 2 * time.Second
 )
 
 type vmInfo struct {
@@ -129,14 +134,8 @@ func (w *WorkloadManager) manageVMIndexReportsWithPopulation(ctx context.Context
 	// There is a race condition between the WorkloadManager and the event pipeline when traversing to Online mode.
 	// If the WorkloadManager is faster than the event pipeline, it will populate the VM store before the listener is restarted.
 	// When the listener restarts, it will clear the VM store. Thus, we must be sure that we wait with populating VMs until the listener restart is complete.
-	// The 2s delay is chosen to be longer than typical listener restart time (~100-200ms) to provide a safety margin.
-	// This is acceptable for fake workload code (but not the production code).
-	const listenerRestartDelay = 2 * time.Second
-	select {
-	case <-ctx.Done():
+	if !w.waitForListenerRestart(ctx) {
 		return
-	case <-time.After(listenerRestartDelay):
-		// Wait for listener restart (eventPipeline.Notify()) to complete.
 	}
 
 	log.Infof("Populating fake VMs after listener restart delay")
@@ -298,4 +297,34 @@ func (w *WorkloadManager) manageVMReportsForSingleVM(ctx context.Context, vm *vm
 			}
 		}
 	}
+}
+
+// waitForListenerRestart waits for the listener restart delay to ensure the store is ready.
+// Returns true if the wait completed, false if the context was cancelled.
+func (w *WorkloadManager) waitForListenerRestart(ctx context.Context) bool {
+	select {
+	case <-ctx.Done():
+		return false
+	case <-time.After(listenerRestartDelay):
+		return true
+	}
+}
+
+// repopulateVMsOnOnlineTransition repopulates the VM store after an offline→online transition.
+// This is necessary because the listener restart clears all stores (including vmStore).
+// The method waits for the listener restart delay before repopulating to avoid a race condition.
+func (w *WorkloadManager) repopulateVMsOnOnlineTransition(ctx context.Context) {
+	if !w.waitForListenerRestart(ctx) {
+		log.Debug("Context cancelled while waiting for listener restart during VM repopulation")
+		return
+	}
+
+	countBefore := w.vmStore.Size()
+	log.Infof("Repopulating fake VMs after offline→online transition (store size before: %d)", countBefore)
+
+	w.populateFakeVMs()
+
+	countAfter := w.vmStore.Size()
+	log.Infof("VM store repopulation complete (store size: %d before → %d after, expected: %d)",
+		countBefore, countAfter, w.workload.VMIndexReportWorkload.NumVMs)
 }

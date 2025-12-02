@@ -332,6 +332,16 @@ func (w *WorkloadManager) Notify(e common.SensorComponentEvent) {
 	case common.SensorComponentEventCentralReachable:
 		log.Debugf("WorkloadManager: Central is reachable, signaling VM report generation can start")
 		w.vmPrerequisitesReady.signalCentralReady()
+		// Repopulate VMs if this is not the initial startup (i.e., offline→online transition).
+		// vmReportGen is only set after initial population in manageVMIndexReportsWithPopulation,
+		// so we use it as an indicator that VMs were previously populated.
+		if w.vmReportGen != nil && w.vmStore != nil {
+			w.wg.Add(1)
+			go func() {
+				defer w.wg.Done()
+				w.repopulateVMsOnOnlineTransition(w.shutdownCtx)
+			}()
+		}
 	case common.SensorComponentEventOfflineMode:
 		log.Debugf("WorkloadManager: Central went offline, resetting reachability signal")
 		w.vmPrerequisitesReady.resetCentralReady()
