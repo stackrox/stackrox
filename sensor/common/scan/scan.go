@@ -422,11 +422,6 @@ func (s *LocalScan) fetchImageAnalysis(ctx context.Context, errorList *errorhelp
 
 // fetchSignatures fetches signatures from the registry for an image. Does nothing if errorList contains errors.
 func (s *LocalScan) fetchSignatures(ctx context.Context, errorList *errorhelpers.ErrorList, registry registryTypes.ImageRegistry, image *storage.Image) []*storage.Signature {
-	if !errorList.Empty() {
-		// do nothing if errors previously encountered.
-		return nil
-	}
-
 	// Fetch signatures from cluster-local registry.
 	sigs, err := s.fetchSignaturesWithRetry(ctx, signatures.NewSignatureFetcher(), image, image.GetName().GetFullName(), registry)
 	if err != nil {
