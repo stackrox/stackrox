@@ -149,7 +149,7 @@ func createTestManager(deploymentDS deploymentDatastore.DataStore, processDS pro
 // across multiple iterations to measure filter building performance.
 // Usage:
 //
-//	go test -bench=BenchmarkBuildIndicatorFilterPerformance -benchtime=10x
+//	go test -bench=BenchmarkBuildIndicatorFilterPerformance
 func BenchmarkBuildIndicatorFilterPerformance(b *testing.B) {
 	// Suppress logs for clean benchmark output
 	logging.SetGlobalLogLevel(zapcore.PanicLevel)
@@ -173,7 +173,6 @@ func BenchmarkBuildIndicatorFilterPerformance(b *testing.B) {
 		manager.buildIndicatorFilter()
 	}
 
-	b.StopTimer()
 }
 
 // BenchmarkBuildIndicatorFilterMemory benchmarks memory usage of buildIndicatorFilter.
