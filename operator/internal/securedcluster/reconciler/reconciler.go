@@ -86,6 +86,7 @@ func RegisterNewReconciler(mgr ctrl.Manager, selector string) error {
 	opts = append(opts, otherPreExtensions...)
 	opts = append(opts, postExtensions...)
 	opts = append(opts, predicates...)
+	opts = append(opts, pkgReconciler.WithAggressiveConflictResolution(true))
 	opts = append(opts, pkgReconciler.WithPauseReconcileAnnotation(commonExtensions.PauseReconcileAnnotation))
 	opts, err := commonExtensions.AddSelectorOptionIfNeeded(selector, opts)
 	if err != nil {
