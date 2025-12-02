@@ -43,24 +43,29 @@ message BaseImageRepository {
 // BaseImageTag stores cached base image tag metadata.
 // Persisting cache data across Central restarts avoids cold-start refetches during base
 // image repository scanning.
-// Next tag: 7
+// Next tag: 8
 message BaseImageTag {
+  // Unique identifier.
+  string id = 1; // @gotags: sql:"pk,type(uuid)"
+
   // Foreign key to the repository pattern.
-  string base_image_repository_id = 1; // @gotags: sql:"pk,fk(BaseImageRepository:id),type(uuid)"
+  // Composite unique constraint with tag field.
+  string base_image_repository_id = 2; // @gotags: sql:"fk(BaseImageRepository:id),type(uuid),index=category:unique;name:base_image_tags_repo_tag"
 
   // Tag name (e.g., "8.10-1234").
-  string tag = 2; // @gotags: sql:"pk"
+  // Composite unique constraint with base_image_repository_id field.
+  string tag = 3; // @gotags: search:"Base Image Tag,hidden" sql:"index=category:unique;name:base_image_tags_repo_tag"
 
   // SHA256 digest of the manifest (or manifest list for multi-arch).
-  string manifest_digest = 3;
+  string manifest_digest = 4;
 
   // Image creation timestamp from config blob.
-  google.protobuf.Timestamp created = 4;
+  google.protobuf.Timestamp created = 5;
 
   // Whether this tag points to a manifest list (multi-platform).
-  bool is_manifest_list = 5;
+  bool is_manifest_list = 6;
 
   // Map of "os/arch" to platform-specific manifest digest,
   // to only refetch platforms whose digest changed.
-  map<string, string> list_digests = 6;
+  map<string, string> list_digests = 7;
 }

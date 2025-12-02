@@ -20,6 +20,8 @@ func init() {
 		&storage.AdministrationEvent{}:                          resources.Administration,
 		&storage.AuthMachineToMachineConfig{}:                   resources.Access,
 		&storage.AuthProvider{}:                                 resources.Access,
+		&storage.BaseImageRepository{}:                          resources.Administration,
+		&storage.BaseImageTag{}:                                 resources.Administration,
 		&storage.Blob{}:                                         resources.Administration,
 		&storage.CloudSource{}:                                  resources.Integration,
 		&storage.ClusterHealthStatus{}:                          resources.Cluster,

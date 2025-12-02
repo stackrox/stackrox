@@ -50,6 +50,7 @@ func (m *BaseImageTag) CloneVT() *BaseImageTag {
 		return (*BaseImageTag)(nil)
 	}
 	r := new(BaseImageTag)
+	r.Id = m.Id
 	r.BaseImageRepositoryId = m.BaseImageRepositoryId
 	r.Tag = m.Tag
 	r.ManifestDigest = m.ManifestDigest
@@ -114,6 +115,9 @@ func (this *BaseImageTag) EqualVT(that *BaseImageTag) bool {
 	if this == that {
 		return true
 	} else if this == nil || that == nil {
+		return false
+	}
+	if this.Id != that.Id {
 		return false
 	}
 	if this.BaseImageRepositoryId != that.BaseImageRepositoryId {
@@ -280,7 +284,7 @@ func (m *BaseImageTag) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 			dAtA[i] = 0xa
 			i = protohelpers.EncodeVarint(dAtA, i, uint64(baseI-i))
 			i--
-			dAtA[i] = 0x32
+			dAtA[i] = 0x3a
 		}
 	}
 	if m.IsManifestList {
@@ -291,7 +295,7 @@ func (m *BaseImageTag) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 			dAtA[i] = 0
 		}
 		i--
-		dAtA[i] = 0x28
+		dAtA[i] = 0x30
 	}
 	if m.Created != nil {
 		size, err := (*timestamppb1.Timestamp)(m.Created).MarshalToSizedBufferVT(dAtA[:i])
@@ -301,26 +305,33 @@ func (m *BaseImageTag) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 		i -= size
 		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
 		i--
-		dAtA[i] = 0x22
+		dAtA[i] = 0x2a
 	}
 	if len(m.ManifestDigest) > 0 {
 		i -= len(m.ManifestDigest)
 		copy(dAtA[i:], m.ManifestDigest)
 		i = protohelpers.EncodeVarint(dAtA, i, uint64(len(m.ManifestDigest)))
 		i--
-		dAtA[i] = 0x1a
+		dAtA[i] = 0x22
 	}
 	if len(m.Tag) > 0 {
 		i -= len(m.Tag)
 		copy(dAtA[i:], m.Tag)
 		i = protohelpers.EncodeVarint(dAtA, i, uint64(len(m.Tag)))
 		i--
-		dAtA[i] = 0x12
+		dAtA[i] = 0x1a
 	}
 	if len(m.BaseImageRepositoryId) > 0 {
 		i -= len(m.BaseImageRepositoryId)
 		copy(dAtA[i:], m.BaseImageRepositoryId)
 		i = protohelpers.EncodeVarint(dAtA, i, uint64(len(m.BaseImageRepositoryId)))
+		i--
+		dAtA[i] = 0x12
+	}
+	if len(m.Id) > 0 {
+		i -= len(m.Id)
+		copy(dAtA[i:], m.Id)
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(len(m.Id)))
 		i--
 		dAtA[i] = 0xa
 	}
@@ -369,6 +380,10 @@ func (m *BaseImageTag) SizeVT() (n int) {
 	}
 	var l int
 	_ = l
+	l = len(m.Id)
+	if l > 0 {
+		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
+	}
 	l = len(m.BaseImageRepositoryId)
 	if l > 0 {
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
@@ -684,6 +699,38 @@ func (m *BaseImageTag) UnmarshalVT(dAtA []byte) error {
 		switch fieldNum {
 		case 1:
 			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Id", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Id = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field BaseImageRepositoryId", wireType)
 			}
 			var stringLen uint64
@@ -714,7 +761,7 @@ func (m *BaseImageTag) UnmarshalVT(dAtA []byte) error {
 			}
 			m.BaseImageRepositoryId = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
-		case 2:
+		case 3:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field Tag", wireType)
 			}
@@ -746,7 +793,7 @@ func (m *BaseImageTag) UnmarshalVT(dAtA []byte) error {
 			}
 			m.Tag = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
-		case 3:
+		case 4:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field ManifestDigest", wireType)
 			}
@@ -778,7 +825,7 @@ func (m *BaseImageTag) UnmarshalVT(dAtA []byte) error {
 			}
 			m.ManifestDigest = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
-		case 4:
+		case 5:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field Created", wireType)
 			}
@@ -814,7 +861,7 @@ func (m *BaseImageTag) UnmarshalVT(dAtA []byte) error {
 				return err
 			}
 			iNdEx = postIndex
-		case 5:
+		case 6:
 			if wireType != 0 {
 				return fmt.Errorf("proto: wrong wireType = %d for field IsManifestList", wireType)
 			}
@@ -834,7 +881,7 @@ func (m *BaseImageTag) UnmarshalVT(dAtA []byte) error {
 				}
 			}
 			m.IsManifestList = bool(v != 0)
-		case 6:
+		case 7:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field ListDigests", wireType)
 			}
@@ -1283,6 +1330,42 @@ func (m *BaseImageTag) UnmarshalVTUnsafe(dAtA []byte) error {
 		switch fieldNum {
 		case 1:
 			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Id", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			var stringValue string
+			if intStringLen > 0 {
+				stringValue = unsafe.String(&dAtA[iNdEx], intStringLen)
+			}
+			m.Id = stringValue
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field BaseImageRepositoryId", wireType)
 			}
 			var stringLen uint64
@@ -1317,7 +1400,7 @@ func (m *BaseImageTag) UnmarshalVTUnsafe(dAtA []byte) error {
 			}
 			m.BaseImageRepositoryId = stringValue
 			iNdEx = postIndex
-		case 2:
+		case 3:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field Tag", wireType)
 			}
@@ -1353,7 +1436,7 @@ func (m *BaseImageTag) UnmarshalVTUnsafe(dAtA []byte) error {
 			}
 			m.Tag = stringValue
 			iNdEx = postIndex
-		case 3:
+		case 4:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field ManifestDigest", wireType)
 			}
@@ -1389,7 +1472,7 @@ func (m *BaseImageTag) UnmarshalVTUnsafe(dAtA []byte) error {
 			}
 			m.ManifestDigest = stringValue
 			iNdEx = postIndex
-		case 4:
+		case 5:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field Created", wireType)
 			}
@@ -1425,7 +1508,7 @@ func (m *BaseImageTag) UnmarshalVTUnsafe(dAtA []byte) error {
 				return err
 			}
 			iNdEx = postIndex
-		case 5:
+		case 6:
 			if wireType != 0 {
 				return fmt.Errorf("proto: wrong wireType = %d for field IsManifestList", wireType)
 			}
@@ -1445,7 +1528,7 @@ func (m *BaseImageTag) UnmarshalVTUnsafe(dAtA []byte) error {
 				}
 			}
 			m.IsManifestList = bool(v != 0)
-		case 6:
+		case 7:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field ListDigests", wireType)
 			}

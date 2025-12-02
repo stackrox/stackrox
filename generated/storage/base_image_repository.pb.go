@@ -178,22 +178,26 @@ func (x *BaseImageRepository) GetPatternHash() string {
 // BaseImageTag stores cached base image tag metadata.
 // Persisting cache data across Central restarts avoids cold-start refetches during base
 // image repository scanning.
-// Next tag: 7
+// Next tag: 8
 type BaseImageTag struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
+	// Unique identifier.
+	Id string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" sql:"pk,type(uuid)"` // @gotags: sql:"pk,type(uuid)"
 	// Foreign key to the repository pattern.
-	BaseImageRepositoryId string `protobuf:"bytes,1,opt,name=base_image_repository_id,json=baseImageRepositoryId,proto3" json:"base_image_repository_id,omitempty" sql:"pk,fk(BaseImageRepository:id),type(uuid)"` // @gotags: sql:"pk,fk(BaseImageRepository:id),type(uuid)"
+	// Composite unique constraint with tag field.
+	BaseImageRepositoryId string `protobuf:"bytes,2,opt,name=base_image_repository_id,json=baseImageRepositoryId,proto3" json:"base_image_repository_id,omitempty" sql:"fk(BaseImageRepository:id),type(uuid),index=category:unique;name:base_image_tags_repo_tag"` // @gotags: sql:"fk(BaseImageRepository:id),type(uuid),index=category:unique;name:base_image_tags_repo_tag"
 	// Tag name (e.g., "8.10-1234").
-	Tag string `protobuf:"bytes,2,opt,name=tag,proto3" json:"tag,omitempty" sql:"pk"` // @gotags: sql:"pk"
+	// Composite unique constraint with base_image_repository_id field.
+	Tag string `protobuf:"bytes,3,opt,name=tag,proto3" json:"tag,omitempty" search:"Base Image Tag,hidden" sql:"index=category:unique;name:base_image_tags_repo_tag"` // @gotags: search:"Base Image Tag,hidden" sql:"index=category:unique;name:base_image_tags_repo_tag"
 	// SHA256 digest of the manifest (or manifest list for multi-arch).
-	ManifestDigest string `protobuf:"bytes,3,opt,name=manifest_digest,json=manifestDigest,proto3" json:"manifest_digest,omitempty"`
+	ManifestDigest string `protobuf:"bytes,4,opt,name=manifest_digest,json=manifestDigest,proto3" json:"manifest_digest,omitempty"`
 	// Image creation timestamp from config blob.
-	Created *timestamppb.Timestamp `protobuf:"bytes,4,opt,name=created,proto3" json:"created,omitempty"`
+	Created *timestamppb.Timestamp `protobuf:"bytes,5,opt,name=created,proto3" json:"created,omitempty"`
 	// Whether this tag points to a manifest list (multi-platform).
-	IsManifestList bool `protobuf:"varint,5,opt,name=is_manifest_list,json=isManifestList,proto3" json:"is_manifest_list,omitempty"`
+	IsManifestList bool `protobuf:"varint,6,opt,name=is_manifest_list,json=isManifestList,proto3" json:"is_manifest_list,omitempty"`
 	// Map of "os/arch" to platform-specific manifest digest,
 	// to only refetch platforms whose digest changed.
-	ListDigests   map[string]string `protobuf:"bytes,6,rep,name=list_digests,json=listDigests,proto3" json:"list_digests,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	ListDigests   map[string]string `protobuf:"bytes,7,rep,name=list_digests,json=listDigests,proto3" json:"list_digests,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -226,6 +230,13 @@ func (x *BaseImageTag) ProtoReflect() protoreflect.Message {
 // Deprecated: Use BaseImageTag.ProtoReflect.Descriptor instead.
 func (*BaseImageTag) Descriptor() ([]byte, []int) {
 	return file_storage_base_image_repository_proto_rawDescGZIP(), []int{1}
+}
+
+func (x *BaseImageTag) GetId() string {
+	if x != nil {
+		return x.Id
+	}
+	return ""
 }
 
 func (x *BaseImageTag) GetBaseImageRepositoryId() string {
@@ -288,14 +299,15 @@ const file_storage_base_image_repository_proto_rawDesc = "" +
 	"\fHealthStatus\x12\v\n" +
 	"\aHEALTHY\x10\x00\x12\r\n" +
 	"\tUNHEALTHY\x10\x01\x12\f\n" +
-	"\bDISABLED\x10\x02\"\xed\x02\n" +
-	"\fBaseImageTag\x127\n" +
-	"\x18base_image_repository_id\x18\x01 \x01(\tR\x15baseImageRepositoryId\x12\x10\n" +
-	"\x03tag\x18\x02 \x01(\tR\x03tag\x12'\n" +
-	"\x0fmanifest_digest\x18\x03 \x01(\tR\x0emanifestDigest\x124\n" +
-	"\acreated\x18\x04 \x01(\v2\x1a.google.protobuf.TimestampR\acreated\x12(\n" +
-	"\x10is_manifest_list\x18\x05 \x01(\bR\x0eisManifestList\x12I\n" +
-	"\flist_digests\x18\x06 \x03(\v2&.storage.BaseImageTag.ListDigestsEntryR\vlistDigests\x1a>\n" +
+	"\bDISABLED\x10\x02\"\xfd\x02\n" +
+	"\fBaseImageTag\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\x127\n" +
+	"\x18base_image_repository_id\x18\x02 \x01(\tR\x15baseImageRepositoryId\x12\x10\n" +
+	"\x03tag\x18\x03 \x01(\tR\x03tag\x12'\n" +
+	"\x0fmanifest_digest\x18\x04 \x01(\tR\x0emanifestDigest\x124\n" +
+	"\acreated\x18\x05 \x01(\v2\x1a.google.protobuf.TimestampR\acreated\x12(\n" +
+	"\x10is_manifest_list\x18\x06 \x01(\bR\x0eisManifestList\x12I\n" +
+	"\flist_digests\x18\a \x03(\v2&.storage.BaseImageTag.ListDigestsEntryR\vlistDigests\x1a>\n" +
 	"\x10ListDigestsEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
 	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01B.\n" +
