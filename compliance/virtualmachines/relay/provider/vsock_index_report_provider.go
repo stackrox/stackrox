@@ -79,7 +79,11 @@ func (p *VsockIndexReportProvider) Start(ctx context.Context) (<-chan *v1.IndexR
 }
 
 func (p *VsockIndexReportProvider) acceptLoop(ctx context.Context, reportChan chan<- *v1.IndexReport) {
+	defer close(reportChan)
 	defer p.stop()
+
+	var wg sync.WaitGroup
+	defer wg.Wait() // Wait for all handlers to finish before closing channel
 
 	go func() {
 		<-ctx.Done()
@@ -129,7 +133,11 @@ func (p *VsockIndexReportProvider) acceptLoop(ctx context.Context, reportChan ch
 			continue
 		}
 
-		go p.handleConnection(ctx, conn, reportChan)
+		wg.Add(1)
+		go func(conn net.Conn) {
+			defer wg.Done()
+			p.handleConnection(ctx, conn, reportChan)
+		}(conn)
 	}
 }
 
@@ -152,7 +160,8 @@ func (p *VsockIndexReportProvider) handleConnection(ctx context.Context, conn ne
 
 	log.Infof("Finished handling connection from %s", conn.RemoteAddr())
 
-	// Send validated report to channel (never blocks - buffer sized to concurrency limit)
+	// Send validated report to channel
+	// WaitGroup ensures channel won't be closed while we're sending
 	reportChan <- indexReport
 }
 
