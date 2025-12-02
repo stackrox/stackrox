@@ -26,7 +26,7 @@ nav.pf-v6-c-nav.pf-m-horizontal-subnav.acs-pf-horizontal-subnav .pf-v6-c-menu-to
 nav.pf-v6-c-nav.pf-m-horizontal-subnav.acs-pf-horizontal-subnav .pf-v6-c-menu-toggle:after {
   border-left-width: 1px;
   border-left-style: solid;
-  border-left-color: var(--pf-t--global--border--color--inverse--default);
+  border-left-color: var(--pf-t--global--background--color--inverse--default);
 }
 
 nav.pf-v6-c-nav.pf-m-horizontal-subnav.acs-pf-horizontal-subnav .pf-v6-c-menu {

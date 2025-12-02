@@ -186,7 +186,7 @@ function ReportJobs({ reportId }: ReportJobsProps) {
                         title="Error loading report jobs"
                         headingLevel="h2"
                         icon={ExclamationCircleIcon}
-                        iconClassName="pf-v6-u-text-color-status-danger"
+                        status="danger"
                     >
                         {error}
                     </EmptyStateTemplate>

@@ -298,7 +298,7 @@ function ListeningEndpointsPage() {
                                 title="Error loading deployments with listening endpoints"
                                 headingLevel="h2"
                                 icon={ExclamationCircleIcon}
-                                iconClassName="pf-v6-u-text-color-status-danger"
+                                status="danger"
                             >
                                 {getAxiosErrorMessage(error.message)}
                             </EmptyStateTemplate>

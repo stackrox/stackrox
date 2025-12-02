@@ -80,6 +80,8 @@ function DeniedRequests() {
         setPage(1);
     }
 
+    tableState.type = 'ERROR';
+
     if (tableState.type === 'ERROR') {
         return (
             <PageSection hasBodyWrapper={false}>

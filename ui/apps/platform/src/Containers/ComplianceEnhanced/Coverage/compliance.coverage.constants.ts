@@ -9,6 +9,6 @@ export const FAILING_LABEL_COLOR = 'red';
 export const MANUAL_VAR_COLOR = 'var(--pf-t--global--icon--color--status--warning--default)';
 export const MANUAL_LABEL_COLOR = 'grey';
 export const OTHER_VAR_COLOR = 'var(--pf-t--global--icon--color--subtle)';
-export const OTHER_LABEL_COLOR = 'gold';
+export const OTHER_LABEL_COLOR = 'yellow';
 export const PASSING_VAR_COLOR = 'var(--pf-t--global--icon--color--brand--default)';
 export const PASSING_LABEL_COLOR = 'blue';
