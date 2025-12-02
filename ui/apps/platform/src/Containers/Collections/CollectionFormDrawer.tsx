@@ -72,7 +72,8 @@ function CollectionFormDrawer({
                     panelContent={
                         <DrawerPanelContent
                             style={{
-                                borderLeft: 'var(--pf-v5-global--BorderColor--100) 1px solid',
+                                borderLeft:
+                                    'var(--pf-t--temp--dev--tbd)' /* CODEMODS: original v5 color was --pf-v5-global--BorderColor--100 */,
                                 maxWidth: isInlineDrawer ? '40%' : 'unset',
                             }}
                         >
@@ -93,11 +94,11 @@ function CollectionFormDrawer({
                         </DrawerPanelContent>
                     }
                 >
-                    <DrawerContentBody className="pf-v5-u-background-color-100 pf-v5-u-display-flex pf-v5-u-flex-direction-column">
+                    <DrawerContentBody className="pf-v6-u-background-color-100 pf-v6-u-display-flex pf-v6-u-flex-direction-column">
                         {headerContent}
                         {isCollectionParseError(initialData) ? (
                             <UnsupportedCollectionState
-                                className="pf-v5-u-pt-xl"
+                                className="pf-v6-u-pt-xl"
                                 errors={initialData.errors}
                             />
                         ) : (

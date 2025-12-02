@@ -121,7 +121,7 @@ function CVEsTableContainer({
                 tableRowCount={rowCount}
                 isFiltered={isFiltered}
             >
-                <ToolbarItem align={{ default: 'alignRight' }}>
+                <ToolbarItem align={{ default: 'alignEnd' }}>
                     <ColumnManagementButton
                         columnConfig={columnConfig}
                         onApplyColumns={managedColumnState.setVisibility}

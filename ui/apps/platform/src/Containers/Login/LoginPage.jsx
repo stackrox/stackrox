@@ -160,7 +160,7 @@ class LoginPage extends Component {
                     isInline
                     title={errorKey}
                     component="p"
-                    className="pf-v5-u-mb-md"
+                    className="pf-v6-u-mb-md"
                 >
                     {errorMsg} {errorLink}
                 </Alert>
@@ -192,7 +192,7 @@ class LoginPage extends Component {
                         isInline
                         title="roxct-authorize-error"
                         component="p"
-                        className="pf-v5-u-mb-md"
+                        className="pf-v6-u-mb-md"
                     >
                         Only basic auth provider given. Authorizing roxctl only works with non-basic
                         auth provider. Configure an auth provider and try again.
@@ -283,7 +283,7 @@ class LoginPage extends Component {
                 <main className="flex h-full items-center justify-center">
                     <div className="flex items-start">
                         <form
-                            className="pf-v5-u-background-color-100 w-128 theme-light"
+                            className="pf-v6-u-background-color-100 w-128 theme-light"
                             onSubmit={this.props.handleSubmit(this.login)}
                         >
                             <div className="flex flex-col p-12 w-full">
@@ -293,7 +293,7 @@ class LoginPage extends Component {
                                 {this.renderLoginButton()}
                             </div>
                         </form>
-                        <BrandLogo className="pf-v5-u-p-2xl" />
+                        <BrandLogo className="pf-v6-u-p-2xl" />
                     </div>
                 </main>
             </>

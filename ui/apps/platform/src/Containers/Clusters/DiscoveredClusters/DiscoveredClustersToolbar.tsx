@@ -61,8 +61,8 @@ function DiscoveredClustersToolbar({
                         />
                     </ToolbarItem>
                 </ToolbarGroup>
-                <ToolbarGroup className="pf-v5-u-w-100">
-                    <ToolbarItem variant="pagination" align={{ default: 'alignRight' }}>
+                <ToolbarGroup variant="action-group" align={{ default: 'alignEnd' }}>
+                    <ToolbarItem variant="pagination">
                         <Pagination
                             isCompact
                             // Comment out for MVP because testers complained about flicker.

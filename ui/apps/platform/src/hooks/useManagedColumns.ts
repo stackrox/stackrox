@@ -99,7 +99,7 @@ export function generateVisibilityForColumns<T extends Record<string, ColumnConf
         if (!state || state.isShown) {
             return '';
         }
-        return 'pf-v5-u-display-none';
+        return 'pf-v6-u-display-none';
     };
 }
 

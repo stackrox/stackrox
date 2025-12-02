@@ -84,7 +84,7 @@ const WorkflowListPage = ({
                         title={`Unable to load data for the ${entityListType.toLowerCase()} list`}
                         headingLevel="h3"
                         icon={ExclamationCircleIcon}
-                        iconClassName="pf-v5-u-danger-color-100"
+                        iconClassName="pf-v6-u-danger-color-100"
                     >
                         {error.message}
                     </EmptyStateTemplate>

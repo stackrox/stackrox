@@ -1,5 +1,6 @@
 import type { ReactElement } from 'react';
-import { Button, Modal, Tab, TabTitleText, Tabs } from '@patternfly/react-core';
+import { Button, Tab, TabTitleText, Tabs } from '@patternfly/react-core';
+import { Modal } from '@patternfly/react-core/deprecated';
 import { useFormik } from 'formik';
 import isEmpty from 'lodash/isEmpty';
 

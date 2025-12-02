@@ -5,9 +5,9 @@ import {
     CardBody,
     CardTitle,
     Checkbox,
+    Content,
     Form,
     PageSection,
-    Text,
     TextArea,
     TextInput,
     ToggleGroup,
@@ -214,7 +214,7 @@ function MicrosoftSentinelIntegrationForm({
     return (
         <>
             <PageSection
-                variant="light"
+                hasBodyWrapper={false}
                 isFilled
                 hasOverflowScroll
                 className="microsoft-sentinel-form"
@@ -276,12 +276,12 @@ function MicrosoftSentinelIntegrationForm({
                             isDisabled={!isEditable}
                         />
                     </FormLabelGroup>
-                    <Card isFlat>
+                    <Card>
                         <CardTitle>Authentication method</CardTitle>
                         <CardBody>
                             <ToggleGroup
                                 aria-label="Authentication method selection"
-                                className="pf-v5-u-pb-md"
+                                className="pf-v6-u-pb-md"
                             >
                                 <ToggleGroupItem
                                     text="Use secret"
@@ -428,12 +428,12 @@ function MicrosoftSentinelIntegrationForm({
                                             helpTitle="Use workload identity"
                                             helpText={
                                                 <>
-                                                    <Text>
+                                                    <Content component="p">
                                                         Enables authentication with short-lived
                                                         tokens using Azure managed identities or
                                                         Azure workload identities.
-                                                    </Text>
-                                                    <Text>
+                                                    </Content>
+                                                    <Content component="p">
                                                         For more information, see{' '}
                                                         <ExternalLink>
                                                             <a
@@ -447,7 +447,7 @@ function MicrosoftSentinelIntegrationForm({
                                                                 RHACS documentation
                                                             </a>
                                                         </ExternalLink>
-                                                    </Text>
+                                                    </Content>
                                                 </>
                                             }
                                             ariaLabel="Help for short-lived tokens"
@@ -470,7 +470,7 @@ function MicrosoftSentinelIntegrationForm({
                             )}
                         </CardBody>
                     </Card>
-                    <Card isFlat>
+                    <Card>
                         <CardTitle>Alert data collection rule configuration</CardTitle>
                         <CardBody>
                             <FormLabelGroup
@@ -529,7 +529,7 @@ function MicrosoftSentinelIntegrationForm({
                             </FormLabelGroup>
                         </CardBody>
                     </Card>
-                    <Card isFlat>
+                    <Card>
                         <CardTitle>Audit data collection rule configuration</CardTitle>
                         <CardBody>
                             <FormLabelGroup

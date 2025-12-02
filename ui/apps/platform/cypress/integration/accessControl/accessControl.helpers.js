@@ -123,7 +123,7 @@ export function assertAccessControlEntitiesPage(entitiesKey) {
         const entitiesTitle = entitiesTitleMap[entitiesKeyAsserted];
         const isSelected = entitiesKey === entitiesKeyAsserted;
 
-        cy.get(`nav.pf-m-tertiary a.pf-v5-c-nav__link:contains("${entitiesTitle}")`).should(
+        cy.get(`nav.pf-m-tertiary a.pf-v6-c-nav__link:contains("${entitiesTitle}")`).should(
             isSelected ? 'have.class' : 'not.have.class',
             'pf-m-current'
         );
@@ -131,7 +131,7 @@ export function assertAccessControlEntitiesPage(entitiesKey) {
 
     // Negative assertion.
 
-    cy.get('.pf-v5-c-breadcrumb').should('not.exist');
+    cy.get('.pf-v6-c-breadcrumb').should('not.exist');
 }
 
 export function assertAccessControlEntityPage(entitiesKey) {
@@ -145,7 +145,7 @@ export function assertAccessControlEntityPage(entitiesKey) {
     );
 
     cy.get(
-        `li.pf-v5-c-breadcrumb__item:nth-child(1) a.pf-v5-c-breadcrumb__link:contains("${entitiesTitleMap[entitiesKey]}")`
+        `li.pf-v6-c-breadcrumb__item:nth-child(1) a.pf-v6-c-breadcrumb__link:contains("${entitiesTitleMap[entitiesKey]}")`
     );
     // Caller is reponsible to assert second breadcrumb item.
 
@@ -154,20 +154,20 @@ export function assertAccessControlEntityPage(entitiesKey) {
     entitiesKeys.forEach((entitiesKeyAsserted) => {
         const entitiesTitle = entitiesTitleMap[entitiesKeyAsserted];
 
-        cy.get(`nav.pf-m-tertiary a.pf-v5-c-nav__link:contains("${entitiesTitle}")`).should(
+        cy.get(`nav.pf-m-tertiary a.pf-v6-c-nav__link:contains("${entitiesTitle}")`).should(
             'not.exist'
         );
     });
 }
 
 export function assertAccessControlEntityDoesNotExist(entitiesKey) {
-    cy.get('li.pf-v5-c-breadcrumb__item:nth-child(2)').should('not.exist');
+    cy.get('li.pf-v6-c-breadcrumb__item:nth-child(2)').should('not.exist');
 
-    cy.get('.pf-v5-c-empty-state h1').should(
+    cy.get('.pf-v6-c-empty-state h1').should(
         'have.text',
         `${entityTitleMap[entitiesKey]} does not exist`
     );
-    cy.get('.pf-v5-c-empty-state a')
+    cy.get('.pf-v6-c-empty-state a')
         .should('have.text', entitiesTitleMap[entitiesKey])
         .should('have.attr', 'href', getEntitiesPath(entitiesKey));
 }
@@ -223,9 +223,9 @@ export function clickEntityNameInTable(entitiesKey, entityName) {
 
 export function clickRowActionMenuItemInTable(entityName, menuItemText) {
     cy.get(
-        `tr:has(td[data-label="Name"] a:contains("${entityName}")) td.pf-v5-c-table__action .pf-v5-c-menu-toggle`
+        `tr:has(td[data-label="Name"] a:contains("${entityName}")) td.pf-v6-c-table__action .pf-v6-c-menu-toggle`
     ).click();
-    cy.get(`td.pf-v5-c-table__action button[role="menuitem"]:contains("${menuItemText}")`).click();
+    cy.get(`td.pf-v6-c-table__action button[role="menuitem"]:contains("${menuItemText}")`).click();
 }
 
 export const authProvidersAliasForDELETE = 'DELETE_authProviders';
@@ -244,7 +244,7 @@ export function clickConfirmationToDeleteAuthProvider(entityId, staticResponseMa
 
     interactAndWaitForResponses(
         () => {
-            cy.get('.pf-v5-c-modal-box__footer button:contains("Delete")').click();
+            cy.get('.pf-v6-c-modal-box__footer button:contains("Delete")').click();
         },
         routeMatcherMap,
         staticResponseMap
@@ -322,7 +322,7 @@ export function inviteNewGroupsBatch(staticResponseMap) {
 
     return interactAndWaitForResponses(
         () => {
-            cy.get('.pf-v5-c-modal-box__footer button:contains("Invite users")').click();
+            cy.get('.pf-v6-c-modal-box__footer button:contains("Invite users")').click();
         },
         routeMatcherMap,
         staticResponseMap

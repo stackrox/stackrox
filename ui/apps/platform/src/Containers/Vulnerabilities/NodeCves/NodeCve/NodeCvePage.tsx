@@ -112,7 +112,7 @@ function NodeCvePage() {
     return (
         <>
             <PageTitle title={`Node CVEs - NodeCVE ${nodeCveName}`} />
-            <PageSection variant="light" className="pf-v5-u-py-md">
+            <PageSection hasBodyWrapper={false} className="pf-v6-u-py-md">
                 <Breadcrumb>
                     <BreadcrumbItemLink to={nodeCveOverviewCvePath}>Node CVEs</BreadcrumbItemLink>
                     <BreadcrumbItem isActive>
@@ -123,13 +123,13 @@ function NodeCvePage() {
                 </Breadcrumb>
             </PageSection>
             <Divider component="div" />
-            <PageSection variant="light">
+            <PageSection hasBodyWrapper={false}>
                 <CvePageHeader data={cveMetadata} />
             </PageSection>
             <Divider component="div" />
-            <PageSection className="pf-v5-u-flex-grow-1">
+            <PageSection hasBodyWrapper={false} className="pf-v6-u-flex-grow-1">
                 <AdvancedFiltersToolbar
-                    className="pf-v5-u-pt-lg pf-v5-u-pb-0 pf-v5-u-px-sm"
+                    className="pf-v6-u-pt-lg pf-v6-u-pb-0 pf-v6-u-px-sm"
                     searchFilter={searchFilter}
                     searchFilterConfig={searchFilterConfig}
                     defaultSearchFilterEntity="Node"
@@ -172,8 +172,8 @@ function NodeCvePage() {
                     />
                 </SummaryCardLayout>
                 <Divider component="div" />
-                <div className="pf-v5-u-background-color-100 pf-v5-u-flex-grow-1 pf-v5-u-p-lg">
-                    <Split className="pf-v5-u-pb-lg pf-v5-u-align-items-baseline">
+                <div className="pf-v6-u-background-color-100 pf-v6-u-flex-grow-1 pf-v6-u-p-lg">
+                    <Split className="pf-v6-u-pb-lg pf-v6-u-align-items-baseline">
                         <SplitItem isFilled>
                             <Flex alignItems={{ default: 'alignItemsCenter' }}>
                                 <Title headingLevel="h2">
