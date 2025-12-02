@@ -871,6 +871,48 @@ module.exports = [
         },
     },
     {
+        files: ['src/*/**/*.{js,jsx,ts,tsx}'],
+        ignores: [
+            'src/Components/CompoundSearchFilter/utils/utils.tsx', // prevent merge conflict
+            'src/Components/GroupedTabs.jsx', // deprecated
+            'src/Components/ReactSelect/ReactSelect.jsx', // deprecated
+            'src/Components/URLSearchInputWithAutocomplete.jsx', // deprecated
+            'src/Containers/AccessControl/**',
+            'src/Containers/Audit/**',
+            'src/Containers/Compliance/**', // deprecated
+            'src/Containers/ComplianceEnhanced/**',
+            'src/Containers/ConfigManagement/**',
+            'src/Containers/MitreAttackVectors/**',
+            'src/Containers/NetworkGraph/**',
+            'src/Containers/Policies/**',
+            'src/Containers/Risk/**',
+            'src/Containers/SystemConfig/**',
+            'src/Containers/SystemHealth/**',
+            'src/Containers/Violations/**',
+            'src/Containers/VulnMgmt/**', // deprecated
+            'src/Containers/Vulnerabilities/**',
+            'src/init/initializeAnalytics.js', // generated from segment api
+            'src/sagas/authSagas.js', // deprecated
+            'src/sagas/groupSagas.js', // deprecated
+            'src/sagas/roleSagas.js', // deprecated
+            'src/utils/URLParser.ts', // deprecated
+            'src/utils/WorkflowState.js', // deprecated
+            'src/utils/entityRelationships.ts', // deprecated
+            'src/utils/getSubListFromEntity.js', // deprecated
+            'src/utils/queryService.js', // deprecated
+        ],
+
+        // languageOptions from previous configuration object
+
+        // Key of plugin is namespace of its rules.
+        plugins: {
+            limited: pluginLimited,
+        },
+        rules: {
+            'limited/no-logical-or-preceding-array-or-object': 'error',
+        },
+    },
+    {
         files: ['src/**/*.{js,jsx,ts,tsx}'],
         ignores: [
             'src/Components/*.{js,jsx}', // deprecated

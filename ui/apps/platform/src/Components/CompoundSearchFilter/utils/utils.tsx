@@ -70,7 +70,7 @@ export function getEntityAttributes(
     entityName: string
 ): CompoundSearchFilterAttribute[] {
     const entity = getEntity(config, entityName);
-    return entity?.attributes || [];
+    return entity?.attributes ?? [];
 }
 
 export function getDefaultAttributeName(

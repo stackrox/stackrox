@@ -6,7 +6,7 @@ import useRestQuery from 'hooks/useRestQuery';
 
 export function UserPermissionProvider({ children }: { children: ReactNode }) {
     const { data, isLoading } = useRestQuery(fetchUserRolePermissions);
-    const userRolePermissions = data?.response || { resourceToAccess: {} };
+    const userRolePermissions = data?.response ?? { resourceToAccess: {} };
     const isLoadingPermissions = isLoading;
 
     return (
