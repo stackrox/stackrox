@@ -13,6 +13,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/fixtures"
+	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/protoassert"
@@ -20,6 +21,7 @@ import (
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/testutils"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -80,6 +82,9 @@ func (s *ImagesStoreSuite) TestStore() {
 			vuln.SuppressActivation = nil
 			vuln.SuppressExpiry = nil
 			vuln.Advisory = nil
+			// TODO: Can be removed after the new CVE table and ImageCVE to EmbeddedVulnerability conversion to populate
+			// the two timestamps (FirstOccurenceInSystem and FixAvailable)
+			vuln.FixAvailableTimestamp = nil
 		}
 		comp.License = nil
 	}
@@ -135,6 +140,7 @@ func (s *ImagesStoreSuite) TestNVDCVSS() {
 	for _, component := range image.GetScan().GetComponents() {
 		for _, vuln := range component.GetVulns() {
 			vuln.CvssMetrics = []*storage.CVSSScore{nvdCvss}
+			vuln.FixAvailableTimestamp = nil
 		}
 
 	}
@@ -282,6 +288,18 @@ func (s *ImagesStoreSuite) TestGetManyImageMetadata() {
 	returnedImages, err = s.store.GetManyImageMetadata(s.ctx, searchedIndexes)
 	s.NoError(err)
 	s.Equal(2, len(returnedImages))
+
+	tx, err := s.testDB.Begin(s.ctx)
+	s.NoError(err)
+	ctx := postgres.ContextWithTx(s.ctx, tx)
+	missing, ok, err := s.store.GetImageMetadata(ctx, "nonsense")
+	s.NoError(err)
+	s.False(ok)
+	s.Nil(missing)
+	_, ok, err = s.store.GetImageMetadata(ctx, image.GetId())
+	s.NoError(err)
+	s.True(ok)
+	assert.NoError(s.T(), tx.Rollback(s.ctx))
 }
 
 func (s *ImagesStoreSuite) TestWalkByQuery() {
@@ -309,6 +327,46 @@ func (s *ImagesStoreSuite) TestWalkByQuery() {
 
 	q := search.NewQueryBuilder().AddExactMatches(search.ImageSHA, image.GetId()).ProtoQuery()
 	s.NoError(s.store.WalkByQuery(s.ctx, q, walkFn))
+
+	tx, err := s.testDB.Begin(s.ctx)
+	s.NoError(err)
+	ctx := postgres.ContextWithTx(s.ctx, tx)
+	s.NoError(s.store.WalkByQuery(ctx, q, walkFn))
+	s.NoError(s.ctx.Err())
+	// The second walk is here to check if transaction and context are still active
+	s.NoError(s.store.WalkByQuery(ctx, q, walkFn))
+	s.NoError(s.ctx.Err())
+	assert.NoError(s.T(), tx.Commit(s.ctx))
+}
+
+func (s *ImagesStoreSuite) TestWalkMetadataByQuery() {
+	image := getTestImage("image1")
+	image2 := getTestImage("image2")
+
+	// Add an image
+	s.NoError(s.store.Upsert(s.ctx, image))
+	_, exists, err := s.store.Get(s.ctx, image.GetId())
+	s.NoError(err)
+	s.True(exists)
+
+	// Add a second image
+	s.NoError(s.store.Upsert(s.ctx, image2))
+	_, exists, err = s.store.Get(s.ctx, image2.GetId())
+	s.NoError(err)
+	s.True(exists)
+
+	walkFn := func(obj *storage.Image) error {
+		if obj.GetId() != image.GetId() {
+			return fmt.Errorf("expected image1 but got %s", obj.GetId())
+		}
+		if obj.GetScan().GetComponents() != nil {
+			return fmt.Errorf("expected scan components to be nil but got %d components", len(obj.GetScan().GetComponents()))
+		}
+		return nil
+	}
+
+	q := search.NewQueryBuilder().AddExactMatches(search.ImageSHA, image.GetId()).ProtoQuery()
+	s.NoError(s.store.WalkMetadataByQuery(s.ctx, q, walkFn))
 }
 
 func (s *ImagesStoreSuite) TestGetMany() {

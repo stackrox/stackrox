@@ -7,7 +7,6 @@ import (
 	"testing"
 
 	"github.com/stackrox/rox/central/networkbaseline/store"
-	pgStore "github.com/stackrox/rox/central/networkbaseline/store/postgres"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/postgres"
@@ -43,7 +42,7 @@ var _ interface {
 
 func (suite *NetworkBaselineDataStoreTestSuite) SetupSuite() {
 	suite.pool = pgtest.ForT(suite.T())
-	suite.storage = pgStore.New(suite.pool)
+	suite.storage = store.New(suite.pool)
 	suite.datastore = newNetworkBaselineDataStore(suite.storage)
 }
 

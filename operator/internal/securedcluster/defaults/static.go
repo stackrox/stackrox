@@ -21,6 +21,9 @@ var staticDefaults = platform.SecuredClusterSpec{
 			Collection: platform.CollectionCOREBPF.Pointer(),
 		},
 		TaintToleration: platform.TaintTolerate.Pointer(),
+		SFA: &platform.SFAContainerSpec{
+			Agent: platform.SFAAgentDisabled.Pointer(),
+		},
 	},
 	AuditLogs: &platform.AuditLogsSpec{
 		Collection: platform.AuditLogsCollectionAuto.Pointer(),

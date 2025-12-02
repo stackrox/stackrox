@@ -554,22 +554,16 @@ func (s *storeImpl) upsert(ctx context.Context, obj *storage.Node) error {
 	keys := gatherKeys(nodeParts)
 
 	return s.keyFence.DoStatusWithLock(concurrency.DiscreteKeySet(keys...), func() error {
-		conn, release, err := s.acquireConn(ctx, ops.Upsert, "Node")
-		if err != nil {
-			return err
-		}
-		defer release()
-
-		tx, ctx, err := conn.Begin(ctx)
+		tx, ctx, err := s.begin(ctx)
 		if err != nil {
 			return err
 		}
 
 		if err := s.insertIntoNodes(ctx, tx, nodeParts, scanUpdated, iTime); err != nil {
-			if err := tx.Rollback(ctx); err != nil {
-				return err
+			if errTx := tx.Rollback(ctx); errTx != nil {
+				return errors.Wrapf(errTx, "rolling back transaction due to: %v", err)
 			}
-			return err
+			return errors.Wrap(err, "inserting into nodes")
 		}
 		return tx.Commit(ctx)
 	})
@@ -640,22 +634,14 @@ func (s *storeImpl) Get(ctx context.Context, id string) (*storage.Node, bool, er
 }
 
 func (s *storeImpl) retryableGet(ctx context.Context, id string) (*storage.Node, bool, error) {
-	conn, release, err := s.acquireConn(ctx, ops.Get, "Node")
+	tx, ctx, err := s.begin(ctx)
 	if err != nil {
 		return nil, false, err
 	}
-	defer release()
+	defer postgres.FinishReadOnlyTransaction(tx)
 
-	tx, ctx, err := conn.Begin(ctx)
-	if err != nil {
-		return nil, false, err
-	}
-	node, found, getErr := s.getFullNode(ctx, tx, id)
-	// No changes are made to the database, so COMMIT or ROLLBACK have same effect.
-	if err := tx.Commit(ctx); err != nil {
-		return nil, false, err
-	}
-	return node, found, getErr
+	node, found, err := s.getFullNode(ctx, tx, id)
+	return node, found, err
 }
 
 func (s *storeImpl) populateNode(ctx context.Context, tx *postgres.Tx, node *storage.Node) error {
@@ -803,13 +789,8 @@ func getComponentCVEEdges(ctx context.Context, tx *postgres.Tx, componentIDs []s
 	return componentIDToEdgesMap, rows.Err()
 }
 
-func (s *storeImpl) acquireConn(ctx context.Context, op ops.Op, typ string) (*postgres.Conn, func(), error) {
-	defer metrics.SetAcquireDBConnDuration(time.Now(), op, typ)
-	conn, err := s.db.Acquire(ctx)
-	if err != nil {
-		return nil, nil, err
-	}
-	return conn, conn.Release, nil
+func (s *storeImpl) begin(ctx context.Context) (*postgres.Tx, context.Context, error) {
+	return postgres.GetTransaction(ctx, s.db)
 }
 
 // Delete removes the specified ID from the store
@@ -822,22 +803,16 @@ func (s *storeImpl) Delete(ctx context.Context, id string) error {
 }
 
 func (s *storeImpl) retryableDelete(ctx context.Context, id string) error {
-	conn, release, err := s.acquireConn(ctx, ops.Remove, "Node")
-	if err != nil {
-		return err
-	}
-	defer release()
-
-	tx, ctx, err := conn.Begin(ctx)
+	tx, ctx, err := s.begin(ctx)
 	if err != nil {
 		return err
 	}
 
 	if err := s.deleteNodeTree(ctx, tx, id); err != nil {
-		if err := tx.Rollback(ctx); err != nil {
-			return err
+		if errTx := tx.Rollback(ctx); errTx != nil {
+			return errors.Wrapf(errTx, "rolling back transaction due to: %v", err)
 		}
-		return err
+		return errors.Wrap(err, "deleting node tree")
 	}
 	return tx.Commit(ctx)
 }
@@ -870,35 +845,22 @@ func (s *storeImpl) GetMany(ctx context.Context, ids []string) ([]*storage.Node,
 }
 
 func (s *storeImpl) retryableGetMany(ctx context.Context, ids []string) ([]*storage.Node, []int, error) {
-	conn, release, err := s.acquireConn(ctx, ops.GetMany, "Node")
+	tx, ctx, err := s.begin(ctx)
 	if err != nil {
 		return nil, nil, err
 	}
-	defer release()
-
-	tx, ctx, err := conn.Begin(ctx)
-	if err != nil {
-		return nil, nil, err
-	}
+	defer postgres.FinishReadOnlyTransaction(tx)
 
 	resultsByID := make(map[string]*storage.Node)
 	for _, id := range ids {
 		msg, found, err := s.getFullNode(ctx, tx, id)
 		if err != nil {
-			// No changes are made to the database, so COMMIT or ROLLBACK have the same effect.
-			if err := tx.Commit(ctx); err != nil {
-				return nil, nil, err
-			}
 			return nil, nil, err
 		}
 		if !found {
 			continue
 		}
 		resultsByID[msg.GetId()] = msg
-	}
-	// No changes are made to the database, so COMMIT or ROLLBACK have the same effect.
-	if err := tx.Commit(ctx); err != nil {
-		return nil, nil, err
 	}
 
 	missingIndices := make([]int, 0, len(ids)-len(resultsByID))
@@ -921,21 +883,11 @@ func (s *storeImpl) WalkByQuery(ctx context.Context, q *v1.Query, fn func(node *
 
 	q = applyDefaultSort(q)
 
-	conn, release, err := s.acquireConn(ctx, ops.WalkByQuery, "Node")
+	tx, ctx, err := s.begin(ctx)
 	if err != nil {
 		return err
 	}
-	defer release()
-
-	tx, ctx, err := conn.Begin(ctx)
-	if err != nil {
-		return err
-	}
-	defer func() {
-		if err := tx.Rollback(ctx); err != nil {
-			log.Errorf("error rolling back: %v", err)
-		}
-	}()
+	defer postgres.FinishReadOnlyTransaction(tx)
 
 	callback := func(node *storage.Node) error {
 		err := s.populateNode(ctx, tx, node)
@@ -965,13 +917,7 @@ func (s *storeImpl) GetNodeMetadata(ctx context.Context, id string) (*storage.No
 }
 
 func (s *storeImpl) retryableGetNodeMetadata(ctx context.Context, id string) (*storage.Node, bool, error) {
-	conn, release, err := s.acquireConn(ctx, ops.Get, "NodeMetadata")
-	if err != nil {
-		return nil, false, err
-	}
-	defer release()
-
-	row := conn.QueryRow(ctx, getNodeMetaStmt, id)
+	row := s.db.QueryRow(ctx, getNodeMetaStmt, id)
 	var data []byte
 	if err := row.Scan(&data); err != nil {
 		return nil, false, pgutils.ErrNilIfNoRows(err)

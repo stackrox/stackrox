@@ -81,6 +81,12 @@ var (
 	// Will aggregate to one edge per unique port/protocol/direction instead of one edge per unique IP/port/protocol/direction.
 	NetworkGraphAggregateExternalIPs = registerFeature("Aggregate all external IP graph edges, showing only unique port/protocol pairs", "ROX_NETWORK_GRAPH_AGGREGATE_EXT_IPS")
 
+	// NetworkFlowBatching enables batching of network flow updates to smooth out data spikes
+	NetworkFlowBatching = registerFeature("Enable batching of network flow updates to smooth out data spikes", "ROX_NETFLOW_BATCHING")
+
+	// NetworkFlowCacheLimiting enables limiting the network flow cache size to prevent memory issues
+	NetworkFlowCacheLimiting = registerFeature("Enable limiting network flow cache size to prevent memory issues", "ROX_NETFLOW_CACHE_LIMITING")
+
 	// Flattens Image Data Model for improved accuracy and performance
 	FlattenImageData = registerFeature("Uses a flattened Image Data Model for improved accuracy and performance", "ROX_FLATTEN_IMAGE_DATA")
 
@@ -102,7 +108,7 @@ var (
 	KnownExploitedVulnerabilities = registerFeature("Display CISA Known Exploited Vulnerabilities (KEV) data", "ROX_CISA_KEV")
 
 	// SensitiveFileActivity enables monitoring of sensitive files.
-	SensitiveFileActivity = registerFeature("Enable sensitive file monitoring", "ROX_SENSITIVE_FILE_ACTIVITY")
+	SensitiveFileActivity = registerFeature("Enable sensitive file monitoring", "ROX_SENSITIVE_FILE_ACTIVITY", enabled)
 
 	// CVEFixTimestampCriteria enables the new CVE Fix timestamp criteria
 	CVEFixTimestampCriteria = registerFeature("Enable grace period criteria based on CVE fix timestamp", "ROX_CVE_FIX_TIMESTAMP")

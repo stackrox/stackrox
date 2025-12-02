@@ -113,6 +113,8 @@ spec:
       {{- end }}
 
       [<- if .FeatureFlags.ROX_SENSITIVE_FILE_ACTIVITY >]
+
+      {{- if ._rox.collector.sfaEnabled }}
       - name: fact
         image: {{ quote ._rox.image.fact.fullRef }}
         imagePullPolicy: {{ ._rox.fact.imagePullPolicy }}
@@ -131,9 +133,9 @@ spec:
           value: "/var/run/secrets/stackrox.io/certs/"
         - name: FACT_HOST_MOUNT
           value: "/host"
-        {{- include "srox.envVars" (list . "daemonset" "fact" "fact") | nindent 8 }}
+        {{- include "srox.envVars" (list . "daemonset" "collector" "fact") | nindent 8 }}
         resources:
-          {{- ._rox.fact._resources | nindent 10 }}
+          {{- ._rox.collector._sfaResources | nindent 10 }}
         securityContext:
           capabilities:
             drop:
@@ -156,6 +158,8 @@ spec:
           name: etc-ro
           readOnly: true
           mountPropagation: HostToContainer
+      {{- end }}
+
       [<- end >]
 
       - command:

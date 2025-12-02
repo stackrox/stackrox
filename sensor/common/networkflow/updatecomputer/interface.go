@@ -24,6 +24,10 @@ type UpdateComputer interface {
 	OnSuccessfulSendEndpoints(enrichedEndpointsProcesses map[indicator.ContainerEndpoint]*indicator.ProcessListeningWithTimestamp)
 	// OnSuccessfulSendProcesses contains actions that should be executed after successful sending of processesListening updates to Central.
 	OnSuccessfulSendProcesses(enrichedEndpointsProcesses map[indicator.ContainerEndpoint]*indicator.ProcessListeningWithTimestamp)
+	// OnSendConnectionsFailure is called after sending with connections that failed to send. These items are stored in cache for retry.
+	OnSendConnectionsFailure(unsentConns []*storage.NetworkFlow)
+	// OnSendEndpointsFailure is called after sending with endpoints that failed to send. These items are stored in cache for retry.
+	OnSendEndpointsFailure(unsentEps []*storage.NetworkEndpoint)
 
 	// ResetState resets all internal state (used when clearing historical data).
 	ResetState()

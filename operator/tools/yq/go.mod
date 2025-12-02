@@ -2,7 +2,7 @@ module github.com/stackrox/rox/operator/tools/yq
 
 go 1.24.0
 
-require github.com/mikefarah/yq/v4 v4.48.2
+require github.com/mikefarah/yq/v4 v4.49.2
 
 require (
 	github.com/a8m/envsubst v1.4.3 // indirect

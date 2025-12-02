@@ -19375,6 +19375,11 @@
                 "type": "google.protobuf.Timestamp"
               },
               {
+                "id": 25,
+                "name": "fix_available_timestamp",
+                "type": "google.protobuf.Timestamp"
+              },
+              {
                 "id": 19,
                 "name": "severity",
                 "type": "VulnerabilitySeverity"

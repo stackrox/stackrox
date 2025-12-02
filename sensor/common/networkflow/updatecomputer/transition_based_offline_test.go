@@ -14,6 +14,10 @@ import (
 // This test doesn't apply to `Legacy` since its offline behavior relies on implementation details
 // within NetFlowManager.
 func TestTransitionBasedComputeUpdatedConnsOffline(t *testing.T) {
+	// Disable feature flags to test the original behavior
+	t.Setenv("ROX_NETFLOW_BATCHING", "false")
+	t.Setenv("ROX_NETFLOW_CACHE_LIMITING", "false")
+
 	// Test data setup
 	entity1 := networkgraph.Entity{Type: storage.NetworkEntityInfo_DEPLOYMENT, ID: "deployment-1"}
 	entity2 := networkgraph.Entity{Type: storage.NetworkEntityInfo_DEPLOYMENT, ID: "deployment-2"}

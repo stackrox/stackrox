@@ -109,7 +109,7 @@ func TestSecretInformer(t *testing.T) {
 
 	for name, c := range cases {
 		t.Run(name, func(t *testing.T) {
-			k8sClient := fake.NewSimpleClientset()
+			k8sClient := fake.NewClientset()
 
 			var wgAdd, wgUp, wgDel sync.WaitGroup
 			wgAdd.Add(c.expectedOnAddCnt)

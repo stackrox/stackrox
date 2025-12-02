@@ -98,7 +98,7 @@ func TestCreateTLSCABundleConfigMap(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Setenv("POD_NAMESPACE", "test-namespace")
-			k8sClient := fake.NewSimpleClientset()
+			k8sClient := fake.NewClientset()
 
 			var certs []*x509.Certificate
 			switch tc.certCount {
@@ -173,7 +173,7 @@ func TestCreateTLSCABundleConfigMap(t *testing.T) {
 func TestCreateTLSCABundleConfigMapUpdate(t *testing.T) {
 	t.Setenv("POD_NAMESPACE", "test-namespace")
 
-	k8sClient := fake.NewSimpleClientset()
+	k8sClient := fake.NewClientset()
 
 	ctx := context.Background()
 	cert1 := createTestCertificate(t, "First CA")

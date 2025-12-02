@@ -26,6 +26,9 @@ func receiveWorkloads(
 		if errors.Is(err, io.EOF) {
 			break
 		}
+		if err != nil {
+			return nil, err
+		}
 		if !swallow {
 			results = append(results, chunk)
 		}
