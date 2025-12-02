@@ -22,7 +22,9 @@ func (a *authenticatedRoundTripper) RoundTrip(req *http.Request) (*http.Response
 	resp, err := a.roundTripper.RoundTrip(req)
 	if err == nil && resp.StatusCode >= 400 {
 		// GKE's issuer endpoint responds with HTTP 400 if Authorization header is set.
-		// At the same time, the Kube docs indicate that auth should be required by default.
+		// At the same time, the Kube docs indicate that auth should be required by default:
+		// https://kubernetes.io/docs/tasks/configure-pod-container/configure-service-account/#service-account-issuer-discovery
+		//
 		// Thus, try first with no auth.
 		// If a response was received but it was a 4xx/5xx status code, try with the auth header.
 		// Note that we don't try with the auth header if a proper HTTP response was not received, i.e. err != nil.
@@ -36,7 +38,7 @@ func (a *authenticatedRoundTripper) RoundTrip(req *http.Request) (*http.Response
 
 		authReq := req.Clone(req.Context())
 		authReq.Header.Add("Authorization", fmt.Sprintf("Bearer %s", string(token)))
-		resp, err = a.roundTripper.RoundTrip(authReq)
+		return a.roundTripper.RoundTrip(authReq)
 	}
 	return resp, err
 }
