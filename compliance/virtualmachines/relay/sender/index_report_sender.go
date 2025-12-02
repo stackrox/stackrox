@@ -39,12 +39,6 @@ func New(sensorClient sensor.VirtualMachineIndexReportServiceClient) IndexReport
 
 // Send sends the report to Sensor, retrying on transient errors.
 func (s *sensorIndexReportSender) Send(ctx context.Context, report *v1.IndexReport) error {
-	return SendReportToSensor(ctx, report, s.sensorClient)
-}
-
-// SendReportToSensor sends the passed report to sensor using the provided VirtualMachineIndexReportServiceClient,
-// retrying when applicable.
-func SendReportToSensor(ctx context.Context, report *v1.IndexReport, sensorClient sensor.VirtualMachineIndexReportServiceClient) error {
 	log.Infof("Sending index report to sensor (vsockCID: %s)", report.GetVsockCid())
 
 	// This is the sending logic that will be retried if needed
@@ -56,7 +50,7 @@ func SendReportToSensor(ctx context.Context, report *v1.IndexReport, sensorClien
 			IndexReport: report,
 		}
 
-		resp, err := sensorClient.UpsertVirtualMachineIndexReport(sendToSensorCtx, req)
+		resp, err := s.sensorClient.UpsertVirtualMachineIndexReport(sendToSensorCtx, req)
 
 		if resp != nil && !resp.GetSuccess() {
 			// This can't happen as of this writing (Success is only false when an error is returned) but is

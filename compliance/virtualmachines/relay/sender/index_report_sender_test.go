@@ -27,17 +27,18 @@ func (s *senderTestSuite) SetupTest() {
 	s.ctx = context.Background()
 }
 
-func (s *senderTestSuite) TestSendReportToSensor_HandlesContextCancellation() {
+func (s *senderTestSuite) TestSend_HandlesContextCancellation() {
 	client := relaytest.NewMockSensorClient(s.T())
+	sender := New(client)
 	ctx, cancel := context.WithCancel(s.ctx)
 	cancel()
 
-	err := SendReportToSensor(ctx, &v1.IndexReport{}, client)
+	err := sender.Send(ctx, &v1.IndexReport{})
 	s.Require().Error(err)
 	s.Contains(err.Error(), "context canceled")
 }
 
-func (s *senderTestSuite) TestSendReportToSensor_RetriesOnRetryableErrors() {
+func (s *senderTestSuite) TestSend_RetriesOnRetryableErrors() {
 	cases := map[string]struct {
 		err         error
 		respSuccess bool
@@ -65,13 +66,14 @@ func (s *senderTestSuite) TestSendReportToSensor_RetriesOnRetryableErrors() {
 			if !c.respSuccess {
 				client = client.WithUnsuccessfulResponse()
 			}
+			sender := New(client)
 
 			// The retry logic uses withExponentialBackoff, which currently has an initial delay between retries of
 			// 100 ms, therefore after 500 ms the failing call has been retried already
 			ctx, cancel := context.WithTimeout(s.ctx, 500*time.Millisecond)
 			defer cancel()
 
-			err := SendReportToSensor(ctx, &v1.IndexReport{}, client)
+			err := sender.Send(ctx, &v1.IndexReport{})
 			s.Require().Error(err)
 
 			retried := len(client.CapturedRequests()) > 1
