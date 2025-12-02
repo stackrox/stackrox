@@ -1,6 +1,7 @@
 import type { ReactElement } from 'react';
 import { Link } from 'react-router-dom-v5-compat';
-import { Button, Flex, FlexItem, ModalBoxBody, ModalBoxFooter } from '@patternfly/react-core';
+import { Button, Flex, FlexItem } from '@patternfly/react-core';
+import { ModalBoxBody, ModalBoxFooter } from '@patternfly/react-core/deprecated';
 
 import type { ListPolicy } from 'types/policy.proto';
 import { policiesBasePath } from 'routePaths';
@@ -22,11 +23,11 @@ function ImportPolicyJSONSuccess({
                 been imported:
                 <Flex
                     direction={{ default: 'column' }}
-                    className="pf-v5-u-mt-md"
+                    className="pf-v6-u-mt-md"
                     data-testid="policies-imported"
                 >
                     {policies.map(({ id, name }, idx) => (
-                        <FlexItem key={id} className={idx === 0 ? '' : 'pf-v5-u-pt-sm'}>
+                        <FlexItem key={id} className={idx === 0 ? '' : 'pf-v6-u-pt-sm'}>
                             <Link to={`${policiesBasePath}/${id}`}>{name}</Link>
                         </FlexItem>
                     ))}

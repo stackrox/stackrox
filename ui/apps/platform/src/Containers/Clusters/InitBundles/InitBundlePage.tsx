@@ -56,7 +56,7 @@ function InitBundlePage({ hasWriteAccessForInitBundles, id }: InitBundlePageProp
     return (
         <>
             <InitBundlesHeader headerActions={headerActions} title="Cluster init bundle" />
-            <PageSection component="div">
+            <PageSection hasBodyWrapper={false} component="div">
                 {isFetching ? (
                     <Bullseye>
                         <Spinner />

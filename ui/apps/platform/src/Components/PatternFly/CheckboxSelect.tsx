@@ -147,7 +147,7 @@ function CheckboxSelect({
 
     const toggle = (toggleRef: Ref<MenuToggleElement>) => (
         <MenuToggle
-            className="pf-v5-u-w-100"
+            className="pf-v6-u-w-100"
             id={toggleId}
             ref={toggleRef}
             onClick={onToggle}

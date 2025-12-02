@@ -1,4 +1,4 @@
-import { Button, Text } from '@patternfly/react-core';
+import { Button, Content } from '@patternfly/react-core';
 import type { ButtonProps } from '@patternfly/react-core';
 import { SearchIcon } from '@patternfly/react-icons';
 
@@ -25,7 +25,7 @@ export function TbodyFilteredEmpty({
     return (
         <TbodyFullCentered colSpan={colSpan}>
             <EmptyStateTemplate title={title} headingLevel={headingLevel} icon={SearchIcon}>
-                <Text>{message}</Text>
+                <Content component="p">{message}</Content>
                 <Button variant="link" onClick={onClearFilters}>
                     Clear filters
                 </Button>

@@ -27,12 +27,16 @@ export function getProviderRegionText(providerType: DiscoveredClusterProviderTyp
 const iconMap: Record<DiscoveredClusterStatus, ReactElement> = {
     STATUS_SECURED: (
         <Icon>
-            <CheckCircleIcon color="var(--pf-v5-global--success-color--100)" />
+            <CheckCircleIcon
+                color="var(--pf-t--temp--dev--tbd)" /* CODEMODS: original v5 color was --pf-v5-global--success-color--100 */
+            />
         </Icon>
     ),
     STATUS_UNSECURED: (
         <Icon>
-            <SecurityIcon color="var(--pf-v5-global--danger-color--100)" />
+            <SecurityIcon
+                color="var(--pf-t--temp--dev--tbd)" /* CODEMODS: original v5 color was --pf-v5-global--danger-color--100 */
+            />
         </Icon>
     ),
     STATUS_UNSPECIFIED: <UnknownIcon />,

@@ -47,8 +47,8 @@ function ScanConfigOptions(): ReactElement {
 
     return (
         <>
-            <PageSection variant="light" padding={{ default: 'noPadding' }}>
-                <Flex direction={{ default: 'column' }} className="pf-v5-u-py-lg pf-v5-u-px-lg">
+            <PageSection hasBodyWrapper={false} padding={{ default: 'noPadding' }}>
+                <Flex direction={{ default: 'column' }} className="pf-v6-u-py-lg pf-v6-u-px-lg">
                     <FlexItem>
                         <Title headingLevel="h2">Parameters</Title>
                     </FlexItem>
@@ -56,7 +56,7 @@ function ScanConfigOptions(): ReactElement {
                 </Flex>
             </PageSection>
             <Divider component="div" />
-            <Form className="pf-v5-u-py-lg pf-v5-u-px-lg" id="scan-schedules-parameters">
+            <Form className="pf-v6-u-py-lg pf-v6-u-px-lg" id="scan-schedules-parameters">
                 <Stack hasGutter>
                     <StackItem>
                         <Stack hasGutter>

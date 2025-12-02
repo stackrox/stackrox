@@ -33,7 +33,7 @@ function SearchNavAndTable({
     return (
         <Split hasGutter>
             <SplitItem>
-                <Nav aria-label="Categories" theme="light">
+                <Nav aria-label="Categories">
                     <NavList>
                         {Object.entries(searchNavMap).map(([navCategory, text]) => (
                             <NavItem key={navCategory} isActive={navCategory === activeNavCategory}>

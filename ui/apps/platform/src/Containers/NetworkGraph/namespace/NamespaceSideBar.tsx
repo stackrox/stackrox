@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import {
+    Content,
     Flex,
     FlexItem,
     Stack,
@@ -8,7 +9,6 @@ import {
     TabContent,
     TabTitleText,
     Tabs,
-    Text,
     Title,
 } from '@patternfly/react-core';
 import uniq from 'lodash/uniq';
@@ -84,7 +84,7 @@ function NamespaceSideBar({
     return (
         <Stack>
             <StackItem>
-                <Flex direction={{ default: 'row' }} className="pf-v5-u-p-md pf-v5-u-mb-0">
+                <Flex direction={{ default: 'row' }} className="pf-v6-u-p-md pf-v6-u-mb-0">
                     <FlexItem>
                         <NamespaceIcon />
                     </FlexItem>
@@ -92,11 +92,11 @@ function NamespaceSideBar({
                         <Title headingLevel="h2" id={labelledById}>
                             {namespaceNode?.label}
                         </Title>
-                        <Text className="pf-v5-u-font-size-sm pf-v5-u-color-200">
+                        <Content component="p" className="pf-v6-u-font-size-sm pf-v6-u-color-200">
                             in &quot;
                             {cluster}
                             &quot;
-                        </Text>
+                        </Content>
                     </FlexItem>
                 </Flex>
             </StackItem>
@@ -129,7 +129,7 @@ function NamespaceSideBar({
                     eventKey="NETWORK_POLICIES"
                     id="NETWORK_POLICIES"
                     hidden={activeTab !== 'NETWORK_POLICIES'}
-                    className="pf-v5-u-h-100"
+                    className="pf-v6-u-h-100"
                 >
                     <NetworkPolicies
                         entityName={namespaceNode?.label || ''}

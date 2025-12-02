@@ -34,7 +34,7 @@ export function getBannerVariant(type: CredentialExpiryVariant) {
         case 'danger':
             return 'red';
         case 'warning':
-            return 'gold';
+            return 'yellow';
         default:
             return 'green';
     }

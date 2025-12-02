@@ -23,7 +23,7 @@ function NodeCvesPage() {
                 <Route
                     path="*"
                     element={
-                        <PageSection variant="light">
+                        <PageSection hasBodyWrapper={false}>
                             <PageTitle title="Node CVEs - Not Found" />
                             <PageNotFound />
                         </PageSection>
