@@ -7,7 +7,6 @@ import (
 	"testing"
 	"time"
 
-	relaytest "github.com/stackrox/rox/compliance/virtualmachines/relay/testutils"
 	v1 "github.com/stackrox/rox/generated/internalapi/virtualmachine/v1"
 	"github.com/stretchr/testify/suite"
 )
@@ -28,6 +27,9 @@ func (s *relayTestSuite) SetupTest() {
 // errTestProviderStart is returned by the mock provider's Start method to simulate
 // a startup failure.
 var errTestProviderStart = errors.New("test provider start failure")
+
+// errTest is a generic test error for use in mock implementations.
+var errTest = errors.New("test error")
 
 // TestRelay_StartFailure verifies that Relay.Run propagates provider startup
 // errors and does not enter the main select loop when initialization fails.
@@ -267,7 +269,7 @@ func (m *mockIndexReportSender) Send(_ context.Context, report *v1.IndexReport) 
 
 	// Fail on the specified index
 	if currentIndex == m.failOnIndex {
-		return relaytest.ErrTest
+		return errTest
 	}
 	return nil
 }
