@@ -14,8 +14,7 @@ var log = logging.LoggerForModule()
 // IndexReportProvider manages report collection and produces validated reports.
 type IndexReportProvider interface {
 	// Start begins accepting connections and returns a channel of validated reports.
-	// The channel is currently not closed to avoid races during shutdown.
-	// TODO: Implement proper shutdown logic that closes the channel.
+	// The implementation closes the channel after all reports are provided.
 	Start(ctx context.Context) (<-chan *v1.IndexReport, error)
 }
 
@@ -44,7 +43,11 @@ func (r *Relay) Run(ctx context.Context) error {
 		select {
 		case <-ctx.Done():
 			return ctx.Err()
-		case report := <-reportChan:
+		case report, ok := <-reportChan:
+			if !ok {
+				// Channel closed, provider stopped
+				return ctx.Err()
+			}
 			if err := r.reportSender.Send(ctx, report); err != nil {
 				log.Errorf("Failed to send report (vsock CID: %s): %v",
 					report.GetVsockCid(), err)
