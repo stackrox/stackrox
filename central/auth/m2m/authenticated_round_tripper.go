@@ -26,12 +26,12 @@ func (a *authenticatedRoundTripper) RoundTrip(req *http.Request) (*http.Response
 		// Thus, try first with no auth.
 		// If a response was received but it was a 4xx/5xx status code, try with the auth header.
 		// Note that we don't try with the auth header if a proper HTTP response was not received, i.e. err != nil.
-		log.Warnf("Unauthenticated oidc config request failed with %d. Trying again with k8s serivce account token.", resp.StatusCode)
+		log.Warnf("Unauthenticated oidc config request failed with %d. Trying again with a token.", resp.StatusCode)
 
 		// Service account token is rotated hourly. We need to read it every time.
 		token, err := a.tokenReader()
 		if err != nil {
-			return nil, errors.Wrap(err, "failed to read kube service account token")
+			return nil, errors.Wrap(err, "failed to read the token")
 		}
 
 		authReq := req.Clone(req.Context())
