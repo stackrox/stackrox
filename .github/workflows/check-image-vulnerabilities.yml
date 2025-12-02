@@ -60,24 +60,6 @@ jobs:
           central-endpoint: ${{ vars.ACS_DOGFOODING_CENTRAL_URL }}
           central-token: ${{ env.ROX_API_TOKEN }}
 
-      - name: Scan images for vulnerabilities
-        run: |
-          {
-            echo "### Upstream: ${{ matrix.image }}:${{ inputs.version }}"
-            echo "<details><summary>Click to expand</summary>"
-            echo ""
-            # We need a monospaced font for the table layout, and `terraform` has
-            # nicer color highlighting than the default language agnostic code block.
-            echo '```terraform'
-            roxctl image scan --output=table --force \
-              --image="quay.io/rhacs-eng/${{ matrix.image }}:${{ inputs.version }}" \
-              --severity="MODERATE,IMPORTANT,CRITICAL" \
-              --headers="COMPONENT,VERSION,CVE,SEVERITY,FIXED_VERSION,LINK" \
-              --row-jsonpath-expressions="{result.vulnerabilities.#.componentName,result.vulnerabilities.#.componentVersion,result.vulnerabilities.#.cveId,result.vulnerabilities.#.cveSeverity,result.vulnerabilities.#.componentFixedVersion,result.vulnerabilities.#.cveInfo}"
-            echo '```'
-            echo "</details>"
-          } >> "$GITHUB_STEP_SUMMARY"
-
       - name: Fail if critical or important vulnerabilities have been found
         run: |
           RESULT=$(roxctl image scan --output=json --force \
@@ -88,7 +70,24 @@ jobs:
             echo "Found $CRITICAL_CNT critical vulnerabilities."
             echo "Found $IMPORTANT_CNT important vulnerabilities."
             echo "Check the workflow summary for a detailed list of the vulnerabilities."
+            {
+              echo "### Upstream vulnerabilities: ${{ matrix.image }}:${{ inputs.version }}"
+              echo "<details><summary>Click to expand</summary>"
+              echo ""
+              # We need a monospaced font for the table layout, and `terraform` has
+              # nicer color highlighting than the default language agnostic code block.
+              echo '```terraform'
+              roxctl image scan --output=table --force \
+                --image="quay.io/rhacs-eng/${{ matrix.image }}:${{ inputs.version }}" \
+                --severity="MODERATE,IMPORTANT,CRITICAL" \
+                --headers="COMPONENT,VERSION,CVE,SEVERITY,FIXED_VERSION,LINK" \
+                --row-jsonpath-expressions="{result.vulnerabilities.#.componentName,result.vulnerabilities.#.componentVersion,result.vulnerabilities.#.cveId,result.vulnerabilities.#.cveSeverity,result.vulnerabilities.#.componentFixedVersion,result.vulnerabilities.#.cveInfo}"
+              echo '```'
+              echo "</details>"
+            } >> "$GITHUB_STEP_SUMMARY"
             exit 1
+          else
+            echo "No important or critical vulnerabilities found."
           fi
 
   check-image-vulnerabilities-konflux:
