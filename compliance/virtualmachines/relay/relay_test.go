@@ -2,6 +2,7 @@ package relay
 
 import (
 	"context"
+	"errors"
 	"sync"
 	"testing"
 	"time"
@@ -22,6 +23,48 @@ type relayTestSuite struct {
 
 func (s *relayTestSuite) SetupTest() {
 	s.ctx = context.Background()
+}
+
+// errTestProviderStart is returned by the mock provider's Start method to simulate
+// a startup failure.
+var errTestProviderStart = errors.New("test provider start failure")
+
+// TestRelay_StartFailure verifies that Relay.Run propagates provider startup
+// errors and does not enter the main select loop when initialization fails.
+func (s *relayTestSuite) TestRelay_StartFailure() {
+	// Use a bounded context to ensure the test fails if Relay.Run blocks.
+	ctx, cancel := context.WithTimeout(s.ctx, 100*time.Millisecond)
+	defer cancel()
+
+	// Create a provider that fails immediately on Start.
+	provider := &failingIndexReportProvider{}
+
+	// Create a dummy sender. It should never be used in this test because the
+	// relay is expected to fail before entering its main loop.
+	sender := &mockIndexReportSender{
+		failOnIndex:   -1,
+		expectedCount: 0,
+	}
+
+	// Construct the relay under test.
+	relay := New(provider, sender)
+
+	// Run the relay in a goroutine so we can assert it returns promptly and
+	// does not block in its select loop.
+	errCh := make(chan error, 1)
+	go func() {
+		errCh <- relay.Run(ctx)
+	}()
+
+	select {
+	case err := <-errCh:
+		// Relay.Run should surface the provider startup error (possibly wrapped).
+		s.Require().Error(err, "Relay.Run should return an error when provider Start fails")
+		s.Require().True(errors.Is(err, errTestProviderStart), "Relay.Run should wrap the provider startup error")
+		s.Equal(1, provider.startCalled, "provider.Start should be called exactly once")
+	case <-time.After(100 * time.Millisecond):
+		s.Fail("Relay.Run did not return promptly on provider Start failure (likely entered select loop)")
+	}
 }
 
 // TestRelay_Integration tests the interaction between provider, relay, and sender.
@@ -163,6 +206,20 @@ func (s *relayTestSuite) TestRelay_ContextCancellation() {
 }
 
 // Mock implementations
+
+// failingIndexReportProvider is a mock IndexReportProvider whose Start method
+// always fails. It tracks how many times Start is called so tests can assert
+// correct behavior.
+type failingIndexReportProvider struct {
+	startCalled int
+}
+
+// Start implements IndexReportProvider.Start. It always returns a nil channel
+// and errTestProviderStart to simulate a provider startup failure.
+func (f *failingIndexReportProvider) Start(ctx context.Context) (<-chan *v1.IndexReport, error) {
+	f.startCalled++
+	return nil, errTestProviderStart
+}
 
 type mockIndexReportProvider struct {
 	reports     []*v1.IndexReport
