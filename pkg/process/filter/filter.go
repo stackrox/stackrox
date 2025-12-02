@@ -1,14 +1,24 @@
 package filter
 
 import (
+	"hash"
 	"strings"
+	"unsafe"
 
+	"github.com/cespare/xxhash"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/containerid"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/stringutils"
 	"github.com/stackrox/rox/pkg/sync"
 )
+
+// BinaryHash represents a 64-bit hash for memory-efficient key storage.
+// Using uint64 directly avoids conversion overhead and provides faster map operations.
+// This follows the pattern from network flow dedupers (PR #17040).
+type BinaryHash uint64
+
+var hashDelimiter = []byte{0}
 
 // This filter is a rudimentary filter that prevents a container from spamming Central
 //
@@ -43,12 +53,12 @@ type Filter interface {
 
 type level struct {
 	hits     int
-	children map[string]*level
+	children map[BinaryHash]*level
 }
 
 func newLevel() *level {
 	return &level{
-		children: make(map[string]*level),
+		children: make(map[BinaryHash]*level),
 	}
 }
 
@@ -59,6 +69,10 @@ type filterImpl struct {
 
 	containersInDeployment map[string]map[string]*level
 	rootLock               sync.Mutex
+
+	// Hash instance for computing BinaryHash keys
+	// Reused across Add() calls to avoid allocations
+	h hash.Hash64
 }
 
 func (f *filterImpl) siftNoLock(level *level, args []string, levelNum int) bool {
@@ -72,19 +86,52 @@ func (f *filterImpl) siftNoLock(level *level, args []string, levelNum int) bool 
 		return true
 	}
 	// Truncate the current argument to the max size to avoid large arguments taking up a lot of space
-	// Clone to avoid retaining references to the ProcessIndicator protobuf object
-	currentArg := strings.Clone(stringutils.Truncate(args[0], maxArgSize))
-	nextLevel := level.children[currentArg]
+	// NO LONGER NEED strings.Clone() - we're hashing the string, not storing it
+	truncated := stringutils.Truncate(args[0], maxArgSize)
+
+	// Hash the argument string
+	argHash := hashString(f.h, truncated)
+
+	nextLevel := level.children[argHash]
 	if nextLevel == nil {
 		// If this level has already hit its max fan out then return false
 		if len(level.children) >= f.maxFanOut[levelNum] {
 			return false
 		}
 		nextLevel = newLevel()
-		level.children[currentArg] = nextLevel
+		level.children[argHash] = nextLevel
 	}
 
 	return f.siftNoLock(nextLevel, args[1:], levelNum+1)
+}
+
+// hashStrings creates a hash from multiple strings using null byte delimiters.
+// This is a zero-copy implementation that avoids string allocations.
+// Pattern from sensor/common/networkflow/manager/indicator/key.go
+func hashStrings(h hash.Hash64, strs ...string) {
+	for i, s := range strs {
+		if i > 0 {
+			_, _ = h.Write(hashDelimiter) // Use null byte as delimiter to avoid hash collisions
+		}
+		// Use zero-copy conversion from string to []byte using unsafe to avoid allocation.
+		// This is safe because:
+		// 1. h.Write() doesn't modify data (io.Writer contract)
+		// 2. xxhash doesn't retain references
+		// 3. string s remains alive during the call
+		if len(s) > 0 {
+			//#nosec G103 -- Audited: zero-copy string-to-bytes conversion for performance
+			b := unsafe.Slice(unsafe.StringData(s), len(s))
+			_, _ = h.Write(b)
+		}
+	}
+}
+
+// hashString creates a hash from a single string.
+// Convenience wrapper for hashStrings with a single argument.
+func hashString(h hash.Hash64, s string) BinaryHash {
+	h.Reset()
+	hashStrings(h, s)
+	return BinaryHash(h.Sum64())
 }
 
 // NewFilter returns an empty filter to start loading processes into
@@ -95,6 +142,7 @@ func NewFilter(maxExactPathMatches, maxUniqueProcesses int, fanOut []int) Filter
 		maxFanOut:           fanOut,
 
 		containersInDeployment: make(map[string]map[string]*level),
+		h:                      xxhash.New(),
 	}
 }
 
@@ -120,19 +168,20 @@ func (f *filterImpl) Add(indicator *storage.ProcessIndicator) bool {
 
 	rootLevel := f.getOrAddRootLevelNoLock(indicator)
 
-	// Clone the exec file path to avoid retaining a reference to the ProcessIndicator
-	// protobuf object. Without this copy, the map key would hold a reference to the
-	// string within the protobuf, preventing garbage collection of the entire protobuf object.
-	execFilePath := strings.Clone(indicator.GetSignal().GetExecFilePath())
+	// NO LONGER NEED strings.Clone() - we're hashing the string, not storing it
+	execFilePath := indicator.GetSignal().GetExecFilePath()
+
+	// Hash the exec file path
+	execFilePathHash := hashString(f.h, execFilePath)
 
 	// Handle the process level independently as we will never reject a new process
-	processLevel := rootLevel.children[execFilePath]
+	processLevel := rootLevel.children[execFilePathHash]
 	if processLevel == nil {
 		if len(rootLevel.children) >= f.maxUniqueProcesses {
 			return false
 		}
 		processLevel = newLevel()
-		rootLevel.children[execFilePath] = processLevel
+		rootLevel.children[execFilePathHash] = processLevel
 	}
 
 	return f.siftNoLock(processLevel, strings.Fields(indicator.GetSignal().GetArgs()), 0)
