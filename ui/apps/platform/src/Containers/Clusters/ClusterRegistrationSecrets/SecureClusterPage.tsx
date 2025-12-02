@@ -48,7 +48,7 @@ function SecureClusterPage(): ReactElement {
 
     return (
         <>
-            <PageSection component="div" variant="light">
+            <PageSection hasBodyWrapper={false} component="div">
                 <PageTitle title="Secure a cluster" />
                 <Flex direction={{ default: 'column' }}>
                     <Flex

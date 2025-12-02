@@ -29,12 +29,12 @@ function Explanation({ lifecycleStage, enforcement, policyId }: ExplanationProps
     const linkAddr = `../policies/${policyId}`;
 
     return (
-        <div className="pf-v5-u-p-md" aria-label="Enforcement explanation message">
-            <div className="pf-v5-u-pb-md">
+        <div className="pf-v6-u-p-md" aria-label="Enforcement explanation message">
+            <div className="pf-v6-u-pb-md">
                 {getEnforcementExplanation(lifecycleStage, enforcement.message)}
             </div>
             <Divider component="div" />
-            <div className="pf-v5-u-pt-md">
+            <div className="pf-v6-u-pt-md">
                 If the enforcement action is being applied several times, learn more on how you can
                 <Link to={linkAddr}> remediate and resolve the issue.</Link>
             </div>

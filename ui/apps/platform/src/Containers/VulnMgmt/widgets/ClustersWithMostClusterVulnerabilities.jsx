@@ -112,12 +112,12 @@ const processData = (data, workflowState, limit) => {
             const indicatorIcon = isGKECluster ? (
                 <InfoCircleIcon
                     className="w-4 h-4 ml-2"
-                    color="var(--pf-v5-global--info-color--100)"
+                    color="var(--pf-t--temp--dev--tbd)" /* CODEMODS: original v5 color was --pf-v5-global--info-color--100 */
                 />
             ) : (
                 <ExclamationCircleIcon
                     className="w-4 h-4 ml-2"
-                    color="var(--pf-v5-global--danger-color--100)"
+                    color="var(--pf-t--temp--dev--tbd)" /* CODEMODS: original v5 color was --pf-v5-global--danger-color--100 */
                 />
             );
 

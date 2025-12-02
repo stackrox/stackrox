@@ -1,12 +1,12 @@
 import { useState } from 'react';
 import {
+    Content,
     DescriptionList,
     DescriptionListDescription,
     DescriptionListGroup,
     DescriptionListTerm,
     Divider,
     EmptyState,
-    EmptyStateHeader,
     ExpandableSection,
     Flex,
     FlexItem,
@@ -14,7 +14,6 @@ import {
     LabelGroup,
     Stack,
     StackItem,
-    TextContent,
     Title,
 } from '@patternfly/react-core';
 
@@ -61,12 +60,12 @@ function DetailSection({ title, children }) {
             isExpanded={isExpanded}
             onToggle={(_event, _isExpanded: boolean) => onToggle(_isExpanded)}
             toggleContent={
-                <TextContent>
+                <Content>
                     <Title headingLevel="h2">{title}</Title>
-                </TextContent>
+                </Content>
             }
         >
-            <div className="pf-v5-u-px-sm pf-v5-u-pb-md">{children}</div>
+            <div className="pf-v6-u-px-sm pf-v6-u-pb-md">{children}</div>
         </ExpandableSection>
     );
 }
@@ -87,7 +86,7 @@ function DeploymentDetails({
     const hasReadAccessForNetworkPolicy = hasReadAccess('NetworkPolicy');
 
     return (
-        <div className="pf-v5-u-h-100 pf-v5-u-p-md">
+        <div className="pf-v6-u-h-100 pf-v6-u-p-md">
             <ul>
                 <li>
                     <DetailSection title="Network security">
@@ -189,7 +188,7 @@ function DeploymentDetails({
                     </DetailSection>
                 </li>
                 <li>
-                    <Divider className="pf-v5-u-mb-sm" />
+                    <Divider className="pf-v6-u-mb-sm" />
                     <DetailSection title="Deployment overview">
                         <Stack hasGutter>
                             <StackItem>
@@ -282,7 +281,7 @@ function DeploymentDetails({
                     </DetailSection>
                 </li>
                 <li>
-                    <Divider className="pf-v5-u-mb-sm" />
+                    <Divider className="pf-v6-u-mb-sm" />
                     <DetailSection title="Port configurations">
                         {deployment.ports.length ? (
                             <Stack hasGutter>
@@ -295,17 +294,16 @@ function DeploymentDetails({
                                 })}
                             </Stack>
                         ) : (
-                            <EmptyState variant="xs">
-                                <EmptyStateHeader
-                                    titleText="No ports available"
-                                    headingLevel="h4"
-                                />
-                            </EmptyState>
+                            <EmptyState
+                                headingLevel="h4"
+                                titleText="No ports available"
+                                variant="xs"
+                            ></EmptyState>
                         )}
                     </DetailSection>
                 </li>
                 <li>
-                    <Divider className="pf-v5-u-mb-sm" />
+                    <Divider className="pf-v6-u-mb-sm" />
                     <DetailSection title="Container configurations">
                         {deployment.containers.length ? (
                             <Stack hasGutter>
@@ -318,12 +316,11 @@ function DeploymentDetails({
                                 })}
                             </Stack>
                         ) : (
-                            <EmptyState variant="xs">
-                                <EmptyStateHeader
-                                    titleText="No containers available"
-                                    headingLevel="h4"
-                                />
-                            </EmptyState>
+                            <EmptyState
+                                headingLevel="h4"
+                                titleText="No containers available"
+                                variant="xs"
+                            ></EmptyState>
                         )}
                     </DetailSection>
                 </li>

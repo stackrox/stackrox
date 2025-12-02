@@ -15,24 +15,24 @@ export const selectors = {
         originCell: 'td[data-label="Origin"]',
         severityCell: 'td[data-label="Severity"]',
         lifecycleCell: 'td[data-label="Lifecycle"]',
-        selectCheckbox: '.pf-v5-c-table__check input[type="checkbox"]',
-        actionsToggleButton: 'td.pf-v5-c-table__action button',
-        actionsItemButton: 'td.pf-v5-c-table__action ul li button[role="menuitem"]',
+        selectCheckbox: '.pf-v6-c-table__check input[type="checkbox"]',
+        actionsToggleButton: 'td.pf-v6-c-table__action button',
+        actionsItemButton: 'td.pf-v6-c-table__action ul li button[role="menuitem"]',
         firstRow: '[data-testid="policies-table"] tbody tr:nth(0)',
         rows: '[data-testid="policies-table"] tbody tr',
     },
     page: {
-        actionsToggleButton: 'button.pf-v5-c-menu-toggle:contains("Actions")',
+        actionsToggleButton: 'button.pf-v6-c-menu-toggle:contains("Actions")',
         actionsItemButton:
-            'button.pf-v5-c-menu-toggle:contains("Actions") + div ul li button[role="menuitem"]',
+            'button.pf-v6-c-menu-toggle:contains("Actions") + div ul li button[role="menuitem"]',
     },
     toast: {
-        title: 'ul.pf-v5-c-alert-group .pf-v5-c-alert__title',
-        description: 'ul.pf-v5-c-alert-group .pf-v5-c-alert__description',
+        title: 'ul.pf-v6-c-alert-group .pf-v6-c-alert__title',
+        description: 'ul.pf-v6-c-alert-group .pf-v6-c-alert__description',
     },
     wizardBtns: {
-        step3: '.pf-v5-c-wizard__nav-link:contains("Rules")',
-        step6: '.pf-v5-c-wizard__nav-link:contains("Review")',
+        step3: '.pf-v6-c-wizard__nav-link:contains("Rules")',
+        step6: '.pf-v6-c-wizard__nav-link:contains("Review")',
     },
     step3: {
         defaultPolicyAlert: '[data-testid="default-policy-alert"]',
@@ -52,7 +52,7 @@ export const selectors = {
             key: '.policy-criteria-key',
             groupCards: '[data-testid="policy-criteria-group-card"]',
             groupCardTitle:
-                '[data-testid="policy-criteria-group-card"] .pf-v5-c-card__header .pf-v5-c-card__title',
+                '[data-testid="policy-criteria-group-card"] .pf-v6-c-card__header .pf-v6-c-card__title',
             value: {
                 textInput: '[data-testid="policy-criteria-value-text-input"]',
                 numberInput: '[data-testid="policy-criteria-value-number-input"]',
@@ -69,7 +69,7 @@ export const selectors = {
                     openButton: '[data-testid="table-modal-open-button"]',
                     firstRowName: '[data-testid="table-modal-table"] tbody tr:nth(0) a',
                     firstRowCheckbox:
-                        '[data-testid="table-modal-table"] tbody .pf-v5-c-table__check input[type="checkbox"]',
+                        '[data-testid="table-modal-table"] tbody .pf-v6-c-table__check input[type="checkbox"]',
                     saveBtn: '[data-testid="table-modal-save-btn"]',
                     cancelBtn: '[data-testid="table-modal-cancel-btn"]',
                     emptyState: '[data-testid="table-modal-empty-state"]',
@@ -82,28 +82,28 @@ export const selectors = {
         },
     },
     importUploadModal: {
-        modalWrapper: '.pf-v5-c-modal-box',
-        titleText: '.pf-v5-c-modal-box__title-text:contains("Import policy JSON")',
-        fileInput: '.pf-v5-c-file-upload input[type="file"]',
+        modalWrapper: '.pf-v6-c-modal-box',
+        titleText: '.pf-v6-c-modal-box__title-text:contains("Import policy JSON")',
+        fileInput: '.pf-v6-c-file-upload input[type="file"]',
         policyNames: '[data-testid="policies-to-import"] div',
-        beginButton: '.pf-v5-c-modal-box__footer button:contains("Begin import")',
-        resumeButton: '.pf-v5-c-modal-box__footer button:contains("Resume import")',
-        cancelButton: '.pf-v5-c-modal-box__footer button:contains("Cancel")',
+        beginButton: '.pf-v6-c-modal-box__footer button:contains("Begin import")',
+        resumeButton: '.pf-v6-c-modal-box__footer button:contains("Resume import")',
+        cancelButton: '.pf-v6-c-modal-box__footer button:contains("Cancel")',
         // Form for duplicate policy name
         duplicateAlertTitle:
-            '.pf-v5-c-modal-box__body .pf-v5-c-alert__title:contains("Policy already exists")',
-        duplicateIdSubstring: '.pf-v5-c-alert__description li:contains("has the same ID")',
-        duplicateNameSubstring: '.pf-v5-c-alert__description li:contains("has the same name")',
+            '.pf-v6-c-modal-box__body .pf-v6-c-alert__title:contains("Policy already exists")',
+        duplicateIdSubstring: '.pf-v6-c-alert__description li:contains("has the same ID")',
+        duplicateNameSubstring: '.pf-v6-c-alert__description li:contains("has the same name")',
         keepBothRadioLabel: 'label[for="keep-both-radio"]:contains("Keep both policies")',
         renameRadioLabel: 'label[for="policy-rename-radio"]:contains("Rename incoming policy")',
         renameInput: 'input#policy-rename',
         overwriteRadioLabel:
             'label[for="policy-overwrite-radio-1"]:contains("Overwrite existing policy")',
         errorAlertTitle:
-            '.pf-v5-c-modal-box__body .pf-m-danger .pf-v5-c-alert__title:contains("Policy errors causing import failure")',
+            '.pf-v6-c-modal-box__body .pf-m-danger .pf-v6-c-alert__title:contains("Policy errors causing import failure")',
     },
     importSuccessModal: {
-        titleText: '.pf-v5-c-modal-box__title-text:contains("Import policy JSON")',
+        titleText: '.pf-v6-c-modal-box__title-text:contains("Import policy JSON")',
         policyNames: '[data-testid="policies-imported"] div',
     },
     confirmationModal: scopeSelectors('[aria-label="Confirm delete"]', {

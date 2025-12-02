@@ -32,8 +32,8 @@ export function SummaryCard<T>({ loadingText, renderer, data }: SummaryCardProps
 }
 
 // Responsive widths for the summary cards, taking into account the gutter spacing
-const oneThirdWidth = 'calc(33.3% - var(--pf-v5-global--gutter))';
-const oneHalfWidth = 'calc(50% - var(--pf-v5-global--gutter))';
+const oneThirdWidth = 'var(--pf-t--global--spacer--gutter--default)';
+const oneHalfWidth = 'var(--pf-t--global--spacer--gutter--default)';
 const fullWidth = '100%';
 
 export type SummaryCardLayoutProps = {
@@ -55,7 +55,7 @@ export function SummaryCardLayout({
 }: SummaryCardLayoutProps): ReactElement {
     return (
         <LoadingContext.Provider value={{ isLoading }}>
-            <div className="pf-v5-u-background-color-100 pf-v5-u-p-lg">
+            <div className="pf-v6-u-background-color-100 pf-v6-u-p-lg">
                 {error ? (
                     <Alert title={errorAlertTitle} component="p" isInline variant="danger">
                         {getAxiosErrorMessage(error)}

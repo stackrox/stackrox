@@ -66,7 +66,7 @@ function DeclarativeConfigurationHealthCard({
             <CardHeader>
                 {
                     <>
-                        <Flex className="pf-v5-u-flex-grow-1">
+                        <Flex className="pf-v6-u-flex-grow-1">
                             <FlexItem>{icon}</FlexItem>
                             <FlexItem>
                                 <CardTitle component="h2">Declarative configuration</CardTitle>

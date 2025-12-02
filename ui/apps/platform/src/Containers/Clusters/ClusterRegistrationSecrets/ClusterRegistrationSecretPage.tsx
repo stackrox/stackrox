@@ -62,7 +62,7 @@ function ClusterRegistrationSecretPage({
                 headerActions={headerActions}
                 title="Cluster registration secret"
             />
-            <PageSection component="div">
+            <PageSection hasBodyWrapper={false} component="div">
                 {isFetching ? (
                     <Bullseye>
                         <Spinner />

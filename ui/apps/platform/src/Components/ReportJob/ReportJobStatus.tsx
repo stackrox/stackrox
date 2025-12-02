@@ -43,7 +43,7 @@ function ReportJobStatus({
         statusIcon = <PendingIcon title="Report run is waiting" />;
         statusText = <p>Waiting</p>;
     } else if (reportStatus.runState === 'FAILURE') {
-        statusColorClass = 'pf-v5-u-danger-color-100';
+        statusColorClass = 'pf-v6-u-danger-color-100';
         statusIcon = (
             <Tooltip
                 content={reportStatus?.errorMsg ? capitalize(reportStatus.errorMsg) : genericMsg}
@@ -53,7 +53,7 @@ function ReportJobStatus({
         );
         statusText = <p>Report failed to generate</p>;
     } else if (isDownload && !isDownloadAvailable) {
-        statusColorClass = 'pf-v5-u-disabled-color-100';
+        statusColorClass = 'pf-v6-u-disabled-color-100';
         statusIcon = <DownloadIcon title="Report download was deleted" />;
         statusText = (
             <Flex
@@ -78,7 +78,7 @@ function ReportJobStatus({
             </Flex>
         );
     } else if (isDownload && isDownloadAvailable && areDownloadActionsDisabled) {
-        statusColorClass = 'pf-v5-u-disabled-color-100';
+        statusColorClass = 'pf-v6-u-disabled-color-100';
         statusIcon = <DownloadIcon title="Report download was successfully prepared" />;
         statusText = (
             <Flex
@@ -109,7 +109,7 @@ function ReportJobStatus({
         !areDownloadActionsDisabled &&
         reportStatus.runState === 'PARTIAL_SCAN_ERROR_DOWNLOAD'
     ) {
-        statusColorClass = 'pf-v5-u-primary-color-100';
+        statusColorClass = 'pf-v6-u-primary-color-100';
         statusIcon = <DownloadIcon title="Partial report download was successfully prepared" />;
         statusText = (
             <PartialReportModal
@@ -118,7 +118,7 @@ function ReportJobStatus({
             />
         );
     } else if (isDownload && isDownloadAvailable && !areDownloadActionsDisabled) {
-        statusColorClass = 'pf-v5-u-primary-color-100';
+        statusColorClass = 'pf-v6-u-primary-color-100';
         statusIcon = <DownloadIcon title="Report download was successfully prepared" />;
         statusText = (
             <Button variant="link" isInline className={statusColorClass} onClick={onDownload}>
@@ -126,15 +126,15 @@ function ReportJobStatus({
             </Button>
         );
     } else if (reportStatus.runState === 'DELIVERED') {
-        statusColorClass = 'pf-v5-u-success-color-100';
+        statusColorClass = 'pf-v6-u-success-color-100';
         statusIcon = <CheckCircleIcon title="Report was successfully sent" />;
-        statusText = <p className="pf-v5-u-success-color-100">Report successfully sent</p>;
+        statusText = <p className="pf-v6-u-success-color-100">Report successfully sent</p>;
     } else if (reportStatus.runState === 'PARTIAL_SCAN_ERROR_EMAIL') {
-        statusColorClass = 'pf-v5-u-success-color-100';
+        statusColorClass = 'pf-v6-u-success-color-100';
         statusIcon = <CheckCircleIcon title="Partial report was successfully sent" />;
         statusText = <PartialReportModal failedClusters={reportStatus.failedClusters} />;
     } else {
-        statusColorClass = 'pf-v5-u-warning-color-100';
+        statusColorClass = 'pf-v6-u-warning-color-100';
         statusIcon = (
             <Tooltip content="Please contact support for more help.">
                 <ExclamationTriangleIcon title="Report run status is unknown" />

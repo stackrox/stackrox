@@ -2,11 +2,11 @@ import { useCallback, useEffect, useMemo, useReducer, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom-v5-compat';
 import {
     Button,
+    Content,
     DropdownItem,
     Flex,
     FlexItem,
     PageSection,
-    Text,
     Title,
     Toolbar,
     ToolbarContent,
@@ -274,7 +274,7 @@ function ClustersTablePanel({ selectedClusterId }: ClustersTablePanelProps) {
     // Conditionally render a subsequent error in addition to most recent successful respnse.
     return (
         <>
-            <PageSection variant="light" component="div">
+            <PageSection variant="light" component="div" hasBodyWrapper={false}>
                 <Flex
                     direction={{ default: 'row' }}
                     alignItems={{ default: 'alignItemsCenter' }}
@@ -365,18 +365,18 @@ function ClustersTablePanel({ selectedClusterId }: ClustersTablePanelProps) {
                         )}
                     </Flex>
                 </Flex>
-                <Text className="pf-v5-u-font-size-md">
+                <Content component="p" className="pf-v6-u-font-size-md">
                     View the status of secured cluster services
-                </Text>
+                </Content>
             </PageSection>
-            <PageSection>
+            <PageSection hasBodyWrapper={false}>
                 <Toolbar>
                     <ToolbarContent>
                         <ToolbarGroup
                             variant="filter-group"
-                            className="pf-v5-u-flex-grow-1 pf-v5-u-flex-shrink-1"
+                            className="pf-v6-u-flex-grow-1 pf-v6-u-flex-shrink-1"
                         >
-                            <ToolbarItem variant="search-filter" className="pf-v5-u-w-100">
+                            <ToolbarItem className="pf-v6-u-w-100">
                                 <CompoundSearchFilter
                                     config={searchFilterConfig}
                                     defaultEntity="Cluster"
@@ -387,9 +387,9 @@ function ClustersTablePanel({ selectedClusterId }: ClustersTablePanelProps) {
                                 />
                             </ToolbarItem>
                         </ToolbarGroup>
-                        <ToolbarGroup variant="button-group" align={{ default: 'alignRight' }}>
+                        <ToolbarGroup variant="action-group" align={{ default: 'alignEnd' }}>
                             {hasWriteAccessForAdministration && (
-                                <ToolbarItem className="pf-v5-u-align-self-center">
+                                <ToolbarItem className="pf-v6-u-align-self-center">
                                     <AutoUpgradeToggle />
                                 </ToolbarItem>
                             )}
@@ -420,7 +420,7 @@ function ClustersTablePanel({ selectedClusterId }: ClustersTablePanelProps) {
                                 </ToolbarItem>
                             )}
                         </ToolbarGroup>
-                        <ToolbarGroup className="pf-v5-u-w-100">
+                        <ToolbarGroup className="pf-v6-u-w-100">
                             <CompoundSearchFilterLabels
                                 attributesSeparateFromConfig={[]}
                                 config={searchFilterConfig}

@@ -26,7 +26,7 @@ function PolicyBehaviorSection({
         enforcementActions
     );
     return (
-        <Card isFlat>
+        <Card>
             <CardBody>
                 <DescriptionList isCompact isHorizontal>
                     <DescriptionListItem

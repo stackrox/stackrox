@@ -11,7 +11,6 @@ import {
     Divider,
     EmptyState,
     EmptyStateBody,
-    EmptyStateHeader,
     FormGroup,
     FormSection,
     Grid,
@@ -366,7 +365,7 @@ export function PrometheusMetricsCard({
     const hasMetrics = descriptors && Object.keys(descriptors).length > 0;
     return (
         <GridItem key={category} md={hasMetrics ? 12 : 6} lg={hasMetrics ? 12 : 6}>
-            <Card isFlat data-testid={`${category}-view-metrics-config`}>
+            <Card data-testid={`${category}-view-metrics-config`}>
                 <CardHeader
                     actions={{
                         actions: (
@@ -412,8 +411,7 @@ export function PrometheusMetricsCard({
                             />
                         </>
                     ) : (
-                        <EmptyState variant="xs">
-                            <EmptyStateHeader>No metrics configured</EmptyStateHeader>
+                        <EmptyState titleText="No metrics configured" variant="xs">
                             <EmptyStateBody>
                                 Edit the configuration, or call <code>/v1/config</code> API to add
                                 custom metrics.
@@ -476,7 +474,7 @@ export function PrometheusMetricsForm({
 }: PrometheusMetricsFormProps): ReactElement {
     return (
         <GridItem>
-            <Card isFlat data-testid={`${category}-metrics-config`}>
+            <Card data-testid={`${category}-metrics-config`}>
                 <CardHeader>
                     <CardTitle component="h3">{title}</CardTitle>
                 </CardHeader>

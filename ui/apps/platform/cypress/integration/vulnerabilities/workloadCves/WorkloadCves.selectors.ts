@@ -1,25 +1,25 @@
 const watchedImageLabelText = 'Watched image';
 const filterChipSection =
-    '.pf-v5-c-toolbar .pf-v5-c-toolbar__group[aria-label="applied search filters"]';
+    '.pf-v6-c-toolbar .pf-v6-c-toolbar__group[aria-label="applied search filters"]';
 
 export const selectors = {
     // Toolbar selectors
     searchOptionsDropdown:
-        '.pf-v5-c-toolbar button[aria-label="search options filter menu toggle"]',
+        '.pf-v6-c-toolbar button[aria-label="search options filter menu toggle"]',
     searchOptionsMenuItem: (searchOption) =>
-        `.pf-v5-c-toolbar ul[aria-label="search options filter menu items"] button:contains("${searchOption}")`,
+        `.pf-v6-c-toolbar ul[aria-label="search options filter menu items"] button:contains("${searchOption}")`,
     searchOptionsValueTypeahead: (searchOption) =>
-        `.pf-v5-c-toolbar input[aria-label="Filter by ${searchOption}"]`,
+        `.pf-v6-c-toolbar input[aria-label="Filter by ${searchOption}"]`,
     searchOptionsValueMenuItem: (searchOption) =>
-        `.pf-v5-c-toolbar ul[aria-label="Filter by ${searchOption}"] button`,
-    severityDropdown: '.pf-v5-c-toolbar button[aria-label="CVE severity"]',
-    severityMenuItems: '.pf-v5-c-toolbar [aria-label="CVE severity select menu"] ul',
+        `.pf-v6-c-toolbar ul[aria-label="Filter by ${searchOption}"] button`,
+    severityDropdown: '.pf-v6-c-toolbar button[aria-label="CVE severity"]',
+    severityMenuItems: '.pf-v6-c-toolbar [aria-label="CVE severity select menu"] ul',
     severityMenuItem: (severity) => `${selectors.severityMenuItems} label:contains("${severity}")`,
-    fixabilityDropdown: '.pf-v5-c-toolbar button[aria-label="CVE status"]',
-    fixabilityMenuItems: '.pf-v5-c-toolbar [aria-label="CVE status select menu"] ul',
+    fixabilityDropdown: '.pf-v6-c-toolbar button[aria-label="CVE status"]',
+    fixabilityMenuItems: '.pf-v6-c-toolbar [aria-label="CVE status select menu"] ul',
     fixabilityMenuItem: (fixability) =>
         `${selectors.fixabilityMenuItems} label:contains("${fixability}")`,
-    filterChipGroup: `${filterChipSection} .pf-v5-c-chip-group`,
+    filterChipGroup: `${filterChipSection} .pf-v6-c-chip-group`,
     filterChipGroupForCategory: (category) =>
         `${selectors.filterChipGroup} *:contains("${category}")`,
     filterChipGroupRemove: (category) =>
@@ -42,24 +42,24 @@ export const selectors = {
         `${selectors.filterLabelGroupItem(category, item)} button[aria-label="close"]`,
 
     searchEntityDropdown:
-        '.pf-v5-c-toolbar button[aria-label="compound search filter entity selector toggle"]',
+        '.pf-v6-c-toolbar button[aria-label="compound search filter entity selector toggle"]',
     searchEntityMenuItem:
-        '.pf-v5-c-toolbar [aria-label="compound search filter entity selector menu"] button',
+        '.pf-v6-c-toolbar [aria-label="compound search filter entity selector menu"] button',
     searchAttributeDropdown:
-        '.pf-v5-c-toolbar button[aria-label="compound search filter attribute selector toggle"]',
+        '.pf-v6-c-toolbar button[aria-label="compound search filter attribute selector toggle"]',
     searchAttributeMenuItem:
-        '.pf-v5-c-toolbar [aria-label="compound search filter attribute selector menu"] button',
-    searchValueTypeahead: '.pf-v5-c-toolbar input[aria-label^="Filter results by"]',
-    searchValueMenuItem: '.pf-v5-c-toolbar [aria-label="Filter results select menu"] button',
+        '.pf-v6-c-toolbar [aria-label="compound search filter attribute selector menu"] button',
+    searchValueTypeahead: '.pf-v6-c-toolbar input[aria-label^="Filter results by"]',
+    searchValueMenuItem: '.pf-v6-c-toolbar [aria-label="Filter results select menu"] button',
     searchValueApplyButton:
-        '.pf-v5-c-toolbar button[aria-label="Apply autocomplete input to search"]',
+        '.pf-v6-c-toolbar button[aria-label="Apply autocomplete input to search"]',
 
     // General selectors
-    filteredViewLabel: '.pf-v5-c-label:contains("Filtered view")',
+    filteredViewLabel: '.pf-v6-c-label:contains("Filtered view")',
     iconText: (textContent) => `svg ~ *:contains("${textContent}")`,
     bulkActionMenuToggle: 'button:contains("Bulk actions")',
     menuOption: (optionText) => `*[role="menu"] button:contains("${optionText}")`,
-    severityIcon: (severity) => `span.pf-v5-c-icon:contains('${severity}')`,
+    severityIcon: (severity) => `span.pf-v6-c-icon:contains('${severity}')`,
     loadingSpinner: 'svg[role="progressbar"][aria-valuetext="Loading..."]',
 
     // Image/Deployment tab selectors
@@ -89,7 +89,7 @@ export const selectors = {
     cveSelectionTab: 'button[role="tab"]:contains("CVE selections")',
 
     // Watched image selectors
-    watchedImageLabel: `.pf-v5-c-label:contains("${watchedImageLabelText}")`,
+    watchedImageLabel: `.pf-v6-c-label:contains("${watchedImageLabelText}")`,
     firstUnwatchedImageRow: `tbody tr:has(td[data-label="Image"]:not(:contains("${watchedImageLabelText}"))):eq(0)`,
     tableRowActionsForImage: (name) =>
         `tbody tr:has(td[data-label="Image"]:contains("${name}")) *[aria-label="Actions"]`,
@@ -100,7 +100,7 @@ export const selectors = {
     addWatchedImageNameInput: '*[role="dialog"] input[id="imageName"]',
     addImageToWatchListButton: 'button:contains("Add image to watch list")',
     currentWatchedImagesTable: '*[role="dialog"] table',
-    modalAlertWithText: (text) => `*[role="dialog"] .pf-v5-c-alert:contains("${text}")`,
+    modalAlertWithText: (text) => `*[role="dialog"] .pf-v6-c-alert:contains("${text}")`,
     currentWatchedImageRow: (name) =>
         `${selectors.currentWatchedImagesTable} tr:has(td:contains("${name}"))`,
     removeImageFromTableButton: (name) =>

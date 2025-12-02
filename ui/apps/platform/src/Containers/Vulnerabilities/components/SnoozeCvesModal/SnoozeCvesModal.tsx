@@ -1,4 +1,5 @@
-import { Alert, Button, Flex, Form, FormGroup, Modal, Radio, Text } from '@patternfly/react-core';
+import { Alert, Button, Content, Flex, Form, FormGroup, Radio } from '@patternfly/react-core';
+import { Modal } from '@patternfly/react-core/deprecated';
 import { useFormik } from 'formik';
 import type { FormikHelpers } from 'formik';
 
@@ -64,7 +65,7 @@ function SnoozeCvesModal({ action, cveType, cves, onSuccess, onClose }: SnoozeCv
             actions={[
                 <Button
                     key="perform-modal-action"
-                    className="pf-v5-u-display-flex pf-v5-u-align-items-center"
+                    className="pf-v6-u-display-flex pf-v6-u-align-items-center"
                     isLoading={isSubmitting}
                     isDisabled={isSubmitting || isSuccess}
                     onClick={submitForm}
@@ -101,7 +102,7 @@ function SnoozeCvesModal({ action, cveType, cves, onSuccess, onClose }: SnoozeCv
                         {getAxiosErrorMessage(error)}
                     </Alert>
                 )}
-                <Text>{text}</Text>
+                <Content component="p">{text}</Content>
                 {action === 'SNOOZE' && (
                     <Form style={{ minHeight: 0 }}>
                         <FormGroup fieldId="snooze-duration" label="Snooze duration">

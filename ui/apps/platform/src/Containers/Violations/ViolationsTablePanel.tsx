@@ -245,12 +245,12 @@ function ViolationsTablePanel({
             <Toolbar>
                 <ToolbarContent>
                     <ToolbarItem>
-                        <Title headingLevel="h2" className="pf-v5-u-color-100">
+                        <Title headingLevel="h2" className="pf-v6-u-color-100">
                             {pluralize(violationsCount, 'result')} found
                         </Title>
                     </ToolbarItem>
                     {hasActions && (
-                        <ToolbarItem align={{ default: 'alignRight' }}>
+                        <ToolbarItem align={{ default: 'alignEnd' }}>
                             <Select
                                 isOpen={isSelectOpen}
                                 onOpenChange={setIsSelectOpen}
@@ -278,7 +278,7 @@ function ViolationsTablePanel({
                             </Select>
                         </ToolbarItem>
                     )}
-                    <ToolbarItem align={{ default: 'alignRight' }} variant="pagination">
+                    <ToolbarItem align={{ default: 'alignEnd' }} variant="pagination">
                         <Pagination
                             itemCount={violationsCount}
                             page={currentPage}
@@ -290,7 +290,12 @@ function ViolationsTablePanel({
                 </ToolbarContent>
             </Toolbar>
             <Divider component="div" />
-            <PageSection isFilled padding={{ default: 'noPadding' }} hasOverflowScroll>
+            <PageSection
+                hasBodyWrapper={false}
+                isFilled
+                padding={{ default: 'noPadding' }}
+                hasOverflowScroll
+            >
                 <Table variant="compact" isStickyHeader>
                     <Thead>
                         <Tr>

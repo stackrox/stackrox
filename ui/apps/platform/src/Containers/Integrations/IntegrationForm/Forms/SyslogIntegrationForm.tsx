@@ -118,7 +118,7 @@ function SyslogIntegrationForm({
 
     return (
         <>
-            <PageSection variant="light" isFilled hasOverflowScroll aria-label="Syslog Form Section">
+            <PageSection hasBodyWrapper={false}  isFilled hasOverflowScroll aria-label="Syslog Form Section">
                 <FormMessage message={message} />
                 <Form isWidthLimited>
                     <FormikProvider value={formik}>
@@ -275,7 +275,7 @@ function SyslogIntegrationForm({
                                 isDisabled={!isEditable}
                             />
                         </FormLabelGroup>
-                        <FormSection title="Extra Fields" titleElement="h3" className="pf-v5-u-mt-0">
+                        <FormSection title="Extra Fields" titleElement="h3" className="pf-v6-u-mt-0">
                             <FieldArray
                                 name="syslog.extraFields"
                                 render={(arrayHelpers) => (
@@ -333,7 +333,7 @@ function SyslogIntegrationForm({
                                                         </FlexItem>
                                                         {isEditable && (
                                                             <FlexItem>
-                                                                <Button
+                                                                <Button icon={<TrashIcon />}
                                                                     variant="plain"
                                                                     aria-label="Delete extra field key/value pair"
                                                                     style={{
@@ -343,9 +343,7 @@ function SyslogIntegrationForm({
                                                                     onClick={() =>
                                                                         arrayHelpers.remove(index)
                                                                     }
-                                                                >
-                                                                    <TrashIcon />
-                                                                </Button>
+                                                                 />
                                                             </FlexItem>
                                                         )}
                                                     </Flex>
@@ -358,7 +356,7 @@ function SyslogIntegrationForm({
                                                         variant="link"
                                                         isInline
                                                         icon={
-                                                            <PlusCircleIcon className="pf-v5-u-mr-sm" />
+                                                            <PlusCircleIcon className="pf-v6-u-mr-sm" />
                                                         }
                                                         onClick={() =>
                                                             arrayHelpers.push({

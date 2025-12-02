@@ -1,4 +1,5 @@
-import { Alert, Modal, ModalBoxBody, pluralize } from '@patternfly/react-core';
+import { Alert, pluralize } from '@patternfly/react-core';
+import { Modal, ModalBoxBody } from '@patternfly/react-core/deprecated';
 import type { FormikHelpers } from 'formik';
 import dateFns from 'date-fns';
 
@@ -175,7 +176,7 @@ function ExceptionRequestModal({
             isOpen
             variant="medium"
         >
-            <ModalBoxBody className="pf-v5-u-display-flex pf-v5-u-flex-direction-column">
+            <ModalBoxBody className="pf-v6-u-display-flex pf-v6-u-flex-direction-column">
                 {!!submissionError && (
                     <Alert
                         variant="danger"

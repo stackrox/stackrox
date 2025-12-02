@@ -66,7 +66,7 @@ function DeploymentPortConfig({ port }: DeploymentPortConfigProps) {
                         {port.exposureInfos.map((exposureInfo) => {
                             return (
                                 <StackItem key={exposureInfo.serviceId}>
-                                    <Card isFlat>
+                                    <Card>
                                         <CardBody>
                                             <DescriptionList
                                                 columnModifier={{ default: '2Col' }}

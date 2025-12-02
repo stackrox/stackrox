@@ -13,7 +13,6 @@ function MyJobsFilter({ isViewingOnlyMyJobs, onMyJobsFilterChange }: MyJobsFilte
         <Switch
             id="view-only-my-jobs"
             label="View only my jobs"
-            labelOff="View only my jobs"
             isChecked={isViewingOnlyMyJobs}
             onChange={(_event, checked: boolean) => onMyJobsFilterChange(checked)}
         />

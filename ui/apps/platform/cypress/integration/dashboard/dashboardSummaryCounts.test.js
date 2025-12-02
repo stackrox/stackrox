@@ -28,7 +28,7 @@ function getStaticResponseForNoAccessExceptResources(resources) {
 }
 
 function getSummaryCountSelector(noun) {
-    return `main section:first-child a.pf-v5-c-button.pf-m-link:contains("${noun}")`;
+    return `main section:first-child a.pf-v6-c-button.pf-m-link:contains("${noun}")`;
 }
 
 const lastUpdatedSelector = 'main section:first-child div:contains("Last updated")';

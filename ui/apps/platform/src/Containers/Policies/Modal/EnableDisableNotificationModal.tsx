@@ -115,7 +115,7 @@ function EnableDisableNotificationModal({
                 </Table>
             )}
             {notifiers.length > 0 && enableDisableType === 'disable' && (
-                <div className="pf-v5-u-pt-sm">
+                <div className="pf-v6-u-pt-sm">
                     Are you sure you want to disable notification for {selectedPolicyIds.length}{' '}
                     {pluralize('policy', selectedPolicyIds.length)}?
                 </div>
