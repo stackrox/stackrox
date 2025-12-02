@@ -1,6 +1,8 @@
 package enricher
 
 import (
+	"context"
+
 	"github.com/pkg/errors"
 	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
 	"github.com/stackrox/rox/generated/storage"
@@ -30,6 +32,10 @@ func (e *enricherImpl) EnrichVirtualMachineWithVulnerabilities(vm *storage.Virtu
 		vm.Notes = append(vm.Notes, storage.VirtualMachine_MISSING_SCAN_DATA)
 		return errors.New("Scanner V4 client not available for VM enrichment")
 	}
+
+	sema := e.vmScanner.MaxConcurrentNodeScanSemaphore()
+	_ = sema.Acquire(context.Background(), 1)
+	defer sema.Release(1)
 
 	scan, err := e.vmScanner.GetVirtualMachineScan(vm, indexReport)
 	if err != nil {

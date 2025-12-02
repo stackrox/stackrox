@@ -15,6 +15,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
+	"golang.org/x/sync/semaphore"
 )
 
 // TestEnrichVirtualMachineWithVulnerabilities_Success tests the successful enrichment flow.
@@ -152,6 +153,7 @@ func TestEnrichVirtualMachineWithVulnerabilities_Success(t *testing.T) {
 			}
 
 			mockScanner := scannerMocks.NewMockVirtualMachineScanner(ctrl)
+			mockScanner.EXPECT().MaxConcurrentNodeScanSemaphore().Return(semaphore.NewWeighted(1))
 			mockScanner.EXPECT().GetVirtualMachineScan(gomock.Any(), gomock.Any()).Return(virtualMachineScan, nil)
 
 			enricher := New(mockScanner)
@@ -211,6 +213,7 @@ func TestEnrichVirtualMachineWithVulnerabilities_Errors(t *testing.T) {
 		testError := errors.New("test error")
 
 		mockScanner := scannerMocks.NewMockVirtualMachineScanner(ctrl)
+		mockScanner.EXPECT().MaxConcurrentNodeScanSemaphore().Return(semaphore.NewWeighted(1))
 		mockScanner.EXPECT().GetVirtualMachineScan(gomock.Any(), gomock.Any()).Return(nil, testError)
 
 		enricher := New(mockScanner)
@@ -254,6 +257,7 @@ func TestEnrichVirtualMachineWithVulnerabilities_ClearPreExistingNotes(t *testin
 
 	virtualMachineScan := createVirtualMachineScanFromIndexReport(indexReport, 0)
 	mockScanner := scannerMocks.NewMockVirtualMachineScanner(ctrl)
+	mockScanner.EXPECT().MaxConcurrentNodeScanSemaphore().Return(semaphore.NewWeighted(1))
 	mockScanner.EXPECT().GetVirtualMachineScan(gomock.Any(), gomock.Any()).Return(virtualMachineScan, nil)
 
 	enricher := New(mockScanner)
@@ -319,6 +323,7 @@ func TestEnrichVirtualMachineWithVulnerabilities_ComponentConversion(t *testing.
 	virtualMachineScan := scannerv4.ToVirtualMachineScan(vulnReport)
 
 	mockScanner := scannerMocks.NewMockVirtualMachineScanner(ctrl)
+	mockScanner.EXPECT().MaxConcurrentNodeScanSemaphore().Return(semaphore.NewWeighted(1))
 	mockScanner.EXPECT().GetVirtualMachineScan(gomock.Any(), gomock.Any()).Return(virtualMachineScan, nil)
 
 	enricher := New(mockScanner)

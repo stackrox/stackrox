@@ -93,6 +93,7 @@ type OrchestratorScanner interface {
 //
 //go:generate mockgen-wrapper
 type VirtualMachineScanner interface {
+	NodeScanSemaphore
 	Name() string
 	GetVirtualMachineScan(vm *storage.VirtualMachine, indexReport *v4.IndexReport) (*storage.VirtualMachineScan, error)
 	Type() string

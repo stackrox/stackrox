@@ -292,10 +292,22 @@ func (s *scannerv4) GetNodeVulnerabilityReport(node *storage.Node, indexReport *
 		log.Errorf("Failed to parse digest from node %q: %v", node.GetName(), err)
 	}
 
+	vr, err := s.getVulnerabilityReport(nodeDigest, indexReport)
+	if err != nil {
+		return nil, errors.Wrap(err, "Scanner V4 client call to GetVulnerabilities")
+	}
+
+	return vr, nil
+}
+
+func (s *scannerv4) getVulnerabilityReport(
+	digest name.Digest,
+	indexReport *v4.IndexReport,
+) (*v4.VulnerabilityReport, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), scanTimeout)
 	defer cancel()
 
-	vr, err := s.scannerClient.GetVulnerabilities(ctx, nodeDigest, indexReport.GetContents())
+	vr, err := s.scannerClient.GetVulnerabilities(ctx, digest, indexReport.GetContents())
 	if err != nil {
 		return nil, errors.Wrap(err, "Scanner V4 client call to GetVulnerabilities")
 	}
@@ -328,9 +340,6 @@ func (s *scannerv4) GetVirtualMachineScan(
 	vm *storage.VirtualMachine,
 	indexReport *v4.IndexReport,
 ) (*storage.VirtualMachineScan, error) {
-	if s.scannerClient == nil {
-		return nil, errors.New("Scanner V4 client not available for VM enrichment")
-	}
 	if indexReport == nil {
 		return nil, errors.New("index report is required for VM scanning")
 	}
@@ -339,10 +348,7 @@ func (s *scannerv4) GetVirtualMachineScan(
 		return nil, errors.Wrapf(err, "failed to parse digest for VM %q", vm.GetName())
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), scanTimeout)
-	defer cancel()
-
-	vr, err := s.scannerClient.GetVulnerabilities(ctx, vmDigest, indexReport.GetContents())
+	vr, err := s.getVulnerabilityReport(vmDigest, indexReport)
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to get vulnerability report for VM %q", vm.GetName())
 	}
@@ -411,8 +417,12 @@ func NewVirtualMachineScanner() (types.VirtualMachineScanner, error) {
 		return nil, err
 	}
 
+	numConcurrentScans := defaultMaxConcurrentScans
+
 	return &scannerv4{
-		name:          "Virtual machine scanner",
-		scannerClient: scannerClient,
+		name:              "Virtual machine scanner",
+		scannerClient:     scannerClient,
+		ScanSemaphore:     types.NewSemaphoreWithValue(numConcurrentScans),
+		NodeScanSemaphore: types.NewNodeSemaphoreWithValue(numConcurrentScans),
 	}, nil
 }

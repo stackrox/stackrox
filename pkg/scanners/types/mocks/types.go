@@ -728,6 +728,20 @@ func (mr *MockVirtualMachineScannerMockRecorder) GetVirtualMachineScan(vm, index
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetVirtualMachineScan", reflect.TypeOf((*MockVirtualMachineScanner)(nil).GetVirtualMachineScan), vm, indexReport)
 }
 
+// MaxConcurrentNodeScanSemaphore mocks base method.
+func (m *MockVirtualMachineScanner) MaxConcurrentNodeScanSemaphore() *semaphore.Weighted {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "MaxConcurrentNodeScanSemaphore")
+	ret0, _ := ret[0].(*semaphore.Weighted)
+	return ret0
+}
+
+// MaxConcurrentNodeScanSemaphore indicates an expected call of MaxConcurrentNodeScanSemaphore.
+func (mr *MockVirtualMachineScannerMockRecorder) MaxConcurrentNodeScanSemaphore() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "MaxConcurrentNodeScanSemaphore", reflect.TypeOf((*MockVirtualMachineScanner)(nil).MaxConcurrentNodeScanSemaphore))
+}
+
 // Name mocks base method.
 func (m *MockVirtualMachineScanner) Name() string {
 	m.ctrl.T.Helper()
