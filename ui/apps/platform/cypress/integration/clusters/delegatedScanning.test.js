@@ -29,13 +29,13 @@ describe('Delegated Image Scanning', () => {
         // make sure the static page loads
         cy.get('h1:contains("Delegated image scanning")');
 
-        cy.get('.pf-v5-c-breadcrumb__item a:contains("Clusters")').should(
+        cy.get('.pf-v6-c-breadcrumb__item a:contains("Clusters")').should(
             'have.attr',
             'href',
             '/main/clusters'
         );
 
-        cy.get('.pf-v5-c-breadcrumb__item:contains("Delegated image scanning")');
+        cy.get('.pf-v6-c-breadcrumb__item:contains("Delegated image scanning")');
 
         // Apparently the initial state of central in CI
         // Delegate scanning for: Specified registries
@@ -71,11 +71,11 @@ describe('Delegated Image Scanning', () => {
         // choose the first cluster in the list as the default
         cy.get('[aria-label="Select default cluster"]').click();
         cy.get(
-            '[aria-label="Select default cluster"] + .pf-v5-c-menu .pf-v5-c-menu__list-item'
+            '[aria-label="Select default cluster"] + .pf-v6-c-menu .pf-v6-c-menu__list-item'
         ).then(($clusterNames) => {
             expect($clusterNames.length).to.be.gte(0);
         });
-        cy.get('[aria-label="Select default cluster"] + .pf-v5-c-menu .pf-v5-c-menu__list-item')
+        cy.get('[aria-label="Select default cluster"] + .pf-v6-c-menu .pf-v6-c-menu__list-item')
             .last()
             .then(($lastCluster) => {
                 // Beware that in local deployment and some CI environments, None is only option.
@@ -93,7 +93,7 @@ describe('Delegated Image Scanning', () => {
                 saveDelegatedRegistryConfig();
 
                 cy.get(
-                    '.pf-v5-c-alert.pf-m-success .pf-v5-c-alert__title:contains("Delegated image scanning configuration saved successfully")'
+                    '.pf-v6-c-alert.pf-m-success .pf-v6-c-alert__title:contains("Delegated image scanning configuration saved successfully")'
                 );
             });
         */

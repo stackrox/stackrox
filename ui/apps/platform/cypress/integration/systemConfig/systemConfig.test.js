@@ -41,7 +41,7 @@ function disableConfig(type) {
 }
 
 function getNumericInputByLabel(labelName) {
-    return `.pf-v5-c-form__group:contains("${labelName}") input`;
+    return `.pf-v6-c-form__group:contains("${labelName}") input`;
 }
 
 function getRandomNumber() {

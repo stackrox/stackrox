@@ -7,11 +7,9 @@ import {
     FormHelperText,
     HelperText,
     HelperTextItem,
-    Modal,
-    ModalBoxBody,
-    ModalBoxFooter,
     TextInput,
 } from '@patternfly/react-core';
+import { Modal, ModalBoxBody, ModalBoxFooter } from '@patternfly/react-core/deprecated';
 import { FormikProvider, useFormik } from 'formik';
 
 import type { PolicyCategory } from 'types/policy.proto';

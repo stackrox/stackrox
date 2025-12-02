@@ -132,7 +132,7 @@ function ClusterDetailsPage() {
     return (
         <>
             <PageTitle title="Compliance coverage - Cluster" />
-            <PageSection variant="light" className="pf-v5-u-py-md">
+            <PageSection hasBodyWrapper={false} className="pf-v6-u-py-md">
                 <Breadcrumb>
                     <BreadcrumbItemLink
                         to={generatePathWithScanConfig(coverageProfileClustersPath, {
@@ -161,12 +161,12 @@ function ClusterDetailsPage() {
                 setSelectedScanConfigName={setSelectedScanConfigName}
             />
             <Divider component="div" />
-            <PageSection variant="light">
+            <PageSection hasBodyWrapper={false}>
                 <Flex
                     direction={{ default: 'column' }}
                     alignItems={{ default: 'alignItemsFlexStart' }}
                 >
-                    <Title headingLevel="h1" className="pf-v5-u-w-100">
+                    <Title headingLevel="h1" className="pf-v6-u-w-100">
                         {isLoadingScanConfigProfiles ? (
                             <Skeleton fontSize="2xl" screenreaderText="Loading cluster name" />
                         ) : (
@@ -188,7 +188,7 @@ function ClusterDetailsPage() {
                 </Flex>
             </PageSection>
             <Divider component="div" />
-            <PageSection>
+            <PageSection hasBodyWrapper={false}>
                 {isLoadingScanConfigProfiles ? (
                     <Bullseye>
                         <Spinner />

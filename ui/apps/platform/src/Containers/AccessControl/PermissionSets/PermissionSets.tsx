@@ -213,7 +213,10 @@ function PermissionSets(): ReactElement {
             {alertPermissionSets}
             {alertResources}
             {alertRoles}
-            <PageSection variant={isList ? PageSectionVariants.default : PageSectionVariants.light}>
+            <PageSection
+                hasBodyWrapper={false}
+                variant={isList ? PageSectionVariants.default : PageSectionVariants.light}
+            >
                 {counterFetching !== 0 ? (
                     <Bullseye>
                         <Spinner />

@@ -20,7 +20,7 @@ function ContainerImage({ image, vulnMgmtBasePath }: ContainerImageProps): React
         const NameComponent = (
             <div>
                 {image.name.fullName}
-                <span className="pf-v5-u-pl-sm">({unavailableText})</span>
+                <span className="pf-v6-u-pl-sm">({unavailableText})</span>
             </div>
         );
         return <DescriptionListItem term="Image name" desc={NameComponent} />;

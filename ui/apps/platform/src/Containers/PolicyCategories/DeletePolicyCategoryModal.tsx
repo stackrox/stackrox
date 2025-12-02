@@ -6,14 +6,12 @@ import {
     List,
     ListComponent,
     ListItem,
-    Modal,
-    ModalBoxBody,
-    ModalBoxFooter,
     OrderType,
     Panel,
     PanelMain,
     PanelMainBody,
 } from '@patternfly/react-core';
+import { Modal, ModalBoxBody, ModalBoxFooter } from '@patternfly/react-core/deprecated';
 
 import { getPolicies } from 'services/PoliciesService';
 import { deletePolicyCategory } from 'services/PolicyCategoriesService';

@@ -180,7 +180,7 @@ function AuthProviders(): ReactElement {
                         actionComponent={
                             hasWriteAccessForPage && (
                                 <MenuDropdown
-                                    toggleClassName="auth-provider-dropdown pf-v5-u-ml-md"
+                                    toggleClassName="auth-provider-dropdown pf-v6-u-ml-md"
                                     toggleText="Create auth provider"
                                     toggleVariant="primary"
                                     onSelect={onClickCreate}
@@ -193,7 +193,7 @@ function AuthProviders(): ReactElement {
                             )
                         }
                     />
-                    <PageSection variant="light">
+                    <PageSection hasBodyWrapper={false}>
                         <Alert
                             isInline
                             variant="info"
@@ -268,13 +268,13 @@ function AuthProviders(): ReactElement {
                     }
                 />
             )}
-            <PageSection variant={isList ? 'default' : 'light'}>
+            <PageSection hasBodyWrapper={false} variant={isList ? 'default' : 'light'}>
                 {isFetchingAuthProviders || isFetchingRoles ? (
                     <Bullseye>
                         <Spinner />
                     </Bullseye>
                 ) : isList ? (
-                    <PageSection variant="light">
+                    <PageSection hasBodyWrapper={false}>
                         <Title headingLevel="h2">
                             {pluralize(authProvidersWithRules.length, 'result')} found
                         </Title>

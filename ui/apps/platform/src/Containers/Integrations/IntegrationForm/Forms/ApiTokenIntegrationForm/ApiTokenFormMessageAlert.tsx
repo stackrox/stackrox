@@ -43,10 +43,8 @@ function ApiTokenResponseDetails({ message }) {
                 <DescriptionListTerm>
                     Please copy the generated token and store it safely. You will not be able to
                     access it again after you close this window.
-                    <CopyToClipboard text={token} className="pf-v5-u-ml-sm">
-                        <Button variant="control" aria-label="Copy">
-                            <CopyIcon />
-                        </Button>
+                    <CopyToClipboard text={token} className="pf-v6-u-ml-sm">
+                        <Button icon={<CopyIcon />} variant="control" aria-label="Copy"></Button>
                     </CopyToClipboard>
                 </DescriptionListTerm>
                 <DescriptionListDescription>{token}</DescriptionListDescription>

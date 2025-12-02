@@ -43,7 +43,7 @@ function AnomalousTraffic({ deploymentId, edgeState, edges, nodes }: AnomalousTr
                             title="Unable to fetch network flows"
                             isInline
                             component="p"
-                            className="pf-v5-u-w-100"
+                            className="pf-v6-u-w-100"
                         >
                             {error}
                         </Alert>

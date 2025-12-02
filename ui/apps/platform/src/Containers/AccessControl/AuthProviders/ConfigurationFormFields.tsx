@@ -123,9 +123,9 @@ function ConfigurationFormFields({
                                         {showIssuerError ? (
                                             configErrors?.issuer
                                         ) : (
-                                            <span className="pf-v5-u-font-size-sm">
+                                            <span className="pf-v6-u-font-size-sm">
                                                 for example,{' '}
-                                                <kbd className="pf-v5-u-font-size-xs">
+                                                <kbd className="pf-v6-u-font-size-xs">
                                                     your-tenant.auth0.com
                                                 </kbd>
                                             </span>
@@ -216,9 +216,9 @@ function ConfigurationFormFields({
                                         {showIssuerError ? (
                                             configErrors?.issuer
                                         ) : (
-                                            <span className="pf-v5-u-font-size-sm">
+                                            <span className="pf-v6-u-font-size-sm">
                                                 for example,{' '}
-                                                <kbd className="pf-v5-u-font-size-xs">
+                                                <kbd className="pf-v6-u-font-size-xs">
                                                     tenant.auth-provider.com
                                                 </kbd>
                                             </span>
@@ -297,7 +297,7 @@ function ConfigurationFormFields({
                                         {showClientSecretError ? (
                                             configErrors?.client_secret
                                         ) : (
-                                            <span className="pf-v5-u-font-size-sm">
+                                            <span className="pf-v6-u-font-size-sm">
                                                 {clientSecretHelperText}
                                             </span>
                                         )}
@@ -339,7 +339,7 @@ function ConfigurationFormFields({
                             <FormHelperText>
                                 <HelperText>
                                     <HelperTextItem>
-                                        <span className="pf-v5-u-font-size-sm">
+                                        <span className="pf-v6-u-font-size-sm">
                                             Use if the identity provider has a limit on the number
                                             of offline tokens that it can issue.
                                         </span>
@@ -392,9 +392,9 @@ function ConfigurationFormFields({
                                         {showSpIssuerError ? (
                                             configErrors?.sp_issuer
                                         ) : (
-                                            <span className="pf-v5-u-font-size-sm">
+                                            <span className="pf-v6-u-font-size-sm">
                                                 for example,{' '}
-                                                <kbd className="pf-v5-u-font-size-xs">
+                                                <kbd className="pf-v6-u-font-size-xs">
                                                     https://prevent.stackrox.io
                                                 </kbd>
                                             </span>
@@ -459,9 +459,9 @@ function ConfigurationFormFields({
                                                 {showIdpMetadataUrlError ? (
                                                     configErrors?.idp_metadata_url
                                                 ) : (
-                                                    <span className="pf-v5-u-font-size-sm">
+                                                    <span className="pf-v6-u-font-size-sm">
                                                         for example,{' '}
-                                                        <kbd className="pf-v5-u-font-size-xs">
+                                                        <kbd className="pf-v6-u-font-size-xs">
                                                             https://idp.example.com/metadata
                                                         </kbd>
                                                     </span>
@@ -505,14 +505,14 @@ function ConfigurationFormFields({
                                                 {showIdpIssuerError ? (
                                                     configErrors?.idp_issuer
                                                 ) : (
-                                                    <span className="pf-v5-u-font-size-sm">
+                                                    <span className="pf-v6-u-font-size-sm">
                                                         for example,{' '}
-                                                        <kbd className="pf-v5-u-font-size-xs">
+                                                        <kbd className="pf-v6-u-font-size-xs">
                                                             https://idp.example.com/
                                                         </kbd>
                                                         {', '}
                                                         or{' '}
-                                                        <kbd className="pf-v5-u-font-size-xs">
+                                                        <kbd className="pf-v6-u-font-size-xs">
                                                             urn:something:else
                                                         </kbd>
                                                     </span>
@@ -552,9 +552,9 @@ function ConfigurationFormFields({
                                                 {showIdpSsoUrlError ? (
                                                     configErrors?.idp_sso_url
                                                 ) : (
-                                                    <span className="pf-v5-u-font-size-sm">
+                                                    <span className="pf-v6-u-font-size-sm">
                                                         for example,{' '}
-                                                        <kbd className="pf-v5-u-font-size-xs">
+                                                        <kbd className="pf-v6-u-font-size-xs">
                                                             https://idp.example.com/login
                                                         </kbd>
                                                     </span>
@@ -580,9 +580,9 @@ function ConfigurationFormFields({
                                     <FormHelperText>
                                         <HelperText>
                                             <HelperTextItem>
-                                                <span className="pf-v5-u-font-size-sm">
+                                                <span className="pf-v6-u-font-size-sm">
                                                     for example,{' '}
-                                                    <kbd className="pf-v5-u-font-size-xs">
+                                                    <kbd className="pf-v6-u-font-size-xs">
                                                         urn:oasis:names:tc:SAML:1.1:nameid-format:persistent
                                                     </kbd>
                                                 </span>
@@ -703,9 +703,9 @@ function ConfigurationFormFields({
                                     {showAudienceError ? (
                                         configErrors?.audience
                                     ) : (
-                                        <span className="pf-v5-u-font-size-sm">
+                                        <span className="pf-v6-u-font-size-sm">
                                             for example,{' '}
-                                            <kbd className="pf-v5-u-font-size-xs">
+                                            <kbd className="pf-v6-u-font-size-xs">
                                                 /projects/&lt;PROJECT_NUMBER&gt;/global/backendServices/&lt;SERVICE_ID&gt;
                                             </kbd>
                                         </span>

@@ -132,8 +132,8 @@ h6 {
 .toast-selector {
     background-color: #ffffff;
     color: #151515;
-    font-family: var(--pf-v5-global--FontFamily--sans-serif);
-    font-size: var(--pf-v5-global--FontSize--sm);
+    font-family: var(--pf-v6-global--FontFamily--sans-serif);
+    font-size: var(--pf-t--global--font--size--sm);
 }
 
 .Toastify__close-button--default {

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import type { ReactElement } from 'react';
-import { Modal } from '@patternfly/react-core';
+import { Modal } from '@patternfly/react-core/deprecated';
 
 import { importPolicies } from 'services/PoliciesService';
 import type { Policy } from 'types/policy.proto';

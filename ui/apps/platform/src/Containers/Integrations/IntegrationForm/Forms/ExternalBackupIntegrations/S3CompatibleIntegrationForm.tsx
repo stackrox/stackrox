@@ -1,12 +1,12 @@
 import type { ReactElement } from 'react';
 import {
     Checkbox,
+    Content,
     Form,
     List,
     ListItem,
     PageSection,
     SelectOption,
-    Text,
     TextInput,
 } from '@patternfly/react-core';
 import * as yup from 'yup';
@@ -217,7 +217,7 @@ function S3CompatibleIntegrationForm({
 
     return (
         <>
-            <PageSection variant="light" isFilled hasOverflowScroll>
+            <PageSection hasBodyWrapper={false} isFilled hasOverflowScroll>
                 <FormMessage message={message} />
                 <Form isWidthLimited>
                     <FormLabelGroup
@@ -430,8 +430,10 @@ function S3CompatibleIntegrationForm({
                                 helpTitle="Virtual hosting of buckets"
                                 helpText={
                                     <>
-                                        <Text>Defines the bucket URL addressing:</Text>
-                                        <List className="pf-v5-u-py-sm">
+                                        <Content component="p">
+                                            Defines the bucket URL addressing:
+                                        </Content>
+                                        <List className="pf-v6-u-py-sm">
                                             <ListItem>
                                                 Virtual-hosted-style buckets are addressed as
                                                 https://&#60;bucket&#62;.&#60;endpoint&#62
@@ -441,7 +443,7 @@ function S3CompatibleIntegrationForm({
                                                 https://&#60;endpoint&#62;/&#60;bucket&#62;
                                             </ListItem>
                                         </List>
-                                        <Text>
+                                        <Content component="p">
                                             For more information, see{' '}
                                             <ExternalLink>
                                                 <a
@@ -452,7 +454,7 @@ function S3CompatibleIntegrationForm({
                                                     AWS documentation about virtual hosting
                                                 </a>
                                             </ExternalLink>
-                                        </Text>
+                                        </Content>
                                     </>
                                 }
                                 ariaLabel="Help for URL style"

@@ -5,16 +5,14 @@ import {
     Alert,
     Bullseye,
     Button,
+    Content,
     EmptyState,
     EmptyStateBody,
     EmptyStateFooter,
-    EmptyStateHeader,
-    EmptyStateIcon,
     Flex,
     FlexItem,
     PageSection,
     Spinner,
-    Text,
 } from '@patternfly/react-core';
 import { CloudSecurityIcon } from '@patternfly/react-icons';
 
@@ -103,7 +101,7 @@ function NoClustersPage({ isModalOpen, setIsModalOpen }): ReactElement {
                 component="p"
                 isInline
             />
-            <PageSection variant="light">
+            <PageSection hasBodyWrapper={false}>
                 {isLoading ? (
                     <Bullseye>
                         <Spinner />
@@ -118,12 +116,12 @@ function NoClustersPage({ isModalOpen, setIsModalOpen }): ReactElement {
                         {errorMessage}
                     </Alert>
                 ) : (
-                    <EmptyState variant="xl">
-                        <EmptyStateHeader
-                            titleText="Secure clusters with a registration secret"
-                            icon={<EmptyStateIcon icon={CloudSecurityIcon} />}
-                            headingLevel={headingLevel}
-                        />
+                    <EmptyState
+                        headingLevel={headingLevel}
+                        icon={CloudSecurityIcon}
+                        titleText="Secure clusters with a registration secret"
+                        variant="xl"
+                    >
                         <EmptyStateBody>
                             <Flex
                                 direction={{ default: 'column' }}
@@ -131,24 +129,24 @@ function NoClustersPage({ isModalOpen, setIsModalOpen }): ReactElement {
                             >
                                 {registrationSecretsCount === 0 ? (
                                     <FlexItem>
-                                        <Text component="p">
+                                        <Content component="p">
                                             {`You have successfully deployed a ${basePageTitle} platform.`}
-                                        </Text>
-                                        <Text component="p">
+                                        </Content>
+                                        <Content component="p">
                                             Before you can secure clusters, create a registration
                                             secret.
-                                        </Text>
+                                        </Content>
                                     </FlexItem>
                                 ) : (
                                     <FlexItem>
-                                        <Text component="p">
+                                        <Content component="p">
                                             Use your preferred method to install secured cluster
                                             services.
-                                        </Text>
-                                        <Text component="p">
+                                        </Content>
+                                        <Content component="p">
                                             After successful installation, it might take a few
                                             moments for this page to display secured clusters.
-                                        </Text>
+                                        </Content>
                                     </FlexItem>
                                 )}
                             </Flex>
@@ -184,7 +182,7 @@ function NoClustersPage({ isModalOpen, setIsModalOpen }): ReactElement {
                                     View installation methods
                                 </Button>
                             )}
-                            <Flex direction={{ default: 'column' }} className="pf-v5-u-mt-xl">
+                            <Flex direction={{ default: 'column' }} className="pf-v6-u-mt-xl">
                                 <Link
                                     to={clustersInitBundlesPath}
                                     onClick={() => {
@@ -208,7 +206,7 @@ function NoClustersPage({ isModalOpen, setIsModalOpen }): ReactElement {
                                     Legacy installation method
                                 </Link>
                                 {registrationSecretsCount !== 0 && (
-                                    <Text component="p" className="pf-v5-u-w-50vw">
+                                    <Content component="p" className="pf-v6-u-w-50vw">
                                         If you misplaced your registration secret, we recommend
                                         locating the previously downloaded YAML on your device first
                                         by the name of the{' '}
@@ -216,7 +214,7 @@ function NoClustersPage({ isModalOpen, setIsModalOpen }): ReactElement {
                                             generated registration secret
                                         </Link>
                                         , or you may need to create a new registration secret.
-                                    </Text>
+                                    </Content>
                                 )}
                             </Flex>
                             <SecureClusterModal

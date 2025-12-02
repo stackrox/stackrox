@@ -26,9 +26,9 @@ export function openTableRowActionMenu(
 }
 
 export function editIntegration(name: string) {
-    cy.get(`tr:contains('${name}') td.pf-v5-c-table__action button`).click();
+    cy.get(`tr:contains('${name}') td.pf-v6-c-table__action button`).click();
     cy.get(
-        `tr:contains('${name}') td.pf-v5-c-table__action button:contains("Edit Integration")`
+        `tr:contains('${name}') td.pf-v6-c-table__action button:contains("Edit Integration")`
     ).click();
 }
 
@@ -38,7 +38,7 @@ export function queryTableHeader(headerName: string) {
 
 export function queryTableSortHeader(headerName: string) {
     return cy
-        .get(`th button:has('.pf-v5-c-table__sort-indicator')`)
+        .get(`th button:has('.pf-v6-c-table__sort-indicator')`)
         .contains(new RegExp(`^${headerName}$`));
 }
 
@@ -98,9 +98,9 @@ export function verifyColumnManagement({ tableSelector }: { tableSelector: strin
 
     // Open the colum management modal and get the list of columns
     cy.get('button:contains("Columns")').click();
-    cy.get('.pf-v5-c-modal-box label')
+    cy.get('.pf-v6-c-modal-box label')
         .then(($labels) => {
-            cy.get('.pf-v5-c-modal-box button:contains("Cancel")').click();
+            cy.get('.pf-v6-c-modal-box button:contains("Cancel")').click();
             const columns = $labels.map((_, el) => el.innerText).get();
             return cy.wrap(columns);
         })
@@ -125,12 +125,12 @@ export function verifyColumnManagement({ tableSelector }: { tableSelector: strin
 }
 
 export function assertVisibleTableColumns(tableSelector: string, columns: string[]) {
-    cy.get(`${tableSelector} > thead th:not(.pf-v5-u-display-none)`).should(
+    cy.get(`${tableSelector} > thead th:not(.pf-v6-u-display-none)`).should(
         'have.length',
         columns.length
     );
     columns.forEach((column) => {
-        cy.get(`${tableSelector} > thead th:not(.pf-v5-u-display-none)`).should(
+        cy.get(`${tableSelector} > thead th:not(.pf-v6-u-display-none)`).should(
             'contain.text',
             column
         );

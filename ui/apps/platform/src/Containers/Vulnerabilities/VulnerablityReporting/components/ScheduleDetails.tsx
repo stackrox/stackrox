@@ -1,5 +1,5 @@
 import type { ReactElement } from 'react';
-import { Flex, FlexItem, Text, TextContent, TextVariants, Title } from '@patternfly/react-core';
+import { Content, ContentVariants, Flex, FlexItem, Title } from '@patternfly/react-core';
 
 import { daysOfMonthMap, daysOfWeekMap } from 'Components/PatternFly/DayPickerDropdown';
 import type { ReportFormValues } from '../forms/useReportFormValues';
@@ -40,9 +40,9 @@ function ScheduleDetails({ formValues }: ScheduleDetailsProps): ReactElement {
                 <Title headingLevel="h2">Schedule details</Title>
             </FlexItem>
             <FlexItem flex={{ default: 'flexNone' }}>
-                <TextContent>
-                    <Text component={TextVariants.p}>{scheduleDetailsText}</Text>
-                </TextContent>
+                <Content>
+                    <Content component={ContentVariants.p}>{scheduleDetailsText}</Content>
+                </Content>
             </FlexItem>
         </Flex>
     );

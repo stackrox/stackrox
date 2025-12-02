@@ -1,4 +1,5 @@
 import {
+    Content,
     Divider,
     Flex,
     PageSection,
@@ -6,7 +7,6 @@ import {
     Skeleton,
     Split,
     SplitItem,
-    Text,
     Title,
     pluralize,
 } from '@patternfly/react-core';
@@ -75,12 +75,22 @@ function ClusterPageVulnerabilities({ clusterId }: ClusterPageVulnerabilitiesPro
 
     return (
         <>
-            <PageSection component="div" variant="light" className="pf-v5-u-py-md pf-v5-u-px-xl">
-                <Text>Review and triage vulnerability data scanned on this cluster</Text>
+            <PageSection
+                hasBodyWrapper={false}
+                component="div"
+                className="pf-v6-u-py-md pf-v6-u-px-xl"
+            >
+                <Content component="p">
+                    Review and triage vulnerability data scanned on this cluster
+                </Content>
             </PageSection>
-            <PageSection isFilled className="pf-v5-u-display-flex pf-v5-u-flex-direction-column">
+            <PageSection
+                hasBodyWrapper={false}
+                isFilled
+                className="pf-v6-u-display-flex pf-v6-u-flex-direction-column"
+            >
                 <AdvancedFiltersToolbar
-                    className="pf-v5-u-pb-0 pf-v5-u-px-sm"
+                    className="pf-v6-u-pb-0 pf-v6-u-px-sm"
                     searchFilter={searchFilter}
                     searchFilterConfig={searchFilterConfig}
                     cveStatusFilterField="CLUSTER CVE FIXABLE"
@@ -112,11 +122,11 @@ function ClusterPageVulnerabilities({ clusterId }: ClusterPageVulnerabilitiesPro
                     />
                 </SummaryCardLayout>
                 <Divider component="div" />
-                <div className="pf-v5-u-flex-grow-1 pf-v5-u-background-color-100 pf-v5-u-p-lg">
-                    <Split className="pf-v5-u-pb-lg pf-v5-u-align-items-baseline">
+                <div className="pf-v6-u-flex-grow-1 pf-v6-u-background-color-100 pf-v6-u-p-lg">
+                    <Split className="pf-v6-u-pb-lg pf-v6-u-align-items-baseline">
                         <SplitItem isFilled>
                             <Flex alignItems={{ default: 'alignItemsCenter' }}>
-                                <Title headingLevel="h2" className="pf-v5-u-w-50">
+                                <Title headingLevel="h2" className="pf-v6-u-w-50">
                                     {data ? (
                                         `${pluralize(clusterVulnerabilityCount, 'result')} found`
                                     ) : (

@@ -44,7 +44,7 @@ function SecurityContext({ deployment }: SecurityContextProps): ReactElement {
     }
 
     return (
-        <Card isFlat>
+        <Card>
             <CardTitle component="h3">Security context</CardTitle>
             <CardBody>{content}</CardBody>
         </Card>

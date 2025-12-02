@@ -28,7 +28,7 @@ describe('Access Control declarative resources', () => {
         visitAccessControlEntities(accessScopesKey, staticResponseMap);
 
         cy.get('td[data-label="Origin"]').should('have.text', 'Declarative');
-        cy.get('td.pf-v5-c-table__action button[aria-label="Kebab toggle"]').should('be.disabled');
+        cy.get('td.pf-v6-c-table__action button[aria-label="Kebab toggle"]').should('be.disabled');
     });
 
     it('list link for declarative access scope goes to form which has label instead of button and disabled input values', () => {
@@ -43,9 +43,9 @@ describe('Access Control declarative resources', () => {
         clickEntityNameInTable(accessScopesKey, entityName);
 
         cy.get(`h1:contains("${entityName}")`);
-        cy.get(`li.pf-v5-c-breadcrumb__item:nth-child(2):contains("${entityName}")`);
+        cy.get(`li.pf-v6-c-breadcrumb__item:nth-child(2):contains("${entityName}")`);
 
-        cy.get('.pf-v5-c-label:contains("Declarative")').should('exist');
+        cy.get('.pf-v6-c-label:contains("Declarative")').should('exist');
 
         cy.get(selectors.form.notEditableLabel).should('exist');
         cy.get(selectors.form.editButton).should('not.exist');
@@ -67,9 +67,9 @@ describe('Access Control declarative resources', () => {
         visitAccessControlEntities(authProvidersKey, staticResponseMap);
 
         cy.get('td[data-label="Origin"]').should('have.text', 'Declarative');
-        cy.get(`td.pf-v5-c-table__action .pf-v5-c-menu-toggle`).click();
+        cy.get(`td.pf-v6-c-table__action .pf-v6-c-menu-toggle`).click();
         cy.get(
-            `td.pf-v5-c-table__action button[role="menuitem"]:contains("Delete auth provider")`
+            `td.pf-v6-c-table__action button[role="menuitem"]:contains("Delete auth provider")`
         ).should('have.attr', 'disabled', 'disabled');
     });
 
@@ -88,9 +88,9 @@ describe('Access Control declarative resources', () => {
         clickEntityNameInTable(authProvidersKey, entityName);
 
         cy.get(`h1:contains("${entityName}")`);
-        cy.get(`li.pf-v5-c-breadcrumb__item:nth-child(2):contains("${entityName}")`);
+        cy.get(`li.pf-v6-c-breadcrumb__item:nth-child(2):contains("${entityName}")`);
 
-        cy.get('.pf-v5-c-label:contains("Declarative")').should('exist');
+        cy.get('.pf-v6-c-label:contains("Declarative")').should('exist');
 
         cy.get('button:contains("Edit minimum role and rules")').should('be.enabled');
 
@@ -101,7 +101,7 @@ describe('Access Control declarative resources', () => {
         cy.get('input[id="groups[0].props.value"]').should('be.disabled');
         // @TODO: We need better selectors for this and other disabled elements. My change fixes the
         // test after the select migration, but isn't an ideal solution.
-        cy.get('.pf-v5-c-menu-toggle.pf-m-disabled').should('exist');
+        cy.get('.pf-v6-c-menu-toggle.pf-m-disabled').should('exist');
         cy.get('button[id="groups[0].roleName"]').should('be.disabled');
         cy.get('button[aria-label="Delete rule"]').should('not.exist');
     });
@@ -116,7 +116,7 @@ describe('Access Control declarative resources', () => {
         visitAccessControlEntities(permissionSetsKey, staticResponseMap);
 
         cy.get('td[data-label="Origin"]').should('have.text', 'Declarative');
-        cy.get('td.pf-v5-c-table__action button[aria-label="Kebab toggle"]').should('be.disabled');
+        cy.get('td.pf-v6-c-table__action button[aria-label="Kebab toggle"]').should('be.disabled');
     });
 
     it('list link for declarative permission set goes to form which has label instead of button and disabled input values', () => {
@@ -131,9 +131,9 @@ describe('Access Control declarative resources', () => {
         clickEntityNameInTable(permissionSetsKey, entityName);
 
         cy.get(`h1:contains("${entityName}")`);
-        cy.get(`li.pf-v5-c-breadcrumb__item:nth-child(2):contains("${entityName}")`);
+        cy.get(`li.pf-v6-c-breadcrumb__item:nth-child(2):contains("${entityName}")`);
 
-        cy.get('.pf-v5-c-label:contains("Declarative")').should('exist');
+        cy.get('.pf-v6-c-label:contains("Declarative")').should('exist');
 
         cy.get(selectors.form.notEditableLabel).should('exist');
         cy.get(selectors.form.editButton).should('not.exist');
@@ -152,7 +152,7 @@ describe('Access Control declarative resources', () => {
         visitAccessControlEntities(rolesKey, staticResponseMap);
 
         cy.get('td[data-label="Origin"]').should('have.text', 'Declarative');
-        cy.get('td.pf-v5-c-table__action button[aria-label="Kebab toggle"]').should('be.disabled');
+        cy.get('td.pf-v6-c-table__action button[aria-label="Kebab toggle"]').should('be.disabled');
     });
 
     it('list link for declarative role goes to form which has label instead of button and disabled input values', () => {
@@ -167,9 +167,9 @@ describe('Access Control declarative resources', () => {
         clickEntityNameInTable(rolesKey, entityName);
 
         cy.get(`h1:contains("${entityName}")`);
-        cy.get(`li.pf-v5-c-breadcrumb__item:nth-child(2):contains("${entityName}")`);
+        cy.get(`li.pf-v6-c-breadcrumb__item:nth-child(2):contains("${entityName}")`);
 
-        cy.get('.pf-v5-c-label:contains("Declarative")').should('exist');
+        cy.get('.pf-v6-c-label:contains("Declarative")').should('exist');
 
         cy.get(selectors.form.notEditableLabel).should('exist');
         cy.get(selectors.form.editButton).should('not.exist');

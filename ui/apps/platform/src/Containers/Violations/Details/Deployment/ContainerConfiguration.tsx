@@ -23,7 +23,7 @@ function ContainerConfiguration({ deployment }: ContainerConfigurationProps): Re
     } else if (deployment.containers.length !== 0) {
         content = deployment.containers.map((container, i) => (
             <Fragment key={container.id}>
-                <Title headingLevel="h4" className="pf-v5-u-mb-md">{`containers[${i}]`}</Title>
+                <Title headingLevel="h4" className="pf-v6-u-mb-md">{`containers[${i}]`}</Title>
                 <ContainerConfigurationDescriptionList
                     key={container.id}
                     container={container}
@@ -34,7 +34,7 @@ function ContainerConfiguration({ deployment }: ContainerConfigurationProps): Re
     }
 
     return (
-        <Card isFlat>
+        <Card>
             <CardTitle component="h3">Container configuration</CardTitle>
             <CardBody>{content}</CardBody>
         </Card>

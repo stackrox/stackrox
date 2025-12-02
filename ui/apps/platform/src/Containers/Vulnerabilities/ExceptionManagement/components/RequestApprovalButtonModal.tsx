@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { Alert, Button, Form, Modal, TextArea, pluralize } from '@patternfly/react-core';
+import { Alert, Button, Form, TextArea, pluralize } from '@patternfly/react-core';
+import { Modal } from '@patternfly/react-core/deprecated';
 import * as yup from 'yup';
 import { useFormik } from 'formik';
 import isEqual from 'lodash/isEqual';

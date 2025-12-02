@@ -17,7 +17,7 @@ function TableErrorComponent({ error, message }: TableErrorComponentProps) {
                 headingLevel="h2"
                 title={getAxiosErrorMessage(error)}
                 icon={ExclamationCircleIcon}
-                iconClassName="pf-v5-u-danger-color-100"
+                iconClassName="pf-v6-u-danger-color-100"
             >
                 {message}
             </EmptyStateTemplate>

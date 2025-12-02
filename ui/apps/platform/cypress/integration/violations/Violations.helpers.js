@@ -37,7 +37,7 @@ export function visitViolationsFromLeftNav() {
 export function visitViolations(staticResponseMap) {
     visit(basePath, routeMatcherMapForViolations, staticResponseMap);
 
-    cy.get(`.pf-v5-c-page__sidebar nav.pf-v5-c-nav > ul > li > a:contains("${title}")`).should(
+    cy.get(`.pf-v6-c-page__sidebar nav.pf-v6-c-nav > ul > li > a:contains("${title}")`).should(
         'have.class',
         'pf-m-current'
     );
@@ -150,7 +150,7 @@ export function clickDeploymentTabWithFixture(fixturePath) {
         },
     };
 
-    const deploymentTab = 'li.pf-v5-c-tabs__item:contains("Deployment")';
+    const deploymentTab = 'li.pf-v6-c-tabs__item:contains("Deployment")';
 
     cy.get(deploymentTab).should('not.have.class', 'pf-m-current');
 

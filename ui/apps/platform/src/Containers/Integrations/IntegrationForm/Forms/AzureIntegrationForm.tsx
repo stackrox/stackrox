@@ -1,5 +1,5 @@
 import type { ReactElement } from 'react';
-import { Checkbox, Form, PageSection, Text, TextInput } from '@patternfly/react-core';
+import { Checkbox, Content, Form, PageSection, TextInput } from '@patternfly/react-core';
 import * as yup from 'yup';
 import merge from 'lodash/merge';
 
@@ -187,7 +187,7 @@ function AzureIntegrationForm({
 
     return (
         <>
-            <PageSection variant="light" isFilled hasOverflowScroll>
+            <PageSection hasBodyWrapper={false} isFilled hasOverflowScroll>
                 <FormMessage message={message} />
                 <Form isWidthLimited>
                     <FormLabelGroup
@@ -245,13 +245,13 @@ function AzureIntegrationForm({
                                 helpTitle="Use workload identity"
                                 helpText={
                                     <>
-                                        <Text>
+                                        <Content component="p">
                                             Enables authentication with short-lived tokens using
                                             Azure managed identities or Azure workload identities.
                                             The associated identity requires permission to pull
                                             images from the registry.
-                                        </Text>
-                                        <Text>
+                                        </Content>
+                                        <Content component="p">
                                             For more information, see{' '}
                                             <ExternalLink>
                                                 <a
@@ -265,7 +265,7 @@ function AzureIntegrationForm({
                                                     RHACS documentation
                                                 </a>
                                             </ExternalLink>
-                                        </Text>
+                                        </Content>
                                     </>
                                 }
                                 ariaLabel="Help for short-lived tokens"

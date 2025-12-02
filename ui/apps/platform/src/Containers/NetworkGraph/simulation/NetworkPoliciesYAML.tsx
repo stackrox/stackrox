@@ -31,7 +31,7 @@ function NetworkPoliciesYAML({ yaml, style, additionalControls }: NetworkPolicie
         download(`${fileName}.yml`, fileContent, 'yml');
     };
     return (
-        <div className="network-policies-yaml pf-v5-u-h-100">
+        <div className="network-policies-yaml pf-v6-u-h-100">
             <CodeViewer
                 code={yaml}
                 style={style}

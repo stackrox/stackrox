@@ -171,7 +171,7 @@ function DelegatedImageScanningForm({
                                     isInline
                                     icon={<PlusCircleIcon />}
                                     onClick={addRegistry}
-                                    className="pf-v5-u-mt-md"
+                                    className="pf-v6-u-mt-md"
                                 >
                                     Add registry
                                 </Button>
