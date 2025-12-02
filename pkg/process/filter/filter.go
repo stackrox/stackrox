@@ -18,8 +18,6 @@ import (
 // This follows the pattern from network flow dedupers (PR #17040).
 type BinaryHash uint64
 
-var hashDelimiter = []byte{0}
-
 // This filter is a rudimentary filter that prevents a container from spamming Central
 //
 // Parameters:
@@ -103,35 +101,6 @@ func (f *filterImpl) siftNoLock(level *level, args []string, levelNum int) bool 
 	}
 
 	return f.siftNoLock(nextLevel, args[1:], levelNum+1)
-}
-
-// hashStrings creates a hash from multiple strings using null byte delimiters.
-// This is a zero-copy implementation that avoids string allocations.
-// Pattern from sensor/common/networkflow/manager/indicator/key.go
-func hashStrings(h hash.Hash64, strs ...string) {
-	for i, s := range strs {
-		if i > 0 {
-			_, _ = h.Write(hashDelimiter) // Use null byte as delimiter to avoid hash collisions
-		}
-		// Use zero-copy conversion from string to []byte using unsafe to avoid allocation.
-		// This is safe because:
-		// 1. h.Write() doesn't modify data (io.Writer contract)
-		// 2. xxhash doesn't retain references
-		// 3. string s remains alive during the call
-		if len(s) > 0 {
-			//#nosec G103 -- Audited: zero-copy string-to-bytes conversion for performance
-			b := unsafe.Slice(unsafe.StringData(s), len(s))
-			_, _ = h.Write(b)
-		}
-	}
-}
-
-// hashString creates a hash from a single string.
-// Convenience wrapper for hashStrings with a single argument.
-func hashString(h hash.Hash64, s string) BinaryHash {
-	h.Reset()
-	hashStrings(h, s)
-	return BinaryHash(h.Sum64())
 }
 
 // NewFilter returns an empty filter to start loading processes into
@@ -237,4 +206,22 @@ func (f *filterImpl) DeleteByPod(pod *storage.Pod) {
 			delete(containersMap, k)
 		}
 	}
+}
+
+// hashString creates a hash from a single string.
+// Convenience wrapper for hashStrings with a single argument.
+func hashString(h hash.Hash64, s string) BinaryHash {
+	if len(s) == 0 {
+		return BinaryHash(0)
+	}
+
+	h.Reset()
+	// Use zero-copy conversion from string to []byte using unsafe to avoid allocation.
+	// This is safe because:
+	// 1. h.Write() doesn't modify data (io.Writer contract)
+	// 2. xxhash doesn't retain references
+	// 3. string s remains alive during the call
+	//#nosec G103 -- Audited: zero-copy string-to-bytes conversion for performance
+	_, _ = h.Write(unsafe.Slice(unsafe.StringData(s), len(s)))
+	return BinaryHash(h.Sum64())
 }
