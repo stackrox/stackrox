@@ -21,11 +21,11 @@ type IndexReportProvider interface {
 
 type Relay struct {
 	reportProvider IndexReportProvider
-	reportSender   sender.ReportSender
+	reportSender   sender.IndexReportSender
 }
 
 // New creates a Relay with the given provider and sender.
-func New(reportProvider IndexReportProvider, reportSender sender.ReportSender) *Relay {
+func New(reportProvider IndexReportProvider, reportSender sender.IndexReportSender) *Relay {
 	return &Relay{
 		reportProvider: reportProvider,
 		reportSender:   reportSender,

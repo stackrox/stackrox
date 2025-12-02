@@ -28,7 +28,7 @@ func (s *relayTestSuite) SetupTest() {
 // This uses mock implementations to verify the full data flow without real vsock/sensor.
 func (s *relayTestSuite) TestRelay_Integration() {
 	// Create mock sender that signals when reports are received
-	mockReportSender := &mockReportSender{
+	mockIndexReportSender := &mockIndexReportSender{
 		failOnIndex:   -1, // never fail
 		doneChan:      make(chan struct{}),
 		expectedCount: 2,
@@ -43,7 +43,7 @@ func (s *relayTestSuite) TestRelay_Integration() {
 	}
 
 	// Create relay with mock dependencies using the public constructor
-	relay := New(mockIndexReportProvider, mockReportSender)
+	relay := New(mockIndexReportProvider, mockIndexReportSender)
 
 	// Run relay in background
 	ctx, cancel := context.WithTimeout(s.ctx, 5*time.Second)
@@ -56,7 +56,7 @@ func (s *relayTestSuite) TestRelay_Integration() {
 
 	// Wait for all reports to be processed (or timeout)
 	select {
-	case <-mockReportSender.doneChan:
+	case <-mockIndexReportSender.doneChan:
 		// All reports processed
 	case <-time.After(1 * time.Second):
 		s.Fail("Timeout waiting for reports to be processed")
@@ -65,11 +65,11 @@ func (s *relayTestSuite) TestRelay_Integration() {
 	cancel()
 
 	// Verify all reports were sent
-	mockReportSender.mu.Lock()
-	s.Require().Len(mockReportSender.sentReports, 2)
-	s.Equal("100", mockReportSender.sentReports[0].GetVsockCid())
-	s.Equal("200", mockReportSender.sentReports[1].GetVsockCid())
-	mockReportSender.mu.Unlock()
+	mockIndexReportSender.mu.Lock()
+	s.Require().Len(mockIndexReportSender.sentReports, 2)
+	s.Equal("100", mockIndexReportSender.sentReports[0].GetVsockCid())
+	s.Equal("200", mockIndexReportSender.sentReports[1].GetVsockCid())
+	mockIndexReportSender.mu.Unlock()
 
 	// Verify relay exited cleanly
 	err := <-errChan
@@ -79,7 +79,7 @@ func (s *relayTestSuite) TestRelay_Integration() {
 // TestRelay_SenderErrorsDoNotStopProcessing verifies that sender errors don't halt the relay
 func (s *relayTestSuite) TestRelay_SenderErrorsDoNotStopProcessing() {
 	// Sender fails on second report but signals completion
-	mockReportSender := &mockReportSender{
+	mockIndexReportSender := &mockIndexReportSender{
 		failOnIndex:   1, // fail on second report
 		doneChan:      make(chan struct{}),
 		expectedCount: 3,
@@ -93,7 +93,7 @@ func (s *relayTestSuite) TestRelay_SenderErrorsDoNotStopProcessing() {
 		},
 	}
 
-	relay := New(mockIndexReportProvider, mockReportSender)
+	relay := New(mockIndexReportProvider, mockIndexReportSender)
 
 	ctx, cancel := context.WithTimeout(s.ctx, 5*time.Second)
 	defer cancel()
@@ -105,7 +105,7 @@ func (s *relayTestSuite) TestRelay_SenderErrorsDoNotStopProcessing() {
 
 	// Wait for all reports to be attempted
 	select {
-	case <-mockReportSender.doneChan:
+	case <-mockIndexReportSender.doneChan:
 		// All reports attempted
 	case <-time.After(1 * time.Second):
 		s.Fail("Timeout waiting for reports to be processed")
@@ -114,9 +114,9 @@ func (s *relayTestSuite) TestRelay_SenderErrorsDoNotStopProcessing() {
 	cancel()
 
 	// All three reports should have been attempted
-	mockReportSender.mu.Lock()
-	s.Require().Len(mockReportSender.sentReports, 3)
-	mockReportSender.mu.Unlock()
+	mockIndexReportSender.mu.Lock()
+	s.Require().Len(mockIndexReportSender.sentReports, 3)
+	mockIndexReportSender.mu.Unlock()
 
 	err := <-errChan
 	s.Equal(context.Canceled, err)
@@ -134,11 +134,11 @@ func (s *relayTestSuite) TestRelay_ContextCancellation() {
 		startedChan: startedChan,
 	}
 
-	mockReportSender := &mockReportSender{
+	mockIndexReportSender := &mockIndexReportSender{
 		failOnIndex: -1, // never fail
 	}
 
-	relay := New(mockIndexReportProvider, mockReportSender)
+	relay := New(mockIndexReportProvider, mockIndexReportSender)
 
 	ctx, cancel := context.WithCancel(s.ctx)
 
@@ -189,7 +189,7 @@ func (m *mockIndexReportProvider) Start(ctx context.Context) (<-chan *v1.IndexRe
 	return reportChan, nil
 }
 
-type mockReportSender struct {
+type mockIndexReportSender struct {
 	mu            sync.Mutex
 	sentReports   []*v1.IndexReport
 	failOnIndex   int           // Index to fail on (0-based), use -1 to never fail
@@ -197,7 +197,7 @@ type mockReportSender struct {
 	expectedCount int           // number of reports expected before signaling done
 }
 
-func (m *mockReportSender) Send(_ context.Context, report *v1.IndexReport) error {
+func (m *mockIndexReportSender) Send(_ context.Context, report *v1.IndexReport) error {
 	m.mu.Lock()
 	currentIndex := len(m.sentReports)
 	m.sentReports = append(m.sentReports, report)

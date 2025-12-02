@@ -19,26 +19,26 @@ import (
 
 var log = logging.LoggerForModule()
 
-// ReportSender sends index reports to Sensor.
-type ReportSender interface {
+// IndexReportSender sends index reports to Sensor.
+type IndexReportSender interface {
 	Send(ctx context.Context, report *v1.IndexReport) error
 }
 
-type senderImpl struct {
+type sensorIndexReportSender struct {
 	sensorClient sensor.VirtualMachineIndexReportServiceClient
 }
 
-var _ ReportSender = (*senderImpl)(nil)
+var _ IndexReportSender = (*sensorIndexReportSender)(nil)
 
-// New creates a ReportSender that sends reports to Sensor with retry logic.
-func New(sensorClient sensor.VirtualMachineIndexReportServiceClient) ReportSender {
-	return &senderImpl{
+// New creates an IndexReportSender that sends reports to Sensor with retry logic.
+func New(sensorClient sensor.VirtualMachineIndexReportServiceClient) IndexReportSender {
+	return &sensorIndexReportSender{
 		sensorClient: sensorClient,
 	}
 }
 
 // Send sends the report to Sensor, retrying on transient errors.
-func (s *senderImpl) Send(ctx context.Context, report *v1.IndexReport) error {
+func (s *sensorIndexReportSender) Send(ctx context.Context, report *v1.IndexReport) error {
 	return SendReportToSensor(ctx, report, s.sensorClient)
 }
 
