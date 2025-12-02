@@ -113,7 +113,7 @@ function VirtualMachinePagePackages({
         checked: boolean,
         selection: string
     ) => {
-        const action = checked ? 'ADD' : 'REMOVE';
+        const action = checked ? 'APPEND_TOGGLE' : 'REMOVE';
         const category = filterType;
         const value = selection;
         setSearchFilter(updateSearchFilter(searchFilter, [{ action, category, value }]));

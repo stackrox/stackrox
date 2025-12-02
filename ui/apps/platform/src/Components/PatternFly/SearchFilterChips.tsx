@@ -3,6 +3,7 @@ import { Button, Chip, ChipGroup, Flex, FlexItem } from '@patternfly/react-core'
 import type { ToolbarChip } from '@patternfly/react-core';
 import { Globe } from 'react-feather'; // eslint-disable-line limited/no-feather-icons
 
+import { updateSearchFilter } from 'Components/CompoundSearchFilter/utils/utils';
 import type { SearchFilter } from 'types/search';
 import { searchValueAsArray } from 'utils/searchUtils';
 
@@ -57,17 +58,14 @@ function SearchFilterChips({
     }
 
     function onDelete(category: string, chip: ToolbarChip | string) {
-        const newSearchFilter = { ...searchFilter };
-        const newSearchFilterValues = searchValueAsArray(searchFilter[category]);
-        const chipKey = typeof chip === 'string' ? chip : chip.key;
-        newSearchFilter[category] = newSearchFilterValues.filter((fil: string) => fil !== chipKey);
-        onChangeSearchFilter(newSearchFilter);
+        const value = typeof chip === 'string' ? chip : chip.key;
+        onChangeSearchFilter(
+            updateSearchFilter(searchFilter, [{ action: 'REMOVE', category, value }])
+        );
     }
 
     function onDeleteGroup(category: string) {
-        const newSearchFilter = { ...searchFilter };
-        delete newSearchFilter[category];
-        onChangeSearchFilter(newSearchFilter);
+        onChangeSearchFilter(updateSearchFilter(searchFilter, [{ action: 'DELETE', category }]));
     }
 
     function onDeleteAll() {

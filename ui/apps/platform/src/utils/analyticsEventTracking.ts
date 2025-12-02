@@ -23,6 +23,7 @@ export function createFilterTracker(analyticsTrack: (analyticsEvent: AnalyticsEv
             payload.filter(payloadItemFiltererForTracking).forEach((payloadItem) => {
                 const { category, value: filter } = payloadItem;
 
+                // TODO do 'APPEND_TOGGLE' and 'ASSIGN_SINGLE' actions require allow list?
                 const telemetryEvent = isSearchCategoryWithFilter(category)
                     ? { event, properties: { category, filter } }
                     : { event, properties: { category } };

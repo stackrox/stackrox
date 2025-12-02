@@ -32,7 +32,7 @@ function IPMatchFilter({ searchFilter, setSearchFilter }: IPMatchFilterProps): R
         setSearchFilter(
             updateSearchFilter(searchFilter, [
                 {
-                    action: 'ADD',
+                    action: 'APPEND_STRING',
                     category: EXTERNAL_SOURCE_ADDRESS_QUERY,
                     value: searchValue,
                 },

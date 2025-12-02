@@ -9,6 +9,7 @@ import type {
     CompoundSearchFilterEntity,
     OnSearchPayload,
     OnSearchPayloadItem,
+    OnSearchPayloadItemAdd,
     SelectSearchFilterAttribute,
     SelectSearchFilterGroupedOptions,
     SelectSearchFilterOptions,
@@ -202,14 +203,29 @@ export function updateSearchFilter(
     const searchFilterUpdated = { ...searchFilter };
     payload.forEach((payloadItem) => {
         switch (payloadItem.action) {
-            case 'ADD':
-            case 'REMOVE': {
-                const { action, category, value } = payloadItem;
+            case 'APPEND_STRING':
+            case 'APPEND_TOGGLE': {
+                const { category, value } = payloadItem;
                 const values = searchValueAsArray(searchFilterUpdated[category]);
-                searchFilterUpdated[category] =
-                    action === 'ADD'
-                        ? [...values, value]
-                        : values.filter((valueInSearchFilter) => valueInSearchFilter !== value);
+                searchFilterUpdated[category] = [...values, value];
+                break;
+            }
+            case 'ASSIGN_SINGLE': {
+                const { category, value } = payloadItem;
+                searchFilterUpdated[category] = [value];
+                break;
+            }
+            case 'DELETE': {
+                const { category } = payloadItem;
+                delete searchFilterUpdated[category];
+                break;
+            }
+            case 'REMOVE': {
+                const { category, value } = payloadItem;
+                const values = searchValueAsArray(searchFilterUpdated[category]);
+                searchFilterUpdated[category] = values.filter(
+                    (valueInSearchFilter) => valueInSearchFilter !== value
+                );
                 break;
             }
             default:
@@ -226,8 +242,7 @@ export function payloadItemFiltererForUpdating(
     payloadItem: OnSearchPayloadItem
 ) {
     switch (payloadItem.action) {
-        case 'ADD':
-        case 'REMOVE': {
+        case 'APPEND_STRING': {
             const { category, value } = payloadItem;
             if (value === '') {
                 // TODO What is pro and con for search filter input field to prevent empty string?
@@ -235,22 +250,21 @@ export function payloadItemFiltererForUpdating(
             }
 
             const values = searchValueAsArray(searchFilter[category]);
-            const hasValue = values.includes(value);
-            if (payloadItem.action === 'REMOVE') {
-                return hasValue;
-            }
-
-            return !hasValue;
+            return !values.includes(value); // omit payload item if user entered redundant value
         }
         default:
-            return false;
+            return true;
     }
 }
 
 // Pure function returns whether payload item is relevant for analytics tracking.
-export function payloadItemFiltererForTracking(payloadItem: OnSearchPayloadItem) {
+export function payloadItemFiltererForTracking(
+    payloadItem: OnSearchPayloadItem
+): payloadItem is OnSearchPayloadItemAdd {
     switch (payloadItem.action) {
-        case 'ADD':
+        case 'APPEND_STRING': // open set of values which analytics might omit
+        case 'APPEND_TOGGLE': // closed set of values
+        case 'ASSIGN_SINGLE': // closed set of values
             return true;
         default:
             return false;

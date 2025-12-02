@@ -120,7 +120,7 @@ function AdvancedFiltersToolbar({
                                         {
                                             category,
                                             value,
-                                            action: checked ? 'ADD' : 'REMOVE',
+                                            action: checked ? 'APPEND_TOGGLE' : 'REMOVE',
                                         },
                                     ])
                                 }
@@ -135,7 +135,7 @@ function AdvancedFiltersToolbar({
                                         {
                                             category,
                                             value,
-                                            action: checked ? 'ADD' : 'REMOVE',
+                                            action: checked ? 'APPEND_TOGGLE' : 'REMOVE',
                                         },
                                     ])
                                 }
