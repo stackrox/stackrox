@@ -21,7 +21,7 @@ function ExternalLink({ children }: ExternalLinkProps): ReactElement {
         >
             {children}
             <Icon>
-                <ExternalLinkAltIcon color="var(--pf-t--global--icon--color--link--default)" />
+                <ExternalLinkAltIcon color="var(--pf-t--global--text--color--link--default)" />
             </Icon>
         </Flex>
     );
