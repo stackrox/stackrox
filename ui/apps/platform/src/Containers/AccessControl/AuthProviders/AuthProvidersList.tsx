@@ -3,7 +3,8 @@ import type { ReactElement } from 'react';
 import pluralize from 'pluralize';
 import { useDispatch, useSelector } from 'react-redux';
 import { createStructuredSelector } from 'reselect';
-import { Button, Modal } from '@patternfly/react-core';
+import { Button } from '@patternfly/react-core';
+import { Modal } from '@patternfly/react-core/deprecated';
 import { ActionsColumn, Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 
 import { selectors } from 'reducers';
@@ -17,7 +18,8 @@ import { AccessControlEntityLink } from '../AccessControlLinks';
 // TODO import from where?
 const unselectedRowStyle = {};
 const selectedRowStyle = {
-    borderLeft: '3px solid var(--pf-v5-global--primary-color--100)',
+    borderLeft:
+        'var(--pf-t--temp--dev--tbd)' /* CODEMODS: original v5 color was --pf-v5-global--primary-color--100 */,
 };
 
 function getAuthProviderTypeLabel(type: string, availableTypes: AuthProviderInfo[]): string {

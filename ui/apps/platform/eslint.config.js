@@ -255,11 +255,11 @@ module.exports = [
                     message: 'Please use Number.isNaN instead',
                 },
                 {
-                    property: '__defineGetter__',
+                    property: 'function __defineGetter__() { [native code] }',
                     message: 'Please use Object.defineProperty instead.',
                 },
                 {
-                    property: '__defineSetter__',
+                    property: 'function __defineSetter__() { [native code] }',
                     message: 'Please use Object.defineProperty instead.',
                 },
                 {

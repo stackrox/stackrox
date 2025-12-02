@@ -54,7 +54,7 @@ function Header({
     }
 
     return (
-        <div className="pf-v5-u-p-md" aria-label="Enforcement detail message">
+        <div className="pf-v6-u-p-md" aria-label="Enforcement detail message">
             Enforcement {countMessage}
         </div>
     );

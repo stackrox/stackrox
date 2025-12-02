@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import type { ReactElement } from 'react';
-import { Alert, Bullseye, PageSection, Spinner, Text, Title } from '@patternfly/react-core';
+import { Alert, Bullseye, Content, PageSection, Spinner, Title } from '@patternfly/react-core';
 
 import PageTitle from 'Components/PageTitle';
 import useInterval from 'hooks/useInterval';
@@ -93,14 +93,14 @@ function AdministrationEventsPage(): ReactElement {
     return (
         <>
             <PageTitle title="Administration Events" />
-            <PageSection component="div" variant="light">
+            <PageSection hasBodyWrapper={false} component="div">
                 <Title headingLevel="h1">Administration Events</Title>
-                <Text>
+                <Content component="p">
                     Troubleshoot platform issues by reviewing event logs. Events are purged after 4
                     days by default.
-                </Text>
+                </Content>
             </PageSection>
-            <PageSection component="div">
+            <PageSection hasBodyWrapper={false} component="div">
                 {isLoading && !lastUpdatedTime ? (
                     <Bullseye>
                         <Spinner />

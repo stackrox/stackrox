@@ -2,10 +2,10 @@ import type { ReactElement, ReactNode } from 'react';
 import {
     Breadcrumb,
     BreadcrumbItem,
+    Content,
     Flex,
     FlexItem,
     PageSection,
-    Text,
     Title,
 } from '@patternfly/react-core';
 
@@ -22,7 +22,7 @@ export type InitBundlesHeaderProps = {
 
 function InitBundlesHeader({ headerActions, title }: InitBundlesHeaderProps): ReactElement {
     return (
-        <PageSection component="div" variant="light">
+        <PageSection hasBodyWrapper={false} component="div">
             <PageTitle title={title} />
             <Flex direction={{ default: 'column' }}>
                 <Breadcrumb>
@@ -40,10 +40,10 @@ function InitBundlesHeader({ headerActions, title }: InitBundlesHeaderProps): Re
                         spaceItems={{ default: 'spaceItemsSm' }}
                     >
                         <Title headingLevel="h1">{title}</Title>
-                        <Text>
+                        <Content component="p">
                             Cluster init bundles contain secrets for secured cluster services to
                             authenticate with Central.
-                        </Text>
+                        </Content>
                     </Flex>
                     {headerActions && (
                         <FlexItem align={{ default: 'alignRight' }}>{headerActions}</FlexItem>

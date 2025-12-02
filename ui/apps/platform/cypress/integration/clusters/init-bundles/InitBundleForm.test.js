@@ -20,19 +20,19 @@ describe('Cluster init bundles InitBundlesForm', () => {
     it('visits clusters from breadcrumb link', () => {
         visitInitBundleForm();
 
-        cy.get('.pf-v5-c-breadcrumb__item:nth-child(3):contains("Create bundle")');
+        cy.get('.pf-v6-c-breadcrumb__item:nth-child(3):contains("Create bundle")');
         interactAndVisitClusters(() => {
-            cy.get('.pf-v5-c-breadcrumb__item:nth-child(1) a:contains("Clusters")').click();
+            cy.get('.pf-v6-c-breadcrumb__item:nth-child(1) a:contains("Clusters")').click();
         });
     });
 
     it('visits cluster init bundles from breadcrumb link', () => {
         visitInitBundleForm();
 
-        cy.get('.pf-v5-c-breadcrumb__item:nth-child(3):contains("Create bundle")');
+        cy.get('.pf-v6-c-breadcrumb__item:nth-child(3):contains("Create bundle")');
         interactAndWaitForInitBundles(() => {
             cy.get(
-                '.pf-v5-c-breadcrumb__item:nth-child(2) a:contains("Cluster init bundles")'
+                '.pf-v6-c-breadcrumb__item:nth-child(2) a:contains("Cluster init bundles")'
             ).click();
         });
 
@@ -61,7 +61,7 @@ describe('Cluster init bundles InitBundlesForm', () => {
 
         assertInitBundlePage();
         cy.get('button:contains("Revoke bundle")').click();
-        cy.get('.pf-v5-c-modal-box__title:contains("Revoke cluster init bundle")');
+        cy.get('.pf-v6-c-modal-box__title:contains("Revoke cluster init bundle")');
         interactAndWaitForRevokeBundle(() => {
             cy.get(`[role="dialog"] button:contains("Revoke bundle")`).click();
         });

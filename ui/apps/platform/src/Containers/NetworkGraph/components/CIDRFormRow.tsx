@@ -19,7 +19,7 @@ const CIDRFormRow = ({ idx, onRemoveRow, errors, touched }) => {
     let buttonClassName = '';
     if (idx === 0) {
         buttonClassName = !hasError
-            ? 'pf-m-align-self-flex-end pf-v5-u-mb-sm'
+            ? 'pf-m-align-self-flex-end pf-v6-u-mb-sm'
             : 'pf-m-align-self-center';
     }
 

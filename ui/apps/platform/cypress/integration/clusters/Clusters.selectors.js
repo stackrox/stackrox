@@ -1,6 +1,6 @@
 import scopeSelectors from '../../helpers/scopeSelectors';
 
-const clusterPageSelector = `#main-page-container:has('a.pf-v5-c-breadcrumb__link:contains("Clusters")')`;
+const clusterPageSelector = `#main-page-container:has('a.pf-v6-c-breadcrumb__link:contains("Clusters")')`;
 
 export const selectors = {
     clusters: {

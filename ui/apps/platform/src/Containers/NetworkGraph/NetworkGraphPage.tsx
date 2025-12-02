@@ -305,14 +305,14 @@ function NetworkGraphPageContent() {
                 />
             )}
             <PageTitle title="Network Graph" />
-            <PageSection variant="light" padding={{ default: 'noPadding' }}>
+            <PageSection hasBodyWrapper={false} padding={{ default: 'noPadding' }}>
                 <Toolbar
                     className="network-graph-selector-bar"
                     data-testid="network-graph-selector-bar"
                 >
                     <ToolbarContent>
-                        <ToolbarGroup variant="filter-group" className="pf-v5-u-align-self-center">
-                            <Title headingLevel="h1" className="pf-v5-u-screen-reader">
+                        <ToolbarGroup variant="filter-group" className="pf-v6-u-align-self-center">
+                            <Title headingLevel="h1" className="pf-v6-u-screen-reader">
                                 Network Graph
                             </Title>
                             <NetworkBreadcrumbs
@@ -324,11 +324,7 @@ function NetworkGraphPageContent() {
                             />
                         </ToolbarGroup>
                         {(hasWriteAccessForBlocks || hasReadAccessForNetworkPolicy) && (
-                            <ToolbarGroup
-                                variant="button-group"
-                                align={{ default: 'alignRight' }}
-                                spaceItems={{ default: 'spaceItemsMd' }}
-                            >
+                            <ToolbarGroup variant="action-group" align={{ default: 'alignEnd' }}>
                                 {hasWriteAccessForBlocks && (
                                     <ToolbarItem>
                                         <Button
@@ -356,7 +352,7 @@ function NetworkGraphPageContent() {
             <Divider component="div" />
             {hasClusterNamespaceSelected && (
                 <>
-                    <PageSection variant="light" padding={{ default: 'noPadding' }}>
+                    <PageSection hasBodyWrapper={false} padding={{ default: 'noPadding' }}>
                         <Toolbar data-testid="network-graph-toolbar">
                             <ToolbarContent>
                                 <ToolbarGroup variant="filter-group">
@@ -376,8 +372,8 @@ function NetworkGraphPageContent() {
                                     </ToolbarItem>
                                 </ToolbarGroup>
                                 <Divider orientation={{ default: 'vertical' }} />
-                                <ToolbarGroup className="pf-v5-u-flex-grow-1">
-                                    <ToolbarItem className="pf-v5-u-flex-grow-1">
+                                <ToolbarGroup className="pf-v6-u-flex-grow-1">
+                                    <ToolbarItem className="pf-v6-u-flex-grow-1">
                                         <NetworkSearch
                                             selectedCluster={clusterFromUrl.name}
                                             selectedNamespaces={namespacesFromUrl}
@@ -395,14 +391,14 @@ function NetworkGraphPageContent() {
                                 </ToolbarGroup>
                                 {hasReadAccessForNetworkPolicy && (
                                     <ToolbarGroup
-                                        align={{ default: 'alignRight' }}
-                                        className="pf-v5-u-align-self-center"
+                                        align={{ default: 'alignEnd' }}
+                                        className="pf-v6-u-align-self-center"
                                     >
                                         <Divider
                                             component="div"
                                             orientation={{ default: 'vertical' }}
                                         />
-                                        <ToolbarItem className="pf-v5-u-color-200">
+                                        <ToolbarItem className="pf-v6-u-color-200">
                                             <NodeUpdateSection
                                                 isLoading={isLoading}
                                                 lastUpdatedTime={lastUpdatedTime}
@@ -421,7 +417,11 @@ function NetworkGraphPageContent() {
                     <Divider component="div" />
                 </>
             )}
-            <PageSection className="network-graph" padding={{ default: 'noPadding' }}>
+            <PageSection
+                hasBodyWrapper={false}
+                className="network-graph"
+                padding={{ default: 'noPadding' }}
+            >
                 {isLoading ? (
                     <Bullseye>
                         <Spinner />

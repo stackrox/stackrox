@@ -57,7 +57,7 @@ describe('Access Control Permission sets', () => {
         clickEntityNameInTable(entitiesKey, entityName);
 
         cy.get('h1').should('have.text', entityName);
-        cy.get(`li.pf-v5-c-breadcrumb__item:nth-child(2):contains("${entityName}")`);
+        cy.get(`li.pf-v6-c-breadcrumb__item:nth-child(2):contains("${entityName}")`);
 
         cy.get(selectors.form.notEditableLabel).should('exist');
         cy.get(selectors.form.editButton).should('not.exist');

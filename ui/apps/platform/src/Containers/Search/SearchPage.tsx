@@ -180,11 +180,11 @@ function SearchPage(): ReactElement {
     });
 
     return (
-        <PageSection variant="light" id="search-page">
+        <PageSection hasBodyWrapper={false} id="search-page">
             <PageTitle title={pageTitleItems.join(' - ')} />
             <Stack hasGutter>
                 <StackItem>
-                    <Title headingLevel="h1" className="pf-v5-u-mb-md">
+                    <Title headingLevel="h1" className="pf-v6-u-mb-md">
                         Search
                     </Title>
                     {typeof searchOptionsErrorMessage === 'string' ? (

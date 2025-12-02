@@ -82,7 +82,7 @@ const imageNameResponseMock = {
 
 function Wrapper({ config, searchFilter, onSearch }) {
     return (
-        <div className="pf-v5-u-p-md">
+        <div className="pf-v6-u-p-md">
             <CompoundSearchFilter config={config} searchFilter={searchFilter} onSearch={onSearch} />
         </div>
     );
@@ -131,15 +131,15 @@ function selectDatePickerDate(month, day, year) {
     cy.get('button[aria-label="Filter by date toggle"]').click();
 
     // Select a month
-    cy.get('div.pf-v5-c-calendar-month__header-month button').click();
-    cy.get(`button.pf-v5-c-menu__item:contains("${month}")`).click();
+    cy.get('div.pf-v6-c-calendar-month__header-month button').click();
+    cy.get(`button.pf-v6-c-menu__item:contains("${month}")`).click();
 
     // Select a year
     cy.get('input[aria-label="Select year"]').clear();
     cy.get('input[aria-label="Select year"]').type(year);
 
     // Select a day
-    cy.get(`button.pf-v5-c-calendar-month__date:contains("${day}")`).click();
+    cy.get(`button.pf-v6-c-calendar-month__date:contains("${day}")`).click();
 }
 
 describe(Cypress.spec.relative, () => {
@@ -516,7 +516,7 @@ describe(Cypress.spec.relative, () => {
                     <button type="button" onClick={() => setConfig([imageSearchFilterConfig])}>
                         Trim config
                     </button>
-                    <div className="pf-v5-u-p-md">
+                    <div className="pf-v6-u-p-md">
                         <CompoundSearchFilter
                             defaultEntity="Image"
                             config={config}

@@ -37,7 +37,7 @@ function CreateVulnReportPage() {
         <>
             <PageTitle title="Create vulnerability report" />
             <ReportFormErrorAlert error={error} />
-            <PageSection variant="light" className="pf-v5-u-py-md">
+            <PageSection hasBodyWrapper={false} className="pf-v6-u-py-md">
                 <Breadcrumb>
                     <BreadcrumbItemLink to={vulnerabilityConfigurationReportsPath}>
                         Vulnerability reporting
@@ -46,8 +46,8 @@ function CreateVulnReportPage() {
                 </Breadcrumb>
             </PageSection>
             <Divider component="div" />
-            <PageSection variant="light" padding={{ default: 'noPadding' }}>
-                <Flex direction={{ default: 'column' }} className="pf-v5-u-py-lg pf-v5-u-px-lg">
+            <PageSection hasBodyWrapper={false} padding={{ default: 'noPadding' }}>
+                <Flex direction={{ default: 'column' }} className="pf-v6-u-py-lg pf-v6-u-px-lg">
                     <FlexItem>
                         <Title headingLevel="h1">Create report</Title>
                     </FlexItem>
@@ -58,7 +58,7 @@ function CreateVulnReportPage() {
                 </Flex>
             </PageSection>
             <Divider component="div" />
-            <PageSection padding={{ default: 'noPadding' }} isCenterAligned>
+            <PageSection hasBodyWrapper={false} padding={{ default: 'noPadding' }} isCenterAligned>
                 <ReportFormWizard formik={formik} onSave={onCreate} isSaving={isLoading} />
             </PageSection>
         </>

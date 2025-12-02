@@ -5,13 +5,13 @@ import type { FormikContextType } from 'formik';
 import {
     Alert,
     Bullseye,
+    Content,
     Divider,
     Flex,
     FlexItem,
     Form,
     PageSection,
     Spinner,
-    Text,
     Title,
 } from '@patternfly/react-core';
 import { ExpandableRowContent, Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
@@ -108,9 +108,11 @@ function ProfileSelection({
                         <Td colSpan={2}></Td>
                         <Td dataLabel="Profile details" colSpan={4}>
                             <ExpandableRowContent>
-                                <Text className="pf-v5-u-font-weight-bold">{title}</Text>
-                                <Divider component="div" className="pf-v5-u-my-md" />
-                                <Text>{description}</Text>
+                                <Content component="p" className="pf-v6-u-font-weight-bold">
+                                    {title}
+                                </Content>
+                                <Divider component="div" className="pf-v6-u-my-md" />
+                                <Content component="p">{description}</Content>
                             </ExpandableRowContent>
                         </Td>
                     </Tr>
@@ -166,8 +168,8 @@ function ProfileSelection({
 
     return (
         <>
-            <PageSection variant="light" padding={{ default: 'noPadding' }}>
-                <Flex direction={{ default: 'column' }} className="pf-v5-u-py-lg pf-v5-u-px-lg">
+            <PageSection hasBodyWrapper={false} padding={{ default: 'noPadding' }}>
+                <Flex direction={{ default: 'column' }} className="pf-v6-u-py-lg pf-v6-u-px-lg">
                     <FlexItem>
                         <Title headingLevel="h2">Profiles</Title>
                     </FlexItem>
@@ -175,7 +177,7 @@ function ProfileSelection({
                 </Flex>
             </PageSection>
             <Divider component="div" />
-            <Form className="pf-v5-u-py-lg pf-v5-u-px-lg" ref={alertRef}>
+            <Form className="pf-v6-u-py-lg pf-v6-u-px-lg" ref={alertRef}>
                 {formikTouched.profiles && formikValues.profiles.length === 0 && (
                     <Alert
                         title="At least one profile is required to proceed"

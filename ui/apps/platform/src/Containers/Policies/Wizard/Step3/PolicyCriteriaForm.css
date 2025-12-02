@@ -3,11 +3,11 @@
     overflow-x: scroll;
 }
 
-#policy-sections .pf-v5-c-alert {
+#policy-sections .pf-v6-c-alert {
     white-space: wrap;
 }
 
-#policy-sections .pf-v5-c-toggle-group .pf-v5-c-toggle-group__button {
+#policy-sections .pf-v6-c-toggle-group .pf-v6-c-toggle-group__button {
     white-space: initial;
 }
 

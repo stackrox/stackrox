@@ -9,18 +9,16 @@ import {
     Button,
     Card,
     CardBody,
+    Content,
     DropdownItem,
     EmptyState,
     EmptyStateBody,
-    EmptyStateHeader,
-    EmptyStateIcon,
     Flex,
     FlexItem,
     PageSection,
     Pagination,
     SearchInput,
     Spinner,
-    Text,
     Toolbar,
     ToolbarContent,
     ToolbarItem,
@@ -184,17 +182,17 @@ function ConfigReportsTab() {
                 ))}
             </AlertGroup>
             <PageTitle title="Vulnerability reporting - Report configurations" />
-            <PageSection variant="light" padding={{ default: 'noPadding' }}>
+            <PageSection hasBodyWrapper={false} padding={{ default: 'noPadding' }}>
                 {runError && <Alert variant="danger" isInline title={runError} component="p" />}
                 <Flex
                     direction={{ default: 'row' }}
                     alignItems={{ default: 'alignItemsCenter' }}
-                    className="pf-v5-u-py-lg pf-v5-u-px-lg"
+                    className="pf-v6-u-py-lg pf-v6-u-px-lg"
                 >
-                    <Text>
+                    <Content component="p">
                         Configure reports, define collections, and assign delivery destinations to
                         report on vulnerabilities across the organization.
-                    </Text>
+                    </Content>
                     {reportConfigurations &&
                         reportConfigurations.length > 0 &&
                         hasWriteAccessForReport && (
@@ -204,16 +202,13 @@ function ConfigReportsTab() {
                         )}
                 </Flex>
             </PageSection>
-            <PageSection padding={{ default: 'noPadding' }}>
-                <PageSection isCenterAligned>
+            <PageSection hasBodyWrapper={false} padding={{ default: 'noPadding' }}>
+                <PageSection hasBodyWrapper={false} isCenterAligned>
                     <Card>
-                        <CardBody className="pf-v5-u-p-0">
+                        <CardBody className="pf-v6-u-p-0">
                             <Toolbar>
                                 <ToolbarContent>
-                                    <ToolbarItem
-                                        variant="search-filter"
-                                        className="pf-v5-u-flex-grow-1"
-                                    >
+                                    <ToolbarItem className="pf-v6-u-flex-grow-1">
                                         <SearchInput
                                             placeholder="Filter by report name"
                                             value={searchValue}
@@ -245,7 +240,7 @@ function ConfigReportsTab() {
                                     </ToolbarItem>
                                     <ToolbarItem
                                         variant="pagination"
-                                        align={{ default: 'alignRight' }}
+                                        align={{ default: 'alignEnd' }}
                                     >
                                         <Pagination
                                             itemCount={totalReports}
@@ -261,24 +256,19 @@ function ConfigReportsTab() {
                                 </ToolbarContent>
                             </Toolbar>
                             {isLoading && !reportConfigurations && (
-                                <div className="pf-v5-u-p-md">
+                                <div className="pf-v6-u-p-md">
                                     <Bullseye>
                                         <Spinner />
                                     </Bullseye>
                                 </div>
                             )}
                             {fetchError && (
-                                <EmptyState variant="sm">
-                                    <EmptyStateHeader
-                                        titleText="Unable to get vulnerability reports"
-                                        icon={
-                                            <EmptyStateIcon
-                                                icon={ExclamationCircleIcon}
-                                                className="pf-v5-u-danger-color-100"
-                                            />
-                                        }
-                                        headingLevel="h2"
-                                    />
+                                <EmptyState
+                                    headingLevel="h2"
+                                    icon={ExclamationCircleIcon}
+                                    titleText="Unable to get vulnerability reports"
+                                    variant="sm"
+                                >
                                     <EmptyStateBody>{fetchError}</EmptyStateBody>
                                 </EmptyState>
                             )}
@@ -347,10 +337,10 @@ function ConfigReportsTab() {
                                                                     }}
                                                                 >
                                                                     <FlexItem>
-                                                                        <Text>
+                                                                        <Content component="p">
                                                                             To get started, create a
                                                                             report
-                                                                        </Text>
+                                                                        </Content>
                                                                     </FlexItem>
                                                                     <FlexItem>
                                                                         <CreateReportsButton />
@@ -381,13 +371,13 @@ function ConfigReportsTab() {
                                                                         }}
                                                                     >
                                                                         <FlexItem>
-                                                                            <Text>
+                                                                            <Content component="p">
                                                                                 No results match
                                                                                 this filter
                                                                                 criteria. Clear the
                                                                                 filter and try
                                                                                 again.
-                                                                            </Text>
+                                                                            </Content>
                                                                         </FlexItem>
                                                                         <FlexItem>
                                                                             <Button
@@ -472,7 +462,7 @@ function ConfigReportsTab() {
                                                     <span
                                                         className={
                                                             !isReportStatusPending
-                                                                ? 'pf-v5-u-danger-color-100'
+                                                                ? 'pf-v6-u-danger-color-100'
                                                                 : ''
                                                         }
                                                     >
@@ -580,7 +570,7 @@ function ConfigReportsTab() {
                                 numSuccessfulDeletions
                             )}`}
                             component="p"
-                            className="pf-v5-u-mb-sm"
+                            className="pf-v6-u-mb-sm"
                         />
                     )}
                     {deleteResults?.filter(isErrorDeleteResult).map((deleteResult) => {
@@ -596,7 +586,7 @@ function ConfigReportsTab() {
                                 variant="danger"
                                 title={`Failed to delete "${report.name}"`}
                                 component="p"
-                                className="pf-v5-u-mb-sm"
+                                className="pf-v6-u-mb-sm"
                             >
                                 {deleteResult.error}
                             </Alert>
