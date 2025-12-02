@@ -23,15 +23,7 @@ import (
 
 var log = logging.LoggerForModule()
 
-// ReportProvider manages the vsock server and produces validated reports.
-type ReportProvider interface {
-	// Start begins accepting connections and returns a channel of validated reports.
-	// The channel is currently not closed to avoid races during shutdown.
-	// TODO: Implement proper shutdown logic that closes the channel.
-	Start(ctx context.Context) (<-chan *v1.IndexReport, error)
-}
-
-type providerImpl struct {
+type VsockIndexReportProvider struct {
 	listener              net.Listener
 	semaphore             *semaphore.Weighted
 	semaphoreTimeout      time.Duration
@@ -40,12 +32,10 @@ type providerImpl struct {
 	maxSizeBytes          int
 }
 
-var _ ReportProvider = (*providerImpl)(nil)
-
-// New creates a ReportProvider with a vsock listener.
+// New creates a VsockIndexReportProvider with a vsock listener.
 // Concurrency limits are read from env vars VirtualMachinesMaxConcurrentVsockConnections
 // and VirtualMachinesConcurrencyTimeout.
-func New() (ReportProvider, error) {
+func New() (*VsockIndexReportProvider, error) {
 	listener, err := vsock.NewListener()
 	if err != nil {
 		return nil, errors.Wrap(err, "creating vsock listener")
@@ -55,7 +45,7 @@ func New() (ReportProvider, error) {
 	semaphoreTimeout := env.VirtualMachinesConcurrencyTimeout.DurationSetting()
 	maxSizeBytes := env.VirtualMachinesVsockConnMaxSizeKB.IntegerSetting() * 1024
 
-	return &providerImpl{
+	return &VsockIndexReportProvider{
 		listener:              listener,
 		semaphore:             semaphore.NewWeighted(int64(maxConcurrentConnections)),
 		semaphoreTimeout:      semaphoreTimeout,
@@ -68,7 +58,7 @@ func New() (ReportProvider, error) {
 // Start begins accepting vsock connections and returns a channel of validated reports.
 // The provider spawns goroutines to handle each connection concurrently (up to the
 // configured limit). Reports are validated before being sent to the channel.
-func (p *providerImpl) Start(ctx context.Context) (<-chan *v1.IndexReport, error) {
+func (p *VsockIndexReportProvider) Start(ctx context.Context) (<-chan *v1.IndexReport, error) {
 	log.Info("Starting report provider")
 
 	if p.listener == nil {
@@ -86,7 +76,7 @@ func (p *providerImpl) Start(ctx context.Context) (<-chan *v1.IndexReport, error
 	return reportChan, nil
 }
 
-func (p *providerImpl) acceptLoop(ctx context.Context, reportChan chan<- *v1.IndexReport) {
+func (p *VsockIndexReportProvider) acceptLoop(ctx context.Context, reportChan chan<- *v1.IndexReport) {
 	defer p.stop()
 
 	go func() {
@@ -141,7 +131,7 @@ func (p *providerImpl) acceptLoop(ctx context.Context, reportChan chan<- *v1.Ind
 	}
 }
 
-func (p *providerImpl) handleConnection(ctx context.Context, conn net.Conn, reportChan chan<- *v1.IndexReport) {
+func (p *VsockIndexReportProvider) handleConnection(ctx context.Context, conn net.Conn, reportChan chan<- *v1.IndexReport) {
 	defer p.releaseSemaphore()
 
 	defer func(conn net.Conn) {
@@ -164,7 +154,7 @@ func (p *providerImpl) handleConnection(ctx context.Context, conn net.Conn, repo
 	reportChan <- indexReport
 }
 
-func (p *providerImpl) receiveAndValidateIndexReport(conn net.Conn) (*v1.IndexReport, error) {
+func (p *VsockIndexReportProvider) receiveAndValidateIndexReport(conn net.Conn) (*v1.IndexReport, error) {
 	vsockCID, err := vsock.ExtractVsockCIDFromConnection(conn)
 	if err != nil {
 		return nil, errors.Wrap(err, "extracting vsock CID")
@@ -209,7 +199,7 @@ func validateReportedVsockCID(indexReport *v1.IndexReport, connVsockCID uint32) 
 	return nil
 }
 
-func (p *providerImpl) stop() {
+func (p *VsockIndexReportProvider) stop() {
 	log.Info("Stopping connection server")
 	if p.listener != nil {
 		if err := p.listener.Close(); err != nil {
@@ -218,7 +208,7 @@ func (p *providerImpl) stop() {
 	}
 }
 
-func (p *providerImpl) acquireSemaphore(parentCtx context.Context) error {
+func (p *VsockIndexReportProvider) acquireSemaphore(parentCtx context.Context) error {
 	semCtx, cancel := context.WithTimeout(parentCtx, p.semaphoreTimeout)
 	defer cancel()
 
@@ -240,7 +230,7 @@ func (p *providerImpl) acquireSemaphore(parentCtx context.Context) error {
 	return nil
 }
 
-func (p *providerImpl) releaseSemaphore() {
+func (p *VsockIndexReportProvider) releaseSemaphore() {
 	p.semaphore.Release(1)
 	metrics.SemaphoreHoldingSize.Dec()
 }
