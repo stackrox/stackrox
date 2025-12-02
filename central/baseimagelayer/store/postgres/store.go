@@ -102,11 +102,11 @@ func insertIntoBaseImageLayers(batch *pgx.Batch, obj *storage.BaseImageLayer) er
 		obj.GetId(),
 		obj.GetBaseImageId(),
 		obj.GetLayerDigest(),
-		obj.GetLevel(),
+		obj.GetIndex(),
 		serialized,
 	}
 
-	finalStr := "INSERT INTO base_image_layers (Id, BaseImageId, LayerDigest, Level, serialized) VALUES($1, $2, $3, $4, $5) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, BaseImageId = EXCLUDED.BaseImageId, LayerDigest = EXCLUDED.LayerDigest, Level = EXCLUDED.Level, serialized = EXCLUDED.serialized"
+	finalStr := "INSERT INTO base_image_layers (Id, BaseImageId, LayerDigest, Index, serialized) VALUES($1, $2, $3, $4, $5) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, BaseImageId = EXCLUDED.BaseImageId, LayerDigest = EXCLUDED.LayerDigest, Index = EXCLUDED.Index, serialized = EXCLUDED.serialized"
 	batch.Queue(finalStr, values...)
 
 	return nil
@@ -133,7 +133,7 @@ func copyFromBaseImageLayers(ctx context.Context, s pgSearch.Deleter, tx *postgr
 		"id",
 		"baseimageid",
 		"layerdigest",
-		"level",
+		"index",
 		"serialized",
 	}
 
@@ -154,7 +154,7 @@ func copyFromBaseImageLayers(ctx context.Context, s pgSearch.Deleter, tx *postgr
 			obj.GetId(),
 			obj.GetBaseImageId(),
 			obj.GetLayerDigest(),
-			obj.GetLevel(),
+			obj.GetIndex(),
 			serialized,
 		}, nil
 	})

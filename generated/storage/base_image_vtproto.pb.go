@@ -32,11 +32,9 @@ func (m *BaseImage) CloneVT() *BaseImage {
 	r.Repository = m.Repository
 	r.Tag = m.Tag
 	r.ManifestDigest = m.ManifestDigest
-	r.FullReference = m.FullReference
 	r.DiscoveredAt = (*timestamppb.Timestamp)((*timestamppb1.Timestamp)(m.DiscoveredAt).CloneVT())
 	r.Active = m.Active
 	r.FirstLayerDigest = m.FirstLayerDigest
-	r.ImageIdV2 = m.ImageIdV2
 	if len(m.unknownFields) > 0 {
 		r.unknownFields = make([]byte, len(m.unknownFields))
 		copy(r.unknownFields, m.unknownFields)
@@ -56,7 +54,7 @@ func (m *BaseImageLayer) CloneVT() *BaseImageLayer {
 	r.Id = m.Id
 	r.BaseImageId = m.BaseImageId
 	r.LayerDigest = m.LayerDigest
-	r.Level = m.Level
+	r.Index = m.Index
 	if len(m.unknownFields) > 0 {
 		r.unknownFields = make([]byte, len(m.unknownFields))
 		copy(r.unknownFields, m.unknownFields)
@@ -89,9 +87,6 @@ func (this *BaseImage) EqualVT(that *BaseImage) bool {
 	if this.ManifestDigest != that.ManifestDigest {
 		return false
 	}
-	if this.FullReference != that.FullReference {
-		return false
-	}
 	if !(*timestamppb1.Timestamp)(this.DiscoveredAt).EqualVT((*timestamppb1.Timestamp)(that.DiscoveredAt)) {
 		return false
 	}
@@ -99,9 +94,6 @@ func (this *BaseImage) EqualVT(that *BaseImage) bool {
 		return false
 	}
 	if this.FirstLayerDigest != that.FirstLayerDigest {
-		return false
-	}
-	if this.ImageIdV2 != that.ImageIdV2 {
 		return false
 	}
 	return string(this.unknownFields) == string(that.unknownFields)
@@ -129,7 +121,7 @@ func (this *BaseImageLayer) EqualVT(that *BaseImageLayer) bool {
 	if this.LayerDigest != that.LayerDigest {
 		return false
 	}
-	if this.Level != that.Level {
+	if this.Index != that.Index {
 		return false
 	}
 	return string(this.unknownFields) == string(that.unknownFields)
@@ -172,19 +164,12 @@ func (m *BaseImage) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 		i -= len(m.unknownFields)
 		copy(dAtA[i:], m.unknownFields)
 	}
-	if len(m.ImageIdV2) > 0 {
-		i -= len(m.ImageIdV2)
-		copy(dAtA[i:], m.ImageIdV2)
-		i = protohelpers.EncodeVarint(dAtA, i, uint64(len(m.ImageIdV2)))
-		i--
-		dAtA[i] = 0x52
-	}
 	if len(m.FirstLayerDigest) > 0 {
 		i -= len(m.FirstLayerDigest)
 		copy(dAtA[i:], m.FirstLayerDigest)
 		i = protohelpers.EncodeVarint(dAtA, i, uint64(len(m.FirstLayerDigest)))
 		i--
-		dAtA[i] = 0x4a
+		dAtA[i] = 0x42
 	}
 	if m.Active {
 		i--
@@ -194,7 +179,7 @@ func (m *BaseImage) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 			dAtA[i] = 0
 		}
 		i--
-		dAtA[i] = 0x40
+		dAtA[i] = 0x38
 	}
 	if m.DiscoveredAt != nil {
 		size, err := (*timestamppb1.Timestamp)(m.DiscoveredAt).MarshalToSizedBufferVT(dAtA[:i])
@@ -203,13 +188,6 @@ func (m *BaseImage) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 		}
 		i -= size
 		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
-		i--
-		dAtA[i] = 0x3a
-	}
-	if len(m.FullReference) > 0 {
-		i -= len(m.FullReference)
-		copy(dAtA[i:], m.FullReference)
-		i = protohelpers.EncodeVarint(dAtA, i, uint64(len(m.FullReference)))
 		i--
 		dAtA[i] = 0x32
 	}
@@ -281,8 +259,8 @@ func (m *BaseImageLayer) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 		i -= len(m.unknownFields)
 		copy(dAtA[i:], m.unknownFields)
 	}
-	if m.Level != 0 {
-		i = protohelpers.EncodeVarint(dAtA, i, uint64(m.Level))
+	if m.Index != 0 {
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(m.Index))
 		i--
 		dAtA[i] = 0x20
 	}
@@ -336,10 +314,6 @@ func (m *BaseImage) SizeVT() (n int) {
 	if l > 0 {
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
-	l = len(m.FullReference)
-	if l > 0 {
-		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
-	}
 	if m.DiscoveredAt != nil {
 		l = (*timestamppb1.Timestamp)(m.DiscoveredAt).SizeVT()
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
@@ -348,10 +322,6 @@ func (m *BaseImage) SizeVT() (n int) {
 		n += 2
 	}
 	l = len(m.FirstLayerDigest)
-	if l > 0 {
-		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
-	}
-	l = len(m.ImageIdV2)
 	if l > 0 {
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
@@ -377,8 +347,8 @@ func (m *BaseImageLayer) SizeVT() (n int) {
 	if l > 0 {
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
-	if m.Level != 0 {
-		n += 1 + protohelpers.SizeOfVarint(uint64(m.Level))
+	if m.Index != 0 {
+		n += 1 + protohelpers.SizeOfVarint(uint64(m.Index))
 	}
 	n += len(m.unknownFields)
 	return n
@@ -575,38 +545,6 @@ func (m *BaseImage) UnmarshalVT(dAtA []byte) error {
 			iNdEx = postIndex
 		case 6:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field FullReference", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return protohelpers.ErrIntOverflow
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return protohelpers.ErrInvalidLength
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex < 0 {
-				return protohelpers.ErrInvalidLength
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.FullReference = string(dAtA[iNdEx:postIndex])
-			iNdEx = postIndex
-		case 7:
-			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field DiscoveredAt", wireType)
 			}
 			var msglen int
@@ -641,7 +579,7 @@ func (m *BaseImage) UnmarshalVT(dAtA []byte) error {
 				return err
 			}
 			iNdEx = postIndex
-		case 8:
+		case 7:
 			if wireType != 0 {
 				return fmt.Errorf("proto: wrong wireType = %d for field Active", wireType)
 			}
@@ -661,7 +599,7 @@ func (m *BaseImage) UnmarshalVT(dAtA []byte) error {
 				}
 			}
 			m.Active = bool(v != 0)
-		case 9:
+		case 8:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field FirstLayerDigest", wireType)
 			}
@@ -692,38 +630,6 @@ func (m *BaseImage) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.FirstLayerDigest = string(dAtA[iNdEx:postIndex])
-			iNdEx = postIndex
-		case 10:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field ImageIdV2", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return protohelpers.ErrIntOverflow
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return protohelpers.ErrInvalidLength
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex < 0 {
-				return protohelpers.ErrInvalidLength
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.ImageIdV2 = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
@@ -874,9 +780,9 @@ func (m *BaseImageLayer) UnmarshalVT(dAtA []byte) error {
 			iNdEx = postIndex
 		case 4:
 			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Level", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field Index", wireType)
 			}
-			m.Level = 0
+			m.Index = 0
 			for shift := uint(0); ; shift += 7 {
 				if shift >= 64 {
 					return protohelpers.ErrIntOverflow
@@ -886,7 +792,7 @@ func (m *BaseImageLayer) UnmarshalVT(dAtA []byte) error {
 				}
 				b := dAtA[iNdEx]
 				iNdEx++
-				m.Level |= int32(b&0x7F) << shift
+				m.Index |= int32(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}
@@ -1124,42 +1030,6 @@ func (m *BaseImage) UnmarshalVTUnsafe(dAtA []byte) error {
 			iNdEx = postIndex
 		case 6:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field FullReference", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return protohelpers.ErrIntOverflow
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return protohelpers.ErrInvalidLength
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex < 0 {
-				return protohelpers.ErrInvalidLength
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			var stringValue string
-			if intStringLen > 0 {
-				stringValue = unsafe.String(&dAtA[iNdEx], intStringLen)
-			}
-			m.FullReference = stringValue
-			iNdEx = postIndex
-		case 7:
-			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field DiscoveredAt", wireType)
 			}
 			var msglen int
@@ -1194,7 +1064,7 @@ func (m *BaseImage) UnmarshalVTUnsafe(dAtA []byte) error {
 				return err
 			}
 			iNdEx = postIndex
-		case 8:
+		case 7:
 			if wireType != 0 {
 				return fmt.Errorf("proto: wrong wireType = %d for field Active", wireType)
 			}
@@ -1214,7 +1084,7 @@ func (m *BaseImage) UnmarshalVTUnsafe(dAtA []byte) error {
 				}
 			}
 			m.Active = bool(v != 0)
-		case 9:
+		case 8:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field FirstLayerDigest", wireType)
 			}
@@ -1249,42 +1119,6 @@ func (m *BaseImage) UnmarshalVTUnsafe(dAtA []byte) error {
 				stringValue = unsafe.String(&dAtA[iNdEx], intStringLen)
 			}
 			m.FirstLayerDigest = stringValue
-			iNdEx = postIndex
-		case 10:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field ImageIdV2", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return protohelpers.ErrIntOverflow
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return protohelpers.ErrInvalidLength
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex < 0 {
-				return protohelpers.ErrInvalidLength
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			var stringValue string
-			if intStringLen > 0 {
-				stringValue = unsafe.String(&dAtA[iNdEx], intStringLen)
-			}
-			m.ImageIdV2 = stringValue
 			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
@@ -1447,9 +1281,9 @@ func (m *BaseImageLayer) UnmarshalVTUnsafe(dAtA []byte) error {
 			iNdEx = postIndex
 		case 4:
 			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Level", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field Index", wireType)
 			}
-			m.Level = 0
+			m.Index = 0
 			for shift := uint(0); ; shift += 7 {
 				if shift >= 64 {
 					return protohelpers.ErrIntOverflow
@@ -1459,7 +1293,7 @@ func (m *BaseImageLayer) UnmarshalVTUnsafe(dAtA []byte) error {
 				}
 				b := dAtA[iNdEx]
 				iNdEx++
-				m.Level |= int32(b&0x7F) << shift
+				m.Index |= int32(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}

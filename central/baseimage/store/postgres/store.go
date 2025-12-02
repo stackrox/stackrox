@@ -13,7 +13,6 @@ import (
 	"github.com/stackrox/rox/pkg/logging"
 	ops "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/postgres"
-	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/sac/resources"
@@ -106,15 +105,13 @@ func insertIntoBaseImages(batch *pgx.Batch, obj *storage.BaseImage) error {
 		obj.GetRepository(),
 		obj.GetTag(),
 		obj.GetManifestDigest(),
-		obj.GetFullReference(),
 		protocompat.NilOrTime(obj.GetDiscoveredAt()),
 		obj.GetActive(),
 		obj.GetFirstLayerDigest(),
-		pgutils.NilOrString(obj.GetImageIdV2()),
 		serialized,
 	}
 
-	finalStr := "INSERT INTO base_images (Id, RepoPatternId, Repository, Tag, ManifestDigest, FullReference, DiscoveredAt, Active, FirstLayerDigest, ImageIdV2, serialized) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, RepoPatternId = EXCLUDED.RepoPatternId, Repository = EXCLUDED.Repository, Tag = EXCLUDED.Tag, ManifestDigest = EXCLUDED.ManifestDigest, FullReference = EXCLUDED.FullReference, DiscoveredAt = EXCLUDED.DiscoveredAt, Active = EXCLUDED.Active, FirstLayerDigest = EXCLUDED.FirstLayerDigest, ImageIdV2 = EXCLUDED.ImageIdV2, serialized = EXCLUDED.serialized"
+	finalStr := "INSERT INTO base_images (Id, RepoPatternId, Repository, Tag, ManifestDigest, DiscoveredAt, Active, FirstLayerDigest, serialized) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, RepoPatternId = EXCLUDED.RepoPatternId, Repository = EXCLUDED.Repository, Tag = EXCLUDED.Tag, ManifestDigest = EXCLUDED.ManifestDigest, DiscoveredAt = EXCLUDED.DiscoveredAt, Active = EXCLUDED.Active, FirstLayerDigest = EXCLUDED.FirstLayerDigest, serialized = EXCLUDED.serialized"
 	batch.Queue(finalStr, values...)
 
 	return nil
@@ -143,11 +140,9 @@ func copyFromBaseImages(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx
 		"repository",
 		"tag",
 		"manifestdigest",
-		"fullreference",
 		"discoveredat",
 		"active",
 		"firstlayerdigest",
-		"imageidv2",
 		"serialized",
 	}
 
@@ -170,11 +165,9 @@ func copyFromBaseImages(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx
 			obj.GetRepository(),
 			obj.GetTag(),
 			obj.GetManifestDigest(),
-			obj.GetFullReference(),
 			protocompat.NilOrTime(obj.GetDiscoveredAt()),
 			obj.GetActive(),
 			obj.GetFirstLayerDigest(),
-			pgutils.NilOrString(obj.GetImageIdV2()),
 			serialized,
 		}, nil
 	})
