@@ -84,10 +84,12 @@ func (f *filterImpl) siftNoLock(level *level, args []string, levelNum int) bool 
 		return true
 	}
 	// Truncate the current argument to the max size to avoid large arguments taking up a lot of space
-	// NO LONGER NEED strings.Clone() - we're hashing the string, not storing it
+
 	truncated := stringutils.Truncate(args[0], maxArgSize)
 
-	// Hash the argument string
+	// Hash the truncated arguments to solve 2 problems:
+	// 1. Holding references to the original string data received from the DB scan
+	// 2. Using BinaryHash as map key is reducing memory requirements for the filter
 	argHash := hashString(f.h, truncated)
 
 	nextLevel := level.children[argHash]
@@ -137,10 +139,10 @@ func (f *filterImpl) Add(indicator *storage.ProcessIndicator) bool {
 
 	rootLevel := f.getOrAddRootLevelNoLock(indicator)
 
-	// NO LONGER NEED strings.Clone() - we're hashing the string, not storing it
 	execFilePath := indicator.GetSignal().GetExecFilePath()
-
-	// Hash the exec file path
+	// Hash the execFilePath to solve 2 problems:
+	// 1. Holding references to the original string data received from the DB scan
+	// 2. Using BinaryHash as map key is reducing memory requirements for the filter
 	execFilePathHash := hashString(f.h, execFilePath)
 
 	// Handle the process level independently as we will never reject a new process
