@@ -265,6 +265,16 @@ func NewWorkloadManager(config *WorkloadManagerConfig) *WorkloadManager {
 	}
 	workload.VirtualMachineWorkload = validateVMWorkload(workload.VirtualMachineWorkload)
 
+	// Sync VirtualMachineWorkload.PoolSize with VMIndexReportWorkload.NumVMs
+	// Both must match for the informer-generated VMs to align with index reports
+	if workload.VirtualMachineWorkload.PoolSize > 0 && workload.VMIndexReportWorkload.NumVMs > 0 {
+		if workload.VirtualMachineWorkload.PoolSize != workload.VMIndexReportWorkload.NumVMs {
+			log.Warnf("VirtualMachineWorkload.PoolSize (%d) != VMIndexReportWorkload.NumVMs (%d); using PoolSize for both",
+				workload.VirtualMachineWorkload.PoolSize, workload.VMIndexReportWorkload.NumVMs)
+			workload.VMIndexReportWorkload.NumVMs = workload.VirtualMachineWorkload.PoolSize
+		}
+	}
+
 	var db *pebble.DB
 	if config.storagePath != "" {
 		db, err = pebble.Open(config.storagePath, &pebble.Options{})
@@ -594,7 +604,7 @@ func (w *WorkloadManager) initializePreexistingResources() {
 		go w.manageVMIndexReportsWithPopulation(w.shutdownCtx)
 	}
 
-	// Start VirtualMachine/VirtualMachineInstance workload if configured
+	// Start VirtualMachine/VirtualMachineInstance informer workload if configured
 	if w.workload.VirtualMachineWorkload.PoolSize > 0 {
 		templatePool := newVMTemplatePool(
 			w.workload.VirtualMachineWorkload.PoolSize,
