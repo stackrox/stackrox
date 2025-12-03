@@ -2,6 +2,13 @@
 # This workload generates fake VirtualMachine and VirtualMachineInstance CRD events
 # to simulate KubeVirt workloads arriving through Kubernetes informers.
 #
+# The unified VirtualMachineWorkload config handles both:
+# 1. VM/VMI informer events (always generated when poolSize > 0)
+# 2. VM index reports (only generated when reportInterval > 0)
+#
+# Index reports are tied to VM lifecycle: reports are only sent while the VM is "alive".
+# You can run just the informers (for testing k8s events) or informers + reports (full flow).
+#
 # Usage:
 #   ROX_VIRTUAL_MACHINES=true go run tools/local-sensor/main.go -no-mem-prof -no-cpu-prof -with-metrics -with-fakeworkload scale/workloads/virtual-machines.yaml
 #
@@ -17,9 +24,11 @@ rbacWorkload:
   numServiceAccounts: 100
   numBindings: 100
 
-# VirtualMachine workload configuration
+# Unified VirtualMachine workload configuration
+# Handles both informer events AND index reports in one config block
 virtualMachineWorkload:
   # Pool size: number of VM/VMI templates to maintain (memory-efficient bounded pool)
+  # This is the number of unique VMs that exist at any given time.
   poolSize: 50
 
   # How often to update VM/VMI metadata (annotations, labels, status)
@@ -30,6 +39,19 @@ virtualMachineWorkload:
 
   # Number of times to recreate VMs/VMIs (0 = infinite)
   numLifecycles: 0
+
+  # === Index Report Settings (optional) ===
+  # Set reportInterval > 0 to enable index report generation.
+  # Reports are only sent while VMs are alive in the lifecycle.
+
+  # How often each VM sends an index report (0 = no reports)
+  reportInterval: 60s
+
+  # Number of fake packages to include in each index report
+  numPackages: 500
+
+  # Number of fake repositories to include in each index report
+  numRepositories: 50
 
 # Optional: small background deployment workload
 deploymentWorkload:
