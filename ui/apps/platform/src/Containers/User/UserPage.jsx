@@ -1,4 +1,4 @@
-import { NavLink, Route, Routes, useMatch, useParams } from 'react-router-dom-v5-compat';
+import { useState } from 'react';
 import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
 import { createSelector, createStructuredSelector } from 'reselect';
@@ -8,64 +8,44 @@ import {
     DescriptionListTerm,
     EmptyState,
     EmptyStateBody,
-    Flex,
-    FlexItem,
-    Nav,
-    NavExpandable,
-    NavItem,
-    NavList,
     PageSection,
+    Tab,
+    TabContent,
+    TabContentBody,
+    TabTitleText,
+    Tabs,
     Title,
 } from '@patternfly/react-core';
 
 import DescriptionListCompact from 'Components/DescriptionListCompact';
 import { selectors } from 'reducers';
-import { userBasePath, userRolePath } from 'routePaths';
 import User from 'utils/User';
 
 import UserPermissionsForRolesTable from './UserPermissionsForRolesTable';
 import UserPermissionsTable from './UserPermissionsTable';
-
-const spacerPageSection = 'var(--pf-t--global--spacer--md)';
-
-const stylePageSection = {
-    '--pf-v5-c-page__main-section--PaddingTop': spacerPageSection,
-    '--pf-v5-c-page__main-section--PaddingRight': spacerPageSection,
-    '--pf-v5-c-page__main-section--PaddingBottom': spacerPageSection,
-    '--pf-v5-c-page__main-section--PaddingLeft': spacerPageSection,
-};
-
-const getUserRolePath = (roleName) => `${userBasePath}/roles/${roleName}`;
 
 function UserPage({ resourceToAccessByRole, userData }) {
     const { email, name, roles, usedAuthProvider } = new User(userData);
     const authProviderName =
         usedAuthProvider?.type === 'basic' ? 'Basic' : (usedAuthProvider?.name ?? '');
 
-    const isUserPathActive = useMatch(userBasePath);
-    const isRolePathActive = useMatch(userRolePath);
+    const [activeTabKey, setActiveTabKey] = useState(0);
+    const [activeRoleTabKey, setActiveRoleTabKey] = useState(0);
 
-    const UserRoleRoute = () => {
-        const { roleName } = useParams();
-        const role = roles.find((_role) => _role.name === roleName);
+    const handleTabClick = (_, tabIndex) => {
+        setActiveTabKey(tabIndex);
+    };
 
-        if (role) {
-            return <UserPermissionsTable permissions={role?.resourceToAccess ?? {}} />;
-        }
-
-        return (
-            <EmptyState headingLevel="h4" titleText="Role not found for user">
-                <EmptyStateBody>{`Role name: ${roleName}`}</EmptyStateBody>
-            </EmptyState>
-        );
+    const handleRoleTabClick = (_, tabIndex) => {
+        setActiveRoleTabKey(tabIndex);
     };
 
     return (
         <>
-            <PageSection hasBodyWrapper={false} style={stylePageSection}>
+            <PageSection hasBodyWrapper={false}>
                 <Title headingLevel="h1">User Profile</Title>
             </PageSection>
-            <PageSection hasBodyWrapper={false} style={stylePageSection}>
+            <PageSection hasBodyWrapper={false}>
                 <DescriptionListCompact isHorizontal>
                     <DescriptionListGroup>
                         <DescriptionListTerm>User name</DescriptionListTerm>
@@ -85,44 +65,60 @@ function UserPage({ resourceToAccessByRole, userData }) {
                     </DescriptionListGroup>
                 </DescriptionListCompact>
             </PageSection>
-            <PageSection hasBodyWrapper={false} style={stylePageSection} isFilled>
-                <Flex>
-                    <FlexItem>
-                        <div className="pf-v6-u-background-color-200">
-                            <Nav aria-label="Roles">
-                                <NavList>
-                                    <NavItem isActive={isUserPathActive}>
-                                        <NavLink to={userBasePath} end>
-                                            User permissions for roles
-                                        </NavLink>
-                                    </NavItem>
-                                    <NavExpandable title="User roles" isExpanded>
-                                        {roles.map((role) => (
-                                            <NavItem key={role.name} isActive={isRolePathActive}>
-                                                <NavLink to={getUserRolePath(role.name)} end>
-                                                    {role.name}
-                                                </NavLink>
-                                            </NavItem>
+            <PageSection hasBodyWrapper={false} isFilled>
+                <Tabs isVertical activeTabKey={activeTabKey} onSelect={handleTabClick}>
+                    <Tab
+                        eventKey={0}
+                        title={<TabTitleText>User permissions for roles</TabTitleText>}
+                    >
+                        <TabContent>
+                            <TabContentBody>
+                                <UserPermissionsForRolesTable
+                                    resourceToAccessByRole={resourceToAccessByRole}
+                                />
+                            </TabContentBody>
+                        </TabContent>
+                    </Tab>
+
+                    <Tab eventKey={1} title={<TabTitleText>User roles</TabTitleText>}>
+                        <TabContent>
+                            <TabContentBody>
+                                {roles.length > 0 ? (
+                                    <Tabs
+                                        isSecondary
+                                        activeTabKey={activeRoleTabKey}
+                                        onSelect={handleRoleTabClick}
+                                    >
+                                        {roles.map((role, index) => (
+                                            <Tab
+                                                key={role.name}
+                                                eventKey={index}
+                                                title={<TabTitleText>{role.name}</TabTitleText>}
+                                            >
+                                                <TabContent>
+                                                    <TabContentBody>
+                                                        <UserPermissionsTable
+                                                            permissions={
+                                                                role?.resourceToAccess ?? {}
+                                                            }
+                                                        />
+                                                    </TabContentBody>
+                                                </TabContent>
+                                            </Tab>
                                         ))}
-                                    </NavExpandable>
-                                </NavList>
-                            </Nav>
-                        </div>
-                    </FlexItem>
-                    <FlexItem>
-                        <Routes>
-                            <Route path={'roles/:roleName'} element={<UserRoleRoute />} />
-                            <Route
-                                index
-                                element={
-                                    <UserPermissionsForRolesTable
-                                        resourceToAccessByRole={resourceToAccessByRole}
-                                    />
-                                }
-                            />
-                        </Routes>
-                    </FlexItem>
-                </Flex>
+                                    </Tabs>
+                                ) : (
+                                    <EmptyState
+                                        headingLevel="h4"
+                                        titleText="No roles assigned to user"
+                                    >
+                                        <EmptyStateBody>User has no roles assigned</EmptyStateBody>
+                                    </EmptyState>
+                                )}
+                            </TabContentBody>
+                        </TabContent>
+                    </Tab>
+                </Tabs>
             </PageSection>
         </>
     );

@@ -137,26 +137,25 @@ describe('User Profile', () => {
             cy.get(userPageSelectors.permissionsTable.forbiddenIcon('Access', 'write'));
         });
 
-        it('should properly highlight current nav item', () => {
+        it('should properly highlight current tab', () => {
             visitUserProfile();
 
             const { userPermissionsForRoles, userRoleNames } = userPageSelectors;
             const userRoleAdmin = `${userRoleNames}:contains("Admin")`;
-            const currentClass = 'pf-m-current';
 
             // When landing on Users page:
-            cy.get(userPermissionsForRoles).should('have.class', currentClass);
-            cy.get(userRoleAdmin).should('not.have.class', currentClass);
+            cy.get(userPermissionsForRoles).should('have.attr', 'aria-selected', 'true');
+            cy.get(userRoleAdmin).should('have.attr', 'aria-selected', 'false');
 
             // After clicking Admin user role:
             cy.get(userRoleAdmin).click();
-            cy.get(userPermissionsForRoles).should('not.have.class', currentClass);
-            cy.get(userRoleAdmin).should('have.class', currentClass);
+            cy.get(userPermissionsForRoles).should('have.attr', 'aria-selected', 'false');
+            cy.get(userRoleAdmin).should('have.attr', 'aria-selected', 'true');
 
             // After clicking User permissions for roles:
             cy.get(userPermissionsForRoles).click();
-            cy.get(userPermissionsForRoles).should('have.class', currentClass);
-            cy.get(userRoleAdmin).should('not.have.class', currentClass);
+            cy.get(userPermissionsForRoles).should('have.attr', 'aria-selected', 'true');
+            cy.get(userRoleAdmin).should('have.attr', 'aria-selected', 'false');
         });
 
         it('should display aggregated permissions for basic auth user', () => {
