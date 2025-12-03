@@ -23,14 +23,14 @@ body {
 }
 
 * .theme-light {
-    --base-500: var(--pf-t--temp--dev--tbd /* CODEMODS: original v5 color was:--pf-v5-global--palette--black-600 */);
-    --base-600: var(--pf-t--temp--dev--tbd /* CODEMODS: original v5 color was:--pf-v5-global--palette--black-900 */);
-    --base-700: var(--pf-t--temp--dev--tbd /* CODEMODS: original v5 color was:--pf-v5-global--palette--black-1000 */);
+    --base-500: var(--pf-t--color--gray--60);
+    --base-600: var(--pf-t--color--gray--90);
+    --base-700: var(--pf-t--color--black);
 }
 
 /* overrides the default link styling in Tailwind (`inherit`) with PF's default blue */
 .pf-v6-c-modal-box a, .pf-v6-c-page__main-section a:not(.pf-v6-c-button):not(.pf-v6-c-nav__link) {
-    color: var(--pf-t--temp--dev--tbd /* CODEMODS: original v5 color was:--pf-v5-global--link--Color */) !important;
+    color: var(--pf-t--global--text--color--link--default) !important;
     -webkit-text-decoration: var(--pf-t--global--text-decoration--link--line--default) !important;
     text-decoration: var(--pf-t--global--text-decoration--link--line--default) !important;
 }
@@ -48,11 +48,11 @@ button[data-testid="related-entity-value"],
 .rt-td a,
 .pf-v6-c-table td a,
 .pf-v6-c-popover a {
-    color: var(--pf-t--temp--dev--tbd /* CODEMODS: original v5 color was:--pf-v5-global--link--Color */);
+    color: var(--pf-t--global--text--color--link--default);
 }
 
 button[data-testid="related-entity-list-count-value"]:hover {
-    color: var(--pf-t--temp--dev--tbd /* CODEMODS: original v5 color was:--pf-v5-global--link--Color--hover */);
+    color: var(--pf-t--global--text--color--link--hover);
     /* but no underline */
 }
 
@@ -65,7 +65,7 @@ button[data-testid="related-entity-value"]:hover,
 .rt-td a:hover,
 .pf-v6-c-table td a:hover,
 .pf-v6-c-popover a:hover {
-    color: var(--pf-t--temp--dev--tbd /* CODEMODS: original v5 color was:--pf-v5-global--link--Color--hover */);
+    color: var(--pf-t--global--text--color--link--hover);
     text-decoration: var(--pf-t--global--text-decoration--link--line--hover);
 }
 
@@ -90,10 +90,10 @@ button[data-testid="related-entity-value"]:hover,
 }
 
 .pf-v6-c-form-control {
-    border-top-color: var(--pf-t--temp--dev--tbd /* CODEMODS: original v5 color was:--pf-v5-global--BorderColor--300 */);
-    border-right-color: var(--pf-t--temp--dev--tbd /* CODEMODS: original v5 color was:--pf-v5-global--BorderColor--300 */);
-    border-bottom-color: var(--pf-t--temp--dev--tbd /* CODEMODS: original v5 color was:--pf-v5-global--BorderColor--200 */);
-    border-left-color: var(--pf-t--temp--dev--tbd /* CODEMODS: original v5 color was:--pf-v5-global--BorderColor--300 */);
+    border-top-color: var(--pf-t--global--border--color--default);
+    border-right-color: var(--pf-t--global--border--color--default);
+    border-bottom-color: var(--pf-t--global--border--color--default);
+    border-left-color: var(--pf-t--global--border--color--default);
 }
 
 .pf-v6-c-form-control:disabled {
@@ -107,11 +107,6 @@ button[data-testid="related-entity-value"]:hover,
 #main-page-container > div > :not(.pf-v6-c-page__main-section) button:disabled {
     opacity: 0.5;
     pointer-events: none;
-}
-
-/* SimpleListItem in policy categories: specify color instead of depending on opacity. */
-.pf-v6-c-simple-list button:disabled {
-    color: var(--pf-t--temp--dev--tbd /* CODEMODS: original v5 color was:--pf-v5-global--disabled-color--100 */);
 }
 
 .pf-v6-c-select__toggle:not(.pf-m-plain)::before {
@@ -219,11 +214,6 @@ select {
 .pf-v6-c-form__group input[type="checkbox"]:disabled {
     cursor: not-allowed;
     border-color: revert;
-}
-.pf-v6-c-table__check input[type="checkbox"]:checked:disabled,
-.pf-v6-c-form__group input[type="checkbox"]:checked:disabled {
-    background-color: var(--pf-t--temp--dev--tbd /* CODEMODS: original v5 color was:--pf-v5-global--disabled-color--200 */);
-    border-color: transparent;
 }
 
 /* fixes flattened radio buttons caused by tailwind appearance when using pf standalone radio button */
