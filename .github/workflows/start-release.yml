@@ -128,12 +128,14 @@ jobs:
         with:
           ref: ${{ needs.start-sha.outputs.start-sha }}
           fetch-depth: 0
+          token: ${{ secrets.RHACS_BOT_GITHUB_TOKEN }}
       - name: Check out code (patch release)
         if: needs.variables.outputs.patch != 0
         uses: actions/checkout@v6
         with:
           ref: ${{ needs.variables.outputs.branch }}
           submodules: true
+          token: ${{ secrets.RHACS_BOT_GITHUB_TOKEN }}
       - name: Check remote branch exists
         id: check-existing
         run: |

@@ -31,7 +31,7 @@ import type { ListPolicy } from 'types/policy.proto';
 import CompoundSearchFilter from 'Components/CompoundSearchFilter/components/CompoundSearchFilter';
 import {
     makeFilterChipDescriptors,
-    onURLSearch,
+    updateSearchFilter,
 } from 'Components/CompoundSearchFilter/utils/utils';
 import MenuDropdown from 'Components/PatternFly/MenuDropdown';
 import ConfirmationModal from 'Components/PatternFly/ConfirmationModal';
@@ -213,7 +213,9 @@ function PoliciesTable({
                                 config={searchFilterConfig}
                                 searchFilter={searchFilter}
                                 onSearch={(payload) => {
-                                    onURLSearch(searchFilter, handleChangeSearchFilter, payload);
+                                    handleChangeSearchFilter(
+                                        updateSearchFilter(searchFilter, payload)
+                                    );
                                 }}
                                 defaultEntity={'Policy'}
                                 defaultAttribute={'Name'}

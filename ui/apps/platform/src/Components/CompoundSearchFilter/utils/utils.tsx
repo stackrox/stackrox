@@ -2,12 +2,13 @@ import { FilterChip } from 'Components/PatternFly/SearchFilterChips';
 import type { FilterChipGroupDescriptor } from 'Components/PatternFly/SearchFilterChips';
 import type { SearchFilter } from 'types/search';
 import type { IsFeatureFlagEnabled } from 'hooks/useFeatureFlags';
-import type { SetSearchFilter } from 'hooks/useURLSearch';
+import { searchValueAsArray } from 'utils/searchUtils';
 import type {
     CompoundSearchFilterAttribute,
     CompoundSearchFilterConfig,
     CompoundSearchFilterEntity,
     OnSearchPayload,
+    OnSearchPayloadItem,
     SelectSearchFilterAttribute,
     SelectSearchFilterGroupedOptions,
     SelectSearchFilterOptions,
@@ -192,27 +193,69 @@ export function makeFilterChipDescriptors(
     return filterChipDescriptors;
 }
 
-// Function to take a compound search "onSearch" payload and update the URL
-export const onURLSearch = (
+// Pure function returns searchFilter updated according to payload from interactions.
+// Assume that update is needed because payload has already been filtered and is non-empty.
+export function updateSearchFilter(
     searchFilter: SearchFilter,
-    setSearchFilter: SetSearchFilter,
     payload: OnSearchPayload
-) => {
-    const { action, category, value } = payload;
-    const currentSelection = searchFilter[category] || [];
-    let newSelection = !Array.isArray(currentSelection) ? [currentSelection] : currentSelection;
-    if (action === 'ADD') {
-        newSelection = [...newSelection, value];
-    } else if (action === 'REMOVE') {
-        newSelection = newSelection.filter((datum) => datum !== value);
-    } else {
-        // Do nothing
-    }
-    setSearchFilter({
-        ...searchFilter,
-        [category]: newSelection,
+): SearchFilter {
+    const searchFilterUpdated = { ...searchFilter };
+    payload.forEach((payloadItem) => {
+        switch (payloadItem.action) {
+            case 'ADD':
+            case 'REMOVE': {
+                const { action, category, value } = payloadItem;
+                const values = searchValueAsArray(searchFilterUpdated[category]);
+                searchFilterUpdated[category] =
+                    action === 'ADD'
+                        ? [...values, value]
+                        : values.filter((valueInSearchFilter) => valueInSearchFilter !== value);
+                break;
+            }
+            default:
+                break;
+        }
     });
-};
+
+    return searchFilterUpdated;
+}
+
+// Pure function returns whether payload item is relevant for updating searchFilter.
+export function payloadItemFiltererForUpdating(
+    searchFilter: SearchFilter,
+    payloadItem: OnSearchPayloadItem
+) {
+    switch (payloadItem.action) {
+        case 'ADD':
+        case 'REMOVE': {
+            const { category, value } = payloadItem;
+            if (value === '') {
+                // TODO What is pro and con for search filter input field to prevent empty string?
+                return false;
+            }
+
+            const values = searchValueAsArray(searchFilter[category]);
+            const hasValue = values.includes(value);
+            if (payloadItem.action === 'REMOVE') {
+                return hasValue;
+            }
+
+            return !hasValue;
+        }
+        default:
+            return false;
+    }
+}
+
+// Pure function returns whether payload item is relevant for analytics tracking.
+export function payloadItemFiltererForTracking(payloadItem: OnSearchPayloadItem) {
+    switch (payloadItem.action) {
+        case 'ADD':
+            return true;
+        default:
+            return false;
+    }
+}
 
 // Given predicate function from useFeatureFlags hook in component
 // and searchFilterConfig in which some attributes might have featureFlagDependency property,
