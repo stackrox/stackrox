@@ -21,7 +21,6 @@ import (
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/scancomponent"
 	pkgSearch "github.com/stackrox/rox/pkg/search"
-	"google.golang.org/protobuf/proto"
 )
 
 const (
@@ -79,7 +78,7 @@ func (ds *datastoreImpl) SearchNodes(ctx context.Context, q *v1.Query) ([]*v1.Se
 	if q == nil {
 		q = pkgSearch.EmptyQuery()
 	} else {
-		q = proto.Clone(q).(*v1.Query)
+		q = q.CloneVT()
 	}
 	q.Selects = append(q.GetSelects(), pkgSearch.NewQuerySelect(pkgSearch.Node).Proto())
 
@@ -88,9 +87,10 @@ func (ds *datastoreImpl) SearchNodes(ctx context.Context, q *v1.Query) ([]*v1.Se
 		return nil, err
 	}
 
+	searchTag := strings.ToLower(pkgSearch.Node.String())
 	for i := range results {
 		if results[i].FieldValues != nil {
-			if nameVal, ok := results[i].FieldValues[strings.ToLower(pkgSearch.Node.String())]; ok {
+			if nameVal, ok := results[i].FieldValues[searchTag]; ok {
 				results[i].Name = nameVal
 			}
 		}
