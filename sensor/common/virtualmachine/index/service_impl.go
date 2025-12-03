@@ -47,7 +47,8 @@ func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName strin
 func (s *serviceImpl) UpsertVirtualMachineIndexReport(ctx context.Context, req *sensor.UpsertVirtualMachineIndexReportRequest) (*sensor.UpsertVirtualMachineIndexReportResponse, error) {
 	startTime := time.Now()
 	defer func() {
-		metrics.IndexReportHandlingDurationSeconds.Observe(time.Since(startTime).Seconds())
+		metrics.VirtualMachineIndexReportHandlingDurationMilliseconds.
+			Observe(float64(time.Since(startTime).Milliseconds()))
 	}()
 
 	ir := req.GetIndexReport()

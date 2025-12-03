@@ -33,14 +33,14 @@ var IndexReportsSent = prometheus.NewCounterVec(
 	[]string{"status"},
 )
 
-// IndexReportHandlingDurationSeconds captures how long it takes to handle a virtual machine index report.
-var IndexReportHandlingDurationSeconds = prometheus.NewHistogram(
+// VirtualMachineIndexReportHandlingDurationMilliseconds captures how long it takes to handle a virtual machine index report.
+var VirtualMachineIndexReportHandlingDurationMilliseconds = prometheus.NewHistogram(
 	prometheus.HistogramOpts{
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.SensorSubsystem.String(),
-		Name:      "virtual_machine_index_report_handling_duration_seconds",
-		Help:      "Distribution of time spent handling virtual machine index report in Sensor (including writing to channel indexReports)",
-		Buckets:   prometheus.ExponentialBuckets(0.01, 2, 12), // ~10ms to ~40s
+		Name:      "virtual_machine_index_report_handling_duration_milliseconds",
+		Help:      "Distribution of time spent (in ms) handling virtual machine index reports in Sensor, including the enqueue step",
+		Buckets:   prometheus.ExponentialBuckets(10, 2, 12), // 10ms to ~40s
 	},
 )
 
@@ -54,14 +54,14 @@ const (
 	IndexReportProcessingOutcomeBuildError = "build_error"
 )
 
-// IndexReportProcessingDurationSeconds tracks how long Sensor spends processing index reports after dequeuing them.
-var IndexReportProcessingDurationSeconds = prometheus.NewHistogramVec(
+// IndexReportProcessingDurationMilliseconds tracks how long Sensor spends processing index reports after dequeuing them.
+var IndexReportProcessingDurationMilliseconds = prometheus.NewHistogramVec(
 	prometheus.HistogramOpts{
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.SensorSubsystem.String(),
-		Name:      "virtual_machine_index_report_processing_duration_seconds",
-		Help:      "Distribution of time spent processing virtual machine index reports after reading from indexReports and before sending to Central",
-		Buckets:   prometheus.ExponentialBuckets(0.01, 2, 12),
+		Name:      "virtual_machine_index_report_processing_duration_milliseconds",
+		Help:      "Distribution of time spent (in ms) processing virtual machine index reports after reading from indexReports and before sending to Central",
+		Buckets:   prometheus.ExponentialBuckets(10, 2, 12),
 	},
 	[]string{"outcome"},
 )
@@ -73,14 +73,14 @@ const (
 	IndexReportEnqueueOutcomeCanceled = "context_canceled"
 )
 
-// IndexReportEnqueueDurationSeconds measures how long Send spent waiting to enqueue reports.
-var IndexReportEnqueueDurationSeconds = prometheus.NewHistogramVec(
+// IndexReportEnqueueDurationMilliseconds measures how long Send spent waiting to enqueue reports.
+var IndexReportEnqueueDurationMilliseconds = prometheus.NewHistogramVec(
 	prometheus.HistogramOpts{
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.SensorSubsystem.String(),
-		Name:      "virtual_machine_index_report_enqueue_duration_seconds",
-		Help:      "Time spent by Sensor while waiting to enqueue virtual machine index reports onto indexReports channel",
-		Buckets:   prometheus.ExponentialBuckets(0.0005, 2, 13), // 0.5ms to ~4s
+		Name:      "virtual_machine_index_report_enqueue_duration_milliseconds",
+		Help:      "Time spent (in ms) by Sensor while waiting to enqueue virtual machine index reports onto the indexReports channel",
+		Buckets:   prometheus.ExponentialBuckets(0.5, 2, 13), // 0.5ms to ~4s
 	},
 	[]string{"outcome"},
 )
@@ -99,9 +99,9 @@ func init() {
 	prometheus.MustRegister(
 		IndexReportsReceived,
 		IndexReportsSent,
-		IndexReportHandlingDurationSeconds,
-		IndexReportProcessingDurationSeconds,
-		IndexReportEnqueueDurationSeconds,
+		VirtualMachineIndexReportHandlingDurationMilliseconds,
+		IndexReportProcessingDurationMilliseconds,
+		IndexReportEnqueueDurationMilliseconds,
 		IndexReportEnqueueBlockedTotal,
 	)
 }
