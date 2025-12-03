@@ -41,6 +41,7 @@ import {
     violationsBasePath,
     vulnManagementPath,
     vulnerabilitiesAllImagesPath,
+    vulnerabilitiesBaseImagesPath,
     vulnerabilitiesImagesWithoutCvesPath,
     vulnerabilitiesInactiveImagesPath,
     vulnerabilitiesNodeCvesPath,
@@ -269,6 +270,12 @@ const routeComponentMap: Record<RouteKey, RouteComponent> = {
     'vulnerabilities/all-images': {
         component: makeVulnMgmtUserWorkloadView('all-images'),
         path: vulnerabilitiesAllImagesPath,
+    },
+    'vulnerabilities/base-images': {
+        component: asyncComponent(
+            () => import('Containers/Vulnerabilities/BaseImages/BaseImagesPage')
+        ),
+        path: vulnerabilitiesBaseImagesPath,
     },
     'vulnerabilities/inactive-images': {
         component: makeVulnMgmtUserWorkloadView('inactive-images'),

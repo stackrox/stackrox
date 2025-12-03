@@ -93,6 +93,7 @@ export const vulnerabilitiesViewPath = `${vulnerabilitiesBasePath}/results/:view
 export const vulnerabilityReportsPath = `${vulnerabilitiesBasePath}/reports`;
 export const vulnerabilityConfigurationReportsPath = `${vulnerabilityReportsPath}/configuration`;
 export const vulnerabilityViewBasedReportsPath = `${vulnerabilityReportsPath}/view-based`;
+export const vulnerabilitiesBaseImagesPath = `${vulnerabilitiesBasePath}/base-images`;
 
 // Vulnerability Management 1.0 path for links from Dashboard:
 
@@ -186,6 +187,7 @@ export type RouteKey =
     | 'vulnerabilities/platform'
     | 'vulnerabilities/all-images'
     | 'vulnerabilities/inactive-images'
+    | 'vulnerabilities/base-images'
     | 'vulnerabilities/images-without-cves'
     | 'vulnerabilities/platform-cves'
     | 'vulnerabilities/virtual-machine-cves'
@@ -357,6 +359,10 @@ const routeRequirementsMap: Record<RouteKey, RouteRequirements> = {
     },
     'vulnerabilities/all-images': {
         resourceAccessRequirements: everyResource(['Deployment', 'Image']),
+    },
+    'vulnerabilities/base-images': {
+        featureFlagRequirements: allEnabled(['ROX_BASE_IMAGE_DETECTION']),
+        resourceAccessRequirements: everyResource(['Image']),
     },
     'vulnerabilities/inactive-images': {
         resourceAccessRequirements: everyResource(['Deployment', 'Image']),
