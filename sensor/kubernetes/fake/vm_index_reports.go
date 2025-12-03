@@ -40,8 +40,9 @@ type reportTemplate struct {
 
 // reportGenerator generates fake VM index reports using pre-built templates
 type reportGenerator struct {
-	templates          []reportTemplate
-	currentTemplateIdx uint32
+	templates            []reportTemplate
+	currentTemplateMutex sync.Mutex
+	currentTemplateIdx   uint32
 }
 
 func newReportGenerator(numPackages, numRepos int) *reportGenerator {
@@ -109,6 +110,8 @@ func (g *reportGenerator) nextTemplate() reportTemplate {
 			repositories: make(map[string]*v4.Repository),
 		}
 	}
+	g.currentTemplateMutex.Lock()
+	defer g.currentTemplateMutex.Unlock()
 	idx := g.currentTemplateIdx % uint32(len(g.templates))
 	g.currentTemplateIdx++
 	return g.templates[idx]
