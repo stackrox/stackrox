@@ -5,7 +5,7 @@ import { connect } from 'react-redux';
 import { createStructuredSelector } from 'reselect';
 import { ClipLoader } from 'react-spinners';
 import { formValueSelector, propTypes as reduxFormPropTypes, reduxForm } from 'redux-form';
-import { Alert, Button, Title, TitleSizes } from '@patternfly/react-core';
+import { Alert, Button, Flex, Panel, PanelMain, Title, TitleSizes } from '@patternfly/react-core';
 
 import { AUTH_STATUS } from 'reducers/auth';
 import { selectors } from 'reducers';
@@ -201,7 +201,7 @@ class LoginPage extends Component {
         const options = authProvidersToSelectOptions(authProviders);
         return (
             <div>
-                <Title headingLevel="h2" size={TitleSizes['3xl']} className="pb-12">
+                <Title headingLevel="h2" size={TitleSizes['3xl']} className="pf-v6-u-pb-xl">
                     {title}
                 </Title>
                 <Labeled label="Select an auth provider">
@@ -277,22 +277,33 @@ class LoginPage extends Component {
         return (
             <>
                 <ServerStatusBanner />
-                <main className="flex h-full items-center justify-center">
-                    <div className="flex items-start">
-                        <form
-                            className="pf-v6-u-background-color-100 w-128 theme-light"
-                            onSubmit={this.props.handleSubmit(this.login)}
-                        >
-                            <div className="flex flex-col p-12 w-full">
-                                {this.renderFields()}
-                                <LoginNotice />
-                                {this.renderAuthError()}
-                                {this.renderLoginButton()}
-                            </div>
-                        </form>
+                <Flex
+                    justifyContent={{ default: 'justifyContentCenter' }}
+                    alignItems={{ default: 'alignItemsCenter' }}
+                    className="pf-v6-u-h-100"
+                >
+                    <Flex alignItems={{ default: 'alignItemsCenter' }}>
+                        <Panel>
+                            <PanelMain>
+                                <form
+                                    style={{ width: '32rem' }}
+                                    onSubmit={this.props.handleSubmit(this.login)}
+                                >
+                                    <Flex
+                                        direction={{ default: 'column' }}
+                                        className="pf-v6-u-w-100 pf-v6-u-p-xl"
+                                    >
+                                        {this.renderFields()}
+                                        <LoginNotice />
+                                        {this.renderAuthError()}
+                                        {this.renderLoginButton()}
+                                    </Flex>
+                                </form>
+                            </PanelMain>
+                        </Panel>
                         <BrandLogo className="pf-v6-u-p-2xl" />
-                    </div>
-                </main>
+                    </Flex>
+                </Flex>
             </>
         );
     }
