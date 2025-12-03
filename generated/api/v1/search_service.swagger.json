@@ -241,7 +241,8 @@
                 "IMAGE_VULNERABILITIES_V2",
                 "IMAGES_V2",
                 "VIRTUAL_MACHINES",
-                "VIRTUAL_MACHINES",
+                "BASE_IMAGES",
+                "BASE_IMAGE_LAYERS",
                 "IMAGE_CVE_INFO"
               ]
             },
@@ -353,7 +354,9 @@
                 "IMAGE_VULNERABILITIES_V2",
                 "IMAGES_V2",
                 "VIRTUAL_MACHINES",
-                "IMAGE_CVE_TIMES"
+                "BASE_IMAGES",
+                "BASE_IMAGE_LAYERS",
+                "IMAGE_CVE_INFO"
               ]
             },
             "collectionFormat": "multi"
@@ -507,7 +510,9 @@
         "IMAGE_VULNERABILITIES_V2",
         "IMAGES_V2",
         "VIRTUAL_MACHINES",
-        "IMAGE_CVE_TIMES"
+        "BASE_IMAGES",
+        "BASE_IMAGE_LAYERS",
+        "IMAGE_CVE_INFO"
       ],
       "default": "SEARCH_UNSET",
       "title": "Next available tag: 78"
