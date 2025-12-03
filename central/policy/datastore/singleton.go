@@ -34,7 +34,7 @@ func initialize() {
 	categoriesDatastore := categoriesDS.Singleton()
 
 	ad = New(storage, clusterDatastore, notifierDatastore, categoriesDatastore)
-	addDefaults(storage, categoriesDatastore)
+	addDefaults(storage, categoriesDatastore, ad)
 }
 
 // Singleton provides the interface for non-service external interaction.
