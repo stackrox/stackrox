@@ -1,5 +1,4 @@
 import { useEffect, useState } from 'react';
-import PropTypes from 'prop-types';
 import { Alert } from '@patternfly/react-core';
 
 import { fetchDeployment } from 'services/DeploymentsService';
@@ -9,6 +8,7 @@ import { portExposureLabels } from 'messages/common';
 import SecurityContext from './SecurityContext';
 import ContainerConfigurations from './ContainerConfigurations';
 import KeyValuePairs from './KeyValuePairs';
+import type { Deployment } from 'types/deployment.proto';
 
 export const formatDeploymentPorts = (ports) => {
     return ports.map(({ exposure, exposureInfos, ...rest }) => {
@@ -45,9 +45,13 @@ const deploymentDetailsMap = {
     },
 };
 
-const DeploymentDetails = ({ deployment }) => {
+type DeploymentDetailsProps = {
+    deployment: Deployment;
+};
+
+function DeploymentDetails({ deployment }: DeploymentDetailsProps) {
     // attempt to fetch related deployment to selected alert
-    const [relatedDeployment, setRelatedDeployment] = useState(deployment);
+    const [relatedDeployment, setRelatedDeployment] = useState<Deployment | null>(deployment);
 
     useEffect(() => {
         fetchDeployment(deployment.id).then(
@@ -80,13 +84,6 @@ const DeploymentDetails = ({ deployment }) => {
             <SecurityContext deployment={relatedDeployment || deployment} />
         </div>
     );
-};
-
-DeploymentDetails.propTypes = {
-    deployment: PropTypes.shape({
-        id: PropTypes.string.isRequired,
-        containers: PropTypes.arrayOf(PropTypes.object),
-    }).isRequired,
-};
+}
 
 export default DeploymentDetails;

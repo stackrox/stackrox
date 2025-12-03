@@ -4,27 +4,38 @@ import NoResultsMessage from 'Components/NoResultsMessage';
 import Table from 'Components/TableV2';
 
 import riskTableColumnDescriptors from './riskTableColumnDescriptors';
+import type { ListDeploymentWithProcessInfo } from 'services/DeploymentsService';
+import type { ApiSortOptionSingle } from 'types/search';
 
 function sortOptionFromTableState(state) {
-    let sortOption = null;
+    let sortOption: ApiSortOptionSingle | null = null;
     if (state.sorted.length && state.sorted[0].id) {
         const column = riskTableColumnDescriptors.find(
             (col) => col.accessor === state.sorted[0].id
         );
         sortOption = {
-            field: column.searchField,
+            // TODO we should be able to assert that column.searchField is not undefined after migrating away
+            // from the legacy TableV2 and descriptor pattern
+            field: column?.searchField ?? '',
             reversed: state.sorted[0].desc,
         };
     }
     return sortOption;
 }
 
+type RiskTableProps = {
+    currentDeployments: ListDeploymentWithProcessInfo[];
+    setSelectedDeploymentId: (deploymentId: string) => void;
+    selectedDeploymentId: string | undefined;
+    setSortOption: (sortOption: ApiSortOptionSingle) => void;
+};
+
 function RiskTable({
     currentDeployments,
     setSelectedDeploymentId,
     selectedDeploymentId,
     setSortOption,
-}) {
+}: RiskTableProps) {
     function onFetchData(state) {
         const newSortOption = sortOptionFromTableState(state);
         if (!newSortOption) {
@@ -52,16 +63,5 @@ function RiskTable({
         />
     );
 }
-
-RiskTable.propTypes = {
-    currentDeployments: PropTypes.arrayOf(PropTypes.object).isRequired,
-    selectedDeploymentId: PropTypes.string,
-    setSelectedDeploymentId: PropTypes.func.isRequired,
-    setSortOption: PropTypes.func.isRequired,
-};
-
-RiskTable.defaultProps = {
-    selectedDeploymentId: undefined,
-};
 
 export default RiskTable;

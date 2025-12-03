@@ -1,5 +1,4 @@
 import { useContext, useEffect } from 'react';
-import PropTypes from 'prop-types';
 import { useNavigate } from 'react-router-dom-v5-compat';
 import { connect } from 'react-redux';
 import { Button } from '@patternfly/react-core';
@@ -12,6 +11,26 @@ import { generatePolicyFromSearch } from 'services/PoliciesService';
 import searchOptionsToQuery from 'services/searchOptionsToQuery';
 import { convertToRestSearch } from 'utils/searchUtils';
 import { policiesBasePath } from 'routePaths';
+import type { ClientPolicy, PolicySeverity } from 'types/policy.proto';
+
+type CreatePolicyFromSearchProps = {
+    setWizardPolicy: (
+        // Note these omissions may not be handled gracefully by the policy form, but represent what the actual
+        // runtime value is at the time this file was converted to TypeScript.
+        policy: Omit<
+            ClientPolicy,
+            | 'severity'
+            | 'excludedImageNames'
+            | 'excludedDeploymentScopes'
+            | 'serverPolicySections'
+            | 'policySections'
+        > & { severity: PolicySeverity | null }
+    ) => void;
+    addToast: (message: string) => void;
+    removeToast: () => void;
+    addFormMessage: (message: { type: string; message: string }) => void;
+    clearFormMessages: () => void;
+};
 
 function CreatePolicyFromSearch({
     setWizardPolicy,
@@ -19,7 +38,7 @@ function CreatePolicyFromSearch({
     removeToast,
     addFormMessage,
     clearFormMessages,
-}) {
+}: CreatePolicyFromSearchProps) {
     const workflowState = useContext(workflowStateContext);
     const navigate = useNavigate();
 
@@ -50,7 +69,7 @@ function CreatePolicyFromSearch({
                     addFormMessage({ type: 'warn', message });
                 }
 
-                if (response?.hasNestedField) {
+                if (response?.hasNestedFields) {
                     addFormMessage({
                         type: 'warn',
                         message: 'Policy contained nested fields.',
@@ -83,14 +102,6 @@ function CreatePolicyFromSearch({
         </Button>
     );
 }
-
-CreatePolicyFromSearch.propTypes = {
-    setWizardPolicy: PropTypes.func.isRequired,
-    addToast: PropTypes.func.isRequired,
-    removeToast: PropTypes.func.isRequired,
-    addFormMessage: PropTypes.func.isRequired,
-    clearFormMessages: PropTypes.func.isRequired,
-};
 
 const mapDispatchToProps = {
     setWizardPolicy: wizardActions.setWizardPolicy,

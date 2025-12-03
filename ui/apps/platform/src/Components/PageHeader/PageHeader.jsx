@@ -25,7 +25,7 @@ PageHeader.propTypes = {
     subHeader: PropTypes.string,
     classes: PropTypes.string,
     bgStyle: PropTypes.shape({}),
-    children: PropTypes.oneOfType([PropTypes.element, PropTypes.arrayOf(PropTypes.element)]),
+    children: PropTypes.node,
 };
 
 PageHeader.defaultProps = {
