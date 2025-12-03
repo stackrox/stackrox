@@ -118,7 +118,7 @@ func (s *relayTestSuite) TestRelay_Integration() {
 
 	// Verify relay exited cleanly
 	err := <-errChan
-	s.Equal(context.Canceled, err)
+	s.ErrorIs(err, context.Canceled)
 }
 
 // TestRelay_SenderErrorsDoNotStopProcessing verifies that sender errors don't halt the relay
@@ -164,7 +164,7 @@ func (s *relayTestSuite) TestRelay_SenderErrorsDoNotStopProcessing() {
 	mockIndexReportSender.mu.Unlock()
 
 	err := <-errChan
-	s.Equal(context.Canceled, err)
+	s.ErrorIs(err, context.Canceled)
 }
 
 // TestRelay_ContextCancellation verifies relay stops on context cancellation
@@ -201,7 +201,7 @@ func (s *relayTestSuite) TestRelay_ContextCancellation() {
 	// Should exit quickly
 	select {
 	case err := <-errChan:
-		s.Equal(context.Canceled, err)
+		s.ErrorIs(err, context.Canceled)
 	case <-time.After(100 * time.Millisecond):
 		s.Fail("Relay did not exit after context cancellation")
 	}
