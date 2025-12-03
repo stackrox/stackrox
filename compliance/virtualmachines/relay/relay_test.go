@@ -62,7 +62,7 @@ func (s *relayTestSuite) TestRelay_StartFailure() {
 	case err := <-errCh:
 		// Relay.Run should surface the provider startup error (possibly wrapped).
 		s.Require().Error(err, "Relay.Run should return an error when provider Start fails")
-		s.Require().True(errors.Is(err, errTestProviderStart), "Relay.Run should wrap the provider startup error")
+		s.Require().ErrorIs(err, errTestProviderStart, "Relay.Run should wrap the provider startup error")
 		s.Equal(1, provider.startCalled, "provider.Start should be called exactly once")
 	case <-time.After(100 * time.Millisecond):
 		s.Fail("Relay.Run did not return promptly on provider Start failure (likely entered select loop)")
