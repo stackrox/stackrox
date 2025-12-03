@@ -7,7 +7,6 @@
 @import 'css/style.css';
 
 @import 'css/light.theme.css';
-@import 'css/dark.theme.css';
 
 /* React Table overrides. Delete this file once all react Table properties are ported over properly to avoid the use of !important*/
 @import 'react-table-6/react-table.css';
@@ -15,12 +14,6 @@
 /* React-vis */
 @import 'react-vis/dist/style.css';
 
-
-.theme-dark .react-select__option:hover,
-.theme-dark .react-select__option:focus,
-.theme-dark .react-select__option:active {
-    background: var(--base-400);
-}
 
 @tailwind base;
 @tailwind components;
@@ -445,20 +438,6 @@ h6 {
 
 .ReactTable .rt-th {
     @apply bg-base-100 !important; /* th also needs background for horizontal scrolling beyond tr width */
-}
-
-.theme-dark .ReactTable .rt-thead.-header .rt-tr {
-    @apply border-b border-base-200 bg-base-0 !important;
-    box-shadow: -10px 0 0 var(--base-100), 10px 0 0 var(--base-100), 0 2px 8px 0 hsl(233, 25%, 15%) !important;
-}
-
-.theme-dark .ReactTable .rt-th {
-    @apply bg-base-0 !important; /* th also needs background for horizontal scrolling beyond tr width */
-}
-
-.theme-dark .widget .ReactTable .rt-thead.-header .rt-tr,
-.theme-dark .widget .ReactTable .rt-th {
-    @apply bg-base-100 !important;
 }
 
 .ReactTable .rt-thead .rt-th.-sort-desc,
