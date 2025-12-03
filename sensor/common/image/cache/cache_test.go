@@ -63,7 +63,7 @@ func getKeyTestCases() []getKeyTestCase {
 }
 
 func TestGetKey_WithoutFlattenImageCapability(t *testing.T) {
-	// Set up: ensure FlattenImageDataOnCentral capability is not set
+	// Set up: ensure FlattenImageData capability is not set
 	centralcaps.Set([]centralsensor.CentralCapability{})
 
 	for _, tt := range getKeyTestCases() {
@@ -75,8 +75,8 @@ func TestGetKey_WithoutFlattenImageCapability(t *testing.T) {
 }
 
 func TestGetKey_WithFlattenImageCapability(t *testing.T) {
-	// Set up: enable FlattenImageDataOnCentral capability
-	centralcaps.Set([]centralsensor.CentralCapability{centralsensor.FlattenImageDataOnCentral})
+	// Set up: enable FlattenImageData capability
+	centralcaps.Set([]centralsensor.CentralCapability{centralsensor.FlattenImageData})
 
 	for _, tt := range getKeyTestCases() {
 		t.Run(tt.name, func(t *testing.T) {
@@ -191,7 +191,7 @@ func compareKeysTestCases() []compareKeysTestCase {
 }
 
 func TestCompareKeys_WithoutFlattenImageCapability(t *testing.T) {
-	// Set up: ensure FlattenImageDataOnCentral capability is not set
+	// Set up: ensure FlattenImageData capability is not set
 	centralcaps.Set([]centralsensor.CentralCapability{})
 
 	for _, tt := range compareKeysTestCases() {
@@ -203,8 +203,8 @@ func TestCompareKeys_WithoutFlattenImageCapability(t *testing.T) {
 }
 
 func TestCompareKeys_WithFlattenImageCapability(t *testing.T) {
-	// Set up: enable FlattenImageDataOnCentral capability
-	centralcaps.Set([]centralsensor.CentralCapability{centralsensor.FlattenImageDataOnCentral})
+	// Set up: enable FlattenImageData capability
+	centralcaps.Set([]centralsensor.CentralCapability{centralsensor.FlattenImageData})
 
 	for _, tt := range compareKeysTestCases() {
 		t.Run(tt.name, func(t *testing.T) {
@@ -232,7 +232,7 @@ func TestGetKey_CapabilityToggle(t *testing.T) {
 	assert.Equal(t, Key("sha256:abc123"), keyWithoutCap)
 
 	// Test with capability
-	centralcaps.Set([]centralsensor.CentralCapability{centralsensor.FlattenImageDataOnCentral})
+	centralcaps.Set([]centralsensor.CentralCapability{centralsensor.FlattenImageData})
 	keyWithCap := GetKey(image)
 	expectedUUID := utils.NewImageV2ID(imageName, "sha256:abc123")
 	assert.Equal(t, Key(expectedUUID), keyWithCap)
@@ -262,6 +262,6 @@ func TestCompareKeys_CapabilityToggle(t *testing.T) {
 	assert.True(t, CompareKeys(a, b), "should be equal without capability")
 
 	// Test with capability
-	centralcaps.Set([]centralsensor.CentralCapability{centralsensor.FlattenImageDataOnCentral})
+	centralcaps.Set([]centralsensor.CentralCapability{centralsensor.FlattenImageData})
 	assert.True(t, CompareKeys(a, b), "should be equal with capability")
 }

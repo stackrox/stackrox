@@ -36,10 +36,10 @@ func (s *ImageCacheTestSuite) SetupTest() {
 	s.manager.imageCache.Purge()
 }
 
-func createTestState(flattenImageDataOnCentral bool) *state {
+func createTestState(flattenImageData bool) *state {
 	return &state{
 		AdmissionControlSettings: &sensor.AdmissionControlSettings{
-			FlattenImageDataOnCentral: flattenImageDataOnCentral,
+			FlattenImageData: flattenImageData,
 		},
 	}
 }
@@ -143,7 +143,7 @@ func (s *ImageCacheTestSuite) TestGetCachedImage() {
 		s.Run(tt.name, func() {
 			if tt.cachedImage != nil {
 				var cacheKey string
-				if tt.state.GetFlattenImageDataOnCentral() {
+				if tt.state.GetFlattenImageData() {
 					cacheKey = utils.NewImageV2ID(tt.cachedImage.GetName(), tt.cachedImage.GetId())
 				} else {
 					cacheKey = tt.cachedImage.GetId()
@@ -224,7 +224,7 @@ func (s *ImageCacheTestSuite) TestCacheImage() {
 
 			if tt.shouldCache {
 				var expectedKey string
-				if tt.state.GetFlattenImageDataOnCentral() {
+				if tt.state.GetFlattenImageData() {
 					expectedKey = utils.NewImageV2ID(tt.image.GetName(), tt.image.GetId())
 				} else {
 					expectedKey = tt.image.GetId()
