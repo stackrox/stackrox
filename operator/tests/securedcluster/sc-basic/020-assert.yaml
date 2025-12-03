@@ -1,5 +1,7 @@
 apiVersion: kuttl.dev/v1beta1
 kind: TestAssert
+collectors:
+- command: retry-kubectl.sh describe securedcluster.platform.stackrox.io -n $NAMESPACE stackrox-secured-cluster-services
 resourceRefs:
 - apiVersion: platform.stackrox.io/v1alpha1
   kind: SecuredCluster
