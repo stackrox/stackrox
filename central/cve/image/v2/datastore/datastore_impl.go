@@ -2,8 +2,8 @@ package datastore
 
 import (
 	"context"
+	"strings"
 
-	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/cve/image/v2/datastore/store"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -19,17 +19,31 @@ func (ds *datastoreImpl) Search(ctx context.Context, q *v1.Query) ([]pkgSearch.R
 }
 
 func (ds *datastoreImpl) SearchImageCVEs(ctx context.Context, q *v1.Query) ([]*v1.SearchResult, error) {
-	results, err := ds.Search(ctx, q)
-	if err != nil {
-		return nil, err
+	if q == nil {
+		q = pkgSearch.EmptyQuery()
 	}
 
-	cves, missingIndices, err := ds.storage.GetMany(ctx, pkgSearch.ResultsToIDs(results))
+	// Clone the query and add select fields for SearchResult construction
+	clonedQuery := q.CloneVT()
+	selectSelects := []*v1.QuerySelect{
+		pkgSearch.NewQuerySelect(pkgSearch.CVE).Proto(),
+	}
+	clonedQuery.Selects = append(clonedQuery.GetSelects(), selectSelects...)
+
+	results, err := ds.storage.Search(ctx, clonedQuery)
 	if err != nil {
 		return nil, err
 	}
-	results = pkgSearch.RemoveMissingResults(results, missingIndices)
-	return convertMany(cves, results)
+	searchTag := strings.ToLower(pkgSearch.CVE.String())
+	for i := range results {
+		if results[i].FieldValues != nil {
+			if nameVal, ok := results[i].FieldValues[searchTag]; ok {
+				results[i].Name = nameVal
+			}
+		}
+	}
+
+	return pkgSearch.ResultsToSearchResultProtos(results, &ImageCVESearchResultConverter{}), nil
 }
 
 func (ds *datastoreImpl) SearchRawImageCVEs(ctx context.Context, q *v1.Query) ([]*storage.ImageCVEV2, error) {
@@ -73,24 +87,20 @@ func (ds *datastoreImpl) GetBatch(ctx context.Context, ids []string) ([]*storage
 	return cves, nil
 }
 
-func convertMany(cves []*storage.ImageCVEV2, results []pkgSearch.Result) ([]*v1.SearchResult, error) {
-	if len(cves) != len(results) {
-		return nil, errors.Errorf("expected %d CVEs but got %d", len(results), len(cves))
-	}
+type ImageCVESearchResultConverter struct{}
 
-	outputResults := make([]*v1.SearchResult, len(cves))
-	for index, sar := range cves {
-		outputResults[index] = convertOne(sar, &results[index])
-	}
-	return outputResults, nil
+func (c *ImageCVESearchResultConverter) BuildName(result *pkgSearch.Result) string {
+	return result.Name
 }
 
-func convertOne(cve *storage.ImageCVEV2, result *pkgSearch.Result) *v1.SearchResult {
-	return &v1.SearchResult{
-		Category:       v1.SearchCategory_IMAGE_VULNERABILITIES_V2,
-		Id:             cve.GetId(),
-		Name:           cve.GetCveBaseInfo().GetCve(),
-		FieldToMatches: pkgSearch.GetProtoMatchesMap(result.Matches),
-		Score:          result.Score,
-	}
+func (c *ImageCVESearchResultConverter) BuildLocation(result *pkgSearch.Result) string {
+	return ""
+}
+
+func (c *ImageCVESearchResultConverter) GetCategory() v1.SearchCategory {
+	return v1.SearchCategory_IMAGE_VULNERABILITIES_V2
+}
+
+func (c *ImageCVESearchResultConverter) GetScore(result *pkgSearch.Result) float64 {
+	return result.Score
 }
