@@ -302,7 +302,7 @@ function WorkloadCVEOverviewTable({
                     </TooltipTh>
                     {/* eslint-disable-next-line generic/Th-defaultColumns */}
                     <Th className={getVisibilityClass('rowActions')}>
-                        <span className="pf-v5-screen-reader">Row actions</span>
+                        <span className="pf-v6-screen-reader">Row actions</span>
                     </Th>
                 </Tr>
             </Thead>
