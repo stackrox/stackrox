@@ -103,7 +103,7 @@ function DeploymentScopeModal({
                         title="There was an error loading deployments"
                         headingLevel="h2"
                         icon={ExclamationCircleIcon}
-                        iconClassName="pf-v6-u-danger-color-100"
+                        status="danger"
                     >
                         {error.message}
                     </EmptyStateTemplate>
