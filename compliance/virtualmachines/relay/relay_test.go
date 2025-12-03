@@ -8,6 +8,7 @@ import (
 	"time"
 
 	v1 "github.com/stackrox/rox/generated/internalapi/virtualmachine/v1"
+	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -73,9 +74,10 @@ func (s *relayTestSuite) TestRelay_StartFailure() {
 // This uses mock implementations to verify the full data flow without real vsock/sensor.
 func (s *relayTestSuite) TestRelay_Integration() {
 	// Create mock sender that signals when reports are received
+	done := concurrency.NewSignal()
 	mockIndexReportSender := &mockIndexReportSender{
 		failOnIndex:   -1, // never fail
-		doneChan:      make(chan struct{}),
+		done:          &done,
 		expectedCount: 2,
 	}
 
@@ -101,7 +103,7 @@ func (s *relayTestSuite) TestRelay_Integration() {
 
 	// Wait for all reports to be processed (or timeout)
 	select {
-	case <-mockIndexReportSender.doneChan:
+	case <-done.Done():
 		// All reports processed
 	case <-time.After(1 * time.Second):
 		s.Fail("Timeout waiting for reports to be processed")
@@ -124,9 +126,10 @@ func (s *relayTestSuite) TestRelay_Integration() {
 // TestRelay_SenderErrorsDoNotStopProcessing verifies that sender errors don't halt the relay
 func (s *relayTestSuite) TestRelay_SenderErrorsDoNotStopProcessing() {
 	// Sender fails on second report but signals completion
+	done := concurrency.NewSignal()
 	mockIndexReportSender := &mockIndexReportSender{
 		failOnIndex:   1, // fail on second report
-		doneChan:      make(chan struct{}),
+		done:          &done,
 		expectedCount: 3,
 	}
 
@@ -150,7 +153,7 @@ func (s *relayTestSuite) TestRelay_SenderErrorsDoNotStopProcessing() {
 
 	// Wait for all reports to be attempted
 	select {
-	case <-mockIndexReportSender.doneChan:
+	case <-done.Done():
 		// All reports attempted
 	case <-time.After(1 * time.Second):
 		s.Fail("Timeout waiting for reports to be processed")
@@ -170,13 +173,13 @@ func (s *relayTestSuite) TestRelay_SenderErrorsDoNotStopProcessing() {
 // TestRelay_ContextCancellation verifies relay stops on context cancellation
 func (s *relayTestSuite) TestRelay_ContextCancellation() {
 	// Provider signals when first report is sent
-	startedChan := make(chan struct{})
+	started := concurrency.NewSignal()
 	mockIndexReportProvider := &mockIndexReportProvider{
 		reports: []*v1.IndexReport{
 			{VsockCid: "100"},
 			{VsockCid: "200"}, // Second report will never be processed
 		},
-		startedChan: startedChan,
+		started: &started,
 	}
 
 	mockIndexReportSender := &mockIndexReportSender{
@@ -193,7 +196,7 @@ func (s *relayTestSuite) TestRelay_ContextCancellation() {
 	}()
 
 	// Wait for provider to start sending reports
-	<-startedChan
+	<-started.Done()
 
 	// Cancel immediately
 	cancel()
@@ -224,8 +227,8 @@ func (f *failingIndexReportProvider) Start(ctx context.Context) (<-chan *v1.Inde
 }
 
 type mockIndexReportProvider struct {
-	reports     []*v1.IndexReport
-	startedChan chan struct{} // signals when first report is sent
+	reports []*v1.IndexReport
+	started *concurrency.Signal // signals when first report is sent
 }
 
 func (m *mockIndexReportProvider) Start(ctx context.Context) (<-chan *v1.IndexReport, error) {
@@ -238,8 +241,8 @@ func (m *mockIndexReportProvider) Start(ctx context.Context) (<-chan *v1.IndexRe
 				return
 			case reportChan <- report:
 				// Signal when first report is sent
-				if i == 0 && m.startedChan != nil {
-					close(m.startedChan)
+				if i == 0 && m.started != nil {
+					m.started.Signal()
 				}
 			}
 		}
@@ -251,9 +254,9 @@ func (m *mockIndexReportProvider) Start(ctx context.Context) (<-chan *v1.IndexRe
 type mockIndexReportSender struct {
 	mu            sync.Mutex
 	sentReports   []*v1.IndexReport
-	failOnIndex   int           // Index to fail on (0-based), use -1 to never fail
-	doneChan      chan struct{} // signals when expectedCount reports are received
-	expectedCount int           // number of reports expected before signaling done
+	failOnIndex   int                   // Index to fail on (0-based), use -1 to never fail
+	done          *concurrency.Signal   // signals when expectedCount reports are received
+	expectedCount int                   // number of reports expected before signaling done
 }
 
 func (m *mockIndexReportSender) Send(_ context.Context, report *v1.IndexReport) error {
@@ -262,8 +265,8 @@ func (m *mockIndexReportSender) Send(_ context.Context, report *v1.IndexReport) 
 	m.sentReports = append(m.sentReports, report)
 
 	// Signal done when we've received expected count
-	if m.doneChan != nil && len(m.sentReports) == m.expectedCount {
-		close(m.doneChan)
+	if m.done != nil && len(m.sentReports) == m.expectedCount {
+		m.done.Signal()
 	}
 	m.mu.Unlock()
 
