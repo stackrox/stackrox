@@ -813,6 +813,20 @@
         }
       }
     },
+    "storageBaseImageInfo": {
+      "type": "object",
+      "properties": {
+        "baseImageId": {
+          "type": "string"
+        },
+        "baseImageFullName": {
+          "type": "string"
+        },
+        "baseImageDigest": {
+          "type": "string"
+        }
+      }
+    },
     "storageCVSSScore": {
       "type": "object",
       "properties": {
@@ -1114,6 +1128,9 @@
         },
         "architecture": {
           "type": "string"
+        },
+        "fromBaseImage": {
+          "type": "boolean"
         }
       },
       "title": "Next Tag: 14"
@@ -1309,6 +1326,13 @@
           "type": "array",
           "items": {
             "$ref": "#/definitions/storageImageNote"
+          }
+        },
+        "baseImageInfo": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/storageBaseImageInfo"
           }
         }
       },
