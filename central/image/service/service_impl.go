@@ -12,6 +12,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	clusterUtil "github.com/stackrox/rox/central/cluster/util"
 	"github.com/stackrox/rox/central/image/datastore"
+	iiStore "github.com/stackrox/rox/central/imageintegration/store"
 	imageV2Datastore "github.com/stackrox/rox/central/imagev2/datastore"
 	"github.com/stackrox/rox/central/risk/manager"
 	"github.com/stackrox/rox/central/role/sachelper"
@@ -21,6 +22,7 @@ import (
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
+	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/features"
@@ -227,21 +229,34 @@ func (s *serviceImpl) InvalidateScanAndRegistryCaches(context.Context, *v1.Empty
 	return &v1.Empty{}, nil
 }
 
+func internalScanRespFromImage(img *storage.Image) *v1.ScanImageInternalResponse {
+	utils.FilterSuppressedCVEsNoClone(img)
+	utils.StripCVEDescriptionsNoClone(img)
+	return &v1.ScanImageInternalResponse{
+		Image: img,
+	}
+}
+
 func (s *serviceImpl) internalScanRespFromImageV2(ctx context.Context, imgV2 *storage.ImageV2) *v1.ScanImageInternalResponse {
 	utils.FilterSuppressedCVEsNoCloneV2(imgV2)
 	utils.StripCVEDescriptionsNoCloneV2(imgV2)
 
 	// Gather all known image names for this digest to ensure backward compatibility when sending image data
-	// to sensors that don't have the FlattenImageDataOnSensor capability.
-	allNames, err := s.datastoreV2.GetImageNamesWithDigest(ctx, imgV2.GetDigest())
-	if err != nil {
-		log.Errorw("Failed to retrieve image names by digest",
-			logging.FromContext(ctx),
-			logging.ImageName(imgV2.GetName().GetFullName()),
-			logging.ImageID(imgV2.GetId()),
-			logging.String("digest", imgV2.GetDigest()),
-			logging.Err(err),
-		)
+	// to sensors that don't have the FlattenImageData capability.
+	// Skip if all sensors have the capability.
+	var allNames []*storage.ImageName
+	if !s.connManager.AllSensorsHaveCapability(centralsensor.FlattenImageData) {
+		var err error
+		allNames, err = s.datastoreV2.GetImageNames(ctx, imgV2.GetDigest())
+		if err != nil {
+			log.Errorw("Failed to retrieve image names by digest",
+				logging.FromContext(ctx),
+				logging.ImageName(imgV2.GetName().GetFullName()),
+				logging.ImageID(imgV2.GetId()),
+				logging.String("digest", imgV2.GetDigest()),
+				logging.Err(err),
+			)
+		}
 	}
 	img := utils.ConvertToV1(imgV2, allNames...)
 	return &v1.ScanImageInternalResponse{
@@ -444,6 +459,48 @@ func (s *serviceImpl) scanImageV2Internal(ctx context.Context, request *v1.ScanI
 	}
 
 	return s.internalScanRespFromImageV2(ctx, imgV2), nil
+}
+
+// scanExpired returns true when the scan associated with the image
+// is considered expired.
+func scanExpired(imgScan *storage.ImageScan) bool {
+	scanTime := timestamp.FromProtobuf(imgScan.GetScanTime())
+	return !scanTime.Add(reprocessInterval).After(timestamp.Now())
+}
+
+// updateImageFromRequest will update the name of existing image with the one from the request
+// if the names differ and the metadata for the existing image was unable to be pulled previously.
+// Returns true if an update was made, false otherwise.
+func updateImageFromRequest(existingImg *storage.Image, reqImgName *storage.ImageName) bool {
+	if !features.UnqualifiedSearchRegistries.Enabled() || reqImgName == nil {
+		// The need for this behavior is associated with the use of unqualified search
+		// registries or short name aliases (currently), if the feature is disabled
+		// do not modify the name.
+		return false
+	}
+
+	if existingImg.GetMetadata() != nil {
+		// If metadata exists, then the existing image name is likely valid, no update needed.
+		return false
+	}
+
+	existingImgName := existingImg.GetName()
+	if existingImgName.GetRegistry() == reqImgName.GetRegistry() &&
+		existingImgName.GetRemote() == reqImgName.GetRemote() {
+		// No updated needed.
+		return false
+	}
+
+	// If the existing image had missing metadata and this request has a different registry or
+	// remote it's possible the values were incorrect when Sensor sent the initial request to Central.
+	// This could occur when unqualified search registries or short name aliases are in use due
+	// to the actual registry/repo/digest not being known until the container runtime pulls the image.
+
+	// Replace the image name with the one from the request since it is more likely to be 'correct'.
+	log.Debugf("Updated existing image name from %q to %q", existingImgName.GetFullName(), reqImgName.GetFullName())
+	existingImg.Name = reqImgName
+
+	return true
 }
 
 // enrichImage will enrich the given image, additionally applying the request source and fetch option to the request.
@@ -1042,6 +1099,54 @@ func (s *serviceImpl) enrichWithVulnerabilitiesV2(img *storage.ImageV2, request 
 	comps := scannerTypes.NewScanComponents(request.GetIndexerVersion(), request.GetComponents(), request.GetV4Contents())
 	_, err := s.enricherV2.EnrichWithVulnerabilities(img, comps, request.GetNotes())
 	return err
+}
+
+// shouldUpdateExistingScan will return true if an image should be scanned / re-scanned, false otherwise.
+func shouldUpdateExistingScan(imgExists bool, existingScan *storage.ImageScan, request *v1.EnrichLocalImageInternalRequest) bool {
+	if !imgExists || existingScan == nil {
+		return true
+	}
+
+	if !features.ScannerV4.Enabled() {
+		return scanExpired(existingScan)
+	}
+
+	v4MatchRequest := scannerTypes.ScannerV4IndexerVersion(request.GetIndexerVersion())
+	v4ExistingScan := existingScan.GetDataSource().GetId() == iiStore.DefaultScannerV4Integration.GetId()
+	if v4ExistingScan && !v4MatchRequest {
+		// Do not overwrite a V4 scan with a Clairify scan regardless of expiration.
+		log.Debugf("Not updating cached Scanner V4 scan with Clairify scan for image %q", request.GetImageName().GetFullName())
+		return false
+	}
+
+	if !v4ExistingScan && v4MatchRequest {
+		// If the existing scan is NOT from Scanner V4 but the request is from Scanner V4,
+		// then scan regardless of expiration.
+		log.Debugf("Forcing overwrite of cached Clairify scan with Scanner V4 scan for image %q", request.GetImageName().GetFullName())
+		return true
+	}
+
+	return scanExpired(existingScan)
+}
+
+// buildNames returns a slice containing the known image names from the various parameters.
+func buildNames(requestImageName *storage.ImageName, existingImageNames []*storage.ImageName, metadata *storage.ImageMetadata) []*storage.ImageName {
+	names := []*storage.ImageName{requestImageName}
+	names = append(names, existingImageNames...)
+
+	// Add a mirror name if exists.
+	if mirror := metadata.GetDataSource().GetMirror(); mirror != "" {
+		mirrorImg, err := utils.GenerateImageFromString(mirror)
+		if err != nil {
+			log.Warnw("Failed generating image from string",
+				logging.String("mirror", mirror), logging.Err(err))
+		} else {
+			names = append(names, mirrorImg.GetName())
+		}
+	}
+
+	names = protoutils.SliceUnique(names)
+	return names
 }
 
 func (s *serviceImpl) informScanWaiter(reqID string, img *storage.Image, scanErr error) {

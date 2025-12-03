@@ -75,9 +75,6 @@ const (
 	// VirtualMachinesSupported identifies the capability of Central to receive virtual machine requests.
 	VirtualMachinesSupported = "VirtualMachinesSupported"
 
-	// FlattenImageDataOnSensor identifies the capability of Sensor to use the flattened image data model (ImageV2).
-	FlattenImageDataOnSensor SensorCapability = "FlattenImageDataOnSensor"
-
-	// FlattenImageDataOnCentral identifies the capability of Central to use the flattened image data model (ImageV2).
-	FlattenImageDataOnCentral CentralCapability = "FlattenImageDataOnCentral"
+	// FlattenImageData identifies the capability to use the flattened image data model (ImageV2).
+	FlattenImageData = "FlattenImageData"
 )

@@ -18,6 +18,7 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/features"
@@ -538,14 +539,20 @@ func (l *loopImpl) reprocessImagesV2AndResyncDeployments(fetchOpt imageEnricher.
 			utils.StripCVEDescriptionsNoCloneV2(image)
 
 			// Gather all known image names with the same SHA to ensure backward compatibility
-			allNames, err := l.imagesV2.GetImageNamesWithDigest(allAccessCtx, image.GetDigest())
-			if err != nil {
-				log.Warnw("Failed to retrieve image names by digest",
-					logging.ImageName(image.GetName().GetFullName()),
-					logging.ImageID(image.GetId()),
-					logging.String("digest", image.GetDigest()),
-					logging.Err(err),
-				)
+			// with sensors that don't have the FlattenImageData capability.
+			// Skip if all sensors have the capability.
+			var allNames []*storage.ImageName
+			if !l.connManager.AllSensorsHaveCapability(centralsensor.FlattenImageData) {
+				var err error
+				allNames, err = l.imagesV2.GetImageNames(allAccessCtx, image.GetDigest())
+				if err != nil {
+					log.Warnw("Failed to retrieve image names by digest",
+						logging.ImageName(image.GetName().GetFullName()),
+						logging.ImageID(image.GetId()),
+						logging.String("digest", image.GetDigest()),
+						logging.Err(err),
+					)
+				}
 			}
 			convertedImage := utils.ConvertToV1(image, allNames...)
 			// Send the updated image to relevant clusters.

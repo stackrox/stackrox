@@ -219,9 +219,9 @@ func (ds *datastoreImpl) GetImagesBatch(ctx context.Context, ids []string) ([]*s
 	return imgs, nil
 }
 
-// GetImageNamesWithDigest returns all image names with the same digest.
-func (ds *datastoreImpl) GetImageNamesWithDigest(ctx context.Context, digest string) ([]*storage.ImageName, error) {
-	defer metrics.SetDatastoreFunctionDuration(time.Now(), "ImageV2", "GetImageNamesWithDigest")
+// GetImageNames returns all image names with the same digest.
+func (ds *datastoreImpl) GetImageNames(ctx context.Context, digest string) ([]*storage.ImageName, error) {
+	defer metrics.SetDatastoreFunctionDuration(time.Now(), "ImageV2", "GetImageNames")
 
 	if digest == "" {
 		return nil, nil
