@@ -41,7 +41,7 @@ var (
 			v1.SearchCategory_BASE_IMAGES,
 			v1.SearchCategory_BASE_IMAGE_LAYERS,
 		}...)
-		schema.ScopingResource = resources.BaseImageLayer
+		schema.ScopingResource = resources.Administration
 		RegisterTable(schema, CreateTableBaseImageLayersStmt)
 		mapping.RegisterCategoryToTable(v1.SearchCategory_BASE_IMAGE_LAYERS, schema)
 		return schema
