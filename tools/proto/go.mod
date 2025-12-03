@@ -5,7 +5,7 @@ go 1.24.0
 require (
 	github.com/bufbuild/buf v1.61.0
 	github.com/favadi/protoc-go-inject-tag v1.4.0
-	google.golang.org/grpc/cmd/protoc-gen-go-grpc v1.5.1
+	google.golang.org/grpc/cmd/protoc-gen-go-grpc v1.6.0
 )
 
 require (
