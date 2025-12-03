@@ -123,7 +123,8 @@ function predefinedMetricTableRow(
     metric: string,
     onCustomChange:
         | ((value: unknown, id: string) => Promise<void> | Promise<FormikErrors<FormikValues>>)
-        | undefined
+        | undefined,
+    showFilters: boolean
 ): ReactElement {
     return (
         <Tr key={`${category}-${metric}-row`}>
@@ -155,9 +156,11 @@ function predefinedMetricTableRow(
             <Td key={`${category}-${metric}-descriptors`}>
                 {labelGroup(predefinedMetrics[category][metric])}
             </Td>
-            <Td key={`${category}-${metric}-filters`}>
-                {filterGroup(predefinedMetrics[category][metric])}
-            </Td>
+            {showFilters ? (
+                <Td key={`${category}-${metric}-filters`}>
+                    {filterGroup(predefinedMetrics[category][metric])}
+                </Td>
+            ) : null}
         </Tr>
     );
 }
@@ -181,6 +184,30 @@ function hasMetric(
     );
 }
 
+function metricsHaveFilters(
+    descriptors: Record<string, PrometheusMetricsLabels> | undefined,
+    category: PrometheusMetricsCategory,
+    editMode: boolean
+): boolean {
+    // In edit mode, check all predefined metrics.
+    // In view mode, only check enabled metrics (those in descriptors).
+    const hasFiltersInPredefined = editMode
+        ? Object.values(predefinedMetrics[category]).some(
+              (labels) => labels.filters && Object.keys(labels.filters).length > 0
+          )
+        : Object.entries(predefinedMetrics[category]).some(
+              ([metric, labels]) =>
+                  hasMetric(descriptors, metric, labels) &&
+                  labels.filters &&
+                  Object.keys(labels.filters).length > 0
+          );
+    const hasFiltersInDescriptors = Object.values(descriptors ?? {}).some(
+        (labels) => labels.filters && Object.keys(labels.filters).length > 0
+    );
+    const showFilters = hasFiltersInPredefined || hasFiltersInDescriptors;
+    return showFilters;
+}
+
 type PrometheusMetricsTableProps = {
     descriptors: Record<string, PrometheusMetricsLabels> | undefined;
     category: PrometheusMetricsCategory;
@@ -194,6 +221,8 @@ function PrometheusMetricsTable({
     category,
     onCustomChange,
 }: PrometheusMetricsTableProps): ReactElement {
+    const showFilters = metricsHaveFilters(descriptors, category, onCustomChange !== undefined);
+
     return (
         <Table aria-label={`${category}-metrics-descriptors`} variant="compact">
             <Thead>
@@ -202,7 +231,7 @@ function PrometheusMetricsTable({
                     <Th width={30}>Metric name</Th>
                     <Th width={10}>Origin</Th>
                     <Th>Labels</Th>
-                    <Th>Filters</Th>
+                    {showFilters ? <Th>Filters</Th> : null}
                 </Tr>
             </Thead>
             <Tbody>
@@ -225,7 +254,8 @@ function PrometheusMetricsTable({
                                 isEnabledOriginal,
                                 category,
                                 predefinedMetric,
-                                onCustomChange
+                                onCustomChange,
+                                showFilters
                             );
                         }
                         return null;
@@ -253,7 +283,7 @@ function PrometheusMetricsTable({
                             </Td>
                             <Td>Custom</Td>
                             <Td>{labelGroup(labels)}</Td>
-                            <Td>{filterGroup(labels)}</Td>
+                            {showFilters ? <Td>{filterGroup(labels)}</Td> : null}
                         </Tr>
                     );
                 })}
