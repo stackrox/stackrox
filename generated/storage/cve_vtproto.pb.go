@@ -448,7 +448,7 @@ func (m *ImageCVEInfo) CloneVT() *ImageCVEInfo {
 	r := new(ImageCVEInfo)
 	r.Id = m.Id
 	r.FixTimestampAvailable = (*timestamppb.Timestamp)((*timestamppb1.Timestamp)(m.FixTimestampAvailable).CloneVT())
-	r.FirstImageOccurrence = (*timestamppb.Timestamp)((*timestamppb1.Timestamp)(m.FirstImageOccurrence).CloneVT())
+	r.FirstSystemOccurence = (*timestamppb.Timestamp)((*timestamppb1.Timestamp)(m.FirstSystemOccurence).CloneVT())
 	if len(m.unknownFields) > 0 {
 		r.unknownFields = make([]byte, len(m.unknownFields))
 		copy(r.unknownFields, m.unknownFields)
@@ -1226,7 +1226,7 @@ func (this *ImageCVEInfo) EqualVT(that *ImageCVEInfo) bool {
 	if !(*timestamppb1.Timestamp)(this.FixTimestampAvailable).EqualVT((*timestamppb1.Timestamp)(that.FixTimestampAvailable)) {
 		return false
 	}
-	if !(*timestamppb1.Timestamp)(this.FirstImageOccurrence).EqualVT((*timestamppb1.Timestamp)(that.FirstImageOccurrence)) {
+	if !(*timestamppb1.Timestamp)(this.FirstSystemOccurence).EqualVT((*timestamppb1.Timestamp)(that.FirstSystemOccurence)) {
 		return false
 	}
 	return string(this.unknownFields) == string(that.unknownFields)
@@ -2703,8 +2703,8 @@ func (m *ImageCVEInfo) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 		i -= len(m.unknownFields)
 		copy(dAtA[i:], m.unknownFields)
 	}
-	if m.FirstImageOccurrence != nil {
-		size, err := (*timestamppb1.Timestamp)(m.FirstImageOccurrence).MarshalToSizedBufferVT(dAtA[:i])
+	if m.FirstSystemOccurence != nil {
+		size, err := (*timestamppb1.Timestamp)(m.FirstSystemOccurence).MarshalToSizedBufferVT(dAtA[:i])
 		if err != nil {
 			return 0, err
 		}
@@ -3361,8 +3361,8 @@ func (m *ImageCVEInfo) SizeVT() (n int) {
 		l = (*timestamppb1.Timestamp)(m.FixTimestampAvailable).SizeVT()
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
-	if m.FirstImageOccurrence != nil {
-		l = (*timestamppb1.Timestamp)(m.FirstImageOccurrence).SizeVT()
+	if m.FirstSystemOccurence != nil {
+		l = (*timestamppb1.Timestamp)(m.FirstSystemOccurence).SizeVT()
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
 	n += len(m.unknownFields)
@@ -7346,7 +7346,7 @@ func (m *ImageCVEInfo) UnmarshalVT(dAtA []byte) error {
 			iNdEx = postIndex
 		case 9:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field FirstImageOccurrence", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field FirstSystemOccurence", wireType)
 			}
 			var msglen int
 			for shift := uint(0); ; shift += 7 {
@@ -7373,10 +7373,10 @@ func (m *ImageCVEInfo) UnmarshalVT(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			if m.FirstImageOccurrence == nil {
-				m.FirstImageOccurrence = &timestamppb.Timestamp{}
+			if m.FirstSystemOccurence == nil {
+				m.FirstSystemOccurence = &timestamppb.Timestamp{}
 			}
-			if err := (*timestamppb1.Timestamp)(m.FirstImageOccurrence).UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := (*timestamppb1.Timestamp)(m.FirstSystemOccurence).UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -11487,7 +11487,7 @@ func (m *ImageCVEInfo) UnmarshalVTUnsafe(dAtA []byte) error {
 			iNdEx = postIndex
 		case 9:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field FirstImageOccurrence", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field FirstSystemOccurence", wireType)
 			}
 			var msglen int
 			for shift := uint(0); ; shift += 7 {
@@ -11514,10 +11514,10 @@ func (m *ImageCVEInfo) UnmarshalVTUnsafe(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			if m.FirstImageOccurrence == nil {
-				m.FirstImageOccurrence = &timestamppb.Timestamp{}
+			if m.FirstSystemOccurence == nil {
+				m.FirstSystemOccurence = &timestamppb.Timestamp{}
 			}
-			if err := (*timestamppb1.Timestamp)(m.FirstImageOccurrence).UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
+			if err := (*timestamppb1.Timestamp)(m.FirstSystemOccurence).UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex

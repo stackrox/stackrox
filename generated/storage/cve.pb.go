@@ -2345,7 +2345,7 @@ type ImageCVEInfo struct {
 	state                 protoimpl.MessageState `protogen:"open.v1"`
 	Id                    string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" search:"CVE" sql:"pk"`                                                                      // @gotags: search:"CVE" sql:"pk"
 	FixTimestampAvailable *timestamppb.Timestamp `protobuf:"bytes,4,opt,name=fix_timestamp_available,json=fixTimestampAvailable,proto3" json:"fix_timestamp_available,omitempty" search:"Fixable Since Timestamp,hidden"` // @gotags: search:"Fixable Since Timestamp,hidden"
-	FirstImageOccurrence  *timestamppb.Timestamp `protobuf:"bytes,9,opt,name=first_image_occurrence,json=firstImageOccurrence,proto3" json:"first_image_occurrence,omitempty" search:"First Image Occurrence Timestamp,hidden"`    // @gotags: search:"First Image Occurrence Timestamp,hidden"
+	FirstSystemOccurence  *timestamppb.Timestamp `protobuf:"bytes,9,opt,name=first_system_occurence,json=firstSystemOccurence,proto3" json:"first_system_occurence,omitempty" search:"First Image Occurrence Timestamp,hidden"`    // @gotags: search:"First Image Occurrence Timestamp,hidden"
 	unknownFields         protoimpl.UnknownFields
 	sizeCache             protoimpl.SizeCache
 }
@@ -2394,9 +2394,9 @@ func (x *ImageCVEInfo) GetFixTimestampAvailable() *timestamppb.Timestamp {
 	return nil
 }
 
-func (x *ImageCVEInfo) GetFirstImageOccurrence() *timestamppb.Timestamp {
+func (x *ImageCVEInfo) GetFirstSystemOccurence() *timestamppb.Timestamp {
 	if x != nil {
-		return x.FirstImageOccurrence
+		return x.FirstSystemOccurence
 	}
 	return nil
 }
@@ -2817,7 +2817,7 @@ const file_storage_cve_proto_rawDesc = "" +
 	"\fImageCVEInfo\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12R\n" +
 	"\x17fix_timestamp_available\x18\x04 \x01(\v2\x1a.google.protobuf.TimestampR\x15fixTimestampAvailable\x12P\n" +
-	"\x16first_image_occurrence\x18\t \x01(\v2\x1a.google.protobuf.TimestampR\x14firstImageOccurrence*D\n" +
+	"\x16first_system_occurence\x18\t \x01(\v2\x1a.google.protobuf.TimestampR\x14firstSystemOccurence*D\n" +
 	"\x12VulnerabilityState\x12\f\n" +
 	"\bOBSERVED\x10\x00\x12\f\n" +
 	"\bDEFERRED\x10\x01\x12\x12\n" +
@@ -2958,7 +2958,7 @@ var file_storage_cve_proto_depIdxs = []int32{
 	12, // 61: storage.CVSSV3.availability:type_name -> storage.CVSSV3.Impact
 	18, // 62: storage.CVSSV3.severity:type_name -> storage.CVSSV3.Severity
 	35, // 63: storage.ImageCVEInfo.fix_timestamp_available:type_name -> google.protobuf.Timestamp
-	35, // 64: storage.ImageCVEInfo.first_image_occurrence:type_name -> google.protobuf.Timestamp
+	35, // 64: storage.ImageCVEInfo.first_system_occurence:type_name -> google.protobuf.Timestamp
 	1,  // 65: storage.CVE.DistroSpecific.severity:type_name -> storage.VulnerabilitySeverity
 	5,  // 66: storage.CVE.DistroSpecific.score_version:type_name -> storage.CVE.ScoreVersion
 	28, // 67: storage.CVE.DistroSpecific.cvss_v2:type_name -> storage.CVSSV2

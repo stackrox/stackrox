@@ -46,6 +46,6 @@ const (
 type ImageCveInfo struct {
 	ID                    string     `gorm:"column:id;type:varchar;primaryKey"`
 	FixTimestampAvailable *time.Time `gorm:"column:fixtimestampavailable;type:timestamp"`
-	FirstImageOccurrence  *time.Time `gorm:"column:firstimageoccurrence;type:timestamp"`
+	FirstSystemOccurence  *time.Time `gorm:"column:firstsystemoccurence;type:timestamp"`
 	Serialized            []byte     `gorm:"column:serialized;type:bytea"`
 }
