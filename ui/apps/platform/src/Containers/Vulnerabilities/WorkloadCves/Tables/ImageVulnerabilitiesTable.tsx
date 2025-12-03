@@ -242,7 +242,7 @@ function ImageVulnerabilitiesTable({
                     </TooltipTh>
                     {/* eslint-disable-next-line generic/Th-defaultColumns */}
                     <Th className={getVisibilityClass('rowActions')}>
-                        <span className="pf-v5-screen-reader">Row actions</span>
+                        <span className="pf-v6-screen-reader">Row actions</span>
                     </Th>
                 </Tr>
             </Thead>
@@ -444,7 +444,7 @@ function ImageVulnerabilitiesTable({
                                         <ExpandableRowContent>
                                             <>
                                                 {summary && (
-                                                    <p className="pf-v5-u-mb-md">{summary}</p>
+                                                    <p className="pf-v6-u-mb-md">{summary}</p>
                                                 )}
                                                 {imageMetadata ? (
                                                     <ImageComponentVulnerabilitiesTable

@@ -2,7 +2,8 @@ import { useEffect, useState } from 'react';
 import type { ReactElement } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { createStructuredSelector } from 'reselect';
-import { Alert, Button, Modal, ModalBoxBody, ModalBoxFooter, Text } from '@patternfly/react-core';
+import { Alert, Button, Content } from '@patternfly/react-core';
+import { Modal, ModalBoxBody, ModalBoxFooter } from '@patternfly/react-core/deprecated';
 import { Link } from 'react-router-dom-v5-compat';
 import { useFormik } from 'formik';
 import * as yup from 'yup';
@@ -217,17 +218,17 @@ function InviteUsersModal(): ReactElement | null {
                         component="p"
                         variant="warning"
                         isInline
-                        className="pf-v5-u-mb-lg"
+                        className="pf-v6-u-mb-lg"
                     >
-                        <Text>
+                        <Content component="p">
                             You must have at least one auth provider in order to invite users.
-                        </Text>
-                        <Text>
+                        </Content>
+                        <Content component="p">
                             To add an auth provider, visit:
                             <Link onClick={onClose} to={`${accessControlBasePath}/auth-providers`}>
                                 Access Control
                             </Link>{' '}
-                        </Text>
+                        </Content>
                     </Alert>
                 )}
                 {modalView === 'FORM' && (
@@ -238,10 +239,10 @@ function InviteUsersModal(): ReactElement | null {
                                 component="p"
                                 variant="danger"
                                 isInline
-                                className="pf-v5-u-mb-lg"
+                                className="pf-v6-u-mb-lg"
                             >
-                                <Text>The following error occurred:</Text>
-                                <Text>{apiError?.message}</Text>
+                                <Content component="p">The following error occurred:</Content>
+                                <Content component="p">{apiError?.message}</Content>
                             </Alert>
                         )}
                         <InviteUsersForm

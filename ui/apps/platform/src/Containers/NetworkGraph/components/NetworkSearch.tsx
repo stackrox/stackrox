@@ -61,7 +61,7 @@ function NetworkSearch({
 
     return (
         <SearchFilterInput
-            className="pf-v5-u-w-100 pf-search-shim"
+            className="pf-v6-u-w-100 pf-search-shim"
             placeholder="Filter deployments"
             searchFilter={searchFilter}
             searchCategory="DEPLOYMENTS"

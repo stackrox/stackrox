@@ -272,7 +272,7 @@ export function visitIntegrationsDashboard(staticResponseMap) {
     visit(basePath, routeMatcherMapForIntegrationsDashboard, staticResponseMap);
 
     cy.get(`h1:contains("${integrationsTitle}")`);
-    cy.get(`.pf-v5-c-nav__link.pf-m-current:contains("${integrationsTitle}")`);
+    cy.get(`.pf-v6-c-nav__link.pf-m-current:contains("${integrationsTitle}")`);
 }
 
 /**
@@ -303,7 +303,7 @@ export function visitIntegrationsTab(integrationSource, staticResponseMap) {
 
     cy.location('pathname').should('eq', getIntegrationsPath(integrationSource));
     cy.get(
-        `a.pf-v5-c-nav__link.pf-m-current:contains("${integrationSourceTitleMap[integrationSource]}")`
+        `a.pf-v6-c-nav__link.pf-m-current:contains("${integrationSourceTitleMap[integrationSource]}")`
     );
 }
 
@@ -364,7 +364,7 @@ export function visitIntegrationsAndVerifyNotFoundWithStaticResponseForCapabilit
 export function clickIntegrationTileOnTab(integrationSource, integrationType) {
     const integrationTitle = integrationTitleMap[integrationSource][integrationType];
 
-    cy.get(`a .pf-v5-c-card__title:contains("${integrationTitle}")`).click();
+    cy.get(`a .pf-v6-c-card__title:contains("${integrationTitle}")`).click();
 }
 
 // interact in table
@@ -403,7 +403,7 @@ export function deleteIntegrationInTable(integrationSource, integrationType, int
         cy.get(
             `tr:contains("${integrationName}") button[role="menuitem"]:contains("Delete Integration")`
         ).click(); // TODO Title Case
-        cy.get('.pf-v5-c-modal-box__footer button:contains("Delete")').click(); // confirmation modal
+        cy.get('.pf-v6-c-modal-box__footer button:contains("Delete")').click(); // confirmation modal
     }, routeMatcherMap);
 }
 
@@ -434,7 +434,7 @@ export function revokeAuthProvidersIntegrationInTable(integrationType, integrati
     getTableRowActionButtonByName(integrationName).click();
     interactAndWaitForResponses(() => {
         cy.get('button:contains("Delete Integration")').click(); // row actions
-        cy.get('.pf-v5-c-modal-box__footer button:contains("Delete")').click(); // confirmation modal
+        cy.get('.pf-v6-c-modal-box__footer button:contains("Delete")').click(); // confirmation modal
     }, routeMatcherMap);
 }
 

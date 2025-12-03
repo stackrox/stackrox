@@ -88,7 +88,7 @@ function ClusterLabelsTable({
                         style={{
                             backgroundColor:
                                 key === keyInput
-                                    ? 'var(--pf-v5-global--warning-color--100)'
+                                    ? 'var(--pf-t--global--color--status--warning--default)'
                                     : 'transparent',
                         }}
                     >
@@ -102,13 +102,14 @@ function ClusterLabelsTable({
                             <Td dataLabel="Action">
                                 <Tooltip content="Delete value">
                                     <Button
+                                        icon={
+                                            <TimesCircleIcon color="var(--pf-t--global--icon--color--status--danger--default)" />
+                                        }
                                         aria-label="Delete value"
                                         variant="plain"
                                         style={{ padding: 0 }}
                                         onClick={() => onDeleteLabel(key)}
-                                    >
-                                        <TimesCircleIcon color="var(--pf-v5-global--danger-color--100)" />
-                                    </Button>
+                                    />
                                 </Tooltip>
                             </Td>
                         )}
@@ -125,12 +126,12 @@ function ClusterLabelsTable({
                                 ref={refKeyInput}
                             />
                             {validatedKey === ValidatedOptions.error && (
-                                <p className="pf-v5-u-font-size-sm pf-v5-u-danger-color-100">
+                                <p className="pf-v6-u-font-size-sm pf-v6-u-text-color-status-danger">
                                     Invalid label key
                                 </p>
                             )}
                             {validatedKey === ValidatedOptions.warning && (
-                                <p className="pf-v5-u-font-size-sm pf-v5-u-warning-color-100">
+                                <p className="pf-v6-u-font-size-sm pf-v6-u-warning-color-100">
                                     You will replace an existing label which has the same key
                                 </p>
                             )}
@@ -144,7 +145,7 @@ function ClusterLabelsTable({
                                 onKeyPress={onKeyPressValue}
                             />
                             {validatedValue === ValidatedOptions.error && (
-                                <p className="pf-v5-u-font-size-sm pf-v5-u-danger-color-100">
+                                <p className="pf-v6-u-font-size-sm pf-v6-u-text-color-status-danger">
                                     {valueInput.length === 0
                                         ? 'Label value is required'
                                         : 'Invalid label value'}
@@ -154,22 +155,23 @@ function ClusterLabelsTable({
                         <Td dataLabel="Action">
                             <Tooltip content={isReplace ? 'Replace label' : 'Add label'}>
                                 <Button
+                                    icon={
+                                        <Icon>
+                                            <PlusCircleIcon
+                                                color={
+                                                    isReplace
+                                                        ? 'var(--pf-t--global--icon--color--status--warning--default)'
+                                                        : 'var(--pf-t--global--icon--color--status--success--default)'
+                                                }
+                                            />
+                                        </Icon>
+                                    }
                                     aria-label={isReplace ? 'Replace label' : 'Add label'}
                                     variant="plain"
                                     style={{ padding: 0 }}
                                     isDisabled={!isValid}
                                     onClick={() => onAddLabel()}
-                                >
-                                    <Icon>
-                                        <PlusCircleIcon
-                                            color={
-                                                isReplace
-                                                    ? 'var(--pf-v5-global--warning-color--100)'
-                                                    : 'var(--pf-v5-global--success-color--100)'
-                                            }
-                                        />
-                                    </Icon>
-                                </Button>
+                                />
                             </Tooltip>
                         </Td>
                     </Tr>

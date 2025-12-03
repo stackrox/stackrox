@@ -60,7 +60,7 @@ function DeploymentSelector({
                     >
                         <span>
                             <DeploymentIcon />
-                            <span className="pf-v5-u-mx-xs" data-testid="deployment-name">
+                            <span className="pf-v6-u-mx-xs" data-testid="deployment-name">
                                 {deployment.name}
                             </span>
                         </span>
@@ -113,7 +113,7 @@ function DeploymentSelector({
                     />
                 </MenuSearchInput>
             </MenuSearch>
-            <Divider className="pf-v5-u-m-0" />
+            <Divider className="pf-v6-u-m-0" />
             <MenuContent>
                 <MenuList className="network-graph-menu-list">
                     {filteredDeploymentSelectMenuItems.length === 0 && (

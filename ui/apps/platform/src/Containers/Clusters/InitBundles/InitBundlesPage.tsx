@@ -54,7 +54,7 @@ function InitBundlesPage({ hasWriteAccessForInitBundles }: InitBundlesPageProps)
     return (
         <>
             <InitBundlesHeader headerActions={headerActions} title={titleInitBundles} />
-            <PageSection component="div">
+            <PageSection hasBodyWrapper={false} component="div">
                 {isFetching ? (
                     <Bullseye>
                         <Spinner />

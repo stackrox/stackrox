@@ -272,6 +272,7 @@ function SearchFilterAutocomplete({
                 <TextInputGroupUtilities>
                     {!!value && (
                         <Button
+                            icon={<TimesIcon aria-hidden />}
                             variant="plain"
                             onClick={() => {
                                 onChange('');
@@ -279,9 +280,7 @@ function SearchFilterAutocomplete({
                                 textInputRef?.current?.focus();
                             }}
                             aria-label="Clear input value"
-                        >
-                            <TimesIcon aria-hidden />
-                        </Button>
+                        />
                     )}
                 </TextInputGroupUtilities>
             </TextInputGroup>
@@ -318,14 +317,13 @@ function SearchFilterAutocomplete({
                 </SelectList>
             </Select>
             <Button
+                icon={<ArrowRightIcon />}
                 variant="control"
                 aria-label="Apply autocomplete input to search"
                 onClick={() => {
                     onSearch(value);
                 }}
-            >
-                <ArrowRightIcon />
-            </Button>
+            ></Button>
         </>
     );
 }

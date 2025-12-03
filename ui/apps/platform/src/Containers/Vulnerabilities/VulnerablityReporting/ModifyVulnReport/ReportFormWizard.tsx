@@ -1,5 +1,6 @@
 import { useNavigate } from 'react-router-dom-v5-compat';
-import { Button, Modal, Wizard, WizardStep } from '@patternfly/react-core';
+import { Button, Wizard, WizardStep } from '@patternfly/react-core';
+import { Modal } from '@patternfly/react-core/deprecated';
 import type { FormikProps } from 'formik';
 import isEmpty from 'lodash/isEmpty';
 
