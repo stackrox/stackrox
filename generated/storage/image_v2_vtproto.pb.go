@@ -77,6 +77,13 @@ func (m *ImageV2) CloneVT() *ImageV2 {
 		copy(tmpContainer, rhs)
 		r.Notes = tmpContainer
 	}
+	if rhs := m.BaseImageInfo; rhs != nil {
+		tmpContainer := make([]*BaseImageInfo, len(rhs))
+		for k, v := range rhs {
+			tmpContainer[k] = v.CloneVT()
+		}
+		r.BaseImageInfo = tmpContainer
+	}
 	if len(m.unknownFields) > 0 {
 		r.unknownFields = make([]byte, len(m.unknownFields))
 		copy(r.unknownFields, m.unknownFields)
@@ -222,6 +229,23 @@ func (this *ImageV2) EqualVT(that *ImageV2) bool {
 		vy := that.Notes[i]
 		if vx != vy {
 			return false
+		}
+	}
+	if len(this.BaseImageInfo) != len(that.BaseImageInfo) {
+		return false
+	}
+	for i, vx := range this.BaseImageInfo {
+		vy := that.BaseImageInfo[i]
+		if p, q := vx, vy; p != q {
+			if p == nil {
+				p = &BaseImageInfo{}
+			}
+			if q == nil {
+				q = &BaseImageInfo{}
+			}
+			if !p.EqualVT(q) {
+				return false
+			}
 		}
 	}
 	return string(this.unknownFields) == string(that.unknownFields)
@@ -401,6 +425,20 @@ func (m *ImageV2) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	if m.unknownFields != nil {
 		i -= len(m.unknownFields)
 		copy(dAtA[i:], m.unknownFields)
+	}
+	if len(m.BaseImageInfo) > 0 {
+		for iNdEx := len(m.BaseImageInfo) - 1; iNdEx >= 0; iNdEx-- {
+			size, err := m.BaseImageInfo[iNdEx].MarshalToSizedBufferVT(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+			i--
+			dAtA[i] = 0x1
+			i--
+			dAtA[i] = 0x82
+		}
 	}
 	if len(m.Notes) > 0 {
 		var pksize2 int
@@ -746,6 +784,12 @@ func (m *ImageV2) SizeVT() (n int) {
 			l += protohelpers.SizeOfVarint(uint64(e))
 		}
 		n += 1 + protohelpers.SizeOfVarint(uint64(l)) + l
+	}
+	if len(m.BaseImageInfo) > 0 {
+		for _, e := range m.BaseImageInfo {
+			l = e.SizeVT()
+			n += 2 + l + protohelpers.SizeOfVarint(uint64(l))
+		}
 	}
 	n += len(m.unknownFields)
 	return n
@@ -1582,6 +1626,40 @@ func (m *ImageV2) UnmarshalVT(dAtA []byte) error {
 			} else {
 				return fmt.Errorf("proto: wrong wireType = %d for field Notes", wireType)
 			}
+		case 16:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field BaseImageInfo", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.BaseImageInfo = append(m.BaseImageInfo, &BaseImageInfo{})
+			if err := m.BaseImageInfo[len(m.BaseImageInfo)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
 			skippy, err := protohelpers.Skip(dAtA[iNdEx:])
@@ -2668,6 +2746,40 @@ func (m *ImageV2) UnmarshalVTUnsafe(dAtA []byte) error {
 			} else {
 				return fmt.Errorf("proto: wrong wireType = %d for field Notes", wireType)
 			}
+		case 16:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field BaseImageInfo", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.BaseImageInfo = append(m.BaseImageInfo, &BaseImageInfo{})
+			if err := m.BaseImageInfo[len(m.BaseImageInfo)-1].UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
 			skippy, err := protohelpers.Skip(dAtA[iNdEx:])
