@@ -49,9 +49,10 @@ func (ds *datastoreImpl) SearchNodeComponents(ctx context.Context, q *v1.Query) 
 		return nil, err
 	}
 
+	searchTag := strings.ToLower(pkgSearch.Component.String())
 	for i := range results {
 		if results[i].FieldValues != nil {
-			if nameVal, ok := results[i].FieldValues[strings.ToLower(pkgSearch.Component.String())]; ok {
+			if nameVal, ok := results[i].FieldValues[searchTag]; ok {
 				results[i].Name = nameVal
 			}
 		}
