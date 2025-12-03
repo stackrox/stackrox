@@ -2,6 +2,7 @@ package m2m
 
 import (
 	"fmt"
+	"io"
 	"net/http"
 
 	"github.com/pkg/errors"
@@ -21,6 +22,12 @@ func (a *authenticatedRoundTripper) RoundTrip(req *http.Request) (*http.Response
 	// First try without any auth header.
 	resp, err := a.roundTripper.RoundTrip(req)
 	if err == nil && resp.StatusCode >= 400 {
+		// If the Body is not both read to EOF and closed, the Client's
+		// underlying RoundTripper (typically Transport) may not be able to
+		// re-use a persistent TCP connection to the server for a subsequent
+		// "keep-alive" request.
+		io.Copy(io.Discard, resp.Body)
+		resp.Body.Close()
 		// GKE's issuer endpoint responds with HTTP 400 if Authorization header is set.
 		// At the same time, the Kube docs indicate that auth should be required by default:
 		// https://kubernetes.io/docs/tasks/configure-pod-container/configure-service-account/#service-account-issuer-discovery
@@ -37,7 +44,7 @@ func (a *authenticatedRoundTripper) RoundTrip(req *http.Request) (*http.Response
 		}
 
 		authReq := req.Clone(req.Context())
-		authReq.Header.Add("Authorization", fmt.Sprintf("Bearer %s", string(token)))
+		authReq.Header.Set("Authorization", fmt.Sprintf("Bearer %s", string(token)))
 		return a.roundTripper.RoundTrip(authReq)
 	}
 	return resp, err
