@@ -25,22 +25,22 @@ func (s *relayTestSuite) SetupTest() {
 	s.ctx = context.Background()
 }
 
-// errTestProviderStart is returned by the mock provider's Start method to simulate
+// errTestStreamStart is returned by the mock stream's Start method to simulate
 // a startup failure.
-var errTestProviderStart = errors.New("test provider start failure")
+var errTestStreamStart = errors.New("test stream start failure")
 
 // errTest is a generic test error for use in mock implementations.
 var errTest = errors.New("test error")
 
-// TestRelay_StartFailure verifies that Relay.Run propagates provider startup
+// TestRelay_StartFailure verifies that Relay.Run propagates stream startup
 // errors and does not enter the main select loop when initialization fails.
 func (s *relayTestSuite) TestRelay_StartFailure() {
 	// Use a bounded context to ensure the test fails if Relay.Run blocks.
 	ctx, cancel := context.WithTimeout(s.ctx, 100*time.Millisecond)
 	defer cancel()
 
-	// Create a provider that fails immediately on Start.
-	provider := &failingIndexReportProvider{}
+	// Create a stream that fails immediately on Start.
+	stream := &failingIndexReportStream{}
 
 	// Create a dummy sender. It should never be used in this test because the
 	// relay is expected to fail before entering its main loop.
@@ -50,7 +50,7 @@ func (s *relayTestSuite) TestRelay_StartFailure() {
 	}
 
 	// Construct the relay under test.
-	relay := New(provider, sender)
+	relay := New(stream, sender)
 
 	// Run the relay in a goroutine so we can assert it returns promptly and
 	// does not block in its select loop.
@@ -61,16 +61,16 @@ func (s *relayTestSuite) TestRelay_StartFailure() {
 
 	select {
 	case err := <-errCh:
-		// Relay.Run should surface the provider startup error (possibly wrapped).
-		s.Require().Error(err, "Relay.Run should return an error when provider Start fails")
-		s.Require().ErrorIs(err, errTestProviderStart, "Relay.Run should wrap the provider startup error")
-		s.Equal(1, provider.startCalled, "provider.Start should be called exactly once")
+		// Relay.Run should surface the stream startup error (possibly wrapped).
+		s.Require().Error(err, "Relay.Run should return an error when stream Start fails")
+		s.Require().ErrorIs(err, errTestStreamStart, "Relay.Run should wrap the stream startup error")
+		s.Equal(1, stream.startCalled, "stream.Start should be called exactly once")
 	case <-time.After(100 * time.Millisecond):
-		s.Fail("Relay.Run did not return promptly on provider Start failure (likely entered select loop)")
+		s.Fail("Relay.Run did not return promptly on stream Start failure (likely entered select loop)")
 	}
 }
 
-// TestRelay_Integration tests the interaction between provider, relay, and sender.
+// TestRelay_Integration tests the interaction between stream, relay, and sender.
 // This uses mock implementations to verify the full data flow without real vsock/sensor.
 func (s *relayTestSuite) TestRelay_Integration() {
 	// Create mock sender that signals when reports are received
@@ -81,8 +81,8 @@ func (s *relayTestSuite) TestRelay_Integration() {
 		expectedCount: 2,
 	}
 
-	// Create mock provider that produces test reports
-	mockIndexReportProvider := &mockIndexReportProvider{
+	// Create mock stream that produces test reports
+	mockIndexReportStream := &mockIndexReportStream{
 		reports: []*v1.IndexReport{
 			{VsockCid: "100"},
 			{VsockCid: "200"},
@@ -90,7 +90,7 @@ func (s *relayTestSuite) TestRelay_Integration() {
 	}
 
 	// Create relay with mock dependencies using the public constructor
-	relay := New(mockIndexReportProvider, mockIndexReportSender)
+	relay := New(mockIndexReportStream, mockIndexReportSender)
 
 	// Run relay in background
 	ctx, cancel := context.WithTimeout(s.ctx, 5*time.Second)
@@ -133,7 +133,7 @@ func (s *relayTestSuite) TestRelay_SenderErrorsDoNotStopProcessing() {
 		expectedCount: 3,
 	}
 
-	mockIndexReportProvider := &mockIndexReportProvider{
+	mockIndexReportStream := &mockIndexReportStream{
 		reports: []*v1.IndexReport{
 			{VsockCid: "100"},
 			{VsockCid: "200"},
@@ -141,7 +141,7 @@ func (s *relayTestSuite) TestRelay_SenderErrorsDoNotStopProcessing() {
 		},
 	}
 
-	relay := New(mockIndexReportProvider, mockIndexReportSender)
+	relay := New(mockIndexReportStream, mockIndexReportSender)
 
 	ctx, cancel := context.WithTimeout(s.ctx, 5*time.Second)
 	defer cancel()
@@ -172,9 +172,9 @@ func (s *relayTestSuite) TestRelay_SenderErrorsDoNotStopProcessing() {
 
 // TestRelay_ContextCancellation verifies relay stops on context cancellation
 func (s *relayTestSuite) TestRelay_ContextCancellation() {
-	// Provider signals when first report is sent
+	// The mocked stream signals when first report is sent
 	started := concurrency.NewSignal()
-	mockIndexReportProvider := &mockIndexReportProvider{
+	mockIndexReportStream := &mockIndexReportStream{
 		reports: []*v1.IndexReport{
 			{VsockCid: "100"},
 			{VsockCid: "200"}, // Second report will never be processed
@@ -186,7 +186,7 @@ func (s *relayTestSuite) TestRelay_ContextCancellation() {
 		failOnIndex: -1, // never fail
 	}
 
-	relay := New(mockIndexReportProvider, mockIndexReportSender)
+	relay := New(mockIndexReportStream, mockIndexReportSender)
 
 	ctx, cancel := context.WithCancel(s.ctx)
 
@@ -195,7 +195,7 @@ func (s *relayTestSuite) TestRelay_ContextCancellation() {
 		errChan <- relay.Run(ctx)
 	}()
 
-	// Wait for provider to start sending reports
+	// Wait for stream to start sending reports
 	<-started.Done()
 
 	// Cancel immediately
@@ -212,26 +212,26 @@ func (s *relayTestSuite) TestRelay_ContextCancellation() {
 
 // Mock implementations
 
-// failingIndexReportProvider is a mock IndexReportProvider whose Start method
+// failingIndexReportStream is a mock IndexReportStream whose Start method
 // always fails. It tracks how many times Start is called so tests can assert
 // correct behavior.
-type failingIndexReportProvider struct {
+type failingIndexReportStream struct {
 	startCalled int
 }
 
-// Start implements IndexReportProvider.Start. It always returns a nil channel
-// and errTestProviderStart to simulate a provider startup failure.
-func (f *failingIndexReportProvider) Start(ctx context.Context) (<-chan *v1.IndexReport, error) {
+// Start implements IndexReportStream.Start. It always returns a nil channel
+// and errTestStreamStart to simulate a stream startup failure.
+func (f *failingIndexReportStream) Start(ctx context.Context) (<-chan *v1.IndexReport, error) {
 	f.startCalled++
-	return nil, errTestProviderStart
+	return nil, errTestStreamStart
 }
 
-type mockIndexReportProvider struct {
+type mockIndexReportStream struct {
 	reports []*v1.IndexReport
 	started *concurrency.Signal // signals when first report is sent
 }
 
-func (m *mockIndexReportProvider) Start(ctx context.Context) (<-chan *v1.IndexReport, error) {
+func (m *mockIndexReportStream) Start(ctx context.Context) (<-chan *v1.IndexReport, error) {
 	reportChan := make(chan *v1.IndexReport, len(m.reports))
 
 	go func() {
@@ -254,9 +254,9 @@ func (m *mockIndexReportProvider) Start(ctx context.Context) (<-chan *v1.IndexRe
 type mockIndexReportSender struct {
 	mu            sync.Mutex
 	sentReports   []*v1.IndexReport
-	failOnIndex   int                   // Index to fail on (0-based), use -1 to never fail
-	done          *concurrency.Signal   // signals when expectedCount reports are received
-	expectedCount int                   // number of reports expected before signaling done
+	failOnIndex   int                 // Index to fail on (0-based), use -1 to never fail
+	done          *concurrency.Signal // signals when expectedCount reports are received
+	expectedCount int                 // number of reports expected before signaling done
 }
 
 func (m *mockIndexReportSender) Send(_ context.Context, report *v1.IndexReport) error {

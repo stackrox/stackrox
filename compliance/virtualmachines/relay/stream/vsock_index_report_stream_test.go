@@ -1,4 +1,4 @@
-package provider
+package stream
 
 import (
 	"testing"
@@ -8,15 +8,15 @@ import (
 	"google.golang.org/protobuf/proto"
 )
 
-func TestProvider(t *testing.T) {
-	suite.Run(t, new(providerTestSuite))
+func TestStream(t *testing.T) {
+	suite.Run(t, new(streamTestSuite))
 }
 
-type providerTestSuite struct {
+type streamTestSuite struct {
 	suite.Suite
 }
 
-func (s *providerTestSuite) TestParseIndexReport() {
+func (s *streamTestSuite) TestParseIndexReport() {
 	data := []byte("malformed-data")
 	parsedIndexReport, err := parseIndexReport(data)
 	s.Require().Error(err)
@@ -30,7 +30,7 @@ func (s *providerTestSuite) TestParseIndexReport() {
 	s.Require().True(proto.Equal(validIndexReport, parsedIndexReport))
 }
 
-func (s *providerTestSuite) TestValidateVsockCID() {
+func (s *streamTestSuite) TestValidateVsockCID() {
 	// Reported CID is 42
 	indexReport := v1.IndexReport{VsockCid: "42"}
 

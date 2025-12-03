@@ -11,8 +11,8 @@ import (
 
 var log = logging.LoggerForModule()
 
-// IndexReportProvider manages report collection and produces validated reports.
-type IndexReportProvider interface {
+// IndexReportStream manages report collection and produces validated reports.
+type IndexReportStream interface {
 	// Start begins accepting connections and returns a channel of validated reports.
 	// The channel is currently not closed to avoid races during shutdown.
 	// TODO: Implement proper shutdown logic that closes the channel.
@@ -20,24 +20,24 @@ type IndexReportProvider interface {
 }
 
 type Relay struct {
-	reportProvider IndexReportProvider
-	reportSender   sender.IndexReportSender
+	reportStream IndexReportStream
+	reportSender sender.IndexReportSender
 }
 
-// New creates a Relay with the given provider and sender.
-func New(reportProvider IndexReportProvider, reportSender sender.IndexReportSender) *Relay {
+// New creates a Relay with the given report stream and sender.
+func New(reportStream IndexReportStream, reportSender sender.IndexReportSender) *Relay {
 	return &Relay{
-		reportProvider: reportProvider,
-		reportSender:   reportSender,
+		reportStream: reportStream,
+		reportSender: reportSender,
 	}
 }
 
 func (r *Relay) Run(ctx context.Context) error {
 	log.Info("Starting virtual machine relay")
 
-	reportChan, err := r.reportProvider.Start(ctx)
+	reportChan, err := r.reportStream.Start(ctx)
 	if err != nil {
-		return errors.Wrap(err, "starting report provider")
+		return errors.Wrap(err, "starting report stream")
 	}
 
 	for {
