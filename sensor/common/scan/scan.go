@@ -530,7 +530,7 @@ func scanLimits(maxParallelScans, maxAdHocScans int) (int, int) {
 	// Max parallel scans minimum is 2: 1 active deployment scan + 1 ad hoc scan.
 	maxParallelScans = max(2, maxParallelScans) // minimum of 2
 
-	// Max ad hoc scans must be at least 1 and lower then max parallel scans to allow
+	// The max number of ad hoc scans must be lower then max parallel scans to allow
 	// for at least 1 active deployment scan.
 	maxAdHocScans = max(1, maxAdHocScans) // minimum of 1
 	if maxAdHocScans >= maxParallelScans {
