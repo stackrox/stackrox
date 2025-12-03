@@ -1,6 +1,8 @@
 import type { SearchFilter } from 'types/search';
 import type { IsFeatureFlagEnabled } from 'hooks/useFeatureFlags';
 import { searchValueAsArray } from 'utils/searchUtils';
+import { ensureExhaustive } from 'utils/type.utils';
+
 import type {
     CompoundSearchFilterAttribute,
     CompoundSearchFilterConfig,
@@ -146,7 +148,8 @@ export function updateSearchFilter(
 ): SearchFilter {
     const searchFilterUpdated = { ...searchFilter };
     payload.forEach((payloadItem) => {
-        switch (payloadItem.action) {
+        const { action } = payloadItem;
+        switch (action) {
             case 'APPEND_STRING':
             case 'APPEND_TOGGLE': {
                 const { category, value } = payloadItem;
@@ -173,6 +176,7 @@ export function updateSearchFilter(
                 break;
             }
             default:
+                ensureExhaustive(action);
                 break;
         }
     });
