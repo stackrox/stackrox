@@ -60,10 +60,10 @@ message BaseImageTag {
   string manifest_digest = 4;
 
   // Whether this tag points to a manifest list (multi-platform).
-  bool is_manifest_list = 6;
+  bool is_manifest_list = 5;
 
   // Image creation timestamp from config blob.
-  google.protobuf.Timestamp created = 5;
+  google.protobuf.Timestamp created = 6;
 
   // Map of "os/arch" to platform-specific manifest digest,
   // to only refetch platforms whose digest changed.
