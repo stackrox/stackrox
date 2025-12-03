@@ -9,9 +9,11 @@ import (
 	"github.com/stackrox/rox/central/convert/storagetoeffectiveaccessscope"
 	deploymentDataStore "github.com/stackrox/rox/central/deployment/datastore"
 	"github.com/stackrox/rox/central/namespace/datastore/internal/store"
+	pgStore "github.com/stackrox/rox/central/namespace/datastore/internal/store/postgres"
 	"github.com/stackrox/rox/central/ranking"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	pg "github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/effectiveaccessscope"
@@ -47,6 +49,14 @@ func New(nsStore store.Store, deploymentDataStore deploymentDataStore.DataStore,
 		deployments:     deploymentDataStore,
 		namespaceRanker: namespaceRanker,
 	}
+}
+
+// Constructor of the namespace storage takes a Store object as an argument,
+// but it's an internal type which could not be constructed outside. Such
+// approach limits the ways how namespace storage could be instantiated to only
+// the singleton. This method allows to avoid the limitation.
+func NewStorage(db pg.DB) store.Store {
+	return pgStore.New(db)
 }
 
 var (
