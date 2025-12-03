@@ -228,7 +228,7 @@ func (f *failingIndexReportStream) Start(ctx context.Context) (<-chan *v1.IndexR
 
 type mockIndexReportStream struct {
 	reports []*v1.IndexReport
-	started *concurrency.Signal // signals when first report is sent
+	started *concurrency.Signal // signals when first report is streamed
 }
 
 func (m *mockIndexReportStream) Start(ctx context.Context) (<-chan *v1.IndexReport, error) {
@@ -240,7 +240,7 @@ func (m *mockIndexReportStream) Start(ctx context.Context) (<-chan *v1.IndexRepo
 			case <-ctx.Done():
 				return
 			case reportChan <- report:
-				// Signal when first report is sent
+				// Signal when first report is streamed
 				if i == 0 && m.started != nil {
 					m.started.Signal()
 				}
@@ -255,7 +255,7 @@ type mockIndexReportSender struct {
 	mu            sync.Mutex
 	sentReports   []*v1.IndexReport
 	failOnIndex   int                 // Index to fail on (0-based), use -1 to never fail
-	done          *concurrency.Signal // signals when expectedCount reports are received
+	done          *concurrency.Signal // signals when expectedCount reports are sent
 	expectedCount int                 // number of reports expected before signaling done
 }
 
@@ -264,7 +264,7 @@ func (m *mockIndexReportSender) Send(_ context.Context, report *v1.IndexReport) 
 	currentIndex := len(m.sentReports)
 	m.sentReports = append(m.sentReports, report)
 
-	// Signal done when we've received expected count
+	// Signal done when we've sent expected count
 	if m.done != nil && len(m.sentReports) == m.expectedCount {
 		m.done.Signal()
 	}
