@@ -993,9 +993,13 @@ func (x *PrometheusMetrics_Group) GetDescriptors() map[string]*PrometheusMetrics
 }
 
 type PrometheusMetrics_Group_Labels struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Labels        []string               `protobuf:"bytes,1,rep,name=labels,proto3" json:"labels,omitempty"`
-	Filters       map[string]string      `protobuf:"bytes,2,rep,name=filters,proto3" json:"filters,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	state  protoimpl.MessageState `protogen:"open.v1"`
+	Labels []string               `protobuf:"bytes,1,rep,name=labels,proto3" json:"labels,omitempty"`
+	// A map of label name to a filter regular expression for this label value.
+	// See the RE2 syntax reference: https://github.com/google/re2/wiki/Syntax.
+	// If filters are specified, a metric record is only counted if all label values match the according label expression.
+	// Patterns are full-match only (automatically wrapped with ^ and $).
+	Filters       map[string]string `protobuf:"bytes,2,rep,name=filters,proto3" json:"filters,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }

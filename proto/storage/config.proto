@@ -70,6 +70,10 @@ message PrometheusMetrics {
   message Group {
     message Labels {
       repeated string labels = 1;
+      // A map of label name to a filter regular expression for this label value.
+      // See the RE2 syntax reference: https://github.com/google/re2/wiki/Syntax.
+      // If filters are specified, a metric record is only counted if all label values match the according label expression.
+      // Patterns are full-match only (automatically wrapped with ^ and $).
       map<string, string> filters = 2;
     }
     uint32 gathering_period_minutes = 1;
