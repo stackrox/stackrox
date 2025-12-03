@@ -102,7 +102,7 @@ const (
 	SearchCategory_VIRTUAL_MACHINES                 SearchCategory = 77
 	SearchCategory_BASE_IMAGES                      SearchCategory = 78
 	SearchCategory_BASE_IMAGE_LAYERS                SearchCategory = 79
-	SearchCategory_IMAGE_CVE_TIMES                  SearchCategory = 80
+	SearchCategory_IMAGE_CVE_INFO                   SearchCategory = 80
 )
 
 // Enum value maps for SearchCategory.
@@ -182,6 +182,7 @@ var (
 		75: "IMAGE_VULNERABILITIES_V2",
 		76: "IMAGES_V2",
 		77: "VIRTUAL_MACHINES",
+		78: "IMAGE_CVE_TIMES",
 	}
 	SearchCategory_value = map[string]int32{
 		"SEARCH_UNSET":                     0,
@@ -258,6 +259,7 @@ var (
 		"IMAGE_VULNERABILITIES_V2":         75,
 		"IMAGES_V2":                        76,
 		"VIRTUAL_MACHINES":                 77,
+		"IMAGE_CVE_TIMES":                  78,
 	}
 )
 
@@ -1917,7 +1919,7 @@ const file_api_v1_search_service_proto_rawDesc = "" +
 	"\x15SearchOptionsResponse\x12\x18\n" +
 	"\aoptions\x18\x01 \x03(\tR\aoptions\".\n" +
 	"\x14AutocompleteResponse\x12\x16\n" +
-	"\x06values\x18\x01 \x03(\tR\x06values*\x87\r\n" +
+	"\x06values\x18\x01 \x03(\tR\x06values*\x9c\r\n" +
 	"\x0eSearchCategory\x12\x10\n" +
 	"\fSEARCH_UNSET\x10\x00\x12\n" +
 	"\n" +
@@ -1997,7 +1999,8 @@ const file_api_v1_search_service_proto_rawDesc = "" +
 	"\x13IMAGE_COMPONENTS_V2\x10J\x12\x1c\n" +
 	"\x18IMAGE_VULNERABILITIES_V2\x10K\x12\r\n" +
 	"\tIMAGES_V2\x10L\x12\x14\n" +
-	"\x10VIRTUAL_MACHINES\x10M\"\x04\b\x1e\x10\x1e\"\x04\b;\x10;\"\x04\b@\x10@*~\n" +
+	"\x10VIRTUAL_MACHINES\x10M\x12\x13\n" +
+	"\x0fIMAGE_CVE_TIMES\x10N\"\x04\b\x1e\x10\x1e\"\x04\b;\x10;\"\x04\b@\x10@*~\n" +
 	"\x0eSearchDataType\x12\x0f\n" +
 	"\vSEARCH_BOOL\x10\x00\x12\x12\n" +
 	"\x0eSEARCH_NUMERIC\x10\x01\x12\x11\n" +
