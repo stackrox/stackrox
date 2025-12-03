@@ -33,6 +33,7 @@ func (m *AdmissionControlSettings) CloneVT() *AdmissionControlSettings {
 	r.CacheVersion = m.CacheVersion
 	r.CentralEndpoint = m.CentralEndpoint
 	r.ClusterId = m.ClusterId
+	r.FlattenImageData = m.FlattenImageData
 	if rhs := m.ClusterConfig; rhs != nil {
 		if vtpb, ok := interface{}(rhs).(interface {
 			CloneVT() *storage.DynamicClusterConfig
@@ -231,6 +232,9 @@ func (this *AdmissionControlSettings) EqualVT(that *AdmissionControlSettings) bo
 			return false
 		}
 	} else if !proto.Equal(this.RuntimePolicies, that.RuntimePolicies) {
+		return false
+	}
+	if this.FlattenImageData != that.FlattenImageData {
 		return false
 	}
 	return string(this.unknownFields) == string(that.unknownFields)
@@ -474,6 +478,16 @@ func (m *AdmissionControlSettings) MarshalToSizedBufferVT(dAtA []byte) (int, err
 	if m.unknownFields != nil {
 		i -= len(m.unknownFields)
 		copy(dAtA[i:], m.unknownFields)
+	}
+	if m.FlattenImageData {
+		i--
+		if m.FlattenImageData {
+			dAtA[i] = 1
+		} else {
+			dAtA[i] = 0
+		}
+		i--
+		dAtA[i] = 0x40
 	}
 	if m.RuntimePolicies != nil {
 		if vtmsg, ok := interface{}(m.RuntimePolicies).(interface {
@@ -891,6 +905,9 @@ func (m *AdmissionControlSettings) SizeVT() (n int) {
 			l = proto.Size(m.RuntimePolicies)
 		}
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
+	}
+	if m.FlattenImageData {
+		n += 2
 	}
 	n += len(m.unknownFields)
 	return n
@@ -1311,6 +1328,26 @@ func (m *AdmissionControlSettings) UnmarshalVT(dAtA []byte) error {
 				}
 			}
 			iNdEx = postIndex
+		case 8:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field FlattenImageData", wireType)
+			}
+			var v int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				v |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			m.FlattenImageData = bool(v != 0)
 		default:
 			iNdEx = preIndex
 			skippy, err := protohelpers.Skip(dAtA[iNdEx:])
@@ -2064,6 +2101,26 @@ func (m *AdmissionControlSettings) UnmarshalVTUnsafe(dAtA []byte) error {
 				}
 			}
 			iNdEx = postIndex
+		case 8:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field FlattenImageData", wireType)
+			}
+			var v int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				v |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			m.FlattenImageData = bool(v != 0)
 		default:
 			iNdEx = preIndex
 			skippy, err := protohelpers.Skip(dAtA[iNdEx:])
