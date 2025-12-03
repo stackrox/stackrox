@@ -45,6 +45,15 @@ const defaultStyle = {
     overflowY: 'auto',
 } as const;
 
+const lightThemeStyles = {} as const;
+
+// TODO This should be deleted when we move to proper PatternFly theming
+const darkThemeStyles = {
+    '--pf-t--global--background--color--secondary--default': 'var(--pf-t--color--gray--95)',
+    '--pf-t--global--text--color--regular': 'var(--pf-t--color--white)',
+    '--pf-t--global--icon--color--regular': 'var(--pf-t--color--white)',
+} as const;
+
 export type CodeViewerProps = {
     code: string;
     language?: SupportedLanguages;
@@ -94,11 +103,14 @@ export default function CodeViewer({
         </>
     );
 
+    const themeStyles = theme === 'light' ? lightThemeStyles : darkThemeStyles;
+
     // TODO - When Tailwind is removed, we likely need to get rid of this font size override
     return (
         <CodeBlock
-            className={`${theme === 'light' ? '' : 'pf-v5-theme-dark'} pf-v6-u-p-0 pf-v6-u-font-size-xs pf-v6-u-max-height ${className}`}
-            style={{ ...defaultStyle, ...style }}
+            data-component-theme={theme}
+            className={`pf-v6-u-p-0 pf-v6-u-font-size-xs pf-v6-u-max-height ${className}`}
+            style={{ ...defaultStyle, ...style, ...themeStyles }}
             actions={actions}
         >
             <SyntaxHighlighter
