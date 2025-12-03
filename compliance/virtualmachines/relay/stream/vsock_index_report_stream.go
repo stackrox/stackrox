@@ -7,7 +7,6 @@ import (
 	"context"
 	"net"
 	"strconv"
-	"sync"
 	"time"
 
 	"github.com/pkg/errors"
@@ -18,6 +17,7 @@ import (
 	v1 "github.com/stackrox/rox/generated/internalapi/virtualmachine/v1"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/sync"
 	"golang.org/x/sync/semaphore"
 	"google.golang.org/protobuf/proto"
 )
