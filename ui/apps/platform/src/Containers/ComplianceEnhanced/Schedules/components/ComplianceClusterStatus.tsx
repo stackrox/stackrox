@@ -20,9 +20,7 @@ function ComplianceClusterStatus({ errors }: ComplianceClusterStatusProps) {
             ? {
                   icon: (
                       <Icon>
-                          <ExclamationCircleIcon
-                              color="var(--pf-t--temp--dev--tbd)" /* CODEMODS: original v5 color was --pf-v5-global--danger-color--100 */
-                          />
+                          <ExclamationCircleIcon color="var(--pf-t--global--icon--color--status--danger--default)" />
                       </Icon>
                   ),
                   statusText: 'Unhealthy',
@@ -30,9 +28,7 @@ function ComplianceClusterStatus({ errors }: ComplianceClusterStatusProps) {
             : {
                   icon: (
                       <Icon>
-                          <CheckCircleIcon
-                              color="var(--pf-t--temp--dev--tbd)" /* CODEMODS: original v5 color was --pf-v5-global--success-color--100 */
-                          />
+                          <CheckCircleIcon color="var(--pf-t--global--icon--color--status--success--default)" />
                       </Icon>
                   ),
                   statusText: 'Healthy',

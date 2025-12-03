@@ -94,9 +94,7 @@ function RequirementRow({
                                         <Button
                                             icon={
                                                 <Icon>
-                                                    <MinusCircleIcon
-                                                        color="var(--pf-t--temp--dev--tbd)" /* CODEMODS: original v5 color was --pf-v5-global--danger-color--100 */
-                                                    />
+                                                    <MinusCircleIcon color="var(--pf-t--global--icon--color--status--danger--default)" />
                                                 </Icon>
                                             }
                                             aria-label="Delete value"
@@ -130,9 +128,7 @@ function RequirementRow({
                                         <Button
                                             icon={
                                                 <Icon>
-                                                    <PlusCircleIcon
-                                                        color="var(--pf-t--temp--dev--tbd)" /* CODEMODS: original v5 color was --pf-v5-global--primary-color--100 */
-                                                    />
+                                                    <PlusCircleIcon color="var(--pf-t--global--icon--color--brand--default)" />
                                                 </Icon>
                                             }
                                             aria-label="Add value (press Enter)"
@@ -146,12 +142,12 @@ function RequirementRow({
                             </span>
                         </div>
                         {isInvalidValue && (
-                            <div className="pf-v6-u-font-size-sm pf-v6-u-danger-color-100">
+                            <div className="pf-v6-u-font-size-sm pf-v6-u-text-color-status-danger">
                                 Invalid label value
                             </div>
                         )}
                         {isDuplicateValue && (
-                            <div className="pf-v6-u-font-size-sm pf-v6-u-danger-color-100">
+                            <div className="pf-v6-u-font-size-sm pf-v6-u-text-color-status-danger">
                                 Duplicate label value
                             </div>
                         )}
@@ -166,9 +162,7 @@ function RequirementRow({
                                 <Button
                                     icon={
                                         <Icon>
-                                            <CheckCircleIcon
-                                                color="var(--pf-t--temp--dev--tbd)" /* CODEMODS: original v5 color was --pf-v5-global--primary-color--100 */
-                                            />
+                                            <CheckCircleIcon color="var(--pf-t--global--icon--color--brand--default)" />
                                         </Icon>
                                     }
                                     aria-label="OK"
@@ -199,9 +193,7 @@ function RequirementRow({
                                     <Button
                                         icon={
                                             <Icon>
-                                                <PencilAltIcon
-                                                    color="var(--pf-t--temp--dev--tbd)" /* CODEMODS: original v5 color was --pf-v5-global--primary-color--100 */
-                                                />
+                                                <PencilAltIcon color="var(--pf-t--global--icon--color--brand--default)" />
                                             </Icon>
                                         }
                                         aria-label="Edit rule"
@@ -216,9 +208,7 @@ function RequirementRow({
                                 <Button
                                     icon={
                                         <Icon>
-                                            <MinusCircleIcon
-                                                color="var(--pf-t--temp--dev--tbd)" /* CODEMODS: original v5 color was --pf-v5-global--danger-color--100 */
-                                            />
+                                            <MinusCircleIcon color="var(--pf-t--global--icon--color--status--danger--default)" />
                                         </Icon>
                                     }
                                     aria-label="Delete rule"
