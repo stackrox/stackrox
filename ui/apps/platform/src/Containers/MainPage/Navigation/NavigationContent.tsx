@@ -1,24 +1,12 @@
-import type { CSSProperties, ReactElement, ReactNode } from 'react';
+import type { ReactElement, ReactNode } from 'react';
 import { Label } from '@patternfly/react-core';
 
 import TechPreviewLabel from 'Components/PatternFly/PreviewLabel/TechPreviewLabel';
 
 type NavigationContentVariant = 'Deprecated' | 'TechPreview';
 
-const style = {
-    '--pf-v5-c-label__content--Color':
-        'var(--pf-t--temp--dev--tbd)' /* CODEMODS: original v5 color was --pf-v5-global--Color--dark-100 */,
-} as CSSProperties;
-// Type assertion prevents TypeScript error:
-// error TS2353: Object literal may only specify known properties, and ''--pf-v5-c-label__content--Color'' does not exist in type 'Properties<string | number, string & {}>'.
-// The expected type comes from property 'style' which is declared here on type 'IntrinsicAttributes & LabelProps'
-
 const badgeMap = {
-    Deprecated: (
-        <Label isCompact style={style}>
-            Deprecated
-        </Label>
-    ),
+    Deprecated: <Label isCompact>Deprecated</Label>,
     TechPreview: <TechPreviewLabel />,
 } satisfies Record<string, ReactElement>;
 

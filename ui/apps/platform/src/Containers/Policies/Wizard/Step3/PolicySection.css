@@ -3,7 +3,7 @@
 }
 
 .policy-section-card-header {
-    border-bottom: 1px solid var(--pf-t--temp--dev--tbd /* CODEMODS: original v5 color was:--pf-v5-global--BorderColor--100 */);
+    border-bottom: 1px solid var(--pf-t--global--border--color--default);
 }
 
 .policy-section-card-body {
@@ -24,7 +24,7 @@
     }
 
     .policy-section-card-header {
-        background-color: var(--pf-t--temp--dev--tbd /* CODEMODS: original v5 color was:--pf-v5-global--BackgroundColor--100 */);
+        background-color: var(--pf-t--global--background--color--primary--default);
         position: sticky;
         top: 0;
         z-index: 101;

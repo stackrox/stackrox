@@ -75,8 +75,7 @@ const VulnMgmtDashboardPage = () => {
                     <div
                         className="flex mr-2"
                         style={{
-                            backgroundColor:
-                                'var(--pf-t--temp--dev--tbd)' /* CODEMODS: original v5 color was --pf-v5-global--palette--red-50 */,
+                            backgroundColor: 'var(--pf-t--color--red--10)',
                         }}
                     >
                         <CvesMenu />

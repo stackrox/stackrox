@@ -1,7 +1,7 @@
 .rule-selector {
   --rule-selector-spacer: var(--pf-t--global--spacer--md);
   padding: var(--pf-t--global--spacer--lg);
-  border: 1px solid var(--pf-t--temp--dev--tbd /* CODEMODS: original v5 color was:--pf-v5-global--BorderColor--100 */);
+  border: 1px solid var(--pf-t--global--border--color--default);
 }
 
 /* Allows rule form elements to shrink further to avoid overlap in constrained screen sizes */
@@ -23,7 +23,7 @@
 }
 
 .rule-selector-list {
-  border-left: solid 1px var(--pf-t--temp--dev--tbd /* CODEMODS: original v5 color was:--pf-v5-global--BorderColor--100 */);
+  border-left: solid 1px var(--pf-t--global--border--color--default);
   margin-left: var(--rule-selector-spacer);
 }
 
@@ -41,7 +41,7 @@
   bottom: var(--rule-selector-spacer);
   height: 1px;
   width: var(--rule-selector-spacer);
-  background-color: var(--pf-t--temp--dev--tbd /* CODEMODS: original v5 color was:--pf-v5-global--BorderColor--100 */);
+  background-color: var(--pf-t--global--border--color--default); /* border--color, because the background simulates a border */
 }
 
 .rule-selector-delete-value-button {
@@ -59,7 +59,7 @@
 }
 
 .rule-selector-label-rule-separator:after {
-  border-bottom: 2px dashed var(--pf-t--temp--dev--tbd /* CODEMODS: original v5 color was:--pf-v5-global--Color--light-300 */);
+  border-bottom: 2px dashed var(--pf-t--global--border--color--default);
   flex: 1 1 0;
   content: "";
   display: inline-block;

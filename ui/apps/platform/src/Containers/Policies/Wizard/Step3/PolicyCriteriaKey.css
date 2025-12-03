@@ -1,5 +1,5 @@
 .policy-criteria-key {
-    border: var(--pf-t--temp--dev--tbd /* CODEMODS: original v5 color was:--pf-v5-global--BorderColor--100 */) 1px solid;
+    border: var(--pf-t--global--border--color--default) 1px solid;
     cursor: move;
 }
 

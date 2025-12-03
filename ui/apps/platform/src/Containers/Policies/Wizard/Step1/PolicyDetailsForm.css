@@ -1,6 +1,6 @@
 .attach-notifiers-section {
     width: 100%;
-    border-top: 1px var(--pf-t--temp--dev--tbd /* CODEMODS: original v5 color was:--pf-v5-global--BorderColor--100 */) solid;
+    border-top: 1px var(--pf-t--global--border--color--default) solid;
     padding-top: var(--pf-t--global--spacer--lg);
     padding-bottom: var(--pf-t--global--spacer--lg);
 }
