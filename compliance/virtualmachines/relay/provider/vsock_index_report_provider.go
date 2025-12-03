@@ -26,13 +26,13 @@ var log = logging.LoggerForModule()
 
 type VsockIndexReportProvider struct {
 	listener                 net.Listener
+	listenerMu               sync.Mutex
 	semaphore                *semaphore.Weighted
 	maxConcurrentConnections int
 	semaphoreTimeout         time.Duration
 	connectionReadTimeout    time.Duration
 	waitAfterFailedAccept    time.Duration
 	maxSizeBytes             int
-	stopOnce                 sync.Once
 }
 
 // New creates a VsockIndexReportProvider with a vsock listener.
@@ -211,14 +211,18 @@ func validateReportedVsockCID(indexReport *v1.IndexReport, connVsockCID uint32) 
 }
 
 func (p *VsockIndexReportProvider) stop() {
-	p.stopOnce.Do(func() {
-		log.Info("Stopping connection server")
-		if p.listener != nil {
-			if err := p.listener.Close(); err != nil {
-				log.Errorf("Error closing listener: %v", err)
-			}
-		}
-	})
+	p.listenerMu.Lock()
+	defer p.listenerMu.Unlock()
+
+	if p.listener == nil {
+		return
+	}
+
+	log.Info("Stopping connection server")
+	if err := p.listener.Close(); err != nil {
+		log.Errorf("Error closing listener: %v", err)
+	}
+	p.listener = nil
 }
 
 func (p *VsockIndexReportProvider) acquireSemaphore(parentCtx context.Context) error {
