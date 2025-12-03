@@ -42,13 +42,16 @@ describe(Cypress.spec.relative, () => {
         cy.mount(<CodeViewer code={sampleYaml} />);
 
         // Default to light mode
-        cy.get('.pf-v5-theme-dark').should('not.exist');
+        cy.get('[data-component-theme="light"]').should('exist');
+        cy.get('[data-component-theme="dark"]').should('not.exist');
 
         cy.get('button[aria-label="Set dark theme"]').click();
-        cy.get('.pf-v5-theme-dark');
+        cy.get('[data-component-theme="light"]').should('not.exist');
+        cy.get('[data-component-theme="dark"]').should('exist');
 
         cy.get('button[aria-label="Set light theme"]').click();
-        cy.get('.pf-v5-theme-dark').should('not.exist');
+        cy.get('[data-component-theme="light"]').should('exist');
+        cy.get('[data-component-theme="dark"]').should('not.exist');
     });
 
     it('should share theme state across multiple instances', () => {
@@ -59,18 +62,21 @@ describe(Cypress.spec.relative, () => {
             </CodeViewerThemeProvider>
         );
 
-        cy.get('.pf-v5-theme-dark').should('not.exist');
+        cy.get('[data-component-theme="light"]').should('have.length', 2);
+        cy.get('[data-component-theme="dark"]').should('have.length', 0);
 
         cy.get('button[aria-label="Set dark theme"]').eq(0);
         cy.get('button[aria-label="Set dark theme"]').eq(1);
         cy.get('button[aria-label="Set dark theme"]').eq(0).click();
 
-        cy.get('.pf-v5-theme-dark').should('have.length', 2);
+        cy.get('[data-component-theme="light"]').should('have.length', 0);
+        cy.get('[data-component-theme="dark"]').should('have.length', 2);
 
         cy.get('button[aria-label="Set light theme"]').eq(0);
         cy.get('button[aria-label="Set light theme"]').eq(1);
         cy.get('button[aria-label="Set light theme"]').eq(1).click();
 
-        cy.get('.pf-v5-theme-dark').should('not.exist');
+        cy.get('[data-component-theme="light"]').should('have.length', 2);
+        cy.get('[data-component-theme="dark"]').should('have.length', 0);
     });
 });
