@@ -10,6 +10,7 @@ import {
     administrationEventsPathWithParam,
     apidocsPath,
     apidocsPathV2,
+    baseImagesPath,
     clustersClusterRegistrationSecretsPathWithParam,
     clustersDelegatedScanningPath,
     clustersDiscoveredClustersPath,
@@ -41,7 +42,6 @@ import {
     violationsBasePath,
     vulnManagementPath,
     vulnerabilitiesAllImagesPath,
-    vulnerabilitiesBaseImagesPath,
     vulnerabilitiesImagesWithoutCvesPath,
     vulnerabilitiesInactiveImagesPath,
     vulnerabilitiesNodeCvesPath,
@@ -271,11 +271,9 @@ const routeComponentMap: Record<RouteKey, RouteComponent> = {
         component: makeVulnMgmtUserWorkloadView('all-images'),
         path: vulnerabilitiesAllImagesPath,
     },
-    'vulnerabilities/base-images': {
-        component: asyncComponent(
-            () => import('Containers/Vulnerabilities/BaseImages/BaseImagesPage')
-        ),
-        path: vulnerabilitiesBaseImagesPath,
+    'base-images': {
+        component: asyncComponent(() => import('Containers/BaseImages/BaseImagesPage')),
+        path: baseImagesPath,
     },
     'vulnerabilities/inactive-images': {
         component: makeVulnMgmtUserWorkloadView('inactive-images'),

@@ -66,6 +66,7 @@ export const searchPath = `${mainPath}/search`;
 export const secretsPath = `${mainPath}/configmanagement/secrets/:secretId?`;
 export const systemConfigPath = `${mainPath}/systemconfig`;
 export const systemHealthPath = `${mainPath}/system-health`;
+export const baseImagesPath = `${mainPath}/base-images`;
 export const userBasePath = `${mainPath}/user`;
 export const userRolePath = `${userBasePath}/roles/:roleName`;
 export const violationsBasePath = `${mainPath}/violations`;
@@ -93,7 +94,6 @@ export const vulnerabilitiesViewPath = `${vulnerabilitiesBasePath}/results/:view
 export const vulnerabilityReportsPath = `${vulnerabilitiesBasePath}/reports`;
 export const vulnerabilityConfigurationReportsPath = `${vulnerabilityReportsPath}/configuration`;
 export const vulnerabilityViewBasedReportsPath = `${vulnerabilityReportsPath}/view-based`;
-export const vulnerabilitiesBaseImagesPath = `${vulnerabilitiesBasePath}/base-images`;
 
 // Vulnerability Management 1.0 path for links from Dashboard:
 
@@ -187,10 +187,10 @@ export type RouteKey =
     | 'vulnerabilities/platform'
     | 'vulnerabilities/all-images'
     | 'vulnerabilities/inactive-images'
-    | 'vulnerabilities/base-images'
     | 'vulnerabilities/images-without-cves'
     | 'vulnerabilities/platform-cves'
     | 'vulnerabilities/virtual-machine-cves'
+    | 'base-images'
     | 'vulnerability-management'
     ;
 
@@ -360,10 +360,6 @@ const routeRequirementsMap: Record<RouteKey, RouteRequirements> = {
     'vulnerabilities/all-images': {
         resourceAccessRequirements: everyResource(['Deployment', 'Image']),
     },
-    'vulnerabilities/base-images': {
-        featureFlagRequirements: allEnabled(['ROX_BASE_IMAGE_DETECTION']),
-        resourceAccessRequirements: everyResource(['Image']), // TODO: May need new resource type
-    },
     'vulnerabilities/inactive-images': {
         resourceAccessRequirements: everyResource(['Deployment', 'Image']),
     },
@@ -373,6 +369,10 @@ const routeRequirementsMap: Record<RouteKey, RouteRequirements> = {
     'vulnerabilities/virtual-machine-cves': {
         featureFlagRequirements: allEnabled(['ROX_VIRTUAL_MACHINES']),
         resourceAccessRequirements: everyResource(['Cluster']),
+    },
+    'base-images': {
+        featureFlagRequirements: allEnabled(['ROX_BASE_IMAGE_DETECTION']),
+        resourceAccessRequirements: everyResource(['Image']), // TODO: May need new resource type
     },
     'vulnerability-management': {
         resourceAccessRequirements: everyResource([
