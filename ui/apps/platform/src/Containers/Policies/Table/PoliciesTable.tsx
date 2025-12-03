@@ -333,7 +333,7 @@ function PoliciesTable({
                         <Thead>
                             <Tr>
                                 <Th>
-                                    <span className="pf-v5-screen-reader">Row expansion</span>
+                                    <span className="pf-v6-screen-reader">Row expansion</span>
                                 </Th>
                                 <Th
                                     select={{
@@ -387,7 +387,7 @@ function PoliciesTable({
                                     Lifecycle
                                 </Th>
                                 <Th>
-                                    <span className="pf-v5-screen-reader">Row actions</span>
+                                    <span className="pf-v6-screen-reader">Row actions</span>
                                 </Th>
                             </Tr>
                         </Thead>
