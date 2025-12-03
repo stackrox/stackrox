@@ -1,8 +1,8 @@
 .pf-v6-c-tree-view__list-item .pf-v6-c-tree-view__list-item .pf-v6-c-tree-view__node-container:hover {
-    background-color: var(--pf-t--temp--dev--tbd /* CODEMODS: original v5 color was:--pf-v5-global--BackgroundColor--200 */) !important;
+    background-color: var(--pf-t--global--background--color--secondary--default) !important;
     cursor: pointer;
 }
 
 .pf-v6-c-tree-view__node.pf-m-current .pf-v6-c-tree-view__node-container {
-    background-color: var(--pf-t--temp--dev--tbd /* CODEMODS: original v5 color was:--pf-v5-global--palette--blue-50 */) !important;
+    background-color: var(--pf-t--color--blue--10) !important;
 }
