@@ -57,8 +57,8 @@ func (p *settingsManager) newSettingsNoLock() *sensor.AdmissionControlSettings {
 	settings.ClusterId = p.clusterID.Get()
 	settings.CentralEndpoint = p.centralEndpoint
 	settings.Timestamp = protocompat.TimestampNow()
-	if centralcaps.Has(centralsensor.FlattenImageDataOnCentral) {
-		settings.FlattenImageDataOnCentral = true
+	if centralcaps.Has(centralsensor.FlattenImageData) {
+		settings.FlattenImageData = true
 	}
 	return settings
 }

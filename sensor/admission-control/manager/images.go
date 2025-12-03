@@ -32,7 +32,7 @@ func (m *manager) getCachedImage(img *storage.ContainerImage, s *state) *storage
 	}
 
 	id := img.GetId()
-	if s.GetFlattenImageDataOnCentral() {
+	if s.GetFlattenImageData() {
 		id = utils.NewImageV2ID(img.GetName(), img.GetId())
 	}
 
@@ -54,7 +54,7 @@ func (m *manager) cacheImage(img *storage.Image, s *state) {
 	}
 
 	id := img.GetId()
-	if s.GetFlattenImageDataOnCentral() {
+	if s.GetFlattenImageData() {
 		id = utils.NewImageV2ID(img.GetName(), img.GetId())
 	}
 
