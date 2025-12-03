@@ -33,9 +33,9 @@ function getMessage(count: number): string {
     return `Signatures: ${count}`;
 }
 
-function getColor(count: number): 'gold' | undefined {
+function getColor(count: number): 'yellow' | undefined {
     if (count === 0) {
-        return 'gold';
+        return 'yellow';
     }
     return undefined;
 }
