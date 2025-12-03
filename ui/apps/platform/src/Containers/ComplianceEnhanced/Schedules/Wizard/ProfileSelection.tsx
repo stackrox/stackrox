@@ -190,10 +190,10 @@ function ProfileSelection({
                     <Thead noWrap>
                         <Tr>
                             <Th>
-                                <span className="pf-v5-screen-reader">Row selection</span>
+                                <span className="pf-v6-screen-reader">Row selection</span>
                             </Th>
                             <Th>
-                                <span className="pf-v5-screen-reader">Row expansion</span>
+                                <span className="pf-v6-screen-reader">Row expansion</span>
                             </Th>
                             <Th>Profile</Th>
                             <Th>Rule set</Th>

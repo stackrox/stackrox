@@ -294,7 +294,7 @@ const rules = {
 
         // Until upgrade to PatternFly 5.3 which has screenReaderText prop,
         // temporary solution is to render child:
-        // <span className="pf-v5-screen-reader">{screenReaderText}</span>
+        // <span className="pf-v6-screen-reader">{screenReaderText}</span>
         meta: {
             type: 'problem',
             docs: {
@@ -477,7 +477,7 @@ const rules = {
 
         // Until upgrade to PatternFly 5.3 which has screenReaderText prop,
         // temporary solution is to render child:
-        // <span className="pf-v5-screen-reader">{screenReaderText}</span>
+        // <span className="pf-v6-screen-reader">{screenReaderText}</span>
         meta: {
             type: 'problem',
             docs: {

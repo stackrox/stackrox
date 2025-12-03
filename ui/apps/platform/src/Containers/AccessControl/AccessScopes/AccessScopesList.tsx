@@ -75,7 +75,7 @@ function AccessScopesList({
                         <Th width={25}>Description</Th>
                         <Th width={35}>Roles</Th>
                         <Th width={10}>
-                            <span className="pf-v5-screen-reader">Row actions</span>
+                            <span className="pf-v6-screen-reader">Row actions</span>
                         </Th>
                     </Tr>
                 </Thead>

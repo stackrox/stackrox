@@ -202,7 +202,7 @@ function ReportJobs({ reportId }: ReportJobsProps) {
                     <Thead>
                         <Tr>
                             <Th>
-                                <span className="pf-v5-screen-reader">Row expansion</span>
+                                <span className="pf-v6-screen-reader">Row expansion</span>
                             </Th>
                             <Th width={25} sort={getSortParams('Report Completion Time')}>
                                 Completed
@@ -210,7 +210,7 @@ function ReportJobs({ reportId }: ReportJobsProps) {
                             <Th width={25}>Status</Th>
                             <Th width={50}>Requester</Th>
                             <Th>
-                                <span className="pf-v5-screen-reader">Row actions</span>
+                                <span className="pf-v6-screen-reader">Row actions</span>
                             </Th>
                         </Tr>
                     </Thead>
