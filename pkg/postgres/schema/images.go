@@ -25,6 +25,10 @@ var (
 				GormModel: (*ImagesLayers)(nil),
 				Children:  []*postgres.CreateStmts{},
 			},
+			&postgres.CreateStmts{
+				GormModel: (*ImagesBaseImageInfos)(nil),
+				Children:  []*postgres.CreateStmts{},
+			},
 		},
 	}
 
@@ -55,6 +59,8 @@ const (
 	ImagesTableName = "images"
 	// ImagesLayersTableName specifies the name of the table in postgres.
 	ImagesLayersTableName = "images_layers"
+	// ImagesBaseImageInfosTableName specifies the name of the table in postgres.
+	ImagesBaseImageInfosTableName = "images_base_image_infos"
 )
 
 // Images holds the Gorm model for Postgres table `images`.
@@ -90,4 +96,14 @@ type ImagesLayers struct {
 	Instruction string `gorm:"column:instruction;type:varchar"`
 	Value       string `gorm:"column:value;type:varchar"`
 	ImagesRef   Images `gorm:"foreignKey:images_id;references:id;belongsTo;constraint:OnDelete:CASCADE"`
+}
+
+// ImagesBaseImageInfos holds the Gorm model for Postgres table `images_base_image_infos`.
+type ImagesBaseImageInfos struct {
+	ImagesID          string `gorm:"column:images_id;type:varchar;primaryKey"`
+	Idx               int    `gorm:"column:idx;type:integer;primaryKey;index:imagesbaseimageinfos_idx,type:btree"`
+	BaseImageID       string `gorm:"column:baseimageid;type:varchar"`
+	BaseImageFullName string `gorm:"column:baseimagefullname;type:varchar"`
+	BaseImageDigest   string `gorm:"column:baseimagedigest;type:varchar"`
+	ImagesRef         Images `gorm:"foreignKey:images_id;references:id;belongsTo;constraint:OnDelete:CASCADE"`
 }
