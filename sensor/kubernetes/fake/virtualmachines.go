@@ -45,6 +45,7 @@ type vmTemplatePool struct {
 }
 
 type vmTemplate struct {
+	index         int // Template index, used for deterministic UUID generation
 	baseName      string
 	baseNamespace string
 	vsockCID      uint32
@@ -63,6 +64,7 @@ func newVMTemplatePool(poolSize int, guestOSPool []string, vsockBaseCID uint32) 
 	for i := 0; i < poolSize; i++ {
 		guestOS := guestOSPool[rand.Intn(len(guestOSPool))]
 		pool.templates[i] = &vmTemplate{
+			index:         i,
 			baseName:      fmt.Sprintf("vm-%d", i),
 			baseNamespace: "default",
 			vsockCID:      vsockBaseCID + uint32(i),
@@ -85,7 +87,9 @@ func (p *vmTemplatePool) size() int {
 }
 
 func (t *vmTemplate) instantiate(iteration int) (*unstructured.Unstructured, *unstructured.Unstructured) {
-	vmUID := types.UID(newUUID())
+	// Use deterministic UUID based on template index to match index report generation.
+	// This ensures the VM UID in informer events matches the VM ID used in index reports.
+	vmUID := types.UID(fakeVMUUID(t.index))
 	vmName := fmt.Sprintf("%s-%d", t.baseName, iteration)
 
 	vm := &kubeVirtV1.VirtualMachine{
@@ -108,7 +112,9 @@ func (t *vmTemplate) instantiate(iteration int) (*unstructured.Unstructured, *un
 		},
 	}
 
-	vmiUID := types.UID(newUUID())
+	// VMI gets a unique UUID based on template index and iteration
+	// Format: 00000000-0000-4000-9000-{6-digit-index}{6-digit-iteration}
+	vmiUID := types.UID(fmt.Sprintf("00000000-0000-4000-9000-%06d%06d", t.index, iteration))
 	vmiName := fmt.Sprintf("%s-%d-vmi", t.baseName, iteration)
 	vsockCID := t.vsockCID
 	vmi := &kubeVirtV1.VirtualMachineInstance{
