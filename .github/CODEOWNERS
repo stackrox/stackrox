@@ -79,9 +79,11 @@ operator/**/* @stackrox/install
 /sensor/kubernetes/listener/resources/secrets*            @stackrox/scanner
 /SCANNER_VERSION                                          @stackrox/scanner
 
-# The RHTAP maintainers for ACS review all changes related to the Konflux (f.k.a. RHTAP) pipelines, such as new
-# pipelines, parameter changes or automated task updates as well as Dockerfile updates.
-**/konflux.*Dockerfile  @stackrox/rhtap-maintainers
-/.konflux/              @stackrox/rhtap-maintainers
-/.tekton/               @stackrox/rhtap-maintainers
-rpms.*                  @stackrox/rhtap-maintainers
+# Konflux maintainers for ACS review all changes related to the Konflux pipelines, Dockerfiles, etc.
+# Release engineers need to merge MintMaker PRs at the time of the release.
+# rhacs-bot needs an ability to auto-approve MintMaker PRs for automated task and security updates.
+**/konflux.*Dockerfile  @stackrox/konflux-maintainers-no-email @stackrox/release-mgmt-no-email @rhacs-bot
+/.tekton/               @stackrox/konflux-maintainers-no-email @stackrox/release-mgmt-no-email @rhacs-bot
+rpms.*                  @stackrox/konflux-maintainers-no-email @stackrox/release-mgmt-no-email @rhacs-bot
+/.konflux/              @stackrox/konflux-maintainers
+.github/renovate.json5  @stackrox/konflux-maintainers
