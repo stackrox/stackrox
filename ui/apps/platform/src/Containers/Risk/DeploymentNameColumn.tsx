@@ -22,9 +22,7 @@ export function DeploymentNameColumn({ original }: DeploymentNameColumnProps) {
             <span className="pf-v6-u-display-inline-flex pf-v6-u-align-items-center">
                 {isSuspicious ? (
                     <Tooltip content="Abnormal processes discovered">
-                        <ExclamationCircleIcon
-                            color="var(--pf-t--temp--dev--tbd)" /* CODEMODS: original v5 color was --pf-v5-global--danger-color--100 */
-                        />
+                        <ExclamationCircleIcon color="var(--pf-t--global--icon--color--status--danger--default)" />
                     </Tooltip>
                 ) : (
                     <Tooltip content="No abnormal processes discovered">

@@ -122,7 +122,7 @@ const HorizontalBarChart = ({
             inner = (
                 <Link
                     style={{
-                        fill: 'var(--pf-t--temp--dev--tbd)' /* CODEMODS: original v5 color was --pf-v5-global--link--Color */,
+                        fill: 'var(--pf-t--global--text--color--link--default)',
                     }}
                     className="text-sm"
                     to={axisLinks[value]}
@@ -159,7 +159,7 @@ const HorizontalBarChart = ({
                         y: item.y,
                         link: item.link,
                     }))}
-                    color="var(--pf-t--temp--dev--tbd)" /* CODEMODS: original v5 color was --pf-v5-global--palette--black-200 */
+                    color="var(--pf-t--color--gray--20)"
                     style={{
                         height: seriesPropsMerged.style.height,
                         rx: '2',

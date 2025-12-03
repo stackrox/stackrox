@@ -60,9 +60,7 @@ function WatchedImagesTable({
                                         isInline
                                         icon={
                                             <Icon>
-                                                <MinusCircleIcon
-                                                    color="var(--pf-t--temp--dev--tbd)" /* CODEMODS: original v5 color was --pf-v5-global--danger-color--100 */
-                                                />
+                                                <MinusCircleIcon color="var(--pf-t--global--icon--color--status--danger--default)" />
                                             </Icon>
                                         }
                                         onClick={() => unwatchImage(name)}

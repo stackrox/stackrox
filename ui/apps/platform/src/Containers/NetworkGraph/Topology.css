@@ -50,21 +50,21 @@
 }
 
 .pf-ri-topology__node__background {
-    fill: var(--pf-t--temp--dev--tbd /* CODEMODS: original v5 color was:--pf-v5-global--palette--black-400 */);
+    fill: var(--pf-t--color--gray--40);
     stroke-width: 1px;
-    stroke: var(--pf-t--temp--dev--tbd /* CODEMODS: original v5 color was:--pf-v5-global--palette--black-1000 */);
+    stroke: var(--pf-t--color--black);
 }
 
 .pf-ri-topology__node__background.pf-m-selected {
-    fill: var(--pf-t--temp--dev--tbd /* CODEMODS: original v5 color was:--pf-v5-global--active-color--100 */);
+    fill: var(--pf-t--global--focus-ring--color--default);
 }
 
 .pf-ri-topology__node__background.pf-m-hover {
-    fill: var(--pf-t--temp--dev--tbd /* CODEMODS: original v5 color was:--pf-v5-global--palette--green-300 */);
+    fill: var(--pf-t--color--green--30);
 }
 
 .pf-ri-topology__node__background.pf-m-drop-target {
-    fill: var(--pf-t--temp--dev--tbd /* CODEMODS: original v5 color was:--pf-v5-global--palette--light-blue-200 */);
+    fill: var(--pf-t--color--blue--20);
 }
 
 .pf-v6-c-page__main-section#\/topology-section-page-section,
