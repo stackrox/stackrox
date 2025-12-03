@@ -46,7 +46,7 @@ function WatchedImagesTable({
                         <Tr>
                             <Th>Image</Th>
                             <Th>
-                                <span className="pf-v5-screen-reader">Row action</span>
+                                <span className="pf-v6-screen-reader">Row action</span>
                             </Th>
                         </Tr>
                     </Thead>
