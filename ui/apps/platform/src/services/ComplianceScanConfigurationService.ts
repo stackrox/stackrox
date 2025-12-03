@@ -8,6 +8,7 @@ import { getPaginationParams, getRequestQueryStringForSearchFilter } from 'utils
 
 import { getQueryString } from 'utils/queryStringUtils';
 import type { Snapshot } from 'types/reportJob';
+import type { Schedule } from 'types/schedule.proto';
 import { complianceV2Url } from './ComplianceCommon';
 import type { ComplianceProfileSummary } from './ComplianceCommon';
 import { makeCancellableAxiosRequest } from './cancellationUtils';
@@ -17,31 +18,6 @@ import type { Empty } from './types';
 
 const complianceScanConfigBaseUrl = `${complianceV2Url}/scan/configurations`;
 export const complianceReportDownloadURL = '/v2/compliance/scan/configurations/reports/download';
-
-export type ScheduleBase = {
-    hour: number;
-    minute: number;
-};
-
-export type UnsetSchedule = ScheduleBase & {
-    intervalType: 'UNSET';
-};
-
-export type DailySchedule = ScheduleBase & {
-    intervalType: 'DAILY';
-};
-
-export type WeeklySchedule = ScheduleBase & {
-    intervalType: 'WEEKLY';
-    daysOfWeek: { days: number[] };
-};
-
-export type MonthlySchedule = ScheduleBase & {
-    intervalType: 'MONTHLY';
-    daysOfMonth: { days: number[] };
-};
-
-export type Schedule = UnsetSchedule | DailySchedule | WeeklySchedule | MonthlySchedule;
 
 export type IntervalType = Schedule['intervalType'];
 

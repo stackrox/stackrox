@@ -33,6 +33,7 @@ type Service interface {
 func New(
 	clusters clusterDatastore.DataStore,
 	imageEnricher enricher.ImageEnricher,
+	imageEnricherV2 enricher.ImageEnricherV2,
 	imageDatastore imageDatastore.DataStore,
 	riskManager manager.Manager,
 	deploymentEnricher enrichment.Enricher,
@@ -48,6 +49,7 @@ func New(
 	return &serviceImpl{
 		clusters:           clusters,
 		imageEnricher:      imageEnricher,
+		imageEnricherV2:    imageEnricherV2,
 		imageDatastore:     imageDatastore,
 		riskManager:        riskManager,
 		deploymentEnricher: deploymentEnricher,

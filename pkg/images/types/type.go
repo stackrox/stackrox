@@ -27,6 +27,7 @@ func ToImage(ci *storage.ContainerImage) *storage.Image {
 func ToImageV2(ci *storage.ContainerImage) *storage.ImageV2 {
 	return &storage.ImageV2{
 		Id:             ci.GetIdV2(),
+		Digest:         ci.GetId(),
 		Name:           ci.GetName(),
 		NotPullable:    ci.GetNotPullable(),
 		IsClusterLocal: ci.GetIsClusterLocal(),

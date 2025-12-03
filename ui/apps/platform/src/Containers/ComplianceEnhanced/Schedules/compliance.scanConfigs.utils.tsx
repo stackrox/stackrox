@@ -3,15 +3,17 @@ import { getProductBranding } from 'constants/productBranding';
 import type {
     ComplianceScanConfiguration,
     ComplianceScanConfigurationStatus,
+} from 'services/ComplianceScanConfigurationService';
+import type { NotifierConfiguration } from 'services/ReportsService.types';
+import type {
     DailySchedule,
     MonthlySchedule,
     Schedule,
     ScheduleBase,
     UnsetSchedule,
     WeeklySchedule,
-} from 'services/ComplianceScanConfigurationService';
-import type { NotifierConfiguration } from 'services/ReportsService.types';
-import { getDayOfMonthWithOrdinal } from 'utils/dateUtils';
+} from 'types/schedule.proto';
+import { getHourMinuteStringFromScheduleBase } from 'utils/dateUtils';
 
 export type ScanConfigParameters = {
     name: string;
@@ -41,15 +43,6 @@ export function getTimeWithHourMinuteFromISO8601(timeISO8601: string) {
     // for example, 2024-02-29T17:13:28.710959319Z
     // Return yyyy-mm-dd hh:mm UTC
     return `${timeISO8601.slice(0, 10)} ${timeISO8601.slice(11, 16)} UTC`;
-}
-
-function padStart2(timeElement: number) {
-    return timeElement.toString().padStart(2, '0');
-}
-
-export function getHourMinuteStringFromScheduleBase({ hour, minute }: ScheduleBase) {
-    // Return 24-hour hh:mm string for hour and minute.
-    return [padStart2(hour), padStart2(minute)].join(':');
 }
 
 function getScheduleBaseFromHourMinuteString(time: string): ScheduleBase {
@@ -188,37 +181,6 @@ export function convertScanConfigToFormik(
             notifierConfigurations: notifiers,
         },
     };
-}
-
-export function formatScanSchedule(schedule: Schedule) {
-    const daysOfWeekMap = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-
-    const formatDays = (days: string[]): string => {
-        if (days.length === 1) {
-            return days[0];
-        }
-        if (days.length === 2) {
-            return days.join(' and ');
-        }
-        return `${days.slice(0, -1).join(', ')}, and ${days[days.length - 1]}`;
-    };
-
-    const timeString = `${getHourMinuteStringFromScheduleBase(schedule)} UTC`;
-
-    switch (schedule.intervalType) {
-        case 'DAILY':
-            return `Daily at ${timeString}`;
-        case 'WEEKLY': {
-            const daysOfWeek = schedule.daysOfWeek.days.map((day) => daysOfWeekMap[day]);
-            return `Every ${formatDays(daysOfWeek)} at ${timeString}`;
-        }
-        case 'MONTHLY': {
-            const formattedDaysOfMonth = schedule.daysOfMonth.days.map(getDayOfMonthWithOrdinal);
-            return `Monthly on the ${formatDays(formattedDaysOfMonth)} at ${timeString}`;
-        }
-        default:
-            return 'Invalid Schedule';
-    }
 }
 
 // report

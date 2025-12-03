@@ -40,6 +40,7 @@ func WaitToReceiveMessagesFromCollectorWithTimeout(ctx context.Context, signal *
 	expectedNetworkMessages []ExpectedNetworkConnectionMessageFn,
 	timeoutDuration time.Duration) {
 	timeout := time.NewTicker(timeoutDuration)
+	defer timeout.Stop()
 	for {
 		select {
 		case <-ctx.Done():
@@ -83,6 +84,7 @@ func WaitToReceiveMessagesFromCollectorWithTimeout(ctx context.Context, signal *
 		}
 		if len(expectedSignalMessages) == 0 && len(expectedNetworkMessages) == 0 {
 			signal.Signal()
+			return
 		}
 	}
 }

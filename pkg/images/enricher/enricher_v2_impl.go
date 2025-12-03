@@ -84,6 +84,7 @@ func (e *enricherV2Impl) EnrichWithVulnerabilities(imageV2 *storage.ImageV2, com
 					ScanResult: ScanNotDone,
 				}, errors.Wrapf(err, "retrieving image vulnerabilities from %s [%s]", scanner.Name(), scanner.Type())
 			}
+			e.cvesSuppressor.EnrichImageV2WithSuppressedCVEs(imageV2)
 
 			return EnrichmentResult{
 				ImageUpdated: res != ScanNotDone,

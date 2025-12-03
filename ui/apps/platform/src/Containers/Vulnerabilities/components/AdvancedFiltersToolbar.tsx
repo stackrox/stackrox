@@ -1,14 +1,16 @@
 import type { ReactElement, ReactNode } from 'react';
 import { Toolbar, ToolbarContent, ToolbarGroup } from '@patternfly/react-core';
-import { uniq } from 'lodash';
 
 import CompoundSearchFilter from 'Components/CompoundSearchFilter/components/CompoundSearchFilter';
 import type { CompoundSearchFilterProps } from 'Components/CompoundSearchFilter/components/CompoundSearchFilter';
 import type { OnSearchPayload } from 'Components/CompoundSearchFilter/types';
-import { makeFilterChipDescriptors } from 'Components/CompoundSearchFilter/utils/utils';
+import {
+    makeFilterChipDescriptors,
+    updateSearchFilter,
+} from 'Components/CompoundSearchFilter/utils/utils';
 import SearchFilterChips, { FilterChip } from 'Components/PatternFly/SearchFilterChips';
 import type { SearchFilter } from 'types/search';
-import { getHasSearchApplied, searchValueAsArray } from 'utils/searchUtils';
+import { getHasSearchApplied } from 'utils/searchUtils';
 
 import type { DefaultFilters } from '../types';
 import {
@@ -89,17 +91,8 @@ function AdvancedFiltersToolbar({
         statusDescriptors
     );
 
-    function onFilterApplied({ category, value, action }: OnSearchPayload) {
-        const selectedSearchFilter = searchValueAsArray(searchFilter[category]);
-
-        const newFilter = {
-            ...searchFilter,
-            [category]:
-                action === 'ADD'
-                    ? uniq([...selectedSearchFilter, value])
-                    : selectedSearchFilter.filter((oldValue) => value !== oldValue),
-        };
-        onFilterChange(newFilter, { category, value, action });
+    function onFilterApplied(payload: OnSearchPayload) {
+        onFilterChange(updateSearchFilter(searchFilter, payload), payload);
     }
 
     return (
@@ -123,11 +116,13 @@ function AdvancedFiltersToolbar({
                             <CVESeverityDropdown
                                 searchFilter={searchFilter}
                                 onSelect={(category, checked, value) =>
-                                    onFilterApplied({
-                                        category,
-                                        value,
-                                        action: checked ? 'ADD' : 'REMOVE',
-                                    })
+                                    onFilterApplied([
+                                        {
+                                            category,
+                                            value,
+                                            action: checked ? 'ADD' : 'REMOVE',
+                                        },
+                                    ])
                                 }
                             />
                         )}
@@ -136,11 +131,13 @@ function AdvancedFiltersToolbar({
                                 filterField={cveStatusFilterField}
                                 searchFilter={searchFilter}
                                 onSelect={(category, checked, value) =>
-                                    onFilterApplied({
-                                        category,
-                                        value,
-                                        action: checked ? 'ADD' : 'REMOVE',
-                                    })
+                                    onFilterApplied([
+                                        {
+                                            category,
+                                            value,
+                                            action: checked ? 'ADD' : 'REMOVE',
+                                        },
+                                    ])
                                 }
                             />
                         )}
