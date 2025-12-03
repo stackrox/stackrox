@@ -447,7 +447,7 @@ func TestEnrichLocalImageV2Internal_ImageNames(t *testing.T) {
 			Id:   "fake-id_1",
 			Scan: nil, // A nil scan should trigger a re-scan.
 		}, true, nil)
-	imageDSMock.EXPECT().GetImageNamesWithDigest(gomock.Any(), gomock.Any()).
+	imageDSMock.EXPECT().GetImageNames(gomock.Any(), gomock.Any()).
 		AnyTimes().
 		Return([]*storage.ImageName{genImageName("fake/image:A"), genImageName("fake/image:B")}, nil)
 
@@ -456,11 +456,15 @@ func TestEnrichLocalImageV2Internal_ImageNames(t *testing.T) {
 		AnyTimes().
 		Return(nil)
 
+	connMgrMock := connMgrMocks.NewMockManager(ctrl)
+	connMgrMock.EXPECT().AllSensorsHaveCapability(gomock.Any()).AnyTimes().Return(false)
+
 	s := serviceImpl{
 		internalScanSemaphore: semaphore.NewWeighted(int64(env.MaxParallelImageScanInternal.IntegerSetting())),
 		enricherV2:            imageEnricherMock,
 		datastoreV2:           imageDSMock,
 		riskManager:           riskManagerMock,
+		connManager:           connMgrMock,
 	}
 
 	resp, err := s.EnrichLocalImageInternal(ctx, &v1.EnrichLocalImageInternalRequest{

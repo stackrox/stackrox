@@ -501,7 +501,7 @@ func (s *ImageV2DataStoreTestSuite) TestGetImageIdsAndDigest() {
 	s.Equal(testImage1.GetDigest(), results[0].Digest)
 }
 
-func (s *ImageV2DataStoreTestSuite) TestGetImageNamesWithDigest() {
+func (s *ImageV2DataStoreTestSuite) TestGetImageNames() {
 	ctx := sac.WithAllAccess(context.Background())
 	img1 := getTestImageV2("img1")
 
@@ -547,7 +547,7 @@ func (s *ImageV2DataStoreTestSuite) TestGetImageNamesWithDigest() {
 			FullName: "registry.test.io/img3:latest",
 		},
 	}
-	imageNames, err := s.datastore.GetImageNamesWithDigest(ctx, img1.GetDigest())
+	imageNames, err := s.datastore.GetImageNames(ctx, img1.GetDigest())
 	s.NoError(err)
 	protoassert.ElementsMatch(s.T(), expectedImageNames, imageNames)
 }
