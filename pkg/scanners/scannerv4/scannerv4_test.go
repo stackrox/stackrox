@@ -468,6 +468,13 @@ func TestGetVirtualMachineScan_Timeout(t *testing.T) {
 	assert.Nil(t, scan)
 }
 
+func TestNewVirtualMachineScanner(t *testing.T) {
+	// Smoke tests for the virtual machine scanner constructor
+	scanner, err := NewVirtualMachineScanner()
+	assert.NoError(t, err)
+	assert.NotNil(t, scanner)
+}
+
 // createVulnerabilityReportFromIndexReport creates a vulnerability report for testing.
 // It distributes the specified number of vulnerabilities across the packages in the index report
 // using round-robin assignment (vuln i goes to package i % len(packages)).
