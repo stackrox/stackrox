@@ -48,7 +48,7 @@ func RegisterNewReconciler(mgr ctrl.Manager, selector string) error {
 	}
 
 	postExtensions := []pkgReconciler.Option{
-		pkgReconciler.WithPreExtension(commonExtensions.ReconcileProductVersionStatusExtension(version.GetMainVersion())),
+		pkgReconciler.WithPostExtension(commonExtensions.ReconcileProductVersionStatusExtension(version.GetMainVersion())),
 	}
 
 	// Plug in custom event predicate to skip reconciliation for updates caused by the status controller.
