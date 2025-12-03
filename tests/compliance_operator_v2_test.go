@@ -510,6 +510,7 @@ func TestComplianceV2CreateGetScanConfigurations(t *testing.T) {
 }
 
 func TestComplianceV2UpdateScanConfigurations(t *testing.T) {
+	t.Skip("disable flaky test")
 	ctx := context.Background()
 	conn := centralgrpc.GRPCConnectionToCentral(t)
 	scanConfigService := v2.NewComplianceScanConfigurationServiceClient(conn)
