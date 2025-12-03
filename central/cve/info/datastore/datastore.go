@@ -12,19 +12,19 @@ import (
 	searchPkg "github.com/stackrox/rox/pkg/search"
 )
 
-// DataStore is an intermediary to the ImageCVETime storage.
+// DataStore is an intermediary to the ImageCVEInfo storage.
 //
 //go:generate mockgen-wrapper
 type DataStore interface {
 	Search(ctx context.Context, q *v1.Query) ([]searchPkg.Result, error)
-	SearchRawImageCVETimes(ctx context.Context, q *v1.Query) ([]*storage.ImageCVETime, error)
+	SearchRawImageCVEInfos(ctx context.Context, q *v1.Query) ([]*storage.ImageCVEInfo, error)
 
 	Exists(ctx context.Context, id string) (bool, error)
-	Get(ctx context.Context, id string) (*storage.ImageCVETime, bool, error)
+	Get(ctx context.Context, id string) (*storage.ImageCVEInfo, bool, error)
 	Count(ctx context.Context, q *v1.Query) (int, error)
-	GetBatch(ctx context.Context, id []string) ([]*storage.ImageCVETime, error)
-	Upsert(ctx context.Context, cve *storage.ImageCVETime) error
-	UpsertMany(ctx context.Context, cve []*storage.ImageCVETime) error
+	GetBatch(ctx context.Context, id []string) ([]*storage.ImageCVEInfo, error)
+	Upsert(ctx context.Context, cve *storage.ImageCVEInfo) error
+	UpsertMany(ctx context.Context, cve []*storage.ImageCVEInfo) error
 }
 
 // New returns a new instance of a DataStore.
