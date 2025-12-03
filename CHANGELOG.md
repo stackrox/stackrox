@@ -27,7 +27,7 @@ Changes should still be described appropriately in JIRA/doc input pages, for inc
 
 ### Technical Changes
 - ROX-30769: Update Node.js requirement for ui folder to 22.13.0
-- ROX-31295: The lower limit for `ROX_MAX_PARALLEL_IMAGE_SCAN_INTERNAL` on Sensor has been reducd to one (from 10).
+- ROX-31295: The lower limit for `ROX_MAX_PARALLEL_IMAGE_SCAN_INTERNAL` on Sensor has been reduced to one (from 10).
 
 ## [4.9.0]
 
