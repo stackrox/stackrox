@@ -1,6 +1,6 @@
 .resource-icon {
   display: inline-block;
-  color: var(--pf-t--temp--dev--tbd /* CODEMODS: original v5 color was:--pf-v5-global--palette--white */);
+  color: var(--pf-t--color--white);
   border-radius: 20px;
   padding: 1px 6px;
   text-align: center;

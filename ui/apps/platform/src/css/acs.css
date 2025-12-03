@@ -29,18 +29,9 @@
     --pf-v5-c-dropdown__menu-item--PaddingLeft: var(--pf-t--global--spacer--sm);
 }
 
-/*
- * ToggleGroupItem button that is disabled needs lighter background like any other form control.
- */
- button.pf-v6-c-toggle-group__button:disabled {
-    background-color: var(--pf-t--temp--dev--tbd /* CODEMODS: original v5 color was:--pf-v5-global--disabled-color--300 */);
-}
-
-/*
- * ToggleGroupItem button that is disabled and selected needs more contrast to distinguish from unselected button.
- */
 button.pf-v6-c-toggle-group__button.pf-m-selected:disabled {
     background-color: var(--pf-v6-c-toggle-group__button--m-selected--BackgroundColor);
+    color: var(--pf-v6-c-toggle-group__button--m-selected--Color);
 }
 
 /*
@@ -72,7 +63,7 @@ a[href="/main/search"] {
  */
 .chrome-picker input,
 .chrome-picker label {
-    color: var(--pf-t--temp--dev--tbd /* CODEMODS: original v5 color was:--pf-v5-global--Color--100 */) !important; /* instead of #969696 */
+    color: var(--pf-t--global--text--color--regular) !important; /* instead of #969696 */
 }
 
 

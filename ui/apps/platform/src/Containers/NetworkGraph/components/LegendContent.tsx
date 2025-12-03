@@ -97,7 +97,7 @@ function LegendContent() {
                     <DescriptionListCompact isHorizontal termWidth="20px" className="pf-v6-u-pl-md">
                         <DescriptionListItem
                             term={
-                                <ExclamationCircleIcon className="pf-v6-u-ml-xs pf-v6-u-danger-color-100" />
+                                <ExclamationCircleIcon className="pf-v6-u-ml-xs pf-v6-u-text-color-status-danger" />
                             }
                             desc="Anomalous traffic detected"
                             groupClassName="pf-v6-u-align-items-center"

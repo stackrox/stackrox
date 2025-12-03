@@ -75,13 +75,11 @@ function getBaselineSimulatedRowStyle(
     let customStyle: CSSProperties;
     if (baselineSimulationDiffState === 'ADDED') {
         customStyle = {
-            backgroundColor:
-                'var(--pf-t--temp--dev--tbd)' /* CODEMODS: original v5 color was --pf-v5-global--palette--green-50 */,
+            backgroundColor: 'var(--pf-t--color--green--10)',
         };
     } else if (baselineSimulationDiffState === 'REMOVED') {
         customStyle = {
-            backgroundColor:
-                'var(--pf-t--temp--dev--tbd)' /* CODEMODS: original v5 color was --pf-v5-global--palette--red-50 */,
+            backgroundColor: 'var(--pf-t--color--red--10)',
         };
     } else {
         customStyle = {};
@@ -128,7 +126,7 @@ function AnomalousIcon({ type }: { type: FlowEntityType }) {
     if (type === 'CIDR_BLOCK' || type === 'EXTERNAL_ENTITIES') {
         return (
             <Tooltip content={<div>Anomalous external flow</div>}>
-                <ExclamationCircleIcon className="pf-v6-u-danger-color-100" />
+                <ExclamationCircleIcon className="pf-v6-u-text-color-status-danger" />
             </Tooltip>
         );
     }
