@@ -86,9 +86,10 @@ func (ds *datastoreImpl) SearchNodeCVEs(ctx context.Context, q *v1.Query) ([]*v1
 		return nil, err
 	}
 
+	searchTag := strings.ToLower(pkgSearch.CVE.String())
 	for i := range results {
 		if results[i].FieldValues != nil {
-			if nameVal, ok := results[i].FieldValues[strings.ToLower(pkgSearch.CVE.String())]; ok {
+			if nameVal, ok := results[i].FieldValues[searchTag]; ok {
 				results[i].Name = nameVal
 			}
 		}
