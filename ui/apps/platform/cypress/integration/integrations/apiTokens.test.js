@@ -46,7 +46,7 @@ describe('API Tokens', () => {
 
         generateCreatedAuthProvidersIntegrationInForm(integrationType);
 
-        cy.get('.pf-v5-screen-reader:contains("Success alert")');
+        cy.get('.pf-v6-screen-reader:contains("Success alert")');
 
         cy.get(selectors.buttons.back).click();
 

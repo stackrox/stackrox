@@ -313,7 +313,7 @@ function ConfigReportsTab() {
                                             </HelpIconTh>
                                             {hasWriteAccessForReport && (
                                                 <Th>
-                                                    <span className="pf-v5-screen-reader">
+                                                    <span className="pf-v6-screen-reader">
                                                         Row actions
                                                     </span>
                                                 </Th>

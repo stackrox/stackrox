@@ -23,7 +23,7 @@ function PermissionSetsTable({
             <Thead>
                 <Tr>
                     <Th>
-                        <span className="pf-v5-screen-reader">Row selection</span>
+                        <span className="pf-v6-screen-reader">Row selection</span>
                     </Th>
                     <Th width={20}>Name</Th>
                     <Th>Description</Th>

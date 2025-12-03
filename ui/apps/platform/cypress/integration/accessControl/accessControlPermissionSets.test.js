@@ -39,7 +39,7 @@ describe('Access Control Permission sets', () => {
         cy.get('th:contains("Origin")');
         cy.get('th:contains("Description")');
         cy.get('th:contains("Roles")');
-        cy.get(`th:has('span.pf-v5-screen-reader:contains("Row actions")')`);
+        cy.get(`th:has('span.pf-v6-screen-reader:contains("Row actions")')`);
     });
 
     it('list has default names', () => {
