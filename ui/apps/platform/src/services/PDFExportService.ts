@@ -62,24 +62,10 @@ function createPDFBodyElement() {
  * @param {HTMLElement} element
  */
 function computeStyles(element) {
-    const isThemeDark = document.body.className.includes('theme-dark');
-
-    // if dark mode is enabled, we want to switch to light mode for exporting to PDF
-    if (isThemeDark) {
-        document.body.classList.remove('theme-dark');
-        document.body.classList.add('theme-light');
-    }
-
     computedStyleToInlineStyle(element, {
         recursive: true,
         properties: ['width', 'height', 'fill', 'style', 'class', 'stroke', 'font', 'font-size'],
     });
-
-    // if dark mode was previously enabled, we want to switch back after styles are computed
-    if (isThemeDark) {
-        document.body.classList.remove('theme-light');
-        document.body.classList.add('theme-dark');
-    }
 }
 
 /**
