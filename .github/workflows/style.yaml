@@ -92,6 +92,9 @@ jobs:
     runs-on: ubuntu-latest
     container:
       image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.4.9
+      volumes:
+        - /usr:/mnt/usr
+        - /opt:/mnt/opt
     steps:
       - name: Checkout
         uses: actions/checkout@v5
