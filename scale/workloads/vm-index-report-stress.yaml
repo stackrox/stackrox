@@ -1,8 +1,12 @@
 # VM Index Report Stress Test Workload
 # This workload focuses on stress-testing the VM index report processing pipeline
-# by generating a stream of VM index reports.
+# by generating a stream of VM index reports tied to the VM lifecycle.
+#
 # It includes a small background load from other system components to simulate
 # a more realistic production environment.
+#
+# NOTE: Index reports are now unified with the VM informer workload.
+# Reports are only sent while VMs are "alive" in the lifecycle simulation.
 
 deploymentWorkload:
 - deploymentType: Deployment
@@ -31,14 +35,21 @@ rbacWorkload:
   numRoles: 100
   numServiceAccounts: 100
 
-vmIndexReportWorkload:
-  # Number of VMs to simulate
+# Unified VM workload: generates both informer events AND index reports
+virtualMachineWorkload:
+  # Number of VMs to simulate (pool size)
   # Each VM will have a unique ID and VSOCK CID
-  numVMs: 10000
+  poolSize: 10000
 
-  # Interval between reports for each VM
+  # VM lifecycle settings
+  # Long lifecycle ensures VMs stay alive and continuously send reports
+  lifecycleDuration: 1h
+  updateInterval: 5m
+  numLifecycles: 0  # infinite
+
+  # Index report settings
   # Lower values = higher load (e.g., 100ms = 10 reports/second per VM)
-  # With 1000 VMs at 100ms interval, this generates ~10,000 reports/second total
+  # With 10000 VMs at 60s interval, this generates ~167 reports/second total
   reportInterval: 60s
 
   # Number of packages to include in each IndexReport

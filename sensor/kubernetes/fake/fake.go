@@ -20,7 +20,6 @@ import (
 	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/networkflow/manager"
 	"github.com/stackrox/rox/sensor/common/signal"
-	"github.com/stackrox/rox/sensor/common/virtualmachine"
 	"github.com/stackrox/rox/sensor/common/virtualmachine/index"
 	"github.com/stackrox/rox/sensor/kubernetes/client"
 	vmStore "github.com/stackrox/rox/sensor/kubernetes/listener/resources/virtualmachine/store"
@@ -159,7 +158,6 @@ type WorkloadManager struct {
 	networkManager       manager.Manager
 	vmIndexReportHandler index.Handler
 	vmStore              *vmStore.VirtualMachineStore
-	vmReportGen          *reportGenerator
 
 	// VM readiness coordinator
 	vmPrerequisitesReady *vmReadiness
@@ -265,16 +263,6 @@ func NewWorkloadManager(config *WorkloadManagerConfig) *WorkloadManager {
 	}
 	workload.VirtualMachineWorkload = validateVMWorkload(workload.VirtualMachineWorkload)
 
-	// Sync VirtualMachineWorkload.PoolSize with VMIndexReportWorkload.NumVMs
-	// Both must match for the informer-generated VMs to align with index reports
-	if workload.VirtualMachineWorkload.PoolSize > 0 && workload.VMIndexReportWorkload.NumVMs > 0 {
-		if workload.VirtualMachineWorkload.PoolSize != workload.VMIndexReportWorkload.NumVMs {
-			log.Warnf("VirtualMachineWorkload.PoolSize (%d) != VMIndexReportWorkload.NumVMs (%d); using PoolSize for both",
-				workload.VirtualMachineWorkload.PoolSize, workload.VMIndexReportWorkload.NumVMs)
-			workload.VMIndexReportWorkload.NumVMs = workload.VirtualMachineWorkload.PoolSize
-		}
-	}
-
 	var db *pebble.DB
 	if config.storagePath != "" {
 		db, err = pebble.Open(config.storagePath, &pebble.Options{})
@@ -336,71 +324,22 @@ func (w *WorkloadManager) SetVMIndexReportHandler(handler index.Handler) {
 
 // SetVMStore sets the VirtualMachineStore
 func (w *WorkloadManager) SetVMStore(store *vmStore.VirtualMachineStore) {
-	log.Debugf("SetVMStore called: store=%p, workload.NumVMs=%d", store, w.workload.VMIndexReportWorkload.NumVMs)
+	log.Debugf("SetVMStore called: store=%p, poolSize=%d", store, w.workload.VirtualMachineWorkload.PoolSize)
 	w.vmStore = store
 	w.vmPrerequisitesReady.signalStoreReady()
-	log.Debugf("SetVMStore completed (VMs will be populated by manageVMIndexReportsWithPopulation)")
+	log.Debugf("SetVMStore completed (VMs will be populated by informer events)")
 }
 
 // Notify implements common.Notifiable to receive Sensor component event notifications
 func (w *WorkloadManager) Notify(e common.SensorComponentEvent) {
 	switch e {
 	case common.SensorComponentEventCentralReachable:
-		log.Debugf("WorkloadManager: Central is reachable, signaling VM report generation can start")
+		log.Debugf("WorkloadManager: Central is reachable, signaling VM workload can start")
 		w.vmPrerequisitesReady.signalCentralReady()
-		// Repopulate VMs if this is not the initial startup (i.e., offline→online transition).
-		// vmReportGen is only set after initial population in manageVMIndexReportsWithPopulation,
-		// so we use it as an indicator that VMs were previously populated.
-		if w.vmReportGen != nil && w.vmStore != nil {
-			w.wg.Add(1)
-			go func() {
-				defer w.wg.Done()
-				w.repopulateVMsOnOnlineTransition(w.shutdownCtx)
-			}()
-		}
 	case common.SensorComponentEventOfflineMode:
 		log.Debugf("WorkloadManager: Central went offline, resetting reachability signal")
 		w.vmPrerequisitesReady.resetCentralReady()
 	}
-}
-
-// populateFakeVMs creates and populates the internal in-memory store with fake VMs.
-func (w *WorkloadManager) populateFakeVMs() {
-	numVMs := w.workload.VMIndexReportWorkload.NumVMs
-
-	if w.vmStore == nil || numVMs == 0 {
-		log.Warnf("populateFakeVMs: nothing to do (store=%p, numVMs=%d)",
-			w.vmStore, numVMs)
-		return
-	}
-
-	log.Infof("Populating VirtualMachineStore with %d fake VMs", numVMs)
-	numAdded := 0
-	for i := range numVMs {
-		cid := vmBaseVSOCKCID + uint32(i)
-		if cid == 0 || cid == 1 || cid == 2 {
-			log.Debugf("CID %d is reserved for kube-virt, skipping", cid)
-			continue
-		}
-		vsock := new(uint32)
-		// cid is reused every iteration, so we need to create a new pointer for each VM and copy the value.
-		*vsock = cid
-		info := &virtualmachine.Info{
-			ID:        virtualmachine.VMID(fakeVMUUID(i)),
-			Name:      fmt.Sprintf("fake-vm-%d", i),
-			Namespace: "default",
-			VSOCKCID:  vsock,
-			Running:   true,
-			GuestOS:   "linux",
-		}
-
-		if res := w.vmStore.AddOrUpdate(info); res == nil {
-			log.Errorf("failed to AddOrUpdate VM %s", info.ID)
-			continue
-		}
-		numAdded++
-	}
-	log.Infof("Successfully populated VirtualMachineStore with %d/%d fake VMs", numAdded, numVMs)
 }
 
 // Stop gracefully stops all background goroutines managed by WorkloadManager.
@@ -597,15 +536,23 @@ func (w *WorkloadManager) initializePreexistingResources() {
 	w.wg.Add(1)
 	go w.manageFlows(w.shutdownCtx)
 
-	// Start VM index report generation if configured
-	if w.workload.VMIndexReportWorkload.NumVMs > 0 &&
-		w.workload.VMIndexReportWorkload.ReportInterval > 0 {
-		w.wg.Add(1)
-		go w.manageVMIndexReportsWithPopulation(w.shutdownCtx)
-	}
-
-	// Start VirtualMachine/VirtualMachineInstance informer workload if configured
+	// Start VirtualMachine/VirtualMachineInstance workload if configured.
+	// This unified workload handles both informer events AND index reports.
+	// Index reports are only sent while VMs are "alive" in the lifecycle.
 	if w.workload.VirtualMachineWorkload.PoolSize > 0 {
+		// Initialize report generator if index reports are enabled
+		var reportGen *reportGenerator
+		if w.workload.VirtualMachineWorkload.ReportInterval > 0 {
+			reportGen = newReportGenerator(
+				w.workload.VirtualMachineWorkload.NumPackages,
+				w.workload.VirtualMachineWorkload.NumRepositories,
+			)
+			log.Infof("VM index reports enabled: interval=%s, packages=%d, repos=%d",
+				w.workload.VirtualMachineWorkload.ReportInterval,
+				w.workload.VirtualMachineWorkload.NumPackages,
+				w.workload.VirtualMachineWorkload.NumRepositories)
+		}
+
 		templatePool := newVMTemplatePool(
 			w.workload.VirtualMachineWorkload.PoolSize,
 			defaultGuestOSPool,
@@ -614,13 +561,13 @@ func (w *WorkloadManager) initializePreexistingResources() {
 
 		var vmResources []*vmResourcesToBeManaged
 		for i := 0; i < templatePool.size(); i++ {
-			resource := w.getVMResources(w.workload.VirtualMachineWorkload, i, templatePool)
+			resource := w.getVMResources(w.workload.VirtualMachineWorkload, i, templatePool, reportGen)
 			if resource != nil {
 				vmResources = append(vmResources, resource)
 			}
 		}
 
-		// Fork management of VM/VMI resources
+		// Fork management of VM/VMI resources (including index reports if enabled)
 		for _, resource := range vmResources {
 			w.wg.Add(1)
 			go w.manageVirtualMachine(w.shutdownCtx, resource)
