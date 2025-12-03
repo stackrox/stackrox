@@ -17,11 +17,6 @@ body {
 
 /* Universal selector increases specificity of these override style rules */
 
-* .theme-dark {
-    --base-500: #aaabac;
-    --base-600: #ffffff;
-}
-
 * .theme-light {
     --base-500: var(--pf-t--color--gray--60);
     --base-600: var(--pf-t--color--gray--90);
@@ -162,12 +157,6 @@ button[data-testid="related-entity-value"]:hover,
 /* overriding vertical align property for table sort icon */
 .pf-v6-c-table__sort-indicator {
     align-self: center;
-}
-
-/* Override filter which simulates dark background color */
-.theme-dark .pf-v6-c-table input[type='checkbox'],
-.theme-dark .pf-v6-c-check input[type='checkbox'] {
-    filter: inherit; /* replace invert(0.3) */
 }
 
 /* override width of thead checkbox so that it's not cut off when table is empty */
