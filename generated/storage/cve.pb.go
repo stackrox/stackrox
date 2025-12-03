@@ -2341,29 +2341,29 @@ func (x *CVSSV3) GetSeverity() CVSSV3_Severity {
 	return CVSSV3_UNKNOWN
 }
 
-type ImageCVETime struct {
-	state                protoimpl.MessageState `protogen:"open.v1"`
-	Id                   string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" search:"CVE" sql:"pk"`                                                                   // @gotags: search:"CVE" sql:"pk"
-	FixedDate            *timestamppb.Timestamp `protobuf:"bytes,4,opt,name=fixed_date,json=fixedDate,proto3" json:"fixed_date,omitempty" search:"Fixable Since Timestamp,hidden"`                                    // @gotags: search:"Fixable Since Timestamp,hidden"
-	FirstImageOccurrence *timestamppb.Timestamp `protobuf:"bytes,9,opt,name=first_image_occurrence,json=firstImageOccurrence,proto3" json:"first_image_occurrence,omitempty" search:"First Image Occurrence Timestamp,hidden"` // @gotags: search:"First Image Occurrence Timestamp,hidden"
-	unknownFields        protoimpl.UnknownFields
-	sizeCache            protoimpl.SizeCache
+type ImageCVEInfo struct {
+	state                 protoimpl.MessageState `protogen:"open.v1"`
+	Id                    string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" search:"CVE" sql:"pk"`                                                                      // @gotags: search:"CVE" sql:"pk"
+	FixTimestampAvailable *timestamppb.Timestamp `protobuf:"bytes,4,opt,name=fix_timestamp_available,json=fixTimestampAvailable,proto3" json:"fix_timestamp_available,omitempty" search:"Fixable Since Timestamp,hidden"` // @gotags: search:"Fixable Since Timestamp,hidden"
+	FirstImageOccurrence  *timestamppb.Timestamp `protobuf:"bytes,9,opt,name=first_image_occurrence,json=firstImageOccurrence,proto3" json:"first_image_occurrence,omitempty" search:"First Image Occurrence Timestamp,hidden"`    // @gotags: search:"First Image Occurrence Timestamp,hidden"
+	unknownFields         protoimpl.UnknownFields
+	sizeCache             protoimpl.SizeCache
 }
 
-func (x *ImageCVETime) Reset() {
-	*x = ImageCVETime{}
+func (x *ImageCVEInfo) Reset() {
+	*x = ImageCVEInfo{}
 	mi := &file_storage_cve_proto_msgTypes[11]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *ImageCVETime) String() string {
+func (x *ImageCVEInfo) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*ImageCVETime) ProtoMessage() {}
+func (*ImageCVEInfo) ProtoMessage() {}
 
-func (x *ImageCVETime) ProtoReflect() protoreflect.Message {
+func (x *ImageCVEInfo) ProtoReflect() protoreflect.Message {
 	mi := &file_storage_cve_proto_msgTypes[11]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -2375,26 +2375,26 @@ func (x *ImageCVETime) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use ImageCVETime.ProtoReflect.Descriptor instead.
-func (*ImageCVETime) Descriptor() ([]byte, []int) {
+// Deprecated: Use ImageCVEInfo.ProtoReflect.Descriptor instead.
+func (*ImageCVEInfo) Descriptor() ([]byte, []int) {
 	return file_storage_cve_proto_rawDescGZIP(), []int{11}
 }
 
-func (x *ImageCVETime) GetId() string {
+func (x *ImageCVEInfo) GetId() string {
 	if x != nil {
 		return x.Id
 	}
 	return ""
 }
 
-func (x *ImageCVETime) GetFixedDate() *timestamppb.Timestamp {
+func (x *ImageCVEInfo) GetFixTimestampAvailable() *timestamppb.Timestamp {
 	if x != nil {
-		return x.FixedDate
+		return x.FixTimestampAvailable
 	}
 	return nil
 }
 
-func (x *ImageCVETime) GetFirstImageOccurrence() *timestamppb.Timestamp {
+func (x *ImageCVEInfo) GetFirstImageOccurrence() *timestamppb.Timestamp {
 	if x != nil {
 		return x.FirstImageOccurrence
 	}
@@ -2813,11 +2813,10 @@ const file_storage_cve_proto_rawDesc = "" +
 	"\n" +
 	"\x06MEDIUM\x10\x03\x12\b\n" +
 	"\x04HIGH\x10\x04\x12\f\n" +
-	"\bCRITICAL\x10\x05\"\xab\x01\n" +
-	"\fImageCVETime\x12\x0e\n" +
-	"\x02id\x18\x01 \x01(\tR\x02id\x129\n" +
-	"\n" +
-	"fixed_date\x18\x04 \x01(\v2\x1a.google.protobuf.TimestampR\tfixedDate\x12P\n" +
+	"\bCRITICAL\x10\x05\"\xc4\x01\n" +
+	"\fImageCVEInfo\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\x12R\n" +
+	"\x17fix_timestamp_available\x18\x04 \x01(\v2\x1a.google.protobuf.TimestampR\x15fixTimestampAvailable\x12P\n" +
 	"\x16first_image_occurrence\x18\t \x01(\v2\x1a.google.protobuf.TimestampR\x14firstImageOccurrence*D\n" +
 	"\x12VulnerabilityState\x12\f\n" +
 	"\bOBSERVED\x10\x00\x12\f\n" +
@@ -2887,7 +2886,7 @@ var file_storage_cve_proto_goTypes = []any{
 	(*CVSSScore)(nil),             // 27: storage.CVSSScore
 	(*CVSSV2)(nil),                // 28: storage.CVSSV2
 	(*CVSSV3)(nil),                // 29: storage.CVSSV3
-	(*ImageCVETime)(nil),          // 30: storage.ImageCVETime
+	(*ImageCVEInfo)(nil),          // 30: storage.ImageCVEInfo
 	(*CVE_DistroSpecific)(nil),    // 31: storage.CVE.DistroSpecific
 	(*CVE_Reference)(nil),         // 32: storage.CVE.Reference
 	nil,                           // 33: storage.CVE.DistroSpecificsEntry
@@ -2958,8 +2957,8 @@ var file_storage_cve_proto_depIdxs = []int32{
 	12, // 60: storage.CVSSV3.integrity:type_name -> storage.CVSSV3.Impact
 	12, // 61: storage.CVSSV3.availability:type_name -> storage.CVSSV3.Impact
 	18, // 62: storage.CVSSV3.severity:type_name -> storage.CVSSV3.Severity
-	35, // 63: storage.ImageCVETime.fixed_date:type_name -> google.protobuf.Timestamp
-	35, // 64: storage.ImageCVETime.first_image_occurrence:type_name -> google.protobuf.Timestamp
+	35, // 63: storage.ImageCVEInfo.fix_timestamp_available:type_name -> google.protobuf.Timestamp
+	35, // 64: storage.ImageCVEInfo.first_image_occurrence:type_name -> google.protobuf.Timestamp
 	1,  // 65: storage.CVE.DistroSpecific.severity:type_name -> storage.VulnerabilitySeverity
 	5,  // 66: storage.CVE.DistroSpecific.score_version:type_name -> storage.CVE.ScoreVersion
 	28, // 67: storage.CVE.DistroSpecific.cvss_v2:type_name -> storage.CVSSV2

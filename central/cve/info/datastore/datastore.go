@@ -4,8 +4,8 @@ import (
 	"context"
 	"testing"
 
-	"github.com/stackrox/rox/central/cve/times/datastore/store"
-	pgStore "github.com/stackrox/rox/central/cve/times/datastore/store/postgres"
+	"github.com/stackrox/rox/central/cve/info/datastore/store"
+	pgStore "github.com/stackrox/rox/central/cve/info/datastore/store/postgres"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres"
