@@ -18,8 +18,7 @@ import { AccessControlEntityLink } from '../AccessControlLinks';
 // TODO import from where?
 const unselectedRowStyle = {};
 const selectedRowStyle = {
-    borderLeft:
-        'var(--pf-t--temp--dev--tbd)' /* CODEMODS: original v5 color was --pf-v5-global--primary-color--100 */,
+    borderLeft: 'var(--pf-t--global--border--color--brand--default)',
 };
 
 function getAuthProviderTypeLabel(type: string, availableTypes: AuthProviderInfo[]): string {

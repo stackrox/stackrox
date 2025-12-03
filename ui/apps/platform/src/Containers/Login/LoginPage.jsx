@@ -9,7 +9,6 @@ import { Alert, Button, Title, TitleSizes } from '@patternfly/react-core';
 
 import { AUTH_STATUS } from 'reducers/auth';
 import { selectors } from 'reducers';
-import { ThemeContext } from 'Containers/ThemeProvider';
 import ExternalLink from 'Components/PatternFly/IconText/ExternalLink';
 import LoadingSection from 'Components/PatternFly/LoadingSection';
 import ReduxSelectField from 'Components/forms/ReduxSelectField';
@@ -52,8 +51,6 @@ class LoginPage extends Component {
         authorizeRoxctlMode: PropTypes.bool,
         ...reduxFormPropTypes,
     };
-
-    static contextType = ThemeContext;
 
     static defaultProps = {
         authorizeRoxctlMode: false,

@@ -12,9 +12,7 @@ import type { ProcessNameAndContainerNameGroup } from 'services/ProcessService';
 
 import { getClusterIdAndNamespaceFromProcessGroup } from './process.utils';
 
-const titleClassName =
-    'border-b border-base-300 leading-normal cursor-pointer flex justify-between h-14';
-const headerClassName = 'hover:bg-primary-200 hover:border-primary-300';
+const titleClassName = 'leading-normal cursor-pointer flex justify-between h-14';
 
 export type ProcessDiscoveryCardHeaderProps = {
     isExpanded: boolean;
@@ -56,19 +54,18 @@ function ProcessDiscoveryCardHeader({
     const trimmedName = name.length > 48 ? `${name.substring(0, 48)}...` : name;
     const style = suspicious
         ? {
-              backgroundColor:
-                  'var(--pf-t--temp--dev--tbd)' /* CODEMODS: original v5 color was --pf-v5-global--palette--red-50 */,
+              border: '1px solid var(--pf-t--global--border--color--status--danger--default)',
           }
         : {};
     return (
-        <div className={`${titleClassName} ${headerClassName}`} style={style}>
+        <div className={titleClassName} style={style}>
             <div className="p-3 text-base-600 flex flex-col">
                 <div className="font-700">
                     {trimmedName}
                     {suspicious && (
                         <ExclamationCircleIcon
+                            color="var(--pf-t--global--icon--color--status--danger--default)"
                             className="ml-4"
-                            color="var(--pf-t--temp--dev--tbd)" /* CODEMODS: original v5 color was --pf-v5-global--danger-color--100 */
                         />
                     )}
                 </div>

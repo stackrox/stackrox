@@ -3,8 +3,7 @@ import { Card, CardBody, CardTitle, Content, Flex, pluralize } from '@patternfly
 import { MinusIcon, WrenchIcon } from '@patternfly/react-icons';
 import type { FixableStatus } from '../../types';
 
-const disabledColor100 =
-    'var(--pf-t--temp--dev--tbd)'; /* CODEMODS: original v5 color was --pf-v5-global--disabled-color--100 */
+const disabledColor = 'var(--pf-t--global--text--color--disabled)';
 
 const statusDisplays = [
     {
@@ -65,7 +64,7 @@ function PlatformCvesByStatusSummaryCard({
                                 <Icon />
                                 <Content
                                     component="p"
-                                    style={{ color: isHidden ? disabledColor100 : 'inherit' }}
+                                    style={{ color: isHidden ? disabledColor : 'inherit' }}
                                 >
                                     {isHidden ? statusHiddenText[status] : text(data)}
                                 </Content>

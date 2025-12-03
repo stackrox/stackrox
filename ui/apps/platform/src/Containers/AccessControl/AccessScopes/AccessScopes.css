@@ -44,7 +44,7 @@
  * Replace primary blue with success green like included state.
  */
 #access-scope-form .pf-v6-c-switch.acs-m-manual-inclusion {
-    --pf-v6-c-switch__input--checked__toggle--BackgroundColor: var(--pf-t--temp--dev--tbd /* CODEMODS: original v5 color was:--pf-v5-global--success-color--100 */);
+    --pf-v6-c-switch__input--checked__toggle--BackgroundColor: var(--pf-t--global--color--status--success--default);
 }
 
 /*
@@ -80,8 +80,8 @@ table .pf-v6-c-dropdown__toggle.pf-m-plain svg {
  * Disabled primary Dropdown needs same colors as Button.
  */
 #access-scope-form .pf-v6-c-dropdown__toggle.pf-m-primary[disabled] {
-    background-color: var(--pf-t--temp--dev--tbd /* CODEMODS: original v5 color was:--pf-v5-global--disabled-color--200 */);
-    color: var(--pf-t--temp--dev--tbd /* CODEMODS: original v5 color was:--pf-v5-global--disabled-color--100 */);
+    background-color: var(--pf-t--global--background--color--disabled--default);
+    color: var(--pf-t--global--text--color--on-disabled);
 }
 
 /*

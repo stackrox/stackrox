@@ -186,7 +186,7 @@ function ReportJobs({ reportId }: ReportJobsProps) {
                         title="Error loading report jobs"
                         headingLevel="h2"
                         icon={ExclamationCircleIcon}
-                        iconClassName="pf-v6-u-danger-color-100"
+                        status="danger"
                     >
                         {error}
                     </EmptyStateTemplate>
@@ -278,7 +278,7 @@ function ReportJobs({ reportId }: ReportJobsProps) {
                         const rowActions = [
                             {
                                 title: (
-                                    <span className="pf-v6-u-danger-color-100">
+                                    <span className="pf-v6-u-text-color-status-danger">
                                         Delete download
                                     </span>
                                 ),

@@ -48,7 +48,7 @@ function NodePageDetails({ nodeId }: NodePageDetailsProps) {
                                     title="There was an error loading the node details"
                                     headingLevel="h2"
                                     icon={ExclamationCircleIcon}
-                                    iconClassName="pf-v6-u-danger-color-100"
+                                    status="danger"
                                 >
                                     {getAxiosErrorMessage(error)}
                                 </EmptyStateTemplate>
