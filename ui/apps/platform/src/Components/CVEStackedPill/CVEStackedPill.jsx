@@ -99,7 +99,7 @@ const CVEStackedPill = ({
                 >
                     <ExclamationTriangleIcon
                         className="w-4 h-4 ml-2"
-                        color="var(--pf-t--temp--dev--tbd)" /* CODEMODS: original v5 color was --pf-v5-global--warning-color--100 */
+                        color="var(--pf-t--global--icon--color--status--warning--default)"
                     />
                 </Tooltip>
             )}

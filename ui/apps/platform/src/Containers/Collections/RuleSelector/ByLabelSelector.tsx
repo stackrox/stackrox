@@ -180,10 +180,7 @@ function ByLabelSelector({
                                             <Button
                                                 icon={
                                                     <Icon>
-                                                        <TrashIcon
-                                                            color="var(--pf-t--temp--dev--tbd)" /* CODEMODS: original v5 color was --pf-v5-global--Color--dark-200 */
-                                                            style={{ cursor: 'pointer' }}
-                                                        />
+                                                        <TrashIcon style={{ cursor: 'pointer' }} />
                                                     </Icon>
                                                 }
                                                 className="rule-selector-delete-value-button"

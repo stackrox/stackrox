@@ -84,7 +84,7 @@ function ClusterPage() {
                             title={getAxiosErrorMessage(error)}
                             headingLevel="h2"
                             icon={ExclamationCircleIcon}
-                            iconClassName="pf-v6-u-danger-color-100"
+                            status="danger"
                         />
                     </Bullseye>
                 </PageSection>

@@ -1,5 +1,6 @@
 import type { ComponentType, PropsWithChildren, ReactElement, ReactNode } from 'react';
 import { EmptyState, EmptyStateBody } from '@patternfly/react-core';
+import type { EmptyStateProps } from '@patternfly/react-core';
 import { CubesIcon } from '@patternfly/react-icons';
 
 export type EmptyStateTemplateProps = {
@@ -7,7 +8,7 @@ export type EmptyStateTemplateProps = {
     title: string;
     headingLevel: 'h1' | 'h2' | 'h3' | 'h4';
     icon?: ComponentType<PropsWithChildren<unknown>>;
-    iconClassName?: string;
+    status?: EmptyStateProps['status'];
 };
 
 function EmptyStateTemplate({
@@ -15,10 +16,16 @@ function EmptyStateTemplate({
     title,
     headingLevel,
     icon = CubesIcon,
-    iconClassName = '',
+    status,
 }: EmptyStateTemplateProps): ReactElement {
     return (
-        <EmptyState headingLevel={headingLevel} icon={icon} titleText={<>{title}</>} variant="lg">
+        <EmptyState
+            status={status}
+            headingLevel={headingLevel}
+            icon={icon}
+            titleText={<>{title}</>}
+            variant="lg"
+        >
             <EmptyStateBody>{children}</EmptyStateBody>
         </EmptyState>
     );

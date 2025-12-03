@@ -33,7 +33,7 @@ function getLabelData(data) {
         yOffset: -13,
         xOffset: 10,
         style: {
-            fill: 'var(--pf-t--temp--dev--tbd)' /* CODEMODS: original v5 color was --pf-v5-global--link--Color */,
+            fill: 'var(--pf-t--global--text--color--link--default)',
             cursor: 'pointer',
         },
     }));

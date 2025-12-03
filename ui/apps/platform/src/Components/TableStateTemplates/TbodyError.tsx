@@ -26,7 +26,7 @@ export function TbodyError({
                 headingLevel={headingLevel}
                 title={title}
                 icon={ExclamationCircleIcon}
-                iconClassName="pf-v6-u-danger-color-100"
+                status="danger"
             >
                 {message ?? getAxiosErrorMessage(error)}
             </EmptyStateTemplate>

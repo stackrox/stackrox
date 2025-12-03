@@ -20,7 +20,7 @@
 .network-policies-generation-scope > *:not(:first-child):after  {
   position: absolute;
   content: "";
-  background-color: var(--pf-t--temp--dev--tbd /* CODEMODS: original v5 color was:--pf-v5-global--BorderColor--100 */);
+  background-color: var(--pf-t--global--border--color--default);
 }
 
 .network-policies-generation-scope > *:not(:first-child):before  {
