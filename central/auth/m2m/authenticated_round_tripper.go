@@ -26,8 +26,8 @@ func (a *authenticatedRoundTripper) RoundTrip(req *http.Request) (*http.Response
 		// underlying RoundTripper (typically Transport) may not be able to
 		// re-use a persistent TCP connection to the server for a subsequent
 		// "keep-alive" request.
-		io.Copy(io.Discard, resp.Body)
-		resp.Body.Close()
+		_, _ = io.Copy(io.Discard, resp.Body)
+		_ = resp.Body.Close()
 		// GKE's issuer endpoint responds with HTTP 400 if Authorization header is set.
 		// At the same time, the Kube docs indicate that auth should be required by default:
 		// https://kubernetes.io/docs/tasks/configure-pod-container/configure-service-account/#service-account-issuer-discovery
