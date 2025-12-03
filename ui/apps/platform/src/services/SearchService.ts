@@ -157,5 +157,5 @@ export function fetchAutoCompleteResults(rawSearchRequest: RawSearchRequest): Pr
     const params = qs.stringify(rawSearchRequest, { arrayFormat: 'repeat' });
     return axios
         .get<AutocompleteResponse>(`${autoCompleteURL}?${params}`)
-        .then((response) => response?.data?.values || []);
+        .then((response) => response?.data?.values ?? []);
 }

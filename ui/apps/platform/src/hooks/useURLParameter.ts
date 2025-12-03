@@ -36,7 +36,7 @@ export function applyUpdatesToUrl(
         ? 'push'
         : 'replace';
 
-    const previousQuery = getQueryObject(search) || {};
+    const previousQuery = getQueryObject(search) ?? {};
     const newQuery = { ...previousQuery };
 
     updates.forEach(({ keyPrefix, newValue }) => {
