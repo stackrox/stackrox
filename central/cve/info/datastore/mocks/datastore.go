@@ -74,10 +74,10 @@ func (mr *MockDataStoreMockRecorder) Exists(ctx, id any) *gomock.Call {
 }
 
 // Get mocks base method.
-func (m *MockDataStore) Get(ctx context.Context, id string) (*storage.ImageCVETime, bool, error) {
+func (m *MockDataStore) Get(ctx context.Context, id string) (*storage.ImageCVEInfo, bool, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Get", ctx, id)
-	ret0, _ := ret[0].(*storage.ImageCVETime)
+	ret0, _ := ret[0].(*storage.ImageCVEInfo)
 	ret1, _ := ret[1].(bool)
 	ret2, _ := ret[2].(error)
 	return ret0, ret1, ret2
@@ -90,10 +90,10 @@ func (mr *MockDataStoreMockRecorder) Get(ctx, id any) *gomock.Call {
 }
 
 // GetBatch mocks base method.
-func (m *MockDataStore) GetBatch(ctx context.Context, id []string) ([]*storage.ImageCVETime, error) {
+func (m *MockDataStore) GetBatch(ctx context.Context, id []string) ([]*storage.ImageCVEInfo, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetBatch", ctx, id)
-	ret0, _ := ret[0].([]*storage.ImageCVETime)
+	ret0, _ := ret[0].([]*storage.ImageCVEInfo)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -119,23 +119,23 @@ func (mr *MockDataStoreMockRecorder) Search(ctx, q any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Search", reflect.TypeOf((*MockDataStore)(nil).Search), ctx, q)
 }
 
-// SearchRawImageCVETimes mocks base method.
-func (m *MockDataStore) SearchRawImageCVETimes(ctx context.Context, q *v1.Query) ([]*storage.ImageCVETime, error) {
+// SearchRawImageCVEInfos mocks base method.
+func (m *MockDataStore) SearchRawImageCVEInfos(ctx context.Context, q *v1.Query) ([]*storage.ImageCVEInfo, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "SearchRawImageCVETimes", ctx, q)
-	ret0, _ := ret[0].([]*storage.ImageCVETime)
+	ret := m.ctrl.Call(m, "SearchRawImageCVEInfos", ctx, q)
+	ret0, _ := ret[0].([]*storage.ImageCVEInfo)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// SearchRawImageCVETimes indicates an expected call of SearchRawImageCVETimes.
-func (mr *MockDataStoreMockRecorder) SearchRawImageCVETimes(ctx, q any) *gomock.Call {
+// SearchRawImageCVEInfos indicates an expected call of SearchRawImageCVEInfos.
+func (mr *MockDataStoreMockRecorder) SearchRawImageCVEInfos(ctx, q any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SearchRawImageCVETimes", reflect.TypeOf((*MockDataStore)(nil).SearchRawImageCVETimes), ctx, q)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SearchRawImageCVEInfos", reflect.TypeOf((*MockDataStore)(nil).SearchRawImageCVEInfos), ctx, q)
 }
 
 // Upsert mocks base method.
-func (m *MockDataStore) Upsert(ctx context.Context, cve *storage.ImageCVETime) error {
+func (m *MockDataStore) Upsert(ctx context.Context, cve *storage.ImageCVEInfo) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Upsert", ctx, cve)
 	ret0, _ := ret[0].(error)
@@ -149,7 +149,7 @@ func (mr *MockDataStoreMockRecorder) Upsert(ctx, cve any) *gomock.Call {
 }
 
 // UpsertMany mocks base method.
-func (m *MockDataStore) UpsertMany(ctx context.Context, cve []*storage.ImageCVETime) error {
+func (m *MockDataStore) UpsertMany(ctx context.Context, cve []*storage.ImageCVEInfo) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "UpsertMany", ctx, cve)
 	ret0, _ := ret[0].(error)
