@@ -370,7 +370,7 @@ func (w *WorkloadManager) populateFakeVMs() {
 		// cid is reused every iteration, so we need to create a new pointer for each VM and copy the value.
 		*vsock = cid
 		info := &virtualmachine.Info{
-			ID:        virtualmachine.VMID(fmt.Sprintf("vm-%d", i)),
+			ID:        virtualmachine.VMID(fakeVMUUID(i)),
 			Name:      fmt.Sprintf("fake-vm-%d", i),
 			Namespace: "default",
 			VSOCKCID:  vsock,

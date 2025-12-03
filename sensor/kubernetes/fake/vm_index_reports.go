@@ -185,7 +185,7 @@ func (w *WorkloadManager) manageVMIndexReports(ctx context.Context) {
 	vms := make([]*vmInfo, numVMs)
 	for i := 0; i < numVMs; i++ {
 		vms[i] = &vmInfo{
-			id:       fmt.Sprintf("vm-%d", i),
+			id:       fakeVMUUID(i),
 			vsockCID: vmBaseVSOCKCID + uint32(i),
 			name:     fmt.Sprintf("fake-vm-%d", i),
 		}
