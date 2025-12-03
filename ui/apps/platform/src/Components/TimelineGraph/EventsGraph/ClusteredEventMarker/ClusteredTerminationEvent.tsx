@@ -37,7 +37,7 @@ const ClusteredTerminationEvent = forwardRef<SVGSVGElement, ClusteredTermination
                             rx="2"
                         />
                         <text
-                            fontFamily="var(--pf-v5-global--FontFamily--sans-serif)"
+                            fontFamily="var(--pf-t--global--font--family--mono)"
                             fontSize="9"
                             fontWeight="bold"
                             letterSpacing="-.18"
