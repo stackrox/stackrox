@@ -462,7 +462,7 @@ function ConfigReportsTab() {
                                                     <span
                                                         className={
                                                             !isReportStatusPending
-                                                                ? 'pf-v6-u-danger-color-100'
+                                                                ? 'pf-v6-u-text-color-status-danger'
                                                                 : ''
                                                         }
                                                     >
