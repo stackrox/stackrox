@@ -8923,6 +8923,12 @@
                 "name": "notes",
                 "type": "Note",
                 "is_repeated": true
+              },
+              {
+                "id": 19,
+                "name": "base_image_info",
+                "type": "BaseImageInfo",
+                "is_repeated": true
               }
             ],
             "reserved_ids": [
@@ -9111,6 +9117,11 @@
                 "id": 13,
                 "name": "architecture",
                 "type": "string"
+              },
+              {
+                "id": 14,
+                "name": "fromBaseImage",
+                "type": "bool"
               }
             ],
             "messages": [
@@ -9424,6 +9435,26 @@
               {
                 "id": 1,
                 "name": "name",
+                "type": "string"
+              }
+            ]
+          },
+          {
+            "name": "BaseImageInfo",
+            "fields": [
+              {
+                "id": 1,
+                "name": "base_image_id",
+                "type": "string"
+              },
+              {
+                "id": 2,
+                "name": "base_image_full_name",
+                "type": "string"
+              },
+              {
+                "id": 3,
+                "name": "base_image_digest",
                 "type": "string"
               }
             ]
@@ -10188,6 +10219,12 @@
                 "id": 15,
                 "name": "notes",
                 "type": "Note",
+                "is_repeated": true
+              },
+              {
+                "id": 16,
+                "name": "base_image_info",
+                "type": "BaseImageInfo",
                 "is_repeated": true
               }
             ],
