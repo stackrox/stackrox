@@ -21,22 +21,22 @@ import (
 )
 
 const (
-	baseTable = "image_cve_times"
-	storeName = "ImageCVETime"
+	baseTable = "image_cve_info"
+	storeName = "ImageCVEInfo"
 )
 
 var (
 	log            = logging.LoggerForModule()
-	schema         = pkgSchema.ImageCveTimesSchema
+	schema         = pkgSchema.ImageCveInfoSchema
 	targetResource = resources.Image
 )
 
 type (
-	storeType = storage.ImageCVETime
+	storeType = storage.ImageCVEInfo
 	callback  = func(obj *storeType) error
 )
 
-// Store is the interface to interact with the storage for storage.ImageCVETime
+// Store is the interface to interact with the storage for storage.ImageCVEInfo
 type Store interface {
 	Upsert(ctx context.Context, obj *storeType) error
 	UpsertMany(ctx context.Context, objs []*storeType) error
@@ -67,8 +67,8 @@ func New(db postgres.DB) Store {
 		db,
 		schema,
 		pkGetter,
-		insertIntoImageCveTimes,
-		copyFromImageCveTimes,
+		insertIntoImageCveInfo,
+		copyFromImageCveInfo,
 		metricsSetAcquireDBConnDuration,
 		metricsSetPostgresOperationDurationTime,
 		targetResource,
@@ -91,7 +91,7 @@ func metricsSetAcquireDBConnDuration(start time.Time, op ops.Op) {
 	metrics.SetAcquireDBConnDuration(start, op, storeName)
 }
 
-func insertIntoImageCveTimes(batch *pgx.Batch, obj *storage.ImageCVETime) error {
+func insertIntoImageCveInfo(batch *pgx.Batch, obj *storage.ImageCVEInfo) error {
 
 	serialized, marshalErr := obj.MarshalVT()
 	if marshalErr != nil {
@@ -101,18 +101,18 @@ func insertIntoImageCveTimes(batch *pgx.Batch, obj *storage.ImageCVETime) error 
 	values := []interface{}{
 		// parent primary keys start
 		obj.GetId(),
-		protocompat.NilOrTime(obj.GetFixedDate()),
+		protocompat.NilOrTime(obj.GetFixTimestampAvailable()),
 		protocompat.NilOrTime(obj.GetFirstImageOccurrence()),
 		serialized,
 	}
 
-	finalStr := "INSERT INTO image_cve_times (Id, FixedDate, FirstImageOccurrence, serialized) VALUES($1, $2, $3, $4) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, FixedDate = EXCLUDED.FixedDate, FirstImageOccurrence = EXCLUDED.FirstImageOccurrence, serialized = EXCLUDED.serialized"
+	finalStr := "INSERT INTO image_cve_info (Id, FixTimestampAvailable, FirstImageOccurrence, serialized) VALUES($1, $2, $3, $4) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, FixTimestampAvailable = EXCLUDED.FixTimestampAvailable, FirstImageOccurrence = EXCLUDED.FirstImageOccurrence, serialized = EXCLUDED.serialized"
 	batch.Queue(finalStr, values...)
 
 	return nil
 }
 
-func copyFromImageCveTimes(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, objs ...*storage.ImageCVETime) error {
+func copyFromImageCveInfo(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, objs ...*storage.ImageCVEInfo) error {
 	if len(objs) == 0 {
 		return nil
 	}
@@ -131,7 +131,7 @@ func copyFromImageCveTimes(ctx context.Context, s pgSearch.Deleter, tx *postgres
 
 	copyCols := []string{
 		"id",
-		"fixeddate",
+		"fixtimestampavailable",
 		"firstimageoccurrence",
 		"serialized",
 	}
@@ -151,13 +151,13 @@ func copyFromImageCveTimes(ctx context.Context, s pgSearch.Deleter, tx *postgres
 
 		return []interface{}{
 			obj.GetId(),
-			protocompat.NilOrTime(obj.GetFixedDate()),
+			protocompat.NilOrTime(obj.GetFixTimestampAvailable()),
 			protocompat.NilOrTime(obj.GetFirstImageOccurrence()),
 			serialized,
 		}, nil
 	})
 
-	if _, err := tx.CopyFrom(ctx, pgx.Identifier{"image_cve_times"}, copyCols, inputRows); err != nil {
+	if _, err := tx.CopyFrom(ctx, pgx.Identifier{"image_cve_info"}, copyCols, inputRows); err != nil {
 		return err
 	}
 
