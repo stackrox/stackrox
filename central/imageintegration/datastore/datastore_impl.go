@@ -14,7 +14,6 @@ import (
 	"github.com/stackrox/rox/pkg/sac/resources"
 	searchPkg "github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/uuid"
-	"google.golang.org/protobuf/proto"
 )
 
 var (
@@ -119,7 +118,7 @@ func (ds *datastoreImpl) SearchImageIntegrations(ctx context.Context, q *v1.Quer
 	if q == nil {
 		q = searchPkg.EmptyQuery()
 	} else {
-		q = proto.Clone(q).(*v1.Query)
+		q = q.CloneVT()
 	}
 	q.Selects = append(q.GetSelects(), searchPkg.NewQuerySelect(searchPkg.IntegrationName).Proto())
 
@@ -127,9 +126,10 @@ func (ds *datastoreImpl) SearchImageIntegrations(ctx context.Context, q *v1.Quer
 	if err != nil {
 		return nil, err
 	}
+	searchTag := strings.ToLower(searchPkg.IntegrationName.String())
 	for i := range results {
 		if results[i].FieldValues != nil {
-			if nameVal, ok := results[i].FieldValues[strings.ToLower(searchPkg.IntegrationName.String())]; ok {
+			if nameVal, ok := results[i].FieldValues[searchTag]; ok {
 				results[i].Name = nameVal
 			}
 		}
