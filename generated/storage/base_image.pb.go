@@ -25,7 +25,7 @@ const (
 type BaseImage struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	Id    string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" search:"Base Image Id,store,hidden" sql:"pk"` // @gotags: search:"Base Image Id,store,hidden" sql:"pk"
-	// TODO add base image repo table and add FK to base image repo table
+	// TODO ROX-32114 add base image repo table and add FK to base image repo table
 	BaseImageRepositoryId string                 `protobuf:"bytes,2,opt,name=base_image_repository_id,json=baseImageRepositoryId,proto3" json:"base_image_repository_id,omitempty" search:"Base Image Repository Id,store"` // @gotags: search:"Base Image Repository Id,store"
 	Repository            string                 `protobuf:"bytes,3,opt,name=repository,proto3" json:"repository,omitempty" search:"Base Image Repository,store"`                                                        // @gotags: search:"Base Image Repository,store"
 	Tag                   string                 `protobuf:"bytes,4,opt,name=tag,proto3" json:"tag,omitempty" search:"Base Image Tag,hidden"`                                                                      // @gotags: search:"Base Image Tag,hidden"
