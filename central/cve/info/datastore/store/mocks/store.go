@@ -74,10 +74,10 @@ func (mr *MockStoreMockRecorder) Exists(ctx, id any) *gomock.Call {
 }
 
 // Get mocks base method.
-func (m *MockStore) Get(ctx context.Context, id string) (*storage.ImageCVETime, bool, error) {
+func (m *MockStore) Get(ctx context.Context, id string) (*storage.ImageCVEInfo, bool, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Get", ctx, id)
-	ret0, _ := ret[0].(*storage.ImageCVETime)
+	ret0, _ := ret[0].(*storage.ImageCVEInfo)
 	ret1, _ := ret[1].(bool)
 	ret2, _ := ret[2].(error)
 	return ret0, ret1, ret2
@@ -90,7 +90,7 @@ func (mr *MockStoreMockRecorder) Get(ctx, id any) *gomock.Call {
 }
 
 // GetByQueryFn mocks base method.
-func (m *MockStore) GetByQueryFn(ctx context.Context, query *v1.Query, fn func(*storage.ImageCVETime) error) error {
+func (m *MockStore) GetByQueryFn(ctx context.Context, query *v1.Query, fn func(*storage.ImageCVEInfo) error) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetByQueryFn", ctx, query, fn)
 	ret0, _ := ret[0].(error)
@@ -104,10 +104,10 @@ func (mr *MockStoreMockRecorder) GetByQueryFn(ctx, query, fn any) *gomock.Call {
 }
 
 // GetMany mocks base method.
-func (m *MockStore) GetMany(ctx context.Context, ids []string) ([]*storage.ImageCVETime, []int, error) {
+func (m *MockStore) GetMany(ctx context.Context, ids []string) ([]*storage.ImageCVEInfo, []int, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetMany", ctx, ids)
-	ret0, _ := ret[0].([]*storage.ImageCVETime)
+	ret0, _ := ret[0].([]*storage.ImageCVEInfo)
 	ret1, _ := ret[1].([]int)
 	ret2, _ := ret[2].(error)
 	return ret0, ret1, ret2
@@ -135,7 +135,7 @@ func (mr *MockStoreMockRecorder) Search(ctx, q any) *gomock.Call {
 }
 
 // Upsert mocks base method.
-func (m *MockStore) Upsert(ctx context.Context, time *storage.ImageCVETime) error {
+func (m *MockStore) Upsert(ctx context.Context, time *storage.ImageCVEInfo) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Upsert", ctx, time)
 	ret0, _ := ret[0].(error)
@@ -149,7 +149,7 @@ func (mr *MockStoreMockRecorder) Upsert(ctx, time any) *gomock.Call {
 }
 
 // UpsertMany mocks base method.
-func (m *MockStore) UpsertMany(ctx context.Context, times []*storage.ImageCVETime) error {
+func (m *MockStore) UpsertMany(ctx context.Context, times []*storage.ImageCVEInfo) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "UpsertMany", ctx, times)
 	ret0, _ := ret[0].(error)

@@ -332,8 +332,8 @@ message CVSSV3 {
   Severity severity = 13;
 }
 
-message ImageCVETime {
+message ImageCVEInfo {
   string id = 1; // @gotags: search:"CVE" sql:"pk"
-  google.protobuf.Timestamp fixed_date = 4; // @gotags: search:"Fixable Since Timestamp,hidden"
+  google.protobuf.Timestamp fix_timestamp_available = 4; // @gotags: search:"Fixable Since Timestamp,hidden"
   google.protobuf.Timestamp first_image_occurrence = 9; // @gotags: search:"First Image Occurrence Timestamp,hidden"
 }
