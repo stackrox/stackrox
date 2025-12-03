@@ -320,6 +320,7 @@ func (s *nodeComponentCVEEdgeDatastoreSACTestSuite) TestSearchEdges() {
 		s.Len(results, expectedCount)
 		for _, r := range results {
 			s.True(c.expectedEdgeFound[r.GetId()])
+			s.Equal(r.GetName(), r.GetId())
 		}
 	})
 }
