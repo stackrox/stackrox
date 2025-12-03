@@ -182,7 +182,7 @@ func (d *detectorImpl) detectForDeployment(
 			violation, err := compiled.MatchAgainstDeploymentAndFileAccess(&cacheReceptable, enhancedDeployment, fileAccess)
 			if err != nil {
 				return errors.Wrapf(err, "evaluating violations for policy %q; file access %+v",
-					compiled.Policy().GetName(), flow)
+					compiled.Policy().GetName(), fileAccess)
 			}
 
 			if alert := constructFileAccessAlert(compiled.Policy(), nil, deployment, violation); alert != nil {

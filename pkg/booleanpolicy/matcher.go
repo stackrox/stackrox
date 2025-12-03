@@ -258,7 +258,7 @@ func BuildDeploymentWithFileAccessMatcher(p *storage.Policy, options ...Validate
 
 		// Conjunction of process fields and events fields is not supported.
 		if !ContainsDiscreteRuntimeFieldCategorySections(p) {
-			return nil, errors.New("a run time policy section must not contain both process and kubernetes event constraints")
+			return nil, errors.New("a runtime policy section must contain only a single runtime event constraint")
 		}
 
 		fieldQueries, err := sectionTypeToFieldQueries(section, FileAccess)
@@ -273,8 +273,6 @@ func BuildDeploymentWithFileAccessMatcher(p *storage.Policy, options ...Validate
 		fileAccessOnlyEvaluators = append(fileAccessOnlyEvaluators, eval)
 	}
 
-	// Although the struct implementation is the same as matcherImpl, we should still use networkFlowMatcher
-	// since it implements another check func MatchDeploymentWithNetworkFlowInfo
 	return &fileAccessMatcherImpl{
 		matcherImpl: matcherImpl{
 			evaluators: sectionsAndEvals,
