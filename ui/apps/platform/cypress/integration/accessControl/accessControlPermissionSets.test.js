@@ -165,7 +165,7 @@ describe('Access Control Permission sets', () => {
         });
     });
 
-    it('direct link to default Continuous Integration has limited read and write accesss', () => {
+    it('direct link to default Continuous Integration has limited read and write access', () => {
         const targetID = 'ffffffff-ffff-fff4-f5ff-fffffffffffd';
         visitAccessControlEntity(entitiesKey, targetID);
 
@@ -219,18 +219,20 @@ describe('Access Control Permission sets', () => {
         );
         cy.get(getAccessLevelSelectForResource('Detection')).should('contain', 'Read Access');
 
-        // Zero-based index for Image instead of ImageComponent, ImageIntegration, WatchedImage.
-        cy.get(getReadAccessIconForResource('Image', 0)).should(
+        // Zero-based index for Image because:
+        // preceded by BaseImage, BaseImageLayer
+        // followed by ImageComponent, ImageIntegration, WatchedImage.
+        cy.get(getReadAccessIconForResource('Image', 2)).should(
             'have.attr',
             'aria-label',
             'permitted'
         );
-        cy.get(getWriteAccessIconForResource('Image', 0)).should(
+        cy.get(getWriteAccessIconForResource('Image', 2)).should(
             'have.attr',
             'aria-label',
             'permitted'
         );
-        cy.get(getAccessLevelSelectForResource('Image', 0)).should(
+        cy.get(getAccessLevelSelectForResource('Image', 2)).should(
             'contain',
             'Read and Write Access'
         );
