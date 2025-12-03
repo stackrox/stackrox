@@ -74,7 +74,7 @@ function RequirementRowAddKey({
                                 icon={
                                     <Icon>
                                         <ArrowCircleDownIcon
-                                            color="var(--pf-t--temp--dev--tbd)" /* CODEMODS: original v5 color was --pf-v5-global--primary-color--100 */
+                                            color="var(--pf-t--global--icon--color--brand--default)"
                                             style={{ transform: 'rotate(-90deg)' }}
                                         />
                                     </Icon>
@@ -89,7 +89,9 @@ function RequirementRowAddKey({
                     </span>
                 </div>
                 {keyInput.length !== 0 && isInvalidKey && (
-                    <p className="pf-v6-u-font-size-sm pf-v6-u-danger-color-100">Invalid key</p>
+                    <p className="pf-v6-u-font-size-sm pf-v6-u-text-color-status-danger">
+                        Invalid key
+                    </p>
                 )}
             </Td>
             <Td dataLabel="Operator" />
