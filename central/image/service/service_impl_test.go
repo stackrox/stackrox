@@ -172,7 +172,7 @@ func TestShouldUpdateExistingScan(t *testing.T) {
 		t.Run(tc.desc, func(t *testing.T) {
 			pkgTestUtils.MustUpdateFeature(t, features.ScannerV4, tc.featureEnabled)
 
-			actual := shouldUpdateExistingScan(tc.imgExists, tc.existingImg, tc.req)
+			actual := shouldUpdateExistingScan(tc.imgExists, tc.existingImg.GetScan(), tc.req)
 			assert.Equal(t, tc.expected, actual)
 		})
 	}
@@ -270,7 +270,7 @@ func TestScanExpired(t *testing.T) {
 	}
 	for _, tc := range tcs {
 		t.Run(tc.desc, func(t *testing.T) {
-			assert.Equal(t, tc.expired, scanExpired(tc.image))
+			assert.Equal(t, tc.expired, scanExpired(tc.image.GetScan()))
 		})
 	}
 
