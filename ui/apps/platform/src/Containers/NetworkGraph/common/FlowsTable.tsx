@@ -191,7 +191,7 @@ function FlowsTable({
             <Thead>
                 <Tr>
                     <Th>
-                        <span className="pf-v5-screen-reader">Row expansion</span>
+                        <span className="pf-v6-screen-reader">Row expansion</span>
                     </Th>
                     {isEditable && (
                         <Th
@@ -207,7 +207,7 @@ function FlowsTable({
                     <Th modifier="nowrap">{columnNames.portAndProtocol}</Th>
                     {isEditable && (
                         <Th>
-                            <span className="pf-v5-screen-reader">Row actions</span>
+                            <span className="pf-v6-screen-reader">Row actions</span>
                         </Th>
                     )}
                 </Tr>
