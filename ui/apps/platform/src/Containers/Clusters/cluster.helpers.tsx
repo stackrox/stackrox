@@ -129,7 +129,7 @@ const styleUninitialized = {
 
 const styleHealthy = {
     Icon: CheckCircleIcon,
-    fgColor: 'pf-v6-u-success-color-100',
+    fgColor: 'pf-v6-u-text-color-status-success',
 };
 
 const styleDegraded = {
@@ -139,7 +139,7 @@ const styleDegraded = {
 
 const styleUnhealthy = {
     Icon: ExclamationCircleIcon,
-    fgColor: 'pf-v6-u-danger-color-100',
+    fgColor: 'pf-v6-u-text-color-status-danger',
 };
 
 const styleUnavailable = {
