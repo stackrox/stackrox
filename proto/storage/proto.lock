@@ -6861,7 +6861,7 @@
             ]
           },
           {
-            "name": "ImageCVETime",
+            "name": "ImageCVEInfo",
             "fields": [
               {
                 "id": 1,
@@ -6870,12 +6870,12 @@
               },
               {
                 "id": 4,
-                "name": "fixed_date",
+                "name": "fix_timestamp_available",
                 "type": "google.protobuf.Timestamp"
               },
               {
                 "id": 9,
-                "name": "first_image_occurrence",
+                "name": "first_system_occurence",
                 "type": "google.protobuf.Timestamp"
               }
             ]
