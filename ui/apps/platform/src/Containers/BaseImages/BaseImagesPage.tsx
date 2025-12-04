@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 import {
     Alert,
     Button,
@@ -25,7 +25,7 @@ import BaseImagesTable from './BaseImagesTable';
 function BaseImagesPage() {
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
 
-    const baseImagesRequest = useRestQuery(useCallback(getBaseImages, []));
+    const baseImagesRequest = useRestQuery(useCallback(() => getBaseImages(), []));
 
     const addBaseImageMutation = useRestMutation(
         (data: { baseImageRepoPath: string; baseImageTagPattern: string }) =>
@@ -92,7 +92,7 @@ function BaseImagesPage() {
             </PageSection>
             <BaseImagesModal
                 isOpen={isAddModalOpen}
-                onClose={handleCloseAddModal}
+                onClose={() => setIsAddModalOpen(false)}
                 onSuccess={handleAddBaseImageSuccess}
             />
         </>
