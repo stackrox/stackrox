@@ -15,6 +15,7 @@ import (
 	categoryPostgres "github.com/stackrox/rox/central/policycategory/store/postgres"
 	policyCategoryEdgeDS "github.com/stackrox/rox/central/policycategoryedge/datastore"
 	edgePostgres "github.com/stackrox/rox/central/policycategoryedge/store/postgres"
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/fixtures"
 	policiesPkg "github.com/stackrox/rox/pkg/policies"
@@ -328,6 +329,129 @@ func (s *PolicyPostgresDataStoreTestSuite) TestSearchRawPolicies() {
 	s.NoError(err)
 	s.Len(policies, 1)
 	s.Len(policies[0].GetCategories(), 3)
+}
+
+func (s *PolicyPostgresDataStoreTestSuite) TestSearchPolicies() {
+	ctx := sac.WithGlobalAccessScopeChecker(context.Background(), sac.AllowFixedScopes(
+		sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
+		sac.ResourceScopeKeys(resources.WorkflowAdministration, resources.Cluster),
+	))
+
+	// Create test policies
+	policy1 := fixtures.GetPolicy()
+	policy1.Name = "Test Policy 60-Day Image Age"
+	policy1.Categories = []string{"DevOps Best Practices"}
+
+	policy2 := fixtures.GetPolicy()
+	policy2.Id = ""
+	policy2.Name = "Test Policy CVSS Score>7"
+	policy2.Categories = []string{"Security Best Practices"}
+
+	policy3 := fixtures.GetPolicy()
+	policy3.Id = ""
+	policy3.Name = "Test Policy NVD CVSS Score>7"
+	policy3.Categories = []string{"Security Best Practices", "Network Security"}
+
+	// Add policies
+	id1, err := s.datastore.AddPolicy(ctx, policy1)
+	s.NoError(err)
+	s.NotEmpty(id1)
+
+	id2, err := s.datastore.AddPolicy(ctx, policy2)
+	s.NoError(err)
+	s.NotEmpty(id2)
+
+	id3, err := s.datastore.AddPolicy(ctx, policy3)
+	s.NoError(err)
+	s.NotEmpty(id3)
+
+	// Define test cases
+	testCases := []struct {
+		name              string
+		query             *v1.Query
+		expectedCount     int
+		expectedPolicyIDs []string
+		expectedNames     []string
+		validateFunc      func(results []*v1.SearchResult)
+	}{
+		{
+			name:          "empty query returns all policies with names populated",
+			query:         pkgSearch.EmptyQuery(),
+			expectedCount: 3,
+			validateFunc: func(results []*v1.SearchResult) {
+				nameMap := make(map[string]string) // id -> name
+				for _, result := range results {
+					s.Equal(v1.SearchCategory_POLICIES, result.GetCategory())
+					nameMap[result.GetId()] = result.GetName()
+				}
+				s.Equal("Test Policy 60-Day Image Age", nameMap[id1])
+				s.Equal("Test Policy CVSS Score>7", nameMap[id2])
+				s.Equal("Test Policy NVD CVSS Score>7", nameMap[id3])
+			},
+		},
+		{
+			name:          "nil query defaults to empty query",
+			query:         nil,
+			expectedCount: 3,
+			validateFunc: func(results []*v1.SearchResult) {
+				nameMap := make(map[string]string) // id -> name
+				for _, result := range results {
+					s.Equal(v1.SearchCategory_POLICIES, result.GetCategory())
+					nameMap[result.GetId()] = result.GetName()
+				}
+				s.Equal("Test Policy 60-Day Image Age", nameMap[id1])
+				s.Equal("Test Policy CVSS Score>7", nameMap[id2])
+				s.Equal("Test Policy NVD CVSS Score>7", nameMap[id3])
+			},
+		},
+		{
+			name:          "query by category filters correctly",
+			query:         pkgSearch.NewQueryBuilder().AddExactMatches(pkgSearch.Category, "DevOps Best Practices").ProtoQuery(),
+			expectedCount: 1,
+			expectedNames: []string{"Test Policy 60-Day Image Age"},
+		},
+	}
+
+	// Run test cases
+	for _, tc := range testCases {
+		s.Run(tc.name, func() {
+			results, err := s.datastore.SearchPolicies(ctx, tc.query)
+			s.NoError(err)
+			s.Len(results, tc.expectedCount, "Expected %d results, got %d", tc.expectedCount, len(results))
+
+			// Validate expected policy IDs if provided
+			if len(tc.expectedPolicyIDs) > 0 {
+				actualIDs := make([]string, 0, len(results))
+				for _, result := range results {
+					actualIDs = append(actualIDs, result.GetId())
+				}
+				s.ElementsMatch(tc.expectedPolicyIDs, actualIDs)
+			}
+
+			// Validate expected names if provided
+			if len(tc.expectedNames) > 0 {
+				actualNames := make([]string, 0, len(results))
+				for _, result := range results {
+					actualNames = append(actualNames, result.GetName())
+				}
+				s.ElementsMatch(tc.expectedNames, actualNames)
+			}
+
+			// Run custom validation function if provided
+			if tc.validateFunc != nil {
+				tc.validateFunc(results)
+			}
+		})
+	}
+
+	s.NoError(s.datastore.RemovePolicy(ctx, policy1))
+	s.NoError(s.datastore.RemovePolicy(ctx, policy2))
+	s.NoError(s.datastore.RemovePolicy(ctx, policy3))
+
+	// Verify cleanup
+	results, err := s.datastore.SearchPolicies(ctx, pkgSearch.EmptyQuery())
+	s.NoError(err)
+	s.Empty(results)
 }
 
 func (s *PolicyPostgresDataStoreTestSuite) TestTransactionRollbacks() {
