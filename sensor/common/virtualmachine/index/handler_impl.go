@@ -65,7 +65,7 @@ func (h *handlerImpl) Send(ctx context.Context, vm *v1.IndexReport) error {
 	defer func() {
 		metrics.IndexReportEnqueueDurationMilliseconds.
 			WithLabelValues(outcome).
-			Observe(float64(time.Since(enqueueStart).Milliseconds()))
+			Observe(metrics.StartTimeToMS(enqueueStart))
 		metrics.IndexReportsSent.WithLabelValues(outcome).Inc()
 	}()
 
@@ -197,7 +197,7 @@ func (h *handlerImpl) handleIndexReport(
 	defer func() {
 		metrics.IndexReportProcessingDurationMilliseconds.
 			WithLabelValues(outcome).
-			Observe(float64(time.Since(startTime).Milliseconds()))
+			Observe(metrics.StartTimeToMS(startTime))
 	}()
 
 	if indexReport == nil {

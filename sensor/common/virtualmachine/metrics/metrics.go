@@ -1,9 +1,16 @@
 package metrics
 
 import (
+	"time"
+
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stackrox/rox/pkg/metrics"
 )
+
+// StartTimeToMS allows to record sub-millisecond durations. Without this, things faster than 1ms are rounded to 0.
+func StartTimeToMS(t time.Time) float64 {
+	return float64(time.Since(t).Nanoseconds()) / float64(time.Millisecond)
+}
 
 var (
 	StatusCentralNotReadyLabels = prometheus.Labels{"status": "central not ready"}

@@ -48,7 +48,7 @@ func (s *serviceImpl) UpsertVirtualMachineIndexReport(ctx context.Context, req *
 	startTime := time.Now()
 	defer func() {
 		metrics.VirtualMachineIndexReportHandlingDurationMilliseconds.
-			Observe(float64(time.Since(startTime).Milliseconds()))
+			Observe(metrics.StartTimeToMS(startTime))
 	}()
 
 	ir := req.GetIndexReport()
