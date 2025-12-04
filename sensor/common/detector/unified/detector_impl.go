@@ -67,3 +67,12 @@ func (d *detectorImpl) DetectAuditLogEvents(auditEvents *sensor.AuditEvents) []*
 	}
 	return alerts
 }
+
+func (d *detectorImpl) DetectNodeFileAccess(node *storage.Node, access *storage.FileAccess) []*storage.Alert {
+	alerts, err := d.runtimeDetector.DetectForNodeAndFileAccess(node, access)
+	if err != nil {
+		log.Errorf("Error evaluating runtime policies for node file accesses: %q", err)
+		return nil
+	}
+	return alerts
+}

@@ -1116,6 +1116,14 @@
         },
         "name": {
           "type": "string"
+        },
+        "clusterId": {
+          "type": "string",
+          "description": "This field has to be duplicated in Alert for scope management and search."
+        },
+        "clusterName": {
+          "type": "string",
+          "description": "This field has to be duplicated in Alert for scope management and search."
         }
       }
     },

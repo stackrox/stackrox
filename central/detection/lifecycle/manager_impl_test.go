@@ -217,6 +217,20 @@ func (suite *ManagerTestSuite) TestHandleResourceAlerts() {
 	suite.NoError(err)
 }
 
+func (suite *ManagerTestSuite) TestHandleNodeAlerts() {
+	alerts := []*storage.Alert{fixtures.GetNodeAlert()}
+
+	// unfortunately because the filters are in a different package and have unexported functions it cannot be tested here. Alert Manager tests should cover it
+	suite.alertManager.EXPECT().
+		AlertAndNotify(gomock.Any(), alerts, gomock.Any(), gomock.Any()).
+		Return(set.NewStringSet(), nil)
+
+	// reprocessor.ReprocessRiskForDeployments should _not_ be called for resource alerts
+
+	err := suite.manager.HandleNodeAlerts(alerts[0].GetResource().GetClusterId(), alerts, storage.LifecycleStage_RUNTIME)
+	suite.NoError(err)
+}
+
 func TestFilterOutDisabledPolicies(t *testing.T) {
 	alert1 := fixtures.GetAlertWithID("1")
 	alert1.Policy.Id = "1"

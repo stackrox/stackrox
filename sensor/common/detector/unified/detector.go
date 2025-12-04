@@ -23,6 +23,7 @@ type Detector interface {
 	DetectKubeEventForDeployment(enhancedDeployment booleanpolicy.EnhancedDeployment, kubeEvent *storage.KubernetesEvent) []*storage.Alert
 	DetectNetworkFlowForDeployment(enhancedDeployment booleanpolicy.EnhancedDeployment, flow *augmentedobjs.NetworkFlowDetails) []*storage.Alert
 	DetectAuditLogEvents(auditEvent *sensor.AuditEvents) []*storage.Alert
+	DetectNodeFileAccess(node *storage.Node, access *storage.FileAccess) []*storage.Alert
 }
 
 // NewDetector returns a new detector.
