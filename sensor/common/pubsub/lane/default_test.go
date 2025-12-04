@@ -129,6 +129,12 @@ func (s *defaultLaneSuite) TestOptionPanic() {
 			config.NewLane()
 		})
 	})
+	s.Run("panic if a nil NewConsumer is passed to WithDefaultLaneConsumer", func() {
+		config := NewDefaultLane(pubsub.DefaultLane, WithDefaultLaneConsumer(nil))
+		s.Assert().Panics(func() {
+			config.NewLane()
+		})
+	})
 }
 
 func (s *defaultLaneSuite) TestRegisterConsumer() {

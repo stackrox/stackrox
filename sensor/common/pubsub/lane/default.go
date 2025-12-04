@@ -34,6 +34,9 @@ func WithDefaultLaneConsumer(consumer pubsub.NewConsumer, opts ...pubsub.Consume
 		if !ok {
 			panic("cannot use default lane option for this type of lane")
 		}
+		if consumer == nil {
+			panic("cannot configure a 'nil' NewConsumer function")
+		}
 		laneImpl.newConsumerFn = consumer
 		laneImpl.consumerOpts = opts
 	}
@@ -148,7 +151,11 @@ func (l *defaultLane) Stop() {
 	l.stopper.Client().Stop()
 	<-l.stopper.Client().Stopped().Done()
 	concurrency.WithLock(&l.mu, func() {
+		if l.ch == nil {
+			return
+		}
 		close(l.ch)
+		l.ch = nil
 	})
 	l.Lane.Stop()
 }
