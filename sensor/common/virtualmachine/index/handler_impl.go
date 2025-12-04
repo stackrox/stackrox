@@ -60,13 +60,15 @@ func (h *handlerImpl) Send(ctx context.Context, vm *v1.IndexReport) error {
 	h.lock.RLock()
 	defer h.lock.RUnlock()
 
-	enqueueStart := time.Now()
-	blockingStart := enqueueStart
+	blockingStart := time.Now()
+	blocked := false
 	outcome := metrics.IndexReportEnqueueOutcomeSuccess
 	defer func() {
-		metrics.IndexReportBlockingEnqueueDurationMilliseconds.
-			WithLabelValues(outcome).
-			Observe(metrics.StartTimeToMS(blockingStart))
+		if blocked {
+			metrics.IndexReportBlockingEnqueueDurationMilliseconds.
+				WithLabelValues(outcome).
+				Observe(metrics.StartTimeToMS(blockingStart))
+		}
 		metrics.IndexReportsSent.WithLabelValues(outcome).Inc()
 	}()
 
@@ -77,6 +79,7 @@ func (h *handlerImpl) Send(ctx context.Context, vm *v1.IndexReport) error {
 	case h.indexReports <- vm:
 		return nil
 	default:
+		blocked = true
 		blockingStart = time.Now()
 		metrics.IndexReportEnqueueBlockedTotal.Inc()
 	}
