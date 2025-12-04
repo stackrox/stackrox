@@ -112,7 +112,7 @@ export function getViolationsTableColumnDescriptors(filteredWorkflowView: Filter
             Header: 'Type',
             accessor: 'commonEntityInfo.resourceType',
             Cell: ({ value, original }): string => {
-                const deployment = original?.deployment || {};
+                const deployment = original?.deployment ?? {};
                 if (
                     value === resourceTypes.DEPLOYMENT &&
                     deployment.deploymentType &&

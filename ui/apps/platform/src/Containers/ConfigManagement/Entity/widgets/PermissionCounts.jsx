@@ -10,7 +10,7 @@ const flattenPermissions = (scopedPermissions) => {
 
 const createPermissionCountsMapping = (permissions) => {
     const permissionsMap = permissions.reduce((acc, curr) => {
-        acc[curr.key] = [...(acc[curr.key] || []), ...curr.values];
+        acc[curr.key] = [...(acc[curr.key] ?? []), ...curr.values];
         return acc;
     }, {});
     return permissionsMap;

@@ -10,7 +10,7 @@ const RulePermissions = ({ rules, ...rest }) => {
     if (rules && rules.length) {
         const permissionsMap = rules.reduce((acc, curr) => {
             curr.verbs.forEach((verb) => {
-                acc[verb] = [...(acc[verb] || []), ...curr.resources, ...curr.nonResourceUrls];
+                acc[verb] = [...(acc[verb] ?? []), ...curr.resources, ...curr.nonResourceUrls];
             });
             return acc;
         }, {});
