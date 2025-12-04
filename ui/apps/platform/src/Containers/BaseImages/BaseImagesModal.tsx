@@ -1,4 +1,3 @@
-import { useEffect } from 'react';
 import { useFormik } from 'formik';
 import type { FormikHelpers } from 'formik';
 import * as yup from 'yup';
@@ -6,7 +5,6 @@ import {
     Alert,
     Button,
     Flex,
-    FlexItem,
     Form,
     FormGroup,
     FormHelperText,
@@ -56,7 +54,15 @@ function parseBaseImagePath(path: string): { repoPath: string; tagPattern: strin
 }
 
 function BaseImagesModal({ isOpen, onClose, onSuccess }: BaseImagesModalProps) {
-    const addBaseImageMutation = useRestMutation(addBaseImage);
+    const addBaseImageMutation = useRestMutation(
+        ({
+            baseImageRepoPath,
+            baseImageTagPattern,
+        }: {
+            baseImageRepoPath: string;
+            baseImageTagPattern: string;
+        }) => addBaseImage(baseImageRepoPath, baseImageTagPattern)
+    );
 
     const formik = useFormik({
         initialValues: { baseImagePath: '' },
@@ -91,16 +97,10 @@ function BaseImagesModal({ isOpen, onClose, onSuccess }: BaseImagesModalProps) {
     const handleModalClose = () => {
         if (!isSubmitting) {
             formik.resetForm();
+            addBaseImageMutation.reset();
             onClose();
         }
     };
-
-    // Reset mutation state when modal closes
-    useEffect(() => {
-        if (!isOpen) {
-            addBaseImageMutation.reset?.();
-        }
-    }, [isOpen, addBaseImageMutation]);
 
     return (
         <Modal
@@ -136,53 +136,42 @@ function BaseImagesModal({ isOpen, onClose, onSuccess }: BaseImagesModalProps) {
         >
             <Flex direction={{ default: 'column' }} spaceItems={{ default: 'spaceItemsMd' }}>
                 {addBaseImageMutation.isSuccess && (
-                    <FlexItem>
-                        <Alert
-                            variant="success"
-                            isInline
-                            title="Base image successfully added"
-                            component="p"
-                        />
-                    </FlexItem>
+                    <Alert
+                        variant="success"
+                        isInline
+                        title="Base image successfully added"
+                        component="p"
+                    />
                 )}
                 {addBaseImageMutation.isError && (
-                    <FlexItem>
-                        <Alert
-                            variant="danger"
-                            isInline
-                            title="Error adding base image"
-                            component="p"
-                        >
-                            {getAxiosErrorMessage(addBaseImageMutation.error)}
-                        </Alert>
-                    </FlexItem>
+                    <Alert variant="danger" isInline title="Error adding base image" component="p">
+                        {getAxiosErrorMessage(addBaseImageMutation.error)}
+                    </Alert>
                 )}
-                <FlexItem>
-                    <Form onSubmit={formik.handleSubmit}>
-                        <FormGroup label="Base image path" fieldId="baseImagePath" isRequired>
-                            <TextInput
-                                id="baseImagePath"
-                                type="text"
-                                value={formik.values.baseImagePath}
-                                validated={baseImagePathFieldValidated}
-                                onChange={(e) => formik.handleChange(e)}
-                                onBlur={formik.handleBlur}
-                                isDisabled={isSubmitting}
-                                placeholder="Example: docker.io/library/ubuntu:22.04"
-                                isRequired
-                            />
-                            <FormHelperText>
-                                <HelperText>
-                                    <HelperTextItem variant={baseImagePathFieldValidated}>
-                                        {isBaseImagePathFieldInvalid
-                                            ? formik.errors.baseImagePath
-                                            : 'Include repository path and tag (e.g., docker.io/library/ubuntu:22.04). Tag can be a pattern (e.g., v*.*)'}
-                                    </HelperTextItem>
-                                </HelperText>
-                            </FormHelperText>
-                        </FormGroup>
-                    </Form>
-                </FlexItem>
+                <Form onSubmit={formik.handleSubmit}>
+                    <FormGroup label="Base image path" fieldId="baseImagePath" isRequired>
+                        <TextInput
+                            id="baseImagePath"
+                            type="text"
+                            value={formik.values.baseImagePath}
+                            validated={baseImagePathFieldValidated}
+                            onChange={(e) => formik.handleChange(e)}
+                            onBlur={formik.handleBlur}
+                            isDisabled={isSubmitting}
+                            placeholder="Example: docker.io/library/ubuntu:22.04"
+                            isRequired
+                        />
+                        <FormHelperText>
+                            <HelperText>
+                                <HelperTextItem variant={baseImagePathFieldValidated}>
+                                    {isBaseImagePathFieldInvalid
+                                        ? formik.errors.baseImagePath
+                                        : 'Include repository path and tag (e.g., docker.io/library/ubuntu:22.04). Tag can be a pattern (e.g., v*.*)'}
+                                </HelperTextItem>
+                            </HelperText>
+                        </FormHelperText>
+                    </FormGroup>
+                </Form>
             </Flex>
         </Modal>
     );
