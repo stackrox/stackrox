@@ -89,7 +89,7 @@ func setDefaultsAndPersist(ctx context.Context, logger logr.Logger, securedClust
 	// that this information is already persisted in the Kubernetes resource before we
 	// can realistically end up in a situation where reconcilliation might need to be retried.
 	//
-	// This updates securedCluster in-place, which is crucial since this object is used for the final
+	// This updates securedCluster both on the cluster and in memory, which is crucial since this object is used for the final
 	// updating within helm-operator and we have concurrently running controllers (the status controller),
 	// whose changes we must preserve.
 	err := client.Patch(ctx, securedCluster, patch)
