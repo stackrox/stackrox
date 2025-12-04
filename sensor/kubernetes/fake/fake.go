@@ -382,10 +382,10 @@ func (w *WorkloadManager) cleanupVMHistory(namespace, vmName, vmiName string) {
 
 	tracker := w.dynamicClient.Tracker()
 	if vmName != "" {
-		_ = tracker.Delete(vmGVR, namespace, vmName, metav1.DeleteOptions{})
+		_ = tracker.Delete(vmGVR, namespace, vmName)
 	}
 	if vmiName != "" {
-		_ = tracker.Delete(vmiGVR, namespace, vmiName, metav1.DeleteOptions{})
+		_ = tracker.Delete(vmiGVR, namespace, vmiName)
 	}
 
 	w.dynamicClient.ClearActions()
@@ -537,19 +537,14 @@ func (w *WorkloadManager) initializePreexistingResources() {
 			vmBaseVSOCKCID,
 		)
 
-		workload := w.workload.VirtualMachineWorkload
-		var vmResources []*vmResourcesToBeManaged
-		for i := 0; i < templatePool.size(); i++ {
-			resource := w.getVMResources(i, templatePool, reportGen)
-			if resource != nil {
-				vmResources = append(vmResources, resource)
-			}
-		}
-
 		// Fork management of VM/VMI resources (including index reports if enabled)
-		for _, resource := range vmResources {
-			w.wg.Add(1)
-			go w.manageVirtualMachine(w.shutdownCtx, workload, resource)
+		workload := w.workload.VirtualMachineWorkload
+		for i := 0; i < templatePool.size(); i++ {
+			template := templatePool.getTemplate(i)
+			if template != nil {
+				w.wg.Add(1)
+				go w.manageVirtualMachine(w.shutdownCtx, workload, template, reportGen)
+			}
 		}
 	}
 }
