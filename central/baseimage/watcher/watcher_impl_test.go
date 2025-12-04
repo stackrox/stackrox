@@ -8,11 +8,39 @@ import (
 	"github.com/stackrox/rox/central/baseimage/datastore/mocks"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
+	delegatedRegistryMocks "github.com/stackrox/rox/pkg/delegatedregistry/mocks"
 	"github.com/stackrox/rox/pkg/errox"
+	registryMocks "github.com/stackrox/rox/pkg/registries/mocks"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
 )
+
+// createTestWatcher creates a watcherImpl with mock dependencies for testing.
+func createTestWatcher(ctrl *gomock.Controller, mockDS *mocks.MockDataStore, pollInterval time.Duration) *watcherImpl {
+	mockRegistrySet := registryMocks.NewMockSet(ctrl)
+	mockDelegator := delegatedRegistryMocks.NewMockDelegator(ctrl)
+
+	// Set default behavior: no delegation
+	mockDelegator.EXPECT().
+		GetDelegateClusterID(gomock.Any(), gomock.Any()).
+		Return("", false, nil).
+		AnyTimes()
+
+	// Set default behavior: no matching registries
+	mockRegistrySet.EXPECT().
+		GetAll().
+		Return(nil).
+		AnyTimes()
+
+	return &watcherImpl{
+		datastore:    mockDS,
+		registries:   mockRegistrySet,
+		delegator:    mockDelegator,
+		pollInterval: pollInterval,
+		stopper:      concurrency.NewStopper(),
+	}
+}
 
 func TestWatcher_StartsAndStops(t *testing.T) {
 	ctrl := gomock.NewController(t)
@@ -24,11 +52,7 @@ func TestWatcher_StartsAndStops(t *testing.T) {
 		Return([]*storage.BaseImageRepository{}, nil).
 		AnyTimes()
 
-	w := &watcherImpl{
-		datastore:    mockDS,
-		pollInterval: 100 * time.Millisecond,
-		stopper:      concurrency.NewStopper(),
-	}
+	w := createTestWatcher(ctrl, mockDS, 100*time.Millisecond)
 
 	// Start watcher
 	w.Start()
@@ -65,11 +89,7 @@ func TestWatcher_PollsImmediately(t *testing.T) {
 		}).
 		Times(1)
 
-	w := &watcherImpl{
-		datastore:    mockDS,
-		pollInterval: 1 * time.Hour, // Long interval
-		stopper:      concurrency.NewStopper(),
-	}
+	w := createTestWatcher(ctrl, mockDS, 1*time.Hour)
 
 	w.Start()
 	defer w.Stop()
@@ -97,11 +117,7 @@ func TestWatcher_ProcessesMultipleRepositories(t *testing.T) {
 		ListRepositories(gomock.Any()).
 		Return(repos, nil)
 
-	w := &watcherImpl{
-		datastore:    mockDS,
-		pollInterval: 1 * time.Hour,
-		stopper:      concurrency.NewStopper(),
-	}
+	w := createTestWatcher(ctrl, mockDS, 1*time.Hour)
 
 	assert.NotPanics(t, func() {
 		w.pollOnce()
@@ -116,11 +132,7 @@ func TestWatcher_HandlesDatastoreError(t *testing.T) {
 		ListRepositories(gomock.Any()).
 		Return(nil, errox.InvariantViolation.New("database connection failed"))
 
-	w := &watcherImpl{
-		datastore:    mockDS,
-		pollInterval: 1 * time.Hour,
-		stopper:      concurrency.NewStopper(),
-	}
+	w := createTestWatcher(ctrl, mockDS, 1*time.Hour)
 
 	assert.NotPanics(t, func() {
 		w.pollOnce()
@@ -136,11 +148,7 @@ func TestWatcher_StartIsIdempotent(t *testing.T) {
 		Return([]*storage.BaseImageRepository{}, nil).
 		AnyTimes()
 
-	w := &watcherImpl{
-		datastore:    mockDS,
-		pollInterval: 100 * time.Millisecond,
-		stopper:      concurrency.NewStopper(),
-	}
+	w := createTestWatcher(ctrl, mockDS, 100*time.Millisecond)
 
 	// Call Start multiple times
 	w.Start()
@@ -162,11 +170,7 @@ func TestWatcher_StopIsIdempotent(t *testing.T) {
 		Return([]*storage.BaseImageRepository{}, nil).
 		AnyTimes()
 
-	w := &watcherImpl{
-		datastore:    mockDS,
-		pollInterval: 100 * time.Millisecond,
-		stopper:      concurrency.NewStopper(),
-	}
+	w := createTestWatcher(ctrl, mockDS, 100*time.Millisecond)
 
 	w.Start()
 	time.Sleep(150 * time.Millisecond)
@@ -194,11 +198,7 @@ func TestWatcher_StopsGracefullyDuringPoll(t *testing.T) {
 		}).
 		AnyTimes()
 
-	w := &watcherImpl{
-		datastore:    mockDS,
-		pollInterval: 1 * time.Hour,
-		stopper:      concurrency.NewStopper(),
-	}
+	w := createTestWatcher(ctrl, mockDS, 1*time.Hour)
 
 	w.Start()
 
@@ -240,11 +240,7 @@ func TestWatcher_AccessesAllProtoFields(t *testing.T) {
 		ListRepositories(gomock.Any()).
 		Return([]*storage.BaseImageRepository{repo}, nil)
 
-	w := &watcherImpl{
-		datastore:    mockDS,
-		pollInterval: 1 * time.Hour,
-		stopper:      concurrency.NewStopper(),
-	}
+	w := createTestWatcher(ctrl, mockDS, 1*time.Hour)
 
 	// Should not panic when accessing proto fields
 	w.pollOnce()
