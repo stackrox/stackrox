@@ -35,7 +35,7 @@ becomes non-trivial and a shepherd is sought later in the development process.
   you don’t know who can be a good candidate.
 - If you don’t have a shepherd and no-one reviews your ~1K long PR days before the code
   freeze — tough luck. Next time find a shepherd earlier.
-- A person you reach out to can say “no”. In such case, ask for reasons and then ask
+- A person you reach out to can say “no”. In such a case, ask for reasons and then ask
   someone else.
 - If you struggle to find a shepherd, talk to your manager, or to another Red Hatter. This
   is healthy and is a natural way to focus the collective mind on what’s truly important.
