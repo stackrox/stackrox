@@ -15,10 +15,8 @@ import type { CustomGroupNodeData } from '../types/topology.type';
 
 const ICON_PADDING = 20;
 
-export enum DataTypes {
-    Default,
-    Alternate,
-}
+type DataTypes = 0 | 1;
+const DataTypesAlternate: DataTypes = 1;
 
 type StyleGroupProps = {
     element: Node;
@@ -42,7 +40,7 @@ const StyleGroup: FunctionComponent<PropsWithChildren<StyleGroupProps>> = ({
 
     const getTypeIcon = (dataType?: DataTypes): ComponentClass<SVGIconProps> => {
         switch (dataType) {
-            case DataTypes.Alternate:
+            case DataTypesAlternate:
                 return AlternateIcon;
             default:
                 return DefaultIcon;
