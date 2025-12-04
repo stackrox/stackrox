@@ -119,8 +119,9 @@ spec:
                   nodeSelector:
                     additionalProperties:
                       type: string
-                    description: If you want this component to only run on specific
-                      nodes, you can configure a node selector here.
+                    description: |-
+                      If you want this component to only run on specific nodes, you can configure a node selector here.
+                      This setting overrides spec.customize.deploymentDefaults.nodeSelector.
                     type: object
                   replicas:
                     description: |-
@@ -196,8 +197,9 @@ spec:
                     format: int32
                     type: integer
                   tolerations:
-                    description: If you want this component to only run on specific
-                      nodes, you can configure tolerations of tainted nodes.
+                    description: |-
+                      If you want this component to only run on specific nodes, you can configure tolerations of tainted nodes.
+                      This setting overrides spec.customize.deploymentDefaults.tolerations.
                     items:
                       description: |-
                         The pod this Toleration is attached to tolerates any taint that matches
@@ -1021,8 +1023,9 @@ spec:
                       nodeSelector:
                         additionalProperties:
                           type: string
-                        description: If you want this component to only run on specific
-                          nodes, you can configure a node selector here.
+                        description: |-
+                          If you want this component to only run on specific nodes, you can configure a node selector here.
+                          This setting overrides spec.customize.deploymentDefaults.nodeSelector.
                         type: object
                       resources:
                         description: |-
@@ -1117,8 +1120,9 @@ spec:
                             type: integer
                         type: object
                       tolerations:
-                        description: If you want this component to only run on specific
-                          nodes, you can configure tolerations of tainted nodes.
+                        description: |-
+                          If you want this component to only run on specific nodes, you can configure tolerations of tainted nodes.
+                          This setting overrides spec.customize.deploymentDefaults.tolerations.
                         items:
                           description: |-
                             The pod this Toleration is attached to tolerates any taint that matches
@@ -1185,8 +1189,9 @@ spec:
                       nodeSelector:
                         additionalProperties:
                           type: string
-                        description: If you want this component to only run on specific
-                          nodes, you can configure a node selector here.
+                        description: |-
+                          If you want this component to only run on specific nodes, you can configure a node selector here.
+                          This setting overrides spec.customize.deploymentDefaults.nodeSelector.
                         type: object
                       resources:
                         description: |-
@@ -1250,8 +1255,9 @@ spec:
                             type: object
                         type: object
                       tolerations:
-                        description: If you want this component to only run on specific
-                          nodes, you can configure tolerations of tainted nodes.
+                        description: |-
+                          If you want this component to only run on specific nodes, you can configure tolerations of tainted nodes.
+                          This setting overrides spec.customize.deploymentDefaults.tolerations.
                         items:
                           description: |-
                             The pod this Toleration is attached to tolerates any taint that matches
@@ -1332,8 +1338,9 @@ spec:
                       nodeSelector:
                         additionalProperties:
                           type: string
-                        description: If you want this component to only run on specific
-                          nodes, you can configure a node selector here.
+                        description: |-
+                          If you want this component to only run on specific nodes, you can configure a node selector here.
+                          This setting overrides spec.customize.deploymentDefaults.nodeSelector.
                         type: object
                       persistence:
                         description: |-
@@ -1437,8 +1444,9 @@ spec:
                             type: object
                         type: object
                       tolerations:
-                        description: If you want this component to only run on specific
-                          nodes, you can configure tolerations of tainted nodes.
+                        description: |-
+                          If you want this component to only run on specific nodes, you can configure tolerations of tainted nodes.
+                          This setting overrides spec.customize.deploymentDefaults.tolerations.
                         items:
                           description: |-
                             The pod this Toleration is attached to tolerates any taint that matches
@@ -1504,8 +1512,9 @@ spec:
                       nodeSelector:
                         additionalProperties:
                           type: string
-                        description: If you want this component to only run on specific
-                          nodes, you can configure a node selector here.
+                        description: |-
+                          If you want this component to only run on specific nodes, you can configure a node selector here.
+                          This setting overrides spec.customize.deploymentDefaults.nodeSelector.
                         type: object
                       resources:
                         description: |-
@@ -1600,8 +1609,9 @@ spec:
                             type: integer
                         type: object
                       tolerations:
-                        description: If you want this component to only run on specific
-                          nodes, you can configure tolerations of tainted nodes.
+                        description: |-
+                          If you want this component to only run on specific nodes, you can configure tolerations of tainted nodes.
+                          This setting overrides spec.customize.deploymentDefaults.tolerations.
                         items:
                           description: |-
                             The pod this Toleration is attached to tolerates any taint that matches
@@ -1695,8 +1705,9 @@ spec:
                   nodeSelector:
                     additionalProperties:
                       type: string
-                    description: If you want this component to only run on specific
-                      nodes, you can configure a node selector here.
+                    description: |-
+                      If you want this component to only run on specific nodes, you can configure a node selector here.
+                      This setting overrides spec.customize.deploymentDefaults.nodeSelector.
                     type: object
                   resources:
                     description: |-
@@ -1760,8 +1771,9 @@ spec:
                         type: object
                     type: object
                   tolerations:
-                    description: If you want this component to only run on specific
-                      nodes, you can configure tolerations of tainted nodes.
+                    description: |-
+                      If you want this component to only run on specific nodes, you can configure tolerations of tainted nodes.
+                      This setting overrides spec.customize.deploymentDefaults.tolerations.
                     items:
                       description: |-
                         The pod this Toleration is attached to tolerates any taint that matches

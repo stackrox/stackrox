@@ -657,82 +657,98 @@ spec:
         path: scannerV4.matcher.resources
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:resourceRequirements
-      - description: If you want this component to only run on specific nodes, you
-          can configure a node selector here.
+      - description: |-
+          If you want this component to only run on specific nodes, you can configure a node selector here.
+          This setting overrides spec.customize.deploymentDefaults.nodeSelector.
         displayName: Node Selector
         path: central.db.nodeSelector
-      - description: If you want this component to only run on specific nodes, you
-          can configure a node selector here.
+      - description: |-
+          If you want this component to only run on specific nodes, you can configure a node selector here.
+          This setting overrides spec.customize.deploymentDefaults.nodeSelector.
         displayName: Node Selector
         path: central.nodeSelector
-      - description: If you want this component to only run on specific nodes, you
-          can configure a node selector here.
+      - description: |-
+          If you want this component to only run on specific nodes, you can configure a node selector here.
+          This setting overrides spec.customize.deploymentDefaults.nodeSelector.
         displayName: Node Selector
         path: configAsCode.nodeSelector
-      - description: If you want this component to only run on specific nodes, you
-          can configure a node selector here.
+      - description: |-
+          If you want this component to only run on specific nodes, you can configure a node selector here.
+          This setting overrides spec.customize.deploymentDefaults.nodeSelector.
         displayName: Node Selector
         path: scanner.analyzer.nodeSelector
-      - description: If you want this component to only run on specific nodes, you
-          can configure a node selector here.
+      - description: |-
+          If you want this component to only run on specific nodes, you can configure a node selector here.
+          This setting overrides spec.customize.deploymentDefaults.nodeSelector.
         displayName: Node Selector
         path: scanner.db.nodeSelector
-      - description: If you want this component to only run on specific nodes, you
-          can configure a node selector here.
+      - description: |-
+          If you want this component to only run on specific nodes, you can configure a node selector here.
+          This setting overrides spec.customize.deploymentDefaults.nodeSelector.
         displayName: Node Selector
         path: scannerV4.db.nodeSelector
-      - description: If you want this component to only run on specific nodes, you
-          can configure a node selector here.
+      - description: |-
+          If you want this component to only run on specific nodes, you can configure a node selector here.
+          This setting overrides spec.customize.deploymentDefaults.nodeSelector.
         displayName: Node Selector
         path: scannerV4.indexer.nodeSelector
-      - description: If you want this component to only run on specific nodes, you
-          can configure a node selector here.
+      - description: |-
+          If you want this component to only run on specific nodes, you can configure a node selector here.
+          This setting overrides spec.customize.deploymentDefaults.nodeSelector.
         displayName: Node Selector
         path: scannerV4.matcher.nodeSelector
-      - description: If you want this component to only run on specific nodes, you
-          can configure tolerations of tainted nodes.
+      - description: |-
+          If you want this component to only run on specific nodes, you can configure tolerations of tainted nodes.
+          This setting overrides spec.customize.deploymentDefaults.tolerations.
         displayName: Tolerations
         path: central.db.tolerations
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:tolerations
-      - description: If you want this component to only run on specific nodes, you
-          can configure tolerations of tainted nodes.
+      - description: |-
+          If you want this component to only run on specific nodes, you can configure tolerations of tainted nodes.
+          This setting overrides spec.customize.deploymentDefaults.tolerations.
         displayName: Tolerations
         path: central.tolerations
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:tolerations
-      - description: If you want this component to only run on specific nodes, you
-          can configure tolerations of tainted nodes.
+      - description: |-
+          If you want this component to only run on specific nodes, you can configure tolerations of tainted nodes.
+          This setting overrides spec.customize.deploymentDefaults.tolerations.
         displayName: Tolerations
         path: configAsCode.tolerations
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:tolerations
-      - description: If you want this component to only run on specific nodes, you
-          can configure tolerations of tainted nodes.
+      - description: |-
+          If you want this component to only run on specific nodes, you can configure tolerations of tainted nodes.
+          This setting overrides spec.customize.deploymentDefaults.tolerations.
         displayName: Tolerations
         path: scanner.analyzer.tolerations
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:tolerations
-      - description: If you want this component to only run on specific nodes, you
-          can configure tolerations of tainted nodes.
+      - description: |-
+          If you want this component to only run on specific nodes, you can configure tolerations of tainted nodes.
+          This setting overrides spec.customize.deploymentDefaults.tolerations.
         displayName: Tolerations
         path: scanner.db.tolerations
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:tolerations
-      - description: If you want this component to only run on specific nodes, you
-          can configure tolerations of tainted nodes.
+      - description: |-
+          If you want this component to only run on specific nodes, you can configure tolerations of tainted nodes.
+          This setting overrides spec.customize.deploymentDefaults.tolerations.
         displayName: Tolerations
         path: scannerV4.db.tolerations
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:tolerations
-      - description: If you want this component to only run on specific nodes, you
-          can configure tolerations of tainted nodes.
+      - description: |-
+          If you want this component to only run on specific nodes, you can configure tolerations of tainted nodes.
+          This setting overrides spec.customize.deploymentDefaults.tolerations.
         displayName: Tolerations
         path: scannerV4.indexer.tolerations
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:tolerations
-      - description: If you want this component to only run on specific nodes, you
-          can configure tolerations of tainted nodes.
+      - description: |-
+          If you want this component to only run on specific nodes, you can configure tolerations of tainted nodes.
+          This setting overrides spec.customize.deploymentDefaults.tolerations.
         displayName: Tolerations
         path: scannerV4.matcher.tolerations
         x-descriptors:
@@ -1378,62 +1394,74 @@ spec:
         path: sensor.resources
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:resourceRequirements
-      - description: If you want this component to only run on specific nodes, you
-          can configure a node selector here.
+      - description: |-
+          If you want this component to only run on specific nodes, you can configure a node selector here.
+          This setting overrides spec.customize.deploymentDefaults.nodeSelector.
         displayName: Node Selector
         path: admissionControl.nodeSelector
-      - description: If you want this component to only run on specific nodes, you
-          can configure a node selector here.
+      - description: |-
+          If you want this component to only run on specific nodes, you can configure a node selector here.
+          This setting overrides spec.customize.deploymentDefaults.nodeSelector.
         displayName: Node Selector
         path: scanner.analyzer.nodeSelector
-      - description: If you want this component to only run on specific nodes, you
-          can configure a node selector here.
+      - description: |-
+          If you want this component to only run on specific nodes, you can configure a node selector here.
+          This setting overrides spec.customize.deploymentDefaults.nodeSelector.
         displayName: Node Selector
         path: scanner.db.nodeSelector
-      - description: If you want this component to only run on specific nodes, you
-          can configure a node selector here.
+      - description: |-
+          If you want this component to only run on specific nodes, you can configure a node selector here.
+          This setting overrides spec.customize.deploymentDefaults.nodeSelector.
         displayName: Node Selector
         path: scannerV4.db.nodeSelector
-      - description: If you want this component to only run on specific nodes, you
-          can configure a node selector here.
+      - description: |-
+          If you want this component to only run on specific nodes, you can configure a node selector here.
+          This setting overrides spec.customize.deploymentDefaults.nodeSelector.
         displayName: Node Selector
         path: scannerV4.indexer.nodeSelector
-      - description: If you want this component to only run on specific nodes, you
-          can configure a node selector here.
+      - description: |-
+          If you want this component to only run on specific nodes, you can configure a node selector here.
+          This setting overrides spec.customize.deploymentDefaults.nodeSelector.
         displayName: Node Selector
         path: sensor.nodeSelector
-      - description: If you want this component to only run on specific nodes, you
-          can configure tolerations of tainted nodes.
+      - description: |-
+          If you want this component to only run on specific nodes, you can configure tolerations of tainted nodes.
+          This setting overrides spec.customize.deploymentDefaults.tolerations.
         displayName: Tolerations
         path: admissionControl.tolerations
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:tolerations
-      - description: If you want this component to only run on specific nodes, you
-          can configure tolerations of tainted nodes.
+      - description: |-
+          If you want this component to only run on specific nodes, you can configure tolerations of tainted nodes.
+          This setting overrides spec.customize.deploymentDefaults.tolerations.
         displayName: Tolerations
         path: scanner.analyzer.tolerations
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:tolerations
-      - description: If you want this component to only run on specific nodes, you
-          can configure tolerations of tainted nodes.
+      - description: |-
+          If you want this component to only run on specific nodes, you can configure tolerations of tainted nodes.
+          This setting overrides spec.customize.deploymentDefaults.tolerations.
         displayName: Tolerations
         path: scanner.db.tolerations
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:tolerations
-      - description: If you want this component to only run on specific nodes, you
-          can configure tolerations of tainted nodes.
+      - description: |-
+          If you want this component to only run on specific nodes, you can configure tolerations of tainted nodes.
+          This setting overrides spec.customize.deploymentDefaults.tolerations.
         displayName: Tolerations
         path: scannerV4.db.tolerations
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:tolerations
-      - description: If you want this component to only run on specific nodes, you
-          can configure tolerations of tainted nodes.
+      - description: |-
+          If you want this component to only run on specific nodes, you can configure tolerations of tainted nodes.
+          This setting overrides spec.customize.deploymentDefaults.tolerations.
         displayName: Tolerations
         path: scannerV4.indexer.tolerations
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:tolerations
-      - description: If you want this component to only run on specific nodes, you
-          can configure tolerations of tainted nodes.
+      - description: |-
+          If you want this component to only run on specific nodes, you can configure tolerations of tainted nodes.
+          This setting overrides spec.customize.deploymentDefaults.tolerations.
         displayName: Tolerations
         path: sensor.tolerations
         x-descriptors:

@@ -83,10 +83,12 @@ type DeploymentSpec struct {
 	Resources *corev1.ResourceRequirements `json:"resources,omitempty"`
 
 	// If you want this component to only run on specific nodes, you can configure a node selector here.
+	// This setting overrides spec.customize.deploymentDefaults.nodeSelector.
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Node Selector",order=101
 	NodeSelector map[string]string `json:"nodeSelector,omitempty"`
 
 	// If you want this component to only run on specific nodes, you can configure tolerations of tainted nodes.
+	// This setting overrides spec.customize.deploymentDefaults.tolerations.
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:tolerations"},order=102
 	Tolerations []*corev1.Toleration `json:"tolerations,omitempty"`
 
