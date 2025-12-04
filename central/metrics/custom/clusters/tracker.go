@@ -4,13 +4,13 @@ import (
 	"context"
 
 	clusterDS "github.com/stackrox/rox/central/cluster/datastore"
-	"github.com/stackrox/rox/central/metrics/custom/refresh"
+	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/central/metrics/custom/tracker"
 )
 
 func New(ds clusterDS.DataStore) *tracker.TrackerBase[*finding] {
 	return tracker.MakeTrackerBase(
-		refresh.Clusters,
+		metrics.Health,
 		"clusters",
 		LazyLabels,
 		func(ctx context.Context, _ tracker.MetricDescriptors) tracker.FindingErrorSequence[*finding] {

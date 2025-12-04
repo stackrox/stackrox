@@ -14,12 +14,6 @@ var (
 	mu        sync.RWMutex
 )
 
-const (
-	Clusters      = "health"
-	Expiry        = "cert_exp"
-	Configuration = "cfg"
-)
-
 // SetSingleton initializes the refresher singleton object.
 func SetSingleton(r Refresher) {
 	mu.Lock()
