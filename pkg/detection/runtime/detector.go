@@ -17,6 +17,7 @@ type Detector interface {
 	DetectForDeploymentAndKubeEvent(enhancedDeployment booleanpolicy.EnhancedDeployment, kubeEvent *storage.KubernetesEvent) ([]*storage.Alert, error)
 	DetectForDeploymentAndNetworkFlow(enhancedDeployment booleanpolicy.EnhancedDeployment, flow *augmentedobjs.NetworkFlowDetails) ([]*storage.Alert, error)
 	DetectForAuditEvents(auditEvents []*storage.KubernetesEvent) ([]*storage.Alert, error)
+	DetectForNodeAndFileAccess(node *storage.Node, access *storage.FileAccess) ([]*storage.Alert, error)
 }
 
 // NewDetector returns a new instance of a Detector.
@@ -67,6 +68,41 @@ func (d *detectorImpl) DetectForDeploymentAndNetworkFlow(
 	flow *augmentedobjs.NetworkFlowDetails,
 ) ([]*storage.Alert, error) {
 	return d.detectForDeployment(enhancedDeployment, nil, false, nil, flow)
+}
+
+func (d *detectorImpl) DetectForNodeAndFileAccess(node *storage.Node, access *storage.FileAccess) ([]*storage.Alert, error) {
+	var alerts []*storage.Alert
+	var cacheReceptacle booleanpolicy.CacheReceptacle
+
+	err := d.policySet.ForEach(func(compiled detection.CompiledPolicy) error {
+		if compiled.Policy().GetDisabled() {
+			return nil
+		}
+
+		if access != nil {
+			// Check predicate on file access.
+			if !compiled.AppliesTo(access) {
+				return nil
+			}
+
+			violation, err := compiled.MatchAgainstNodeAndFileAccess(&cacheReceptacle, node, access)
+			if err != nil {
+				return errors.Wrapf(err, "evaluating violations for policy %q; node file access.",
+					compiled.Policy().GetName())
+			}
+
+			alert := constructFileAccessAlert(compiled.Policy(), node, nil, violation)
+			if alert != nil {
+				alerts = append(alerts, alert)
+			}
+		}
+
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+	return alerts, nil
 }
 
 // detectForDeployment runs detection on a deployment, returning any generated alerts.

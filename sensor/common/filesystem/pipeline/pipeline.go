@@ -11,7 +11,7 @@ import (
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stackrox/rox/sensor/common/clusterentities"
 	"github.com/stackrox/rox/sensor/common/detector"
-	"github.com/stackrox/rox/sensor/common/store"
+	fsUtils "github.com/stackrox/rox/sensor/common/filesystem/utils"
 )
 
 var (
@@ -24,19 +24,17 @@ type Pipeline struct {
 
 	activityChan    chan *sensorAPI.FileActivity
 	clusterEntities *clusterentities.Store
-	nodeStore       store.NodeStore
 
 	msgCtx context.Context
 }
 
-func NewFileSystemPipeline(detector detector.Detector, clusterEntities *clusterentities.Store, nodeStore store.NodeStore, activityChan chan *sensorAPI.FileActivity) *Pipeline {
+func NewFileSystemPipeline(detector detector.Detector, clusterEntities *clusterentities.Store, activityChan chan *sensorAPI.FileActivity) *Pipeline {
 	msgCtx := context.Background()
 
 	p := &Pipeline{
 		detector:        detector,
 		activityChan:    activityChan,
 		clusterEntities: clusterEntities,
-		nodeStore:       nodeStore,
 		stopper:         concurrency.NewStopper(),
 		msgCtx:          msgCtx,
 	}
@@ -114,6 +112,11 @@ func (p *Pipeline) translate(fs *sensorAPI.FileActivity) *storage.FileAccess {
 		return nil
 	}
 
+	if fsUtils.IsNodeFileAccess(access) {
+		// TODO: remove when full host path resolution is complete
+		access.File.NodePath = access.GetFile().GetMountedPath()
+	}
+
 	return access
 }
 
@@ -175,21 +178,7 @@ func (p *Pipeline) run() {
 				return
 			}
 			event := p.translate(fs)
-
-			// TODO: Send event to detector
-			if event.GetProcess().GetContainerName() != "" {
-				// Do deployment based detection but for now just log
-				log.Infof("Container FS event = %+v", event)
-			} else {
-				node := p.nodeStore.GetNode(event.GetHostname())
-				if node == nil {
-					log.Warnf("Node %s not found in node store", event.GetHostname())
-					continue
-				}
-
-				// Do node based detection but for now just log
-				log.Infof("Node FS event on %s = %+v", node.GetName(), event)
-			}
+			p.detector.ProcessFileAccess(p.msgCtx, event)
 		}
 	}
 }
