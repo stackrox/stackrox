@@ -12,6 +12,7 @@ import type { VulnerabilityState } from 'types/cve.proto';
 import type { SearchFilter } from 'types/search';
 import { createFilterTracker } from 'utils/analyticsEventTracking';
 import { getHasSearchApplied } from 'utils/searchUtils';
+import { ensureExhaustive } from 'utils/type.utils';
 
 import type { DefaultFilters, QuerySearchFilter, WorkloadEntityTab } from '../../types';
 import CVEsTableContainer from './CVEsTableContainer';
@@ -24,9 +25,7 @@ import type { defaultColumns as cveDefaultColumns } from '../Tables/WorkloadCVEO
 import type { defaultColumns as imageDefaultColumns } from '../Tables/ImageOverviewTable';
 import type { defaultColumns as deploymentDefaultColumns } from '../Tables/DeploymentOverviewTable';
 
-function getSearchFilterEntityByTab(
-    entityTab: WorkloadEntityTab
-): 'CVE' | 'Image' | 'Deployment' | undefined {
+function getSearchFilterEntityByTab(entityTab: WorkloadEntityTab): 'CVE' | 'Image' | 'Deployment' {
     switch (entityTab) {
         case 'CVE':
             return 'CVE';
@@ -35,7 +34,7 @@ function getSearchFilterEntityByTab(
         case 'Deployment':
             return 'Deployment';
         default:
-            return undefined;
+            return ensureExhaustive(entityTab);
     }
 }
 
