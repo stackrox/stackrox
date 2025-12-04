@@ -120,7 +120,7 @@ describe('User Profile', () => {
                 staticResponseForMultiRolesWithOidcProvider
             );
 
-            cy.get('#user-role-selector').click();
+            cy.get(userPageSelectors.userRoleSelector).click();
             cy.get(`${userPageSelectors.userRoleNames}:contains("Admin")`).should('exist');
             cy.get(`${userPageSelectors.userRoleNames}:contains("Analyst")`).should('exist');
             cy.get(`${userPageSelectors.userRoleNames}:contains("Continuous Integration")`).should(
@@ -133,7 +133,7 @@ describe('User Profile', () => {
                 staticResponseForMultiRolesWithOidcProvider
             );
 
-            cy.get('#user-role-selector').click();
+            cy.get(userPageSelectors.userRoleSelector).click();
             cy.get(`${userPageSelectors.userRoleNames}:contains("Analyst")`).click();
 
             // check that read is allowed and write is forbidden
@@ -144,21 +144,21 @@ describe('User Profile', () => {
         it('should properly highlight current role', () => {
             visitUserProfile();
 
-            const { userPermissionsForRoles, userRoleNames } = userPageSelectors;
+            const { userPermissionsForRoles, userRoleNames, userRoleSelector } = userPageSelectors;
             const userRoleAdmin = `${userRoleNames}:contains("Admin")`;
 
             // When landing on Users page, "User permissions for roles" should be selected
-            cy.get('#user-role-selector').should('contain.text', 'User permissions for roles');
+            cy.get(userRoleSelector).should('contain.text', 'User permissions for roles');
 
             // After clicking Admin user role:
-            cy.get('#user-role-selector').click();
+            cy.get(userRoleSelector).click();
             cy.get(userRoleAdmin).click();
-            cy.get('#user-role-selector').should('contain.text', 'Admin');
+            cy.get(userRoleSelector).should('contain.text', 'Admin');
 
             // After clicking User permissions for roles:
-            cy.get('#user-role-selector').click();
+            cy.get(userRoleSelector).click();
             cy.get(userPermissionsForRoles).click();
-            cy.get('#user-role-selector').should('contain.text', 'User permissions for roles');
+            cy.get(userRoleSelector).should('contain.text', 'User permissions for roles');
         });
 
         it('should display aggregated permissions for basic auth user', () => {
