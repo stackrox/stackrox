@@ -82,23 +82,16 @@ const (
 	IndexReportEnqueueOutcomeCanceled = "context_canceled"
 )
 
-// IndexReportEnqueueMode label values for blocking vs non-blocking paths.
-const (
-	IndexReportEnqueueModeNonBlocking = "non_blocking"
-	IndexReportEnqueueModeBlocking    = "blocking"
-)
-
-// IndexReportEnqueueDurationMilliseconds measures how long Send spent waiting to enqueue reports.
-var IndexReportEnqueueDurationMilliseconds = prometheus.NewHistogramVec(
+// IndexReportBlockingEnqueueDurationMilliseconds measures how long Sensor waits after detecting backpressure.
+var IndexReportBlockingEnqueueDurationMilliseconds = prometheus.NewHistogramVec(
 	prometheus.HistogramOpts{
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.SensorSubsystem.String(),
-		Name:      "virtual_machine_index_report_enqueue_duration_milliseconds",
-		Help: "Time spent (in ms) by Sensor while waiting to enqueue virtual machine index reports onto the indexReports channel. " +
-			"Mode indicates whether the initial enqueue attempt was blocking (channel full) or non-blocking (channel has space).",
-		Buckets: prometheus.ExponentialBuckets(0.5, 2, 13), // 0.5ms to ~4s
+		Name:      "virtual_machine_index_report_blocking_enqueue_duration_milliseconds",
+		Help:      "Time spent (in ms) waiting for indexReports capacity after encountering a full channel",
+		Buckets:   append([]float64{1, 5, 10, 50, 100, 250, 500}, prometheus.ExponentialBuckets(1000, 2, 8)...), // 1ms to 128s
 	},
-	[]string{"outcome", "mode"},
+	[]string{"outcome"},
 )
 
 // IndexReportEnqueueBlockedTotal counts how often the enqueue channel was full.
@@ -117,7 +110,7 @@ func init() {
 		IndexReportsSent,
 		VirtualMachineIndexReportHandlingDurationMilliseconds,
 		IndexReportProcessingDurationMilliseconds,
-		IndexReportEnqueueDurationMilliseconds,
+		IndexReportBlockingEnqueueDurationMilliseconds,
 		IndexReportEnqueueBlockedTotal,
 	)
 }

@@ -63,10 +63,9 @@ func (h *handlerImpl) Send(ctx context.Context, vm *v1.IndexReport) error {
 	enqueueStart := time.Now()
 	blockingStart := enqueueStart
 	outcome := metrics.IndexReportEnqueueOutcomeSuccess
-	mode := metrics.IndexReportEnqueueModeNonBlocking
 	defer func() {
-		metrics.IndexReportEnqueueDurationMilliseconds.
-			WithLabelValues(outcome, mode).
+		metrics.IndexReportBlockingEnqueueDurationMilliseconds.
+			WithLabelValues(outcome).
 			Observe(metrics.StartTimeToMS(blockingStart))
 		metrics.IndexReportsSent.WithLabelValues(outcome).Inc()
 	}()
@@ -78,7 +77,6 @@ func (h *handlerImpl) Send(ctx context.Context, vm *v1.IndexReport) error {
 	case h.indexReports <- vm:
 		return nil
 	default:
-		mode = metrics.IndexReportEnqueueModeBlocking
 		blockingStart = time.Now()
 		metrics.IndexReportEnqueueBlockedTotal.Inc()
 	}
