@@ -371,7 +371,7 @@ const routeRequirementsMap: Record<RouteKey, RouteRequirements> = {
         resourceAccessRequirements: everyResource(['Cluster']),
     },
     'base-images': {
-        // featureFlagRequirements: allEnabled(['ROX_BASE_IMAGE_DETECTION']),
+        featureFlagRequirements: allEnabled(['ROX_BASE_IMAGE_DETECTION']),
         resourceAccessRequirements: everyResource(['Image']), // TODO: May need new resource type
     },
     'vulnerability-management': {
