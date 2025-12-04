@@ -10,6 +10,7 @@ export type BaseImagesTableProps = {
     isRemoveInProgress: boolean;
 };
 
+// TODO: Use onRemove and isRemoveInProgress when table UI is implemented
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 function BaseImagesTable({ baseImages, onRemove, isRemoveInProgress }: BaseImagesTableProps) {
     if (baseImages.length === 0) {

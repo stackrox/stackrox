@@ -3,25 +3,24 @@ import type { AxiosError } from 'axios';
 
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 
-import BaseImagesForm from './BaseImagesForm';
-import type { BaseImagesFormProps } from './BaseImagesForm';
-
 export type BaseImagesModalProps = {
     isOpen: boolean;
     onClose: () => void;
+    onSave: () => void;
     isSuccess: boolean;
     isError: boolean;
+    isSubmitting: boolean;
     error: AxiosError | null;
-    formProps: BaseImagesFormProps;
 };
 
 function BaseImagesModal({
     isOpen,
     onClose,
+    onSave,
     isSuccess,
     isError,
+    isSubmitting,
     error,
-    formProps,
 }: BaseImagesModalProps) {
     return (
         <Modal
@@ -34,7 +33,21 @@ function BaseImagesModal({
             isOpen={isOpen}
             onClose={onClose}
             variant="medium"
-            showClose={true}
+            showClose
+            actions={[
+                <Button
+                    key="save"
+                    variant="primary"
+                    onClick={onSave}
+                    isLoading={isSubmitting}
+                    isDisabled={isSubmitting}
+                >
+                    Save
+                </Button>,
+                <Button key="cancel" variant="link" onClick={onClose}>
+                    Cancel
+                </Button>,
+            ]}
         >
             <Flex direction={{ default: 'column' }} spaceItems={{ default: 'spaceItemsMd' }}>
                 {isSuccess && (
@@ -60,7 +73,9 @@ function BaseImagesModal({
                     </FlexItem>
                 )}
                 <FlexItem>
-                    <BaseImagesForm {...formProps} />
+                    <Alert variant="info" isInline title="Form coming soon" component="p">
+                        Will add input for base image path (including repo path and tag pattern)
+                    </Alert>
                 </FlexItem>
             </Flex>
         </Modal>

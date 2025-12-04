@@ -128,14 +128,16 @@ function BaseImagesPage() {
             <BaseImagesModal
                 isOpen={isAddModalOpen}
                 onClose={handleCloseAddModal}
+                onSave={() =>
+                    addBaseImageMutation.mutate({
+                        baseImageRepoPath: '',
+                        baseImageTagPattern: '',
+                    })
+                }
                 isSuccess={addBaseImageMutation.isSuccess}
                 isError={addBaseImageMutation.isError}
+                isSubmitting={addBaseImageMutation.isLoading}
                 error={(addBaseImageMutation.error as AxiosError) || null}
-                formProps={{
-                    onAddBaseImage: addBaseImageMutation.mutate,
-                    isSubmitting: addBaseImageMutation.isLoading,
-                    error: (addBaseImageMutation.error as AxiosError) || null,
-                }}
             />
         </>
     );
