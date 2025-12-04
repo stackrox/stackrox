@@ -57,11 +57,6 @@ func validateVMWorkload(workload VirtualMachineWorkload) VirtualMachineWorkload 
 	return workload
 }
 
-// vmTemplatePool holds a fixed-size pool of VM/VMI templates
-type vmTemplatePool struct {
-	templates []*vmTemplate
-}
-
 type vmTemplate struct {
 	index         int // Template index, used for deterministic UUID generation
 	baseName      string
@@ -70,14 +65,12 @@ type vmTemplate struct {
 	guestOS       string
 }
 
-func newVMTemplatePool(poolSize int, guestOSPool []string, vsockBaseCID uint32) *vmTemplatePool {
-	pool := &vmTemplatePool{
-		templates: make([]*vmTemplate, poolSize),
-	}
-
+// newVMTemplates creates a slice of VM templates for the fake workload.
+func newVMTemplates(poolSize int, guestOSPool []string, vsockBaseCID uint32) []*vmTemplate {
+	templates := make([]*vmTemplate, poolSize)
 	for i := 0; i < poolSize; i++ {
 		guestOS := guestOSPool[rand.Intn(len(guestOSPool))]
-		pool.templates[i] = &vmTemplate{
+		templates[i] = &vmTemplate{
 			index:         i,
 			baseName:      fmt.Sprintf("vm-%d", i),
 			baseNamespace: "default",
@@ -85,19 +78,7 @@ func newVMTemplatePool(poolSize int, guestOSPool []string, vsockBaseCID uint32) 
 			guestOS:       guestOS,
 		}
 	}
-
-	return pool
-}
-
-func (p *vmTemplatePool) getTemplate(idx int) *vmTemplate {
-	if idx < 0 || idx >= len(p.templates) {
-		return nil
-	}
-	return p.templates[idx]
-}
-
-func (p *vmTemplatePool) size() int {
-	return len(p.templates)
+	return templates
 }
 
 func (t *vmTemplate) instantiate(iteration int) (*unstructured.Unstructured, *unstructured.Unstructured) {
