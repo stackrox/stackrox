@@ -40,8 +40,24 @@ type Configuration struct {
 	toAdd          []MetricName
 	toDelete       []MetricName
 	period         time.Duration
+	enabled        bool
 }
 
+// GetMetrics returns the parsed metric descriptors.
+func (cfg *Configuration) GetMetrics() MetricDescriptors {
+	if cfg == nil {
+		return nil
+	}
+	return cfg.metrics
+}
+
+// isEnabled checks if a counter (non-periodic) tracker is enabled.
 func (cfg *Configuration) isEnabled() bool {
+	return cfg != nil && cfg.enabled && len(cfg.metrics) > 0
+}
+
+// isGatheringEnabled checks if a gauge (periodic) tracker is enabled.
+// The enabled flag is ignored: having metrics and a period is sufficient.
+func (cfg *Configuration) isGatheringEnabled() bool {
 	return cfg != nil && len(cfg.metrics) > 0 && cfg.period > 0
 }

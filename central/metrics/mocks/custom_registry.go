@@ -57,6 +57,18 @@ func (mr *MockCustomRegistryMockRecorder) Gather() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Gather", reflect.TypeOf((*MockCustomRegistry)(nil).Gather))
 }
 
+// IncrementCounter mocks base method.
+func (m *MockCustomRegistry) IncrementCounter(metricName string, labels prometheus.Labels) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "IncrementCounter", metricName, labels)
+}
+
+// IncrementCounter indicates an expected call of IncrementCounter.
+func (mr *MockCustomRegistryMockRecorder) IncrementCounter(metricName, labels any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IncrementCounter", reflect.TypeOf((*MockCustomRegistry)(nil).IncrementCounter), metricName, labels)
+}
+
 // Lock mocks base method.
 func (m *MockCustomRegistry) Lock() {
 	m.ctrl.T.Helper()
@@ -67,6 +79,20 @@ func (m *MockCustomRegistry) Lock() {
 func (mr *MockCustomRegistryMockRecorder) Lock() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Lock", reflect.TypeOf((*MockCustomRegistry)(nil).Lock))
+}
+
+// RegisterCounter mocks base method.
+func (m *MockCustomRegistry) RegisterCounter(metricName, description string, labels []string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "RegisterCounter", metricName, description, labels)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// RegisterCounter indicates an expected call of RegisterCounter.
+func (mr *MockCustomRegistryMockRecorder) RegisterCounter(metricName, description, labels any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RegisterCounter", reflect.TypeOf((*MockCustomRegistry)(nil).RegisterCounter), metricName, description, labels)
 }
 
 // RegisterMetric mocks base method.
