@@ -1,4 +1,4 @@
-import { Bullseye } from '@patternfly/react-core';
+import { Alert, Bullseye } from '@patternfly/react-core';
 
 import type { BaseImage } from 'services/BaseImagesService';
 
@@ -23,11 +23,10 @@ function BaseImagesTable({ baseImages, onRemove, isRemoveInProgress }: BaseImage
     }
 
     return (
-        <div>
-            <p>BaseImagesTable placeholder</p>
-            <p>Items: {baseImages.length}</p>
-            <p>Is removing: {isRemoveInProgress ? 'yes' : 'no'}</p>
-        </div>
+        <Alert variant="info" isInline title="Base images table coming soon" component="p">
+            You have {baseImages.length} base image{baseImages.length !== 1 ? 's' : ''}. Table UI
+            will be implemented soon.
+        </Alert>
     );
 }
 

@@ -37,7 +37,6 @@ function BaseImagesPage() {
         (request: AddBaseImageRequest) => addBaseImageFn(request),
         {
             onSuccess: () => {
-                setIsAddModalOpen(false);
                 baseImagesRequest.refetch();
             },
         }
@@ -92,14 +91,6 @@ function BaseImagesPage() {
                     className="pf-v5-u-flex-grow-1"
                 >
                     {/* Alerts */}
-                    {deleteBaseImageMutation.isSuccess && (
-                        <Alert
-                            variant="success"
-                            isInline
-                            title="Base image successfully removed"
-                            component="p"
-                        />
-                    )}
                     {deleteBaseImageMutation.isError && (
                         <Alert
                             variant="danger"

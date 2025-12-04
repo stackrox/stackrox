@@ -1,4 +1,4 @@
-import { Alert, Button, Modal, Title } from '@patternfly/react-core';
+import { Alert, Button, Flex, FlexItem, Modal, Title } from '@patternfly/react-core';
 import type { AxiosError } from 'axios';
 
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
@@ -41,20 +41,33 @@ function BaseImagesModal({
                 </Button>,
             ]}
         >
-            {isSuccess && (
-                <Alert
-                    variant="success"
-                    isInline
-                    title="Base image successfully added"
-                    component="p"
-                />
-            )}
-            {isError && (
-                <Alert variant="danger" isInline title="Error adding base image" component="p">
-                    {getAxiosErrorMessage(error)}
-                </Alert>
-            )}
-            <BaseImagesForm {...formProps} />
+            <Flex direction={{ default: 'column' }} spaceItems={{ default: 'spaceItemsMd' }}>
+                {isSuccess && (
+                    <FlexItem>
+                        <Alert
+                            variant="success"
+                            isInline
+                            title="Base image successfully added"
+                            component="p"
+                        />
+                    </FlexItem>
+                )}
+                {isError && (
+                    <FlexItem>
+                        <Alert
+                            variant="danger"
+                            isInline
+                            title="Error adding base image"
+                            component="p"
+                        >
+                            {getAxiosErrorMessage(error)}
+                        </Alert>
+                    </FlexItem>
+                )}
+                <FlexItem>
+                    <BaseImagesForm {...formProps} />
+                </FlexItem>
+            </Flex>
         </Modal>
     );
 }

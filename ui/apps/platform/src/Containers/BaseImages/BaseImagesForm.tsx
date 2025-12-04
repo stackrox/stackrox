@@ -9,8 +9,8 @@ export type BaseImagesFormProps = {
     error: AxiosError | null;
 };
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 function BaseImagesForm({ onAddBaseImage, isSubmitting, error }: BaseImagesFormProps) {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     return (
         <Alert variant="info" isInline title="Form coming soon" component="p">
             Will add baseImageRepoPath and baseImageTagPattern inputs
