@@ -76,7 +76,7 @@ function MainPage(): ReactElement {
             <div id="PageParent">
                 <Button
                     style={{
-                        bottom: 'var(--pf-t--global--spacer--lg)',
+                        bottom: 'calc(2 * var(--pf-t--global--spacer--4xl))',
                         position: 'absolute',
                         right: '0',
                         transform: 'rotate(270deg)',
