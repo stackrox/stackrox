@@ -12,7 +12,7 @@ function BaseImagesForm({ onAddBaseImage, isSubmitting }: BaseImagesFormProps) {
         <Flex direction={{ default: 'column' }} spaceItems={{ default: 'spaceItemsMd' }}>
             <FlexItem>
                 <Alert variant="info" isInline title="Form coming soon" component="p">
-                    Will add baseImageRepoPath and baseImageTagPattern inputs
+                    Will add input for base image path (including repo path and tag pattern)
                 </Alert>
             </FlexItem>
             <FlexItem>
