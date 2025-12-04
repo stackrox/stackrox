@@ -46,6 +46,10 @@ const validationSchema = yup.object({
 
 type FormData = yup.InferType<typeof validationSchema>;
 
+/**
+ * Parses a base image path into repository path and tag pattern.
+ * Format: "docker.io/library/ubuntu:22.04" -> { repoPath: "docker.io/library/ubuntu", tagPattern: "22.04" }
+ */
 function parseBaseImagePath(path: string): { repoPath: string; tagPattern: string } {
     const lastColonIndex = path.lastIndexOf(':');
     const repoPath = path.substring(0, lastColonIndex);
@@ -53,6 +57,10 @@ function parseBaseImagePath(path: string): { repoPath: string; tagPattern: strin
     return { repoPath, tagPattern };
 }
 
+/**
+ * Modal form for adding a new base image. Handles form validation and submission,
+ * parsing the input path into repo path and tag pattern components.
+ */
 function BaseImagesModal({ isOpen, onClose, onSuccess }: BaseImagesModalProps) {
     const addBaseImageMutation = useRestMutation(
         ({
@@ -68,6 +76,7 @@ function BaseImagesModal({ isOpen, onClose, onSuccess }: BaseImagesModalProps) {
         initialValues: { baseImagePath: '' },
         validationSchema,
         onSubmit: (formValues: FormData, { setSubmitting }: FormikHelpers<FormData>) => {
+            // Parse user input (e.g., "docker.io/library/ubuntu:22.04") into separate components
             const { repoPath, tagPattern } = parseBaseImagePath(formValues.baseImagePath);
 
             addBaseImageMutation.mutate(
@@ -94,6 +103,10 @@ function BaseImagesModal({ isOpen, onClose, onSuccess }: BaseImagesModalProps) {
     const baseImagePathFieldValidated = isBaseImagePathFieldInvalid ? 'error' : 'default';
     const isSubmitting = formik.isSubmitting || addBaseImageMutation.isLoading;
 
+    /**
+     * Prevents closing the modal while a submission is in progress.
+     * Cleans up form state when successfully closed.
+     */
     const handleModalClose = () => {
         if (!isSubmitting) {
             formik.resetForm();
