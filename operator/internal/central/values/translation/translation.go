@@ -94,7 +94,7 @@ func (t Translator) translate(ctx context.Context, c platform.Central) (chartuti
 
 	customize := translation.NewValuesBuilder()
 	customize.AddAllFrom(translation.GetCustomize(c.Spec.Customize))
-	defaults := translation.GetDeploymentDefaults(c.Spec.Customize)
+	deploymentDefaults := translation.GetDeploymentDefaults(c.Spec.Customize)
 
 	centralSpec := c.Spec.Central
 	if centralSpec == nil {
@@ -103,27 +103,27 @@ func (t Translator) translate(ctx context.Context, c platform.Central) (chartuti
 
 	monitoring := c.Spec.Monitoring
 	v.AddChild("monitoring", translation.GetGlobalMonitoring(monitoring))
-	central, err := getCentralComponentValues(ctx, centralSpec, c.GetNamespace(), t.client, defaults)
+	central, err := getCentralComponentValues(ctx, centralSpec, c.GetNamespace(), t.client, deploymentDefaults)
 	if err != nil {
 		return nil, err
 	}
 
 	v.AddChild("central", central)
 
-	if c.Spec.Scanner != nil || defaults.IsSet() {
+	if c.Spec.Scanner != nil || deploymentDefaults.IsSet() {
 		scannerSpec := c.Spec.Scanner
 		if scannerSpec == nil {
 			scannerSpec = &platform.ScannerComponentSpec{}
 		}
-		v.AddChild("scanner", getCentralScannerComponentValues(scannerSpec, defaults))
+		v.AddChild("scanner", getCentralScannerComponentValues(scannerSpec, deploymentDefaults))
 	}
 
-	if c.Spec.ScannerV4 != nil || defaults.IsSet() {
+	if c.Spec.ScannerV4 != nil || deploymentDefaults.IsSet() {
 		scannerV4Spec := c.Spec.ScannerV4
 		if scannerV4Spec == nil {
 			scannerV4Spec = &platform.ScannerV4Spec{}
 		}
-		v.AddChild("scannerV4", getCentralScannerV4ComponentValues(ctx, scannerV4Spec, c.GetNamespace(), t.client, defaults))
+		v.AddChild("scannerV4", getCentralScannerV4ComponentValues(ctx, scannerV4Spec, c.GetNamespace(), t.client, deploymentDefaults))
 	}
 
 	v.AddChild("customize", &customize)
@@ -136,12 +136,12 @@ func (t Translator) translate(ctx context.Context, c platform.Central) (chartuti
 		v.AddChild("configAsCode", translation.GetConfigAsCode(c.Spec.ConfigAsCode))
 	}
 
-	if c.Spec.ConfigAsCode != nil || defaults.IsSet() {
+	if c.Spec.ConfigAsCode != nil || deploymentDefaults.IsSet() {
 		configAsCodeSpec := c.Spec.ConfigAsCode
 		if configAsCodeSpec == nil {
 			configAsCodeSpec = &platform.ConfigAsCodeSpec{}
 		}
-		v.AddChild("configController", getConfigControllerValues(configAsCodeSpec, defaults))
+		v.AddChild("configController", getConfigControllerValues(configAsCodeSpec, deploymentDefaults))
 	}
 
 	return v.Build()
