@@ -302,7 +302,7 @@ func (ds *datastoreImpl) AddPolicy(ctx context.Context, policy *storage.Policy) 
 		metrics.IncrementTotalExternalPoliciesGauge()
 	}
 
-	refresh.RefreshTracker(refresh.Configuration)
+	refresh.RefreshTracker(metrics.Configuration)
 	return clonedPolicy.GetId(), nil
 }
 
@@ -341,7 +341,7 @@ func (ds *datastoreImpl) UpdatePolicy(ctx context.Context, policy *storage.Polic
 	if err = ds.storage.Upsert(ctx, clonedPolicy); err != nil {
 		return ds.wrapWithRollback(ctx, tx, err)
 	}
-	defer refresh.RefreshTracker(refresh.Configuration)
+	defer refresh.RefreshTracker(metrics.Configuration)
 	return tx.Commit(ctx)
 }
 
@@ -361,7 +361,7 @@ func (ds *datastoreImpl) RemovePolicy(ctx context.Context, policy *storage.Polic
 	if err == nil && policy.GetSource() == storage.PolicySource_DECLARATIVE {
 		metrics.DecrementTotalExternalPoliciesGauge()
 	}
-	refresh.RefreshTracker(refresh.Configuration)
+	refresh.RefreshTracker(metrics.Configuration)
 	return err
 }
 
@@ -415,7 +415,7 @@ func (ds *datastoreImpl) ImportPolicies(ctx context.Context, importPolicies []*s
 
 		responses[i] = response
 	}
-	refresh.RefreshTracker(refresh.Configuration)
+	refresh.RefreshTracker(metrics.Configuration)
 	return responses, allSucceeded, nil
 }
 
