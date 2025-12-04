@@ -1493,16 +1493,18 @@ func TestDeploymentDefaults(t *testing.T) {
 			require.NoError(t, err)
 
 			for _, path := range componentPaths {
-				exp := tt.expectations[path.Name]
-				flatExpected, err := flatten.Flatten(map[string]any{
-					path.NodeSelectorPath: exp.NodeSelector,
-					path.TolerationsPath:  exp.Tolerations,
-				}, "", flatten.DotStyle)
-				require.NoError(t, err)
+				t.Run(path.Name, func(t *testing.T) {
+					exp := tt.expectations[path.Name]
+					flatExpected, err := flatten.Flatten(map[string]any{
+						path.NodeSelectorPath: exp.NodeSelector,
+						path.TolerationsPath:  exp.Tolerations,
+					}, "", flatten.DotStyle)
+					require.NoError(t, err)
 
-				for k, v := range flatExpected {
-					assert.Equal(t, v, flatValues[k], "mismatch for %s at %s", path.Name, k)
-				}
+					for k, v := range flatExpected {
+						assert.Equal(t, v, flatValues[k], "mismatch at %s", k)
+					}
+				})
 			}
 
 			// Collector is a DaemonSet and does not inherit deployment scheduling defaults
