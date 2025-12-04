@@ -101,7 +101,11 @@ func (p *VsockIndexReportStream) acceptLoop(ctx context.Context, reportChan chan
 			// and that would make it an invisible problem to the user.
 			log.Errorf("Error accepting connection: %v", err)
 
-			time.Sleep(p.waitAfterFailedAccept) // Prevent a tight loop
+			select {
+				case <-time.After(p.waitAfterFailedAccept):
+				case <-ctx.Done():
+					return
+			}
 			continue
 		}
 		metrics.ConnectionsAccepted.Inc()
