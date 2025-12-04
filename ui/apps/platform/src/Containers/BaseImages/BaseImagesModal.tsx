@@ -179,7 +179,7 @@ function BaseImagesModal({ isOpen, onClose, onSuccess }: BaseImagesModalProps) {
                                 <HelperTextItem variant={baseImagePathFieldValidated}>
                                     {isBaseImagePathFieldInvalid
                                         ? formik.errors.baseImagePath
-                                        : 'Include repository path and tag (e.g., docker.io/library/ubuntu:22.04). Tag can be a pattern (e.g., v*.*)'}
+                                        : 'Include repository path and tag (e.g., docker.io/library/ubuntu:22.04). Tag can be a pattern (e.g., 1.*)'}
                                 </HelperTextItem>
                             </HelperText>
                         </FormHelperText>
