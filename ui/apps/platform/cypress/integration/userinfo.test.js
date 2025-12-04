@@ -123,7 +123,9 @@ describe('User Profile', () => {
             cy.get('#user-role-selector').click();
             cy.get(`${userPageSelectors.userRoleNames}:contains("Admin")`).should('exist');
             cy.get(`${userPageSelectors.userRoleNames}:contains("Analyst")`).should('exist');
-            cy.get(`${userPageSelectors.userRoleNames}:contains("Continuous Integration")`).should('exist');
+            cy.get(`${userPageSelectors.userRoleNames}:contains("Continuous Integration")`).should(
+                'exist'
+            );
         });
 
         it('should show correct permissions for the role', () => {
@@ -139,7 +141,7 @@ describe('User Profile', () => {
             cy.get(userPageSelectors.permissionsTable.forbiddenIcon('Access', 'write'));
         });
 
-        it('should properly highlight current tab', () => {
+        it('should properly highlight current role', () => {
             visitUserProfile();
 
             const { userPermissionsForRoles, userRoleNames } = userPageSelectors;

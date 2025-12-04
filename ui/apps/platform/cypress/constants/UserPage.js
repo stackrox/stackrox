@@ -13,7 +13,7 @@ export const selectors = {
     userEmail: 'dl div:contains("User email") dd',
     authProviderName: 'dl div:contains("Auth provider") dd',
 
-    // Select Options (in menu when open)
+    // Select Options
     userPermissionsForRoles: '[role="option"]:contains("User permissions for roles")',
     userRoleNames: '[role="option"]',
 
