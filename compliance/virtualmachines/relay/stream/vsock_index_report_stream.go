@@ -102,9 +102,9 @@ func (p *VsockIndexReportStream) acceptLoop(ctx context.Context, reportChan chan
 			log.Errorf("Error accepting connection: %v", err)
 
 			select {
-				case <-time.After(p.waitAfterFailedAccept):
-				case <-ctx.Done():
-					return
+			case <-time.After(p.waitAfterFailedAccept):
+			case <-ctx.Done():
+				return
 			}
 			continue
 		}
@@ -222,7 +222,7 @@ func (p *VsockIndexReportStream) stop() {
 		return
 	}
 
-	log.Info("Stopping connection server")
+	log.Info("Stopping index report stream")
 	if err := p.listener.Close(); err != nil {
 		log.Errorf("Error closing listener: %v", err)
 	}
