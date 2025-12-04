@@ -5,6 +5,7 @@ import groovy.util.logging.Slf4j
 import io.grpc.Status
 import io.grpc.StatusRuntimeException
 
+import io.stackrox.annotations.Retry
 import io.stackrox.proto.api.v1.ImageIntegrationServiceGrpc
 import io.stackrox.proto.api.v1.ImageIntegrationServiceOuterClass
 import io.stackrox.proto.storage.ImageIntegrationOuterClass
@@ -23,14 +24,9 @@ class ImageIntegrationService extends BaseService {
         return ImageIntegrationServiceGrpc.newBlockingStub(getChannel())
     }
 
+    @Retry
     static testImageIntegration(ImageIntegrationOuterClass.ImageIntegration integration) {
-        try {
-            getImageIntegrationClient().testImageIntegration(integration)
-            return true
-        } catch (Exception e) {
-            log.warn("could not get integration", e)
-            return false
-        }
+        return getImageIntegrationClient().testImageIntegration(integration)
     }
 
     static createImageIntegration(ImageIntegrationOuterClass.ImageIntegration integration,
