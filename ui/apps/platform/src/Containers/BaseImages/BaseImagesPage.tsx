@@ -92,24 +92,6 @@ function BaseImagesPage() {
                     className="pf-v5-u-flex-grow-1"
                 >
                     {/* Alerts */}
-                    {addBaseImageMutation.isSuccess && (
-                        <Alert
-                            variant="success"
-                            isInline
-                            title="Base image successfully added"
-                            component="p"
-                        />
-                    )}
-                    {addBaseImageMutation.isError && (
-                        <Alert
-                            variant="danger"
-                            isInline
-                            title="Error adding base image"
-                            component="p"
-                        >
-                            {getAxiosErrorMessage(addBaseImageMutation.error)}
-                        </Alert>
-                    )}
                     {deleteBaseImageMutation.isSuccess && (
                         <Alert
                             variant="success"
@@ -151,6 +133,9 @@ function BaseImagesPage() {
             <BaseImagesModal
                 isOpen={isAddModalOpen}
                 onClose={handleCloseAddModal}
+                isSuccess={addBaseImageMutation.isSuccess}
+                isError={addBaseImageMutation.isError}
+                error={(addBaseImageMutation.error as AxiosError) || null}
                 formProps={{
                     onAddBaseImage: addBaseImageMutation.mutate,
                     isSubmitting: addBaseImageMutation.isLoading,

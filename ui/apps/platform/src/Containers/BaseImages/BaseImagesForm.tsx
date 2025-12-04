@@ -1,4 +1,5 @@
 import type { AxiosError } from 'axios';
+import { Alert } from '@patternfly/react-core';
 import type { AddBaseImageRequest } from 'services/BaseImagesService';
 
 export type BaseImagesFormProps = {
@@ -7,25 +8,12 @@ export type BaseImagesFormProps = {
     error: AxiosError | null;
 };
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 function BaseImagesForm({ onAddBaseImage, isSubmitting, error }: BaseImagesFormProps) {
     return (
-        <div>
-            <p>BaseImagesForm placeholder</p>
-            <p>Is submitting: {isSubmitting ? 'yes' : 'no'}</p>
-            <p>Error: {error ? 'yes' : 'no'}</p>
-            <button
-                type="button"
-                onClick={() => {
-                    const request: AddBaseImageRequest = {
-                        baseImageRepoPath: 'test',
-                        baseImageTagPattern: 'test',
-                    };
-                    onAddBaseImage(request);
-                }}
-            >
-                Test Add
-            </button>
-        </div>
+        <Alert variant="info" isInline title="Form coming soon" component="p">
+            Will add baseImageRepoPath and baseImageTagPattern inputs
+        </Alert>
     );
 }
 
