@@ -19,7 +19,7 @@ func WithDefaultLaneSize(size int) pubsub.LaneOption {
 	return func(lane pubsub.Lane) {
 		laneImpl, ok := lane.(*defaultLane)
 		if !ok {
-			return
+			panic("cannot use default lane option for this type of lane")
 		}
 		if size < 0 {
 			return
@@ -32,7 +32,7 @@ func WithDefaultLaneConsumer(consumer pubsub.NewConsumer, opts ...pubsub.Consume
 	return func(lane pubsub.Lane) {
 		laneImpl, ok := lane.(*defaultLane)
 		if !ok {
-			return
+			panic("cannot use default lane option for this type of lane")
 		}
 		laneImpl.newConsumerFn = consumer
 		laneImpl.consumerOpts = opts
@@ -83,11 +83,7 @@ func (l *defaultLane) Publish(event pubsub.Event) error {
 	case <-l.stopper.Flow().StopRequested():
 		return errors.Wrap(pubsubErrors.NewPublishOnStoppedLaneErr(l.id), "unable to publish event")
 	default:
-		return l.publish(event)
 	}
-}
-
-func (l *defaultLane) publish(event pubsub.Event) error {
 	select {
 	case <-l.stopper.Flow().StopRequested():
 		return errors.Wrap(pubsubErrors.NewPublishOnStoppedLaneErr(l.id), "unable to publish event")
@@ -123,6 +119,7 @@ func (l *defaultLane) handleEvent(event pubsub.Event) error {
 	errList := errorhelpers.NewErrorList("handle event")
 	for _, c := range consumers {
 		select {
+		// This will block if we have a slow consumer
 		case err := <-c.Consume(l.stopper.Client().Stopped(), event):
 			if err != nil {
 				errList.AddErrors(pubsubErrors.WrapConsumeErr(err, event.Topic(), l.id))
@@ -137,9 +134,13 @@ func (l *defaultLane) RegisterConsumer(topic pubsub.Topic, callback pubsub.Event
 	if callback == nil {
 		return errors.New("cannot register a 'nil' callback")
 	}
+	c, err := l.newConsumerFn(callback, l.consumerOpts...)
+	if err != nil {
+		return errors.Wrap(err, "unable to create the consumer")
+	}
 	l.consumerLock.Lock()
 	defer l.consumerLock.Unlock()
-	l.consumers[topic] = append(l.consumers[topic], l.newConsumerFn(callback, l.consumerOpts...))
+	l.consumers[topic] = append(l.consumers[topic], c)
 	return nil
 }
 

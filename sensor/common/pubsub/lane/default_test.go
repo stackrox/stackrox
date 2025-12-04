@@ -79,6 +79,58 @@ func (s *defaultLaneSuite) TestNewLaneOptions() {
 	})
 }
 
+type testLaneConfig struct {
+	opts []pubsub.LaneOption
+}
+
+type testLane struct{}
+
+func (t *testLane) Publish(_ pubsub.Event) error {
+	return nil
+}
+
+func (t *testLane) RegisterConsumer(_ pubsub.Topic, _ pubsub.EventCallback) error {
+	return nil
+}
+
+func (t *testLane) Stop() {
+}
+
+func (lc *testLaneConfig) NewLane() pubsub.Lane {
+	ret := &testLane{}
+	for _, opt := range lc.opts {
+		opt(ret)
+	}
+	return ret
+}
+func (lc *testLaneConfig) LaneID() pubsub.LaneID {
+	return pubsub.DefaultLane
+}
+
+func (s *defaultLaneSuite) TestOptionPanic() {
+	defer goleak.AssertNoGoroutineLeaks(s.T())
+	s.Run("panic if WithDefaultLaneSize is used in a different lane", func() {
+		config := &testLaneConfig{
+			opts: []pubsub.LaneOption{
+				WithDefaultLaneSize(10),
+			},
+		}
+		s.Assert().Panics(func() {
+			config.NewLane()
+		})
+	})
+	s.Run("panic if WithDefaultLaneConsumer is used in a different lane", func() {
+		config := &testLaneConfig{
+			opts: []pubsub.LaneOption{
+				WithDefaultLaneConsumer(nil),
+			},
+		}
+		s.Assert().Panics(func() {
+			config.NewLane()
+		})
+	})
+}
+
 func (s *defaultLaneSuite) TestRegisterConsumer() {
 	defer goleak.AssertNoGoroutineLeaks(s.T())
 	s.Run("should error on nil callback", func() {
@@ -199,8 +251,8 @@ func (t *testEvent) Lane() pubsub.LaneID {
 	return pubsub.DefaultLane
 }
 
-func newTestConsumer(_ pubsub.EventCallback, _ ...pubsub.ConsumerOption) pubsub.Consumer {
-	return &testCustomConsumer{}
+func newTestConsumer(_ pubsub.EventCallback, _ ...pubsub.ConsumerOption) (pubsub.Consumer, error) {
+	return &testCustomConsumer{}, nil
 }
 
 type testCustomConsumer struct {

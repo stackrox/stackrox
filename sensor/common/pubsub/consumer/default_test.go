@@ -23,29 +23,17 @@ func TestDefaultConsumer(t *testing.T) {
 func (s *defaultConsumerSuite) TestConsume() {
 	defer goleak.AssertNoGoroutineLeaks(s.T())
 	s.Run("should error with nil callback", func() {
-		c := NewDefaultConsumer(nil)
-		ctx := context.Background()
-		errC := c.Consume(ctx, &testEvent{})
-		select {
-		case <-time.After(100 * time.Millisecond):
-			s.FailNow("timeout waiting for error")
-		case err, ok := <-errC:
-			s.Assert().True(ok)
-			s.Assert().Error(err)
-		}
-		select {
-		case <-time.After(100 * time.Millisecond):
-			s.FailNow("timeout waiting for errC to be closed")
-		case _, ok := <-errC:
-			s.Assert().False(ok)
-		}
+		c, err := NewDefaultConsumer(nil)
+		s.Assert().Error(err)
+		s.Assert().Nil(c)
 	})
 	s.Run("should unblock if waitable is done", func() {
 		callbackDone := concurrency.NewSignal()
-		c := NewDefaultConsumer(func(_ pubsub.Event) error {
+		c, err := NewDefaultConsumer(func(_ pubsub.Event) error {
 			defer callbackDone.Signal()
 			return errors.New("some error")
 		})
+		s.Assert().NoError(err)
 		ctx, cancel := context.WithCancel(context.Background())
 		_ = c.Consume(ctx, &testEvent{})
 		select {
@@ -59,13 +47,14 @@ func (s *defaultConsumerSuite) TestConsume() {
 	s.Run("consume event error", func() {
 		data := "some data"
 		consumerSignal := concurrency.NewSignal()
-		c := NewDefaultConsumer(func(event pubsub.Event) error {
+		c, err := NewDefaultConsumer(func(event pubsub.Event) error {
 			defer consumerSignal.Signal()
 			eventImpl, ok := event.(*testEvent)
 			s.Require().True(ok)
 			s.Assert().Equal(data, eventImpl.data)
 			return errors.New("some error")
 		})
+		s.Assert().NoError(err)
 		ctx := context.Background()
 		errC := c.Consume(ctx, &testEvent{
 			data: data,
@@ -93,13 +82,14 @@ func (s *defaultConsumerSuite) TestConsume() {
 	s.Run("consume event no error", func() {
 		data := "some data"
 		consumerSignal := concurrency.NewSignal()
-		c := NewDefaultConsumer(func(event pubsub.Event) error {
+		c, err := NewDefaultConsumer(func(event pubsub.Event) error {
 			defer consumerSignal.Signal()
 			eventImpl, ok := event.(*testEvent)
 			s.Require().True(ok)
 			s.Assert().Equal(data, eventImpl.data)
 			return nil
 		})
+		s.Assert().NoError(err)
 		ctx := context.Background()
 		errC := c.Consume(ctx, &testEvent{
 			data: data,

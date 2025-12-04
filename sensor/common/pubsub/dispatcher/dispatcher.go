@@ -26,6 +26,7 @@ func NewDispatcher(opts ...Option) (*dispatcher, error) {
 		opt(ps)
 	}
 	if err := ps.createLanes(); err != nil {
+		ps.Stop()
 		return nil, err
 	}
 	if len(ps.lanes) == 0 {

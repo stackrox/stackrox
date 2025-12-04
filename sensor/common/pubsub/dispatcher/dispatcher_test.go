@@ -63,6 +63,7 @@ func (s *dispatcherSuite) Test_WithLaneConfigs() {
 		lc1 := mocks.NewMockLaneConfig(s.ctrl)
 		lc1.EXPECT().LaneID().Times(2).Return(pubsub.DefaultLane)
 		lc1.EXPECT().NewLane().Times(1).Return(lane)
+		lane.EXPECT().Stop().Times(1)
 		lc2 := mocks.NewMockLaneConfig(s.ctrl)
 		lc2.EXPECT().LaneID().Times(2).Return(pubsub.DefaultLane)
 		d, err := NewDispatcher(WithLaneConfigs([]pubsub.LaneConfig{lc1, lc2}))

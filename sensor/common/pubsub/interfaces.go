@@ -25,7 +25,7 @@ type Lane interface {
 	Stop()
 }
 
-type NewConsumer func(EventCallback, ...ConsumerOption) Consumer
+type NewConsumer func(EventCallback, ...ConsumerOption) (Consumer, error)
 
 type Consumer interface {
 	Consume(concurrency.Waitable, Event) <-chan error
