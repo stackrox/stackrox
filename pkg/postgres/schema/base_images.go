@@ -31,8 +31,9 @@ var (
 		}
 		schema = walker.Walk(reflect.TypeOf((*storage.BaseImage)(nil)), "base_images")
 		referencedSchemas := map[string]*walker.Schema{
-			"storage.Image":   ImagesSchema,
-			"storage.ImageV2": ImagesV2Schema,
+			"storage.BaseImageRepository": BaseImageRepositoriesSchema,
+			"storage.Image":               ImagesSchema,
+			"storage.ImageV2":             ImagesV2Schema,
 		}
 
 		schema.ResolveReferences(func(messageTypeName string) *walker.Schema {
@@ -61,7 +62,7 @@ const (
 
 // BaseImages holds the Gorm model for Postgres table `base_images`.
 type BaseImages struct {
-	ID                    string     `gorm:"column:id;type:varchar;primaryKey"`
+	ID                    string     `gorm:"column:id;type:uuid;primaryKey"`
 	BaseImageRepositoryID string     `gorm:"column:baseimagerepositoryid;type:varchar"`
 	Repository            string     `gorm:"column:repository;type:varchar"`
 	Tag                   string     `gorm:"column:tag;type:varchar"`
