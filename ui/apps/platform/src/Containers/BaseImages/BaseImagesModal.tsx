@@ -26,7 +26,7 @@ function BaseImagesModal({
         <Modal
             aria-labelledby="add-base-image-modal-title"
             header={
-                <Title id="add-base-image-modal-title" headingLevel="h2" size="2xl">
+                <Title id="add-base-image-modal-title" headingLevel="h2">
                     Add base image path
                 </Title>
             }

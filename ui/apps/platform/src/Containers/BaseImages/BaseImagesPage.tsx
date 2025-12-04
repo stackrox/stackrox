@@ -29,10 +29,8 @@ import BaseImagesTable from './BaseImagesTable';
 function BaseImagesPage() {
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
 
-    // Fetch base images list
     const baseImagesRequest = useRestQuery(useCallback(getBaseImages, []));
 
-    // Add base image mutation
     const addBaseImageMutation = useRestMutation(
         (request: AddBaseImageRequest) => addBaseImageFn(request),
         {
@@ -42,7 +40,6 @@ function BaseImagesPage() {
         }
     );
 
-    // Delete base image mutation
     const deleteBaseImageMutation = useRestMutation((id: string) => deleteBaseImageFn(id), {
         onSuccess: () => {
             baseImagesRequest.refetch();
@@ -85,16 +82,13 @@ function BaseImagesPage() {
                     </FlexItem>
                 </Flex>
             </PageSection>
-
             <Divider component="div" />
-
             <PageSection className="pf-v5-u-display-flex pf-v5-u-flex-direction-column">
                 <Flex
                     direction={{ default: 'column' }}
                     spaceItems={{ default: 'spaceItemsLg' }}
                     className="pf-v5-u-flex-grow-1"
                 >
-                    {/* Alerts */}
                     {deleteBaseImageMutation.isError && (
                         <Alert
                             variant="danger"
@@ -106,14 +100,12 @@ function BaseImagesPage() {
                         </Alert>
                     )}
 
-                    {/* Loading spinner */}
                     {baseImagesRequest.isLoading && !baseImagesRequest.data && (
                         <Bullseye>
                             <Spinner aria-label="Loading base images" />
                         </Bullseye>
                     )}
 
-                    {/* Table or Empty State */}
                     {baseImagesRequest.data !== undefined && (
                         <BaseImagesTable
                             baseImages={baseImages}
@@ -123,8 +115,6 @@ function BaseImagesPage() {
                     )}
                 </Flex>
             </PageSection>
-
-            {/* Add Modal */}
             <BaseImagesModal
                 isOpen={isAddModalOpen}
                 onClose={handleCloseAddModal}
