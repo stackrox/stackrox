@@ -148,6 +148,7 @@ func (tracker *TrackerBase[F]) NewConfiguration(cfg *storage.PrometheusMetrics_G
 		toAdd:    toAdd,
 		toDelete: toDelete,
 		period:   time.Minute * time.Duration(cfg.GetGatheringPeriodMinutes()),
+		enabled:  cfg.GetEnabled(),
 	}, nil
 }
 
@@ -159,13 +160,23 @@ func (tracker *TrackerBase[F]) Reconfigure(cfg *Configuration) {
 	}
 	previous := tracker.setConfiguration(cfg)
 	if previous != nil {
-		if cfg.period == 0 {
+		if cfg.period == 0 || (tracker.generator == nil && !cfg.enabled) {
 			log.Debugf("Metrics collection has been disabled for %s", tracker.description)
 			tracker.unregisterMetrics(slices.Collect(maps.Keys(previous.metrics)))
 			return
 		}
 		tracker.unregisterMetrics(cfg.toDelete)
 	}
+
+	// For non-scoped counter trackers, ensure the global gatherer exists
+	// so that IncrementCounter() calls don't get lost before the first /metrics scrape.
+	if !tracker.scoped && tracker.generator == nil && cfg.enabled && len(cfg.metrics) > 0 {
+		if gr := tracker.getGatherer(globalScopeID, cfg); gr != nil {
+			gr.running.Store(false) // Reset running state since we're just initializing.
+			log.Debugf("Created global gatherer for %s counter tracker", tracker.description)
+		}
+	}
+
 	tracker.registerMetrics(cfg, cfg.toAdd)
 }
 
@@ -196,12 +207,27 @@ func (tracker *TrackerBase[Finding]) registerMetrics(cfg *Configuration, metrics
 }
 
 func (tracker *TrackerBase[Finding]) registerMetric(gatherer *gatherer, cfg *Configuration, metric MetricName) {
-	if err := gatherer.registry.RegisterMetric(
-		string(metric),
-		tracker.description,
-		cfg.period,
-		labelsAsStrings(cfg.metrics[metric]),
-	); err != nil {
+	labels := labelsAsStrings(cfg.metrics[metric])
+
+	var err error
+	if tracker.generator == nil {
+		// No generator means this is a counter tracker (real-time increments).
+		err = gatherer.registry.RegisterCounter(
+			string(metric),
+			tracker.description,
+			labels,
+		)
+	} else {
+		// Has generator means this is a gauge tracker (periodic gathering).
+		err = gatherer.registry.RegisterMetric(
+			string(metric),
+			tracker.description,
+			cfg.period,
+			labels,
+		)
+	}
+
+	if err != nil {
 		log.Errorf("Failed to register %s metric %q: %v", tracker.description, metric, err)
 		return
 	}
@@ -224,7 +250,7 @@ func (tracker *TrackerBase[Finding]) setConfiguration(config *Configuration) *Co
 
 // track aggregates the fetched findings and updates the gauges.
 func (tracker *TrackerBase[Finding]) track(ctx context.Context, registry metrics.CustomRegistry, cfg *Configuration) error {
-	if len(cfg.metrics) == 0 {
+	if len(cfg.metrics) == 0 || tracker.generator == nil {
 		return nil
 	}
 	aggregator := makeAggregator(cfg.metrics, cfg.filters, tracker.getters)
@@ -283,6 +309,37 @@ func (tracker *TrackerBase[Finding]) Gather(ctx context.Context) {
 		descriptionTitle+" metrics gathered", nil,
 		telemeter.WithTraits(tracker.makeProps(descriptionTitle, end.Sub(begin))),
 		telemeter.WithNoDuplicates(tracker.metricPrefix))
+}
+
+// IncrementCounter increments a counter metric with label values extracted from the finding.
+// This should only be called on counter trackers (created with nil generator).
+// If no configuration exists, the increment is a no-op.
+func (tracker *TrackerBase[F]) IncrementCounter(finding F) {
+	if tracker.generator != nil {
+		// This is a gauge tracker, not a counter tracker
+		return
+	}
+
+	cfg := tracker.getConfiguration()
+	if cfg == nil {
+		return
+	}
+
+	aggregator := makeAggregator(cfg.metrics, cfg.filters, tracker.getters)
+	aggregator.count(finding)
+
+	// Increment counters in all gatherers.
+	// For scoped trackers: multiple gatherers (one per user).
+	// For non-scoped trackers: single global gatherer created during Reconfigure.
+	tracker.gatherers.Range(func(_, g any) bool {
+		for metric, records := range aggregator.result {
+			gatherer := g.(*gatherer)
+			for _, rec := range records {
+				gatherer.registry.IncrementCounter(string(metric), rec.labels)
+			}
+		}
+		return true
+	})
 }
 
 func (tracker *TrackerBase[Finding]) makeProps(descriptionTitle string, duration time.Duration) map[string]any {

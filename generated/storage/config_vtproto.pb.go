@@ -181,6 +181,7 @@ func (m *PrometheusMetrics_Group) CloneVT() *PrometheusMetrics_Group {
 	}
 	r := new(PrometheusMetrics_Group)
 	r.GatheringPeriodMinutes = m.GatheringPeriodMinutes
+	r.Enabled = m.Enabled
 	if rhs := m.Descriptors; rhs != nil {
 		tmpContainer := make(map[string]*PrometheusMetrics_Group_Labels, len(rhs))
 		for k, v := range rhs {
@@ -207,6 +208,7 @@ func (m *PrometheusMetrics) CloneVT() *PrometheusMetrics {
 	r.ImageVulnerabilities = m.ImageVulnerabilities.CloneVT()
 	r.PolicyViolations = m.PolicyViolations.CloneVT()
 	r.NodeVulnerabilities = m.NodeVulnerabilities.CloneVT()
+	r.ApiRequests = m.ApiRequests.CloneVT()
 	if len(m.unknownFields) > 0 {
 		r.unknownFields = make([]byte, len(m.unknownFields))
 		copy(r.unknownFields, m.unknownFields)
@@ -678,6 +680,9 @@ func (this *PrometheusMetrics_Group) EqualVT(that *PrometheusMetrics_Group) bool
 			}
 		}
 	}
+	if this.Enabled != that.Enabled {
+		return false
+	}
 	return string(this.unknownFields) == string(that.unknownFields)
 }
 
@@ -701,6 +706,9 @@ func (this *PrometheusMetrics) EqualVT(that *PrometheusMetrics) bool {
 		return false
 	}
 	if !this.NodeVulnerabilities.EqualVT(that.NodeVulnerabilities) {
+		return false
+	}
+	if !this.ApiRequests.EqualVT(that.ApiRequests) {
 		return false
 	}
 	return string(this.unknownFields) == string(that.unknownFields)
@@ -1496,6 +1504,16 @@ func (m *PrometheusMetrics_Group) MarshalToSizedBufferVT(dAtA []byte) (int, erro
 		i -= len(m.unknownFields)
 		copy(dAtA[i:], m.unknownFields)
 	}
+	if m.Enabled {
+		i--
+		if m.Enabled {
+			dAtA[i] = 1
+		} else {
+			dAtA[i] = 0
+		}
+		i--
+		dAtA[i] = 0x18
+	}
 	if len(m.Descriptors) > 0 {
 		for k := range m.Descriptors {
 			v := m.Descriptors[k]
@@ -1555,6 +1573,16 @@ func (m *PrometheusMetrics) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	if m.unknownFields != nil {
 		i -= len(m.unknownFields)
 		copy(dAtA[i:], m.unknownFields)
+	}
+	if m.ApiRequests != nil {
+		size, err := m.ApiRequests.MarshalToSizedBufferVT(dAtA[:i])
+		if err != nil {
+			return 0, err
+		}
+		i -= size
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+		i--
+		dAtA[i] = 0x22
 	}
 	if m.NodeVulnerabilities != nil {
 		size, err := m.NodeVulnerabilities.MarshalToSizedBufferVT(dAtA[:i])
@@ -2381,6 +2409,9 @@ func (m *PrometheusMetrics_Group) SizeVT() (n int) {
 			n += mapEntrySize + 1 + protohelpers.SizeOfVarint(uint64(mapEntrySize))
 		}
 	}
+	if m.Enabled {
+		n += 2
+	}
 	n += len(m.unknownFields)
 	return n
 }
@@ -2401,6 +2432,10 @@ func (m *PrometheusMetrics) SizeVT() (n int) {
 	}
 	if m.NodeVulnerabilities != nil {
 		l = m.NodeVulnerabilities.SizeVT()
+		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
+	}
+	if m.ApiRequests != nil {
+		l = m.ApiRequests.SizeVT()
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
 	n += len(m.unknownFields)
@@ -4021,6 +4056,26 @@ func (m *PrometheusMetrics_Group) UnmarshalVT(dAtA []byte) error {
 			}
 			m.Descriptors[mapkey] = mapvalue
 			iNdEx = postIndex
+		case 3:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Enabled", wireType)
+			}
+			var v int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				v |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			m.Enabled = bool(v != 0)
 		default:
 			iNdEx = preIndex
 			skippy, err := protohelpers.Skip(dAtA[iNdEx:])
@@ -4177,6 +4232,42 @@ func (m *PrometheusMetrics) UnmarshalVT(dAtA []byte) error {
 				m.NodeVulnerabilities = &PrometheusMetrics_Group{}
 			}
 			if err := m.NodeVulnerabilities.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 4:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ApiRequests", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.ApiRequests == nil {
+				m.ApiRequests = &PrometheusMetrics_Group{}
+			}
+			if err := m.ApiRequests.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -6931,6 +7022,26 @@ func (m *PrometheusMetrics_Group) UnmarshalVTUnsafe(dAtA []byte) error {
 			}
 			m.Descriptors[mapkey] = mapvalue
 			iNdEx = postIndex
+		case 3:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Enabled", wireType)
+			}
+			var v int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				v |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			m.Enabled = bool(v != 0)
 		default:
 			iNdEx = preIndex
 			skippy, err := protohelpers.Skip(dAtA[iNdEx:])
@@ -7087,6 +7198,42 @@ func (m *PrometheusMetrics) UnmarshalVTUnsafe(dAtA []byte) error {
 				m.NodeVulnerabilities = &PrometheusMetrics_Group{}
 			}
 			if err := m.NodeVulnerabilities.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 4:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ApiRequests", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.ApiRequests == nil {
+				m.ApiRequests = &PrometheusMetrics_Group{}
+			}
+			if err := m.ApiRequests.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
