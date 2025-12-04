@@ -1,5 +1,5 @@
 import { useCallback, useState } from 'react';
-import type { AxiosError } from 'axios';
+import { isAxiosError } from 'axios';
 import {
     Alert,
     Bullseye,
@@ -127,7 +127,7 @@ function BaseImagesPage() {
                 isSuccess={addBaseImageMutation.isSuccess}
                 isError={addBaseImageMutation.isError}
                 isSubmitting={addBaseImageMutation.isLoading}
-                error={(addBaseImageMutation.error as AxiosError) || null}
+                error={isAxiosError(addBaseImageMutation.error) ? addBaseImageMutation.error : null}
             />
         </>
     );
