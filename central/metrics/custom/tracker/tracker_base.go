@@ -154,6 +154,9 @@ func (tracker *TrackerBase[F]) Reconfigure(cfg *Configuration) {
 		tracker.unregisterMetrics(cfg.toDelete)
 	}
 	tracker.registerMetrics(cfg, cfg.toAdd)
+	if len(cfg.toAdd) != 0 || len(cfg.toDelete) != 0 {
+		tracker.Refresh()
+	}
 	// Note: aggregators are recreated lazily in getGatherer() when config
 	// changes, to avoid race conditions with running gatherers.
 }
@@ -178,7 +181,7 @@ func (tracker *TrackerBase[F]) Refresh() {
 		return
 	}
 
-	shift := func(g *gatherer) bool {
+	shift := func(g *gatherer[F]) bool {
 		ok := g.trySetRunning()
 		if ok {
 			g.lastGather = g.lastGather.Add(-(cfg.period + 1))
@@ -189,7 +192,7 @@ func (tracker *TrackerBase[F]) Refresh() {
 
 	const maxAttempts = 5
 	tracker.gatherers.Range(func(userID, gv any) bool {
-		g := gv.(*gatherer)
+		g := gv.(*gatherer[F])
 		go func() {
 			if !retry(func() bool { return shift(g) }, time.Minute, maxAttempts) {
 				log.Warnf("Failed to refresh a gatherer of the %s tracker after %d retries",
