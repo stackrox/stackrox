@@ -28,7 +28,6 @@ jobs:
     permissions:
       id-token: write
       contents: read
-    environment: development
     steps:
       - name: Cancel Previous Runs
         uses: n1hility/cancel-previous-runs@v3
@@ -65,6 +64,9 @@ jobs:
           ref: ${{ github.event.pull_request.head.sha }}
           path: stackrox
           fetch-depth: 0
+      - uses: ./stackrox/.github/actions/job-preamble
+        with:
+          free-disk-space: 40
       - name: Create Kind cluster"
         uses: helm/kind-action@v1
         with:
@@ -73,3 +75,10 @@ jobs:
         env:
           IMG_WAIT_TIMEOUT_SECONDS: 2100
         run: acs-fleet-manager/scripts/ci/central_compatibility/entrypoint.sh
+      - name: Upload logs
+        uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: logs-directory-${{ github.sha }}
+          path: logs/
+          retention-days: 3
