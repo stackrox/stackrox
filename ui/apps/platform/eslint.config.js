@@ -873,19 +873,11 @@ module.exports = [
     {
         files: ['src/*/**/*.{js,jsx,ts,tsx}'],
         ignores: [
-            'src/Components/CompoundSearchFilter/utils/utils.tsx', // prevent merge conflict
             'src/Components/GroupedTabs.jsx', // deprecated
             'src/Components/ReactSelect/ReactSelect.jsx', // deprecated
             'src/Components/URLSearchInputWithAutocomplete.jsx', // deprecated
-            'src/Containers/AccessControl/**',
-            'src/Containers/Audit/**',
             'src/Containers/Compliance/**', // deprecated
-            'src/Containers/ComplianceEnhanced/**',
             'src/Containers/ConfigManagement/**',
-            'src/Containers/MitreAttackVectors/**',
-            'src/Containers/NetworkGraph/**',
-            'src/Containers/Policies/**',
-            'src/Containers/Risk/**',
             'src/Containers/SystemConfig/**',
             'src/Containers/SystemHealth/**',
             'src/Containers/Violations/**',
