@@ -302,7 +302,7 @@ func (c *Client) Telemeter() telemeter.Telemeter {
 func (c *Client) GetGRPCInterceptor() grpc.UnaryServerInterceptor {
 	return func(ctx context.Context, req any, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (any, error) {
 		resp, err := handler(ctx, req)
-		rp := getGRPCRequestDetails(ctx, err, info.FullMethod, req)
+		rp := GetGRPCRequestDetails(ctx, err, info.FullMethod, req)
 		go c.track(rp)
 		return resp, err
 	}
@@ -318,7 +318,7 @@ func (c *Client) GetHTTPInterceptor() httputil.HTTPInterceptor {
 			if sptr := statusTrackingWriter.GetStatusCode(); sptr != nil {
 				status = *sptr
 			}
-			rp := getHTTPRequestDetails(r.Context(), r, status)
+			rp := GetHTTPRequestDetails(r.Context(), r, status)
 			go c.track(rp)
 		})
 	}

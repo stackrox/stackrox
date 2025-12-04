@@ -40,4 +40,5 @@ type Configuration struct {
 	toAdd          []MetricName
 	toDelete       []MetricName
 	period         time.Duration
+	enabled  bool
 }

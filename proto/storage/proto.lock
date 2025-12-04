@@ -5480,6 +5480,11 @@
                 "id": 3,
                 "name": "node_vulnerabilities",
                 "type": "Group"
+              },
+              {
+                "id": 4,
+                "name": "api_requests",
+                "type": "Group"
               }
             ],
             "messages": [
@@ -5490,6 +5495,11 @@
                     "id": 1,
                     "name": "gathering_period_minutes",
                     "type": "uint32"
+                  },
+                  {
+                    "id": 3,
+                    "name": "enabled",
+                    "type": "bool"
                   }
                 ],
                 "maps": [

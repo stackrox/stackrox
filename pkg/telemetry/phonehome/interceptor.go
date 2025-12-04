@@ -46,7 +46,9 @@ func (c *Client) track(rp *RequestParams) {
 	}
 }
 
-func getGRPCRequestDetails(ctx context.Context, err error, grpcFullMethod string, req any) *RequestParams {
+// GetGRPCRequestDetails extracts request parameters from a gRPC request context.
+// This function is exported to allow other packages to reuse the request metadata extraction logic.
+func GetGRPCRequestDetails(ctx context.Context, err error, grpcFullMethod string, req any) *RequestParams {
 	id, iderr := authn.IdentityFromContext(ctx)
 	if iderr != nil && grpcFullMethod != v1.PingService_Ping_FullMethodName { // Ignore readiness probes.
 		log.Debugf("Cannot identify user from context for method call %q: %v", grpcFullMethod, iderr)
@@ -90,7 +92,9 @@ func getGRPCRequestDetails(ctx context.Context, err error, grpcFullMethod string
 	}
 }
 
-func getHTTPRequestDetails(ctx context.Context, r *http.Request, status int) *RequestParams {
+// GetHTTPRequestDetails extracts request parameters from an HTTP request.
+// This function is exported to allow other packages to reuse the request metadata extraction logic.
+func GetHTTPRequestDetails(ctx context.Context, r *http.Request, status int) *RequestParams {
 	id, iderr := authn.IdentityFromContext(ctx)
 	if iderr != nil {
 		log.Debug("Cannot identify user from context: ", iderr)

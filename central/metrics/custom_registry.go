@@ -31,8 +31,10 @@ type CustomRegistry interface {
 	Lock()
 	Unlock()
 	RegisterMetric(metricName string, description string, labels []string) error
+	RegisterCounter(metricName string, description string, labels []string) error
 	UnregisterMetric(metricName string) bool
 	SetTotal(metricName string, labels prometheus.Labels, total int)
+	IncrementCounter(metricName string, labels prometheus.Labels)
 	Reset(metricName string)
 }
 
@@ -40,7 +42,8 @@ type customRegistry struct {
 	*prometheus.Registry
 	sync.Mutex
 	http.Handler
-	gauges sync.Map // map[metricName string]*prometheus.GaugeVec
+	gauges   sync.Map // map[metricName string]*prometheus.GaugeVec
+	counters sync.Map // map[metricName string]*prometheus.CounterVec
 }
 
 var (
@@ -97,7 +100,12 @@ func DeleteCustomRegistry(userID string) {
 		_ = registry.UnregisterMetric(metric.(string))
 		return true
 	})
+	registry.counters.Range(func(metric, vec any) bool {
+		_ = registry.UnregisterMetric(metric.(string))
+		return true
+	})
 	registry.gauges.Clear()
+	registry.counters.Clear()
 	delete(userRegistries, userID)
 }
 
@@ -107,6 +115,9 @@ var _ CustomRegistry = (*customRegistry)(nil)
 func (cr *customRegistry) UnregisterMetric(metricName string) bool {
 	if gauge, loaded := cr.gauges.LoadAndDelete(metricName); loaded {
 		return cr.Unregister(gauge.(*prometheus.GaugeVec))
+	}
+	if counter, loaded := cr.counters.LoadAndDelete(metricName); loaded {
+		return cr.Unregister(counter.(*prometheus.CounterVec))
 	}
 	return false
 }
@@ -125,6 +136,20 @@ func (cr *customRegistry) RegisterMetric(metricName string, description string, 
 	return nil
 }
 
+// RegisterCounter registers a counter metric with configurable labels.
+func (cr *customRegistry) RegisterCounter(metricName string, description string, labels []string) error {
+	counter := prometheus.NewCounterVec(prometheus.CounterOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.CentralSubsystem.String(),
+		Name:      metricName,
+		Help:      description,
+	}, labels)
+	if _, loaded := cr.counters.LoadOrStore(metricName, counter); !loaded {
+		return cr.Register(counter)
+	}
+	return nil
+}
+
 // SetTotal sets the value to the gauge of a metric.
 func (cr *customRegistry) SetTotal(metricName string, labels prometheus.Labels, total int) {
 	if gauge, ok := cr.gauges.Load(metricName); ok {
@@ -132,10 +157,20 @@ func (cr *customRegistry) SetTotal(metricName string, labels prometheus.Labels, 
 	}
 }
 
+// IncrementCounter increments the counter metric with the given labels.
+func (cr *customRegistry) IncrementCounter(metricName string, labels prometheus.Labels) {
+	if counter, ok := cr.counters.Load(metricName); ok {
+		counter.(*prometheus.CounterVec).With(labels).Inc()
+	}
+}
+
 // Reset the metric to drop potentially stale labels.
 func (cr *customRegistry) Reset(metricName string) {
 	if gauge, ok := cr.gauges.Load(metricName); ok {
 		gauge.(*prometheus.GaugeVec).Reset()
+	}
+	if counter, ok := cr.counters.Load(metricName); ok {
+		counter.(*prometheus.CounterVec).Reset()
 	}
 }
 

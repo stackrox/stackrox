@@ -152,6 +152,7 @@ func (tracker *TrackerBase[F]) NewConfiguration(cfg *storage.PrometheusMetrics_G
 		toAdd:          toAdd,
 		toDelete:       toDelete,
 		period:         time.Minute * time.Duration(cfg.GetGatheringPeriodMinutes()),
+		enabled:        cfg.GetEnabled(),
 	}, nil
 }
 
@@ -163,13 +164,23 @@ func (tracker *TrackerBase[F]) Reconfigure(cfg *Configuration) {
 	}
 	previous := tracker.setConfiguration(cfg)
 	if previous != nil {
-		if cfg.period == 0 {
+		if cfg.period == 0 || (tracker.generator == nil && !cfg.enabled) {
 			log.Debugf("Metrics collection has been disabled for %s", tracker.description)
 			tracker.unregisterMetrics(slices.Collect(maps.Keys(previous.metrics)))
 			return
 		}
 		tracker.unregisterMetrics(cfg.toDelete)
 	}
+
+	// For non-scoped counter trackers, ensure the global gatherer exists
+	// so that IncrementCounter() calls don't get lost before the first /metrics scrape.
+	if !tracker.scoped && tracker.generator == nil && cfg.enabled && len(cfg.metrics) > 0 {
+		if gr := tracker.getGatherer(globalScopeID, cfg); gr != nil {
+			gr.running.Store(false) // Reset running state since we're just initializing.
+			log.Debugf("Created global gatherer for %s counter tracker", tracker.description)
+		}
+	}
+
 	tracker.registerMetrics(cfg, cfg.toAdd)
 	// Note: aggregators are recreated lazily in getGatherer() when config
 	// changes, to avoid race conditions with running gatherers.
@@ -203,12 +214,26 @@ func (tracker *TrackerBase[F]) registerMetrics(cfg *Configuration, metrics []Met
 
 func (tracker *TrackerBase[F]) registerMetric(gatherer *gatherer[F], cfg *Configuration, metric MetricName) {
 	help := formatMetricHelp(tracker.description, cfg, metric)
+	labels := labelsAsStrings(cfg.metrics[metric])
 
-	if err := gatherer.registry.RegisterMetric(
-		string(metric),
-		help,
-		labelsAsStrings(cfg.metrics[metric]),
-	); err != nil {
+	var err error
+	if tracker.generator == nil {
+		// No generator means this is a counter tracker (real-time increments).
+		err = gatherer.registry.RegisterCounter(
+			string(metric),
+			help,
+			labels,
+		)
+	} else {
+		// Has generator means this is a gauge tracker (periodic gathering).
+		err = gatherer.registry.RegisterMetric(
+			string(metric),
+			help,
+			labels,
+		)
+	}
+
+	if err != nil {
 		log.Errorf("Failed to register %s metric %q: %v", tracker.description, metric, err)
 		return
 	}
@@ -269,7 +294,7 @@ func (tracker *TrackerBase[F]) setConfiguration(config *Configuration) *Configur
 
 // track aggregates the fetched findings and updates the gauges.
 func (tracker *TrackerBase[F]) track(ctx context.Context, gatherer *gatherer[F], cfg *Configuration) error {
-	if len(cfg.metrics) == 0 {
+	if len(cfg.metrics) == 0 || tracker.generator == nil {
 		return nil
 	}
 	aggregator := gatherer.aggregator
@@ -335,6 +360,37 @@ func (tracker *TrackerBase[F]) Gather(ctx context.Context) {
 		// Central traits:
 		telemeter.WithTraits(tracker.makeProps(descriptionTitle)),
 		telemeter.WithNoDuplicates(tracker.metricPrefix))
+}
+
+// IncrementCounter increments a counter metric with label values extracted from the finding.
+// This should only be called on counter trackers (created with nil generator).
+// If no configuration exists, the increment is a no-op.
+func (tracker *TrackerBase[F]) IncrementCounter(finding F) {
+	if tracker.generator != nil {
+		// This is a gauge tracker, not a counter tracker
+		return
+	}
+
+	cfg := tracker.getConfiguration()
+	if cfg == nil {
+		return
+	}
+
+	aggregator := makeAggregator(cfg.metrics, cfg.includeFilters, cfg.excludeFilters, tracker.getters)
+	aggregator.count(finding)
+
+	// Increment counters in all gatherers.
+	// For scoped trackers: multiple gatherers (one per user).
+	// For non-scoped trackers: single global gatherer created during Reconfigure.
+	tracker.gatherers.Range(func(_, g any) bool {
+		for metric, records := range aggregator.result {
+			gatherer := g.(*gatherer[F])
+			for _, rec := range records {
+				gatherer.registry.IncrementCounter(string(metric), rec.labels)
+			}
+		}
+		return true
+	})
 }
 
 func (tracker *TrackerBase[F]) makeProps(descriptionTitle string) map[string]any {

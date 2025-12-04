@@ -18,6 +18,7 @@ import (
 	administrationUsageService "github.com/stackrox/rox/central/administration/usage/service"
 	alertDatastore "github.com/stackrox/rox/central/alert/datastore"
 	alertService "github.com/stackrox/rox/central/alert/service"
+	"github.com/stackrox/rox/central/apirequestlog"
 	apitokenDS "github.com/stackrox/rox/central/apitoken/datastore"
 	apiTokenExpiration "github.com/stackrox/rox/central/apitoken/expiration"
 	apiTokenService "github.com/stackrox/rox/central/apitoken/service"
@@ -628,6 +629,11 @@ func startGRPCServer() {
 		observe.AuthzTraceInterceptor(authzTraceSink),
 	)
 	config.HTTPInterceptors = append(config.HTTPInterceptors, observe.AuthzTraceHTTPInterceptor(authzTraceSink))
+
+	// API request tracking for Prometheus metrics
+	config.UnaryInterceptors = append(config.UnaryInterceptors, apirequestlog.UnaryServerInterceptor())
+	config.StreamInterceptors = append(config.StreamInterceptors, apirequestlog.StreamServerInterceptor())
+	config.HTTPInterceptors = append(config.HTTPInterceptors, apirequestlog.HTTPInterceptor())
 
 	// Before authorization is checked, we want to inject the sac client into the context.
 	config.PreAuthContextEnrichers = append(config.PreAuthContextEnrichers,
