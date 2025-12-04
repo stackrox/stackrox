@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { useState } from 'react';
 import {
     Alert,
     Button,
@@ -18,11 +18,17 @@ import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 import BaseImagesModal from './BaseImagesModal';
 import BaseImagesTable from './BaseImagesTable';
 
+/**
+ * Page component for managing base images. Displays a list of approved base images
+ * and provides functionality to add and delete base images.
+ */
 function BaseImagesPage() {
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
 
-    const baseImagesRequest = useRestQuery(useCallback(getBaseImages, []));
+    // Fetch base images on component mount
+    const baseImagesRequest = useRestQuery(getBaseImages);
 
+    // Delete mutation that refetches the list after successful deletion to keep UI in sync
     const deleteBaseImageMutation = useRestMutation((id: string) => deleteBaseImageFn(id), {
         onSuccess: () => {
             baseImagesRequest.refetch();
