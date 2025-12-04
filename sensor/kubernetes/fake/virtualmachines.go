@@ -71,10 +71,6 @@ type vmTemplate struct {
 }
 
 func newVMTemplatePool(poolSize int, guestOSPool []string, vsockBaseCID uint32) *vmTemplatePool {
-	if poolSize <= 0 {
-		poolSize = 10 // default pool size
-	}
-
 	pool := &vmTemplatePool{
 		templates: make([]*vmTemplate, poolSize),
 	}
@@ -241,80 +237,70 @@ func jsonSafeUint64(value uint64) int64 {
 	return int64(value)
 }
 
-type vmResourcesToBeManaged struct {
-	template  *vmTemplate
-	vm        *unstructured.Unstructured
-	vmi       *unstructured.Unstructured
-	reportGen *reportGenerator // nil if index reports are disabled
-}
-
-func (w *WorkloadManager) getVMResources(templateIdx int, templatePool *vmTemplatePool, reportGen *reportGenerator) *vmResourcesToBeManaged {
-	template := templatePool.getTemplate(templateIdx)
-	if template == nil {
-		return nil
-	}
-
-	return &vmResourcesToBeManaged{
-		template:  template,
-		reportGen: reportGen,
-	}
-}
-
 // manageVirtualMachine manages repeated VM/VMI lifecycles for a single template.
-func (w *WorkloadManager) manageVirtualMachine(ctx context.Context, workload VirtualMachineWorkload, resources *vmResourcesToBeManaged) {
+func (w *WorkloadManager) manageVirtualMachine(
+	ctx context.Context,
+	workload VirtualMachineWorkload,
+	template *vmTemplate,
+	reportGen *reportGenerator,
+) {
 	defer w.wg.Done()
 
 	lifecycles := workload.NumLifecycles
 	for iteration := 0; lifecycles <= 0 || iteration < lifecycles; iteration++ {
-		vm, vmi := resources.template.instantiate(iteration)
-		resources.vm = vm
-		resources.vmi = vmi
+		vm, vmi := template.instantiate(iteration)
 
-		if w.manageVirtualMachineLifecycleOnce(ctx, workload, resources) {
+		if w.runVMLifecycle(ctx, workload, template, vm, vmi, reportGen) {
 			return
 		}
 	}
 }
 
-// manageVirtualMachineLifecycleOnce runs a single VM/VMI lifecycle.
+// runVMLifecycle runs a single VM/VMI lifecycle.
 // It returns true if the caller should stop spawning further lifecycles (e.g., context cancelled or setup failed).
 // If index reports are enabled (reportGen != nil), it also sends index reports while the VM is alive.
-func (w *WorkloadManager) manageVirtualMachineLifecycleOnce(ctx context.Context, workload VirtualMachineWorkload, resources *vmResourcesToBeManaged) bool {
+func (w *WorkloadManager) runVMLifecycle(
+	ctx context.Context,
+	workload VirtualMachineWorkload,
+	template *vmTemplate,
+	vm, vmi *unstructured.Unstructured,
+	reportGen *reportGenerator,
+) bool {
 	lifecycleTimer := newTimerWithJitter(workload.LifecycleDuration/2 + time.Duration(rand.Int63n(int64(workload.LifecycleDuration))))
 	defer lifecycleTimer.Stop()
 
 	updateTicker := time.NewTicker(calculateDurationWithJitter(workload.UpdateInterval))
 	defer updateTicker.Stop()
 
-	vmClient := w.client.Dynamic().Resource(vmGVR).Namespace(resources.vm.GetNamespace())
-	vmiClient := w.client.Dynamic().Resource(vmiGVR).Namespace(resources.vmi.GetNamespace())
+	vmClient := w.client.Dynamic().Resource(vmGVR).Namespace(vm.GetNamespace())
+	vmiClient := w.client.Dynamic().Resource(vmiGVR).Namespace(vmi.GetNamespace())
 
 	// Create initial resources
-	vmUID := resources.vm.GetUID()
-	vmName := resources.vm.GetName()
-	if _, err := vmClient.Create(ctx, resources.vm, metav1.CreateOptions{}); err != nil {
+	vmUID := vm.GetUID()
+	vmName := vm.GetName()
+	if _, err := vmClient.Create(ctx, vm, metav1.CreateOptions{}); err != nil {
 		log.Errorf("error creating VirtualMachine: %v", err)
 		return true
 	}
 	w.writeID(virtualMachinePrefix, vmUID)
 
-	if _, err := vmiClient.Create(ctx, resources.vmi, metav1.CreateOptions{}); err != nil {
+	if _, err := vmiClient.Create(ctx, vmi, metav1.CreateOptions{}); err != nil {
 		log.Errorf("error creating VirtualMachineInstance: %v", err)
 		// Continue even if VMI creation fails
 	} else {
-		w.writeID(vmiPrefix, resources.vmi.GetUID())
+		w.writeID(vmiPrefix, vmi.GetUID())
 	}
 
 	// Start index report generation if enabled (runs while VM is alive)
 	var reportCancel context.CancelFunc
-	if resources.reportGen != nil && workload.ReportInterval > 0 {
+	if reportGen != nil && workload.ReportInterval > 0 {
 		var reportCtx context.Context
 		reportCtx, reportCancel = context.WithCancel(ctx)
 		go w.sendIndexReportsWhileAlive(
 			reportCtx,
-			resources.reportGen,
-			fakeVMUUID(resources.template.index),
-			resources.template.vsockCID,
+			reportGen,
+			fakeVMUUID(template.index),
+			template.vsockCID,
 			workload.ReportInterval,
 		)
 	}
@@ -332,10 +318,10 @@ func (w *WorkloadManager) manageVirtualMachineLifecycleOnce(ctx context.Context,
 			return true
 		case <-lifecycleTimer.C:
 			// Delete resources
-			if err := vmiClient.Delete(ctx, resources.vmi.GetName(), metav1.DeleteOptions{}); err != nil {
+			if err := vmiClient.Delete(ctx, vmi.GetName(), metav1.DeleteOptions{}); err != nil {
 				log.Debugf("error deleting VirtualMachineInstance (may not exist): %v", err)
 			} else {
-				w.deleteID(vmiPrefix, resources.vmi.GetUID())
+				w.deleteID(vmiPrefix, vmi.GetUID())
 			}
 
 			if err := vmClient.Delete(ctx, vmName, metav1.DeleteOptions{}); err != nil {
@@ -344,21 +330,21 @@ func (w *WorkloadManager) manageVirtualMachineLifecycleOnce(ctx context.Context,
 				w.deleteID(virtualMachinePrefix, vmUID)
 			}
 			// Drop the fake tracker entries so unstructured DeepCopy payloads do not accumulate indefinitely.
-			w.cleanupVMHistory(resources.vm.GetNamespace(), vmName, resources.vmi.GetName())
+			w.cleanupVMHistory(vm.GetNamespace(), vmName, vmi.GetName())
 			return false
 		case <-updateTicker.C:
 			// Reset ticker with jitter for next update
 			updateTicker.Reset(calculateDurationWithJitter(workload.UpdateInterval))
 
 			// Update VM metadata
-			resources.template.updateVMObject(resources.vm)
-			if _, err := vmClient.Update(ctx, resources.vm, metav1.UpdateOptions{}); err != nil {
+			template.updateVMObject(vm)
+			if _, err := vmClient.Update(ctx, vm, metav1.UpdateOptions{}); err != nil {
 				log.Debugf("error updating VirtualMachine: %v", err)
 			}
 
 			// Update VMI metadata
-			resources.template.updateVMIObject(resources.vmi)
-			if _, err := vmiClient.Update(ctx, resources.vmi, metav1.UpdateOptions{}); err != nil {
+			template.updateVMIObject(vmi)
+			if _, err := vmiClient.Update(ctx, vmi, metav1.UpdateOptions{}); err != nil {
 				log.Debugf("error updating VirtualMachineInstance: %v", err)
 			}
 		}
