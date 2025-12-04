@@ -335,14 +335,6 @@ func main() {
 		WithLocalSensor(true).
 		WithWorkloadManager(workloadManager)
 
-	// When connecting to real Central, override deployment identification with explicit namespace
-	// to avoid panic during certificate generation (namespace is required but cannot be detected
-	// when running outside a Kubernetes pod without service account files)
-	if !isFakeCentral && !localConfig.OperatorInstall {
-		deploymentID := createDeploymentIdentificationWithNamespace(localConfig.Namespace)
-		sensorConfig = sensorConfig.WithDeploymentIdentification(deploymentID)
-	}
-
 	if localConfig.FakeCollector {
 		acceptAnyFn := func(ctx context.Context, _ string) (context.Context, error) {
 			return ctx, nil
