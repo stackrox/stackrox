@@ -19,7 +19,7 @@ import { makeFilterChipDescriptors } from 'Components/CompoundSearchFilter/utils
 import SearchFilterChips from 'Components/PatternFly/SearchFilterChips';
 import type {
     CompoundSearchFilterConfig,
-    OnSearchPayload,
+    OnSearchCallback,
 } from 'Components/CompoundSearchFilter/types';
 import type { SearchFilter } from 'types/search';
 
@@ -45,7 +45,7 @@ export type CheckDetailsTableProps = {
     searchFilterConfig: CompoundSearchFilterConfig;
     searchFilter: SearchFilter;
     onFilterChange: (newFilter: SearchFilter) => void;
-    onSearch: (payload: OnSearchPayload) => void;
+    onSearch: OnSearchCallback;
     onCheckStatusSelect: (
         filterType: 'Compliance Check Status',
         checked: boolean,
