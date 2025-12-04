@@ -19,7 +19,7 @@ import {
 
 import { addBaseImage } from 'services/BaseImagesService';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
-import { useRestMutation } from 'hooks/useRestMutation';
+import useRestMutation from 'hooks/useRestMutation';
 
 export type BaseImagesModalProps = {
     isOpen: boolean;
@@ -34,7 +34,15 @@ const validationSchema = yup.object({
         .test(
             'has-colon',
             'Base image path must include both repository and tag separated by ":"',
-            (value) => value?.includes(':') ?? false
+            (value) => {
+                if (!value?.includes(':')) {
+                    return false;
+                }
+                const lastColonIndex = value.lastIndexOf(':');
+                const tagPattern = value.substring(lastColonIndex + 1);
+                // Tag pattern must not be empty
+                return tagPattern.length > 0;
+            }
         ),
 });
 
@@ -151,13 +159,7 @@ function BaseImagesModal({ isOpen, onClose, onSuccess }: BaseImagesModalProps) {
                 )}
                 <FlexItem>
                     <Form onSubmit={formik.handleSubmit}>
-                        <FormGroup
-                            label="Base image path"
-                            fieldId="baseImagePath"
-                            isRequired
-                            helperTextInvalid={formik.errors.baseImagePath}
-                            validated={baseImagePathFieldValidated}
-                        >
+                        <FormGroup label="Base image path" fieldId="baseImagePath" isRequired>
                             <TextInput
                                 id="baseImagePath"
                                 type="text"
