@@ -1795,7 +1795,7 @@ func TestDeploymentDefaults(t *testing.T) {
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
 			translator := Translator{client: fkClient.NewClientBuilder().Build()}
-			values, err := translator.translate(context.Background(), tt.central)
+			values, err := translator.translate(t.Context(), tt.central)
 			require.NoError(t, err)
 
 			flatValues, err := flatten.Flatten(values, "", flatten.DotStyle)

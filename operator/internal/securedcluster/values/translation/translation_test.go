@@ -1486,7 +1486,7 @@ func TestDeploymentDefaults(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			client := newDefaultFakeClient(t)
 			translator := Translator{client: client, direct: client}
-			values, err := translator.translate(context.Background(), tt.securedCluster)
+			values, err := translator.translate(t.Context(), tt.securedCluster)
 			require.NoError(t, err)
 
 			flatValues, err := flatten.Flatten(values, "", flatten.DotStyle)
