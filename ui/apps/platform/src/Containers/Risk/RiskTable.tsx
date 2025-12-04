@@ -23,27 +23,17 @@ function sortOptionFromTableState(state) {
 
 type RiskTableProps = {
     currentDeployments: ListDeploymentWithProcessInfo[];
-    setSelectedDeploymentId: (deploymentId: string) => void;
     selectedDeploymentId: string | undefined;
     setSortOption: (sortOption: ApiSortOptionSingle) => void;
 };
 
-function RiskTable({
-    currentDeployments,
-    setSelectedDeploymentId,
-    selectedDeploymentId,
-    setSortOption,
-}: RiskTableProps) {
+function RiskTable({ currentDeployments, selectedDeploymentId, setSortOption }: RiskTableProps) {
     function onFetchData(state) {
         const newSortOption = sortOptionFromTableState(state);
         if (!newSortOption) {
             return;
         }
         setSortOption(newSortOption);
-    }
-
-    function updateSelectedDeployment({ deployment }) {
-        setSelectedDeploymentId(deployment.id);
     }
 
     if (!currentDeployments.length) {
@@ -54,7 +44,6 @@ function RiskTable({
             idAttribute="deployment.id"
             rows={currentDeployments}
             columns={riskTableColumnDescriptors}
-            onRowClick={updateSelectedDeployment}
             selectedRowId={selectedDeploymentId}
             onFetchData={onFetchData}
             noDataText="No results found. Please refine your search."
