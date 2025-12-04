@@ -1,33 +1,68 @@
-import { Alert, Bullseye } from '@patternfly/react-core';
+import { Button } from '@patternfly/react-core';
+import { Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 
-import type { BaseImage } from 'services/BaseImagesService';
+import type { BaseImageReference } from 'services/BaseImagesService';
+import { getTableUIState } from 'utils/getTableUIState';
 
-import EmptyStateTemplate from 'Components/EmptyStateTemplate';
+import TBodyUnified from 'Components/TableStateTemplates/TbodyUnified';
 
 export type BaseImagesTableProps = {
-    baseImages: BaseImage[];
-    onRemove: (baseImage: BaseImage) => void;
+    baseImages: BaseImageReference[];
+    onRemove: (baseImage: BaseImageReference) => void;
     isRemoveInProgress: boolean;
+    isLoading: boolean;
+    error: Error | null;
 };
 
-// TODO: Use onRemove and isRemoveInProgress when table UI is implemented
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-function BaseImagesTable({ baseImages, onRemove, isRemoveInProgress }: BaseImagesTableProps) {
-    if (baseImages.length === 0) {
-        return (
-            <Bullseye>
-                <EmptyStateTemplate title="No base images configured" headingLevel="h2">
-                    Add your first base image to start tracking layer-specific vulnerabilities
-                </EmptyStateTemplate>
-            </Bullseye>
-        );
-    }
+function BaseImagesTable({
+    baseImages,
+    onRemove,
+    isRemoveInProgress,
+    isLoading,
+    error = null,
+}: BaseImagesTableProps) {
+    const tableState = getTableUIState({
+        isLoading,
+        data: baseImages,
+        error: error || undefined,
+        searchFilter: {},
+    });
 
     return (
-        <Alert variant="info" isInline title="Base images table coming soon" component="p">
-            You have {baseImages.length} base image{baseImages.length !== 1 ? 's' : ''}. Table UI
-            will be implemented soon.
-        </Alert>
+        <Table>
+            <Thead>
+                <Tr>
+                    <Th>Repository Path</Th>
+                    <Th>Tag Pattern</Th>
+                    <Th width={10}>Actions</Th>
+                </Tr>
+            </Thead>
+            <TBodyUnified<BaseImageReference>
+                tableState={tableState}
+                colSpan={3}
+                renderer={({ data }) => (
+                    <Tbody>
+                        {data.map((baseImage) => (
+                            <Tr key={baseImage.id}>
+                                <Td>{baseImage.baseImageRepoPath}</Td>
+                                <Td>{baseImage.baseImageTagPattern}</Td>
+                                <Td>
+                                    {/* TODO: Add modal confirmation before removing */}
+                                    <Button
+                                        variant="secondary"
+                                        isDanger
+                                        isDisabled={isRemoveInProgress}
+                                        onClick={() => onRemove(baseImage)}
+                                    >
+                                        Remove
+                                    </Button>
+                                </Td>
+                            </Tr>
+                        ))}
+                    </Tbody>
+                )}
+            />
+        </Table>
     );
 }
 

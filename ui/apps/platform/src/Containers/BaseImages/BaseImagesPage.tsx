@@ -2,13 +2,11 @@ import { useCallback, useState } from 'react';
 import { isAxiosError } from 'axios';
 import {
     Alert,
-    Bullseye,
     Button,
     Divider,
     Flex,
     FlexItem,
     PageSection,
-    Spinner,
     Text,
     Title,
 } from '@patternfly/react-core';
@@ -18,7 +16,6 @@ import {
     deleteBaseImage as deleteBaseImageFn,
     getBaseImages,
 } from 'services/BaseImagesService';
-import type { AddBaseImageRequest } from 'services/BaseImagesService';
 import useRestMutation from 'hooks/useRestMutation';
 import useRestQuery from 'hooks/useRestQuery';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
@@ -32,7 +29,8 @@ function BaseImagesPage() {
     const baseImagesRequest = useRestQuery(useCallback(getBaseImages, []));
 
     const addBaseImageMutation = useRestMutation(
-        (request: AddBaseImageRequest) => addBaseImageFn(request),
+        (data: { baseImageRepoPath: string; baseImageTagPattern: string }) =>
+            addBaseImageFn(data.baseImageRepoPath, data.baseImageTagPattern),
         {
             onSuccess: () => {
                 baseImagesRequest.refetch();
@@ -75,45 +73,31 @@ function BaseImagesPage() {
                             layer-specific filtering
                         </Text>
                     </FlexItem>
-                    <FlexItem align={{ default: 'alignRight' }}>
-                        <Button variant="primary" onClick={handleOpenAddModal}>
-                            Add base image
-                        </Button>
-                    </FlexItem>
+                    <Button variant="primary" onClick={handleOpenAddModal}>
+                        Add base image
+                    </Button>
                 </Flex>
             </PageSection>
             <Divider component="div" />
-            <PageSection className="pf-v5-u-display-flex pf-v5-u-flex-direction-column">
-                <Flex
-                    direction={{ default: 'column' }}
-                    spaceItems={{ default: 'spaceItemsLg' }}
-                    className="pf-v5-u-flex-grow-1"
-                >
-                    {deleteBaseImageMutation.isError && (
-                        <Alert
-                            variant="danger"
-                            isInline
-                            title="Error removing base image"
-                            component="p"
-                        >
-                            {getAxiosErrorMessage(deleteBaseImageMutation.error)}
-                        </Alert>
-                    )}
-
-                    {baseImagesRequest.isLoading && !baseImagesRequest.data && (
-                        <Bullseye>
-                            <Spinner aria-label="Loading base images" />
-                        </Bullseye>
-                    )}
-
-                    {baseImagesRequest.data !== undefined && (
-                        <BaseImagesTable
-                            baseImages={baseImages}
-                            onRemove={(baseImage) => handleRemoveBaseImage(baseImage.id)}
-                            isRemoveInProgress={deleteBaseImageMutation.isLoading}
-                        />
-                    )}
-                </Flex>
+            <PageSection>
+                {deleteBaseImageMutation.isError && (
+                    <Alert
+                        variant="danger"
+                        isInline
+                        title="Error removing base image"
+                        component="p"
+                        className="pf-v5-u-mb-lg"
+                    >
+                        {getAxiosErrorMessage(deleteBaseImageMutation.error)}
+                    </Alert>
+                )}
+                <BaseImagesTable
+                    baseImages={baseImages}
+                    onRemove={(baseImage) => handleRemoveBaseImage(baseImage.id)}
+                    isRemoveInProgress={deleteBaseImageMutation.isLoading}
+                    isLoading={baseImagesRequest.isLoading && !baseImagesRequest.data}
+                    error={baseImagesRequest.error as Error | null}
+                />
             </PageSection>
             <BaseImagesModal
                 isOpen={isAddModalOpen}

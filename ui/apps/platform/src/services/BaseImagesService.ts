@@ -4,38 +4,51 @@ import type { Empty } from './types';
 
 const baseImagesUrl = '/v2/baseimages';
 
-export type BaseImage = {
+export type BaseImageReference = {
     id: string;
     baseImageRepoPath: string;
     baseImageTagPattern: string;
     user: SlimUser;
 };
 
-export type AddBaseImageRequest = {
-    baseImageRepoPath: string;
-    baseImageTagPattern: string;
-};
-
 export type BaseImagesResponse = {
-    baseImages: BaseImage[];
+    baseImageReferences: BaseImageReference[];
 };
 
 /**
  * Fetch the list of configured base images.
  */
-export function getBaseImages(): Promise<BaseImage[]> {
+export function getBaseImages(): Promise<BaseImageReference[]> {
     // TODO: Replace with actual API call once backend is ready
     // return axios
     //     .get<BaseImagesResponse>(baseImagesUrl)
-    //     .then((response) => response.data.baseImages ?? []);
-    return Promise.resolve([]);
+    //     .then((response) => response.data.baseImageReferences ?? []);
+    return Promise.resolve([
+        {
+            id: '1',
+            baseImageRepoPath: 'library/ubuntu',
+            baseImageTagPattern: '20.04.*',
+            user: { id: '1', username: 'admin', name: 'Admin User' },
+        },
+        {
+            id: '2',
+            baseImageRepoPath: 'library/alpine',
+            baseImageTagPattern: '3.*',
+            user: { id: '2', username: 'admin', name: 'Admin User' },
+        },
+    ]);
 }
 
 /**
  * Add a new base image to the system.
  */
-export function addBaseImage(request: AddBaseImageRequest): Promise<BaseImage> {
-    return axios.post<BaseImage>(baseImagesUrl, request).then((response) => response.data);
+export function addBaseImage(
+    baseImageRepoPath: string,
+    baseImageTagPattern: string
+): Promise<BaseImageReference> {
+    return axios
+        .post<BaseImageReference>(baseImagesUrl, { baseImageRepoPath, baseImageTagPattern })
+        .then((response) => response.data);
 }
 
 /**
