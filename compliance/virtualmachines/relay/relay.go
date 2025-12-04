@@ -45,6 +45,10 @@ func (r *Relay) Run(ctx context.Context) error {
 		case <-ctx.Done():
 			return ctx.Err()
 		case report := <-reportChan:
+			if report == nil {
+				log.Warn("Received nil report, skipping")
+				continue
+			}
 			if err := r.reportSender.Send(ctx, report); err != nil {
 				log.Errorf("Failed to send report (vsock CID: %s): %v",
 					report.GetVsockCid(), err)
