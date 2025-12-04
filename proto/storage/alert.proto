@@ -56,6 +56,8 @@ message Alert {
   message Node {
     string id = 1; // @gotags: search:"Node ID"
     string name = 2; // @gotags: search:"Node"
+    string cluster_id = 3; // This field has to be duplicated in Alert for scope management and search.
+    string cluster_name = 4; // This field has to be duplicated in Alert for scope management and search.
   }
 
   message Violation {
