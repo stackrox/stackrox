@@ -313,7 +313,7 @@ func (t Translator) getSensorValues(sensor *platform.SensorComponentSpec, scanne
 
 	sv.AddChild(translation.ResourcesKey, translation.GetResources(sensor.Resources))
 
-	nodeSelector, tolerations := translation.GetSchedulingWithFallback(translation.SchedulingConstraints{NodeSelector: sensor.NodeSelector, Tolerations: sensor.Tolerations}, defaults)
+	nodeSelector, tolerations := translation.GetSchedulingWithFallback(&sensor.DeploymentSpec, defaults)
 	sv.SetStringMap("nodeSelector", nodeSelector)
 	sv.AddAllFrom(translation.GetTolerations(translation.TolerationsKey, tolerations))
 
@@ -363,7 +363,7 @@ func (t Translator) getAdmissionControlValues(admissionControl *platform.Admissi
 	acv.SetString("failurePolicy", (*string)(admissionControl.FailurePolicy))
 	acv.AddChild("dynamic", &dynamic)
 
-	nodeSelector, tolerations := translation.GetSchedulingWithFallback(translation.SchedulingConstraints{NodeSelector: admissionControl.NodeSelector, Tolerations: admissionControl.Tolerations}, defaults)
+	nodeSelector, tolerations := translation.GetSchedulingWithFallback(&admissionControl.DeploymentSpec, defaults)
 	acv.SetStringMap("nodeSelector", nodeSelector)
 	acv.AddAllFrom(translation.GetTolerations(translation.TolerationsKey, tolerations))
 

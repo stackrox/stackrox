@@ -895,19 +895,19 @@ func TestGetDeploymentDefaults(t *testing.T) {
 
 func TestGetSchedulingWithFallback(t *testing.T) {
 	tests := map[string]struct {
-		component        SchedulingConstraints
+		spec             *platform.DeploymentSpec
 		defaults         SchedulingConstraints
 		wantNodeSelector map[string]string
 		wantTolerations  []*corev1.Toleration
 	}{
 		"all nil": {
-			component:        SchedulingConstraints{},
+			spec:             nil,
 			defaults:         SchedulingConstraints{},
 			wantNodeSelector: nil,
 			wantTolerations:  nil,
 		},
-		"component set, defaults nil": {
-			component: SchedulingConstraints{
+		"spec set, defaults nil": {
+			spec: &platform.DeploymentSpec{
 				NodeSelector: map[string]string{"component-label": "component-value"},
 				Tolerations: []*corev1.Toleration{
 					{Key: "component-taint", Operator: corev1.TolerationOpExists},
@@ -919,8 +919,8 @@ func TestGetSchedulingWithFallback(t *testing.T) {
 				{Key: "component-taint", Operator: corev1.TolerationOpExists},
 			},
 		},
-		"component nil, defaults set": {
-			component: SchedulingConstraints{},
+		"spec nil, defaults set": {
+			spec: nil,
 			defaults: SchedulingConstraints{
 				NodeSelector: map[string]string{"default-label": "default-value"},
 				Tolerations: []*corev1.Toleration{
@@ -933,7 +933,7 @@ func TestGetSchedulingWithFallback(t *testing.T) {
 			},
 		},
 		"both set - component overrides defaults": {
-			component: SchedulingConstraints{
+			spec: &platform.DeploymentSpec{
 				NodeSelector: map[string]string{"component-label": "component-value"},
 				Tolerations: []*corev1.Toleration{
 					{Key: "component-taint", Operator: corev1.TolerationOpExists},
@@ -954,7 +954,7 @@ func TestGetSchedulingWithFallback(t *testing.T) {
 
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			nodeSelector, tolerations := GetSchedulingWithFallback(tc.component, tc.defaults)
+			nodeSelector, tolerations := GetSchedulingWithFallback(tc.spec, tc.defaults)
 			assert.Equal(t, tc.wantNodeSelector, nodeSelector)
 			assert.Equal(t, tc.wantTolerations, tolerations)
 		})
