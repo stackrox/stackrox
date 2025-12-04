@@ -163,13 +163,11 @@ func ConstructDeploymentWithFileAccess(
 	if err != nil {
 		return nil, err
 	}
-
 	return obj, nil
 }
 
 func ConstructFileAccess(fileAccess *storage.FileAccess) (*pathutil.AugmentedObj, error) {
-	augmentedFileAccess := pathutil.NewAugmentedObj(fileAccess)
-	return augmentedFileAccess, nil
+	return pathutil.NewAugmentedObj(fileAccess), nil
 }
 
 // ConstructDeploymentWithNetworkFlowInfo constructs an augmented object with deployment and network flow.
