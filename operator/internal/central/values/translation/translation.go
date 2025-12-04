@@ -256,9 +256,7 @@ func getCentralComponentValues(ctx context.Context, c *platform.CentralComponent
 
 	cv.SetBoolValue("exposeMonitoring", c.Monitoring.IsEnabled())
 
-	nodeSelector, tolerations := translation.GetSchedulingWithFallback(&c.DeploymentSpec, defaults)
-	cv.SetStringMap("nodeSelector", nodeSelector)
-	cv.AddAllFrom(translation.GetTolerations(translation.TolerationsKey, tolerations))
+	cv.SetScheduling("nodeSelector", translation.TolerationsKey, &c.DeploymentSpec, defaults)
 
 	if c.Exposure != nil {
 		exposure := translation.NewValuesBuilder()
@@ -323,9 +321,7 @@ func getCentralDBComponentValues(ctx context.Context, c *platform.CentralDBSpec,
 	cv.AddChild("source", &source)
 	cv.AddChild(translation.ResourcesKey, translation.GetResources(c.Resources))
 
-	nodeSelector, tolerations := translation.GetSchedulingWithFallback(&c.DeploymentSpec, defaults)
-	cv.SetStringMap("nodeSelector", nodeSelector)
-	cv.AddAllFrom(translation.GetTolerations(translation.TolerationsKey, tolerations))
+	cv.SetScheduling("nodeSelector", translation.TolerationsKey, &c.DeploymentSpec, defaults)
 	cv.AddChild("persistence", getCentralDBPersistenceValues(ctx, c.GetPersistence(), namespace, client))
 	if len(c.HostAliases) > 0 {
 		cv.AddAllFrom(translation.GetHostAliases(translation.HostAliasesKey, c.HostAliases))
@@ -421,9 +417,7 @@ func getConfigControllerValues(c *platform.ConfigAsCodeSpec, defaults translatio
 	}
 
 	cv.AddChild(translation.ResourcesKey, translation.GetResources(c.Resources))
-	nodeSelector, tolerations := translation.GetSchedulingWithFallback(&c.DeploymentSpec, defaults)
-	cv.SetStringMap("nodeSelector", nodeSelector)
-	cv.AddAllFrom(translation.GetTolerations(translation.TolerationsKey, tolerations))
+	cv.SetScheduling("nodeSelector", translation.TolerationsKey, &c.DeploymentSpec, defaults)
 	if len(c.HostAliases) > 0 {
 		cv.AddAllFrom(translation.GetHostAliases(translation.HostAliasesKey, c.HostAliases))
 	}

@@ -212,10 +212,8 @@ func SetScannerAnalyzerValues(sv *ValuesBuilder, analyzer *platform.ScannerAnaly
 
 	setScannerComponentScaling(sv, analyzer.GetScaling())
 
-	nodeSelector, tolerations := GetSchedulingWithFallback(&analyzer.DeploymentSpec, defaults)
-	sv.SetStringMap("nodeSelector", nodeSelector)
+	sv.SetScheduling("nodeSelector", TolerationsKey, &analyzer.DeploymentSpec, defaults)
 	sv.AddChild(ResourcesKey, GetResources(analyzer.Resources))
-	sv.AddAllFrom(GetTolerations(TolerationsKey, tolerations))
 
 	if len(analyzer.HostAliases) > 0 {
 		sv.AddAllFrom(GetHostAliases(HostAliasesKey, analyzer.HostAliases))
@@ -232,10 +230,8 @@ func SetScannerDBValues(sv *ValuesBuilder, db *platform.DeploymentSpec, defaults
 		db = &platform.DeploymentSpec{}
 	}
 
-	nodeSelector, tolerations := GetSchedulingWithFallback(db, defaults)
-	sv.SetStringMap("dbNodeSelector", nodeSelector)
+	sv.SetScheduling("dbNodeSelector", "dbTolerations", db, defaults)
 	sv.AddChild("dbResources", GetResources(db.Resources))
-	sv.AddAllFrom(GetTolerations("dbTolerations", tolerations))
 	if len(db.HostAliases) > 0 {
 		sv.AddAllFrom(GetHostAliases("dbHostAliases", db.HostAliases))
 	}
@@ -271,10 +267,8 @@ func SetScannerV4DBValues(ctx context.Context, sv *ValuesBuilder, db *platform.S
 		db = &platform.ScannerV4DB{}
 	}
 
-	nodeSelector, tolerations := GetSchedulingWithFallback(&db.DeploymentSpec, defaults)
-	dbVB.SetStringMap("nodeSelector", nodeSelector)
+	dbVB.SetScheduling("nodeSelector", TolerationsKey, &db.DeploymentSpec, defaults)
 	dbVB.AddChild(ResourcesKey, GetResources(db.Resources))
-	dbVB.AddAllFrom(GetTolerations(TolerationsKey, tolerations))
 	if len(db.HostAliases) > 0 {
 		dbVB.AddAllFrom(GetHostAliases(HostAliasesKey, db.HostAliases))
 	}
@@ -388,10 +382,8 @@ func SetScannerV4ComponentValues(sv *ValuesBuilder, componentKey string, compone
 	componentVB := NewValuesBuilder()
 	setScannerComponentScaling(&componentVB, component.Scaling)
 
-	nodeSelector, tolerations := GetSchedulingWithFallback(&component.DeploymentSpec, defaults)
-	componentVB.SetStringMap("nodeSelector", nodeSelector)
+	componentVB.SetScheduling("nodeSelector", TolerationsKey, &component.DeploymentSpec, defaults)
 	componentVB.AddChild(ResourcesKey, GetResources(component.Resources))
-	componentVB.AddAllFrom(GetTolerations(TolerationsKey, tolerations))
 
 	if len(component.HostAliases) > 0 {
 		componentVB.AddAllFrom(GetHostAliases(HostAliasesKey, component.HostAliases))
@@ -514,4 +506,11 @@ func GetSchedulingWithFallback(spec *platform.DeploymentSpec, defaults Schedulin
 	}
 
 	return nodeSelector, tolerations
+}
+
+// SetScheduling sets nodeSelector and tolerations values with fallback to defaults.
+func (v *ValuesBuilder) SetScheduling(nodeSelectorKey, tolerationsKey string, spec *platform.DeploymentSpec, defaults SchedulingConstraints) {
+	nodeSelector, tolerations := GetSchedulingWithFallback(spec, defaults)
+	v.SetStringMap(nodeSelectorKey, nodeSelector)
+	v.AddAllFrom(GetTolerations(tolerationsKey, tolerations))
 }

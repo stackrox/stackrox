@@ -313,9 +313,7 @@ func (t Translator) getSensorValues(sensor *platform.SensorComponentSpec, scanne
 
 	sv.AddChild(translation.ResourcesKey, translation.GetResources(sensor.Resources))
 
-	nodeSelector, tolerations := translation.GetSchedulingWithFallback(&sensor.DeploymentSpec, defaults)
-	sv.SetStringMap("nodeSelector", nodeSelector)
-	sv.AddAllFrom(translation.GetTolerations(translation.TolerationsKey, tolerations))
+	sv.SetScheduling("nodeSelector", translation.TolerationsKey, &sensor.DeploymentSpec, defaults)
 
 	if len(sensor.HostAliases) > 0 {
 		sv.AddAllFrom(translation.GetHostAliases(translation.HostAliasesKey, sensor.HostAliases))
@@ -363,9 +361,7 @@ func (t Translator) getAdmissionControlValues(admissionControl *platform.Admissi
 	acv.SetString("failurePolicy", (*string)(admissionControl.FailurePolicy))
 	acv.AddChild("dynamic", &dynamic)
 
-	nodeSelector, tolerations := translation.GetSchedulingWithFallback(&admissionControl.DeploymentSpec, defaults)
-	acv.SetStringMap("nodeSelector", nodeSelector)
-	acv.AddAllFrom(translation.GetTolerations(translation.TolerationsKey, tolerations))
+	acv.SetScheduling("nodeSelector", translation.TolerationsKey, &admissionControl.DeploymentSpec, defaults)
 
 	if len(admissionControl.HostAliases) > 0 {
 		acv.AddAllFrom(translation.GetHostAliases(translation.HostAliasesKey, admissionControl.HostAliases))
