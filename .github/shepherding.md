@@ -39,7 +39,7 @@ becomes non-trivial and a shepherd is sought later in the development process.
   someone else.
 - If you struggle to find a shepherd, talk to your manager, or to another Red Hatter. This
   is healthy and is a natural way to focus the collective mind on what’s truly important.
-  Don’t take it personally, and avoid starting working without a shepherd; try to figure
+  Don’t take it personally, and avoid working without a shepherd; try to figure
   out why this happened. Maybe we don’t focus on the right things as a project or maybe
   the effort you’re working on is not the top priority.
 - For cross-component efforts, you will likely have a shepherd per component, and this is
