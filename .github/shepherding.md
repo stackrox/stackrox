@@ -10,7 +10,7 @@ It is a well-established practice, both here and in the industry, to review code
 before merging them, yet we do not often apply the same approach for other phases of the
 feature development cycle. Similarly to a PR reviewer, a shepherd usually understands the
 affected product area well, knows undocumented and non-obvious facts and effects, and has
-a vision on how the product area will develop in the next year.
+a vision of how the product area will develop in the next year.
 
 A shepherd helps you throughout the entire process of making a contribution, from the
 design to analyzing bug reports. While you’re still responsible for the change overall,
@@ -25,7 +25,7 @@ their schedule and should be able to help with maintaining the change.
 
 To give an idea how shepherding works, here are some aspects of shepherding. These are not
 the hard rules as situations are different and there are always exceptions. Some
-components have higher contribution barrier than others. Sometimes what looked trivial
+components have a higher contribution barrier than others. Sometimes what looked trivial
 becomes non-trivial and a shepherd is sought later in the development process.
 
 - Shepherding is not a burden but your help in getting the stuff you need done. It reduces
