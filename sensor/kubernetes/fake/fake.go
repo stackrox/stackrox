@@ -531,7 +531,7 @@ func (w *WorkloadManager) initializePreexistingResources() {
 				w.workload.VirtualMachineWorkload.NumRepositories)
 		}
 
-		templatePool := newVMTemplatePool(
+		templates := newVMTemplates(
 			w.workload.VirtualMachineWorkload.PoolSize,
 			defaultGuestOSPool,
 			vmBaseVSOCKCID,
@@ -539,12 +539,9 @@ func (w *WorkloadManager) initializePreexistingResources() {
 
 		// Fork management of VM/VMI resources (including index reports if enabled)
 		workload := w.workload.VirtualMachineWorkload
-		for i := 0; i < templatePool.size(); i++ {
-			template := templatePool.getTemplate(i)
-			if template != nil {
-				w.wg.Add(1)
-				go w.manageVirtualMachine(w.shutdownCtx, workload, template, reportGen)
-			}
+		for _, tmpl := range templates {
+			w.wg.Add(1)
+			go w.manageVirtualMachine(w.shutdownCtx, workload, tmpl, reportGen)
 		}
 	}
 }
