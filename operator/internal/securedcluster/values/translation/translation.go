@@ -115,7 +115,7 @@ func (t Translator) translate(ctx context.Context, sc platform.SecuredCluster) (
 	v.AddAllFrom(translation.GetImagePullSecrets(sc.Spec.ImagePullSecrets))
 
 	customize := translation.NewValuesBuilder()
-	defaults := translation.GetDeploymentDefaults(sc.Spec.Customize)
+	deploymentDefaults := translation.GetDeploymentDefaults(sc.Spec.Customize)
 
 	scannerAutoSenseConfig, err := scanner.AutoSenseLocalScannerConfig(ctx, t.client, sc)
 	if err != nil {
@@ -127,8 +127,8 @@ func (t Translator) translate(ctx context.Context, sc platform.SecuredCluster) (
 		return nil, err
 	}
 
-	v.AddChild("sensor", t.getSensorValues(sc.Spec.Sensor, scannerAutoSenseConfig, scannerV4AutoSenseConfig, defaults))
-	v.AddChild("admissionControl", t.getAdmissionControlValues(sc.Spec.AdmissionControl, defaults))
+	v.AddChild("sensor", t.getSensorValues(sc.Spec.Sensor, scannerAutoSenseConfig, scannerV4AutoSenseConfig, deploymentDefaults))
+	v.AddChild("admissionControl", t.getAdmissionControlValues(sc.Spec.AdmissionControl, deploymentDefaults))
 
 	if sc.Spec.AuditLogs != nil {
 		v.AddChild("auditLogs", t.getAuditLogsValues(sc.Spec.AuditLogs))
@@ -138,10 +138,10 @@ func (t Translator) translate(ctx context.Context, sc platform.SecuredCluster) (
 		v.AddChild("collector", t.getCollectorValues(sc.Spec.PerNode))
 	}
 
-	v.AddChild("scanner", t.getLocalScannerComponentValues(sc, scannerAutoSenseConfig, defaults))
+	v.AddChild("scanner", t.getLocalScannerComponentValues(sc, scannerAutoSenseConfig, deploymentDefaults))
 
-	if sc.Spec.ScannerV4 != nil || defaults.IsSet() {
-		v.AddChild("scannerV4", t.getLocalScannerV4ComponentValues(ctx, sc, scannerV4AutoSenseConfig, defaults))
+	if sc.Spec.ScannerV4 != nil || deploymentDefaults.IsSet() {
+		v.AddChild("scannerV4", t.getLocalScannerV4ComponentValues(ctx, sc, scannerV4AutoSenseConfig, deploymentDefaults))
 	}
 
 	customize.AddAllFrom(translation.GetCustomize(sc.Spec.Customize))
