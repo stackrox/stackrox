@@ -94,7 +94,10 @@ func (t Translator) translate(ctx context.Context, c platform.Central) (chartuti
 
 	customize := translation.NewValuesBuilder()
 	customize.AddAllFrom(translation.GetCustomize(c.Spec.Customize))
-	deploymentDefaults := translation.GetDeploymentDefaults(c.Spec.Customize)
+	deploymentDefaults, err := translation.GetDeploymentDefaults(c.Spec.Customize)
+	if err != nil {
+		return nil, err
+	}
 
 	centralSpec := c.Spec.Central
 	if centralSpec == nil {

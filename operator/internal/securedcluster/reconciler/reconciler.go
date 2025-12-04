@@ -45,7 +45,6 @@ func RegisterNewReconciler(mgr ctrl.Manager, selector string) error {
 		pkgReconciler.WithPreExtension(extensions.ReconcileLocalScannerDBPasswordExtension(mgr.GetClient(), mgr.GetAPIReader())),
 		pkgReconciler.WithPreExtension(extensions.ReconcileLocalScannerV4DBPasswordExtension(mgr.GetClient(), mgr.GetAPIReader())),
 		pkgReconciler.WithPreExtension(extensions.SensorCAHashExtension(mgr.GetClient(), mgr.GetAPIReader(), renderCache)),
-		pkgReconciler.WithPreExtension(commonExtensions.ValidateDeploymentDefaultsExtension()),
 	}
 
 	postExtensions := []pkgReconciler.Option{

@@ -3,7 +3,6 @@
 package v1alpha1
 
 import (
-	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/utils/pointer"
@@ -415,7 +414,6 @@ type ObjectForStatusController interface {
 	GetObservedGeneration() int64
 }
 
-<<<<<<< HEAD
 // getCondition returns a specific condition by type, or nil if not found.
 func getCondition(conditions []StackRoxCondition, condType ConditionType) *StackRoxCondition {
 	for i := range conditions {
@@ -445,19 +443,3 @@ func updateCondition(conditions []StackRoxCondition, updatedCond StackRoxConditi
 	// Condition doesn't exist, add it.
 	return append(conditions, updatedCond), true
 }
-=======
-// ValidateDeploymentDefaults checks for conflicting configurations in the DeploymentDefaultsSpec.
-func (c *CustomizeSpec) ValidateDeploymentDefaults() error {
-	if c == nil || c.DeploymentDefaults == nil {
-		return nil
-	}
-	d := c.DeploymentDefaults
-	if d.PinToNodes == nil || *d.PinToNodes == PinToNodesNone {
-		return nil
-	}
-	if len(d.NodeSelector) > 0 || len(d.Tolerations) > 0 {
-		return errors.New("spec.customize.deploymentDefaults.pinToNodes cannot be used together with nodeSelector or tolerations")
-	}
-	return nil
-}
->>>>>>> 9dce40a9cd (ROX-31738: Global NodeSelectors and Tolerations)
