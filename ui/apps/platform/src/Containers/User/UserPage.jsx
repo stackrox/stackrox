@@ -6,18 +6,19 @@ import {
     DescriptionListDescription,
     DescriptionListGroup,
     DescriptionListTerm,
+    Divider,
     EmptyState,
     EmptyStateBody,
+    Flex,
+    FlexItem,
     PageSection,
-    Tab,
-    TabContent,
-    TabContentBody,
-    TabTitleText,
-    Tabs,
+    SelectGroup,
+    SelectOption,
     Title,
 } from '@patternfly/react-core';
 
 import DescriptionListCompact from 'Components/DescriptionListCompact';
+import SelectSingle from 'Components/SelectSingle/SelectSingle';
 import { selectors } from 'reducers';
 import User from 'utils/User';
 
@@ -29,15 +30,10 @@ function UserPage({ resourceToAccessByRole, userData }) {
     const authProviderName =
         usedAuthProvider?.type === 'basic' ? 'Basic' : (usedAuthProvider?.name ?? '');
 
-    const [activeTabKey, setActiveTabKey] = useState(0);
-    const [activeRoleTabKey, setActiveRoleTabKey] = useState(0);
+    const [selectedRole, setSelectedRole] = useState('ALL');
 
-    const handleTabClick = (_, tabIndex) => {
-        setActiveTabKey(tabIndex);
-    };
-
-    const handleRoleTabClick = (_, tabIndex) => {
-        setActiveRoleTabKey(tabIndex);
+    const handleRoleSelect = (_, selection) => {
+        setSelectedRole(selection);
     };
 
     return (
@@ -66,59 +62,66 @@ function UserPage({ resourceToAccessByRole, userData }) {
                 </DescriptionListCompact>
             </PageSection>
             <PageSection hasBodyWrapper={false} isFilled>
-                <Tabs isVertical activeTabKey={activeTabKey} onSelect={handleTabClick}>
-                    <Tab
-                        eventKey={0}
-                        title={<TabTitleText>User permissions for roles</TabTitleText>}
-                    >
-                        <TabContent>
-                            <TabContentBody>
-                                <UserPermissionsForRolesTable
-                                    resourceToAccessByRole={resourceToAccessByRole}
-                                />
-                            </TabContentBody>
-                        </TabContent>
-                    </Tab>
+                <Flex direction={{ default: 'column' }} gap={{ default: 'gapMd' }}>
+                    <FlexItem>
+                        <Flex direction={{ default: 'column' }} gap={{ default: 'gapMd' }}>
+                            <FlexItem>
+                                <SelectSingle
+                                    id="user-role-selector"
+                                    value={selectedRole}
+                                    handleSelect={handleRoleSelect}
+                                    placeholderText="Select a view"
+                                    isFullWidth={false}
+                                >
+                                    {[
+                                        <SelectOption
+                                            key="ALL"
+                                            value="ALL"
+                                            description="View aggregated permissions across all assigned roles"
+                                        >
+                                            User permissions for roles
+                                        </SelectOption>,
+                                        <Divider key="divider" component="li" />,
+                                        <SelectGroup key="roles-group" label="User roles">
+                                            {roles.map((role) => (
+                                                <SelectOption key={role.name} value={role.name}>
+                                                    {role.name}
+                                                </SelectOption>
+                                            ))}
+                                        </SelectGroup>,
+                                    ]}
+                                </SelectSingle>
+                            </FlexItem>
 
-                    <Tab eventKey={1} title={<TabTitleText>User roles</TabTitleText>}>
-                        <TabContent>
-                            <TabContentBody>
-                                {roles.length > 0 ? (
-                                    <Tabs
-                                        isSecondary
-                                        activeTabKey={activeRoleTabKey}
-                                        onSelect={handleRoleTabClick}
-                                    >
-                                        {roles.map((role, index) => (
-                                            <Tab
-                                                key={role.name}
-                                                eventKey={index}
-                                                title={<TabTitleText>{role.name}</TabTitleText>}
-                                            >
-                                                <TabContent>
-                                                    <TabContentBody>
-                                                        <UserPermissionsTable
-                                                            permissions={
-                                                                role?.resourceToAccess ?? {}
-                                                            }
-                                                        />
-                                                    </TabContentBody>
-                                                </TabContent>
-                                            </Tab>
-                                        ))}
-                                    </Tabs>
-                                ) : (
-                                    <EmptyState
-                                        headingLevel="h4"
-                                        titleText="No roles assigned to user"
-                                    >
-                                        <EmptyStateBody>User has no roles assigned</EmptyStateBody>
-                                    </EmptyState>
-                                )}
-                            </TabContentBody>
-                        </TabContent>
-                    </Tab>
-                </Tabs>
+                            {selectedRole === 'ALL' && (
+                                <FlexItem>
+                                    <UserPermissionsForRolesTable
+                                        resourceToAccessByRole={resourceToAccessByRole}
+                                    />
+                                </FlexItem>
+                            )}
+
+                            {selectedRole && selectedRole !== 'ALL' && (
+                                <FlexItem>
+                                    <UserPermissionsTable
+                                        permissions={
+                                            roles.find((r) => r.name === selectedRole)
+                                                ?.resourceToAccess ?? {}
+                                        }
+                                    />
+                                </FlexItem>
+                            )}
+                        </Flex>
+                    </FlexItem>
+
+                    {roles.length === 0 && (
+                        <FlexItem>
+                            <EmptyState headingLevel="h4" titleText="No roles assigned to user">
+                                <EmptyStateBody>User has no roles assigned</EmptyStateBody>
+                            </EmptyState>
+                        </FlexItem>
+                    )}
+                </Flex>
             </PageSection>
         </>
     );

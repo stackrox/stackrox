@@ -120,9 +120,10 @@ describe('User Profile', () => {
                 staticResponseForMultiRolesWithOidcProvider
             );
 
-            cy.get(`${userPageSelectors.userRoleNames}:contains("Admin")`);
-            cy.get(`${userPageSelectors.userRoleNames}:contains("Analyst")`);
-            cy.get(`${userPageSelectors.userRoleNames}:contains("Continuous Integration")`);
+            cy.get('#user-role-selector').click();
+            cy.get(`${userPageSelectors.userRoleNames}:contains("Admin")`).should('exist');
+            cy.get(`${userPageSelectors.userRoleNames}:contains("Analyst")`).should('exist');
+            cy.get(`${userPageSelectors.userRoleNames}:contains("Continuous Integration")`).should('exist');
         });
 
         it('should show correct permissions for the role', () => {
@@ -130,6 +131,7 @@ describe('User Profile', () => {
                 staticResponseForMultiRolesWithOidcProvider
             );
 
+            cy.get('#user-role-selector').click();
             cy.get(`${userPageSelectors.userRoleNames}:contains("Analyst")`).click();
 
             // check that read is allowed and write is forbidden
@@ -143,19 +145,18 @@ describe('User Profile', () => {
             const { userPermissionsForRoles, userRoleNames } = userPageSelectors;
             const userRoleAdmin = `${userRoleNames}:contains("Admin")`;
 
-            // When landing on Users page:
-            cy.get(userPermissionsForRoles).should('have.attr', 'aria-selected', 'true');
-            cy.get(userRoleAdmin).should('have.attr', 'aria-selected', 'false');
+            // When landing on Users page, "User permissions for roles" should be selected
+            cy.get('#user-role-selector').should('contain.text', 'User permissions for roles');
 
             // After clicking Admin user role:
+            cy.get('#user-role-selector').click();
             cy.get(userRoleAdmin).click();
-            cy.get(userPermissionsForRoles).should('have.attr', 'aria-selected', 'false');
-            cy.get(userRoleAdmin).should('have.attr', 'aria-selected', 'true');
+            cy.get('#user-role-selector').should('contain.text', 'Admin');
 
             // After clicking User permissions for roles:
+            cy.get('#user-role-selector').click();
             cy.get(userPermissionsForRoles).click();
-            cy.get(userPermissionsForRoles).should('have.attr', 'aria-selected', 'true');
-            cy.get(userRoleAdmin).should('have.attr', 'aria-selected', 'false');
+            cy.get('#user-role-selector').should('contain.text', 'User permissions for roles');
         });
 
         it('should display aggregated permissions for basic auth user', () => {
