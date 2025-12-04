@@ -48,7 +48,6 @@ func RegisterNewReconciler(mgr ctrl.Manager, selector string) error {
 		pkgReconciler.WithPreExtension(extensions.ReconcilePVCExtension(mgr.GetClient(), mgr.GetAPIReader(), extensions.PVCTargetCentralDBBackup, common.DefaultCentralDBBackupPVCName, extensions.WithDefaultClaimSize(extensions.DefaultBackupPVCSize))),
 		pkgReconciler.WithPreExtension(proxy.ReconcileProxySecretExtension(mgr.GetClient(), mgr.GetAPIReader(), proxyEnv)),
 		pkgReconciler.WithPreExtension(commonExtensions.CheckForbiddenNamespacesExtension(commonExtensions.IsSystemNamespace)),
-		pkgReconciler.WithPreExtension(commonExtensions.ValidateDeploymentDefaultsExtension()),
 	}
 
 	postExtensions := []pkgReconciler.Option{

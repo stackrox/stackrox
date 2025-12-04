@@ -776,6 +776,7 @@ func TestGetDeploymentDefaults(t *testing.T) {
 		customize        *platform.CustomizeSpec
 		wantNodeSelector map[string]string
 		wantTolerations  []*corev1.Toleration
+		wantErr          bool
 	}{
 		"nil customize": {
 			customize:        nil,
@@ -840,11 +841,52 @@ func TestGetDeploymentDefaults(t *testing.T) {
 				{Key: "node.stackrox.io", Value: "false", Operator: corev1.TolerationOpEqual},
 			},
 		},
+		"invalid: pinToNodes with nodeSelector": {
+			customize: &platform.CustomizeSpec{
+				DeploymentDefaults: &platform.DeploymentDefaultsSpec{
+					PinToNodes: pointers.Pointer(platform.PinToNodesInfraRole),
+					NodeSelector: map[string]string{
+						"global-node-selector-label": "global-node-selector-value",
+					},
+				},
+			},
+			wantErr: true,
+		},
+		"invalid: pinToNodes with tolerations": {
+			customize: &platform.CustomizeSpec{
+				DeploymentDefaults: &platform.DeploymentDefaultsSpec{
+					PinToNodes: pointers.Pointer(platform.PinToNodesInfraRole),
+					Tolerations: []*corev1.Toleration{
+						{Key: "node.stackrox.io", Value: "false", Operator: corev1.TolerationOpEqual},
+					},
+				},
+			},
+			wantErr: true,
+		},
+		"invalid: pinToNodes with both nodeSelector and tolerations": {
+			customize: &platform.CustomizeSpec{
+				DeploymentDefaults: &platform.DeploymentDefaultsSpec{
+					PinToNodes: pointers.Pointer(platform.PinToNodesInfraRole),
+					NodeSelector: map[string]string{
+						"global-node-selector-label": "global-node-selector-value",
+					},
+					Tolerations: []*corev1.Toleration{
+						{Key: "node.stackrox.io", Value: "false", Operator: corev1.TolerationOpEqual},
+					},
+				},
+			},
+			wantErr: true,
+		},
 	}
 
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			defaults := GetDeploymentDefaults(tc.customize)
+			defaults, err := GetDeploymentDefaults(tc.customize)
+			if tc.wantErr {
+				assert.Error(t, err)
+				return
+			}
+			require.NoError(t, err)
 			assert.Equal(t, tc.wantNodeSelector, defaults.NodeSelector)
 			assert.Equal(t, tc.wantTolerations, defaults.Tolerations)
 		})

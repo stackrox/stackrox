@@ -449,20 +449,25 @@ func GetConfigAsCode(c *platform.ConfigAsCodeSpec) *ValuesBuilder {
 
 // GetDeploymentDefaults returns the default nodeSelector and tolerations for all Deployments.
 // If pinToNodes is set, it expands it to the default nodeSelector and tolerations.
-func GetDeploymentDefaults(customize *platform.CustomizeSpec) SchedulingConstraints {
+func GetDeploymentDefaults(customize *platform.CustomizeSpec) (SchedulingConstraints, error) {
 	if customize == nil || customize.DeploymentDefaults == nil {
-		return SchedulingConstraints{}
+		return SchedulingConstraints{}, nil
+	}
+
+	if customize.DeploymentDefaults.PinToNodes != nil && *customize.DeploymentDefaults.PinToNodes != platform.PinToNodesNone &&
+		(len(customize.DeploymentDefaults.NodeSelector) > 0 || len(customize.DeploymentDefaults.Tolerations) > 0) {
+		return SchedulingConstraints{}, errors.New("deploymentDefaults.pinToNodes cannot be used together with nodeSelector or tolerations")
 	}
 
 	defaults := customize.DeploymentDefaults
 	if expanded := expandPinToNodes(defaults.PinToNodes); expanded.IsSet() {
-		return expanded
+		return expanded, nil
 	}
 
 	return SchedulingConstraints{
 		NodeSelector: defaults.NodeSelector,
 		Tolerations:  defaults.Tolerations,
-	}
+	}, nil
 }
 
 func expandPinToNodes(pinToNodes *platform.PinToNodesPolicy) SchedulingConstraints {

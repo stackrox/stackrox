@@ -3,7 +3,6 @@
 package v1alpha1
 
 import (
-	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/utils/pointer"
@@ -413,19 +412,4 @@ type ObjectForStatusController interface {
 	SetCondition(StackRoxCondition) bool
 	GetGeneration() int64
 	GetObservedGeneration() int64
-}
-
-// ValidateDeploymentDefaults checks for conflicting configurations in the DeploymentDefaultsSpec.
-func (c *CustomizeSpec) ValidateDeploymentDefaults() error {
-	if c == nil || c.DeploymentDefaults == nil {
-		return nil
-	}
-	d := c.DeploymentDefaults
-	if d.PinToNodes == nil || *d.PinToNodes == PinToNodesNone {
-		return nil
-	}
-	if len(d.NodeSelector) > 0 || len(d.Tolerations) > 0 {
-		return errors.New("spec.customize.deploymentDefaults.pinToNodes cannot be used together with nodeSelector or tolerations")
-	}
-	return nil
 }

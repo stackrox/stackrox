@@ -115,7 +115,10 @@ func (t Translator) translate(ctx context.Context, sc platform.SecuredCluster) (
 	v.AddAllFrom(translation.GetImagePullSecrets(sc.Spec.ImagePullSecrets))
 
 	customize := translation.NewValuesBuilder()
-	deploymentDefaults := translation.GetDeploymentDefaults(sc.Spec.Customize)
+	deploymentDefaults, err := translation.GetDeploymentDefaults(sc.Spec.Customize)
+	if err != nil {
+		return nil, err
+	}
 
 	scannerAutoSenseConfig, err := scanner.AutoSenseLocalScannerConfig(ctx, t.client, sc)
 	if err != nil {
