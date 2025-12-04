@@ -1,0 +1,21 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "mocks",
+    srcs = [
+        "email_formatter.go",
+        "formatter.go",
+    ],
+    importpath = "github.com/stackrox/rox/central/complianceoperator/v2/report/manager/format/mocks",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//pkg/csv",
+        "@org_uber_go_mock//gomock",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":mocks",
+    visibility = ["//visibility:public"],
+)

@@ -1,0 +1,27 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "mocks",
+    srcs = [
+        "environment.go",
+        "util.go",
+    ],
+    importpath = "github.com/stackrox/rox/roxctl/common/environment/mocks",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//roxctl/common",
+        "//roxctl/common/config",
+        "//roxctl/common/environment",
+        "//roxctl/common/io",
+        "//roxctl/common/logger",
+        "//roxctl/common/printer",
+        "@org_golang_google_grpc//:grpc",
+        "@org_uber_go_mock//gomock",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":mocks",
+    visibility = ["//visibility:public"],
+)

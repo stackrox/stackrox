@@ -1,0 +1,47 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "aws",
+    srcs = [
+        "certs.go",
+        "metadata.go",
+    ],
+    importpath = "github.com/stackrox/rox/pkg/cloudproviders/aws",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//generated/storage",
+        "//pkg/cloudproviders/utils",
+        "//pkg/errorhelpers",
+        "//pkg/httputil/proxy",
+        "//pkg/k8sutil",
+        "//pkg/logging",
+        "//pkg/utils",
+        "@com_github_aws_aws_sdk_go_v2_config//:config",
+        "@com_github_aws_aws_sdk_go_v2_feature_ec2_imds//:imds",
+        "@com_github_cloudflare_cfssl//helpers",
+        "@com_github_pkg_errors//:errors",
+        "@com_github_stackrox_pkcs7//:pkcs7",
+        "@io_k8s_client_go//kubernetes",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":aws",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "aws_test",
+    srcs = ["metadata_test.go"],
+    embed = [":aws"],
+    deps = [
+        "//generated/storage",
+        "@com_github_aws_aws_sdk_go_v2_feature_ec2_imds//:imds",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+        "@io_k8s_api//core/v1:core",
+        "@io_k8s_apimachinery//pkg/apis/meta/v1:meta",
+        "@io_k8s_client_go//kubernetes/fake",
+    ],
+)

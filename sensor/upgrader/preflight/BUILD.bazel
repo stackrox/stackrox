@@ -1,0 +1,65 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "preflight",
+    srcs = [
+        "access.go",
+        "all.go",
+        "check.go",
+        "labels.go",
+        "namespace.go",
+        "object_preconds.go",
+        "perform.go",
+        "resources.go",
+        "schema_validation.go",
+    ],
+    importpath = "github.com/stackrox/rox/sensor/upgrader/preflight",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//pkg/k8sutil",
+        "//pkg/k8sutil/k8sobjects",
+        "//pkg/logging",
+        "//pkg/namespaces",
+        "//pkg/pods",
+        "//pkg/set",
+        "//pkg/sliceutils",
+        "//sensor/upgrader/common",
+        "//sensor/upgrader/plan",
+        "//sensor/upgrader/resources",
+        "//sensor/upgrader/upgradectx",
+        "@com_github_pkg_errors//:errors",
+        "@io_k8s_api//authorization/v1:authorization",
+        "@io_k8s_apimachinery//pkg/api/errors",
+        "@io_k8s_apimachinery//pkg/apis/meta/v1:meta",
+        "@io_k8s_apimachinery//pkg/runtime/serializer/json",
+        "@io_k8s_kubectl//pkg/validation",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":preflight",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "preflight_test",
+    srcs = [
+        "namespace_test.go",
+        "schema_validation_test.go",
+    ],
+    data = glob(["testdata/**"]),
+    embed = [":preflight"],
+    embedsrcs = ["testdata/k8s-1.22.json.gz"],
+    deps = [
+        "//pkg/gziputil",
+        "//pkg/k8sutil",
+        "//pkg/k8sutil/k8sobjects",
+        "//pkg/namespaces",
+        "//sensor/upgrader/common",
+        "@com_github_google_gnostic_models//openapiv2",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+        "@io_k8s_apimachinery//pkg/runtime/schema",
+    ],
+)

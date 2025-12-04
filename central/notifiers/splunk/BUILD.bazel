@@ -1,0 +1,33 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "splunk",
+    srcs = ["splunk.go"],
+    importpath = "github.com/stackrox/rox/central/notifiers/splunk",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//central/notifiers/utils",
+        "//generated/api/v1:api",
+        "//generated/internalapi/wrapper",
+        "//generated/storage",
+        "//pkg/administration/events/codes",
+        "//pkg/cryptoutils/cryptocodec",
+        "//pkg/env",
+        "//pkg/errorhelpers",
+        "//pkg/httputil/proxy",
+        "//pkg/jsonutil",
+        "//pkg/notifiers",
+        "//pkg/protocompat",
+        "//pkg/protoutils",
+        "//pkg/retry",
+        "//pkg/urlfmt",
+        "//pkg/utils",
+        "@com_github_pkg_errors//:errors",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":splunk",
+    visibility = ["//visibility:public"],
+)

@@ -1,0 +1,15 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "alpn",
+    srcs = ["alpn.go"],
+    importpath = "github.com/stackrox/rox/pkg/grpc/alpn",
+    visibility = ["//visibility:public"],
+    deps = ["//pkg/sliceutils"],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":alpn",
+    visibility = ["//visibility:public"],
+)

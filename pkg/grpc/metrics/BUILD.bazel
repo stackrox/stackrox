@@ -1,0 +1,42 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "metrics",
+    srcs = [
+        "grpc_metrics.go",
+        "grpc_metrics_impl.go",
+        "http_metrics.go",
+        "http_metrics_impl.go",
+        "metrics.go",
+        "prom.go",
+    ],
+    importpath = "github.com/stackrox/rox/pkg/grpc/metrics",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//pkg/concurrency",
+        "//pkg/httputil",
+        "//pkg/logging",
+        "//pkg/metrics",
+        "//pkg/sync",
+        "//pkg/utils",
+        "@com_github_hashicorp_golang_lru_v2//:golang-lru",
+        "@com_github_pkg_errors//:errors",
+        "@com_github_prometheus_client_golang//prometheus",
+        "@org_golang_google_grpc//:grpc",
+        "@org_golang_google_grpc//codes",
+        "@org_golang_google_grpc//status",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":metrics",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "metrics_test",
+    srcs = ["http_metrics_test.go"],
+    embed = [":metrics"],
+    deps = ["@com_github_stretchr_testify//suite"],
+)

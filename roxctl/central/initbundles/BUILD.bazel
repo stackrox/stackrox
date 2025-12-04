@@ -1,0 +1,53 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "initbundles",
+    srcs = [
+        "common.go",
+        "fetch_ca.go",
+        "generate.go",
+        "initbundles.go",
+        "list.go",
+        "revoke.go",
+    ],
+    importpath = "github.com/stackrox/rox/roxctl/central/initbundles",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//generated/api/v1:api",
+        "//generated/storage",
+        "//pkg/errox",
+        "//pkg/protocompat",
+        "//pkg/roxctl/common",
+        "//pkg/set",
+        "//pkg/stringutils",
+        "//pkg/utils",
+        "//roxctl/common",
+        "//roxctl/common/environment",
+        "//roxctl/common/flags",
+        "//roxctl/common/logger",
+        "//roxctl/common/util",
+        "@com_github_pkg_errors//:errors",
+        "@com_github_spf13_cobra//:cobra",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":initbundles",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "initbundles_test",
+    srcs = [
+        "list_test.go",
+        "revoke_test.go",
+    ],
+    embed = [":initbundles"],
+    deps = [
+        "//generated/api/v1:api",
+        "//generated/storage",
+        "//pkg/protocompat",
+        "@com_github_stretchr_testify//assert",
+    ],
+)

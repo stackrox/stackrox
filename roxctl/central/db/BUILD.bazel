@@ -1,0 +1,21 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "db",
+    srcs = ["db.go"],
+    importpath = "github.com/stackrox/rox/roxctl/central/db",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//roxctl/central/db/backup",
+        "//roxctl/central/db/restore",
+        "//roxctl/common/environment",
+        "//roxctl/common/flags",
+        "@com_github_spf13_cobra//:cobra",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":db",
+    visibility = ["//visibility:public"],
+)

@@ -1,0 +1,24 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "deploymentenvs",
+    srcs = [
+        "manager.go",
+        "manager_impl.go",
+        "singleton.go",
+    ],
+    importpath = "github.com/stackrox/rox/central/deploymentenvs",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//pkg/concurrency",
+        "//pkg/deploymentenvs",
+        "//pkg/providers",
+        "//pkg/sync",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":deploymentenvs",
+    visibility = ["//visibility:public"],
+)

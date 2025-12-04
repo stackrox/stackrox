@@ -1,0 +1,37 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "datastore",
+    srcs = [
+        "datastore.go",
+        "datastore_impl.go",
+        "singleton.go",
+        "telemetry.go",
+    ],
+    importpath = "github.com/stackrox/rox/central/administration/events/datastore",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//central/administration/events/datastore/internal/store",
+        "//central/administration/events/datastore/internal/store/postgres",
+        "//central/administration/events/datastore/internal/writer",
+        "//central/globaldb",
+        "//generated/api/v1:api",
+        "//generated/storage",
+        "//pkg/administration/events",
+        "//pkg/errorhelpers",
+        "//pkg/errox",
+        "//pkg/postgres",
+        "//pkg/sac",
+        "//pkg/sac/resources",
+        "//pkg/search",
+        "//pkg/sync",
+        "//pkg/telemetry/phonehome",
+        "@com_github_pkg_errors//:errors",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":datastore",
+    visibility = ["//visibility:public"],
+)

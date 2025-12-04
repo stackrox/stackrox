@@ -1,0 +1,28 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "testutils",
+    srcs = [
+        "context_matcher.go",
+        "crud_test_cases.go",
+        "search_test_cases.go",
+        "test_contexts.go",
+        "testresult_distribution.go",
+    ],
+    importpath = "github.com/stackrox/rox/pkg/sac/testutils",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//generated/storage",
+        "//pkg/auth/permissions",
+        "//pkg/sac",
+        "//pkg/sac/testconsts",
+        "@com_github_stretchr_testify//suite",
+        "@org_uber_go_mock//gomock",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":testutils",
+    visibility = ["//visibility:public"],
+)

@@ -1,0 +1,44 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "gcp",
+    srcs = [
+        "api.go",
+        "cert_set.go",
+        "http_client.go",
+        "identity_token.go",
+        "metadata.go",
+    ],
+    importpath = "github.com/stackrox/rox/pkg/cloudproviders/gcp",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//generated/storage",
+        "//pkg/cryptoutils",
+        "//pkg/env",
+        "//pkg/errorhelpers",
+        "//pkg/httputil",
+        "//pkg/httputil/proxy",
+        "//pkg/jwt",
+        "//pkg/logging",
+        "//pkg/utils",
+        "@com_github_go_jose_go_jose_v4//jwt",
+        "@com_github_pkg_errors//:errors",
+        "@com_google_cloud_go_compute_metadata//:metadata",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":gcp",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "gcp_test",
+    srcs = ["metadata_test.go"],
+    embed = [":gcp"],
+    deps = [
+        "@com_github_stretchr_testify//assert",
+        "@com_google_cloud_go_compute_metadata//:metadata",
+    ],
+)

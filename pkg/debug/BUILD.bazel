@@ -1,0 +1,18 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "debug",
+    srcs = [
+        "debug.go",
+        "frame.go",
+        "lazy_stacktrace.go",
+    ],
+    importpath = "github.com/stackrox/rox/pkg/debug",
+    visibility = ["//visibility:public"],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":debug",
+    visibility = ["//visibility:public"],
+)

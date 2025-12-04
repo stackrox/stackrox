@@ -1,0 +1,21 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "validateimports",
+    srcs = ["analyzer.go"],
+    importpath = "github.com/stackrox/rox/tools/roxvet/analyzers/validateimports",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//pkg/set",
+        "//pkg/stringutils",
+        "@com_github_pkg_errors//:errors",
+        "@org_golang_x_tools//go/analysis",
+        "@org_golang_x_tools//go/analysis/passes/inspect",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":validateimports",
+    visibility = ["//visibility:public"],
+)

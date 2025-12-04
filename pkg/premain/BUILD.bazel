@@ -1,0 +1,15 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "premain",
+    srcs = ["premain.go"],
+    importpath = "github.com/stackrox/rox/pkg/premain",
+    visibility = ["//visibility:public"],
+    deps = ["//pkg/concurrency"],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":premain",
+    visibility = ["//visibility:public"],
+)

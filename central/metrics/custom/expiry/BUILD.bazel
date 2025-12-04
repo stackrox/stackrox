@@ -1,0 +1,22 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "expiry",
+    srcs = [
+        "labels.go",
+        "tracker.go",
+    ],
+    importpath = "github.com/stackrox/rox/central/metrics/custom/expiry",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//central/credentialexpiry/service",
+        "//central/metrics/custom/tracker",
+        "//generated/api/v1:api",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":expiry",
+    visibility = ["//visibility:public"],
+)

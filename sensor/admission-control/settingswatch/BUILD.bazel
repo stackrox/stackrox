@@ -1,0 +1,41 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "settingswatch",
+    srcs = [
+        "common.go",
+        "k8s.go",
+        "mount.go",
+        "persist.go",
+        "sensor_push.go",
+    ],
+    importpath = "github.com/stackrox/rox/sensor/admission-control/settingswatch",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//generated/internalapi/sensor",
+        "//generated/storage",
+        "//pkg/admissioncontrol",
+        "//pkg/concurrency",
+        "//pkg/fileutils",
+        "//pkg/gziputil",
+        "//pkg/k8scfgwatch",
+        "//pkg/logging",
+        "//pkg/protocompat",
+        "//sensor/admission-control/common",
+        "//sensor/admission-control/manager",
+        "@com_github_cenkalti_backoff_v3//:backoff",
+        "@com_github_pkg_errors//:errors",
+        "@io_k8s_api//core/v1:core",
+        "@io_k8s_apimachinery//pkg/apis/meta/v1:meta",
+        "@io_k8s_client_go//informers",
+        "@io_k8s_client_go//kubernetes",
+        "@io_k8s_client_go//rest",
+        "@org_golang_google_grpc//:grpc",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":settingswatch",
+    visibility = ["//visibility:public"],
+)

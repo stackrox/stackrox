@@ -1,0 +1,50 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "datastore",
+    srcs = [
+        "datastore.go",
+        "datastore_impl.go",
+        "datastore_test_constructors.go",
+        "defaults.go",
+        "resolved_role_impl.go",
+        "singleton.go",
+        "telemetry.go",
+    ],
+    importpath = "github.com/stackrox/rox/central/role/datastore",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//central/globaldb",
+        "//central/group/datastore/filter",
+        "//central/role",
+        "//central/role/store",
+        "//central/role/store/permissionset/postgres",
+        "//central/role/store/role/postgres",
+        "//central/role/store/simpleaccessscope/postgres",
+        "//generated/storage",
+        "//pkg/auth/permissions",
+        "//pkg/auth/permissions/utils",
+        "//pkg/declarativeconfig",
+        "//pkg/defaults/accesscontrol",
+        "//pkg/errorhelpers",
+        "//pkg/errox",
+        "//pkg/logging",
+        "//pkg/postgres",
+        "//pkg/postgres/pgutils",
+        "//pkg/sac",
+        "//pkg/sac/resources",
+        "//pkg/search",
+        "//pkg/sync",
+        "//pkg/telemetry/phonehome",
+        "//pkg/utils",
+        "@com_github_pkg_errors//:errors",
+        "@org_golang_x_text//cases",
+        "@org_golang_x_text//language",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":datastore",
+    visibility = ["//visibility:public"],
+)

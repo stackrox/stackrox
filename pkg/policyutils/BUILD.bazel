@@ -1,0 +1,34 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "policyutils",
+    srcs = [
+        "exclusions.go",
+        "scope.go",
+        "utils.go",
+    ],
+    importpath = "github.com/stackrox/rox/pkg/policyutils",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//generated/api/v1:api",
+        "//generated/storage",
+        "//pkg/search",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":policyutils",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "policyutils_test",
+    srcs = ["exclusions_test.go"],
+    embed = [":policyutils"],
+    deps = [
+        "//generated/storage",
+        "//pkg/protoassert",
+        "//pkg/search",
+    ],
+)

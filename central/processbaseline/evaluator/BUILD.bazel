@@ -1,0 +1,50 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "evaluator",
+    srcs = [
+        "evaluator.go",
+        "evaluator_impl.go",
+        "singleton.go",
+    ],
+    importpath = "github.com/stackrox/rox/central/processbaseline/evaluator",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//central/processbaseline",
+        "//central/processbaseline/datastore",
+        "//central/processbaselineresults/datastore",
+        "//central/processindicator/datastore",
+        "//central/processindicator/views",
+        "//generated/storage",
+        "//pkg/sac",
+        "//pkg/sac/resources",
+        "//pkg/search",
+        "//pkg/set",
+        "//pkg/sync",
+        "@com_github_pkg_errors//:errors",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":evaluator",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "evaluator_test",
+    srcs = ["evaluator_test.go"],
+    embed = [":evaluator"],
+    deps = [
+        "//central/processbaseline/datastore/mocks",
+        "//central/processbaselineresults/datastore/mocks",
+        "//central/processindicator/datastore/mocks",
+        "//central/processindicator/views",
+        "//generated/api/v1:api",
+        "//generated/storage",
+        "//pkg/fixtures",
+        "//pkg/protoconv",
+        "@com_github_stretchr_testify//require",
+        "@org_uber_go_mock//gomock",
+    ],
+)

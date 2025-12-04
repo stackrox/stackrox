@@ -1,0 +1,19 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "remote",
+    srcs = ["all.go"],
+    importpath = "github.com/stackrox/rox/central/compliance/checks/remote",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//central/compliance/framework",
+        "//pkg/compliance/checks",
+        "//pkg/compliance/checks/standards",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":remote",
+    visibility = ["//visibility:public"],
+)

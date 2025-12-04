@@ -1,0 +1,14 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "manual",
+    srcs = ["manual.go"],
+    importpath = "github.com/stackrox/rox/pkg/scannerv4/updater/manual",
+    visibility = ["//visibility:public"],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":manual",
+    visibility = ["//visibility:public"],
+)

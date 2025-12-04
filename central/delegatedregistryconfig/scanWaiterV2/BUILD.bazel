@@ -1,0 +1,20 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "scanWaiterV2",
+    srcs = ["singleton.go"],
+    importpath = "github.com/stackrox/rox/central/delegatedregistryconfig/scanWaiterV2",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//generated/storage",
+        "//pkg/features",
+        "//pkg/sync",
+        "//pkg/waiter",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":scanWaiterV2",
+    visibility = ["//visibility:public"],
+)

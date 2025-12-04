@@ -1,0 +1,65 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "common",
+    srcs = [
+        "bundle_file_ignorelist.go",
+        "bundle_resources.go",
+        "consts.go",
+        "dynamic_bundle_objects.go",
+        "filter.go",
+        "metadata.go",
+        "namespaces.go",
+        "patch_schema.go",
+        "schema_validator.go",
+        "shared_objects.go",
+        "state_resources.go",
+        "yaml_validator.go",
+    ],
+    importpath = "github.com/stackrox/rox/sensor/upgrader/common",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//image",
+        "//pkg/k8sutil",
+        "//pkg/k8sutil/k8sobjects",
+        "//pkg/namespaces",
+        "//pkg/pods",
+        "//pkg/set",
+        "@com_github_google_gnostic_models//openapiv2",
+        "@com_github_pkg_errors//:errors",
+        "@io_k8s_apimachinery//pkg/runtime/schema",
+        "@io_k8s_apimachinery//pkg/util/yaml",
+        "@io_k8s_kubectl//pkg/util/openapi",
+        "@io_k8s_kubectl//pkg/validation",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":common",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "common_test",
+    srcs = [
+        "bundle_resources_completeness_test.go",
+        "bundle_resources_test.go",
+        "filter_test.go",
+        "state_resources_test.go",
+    ],
+    embed = [":common"],
+    deps = [
+        "//image",
+        "//pkg/features",
+        "//pkg/helm/charts",
+        "//pkg/helm/util",
+        "//pkg/images/defaults",
+        "//pkg/k8sutil",
+        "//pkg/version",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+        "@io_k8s_apimachinery//pkg/apis/meta/v1/unstructured",
+        "@io_k8s_apimachinery//pkg/runtime/schema",
+    ],
+)

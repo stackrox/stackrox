@@ -1,0 +1,66 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "splunk",
+    srcs = [
+        "compliance.go",
+        "violations.go",
+        "vm.go",
+    ],
+    importpath = "github.com/stackrox/rox/central/splunk",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//central/alert/datastore",
+        "//central/cluster/datastore",
+        "//central/compliance/datastore",
+        "//central/compliance/datastore/types",
+        "//central/compliance/standards",
+        "//central/deployment/datastore",
+        "//central/image/datastore",
+        "//generated/api/integrations",
+        "//generated/api/v1:api",
+        "//generated/storage",
+        "//pkg/booleanpolicy/violationmessages/printer",
+        "//pkg/httputil",
+        "//pkg/jsonutil",
+        "//pkg/logging",
+        "//pkg/protocompat",
+        "//pkg/protoconv",
+        "//pkg/search",
+        "//pkg/set",
+        "//pkg/uuid",
+        "@com_github_pkg_errors//:errors",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":splunk",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "splunk_test",
+    srcs = [
+        "compliance_test.go",
+        "violations_checkpoint_test.go",
+        "violations_query_test.go",
+    ],
+    embed = [":splunk"],
+    deps = [
+        "//central/alert/datastore",
+        "//central/compliance",
+        "//central/compliance/datastore/mocks",
+        "//central/compliance/datastore/types",
+        "//generated/storage",
+        "//pkg/postgres/pgtest",
+        "//pkg/sac",
+        "//pkg/sac/resources",
+        "//pkg/utils",
+        "//pkg/uuid",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+        "@com_github_stretchr_testify//suite",
+        "@org_uber_go_mock//gomock",
+    ],
+)

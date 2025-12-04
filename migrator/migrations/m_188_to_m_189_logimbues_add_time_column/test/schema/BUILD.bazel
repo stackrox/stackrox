@@ -1,0 +1,22 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "schema",
+    srcs = [
+        "convert_log_imbues.go",
+        "log_imbues.go",
+    ],
+    importpath = "github.com/stackrox/rox/migrator/migrations/m_188_to_m_189_logimbues_add_time_column/test/schema",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//generated/storage",
+        "//pkg/postgres",
+        "//pkg/postgres/walker",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":schema",
+    visibility = ["//visibility:public"],
+)

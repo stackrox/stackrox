@@ -1,0 +1,23 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "undostore",
+    srcs = [
+        "singleton.go",
+        "undostore.go",
+    ],
+    importpath = "github.com/stackrox/rox/central/networkpolicies/datastore/internal/undostore",
+    visibility = ["//central/networkpolicies/datastore:__subpackages__"],
+    deps = [
+        "//central/globaldb",
+        "//central/networkpolicies/datastore/internal/undostore/postgres",
+        "//generated/storage",
+        "//pkg/sync",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":undostore",
+    visibility = ["//central/networkpolicies/datastore:__subpackages__"],
+)

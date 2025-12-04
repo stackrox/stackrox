@@ -1,0 +1,32 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "networkbaseline",
+    srcs = ["network_baseline.go"],
+    importpath = "github.com/stackrox/rox/sensor/common/detector/networkbaseline",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//generated/storage",
+        "//pkg/networkgraph",
+        "//pkg/networkgraph/networkbaseline",
+        "//pkg/sync",
+        "@com_github_pkg_errors//:errors",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":networkbaseline",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "networkbaseline_test",
+    srcs = ["network_baseline_test.go"],
+    embed = [":networkbaseline"],
+    deps = [
+        "//generated/storage",
+        "//pkg/networkgraph",
+        "@com_github_stretchr_testify//assert",
+    ],
+)

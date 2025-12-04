@@ -1,0 +1,26 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "suppress",
+    srcs = ["reprocessor.go"],
+    importpath = "github.com/stackrox/rox/central/cve/suppress",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//central/cve/cluster/datastore",
+        "//central/cve/image/datastore",
+        "//central/cve/node/datastore",
+        "//generated/api/v1:api",
+        "//pkg/concurrency",
+        "//pkg/cve",
+        "//pkg/logging",
+        "//pkg/sac",
+        "//pkg/search",
+        "//pkg/sync",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":suppress",
+    visibility = ["//visibility:public"],
+)

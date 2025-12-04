@@ -1,0 +1,20 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "protoassert",
+    srcs = ["assert.go"],
+    importpath = "github.com/stackrox/rox/pkg/protoassert",
+    visibility = ["//visibility:public"],
+    deps = [
+        "@com_github_davecgh_go_spew//spew",
+        "@com_github_pmezard_go_difflib//difflib",
+        "@com_github_stretchr_testify//assert",
+        "@org_golang_google_protobuf//proto",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":protoassert",
+    visibility = ["//visibility:public"],
+)

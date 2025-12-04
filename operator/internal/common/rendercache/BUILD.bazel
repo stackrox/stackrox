@@ -1,0 +1,31 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "rendercache",
+    srcs = ["render_cache.go"],
+    importpath = "github.com/stackrox/rox/operator/internal/common/rendercache",
+    visibility = ["//operator:__subpackages__"],
+    deps = [
+        "//pkg/sync",
+        "@io_k8s_apimachinery//pkg/types",
+        "@io_k8s_sigs_controller_runtime//pkg/client",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":rendercache",
+    visibility = ["//operator:__subpackages__"],
+)
+
+go_test(
+    name = "rendercache_test",
+    srcs = ["render_cache_test.go"],
+    embed = [":rendercache"],
+    deps = [
+        "@io_k8s_api//core/v1:core",
+        "@io_k8s_apimachinery//pkg/apis/meta/v1:meta",
+        "@io_k8s_apimachinery//pkg/types",
+        "@io_k8s_sigs_controller_runtime//pkg/client",
+    ],
+)

@@ -1,0 +1,62 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "networkflowupdate",
+    srcs = [
+        "factory.go",
+        "flow_store_updater.go",
+        "flow_store_updater_impl.go",
+        "pipeline.go",
+        "singleton.go",
+    ],
+    importpath = "github.com/stackrox/rox/central/sensor/service/pipeline/networkflowupdate",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//central/metrics",
+        "//central/networkbaseline/manager",
+        "//central/networkgraph/entity/datastore",
+        "//central/networkgraph/flow/datastore",
+        "//central/sensor/service/common",
+        "//central/sensor/service/pipeline",
+        "//central/sensor/service/pipeline/reconciliation",
+        "//generated/internalapi/central",
+        "//generated/storage",
+        "//pkg/centralsensor",
+        "//pkg/features",
+        "//pkg/networkgraph",
+        "//pkg/networkgraph/externalsrcs",
+        "//pkg/protocompat",
+        "//pkg/protoconv",
+        "//pkg/sync",
+        "//pkg/timestamp",
+        "@com_github_pkg_errors//:errors",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":networkflowupdate",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "networkflowupdate_test",
+    srcs = ["flow_store_updater_impl_test.go"],
+    embed = [":networkflowupdate"],
+    deps = [
+        "//central/networkbaseline/manager/mocks",
+        "//central/networkgraph/entity/datastore/mocks",
+        "//central/networkgraph/flow/datastore/mocks",
+        "//generated/storage",
+        "//pkg/features",
+        "//pkg/net",
+        "//pkg/networkgraph",
+        "//pkg/protoconv",
+        "//pkg/sac",
+        "//pkg/sac/resources",
+        "//pkg/testutils",
+        "//pkg/timestamp",
+        "@com_github_stretchr_testify//suite",
+        "@org_uber_go_mock//gomock",
+    ],
+)

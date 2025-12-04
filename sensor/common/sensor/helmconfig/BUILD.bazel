@@ -1,0 +1,40 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "helmconfig",
+    srcs = [
+        "cluster_id_cache.go",
+        "cluster_name.go",
+        "env.go",
+        "load.go",
+    ],
+    importpath = "github.com/stackrox/rox/sensor/common/sensor/helmconfig",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//generated/internalapi/central",
+        "//pkg/env",
+        "//pkg/jsonutil",
+        "//pkg/logging",
+        "//pkg/uuid",
+        "@com_github_pkg_errors//:errors",
+        "@io_k8s_sigs_yaml//:yaml",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":helmconfig",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "helmconfig_test",
+    srcs = ["load_test.go"],
+    embed = [":helmconfig"],
+    deps = [
+        "//generated/internalapi/central",
+        "//generated/storage",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+    ],
+)

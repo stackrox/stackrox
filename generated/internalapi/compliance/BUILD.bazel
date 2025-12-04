@@ -1,0 +1,26 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "compliance",
+    srcs = [
+        "compliance_data.pb.go",
+        "compliance_data_vtproto.pb.go",
+    ],
+    importpath = "github.com/stackrox/rox/generated/internalapi/compliance",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//generated/storage",
+        "@com_github_planetscale_vtprotobuf//protohelpers",
+        "@com_github_planetscale_vtprotobuf//types/known/timestamppb",
+        "@org_golang_google_protobuf//proto",
+        "@org_golang_google_protobuf//reflect/protoreflect",
+        "@org_golang_google_protobuf//runtime/protoimpl",
+        "@org_golang_google_protobuf//types/known/timestamppb",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":compliance",
+    visibility = ["//visibility:public"],
+)

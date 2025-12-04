@@ -1,0 +1,14 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "ui",
+    srcs = ["mux.go"],
+    importpath = "github.com/stackrox/rox/central/ui",
+    visibility = ["//visibility:public"],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":ui",
+    visibility = ["//visibility:public"],
+)

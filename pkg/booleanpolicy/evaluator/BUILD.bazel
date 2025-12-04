@@ -1,0 +1,52 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "evaluator",
+    srcs = [
+        "base_evaluators.go",
+        "constant_evaluators.go",
+        "evaluator.go",
+        "match.go",
+        "path_evaluators.go",
+    ],
+    importpath = "github.com/stackrox/rox/pkg/booleanpolicy/evaluator",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//pkg/booleanpolicy/evaluator/mapeval",
+        "//pkg/booleanpolicy/evaluator/pathutil",
+        "//pkg/booleanpolicy/query",
+        "//pkg/protocompat",
+        "//pkg/protoconv",
+        "//pkg/protoreflect",
+        "//pkg/readable",
+        "//pkg/search",
+        "//pkg/search/predicate/basematchers",
+        "//pkg/set",
+        "//pkg/stringutils",
+        "//pkg/utils",
+        "@com_github_pkg_errors//:errors",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":evaluator",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "evaluator_test",
+    srcs = ["evaluator_test.go"],
+    embed = [":evaluator"],
+    deps = [
+        "//generated/storage",
+        "//pkg/booleanpolicy/evaluator/pathutil",
+        "//pkg/booleanpolicy/query",
+        "//pkg/pointers",
+        "//pkg/protocompat",
+        "//pkg/protoconv",
+        "//pkg/timeutil",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+    ],
+)

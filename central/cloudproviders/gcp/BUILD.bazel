@@ -1,0 +1,19 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "gcp",
+    srcs = ["singleton.go"],
+    importpath = "github.com/stackrox/rox/central/cloudproviders/gcp",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//pkg/cloudproviders/gcp/auth",
+        "//pkg/env",
+        "//pkg/sync",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":gcp",
+    visibility = ["//visibility:public"],
+)

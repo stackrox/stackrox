@@ -1,0 +1,14 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "helpers",
+    srcs = ["conversion_helpers.go"],
+    importpath = "github.com/stackrox/rox/central/convert/helpers",
+    visibility = ["//visibility:public"],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":helpers",
+    visibility = ["//visibility:public"],
+)

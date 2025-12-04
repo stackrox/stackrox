@@ -1,0 +1,43 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "paladin",
+    srcs = ["client.go"],
+    importpath = "github.com/stackrox/rox/pkg/cloudsources/paladin",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//generated/storage",
+        "//pkg/administration/events/codes",
+        "//pkg/administration/events/option",
+        "//pkg/clientconn",
+        "//pkg/cloudsources/discoveredclusters",
+        "//pkg/cloudsources/opts",
+        "//pkg/errox",
+        "//pkg/httputil",
+        "//pkg/httputil/proxy",
+        "//pkg/logging",
+        "//pkg/urlfmt",
+        "//pkg/utils",
+        "@com_github_hashicorp_go_retryablehttp//:go-retryablehttp",
+        "@com_github_pkg_errors//:errors",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":paladin",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "paladin_test",
+    srcs = ["client_test.go"],
+    data = glob(["testdata/**"]),
+    embed = [":paladin"],
+    deps = [
+        "//generated/storage",
+        "//pkg/cloudsources/discoveredclusters",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+    ],
+)

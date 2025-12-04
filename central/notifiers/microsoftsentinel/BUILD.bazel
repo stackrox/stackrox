@@ -1,0 +1,66 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "microsoftsentinel",
+    srcs = [
+        "azlogsclient.go",
+        "sentinel.go",
+    ],
+    importpath = "github.com/stackrox/rox/central/notifiers/microsoftsentinel",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//central/notifiers/utils",
+        "//generated/api/v1:api",
+        "//generated/storage",
+        "//pkg/administration/events/codes",
+        "//pkg/administration/events/option",
+        "//pkg/cryptoutils/cryptocodec",
+        "//pkg/env",
+        "//pkg/errorhelpers",
+        "//pkg/httputil/proxy",
+        "//pkg/logging",
+        "//pkg/notifiers",
+        "//pkg/protocompat",
+        "//pkg/retry",
+        "//pkg/utils",
+        "//pkg/uuid",
+        "//pkg/x509utils",
+        "@com_github_azure_azure_sdk_for_go_extensions//pkg/errors",
+        "@com_github_azure_azure_sdk_for_go_sdk_azcore//:azcore",
+        "@com_github_azure_azure_sdk_for_go_sdk_azidentity//:azidentity",
+        "@com_github_azure_azure_sdk_for_go_sdk_monitor_ingestion_azlogs//:azlogs",
+        "@com_github_pkg_errors//:errors",
+        "@org_golang_google_protobuf//proto",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":microsoftsentinel",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "microsoftsentinel_test",
+    srcs = ["sentinel_test.go"],
+    data = glob(["testdata/**"]),
+    embed = [":microsoftsentinel"],
+    embedsrcs = [
+        "testdata/sentinel-ca-cert.pem",
+        "testdata/sentinel-ca-key.pem",
+    ],
+    deps = [
+        "//central/notifiers/microsoftsentinel/mocks",
+        "//generated/storage",
+        "//pkg/cryptoutils/cryptocodec",
+        "//pkg/env",
+        "//pkg/notifiers",
+        "//pkg/uuid",
+        "@com_github_azure_azure_sdk_for_go_sdk_azcore//:azcore",
+        "@com_github_azure_azure_sdk_for_go_sdk_monitor_ingestion_azlogs//:azlogs",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+        "@com_github_stretchr_testify//suite",
+        "@org_uber_go_mock//gomock",
+    ],
+)

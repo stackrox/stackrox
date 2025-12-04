@@ -1,0 +1,26 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "handler",
+    srcs = ["unconfirmed_message_handler.go"],
+    importpath = "github.com/stackrox/rox/pkg/retry/handler",
+    visibility = ["//visibility:public"],
+    deps = ["//pkg/logging"],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":handler",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "handler_test",
+    srcs = ["unconfirmed_message_handler_test.go"],
+    embed = [":handler"],
+    deps = [
+        "//pkg/concurrency",
+        "//pkg/sync",
+        "@com_github_stretchr_testify//suite",
+    ],
+)

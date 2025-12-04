@@ -1,0 +1,22 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "m_177_to_m_178_group_permissions",
+    srcs = ["migration.go"],
+    importpath = "github.com/stackrox/rox/migrator/migrations/m_177_to_m_178_group_permissions",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//generated/storage",
+        "//migrator/migrations",
+        "//migrator/migrations/m_177_to_m_178_group_permissions/permissionsetpostgresstore",
+        "//migrator/types",
+        "//pkg/postgres",
+        "//pkg/sac",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":m_177_to_m_178_group_permissions",
+    visibility = ["//visibility:public"],
+)

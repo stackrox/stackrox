@@ -1,0 +1,43 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "downloaddb",
+    srcs = ["downloaddb.go"],
+    importpath = "github.com/stackrox/rox/roxctl/scanner/downloaddb",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//generated/api/v1:api",
+        "//pkg/env",
+        "//pkg/jsonutil",
+        "//pkg/utils",
+        "//pkg/version",
+        "//roxctl/common/environment",
+        "//roxctl/common/flags",
+        "@com_github_hashicorp_go_retryablehttp//:go-retryablehttp",
+        "@com_github_pkg_errors//:errors",
+        "@com_github_spf13_cobra//:cobra",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":downloaddb",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "downloaddb_test",
+    srcs = ["downloaddb_test.go"],
+    embed = [":downloaddb"],
+    deps = [
+        "//generated/api/v1:api",
+        "//pkg/version/testutils",
+        "//roxctl/common/environment",
+        "//roxctl/common/flags",
+        "//roxctl/common/io",
+        "//roxctl/common/printer",
+        "@com_github_spf13_cobra//:cobra",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+    ],
+)

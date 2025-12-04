@@ -1,0 +1,30 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "event",
+    srcs = ["event.go"],
+    importpath = "github.com/stackrox/rox/pkg/sensor/event",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//generated/internalapi/central",
+        "//pkg/reflectutils",
+        "//pkg/stringutils",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":event",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "event_test",
+    srcs = ["event_test.go"],
+    embed = [":event"],
+    deps = [
+        "//generated/internalapi/central",
+        "//generated/storage",
+        "@com_github_stretchr_testify//assert",
+    ],
+)

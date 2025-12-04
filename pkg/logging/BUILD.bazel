@@ -1,0 +1,73 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "logging",
+    srcs = [
+        "encoder.go",
+        "fields.go",
+        "log_converter_impl.go",
+        "logger.go",
+        "logging.go",
+        "module.go",
+        "options.go",
+        "quota.go",
+        "rate_limited_logger.go",
+    ],
+    importpath = "github.com/stackrox/rox/pkg/logging",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//generated/storage",
+        "//pkg/administration/events",
+        "//pkg/administration/events/resources",
+        "//pkg/buildinfo",
+        "//pkg/cache/lru",
+        "//pkg/env",
+        "//pkg/sync",
+        "//pkg/uuid",
+        "@com_github_hashicorp_golang_lru_v2//expirable",
+        "@com_github_pkg_errors//:errors",
+        "@in_gopkg_natefinch_lumberjack_v2//:lumberjack_v2",
+        "@org_golang_google_grpc//metadata",
+        "@org_golang_x_text//cases",
+        "@org_golang_x_text//language",
+        "@org_uber_go_atomic//:atomic",
+        "@org_uber_go_zap//:zap",
+        "@org_uber_go_zap//zapcore",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":logging",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "logging_test",
+    srcs = [
+        "encoder_test.go",
+        "log_converter_impl_test.go",
+        "logger_test.go",
+        "logging_test.go",
+        "module_test.go",
+        "quota_test.go",
+        "rate_limited_logger_test.go",
+    ],
+    embed = [":logging"],
+    deps = [
+        "//generated/storage",
+        "//pkg/administration/events",
+        "//pkg/cache/lru",
+        "//pkg/cache/lru/mocks",
+        "//pkg/env",
+        "//pkg/logging/mocks",
+        "//pkg/uuid",
+        "@com_github_hashicorp_golang_lru_v2//expirable",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+        "@com_github_stretchr_testify//suite",
+        "@org_uber_go_mock//gomock",
+        "@org_uber_go_zap//:zap",
+        "@org_uber_go_zap//zapcore",
+    ],
+)

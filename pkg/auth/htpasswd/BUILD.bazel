@@ -1,0 +1,35 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "htpasswd",
+    srcs = [
+        "reader.go",
+        "writer.go",
+    ],
+    importpath = "github.com/stackrox/rox/pkg/auth/htpasswd",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//pkg/logging",
+        "@com_github_pkg_errors//:errors",
+        "@org_golang_x_crypto//bcrypt",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":htpasswd",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "htpasswd_test",
+    srcs = [
+        "reader_test.go",
+        "writer_test.go",
+    ],
+    embed = [":htpasswd"],
+    deps = [
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+    ],
+)

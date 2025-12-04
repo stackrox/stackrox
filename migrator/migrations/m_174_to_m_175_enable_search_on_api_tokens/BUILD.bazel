@@ -1,0 +1,26 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "m_174_to_m_175_enable_search_on_api_tokens",
+    srcs = ["migration.go"],
+    importpath = "github.com/stackrox/rox/migrator/migrations/m_174_to_m_175_enable_search_on_api_tokens",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//generated/storage",
+        "//migrator/migrations",
+        "//migrator/migrations/m_174_to_m_175_enable_search_on_api_tokens/newapitokenpostgresstore",
+        "//migrator/migrations/m_174_to_m_175_enable_search_on_api_tokens/oldapitokenpostgresstore",
+        "//migrator/migrations/m_174_to_m_175_enable_search_on_api_tokens/schema",
+        "//migrator/types",
+        "//pkg/postgres",
+        "//pkg/postgres/pgutils",
+        "//pkg/sac",
+        "@io_gorm_gorm//:gorm",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":m_174_to_m_175_enable_search_on_api_tokens",
+    visibility = ["//visibility:public"],
+)

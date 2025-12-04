@@ -1,0 +1,33 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "parser",
+    srcs = ["url_parser.go"],
+    importpath = "github.com/stackrox/rox/pkg/search/parser",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//generated/api/v1:api",
+        "//pkg/search",
+        "//pkg/search/paginated",
+        "@com_github_grpc_ecosystem_grpc_gateway_v2//runtime",
+        "@com_github_grpc_ecosystem_grpc_gateway_v2//utilities",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":parser",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "parser_test",
+    srcs = ["url_parser_test.go"],
+    embed = [":parser"],
+    deps = [
+        "//generated/api/v1:api",
+        "//pkg/protoassert",
+        "//pkg/search",
+        "@com_github_stretchr_testify//assert",
+    ],
+)

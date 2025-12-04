@@ -1,0 +1,74 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "watcher",
+    srcs = [
+        "metrics.go",
+        "scanconfigwatcher.go",
+        "scanwatcher.go",
+        "utils.go",
+        "validator.go",
+    ],
+    importpath = "github.com/stackrox/rox/central/complianceoperator/v2/report/manager/watcher",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//central/complianceoperator/v2/checkresults/datastore",
+        "//central/complianceoperator/v2/integration/datastore",
+        "//central/complianceoperator/v2/profiles/datastore",
+        "//central/complianceoperator/v2/report",
+        "//central/complianceoperator/v2/report/datastore",
+        "//central/complianceoperator/v2/scanconfigurations/datastore",
+        "//central/complianceoperator/v2/scans/datastore",
+        "//generated/storage",
+        "//pkg/concurrency",
+        "//pkg/env",
+        "//pkg/errorhelpers",
+        "//pkg/logging",
+        "//pkg/metrics",
+        "//pkg/protocompat",
+        "//pkg/search",
+        "//pkg/set",
+        "//pkg/sync",
+        "//pkg/timestamp",
+        "@com_github_pkg_errors//:errors",
+        "@com_github_prometheus_client_golang//prometheus",
+        "@org_golang_x_mod//semver",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":watcher",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "watcher_test",
+    srcs = [
+        "scanconfigwatcher_test.go",
+        "scanwatcher_test.go",
+        "validator_test.go",
+    ],
+    embed = [":watcher"],
+    deps = [
+        "//central/complianceoperator/v2/checkresults/datastore/mocks",
+        "//central/complianceoperator/v2/integration/datastore/mocks",
+        "//central/complianceoperator/v2/profiles/datastore/mocks",
+        "//central/complianceoperator/v2/report",
+        "//central/complianceoperator/v2/report/datastore/mocks",
+        "//central/complianceoperator/v2/scanconfigurations/datastore/mocks",
+        "//central/complianceoperator/v2/scans/datastore/mocks",
+        "//generated/storage",
+        "//pkg/concurrency",
+        "//pkg/protocompat",
+        "//pkg/queue",
+        "//pkg/sac",
+        "//pkg/set",
+        "@com_github_pkg_errors//:errors",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+        "@org_golang_google_protobuf//proto",
+        "@org_golang_google_protobuf//types/known/timestamppb",
+        "@org_uber_go_mock//gomock",
+    ],
+)

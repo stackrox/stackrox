@@ -1,0 +1,42 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "slack",
+    srcs = ["slack.go"],
+    importpath = "github.com/stackrox/rox/central/notifiers/slack",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//central/notifiers/metadatagetter",
+        "//generated/storage",
+        "//pkg/administration/events/codes",
+        "//pkg/administration/events/option",
+        "//pkg/httputil/proxy",
+        "//pkg/logging",
+        "//pkg/mitre/datastore",
+        "//pkg/notifiers",
+        "//pkg/retry",
+        "//pkg/urlfmt",
+        "//pkg/utils",
+        "@com_github_pkg_errors//:errors",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":slack",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "slack_test",
+    srcs = ["slack_test.go"],
+    embed = [":slack"],
+    deps = [
+        "//generated/storage",
+        "//pkg/fixtures",
+        "//pkg/mitre/datastore/mocks",
+        "//pkg/notifiers/mocks",
+        "@com_github_stretchr_testify//assert",
+        "@org_uber_go_mock//gomock",
+    ],
+)

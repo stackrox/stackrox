@@ -1,0 +1,18 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "verifier",
+    srcs = ["verify.go"],
+    importpath = "github.com/stackrox/rox/pkg/mtls/verifier",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//pkg/mtls",
+        "@com_github_pkg_errors//:errors",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":verifier",
+    visibility = ["//visibility:public"],
+)

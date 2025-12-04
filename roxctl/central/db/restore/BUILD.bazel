@@ -1,0 +1,62 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "restore",
+    srcs = [
+        "common.go",
+        "statusline.go",
+        "v1.go",
+        "v2.go",
+        "v2_cancel.go",
+        "v2_restorer.go",
+        "v2_status.go",
+    ],
+    importpath = "github.com/stackrox/rox/roxctl/central/db/restore",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//generated/api/v1:api",
+        "//pkg/concurrency",
+        "//pkg/errox",
+        "//pkg/httputil",
+        "//pkg/ioutils",
+        "//pkg/protoconv",
+        "//pkg/retry",
+        "//pkg/roxctl/common",
+        "//pkg/sliceutils",
+        "//pkg/sync",
+        "//pkg/utils",
+        "//pkg/uuid",
+        "//pkg/v2backuprestore",
+        "//roxctl/central/db/transfer",
+        "//roxctl/common",
+        "//roxctl/common/environment",
+        "//roxctl/common/flags",
+        "//roxctl/common/logger",
+        "//roxctl/common/util",
+        "@com_github_pkg_errors//:errors",
+        "@com_github_spf13_cobra//:cobra",
+        "@com_github_vbauerster_mpb_v4//:mpb",
+        "@com_github_vbauerster_mpb_v4//decor",
+        "@com_github_vividcortex_ewma//:ewma",
+        "@org_golang_google_grpc//codes",
+        "@org_golang_google_grpc//status",
+        "@org_golang_x_term//:term",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":restore",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "restore_test",
+    srcs = ["v2_test.go"],
+    embed = [":restore"],
+    deps = [
+        "//pkg/errox",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+    ],
+)

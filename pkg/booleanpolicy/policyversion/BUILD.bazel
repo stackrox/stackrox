@@ -1,0 +1,43 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "policyversion",
+    srcs = [
+        "convertor.go",
+        "downgrade.go",
+        "upgrade.go",
+        "version.go",
+    ],
+    importpath = "github.com/stackrox/rox/pkg/booleanpolicy/policyversion",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//generated/storage",
+        "//pkg/set",
+        "//pkg/utils",
+        "@com_github_pkg_errors//:errors",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":policyversion",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "policyversion_test",
+    srcs = [
+        "convertor_test.go",
+        "downgrade_test.go",
+        "upgrade_test.go",
+        "version_test.go",
+    ],
+    embed = [":policyversion"],
+    deps = [
+        "//generated/storage",
+        "//pkg/protoassert",
+        "//pkg/set",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+    ],
+)

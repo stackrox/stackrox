@@ -1,0 +1,70 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "manager",
+    srcs = [
+        "checks.go",
+        "collect_results.go",
+        "data_promise.go",
+        "manager.go",
+        "manager_impl.go",
+        "run.go",
+        "singleton.go",
+    ],
+    importpath = "github.com/stackrox/rox/central/compliance/manager",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//central/cluster/datastore",
+        "//central/compliance",
+        "//central/compliance/checks",
+        "//central/compliance/data",
+        "//central/compliance/datastore",
+        "//central/compliance/framework",
+        "//central/compliance/standards",
+        "//central/complianceoperator/checkresults/datastore",
+        "//central/complianceoperator/manager",
+        "//central/deployment/datastore",
+        "//central/node/datastore",
+        "//central/pod/datastore",
+        "//central/scrape/factory",
+        "//generated/api/v1:api",
+        "//generated/internalapi/compliance",
+        "//generated/storage",
+        "//pkg/compliance/checks/standards",
+        "//pkg/compliance/framework",
+        "//pkg/concurrency",
+        "//pkg/errox",
+        "//pkg/logging",
+        "//pkg/protocompat",
+        "//pkg/sac",
+        "//pkg/sac/resources",
+        "//pkg/search",
+        "//pkg/set",
+        "//pkg/sync",
+        "//pkg/uuid",
+        "@com_github_pkg_errors//:errors",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":manager",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "manager_test",
+    srcs = ["run_test.go"],
+    embed = [":manager"],
+    deps = [
+        "//central/compliance/framework",
+        "//central/compliance/standards",
+        "//central/compliance/standards/metadata",
+        "//generated/internalapi/compliance",
+        "//generated/storage",
+        "//pkg/compliance/checks/standards",
+        "//pkg/compliance/framework",
+        "//pkg/protoassert",
+        "@com_github_stretchr_testify//suite",
+    ],
+)

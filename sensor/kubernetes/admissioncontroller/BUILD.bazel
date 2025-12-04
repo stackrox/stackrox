@@ -1,0 +1,47 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "admissioncontroller",
+    srcs = ["config_map_persister.go"],
+    importpath = "github.com/stackrox/rox/sensor/kubernetes/admissioncontroller",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//generated/internalapi/sensor",
+        "//pkg/admissioncontrol",
+        "//pkg/centralsensor",
+        "//pkg/concurrency",
+        "//pkg/gziputil",
+        "//pkg/logging",
+        "//sensor/common",
+        "//sensor/common/admissioncontroller",
+        "//sensor/common/message",
+        "//sensor/common/unimplemented",
+        "@com_github_pkg_errors//:errors",
+        "@io_k8s_api//core/v1:core",
+        "@io_k8s_apimachinery//pkg/api/errors",
+        "@io_k8s_apimachinery//pkg/apis/meta/v1:meta",
+        "@io_k8s_client_go//kubernetes",
+        "@io_k8s_client_go//kubernetes/typed/core/v1:core",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":admissioncontroller",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "admissioncontroller_test",
+    srcs = ["config_map_persister_test.go"],
+    embed = [":admissioncontroller"],
+    deps = [
+        "//generated/internalapi/sensor",
+        "//generated/storage",
+        "//pkg/admissioncontrol",
+        "//pkg/gziputil",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+        "@io_k8s_api//core/v1:core",
+    ],
+)

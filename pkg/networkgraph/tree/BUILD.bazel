@@ -1,0 +1,51 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "tree",
+    srcs = [
+        "multitree.go",
+        "radix.go",
+        "types.go",
+        "utils.go",
+        "wrapper.go",
+    ],
+    importpath = "github.com/stackrox/rox/pkg/networkgraph/tree",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//generated/storage",
+        "//pkg/logging",
+        "//pkg/net",
+        "//pkg/networkgraph",
+        "//pkg/sync",
+        "//pkg/utils",
+        "@com_github_pkg_errors//:errors",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":tree",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "tree_test",
+    srcs = [
+        "multitree_test.go",
+        "radix_bench_test.go",
+        "radix_test.go",
+        "wrapper_bench_test.go",
+        "wrapper_test.go",
+    ],
+    embed = [":tree"],
+    deps = [
+        "//generated/storage",
+        "//pkg/net",
+        "//pkg/networkgraph",
+        "//pkg/networkgraph/testutils",
+        "//pkg/protoassert",
+        "//pkg/set",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+    ],
+)

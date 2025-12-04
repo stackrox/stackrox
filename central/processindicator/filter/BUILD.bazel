@@ -1,0 +1,19 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "filter",
+    srcs = ["singleton.go"],
+    importpath = "github.com/stackrox/rox/central/processindicator/filter",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//pkg/env",
+        "//pkg/process/filter",
+        "//pkg/sync",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":filter",
+    visibility = ["//visibility:public"],
+)

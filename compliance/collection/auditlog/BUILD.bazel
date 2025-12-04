@@ -1,0 +1,50 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "auditlog",
+    srcs = [
+        "auditevent.go",
+        "auditlog.go",
+        "auditlog_impl.go",
+        "sender.go",
+        "sender_impl.go",
+    ],
+    importpath = "github.com/stackrox/rox/compliance/collection/auditlog",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//generated/internalapi/sensor",
+        "//generated/storage",
+        "//pkg/concurrency",
+        "//pkg/logging",
+        "//pkg/protocompat",
+        "//pkg/protoutils",
+        "//pkg/set",
+        "@com_github_nxadm_tail//:tail",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":auditlog",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "auditlog_test",
+    srcs = [
+        "auditlog_impl_test.go",
+        "sender_impl_test.go",
+    ],
+    embed = [":auditlog"],
+    deps = [
+        "//generated/internalapi/sensor",
+        "//generated/storage",
+        "//pkg/concurrency",
+        "//pkg/protoassert",
+        "//pkg/protocompat",
+        "//pkg/sync",
+        "//pkg/uuid",
+        "@com_github_stretchr_testify//suite",
+        "@org_golang_google_grpc//:grpc",
+    ],
+)

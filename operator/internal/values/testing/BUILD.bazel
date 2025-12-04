@@ -1,0 +1,19 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "testing",
+    srcs = ["utils.go"],
+    importpath = "github.com/stackrox/rox/operator/internal/values/testing",
+    visibility = ["//operator:__subpackages__"],
+    deps = [
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+        "@sh_helm_helm_v3//pkg/chartutil",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":testing",
+    visibility = ["//operator:__subpackages__"],
+)

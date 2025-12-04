@@ -1,0 +1,35 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "scanner",
+    srcs = [
+        "auto_sense.go",
+        "defaults.go",
+    ],
+    importpath = "github.com/stackrox/rox/operator/internal/securedcluster/scanner",
+    visibility = ["//operator:__subpackages__"],
+    deps = [
+        "//operator/api/v1alpha1",
+        "@com_github_pkg_errors//:errors",
+        "@io_k8s_sigs_controller_runtime//pkg/client",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":scanner",
+    visibility = ["//operator:__subpackages__"],
+)
+
+go_test(
+    name = "scanner_test",
+    srcs = ["auto_sense_test.go"],
+    embed = [":scanner"],
+    deps = [
+        "//operator/api/v1alpha1",
+        "//operator/internal/utils/testutils",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+        "@io_k8s_apimachinery//pkg/apis/meta/v1:meta",
+    ],
+)

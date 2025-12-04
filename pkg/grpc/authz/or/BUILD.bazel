@@ -1,0 +1,20 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "or",
+    srcs = ["or.go"],
+    importpath = "github.com/stackrox/rox/pkg/grpc/authz/or",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//pkg/errorhelpers",
+        "//pkg/errox",
+        "//pkg/grpc/authz",
+        "//pkg/grpc/authz/idcheck",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":or",
+    visibility = ["//visibility:public"],
+)

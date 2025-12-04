@@ -1,0 +1,48 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "confighash",
+    srcs = [
+        "cahash.go",
+        "keys.go",
+        "pod_template_annotation.go",
+    ],
+    importpath = "github.com/stackrox/rox/operator/internal/common/confighash",
+    visibility = ["//operator:__subpackages__"],
+    deps = [
+        "//operator/internal/common/rendercache",
+        "@com_github_pkg_errors//:errors",
+        "@io_k8s_apimachinery//pkg/apis/meta/v1/unstructured",
+        "@io_k8s_cli_runtime//pkg/resource",
+        "@io_k8s_sigs_controller_runtime//pkg/client",
+        "@io_k8s_sigs_yaml//:yaml",
+        "@sh_helm_helm_v3//pkg/kube",
+        "@sh_helm_helm_v3//pkg/postrender",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":confighash",
+    visibility = ["//operator:__subpackages__"],
+)
+
+go_test(
+    name = "confighash_test",
+    srcs = [
+        "cahash_test.go",
+        "pod_template_annotation_test.go",
+    ],
+    embed = [":confighash"],
+    deps = [
+        "//operator/api/v1alpha1",
+        "//operator/internal/common/rendercache",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+        "@io_k8s_apimachinery//pkg/apis/meta/v1:meta",
+        "@io_k8s_apimachinery//pkg/apis/meta/v1/unstructured",
+        "@io_k8s_apimachinery//pkg/types",
+        "@io_k8s_cli_runtime//pkg/resource",
+        "@sh_helm_helm_v3//pkg/kube",
+    ],
+)

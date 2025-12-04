@@ -1,0 +1,23 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "files",
+    srcs = [
+        "common.go",
+        "implementation_file.go",
+        "signature_file.go",
+    ],
+    importpath = "github.com/stackrox/rox/tools/generate-helpers/notifier/files",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//tools/generate-helpers/common/packagenames",
+        "//tools/generate-helpers/notifier/operations",
+        "@com_github_dave_jennifer//jen",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":files",
+    visibility = ["//visibility:public"],
+)

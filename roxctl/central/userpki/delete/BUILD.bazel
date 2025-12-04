@@ -1,0 +1,29 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "delete",
+    srcs = ["delete.go"],
+    importpath = "github.com/stackrox/rox/roxctl/central/userpki/delete",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//generated/api/v1:api",
+        "//generated/storage",
+        "//pkg/auth/authproviders/userpki",
+        "//pkg/errox",
+        "//pkg/roxctl/common",
+        "//pkg/utils",
+        "//pkg/uuid",
+        "//roxctl/central/userpki/list",
+        "//roxctl/common",
+        "//roxctl/common/environment",
+        "//roxctl/common/flags",
+        "@com_github_pkg_errors//:errors",
+        "@com_github_spf13_cobra//:cobra",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":delete",
+    visibility = ["//visibility:public"],
+)

@@ -1,0 +1,51 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "proxy",
+    srcs = [
+        "env.go",
+        "extension.go",
+        "status_condition.go",
+        "translation.go",
+    ],
+    importpath = "github.com/stackrox/rox/operator/internal/proxy",
+    visibility = ["//operator:__subpackages__"],
+    deps = [
+        "//operator/internal/common/labels",
+        "//operator/internal/utils",
+        "//operator/internal/values/translation",
+        "//pkg/k8sutil",
+        "@com_github_go_logr_logr//:logr",
+        "@com_github_operator_framework_helm_operator_plugins//pkg/extensions",
+        "@com_github_pkg_errors//:errors",
+        "@io_k8s_api//core/v1:core",
+        "@io_k8s_apimachinery//pkg/api/errors",
+        "@io_k8s_apimachinery//pkg/apis/meta/v1:meta",
+        "@io_k8s_apimachinery//pkg/apis/meta/v1/unstructured",
+        "@io_k8s_sigs_controller_runtime//pkg/client",
+        "@sh_helm_helm_v3//pkg/chartutil",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":proxy",
+    visibility = ["//operator:__subpackages__"],
+)
+
+go_test(
+    name = "proxy_test",
+    srcs = ["translation_test.go"],
+    embed = [":proxy"],
+    deps = [
+        "//operator/api/v1alpha1",
+        "//operator/internal/values/translation",
+        "@com_github_go_logr_logr//:logr",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+        "@io_k8s_api//core/v1:core",
+        "@io_k8s_apimachinery//pkg/apis/meta/v1:meta",
+        "@io_k8s_apimachinery//pkg/apis/meta/v1/unstructured",
+        "@sh_helm_helm_v3//pkg/chartutil",
+    ],
+)

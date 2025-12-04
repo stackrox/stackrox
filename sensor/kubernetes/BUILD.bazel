@@ -1,0 +1,40 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library")
+
+go_library(
+    name = "kubernetes_lib",
+    srcs = ["main.go"],
+    importpath = "github.com/stackrox/rox/sensor/kubernetes",
+    visibility = ["//visibility:private"],
+    deps = [
+        "//generated/storage",
+        "//pkg/centralsensor",
+        "//pkg/clientconn",
+        "//pkg/continuousprofiling",
+        "//pkg/devmode",
+        "//pkg/env",
+        "//pkg/features",
+        "//pkg/logging",
+        "//pkg/memlimit",
+        "//pkg/metrics",
+        "//pkg/premain",
+        "//pkg/utils",
+        "//pkg/version",
+        "//sensor/common/centralclient",
+        "//sensor/common/cloudproviders/gcp",
+        "//sensor/common/clusterid",
+        "//sensor/kubernetes/certrefresh",
+        "//sensor/kubernetes/client",
+        "//sensor/kubernetes/crs",
+        "//sensor/kubernetes/fake",
+        "//sensor/kubernetes/helm",
+        "//sensor/kubernetes/sensor",
+        "@com_github_pkg_errors//:errors",
+        "@org_golang_x_sys//unix",
+    ],
+)
+
+go_binary(
+    name = "kubernetes",
+    embed = [":kubernetes_lib"],
+    visibility = ["//visibility:public"],
+)

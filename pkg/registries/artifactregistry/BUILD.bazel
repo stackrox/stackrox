@@ -1,0 +1,19 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "artifactregistry",
+    srcs = ["registry.go"],
+    importpath = "github.com/stackrox/rox/pkg/registries/artifactregistry",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//generated/storage",
+        "//pkg/registries/google",
+        "//pkg/registries/types",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":artifactregistry",
+    visibility = ["//visibility:public"],
+)

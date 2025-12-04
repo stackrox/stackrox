@@ -1,0 +1,35 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "check_cm_11",
+    srcs = ["check.go"],
+    importpath = "github.com/stackrox/rox/central/compliance/checks/nist80053/check_cm_11",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//central/compliance/checks/common",
+        "//central/compliance/framework",
+        "//pkg/booleanpolicy/policyfields",
+        "//pkg/compliance/framework",
+        "//pkg/set",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":check_cm_11",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "check_cm_11_test",
+    srcs = ["check_test.go"],
+    embed = [":check_cm_11"],
+    deps = [
+        "//central/compliance/checks/testutils",
+        "//generated/storage",
+        "//pkg/defaults/policies",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+        "@org_uber_go_mock//gomock",
+    ],
+)

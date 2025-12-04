@@ -1,0 +1,67 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "index",
+    srcs = [
+        "handler.go",
+        "handler_impl.go",
+        "service.go",
+        "service_impl.go",
+    ],
+    importpath = "github.com/stackrox/rox/sensor/common/virtualmachine/index",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//generated/internalapi/central",
+        "//generated/internalapi/sensor",
+        "//generated/internalapi/virtualmachine/v1:virtualmachine",
+        "//pkg/centralsensor",
+        "//pkg/concurrency",
+        "//pkg/errox",
+        "//pkg/grpc",
+        "//pkg/grpc/authz/idcheck",
+        "//pkg/logging",
+        "//pkg/sync",
+        "//pkg/utils",
+        "//sensor/common",
+        "//sensor/common/centralcaps",
+        "//sensor/common/message",
+        "//sensor/common/virtualmachine",
+        "//sensor/common/virtualmachine/metrics",
+        "@com_github_grpc_ecosystem_grpc_gateway_v2//runtime",
+        "@com_github_pkg_errors//:errors",
+        "@org_golang_google_grpc//:grpc",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":index",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "index_test",
+    srcs = [
+        "handler_impl_test.go",
+        "service_impl_test.go",
+    ],
+    embed = [":index"],
+    deps = [
+        "//generated/internalapi/central",
+        "//generated/internalapi/sensor",
+        "//generated/internalapi/virtualmachine/v1:virtualmachine",
+        "//pkg/centralsensor",
+        "//pkg/concurrency",
+        "//pkg/errox",
+        "//pkg/sync",
+        "//pkg/testutils/goleak",
+        "//sensor/common",
+        "//sensor/common/centralcaps",
+        "//sensor/common/virtualmachine",
+        "//sensor/common/virtualmachine/index/mocks",
+        "@com_github_grpc_ecosystem_grpc_gateway_v2//runtime",
+        "@com_github_stretchr_testify//suite",
+        "@org_golang_google_grpc//:grpc",
+        "@org_uber_go_mock//gomock",
+    ],
+)

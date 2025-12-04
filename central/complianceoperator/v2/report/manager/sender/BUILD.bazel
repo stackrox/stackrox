@@ -1,0 +1,51 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "sender",
+    srcs = [
+        "async_response_handler.go",
+        "sender.go",
+    ],
+    importpath = "github.com/stackrox/rox/central/complianceoperator/v2/report/manager/sender",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//central/complianceoperator/v2/report",
+        "//central/complianceoperator/v2/report/manager/format",
+        "//generated/storage",
+        "//pkg/branding",
+        "//pkg/concurrency",
+        "//pkg/errorhelpers",
+        "//pkg/notifier",
+        "//pkg/notifiers",
+        "//pkg/retry",
+        "@com_github_pkg_errors//:errors",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":sender",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "sender_test",
+    srcs = [
+        "async_response_handler_test.go",
+        "sender_test.go",
+    ],
+    embed = [":sender"],
+    deps = [
+        "//central/complianceoperator/v2/report",
+        "//central/complianceoperator/v2/report/manager/format/mocks",
+        "//generated/storage",
+        "//pkg/concurrency",
+        "//pkg/notifier/mocks",
+        "//pkg/notifiers/mocks",
+        "@com_github_pkg_errors//:errors",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+        "@com_github_stretchr_testify//suite",
+        "@org_uber_go_mock//gomock",
+    ],
+)

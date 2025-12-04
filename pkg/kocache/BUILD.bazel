@@ -1,0 +1,43 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "kocache",
+    srcs = [
+        "entry.go",
+        "kocache.go",
+        "offlinectrl.go",
+        "source.go",
+    ],
+    importpath = "github.com/stackrox/rox/pkg/kocache",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//pkg/concurrency",
+        "//pkg/ioutils",
+        "//pkg/logging",
+        "//pkg/sync",
+        "//pkg/timestamp",
+        "//pkg/utils",
+        "@com_github_pkg_errors//:errors",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":kocache",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "kocache_test",
+    srcs = [
+        "kocache_test.go",
+        "offlinectrl_test.go",
+    ],
+    embed = [":kocache"],
+    deps = [
+        "//pkg/concurrency",
+        "//pkg/sync",
+        "@com_github_pkg_errors//:errors",
+        "@com_github_stretchr_testify//assert",
+    ],
+)

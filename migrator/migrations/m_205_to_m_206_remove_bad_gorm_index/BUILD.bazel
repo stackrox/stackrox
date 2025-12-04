@@ -1,0 +1,23 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "m_205_to_m_206_remove_bad_gorm_index",
+    srcs = [
+        "migration.go",
+        "migration_impl.go",
+    ],
+    importpath = "github.com/stackrox/rox/migrator/migrations/m_205_to_m_206_remove_bad_gorm_index",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//generated/storage",
+        "//migrator/migrations",
+        "//migrator/types",
+        "//pkg/logging",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":m_205_to_m_206_remove_bad_gorm_index",
+    visibility = ["//visibility:public"],
+)

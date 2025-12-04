@@ -1,0 +1,35 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "results",
+    srcs = [
+        "gen.go",
+        "store.go",
+    ],
+    importpath = "github.com/stackrox/rox/central/compliance/datastore/internal/store/postgres/results",
+    visibility = ["//central/compliance/datastore:__subpackages__"],
+    deps = [
+        "//central/metrics",
+        "//generated/api/v1:api",
+        "//generated/storage",
+        "//pkg/logging",
+        "//pkg/metrics",
+        "//pkg/postgres",
+        "//pkg/postgres/pgutils",
+        "//pkg/postgres/schema",
+        "//pkg/protocompat",
+        "//pkg/sac",
+        "//pkg/sac/resources",
+        "//pkg/search",
+        "//pkg/search/postgres",
+        "@com_github_jackc_pgx_v5//:pgx",
+        "@com_github_pkg_errors//:errors",
+        "@io_gorm_gorm//:gorm",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":results",
+    visibility = ["//central/compliance/datastore:__subpackages__"],
+)

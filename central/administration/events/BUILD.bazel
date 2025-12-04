@@ -1,0 +1,18 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "events",
+    srcs = ["option.go"],
+    importpath = "github.com/stackrox/rox/central/administration/events",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//pkg/administration/events/stream",
+        "//pkg/logging",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":events",
+    visibility = ["//visibility:public"],
+)

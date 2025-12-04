@@ -1,0 +1,52 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "util",
+    srcs = [
+        "api_versions.go",
+        "extract_gvks.go",
+        "filter.go",
+        "render.go",
+        "tables.go",
+        "values.go",
+    ],
+    importpath = "github.com/stackrox/rox/pkg/helm/util",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//pkg/helm/util/internal/ignore",
+        "//pkg/set",
+        "//pkg/stringutils",
+        "@com_github_masterminds_semver//:semver",
+        "@com_github_pkg_errors//:errors",
+        "@io_k8s_apimachinery//pkg/runtime/schema",
+        "@sh_helm_helm_v3//pkg/action",
+        "@sh_helm_helm_v3//pkg/chart",
+        "@sh_helm_helm_v3//pkg/chart/loader",
+        "@sh_helm_helm_v3//pkg/chartutil",
+        "@sh_helm_helm_v3//pkg/engine",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":util",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "util_test",
+    srcs = [
+        "filter_test.go",
+        "tables_test.go",
+        "values_test.go",
+    ],
+    embed = [":util"],
+    deps = [
+        "//pkg/helm/util/internal/ignore",
+        "//pkg/set",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+        "@sh_helm_helm_v3//pkg/chart/loader",
+        "@sh_helm_helm_v3//pkg/chartutil",
+    ],
+)

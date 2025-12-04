@@ -1,0 +1,23 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "profile",
+    srcs = [
+        "droppedpackets.go",
+        "none.go",
+        "periodicdisconnect.go",
+        "profile.go",
+    ],
+    importpath = "github.com/stackrox/rox/sensor/common/chaos/profile",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//pkg/logging",
+        "@com_github_shopify_toxiproxy_v2//client",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":profile",
+    visibility = ["//visibility:public"],
+)

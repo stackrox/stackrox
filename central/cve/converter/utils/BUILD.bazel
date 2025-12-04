@@ -1,0 +1,48 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "utils",
+    srcs = [
+        "convert_utils.go",
+        "convert_utils_v2.go",
+    ],
+    importpath = "github.com/stackrox/rox/central/cve/converter/utils",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//generated/storage",
+        "//pkg/cve",
+        "//pkg/cvss/cvssv2",
+        "//pkg/cvss/cvssv3",
+        "//pkg/features",
+        "//pkg/protoconv",
+        "//pkg/scans",
+        "@com_github_facebookincubator_nvdtools//cvefeed/nvd/schema",
+        "@com_github_pkg_errors//:errors",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":utils",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "utils_test",
+    srcs = [
+        "convert_utils_test.go",
+        "convert_utils_v2_test.go",
+    ],
+    data = glob(["testdata/**"]),
+    embed = [":utils"],
+    deps = [
+        "//generated/storage",
+        "//pkg/cve",
+        "//pkg/protoassert",
+        "//pkg/protocompat",
+        "//pkg/scancomponent",
+        "@com_github_facebookincubator_nvdtools//cvefeed/nvd/schema",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+    ],
+)

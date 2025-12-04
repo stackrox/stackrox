@@ -1,0 +1,59 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "service",
+    srcs = [
+        "service.go",
+        "service_impl.go",
+    ],
+    importpath = "github.com/stackrox/rox/central/authprovider/service",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//central/authprovider/datastore",
+        "//central/group/datastore",
+        "//generated/api/v1:api",
+        "//generated/storage",
+        "//pkg/auth/authproviders",
+        "//pkg/auth/authproviders/basic",
+        "//pkg/auth/authproviders/idputil",
+        "//pkg/auth/permissions",
+        "//pkg/auth/user",
+        "//pkg/errox",
+        "//pkg/grpc",
+        "//pkg/grpc/authz",
+        "//pkg/grpc/authz/allow",
+        "//pkg/grpc/authz/perrpc",
+        "//pkg/grpc/authz/user",
+        "//pkg/logging",
+        "//pkg/sac",
+        "//pkg/sac/resources",
+        "@com_github_grpc_ecosystem_grpc_gateway_v2//runtime",
+        "@com_github_pkg_errors//:errors",
+        "@org_golang_google_grpc//:grpc",
+        "@org_golang_google_grpc//metadata",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":service",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "service_test",
+    srcs = ["service_impl_test.go"],
+    embed = [":service"],
+    deps = [
+        "//central/group/datastore/mocks",
+        "//generated/api/v1:api",
+        "//generated/storage",
+        "//pkg/auth/authproviders",
+        "//pkg/auth/authproviders/mocks",
+        "//pkg/auth/permissions/mocks",
+        "//pkg/auth/tokens/mocks",
+        "//pkg/errox",
+        "@com_github_stretchr_testify//suite",
+        "@org_uber_go_mock//gomock",
+    ],
+)

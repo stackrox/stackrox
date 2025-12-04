@@ -1,0 +1,61 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "environment",
+    srcs = [
+        "auth_config.go",
+        "environment.go",
+        "environment-impl.go",
+    ],
+    importpath = "github.com/stackrox/rox/roxctl/common/environment",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//pkg/auth/authproviders",
+        "//pkg/env",
+        "//pkg/errox",
+        "//pkg/grpc/client/authn/tokenbased",
+        "//pkg/httputil",
+        "//pkg/sync",
+        "//pkg/utils",
+        "//roxctl/common",
+        "//roxctl/common/auth",
+        "//roxctl/common/config",
+        "//roxctl/common/flags",
+        "//roxctl/common/io",
+        "//roxctl/common/logger",
+        "//roxctl/common/printer",
+        "@com_github_pkg_errors//:errors",
+        "@org_golang_google_grpc//:grpc",
+        "@org_golang_google_grpc//credentials",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":environment",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "environment_test",
+    srcs = [
+        "auth_config_test.go",
+        "environment-impl_test.go",
+    ],
+    embed = [":environment"],
+    deps = [
+        "//pkg/auth/authproviders",
+        "//pkg/buildinfo",
+        "//pkg/errox",
+        "//roxctl/common",
+        "//roxctl/common/config",
+        "//roxctl/common/config/mocks",
+        "//roxctl/common/io",
+        "//roxctl/common/logger",
+        "//roxctl/common/printer",
+        "@com_github_fatih_color//:color",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+        "@org_uber_go_mock//gomock",
+    ],
+)

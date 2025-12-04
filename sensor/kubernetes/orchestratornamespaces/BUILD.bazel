@@ -1,0 +1,19 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "orchestratornamespaces",
+    srcs = ["store.go"],
+    importpath = "github.com/stackrox/rox/sensor/kubernetes/orchestratornamespaces",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//pkg/kubernetes",
+        "//pkg/set",
+        "//pkg/sync",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":orchestratornamespaces",
+    visibility = ["//visibility:public"],
+)

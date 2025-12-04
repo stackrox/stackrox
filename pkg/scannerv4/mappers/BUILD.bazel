@@ -1,0 +1,60 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "mappers",
+    srcs = ["mappers.go"],
+    importpath = "github.com/stackrox/rox/pkg/scannerv4/mappers",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//generated/internalapi/scanner/v4:scanner",
+        "//generated/storage",
+        "//pkg/features",
+        "//pkg/protocompat",
+        "//pkg/protoconv",
+        "//pkg/scanners/scannerv4",
+        "//pkg/scannerv4/enricher/csaf",
+        "//pkg/scannerv4/enricher/fixedby",
+        "//pkg/scannerv4/enricher/nvd",
+        "//pkg/scannerv4/updater/manual",
+        "//pkg/set",
+        "@com_github_facebookincubator_nvdtools//cveapi/nvd/schema",
+        "@com_github_facebookincubator_nvdtools//cvss2",
+        "@com_github_facebookincubator_nvdtools//cvss3",
+        "@com_github_quay_claircore//:claircore",
+        "@com_github_quay_claircore//enricher/epss",
+        "@com_github_quay_claircore//rhel/rhcc",
+        "@com_github_quay_claircore//rhel/vex",
+        "@com_github_quay_claircore_toolkit//types/cpe",
+        "@com_github_quay_zlog//:zlog",
+        "@org_golang_google_protobuf//types/known/timestamppb",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":mappers",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "mappers_test",
+    srcs = ["mappers_test.go"],
+    embed = [":mappers"],
+    deps = [
+        "//generated/internalapi/scanner/v4:scanner",
+        "//pkg/features",
+        "//pkg/protoassert",
+        "//pkg/protocompat",
+        "//pkg/protoconv",
+        "//pkg/scannerv4/enricher/csaf",
+        "//pkg/scannerv4/updater/manual",
+        "//pkg/testutils",
+        "@com_github_facebookincubator_nvdtools//cveapi/nvd/schema",
+        "@com_github_quay_claircore//:claircore",
+        "@com_github_quay_claircore//enricher/epss",
+        "@com_github_quay_claircore_toolkit//types/cpe",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+        "@org_golang_google_protobuf//types/known/timestamppb",
+    ],
+)

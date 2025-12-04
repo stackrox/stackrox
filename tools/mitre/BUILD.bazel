@@ -1,0 +1,18 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library")
+
+go_library(
+    name = "mitre_lib",
+    srcs = ["main.go"],
+    importpath = "github.com/stackrox/rox/tools/mitre",
+    visibility = ["//visibility:private"],
+    deps = [
+        "//tools/mitre/command",
+        "@com_github_spf13_cobra//:cobra",
+    ],
+)
+
+go_binary(
+    name = "mitre",
+    embed = [":mitre_lib"],
+    visibility = ["//visibility:public"],
+)

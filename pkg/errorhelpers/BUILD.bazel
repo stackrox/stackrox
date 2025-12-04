@@ -1,0 +1,15 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "errorhelpers",
+    srcs = ["format.go"],
+    importpath = "github.com/stackrox/rox/pkg/errorhelpers",
+    visibility = ["//visibility:public"],
+    deps = ["@com_github_pkg_errors//:errors"],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":errorhelpers",
+    visibility = ["//visibility:public"],
+)

@@ -1,0 +1,19 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "check_si_2_2",
+    srcs = ["check.go"],
+    importpath = "github.com/stackrox/rox/central/compliance/checks/nist80053/check_si_2_2",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//central/compliance/checks/common",
+        "//central/compliance/framework",
+        "//pkg/compliance/framework",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":check_si_2_2",
+    visibility = ["//visibility:public"],
+)

@@ -1,0 +1,29 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "previous",
+    srcs = ["store.go"],
+    importpath = "github.com/stackrox/rox/migrator/migrations/m_209_to_m_210_add_updated_at_to_network_flows_v2/test/stores/previous",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//generated/storage",
+        "//pkg/env",
+        "//pkg/logging",
+        "//pkg/postgres",
+        "//pkg/postgres/pgutils",
+        "//pkg/protocompat",
+        "//pkg/protoconv",
+        "//pkg/search/postgres",
+        "//pkg/sync",
+        "//pkg/timestamp",
+        "//pkg/uuid",
+        "@com_github_jackc_pgx_v5//:pgx",
+        "@com_github_pkg_errors//:errors",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":previous",
+    visibility = ["//visibility:public"],
+)

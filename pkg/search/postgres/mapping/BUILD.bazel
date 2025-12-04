@@ -1,0 +1,19 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "mapping",
+    srcs = ["mapping.go"],
+    importpath = "github.com/stackrox/rox/pkg/search/postgres/mapping",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//generated/api/v1:api",
+        "//pkg/logging",
+        "//pkg/postgres/walker",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":mapping",
+    visibility = ["//visibility:public"],
+)

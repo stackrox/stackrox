@@ -1,0 +1,16 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_test")
+
+go_test(
+    name = "flavor_test",
+    srcs = ["flavor_test.go"],
+    data = glob(["testdata/**"]),
+    deps = [
+        "//image",
+        "//pkg/buildinfo",
+        "//pkg/helm/charts",
+        "//pkg/helm/charts/testutils",
+        "//pkg/images/defaults",
+        "//pkg/version/testutils",
+        "@com_github_stackrox_helmtest//pkg/framework",
+    ],
+)

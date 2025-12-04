@@ -1,0 +1,20 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "virtualmachine",
+    srcs = ["api.go"],
+    importpath = "github.com/stackrox/rox/pkg/virtualmachine",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//pkg/k8sapi",
+        "@io_k8s_apimachinery//pkg/apis/meta/v1:meta",
+        "@io_k8s_apimachinery//pkg/runtime/schema",
+        "@io_kubevirt_api//core/v1:core",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":virtualmachine",
+    visibility = ["//visibility:public"],
+)

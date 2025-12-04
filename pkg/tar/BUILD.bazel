@@ -1,0 +1,28 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "tar",
+    srcs = ["tar.go"],
+    importpath = "github.com/stackrox/rox/pkg/tar",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//pkg/utils",
+        "@com_github_pkg_errors//:errors",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":tar",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "tar_test",
+    srcs = ["tar_test.go"],
+    embed = [":tar"],
+    deps = [
+        "//pkg/utils",
+        "@com_github_stretchr_testify//assert",
+    ],
+)

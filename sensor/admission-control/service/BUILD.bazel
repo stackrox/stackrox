@@ -1,0 +1,48 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "service",
+    srcs = ["service.go"],
+    importpath = "github.com/stackrox/rox/sensor/admission-control/service",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//pkg/grpc",
+        "//pkg/grpc/authz/allow",
+        "//pkg/grpc/routes",
+        "//pkg/logging",
+        "//sensor/admission-control/manager",
+        "@com_github_grpc_ecosystem_grpc_gateway_v2//runtime",
+        "@com_github_pkg_errors//:errors",
+        "@io_k8s_api//admission/v1:admission",
+        "@io_k8s_apimachinery//pkg/apis/meta/v1:meta",
+        "@io_k8s_apimachinery//pkg/runtime",
+        "@io_k8s_apimachinery//pkg/runtime/serializer",
+        "@io_k8s_apimachinery//pkg/util/json",
+        "@org_golang_google_grpc//:grpc",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":service",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "service_test",
+    srcs = ["service_test.go"],
+    data = glob(["testdata/**"]),
+    embed = [":service"],
+    deps = [
+        "//generated/internalapi/sensor",
+        "//generated/storage",
+        "//pkg/defaults/policies/testing",
+        "//pkg/uuid",
+        "//sensor/admission-control/manager",
+        "//sensor/admission-control/manager/testing",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+        "@io_k8s_api//admission/v1:admission",
+        "@io_k8s_api//admission/v1beta1",
+    ],
+)
