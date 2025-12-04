@@ -264,6 +264,28 @@ func (s *DeploymentDetectionTestSuite) TestDeploymentFileAccess() {
 				},
 			},
 		},
+		{
+			description: "Deployment file policy with suffix",
+			policy:      s.getDeploymentFileAccessPolicy("/etc/passwd", "/etc/ssh/sshd_config", "/etc/shadow", "/etc/sudoers"),
+			events: []eventWrapper{
+				{
+					access:      s.getDeploymentNodeFileAccessEvent("/etc/passwd-suffix", storage.FileAccess_OPEN),
+					expectAlert: false,
+				},
+				{
+					access:      s.getDeploymentNodeFileAccessEvent("/etc/shadow-suffix", storage.FileAccess_OPEN),
+					expectAlert: false,
+				},
+				{
+					access:      s.getDeploymentNodeFileAccessEvent("/etc/ssh/sshd_config-suffix", storage.FileAccess_OPEN),
+					expectAlert: false,
+				},
+				{
+					access:      s.getDeploymentNodeFileAccessEvent("/etc/sudoers-suffix", storage.FileAccess_OPEN),
+					expectAlert: false,
+				},
+			},
+		},
 	} {
 		testutils.MustUpdateFeature(s.T(), features.SensitiveFileActivity, true)
 		defer testutils.MustUpdateFeature(s.T(), features.SensitiveFileActivity, false)
@@ -297,75 +319,6 @@ func (s *DeploymentDetectionTestSuite) TestDeploymentFileAccess() {
 			}
 		})
 	}
-}
-
-// getFileAccessPolicy is a generic helper for creating file access policies.
-func (s *DeploymentDetectionTestSuite) getFileAccessPolicy(isNodePath bool, operations []storage.FileAccess_Operation, negate bool, paths ...string) *storage.Policy {
-	var pathValues []*storage.PolicyValue
-	for _, path := range paths {
-		pathValues = append(pathValues, &storage.PolicyValue{
-			Value: path,
-		})
-	}
-
-	fieldName := fieldnames.NodeFilePath
-	if !isNodePath {
-		fieldName = fieldnames.MountedFilePath
-	}
-
-	policyGroups := []*storage.PolicyGroup{
-		{
-			FieldName: fieldName,
-			Values:    pathValues,
-		},
-	}
-
-	var operationValues []*storage.PolicyValue
-	for _, op := range operations {
-		operationValues = append(operationValues, &storage.PolicyValue{
-			Value: op.String(),
-		})
-	}
-
-	if len(operationValues) != 0 {
-		policyGroups = append(policyGroups, &storage.PolicyGroup{
-			FieldName: fieldnames.FileOperation,
-			Values:    operationValues,
-			Negate:    negate,
-		})
-	}
-
-	return &storage.Policy{
-		Id:            uuid.NewV4().String(),
-		PolicyVersion: "1.1",
-		Name:          "Sensitive File Access in Deployment",
-		Severity:      storage.Severity_HIGH_SEVERITY,
-		Categories:    []string{"File System"},
-		PolicySections: []*storage.PolicySection{
-			{
-				SectionName:  "section 1",
-				PolicyGroups: policyGroups,
-			},
-		},
-		LifecycleStages: []storage.LifecycleStage{storage.LifecycleStage_RUNTIME},
-		EventSource:     storage.EventSource_DEPLOYMENT_EVENT,
-	}
-}
-
-func (s *DeploymentDetectionTestSuite) getDeploymentFileAccessPolicyWithOperations(operations []storage.FileAccess_Operation, negate bool, paths ...string) *storage.Policy {
-	return s.getFileAccessPolicy(true, operations, negate, paths...)
-}
-
-func (s *DeploymentDetectionTestSuite) getDeploymentFileAccessPolicy(paths ...string) *storage.Policy {
-	return s.getFileAccessPolicy(true, nil, false, paths...)
-}
-
-func (s *DeploymentDetectionTestSuite) getMountedFileAccessPolicyWithOperations(operations []storage.FileAccess_Operation, negate bool, paths ...string) *storage.Policy {
-	return s.getFileAccessPolicy(false, operations, negate, paths...)
-}
-
-func (s *DeploymentDetectionTestSuite) getMountedFileAccessPolicy(paths ...string) *storage.Policy {
-	return s.getFileAccessPolicy(false, nil, false, paths...)
 }
 
 func (s *DeploymentDetectionTestSuite) TestDeploymentMountedFileAccess() {
@@ -612,6 +565,28 @@ func (s *DeploymentDetectionTestSuite) TestDeploymentMountedFileAccess() {
 				},
 			},
 		},
+		{
+			description: "Deployment file policy with suffix",
+			policy:      s.getDeploymentFileAccessPolicy("/etc/passwd", "/etc/ssh/sshd_config", "/etc/shadow", "/etc/sudoers"),
+			events: []eventWrapper{
+				{
+					access:      s.getDeploymentMountedFileAccessEvent("/etc/passwd-suffix", storage.FileAccess_OPEN),
+					expectAlert: false,
+				},
+				{
+					access:      s.getDeploymentMountedFileAccessEvent("/etc/shadow-suffix", storage.FileAccess_OPEN),
+					expectAlert: false,
+				},
+				{
+					access:      s.getDeploymentMountedFileAccessEvent("/etc/ssh/sshd_config-suffix", storage.FileAccess_OPEN),
+					expectAlert: false,
+				},
+				{
+					access:      s.getDeploymentMountedFileAccessEvent("/etc/sudoers-suffix", storage.FileAccess_OPEN),
+					expectAlert: false,
+				},
+			},
+		},
 	} {
 		testutils.MustUpdateFeature(s.T(), features.SensitiveFileActivity, true)
 		defer testutils.MustUpdateFeature(s.T(), features.SensitiveFileActivity, false)
@@ -667,4 +642,73 @@ func (s *DeploymentDetectionTestSuite) getDeploymentNodeFileAccessEvent(path str
 
 func (s *DeploymentDetectionTestSuite) getDeploymentMountedFileAccessEvent(path string, operation storage.FileAccess_Operation) *storage.FileAccess {
 	return s.getFileAccessEvent(path, operation, false)
+}
+
+// getFileAccessPolicy is a generic helper for creating file access policies.
+func (s *DeploymentDetectionTestSuite) getFileAccessPolicy(isNodePath bool, operations []storage.FileAccess_Operation, negate bool, paths ...string) *storage.Policy {
+	var pathValues []*storage.PolicyValue
+	for _, path := range paths {
+		pathValues = append(pathValues, &storage.PolicyValue{
+			Value: path,
+		})
+	}
+
+	fieldName := fieldnames.NodeFilePath
+	if !isNodePath {
+		fieldName = fieldnames.MountedFilePath
+	}
+
+	policyGroups := []*storage.PolicyGroup{
+		{
+			FieldName: fieldName,
+			Values:    pathValues,
+		},
+	}
+
+	var operationValues []*storage.PolicyValue
+	for _, op := range operations {
+		operationValues = append(operationValues, &storage.PolicyValue{
+			Value: op.String(),
+		})
+	}
+
+	if len(operationValues) != 0 {
+		policyGroups = append(policyGroups, &storage.PolicyGroup{
+			FieldName: fieldnames.FileOperation,
+			Values:    operationValues,
+			Negate:    negate,
+		})
+	}
+
+	return &storage.Policy{
+		Id:            uuid.NewV4().String(),
+		PolicyVersion: "1.1",
+		Name:          "Sensitive File Access in Deployment",
+		Severity:      storage.Severity_HIGH_SEVERITY,
+		Categories:    []string{"File System"},
+		PolicySections: []*storage.PolicySection{
+			{
+				SectionName:  "section 1",
+				PolicyGroups: policyGroups,
+			},
+		},
+		LifecycleStages: []storage.LifecycleStage{storage.LifecycleStage_RUNTIME},
+		EventSource:     storage.EventSource_DEPLOYMENT_EVENT,
+	}
+}
+
+func (s *DeploymentDetectionTestSuite) getDeploymentFileAccessPolicyWithOperations(operations []storage.FileAccess_Operation, negate bool, paths ...string) *storage.Policy {
+	return s.getFileAccessPolicy(true, operations, negate, paths...)
+}
+
+func (s *DeploymentDetectionTestSuite) getDeploymentFileAccessPolicy(paths ...string) *storage.Policy {
+	return s.getFileAccessPolicy(true, nil, false, paths...)
+}
+
+func (s *DeploymentDetectionTestSuite) getMountedFileAccessPolicyWithOperations(operations []storage.FileAccess_Operation, negate bool, paths ...string) *storage.Policy {
+	return s.getFileAccessPolicy(false, operations, negate, paths...)
+}
+
+func (s *DeploymentDetectionTestSuite) getMountedFileAccessPolicy(paths ...string) *storage.Policy {
+	return s.getFileAccessPolicy(false, nil, false, paths...)
 }
