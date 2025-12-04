@@ -1,13 +1,19 @@
 ARG PG_VERSION=15
 
+FROM registry.access.redhat.com/ubi9/go-toolset:1.24@sha256:c06c8764041cceae3ef35962b44043bfea534ad336d2cb14cafb5d0c384a5b5e AS go-builder
 
-FROM brew.registry.redhat.io/rh-osbs/openshift-golang-builder:rhel_8_golang_1.24@sha256:c52f52b73cc121327416b3fe8d64d682eb48b2c86298a4d645d7169251700cd5 AS go-builder
+USER root
+RUN dnf -y install --allowerasing jq \
+    && dnf clean all \
+    && rm -rf /var/cache/dnf /var/cache/yum
 
-RUN dnf -y install --allowerasing jq
+USER default
 
-WORKDIR /go/src/github.com/stackrox/rox/app
+# Use $APP_ROOT which is accessible to the default user in s2i-based builder images
+ENV GOPATH=${APP_ROOT:-/opt/app-root/}/src
+WORKDIR ${GOPATH}/github.com/stackrox/rox/app
 
-COPY . .
+COPY --chown=default . .
 
 ARG BUILD_TAG
 RUN if [[ "$BUILD_TAG" == "" ]]; then >&2 echo "error: required BUILD_TAG arg is unset"; exit 6; fi
@@ -37,9 +43,17 @@ RUN mkdir -p image/rhel/docs/api/v1 && \
 RUN make copy-go-binaries-to-image-dir
 
 
-FROM registry.access.redhat.com/ubi9/nodejs-20:latest@sha256:c3afeb6716306b239d0f1bc3c567bd899cb102cf70b6dd48b9a11e7339482f3f AS ui-builder
+FROM registry.access.redhat.com/ubi9/nodejs-20-minimal:latest@sha256:badc5c47327f1af2ca2c0d9c68bac4c0a5e3f42bea398fc9654effbefc40b40b AS ui-builder
 
-WORKDIR /go/src/github.com/stackrox/rox/app
+USER root
+RUN microdnf -y install make \
+    && microdnf clean all \
+    && rm -rf /var/cache/dnf /var/cache/yum
+
+USER default
+
+ENV GOPATH=${APP_ROOT:-/opt/app-root/}/src
+WORKDIR ${GOPATH}/github.com/stackrox/rox/app
 
 COPY --chown=default . .
 
@@ -59,7 +73,7 @@ ENV UI_PKG_INSTALL_EXTRA_ARGS="--ignore-scripts"
 RUN make -C ui build
 
 
-FROM registry.access.redhat.com/ubi8/ubi-minimal:latest@sha256:951ee3cabb74246821ae31c2b808b7789310f5509882c153b7b178aaaeefa2d3
+FROM registry.access.redhat.com/ubi9/ubi-minimal:latest@sha256:2ddd6e10383981c7d10e4966a7c0edce7159f8ca91b1691cafabc78bae79d8f8
 
 ARG PG_VERSION
 
