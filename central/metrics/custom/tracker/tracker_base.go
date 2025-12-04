@@ -151,6 +151,9 @@ func (tracker *TrackerBase[F]) Reconfigure(cfg *Configuration) {
 		tracker.unregisterMetrics(cfg.toDelete)
 	}
 	tracker.registerMetrics(cfg, cfg.toAdd)
+	if len(cfg.toAdd) != 0 || len(cfg.toDelete) != 0 {
+		tracker.Refresh()
+	}
 }
 
 func retry(f func() bool, d time.Duration, maxAttempts int) bool {
