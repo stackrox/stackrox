@@ -387,8 +387,8 @@ func (w *WorkloadManager) cleanupVMHistory(namespace, vmName, vmiName string) {
 	if vmiName != "" {
 		_ = tracker.Delete(vmiGVR, namespace, vmiName)
 	}
-
-	w.dynamicClient.ClearActions()
+	// Note: We intentionally don't call ClearActions() here as it would clear
+	// the entire fake client's action history, including for non-VM resources.
 }
 
 func (w *WorkloadManager) initializePreexistingResources() {

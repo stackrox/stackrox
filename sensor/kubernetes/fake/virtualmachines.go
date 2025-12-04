@@ -168,12 +168,11 @@ func (t *vmTemplate) instantiate(iteration int) (*unstructured.Unstructured, *un
 	return vmObj, vmiObj
 }
 
-// updateVMObject updates VM metadata while keeping base structure
-func (t *vmTemplate) updateVMObject(vm *unstructured.Unstructured) {
+// randomizeVMObject updates VM metadata while keeping base structure
+func randomizeVMObject(vm *unstructured.Unstructured) {
 	vm.SetAnnotations(createRandMap(16, 3))
 	vm.SetLabels(createRandMap(16, 3))
 
-	// Randomly toggle running status
 	if rand.Float32() < 0.3 {
 		status, _, _ := unstructured.NestedString(vm.Object, "status", "printableStatus")
 		if status == string(kubeVirtV1.VirtualMachineStatusRunning) {
@@ -184,12 +183,11 @@ func (t *vmTemplate) updateVMObject(vm *unstructured.Unstructured) {
 	}
 }
 
-// updateVMIObject updates VMI metadata while keeping base structure
-func (t *vmTemplate) updateVMIObject(vmi *unstructured.Unstructured) {
+// randomizeVMIObject updates VM metadata while keeping base structure
+func randomizeVMIObject(vmi *unstructured.Unstructured) {
 	vmi.SetAnnotations(createRandMap(16, 3))
 	vmi.SetLabels(createRandMap(16, 3))
 
-	// Randomly toggle phase
 	if rand.Float32() < 0.3 {
 		phase, _, _ := unstructured.NestedString(vmi.Object, "status", "phase")
 		if phase == string(kubeVirtV1.Running) {
@@ -337,13 +335,13 @@ func (w *WorkloadManager) runVMLifecycle(
 			updateTicker.Reset(calculateDurationWithJitter(workload.UpdateInterval))
 
 			// Update VM metadata
-			template.updateVMObject(vm)
+			randomizeVMObject(vm)
 			if _, err := vmClient.Update(ctx, vm, metav1.UpdateOptions{}); err != nil {
 				log.Debugf("error updating VirtualMachine: %v", err)
 			}
 
 			// Update VMI metadata
-			template.updateVMIObject(vmi)
+			randomizeVMIObject(vmi)
 			if _, err := vmiClient.Update(ctx, vmi, metav1.UpdateOptions{}); err != nil {
 				log.Debugf("error updating VirtualMachineInstance: %v", err)
 			}
@@ -372,13 +370,18 @@ func (w *WorkloadManager) sendIndexReportsWhileAlive(
 	// Send first report immediately
 	w.sendOneIndexReport(ctx, reportGen, vmID, vsockCID)
 
-	// Continue sending at configured interval
+	// Use a ticker instead of time.After to reduce allocations with large pool sizes.
+	// Reset with jitter on each tick to maintain randomized timing.
+	reportTicker := time.NewTicker(jitteredInterval(interval, reportIntervalJitterPercent))
+	defer reportTicker.Stop()
+
 	for {
 		select {
 		case <-ctx.Done():
 			log.Debugf("Stopping index report generation for VM %s (lifecycle ended)", vmID)
 			return
-		case <-time.After(jitteredInterval(interval, reportIntervalJitterPercent)):
+		case <-reportTicker.C:
+			reportTicker.Reset(jitteredInterval(interval, reportIntervalJitterPercent))
 			w.sendOneIndexReport(ctx, reportGen, vmID, vsockCID)
 		}
 	}
