@@ -15,8 +15,8 @@ import type { BaseImageReference } from 'services/BaseImagesService';
 import useRestMutation from 'hooks/useRestMutation';
 import useRestQuery from 'hooks/useRestQuery';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
-import ConfirmationModal from 'Components/PatternFly/ConfirmationModal/ConfirmationModal';
 
+import ConfirmationModal from 'Components/PatternFly/ConfirmationModal/ConfirmationModal';
 import BaseImagesModal from './BaseImagesModal';
 import BaseImagesTable from './BaseImagesTable';
 
@@ -109,7 +109,7 @@ function BaseImagesPage() {
                             >
                                 {getAxiosErrorMessage(deleteBaseImageMutation.error)}
                             </Alert>
-                        )}{' '}
+                        )}
                         <span>
                             Are you sure you want to delete the base image{' '}
                             <strong>
