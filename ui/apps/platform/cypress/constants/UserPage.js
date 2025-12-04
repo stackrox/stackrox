@@ -14,8 +14,8 @@ export const selectors = {
     authProviderName: 'dl div:contains("Auth provider") dd',
 
     // Select Options
-    userPermissionsForRoles: '[role="option"]:contains("User permissions for roles")',
-    userRoleNames: '[role="option"]',
+    userPermissionsForRoles: '[role="listbox"] [role="option"]:contains("User permissions for roles")',
+    userRoleNames: '[role="listbox"] [role="option"]',
 
     // Table
     permissionsTable: scopeSelectors('table', {
