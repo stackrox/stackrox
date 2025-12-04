@@ -51,7 +51,11 @@ function BaseImagesPage() {
 
     function handleCloseAddModal() {
         setIsAddModalOpen(false);
+    }
+
+    function handleOpenAddModal() {
         addBaseImageMutation.reset();
+        setIsAddModalOpen(true);
     }
 
     function handleRemoveBaseImage(id: string) {
@@ -75,7 +79,7 @@ function BaseImagesPage() {
                         </Text>
                     </FlexItem>
                     <FlexItem align={{ default: 'alignRight' }}>
-                        <Button variant="primary" onClick={() => setIsAddModalOpen(true)}>
+                        <Button variant="primary" onClick={handleOpenAddModal}>
                             Add base image
                         </Button>
                     </FlexItem>

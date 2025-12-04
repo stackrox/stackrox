@@ -28,18 +28,13 @@ function BaseImagesModal({
             aria-labelledby="add-base-image-modal-title"
             header={
                 <Title id="add-base-image-modal-title" headingLevel="h2" size="2xl">
-                    Add base image
+                    Add base image path
                 </Title>
             }
             isOpen={isOpen}
             onClose={onClose}
             variant="medium"
-            showClose={false}
-            actions={[
-                <Button key="Close" onClick={onClose} isDisabled={formProps.isSubmitting}>
-                    Close
-                </Button>,
-            ]}
+            showClose={true}
         >
             <Flex direction={{ default: 'column' }} spaceItems={{ default: 'spaceItemsMd' }}>
                 {isSuccess && (
