@@ -1,6 +1,8 @@
 import { Bullseye } from '@patternfly/react-core';
-import EmptyStateTemplate from 'Components/EmptyStateTemplate';
+
 import type { BaseImage } from 'services/BaseImagesService';
+
+import EmptyStateTemplate from 'Components/EmptyStateTemplate';
 
 export type BaseImagesTableProps = {
     baseImages: BaseImage[];
