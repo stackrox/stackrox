@@ -184,7 +184,7 @@ export_test_environment() {
     ci_export ROX_CUSTOMIZABLE_PLATFORM_COMPONENTS "${ROX_CUSTOMIZABLE_PLATFORM_COMPONENTS:-true}"
     ci_export ROX_ADMISSION_CONTROLLER_CONFIG "${ROX_ADMISSION_CONTROLLER_CONFIG:-true}"
     ci_export ROX_CISA_KEV "${ROX_CISA_KEV:-true}"
-    ci_export ROX_SENSITIVE_FILE_ACTIVITY "${ROX_SENSITIVE_FILE_ACTIVITY:-false}"
+    ci_export ROX_SENSITIVE_FILE_ACTIVITY "${ROX_SENSITIVE_FILE_ACTIVITY:-true}"
     ci_export ROX_CVE_FIX_TIMESTAMP "${ROX_CVE_FIX_TIMESTAMP:-true}"
     ci_export ROX_BASE_IMAGE_DETECTION "${ROX_BASE_IMAGE_DETECTION:-false}"
 
@@ -409,6 +409,7 @@ deploy_sensor_via_operator() {
     local sensor_namespace=${1:-stackrox}
     local central_namespace=${2:-stackrox}
     local scanner_component_setting="Disabled"
+    local sfa_agent_setting="Disabled"
     local central_endpoint="central.${central_namespace}.svc:443"
 
     info "Deploying sensor using operator into namespace ${sensor_namespace} (central is expected in namespace ${central_namespace})"
@@ -426,12 +427,6 @@ deploy_sensor_via_operator() {
         --output-secrets -' \
     | kubectl -n "${sensor_namespace}" apply -f -
 
-    if [[ -n "${COLLECTION_METHOD:-}" ]]; then
-       echo "Overriding the product default collection method due to COLLECTION_METHOD variable: ${COLLECTION_METHOD}"
-    else
-       die "COLLECTION_METHOD not set"
-    fi
-
     if [[ "${SENSOR_SCANNER_SUPPORT:-}" == "true" ]]; then
         scanner_component_setting="AutoSense"
     fi
@@ -441,17 +436,14 @@ deploy_sensor_via_operator() {
         secured_cluster_yaml_path="tests/e2e/yaml/secured-cluster-cr-with-scanner-v4.envsubst.yaml"
     fi
 
-    upper_case_collection_method="$(echo "$COLLECTION_METHOD" | tr '[:lower:]' '[:upper:]')"
-
-    # forceCollection only has an impact when the collection method is EBPF
-    # but upgrade tests can fail if forceCollection is used for 4.3 or older.
-    if [[ "${upper_case_collection_method}" == "CORE_BPF" ]]; then
-      sed -i.bak '/forceCollection/d' "${secured_cluster_yaml_path}"
+    if [[ "${SFA_AGENT:-}" == "Enabled" ]]; then
+       echo "Enabling SFA agent due to SFA_AGENT variable: ${SFA_AGENT}"
+       sfa_agent_setting="Enabled"
     fi
 
     env - \
-      collection_method="$upper_case_collection_method" \
       scanner_component_setting="$scanner_component_setting" \
+      sfa_agent_setting="$sfa_agent_setting" \
       central_endpoint="$central_endpoint" \
     "${envsubst}" \
       < "${secured_cluster_yaml_path}" | kubectl apply -n "${sensor_namespace}" -f -
