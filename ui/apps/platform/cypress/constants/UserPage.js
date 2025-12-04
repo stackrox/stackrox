@@ -17,7 +17,8 @@ export const selectors = {
     userRoleSelector: '#user-role-selector',
 
     // Select Options
-    userPermissionsForRoles: '[role="listbox"] [role="option"]:contains("User permissions for roles")',
+    userPermissionsForRoles:
+        '[role="listbox"] [role="option"]:contains("User permissions for roles")',
     userRoleNames: '[role="listbox"] [role="option"]',
 
     // Table
