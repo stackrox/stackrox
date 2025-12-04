@@ -1,5 +1,4 @@
-import { useCallback, useState } from 'react';
-import { isAxiosError } from 'axios';
+import { useState } from 'react';
 import {
     Alert,
     Button,
@@ -44,18 +43,10 @@ function BaseImagesPage() {
         },
     });
 
-    function handleCloseAddModal() {
+    const handleAddBaseImageSuccess = () => {
         setIsAddModalOpen(false);
-    }
-
-    function handleOpenAddModal() {
-        addBaseImageMutation.reset();
-        setIsAddModalOpen(true);
-    }
-
-    function handleRemoveBaseImage(id: string) {
-        deleteBaseImageMutation.mutate(id);
-    }
+        baseImagesRequest.refetch();
+    };
 
     const baseImages = baseImagesRequest.data ?? [];
 
@@ -102,16 +93,7 @@ function BaseImagesPage() {
             <BaseImagesModal
                 isOpen={isAddModalOpen}
                 onClose={handleCloseAddModal}
-                onSave={() =>
-                    addBaseImageMutation.mutate({
-                        baseImageRepoPath: '',
-                        baseImageTagPattern: '',
-                    })
-                }
-                isSuccess={addBaseImageMutation.isSuccess}
-                isError={addBaseImageMutation.isError}
-                isSubmitting={addBaseImageMutation.isLoading}
-                error={isAxiosError(addBaseImageMutation.error) ? addBaseImageMutation.error : null}
+                onSuccess={handleAddBaseImageSuccess}
             />
         </>
     );
