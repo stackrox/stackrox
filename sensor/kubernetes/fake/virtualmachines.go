@@ -27,7 +27,25 @@ const (
 	defaultVMUpdateInterval    = 10 * time.Second
 )
 
+// Centralized GVR definitions for KubeVirt resources
+var (
+	vmGVR = schema.GroupVersionResource{
+		Group:    "kubevirt.io",
+		Version:  "v1",
+		Resource: "virtualmachines",
+	}
+	vmiGVR = schema.GroupVersionResource{
+		Group:    "kubevirt.io",
+		Version:  "v1",
+		Resource: "virtualmachineinstances",
+	}
+)
+
 func validateVMWorkload(workload VirtualMachineWorkload) VirtualMachineWorkload {
+	// Skip validation and defaults if workload is disabled (poolSize=0)
+	if workload.PoolSize <= 0 {
+		return workload
+	}
 	if workload.LifecycleDuration <= 0 {
 		log.Warnf("virtualMachineWorkload.lifecycleDuration not set or <= 0; defaulting to %s", defaultVMLifecycleDuration)
 		workload.LifecycleDuration = defaultVMLifecycleDuration
@@ -224,37 +242,35 @@ func jsonSafeUint64(value uint64) int64 {
 }
 
 type vmResourcesToBeManaged struct {
-	workload  VirtualMachineWorkload
 	template  *vmTemplate
 	vm        *unstructured.Unstructured
 	vmi       *unstructured.Unstructured
 	reportGen *reportGenerator // nil if index reports are disabled
 }
 
-func (w *WorkloadManager) getVMResources(workload VirtualMachineWorkload, templateIdx int, templatePool *vmTemplatePool, reportGen *reportGenerator) *vmResourcesToBeManaged {
+func (w *WorkloadManager) getVMResources(templateIdx int, templatePool *vmTemplatePool, reportGen *reportGenerator) *vmResourcesToBeManaged {
 	template := templatePool.getTemplate(templateIdx)
 	if template == nil {
 		return nil
 	}
 
 	return &vmResourcesToBeManaged{
-		workload:  workload,
 		template:  template,
 		reportGen: reportGen,
 	}
 }
 
 // manageVirtualMachine manages repeated VM/VMI lifecycles for a single template.
-func (w *WorkloadManager) manageVirtualMachine(ctx context.Context, resources *vmResourcesToBeManaged) {
+func (w *WorkloadManager) manageVirtualMachine(ctx context.Context, workload VirtualMachineWorkload, resources *vmResourcesToBeManaged) {
 	defer w.wg.Done()
 
-	lifecycles := resources.workload.NumLifecycles
+	lifecycles := workload.NumLifecycles
 	for iteration := 0; lifecycles <= 0 || iteration < lifecycles; iteration++ {
 		vm, vmi := resources.template.instantiate(iteration)
 		resources.vm = vm
 		resources.vmi = vmi
 
-		if w.manageVirtualMachineLifecycleOnce(ctx, resources) {
+		if w.manageVirtualMachineLifecycleOnce(ctx, workload, resources) {
 			return
 		}
 	}
@@ -263,22 +279,12 @@ func (w *WorkloadManager) manageVirtualMachine(ctx context.Context, resources *v
 // manageVirtualMachineLifecycleOnce runs a single VM/VMI lifecycle.
 // It returns true if the caller should stop spawning further lifecycles (e.g., context cancelled or setup failed).
 // If index reports are enabled (reportGen != nil), it also sends index reports while the VM is alive.
-func (w *WorkloadManager) manageVirtualMachineLifecycleOnce(ctx context.Context, resources *vmResourcesToBeManaged) bool {
-	timer := newTimerWithJitter(resources.workload.LifecycleDuration/2 + time.Duration(rand.Int63n(int64(resources.workload.LifecycleDuration))))
-	defer timer.Stop()
+func (w *WorkloadManager) manageVirtualMachineLifecycleOnce(ctx context.Context, workload VirtualMachineWorkload, resources *vmResourcesToBeManaged) bool {
+	lifecycleTimer := newTimerWithJitter(workload.LifecycleDuration/2 + time.Duration(rand.Int63n(int64(workload.LifecycleDuration))))
+	defer lifecycleTimer.Stop()
 
-	updateNextUpdate := calculateDurationWithJitter(resources.workload.UpdateInterval)
-
-	vmGVR := schema.GroupVersionResource{
-		Group:    "kubevirt.io",
-		Version:  "v1",
-		Resource: "virtualmachines",
-	}
-	vmiGVR := schema.GroupVersionResource{
-		Group:    "kubevirt.io",
-		Version:  "v1",
-		Resource: "virtualmachineinstances",
-	}
+	updateTicker := time.NewTicker(calculateDurationWithJitter(workload.UpdateInterval))
+	defer updateTicker.Stop()
 
 	vmClient := w.client.Dynamic().Resource(vmGVR).Namespace(resources.vm.GetNamespace())
 	vmiClient := w.client.Dynamic().Resource(vmiGVR).Namespace(resources.vmi.GetNamespace())
@@ -301,10 +307,16 @@ func (w *WorkloadManager) manageVirtualMachineLifecycleOnce(ctx context.Context,
 
 	// Start index report generation if enabled (runs while VM is alive)
 	var reportCancel context.CancelFunc
-	if resources.reportGen != nil && resources.workload.ReportInterval > 0 {
+	if resources.reportGen != nil && workload.ReportInterval > 0 {
 		var reportCtx context.Context
 		reportCtx, reportCancel = context.WithCancel(ctx)
-		go w.sendIndexReportsWhileAlive(reportCtx, resources)
+		go w.sendIndexReportsWhileAlive(
+			reportCtx,
+			resources.reportGen,
+			fakeVMUUID(resources.template.index),
+			resources.template.vsockCID,
+			workload.ReportInterval,
+		)
 	}
 
 	// Ensure report generation stops when this function exits
@@ -318,7 +330,7 @@ func (w *WorkloadManager) manageVirtualMachineLifecycleOnce(ctx context.Context,
 		select {
 		case <-ctx.Done():
 			return true
-		case <-timer.C:
+		case <-lifecycleTimer.C:
 			// Delete resources
 			if err := vmiClient.Delete(ctx, resources.vmi.GetName(), metav1.DeleteOptions{}); err != nil {
 				log.Debugf("error deleting VirtualMachineInstance (may not exist): %v", err)
@@ -334,8 +346,9 @@ func (w *WorkloadManager) manageVirtualMachineLifecycleOnce(ctx context.Context,
 			// Drop the fake tracker entries so unstructured DeepCopy payloads do not accumulate indefinitely.
 			w.cleanupVMHistory(resources.vm.GetNamespace(), vmName, resources.vmi.GetName())
 			return false
-		case <-time.After(updateNextUpdate):
-			updateNextUpdate = calculateDurationWithJitter(resources.workload.UpdateInterval)
+		case <-updateTicker.C:
+			// Reset ticker with jitter for next update
+			updateTicker.Reset(calculateDurationWithJitter(workload.UpdateInterval))
 
 			// Update VM metadata
 			resources.template.updateVMObject(resources.vm)
@@ -355,11 +368,13 @@ func (w *WorkloadManager) manageVirtualMachineLifecycleOnce(ctx context.Context,
 // sendIndexReportsWhileAlive sends index reports for a VM at the configured interval.
 // It waits for prerequisites (handler, store, central) before starting, then runs
 // until the context is cancelled (when the VM lifecycle ends).
-func (w *WorkloadManager) sendIndexReportsWhileAlive(ctx context.Context, resources *vmResourcesToBeManaged) {
-	vmID := fakeVMUUID(resources.template.index)
-	vsockCID := resources.template.vsockCID
-	interval := resources.workload.ReportInterval
-
+func (w *WorkloadManager) sendIndexReportsWhileAlive(
+	ctx context.Context,
+	reportGen *reportGenerator,
+	vmID string,
+	vsockCID uint32,
+	interval time.Duration,
+) {
 	// Wait for all prerequisites before sending reports
 	if !w.vmPrerequisitesReady.Wait(ctx) {
 		log.Debugf("VM %s: prerequisites not ready, skipping index reports", vmID)
@@ -369,7 +384,7 @@ func (w *WorkloadManager) sendIndexReportsWhileAlive(ctx context.Context, resour
 	log.Debugf("Starting index report generation for VM %s (vsockCID=%d, interval=%s)", vmID, vsockCID, interval)
 
 	// Send first report immediately
-	w.sendOneIndexReport(ctx, resources, vmID, vsockCID)
+	w.sendOneIndexReport(ctx, reportGen, vmID, vsockCID)
 
 	// Continue sending at configured interval
 	for {
@@ -378,18 +393,23 @@ func (w *WorkloadManager) sendIndexReportsWhileAlive(ctx context.Context, resour
 			log.Debugf("Stopping index report generation for VM %s (lifecycle ended)", vmID)
 			return
 		case <-time.After(jitteredInterval(interval, reportIntervalJitterPercent)):
-			w.sendOneIndexReport(ctx, resources, vmID, vsockCID)
+			w.sendOneIndexReport(ctx, reportGen, vmID, vsockCID)
 		}
 	}
 }
 
 // sendOneIndexReport generates and sends a single index report for a VM.
-func (w *WorkloadManager) sendOneIndexReport(ctx context.Context, resources *vmResourcesToBeManaged, vmID string, vsockCID uint32) {
+func (w *WorkloadManager) sendOneIndexReport(
+	ctx context.Context,
+	reportGen *reportGenerator,
+	vmID string,
+	vsockCID uint32,
+) {
 	if ctx.Err() != nil {
 		return
 	}
 
-	report := generateFakeIndexReport(resources.reportGen, vsockCID, vmID)
+	report := generateFakeIndexReport(reportGen, vsockCID, vmID)
 
 	if w.vmIndexReportHandler == nil {
 		log.Debugf("VM index report handler not set, skipping report for VM %s", vmID)

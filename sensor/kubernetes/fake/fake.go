@@ -380,17 +380,6 @@ func (w *WorkloadManager) cleanupVMHistory(namespace, vmName, vmiName string) {
 		return
 	}
 
-	vmGVR := schema.GroupVersionResource{
-		Group:    "kubevirt.io",
-		Version:  "v1",
-		Resource: "virtualmachines",
-	}
-	vmiGVR := schema.GroupVersionResource{
-		Group:    "kubevirt.io",
-		Version:  "v1",
-		Resource: "virtualmachineinstances",
-	}
-
 	tracker := w.dynamicClient.Tracker()
 	if vmName != "" {
 		_ = tracker.Delete(vmGVR, namespace, vmName, metav1.DeleteOptions{})
@@ -466,26 +455,15 @@ func (w *WorkloadManager) initializePreexistingResources() {
 		Platform:     "linux/amd64",
 	}
 	scheme := runtime.NewScheme()
-	gvr := schema.GroupVersionResource{
+	crdGVR := schema.GroupVersionResource{
 		Group:    "apiextensions.k8s.io",
 		Version:  "v1",
 		Resource: "customresourcedefinitions",
 	}
 
-	// Add kubevirt GVRs for dynamic client
-	vmGVR := schema.GroupVersionResource{
-		Group:    "kubevirt.io",
-		Version:  "v1",
-		Resource: "virtualmachines",
-	}
-	vmiGVR := schema.GroupVersionResource{
-		Group:    "kubevirt.io",
-		Version:  "v1",
-		Resource: "virtualmachineinstances",
-	}
-
+	// Use centralized GVRs from virtualmachines.go for kubevirt resources
 	customListKinds := map[schema.GroupVersionResource]string{
-		gvr:    "CustomResourceDefinitionList",
+		crdGVR: "CustomResourceDefinitionList",
 		vmGVR:  "VirtualMachineList",
 		vmiGVR: "VirtualMachineInstanceList",
 	}
@@ -559,9 +537,10 @@ func (w *WorkloadManager) initializePreexistingResources() {
 			vmBaseVSOCKCID,
 		)
 
+		workload := w.workload.VirtualMachineWorkload
 		var vmResources []*vmResourcesToBeManaged
 		for i := 0; i < templatePool.size(); i++ {
-			resource := w.getVMResources(w.workload.VirtualMachineWorkload, i, templatePool, reportGen)
+			resource := w.getVMResources(i, templatePool, reportGen)
 			if resource != nil {
 				vmResources = append(vmResources, resource)
 			}
@@ -570,7 +549,7 @@ func (w *WorkloadManager) initializePreexistingResources() {
 		// Fork management of VM/VMI resources (including index reports if enabled)
 		for _, resource := range vmResources {
 			w.wg.Add(1)
-			go w.manageVirtualMachine(w.shutdownCtx, resource)
+			go w.manageVirtualMachine(w.shutdownCtx, workload, resource)
 		}
 	}
 }
