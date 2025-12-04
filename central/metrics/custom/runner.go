@@ -10,6 +10,7 @@ import (
 	expiryS "github.com/stackrox/rox/central/credentialexpiry/service"
 	deploymentDS "github.com/stackrox/rox/central/deployment/datastore"
 	"github.com/stackrox/rox/central/metrics"
+	"github.com/stackrox/rox/central/metrics/custom/api_requests"
 	"github.com/stackrox/rox/central/metrics/custom/clusters"
 	"github.com/stackrox/rox/central/metrics/custom/expiry"
 	"github.com/stackrox/rox/central/metrics/custom/image_vulnerabilities"
@@ -94,6 +95,12 @@ func makeRunner(ds *runnerDatastores) trackerRunner {
 		withHardcodedConfiguration(60, map[string][]string{
 			// rox_central_cert_exp_hours
 			"hours": expiry.LazyLabels.GetLabels(),
+		}),
+	}, {
+		api_requests.Singleton(),
+		withHardcodedConfiguration(0, map[string][]string{
+			// rox_central_api_request_total
+			"api_request_total": api_requests.LazyLabels.GetLabels(),
 		}),
 	},
 	}
