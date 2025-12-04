@@ -11,9 +11,11 @@ import {
 } from '@patternfly/react-core';
 
 import { deleteBaseImage as deleteBaseImageFn, getBaseImages } from 'services/BaseImagesService';
+import type { BaseImageReference } from 'services/BaseImagesService';
 import useRestMutation from 'hooks/useRestMutation';
 import useRestQuery from 'hooks/useRestQuery';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
+import ConfirmationModal from 'Components/PatternFly/ConfirmationModal/ConfirmationModal';
 
 import BaseImagesModal from './BaseImagesModal';
 import BaseImagesTable from './BaseImagesTable';
@@ -24,6 +26,7 @@ import BaseImagesTable from './BaseImagesTable';
  */
 function BaseImagesPage() {
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+    const [baseImageToDelete, setBaseImageToDelete] = useState<BaseImageReference | null>(null);
 
     // Fetch base images on component mount
     const baseImagesRequest = useRestQuery(getBaseImages);
@@ -31,9 +34,21 @@ function BaseImagesPage() {
     // Delete mutation that refetches the list after successful deletion to keep UI in sync
     const deleteBaseImageMutation = useRestMutation((id: string) => deleteBaseImageFn(id), {
         onSuccess: () => {
+            setBaseImageToDelete(null);
             baseImagesRequest.refetch();
         },
     });
+
+    const onConfirmDelete = () => {
+        if (baseImageToDelete) {
+            deleteBaseImageMutation.mutate(baseImageToDelete.id);
+        }
+    };
+
+    const onCancelDelete = () => {
+        deleteBaseImageMutation.reset();
+        setBaseImageToDelete(null);
+    };
 
     const baseImages = baseImagesRequest.data ?? [];
 
@@ -58,20 +73,9 @@ function BaseImagesPage() {
             </PageSection>
             <Divider component="div" />
             <PageSection>
-                {deleteBaseImageMutation.isError && (
-                    <Alert
-                        variant="danger"
-                        isInline
-                        title="Error removing base image"
-                        component="p"
-                        className="pf-v5-u-mb-lg"
-                    >
-                        {getAxiosErrorMessage(deleteBaseImageMutation.error)}
-                    </Alert>
-                )}
                 <BaseImagesTable
                     baseImages={baseImages}
-                    onRemove={(baseImage) => deleteBaseImageMutation.mutate(baseImage.id)}
+                    onRemove={setBaseImageToDelete}
                     isRemoveInProgress={deleteBaseImageMutation.isLoading}
                     isLoading={baseImagesRequest.isLoading && !baseImagesRequest.data}
                     error={baseImagesRequest.error as Error | null}
@@ -82,6 +86,41 @@ function BaseImagesPage() {
                 onClose={() => setIsAddModalOpen(false)}
                 onSuccess={baseImagesRequest.refetch}
             />
+            {baseImageToDelete && (
+                <ConfirmationModal
+                    title="Delete base image?"
+                    ariaLabel="Confirm delete base image"
+                    confirmText="Delete"
+                    isLoading={deleteBaseImageMutation.isLoading}
+                    isOpen={baseImageToDelete !== null}
+                    onConfirm={onConfirmDelete}
+                    onCancel={onCancelDelete}
+                >
+                    <Flex
+                        direction={{ default: 'column' }}
+                        spaceItems={{ default: 'spaceItemsMd' }}
+                    >
+                        {deleteBaseImageMutation.isError && (
+                            <Alert
+                                variant="danger"
+                                isInline
+                                title="Error removing base image"
+                                component="p"
+                            >
+                                {getAxiosErrorMessage(deleteBaseImageMutation.error)}
+                            </Alert>
+                        )}{' '}
+                        <span>
+                            Are you sure you want to delete the base image{' '}
+                            <strong>
+                                {baseImageToDelete.baseImageRepoPath}:
+                                {baseImageToDelete.baseImageTagPattern}
+                            </strong>
+                            ?
+                        </span>
+                    </Flex>
+                </ConfirmationModal>
+            )}
         </>
     );
 }

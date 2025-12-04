@@ -32,8 +32,8 @@ function BaseImagesTable({
         <Table>
             <Thead>
                 <Tr>
-                    <Th>Repository Path</Th>
-                    <Th>Tag Pattern</Th>
+                    <Th>Base image path</Th>
+                    <Th>Added by</Th>
                     <Th width={10}>Actions</Th>
                 </Tr>
             </Thead>
@@ -44,10 +44,11 @@ function BaseImagesTable({
                     <Tbody>
                         {data.map((baseImage) => (
                             <Tr key={baseImage.id}>
-                                <Td>{baseImage.baseImageRepoPath}</Td>
-                                <Td>{baseImage.baseImageTagPattern}</Td>
                                 <Td>
-                                    {/* TODO: Add modal confirmation before removing */}
+                                    {baseImage.baseImageRepoPath}:{baseImage.baseImageTagPattern}
+                                </Td>
+                                <Td>{baseImage.user.name}</Td>
+                                <Td>
                                     <Button
                                         variant="secondary"
                                         isDanger
