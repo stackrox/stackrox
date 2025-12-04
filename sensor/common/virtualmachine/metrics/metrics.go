@@ -53,12 +53,14 @@ var VirtualMachineIndexReportHandlingDurationMilliseconds = prometheus.NewHistog
 
 // IndexReportProcessingDuration label values.
 const (
-	// IndexReportProcessingOutcomeSuccess marks processing flows that successfully send to Central.
-	IndexReportProcessingOutcomeSuccess = "success"
-	// IndexReportProcessingOutcomeNilReport marks flows that exit because the report was nil.
-	IndexReportProcessingOutcomeNilReport = "nil_report"
-	// IndexReportProcessingOutcomeBuildError marks flows that exit because the message could not be constructed.
-	IndexReportProcessingOutcomeBuildError = "build_error"
+	// IndexReportHandlingMessageToCentralSuccess marks processing flows that successfully send to Central.
+	IndexReportHandlingMessageToCentralSuccess = "success"
+	// IndexReportHandlingMessageToCentralNilReport marks flows that exit because the report was nil.
+	IndexReportHandlingMessageToCentralNilReport = "nil_report"
+	// IndexReportHandlingMessageToCentralInvalidCID marks flows that exit because the message could not be constructed due to an invalid vsock CID.
+	IndexReportHandlingMessageToCentralInvalidCID = "invalid_vsock_cid"
+	// IndexReportHandlingMessageToCentralVMUnknown marks flows that exit because the virtual machine is not known to Sensor.
+	IndexReportHandlingMessageToCentralVMUnknown = "vm_unknown_to_sensor"
 )
 
 // IndexReportProcessingDurationMilliseconds tracks how long Sensor spends processing index reports after dequeuing them.
@@ -80,16 +82,23 @@ const (
 	IndexReportEnqueueOutcomeCanceled = "context_canceled"
 )
 
+// IndexReportEnqueueMode label values for blocking vs non-blocking paths.
+const (
+	IndexReportEnqueueModeNonBlocking = "non_blocking"
+	IndexReportEnqueueModeBlocking    = "blocking"
+)
+
 // IndexReportEnqueueDurationMilliseconds measures how long Send spent waiting to enqueue reports.
 var IndexReportEnqueueDurationMilliseconds = prometheus.NewHistogramVec(
 	prometheus.HistogramOpts{
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.SensorSubsystem.String(),
 		Name:      "virtual_machine_index_report_enqueue_duration_milliseconds",
-		Help:      "Time spent (in ms) by Sensor while waiting to enqueue virtual machine index reports onto the indexReports channel",
-		Buckets:   prometheus.ExponentialBuckets(0.5, 2, 13), // 0.5ms to ~4s
+		Help: "Time spent (in ms) by Sensor while waiting to enqueue virtual machine index reports onto the indexReports channel. " +
+			"Mode indicates whether the initial enqueue attempt was blocking (channel full) or non-blocking (channel has space).",
+		Buckets: prometheus.ExponentialBuckets(0.5, 2, 13), // 0.5ms to ~4s
 	},
-	[]string{"outcome"},
+	[]string{"outcome", "mode"},
 )
 
 // IndexReportEnqueueBlockedTotal counts how often the enqueue channel was full.
