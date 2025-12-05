@@ -161,20 +161,42 @@ func (m *managerImpl) Gather() phonehome.GatherFunc {
 
 // UpdateDeclarativeConfigContents will take the file contents and transform these to declarative configurations.
 func (m *managerImpl) UpdateDeclarativeConfigContents(handlerID string, contents [][]byte) {
-	// Operate the whole function under a single lock.
-	// This is due to the nature of the function being called from multiple go routines, and the possibility currently
-	// being there that two concurrent calls to Update lead to transformed configurations being potentially overwritten.
-	m.transformedMessagesMutex.Lock()
-	defer m.transformedMessagesMutex.Unlock()
+	// IMPORTANT: Do NOT hold mutex while waiting for database resources.
+	// With a single DB connection, holding mutex while waiting for the connection causes timeouts:
+	// - Thread A: Holds mutex → waits for DB connection (blocked)
+	// - Thread B: Holds DB connection → waits for mutex (blocked)
+	// Solution: Acquire mutex ONLY for updating the in-memory map, not during DB operations.
+
+	// Start transaction WITHOUT holding mutex to avoid blocking on single DB connection
+	ctx, tx, err := m.declarativeConfigHealthDS.Begin(m.reconciliationCtx)
+	if err != nil {
+		log.Errorf("Failed to begin transaction for declarative config update: %v", err)
+		return
+	}
+
+	// Track if we need to rollback
+	var txErr error
+	defer func() {
+		if txErr != nil && tx != nil {
+			if rollbackErr := tx.Rollback(ctx); rollbackErr != nil {
+				log.Errorf("Failed to rollback transaction: %v", rollbackErr)
+			}
+		}
+	}()
+
 	configurations, err := declarativeconfig.ConfigurationFromRawBytes(contents...)
 	if err != nil {
-		m.updateDeclarativeConfigHealth(declarativeConfigUtils.HealthStatusForHandler(handlerID, err))
+		txErr = err
+		m.updateDeclarativeConfigHealthWithContext(ctx, declarativeConfigUtils.HealthStatusForHandler(handlerID, err))
 		log.Debugf("Error during unmarshalling of declarative configuration files: %+v", err)
 		return
 	}
 
 	transformedConfigurations := make(map[reflect.Type][]protocompat.Message, len(configurations))
 	var transformationErrors *multierror.Error
+	// Collect all health statuses to register in batch (reduces DB round-trips from N to 1-2)
+	var healthStatusesToRegister []*storage.DeclarativeConfigHealth
+
 	for _, configuration := range configurations {
 		transformedConfig, err := m.universalTransformer.Transform(configuration)
 		if err != nil {
@@ -184,14 +206,35 @@ func (m *managerImpl) UpdateDeclarativeConfigContents(handlerID string, contents
 		}
 		for protoType, protoMessages := range transformedConfig {
 			transformedConfigurations[protoType] = append(transformedConfigurations[protoType], protoMessages...)
-			// Register health status for all new messages. Existing messages will not be re-registered.
-			m.registerHealthForMessages(handlerID, protoMessages...)
+			// Collect health statuses for batch registration (instead of registering one-by-one)
+			for _, message := range protoMessages {
+				health := declarativeConfigUtils.HealthStatusForProtoMessage(message, handlerID, nil, m.idExtractor, m.nameExtractor)
+				healthStatusesToRegister = append(healthStatusesToRegister, health)
+			}
 		}
 	}
-	m.updateDeclarativeConfigHealth(declarativeConfigUtils.HealthStatusForHandler(handlerID,
+	m.updateDeclarativeConfigHealthWithContext(ctx, declarativeConfigUtils.HealthStatusForHandler(handlerID,
 		errors.Wrap(transformationErrors.ErrorOrNil(), "during transforming configuration")))
 
+	// Batch register all collected health statuses (1-2 DB calls instead of N)
+	m.batchRegisterHealthStatusesWithContext(ctx, healthStatusesToRegister)
+
+	// Acquire mutex ONLY to update the in-memory map, then release immediately.
+	// This minimal lock scope prevents holding the mutex while doing DB operations,
+	// which would cause timeouts with a single DB connection.
+	m.transformedMessagesMutex.Lock()
 	m.transformedMessagesByHandler[handlerID] = transformedConfigurations
+	m.transformedMessagesMutex.Unlock()
+
+	// Commit the transaction (skip if tx is nil, e.g., in tests)
+	if tx != nil {
+		if err := tx.Commit(ctx); err != nil {
+			txErr = err
+			log.Errorf("Failed to commit transaction for declarative config update: %v", err)
+			return
+		}
+	}
+
 	m.shortCircuitReconciliationLoop()
 }
 
@@ -337,13 +380,6 @@ func (m *managerImpl) updateHealthForMessage(handler string, message protocompat
 	}
 }
 
-func (m *managerImpl) registerHealthForMessages(handler string, messages ...protocompat.Message) {
-	for _, message := range messages {
-		health := declarativeConfigUtils.HealthStatusForProtoMessage(message, handler, nil, m.idExtractor, m.nameExtractor)
-		m.registerDeclarativeConfigHealth(health)
-	}
-}
-
 // removeStaleHealthStatuses is expected to run after reconciliation has deleted declarative proto messages.
 // It deletes health status entries for deleted proto messages, as well as entries for which the first creation
 // of a resource failed.
@@ -415,13 +451,21 @@ func (m *managerImpl) calculateHashAndIndicateChanges(transformedMessagesByHandl
 }
 
 func (m *managerImpl) updateDeclarativeConfigHealth(healthStatus *storage.DeclarativeConfigHealth) {
-	if err := m.declarativeConfigHealthDS.UpsertDeclarativeConfig(m.reconciliationCtx, healthStatus); err != nil {
+	m.updateDeclarativeConfigHealthWithContext(m.reconciliationCtx, healthStatus)
+}
+
+func (m *managerImpl) updateDeclarativeConfigHealthWithContext(ctx context.Context, healthStatus *storage.DeclarativeConfigHealth) {
+	if err := m.declarativeConfigHealthDS.UpsertDeclarativeConfig(ctx, healthStatus); err != nil {
 		log.Errorf("Could not upsert declarative config health %q: %v", healthStatus.GetId(), err)
 	}
 }
 
 func (m *managerImpl) registerDeclarativeConfigHealth(healthStatus *storage.DeclarativeConfigHealth) {
-	_, exists, err := m.declarativeConfigHealthDS.GetDeclarativeConfig(m.reconciliationCtx,
+	m.registerDeclarativeConfigHealthWithContext(m.reconciliationCtx, healthStatus)
+}
+
+func (m *managerImpl) registerDeclarativeConfigHealthWithContext(ctx context.Context, healthStatus *storage.DeclarativeConfigHealth) {
+	_, exists, err := m.declarativeConfigHealthDS.GetDeclarativeConfig(ctx,
 		healthStatus.GetId())
 	// No-op. We do not want to upsert existing health status, as this might override the status and error messages.
 	if exists {
@@ -433,5 +477,50 @@ func (m *managerImpl) registerDeclarativeConfigHealth(healthStatus *storage.Decl
 	}
 
 	// Irrespective if we received an error to retrieve the health status, attempt to upsert it.
-	m.updateDeclarativeConfigHealth(healthStatus)
+	m.updateDeclarativeConfigHealthWithContext(ctx, healthStatus)
+}
+
+// batchRegisterHealthStatusesWithContext registers multiple health statuses efficiently by batching DB operations.
+// This reduces the number of DB round-trips from 2N (N gets + N upserts) to just 2 calls total (1 bulk get + 1 bulk upsert).
+// This is critical when running with a single DB connection to avoid holding the connection for too long.
+func (m *managerImpl) batchRegisterHealthStatusesWithContext(ctx context.Context, healthStatuses []*storage.DeclarativeConfigHealth) {
+	if len(healthStatuses) == 0 {
+		return
+	}
+
+	// Build a set of IDs we want to register
+	healthIDsToRegister := set.NewStringSet()
+	healthByID := make(map[string]*storage.DeclarativeConfigHealth, len(healthStatuses))
+	for _, health := range healthStatuses {
+		healthIDsToRegister.Add(health.GetId())
+		healthByID[health.GetId()] = health
+	}
+
+	// Bulk check which ones already exist (1 DB call instead of N)
+	existingHealths, err := m.declarativeConfigHealthDS.GetDeclarativeConfigs(ctx)
+	if err != nil {
+		log.Errorf("Failed to retrieve existing declarative config healths for batch registration: %v", err)
+		// Continue anyway and try to register - individual upserts will handle duplicates
+	} else {
+		// Remove IDs that already exist - we don't want to override them
+		for _, existingHealth := range existingHealths {
+			if healthIDsToRegister.Contains(existingHealth.GetId()) {
+				healthIDsToRegister.Remove(existingHealth.GetId())
+			}
+		}
+	}
+
+	// Batch upsert all new health statuses (1 DB call instead of N)
+	var healthsToUpsert []*storage.DeclarativeConfigHealth
+	for healthID := range healthIDsToRegister {
+		if health, ok := healthByID[healthID]; ok {
+			healthsToUpsert = append(healthsToUpsert, health)
+		}
+	}
+
+	if len(healthsToUpsert) > 0 {
+		if err := m.declarativeConfigHealthDS.UpsertDeclarativeConfigs(ctx, healthsToUpsert); err != nil {
+			log.Errorf("Failed to batch upsert declarative config healths: %v", err)
+		}
+	}
 }

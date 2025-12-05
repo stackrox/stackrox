@@ -82,7 +82,7 @@ func NewManager(registry *standards.Registry, profiles profileDatastore.DataStor
 	}
 	// Postgres retries in addProfileNoLock(...)
 	err := profiles.Walk(allAccessCtx, func(profile *storage.ComplianceOperatorProfile) error {
-		return mgr.addProfileNoLock(profile)
+		return mgr.addProfileNoLock(allAccessCtx, profile)
 	})
 	if err != nil {
 		return nil, err
@@ -159,30 +159,49 @@ func (m *managerImpl) registerCheckFromRule(standardID string, productType pkgFr
 }
 
 func (m *managerImpl) AddProfile(profile *storage.ComplianceOperatorProfile) error {
-	if err := m.profiles.Upsert(allAccessCtx, profile); err != nil {
+	// IMPORTANT: Acquire DB transaction FIRST, then mutex to prevent deadlock with single DB connection.
+	// With ROX_POSTGRES_MAX_CONNS=1:
+	// - Transaction reserves the DB connection
+	// - Mutex acquisition is safe (we already have the connection)
+	// - No deadlock: we never wait for DB conn while holding mutex
+	ctx, tx, err := m.profiles.Begin(allAccessCtx)
+	if err != nil {
 		return err
 	}
+	defer func() {
+		if err != nil && tx != nil {
+			_ = tx.Rollback(ctx)
+		}
+	}()
 
 	m.registryLock.Lock()
 	defer m.registryLock.Unlock()
 
-	return m.addProfileNoLock(profile)
+	if err = m.profiles.Upsert(ctx, profile); err != nil {
+		return err
+	}
+
+	if err = m.addProfileNoLock(ctx, profile); err != nil {
+		return err
+	}
+
+	return tx.Commit(ctx)
 }
 
-func (m *managerImpl) addProfileNoLock(profile *storage.ComplianceOperatorProfile) error {
+func (m *managerImpl) addProfileNoLock(ctx context.Context, profile *storage.ComplianceOperatorProfile) error {
 	var existingProfiles []*storage.ComplianceOperatorProfile
 	walkFn := func() error {
 		existingProfiles = []*storage.ComplianceOperatorProfile{
 			profile,
 		}
-		return m.profiles.Walk(allAccessCtx, func(existingProfile *storage.ComplianceOperatorProfile) error {
+		return m.profiles.Walk(ctx, func(existingProfile *storage.ComplianceOperatorProfile) error {
 			if existingProfile.GetClusterId() != profile.GetClusterId() && existingProfile.GetName() == profile.GetName() {
 				existingProfiles = append(existingProfiles, existingProfile)
 			}
 			return nil
 		})
 	}
-	if err := pgutils.RetryIfPostgres(context.Background(), walkFn); err != nil {
+	if err := pgutils.RetryIfPostgres(ctx, walkFn); err != nil {
 		return err
 	}
 
@@ -260,24 +279,41 @@ func (m *managerImpl) addProfileNoLock(profile *storage.ComplianceOperatorProfil
 }
 
 func (m *managerImpl) DeleteProfile(deletedProfile *storage.ComplianceOperatorProfile) error {
-	if err := m.profiles.Delete(allAccessCtx, deletedProfile.GetId()); err != nil {
+	// IMPORTANT: Acquire DB transaction FIRST, then mutex to prevent deadlock with single DB connection.
+	// With ROX_POSTGRES_MAX_CONNS=1:
+	// - Transaction reserves the DB connection
+	// - Mutex acquisition is safe (we already have the connection)
+	// - No deadlock: we never wait for DB conn while holding mutex
+	ctx, tx, err := m.profiles.Begin(allAccessCtx)
+	if err != nil {
+		return err
+	}
+	defer func() {
+		if err != nil && tx != nil {
+			_ = tx.Rollback(ctx)
+		}
+	}()
+
+	m.registryLock.Lock()
+	defer m.registryLock.Unlock()
+
+	if err = m.profiles.Delete(ctx, deletedProfile.GetId()); err != nil {
 		return err
 	}
 
 	// ClearAggregationResults when removing a profile as we need to remove cached references
 	// to standards that will not be filtered out on the next aggregation call
-	if err := m.compliance.ClearAggregationResults(allAccessCtx); err != nil {
+	// Note: This uses allAccessCtx (not ctx) because it's a separate datastore without shared transaction
+	if err = m.compliance.ClearAggregationResults(allAccessCtx); err != nil {
 		return err
 	}
 
 	// Deleting a profile is fairly involved because it involves making sure that the profile name is not referenced
 	// anywhere else as standards are indexed by name-based IDs
-	m.registryLock.Lock()
-	defer m.registryLock.Unlock()
 
 	var found bool
 	rulesFound := set.NewStringSet()
-	err := m.profiles.Walk(allAccessCtx, func(profile *storage.ComplianceOperatorProfile) error {
+	err = m.profiles.Walk(ctx, func(profile *storage.ComplianceOperatorProfile) error {
 		if deletedProfile.GetId() != profile.GetId() && deletedProfile.GetName() == profile.GetName() {
 			found = true
 			for _, rule := range profile.GetRules() {
@@ -290,7 +326,7 @@ func (m *managerImpl) DeleteProfile(deletedProfile *storage.ComplianceOperatorPr
 		return err
 	}
 	if !found {
-		if err := m.registry.DeleteStandard(deletedProfile.GetName()); err != nil {
+		if err = m.registry.DeleteStandard(deletedProfile.GetName()); err != nil {
 			return err
 		}
 	}
@@ -303,12 +339,13 @@ func (m *managerImpl) DeleteProfile(deletedProfile *storage.ComplianceOperatorPr
 			if rule == nil {
 				continue
 			}
-			if err := m.registry.DeleteControl(standards.BuildQualifiedID(deletedProfile.GetName(), getRuleName(rule))); err != nil {
+			if err = m.registry.DeleteControl(standards.BuildQualifiedID(deletedProfile.GetName(), getRuleName(rule))); err != nil {
 				return err
 			}
 		}
 	}
-	return nil
+
+	return tx.Commit(ctx)
 }
 
 func (m *managerImpl) AddScan(scan *storage.ComplianceOperatorScan) error {
@@ -441,11 +478,11 @@ func (m *managerImpl) GetMachineConfigs(clusterID string) (map[string][]string, 
 	return profilesToScan, nil
 }
 
-func (m *managerImpl) findProfilesWithRuleNoLock(ruleName string) ([]*storage.ComplianceOperatorProfile, error) {
+func (m *managerImpl) findProfilesWithRuleNoLock(ctx context.Context, ruleName string) ([]*storage.ComplianceOperatorProfile, error) {
 	var profiles []*storage.ComplianceOperatorProfile
 	walkFn := func() error {
 		profiles = profiles[:0]
-		return m.profiles.Walk(allAccessCtx, func(profile *storage.ComplianceOperatorProfile) error {
+		return m.profiles.Walk(ctx, func(profile *storage.ComplianceOperatorProfile) error {
 			for _, rule := range profile.GetRules() {
 				if rule.GetName() == ruleName {
 					profiles = append(profiles, profile)
@@ -455,14 +492,14 @@ func (m *managerImpl) findProfilesWithRuleNoLock(ruleName string) ([]*storage.Co
 			return nil
 		})
 	}
-	if err := pgutils.RetryIfPostgres(context.Background(), walkFn); err != nil {
+	if err := pgutils.RetryIfPostgres(ctx, walkFn); err != nil {
 		return nil, err
 	}
 	return profiles, nil
 }
 
-func (m *managerImpl) reindexProfilesWithRuleNoLock(rule *storage.ComplianceOperatorRule) error {
-	profiles, err := m.findProfilesWithRuleNoLock(rule.GetName())
+func (m *managerImpl) reindexProfilesWithRuleNoLock(ctx context.Context, rule *storage.ComplianceOperatorRule) error {
+	profiles, err := m.findProfilesWithRuleNoLock(ctx, rule.GetName())
 	if err != nil {
 		return err
 	}
@@ -470,7 +507,7 @@ func (m *managerImpl) reindexProfilesWithRuleNoLock(rule *storage.ComplianceOper
 	alreadyUpdated := set.NewStringSet()
 	for _, profile := range profiles {
 		if alreadyUpdated.Add(profile.GetName()) {
-			if err := m.addProfileNoLock(profile); err != nil {
+			if err := m.addProfileNoLock(ctx, profile); err != nil {
 				log.Errorf("error updating profile %s: %v", profile.GetName(), err)
 			}
 		}
@@ -479,32 +516,69 @@ func (m *managerImpl) reindexProfilesWithRuleNoLock(rule *storage.ComplianceOper
 }
 
 func (m *managerImpl) AddRule(rule *storage.ComplianceOperatorRule) error {
-	exists, err := m.rules.ExistsByName(allAccessCtx, rule.GetName())
+	// IMPORTANT: Acquire DB transaction FIRST, then mutex to prevent deadlock with single DB connection.
+	// With ROX_POSTGRES_MAX_CONNS=1:
+	// - Transaction reserves the DB connection
+	// - Mutex acquisition is safe (we already have the connection)
+	// - No deadlock: we never wait for DB conn while holding mutex
+	ctx, tx, err := m.rules.Begin(allAccessCtx)
+	if err != nil {
+		return err
+	}
+	defer func() {
+		if err != nil && tx != nil {
+			_ = tx.Rollback(ctx)
+		}
+	}()
+
+	m.registryLock.Lock()
+	defer m.registryLock.Unlock()
+
+	exists, err := m.rules.ExistsByName(ctx, rule.GetName())
 	if err != nil {
 		return err
 	}
 
-	if err := m.rules.Upsert(allAccessCtx, rule); err != nil {
+	if err = m.rules.Upsert(ctx, rule); err != nil {
 		return err
 	}
+
 	// No need to reindex if the rule already exists
-	if exists {
-		return nil
+	if !exists {
+		if err = m.reindexProfilesWithRuleNoLock(ctx, rule); err != nil {
+			return err
+		}
 	}
 
-	m.registryLock.Lock()
-	defer m.registryLock.Unlock()
-
-	return m.reindexProfilesWithRuleNoLock(rule)
+	return tx.Commit(ctx)
 }
 
 func (m *managerImpl) DeleteRule(rule *storage.ComplianceOperatorRule) error {
-	if err := m.rules.Delete(allAccessCtx, rule.GetId()); err != nil {
+	// IMPORTANT: Acquire DB transaction FIRST, then mutex to prevent deadlock with single DB connection.
+	// With ROX_POSTGRES_MAX_CONNS=1:
+	// - Transaction reserves the DB connection
+	// - Mutex acquisition is safe (we already have the connection)
+	// - No deadlock: we never wait for DB conn while holding mutex
+	ctx, tx, err := m.rules.Begin(allAccessCtx)
+	if err != nil {
 		return err
 	}
+	defer func() {
+		if err != nil && tx != nil {
+			_ = tx.Rollback(ctx)
+		}
+	}()
 
 	m.registryLock.Lock()
 	defer m.registryLock.Unlock()
 
-	return m.reindexProfilesWithRuleNoLock(rule)
+	if err = m.rules.Delete(ctx, rule.GetId()); err != nil {
+		return err
+	}
+
+	if err = m.reindexProfilesWithRuleNoLock(ctx, rule); err != nil {
+		return err
+	}
+
+	return tx.Commit(ctx)
 }
