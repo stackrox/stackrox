@@ -34,7 +34,7 @@ jobs:
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
       - name: Set up Go 1.24
-        uses: actions/setup-go@v5
+        uses: actions/setup-go@v6
         with:
           go-version: "1.24"
       - name: Cache go module
@@ -51,14 +51,14 @@ jobs:
           username: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
           password: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
       - name: Checkout stackrox/acs-fleet-manager repository
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           repository: stackrox/acs-fleet-manager
           path: acs-fleet-manager
           ref: main
           fetch-depth: 0
       - name: Checkout stackrox/stackrox repository
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           repository: stackrox/stackrox
           ref: ${{ github.event.pull_request.head.sha }}
@@ -76,7 +76,7 @@ jobs:
           IMG_WAIT_TIMEOUT_SECONDS: 2100
         run: acs-fleet-manager/scripts/ci/central_compatibility/entrypoint.sh
       - name: Upload logs
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         if: failure()
         with:
           name: logs-directory-${{ github.sha }}
