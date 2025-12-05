@@ -779,7 +779,7 @@ func (s *alertDatastoreSACTestSuite) TestAlertUnrestrictedListAlerts() {
 	}
 }
 
-func countSearchRawAlertsResultsPerClusterAndNamespace(results []*storage.Alert) map[string]map[string]int {
+func (s *alertDatastoreSACTestSuite) countSearchRawAlertsResultsPerClusterAndNamespace(results []*storage.Alert) map[string]map[string]int {
 	resultDistribution := make(map[string]map[string]int, 0)
 	for _, result := range results {
 		var clusterID string
@@ -799,6 +799,7 @@ func countSearchRawAlertsResultsPerClusterAndNamespace(results []*storage.Alert)
 			// Node alerts are cluster-scoped, use top-level fields
 			clusterID = result.GetClusterId()
 			namespace = result.GetNamespace() // Should be empty for node alerts
+			s.Empty(namespace)
 		}
 		if _, clusterIDExists := resultDistribution[clusterID]; !clusterIDExists {
 			resultDistribution[clusterID] = make(map[string]int, 0)
@@ -815,7 +816,7 @@ func (s *alertDatastoreSACTestSuite) runSearchRawAlertsTest(testparams alertSACS
 	ctx := s.testContexts[testparams.scopeKey]
 	searchResults, err := s.datastore.SearchRawAlerts(ctx, nil, true)
 	s.NoError(err)
-	resultsDistribution := countSearchRawAlertsResultsPerClusterAndNamespace(searchResults)
+	resultsDistribution := s.countSearchRawAlertsResultsPerClusterAndNamespace(searchResults)
 	testutils.ValidateSACSearchResultDistribution(&s.Suite, testparams.resultCounts, resultsDistribution)
 }
 
