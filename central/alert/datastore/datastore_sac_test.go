@@ -506,13 +506,17 @@ var alertScopedSACSearchTestCases = map[string]alertSACSearchResult{
 			},
 		},
 	},
-	"Cluster3 read-write access should see no alert": {
+	"Cluster3 read-write access should see node alert": {
 		scopeKey: testutils.Cluster3ReadWriteCtx,
 		resultCounts: map[string]map[string]int{
 			testconsts.Cluster3: {
 				"": 1, // One node alert in Cluster3
 			},
 		},
+	},
+	"Cluster4 read-write access should see no alert": {
+		scopeKey: testutils.Cluster4ReadWriteCtx,
+		resultCounts: map[string]map[string]int{},
 	},
 }
 
