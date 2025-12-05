@@ -19,17 +19,56 @@
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 1,
-  "id": null,
+  "id": 9,
   "links": [],
   "liveNow": false,
   "panels": [
+    {
+      "collapsed": true,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 0
+      },
+      "id": 106,
+      "panels": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "gridPos": {
+            "h": 16,
+            "w": 24,
+            "x": 0,
+            "y": 1
+          },
+          "id": 107,
+          "options": {
+            "code": {
+              "language": "plaintext",
+              "showLineNumbers": false,
+              "showMiniMap": false
+            },
+            "content": "```\n# How VM Index Report Processing Works in Sensor\n\n                                    Fake Workloads (scale testing)\n                                              │\n                                              ▼\n┌───────┐        ┌────────────────┐      ┌─────────────────────────────┐      ┌─────────┐      ┌────────────┐\n│ Relay │──GRPC──▶ Sensor Service │──────▶ handlerImpl.indexReports    │──────▶ Process │──────▶ to Central │\n└───────┘        └────────────────┘      │     (buffered channel)      │      └────┬────┘      └────────────┘\n                                         └─────────────────────────────┘           │\n                                                       ▲                           │\n                                                       │                           ▼\n                                                 capacity limit           ┌──────────────────┐\n                                                (blocks if full)          │ Check in-memory  │\n                                                                          │ store if VM is   │\n                                                                          │ known to Sensor  │\n                                                                          └────────┬─────────┘\n                                                                                   │\n                                                                    ┌──────────────┴──────────────┐\n                                                                    ▼                             ▼\n                                                              VM is known                  VM is unknown\n                                                            (outcome=success)         (outcome=vm_unknown_to_sensor)\n                                                                    │                             │\n                                                                    ▼                             ▼\n                                                            Transform & send              Report is dropped\n                                                              to Central\n```\n",
+            "mode": "markdown"
+          },
+          "pluginVersion": "10.4.17",
+          "title": "How this part of Sensor works",
+          "type": "text"
+        }
+      ],
+      "title": "Architectural intro",
+      "type": "row"
+    },
     {
       "collapsed": false,
       "gridPos": {
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 0
+        "y": 1
       },
       "id": 100,
       "panels": [],
@@ -65,7 +104,7 @@
         "h": 4,
         "w": 6,
         "x": 0,
-        "y": 1
+        "y": 2
       },
       "id": 1,
       "options": {
@@ -74,13 +113,17 @@
         "justifyMode": "auto",
         "orientation": "auto",
         "reduceOptions": {
-          "calcs": ["lastNotNull"],
+          "calcs": [
+            "lastNotNull"
+          ],
           "fields": "",
           "values": false
         },
-        "textMode": "auto"
+        "showPercentChange": false,
+        "textMode": "auto",
+        "wideLayout": true
       },
-      "pluginVersion": "10.0.0",
+      "pluginVersion": "10.4.17",
       "targets": [
         {
           "datasource": {
@@ -94,7 +137,7 @@
           "refId": "A"
         }
       ],
-      "title": "✅ Reports Sent (Success)",
+      "title": "✅ Reports Sent to Central (Success)",
       "type": "stat"
     },
     {
@@ -126,7 +169,7 @@
         "h": 4,
         "w": 6,
         "x": 6,
-        "y": 1
+        "y": 2
       },
       "id": 2,
       "options": {
@@ -135,13 +178,17 @@
         "justifyMode": "auto",
         "orientation": "auto",
         "reduceOptions": {
-          "calcs": ["lastNotNull"],
+          "calcs": [
+            "lastNotNull"
+          ],
           "fields": "",
           "values": false
         },
-        "textMode": "auto"
+        "showPercentChange": false,
+        "textMode": "auto",
+        "wideLayout": true
       },
-      "pluginVersion": "10.0.0",
+      "pluginVersion": "10.4.17",
       "targets": [
         {
           "datasource": {
@@ -155,7 +202,7 @@
           "refId": "A"
         }
       ],
-      "title": "📥 Reports Received",
+      "title": "📥 Reports Received from Relay",
       "type": "stat"
     },
     {
@@ -199,7 +246,7 @@
         "h": 4,
         "w": 6,
         "x": 12,
-        "y": 1
+        "y": 2
       },
       "id": 3,
       "options": {
@@ -208,13 +255,17 @@
         "justifyMode": "auto",
         "orientation": "auto",
         "reduceOptions": {
-          "calcs": ["lastNotNull"],
+          "calcs": [
+            "lastNotNull"
+          ],
           "fields": "",
           "values": false
         },
-        "textMode": "auto"
+        "showPercentChange": false,
+        "textMode": "auto",
+        "wideLayout": true
       },
-      "pluginVersion": "10.0.0",
+      "pluginVersion": "10.4.17",
       "targets": [
         {
           "datasource": {
@@ -260,7 +311,7 @@
         "h": 4,
         "w": 6,
         "x": 18,
-        "y": 1
+        "y": 2
       },
       "id": 4,
       "options": {
@@ -269,13 +320,17 @@
         "justifyMode": "auto",
         "orientation": "auto",
         "reduceOptions": {
-          "calcs": ["lastNotNull"],
+          "calcs": [
+            "lastNotNull"
+          ],
           "fields": "",
           "values": false
         },
-        "textMode": "auto"
+        "showPercentChange": false,
+        "textMode": "auto",
+        "wideLayout": true
       },
-      "pluginVersion": "10.0.0",
+      "pluginVersion": "10.4.17",
       "targets": [
         {
           "datasource": {
@@ -289,7 +344,7 @@
           "refId": "A"
         }
       ],
-      "title": "🔄 Total Processed",
+      "title": "🔄 Total Processed Index Reports",
       "type": "stat"
     },
     {
@@ -298,7 +353,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 5
+        "y": 6
       },
       "id": 101,
       "panels": [],
@@ -317,6 +372,7 @@
             "mode": "palette-classic"
           },
           "custom": {
+            "axisBorderShow": false,
             "axisCenteredZero": false,
             "axisColorMode": "text",
             "axisLabel": "Reports/sec",
@@ -330,6 +386,7 @@
               "tooltip": false,
               "viz": false
             },
+            "insertNulls": false,
             "lineInterpolation": "smooth",
             "lineWidth": 2,
             "pointSize": 5,
@@ -364,12 +421,15 @@
         "h": 8,
         "w": 12,
         "x": 0,
-        "y": 6
+        "y": 7
       },
       "id": 5,
       "options": {
         "legend": {
-          "calcs": ["mean", "max"],
+          "calcs": [
+            "mean",
+            "max"
+          ],
           "displayMode": "table",
           "placement": "bottom",
           "showLegend": true
@@ -393,7 +453,7 @@
           "refId": "A"
         }
       ],
-      "title": "📤 Reports Sent Rate",
+      "title": "📤 Reports Sent to Central Rate",
       "type": "timeseries"
     },
     {
@@ -408,6 +468,7 @@
             "mode": "palette-classic"
           },
           "custom": {
+            "axisBorderShow": false,
             "axisCenteredZero": false,
             "axisColorMode": "text",
             "axisLabel": "Reports/sec",
@@ -421,6 +482,7 @@
               "tooltip": false,
               "viz": false
             },
+            "insertNulls": false,
             "lineInterpolation": "smooth",
             "lineWidth": 2,
             "pointSize": 5,
@@ -486,12 +548,15 @@
         "h": 8,
         "w": 12,
         "x": 12,
-        "y": 6
+        "y": 7
       },
       "id": 6,
       "options": {
         "legend": {
-          "calcs": ["mean", "max"],
+          "calcs": [
+            "mean",
+            "max"
+          ],
           "displayMode": "table",
           "placement": "bottom",
           "showLegend": true
@@ -524,7 +589,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 14
+        "y": 15
       },
       "id": 102,
       "panels": [],
@@ -589,20 +654,28 @@
         "h": 8,
         "w": 8,
         "x": 0,
-        "y": 15
+        "y": 16
       },
       "id": 7,
       "options": {
-        "displayLabels": ["name", "percent"],
+        "displayLabels": [
+          "name",
+          "percent"
+        ],
         "legend": {
           "displayMode": "table",
           "placement": "right",
           "showLegend": true,
-          "values": ["value", "percent"]
+          "values": [
+            "value",
+            "percent"
+          ]
         },
         "pieType": "donut",
         "reduceOptions": {
-          "calcs": ["lastNotNull"],
+          "calcs": [
+            "lastNotNull"
+          ],
           "fields": "",
           "values": false
         },
@@ -731,20 +804,28 @@
         "h": 8,
         "w": 8,
         "x": 8,
-        "y": 15
+        "y": 16
       },
       "id": 8,
       "options": {
-        "displayLabels": ["name", "percent"],
+        "displayLabels": [
+          "name",
+          "percent"
+        ],
         "legend": {
           "displayMode": "table",
           "placement": "right",
           "showLegend": true,
-          "values": ["value", "percent"]
+          "values": [
+            "value",
+            "percent"
+          ]
         },
         "pieType": "donut",
         "reduceOptions": {
-          "calcs": ["lastNotNull"],
+          "calcs": [
+            "lastNotNull"
+          ],
           "fields": "",
           "values": false
         },
@@ -887,20 +968,28 @@
         "h": 8,
         "w": 8,
         "x": 16,
-        "y": 15
+        "y": 16
       },
       "id": 9,
       "options": {
-        "displayLabels": ["name", "percent"],
+        "displayLabels": [
+          "name",
+          "percent"
+        ],
         "legend": {
           "displayMode": "table",
           "placement": "right",
           "showLegend": true,
-          "values": ["value", "percent"]
+          "values": [
+            "value",
+            "percent"
+          ]
         },
         "pieType": "donut",
         "reduceOptions": {
-          "calcs": ["lastNotNull"],
+          "calcs": [
+            "lastNotNull"
+          ],
           "fields": "",
           "values": false
         },
@@ -954,7 +1043,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 23
+        "y": 24
       },
       "id": 103,
       "panels": [],
@@ -973,6 +1062,7 @@
             "mode": "palette-classic"
           },
           "custom": {
+            "axisBorderShow": false,
             "axisCenteredZero": false,
             "axisColorMode": "text",
             "axisLabel": "Latency (ms)",
@@ -986,6 +1076,7 @@
               "tooltip": false,
               "viz": false
             },
+            "insertNulls": false,
             "lineInterpolation": "smooth",
             "lineWidth": 2,
             "pointSize": 5,
@@ -1081,12 +1172,15 @@
         "h": 8,
         "w": 12,
         "x": 0,
-        "y": 24
+        "y": 25
       },
       "id": 10,
       "options": {
         "legend": {
-          "calcs": ["mean", "max"],
+          "calcs": [
+            "mean",
+            "max"
+          ],
           "displayMode": "table",
           "placement": "bottom",
           "showLegend": true
@@ -1158,6 +1252,7 @@
             "mode": "palette-classic"
           },
           "custom": {
+            "axisBorderShow": false,
             "axisCenteredZero": false,
             "axisColorMode": "text",
             "axisLabel": "Latency (ms)",
@@ -1171,6 +1266,7 @@
               "tooltip": false,
               "viz": false
             },
+            "insertNulls": false,
             "lineInterpolation": "smooth",
             "lineWidth": 2,
             "pointSize": 5,
@@ -1266,12 +1362,15 @@
         "h": 8,
         "w": 12,
         "x": 12,
-        "y": 24
+        "y": 25
       },
       "id": 11,
       "options": {
         "legend": {
-          "calcs": ["mean", "max"],
+          "calcs": [
+            "mean",
+            "max"
+          ],
           "displayMode": "table",
           "placement": "bottom",
           "showLegend": true
@@ -1337,7 +1436,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 32
+        "y": 33
       },
       "id": 104,
       "panels": [],
@@ -1491,23 +1590,28 @@
         "h": 8,
         "w": 24,
         "x": 0,
-        "y": 33
+        "y": 34
       },
       "id": 12,
       "options": {
         "displayMode": "gradient",
+        "maxVizHeight": 300,
         "minVizHeight": 10,
         "minVizWidth": 0,
+        "namePlacement": "auto",
         "orientation": "horizontal",
         "reduceOptions": {
-          "calcs": ["lastNotNull"],
+          "calcs": [
+            "lastNotNull"
+          ],
           "fields": "",
           "values": false
         },
         "showUnfilled": true,
+        "sizing": "auto",
         "valueMode": "color"
       },
-      "pluginVersion": "10.0.0",
+      "pluginVersion": "10.4.17",
       "targets": [
         {
           "datasource": {
@@ -1596,7 +1700,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 41
+        "y": 42
       },
       "id": 105,
       "panels": [],
@@ -1644,7 +1748,7 @@
         "h": 5,
         "w": 6,
         "x": 0,
-        "y": 42
+        "y": 43
       },
       "id": 13,
       "options": {
@@ -1653,13 +1757,17 @@
         "justifyMode": "auto",
         "orientation": "auto",
         "reduceOptions": {
-          "calcs": ["lastNotNull"],
+          "calcs": [
+            "lastNotNull"
+          ],
           "fields": "",
           "values": false
         },
-        "textMode": "auto"
+        "showPercentChange": false,
+        "textMode": "auto",
+        "wideLayout": true
       },
-      "pluginVersion": "10.0.0",
+      "pluginVersion": "10.4.17",
       "targets": [
         {
           "datasource": {
@@ -1717,7 +1825,7 @@
         "h": 5,
         "w": 6,
         "x": 6,
-        "y": 42
+        "y": 43
       },
       "id": 14,
       "options": {
@@ -1726,13 +1834,17 @@
         "justifyMode": "auto",
         "orientation": "auto",
         "reduceOptions": {
-          "calcs": ["lastNotNull"],
+          "calcs": [
+            "lastNotNull"
+          ],
           "fields": "",
           "values": false
         },
-        "textMode": "auto"
+        "showPercentChange": false,
+        "textMode": "auto",
+        "wideLayout": true
       },
-      "pluginVersion": "10.0.0",
+      "pluginVersion": "10.4.17",
       "targets": [
         {
           "datasource": {
@@ -1792,20 +1904,25 @@
         "h": 5,
         "w": 6,
         "x": 12,
-        "y": 42
+        "y": 43
       },
       "id": 15,
       "options": {
+        "minVizHeight": 75,
+        "minVizWidth": 75,
         "orientation": "auto",
         "reduceOptions": {
-          "calcs": ["lastNotNull"],
+          "calcs": [
+            "lastNotNull"
+          ],
           "fields": "",
           "values": false
         },
         "showThresholdLabels": false,
-        "showThresholdMarkers": true
+        "showThresholdMarkers": true,
+        "sizing": "auto"
       },
-      "pluginVersion": "10.0.0",
+      "pluginVersion": "10.4.17",
       "targets": [
         {
           "datasource": {
@@ -1865,20 +1982,25 @@
         "h": 5,
         "w": 6,
         "x": 18,
-        "y": 42
+        "y": 43
       },
       "id": 16,
       "options": {
+        "minVizHeight": 75,
+        "minVizWidth": 75,
         "orientation": "auto",
         "reduceOptions": {
-          "calcs": ["lastNotNull"],
+          "calcs": [
+            "lastNotNull"
+          ],
           "fields": "",
           "values": false
         },
         "showThresholdLabels": false,
-        "showThresholdMarkers": true
+        "showThresholdMarkers": true,
+        "sizing": "auto"
       },
-      "pluginVersion": "10.0.0",
+      "pluginVersion": "10.4.17",
       "targets": [
         {
           "datasource": {
@@ -1897,7 +2019,7 @@
     }
   ],
   "refresh": "30s",
-  "schemaVersion": 38,
+  "schemaVersion": 39,
   "tags": [
     "stackrox",
     "sensor",
@@ -1910,7 +2032,7 @@
         "current": {
           "selected": false,
           "text": "Prometheus",
-          "value": "Prometheus"
+          "value": "PBFA97CFB590B2093"
         },
         "hide": 0,
         "includeAll": false,
@@ -1928,12 +2050,13 @@
     ]
   },
   "time": {
-    "from": "now-1h",
+    "from": "now-15m",
     "to": "now"
   },
   "timepicker": {},
   "timezone": "browser",
   "title": "VM Index Report - Sensor Metrics",
   "uid": "vm-index-report-sensor",
-  "version": 1
+  "version": 8,
+  "weekStart": ""
 }
