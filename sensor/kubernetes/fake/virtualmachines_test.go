@@ -62,6 +62,17 @@ func TestValidateVMWorkload(t *testing.T) {
 			expectLifecycleDefaulted: true,
 			expectUpdateIntervalDef:  true,
 		},
+		"workload with report intervals exceeding lifecycle logs warning but keeps values": {
+			input: VirtualMachineWorkload{
+				PoolSize:           5,
+				LifecycleDuration:  30 * time.Second,
+				UpdateInterval:     10 * time.Second,
+				ReportInterval:     60 * time.Second, // > lifecycle, will warn
+				InitialReportDelay: 45 * time.Second, // > min lifecycle, will warn
+			},
+			wantLifecycleDuration: 30 * time.Second,
+			wantUpdateInterval:    10 * time.Second,
+		},
 	}
 
 	for name, tt := range tests {

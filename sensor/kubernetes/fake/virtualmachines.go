@@ -26,6 +26,9 @@ const (
 	defaultVMLifecycleDuration = 30 * time.Second
 	defaultVMUpdateInterval    = 10 * time.Second
 	initialReportJitterPercent = 0.2
+	// lifecycleJitterPercent is the jitter applied to VM lifecycle duration.
+	// With 0.5 (50%), a 60s lifecycle will vary between 30s-90s.
+	lifecycleJitterPercent = 0.5
 )
 
 // Centralized GVR definitions for KubeVirt resources
@@ -54,6 +57,23 @@ func validateVMWorkload(workload VirtualMachineWorkload) VirtualMachineWorkload 
 	if workload.UpdateInterval <= 0 {
 		log.Warnf("virtualMachineWorkload.updateInterval not set or <= 0; defaulting to %s", defaultVMUpdateInterval)
 		workload.UpdateInterval = defaultVMUpdateInterval
+	}
+
+	// Sanity check timing relationships
+	minLifecycle := time.Duration(float64(workload.LifecycleDuration) * (1 - lifecycleJitterPercent))
+	if workload.UpdateInterval > minLifecycle {
+		log.Warnf("virtualMachineWorkload.updateInterval (%s) > minimum lifecycle (%s); updates may never occur",
+			workload.UpdateInterval, minLifecycle)
+	}
+	if workload.ReportInterval > 0 {
+		if workload.ReportInterval > minLifecycle {
+			log.Warnf("virtualMachineWorkload.reportInterval (%s) > minimum lifecycle (%s); reports may never fire",
+				workload.ReportInterval, minLifecycle)
+		}
+		if workload.InitialReportDelay > minLifecycle {
+			log.Warnf("virtualMachineWorkload.initialReportDelay (%s) > minimum lifecycle (%s); first report may never fire",
+				workload.InitialReportDelay, minLifecycle)
+		}
 	}
 	return workload
 }
@@ -228,25 +248,25 @@ func (w *WorkloadManager) manageVirtualMachine(
 
 	lifecycles := workload.NumLifecycles
 	for iteration := 0; lifecycles <= 0 || iteration < lifecycles; iteration++ {
-		vm, vmi := template.instantiate(iteration)
-
-		if w.runVMLifecycle(ctx, workload, template, vm, vmi, reportGen) {
+		if ctx.Err() != nil {
 			return
 		}
+		vm, vmi := template.instantiate(iteration)
+		w.runVMLifecycle(ctx, workload, template, vm, vmi, reportGen)
 	}
 }
 
 // runVMLifecycle runs a single VM/VMI lifecycle.
-// It returns true if the caller should stop spawning further lifecycles (e.g., context cancelled or setup failed).
-// If index reports are enabled (reportGen != nil), it also sends index reports while the VM is alive.
+// It blocks until the lifecycle ends (timer fires) or context is cancelled.
+// If index reports are enabled (reportGen != nil), it sends index reports while the VM is alive.
 func (w *WorkloadManager) runVMLifecycle(
 	ctx context.Context,
 	workload VirtualMachineWorkload,
 	template *vmTemplate,
 	vm, vmi *unstructured.Unstructured,
 	reportGen *reportGenerator,
-) bool {
-	lifecycleTimer := newTimerWithJitter(workload.LifecycleDuration/2 + time.Duration(rand.Int63n(int64(workload.LifecycleDuration))))
+) {
+	lifecycleTimer := newTimerWithJitter(jitteredInterval(workload.LifecycleDuration, lifecycleJitterPercent))
 	defer lifecycleTimer.Stop()
 
 	updateTicker := time.NewTicker(calculateDurationWithJitter(workload.UpdateInterval))
@@ -260,7 +280,7 @@ func (w *WorkloadManager) runVMLifecycle(
 	vmName := vm.GetName()
 	if _, err := vmClient.Create(ctx, vm, metav1.CreateOptions{}); err != nil {
 		log.Errorf("error creating VirtualMachine: %v", err)
-		return true
+		return
 	}
 	w.writeID(virtualMachinePrefix, vmUID)
 
@@ -296,7 +316,7 @@ func (w *WorkloadManager) runVMLifecycle(
 	for {
 		select {
 		case <-ctx.Done():
-			return true
+			return
 		case <-lifecycleTimer.C:
 			// Delete resources
 			if err := vmiClient.Delete(ctx, vmi.GetName(), metav1.DeleteOptions{}); err != nil {
@@ -312,7 +332,7 @@ func (w *WorkloadManager) runVMLifecycle(
 			}
 			// Drop the fake tracker entries so unstructured DeepCopy payloads do not accumulate indefinitely.
 			w.cleanupVMHistory(vm.GetNamespace(), vmName, vmi.GetName())
-			return false
+			return
 		case <-updateTicker.C:
 			// Reset ticker with jitter for next update
 			updateTicker.Reset(calculateDurationWithJitter(workload.UpdateInterval))
