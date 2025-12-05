@@ -1,7 +1,7 @@
 package watcher
 
 import (
-	"github.com/stackrox/rox/central/baseimage/datastore"
+	repoDS "github.com/stackrox/rox/central/baseimage/datastore/repository"
 	"github.com/stackrox/rox/pkg/sync"
 )
 
@@ -13,7 +13,7 @@ var (
 // Singleton returns the global base image watcher instance.
 func Singleton() Watcher {
 	once.Do(func() {
-		watcher = New(datastore.Singleton())
+		watcher = New(repoDS.Singleton())
 	})
 	return watcher
 }
