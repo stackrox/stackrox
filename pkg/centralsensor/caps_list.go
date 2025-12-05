@@ -74,4 +74,7 @@ const (
 
 	// VirtualMachinesSupported identifies the capability of Central to receive virtual machine requests.
 	VirtualMachinesSupported = "VirtualMachinesSupported"
+
+	// FlattenImageData identifies the capability to use the flattened image data model (ImageV2).
+	FlattenImageData = "FlattenImageData"
 )

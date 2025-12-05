@@ -25,6 +25,7 @@ type DataStore interface {
 	GetImageMetadata(ctx context.Context, id string) (*storage.ImageV2, bool, error)
 	GetManyImageMetadata(ctx context.Context, ids []string) ([]*storage.ImageV2, error)
 	GetImagesBatch(ctx context.Context, ids []string) ([]*storage.ImageV2, error)
+	GetImageNames(ctx context.Context, digest string) ([]*storage.ImageName, error)
 	WalkByQuery(ctx context.Context, q *v1.Query, fn func(image *storage.ImageV2) error) error
 
 	UpsertImage(ctx context.Context, image *storage.ImageV2) error
