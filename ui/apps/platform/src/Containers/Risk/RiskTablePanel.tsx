@@ -1,5 +1,4 @@
-import { useContext, useState } from 'react';
-import { useNavigate } from 'react-router-dom-v5-compat';
+import { useState } from 'react';
 import useDeepCompareEffect from 'use-deep-compare-effect';
 import { Bullseye } from '@patternfly/react-core';
 import { ExclamationTriangleIcon } from '@patternfly/react-icons';
@@ -9,10 +8,9 @@ import TableHeader from 'Components/TableHeader';
 import { PanelBody, PanelHead, PanelHeadEnd, PanelNew } from 'Components/Panel';
 import TablePagination from 'Components/TablePagination';
 import { DEFAULT_PAGE_SIZE } from 'Components/Table';
-import { pagingParams } from 'constants/searchParams';
-import workflowStateContext from 'Containers/workflowStateContext';
 import useURLSearch from 'hooks/useURLSearch';
 import useURLSort from 'hooks/useURLSort';
+import useURLPagination from 'hooks/useURLPagination';
 import {
     fetchDeploymentsCount,
     fetchDeploymentsWithProcessInfo,
@@ -36,22 +34,15 @@ function RiskTablePanel({
     isViewFiltered,
     setIsViewFiltered,
 }: RiskTablePanelProps) {
-    const navigate = useNavigate();
-    const workflowState = useContext(workflowStateContext);
-    const currentPage = workflowState.paging[pagingParams.page];
-
     const { searchFilter } = useURLSearch();
     const { sortOption, setSortOption } = useURLSort({ sortFields, defaultSortOption });
+    const { page, perPage, setPage } = useURLPagination(DEFAULT_PAGE_SIZE);
 
     const [currentDeployments, setCurrentDeployments] = useState<ListDeploymentWithProcessInfo[]>(
         []
     );
     const [errorMessageDeployments, setErrorMessageDeployments] = useState('');
     const [deploymentCount, setDeploymentsCount] = useState(0);
-
-    function setPage(newPage) {
-        navigate(workflowState.setPage(newPage).toUrl());
-    }
 
     const shouldHideOrchestratorComponents =
         localStorage.getItem(ORCHESTRATOR_COMPONENTS_KEY) !== 'true';
@@ -64,8 +55,8 @@ function RiskTablePanel({
         const { request } = fetchDeploymentsWithProcessInfo(
             effectiveSearchFilter,
             sortOption,
-            currentPage + 1, // Convert 0-based to 1-based page
-            DEFAULT_PAGE_SIZE
+            page,
+            perPage
         );
 
         request.then(setCurrentDeployments).catch((error) => {
@@ -85,7 +76,7 @@ function RiskTablePanel({
 
         const hasSearchFilters = Object.keys(searchFilter).length > 0;
         setIsViewFiltered(hasSearchFilters);
-    }, [searchFilter, sortOption, currentPage, shouldHideOrchestratorComponents]);
+    }, [searchFilter, sortOption, page, shouldHideOrchestratorComponents]);
 
     return (
         <PanelNew testid="panel">
@@ -97,10 +88,10 @@ function RiskTablePanel({
                 />
                 <PanelHeadEnd>
                     <TablePagination
-                        page={currentPage}
+                        page={page - 1}
                         dataLength={deploymentCount}
-                        pageSize={DEFAULT_PAGE_SIZE}
-                        setPage={setPage}
+                        pageSize={perPage}
+                        setPage={(newPage) => setPage(newPage + 1)}
                     />
                 </PanelHeadEnd>
             </PanelHead>
