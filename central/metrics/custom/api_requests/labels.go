@@ -8,7 +8,12 @@ import (
 )
 
 var LazyLabels = tracker.LazyLabelGetters[*finding]{
-	"UserID":     func(f *finding) string { return f.UserID.UID() },
+	"UserID": func(f *finding) string {
+		if f.UserID != nil {
+			return f.UserID.UID()
+		}
+		return ""
+	},
 	"User-Agent": func(f *finding) string { return getUserAgentFromHeaders(f.Headers) },
 	"Path":       func(f *finding) string { return f.Path },
 	"Status":     func(f *finding) string { return strconv.Itoa(f.Code) },
