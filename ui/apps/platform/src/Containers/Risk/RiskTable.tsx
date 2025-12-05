@@ -1,12 +1,14 @@
 import NoResultsMessage from 'Components/NoResultsMessage';
 import Table from 'Components/TableV2';
 
-import riskTableColumnDescriptors from './riskTableColumnDescriptors';
 import type { ListDeploymentWithProcessInfo } from 'services/DeploymentsService';
-import type { ApiSortOptionSingle } from 'types/search';
+import type { UseURLSortResult } from 'hooks/useURLSort';
+import type { SortOption } from 'types/table';
 
-function sortOptionFromTableState(state) {
-    let sortOption: ApiSortOptionSingle | null = null;
+import riskTableColumnDescriptors from './riskTableColumnDescriptors';
+
+function convertTableSortToURLSetterSort(state): SortOption | null {
+    let sortOption: SortOption | null = null;
     if (state.sorted.length && state.sorted[0].id) {
         const column = riskTableColumnDescriptors.find(
             (col) => col.accessor === state.sorted[0].id
@@ -15,7 +17,7 @@ function sortOptionFromTableState(state) {
             // TODO we should be able to assert that column.searchField is not undefined after migrating away
             // from the legacy TableV2 and descriptor pattern
             field: column?.searchField ?? '',
-            reversed: state.sorted[0].desc,
+            direction: state.sorted[0].desc ? 'desc' : 'asc',
         };
     }
     return sortOption;
@@ -24,12 +26,12 @@ function sortOptionFromTableState(state) {
 type RiskTableProps = {
     currentDeployments: ListDeploymentWithProcessInfo[];
     selectedDeploymentId: string | undefined;
-    setSortOption: (sortOption: ApiSortOptionSingle) => void;
+    setSortOption: UseURLSortResult['setSortOption'];
 };
 
 function RiskTable({ currentDeployments, selectedDeploymentId, setSortOption }: RiskTableProps) {
     function onFetchData(state) {
-        const newSortOption = sortOptionFromTableState(state);
+        const newSortOption = convertTableSortToURLSetterSort(state);
         if (!newSortOption) {
             return;
         }
