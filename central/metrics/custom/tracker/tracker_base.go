@@ -123,6 +123,7 @@ func (tracker *TrackerBase[F]) NewConfiguration(cfg *storage.PrometheusMetrics_G
 		toAdd:    toAdd,
 		toDelete: toDelete,
 		period:   time.Minute * time.Duration(cfg.GetGatheringPeriodMinutes()),
+		enabled:  cfg.GetEnabled(),
 	}, nil
 }
 
@@ -134,7 +135,7 @@ func (tracker *TrackerBase[F]) Reconfigure(cfg *Configuration) {
 	}
 	previous := tracker.setConfiguration(cfg)
 	if previous != nil {
-		if cfg.period == 0 {
+		if cfg.period == 0 || (tracker.generator == nil && !cfg.enabled) {
 			log.Debugf("Metrics collection has been disabled for %s", tracker.description)
 			tracker.unregisterMetrics(slices.Collect(maps.Keys(previous.metrics)))
 			return

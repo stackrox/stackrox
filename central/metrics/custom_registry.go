@@ -110,12 +110,15 @@ func (cr *customRegistry) UnregisterMetric(metricName string) bool {
 
 // RegisterMetric registers a user-defined aggregated metric.
 func (cr *customRegistry) RegisterMetric(metricName string, description string, period time.Duration, labels []string) error {
+	help := "The total number of " + description + " aggregated by " + strings.Join(labels, ",")
+	if period > 0 {
+		help += " and gathered every " + period.String()
+	}
 	gauge := prometheus.NewGaugeVec(prometheus.GaugeOpts{
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.CentralSubsystem.String(),
 		Name:      metricName,
-		Help: "The total number of " + description + " aggregated by " + strings.Join(labels, ",") +
-			" and gathered every " + period.String(),
+		Help:      help,
 	}, labels)
 	if _, loaded := cr.gauges.LoadOrStore(metricName, gauge); !loaded {
 		return cr.Register(gauge)
