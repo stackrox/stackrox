@@ -1,17 +1,17 @@
-import { useContext, useEffect } from 'react';
+import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom-v5-compat';
 import { connect } from 'react-redux';
 import { Button } from '@patternfly/react-core';
 
-import workflowStateContext from 'Containers/workflowStateContext';
+import useURLSearch from 'hooks/useURLSearch';
 import { actions as formMessageActions } from 'reducers/formMessages';
 import { actions as notificationActions } from 'reducers/notifications';
 import { actions as wizardActions } from 'reducers/policies/wizard';
 import { generatePolicyFromSearch } from 'services/PoliciesService';
-import searchOptionsToQuery from 'services/searchOptionsToQuery';
-import { convertToRestSearch } from 'utils/searchUtils';
+import { getRequestQueryStringForSearchFilter } from 'utils/searchUtils';
 import { policiesBasePath } from 'routePaths';
 import type { ClientPolicy, PolicySeverity } from 'types/policy.proto';
+import { ORCHESTRATOR_COMPONENTS_KEY } from 'utils/orchestratorComponents';
 
 type CreatePolicyFromSearchProps = {
     setWizardPolicy: (
@@ -39,19 +39,23 @@ function CreatePolicyFromSearch({
     addFormMessage,
     clearFormMessages,
 }: CreatePolicyFromSearchProps) {
-    const workflowState = useContext(workflowStateContext);
     const navigate = useNavigate();
+    const { searchFilter } = useURLSearch();
 
-    // this utility filters out incomplete search pairs
-    const currentSearch = workflowState.getCurrentSearchState();
-    const policySearchOptions = convertToRestSearch(currentSearch);
     // ensure clean slate for policy form messages
     useEffect(() => {
         clearFormMessages();
     }, [clearFormMessages]);
 
     function createPolicyFromSearch() {
-        const queryString = searchOptionsToQuery(policySearchOptions);
+        const shouldHideOrchestratorComponents =
+            localStorage.getItem(ORCHESTRATOR_COMPONENTS_KEY) !== 'true';
+        const effectiveSearchFilter = {
+            ...searchFilter,
+            ...(shouldHideOrchestratorComponents ? { 'Orchestrator Component': 'false' } : {}),
+        };
+
+        const queryString = getRequestQueryStringForSearchFilter(effectiveSearchFilter);
 
         generatePolicyFromSearch(queryString)
             .then((response) => {
@@ -89,7 +93,9 @@ function CreatePolicyFromSearch({
             });
     }
 
-    const isPolicyBtnDisabled = !policySearchOptions?.length;
+    const isPolicyBtnDisabled = Object.values(searchFilter).every(
+        (value) => value === undefined || value.length === 0
+    );
 
     return (
         <Button
