@@ -24,6 +24,7 @@ var (
 	fieldDependencies = map[string]set.StringSet{
 		fieldnames.FileOperation: set.NewStringSet(
 			fieldnames.NodeFilePath,
+			fieldnames.MountedFilePath,
 		),
 		fieldnames.KubeUserName: set.NewStringSet(
 			fieldnames.KubeResource,

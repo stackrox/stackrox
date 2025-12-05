@@ -992,6 +992,91 @@ func (s *PolicyValidatorTestSuite) TestValidateEnforcement() {
 	}
 }
 
+func (s *PolicyValidatorTestSuite) TestValidateMountedFilePathEventSource() {
+	testCases := []struct {
+		description string
+		p           *storage.Policy
+		errExpected bool
+	}{
+		{
+			description: "Deployment policy with valid MountedFilePath field",
+			p: booleanPolicyWithFields(storage.LifecycleStage_RUNTIME, storage.EventSource_DEPLOYMENT_EVENT,
+				map[string]string{
+					fieldnames.MountedFilePath: "/etc/passwd",
+				}),
+		},
+		{
+			description: "Deployment policy with MountedFilePath and FileOperation",
+			p: booleanPolicyWithFields(storage.LifecycleStage_RUNTIME, storage.EventSource_DEPLOYMENT_EVENT,
+				map[string]string{
+					fieldnames.MountedFilePath: "/etc/shadow",
+					fieldnames.FileOperation:   "open",
+				}),
+		},
+		{
+			description: "Node policy with MountedFilePath (should be invalid)",
+			p: booleanPolicyWithFields(storage.LifecycleStage_RUNTIME, storage.EventSource_NODE_EVENT,
+				map[string]string{
+					fieldnames.MountedFilePath: "/etc/passwd",
+				}),
+			errExpected: true,
+		},
+		{
+			description: "Deployment policy with FileOperation but no file path",
+			p: booleanPolicyWithFields(storage.LifecycleStage_RUNTIME, storage.EventSource_DEPLOYMENT_EVENT,
+				map[string]string{
+					fieldnames.FileOperation: "open",
+				}),
+			errExpected: true,
+		},
+		{
+			description: "Deployment policy with invalid MountedFilePath",
+			p: booleanPolicyWithFields(storage.LifecycleStage_RUNTIME, storage.EventSource_DEPLOYMENT_EVENT,
+				map[string]string{
+					fieldnames.MountedFilePath: "relative/path.sh",
+				}),
+			errExpected: true,
+		},
+		{
+			description: "Deployment policy with MountedFilePath in wrong lifecycle stage (build)",
+			p: booleanPolicyWithFields(storage.LifecycleStage_BUILD, storage.EventSource_DEPLOYMENT_EVENT,
+				map[string]string{
+					fieldnames.MountedFilePath: "/etc/hosts",
+				}),
+			errExpected: true,
+		},
+		{
+			description: "Deployment policy with MountedFilePath in wrong lifecycle stage (deploy)",
+			p: booleanPolicyWithFields(storage.LifecycleStage_DEPLOY, storage.EventSource_DEPLOYMENT_EVENT,
+				map[string]string{
+					fieldnames.MountedFilePath: "/etc/passwd",
+				}),
+			errExpected: true,
+		},
+	}
+
+	// reset once for these tests, and then reset on return after the feature flag has been disabled
+	// again to ensure consistent state in other tests
+	testutils.MustUpdateFeature(s.T(), features.SensitiveFileActivity, true)
+	booleanpolicy.ResetFieldMetadataSingleton(s.T())
+
+	defer testutils.MustUpdateFeature(s.T(), features.SensitiveFileActivity, false)
+	defer booleanpolicy.ResetFieldMetadataSingleton(s.T())
+
+	for _, c := range testCases {
+		s.T().Run(c.description, func(t *testing.T) {
+			c.p.Name = "BLAHBLAH"
+
+			err := s.validator.validateCompilableForLifecycle(c.p)
+			if c.errExpected {
+				assert.Error(t, err)
+			} else {
+				assert.NoError(t, err)
+			}
+		})
+	}
+}
+
 func (s *PolicyValidatorTestSuite) TestValidateNodeEventSource() {
 	testCases := []struct {
 		description string

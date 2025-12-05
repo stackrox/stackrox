@@ -682,4 +682,59 @@ func (s *PolicyValueValidator) TestValidateFileOperationRequiresFilePath() {
 			},
 		},
 	}))
+
+	s.NoError(Validate(&storage.Policy{
+		Name:          "Valid Section with MountedFilePath",
+		PolicyVersion: policyversion.CurrentVersion().String(),
+		EventSource:   storage.EventSource_DEPLOYMENT_EVENT,
+		PolicySections: []*storage.PolicySection{
+			{
+				SectionName: "good",
+				PolicyGroups: []*storage.PolicyGroup{
+					{
+						FieldName: fieldnames.FileOperation,
+						Values:    []*storage.PolicyValue{{Value: "CREATE"}},
+					},
+					{
+						FieldName: fieldnames.MountedFilePath,
+						Values:    []*storage.PolicyValue{{Value: "/etc/passwd"}},
+					},
+				},
+			},
+		},
+	}))
+
+	s.Error(Validate(&storage.Policy{
+		Name:          "FileOperation without path for deployment event",
+		PolicyVersion: policyversion.CurrentVersion().String(),
+		EventSource:   storage.EventSource_DEPLOYMENT_EVENT,
+		PolicySections: []*storage.PolicySection{
+			{
+				SectionName: "bad",
+				PolicyGroups: []*storage.PolicyGroup{
+					{
+						FieldName: fieldnames.FileOperation,
+						Values:    []*storage.PolicyValue{{Value: "CREATE"}},
+					},
+				},
+			},
+		},
+	}))
+
+	s.Error(Validate(&storage.Policy{
+		Name:          "MountedFilePath with NODE_EVENT should error",
+		PolicyVersion: policyversion.CurrentVersion().String(),
+		EventSource:   storage.EventSource_NODE_EVENT,
+		PolicySections: []*storage.PolicySection{
+			{
+				SectionName: "bad",
+				PolicyGroups: []*storage.PolicyGroup{
+					{
+						FieldName: fieldnames.MountedFilePath,
+						Values:    []*storage.PolicyValue{{Value: "/etc/passwd"}},
+					},
+				},
+			},
+		},
+	}))
 }
