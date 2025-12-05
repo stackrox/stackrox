@@ -17,7 +17,7 @@ central/splunk/violations_test.go
 central/testutils/testdata/imgdata.json.gz
 central/vulnmgmt/vulnerabilityrequest/datastore/datastore_impl_postgres_test.go
 compliance/node/index/testdata/usr/share/rpm/rpmdb.sqlite
-deploy/charts/monitoring/dashboards/dataplane.json
+deploy/charts/monitoring/dashboards/*.json
 generated/**/*.pb.go
 generated/**/*.pb.gw.go
 generated/**/*.swagger.json
