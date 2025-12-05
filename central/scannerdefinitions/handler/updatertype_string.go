@@ -18,8 +18,9 @@ const _updaterType_name = "mappingUpdaterTypevulnerabilityUpdaterTypev2UpdaterTy
 var _updaterType_index = [...]uint8{0, 18, 42, 55}
 
 func (i updaterType) String() string {
-	if i < 0 || i >= updaterType(len(_updaterType_index)-1) {
+	idx := int(i) - 0
+	if i < 0 || idx >= len(_updaterType_index)-1 {
 		return "updaterType(" + strconv.FormatInt(int64(i), 10) + ")"
 	}
-	return _updaterType_name[_updaterType_index[i]:_updaterType_index[i+1]]
+	return _updaterType_name[_updaterType_index[idx]:_updaterType_index[idx+1]]
 }

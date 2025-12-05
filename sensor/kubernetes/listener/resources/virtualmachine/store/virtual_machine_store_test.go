@@ -296,6 +296,39 @@ func (s *storeSuite) Test_UpdateVirtualMachine() {
 	}
 }
 
+func (s *storeSuite) Test_replaceVSOCKInfoNoLockCopiesIncomingPointer() {
+	s.store = NewVirtualMachineStore()
+
+	existing := &virtualmachine.Info{
+		ID:        vmID,
+		Name:      vmName,
+		Namespace: vmNamespace,
+		VSOCKCID:  nil,
+	}
+	s.store.virtualMachines[vmID] = existing
+
+	vsock := uint32(123)
+	vmUpdate := &virtualmachine.Info{
+		ID:        vmID,
+		Name:      vmName,
+		Namespace: vmNamespace,
+		VSOCKCID:  &vsock,
+	}
+
+	storePtr := s.store.replaceVSOCKInfoNoLock(vmUpdate)
+	vmUpdate.VSOCKCID = storePtr
+
+	s.Require().NotNil(storePtr, "replaceVSOCKInfoNoLock should always hand back a pointer owned by the store")
+	s.Equal(uint32(123), *storePtr, "store copy must preserve the original vsock value before caller mutates their pointer")
+	s.False(&vsock == storePtr, "store copy must not point to the informer-supplied pointer")
+
+	vsock = 456
+	s.Equal(uint32(123), *storePtr, "store-managed pointer should remain unchanged even if informer pointer is mutated")
+
+	s.Equal(uint32(123), s.store.idToCID[vmID], "idToCID map should track the original value")
+	s.Equal(virtualmachine.VMID(vmID), s.store.cidToID[123], "cidToID map should continue to refer back to the VM")
+}
+
 func (s *storeSuite) Test_UpdateStateOrCreate() {
 	vsockCID1 := newVSOCKCID(1)
 	vsockCID2 := newVSOCKCID(2)

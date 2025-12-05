@@ -1085,6 +1085,7 @@ func (s *PolicyValidatorTestSuite) TestValidateNodeEventSource() {
 				map[string]string{
 					fieldnames.FileOperation: "open",
 				}),
+			errExpected: true,
 		},
 		{
 			description: "Node policy with FileOperation and valid NodeFilePath field",

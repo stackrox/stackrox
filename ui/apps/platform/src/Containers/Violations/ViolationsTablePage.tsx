@@ -22,8 +22,8 @@ import useEntitiesByIdsCache from 'hooks/useEntitiesByIdsCache';
 import LIFECYCLE_STAGES from 'constants/lifecycleStages';
 import { VIOLATION_STATES } from 'constants/violationStates';
 import { ENFORCEMENT_ACTIONS } from 'constants/enforcementActions';
-import type { OnSearchPayload } from 'Components/CompoundSearchFilter/types';
-import { onURLSearch } from 'Components/CompoundSearchFilter/utils/utils';
+import type { OnSearchCallback } from 'Components/CompoundSearchFilter/types';
+import { updateSearchFilter } from 'Components/CompoundSearchFilter/utils/utils';
 import type { FilteredWorkflowView } from 'Components/FilteredWorkflowViewSelector/types';
 import type { SearchFilter } from 'types/search';
 import useURLStringUnion from 'hooks/useURLStringUnion';
@@ -60,7 +60,9 @@ function getFilteredWorkflowViewSearchFilter(
             };
         case 'Full view':
         default:
-            return {};
+            return {
+                'Entity Type': ['UNSET', 'DEPLOYMENT', 'CONTAINER_IMAGE', 'RESOURCE'],
+            };
     }
 }
 
@@ -154,8 +156,8 @@ function ViolationsTablePage(): ReactElement {
 
     const additionalContextFilter = getFilteredWorkflowViewSearchFilter(filteredWorkflowView);
 
-    const onSearch = (payload: OnSearchPayload) => {
-        onURLSearch(searchFilter, setSearchFilter, payload);
+    const onSearch: OnSearchCallback = (payload) => {
+        setSearchFilter(updateSearchFilter(searchFilter, payload));
     };
 
     useEffectAfterFirstRender(() => {

@@ -85,6 +85,18 @@ func (p *Pipeline) Shutdown() {
 	p.stopper.Client().Stop()
 }
 
+// WaitForShutdown waits for the pipeline shutdown to complete.
+// This is useful for tests that need to ensure shutdown has fully completed.
+func (p *Pipeline) WaitForShutdown() error {
+	if err := p.enricher.Stopped().Wait(); err != nil {
+		return errors.Wrap(err, "waiting for enricher to stop")
+	}
+	if err := p.stopper.Client().Stopped().Wait(); err != nil {
+		return errors.Wrap(err, "waiting for pipeline stopper")
+	}
+	return nil
+}
+
 // Notify allows the component state to be propagated to the pipeline
 func (p *Pipeline) Notify(e common.SensorComponentEvent) {
 	// With event buffering enabled, we use long-lived contexts and don't cancel on disconnect
@@ -92,7 +104,16 @@ func (p *Pipeline) Notify(e common.SensorComponentEvent) {
 }
 
 // Process defines processes to process a ProcessIndicator
+// If the pipeline is shutting down, the signal is dropped to prevent sending on closed channels.
 func (p *Pipeline) Process(signal *storage.ProcessSignal) {
+	// Check if shutdown has been requested before processing
+	select {
+	case <-p.stopper.Flow().StopRequested():
+		p.dropIndicator(signal, "pipeline shutting down before enrichment")
+		return
+	default:
+	}
+
 	indicator := &storage.ProcessIndicator{
 		Id:     uuid.NewV4().String(),
 		Signal: signal,
@@ -107,7 +128,23 @@ func (p *Pipeline) Process(signal *storage.ProcessSignal) {
 	metrics.IncrementProcessEnrichmentHits()
 	populateIndicatorFromCachedContainer(indicator, metadata)
 	normalize.Indicator(indicator)
-	p.enrichedIndicators <- indicator
+
+	// Use select to avoid sending on closed channel if shutdown happens between check and send
+	select {
+	case p.enrichedIndicators <- indicator:
+	case <-p.stopper.Flow().StopRequested():
+		p.dropIndicator(indicator.GetSignal(), "pipeline shutting down during send")
+		return
+	}
+}
+
+func (p *Pipeline) dropIndicator(signal *storage.ProcessSignal, reason string) {
+	metrics.IncrementProcessSignalDroppedCount()
+	if signal != nil {
+		log.Debugf("Dropping process signal for container %s: %s", signal.GetContainerId(), reason)
+	} else {
+		log.Debugf("Dropping process signal: %s", reason)
+	}
 }
 
 func (p *Pipeline) sendIndicatorEvent() {

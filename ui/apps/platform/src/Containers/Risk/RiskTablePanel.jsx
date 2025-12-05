@@ -59,7 +59,7 @@ function RiskTablePanel({
      * Compute outside hook to avoid double requests if no page search options
      * before and after response to request for searchOptions.
      */
-    const restSearch = convertToRestSearch(pageSearch || {});
+    const restSearch = convertToRestSearch(pageSearch ?? {});
     const restSort = convertSortToRestFormat(sortOption);
 
     useDeepCompareEffect(() => {

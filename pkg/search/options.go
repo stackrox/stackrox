@@ -54,6 +54,7 @@ var (
 	CVE                = newFieldLabel("CVE")
 	CVEType            = newFieldLabel("CVE Type")
 	CVEPublishedOn     = newFieldLabel("CVE Published On")
+	CVEFixAvailable    = newFieldLabel("CVE Fix Available Timestamp")
 	CVECreatedTime     = newFieldLabel("CVE Created Time")
 	CVESuppressed      = newFieldLabel("CVE Snoozed")
 	CVESuppressExpiry  = newFieldLabel("CVE Snooze Expiry")
@@ -116,6 +117,18 @@ var (
 	FixableModerateCVECount        = newFieldLabel("Fixable Moderate CVE Count")
 	LowCVECount                    = newFieldLabel("Low CVE Count")
 	FixableLowCVECount             = newFieldLabel("Fixable Low CVE Count")
+
+	// Base Image
+	BaseImageId               = newFieldLabel("Base Image Id")
+	BaseImageRepositoryId     = newFieldLabel("Base Image Repository Id")
+	BaseImageRepository       = newFieldLabel("Base Image Repository")
+	BaseImageTag              = newFieldLabel("Base Image Tag")
+	BaseImageActive           = newFieldLabel("Base Image Active")
+	BaseImageManifestDigest   = newFieldLabel("Base Image Manifest Digest")
+	BaseImageFirstLayerDigest = newFieldLabel("Base Image First Layer Digest")
+	BaseImageLayerDigest      = newFieldLabel("Base Image Layer Digest")
+	BaseImageIndex            = newFieldLabel("Base Image Index")
+	BaseImageDiscoveredAt     = newFieldLabel("Base Image Discovered At")
 
 	// Deployment related fields
 	AddCapabilities              = newFieldLabel("Add Capabilities")
@@ -318,12 +331,13 @@ var (
 	Inactive = newFieldLabel("Inactive Deployment")
 
 	// Risk Search Fields
-	RiskScore           = newFieldLabel("Risk Score")
-	NodeRiskScore       = newFieldLabel("Node Risk Score")
-	DeploymentRiskScore = newFieldLabel("Deployment Risk Score")
-	ImageRiskScore      = newFieldLabel("Image Risk Score")
-	ComponentRiskScore  = newFieldLabel("Component Risk Score")
-	RiskSubjectType     = newFieldLabel("Risk Subject Type")
+	RiskScore              = newFieldLabel("Risk Score")
+	NodeRiskScore          = newFieldLabel("Node Risk Score")
+	DeploymentRiskScore    = newFieldLabel("Deployment Risk Score")
+	ImageRiskScore         = newFieldLabel("Image Risk Score")
+	ComponentRiskScore     = newFieldLabel("Component Risk Score")
+	RiskSubjectType        = newFieldLabel("Risk Subject Type")
+	ComponentFromBaseImage = newFieldLabel("Component From Base Image")
 
 	PolicyLastUpdated = newFieldLabel("Policy Last Updated")
 

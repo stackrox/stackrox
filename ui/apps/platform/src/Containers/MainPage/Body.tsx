@@ -10,6 +10,7 @@ import {
     administrationEventsPathWithParam,
     apidocsPath,
     apidocsPathV2,
+    baseImagesPath,
     clustersClusterRegistrationSecretsPathWithParam,
     clustersDelegatedScanningPath,
     clustersDiscoveredClustersPath,
@@ -270,6 +271,10 @@ const routeComponentMap: Record<RouteKey, RouteComponent> = {
         component: makeVulnMgmtUserWorkloadView('all-images'),
         path: vulnerabilitiesAllImagesPath,
     },
+    'base-images': {
+        component: asyncComponent(() => import('Containers/BaseImages/BaseImagesPage')),
+        path: baseImagesPath,
+    },
     'vulnerabilities/inactive-images': {
         component: makeVulnMgmtUserWorkloadView('inactive-images'),
         path: vulnerabilitiesInactiveImagesPath,
@@ -329,7 +334,7 @@ function Body({ hasReadAccess, isFeatureFlagEnabled }: BodyProps): ReactElement 
     const routePredicates = { hasReadAccess, isFeatureFlagEnabled };
 
     return (
-        <div className="flex flex-col h-full w-full relative overflow-auto bg-base-100">
+        <div id="BodyRoutes">
             <ErrorBoundary>
                 <Routes>
                     <Route path="/" element={<Navigate to={dashboardPath} replace />} />

@@ -332,6 +332,64 @@ const rules = {
             };
         },
     },
+    'no-feather-icons': {
+        // Forbid feather icons outside legacy folders.
+        // See ignores array in eslint.config.js file.
+        // See purge array in tailwind.config.js file.
+        meta: {
+            type: 'problem',
+            docs: {
+                description: 'Forbid feather icons outside legacy folders',
+            },
+            schema: [],
+        },
+        create(context) {
+            return {
+                ImportDeclaration(node) {
+                    if (node.source?.value === 'react-feather') {
+                        context.report({
+                            node,
+                            message: 'Replace feather icons with PatternFly icons',
+                        });
+                    }
+                },
+            };
+        },
+    },
+    'no-logical-or-preceding-array-or-object': {
+        // Consistently write more precise nullish coalescing operator.
+        meta: {
+            type: 'problem',
+            docs: {
+                description: 'Replace || with nullish coalescing ??',
+            },
+            schema: [],
+        },
+        create(context) {
+            return {
+                LogicalExpression(node) {
+                    if (node.operator === '||') {
+                        switch (node.right?.type) {
+                            case 'ArrayExpression':
+                                context.report({
+                                    node,
+                                    message: `Replace || with ?? preceding array expression`,
+                                });
+                                break;
+                            case 'ObjectExpression':
+                                context.report({
+                                    node,
+                                    message: `Replace || with ?? preceding object expression`,
+                                });
+                                break;
+                            default:
+                                break;
+                        }
+                    }
+                },
+            };
+        },
+    },
     'no-qualified-name-react': {
         // React.Whatever is possible with default import.
         // For consistency and as prerequisite to replace default import with JSX transform.

@@ -18,6 +18,7 @@ var (
 	ContainerMemRequest            = newFieldName("Container Memory Request")
 	ContainerName                  = newFieldName("Container Name")
 	DaysSincePublished             = newFieldName("Days Since CVE Was Published")
+	DaysSinceFixAvailable          = newFieldName("Days Since CVE Fix Was Available")
 	DaysSinceImageFirstDiscovered  = newFieldName("Days Since CVE Was First Discovered In Image")
 	DaysSinceSystemFirstDiscovered = newFieldName("Days Since CVE Was First Discovered In System")
 	DisallowedAnnotation           = newFieldName("Disallowed Annotation")

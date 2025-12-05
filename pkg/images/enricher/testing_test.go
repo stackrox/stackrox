@@ -160,6 +160,10 @@ func (*fakeRegistryScanner) HTTPClient() *http.Client {
 	return nil
 }
 
+func (*fakeRegistryScanner) ListTags(_ context.Context, _ string) ([]string, error) {
+	return nil, nil
+}
+
 func (f *fakeRegistryScanner) GetScanner() scannertypes.Scanner {
 	return f.scanner
 }

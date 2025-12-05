@@ -15,9 +15,14 @@ import (
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/sync"
+	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/networkflow/manager"
 	"github.com/stackrox/rox/sensor/common/signal"
+	"github.com/stackrox/rox/sensor/common/virtualmachine"
+	"github.com/stackrox/rox/sensor/common/virtualmachine/index"
 	"github.com/stackrox/rox/sensor/kubernetes/client"
+	vmStore "github.com/stackrox/rox/sensor/kubernetes/listener/resources/virtualmachine/store"
 	"go.yaml.in/yaml/v3"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -34,7 +39,45 @@ const (
 	workloadPath = "/var/scale/stackrox/workload.yaml"
 
 	defaultNamespaceNum = 30
+
+	// Starting CID for VM population. This is used as a part of the name and its value does not matter
+	// as long as it is unique and different than 0, 1, and 2 (reserved values).
+	vmBaseVSOCKCID = uint32(1000)
 )
+
+// vmReadiness encapsulates the three readiness signals needed before VM workload can start
+type vmReadiness struct {
+	handlerReady concurrency.Signal
+	storeReady   concurrency.Signal
+	centralReady concurrency.Signal
+}
+
+func newVMReadiness() *vmReadiness {
+	return &vmReadiness{
+		handlerReady: concurrency.NewSignal(),
+		storeReady:   concurrency.NewSignal(),
+		centralReady: concurrency.NewSignal(),
+	}
+}
+
+func (r *vmReadiness) signalHandlerReady() { r.handlerReady.Signal() }
+func (r *vmReadiness) signalStoreReady()   { r.storeReady.Signal() }
+func (r *vmReadiness) signalCentralReady() { r.centralReady.Signal() }
+func (r *vmReadiness) resetCentralReady()  { r.centralReady.Reset() }
+
+// Wait blocks until all three signals are ready. Returns true if all ready, false if context cancelled.
+func (r *vmReadiness) Wait(ctx context.Context) bool {
+	if !concurrency.WaitInContext(&r.handlerReady, ctx) {
+		return false
+	}
+	if !concurrency.WaitInContext(&r.storeReady, ctx) {
+		return false
+	}
+	if !concurrency.WaitInContext(&r.centralReady, ctx) {
+		return false
+	}
+	return true
+}
 
 var (
 	log = logging.LoggerForModule()
@@ -106,9 +149,20 @@ type WorkloadManager struct {
 	originatorCache           *OriginatorCache
 
 	// signals services
-	servicesInitialized concurrency.Signal
-	processes           signal.Pipeline
-	networkManager      manager.Manager
+	servicesInitialized  concurrency.Signal
+	processes            signal.Pipeline
+	networkManager       manager.Manager
+	vmIndexReportHandler index.Handler
+	vmStore              *vmStore.VirtualMachineStore
+	vmReportGen          *reportGenerator
+
+	// VM readiness coordinator
+	vmPrerequisitesReady *vmReadiness
+
+	// shutdown coordination
+	shutdownCtx    context.Context
+	shutdownCancel context.CancelFunc
+	wg             sync.WaitGroup
 }
 
 // WorkloadManagerConfig WorkloadManager's configuration
@@ -212,17 +266,21 @@ func NewWorkloadManager(config *WorkloadManagerConfig) *WorkloadManager {
 			log.Panic("could not open id storage")
 		}
 	}
+	shutdownCtx, shutdownCancel := context.WithCancel(context.Background())
 	mgr := &WorkloadManager{
-		db:                  db,
-		workload:            &workload,
-		originatorCache:     NewOriginatorCache(),
-		labelsPool:          config.labelsPool,
-		endpointPool:        config.endpointPool,
-		ipPool:              config.ipPool,
-		externalIpPool:      config.externalIpPool,
-		containerPool:       config.containerPool,
-		processPool:         config.processPool,
-		servicesInitialized: concurrency.NewSignal(),
+		db:                   db,
+		workload:             &workload,
+		originatorCache:      NewOriginatorCache(),
+		labelsPool:           config.labelsPool,
+		endpointPool:         config.endpointPool,
+		ipPool:               config.ipPool,
+		externalIpPool:       config.externalIpPool,
+		containerPool:        config.containerPool,
+		processPool:          config.processPool,
+		servicesInitialized:  concurrency.NewSignal(),
+		vmPrerequisitesReady: newVMReadiness(),
+		shutdownCtx:          shutdownCtx,
+		shutdownCancel:       shutdownCancel,
 	}
 	mgr.initializePreexistingResources()
 
@@ -254,13 +312,107 @@ func (w *WorkloadManager) SetSignalHandlers(processPipeline signal.Pipeline, net
 	w.servicesInitialized.Signal()
 }
 
+// SetVMIndexReportHandler sets the handler that will accept VM index reports
+func (w *WorkloadManager) SetVMIndexReportHandler(handler index.Handler) {
+	w.vmIndexReportHandler = handler
+	w.vmPrerequisitesReady.signalHandlerReady()
+}
+
+// SetVMStore sets the VirtualMachineStore
+func (w *WorkloadManager) SetVMStore(store *vmStore.VirtualMachineStore) {
+	log.Debugf("SetVMStore called: store=%p, workload.NumVMs=%d", store, w.workload.VMIndexReportWorkload.NumVMs)
+	w.vmStore = store
+	w.vmPrerequisitesReady.signalStoreReady()
+	log.Debugf("SetVMStore completed (VMs will be populated by manageVMIndexReportsWithPopulation)")
+}
+
+// Notify implements common.Notifiable to receive Sensor component event notifications
+func (w *WorkloadManager) Notify(e common.SensorComponentEvent) {
+	switch e {
+	case common.SensorComponentEventCentralReachable:
+		log.Debugf("WorkloadManager: Central is reachable, signaling VM report generation can start")
+		w.vmPrerequisitesReady.signalCentralReady()
+		// Repopulate VMs if this is not the initial startup (i.e., offline→online transition).
+		// vmReportGen is only set after initial population in manageVMIndexReportsWithPopulation,
+		// so we use it as an indicator that VMs were previously populated.
+		if w.vmReportGen != nil && w.vmStore != nil {
+			w.wg.Add(1)
+			go func() {
+				defer w.wg.Done()
+				w.repopulateVMsOnOnlineTransition(w.shutdownCtx)
+			}()
+		}
+	case common.SensorComponentEventOfflineMode:
+		log.Debugf("WorkloadManager: Central went offline, resetting reachability signal")
+		w.vmPrerequisitesReady.resetCentralReady()
+	}
+}
+
+// populateFakeVMs creates and populates the internal in-memory store with fake VMs.
+func (w *WorkloadManager) populateFakeVMs() {
+	numVMs := w.workload.VMIndexReportWorkload.NumVMs
+
+	if w.vmStore == nil || numVMs == 0 {
+		log.Warnf("populateFakeVMs: nothing to do (store=%p, numVMs=%d)",
+			w.vmStore, numVMs)
+		return
+	}
+
+	log.Infof("Populating VirtualMachineStore with %d fake VMs", numVMs)
+	numAdded := 0
+	for i := range numVMs {
+		cid := vmBaseVSOCKCID + uint32(i)
+		if cid == 0 || cid == 1 || cid == 2 {
+			log.Debugf("CID %d is reserved for kube-virt, skipping", cid)
+			continue
+		}
+		vsock := new(uint32)
+		// cid is reused every iteration, so we need to create a new pointer for each VM and copy the value.
+		*vsock = cid
+		info := &virtualmachine.Info{
+			ID:        virtualmachine.VMID(fakeVMUUID(i)),
+			Name:      fmt.Sprintf("fake-vm-%d", i),
+			Namespace: "default",
+			VSOCKCID:  vsock,
+			Running:   true,
+			GuestOS:   "linux",
+		}
+
+		if res := w.vmStore.AddOrUpdate(info); res == nil {
+			log.Errorf("failed to AddOrUpdate VM %s", info.ID)
+			continue
+		}
+		numAdded++
+	}
+	log.Infof("Successfully populated VirtualMachineStore with %d/%d fake VMs", numAdded, numVMs)
+}
+
+// Stop gracefully stops all background goroutines managed by WorkloadManager.
+// This should be called before shutting down the process pipeline to prevent
+// sending signals on closed channels.
+// Stop waits for all background goroutines to exit before returning.
+func (w *WorkloadManager) Stop() {
+	if w.shutdownCancel != nil {
+		w.shutdownCancel()
+	}
+	// Wait for all background goroutines to exit
+	w.wg.Wait()
+}
+
 // clearActions periodically cleans up the fake client we're using. This needs to exist because we aren't
 // using the client for its original purpose of unit testing. Essentially, it stores the actions
 // so you can check which actions were run. We don't care about these actions so clear them every 10s
 func (w *WorkloadManager) clearActions() {
+	defer w.wg.Done()
 	t := time.NewTicker(10 * time.Second)
-	for range t.C {
-		w.fakeClient.ClearActions()
+	defer t.Stop()
+	for {
+		select {
+		case <-t.C:
+			w.fakeClient.ClearActions()
+		case <-w.shutdownCtx.Done():
+			return
+		}
 	}
 }
 
@@ -315,7 +467,7 @@ func (w *WorkloadManager) initializePreexistingResources() {
 		}
 	}
 
-	w.fakeClient = fake.NewSimpleClientset(objects...)
+	w.fakeClient = fake.NewClientset(objects...)
 	w.fakeClient.Discovery().(*fakediscovery.FakeDiscovery).FakedServerVersion = &version.Info{
 		Major:        "1",
 		Minor:        "14",
@@ -341,17 +493,28 @@ func (w *WorkloadManager) initializePreexistingResources() {
 	initializeOpenshiftClients(clientSet)
 	w.client = clientSet
 
+	w.wg.Add(1)
 	go w.clearActions()
 
 	// Fork management of deployment resources
 	for _, resource := range resources {
-		go w.manageDeployment(context.Background(), resource)
+		w.wg.Add(1)
+		go w.manageDeployment(w.shutdownCtx, resource)
 	}
 
 	// Fork management of networkPolicy resources
 	for _, resource := range npResources {
-		go w.manageNetworkPolicy(context.Background(), resource)
+		w.wg.Add(1)
+		go w.manageNetworkPolicy(w.shutdownCtx, resource)
 	}
 
-	go w.manageFlows(context.Background())
+	w.wg.Add(1)
+	go w.manageFlows(w.shutdownCtx)
+
+	// Start VM index report generation if configured
+	if w.workload.VMIndexReportWorkload.NumVMs > 0 &&
+		w.workload.VMIndexReportWorkload.ReportInterval > 0 {
+		w.wg.Add(1)
+		go w.manageVMIndexReportsWithPopulation(w.shutdownCtx)
+	}
 }

@@ -711,10 +711,10 @@ module.exports = [
             'react/style-prop-object': 'error',
             'react/void-dom-elements-no-children': 'error',
 
-            // https://github.com/facebook/react/blob/main/packages/eslint-plugin-react-hooks/src/index.js
-            ...pluginReactHooks.configs.recommended.rules,
-
+            // Explicit configuration because recommended includes React Compiler rules.
+            // Core hooks rules
             'react-hooks/exhaustive-deps': 'error', // instead of 'warn'
+            'react-hooks/rules-of-hooks': 'error',
         },
     },
     {
@@ -871,6 +871,40 @@ module.exports = [
         },
     },
     {
+        files: ['src/*/**/*.{js,jsx,ts,tsx}'],
+        ignores: [
+            'src/Components/GroupedTabs.jsx', // deprecated
+            'src/Components/ReactSelect/ReactSelect.jsx', // deprecated
+            'src/Components/URLSearchInputWithAutocomplete.jsx', // deprecated
+            'src/Containers/Compliance/**', // deprecated
+            'src/Containers/ConfigManagement/**',
+            'src/Containers/SystemConfig/**',
+            'src/Containers/SystemHealth/**',
+            'src/Containers/Violations/**',
+            'src/Containers/VulnMgmt/**', // deprecated
+            'src/Containers/Vulnerabilities/**',
+            'src/init/initializeAnalytics.js', // generated from segment api
+            'src/sagas/authSagas.js', // deprecated
+            'src/sagas/groupSagas.js', // deprecated
+            'src/sagas/roleSagas.js', // deprecated
+            'src/utils/URLParser.ts', // deprecated
+            'src/utils/WorkflowState.js', // deprecated
+            'src/utils/entityRelationships.ts', // deprecated
+            'src/utils/getSubListFromEntity.js', // deprecated
+            'src/utils/queryService.js', // deprecated
+        ],
+
+        // languageOptions from previous configuration object
+
+        // Key of plugin is namespace of its rules.
+        plugins: {
+            limited: pluginLimited,
+        },
+        rules: {
+            'limited/no-logical-or-preceding-array-or-object': 'error',
+        },
+    },
+    {
         files: ['src/**/*.{js,jsx,ts,tsx}'],
         ignores: [
             'src/Components/*.{js,jsx}', // deprecated
@@ -887,7 +921,6 @@ module.exports = [
             'src/Components/FixableCVECount/**', // deprecated
             'src/Components/HeaderWithSubText/**', // deprecated
             'src/Components/Labeled/**', // deprecated
-            'src/Components/KeyValue/**', // fix errors, and then delete
             'src/Components/Menu/**', // deprecated
             'src/Components/Metadata/**', // deprecated
             'src/Components/MetadataStatsList/**', // deprecated
@@ -923,9 +956,8 @@ module.exports = [
             'src/Containers/ConfigManagement/**',
             'src/Containers/Images/**', // deprecated
             'src/Containers/Login/**', // rewrite in PatternFly, and then delete; also in tailwind.config.js file
-            'src/Containers/MainPage/**', // fix errors, and then delete; also in tailwind.config.js file
+            'src/Containers/MainPage/Header/Header.tsx', // investigate ignore-react-onclickoutside
             'src/Containers/Risk/**', // rewrite in PatternFly, and then delete; also in tailwind.config.js file
-            'src/Containers/Violations/Details/ProcessCardContent.jsx', // fix error and then delete; also in tailwind.config.js file
             'src/Containers/VulnMgmt/**', // deprecated
             'src/Containers/Workflow/**', // deprecated
         ],
@@ -938,6 +970,7 @@ module.exports = [
         },
         rules: {
             'limited/no-Tailwind': 'error',
+            'limited/no-feather-icons': 'error',
         },
     },
     {

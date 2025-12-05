@@ -512,22 +512,16 @@ func (s *storeImpl) upsert(ctx context.Context, obj *storage.ImageV2) error {
 	keys := gatherKeys(imageParts)
 
 	return s.keyFence.DoStatusWithLock(concurrency.DiscreteKeySet(keys...), func() error {
-		conn, release, err := s.acquireConn(ctx, ops.Get, "ImageV2")
-		if err != nil {
-			return err
-		}
-		defer release()
-
-		tx, ctx, err := conn.Begin(ctx)
+		tx, ctx, err := s.begin(ctx)
 		if err != nil {
 			return err
 		}
 
 		if err := s.insertIntoImages(ctx, tx, imageParts, metadataUpdated, scanUpdated, iTime); err != nil {
-			if err := tx.Rollback(ctx); err != nil {
-				return err
+			if errTx := tx.Rollback(ctx); errTx != nil {
+				return errors.Wrapf(errTx, "rolling back transaction due to: %v", err)
 			}
-			return err
+			return errors.Wrap(err, "inserting into images")
 		}
 		return tx.Commit(ctx)
 	})
@@ -580,14 +574,6 @@ func (s *storeImpl) retryableExists(ctx context.Context, id string) (bool, error
 	return count == 1, nil
 }
 
-func wrapRollback(ctx context.Context, tx *postgres.Tx, err error) error {
-	rollbackErr := tx.Rollback(ctx)
-	if rollbackErr != nil {
-		return errors.Wrapf(rollbackErr, "rolling back due to err: %v", err)
-	}
-	return err
-}
-
 // Get returns the object, if it exists from the store.
 func (s *storeImpl) Get(ctx context.Context, id string) (*storage.ImageV2, bool, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Get, "ImageV2")
@@ -598,25 +584,13 @@ func (s *storeImpl) Get(ctx context.Context, id string) (*storage.ImageV2, bool,
 }
 
 func (s *storeImpl) retryableGet(ctx context.Context, id string) (*storage.ImageV2, bool, error) {
-	conn, release, err := s.acquireConn(ctx, ops.Get, "ImageV2")
+	tx, ctx, err := s.begin(ctx)
 	if err != nil {
 		return nil, false, err
 	}
-	defer release()
-
-	tx, ctx, err := conn.Begin(ctx)
-	if err != nil {
-		return nil, false, err
-	}
+	defer postgres.FinishReadOnlyTransaction(tx)
 
 	image, found, err := s.getFullImage(ctx, id)
-	if err != nil {
-		return nil, false, wrapRollback(ctx, tx, err)
-	}
-
-	if err := tx.Commit(ctx); err != nil {
-		return nil, false, err
-	}
 	return image, found, err
 }
 
@@ -672,13 +646,8 @@ func (s *storeImpl) getFullImage(ctx context.Context, imageID string) (*storage.
 	return image, true, nil
 }
 
-func (s *storeImpl) acquireConn(ctx context.Context, op ops.Op, typ string) (*postgres.Conn, func(), error) {
-	defer metrics.SetAcquireDBConnDuration(time.Now(), op, typ)
-	conn, err := s.db.Acquire(ctx)
-	if err != nil {
-		return nil, nil, err
-	}
-	return conn, conn.Release, nil
+func (s *storeImpl) begin(ctx context.Context) (*postgres.Tx, context.Context, error) {
+	return postgres.GetTransaction(ctx, s.db)
 }
 
 func getImageComponents(ctx context.Context, tx *postgres.Tx, imageID string) ([]*storage.ImageComponentV2, error) {
@@ -810,22 +779,16 @@ func (s *storeImpl) Delete(ctx context.Context, id string) error {
 }
 
 func (s *storeImpl) retryableDelete(ctx context.Context, id string) error {
-	conn, release, err := s.acquireConn(ctx, ops.Remove, "ImageV2")
-	if err != nil {
-		return err
-	}
-	defer release()
-
-	tx, ctx, err := conn.Begin(ctx)
+	tx, ctx, err := s.begin(ctx)
 	if err != nil {
 		return err
 	}
 
 	if err := s.deleteImageTree(ctx, tx, id); err != nil {
-		if err := tx.Rollback(ctx); err != nil {
-			return err
+		if errTx := tx.Rollback(ctx); errTx != nil {
+			return errors.Wrapf(errTx, "rolling back transaction due to: %v", err)
 		}
-		return err
+		return errors.Wrap(err, "deleting image tree")
 	}
 	return tx.Commit(ctx)
 }
@@ -859,22 +822,17 @@ func (s *storeImpl) GetByIDs(ctx context.Context, ids []string) ([]*storage.Imag
 }
 
 func (s *storeImpl) retryableGetByIDs(ctx context.Context, ids []string) ([]*storage.ImageV2, error) {
-	conn, release, err := s.acquireConn(ctx, ops.GetMany, "ImageV2")
+	tx, ctx, err := s.begin(ctx)
 	if err != nil {
 		return nil, err
 	}
-	defer release()
-
-	tx, ctx, err := conn.Begin(ctx)
-	if err != nil {
-		return nil, err
-	}
+	defer postgres.FinishReadOnlyTransaction(tx)
 
 	elems := make([]*storage.ImageV2, 0, len(ids))
 	for _, id := range ids {
 		msg, found, err := s.getFullImage(ctx, id)
 		if err != nil {
-			return nil, wrapRollback(ctx, tx, err)
+			return nil, err
 		}
 		if !found {
 			continue
@@ -882,9 +840,6 @@ func (s *storeImpl) retryableGetByIDs(ctx context.Context, ids []string) ([]*sto
 		elems = append(elems, msg)
 	}
 
-	if err := tx.Commit(ctx); err != nil {
-		return nil, err
-	}
 	return elems, nil
 }
 
@@ -894,21 +849,11 @@ func (s *storeImpl) WalkByQuery(ctx context.Context, q *v1.Query, fn func(image 
 
 	q = s.applyDefaultSort(q)
 
-	conn, release, err := s.acquireConn(ctx, ops.WalkByQuery, "ImageV2")
+	tx, ctx, err := s.begin(ctx)
 	if err != nil {
 		return err
 	}
-	defer release()
-
-	tx, ctx, err := conn.Begin(ctx)
-	if err != nil {
-		return err
-	}
-	defer func() {
-		if err := tx.Rollback(ctx); err != nil {
-			log.Errorf("error rolling back: %v", err)
-		}
-	}()
+	defer postgres.FinishReadOnlyTransaction(tx)
 
 	callback := func(image *storage.ImageV2) error {
 		err := s.populateImage(ctx, tx, image)
@@ -1008,13 +953,7 @@ func (s *storeImpl) retryableUpdateVulnState(ctx context.Context, cve string, im
 		return nil
 	}
 
-	conn, release, err := s.acquireConn(ctx, ops.Update, "UpdateVulnState")
-	if err != nil {
-		return err
-	}
-	defer release()
-
-	tx, ctx, err := conn.Begin(ctx)
+	tx, ctx, err := s.begin(ctx)
 	if err != nil {
 		return err
 	}
@@ -1049,10 +988,10 @@ func (s *storeImpl) retryableUpdateVulnState(ctx context.Context, cve string, im
 	return s.keyFence.DoStatusWithLock(concurrency.DiscreteKeySet(keys...), func() error {
 		err = s.updateCVEVulnState(ctx, tx, imageCVEs...)
 		if err != nil {
-			if err := tx.Rollback(ctx); err != nil {
-				return err
+			if errTx := tx.Rollback(ctx); errTx != nil {
+				return errors.Wrapf(errTx, "rolling back transaction due to: %v", err)
 			}
-			return err
+			return errors.Wrap(err, "updating CVE vuln state")
 		}
 		return tx.Commit(ctx)
 	})

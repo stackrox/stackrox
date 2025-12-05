@@ -78,6 +78,13 @@ var (
 	// Multiple items can hold a pointer to the same object (e.g. same Deployment) so these numbers are pessimistic because we assume all items hold different objects.
 	DetectorDeploymentBufferSize = RegisterIntegerSetting("ROX_SENSOR_DETECTOR_DEPLOYMENT_BUFFER_SIZE", 20000)
 
+	// DetectorFileAccessBufferSize size indicates how many file access will be kept in Sensor while offline in the detector.
+	// 1 Item in the buffer = ~1000 bytes
+	// 20000 * 1000 = 20 MB
+	// Notice: the actual size of each item is ~40 bytes since it holds pointers to the actual objects.
+	// Multiple items can hold a pointer to the same object (e.g. same Deployment) so these numbers are pessimistic because we assume all items hold different objects.
+	DetectorFileAccessBufferSize = RegisterIntegerSetting("ROX_SENSOR_DETECTOR_FILE_ACCESS_BUFFER_SIZE", 20000)
+
 	// BufferScaleCeiling sets the upper limit queue.ScaleSize will scale buffers and queues to.
 	// In its default, the ceiling is defined as triple the relative size.
 	// For example, the NetflowBufferSize will never surpass 100 * 3 = 300.
@@ -126,4 +133,9 @@ var (
 	// ClusterEntityResolutionWaitPeriod defines a time period in which we tolerate failed endpoint and IP lookups in the clusterEntitiesStore.
 	// All failures that happen within this period are considered "okay" and will be retried later.
 	ClusterEntityResolutionWaitPeriod = registerDurationSetting("ROX_CLUSTER_ENTITY_RESOLUTION_WAIT_PERIOD", 10*time.Second)
+
+	// NetworkFlowMaxUpdateSize is maximum number of connections and endpoints to be sent in one update.
+	NetworkFlowMaxUpdateSize = RegisterIntegerSetting("ROX_NETFLOW_MAX_UPDATE_SIZE", 150000)
+	// NetworkFlowMaxCacheSize is the maximum number of connections and endpoints sensor holds in cache.
+	NetworkFlowMaxCacheSize = RegisterIntegerSetting("ROX_NETFLOW_MAX_CACHE_SIZE", 800000)
 )

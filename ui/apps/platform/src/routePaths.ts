@@ -66,6 +66,7 @@ export const searchPath = `${mainPath}/search`;
 export const secretsPath = `${mainPath}/configmanagement/secrets/:secretId?`;
 export const systemConfigPath = `${mainPath}/systemconfig`;
 export const systemHealthPath = `${mainPath}/system-health`;
+export const baseImagesPath = `${mainPath}/base-images`;
 export const userBasePath = `${mainPath}/user`;
 export const userRolePath = `${userBasePath}/roles/:roleName`;
 export const violationsBasePath = `${mainPath}/violations`;
@@ -189,6 +190,7 @@ export type RouteKey =
     | 'vulnerabilities/images-without-cves'
     | 'vulnerabilities/platform-cves'
     | 'vulnerabilities/virtual-machine-cves'
+    | 'base-images'
     | 'vulnerability-management'
     ;
 
@@ -367,6 +369,10 @@ const routeRequirementsMap: Record<RouteKey, RouteRequirements> = {
     'vulnerabilities/virtual-machine-cves': {
         featureFlagRequirements: allEnabled(['ROX_VIRTUAL_MACHINES']),
         resourceAccessRequirements: everyResource(['Cluster']),
+    },
+    'base-images': {
+        featureFlagRequirements: allEnabled(['ROX_BASE_IMAGE_DETECTION']),
+        resourceAccessRequirements: everyResource(['Image']), // TODO: May need new resource type
     },
     'vulnerability-management': {
         resourceAccessRequirements: everyResource([

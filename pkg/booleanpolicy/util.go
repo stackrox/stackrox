@@ -27,6 +27,15 @@ func HasDiscreteEventSource(policy *storage.Policy, eventSource storage.EventSou
 	return true
 }
 
+func SectionContainsEventSource(section *storage.PolicySection, eventSource storage.EventSource) bool {
+	for _, group := range section.GetPolicyGroups() {
+		if FieldMetadataSingleton().IsFromEventSource(group.GetFieldName(), eventSource) {
+			return true
+		}
+	}
+	return false
+}
+
 // ContainsRuntimeFields returns whether the policy contains runtime specific fields.
 func ContainsRuntimeFields(policy *storage.Policy) bool {
 	return ContainsOneOf(policy, AuditLogEvent) || ContainsOneOf(policy, Process) ||

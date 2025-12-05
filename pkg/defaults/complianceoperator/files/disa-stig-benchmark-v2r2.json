@@ -7,18 +7,6 @@
   "shortName": "STIG",
   "profiles": [
     {
-      "profileName": "ocp4-stig",
-      "profileVersion": "V2R2"
-    },
-    {
-      "profileName": "ocp4-stig-node",
-      "profileVersion": "V2R2"
-    },
-    {
-      "profileName": "rhcos4-stig",
-      "profileVersion": "V2R2"
-    },
-    {
       "profileName": "ocp4-stig-v2r2",
       "profileVersion": "V2R2"
     },

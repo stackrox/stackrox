@@ -45,6 +45,7 @@ type FakeService struct {
 	deduperStateLock    sync.RWMutex
 	deduperStateEnabled atomic.Bool
 	deduperState        *central.DeduperState
+	recordMessages      atomic.Bool
 
 	t *testing.T
 }
@@ -70,7 +71,7 @@ func (s *FakeService) ClearReceivedBuffer() {
 // MakeFakeCentralWithInitialMessages creates a fake gRPC connection that sends `initialMessages` on startup.
 // Once communicate is called and the gRPC stream is enabled, this instance will send all `initialMessages` in order.
 func MakeFakeCentralWithInitialMessages(initialMessages ...*central.MsgToSensor) *FakeService {
-	return &FakeService{
+	svc := &FakeService{
 		ConnectionStarted:    concurrency.NewSignal(),
 		KillSwitch:           concurrency.NewSignal(),
 		initialMessages:      initialMessages,
@@ -81,6 +82,27 @@ func MakeFakeCentralWithInitialMessages(initialMessages ...*central.MsgToSensor)
 		centralStubMessagesC: make(chan *central.MsgToSensor, 1),
 		deduperState:         &central.DeduperState{ResourceHashes: make(map[string]uint64)},
 	}
+	svc.recordMessages.Store(true)
+	return svc
+}
+
+func (s *FakeService) shouldRecordMessages() bool {
+	return s.recordMessages.Load()
+}
+
+func (s *FakeService) invokeMessageCallback(msg *central.MsgFromSensor) {
+	concurrency.WithRLock(&s.messageCallbackLock, func() {
+		s.messageCallback(msg)
+	})
+}
+
+// SetMessageRecording controls whether FakeService keeps copies of received messages.
+// Disabling recording clears any buffered messages and prevents further CloneVT calls.
+func (s *FakeService) SetMessageRecording(enabled bool) {
+	previous := s.recordMessages.Swap(enabled)
+	if !enabled && previous {
+		s.ClearReceivedBuffer()
+	}
 }
 
 func (s *FakeService) ingestMessageWithLock(msg *central.MsgFromSensor) {
@@ -88,9 +110,7 @@ func (s *FakeService) ingestMessageWithLock(msg *central.MsgFromSensor) {
 		s.receivedMessages = append(s.receivedMessages, msg)
 	})
 
-	concurrency.WithRLock(&s.messageCallbackLock, func() {
-		s.messageCallback(msg)
-	})
+	s.invokeMessageCallback(msg)
 }
 
 func (s *FakeService) startCentralStub(stream central.SensorService_CommunicateServer) {
@@ -129,7 +149,12 @@ func (s *FakeService) startInputIngestion(stream central.SensorService_Communica
 		if s.KillSwitch.IsDone() {
 			return
 		}
-		go s.ingestMessageWithLock(msg.CloneVT())
+		if s.shouldRecordMessages() {
+			msgCopy := msg.CloneVT()
+			go s.ingestMessageWithLock(msgCopy)
+			continue
+		}
+		go s.invokeMessageCallback(&msg)
 	}
 
 }

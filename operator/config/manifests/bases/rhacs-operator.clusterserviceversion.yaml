@@ -593,6 +593,13 @@ spec:
           Allows overriding the default resource settings for this component. Please consult the documentation
           for an overview of default resource requirements and a sizing guide.
         displayName: Resources
+        path: configAsCode.resources
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:resourceRequirements
+      - description: |-
+          Allows overriding the default resource settings for this component. Please consult the documentation
+          for an overview of default resource requirements and a sizing guide.
+        displayName: Resources
         path: scanner.analyzer.resources
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:resourceRequirements
@@ -635,6 +642,10 @@ spec:
       - description: If you want this component to only run on specific nodes, you
           can configure a node selector here.
         displayName: Node Selector
+        path: configAsCode.nodeSelector
+      - description: If you want this component to only run on specific nodes, you
+          can configure a node selector here.
+        displayName: Node Selector
         path: scanner.analyzer.nodeSelector
       - description: If you want this component to only run on specific nodes, you
           can configure a node selector here.
@@ -662,6 +673,12 @@ spec:
           can configure tolerations of tainted nodes.
         displayName: Tolerations
         path: central.tolerations
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:tolerations
+      - description: If you want this component to only run on specific nodes, you
+          can configure tolerations of tainted nodes.
+        displayName: Tolerations
+        path: configAsCode.tolerations
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:tolerations
       - description: If you want this component to only run on specific nodes, you
@@ -702,6 +719,10 @@ spec:
           in the pod's hosts file.
         displayName: Host Aliases
         path: central.hostAliases
+      - description: HostAliases allows configuring additional hostnames to resolve
+          in the pod's hosts file.
+        displayName: Host Aliases
+        path: configAsCode.hostAliases
       - description: HostAliases allows configuring additional hostnames to resolve
           in the pod's hosts file.
         displayName: Host Aliases
@@ -843,6 +864,10 @@ spec:
         path: central.adminPassword.adminPasswordSecretReference
         x-descriptors:
         - urn:alm:descriptor:io.kubernetes:Secret
+      - description: ObservedGeneration is the generation most recently observed by
+          the controller.
+        displayName: Observed Generation
+        path: observedGeneration
       version: v1alpha1
     - description: |-
         SecuredCluster is the configuration template for the secured cluster services. These include Sensor, which is
@@ -928,6 +953,11 @@ spec:
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:select:CORE_BPF
         - urn:alm:descriptor:com.tectonic.ui:select:NoCollection
+      - description: |-
+          Specifies whether Sensitive File Activity agent is deployed.
+          The default is: Disabled.
+        displayName: SFA Agent
+        path: perNode.sfa.agent
       - description: |-
           Should process baselines be automatically locked when the observation period (1 hour by default) ends.
           The default is: Disabled.
@@ -1122,13 +1152,10 @@ spec:
           When Optional is false, and the specified resource does not exist in the output manifests, an error will be thrown.
         displayName: Optional
         path: overlays[0].optional
-      - description: |-
-          To ensure comprehensive monitoring of your cluster activity, Red Hat Advanced Cluster Security
-          will run services on every node in the cluster, including tainted nodes by default. If you do
-          not want this behavior, please select 'AvoidTaints' here.
-          The default is: TolerateTaints.
-        displayName: Taint Toleration
-        path: perNode.taintToleration
+      - description: Settings for the Sensitive File Activity container, which is
+          responsible for file activity monitoring on the Node.
+        displayName: SFA
+        path: perNode.sfa
       - description: 'The default is: 5.'
         displayName: Autoscaling Maximum Replicas
         path: scanner.analyzer.scaling.maxReplicas
@@ -1159,13 +1186,20 @@ spec:
           (Collector and Compliance).
         displayName: Per Node Settings
         path: perNode
+      - description: |-
+          To ensure comprehensive monitoring of your cluster activity, Red Hat Advanced Cluster Security
+          will run services on every node in the cluster, including tainted nodes by default. If you do
+          not want this behavior, please select 'AvoidTaints' here.
+          The default is: TolerateTaints.
+        displayName: Taint Toleration
+        path: perNode.taintToleration
+      - description: Settings relating to the ingestion of Kubernetes audit logs.
+        displayName: Kubernetes Audit Logs Ingestion Settings
+        path: auditLogs
       - description: HostAliases allows configuring additional hostnames to resolve
           in the pod's hosts file.
         displayName: Host Aliases
         path: perNode.hostAliases
-      - description: Settings relating to the ingestion of Kubernetes audit logs.
-        displayName: Kubernetes Audit Logs Ingestion Settings
-        path: auditLogs
       - description: Settings relating to process baselines.
         displayName: Process Baselines Settings
         path: processBaselines
@@ -1248,6 +1282,13 @@ spec:
           for an overview of default resource requirements and a sizing guide.
         displayName: Resources
         path: perNode.nodeInventory.resources
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:resourceRequirements
+      - description: |-
+          Allows overriding the default resource settings for this component. Please consult the documentation
+          for an overview of default resource requirements and a sizing guide.
+        displayName: Resources
+        path: perNode.sfa.resources
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:resourceRequirements
       - description: |-
