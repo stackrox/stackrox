@@ -8,10 +8,13 @@ import (
 	repoDS "github.com/stackrox/rox/central/baseimage/datastore/repository"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/delegatedregistry"
 	"github.com/stackrox/rox/pkg/env"
+	imageUtils "github.com/stackrox/rox/pkg/images/utils"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/registries"
+	"github.com/stackrox/rox/pkg/registries/types"
 	"github.com/stackrox/rox/pkg/sac"
-	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/sync"
 	"golang.org/x/sync/semaphore"
 )
@@ -20,6 +23,8 @@ var log = logging.LoggerForModule()
 
 type watcherImpl struct {
 	datastore    repoDS.DataStore
+	registries   registries.Set
+	delegator    delegatedregistry.Delegator
 	pollInterval time.Duration
 
 	stopper     concurrency.Stopper
@@ -28,9 +33,11 @@ type watcherImpl struct {
 }
 
 // New creates a new base image watcher.
-func New(ds repoDS.DataStore) Watcher {
+func New(ds repoDS.DataStore, registries registries.Set, delegator delegatedregistry.Delegator) Watcher {
 	return &watcherImpl{
 		datastore:    ds,
+		registries:   registries,
+		delegator:    delegator,
 		pollInterval: env.BaseImageWatcherPollInterval.DurationSetting(),
 		stopper:      concurrency.NewStopper(),
 	}
@@ -94,13 +101,8 @@ func (w *watcherImpl) doPoll() error {
 
 	ctx := concurrency.AsContext(w.stopper.LowLevel().GetStopRequestSignal())
 
-	// Wrap context with SAC scope checker for Administration resource.
-	// Base image repositories are administration-level resources requiring READ_ACCESS.
-	ctx = sac.WithGlobalAccessScopeChecker(ctx,
-		sac.AllowFixedScopes(
-			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
-			sac.ResourceScopeKeys(resources.Administration),
-		))
+	// Use all access since the watcher is an internal Central component.
+	ctx = sac.WithAllAccess(ctx)
 
 	repos, err := w.datastore.ListRepositories(ctx)
 	if err != nil {
@@ -141,9 +143,15 @@ func (w *watcherImpl) doPoll() error {
 
 // processRepository processes a single repository.
 func (w *watcherImpl) processRepository(ctx context.Context, repo *storage.BaseImageRepository) {
-	log.Infof("Processing repository: %s (pattern: %s)",
+	log.Infof("Processing repository: %q: pattern: %q",
 		repo.GetRepositoryPath(),
 		repo.GetTagPattern())
+
+	name, _, err := imageUtils.GenerateImageNameFromString(repo.GetRepositoryPath())
+	if err != nil {
+		log.Errorf("Failed to parse repository path %q: %v", repo.GetRepositoryPath(), err)
+		return
+	}
 
 	// Check for context cancellation (shutdown during processing)
 	select {
@@ -153,8 +161,46 @@ func (w *watcherImpl) processRepository(ctx context.Context, repo *storage.BaseI
 	default:
 	}
 
-	// TODO(ROX-31921): Add tag listing and pattern matching
-	// TODO(ROX-31922): Add metadata fetching
+	// Check if scanning should be delegated to a secured cluster.  On error, default
+	// to Central (same behavior as image enricher).
+	clusterID, shouldDelegate, err := w.delegator.GetDelegateClusterID(ctx, name)
+	if err != nil {
+		log.Warnf("Error checking delegation for %s: %v (continuing with Central-based processing)",
+			repo.GetRepositoryPath(), err)
+	} else if shouldDelegate {
+		log.Infof("Repository %s would be delegated to cluster %s (delegation not implemented yet, skipping)",
+			repo.GetRepositoryPath(), clusterID)
+		// TODO(ROX-31926/ROX-31927): Implement delegated tag listing via Sensor.
+		return
+	}
+
+	// Find matching registry integration for this repository.
+	var reg types.Registry
+	for _, r := range w.registries.GetAll() {
+		if r.Match(name) {
+			reg = r
+			break
+		}
+	}
+	if reg == nil {
+		log.Errorf("No matching image integration found for repository %s", repo.GetRepositoryPath())
+		return
+	}
+
+	// List and filter tags on the repository.
+	start := time.Now()
+	tags, err := listAndFilterTags(ctx, reg, name.GetRemote(), repo.GetTagPattern())
+	recordTagListDuration(name.GetRegistry(), repo.GetRepositoryPath(), start, len(tags), err)
+	if err != nil {
+		log.Errorf("list and filter tags: repository %q: pattern %q: %v",
+			repo.GetRepositoryPath(), repo.GetTagPattern(), err)
+		return
+	}
+
+	log.Infof("Found %d matching tags for repository %s with pattern %q",
+		len(tags), repo.GetRepositoryPath(), repo.GetTagPattern())
+
+	// TODO(ROX-31922): Add metadata fetching for discovered tags
 
 	log.Infof("Repository processed successfully: %s", repo.GetRepositoryPath())
 }
