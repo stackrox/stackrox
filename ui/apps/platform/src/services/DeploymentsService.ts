@@ -2,7 +2,6 @@ import queryString from 'qs';
 
 import type { Deployment, ListDeployment } from 'types/deployment.proto';
 import type { ContainerNameAndBaselineStatus } from 'types/processBaseline.proto';
-import type { Risk } from 'types/risk.proto';
 import type { ApiSortOption, SearchFilter } from 'types/search';
 import { getPaginationParams, getRequestQueryStringForSearchFilter } from 'utils/searchUtils';
 import { makeCancellableAxiosRequest } from './cancellationUtils';
@@ -14,6 +13,42 @@ const deploymentsUrl = '/v1/deployments';
 const deploymentsWithProcessUrl = '/v1/deploymentswithprocessinfo';
 const deploymentWithRiskUrl = '/v1/deploymentswithrisk';
 const deploymentsCountUrl = '/v1/deploymentscount';
+
+export type Risk = {
+    id: string;
+    subject: RiskSubject;
+    score: number; // float
+    results: RiskResult[];
+};
+
+export type RiskResult = {
+    name: string;
+    factors: RiskFactor[];
+    score: number; // float
+};
+
+export type RiskFactor = {
+    message: string;
+    url: string;
+};
+
+export type RiskSubject = {
+    id: string;
+    namespace: string;
+    clusterId: string;
+    type: RiskSubjectType;
+};
+
+export type RiskSubjectType =
+    | 'UNKNOWN'
+    | 'DEPLOYMENT'
+    | 'NAMESPACE'
+    | 'CLUSTER'
+    | 'NODE'
+    | 'NODE_COMPONENT'
+    | 'IMAGE'
+    | 'IMAGE_COMPONENT'
+    | 'SERVICEACCOUNT';
 
 function fillDeploymentSearchQuery(
     searchFilter: SearchFilter,
