@@ -62,11 +62,23 @@ networkWorkload:
   # i.e., multiple processes listening on the same port.
   openPortReuseProbability: 0.05
 
-# Example VirtualMachine workload configuration (commented out by default)
-# Uncomment to enable VM/VMI event generation:
-# virtualMachineWorkload:
-#   poolSize: 20
-#   updateInterval: 30s
-#   lifecycleDuration: 5m
-#   numLifecycles: 0
+# VirtualMachine workload simulates KubeVirt VMs arriving through Kubernetes informers.
+# Optionally generates index reports for each VM while it's alive in the lifecycle.
+virtualMachineWorkload:
+  # Number of VM/VMI templates to maintain (bounded pool for memory efficiency)
+  poolSize: 20
+  # Approx this often, update the annotations/labels on the VM/VMI
+  updateInterval: 30s
+  # Approx this often, destroy and recreate the VM/VMI
+  lifecycleDuration: 5m
+  # Number of times to recreate VMs beyond the initial scale up (0 = infinite)
+  numLifecycles: 0
+  # How often each VM sends an index report (0 = no reports, informer events only)
+  reportInterval: 60s
+  # Number of fake packages to include in each index report
+  numPackages: 100
+  # Number of fake repositories to include in each index report
+  numRepositories: 10
+  # Delay before the first index report for each VM (±20% jitter applied)
+  initialReportDelay: 10s
 

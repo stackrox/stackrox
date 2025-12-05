@@ -35,7 +35,7 @@ virtualMachineWorkload:
   updateInterval: 30s
 
   # How long each VM/VMI lifecycle lasts before recreation
-  lifecycleDuration: 10s
+  lifecycleDuration: 5m
 
   # Number of times to recreate VMs/VMIs (0 = infinite)
   numLifecycles: 0
