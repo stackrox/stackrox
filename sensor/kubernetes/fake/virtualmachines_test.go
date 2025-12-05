@@ -234,25 +234,25 @@ func TestGenerateFakeIndexReport(t *testing.T) {
 			report := generateFakeIndexReport(gen, tt.vsockCID, tt.vmID)
 
 			// Verify vsockCID is set as string
-			assert.Equal(t, fmt.Sprintf("%d", tt.vsockCID), report.VsockCid, "vsockCID mismatch")
+			assert.Equal(t, fmt.Sprintf("%d", tt.vsockCID), report.GetVsockCid(), "vsockCID mismatch")
 
 			// Verify index report structure
-			require.NotNil(t, report.IndexV4, "IndexV4 should not be nil")
-			assert.Equal(t, fmt.Sprintf("hash-%s", tt.vmID), report.IndexV4.HashId, "HashId mismatch")
-			assert.Equal(t, "IndexFinished", report.IndexV4.State, "State mismatch")
-			assert.True(t, report.IndexV4.Success, "Success should be true")
+			require.NotNil(t, report.GetIndexV4(), "IndexV4 should not be nil")
+			assert.Equal(t, fmt.Sprintf("hash-%s", tt.vmID), report.GetIndexV4().GetHashId(), "HashId mismatch")
+			assert.Equal(t, "IndexFinished", report.GetIndexV4().GetState(), "State mismatch")
+			assert.True(t, report.GetIndexV4().GetSuccess(), "Success should be true")
 
 			// Verify contents
-			require.NotNil(t, report.IndexV4.Contents, "Contents should not be nil")
-			assert.Len(t, report.IndexV4.Contents.Packages, 10, "expected 10 packages")
-			assert.Len(t, report.IndexV4.Contents.Repositories, 3, "expected 3 repositories")
+			require.NotNil(t, report.GetIndexV4().GetContents(), "Contents should not be nil")
+			assert.Len(t, report.GetIndexV4().GetContents().GetPackages(), 10, "expected 10 packages")
+			assert.Len(t, report.GetIndexV4().GetContents().GetRepositories(), 3, "expected 3 repositories")
 
 			// Verify packages have valid CPEs (regression test for WFN error)
-			for _, pkg := range report.IndexV4.Contents.Packages {
-				assert.NotEmpty(t, pkg.Cpe, "package CPE should not be empty")
-				assert.Contains(t, pkg.Cpe, "cpe:2.3:", "package CPE should be valid format")
-				if pkg.Source != nil {
-					assert.NotEmpty(t, pkg.Source.Cpe, "source package CPE should not be empty")
+			for _, pkg := range report.GetIndexV4().GetContents().GetPackages() {
+				assert.NotEmpty(t, pkg.GetCpe(), "package CPE should not be empty")
+				assert.Contains(t, pkg.GetCpe(), "cpe:2.3:", "package CPE should be valid format")
+				if pkg.GetSource() != nil {
+					assert.NotEmpty(t, pkg.GetSource().GetCpe(), "source package CPE should not be empty")
 				}
 			}
 		})
@@ -269,7 +269,7 @@ func TestGenerateFakeIndexReport_TemplateRotation(t *testing.T) {
 	for i := 0; i < numReports; i++ {
 		report := generateFakeIndexReport(gen, uint32(i), fmt.Sprintf("vm-%d", i))
 		// Extract a package ID to identify which template was used
-		for pkgID := range report.IndexV4.Contents.Packages {
+		for pkgID := range report.GetIndexV4().GetContents().GetPackages() {
 			hashIDs = append(hashIDs, pkgID)
 			break
 		}
