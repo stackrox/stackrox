@@ -115,7 +115,7 @@ function ClusterDetailsPage() {
         checked: boolean,
         selection: string
     ) => {
-        const action = checked ? 'APPEND_TOGGLE' : 'REMOVE';
+        const action = checked ? 'SELECT_INCLUSIVE' : 'REMOVE';
         const category = filterType;
         const value = selection;
         onSearch([{ action, category, value }]);

@@ -81,7 +81,7 @@ function CompoundSearchFilterInputField({
                 onSearch={(_event, _value) => {
                     onSearch([
                         {
-                            action: 'APPEND_STRING',
+                            action: 'APPEND',
                             category: attribute.searchTerm,
                             value: _value,
                         },
@@ -104,7 +104,7 @@ function CompoundSearchFilterInputField({
                     const { condition, date } = newValue;
                     onSearch([
                         {
-                            action: 'APPEND_STRING',
+                            action: 'APPEND',
                             category: attribute.searchTerm,
                             value: `${dateConditionMap[condition]}${date}`,
                         },
@@ -126,7 +126,7 @@ function CompoundSearchFilterInputField({
                     onChange(newValue);
                     onSearch([
                         {
-                            action: 'APPEND_STRING',
+                            action: 'APPEND',
                             category: attribute.searchTerm,
                             value: `${conditionMap[condition]}${number}`,
                         },
@@ -143,7 +143,7 @@ function CompoundSearchFilterInputField({
                     // onChange(newValue); // inputText seems unused in CompoundSearchFilter
                     onSearch([
                         {
-                            action: 'APPEND_STRING',
+                            action: 'APPEND',
                             category: attribute.searchTerm,
                             value: internalConditionText,
                         },
@@ -167,7 +167,7 @@ function CompoundSearchFilterInputField({
                 onSearch={(newValue) => {
                     onSearch([
                         {
-                            action: 'APPEND_STRING',
+                            action: 'APPEND',
                             category: attribute.searchTerm,
                             value: newValue,
                         },
@@ -243,7 +243,7 @@ function CompoundSearchFilterInputField({
                     onChange(value);
                     onSearch([
                         {
-                            action: checked ? 'APPEND_TOGGLE' : 'REMOVE',
+                            action: checked ? 'SELECT_INCLUSIVE' : 'REMOVE',
                             category: attribute.searchTerm,
                             value: _value,
                         },

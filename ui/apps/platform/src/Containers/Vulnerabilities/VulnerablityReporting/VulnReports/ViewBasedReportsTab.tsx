@@ -120,7 +120,7 @@ function ViewBasedReportsTab() {
         if (checked) {
             trackAppliedFilter(VIEW_BASED_REPORT_FILTER_APPLIED, [
                 {
-                    action: 'APPEND_TOGGLE',
+                    action: 'SELECT_INCLUSIVE',
                     category: 'Report Job Status',
                     value: selectedStatus,
                 },
@@ -136,7 +136,7 @@ function ViewBasedReportsTab() {
         if (checked) {
             trackAppliedFilter(VIEW_BASED_REPORT_FILTER_APPLIED, [
                 {
-                    action: 'APPEND_TOGGLE',
+                    action: 'SELECT_INCLUSIVE',
                     category: 'My Jobs',
                     value: 'true',
                 },

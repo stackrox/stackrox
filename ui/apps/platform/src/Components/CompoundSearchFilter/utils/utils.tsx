@@ -150,14 +150,14 @@ export function updateSearchFilter(
     payload.forEach((payloadItem) => {
         const { action } = payloadItem;
         switch (action) {
-            case 'APPEND_STRING':
-            case 'APPEND_TOGGLE': {
+            case 'APPEND':
+            case 'SELECT_INCLUSIVE': {
                 const { category, value } = payloadItem;
                 const values = searchValueAsArray(searchFilterUpdated[category]);
                 searchFilterUpdated[category] = [...values, value];
                 break;
             }
-            case 'ASSIGN_SINGLE': {
+            case 'SELECT_EXCLUSIVE': {
                 const { category, value } = payloadItem;
                 searchFilterUpdated[category] = [value];
                 break;
@@ -190,7 +190,7 @@ export function payloadItemFiltererForUpdating(
     payloadItem: OnSearchPayloadItem
 ) {
     switch (payloadItem.action) {
-        case 'APPEND_STRING': {
+        case 'APPEND': {
             const { category, value } = payloadItem;
             if (value === '') {
                 // TODO What is pro and con for search filter input field to prevent empty string?
@@ -210,9 +210,9 @@ export function payloadItemFiltererForTracking(
     payloadItem: OnSearchPayloadItem
 ): payloadItem is OnSearchPayloadItemAdd {
     switch (payloadItem.action) {
-        case 'APPEND_STRING': // open set of values which analytics might omit
-        case 'APPEND_TOGGLE': // closed set of values
-        case 'ASSIGN_SINGLE': // closed set of values
+        case 'APPEND': // open set of values which analytics might omit
+        case 'SELECT_INCLUSIVE': // closed set of values
+        case 'SELECT_EXCLUSIVE': // closed set of values
             return true;
         default:
             return false;

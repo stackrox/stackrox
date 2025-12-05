@@ -65,20 +65,20 @@ export type OnSearchPayloadItem =
     | OnSearchPayloadItemRemove;
 
 export type OnSearchPayloadItemAdd =
-    | OnSearchPayloadItemAppendString
-    | OnSearchPayloadItemAppendToggle
-    | OnSearchPayloadItemAssignSingle;
+    | OnSearchPayloadItemAppend
+    | OnSearchPayloadItemSelectInclusive
+    | OnSearchPayloadItemSelectExclusive;
 
-export type OnSearchPayloadItemAppendString = {
-    action: 'APPEND_STRING'; // inputType: autocomplete, and so on
+export type OnSearchPayloadItemAppend = {
+    action: 'APPEND'; // inputType: autocomplete, and so on
 } & OnSearchPayloadItemWithValue;
 
-export type OnSearchPayloadItemAppendToggle = {
-    action: 'APPEND_TOGGLE'; // inputType: select
+export type OnSearchPayloadItemSelectInclusive = {
+    action: 'SELECT_INCLUSIVE'; // inputType: select
 } & OnSearchPayloadItemWithValue;
 
-export type OnSearchPayloadItemAssignSingle = {
-    action: 'ASSIGN_SINGLE'; // inputType: select-single
+export type OnSearchPayloadItemSelectExclusive = {
+    action: 'SELECT_EXCLUSIVE'; // inputType: select-single
 } & OnSearchPayloadItemWithValue;
 
 export type OnSearchPayloadItemDelete = {
