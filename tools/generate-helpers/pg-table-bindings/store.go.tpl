@@ -45,9 +45,7 @@ const (
 var (
     log = logging.LoggerForModule()
     schema = {{ template "schemaVar" .Schema}}
-    {{- if or (.Obj.IsGloballyScoped) (.Obj.IsDirectlyScoped) (.Obj.IsIndirectlyScoped) }}
-        targetResource = resources.{{.Type | storageToResource}}
-    {{- end }}
+    targetResource = resources.{{.ScopingResource}}
 )
 
 type (
