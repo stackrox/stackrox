@@ -360,10 +360,7 @@ func (s *PolicyPostgresDataStoreTestSuite) TestTransactionRollbacks() {
 }
 
 func (s *PolicyPostgresDataStoreTestSuite) TestAddDefaultsDeduplicatesCategoryNames() {
-	ctx := sac.WithGlobalAccessScopeChecker(context.Background(), sac.AllowFixedScopes(
-		sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
-		sac.ResourceScopeKeys(resources.WorkflowAdministration, resources.Cluster),
-	))
+	ctx := sac.WithAllAccess(context.Background())
 
 	// Create a policy with incorrect category names that need to be deduplicated
 	policy := fixtures.GetPolicy()
@@ -396,9 +393,9 @@ func (s *PolicyPostgresDataStoreTestSuite) TestAddDefaultsDeduplicatesCategoryNa
 	}
 
 	// Upsert the incorrect categories directly to the store
-	err = categoryStorage.Upsert(sac.WithAllAccess(context.Background()), dockerCisCategory)
+	err = categoryStorage.Upsert(ctx, dockerCisCategory)
 	s.NoError(err)
-	err = categoryStorage.Upsert(sac.WithAllAccess(context.Background()), devopsCategory)
+	err = categoryStorage.Upsert(ctx, devopsCategory)
 	s.NoError(err)
 
 	// Create edges linking the policy to the incorrect categories
@@ -412,7 +409,7 @@ func (s *PolicyPostgresDataStoreTestSuite) TestAddDefaultsDeduplicatesCategoryNa
 		PolicyId:   policy.GetId(),
 		CategoryId: devopsCategory.GetId(),
 	}
-	err = edgeDS.UpsertMany(sac.WithAllAccess(context.Background()), []*storage.PolicyCategoryEdge{dockerCisEdge, devopsEdge})
+	err = edgeDS.UpsertMany(ctx, []*storage.PolicyCategoryEdge{dockerCisEdge, devopsEdge})
 	s.NoError(err)
 
 	// Verify the policy has the incorrect category names
