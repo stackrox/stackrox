@@ -245,12 +245,12 @@ export function transformActiveData(
 
     nodes.forEach(({ entity, outEdges }) => {
         const { type, id } = entity;
-        const { networkPolicyState } = policyNodeMap[id]?.data || {};
+        const { networkPolicyState } = policyNodeMap[id]?.data ?? {};
         const isExternallyConnected = Object.keys(outEdges).some((nodeIdx) => {
             const { entity: targetEntity } = nodes[nodeIdx];
             return targetEntity.type === 'EXTERNAL_SOURCE' || targetEntity.type === 'INTERNET';
         });
-        const policyIds = policyNodeMap[id]?.data.policyIds || [];
+        const policyIds = policyNodeMap[id]?.data.policyIds ?? [];
 
         // to group deployments into namespaces
         if (type === 'DEPLOYMENT') {
@@ -340,7 +340,7 @@ export function transformActiveData(
     if (externalNodeIds.length > 0) {
         // adding external outEdges to nodes to indicate externally connected state
         Object.values(externalNodes).forEach((externalNode) => {
-            const { outEdges } = externalNode.data || {};
+            const { outEdges } = externalNode.data ?? {};
             Object.keys(outEdges).forEach((nodeIdx) => {
                 const { id: targetNodeId } = nodes[nodeIdx];
                 if (deploymentNodes[targetNodeId]) {

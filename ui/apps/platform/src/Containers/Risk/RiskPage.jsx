@@ -43,7 +43,7 @@ const RiskPage = () => {
         },
     };
     const { data: searchData } = useQuery(SEARCH_OPTIONS_QUERY, searchQueryOptions);
-    const searchOptions = (searchData && searchData.searchOptions) || [];
+    const searchOptions = searchData?.searchOptions ?? [];
     const filteredSearchOptions = searchOptions.filter(
         (option) => option !== 'Orchestrator Component'
     );

@@ -103,7 +103,7 @@ function PolicyBehaviorForm({ hasActiveViolations }: PolicyBehaviorFormProps) {
             }
         });
         values.excludedDeploymentScopes.forEach(({ scope }, idx) => {
-            const { ...rest } = omit(scope || {}, 'label');
+            const { ...rest } = omit(scope ?? {}, 'label');
 
             setFieldValue(
                 `excludedDeploymentScopes[${idx}]`,

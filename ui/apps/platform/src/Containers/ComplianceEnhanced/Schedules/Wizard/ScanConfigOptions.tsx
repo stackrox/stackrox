@@ -164,12 +164,11 @@ function ScanConfigOptions(): ReactElement {
                                                             : 'parameters.daysOfMonth'
                                                     }
                                                     value={
-                                                        formik.values.parameters.intervalType ===
+                                                        (formik.values.parameters.intervalType ===
                                                         'WEEKLY'
-                                                            ? formik.values.parameters.daysOfWeek ||
-                                                              []
+                                                            ? formik.values.parameters.daysOfWeek
                                                             : formik.values.parameters
-                                                                  .daysOfMonth || []
+                                                                  .daysOfMonth) ?? []
                                                     }
                                                     handleSelect={onScheduledDaysChange}
                                                     intervalType={

@@ -19,9 +19,26 @@ import (
 
 var log = logging.LoggerForModule()
 
-// SendReportToSensor sends the passed report to sensor using the provided VirtualMachineIndexReportServiceClient,
-// retrying when applicable.
-func SendReportToSensor(ctx context.Context, report *v1.IndexReport, sensorClient sensor.VirtualMachineIndexReportServiceClient) error {
+// IndexReportSender sends index reports to Sensor.
+type IndexReportSender interface {
+	Send(ctx context.Context, report *v1.IndexReport) error
+}
+
+type sensorIndexReportSender struct {
+	sensorClient sensor.VirtualMachineIndexReportServiceClient
+}
+
+var _ IndexReportSender = (*sensorIndexReportSender)(nil)
+
+// New creates an IndexReportSender that sends reports to Sensor with retry logic.
+func New(sensorClient sensor.VirtualMachineIndexReportServiceClient) IndexReportSender {
+	return &sensorIndexReportSender{
+		sensorClient: sensorClient,
+	}
+}
+
+// Send sends the report to Sensor, retrying on transient errors.
+func (s *sensorIndexReportSender) Send(ctx context.Context, report *v1.IndexReport) error {
 	log.Infof("Sending index report to sensor (vsockCID: %s)", report.GetVsockCid())
 
 	// This is the sending logic that will be retried if needed
@@ -33,7 +50,7 @@ func SendReportToSensor(ctx context.Context, report *v1.IndexReport, sensorClien
 			IndexReport: report,
 		}
 
-		resp, err := sensorClient.UpsertVirtualMachineIndexReport(sendToSensorCtx, req)
+		resp, err := s.sensorClient.UpsertVirtualMachineIndexReport(sendToSensorCtx, req)
 
 		if resp != nil && !resp.GetSuccess() {
 			// This can't happen as of this writing (Success is only false when an error is returned) but is

@@ -148,7 +148,7 @@ function PolicyCriteriaFieldInput({
                     data-testid="policy-criteria-value-multiselect"
                 >
                     <CheckboxSelect
-                        selections={(value.value as string[]) || []}
+                        selections={(value.value as string[]) ?? []}
                         onChange={handleChangeSelectMultiple}
                         isDisabled={readOnly}
                         placeholderText={descriptor.placeholder || 'Select one or more options'}
@@ -162,7 +162,7 @@ function PolicyCriteriaFieldInput({
                             >
                                 {option.label}
                             </SelectOption>
-                        )) || []}
+                        )) ?? []}
                     </CheckboxSelect>
                 </FormGroup>
             );
