@@ -17,6 +17,7 @@ import NotifierIntegrationHealthWidget from './Components/NotifierIntegrationHea
 import BackupIntegrationHealthWidget from './Components/BackupIntegrationHealthWidget';
 import ShowAdministrationUsage from './UsageStatistics/ShowAdministrationUsage';
 import CentralDatabaseHealthCard from './CentralDatabaseHealth/CentralDatabaseHealthCard';
+import PrometheusMetricsViewer from './PrometheusMetrics/PrometheusMetricsViewer';
 
 function SystemHealthPage() {
     const { isCentralCapabilityAvailable } = useCentralCapabilities();
@@ -122,6 +123,11 @@ function SystemHealthPage() {
                                 component="SCANNER_V4"
                                 pollingCount={pollingCountSlower}
                             />
+                        </GridItem>
+                    )}
+                    {hasReadAccessForAdministration && (
+                        <GridItem span={12}>
+                            <PrometheusMetricsViewer />
                         </GridItem>
                     )}
                 </Grid>
