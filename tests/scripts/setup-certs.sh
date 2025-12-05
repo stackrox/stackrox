@@ -66,20 +66,22 @@ setup_default_TLS_certs() {
 
     local cert_dir
     cert_dir="${1:-$(mktemp -d)}"
-    setup_certs "$cert_dir" custom-tls-cert.central.stackrox.local "Server CA"
+    # Use internal service name to test config-controller with custom TLS certs
+    # This triggers the SNI-based certificate selection bug that the init container fixes
+    setup_certs "$cert_dir" central.stackrox.svc "Server CA"
 
     export_default_TLS_certs "${cert_dir}"
 }
 
 export_default_TLS_certs() {
     local cert_dir="$1"
-    
+
     export ROX_DEFAULT_TLS_CERT_FILE="${cert_dir}/tls.crt"
     export ROX_DEFAULT_TLS_KEY_FILE="${cert_dir}/tls.key"
     export DEFAULT_CA_FILE="${cert_dir}/ca.crt"
     ROX_TEST_CA_PEM="$(cat "${cert_dir}/ca.crt")"
     export ROX_TEST_CA_PEM="$ROX_TEST_CA_PEM"
-    export ROX_TEST_CENTRAL_CN="custom-tls-cert.central.stackrox.local"
+    export ROX_TEST_CENTRAL_CN="central.stackrox.svc"
     export TRUSTSTORE_PATH="${cert_dir}/keystore.p12"
 
     echo "Contents of ${cert_dir}:"
