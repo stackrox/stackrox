@@ -5,7 +5,7 @@ import PageNotFound from 'Components/PageNotFound';
 import RiskTablePage from './RiskTablePage';
 import RiskDetailsPage from './RiskDetailsPage';
 
-function RiskPageRoutes(): ReactElement {
+function RiskRoutes(): ReactElement {
     return (
         <>
             <Routes>
@@ -17,4 +17,4 @@ function RiskPageRoutes(): ReactElement {
     );
 }
 
-export default RiskPageRoutes;
+export default RiskRoutes;

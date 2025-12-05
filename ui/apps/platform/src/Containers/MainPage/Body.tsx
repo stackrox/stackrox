@@ -212,7 +212,7 @@ const routeComponentMap: Record<RouteKey, RouteComponent> = {
         path: policyManagementBasePath,
     },
     risk: {
-        component: asyncComponent(() => import('Containers/Risk/RiskPageRoutes')),
+        component: asyncComponent(() => import('Containers/Risk/RiskRoutes')),
         path: riskBasePath,
     },
     search: {
