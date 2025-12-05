@@ -14,8 +14,8 @@ import workflowStateContext from 'Containers/workflowStateContext';
 import {
     fetchDeploymentsCountLegacy,
     fetchDeploymentsWithProcessInfoLegacy as fetchDeploymentsWithProcessInfo,
-    type ListDeploymentWithProcessInfo,
 } from 'services/DeploymentsService';
+import type { ListDeploymentWithProcessInfo } from 'services/DeploymentsService';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 import {
     convertSortToGraphQLFormat,

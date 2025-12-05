@@ -1,5 +1,3 @@
-import PropTypes from 'prop-types';
-
 import NoResultsMessage from 'Components/NoResultsMessage';
 import Table from 'Components/TableV2';
 

@@ -103,15 +103,14 @@ function ContainerVolumes({ volumes }: ContainerVolumesProps) {
             key={volume.name}
             className={`py-2 ${idx === volumes.length - 1 ? '' : 'border-base-300 border-b'}`}
         >
-            {Object.keys(volume).map(
-                (key) =>
-                    volume[key] && (
-                        <div key={key} className="py-1">
-                            <span className="font-700 pr-1">{capitalize(lowerCase(key))}:</span>
-                            <span>{volume[key].toString()}</span>
-                        </div>
-                    )
-            )}
+            {Object.keys(volume).map((key) => {
+                return volume[key] ? (
+                    <div key={key} className="py-1">
+                        <span className="font-700 pr-1">{capitalize(lowerCase(key))}:</span>
+                        <span>{volume[key].toString()}</span>
+                    </div>
+                ) : null;
+            })}
         </li>
     ));
 }

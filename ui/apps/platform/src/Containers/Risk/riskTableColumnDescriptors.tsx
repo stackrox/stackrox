@@ -69,7 +69,7 @@ const riskTableColumnDescriptors = [
         Header: 'Priority',
         searchField: 'Deployment Risk Priority',
         accessor: 'deployment.priority',
-        Cell: ({ value }) => {
+        Cell: ({ value }: { value: string }) => {
             const asInt = parseInt(value, 10);
             return Number.isNaN(asInt) || asInt < 1 ? '-' : value;
         },

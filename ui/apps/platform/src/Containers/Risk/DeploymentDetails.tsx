@@ -8,18 +8,20 @@ import { portExposureLabels } from 'messages/common';
 import SecurityContext from './SecurityContext';
 import ContainerConfigurations from './ContainerConfigurations';
 import KeyValuePairs from './KeyValuePairs';
-import type { Deployment } from 'types/deployment.proto';
+import type { Deployment, PortConfig } from 'types/deployment.proto';
 
-export const formatDeploymentPorts = (ports) => {
+export function formatDeploymentPorts(ports: Deployment['ports']): Deployment['ports'] {
     return ports.map(({ exposure, exposureInfos, ...rest }) => {
-        const formattedPort = { ...rest };
+        const formattedPort: PortConfig = { ...rest, exposure: 'UNSET', exposureInfos: [] };
+        // @ts-expect-error TODO: The type of `portExposureLabels` is not correct based on declared types.
         formattedPort.exposure = portExposureLabels[exposure] || portExposureLabels.UNSET;
+        // @ts-expect-error TODO: The type of `portExposureLabels` is not correct based on declared types.
         formattedPort.exposureInfos = exposureInfos.map(({ level, ...restInfo }) => {
             return { ...restInfo, level: portExposureLabels[level] };
         });
         return formattedPort;
     });
-};
+}
 
 const deploymentDetailsMap = {
     id: { label: 'Deployment ID' },
@@ -36,12 +38,12 @@ const deploymentDetailsMap = {
     annotations: { label: 'Annotations' },
     ports: {
         label: 'Port configuration',
-        formatValue: (v) => formatDeploymentPorts(v),
+        formatValue: (v: Deployment['ports']) => formatDeploymentPorts(v),
     },
     serviceAccount: { label: 'Service Account' },
     imagePullSecrets: {
         label: 'Image Pull Secrets',
-        formatValue: (v) => v.join(', '),
+        formatValue: (v: Deployment['imagePullSecrets']) => v.join(', '),
     },
 };
 
