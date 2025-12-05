@@ -856,7 +856,7 @@ func (d *detectorImpl) pushFileAccess(ctx context.Context, access *storage.FileA
 	if fsUtils.IsDeploymentFileAccess(access) {
 		deployment := d.deploymentStore.GetSnapshot(access.GetProcess().GetDeploymentId())
 		if deployment == nil {
-			log.Debugf("Deployment has already been removed: %+v", access.GetProcess())
+			log.Debugf("Deployment has already been removed: %+v", access.GetProcess().GetDeploymentId())
 			// Because the file access was already enriched with a deployment, this means the deployment is gone
 			return
 		}
