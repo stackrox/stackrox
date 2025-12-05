@@ -33,7 +33,7 @@ var (
 		schema.ResolveReferences(func(messageTypeName string) *walker.Schema {
 			return referencedSchemas[fmt.Sprintf("storage.%s", messageTypeName)]
 		})
-		schema.ScopingResource = resources.Administration
+		schema.ScopingResource = resources.ImageAdministration
 		RegisterTable(schema, CreateTableBaseImageTagsStmt)
 		return schema
 	}()

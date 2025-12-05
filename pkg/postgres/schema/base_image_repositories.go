@@ -25,7 +25,7 @@ var (
 			return schema
 		}
 		schema = walker.Walk(reflect.TypeOf((*storage.BaseImageRepository)(nil)), "base_image_repositories")
-		schema.ScopingResource = resources.Administration
+		schema.ScopingResource = resources.ImageAdministration
 		RegisterTable(schema, CreateTableBaseImageRepositoriesStmt)
 		return schema
 	}()

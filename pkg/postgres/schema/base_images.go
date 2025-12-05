@@ -47,7 +47,7 @@ var (
 			v1.SearchCategory_NAMESPACES,
 			v1.SearchCategory_CLUSTERS,
 		}...)
-		schema.ScopingResource = resources.Administration
+		schema.ScopingResource = resources.ImageAdministration
 		RegisterTable(schema, CreateTableBaseImagesStmt)
 		mapping.RegisterCategoryToTable(v1.SearchCategory_BASE_IMAGES, schema)
 		return schema
