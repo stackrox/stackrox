@@ -50,6 +50,7 @@ message ExportDeploymentRequest {
 
 message ExportDeploymentResponse {
   storage.Deployment deployment = 1;
+  storage.Risk risk = 2; // Risk includes both ML score and user_ranking_adjustment (effective score)
 }
 
 // DeploymentService APIs can be used to manage deployments.

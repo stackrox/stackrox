@@ -21,6 +21,7 @@ import (
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/images/integration"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/scancomponent"
@@ -47,6 +48,10 @@ type Manager interface {
 	CalculateRiskAndUpsertImage(image *storage.Image) error
 	CalculateRiskAndUpsertImageV2(image *storage.ImageV2) error
 	CalculateRiskAndUpsertNode(node *storage.Node) error
+
+	// User ranking adjustment methods
+	ChangeDeploymentRiskPosition(ctx context.Context, deploymentID string, moveUp bool) (*storage.Risk, error)
+	ResetDeploymentRisk(ctx context.Context, deploymentID string) (*storage.Risk, error)
 }
 
 type managerImpl struct {
@@ -382,4 +387,106 @@ func (e *managerImpl) updateNamespaceRisk(nsID string, oldDeploymentScore float3
 func (e *managerImpl) updateClusterRisk(clusterID string, oldDeploymentScore float32, newDeploymentScore float32) {
 	oldClusterRiskScore := e.clusterRanker.GetScoreForID(clusterID)
 	e.clusterRanker.Add(clusterID, oldClusterRiskScore-oldDeploymentScore+newDeploymentScore)
+}
+
+// ResetDeploymentRisk removes user ranking adjustments and returns to the original ML-calculated score.
+func (e *managerImpl) ResetDeploymentRisk(ctx context.Context, deploymentID string) (*storage.Risk, error) {
+	// Get the current risk
+	risk, exists, err := e.riskStorage.GetRisk(ctx, deploymentID, storage.RiskSubjectType_DEPLOYMENT)
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to get risk for deployment %s", deploymentID)
+	}
+	if !exists {
+		return nil, errors.Errorf("risk not found for deployment %s", deploymentID)
+	}
+
+	// Clear the user ranking adjustment
+	risk.UserRankingAdjustment = nil
+
+	// Save the updated risk
+	if err := e.riskStorage.UpsertRisk(ctx, risk); err != nil {
+		return nil, errors.Wrapf(err, "failed to reset risk for deployment %s", deploymentID)
+	}
+
+	log.Infof("Reset user ranking adjustment for deployment %s", deploymentID)
+	return risk, nil
+}
+
+// ChangeDeploymentRiskPosition adjusts a deployment's risk ranking by moving it
+// up or down in the ranking. It places the deployment midway between its current
+// position and the next adjacent deployment.
+func (e *managerImpl) ChangeDeploymentRiskPosition(ctx context.Context, deploymentID string, moveUp bool) (*storage.Risk, error) {
+	// Get all deployment risks in user's scope
+	allRisks, err := e.riskStorage.GetDeploymentsInUserScope(ctx)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get deployments in user scope")
+	}
+
+	if len(allRisks) == 0 {
+		return nil, errors.New("no deployments found in user scope")
+	}
+
+	// Find the target deployment
+	var targetRisk *storage.Risk
+	for _, risk := range allRisks {
+		if risk.GetSubject().GetId() == deploymentID {
+			targetRisk = risk
+			break
+		}
+	}
+
+	if targetRisk == nil {
+		return nil, errors.Errorf("deployment %s not found in user scope", deploymentID)
+	}
+
+	// Sort risks by effective score (descending)
+	sortedRisks := SortRisksByEffectiveScore(allRisks)
+
+	// Find current position
+	currentIndex := FindDeploymentIndex(sortedRisks, deploymentID)
+	if currentIndex == -1 {
+		return nil, errors.Errorf("deployment %s not found in sorted list", deploymentID)
+	}
+
+	// Get current effective score
+	currentScore := GetEffectiveScore(targetRisk)
+
+	// Calculate new score
+	newScore := CalculatePositionChangeScore(currentScore, sortedRisks, currentIndex, moveUp)
+
+	// If score didn't change, it's a no-op (at boundary)
+	if newScore == currentScore {
+		direction := "up"
+		if !moveUp {
+			direction = "down"
+		}
+		log.Infof("Deployment %s position change %s is a no-op (at boundary)", deploymentID, direction)
+		return targetRisk, nil
+	}
+
+	// Create or update user ranking adjustment
+	if targetRisk.GetUserRankingAdjustment() == nil {
+		targetRisk.UserRankingAdjustment = &storage.UserRankingAdjustment{}
+	}
+
+	adj := targetRisk.GetUserRankingAdjustment()
+	adj.AdjustedScore = newScore
+	adj.LastAdjusted = protocompat.TimestampNow()
+
+	// Get user ID from context (if available via authn)
+	// For now, we'll use a placeholder - this should be extracted from the context
+	adj.LastAdjustedBy = "user" // TODO: Extract from authn context
+
+	// Save the updated risk
+	if err := e.riskStorage.UpsertRisk(ctx, targetRisk); err != nil {
+		return nil, errors.Wrapf(err, "failed to update risk for deployment %s", deploymentID)
+	}
+
+	direction := "up"
+	if !moveUp {
+		direction = "down"
+	}
+	log.Infof("Deployment %s moved %s: score %.2f -> %.2f", deploymentID, direction, currentScore, newScore)
+
+	return targetRisk, nil
 }

@@ -1046,6 +1046,9 @@
             "type": "object",
             "$ref": "#/definitions/storageRiskResult"
           }
+        },
+        "userRankingAdjustment": {
+          "$ref": "#/definitions/storageUserRankingAdjustment"
         }
       }
     },
@@ -1169,6 +1172,25 @@
       ],
       "default": "TOLERATION_OPERATION_UNKNOWN"
     },
+    "storageUserRankingAdjustment": {
+      "type": "object",
+      "properties": {
+        "adjustedScore": {
+          "type": "number",
+          "format": "float",
+          "title": "Adjusted risk score after user ranking changes\nNo limits - can be negative or exceed 10.0"
+        },
+        "lastAdjusted": {
+          "type": "string",
+          "format": "date-time",
+          "title": "Timestamp of last adjustment"
+        },
+        "lastAdjustedBy": {
+          "type": "string",
+          "title": "User ID who made the last adjustment"
+        }
+      }
+    },
     "storageVolume": {
       "type": "object",
       "properties": {
@@ -1244,6 +1266,10 @@
       "properties": {
         "deployment": {
           "$ref": "#/definitions/storageDeployment"
+        },
+        "risk": {
+          "$ref": "#/definitions/storageRisk",
+          "title": "Risk includes both ML score and user_ranking_adjustment (effective score)"
         }
       }
     },

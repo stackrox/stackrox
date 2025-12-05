@@ -1,0 +1,61 @@
+syntax = "proto3";
+
+package v1;
+
+import weak "google/api/annotations.proto";
+import "storage/risk.proto";
+
+option go_package = "./api/v1;v1";
+option java_package = "io.stackrox.proto.api.v1";
+
+// RiskService provides APIs for managing deployment risk rankings
+service RiskService {
+  // ChangeDeploymentRiskPosition adjusts a deployment's risk ranking
+  // by placing it between the current position and the adjacent deployment
+  // (up or down based on direction parameter)
+  rpc ChangeDeploymentRiskPosition(RiskPositionChangeRequest) returns (RiskAdjustmentResponse) {
+    option (google.api.http) = {
+      post: "/v1/risk/deployment/{deployment_id}/position"
+      body: "*"
+    };
+  }
+
+  // ResetDeploymentRisk removes user ranking adjustments and returns to the original ML-calculated score
+  rpc ResetDeploymentRisk(RiskAdjustmentRequest) returns (RiskAdjustmentResponse) {
+    option (google.api.http) = {
+      post: "/v1/risk/deployment/{deployment_id}/reset"
+      body: "*"
+    };
+  }
+}
+
+// Direction for risk ranking position changes
+enum RiskPositionDirection {
+  RISK_POSITION_DIRECTION_UNSPECIFIED = 0;
+  RISK_POSITION_UP = 1;    // Move deployment higher in ranking (increase score)
+  RISK_POSITION_DOWN = 2;  // Move deployment lower in ranking (decrease score)
+}
+
+message RiskPositionChangeRequest {
+  // Deployment ID to adjust
+  string deployment_id = 1;
+  // Direction to move in the ranking
+  RiskPositionDirection direction = 2;
+}
+
+// Keep for backward compatibility with Reset endpoint
+message RiskAdjustmentRequest {
+  // Deployment ID to adjust
+  string deployment_id = 1;
+}
+
+message RiskAdjustmentResponse {
+  // Updated risk object with new ranking adjustment
+  storage.Risk risk = 1;
+  // Original score (never changes)
+  float original_score = 2;
+  // New adjusted score (or original if reset)
+  float effective_score = 3;
+  // Human-readable message about the adjustment
+  string message = 4;
+}

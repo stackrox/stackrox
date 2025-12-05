@@ -145,6 +145,7 @@ import (
 	collectionService "github.com/stackrox/rox/central/resourcecollection/service"
 	"github.com/stackrox/rox/central/risk/handlers/timeline"
 	riskManager "github.com/stackrox/rox/central/risk/manager"
+	riskService "github.com/stackrox/rox/central/risk/service"
 	roleDataStore "github.com/stackrox/rox/central/role/datastore"
 	"github.com/stackrox/rox/central/role/sachelper"
 	roleService "github.com/stackrox/rox/central/role/service"
@@ -451,6 +452,7 @@ func servicesToRegister() []pkgGRPC.APIService {
 		processIndicatorService.Singleton(),
 		processListeningOnPorts.Singleton(),
 		rbacService.Singleton(),
+		riskService.Singleton(),
 		roleService.Singleton(),
 		searchService.Singleton(),
 		secretService.Singleton(),

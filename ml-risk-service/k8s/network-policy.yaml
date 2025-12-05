@@ -1,0 +1,70 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: ml-risk-service-netpol
+  namespace: stackrox
+  labels:
+    app.kubernetes.io/name: ml-risk-service
+    app.kubernetes.io/component: ml-service
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: ml-risk-service
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    # Allow gRPC connections from Central
+    - from:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: central
+      ports:
+        - protocol: TCP
+          port: 8080
+    # Allow health checks from monitoring systems
+    - from:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: prometheus
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: monitoring
+      ports:
+        - protocol: TCP
+          port: 8081
+    # Allow communication between ML service replicas
+    - from:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: ml-risk-service
+      ports:
+        - protocol: TCP
+          port: 8080
+        - protocol: TCP
+          port: 8081
+  egress:
+    # Allow DNS resolution
+    - to: []
+      ports:
+        - protocol: UDP
+          port: 53
+        - protocol: TCP
+          port: 53
+    # Allow connections to Central for data fetching
+    - to:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: central
+      ports:
+        - protocol: TCP
+          port: 443
+        - protocol: TCP
+          port: 8443
+    # Allow connections to external APIs if needed (e.g., for model updates)
+    - to: []
+      ports:
+        - protocol: TCP
+          port: 443
+        - protocol: TCP
+          port: 80
