@@ -46,7 +46,6 @@ virtualMachineWorkload:
   lifecycleDuration: 1h
   updateInterval: 5m
   numLifecycles: 0  # infinite
-  initialReportDelay: 30s  # first report delayed with ±20% jitter
 
   # Index report settings
   # Lower values = higher load (e.g., 100ms = 10 reports/second per VM)
@@ -60,3 +59,6 @@ virtualMachineWorkload:
   # Number of repositories to include in each IndexReport
   # Higher values = larger message size and more processing overhead
   numRepositories: 500
+
+  # Optional: delay before the first index report for each VM (±20% jitter is always applied)
+  initialReportDelay: 30s  # first report delayed with ±20% jitter
