@@ -609,9 +609,9 @@ export const policyCriteriaDescriptors: Descriptor[] = [
         lifecycleStages: ['BUILD', 'DEPLOY', 'RUNTIME'],
     },
     {
-        label: 'Days Since CVE Fix Available',
-        name: 'Days Since CVE Fix Available',
-        shortName: 'Days since CVE fix available',
+        label: 'Days Since CVE Fix Was Available',
+        name: 'Days Since CVE Fix Was Available',
+        shortName: 'Days since CVE fix was available',
         category: policyCriteriaCategories.IMAGE_SCANNING,
         type: 'number',
         placeholder: '0',
