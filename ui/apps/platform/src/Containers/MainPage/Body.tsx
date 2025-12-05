@@ -34,7 +34,7 @@ import {
     networkPath,
     policiesBasePath,
     policyManagementBasePath,
-    riskPath,
+    riskBasePath,
     searchPath,
     systemConfigPath,
     systemHealthPath,
@@ -212,8 +212,8 @@ const routeComponentMap: Record<RouteKey, RouteComponent> = {
         path: policyManagementBasePath,
     },
     risk: {
-        component: asyncComponent(() => import('Containers/Risk/RiskPage')),
-        path: riskPath,
+        component: asyncComponent(() => import('Containers/Risk/RiskRoutes')),
+        path: riskBasePath,
     },
     search: {
         component: asyncComponent(() => import('Containers/Search/SearchPage')),

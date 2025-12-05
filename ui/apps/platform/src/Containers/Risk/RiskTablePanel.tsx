@@ -28,14 +28,12 @@ const DEFAULT_RISK_SORT = [{ id: 'Deployment Risk Priority', desc: false }] as c
 
 type RiskTablePanelProps = {
     selectedDeploymentId: string | undefined;
-    setSelectedDeploymentId: (deploymentId: string) => void;
     isViewFiltered: boolean;
     setIsViewFiltered: (isViewFiltered: boolean) => void;
 };
 
 function RiskTablePanel({
     selectedDeploymentId = undefined,
-    setSelectedDeploymentId,
     isViewFiltered,
     setIsViewFiltered,
 }: RiskTablePanelProps) {
@@ -131,7 +129,6 @@ function RiskTablePanel({
                 ) : (
                     <RiskTable
                         currentDeployments={currentDeployments}
-                        setSelectedDeploymentId={setSelectedDeploymentId}
                         selectedDeploymentId={selectedDeploymentId}
                         setSortOption={setSortOption}
                     />
