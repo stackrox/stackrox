@@ -25,6 +25,7 @@ func setNestedField(obj *unstructured.Unstructured, value interface{}, fields ..
 const (
 	defaultVMLifecycleDuration = 30 * time.Second
 	defaultVMUpdateInterval    = 10 * time.Second
+	initialReportJitterPercent = 0.2
 )
 
 // Centralized GVR definitions for KubeVirt resources
@@ -281,6 +282,7 @@ func (w *WorkloadManager) runVMLifecycle(
 			fakeVMUUID(template.index),
 			template.vsockCID,
 			workload.ReportInterval,
+			workload.InitialReportDelay,
 		)
 	}
 
@@ -339,6 +341,7 @@ func (w *WorkloadManager) sendIndexReportsWhileAlive(
 	vmID string,
 	vsockCID uint32,
 	interval time.Duration,
+	initialDelay time.Duration,
 ) {
 	// Wait for all prerequisites before sending reports
 	if !w.vmPrerequisitesReady.Wait(ctx) {
@@ -346,14 +349,15 @@ func (w *WorkloadManager) sendIndexReportsWhileAlive(
 		return
 	}
 
-	log.Debugf("Starting index report generation for VM %s (vsockCID=%d, interval=%s)", vmID, vsockCID, interval)
+	log.Debugf("Starting index report generation for VM %s (vsockCID=%d, interval=%s, initialDelay=%s)", vmID, vsockCID, interval, initialDelay)
 
-	// Send first report immediately
-	w.sendOneIndexReport(ctx, reportGen, vmID, vsockCID)
-
-	// Use a ticker instead of time.After to reduce allocations with large pool sizes.
-	// Reset with jitter on each tick to maintain randomized timing.
 	reportTicker := time.NewTicker(jitteredInterval(interval, reportIntervalJitterPercent))
+	if initialDelay > 0 {
+		firstPeriod := jitteredInterval(initialDelay, initialReportJitterPercent)
+		reportTicker.Reset(firstPeriod)
+	} else {
+		w.sendOneIndexReport(ctx, reportGen, vmID, vsockCID)
+	}
 	defer reportTicker.Stop()
 
 	for {

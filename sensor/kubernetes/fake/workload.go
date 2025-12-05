@@ -94,6 +94,10 @@ type VirtualMachineWorkload struct {
 	LifecycleDuration time.Duration `yaml:"lifecycleDuration"`
 	// NumLifecycles is the number of times to recreate VMs/VMIs (0 = infinite)
 	NumLifecycles int `yaml:"numLifecycles"`
+	// InitialReportDelay delays the first index report for each VM by a user-provided duration.
+	// A ±20% jitter is always applied to spread the initial burst; when unset, the first index
+	// report is sent immediately (no delay, no jitter) once prerequisites are ready.
+	InitialReportDelay time.Duration `yaml:"initialReportDelay"`
 
 	// ReportInterval is how often each VM sends an index report (0 = no reports).
 	// Index reports are only sent while the VM is alive in the informer simulation.

@@ -46,6 +46,7 @@ virtualMachineWorkload:
   lifecycleDuration: 1h
   updateInterval: 5m
   numLifecycles: 0  # infinite
+  initialReportDelay: 30s  # first report delayed with ±20% jitter
 
   # Index report settings
   # Lower values = higher load (e.g., 100ms = 10 reports/second per VM)
