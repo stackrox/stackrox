@@ -17,4 +17,9 @@ var (
 	// is exceeded subsequent messages targeting this particular sensor will be skipped until the next reprocessing cycle.
 	// Setting the duration to zero will disable the timeout.
 	ReprocessInjectMessageTimeout = registerDurationSetting("ROX_REPROCESSING_INJECT_MESSAGE_TIMEOUT", 1*time.Minute, WithDurationZeroAllowed())
+	// ReprocessDeploymentSpreadInterval specifies the interval over which to spread the "ReprocessDeployments"
+	// messages sent to Sensors at the end of Central image reprocessing. When set to 0, messages are sent as fast
+	// as possible, otherwise the messages are spread out over the interval. For example: if this interval is 10 mins
+	// and there are 10 clusters, every minute a message is sent to a cluster.
+	ReprocessDeploymentSpreadInterval = registerDurationSetting("ROX_REPROCESS_DEPLOYMENTS_MSG_SPREAD_INTERVAL", 0, WithDurationZeroAllowed())
 )

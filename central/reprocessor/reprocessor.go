@@ -449,35 +449,9 @@ func (l *loopImpl) reprocessImagesAndResyncDeployments(fetchOpt imageEnricher.Fe
 		return
 	}
 	log.Infof("Successfully reprocessed %d/%d images", nReprocessed.Load(), len(results))
-	log.Info("Resyncing deployments now that images have been reprocessed...")
-	// Once the images have been rescanned, then reprocess the deployments.
-	// This should not take a particularly long period of time.
-	if !l.stopSig.IsDone() {
-		msg := &central.MsgToSensor{
-			Msg: &central.MsgToSensor_ReprocessDeployments{
-				ReprocessDeployments: &central.ReprocessDeployments{},
-			},
-		}
-		ctx := concurrency.AsContext(&l.stopSig)
-		for _, conn := range l.connManager.GetActiveConnections() {
-			clusterID := conn.ClusterID()
-			if skipClusterIDs.Contains(clusterID) {
-				metrics.IncrementMsgToSensorNotSentCounter(clusterID, msg, metrics.NotSentSkip)
-				log.Errorw("Not sending reprocess deployments to cluster due to prior errors",
-					logging.ClusterID(clusterID),
-				)
-				continue
-			}
 
-			err := l.injectMessage(ctx, conn, msg)
-			if err != nil {
-				log.Errorw("Error sending reprocess deployments message to cluster",
-					logging.ClusterID(clusterID),
-					logging.Err(err),
-				)
-			}
-		}
-	}
+	log.Info("Resyncing deployments now that images have been reprocessed...")
+	l.sendReprocessDeployments(skipClusterIDs)
 }
 
 func (l *loopImpl) reprocessImageV2(id string, fetchOpt imageEnricher.FetchOption,
@@ -608,7 +582,14 @@ func (l *loopImpl) reprocessImagesV2AndResyncDeployments(fetchOpt imageEnricher.
 		return
 	}
 	log.Infof("Successfully reprocessed %d/%d images", nReprocessed.Load(), len(results))
+
 	log.Info("Resyncing deployments now that images have been reprocessed...")
+	l.sendReprocessDeployments(skipClusterIDs)
+}
+
+// sendReprocessDeployments sends a reprocess deployments message to every connected
+// secured cluster.
+func (l *loopImpl) sendReprocessDeployments(skipClusterIDs maputil.SyncMap[string, struct{}]) {
 	// Once the images have been rescanned, then reprocess the deployments.
 	// This should not take a particularly long period of time.
 	if !l.stopSig.IsDone() {
@@ -618,7 +599,16 @@ func (l *loopImpl) reprocessImagesV2AndResyncDeployments(fetchOpt imageEnricher.
 			},
 		}
 		ctx := concurrency.AsContext(&l.stopSig)
-		for _, conn := range l.connManager.GetActiveConnections() {
+
+		// Calculate the delay between sending reprocess messages to secured clusters.
+		conns := l.connManager.GetActiveConnections()
+		delay := reprocessDeploymentsMessageDelay(len(conns))
+		if delay > 0 {
+			log.Infof("Sending reprocess deployments messages to %d clusters with %s delay between each message", len(conns), delay)
+		}
+
+		firstMessage := true
+		for i, conn := range conns {
 			clusterID := conn.ClusterID()
 			if skipClusterIDs.Contains(clusterID) {
 				metrics.IncrementMsgToSensorNotSentCounter(clusterID, msg, metrics.NotSentSkip)
@@ -628,6 +618,13 @@ func (l *loopImpl) reprocessImagesV2AndResyncDeployments(fetchOpt imageEnricher.
 				continue
 			}
 
+			// Sleep before sending if it is not the first message and a delay is specified.
+			if !firstMessage && delay > 0 {
+				log.Infof("Sleeping %s before sending reprocess deployments message to cluster %s [%d/%d]", delay, clusterID, i+1, len(conns))
+				time.Sleep(delay)
+			}
+
+			firstMessage = false
 			err := l.injectMessage(ctx, conn, msg)
 			if err != nil {
 				log.Errorw("Error sending reprocess deployments message to cluster",
@@ -637,6 +634,22 @@ func (l *loopImpl) reprocessImagesV2AndResyncDeployments(fetchOpt imageEnricher.
 			}
 		}
 	}
+	log.Info("Done sending reprocess deployments messages")
+}
+
+// reprocessDeploymentsMessageDelay returns the duration to wait between each "ReprocessDeployments"
+// message sent to secured clusters.
+func reprocessDeploymentsMessageDelay(clusters int) time.Duration {
+	if clusters <= 1 {
+		return 0
+	}
+
+	var delay time.Duration
+	if dur := env.ReprocessDeploymentSpreadInterval.DurationSetting(); dur > 0 {
+		delay = dur / time.Duration(clusters)
+	}
+
+	return delay
 }
 
 // injectMessage will inject a message onto connection, an error will be returned if the
