@@ -12,7 +12,7 @@ import RiskPageHeader from './RiskPageHeader';
 import RiskSidePanel from './RiskSidePanel';
 import RiskTablePanel from './RiskTablePanel';
 
-const RiskPage = () => {
+function RiskPage() {
     const navigate = useNavigate();
     const location = useLocation();
     const params = useParams();
@@ -70,6 +70,6 @@ const RiskPage = () => {
             </PageBody>
         </workflowStateContext.Provider>
     );
-};
+}
 
 export default RiskPage;

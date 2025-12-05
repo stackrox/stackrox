@@ -1,5 +1,3 @@
-import PropTypes from 'prop-types';
-
 import entityTypes, { searchCategories } from 'constants/entityTypes';
 import PageHeader from 'Components/PageHeader';
 import {
@@ -14,7 +12,12 @@ import searchOptionsToQuery from 'services/searchOptionsToQuery';
 
 import CreatePolicyFromSearch from './CreatePolicyFromSearch';
 
-function RiskPageHeader({ isViewFiltered, searchOptions }) {
+type RiskPageHeaderProps = {
+    isViewFiltered: boolean;
+    searchOptions: string[];
+};
+
+function RiskPageHeader({ isViewFiltered, searchOptions }: RiskPageHeaderProps) {
     const isRouteEnabled = useIsRouteEnabled();
     const { hasReadWriteAccess } = usePermissions();
 
@@ -44,10 +47,5 @@ function RiskPageHeader({ isViewFiltered, searchOptions }) {
         </PageHeader>
     );
 }
-
-RiskPageHeader.propTypes = {
-    isViewFiltered: PropTypes.bool.isRequired,
-    searchOptions: PropTypes.arrayOf(PropTypes.string).isRequired,
-};
 
 export default RiskPageHeader;

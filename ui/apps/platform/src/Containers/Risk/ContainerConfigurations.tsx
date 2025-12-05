@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import { Link } from 'react-router-dom-v5-compat';
 import lowerCase from 'lodash/lowerCase';
 import capitalize from 'lodash/capitalize';
@@ -5,6 +6,14 @@ import capitalize from 'lodash/capitalize';
 import { vulnerabilitiesPlatformPath, vulnerabilitiesUserWorkloadsPath } from 'routePaths';
 
 import CollapsibleCard from 'Components/CollapsibleCard';
+import type {
+    Container,
+    ContainerImage,
+    ContainerResources,
+    ContainerVolume,
+    Deployment,
+    EmbeddedSecret,
+} from 'types/deployment.proto';
 import KeyValuePairs from './KeyValuePairs';
 
 const containerConfigMap = {
@@ -15,15 +24,22 @@ const containerConfigMap = {
     secrets: { label: 'Secrets' },
 };
 
-const getContainerConfigurations = (container) => {
+const getContainerConfigurations = (container: Container) => {
     if (!container.config) {
         return null;
     }
+    // @ts-expect-error TODO: ports, volumes, and secrets are typed on the top level Container, not the ContainerConfig
+    // TODO: Do we need to update the proto file or the code here?
     const { command, args, ports, volumes, secrets } = container.config;
     return { command, args, ports, volumes, secrets };
 };
 
-const ContainerImage = ({ image, vulnMgmtBasePath }) => {
+type ContainerImageProps = {
+    image: ContainerImage;
+    vulnMgmtBasePath: string;
+};
+
+function ContainerImage({ image, vulnMgmtBasePath }: ContainerImageProps) {
     const imageDetailsPageURL = `${vulnMgmtBasePath}/images/${image.id}`;
 
     if (!image?.name?.fullName) {
@@ -54,9 +70,13 @@ const ContainerImage = ({ image, vulnMgmtBasePath }) => {
             </Link>
         </div>
     );
+}
+
+type ResourcesProps = {
+    resources: ContainerResources;
 };
 
-const Resources = ({ resources }) => {
+function Resources({ resources }: ResourcesProps) {
     if (!resources) {
         return <span className="py-3">None</span>;
     }
@@ -68,9 +88,13 @@ const Resources = ({ resources }) => {
     };
 
     return <KeyValuePairs data={resources} keyValueMap={resourceMap} />;
+}
+
+type ContainerVolumesProps = {
+    volumes: ContainerVolume[];
 };
 
-const ContainerVolumes = ({ volumes }) => {
+function ContainerVolumes({ volumes }: ContainerVolumesProps) {
     if (!volumes?.length) {
         return <span className="py-1">None</span>;
     }
@@ -79,20 +103,23 @@ const ContainerVolumes = ({ volumes }) => {
             key={volume.name}
             className={`py-2 ${idx === volumes.length - 1 ? '' : 'border-base-300 border-b'}`}
         >
-            {Object.keys(volume).map(
-                (key) =>
-                    volume[key] && (
-                        <div key={key} className="py-1">
-                            <span className="font-700 pr-1">{capitalize(lowerCase(key))}:</span>
-                            <span>{volume[key].toString()}</span>
-                        </div>
-                    )
-            )}
+            {Object.keys(volume).map((key) => {
+                return volume[key] ? (
+                    <div key={key} className="py-1">
+                        <span className="font-700 pr-1">{capitalize(lowerCase(key))}:</span>
+                        <span>{volume[key].toString()}</span>
+                    </div>
+                ) : null;
+            })}
         </li>
     ));
+}
+
+type ContainerSecretsProps = {
+    secrets: EmbeddedSecret[];
 };
 
-const ContainerSecrets = ({ secrets }) => {
+function ContainerSecrets({ secrets }: ContainerSecretsProps) {
     if (!secrets?.length) {
         return <span className="py-1">None</span>;
     }
@@ -108,17 +135,21 @@ const ContainerSecrets = ({ secrets }) => {
             </div>
         </div>
     ));
+}
+
+type ContainerConfigurationsProps = {
+    deployment: Deployment;
 };
 
-const ContainerConfigurations = ({ deployment }) => {
+function ContainerConfigurations({ deployment }: ContainerConfigurationsProps) {
     const title = 'Container configuration';
     const vulnMgmtBasePath = deployment?.platformComponent
         ? vulnerabilitiesPlatformPath
         : vulnerabilitiesUserWorkloadsPath;
 
-    let containers = [];
+    let containers: ReactNode = [];
     if (deployment.containers) {
-        containers = deployment.containers.map((container) => {
+        containers = deployment.containers.map((container: Container) => {
             const data = getContainerConfigurations(container);
             const { id, resources, volumes, secrets } = container;
             return (
@@ -160,6 +191,6 @@ const ContainerConfigurations = ({ deployment }) => {
             </CollapsibleCard>
         </div>
     );
-};
+}
 
 export default ContainerConfigurations;

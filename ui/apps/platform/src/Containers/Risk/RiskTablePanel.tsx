@@ -1,5 +1,4 @@
 import { useCallback, useContext, useState } from 'react';
-import PropTypes from 'prop-types';
 import { useNavigate } from 'react-router-dom-v5-compat';
 import useDeepCompareEffect from 'use-deep-compare-effect';
 import { Bullseye } from '@patternfly/react-core';
@@ -16,6 +15,7 @@ import {
     fetchDeploymentsCountLegacy,
     fetchDeploymentsWithProcessInfoLegacy as fetchDeploymentsWithProcessInfo,
 } from 'services/DeploymentsService';
+import type { ListDeploymentWithProcessInfo } from 'services/DeploymentsService';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 import {
     convertSortToGraphQLFormat,
@@ -24,20 +24,30 @@ import {
 } from 'utils/searchUtils';
 import RiskTable from './RiskTable';
 
-const DEFAULT_RISK_SORT = [{ id: 'Deployment Risk Priority', desc: false }];
+const DEFAULT_RISK_SORT = [{ id: 'Deployment Risk Priority', desc: false }] as const;
+
+type RiskTablePanelProps = {
+    selectedDeploymentId: string | undefined;
+    setSelectedDeploymentId: (deploymentId: string) => void;
+    isViewFiltered: boolean;
+    setIsViewFiltered: (isViewFiltered: boolean) => void;
+};
+
 function RiskTablePanel({
-    selectedDeploymentId,
+    selectedDeploymentId = undefined,
     setSelectedDeploymentId,
     isViewFiltered,
     setIsViewFiltered,
-}) {
+}: RiskTablePanelProps) {
     const navigate = useNavigate();
     const workflowState = useContext(workflowStateContext);
     const pageSearch = workflowState.search[searchParams.page];
     const sortOption = workflowState.sort[sortParams.page] || DEFAULT_RISK_SORT;
     const currentPage = workflowState.paging[pagingParams.page];
 
-    const [currentDeployments, setCurrentDeployments] = useState([]);
+    const [currentDeployments, setCurrentDeployments] = useState<ListDeploymentWithProcessInfo[]>(
+        []
+    );
     const [errorMessageDeployments, setErrorMessageDeployments] = useState('');
     const [deploymentCount, setDeploymentsCount] = useState(0);
 
@@ -60,7 +70,9 @@ function RiskTablePanel({
      * before and after response to request for searchOptions.
      */
     const restSearch = convertToRestSearch(pageSearch ?? {});
-    const restSort = convertSortToRestFormat(sortOption);
+    const restSort = convertSortToRestFormat(
+        sortOption.length > 0 ? sortOption : DEFAULT_RISK_SORT
+    );
 
     useDeepCompareEffect(() => {
         fetchDeploymentsWithProcessInfo(restSearch, restSort, currentPage, DEFAULT_PAGE_SIZE)
@@ -128,16 +140,5 @@ function RiskTablePanel({
         </PanelNew>
     );
 }
-
-RiskTablePanel.propTypes = {
-    selectedDeploymentId: PropTypes.string,
-    setSelectedDeploymentId: PropTypes.func.isRequired,
-    isViewFiltered: PropTypes.bool.isRequired,
-    setIsViewFiltered: PropTypes.func.isRequired,
-};
-
-RiskTablePanel.defaultProps = {
-    selectedDeploymentId: null,
-};
 
 export default RiskTablePanel;

@@ -1,5 +1,4 @@
 import { Link } from 'react-router-dom-v5-compat';
-import PropTypes from 'prop-types';
 import find from 'lodash/find';
 import { Tooltip } from '@patternfly/react-core';
 import { CheckIcon, ExclamationCircleIcon } from '@patternfly/react-icons';
@@ -8,7 +7,14 @@ import { sortDate, sortValue } from 'sorters/sorters';
 import { riskBasePath } from 'routePaths';
 import { getDateTime } from 'utils/dateUtils';
 
-function DeploymentNameColumn({ original }) {
+type DeploymentNameColumnProps = {
+    original: {
+        deployment: { id: string; name: string };
+        baselineStatuses: { anomalousProcessesExecuted: boolean }[];
+    };
+};
+
+function DeploymentNameColumn({ original }: DeploymentNameColumnProps) {
     const isSuspicious = find(original.baselineStatuses, {
         anomalousProcessesExecuted: true,
     });
@@ -34,16 +40,6 @@ function DeploymentNameColumn({ original }) {
         </div>
     );
 }
-
-DeploymentNameColumn.propTypes = {
-    original: PropTypes.shape({
-        deployment: PropTypes.shape({
-            id: PropTypes.string.isRequired,
-            name: PropTypes.string.isRequired,
-        }).isRequired,
-        baselineStatuses: PropTypes.arrayOf(PropTypes.object).isRequired,
-    }).isRequired,
-};
 
 const riskTableColumnDescriptors = [
     {
@@ -73,7 +69,7 @@ const riskTableColumnDescriptors = [
         Header: 'Priority',
         searchField: 'Deployment Risk Priority',
         accessor: 'deployment.priority',
-        Cell: ({ value }) => {
+        Cell: ({ value }: { value: string }) => {
             const asInt = parseInt(value, 10);
             return Number.isNaN(asInt) || asInt < 1 ? '-' : value;
         },
