@@ -74,7 +74,8 @@ func setDefaultsAndPersist(ctx context.Context, logger logr.Logger, securedClust
 		effectiveDefaultingFlows = append(effectiveDefaultingFlows, defaults.SecuredClusterAdmissionControllerDefaultingFlow)
 	}
 
-	origSecuredCluster := securedCluster.DeepCopy()
+	baseSecuredCluster := securedCluster.DeepCopy()
+	patch := ctrlClient.MergeFrom(baseSecuredCluster)
 
 	// This may update securedCluster.Defaults and securedCluster's embedded annotations.
 	for _, flow := range effectiveDefaultingFlows {
@@ -82,15 +83,27 @@ func setDefaultsAndPersist(ctx context.Context, logger logr.Logger, securedClust
 			return err
 		}
 	}
+	securedClusterDefaults := securedCluster.Defaults
 
 	// We persist the annotations immediately during (first-time) execution of this extension to make sure
 	// that this information is already persisted in the Kubernetes resource before we
 	// can realistically end up in a situation where reconcilliation might need to be retried.
-	newResourceVersion, err := patchSecuredClusterAnnotations(ctx, logger, client, origSecuredCluster, securedCluster.GetAnnotations())
+	//
+	// This updates securedCluster both on the cluster and in memory, which is crucial since this object is used for the final
+	// updating within helm-operator and we have concurrently running controllers (the status controller),
+	// whose changes we must preserve.
+	err := client.Patch(ctx, securedCluster, patch)
 	if err != nil {
 		return errors.Wrap(err, "patching SecuredCluster annotations")
 	}
-	securedCluster.SetResourceVersion(newResourceVersion)
+
+	logger.Info("patched SecuredCluster object",
+		"oldResourceVersion", baseSecuredCluster.GetResourceVersion(),
+		"newResourceVersion", securedCluster.GetResourceVersion(),
+	)
+
+	// Retain the defaults, which are not in the patched object after cluster refresh.
+	securedCluster.Defaults = securedClusterDefaults
 	return nil
 }
 
@@ -112,21 +125,4 @@ func executeSingleDefaultingFlow(logger logr.Logger, securedCluster *platform.Se
 	securedCluster.SetAnnotations(annotations)
 
 	return nil
-}
-
-func patchSecuredClusterAnnotations(ctx context.Context, logger logr.Logger, client ctrlClient.Client, securedCluster *platform.SecuredCluster, annotations map[string]string) (string, error) {
-	// MergeFromWithOptimisticLock causes the resourceVersion to be checked prior to patching.
-	patch := ctrlClient.MergeFromWithOptions(securedCluster, ctrlClient.MergeFromWithOptimisticLock{})
-	newSecuredCluster := securedCluster.DeepCopy()
-	newSecuredCluster.SetAnnotations(annotations)
-	if err := client.Patch(ctx, newSecuredCluster, patch); err != nil {
-		return "", err
-	}
-
-	newResourceVersion := newSecuredCluster.GetResourceVersion()
-	logger.Info("patched SecuredCluster object",
-		"oldResourceVersion", securedCluster.GetResourceVersion(),
-		"newResourceVersion", newResourceVersion)
-
-	return newResourceVersion, nil
 }

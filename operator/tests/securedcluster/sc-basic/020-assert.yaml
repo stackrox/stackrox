@@ -1,19 +1,20 @@
-apiVersion: platform.stackrox.io/v1alpha1
-kind: SecuredCluster
-metadata:
+apiVersion: kuttl.dev/v1beta1
+kind: TestAssert
+collectors:
+- command: retry-kubectl.sh describe securedcluster.platform.stackrox.io -n $NAMESPACE stackrox-secured-cluster-services
+resourceRefs:
+- apiVersion: platform.stackrox.io/v1alpha1
+  kind: SecuredCluster
   name: stackrox-secured-cluster-services
-status:
-  clusterName: testing-cluster
-  conditions:
-  - status: "True"
-    type: Deployed
-  - status: "True"
-    type: Initialized
-  - status: "True"
-    type: Irreconcilable
-  - status: "False"
-    type: Paused
-  - status: "False"
-    type: ProxyConfigFailed
-  - status: "Unknown"
-    type: ReleaseFailed
+  ref: securedcluster_cr
+assertAll:
+- celExpr: "securedcluster_cr.status.clusterName == 'testing-cluster'"
+- celExpr: "securedcluster_cr.status.conditions.filter(c, c.type=='Deployed').exists(c, c.status=='True')"
+- celExpr: "securedcluster_cr.status.conditions.filter(c, c.type=='Deployed').exists(c, c.message.contains('installed'))"
+- celExpr: "securedcluster_cr.status.conditions.filter(c, c.type=='Initialized').exists(c, c.status=='True')"
+- celExpr: "securedcluster_cr.status.conditions.filter(c, c.type=='Irreconcilable').exists(c, c.status=='True')"
+- celExpr: "securedcluster_cr.status.conditions.filter(c, c.type=='ProxyConfigFailed').exists(c, c.status=='False')"
+- celExpr: "securedcluster_cr.status.conditions.filter(c, c.type=='ReleaseFailed').exists(c, c.status=='Unknown')"
+- celExpr: "securedcluster_cr.status.conditions.filter(c, c.type=='Paused').exists(c, c.status=='False')"
+- celExpr: "securedcluster_cr.status.conditions.filter(c, c.type=='Progressing').exists(c, c.status=='True')"
+- celExpr: "securedcluster_cr.status.conditions.filter(c, c.type=='Available').exists(c, c.status=='True')"
