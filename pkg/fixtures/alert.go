@@ -136,7 +136,7 @@ func GetScopedResourceAlert(ID string, clusterID string, namespace string) *stor
 
 // GetScopedNodeAlert returns a Mock alert attached to a node belonging to the input cluster
 func GetScopedNodeAlert(ID string, clusterID string, nodeID string, nodeName string) *storage.Alert {
-	return copyScopingInfo(&storage.Alert{
+	return &storage.Alert{
 		Id: ID,
 		Violations: []*storage.Alert_Violation{
 			{
@@ -154,7 +154,7 @@ func GetScopedNodeAlert(ID string, clusterID string, nodeID string, nodeName str
 			},
 		},
 		LifecycleStage: storage.LifecycleStage_RUNTIME,
-	})
+	}
 }
 
 // GetClusterResourceAlert returns a Mock Alert with a resource entity that is cluster wide (i.e. has no namespace)
