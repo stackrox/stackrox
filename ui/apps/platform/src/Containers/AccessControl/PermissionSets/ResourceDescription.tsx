@@ -18,6 +18,8 @@ const resourceDescriptions: Record<ResourceName, string> = {
         'Read: View network, process listening on ports, and process baseline extensions, risk score of deployments. Write: Modify the process, process listening on ports, and network baseline extensions of deployments.',
     Detection: 'Read: Check build-time policies against images or deployment YAMLs. Write: N/A',
     Image: 'Read: View images, their components, and their vulnerabilities. Write: N/A',
+    ImageAdministration:
+        'Read: View base images and non-deployed watched images monitored. Write: Configure base images and watched images.',
     Integration:
         'Read: View integrations and their configuration. This includes backup, registry, image signature and notification systems, API tokens. Write: Add, modify, delete integrations and their configuration, API tokens.',
     K8sRole:
