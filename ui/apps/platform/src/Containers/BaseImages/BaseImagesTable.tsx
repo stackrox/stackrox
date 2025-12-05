@@ -1,5 +1,4 @@
-import { Button } from '@patternfly/react-core';
-import { Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
+import { ActionsColumn, Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 
 import type { BaseImageReference } from 'services/BaseImagesService';
 import { getTableUIState } from 'utils/getTableUIState';
@@ -34,7 +33,9 @@ function BaseImagesTable({
                 <Tr>
                     <Th>Base image path</Th>
                     <Th>Added by</Th>
-                    <Th width={10}>Actions</Th>
+                    <Th width={10}>
+                        <span className="pf-v5-screen-reader">Row actions</span>
+                    </Th>
                 </Tr>
             </Thead>
             <TBodyUnified<BaseImageReference>
@@ -48,15 +49,16 @@ function BaseImagesTable({
                                     {baseImage.baseImageRepoPath}:{baseImage.baseImageTagPattern}
                                 </Td>
                                 <Td>{baseImage.user.name}</Td>
-                                <Td>
-                                    <Button
-                                        variant="secondary"
-                                        isDanger
+                                <Td isActionCell>
+                                    <ActionsColumn
                                         isDisabled={isRemoveInProgress}
-                                        onClick={() => onRemove(baseImage)}
-                                    >
-                                        Remove
-                                    </Button>
+                                        items={[
+                                            {
+                                                title: 'Remove',
+                                                onClick: () => onRemove(baseImage),
+                                            },
+                                        ]}
+                                    />
                                 </Td>
                             </Tr>
                         ))}
