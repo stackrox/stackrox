@@ -939,8 +939,10 @@ func (x *DayOption) GetEnabled() bool {
 // aggregator. Metrics in a group may use different subsets of a complete list
 // of labels supported by the aggregator.
 type PrometheusMetrics_Group struct {
-	state                  protoimpl.MessageState `protogen:"open.v1"`
-	GatheringPeriodMinutes uint32                 `protobuf:"varint,1,opt,name=gathering_period_minutes,json=gatheringPeriodMinutes,proto3" json:"gathering_period_minutes,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// The gathering period for periodically gathered metrics. If set to zero,
+	// gathering is disabled.
+	GatheringPeriodMinutes uint32 `protobuf:"varint,1,opt,name=gathering_period_minutes,json=gatheringPeriodMinutes,proto3" json:"gathering_period_minutes,omitempty"`
 	// Metric descriptors is a map of metric names to the list of allowed
 	// labels.
 	Descriptors   map[string]*PrometheusMetrics_Group_Labels `protobuf:"bytes,2,rep,name=descriptors,proto3" json:"descriptors,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
@@ -993,12 +995,17 @@ func (x *PrometheusMetrics_Group) GetDescriptors() map[string]*PrometheusMetrics
 }
 
 type PrometheusMetrics_Group_Labels struct {
-	state  protoimpl.MessageState `protogen:"open.v1"`
-	Labels []string               `protobuf:"bytes,1,rep,name=labels,proto3" json:"labels,omitempty"`
-	// A map of label name to a filter regular expression for this label value.
-	// See the RE2 syntax reference: https://github.com/google/re2/wiki/Syntax.
-	// If filters are specified, a metric record is only counted if all label values match the according label expression.
-	// Patterns are full-match only (automatically wrapped with ^ and $).
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// A list of labels to aggregate on. The complete list of labels for the
+	// given metric group can be found in the documentation, or in the API
+	// error message, returned when an invalid label is attempted to be added.
+	Labels []string `protobuf:"bytes,1,rep,name=labels,proto3" json:"labels,omitempty"`
+	// A map of label name to a filter regular expression for this label
+	// value. See the RE2 syntax reference:
+	// https://github.com/google/re2/wiki/Syntax. If filters are specified, a
+	// metric record is only counted if all label values match the according
+	// label expression. Patterns are full-match only (automatically wrapped
+	// with ^ and $).
 	Filters       map[string]string `protobuf:"bytes,2,rep,name=filters,proto3" json:"filters,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
