@@ -43,8 +43,9 @@
 
 - Between review cycles, you may create commits at will and freely rewrite,
   squash, or rebase your branch.
-- Requesting a PR review locks your commits. Once you request (or re-request) a
-  PR review, those commits become immutable -- only add new commits on top.
+- Requesting a PR review locks your commits. A review cycle ends when all
+  requested reviewers have responded. Once you request (or re-request) a PR
+  review, those commits become immutable -- only add new commits on top.
 - For locked commits, only use `git rebase` (or the `smart-rebase` script) for
   rebasing on top of latest `master` changes. **Do not use merge commits**
   because they complicate reviewing and confuse Jira linkage.
