@@ -72,6 +72,10 @@ func addDefaults(s policyStore.Store, categoriesDS categoriesDS.DataStore, fullS
 		}
 		shouldReupsert := false
 		p.Categories = sliceutils.Map[*storage.PolicyCategory, string](categories, func(c *storage.PolicyCategory) string {
+			// Both Docker CIS and DevOps Best Practices were broken as a result of a change made in 4.8 that added
+			// a title case enforcement on policies that were added, not accounting for the fact that words may have
+			// more than just the first character capitalized. This code section just fixes the default categories
+			// that may have been duplicated as a result of this.
 			if c.GetName() == "Docker Cis" {
 				shouldReupsert = true
 				return "Docker CIS"
