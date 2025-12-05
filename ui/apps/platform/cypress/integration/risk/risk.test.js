@@ -32,31 +32,20 @@ describe('Risk', () => {
             cy.get('.rt-th:contains("Priority")');
         });
 
-        it('should open side panel for deployment', () => {
+        it('should open detail page for deployment', () => {
             visitRiskDeployments();
             viewRiskDeploymentByName('collector');
         });
 
         // TODO add relevant tests for error messages in PatternFly
 
-        it('should open the panel to view risk indicators', () => {
+        it('should open the detail page to view risk indicators, deployment details, and process discovery tabs', () => {
             visitRiskDeployments();
             viewRiskDeploymentByName('collector');
 
-            cy.get(RiskPageSelectors.panel).should('have.length', 2); // main panel and side panel
             cy.get('button[data-testid="tab"]:contains("Risk Indicators")');
-            cy.get('button[aria-label="Close"]').click();
-            cy.get(RiskPageSelectors.panel).should('have.length', 1); // main panel
-        });
-
-        it('should open the panel to view deployment details', () => {
-            visitRiskDeployments();
-            viewRiskDeploymentByName('collector');
-
-            cy.get(RiskPageSelectors.panel).should('have.length', 2); // main panel and side panel
             cy.get('button[data-testid="tab"]:contains("Deployment Details")');
-            cy.get('button[aria-label="Close"]').click();
-            cy.get(RiskPageSelectors.panel).should('have.length', 1); // main panel
+            cy.get('button[data-testid="tab"]:contains("Process Discovery")');
         });
 
         it('should navigate from Risk Page to Vulnerability Management Image Page', () => {
