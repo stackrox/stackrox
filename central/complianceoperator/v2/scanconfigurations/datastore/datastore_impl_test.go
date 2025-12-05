@@ -6,6 +6,7 @@ import (
 	"context"
 	"testing"
 
+	profileStore "github.com/stackrox/rox/central/complianceoperator/v2/profiles/store/postgres"
 	scanConfigMocks "github.com/stackrox/rox/central/complianceoperator/v2/scanconfigurations/datastore/mocks"
 	scanStatusStore "github.com/stackrox/rox/central/complianceoperator/v2/scanconfigurations/scanconfigstatus/store/postgres"
 	configStore "github.com/stackrox/rox/central/complianceoperator/v2/scanconfigurations/store/postgres"
@@ -43,9 +44,7 @@ const (
 	maxPaginationLimit = 1000
 )
 
-var (
-	log = logging.LoggerForModule()
-)
+var log = logging.LoggerForModule()
 
 func TestComplianceScanConfigDataStore(t *testing.T) {
 	suite.Run(t, new(complianceScanConfigDataStoreTestSuite))
@@ -61,6 +60,7 @@ type complianceScanConfigDataStoreTestSuite struct {
 	db               *pgtest.TestPostgres
 	storage          configStore.Store
 	statusStorage    scanStatusStore.Store
+	profileStorage   profileStore.Store
 	scanConfigDSMock *scanConfigMocks.MockDataStore
 
 	clusterID1 string
@@ -81,6 +81,7 @@ func (s *complianceScanConfigDataStoreTestSuite) SetupTest() {
 
 	s.storage = configStore.New(s.db)
 	s.statusStorage = scanStatusStore.New(s.db)
+	s.profileStorage = profileStore.New(s.db)
 	s.scanConfigDSMock = scanConfigMocks.NewMockDataStore(s.mockCtrl)
 
 	s.dataStore = New(s.storage, s.statusStorage, s.db.DB)
@@ -90,39 +91,34 @@ func (s *complianceScanConfigDataStoreTestSuite) SetupTest() {
 	// Setup SAC contexts
 	s.testContexts = make(map[string]context.Context, 0)
 	resourceHandles := []permissions.ResourceHandle{resources.Compliance, resources.Cluster}
-	s.testContexts[unrestrictedReadWriteCtx] =
-		sac.WithGlobalAccessScopeChecker(context.Background(),
-			sac.AllowFixedScopes(
-				sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
-				sac.ResourceScopeKeys(resourceHandles...)))
+	s.testContexts[unrestrictedReadWriteCtx] = sac.WithGlobalAccessScopeChecker(context.Background(),
+		sac.AllowFixedScopes(
+			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
+			sac.ResourceScopeKeys(resourceHandles...)))
 
-	s.testContexts[cluster1ReadCtx] =
-		sac.WithGlobalAccessScopeChecker(context.Background(),
-			sac.AllowFixedScopes(
-				sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
-				sac.ResourceScopeKeys(resourceHandles...),
-				sac.ClusterScopeKeys(s.clusterID1)))
+	s.testContexts[cluster1ReadCtx] = sac.WithGlobalAccessScopeChecker(context.Background(),
+		sac.AllowFixedScopes(
+			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
+			sac.ResourceScopeKeys(resourceHandles...),
+			sac.ClusterScopeKeys(s.clusterID1)))
 
-	s.testContexts[cluster1ReadWriteCtx] =
-		sac.WithGlobalAccessScopeChecker(context.Background(),
-			sac.AllowFixedScopes(
-				sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
-				sac.ResourceScopeKeys(resourceHandles...),
-				sac.ClusterScopeKeys(s.clusterID1)))
+	s.testContexts[cluster1ReadWriteCtx] = sac.WithGlobalAccessScopeChecker(context.Background(),
+		sac.AllowFixedScopes(
+			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
+			sac.ResourceScopeKeys(resourceHandles...),
+			sac.ClusterScopeKeys(s.clusterID1)))
 
-	s.testContexts[cluster2ReadWriteCtx] =
-		sac.WithGlobalAccessScopeChecker(context.Background(),
-			sac.AllowFixedScopes(
-				sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
-				sac.ResourceScopeKeys(resourceHandles...),
-				sac.ClusterScopeKeys(s.clusterID2)))
+	s.testContexts[cluster2ReadWriteCtx] = sac.WithGlobalAccessScopeChecker(context.Background(),
+		sac.AllowFixedScopes(
+			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
+			sac.ResourceScopeKeys(resourceHandles...),
+			sac.ClusterScopeKeys(s.clusterID2)))
 
-	s.testContexts[cluster3ReadWriteCtx] =
-		sac.WithGlobalAccessScopeChecker(context.Background(),
-			sac.AllowFixedScopes(
-				sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
-				sac.ResourceScopeKeys(resourceHandles...),
-				sac.ClusterScopeKeys(testconsts.Cluster3)))
+	s.testContexts[cluster3ReadWriteCtx] = sac.WithGlobalAccessScopeChecker(context.Background(),
+		sac.AllowFixedScopes(
+			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
+			sac.ResourceScopeKeys(resourceHandles...),
+			sac.ClusterScopeKeys(testconsts.Cluster3)))
 
 	s.testContexts[unrestrictedReadCtx] = sac.WithGlobalAccessScopeChecker(context.Background(),
 		sac.AllowFixedScopes(
@@ -457,7 +453,6 @@ func (s *complianceScanConfigDataStoreTestSuite) TestScanConfigurationProfileExi
 			s.Require().NoError(err)
 		}
 	}
-
 }
 
 func (s *complianceScanConfigDataStoreTestSuite) TestUpsertScanConfiguration() {
@@ -682,6 +677,52 @@ func (s *complianceScanConfigDataStoreTestSuite) TestGetProfilesNames() {
 		},
 	}
 
+	// Create the corresponding profile records in the profile table
+	// so that DistinctProfiles can find them (it filters out orphaned profiles).
+	// Create profiles for both Cluster1 and Cluster2 to match the test expectations.
+	profiles := []*storage.ComplianceOperatorProfileV2{
+		// Cluster 1 profiles
+		{
+			Id:        uuid.NewV4().String(),
+			Name:      "ocp4-cis",
+			ClusterId: s.clusterID1,
+		},
+		{
+			Id:        uuid.NewV4().String(),
+			Name:      "rhcos-moderate",
+			ClusterId: s.clusterID1,
+		},
+		{
+			Id:        uuid.NewV4().String(),
+			Name:      "a-rhcos-moderate",
+			ClusterId: s.clusterID1,
+		},
+		{
+			Id:        uuid.NewV4().String(),
+			Name:      "yet-another-profile",
+			ClusterId: s.clusterID1,
+		},
+		// Cluster 2 profiles (same profile names, different cluster)
+		{
+			Id:        uuid.NewV4().String(),
+			Name:      "ocp4-cis",
+			ClusterId: s.clusterID2,
+		},
+		{
+			Id:        uuid.NewV4().String(),
+			Name:      "rhcos-moderate",
+			ClusterId: s.clusterID2,
+		},
+		{
+			Id:        uuid.NewV4().String(),
+			Name:      "a-rhcos-moderate",
+			ClusterId: s.clusterID2,
+		},
+	}
+	for _, profile := range profiles {
+		s.Require().NoError(s.profileStorage.Upsert(s.testContexts[unrestrictedReadWriteCtx], profile))
+	}
+
 	// Add a record so we have something to find
 	s.Require().NoError(s.storage.Upsert(s.testContexts[unrestrictedReadWriteCtx], scanConfig1))
 	s.Require().NoError(s.storage.Upsert(s.testContexts[unrestrictedReadWriteCtx], scanConfig2))
@@ -749,6 +790,46 @@ func (s *complianceScanConfigDataStoreTestSuite) TestGetProfilesNames() {
 		s.Require().NoError(err)
 		s.Require().Len(count, tc.expectedCount)
 	}
+}
+
+func (s *complianceScanConfigDataStoreTestSuite) TestOrphanedProfilesNotCounted() {
+	// This test verifies that orphaned profiles (referenced in scan configs but not in profile table)
+	// are NOT included in the DistinctProfiles count.
+	scanConfig := s.getTestRec("orphaned-test-scan")
+	scanConfig.Id = uuid.NewV4().String()
+	scanConfig.Profiles = []*storage.ComplianceOperatorScanConfigurationV2_ProfileName{
+		{
+			ProfileName: "valid-profile",
+		},
+		{
+			ProfileName: "orphaned-profile-1",
+		},
+		{
+			ProfileName: "orphaned-profile-2",
+		},
+	}
+
+	// Create ONLY the valid profile in the profile table, not the orphaned ones.
+	validProfile := &storage.ComplianceOperatorProfileV2{
+		Id:          uuid.NewV4().String(),
+		Name:        "valid-profile",
+		ClusterId:   s.clusterID1,
+		ProfileId:   "valid-profile-id",
+		Title:       "Valid Profile",
+		Description: "This profile exists",
+	}
+	s.Require().NoError(s.profileStorage.Upsert(s.testContexts[unrestrictedReadWriteCtx], validProfile))
+
+	// Upsert the scan config that references all three profiles.
+	s.Require().NoError(s.storage.Upsert(s.testContexts[unrestrictedReadWriteCtx], scanConfig))
+
+	// Call DistinctProfiles - should only count the valid profile.
+	count, err := s.dataStore.DistinctProfiles(s.testContexts[unrestrictedReadCtx], search.EmptyQuery())
+	s.Require().NoError(err)
+	s.Require().Len(count, 1, "DistinctProfiles should only count profiles that exist in the profile table")
+	s.Require().Contains(count, "valid-profile", "valid-profile should be in the count")
+	s.Require().NotContains(count, "orphaned-profile-1", "orphaned-profile-1 should NOT be in the count")
+	s.Require().NotContains(count, "orphaned-profile-2", "orphaned-profile-2 should NOT be in the count")
 }
 
 func (s *complianceScanConfigDataStoreTestSuite) getTestRec(scanName string) *storage.ComplianceOperatorScanConfigurationV2 {
