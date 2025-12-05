@@ -1,5 +1,18 @@
 package watcher
 
+import (
+	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/features"
+)
+
+// Enabled returns true if the base image watcher should be started.
+// The watcher is enabled when:
+//   - ROX_BASE_IMAGE_DETECTION feature flag is true, AND
+//   - ROX_BASE_IMAGE_WATCHER_ENABLED is true (defaults to true)
+func Enabled() bool {
+	return features.BaseImageDetection.Enabled() && env.BaseImageWatcherEnabled.BooleanSetting()
+}
+
 // Watcher runs periodic polling of base image repositories to discover new tags.
 // It follows the standard StackRox background worker pattern:
 // - Start() spawns goroutines and returns immediately
