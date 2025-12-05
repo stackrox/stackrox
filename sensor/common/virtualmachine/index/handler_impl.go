@@ -69,7 +69,6 @@ func (h *handlerImpl) Send(ctx context.Context, vm *v1.IndexReport) error {
 				WithLabelValues(outcome).
 				Observe(metrics.StartTimeToMS(blockingStart))
 		}
-		metrics.IndexReportsSent.WithLabelValues(outcome).Inc()
 	}()
 
 	// Fast-path select to detect blocking on the channel for metrics
