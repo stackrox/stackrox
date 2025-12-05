@@ -204,13 +204,8 @@ func (m *fileAccessMatcherImpl) checkFileAccessMatches(cache *CacheReceptacle, f
 	if cache != nil && cache.augmentedFileAccess != nil {
 		augmentedFileAccess = cache.augmentedFileAccess
 	} else {
-		var err error
-		augmentedFileAccess, err = augmentedobjs.ConstructFileAccess(fileAccess)
-		if err != nil {
-			return false, err
-		}
 		if cache != nil {
-			cache.augmentedFileAccess = augmentedFileAccess
+			cache.augmentedFileAccess = augmentedobjs.ConstructFileAccess(fileAccess)
 		}
 	}
 	for _, eval := range m.fileAccessOnlyEvaluators {
