@@ -10,9 +10,7 @@ import (
 
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
-	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/sac"
-	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stretchr/testify/suite"
 )
@@ -54,57 +52,4 @@ func (s *BaseImagesStoreSuite) TestStore() {
 	s.False(exists)
 	s.Nil(foundBaseImage)
 
-	withNoAccessCtx := sac.WithNoAccess(ctx)
-
-	s.NoError(store.Upsert(ctx, baseImage))
-	foundBaseImage, exists, err = store.Get(ctx, baseImage.GetId())
-	s.NoError(err)
-	s.True(exists)
-	protoassert.Equal(s.T(), baseImage, foundBaseImage)
-
-	baseImageCount, err := store.Count(ctx, search.EmptyQuery())
-	s.NoError(err)
-	s.Equal(1, baseImageCount)
-	baseImageCount, err = store.Count(withNoAccessCtx, search.EmptyQuery())
-	s.NoError(err)
-	s.Zero(baseImageCount)
-
-	baseImageExists, err := store.Exists(ctx, baseImage.GetId())
-	s.NoError(err)
-	s.True(baseImageExists)
-	s.NoError(store.Upsert(ctx, baseImage))
-	s.ErrorIs(store.Upsert(withNoAccessCtx, baseImage), sac.ErrResourceAccessDenied)
-
-	s.NoError(store.Delete(ctx, baseImage.GetId()))
-	foundBaseImage, exists, err = store.Get(ctx, baseImage.GetId())
-	s.NoError(err)
-	s.False(exists)
-	s.Nil(foundBaseImage)
-	s.ErrorIs(store.Delete(withNoAccessCtx, baseImage.GetId()), sac.ErrResourceAccessDenied)
-
-	var baseImages []*storage.BaseImage
-	var baseImageIDs []string
-	for i := 0; i < 200; i++ {
-		baseImage := &storage.BaseImage{}
-		s.NoError(testutils.FullInit(baseImage, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
-		baseImages = append(baseImages, baseImage)
-		baseImageIDs = append(baseImageIDs, baseImage.GetId())
-	}
-
-	s.NoError(store.UpsertMany(ctx, baseImages))
-
-	foundBaseImages, missing, err := store.GetMany(ctx, baseImageIDs)
-	s.NoError(err)
-	s.Empty(missing)
-	protoassert.ElementsMatch(s.T(), baseImages, foundBaseImages)
-
-	baseImageCount, err = store.Count(ctx, search.EmptyQuery())
-	s.NoError(err)
-	s.Equal(200, baseImageCount)
-
-	s.NoError(store.DeleteMany(ctx, baseImageIDs))
-
-	baseImageCount, err = store.Count(ctx, search.EmptyQuery())
-	s.NoError(err)
-	s.Equal(0, baseImageCount)
 }

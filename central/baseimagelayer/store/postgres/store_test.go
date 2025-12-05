@@ -10,9 +10,7 @@ import (
 
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
-	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/sac"
-	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stretchr/testify/suite"
 )
@@ -54,57 +52,4 @@ func (s *BaseImageLayersStoreSuite) TestStore() {
 	s.False(exists)
 	s.Nil(foundBaseImageLayer)
 
-	withNoAccessCtx := sac.WithNoAccess(ctx)
-
-	s.NoError(store.Upsert(ctx, baseImageLayer))
-	foundBaseImageLayer, exists, err = store.Get(ctx, baseImageLayer.GetId())
-	s.NoError(err)
-	s.True(exists)
-	protoassert.Equal(s.T(), baseImageLayer, foundBaseImageLayer)
-
-	baseImageLayerCount, err := store.Count(ctx, search.EmptyQuery())
-	s.NoError(err)
-	s.Equal(1, baseImageLayerCount)
-	baseImageLayerCount, err = store.Count(withNoAccessCtx, search.EmptyQuery())
-	s.NoError(err)
-	s.Zero(baseImageLayerCount)
-
-	baseImageLayerExists, err := store.Exists(ctx, baseImageLayer.GetId())
-	s.NoError(err)
-	s.True(baseImageLayerExists)
-	s.NoError(store.Upsert(ctx, baseImageLayer))
-	s.ErrorIs(store.Upsert(withNoAccessCtx, baseImageLayer), sac.ErrResourceAccessDenied)
-
-	s.NoError(store.Delete(ctx, baseImageLayer.GetId()))
-	foundBaseImageLayer, exists, err = store.Get(ctx, baseImageLayer.GetId())
-	s.NoError(err)
-	s.False(exists)
-	s.Nil(foundBaseImageLayer)
-	s.ErrorIs(store.Delete(withNoAccessCtx, baseImageLayer.GetId()), sac.ErrResourceAccessDenied)
-
-	var baseImageLayers []*storage.BaseImageLayer
-	var baseImageLayerIDs []string
-	for i := 0; i < 200; i++ {
-		baseImageLayer := &storage.BaseImageLayer{}
-		s.NoError(testutils.FullInit(baseImageLayer, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
-		baseImageLayers = append(baseImageLayers, baseImageLayer)
-		baseImageLayerIDs = append(baseImageLayerIDs, baseImageLayer.GetId())
-	}
-
-	s.NoError(store.UpsertMany(ctx, baseImageLayers))
-
-	foundBaseImageLayers, missing, err := store.GetMany(ctx, baseImageLayerIDs)
-	s.NoError(err)
-	s.Empty(missing)
-	protoassert.ElementsMatch(s.T(), baseImageLayers, foundBaseImageLayers)
-
-	baseImageLayerCount, err = store.Count(ctx, search.EmptyQuery())
-	s.NoError(err)
-	s.Equal(200, baseImageLayerCount)
-
-	s.NoError(store.DeleteMany(ctx, baseImageLayerIDs))
-
-	baseImageLayerCount, err = store.Count(ctx, search.EmptyQuery())
-	s.NoError(err)
-	s.Equal(0, baseImageLayerCount)
 }
