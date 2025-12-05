@@ -9,19 +9,17 @@ import TableHeader from 'Components/TableHeader';
 import { PanelBody, PanelHead, PanelHeadEnd, PanelNew } from 'Components/Panel';
 import TablePagination from 'Components/TablePagination';
 import { DEFAULT_PAGE_SIZE } from 'Components/Table';
-import { pagingParams, searchParams, sortParams } from 'constants/searchParams';
+import { pagingParams, sortParams } from 'constants/searchParams';
 import workflowStateContext from 'Containers/workflowStateContext';
+import useURLSearch from 'hooks/useURLSearch';
 import {
-    fetchDeploymentsCountLegacy,
-    fetchDeploymentsWithProcessInfoLegacy as fetchDeploymentsWithProcessInfo,
+    fetchDeploymentsCount,
+    fetchDeploymentsWithProcessInfo,
 } from 'services/DeploymentsService';
 import type { ListDeploymentWithProcessInfo } from 'services/DeploymentsService';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
-import {
-    convertSortToGraphQLFormat,
-    convertSortToRestFormat,
-    convertToRestSearch,
-} from 'utils/searchUtils';
+import { convertSortToGraphQLFormat, convertSortToRestFormat } from 'utils/searchUtils';
+import { ORCHESTRATOR_COMPONENTS_KEY } from 'utils/orchestratorComponents';
 import RiskTable from './RiskTable';
 
 const DEFAULT_RISK_SORT = [{ id: 'Deployment Risk Priority', desc: false }] as const;
@@ -39,9 +37,10 @@ function RiskTablePanel({
 }: RiskTablePanelProps) {
     const navigate = useNavigate();
     const workflowState = useContext(workflowStateContext);
-    const pageSearch = workflowState.search[searchParams.page];
     const sortOption = workflowState.sort[sortParams.page] || DEFAULT_RISK_SORT;
     const currentPage = workflowState.paging[pagingParams.page];
+
+    const { searchFilter } = useURLSearch();
 
     const [currentDeployments, setCurrentDeployments] = useState<ListDeploymentWithProcessInfo[]>(
         []
@@ -63,39 +62,43 @@ function RiskTablePanel({
         [navigate, workflowState]
     );
 
-    /*
-     * Compute outside hook to avoid double requests if no page search options
-     * before and after response to request for searchOptions.
-     */
-    const restSearch = convertToRestSearch(pageSearch ?? {});
     const restSort = convertSortToRestFormat(
         sortOption.length > 0 ? sortOption : DEFAULT_RISK_SORT
     );
 
+    const shouldHideOrchestratorComponents =
+        localStorage.getItem(ORCHESTRATOR_COMPONENTS_KEY) !== 'true';
+
     useDeepCompareEffect(() => {
-        fetchDeploymentsWithProcessInfo(restSearch, restSort, currentPage, DEFAULT_PAGE_SIZE)
-            .then(setCurrentDeployments)
-            .catch((error) => {
-                setCurrentDeployments([]);
-                setErrorMessageDeployments(getAxiosErrorMessage(error));
-            });
+        const effectiveSearchFilter = {
+            ...searchFilter,
+            ...(shouldHideOrchestratorComponents ? { 'Orchestrator Component': 'false' } : {}),
+        };
+        const { request } = fetchDeploymentsWithProcessInfo(
+            effectiveSearchFilter,
+            restSort,
+            currentPage + 1, // Convert 0-based to 1-based page
+            DEFAULT_PAGE_SIZE
+        );
+
+        request.then(setCurrentDeployments).catch((error) => {
+            setCurrentDeployments([]);
+            setErrorMessageDeployments(getAxiosErrorMessage(error));
+        });
 
         /*
          * Although count does not depend on change to sort option or page offset,
          * request in case of change to count of deployments in Kubernetes environment.
          */
-        fetchDeploymentsCountLegacy(restSearch)
+        fetchDeploymentsCount(effectiveSearchFilter)
             .then(setDeploymentsCount)
             .catch(() => {
                 setDeploymentsCount(0);
             });
 
-        if (restSearch.length) {
-            setIsViewFiltered(true);
-        } else {
-            setIsViewFiltered(false);
-        }
-    }, [restSearch, restSort, currentPage]);
+        const hasSearchFilters = Object.keys(searchFilter).length > 0;
+        setIsViewFiltered(hasSearchFilters);
+    }, [searchFilter, restSort, currentPage, shouldHideOrchestratorComponents]);
 
     return (
         <PanelNew testid="panel">
