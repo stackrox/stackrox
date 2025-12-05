@@ -97,6 +97,20 @@ in `migrations` directory, or at the examples listed below.
 
     Avoid depending on code that might change in the future as **migration should produce consistent results**.
 
+## Migration Conflicts
+
+The main project's makefile has a make target to resolve conflicts between migrations if you're in the middle of writing
+a migration and a new one gets merged ahead of you.
+
+To resolve this, take the following steps:
+
+1. Rebase your branch with whatever upstream has the conflicting migration
+2. Run `MIGRATION_PACKAGES=m_*_to_m_*_your_migration make fix_migrations` where `MIGRATION_PACKAGES` is a 
+   comma-separated list of migration folder names that you wish to reorganize. It is important to note that the script
+   will re-generate their sequence numbers in the order they appear in the list you pass in as an argument, so make
+   sure when you pass them through that they match your desired final order.
+3. Commit the result
+
 ## How to test migration on locally deployed cluster
 
 1. Create PR with migration files to build image in CI
