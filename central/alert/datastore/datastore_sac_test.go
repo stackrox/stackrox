@@ -515,7 +515,7 @@ var alertScopedSACSearchTestCases = map[string]alertSACSearchResult{
 		},
 	},
 	"Cluster4 read-write access should see no alert": {
-		scopeKey: testutils.Cluster4ReadWriteCtx,
+		scopeKey:     testutils.Cluster4ReadWriteCtx,
 		resultCounts: map[string]map[string]int{},
 	},
 }
