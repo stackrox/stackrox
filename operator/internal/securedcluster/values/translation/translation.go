@@ -142,10 +142,7 @@ func (t Translator) translate(ctx context.Context, sc platform.SecuredCluster) (
 	}
 
 	v.AddChild("scanner", t.getLocalScannerComponentValues(sc, scannerAutoSenseConfig, deploymentDefaults))
-
-	if sc.Spec.ScannerV4 != nil || deploymentDefaults.IsSet() {
-		v.AddChild("scannerV4", t.getLocalScannerV4ComponentValues(ctx, sc, scannerV4AutoSenseConfig, deploymentDefaults))
-	}
+	v.AddChild("scannerV4", t.getLocalScannerV4ComponentValues(ctx, sc, scannerV4AutoSenseConfig, deploymentDefaults))
 
 	customize.AddAllFrom(translation.GetCustomize(sc.Spec.Customize))
 
@@ -323,14 +320,14 @@ func (t Translator) getSensorValues(sensor *platform.SensorComponentSpec, scanne
 }
 
 func (t Translator) getAdmissionControlValues(admissionControl *platform.AdmissionControlComponentSpec, defaults translation.SchedulingConstraints) *translation.ValuesBuilder {
-	acv := translation.NewValuesBuilder()
-
 	if admissionControl == nil && !defaults.IsSet() {
-		return &acv
+		return nil
 	}
 	if admissionControl == nil {
 		admissionControl = &platform.AdmissionControlComponentSpec{}
 	}
+
+	acv := translation.NewValuesBuilder()
 
 	acv.AddChild(translation.ResourcesKey, translation.GetResources(admissionControl.Resources))
 	dynamic := translation.NewValuesBuilder()
@@ -506,11 +503,11 @@ func (t Translator) getLocalScannerComponentValues(securedCluster platform.Secur
 }
 
 func (t Translator) getLocalScannerV4ComponentValues(ctx context.Context, securedCluster platform.SecuredCluster, config scanner.AutoSenseResult, defaults translation.SchedulingConstraints) *translation.ValuesBuilder {
-	sv := translation.NewValuesBuilder()
 	s := securedCluster.Spec.ScannerV4
 	if s == nil && !defaults.IsSet() {
-		return &sv
+		return nil
 	}
+	sv := translation.NewValuesBuilder()
 	if s == nil {
 		s = &platform.LocalScannerV4ComponentSpec{}
 	}

@@ -112,23 +112,8 @@ func (t Translator) translate(ctx context.Context, c platform.Central) (chartuti
 	}
 
 	v.AddChild("central", central)
-
-	if c.Spec.Scanner != nil || deploymentDefaults.IsSet() {
-		scannerSpec := c.Spec.Scanner
-		if scannerSpec == nil {
-			scannerSpec = &platform.ScannerComponentSpec{}
-		}
-		v.AddChild("scanner", getCentralScannerComponentValues(scannerSpec, deploymentDefaults))
-	}
-
-	if c.Spec.ScannerV4 != nil || deploymentDefaults.IsSet() {
-		scannerV4Spec := c.Spec.ScannerV4
-		if scannerV4Spec == nil {
-			scannerV4Spec = &platform.ScannerV4Spec{}
-		}
-		v.AddChild("scannerV4", getCentralScannerV4ComponentValues(ctx, scannerV4Spec, c.GetNamespace(), t.client, deploymentDefaults))
-	}
-
+	v.AddChild("scanner", getCentralScannerComponentValues(c.Spec.Scanner, deploymentDefaults))
+	v.AddChild("scannerV4", getCentralScannerV4ComponentValues(ctx, c.Spec.ScannerV4, c.GetNamespace(), t.client, deploymentDefaults))
 	v.AddChild("customize", &customize)
 
 	if c.Spec.Network != nil {
@@ -139,13 +124,7 @@ func (t Translator) translate(ctx context.Context, c platform.Central) (chartuti
 		v.AddChild("configAsCode", translation.GetConfigAsCode(c.Spec.ConfigAsCode))
 	}
 
-	if c.Spec.ConfigAsCode != nil || deploymentDefaults.IsSet() {
-		configAsCodeSpec := c.Spec.ConfigAsCode
-		if configAsCodeSpec == nil {
-			configAsCodeSpec = &platform.ConfigAsCodeSpec{}
-		}
-		v.AddChild("configController", getConfigControllerValues(configAsCodeSpec, deploymentDefaults))
-	}
+	v.AddChild("configController", getConfigControllerValues(c.Spec.ConfigAsCode, deploymentDefaults))
 
 	return v.Build()
 }
@@ -386,8 +365,14 @@ func getDeclarativeConfigurationValues(c *platform.DeclarativeConfiguration) *tr
 }
 
 func getCentralScannerComponentValues(s *platform.ScannerComponentSpec, defaults translation.SchedulingConstraints) *translation.ValuesBuilder {
-	sv := translation.NewValuesBuilder()
+	if s == nil && !defaults.IsSet() {
+		return nil
+	}
+	if s == nil {
+		s = &platform.ScannerComponentSpec{}
+	}
 
+	sv := translation.NewValuesBuilder()
 	translation.SetScannerComponentDisableValue(&sv, s.ScannerComponent)
 	translation.SetScannerAnalyzerValues(&sv, s.GetAnalyzer(), defaults)
 	translation.SetScannerDBValues(&sv, s.DB, defaults)
@@ -397,6 +382,13 @@ func getCentralScannerComponentValues(s *platform.ScannerComponentSpec, defaults
 }
 
 func getCentralScannerV4ComponentValues(ctx context.Context, s *platform.ScannerV4Spec, namespace string, client ctrlClient.Client, defaults translation.SchedulingConstraints) *translation.ValuesBuilder {
+	if s == nil && !defaults.IsSet() {
+		return nil
+	}
+	if s == nil {
+		s = &platform.ScannerV4Spec{}
+	}
+
 	sv := translation.NewValuesBuilder()
 	translation.SetScannerV4DisableValue(&sv, s.ScannerComponent)
 	translation.SetScannerV4ComponentValues(&sv, "indexer", s.Indexer, defaults)
@@ -411,11 +403,14 @@ func getCentralScannerV4ComponentValues(ctx context.Context, s *platform.Scanner
 }
 
 func getConfigControllerValues(c *platform.ConfigAsCodeSpec, defaults translation.SchedulingConstraints) *translation.ValuesBuilder {
-	cv := translation.NewValuesBuilder()
+	if c == nil && !defaults.IsSet() {
+		return nil
+	}
 	if c == nil {
-		return &cv
+		c = &platform.ConfigAsCodeSpec{}
 	}
 
+	cv := translation.NewValuesBuilder()
 	cv.AddChild(translation.ResourcesKey, translation.GetResources(c.Resources))
 	cv.SetScheduling("nodeSelector", translation.TolerationsKey, &c.DeploymentSpec, defaults)
 	if len(c.HostAliases) > 0 {
