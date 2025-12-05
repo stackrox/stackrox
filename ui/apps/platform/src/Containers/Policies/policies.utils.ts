@@ -543,7 +543,7 @@ function trimClientWizardPolicy(policyUntrimmed: ClientPolicy): ClientPolicy {
         for (let iSection = 0; iSection !== policy.policySections.length; iSection += 1) {
             const policySection = policy.policySections[iSection];
 
-            policySection.sectionName = policySection.sectionName.trim();
+            policySection.sectionName = policySection.sectionName?.trim();
 
             // TODO value: make sure about empty string versus undefined.
             /*
