@@ -487,7 +487,7 @@ func TestTrackerBase_IncrementCounter(t *testing.T) {
 		mockRegistry3.EXPECT().IncrementCounter("test_counter", expectedLabels)
 
 		// Increment the counter
-		tracker.IncrementCounter("test_counter", testFinding(0))
+		tracker.IncrementCounter(testFinding(0))
 	})
 
 	t.Run("no-op when no gatherers exist", func(t *testing.T) {
@@ -505,7 +505,7 @@ func TestTrackerBase_IncrementCounter(t *testing.T) {
 		tracker.Reconfigure(cfg)
 
 		// Increment should be a no-op (no panic, no error)
-		tracker.IncrementCounter("test_counter", testFinding(0))
+		tracker.IncrementCounter(testFinding(0))
 	})
 
 	t.Run("does nothing on gauge tracker", func(t *testing.T) {
@@ -536,7 +536,7 @@ func TestTrackerBase_IncrementCounter(t *testing.T) {
 
 		// IncrementCounter should be a no-op for gauge trackers
 		// No IncrementCounter expectation - it should not be called
-		tracker.IncrementCounter("test_metric", testFinding(0))
+		tracker.IncrementCounter(testFinding(0))
 	})
 
 	t.Run("returns early when configuration is nil", func(t *testing.T) {
@@ -544,7 +544,7 @@ func TestTrackerBase_IncrementCounter(t *testing.T) {
 
 		// No configuration set
 		// IncrementCounter should return early without panicking
-		tracker.IncrementCounter("test_counter", testFinding(0))
+		tracker.IncrementCounter(testFinding(0))
 	})
 
 	t.Run("extracts correct label values from finding", func(t *testing.T) {
@@ -584,6 +584,6 @@ func TestTrackerBase_IncrementCounter(t *testing.T) {
 		}
 		mockRegistry.EXPECT().IncrementCounter("test_counter", expectedLabels)
 
-		tracker.IncrementCounter("test_counter", testFinding(1))
+		tracker.IncrementCounter(testFinding(1))
 	})
 }

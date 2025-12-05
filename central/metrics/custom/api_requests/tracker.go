@@ -6,10 +6,6 @@ import (
 	"github.com/stackrox/rox/pkg/telemetry/phonehome"
 )
 
-const (
-	metricName = "total" // results in rox_central_api_request_total.
-)
-
 var (
 	singleton     *tracker.TrackerBase[*finding]
 	singletonOnce sync.Once
@@ -38,5 +34,5 @@ func Singleton() *tracker.TrackerBase[*finding] {
 // RecordRequest records an API request by incrementing the counter.
 // This is a convenience wrapper around TrackerBase.IncrementCounter.
 func RecordRequest(rp *phonehome.RequestParams) {
-	Singleton().IncrementCounter(metricName, rp)
+	Singleton().IncrementCounter(rp)
 }
