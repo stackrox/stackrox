@@ -112,6 +112,9 @@ var (
 
 	// CVEFixTimestampCriteria enables the new CVE Fix timestamp criteria
 	CVEFixTimestampCriteria = registerFeature("Enable grace period criteria based on CVE fix timestamp", "ROX_CVE_FIX_TIMESTAMP")
+
+	// BaseImageDetection enables base image detection and management functionality
+	BaseImageDetection = registerFeature("Enable base image detection and management functionality", "ROX_BASE_IMAGE_DETECTION")
 )
 
 // The following feature flags are related to Scanner V4.

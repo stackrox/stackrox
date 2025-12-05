@@ -15,11 +15,13 @@ Changes should still be described appropriately in JIRA/doc input pages, for inc
 
 - ROX-31443: Automatic HTTP to HTTPS redirection is now enabled for Central OpenShift routes (passthrough and reencrypt).
 - ROX-29582: A `kubectl get` on a Central CR now shows the following additional columns: Version, AdminPassword, Message, Available, Progressing.
+- ROX-32061: The `spec.configAsCode` field in the Central CR now supports `resources`, `nodeSelector`, `tolerations`, and `hostAliases` settings for the config-controller deployment.
 
 ### Removed Features
 - ROX-31727: `/v1/cve/requests` APIs (deprecated in 4.3.0) for managing vulnerability exceptions have been removed.
   - The `/v2/vulnerability-exceptions/` APIs must be used.
 - ROX-31728: Active Vulnerability Management has been removed.
+- ROX-31531: Removed deprecated `/v1/imagecves/suppress` and `/v1/imagecves/unsuppress` APIs
 
 ### Deprecated Features
 

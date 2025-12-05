@@ -414,3 +414,19 @@ func GetJSONSerializedTestAlert() string {
 	]
 }`
 }
+
+func GetNodeAlert() *storage.Alert {
+	return copyScopingInfo(&storage.Alert{
+		Id:             fixtureconsts.Alert1,
+		Time:           protocompat.TimestampNow(),
+		LifecycleStage: storage.LifecycleStage_RUNTIME,
+		Entity: &storage.Alert_Node_{
+			Node: &storage.Alert_Node{
+				Name:        fixtureconsts.Node1,
+				Id:          fixtureconsts.Node1,
+				ClusterId:   fixtureconsts.Cluster1,
+				ClusterName: fixtureconsts.ClusterName1,
+			},
+		},
+	})
+}

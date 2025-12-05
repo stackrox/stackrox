@@ -39,7 +39,7 @@ function PolicyScopeCard({
 }: PolicyScopeCardProps): ReactElement {
     const [field, , helper] = useField(name);
     const { value } = field;
-    const { scope } = value || {};
+    const { scope } = value ?? {};
     const { setValue } = helper;
 
     const clusterOptions: TypeaheadSelectOption[] = clusters.map((cluster) => ({
@@ -66,20 +66,20 @@ function PolicyScopeCard({
 
     function handleChangeLabelKey(key) {
         if (type === 'exclusion') {
-            const { label } = scope || {};
+            const { label } = scope ?? {};
             setValue({ ...value, scope: { ...scope, label: { ...label, key } } });
         } else {
-            const { label } = value || {};
+            const { label } = value ?? {};
             setValue({ ...value, label: { ...label, key } });
         }
     }
 
     function handleChangeLabelValue(val) {
         if (type === 'exclusion') {
-            const { label } = scope || {};
+            const { label } = scope ?? {};
             setValue({ ...value, scope: { ...scope, label: { ...label, value: val } } });
         } else {
-            const { label } = value || {};
+            const { label } = value ?? {};
             setValue({ ...value, label: { ...label, value: val } });
         }
     }

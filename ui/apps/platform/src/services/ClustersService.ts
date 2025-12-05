@@ -233,7 +233,7 @@ export function fetchClusterInitBundles(): Promise<{ response: { items: ClusterI
         .get<{ items: ClusterInitBundle[] }>(`${clusterInitUrl}/init-bundles`)
         .then((response) => {
             return {
-                response: response.data || { items: [] },
+                response: response.data ?? { items: [] },
             };
         });
 }
@@ -242,7 +242,7 @@ export function fetchClusterRegistrationSecrets(): Promise<{ items: ClusterRegis
     return axios
         .get<{ items: ClusterRegistrationSecret[] }>(`${clusterInitUrl}/crs`)
         .then((response) => {
-            return response.data || { items: [] };
+            return response.data ?? { items: [] };
         });
 }
 
@@ -268,7 +268,7 @@ export function generateClusterInitBundle(data: { name: string }): Promise<{
         }>(`${clusterInitUrl}/init-bundles`, data)
         .then((response) => {
             return {
-                response: response.data || {},
+                response: response.data ?? {},
             };
         });
 }

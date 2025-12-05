@@ -593,6 +593,13 @@ spec:
           Allows overriding the default resource settings for this component. Please consult the documentation
           for an overview of default resource requirements and a sizing guide.
         displayName: Resources
+        path: configAsCode.resources
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:resourceRequirements
+      - description: |-
+          Allows overriding the default resource settings for this component. Please consult the documentation
+          for an overview of default resource requirements and a sizing guide.
+        displayName: Resources
         path: scanner.analyzer.resources
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:resourceRequirements
@@ -635,6 +642,10 @@ spec:
       - description: If you want this component to only run on specific nodes, you
           can configure a node selector here.
         displayName: Node Selector
+        path: configAsCode.nodeSelector
+      - description: If you want this component to only run on specific nodes, you
+          can configure a node selector here.
+        displayName: Node Selector
         path: scanner.analyzer.nodeSelector
       - description: If you want this component to only run on specific nodes, you
           can configure a node selector here.
@@ -662,6 +673,12 @@ spec:
           can configure tolerations of tainted nodes.
         displayName: Tolerations
         path: central.tolerations
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:tolerations
+      - description: If you want this component to only run on specific nodes, you
+          can configure tolerations of tainted nodes.
+        displayName: Tolerations
+        path: configAsCode.tolerations
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:tolerations
       - description: If you want this component to only run on specific nodes, you
@@ -702,6 +719,10 @@ spec:
           in the pod's hosts file.
         displayName: Host Aliases
         path: central.hostAliases
+      - description: HostAliases allows configuring additional hostnames to resolve
+          in the pod's hosts file.
+        displayName: Host Aliases
+        path: configAsCode.hostAliases
       - description: HostAliases allows configuring additional hostnames to resolve
           in the pod's hosts file.
         displayName: Host Aliases

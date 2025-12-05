@@ -105,6 +105,8 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"message: String!",
 	}))
 	utils.Must(builder.AddType("Alert_Node", []string{
+		"clusterId: String!",
+		"clusterName: String!",
 		"id: ID!",
 		"name: String!",
 	}))
@@ -2463,6 +2465,16 @@ func (resolver *Resolver) wrapAlert_NodesWithContext(ctx context.Context, values
 		output[i] = &alert_NodeResolver{ctx: ctx, root: resolver, data: v}
 	}
 	return output, nil
+}
+
+func (resolver *alert_NodeResolver) ClusterId(ctx context.Context) string {
+	value := resolver.data.GetClusterId()
+	return value
+}
+
+func (resolver *alert_NodeResolver) ClusterName(ctx context.Context) string {
+	value := resolver.data.GetClusterName()
+	return value
 }
 
 func (resolver *alert_NodeResolver) Id(ctx context.Context) graphql.ID {

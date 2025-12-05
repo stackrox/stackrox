@@ -160,7 +160,7 @@ function ListeningEndpointsPage() {
     }
 
     const selectedValues = searchValueAsArray(searchFilter[entity]);
-    const autocompleteOptions = autoCompleteData?.searchAutocomplete || [];
+    const autocompleteOptions = autoCompleteData?.searchAutocomplete ?? [];
 
     // Show create option if user has typed something that doesn't exist
     const shouldShowCreateOption =

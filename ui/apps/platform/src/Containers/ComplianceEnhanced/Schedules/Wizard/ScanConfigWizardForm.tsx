@@ -93,7 +93,7 @@ function CustomWizardFooter({
     }
 
     function handleNext() {
-        const hasNoErrors = Object.keys(formik.errors?.[stepId] || {}).length === 0;
+        const hasNoErrors = Object.keys(formik.errors?.[stepId] ?? {}).length === 0;
 
         if (!hasNoErrors) {
             setAllFieldsTouched(stepId);
@@ -198,19 +198,19 @@ function ScanConfigWizardForm({ initialFormValues }: ScanConfigWizardFormProps):
     }
 
     function canJumpToSelectClusters() {
-        return Object.keys(formik.errors?.parameters || {}).length === 0;
+        return Object.keys(formik.errors?.parameters ?? {}).length === 0;
     }
 
     function canJumpToSelectProfiles() {
-        return canJumpToSelectClusters() && Object.keys(formik.errors?.clusters || {}).length === 0;
+        return canJumpToSelectClusters() && Object.keys(formik.errors?.clusters ?? {}).length === 0;
     }
 
     function canJumpToConfigureReport() {
-        return canJumpToSelectProfiles() && Object.keys(formik.errors?.profiles || {}).length === 0;
+        return canJumpToSelectProfiles() && Object.keys(formik.errors?.profiles ?? {}).length === 0;
     }
 
     function canJumpToReviewConfig() {
-        return canJumpToConfigureReport() && Object.keys(formik.errors?.report || {}).length === 0;
+        return canJumpToConfigureReport() && Object.keys(formik.errors?.report ?? {}).length === 0;
     }
 
     function allClustersAreUnhealthy(): boolean {
@@ -259,7 +259,7 @@ function ScanConfigWizardForm({ initialFormValues }: ScanConfigWizardFormProps):
                     >
                         <ClusterSelection
                             alertRef={alertRef}
-                            clusters={clusters || []}
+                            clusters={clusters ?? []}
                             isFetchingClusters={isFetchingClusters}
                         />
                     </WizardStep>
@@ -280,7 +280,7 @@ function ScanConfigWizardForm({ initialFormValues }: ScanConfigWizardFormProps):
                     >
                         <ProfileSelection
                             alertRef={alertRef}
-                            profiles={profiles || []}
+                            profiles={profiles ?? []}
                             isFetchingProfiles={isFetchingProfiles}
                         />
                     </WizardStep>
@@ -314,7 +314,7 @@ function ScanConfigWizardForm({ initialFormValues }: ScanConfigWizardFormProps):
                         }}
                     >
                         <ReviewConfig
-                            clusters={clusters || []}
+                            clusters={clusters ?? []}
                             errorMessage={createScanConfigError}
                         />
                     </WizardStep>

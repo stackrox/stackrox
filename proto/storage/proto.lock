@@ -593,6 +593,16 @@
                     "id": 2,
                     "name": "name",
                     "type": "string"
+                  },
+                  {
+                    "id": 3,
+                    "name": "cluster_id",
+                    "type": "string"
+                  },
+                  {
+                    "id": 4,
+                    "name": "cluster_name",
+                    "type": "string"
                   }
                 ]
               },
@@ -1329,6 +1339,229 @@
           },
           {
             "path": "storage/traits.proto"
+          }
+        ],
+        "package": {
+          "name": "storage"
+        },
+        "options": [
+          {
+            "name": "go_package",
+            "value": "./storage;storage"
+          },
+          {
+            "name": "java_package",
+            "value": "io.stackrox.proto.storage"
+          }
+        ]
+      }
+    },
+    {
+      "protopath": "base_image.proto",
+      "def": {
+        "messages": [
+          {
+            "name": "BaseImage",
+            "fields": [
+              {
+                "id": 1,
+                "name": "id",
+                "type": "string"
+              },
+              {
+                "id": 2,
+                "name": "base_image_repository_id",
+                "type": "string"
+              },
+              {
+                "id": 3,
+                "name": "repository",
+                "type": "string"
+              },
+              {
+                "id": 4,
+                "name": "tag",
+                "type": "string"
+              },
+              {
+                "id": 5,
+                "name": "manifest_digest",
+                "type": "string"
+              },
+              {
+                "id": 6,
+                "name": "discovered_at",
+                "type": "google.protobuf.Timestamp"
+              },
+              {
+                "id": 7,
+                "name": "active",
+                "type": "bool"
+              },
+              {
+                "id": 8,
+                "name": "first_layer_digest",
+                "type": "string"
+              }
+            ]
+          },
+          {
+            "name": "BaseImageLayer",
+            "fields": [
+              {
+                "id": 1,
+                "name": "id",
+                "type": "string"
+              },
+              {
+                "id": 2,
+                "name": "base_image_id",
+                "type": "string"
+              },
+              {
+                "id": 3,
+                "name": "layer_digest",
+                "type": "string"
+              },
+              {
+                "id": 4,
+                "name": "index",
+                "type": "int32"
+              }
+            ]
+          }
+        ],
+        "imports": [
+          {
+            "path": "google/protobuf/timestamp.proto"
+          }
+        ],
+        "package": {
+          "name": "storage"
+        },
+        "options": [
+          {
+            "name": "go_package",
+            "value": "./storage;storage"
+          },
+          {
+            "name": "java_package",
+            "value": "io.stackrox.proto.storage"
+          }
+        ]
+      }
+    },
+    {
+      "protopath": "base_image_repository.proto",
+      "def": {
+        "enums": [
+          {
+            "name": "BaseImageRepository.HealthStatus",
+            "enum_fields": [
+              {
+                "name": "HEALTHY"
+              },
+              {
+                "name": "UNHEALTHY",
+                "integer": 1
+              },
+              {
+                "name": "DISABLED",
+                "integer": 2
+              }
+            ]
+          }
+        ],
+        "messages": [
+          {
+            "name": "BaseImageRepository",
+            "fields": [
+              {
+                "id": 1,
+                "name": "id",
+                "type": "string"
+              },
+              {
+                "id": 2,
+                "name": "repository_path",
+                "type": "string"
+              },
+              {
+                "id": 3,
+                "name": "tag_pattern",
+                "type": "string"
+              },
+              {
+                "id": 4,
+                "name": "updated_at",
+                "type": "google.protobuf.Timestamp"
+              },
+              {
+                "id": 5,
+                "name": "failure_count",
+                "type": "int32"
+              },
+              {
+                "id": 6,
+                "name": "health_status",
+                "type": "HealthStatus"
+              },
+              {
+                "id": 7,
+                "name": "pattern_hash",
+                "type": "string"
+              }
+            ]
+          },
+          {
+            "name": "BaseImageTag",
+            "fields": [
+              {
+                "id": 1,
+                "name": "id",
+                "type": "string"
+              },
+              {
+                "id": 2,
+                "name": "base_image_repository_id",
+                "type": "string"
+              },
+              {
+                "id": 3,
+                "name": "tag",
+                "type": "string"
+              },
+              {
+                "id": 4,
+                "name": "manifest_digest",
+                "type": "string"
+              },
+              {
+                "id": 5,
+                "name": "is_manifest_list",
+                "type": "bool"
+              },
+              {
+                "id": 6,
+                "name": "created",
+                "type": "google.protobuf.Timestamp"
+              }
+            ],
+            "maps": [
+              {
+                "key_type": "string",
+                "field": {
+                  "id": 7,
+                  "name": "list_digests",
+                  "type": "string"
+                }
+              }
+            ]
+          }
+        ],
+        "imports": [
+          {
+            "path": "google/protobuf/timestamp.proto"
           }
         ],
         "package": {
@@ -9347,6 +9580,11 @@
                 "id": 14,
                 "name": "image_id_v2",
                 "type": "string"
+              },
+              {
+                "id": 15,
+                "name": "from_base_image",
+                "type": "bool"
               }
             ]
           }

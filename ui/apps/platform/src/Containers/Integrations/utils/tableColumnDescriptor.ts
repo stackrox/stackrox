@@ -1,3 +1,5 @@
+import type { AuthMachineToMachineConfig } from 'services/MachineAccessService';
+import type { CloudSourceIntegration } from 'services/CloudSourceService';
 import type { ApiToken } from 'types/apiToken.proto';
 import type { BaseBackupIntegration } from 'types/externalBackup.proto';
 import type { FeatureFlagEnvVar } from 'types/featureFlag';
@@ -24,17 +26,14 @@ import type {
     SyslogNotifierIntegration,
 } from 'types/notifier.proto';
 import type { SignatureIntegration } from 'types/signatureIntegration.proto';
-
+import { formatRecurringSchedule, getDateTime } from 'utils/dateUtils';
 import { getOriginLabel } from 'utils/traits.utils';
-import type { AuthMachineToMachineConfig } from 'services/MachineAccessService';
-import type { CloudSourceIntegration } from 'services/CloudSourceService';
+
 import {
-    backupScheduleDescriptor,
     categoriesUtilsForClairifyScanner,
     categoriesUtilsForRegistryScanner,
     transformDurationLongForm,
 } from './integrationUtils';
-import { getDateTime } from 'utils/dateUtils';
 
 const { getCategoriesText: getCategoriesTextForClairifyScanner } =
     categoriesUtilsForClairifyScanner;
@@ -105,7 +104,7 @@ const tableColumnDescriptor: Readonly<IntegrationTableColumnDescriptorMap> = {
             { accessor: 'role', Header: 'Role' },
             {
                 accessor: (config) => {
-                    const objectConfig = <ApiToken>config;
+                    const objectConfig = config as ApiToken;
                     return objectConfig.expiration
                         ? getDateTime(objectConfig.expiration)
                         : 'Unknown';
@@ -116,7 +115,7 @@ const tableColumnDescriptor: Readonly<IntegrationTableColumnDescriptorMap> = {
         machineAccess: [
             {
                 accessor: (config) => {
-                    const { type } = <AuthMachineToMachineConfig>config;
+                    const { type } = config as AuthMachineToMachineConfig;
                     if (type === 'GENERIC') {
                         return 'Generic';
                     }
@@ -135,7 +134,7 @@ const tableColumnDescriptor: Readonly<IntegrationTableColumnDescriptorMap> = {
             {
                 accessor: (config) => {
                     return transformDurationLongForm(
-                        (<AuthMachineToMachineConfig>config).tokenExpirationDuration
+                        (config as AuthMachineToMachineConfig).tokenExpirationDuration
                     );
                 },
                 Header: 'Token lifetime',
@@ -348,17 +347,17 @@ const tableColumnDescriptor: Readonly<IntegrationTableColumnDescriptorMap> = {
         s3: [
             { accessor: 'name', Header: 'Name' },
             { accessor: 's3.bucket', Header: 'Bucket' },
-            backupScheduleDescriptor(),
+            { accessor: ({ schedule }) => formatRecurringSchedule(schedule), Header: 'Schedule' },
         ],
         s3compatible: [
             { accessor: 'name', Header: 'Name' },
             { accessor: 's3compatible.bucket', Header: 'Bucket' },
-            backupScheduleDescriptor(),
+            { accessor: ({ schedule }) => formatRecurringSchedule(schedule), Header: 'Schedule' },
         ],
         gcs: [
             { accessor: 'name', Header: 'Name' },
             { accessor: 'gcs.bucket', Header: 'Bucket' },
-            backupScheduleDescriptor(),
+            { accessor: ({ schedule }) => formatRecurringSchedule(schedule), Header: 'Schedule' },
         ],
     },
     cloudSources: {

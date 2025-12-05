@@ -1,14 +1,22 @@
 package filter
 
 import (
+	"hash"
 	"strings"
+	"unsafe"
 
+	"github.com/cespare/xxhash"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/containerid"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/stringutils"
 	"github.com/stackrox/rox/pkg/sync"
 )
+
+// BinaryHash represents a 64-bit hash for memory-efficient key storage.
+// Using uint64 directly avoids conversion overhead and provides faster map operations.
+// This follows the pattern from network flow dedupers (PR #17040).
+type BinaryHash uint64
 
 // This filter is a rudimentary filter that prevents a container from spamming Central
 //
@@ -43,12 +51,12 @@ type Filter interface {
 
 type level struct {
 	hits     int
-	children map[string]*level
+	children map[BinaryHash]*level
 }
 
 func newLevel() *level {
 	return &level{
-		children: make(map[string]*level),
+		children: make(map[BinaryHash]*level),
 	}
 }
 
@@ -59,6 +67,10 @@ type filterImpl struct {
 
 	containersInDeployment map[string]map[string]*level
 	rootLock               sync.Mutex
+
+	// Hash instance for computing BinaryHash keys
+	// Reused across Add() calls to avoid allocations
+	h hash.Hash64
 }
 
 func (f *filterImpl) siftNoLock(level *level, args []string, levelNum int) bool {
@@ -72,15 +84,22 @@ func (f *filterImpl) siftNoLock(level *level, args []string, levelNum int) bool 
 		return true
 	}
 	// Truncate the current argument to the max size to avoid large arguments taking up a lot of space
-	currentArg := stringutils.Truncate(args[0], maxArgSize)
-	nextLevel := level.children[currentArg]
+
+	truncated := stringutils.Truncate(args[0], maxArgSize)
+
+	// Hash the truncated arguments to solve 2 problems:
+	// 1. Holding references to the original string data received from the DB scan
+	// 2. Using BinaryHash as map key is reducing memory requirements for the filter
+	argHash := hashString(f.h, truncated)
+
+	nextLevel := level.children[argHash]
 	if nextLevel == nil {
 		// If this level has already hit its max fan out then return false
 		if len(level.children) >= f.maxFanOut[levelNum] {
 			return false
 		}
 		nextLevel = newLevel()
-		level.children[currentArg] = nextLevel
+		level.children[argHash] = nextLevel
 	}
 
 	return f.siftNoLock(nextLevel, args[1:], levelNum+1)
@@ -94,6 +113,7 @@ func NewFilter(maxExactPathMatches, maxUniqueProcesses int, fanOut []int) Filter
 		maxFanOut:           fanOut,
 
 		containersInDeployment: make(map[string]map[string]*level),
+		h:                      xxhash.New(),
 	}
 }
 
@@ -119,14 +139,20 @@ func (f *filterImpl) Add(indicator *storage.ProcessIndicator) bool {
 
 	rootLevel := f.getOrAddRootLevelNoLock(indicator)
 
+	execFilePath := indicator.GetSignal().GetExecFilePath()
+	// Hash the execFilePath to solve 2 problems:
+	// 1. Holding references to the original string data received from the DB scan
+	// 2. Using BinaryHash as map key is reducing memory requirements for the filter
+	execFilePathHash := hashString(f.h, execFilePath)
+
 	// Handle the process level independently as we will never reject a new process
-	processLevel := rootLevel.children[indicator.GetSignal().GetExecFilePath()]
+	processLevel := rootLevel.children[execFilePathHash]
 	if processLevel == nil {
 		if len(rootLevel.children) >= f.maxUniqueProcesses {
 			return false
 		}
 		processLevel = newLevel()
-		rootLevel.children[indicator.GetSignal().GetExecFilePath()] = processLevel
+		rootLevel.children[execFilePathHash] = processLevel
 	}
 
 	return f.siftNoLock(processLevel, strings.Fields(indicator.GetSignal().GetArgs()), 0)
@@ -182,4 +208,22 @@ func (f *filterImpl) DeleteByPod(pod *storage.Pod) {
 			delete(containersMap, k)
 		}
 	}
+}
+
+// hashString creates a hash from a single string.
+// Convenience wrapper for hashStrings with a single argument.
+func hashString(h hash.Hash64, s string) BinaryHash {
+	if len(s) == 0 {
+		return BinaryHash(0)
+	}
+
+	h.Reset()
+	// Use zero-copy conversion from string to []byte using unsafe to avoid allocation.
+	// This is safe because:
+	// 1. h.Write() doesn't modify data (io.Writer contract)
+	// 2. xxhash doesn't retain references
+	// 3. string s remains alive during the call
+	//#nosec G103 -- Audited: zero-copy string-to-bytes conversion for performance
+	_, _ = h.Write(unsafe.Slice(unsafe.StringData(s), len(s)))
+	return BinaryHash(h.Sum64())
 }

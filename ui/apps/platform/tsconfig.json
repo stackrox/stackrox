@@ -9,6 +9,7 @@
     "baseUrl": "src",
     "allowJs": true,
     "checkJs": false,
+    "erasableSyntaxOnly": true,
     "skipLibCheck": true,
     "esModuleInterop": true,
     "allowSyntheticDefaultImports": true,

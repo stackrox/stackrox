@@ -3,13 +3,13 @@ module github.com/stackrox/rox
 go 1.24.0
 
 require (
-	cloud.google.com/go/artifactregistry v1.17.2
+	cloud.google.com/go/artifactregistry v1.18.0
 	cloud.google.com/go/compute/metadata v0.9.0
 	cloud.google.com/go/containeranalysis v0.14.2
 	cloud.google.com/go/securitycenter v1.38.1
 	cloud.google.com/go/storage v1.57.2
 	dario.cat/mergo v1.0.2
-	github.com/Azure/azure-sdk-for-go-extensions v0.2.0
+	github.com/Azure/azure-sdk-for-go-extensions v0.3.0
 	github.com/Azure/azure-sdk-for-go/sdk/azcore v1.20.0
 	github.com/Azure/azure-sdk-for-go/sdk/azidentity v1.13.1
 	github.com/Azure/azure-sdk-for-go/sdk/containers/azcontainerregistry v0.2.3
@@ -34,7 +34,7 @@ require (
 	github.com/aws/aws-sdk-go-v2/service/s3 v1.92.1
 	github.com/aws/aws-sdk-go-v2/service/securityhub v1.66.1
 	github.com/aws/aws-sdk-go-v2/service/sts v1.41.2
-	github.com/aws/smithy-go v1.23.2
+	github.com/aws/smithy-go v1.24.0
 	github.com/cenkalti/backoff/v3 v3.2.2
 	github.com/cenkalti/backoff/v4 v4.3.0
 	github.com/cespare/xxhash v1.1.0
@@ -89,7 +89,7 @@ require (
 	github.com/np-guard/cluster-topology-analyzer/v2 v2.3.0
 	github.com/np-guard/netpol-analyzer v1.4.4
 	github.com/nxadm/tail v1.4.11
-	github.com/olekukonko/tablewriter v1.1.1
+	github.com/olekukonko/tablewriter v1.1.2
 	github.com/onsi/ginkgo/v2 v2.27.2
 	github.com/onsi/gomega v1.38.2
 	github.com/opencontainers/go-digest v1.0.0
@@ -120,7 +120,7 @@ require (
 	github.com/sigstore/rekor v1.4.3
 	github.com/sigstore/sigstore v1.9.5
 	github.com/sourcegraph/conc v0.3.1-0.20240121214520-5f936abd7ae8
-	github.com/spf13/cobra v1.10.1
+	github.com/spf13/cobra v1.10.2
 	github.com/spf13/pflag v1.0.10
 	github.com/spf13/viper v1.21.0
 	github.com/stackrox/external-network-pusher v0.0.0-20231115153210-b82d72f500a2
@@ -150,9 +150,9 @@ require (
 	golang.org/x/time v0.14.0
 	golang.org/x/tools v0.39.0
 	golang.stackrox.io/grpc-http1 v0.5.1
-	google.golang.org/api v0.256.0
+	google.golang.org/api v0.257.0
 	google.golang.org/genproto v0.0.0-20250603155806-513f23925822
-	google.golang.org/genproto/googleapis/api v0.0.0-20251022142026-3a174f9686a8
+	google.golang.org/genproto/googleapis/api v0.0.0-20251111163417-95abcf5c77ba
 	google.golang.org/grpc v1.77.0
 	google.golang.org/grpc/examples v0.0.0-20250407062114-b368379ef8f6
 	google.golang.org/protobuf v1.36.10
@@ -189,6 +189,7 @@ require (
 	github.com/AliyunContainerService/ack-ram-tool/pkg/credentials/provider v0.14.0 // indirect
 	github.com/Azure/azure-sdk-for-go v68.0.0+incompatible // indirect
 	github.com/Azure/azure-sdk-for-go/sdk/internal v1.11.2 // indirect
+	github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/containerservice/armcontainerservice/v8 v8.1.0 // indirect
 	github.com/Azure/go-ansiterm v0.0.0-20250102033503-faa5f7b0171c // indirect
 	github.com/Azure/go-autorest v14.2.0+incompatible // indirect
 	github.com/Azure/go-autorest/autorest v0.11.29 // indirect
@@ -255,9 +256,9 @@ require (
 	github.com/chai2010/gettext-go v1.0.2 // indirect
 	github.com/chrismellard/docker-credential-acr-env v0.0.0-20230304212654-82a0ddb27589 // indirect
 	github.com/clbanning/mxj/v2 v2.7.0 // indirect
-	github.com/clipperhouse/displaywidth v0.3.1 // indirect
+	github.com/clipperhouse/displaywidth v0.6.0 // indirect
 	github.com/clipperhouse/stringish v0.1.1 // indirect
-	github.com/clipperhouse/uax29/v2 v2.2.0 // indirect
+	github.com/clipperhouse/uax29/v2 v2.3.0 // indirect
 	github.com/cloudflare/circl v1.6.1 // indirect
 	github.com/cncf/xds/go v0.0.0-20251022180443-0feb69152e9f // indirect
 	github.com/cockroachdb/crlib v0.0.0-20250617202621-0794c595bbe6 // indirect
@@ -419,7 +420,7 @@ require (
 	github.com/oklog/ulid v1.3.1 // indirect
 	github.com/olekukonko/cat v0.0.0-20250911104152-50322a0618f6 // indirect
 	github.com/olekukonko/errors v1.1.0 // indirect
-	github.com/olekukonko/ll v0.1.2 // indirect
+	github.com/olekukonko/ll v0.1.3 // indirect
 	github.com/opencontainers/runtime-spec v1.2.1 // indirect
 	github.com/openshift-online/ocm-api-model/clientapi v0.0.439 // indirect
 	github.com/openshift-online/ocm-api-model/model v0.0.439 // indirect
@@ -502,7 +503,7 @@ require (
 	golang.org/x/exp v0.0.0-20250620022241-b7579e27df2b // indirect
 	golang.org/x/tools/go/packages/packagestest v0.1.1-deprecated // indirect
 	gomodules.xyz/jsonpatch/v2 v2.4.0 // indirect
-	google.golang.org/genproto/googleapis/rpc v0.0.0-20251103181224-f26f9409b101 // indirect
+	google.golang.org/genproto/googleapis/rpc v0.0.0-20251124214823-79d6a2a48846 // indirect
 	gopkg.in/evanphx/json-patch.v4 v4.12.0 // indirect
 	gopkg.in/inf.v0 v0.9.1 // indirect
 	gopkg.in/ini.v1 v1.67.0 // indirect

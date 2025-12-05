@@ -53,7 +53,7 @@ export function fetchDelegatedRegistryConfig(): Promise<DelegatedRegistryConfig>
 export function fetchDelegatedRegistryClusters(): Promise<DelegatedRegistryCluster[]> {
     return axios
         .get<{ clusters: DelegatedRegistryCluster[] }>(`${delegatedRegistryUrl}/clusters`)
-        .then((response) => response.data.clusters || []);
+        .then((response) => response.data.clusters ?? []);
 }
 
 /**

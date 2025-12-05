@@ -2,38 +2,47 @@ package printer
 
 import (
 	"fmt"
+	"maps"
+	"slices"
 	"strings"
 
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/set"
+	"github.com/stackrox/rox/pkg/sliceutils"
+)
+
+const (
+	maxPaths = 10
 )
 
 func UpdateFileAccessAlertViolationMessage(v *storage.Alert_FileAccessViolation) {
-	accesses := v.GetAccesses()
-	if len(accesses) == 0 {
+	if len(v.GetAccesses()) == 0 {
 		return
 	}
 
-	pathSet := set.NewStringSet()
-	for _, fa := range accesses {
-		pathSet.Add(fa.GetFile().GetMountedPath())
+	// Construct a string for each distinct path, and accumulate
+	// file operation, so we can show all the kinds of activity
+	// for each file, to provide the most important info.
+	pathToOperation := make(map[string][]string, 0)
+	for _, fa := range v.GetAccesses() {
+		path := fa.GetFile().GetNodePath()
+		pathToOperation[path] = append(pathToOperation[path], fa.GetOperation().String())
 	}
 
-	var sb strings.Builder
-
-	if pathSet.Cardinality() < 10 {
-		for i, fa := range accesses {
-			if i > 0 {
-				sb.WriteString("; ")
-			}
-			fmt.Fprintf(&sb, "'%v' accessed (%v) by %v",
-				fa.GetFile().GetMountedPath(),
-				fa.GetOperation(),
-				fa.GetProcess().GetSignal().GetName())
-		}
-	} else {
-		fmt.Fprintf(&sb, "%d sensitive files accessed", pathSet.Cardinality())
+	if len(pathToOperation) >= maxPaths {
+		v.Message = fmt.Sprintf("%d sensitive files accessed", len(pathToOperation))
+		return
 	}
 
-	v.Message = sb.String()
+	// sorted to make this more deterministic which means both that
+	// the output is more consistent, and it is more testable.
+	paths := slices.SortedFunc(maps.Keys(pathToOperation), func(a, b string) int {
+		return strings.Compare(a, b)
+	})
+
+	parts := make([]string, 0, len(pathToOperation))
+	for _, path := range paths {
+		parts = append(parts, fmt.Sprintf("'%v' accessed (%s)", path, strings.Join(sliceutils.Unique(pathToOperation[path]), ", ")))
+	}
+
+	v.Message = strings.Join(parts, "; ")
 }

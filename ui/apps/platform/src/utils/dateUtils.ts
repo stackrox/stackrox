@@ -1,6 +1,8 @@
 import Raven from 'raven-js';
 import { distanceInWordsStrict } from 'date-fns';
 
+import type { Schedule, ScheduleBase } from 'types/schedule.proto';
+
 const userLanguages: readonly string[] | undefined = globalThis.navigator?.languages;
 
 export type DateLike = string | number | Date;
@@ -45,6 +47,49 @@ function formatLocalizedDateTime(
         Raven.captureException(e);
         return String(dateLike);
     }
+}
+
+/**
+ * Returns a human readable label for a recurring schedule.
+ * @param schedule - A `Schedule` object describing the interval and time
+ * @returns A formatted string such as "Daily at 05:00 UTC" or "Every Mon and Wed at 13:30 UTC"
+ */
+export function formatRecurringSchedule(schedule: Schedule) {
+    const formatDays = (days: string[]): string => {
+        if (days.length === 1) {
+            return days[0];
+        }
+        if (days.length === 2) {
+            return days.join(' and ');
+        }
+        return `${days.slice(0, -1).join(', ')}, and ${days[days.length - 1]}`;
+    };
+
+    const timeString = `${getHourMinuteStringFromScheduleBase(schedule)} UTC`;
+
+    switch (schedule.intervalType) {
+        case 'DAILY':
+            return `Daily at ${timeString}`;
+        case 'WEEKLY': {
+            const daysOfWeek = schedule.daysOfWeek.days.map((day) => daysOfWeekAbbreviated[day]);
+            return `Every ${formatDays(daysOfWeek)} at ${timeString}`;
+        }
+        case 'MONTHLY': {
+            const formattedDaysOfMonth = schedule.daysOfMonth.days.map(getDayOfMonthWithOrdinal);
+            return `Monthly on the ${formatDays(formattedDaysOfMonth)} at ${timeString}`;
+        }
+        default:
+            return 'Invalid Schedule';
+    }
+}
+
+function padStart2(timeElement: number) {
+    return timeElement.toString().padStart(2, '0');
+}
+
+export function getHourMinuteStringFromScheduleBase({ hour, minute }: ScheduleBase) {
+    // Return 24-hour hh:mm string for hour and minute.
+    return [padStart2(hour), padStart2(minute)].join(':');
 }
 
 /**
@@ -148,6 +193,8 @@ const daysOfWeek = [
     'Friday',
     'Saturday',
 ] as const;
+
+const daysOfWeekAbbreviated = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'] as const;
 
 /**
  * Given an ISO 8601 string, return the day of the week.

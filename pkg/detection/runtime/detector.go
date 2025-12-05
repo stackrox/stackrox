@@ -17,6 +17,8 @@ type Detector interface {
 	DetectForDeploymentAndKubeEvent(enhancedDeployment booleanpolicy.EnhancedDeployment, kubeEvent *storage.KubernetesEvent) ([]*storage.Alert, error)
 	DetectForDeploymentAndNetworkFlow(enhancedDeployment booleanpolicy.EnhancedDeployment, flow *augmentedobjs.NetworkFlowDetails) ([]*storage.Alert, error)
 	DetectForAuditEvents(auditEvents []*storage.KubernetesEvent) ([]*storage.Alert, error)
+	DetectForNodeAndFileAccess(node *storage.Node, access *storage.FileAccess) ([]*storage.Alert, error)
+	DetectForDeploymentAndFileAccess(enhancedDeployment booleanpolicy.EnhancedDeployment, access *storage.FileAccess) ([]*storage.Alert, error)
 }
 
 // NewDetector returns a new instance of a Detector.
@@ -52,21 +54,63 @@ func (d *detectorImpl) DetectForDeploymentAndProcess(
 	process *storage.ProcessIndicator,
 	processNotInBaseline bool,
 ) ([]*storage.Alert, error) {
-	return d.detectForDeployment(enhancedDeployment, process, processNotInBaseline, nil, nil)
+	return d.detectForDeployment(enhancedDeployment, process, processNotInBaseline, nil, nil, nil)
 }
 
 func (d *detectorImpl) DetectForDeploymentAndKubeEvent(
 	enhancedDeployment booleanpolicy.EnhancedDeployment,
 	kubeEvent *storage.KubernetesEvent,
 ) ([]*storage.Alert, error) {
-	return d.detectForDeployment(enhancedDeployment, nil, false, kubeEvent, nil)
+	return d.detectForDeployment(enhancedDeployment, nil, false, kubeEvent, nil, nil)
 }
 
 func (d *detectorImpl) DetectForDeploymentAndNetworkFlow(
 	enhancedDeployment booleanpolicy.EnhancedDeployment,
 	flow *augmentedobjs.NetworkFlowDetails,
 ) ([]*storage.Alert, error) {
-	return d.detectForDeployment(enhancedDeployment, nil, false, nil, flow)
+	return d.detectForDeployment(enhancedDeployment, nil, false, nil, flow, nil)
+}
+
+func (d *detectorImpl) DetectForDeploymentAndFileAccess(
+	enhancedDeployment booleanpolicy.EnhancedDeployment,
+	fileAccess *storage.FileAccess,
+) ([]*storage.Alert, error) {
+	return d.detectForDeployment(enhancedDeployment, nil, false, nil, nil, fileAccess)
+}
+
+func (d *detectorImpl) DetectForNodeAndFileAccess(node *storage.Node, access *storage.FileAccess) ([]*storage.Alert, error) {
+	var alerts []*storage.Alert
+	var cacheReceptacle booleanpolicy.CacheReceptacle
+
+	err := d.policySet.ForEach(func(compiled detection.CompiledPolicy) error {
+		if compiled.Policy().GetDisabled() {
+			return nil
+		}
+
+		if access != nil {
+			// Check predicate on file access.
+			if !compiled.AppliesTo(access) {
+				return nil
+			}
+
+			violation, err := compiled.MatchAgainstNodeAndFileAccess(&cacheReceptacle, node, access)
+			if err != nil {
+				return errors.Wrapf(err, "evaluating violations for policy %q; node file access.",
+					compiled.Policy().GetName())
+			}
+
+			alert := constructFileAccessAlert(compiled.Policy(), node, nil, violation)
+			if alert != nil {
+				alerts = append(alerts, alert)
+			}
+		}
+
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+	return alerts, nil
 }
 
 // detectForDeployment runs detection on a deployment, returning any generated alerts.
@@ -76,6 +120,7 @@ func (d *detectorImpl) detectForDeployment(
 	processNotInBaseline bool,
 	kubeEvent *storage.KubernetesEvent,
 	flow *augmentedobjs.NetworkFlowDetails,
+	fileAccess *storage.FileAccess,
 ) ([]*storage.Alert, error) {
 	var alerts []*storage.Alert
 	var cacheReceptable booleanpolicy.CacheReceptacle
@@ -120,6 +165,7 @@ func (d *detectorImpl) detectForDeployment(
 				alerts = append(alerts, alert)
 			}
 		}
+
 		if flow != nil {
 			violation, err := compiled.MatchAgainstDeploymentAndNetworkFlow(&cacheReceptable, enhancedDeployment, flow)
 			if err != nil {
@@ -128,6 +174,18 @@ func (d *detectorImpl) detectForDeployment(
 			}
 
 			if alert := constructNetworkFlowAlert(compiled.Policy(), deployment, flow, violation); alert != nil {
+				alerts = append(alerts, alert)
+			}
+		}
+
+		if fileAccess != nil {
+			violation, err := compiled.MatchAgainstDeploymentAndFileAccess(&cacheReceptable, enhancedDeployment, fileAccess)
+			if err != nil {
+				return errors.Wrapf(err, "evaluating violations for policy %q; file access %+v",
+					compiled.Policy().GetName(), fileAccess)
+			}
+
+			if alert := constructFileAccessAlert(compiled.Policy(), nil, deployment, violation); alert != nil {
 				alerts = append(alerts, alert)
 			}
 		}

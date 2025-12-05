@@ -2,50 +2,57 @@ package relay
 
 import (
 	"context"
-	"net"
 
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/compliance/virtualmachines/relay/handler"
-	"github.com/stackrox/rox/compliance/virtualmachines/relay/server"
-	"github.com/stackrox/rox/compliance/virtualmachines/relay/vsock"
-	"github.com/stackrox/rox/generated/internalapi/sensor"
+	"github.com/stackrox/rox/compliance/virtualmachines/relay/sender"
+	v1 "github.com/stackrox/rox/generated/internalapi/virtualmachine/v1"
 	"github.com/stackrox/rox/pkg/logging"
-	"google.golang.org/grpc"
 )
 
 var log = logging.LoggerForModule()
 
-// Handler processes connections carrying virtual machine index reports.
-type Handler interface {
-	Handle(ctx context.Context, conn net.Conn) error
-}
-
-// Server accepts and manages connections with concurrency control.
-type Server interface {
-	Run(ctx context.Context, handler server.ConnectionHandler) error
+// IndexReportStream manages report collection and produces validated reports.
+type IndexReportStream interface {
+	// Start begins accepting connections and returns a channel of validated reports.
+	// The channel is currently not closed to avoid races during shutdown.
+	// TODO: Implement proper shutdown logic that closes the channel.
+	Start(ctx context.Context) (<-chan *v1.IndexReport, error)
 }
 
 type Relay struct {
-	handler Handler
-	server  Server
+	reportStream IndexReportStream
+	reportSender sender.IndexReportSender
 }
 
-func NewRelay(conn grpc.ClientConnInterface) (*Relay, error) {
-	sensorClient := sensor.NewVirtualMachineIndexReportServiceClient(conn)
-
-	listener, err := vsock.NewListener()
-	if err != nil {
-		return nil, errors.Wrap(err, "creating vsock listener")
-	}
-
+// New creates a Relay with the given report stream and sender.
+func New(reportStream IndexReportStream, reportSender sender.IndexReportSender) *Relay {
 	return &Relay{
-		handler: handler.New(sensorClient),
-		server:  server.New(listener),
-	}, nil
+		reportStream: reportStream,
+		reportSender: reportSender,
+	}
 }
 
 func (r *Relay) Run(ctx context.Context) error {
 	log.Info("Starting virtual machine relay")
-	// The server handles shutdown by closing its listener when ctx is cancelled
-	return r.server.Run(ctx, r.handler.Handle)
+
+	reportChan, err := r.reportStream.Start(ctx)
+	if err != nil {
+		return errors.Wrap(err, "starting report stream")
+	}
+
+	for {
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		case report := <-reportChan:
+			if report == nil {
+				log.Warn("Received nil report, skipping")
+				continue
+			}
+			if err := r.reportSender.Send(ctx, report); err != nil {
+				log.Errorf("Failed to send report (vsock CID: %s): %v",
+					report.GetVsockCid(), err)
+			}
+		}
+	}
 }

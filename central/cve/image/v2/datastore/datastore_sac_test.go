@@ -424,6 +424,11 @@ func (s *cveV2DataStoreSACTestSuite) TestSACImageCVESearchCVEs() {
 		fetchedCVEIDs := make([]string, 0, len(results))
 		for _, result := range results {
 			fetchedCVEIDs = append(fetchedCVEIDs, result.GetId())
+
+			// Verify that each result has proper fields populated
+			// CVE name should be the actual CVE string (e.g., "CVE-1234-0001")
+			// ID is a composite key that includes component and image context
+			s.Contains(result.GetId(), result.GetName(), "CVE ID should contain the CVE name")
 		}
 		s.ElementsMatch(expectedCVEIDs, fetchedCVEIDs)
 	})

@@ -17,7 +17,7 @@ import CloseButton from 'Components/CloseButton';
 import CompoundSearchFilter from 'Components/CompoundSearchFilter/components/CompoundSearchFilter';
 import {
     makeFilterChipDescriptors,
-    onURLSearch,
+    updateSearchFilter,
 } from 'Components/CompoundSearchFilter/utils/utils';
 import Dialog from 'Components/Dialog';
 import LinkShim from 'Components/PatternFly/LinkShim';
@@ -404,7 +404,7 @@ function ClustersTablePanel({ selectedClusterId }: ClustersTablePanelProps) {
                                     config={searchFilterConfig}
                                     searchFilter={searchFilter}
                                     onSearch={(payload) =>
-                                        onURLSearch(searchFilter, setSearchFilter, payload)
+                                        setSearchFilter(updateSearchFilter(searchFilter, payload))
                                     }
                                 />
                             </ToolbarItem>

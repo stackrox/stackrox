@@ -14,21 +14,23 @@ import {
 } from '@patternfly/react-core';
 import { Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 import { gql, useQuery } from '@apollo/client';
-import uniq from 'lodash/uniq';
 
 import { getTableUIState } from 'utils/getTableUIState';
-import { getPaginationParams, searchValueAsArray } from 'utils/searchUtils';
+import { getPaginationParams } from 'utils/searchUtils';
 import useURLSearch from 'hooks/useURLSearch';
 import useURLPagination from 'hooks/useURLPagination';
 import useURLSort from 'hooks/useURLSort';
 
 import CompoundSearchFilter from 'Components/CompoundSearchFilter/components/CompoundSearchFilter';
-import type { OnSearchPayload } from 'Components/CompoundSearchFilter/types';
+import type { OnSearchCallback } from 'Components/CompoundSearchFilter/types';
+import {
+    makeFilterChipDescriptors,
+    updateSearchFilter,
+} from 'Components/CompoundSearchFilter/utils/utils';
 import BreadcrumbItemLink from 'Components/BreadcrumbItemLink';
 import PageTitle from 'Components/PageTitle';
 import SearchFilterChips from 'Components/PatternFly/SearchFilterChips';
 import KeyValueListModal from 'Components/KeyValueListModal';
-import { makeFilterChipDescriptors } from 'Components/CompoundSearchFilter/utils/utils';
 import TbodyUnified from 'Components/TableStateTemplates/TbodyUnified';
 import useAnalytics, { WORKLOAD_CVE_FILTER_APPLIED } from 'hooks/useAnalytics';
 import { createFilterTracker } from 'utils/analyticsEventTracking';
@@ -136,21 +138,10 @@ function NamespaceViewPage() {
         searchFilter,
     });
 
-    function onSearch(searchPayload: OnSearchPayload) {
-        const { category, value, action } = searchPayload;
-        const selectedSearchFilter = searchValueAsArray(searchFilter[category]);
-
-        const newFilter = {
-            ...searchFilter,
-            [category]:
-                action === 'ADD'
-                    ? uniq([...selectedSearchFilter, value])
-                    : selectedSearchFilter.filter((oldValue) => value !== oldValue),
-        };
-
-        onFilterChange(newFilter);
+    const onSearch: OnSearchCallback = (searchPayload) => {
+        onFilterChange(updateSearchFilter(searchFilter, searchPayload));
         trackAppliedFilter(WORKLOAD_CVE_FILTER_APPLIED, searchPayload);
-    }
+    };
 
     function onFilterChange(searchFilter: SearchFilter) {
         setSearchFilter(searchFilter);

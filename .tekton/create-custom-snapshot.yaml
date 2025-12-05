@@ -78,7 +78,7 @@ spec:
         - name: name
           value: post-bigquery-metrics
         - name: bundle
-          value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:dfbf22954b6979293cb7e37025b5ee2da7f0193e75c5e9760a882d0e1f6f30df
+          value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:25bc12b50bd0296c53c7177969830f9116e52906cd284df5fde96d24ae758ea4
         - name: kind
           value: task
         resolver: bundles
@@ -142,7 +142,7 @@ spec:
         - name: name
           value: git-clone-oci-ta
         - name: bundle
-          value: quay.io/konflux-ci/tekton-catalog/task-git-clone-oci-ta:0.1@sha256:3dc39eae48745a96097c07c577b944d6203a91c35d3f71d9ed5feab41d327a6a
+          value: quay.io/konflux-ci/tekton-catalog/task-git-clone-oci-ta:0.1@sha256:ea64f5b99202621e78ed3d74b00df5750cbf572c391e6da1956396f5945e4e11
         - name: kind
           value: task
         resolver: bundles
@@ -161,7 +161,7 @@ spec:
         - name: name
           value: determine-image-tag
         - name: bundle
-          value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:dfbf22954b6979293cb7e37025b5ee2da7f0193e75c5e9760a882d0e1f6f30df
+          value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:25bc12b50bd0296c53c7177969830f9116e52906cd284df5fde96d24ae758ea4
         - name: kind
           value: task
         resolver: bundles
@@ -175,7 +175,7 @@ spec:
         - name: name
           value: wait-for-image
         - name: bundle
-          value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:dfbf22954b6979293cb7e37025b5ee2da7f0193e75c5e9760a882d0e1f6f30df
+          value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:25bc12b50bd0296c53c7177969830f9116e52906cd284df5fde96d24ae758ea4
         - name: kind
           value: task
         resolver: bundles
@@ -259,7 +259,7 @@ spec:
         - name: name
           value: create-snapshot-from-bundle
         - name: bundle
-          value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:dfbf22954b6979293cb7e37025b5ee2da7f0193e75c5e9760a882d0e1f6f30df
+          value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:25bc12b50bd0296c53c7177969830f9116e52906cd284df5fde96d24ae758ea4
         - name: kind
           value: task
         resolver: bundles

@@ -3,12 +3,11 @@ import { Toolbar, ToolbarContent, ToolbarGroup, ToolbarItem } from '@patternfly/
 import type { SearchFilter } from 'types/search';
 import useAnalytics from 'hooks/useAnalytics';
 import { createFilterTracker } from 'utils/analyticsEventTracking';
-import { makeFilterChipDescriptors } from 'Components/CompoundSearchFilter/utils/utils';
 import type {
     CompoundSearchFilterConfig,
     OnSearchCallback,
-    OnSearchPayload,
 } from 'Components/CompoundSearchFilter/types';
+import { makeFilterChipDescriptors } from 'Components/CompoundSearchFilter/utils/utils';
 import SearchFilterChips from 'Components/PatternFly/SearchFilterChips';
 import CompoundSearchFilter from 'Components/CompoundSearchFilter/components/CompoundSearchFilter';
 import {
@@ -98,10 +97,10 @@ function ViolationsTableSearchFilter({
 
     const filterChipGroupDescriptors = makeFilterChipDescriptors(searchFilterConfig);
 
-    function onSearchHandler(payload: OnSearchPayload) {
+    const onSearchHandler: OnSearchCallback = (payload) => {
         onSearch(payload);
         trackAppliedFilter('Policy Violations Filter Applied', payload);
-    }
+    };
 
     return (
         <Toolbar>

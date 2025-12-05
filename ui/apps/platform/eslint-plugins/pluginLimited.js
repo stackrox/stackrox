@@ -356,6 +356,40 @@ const rules = {
             };
         },
     },
+    'no-logical-or-preceding-array-or-object': {
+        // Consistently write more precise nullish coalescing operator.
+        meta: {
+            type: 'problem',
+            docs: {
+                description: 'Replace || with nullish coalescing ??',
+            },
+            schema: [],
+        },
+        create(context) {
+            return {
+                LogicalExpression(node) {
+                    if (node.operator === '||') {
+                        switch (node.right?.type) {
+                            case 'ArrayExpression':
+                                context.report({
+                                    node,
+                                    message: `Replace || with ?? preceding array expression`,
+                                });
+                                break;
+                            case 'ObjectExpression':
+                                context.report({
+                                    node,
+                                    message: `Replace || with ?? preceding object expression`,
+                                });
+                                break;
+                            default:
+                                break;
+                        }
+                    }
+                },
+            };
+        },
+    },
     'no-qualified-name-react': {
         // React.Whatever is possible with default import.
         // For consistency and as prerequisite to replace default import with JSX transform.

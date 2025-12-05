@@ -723,7 +723,7 @@ class IntegrationsTest extends BaseSpecification {
 
         when:
         "the integration is tested"
-        def outcome = ImageIntegrationService.getImageIntegrationClient().testImageIntegration(
+        def outcome = ImageIntegrationService.testImageIntegration(
                 imageIntegration.getCustomBuilder(customArgs).build()
         )
 
@@ -766,7 +766,7 @@ class IntegrationsTest extends BaseSpecification {
 
         when:
         "the integration is tested"
-        ImageIntegrationService.getImageIntegrationClient().testImageIntegration(
+        ImageIntegrationService.testImageIntegration(
                 imageIntegration.getCustomBuilder(getCustomArgs()).build()
         )
 

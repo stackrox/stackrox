@@ -28,6 +28,7 @@ import (
 	authProviderRegistry "github.com/stackrox/rox/central/authprovider/registry"
 	authProviderSvc "github.com/stackrox/rox/central/authprovider/service"
 	authProviderTelemetry "github.com/stackrox/rox/central/authprovider/telemetry"
+	baseImageWatcher "github.com/stackrox/rox/central/baseimage/watcher"
 	centralHealthService "github.com/stackrox/rox/central/centralhealth/service"
 	"github.com/stackrox/rox/central/certgen"
 	certHandler "github.com/stackrox/rox/central/certs/handlers"
@@ -377,6 +378,9 @@ func startServices() {
 	reprocessor.Singleton().Start()
 	suppress.Singleton().Start()
 	pruning.Singleton().Start()
+	if env.BaseImageWatcherEnabled.BooleanSetting() {
+		baseImageWatcher.Singleton().Start()
+	}
 	gatherer.Singleton().Start()
 	vulnRequestManager.Singleton().Start()
 	apiTokenExpiration.Singleton().Start()
@@ -989,6 +993,10 @@ func waitForTerminationSignal() {
 		{gcp.Singleton(), "GCP cloud credentials manager"},
 		{cloudSourcesManager.Singleton(), "cloud sources manager"},
 		{administrationEventHandler.Singleton(), "administration events handler"},
+	}
+
+	if env.BaseImageWatcherEnabled.BooleanSetting() {
+		stoppables = append(stoppables, stoppableWithName{baseImageWatcher.Singleton(), "base image watcher"})
 	}
 
 	stoppables = append(stoppables,
