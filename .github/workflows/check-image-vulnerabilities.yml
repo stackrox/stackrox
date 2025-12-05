@@ -7,6 +7,8 @@ on:
         required: true
         default: 0.0.0-test-rc.1
         type: string
+  push:
+    tags: ['*']
 
 run-name: ${{ format('Check image vulnerabilities for {0}', inputs.version) }}
 
@@ -49,6 +51,19 @@ jobs:
             "stackrox-operator",
           ]
     steps:
+      - name: Quay login
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
+          password: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
+
+      - name: "Wait for image to be built: quay.io/rhacs-eng/${{ matrix.image }}:${{ inputs.version }}"
+        uses: stackrox/actions/release/wait-for-image@v1
+        with:
+          token: ${{ secrets.QUAY_RHACS_ENG_BEARER_TOKEN }}
+          image: rhacs-eng/${{ matrix.image }}:${{ inputs.version }}
+          limit: 7200
+
       - name: Central login
         uses: stackrox/central-login@v1
         with:
@@ -121,6 +136,19 @@ jobs:
             "release-operator",
           ]
     steps:
+      - name: Quay login
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
+          password: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
+
+      - name: "Wait for image to be built: quay.io/rhacs-eng/${{ matrix.image }}:${{ inputs.version }}"
+        uses: stackrox/actions/release/wait-for-image@v1
+        with:
+          token: ${{ secrets.QUAY_RHACS_ENG_BEARER_TOKEN }}
+          image: rhacs-eng/${{ matrix.image }}:${{ inputs.version }}
+          limit: 11400
+
       - name: Central login
         uses: stackrox/central-login@v1
         with:
