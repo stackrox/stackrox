@@ -98,10 +98,7 @@ func makeRunner(ds *runnerDatastores) trackerRunner {
 		}),
 	}, {
 		api_requests.Singleton(),
-		withHardcodedConfiguration(0, map[string][]string{
-			// rox_central_api_request_total
-			"api_request_total": api_requests.LazyLabels.GetLabels(),
-		}),
+		(*storage.PrometheusMetrics).GetApiRequests,
 	},
 	}
 }
