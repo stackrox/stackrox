@@ -29,17 +29,14 @@ import { TimesIcon } from '@patternfly/react-icons';
 
 import type { ClientPolicy } from 'types/policy.proto';
 import type { ListImage } from 'types/image.proto';
-import type { ListDeployment } from 'types/deployment.proto';
 import useFetchClustersForPermissions from 'hooks/useFetchClustersForPermissions';
 import { getImages } from 'services/imageService';
-import { fetchDeploymentsWithProcessInfoLegacy as fetchDeploymentsWithProcessInfo } from 'services/DeploymentsService';
 import PolicyScopeCard from './PolicyScopeCard';
 
 function PolicyScopeForm(): ReactElement {
     const [isExcludeImagesOpen, setIsExcludeImagesOpen] = useState(false);
     const [filterValue, setFilterValue] = useState('');
     const [images, setImages] = useState<ListImage[]>([]);
-    const [deployments, setDeployments] = useState<ListDeployment[]>([]);
     const { clusters } = useFetchClustersForPermissions(['Deployment']);
     const { values, setFieldValue } = useFormikContext<ClientPolicy>();
     const { scope, excludedDeploymentScopes, excludedImageNames } = values;
@@ -102,21 +99,6 @@ function PolicyScopeForm(): ReactElement {
         getImages()
             .then((response) => {
                 setImages(response);
-            })
-            .catch(() => {
-                // TODO
-            });
-
-        // TODO from ROX-14643 and stackrox/stackrox/issues/2725
-        // Move request to exclusion card to add restSearch for cluster or namespace if specified in exclusion scope.
-        // Search element to support creatable deployment names.
-        const restSort = { field: 'Deployment', reversed: false }; // ascending by name
-        fetchDeploymentsWithProcessInfo([], restSort, 0, 0)
-            .then((response) => {
-                const deploymentList = response
-                    .map(({ deployment }) => deployment)
-                    .filter(({ name }, i, array) => i === 0 || name !== array[i - 1].name);
-                setDeployments(deploymentList);
             })
             .catch(() => {
                 // TODO
@@ -211,7 +193,6 @@ function PolicyScopeForm(): ReactElement {
                                     type="exclusion"
                                     name={`excludedDeploymentScopes[${index}]`}
                                     clusters={clusters}
-                                    deployments={deployments}
                                     onDelete={() => deleteExclusionDeploymentScope(index)}
                                     hasAuditLogEventSource={hasAuditLogEventSource}
                                 />
