@@ -134,6 +134,29 @@ func GetScopedResourceAlert(ID string, clusterID string, namespace string) *stor
 	})
 }
 
+// GetScopedNodeAlert returns a Mock alert attached to a node belonging to the input cluster
+func GetScopedNodeAlert(ID string, clusterID string, nodeID string, nodeName string) *storage.Alert {
+	return &storage.Alert{
+		Id: ID,
+		Violations: []*storage.Alert_Violation{
+			{
+				Message: "Node has suspicious file activity",
+			},
+		},
+		Time:        protocompat.TimestampNow(),
+		Policy:      GetPolicy(),
+		ClusterId:   clusterID,
+		ClusterName: "prod cluster",
+		Entity: &storage.Alert_Node_{
+			Node: &storage.Alert_Node{
+				Id:   nodeID,
+				Name: nodeName,
+			},
+		},
+		LifecycleStage: storage.LifecycleStage_RUNTIME,
+	}
+}
+
 // GetClusterResourceAlert returns a Mock Alert with a resource entity that is cluster wide (i.e. has no namespace)
 func GetClusterResourceAlert() *storage.Alert {
 	policy := GetAuditLogEventSourcePolicy()
@@ -277,7 +300,7 @@ func GetAlertWithID(id string) *storage.Alert {
 
 // GetSACTestAlertSet returns a set of mock alerts that can be used for scoped access control tests
 func GetSACTestAlertSet() []*storage.Alert {
-	alerts := make([]*storage.Alert, 0, 19)
+	alerts := make([]*storage.Alert, 0, 24)
 	alerts = append(alerts, GetScopedDeploymentAlert(uuid.NewV4().String(), testconsts.Cluster1, testconsts.NamespaceA))
 	alerts = append(alerts, GetScopedDeploymentAlert(uuid.NewV4().String(), testconsts.Cluster1, testconsts.NamespaceA))
 	alerts = append(alerts, GetScopedDeploymentAlert(uuid.NewV4().String(), testconsts.Cluster1, testconsts.NamespaceA))
@@ -297,6 +320,12 @@ func GetSACTestAlertSet() []*storage.Alert {
 	alerts = append(alerts, GetScopedDeploymentAlert(uuid.NewV4().String(), testconsts.Cluster2, testconsts.NamespaceC))
 	alerts = append(alerts, GetScopedResourceAlert(uuid.NewV4().String(), testconsts.Cluster2, testconsts.NamespaceC))
 	alerts = append(alerts, getImageAlertWithID(uuid.NewV4().String()))
+
+	alerts = append(alerts, GetScopedNodeAlert(uuid.NewV4().String(), testconsts.Cluster1, uuid.NewV4().String(), "node-1"))
+	alerts = append(alerts, GetScopedNodeAlert(uuid.NewV4().String(), testconsts.Cluster1, uuid.NewV4().String(), "node-2"))
+	alerts = append(alerts, GetScopedNodeAlert(uuid.NewV4().String(), testconsts.Cluster2, uuid.NewV4().String(), "node-3"))
+	alerts = append(alerts, GetScopedNodeAlert(uuid.NewV4().String(), testconsts.Cluster2, uuid.NewV4().String(), "node-4"))
+	alerts = append(alerts, GetScopedNodeAlert(uuid.NewV4().String(), testconsts.Cluster3, uuid.NewV4().String(), "node-5"))
 	return alerts
 }
 

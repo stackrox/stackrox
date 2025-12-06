@@ -35,6 +35,7 @@ const (
 	Cluster3NamespacesABReadWriteCtx = "Cluster3NamespacesABReadWriteCtx"
 	Cluster3NamespacesACReadWriteCtx = "Cluster3NamespacesACReadWriteCtx"
 	Cluster3NamespacesBCReadWriteCtx = "Cluster3NamespacesBCReadWriteCtx"
+	Cluster4ReadWriteCtx             = "Cluster4ReadWriteCtx"
 	MixedClusterAndNamespaceReadCtx  = "MixedClusterAndNamespaceReadCtx"
 )
 
@@ -222,6 +223,13 @@ func GetNamespaceScopedTestContexts(ctx context.Context, t *testing.T, resources
 				sac.ResourceScopeKeys(resourceHandles...),
 				sac.ClusterScopeKeys(testconsts.Cluster3),
 				sac.NamespaceScopeKeys(testconsts.NamespaceB, testconsts.NamespaceC)))
+
+	contextMap[Cluster4ReadWriteCtx] =
+		sac.WithGlobalAccessScopeChecker(ctx,
+			sac.AllowFixedScopes(
+				sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
+				sac.ResourceScopeKeys(resourceHandles...),
+				sac.ClusterScopeKeys(testconsts.Cluster4)))
 
 	mixedResourceScope := &sac.TestResourceScope{
 		Clusters: map[string]*sac.TestClusterScope{
