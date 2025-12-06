@@ -125,8 +125,8 @@ func (x *BaseImage) GetFirstLayerDigest() string {
 type BaseImageLayer struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" sql:"pk,type(uuid)"`                                        // @gotags: sql:"pk,type(uuid)"
-	BaseImageId   string                 `protobuf:"bytes,2,opt,name=base_image_id,json=baseImageId,proto3" json:"base_image_id,omitempty" sql:"fk(BaseImage:id)"` // @gotags: sql:"fk(BaseImage:id)"
-	LayerDigest   string                 `protobuf:"bytes,3,opt,name=layer_digest,json=layerDigest,proto3" json:"layer_digest,omitempty" search:"Base Image Layer Digest,hidden"`   // @gotags: search:"Base Image Layer Digest,hidden"
+	BaseImageId   string                 `protobuf:"bytes,2,opt,name=base_image_id,json=baseImageId,proto3" json:"base_image_id,omitempty" sql:"fk(BaseImage:id),index=category:unique;name:base_image_id_layer"` // @gotags: sql:"fk(BaseImage:id),index=category:unique;name:base_image_id_layer"
+	LayerDigest   string                 `protobuf:"bytes,3,opt,name=layer_digest,json=layerDigest,proto3" json:"layer_digest,omitempty" search:"Base Image Layer Digest,hidden" sql:"index=category:unique;name:base_image_id_layer"`   // @gotags: search:"Base Image Layer Digest,hidden" sql:"index=category:unique;name:base_image_id_layer"
 	Index         int32                  `protobuf:"varint,4,opt,name=index,proto3" json:"index,omitempty" search:"Base Image Index,hidden"`                                 // @gotags: search:"Base Image Index,hidden"
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
