@@ -378,7 +378,7 @@ func startServices() {
 	reprocessor.Singleton().Start()
 	suppress.Singleton().Start()
 	pruning.Singleton().Start()
-	if env.BaseImageWatcherEnabled.BooleanSetting() {
+	if baseImageWatcher.Enabled() {
 		baseImageWatcher.Singleton().Start()
 	}
 	gatherer.Singleton().Start()
@@ -995,7 +995,7 @@ func waitForTerminationSignal() {
 		{administrationEventHandler.Singleton(), "administration events handler"},
 	}
 
-	if env.BaseImageWatcherEnabled.BooleanSetting() {
+	if baseImageWatcher.Enabled() {
 		stoppables = append(stoppables, stoppableWithName{baseImageWatcher.Singleton(), "base image watcher"})
 	}
 
