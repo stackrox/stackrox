@@ -159,7 +159,7 @@ function ImagePage({
         imageData && imageName
             ? `${imageName.registry}/${getImageBaseNameDisplay(imageData.id, imageName)}`
             : 'NAME UNKNOWN';
-    const scanMessage = getImageScanMessage(imageData?.notes || [], imageData?.scanNotes || []);
+    const scanMessage = getImageScanMessage(imageData?.notes ?? [], imageData?.scanNotes ?? []);
     const hasScanMessage = !isEmpty(scanMessage);
 
     const workloadCveOverviewImagePath = urlBuilder.imageList('OBSERVED');
