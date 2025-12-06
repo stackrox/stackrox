@@ -2,6 +2,7 @@ package datastore
 
 import (
 	"context"
+	"strings"
 	"time"
 
 	"github.com/pkg/errors"
@@ -72,35 +73,28 @@ func (ds *datastoreImpl) Count(ctx context.Context, q *v1.Query) (int, error) {
 func (ds *datastoreImpl) SearchImages(ctx context.Context, q *v1.Query) ([]*v1.SearchResult, error) {
 	defer metrics.SetDatastoreFunctionDuration(time.Now(), "Image", "SearchImages")
 
-	// TODO(ROX-29943): remove unnecessary calls to database
+	if q == nil {
+		q = pkgSearch.EmptyQuery()
+	}
+
+	// Clone the query and add select fields for SearchResult construction
+	clonedQuery := q.CloneVT()
+	clonedQuery.Selects = append(q.GetSelects(), pkgSearch.NewQuerySelect(pkgSearch.ImageName).Proto())
+
 	results, err := ds.Search(ctx, q)
 	if err != nil {
 		return nil, err
 	}
-	var images []*storage.Image
-	var newResults []pkgSearch.Result
-	for _, result := range results {
-		image, exists, err := ds.storage.GetImageMetadata(ctx, result.ID)
-		if err != nil {
-			return nil, err
+	for i := range results {
+		if results[i].FieldValues != nil {
+			if nameVal, ok := results[i].FieldValues[strings.ToLower(pkgSearch.ImageName.String())]; ok {
+				results[i].Name = nameVal
+			}
 		}
-		// The result may not exist if the object was deleted after the search
-		if !exists {
-			continue
-		}
-		images = append(images, image)
-		newResults = append(newResults, result)
+		results[i].ID = imageTypes.NewDigest(results[i].ID).Digest()
 	}
 
-	if len(newResults) != len(images) {
-		return nil, errors.Errorf("expected %d results, got %d", len(images), len(newResults))
-	}
-
-	protoResults := make([]*v1.SearchResult, 0, len(images))
-	for i, image := range images {
-		protoResults = append(protoResults, convertImage(image, newResults[i]))
-	}
-	return protoResults, nil
+	return pkgSearch.ResultsToSearchResultProtos(results, &ImageSearchResultConverter{}), nil
 }
 
 // SearchRawImages delegates to the underlying searcher.
@@ -376,13 +370,23 @@ func (ds *datastoreImpl) updateComponentRisk(image *storage.Image) {
 	}
 }
 
-// convertImage returns proto search result from an image object and the internal search result
-func convertImage(image *storage.Image, result pkgSearch.Result) *v1.SearchResult {
-	return &v1.SearchResult{
-		Category:       v1.SearchCategory_IMAGES,
-		Id:             imageTypes.NewDigest(image.GetId()).Digest(),
-		Name:           image.GetName().GetFullName(),
-		FieldToMatches: pkgSearch.GetProtoMatchesMap(result.Matches),
-		Score:          result.Score,
-	}
+// ImageSearchResultConverter converts image search results to proto search results
+type ImageSearchResultConverter struct{}
+
+func (c *ImageSearchResultConverter) BuildName(result *pkgSearch.Result) string {
+
+	return result.Name
+}
+
+func (c *ImageSearchResultConverter) BuildLocation(result *pkgSearch.Result) string {
+	// Images do not have a location
+	return ""
+}
+
+func (c *ImageSearchResultConverter) GetCategory() v1.SearchCategory {
+	return v1.SearchCategory_IMAGES
+}
+
+func (c *ImageSearchResultConverter) GetScore(result *pkgSearch.Result) float64 {
+	return result.Score
 }
