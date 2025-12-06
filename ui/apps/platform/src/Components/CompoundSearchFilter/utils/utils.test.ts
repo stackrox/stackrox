@@ -1,12 +1,12 @@
 import { deploymentAttributes } from '../attributes/deployment';
 import { imageAttributes } from '../attributes/image';
 import { imageCVEAttributes } from '../attributes/imageCVE';
+import { makeFilterChipDescriptors } from '../components/SearchFilterChips';
 import {
     getDefaultAttributeName,
     getDefaultEntityName,
     getEntityAttributes,
     getSearchFilterConfigWithFeatureFlagDependency,
-    makeFilterChipDescriptors,
 } from './utils';
 import type { CompoundSearchFilterEntity } from '../types';
 

@@ -267,7 +267,7 @@ describe(Cypress.spec.relative, () => {
 
         cy.get('@onSearch').should('have.been.calledWithExactly', [
             {
-                action: 'ADD',
+                action: 'APPEND',
                 category: 'Image Tag',
                 value: 'Tag 123',
             },
@@ -307,7 +307,7 @@ describe(Cypress.spec.relative, () => {
         cy.get(imageComponenSourceSelectItems).eq(1).click();
         cy.get('@onSearch').should('have.been.calledWithExactly', [
             {
-                action: 'ADD',
+                action: 'SELECT_INCLUSIVE',
                 category: 'Component Source',
                 value: 'PYTHON',
             },
@@ -316,7 +316,7 @@ describe(Cypress.spec.relative, () => {
         cy.get(imageComponenSourceSelectItems).eq(4).click();
         cy.get('@onSearch').should('have.been.calledWithExactly', [
             {
-                action: 'ADD',
+                action: 'SELECT_INCLUSIVE',
                 category: 'Component Source',
                 value: 'NODEJS',
             },
@@ -356,7 +356,7 @@ describe(Cypress.spec.relative, () => {
         // Check updated date value
         cy.get('@onSearch').should('have.been.calledWithExactly', [
             {
-                action: 'ADD',
+                action: 'APPEND',
                 category: 'CVE Created Time',
                 value: '>01/15/2034',
             },
@@ -401,7 +401,7 @@ describe(Cypress.spec.relative, () => {
         cy.get('button[aria-label="Apply condition and number input to search"]').click();
         cy.get('@onSearch').should('have.been.calledWithExactly', [
             {
-                action: 'ADD',
+                action: 'APPEND',
                 category: 'CVSS',
                 value: '<9.9',
             },
@@ -422,7 +422,7 @@ describe(Cypress.spec.relative, () => {
         cy.get('button[aria-label="Apply condition and number input to search"]').click();
         cy.get('@onSearch').should('have.been.calledWithExactly', [
             {
-                action: 'ADD',
+                action: 'APPEND',
                 category: 'CVSS',
                 value: '<10',
             },
@@ -438,7 +438,7 @@ describe(Cypress.spec.relative, () => {
         cy.get('button[aria-label="Apply condition and number input to search"]').click();
         cy.get('@onSearch').should('have.been.calledWithExactly', [
             {
-                action: 'ADD',
+                action: 'APPEND',
                 category: 'CVSS',
                 value: '<0',
             },
@@ -473,7 +473,7 @@ describe(Cypress.spec.relative, () => {
 
         cy.get('@onSearch').should('have.been.calledWithExactly', [
             {
-                action: 'ADD',
+                action: 'APPEND',
                 category: 'Image',
                 value: 'docker.io/library/centos:7',
             },
@@ -492,7 +492,7 @@ describe(Cypress.spec.relative, () => {
         cy.get(autocompleteSearchButton).click();
         cy.get('@onSearch').should('have.been.calledWithExactly', [
             {
-                action: 'ADD',
+                action: 'APPEND',
                 category: 'Image',
                 value: 'docker.io',
             },

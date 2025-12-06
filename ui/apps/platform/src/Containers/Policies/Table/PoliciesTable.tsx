@@ -29,15 +29,14 @@ import type { IAction } from '@patternfly/react-table';
 
 import type { ListPolicy } from 'types/policy.proto';
 import CompoundSearchFilter from 'Components/CompoundSearchFilter/components/CompoundSearchFilter';
-import {
+import SearchFilterChips, {
     makeFilterChipDescriptors,
-    updateSearchFilter,
-} from 'Components/CompoundSearchFilter/utils/utils';
+} from 'Components/CompoundSearchFilter/components/SearchFilterChips';
+import { updateSearchFilter } from 'Components/CompoundSearchFilter/utils/utils';
 import MenuDropdown from 'Components/PatternFly/MenuDropdown';
 import ConfirmationModal from 'Components/PatternFly/ConfirmationModal';
 import PolicyDisabledIconText from 'Components/PatternFly/IconText/PolicyDisabledIconText';
 import PolicySeverityIconText from 'Components/PatternFly/IconText/PolicySeverityIconText';
-import SearchFilterChips from 'Components/PatternFly/SearchFilterChips';
 import TbodyUnified from 'Components/TableStateTemplates/TbodyUnified';
 
 import useTableSelection from 'hooks/useTableSelection';

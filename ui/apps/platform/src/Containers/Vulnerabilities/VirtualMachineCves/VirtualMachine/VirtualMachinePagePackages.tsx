@@ -15,10 +15,10 @@ import {
 } from '@patternfly/react-core';
 
 import CompoundSearchFilter from 'Components/CompoundSearchFilter/components/CompoundSearchFilter';
+import SearchFilterChips from 'Components/CompoundSearchFilter/components/SearchFilterChips';
 import type { OnSearchCallback } from 'Components/CompoundSearchFilter/types';
 import { updateSearchFilter } from 'Components/CompoundSearchFilter/utils/utils';
 import { DynamicTableLabel } from 'Components/DynamicIcon';
-import SearchFilterChips from 'Components/PatternFly/SearchFilterChips';
 import type { UseURLPaginationResult } from 'hooks/useURLPagination';
 import type { UseUrlSearchReturn } from 'hooks/useURLSearch';
 import type { UseURLSortResult } from 'hooks/useURLSort';
@@ -113,7 +113,7 @@ function VirtualMachinePagePackages({
         checked: boolean,
         selection: string
     ) => {
-        const action = checked ? 'ADD' : 'REMOVE';
+        const action = checked ? 'SELECT_INCLUSIVE' : 'REMOVE';
         const category = filterType;
         const value = selection;
         setSearchFilter(updateSearchFilter(searchFilter, [{ action, category, value }]));

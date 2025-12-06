@@ -59,8 +59,41 @@ export function isOnSearchPayload(payload: OnSearchPayloadItem[]): payload is On
     return payload.length !== 0;
 }
 
-export type OnSearchPayloadItem = {
-    action: 'ADD' | 'REMOVE';
-    category: string;
+export type OnSearchPayloadItem =
+    | OnSearchPayloadItemAdd
+    | OnSearchPayloadItemDelete
+    | OnSearchPayloadItemRemove;
+
+export type OnSearchPayloadItemAdd =
+    | OnSearchPayloadItemAppend
+    | OnSearchPayloadItemSelectInclusive
+    | OnSearchPayloadItemSelectExclusive;
+
+export type OnSearchPayloadItemAppend = {
+    action: 'APPEND'; // inputType: autocomplete, and so on
+} & OnSearchPayloadItemWithValue;
+
+export type OnSearchPayloadItemSelectInclusive = {
+    action: 'SELECT_INCLUSIVE'; // inputType: select
+} & OnSearchPayloadItemWithValue;
+
+export type OnSearchPayloadItemSelectExclusive = {
+    action: 'SELECT_EXCLUSIVE'; // inputType: select-single
+} & OnSearchPayloadItemWithValue;
+
+export type OnSearchPayloadItemDelete = {
+    action: 'DELETE';
+} & OnSearchPayloadItemWithoutValue;
+
+export type OnSearchPayloadItemRemove = {
+    action: 'REMOVE';
+} & OnSearchPayloadItemWithValue;
+
+export type OnSearchPayloadItemWithValue = {
     value: string;
+} & OnSearchPayloadItemWithoutValue;
+
+export type OnSearchPayloadItemWithoutValue = {
+    action: string;
+    category: string;
 };

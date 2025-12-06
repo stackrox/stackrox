@@ -3,12 +3,12 @@ import { Toolbar, ToolbarContent, ToolbarGroup } from '@patternfly/react-core';
 
 import CompoundSearchFilter from 'Components/CompoundSearchFilter/components/CompoundSearchFilter';
 import type { CompoundSearchFilterProps } from 'Components/CompoundSearchFilter/components/CompoundSearchFilter';
-import type { OnSearchPayload } from 'Components/CompoundSearchFilter/types';
-import {
+import SearchFilterChips, {
+    FilterChip,
     makeFilterChipDescriptors,
-    updateSearchFilter,
-} from 'Components/CompoundSearchFilter/utils/utils';
-import SearchFilterChips, { FilterChip } from 'Components/PatternFly/SearchFilterChips';
+} from 'Components/CompoundSearchFilter/components/SearchFilterChips';
+import type { OnSearchPayload } from 'Components/CompoundSearchFilter/types';
+import { updateSearchFilter } from 'Components/CompoundSearchFilter/utils/utils';
 import type { SearchFilter } from 'types/search';
 import { getHasSearchApplied } from 'utils/searchUtils';
 
@@ -120,7 +120,7 @@ function AdvancedFiltersToolbar({
                                         {
                                             category,
                                             value,
-                                            action: checked ? 'ADD' : 'REMOVE',
+                                            action: checked ? 'SELECT_INCLUSIVE' : 'REMOVE',
                                         },
                                     ])
                                 }
@@ -135,7 +135,7 @@ function AdvancedFiltersToolbar({
                                         {
                                             category,
                                             value,
-                                            action: checked ? 'ADD' : 'REMOVE',
+                                            action: checked ? 'SELECT_INCLUSIVE' : 'REMOVE',
                                         },
                                     ])
                                 }
