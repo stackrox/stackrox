@@ -16,6 +16,7 @@ import (
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/features"
 	imageEnricher "github.com/stackrox/rox/pkg/images/enricher"
 	"github.com/stackrox/rox/pkg/images/enricher/mocks"
@@ -662,4 +663,27 @@ func TestInjectMessage(t *testing.T) {
 		err := testLoop.injectMessage(ctx, conn, msg)
 		require.NoError(t, err)
 	})
+}
+
+func TestReprocessDeploymentsMessageDelay(t *testing.T) {
+	tcs := []struct {
+		intervalEnv  string
+		clusters     int
+		wantDuration time.Duration
+	}{
+		{"0", 10, 0},
+		{"10m", 1, 0},
+		{"10m", 0, 0},
+		{"10m", -1, 0},
+		{"10m", 2, 5 * time.Minute},
+		{"10m", 10, 1 * time.Minute},
+		{"10m", 20, 30 * time.Second},
+		{"1h", 10, 6 * time.Minute},
+	}
+	for _, tc := range tcs {
+		t.Run(fmt.Sprintf("%v env %d clusters %s duration", tc.intervalEnv, tc.clusters, tc.wantDuration), func(t *testing.T) {
+			t.Setenv(env.ReprocessDeploymentSpreadInterval.EnvVar(), tc.intervalEnv)
+			assert.Equal(t, tc.wantDuration, reprocessDeploymentsMessageDelay(tc.clusters))
+		})
+	}
 }
