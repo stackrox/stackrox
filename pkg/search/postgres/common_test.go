@@ -58,12 +58,12 @@ func TestReplaceVars(t *testing.T) {
 func BenchmarkReplaceVars(b *testing.B) {
 	veryLongString := strings.Repeat("$$ ", 1000)
 	b.Run("short", func(b *testing.B) {
-		for i := 0; i < b.N; i++ {
+		for b.Loop() {
 			replaceVars("$$ $$ $$ $$ $$ $$ $$ $$ $$ $$ $$")
 		}
 	})
 	b.Run("long", func(b *testing.B) {
-		for i := 0; i < b.N; i++ {
+		for b.Loop() {
 			replaceVars(veryLongString)
 		}
 	})

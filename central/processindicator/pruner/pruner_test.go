@@ -82,7 +82,7 @@ func BenchmarkRabbitMQPruning(b *testing.B) {
 	for i := 0; i < 1000000; i++ {
 		processes = append(processes, processToIDAndArgs(rabbitMQBeamSMPProcess()))
 	}
-	for i := 0; i < b.N; i++ {
+	for b.Loop() {
 		pruner := NewFactory(1, time.Second).StartPruning()
 		pruner.Prune(processes)
 		pruner.Finish()

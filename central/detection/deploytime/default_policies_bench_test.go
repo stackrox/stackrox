@@ -13,7 +13,6 @@ import (
 )
 
 func BenchmarkDefaultPolicies(b *testing.B) {
-	b.StopTimer()
 
 	policySet = detection.NewPolicySet(nil)
 
@@ -31,8 +30,7 @@ func BenchmarkDefaultPolicies(b *testing.B) {
 	dep := fixtures.GetDeployment()
 	images := fixtures.DeploymentImages()
 
-	b.StartTimer()
-	for i := 0; i < b.N; i++ {
+	for b.Loop() {
 		_, err := detection.Detect(deploytime.DetectionContext{}, booleanpolicy.EnhancedDeployment{
 			Deployment: dep,
 			Images:     images,

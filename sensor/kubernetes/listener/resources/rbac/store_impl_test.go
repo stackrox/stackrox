@@ -609,13 +609,13 @@ func generateStore(counts storeObjectCounts) Store {
 }
 
 func BenchmarkRBACStoreUpsertTime(b *testing.B) {
-	for n := 0; n < b.N; n++ {
+	for b.Loop() {
 		generateStore(storeObjectCounts{roles: 1000, bindings: 10_000, namespaces: 10})
 	}
 }
 
 func runRBACBenchmarkGetPermissionLevelForDeployment(b *testing.B, store Store, keepCache bool) {
-	for n := 0; n < b.N; n++ {
+	for b.Loop() {
 		store.GetPermissionLevelForDeployment(
 			&storage.Deployment{ServiceAccount: "default-subject", Namespace: "namespace0"})
 		if !keepCache {
@@ -660,7 +660,7 @@ func BenchmarkRBACStoreAssignPermissionLevelToDeployment(b *testing.B) {
 }
 
 func BenchmarkRBACUpsertExistingBinding(b *testing.B) {
-	b.StopTimer()
+
 	store := NewStore()
 	binding := &v1.RoleBinding{
 		ObjectMeta: metav1.ObjectMeta{
@@ -673,8 +673,8 @@ func BenchmarkRBACUpsertExistingBinding(b *testing.B) {
 		},
 	}
 	store.UpsertBinding(binding)
-	b.StartTimer()
-	for n := 0; n < b.N; n++ {
+
+	for b.Loop() {
 		store.UpsertBinding(binding)
 	}
 }
