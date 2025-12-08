@@ -115,6 +115,55 @@ func (s *alertDatastoreSACTestSuite) TestUpsertAlert() {
 	}
 }
 
+func (s *alertDatastoreSACTestSuite) TestUpsertNodeAlert() {
+	nodeAlert := fixtures.GetScopedNodeAlert(uuid.NewV4().String(), testconsts.Cluster2, uuid.NewV4().String(), "test-node")
+	s.testAlertIDs = append(s.testAlertIDs, nodeAlert.GetId())
+
+	cases := map[string]crudTest{
+		"(full) read-only cannot upsert node alert": {
+			scopeKey:      testutils.UnrestrictedReadCtx,
+			expectError:   true,
+			expectedError: sac.ErrResourceAccessDenied,
+		},
+		"full read-write can upsert node alert": {
+			scopeKey:    testutils.UnrestrictedReadWriteCtx,
+			expectError: false,
+		},
+		"cluster1 read-write cannot upsert cluster2 node alert": {
+			scopeKey:      testutils.Cluster1ReadWriteCtx,
+			expectError:   true,
+			expectedError: sac.ErrResourceAccessDenied,
+		},
+		"cluster2 read-write can upsert cluster2 node alert": {
+			scopeKey:    testutils.Cluster2ReadWriteCtx,
+			expectError: false,
+		},
+		"cluster2 namespace-scoped access cannot upsert cluster2 node alert": {
+			scopeKey:      testutils.Cluster2NamespaceBReadWriteCtx,
+			expectError:   true,
+			expectedError: sac.ErrResourceAccessDenied,
+		},
+		"cluster3 read-write cannot upsert cluster2 node alert": {
+			scopeKey:      testutils.Cluster3ReadWriteCtx,
+			expectError:   true,
+			expectedError: sac.ErrResourceAccessDenied,
+		},
+	}
+
+	for name, c := range cases {
+		s.Run(name, func() {
+			ctx := s.testContexts[c.scopeKey]
+			err := s.datastore.UpsertAlert(ctx, nodeAlert)
+			defer s.cleanupAlert(nodeAlert.GetId())
+			if !c.expectError {
+				s.NoError(err)
+			} else {
+				s.Equal(c.expectedError, err)
+			}
+		})
+	}
+}
+
 func (s *alertDatastoreSACTestSuite) TestMarkAlertResolved() {
 	cases := map[string]crudTest{
 		"(full) read-only cannot mark alert stale": {
@@ -232,6 +281,64 @@ func (s *alertDatastoreSACTestSuite) TestGetAlert() {
 	}
 }
 
+func (s *alertDatastoreSACTestSuite) TestGetNodeAlert() {
+	// Inject a scoped node alert to the storage
+	var err error
+	nodeAlert := fixtures.GetScopedNodeAlert(uuid.NewV4().String(), testconsts.Cluster2, uuid.NewV4().String(), "test-node")
+	err = s.datastore.UpsertAlert(s.testContexts[testutils.UnrestrictedReadWriteCtx], nodeAlert)
+	s.testAlertIDs = append(s.testAlertIDs, nodeAlert.GetId())
+	s.NoError(err)
+
+	cases := map[string]struct {
+		scopeKey      string
+		expectedFound bool
+	}{
+		"full read access should see node alert": {
+			scopeKey:      testutils.UnrestrictedReadCtx,
+			expectedFound: true,
+		},
+		"full read-write access should see node alert": {
+			scopeKey:      testutils.UnrestrictedReadWriteCtx,
+			expectedFound: true,
+		},
+		"cluster1 read access should not see cluster2 node alert": {
+			scopeKey:      testutils.Cluster1ReadWriteCtx,
+			expectedFound: false,
+		},
+		"cluster2 read access should see cluster2 node alert": {
+			scopeKey:      testutils.Cluster2ReadWriteCtx,
+			expectedFound: true,
+		},
+		"cluster2 namespaceA access should not see cluster2 node alert": {
+			scopeKey:      testutils.Cluster2NamespaceAReadWriteCtx,
+			expectedFound: false,
+		},
+		"cluster2 namespaceB access should not see cluster2 node alert": {
+			scopeKey:      testutils.Cluster2NamespaceBReadWriteCtx,
+			expectedFound: false,
+		},
+		"cluster3 read access should not see cluster2 node alert": {
+			scopeKey:      testutils.Cluster3ReadWriteCtx,
+			expectedFound: false,
+		},
+	}
+
+	for name, c := range cases {
+		s.Run(name, func() {
+			ctx := s.testContexts[c.scopeKey]
+			readAlert, found, err := s.datastore.GetAlert(ctx, nodeAlert.GetId())
+			s.NoError(err)
+			if c.expectedFound {
+				s.True(found)
+				protoassert.Equal(s.T(), nodeAlert, readAlert)
+			} else {
+				s.False(found)
+				s.Nil(readAlert)
+			}
+		})
+	}
+}
+
 // Note: UpsertAlerts does not enforce Scoped access control checks, these are performed
 // one level up in the caller code
 
@@ -283,8 +390,11 @@ type alertSACSearchResult struct {
 // Global: 1
 // Cluster1::NamespaceA: 8 alerts
 // Cluster1::NamespaceB: 5 alerts
+// Cluster1 (nodes, cluster-scoped): 2 alerts
 // Cluster2::NamespaceB: 3 alerts
 // Cluster2::NamespaceC: 2 alerts
+// Cluster2 (nodes, cluster-scoped): 2 alerts
+// Cluster3 (nodes, cluster-scoped): 1 alert
 var alertScopedSACSearchTestCases = map[string]alertSACSearchResult{
 	"Cluster1 read-write access should only see Cluster1 alerts": {
 		scopeKey: testutils.Cluster1ReadWriteCtx,
@@ -292,6 +402,7 @@ var alertScopedSACSearchTestCases = map[string]alertSACSearchResult{
 			testconsts.Cluster1: {
 				testconsts.NamespaceA: 8,
 				testconsts.NamespaceB: 5,
+				"":                    2, // Node alerts are cluster-scoped, no namespace
 			},
 		},
 	},
@@ -346,6 +457,7 @@ var alertScopedSACSearchTestCases = map[string]alertSACSearchResult{
 			testconsts.Cluster2: {
 				testconsts.NamespaceB: 3,
 				testconsts.NamespaceC: 2,
+				"":                    2, // Node alerts are cluster-scoped, no namespace
 			},
 		},
 	},
@@ -394,8 +506,16 @@ var alertScopedSACSearchTestCases = map[string]alertSACSearchResult{
 			},
 		},
 	},
-	"Cluster3 read-write access should see no alert": {
-		scopeKey:     testutils.Cluster3ReadWriteCtx,
+	"Cluster3 read-write access should see node alert": {
+		scopeKey: testutils.Cluster3ReadWriteCtx,
+		resultCounts: map[string]map[string]int{
+			testconsts.Cluster3: {
+				"": 1, // One node alert in Cluster3
+			},
+		},
+	},
+	"Cluster4 read-write access should see no alert": {
+		scopeKey:     testutils.Cluster4ReadWriteCtx,
 		resultCounts: map[string]map[string]int{},
 	},
 }
@@ -407,10 +527,15 @@ var alertUnrestrictedSACSearchTestCases = map[string]alertSACSearchResult{
 			testconsts.Cluster1: {
 				testconsts.NamespaceA: 8,
 				testconsts.NamespaceB: 5,
+				"":                    2, // Node alerts
 			},
 			testconsts.Cluster2: {
 				testconsts.NamespaceB: 3,
 				testconsts.NamespaceC: 2,
+				"":                    2, // Node alerts
+			},
+			testconsts.Cluster3: {
+				"": 1, // Node alert
 			},
 			fixtureconsts.Cluster1: {"stackrox": 1},
 		},
@@ -421,10 +546,15 @@ var alertUnrestrictedSACSearchTestCases = map[string]alertSACSearchResult{
 			testconsts.Cluster1: {
 				testconsts.NamespaceA: 8,
 				testconsts.NamespaceB: 5,
+				"":                    2, // Node alerts
 			},
 			testconsts.Cluster2: {
 				testconsts.NamespaceB: 3,
 				testconsts.NamespaceC: 2,
+				"":                    2, // Node alerts
+			},
+			testconsts.Cluster3: {
+				"": 1, // Node alert
 			},
 			fixtureconsts.Cluster1: {"stackrox": 1},
 		},
@@ -438,10 +568,15 @@ var alertUnrestrictedSACObjectSearchTestCases = map[string]alertSACSearchResult{
 			testconsts.Cluster1: {
 				testconsts.NamespaceA: 8,
 				testconsts.NamespaceB: 5,
+				"":                    2, // Node alerts
 			},
 			testconsts.Cluster2: {
 				testconsts.NamespaceB: 3,
 				testconsts.NamespaceC: 2,
+				"":                    2, // Node alerts
+			},
+			testconsts.Cluster3: {
+				"": 1, // Node alert
 			},
 			"": {"": 1},
 		},
@@ -452,10 +587,15 @@ var alertUnrestrictedSACObjectSearchTestCases = map[string]alertSACSearchResult{
 			testconsts.Cluster1: {
 				testconsts.NamespaceA: 8,
 				testconsts.NamespaceB: 5,
+				"":                    2, // Node alerts
 			},
 			testconsts.Cluster2: {
 				testconsts.NamespaceB: 3,
 				testconsts.NamespaceC: 2,
+				"":                    2, // Node alerts
+			},
+			testconsts.Cluster3: {
+				"": 1, // Node alert
 			},
 			"": {"": 1},
 		},
@@ -639,7 +779,7 @@ func (s *alertDatastoreSACTestSuite) TestAlertUnrestrictedListAlerts() {
 	}
 }
 
-func countSearchRawAlertsResultsPerClusterAndNamespace(results []*storage.Alert) map[string]map[string]int {
+func (s *alertDatastoreSACTestSuite) countSearchRawAlertsResultsPerClusterAndNamespace(results []*storage.Alert) map[string]map[string]int {
 	resultDistribution := make(map[string]map[string]int, 0)
 	for _, result := range results {
 		var clusterID string
@@ -655,6 +795,11 @@ func countSearchRawAlertsResultsPerClusterAndNamespace(results []*storage.Alert)
 				clusterID = entity.Resource.GetClusterId()
 				namespace = entity.Resource.GetNamespace()
 			}
+		case *storage.Alert_Node_:
+			// Node alerts are cluster-scoped, use top-level fields
+			clusterID = result.GetClusterId()
+			namespace = result.GetNamespace() // Should be empty for node alerts
+			s.Empty(namespace)
 		}
 		if _, clusterIDExists := resultDistribution[clusterID]; !clusterIDExists {
 			resultDistribution[clusterID] = make(map[string]int, 0)
@@ -671,7 +816,7 @@ func (s *alertDatastoreSACTestSuite) runSearchRawAlertsTest(testparams alertSACS
 	ctx := s.testContexts[testparams.scopeKey]
 	searchResults, err := s.datastore.SearchRawAlerts(ctx, nil, true)
 	s.NoError(err)
-	resultsDistribution := countSearchRawAlertsResultsPerClusterAndNamespace(searchResults)
+	resultsDistribution := s.countSearchRawAlertsResultsPerClusterAndNamespace(searchResults)
 	testutils.ValidateSACSearchResultDistribution(&s.Suite, testparams.resultCounts, resultsDistribution)
 }
 
