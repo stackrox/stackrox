@@ -620,8 +620,13 @@ func (l *loopImpl) sendReprocessDeployments(skipClusterIDs maputil.SyncMap[strin
 
 			// Sleep before sending if it is not the first message and a delay is specified.
 			if !firstMessage && delay > 0 {
-				log.Infof("Sleeping %s before sending reprocess deployments message to cluster %s [%d/%d]", delay, clusterID, i+1, len(conns))
-				time.Sleep(delay)
+				log.Infof("Sleeping %s before sending reprocess deployments message to cluster %q [%d/%d]", delay, clusterID, i+1, len(conns))
+				select {
+				case <-time.After(delay):
+				case <-l.stopSig.Done():
+					log.Warnf("Caught stop signal while waiting to send reprocess deployments to cluster %q", clusterID)
+					return
+				}
 			}
 
 			firstMessage = false
