@@ -1,0 +1,35 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "utils",
+    srcs = ["encryption.go"],
+    importpath = "github.com/stackrox/rox/central/notifiers/utils",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//generated/storage",
+        "//pkg/cryptoutils/cryptocodec",
+        "//pkg/env",
+        "//pkg/notifiers",
+        "@com_github_pkg_errors//:errors",
+        "@in_yaml_go_yaml_v3//:yaml",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":utils",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "utils_test",
+    srcs = ["encryption_test.go"],
+    embed = [":utils"],
+    deps = [
+        "//generated/storage",
+        "//pkg/env",
+        "//pkg/notifiers",
+        "@com_github_pkg_errors//:errors",
+        "@com_github_stretchr_testify//suite",
+    ],
+)

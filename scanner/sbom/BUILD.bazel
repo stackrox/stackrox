@@ -1,0 +1,30 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "sbom",
+    srcs = ["sbom.go"],
+    importpath = "github.com/stackrox/rox/scanner/sbom",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//scanner/internal/version",
+        "@com_github_pkg_errors//:errors",
+        "@com_github_quay_claircore//:claircore",
+        "@com_github_quay_claircore//sbom/spdx",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":sbom",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "sbom_test",
+    srcs = ["sbom_test.go"],
+    embed = [":sbom"],
+    deps = [
+        "@com_github_quay_claircore//:claircore",
+        "@com_github_stretchr_testify//assert",
+    ],
+)

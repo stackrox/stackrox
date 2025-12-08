@@ -1,0 +1,20 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "mocks",
+    srcs = ["alert_manager.go"],
+    importpath = "github.com/stackrox/rox/central/detection/alertmanager/mocks",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//central/detection/alertmanager",
+        "//generated/storage",
+        "//pkg/set",
+        "@org_uber_go_mock//gomock",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":mocks",
+    visibility = ["//visibility:public"],
+)

@@ -1,0 +1,48 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "common",
+    srcs = [
+        "merge.go",
+        "merge_v2.go",
+        "metrics.go",
+        "parts.go",
+        "split.go",
+        "split_v2.go",
+    ],
+    importpath = "github.com/stackrox/rox/central/image/datastore/store/common/v2",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//central/cve/converter/utils",
+        "//generated/storage",
+        "//pkg/features",
+        "//pkg/logging",
+        "//pkg/metrics",
+        "//pkg/scancomponent",
+        "//pkg/search/postgres",
+        "//pkg/set",
+        "@com_github_prometheus_client_golang//prometheus",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":common",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "common_test",
+    srcs = ["parts_test.go"],
+    embed = [":common"],
+    deps = [
+        "//generated/storage",
+        "//pkg/cve",
+        "//pkg/features",
+        "//pkg/protoassert",
+        "//pkg/protocompat",
+        "//pkg/scancomponent",
+        "//pkg/search/postgres",
+        "@com_github_stretchr_testify//assert",
+    ],
+)

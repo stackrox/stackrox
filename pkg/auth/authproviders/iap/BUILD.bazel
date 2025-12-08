@@ -1,0 +1,29 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "iap",
+    srcs = [
+        "backend_factory_impl.go",
+        "backend_impl.go",
+    ],
+    importpath = "github.com/stackrox/rox/pkg/auth/authproviders/iap",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//pkg/auth/authproviders",
+        "//pkg/auth/tokens",
+        "//pkg/grpc/requestinfo",
+        "//pkg/httputil",
+        "//pkg/jwt",
+        "//pkg/stringutils",
+        "@com_github_go_jose_go_jose_v4//jwt",
+        "@com_github_pkg_errors//:errors",
+        "@org_golang_google_grpc//codes",
+        "@org_golang_google_grpc//status",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":iap",
+    visibility = ["//visibility:public"],
+)

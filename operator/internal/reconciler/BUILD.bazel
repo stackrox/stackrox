@@ -1,0 +1,38 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "reconciler",
+    srcs = ["reconciler_factory.go"],
+    importpath = "github.com/stackrox/rox/operator/internal/reconciler",
+    visibility = ["//operator:__subpackages__"],
+    deps = [
+        "//image",
+        "//operator/internal/common/confighash",
+        "//operator/internal/common/labels",
+        "//operator/internal/common/rendercache",
+        "//operator/internal/overlays",
+        "//operator/internal/utils",
+        "//pkg/env",
+        "//pkg/helm/charts",
+        "//pkg/images/defaults",
+        "@com_github_operator_framework_helm_operator_plugins//pkg/client",
+        "@com_github_operator_framework_helm_operator_plugins//pkg/reconciler",
+        "@com_github_operator_framework_helm_operator_plugins//pkg/values",
+        "@com_github_pkg_errors//:errors",
+        "@io_k8s_apimachinery//pkg/api/meta",
+        "@io_k8s_apimachinery//pkg/apis/meta/v1/unstructured",
+        "@io_k8s_apimachinery//pkg/runtime/schema",
+        "@io_k8s_sigs_controller_runtime//:controller-runtime",
+        "@io_k8s_sigs_controller_runtime//pkg/client",
+        "@io_k8s_sigs_controller_runtime//pkg/handler",
+        "@io_k8s_sigs_controller_runtime//pkg/reconcile",
+        "@sh_helm_helm_v3//pkg/kube",
+        "@sh_helm_helm_v3//pkg/postrender",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":reconciler",
+    visibility = ["//operator:__subpackages__"],
+)

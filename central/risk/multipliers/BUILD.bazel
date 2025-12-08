@@ -1,0 +1,22 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "multipliers",
+    srcs = [
+        "test_utils.go",
+        "utils.go",
+    ],
+    importpath = "github.com/stackrox/rox/central/risk/multipliers",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//generated/storage",
+        "//pkg/images/types",
+        "//pkg/protoconv",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":multipliers",
+    visibility = ["//visibility:public"],
+)

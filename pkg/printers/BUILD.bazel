@@ -1,0 +1,53 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "printers",
+    srcs = [
+        "csv.go",
+        "json.go",
+        "junit.go",
+        "sarif.go",
+        "table.go",
+    ],
+    importpath = "github.com/stackrox/rox/pkg/printers",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//generated/storage",
+        "//pkg/errox",
+        "//pkg/gjson",
+        "//pkg/set",
+        "//pkg/utils",
+        "//pkg/version",
+        "@com_github_olekukonko_tablewriter//:tablewriter",
+        "@com_github_olekukonko_tablewriter//renderer",
+        "@com_github_olekukonko_tablewriter//tw",
+        "@com_github_owenrumney_go_sarif_v2//sarif",
+        "@com_github_pkg_errors//:errors",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":printers",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "printers_test",
+    srcs = [
+        "csv_test.go",
+        "json_test.go",
+        "junit_test.go",
+        "sarif_test.go",
+        "table_test.go",
+    ],
+    data = glob(["testdata/**"]),
+    embed = [":printers"],
+    deps = [
+        "//pkg/errox",
+        "//pkg/version",
+        "@com_github_joshdk_go_junit//:go-junit",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+    ],
+)

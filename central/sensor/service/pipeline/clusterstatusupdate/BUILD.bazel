@@ -1,0 +1,26 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "clusterstatusupdate",
+    srcs = ["pipeline.go"],
+    importpath = "github.com/stackrox/rox/central/sensor/service/pipeline/clusterstatusupdate",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//central/cloudsources/manager",
+        "//central/cluster/datastore",
+        "//central/cve/fetcher",
+        "//central/deploymentenvs",
+        "//central/sensor/service/common",
+        "//central/sensor/service/pipeline",
+        "//central/sensor/service/pipeline/reconciliation",
+        "//generated/internalapi/central",
+        "//pkg/centralsensor",
+        "@com_github_pkg_errors//:errors",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":clusterstatusupdate",
+    visibility = ["//visibility:public"],
+)

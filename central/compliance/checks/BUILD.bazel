@@ -1,0 +1,33 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "checks",
+    srcs = ["all.go"],
+    importpath = "github.com/stackrox/rox/central/compliance/checks",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//central/compliance/checks/hipaa_164",
+        "//central/compliance/checks/nist800-190",
+        "//central/compliance/checks/nist80053",
+        "//central/compliance/checks/pcidss32",
+        "//central/compliance/checks/remote",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":checks",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "checks_test",
+    srcs = ["all_test.go"],
+    embed = [":checks"],
+    deps = [
+        "//central/compliance/framework",
+        "//central/compliance/standards",
+        "//central/compliance/standards/metadata",
+        "@com_github_stretchr_testify//assert",
+    ],
+)

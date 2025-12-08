@@ -1,0 +1,35 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "check_ac_14",
+    srcs = ["check.go"],
+    importpath = "github.com/stackrox/rox/central/compliance/checks/nist80053/check_ac_14",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//central/compliance/framework",
+        "//generated/storage",
+        "//pkg/compliance/checks/common",
+        "//pkg/compliance/framework",
+        "//pkg/k8srbac",
+        "//pkg/set",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":check_ac_14",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "check_ac_14_test",
+    srcs = ["check_test.go"],
+    embed = [":check_ac_14"],
+    deps = [
+        "//central/compliance/checks/testutils",
+        "//central/compliance/framework",
+        "//generated/storage",
+        "//pkg/uuid",
+        "@org_uber_go_mock//gomock",
+    ],
+)

@@ -1,0 +1,40 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "all",
+    srcs = ["all.go"],
+    importpath = "github.com/stackrox/rox/central/notifiers/all",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//central/notifiers/acscsemail",
+        "//central/notifiers/awssh",
+        "//central/notifiers/cscc",
+        "//central/notifiers/email",
+        "//central/notifiers/generic",
+        "//central/notifiers/jira",
+        "//central/notifiers/microsoftsentinel",
+        "//central/notifiers/pagerduty",
+        "//central/notifiers/slack",
+        "//central/notifiers/splunk",
+        "//central/notifiers/sumologic",
+        "//central/notifiers/syslog",
+        "//central/notifiers/teams",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":all",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "all_test",
+    srcs = ["all_test.go"],
+    embed = [":all"],
+    deps = [
+        "//pkg/set",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+    ],
+)

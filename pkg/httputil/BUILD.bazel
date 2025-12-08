@@ -1,0 +1,55 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "httputil",
+    srcs = [
+        "context.go",
+        "cookie.go",
+        "default_transport.go",
+        "error.go",
+        "handler.go",
+        "httpops.go",
+        "interceptor.go",
+        "response_error.go",
+        "rest.go",
+        "round_tripper.go",
+        "status.go",
+        "status_tracking_writer.go",
+    ],
+    importpath = "github.com/stackrox/rox/pkg/httputil",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//pkg/concurrency",
+        "//pkg/grpc/errors",
+        "//pkg/jsonutil",
+        "//pkg/logging",
+        "//pkg/protocompat",
+        "@com_github_grpc_ecosystem_grpc_gateway_v2//runtime",
+        "@com_github_pkg_errors//:errors",
+        "@org_golang_google_grpc//codes",
+        "@org_golang_google_grpc//status",
+        "@org_golang_google_protobuf//encoding/protojson",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":httputil",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "httputil_test",
+    srcs = [
+        "error_test.go",
+        "status_test.go",
+    ],
+    embed = [":httputil"],
+    deps = [
+        "//pkg/errox",
+        "@com_github_pkg_errors//:errors",
+        "@com_github_stretchr_testify//assert",
+        "@org_golang_google_grpc//codes",
+        "@org_golang_google_grpc//status",
+    ],
+)

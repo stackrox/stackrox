@@ -1,0 +1,28 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "util",
+    srcs = ["wrap.go"],
+    importpath = "github.com/stackrox/rox/roxctl/common/util",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//pkg/errox",
+        "@com_github_spf13_cobra//:cobra",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":util",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "util_test",
+    srcs = ["wrap_test.go"],
+    embed = [":util"],
+    deps = [
+        "@com_github_spf13_cobra//:cobra",
+        "@com_github_stretchr_testify//assert",
+    ],
+)

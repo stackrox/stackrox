@@ -1,0 +1,44 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "role",
+    srcs = [
+        "default.go",
+        "validate.go",
+    ],
+    importpath = "github.com/stackrox/rox/central/role",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//generated/storage",
+        "//pkg/accessscope",
+        "//pkg/auth/permissions",
+        "//pkg/defaults/accesscontrol",
+        "//pkg/sac/resources",
+        "//pkg/set",
+        "//pkg/uuid",
+        "@com_github_hashicorp_go_multierror//:go-multierror",
+        "@com_github_pkg_errors//:errors",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":role",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "role_test",
+    srcs = [
+        "default_test.go",
+        "validate_test.go",
+    ],
+    embed = [":role"],
+    deps = [
+        "//generated/storage",
+        "//pkg/defaults/accesscontrol",
+        "//pkg/uuid",
+        "@com_github_hashicorp_go_multierror//:go-multierror",
+        "@com_github_stretchr_testify//assert",
+    ],
+)

@@ -1,0 +1,41 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library")
+
+go_library(
+    name = "scanner_lib",
+    srcs = ["main.go"],
+    importpath = "github.com/stackrox/rox/scanner/cmd/scanner",
+    visibility = ["//visibility:private"],
+    deps = [
+        "//pkg/buildinfo",
+        "//pkg/continuousprofiling",
+        "//pkg/features",
+        "//pkg/grpc",
+        "//pkg/grpc/authn",
+        "//pkg/grpc/authn/service",
+        "//pkg/grpc/authz/allow",
+        "//pkg/grpc/metrics",
+        "//pkg/grpc/routes",
+        "//pkg/httputil/proxy",
+        "//pkg/memlimit",
+        "//pkg/metrics",
+        "//pkg/mtls",
+        "//pkg/mtls/verifier",
+        "//pkg/utils",
+        "//scanner/config",
+        "//scanner/indexer",
+        "//scanner/internal/version",
+        "//scanner/matcher",
+        "//scanner/services",
+        "@com_github_quay_zlog//:zlog",
+        "@com_github_rs_zerolog//:zerolog",
+        "@com_github_rs_zerolog//log",
+        "@org_golang_google_grpc//:grpc",
+        "@org_golang_x_sys//unix",
+    ],
+)
+
+go_binary(
+    name = "scanner",
+    embed = [":scanner_lib"],
+    visibility = ["//visibility:public"],
+)

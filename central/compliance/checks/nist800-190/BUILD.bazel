@@ -1,0 +1,29 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "nist800-190",
+    srcs = ["all.go"],
+    importpath = "github.com/stackrox/rox/central/compliance/checks/nist800-190",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//central/compliance/checks/nist800-190/check411",
+        "//central/compliance/checks/nist800-190/check412",
+        "//central/compliance/checks/nist800-190/check414",
+        "//central/compliance/checks/nist800-190/check422",
+        "//central/compliance/checks/nist800-190/check431",
+        "//central/compliance/checks/nist800-190/check432",
+        "//central/compliance/checks/nist800-190/check433",
+        "//central/compliance/checks/nist800-190/check435",
+        "//central/compliance/checks/nist800-190/check442",
+        "//central/compliance/checks/nist800-190/check443",
+        "//central/compliance/checks/nist800-190/check444",
+        "//central/compliance/checks/nist800-190/check451",
+        "//central/compliance/checks/nist800-190/check455",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":nist800-190",
+    visibility = ["//visibility:public"],
+)

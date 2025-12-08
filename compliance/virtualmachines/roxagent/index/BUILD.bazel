@@ -1,0 +1,23 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "index",
+    srcs = ["index.go"],
+    importpath = "github.com/stackrox/rox/compliance/virtualmachines/roxagent/index",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//compliance/node/index",
+        "//compliance/virtualmachines/roxagent/common",
+        "//compliance/virtualmachines/roxagent/vsock",
+        "//generated/internalapi/scanner/v4:scanner",
+        "//pkg/httputil/proxy",
+        "//pkg/jsonutil",
+        "//pkg/logging",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":index",
+    visibility = ["//visibility:public"],
+)

@@ -1,0 +1,25 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "node",
+    srcs = [
+        "interfaces.go",
+        "node_name.go",
+    ],
+    importpath = "github.com/stackrox/rox/compliance/node",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//compliance/utils",
+        "//generated/internalapi/scanner/v4:scanner",
+        "//generated/internalapi/sensor",
+        "//pkg/logging",
+        "//pkg/orchestrators",
+        "//pkg/sync",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":node",
+    visibility = ["//visibility:public"],
+)

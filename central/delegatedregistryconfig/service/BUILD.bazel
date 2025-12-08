@@ -1,0 +1,58 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "service",
+    srcs = [
+        "service.go",
+        "singleton.go",
+    ],
+    importpath = "github.com/stackrox/rox/central/delegatedregistryconfig/service",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//central/cluster/datastore",
+        "//central/delegatedregistryconfig/convert",
+        "//central/delegatedregistryconfig/datastore",
+        "//central/delegatedregistryconfig/util/connection",
+        "//central/sensor/service/connection",
+        "//generated/api/v1:api",
+        "//generated/internalapi/central",
+        "//pkg/auth/permissions",
+        "//pkg/errox",
+        "//pkg/grpc",
+        "//pkg/grpc/authz",
+        "//pkg/grpc/authz/perrpc",
+        "//pkg/grpc/authz/user",
+        "//pkg/logging",
+        "//pkg/sac/resources",
+        "//pkg/set",
+        "//pkg/sync",
+        "@com_github_grpc_ecosystem_grpc_gateway_v2//runtime",
+        "@org_golang_google_grpc//:grpc",
+        "@org_golang_google_grpc//codes",
+        "@org_golang_google_grpc//status",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":service",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "service_test",
+    srcs = ["service_test.go"],
+    embed = [":service"],
+    deps = [
+        "//central/cluster/datastore/mocks",
+        "//central/delegatedregistryconfig/datastore/mocks",
+        "//central/sensor/service/connection/mocks",
+        "//generated/api/v1:api",
+        "//generated/storage",
+        "//pkg/grpc/testutils",
+        "@com_github_pkg_errors//:errors",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+        "@org_uber_go_mock//gomock",
+    ],
+)

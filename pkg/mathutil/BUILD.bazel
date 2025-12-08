@@ -1,0 +1,24 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "mathutil",
+    srcs = [
+        "mod.go",
+        "round.go",
+    ],
+    importpath = "github.com/stackrox/rox/pkg/mathutil",
+    visibility = ["//visibility:public"],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":mathutil",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "mathutil_test",
+    srcs = ["mod_test.go"],
+    embed = [":mathutil"],
+    deps = ["@com_github_stretchr_testify//assert"],
+)

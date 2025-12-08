@@ -1,0 +1,34 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "quay",
+    srcs = ["quay.go"],
+    importpath = "github.com/stackrox/rox/pkg/registries/quay",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//generated/storage",
+        "//pkg/httputil",
+        "//pkg/registries/docker",
+        "//pkg/registries/types",
+        "//pkg/urlfmt",
+        "//pkg/utils",
+        "@com_github_cloudflare_cfssl//log",
+        "@com_github_pkg_errors//:errors",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":quay",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "quay_test",
+    srcs = ["quay_test.go"],
+    embed = [":quay"],
+    deps = [
+        "//generated/storage",
+        "@com_github_stretchr_testify//assert",
+    ],
+)

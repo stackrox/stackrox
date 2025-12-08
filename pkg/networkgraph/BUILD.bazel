@@ -1,0 +1,45 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "networkgraph",
+    srcs = [
+        "cidr.go",
+        "conn_indicator.go",
+        "constants.go",
+        "entity.go",
+        "filter.go",
+        "utils.go",
+    ],
+    importpath = "github.com/stackrox/rox/pkg/networkgraph",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//generated/api/v1:api",
+        "//generated/storage",
+        "//pkg/net",
+        "//pkg/networkgraph/externalsrcs",
+        "//pkg/sac",
+        "//pkg/search",
+        "//pkg/set",
+        "//pkg/utils",
+        "@com_github_pkg_errors//:errors",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":networkgraph",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "networkgraph_test",
+    srcs = ["utils_test.go"],
+    embed = [":networkgraph"],
+    deps = [
+        "//generated/api/v1:api",
+        "//generated/storage",
+        "//pkg/protoassert",
+        "//pkg/search",
+        "@com_github_stretchr_testify//assert",
+    ],
+)

@@ -1,0 +1,29 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "basematchers",
+    srcs = [
+        "base_matchers.go",
+        "comparator.go",
+        "timestamp.go",
+    ],
+    importpath = "github.com/stackrox/rox/pkg/search/predicate/basematchers",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//pkg/parse",
+        "//pkg/protocompat",
+        "//pkg/protoreflect",
+        "//pkg/regexutils",
+        "//pkg/search",
+        "//pkg/stringutils",
+        "//pkg/timeutil",
+        "@com_github_pkg_errors//:errors",
+        "@org_golang_google_protobuf//types/descriptorpb",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":basematchers",
+    visibility = ["//visibility:public"],
+)

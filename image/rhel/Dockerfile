@@ -11,16 +11,25 @@ ARG DEBUG_BUILD=no
 
 WORKDIR /
 COPY download.sh /download.sh
-RUN /download.sh
+# Cache the download script separately from the execution
+# This allows Docker to cache the download layer better
+RUN --mount=type=cache,target=/var/cache/dnf \
+    --mount=type=cache,target=/var/cache/yum \
+    /download.sh
 
 FROM ${BASE_REGISTRY}/${BASE_IMAGE}:${BASE_TAG} AS stackrox_data
 
 RUN mkdir /stackrox-data
-RUN microdnf upgrade --nobest -y  && microdnf install -y zip
+
+# Install dependencies with cache mount
+RUN --mount=type=cache,target=/var/cache/dnf \
+    microdnf upgrade --nobest -y && microdnf install -y zip
 
 WORKDIR /
 COPY fetch-stackrox-data.sh .
-RUN /fetch-stackrox-data.sh /stackrox-data
+# Use cache for external downloads
+RUN --mount=type=cache,target=/tmp/stackrox-cache \
+    /fetch-stackrox-data.sh /stackrox-data
 
 FROM ${BASE_REGISTRY}/${BASE_IMAGE}:${BASE_TAG}
 
@@ -46,47 +55,45 @@ ENV PATH="/stackrox:$PATH" \
     ROX_PRODUCT_BRANDING=${ROX_PRODUCT_BRANDING}
 
 COPY signatures/RPM-GPG-KEY-CentOS-Official /
-COPY static-bin /stackrox/
-
 COPY --from=downloads /output/rpms/ /tmp/
 COPY --from=downloads /output/go/ /go/
 
-RUN rpm --import RPM-GPG-KEY-CentOS-Official && \
+# Copy static binaries first (needed for save-dir-contents script)
+COPY static-bin /stackrox/
+
+# Install system packages (most cacheable layer)
+RUN --mount=type=cache,target=/var/cache/dnf \
+    --mount=type=cache,target=/var/cache/yum \
+    rpm --import RPM-GPG-KEY-CentOS-Official && \
     microdnf -y upgrade --nobest && \
     rpm -i --nodeps /tmp/postgres-libs.rpm && \
     rpm -i --nodeps /tmp/postgres.rpm && \
     microdnf install --setopt=install_weak_deps=0 --nodocs -y util-linux && \
     microdnf clean all -y && \
     rm /tmp/postgres.rpm /tmp/postgres-libs.rpm RPM-GPG-KEY-CentOS-Official && \
-    # (Optional) Remove line below to keep package management utilities
-    rpm -e --nodeps $(rpm -qa curl '*rpm*' '*dnf*' '*libsolv*' '*hawkey*' 'yum*') && \
-    rm -rf /var/cache/dnf /var/cache/yum && \
-    # The contents of paths mounted as emptyDir volumes in Kubernetes are saved
-    # by the script `save-dir-contents` during the image build. The directory
-    # contents are then restored by the script `restore-all-dir-contents`
-    # during the container start.
-    chown -R 4000:4000 /etc/pki/ca-trust /etc/ssl && save-dir-contents /etc/pki/ca-trust /etc/ssl && \
-    mkdir -p /var/lib/stackrox && chown -R 4000:4000 /var/lib/stackrox && \
-    mkdir -p /var/log/stackrox && chown -R 4000:4000 /var/log/stackrox && \
-    mkdir -p /var/cache/stackrox && chown -R 4000:4000 /var/cache/stackrox && \
-    chown -R 4000:4000 /tmp
+    rpm -e --nodeps $(rpm -qa curl '*rpm*' '*dnf*' '*libsolv*' '*hawkey*' 'yum*') || true
 
+# Create directories and set permissions (separate layer for better caching)
+RUN mkdir -p /var/lib/stackrox /var/log/stackrox /var/cache/stackrox && \
+    chown -R 4000:4000 /etc/pki/ca-trust /etc/ssl /var/lib/stackrox /var/log/stackrox /var/cache/stackrox /tmp && \
+    save-dir-contents /etc/pki/ca-trust /etc/ssl
+
+# Copy static data (changes infrequently)
 COPY --from=stackrox_data /stackrox-data /stackrox/static-data
+COPY THIRD_PARTY_NOTICES /THIRD_PARTY_NOTICES/
 COPY ./docs/api/v1/swagger.json /stackrox/static-data/docs/api/v1/swagger.json
 COPY ./docs/api/v2/swagger.json /stackrox/static-data/docs/api/v2/swagger.json
-COPY THIRD_PARTY_NOTICES /THIRD_PARTY_NOTICES/
 
+# Copy UI (changes moderately)
 COPY ui /ui
 
-COPY bin/central            /stackrox/central
-COPY bin/migrator           /stackrox/bin/migrator
-COPY bin/compliance         /stackrox/bin/compliance
-COPY bin/kubernetes-sensor  /stackrox/bin/kubernetes-sensor
-COPY bin/sensor-upgrader    /stackrox/bin/sensor-upgrader
-COPY bin/admission-control  /stackrox/bin/admission-control
-COPY bin/config-controller  /stackrox/bin/config-controller
-COPY bin/init-tls-certs     /stackrox/bin/init-tls-certs
-COPY bin/roxctl*            /assets/downloads/cli/
+# Copy application binaries (changes most frequently - keep at end)
+COPY bin/ /stackrox/bin/
+# Move central to expected location
+RUN mv /stackrox/bin/central /stackrox/central
+# Create roxctl symlinks directory
+RUN mkdir -p /assets/downloads/cli && \
+    cp -p /stackrox/bin/roxctl* /assets/downloads/cli/ 2>/dev/null || true
 
 RUN ln -s /assets/downloads/cli/roxctl-linux-${TARGET_ARCH} /stackrox/roxctl && \
     ln -s /assets/downloads/cli/roxctl-linux-amd64 /assets/downloads/cli/roxctl-linux

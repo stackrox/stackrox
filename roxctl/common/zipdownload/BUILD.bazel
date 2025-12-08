@@ -1,0 +1,24 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "zipdownload",
+    srcs = ["download_zip.go"],
+    importpath = "github.com/stackrox/rox/roxctl/common/zipdownload",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//pkg/ioutils",
+        "//pkg/roxctl",
+        "//pkg/utils",
+        "//pkg/zip",
+        "//roxctl/common/download",
+        "//roxctl/common/environment",
+        "//roxctl/common/logger",
+        "@com_github_pkg_errors//:errors",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":zipdownload",
+    visibility = ["//visibility:public"],
+)

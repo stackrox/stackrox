@@ -1,0 +1,15 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_test")
+
+go_test(
+    name = "imagescan_test",
+    srcs = ["imagescan_test.go"],
+    deps = [
+        "//generated/internalapi/central",
+        "//generated/storage",
+        "//pkg/uuid",
+        "//sensor/tests/helper",
+        "@com_github_pkg_errors//:errors",
+        "@com_github_stretchr_testify//suite",
+        "@io_k8s_sigs_e2e_framework//klient/k8s",
+    ],
+)

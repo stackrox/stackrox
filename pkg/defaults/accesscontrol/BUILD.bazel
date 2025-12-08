@@ -1,0 +1,22 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "accesscontrol",
+    srcs = [
+        "access_scope.go",
+        "permission_set.go",
+        "role.go",
+    ],
+    importpath = "github.com/stackrox/rox/pkg/defaults/accesscontrol",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//pkg/grpc/authn",
+        "//pkg/set",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":accesscontrol",
+    visibility = ["//visibility:public"],
+)

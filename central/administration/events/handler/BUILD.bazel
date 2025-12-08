@@ -1,0 +1,44 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "handler",
+    srcs = [
+        "handler.go",
+        "singleton.go",
+    ],
+    importpath = "github.com/stackrox/rox/central/administration/events/handler",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//central/administration/events/datastore",
+        "//generated/storage",
+        "//pkg/administration/events",
+        "//pkg/administration/events/stream",
+        "//pkg/concurrency",
+        "//pkg/env",
+        "//pkg/logging",
+        "//pkg/sac",
+        "//pkg/sac/resources",
+        "//pkg/sync",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":handler",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "handler_test",
+    srcs = ["handler_test.go"],
+    embed = [":handler"],
+    deps = [
+        "//central/administration/events/datastore/mocks",
+        "//pkg/administration/events",
+        "//pkg/administration/events/stream",
+        "//pkg/fixtures",
+        "//pkg/sync",
+        "@com_github_stretchr_testify//suite",
+        "@org_uber_go_mock//gomock",
+    ],
+)

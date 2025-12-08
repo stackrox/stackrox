@@ -1,0 +1,18 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "backup",
+    srcs = ["backup_bundle.go"],
+    importpath = "github.com/stackrox/rox/pkg/backup",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//pkg/certgen",
+        "//pkg/mtls",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":backup",
+    visibility = ["//visibility:public"],
+)

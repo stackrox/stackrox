@@ -1,0 +1,44 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "generic",
+    srcs = ["generic.go"],
+    importpath = "github.com/stackrox/rox/central/notifiers/generic",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//central/notifiers/utils",
+        "//generated/api/v1:api",
+        "//generated/storage",
+        "//pkg/administration/events/codes",
+        "//pkg/cryptoutils/cryptocodec",
+        "//pkg/env",
+        "//pkg/errorhelpers",
+        "//pkg/httputil/proxy",
+        "//pkg/jsonutil",
+        "//pkg/notifiers",
+        "//pkg/protocompat",
+        "//pkg/retry",
+        "//pkg/stringutils",
+        "//pkg/urlfmt",
+        "//pkg/utils",
+        "@com_github_pkg_errors//:errors",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":generic",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "generic_test",
+    srcs = ["generic_test.go"],
+    embed = [":generic"],
+    deps = [
+        "//generated/storage",
+        "//pkg/fixtures",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+    ],
+)

@@ -1,0 +1,50 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "backend",
+    srcs = [
+        "backend.go",
+        "backend_impl.go",
+        "render.go",
+        "singleton.go",
+        "validation.go",
+    ],
+    importpath = "github.com/stackrox/rox/central/clusterinit/backend",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//central/clusterinit/backend/access",
+        "//central/clusterinit/backend/certificate",
+        "//central/clusterinit/store",
+        "//central/clusterinit/store/singleton",
+        "//central/clusters",
+        "//generated/storage",
+        "//pkg/centralsensor",
+        "//pkg/crs",
+        "//pkg/grpc/authn",
+        "//pkg/logging",
+        "//pkg/mtls",
+        "//pkg/protocompat",
+        "//pkg/sac",
+        "//pkg/sac/resources",
+        "//pkg/sync",
+        "@com_github_pkg_errors//:errors",
+        "@in_yaml_go_yaml_v3//:yaml",
+        "@io_k8s_api//core/v1:core",
+        "@io_k8s_apimachinery//pkg/apis/meta/v1:meta",
+        "@io_k8s_apimachinery//pkg/runtime/serializer/json",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":backend",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "backend_test",
+    srcs = ["validation_test.go"],
+    data = glob(["testdata/**"]),
+    embed = [":backend"],
+    deps = ["@com_github_stretchr_testify//suite"],
+)

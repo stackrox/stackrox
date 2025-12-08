@@ -1,0 +1,47 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "dispatchers",
+    srcs = [
+        "complianceoperatorprofiles.go",
+        "complianceoperatorremediations.go",
+        "complianceoperatorresults.go",
+        "complianceoperatorrules.go",
+        "complianceoperatorscans.go",
+        "complianceoperatorscansettingbindings.go",
+        "complianceoperatorsuites.go",
+        "complianceoperatortailoredprofiles.go",
+        "convert_util.go",
+    ],
+    importpath = "github.com/stackrox/rox/sensor/kubernetes/complianceoperator/dispatchers",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//generated/internalapi/central",
+        "//generated/storage",
+        "//pkg/centralsensor",
+        "//pkg/logging",
+        "//pkg/protocompat",
+        "//pkg/protoconv",
+        "//pkg/set",
+        "//pkg/stringutils",
+        "//sensor/common/centralcaps",
+        "//sensor/kubernetes/eventpipeline/component",
+        "@com_github_complianceascode_compliance_operator//pkg/apis/compliance/v1alpha1",
+        "@io_k8s_apimachinery//pkg/apis/meta/v1/unstructured",
+        "@io_k8s_apimachinery//pkg/runtime",
+        "@io_k8s_client_go//tools/cache",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":dispatchers",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "dispatchers_test",
+    srcs = ["complianceoperatorremediation_test.go"],
+    embed = [":dispatchers"],
+    deps = ["@com_github_stretchr_testify//assert"],
+)

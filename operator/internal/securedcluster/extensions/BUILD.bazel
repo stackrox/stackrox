@@ -1,0 +1,75 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "extensions",
+    srcs = [
+        "cluster_name.go",
+        "collision_check.go",
+        "common.go",
+        "reconcile_defaulting.go",
+        "reconcile_scanner_db_password.go",
+        "reconcile_scanner_v4_db_password.go",
+        "sensor_ca_hash.go",
+    ],
+    importpath = "github.com/stackrox/rox/operator/internal/securedcluster/extensions",
+    visibility = ["//operator:__subpackages__"],
+    deps = [
+        "//operator/api/v1alpha1",
+        "//operator/internal/common",
+        "//operator/internal/common/confighash",
+        "//operator/internal/common/extensions",
+        "//operator/internal/common/rendercache",
+        "//operator/internal/securedcluster",
+        "//operator/internal/securedcluster/defaults",
+        "//operator/internal/securedcluster/scanner",
+        "//operator/internal/utils",
+        "//pkg/crs",
+        "//pkg/features",
+        "//pkg/securedcluster",
+        "@com_github_go_logr_logr//:logr",
+        "@com_github_operator_framework_helm_operator_plugins//pkg/extensions",
+        "@com_github_pkg_errors//:errors",
+        "@io_k8s_api//core/v1:core",
+        "@io_k8s_apimachinery//pkg/api/errors",
+        "@io_k8s_apimachinery//pkg/apis/meta/v1/unstructured",
+        "@io_k8s_apimachinery//pkg/runtime",
+        "@io_k8s_apimachinery//pkg/types",
+        "@io_k8s_sigs_controller_runtime//pkg/client",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":extensions",
+    visibility = ["//operator:__subpackages__"],
+)
+
+go_test(
+    name = "extensions_test",
+    srcs = [
+        "reconcile_defaulting_test.go",
+        "sensor_ca_hash_test.go",
+    ],
+    embed = [":extensions"],
+    deps = [
+        "//operator/api/v1alpha1",
+        "//operator/internal/common",
+        "//operator/internal/common/confighash",
+        "//operator/internal/common/rendercache",
+        "//operator/internal/securedcluster/defaults",
+        "//operator/internal/utils/testutils",
+        "//pkg/crs",
+        "//pkg/securedcluster",
+        "@com_github_go_logr_logr//:logr",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+        "@io_k8s_api//core/v1:core",
+        "@io_k8s_apimachinery//pkg/apis/meta/v1:meta",
+        "@io_k8s_apimachinery//pkg/apis/meta/v1/unstructured",
+        "@io_k8s_apimachinery//pkg/runtime",
+        "@io_k8s_client_go//kubernetes/scheme",
+        "@io_k8s_sigs_controller_runtime//pkg/client",
+        "@io_k8s_sigs_controller_runtime//pkg/client/fake",
+        "@io_k8s_utils//ptr",
+    ],
+)

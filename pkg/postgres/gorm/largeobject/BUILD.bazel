@@ -1,0 +1,15 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "largeobject",
+    srcs = ["large_objects.go"],
+    importpath = "github.com/stackrox/rox/pkg/postgres/gorm/largeobject",
+    visibility = ["//visibility:public"],
+    deps = ["@io_gorm_gorm//:gorm"],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":largeobject",
+    visibility = ["//visibility:public"],
+)

@@ -1,0 +1,23 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "postgres",
+    srcs = ["pruning.go"],
+    importpath = "github.com/stackrox/rox/central/postgres",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//pkg/contextutil",
+        "//pkg/env",
+        "//pkg/logging",
+        "//pkg/postgres",
+        "//pkg/postgres/pgutils",
+        "//pkg/postgres/schema",
+        "@com_github_pkg_errors//:errors",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":postgres",
+    visibility = ["//visibility:public"],
+)

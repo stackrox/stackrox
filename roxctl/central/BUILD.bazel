@@ -1,0 +1,32 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "central",
+    srcs = ["central.go"],
+    importpath = "github.com/stackrox/rox/roxctl/central",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//pkg/features",
+        "//pkg/pointers",
+        "//roxctl/central/backup",
+        "//roxctl/central/cert",
+        "//roxctl/central/crs",
+        "//roxctl/central/db",
+        "//roxctl/central/debug",
+        "//roxctl/central/export",
+        "//roxctl/central/generate",
+        "//roxctl/central/initbundles",
+        "//roxctl/central/login",
+        "//roxctl/central/m2m",
+        "//roxctl/central/userpki",
+        "//roxctl/central/whoami",
+        "//roxctl/common/environment",
+        "@com_github_spf13_cobra//:cobra",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":central",
+    visibility = ["//visibility:public"],
+)

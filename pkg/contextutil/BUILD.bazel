@@ -1,0 +1,39 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "contextutil",
+    srcs = [
+        "contextmerge.go",
+        "contextupdater.go",
+        "timeout.go",
+        "with_values.go",
+    ],
+    importpath = "github.com/stackrox/rox/pkg/contextutil",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//pkg/grpc/util",
+        "//pkg/httputil",
+        "@org_golang_google_grpc//:grpc",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":contextutil",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "contextutil_test",
+    srcs = [
+        "contextmerge_test.go",
+        "contextupdater_test.go",
+    ],
+    embed = [":contextutil"],
+    deps = [
+        "//pkg/testutils/goleak",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+        "@org_golang_google_grpc//:grpc",
+    ],
+)

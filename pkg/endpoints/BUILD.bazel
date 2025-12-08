@@ -1,0 +1,29 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "endpoints",
+    srcs = ["validate.go"],
+    importpath = "github.com/stackrox/rox/pkg/endpoints",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//pkg/urlfmt",
+        "//pkg/utils",
+        "@com_github_pkg_errors//:errors",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":endpoints",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "endpoints_test",
+    srcs = ["validate_test.go"],
+    embed = [":endpoints"],
+    deps = [
+        "//generated/storage",
+        "@com_github_stretchr_testify//assert",
+    ],
+)

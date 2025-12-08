@@ -1,0 +1,22 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "check312e1",
+    srcs = [
+        "check.go",
+        "messages.go",
+    ],
+    importpath = "github.com/stackrox/rox/central/compliance/checks/hipaa_164/check312e1",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//central/compliance/checks/common",
+        "//central/compliance/framework",
+        "//pkg/compliance/framework",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":check312e1",
+    visibility = ["//visibility:public"],
+)

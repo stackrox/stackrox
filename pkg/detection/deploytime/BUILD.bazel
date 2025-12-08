@@ -1,0 +1,27 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "deploytime",
+    srcs = [
+        "detector.go",
+        "detector_impl.go",
+        "utils.go",
+    ],
+    importpath = "github.com/stackrox/rox/pkg/detection/deploytime",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//generated/storage",
+        "//pkg/alert/convert",
+        "//pkg/booleanpolicy",
+        "//pkg/detection",
+        "//pkg/protocompat",
+        "//pkg/uuid",
+        "@com_github_pkg_errors//:errors",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":deploytime",
+    visibility = ["//visibility:public"],
+)

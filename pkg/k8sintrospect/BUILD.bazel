@@ -1,0 +1,65 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "k8sintrospect",
+    srcs = [
+        "collect.go",
+        "collector.go",
+        "config.go",
+        "default_config.go",
+        "logs.go",
+        "redact.go",
+    ],
+    importpath = "github.com/stackrox/rox/pkg/k8sintrospect",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//operator/api/v1alpha1",
+        "//pkg/concurrency",
+        "//pkg/env",
+        "//pkg/httputil",
+        "//pkg/k8sutil",
+        "//pkg/utils",
+        "@com_github_cloudflare_cfssl//log",
+        "@com_github_complianceascode_compliance_operator//pkg/apis/compliance/v1alpha1",
+        "@com_github_pkg_errors//:errors",
+        "@io_k8s_api//core/v1:core",
+        "@io_k8s_apimachinery//pkg/api/errors",
+        "@io_k8s_apimachinery//pkg/apis/meta/v1:meta",
+        "@io_k8s_apimachinery//pkg/apis/meta/v1/unstructured",
+        "@io_k8s_apimachinery//pkg/runtime/schema",
+        "@io_k8s_client_go//dynamic",
+        "@io_k8s_client_go//kubernetes",
+        "@io_k8s_client_go//rest",
+        "@io_k8s_kubectl//pkg/scheme",
+        "@io_k8s_sigs_yaml//:yaml",
+        "@io_k8s_utils//pointer",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":k8sintrospect",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "k8sintrospect_test",
+    srcs = [
+        "collector_test.go",
+        "logs_test.go",
+        "redact_test.go",
+    ],
+    embed = [":k8sintrospect"],
+    deps = [
+        "//pkg/complianceoperator",
+        "//pkg/k8sutil",
+        "@com_github_complianceascode_compliance_operator//pkg/apis/compliance/v1alpha1",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+        "@io_k8s_api//apps/v1:apps",
+        "@io_k8s_api//core/v1:core",
+        "@io_k8s_apimachinery//pkg/apis/meta/v1:meta",
+        "@io_k8s_apimachinery//pkg/apis/meta/v1/unstructured",
+        "@io_k8s_client_go//kubernetes/scheme",
+    ],
+)

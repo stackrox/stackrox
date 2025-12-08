@@ -1,0 +1,60 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "datastore",
+    srcs = [
+        "datastore.go",
+        "datastore_impl.go",
+        "metrics.go",
+        "singleton.go",
+    ],
+    importpath = "github.com/stackrox/rox/central/processindicator/datastore",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//central/globaldb",
+        "//central/metrics",
+        "//central/processindicator",
+        "//central/processindicator/pruner",
+        "//central/processindicator/store",
+        "//central/processindicator/store/postgres",
+        "//central/processindicator/views",
+        "//central/processlisteningonport/store/postgres",
+        "//generated/api/v1:api",
+        "//generated/storage",
+        "//pkg/concurrency",
+        "//pkg/env",
+        "//pkg/logging",
+        "//pkg/metrics",
+        "//pkg/postgres",
+        "//pkg/postgres/schema",
+        "//pkg/sac",
+        "//pkg/search",
+        "//pkg/search/postgres",
+        "//pkg/sync",
+        "@com_github_prometheus_client_golang//prometheus",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":datastore",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "datastore_test",
+    srcs = ["bench_test.go"],
+    embed = [":datastore"],
+    deps = [
+        "//central/processindicator/store/postgres",
+        "//central/processlisteningonport/store/postgres",
+        "//generated/storage",
+        "//pkg/fixtures",
+        "//pkg/fixtures/fixtureconsts",
+        "//pkg/postgres/pgtest",
+        "//pkg/sac",
+        "//pkg/search",
+        "//pkg/uuid",
+        "@com_github_stretchr_testify//require",
+    ],
+)

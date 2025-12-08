@@ -1,0 +1,42 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "common",
+    srcs = [
+        "file_filter.go",
+        "file_filters.go",
+        "nolint.go",
+        "traverse.go",
+    ],
+    importpath = "github.com/stackrox/rox/tools/roxvet/common",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//pkg/set",
+        "@org_golang_x_tools//go/analysis",
+        "@org_golang_x_tools//go/ast/inspector",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":common",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "common_test",
+    srcs = [
+        "nolint_test.go",
+        "traverse_test.go",
+    ],
+    embed = [":common"],
+    deps = [
+        "//pkg/set",
+        "//pkg/sliceutils",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+        "@org_golang_x_tools//go/analysis",
+        "@org_golang_x_tools//go/analysis/analysistest",
+        "@org_golang_x_tools//go/ast/inspector",
+    ],
+)

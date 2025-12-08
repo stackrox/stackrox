@@ -1,0 +1,20 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "defaulting_test_helpers",
+    srcs = ["helpers.go"],
+    importpath = "github.com/stackrox/rox/operator/internal/common/defaulting_test_helpers",
+    visibility = ["//operator:__subpackages__"],
+    deps = [
+        "@com_github_stretchr_testify//require",
+        "@io_k8s_apimachinery//pkg/apis/meta/v1/unstructured",
+        "@io_k8s_apimachinery//pkg/util/yaml",
+        "@sh_helm_helm_v3//pkg/chartutil",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":defaulting_test_helpers",
+    visibility = ["//operator:__subpackages__"],
+)

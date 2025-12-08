@@ -1,0 +1,31 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "fetchcerts",
+    srcs = ["fetch_certs.go"],
+    importpath = "github.com/stackrox/rox/sensor/admission-control/fetchcerts",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//generated/internalapi/sensor",
+        "//generated/storage",
+        "//pkg/clientconn",
+        "//pkg/env",
+        "//pkg/fileutils",
+        "//pkg/logging",
+        "//pkg/mtls",
+        "//pkg/mtls/verifier",
+        "//pkg/retry",
+        "//pkg/satoken",
+        "//pkg/utils",
+        "//sensor/admission-control/common",
+        "@com_github_pkg_errors//:errors",
+        "@org_golang_google_grpc//codes",
+        "@org_golang_google_grpc//status",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":fetchcerts",
+    visibility = ["//visibility:public"],
+)

@@ -1,0 +1,35 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "globaldb",
+    srcs = [
+        "close.go",
+        "common.go",
+        "postgres.go",
+        "telemetry.go",
+    ],
+    importpath = "github.com/stackrox/rox/central/globaldb",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//central/globaldb/metrics",
+        "//pkg/env",
+        "//pkg/logging",
+        "//pkg/postgres",
+        "//pkg/postgres/pgadmin",
+        "//pkg/postgres/pgconfig",
+        "//pkg/postgres/stats",
+        "//pkg/retry",
+        "//pkg/set",
+        "//pkg/sync",
+        "//pkg/telemetry/data",
+        "//pkg/telemetry/phonehome",
+        "@com_github_pkg_errors//:errors",
+        "@com_github_prometheus_client_golang//prometheus",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":globaldb",
+    visibility = ["//visibility:public"],
+)

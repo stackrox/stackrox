@@ -1,0 +1,21 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "manifest",
+    srcs = ["manager.go"],
+    importpath = "github.com/stackrox/rox/scanner/indexer/manifest",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//pkg/buildinfo",
+        "//pkg/env",
+        "//scanner/datastore/postgres",
+        "@com_github_quay_claircore//libvuln/updates",
+        "@com_github_quay_zlog//:zlog",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":manifest",
+    visibility = ["//visibility:public"],
+)

@@ -1,0 +1,25 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "openshift",
+    srcs = ["pullsecret.go"],
+    importpath = "github.com/stackrox/rox/pkg/openshift",
+    visibility = ["//visibility:public"],
+    deps = ["//generated/storage"],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":openshift",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "openshift_test",
+    srcs = ["pullsecret_test.go"],
+    embed = [":openshift"],
+    deps = [
+        "//generated/storage",
+        "@com_github_stretchr_testify//assert",
+    ],
+)

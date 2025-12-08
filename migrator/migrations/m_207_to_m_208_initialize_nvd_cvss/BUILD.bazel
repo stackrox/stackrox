@@ -1,0 +1,24 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "m_207_to_m_208_initialize_nvd_cvss",
+    srcs = [
+        "migration.go",
+        "migration_impl.go",
+    ],
+    importpath = "github.com/stackrox/rox/migrator/migrations/m_207_to_m_208_initialize_nvd_cvss",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//generated/storage",
+        "//migrator/migrations",
+        "//migrator/migrations/m_207_to_m_208_initialize_nvd_cvss/schema",
+        "//migrator/types",
+        "//pkg/postgres/pgutils",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":m_207_to_m_208_initialize_nvd_cvss",
+    visibility = ["//visibility:public"],
+)

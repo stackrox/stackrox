@@ -1,0 +1,22 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "metarunner",
+    srcs = ["meta_runner.go"],
+    importpath = "github.com/stackrox/rox/sensor/upgrader/metarunner",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//generated/internalapi/central",
+        "//pkg/logging",
+        "//pkg/sensorupgrader",
+        "//sensor/upgrader/runner",
+        "//sensor/upgrader/upgradectx",
+        "@com_github_pkg_errors//:errors",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":metarunner",
+    visibility = ["//visibility:public"],
+)

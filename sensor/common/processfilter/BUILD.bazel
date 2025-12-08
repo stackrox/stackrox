@@ -1,0 +1,18 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "processfilter",
+    srcs = ["filter.go"],
+    importpath = "github.com/stackrox/rox/sensor/common/processfilter",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//pkg/process/filter",
+        "//pkg/sync",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":processfilter",
+    visibility = ["//visibility:public"],
+)

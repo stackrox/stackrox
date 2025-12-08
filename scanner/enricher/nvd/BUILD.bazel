@@ -1,0 +1,38 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "nvd",
+    srcs = ["nvd.go"],
+    importpath = "github.com/stackrox/rox/scanner/enricher/nvd",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//pkg/scannerv4/enricher/nvd",
+        "//pkg/utils",
+        "//pkg/uuid",
+        "@com_github_facebookincubator_nvdtools//cveapi/nvd/schema",
+        "@com_github_quay_claircore//:claircore",
+        "@com_github_quay_claircore//libvuln/driver",
+        "@com_github_quay_zlog//:zlog",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":nvd",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "nvd_test",
+    srcs = ["nvd_test.go"],
+    data = glob(["testdata/**"]),
+    embed = [":nvd"],
+    deps = [
+        "//pkg/scannerv4/enricher/nvd",
+        "@com_github_facebookincubator_nvdtools//cveapi/nvd/schema",
+        "@com_github_google_go_cmp//cmp",
+        "@com_github_quay_claircore//:claircore",
+        "@com_github_quay_claircore//libvuln/driver",
+        "@com_github_quay_zlog//:zlog",
+    ],
+)

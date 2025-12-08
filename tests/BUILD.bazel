@@ -1,0 +1,14 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "tests",
+    srcs = ["empty.go"],
+    importpath = "github.com/stackrox/rox/tests",
+    visibility = ["//visibility:public"],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":tests",
+    visibility = ["//visibility:public"],
+)

@@ -1,0 +1,42 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "deploytime",
+    srcs = [
+        "detector.go",
+        "detector_impl.go",
+        "singleton.go",
+    ],
+    importpath = "github.com/stackrox/rox/central/detection/deploytime",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//central/detection",
+        "//central/policy/datastore",
+        "//generated/storage",
+        "//pkg/booleanpolicy",
+        "//pkg/detection",
+        "//pkg/detection/deploytime",
+        "//pkg/sync",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":deploytime",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "deploytime_test",
+    srcs = ["default_policies_bench_test.go"],
+    embed = [":deploytime"],
+    deps = [
+        "//central/detection",
+        "//pkg/booleanpolicy",
+        "//pkg/defaults/policies",
+        "//pkg/detection/deploytime",
+        "//pkg/fixtures",
+        "//pkg/policies",
+        "@com_github_stretchr_testify//require",
+    ],
+)

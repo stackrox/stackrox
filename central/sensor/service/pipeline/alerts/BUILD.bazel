@@ -1,0 +1,27 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "alerts",
+    srcs = ["pipeline.go"],
+    importpath = "github.com/stackrox/rox/central/sensor/service/pipeline/alerts",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//central/cluster/datastore",
+        "//central/deployment/datastore",
+        "//central/detection/lifecycle",
+        "//central/metrics",
+        "//central/sensor/service/common",
+        "//central/sensor/service/pipeline",
+        "//central/sensor/service/pipeline/reconciliation",
+        "//generated/internalapi/central",
+        "//pkg/centralsensor",
+        "//pkg/metrics",
+        "@com_github_pkg_errors//:errors",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":alerts",
+    visibility = ["//visibility:public"],
+)

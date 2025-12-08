@@ -1,0 +1,29 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "queue",
+    srcs = ["scaler.go"],
+    importpath = "github.com/stackrox/rox/pkg/sensor/queue",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//pkg/env",
+        "//pkg/logging",
+        "@com_github_pkg_errors//:errors",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":queue",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "queue_test",
+    srcs = ["scaler_test.go"],
+    embed = [":queue"],
+    deps = [
+        "//pkg/env",
+        "@com_github_stretchr_testify//suite",
+    ],
+)

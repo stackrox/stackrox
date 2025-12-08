@@ -1,0 +1,26 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "test",
+    srcs = ["store.go"],
+    importpath = "github.com/stackrox/rox/migrator/migrations/m_211_to_m_212_admission_control_config/test",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//generated/api/v1:api",
+        "//generated/storage",
+        "//migrator/migrations/m_211_to_m_212_admission_control_config/schema",
+        "//pkg/postgres",
+        "//pkg/postgres/pgutils",
+        "//pkg/sac",
+        "//pkg/sac/resources",
+        "//pkg/search/postgres",
+        "@com_github_jackc_pgx_v5//:pgx",
+        "@com_github_pkg_errors//:errors",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":test",
+    visibility = ["//visibility:public"],
+)

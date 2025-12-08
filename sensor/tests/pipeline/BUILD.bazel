@@ -1,0 +1,26 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_test")
+
+go_test(
+    name = "pipeline_test",
+    srcs = ["bench_test.go"],
+    deps = [
+        "//generated/internalapi/central",
+        "//generated/storage",
+        "//pkg/concurrency",
+        "//pkg/sync",
+        "//pkg/utils",
+        "//sensor/debugger/central",
+        "//sensor/debugger/k8s",
+        "//sensor/debugger/message",
+        "//sensor/kubernetes/sensor",
+        "@com_github_stretchr_testify//require",
+        "@io_k8s_api//apps/v1:apps",
+        "@io_k8s_api//core/v1:core",
+        "@io_k8s_api//rbac/v1:rbac",
+        "@io_k8s_apimachinery//pkg/apis/meta/v1:meta",
+        "@io_k8s_apimachinery//pkg/util/intstr",
+        "@org_golang_google_grpc//:grpc",
+        "@org_golang_google_grpc//credentials/insecure",
+        "@org_golang_google_grpc//test/bufconn",
+    ],
+)

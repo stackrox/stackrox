@@ -1,0 +1,42 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "service",
+    srcs = [
+        "service.go",
+        "service_impl.go",
+        "singleton.go",
+        "testutils.go",
+    ],
+    importpath = "github.com/stackrox/rox/central/vulnmgmt/service",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//central/deployment/datastore",
+        "//central/image/datastore",
+        "//central/imagev2/datastore/mapper/datastore",
+        "//central/pod/datastore",
+        "//generated/api/v1:api",
+        "//generated/storage",
+        "//pkg/auth/permissions",
+        "//pkg/errox",
+        "//pkg/grpc",
+        "//pkg/grpc/authz",
+        "//pkg/grpc/authz/perrpc",
+        "//pkg/grpc/authz/user",
+        "//pkg/logging",
+        "//pkg/sac/resources",
+        "//pkg/search",
+        "//pkg/set",
+        "//pkg/sync",
+        "@com_github_grpc_ecosystem_grpc_gateway_v2//runtime",
+        "@com_github_hashicorp_golang_lru_v2//:golang-lru",
+        "@com_github_pkg_errors//:errors",
+        "@org_golang_google_grpc//:grpc",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":service",
+    visibility = ["//visibility:public"],
+)

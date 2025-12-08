@@ -1,0 +1,52 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "results",
+    srcs = ["results_aggregator.go"],
+    importpath = "github.com/stackrox/rox/central/complianceoperator/v2/report/manager/results",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//central/complianceoperator/v2/benchmarks/datastore",
+        "//central/complianceoperator/v2/checkresults/datastore",
+        "//central/complianceoperator/v2/checkresults/utils",
+        "//central/complianceoperator/v2/profiles/datastore",
+        "//central/complianceoperator/v2/remediations/datastore",
+        "//central/complianceoperator/v2/report",
+        "//central/complianceoperator/v2/rules/datastore",
+        "//central/complianceoperator/v2/scans/datastore",
+        "//generated/storage",
+        "//pkg/logging",
+        "//pkg/search",
+        "//pkg/set",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":results",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "results_test",
+    srcs = ["results_aggregator_test.go"],
+    embed = [":results"],
+    deps = [
+        "//central/complianceoperator/v2/benchmarks/datastore/mocks",
+        "//central/complianceoperator/v2/checkresults/datastore/mocks",
+        "//central/complianceoperator/v2/profiles/datastore/mocks",
+        "//central/complianceoperator/v2/remediations/datastore/mocks",
+        "//central/complianceoperator/v2/report",
+        "//central/complianceoperator/v2/rules/datastore",
+        "//central/complianceoperator/v2/rules/datastore/mocks",
+        "//central/complianceoperator/v2/scans/datastore/mocks",
+        "//generated/api/v1:api",
+        "//generated/storage",
+        "//pkg/search",
+        "@com_github_pkg_errors//:errors",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+        "@com_github_stretchr_testify//suite",
+        "@org_uber_go_mock//gomock",
+    ],
+)

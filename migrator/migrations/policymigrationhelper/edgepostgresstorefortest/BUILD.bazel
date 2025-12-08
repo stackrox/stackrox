@@ -1,0 +1,26 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "edgepostgresstorefortest",
+    srcs = ["postgres_policy_category_edge_plugin.go"],
+    importpath = "github.com/stackrox/rox/migrator/migrations/policymigrationhelper/edgepostgresstorefortest",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//generated/api/v1:api",
+        "//generated/storage",
+        "//migrator/migrations/policymigrationhelper/edgepostgresstorefortest/schema",
+        "//pkg/metrics",
+        "//pkg/postgres",
+        "//pkg/postgres/pgutils",
+        "//pkg/search",
+        "//pkg/search/postgres",
+        "@com_github_hashicorp_go_multierror//:go-multierror",
+        "@com_github_jackc_pgx_v5//:pgx",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":edgepostgresstorefortest",
+    visibility = ["//visibility:public"],
+)

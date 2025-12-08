@@ -1,0 +1,24 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "local-sensor",
+    srcs = [
+        "message.pb.go",
+        "message_vtproto.pb.go",
+    ],
+    importpath = "github.com/stackrox/rox/generated/tools/local-sensor",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//generated/storage",
+        "@com_github_planetscale_vtprotobuf//protohelpers",
+        "@org_golang_google_protobuf//proto",
+        "@org_golang_google_protobuf//reflect/protoreflect",
+        "@org_golang_google_protobuf//runtime/protoimpl",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":local-sensor",
+    visibility = ["//visibility:public"],
+)

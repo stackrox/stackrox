@@ -1,0 +1,28 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "virtualmachine",
+    srcs = ["availabilitychecker.go"],
+    importpath = "github.com/stackrox/rox/sensor/kubernetes/listener/watcher/virtualmachine",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//pkg/virtualmachine",
+        "//sensor/kubernetes/listener/watcher/availability",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":virtualmachine",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "virtualmachine_test",
+    srcs = ["availabilitychecker_test.go"],
+    embed = [":virtualmachine"],
+    deps = [
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+    ],
+)

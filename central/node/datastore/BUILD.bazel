@@ -1,0 +1,56 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "datastore",
+    srcs = [
+        "datastore.go",
+        "datastore_impl.go",
+        "singleton.go",
+    ],
+    importpath = "github.com/stackrox/rox/central/node/datastore",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//central/globaldb",
+        "//central/metrics",
+        "//central/node/datastore/keyfence",
+        "//central/node/datastore/store",
+        "//central/node/datastore/store/postgres",
+        "//central/ranking",
+        "//central/risk/datastore",
+        "//generated/api/v1:api",
+        "//generated/storage",
+        "//pkg/concurrency",
+        "//pkg/errorhelpers",
+        "//pkg/logging",
+        "//pkg/nodes/enricher",
+        "//pkg/postgres",
+        "//pkg/sac",
+        "//pkg/sac/resources",
+        "//pkg/scancomponent",
+        "//pkg/search",
+        "//pkg/sync",
+        "@com_github_pkg_errors//:errors",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":datastore",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "datastore_test",
+    srcs = ["datastore_bench_test.go"],
+    embed = [":datastore"],
+    deps = [
+        "//generated/storage",
+        "//pkg/fixtures",
+        "//pkg/postgres/pgtest",
+        "//pkg/sac",
+        "//pkg/sac/resources",
+        "//pkg/search",
+        "//pkg/uuid",
+        "@com_github_stretchr_testify//require",
+    ],
+)

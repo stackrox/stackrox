@@ -1,0 +1,37 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "after",
+    srcs = [
+        "blobs.go",
+        "convert_blobs.go",
+    ],
+    importpath = "github.com/stackrox/rox/migrator/migrations/m_186_to_m_187_add_blob_search/schema/after",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//generated/api/v1:api",
+        "//generated/storage",
+        "//pkg/postgres",
+        "//pkg/postgres/walker",
+        "//pkg/protocompat",
+        "//pkg/search",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":after",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "after_test",
+    srcs = ["convert_blobs_test.go"],
+    embed = [":after"],
+    deps = [
+        "//generated/storage",
+        "//pkg/protoassert",
+        "//pkg/testutils",
+        "@com_github_stretchr_testify//assert",
+    ],
+)

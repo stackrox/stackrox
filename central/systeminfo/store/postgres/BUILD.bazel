@@ -1,0 +1,31 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "postgres",
+    srcs = [
+        "gen.go",
+        "singleton.go",
+        "store.go",
+    ],
+    importpath = "github.com/stackrox/rox/central/systeminfo/store/postgres",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//central/globaldb",
+        "//central/metrics",
+        "//generated/storage",
+        "//pkg/errox",
+        "//pkg/metrics",
+        "//pkg/postgres",
+        "//pkg/postgres/pgutils",
+        "//pkg/postgres/schema",
+        "//pkg/sac",
+        "//pkg/sac/resources",
+        "//pkg/sync",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":postgres",
+    visibility = ["//visibility:public"],
+)

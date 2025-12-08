@@ -1,0 +1,31 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "references",
+    srcs = ["parent_hierarchy.go"],
+    importpath = "github.com/stackrox/rox/sensor/kubernetes/listener/resources/references",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//pkg/protoconv/resources",
+        "//pkg/set",
+        "//pkg/sync",
+        "@io_k8s_apimachinery//pkg/apis/meta/v1:meta",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":references",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "references_test",
+    srcs = ["parent_hierarchy_test.go"],
+    embed = [":references"],
+    deps = [
+        "@com_github_stretchr_testify//assert",
+        "@io_k8s_apimachinery//pkg/apis/meta/v1:meta",
+        "@io_k8s_apimachinery//pkg/types",
+    ],
+)

@@ -1,0 +1,39 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "clone",
+    srcs = [
+        "db_clone_manager.go",
+        "db_clone_manager_impl.go",
+        "mock_central.go",
+    ],
+    importpath = "github.com/stackrox/rox/migrator/clone",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//generated/storage",
+        "//migrator/clone/postgres",
+        "//migrator/clone/rocksdb",
+        "//migrator/postgres/gorm",
+        "//migrator/postgreshelper",
+        "//migrator/version",
+        "//pkg/logging",
+        "//pkg/migrations",
+        "//pkg/migrations/testutils",
+        "//pkg/postgres",
+        "//pkg/postgres/pgadmin",
+        "//pkg/postgres/pgconfig",
+        "//pkg/postgres/pgtest",
+        "//pkg/sac",
+        "//pkg/version",
+        "@com_github_pkg_errors//:errors",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+        "@in_yaml_go_yaml_v3//:yaml",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":clone",
+    visibility = ["//visibility:public"],
+)

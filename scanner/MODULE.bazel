@@ -1,0 +1,12 @@
+"""
+Scanner module - part of StackRox monorepo
+"""
+
+module(
+    name = "scanner",
+    version = "0.0.0",
+)
+
+# Scanner has minimal dependencies
+# It primarily uses packages from the parent rox repository
+

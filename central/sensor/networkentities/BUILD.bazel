@@ -1,0 +1,26 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "networkentities",
+    srcs = [
+        "controller.go",
+        "controller_impl.go",
+    ],
+    importpath = "github.com/stackrox/rox/central/sensor/networkentities",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//central/networkpolicies/graph",
+        "//central/sensor/service/common",
+        "//generated/internalapi/central",
+        "//generated/storage",
+        "//pkg/concurrency",
+        "//pkg/sync",
+        "@com_github_pkg_errors//:errors",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":networkentities",
+    visibility = ["//visibility:public"],
+)

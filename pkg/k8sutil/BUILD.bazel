@@ -1,0 +1,70 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "k8sutil",
+    srcs = [
+        "client_config.go",
+        "container_runtime.go",
+        "container_runtime_str.go",
+        "nsobj_ref.go",
+        "object.go",
+        "openshift_schemes.go",
+        "unstructured.go",
+    ],
+    importpath = "github.com/stackrox/rox/pkg/k8sutil",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//generated/storage",
+        "//pkg/env",
+        "//pkg/logging",
+        "//pkg/stringutils",
+        "//pkg/utils",
+        "@com_github_openshift_api//apps/v1:apps",
+        "@com_github_openshift_client_go//apps/clientset/versioned/scheme",
+        "@com_github_openshift_client_go//authorization/clientset/versioned/scheme",
+        "@com_github_openshift_client_go//build/clientset/versioned/scheme",
+        "@com_github_openshift_client_go//config/clientset/versioned/scheme",
+        "@com_github_openshift_client_go//console/clientset/versioned/scheme",
+        "@com_github_openshift_client_go//image/clientset/versioned/scheme",
+        "@com_github_openshift_client_go//imageregistry/clientset/versioned/scheme",
+        "@com_github_openshift_client_go//network/clientset/versioned/scheme",
+        "@com_github_openshift_client_go//oauth/clientset/versioned/scheme",
+        "@com_github_openshift_client_go//operator/clientset/versioned/scheme",
+        "@com_github_openshift_client_go//project/clientset/versioned/scheme",
+        "@com_github_openshift_client_go//quota/clientset/versioned/scheme",
+        "@com_github_openshift_client_go//route/clientset/versioned/scheme",
+        "@com_github_openshift_client_go//security/clientset/versioned/scheme",
+        "@com_github_openshift_client_go//servicecertsigner/clientset/versioned/scheme",
+        "@com_github_openshift_client_go//template/clientset/versioned/scheme",
+        "@com_github_openshift_client_go//user/clientset/versioned/scheme",
+        "@com_github_pkg_errors//:errors",
+        "@io_k8s_apimachinery//pkg/apis/meta/v1:meta",
+        "@io_k8s_apimachinery//pkg/apis/meta/v1/unstructured",
+        "@io_k8s_apimachinery//pkg/runtime",
+        "@io_k8s_apimachinery//pkg/runtime/schema",
+        "@io_k8s_apimachinery//pkg/util/yaml",
+        "@io_k8s_client_go//kubernetes",
+        "@io_k8s_client_go//rest",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":k8sutil",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "k8sutil_test",
+    srcs = [
+        "container_runtime_test.go",
+        "unstructured_test.go",
+    ],
+    embed = [":k8sutil"],
+    deps = [
+        "//generated/storage",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+        "@io_k8s_apimachinery//pkg/apis/meta/v1/unstructured",
+    ],
+)

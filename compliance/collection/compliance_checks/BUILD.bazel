@@ -1,0 +1,54 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "compliance_checks",
+    srcs = ["compliance_checks.go"],
+    importpath = "github.com/stackrox/rox/compliance/collection/compliance_checks",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//compliance/collection/command",
+        "//compliance/collection/containerruntimes/crio",
+        "//compliance/collection/file",
+        "//compliance/collection/kubernetes",
+        "//compliance/node",
+        "//compliance/utils",
+        "//generated/internalapi/compliance",
+        "//generated/internalapi/sensor",
+        "//generated/storage",
+        "//pkg/compliance/checks",
+        "//pkg/compliance/checks/standards",
+        "//pkg/compliance/data",
+        "//pkg/compliance/framework",
+        "//pkg/logging",
+        "//pkg/protocompat",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":compliance_checks",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "compliance_checks_test",
+    srcs = [
+        "compliance_checks_bench_test.go",
+        "compliance_checks_test.go",
+    ],
+    embed = [":compliance_checks"],
+    deps = [
+        "//compliance/utils",
+        "//generated/internalapi/compliance",
+        "//generated/internalapi/sensor",
+        "//generated/storage",
+        "//pkg/compliance/checks/standards",
+        "//pkg/compliance/compress",
+        "//pkg/compliance/framework",
+        "//pkg/orchestrators",
+        "//pkg/protoassert",
+        "//pkg/utils",
+        "@com_github_stretchr_testify//suite",
+        "@org_golang_google_grpc//:grpc",
+    ],
+)

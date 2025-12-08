@@ -1,0 +1,38 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "defaultexternalsrcs",
+    srcs = [
+        "constants.go",
+        "parse.go",
+    ],
+    importpath = "github.com/stackrox/rox/pkg/networkgraph/defaultexternalsrcs",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//generated/storage",
+        "//pkg/httputil",
+        "//pkg/networkgraph/externalsrcs",
+        "//pkg/set",
+        "//pkg/stringutils",
+        "//pkg/utils",
+        "@com_github_pkg_errors//:errors",
+        "@com_github_stackrox_external_network_pusher//pkg/common",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":defaultexternalsrcs",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "defaultexternalsrcs_test",
+    srcs = ["parse_test.go"],
+    embed = [":defaultexternalsrcs"],
+    deps = [
+        "//generated/storage",
+        "//pkg/protoassert",
+        "@com_github_stretchr_testify//assert",
+    ],
+)

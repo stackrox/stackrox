@@ -1,0 +1,38 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "gatherer",
+    srcs = [
+        "common.go",
+        "gatherer.go",
+        "load_bundled.go",
+        "online_gatherer.go",
+        "singleton.go",
+    ],
+    importpath = "github.com/stackrox/rox/central/networkgraph/entity/gatherer",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//central/blob/datastore",
+        "//central/networkgraph/entity/datastore",
+        "//generated/storage",
+        "//pkg/concurrency",
+        "//pkg/env",
+        "//pkg/errorhelpers",
+        "//pkg/httputil",
+        "//pkg/logging",
+        "//pkg/networkgraph/defaultexternalsrcs",
+        "//pkg/protocompat",
+        "//pkg/sac",
+        "//pkg/sac/resources",
+        "//pkg/set",
+        "//pkg/sync",
+        "//pkg/utils",
+        "@com_github_pkg_errors//:errors",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":gatherer",
+    visibility = ["//visibility:public"],
+)

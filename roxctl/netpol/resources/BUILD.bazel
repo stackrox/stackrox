@@ -1,0 +1,38 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "resources",
+    srcs = [
+        "errors.go",
+        "info.go",
+    ],
+    importpath = "github.com/stackrox/rox/roxctl/netpol/resources",
+    visibility = ["//visibility:public"],
+    deps = [
+        "@io_k8s_apimachinery//pkg/util/errors",
+        "@io_k8s_cli_runtime//pkg/resource",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":resources",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "resources_test",
+    srcs = [
+        "errors_test.go",
+        "info_test.go",
+    ],
+    data = glob(["testdata/**"]),
+    embed = [":resources"],
+    deps = [
+        "//roxctl/common/npg",
+        "@com_github_pkg_errors//:errors",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+        "@io_k8s_apimachinery//pkg/util/errors",
+    ],
+)

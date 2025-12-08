@@ -1,0 +1,60 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "imageintegrations",
+    srcs = ["pipeline.go"],
+    importpath = "github.com/stackrox/rox/central/sensor/service/pipeline/imageintegrations",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//central/cluster/datastore",
+        "//central/enrichment",
+        "//central/imageintegration/datastore",
+        "//central/imageintegration/tlscheckcache",
+        "//central/metrics",
+        "//central/reprocessor",
+        "//central/sensor/service/common",
+        "//central/sensor/service/pipeline",
+        "//central/sensor/service/pipeline/reconciliation",
+        "//generated/api/v1:api",
+        "//generated/internalapi/central",
+        "//generated/storage",
+        "//pkg/centralsensor",
+        "//pkg/env",
+        "//pkg/errox",
+        "//pkg/features",
+        "//pkg/logging",
+        "//pkg/metrics",
+        "//pkg/openshift",
+        "//pkg/set",
+        "//pkg/tlscheckcache",
+        "//pkg/urlfmt",
+        "@com_github_pkg_errors//:errors",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":imageintegrations",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "imageintegrations_test",
+    srcs = ["pipeline_test.go"],
+    embed = [":imageintegrations"],
+    deps = [
+        "//central/imageintegration/datastore/mocks",
+        "//central/sensor/service/pipeline/reconciliation",
+        "//generated/internalapi/central",
+        "//generated/storage",
+        "//pkg/env",
+        "//pkg/features",
+        "//pkg/openshift",
+        "//pkg/protocompat",
+        "//pkg/testutils",
+        "//pkg/tlscheckcache",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+        "@org_uber_go_mock//gomock",
+    ],
+)

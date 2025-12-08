@@ -1,0 +1,25 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "utils",
+    srcs = ["util.go"],
+    importpath = "github.com/stackrox/rox/pkg/cloudproviders/gcp/utils",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//generated/storage",
+        "//pkg/cloudproviders/gcp/auth",
+        "//pkg/httputil/proxy",
+        "@com_google_cloud_go_securitycenter//apiv1",
+        "@com_google_cloud_go_storage//:storage",
+        "@org_golang_google_api//option",
+        "@org_golang_google_grpc//:grpc",
+        "@org_golang_x_oauth2//:oauth2",
+        "@org_golang_x_oauth2//google",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":utils",
+    visibility = ["//visibility:public"],
+)

@@ -1,0 +1,21 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "devbuild",
+    srcs = [
+        "init.go",
+        "setting.go",
+    ],
+    importpath = "github.com/stackrox/rox/pkg/devbuild",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//pkg/buildinfo",
+        "//pkg/env",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":devbuild",
+    visibility = ["//visibility:public"],
+)

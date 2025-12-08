@@ -1,0 +1,22 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library")
+
+go_library(
+    name = "config-as-code-helper_lib",
+    srcs = ["main.go"],
+    embedsrcs = ["policy.go.tpl"],
+    importpath = "github.com/stackrox/rox/tools/generate-helpers/config-as-code-helper",
+    visibility = ["//visibility:private"],
+    deps = [
+        "//generated/storage",
+        "//pkg/protoreflect",
+        "//pkg/set",
+        "//pkg/utils",
+        "//tools/generate-helpers/common",
+    ],
+)
+
+go_binary(
+    name = "config-as-code-helper",
+    embed = [":config-as-code-helper_lib"],
+    visibility = ["//visibility:public"],
+)

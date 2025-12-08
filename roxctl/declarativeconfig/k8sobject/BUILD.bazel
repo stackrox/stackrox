@@ -1,0 +1,34 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "k8sobject",
+    srcs = ["k8sobject.go"],
+    importpath = "github.com/stackrox/rox/roxctl/declarativeconfig/k8sobject",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//pkg/errox",
+        "@com_github_pkg_errors//:errors",
+        "@com_github_spf13_cobra//:cobra",
+        "@io_k8s_apimachinery//pkg/apis/meta/v1:meta",
+        "@io_k8s_cli_runtime//pkg/genericclioptions",
+        "@io_k8s_client_go//kubernetes",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":k8sobject",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "k8sobject_test",
+    srcs = ["k8sobject_test.go"],
+    embed = [":k8sobject"],
+    deps = [
+        "@com_github_stretchr_testify//assert",
+        "@io_k8s_api//core/v1:core",
+        "@io_k8s_apimachinery//pkg/apis/meta/v1:meta",
+        "@io_k8s_client_go//kubernetes/fake",
+    ],
+)

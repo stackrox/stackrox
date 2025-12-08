@@ -1,0 +1,19 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "stats",
+    srcs = ["stats.go"],
+    importpath = "github.com/stackrox/rox/roxctl/central/debug/db/stats",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//roxctl/central/debug/db/stats/reset",
+        "//roxctl/common/environment",
+        "@com_github_spf13_cobra//:cobra",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":stats",
+    visibility = ["//visibility:public"],
+)

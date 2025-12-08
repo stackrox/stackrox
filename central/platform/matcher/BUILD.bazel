@@ -1,0 +1,41 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "matcher",
+    srcs = [
+        "matcher.go",
+        "matcher_impl.go",
+        "matcher_test_utils.go",
+        "singleton.go",
+    ],
+    importpath = "github.com/stackrox/rox/central/platform/matcher",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//central/config/datastore",
+        "//central/config/datastore/mocks",
+        "//generated/storage",
+        "//pkg/features",
+        "//pkg/sac",
+        "//pkg/sync",
+        "@com_github_pkg_errors//:errors",
+        "@org_uber_go_mock//gomock",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":matcher",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "matcher_test",
+    srcs = ["matcher_impl_test.go"],
+    embed = [":matcher"],
+    deps = [
+        "//generated/storage",
+        "//pkg/features",
+        "@com_github_stretchr_testify//suite",
+        "@org_uber_go_mock//gomock",
+    ],
+)

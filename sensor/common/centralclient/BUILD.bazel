@@ -1,0 +1,72 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "centralclient",
+    srcs = [
+        "certificate_verification.go",
+        "client.go",
+        "errors.go",
+        "grpc_connection.go",
+    ],
+    importpath = "github.com/stackrox/rox/sensor/common/centralclient",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//generated/api/v1:api",
+        "//pkg/centralsensor",
+        "//pkg/clientconn",
+        "//pkg/concurrency",
+        "//pkg/cryptoutils",
+        "//pkg/env",
+        "//pkg/grpc/util",
+        "//pkg/httputil",
+        "//pkg/httputil/proxy",
+        "//pkg/jsonutil",
+        "//pkg/logging",
+        "//pkg/mtls",
+        "//pkg/mtls/verifier",
+        "//pkg/utils",
+        "//pkg/x509utils",
+        "//sensor/common/trace",
+        "@com_github_google_certificate_transparency_go//tls",
+        "@com_github_pkg_errors//:errors",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":centralclient",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "centralclient_test",
+    srcs = ["client_test.go"],
+    data = glob(["testdata/**"]),
+    embed = [":centralclient"],
+    embedsrcs = [
+        "testdata/additionalCA.key",
+        "testdata/additionalCAs/ca.pem",
+        "testdata/central/ca-key.pem",
+        "testdata/central/ca.pem",
+        "testdata/central/cert.pem",
+        "testdata/central/info.md",
+        "testdata/central/jwt-key.pem",
+        "testdata/central/key.pem",
+        "testdata/signature.example",
+        "testdata/trust_info_serialized.example",
+        "testdata/update-testdata.sh",
+    ],
+    deps = [
+        "//generated/api/v1:api",
+        "//pkg/centralsensor",
+        "//pkg/certgen",
+        "//pkg/cryptoutils",
+        "//pkg/cryptoutils/mocks",
+        "//pkg/mtls",
+        "@com_github_cloudflare_cfssl//csr",
+        "@com_github_cloudflare_cfssl//initca",
+        "@com_github_google_certificate_transparency_go//tls",
+        "@com_github_stretchr_testify//suite",
+        "@org_uber_go_mock//gomock",
+    ],
+)

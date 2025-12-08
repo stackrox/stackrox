@@ -1,0 +1,26 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "virtualmachine",
+    srcs = [
+        "index_report.pb.go",
+        "index_report_vtproto.pb.go",
+        "virtual_machine.pb.go",
+        "virtual_machine_vtproto.pb.go",
+    ],
+    importpath = "github.com/stackrox/rox/generated/internalapi/virtualmachine/v1",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//generated/internalapi/scanner/v4:scanner",
+        "@com_github_planetscale_vtprotobuf//protohelpers",
+        "@org_golang_google_protobuf//proto",
+        "@org_golang_google_protobuf//reflect/protoreflect",
+        "@org_golang_google_protobuf//runtime/protoimpl",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":virtualmachine",
+    visibility = ["//visibility:public"],
+)

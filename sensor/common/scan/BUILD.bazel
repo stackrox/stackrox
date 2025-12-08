@@ -1,0 +1,60 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "scan",
+    srcs = ["scan.go"],
+    importpath = "github.com/stackrox/rox/sensor/common/scan",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//generated/api/v1:api",
+        "//generated/internalapi/scanner/v4:scanner",
+        "//generated/storage",
+        "//pkg/env",
+        "//pkg/errorhelpers",
+        "//pkg/errox",
+        "//pkg/images",
+        "//pkg/images/types",
+        "//pkg/images/utils",
+        "//pkg/logging",
+        "//pkg/registries",
+        "//pkg/registries/docker",
+        "//pkg/registries/types",
+        "//pkg/registrymirror",
+        "//pkg/signatures",
+        "//pkg/tlscheck",
+        "//sensor/common/scannerclient",
+        "@com_github_pkg_errors//:errors",
+        "@org_golang_google_grpc//:grpc",
+        "@org_golang_x_sync//semaphore",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":scan",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "scan_test",
+    srcs = ["scan_test.go"],
+    embed = [":scan"],
+    deps = [
+        "//generated/api/v1:api",
+        "//generated/internalapi/scanner/v4:scanner",
+        "//generated/storage",
+        "//pkg/errox",
+        "//pkg/images/types",
+        "//pkg/images/utils",
+        "//pkg/protoassert",
+        "//pkg/registries",
+        "//pkg/registries/types",
+        "//pkg/registrymirror/mocks",
+        "//pkg/signatures",
+        "//sensor/common/scannerclient",
+        "@com_github_stretchr_testify//suite",
+        "@org_golang_google_grpc//:grpc",
+        "@org_golang_x_sync//semaphore",
+        "@org_uber_go_mock//gomock",
+    ],
+)

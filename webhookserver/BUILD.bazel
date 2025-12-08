@@ -1,0 +1,15 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library")
+
+go_library(
+    name = "webhookserver_lib",
+    srcs = ["server.go"],
+    importpath = "github.com/stackrox/rox/webhookserver",
+    visibility = ["//visibility:private"],
+    deps = ["//pkg/sync"],
+)
+
+go_binary(
+    name = "webhookserver",
+    embed = [":webhookserver_lib"],
+    visibility = ["//visibility:public"],
+)

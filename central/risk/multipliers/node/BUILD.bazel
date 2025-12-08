@@ -1,0 +1,34 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "node",
+    srcs = [
+        "multiplier.go",
+        "vulnerabilities.go",
+    ],
+    importpath = "github.com/stackrox/rox/central/risk/multipliers/node",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//central/risk/multipliers",
+        "//central/risk/scorer/vulns",
+        "//generated/storage",
+        "//pkg/scancomponent",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":node",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "node_test",
+    srcs = ["vulnerabilities_test.go"],
+    embed = [":node"],
+    deps = [
+        "//central/risk/multipliers",
+        "//generated/storage",
+        "@com_github_stretchr_testify//assert",
+    ],
+)

@@ -1,0 +1,34 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "sorted",
+    srcs = ["searcher.go"],
+    importpath = "github.com/stackrox/rox/pkg/search/sorted",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//generated/api/v1:api",
+        "//pkg/search",
+        "@com_github_pkg_errors//:errors",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":sorted",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "sorted_test",
+    srcs = ["searcher_test.go"],
+    embed = [":sorted"],
+    deps = [
+        "//generated/api/v1:api",
+        "//pkg/search",
+        "//pkg/search/mocks",
+        "//pkg/search/sorted/mocks",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//suite",
+        "@org_uber_go_mock//gomock",
+    ],
+)

@@ -1,0 +1,30 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "m_180_to_m_181_move_to_blobstore",
+    srcs = ["migration.go"],
+    importpath = "github.com/stackrox/rox/migrator/migrations/m_180_to_m_181_move_to_blobstore",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//generated/storage",
+        "//migrator/migrations",
+        "//migrator/migrations/m_180_to_m_181_move_to_blobstore/schema",
+        "//migrator/types",
+        "//pkg/ioutils",
+        "//pkg/logging",
+        "//pkg/postgres/gorm/largeobject",
+        "//pkg/postgres/pgutils",
+        "//pkg/probeupload",
+        "//pkg/protocompat",
+        "//pkg/sac",
+        "//pkg/utils",
+        "@com_github_pkg_errors//:errors",
+        "@io_gorm_gorm//:gorm",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":m_180_to_m_181_move_to_blobstore",
+    visibility = ["//visibility:public"],
+)

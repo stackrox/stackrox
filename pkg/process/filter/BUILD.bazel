@@ -1,0 +1,32 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "filter",
+    srcs = ["filter.go"],
+    importpath = "github.com/stackrox/rox/pkg/process/filter",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//generated/storage",
+        "//pkg/containerid",
+        "//pkg/set",
+        "//pkg/stringutils",
+        "//pkg/sync",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":filter",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "filter_test",
+    srcs = ["filter_test.go"],
+    embed = [":filter"],
+    deps = [
+        "//generated/storage",
+        "//pkg/fixtures",
+        "@com_github_stretchr_testify//assert",
+    ],
+)

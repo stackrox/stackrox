@@ -1,0 +1,35 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_test")
+
+go_test(
+    name = "reconcile_test",
+    srcs = [
+        "mapkubeapis_test.go",
+        "reconcile_suite_test.go",
+    ],
+    deps = [
+        "//operator/internal/common/extensions",
+        "@com_github_helm_helm_mapkubeapis//pkg/common",
+        "@com_github_onsi_ginkgo_v2//:ginkgo",
+        "@com_github_onsi_gomega//:gomega",
+        "@com_github_operator_framework_helm_operator_plugins//pkg/client",
+        "@com_github_operator_framework_helm_operator_plugins//pkg/reconciler",
+        "@com_github_pkg_errors//:errors",
+        "@io_k8s_apiextensions_apiserver//pkg/apis/apiextensions/v1:apiextensions",
+        "@io_k8s_apimachinery//pkg/api/errors",
+        "@io_k8s_apimachinery//pkg/apis/meta/v1:meta",
+        "@io_k8s_apimachinery//pkg/apis/meta/v1/unstructured",
+        "@io_k8s_apimachinery//pkg/runtime/schema",
+        "@io_k8s_apimachinery//pkg/types",
+        "@io_k8s_client_go//rest",
+        "@io_k8s_sigs_controller_runtime//pkg/envtest",
+        "@io_k8s_sigs_controller_runtime//pkg/log",
+        "@io_k8s_sigs_controller_runtime//pkg/log/zap",
+        "@io_k8s_sigs_controller_runtime//pkg/manager",
+        "@io_k8s_sigs_controller_runtime//pkg/metrics/server",
+        "@io_k8s_sigs_controller_runtime//pkg/reconcile",
+        "@sh_helm_helm_v3//pkg/action",
+        "@sh_helm_helm_v3//pkg/chart",
+        "@sh_helm_helm_v3//pkg/storage",
+        "@sh_helm_helm_v3//pkg/storage/driver",
+    ],
+)
