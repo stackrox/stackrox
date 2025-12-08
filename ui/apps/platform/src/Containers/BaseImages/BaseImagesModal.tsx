@@ -171,15 +171,20 @@ function BaseImagesModal({ isOpen, onClose, onSuccess }: BaseImagesModalProps) {
                             onChange={(e) => formik.handleChange(e)}
                             onBlur={formik.handleBlur}
                             isDisabled={isSubmitting}
-                            placeholder="Example: docker.io/library/ubuntu:22.04"
+                            placeholder="example-registry.io/path/to/image:tag"
                             isRequired
                         />
                         <FormHelperText>
                             <HelperText>
-                                <HelperTextItem variant={baseImagePathFieldValidated}>
-                                    {isBaseImagePathFieldInvalid
-                                        ? formik.errors.baseImagePath
-                                        : 'Include repository path and tag (e.g., docker.io/library/ubuntu:22.04). Tag can be a pattern (e.g., 1.*)'}
+                                {isBaseImagePathFieldInvalid && (
+                                    <HelperTextItem variant="error">
+                                        {formik.errors.baseImagePath}
+                                    </HelperTextItem>
+                                )}
+                                <HelperTextItem>
+                                    Include repository path and tag (e.g.,
+                                    example-registry.io/path/to/image:tag). Tag can be a pattern
+                                    (e.g., 1.*)
                                 </HelperTextItem>
                             </HelperText>
                         </FormHelperText>
