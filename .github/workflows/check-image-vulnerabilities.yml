@@ -10,7 +10,7 @@ on:
   push:
     tags: ['*']
 
-run-name: ${{ format('Check image vulnerabilities for {0}', inputs.version) }}
+run-name: ${{ format('Check image vulnerabilities for {0}', inputs.version || github.ref_name) }}
 
 jobs:
   run-parameters:
@@ -28,7 +28,7 @@ jobs:
           } >> "$GITHUB_STEP_SUMMARY"
 
   check-image-vulnerabilities-upstream:
-    name: "Upstream: ${{ matrix.image }}:${{ inputs.version }}"
+    name: "Upstream: ${{ matrix.image }}:${{ inputs.version || github.ref_name }}"
     runs-on: ubuntu-latest
     permissions:
       # Needed for stackrox/central-login to create the JWT token.
@@ -55,7 +55,7 @@ jobs:
         uses: stackrox/actions/release/check-image-vulnerabilities@tm/ROX-image-vuln-check
         with:
           image: ${{ matrix.image }}
-          version: ${{ inputs.version }}
+          version: ${{ inputs.version || github.ref_name }}
           wait-limit: "7200"
           summary-title: "Upstream vulnerabilities"
           quay-bearer-token: ${{ secrets.QUAY_RHACS_ENG_BEARER_TOKEN }}
@@ -70,7 +70,7 @@ jobs:
           retention-days: 30
 
   check-image-vulnerabilities-konflux:
-    name: "Konflux: ${{ matrix.image }}:${{ inputs.version }}"
+    name: "Konflux: ${{ matrix.image }}:${{ inputs.version || github.ref_name }}"
     runs-on: ubuntu-latest
     permissions:
       # Needed for stackrox/central-login to create the JWT token.
@@ -97,7 +97,7 @@ jobs:
         uses: stackrox/actions/release/check-image-vulnerabilities@tm/ROX-image-vuln-check
         with:
           image: ${{ matrix.image }}
-          version: ${{ inputs.version }}
+          version: ${{ inputs.version || github.ref_name }}
           wait-limit: "11400"
           summary-title: "Konflux vulnerabilities"
           quay-bearer-token: ${{ secrets.QUAY_RHACS_ENG_BEARER_TOKEN }}
