@@ -17,31 +17,31 @@ import (
 	"github.com/stretchr/testify/suite"
 )
 
-type ImageCveInfoStoreSuite struct {
+type ImageCveInfosStoreSuite struct {
 	suite.Suite
 	store  Store
 	testDB *pgtest.TestPostgres
 }
 
-func TestImageCveInfoStore(t *testing.T) {
-	suite.Run(t, new(ImageCveInfoStoreSuite))
+func TestImageCveInfosStore(t *testing.T) {
+	suite.Run(t, new(ImageCveInfosStoreSuite))
 }
 
-func (s *ImageCveInfoStoreSuite) SetupSuite() {
+func (s *ImageCveInfosStoreSuite) SetupSuite() {
 
 	s.testDB = pgtest.ForT(s.T())
 	s.store = New(s.testDB.DB)
 }
 
-func (s *ImageCveInfoStoreSuite) SetupTest() {
+func (s *ImageCveInfosStoreSuite) SetupTest() {
 	ctx := sac.WithAllAccess(context.Background())
-	tag, err := s.testDB.Exec(ctx, "TRUNCATE image_cve_info CASCADE")
-	s.T().Log("image_cve_info", tag)
+	tag, err := s.testDB.Exec(ctx, "TRUNCATE image_cve_infos CASCADE")
+	s.T().Log("image_cve_infos", tag)
 	s.store = New(s.testDB.DB)
 	s.NoError(err)
 }
 
-func (s *ImageCveInfoStoreSuite) TestStore() {
+func (s *ImageCveInfosStoreSuite) TestStore() {
 	ctx := sac.WithAllAccess(context.Background())
 
 	store := s.store
