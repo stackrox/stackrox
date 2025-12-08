@@ -45,6 +45,7 @@ var (
 		schema.SetOptionsMap(search.Walk(v1.SearchCategory_COMPLIANCE_PROFILES, "complianceoperatorprofilev2", (*storage.ComplianceOperatorProfileV2)(nil)))
 		schema.SetSearchScope([]v1.SearchCategory{
 			v1.SearchCategory_COMPLIANCE_PROFILES,
+			v1.SearchCategory_COMPLIANCE_SCAN,
 			v1.SearchCategory_COMPLIANCE_SCAN_CONFIG,
 		}...)
 		schema.ScopingResource = resources.Compliance

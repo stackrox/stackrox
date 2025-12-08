@@ -236,7 +236,7 @@ func getJoinsAndFields(src *walker.Schema, q *v1.Query) ([]Join, map[string]sear
 				table:       currElem.schema,
 				columnPairs: rel.MappedColumnNames,
 			}
-			if src.SearchScope == nil || newElem.schema.OptionsMap == nil {
+			if src.SearchScope == nil {
 				queue = append(queue, newElem)
 			} else if _, foundInSearchScope := src.SearchScope[newElem.schema.OptionsMap.PrimaryCategory()]; foundInSearchScope {
 				queue = append(queue, newElem)

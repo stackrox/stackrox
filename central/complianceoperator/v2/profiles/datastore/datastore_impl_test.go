@@ -395,6 +395,23 @@ func (s *complianceProfileDataStoreTestSuite) TestGetProfilesNames() {
 	}
 }
 
+func (s *complianceProfileDataStoreTestSuite) TestSearchProfilesByScanRef() {
+	profile := getTestProfile(uuid.NewV4().String(), "test-profile", "1.0", testconsts.Cluster1, 0)
+	s.Require().NoError(s.dataStore.UpsertProfile(s.hasWriteCtx, profile))
+
+	// Call SearchProfiles with a query using ComplianceOperatorScanRef field.
+	// This field is from the Scan schema, which will trigger the join traversal logic.
+	// The search framework will traverse: Profile → CheckResults → Scan → ScanConfiguration
+	scanRefQuery := search.NewQueryBuilder().
+		AddExactMatches(search.ComplianceOperatorScanRef, uuid.NewV4().String()).
+		ProtoQuery()
+
+	profiles, err := s.dataStore.SearchProfiles(s.hasReadCtx, scanRefQuery)
+	s.Require().NoError(err, "SearchProfiles should not panic when querying scan ref fields")
+	// The query won't match anything since we didn't create a scan, but it should not panic.
+	s.Require().Len(profiles, 0, "Should not find any profiles since there's no matching scan")
+}
+
 func getTestProfile(profileUID string, profileName string, version string, clusterID string, ruleCount int) *storage.ComplianceOperatorProfileV2 {
 	var rules []*storage.ComplianceOperatorProfileV2_Rule
 
