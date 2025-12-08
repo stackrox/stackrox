@@ -29,7 +29,6 @@ func initialize() {
 		enrichment.ImageEnricherSingleton(),
 		enrichment.ImageEnricherV2Singleton(),
 		imageDatastore.Singleton(),
-		enrichment.ImageEnricherV2Singleton(),
 		manager.Singleton(),
 		enrichment.Singleton(),
 		buildTimeDetection.SingletonDetector(),
