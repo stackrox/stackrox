@@ -162,7 +162,7 @@ func (s *migrationTestSuite) TestMigration() {
 		s.Require().NoError(migration.Run(dbs))
 
 		_ = s.store.WalkByQuery(dbs.DBCtx, search.EmptyQuery(), func(alert *storage.Alert) error {
-			expectedAlert, found := alerts[alert.Id]
+			expectedAlert, found := alerts[alert.GetId()]
 			s.Require().True(found)
 			protoassert.Equal(s.T(), expectedAlert, alert)
 			return nil
