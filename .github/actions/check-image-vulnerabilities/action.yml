@@ -1,0 +1,82 @@
+name: "Check Image Vulnerabilities"
+description: "Scan an image for vulnerabilities and fail if critical or important ones are found"
+
+inputs:
+  image:
+    description: "Image name (without registry prefix)"
+    required: true
+  version:
+    description: "Image version tag"
+    required: true
+  wait-limit:
+    description: "Maximum time to wait for image (seconds)"
+    required: false
+    default: "7200"
+  summary-title:
+    description: "Title prefix for the GitHub step summary"
+    required: true
+  quay-bearer-token:
+    description: "Quay.io bearer token for wait-for-image"
+    required: true
+  central-url:
+    description: "ACS Central URL"
+    required: true
+
+outputs:
+  scan-result-path:
+    description: "Path to the scan result JSON file"
+    value: ${{ steps.scan.outputs.result-path }}
+
+runs:
+  using: "composite"
+  steps:
+    - name: "Wait for image to be built: quay.io/rhacs-eng/${{ inputs.image }}:${{ inputs.version }}"
+      uses: stackrox/actions/release/wait-for-image@v1
+      with:
+        token: ${{ inputs.quay-bearer-token }}
+        image: rhacs-eng/${{ inputs.image }}:${{ inputs.version }}
+        limit: ${{ inputs.wait-limit }}
+
+    - name: Central login
+      uses: stackrox/central-login@v1
+      with:
+        endpoint: ${{ inputs.central-url }}
+
+    - name: Install roxctl
+      uses: stackrox/roxctl-installer-action@v1
+      with:
+        central-endpoint: ${{ inputs.central-url }}
+        central-token: ${{ env.ROX_API_TOKEN }}
+
+    - name: Scan image and check for vulnerabilities
+      id: scan
+      shell: bash
+      run: |
+        RESULT=$(roxctl image scan --output=json --force \
+          --image="quay.io/rhacs-eng/${{ inputs.image }}:${{ inputs.version }}")
+        echo "$RESULT" > scan-result.json
+        echo "result-path=scan-result.json" >> "$GITHUB_OUTPUT"
+        CRITICAL_CNT=$(jq ".result.summary.CRITICAL" <<< "$RESULT")
+        IMPORTANT_CNT=$(jq ".result.summary.IMPORTANT" <<< "$RESULT")
+        if (( CRITICAL_CNT + IMPORTANT_CNT > 0 )); then
+          echo "Found $CRITICAL_CNT critical vulnerabilities."
+          echo "Found $IMPORTANT_CNT important vulnerabilities."
+          echo "Check the workflow summary for a detailed list of the vulnerabilities."
+          {
+            echo "### ${{ inputs.summary-title }}: ${{ inputs.image }}:${{ inputs.version }}"
+            echo ""
+            # We need a monospaced font for the table layout, and `terraform` has
+            # nicer color highlighting than the default language agnostic code block.
+            echo '```terraform'
+            jq -r '
+              .result.vulnerabilities // []
+              | map(select(.cveSeverity == "CRITICAL" or .cveSeverity == "IMPORTANT"))
+              | (["COMPONENT","VERSION","CVE","SEVERITY","FIXED_VERSION","LINK"] | @tsv),
+                (.[] | [.componentName // "", .componentVersion // "", .cveId // "", .cveSeverity // "", .componentFixedVersion // "", .cveInfo // ""] | @tsv)
+            ' <<< "$RESULT" | column -t -s $'\t'
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+          exit 1
+        else
+          echo "No important or critical vulnerabilities found."
+        fi
