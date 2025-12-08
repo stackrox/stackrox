@@ -111,7 +111,10 @@ function RiskTablePanel({
                     <RiskTable
                         currentDeployments={currentDeployments}
                         selectedDeploymentId={selectedDeploymentId}
-                        setSortOption={setSortOption}
+                        setSortOption={(sortOption) => {
+                            setSortOption(sortOption);
+                            setPage(1);
+                        }}
                     />
                 )}
             </PanelBody>
