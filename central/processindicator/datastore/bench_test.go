@@ -201,7 +201,7 @@ func BenchmarkProcessIndicators(b *testing.B) {
 
 	d1DeleteIDs := make([]string, len(d1Results))
 	for i, r := range d1Results {
-		d1DeleteIDs[i] = r.Id
+		d1DeleteIDs[i] = r.GetId()
 	}
 
 	d1PodID2Query := search.NewQueryBuilder().
@@ -213,7 +213,7 @@ func BenchmarkProcessIndicators(b *testing.B) {
 
 	d1PodID2DeleteIDs := make([]string, len(d1PodID2Results))
 	for i, r := range d1PodID2Results {
-		d1PodID2DeleteIDs[i] = r.Id
+		d1PodID2DeleteIDs[i] = r.GetId()
 	}
 
 	b.Run("Delete/ByDeployment1", func(b *testing.B) {
