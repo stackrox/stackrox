@@ -624,7 +624,7 @@ func (l *loopImpl) sendReprocessDeployments(skipClusterIDs maputil.SyncMap[strin
 				select {
 				case <-time.After(delay):
 				case <-l.stopSig.Done():
-					log.Warnf("Caught stop signal while waiting to send reprocess deployments to cluster %q", clusterID)
+					log.Infof("Caught stop signal while waiting to send reprocess deployments to cluster %q", clusterID)
 					return
 				}
 			}
