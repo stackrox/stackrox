@@ -805,9 +805,7 @@ module.exports = [
     {
         files: ['src/**/*.{js,jsx,ts,tsx}'],
         ignores: [
-            'src/Containers/Compliance/**', // deprecated
             'src/Containers/VulnMgmt/**', // deprecated
-            'src/Containers/Workflow/**', // deprecated
         ],
 
         // After deprecated folders have been deleted:
