@@ -39,25 +39,74 @@ func BenchmarkAddIndicator(b *testing.B) {
 	}
 }
 
-func BenchmarkSearchIndicator(b *testing.B) {
-	// Create a randomized distribution of deployments (55/25/20)
-	deployments := make([]string, 0, 10000)
-	deployments = append(deployments, makeStringSlice(fixtureconsts.Deployment1, 5500)...)
-	deployments = append(deployments, makeStringSlice(fixtureconsts.Deployment2, 2500)...)
-	deployments = append(deployments, makeStringSlice(fixtureconsts.Deployment3, 2000)...)
+func BenchmarkProcessIndicators(b *testing.B) {
+	// Create pod IDs
+	podID1 := uuid.NewV4().String()
+	podID2 := uuid.NewV4().String()
+	podID3 := uuid.NewV4().String()
 
-	// Shuffle to randomize the distribution
-	rand.Shuffle(len(deployments), func(i, j int) {
-		deployments[i], deployments[j] = deployments[j], deployments[i]
-	})
+	// Create indicators with both deployment (55/25/20) and pod distribution (55/25/20)
+	// This creates a matrix where we have all combinations
+	var allIndicators []*storage.ProcessIndicator
 
-	var indicators []*storage.ProcessIndicator
-	for i := 0; i < 10000; i++ {
+	// Deployment1: 5,500 total
+	//   PodID1: 3,025 (55%)
+	//   PodID2: 1,375 (25%)
+	//   PodID3: 1,100 (20%)
+	for i := 0; i < 5500; i++ {
 		pi := fixtures.GetProcessIndicator()
 		pi.Id = uuid.NewV4().String()
-		pi.DeploymentId = deployments[i]
-		indicators = append(indicators, pi)
+		pi.DeploymentId = fixtureconsts.Deployment1
+		if i < 3025 {
+			pi.PodUid = podID1
+		} else if i < 4400 {
+			pi.PodUid = podID2
+		} else {
+			pi.PodUid = podID3
+		}
+		allIndicators = append(allIndicators, pi)
 	}
+
+	// Deployment2: 2,500 total
+	//   PodID1: 1,375 (55%)
+	//   PodID2: 625 (25%)
+	//   PodID3: 500 (20%)
+	for i := 0; i < 2500; i++ {
+		pi := fixtures.GetProcessIndicator()
+		pi.Id = uuid.NewV4().String()
+		pi.DeploymentId = fixtureconsts.Deployment2
+		if i < 1375 {
+			pi.PodUid = podID1
+		} else if i < 2000 {
+			pi.PodUid = podID2
+		} else {
+			pi.PodUid = podID3
+		}
+		allIndicators = append(allIndicators, pi)
+	}
+
+	// Deployment3: 2,000 total
+	//   PodID1: 1,100 (55%)
+	//   PodID2: 500 (25%)
+	//   PodID3: 400 (20%)
+	for i := 0; i < 2000; i++ {
+		pi := fixtures.GetProcessIndicator()
+		pi.Id = uuid.NewV4().String()
+		pi.DeploymentId = fixtureconsts.Deployment3
+		if i < 1100 {
+			pi.PodUid = podID1
+		} else if i < 1600 {
+			pi.PodUid = podID2
+		} else {
+			pi.PodUid = podID3
+		}
+		allIndicators = append(allIndicators, pi)
+	}
+
+	// Shuffle to randomize the distribution
+	rand.Shuffle(len(allIndicators), func(i, j int) {
+		allIndicators[i], allIndicators[j] = allIndicators[j], allIndicators[i]
+	})
 
 	db := pgtest.ForT(b)
 	store := postgresStore.New(db)
@@ -66,11 +115,13 @@ func BenchmarkSearchIndicator(b *testing.B) {
 	datastore := New(db, store, plopStore, nil)
 
 	ctx := sac.WithAllAccess(context.Background())
-	// Add the data first.
-	err := datastore.AddProcessIndicators(ctx, indicators...)
+	// Add all data once
+	err := datastore.AddProcessIndicators(ctx, allIndicators...)
 	require.NoError(b, err)
 
-	b.Run("Deployment1", func(b *testing.B) {
+	// ==================== SEARCH PHASE ====================
+	// Search benchmarks - non-destructive, can run multiple times
+	b.Run("Search/ByDeployment1", func(b *testing.B) {
 		query := search.NewQueryBuilder().AddExactMatches(search.DeploymentID, fixtureconsts.Deployment1).ProtoQuery()
 		b.ResetTimer()
 		for i := 0; i < b.N; i++ {
@@ -80,7 +131,7 @@ func BenchmarkSearchIndicator(b *testing.B) {
 		}
 	})
 
-	b.Run("Deployment2", func(b *testing.B) {
+	b.Run("Search/ByDeployment2", func(b *testing.B) {
 		query := search.NewQueryBuilder().AddExactMatches(search.DeploymentID, fixtureconsts.Deployment2).ProtoQuery()
 		b.ResetTimer()
 		for i := 0; i < b.N; i++ {
@@ -90,7 +141,7 @@ func BenchmarkSearchIndicator(b *testing.B) {
 		}
 	})
 
-	b.Run("Deployment3", func(b *testing.B) {
+	b.Run("Search/ByDeployment3", func(b *testing.B) {
 		query := search.NewQueryBuilder().AddExactMatches(search.DeploymentID, fixtureconsts.Deployment3).ProtoQuery()
 		b.ResetTimer()
 		for i := 0; i < b.N; i++ {
@@ -99,44 +150,8 @@ func BenchmarkSearchIndicator(b *testing.B) {
 			require.True(b, len(results) > 0)
 		}
 	})
-}
 
-func BenchmarkSearchIndicatorByPodID(b *testing.B) {
-	podID1 := uuid.NewV4().String()
-	podID2 := uuid.NewV4().String()
-	podID3 := uuid.NewV4().String()
-
-	// Create a randomized distribution of pod IDs (55/25/20)
-	podIDs := make([]string, 0, 10000)
-	podIDs = append(podIDs, makeStringSlice(podID1, 5500)...)
-	podIDs = append(podIDs, makeStringSlice(podID2, 2500)...)
-	podIDs = append(podIDs, makeStringSlice(podID3, 2000)...)
-
-	// Shuffle to randomize the distribution
-	rand.Shuffle(len(podIDs), func(i, j int) {
-		podIDs[i], podIDs[j] = podIDs[j], podIDs[i]
-	})
-
-	var indicators []*storage.ProcessIndicator
-	for i := 0; i < 10000; i++ {
-		pi := fixtures.GetProcessIndicator()
-		pi.Id = uuid.NewV4().String()
-		pi.PodUid = podIDs[i]
-		indicators = append(indicators, pi)
-	}
-
-	db := pgtest.ForT(b)
-	store := postgresStore.New(db)
-	plopStore := plopStore.New(db)
-
-	datastore := New(db, store, plopStore, nil)
-
-	ctx := sac.WithAllAccess(context.Background())
-	// Add the data first.
-	err := datastore.AddProcessIndicators(ctx, indicators...)
-	require.NoError(b, err)
-
-	b.Run("PodID1", func(b *testing.B) {
+	b.Run("Search/ByPodID1", func(b *testing.B) {
 		query := search.NewQueryBuilder().AddExactMatches(search.PodUID, podID1).ProtoQuery()
 		b.ResetTimer()
 		for i := 0; i < b.N; i++ {
@@ -146,7 +161,7 @@ func BenchmarkSearchIndicatorByPodID(b *testing.B) {
 		}
 	})
 
-	b.Run("PodID2", func(b *testing.B) {
+	b.Run("Search/ByPodID2", func(b *testing.B) {
 		query := search.NewQueryBuilder().AddExactMatches(search.PodUID, podID2).ProtoQuery()
 		b.ResetTimer()
 		for i := 0; i < b.N; i++ {
@@ -156,7 +171,7 @@ func BenchmarkSearchIndicatorByPodID(b *testing.B) {
 		}
 	})
 
-	b.Run("PodID3", func(b *testing.B) {
+	b.Run("Search/ByPodID3", func(b *testing.B) {
 		query := search.NewQueryBuilder().AddExactMatches(search.PodUID, podID3).ProtoQuery()
 		b.ResetTimer()
 		for i := 0; i < b.N; i++ {
@@ -165,135 +180,46 @@ func BenchmarkSearchIndicatorByPodID(b *testing.B) {
 			require.True(b, len(results) > 0)
 		}
 	})
-}
 
-func BenchmarkDeleteIndicatorByDeployment(b *testing.B) {
-	// Create a randomized distribution of deployments (55/25/20)
-	deployments := make([]string, 0, 10000)
-	deployments = append(deployments, makeStringSlice(fixtureconsts.Deployment1, 5500)...)
-	deployments = append(deployments, makeStringSlice(fixtureconsts.Deployment2, 2500)...)
-	deployments = append(deployments, makeStringSlice(fixtureconsts.Deployment3, 2000)...)
-
-	// Shuffle to randomize the distribution
-	rand.Shuffle(len(deployments), func(i, j int) {
-		deployments[i], deployments[j] = deployments[j], deployments[i]
-	})
-
-	var indicators []*storage.ProcessIndicator
-	for i := 0; i < 10000; i++ {
-		pi := fixtures.GetProcessIndicator()
-		pi.Id = uuid.NewV4().String()
-		pi.DeploymentId = deployments[i]
-		indicators = append(indicators, pi)
-	}
-
-	db := pgtest.ForT(b)
-	store := postgresStore.New(db)
-	plopStore := plopStore.New(db)
-
-	datastore := New(db, store, plopStore, nil)
-
-	ctx := sac.WithAllAccess(context.Background())
-	// Add the data first.
-	err := datastore.AddProcessIndicators(ctx, indicators...)
+	// ==================== DELETE PHASE ====================
+	// Simple delete benchmarks - measure the actual delete operation without re-add overhead
+	// Collect data to delete after searches are complete
+	d1Query := search.NewQueryBuilder().
+		AddExactMatches(search.DeploymentID, fixtureconsts.Deployment1).
+		ProtoQuery()
+	d1Results, err := datastore.SearchRawProcessIndicators(ctx, d1Query)
 	require.NoError(b, err)
+	require.True(b, len(d1Results) > 0)
 
-	// Group indicators by deployment for deletion
-	deployment1Indicators := make([]string, 0, 5500)
-	deployment2Indicators := make([]string, 0, 2500)
-	deployment3Indicators := make([]string, 0, 2000)
-
-	for _, indicator := range indicators {
-		switch indicator.DeploymentId {
-		case fixtureconsts.Deployment1:
-			deployment1Indicators = append(deployment1Indicators, indicator.Id)
-		case fixtureconsts.Deployment2:
-			deployment2Indicators = append(deployment2Indicators, indicator.Id)
-		case fixtureconsts.Deployment3:
-			deployment3Indicators = append(deployment3Indicators, indicator.Id)
-		}
+	d1DeleteIDs := make([]string, len(d1Results))
+	for i, r := range d1Results {
+		d1DeleteIDs[i] = r.Id
 	}
 
-	b.Run("Deployment1", func(b *testing.B) {
-		b.ResetTimer()
-		for i := 0; i < b.N; i++ {
-			err := datastore.RemoveProcessIndicators(ctx, deployment1Indicators)
-			require.NoError(b, err)
-		}
-	})
-
-	b.Run("Deployment2", func(b *testing.B) {
-		b.ResetTimer()
-		for i := 0; i < b.N; i++ {
-			err := datastore.RemoveProcessIndicators(ctx, deployment2Indicators)
-			require.NoError(b, err)
-		}
-	})
-
-	b.Run("Deployment3", func(b *testing.B) {
-		b.ResetTimer()
-		for i := 0; i < b.N; i++ {
-			err := datastore.RemoveProcessIndicators(ctx, deployment3Indicators)
-			require.NoError(b, err)
-		}
-	})
-}
-
-func BenchmarkDeleteIndicatorByPodID(b *testing.B) {
-	podID1 := uuid.NewV4().String()
-	podID2 := uuid.NewV4().String()
-	podID3 := uuid.NewV4().String()
-
-	// Create a randomized distribution of pod IDs (55/25/20)
-	podIDs := make([]string, 0, 10000)
-	podIDs = append(podIDs, makeStringSlice(podID1, 5500)...)
-	podIDs = append(podIDs, makeStringSlice(podID2, 2500)...)
-	podIDs = append(podIDs, makeStringSlice(podID3, 2000)...)
-
-	// Shuffle to randomize the distribution
-	rand.Shuffle(len(podIDs), func(i, j int) {
-		podIDs[i], podIDs[j] = podIDs[j], podIDs[i]
-	})
-
-	var indicators []*storage.ProcessIndicator
-	for i := 0; i < 10000; i++ {
-		pi := fixtures.GetProcessIndicator()
-		pi.Id = uuid.NewV4().String()
-		pi.PodUid = podIDs[i]
-		indicators = append(indicators, pi)
-	}
-
-	db := pgtest.ForT(b)
-	store := postgresStore.New(db)
-	plopStore := plopStore.New(db)
-
-	datastore := New(db, store, plopStore, nil)
-
-	ctx := sac.WithAllAccess(context.Background())
-	// Add the data first.
-	err := datastore.AddProcessIndicators(ctx, indicators...)
+	p2Query := search.NewQueryBuilder().
+		AddExactMatches(search.PodUID, podID2).
+		ProtoQuery()
+	p2Results, err := datastore.SearchRawProcessIndicators(ctx, p2Query)
 	require.NoError(b, err)
+	require.True(b, len(p2Results) > 0)
 
-	b.Run("PodID1", func(b *testing.B) {
+	p2DeleteIDs := make([]string, len(p2Results))
+	for i, r := range p2Results {
+		p2DeleteIDs[i] = r.Id
+	}
+
+	b.Run("Delete/ByDeployment1", func(b *testing.B) {
 		b.ResetTimer()
 		for i := 0; i < b.N; i++ {
-			err := datastore.RemoveProcessIndicatorsByPod(ctx, podID1)
+			err := datastore.RemoveProcessIndicators(ctx, d1DeleteIDs)
 			require.NoError(b, err)
 		}
 	})
 
-	b.Run("PodID2", func(b *testing.B) {
+	b.Run("Delete/ByPodID2", func(b *testing.B) {
 		b.ResetTimer()
 		for i := 0; i < b.N; i++ {
-			err := datastore.RemoveProcessIndicatorsByPod(ctx, podID2)
-			require.NoError(b, err)
-		}
-	})
-
-	b.Run("PodID3", func(b *testing.B) {
-		b.ResetTimer()
-		for i := 0; i < b.N; i++ {
-			err := datastore.RemoveProcessIndicatorsByPod(ctx, podID3)
+			err := datastore.RemoveProcessIndicators(ctx, p2DeleteIDs)
 			require.NoError(b, err)
 		}
 	})
