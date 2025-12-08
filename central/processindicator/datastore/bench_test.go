@@ -219,7 +219,14 @@ func BenchmarkProcessIndicators(b *testing.B) {
 	b.Run("Delete/ByDeployment1", func(b *testing.B) {
 		b.ResetTimer()
 		for i := 0; i < b.N; i++ {
-			err := datastore.RemoveProcessIndicators(ctx, d1DeleteIDs)
+			b.StopTimer()
+			// Re-add before each iteration
+			err := datastore.AddProcessIndicators(ctx, d1Results...)
+			require.NoError(b, err)
+			b.StartTimer()
+
+			// Delete
+			err = datastore.RemoveProcessIndicators(ctx, d1DeleteIDs)
 			require.NoError(b, err)
 		}
 	})
@@ -227,16 +234,15 @@ func BenchmarkProcessIndicators(b *testing.B) {
 	b.Run("Delete/ByD1PodID2", func(b *testing.B) {
 		b.ResetTimer()
 		for i := 0; i < b.N; i++ {
-			err := datastore.RemoveProcessIndicators(ctx, d1PodID2DeleteIDs)
+			b.StopTimer()
+			// Re-add before each iteration
+			err := datastore.AddProcessIndicators(ctx, d1PodID2Results...)
+			require.NoError(b, err)
+			b.StartTimer()
+
+			// Delete
+			err = datastore.RemoveProcessIndicators(ctx, d1PodID2DeleteIDs)
 			require.NoError(b, err)
 		}
 	})
-}
-
-func makeStringSlice(s string, count int) []string {
-	result := make([]string, count)
-	for i := 0; i < count; i++ {
-		result[i] = s
-	}
-	return result
 }
