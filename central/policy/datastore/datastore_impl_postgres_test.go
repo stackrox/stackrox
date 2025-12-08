@@ -400,7 +400,7 @@ func (s *PolicyPostgresDataStoreTestSuite) TestAddDefaultsDeduplicatesCategoryNa
 	// These are the incorrect names: "Docker Cis" and "Devops Best Practices"
 	categoryStorage := categoryPostgres.New(s.db)
 	edgeStorage := edgePostgres.New(s.db)
-	edgeDS := policyCategoryEdgeDS.New(edgeStorage)
+	edgeDS := policyCategoryEdgeDS.New(edgeStorage, edgeSearch.New(edgeStorage))
 
 	dockerCisCategory := &storage.PolicyCategory{
 		Id:        uuid.NewV4().String(),
