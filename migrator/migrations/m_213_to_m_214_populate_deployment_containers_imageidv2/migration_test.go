@@ -43,6 +43,8 @@ func (s *migrationTestSuite) SetupSuite() {
 }
 
 func (s *migrationTestSuite) TestMigration() {
+	// Test with multiple batch sizes to catch edge cases where the number of rows in the DB is on the threshold of the
+	// batch size
 	for _, i := range []int{3, 4, 5} {
 		s.Run(fmt.Sprintf("Batch size of %d", i), func() {
 			batchSize = i
