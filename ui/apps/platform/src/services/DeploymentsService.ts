@@ -131,27 +131,6 @@ export type ListDeploymentWithProcessInfo = {
     baselineStatuses: ContainerNameAndBaselineStatus[];
 };
 
-/**
- * Fetches count of registered deployments.
- */
-export function fetchDeploymentsCountLegacy(options: RestSearchOption[]): Promise<number> {
-    let searchOptions: RestSearchOption[] = options;
-    if (shouldHideOrchestratorComponents()) {
-        searchOptions = [...options, ...orchestratorComponentsOption];
-    }
-    const query = searchOptionsToQuery(searchOptions);
-    const queryObject =
-        searchOptions.length > 0
-            ? {
-                  query,
-              }
-            : {};
-    const params = queryString.stringify(queryObject, { arrayFormat: 'repeat' });
-    return axios
-        .get<{ count: number }>(`${deploymentsCountUrl}?${params}`)
-        .then((response) => response?.data?.count ?? 0);
-}
-
 export function fetchDeploymentsCount(searchFilter: SearchFilter): Promise<number> {
     const query = getRequestQueryStringForSearchFilter(searchFilter);
     const queryObject = query ? { query } : {};
