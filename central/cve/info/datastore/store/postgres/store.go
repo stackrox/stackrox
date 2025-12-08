@@ -21,13 +21,13 @@ import (
 )
 
 const (
-	baseTable = "image_cve_info"
+	baseTable = "image_cve_infos"
 	storeName = "ImageCVEInfo"
 )
 
 var (
 	log            = logging.LoggerForModule()
-	schema         = pkgSchema.ImageCveInfoSchema
+	schema         = pkgSchema.ImageCveInfosSchema
 	targetResource = resources.Image
 )
 
@@ -51,9 +51,6 @@ type Store interface {
 	Search(ctx context.Context, q *v1.Query) ([]search.Result, error)
 
 	Get(ctx context.Context, id string) (*storeType, bool, error)
-	// Deprecated: use GetByQueryFn instead
-	GetByQuery(ctx context.Context, query *v1.Query) ([]*storeType, error)
-	GetByQueryFn(ctx context.Context, query *v1.Query, fn callback) error
 	GetMany(ctx context.Context, identifiers []string) ([]*storeType, []int, error)
 	GetIDs(ctx context.Context) ([]string, error)
 
@@ -67,8 +64,8 @@ func New(db postgres.DB) Store {
 		db,
 		schema,
 		pkGetter,
-		insertIntoImageCveInfo,
-		copyFromImageCveInfo,
+		insertIntoImageCveInfos,
+		copyFromImageCveInfos,
 		metricsSetAcquireDBConnDuration,
 		metricsSetPostgresOperationDurationTime,
 		targetResource,
@@ -91,7 +88,7 @@ func metricsSetAcquireDBConnDuration(start time.Time, op ops.Op) {
 	metrics.SetAcquireDBConnDuration(start, op, storeName)
 }
 
-func insertIntoImageCveInfo(batch *pgx.Batch, obj *storage.ImageCVEInfo) error {
+func insertIntoImageCveInfos(batch *pgx.Batch, obj *storage.ImageCVEInfo) error {
 
 	serialized, marshalErr := obj.MarshalVT()
 	if marshalErr != nil {
@@ -106,13 +103,13 @@ func insertIntoImageCveInfo(batch *pgx.Batch, obj *storage.ImageCVEInfo) error {
 		serialized,
 	}
 
-	finalStr := "INSERT INTO image_cve_info (Id, FixTimestampAvailable, FirstSystemOccurence, serialized) VALUES($1, $2, $3, $4) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, FixTimestampAvailable = EXCLUDED.FixTimestampAvailable, FirstSystemOccurence = EXCLUDED.FirstSystemOccurence, serialized = EXCLUDED.serialized"
+	finalStr := "INSERT INTO image_cve_infos (Id, FixTimestampAvailable, FirstSystemOccurence, serialized) VALUES($1, $2, $3, $4) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, FixTimestampAvailable = EXCLUDED.FixTimestampAvailable, FirstSystemOccurence = EXCLUDED.FirstSystemOccurence, serialized = EXCLUDED.serialized"
 	batch.Queue(finalStr, values...)
 
 	return nil
 }
 
-func copyFromImageCveInfo(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, objs ...*storage.ImageCVEInfo) error {
+func copyFromImageCveInfos(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, objs ...*storage.ImageCVEInfo) error {
 	if len(objs) == 0 {
 		return nil
 	}
@@ -157,7 +154,7 @@ func copyFromImageCveInfo(ctx context.Context, s pgSearch.Deleter, tx *postgres.
 		}, nil
 	})
 
-	if _, err := tx.CopyFrom(ctx, pgx.Identifier{"image_cve_info"}, copyCols, inputRows); err != nil {
+	if _, err := tx.CopyFrom(ctx, pgx.Identifier{"image_cve_infos"}, copyCols, inputRows); err != nil {
 		return err
 	}
 
