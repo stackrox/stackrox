@@ -21,6 +21,9 @@ func copyScopingInfo(alert *storage.Alert) *storage.Alert {
 		alert.ClusterId = entity.Resource.GetClusterId()
 		alert.Namespace = entity.Resource.GetNamespace()
 		alert.NamespaceId = entity.Resource.GetNamespaceId()
+	case *storage.Alert_Node_:
+		alert.ClusterId = entity.Node.GetClusterId()
+		alert.ClusterName = entity.Node.GetClusterName()
 	}
 	return alert
 }
@@ -437,7 +440,9 @@ func GetJSONSerializedTestAlert() string {
 func GetNodeAlert() *storage.Alert {
 	return copyScopingInfo(&storage.Alert{
 		Id:             fixtureconsts.Alert1,
+		Violations:     []*storage.Alert_Violation{},
 		Time:           protocompat.TimestampNow(),
+		Policy:         GetNodePolicy(),
 		LifecycleStage: storage.LifecycleStage_RUNTIME,
 		Entity: &storage.Alert_Node_{
 			Node: &storage.Alert_Node{
@@ -448,4 +453,43 @@ func GetNodeAlert() *storage.Alert {
 			},
 		},
 	})
+}
+
+func GetFileAccessAlert(alert *storage.Alert) *storage.Alert {
+	alert.FileAccessViolation = &storage.Alert_FileAccessViolation{
+		Message: "'/etc/passwd' accessed (OPEN); '/etc/shadow' accessed (OPEN, WRITE)",
+		Accesses: []*storage.FileAccess{
+			{
+				File: &storage.FileAccess_File{
+					NodePath: "/etc/passwd",
+				},
+				Operation: storage.FileAccess_OPEN,
+				Timestamp: protocompat.TimestampNow(),
+			},
+			{
+				File: &storage.FileAccess_File{
+					NodePath: "/etc/shadow",
+				},
+				Operation: storage.FileAccess_OPEN,
+				Timestamp: protocompat.TimestampNow(),
+			},
+			{
+				File: &storage.FileAccess_File{
+					NodePath: "/etc/shadow",
+				},
+				Operation: storage.FileAccess_WRITE,
+				Timestamp: protocompat.TimestampNow(),
+			},
+		},
+	}
+
+	return alert
+}
+
+func GetNodeFileAccessAlert() *storage.Alert {
+	return GetFileAccessAlert(GetNodeAlert())
+}
+
+func GetDeploymentFileAccessAlert() *storage.Alert {
+	return GetFileAccessAlert(GetScopedDeploymentAlert(fixtureconsts.Alert1, fixtureconsts.Cluster1, "stackrox"))
 }
