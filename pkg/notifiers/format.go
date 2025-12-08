@@ -54,6 +54,9 @@ const bplPolicyFormat = `
 	{{if .ProcessViolation}}
 		{{list .ProcessViolation.Message}}
 	{{end}}
+	{{if .FileAccessViolation}}
+		{{list .FileAccessViolation.Message}}
+	{{end}}
 {{header "Policy Definition:"}}
 	{{"Description:" | subheader}}
 	{{.Policy.Description | list}}
@@ -96,6 +99,13 @@ const bplPolicyFormat = `
 	{{stringify "Cluster:" .GetResource.ClusterName | list}}
 	{{stringify "ClusterId:" .GetResource.ClusterId | list}}
 	{{if .GetResource.Namespace }}{{stringify "Namespace:" .GetResource.Namespace | list}}{{end}}
+{{end}}
+
+{{if .GetNode}}{{line ""}}{{header "Node:"}}
+	{{stringify "Name:" .GetNode.Name | list}}
+	{{stringify "Id:" .GetNode.Id | list}}
+	{{stringify "Cluster:" .GetNode.ClusterName | list}}
+	{{stringify "ClusterId:" .GetNode.ClusterId | list}}
 {{end}}
 
 {{if .GetImage}}{{line ""}}{{header "Image:"}}
@@ -176,6 +186,8 @@ func SummaryForAlert(alert *storage.Alert) string {
 		return fmt.Sprintf("Image %s violates '%s' Policy", types.Wrapper{GenericImage: entity.Image}.FullName(), alert.GetPolicy().GetName())
 	case *storage.Alert_Resource_:
 		return fmt.Sprintf("Policy '%s' violated in cluster %s", alert.GetPolicy().GetName(), alert.GetResource().GetClusterName())
+	case *storage.Alert_Node_:
+		return fmt.Sprintf("Node %s (in cluster %s) violates '%s' Policy", entity.Node.GetName(), entity.Node.GetClusterName(), alert.GetPolicy().GetName())
 	}
 	return fmt.Sprintf("Policy '%s' violated", alert.GetPolicy().GetName())
 }
