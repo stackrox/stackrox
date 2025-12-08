@@ -1,7 +1,8 @@
-import React, { ReactElement } from 'react';
+import React from 'react';
+import type { ReactElement } from 'react';
 
 import TileLink from 'Components/TileLink';
-import { VulnerabilityManagementEntityType } from 'utils/entityRelationships';
+import type { VulnerabilityManagementEntityType } from 'utils/entityRelationships';
 
 /*
  * OrdinaryCase for consistency with entityCountNounOrdinaryCase
