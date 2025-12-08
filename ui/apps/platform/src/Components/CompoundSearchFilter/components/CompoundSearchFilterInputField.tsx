@@ -1,11 +1,13 @@
 import { Fragment } from 'react';
 import {
+    Button,
     Divider,
     SearchInput,
     SelectGroup,
     SelectList,
     SelectOption,
 } from '@patternfly/react-core';
+import { ArrowRightIcon } from '@patternfly/react-icons';
 
 import type { SearchFilter } from 'types/search';
 import CheckboxSelect from 'Components/CheckboxSelect';
@@ -156,28 +158,39 @@ function CompoundSearchFilterInputField({
         const { searchCategory } = entity;
         const { searchTerm, filterChipLabel } = attribute;
         const textLabel = `Filter results by ${filterChipLabel}`;
+
+        const handleSearch = (newValue: string) => {
+            onSearch([
+                {
+                    action: 'APPEND',
+                    category: attribute.searchTerm,
+                    value: newValue,
+                },
+            ]);
+            onChange('');
+        };
         return (
-            <SearchFilterAutocomplete
-                searchCategory={searchCategory}
-                searchTerm={searchTerm}
-                value={ensureString(value)}
-                onChange={(newValue) => {
-                    onChange(newValue);
-                }}
-                onSearch={(newValue) => {
-                    onSearch([
-                        {
-                            action: 'APPEND',
-                            category: attribute.searchTerm,
-                            value: newValue,
-                        },
-                    ]);
-                    onChange('');
-                }}
-                textLabel={textLabel}
-                searchFilter={searchFilter}
-                additionalContextFilter={additionalContextFilter}
-            />
+            <>
+                <SearchFilterAutocomplete
+                    searchCategory={searchCategory}
+                    searchTerm={searchTerm}
+                    value={ensureString(value)}
+                    onChange={(newValue) => {
+                        onChange(newValue);
+                    }}
+                    onSearch={handleSearch}
+                    textLabel={textLabel}
+                    searchFilter={searchFilter}
+                    additionalContextFilter={additionalContextFilter}
+                />
+                <Button
+                    variant="control"
+                    aria-label="Apply autocomplete input to search"
+                    onClick={() => handleSearch(ensureString(value))}
+                >
+                    <ArrowRightIcon />
+                </Button>
+            </>
         );
     }
     if (isSelectType(attribute)) {
