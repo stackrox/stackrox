@@ -41,6 +41,7 @@ func request_NetworkPolicyService_GetNetworkPolicy_0(ctx context.Context, marsha
 		metadata runtime.ServerMetadata
 		err      error
 	)
+	io.Copy(io.Discard, req.Body)
 	val, ok := pathParams["id"]
 	if !ok {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "id")
@@ -78,6 +79,7 @@ func request_NetworkPolicyService_GetNetworkPolicies_0(ctx context.Context, mars
 		protoReq GetNetworkPoliciesRequest
 		metadata runtime.ServerMetadata
 	)
+	io.Copy(io.Discard, req.Body)
 	if err := req.ParseForm(); err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
@@ -111,6 +113,7 @@ func request_NetworkPolicyService_GetNetworkGraph_0(ctx context.Context, marshal
 		metadata runtime.ServerMetadata
 		err      error
 	)
+	io.Copy(io.Discard, req.Body)
 	val, ok := pathParams["cluster_id"]
 	if !ok {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "cluster_id")
@@ -160,6 +163,7 @@ func request_NetworkPolicyService_GetNetworkGraphEpoch_0(ctx context.Context, ma
 		protoReq GetNetworkGraphEpochRequest
 		metadata runtime.ServerMetadata
 	)
+	io.Copy(io.Discard, req.Body)
 	if err := req.ParseForm(); err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
@@ -233,6 +237,7 @@ func request_NetworkPolicyService_GetUndoModification_0(ctx context.Context, mar
 		metadata runtime.ServerMetadata
 		err      error
 	)
+	io.Copy(io.Discard, req.Body)
 	val, ok := pathParams["cluster_id"]
 	if !ok {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "cluster_id")
@@ -383,6 +388,7 @@ func request_NetworkPolicyService_GenerateNetworkPolicies_0(ctx context.Context,
 		metadata runtime.ServerMetadata
 		err      error
 	)
+	io.Copy(io.Discard, req.Body)
 	val, ok := pathParams["cluster_id"]
 	if !ok {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "cluster_id")
@@ -473,6 +479,7 @@ func request_NetworkPolicyService_GetAllowedPeersFromCurrentPolicyForDeployment_
 		metadata runtime.ServerMetadata
 		err      error
 	)
+	io.Copy(io.Discard, req.Body)
 	val, ok := pathParams["id"]
 	if !ok {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "id")
@@ -551,6 +558,7 @@ func request_NetworkPolicyService_GetUndoModificationForDeployment_0(ctx context
 		metadata runtime.ServerMetadata
 		err      error
 	)
+	io.Copy(io.Discard, req.Body)
 	val, ok := pathParams["id"]
 	if !ok {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "id")
@@ -587,6 +595,7 @@ func request_NetworkPolicyService_GetDiffFlowsBetweenPolicyAndBaselineForDeploym
 		metadata runtime.ServerMetadata
 		err      error
 	)
+	io.Copy(io.Discard, req.Body)
 	val, ok := pathParams["id"]
 	if !ok {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "id")
@@ -623,6 +632,7 @@ func request_NetworkPolicyService_GetDiffFlowsFromUndoModificationForDeployment_
 		metadata runtime.ServerMetadata
 		err      error
 	)
+	io.Copy(io.Discard, req.Body)
 	val, ok := pathParams["id"]
 	if !ok {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "id")

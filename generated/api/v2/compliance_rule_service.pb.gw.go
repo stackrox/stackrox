@@ -43,6 +43,7 @@ func request_ComplianceRuleService_GetComplianceRule_0(ctx context.Context, mars
 		metadata runtime.ServerMetadata
 		err      error
 	)
+	io.Copy(io.Discard, req.Body)
 	val, ok := pathParams["rule_name"]
 	if !ok {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "rule_name")

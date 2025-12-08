@@ -42,6 +42,7 @@ func request_ProcessBaselineService_GetProcessBaseline_0(ctx context.Context, ma
 		protoReq GetProcessBaselineRequest
 		metadata runtime.ServerMetadata
 	)
+	io.Copy(io.Discard, req.Body)
 	if err := req.ParseForm(); err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
@@ -122,6 +123,7 @@ func request_ProcessBaselineService_DeleteProcessBaselines_0(ctx context.Context
 		protoReq DeleteProcessBaselinesRequest
 		metadata runtime.ServerMetadata
 	)
+	io.Copy(io.Discard, req.Body)
 	if err := req.ParseForm(); err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}

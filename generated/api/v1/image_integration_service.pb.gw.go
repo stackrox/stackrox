@@ -42,6 +42,7 @@ func request_ImageIntegrationService_GetImageIntegration_0(ctx context.Context, 
 		metadata runtime.ServerMetadata
 		err      error
 	)
+	io.Copy(io.Discard, req.Body)
 	val, ok := pathParams["id"]
 	if !ok {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "id")
@@ -79,6 +80,7 @@ func request_ImageIntegrationService_GetImageIntegrations_0(ctx context.Context,
 		protoReq GetImageIntegrationsRequest
 		metadata runtime.ServerMetadata
 	)
+	io.Copy(io.Discard, req.Body)
 	if err := req.ParseForm(); err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
@@ -200,6 +202,7 @@ func request_ImageIntegrationService_DeleteImageIntegration_0(ctx context.Contex
 		metadata runtime.ServerMetadata
 		err      error
 	)
+	io.Copy(io.Discard, req.Body)
 	val, ok := pathParams["id"]
 	if !ok {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "id")

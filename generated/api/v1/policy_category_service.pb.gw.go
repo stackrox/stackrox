@@ -41,6 +41,7 @@ func request_PolicyCategoryService_GetPolicyCategory_0(ctx context.Context, mars
 		metadata runtime.ServerMetadata
 		err      error
 	)
+	io.Copy(io.Discard, req.Body)
 	val, ok := pathParams["id"]
 	if !ok {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "id")
@@ -78,6 +79,7 @@ func request_PolicyCategoryService_GetPolicyCategories_0(ctx context.Context, ma
 		protoReq RawQuery
 		metadata runtime.ServerMetadata
 	)
+	io.Copy(io.Discard, req.Body)
 	if err := req.ParseForm(); err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
@@ -157,6 +159,7 @@ func request_PolicyCategoryService_DeletePolicyCategory_0(ctx context.Context, m
 		metadata runtime.ServerMetadata
 		err      error
 	)
+	io.Copy(io.Discard, req.Body)
 	val, ok := pathParams["id"]
 	if !ok {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "id")

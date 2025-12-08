@@ -43,6 +43,7 @@ func request_ImageService_GetImage_0(ctx context.Context, marshaler runtime.Mars
 		metadata runtime.ServerMetadata
 		err      error
 	)
+	io.Copy(io.Discard, req.Body)
 	val, ok := pathParams["id"]
 	if !ok {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "id")
@@ -92,6 +93,7 @@ func request_ImageService_CountImages_0(ctx context.Context, marshaler runtime.M
 		protoReq RawQuery
 		metadata runtime.ServerMetadata
 	)
+	io.Copy(io.Discard, req.Body)
 	if err := req.ParseForm(); err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
@@ -124,6 +126,7 @@ func request_ImageService_ListImages_0(ctx context.Context, marshaler runtime.Ma
 		protoReq RawQuery
 		metadata runtime.ServerMetadata
 	)
+	io.Copy(io.Discard, req.Body)
 	if err := req.ParseForm(); err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
@@ -178,6 +181,7 @@ func request_ImageService_InvalidateScanAndRegistryCaches_0(ctx context.Context,
 		protoReq Empty
 		metadata runtime.ServerMetadata
 	)
+	io.Copy(io.Discard, req.Body)
 	msg, err := client.InvalidateScanAndRegistryCaches(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
 	return msg, metadata, err
 }
@@ -198,6 +202,7 @@ func request_ImageService_DeleteImages_0(ctx context.Context, marshaler runtime.
 		protoReq DeleteImagesRequest
 		metadata runtime.ServerMetadata
 	)
+	io.Copy(io.Discard, req.Body)
 	if err := req.ParseForm(); err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
@@ -254,6 +259,7 @@ func request_ImageService_UnwatchImage_0(ctx context.Context, marshaler runtime.
 		protoReq UnwatchImageRequest
 		metadata runtime.ServerMetadata
 	)
+	io.Copy(io.Discard, req.Body)
 	if err := req.ParseForm(); err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
@@ -284,6 +290,7 @@ func request_ImageService_GetWatchedImages_0(ctx context.Context, marshaler runt
 		protoReq Empty
 		metadata runtime.ServerMetadata
 	)
+	io.Copy(io.Discard, req.Body)
 	msg, err := client.GetWatchedImages(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
 	return msg, metadata, err
 }
@@ -304,6 +311,7 @@ func request_ImageService_ExportImages_0(ctx context.Context, marshaler runtime.
 		protoReq ExportImageRequest
 		metadata runtime.ServerMetadata
 	)
+	io.Copy(io.Discard, req.Body)
 	if err := req.ParseForm(); err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
