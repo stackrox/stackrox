@@ -61,6 +61,7 @@ func init() {
 		&storage.ExternalBackup{}:                               resources.Integration,
 		&storage.Group{}:                                        resources.Access,
 		&storage.Hash{}:                                         resources.Hash,
+		&storage.Image{}:                                        resources.Image,
 		&storage.ImageComponentV2{}:                             resources.Image,
 		&storage.ImageCVEV2{}:                                   resources.Image,
 		&storage.ImageIntegration{}:                             resources.Integration,
