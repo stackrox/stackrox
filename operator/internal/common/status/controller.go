@@ -177,20 +177,17 @@ func (r *Reconciler[T]) determineProgressingState(obj T) (platform.ConditionStat
 	}
 
 	// If Deployed condition is Unknown, helm is working
-	cond := obj.GetCondition(platform.ConditionDeployed)
-	if cond.Type == platform.ConditionDeployed && cond.Status != platform.StatusTrue {
+	if cond := obj.GetCondition(platform.ConditionDeployed); cond != nil && cond.Status != platform.StatusTrue {
 		return platform.StatusTrue, "Reconciling", "Reconciliation in progress"
 	}
 
 	// If ReleaseFailed is True, reconciliation failed but might retry
-	cond = obj.GetCondition(platform.ConditionReleaseFailed)
-	if cond.Type == platform.ConditionReleaseFailed && cond.Status == platform.StatusTrue {
+	if cond := obj.GetCondition(platform.ConditionReleaseFailed); cond != nil && cond.Status == platform.StatusTrue {
 		return platform.StatusTrue, "ReleaseFailed", cond.Message
 	}
 
-	// If Irreconcilable is True, there's a problem
-	cond = obj.GetCondition(platform.ConditionIrreconcilable)
-	if cond.Type == platform.ConditionIrreconcilable && cond.Status == platform.StatusTrue {
+	// If Irreconcilable is True, there's a problem.
+	if cond := obj.GetCondition(platform.ConditionIrreconcilable); cond != nil && cond.Status == platform.StatusTrue {
 		return platform.StatusTrue, "Irreconcilable", cond.Message
 	}
 
