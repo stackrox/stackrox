@@ -740,13 +740,13 @@ func TestTransitionBasedProcessBatching(t *testing.T) {
 
 		// Process first update and simulate failure
 		_, procs1 := uc.ComputeUpdatedEndpointsAndProcesses(update1)
-		require.Len(t, procs1, 1)            // Returns proc1
-		uc.OnSendProcessesFailure(procs1)    // Prepend proc1 back to cache
+		require.Len(t, procs1, 1)         // Returns proc1
+		uc.OnSendProcessesFailure(procs1) // Prepend proc1 back to cache
 
 		// Process second update - should return both proc1 (from cache) and proc2 (new)
 		_, procs2 := uc.ComputeUpdatedEndpointsAndProcesses(update2)
-		require.Len(t, procs2, 2)            // Returns [proc1, proc2]
-		uc.OnSendProcessesFailure(procs2)    // Prepend both back to cache
+		require.Len(t, procs2, 2)         // Returns [proc1, proc2]
+		uc.OnSendProcessesFailure(procs2) // Prepend both back to cache
 
 		// Process third update - should return all three
 		_, procs3 := uc.ComputeUpdatedEndpointsAndProcesses(update3)
