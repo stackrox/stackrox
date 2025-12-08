@@ -2343,9 +2343,9 @@ func (x *CVSSV3) GetSeverity() CVSSV3_Severity {
 
 type ImageCVEInfo struct {
 	state                 protoimpl.MessageState `protogen:"open.v1"`
-	Id                    string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" search:"CVE" sql:"pk"`                                                                      // @gotags: search:"CVE" sql:"pk"
-	FixTimestampAvailable *timestamppb.Timestamp `protobuf:"bytes,4,opt,name=fix_timestamp_available,json=fixTimestampAvailable,proto3" json:"fix_timestamp_available,omitempty" search:"Fixable Since Timestamp,hidden"` // @gotags: search:"Fixable Since Timestamp,hidden"
-	FirstSystemOccurence  *timestamppb.Timestamp `protobuf:"bytes,9,opt,name=first_system_occurence,json=firstSystemOccurence,proto3" json:"first_system_occurence,omitempty" search:"First Image Occurrence Timestamp,hidden"`    // @gotags: search:"First Image Occurrence Timestamp,hidden"
+	Id                    string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" search:"CVE Info" sql:"pk"`                                                                      // @gotags: search:"CVE Info" sql:"pk"
+	FixTimestampAvailable *timestamppb.Timestamp `protobuf:"bytes,4,opt,name=fix_timestamp_available,json=fixTimestampAvailable,proto3" json:"fix_timestamp_available,omitempty" search:"CVE Fix Available Timestamp,hidden"` // @gotags: search:"CVE Fix Available Timestamp,hidden"
+	FirstSystemOccurence  *timestamppb.Timestamp `protobuf:"bytes,9,opt,name=first_system_occurence,json=firstSystemOccurence,proto3" json:"first_system_occurence,omitempty" search:"First System Occurrence Timestamp,hidden"`    // @gotags: search:"First System Occurrence Timestamp,hidden"
 	unknownFields         protoimpl.UnknownFields
 	sizeCache             protoimpl.SizeCache
 }
