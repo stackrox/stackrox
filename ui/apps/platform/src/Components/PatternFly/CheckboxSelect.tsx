@@ -1,26 +1,37 @@
-import React, { ReactElement, ReactNode, useState, useRef, useMemo } from 'react';
+import { Children, cloneElement, isValidElement, useMemo, useRef, useState } from 'react';
+import type {
+    FocusEvent,
+    FocusEventHandler,
+    MouseEvent as ReactMouseEvent,
+    ReactElement,
+    ReactNode,
+    Ref,
+} from 'react';
 import {
-    Select,
-    SelectOption,
-    SelectOptionProps,
-    SelectGroup,
-    MenuToggle,
-    MenuToggleElement,
     Badge,
     Flex,
     FlexItem,
+    MenuToggle,
+    Select,
+    SelectGroup,
     SelectList,
+    SelectOption,
+} from '@patternfly/react-core';
+import type {
+    MenuToggleElement,
+    SelectOptionProps,
     SelectPopperProps,
 } from '@patternfly/react-core';
+import { toggleItemInArray } from 'utils/arrayUtils';
 
 // Enhance children to automatically inject hasCheckbox and isSelected props
 function enhanceSelectOptions(children: ReactNode, selectionsSet: Set<string>): ReactNode {
-    return React.Children.map(children, (child) => {
-        if (React.isValidElement(child)) {
+    return Children.map(children, (child) => {
+        if (isValidElement(child)) {
             if (child.type === SelectOption) {
                 const { value } = child.props;
                 if (value !== null && value !== undefined) {
-                    return React.cloneElement(child, {
+                    return cloneElement(child, {
                         hasCheckbox: true,
                         isSelected: selectionsSet.has(value as string),
                         ...child.props, // Allow explicit overrides if needed
@@ -32,7 +43,7 @@ function enhanceSelectOptions(children: ReactNode, selectionsSet: Set<string>): 
                     child.props.children,
                     selectionsSet
                 );
-                return React.cloneElement(child, {
+                return cloneElement(child, {
                     ...child.props,
                     children: enhancedGroupChildren,
                 });
@@ -42,30 +53,46 @@ function enhanceSelectOptions(children: ReactNode, selectionsSet: Set<string>): 
     });
 }
 
-export type CheckboxSelectProps = {
+type CheckboxSelectBaseProps = {
     id?: string;
+    className?: string;
     selections: string[];
-    onChange: (selection: string[]) => void;
-    onBlur?: React.FocusEventHandler<HTMLDivElement>;
+    onBlur?: FocusEventHandler<HTMLDivElement>;
     ariaLabel: string;
     children: ReactElement<SelectOptionProps>[];
     placeholderText?: string;
     toggleIcon?: ReactElement;
     toggleId?: string;
+    toggleAriaLabel?: string;
     isDisabled?: boolean;
     popperProps?: SelectPopperProps;
 };
 
+type CheckboxSelectWithArrayCallback = CheckboxSelectBaseProps & {
+    onChange: (selections: string[]) => void;
+    onItemSelect?: never;
+};
+
+type CheckboxSelectWithItemCallback = CheckboxSelectBaseProps & {
+    onChange?: never;
+    onItemSelect: (selection: string, checked: boolean) => void;
+};
+
+export type CheckboxSelectProps = CheckboxSelectWithArrayCallback | CheckboxSelectWithItemCallback;
+
 function CheckboxSelect({
     id,
+    className,
     selections,
     onChange,
+    onItemSelect,
     onBlur,
     ariaLabel,
     children,
     placeholderText = 'Filter by value',
     toggleIcon,
     toggleId,
+    toggleAriaLabel,
     isDisabled = false,
     popperProps,
 }: CheckboxSelectProps): ReactElement {
@@ -76,7 +103,7 @@ function CheckboxSelect({
         setIsOpen(!isOpen);
     }
 
-    function handleBlur(event: React.FocusEvent<HTMLDivElement>) {
+    function handleBlur(event: FocusEvent<HTMLDivElement>) {
         const { currentTarget, relatedTarget } = event;
 
         // Wait for focus to settle, then check if it moved outside the component
@@ -104,20 +131,21 @@ function CheckboxSelect({
     }
 
     function onSelect(
-        _event: React.MouseEvent<Element, MouseEvent> | undefined,
+        _event: ReactMouseEvent<Element, MouseEvent> | undefined,
         selection: string | number | undefined
     ) {
-        if (typeof selection !== 'string' || !selections || !onChange) {
+        if (typeof selection !== 'string' || !selections) {
             return;
         }
-        if (selections.includes(selection)) {
-            onChange(selections.filter((item) => item !== selection));
-        } else {
-            onChange([...selections, selection]);
+
+        if (onItemSelect) {
+            onItemSelect(selection, !selections.includes(selection));
+        } else if (onChange) {
+            onChange(toggleItemInArray(selections, selection));
         }
     }
 
-    const toggle = (toggleRef: React.Ref<MenuToggleElement>) => (
+    const toggle = (toggleRef: Ref<MenuToggleElement>) => (
         <MenuToggle
             className="pf-v5-u-w-100"
             id={toggleId}
@@ -126,11 +154,12 @@ function CheckboxSelect({
             isExpanded={isOpen}
             isDisabled={isDisabled}
             icon={toggleIcon}
-            aria-label={ariaLabel}
+            aria-label={toggleAriaLabel}
         >
             <Flex
                 alignItems={{ default: 'alignItemsCenter' }}
                 spaceItems={{ default: 'spaceItemsSm' }}
+                flexWrap={{ default: 'nowrap' }}
             >
                 <FlexItem>{placeholderText}</FlexItem>
                 {selections.length > 0 && <Badge isRead>{selections.length}</Badge>}
@@ -147,7 +176,7 @@ function CheckboxSelect({
     }, [children, selectionsSet]);
 
     return (
-        <div ref={selectRef} onBlur={handleBlur}>
+        <div ref={selectRef} onBlur={handleBlur} className={className}>
             <Select
                 id={id}
                 aria-label={ariaLabel}

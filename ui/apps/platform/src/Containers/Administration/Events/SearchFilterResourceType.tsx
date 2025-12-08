@@ -1,10 +1,9 @@
-import React, { useState } from 'react';
-import { Divider } from '@patternfly/react-core';
-import { Select, SelectOption } from '@patternfly/react-core/deprecated';
+import { Divider, SelectOption } from '@patternfly/react-core';
+import SelectSingle from 'Components/SelectSingle/SelectSingle';
 
 import { resourceTypes } from 'services/AdministrationEventsService';
 
-const optionAll = 'All';
+const optionAll = 'All resource types';
 
 type SearchFilterResourceTypeProps = {
     isDisabled: boolean;
@@ -17,38 +16,33 @@ function SearchFilterResourceType({
     resourceType,
     setResourceType,
 }: SearchFilterResourceTypeProps) {
-    const [isOpen, setIsOpen] = useState(false);
-
-    function onSelect(_event, selection) {
+    function onSelect(_id: string, selection: string) {
         setResourceType(selection === optionAll ? undefined : selection);
-        setIsOpen(false);
     }
 
-    const options = resourceTypes.map((resourceTypeArg) => (
-        <SelectOption key={resourceTypeArg} value={resourceTypeArg}>
-            {resourceTypeArg}
-        </SelectOption>
-    ));
-    options.push(
+    const options = [
+        <SelectOption key="All" value={optionAll}>
+            {optionAll}
+        </SelectOption>,
         <Divider key="Divider" />,
-        <SelectOption key="All" value={optionAll} isPlaceholder>
-            All resource types
-        </SelectOption>
-    );
+        ...resourceTypes.map((resourceTypeArg) => (
+            <SelectOption key={resourceTypeArg} value={resourceTypeArg}>
+                {resourceTypeArg}
+            </SelectOption>
+        )),
+    ];
 
     return (
-        <Select
-            variant="single"
-            aria-label="Resource type filter menu items"
-            toggleAriaLabel="Resource type filter menu toggle"
-            onToggle={(_event, val) => setIsOpen(val)}
-            onSelect={onSelect}
-            selections={resourceType ?? optionAll}
+        <SelectSingle
+            id="resource-type-filter"
+            value={resourceType ?? optionAll}
+            handleSelect={onSelect}
             isDisabled={isDisabled}
-            isOpen={isOpen}
+            placeholderText="Select resource type"
+            toggleAriaLabel="Resource type filter menu toggle"
         >
             {options}
-        </Select>
+        </SelectSingle>
     );
 }
 

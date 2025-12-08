@@ -77,7 +77,7 @@ func (s *datastorePostgresTestSuite) TestUpsertAndGetDiscoveredCluster() {
 	expectedCluster := typetostorage.DiscoveredCluster(fakeCluster)
 	roundtripCluster, err := s.datastore.GetDiscoveredCluster(s.readCtx, expectedCluster.GetId())
 	s.Require().NoError(err)
-	expectedCluster.LastUpdatedAt = roundtripCluster.LastUpdatedAt
+	expectedCluster.LastUpdatedAt = roundtripCluster.GetLastUpdatedAt()
 	protoassert.Equal(s.T(), expectedCluster, roundtripCluster)
 }
 

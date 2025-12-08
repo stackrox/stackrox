@@ -1,5 +1,3 @@
-import React from 'react';
-
 export type CveType =
     | 'IMAGE_CVE'
     | 'IMAGE'

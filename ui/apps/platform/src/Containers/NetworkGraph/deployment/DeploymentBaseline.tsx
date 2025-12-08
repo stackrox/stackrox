@@ -1,4 +1,4 @@
-import React from 'react';
+import { useState } from 'react';
 import {
     Alert,
     Bullseye,
@@ -20,9 +20,9 @@ import { HelpIcon } from '@patternfly/react-icons';
 
 import download from 'utils/download';
 import usePermissions from 'hooks/usePermissions';
-import { Deployment } from 'types/deployment.proto';
-import { NetworkPolicyModification } from 'types/networkPolicy.proto';
-import { AdvancedFlowsFilterType } from '../common/AdvancedFlowsFilter/types';
+import type { Deployment } from 'types/deployment.proto';
+import type { NetworkPolicyModification } from 'types/networkPolicy.proto';
+import type { AdvancedFlowsFilterType } from '../common/AdvancedFlowsFilter/types';
 import { filterNetworkFlows, getAllUniquePorts, getNumFlows } from '../utils/flowUtils';
 
 import AdvancedFlowsFilter, {
@@ -33,7 +33,7 @@ import FlowsTable from '../common/FlowsTable';
 import FlowsTableHeaderText from '../common/FlowsTableHeaderText';
 import FlowsBulkActions from '../common/FlowsBulkActions';
 import useFetchNetworkBaselines from '../api/useFetchNetworkBaselines';
-import { Flow } from '../types/flow.type';
+import type { Flow } from '../types/flow.type';
 import useModifyBaselineStatuses from '../api/useModifyBaselineStatuses';
 import useToggleAlertingOnBaselineViolation from '../api/useToggleAlertingOnBaselineViolation';
 import useFetchBaselineNetworkPolicy from '../api/useFetchBaselineNetworkPolicy';
@@ -50,10 +50,10 @@ function DeploymentBaseline({ deployment, deploymentId, onNodeSelect }: Deployme
 
     // component state
     const [isExcludingPortsAndProtocols, setIsExcludingPortsAndProtocols] =
-        React.useState<boolean>(false);
+        useState<boolean>(false);
 
-    const [entityNameFilter, setEntityNameFilter] = React.useState<string>('');
-    const [advancedFilters, setAdvancedFilters] = React.useState<AdvancedFlowsFilterType>(
+    const [entityNameFilter, setEntityNameFilter] = useState<string>('');
+    const [advancedFilters, setAdvancedFilters] = useState<AdvancedFlowsFilterType>(
         defaultAdvancedFlowsFilters
     );
     const {
@@ -90,8 +90,8 @@ function DeploymentBaseline({ deployment, deploymentId, onNodeSelect }: Deployme
     const initialExpandedRows = filteredNetworkBaselines
         .filter((row) => row.children && !!row.children.length)
         .map((row) => row.id); // Default to all expanded
-    const [expandedRows, setExpandedRows] = React.useState<string[]>(initialExpandedRows);
-    const [selectedRows, setSelectedRows] = React.useState<string[]>([]);
+    const [expandedRows, setExpandedRows] = useState<string[]>(initialExpandedRows);
+    const [selectedRows, setSelectedRows] = useState<string[]>([]);
 
     // derived data
     const numBaselines = getNumFlows(filteredNetworkBaselines);

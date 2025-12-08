@@ -1,7 +1,7 @@
 import withAuth from '../../helpers/basicAuth';
 import {
-    credentialForCentralExpiryAlias,
     credentialForCentralDbExpiryAlias,
+    credentialForCentralExpiryAlias,
     credentialForScannerExpiryAlias,
     setClock,
     visitSystemHealth,

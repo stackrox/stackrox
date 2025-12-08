@@ -1,16 +1,18 @@
 // system under test (SUT)
-import { ImportPoliciesResponse, ImportPolicyError } from 'services/PoliciesService';
+import type { ImportPoliciesResponse, ImportPolicyError } from 'services/PoliciesService';
 import {
-    parsePolicyImportErrors,
-    isDuplicateResolved,
-    getResolvedPolicies,
-    getErrorMessages,
-    hasDuplicateIdOnly,
     checkForBlockedSubmit,
-    PolicyResolutionType,
-    PolicyImportErrorDuplicateName,
+    getErrorMessages,
+    getResolvedPolicies,
+    hasDuplicateIdOnly,
+    isDuplicateResolved,
+    parsePolicyImportErrors,
+} from './PolicyImport.utils';
+import type {
     PolicyImportErrorDuplicateId,
+    PolicyImportErrorDuplicateName,
     PolicyImportErrorInvalidPolicy,
+    PolicyResolutionType,
 } from './PolicyImport.utils';
 
 describe('PolicyImport.utils', () => {

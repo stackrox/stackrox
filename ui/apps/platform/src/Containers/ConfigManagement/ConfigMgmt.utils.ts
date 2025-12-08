@@ -1,16 +1,17 @@
 import { defaultCountKeyMap } from 'constants/workflowPages.constants';
-import { defaultClusterSort } from 'Containers/ConfigManagement/List/ConfigManagementListClusters';
-import { defaultDeploymentSort } from 'Containers/ConfigManagement/List/ConfigManagementListDeployments';
-import { defaultImageSort } from 'Containers/ConfigManagement/List/ConfigManagementListImages';
-import { defaultNamespaceSort } from 'Containers/ConfigManagement/List/ConfigManagementListNamespaces';
-import { defaultNodeSort } from 'Containers/ConfigManagement/List/ConfigManagementListNodes';
-import { defaultPolicySort } from 'Containers/ConfigManagement/List/ConfigManagementListPolicies';
-import { defaultRoleSort } from 'Containers/ConfigManagement/List/ConfigManagementListRoles';
-import { defaultSecretSort } from 'Containers/ConfigManagement/List/ConfigManagementListSecrets';
-import { defaultServiceAccountSort } from 'Containers/ConfigManagement/List/ConfigManagementListServiceAccounts';
-import { defaultSubjectSort } from 'Containers/ConfigManagement/List/ConfigManagementListSubjects';
 import type { GraphQLSortOption } from 'types/search';
 import type { ConfigurationManagementEntityType } from 'utils/entityRelationships';
+
+import { defaultClusterSort } from './List/ConfigManagementListClusters';
+import { defaultDeploymentSort } from './List/ConfigManagementListDeployments';
+import { defaultImageSort } from './List/ConfigManagementListImages';
+import { defaultNamespaceSort } from './List/ConfigManagementListNamespaces';
+import { defaultNodeSort } from './List/ConfigManagementListNodes';
+import { defaultPolicySort } from './List/ConfigManagementListPolicies';
+import { defaultRoleSort } from './List/ConfigManagementListRoles';
+import { defaultSecretSort } from './List/ConfigManagementListSecrets';
+import { defaultServiceAccountSort } from './List/ConfigManagementListServiceAccounts';
+import { defaultSubjectSort } from './List/ConfigManagementListSubjects';
 
 const defaultSortFieldMap: Record<ConfigurationManagementEntityType, GraphQLSortOption[]> = {
     CLUSTER: defaultClusterSort,

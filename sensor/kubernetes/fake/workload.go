@@ -45,6 +45,10 @@ type NetworkWorkload struct {
 	FlowInterval              time.Duration `yaml:"flowInterval"`
 	BatchSize                 int           `yaml:"batchSize"`
 	GenerateUnclosedEndpoints bool          `yaml:"generateUnclosedEndpoints"`
+	// OpenPortReuseProbability is the probability of reusing an existing open endpoint
+	// by a different process without closing the endpoint.
+	// In releases 4.8 and older, this was not configurable and was always set to 1.0.
+	OpenPortReuseProbability float64 `yaml:"openPortReuseProbability"`
 }
 
 // PodWorkload defines the workload and lifecycle of the pods within a deployment
@@ -76,6 +80,14 @@ type ServiceWorkload struct {
 	NumLoadBalancers int `yaml:"numLoadBalancers"`
 }
 
+// VMIndexReportWorkload defines the virtual machine index report generation workload
+type VMIndexReportWorkload struct {
+	NumVMs          int           `yaml:"numVMs"`
+	ReportInterval  time.Duration `yaml:"reportInterval"`
+	NumPackages     int           `yaml:"numPackages"`
+	NumRepositories int           `yaml:"numRepositories"`
+}
+
 // Workload is the definition of a scale workload
 type Workload struct {
 	DeploymentWorkload    []DeploymentWorkload    `yaml:"deploymentWorkload"`
@@ -84,6 +96,7 @@ type Workload struct {
 	NetworkWorkload       NetworkWorkload         `yaml:"networkWorkload"`
 	RBACWorkload          RBACWorkload            `yaml:"rbacWorkload"`
 	ServiceWorkload       ServiceWorkload         `yaml:"serviceWorkload"`
+	VMIndexReportWorkload VMIndexReportWorkload   `yaml:"vmIndexReportWorkload"`
 	NumNamespaces         int                     `yaml:"numNamespaces"`
 	MatchLabels           bool                    `yaml:"matchLabels"`
 }

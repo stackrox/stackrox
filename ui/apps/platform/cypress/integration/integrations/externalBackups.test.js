@@ -4,15 +4,16 @@ import {
     getHelperElementByLabel,
     getInputByLabel,
 } from '../../helpers/formHelpers';
+import fakeGCPServiceAccount from '../../helpers/fakeGCPServiceAccount';
 
 import {
     clickCreateNewIntegrationInTable,
     deleteIntegrationInTable,
     saveCreatedIntegrationInForm,
     testIntegrationInFormWithStoredCredentials,
+    visitIntegrationsAndVerifyNotFoundWithStaticResponseForCapabilities,
     visitIntegrationsTable,
     visitIntegrationsWithStaticResponseForCapabilities,
-    visitIntegrationsAndVerifyRedirectWithStaticResponseForCapabilities,
 } from './integrations.helpers';
 import { selectors } from './integrations.selectors';
 
@@ -205,10 +206,9 @@ describe('Backup Integrations', () => {
             getInputByLabel('Object prefix').clear().type('acs-');
             getInputByLabel('Backups to retain').clear().type(1).blur();
             getInputByLabel('Service account key (JSON)')
-                .type('{ "type": "service_account" }', {
-                    parseSpecialCharSequences: false,
-                })
-                .blur(); // enter invalid JSON
+                .clear()
+                .type(JSON.stringify(fakeGCPServiceAccount), { parseSpecialCharSequences: false })
+                .blur();
 
             const staticResponseForTest = { body: {} };
             testIntegrationInFormWithStoredCredentials(
@@ -228,12 +228,10 @@ describe('Backup Integrations', () => {
             visitIntegrationsWithStaticResponseForCapabilities({
                 body: { centralCanUseCloudBackupIntegrations: 'CapabilityDisabled' },
             });
-            cy.get('h2:contains("Backup Integrations")').should('not.exist');
-            cy.get('a .pf-v5-c-card__title:contains("Amazon S3")').should('not.exist');
-            cy.get('a .pf-v5-c-card__title:contains("S3 Compatible API")').should('not.exist');
-            cy.get('a .pf-v5-c-card__title:contains("Google Cloud Storage")').should('not.exist');
+            cy.get('nav.pf-m-tertiary a:contains("Notifier")').should('exist'); // preceding tab
+            cy.get('nav.pf-m-tertiary a:contains("Backup")').should('not.exist');
 
-            visitIntegrationsAndVerifyRedirectWithStaticResponseForCapabilities(
+            visitIntegrationsAndVerifyNotFoundWithStaticResponseForCapabilities(
                 {
                     body: { centralCanUseCloudBackupIntegrations: 'CapabilityDisabled' },
                 },
@@ -241,7 +239,7 @@ describe('Backup Integrations', () => {
                 's3'
             );
 
-            visitIntegrationsAndVerifyRedirectWithStaticResponseForCapabilities(
+            visitIntegrationsAndVerifyNotFoundWithStaticResponseForCapabilities(
                 {
                     body: { centralCanUseCloudBackupIntegrations: 'CapabilityDisabled' },
                 },
@@ -249,7 +247,7 @@ describe('Backup Integrations', () => {
                 's3compatible'
             );
 
-            visitIntegrationsAndVerifyRedirectWithStaticResponseForCapabilities(
+            visitIntegrationsAndVerifyNotFoundWithStaticResponseForCapabilities(
                 {
                     body: { centralCanUseCloudBackupIntegrations: 'CapabilityDisabled' },
                 },

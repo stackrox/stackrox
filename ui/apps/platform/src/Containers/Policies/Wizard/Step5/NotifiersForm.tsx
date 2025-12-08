@@ -1,6 +1,6 @@
-import React, { useCallback } from 'react';
+import { useCallback } from 'react';
 import { Link } from 'react-router-dom-v5-compat';
-import { Table, Thead, Tbody, Tr, Th, Td } from '@patternfly/react-table';
+import { Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 import { Form } from '@patternfly/react-core';
 import { useField } from 'formik';
 
@@ -24,7 +24,7 @@ function NotifiersForm() {
     });
 
     function onSelectNotifier(e, isSelected, rowIndex) {
-        const selectedNotifiers = field.value || [];
+        const selectedNotifiers = field.value ?? [];
         if (isSelected) {
             helpers.setValue([...selectedNotifiers, notifiers[rowIndex].id]);
         } else {

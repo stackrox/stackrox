@@ -1,4 +1,5 @@
-import React, { ReactElement, useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
+import type { ReactElement } from 'react';
 import { useParams } from 'react-router-dom-v5-compat';
 import startCase from 'lodash/startCase';
 import {
@@ -11,6 +12,7 @@ import {
     Tab,
     TabTitleText,
     Tabs,
+    Text,
     Title,
 } from '@patternfly/react-core';
 
@@ -19,7 +21,8 @@ import { getClientWizardPolicy } from 'Containers/Policies/policies.utils';
 import useIsRouteEnabled from 'hooks/useIsRouteEnabled';
 import usePermissions from 'hooks/usePermissions';
 import { fetchAlert } from 'services/AlertsService';
-import { Alert, isDeploymentAlert, isResourceAlert } from 'types/alert.proto';
+import { isDeploymentAlert, isResourceAlert } from 'types/alert.proto';
+import type { Alert } from 'types/alert.proto';
 import { getDateTime } from 'utils/dateUtils';
 import { VIOLATION_STATE_LABELS } from 'constants/violationStates';
 
@@ -95,10 +98,10 @@ function ViolationDetailsPage(): ReactElement {
             <ViolationsBreadcrumbs current={title} filteredWorkflowView={filteredWorkflowView} />
             <PageSection variant="light">
                 <Title headingLevel="h1">{title}</Title>
-                <Title
-                    headingLevel="h2"
+                <Text
+                    component="p"
                     className="pf-v5-u-mb-sm"
-                >{`in "${entityName}" ${displayedResourceType}`}</Title>
+                >{`in "${entityName}" ${displayedResourceType}`}</Text>
                 <LabelGroup numLabels={2} aria-label="Violation state and resolution">
                     <Label>State: {VIOLATION_STATE_LABELS[alert.state]}</Label>
                     {alert.state === 'RESOLVED' && (
@@ -121,6 +124,7 @@ function ViolationDetailsPage(): ReactElement {
                             <ViolationDetails
                                 violations={alert.violations}
                                 processViolation={alert.processViolation}
+                                fileAccessViolation={alert.fileAccessViolation}
                                 lifecycleStage={alert.lifecycleStage}
                             />
                         </PageSection>
@@ -150,7 +154,7 @@ function ViolationDetailsPage(): ReactElement {
                     {isRouteEnabledForPolicy && (
                         <Tab eventKey={3} title={<TabTitleText>Policy</TabTitleText>}>
                             <PageSection variant="default">
-                                <Title headingLevel="h3" className="pf-v5-u-mb-md">
+                                <Title headingLevel="h2" className="pf-v5-u-mb-md">
                                     Policy overview
                                 </Title>
                                 <Divider component="div" className="pf-v5-u-pb-md" />

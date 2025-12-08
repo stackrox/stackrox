@@ -77,7 +77,7 @@ func (s *ViewBasedReportingTestSuite) SetupTest() {
 
 	s.reportGenerator = newReportGeneratorImpl(s.testDB, nil, s.resolver.DeploymentDataStore,
 		s.watchedImageDatastore, nil, nil, s.blobStore, s.clusterDatastore,
-		s.namespaceDatastore, s.resolver.ImageCVEDataStore, s.resolver.ImageCVEV2DataStore, nil)
+		s.namespaceDatastore, s.resolver.ImageCVEV2DataStore, nil)
 }
 
 func (s *ViewBasedReportingTestSuite) TearDownTest() {
@@ -600,7 +600,7 @@ func (s *ViewBasedReportingTestSuite) upsertManyImages(images []*storage.Image) 
 
 func (s *ViewBasedReportingTestSuite) upsertManyWatchedImages(images []*storage.Image) {
 	for _, img := range images {
-		err := s.watchedImageDatastore.UpsertWatchedImage(s.ctx, img.Name.FullName)
+		err := s.watchedImageDatastore.UpsertWatchedImage(s.ctx, img.GetName().GetFullName())
 		s.NoError(err)
 	}
 }

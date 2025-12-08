@@ -11,9 +11,9 @@ option java_package = "io.stackrox.proto.storage";
 message NetworkPolicy {
   string id = 1; // @gotags: sql:"pk"
   string name = 2;
-  string cluster_id = 3; // @gotags: search:"Cluster ID,hidden,store" sql:"type(uuid)"
+  string cluster_id = 3; // @gotags: search:"Cluster ID,hidden" sql:"type(uuid)"
   string cluster_name = 4;
-  string namespace = 5; // @gotags: search:"Namespace,hidden,store"
+  string namespace = 5; // @gotags: search:"Namespace,hidden"
   map<string, string> labels = 6;
   map<string, string> annotations = 7;
 

@@ -136,16 +136,26 @@ func (s *nodeIndexerSuite) TestRunRepositoryScannerAnyPath() {
 func (s *nodeIndexerSuite) TestRunPackageScanner() {
 	layer := s.mustCreateLayer("testdata")
 
-	packages, err := runPackageScanner(context.Background(), layer)
+	packages, err := runPackageScanner(context.Background(), rhcosPackageDB, layer)
 	s.NoError(err)
 
 	s.Len(packages, 106)
 }
 
+func (s *nodeIndexerSuite) TestRunPackageScannerWithUnmatchedFilter() {
+	layer := s.mustCreateLayer("testdata")
+
+	packages, err := runPackageScanner(context.Background(), "invalidPackageDB", layer)
+	s.NoError(err)
+
+	// All packages are filtered out.
+	s.Len(packages, 0)
+}
+
 func (s *nodeIndexerSuite) TestRunPackageScannerAnyPath() {
 	layer := s.mustCreateLayer(s.T().TempDir())
 
-	packages, err := runPackageScanner(context.Background(), layer)
+	packages, err := runPackageScanner(context.Background(), rhcosPackageDB, layer)
 	s.NoError(err)
 
 	// The scanner must not error out, but produce 0 results
@@ -205,13 +215,14 @@ func (s *nodeIndexerSuite) TestIndexerE2E() {
 	cfg := DefaultNodeIndexerConfig()
 	cfg.HostPath = "testdata"
 	cfg.Repo2CPEMappingURL = server.URL
+	cfg.PackageDBFilter = rhcosPackageDB
 	indexer := NewNodeIndexer(cfg)
 
 	report, err := indexer.IndexNode(context.Background())
 	s.NoError(err)
 
 	s.NotNil(report)
-	s.True(report.Success)
+	s.True(report.GetSuccess())
 	s.Len(report.GetContents().GetPackages(), 106, "Expected number of installed packages differs")
 	s.Len(report.GetContents().GetRepositories(), 2, "Expected number of discovered repositories differs")
 }
@@ -222,10 +233,12 @@ func (s *nodeIndexerSuite) TestIndexerE2ENoPath() {
 	cfg.Client = server.Client()
 	cfg.HostPath = "doesnotexist"
 	cfg.Repo2CPEMappingURL = server.URL
+	cfg.PackageDBFilter = rhcosPackageDB
 	indexer := NewNodeIndexer(cfg)
 
 	report, err := indexer.IndexNode(context.Background())
 
 	s.ErrorContains(err, "no such file or directory")
+	s.ErrorIs(err, os.ErrNotExist)
 	s.Nil(report)
 }

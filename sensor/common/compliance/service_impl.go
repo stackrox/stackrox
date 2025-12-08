@@ -236,7 +236,7 @@ func (s *serviceImpl) Communicate(server sensor.ComplianceService_CommunicateSer
 			stopper.Client().Stop()
 			return errors.Wrapf(err, "receiving from compliance %q", hostname)
 		}
-		switch t := msg.Msg.(type) {
+		switch t := msg.GetMsg().(type) {
 		case *sensor.MsgFromCompliance_Return:
 			log.Infof("Received compliance return from %q", msg.GetNode())
 			s.output <- t.Return
@@ -252,8 +252,11 @@ func (s *serviceImpl) Communicate(server sensor.ComplianceService_CommunicateSer
 		case *sensor.MsgFromCompliance_NodeInventory:
 			s.nodeInventories <- t.NodeInventory
 		case *sensor.MsgFromCompliance_IndexReport:
-			log.Infof("Received index report from %q with %d packages",
-				msg.GetNode(), len(msg.GetIndexReport().GetContents().GetPackages()))
+			log.Infof("Received index report from %q with %d packages (%d deprecated)",
+				msg.GetNode(),
+				len(msg.GetIndexReport().GetContents().GetPackages()),
+				len(msg.GetIndexReport().GetContents().GetPackagesDEPRECATED()),
+			)
 			s.indexReportWraps <- &index.IndexReportWrap{
 				NodeName:    msg.GetNode(),
 				IndexReport: t.IndexReport,

@@ -1,9 +1,10 @@
-import { Schedule } from 'services/ComplianceScanConfigurationService';
 import {
     convertFormikParametersToSchedule,
     convertScheduleToFormikParameters,
-    ScanConfigParameters,
 } from './compliance.scanConfigs.utils';
+import type { ScanConfigParameters } from './compliance.scanConfigs.utils';
+
+import type { Schedule } from 'types/schedule.proto';
 
 // @TODO: Consider making a more unique name for general utils file under Vulnerability Reporting
 describe('compliance.scanConfigs.utils', () => {

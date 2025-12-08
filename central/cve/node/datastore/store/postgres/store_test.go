@@ -93,6 +93,11 @@ func (s *NodeCvesStoreSuite) TestStore() {
 
 	s.NoError(store.UpsertMany(ctx, nodeCVEs))
 
+	foundNodeCVEs, missing, err := store.GetMany(ctx, nodeCVEIDs)
+	s.NoError(err)
+	s.Empty(missing)
+	protoassert.ElementsMatch(s.T(), nodeCVEs, foundNodeCVEs)
+
 	nodeCVECount, err = store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)
 	s.Equal(200, nodeCVECount)

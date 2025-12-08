@@ -93,6 +93,11 @@ func (s *TestGrandparentsStoreSuite) TestStore() {
 
 	s.NoError(store.UpsertMany(ctx, testGrandparents))
 
+	foundTestGrandparents, missing, err := store.GetMany(ctx, testGrandparentIDs)
+	s.NoError(err)
+	s.Empty(missing)
+	protoassert.ElementsMatch(s.T(), testGrandparents, foundTestGrandparents)
+
 	testGrandparentCount, err = store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)
 	s.Equal(200, testGrandparentCount)

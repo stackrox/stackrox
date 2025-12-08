@@ -1,6 +1,7 @@
 import { saveFile } from 'services/DownloadService';
 import { sanitizeFilename } from 'utils/fileUtils';
-import { JobContextTab, jobContextTabs } from './types';
+import { jobContextTabs } from './types';
+import type { JobContextTab } from './types';
 
 export function ensureJobContextTab(value: unknown): JobContextTab {
     if (typeof value === 'string' && jobContextTabs.includes(value as JobContextTab)) {
@@ -9,7 +10,17 @@ export function ensureJobContextTab(value: unknown): JobContextTab {
     return 'CONFIGURATION_DETAILS';
 }
 
-export function onDownloadReport({ reportJobId, name, completedAt, baseDownloadURL }) {
+export function onDownloadReport({
+    reportJobId,
+    name,
+    completedAt,
+    baseDownloadURL,
+}: {
+    reportJobId: string;
+    name: string;
+    completedAt: string;
+    baseDownloadURL: string;
+}) {
     const filename = `${name}-${completedAt}`;
     const sanitizedFilename = sanitizeFilename(filename);
     return saveFile({

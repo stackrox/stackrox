@@ -6,6 +6,7 @@ on:
 
 jobs:
   update-scanner-mappings:
+    if:  ${{ github.repository_owner == 'stackrox' }}
     runs-on: ubuntu-latest
     env:
       REPOMAPPING_DIR: repomapping

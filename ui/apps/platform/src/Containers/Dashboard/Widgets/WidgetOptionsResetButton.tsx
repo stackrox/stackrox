@@ -1,4 +1,4 @@
-import React, { MouseEventHandler } from 'react';
+import type { MouseEventHandler } from 'react';
 import { Button, Tooltip } from '@patternfly/react-core';
 
 import { UndoIcon } from '@patternfly/react-icons';

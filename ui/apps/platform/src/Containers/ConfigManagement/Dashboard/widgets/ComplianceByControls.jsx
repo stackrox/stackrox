@@ -1,4 +1,4 @@
-import React, { useState, useContext } from 'react';
+import { useContext, useState } from 'react';
 import { Alert } from '@patternfly/react-core';
 import PropTypes from 'prop-types';
 import { gql } from '@apollo/client';

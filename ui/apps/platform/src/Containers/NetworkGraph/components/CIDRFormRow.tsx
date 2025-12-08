@@ -1,4 +1,3 @@
-import React from 'react';
 import { Field } from 'formik';
 import {
     Button,
@@ -12,8 +11,8 @@ import {
 import { TrashIcon } from '@patternfly/react-icons';
 
 const CIDRFormRow = ({ idx, onRemoveRow, errors, touched }) => {
-    const { name: nameError, cidr: cidrError } = errors?.entity || {};
-    const { name: nameTouched, cidr: cidrTouched } = touched?.entity || {};
+    const { name: nameError, cidr: cidrError } = errors?.entity ?? {};
+    const { name: nameTouched, cidr: cidrTouched } = touched?.entity ?? {};
     const showNameError = nameError && nameTouched;
     const showCidrError = cidrError && cidrTouched;
     const hasError = showNameError || showCidrError;

@@ -21,6 +21,10 @@ const (
 	// PromoteSecondary indicates that the secondary CA should become the new primary CA,
 	// typically when the primary is nearing the end of its validity (e.g., last year).
 	PromoteSecondary
+	// AddSecondaryAndPromote indicates that the CA has passed a threshold (e.g., 4/5 of its validity)
+	// and a secondary CA should be generated and added, and then promoted to primary. This is doing
+	// AddSecondary and PromoteSecondary in one step.
+	AddSecondaryAndPromote
 	// DeleteSecondary indicates that the secondary CA has expired and should be removed.
 	DeleteSecondary
 )
@@ -32,22 +36,29 @@ func DetermineAction(primary, secondary *x509.Certificate, current time.Time) Ac
 	validityDuration := primary.NotAfter.Sub(primary.NotBefore)
 	fifthOfValidityDuration := validityDuration / 5
 
-	// Add secondary CA after 3/5 of validity
+	// Add secondary CA after 3/5 of the primary's validity period has elapsed.
 	addSecondaryCATime := startTime.Add(3 * fifthOfValidityDuration)
-	if current.After(addSecondaryCATime) && secondary == nil {
-		return AddSecondary
+	// Promote secondary to primary after 4/5 of the primary's validity period has elapsed.
+	promoteSecondaryCATime := startTime.Add(4 * fifthOfValidityDuration)
+
+	if secondary == nil {
+		if current.After(promoteSecondaryCATime) {
+			return AddSecondaryAndPromote
+		}
+
+		if current.After(addSecondaryCATime) {
+			return AddSecondary
+		}
+
+		return NoAction
 	}
 
-	// Promote secondary to primary after 4/5 of the primary's validity period has elapsed.
-	// If no secondary CA exists at this point, the rotation will be done in two steps:
-	// first reconcile - AddSecondary, subsequent reconcile - PromoteSecondary
-	promoteSecondaryCATime := startTime.Add(4 * fifthOfValidityDuration)
-	if current.After(promoteSecondaryCATime) && secondary != nil && secondary.NotBefore.After(primary.NotBefore) {
+	if current.After(promoteSecondaryCATime) && secondary.NotBefore.After(primary.NotBefore) {
 		return PromoteSecondary
 	}
 
 	// Delete expired secondary
-	if secondary != nil && current.After(secondary.NotAfter) {
+	if current.After(secondary.NotAfter) {
 		return DeleteSecondary
 	}
 
@@ -58,18 +69,28 @@ func DetermineAction(primary, secondary *x509.Certificate, current time.Time) Ac
 func Handle(action Action, fileMap types.SecretDataMap) error {
 	switch action {
 	case AddSecondary:
-		ca, err := certgen.GenerateCA()
-		if err != nil {
-			return errors.Wrap(err, "creating secondary CA failed")
-		}
-		certgen.AddSecondaryCAToFileMap(fileMap, ca)
-
-	case DeleteSecondary:
-		certgen.RemoveSecondaryCA(fileMap)
+		return addSecondaryCA(fileMap)
 
 	case PromoteSecondary:
 		certgen.PromoteSecondaryCA(fileMap)
-	}
 
+	case AddSecondaryAndPromote:
+		if err := addSecondaryCA(fileMap); err != nil {
+			return err
+		}
+		certgen.PromoteSecondaryCA(fileMap)
+
+	case DeleteSecondary:
+		certgen.RemoveSecondaryCA(fileMap)
+	}
+	return nil
+}
+
+func addSecondaryCA(fileMap types.SecretDataMap) error {
+	ca, err := certgen.GenerateCA()
+	if err != nil {
+		return errors.Wrap(err, "creating secondary CA failed")
+	}
+	certgen.AddSecondaryCAToFileMap(fileMap, ca)
 	return nil
 }

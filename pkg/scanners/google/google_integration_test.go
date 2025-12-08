@@ -62,8 +62,8 @@ func TestGoogle(t *testing.T) {
 		require.NoError(t, err)
 		require.NotEmpty(t, scan.GetComponents())
 		for _, c := range scan.GetComponents() {
-			for _, v := range c.Vulns {
-				require.NotEmpty(t, v.Cve)
+			for _, v := range c.GetVulns() {
+				require.NotEmpty(t, v.GetCve())
 			}
 		}
 	}

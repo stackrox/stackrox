@@ -56,9 +56,9 @@ func (s *TestConvertUtilsSuite) TestConvertV2ImageToV1() {
 	}
 	timestamp := timestamppb.Now()
 	image := &storage.ImageV2{
-		Id:   fixtureconsts.Deployment1,
-		Sha:  "sha256:adea4f68096fded167603ba6663ed615a80e090da68eb3c9e2508c15c8368401",
-		Name: imageName,
+		Id:     fixtureconsts.Deployment1,
+		Digest: "sha256:adea4f68096fded167603ba6663ed615a80e090da68eb3c9e2508c15c8368401",
+		Name:   imageName,
 		Metadata: &storage.ImageMetadata{
 			V1: &storage.V1Metadata{
 				Digest:  "sha256:adea4f68096fded167603ba6663ed615a80e090da68eb3c9e2508c15c8368401",
@@ -108,13 +108,15 @@ func (s *TestConvertUtilsSuite) TestConvertV2ImageToV1() {
 			Signatures: nil,
 			Fetched:    nil,
 		},
-		ComponentCount:  150,
-		CveCount:        175,
-		FixableCveCount: 200,
-		LastUpdated:     timestamp,
-		NotPullable:     false,
-		TopCvss:         9.5,
-		RiskScore:       10.5,
+		ScanStats: &storage.ImageV2_ScanStats{
+			ComponentCount:  150,
+			CveCount:        175,
+			FixableCveCount: 200,
+		},
+		LastUpdated: timestamp,
+		NotPullable: false,
+		TopCvss:     9.5,
+		RiskScore:   10.5,
 		Notes: []storage.ImageV2_Note{
 			storage.ImageV2_MISSING_SIGNATURE,
 		},

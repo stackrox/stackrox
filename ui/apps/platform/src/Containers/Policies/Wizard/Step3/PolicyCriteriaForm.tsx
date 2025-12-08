@@ -1,12 +1,11 @@
-import React from 'react';
 import { Alert, Button, Divider, Flex, FlexItem, Title } from '@patternfly/react-core';
 import { DndProvider } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
 import { useFormikContext } from 'formik';
 
-import { ClientPolicy } from 'types/policy.proto';
+import type { ClientPolicy } from 'types/policy.proto';
 import useFeatureFlags from 'hooks/useFeatureFlags';
-import { getPolicyDescriptors } from 'Containers/Policies/policies.utils';
+import { getPolicyDescriptors } from '../../policies.utils';
 import PolicyCriteriaKeys from './PolicyCriteriaKeys';
 import BooleanPolicyLogicSection from './BooleanPolicyLogicSection';
 
@@ -133,7 +132,10 @@ function PolicyCriteriaForm({ hasActiveViolations }: PolicyCriteriaFormProps) {
                         className="pf-v5-u-h-100 pf-v5-u-pt-lg"
                         id="policy-criteria-keys-container"
                     >
-                        <PolicyCriteriaKeys keys={filteredDescriptors} />
+                        <PolicyCriteriaKeys
+                            keys={filteredDescriptors}
+                            eventSource={values.eventSource}
+                        />
                     </Flex>
                 )}
             </Flex>

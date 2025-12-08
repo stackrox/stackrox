@@ -1,13 +1,6 @@
-import React, { ReactElement } from 'react';
-import {
-    Select,
-    MenuToggle,
-    MenuToggleElement,
-    SelectList,
-    MenuFooter,
-    SelectOptionProps,
-    MenuToggleProps,
-} from '@patternfly/react-core';
+import type { FocusEventHandler, ReactElement, ReactNode, Ref } from 'react';
+import { MenuFooter, MenuToggle, Select, SelectList } from '@patternfly/react-core';
+import type { MenuToggleElement, MenuToggleProps, SelectOptionProps } from '@patternfly/react-core';
 
 import useSelectToggleState from './useSelectToggleState';
 
@@ -22,9 +15,9 @@ export type SelectSingleProps = {
     children: ReactElement<SelectOptionProps>[];
     direction?: 'up' | 'down';
     placeholderText?: string;
-    onBlur?: React.FocusEventHandler<HTMLDivElement>;
+    onBlur?: FocusEventHandler<HTMLDivElement>;
     menuAppendTo?: () => HTMLElement;
-    footer?: React.ReactNode;
+    footer?: ReactNode;
     maxHeight?: string;
     maxWidth?: string;
     variant?: MenuToggleProps['variant'];
@@ -45,8 +38,8 @@ function SelectSingle({
     onBlur,
     menuAppendTo = undefined,
     footer,
-    maxHeight = '300px',
-    maxWidth = '30ch',
+    maxHeight = '50vh',
+    maxWidth = '100%',
     variant = 'default',
     className,
 }: SelectSingleProps): ReactElement {
@@ -67,7 +60,7 @@ function SelectSingle({
         return (selectedChild?.props.children as string) || value;
     };
 
-    const toggle = (toggleRef: React.Ref<MenuToggleElement>) => (
+    const toggle = (toggleRef: Ref<MenuToggleElement>) => (
         <MenuToggle
             ref={toggleRef}
             onClick={onToggle}

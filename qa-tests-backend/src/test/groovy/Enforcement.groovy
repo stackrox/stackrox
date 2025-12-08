@@ -305,11 +305,17 @@ class Enforcement extends BaseSpecification {
         and:
         "check pod was killed"
         def startTime = System.currentTimeMillis()
-        assert d.pods.size() > 0
-        assert d.pods.collect {
-            it -> log.info "checking if ${it.name} was killed"
-            orchestrator.wasContainerKilled(it.name)
-        }.find { it == true }
+        assert d.pods.size() >= 0
+        // It is possible that the enforcement kicked even even before deployment creation method had a chance to load
+        // pods into memory. In that case, the pods.size() will be 0 and we don't need to check anything else.
+        // But if the deployment creation method was able to load pods into memory before enforcement kills them,
+        // then we verify that those pods aren't running anymore.
+        if (d.pods.size() > 0) {
+            assert d.pods.collect {
+                it -> log.info "checking if ${it.name} was killed"
+                    orchestrator.wasContainerKilled(it.name)
+            }.find { it == true }
+        }
         assert alert.enforcement.action == EnforcementAction.KILL_POD_ENFORCEMENT
         log.info "Enforcement took ${(System.currentTimeMillis() - startTime) / 1000}s"
         assert Services.getAlertEnforcementCount(KILL_ENFORCEMENT, KILL_ENFORCEMENT) > 0

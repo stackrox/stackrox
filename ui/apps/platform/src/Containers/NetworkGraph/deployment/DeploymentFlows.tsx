@@ -1,13 +1,12 @@
-import React, { useCallback, useEffect } from 'react';
+import { useCallback, useEffect } from 'react';
 import { Divider, Stack, StackItem, ToggleGroup, ToggleGroupItem } from '@patternfly/react-core';
 
 import useAnalytics, { DEPLOYMENT_FLOWS_TOGGLE_CLICKED } from 'hooks/useAnalytics';
-import useFeatureFlags from 'hooks/useFeatureFlags';
-import { QueryValue } from 'hooks/useURLParameter';
+import type { QueryValue } from 'hooks/useURLParameter';
 
 import useFetchNetworkFlows from '../api/useFetchNetworkFlows';
-import { EdgeState } from '../components/EdgeStateSelect';
-import { CustomEdgeModel, CustomNodeModel } from '../types/topology.type';
+import type { EdgeState } from '../components/EdgeStateSelect';
+import type { CustomEdgeModel, CustomNodeModel } from '../types/topology.type';
 import { isInternalFlow } from '../utils/networkGraphUtils';
 
 import InternalFlows from './InternalFlows';
@@ -47,8 +46,6 @@ function DeploymentFlows({
     onNodeSelect,
 }: DeploymentFlowsProps) {
     const { analyticsTrack } = useAnalytics();
-    const { isFeatureFlagEnabled } = useFeatureFlags();
-    const isNetworkGraphExternalIpsEnabled = isFeatureFlagEnabled('ROX_NETWORK_GRAPH_EXTERNAL_IPS');
 
     const { setPage: setPageAnomalous } = usePagination();
     const { setPage: setPageBaseline } = usePaginationSecondary();
@@ -97,23 +94,6 @@ function DeploymentFlows({
         data: { networkFlows },
         refetchFlows,
     } = useFetchNetworkFlows({ deploymentId, edgeState, edges, nodes });
-
-    if (!isNetworkGraphExternalIpsEnabled) {
-        return (
-            <div className="pf-v5-u-h-100 pf-v5-u-p-md">
-                <InternalFlows
-                    nodes={nodes}
-                    deploymentId={deploymentId}
-                    edgeState={edgeState}
-                    onNodeSelect={onNodeSelect}
-                    isLoadingNetworkFlows={isLoadingNetworkFlows}
-                    networkFlowsError={networkFlowsError}
-                    networkFlows={networkFlows}
-                    refetchFlows={refetchFlows}
-                />
-            </div>
-        );
-    }
 
     const selectedView: DeploymentFlowsToggleKey = isValidDeploymentFlowsToggle(
         selectedToggleSidePanel

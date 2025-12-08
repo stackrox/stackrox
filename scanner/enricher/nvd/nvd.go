@@ -421,8 +421,8 @@ func (e *Enricher) tryQuery(ctx context.Context, req *http.Request) (*http.Respo
 		Int("status", resp.StatusCode).
 		Str("nvd_message", req.Header.Get("message")).
 		Msg("NVD response")
-	if resp.StatusCode != 200 {
-		_ = resp.Body.Close
+	if resp.StatusCode != http.StatusOK {
+		_ = resp.Body.Close()
 		return nil, fmt.Errorf("unexpected status code when querying %s: %d", req.URL.String(), resp.StatusCode)
 	}
 	return resp, nil

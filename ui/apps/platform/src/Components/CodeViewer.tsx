@@ -1,13 +1,6 @@
-import React, {
-    createContext,
-    CSSProperties,
-    Dispatch,
-    ReactNode,
-    SetStateAction,
-    useContext,
-    useState,
-} from 'react';
-import { CodeBlockAction, ClipboardCopyButton, Button, CodeBlock } from '@patternfly/react-core';
+import { createContext, useContext, useState } from 'react';
+import type { CSSProperties, Dispatch, ReactElement, ReactNode, SetStateAction } from 'react';
+import { Button, ClipboardCopyButton, CodeBlock, CodeBlockAction } from '@patternfly/react-core';
 import { MoonIcon, SunIcon } from '@patternfly/react-icons';
 
 import { PrismLight as SyntaxHighlighter } from 'react-syntax-highlighter';
@@ -23,7 +16,7 @@ const CodeViewerThemeContext = createContext<
     ['light' | 'dark', Dispatch<SetStateAction<'light' | 'dark'>>] | undefined
 >(undefined);
 
-export const CodeViewerThemeProvider = ({ children }) => {
+export const CodeViewerThemeProvider = ({ children }: { children: ReactNode }) => {
     const [state, setState] = useState<'light' | 'dark'>('light');
 
     return (
@@ -66,7 +59,7 @@ export default function CodeViewer({
     className = '',
     style,
     additionalControls,
-}: CodeViewerProps) {
+}: CodeViewerProps): ReactElement {
     const { wasCopied, setWasCopied, copyToClipboard } = useClipboardCopy();
     const [theme, setTheme] = useCodeViewerThemeContext();
 

@@ -79,7 +79,7 @@ func SeverityString(s storage.Severity) string {
 
 // CreateError formats a returned HTTP response's status into an error, or nil.
 func CreateError(notifier string, resp *http.Response, errCode string) error {
-	if resp.StatusCode == 503 { // Error codes we want to retry go here.
+	if resp.StatusCode == http.StatusServiceUnavailable { // Error codes we want to retry go here.
 		return retry.MakeRetryable(wrapError(notifier, resp, errCode))
 	}
 	return wrapError(notifier, resp, errCode)

@@ -200,7 +200,7 @@ func ConvertV2ScheduleToProto(schedule *v2.Schedule) *storage.Schedule {
 		Hour:         schedule.GetHour(),
 		Minute:       schedule.GetMinute(),
 	}
-	switch schedule.Interval.(type) {
+	switch schedule.GetInterval().(type) {
 	case *v2.Schedule_DaysOfWeek_:
 		ret.Interval = &storage.Schedule_DaysOfWeek_{
 			DaysOfWeek: &storage.Schedule_DaysOfWeek{Days: schedule.GetDaysOfWeek().GetDays()},
@@ -225,7 +225,7 @@ func convertProtoScheduleToV2(schedule *storage.Schedule) *v2.Schedule {
 		Minute:       schedule.GetMinute(),
 	}
 
-	switch schedule.Interval.(type) {
+	switch schedule.GetInterval().(type) {
 	case *storage.Schedule_DaysOfWeek_:
 		ret.Interval = &v2.Schedule_DaysOfWeek_{
 			DaysOfWeek: &v2.Schedule_DaysOfWeek{Days: schedule.GetDaysOfWeek().GetDays()},
@@ -373,17 +373,17 @@ func convertStorageScanConfigToV2ScanStatus(ctx context.Context,
 		}
 		conditions := suite.GetStatus().GetConditions()
 		for _, c := range conditions {
-			if suiteStatus.LastTransitionTime == nil || protoutils.After(c.LastTransitionTime, suiteStatus.LastTransitionTime) {
-				suiteStatus.LastTransitionTime = c.LastTransitionTime
+			if suiteStatus.GetLastTransitionTime() == nil || protoutils.After(c.GetLastTransitionTime(), suiteStatus.GetLastTransitionTime()) {
+				suiteStatus.LastTransitionTime = c.GetLastTransitionTime()
 			}
 		}
 
 		// If the suite is complete, set the last scan time
-		if suite.GetStatus().GetPhase() == suiteComplete && (lastScanTime == nil || protoutils.After(suiteStatus.LastTransitionTime, lastScanTime)) {
-			lastScanTime = suiteStatus.LastTransitionTime
+		if suite.GetStatus().GetPhase() == suiteComplete && (lastScanTime == nil || protoutils.After(suiteStatus.GetLastTransitionTime(), lastScanTime)) {
+			lastScanTime = suiteStatus.GetLastTransitionTime()
 		}
 
-		clusterToSuiteMap[suite.ClusterId] = suiteStatus
+		clusterToSuiteMap[suite.GetClusterId()] = suiteStatus
 	}
 
 	return &v2.ComplianceScanConfigurationStatus{
@@ -395,14 +395,14 @@ func convertStorageScanConfigToV2ScanStatus(ctx context.Context,
 				var errors []string
 				bindings, err := bindingsDS.GetScanSettingBindings(ctx, search.NewQueryBuilder().
 					AddExactMatches(search.ComplianceOperatorScanConfigName, scanConfig.GetScanConfigName()).
-					AddExactMatches(search.ClusterID, cluster.ClusterId).ProtoQuery())
+					AddExactMatches(search.ClusterID, cluster.GetClusterId()).ProtoQuery())
 				if err != nil {
 					continue
 				}
 
 				// We may not have received any bindings from sensor
 				if len(bindings) != 0 {
-					bindingError := getLatestBindingError(bindings[0].Status)
+					bindingError := getLatestBindingError(bindings[0].GetStatus())
 					if bindingError != "" {
 						errors = append(errors, bindingError)
 					}

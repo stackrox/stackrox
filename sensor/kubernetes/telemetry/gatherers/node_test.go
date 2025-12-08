@@ -53,7 +53,7 @@ func (s *NodeGathererTestSuite) TestGatherNodes() {
 			},
 		},
 	}
-	gatherer := newNodeGatherer(fake.NewSimpleClientset(noConditions, conditions))
+	gatherer := newNodeGatherer(fake.NewClientset(noConditions, conditions))
 	gathered, err := gatherer.Gather(context.Background())
 	s.NoError(err)
 	s.Len(gathered, 2)

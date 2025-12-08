@@ -110,7 +110,7 @@ func (u *upgradeController) doHandleNewConnection(sensorCtx context.Context, con
 
 	// Special case: if the sensor is too old to support auto upgrades, then don't send it a trigger that
 	// it will not know how to parse.
-	if u.upgradeStatus.Upgradability == storage.ClusterUpgradeStatus_MANUAL_UPGRADE_REQUIRED {
+	if u.upgradeStatus.GetUpgradability() == storage.ClusterUpgradeStatus_MANUAL_UPGRADE_REQUIRED {
 		return false
 	}
 

@@ -332,7 +332,7 @@ func (s *serviceImpl) DeletePolicy(ctx context.Context, request *v1.ResourceByID
 	}
 
 	// Note: default policies cannot be deleted, only disabled
-	if policy.IsDefault {
+	if policy.GetIsDefault() {
 		return nil, errors.Wrap(errox.InvalidArgs, "A default policy cannot be deleted. (You can disable a default policy, but not delete it.)")
 	}
 
@@ -385,7 +385,7 @@ func (s *serviceImpl) SubmitDryRunPolicyJob(ctx context.Context, request *storag
 }
 
 func (s *serviceImpl) QueryDryRunJobStatus(ctx context.Context, jobid *v1.JobId) (*v1.DryRunJobStatusResponse, error) {
-	metadata, res, completed, err := s.dryRunPolicyJobManager.GetTaskStatusAndMetadata(jobid.JobId)
+	metadata, res, completed, err := s.dryRunPolicyJobManager.GetTaskStatusAndMetadata(jobid.GetJobId())
 	if err != nil {
 		return nil, err
 	}
@@ -400,7 +400,7 @@ func (s *serviceImpl) QueryDryRunJobStatus(ctx context.Context, jobid *v1.JobId)
 
 	if completed {
 		resp.Result, _ = res.(*v1.DryRunResponse)
-		if resp.Result == nil {
+		if resp.GetResult() == nil {
 			return nil, errors.New("Invalid response.")
 		}
 	}
@@ -409,7 +409,7 @@ func (s *serviceImpl) QueryDryRunJobStatus(ctx context.Context, jobid *v1.JobId)
 }
 
 func (s *serviceImpl) CancelDryRunJob(ctx context.Context, jobid *v1.JobId) (*v1.Empty, error) {
-	metadata, _, _, err := s.dryRunPolicyJobManager.GetTaskStatusAndMetadata(jobid.JobId)
+	metadata, _, _, err := s.dryRunPolicyJobManager.GetTaskStatusAndMetadata(jobid.GetJobId())
 	if err != nil {
 		return nil, errors.Wrap(errox.InvalidArgs, err.Error())
 	}
@@ -418,7 +418,7 @@ func (s *serviceImpl) CancelDryRunJob(ctx context.Context, jobid *v1.JobId) (*v1
 		return nil, err
 	}
 
-	if err := s.dryRunPolicyJobManager.CancelTask(jobid.JobId); err != nil {
+	if err := s.dryRunPolicyJobManager.CancelTask(jobid.GetJobId()); err != nil {
 		return nil, errors.Wrap(errox.InvalidArgs, err.Error())
 	}
 
@@ -563,7 +563,7 @@ func (s *serviceImpl) GetPolicyCategories(ctx context.Context, _ *v1.Empty) (*v1
 
 	response := new(v1.PolicyCategoriesResponse)
 	response.Categories = categorySet.AsSlice()
-	slices.Sort(response.Categories)
+	slices.Sort(response.GetCategories())
 
 	return response, nil
 }
@@ -620,7 +620,7 @@ func (s *serviceImpl) enablePolicyNotification(ctx context.Context, policyID str
 	if !exists {
 		return errors.Wrapf(errox.NotFound, "Policy %q not found", policyID)
 	}
-	notifierSet := set.NewStringSet(policy.Notifiers...)
+	notifierSet := set.NewStringSet(policy.GetNotifiers()...)
 	errorList := errorhelpers.NewErrorList("unable to use all requested notifiers")
 	for _, notifierID := range notifierIDs {
 		_, exists, err := s.notifiers.GetNotifier(ctx, notifierID)
@@ -668,7 +668,7 @@ func (s *serviceImpl) disablePolicyNotification(ctx context.Context, policyID st
 	if !exists {
 		return errors.Wrapf(errox.NotFound, "Policy %q not found", policyID)
 	}
-	notifierSet := set.NewStringSet(policy.Notifiers...)
+	notifierSet := set.NewStringSet(policy.GetNotifiers()...)
 	if notifierSet.Cardinality() == 0 {
 		return nil
 	}
@@ -713,13 +713,13 @@ func checkIdentityFromMetadata(ctx context.Context, metadata map[string]interfac
 
 func (s *serviceImpl) ExportPolicies(ctx context.Context, request *v1.ExportPoliciesRequest) (*storage.ExportPoliciesResponse, error) {
 	// missingIndices and policyErrors should not overlap
-	policyList, missingIndices, err := s.policies.GetPolicies(ctx, request.PolicyIds)
+	policyList, missingIndices, err := s.policies.GetPolicies(ctx, request.GetPolicyIds())
 	if err != nil {
 		return nil, err
 	}
 	errDetails := &v1.PolicyOperationErrorList{}
 	for _, missingIndex := range missingIndices {
-		policyID := request.PolicyIds[missingIndex]
+		policyID := request.GetPolicyIds()[missingIndex]
 		errDetails.Errors = append(errDetails.Errors, &v1.PolicyOperationError{
 			PolicyId: policyID,
 			Error: &v1.PolicyError{
@@ -767,7 +767,7 @@ func (s *serviceImpl) convertAndValidateForImport(p *storage.Policy) error {
 }
 
 func (s *serviceImpl) ImportPolicies(ctx context.Context, request *v1.ImportPoliciesRequest) (*v1.ImportPoliciesResponse, error) {
-	responses := make([]*v1.ImportPolicyResponse, 0, len(request.Policies))
+	responses := make([]*v1.ImportPolicyResponse, 0, len(request.GetPolicies()))
 	allValidationSucceeded := true
 	// Validate input policies
 	validPolicyList := make([]*storage.Policy, 0, len(request.GetPolicies()))
@@ -799,7 +799,7 @@ func (s *serviceImpl) ImportPolicies(ctx context.Context, request *v1.ImportPoli
 		}
 		// Clone here because this may be the same object stored by the DB
 		importResponse.Policy = importResponse.GetPolicy().CloneVT()
-		removeInternal(importResponse.Policy)
+		removeInternal(importResponse.GetPolicy())
 	}
 
 	if err := s.syncPoliciesWithSensors(); err != nil {

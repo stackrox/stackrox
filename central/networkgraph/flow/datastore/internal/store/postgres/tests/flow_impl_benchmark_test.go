@@ -58,6 +58,9 @@ func BenchmarkUpsertFlows(b *testing.B) {
 	b.Run("benchmark upsert single flow", benchmarkUpsertFlows(flowStore, 1))
 	b.Run("benchmark upsert 100 flow batch", benchmarkUpsertFlows(flowStore, 100))
 	b.Run("benchmark upsert 1000 flow batch", benchmarkUpsertFlows(flowStore, 1000))
+	b.Run("benchmark upsert 10000 flow batch", benchmarkUpsertFlows(flowStore, 10000))
+	b.Run("benchmark upsert 50000 flow batch", benchmarkUpsertFlows(flowStore, 50000))
+	b.Run("benchmark upsert 100000 flow batch", benchmarkUpsertFlows(flowStore, 100000))
 }
 
 func benchmarkUpsertFlows(flowStore store.FlowStore, numFlows uint32) func(*testing.B) {

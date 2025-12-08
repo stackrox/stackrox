@@ -1,4 +1,5 @@
 import qs from 'qs';
+import cloneDeep from 'lodash/cloneDeep';
 
 import type { RestSearchOption } from 'services/searchOptionsToQuery';
 import type { Pagination } from 'services/types';
@@ -8,7 +9,23 @@ import type {
     GraphQLSortOption,
     SearchFilter,
 } from 'types/search';
-import type { ValueOf } from './type.utils';
+import { nodeAttributes } from 'Components/CompoundSearchFilter/attributes/node';
+import { imageAttributes } from 'Components/CompoundSearchFilter/attributes/image';
+import { imageCVEAttributes } from 'Components/CompoundSearchFilter/attributes/imageCVE';
+import { imageComponentAttributes } from 'Components/CompoundSearchFilter/attributes/imageComponent';
+import { deploymentAttributes } from 'Components/CompoundSearchFilter/attributes/deployment';
+import { namespaceAttributes } from 'Components/CompoundSearchFilter/attributes/namespace';
+import {
+    clusterIdAttribute,
+    clusterKubernetesVersionAttribute,
+    clusterLabelAttribute,
+    clusterNameAttribute,
+    clusterPlatformTypeAttribute,
+    clusterTypeAttribute,
+} from 'Components/CompoundSearchFilter/attributes/cluster';
+import { policyAttributes } from 'Components/CompoundSearchFilter/attributes/policy';
+
+import type { NonEmptyArray, ValueOf } from './type.utils';
 import { safeGeneratePath } from './urlUtils';
 
 /**
@@ -71,11 +88,11 @@ export function convertSortToGraphQLFormat({
 }
 
 export function convertSortToRestFormat(
-    graphqlSort: GraphQLSortOption[]
-): Partial<ApiSortOptionSingle> {
+    graphqlSort: NonEmptyArray<GraphQLSortOption>
+): Pick<ApiSortOptionSingle, 'field' | 'reversed'> {
     return {
-        field: graphqlSort[0]?.id,
-        reversed: graphqlSort[0]?.desc,
+        field: graphqlSort[0].id,
+        reversed: graphqlSort[0].desc,
     };
 }
 
@@ -351,6 +368,23 @@ export function hasSearchKeyValue(search: string, key: string, value: string | n
 }
 
 /**
+ * Finds a value in an object by key case-insensitively.
+ *
+ * @param obj The object to search in
+ * @param targetKey The key to search for (case-insensitive)
+ * @returns The value associated with the key, or undefined if not found
+ */
+export function getValueByCaseInsensitiveKey<T extends Record<string, unknown>>(
+    obj: T,
+    targetKey: string
+): T[keyof T] | undefined {
+    const foundKey = Object.keys(obj).find(
+        (key) => key.toLowerCase() === targetKey.toLowerCase()
+    ) as keyof T | undefined;
+    return foundKey ? obj[foundKey] : undefined;
+}
+
+/**
  * Deletes the keys from the `SearchFilter` regardless of case. The backend search
  * API is case-insensitive, so we need to ensure that any keys we delete are also
  * deleted regardless of case.
@@ -368,4 +402,43 @@ export function deleteKeysCaseInsensitive(searchFilter: SearchFilter, keysToDele
         }
     });
     return nextFilter;
+}
+
+/*
+ Search terms that will default to regex search.
+
+ We only convert to regex search if the search field is of type 'text' or 'autocomplete'
+*/
+const regexSearchOptions = [
+    nodeAttributes,
+    imageAttributes,
+    imageCVEAttributes,
+    imageComponentAttributes,
+    deploymentAttributes,
+    namespaceAttributes,
+    clusterIdAttribute,
+    clusterKubernetesVersionAttribute,
+    clusterLabelAttribute,
+    clusterNameAttribute,
+    clusterPlatformTypeAttribute,
+    clusterTypeAttribute,
+    policyAttributes,
+]
+    .flat()
+    .filter(({ inputType }) => inputType === 'text' || inputType === 'autocomplete')
+    .map(({ searchTerm }) => searchTerm);
+
+/**
+ * Adds the regex search modifier to the search filter for any search options that support it.
+ */
+export function applyRegexSearchModifiers(searchFilter: SearchFilter): SearchFilter {
+    const regexSearchFilter = cloneDeep(searchFilter);
+
+    Object.entries(regexSearchFilter).forEach(([key, value]) => {
+        if (regexSearchOptions.some((option) => option.toLowerCase() === key.toLowerCase())) {
+            regexSearchFilter[key] = searchValueAsArray(value).map((val) => `r/${val}`);
+        }
+    });
+
+    return regexSearchFilter;
 }

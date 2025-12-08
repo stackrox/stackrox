@@ -2,10 +2,10 @@ import { useCallback } from 'react';
 
 import useInterval from 'hooks/useInterval';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
-import {
+import { fetchComplianceReportHistory } from 'services/ComplianceScanConfigurationService';
+import type {
     ComplianceReportSnapshot,
     ComplianceScanConfigurationStatus,
-    fetchComplianceReportHistory,
 } from 'services/ComplianceScanConfigurationService';
 import useRestQuery from 'hooks/useRestQuery';
 
@@ -83,7 +83,7 @@ function useWatchLastSnapshotForComplianceReports(
     useInterval(refetch, 10000);
 
     const result: FetchLastComplianceReportSnapshotReturn = {
-        complianceReportSnapshots: data || {},
+        complianceReportSnapshots: data ?? {},
         isLoading,
         error: error ? getAxiosErrorMessage(error) : null,
         fetchSnapshots: refetch,

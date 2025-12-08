@@ -5,6 +5,7 @@ on:
     - cron: 0 5 * * 1-5
 jobs:
   update-collector:
+    if:  ${{ github.repository_owner == 'stackrox' }}
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v5

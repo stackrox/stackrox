@@ -1,4 +1,4 @@
-import React, { ReactElement } from 'react';
+import type { ReactElement } from 'react';
 import { ClipboardCopy, Flex, List, ListItem, Title } from '@patternfly/react-core';
 
 export type SecureClusterUsingOperatorProps = {

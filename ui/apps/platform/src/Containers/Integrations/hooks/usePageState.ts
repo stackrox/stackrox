@@ -6,7 +6,7 @@ import {
     integrationsListPath,
     integrationsPath,
 } from 'routePaths';
-import { IntegrationSource, IntegrationType } from '../utils/integrationUtils';
+import type { IntegrationSource, IntegrationType } from '../utils/integrationUtils';
 
 type Params = {
     source: IntegrationSource;

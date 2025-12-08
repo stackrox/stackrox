@@ -112,6 +112,18 @@ func (mr *MockDetectorMockRecorder) ProcessDeployment(ctx, deployment, action an
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ProcessDeployment", reflect.TypeOf((*MockDetector)(nil).ProcessDeployment), ctx, deployment, action)
 }
 
+// ProcessFileAccess mocks base method.
+func (m *MockDetector) ProcessFileAccess(ctx context.Context, access *storage.FileAccess) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "ProcessFileAccess", ctx, access)
+}
+
+// ProcessFileAccess indicates an expected call of ProcessFileAccess.
+func (mr *MockDetectorMockRecorder) ProcessFileAccess(ctx, access any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ProcessFileAccess", reflect.TypeOf((*MockDetector)(nil).ProcessFileAccess), ctx, access)
+}
+
 // ProcessIndicator mocks base method.
 func (m *MockDetector) ProcessIndicator(ctx context.Context, indicator *storage.ProcessIndicator) {
 	m.ctrl.T.Helper()

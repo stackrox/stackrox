@@ -27,6 +27,9 @@ jobs:
       new-jiras: ${{ steps.junit2jira.outputs.new-jiras }}
     container:
       image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.4.9
+      volumes:
+        - /usr:/mnt/usr
+        - /opt:/mnt/opt
     steps:
     - name: Checkout
       uses: actions/checkout@v5
@@ -89,12 +92,15 @@ jobs:
       fail-fast: false
       matrix:
         gotags: [ 'GOTAGS=""', 'GOTAGS=release' ]
-        pg: [ '13', '15' ]
+        pg: [ '15' ]
     runs-on: ubuntu-latest
     outputs:
       new-jiras: ${{ steps.junit2jira.outputs.new-jiras }}
     container:
       image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.4.9
+      volumes:
+        - /usr:/mnt/usr
+        - /opt:/mnt/opt
     steps:
     - name: Set Postgres version
       run: |
@@ -152,6 +158,9 @@ jobs:
     runs-on: ubuntu-latest
     container:
       image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.4.9
+      volumes:
+        - /usr:/mnt/usr
+        - /opt:/mnt/opt
     steps:
     - name: Set Postgres version
       run: |
@@ -278,6 +287,9 @@ jobs:
       new-jiras: ${{ steps.junit2jira.outputs.new-jiras }}
     container:
       image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.4.9
+      volumes:
+        - /usr:/mnt/usr
+        - /opt:/mnt/opt
     steps:
     - name: Checkout
       uses: actions/checkout@v5

@@ -1,4 +1,4 @@
-import React, { ReactElement } from 'react';
+import type { MouseEvent, ReactElement } from 'react';
 
 type RadioButtonGroupProps = {
     headerText?: string;
@@ -7,7 +7,7 @@ type RadioButtonGroupProps = {
         value: boolean | string;
     }[];
     selected?: boolean | string;
-    onClick: (value) => void;
+    onClick: (value: boolean | string) => void;
     groupClassName?: string;
     testId?: string;
     useBoolean?: boolean;
@@ -24,8 +24,8 @@ const RadioButtonGroup = ({
     useBoolean,
     disabled,
 }: RadioButtonGroupProps): ReactElement => {
-    function onClickHandler(data) {
-        const targetValue = data.target.getAttribute('value');
+    function onClickHandler(data: MouseEvent<HTMLButtonElement>) {
+        const targetValue = data.currentTarget.getAttribute('value');
         if (targetValue) {
             const value = useBoolean ? targetValue === 'true' : targetValue.toString();
             onClick(value);

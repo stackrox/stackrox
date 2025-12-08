@@ -61,9 +61,9 @@ func (s *pipelineImpl) Match(msg *central.MsgFromSensor) bool {
 
 // Run runs the pipeline template on the input and returns the output.
 func (s *pipelineImpl) Run(ctx context.Context, clusterID string, msg *central.MsgFromSensor, _ common.MessageInjector) error {
-	switch m := msg.GetClusterStatusUpdate().Msg.(type) {
+	switch m := msg.GetClusterStatusUpdate().GetMsg().(type) {
 	case *central.ClusterStatusUpdate_DeploymentEnvUpdate:
-		s.deploymentEnvsMgr.UpdateDeploymentEnvironments(clusterID, m.DeploymentEnvUpdate.Environments)
+		s.deploymentEnvsMgr.UpdateDeploymentEnvironments(clusterID, m.DeploymentEnvUpdate.GetEnvironments())
 		return nil
 	case *central.ClusterStatusUpdate_Status:
 		if err := s.clusters.UpdateClusterStatus(ctx, clusterID, m.Status); err != nil {

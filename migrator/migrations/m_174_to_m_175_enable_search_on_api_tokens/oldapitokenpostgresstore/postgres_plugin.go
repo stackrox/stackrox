@@ -158,7 +158,7 @@ func (s *storeImpl) copyFrom(ctx context.Context, objs ...*storage.TokenMetadata
 	}
 	defer release()
 
-	tx, err := conn.Begin(ctx)
+	tx, ctx, err := conn.Begin(ctx)
 	if err != nil {
 		return err
 	}

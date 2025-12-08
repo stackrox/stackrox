@@ -1,8 +1,9 @@
 import { gql, useQuery } from '@apollo/client';
 
 import { getPaginationParams } from 'utils/searchUtils';
-import { ClientPagination, Pagination } from 'services/types';
-import { NodeVulnerability, nodeVulnerabilityFragment } from './CVEsTable';
+import type { ClientPagination, Pagination } from 'services/types';
+import { nodeVulnerabilityFragment } from './CVEsTable';
+import type { NodeVulnerability } from './CVEsTable';
 
 const nodeVulnerabilitiesQuery = gql`
     ${nodeVulnerabilityFragment}

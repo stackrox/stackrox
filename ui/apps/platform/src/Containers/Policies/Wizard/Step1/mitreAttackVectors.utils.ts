@@ -1,5 +1,5 @@
-import { MitreAttackVector, MitreTechnique } from 'types/mitre.proto';
-import { PolicyMitreAttackVector } from 'types/policy.proto';
+import type { MitreAttackVector, MitreTechnique } from 'types/mitre.proto';
+import type { PolicyMitreAttackVector } from 'types/policy.proto';
 
 // MitreAttackVector
 

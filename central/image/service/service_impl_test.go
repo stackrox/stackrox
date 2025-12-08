@@ -101,7 +101,7 @@ func TestShouldUpdateExistingScan(t *testing.T) {
 	v2MatchReq := &v1.EnrichLocalImageInternalRequest{}
 	v2ExpiredScan := &storage.Image{Scan: &storage.ImageScan{ScanTime: protoconv.NowMinus(reprocessInterval * 2)}}
 	v2CurrentScan := &storage.Image{Scan: &storage.ImageScan{ScanTime: protoconv.NowMinus(0)}}
-	v4ExpiredScan := &storage.Image{Scan: &storage.ImageScan{ScanTime: v2ExpiredScan.Scan.ScanTime, DataSource: v4DataSource}}
+	v4ExpiredScan := &storage.Image{Scan: &storage.ImageScan{ScanTime: v2ExpiredScan.GetScan().GetScanTime(), DataSource: v4DataSource}}
 	v4CurrentScan := &storage.Image{Scan: &storage.ImageScan{ScanTime: protoconv.NowMinus(0), DataSource: v4DataSource}}
 
 	testCases := []struct {
@@ -172,7 +172,7 @@ func TestShouldUpdateExistingScan(t *testing.T) {
 		t.Run(tc.desc, func(t *testing.T) {
 			pkgTestUtils.MustUpdateFeature(t, features.ScannerV4, tc.featureEnabled)
 
-			actual := shouldUpdateExistingScan(tc.imgExists, tc.existingImg, tc.req)
+			actual := shouldUpdateExistingScan(tc.imgExists, tc.existingImg.GetScan(), tc.req)
 			assert.Equal(t, tc.expected, actual)
 		})
 	}
@@ -238,7 +238,7 @@ func TestUpdatingImageFromRequest(t *testing.T) {
 
 			clone := tc.existingImg.CloneVT()
 			updateImageFromRequest(clone, tc.reqImgName)
-			protoassert.Equal(t, tc.expectedName, clone.Name)
+			protoassert.Equal(t, tc.expectedName, clone.GetName())
 		})
 	}
 }
@@ -270,7 +270,7 @@ func TestScanExpired(t *testing.T) {
 	}
 	for _, tc := range tcs {
 		t.Run(tc.desc, func(t *testing.T) {
-			assert.Equal(t, tc.expired, scanExpired(tc.image))
+			assert.Equal(t, tc.expired, scanExpired(tc.image.GetScan()))
 		})
 	}
 

@@ -2,19 +2,20 @@ import { useNavigate } from 'react-router-dom-v5-compat';
 import { integrationsPath } from 'routePaths';
 
 import {
-    IntegrationOptions,
     createIntegration,
     saveIntegration,
     saveIntegrationV2,
     testIntegration,
     testIntegrationV2,
 } from 'services/IntegrationsService';
-import { IntegrationSource, IntegrationType } from 'Containers/Integrations/utils/integrationUtils';
+import type { IntegrationOptions } from 'services/IntegrationsService';
 import { generateAPIToken } from 'services/APITokensService';
 import { getAxiosErrorMessage, isTimeoutError } from 'utils/responseErrorUtils';
 
-import { FormResponseMessage } from 'Components/PatternFly/FormMessage';
+import type { FormResponseMessage } from 'Components/PatternFly/FormMessage';
 import { createMachineAccessConfig } from 'services/MachineAccessService';
+
+import type { IntegrationSource, IntegrationType } from '../utils/integrationUtils';
 import useFetchIntegrations from './useFetchIntegrations';
 import usePageState from './usePageState';
 

@@ -50,7 +50,7 @@ func (ctx *walkState) walkUnions(p reflect.Type) (output []unionData) {
 			Name: camelCase(oneOf.GetName()),
 		}
 		for _, field := range des.GetField() {
-			if field.OneofIndex == nil || *field.OneofIndex != int32(i) {
+			if field.OneofIndex == nil || field.GetOneofIndex() != int32(i) {
 				continue
 			}
 			if field.GetType() != descriptorpb.FieldDescriptorProto_TYPE_MESSAGE {

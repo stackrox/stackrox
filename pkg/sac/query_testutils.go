@@ -41,37 +41,37 @@ func isSameQuery(expected, actual *v1.Query) bool {
 	if expected.Query == nil && actual.Query != nil {
 		return false
 	}
-	switch expected.Query.(type) {
+	switch expected.GetQuery().(type) {
 	case *v1.Query_BaseQuery:
-		switch actual.Query.(type) {
+		switch actual.GetQuery().(type) {
 		case *v1.Query_BaseQuery:
 			return isSameBaseQuery(expected.GetBaseQuery(), actual.GetBaseQuery())
 		default:
 			return false
 		}
 	case *v1.Query_BooleanQuery:
-		switch actual.Query.(type) {
+		switch actual.GetQuery().(type) {
 		case *v1.Query_BooleanQuery:
 			return isSameBooleanQuery(expected.GetBooleanQuery(), actual.GetBooleanQuery())
 		default:
 			return false
 		}
 	case *v1.Query_Conjunction:
-		switch actual.Query.(type) {
+		switch actual.GetQuery().(type) {
 		case *v1.Query_Conjunction:
 			return isSameConjunctionQuery(expected.GetConjunction(), actual.GetConjunction())
 		default:
 			return false
 		}
 	case *v1.Query_Disjunction:
-		switch actual.Query.(type) {
+		switch actual.GetQuery().(type) {
 		case *v1.Query_Disjunction:
 			return isSameDisjunctionQuery(expected.GetDisjunction(), actual.GetDisjunction())
 		default:
 			return false
 		}
 	default:
-		utils.Must(fmt.Errorf("Unexpected query type %T", expected.Query))
+		utils.Must(fmt.Errorf("Unexpected query type %T", expected.GetQuery()))
 		return false
 	}
 }
@@ -86,23 +86,23 @@ func isSameBaseQuery(expected, actual *v1.BaseQuery) bool {
 	if expected == nil && actual != nil {
 		return false
 	}
-	switch expected.Query.(type) {
+	switch expected.GetQuery().(type) {
 	case *v1.BaseQuery_DocIdQuery:
-		switch actual.Query.(type) {
+		switch actual.GetQuery().(type) {
 		case *v1.BaseQuery_DocIdQuery:
 			return isSameDocIDQuery(expected.GetDocIdQuery(), actual.GetDocIdQuery())
 		default:
 			return false
 		}
 	case *v1.BaseQuery_MatchFieldQuery:
-		switch actual.Query.(type) {
+		switch actual.GetQuery().(type) {
 		case *v1.BaseQuery_MatchFieldQuery:
 			return isSameMatchFieldQuery(expected.GetMatchFieldQuery(), actual.GetMatchFieldQuery())
 		default:
 			return false
 		}
 	case *v1.BaseQuery_MatchLinkedFieldsQuery:
-		switch actual.Query.(type) {
+		switch actual.GetQuery().(type) {
 		case *v1.BaseQuery_MatchLinkedFieldsQuery:
 			return isSameMatchLinkedFieldsQuery(
 				expected.GetMatchLinkedFieldsQuery(),
@@ -111,7 +111,7 @@ func isSameBaseQuery(expected, actual *v1.BaseQuery) bool {
 			return false
 		}
 	case *v1.BaseQuery_MatchNoneQuery:
-		switch actual.Query.(type) {
+		switch actual.GetQuery().(type) {
 		case *v1.BaseQuery_MatchNoneQuery:
 			if expected.Query == nil && actual.Query == nil {
 				return true
@@ -124,7 +124,7 @@ func isSameBaseQuery(expected, actual *v1.BaseQuery) bool {
 			return false
 		}
 	default:
-		utils.Must(fmt.Errorf("Unexpected base query type %T", expected.Query))
+		utils.Must(fmt.Errorf("Unexpected base query type %T", expected.GetQuery()))
 		return false
 	}
 }

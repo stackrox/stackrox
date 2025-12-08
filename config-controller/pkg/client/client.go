@@ -54,7 +54,7 @@ func (c *perRPCCreds) refreshToken(ctx context.Context) error {
 		return errors.Wrap(err, "Failed to exchange token")
 	}
 
-	authHeaderValue := fmt.Sprintf("Bearer %s", resp.AccessToken)
+	authHeaderValue := fmt.Sprintf("Bearer %s", resp.GetAccessToken())
 
 	c.metadata = map[string]string{
 		"authorization": authHeaderValue,
@@ -133,7 +133,7 @@ func (gc *grpcClient) ListNotifiers(ctx context.Context) ([]*storage.Notifier, e
 		return []*storage.Notifier{}, errors.Wrap(err, "Failed to list notifiers from grpc client")
 	}
 
-	return allNotifiers.Notifiers, nil
+	return allNotifiers.GetNotifiers(), nil
 }
 
 func (gc *grpcClient) ListClusters(ctx context.Context) ([]*storage.Cluster, error) {
@@ -142,7 +142,7 @@ func (gc *grpcClient) ListClusters(ctx context.Context) ([]*storage.Cluster, err
 		return []*storage.Cluster{}, errors.Wrap(err, "Failed to list clusters from grpc client")
 	}
 
-	return allClusters.Clusters, nil
+	return allClusters.GetClusters(), nil
 }
 
 func (gc *grpcClient) ListPolicies(ctx context.Context) ([]*storage.ListPolicy, error) {
@@ -151,7 +151,7 @@ func (gc *grpcClient) ListPolicies(ctx context.Context) ([]*storage.ListPolicy, 
 		return []*storage.ListPolicy{}, errors.Wrap(err, "Failed to list policies from grpc client")
 	}
 
-	return allPolicies.Policies, nil
+	return allPolicies.GetPolicies(), nil
 }
 
 func (gc *grpcClient) GetPolicy(ctx context.Context, id string) (*storage.Policy, error) {
@@ -275,11 +275,11 @@ func (c *client) GetPolicy(_ context.Context, name string) (*storage.Policy, boo
 }
 
 func (c *client) CreatePolicy(ctx context.Context, policy *storage.Policy) (*storage.Policy, error) {
-	log.Infof("Creating policy %q", policy.Name)
+	log.Infof("Creating policy %q", policy.GetName())
 	createdPolicy, err := c.centralSvc.PostPolicy(ctx, policy)
 
 	if err != nil {
-		return nil, errors.Wrap(err, fmt.Sprintf("Failed to POST policy '%s'", policy.Name))
+		return nil, errors.Wrap(err, fmt.Sprintf("Failed to POST policy '%s'", policy.GetName()))
 	}
 
 	c.policyObjectCache[createdPolicy.GetId()] = createdPolicy
@@ -289,7 +289,7 @@ func (c *client) CreatePolicy(ctx context.Context, policy *storage.Policy) (*sto
 }
 
 func (c *client) UpdatePolicy(ctx context.Context, policy *storage.Policy) error {
-	log.Infof("Updating policy %q", policy.Name)
+	log.Infof("Updating policy %q", policy.GetName())
 
 	var existingPolicyName string
 	if id, ok := c.policyNameToIDCache[policy.GetName()]; ok {
@@ -356,9 +356,9 @@ func (c *client) FlushCache(ctx context.Context) error {
 
 	for _, listPolicy := range allPolicies {
 		log.Debugf("Get policy: %s", listPolicy.GetName())
-		policy, err := c.centralSvc.GetPolicy(ctx, listPolicy.Id)
+		policy, err := c.centralSvc.GetPolicy(ctx, listPolicy.GetId())
 		if err != nil {
-			return errors.Wrapf(err, "Failed to fetch policy %s", listPolicy.Id)
+			return errors.Wrapf(err, "Failed to fetch policy %s", listPolicy.GetId())
 		}
 		newPolicyObjectCache[policy.GetId()] = policy
 		newPolicyNameToIDCache[policy.GetName()] = policy.GetId()

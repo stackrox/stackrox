@@ -28,7 +28,7 @@ func BenchmarkAddIndicator(b *testing.B) {
 	store := postgresStore.New(db)
 	plopStore := plopStore.New(db)
 
-	datastore := New(store, plopStore, nil)
+	datastore := New(db, store, plopStore, nil)
 
 	ctx := sac.WithAllAccess(context.Background())
 	b.ResetTimer()
@@ -60,7 +60,7 @@ func BenchmarkSearchIndicator(b *testing.B) {
 	store := postgresStore.New(db)
 	plopStore := plopStore.New(db)
 
-	datastore := New(store, plopStore, nil)
+	datastore := New(db, store, plopStore, nil)
 
 	ctx := sac.WithAllAccess(context.Background())
 	// Add the data first.

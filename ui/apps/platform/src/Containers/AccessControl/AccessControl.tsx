@@ -1,4 +1,4 @@
-import React, { ReactElement } from 'react';
+import type { ReactElement } from 'react';
 import { Navigate, Route, Routes } from 'react-router-dom-v5-compat';
 
 import { entityPathSegment } from './accessControlPaths';
@@ -14,7 +14,7 @@ function AccessControl(): ReactElement {
     return (
         <>
             <Routes>
-                <Route index element={<Navigate to={entityPathSegment.AUTH_PROVIDER} />} />
+                <Route index element={<Navigate to={entityPathSegment.AUTH_PROVIDER} replace />} />
                 <Route
                     path={`${entityPathSegment.AUTH_PROVIDER}/${paramId}`}
                     element={<AuthProviders />}

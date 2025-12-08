@@ -13,4 +13,5 @@ var (
 	Collector     = env.RegisterSetting("RELATED_IMAGE_COLLECTOR")
 	ScannerV4DB   = env.RegisterSetting("RELATED_IMAGE_SCANNER_V4_DB")
 	ScannerV4     = env.RegisterSetting("RELATED_IMAGE_SCANNER_V4")
+	Fact          = env.RegisterSetting("RELATED_IMAGE_FACT")
 )

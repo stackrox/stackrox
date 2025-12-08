@@ -1,23 +1,24 @@
-import React from 'react';
+import type { ReactElement } from 'react';
 import {
+    Button,
     Card,
+    CardBody,
     CardHeader,
     CardTitle,
-    CardBody,
     Divider,
-    Button,
-    TextInput,
     Flex,
     FlexItem,
     Form,
     FormGroup,
+    TextInput,
 } from '@patternfly/react-core';
 import { TrashIcon } from '@patternfly/react-icons';
 import { useField } from 'formik';
 
-import TypeaheadSelect, { TypeaheadSelectOption } from 'Components/TypeaheadSelect/TypeaheadSelect';
-import { ClusterScopeObject } from 'services/RolesService';
-import { ListDeployment } from 'types/deployment.proto';
+import TypeaheadSelect from 'Components/TypeaheadSelect/TypeaheadSelect';
+import type { TypeaheadSelectOption } from 'Components/TypeaheadSelect/TypeaheadSelect';
+import type { ClusterScopeObject } from 'services/RolesService';
+import type { ListDeployment } from 'types/deployment.proto';
 
 type PolicyScopeCardProps = {
     type: 'exclusion' | 'inclusion';
@@ -35,10 +36,10 @@ function PolicyScopeCard({
     deployments = [],
     onDelete,
     hasAuditLogEventSource = false,
-}: PolicyScopeCardProps): React.ReactElement {
+}: PolicyScopeCardProps): ReactElement {
     const [field, , helper] = useField(name);
     const { value } = field;
-    const { scope } = value || {};
+    const { scope } = value ?? {};
     const { setValue } = helper;
 
     const clusterOptions: TypeaheadSelectOption[] = clusters.map((cluster) => ({
@@ -65,20 +66,20 @@ function PolicyScopeCard({
 
     function handleChangeLabelKey(key) {
         if (type === 'exclusion') {
-            const { label } = scope || {};
+            const { label } = scope ?? {};
             setValue({ ...value, scope: { ...scope, label: { ...label, key } } });
         } else {
-            const { label } = value || {};
+            const { label } = value ?? {};
             setValue({ ...value, label: { ...label, key } });
         }
     }
 
     function handleChangeLabelValue(val) {
         if (type === 'exclusion') {
-            const { label } = scope || {};
+            const { label } = scope ?? {};
             setValue({ ...value, scope: { ...scope, label: { ...label, value: val } } });
         } else {
-            const { label } = value || {};
+            const { label } = value ?? {};
             setValue({ ...value, label: { ...label, value: val } });
         }
     }

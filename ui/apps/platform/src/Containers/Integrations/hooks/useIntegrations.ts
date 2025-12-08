@@ -3,7 +3,7 @@ import { useSelector } from 'react-redux';
 import { createStructuredSelector } from 'reselect';
 import { selectors } from 'reducers';
 
-import { Integration, IntegrationSource, IntegrationType } from '../utils/integrationUtils';
+import type { Integration, IntegrationSource, IntegrationType } from '../utils/integrationUtils';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type SelectIntegrationsState = Record<string, any[]>;

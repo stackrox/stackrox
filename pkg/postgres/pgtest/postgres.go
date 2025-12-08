@@ -134,7 +134,7 @@ func ForTCustomDB(t testing.TB, dbName string) *TestPostgres {
 
 // ForTCustomPool - gets a connection pool to a specific database.
 func ForTCustomPool(t testing.TB, dbName string) postgres.DB {
-	sourceWithDatabase := conn.GetConnectionStringWithDatabaseName(t, dbName)
+	sourceWithDatabase := conn.GetSingleConnectionString(t, dbName)
 	ctx := context.Background()
 
 	// initialize pool to be used

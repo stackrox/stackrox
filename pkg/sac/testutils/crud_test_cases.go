@@ -148,56 +148,72 @@ func GenericNamespaceSACGetTestCases(_ *testing.T) map[string]SACCrudTestCase {
 // are expected to assess whether the retrieved object belongs to a namespace
 // in scope. These test cases assume the removed test object belongs to Cluster2 and NamespaceB.
 func GenericNamespaceSACDeleteTestCases(_ *testing.T) map[string]SACCrudTestCase {
+	// The ability to delete an object or not is also materialized by the ability to
+	// retrieve the object after the deletion request.
+	// In a case where the deletion should not be allowed, a Get after the removal should still see
+	// the object untouched in the database.
+	// In a case where the deletion should be allowed, a Get after the removal should not see
+	// the object in database anymore.
 	return map[string]SACCrudTestCase{
 		"global read-only should not be able to delete": {
 			ScopeKey:      UnrestrictedReadCtx,
 			ExpectError:   true,
 			ExpectedError: sac.ErrResourceAccessDenied,
+			ExpectedFound: true,
 		},
 		"global read-write should be able to delete": {
 			ScopeKey:      UnrestrictedReadWriteCtx,
 			ExpectError:   false,
 			ExpectedError: nil,
+			ExpectedFound: false,
 		},
 		"read-write on wrong cluster should not be able to delete": {
 			ScopeKey:      Cluster1ReadWriteCtx,
 			ExpectError:   true,
 			ExpectedError: sac.ErrResourceAccessDenied,
+			ExpectedFound: true,
 		},
 		"read-write on wrong cluster and namespace should not be able to delete": {
 			ScopeKey:      Cluster1NamespaceAReadWriteCtx,
 			ExpectError:   true,
 			ExpectedError: sac.ErrResourceAccessDenied,
+			ExpectedFound: true,
 		},
 		"read-write on wrong cluster and matching namespace should not be able to delete": {
 			ScopeKey:      Cluster1NamespaceBReadWriteCtx,
 			ExpectError:   true,
 			ExpectedError: sac.ErrResourceAccessDenied,
+			ExpectedFound: true,
 		},
 		"read-write on matching cluster should be able to delete": {
 			ScopeKey:      Cluster2ReadWriteCtx,
 			ExpectError:   false,
 			ExpectedError: nil,
+			ExpectedFound: false,
 		},
 		"read-write on matching cluster and wrong namespace should not be able to delete": {
 			ScopeKey:      Cluster2NamespaceAReadWriteCtx,
 			ExpectError:   true,
 			ExpectedError: sac.ErrResourceAccessDenied,
+			ExpectedFound: true,
 		},
 		"read-write on matching cluster and wrong namespaces should not be able to delete": {
 			ScopeKey:      Cluster2NamespacesACReadWriteCtx,
 			ExpectError:   true,
 			ExpectedError: sac.ErrResourceAccessDenied,
+			ExpectedFound: true,
 		},
 		"read-write on matching cluster and matching namespace should be able to delete": {
 			ScopeKey:      Cluster2NamespaceBReadWriteCtx,
 			ExpectError:   false,
 			ExpectedError: nil,
+			ExpectedFound: false,
 		},
 		"read-write on matching cluster and at least one matching namespace should be able to delete": {
 			ScopeKey:      Cluster2NamespacesABReadWriteCtx,
 			ExpectError:   false,
 			ExpectedError: nil,
+			ExpectedFound: false,
 		},
 	}
 }

@@ -1,4 +1,5 @@
-import React, { ReactElement, useState } from 'react';
+import { useState } from 'react';
+import type { ReactElement } from 'react';
 import { Link } from 'react-router-dom-v5-compat';
 import { useDispatch } from 'react-redux';
 import { Divider, Dropdown, DropdownItem, DropdownList, MenuToggle } from '@patternfly/react-core';
@@ -34,11 +35,11 @@ function HelpMenu(): ReactElement {
             )}
         >
             <DropdownList>
-                <DropdownItem>
-                    <Link to={apidocsPath}>API Reference (v1)</Link>
+                <DropdownItem component={(props) => <Link {...props} to={apidocsPath} />}>
+                    API Reference (v1)
                 </DropdownItem>
-                <DropdownItem>
-                    <Link to={apidocsPathV2}>API Reference (v2)</Link>
+                <DropdownItem component={(props) => <Link {...props} to={apidocsPathV2} />}>
+                    API Reference (v2)
                 </DropdownItem>
                 <DropdownItem
                     component="button"

@@ -8,7 +8,6 @@ import (
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/sac/resources"
@@ -49,7 +48,7 @@ var (
 			v1.SearchCategory_CLUSTERS,
 		}...)
 		schema.ScopingResource = resources.Image
-		RegisterTable(schema, CreateTableImageComponentV2Stmt, features.FlattenCVEData.Enabled)
+		RegisterTable(schema, CreateTableImageComponentV2Stmt)
 		mapping.RegisterCategoryToTable(v1.SearchCategory_IMAGE_COMPONENTS_V2, schema)
 		return schema
 	}()
@@ -73,6 +72,7 @@ type ImageComponentV2 struct {
 	ImageID         string             `gorm:"column:imageid;type:varchar;index:imagecomponentv2_imageid,type:btree"`
 	Location        string             `gorm:"column:location;type:varchar"`
 	ImageIDV2       string             `gorm:"column:imageidv2;type:varchar;index:imagecomponentv2_imageidv2,type:btree"`
+	FromBaseImage   bool               `gorm:"column:frombaseimage;type:bool"`
 	Serialized      []byte             `gorm:"column:serialized;type:bytea"`
 	ImagesRef       Images             `gorm:"foreignKey:imageid;references:id;belongsTo;constraint:OnDelete:CASCADE"`
 	ImagesV2Ref     ImagesV2           `gorm:"foreignKey:imageidv2;references:id;belongsTo;constraint:OnDelete:CASCADE"`

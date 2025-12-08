@@ -1,4 +1,3 @@
-import React from 'react';
 import type { ReactNode } from 'react';
 import { LabelGroup } from '@patternfly/react-core';
 import { Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
@@ -7,23 +6,21 @@ import { gql } from '@apollo/client';
 import useFeatureFlags from 'hooks/useFeatureFlags';
 import useTableSort from 'hooks/useTableSort';
 import VulnerabilitySeverityIconText from 'Components/PatternFly/IconText/VulnerabilitySeverityIconText';
-import { VulnerabilityState } from 'types/cve.proto';
+import type { VulnerabilityState } from 'types/cve.proto';
 import CvssFormatted from 'Components/CvssFormatted';
 
+import AdvisoryLinkOrText from '../../components/AdvisoryLinkOrText';
 import PendingExceptionLabel from '../../components/PendingExceptionLabel';
 import ImageNameLink from '../components/ImageNameLink';
 import {
-    imageMetadataContextFragment,
-    ImageMetadataContext,
-    DeploymentComponentVulnerability,
-    sortTableData,
     flattenDeploymentComponentVulns,
+    imageMetadataContextFragment,
+    sortTableData,
 } from './table.utils';
-import FixedByVersion from '../components/FixedByVersion';
+import type { DeploymentComponentVulnerability, ImageMetadataContext } from './table.utils';
 import DockerfileLayer from '../components/DockerfileLayer';
 import ComponentLocation from '../components/ComponentLocation';
-
-import AdvisoryLinkOrText from './AdvisoryLinkOrText';
+import FixedByVersion from '../../components/FixedByVersion';
 
 export { imageMetadataContextFragment };
 export type { ImageMetadataContext, DeploymentComponentVulnerability };

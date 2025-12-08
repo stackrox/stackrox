@@ -150,8 +150,8 @@ message SensorDeploymentIdentification {
 
 //Next tag: 33
 message Cluster {
-  string id = 1; // @gotags: search:"Cluster ID,hidden,store" sql:"pk,type(uuid)"
-  string name = 2; // @gotags: search:"Cluster,store" sql:"unique"
+  string id = 1; // @gotags: search:"Cluster ID,hidden" sql:"pk,type(uuid)"
+  string name = 2; // @gotags: search:"Cluster" sql:"unique"
   ClusterType type = 3; // @gotags: search:"Cluster Platform Type"
   map<string, string> labels = 27; // @gotags: search:"Cluster Label"
   string main_image = 4;
@@ -313,12 +313,12 @@ message ClusterHealthStatus {
   ScannerHealthInfo scanner_health_info = 10;
 
   // The following _health_status fields provide aggregated health status of the respective components and are assigned by central.
-  HealthStatusLabel sensor_health_status = 2; // @gotags: search:"Sensor Status,store"
-  HealthStatusLabel collector_health_status = 3; // @gotags: search:"Collector Status,store"
+  HealthStatusLabel sensor_health_status = 2; // @gotags: search:"Sensor Status"
+  HealthStatusLabel collector_health_status = 3; // @gotags: search:"Collector Status"
 
-  HealthStatusLabel overall_health_status = 4; // @gotags: search:"Cluster Status,store"
-  HealthStatusLabel admission_control_health_status = 7; // @gotags: search:"Admission Control Status,store"
-  HealthStatusLabel scanner_health_status = 11; // @gotags: search:"Scanner Status,store"
+  HealthStatusLabel overall_health_status = 4; // @gotags: search:"Cluster Status"
+  HealthStatusLabel admission_control_health_status = 7; // @gotags: search:"Admission Control Status"
+  HealthStatusLabel scanner_health_status = 11; // @gotags: search:"Scanner Status"
 
   // For sensors not having health capability, this will be filled with gRPC connection poll. Otherwise,
   // this timestamp will be updated by central pipeline when message is processed.
@@ -328,7 +328,7 @@ message ClusterHealthStatus {
   // to re-run the CRS-flow which would then equip the attacker with a certificate & key issued to the cluster A.
   // As countermeasure we only allow re-running the CRS-flow only as long as the last_contact field is empty,
   // indicating that the legit cluster A's sensor has not yet connected with the CRS-issued service certificates.
-  google.protobuf.Timestamp last_contact = 5; // @gotags: search:"Last Contact,store"
+  google.protobuf.Timestamp last_contact = 5; // @gotags: search:"Last Contact"
 
   // To track cases such as when sensor is healthy, but collector status data is unavailable because the sensor is on an old version
   bool health_info_complete = 6;

@@ -87,3 +87,25 @@ func (s *{{$namePrefix}}StoreSuite) TestStore() {
 	s.True(exists)
 	protoassert.Equal(s.T(), {{$name}}, found{{.TrimmedType|upperCamelCase}})
 }
+
+func (s *{{$namePrefix}}StoreSuite) TestGetWithTransactionContext() {
+	ctx := sac.WithAllAccess(context.Background())
+	store := s.store
+
+	{{$name}} := &{{.Type}}{}
+	s.NoError(testutils.FullInit({{$name}}, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
+	s.NoError(store.Upsert(ctx, {{$name}}))
+
+	// Create explicit transaction
+	tx, err := s.testDB.DB.Begin(ctx)
+	s.NoError(err)
+	defer tx.Rollback(ctx)
+
+	// Pass transaction context to Get
+	txCtx := postgres.ContextWithTx(ctx, tx)
+	retrieved, exists, err := store.Get(txCtx)
+
+	s.NoError(err)
+	s.True(exists)
+	protoassert.Equal(s.T(), {{$name}}, retrieved)
+}

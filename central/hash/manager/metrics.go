@@ -6,7 +6,7 @@ import (
 )
 
 func init() {
-	prometheus.MustRegister(dedupingHashSizeGauge)
+	prometheus.MustRegister(dedupingHashSizeGauge, dedupingHashCounterVec)
 }
 
 var (
@@ -16,4 +16,11 @@ var (
 		Name:      "deduping_hash_size",
 		Help:      "Number of hashes in the deduping hashes",
 	}, []string{"cluster"})
+
+	dedupingHashCounterVec = prometheus.NewCounterVec(prometheus.CounterOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.CentralSubsystem.String(),
+		Name:      "deduping_hash_count",
+		Help:      "Number of operations against the hashes by cluster, resource type and operation",
+	}, []string{"cluster", "ResourceType", "Operation"})
 )

@@ -14,7 +14,7 @@ import queryService from 'utils/queryService';
 import { createPolicy, savePolicy } from 'services/PoliciesService';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 import { truncate } from 'utils/textUtils';
-import { splitCvesByType } from 'utils/vulnerabilityUtils';
+import { splitCvesByType } from '../../VulnMgmt.utils/vulnerabilityUtils';
 
 import CustomDialogue from '../../Components/CustomDialogue';
 

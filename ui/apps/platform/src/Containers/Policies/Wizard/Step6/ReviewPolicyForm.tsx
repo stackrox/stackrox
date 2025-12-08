@@ -1,9 +1,11 @@
-import React, { ReactElement, useEffect, useState } from 'react';
-import { Alert, Flex, FlexItem, Spinner, Title, Divider, Button } from '@patternfly/react-core';
+import { useEffect, useState } from 'react';
+import type { ReactElement } from 'react';
+import { Alert, Button, Divider, Flex, FlexItem, Spinner, Title } from '@patternfly/react-core';
 import { useFormikContext } from 'formik';
 
-import { DryRunAlert, checkDryRun, startDryRun } from 'services/PoliciesService';
-import { ClientPolicy } from 'types/policy.proto';
+import { checkDryRun, startDryRun } from 'services/PoliciesService';
+import type { DryRunAlert } from 'services/PoliciesService';
+import type { ClientPolicy } from 'types/policy.proto';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 
 import { getServerPolicy } from '../../policies.utils';

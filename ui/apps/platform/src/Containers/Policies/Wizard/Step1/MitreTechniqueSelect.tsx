@@ -1,17 +1,18 @@
-import React, { ReactElement } from 'react';
+import { Fragment } from 'react';
+import type { ReactElement, Ref } from 'react';
 import {
-    Select,
-    MenuToggle,
-    MenuToggleElement,
-    SelectList,
-    SelectOption,
-    SelectGroup,
     Divider,
     Flex,
     FlexItem,
+    MenuToggle,
+    Select,
+    SelectGroup,
+    SelectList,
+    SelectOption,
 } from '@patternfly/react-core';
+import type { MenuToggleElement } from '@patternfly/react-core';
 
-import { MitreTechnique } from 'types/mitre.proto';
+import type { MitreTechnique } from 'types/mitre.proto';
 import useSelectToggleState from 'Components/SelectSingle/useSelectToggleState';
 
 type GroupedTechnique = {
@@ -92,7 +93,7 @@ function MitreTechniqueSelect({
     const groupedTechniques = groupAndSortTechniques(mitreTechniques);
     const selectedTechnique = mitreTechniques.find((technique) => technique.id === techniqueId);
 
-    const toggle = (toggleRef: React.Ref<MenuToggleElement>) => (
+    const toggle = (toggleRef: Ref<MenuToggleElement>) => (
         <MenuToggle
             ref={toggleRef}
             onClick={onToggle}
@@ -134,7 +135,7 @@ function MitreTechniqueSelect({
                     const isLastGroup = index === groupedTechniques.length - 1;
 
                     return (
-                        <React.Fragment key={baseId}>
+                        <Fragment key={baseId}>
                             <SelectGroup label={groupLabel}>
                                 {techniques.map(({ id, name }) => (
                                     <SelectOption
@@ -148,7 +149,7 @@ function MitreTechniqueSelect({
                                 ))}
                             </SelectGroup>
                             {!isLastGroup && <Divider component="li" />}
-                        </React.Fragment>
+                        </Fragment>
                     );
                 })}
             </SelectList>

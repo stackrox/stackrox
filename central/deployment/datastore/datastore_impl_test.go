@@ -56,7 +56,7 @@ func (suite *DeploymentDataStoreTestSuite) TestInitializeRanker() {
 	nsRanker := ranking.NewRanker()
 	deploymentRanker := ranking.NewRanker()
 
-	ds := newDatastoreImpl(suite.storage, nil, nil, nil, suite.riskStore, nil, suite.filter, clusterRanker, nsRanker, deploymentRanker, suite.matcher)
+	ds := newDatastoreImpl(suite.storage, nil, nil, nil, nil, suite.riskStore, nil, suite.filter, clusterRanker, nsRanker, deploymentRanker, suite.matcher)
 
 	deployments := []*storage.Deployment{
 		{
@@ -109,7 +109,7 @@ func walkMockFunc(deployments []*storage.Deployment) func(_ context.Context, _ *
 }
 
 func (suite *DeploymentDataStoreTestSuite) TestMergeCronJobs() {
-	ds := newDatastoreImpl(suite.storage, nil, nil, nil, suite.riskStore, nil, suite.filter, nil, nil, nil, suite.matcher)
+	ds := newDatastoreImpl(suite.storage, nil, nil, nil, nil, suite.riskStore, nil, suite.filter, nil, nil, nil, suite.matcher)
 	ctx := sac.WithAllAccess(context.Background())
 
 	// Not a cronjob so no merging
@@ -148,14 +148,14 @@ func (suite *DeploymentDataStoreTestSuite) TestMergeCronJobs() {
 
 	// Different numbers of containers for the CronJob so early exit with no changes
 	returnedDep := dep.CloneVT()
-	returnedDep.Containers = returnedDep.Containers[:1]
+	returnedDep.Containers = returnedDep.GetContainers()[:1]
 
 	suite.storage.EXPECT().Get(ctx, "id").Return(returnedDep, true, nil)
 	suite.NoError(ds.mergeCronJobs(ctx, dep))
 	protoassert.Equal(suite.T(), expectedDep, dep)
 
 	// Filled in for missing last container, but names do not match
-	returnedDep.Containers = append(returnedDep.Containers, dep.Containers[1].CloneVT())
+	returnedDep.Containers = append(returnedDep.Containers, dep.GetContainers()[1].CloneVT())
 	returnedDep.Containers[1].Image.Id = "xyz"
 	returnedDep.Containers[1].Image.Name = &storage.ImageName{
 		FullName: "fullname",
@@ -165,8 +165,8 @@ func (suite *DeploymentDataStoreTestSuite) TestMergeCronJobs() {
 	protoassert.Equal(suite.T(), expectedDep, dep)
 
 	// Fill in missing last container value since names match
-	dep.Containers[1].Image.Name = returnedDep.Containers[1].Image.Name
-	expectedDep.Containers[1].Image.Name = returnedDep.Containers[1].Image.Name
+	dep.Containers[1].Image.Name = returnedDep.GetContainers()[1].GetImage().GetName()
+	expectedDep.Containers[1].Image.Name = returnedDep.GetContainers()[1].GetImage().GetName()
 	expectedDep.Containers[1].Image.Id = "xyz"
 	suite.storage.EXPECT().Get(ctx, "id").Return(returnedDep, true, nil)
 	suite.NoError(ds.mergeCronJobs(ctx, dep))
@@ -179,7 +179,7 @@ func (suite *DeploymentDataStoreTestSuite) TestUpsert_PlatformComponentAssignmen
 		suite.T().Skip("Skip test when ROX_PLATFORM_COMPONENTS disabled")
 		suite.T().SkipNow()
 	}
-	ds := newDatastoreImpl(suite.storage, nil, nil, nil, suite.riskStore, nil, suite.filter, nil, nil, ranking.NewRanker(), suite.matcher)
+	ds := newDatastoreImpl(suite.storage, nil, nil, nil, nil, suite.riskStore, nil, suite.filter, nil, nil, ranking.NewRanker(), suite.matcher)
 	ctx := sac.WithAllAccess(context.Background())
 	suite.storage.EXPECT().Get(gomock.Any(), gomock.Any()).Return(nil, false, nil).AnyTimes()
 

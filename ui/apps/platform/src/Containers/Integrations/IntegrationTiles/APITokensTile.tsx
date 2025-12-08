@@ -1,7 +1,7 @@
-import React, { ReactElement } from 'react';
-import { useSelector } from 'react-redux';
+import type { ReactElement } from 'react';
 
-import { selectors } from 'reducers';
+import useRestQuery from 'hooks/useRestQuery';
+import { fetchAPITokens } from 'services/APITokensService';
 
 import {
     apiTokenDescriptor as descriptor,
@@ -13,7 +13,8 @@ import IntegrationTile from './IntegrationTile';
 const { image, label, type } = descriptor;
 
 function APITokensTile(): ReactElement {
-    const integrations = useSelector(selectors.getAPITokens);
+    const { data } = useRestQuery(fetchAPITokens);
+    const integrations = data?.response?.tokens ?? [];
 
     return (
         <IntegrationTile

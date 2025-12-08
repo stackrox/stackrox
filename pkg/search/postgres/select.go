@@ -11,11 +11,11 @@ import (
 	"github.com/georgysavva/scany/v2/pgxscan"
 	"github.com/pkg/errors"
 	v1 "github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/pkg/env"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stackrox/rox/pkg/postgres/walker"
+	"github.com/stackrox/rox/pkg/search/enumregistry"
+	"github.com/stackrox/rox/pkg/search/paginated"
 	"github.com/stackrox/rox/pkg/search/postgres/aggregatefunc"
 	pgsearch "github.com/stackrox/rox/pkg/search/postgres/query"
 	"github.com/stackrox/rox/pkg/utils"
@@ -41,7 +41,20 @@ func newDBScanAPI(opts ...dbscan.APIOption) *dbscan.API {
 
 // RunSelectRequestForSchema executes a select request against the database for given schema. The input query must
 // explicitly specify select fields.
+//
+// Deprecated: Use RunSelectRequestForSchemaFn
 func RunSelectRequestForSchema[T any](ctx context.Context, db postgres.DB, schema *walker.Schema, q *v1.Query) ([]*T, error) {
+	result := make([]*T, 0, paginated.GetLimit(q.GetPagination().GetLimit(), 100))
+	err := RunSelectRequestForSchemaFn(ctx, db, schema, q, func(t *T) error {
+		result = append(result, t)
+		return nil
+	})
+	return result, err
+}
+
+// RunSelectRequestForSchemaFn executes a select request against the database for given schema. The input query must
+// explicitly specify select fields.
+func RunSelectRequestForSchemaFn[T any](ctx context.Context, db postgres.DB, schema *walker.Schema, q *v1.Query, fn func(*T) error) error {
 	var query *query
 	var err error
 	// Add this to be safe and convert panics to errors,
@@ -62,14 +75,14 @@ func RunSelectRequestForSchema[T any](ctx context.Context, db postgres.DB, schem
 
 	query, err = standardizeSelectQueryAndPopulatePath(ctx, q, schema, SELECT)
 	if err != nil {
-		return nil, err
+		return err
 	}
 	// A nil-query implies no results.
 	if query == nil {
-		return nil, nil
+		return nil
 	}
-	return pgutils.Retry2(ctx, func() ([]*T, error) {
-		return retryableRunSelectRequestForSchema[T](ctx, db, query)
+	return pgutils.Retry(ctx, func() error {
+		return retryableRunSelectRequestForSchemaFn[T](ctx, db, query, fn)
 	})
 }
 
@@ -86,13 +99,6 @@ func standardizeSelectQueryAndPopulatePath(ctx context.Context, q *v1.Query, sch
 	joins, dbFields := getJoinsAndFields(schema, q)
 	if len(q.GetSelects()) == 0 && q.GetQuery() == nil {
 		return nil, nil
-	}
-
-	if env.ImageCVEEdgeCustomJoin.BooleanSetting() && !features.FlattenCVEData.Enabled() {
-		joins, err = handleImageCveEdgesTableInJoins(schema, joins)
-		if err != nil {
-			return nil, err
-		}
 	}
 
 	parsedQuery := &query{
@@ -134,24 +140,30 @@ func standardizeSelectQueryAndPopulatePath(ctx context.Context, q *v1.Query, sch
 	return parsedQuery, nil
 }
 
-func retryableRunSelectRequestForSchema[T any](ctx context.Context, db postgres.DB, query *query) ([]*T, error) {
+func retryableRunSelectRequestForSchemaFn[T any](ctx context.Context, db postgres.DB, query *query, fn func(*T) error) error {
 	if len(query.SelectedFields) == 0 {
-		return nil, errors.New("select fields required for select query")
+		return errors.New("select fields required for select query")
 	}
 
 	queryStr := query.AsSQL()
 
 	rows, err := tracedQuery(ctx, db, queryStr, query.Data...)
 	if err != nil {
-		return nil, errors.Wrapf(err, "error executing query %s", queryStr)
+		return errors.Wrapf(err, "error executing query %s", queryStr)
 	}
 	defer rows.Close()
 
-	var scannedRows []*T
-	if err := scanAPI.ScanAll(&scannedRows, rows); err != nil {
-		return nil, err
+	scanner := scanAPI.NewRowScanner(rows)
+	for rows.Next() {
+		var row T
+		if err := scanner.Scan(&row); err != nil {
+			return err
+		}
+		if err := fn(&row); err != nil {
+			return err
+		}
 	}
-	return scannedRows, rows.Err()
+	return rows.Err()
 }
 
 func populateSelect(querySoFar *query, schema *walker.Schema, querySelects []*v1.QuerySelect, queryFields map[string]searchFieldMetadata, nowForQuery time.Time) error {
@@ -228,10 +240,26 @@ func selectQueryField(searchField string, field *walker.Field, selectDistinct bo
 	if dataType == "" {
 		dataType = field.DataType
 	}
+
+	// Add PostTransform for enum fields to convert integer values to strings
+	var postTransform func(interface{}) interface{}
+	if dataType == postgres.Enum {
+		var enumFieldPath string
+		if searchFieldObj, ok := field.Schema.OptionsMap.Get(searchField); ok {
+			enumFieldPath = searchFieldObj.FieldPath
+		}
+		postTransform = func(i interface{}) interface{} {
+			// The value from postgres is a *int, convert it to string using enum registry
+			return enumregistry.Lookup(enumFieldPath, int32(*(i.(*int))))
+		}
+	}
+
 	return pgsearch.SelectQueryField{
-		SelectPath:   selectPath,
-		Alias:        strings.Join(strings.Fields(searchField+" "+aggrFunc.Name()), "_"),
-		FieldType:    dataType,
-		DerivedField: aggrFunc != aggregatefunc.Unset,
+		SelectPath:    selectPath,
+		Alias:         strings.Join(strings.Fields(searchField+" "+aggrFunc.Name()), "_"),
+		FieldType:     dataType,
+		FieldPath:     strings.ToLower(searchField), // Store the search field name for FieldValues mapping
+		DerivedField:  aggrFunc != aggregatefunc.Unset,
+		PostTransform: postTransform,
 	}
 }

@@ -2,7 +2,7 @@ import cloneDeep from 'lodash/cloneDeep';
 
 import entityRelationships from 'utils/entityRelationships';
 import generateURL from 'utils/URLGenerator';
-import { searchParams, sortParams, pagingParams } from 'constants/searchParams';
+import { pagingParams, searchParams, sortParams } from 'constants/searchParams';
 
 import WorkflowEntity from './WorkflowEntity';
 

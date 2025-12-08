@@ -1,7 +1,7 @@
-import React from 'react';
 import { SelectOption } from '@patternfly/react-core';
 
-import { TimeWindow, timeWindows } from 'constants/timeWindows';
+import { timeWindows } from 'constants/timeWindows';
+import type { TimeWindow } from 'constants/timeWindows';
 import SelectSingle from 'Components/SelectSingle/SelectSingle';
 
 type TimeWindowSelectorProps = {

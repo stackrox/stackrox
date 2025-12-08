@@ -93,6 +93,11 @@ func (s *CloudSourcesStoreSuite) TestStore() {
 
 	s.NoError(store.UpsertMany(ctx, cloudSources))
 
+	foundCloudSources, missing, err := store.GetMany(ctx, cloudSourceIDs)
+	s.NoError(err)
+	s.Empty(missing)
+	protoassert.ElementsMatch(s.T(), cloudSources, foundCloudSources)
+
 	cloudSourceCount, err = store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)
 	s.Equal(200, cloudSourceCount)

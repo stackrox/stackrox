@@ -102,7 +102,7 @@ func productTypeToTarget(s string) pkgFramework.TargetKind {
 }
 
 func getRuleName(rule *storage.ComplianceOperatorRule) string {
-	if ruleName, ok := rule.Annotations[v1alpha1.RuleIDAnnotationKey]; ok {
+	if ruleName, ok := rule.GetAnnotations()[v1alpha1.RuleIDAnnotationKey]; ok {
 		return ruleName
 	}
 	// This field is checked within the pipeline so it should never be empty
@@ -237,7 +237,7 @@ func (m *managerImpl) addProfileNoLock(profile *storage.ComplianceOperatorProfil
 
 	standard.Categories = []metadata.Category{category}
 
-	profileProductType := productTypeToTarget(profile.Annotations[v1alpha1.ProductTypeAnnotation])
+	profileProductType := productTypeToTarget(profile.GetAnnotations()[v1alpha1.ProductTypeAnnotation])
 	for _, rule := range ruleSlice {
 		fullRule, err := m.getRule(rule)
 		if err != nil {
@@ -411,7 +411,7 @@ func (m *managerImpl) GetMachineConfigs(clusterID string) (map[string][]string, 
 	walkFn := func() error {
 		profileIDsToNames = make(map[string]string)
 		return m.profiles.Walk(allAccessCtx, func(profile *storage.ComplianceOperatorProfile) error {
-			if profile.GetClusterId() == clusterID && profile.Annotations[v1alpha1.ProductTypeAnnotation] == string(v1alpha1.ScanTypeNode) {
+			if profile.GetClusterId() == clusterID && profile.GetAnnotations()[v1alpha1.ProductTypeAnnotation] == string(v1alpha1.ScanTypeNode) {
 				profileIDsToNames[profile.GetProfileId()] = profile.GetName()
 			}
 			return nil

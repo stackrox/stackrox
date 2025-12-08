@@ -1,8 +1,8 @@
-import React, { ReactElement, ReactNode } from 'react';
+import type { ReactElement, ReactNode } from 'react';
 import {
+    DescriptionListDescription,
     DescriptionListGroup,
     DescriptionListTerm,
-    DescriptionListDescription,
 } from '@patternfly/react-core';
 
 type DescriptionListItemProps = {

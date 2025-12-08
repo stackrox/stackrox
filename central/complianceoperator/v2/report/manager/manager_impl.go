@@ -635,7 +635,7 @@ func (m *managerImpl) generateSingleReportFromWatcherResults(result *watcher.Sca
 	// Update ReportData
 	snapshot.ReportData = m.getReportData(result.ScanConfig)
 	// Populate ClusterData
-	clusterData, err := helpers.GetClusterData(m.automaticReportingCtx, snapshot.ReportData, failedClusters, m.scanDataStore)
+	clusterData, err := helpers.GetClusterData(m.automaticReportingCtx, snapshot.GetReportData(), failedClusters, m.scanDataStore)
 	if err != nil {
 		log.Errorf("unable to populate cluster data: %v", err)
 		if dbErr := helpers.UpdateSnapshotOnError(m.automaticReportingCtx, snapshot, report.ErrReportGeneration, m.snapshotDataStore); dbErr != nil {

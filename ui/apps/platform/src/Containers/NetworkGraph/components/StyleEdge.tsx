@@ -1,8 +1,9 @@
 /* eslint-disable @typescript-eslint/no-unsafe-return */
-import React, { useMemo } from 'react';
+import { useMemo } from 'react';
 import type { FunctionComponent, PropsWithChildren } from 'react';
 import { observer } from 'mobx-react';
-import { Edge, DefaultEdge } from '@patternfly/react-topology';
+import { DefaultEdge } from '@patternfly/react-topology';
+import type { Edge } from '@patternfly/react-topology';
 
 type StyleEdgeProps = {
     element: Edge;

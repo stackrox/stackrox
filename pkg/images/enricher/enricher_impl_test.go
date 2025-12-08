@@ -336,7 +336,6 @@ func TestEnricherFlow(t *testing.T) {
 			mockReporter.EXPECT().UpdateIntegrationHealthAsync(gomock.Any()).AnyTimes()
 
 			enricherImpl := &enricherImpl{
-				cvesSuppressor:             &fakeCVESuppressor{},
 				cvesSuppressorV2:           &fakeCVESuppressorV2{},
 				integrations:               set,
 				errorsPerScanner:           map[scannertypes.ImageScannerWithDataSource]int32{fsr: 0},
@@ -389,7 +388,6 @@ func TestCVESuppression(t *testing.T) {
 	mockReporter.EXPECT().UpdateIntegrationHealthAsync(gomock.Any()).AnyTimes()
 
 	enricherImpl := &enricherImpl{
-		cvesSuppressor:             &fakeCVESuppressor{},
 		cvesSuppressorV2:           &fakeCVESuppressorV2{},
 		integrations:               set,
 		errorsPerScanner:           map[scannertypes.ImageScannerWithDataSource]int32{fsr: 0},
@@ -408,8 +406,7 @@ func TestCVESuppression(t *testing.T) {
 	results, err := enricherImpl.EnrichImage(emptyCtx, EnrichmentContext{}, img)
 	require.NoError(t, err)
 	assert.True(t, results.ImageUpdated)
-	assert.True(t, img.Scan.Components[0].Vulns[0].Suppressed)
-	assert.Equal(t, storage.VulnerabilityState_DEFERRED, img.Scan.Components[0].Vulns[0].State)
+	assert.Equal(t, storage.VulnerabilityState_DEFERRED, img.GetScan().GetComponents()[0].GetVulns()[0].GetState())
 }
 
 func TestZeroIntegrations(t *testing.T) {
@@ -971,7 +968,6 @@ func TestEnrichWithSignatureVerificationData_Failure(t *testing.T) {
 func TestDelegateEnrichImage(t *testing.T) {
 	deleEnrichCtx := EnrichmentContext{Delegable: true}
 	e := enricherImpl{
-		cvesSuppressor:   &fakeCVESuppressor{},
 		cvesSuppressorV2: &fakeCVESuppressorV2{},
 		imageGetter:      emptyImageGetter,
 	}
@@ -1084,7 +1080,6 @@ func TestDelegateEnrichImage(t *testing.T) {
 func TestEnrichImage_Delegate(t *testing.T) {
 	deleEnrichCtx := EnrichmentContext{Delegable: true}
 	e := enricherImpl{
-		cvesSuppressor:   &fakeCVESuppressor{},
 		cvesSuppressorV2: &fakeCVESuppressorV2{},
 		imageGetter:      emptyImageGetter,
 	}
@@ -1370,7 +1365,7 @@ func TestMetadataUpToDate(t *testing.T) {
 }
 
 func newEnricher(set *mocks.MockSet, mockReporter *reporterMocks.MockReporter) ImageEnricher {
-	return New(&fakeCVESuppressor{}, &fakeCVESuppressorV2{}, set, pkgMetrics.CentralSubsystem,
+	return New(&fakeCVESuppressorV2{}, set, pkgMetrics.CentralSubsystem,
 		newCache(),
 		emptyImageGetter,
 		mockReporter, emptySignatureIntegrationGetter, nil)

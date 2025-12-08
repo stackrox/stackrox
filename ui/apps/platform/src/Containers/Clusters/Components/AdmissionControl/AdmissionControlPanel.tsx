@@ -1,18 +1,17 @@
-import React from 'react';
 import {
     DescriptionList,
+    DescriptionListDescription,
     DescriptionListGroup,
     DescriptionListTerm,
-    DescriptionListDescription,
     List,
     ListItem,
 } from '@patternfly/react-core';
 
-import { ClusterHealthStatus } from 'types/cluster.proto';
-import { buildStatusMessage } from 'Containers/Clusters/cluster.helpers';
+import type { ClusterHealthStatus } from 'types/cluster.proto';
 
-import AdmissionControlStatus from './AdmissionControlStatus';
+import { buildStatusMessage } from '../../cluster.helpers';
 import ClusterHealthPanel from '../ClusterHealthPanel';
+import AdmissionControlStatus from './AdmissionControlStatus';
 
 export type AdmissionControlPanelProps = {
     healthStatus: ClusterHealthStatus;

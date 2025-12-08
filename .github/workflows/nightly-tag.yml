@@ -5,6 +5,7 @@ on:
   - cron: 0 0 * * 1-5
 jobs:
   create-nightly-tag:
+    if:  ${{ github.repository_owner == 'stackrox' }}
     runs-on: ubuntu-latest
     steps:
     - name: Checkout

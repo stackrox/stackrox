@@ -74,3 +74,13 @@ a[href="/main/search"] {
 .chrome-picker label {
     color: var(--pf-v5-global--Color--100) !important; /* instead of #969696 */
 }
+
+
+/*
+ * Forces the main dashboard to display a scrollbar unconditionally. This is needed to prevent an infinite
+ * screen flicker at specific screen resolutions where the Victory chart resize observer triggers a resize event
+ * infinitely and shifts the grid layout between 2x3 and 3x2.
+ */
+#main-page-container > div:has(#main-dashboard-widget-gallery) {
+    overflow-y: scroll !important;
+}

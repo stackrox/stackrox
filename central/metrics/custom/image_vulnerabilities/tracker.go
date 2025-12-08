@@ -2,7 +2,6 @@ package image_vulnerabilities
 
 import (
 	"context"
-	"iter"
 
 	deploymentDS "github.com/stackrox/rox/central/deployment/datastore"
 	"github.com/stackrox/rox/central/metrics/custom/tracker"
@@ -15,42 +14,43 @@ func New(ds deploymentDS.DataStore) *tracker.TrackerBase[*finding] {
 		"image_vuln",
 		"image vulnerabilities",
 		lazyLabels,
-		func(ctx context.Context, md tracker.MetricDescriptors) iter.Seq[*finding] {
-			return trackVulnerabilityMetrics(ctx, md, ds)
+		func(ctx context.Context, md tracker.MetricDescriptors) tracker.FindingErrorSequence[*finding] {
+			return track(ctx, ds)
 		},
 	)
 }
 
-func trackVulnerabilityMetrics(ctx context.Context, _ tracker.MetricDescriptors, ds deploymentDS.DataStore) iter.Seq[*finding] {
-	return func(yield func(*finding) bool) {
-		finding := &finding{}
-		_ = ds.WalkByQuery(ctx, search.EmptyQuery(), func(deployment *storage.Deployment) error {
-			finding.deployment = deployment
+func track(ctx context.Context, ds deploymentDS.DataStore) tracker.FindingErrorSequence[*finding] {
+	return func(yield func(*finding, error) bool) {
+		var f finding
+		collector := tracker.NewFindingCollector(yield)
+		collector.Finally(ds.WalkByQuery(ctx, search.EmptyQuery(), func(deployment *storage.Deployment) error {
+			f.deployment = deployment
 			images, err := ds.GetImagesForDeployment(ctx, deployment)
 			if err != nil {
-				return nil // Nothing can be done with this error here.
+				return err
 			}
-			for _, finding.image = range images {
-				if !forEachImageVuln(yield, finding) {
-					return tracker.ErrStopIterator
+			for _, f.image = range images {
+				if err := forEachImageVuln(collector, &f); err != nil {
+					return err
 				}
 			}
 			return nil
-		})
+		}))
 	}
 }
 
 // forEachImageVuln yields a finding for every vulnerability associated with
 // each image name.
-func forEachImageVuln(yield func(*finding) bool, f *finding) bool {
+func forEachImageVuln(collector tracker.Collector[*finding], f *finding) error {
 	for _, f.component = range f.image.GetScan().GetComponents() {
 		for _, f.vuln = range f.component.GetVulns() {
 			for _, f.name = range f.image.GetNames() {
-				if !yield(f) {
-					return false
+				if err := collector.Yield(f); err != nil {
+					return err
 				}
 			}
 		}
 	}
-	return true
+	return nil
 }

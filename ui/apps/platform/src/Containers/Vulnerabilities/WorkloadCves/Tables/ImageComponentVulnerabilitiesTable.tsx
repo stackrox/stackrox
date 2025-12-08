@@ -1,22 +1,19 @@
-import React from 'react';
 import { Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 import { gql } from '@apollo/client';
 
 import useFeatureFlags from 'hooks/useFeatureFlags';
 import useTableSort from 'hooks/useTableSort';
 
+import AdvisoryLinkOrText from '../../components/AdvisoryLinkOrText';
 import {
-    ImageComponentVulnerability,
-    ImageMetadataContext,
     flattenImageComponentVulns,
     imageMetadataContextFragment,
     sortTableData,
 } from './table.utils';
-import FixedByVersion from '../components/FixedByVersion';
+import type { ImageComponentVulnerability, ImageMetadataContext } from './table.utils';
 import DockerfileLayer from '../components/DockerfileLayer';
 import ComponentLocation from '../components/ComponentLocation';
-
-import AdvisoryLinkOrText from './AdvisoryLinkOrText';
+import FixedByVersion from '../../components/FixedByVersion';
 
 export { imageMetadataContextFragment };
 export type { ImageMetadataContext, ImageComponentVulnerability };

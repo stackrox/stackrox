@@ -37,17 +37,8 @@ func TestIndex(t *testing.T) {
 }
 
 func (s *IndexSuite) SetupTest() {
-
-	source := pgtest.GetConnectionString(s.T())
-	config, err := postgres.ParseConfig(source)
-	s.Require().NoError(err)
-	s.pool, err = postgres.New(context.Background(), config)
-	s.Require().NoError(err)
-
-	pgStore.Destroy(ctx, s.pool)
-	gormDB := pgtest.OpenGormDB(s.T(), source)
-	defer pgtest.CloseGormDB(s.T(), gormDB)
-	s.store = pgStore.CreateTableAndNewStore(ctx, s.pool, gormDB)
+	s.pool = pgtest.ForT(s.T())
+	s.store = pgStore.New(s.pool)
 }
 
 func (s *IndexSuite) TearDownTest() {
@@ -66,7 +57,7 @@ func (s *IndexSuite) getStruct(i int, f func(s *storage.TestStruct)) *storage.Te
 }
 
 func getID(s *storage.TestStruct) string {
-	return s.Key1
+	return s.GetKey1()
 }
 
 type testCase struct {
@@ -579,7 +570,7 @@ func (s *IndexSuite) TestTime() {
 		{
 			desc: "range time query",
 			q: search.NewQueryBuilder().AddTimeRangeField(search.TestTimestamp,
-				protoconv.ConvertTimestampToTimeOrNow(testStruct2020Mar09Noon.Timestamp), protoconv.ConvertTimestampToTimeOrNow(testStruct2022Feb09Noon.Timestamp)).ProtoQuery(),
+				protoconv.ConvertTimestampToTimeOrNow(testStruct2020Mar09Noon.GetTimestamp()), protoconv.ConvertTimestampToTimeOrNow(testStruct2022Feb09Noon.GetTimestamp())).ProtoQuery(),
 			expectedResults: []*storage.TestStruct{testStruct2020Mar09Noon, testStruct2021Mar09Noon},
 		},
 	})

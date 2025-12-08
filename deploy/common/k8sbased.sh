@@ -31,6 +31,7 @@ function launch_service {
           return 1
         fi
 
+        echo "Deploying $service using Helm (\$OUTPUT_FORMAT=helm)..."
         for _ in {1..5}; do
             if helm_install "$service"; then
                 break
@@ -39,6 +40,7 @@ function launch_service {
             echo "Waiting for helm to respond"
         done
     else
+        echo "Deploying $service using manifests..."
         ${ORCH_CMD} apply -R -f "$dir/$service"
     fi
 }
@@ -342,6 +344,7 @@ function launch_central {
       ${KUBE_COMMAND:-kubectl} create namespace "${central_namespace}"
 
     if [[ -f "$unzip_dir/values-public.yaml" ]]; then
+      echo "Deploying central using Helm..."
       if [[ -n "${REGISTRY_USERNAME}" ]]; then
         ROX_NAMESPACE="${central_namespace}" "${unzip_dir}/scripts/setup.sh"
       fi
@@ -582,7 +585,7 @@ function launch_central {
         echo
         export API_ENDPOINT="${ROUTE_HOST}:443"
     else
-        "${central_scripts_dir}/port-forward.sh" 8000
+        "${central_scripts_dir}/port-forward.sh" "${LOCAL_PORT:-8000}"
     fi
 
     if [[ "${needs_monitoring}" == "true" ]]; then
@@ -624,6 +627,7 @@ function launch_sensor {
     local extra_config=()
     local scanner_extra_config=()
     local extra_json_config=''
+    local extra_json_dynamic_config=''
     local extra_helm_config=()
 
     local collector_priority_class_name="stackrox-collector-dev"
@@ -649,6 +653,12 @@ function launch_sensor {
       extra_config+=("--admission-controller-listen-on-events=${bool_val}")
     	extra_json_config+=", \"admissionControllerEvents\": ${bool_val}"
     	extra_helm_config+=(--set "admissionControl.listenOnEvents=${bool_val}")
+    fi
+
+    if [[ "${SECURED_CLUSTER_AUTO_LOCK_PROCESS_BASELINES:-}" == "true" ]]; then
+        extra_config+=("--auto-lock-process-baselines=true")
+        extra_json_dynamic_config+='"autoLockProcessBaselinesConfig": {"enabled": true}'
+        extra_helm_config+=(--set "autoLockProcessBaselines.enabled=true")
     fi
 
     if [[ -n "$ROXCTL_TIMEOUT" ]]; then
@@ -855,6 +865,11 @@ function launch_sensor {
         extra_helm_config+=(--set "collector.priorityClassName=$collector_priority_class_name")
       fi
 
+      if [[ "${ROX_SENSITIVE_FILE_ACTIVITY:-false}" == "true" ]]; then
+        echo "Enable Sensitive File Activity agent"
+        extra_helm_config+=(--set "collector.sfaEnabled=true")
+      fi
+
       if [[ -n "$CI" ]]; then
         echo "Linting Helm chart ${sensor_helm_chart}".
         helm lint --set ca.cert=PLACEHOLDER_FOR_LINTING "${sensor_helm_chart}"
@@ -869,6 +884,7 @@ function launch_sensor {
         kubectl -n "${sensor_namespace}" get secret stackrox &>/dev/null || kubectl -n "${sensor_namespace}" create -f - < <("${common_dir}/pull-secret.sh" stackrox docker.io)
       fi
 
+      echo "Deploying sensor using Helm..."
       helm upgrade --install -n "${sensor_namespace}" --create-namespace stackrox-secured-cluster-services "${sensor_helm_chart}" \
           "${helm_args[@]}" "${extra_helm_config[@]}"
     else
@@ -891,6 +907,7 @@ function launch_sensor {
             echo >&2 "Please make sure to have a roxctl version ${MAIN_IMAGE_TAG} in PATH."
             exit 1
         fi
+        extra_json_config="${extra_json_config}, "'"dynamicConfig"'": {${extra_json_dynamic_config}}"
         get_cluster_zip "$API_ENDPOINT" "$CLUSTER" "${CLUSTER_TYPE}" "${MAIN_IMAGE}" "$CLUSTER_API_ENDPOINT" "$k8s_dir" "$COLLECTION_METHOD" "$extra_json_config"
         unzip "$k8s_dir/sensor-deploy.zip" -d "$k8s_dir/sensor-deploy"
         rm "$k8s_dir/sensor-deploy.zip"
@@ -909,7 +926,7 @@ function launch_sensor {
         sed -itmp.bak 's/set -e//g' "${k8s_dir}/sensor-deploy/sensor.sh"
       fi
 
-      echo "Deploying Sensor..."
+      echo "Deploying sensor using manifests..."
       NAMESPACE="${sensor_namespace}" "${k8s_dir}/sensor-deploy/sensor.sh"
     fi
 

@@ -3,8 +3,8 @@ import { createStructuredSelector } from 'reselect';
 
 import { selectors } from 'reducers';
 import { getHasReadPermission, getHasReadWritePermission } from 'reducers/roles';
-import { PermissionsMap } from 'services/RolesService';
-import { IntegrationSource } from '../utils/integrationUtils';
+import type { PermissionsMap } from 'services/RolesService';
+import type { IntegrationSource } from '../utils/integrationUtils';
 
 type UseIntegrationPermissionsResponse = Record<
     IntegrationSource,

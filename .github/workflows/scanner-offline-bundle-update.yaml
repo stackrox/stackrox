@@ -13,6 +13,7 @@ jobs:
   offline-bundle-matrix:
     runs-on: ubuntu-latest
     if: >
+      github.repository_owner == 'stackrox' &&
       github.event_name == 'schedule' ||
       (github.event_name == 'pull_request' &&
        contains(github.event.pull_request.labels.*.name, 'pr-update-scanner-vulns'))
@@ -30,7 +31,7 @@ jobs:
         set -o pipefail
         EOF=$(dd if=/dev/urandom bs=15 count=1 status=none | base64)
         echo "matrix<<$EOF" >> "$GITHUB_OUTPUT"
-        .github/workflows/scripts/scanner-offline-bundle-matrix.sh | tee -a "$GITHUB_OUTPUT"
+        SCANNER_RELEASE_ALLOW_RC=true .github/workflows/scripts/scanner-offline-bundle-matrix.sh | tee -a "$GITHUB_OUTPUT"
         echo "$EOF" >> "$GITHUB_OUTPUT"
 
   offline-bundle-generate:

@@ -1,90 +1,33 @@
 package storagetov2
 
 import (
+	"github.com/stackrox/rox/central/convert/helpers"
 	v2 "github.com/stackrox/rox/generated/api/v2"
 	"github.com/stackrox/rox/generated/storage"
 )
 
-func ScanComponents(components []*storage.EmbeddedImageScanComponent) []*v2.ScanComponent {
-	if len(components) == 0 {
-		return nil
-	}
-
-	var ret []*v2.ScanComponent
-	for _, component := range components {
-		if component == nil {
-			continue
-		}
-		ret = append(ret, ScanComponent(component))
-	}
-
-	return ret
+func EmbeddedVirtualMachineScanComponents(components []*storage.EmbeddedVirtualMachineScanComponent) []*v2.ScanComponent {
+	return helpers.ConvertPointerArray(components, EmbeddedVirtualMachineScanComponent)
 }
 
-func ScanComponent(component *storage.EmbeddedImageScanComponent) *v2.ScanComponent {
-	if component == nil {
+func EmbeddedVirtualMachineScanComponent(cmp *storage.EmbeddedVirtualMachineScanComponent) *v2.ScanComponent {
+	if cmp == nil {
 		return nil
 	}
-
 	result := &v2.ScanComponent{
-		Name:         component.GetName(),
-		Version:      component.GetVersion(),
-		License:      License(component.GetLicense()),
-		Vulns:        EmbeddedVulnerabilities(component.GetVulns()),
-		Source:       convertSourceType(component.GetSource()),
-		Location:     component.GetLocation(),
-		RiskScore:    component.GetRiskScore(),
-		FixedBy:      component.GetFixedBy(),
-		Executables:  Executables(component.GetExecutables()),
-		Architecture: component.GetArchitecture(),
+		Name:      cmp.GetName(),
+		Version:   cmp.GetVersion(),
+		RiskScore: cmp.GetRiskScore(),
+		Vulns:     VirtualMachineVulnerabilities(cmp.GetVulnerabilities()),
+		Source:    convertSourceType(cmp.GetSource()),
+		Notes:     scanComponentNotes(cmp.GetNotes()),
 	}
-
-	if component.GetTopCvss() != 0 {
+	if cmp.GetSetTopCvss() != nil {
 		result.SetTopCvss = &v2.ScanComponent_TopCvss{
-			TopCvss: component.GetTopCvss(),
+			TopCvss: cmp.GetTopCvss(),
 		}
 	}
-
 	return result
-}
-
-func License(license *storage.License) *v2.License {
-	if license == nil {
-		return nil
-	}
-
-	return &v2.License{
-		Name: license.GetName(),
-		Type: license.GetType(),
-		Url:  license.GetUrl(),
-	}
-}
-
-func Executables(executables []*storage.EmbeddedImageScanComponent_Executable) []*v2.ScanComponent_Executable {
-	if len(executables) == 0 {
-		return nil
-	}
-
-	var ret []*v2.ScanComponent_Executable
-	for _, executable := range executables {
-		if executable == nil {
-			continue
-		}
-		ret = append(ret, Executable(executable))
-	}
-
-	return ret
-}
-
-func Executable(executable *storage.EmbeddedImageScanComponent_Executable) *v2.ScanComponent_Executable {
-	if executable == nil {
-		return nil
-	}
-
-	return &v2.ScanComponent_Executable{
-		Path:         executable.GetPath(),
-		Dependencies: executable.GetDependencies(),
-	}
 }
 
 func convertSourceType(source storage.SourceType) v2.SourceType {
@@ -107,5 +50,18 @@ func convertSourceType(source storage.SourceType) v2.SourceType {
 		return v2.SourceType_INFRASTRUCTURE
 	default:
 		return v2.SourceType_OS
+	}
+}
+
+func scanComponentNotes(notes []storage.EmbeddedVirtualMachineScanComponent_Note) []v2.ScanComponent_Note {
+	return helpers.ConvertEnumArray(notes, convertScanComponentNoteType)
+}
+
+func convertScanComponentNoteType(note storage.EmbeddedVirtualMachineScanComponent_Note) v2.ScanComponent_Note {
+	switch note {
+	case storage.EmbeddedVirtualMachineScanComponent_UNSCANNED:
+		return v2.ScanComponent_UNSCANNED
+	default:
+		return v2.ScanComponent_UNSPECIFIED
 	}
 }

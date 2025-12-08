@@ -1,4 +1,3 @@
-import React from 'react';
 import { useParams } from 'react-router-dom-v5-compat';
 import { ToggleGroup, ToggleGroupItem } from '@patternfly/react-core';
 
@@ -6,8 +5,8 @@ import useURLSearch from 'hooks/useURLSearch';
 import {
     coverageProfileChecksPath,
     coverageProfileClustersPath,
-    CoverageProfilePath,
 } from '../compliance.coverage.routes';
+import type { CoverageProfilePath } from '../compliance.coverage.routes';
 import useScanConfigRouter from '../hooks/useScanConfigRouter';
 
 export type ProfilesTableToggleGroupProps = {

@@ -61,7 +61,7 @@ func (s *UpdaterTestSuite) SetupSuite() {
 
 func (s *UpdaterTestSuite) SetupTest() {
 	centralcaps.Set([]centralsensor.CentralCapability{centralsensor.ComplianceV2Integrations})
-	s.client = fake.NewSimpleClientset()
+	s.client = fake.NewClientset()
 	_, err := s.client.CoreV1().Namespaces().Create(context.Background(), buildComplianceOperatorNamespace(defaultNS), metaV1.CreateOptions{})
 	s.Require().NoError(err)
 
@@ -341,7 +341,7 @@ func (s *UpdaterTestSuite) assertEqual(expected expectedInfo, actual *central.Co
 		Version:     expected.version,
 		Namespace:   expected.namespace,
 		StatusError: expected.error,
-		IsInstalled: actual.IsInstalled,
+		IsInstalled: actual.GetIsInstalled(),
 	}
 
 	if expected.desired > 0 {

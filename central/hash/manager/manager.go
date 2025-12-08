@@ -111,9 +111,9 @@ func (m *managerImpl) GetDeduper(ctx context.Context, clusterID string) Deduper 
 		log.Errorf("could not get hashes from database for cluster %q: %v", clusterID, err)
 	}
 	if !exists {
-		d = NewDeduper(make(map[string]uint64))
+		d = NewDeduper(make(map[string]uint64), clusterID)
 	} else {
-		d = NewDeduper(hash.GetHashes())
+		d = NewDeduper(hash.GetHashes(), clusterID)
 	}
 
 	m.dedupersLock.Lock()

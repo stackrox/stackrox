@@ -63,7 +63,7 @@ func getCurrentComplianceResults(t testutils.T) (rhcos, ocp *storage.ComplianceR
 	require.NoError(t, err)
 
 	var rhcosRun, ocpRun *v1.ComplianceRun
-	for _, run := range resp.StartedRuns {
+	for _, run := range resp.GetStartedRuns() {
 		// Ensure the profile not referenced by a scan setting binding is not run
 		assert.NotEqual(t, unusedProfile, run.GetStandardId())
 		switch run.GetStandardId() {
@@ -87,7 +87,7 @@ func getCurrentComplianceResults(t testutils.T) (rhcos, ocp *storage.ComplianceR
 		for _, run := range statusRunResp.GetRuns() {
 			if run.GetState() != v1.ComplianceRun_FINISHED {
 				finished = false
-				log.Infof("Run for %v is in state %v", run.GetStandardId(), run.GetState())
+				t.Logf("Run for %v is in state %v", run.GetStandardId(), run.GetState())
 			}
 		}
 		if finished {

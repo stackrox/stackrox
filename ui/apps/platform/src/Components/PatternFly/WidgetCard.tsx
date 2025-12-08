@@ -1,5 +1,5 @@
-import React, { CSSProperties, ReactNode } from 'react';
-import { Skeleton, Card, CardBody, CardHeader } from '@patternfly/react-core';
+import type { CSSProperties, ReactElement, ReactNode } from 'react';
+import { Card, CardBody, CardHeader, Skeleton } from '@patternfly/react-core';
 
 import { defaultChartHeight } from 'utils/chartUtils';
 import { CancelledPromiseError } from 'services/cancellationUtils';
@@ -23,7 +23,7 @@ function WidgetCard({
     errorMessage,
     header,
     children,
-}: WidgetCardProps) {
+}: WidgetCardProps): ReactElement {
     let cardContent: ReactNode;
 
     if (isLoading && !error) {

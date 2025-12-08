@@ -57,7 +57,7 @@ func (a *aggregateToSupernetImpl) Aggregate(conns []*storage.NetworkFlow) []*sto
 		}
 
 		// Move the connections to supernet.
-		a.mapToSupernetIfNotfound(supernetCache, conn.Props.SrcEntity, conn.Props.DstEntity)
+		a.mapToSupernetIfNotfound(supernetCache, conn.GetProps().GetSrcEntity(), conn.GetProps().GetDstEntity())
 
 		connID := networkgraph.GetNetworkConnIndicator(conn)
 		if storedFlow := normalizedConns[connID]; storedFlow != nil {
@@ -125,9 +125,9 @@ func (a *aggregateDefaultToCustomExtSrcsImpl) Aggregate(conns []*storage.Network
 
 		// Move the connection from default external network to non-default supernet. If none is found, it gets mapped to INTERNET.
 		if networkgraph.IsKnownDefaultExternal(conn.GetProps().GetSrcEntity()) {
-			mapToSupernet(a.networkTree, supernetCache, a.supernetPred, conn.Props.SrcEntity)
+			mapToSupernet(a.networkTree, supernetCache, a.supernetPred, conn.GetProps().GetSrcEntity())
 		} else if networkgraph.IsKnownDefaultExternal(conn.GetProps().GetDstEntity()) {
-			mapToSupernet(a.networkTree, supernetCache, a.supernetPred, conn.Props.DstEntity)
+			mapToSupernet(a.networkTree, supernetCache, a.supernetPred, conn.GetProps().GetDstEntity())
 		}
 
 		connID := networkgraph.GetNetworkConnIndicator(conn)

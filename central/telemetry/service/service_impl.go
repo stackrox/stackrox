@@ -51,6 +51,7 @@ func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName strin
 
 // GetTelemetryConfiguration used to tell whether periodic telemetry collection
 // (previous implementation) was enabled. Returns false unconditionally.
+//
 // Deprecated: the previous implementation is not used for periodic collection.
 func (s *serviceImpl) GetTelemetryConfiguration(_ context.Context, _ *v1.Empty) (*storage.TelemetryConfiguration, error) {
 	return &storage.TelemetryConfiguration{
@@ -59,6 +60,7 @@ func (s *serviceImpl) GetTelemetryConfiguration(_ context.Context, _ *v1.Empty) 
 }
 
 // ConfigureTelemetry used to enable or disable periodic telemetry collection.
+//
 // Deprecated: the previous implementation is not used for periodic collection.
 func (s *serviceImpl) ConfigureTelemetry(_ context.Context, _ *v1.ConfigureTelemetryRequest) (*storage.TelemetryConfiguration, error) {
 	return &storage.TelemetryConfiguration{Enabled: false}, nil

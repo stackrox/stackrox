@@ -49,8 +49,8 @@ func TestGetConfigSuccess(t *testing.T) {
 		deleClusterDS.EXPECT().GetConfig(gomock.Any()).Return(retVal, true, nil)
 		cfg, err = s.GetConfig(context.Background(), empty)
 		assert.NoError(t, err)
-		assert.Equal(t, cfg.EnabledFor, specific)
-		assert.Equal(t, cfg.DefaultClusterId, "id1")
+		assert.Equal(t, cfg.GetEnabledFor(), specific)
+		assert.Equal(t, cfg.GetDefaultClusterId(), "id1")
 	})
 }
 
@@ -99,8 +99,8 @@ func TestGetClustersSuccess(t *testing.T) {
 			connMgr.EXPECT().GetConnection(gomock.Any()).Return(test.conn)
 			resp, err = s.GetClusters(context.Background(), empty)
 			assert.NoError(t, err)
-			require.Len(t, resp.Clusters, 1)
-			assert.Equal(t, resp.Clusters[0].IsValid, test.valid)
+			require.Len(t, resp.GetClusters(), 1)
+			assert.Equal(t, resp.GetClusters()[0].GetIsValid(), test.valid)
 		}
 
 		t.Run(name, tf)
@@ -114,11 +114,11 @@ func TestGetClustersSuccess(t *testing.T) {
 		connMgr.EXPECT().GetConnection("id2").Return(fakeConnWithoutCap)
 		resp, err = s.GetClusters(context.Background(), empty)
 		assert.NoError(t, err)
-		require.Len(t, resp.Clusters, 2)
-		assert.True(t, resp.Clusters[0].IsValid)
-		assert.Equal(t, resp.Clusters[0].Id, "id1")
-		assert.False(t, resp.Clusters[1].IsValid)
-		assert.Equal(t, resp.Clusters[1].Id, "id2")
+		require.Len(t, resp.GetClusters(), 2)
+		assert.True(t, resp.GetClusters()[0].GetIsValid())
+		assert.Equal(t, resp.GetClusters()[0].GetId(), "id1")
+		assert.False(t, resp.GetClusters()[1].GetIsValid())
+		assert.Equal(t, resp.GetClusters()[1].GetId(), "id2")
 	})
 
 }

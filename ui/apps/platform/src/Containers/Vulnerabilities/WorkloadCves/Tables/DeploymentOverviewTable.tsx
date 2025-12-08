@@ -1,25 +1,22 @@
-import React from 'react';
 import { Link } from 'react-router-dom-v5-compat';
 import { gql } from '@apollo/client';
 import pluralize from 'pluralize';
 import { Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 import { Truncate } from '@patternfly/react-core';
 
-import { UseURLSortResult } from 'hooks/useURLSort';
+import type { UseURLSortResult } from 'hooks/useURLSort';
 import { DynamicColumnIcon } from 'Components/DynamicIcon';
 import TooltipTh from 'Components/TooltipTh';
 import DateDistance from 'Components/DateDistance';
 import TbodyUnified from 'Components/TableStateTemplates/TbodyUnified';
-import { TableUIState } from 'utils/getTableUIState';
-import {
-    generateVisibilityForColumns,
-    getHiddenColumnCount,
-    ManagedColumns,
-} from 'hooks/useManagedColumns';
+import type { TableUIState } from 'utils/getTableUIState';
+import { generateVisibilityForColumns, getHiddenColumnCount } from 'hooks/useManagedColumns';
+import type { ManagedColumns } from 'hooks/useManagedColumns';
 import SeverityCountLabels from '../../components/SeverityCountLabels';
-import { VulnerabilitySeverityLabel } from '../../types';
+import type { VulnerabilitySeverityLabel } from '../../types';
 import useVulnerabilityState from '../hooks/useVulnerabilityState';
 import useWorkloadCveViewContext from '../hooks/useWorkloadCveViewContext';
+import { getSeveritySortOptions } from '../../utils/sortUtils';
 
 export const tableId = 'WorkloadCvesDeploymentOverviewTable';
 
@@ -135,6 +132,10 @@ function DeploymentOverviewTable({
                     <TooltipTh
                         className={getVisibilityClass('cvesBySeverity')}
                         tooltip="CVEs by severity across this deployment"
+                        sort={getSortParams(
+                            'CVEs By Severity',
+                            getSeveritySortOptions(filteredSeverities)
+                        )}
                     >
                         CVEs by severity
                         {isFiltered && <DynamicColumnIcon />}

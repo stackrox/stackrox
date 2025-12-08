@@ -88,6 +88,8 @@ func local_request_VirtualMachineService_GetVirtualMachine_0(ctx context.Context
 	return msg, metadata, err
 }
 
+var filter_VirtualMachineService_ListVirtualMachines_0 = &utilities.DoubleArray{Encoding: map[string]int{}, Base: []int(nil), Check: []int(nil)}
+
 func request_VirtualMachineService_ListVirtualMachines_0(ctx context.Context, marshaler runtime.Marshaler, client VirtualMachineServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
 	var (
 		protoReq ListVirtualMachinesRequest
@@ -95,6 +97,12 @@ func request_VirtualMachineService_ListVirtualMachines_0(ctx context.Context, ma
 	)
 	if req.Body != nil {
 		_, _ = io.Copy(io.Discard, req.Body)
+	}
+	if err := req.ParseForm(); err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
+	}
+	if err := runtime.PopulateQueryParameters(&protoReq, req.Form, filter_VirtualMachineService_ListVirtualMachines_0); err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
 	msg, err := client.ListVirtualMachines(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
 	return msg, metadata, err
@@ -105,6 +113,12 @@ func local_request_VirtualMachineService_ListVirtualMachines_0(ctx context.Conte
 		protoReq ListVirtualMachinesRequest
 		metadata runtime.ServerMetadata
 	)
+	if err := req.ParseForm(); err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
+	}
+	if err := runtime.PopulateQueryParameters(&protoReq, req.Form, filter_VirtualMachineService_ListVirtualMachines_0); err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
+	}
 	msg, err := server.ListVirtualMachines(ctx, &protoReq)
 	return msg, metadata, err
 }

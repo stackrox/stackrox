@@ -1,4 +1,3 @@
-import React from 'react';
 import Query from './ThrowingQuery';
 
 const CacheFirstQuery = ({ children, ...rest }) => (

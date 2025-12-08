@@ -119,7 +119,7 @@ func TestLatestTagPolicyAdmissionReview(t *testing.T) {
 			require.Len(t, alerts, 1)
 			assert.Equal(t, LatestTagPolicyName, alerts[0].GetPolicy().GetName())
 			require.Len(t, alerts[0].GetViolations(), 1)
-			assert.Equal(t, "Container 'nginx' has image with tag 'latest'", alerts[0].GetViolations()[0].Message)
+			assert.Equal(t, "Container 'nginx' has image with tag 'latest'", alerts[0].GetViolations()[0].GetMessage())
 
 			review := readV1AdmissionReview(t, resp)
 			assert.Equal(t, admissionv1.SchemeGroupVersion.String(), review.APIVersion)
@@ -137,7 +137,7 @@ func TestLatestTagPolicyAdmissionReview(t *testing.T) {
 			require.Len(t, alerts, 1)
 			assert.Equal(t, LatestTagPolicyName, alerts[0].GetPolicy().GetName())
 			require.Len(t, alerts[0].GetViolations(), 1)
-			assert.Equal(t, latestTagErrMessage, alerts[0].GetViolations()[0].Message)
+			assert.Equal(t, latestTagErrMessage, alerts[0].GetViolations()[0].GetMessage())
 
 			review := readV1beta1AdmissionReview(t, resp)
 			assert.Contains(t, review.Response.Result.Message, latestTagErrMessage)

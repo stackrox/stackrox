@@ -41,15 +41,17 @@ func _() {
 	_ = x[ComplianceOperatorRemediationV2-30]
 	_ = x[NodeIndex-31]
 	_ = x[VirtualMachineIndex-32]
+	_ = x[VirtualMachine-33]
 }
 
-const _Resource_name = "AlertDeploymentProcessIndicatorProcessListeningOnPortImageSecretNamespaceNetworkPolicyNodeNodeInventoryProviderMetadataComplianceReturnImageIntegrationServiceAccountPermissionSetRoleRoleBindingDeploymentReprocessPodComplianceOperatorCheckResultComplianceOperatorProfileComplianceOperatorScanSettingBindingComplianceOperatorRuleComplianceOperatorScanComplianceOperatorInfoComplianceOperatorCheckResultV2ComplianceOperatorRuleV2ComplianceOperatorProfileV2ComplianceOperatorScanV2ComplianceOperatorSuiteV2ComplianceOperatorRemediationV2NodeIndexVirtualMachineIndex"
+const _Resource_name = "AlertDeploymentProcessIndicatorProcessListeningOnPortImageSecretNamespaceNetworkPolicyNodeNodeInventoryProviderMetadataComplianceReturnImageIntegrationServiceAccountPermissionSetRoleRoleBindingDeploymentReprocessPodComplianceOperatorCheckResultComplianceOperatorProfileComplianceOperatorScanSettingBindingComplianceOperatorRuleComplianceOperatorScanComplianceOperatorInfoComplianceOperatorCheckResultV2ComplianceOperatorRuleV2ComplianceOperatorProfileV2ComplianceOperatorScanV2ComplianceOperatorSuiteV2ComplianceOperatorRemediationV2NodeIndexVirtualMachineIndexVirtualMachine"
 
-var _Resource_index = [...]uint16{0, 5, 15, 31, 53, 58, 64, 73, 86, 90, 103, 119, 135, 151, 165, 178, 182, 193, 212, 215, 244, 269, 305, 327, 349, 371, 402, 426, 453, 477, 502, 533, 542, 561}
+var _Resource_index = [...]uint16{0, 5, 15, 31, 53, 58, 64, 73, 86, 90, 103, 119, 135, 151, 165, 178, 182, 193, 212, 215, 244, 269, 305, 327, 349, 371, 402, 426, 453, 477, 502, 533, 542, 561, 575}
 
 func (i Resource) String() string {
-	if i < 0 || i >= Resource(len(_Resource_index)-1) {
+	idx := int(i) - 0
+	if i < 0 || idx >= len(_Resource_index)-1 {
 		return "Resource(" + strconv.FormatInt(int64(i), 10) + ")"
 	}
-	return _Resource_name[_Resource_index[i]:_Resource_index[i+1]]
+	return _Resource_name[_Resource_index[idx]:_Resource_index[idx+1]]
 }

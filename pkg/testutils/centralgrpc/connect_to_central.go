@@ -10,6 +10,7 @@ import (
 	"testing"
 	"time"
 
+	grpc_retry "github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/retry"
 	"github.com/stackrox/rox/pkg/clientconn"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/httputil"
@@ -19,6 +20,8 @@ import (
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
 const (
@@ -91,6 +94,53 @@ func GRPCConnectionToCentral(t testutils.T, optsFuncs ...func(opts *clientconn.O
 	return grpcConnectionToCentral(t, optsFuncs...)
 }
 
+// shouldRetryForTests determines if a gRPC error should be retried in tests.
+// This is based on the retry logic from roxctl/common/connection.go.
+func shouldRetryForTests(err error) bool {
+	if grpcErr, ok := status.FromError(err); ok {
+		code := grpcErr.Code()
+		// Retry on common transient errors
+		if code == codes.DeadlineExceeded || code == codes.Unavailable || code == codes.ResourceExhausted {
+			return true
+		}
+	}
+	return false
+}
+
+// loggingUnaryInterceptor logs gRPC requests and responses for debugging test failures.
+func loggingUnaryInterceptor(logger testutils.T) grpc.UnaryClientInterceptor {
+	return func(ctx context.Context, method string, req, reply interface{}, cc *grpc.ClientConn, invoker grpc.UnaryInvoker, opts ...grpc.CallOption) error {
+		start := time.Now()
+		err := invoker(ctx, method, req, reply, cc, opts...)
+		duration := time.Since(start)
+
+		if err != nil {
+			logger.Logf("gRPC call %s failed after %v: %v", method, duration, err)
+		} else {
+			logger.Logf("gRPC call %s succeeded in %v", method, duration)
+		}
+
+		return err
+	}
+}
+
+// loggingStreamInterceptor logs gRPC stream requests for debugging test failures.
+func loggingStreamInterceptor(logger testutils.T) grpc.StreamClientInterceptor {
+	return func(ctx context.Context, desc *grpc.StreamDesc, cc *grpc.ClientConn, method string, streamer grpc.Streamer, opts ...grpc.CallOption) (grpc.ClientStream, error) {
+		start := time.Now()
+		stream, err := streamer(ctx, desc, cc, method, opts...)
+		duration := time.Since(start)
+
+		if err != nil {
+			logger.Logf("gRPC stream %s failed after %v: %v", method, duration, err)
+		} else {
+			logger.Logf("gRPC stream %s established in %v", method, duration)
+		}
+
+		return stream, err
+	}
+}
+
 func grpcConnectionToCentral(t testutils.T, optsFuncs ...func(options *clientconn.Options)) *grpc.ClientConn {
 	endpoint := RoxAPIEndpoint(t)
 	host, _, _, err := netutil.ParseEndpoint(endpoint)
@@ -107,7 +157,31 @@ func grpcConnectionToCentral(t testutils.T, optsFuncs ...func(options *clientcon
 		optsFunc(&opts)
 	}
 
-	conn, err := clientconn.GRPCConnection(context.Background(), mtls.CentralSubject, endpoint, opts)
+	// Add retry interceptors similar to roxctl to handle transient failures
+	const initialBackoffDuration = 100 * time.Millisecond
+	retryOpts := []grpc_retry.CallOption{
+		grpc_retry.WithBackoff(grpc_retry.BackoffExponential(initialBackoffDuration)),
+		// First retry after 100ms, max 5 retries for tests (less aggressive than roxctl's 10)
+		grpc_retry.WithMax(5),
+		grpc_retry.WithRetriable(shouldRetryForTests),
+	}
+
+	grpcDialOpts := []grpc.DialOption{}
+
+	// Add logging interceptors if the test object supports logging (e.g., *testing.T)
+	// Logging interceptor first, then retry - this ensures we log each retry attempt
+	grpcDialOpts = append(grpcDialOpts,
+		grpc.WithChainUnaryInterceptor(
+			loggingUnaryInterceptor(t),
+			grpc_retry.UnaryClientInterceptor(retryOpts...),
+		),
+		grpc.WithChainStreamInterceptor(
+			loggingStreamInterceptor(t),
+			grpc_retry.StreamClientInterceptor(retryOpts...),
+		),
+	)
+
+	conn, err := clientconn.GRPCConnection(context.Background(), mtls.CentralSubject, endpoint, opts, grpcDialOpts...)
 	require.NoError(t, err)
 	return conn
 }

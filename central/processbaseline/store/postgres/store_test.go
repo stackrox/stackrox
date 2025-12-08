@@ -96,6 +96,11 @@ func (s *ProcessBaselinesStoreSuite) TestStore() {
 
 	s.NoError(store.UpsertMany(ctx, processBaselines))
 
+	foundProcessBaselines, missing, err := store.GetMany(ctx, processBaselineIDs)
+	s.NoError(err)
+	s.Empty(missing)
+	protoassert.ElementsMatch(s.T(), processBaselines, foundProcessBaselines)
+
 	processBaselineCount, err = store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)
 	s.Equal(200, processBaselineCount)

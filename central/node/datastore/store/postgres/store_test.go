@@ -4,11 +4,13 @@ package postgres
 
 import (
 	"context"
+	"fmt"
 	"testing"
 	"time"
 
 	nodeCveStore "github.com/stackrox/rox/central/cve/node/datastore/store/postgres"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
@@ -20,14 +22,12 @@ import (
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/suite"
-	"gorm.io/gorm"
 )
 
 type NodesStoreSuite struct {
 	suite.Suite
-	ctx    context.Context
-	pool   postgres.DB
-	gormDB *gorm.DB
+	ctx  context.Context
+	pool postgres.DB
 }
 
 func TestNodesStore(t *testing.T) {
@@ -37,28 +37,17 @@ func TestNodesStore(t *testing.T) {
 func (s *NodesStoreSuite) SetupTest() {
 
 	s.ctx = sac.WithAllAccess(context.Background())
-	source := pgtest.GetConnectionString(s.T())
-
-	config, err := postgres.ParseConfig(source)
-	s.Require().NoError(err)
-	s.pool, err = postgres.New(s.ctx, config)
-	s.NoError(err)
-	Destroy(s.ctx, s.pool)
-
-	s.gormDB = pgtest.OpenGormDB(s.T(), source)
+	s.pool = pgtest.ForT(s.T())
 }
 
 func (s *NodesStoreSuite) TearDownTest() {
 	if s.pool != nil {
 		s.pool.Close()
 	}
-	if s.gormDB != nil {
-		pgtest.CloseGormDB(s.T(), s.gormDB)
-	}
 }
 
 func (s *NodesStoreSuite) TestStore() {
-	store := CreateTableAndNewStore(s.ctx, s.T(), s.pool, s.gormDB, false)
+	store := New(s.pool, false, concurrency.NewKeyFence())
 
 	node := &storage.Node{}
 	s.NoError(testutils.FullInit(node, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
@@ -98,7 +87,7 @@ func (s *NodesStoreSuite) TestStore() {
 	s.True(exists)
 
 	// Reconcile the timestamps that are set during upsert.
-	cloned.LastUpdated = foundNode.LastUpdated
+	cloned.LastUpdated = foundNode.GetLastUpdated()
 	protoassert.Equal(s.T(), cloned, foundNode)
 
 	s.NoError(store.Delete(s.ctx, node.GetId()))
@@ -108,8 +97,31 @@ func (s *NodesStoreSuite) TestStore() {
 	s.Nil(foundNode)
 }
 
+func (s *NodesStoreSuite) TestWalkByQuery() {
+	store := New(s.pool, false, concurrency.NewKeyFence())
+
+	node := &storage.Node{}
+	s.NoError(testutils.FullInit(node, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
+
+	node2 := node.CloneVT()
+	node2.Id = uuid.NewDummy().String()
+
+	s.NoError(store.Upsert(s.ctx, node))
+	s.NoError(store.Upsert(s.ctx, node2))
+
+	walkFn := func(obj *storage.Node) error {
+		if obj.GetId() != node.GetId() {
+			return fmt.Errorf("expected node1 but got %s", obj.GetId())
+		}
+		return nil
+	}
+
+	q := search.NewQueryBuilder().AddExactMatches(search.NodeID, node.GetId()).ProtoQuery()
+	s.NoError(store.WalkByQuery(s.ctx, q, walkFn))
+}
+
 func (s *NodesStoreSuite) TestStore_UpsertWithoutScan() {
-	store := CreateTableAndNewStore(s.ctx, s.T(), s.pool, s.gormDB, false)
+	store := New(s.pool, false, concurrency.NewKeyFence())
 
 	node := &storage.Node{}
 	s.NoError(testutils.FullInit(node, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
@@ -147,7 +159,7 @@ func (s *NodesStoreSuite) TestStore_OrphanedCVEs() {
 	}
 	defer s.T().Setenv(env.OrphanedCVEsKeepAlive.EnvVar(), "false")
 
-	store := CreateTableAndNewStore(s.ctx, s.T(), s.pool, s.gormDB, false)
+	store := New(s.pool, false, concurrency.NewKeyFence())
 
 	node := &storage.Node{}
 	s.NoError(testutils.FullInit(node, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
@@ -186,7 +198,7 @@ func (s *NodesStoreSuite) TestStore_OrphanedCVEs() {
 	s.Empty(newNode.GetScan().GetComponents()[0].GetVulnerabilities())
 
 	// Removed vulns should be marked orphaned in node_cves table
-	cveStore := nodeCveStore.CreateTableAndNewStore(s.ctx, s.pool, s.gormDB)
+	cveStore := nodeCveStore.New(s.pool)
 	orphanedCVEs, err := cveStore.GetByQuery(s.ctx, search.NewQueryBuilder().AddBools(search.CVEOrphaned, true).ProtoQuery())
 	s.NoError(err)
 	s.NotEmpty(orphanedCVEs)
@@ -235,4 +247,94 @@ func stripComponents(n *storage.Node) *storage.Node {
 	node := n.CloneVT()
 	node.GetScan().Components = nil
 	return node
+}
+
+func (s *NodesStoreSuite) TestGetWithTransactionContext() {
+	store := New(s.pool, false, concurrency.NewKeyFence())
+
+	node := &storage.Node{}
+	s.NoError(testutils.FullInit(node, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
+	for _, comp := range node.GetScan().GetComponents() {
+		comp.Vulns = nil
+	}
+
+	// Insert test data
+	s.NoError(store.Upsert(s.ctx, node))
+
+	// Create explicit transaction
+	tx, err := s.pool.Begin(s.ctx)
+	s.NoError(err)
+
+	// Pass transaction context to Get
+	ctx := postgres.ContextWithTx(s.ctx, tx)
+	retrieved, ok, err := store.Get(ctx, node.GetId())
+
+	s.NoError(err)
+	s.True(ok)
+	s.Equal(node.GetId(), retrieved.GetId())
+	s.NoError(tx.Rollback(s.ctx))
+}
+
+func (s *NodesStoreSuite) TestGetManyWithTransactionContext() {
+	store := New(s.pool, false, concurrency.NewKeyFence())
+
+	node1 := &storage.Node{}
+	s.NoError(testutils.FullInit(node1, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
+	for _, comp := range node1.GetScan().GetComponents() {
+		comp.Vulns = nil
+	}
+
+	node2 := &storage.Node{}
+	s.NoError(testutils.FullInit(node2, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
+	for _, comp := range node2.GetScan().GetComponents() {
+		comp.Vulns = nil
+	}
+
+	// Insert test data
+	s.NoError(store.Upsert(s.ctx, node1))
+	s.NoError(store.Upsert(s.ctx, node2))
+
+	// Create explicit transaction
+	tx, err := s.pool.Begin(s.ctx)
+	s.NoError(err)
+
+	// Pass transaction context to GetMany
+	ctx := postgres.ContextWithTx(s.ctx, tx)
+	nodes, missing, err := store.GetMany(ctx, []string{node1.GetId(), node2.GetId()})
+
+	s.NoError(err)
+	s.Empty(missing)
+	s.Len(nodes, 2)
+	s.NoError(tx.Rollback(s.ctx))
+}
+
+func (s *NodesStoreSuite) TestWalkByQueryWithTransactionContext() {
+	store := New(s.pool, false, concurrency.NewKeyFence())
+
+	node := &storage.Node{}
+	s.NoError(testutils.FullInit(node, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
+	for _, comp := range node.GetScan().GetComponents() {
+		comp.Vulns = nil
+	}
+
+	// Insert test data
+	s.NoError(store.Upsert(s.ctx, node))
+
+	// Create explicit transaction
+	tx, err := s.pool.Begin(s.ctx)
+	s.NoError(err)
+
+	// Pass transaction context to WalkByQuery
+	ctx := postgres.ContextWithTx(s.ctx, tx)
+	var count int
+	walkFn := func(n *storage.Node) error {
+		count++
+		s.Equal(node.GetId(), n.GetId())
+		return nil
+	}
+
+	q := search.NewQueryBuilder().AddExactMatches(search.NodeID, node.GetId()).ProtoQuery()
+	s.NoError(store.WalkByQuery(ctx, q, walkFn))
+	s.Equal(1, count)
+	s.NoError(tx.Rollback(s.ctx))
 }

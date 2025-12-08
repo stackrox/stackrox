@@ -5,7 +5,7 @@ import {
 } from 'Components/CompoundSearchFilter/attributes/cluster';
 import { profileCheckAttributes } from 'Components/CompoundSearchFilter/attributes/profileCheck';
 import type { CompoundSearchFilterEntity } from 'Components/CompoundSearchFilter/types';
-import type { FilterChipGroupDescriptor } from 'Components/PatternFly/SearchFilterChips';
+import type { FilterChipGroupDescriptor } from 'Components/CompoundSearchFilter/components/SearchFilterChips';
 
 import { CHECK_STATUS_QUERY } from './Coverage/compliance.coverage.constants';
 

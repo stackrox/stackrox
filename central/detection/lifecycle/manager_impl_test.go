@@ -27,6 +27,28 @@ import (
 
 var (
 	clusterAutolockEnabled = &storage.Cluster{
+		ManagedBy: storage.ManagerType_MANAGER_TYPE_HELM_CHART,
+		HelmConfig: &storage.CompleteClusterConfig{
+			DynamicConfig: &storage.DynamicClusterConfig{
+				AutoLockProcessBaselinesConfig: &storage.AutoLockProcessBaselinesConfig{
+					Enabled: true,
+				},
+			},
+		},
+	}
+
+	clusterAutolockDisabled = &storage.Cluster{
+		ManagedBy: storage.ManagerType_MANAGER_TYPE_HELM_CHART,
+		HelmConfig: &storage.CompleteClusterConfig{
+			DynamicConfig: &storage.DynamicClusterConfig{
+				AutoLockProcessBaselinesConfig: &storage.AutoLockProcessBaselinesConfig{
+					Enabled: false,
+				},
+			},
+		},
+	}
+
+	clusterAutolockManualEnabled = &storage.Cluster{
 		ManagedBy: storage.ManagerType_MANAGER_TYPE_MANUAL,
 		DynamicConfig: &storage.DynamicClusterConfig{
 			AutoLockProcessBaselinesConfig: &storage.AutoLockProcessBaselinesConfig{
@@ -35,11 +57,11 @@ var (
 		},
 	}
 
-	clusterAutolockDisabled = &storage.Cluster{
-		ManagedBy: storage.ManagerType_MANAGER_TYPE_MANUAL,
+	clusterAutolockUnknownEnabled = &storage.Cluster{
+		ManagedBy: storage.ManagerType_MANAGER_TYPE_UNKNOWN,
 		DynamicConfig: &storage.DynamicClusterConfig{
 			AutoLockProcessBaselinesConfig: &storage.AutoLockProcessBaselinesConfig{
-				Enabled: false,
+				Enabled: true,
 			},
 		},
 	}
@@ -159,7 +181,7 @@ func (suite *ManagerTestSuite) TestBaselineNotFoundInObservation() {
 
 func (suite *ManagerTestSuite) TestBaselineShouldPass() {
 	key, indicator := makeIndicator()
-	baseline := &storage.ProcessBaseline{Elements: fixtures.MakeBaselineElements(indicator.Signal.GetExecFilePath())}
+	baseline := &storage.ProcessBaseline{Elements: fixtures.MakeBaselineElements(indicator.GetSignal().GetExecFilePath())}
 	suite.deploymentObservationQueue.EXPECT().InObservation(key.GetDeploymentId()).Return(false).AnyTimes()
 	suite.baselines.EXPECT().GetProcessBaseline(gomock.Any(), key).Return(baseline, true, nil)
 	_, _, err := suite.manager.checkAndUpdateBaseline(indicatorToBaselineKey(indicator), []*storage.ProcessIndicator{indicator})
@@ -168,7 +190,7 @@ func (suite *ManagerTestSuite) TestBaselineShouldPass() {
 
 func (suite *ManagerTestSuite) TestHandleDeploymentAlerts() {
 	alerts := []*storage.Alert{fixtures.GetAlert()}
-	depID := alerts[0].GetDeployment().Id
+	depID := alerts[0].GetDeployment().GetId()
 
 	// unfortunately because the filters are in a different package and have unexported functions it cannot be tested here. Alert Manager tests should cover it
 	suite.alertManager.EXPECT().
@@ -191,7 +213,21 @@ func (suite *ManagerTestSuite) TestHandleResourceAlerts() {
 
 	// reprocessor.ReprocessRiskForDeployments should _not_ be called for resource alerts
 
-	err := suite.manager.HandleResourceAlerts(alerts[0].GetResource().ClusterId, alerts, storage.LifecycleStage_RUNTIME)
+	err := suite.manager.HandleResourceAlerts(alerts[0].GetResource().GetClusterId(), alerts, storage.LifecycleStage_RUNTIME)
+	suite.NoError(err)
+}
+
+func (suite *ManagerTestSuite) TestHandleNodeAlerts() {
+	alerts := []*storage.Alert{fixtures.GetNodeAlert()}
+
+	// unfortunately because the filters are in a different package and have unexported functions it cannot be tested here. Alert Manager tests should cover it
+	suite.alertManager.EXPECT().
+		AlertAndNotify(gomock.Any(), alerts, gomock.Any(), gomock.Any()).
+		Return(set.NewStringSet(), nil)
+
+	// reprocessor.ReprocessRiskForDeployments should _not_ be called for resource alerts
+
+	err := suite.manager.HandleNodeAlerts(alerts[0].GetResource().GetClusterId(), alerts, storage.LifecycleStage_RUNTIME)
 	suite.NoError(err)
 }
 
@@ -267,6 +303,24 @@ func (suite *ManagerTestSuite) TestAutoLockProcessBaselinesDisabled() {
 	suite.cluster.EXPECT().GetCluster(gomock.Any(), clusterId).Return(clusterAutolockDisabled, true, nil)
 	enabled := suite.manager.isAutoLockEnabledForCluster(clusterId)
 	suite.False(enabled)
+}
+
+func (suite *ManagerTestSuite) TestAutoLockProcessBaselinesManual() {
+	clusterId := fixtureconsts.Cluster1
+
+	suite.T().Setenv(features.AutoLockProcessBaselines.EnvVar(), "true")
+	suite.cluster.EXPECT().GetCluster(gomock.Any(), clusterId).Return(clusterAutolockManualEnabled, true, nil)
+	enabled := suite.manager.isAutoLockEnabledForCluster(clusterId)
+	suite.True(enabled)
+}
+
+func (suite *ManagerTestSuite) TestAutoLockProcessBaselinesUnknown() {
+	clusterId := fixtureconsts.Cluster1
+
+	suite.T().Setenv(features.AutoLockProcessBaselines.EnvVar(), "true")
+	suite.cluster.EXPECT().GetCluster(gomock.Any(), clusterId).Return(clusterAutolockUnknownEnabled, true, nil)
+	enabled := suite.manager.isAutoLockEnabledForCluster(clusterId)
+	suite.True(enabled)
 }
 
 func (suite *ManagerTestSuite) TestAutoLockProcessBaselinesNoCluster() {

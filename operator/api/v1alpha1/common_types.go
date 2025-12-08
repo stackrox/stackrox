@@ -6,6 +6,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/utils/pointer"
+	ctrlClient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 // MiscSpec defines miscellaneous settings for custom resources.
@@ -76,6 +77,10 @@ const (
 	ConditionDeployed       ConditionType = "Deployed"
 	ConditionReleaseFailed  ConditionType = "ReleaseFailed"
 	ConditionIrreconcilable ConditionType = "Irreconcilable"
+
+	// These are specifically owned by the status controllers.
+	ConditionProgressing ConditionType = "Progressing"
+	ConditionAvailable   ConditionType = "Available"
 
 	StatusTrue    ConditionStatus = "True"
 	StatusFalse   ConditionStatus = "False"
@@ -174,7 +179,7 @@ type ScannerV4Persistence struct {
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Persistent volume claim",order=1
 	PersistentVolumeClaim *ScannerV4PersistentVolumeClaim `json:"persistentVolumeClaim,omitempty"`
 
-	// Stores persistent data on a directory on the host. This is not recommended, and should only
+	// Stores persistent data in a directory on the host. This is not recommended, and should only
 	// be used together with a node selector (only available in YAML view).
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Host path",order=99
 	HostPath *HostPathSpec `json:"hostPath,omitempty"`
@@ -350,8 +355,17 @@ func (s *GlobalNetworkSpec) IsNetworkPoliciesEnabled() bool {
 // GlobalNetworkSpec defines settings related to Helm chart network parameters. The corresponding Helm flags
 // live in the global scope `.network`.
 type GlobalNetworkSpec struct {
-	// To provide security at the network level the ACS Operator creates NetworkPolicy resources by default. If you want to manage your own NetworkPolicy objects then set this to "Disabled".
+	// To provide security at the network level, the ACS Operator creates NetworkPolicy resources by default. If you want to manage your own NetworkPolicy objects then set this to "Disabled".
 	// The default is: Enabled.
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=1,displayName="Network Policies"
 	Policies *NetworkPolicies `json:"policies,omitempty"`
+}
+
+// +kubebuilder:object:generate=false
+type ObjectForStatusController interface {
+	ctrlClient.Object
+	GetCondition(condType ConditionType) *StackRoxCondition
+	SetCondition(StackRoxCondition) bool
+	GetGeneration() int64
+	GetObservedGeneration() int64
 }

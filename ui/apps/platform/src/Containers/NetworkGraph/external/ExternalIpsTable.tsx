@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import { useEffect } from 'react';
 import {
     Button,
     Divider,
@@ -11,12 +11,12 @@ import {
 import { InnerScrollContainer, Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 
 import ExternalLink from 'Components/PatternFly/IconText/ExternalLink';
-import SearchFilterChips from 'Components/PatternFly/SearchFilterChips';
+import SearchFilterChips from 'Components/CompoundSearchFilter/components/SearchFilterChips';
 import TbodyUnified from 'Components/TableStateTemplates/TbodyUnified';
 import useMetadata from 'hooks/useMetadata';
-import { TableUIState } from 'utils/getTableUIState';
+import type { TableUIState } from 'utils/getTableUIState';
 import { getVersionedDocs } from 'utils/versioning';
-import { ExternalNetworkFlowsMetadata } from 'types/networkFlow.proto';
+import type { ExternalNetworkFlowsMetadata } from 'types/networkFlow.proto';
 
 import IPMatchFilter from '../common/IPMatchFilter';
 import { EXTERNAL_SOURCE_ADDRESS_QUERY } from '../NetworkGraph.constants';

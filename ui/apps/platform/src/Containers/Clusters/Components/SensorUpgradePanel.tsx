@@ -1,21 +1,20 @@
-import React from 'react';
 import {
+    Button,
     DescriptionList,
+    DescriptionListDescription,
     DescriptionListGroup,
     DescriptionListTerm,
-    DescriptionListDescription,
     Divider,
     Panel,
     PanelHeader,
     PanelMain,
     PanelMainBody,
-    Button,
 } from '@patternfly/react-core';
 import upperFirst from 'lodash/upperFirst';
 
 import { findUpgradeState } from '../cluster.helpers';
 import SensorUpgrade from './SensorUpgrade';
-import { SensorUpgradeStatus } from '../clusterTypes';
+import type { SensorUpgradeStatus } from '../clusterTypes';
 
 export type SensorUpgradePanelProps = {
     actionProps?: {

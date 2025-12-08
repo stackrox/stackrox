@@ -14,13 +14,20 @@ import (
 type UpdateComputer interface {
 	// ComputeUpdatedConns updates based on currentState state and implementation-specific tracking
 	ComputeUpdatedConns(current map[indicator.NetworkConn]timestamp.MicroTS) []*storage.NetworkFlow
-	ComputeUpdatedEndpoints(current map[indicator.ContainerEndpoint]timestamp.MicroTS) []*storage.NetworkEndpoint
-	ComputeUpdatedProcesses(current map[indicator.ProcessListening]timestamp.MicroTS) []*storage.ProcessListeningOnPortFromSensor
+	ComputeUpdatedEndpointsAndProcesses(
+		enrichedEndpointsProcesses map[indicator.ContainerEndpoint]*indicator.ProcessListeningWithTimestamp,
+	) ([]*storage.NetworkEndpoint, []*storage.ProcessListeningOnPortFromSensor)
 
-	// OnSuccessfulSend contains actions that should be executed after successful sending of updates to Central.
-	OnSuccessfulSend(currentConns map[indicator.NetworkConn]timestamp.MicroTS,
-		currentEndpoints map[indicator.ContainerEndpoint]timestamp.MicroTS,
-		currentProcesses map[indicator.ProcessListening]timestamp.MicroTS)
+	// OnSuccessfulSendConnections contains actions that should be executed after successful sending of connection updates to Central.
+	OnSuccessfulSendConnections(currentConns map[indicator.NetworkConn]timestamp.MicroTS)
+	// OnSuccessfulSendEndpoints contains actions that should be executed after successful sending of endpoint updates to Central.
+	OnSuccessfulSendEndpoints(enrichedEndpointsProcesses map[indicator.ContainerEndpoint]*indicator.ProcessListeningWithTimestamp)
+	// OnSuccessfulSendProcesses contains actions that should be executed after successful sending of processesListening updates to Central.
+	OnSuccessfulSendProcesses(enrichedEndpointsProcesses map[indicator.ContainerEndpoint]*indicator.ProcessListeningWithTimestamp)
+	// OnSendConnectionsFailure is called after sending with connections that failed to send. These items are stored in cache for retry.
+	OnSendConnectionsFailure(unsentConns []*storage.NetworkFlow)
+	// OnSendEndpointsFailure is called after sending with endpoints that failed to send. These items are stored in cache for retry.
+	OnSendEndpointsFailure(unsentEps []*storage.NetworkEndpoint)
 
 	// ResetState resets all internal state (used when clearing historical data).
 	ResetState()

@@ -1,26 +1,16 @@
-import { ComponentType } from 'react';
-import {
-    GraphElement,
-    ComponentFactory,
-    GraphComponent,
-    DefaultNode,
-    DefaultEdge,
-    DefaultGroup,
-} from '@patternfly/react-topology';
+import type { ComponentType, PropsWithChildren } from 'react';
+import { DefaultEdge, DefaultGroup, DefaultNode, GraphComponent } from '@patternfly/react-topology';
+import type { ComponentFactory, GraphElement } from '@patternfly/react-topology';
 
-enum CustomModelKind {
-    node = 'node',
-    graph = 'graph',
-    edge = 'edge',
-    fakeGroup = 'fakeGroup',
-}
+import { ensureExhaustive } from 'utils/type.utils';
 
-// @ts-expect-error TODO: raise type error issue with patternfly/react-topology team
+type CustomModelKind = 'node' | 'graph' | 'edge' | 'fakeGroup';
+
 const defaultComponentFactory: ComponentFactory = (
     kind: CustomModelKind,
     type: string
 ):
-    | ComponentType<React.PropsWithChildren<{ element: GraphElement }>>
+    | ComponentType<PropsWithChildren<{ element: GraphElement }>>
     | typeof DefaultGroup
     | typeof GraphComponent
     | typeof DefaultNode
@@ -31,16 +21,16 @@ const defaultComponentFactory: ComponentFactory = (
             return DefaultGroup;
         default:
             switch (kind) {
-                case CustomModelKind.graph:
+                case 'graph':
                     return GraphComponent;
-                case CustomModelKind.node:
+                case 'node':
                     return DefaultNode;
-                case CustomModelKind.edge:
+                case 'edge':
                     return DefaultEdge;
-                case CustomModelKind.fakeGroup:
+                case 'fakeGroup':
                     return DefaultNode;
                 default:
-                    return undefined;
+                    return ensureExhaustive(kind);
             }
     }
 };

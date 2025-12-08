@@ -1,6 +1,7 @@
 import { gql, useQuery } from '@apollo/client';
 
-import { ClustersByType, clustersByTypeFragment } from './ClustersByTypeSummaryCard';
+import { clustersByTypeFragment } from './ClustersByTypeSummaryCard';
+import type { ClustersByType } from './ClustersByTypeSummaryCard';
 
 const platformCveMetadataQuery = gql`
     ${clustersByTypeFragment}

@@ -11,7 +11,7 @@ option java_package = "io.stackrox.proto.storage";
 // Next Tag: 15.
 message AuthProvider {
   string id = 1; // @gotags: sql:"pk"
-  string name = 2; // @gotags: sql:"unique" search:"AuthProvider Name,store,hidden"
+  string name = 2; // @gotags: sql:"unique" search:"AuthProvider Name,hidden"
   string type = 3;
   string ui_endpoint = 4;
   bool enabled = 5;

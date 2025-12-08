@@ -9,6 +9,8 @@ import (
 	"github.com/docker/distribution/manifest/manifestlist"
 	manifestV1 "github.com/docker/distribution/manifest/schema1"
 	manifestV2 "github.com/docker/distribution/manifest/schema2"
+	"github.com/google/go-containerregistry/pkg/name"
+	"github.com/google/go-containerregistry/pkg/v1/remote"
 	"github.com/heroku/docker-registry-client/registry"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
@@ -67,6 +69,8 @@ type Registry struct {
 	repositoryListLock   sync.RWMutex
 
 	repoListOnce sync.Once
+
+	clientTimeout time.Duration
 }
 
 // NewDockerRegistryWithConfig creates a new instantiation of the docker registry
@@ -87,25 +91,25 @@ func NewDockerRegistryWithConfig(cfg *Config, integration *storage.ImageIntegrat
 		return nil, err
 	}
 
-	client.Client.Timeout = env.RegistryClientTimeout.DurationSetting()
-
 	repoListState := pkgUtils.IfThenElse(cfg.DisableRepoList, "disabled", "enabled")
 	log.Debugf("created integration %q with repo list %s", integration.GetName(), repoListState)
-
-	return &Registry{
+	r := &Registry{
 		url:                   url,
 		registry:              hostname,
 		Client:                client,
 		cfg:                   cfg,
 		protoImageIntegration: integration,
-	}, nil
+		clientTimeout:         env.RegistryClientTimeout.DurationSetting(),
+	}
+	r.Client.Client.Timeout = r.clientTimeout
+	return r, nil
 }
 
 // NewDockerRegistry creates a generic docker registry integration
 func NewDockerRegistry(integration *storage.ImageIntegration, disableRepoList bool,
 	metricsHandler *types.MetricsHandler,
 ) (*Registry, error) {
-	dockerConfig, ok := integration.IntegrationConfig.(*storage.ImageIntegration_Docker)
+	dockerConfig, ok := integration.GetIntegrationConfig().(*storage.ImageIntegration_Docker)
 	if !ok {
 		return nil, errors.New("Docker configuration required")
 	}
@@ -253,4 +257,34 @@ func (r *Registry) Name() string {
 // HTTPClient returns the *http.Client used to contact the registry.
 func (r *Registry) HTTPClient() *http.Client {
 	return r.Client.Client
+}
+
+// ListTags lists all tags for a given repository, returning a list of tag names.
+// This uses google/go-containerregistry which properly handles pagination with
+// relative URLs, but uses the same transport used by the docker-registry-client
+// configuration. Reuse of the existing client's transport gives us,
+// authentication, transport timeouts,TLS settings, proxy config and metrics.
+func (r *Registry) ListTags(ctx context.Context, repository string) ([]string, error) {
+	if ctx == nil {
+		ctx = context.Background()
+	}
+	if r.clientTimeout > 0 {
+		var cancel context.CancelFunc
+		ctx, cancel = context.WithTimeout(ctx, r.clientTimeout)
+		defer cancel()
+	}
+	repoPath := fmt.Sprintf("%s/%s", r.registry, repository)
+	repo, err := name.NewRepository(repoPath)
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to parse repository %q", repoPath)
+	}
+	opts := []remote.Option{
+		remote.WithContext(ctx),
+		remote.WithTransport(r.Client.Client.Transport),
+	}
+	tags, err := remote.List(repo, opts...)
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to list tags for repository %q", repository)
+	}
+	return tags, nil
 }

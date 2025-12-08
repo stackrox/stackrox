@@ -14,6 +14,10 @@ import (
 // This test doesn't apply to `Legacy` since its offline behavior relies on implementation details
 // within NetFlowManager.
 func TestTransitionBasedComputeUpdatedConnsOffline(t *testing.T) {
+	// Disable feature flags to test the original behavior
+	t.Setenv("ROX_NETFLOW_BATCHING", "false")
+	t.Setenv("ROX_NETFLOW_CACHE_LIMITING", "false")
+
 	// Test data setup
 	entity1 := networkgraph.Entity{Type: storage.NetworkEntityInfo_DEPLOYMENT, ID: "deployment-1"}
 	entity2 := networkgraph.Entity{Type: storage.NetworkEntityInfo_DEPLOYMENT, ID: "deployment-2"}
@@ -193,7 +197,7 @@ func TestTransitionBasedComputeUpdatedConnsOffline(t *testing.T) {
 			l := NewTransitionBased()
 			// Initial online update - for TransitionBased, we must trigger a single computation and call `OnSuccessfulSend`
 			_ = l.ComputeUpdatedConns(tc.initialOnlineState)
-			l.OnSuccessfulSend(tc.initialOnlineState, nil, nil)
+			l.OnSuccessfulSendConnections(tc.initialOnlineState)
 
 			// Going offline - calling ComputeUpdatedConns but not OnSuccessfulSend
 			_ = l.ComputeUpdatedConns(tc.offlineUpdate1)
@@ -202,13 +206,13 @@ func TestTransitionBasedComputeUpdatedConnsOffline(t *testing.T) {
 
 			// Going online again - calling ComputeUpdatedConns followed by OnSuccessfulSend
 			finalUpdates := l.ComputeUpdatedConns(tc.currentOnlineState)
-			l.OnSuccessfulSend(tc.currentOnlineState, nil, nil)
+			l.OnSuccessfulSendConnections(tc.currentOnlineState)
 
 			assert.Len(t, finalUpdates, tc.expectNumUpdates)
 
 			// Empty update to ensure that any caches for offline mode are cleared
 			u := l.ComputeUpdatedConns(emptyUpdate)
-			l.OnSuccessfulSend(emptyUpdate, nil, nil)
+			l.OnSuccessfulSendConnections(emptyUpdate)
 			assert.Len(t, u, 0)
 		})
 	}

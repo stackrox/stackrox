@@ -150,8 +150,8 @@ func TestGetProtoTimestampFromRFC3339NanoString(t *testing.T) {
 
 	ts1, err1 := GetProtoTimestampFromRFC3339NanoString(timeString)
 	assert.NoError(t, err1)
-	assert.Equal(t, int64(1510860932), ts1.Seconds)
-	assert.Equal(t, int32(12345678), ts1.Nanos)
+	assert.Equal(t, int64(1510860932), ts1.GetSeconds())
+	assert.Equal(t, int32(12345678), ts1.GetNanos())
 
 	invalidTimeString1 := "0000-12-24T23:59:59.999999999Z"
 	_, err2 := GetProtoTimestampFromRFC3339NanoString(invalidTimeString1)

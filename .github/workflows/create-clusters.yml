@@ -16,7 +16,7 @@ on:
         default: false
         type: boolean
       create-long-cluster:
-        description: Create a long-running cluster on RC1
+        description: Create a long-running cluster
         default: false
         type: boolean
       dry-run:

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 
 import ComponentTestProvider from 'test-utils/ComponentTestProvider';
 import { graphqlUrl } from 'test-utils/apiEndpoints';
@@ -265,11 +265,13 @@ describe(Cypress.spec.relative, () => {
         cy.get('input[aria-label="Filter results by Image tag"]').type('Tag 123');
         cy.get('button[aria-label="Apply text input to search"]').click();
 
-        cy.get('@onSearch').should('have.been.calledWithExactly', {
-            action: 'ADD',
-            category: 'Image Tag',
-            value: 'Tag 123',
-        });
+        cy.get('@onSearch').should('have.been.calledWithExactly', [
+            {
+                action: 'APPEND',
+                category: 'Image Tag',
+                value: 'Tag 123',
+            },
+        ]);
     });
 
     it('should display the select input and correctly search for image component source', () => {
@@ -303,18 +305,22 @@ describe(Cypress.spec.relative, () => {
         cy.get(imageComponenSourceSelectItems).eq(7).should('have.text', 'Infrastructure');
 
         cy.get(imageComponenSourceSelectItems).eq(1).click();
-        cy.get('@onSearch').should('have.been.calledWithExactly', {
-            action: 'ADD',
-            category: 'Component Source',
-            value: 'PYTHON',
-        });
+        cy.get('@onSearch').should('have.been.calledWithExactly', [
+            {
+                action: 'SELECT_INCLUSIVE',
+                category: 'Component Source',
+                value: 'PYTHON',
+            },
+        ]);
 
         cy.get(imageComponenSourceSelectItems).eq(4).click();
-        cy.get('@onSearch').should('have.been.calledWithExactly', {
-            action: 'ADD',
-            category: 'Component Source',
-            value: 'NODEJS',
-        });
+        cy.get('@onSearch').should('have.been.calledWithExactly', [
+            {
+                action: 'SELECT_INCLUSIVE',
+                category: 'Component Source',
+                value: 'NODEJS',
+            },
+        ]);
     });
 
     it('should display the date-picker input and correctly search for image cve discovered time', () => {
@@ -348,11 +354,13 @@ describe(Cypress.spec.relative, () => {
         cy.get('button[aria-label="Apply condition and date input to search"]').click();
 
         // Check updated date value
-        cy.get('@onSearch').should('have.been.calledWithExactly', {
-            action: 'ADD',
-            category: 'CVE Created Time',
-            value: '>01/15/2034',
-        });
+        cy.get('@onSearch').should('have.been.calledWithExactly', [
+            {
+                action: 'APPEND',
+                category: 'CVE Created Time',
+                value: '>01/15/2034',
+            },
+        ]);
 
         cy.get('input[aria-label="Filter by date"]').should('have.value', '');
     });
@@ -391,11 +399,13 @@ describe(Cypress.spec.relative, () => {
         cy.get('input[aria-label="Condition value input"]').blur();
 
         cy.get('button[aria-label="Apply condition and number input to search"]').click();
-        cy.get('@onSearch').should('have.been.calledWithExactly', {
-            action: 'ADD',
-            category: 'CVSS',
-            value: '<9.9',
-        });
+        cy.get('@onSearch').should('have.been.calledWithExactly', [
+            {
+                action: 'APPEND',
+                category: 'CVSS',
+                value: '<9.9',
+            },
+        ]);
 
         // should have new values
         cy.get('button[aria-label="Condition selector toggle"]').should(
@@ -410,11 +420,13 @@ describe(Cypress.spec.relative, () => {
         cy.get('input[aria-label="Condition value input"]').should('have.value', '10');
 
         cy.get('button[aria-label="Apply condition and number input to search"]').click();
-        cy.get('@onSearch').should('have.been.calledWithExactly', {
-            action: 'ADD',
-            category: 'CVSS',
-            value: '<10',
-        });
+        cy.get('@onSearch').should('have.been.calledWithExactly', [
+            {
+                action: 'APPEND',
+                category: 'CVSS',
+                value: '<10',
+            },
+        ]);
 
         // should decrement
         cy.get('input[aria-label="Condition value input"]').clear();
@@ -424,11 +436,13 @@ describe(Cypress.spec.relative, () => {
         cy.get('input[aria-label="Condition value input"]').should('have.value', '0');
 
         cy.get('button[aria-label="Apply condition and number input to search"]').click();
-        cy.get('@onSearch').should('have.been.calledWithExactly', {
-            action: 'ADD',
-            category: 'CVSS',
-            value: '<0',
-        });
+        cy.get('@onSearch').should('have.been.calledWithExactly', [
+            {
+                action: 'APPEND',
+                category: 'CVSS',
+                value: '<0',
+            },
+        ]);
     });
 
     it('should display the autocomplete input and correctly search for image name', () => {
@@ -457,11 +471,13 @@ describe(Cypress.spec.relative, () => {
 
         cy.get(autocompleteMenuItems).eq(0).click();
 
-        cy.get('@onSearch').should('have.been.calledWithExactly', {
-            action: 'ADD',
-            category: 'Image',
-            value: 'docker.io/library/centos:7',
-        });
+        cy.get('@onSearch').should('have.been.calledWithExactly', [
+            {
+                action: 'APPEND',
+                category: 'Image',
+                value: 'docker.io/library/centos:7',
+            },
+        ]);
 
         cy.get(autocompleteInput).should('have.value', '');
 
@@ -474,11 +490,13 @@ describe(Cypress.spec.relative, () => {
         cy.get(autocompleteMenuItems).eq(1).should('have.text', 'docker.io/library/centos:8');
 
         cy.get(autocompleteSearchButton).click();
-        cy.get('@onSearch').should('have.been.calledWithExactly', {
-            action: 'ADD',
-            category: 'Image',
-            value: 'docker.io',
-        });
+        cy.get('@onSearch').should('have.been.calledWithExactly', [
+            {
+                action: 'APPEND',
+                category: 'Image',
+                value: 'docker.io',
+            },
+        ]);
     });
 
     it('should display the default entity and attribute when the selected entity and attribute are not in the config', () => {

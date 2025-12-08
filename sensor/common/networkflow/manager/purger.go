@@ -8,7 +8,6 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/env"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/timestamp"
 	"github.com/stackrox/rox/sensor/common"
@@ -119,9 +118,7 @@ func (p *NetworkFlowPurger) Notify(e common.SensorComponentEvent) {
 		p.purgerTicker.Reset(d)
 		log.Debugf("NetworkFlowPurger will execute in %s", d.String())
 	case common.SensorComponentEventOfflineMode:
-		if !features.SensorCapturesIntermediateEvents.Enabled() {
-			p.purgerTicker.Stop()
-		}
+		// Continue purging even in offline mode when buffering events
 	}
 }
 

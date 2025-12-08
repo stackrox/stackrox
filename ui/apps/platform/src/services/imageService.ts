@@ -24,7 +24,7 @@ export function getImages(): Promise<ListImage[]> {
 export function getWatchedImages(): Promise<WatchedImage[]> {
     return axios
         .get<{ watchedImages: WatchedImage[] }>(watchedImagesUrl)
-        .then((response) => response.data.watchedImages || []);
+        .then((response) => response.data.watchedImages ?? []);
 }
 
 /*

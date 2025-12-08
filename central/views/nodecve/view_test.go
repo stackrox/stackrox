@@ -554,7 +554,7 @@ func (s *NodeCVEViewTestSuite) testCases() []testCase {
 		{
 			desc: "search one cve w/ cluster scope",
 			ctx: scoped.Context(context.Background(), scoped.Scope{
-				IDs:   []string{s.nodeMap[fixtureconsts.Node1].ClusterId},
+				IDs:   []string{s.nodeMap[fixtureconsts.Node1].GetClusterId()},
 				Level: v1.SearchCategory_CLUSTERS,
 			}),
 			q: search.NewQueryBuilder().
@@ -562,7 +562,7 @@ func (s *NodeCVEViewTestSuite) testCases() []testCase {
 				ProtoQuery(),
 			matchFilter: matchAllFilter().
 				withClusterFilter(func(cluster *storage.Cluster) bool {
-					return cluster.GetName() == s.nodeMap[fixtureconsts.Node1].ClusterName
+					return cluster.GetName() == s.nodeMap[fixtureconsts.Node1].GetClusterName()
 				}).
 				withVulnFilter(func(vuln *storage.NodeVulnerability) bool {
 					return vuln.GetCveBaseInfo().GetCve() == "CVE-2014-6210"
@@ -571,7 +571,7 @@ func (s *NodeCVEViewTestSuite) testCases() []testCase {
 		{
 			desc: "search one cve w/ node scope",
 			ctx: scoped.Context(context.Background(), scoped.Scope{
-				IDs:   []string{s.nodeMap[fixtureconsts.Node2].Id},
+				IDs:   []string{s.nodeMap[fixtureconsts.Node2].GetId()},
 				Level: v1.SearchCategory_NODES,
 			}),
 			q: search.NewQueryBuilder().
@@ -579,7 +579,7 @@ func (s *NodeCVEViewTestSuite) testCases() []testCase {
 				ProtoQuery(),
 			matchFilter: matchAllFilter().
 				withNodeFilter(func(node *storage.Node) bool {
-					return node.GetName() == s.nodeMap[fixtureconsts.Node2].Name
+					return node.GetName() == s.nodeMap[fixtureconsts.Node2].GetName()
 				}).
 				withVulnFilter(func(vuln *storage.NodeVulnerability) bool {
 					return vuln.GetCveBaseInfo().GetCve() == "CVE-2014-6210"
@@ -762,7 +762,7 @@ func (s *NodeCVEViewTestSuite) compileExpectedCVECores(filter *filterImpl) []Cve
 		if !filter.matchNode(n) {
 			continue
 		}
-		if !filter.matchCluster(s.nameToClusters[n.ClusterName]) {
+		if !filter.matchCluster(s.nameToClusters[n.GetClusterName()]) {
 			continue
 		}
 		for _, c := range n.GetScan().GetComponents() {
@@ -775,7 +775,7 @@ func (s *NodeCVEViewTestSuite) compileExpectedCVECores(filter *filterImpl) []Cve
 				if _, ok := s.cveCreateMap[id]; !ok {
 					s.Require().Contains(s.cveCreateMap, id)
 				}
-				cveCreatedTime, err := protocompat.ConvertTimestampToTimeOrError(s.cveCreateMap[id].GetCveBaseInfo().CreatedAt)
+				cveCreatedTime, err := protocompat.ConvertTimestampToTimeOrError(s.cveCreateMap[id].GetCveBaseInfo().GetCreatedAt())
 				s.Require().NoError(err)
 				cveCreatedTime = cveCreatedTime.Round(time.Microsecond)
 				withStats, ok := cveMap[cve]
@@ -792,8 +792,8 @@ func (s *NodeCVEViewTestSuite) compileExpectedCVECores(filter *filterImpl) []Cve
 				}
 				core := withStats.response
 				core.CVEIDs = append(core.CVEIDs, id)
-				if core.GetTopCVSS() < v.Cvss {
-					core.TopCVSS = v.Cvss
+				if core.GetTopCVSS() < v.GetCvss() {
+					core.TopCVSS = v.GetCvss()
 				}
 				core.NodeIDs = append(core.NodeIDs, n.GetId())
 				if core.GetFirstDiscoveredInSystem().Compare(cveCreatedTime) > 0 {
@@ -801,13 +801,13 @@ func (s *NodeCVEViewTestSuite) compileExpectedCVECores(filter *filterImpl) []Cve
 				}
 				withStats.operatingSystems.Add(n.GetOperatingSystem())
 				nSet, ok := withStats.severityToNodes[v.GetSeverity()]
-				nSet.Add(n.Id)
+				nSet.Add(n.GetId())
 				if !ok {
 					withStats.severityToNodes[v.GetSeverity()] = nSet
 				}
 				if v.GetFixedBy() != "" {
 					fixableNSet, ok := withStats.severityToFixableNodes[v.GetSeverity()]
-					fixableNSet.Add(n.Id)
+					fixableNSet.Add(n.GetId())
 					if !ok {
 						withStats.severityToFixableNodes[v.GetSeverity()] = fixableNSet
 					}
@@ -852,7 +852,7 @@ func (s *NodeCVEViewTestSuite) compileExpectedCountBySeverity(filter *filterImpl
 		if !filter.matchNode(n) {
 			continue
 		}
-		if !filter.matchCluster(s.nameToClusters[n.ClusterName]) {
+		if !filter.matchCluster(s.nameToClusters[n.GetClusterName()]) {
 			continue
 		}
 		for _, c := range n.GetScan().GetComponents() {
@@ -917,7 +917,7 @@ func (s *NodeCVEViewTestSuite) compileExpectedAffectedNodeIDs(filter *filterImpl
 		if !filter.matchNode(n) {
 			continue
 		}
-		if !filter.matchCluster(s.nameToClusters[n.ClusterName]) {
+		if !filter.matchCluster(s.nameToClusters[n.GetClusterName()]) {
 			continue
 		}
 		for _, c := range n.GetScan().GetComponents() {
@@ -963,8 +963,8 @@ func getTestNodes() map[string]*storage.Node {
 
 	for i, n := range nodes {
 		n.Name = fmt.Sprintf("Node-%d", i+1)
-		n.Scan.OperatingSystem = n.OperatingSystem
-		if n.OperatingSystem == os2NodeTemplate.OperatingSystem {
+		n.Scan.OperatingSystem = n.GetOperatingSystem()
+		if n.GetOperatingSystem() == os2NodeTemplate.GetOperatingSystem() {
 			for _, c := range n.GetScan().GetComponents() {
 				for _, v := range c.GetVulnerabilities() {
 					v.Severity = storage.VulnerabilitySeverity_LOW_VULNERABILITY_SEVERITY

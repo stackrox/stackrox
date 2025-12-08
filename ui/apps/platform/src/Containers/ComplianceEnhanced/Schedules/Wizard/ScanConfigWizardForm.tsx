@@ -1,11 +1,12 @@
-import React, { ReactElement, useCallback, useRef, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
+import type { ReactElement, RefObject } from 'react';
 import { useNavigate } from 'react-router-dom-v5-compat';
 import {
     Button,
     Modal,
     Wizard,
-    WizardStep,
     WizardFooter,
+    WizardStep,
     useWizardContext,
 } from '@patternfly/react-core';
 import type { WizardStepType } from '@patternfly/react-core';
@@ -30,7 +31,8 @@ import ProfileSelection from './ProfileSelection';
 import ReportConfiguration from './ReportConfiguration';
 import ReviewConfig from './ReviewConfig';
 import useFormikScanConfig from './useFormikScanConfig';
-import { convertFormikToScanConfig, ScanConfigFormValues } from '../compliance.scanConfigs.utils';
+import { convertFormikToScanConfig } from '../compliance.scanConfigs.utils';
+import type { ScanConfigFormValues } from '../compliance.scanConfigs.utils';
 
 const PARAMETERS = 'Set parameters';
 const PARAMETERS_ID = 'parameters';
@@ -50,7 +52,7 @@ type ScanConfigWizardFormProps = {
 type CustomWizardFooterProps = {
     stepId: string;
     formik: ReturnType<typeof useFormikScanConfig>;
-    alertRef: React.RefObject<HTMLDivElement>;
+    alertRef: RefObject<HTMLDivElement>;
     openModal: () => void;
     validate?: () => boolean;
 };
@@ -91,7 +93,7 @@ function CustomWizardFooter({
     }
 
     function handleNext() {
-        const hasNoErrors = Object.keys(formik.errors?.[stepId] || {}).length === 0;
+        const hasNoErrors = Object.keys(formik.errors?.[stepId] ?? {}).length === 0;
 
         if (!hasNoErrors) {
             setAllFieldsTouched(stepId);
@@ -196,19 +198,19 @@ function ScanConfigWizardForm({ initialFormValues }: ScanConfigWizardFormProps):
     }
 
     function canJumpToSelectClusters() {
-        return Object.keys(formik.errors?.parameters || {}).length === 0;
+        return Object.keys(formik.errors?.parameters ?? {}).length === 0;
     }
 
     function canJumpToSelectProfiles() {
-        return canJumpToSelectClusters() && Object.keys(formik.errors?.clusters || {}).length === 0;
+        return canJumpToSelectClusters() && Object.keys(formik.errors?.clusters ?? {}).length === 0;
     }
 
     function canJumpToConfigureReport() {
-        return canJumpToSelectProfiles() && Object.keys(formik.errors?.profiles || {}).length === 0;
+        return canJumpToSelectProfiles() && Object.keys(formik.errors?.profiles ?? {}).length === 0;
     }
 
     function canJumpToReviewConfig() {
-        return canJumpToConfigureReport() && Object.keys(formik.errors?.report || {}).length === 0;
+        return canJumpToConfigureReport() && Object.keys(formik.errors?.report ?? {}).length === 0;
     }
 
     function allClustersAreUnhealthy(): boolean {
@@ -257,7 +259,7 @@ function ScanConfigWizardForm({ initialFormValues }: ScanConfigWizardFormProps):
                     >
                         <ClusterSelection
                             alertRef={alertRef}
-                            clusters={clusters || []}
+                            clusters={clusters ?? []}
                             isFetchingClusters={isFetchingClusters}
                         />
                     </WizardStep>
@@ -278,7 +280,7 @@ function ScanConfigWizardForm({ initialFormValues }: ScanConfigWizardFormProps):
                     >
                         <ProfileSelection
                             alertRef={alertRef}
-                            profiles={profiles || []}
+                            profiles={profiles ?? []}
                             isFetchingProfiles={isFetchingProfiles}
                         />
                     </WizardStep>
@@ -312,7 +314,7 @@ function ScanConfigWizardForm({ initialFormValues }: ScanConfigWizardFormProps):
                         }}
                     >
                         <ReviewConfig
-                            clusters={clusters || []}
+                            clusters={clusters ?? []}
                             errorMessage={createScanConfigError}
                         />
                     </WizardStep>

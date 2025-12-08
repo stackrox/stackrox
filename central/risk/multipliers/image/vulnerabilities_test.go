@@ -17,15 +17,15 @@ func TestVulnerabilitiesScore(t *testing.T) {
 	mult := NewVulnerabilities()
 	images := multipliers.GetMockImages()
 	result := mult.Score(ctx, images[0])
-	assert.Equal(t, float32(1.59025), result.Score)
+	assert.Equal(t, float32(1.59025), result.GetScore())
 
 	// Changing CVSS score should not affect result.
 	images[0].GetScan().GetComponents()[0].GetVulns()[0].Cvss = 0
 	result = mult.Score(ctx, images[0])
-	assert.Equal(t, float32(1.59025), result.Score)
+	assert.Equal(t, float32(1.59025), result.GetScore())
 	images[0].GetScan().GetComponents()[0].GetVulns()[0].Cvss = 10
 	result = mult.Score(ctx, images[0])
-	assert.Equal(t, float32(1.59025), result.Score)
+	assert.Equal(t, float32(1.59025), result.GetScore())
 
 	// Set both severity to unknown and then there should be a nil RiskResult
 	images[0].GetScan().GetComponents()[0].GetVulns()[0].Severity = storage.VulnerabilitySeverity_UNKNOWN_VULNERABILITY_SEVERITY
@@ -43,15 +43,15 @@ func TestVulnerabilitiesScoreV2(t *testing.T) {
 	mult := NewVulnerabilities()
 	images := multipliers.GetMockImagesV2()
 	result := mult.ScoreV2(ctx, images[0])
-	assert.Equal(t, float32(1.59025), result.Score)
+	assert.Equal(t, float32(1.59025), result.GetScore())
 
 	// Changing CVSS score should not affect result.
 	images[0].GetScan().GetComponents()[0].GetVulns()[0].Cvss = 0
 	result = mult.ScoreV2(ctx, images[0])
-	assert.Equal(t, float32(1.59025), result.Score)
+	assert.Equal(t, float32(1.59025), result.GetScore())
 	images[0].GetScan().GetComponents()[0].GetVulns()[0].Cvss = 10
 	result = mult.ScoreV2(ctx, images[0])
-	assert.Equal(t, float32(1.59025), result.Score)
+	assert.Equal(t, float32(1.59025), result.GetScore())
 
 	// Set both severity to unknown and then there should be a nil RiskResult
 	images[0].GetScan().GetComponents()[0].GetVulns()[0].Severity = storage.VulnerabilitySeverity_UNKNOWN_VULNERABILITY_SEVERITY

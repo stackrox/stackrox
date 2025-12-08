@@ -154,7 +154,7 @@ func getInstanceId(ids installationDS.Store) (string, error) {
 	if err != nil || ii == nil {
 		return "", errors.WithMessagef(err, "failed to get installation information")
 	}
-	return ii.Id, nil
+	return ii.GetId(), nil
 }
 
 // Singleton instance collects the central instance telemetry configuration from

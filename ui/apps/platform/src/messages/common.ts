@@ -5,6 +5,7 @@ import type {
     PolicyEventSource,
     PolicySeverity,
 } from 'types/policy.proto';
+import type { ValueOf } from 'utils/type.utils';
 
 export const severityLabels: Record<PolicySeverity, string> = Object.freeze({
     CRITICAL_SEVERITY: 'Critical',
@@ -56,6 +57,7 @@ export const eventSourceLabels: Record<PolicyEventSource, string> = Object.freez
     NOT_APPLICABLE: 'N/A',
     DEPLOYMENT_EVENT: 'Deployment',
     AUDIT_LOG_EVENT: 'Audit log',
+    NODE_EVENT: 'Node',
 });
 
 export const accessControl = Object.freeze({
@@ -140,14 +142,21 @@ export const envVarSrcLabels = Object.freeze({
 export const policyCriteriaCategories = Object.freeze({
     IMAGE_REGISTRY: 'Image registry',
     IMAGE_CONTENTS: 'Image contents',
+    IMAGE_SCANNING: 'Image scanning',
     CONTAINER_CONFIGURATION: 'Container configuration',
     DEPLOYMENT_METADATA: 'Deployment metadata',
     STORAGE: 'Storage',
     NETWORKING: 'Networking',
     PROCESS_ACTIVITY: 'Process activity',
-    KUBERNETES_ACCESS: 'Kubernetes access',
-    KUBERNETES_EVENTS: 'Kubernetes events',
+    BASELINE_DEVIATION: 'Baseline deviation',
+    ACCESS_CONTROL: 'Access control',
+    USER_ISSUED_CONTAINER_COMMANDS: 'User issued container commands',
+    RESOURCE_OPERATION: 'Resource operation (Required)',
+    RESOURCE_ATTRIBUTES: 'Resource attributes',
+    FILE_ACTIVITY: 'File activity',
 });
+
+export type PolicyCriteriaCategoryKey = ValueOf<typeof policyCriteriaCategories>;
 
 // For any update to severityRatings, please also update cve.proto,
 // pkg/booleanpolicy/value_regex.go, and Containers/Policies/Wizard/Form/utils.js.

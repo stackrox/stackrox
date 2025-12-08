@@ -6,13 +6,13 @@ option go_package = "./storage;storage";
 option java_package = "io.stackrox.proto.storage";
 
 message NodeComponent {
-  string id = 1; // This field is composite id over name, version, and operating system. // @gotags: search:"Component ID,store,hidden" sql:"pk,id"
-  string name = 2; // @gotags: search:"Component,store"
-  string version = 3; // @gotags: search:"Component Version,store"
+  string id = 1; // This field is composite id over name, version, and operating system. // @gotags: search:"Component ID,hidden" sql:"pk,id"
+  string name = 2; // @gotags: search:"Component"
+  string version = 3; // @gotags: search:"Component Version"
   int64 priority = 5; // @gotags: search:"Component Risk Priority,hidden"
   float risk_score = 7; // @gotags: search:"Component Risk Score,hidden"
   oneof set_top_cvss {
-    float top_cvss = 8; // @gotags: search:"Component Top CVSS,store"
+    float top_cvss = 8; // @gotags: search:"Component Top CVSS"
   }
   string operating_system = 9; // @gotags: search:"Operating System"
 }

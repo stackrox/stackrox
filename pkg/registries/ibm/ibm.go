@@ -46,7 +46,7 @@ func validate(ibm *storage.IBMRegistryConfig) error {
 func newRegistry(integration *storage.ImageIntegration, disableRepoList bool,
 	metricsHandler *types.MetricsHandler,
 ) (*docker.Registry, error) {
-	ibmConfig, ok := integration.IntegrationConfig.(*storage.ImageIntegration_Ibm)
+	ibmConfig, ok := integration.GetIntegrationConfig().(*storage.ImageIntegration_Ibm)
 	if !ok {
 		return nil, errors.New("IBM configuration required")
 	}

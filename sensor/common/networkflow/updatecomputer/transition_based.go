@@ -2,27 +2,26 @@ package updatecomputer
 
 import (
 	"slices"
-	"strings"
 	"time"
 
+	"github.com/cespare/xxhash"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/env"
-	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/timestamp"
 	"github.com/stackrox/rox/sensor/common/networkflow/manager/indicator"
 )
 
-var log = logging.LoggerForModule()
-
 type deduperAction int
 
 const (
 	deduperActionAdd deduperAction = iota
 	deduperActionRemove
+	deduperActionUpdateProcess
 	deduperActionNoop
 
 	// skipReason explains why a given update was not sent to Central. Used in metric labels.
@@ -51,12 +50,6 @@ var (
 	ProcessEnrichedEntity    EnrichedEntity = "process"
 )
 
-// allEnrichedEntities is a list of all enriched entities. It is used to gather metrics for all enriched entities types.
-var allEnrichedEntities = []EnrichedEntity{
-	ConnectionEnrichedEntity,
-	EndpointEnrichedEntity,
-	ProcessEnrichedEntity}
-
 // TransitionType describes the type of transition of states - in the previous tick and in the current tick -
 // of an enriched entity (EE).
 type TransitionType int
@@ -72,6 +65,7 @@ const (
 	TransitionTypeClosed2Closed
 	// TransitionTypeClosed2Open describes the situation when a previously seen closed EE is seen again as open.
 	TransitionTypeClosed2Open
+	TransitionTypeReplaceProcess
 )
 
 func (tt *TransitionType) String() string {
@@ -86,6 +80,8 @@ func (tt *TransitionType) String() string {
 		return "closed->closed"
 	case TransitionTypeClosed2Open:
 		return "closed->open"
+	case TransitionTypeReplaceProcess:
+		return "replace-process"
 	}
 	return "unknown"
 }
@@ -103,13 +99,13 @@ func (tt *TransitionType) String() string {
 // to avoid sending duplicate close updates to Central. In the future, after careful investigation,
 // this behavior may be made optional and hidden behind an environment variable.
 type TransitionBased struct {
-	// Algorithm used for creating fingerprints of indicators
-	hashingAlgo indicator.HashingAlgo
 
 	// State tracking for conditional updates - moved from networkFlowManager
-	deduperMutex    sync.RWMutex
-	deduper         map[EnrichedEntity]*set.StringSet
-	deduperEstBytes map[EnrichedEntity]uintptr
+	connectionsDeduperMutex sync.RWMutex
+	connectionsDeduper      *set.Set[indicator.BinaryHash]
+
+	endpointsDeduperMutex sync.RWMutex
+	endpointsDeduper      map[indicator.BinaryHash]indicator.BinaryHash
 
 	// cachedUpdates contains a list of updates to Central that cannot be sent at the given moment.
 	cachedUpdatesConn []*storage.NetworkFlow
@@ -118,50 +114,29 @@ type TransitionBased struct {
 
 	// Closed connection timestamp tracking for handling late-arriving updates
 	closedConnMutex            sync.RWMutex
-	closedConnTimestamps       map[string]closedConnEntry
+	closedConnTimestamps       map[indicator.BinaryHash]closedConnEntry
 	closedConnRememberDuration time.Duration
 
 	lastCleanupMutex sync.RWMutex
 	lastCleanup      time.Time
 }
 
-// newStringSetPtr returns a pointer to a new string set, which is originally a value type.
+// newBinaryHashSetPtr returns a pointer to a new set of BinaryHash values, which is originally a value type.
 // This avoids copying the set when it is used in the deduper.
-func newStringSetPtr() *set.StringSet {
-	s := set.NewStringSet()
+func newBinaryHashSetPtr() *set.Set[indicator.BinaryHash] {
+	s := set.NewSet[indicator.BinaryHash]()
 	return &s
-}
-
-func hashingAlgoFromEnv(v env.Setting) indicator.HashingAlgo {
-	switch strings.ToLower(v.Setting()) {
-	case "fnv64":
-		return indicator.HashingAlgoHash
-	case "string":
-		return indicator.HashingAlgoString
-	default:
-		log.Warnf("Unknown hashing algorithm selected in %s: %q. Using default 'FNV64'.", v.EnvVar(), v.Setting())
-		return indicator.HashingAlgoHash
-	}
 }
 
 // NewTransitionBased creates a new instance of the transition-based update computer.
 func NewTransitionBased() *TransitionBased {
 	return &TransitionBased{
-		hashingAlgo: hashingAlgoFromEnv(env.NetworkFlowDeduperHashingAlgorithm),
-		deduper: map[EnrichedEntity]*set.StringSet{
-			ConnectionEnrichedEntity: newStringSetPtr(),
-			EndpointEnrichedEntity:   newStringSetPtr(),
-			ProcessEnrichedEntity:    newStringSetPtr(),
-		},
-		deduperEstBytes: map[EnrichedEntity]uintptr{
-			ConnectionEnrichedEntity: 0,
-			EndpointEnrichedEntity:   0,
-			ProcessEnrichedEntity:    0,
-		},
+		connectionsDeduper:         newBinaryHashSetPtr(),
+		endpointsDeduper:           make(map[indicator.BinaryHash]indicator.BinaryHash),
 		cachedUpdatesConn:          make([]*storage.NetworkFlow, 0),
 		cachedUpdatesEp:            make([]*storage.NetworkEndpoint, 0),
 		cachedUpdatesProc:          make([]*storage.ProcessListeningOnPortFromSensor, 0),
-		closedConnTimestamps:       make(map[string]closedConnEntry),
+		closedConnTimestamps:       make(map[indicator.BinaryHash]closedConnEntry),
 		closedConnRememberDuration: env.NetworkFlowClosedConnRememberDuration.DurationSetting(),
 		lastCleanup:                time.Now(),
 	}
@@ -171,42 +146,113 @@ func NewTransitionBased() *TransitionBased {
 func (c *TransitionBased) ComputeUpdatedConns(current map[indicator.NetworkConn]timestamp.MicroTS) []*storage.NetworkFlow {
 	var updates []*storage.NetworkFlow
 	ee := ConnectionEnrichedEntity
-	if len(current) == 0 {
-		// Received an empty map with current state. This may happen because:
-		// - Some items were discarded during the enrichment process, so none made it through.
-		// - This command was run on an empty map.
-		// In this case, the current updates would be empty.
-		// Return the cache as it may contain past updates collected during the offline mode.
-		return c.cachedUpdatesConn
-	}
-	// Process each enriched connection individually, categorize the transition, and generate an update if needed.
-	for conn, currTS := range current {
-		key := conn.Key(c.hashingAlgo)
+	if len(current) > 0 {
+		// Process each enriched connection individually, categorize the transition, and generate an update if needed.
+		h := xxhash.New()
+		for conn, currTS := range current {
+			key := conn.BinaryKey(h)
 
-		// Check if this connection has been closed recently.
-		prevTsFound, prevTS := c.lookupPrevTimestamp(key)
-		// Based on the categorization, calculate the transition and determine if an update should be sent.
-		update, transition := categorizeUpdate(prevTS, currTS, prevTsFound, key, ee, c.deduper, &c.deduperMutex)
-		updateMetrics(update, transition, ee)
-		// Each transition may require updating the deduper.
-		action := getDeduperAction(transition)
-		switch action {
-		case deduperActionAdd:
-			c.deduper[ee].Add(key)
-		case deduperActionRemove:
-			c.deduper[ee].Remove(key)
-		default: // noop
+			// Check if this connection has been closed recently.
+			prevTsFound, prevTS := c.lookupPrevTimestamp(key)
+			// Based on the categorization, calculate the transition and determine if an update should be sent.
+			update, transition := categorizeUpdate(prevTS, currTS, prevTsFound, key, c.connectionsDeduper, &c.connectionsDeduperMutex)
+			updateMetrics(update, transition, ee)
+			// Each transition may require updating the deduper.
+			action := getConnectionDeduperAction(transition)
+			switch action {
+			case deduperActionAdd:
+				c.connectionsDeduper.Add(key)
+			case deduperActionRemove:
+				c.connectionsDeduper.Remove(key)
+			default: // noop
+			}
+			if update {
+				c.storeClosedConnectionTimestamp(key, currTS, c.closedConnRememberDuration)
+				updates = append(updates, conn.ToProto(currTS))
+			}
 		}
-		if update {
-			c.storeClosedConnectionTimestamp(key, currTS, c.closedConnRememberDuration)
-			updates = append(updates, conn.ToProto(currTS))
+		// Store into cache in case sending to Central fails.
+		c.cachedUpdatesConn = slices.Grow(c.cachedUpdatesConn, len(updates))
+		c.cachedUpdatesConn = append(c.cachedUpdatesConn, updates...)
+		// Limit cache size, prioritizing closed connections over open ones
+		if features.NetworkFlowCacheLimiting.Enabled() {
+			NetworkFlowMaxCacheSize := env.NetworkFlowMaxCacheSize.IntegerSetting()
+			c.cachedUpdatesConn = limitCacheSizeWithMetrics(c.cachedUpdatesConn, NetworkFlowMaxCacheSize, isConnClosed, ConnectionEnrichedEntity)
 		}
 	}
-	// Store into cache in case sending to Central fails.
-	c.cachedUpdatesConn = slices.Grow(c.cachedUpdatesConn, len(updates))
-	c.cachedUpdatesConn = append(c.cachedUpdatesConn, updates...)
+
+	if features.NetworkFlowBatching.Enabled() {
+		NetworkFlowMaxUpdateSize := env.NetworkFlowMaxUpdateSize.IntegerSetting()
+		if len(c.cachedUpdatesConn) > NetworkFlowMaxUpdateSize {
+			update := c.cachedUpdatesConn[:NetworkFlowMaxUpdateSize]
+			c.cachedUpdatesConn = c.cachedUpdatesConn[NetworkFlowMaxUpdateSize:]
+			return update
+		}
+		update := c.cachedUpdatesConn
+		c.cachedUpdatesConn = make([]*storage.NetworkFlow, 0)
+		return update
+	}
 	// Return concatenated past and current updates.
 	return c.cachedUpdatesConn
+}
+
+// isConnClosed returns true if the network flow represents a closed connection.
+// A flow is closed if its LastSeenTimestamp is not InfiniteFuture (which represents an open connection).
+func isConnClosed(flow *storage.NetworkFlow) bool {
+	ts := flow.GetLastSeenTimestamp()
+	if ts == nil {
+		return false
+	}
+
+	return ts.GetSeconds() != timestamp.InfiniteFuture.GoTime().Unix()
+}
+
+// isEndpointClosed returns true if the network endpoint represents a closed endpoint.
+func isEndpointClosed(endpoint *storage.NetworkEndpoint) bool {
+	ts := endpoint.GetLastActiveTimestamp()
+	if ts == nil {
+		return false
+	}
+
+	return ts.GetSeconds() != timestamp.InfiniteFuture.GoTime().Unix()
+}
+
+// limitCacheSize limits the cache to maxSize by discarding open events first,
+// since sending an open event without a closing event would result in stale
+// connections and endpoints.
+// Returns the limited cache and the number of items that were dropped.
+func limitCacheSize[T any](cache []T, maxSize int, isClosed func(T) bool) ([]T, int) {
+	if len(cache) <= maxSize {
+		return cache, 0
+	}
+
+	idx := 0
+
+	toDiscard := len(cache) - maxSize
+
+	discarded := 0
+	for i, item := range cache {
+		if !isClosed(item) && discarded < toDiscard {
+			discarded++
+		} else {
+			cache[idx] = cache[i]
+			idx++
+		}
+		if idx == maxSize {
+			break
+		}
+	}
+
+	return cache[:idx], len(cache) - idx
+}
+
+// limitCacheSizeWithMetrics wraps limitCacheSize and records dropped items as a metric.
+func limitCacheSizeWithMetrics[T any](cache []T, maxSize int, isClosed func(T) bool, entity EnrichedEntity) []T {
+	limitedCache, droppedCount := limitCacheSize(cache, maxSize, isClosed)
+	if droppedCount > 0 {
+		DroppedItems.WithLabelValues(string(entity)).Add(float64(droppedCount))
+	}
+	return limitedCache
 }
 
 // categorizeUpdate determines whether an update to Central should be sent for a given enrichment update.
@@ -215,8 +261,8 @@ func (c *TransitionBased) ComputeUpdatedConns(current map[indicator.NetworkConn]
 // Note that enriched entities for which enrichment should be retried never reach this function.
 func categorizeUpdate(
 	prevTS, currTS timestamp.MicroTS, prevTsFound bool,
-	connKey string, ee EnrichedEntity,
-	deduper map[EnrichedEntity]*set.StringSet, mutex *sync.RWMutex) (bool, TransitionType) {
+	connKey indicator.BinaryHash,
+	deduper *set.Set[indicator.BinaryHash], mutex *sync.RWMutex) (bool, TransitionType) {
 
 	// Variables for ease of reading
 	isClosed := currTS != timestamp.InfiniteFuture
@@ -241,7 +287,7 @@ func categorizeUpdate(
 
 	// OPEN -> OPEN - as last check due to costly search in the deduper
 	seenPreviouslyOpen := concurrency.WithRLock1(mutex, func() bool {
-		return deduper[ee].Contains(connKey)
+		return deduper.Contains(connKey)
 	})
 	if seenPreviouslyOpen {
 		return false, TransitionTypeOpen2Open
@@ -250,8 +296,8 @@ func categorizeUpdate(
 
 }
 
-// getDeduperAction returns action to be executed on a deduper (or noop) for a given transition between states.
-func getDeduperAction(tt TransitionType) deduperAction {
+// getConnectionDeduperAction returns action to be executed on a deduper (or noop) for a given transition between states.
+func getConnectionDeduperAction(tt TransitionType) deduperAction {
 	switch tt {
 	case TransitionTypeOpen2Closed:
 		// When a previously open EE is being closed, we must remove it from the deduper.
@@ -269,7 +315,6 @@ func getDeduperAction(tt TransitionType) deduperAction {
 		// 2. Open -> Open - the first observation of open EE would add it to deduper.
 		return deduperActionNoop
 	}
-
 }
 
 func updateMetrics(update bool, tt TransitionType, ee EnrichedEntity) {
@@ -290,7 +335,82 @@ func updateMetrics(update bool, tt TransitionType, ee EnrichedEntity) {
 	UpdateEvents.WithLabelValues(tt.String(), string(ee), action, reason).Inc()
 }
 
-// categorizeUpdateNoPast determines whether an update to Central should be sent for a given enrichment update.
+// ComputeUpdatedEndpointsAndProcesses computes updates to Central for endpoints and their processes
+func (c *TransitionBased) ComputeUpdatedEndpointsAndProcesses(
+	enrichedEndpointsProcesses map[indicator.ContainerEndpoint]*indicator.ProcessListeningWithTimestamp,
+) ([]*storage.NetworkEndpoint, []*storage.ProcessListeningOnPortFromSensor) {
+	plopEnabled := env.ProcessesListeningOnPort.BooleanSetting()
+
+	var epUpdates []*storage.NetworkEndpoint
+	var procUpdates []*storage.ProcessListeningOnPortFromSensor
+
+	if len(enrichedEndpointsProcesses) > 0 {
+		// Process currently enriched entities one by one, categorize the transition, and generate an update if applicable.
+		h := xxhash.New()
+		for ep, p := range enrichedEndpointsProcesses {
+			currTS := p.LastSeen
+			epBinaryKey := ep.BinaryKey(h)
+			// Check if this endpoint has a process.
+			var procBinaryKey indicator.BinaryHash
+			// If process was replaced (ep1->proc1 changed to ep1->proc2), the `procInd` would be the new process indicator.
+			// There is currently no way to get the old processIndicator, so we don't inform Central about the old being closed.
+			// If that is needed, this can be added in the future.
+			if p.ProcessListening != nil {
+				procBinaryKey = p.ProcessListening.BinaryKey(h)
+			}
+			// Based on the categorization, we calculate the transition and whether an update should be sent.
+			sendEndpointUpdate, sendProcessUpdate, transition, dAction := categorizeEndpointUpdate(currTS, epBinaryKey, procBinaryKey, c.deduperHasEndpointAndProcess)
+			updateMetrics(sendEndpointUpdate, transition, EndpointEnrichedEntity)
+			updateMetrics(sendProcessUpdate, transition, ProcessEnrichedEntity)
+
+			switch dAction {
+			case deduperActionAdd, deduperActionUpdateProcess:
+				concurrency.WithLock(&c.endpointsDeduperMutex, func() {
+					c.endpointsDeduper[epBinaryKey] = procBinaryKey
+				})
+			case deduperActionRemove:
+				concurrency.WithLock(&c.endpointsDeduperMutex, func() {
+					delete(c.endpointsDeduper, epBinaryKey)
+				})
+			default: // noop
+			}
+			if sendEndpointUpdate {
+				epUpdates = append(epUpdates, ep.ToProto(currTS))
+			}
+			if plopEnabled && sendProcessUpdate && p.ProcessListening != nil {
+				procUpdates = append(procUpdates, p.ProcessListening.ToProto(currTS))
+			}
+		}
+
+		// Store into cache in case sending to Central fails.
+		c.cachedUpdatesEp = slices.Grow(c.cachedUpdatesEp, len(epUpdates))
+		c.cachedUpdatesEp = append(c.cachedUpdatesEp, epUpdates...)
+		if plopEnabled {
+			c.cachedUpdatesProc = slices.Grow(c.cachedUpdatesProc, len(procUpdates))
+			c.cachedUpdatesProc = append(c.cachedUpdatesProc, procUpdates...)
+		}
+		// Limit cache size, prioritizing closed endpoints over open ones
+		if features.NetworkFlowCacheLimiting.Enabled() {
+			NetworkFlowMaxCacheSize := env.NetworkFlowMaxCacheSize.IntegerSetting()
+			c.cachedUpdatesEp = limitCacheSizeWithMetrics(c.cachedUpdatesEp, NetworkFlowMaxCacheSize, isEndpointClosed, EndpointEnrichedEntity)
+		}
+	}
+
+	if features.NetworkFlowBatching.Enabled() {
+		NetworkFlowMaxUpdateSize := env.NetworkFlowMaxUpdateSize.IntegerSetting()
+		if len(c.cachedUpdatesEp) > NetworkFlowMaxUpdateSize {
+			epUpdate := c.cachedUpdatesEp[:NetworkFlowMaxUpdateSize]
+			c.cachedUpdatesEp = c.cachedUpdatesEp[NetworkFlowMaxUpdateSize:]
+			return epUpdate, c.cachedUpdatesProc
+		}
+		epUpdate := c.cachedUpdatesEp
+		c.cachedUpdatesEp = make([]*storage.NetworkEndpoint, 0)
+		return epUpdate, c.cachedUpdatesProc
+	}
+	return c.cachedUpdatesEp, c.cachedUpdatesProc
+}
+
+// categorizeEndpointUpdate determines whether an update to Central should be sent for a given enrichment update.
 // The function is optimized to execute less expensive checks first and
 // for readability (some conditions could be condensed but are kept separate for clarity).
 // Note that enriched entities for which enrichment should be retried never reach this function.
@@ -301,10 +421,8 @@ func updateMetrics(update bool, tt TransitionType, ee EnrichedEntity) {
 //
 // Returns a boolean indicating whether an update should be sent and a TransitionType describing
 // the type of transition.
-func categorizeUpdateNoPast(
-	currTS timestamp.MicroTS,
-	key string, deduper *set.StringSet, mutex *sync.RWMutex) (bool, TransitionType) {
-
+func categorizeEndpointUpdate(currTS timestamp.MicroTS, epKey, procKey indicator.BinaryHash,
+	deduperHas func(indicator.BinaryHash, indicator.BinaryHash) (bool, bool)) (updateEp, updateProc bool, tt TransitionType, da deduperAction) {
 	// Variables for ease of reading
 	isClosed := currTS != timestamp.InfiniteFuture
 
@@ -313,131 +431,63 @@ func categorizeUpdateNoPast(
 		// We are unable to check whether this is closed->closed or open->closed.
 		// The latter is assumed to be on the safe side and properly update the deduper.
 		// Update to Central will always be sent, even if that was indeed a closed->closed transition.
-		return true, TransitionTypeOpen2Closed
+		return true, true, TransitionTypeOpen2Closed, deduperActionRemove
 	}
 	// UNKNOWN -> OPEN - as last check due to costly search in the deduper
-	seenPreviouslyOpen := concurrency.WithRLock1(mutex, func() bool {
-		return deduper.Contains(key)
+	knownEp, knownProc := deduperHas(epKey, procKey)
+	if !knownEp {
+		// This is a new, previously unseen endpoint, so the process must also be new. Send both updates.
+		return true, true, TransitionTypeNew2Open, deduperActionAdd
+	}
+	if knownProc {
+		// We have seen that endpoint and process together already. Skip updates.
+		return false, false, TransitionTypeOpen2Open, deduperActionNoop
+	}
+	// We have seen that endpoint, but it had different process. We must update the process.
+	return false, true, TransitionTypeReplaceProcess, deduperActionUpdateProcess
+}
+
+func (c *TransitionBased) deduperHasEndpointAndProcess(epKey, procKey indicator.BinaryHash) (bool, bool) {
+	return concurrency.WithRLock2(&c.endpointsDeduperMutex, func() (bool, bool) {
+		storedProcKey, ok := c.endpointsDeduper[epKey]
+		if !ok {
+			return false, false
+		}
+		return true, storedProcKey == procKey
 	})
-	if seenPreviouslyOpen {
-		return false, TransitionTypeOpen2Open
-	}
-	return true, TransitionTypeNew2Open
 }
 
-// ComputeUpdatedEndpoints computes endpoint updates to send to Central in the current tick.
-// This method doesn't rely on the state of closed endpoints from the past; each closed endpoint generates an update.
-func (c *TransitionBased) ComputeUpdatedEndpoints(current map[indicator.ContainerEndpoint]timestamp.MicroTS) []*storage.NetworkEndpoint {
-	updates := computeUpdatedEntitiesNoPast(
-		current,
-		EndpointEnrichedEntity,
-		c.deduper[EndpointEnrichedEntity],
-		&c.deduperMutex,
-		c.hashingAlgo,
-		func(ep indicator.ContainerEndpoint, algo indicator.HashingAlgo) string {
-			return ep.Key(algo)
-		},
-		func(ep indicator.ContainerEndpoint, ts timestamp.MicroTS) *storage.NetworkEndpoint {
-			return ep.ToProto(ts)
-		},
-	)
-	// Store into cache in case sending to Central fails.
-	c.cachedUpdatesEp = slices.Grow(c.cachedUpdatesEp, len(updates))
-	c.cachedUpdatesEp = append(c.cachedUpdatesEp, updates...)
-	// Return concatenated past and current updates.
-	return c.cachedUpdatesEp
-}
-
-// ComputeUpdatedProcesses computes process updates to send to Central in the current tick.
-// This method doesn't rely on the state of closed processes from the past; each closed process generates an update.
-func (c *TransitionBased) ComputeUpdatedProcesses(current map[indicator.ProcessListening]timestamp.MicroTS) []*storage.ProcessListeningOnPortFromSensor {
-	if !env.ProcessesListeningOnPort.BooleanSetting() {
-		if len(current) > 0 {
-			logging.GetRateLimitedLogger().WarnL(loggingRateLimiter,
-				"Received process(es) while ProcessesListeningOnPorts feature is disabled. This may indicate a misconfiguration.")
-		}
-		return []*storage.ProcessListeningOnPortFromSensor{}
-	}
-
-	updates := computeUpdatedEntitiesNoPast(
-		current,
-		ProcessEnrichedEntity,
-		c.deduper[ProcessEnrichedEntity],
-		&c.deduperMutex,
-		c.hashingAlgo,
-		func(proc indicator.ProcessListening, algo indicator.HashingAlgo) string {
-			return proc.Key(algo)
-		},
-		func(proc indicator.ProcessListening, ts timestamp.MicroTS) *storage.ProcessListeningOnPortFromSensor {
-			return proc.ToProto(ts)
-		},
-	)
-	// Store into cache in case sending to Central fails.
-	c.cachedUpdatesProc = slices.Grow(c.cachedUpdatesProc, len(updates))
-	c.cachedUpdatesProc = append(c.cachedUpdatesProc, updates...)
-	// Return concatenated past and current updates.
-	return c.cachedUpdatesProc
-}
-
-// computeUpdatedEntitiesNoPast is a generic function that computes updates for any entity type.
-// It eliminates code duplication between endpoints and processes by abstracting the common computation logic.
-// The function operates directly on the cachedUpdates slice through a pointer for efficiency and clarity.
-func computeUpdatedEntitiesNoPast[indicatorT comparable, updateT any](
-	currentUpdates map[indicatorT]timestamp.MicroTS,
-	ee EnrichedEntity,
-	deduper *set.StringSet,
-	deduperMutex *sync.RWMutex,
-	hashingAlgo indicator.HashingAlgo,
-	keyFunc func(indicatorT, indicator.HashingAlgo) string,
-	toProto func(indicatorT, timestamp.MicroTS) updateT,
-) []updateT {
-	var updates []updateT
-	if len(currentUpdates) == 0 {
-		// Received an empty map with current state. This may happen because:
-		// - Some items were discarded during the enrichment process, so none made it through.
-		// - This command was run on an empty map.
-		// In this case, the current updates would be empty.
-		// The `cachedUpdates` already contains past updates collected during offline mode, so no action needed.
-		return updates
-	}
-
-	// Process currently enriched entities one by one, categorize the transition, and generate an update if applicable.
-	for entity, currTS := range currentUpdates {
-		key := keyFunc(entity, hashingAlgo)
-		// Based on the categorization, we calculate the transition and whether an update should be sent.
-		update, transition := categorizeUpdateNoPast(currTS, key, deduper, deduperMutex)
-		updateMetrics(update, transition, ee)
-		// Each transition may require updating the deduper.
-		// We cannot update the deduper right away, because Central may be offline, so we must store the operations
-		// to execute on the deduper and execute them only when sending to Central is successful.
-		action := getDeduperAction(transition)
-		switch action {
-		case deduperActionAdd:
-			deduper.Add(key)
-		case deduperActionRemove:
-			deduper.Remove(key)
-		default: // noop
-		}
-		if update {
-			updates = append(updates, toProto(entity, currTS))
-		}
-	}
-	return updates
-}
-
-// OnSuccessfulSend clears the cached updates to Central.
-func (c *TransitionBased) OnSuccessfulSend(conns map[indicator.NetworkConn]timestamp.MicroTS,
-	eps map[indicator.ContainerEndpoint]timestamp.MicroTS,
-	procs map[indicator.ProcessListening]timestamp.MicroTS,
-) {
-	if conns != nil {
+func (c *TransitionBased) OnSuccessfulSendConnections(conns map[indicator.NetworkConn]timestamp.MicroTS) {
+	if !features.NetworkFlowBatching.Enabled() && conns != nil {
 		c.cachedUpdatesConn = make([]*storage.NetworkFlow, 0)
 	}
-	if eps != nil {
+}
+
+// OnSuccessfulSendEndpoints updates the internal enrichedConnsLastSentState map with the currentState state.
+// Providing nil will skip updates for respective map.
+// Providing empty map will reset the state for given state.
+func (c *TransitionBased) OnSuccessfulSendEndpoints(enrichedEndpointsProcesses map[indicator.ContainerEndpoint]*indicator.ProcessListeningWithTimestamp) {
+	if !features.NetworkFlowBatching.Enabled() && enrichedEndpointsProcesses != nil {
 		c.cachedUpdatesEp = make([]*storage.NetworkEndpoint, 0)
 	}
-	if procs != nil {
+}
+
+// OnSuccessfulSendProcesses contains actions that should be executed after successful sending of processesListening updates to Central.
+func (c *TransitionBased) OnSuccessfulSendProcesses(enrichedEndpointsProcesses map[indicator.ContainerEndpoint]*indicator.ProcessListeningWithTimestamp) {
+	if enrichedEndpointsProcesses != nil {
 		c.cachedUpdatesProc = make([]*storage.ProcessListeningOnPortFromSensor, 0)
+	}
+}
+
+func (c *TransitionBased) OnSendConnectionsFailure(unsentConns []*storage.NetworkFlow) {
+	if features.NetworkFlowBatching.Enabled() {
+		c.cachedUpdatesConn = append(unsentConns, c.cachedUpdatesConn...)
+	}
+}
+
+func (c *TransitionBased) OnSendEndpointsFailure(unsentEps []*storage.NetworkEndpoint) {
+	if features.NetworkFlowBatching.Enabled() {
+		c.cachedUpdatesEp = append(unsentEps, c.cachedUpdatesEp...)
 	}
 }
 
@@ -449,50 +499,39 @@ func (c *TransitionBased) updateLastCleanup(now time.Time) {
 
 // ResetState clears the transition-based computer's firstTimeSeen tracking
 func (c *TransitionBased) ResetState() {
-	concurrency.WithLock(&c.deduperMutex, func() {
-		c.deduper = map[EnrichedEntity]*set.StringSet{
-			ConnectionEnrichedEntity: newStringSetPtr(),
-			EndpointEnrichedEntity:   newStringSetPtr(),
-			ProcessEnrichedEntity:    newStringSetPtr(),
-		}
-		c.deduperEstBytes = map[EnrichedEntity]uintptr{
-			ConnectionEnrichedEntity: 0,
-			EndpointEnrichedEntity:   0,
-			ProcessEnrichedEntity:    0,
-		}
+	concurrency.WithLock(&c.connectionsDeduperMutex, func() {
+		c.connectionsDeduper = newBinaryHashSetPtr()
+	})
+	concurrency.WithLock(&c.endpointsDeduperMutex, func() {
+		c.endpointsDeduper = make(map[indicator.BinaryHash]indicator.BinaryHash)
 	})
 
 	c.updateLastCleanup(time.Now())
 
 	concurrency.WithLock(&c.closedConnMutex, func() {
-		c.closedConnTimestamps = make(map[string]closedConnEntry)
+		c.closedConnTimestamps = make(map[indicator.BinaryHash]closedConnEntry)
 	})
 }
 
 func (c *TransitionBased) RecordSizeMetrics(lenSize, byteSize *prometheus.GaugeVec) {
-	for _, entity := range allEnrichedEntities {
-		value := concurrency.WithRLock1(&c.deduperMutex, func() int {
-			return c.deduper[entity].Cardinality()
-		})
-		lenSize.WithLabelValues("deduper", string(entity)).Set(float64(value))
-	}
+	valueConns := concurrency.WithRLock1(&c.connectionsDeduperMutex, func() int {
+		return c.connectionsDeduper.Cardinality()
+	})
+	lenSize.WithLabelValues("deduper", string(ConnectionEnrichedEntity)).Set(float64(valueConns))
+
+	valueEps := concurrency.WithRLock1(&c.endpointsDeduperMutex, func() int {
+		return len(c.endpointsDeduper)
+	})
+	lenSize.WithLabelValues("deduper", string(EndpointEnrichedEntity)).Set(float64(valueEps))
+
 	value := concurrency.WithRLock1(&c.closedConnMutex, func() int {
 		return len(c.closedConnTimestamps)
 	})
 	lenSize.WithLabelValues("closedTimestamps", string(ConnectionEnrichedEntity)).Set(float64(value))
 
 	// Calculate byte metrics
-	for _, entity := range allEnrichedEntities {
-		baseSize := concurrency.WithRLock1(&c.deduperMutex, func() uintptr {
-			var totalStringBytes uintptr
-			for _, s := range c.deduper[entity].AsSlice() {
-				totalStringBytes += uintptr(len(s))
-			}
-			return 8 + uintptr(c.deduper[entity].Cardinality())*16 + totalStringBytes
-		})
-		c.deduperEstBytes[entity] = baseSize * 2 // *2 comes from the overhead for map
-		byteSize.WithLabelValues("deduper", string(entity)).Set(float64(c.deduperEstBytes[entity]))
-	}
+	byteSize.WithLabelValues("deduper", string(ConnectionEnrichedEntity)).Set(float64(c.calculateConnectionsDeduperByteSize()))
+	byteSize.WithLabelValues("deduper", string(EndpointEnrichedEntity)).Set(float64(c.calculateEndpointsDeduperByteSize()))
 
 	// Size of buffers that hold updates to Central while Sensor is offline
 	lenSize.WithLabelValues("cachedUpdates", string(ConnectionEnrichedEntity)).Set(float64(len(c.cachedUpdatesConn)))
@@ -503,7 +542,7 @@ func (c *TransitionBased) RecordSizeMetrics(lenSize, byteSize *prometheus.GaugeV
 // lookupPrevTimestamp retrieves the previous close-timestamp for a connection.
 // For open connections, returns found==false.
 // For recently closed connections, returns the stored timestamp and found==true.
-func (c *TransitionBased) lookupPrevTimestamp(connKey string) (found bool, prevTS timestamp.MicroTS) {
+func (c *TransitionBased) lookupPrevTimestamp(connKey indicator.BinaryHash) (found bool, prevTS timestamp.MicroTS) {
 	// For closed connections, check if we have stored previous timestamp
 	c.closedConnMutex.RLock()
 	defer c.closedConnMutex.RUnlock()
@@ -513,7 +552,7 @@ func (c *TransitionBased) lookupPrevTimestamp(connKey string) (found bool, prevT
 
 // storeClosedConnectionTimestamp stores the timestamp of a closed connection for future reference
 func (c *TransitionBased) storeClosedConnectionTimestamp(
-	connKey string, closedTS timestamp.MicroTS, closedConnRememberDuration time.Duration) {
+	connKey indicator.BinaryHash, closedTS timestamp.MicroTS, closedConnRememberDuration time.Duration) {
 	// Do not store open connections.
 	if closedTS == timestamp.InfiniteFuture {
 		return
@@ -526,6 +565,29 @@ func (c *TransitionBased) storeClosedConnectionTimestamp(
 			expiresAt: expiresAt,
 		}
 	})
+}
+
+// calculateConnectionsDeduperByteSize calculates the memory usage of the connections deduper.
+// The calculation includes: map reference (8 bytes) + BinaryHash entries (8 bytes per uint64 entry).
+func (c *TransitionBased) calculateConnectionsDeduperByteSize() uintptr {
+	baseSize := concurrency.WithRLock1(&c.connectionsDeduperMutex, func() uintptr {
+		return uintptr(8) + // map reference
+			uintptr(c.connectionsDeduper.Cardinality())*8 // 8 bytes per BinaryHash (uint64) entry
+	})
+
+	// Conservative 1.8x multiplier for Go map overhead (same as endpoints deduper)
+	return baseSize * 18 / 10
+}
+
+// calculateEndpointsDeduperByteSize calculates the memory usage of the endpoints deduper.
+func (c *TransitionBased) calculateEndpointsDeduperByteSize() uintptr {
+	baseSize := concurrency.WithRLock1(&c.endpointsDeduperMutex, func() uintptr {
+		return uintptr(8) + // map reference
+			uintptr(len(c.endpointsDeduper))*16 // 8 bytes key + 8 bytes value per entry
+	})
+	// Conservative 1.8x multiplier for Go map overhead (buckets, hash table structure, etc.)
+	// The benchmarked overhead was 1.67x, but we use a slightly higher multiplier to be safe.
+	return baseSize * 18 / 10
 }
 
 // PeriodicCleanup removes expired items from `closedConnTimestamps`.

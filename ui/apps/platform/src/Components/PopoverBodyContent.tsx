@@ -1,4 +1,4 @@
-import React, { ReactElement, ReactNode } from 'react';
+import type { ReactElement, ReactNode } from 'react';
 
 type PopoverBodyContentProps =
     | {
@@ -7,12 +7,12 @@ type PopoverBodyContentProps =
       }
     | {
           headerContent: ReactNode;
-          headerIcon?: React.ReactNode;
+          headerIcon?: ReactNode;
           bodyContent: ReactNode;
       }
     | {
           headerContent: ReactNode;
-          headerIcon?: React.ReactNode;
+          headerIcon?: ReactNode;
           bodyContent: ReactNode;
           footerContent: ReactNode;
       };
@@ -33,7 +33,7 @@ function PopoverBodyContent(props: PopoverBodyContentProps): ReactElement {
                     </div>
                 </div>
             )}
-            <div className="bodyContent">{props.bodyContent}</div>
+            <div>{props.bodyContent}</div>
             {'footerContent' in props && props.footerContent && (
                 <div className="pf-v5-c-popover__footer">{props.footerContent}</div>
             )}

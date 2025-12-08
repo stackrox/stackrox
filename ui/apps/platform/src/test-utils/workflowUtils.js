@@ -1,5 +1,5 @@
 import entityTypes from 'constants/entityTypes';
-import { searchParams, sortParams, pagingParams } from 'constants/searchParams';
+import { pagingParams, searchParams, sortParams } from 'constants/searchParams';
 import useCases from 'constants/useCaseTypes';
 import WorkflowEntity from 'utils/WorkflowEntity';
 import { WorkflowState } from 'utils/WorkflowState';

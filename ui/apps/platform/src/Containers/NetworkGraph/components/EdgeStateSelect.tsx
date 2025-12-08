@@ -1,4 +1,3 @@
-import React from 'react';
 import { SelectOption } from '@patternfly/react-core';
 
 import SelectSingle from 'Components/SelectSingle/SelectSingle';
@@ -30,6 +29,7 @@ function EdgeStateSelect({ edgeState, setEdgeState, isDisabled }: EdgeStateSelec
             value={edgeState}
             handleSelect={handleSelect}
             isDisabled={isDisabled}
+            maxWidth="30ch"
         >
             <SelectOption
                 value="active"

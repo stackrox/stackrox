@@ -36,6 +36,7 @@ func init() {
 		telemetryInfo,
 		telemetrySecuredNodes,
 		telemetrySecuredVCPU,
+		telemetryComplianceOperatorVersion,
 		deploymentEnhancementQueueSize,
 		responsesChannelOperationCount,
 		ComponentQueueOperations,

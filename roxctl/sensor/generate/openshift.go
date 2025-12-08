@@ -35,13 +35,13 @@ func (s *sensorGenerateOpenShiftCommand) ConstructOpenShift() error {
 		return errox.InvalidArgs.Newf("invalid OpenShift version %d, supported values are '3' and '4'", s.openshiftVersion)
 	}
 
-	s.cluster.AdmissionControllerEvents = s.cluster.Type == storage.ClusterType_OPENSHIFT4_CLUSTER
+	s.cluster.AdmissionControllerEvents = s.cluster.GetType() == storage.ClusterType_OPENSHIFT4_CLUSTER
 
 	// This is intentionally NOT feature-flagged, because we always want to set the correct (auto) value,
 	// even if we turn off the flag before shipping.
 	if s.disableAuditLogCollection == nil {
-		s.disableAuditLogCollection = pointers.Bool(s.cluster.Type != storage.ClusterType_OPENSHIFT4_CLUSTER)
-	} else if !*s.disableAuditLogCollection && s.cluster.Type != storage.ClusterType_OPENSHIFT4_CLUSTER {
+		s.disableAuditLogCollection = pointers.Bool(s.cluster.GetType() != storage.ClusterType_OPENSHIFT4_CLUSTER)
+	} else if !*s.disableAuditLogCollection && s.cluster.GetType() != storage.ClusterType_OPENSHIFT4_CLUSTER {
 		return errox.InvalidArgs.New(errorAuditLogsNotSupportedOnOpenShift3x)
 	}
 

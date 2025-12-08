@@ -1,57 +1,29 @@
-import React, { useState, ReactElement } from 'react';
-import { Button, Flex, Popover, PopoverPosition } from '@patternfly/react-core';
-import { AngleDownIcon, AngleUpIcon, DownloadIcon } from '@patternfly/react-icons';
+import type { ReactElement } from 'react';
+import { Button, Flex, Modal, ModalBoxBody, ModalBoxFooter } from '@patternfly/react-core';
+import { DownloadIcon } from '@patternfly/react-icons';
 import { useFormik } from 'formik';
-import { parse } from 'date-fns';
 
 import ExternalLink from 'Components/PatternFly/IconText/ExternalLink';
-import PopoverBodyContent from 'Components/PopoverBodyContent';
+import useModal from 'hooks/useModal';
 import useMetadata from 'hooks/useMetadata';
-import downloadDiagnostics, { DiagnosticBundleRequest } from 'services/DebugService';
+import downloadDiagnostics from 'services/DebugService';
 import { getVersionedDocs } from 'utils/versioning';
 
 import DiagnosticBundleForm from './DiagnosticBundleForm';
-import { getQueryString, startingTimeRegExp } from './diagnosticBundleUtils';
+import type { DiagnosticBundleFormValues } from './DiagnosticBundleForm';
+import { getQueryString } from './diagnosticBundleUtils';
 
-const initialValues: DiagnosticBundleRequest = {
+const initialValues: DiagnosticBundleFormValues = {
     filterByClusters: [],
-    filterByStartingTime: '',
+    isDatabaseDiagnosticsOnly: false,
+    includeComplianceOperatorResources: false,
+    startingDate: '',
+    startingTime: '',
 };
 
 function GenerateDiagnosticBundle(): ReactElement {
-    const [isOpen, setIsOpen] = useState<boolean>(false);
-    const [startingTimeObject, setStartingTimeObject] = useState<Date | null>(null); // parsed from text
-    const [isStartingTimeValid, setIsStartingTimeValid] = useState<boolean>(true);
-    const [currentTimeObject, setCurrentTimeObject] = useState<Date | null>(null); // for pure message
+    const { isModalOpen, openModal, closeModal } = useModal();
     const { version } = useMetadata();
-
-    function onChangeStartingTime(event: React.FormEvent<HTMLInputElement>): void {
-        const trimmedText = event.currentTarget.value.trim();
-
-        if (trimmedText.length === 0) {
-            // This combination represents default starting time.
-            setCurrentTimeObject(null);
-            setStartingTimeObject(null);
-            setIsStartingTimeValid(true);
-        } else if (
-            startingTimeRegExp.test(trimmedText) &&
-            !Number.isNaN(Number(parse(trimmedText)))
-        ) {
-            const newTimeObject = new Date();
-            const dateTimeObject = parse(trimmedText);
-
-            setCurrentTimeObject(newTimeObject);
-            setStartingTimeObject(dateTimeObject);
-
-            // Successfully parsed text is valid if it is in the past.
-            setIsStartingTimeValid(Number(dateTimeObject) < Number(newTimeObject));
-        } else {
-            // This combination represents unsuccessfully parsed text.
-            setCurrentTimeObject(null);
-            setStartingTimeObject(null);
-            setIsStartingTimeValid(false);
-        }
-    }
 
     const { submitForm, setFieldValue, values, handleBlur, isSubmitting, setSubmitting } =
         useFormik({
@@ -60,10 +32,15 @@ function GenerateDiagnosticBundle(): ReactElement {
         });
 
     function triggerDownload(): void {
+        const startingTimeIso = values.startingDate
+            ? `${values.startingDate}T${values.startingTime || '00:00'}:00.000Z`
+            : null;
+
         const queryString = getQueryString({
             selectedClusterNames: values.filterByClusters,
-            startingTimeObject,
-            isStartingTimeValid,
+            startingTimeIso,
+            isDatabaseDiagnosticsOnly: values.isDatabaseDiagnosticsOnly,
+            includeComplianceOperatorResources: values.includeComplianceOperatorResources,
         });
         downloadDiagnostics(queryString)
             .catch(() => {
@@ -74,68 +51,61 @@ function GenerateDiagnosticBundle(): ReactElement {
             });
     }
 
-    const footerContent = (
-        <Flex spaceItems={{ default: 'spaceItemsLg' }}>
-            <Button
-                variant="primary"
-                onClick={submitForm}
-                icon={isSubmitting ? null : <DownloadIcon />}
-                spinnerAriaValueText={isSubmitting ? 'Downloading' : undefined}
-                isLoading={isSubmitting}
-            >
-                Download diagnostic bundle
-            </Button>
-            {version && (
-                <ExternalLink>
-                    <a
-                        href={getVersionedDocs(version, 'configuring/generate-diagnostic-bundle')}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                    >
-                        Generate a diagnostic bundle
-                    </a>
-                </ExternalLink>
-            )}
-        </Flex>
-    );
-
     return (
-        <Popover
-            aria-label="Choose options to generate a diagnostic bundle"
-            bodyContent={
-                <PopoverBodyContent
-                    headerContent="Diagnostic bundle"
-                    bodyContent={
-                        <DiagnosticBundleForm
-                            values={values}
-                            setFieldValue={setFieldValue}
-                            handleBlur={handleBlur}
-                            currentTimeObject={currentTimeObject}
-                            startingTimeObject={startingTimeObject}
-                            isStartingTimeValid={isStartingTimeValid}
-                            onChangeStartingTime={onChangeStartingTime}
-                        />
-                    }
-                    footerContent={footerContent}
-                />
-            }
-            maxWidth="100%"
-            position={PopoverPosition.bottomEnd}
-            shouldOpen={() => setIsOpen(true)}
-            shouldClose={() => setIsOpen(false)}
-            showClose={false}
-            isVisible={isOpen}
-        >
-            <Button variant="secondary">
-                <Flex
-                    alignItems={{ default: 'alignItemsCenter' }}
-                    spaceItems={{ default: 'spaceItemsXs' }}
-                >
-                    <span>Generate diagnostic bundle</span>
-                    {isOpen ? <AngleUpIcon /> : <AngleDownIcon />}
-                </Flex>
+        <>
+            <Button
+                key="open-diagnostic-bundle-modal"
+                data-testid="diagnostic-bundle-modal-open-button"
+                variant="secondary"
+                onClick={openModal}
+            >
+                Generate diagnostic bundle
             </Button>
-        </Popover>
+            <Modal
+                title="Diagnostic bundle"
+                description="You can filter which platform data to include in the Zip file (max size 50MB)"
+                isOpen={isModalOpen}
+                variant="medium"
+                onClose={closeModal}
+                aria-label="Diagnostic bundle"
+                hasNoBodyWrapper
+            >
+                <ModalBoxBody>
+                    <DiagnosticBundleForm
+                        values={values}
+                        setFieldValue={setFieldValue}
+                        handleBlur={handleBlur}
+                    />
+                </ModalBoxBody>
+                <ModalBoxFooter>
+                    <Flex spaceItems={{ default: 'spaceItemsLg' }}>
+                        <Button
+                            variant="primary"
+                            onClick={submitForm}
+                            icon={isSubmitting ? null : <DownloadIcon />}
+                            spinnerAriaValueText={isSubmitting ? 'Downloading' : undefined}
+                            isLoading={isSubmitting}
+                        >
+                            Download diagnostic bundle
+                        </Button>
+                        {version && (
+                            <ExternalLink>
+                                <a
+                                    href={getVersionedDocs(
+                                        version,
+                                        'configuring/generate-diagnostic-bundle'
+                                    )}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                >
+                                    Generate a diagnostic bundle
+                                </a>
+                            </ExternalLink>
+                        )}
+                    </Flex>
+                </ModalBoxFooter>
+            </Modal>
+        </>
     );
 }
 

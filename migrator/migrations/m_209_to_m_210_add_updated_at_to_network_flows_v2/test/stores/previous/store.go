@@ -251,7 +251,7 @@ func (s *flowStoreImpl) copyFrom(ctx context.Context, objs ...*storage.NetworkFl
 	}
 	defer release()
 
-	tx, err := conn.Begin(ctx)
+	tx, ctx, err := conn.Begin(ctx)
 	if err != nil {
 		return err
 	}
@@ -276,7 +276,7 @@ func (s *flowStoreImpl) upsert(ctx context.Context, objs ...*storage.NetworkFlow
 	defer release()
 
 	// Moved the transaction outside the loop which greatly improved the performance of these individual inserts.
-	tx, err := conn.Begin(ctx)
+	tx, ctx, err := conn.Begin(ctx)
 	if err != nil {
 		return err
 	}
@@ -358,7 +358,7 @@ func (s *flowStoreImpl) readRows(rows pgx.Rows, pred func(*storage.NetworkFlowPr
 		}
 
 		// Apply the predicate function.  Will phase out as we move away form Rocks to where clause
-		if pred == nil || pred(flow.Props) {
+		if pred == nil || pred(flow.GetProps()) {
 			flows = append(flows, flow)
 		}
 	}
@@ -398,7 +398,7 @@ func (s *flowStoreImpl) removeDeploymentFlows(ctx context.Context, deleteStmt st
 	ctx, cancel := context.WithTimeout(ctx, deleteTimeout)
 	defer cancel()
 
-	tx, err := conn.Begin(ctx)
+	tx, ctx, err := conn.Begin(ctx)
 	if err != nil {
 		return err
 	}
@@ -535,7 +535,7 @@ func (s *flowStoreImpl) delete(ctx context.Context, objs ...*storage.NetworkFlow
 	defer release()
 
 	// Moved the transaction outside the loop which greatly improved the performance of these individual inserts.
-	tx, err := conn.Begin(ctx)
+	tx, ctx, err := conn.Begin(ctx)
 	if err != nil {
 		return err
 	}
@@ -616,15 +616,4 @@ func (s *flowStoreImpl) RemoveStaleFlows(ctx context.Context) error {
 	_, err = conn.Exec(ctx, prune)
 
 	return err
-}
-
-//// Used for testing
-
-func dropTableNetworkflow(ctx context.Context, db postgres.DB) {
-	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS network_flows_v2 CASCADE")
-}
-
-// Destroy destroys the tables
-func Destroy(ctx context.Context, db postgres.DB) {
-	dropTableNetworkflow(ctx, db)
 }

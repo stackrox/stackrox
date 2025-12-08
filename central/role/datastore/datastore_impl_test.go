@@ -479,11 +479,11 @@ func (s *roleDataStoreTestSuite) TestPermissionSetWriteOperations() {
 	}
 	badPermissionSet := getInvalidPermissionSet("permissionset.new", "new invalid permissionset")
 	mimicPermissionSet := &storage.PermissionSet{
-		Id:   goodPermissionSet.Id,
+		Id:   goodPermissionSet.GetId(),
 		Name: "existing permissionset",
 	}
 	clonePermissionSet := &storage.PermissionSet{
-		Id:   s.existingPermissionSet.Id,
+		Id:   s.existingPermissionSet.GetId(),
 		Name: "new existing permissionset",
 	}
 	declarativePermissionSet := getValidPermissionSet("permissionset.declarative", "declarative permissionset")
@@ -736,12 +736,12 @@ func (s *roleDataStoreTestSuite) TestAccessScopeWriteOperations() {
 	}
 	badScope := getInvalidAccessScope("scope.new", "new invalid scope")
 	mimicScope := &storage.SimpleAccessScope{
-		Id:    goodScope.Id,
+		Id:    goodScope.GetId(),
 		Name:  "existing scope",
 		Rules: &storage.SimpleAccessScope_Rules{},
 	}
 	cloneScope := &storage.SimpleAccessScope{
-		Id:    s.existingScope.Id,
+		Id:    s.existingScope.GetId(),
 		Name:  "new existing scope",
 		Rules: &storage.SimpleAccessScope_Rules{},
 	}

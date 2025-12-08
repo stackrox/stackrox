@@ -1,4 +1,5 @@
-import React, { ReactElement, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
+import type { ReactElement } from 'react';
 import { useNavigate } from 'react-router-dom-v5-compat';
 import {
     Alert,
@@ -20,23 +21,21 @@ import set from 'lodash/set';
 import BreadcrumbItemLink from 'Components/BreadcrumbItemLink';
 import PageTitle from 'Components/PageTitle';
 import useAnalytics, { CLUSTER_CREATED } from 'hooks/useAnalytics';
-import useFeatureFlags from 'hooks/useFeatureFlags';
 import useInterval from 'hooks/useInterval';
 import useMetadata from 'hooks/useMetadata';
 import usePermissions from 'hooks/usePermissions';
 import {
-    fetchClusterWithRetentionInformation,
-    saveCluster,
     downloadClusterYaml,
+    fetchClusterWithRetentionInformation,
     getClusterDefaults,
+    saveCluster,
 } from 'services/ClustersService';
-import { Cluster, ClusterManagerType } from 'types/cluster.proto';
-import { DecommissionedClusterRetentionInfo } from 'types/clusterService.proto';
+import type { Cluster, ClusterManagerType } from 'types/cluster.proto';
+import type { DecommissionedClusterRetentionInfo } from 'types/clusterService.proto';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 import { clustersBasePath } from 'routePaths';
 
 import ClusterLabelsConfigurationStatusSummary from './ClusterLabelsConfigurationStatusSummary';
-import ClusterEditFormLegacy from './ClusterEditFormLegacy';
 import ClusterDeployment from './ClusterDeployment';
 import DownloadHelmValues from './DownloadHelmValues';
 import { clusterDetailPollingInterval, newClusterDefault } from './cluster.helpers';
@@ -76,10 +75,6 @@ function ClusterPage({ clusterId }: ClusterPageProps): ReactElement {
     const navigate = useNavigate();
     const { hasReadWriteAccess } = usePermissions();
     const hasWriteAccessForCluster = hasReadWriteAccess('Cluster');
-    const { isFeatureFlagEnabled } = useFeatureFlags();
-    const isAdmissionControllerConfigEnabled = isFeatureFlagEnabled(
-        'ROX_ADMISSION_CONTROLLER_CONFIG'
-    );
 
     const metadata = useMetadata();
     const { analyticsTrack } = useAnalytics();
@@ -231,30 +226,6 @@ function ClusterPage({ clusterId }: ClusterPageProps): ReactElement {
         });
     }
 
-    /**
-     * @param   {Event}  event  native JS Event object from an onChange event in an input
-     *
-     * @return  {nothing}       Side effect: change the corresponding property in selectedCluster
-     */
-    function onChangeLegacy(event) {
-        // Functional update computes new state from old state to solve data race:
-        // `admissionControllerEvents: false` overwritten by `type: "OPENSHIFT_CLUSTER"`
-        // See guardedClusterTypeChange
-        setSelectedCluster((oldClusterSettings) => {
-            // event.target.name can be a dot path to property like:
-            // dynamicConfig.admissionControllerConfig.timeoutSeconds
-            if (get(oldClusterSettings, event.target.name) === undefined) {
-                return oldClusterSettings;
-            }
-
-            const newClusterSettings = { ...oldClusterSettings };
-            const newValue =
-                event.target.type === 'checkbox' ? event.target.checked : event.target.value;
-            set(newClusterSettings, event.target.name, newValue);
-            return newClusterSettings;
-        });
-    }
-
     /*
      * Adapt preceding code for labels whose value is not from an input element.
      */
@@ -375,7 +346,7 @@ function ClusterPage({ clusterId }: ClusterPageProps): ReactElement {
                             <Bullseye>
                                 <Spinner />
                             </Bullseye>
-                        ) : isAdmissionControllerConfigEnabled ? (
+                        ) : (
                             <ClusterLabelsConfigurationStatusSummary
                                 centralVersion={metadata.version}
                                 clusterRetentionInfo={clusterRetentionInfo}
@@ -385,15 +356,6 @@ function ClusterPage({ clusterId }: ClusterPageProps): ReactElement {
                                 handleChangeAdmissionControllerEnforcementBehavior={
                                     onChangeAdmissionControllerEnforcementBehavior
                                 }
-                                handleChangeLabels={handleChangeLabels}
-                            />
-                        ) : (
-                            <ClusterEditFormLegacy
-                                centralVersion={metadata.version}
-                                clusterRetentionInfo={clusterRetentionInfo}
-                                selectedCluster={selectedCluster}
-                                managerType={managerType(selectedCluster)}
-                                handleChange={onChangeLegacy}
                                 handleChangeLabels={handleChangeLabels}
                             />
                         ))}

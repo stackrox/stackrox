@@ -137,8 +137,9 @@ func loadTestCases(s string) ([]*TestCase, error) {
 // mapNamespace creates a test case namespace from a vulnerability report.
 func mapNamespace(vr *v4.VulnerabilityReport) string {
 	if len(vr.GetContents().GetDistributions()) == 1 {
-		d := vr.GetContents().GetDistributions()[0]
-		return fmt.Sprintf("%s:%s", d.GetDid(), d.GetVersionId())
+		for _, d := range vr.GetContents().GetDistributions() {
+			return fmt.Sprintf("%s:%s", d.GetDid(), d.GetVersionId())
+		}
 	}
 	return "unknown"
 }
@@ -168,12 +169,12 @@ func (tc *TestCase) mapFillFeatures(t *testing.T, vr *v4.VulnerabilityReport) []
 	// Populate map with all packages in the report.
 	pkgs := make(map[string]map[VA]*v4.Package)
 	for _, p := range vr.GetContents().GetPackages() {
-		versions, ok := pkgs[p.Name]
+		versions, ok := pkgs[p.GetName()]
 		if !ok {
 			versions = make(map[VA]*v4.Package)
-			pkgs[p.Name] = versions
+			pkgs[p.GetName()] = versions
 		}
-		va := VA{V: p.Version, A: p.Arch}
+		va := VA{V: p.GetVersion(), A: p.GetArch()}
 		if _, ok := versions[va]; ok {
 			t.Logf("Ignoring a duplicated package-version found in the vulnerability report: %v", va)
 			continue
