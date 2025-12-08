@@ -40,65 +40,73 @@ func BenchmarkAddIndicator(b *testing.B) {
 }
 
 func BenchmarkProcessIndicators(b *testing.B) {
-	// Create pod IDs
-	podID1 := uuid.NewV4().String()
-	podID2 := uuid.NewV4().String()
-	podID3 := uuid.NewV4().String()
+	// Create unique pod IDs for each deployment (pod IDs are not shared across deployments)
+	d1PodID1 := uuid.NewV4().String()
+	d1PodID2 := uuid.NewV4().String()
+	d1PodID3 := uuid.NewV4().String()
+
+	d2PodID1 := uuid.NewV4().String()
+	d2PodID2 := uuid.NewV4().String()
+	d2PodID3 := uuid.NewV4().String()
+
+	d3PodID1 := uuid.NewV4().String()
+	d3PodID2 := uuid.NewV4().String()
+	d3PodID3 := uuid.NewV4().String()
 
 	// Create indicators with both deployment (55/25/20) and pod distribution (55/25/20)
-	// This creates a matrix where we have all combinations
+	// Pod IDs are unique to each deployment
 	var allIndicators []*storage.ProcessIndicator
 
 	// Deployment1: 5,500 total
-	//   PodID1: 3,025 (55%)
-	//   PodID2: 1,375 (25%)
-	//   PodID3: 1,100 (20%)
+	//   D1PodID1: 3,025 (55%)
+	//   D1PodID2: 1,375 (25%)
+	//   D1PodID3: 1,100 (20%)
 	for i := 0; i < 5500; i++ {
 		pi := fixtures.GetProcessIndicator()
 		pi.Id = uuid.NewV4().String()
 		pi.DeploymentId = fixtureconsts.Deployment1
 		if i < 3025 {
-			pi.PodUid = podID1
+			pi.PodUid = d1PodID1
 		} else if i < 4400 {
-			pi.PodUid = podID2
+			pi.PodUid = d1PodID2
 		} else {
-			pi.PodUid = podID3
+			pi.PodUid = d1PodID3
 		}
 		allIndicators = append(allIndicators, pi)
 	}
 
 	// Deployment2: 2,500 total
-	//   PodID1: 1,375 (55%)
-	//   PodID2: 625 (25%)
-	//   PodID3: 500 (20%)
+	//   D2PodID1: 1,375 (55%)
+	//   D2PodID2: 625 (25%)
+	//   D2PodID3: 500 (20%)
 	for i := 0; i < 2500; i++ {
 		pi := fixtures.GetProcessIndicator()
 		pi.Id = uuid.NewV4().String()
 		pi.DeploymentId = fixtureconsts.Deployment2
 		if i < 1375 {
-			pi.PodUid = podID1
+			pi.PodUid = d2PodID1
 		} else if i < 2000 {
-			pi.PodUid = podID2
+			pi.PodUid = d2PodID2
 		} else {
-			pi.PodUid = podID3
+			pi.PodUid = d2PodID3
 		}
 		allIndicators = append(allIndicators, pi)
 	}
 
 	// Deployment3: 2,000 total
-	//   PodID1: 1,100 (55%)
-	//   PodID2: 500 (25%)
-	//   PodID3: 400 (20%)
+	//   D3PodID1: 1,100 (55%)
+	//   D3PodID2: 500 (25%)
+	//   D3PodID3: 400 (20%)
 	for i := 0; i < 2000; i++ {
 		pi := fixtures.GetProcessIndicator()
 		pi.Id = uuid.NewV4().String()
 		pi.DeploymentId = fixtureconsts.Deployment3
 		if i < 1100 {
-			pi.PodUid = podID1
+			pi.PodUid = d3PodID1
 		} else if i < 1600 {
-			pi.PodUid = podID2
+			pi.PodUid = d3PodID2
 		} else {
-			pi.PodUid = podID3
+			pi.PodUid = d3PodID3
 		}
 		allIndicators = append(allIndicators, pi)
 	}
@@ -151,8 +159,8 @@ func BenchmarkProcessIndicators(b *testing.B) {
 		}
 	})
 
-	b.Run("Search/ByPodID1", func(b *testing.B) {
-		query := search.NewQueryBuilder().AddExactMatches(search.PodUID, podID1).ProtoQuery()
+	b.Run("Search/ByD1PodID1", func(b *testing.B) {
+		query := search.NewQueryBuilder().AddExactMatches(search.PodUID, d1PodID1).ProtoQuery()
 		b.ResetTimer()
 		for i := 0; i < b.N; i++ {
 			results, err := datastore.SearchRawProcessIndicators(ctx, query)
@@ -161,8 +169,8 @@ func BenchmarkProcessIndicators(b *testing.B) {
 		}
 	})
 
-	b.Run("Search/ByPodID2", func(b *testing.B) {
-		query := search.NewQueryBuilder().AddExactMatches(search.PodUID, podID2).ProtoQuery()
+	b.Run("Search/ByD2PodID1", func(b *testing.B) {
+		query := search.NewQueryBuilder().AddExactMatches(search.PodUID, d2PodID1).ProtoQuery()
 		b.ResetTimer()
 		for i := 0; i < b.N; i++ {
 			results, err := datastore.SearchRawProcessIndicators(ctx, query)
@@ -171,8 +179,8 @@ func BenchmarkProcessIndicators(b *testing.B) {
 		}
 	})
 
-	b.Run("Search/ByPodID3", func(b *testing.B) {
-		query := search.NewQueryBuilder().AddExactMatches(search.PodUID, podID3).ProtoQuery()
+	b.Run("Search/ByD3PodID1", func(b *testing.B) {
+		query := search.NewQueryBuilder().AddExactMatches(search.PodUID, d3PodID1).ProtoQuery()
 		b.ResetTimer()
 		for i := 0; i < b.N; i++ {
 			results, err := datastore.SearchRawProcessIndicators(ctx, query)
@@ -196,16 +204,16 @@ func BenchmarkProcessIndicators(b *testing.B) {
 		d1DeleteIDs[i] = r.Id
 	}
 
-	p2Query := search.NewQueryBuilder().
-		AddExactMatches(search.PodUID, podID2).
+	d1PodID2Query := search.NewQueryBuilder().
+		AddExactMatches(search.PodUID, d1PodID2).
 		ProtoQuery()
-	p2Results, err := datastore.SearchRawProcessIndicators(ctx, p2Query)
+	d1PodID2Results, err := datastore.SearchRawProcessIndicators(ctx, d1PodID2Query)
 	require.NoError(b, err)
-	require.True(b, len(p2Results) > 0)
+	require.True(b, len(d1PodID2Results) > 0)
 
-	p2DeleteIDs := make([]string, len(p2Results))
-	for i, r := range p2Results {
-		p2DeleteIDs[i] = r.Id
+	d1PodID2DeleteIDs := make([]string, len(d1PodID2Results))
+	for i, r := range d1PodID2Results {
+		d1PodID2DeleteIDs[i] = r.Id
 	}
 
 	b.Run("Delete/ByDeployment1", func(b *testing.B) {
@@ -216,10 +224,10 @@ func BenchmarkProcessIndicators(b *testing.B) {
 		}
 	})
 
-	b.Run("Delete/ByPodID2", func(b *testing.B) {
+	b.Run("Delete/ByD1PodID2", func(b *testing.B) {
 		b.ResetTimer()
 		for i := 0; i < b.N; i++ {
-			err := datastore.RemoveProcessIndicators(ctx, p2DeleteIDs)
+			err := datastore.RemoveProcessIndicators(ctx, d1PodID2DeleteIDs)
 			require.NoError(b, err)
 		}
 	})
