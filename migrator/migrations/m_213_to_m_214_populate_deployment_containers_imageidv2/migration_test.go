@@ -148,6 +148,7 @@ func (s *migrationTestSuite) TestMigration() {
 			_, err := s.db.Exec(s.ctx, "DELETE FROM deployments_containers WHERE true")
 			s.Require().NoError(err)
 			_, err = s.db.Exec(s.ctx, "DELETE FROM deployments WHERE true")
+			s.Require().NoError(err)
 		})
 	}
 }
