@@ -602,7 +602,7 @@ func (l *loopImpl) sendReprocessDeployments(skipClusterIDs maputil.SyncMap[strin
 
 		// Calculate the delay between sending reprocess messages to secured clusters.
 		conns := l.connManager.GetActiveConnections()
-		delay := reprocessDeploymentsMessageDelay(len(conns))
+		delay := env.ReprocessDeploymentsMsgDelay.DurationSetting()
 		if delay > 0 {
 			log.Infof("Sending reprocess deployments messages to %d clusters with %s delay between each message", len(conns), delay)
 		}
@@ -640,21 +640,6 @@ func (l *loopImpl) sendReprocessDeployments(skipClusterIDs maputil.SyncMap[strin
 		}
 	}
 	log.Info("Done sending reprocess deployments messages")
-}
-
-// reprocessDeploymentsMessageDelay returns the duration to wait between each "ReprocessDeployments"
-// message sent to secured clusters.
-func reprocessDeploymentsMessageDelay(clusters int) time.Duration {
-	if clusters <= 1 {
-		return 0
-	}
-
-	var delay time.Duration
-	if dur := env.ReprocessDeploymentSpreadInterval.DurationSetting(); dur > 0 {
-		delay = dur / time.Duration(clusters)
-	}
-
-	return delay
 }
 
 // injectMessage will inject a message onto connection, an error will be returned if the
