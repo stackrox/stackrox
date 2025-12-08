@@ -3,6 +3,7 @@ package datastore
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	errorsPkg "github.com/pkg/errors"
 	"github.com/stackrox/rox/central/policycategory/store"
@@ -160,34 +161,30 @@ func (ds *datastoreImpl) GetPolicyCategory(ctx context.Context, id string) (*sto
 
 // SearchPolicyCategories returns search results that match the provided query
 func (ds *datastoreImpl) SearchPolicyCategories(ctx context.Context, q *v1.Query) ([]*v1.SearchResult, error) {
-	// TODO(ROX-29943): remove 2 pass database calls
-	results, err := ds.Search(ctx, q)
+	if q == nil {
+		q = searchPkg.EmptyQuery()
+	}
+	// Clone the query and add select fields for SearchResult construction
+	clonedQuery := q.CloneVT()
+
+	// Add name field to select columns
+	clonedQuery.Selects = append(q.GetSelects(), searchPkg.NewQuerySelect(searchPkg.PolicyCategoryName).Proto())
+
+	results, err := ds.Search(ctx, clonedQuery)
 	if err != nil {
 		return nil, err
 	}
 
-	var categories []*storage.PolicyCategory
-	var newResults []searchPkg.Result
-	for _, result := range results {
-		category, exists, err := ds.storage.Get(ctx, result.ID)
-		if err != nil {
-			return nil, err
+	// Extract name from FieldValues and populate Name in search results
+	searchTag := strings.ToLower(searchPkg.PolicyCategoryName.String())
+	for i := range results {
+		if results[i].FieldValues != nil {
+			if nameVal, ok := results[i].FieldValues[searchTag]; ok {
+				results[i].Name = nameVal
+			}
 		}
-		// The result may not exist if the object was deleted after the search
-		if !exists {
-			continue
-		}
-		categories = append(categories, category)
-		// Because of using 2 calls we are at risk of a race condition causing a mismatch in results
-		// and policies.  So we have to make sure we match for building the output below.
-		newResults = append(newResults, result)
 	}
-
-	protoResults := make([]*v1.SearchResult, 0, len(categories))
-	for i, c := range categories {
-		protoResults = append(protoResults, convertCategory(c, newResults[i]))
-	}
-	return protoResults, nil
+	return searchPkg.ResultsToSearchResultProtos(results, &PolicyCategorySearchResultConverter{}), nil
 }
 
 // SearchRawPolicyCategories returns policy category objects that match the provided query
@@ -324,13 +321,21 @@ func (ds *datastoreImpl) DeletePolicyCategory(ctx context.Context, id string) er
 	return nil
 }
 
-// convertCategory returns proto search result from a category object and the internal search result
-func convertCategory(category *storage.PolicyCategory, result searchPkg.Result) *v1.SearchResult {
-	return &v1.SearchResult{
-		Category:       v1.SearchCategory_POLICY_CATEGORIES,
-		Id:             category.GetId(),
-		Name:           category.GetName(),
-		FieldToMatches: searchPkg.GetProtoMatchesMap(result.Matches),
-		Score:          result.Score,
-	}
+type PolicyCategorySearchResultConverter struct{}
+
+func (c *PolicyCategorySearchResultConverter) BuildName(result *searchPkg.Result) string {
+	return result.Name
+}
+
+func (c *PolicyCategorySearchResultConverter) BuildLocation(result *searchPkg.Result) string {
+	// PolicyCategory does not have a location
+	return ""
+}
+
+func (c *PolicyCategorySearchResultConverter) GetCategory() v1.SearchCategory {
+	return v1.SearchCategory_POLICY_CATEGORIES
+}
+
+func (c *PolicyCategorySearchResultConverter) GetScore(result *searchPkg.Result) float64 {
+	return result.Score
 }
