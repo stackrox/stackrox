@@ -749,6 +749,7 @@ module.exports = [
 
             '@typescript-eslint/array-type': 'error',
             '@typescript-eslint/consistent-type-exports': 'error',
+            '@typescript-eslint/consistent-type-imports': 'error',
 
             'import/consistent-type-specifier-style': ['error', 'prefer-top-level'],
         },
@@ -832,23 +833,6 @@ module.exports = [
             'limited/no-qualified-name-react': 'error',
             'react/jsx-uses-react': 'off',
             'react/react-in-jsx-scope': 'off',
-        },
-    },
-    {
-        files: ['src/**/*.{ts,tsx}'],
-        ignores: [
-            'src/Containers/Compliance/**', // deprecated
-            'src/Containers/VulnMgmt/**', // deprecated
-        ],
-
-        // languageOptions from previous configuration object
-
-        // Key of plugin is namespace of its rules.
-        plugins: {
-            '@typescript-eslint': pluginTypeScriptESLint,
-        },
-        rules: {
-            '@typescript-eslint/consistent-type-imports': 'error',
         },
     },
     {

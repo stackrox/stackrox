@@ -1,8 +1,9 @@
-import React, { ReactElement } from 'react';
+import React from 'react';
+import type { ReactElement } from 'react';
 import { Link } from 'react-router-dom-v5-compat';
 
 import useEntityName from 'hooks/useEntityName';
-import { VulnerabilityManagementEntityType } from 'utils/entityRelationships';
+import type { VulnerabilityManagementEntityType } from 'utils/entityRelationships';
 
 import {
     entityNounSentenceCasePlural,
