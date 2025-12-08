@@ -58,6 +58,15 @@ func (s *storeSuite) Test_AddVirtualMachine() {
 				VSOCKCID:  newVSOCKCID(1),
 			},
 		},
+		"with GuestOS": {
+			vm: &virtualmachine.Info{
+				ID:        vmID,
+				Name:      vmName,
+				Namespace: vmNamespace,
+				Running:   true,
+				GuestOS:   "Red Hat Enterprise Linux",
+			},
+		},
 		"nil": {
 			vm: nil,
 		},
@@ -188,6 +197,40 @@ func (s *storeSuite) Test_UpdateVirtualMachine() {
 				VSOCKCID:  nil,
 			},
 		},
+		"original without GuestOS - update with GuestOS": {
+			original: &virtualmachine.Info{
+				ID:        vmID,
+				Name:      vmName,
+				Namespace: vmNamespace,
+				Running:   true,
+				VSOCKCID:  nil,
+			},
+			new: &virtualmachine.Info{
+				ID:        vmID,
+				Name:      vmName,
+				Namespace: vmNamespace,
+				Running:   false,
+				VSOCKCID:  nil,
+				GuestOS:   "Red Hat Enterprise Linux",
+			},
+		},
+		"original with GuestOS - update without GuestOS": {
+			original: &virtualmachine.Info{
+				ID:        vmID,
+				Name:      vmName,
+				Namespace: vmNamespace,
+				Running:   true,
+				VSOCKCID:  nil,
+				GuestOS:   "Red Hat Enterprise Linux",
+			},
+			new: &virtualmachine.Info{
+				ID:        vmID,
+				Name:      vmName,
+				Namespace: vmNamespace,
+				Running:   false,
+				VSOCKCID:  nil,
+			},
+		},
 		"original nil - update running without vsock": {
 			original: nil,
 			new: &virtualmachine.Info{
@@ -196,6 +239,7 @@ func (s *storeSuite) Test_UpdateVirtualMachine() {
 				Namespace: vmNamespace,
 				Running:   true,
 				VSOCKCID:  nil,
+				GuestOS:   "Red Hat Enterprise Linux",
 			},
 		},
 		"original nil - update running with vsock": {
@@ -250,6 +294,39 @@ func (s *storeSuite) Test_UpdateVirtualMachine() {
 			}
 		})
 	}
+}
+
+func (s *storeSuite) Test_replaceVSOCKInfoNoLockCopiesIncomingPointer() {
+	s.store = NewVirtualMachineStore()
+
+	existing := &virtualmachine.Info{
+		ID:        vmID,
+		Name:      vmName,
+		Namespace: vmNamespace,
+		VSOCKCID:  nil,
+	}
+	s.store.virtualMachines[vmID] = existing
+
+	vsock := uint32(123)
+	vmUpdate := &virtualmachine.Info{
+		ID:        vmID,
+		Name:      vmName,
+		Namespace: vmNamespace,
+		VSOCKCID:  &vsock,
+	}
+
+	storePtr := s.store.replaceVSOCKInfoNoLock(vmUpdate)
+	vmUpdate.VSOCKCID = storePtr
+
+	s.Require().NotNil(storePtr, "replaceVSOCKInfoNoLock should always hand back a pointer owned by the store")
+	s.Equal(uint32(123), *storePtr, "store copy must preserve the original vsock value before caller mutates their pointer")
+	s.False(&vsock == storePtr, "store copy must not point to the informer-supplied pointer")
+
+	vsock = 456
+	s.Equal(uint32(123), *storePtr, "store-managed pointer should remain unchanged even if informer pointer is mutated")
+
+	s.Equal(uint32(123), s.store.idToCID[vmID], "idToCID map should track the original value")
+	s.Equal(virtualmachine.VMID(vmID), s.store.cidToID[123], "cidToID map should continue to refer back to the VM")
 }
 
 func (s *storeSuite) Test_UpdateStateOrCreate() {
@@ -372,6 +449,28 @@ func (s *storeSuite) Test_UpdateStateOrCreate() {
 				Running:   true,
 			},
 		},
+		"original running without GuestOS - instance running with GuestOS": {
+			original: &virtualmachine.Info{
+				ID:        vmID,
+				Name:      vmName,
+				Namespace: vmNamespace,
+				Running:   true,
+			},
+			new: &virtualmachine.Info{
+				ID:        vmID,
+				Name:      vmName,
+				Namespace: vmNamespace,
+				Running:   true,
+				GuestOS:   "Red Hat Enterprise Linux",
+			},
+			expected: &virtualmachine.Info{
+				ID:        vmID,
+				Name:      vmName,
+				Namespace: vmNamespace,
+				Running:   true,
+				GuestOS:   "Red Hat Enterprise Linux",
+			},
+		},
 		"no virtual machine info - instance running with vsock": {
 			original: nil,
 			new: &virtualmachine.Info{
@@ -418,6 +517,23 @@ func (s *storeSuite) Test_UpdateStateOrCreate() {
 				ID:        vmID,
 				Name:      vmName,
 				Namespace: vmNamespace,
+			},
+		},
+		"no virtual machine info - instance running with GuestOS": {
+			original: nil,
+			new: &virtualmachine.Info{
+				ID:        vmID,
+				Name:      vmName,
+				Namespace: vmNamespace,
+				Running:   true,
+				GuestOS:   "Red Hat Enterprise Linux",
+			},
+			expected: &virtualmachine.Info{
+				ID:        vmID,
+				Name:      vmName,
+				Namespace: vmNamespace,
+				Running:   true,
+				GuestOS:   "Red Hat Enterprise Linux",
 			},
 		},
 	}
@@ -753,6 +869,7 @@ func (s *storeSuite) Test_GetVirtualMachine() {
 		Namespace: vmNamespace,
 		VSOCKCID:  newVSOCKCID(1),
 		Running:   true,
+		GuestOS:   "Red Hat Enterprise Linux",
 	}
 	s.Run("success", func() {
 		s.store.AddOrUpdate(vm)
@@ -868,6 +985,7 @@ func (s *storeSuite) assertVM(expected *virtualmachine.Info) {
 	s.Assert().Equal(expected.Namespace, actual.Namespace)
 	s.Assert().Equal(expected.VSOCKCID, actual.VSOCKCID)
 	s.Assert().Equal(expected.Running, actual.Running)
+	s.Assert().Equal(expected.GuestOS, actual.GuestOS)
 	nsIDs, ok := s.store.namespaceToID[expected.Namespace]
 	s.Assert().True(ok)
 	s.Assert().Contains(nsIDs, expected.ID)

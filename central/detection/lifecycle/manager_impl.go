@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/central/activecomponent/updater/aggregator"
 	clusterDatastore "github.com/stackrox/rox/central/cluster/datastore"
 	"github.com/stackrox/rox/central/deployment/cache"
 	deploymentDatastore "github.com/stackrox/rox/central/deployment/datastore"
@@ -85,8 +84,6 @@ type managerImpl struct {
 	policyAlertsLock          sync.RWMutex
 	removedOrDisabledPolicies set.StringSet
 
-	processAggregator aggregator.ProcessAggregator
-
 	connectionManager connection.Manager
 }
 
@@ -110,21 +107,20 @@ func (m *managerImpl) buildIndicatorFilter() {
 		return
 	}
 
-	var processesToRemove []string
+	processesToRemove := make([]string, 0, len(deploymentIDs))
 	walkFn := func() error {
-		deploymentIDSet := set.NewStringSet(deploymentIDs...)
 		processesToRemove = processesToRemove[:0]
-		return m.processesDataStore.WalkAll(ctx, func(pi *storage.ProcessIndicator) error {
-			if !deploymentIDSet.Contains(pi.GetDeploymentId()) {
-				// Don't remove as these processes will be removed by GC
-				// but don't add to the filter
-				return nil
-			}
+
+		// Only process indicators for existing deployments
+		fn := func(pi *storage.ProcessIndicator) error {
 			if !m.processFilter.Add(pi) {
 				processesToRemove = append(processesToRemove, pi.GetId())
 			}
 			return nil
-		})
+		}
+
+		query := search.NewQueryBuilder().AddExactMatches(search.DeploymentID, deploymentIDs...).ProtoQuery()
+		return m.processesDataStore.WalkByQuery(ctx, query, fn)
 	}
 	if err := pgutils.RetryIfPostgres(ctx, walkFn); err != nil {
 		utils.Should(errors.Wrap(err, "error building indicator filter"))
@@ -230,7 +226,11 @@ func (m *managerImpl) isAutoLockEnabledForCluster(clusterId string) bool {
 		return false
 	}
 
-	return cluster.GetDynamicConfig().GetAutoLockProcessBaselinesConfig().GetEnabled()
+	if cluster.GetManagedBy() == storage.ManagerType_MANAGER_TYPE_MANUAL || cluster.GetManagedBy() == storage.ManagerType_MANAGER_TYPE_UNKNOWN {
+		return cluster.GetDynamicConfig().GetAutoLockProcessBaselinesConfig().GetEnabled()
+	}
+
+	return cluster.GetHelmConfig().GetDynamicConfig().GetAutoLockProcessBaselinesConfig().GetEnabled()
 }
 
 func (m *managerImpl) flushIndicatorQueue() {
@@ -262,10 +262,6 @@ func (m *managerImpl) flushIndicatorQueue() {
 	if err := m.processesDataStore.AddProcessIndicators(lifecycleMgrCtx, indicatorSlice...); err != nil {
 		log.Errorf("Error adding process indicators: %v", err)
 	}
-
-	now := time.Now()
-	m.processAggregator.Add(indicatorSlice)
-	centralMetrics.SetFunctionSegmentDuration(now, "AddProcessToAggregator")
 
 	defer centralMetrics.SetFunctionSegmentDuration(time.Now(), "CheckAndUpdateBaseline")
 
@@ -330,7 +326,7 @@ func (m *managerImpl) SendBaselineToSensor(baseline *storage.ProcessBaseline) er
 		log.Errorf("Error sending process baseline to cluster %q: %v", clusterId, err)
 		return err
 	}
-	log.Infof("Successfully sent process baseline to cluster %q: %s", clusterId, baseline.GetId())
+	log.Debugf("Successfully sent process baseline to cluster %q: %s", clusterId, baseline.GetId())
 
 	return nil
 }
@@ -487,6 +483,19 @@ func (m *managerImpl) HandleResourceAlerts(clusterID string, alerts []*storage.A
 		if _, err := m.alertManager.AlertAndNotify(lifecycleMgrCtx, alerts, opts...); err != nil {
 			return err
 		}
+	}
+	return nil
+}
+
+func (m *managerImpl) HandleNodeAlerts(clusterID string, alerts []*storage.Alert, stage storage.LifecycleStage) error {
+	m.filterOutDisabledPolicies(&alerts)
+	if len(alerts) == 0 && stage == storage.LifecycleStage_RUNTIME {
+		return nil
+	}
+
+	if _, err := m.alertManager.AlertAndNotify(lifecycleMgrCtx, alerts,
+		alertmanager.WithClusterID(clusterID), alertmanager.WithLifecycleStage(stage)); err != nil {
+		return err
 	}
 	return nil
 }

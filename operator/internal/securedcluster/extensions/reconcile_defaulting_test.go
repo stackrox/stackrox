@@ -6,9 +6,8 @@ import (
 
 	"github.com/go-logr/logr"
 	platform "github.com/stackrox/rox/operator/api/v1alpha1"
-	"github.com/stackrox/rox/operator/internal/common/defaulting"
-	"github.com/stackrox/rox/operator/internal/securedcluster/values/defaults"
-
+	"github.com/stackrox/rox/operator/internal/common"
+	"github.com/stackrox/rox/operator/internal/securedcluster/defaults"
 	"github.com/stackrox/rox/operator/internal/utils/testutils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -55,16 +54,16 @@ func TestReconcileAdmissionControllerDefaulting(t *testing.T) {
 				Bypass:        ptr.To(platform.BypassBreakGlassAnnotation),
 				FailurePolicy: ptr.To(platform.FailurePolicyIgnore),
 				Replicas:      ptr.To(int32(3)),
-				Enforce:       ptr.To(true),
+				Enforcement:   ptr.To(platform.PolicyEnforcementEnabled),
 			},
 			ExpectedAnnotations: map[string]string{
-				defaults.FeatureDefaultKeyAdmissionControllerEnforce: "true",
+				defaults.FeatureDefaultKeyAdmissionControllerEnforcement: "Enabled",
 			},
 		},
-		"install: explicit enforce false": {
+		"install: explicit enforcement disabled": {
 			Spec: platform.SecuredClusterSpec{
 				AdmissionControl: &platform.AdmissionControlComponentSpec{
-					Enforce: ptr.To(false),
+					Enforcement: ptr.To(platform.PolicyEnforcementDisabled),
 				},
 			},
 			Status: platform.SecuredClusterStatus{},
@@ -72,16 +71,16 @@ func TestReconcileAdmissionControllerDefaulting(t *testing.T) {
 				Bypass:        ptr.To(platform.BypassBreakGlassAnnotation),
 				FailurePolicy: ptr.To(platform.FailurePolicyIgnore),
 				Replicas:      ptr.To(int32(3)),
-				Enforce:       nil,
+				Enforcement:   nil,
 			},
 			ExpectedAnnotations: map[string]string{
-				defaults.FeatureDefaultKeyAdmissionControllerEnforce: "",
+				defaults.FeatureDefaultKeyAdmissionControllerEnforcement: "",
 			},
 		},
-		"install: explicit enforce true": {
+		"install: explicit enforcement enabled": {
 			Spec: platform.SecuredClusterSpec{
 				AdmissionControl: &platform.AdmissionControlComponentSpec{
-					Enforce: ptr.To(true),
+					Enforcement: ptr.To(platform.PolicyEnforcementEnabled),
 				},
 			},
 			Status: platform.SecuredClusterStatus{},
@@ -89,45 +88,45 @@ func TestReconcileAdmissionControllerDefaulting(t *testing.T) {
 				Bypass:        ptr.To(platform.BypassBreakGlassAnnotation),
 				FailurePolicy: ptr.To(platform.FailurePolicyIgnore),
 				Replicas:      ptr.To(int32(3)),
-				Enforce:       nil,
+				Enforcement:   nil,
 			},
 			ExpectedAnnotations: map[string]string{
-				defaults.FeatureDefaultKeyAdmissionControllerEnforce: "",
+				defaults.FeatureDefaultKeyAdmissionControllerEnforcement: "",
 			},
 		},
 		"upgrade: annotation true is picked up": {
 			Spec:   platform.SecuredClusterSpec{},
 			Status: nonEmptyStatus,
 			Annotations: map[string]string{
-				defaults.FeatureDefaultKeyAdmissionControllerEnforce: "true",
+				defaults.FeatureDefaultKeyAdmissionControllerEnforcement: "Enabled",
 			},
 			ExpectedDefaults: &platform.AdmissionControlComponentSpec{
 				Bypass:        ptr.To(platform.BypassBreakGlassAnnotation),
 				FailurePolicy: ptr.To(platform.FailurePolicyIgnore),
 				Replicas:      ptr.To(int32(3)),
-				Enforce:       ptr.To(true),
+				Enforcement:   ptr.To(platform.PolicyEnforcementEnabled),
 			},
 			ExpectedAnnotations: map[string]string{
-				defaults.FeatureDefaultKeyAdmissionControllerEnforce: "true",
+				defaults.FeatureDefaultKeyAdmissionControllerEnforcement: "Enabled",
 			},
 		},
 		"upgrade: annotation false is picked up": {
 			Spec:   platform.SecuredClusterSpec{},
 			Status: nonEmptyStatus,
 			Annotations: map[string]string{
-				defaults.FeatureDefaultKeyAdmissionControllerEnforce: "false",
+				defaults.FeatureDefaultKeyAdmissionControllerEnforcement: "Disabled",
 			},
 			ExpectedDefaults: &platform.AdmissionControlComponentSpec{
 				Bypass:        ptr.To(platform.BypassBreakGlassAnnotation),
 				FailurePolicy: ptr.To(platform.FailurePolicyIgnore),
 				Replicas:      ptr.To(int32(3)),
-				Enforce:       ptr.To(false),
+				Enforcement:   ptr.To(platform.PolicyEnforcementDisabled),
 			},
 			ExpectedAnnotations: map[string]string{
-				defaults.FeatureDefaultKeyAdmissionControllerEnforce: "false",
+				defaults.FeatureDefaultKeyAdmissionControllerEnforcement: "Disabled",
 			},
 		},
-		"upgrade: enforce disabled if listenOnCreates & listenOnUpdates disabled": {
+		"upgrade: enforcement disabled if listenOnCreates & listenOnUpdates disabled": {
 			Spec: platform.SecuredClusterSpec{
 				AdmissionControl: &platform.AdmissionControlComponentSpec{
 					ListenOnCreates: ptr.To(false),
@@ -139,13 +138,13 @@ func TestReconcileAdmissionControllerDefaulting(t *testing.T) {
 				Bypass:        ptr.To(platform.BypassBreakGlassAnnotation),
 				FailurePolicy: ptr.To(platform.FailurePolicyIgnore),
 				Replicas:      ptr.To(int32(3)),
-				Enforce:       ptr.To(false),
+				Enforcement:   ptr.To(platform.PolicyEnforcementDisabled),
 			},
 			ExpectedAnnotations: map[string]string{
-				defaults.FeatureDefaultKeyAdmissionControllerEnforce: "false",
+				defaults.FeatureDefaultKeyAdmissionControllerEnforcement: "Disabled",
 			},
 		},
-		"upgrade: enforce enabled if listenOnCreates enabled": {
+		"upgrade: enforcement enabled if listenOnCreates enabled": {
 			Spec: platform.SecuredClusterSpec{
 				AdmissionControl: &platform.AdmissionControlComponentSpec{
 					ListenOnCreates: ptr.To(true),
@@ -157,13 +156,13 @@ func TestReconcileAdmissionControllerDefaulting(t *testing.T) {
 				Bypass:        ptr.To(platform.BypassBreakGlassAnnotation),
 				FailurePolicy: ptr.To(platform.FailurePolicyIgnore),
 				Replicas:      ptr.To(int32(3)),
-				Enforce:       ptr.To(true),
+				Enforcement:   ptr.To(platform.PolicyEnforcementEnabled),
 			},
 			ExpectedAnnotations: map[string]string{
-				defaults.FeatureDefaultKeyAdmissionControllerEnforce: "true",
+				defaults.FeatureDefaultKeyAdmissionControllerEnforcement: "Enabled",
 			},
 		},
-		"upgrade: enforce enabled if listenOnUpdates enabled": {
+		"upgrade: enforcement enabled if listenOnUpdates enabled": {
 			Spec: platform.SecuredClusterSpec{
 				AdmissionControl: &platform.AdmissionControlComponentSpec{
 					ListenOnCreates: ptr.To(false),
@@ -175,10 +174,10 @@ func TestReconcileAdmissionControllerDefaulting(t *testing.T) {
 				Bypass:        ptr.To(platform.BypassBreakGlassAnnotation),
 				FailurePolicy: ptr.To(platform.FailurePolicyIgnore),
 				Replicas:      ptr.To(int32(3)),
-				Enforce:       ptr.To(true),
+				Enforcement:   ptr.To(platform.PolicyEnforcementEnabled),
 			},
 			ExpectedAnnotations: map[string]string{
-				defaults.FeatureDefaultKeyAdmissionControllerEnforce: "true",
+				defaults.FeatureDefaultKeyAdmissionControllerEnforcement: "Enabled",
 			},
 		},
 	}
@@ -242,7 +241,7 @@ func TestReconcileScannerV4FeatureDefaultsExtension(t *testing.T) {
 			Status:          platform.SecuredClusterStatus{},
 			ExpectedDefault: &platform.LocalScannerV4AutoSense,
 			ExpectedAnnotations: map[string]string{
-				defaulting.FeatureDefaultKeyScannerV4: string(platform.LocalScannerV4AutoSense),
+				common.FeatureDefaultKeyScannerV4: string(platform.LocalScannerV4AutoSense),
 			},
 		},
 		"upgrade: disabled by default": {
@@ -250,7 +249,7 @@ func TestReconcileScannerV4FeatureDefaultsExtension(t *testing.T) {
 			Status:          nonEmptyStatus,
 			ExpectedDefault: &platform.LocalScannerV4Disabled,
 			ExpectedAnnotations: map[string]string{
-				defaulting.FeatureDefaultKeyScannerV4: string(platform.ScannerV4ComponentDisabled),
+				common.FeatureDefaultKeyScannerV4: string(platform.ScannerV4ComponentDisabled),
 			},
 		},
 		"install: auto-sense explicitly": {
@@ -275,43 +274,43 @@ func TestReconcileScannerV4FeatureDefaultsExtension(t *testing.T) {
 			Spec:   platform.SecuredClusterSpec{},
 			Status: nonEmptyStatus,
 			Annotations: map[string]string{
-				defaulting.FeatureDefaultKeyScannerV4: string(platform.LocalScannerV4AutoSense),
+				common.FeatureDefaultKeyScannerV4: string(platform.LocalScannerV4AutoSense),
 			},
 			ExpectedDefault: &platform.LocalScannerV4AutoSense,
 			ExpectedAnnotations: map[string]string{
-				defaulting.FeatureDefaultKeyScannerV4: string(platform.LocalScannerV4AutoSense),
+				common.FeatureDefaultKeyScannerV4: string(platform.LocalScannerV4AutoSense),
 			},
 		},
 		"upgrade: pick up previously persisted default (Disabled)": {
 			Spec:   platform.SecuredClusterSpec{},
 			Status: nonEmptyStatus,
 			Annotations: map[string]string{
-				defaulting.FeatureDefaultKeyScannerV4: string(platform.ScannerV4ComponentDisabled),
+				common.FeatureDefaultKeyScannerV4: string(platform.ScannerV4ComponentDisabled),
 			},
 			ExpectedDefault: &platform.LocalScannerV4Disabled,
 			ExpectedAnnotations: map[string]string{
-				defaulting.FeatureDefaultKeyScannerV4: string(platform.ScannerV4ComponentDisabled),
+				common.FeatureDefaultKeyScannerV4: string(platform.ScannerV4ComponentDisabled),
 			},
 		},
 		"upgrade: ignoring bogus persisted default": {
 			Spec:   platform.SecuredClusterSpec{},
 			Status: nonEmptyStatus,
 			Annotations: map[string]string{
-				defaulting.FeatureDefaultKeyScannerV4: "foo",
+				common.FeatureDefaultKeyScannerV4: "foo",
 			},
 			ExpectedDefault: &platform.LocalScannerV4Disabled,
 			ExpectedAnnotations: map[string]string{
-				defaulting.FeatureDefaultKeyScannerV4: string(platform.ScannerV4ComponentDisabled),
+				common.FeatureDefaultKeyScannerV4: string(platform.ScannerV4ComponentDisabled),
 			},
 		},
 		"previously persisted default is picked up even if status is empty": {
 			Spec: platform.SecuredClusterSpec{},
 			Annotations: map[string]string{
-				defaulting.FeatureDefaultKeyScannerV4: string(platform.ScannerV4ComponentDisabled),
+				common.FeatureDefaultKeyScannerV4: string(platform.ScannerV4ComponentDisabled),
 			},
 			ExpectedDefault: &platform.LocalScannerV4Disabled,
 			ExpectedAnnotations: map[string]string{
-				defaulting.FeatureDefaultKeyScannerV4: string(platform.ScannerV4ComponentDisabled),
+				common.FeatureDefaultKeyScannerV4: string(platform.ScannerV4ComponentDisabled),
 			},
 		},
 	}

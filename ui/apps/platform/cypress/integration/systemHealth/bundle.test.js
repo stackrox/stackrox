@@ -1,9 +1,8 @@
-import path from 'path';
-
 import { selectors } from '../../constants/SystemHealth';
 import withAuth from '../../helpers/basicAuth';
 import { interactAndWaitForResponses } from '../../helpers/request';
 import { setClock, visitSystemHealth } from '../../helpers/systemHealth';
+import { readFileFromDownloads } from '../../helpers/file';
 
 const routeMatcherMapForClusters = {
     clusters: '/v1/clusters',
@@ -55,17 +54,20 @@ function downloadDiagnosticBundle(query) {
         staticResponseMapForDiagnosticBundle
     );
 
-    cy.readFile(path.join(Cypress.config('downloadsFolder'), mockResponseFilename)).should('exist');
+    readFileFromDownloads(mockResponseFilename).then((file) => cy.wrap(file).should('exist'));
 }
 
 describe('Download Diagnostic Data', () => {
     withAuth();
 
-    const { filterByStartingTime, startingTimeMessage } = selectors.bundle;
+    const {
+        startingDate,
+        startingTime,
+        isDatabaseDiagnosticsOnly,
+        includeComplianceOperatorResources,
+    } = selectors.bundle;
 
     describe('interaction', () => {
-        const currentTime = new Date('2020-10-20T21:22:00.000Z');
-
         it('should display value for one cluster selected', () => {
             visitSystemHealth();
             openDiagnosticBundleDialogBox();
@@ -75,55 +77,27 @@ describe('Download Diagnostic Data', () => {
             cy.get(`.pf-v5-c-chip-group__list-item:contains("${clusterName}")`).should('not.exist');
 
             // TODO factor out as helper function
-            cy.get('[aria-label="Options menu"]').click(); // TODO better label
+            cy.get('[placeholder="Type a cluster name"]').click();
             cy.get(`[role="option"]:contains("${clusterName}")`).click();
 
             cy.get(`.pf-v5-c-chip-group__list-item:contains("${clusterName}")`).should('exist');
         });
 
-        it('should display info message for initial default no starting time', () => {
+        it('should disable other fields when "Database diagnostics only" is checked', () => {
             visitSystemHealth();
             openDiagnosticBundleDialogBox();
 
-            cy.get(startingTimeMessage).should('have.text', 'default time: 20 minutes ago');
-        });
+            cy.get(isDatabaseDiagnosticsOnly).check();
 
-        it('should display warning message for invalid starting time', () => {
-            setClock(currentTime); // call before visit
-            visitSystemHealth();
-            openDiagnosticBundleDialogBox();
-
-            cy.get(filterByStartingTime).type('10/20/2020 17:22:00');
-
-            cy.get(startingTimeMessage).should('have.text', 'expected format: yyyy-mm-ddThh:mmZ');
-        });
-
-        it('should display alert message for future starting time', () => {
-            setClock(currentTime); // call before visit
-            visitSystemHealth();
-            openDiagnosticBundleDialogBox();
-
-            const startingTime = '2020-10-20T21:52Z'; // seconds are optional
-            cy.get(filterByStartingTime).type(startingTime);
-
-            cy.get(startingTimeMessage).should('have.text', 'future time: in about 30 minutes');
-        });
-
-        it('should display success message for past starting time', () => {
-            setClock(currentTime); // call before visit
-            visitSystemHealth();
-            openDiagnosticBundleDialogBox();
-
-            const startingTime = '2020-10-20T19:51:52Z'; // thousandths are optional
-            cy.get(filterByStartingTime).type(startingTime);
-
-            cy.get(startingTimeMessage).should('have.text', 'about 2 hours ago');
+            cy.get('[placeholder="Type a cluster name"]').should('be.disabled');
+            cy.get(startingDate).should('be.disabled');
+            cy.get(startingTime).should('be.disabled');
+            cy.get(includeComplianceOperatorResources).should('be.disabled');
         });
     });
 
     describe('request', () => {
         const currentTime = new Date('2020-10-20T21:22:00.000Z');
-        const startingTime = '2020-10-20T20:21:22.345Z';
 
         it('should not have params for initial defaults', () => {
             visitSystemHealth();
@@ -137,10 +111,11 @@ describe('Download Diagnostic Data', () => {
             visitSystemHealth();
             openDiagnosticBundleDialogBox();
 
-            cy.get(filterByStartingTime).type(startingTime);
+            cy.get(startingDate).type('2020-10-20');
+            cy.get(startingTime).type('20:21');
 
             const query = {
-                since: startingTime,
+                since: '2020-10-20T20:21:00.000Z',
             };
             downloadDiagnosticBundle(query);
         });
@@ -153,13 +128,27 @@ describe('Download Diagnostic Data', () => {
             const clusterName = 'remote';
 
             // TODO factor out as helper function
-            cy.get('[aria-label="Options menu"]').click(); // TODO better label
+            cy.get('[placeholder="Type a cluster name"]').click();
             cy.get(`[role="option"]:contains("${clusterName}")`).click();
-            cy.get(filterByStartingTime).type(startingTime);
+
+            cy.get(startingDate).type('2020-10-20');
+            cy.get(startingTime).type('20:21');
 
             const query = {
                 cluster: clusterName,
-                since: startingTime,
+                since: '2020-10-20T20:21:00.000Z',
+            };
+            downloadDiagnosticBundle(query);
+        });
+
+        it('should have param for compliance operator resources', () => {
+            visitSystemHealth();
+            openDiagnosticBundleDialogBox();
+
+            cy.get(includeComplianceOperatorResources).check();
+
+            const query = {
+                'compliance-operator': 'true',
             };
             downloadDiagnosticBundle(query);
         });

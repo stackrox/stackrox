@@ -6,6 +6,7 @@ import (
 
 	"github.com/stackrox/rox/generated/internalapi/central"
 	virtualMachineV1 "github.com/stackrox/rox/generated/internalapi/virtualmachine/v1"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/virtualmachine"
 	vmInfo "github.com/stackrox/rox/sensor/common/virtualmachine"
 	"github.com/stackrox/rox/sensor/kubernetes/eventpipeline/component"
@@ -43,6 +44,8 @@ var _ suite.SetupSubTest = (*virtualMachineInstanceSuite)(nil)
 var _ suite.TearDownSubTest = (*virtualMachineInstanceSuite)(nil)
 
 func (s *virtualMachineInstanceSuite) SetupSubTest() {
+	s.T().Setenv(features.VirtualMachines.EnvVar(), "true")
+
 	s.mockCtrl = gomock.NewController(s.T())
 	s.store = mocks.NewMockvirtualMachineStore(s.mockCtrl)
 	s.dispatcher = NewVirtualMachineInstanceDispatcher(clusterID, s.store)
@@ -105,6 +108,8 @@ func (s *virtualMachineInstanceSuite) Test_VirtualMachineInstanceEvents() {
 						Name:      vmiName,
 						Namespace: vmiNamespace,
 						ClusterId: clusterID,
+						State:     virtualMachineV1.VirtualMachine_STOPPED,
+						Facts:     getFactsForTest(s.T(), UnknownGuestOS),
 					},
 				},
 			}),
@@ -135,6 +140,8 @@ func (s *virtualMachineInstanceSuite) Test_VirtualMachineInstanceEvents() {
 						Name:      vmiName,
 						Namespace: vmiNamespace,
 						ClusterId: clusterID,
+						State:     virtualMachineV1.VirtualMachine_STOPPED,
+						Facts:     getFactsForTest(s.T(), UnknownGuestOS),
 					},
 				},
 			}),
@@ -157,6 +164,8 @@ func (s *virtualMachineInstanceSuite) Test_VirtualMachineInstanceEvents() {
 						Name:      vmiName,
 						Namespace: vmiNamespace,
 						ClusterId: clusterID,
+						State:     virtualMachineV1.VirtualMachine_STOPPED,
+						Facts:     getFactsForTest(s.T(), UnknownGuestOS),
 					},
 				},
 			}),
@@ -185,7 +194,14 @@ func (s *virtualMachineInstanceSuite) Test_VirtualMachineInstanceEvents() {
 						VSOCKCID:  nil,
 						Running:   false,
 					}),
-				).Times(1)
+				).Times(1).Return(
+					&vmInfo.Info{
+						ID:        vmiUID,
+						Name:      vmiName,
+						Namespace: vmiNamespace,
+						VSOCKCID:  nil,
+						Running:   false,
+					})
 			},
 			expectedMsg: component.NewEvent(&central.SensorEvent{
 				Id:     vmiUID,
@@ -196,6 +212,8 @@ func (s *virtualMachineInstanceSuite) Test_VirtualMachineInstanceEvents() {
 						Name:      vmiName,
 						Namespace: vmiNamespace,
 						ClusterId: clusterID,
+						State:     virtualMachineV1.VirtualMachine_STOPPED,
+						Facts:     getFactsForTest(s.T(), UnknownGuestOS),
 					},
 				},
 			}),
@@ -212,7 +230,14 @@ func (s *virtualMachineInstanceSuite) Test_VirtualMachineInstanceEvents() {
 						VSOCKCID:  nil,
 						Running:   false,
 					}),
-				).Times(1)
+				).Times(1).Return(
+					&vmInfo.Info{
+						ID:        vmiUID,
+						Name:      vmiName,
+						Namespace: vmiNamespace,
+						VSOCKCID:  nil,
+						Running:   false,
+					})
 			},
 			expectedMsg: component.NewEvent(&central.SensorEvent{
 				Id:     vmiUID,
@@ -223,6 +248,8 @@ func (s *virtualMachineInstanceSuite) Test_VirtualMachineInstanceEvents() {
 						Name:      vmiName,
 						Namespace: vmiNamespace,
 						ClusterId: clusterID,
+						State:     virtualMachineV1.VirtualMachine_STOPPED,
+						Facts:     getFactsForTest(s.T(), UnknownGuestOS),
 					},
 				},
 			}),
@@ -242,6 +269,8 @@ func (s *virtualMachineInstanceSuite) Test_VirtualMachineInstanceEvents() {
 						Name:      vmiName,
 						Namespace: vmiNamespace,
 						ClusterId: clusterID,
+						State:     virtualMachineV1.VirtualMachine_STOPPED,
+						Facts:     getFactsForTest(s.T(), UnknownGuestOS),
 					},
 				},
 			}),
@@ -258,7 +287,14 @@ func (s *virtualMachineInstanceSuite) Test_VirtualMachineInstanceEvents() {
 						VSOCKCID:  nil,
 						Running:   false,
 					}),
-				).Times(1)
+				).Times(1).Return(
+					&vmInfo.Info{
+						ID:        vmiUID,
+						Name:      vmiName,
+						Namespace: vmiNamespace,
+						VSOCKCID:  nil,
+						Running:   false,
+					})
 			},
 			expectedMsg: component.NewEvent(&central.SensorEvent{
 				Id:     vmiUID,
@@ -269,6 +305,8 @@ func (s *virtualMachineInstanceSuite) Test_VirtualMachineInstanceEvents() {
 						Name:      vmiName,
 						Namespace: vmiNamespace,
 						ClusterId: clusterID,
+						State:     virtualMachineV1.VirtualMachine_STOPPED,
+						Facts:     getFactsForTest(s.T(), UnknownGuestOS),
 					},
 				},
 			}),
@@ -314,10 +352,14 @@ func (s *virtualMachineInstanceSuite) Test_VirtualMachineInstanceEvents() {
 				Action: central.ResourceAction_UPDATE_RESOURCE,
 				Resource: &central.SensorEvent_VirtualMachine{
 					VirtualMachine: &virtualMachineV1.VirtualMachine{
-						Id:        ownerUID,
-						Name:      vmiName,
-						Namespace: vmiNamespace,
-						ClusterId: clusterID,
+						Id:          ownerUID,
+						Name:        vmiName,
+						Namespace:   vmiNamespace,
+						ClusterId:   clusterID,
+						VsockCid:    int32(vsockVal),
+						VsockCidSet: true,
+						State:       virtualMachineV1.VirtualMachine_RUNNING,
+						Facts:       getFactsForTest(s.T(), UnknownGuestOS),
 					},
 				},
 			}),

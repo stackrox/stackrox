@@ -360,7 +360,7 @@ func inverseFilterFailingDeploymentsQuery(q *v1.Query) (*v1.Query, bool) {
 		return true
 	})
 	if filtered != nil {
-		filtered.Pagination = q.Pagination
+		filtered.Pagination = q.GetPagination()
 	}
 	return filtered, isFailingDeploymentsQuery
 }

@@ -8,7 +8,7 @@ import {
 import { actions, types } from 'reducers/groups';
 import { actions as authActions } from 'reducers/auth';
 import { selectors } from 'reducers';
-import { getGroupsWithDefault, getExistingGroupsWithDefault } from 'utils/permissionRuleGroupUtils';
+import { getExistingGroupsWithDefault, getGroupsWithDefault } from 'utils/permissionRuleGroupUtils';
 
 import Raven from 'raven-js';
 

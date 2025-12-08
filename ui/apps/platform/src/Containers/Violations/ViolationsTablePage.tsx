@@ -1,4 +1,5 @@
-import React, { useEffect, useState, ReactElement } from 'react';
+import { useEffect, useState } from 'react';
+import type { ReactElement } from 'react';
 import {
     Alert,
     Bullseye,
@@ -7,28 +8,28 @@ import {
     PageSection,
     Popover,
     Spinner,
-    Title,
-    Tabs,
     Tab,
     TabTitleText,
+    Tabs,
     Text,
+    Title,
 } from '@patternfly/react-core';
 import { OutlinedQuestionCircleIcon } from '@patternfly/react-icons';
 
-import { fetchAlerts, fetchAlertCount } from 'services/AlertsService';
+import { fetchAlertCount, fetchAlerts } from 'services/AlertsService';
 import { CancelledPromiseError } from 'services/cancellationUtils';
 import useEntitiesByIdsCache from 'hooks/useEntitiesByIdsCache';
 import LIFECYCLE_STAGES from 'constants/lifecycleStages';
 import { VIOLATION_STATES } from 'constants/violationStates';
 import { ENFORCEMENT_ACTIONS } from 'constants/enforcementActions';
-import { OnSearchPayload } from 'Components/CompoundSearchFilter/types';
-import { onURLSearch } from 'Components/CompoundSearchFilter/utils/utils';
-import { FilteredWorkflowView } from 'Components/FilteredWorkflowViewSelector/types';
-import { SearchFilter } from 'types/search';
+import type { OnSearchCallback } from 'Components/CompoundSearchFilter/types';
+import { updateSearchFilter } from 'Components/CompoundSearchFilter/utils/utils';
+import type { FilteredWorkflowView } from 'Components/FilteredWorkflowViewSelector/types';
+import type { SearchFilter } from 'types/search';
 import useURLStringUnion from 'hooks/useURLStringUnion';
 import useEffectAfterFirstRender from 'hooks/useEffectAfterFirstRender';
 import useURLSort from 'hooks/useURLSort';
-import { SortOption } from 'types/table';
+import type { SortOption } from 'types/table';
 import useURLSearch from 'hooks/useURLSearch';
 import useURLPagination from 'hooks/useURLPagination';
 import useInterval from 'hooks/useInterval';
@@ -36,7 +37,8 @@ import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 import useFilteredWorkflowViewURLState from 'Components/FilteredWorkflowViewSelector/useFilteredWorkflowViewURLState';
 import ViolationsTablePanel from './ViolationsTablePanel';
 import { getViolationsTableColumnDescriptors } from './violationsTableColumnDescriptors';
-import { ViolationStateTab, violationStateTabs } from './types';
+import { violationStateTabs } from './types';
+import type { ViolationStateTab } from './types';
 
 import './ViolationsTablePage.css';
 
@@ -58,7 +60,9 @@ function getFilteredWorkflowViewSearchFilter(
             };
         case 'Full view':
         default:
-            return {};
+            return {
+                'Entity Type': ['UNSET', 'DEPLOYMENT', 'CONTAINER_IMAGE', 'RESOURCE'],
+            };
     }
 }
 
@@ -152,8 +156,8 @@ function ViolationsTablePage(): ReactElement {
 
     const additionalContextFilter = getFilteredWorkflowViewSearchFilter(filteredWorkflowView);
 
-    const onSearch = (payload: OnSearchPayload) => {
-        onURLSearch(searchFilter, setSearchFilter, payload);
+    const onSearch: OnSearchCallback = (payload) => {
+        setSearchFilter(updateSearchFilter(searchFilter, payload));
     };
 
     useEffectAfterFirstRender(() => {

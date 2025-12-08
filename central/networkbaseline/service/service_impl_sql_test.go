@@ -127,7 +127,7 @@ func (s *networkBaselineServiceSuite) setupTablesExternalFlowsWithDefaultEntity(
 			Id:   fixtureconsts.Deployment1,
 			Type: storage.NetworkEntityInfo_DEPLOYMENT,
 		},
-		nonDiscoveredEntity.Info,
+		nonDiscoveredEntity.GetInfo(),
 		1234,
 		storage.L4Protocol_L4_PROTOCOL_TCP,
 		&ts,
@@ -182,7 +182,7 @@ func (s *networkBaselineServiceSuite) setupTablesExternalFlows() {
 	for _, entity := range entities {
 		flows = append(flows, networkgraphTestutils.GetNetworkFlow(
 			deploymentEntity,
-			entity.Info,
+			entity.GetInfo(),
 			1234,
 			storage.L4Protocol_L4_PROTOCOL_TCP,
 			&ts,
@@ -190,7 +190,7 @@ func (s *networkBaselineServiceSuite) setupTablesExternalFlows() {
 
 		flows = append(flows, networkgraphTestutils.GetNetworkFlow(
 			deploymentEntity,
-			entity.Info,
+			entity.GetInfo(),
 			4567,
 			storage.L4Protocol_L4_PROTOCOL_TCP,
 			&ts,
@@ -216,17 +216,17 @@ func (s *networkBaselineServiceSuite) TestExternalStatus() {
 	s.NoError(err)
 
 	// expect len(ips) anomalous flows and len(ips) baseline flows
-	s.Equal(len(externalIps), len(resp.Anomalous))
-	s.Equal(len(externalIps), len(resp.Baseline))
-	s.Equal(int32(len(externalIps)), resp.TotalAnomalous)
-	s.Equal(int32(len(externalIps)), resp.TotalBaseline)
+	s.Equal(len(externalIps), len(resp.GetAnomalous()))
+	s.Equal(len(externalIps), len(resp.GetBaseline()))
+	s.Equal(int32(len(externalIps)), resp.GetTotalAnomalous())
+	s.Equal(int32(len(externalIps)), resp.GetTotalBaseline())
 
-	for _, anomalous := range resp.Anomalous {
-		s.Equal(v1.NetworkBaselinePeerStatus_ANOMALOUS, anomalous.Status)
+	for _, anomalous := range resp.GetAnomalous() {
+		s.Equal(v1.NetworkBaselinePeerStatus_ANOMALOUS, anomalous.GetStatus())
 	}
 
-	for _, baseline := range resp.Baseline {
-		s.Equal(v1.NetworkBaselinePeerStatus_BASELINE, baseline.Status)
+	for _, baseline := range resp.GetBaseline() {
+		s.Equal(v1.NetworkBaselinePeerStatus_BASELINE, baseline.GetStatus())
 	}
 }
 
@@ -245,26 +245,26 @@ func (s *networkBaselineServiceSuite) TestExternalStatusPagination() {
 	resp, err := s.service.GetNetworkBaselineStatusForExternalFlows(allAllowedCtx, req)
 	s.NoError(err)
 
-	s.Equal(2, len(resp.Anomalous))
-	s.Equal(2, len(resp.Baseline))
-	s.Equal(int32(len(externalIps)), resp.TotalAnomalous)
-	s.Equal(int32(len(externalIps)), resp.TotalBaseline)
+	s.Equal(2, len(resp.GetAnomalous()))
+	s.Equal(2, len(resp.GetBaseline()))
+	s.Equal(int32(len(externalIps)), resp.GetTotalAnomalous())
+	s.Equal(int32(len(externalIps)), resp.GetTotalBaseline())
 
 	req.Pagination.Offset = 2
 
-	firstPageAnomalous := resp.Anomalous
-	firstPageBaseline := resp.Baseline
+	firstPageAnomalous := resp.GetAnomalous()
+	firstPageBaseline := resp.GetBaseline()
 
 	resp, err = s.service.GetNetworkBaselineStatusForExternalFlows(allAllowedCtx, req)
 	s.NoError(err)
 
-	s.Equal(2, len(resp.Anomalous))
-	s.Equal(2, len(resp.Baseline))
-	s.Equal(int32(len(externalIps)), resp.TotalAnomalous)
-	s.Equal(int32(len(externalIps)), resp.TotalBaseline)
+	s.Equal(2, len(resp.GetAnomalous()))
+	s.Equal(2, len(resp.GetBaseline()))
+	s.Equal(int32(len(externalIps)), resp.GetTotalAnomalous())
+	s.Equal(int32(len(externalIps)), resp.GetTotalBaseline())
 
-	s.NotElementsMatch(firstPageAnomalous, resp.Anomalous)
-	s.NotElementsMatch(firstPageBaseline, resp.Baseline)
+	s.NotElementsMatch(firstPageAnomalous, resp.GetAnomalous())
+	s.NotElementsMatch(firstPageBaseline, resp.GetBaseline())
 }
 
 func (s *networkBaselineServiceSuite) TestExternalStatusNoExternalFlows() {
@@ -277,10 +277,10 @@ func (s *networkBaselineServiceSuite) TestExternalStatusNoExternalFlows() {
 	resp, err := s.service.GetNetworkBaselineStatusForExternalFlows(allAllowedCtx, req)
 	s.NoError(err)
 
-	s.Empty(resp.Anomalous)
-	s.Empty(resp.Baseline)
-	s.Equal(int32(0), resp.TotalAnomalous)
-	s.Equal(int32(0), resp.TotalBaseline)
+	s.Empty(resp.GetAnomalous())
+	s.Empty(resp.GetBaseline())
+	s.Equal(int32(0), resp.GetTotalAnomalous())
+	s.Equal(int32(0), resp.GetTotalBaseline())
 }
 
 func (s *networkBaselineServiceSuite) TestExternalStatusCIDRFilter() {
@@ -294,12 +294,12 @@ func (s *networkBaselineServiceSuite) TestExternalStatusCIDRFilter() {
 	resp, err := s.service.GetNetworkBaselineStatusForExternalFlows(allAllowedCtx, req)
 	s.NoError(err)
 
-	s.Equal(3, len(resp.Anomalous))
-	s.Equal(3, len(resp.Baseline))
-	s.Equal(int32(3), resp.TotalAnomalous)
-	s.Equal(int32(3), resp.TotalBaseline)
+	s.Equal(3, len(resp.GetAnomalous()))
+	s.Equal(3, len(resp.GetBaseline()))
+	s.Equal(int32(3), resp.GetTotalAnomalous())
+	s.Equal(int32(3), resp.GetTotalBaseline())
 
-	for _, anomaly := range append(resp.Baseline, resp.Anomalous...) {
+	for _, anomaly := range append(resp.Baseline, resp.GetAnomalous()...) {
 		// confirm all the CIDRs match the expected range
 		s.True(strings.HasPrefix(anomaly.GetPeer().GetEntity().GetName(), "1.1.1"))
 	}
@@ -312,10 +312,10 @@ func (s *networkBaselineServiceSuite) TestExternalStatusCIDRFilter() {
 	resp, err = s.service.GetNetworkBaselineStatusForExternalFlows(allAllowedCtx, req)
 	s.NoError(err)
 
-	s.Equal(0, len(resp.Anomalous))
-	s.Equal(0, len(resp.Baseline))
-	s.Equal(int32(0), resp.TotalAnomalous)
-	s.Equal(int32(0), resp.TotalBaseline)
+	s.Equal(0, len(resp.GetAnomalous()))
+	s.Equal(0, len(resp.GetBaseline()))
+	s.Equal(int32(0), resp.GetTotalAnomalous())
+	s.Equal(int32(0), resp.GetTotalBaseline())
 
 	// empty query should return everything
 	req = &v1.NetworkBaselineExternalStatusRequest{
@@ -326,10 +326,10 @@ func (s *networkBaselineServiceSuite) TestExternalStatusCIDRFilter() {
 	resp, err = s.service.GetNetworkBaselineStatusForExternalFlows(allAllowedCtx, req)
 	s.NoError(err)
 
-	s.Equal(len(externalIps), len(resp.Anomalous))
-	s.Equal(len(externalIps), len(resp.Baseline))
-	s.Equal(int32(len(externalIps)), resp.TotalAnomalous)
-	s.Equal(int32(len(externalIps)), resp.TotalBaseline)
+	s.Equal(len(externalIps), len(resp.GetAnomalous()))
+	s.Equal(len(externalIps), len(resp.GetBaseline()))
+	s.Equal(int32(len(externalIps)), resp.GetTotalAnomalous())
+	s.Equal(int32(len(externalIps)), resp.GetTotalBaseline())
 }
 
 func (s *networkBaselineServiceSuite) TestExternalStatusSince() {
@@ -344,10 +344,10 @@ func (s *networkBaselineServiceSuite) TestExternalStatusSince() {
 	resp, err := s.service.GetNetworkBaselineStatusForExternalFlows(allAllowedCtx, req)
 	s.NoError(err)
 
-	s.Equal(0, len(resp.Anomalous))
-	s.Equal(0, len(resp.Baseline))
-	s.Equal(int32(0), resp.TotalAnomalous)
-	s.Equal(int32(0), resp.TotalBaseline)
+	s.Equal(0, len(resp.GetAnomalous()))
+	s.Equal(0, len(resp.GetBaseline()))
+	s.Equal(int32(0), resp.GetTotalAnomalous())
+	s.Equal(int32(0), resp.GetTotalBaseline())
 
 	// very old timestamp should return everything
 	req = &v1.NetworkBaselineExternalStatusRequest{
@@ -358,10 +358,10 @@ func (s *networkBaselineServiceSuite) TestExternalStatusSince() {
 	resp, err = s.service.GetNetworkBaselineStatusForExternalFlows(allAllowedCtx, req)
 	s.NoError(err)
 
-	s.Equal(len(externalIps), len(resp.Anomalous))
-	s.Equal(len(externalIps), len(resp.Baseline))
-	s.Equal(int32(len(externalIps)), resp.TotalAnomalous)
-	s.Equal(int32(len(externalIps)), resp.TotalBaseline)
+	s.Equal(len(externalIps), len(resp.GetAnomalous()))
+	s.Equal(len(externalIps), len(resp.GetBaseline()))
+	s.Equal(int32(len(externalIps)), resp.GetTotalAnomalous())
+	s.Equal(int32(len(externalIps)), resp.GetTotalBaseline())
 }
 
 func (s *networkBaselineServiceSuite) TestExternalStatusWithDefaultCIDRFlow() {
@@ -374,8 +374,8 @@ func (s *networkBaselineServiceSuite) TestExternalStatusWithDefaultCIDRFlow() {
 	resp, err := s.service.GetNetworkBaselineStatusForExternalFlows(allAllowedCtx, req)
 	s.NoError(err)
 
-	s.Equal(6, len(resp.Anomalous))
-	s.Equal(5, len(resp.Baseline))
-	s.Equal(int32(6), resp.TotalAnomalous)
-	s.Equal(int32(5), resp.TotalBaseline)
+	s.Equal(6, len(resp.GetAnomalous()))
+	s.Equal(5, len(resp.GetBaseline()))
+	s.Equal(int32(6), resp.GetTotalAnomalous())
+	s.Equal(int32(5), resp.GetTotalBaseline())
 }

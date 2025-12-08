@@ -142,8 +142,8 @@ func (s *serviceImpl) getDeploymentRelationships(ctx context.Context, sa *storag
 	deployments := make([]*v1.SADeploymentRelationship, 0, len(deploymentResults))
 	for _, r := range deploymentResults {
 		deployments = append(deployments, &v1.SADeploymentRelationship{
-			Id:   r.Id,
-			Name: r.Name,
+			Id:   r.GetId(),
+			Name: r.GetName(),
 		})
 	}
 
@@ -156,7 +156,7 @@ func (s *serviceImpl) getRoles(ctx context.Context, sa *storage.ServiceAccount) 
 	clusterEvaluator := utils.NewClusterPermissionEvaluator(sa.GetClusterId(), s.roles, s.bindings)
 	clusterRoles := clusterEvaluator.RolesForSubject(ctx, subject)
 
-	namespaceQuery := search.NewQueryBuilder().AddExactMatches(search.ClusterID, sa.ClusterId).ProtoQuery()
+	namespaceQuery := search.NewQueryBuilder().AddExactMatches(search.ClusterID, sa.GetClusterId()).ProtoQuery()
 	namespaces, err := s.namespaces.SearchNamespaces(ctx, namespaceQuery)
 	if err != nil {
 		return clusterRoles, nil, err
@@ -164,7 +164,7 @@ func (s *serviceImpl) getRoles(ctx context.Context, sa *storage.ServiceAccount) 
 
 	scopedRoles := make([]*v1.ScopedRoles, 0)
 	for _, namespace := range namespaces {
-		namespaceEvaluator := utils.NewNamespacePermissionEvaluator(sa.ClusterId, namespace.GetName(), s.roles, s.bindings)
+		namespaceEvaluator := utils.NewNamespacePermissionEvaluator(sa.GetClusterId(), namespace.GetName(), s.roles, s.bindings)
 		namespaceRoles := namespaceEvaluator.RolesForSubject(ctx, subject)
 
 		if len(namespaceRoles) != 0 {

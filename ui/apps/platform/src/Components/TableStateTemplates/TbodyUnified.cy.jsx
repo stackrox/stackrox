@@ -1,8 +1,6 @@
-import React from 'react';
-
 import ComponentTestProvider from 'test-utils/ComponentTestProvider';
 
-import { Table, Thead, Tbody, Tr, Th, Td } from '@patternfly/react-table';
+import { Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 import TbodyUnified from './TbodyUnified';
 
 function setup(tableState, otherProps) {

@@ -1,7 +1,8 @@
-import React, { ReactElement } from 'react';
-import { Alert, Flex, FlexItem, Spinner, TreeView, TreeViewDataItem } from '@patternfly/react-core';
+import type { ReactElement } from 'react';
+import { Alert, Flex, FlexItem, Spinner, TreeView } from '@patternfly/react-core';
+import type { TreeViewDataItem } from '@patternfly/react-core';
 
-import { MitreAttackVector } from 'types/mitre.proto';
+import type { MitreAttackVector } from 'types/mitre.proto';
 
 import MitreAttackLink from './MitreAttackLink';
 import { getMitreTacticUrl, getMitreTechniqueUrl } from './MitreAttackVectors.utils';

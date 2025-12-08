@@ -1,4 +1,4 @@
-import React, { useContext } from 'react';
+import { useContext } from 'react';
 import { gql } from '@apollo/client';
 
 import Query from 'Components/ThrowingQuery';
@@ -8,15 +8,16 @@ import CollapsibleSection from 'Components/CollapsibleSection';
 import RelatedEntityListCount from 'Components/RelatedEntityListCount';
 import RelatedEntity from 'Components/RelatedEntity';
 import Metadata from 'Components/Metadata';
-import { entityComponentPropTypes, entityComponentDefaultProps } from 'constants/entityPageProps';
-import DeploymentsWithFailedPolicies from 'Containers/ConfigManagement/Entity/widgets/DeploymentsWithFailedPolicies';
+import { entityComponentDefaultProps, entityComponentPropTypes } from 'constants/entityPageProps';
 import searchContext from 'Containers/searchContext';
-import { getConfigMgmtCountQuery } from 'Containers/ConfigManagement/ConfigMgmt.utils';
 import { getDateTime } from 'utils/dateUtils';
 import getSubListFromEntity from 'utils/getSubListFromEntity';
 import isGQLLoading from 'utils/gqlLoading';
 import queryService from 'utils/queryService';
+
+import { getConfigMgmtCountQuery } from '../ConfigMgmt.utils';
 import EntityList from '../List/EntityList';
+import DeploymentsWithFailedPolicies from './widgets/DeploymentsWithFailedPolicies';
 
 const ConfigManagementEntityNamespace = ({
     id,

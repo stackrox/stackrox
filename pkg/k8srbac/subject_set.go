@@ -80,11 +80,11 @@ func getSortedSubjectList(subjectsByKey map[subjectKey]*storage.Subject) []*stor
 }
 
 func subjectIsLess(sub1, sub2 *storage.Subject) bool {
-	if sub1.Kind != sub2.Kind {
-		return sub1.Kind < sub2.Kind
+	if sub1.GetKind() != sub2.GetKind() {
+		return sub1.GetKind() < sub2.GetKind()
 	}
-	if sub1.Namespace != sub2.Namespace {
-		return sub1.Namespace < sub2.Namespace
+	if sub1.GetNamespace() != sub2.GetNamespace() {
+		return sub1.GetNamespace() < sub2.GetNamespace()
 	}
-	return sub1.Name < sub2.Name
+	return sub1.GetName() < sub2.GetName()
 }

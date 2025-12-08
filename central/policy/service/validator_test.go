@@ -14,6 +14,8 @@ import (
 	"github.com/stackrox/rox/pkg/booleanpolicy/fieldnames"
 	"github.com/stackrox/rox/pkg/booleanpolicy/policyversion"
 	"github.com/stackrox/rox/pkg/defaults/policies"
+	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
@@ -95,7 +97,7 @@ func (s *PolicyValidatorTestSuite) TestValidatesName() {
 	}
 	err = s.validator.validateName(policy)
 	s.NoError(err, "leading and trailing spaces should be trimmed")
-	s.Equal("Boo's policy", policy.Name)
+	s.Equal("Boo's policy", policy.GetName())
 }
 
 func (s *PolicyValidatorTestSuite) TestValidateVersion() {
@@ -531,7 +533,7 @@ func (s *PolicyValidatorTestSuite) TestValidateLifeCycleEnforcementCombination()
 		s.T().Run(c.description, func(t *testing.T) {
 			c.p.Name = "BLAHBLAH"
 			s.validator.removeEnforcementsForMissingLifecycles(c.p)
-			assert.Equal(t, c.expectedSize, len(c.p.EnforcementActions), "enforcement size does not match")
+			assert.Equal(t, c.expectedSize, len(c.p.GetEnforcementActions()), "enforcement size does not match")
 		})
 	}
 }
@@ -985,6 +987,242 @@ func (s *PolicyValidatorTestSuite) TestValidateEnforcement() {
 				assert.Equal(t, c.expectedError, err.Error())
 			} else {
 				assert.Truef(t, err == nil, "Error not expected")
+			}
+		})
+	}
+}
+
+func (s *PolicyValidatorTestSuite) TestValidateMountedFilePathEventSource() {
+	testCases := []struct {
+		description string
+		p           *storage.Policy
+		errExpected bool
+	}{
+		{
+			description: "Deployment policy with valid MountedFilePath field",
+			p: booleanPolicyWithFields(storage.LifecycleStage_RUNTIME, storage.EventSource_DEPLOYMENT_EVENT,
+				map[string]string{
+					fieldnames.MountedFilePath: "/etc/passwd",
+				}),
+		},
+		{
+			description: "Deployment policy with MountedFilePath and FileOperation",
+			p: booleanPolicyWithFields(storage.LifecycleStage_RUNTIME, storage.EventSource_DEPLOYMENT_EVENT,
+				map[string]string{
+					fieldnames.MountedFilePath: "/etc/shadow",
+					fieldnames.FileOperation:   "open",
+				}),
+		},
+		{
+			description: "Node policy with MountedFilePath (should be invalid)",
+			p: booleanPolicyWithFields(storage.LifecycleStage_RUNTIME, storage.EventSource_NODE_EVENT,
+				map[string]string{
+					fieldnames.MountedFilePath: "/etc/passwd",
+				}),
+			errExpected: true,
+		},
+		{
+			description: "Deployment policy with FileOperation but no file path",
+			p: booleanPolicyWithFields(storage.LifecycleStage_RUNTIME, storage.EventSource_DEPLOYMENT_EVENT,
+				map[string]string{
+					fieldnames.FileOperation: "open",
+				}),
+			errExpected: true,
+		},
+		{
+			description: "Deployment policy with invalid MountedFilePath",
+			p: booleanPolicyWithFields(storage.LifecycleStage_RUNTIME, storage.EventSource_DEPLOYMENT_EVENT,
+				map[string]string{
+					fieldnames.MountedFilePath: "relative/path.sh",
+				}),
+			errExpected: true,
+		},
+		{
+			description: "Deployment policy with MountedFilePath in wrong lifecycle stage (build)",
+			p: booleanPolicyWithFields(storage.LifecycleStage_BUILD, storage.EventSource_DEPLOYMENT_EVENT,
+				map[string]string{
+					fieldnames.MountedFilePath: "/etc/hosts",
+				}),
+			errExpected: true,
+		},
+		{
+			description: "Deployment policy with MountedFilePath in wrong lifecycle stage (deploy)",
+			p: booleanPolicyWithFields(storage.LifecycleStage_DEPLOY, storage.EventSource_DEPLOYMENT_EVENT,
+				map[string]string{
+					fieldnames.MountedFilePath: "/etc/passwd",
+				}),
+			errExpected: true,
+		},
+	}
+
+	// reset once for these tests, and then reset on return after the feature flag has been disabled
+	// again to ensure consistent state in other tests
+	testutils.MustUpdateFeature(s.T(), features.SensitiveFileActivity, true)
+	booleanpolicy.ResetFieldMetadataSingleton(s.T())
+
+	defer testutils.MustUpdateFeature(s.T(), features.SensitiveFileActivity, false)
+	defer booleanpolicy.ResetFieldMetadataSingleton(s.T())
+
+	for _, c := range testCases {
+		s.T().Run(c.description, func(t *testing.T) {
+			c.p.Name = "BLAHBLAH"
+
+			err := s.validator.validateCompilableForLifecycle(c.p)
+			if c.errExpected {
+				assert.Error(t, err)
+			} else {
+				assert.NoError(t, err)
+			}
+		})
+	}
+}
+
+func (s *PolicyValidatorTestSuite) TestValidateNodeEventSource() {
+	testCases := []struct {
+		description string
+		p           *storage.Policy
+		errExpected bool
+	}{
+		{
+			description: "Node policy with valid NodeFilePath field",
+			p: booleanPolicyWithFields(storage.LifecycleStage_RUNTIME, storage.EventSource_NODE_EVENT,
+				map[string]string{
+					fieldnames.NodeFilePath: "/etc/passwd",
+				}),
+		},
+		{
+			description: "Node policy with no fields",
+			p:           booleanPolicyWithFields(storage.LifecycleStage_RUNTIME, storage.EventSource_NODE_EVENT, nil),
+			errExpected: true,
+		},
+		{
+			description: "Node policy with deploy-time fields only",
+			p: booleanPolicyWithFields(storage.LifecycleStage_RUNTIME, storage.EventSource_NODE_EVENT,
+				map[string]string{
+					fieldnames.ImageTag:   "latest",
+					fieldnames.VolumeName: "BLAH",
+				}),
+			errExpected: true,
+		},
+		{
+			description: "Node policy with process field (should be invalid)",
+			p: booleanPolicyWithFields(storage.LifecycleStage_RUNTIME, storage.EventSource_NODE_EVENT,
+				map[string]string{
+					fieldnames.ProcessName: "malicious-process",
+				}),
+			errExpected: true,
+		},
+		{
+			description: "Node policy with wrong lifecycle stage (build)",
+			p:           booleanPolicyWithFields(storage.LifecycleStage_BUILD, storage.EventSource_NODE_EVENT, nil),
+			errExpected: true,
+		},
+		{
+			description: "Node policy with wrong lifecycle stage (deploy)",
+			p:           booleanPolicyWithFields(storage.LifecycleStage_DEPLOY, storage.EventSource_NODE_EVENT, nil),
+			errExpected: true,
+		},
+		{
+			description: "Node policy with NodeFilePath and invalid process fields",
+			p: booleanPolicyWithFields(storage.LifecycleStage_RUNTIME, storage.EventSource_NODE_EVENT,
+				map[string]string{
+					fieldnames.NodeFilePath: "/var/log/audit.log",
+					fieldnames.ProcessName:  "suspicious-binary",
+				}),
+			errExpected: true,
+		},
+		{
+			description: "Node policy with NodeFilePath and invalid container fields",
+			p: booleanPolicyWithFields(storage.LifecycleStage_RUNTIME, storage.EventSource_NODE_EVENT,
+				map[string]string{
+					fieldnames.NodeFilePath:  "/etc/shadow",
+					fieldnames.ContainerName: "malicious-container",
+				}),
+			errExpected: true,
+		},
+		{
+			description: "Node policy with NodeFilePath in wrong lifecycle stage (build)",
+			p: booleanPolicyWithFields(storage.LifecycleStage_BUILD, storage.EventSource_NODE_EVENT,
+				map[string]string{
+					fieldnames.NodeFilePath: "/etc/hosts",
+				}),
+			errExpected: true,
+		},
+		{
+			description: "Node policy with NodeFilePath in wrong lifecycle stage (deploy)",
+			p: booleanPolicyWithFields(storage.LifecycleStage_DEPLOY, storage.EventSource_NODE_EVENT,
+				map[string]string{
+					fieldnames.NodeFilePath: "/tmp/malicious.sh",
+				}),
+			errExpected: true,
+		},
+		{
+			description: "Node policy invalid NodeFilePath",
+			p: booleanPolicyWithFields(storage.LifecycleStage_RUNTIME, storage.EventSource_NODE_EVENT,
+				map[string]string{
+					fieldnames.NodeFilePath: "relative/path.sh",
+				}),
+			errExpected: true,
+		},
+		{
+			description: "Node policy with valid FileOperation field but no file path",
+			p: booleanPolicyWithFields(storage.LifecycleStage_RUNTIME, storage.EventSource_NODE_EVENT,
+				map[string]string{
+					fieldnames.FileOperation: "open",
+				}),
+			errExpected: true,
+		},
+		{
+			description: "Node policy with FileOperation and valid NodeFilePath field",
+			p: booleanPolicyWithFields(storage.LifecycleStage_RUNTIME, storage.EventSource_NODE_EVENT,
+				map[string]string{
+					fieldnames.FileOperation: "open",
+					fieldnames.NodeFilePath:  "/etc/passwd",
+				}),
+		},
+		{
+			description: "Node policy with invalid FileOperation",
+			p: booleanPolicyWithFields(storage.LifecycleStage_RUNTIME, storage.EventSource_NODE_EVENT,
+				map[string]string{
+					fieldnames.FileOperation: "execute",
+				}),
+			errExpected: true,
+		},
+		{
+			description: "Node policy with FileOperation in wrong lifecycle stage (build)",
+			p: booleanPolicyWithFields(storage.LifecycleStage_BUILD, storage.EventSource_NODE_EVENT,
+				map[string]string{
+					fieldnames.FileOperation: "open",
+				}),
+			errExpected: true,
+		},
+		{
+			description: "Node policy with FileOperation in wrong lifecycle stage (deploy)",
+			p: booleanPolicyWithFields(storage.LifecycleStage_DEPLOY, storage.EventSource_NODE_EVENT,
+				map[string]string{
+					fieldnames.FileOperation: "open",
+				}),
+			errExpected: true,
+		},
+	}
+
+	// reset once for these tests, and then reset on return after the feature flag has been disabled
+	// again to ensure consistent state in other tests
+	testutils.MustUpdateFeature(s.T(), features.SensitiveFileActivity, true)
+	booleanpolicy.ResetFieldMetadataSingleton(s.T())
+
+	defer testutils.MustUpdateFeature(s.T(), features.SensitiveFileActivity, false)
+	defer booleanpolicy.ResetFieldMetadataSingleton(s.T())
+
+	for _, c := range testCases {
+		s.T().Run(c.description, func(t *testing.T) {
+			c.p.Name = "BLAHBLAH"
+
+			err := s.validator.validateCompilableForLifecycle(c.p)
+			if c.errExpected {
+				assert.Error(t, err)
+			} else {
+				assert.NoError(t, err)
 			}
 		})
 	}

@@ -1,10 +1,9 @@
 /* eslint-disable @typescript-eslint/no-unsafe-return */
-import React, { useMemo } from 'react';
+import { useMemo } from 'react';
 import type { ComponentClass, FunctionComponent, PropsWithChildren, ReactNode } from 'react';
-import {
+import { ScaleDetailsLevel, observer } from '@patternfly/react-topology';
+import type {
     Node,
-    observer,
-    ScaleDetailsLevel,
     ShapeProps,
     WithDragNodeProps,
     WithSelectionProps,
@@ -12,15 +11,13 @@ import {
 import AlternateIcon from '@patternfly/react-icons/dist/esm/icons/regions-icon';
 import DefaultIcon from '@patternfly/react-icons/dist/esm/icons/builder-image-icon';
 import useDetailsLevel from '@patternfly/react-topology/dist/esm/hooks/useDetailsLevel';
-import { SVGIconProps } from '@patternfly/react-icons/dist/js/createIcon';
+import type { SVGIconProps } from '@patternfly/react-icons/dist/js/createIcon';
 import DefaultFakeGroup from './DefaultFakeGroup';
 
 const ICON_PADDING = 20;
 
-export enum DataTypes {
-    Default,
-    Alternate,
-}
+type DataTypes = 0 | 1;
+const DataTypesAlternate: DataTypes = 1;
 
 type StyleGroupProps = {
     element: Node;
@@ -43,7 +40,7 @@ const StyleFakeGroup: FunctionComponent<PropsWithChildren<StyleGroupProps>> = ({
 
     const getTypeIcon = (dataType?: DataTypes): ComponentClass<SVGIconProps> => {
         switch (dataType) {
-            case DataTypes.Alternate:
+            case DataTypesAlternate:
                 return AlternateIcon;
             default:
                 return DefaultIcon;

@@ -8,6 +8,7 @@ on:
     paths:
       - 'central/notifiers/email/**'
       - 'central/notifiers/acscsemail/**'
+      - 'central/auth/m2m/**'
       - '.github/workflows/emailsender-central-compatibility.yaml'
 
   pull_request:
@@ -15,6 +16,7 @@ on:
     paths:
       - 'central/notifiers/email/**'
       - 'central/notifiers/acscsemail/**'
+      - 'central/auth/m2m/**'
       - '.github/workflows/emailsender-central-compatibility.yaml'
 
 jobs:
@@ -26,16 +28,15 @@ jobs:
     permissions:
       id-token: write
       contents: read
-    environment: development
     steps:
       - name: Cancel Previous Runs
         uses: n1hility/cancel-previous-runs@v3
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-      - name: Set up Go 1.21
+      - name: Set up Go 1.24
         uses: actions/setup-go@v5
         with:
-          go-version: "1.21"
+          go-version: "1.24"
       - name: Cache go module
         uses: actions/cache@v4
         with:
@@ -63,6 +64,9 @@ jobs:
           ref: ${{ github.event.pull_request.head.sha }}
           path: stackrox
           fetch-depth: 0
+      - uses: ./stackrox/.github/actions/job-preamble
+        with:
+          free-disk-space: 40
       - name: Create Kind cluster"
         uses: helm/kind-action@v1
         with:
@@ -71,3 +75,10 @@ jobs:
         env:
           IMG_WAIT_TIMEOUT_SECONDS: 2100
         run: acs-fleet-manager/scripts/ci/central_compatibility/entrypoint.sh
+      - name: Upload logs
+        uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: logs-directory-${{ github.sha }}
+          path: logs/
+          retention-days: 3

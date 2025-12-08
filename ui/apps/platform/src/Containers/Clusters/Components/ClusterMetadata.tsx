@@ -1,9 +1,8 @@
-import React from 'react';
 import {
     DescriptionList,
+    DescriptionListDescription,
     DescriptionListGroup,
     DescriptionListTerm,
-    DescriptionListDescription,
 } from '@patternfly/react-core';
 
 import type { ClusterStatus } from 'types/cluster.proto';

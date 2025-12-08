@@ -1,9 +1,9 @@
+import type { ReactElement } from 'react';
 import { Flex, FlexItem, Text, TextContent, TextVariants, Title } from '@patternfly/react-core';
-import React, { ReactElement } from 'react';
 
-import { commaSeparateWithAnd } from 'Containers/Vulnerabilities/VulnerablityReporting/utils';
 import { daysOfMonthMap, daysOfWeekMap } from 'Components/PatternFly/DayPickerDropdown';
-import { ReportFormValues } from 'Containers/Vulnerabilities/VulnerablityReporting/forms/useReportFormValues';
+import type { ReportFormValues } from '../forms/useReportFormValues';
+import { commaSeparateWithAnd } from '../utils';
 
 export type ScheduleDetailsProps = {
     formValues: ReportFormValues;

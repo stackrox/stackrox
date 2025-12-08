@@ -5,7 +5,6 @@ import (
 	"time"
 
 	"github.com/stackrox/rox/pkg/concurrency"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -24,7 +23,6 @@ func (s *queueSuite) createAndStartQueue(stopper concurrency.Stopper, size int) 
 }
 
 func (s *queueSuite) TestPauseAndResume() {
-	s.T().Setenv(features.SensorCapturesIntermediateEvents.EnvVar(), "true")
 	cases := map[string][]func(*Queue[*string], concurrency.Stopper){
 		"Pause":                              {s.push, s.pause, s.noPull},
 		"Pause, resume":                      {s.push, s.pause, s.push, s.resume, s.pull, s.pull},

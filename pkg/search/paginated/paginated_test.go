@@ -237,10 +237,10 @@ func TestFillPagination(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			FillPagination(tt.query, tt.pagination, tt.maxLimit)
 
-			assert.NotNil(t, tt.query.Pagination)
-			assert.Equal(t, tt.expectedLimit, tt.query.Pagination.GetLimit())
-			assert.Equal(t, tt.expectedOffset, tt.query.Pagination.GetOffset())
-			assert.Len(t, tt.query.Pagination.GetSortOptions(), tt.expectedSortOps)
+			assert.NotNil(t, tt.query.GetPagination())
+			assert.Equal(t, tt.expectedLimit, tt.query.GetPagination().GetLimit())
+			assert.Equal(t, tt.expectedOffset, tt.query.GetPagination().GetOffset())
+			assert.Len(t, tt.query.GetPagination().GetSortOptions(), tt.expectedSortOps)
 		})
 	}
 }
@@ -308,10 +308,10 @@ func TestFillPaginationV2(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			FillPaginationV2(tt.query, tt.pagination, tt.maxLimit)
 
-			assert.NotNil(t, tt.query.Pagination)
-			assert.Equal(t, tt.expectedLimit, tt.query.Pagination.GetLimit())
-			assert.Equal(t, tt.expectedOffset, tt.query.Pagination.GetOffset())
-			assert.Len(t, tt.query.Pagination.GetSortOptions(), tt.expectedSortOps)
+			assert.NotNil(t, tt.query.GetPagination())
+			assert.Equal(t, tt.expectedLimit, tt.query.GetPagination().GetLimit())
+			assert.Equal(t, tt.expectedOffset, tt.query.GetPagination().GetOffset())
+			assert.Len(t, tt.query.GetPagination().GetSortOptions(), tt.expectedSortOps)
 		})
 	}
 }

@@ -44,7 +44,7 @@ type ImageResolver interface {
 	Notes(ctx context.Context) []string
 	Priority(ctx context.Context) int32
 	RiskScore(ctx context.Context) float64
-	Sha(ctx context.Context) string
+	Digest(ctx context.Context) string
 	Signature(ctx context.Context) (*imageSignatureResolver, error)
 	SignatureVerificationData(ctx context.Context) (*imageSignatureVerificationDataResolver, error)
 	TopCvss(ctx context.Context) float64
@@ -501,7 +501,7 @@ func (resolver *imageResolver) UnknownCveCount(_ context.Context) int32 {
 	return 0
 }
 
-func (resolver *imageResolver) Sha(ctx context.Context) string {
+func (resolver *imageResolver) Digest(ctx context.Context) string {
 	resolver.ensureData(ctx)
 	return resolver.data.GetId()
 }

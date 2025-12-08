@@ -3,9 +3,10 @@ import { getRegExpForTitleWithBranding } from '../../helpers/title';
 
 import {
     assertIntegrationsTable,
-    clickIntegrationTileOnDashboard,
+    clickIntegrationTileOnTab,
     visitIntegrationsDashboard,
     visitIntegrationsDashboardFromLeftNav,
+    visitIntegrationsTab,
 } from './integrations.helpers';
 
 describe('Integrations Dashboard', () => {
@@ -25,7 +26,7 @@ describe('Integrations Dashboard', () => {
         visitIntegrationsDashboard();
 
         let value = null;
-        cy.get('#image-integrations a[data-testid="integration-tile"]').each(($el) => {
+        cy.get('a[data-testid="integration-tile"]').each(($el) => {
             if (value) {
                 expect($el[0].clientHeight).to.equal(value);
             } else {
@@ -42,7 +43,7 @@ describe('Integrations Dashboard', () => {
 
         visitIntegrationsDashboard();
 
-        clickIntegrationTileOnDashboard(integrationSource, integrationType);
+        clickIntegrationTileOnTab(integrationSource, integrationType);
 
         assertIntegrationsTable(integrationSource, integrationType);
     });
@@ -51,9 +52,9 @@ describe('Integrations Dashboard', () => {
         const integrationSource = 'notifiers';
         const integrationType = 'slack';
 
-        visitIntegrationsDashboard();
+        visitIntegrationsTab(integrationSource);
 
-        clickIntegrationTileOnDashboard(integrationSource, integrationType);
+        clickIntegrationTileOnTab(integrationSource, integrationType);
 
         assertIntegrationsTable(integrationSource, integrationType);
     });
@@ -62,9 +63,9 @@ describe('Integrations Dashboard', () => {
         const integrationSource = 'backups';
         const integrationType = 's3';
 
-        visitIntegrationsDashboard();
+        visitIntegrationsTab(integrationSource);
 
-        clickIntegrationTileOnDashboard(integrationSource, integrationType);
+        clickIntegrationTileOnTab(integrationSource, integrationType);
 
         assertIntegrationsTable(integrationSource, integrationType);
     });
@@ -73,9 +74,9 @@ describe('Integrations Dashboard', () => {
         const integrationSource = 'authProviders';
         const integrationType = 'apitoken';
 
-        visitIntegrationsDashboard();
+        visitIntegrationsTab(integrationSource);
 
-        clickIntegrationTileOnDashboard(integrationSource, integrationType);
+        clickIntegrationTileOnTab(integrationSource, integrationType);
 
         assertIntegrationsTable(integrationSource, integrationType);
     });

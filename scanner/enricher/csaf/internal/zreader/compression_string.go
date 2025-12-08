@@ -19,8 +19,9 @@ const _Compression_name = "KindGzipKindZstdKindBzip2KindNone"
 var _Compression_index = [...]uint8{0, 8, 16, 25, 33}
 
 func (i Compression) String() string {
-	if i < 0 || i >= Compression(len(_Compression_index)-1) {
+	idx := int(i) - 0
+	if i < 0 || idx >= len(_Compression_index)-1 {
 		return "Compression(" + strconv.FormatInt(int64(i), 10) + ")"
 	}
-	return _Compression_name[_Compression_index[i]:_Compression_index[i+1]]
+	return _Compression_name[_Compression_index[idx]:_Compression_index[idx+1]]
 }

@@ -32,13 +32,23 @@ func NewVirtualMachineStore() *VirtualMachineStore {
 }
 
 // AddOrUpdate upserts a new VirtualMachine
-func (s *VirtualMachineStore) AddOrUpdate(vm *virtualmachine.Info) {
+func (s *VirtualMachineStore) AddOrUpdate(vm *virtualmachine.Info) *virtualmachine.Info {
 	if vm == nil {
-		return
+		return nil
 	}
 	s.lock.Lock()
 	defer s.lock.Unlock()
+	oldVM := s.virtualMachines[vm.ID]
+	if oldVM != nil {
+		vm.Running = oldVM.Running
+		if oldVM.VSOCKCID != nil {
+			vSockCID := *oldVM.VSOCKCID
+			vm.VSOCKCID = &vSockCID
+		}
+		vm.GuestOS = oldVM.GuestOS
+	}
 	s.addOrUpdateNoLock(vm)
+	return vm
 }
 
 // UpdateStateOrCreate updates the VirtualMachine state
@@ -98,6 +108,13 @@ func (s *VirtualMachineStore) Has(id virtualmachine.VMID) bool {
 	return s.Get(id) != nil
 }
 
+// Size returns the number of VirtualMachines in the store
+func (s *VirtualMachineStore) Size() int {
+	s.lock.RLock()
+	defer s.lock.RUnlock()
+	return len(s.virtualMachines)
+}
+
 // GetFromCID returns the VirtualMachineInfo associated with a given VSOCK CID
 func (s *VirtualMachineStore) GetFromCID(cid uint32) *virtualmachine.Info {
 	s.lock.RLock()
@@ -143,6 +160,7 @@ func (s *VirtualMachineStore) updateStatusOrCreateNoLock(updateInfo *virtualmach
 	// Update new VSOCK maps
 	prev.VSOCKCID = s.addOrUpdateVSOCKInfoNoLock(updateInfo.ID, updateInfo.VSOCKCID)
 	prev.Running = updateInfo.Running
+	prev.GuestOS = updateInfo.GuestOS
 }
 
 func (s *VirtualMachineStore) addOrUpdateVSOCKInfoNoLock(id virtualmachine.VMID, vsockCID *uint32) *uint32 {
@@ -176,8 +194,11 @@ func (s *VirtualMachineStore) replaceVSOCKInfoNoLock(vm *virtualmachine.Info) *u
 		vm.VSOCKCID = prev.VSOCKCID
 	}
 	// Upsert VSOCKCID info
+	// CRITICAL: addOrUpdateVSOCKInfoNoLock always returns a heap-allocated copy so the store owns
+	// its own pointer. Reusing vm.VSOCKCID would let the caller mutate the same pointer later.
+	// Added regression test: Test_replaceVSOCKInfoNoLockCopiesIncomingPointer.
 	if vm.VSOCKCID != nil {
-		_ = s.addOrUpdateVSOCKInfoNoLock(vm.ID, vm.VSOCKCID)
+		return s.addOrUpdateVSOCKInfoNoLock(vm.ID, vm.VSOCKCID)
 	}
 	return vm.VSOCKCID
 }

@@ -21,7 +21,6 @@ import (
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
 	pgSearch "github.com/stackrox/rox/pkg/search/postgres"
-	"gorm.io/gorm"
 )
 
 const (
@@ -63,6 +62,8 @@ type Store interface {
 
 	Walk(ctx context.Context, fn callback) error
 	WalkByQuery(ctx context.Context, query *v1.Query, fn callback) error
+	// Deprecated: Use for SAC only
+	GetAllFromCacheForSAC() []*storeType
 }
 
 // New returns a new Store instance using the provided sql instance.
@@ -147,23 +148,3 @@ func insertIntoClusters(batch *pgx.Batch, obj *storage.Cluster) error {
 }
 
 // endregion Helper functions
-
-// region Used for testing
-
-// CreateTableAndNewStore returns a new Store instance for testing.
-func CreateTableAndNewStore(ctx context.Context, db postgres.DB, gormDB *gorm.DB) Store {
-	pkgSchema.ApplySchemaForTable(ctx, gormDB, baseTable)
-	return New(db)
-}
-
-// Destroy drops the tables associated with the target object type.
-func Destroy(ctx context.Context, db postgres.DB) {
-	dropTableClusters(ctx, db)
-}
-
-func dropTableClusters(ctx context.Context, db postgres.DB) {
-	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS clusters CASCADE")
-
-}
-
-// endregion Used for testing

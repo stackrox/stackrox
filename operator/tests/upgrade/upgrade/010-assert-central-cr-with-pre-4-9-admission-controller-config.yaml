@@ -14,25 +14,19 @@ collectors:
 - command: retry-kubectl.sh describe pod -n $NAMESPACE -l app=admission-control
 - command: retry-kubectl.sh describe pod -n $NAMESPACE -l app=collector
 # Please keep the above lists in sync with pods-debug.yaml
-timeout: 1500
----
-apiVersion: platform.stackrox.io/v1alpha1
-kind: SecuredCluster
-metadata:
+- command: retry-kubectl.sh describe securedcluster.platform.stackrox.io -n $NAMESPACE stackrox-secured-cluster-services
+resourceRefs:
+- apiVersion: platform.stackrox.io/v1alpha1
+  kind: SecuredCluster
   name: stackrox-secured-cluster-services
-status:
-  clusterName: testing-cluster
-  conditions:
-    - status: "True"
-      type: Deployed
-    - status: "True"
-      type: Initialized
-    - status: "False"
-      type: Irreconcilable
-    - status: "False"
-      type: ProxyConfigFailed
-    - status: "False"
-      type: ReleaseFailed
+  ref: sc_cr
+assertAll:
+- celExpr: "sc_cr.status.conditions.filter(c, c.type=='Deployed').exists(c, c.status=='True')"
+- celExpr: "sc_cr.status.conditions.filter(c, c.type=='Initialized').exists(c, c.status=='True')"
+- celExpr: "sc_cr.status.conditions.filter(c, c.type=='Irreconcilable').exists(c, c.status=='False')"
+- celExpr: "sc_cr.status.conditions.filter(c, c.type=='ProxyConfigFailed').exists(c, c.status=='False')"
+- celExpr: "sc_cr.status.conditions.filter(c, c.type=='ReleaseFailed').exists(c, c.status=='False')"
+timeout: 1500
 ---
 apiVersion: apps/v1
 kind: Deployment

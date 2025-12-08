@@ -1,10 +1,9 @@
-import React from 'react';
 import { SelectOption } from '@patternfly/react-core';
 
 import { getEntity } from 'Components/CompoundSearchFilter/utils/utils';
 
 import SimpleSelect from './SimpleSelect';
-import { CompoundSearchFilterConfig } from '../types';
+import type { CompoundSearchFilterConfig } from '../types';
 
 export type SelectedEntity = string | undefined;
 export type EntitySelectorOnChange = (value: string | number | undefined) => void;

@@ -125,6 +125,7 @@ func (t Translator) translate(ctx context.Context, c platform.Central) (chartuti
 
 	if c.Spec.ConfigAsCode != nil {
 		v.AddChild("configAsCode", translation.GetConfigAsCode(c.Spec.ConfigAsCode))
+		v.AddChild("configController", getConfigControllerValues(c.Spec.ConfigAsCode))
 	}
 
 	return v.Build()
@@ -389,4 +390,20 @@ func getCentralScannerV4ComponentValues(ctx context.Context, s *platform.Scanner
 	}
 
 	return &sv
+}
+
+func getConfigControllerValues(c *platform.ConfigAsCodeSpec) *translation.ValuesBuilder {
+	cv := translation.NewValuesBuilder()
+	if c == nil {
+		return &cv
+	}
+
+	cv.AddChild(translation.ResourcesKey, translation.GetResources(c.Resources))
+	cv.SetStringMap("nodeSelector", c.NodeSelector)
+	cv.AddAllFrom(translation.GetTolerations(translation.TolerationsKey, c.Tolerations))
+	if len(c.HostAliases) > 0 {
+		cv.AddAllFrom(translation.GetHostAliases(translation.HostAliasesKey, c.HostAliases))
+	}
+
+	return &cv
 }

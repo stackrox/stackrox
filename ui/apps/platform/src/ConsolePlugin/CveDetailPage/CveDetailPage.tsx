@@ -1,4 +1,3 @@
-import React from 'react';
 import { NamespaceBar, useActiveNamespace } from '@openshift-console/dynamic-plugin-sdk';
 
 import useURLSearch from 'hooks/useURLSearch';
@@ -7,9 +6,9 @@ import { ALL_NAMESPACES_KEY } from 'ConsolePlugin/constants';
 import { useDefaultWorkloadCveViewContext } from 'ConsolePlugin/hooks/useDefaultWorkloadCveViewContext';
 import { WorkloadCveViewContext } from 'Containers/Vulnerabilities/WorkloadCves/WorkloadCveViewContext';
 import {
-    imageSearchFilterConfig,
-    imageComponentSearchFilterConfig,
     deploymentSearchFilterConfig,
+    imageComponentSearchFilterConfig,
+    imageSearchFilterConfig,
     namespaceSearchFilterConfig,
 } from 'Containers/Vulnerabilities/searchFilterConfig';
 import ImageCvePage from 'Containers/Vulnerabilities/WorkloadCves/ImageCve/ImageCvePage';

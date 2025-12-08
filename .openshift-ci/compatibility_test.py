@@ -12,7 +12,7 @@ from pre_tests import (
     CollectionMethodOverridePreTest
 )
 from post_tests import PostClusterTest, FinalPost
-from runners import ClusterTestSetsRunner
+from runners import ClusterTestSetsRunner, TestSet
 from clusters import GKECluster
 from get_compatibility_test_tuples import (
     get_compatibility_test_tuples,
@@ -39,17 +39,17 @@ def run_compatibility_tests(testfunc, cluster_name):
                          test_tuple.central_version, test_tuple.sensor_version, testfunc.__name__)
 
             sets.append(
-                {
-                    "name": f'version compatibility tests: {test_versions}',
-                    "test": testfunc(test_tuple.central_version, test_tuple.sensor_version),
-                    "post_test": PostClusterTest(
+                TestSet(
+                    f'version compatibility tests: {test_versions}',
+                    test=testfunc(test_tuple.central_version, test_tuple.sensor_version),
+                    post=PostClusterTest(
                         collect_collector_metrics=not is_3_74_sensor,
                         check_stackrox_logs=True,
                         artifact_destination_prefix=test_versions,
                     ),
                     # Collection not supported on 3.74
-                    "pre_test": CollectionMethodOverridePreTest("NO_COLLECTION" if is_3_74_sensor else "core_bpf")
-                },
+                    pre=CollectionMethodOverridePreTest("NO_COLLECTION" if is_3_74_sensor else "core_bpf")
+                )
             )
         ClusterTestSetsRunner(
             cluster=GKECluster(cluster_name,

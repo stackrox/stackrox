@@ -1,4 +1,3 @@
-import React from 'react';
 import { differenceInDays, differenceInMinutes } from 'date-fns';
 import get from 'lodash/get';
 import { DownloadCloud } from 'react-feather';
@@ -7,18 +6,22 @@ import {
     CheckCircleIcon,
     ExclamationCircleIcon,
     ExclamationTriangleIcon,
-    InfoCircleIcon,
     InProgressIcon,
+    InfoCircleIcon,
     MinusCircleIcon,
     ResourcesEmptyIcon,
     UnknownIcon,
 } from '@patternfly/react-icons';
 
-import { Cluster, ClusterHealthStatusLabel, ClusterProviderMetadata } from 'types/cluster.proto';
+import type {
+    Cluster,
+    ClusterHealthStatusLabel,
+    ClusterProviderMetadata,
+} from 'types/cluster.proto';
 import { getDate, getDistanceStrict } from 'utils/dateUtils';
 
 import { healthStatusLabels } from './cluster.constants';
-import { CertExpiryStatus } from './clusterTypes';
+import type { CertExpiryStatus } from './clusterTypes';
 
 export const runtimeOptions = [
     {
@@ -380,10 +383,6 @@ export const isCertificateExpiringSoon = (
     sensorCertExpiryStatus: CertExpiryStatus,
     currentDatetime
 ) => getCredentialExpirationStatus(sensorCertExpiryStatus, currentDatetime) !== 'HEALTHY';
-
-export function formatSensorVersion(sensorVersion: string) {
-    return sensorVersion || 'Not Running';
-}
 
 export const isDelayedSensorHealthStatus = (sensorHealthStatus) =>
     sensorHealthStatus === 'UNHEALTHY' || sensorHealthStatus === 'DEGRADED';

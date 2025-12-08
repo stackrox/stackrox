@@ -1,8 +1,8 @@
-import React from 'react';
+import { useState } from 'react';
 import { Button, Flex, pluralize } from '@patternfly/react-core';
 
 import DeploymentScopeModal from './DeploymentScopeModal';
-import { NetworkScopeHierarchy } from '../types/networkScopeHierarchy';
+import type { NetworkScopeHierarchy } from '../types/networkScopeHierarchy';
 import { ClusterIcon, DeploymentIcon, NamespaceIcon } from '../common/NetworkGraphIcons';
 
 import './NetworkPoliciesGenerationScope.css';
@@ -18,7 +18,7 @@ function NetworkPoliciesGenerationScope({
 }: NetworkPoliciesGenerationScopeProps) {
     const isOnlyClusterScope =
         scopeHierarchy.namespaces.length === 0 && scopeHierarchy.deployments.length === 0;
-    const [showDeploymentModal, setShowDeploymentModal] = React.useState(false);
+    const [showDeploymentModal, setShowDeploymentModal] = useState(false);
 
     let deploymentElement = <span>All deployments</span>;
     let namespaceElement = <span>All namespaces</span>;

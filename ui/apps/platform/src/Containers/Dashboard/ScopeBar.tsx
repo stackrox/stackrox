@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import { useMemo } from 'react';
 import { Toolbar, ToolbarContent, ToolbarItem } from '@patternfly/react-core';
 import { gql, useQuery } from '@apollo/client';
 import omit from 'lodash/omit';
@@ -7,8 +7,9 @@ import useURLSearch from 'hooks/useURLSearch';
 
 import { flattenFilterValue } from 'utils/searchUtils';
 import NamespaceSelect from './NamespaceSelect';
-import ClusterSelect, { SelectionChangeAction } from './ClusterSelect';
-import { Cluster } from './types';
+import ClusterSelect from './ClusterSelect';
+import type { SelectionChangeAction } from './ClusterSelect';
+import type { Cluster } from './types';
 
 type NamespacesResponse = {
     clusters: Cluster[];
@@ -83,9 +84,7 @@ function ScopeBar() {
     return (
         <Toolbar className="pf-v5-u-p-0">
             <ToolbarContent className="pf-v5-u-p-0">
-                <ToolbarItem>
-                    <div>Resources:</div>
-                </ToolbarItem>
+                <ToolbarItem variant="label">Resources:</ToolbarItem>
                 <ToolbarItem>
                     <ClusterSelect
                         clusters={data?.clusters ?? []}

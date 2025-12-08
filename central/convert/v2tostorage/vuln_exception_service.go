@@ -219,8 +219,10 @@ func requestExpiry(expiry *v2.ExceptionExpiry) *storage.RequestExpiry {
 	}
 	switch expiry.GetExpiryType() {
 	case v2.ExceptionExpiry_TIME:
-		ret.Expiry = &storage.RequestExpiry_ExpiresOn{
-			ExpiresOn: expiry.GetExpiresOn(),
+		if expiry.GetExpiresOn() != nil {
+			ret.Expiry = &storage.RequestExpiry_ExpiresOn{
+				ExpiresOn: expiry.GetExpiresOn(),
+			}
 		}
 	case v2.ExceptionExpiry_ANY_CVE_FIXABLE:
 		// Set the legacy field for backward compatibility.

@@ -79,7 +79,7 @@ func (s *virtualMachineServiceSuite) TestUpsertVirtualMachine_NilConnection() {
 
 	resp, err := s.service.UpsertVirtualMachineIndexReport(ctx, req)
 	s.Assert().NotNil(resp)
-	s.Assert().False(resp.Success)
+	s.Assert().False(resp.GetSuccess())
 	s.Assert().Error(err)
 	s.Assert().ErrorIs(err, errox.ResourceExhausted)
 }
@@ -101,7 +101,7 @@ func (s *virtualMachineServiceSuite) TestUpsertVirtualMachine_WithConnection() {
 
 	resp, err := s.service.UpsertVirtualMachineIndexReport(ctx, req)
 	s.Require().NotNil(resp)
-	s.Require().True(resp.Success)
+	s.Require().True(resp.GetSuccess())
 	s.Require().NoError(err)
 }
 
@@ -116,6 +116,6 @@ func (s *virtualMachineServiceSuite) TestUpsertVirtualMachine_NilVirtualMachine(
 
 	req := &sensor.UpsertVirtualMachineIndexReportRequest{}
 	resp, err := s.service.UpsertVirtualMachineIndexReport(ctx, req)
-	s.Require().Equal(resp.Success, false)
+	s.Require().Equal(resp.GetSuccess(), false)
 	s.Require().ErrorIs(err, errox.InvalidArgs)
 }

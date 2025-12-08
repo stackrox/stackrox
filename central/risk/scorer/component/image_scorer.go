@@ -6,13 +6,12 @@ import (
 	"github.com/stackrox/rox/central/risk/datastore"
 	"github.com/stackrox/rox/central/risk/multipliers/component"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/scancomponent"
 )
 
 // Scorer is the object that encompasses the multipliers for evaluating component risk
 type ImageScorer interface {
-	Score(ctx context.Context, component scancomponent.ScanComponent, os string, imageComponent *storage.EmbeddedImageScanComponent, imageID string) *storage.Risk
+	Score(ctx context.Context, component scancomponent.ScanComponent, os string, imageComponent *storage.EmbeddedImageScanComponent, imageID string, index int) *storage.Risk
 }
 
 // NewComponentScorer returns a new scorer that encompasses multipliers for evaluating component risk
@@ -31,7 +30,7 @@ type componentImageScorerImpl struct {
 }
 
 // Score takes a component and evaluates its risk
-func (s *componentImageScorerImpl) Score(ctx context.Context, scanComponent scancomponent.ScanComponent, os string, imageComponent *storage.EmbeddedImageScanComponent, imageID string) *storage.Risk {
+func (s *componentImageScorerImpl) Score(ctx context.Context, scanComponent scancomponent.ScanComponent, os string, imageComponent *storage.EmbeddedImageScanComponent, imageID string, index int) *storage.Risk {
 	riskResults := make([]*storage.Risk_Result, 0, len(s.ConfiguredMultipliers))
 	overallScore := float32(1.0)
 	for _, mult := range s.ConfiguredMultipliers {
@@ -44,17 +43,7 @@ func (s *componentImageScorerImpl) Score(ctx context.Context, scanComponent scan
 		return nil
 	}
 
-	var componentID string
-	var err error
-	if features.FlattenCVEData.Enabled() {
-		componentID, err = scancomponent.ComponentIDV2(imageComponent, imageID)
-		if err != nil {
-			log.Errorf("Unable to score %s: %v", scanComponent.GetName(), err)
-			return nil
-		}
-	} else {
-		componentID = scancomponent.ComponentID(scanComponent.GetName(), scanComponent.GetVersion(), os)
-	}
+	componentID := scancomponent.ComponentIDV2(imageComponent, imageID, index)
 
 	risk := &storage.Risk{
 		Score:   overallScore,

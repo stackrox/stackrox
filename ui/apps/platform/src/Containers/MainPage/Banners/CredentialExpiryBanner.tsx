@@ -1,9 +1,10 @@
-import React, { ReactElement, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
+import type { ReactElement } from 'react';
 import { Banner, Button } from '@patternfly/react-core';
 
 import { generateCertSecretForComponent } from 'services/CertGenerationService';
 import { fetchCertExpiryForComponent } from 'services/CredentialExpiryService';
-import { CertExpiryComponent } from 'types/credentialExpiryService.proto';
+import type { CertExpiryComponent } from 'types/credentialExpiryService.proto';
 import {
     getBannerVariant,
     getCredentialExpiryPhrase,
@@ -50,20 +51,15 @@ function CredentialExpiryBanner({
         </Button>
     );
     const name = nameOfComponent[component];
-    const message = (
-        <span className="flex-1 text-center">
+
+    return (
+        <Banner className="pf-v5-u-text-align-center" variant={getBannerVariant(type)}>
             {`${name} certificate ${getCredentialExpiryPhrase(expirationDate, now)}. `}
             {showCertGenerateAction ? (
                 <>To use renewed certificates, {downloadLink} and apply it to your cluster.</>
             ) : (
                 'Contact your administrator.'
             )}
-        </span>
-    );
-
-    return (
-        <Banner className="pf-v5-u-text-align-center" variant={getBannerVariant(type)}>
-            {message}
         </Banner>
     );
 }

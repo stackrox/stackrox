@@ -38,7 +38,7 @@ func (r *remoteIndexer) Close(_ context.Context) error {
 }
 
 // GetIndexReport calls the remote service to retrieve an IndexReport for the given hash ID.
-func (r *remoteIndexer) GetIndexReport(ctx context.Context, hashID string) (*claircore.IndexReport, bool, error) {
+func (r *remoteIndexer) GetIndexReport(ctx context.Context, hashID string, _ bool) (*claircore.IndexReport, bool, error) {
 	ctx = zlog.ContextWithValues(ctx,
 		"component", "scanner/backend/remoteIndexer.GetIndexReport",
 		"hash_id", hashID,

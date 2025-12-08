@@ -54,16 +54,25 @@ func (ed *EntityData) String() string {
 		return "nil"
 	}
 	return fmt.Sprintf("ips: %v, endpoints: %v, containerIDs: %v",
-		maps.Keys(ed.ips), maps.Keys(ed.endpoints), maps.Keys(ed.containerIDs))
+		slices.Collect(maps.Keys(ed.ips)), slices.Collect(maps.Keys(ed.endpoints)), slices.Collect(maps.Keys(ed.containerIDs)))
 }
 
-// GetDetails returns the internal data about the entity
-func (ed *EntityData) GetDetails() (containerIDs []string, podIPs []net.IPAddress) {
-	containerIDs = slices.Collect(maps.Keys(ed.containerIDs))
-	podIPs = slices.DeleteFunc(slices.Collect(maps.Keys(ed.ips)), func(e net.IPAddress) bool {
+// GetContainerIDs returns containerIDs for container with matching name
+func (ed *EntityData) GetContainerIDs(containerName string) []string {
+	ids := make([]string, 0)
+	for s, metadata := range ed.containerIDs {
+		if metadata.ContainerName == containerName {
+			ids = append(ids, s)
+		}
+	}
+	return ids
+}
+
+// GetValidIPs returns list of valid entity IP addresses
+func (ed *EntityData) GetValidIPs() []net.IPAddress {
+	return slices.DeleteFunc(slices.Collect(maps.Keys(ed.ips)), func(e net.IPAddress) bool {
 		return !e.IsValid()
 	})
-	return
 }
 
 // isDeleteOnly prevents from treating a request as ADD with empty values, as such requests should be treated as DELETE
@@ -115,6 +124,16 @@ type Store struct {
 
 	// pastSensors provides data about past Sensor IPs and container IDs
 	pastSensors HeritageManager
+	// heritageApplied ensures that past heritage data is applied to the current instance only once.
+	heritageApplied concurrency.Signal
+
+	// Cache enriched data for the current instance of Sensor.
+	// This data won't be stored into config map.
+	// It will be used to find the data about the current sensor instance,
+	// so that the past data can be applied to it.
+	currentSensorLock         sync.RWMutex
+	currentSensorDeploymentID string
+	currentSensorEntityData   *EntityData
 
 	// memorySize defines how many ticks old endpoint data should be remembered after removal request
 	// Set to 0 to disable memory
@@ -129,6 +148,7 @@ type Store struct {
 type HeritageManager interface {
 	GetData(ctx context.Context) []*heritage.SensorMetadata
 	SetCurrentSensorData(currentIP, currentContainerID string)
+	IsEnabled() bool
 }
 
 // NewStore returns store that remembers past IPs of an endpoint for a given number of ticks
@@ -139,6 +159,7 @@ func NewStore(numTicks uint16, hm HeritageManager, debugMode bool) *Store {
 		containerIDsStore: newContainerIDsStoreWithMemory(numTicks),
 		memorySize:        numTicks,
 		pastSensors:       hm,
+		heritageApplied:   concurrency.NewSignal(),
 		debugMode:         debugMode,
 	}
 	store.initMaps()
@@ -174,6 +195,109 @@ func (e *Store) Cleanup() {
 
 func (e *Store) GetHeritageManager() HeritageManager {
 	return e.pastSensors
+}
+
+// ApplyDataFromHeritageOnce adds heritage data about past sensors to the store if that hasn't happened yet.
+func (e *Store) ApplyDataFromHeritageOnce() {
+	if e.heritageApplied.IsDone() {
+		return
+	}
+	if !e.pastSensors.IsEnabled() {
+		log.Info("Won't apply heritage data to cluster-entities Store - feature is disabled")
+		e.heritageApplied.Signal()
+		return
+	}
+	if e.applyHeritageData(e.pastSensors) {
+		e.heritageApplied.Signal()
+	}
+}
+
+type dataGetter interface {
+	GetData(ctx context.Context) []*heritage.SensorMetadata
+	IsEnabled() bool
+}
+
+// applyHeritageData adds heritage data about past sensors to the store. Returns true on success, and false otherwise.
+func (e *Store) applyHeritageData(dg dataGetter) bool {
+	// Applying heritage data would pollute the data about current sensor (it would be impossible to tell
+	// the current container ID from the past ones), so we must wait until current sensor metadata is stored.
+	// Only then we can add heritage data to the store.
+	if !e.HasCurrentSensorMetadata() {
+		log.Warnf("Can't apply heritage data - missing current sensor metadata.")
+		return false
+	}
+
+	apiReadCtx, cancel := context.WithTimeout(context.Background(), time.Second)
+	defer cancel()
+
+	past := dg.GetData(apiReadCtx)
+	if len(past) == 0 {
+		log.Warnf("Can't apply heritage data - incomplete heritage data.")
+		return false
+	}
+
+	e.currentSensorLock.RLock()
+	defer e.currentSensorLock.RUnlock()
+	for _, entry := range past {
+		log.Infof("Applying heritage data %q to current Sensor deploymentID %s", entry.String(), e.currentSensorDeploymentID)
+		modEntityData := e.currentSensorEntityData
+		if applyPastToEntityData(modEntityData, entry) {
+			e.Apply(map[string]*EntityData{e.currentSensorDeploymentID: modEntityData}, true)
+		}
+	}
+	return true
+}
+
+// RememberCurrentSensorMetadata stores internally current deploymentID and EntityData of Sensor container.
+// The data will be used to identify the target (i.e., finding Sensor in entityStore) to apply the heritage data.
+func (e *Store) RememberCurrentSensorMetadata(deplID string, data *EntityData) {
+	e.currentSensorLock.Lock()
+	defer e.currentSensorLock.Unlock()
+	e.currentSensorDeploymentID = deplID
+	e.currentSensorEntityData = data
+}
+
+func (e *Store) HasCurrentSensorMetadata() bool {
+	e.currentSensorLock.RLock()
+	defer e.currentSensorLock.RUnlock()
+	return e.currentSensorDeploymentID != "" && e.currentSensorEntityData != nil
+}
+
+// applyPastToEntityData returns true if the `past` data was added to `data`; false otherwise.
+func applyPastToEntityData(data *EntityData, past *heritage.SensorMetadata) bool {
+	if _, found := data.containerIDs[past.ContainerID]; found {
+		// The cluster entities store knows about this past instance of sensor. Skip adding.
+		log.Debugf("Cluster entities store already knows about container %s. Skipping.", past.ContainerID)
+		return false
+	}
+	log.Debugf("Adding heritage data: %s", past.String())
+
+	pastIP := net.ParseIP(past.PodIP)
+	// Adding additional pod IP to the Sensor deployment
+	data.AddIP(pastIP)
+	for endpoint, infos := range data.endpoints {
+		// Craft endpoint with the same port and proto but with past IP
+		newEndpoint := net.MakeNumericEndpoint(pastIP, endpoint.IPAndPort.Port, endpoint.L4Proto)
+		// Container port and port name included in `infos` remain the same
+		for _, info := range infos {
+			data.AddEndpoint(newEndpoint, info)
+		}
+	}
+	// Sensor has a few containers. Let's find the `sensor` one.
+	currentSensorContainerID := ""
+	for s, metadata := range data.containerIDs {
+		if metadata.ContainerName == "sensor" {
+			currentSensorContainerID = s
+		}
+	}
+	currentMetaCopy := data.containerIDs[currentSensorContainerID]
+	// This adds a new container to the current sensor deployment.
+	// We could theoretically copy the entire metadata as we do not care whether something has happened
+	// to the past sensor or the current one. However, there maybe some conflicts, so let's set the basics.
+	currentMetaCopy.ContainerID = past.ContainerID
+	currentMetaCopy.StartTime = &past.SensorStart
+	data.containerIDs[past.ContainerID] = currentMetaCopy
+	return true
 }
 
 // Apply applies an update to the store. If incremental is true, data will be added; otherwise, data for each deployment

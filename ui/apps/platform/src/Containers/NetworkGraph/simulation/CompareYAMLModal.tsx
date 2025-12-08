@@ -1,4 +1,3 @@
-import React from 'react';
 import { Button, Flex, Modal, Text, Title } from '@patternfly/react-core';
 import NetworkPoliciesYAML from './NetworkPoliciesYAML';
 

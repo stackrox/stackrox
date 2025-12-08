@@ -366,7 +366,7 @@ func TestSAAnnotationImageIntegrationEvents(t *testing.T) {
 func getImageIntegrationEvents(events *component.ResourceEvent) []*central.SensorEvent_ImageIntegration {
 	var iiEvents []*central.SensorEvent_ImageIntegration
 	for _, e := range events.ForwardMessages {
-		msg, ok := e.Resource.(*central.SensorEvent_ImageIntegration)
+		msg, ok := e.GetResource().(*central.SensorEvent_ImageIntegration)
 		if ok {
 			iiEvents = append(iiEvents, msg)
 		}

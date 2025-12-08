@@ -1,4 +1,4 @@
-import React, { ReactElement } from 'react';
+import type { ReactElement } from 'react';
 import { Popover } from '@patternfly/react-core';
 import { HelpIcon } from '@patternfly/react-icons';
 
@@ -6,7 +6,7 @@ import PopoverBodyContent from 'Components/PopoverBodyContent';
 
 export type IntegrationHelpIconProps = {
     helpTitle: string;
-    helpText: React.ReactElement;
+    helpText: ReactElement;
     ariaLabel: string;
     hasAutoWidth?: boolean;
 };

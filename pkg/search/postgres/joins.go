@@ -6,9 +6,6 @@ import (
 	"strings"
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/pkg/env"
-	"github.com/stackrox/rox/pkg/features"
-	"github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/set"
@@ -19,11 +16,6 @@ type JoinType int
 const (
 	Inner JoinType = iota
 	Left
-)
-
-var (
-	schemasWithImageID    = []*walker.Schema{schema.ImagesSchema, schema.ImageComponentEdgesSchema}
-	schemasWithImageCVEID = []*walker.Schema{schema.ImageCvesSchema, schema.ImageComponentCveEdgesSchema}
 )
 
 type joinTreeNode struct {
@@ -122,7 +114,7 @@ func collectFields(q *v1.Query) (set.StringSet, set.StringSet) {
 	nullableFields := set.NewStringSet()
 	switch sub := q.GetQuery().(type) {
 	case *v1.Query_BaseQuery:
-		switch subBQ := q.GetBaseQuery().Query.(type) {
+		switch subBQ := q.GetBaseQuery().GetQuery().(type) {
 		case *v1.BaseQuery_DocIdQuery, *v1.BaseQuery_MatchNoneQuery:
 			// nothing to do
 		case *v1.BaseQuery_MatchFieldQuery:
@@ -131,7 +123,7 @@ func collectFields(q *v1.Query) (set.StringSet, set.StringSet) {
 				nullableFields.Add(subBQ.MatchFieldQuery.GetField())
 			}
 		case *v1.BaseQuery_MatchLinkedFieldsQuery:
-			for _, q := range subBQ.MatchLinkedFieldsQuery.Query {
+			for _, q := range subBQ.MatchLinkedFieldsQuery.GetQuery() {
 				collectedFields.Add(q.GetField())
 				if q.GetValue() == search.NullString {
 					nullableFields.Add(q.GetField())
@@ -141,12 +133,12 @@ func collectFields(q *v1.Query) (set.StringSet, set.StringSet) {
 			panic("unsupported")
 		}
 	case *v1.Query_Conjunction:
-		queries = append(queries, sub.Conjunction.Queries...)
+		queries = append(queries, sub.Conjunction.GetQueries()...)
 	case *v1.Query_Disjunction:
-		queries = append(queries, sub.Disjunction.Queries...)
+		queries = append(queries, sub.Disjunction.GetQueries()...)
 	case *v1.Query_BooleanQuery:
-		queries = append(queries, sub.BooleanQuery.Must.Queries...)
-		queries = append(queries, sub.BooleanQuery.MustNot.Queries...)
+		queries = append(queries, sub.BooleanQuery.GetMust().GetQueries()...)
+		queries = append(queries, sub.BooleanQuery.GetMustNot().GetQueries()...)
 	}
 
 	for _, query := range queries {
@@ -177,20 +169,6 @@ type searchFieldMetadata struct {
 func getJoinsAndFields(src *walker.Schema, q *v1.Query) ([]Join, map[string]searchFieldMetadata) {
 	unreachedFields, nullableFields := collectFields(q)
 
-	if env.ImageCVEEdgeCustomJoin.BooleanSetting() && !features.FlattenCVEData.Enabled() {
-		// Step 1: If ImageCveEdgesSchema is going to be a part of joins, we want to ensure that we are able to join on both
-		//  ImageId and ImageCveId fields
-		if src != schema.ImageCveEdgesSchema &&
-			containsFieldsFromSchemas(unreachedFields, []*walker.Schema{schema.ImageCveEdgesSchema}) {
-			if !containsFieldsFromSchemas(unreachedFields, schemasWithImageID) {
-				unreachedFields.Add(strings.ToLower(search.ImageSHA.String()))
-			}
-			if !containsFieldsFromSchemas(unreachedFields, schemasWithImageCVEID) {
-				unreachedFields.Add(strings.ToLower(search.CVEID.String()))
-			}
-		}
-	}
-
 	joinTreeRoot := &joinTreeNode{
 		currNode: src,
 	}
@@ -198,29 +176,9 @@ func getJoinsAndFields(src *walker.Schema, q *v1.Query) ([]Join, map[string]sear
 	queue := []bfsQueueElem{{schema: src}}
 	visited := set.NewStringSet()
 
-	imageCveEdgesSchemaInQueue := false
-	if src == schema.ImageCveEdgesSchema {
-		imageCveEdgesSchemaInQueue = true
-	}
-
 	for len(queue) > 0 && len(unreachedFields) > 0 {
 		currElem := queue[0]
 		queue = queue[1:]
-
-		if env.ImageCVEEdgeCustomJoin.BooleanSetting() && !features.FlattenCVEData.Enabled() {
-			// Step 2: Avoid using ImageCveEdgesSchema unless there is no other way to get to the required fields.
-			// If ImageCveEdgesSchema is root schema, then it is unavoidable.
-			if currElem.schema == schema.ImageCveEdgesSchema && currElem.schema != src {
-				// If there are more schemas to expand in queue, expand them first. Hopefully we will find all required fields
-				//   without having to use ImageCveEdgesSchema.
-				// But if there are no more schemas to expand, and we still have unreachable fields,
-				//   then they must be fields of ImageCveEdgesSchema. In that case ImageCveEdgesSchema is unavoidable.
-				if len(queue) > 0 {
-					queue = append(queue, currElem)
-					continue
-				}
-			}
-		}
 
 		if !visited.Add(currElem.schema.Table) {
 			continue
@@ -269,19 +227,6 @@ func getJoinsAndFields(src *walker.Schema, q *v1.Query) ([]Join, map[string]sear
 				}
 			}
 
-			if env.ImageCVEEdgeCustomJoin.BooleanSetting() && !features.FlattenCVEData.Enabled() {
-				// We want to make sure ImageCveEdgesSchema gets added only once to queue. If there are multiple copies of
-				// ImageCveEdgesSchema in the queue, then we can enter an infinite loop trying to push one copy after another
-				// to the end of queue.
-				if rel.OtherSchema == schema.ImageCveEdgesSchema {
-					if imageCveEdgesSchemaInQueue {
-						continue
-					} else {
-						imageCveEdgesSchemaInQueue = true
-					}
-				}
-			}
-
 			newElem := bfsQueueElem{
 				schema: rel.OtherSchema,
 			}
@@ -302,24 +247,6 @@ func getJoinsAndFields(src *walker.Schema, q *v1.Query) ([]Join, map[string]sear
 	joinTreeRoot.removeUnnecessaryRelations(reachableFields)
 
 	return joinTreeRoot.toJoins(), reachableFields
-}
-
-func containsFieldsFromSchemas(fields set.StringSet, schemas []*walker.Schema) bool {
-	for _, s := range schemas {
-		for _, f := range s.Fields {
-			if !f.Derived {
-				if fields.Contains(strings.ToLower(f.Search.FieldName)) {
-					return true
-				}
-			}
-			for _, derivedF := range f.DerivedSearchFields {
-				if fields.Contains(strings.ToLower(derivedF.DerivedFrom)) {
-					return true
-				}
-			}
-		}
-	}
-	return false
 }
 
 // removeUnnecessaryRelations removes inner join tables where the same column

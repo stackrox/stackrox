@@ -1,4 +1,4 @@
-import React, { ReactElement } from 'react';
+import type { ReactElement } from 'react';
 
 import { violationsBasePath } from 'routePaths';
 import useFilteredWorkflowViewURLState, {

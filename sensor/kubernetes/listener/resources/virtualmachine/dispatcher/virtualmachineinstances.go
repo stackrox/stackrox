@@ -2,7 +2,7 @@ package dispatcher
 
 import (
 	"github.com/stackrox/rox/generated/internalapi/central"
-	virtualMachineV1 "github.com/stackrox/rox/generated/internalapi/virtualmachine/v1"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/sensor/common/virtualmachine"
 	"github.com/stackrox/rox/sensor/kubernetes/eventpipeline/component"
@@ -18,7 +18,7 @@ var (
 type virtualMachineStore interface {
 	Has(id virtualmachine.VMID) bool
 	Get(id virtualmachine.VMID) *virtualmachine.Info
-	AddOrUpdate(vm *virtualmachine.Info)
+	AddOrUpdate(vm *virtualmachine.Info) *virtualmachine.Info
 	Remove(id virtualmachine.VMID)
 	UpdateStateOrCreate(vm *virtualmachine.Info)
 	ClearState(id virtualmachine.VMID)
@@ -41,6 +41,9 @@ func (d *VirtualMachineInstanceDispatcher) ProcessEvent(
 	_ interface{},
 	action central.ResourceAction,
 ) *component.ResourceEvent {
+	if !features.VirtualMachines.Enabled() {
+		return nil
+	}
 	virtualMachineInstance := &kubeVirtV1.VirtualMachineInstance{}
 	if err := k8sUtils.FromUnstructuredToSpecificTypePointer(obj, virtualMachineInstance); err != nil {
 		log.Errorf("unable to convert 'Unstructured' to 'VirtualMachineInstance': %v", err)
@@ -66,6 +69,7 @@ func (d *VirtualMachineInstanceDispatcher) ProcessEvent(
 		Namespace: namespace,
 		Running:   virtualMachineInstance.Status.Phase == kubeVirtV1.Running,
 		VSOCKCID:  virtualMachineInstance.Status.VSOCKCID,
+		GuestOS:   virtualMachineInstance.Status.GuestOSInfo.Name,
 	}
 	// If the instance is NOT handled by a VirtualMachine
 	// Process the instance as a VirtualMachine
@@ -98,16 +102,5 @@ func (d *VirtualMachineInstanceDispatcher) ProcessEvent(
 	}
 
 	// Send an Update event for the VirtualMachine that handles this instance
-	return component.NewEvent(&central.SensorEvent{
-		Id:     string(vm.ID),
-		Action: central.ResourceAction_UPDATE_RESOURCE,
-		Resource: &central.SensorEvent_VirtualMachine{
-			VirtualMachine: &virtualMachineV1.VirtualMachine{
-				Id:        string(vm.ID),
-				Name:      vm.Name,
-				Namespace: vm.Namespace,
-				ClusterId: d.clusterID,
-			},
-		},
-	})
+	return component.NewEvent(createEvent(central.ResourceAction_UPDATE_RESOURCE, d.clusterID, vm))
 }

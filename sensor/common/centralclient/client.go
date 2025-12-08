@@ -158,8 +158,8 @@ func (c *Client) GetTLSTrustedCerts(ctx context.Context) (certs []*x509.Certific
 		return nil, nil, errors.Wrap(err, "verifying tls challenge")
 	}
 
-	if trustInfo.SensorChallenge != token {
-		return nil, nil, errors.Errorf("validating Central response failed: Sensor token %q did not match received token %q", token, trustInfo.SensorChallenge)
+	if trustInfo.GetSensorChallenge() != token {
+		return nil, nil, errors.Errorf("validating Central response failed: Sensor token %q did not match received token %q", token, trustInfo.GetSensorChallenge())
 	}
 
 	for _, ca := range trustInfo.GetAdditionalCas() {
@@ -221,8 +221,8 @@ func (c *Client) parseTLSChallengeResponse(challenge *v1.TLSChallengeResponse) (
 	}
 
 	// Try primary CA first
-	err = validateCertChain(trustInfo.GetCertChain(), challenge.TrustInfoSerialized,
-		challenge.Signature, rootCAs, "primary")
+	err = validateCertChain(trustInfo.GetCertChain(), challenge.GetTrustInfoSerialized(),
+		challenge.GetSignature(), rootCAs, "primary")
 	if err == nil {
 		return &trustInfo, nil
 	}
@@ -231,8 +231,8 @@ func (c *Client) parseTLSChallengeResponse(challenge *v1.TLSChallengeResponse) (
 	if len(trustInfo.GetSecondaryCertChain()) == 0 {
 		return nil, errors.Wrap(err, "validating primary Central certificate chain (no secondary certificate chain present)")
 	}
-	err = validateCertChain(trustInfo.GetSecondaryCertChain(), challenge.TrustInfoSerialized,
-		challenge.SignatureSecondaryCa, rootCAs, "secondary")
+	err = validateCertChain(trustInfo.GetSecondaryCertChain(), challenge.GetTrustInfoSerialized(),
+		challenge.GetSignatureSecondaryCa(), rootCAs, "secondary")
 	if err != nil {
 		return nil, err
 	}

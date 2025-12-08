@@ -44,7 +44,6 @@ const eventTimelineSelectors = scopeSelectors('[data-testid="event-timeline"]', 
 
 export const selectors = {
     risk: `${navigationSelectors.navLinks}:contains("Risk")`,
-    panel: '[data-testid="panel"]',
     search: {
         valueContainer: '.react-select__value-container',
         searchLabels: '.react-select__multi-value__label',

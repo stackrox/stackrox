@@ -9,10 +9,14 @@ package scanner.v4;
 option go_package = "./internalapi/scanner/v4;v4";
 
 message Contents {
-  repeated Package packages = 1;
-  repeated Distribution distributions = 2;
-  repeated Repository repositories = 3;
-  map<string, Environment.List> environments = 4;
+  repeated Package packagesDEPRECATED = 1 [deprecated = true];
+  map<string, Package> packages = 5;
+  repeated Distribution distributionsDEPRECATED = 2 [deprecated = true];
+  map<string, Distribution> distributions = 6;
+  repeated Repository repositoriesDEPRECATED = 3 [deprecated = true];
+  map<string, Repository> repositories = 7;
+  map<string, Environment.List> environmentsDEPRECATED = 4 [deprecated = true];
+  map<string, Environment.List> environments = 8;
 }
 
 message Package {

@@ -77,9 +77,9 @@ var (
 		LastExecutedTime: types.TimestampNow(),
 	}
 
-	scan1Time = protoconv.ConvertTimestampToTimeOrNow(scan1.LastExecutedTime)
-	scan2Time = protoconv.ConvertTimestampToTimeOrNow(scan2.LastExecutedTime)
-	scan3Time = protoconv.ConvertTimestampToTimeOrNow(scan3.LastExecutedTime)
+	scan1Time = protoconv.ConvertTimestampToTimeOrNow(scan1.GetLastExecutedTime())
+	scan2Time = protoconv.ConvertTimestampToTimeOrNow(scan2.GetLastExecutedTime())
+	scan3Time = protoconv.ConvertTimestampToTimeOrNow(scan3.GetLastExecutedTime())
 )
 
 func TestAuthz(t *testing.T) {
@@ -313,9 +313,9 @@ func (s *ComplianceResultsStatsServiceTestSuite) TestGetComplianceClusterStats()
 			},
 			expectedErr: nil,
 			expectedResp: []*apiV2.ComplianceClusterOverallStats{
-				convertUtils.GetComplianceClusterV2Count(s.T(), fixtureconsts.Cluster1, scan1.LastExecutedTime),
-				convertUtils.GetComplianceClusterV2Count(s.T(), fixtureconsts.Cluster2, scan2.LastExecutedTime),
-				convertUtils.GetComplianceClusterV2Count(s.T(), fixtureconsts.Cluster3, scan3.LastExecutedTime),
+				convertUtils.GetComplianceClusterV2Count(s.T(), fixtureconsts.Cluster1, scan1.GetLastExecutedTime()),
+				convertUtils.GetComplianceClusterV2Count(s.T(), fixtureconsts.Cluster2, scan2.GetLastExecutedTime()),
+				convertUtils.GetComplianceClusterV2Count(s.T(), fixtureconsts.Cluster3, scan3.GetLastExecutedTime()),
 			},
 			setMocks: func() {
 				expectedQ := search.ConjunctionQuery(
@@ -347,7 +347,7 @@ func (s *ComplianceResultsStatsServiceTestSuite) TestGetComplianceClusterStats()
 			},
 			expectedErr: nil,
 			expectedResp: []*apiV2.ComplianceClusterOverallStats{
-				convertUtils.GetComplianceClusterV2Count(s.T(), fixtureconsts.Cluster1, scan1.LastExecutedTime),
+				convertUtils.GetComplianceClusterV2Count(s.T(), fixtureconsts.Cluster1, scan1.GetLastExecutedTime()),
 			},
 			setMocks: func() {
 				expectedQ := search.ConjunctionQuery(

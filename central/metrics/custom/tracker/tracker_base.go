@@ -1,48 +1,47 @@
 package tracker
 
 import (
+	"cmp"
 	"context"
 	"iter"
 	"maps"
 	"net/http"
 	"slices"
+	"strings"
 	"sync/atomic"
 	"time"
 
-	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/metrics"
+	"github.com/stackrox/rox/central/telemetry/centralclient"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sync"
+	"github.com/stackrox/rox/pkg/telemetry/phonehome/telemeter"
 )
+
+const inactiveGathererTTL = 2 * 24 * time.Hour
 
 var (
-	log             = logging.CreateLogger(logging.ModuleForName("central_metrics"), 1)
-	ErrStopIterator = errors.New("stopped")
+	log = logging.CreateLogger(logging.ModuleForName("central_metrics"), 1)
 )
 
-type WithError interface {
-	GetError() error
-}
+// Getter is a function, normally bound to a label, that extracts the label
+// value from a finding.
+type Getter[F Finding] func(F) string
 
-// LazyLabel enables deferred evaluation of a label's value.
+// LazyLabelGetters enables deferred evaluation of a label's value.
 // Computing and storing values for all labels for every finding would be
 // inefficient. Instead, the Getter function computes the value for this
 // specific label only when provided with a finding.
-type LazyLabel[Finding WithError] struct {
-	Label
-	Getter func(Finding) string
-}
+type LazyLabelGetters[F Finding] map[Label]Getter[F]
 
-// MakeLabelOrderMap maps labels to their order according to the order of
-// the labels in the list of getters.
-// Respecting the order is important for computing the aggregation key, which is
-// a concatenation of label values.
-func MakeLabelOrderMap[Finding WithError](getters []LazyLabel[Finding]) map[Label]int {
-	result := make(map[Label]int, len(getters))
-	for i, getter := range getters {
-		result[getter.Label] = i + 1
+// GetLabels returns a slice of labels from the list of lazy getters.
+func (ll LazyLabelGetters[F]) GetLabels() []string {
+	result := make([]string, 0, len(ll))
+	for _, label := range slices.Sorted(maps.Keys(ll)) {
+		result = append(result, string(label))
 	}
 	return result
 }
@@ -57,8 +56,11 @@ type Tracker interface {
 	Reconfigure(*Configuration)
 }
 
+// FindingErrorSequence is a sequence of pairs of findings and errors.
+type FindingErrorSequence[F Finding] = iter.Seq2[F, error]
+
 // FindingGenerator returns an iterator to the sequence of findings.
-type FindingGenerator[Finding WithError] func(context.Context, MetricDescriptors) iter.Seq[Finding]
+type FindingGenerator[F Finding] func(context.Context, MetricDescriptors) FindingErrorSequence[F]
 
 type gatherer struct {
 	http.Handler
@@ -70,54 +72,44 @@ type gatherer struct {
 // TrackerBase implements a generic finding tracker.
 // Configured with a finding generator and other arguments, it runs a goroutine
 // that periodically aggregates gathered values and updates the gauge values.
-type TrackerBase[Finding WithError] struct {
+type TrackerBase[F Finding] struct {
 	metricPrefix string
 	description  string
-	labelOrder   map[Label]int
-	getters      map[Label]func(Finding) string
-	generator    FindingGenerator[Finding]
+	getters      LazyLabelGetters[F]
+	generator    FindingGenerator[F]
 
 	// metricsConfig can be changed with an API call.
 	config           *Configuration
 	metricsConfigMux sync.RWMutex
 
-	gatherers sync.Map // map[user ID]*tokenGatherer
+	gatherers sync.Map       // map[user ID]*gatherer
+	cleanupWG sync.WaitGroup // for sync in testing.
 
-	registryFactory func(userID string) metrics.CustomRegistry // for mocking in tests.
-}
-
-// makeGettersMap transforms a list of label names with their getters to a map.
-func makeGettersMap[Finding WithError](getters []LazyLabel[Finding]) map[Label]func(Finding) string {
-	result := make(map[Label]func(Finding) string, len(getters))
-	for _, getter := range getters {
-		result[getter.Label] = getter.Getter
-	}
-	return result
+	registryFactory func(userID string) (metrics.CustomRegistry, error) // for mocking in tests.
 }
 
 // MakeTrackerBase initializes a tracker without any period or metrics
 // configuration. Call Reconfigure to configure the period and the metrics.
-func MakeTrackerBase[Finding WithError](metricPrefix, description string,
-	getters []LazyLabel[Finding], generator FindingGenerator[Finding],
-) *TrackerBase[Finding] {
-	return &TrackerBase[Finding]{
+func MakeTrackerBase[F Finding](metricPrefix, description string,
+	getters LazyLabelGetters[F], generator FindingGenerator[F],
+) *TrackerBase[F] {
+	return &TrackerBase[F]{
 		metricPrefix:    metricPrefix,
 		description:     description,
-		labelOrder:      MakeLabelOrderMap(getters),
-		getters:         makeGettersMap(getters),
+		getters:         getters,
 		generator:       generator,
 		registryFactory: metrics.GetCustomRegistry,
 	}
 }
 
 // NewConfiguration does not apply the configuration.
-func (tracker *TrackerBase[Finding]) NewConfiguration(cfg *storage.PrometheusMetrics_Group) (*Configuration, error) {
+func (tracker *TrackerBase[F]) NewConfiguration(cfg *storage.PrometheusMetrics_Group) (*Configuration, error) {
 	current := tracker.getConfiguration()
 	if current == nil {
 		current = &Configuration{}
 	}
 
-	md, err := translateStorageConfiguration(cfg.GetDescriptors(), tracker.metricPrefix, tracker.labelOrder)
+	md, err := tracker.translateStorageConfiguration(cfg.GetDescriptors())
 	if err != nil {
 		return nil, err
 	}
@@ -136,7 +128,7 @@ func (tracker *TrackerBase[Finding]) NewConfiguration(cfg *storage.PrometheusMet
 
 // Reconfigure assumes the configuration has been validated, so doesn't return
 // an error.
-func (tracker *TrackerBase[Finding]) Reconfigure(cfg *Configuration) {
+func (tracker *TrackerBase[F]) Reconfigure(cfg *Configuration) {
 	if cfg == nil {
 		cfg = &Configuration{}
 	}
@@ -210,9 +202,9 @@ func (tracker *TrackerBase[Finding]) track(ctx context.Context, registry metrics
 	if len(metrics) == 0 {
 		return nil
 	}
-	aggregator := makeAggregator(metrics, tracker.labelOrder, tracker.getters)
-	for finding := range tracker.generator(ctx, metrics) {
-		if err := finding.GetError(); err != nil {
+	aggregator := makeAggregator(metrics, tracker.getters)
+	for finding, err := range tracker.generator(ctx, metrics) {
+		if err != nil {
 			return err
 		}
 		aggregator.count(finding)
@@ -238,39 +230,108 @@ func (tracker *TrackerBase[Finding]) Gather(ctx context.Context) {
 	if cfg == nil {
 		return
 	}
+	// Pass the cfg so that the same configuration is used there and here.
 	gatherer := tracker.getGatherer(id.UID(), cfg)
-
-	// Return if is still running.
-	if !gatherer.running.CompareAndSwap(false, true) {
+	// getGatherer() returns nil if the gatherer is still running.
+	if gatherer == nil {
 		return
 	}
+	defer tracker.cleanupInactiveGatherers()
 	defer gatherer.running.Store(false)
 
 	if cfg.period == 0 || time.Since(gatherer.lastGather) < cfg.period {
 		return
 	}
+	begin := time.Now()
 	if err := tracker.track(ctx, gatherer.registry, cfg.metrics); err != nil {
 		log.Errorf("Failed to gather %s metrics: %v", tracker.description, err)
 	}
-	gatherer.lastGather = time.Now()
+	end := time.Now()
+	gatherer.lastGather = end
+
+	descriptionTitle := strings.ToTitle(tracker.description[0:1]) + tracker.description[1:]
+	centralclient.Singleton().Telemeter().Track(
+		descriptionTitle+" metrics gathered", nil,
+		telemeter.WithTraits(tracker.makeProps(descriptionTitle, end.Sub(begin))),
+		telemeter.WithNoDuplicates(tracker.metricPrefix))
+}
+
+func (tracker *TrackerBase[Finding]) makeProps(descriptionTitle string, duration time.Duration) map[string]any {
+	props := make(map[string]any, 3)
+	props["Total "+descriptionTitle+" metrics"] = len(tracker.config.metrics)
+	props[descriptionTitle+" metrics labels"] = getLabels(tracker.config.metrics)
+	props[descriptionTitle+" gathering seconds"] = uint32(duration.Round(time.Second).Seconds())
+	return props
+}
+
+func getLabels(metrics MetricDescriptors) []Label {
+	labels := set.NewSet[Label]()
+	for _, metricLabels := range metrics {
+		labels.AddAll(metricLabels...)
+	}
+	return labels.AsSortedSlice(cmp.Less)
 }
 
 // getGatherer returns the existing or a new gatherer for the given userID.
-// When creating a new gatherer, it also registers all known metrics on the
-// gatherer registry.
+// The returned gatherer will be set to a running state for synchronization
+// purposes. When creating a new gatherer, it also registers all known metrics
+// on the gatherer registry.
+// Returns nil on error, or if the gatherer for this userID is still running.
 func (tracker *TrackerBase[Finding]) getGatherer(userID string, cfg *Configuration) *gatherer {
-	// TODO(PR #16176): limit the number of different tokens accessing the metrics?
 	var gr *gatherer
 	if g, ok := tracker.gatherers.Load(userID); !ok {
-		gr = &gatherer{
-			registry: tracker.registryFactory(userID),
+		r, err := tracker.registryFactory(userID)
+		if err != nil {
+			log.Errorw("failed to create custom registry for user", userID, logging.Err(err))
+			return nil
 		}
+		gr = &gatherer{
+			registry: r,
+		}
+		gr.running.Store(true)
 		tracker.gatherers.Store(userID, gr)
 		for metricName := range cfg.metrics {
 			tracker.registerMetric(gr, cfg, metricName)
 		}
 	} else {
 		gr = g.(*gatherer)
+		// Return nil if this gatherer is still running.
+		// Otherwise mark it running.
+		if !gr.trySetRunning() {
+			return nil
+		}
 	}
 	return gr
+}
+
+func (g *gatherer) trySetRunning() bool {
+	return g.running.CompareAndSwap(false, true)
+}
+
+// cleanupInactiveGatherers frees the registries for the userIDs, that haven't
+// shown up for inactiveGathererTTL.
+func (tracker *TrackerBase[Finding]) cleanupInactiveGatherers() {
+	tracker.cleanupWG.Add(1)
+	go func() {
+		defer tracker.cleanupWG.Done()
+		tracker.gatherers.Range(func(userID, gv any) bool {
+			g := gv.(*gatherer)
+			// Try to make it running to not interfere with the normal gathering
+			// or otherwise do nothing.
+			if !g.trySetRunning() {
+				return true
+			}
+			if time.Since(g.lastGather) >= inactiveGathererTTL &&
+				// Do not delete a just created gatherer in test.
+				// lastGather should never be zero for a non-running gatherer
+				// in production run.
+				!g.lastGather.IsZero() {
+				metrics.DeleteCustomRegistry(userID.(string))
+				tracker.gatherers.Delete(userID)
+			} else {
+				g.running.Store(false)
+			}
+			return true
+		})
+	}()
 }

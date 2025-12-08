@@ -1,4 +1,4 @@
-import React, { ReactElement } from 'react';
+import type { ReactElement } from 'react';
 import { DescriptionList } from '@patternfly/react-core';
 
 import DescriptionListItem from 'Components/DescriptionListItem';

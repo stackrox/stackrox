@@ -161,7 +161,10 @@ export function saveCluster(cluster: Cluster) {
 /**
  * Downloads cluster YAML configuration.
  */
-export function downloadClusterYaml(id: string, createUpgraderSA = false): Promise<void> {
+export function downloadClusterYaml(
+    id: string,
+    createUpgraderSA = false
+): Promise<{ fileSizeBytes: number }> {
     return saveFile({
         method: 'post',
         url: '/api/extensions/clusters/zip',
@@ -172,7 +175,7 @@ export function downloadClusterYaml(id: string, createUpgraderSA = false): Promi
 /**
  * Downloads cluster Helm YAML configuration.
  */
-export function downloadClusterHelmValuesYaml(id: string): Promise<void> {
+export function downloadClusterHelmValuesYaml(id: string): Promise<{ fileSizeBytes: number }> {
     return saveFile({
         method: 'post',
         url: '/api/extensions/clusters/helm-config.yaml',
@@ -230,7 +233,7 @@ export function fetchClusterInitBundles(): Promise<{ response: { items: ClusterI
         .get<{ items: ClusterInitBundle[] }>(`${clusterInitUrl}/init-bundles`)
         .then((response) => {
             return {
-                response: response.data || { items: [] },
+                response: response.data ?? { items: [] },
             };
         });
 }
@@ -239,7 +242,7 @@ export function fetchClusterRegistrationSecrets(): Promise<{ items: ClusterRegis
     return axios
         .get<{ items: ClusterRegistrationSecret[] }>(`${clusterInitUrl}/crs`)
         .then((response) => {
-            return response.data || { items: [] };
+            return response.data ?? { items: [] };
         });
 }
 
@@ -265,7 +268,7 @@ export function generateClusterInitBundle(data: { name: string }): Promise<{
         }>(`${clusterInitUrl}/init-bundles`, data)
         .then((response) => {
             return {
-                response: response.data || {},
+                response: response.data ?? {},
             };
         });
 }

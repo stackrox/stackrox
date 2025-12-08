@@ -14,10 +14,33 @@ func ContainsOneOf(policy *storage.Policy, fieldType RuntimeFieldType) bool {
 	return false
 }
 
+// HasDiscreteEventSource returns whether the policy contains only fields that
+// match the specified event source
+func HasDiscreteEventSource(policy *storage.Policy, eventSource storage.EventSource) bool {
+	for _, section := range policy.GetPolicySections() {
+		for _, group := range section.GetPolicyGroups() {
+			if !FieldMetadataSingleton().IsFromEventSource(group.GetFieldName(), eventSource) {
+				return false
+			}
+		}
+	}
+	return true
+}
+
+func SectionContainsEventSource(section *storage.PolicySection, eventSource storage.EventSource) bool {
+	for _, group := range section.GetPolicyGroups() {
+		if FieldMetadataSingleton().IsFromEventSource(group.GetFieldName(), eventSource) {
+			return true
+		}
+	}
+	return false
+}
+
 // ContainsRuntimeFields returns whether the policy contains runtime specific fields.
 func ContainsRuntimeFields(policy *storage.Policy) bool {
 	return ContainsOneOf(policy, AuditLogEvent) || ContainsOneOf(policy, Process) ||
-		ContainsOneOf(policy, KubeEvent) || ContainsOneOf(policy, NetworkFlow)
+		ContainsOneOf(policy, KubeEvent) || ContainsOneOf(policy, NetworkFlow) ||
+		ContainsOneOf(policy, FileAccess)
 }
 
 // ContainsDeployTimeFields returns whether the policy contains deploy-time specific fields.
@@ -86,6 +109,11 @@ func ContainsDiscreteRuntimeFieldCategorySections(policy *storage.Policy) bool {
 			numRuntimeCategories++
 		}
 		if SectionContainsFieldOfType(section, NetworkFlow) {
+			numRuntimeCategories++
+		}
+		// TODO(ROX-30807): update to support a combination of FileAccess and Process
+		// fields.
+		if SectionContainsFieldOfType(section, FileAccess) {
 			numRuntimeCategories++
 		}
 		if numRuntimeCategories > 1 {

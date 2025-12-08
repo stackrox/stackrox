@@ -1,5 +1,6 @@
 import useURLStringUnion from 'hooks/useURLStringUnion';
-import { FilteredWorkflowView, filteredWorkflowViews } from './types';
+import { filteredWorkflowViews } from './types';
+import type { FilteredWorkflowView } from './types';
 
 export type FilteredWorkflowViewURLStateResult = {
     filteredWorkflowView: FilteredWorkflowView;

@@ -31,14 +31,14 @@ func TestListener(t *testing.T) {
 	actual, exists, err = sysInfoStore.Get(ctx)
 	assert.NoError(t, err)
 	assert.True(t, exists)
-	assert.NotNil(t, actual.BackupInfo.BackupLastRunAt)
-	assert.Equal(t, storage.OperationStatus_PASS, actual.BackupInfo.Status)
+	assert.NotNil(t, actual.GetBackupInfo().GetBackupLastRunAt())
+	assert.Equal(t, storage.OperationStatus_PASS, actual.GetBackupInfo().GetStatus())
 
 	// Test failure
 	listener.OnBackupFail(ctx)
 	actual, exists, err = sysInfoStore.Get(ctx)
 	assert.NoError(t, err)
 	assert.True(t, exists)
-	assert.NotNil(t, actual.BackupInfo.BackupLastRunAt)
-	assert.Equal(t, storage.OperationStatus_FAIL, actual.BackupInfo.Status)
+	assert.NotNil(t, actual.GetBackupInfo().GetBackupLastRunAt())
+	assert.Equal(t, storage.OperationStatus_FAIL, actual.GetBackupInfo().GetStatus())
 }

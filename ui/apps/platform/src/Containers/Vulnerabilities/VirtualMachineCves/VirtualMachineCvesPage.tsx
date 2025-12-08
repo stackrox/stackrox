@@ -1,4 +1,3 @@
-import React from 'react';
 import { Route, Routes } from 'react-router-dom-v5-compat';
 import { PageSection } from '@patternfly/react-core';
 
@@ -18,7 +17,7 @@ function VirtualMachineCvesPage() {
             {hasReadAccessForIntegration && <ScannerV4IntegrationBanner />}
             <Routes>
                 <Route index element={<VirtualMachineCvesOverviewPage />} />
-                <Route path=":virtualMachineId" element={<VirtualMachinePage />} />
+                <Route path="virtualmachines/:virtualMachineId" element={<VirtualMachinePage />} />
                 <Route
                     path="*"
                     element={

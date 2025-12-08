@@ -13,6 +13,7 @@ import (
 
 var (
 	port     = intstr.FromInt(5978)
+	portName = intstr.FromString("https")
 	protocol = coreV1.ProtocolTCP
 
 	cases = map[string]*v1.NetworkPolicy{
@@ -95,6 +96,10 @@ var (
 								Protocol: &protocol,
 								Port:     &port,
 							},
+							{
+								Protocol: &protocol,
+								Port:     &portName,
+							},
 						},
 					},
 				},
@@ -136,6 +141,10 @@ var (
 							{
 								Protocol: &protocol,
 								Port:     &port,
+							},
+							{
+								Protocol: &protocol,
+								Port:     &portName,
 							},
 						},
 					},
@@ -207,6 +216,10 @@ var (
 								Protocol: &protocol,
 								Port:     &port,
 							},
+							{
+								Protocol: &protocol,
+								Port:     &portName,
+							},
 						},
 					},
 				},
@@ -234,6 +247,10 @@ var (
 							{
 								Protocol: &protocol,
 								Port:     &port,
+							},
+							{
+								Protocol: &protocol,
+								Port:     &portName,
 							},
 						},
 					},

@@ -147,3 +147,13 @@ func ToAlertResource(kubeEvent *storage.KubernetesEvent) *storage.Alert_Resource
 		},
 	}
 }
+
+// ToAlertNode converts a storage.Node to an Alert_Node_
+func ToAlertNode(node *storage.Node) *storage.Alert_Node_ {
+	return &storage.Alert_Node_{
+		Node: &storage.Alert_Node{
+			Id:   node.GetId(),
+			Name: node.GetName(),
+		},
+	}
+}

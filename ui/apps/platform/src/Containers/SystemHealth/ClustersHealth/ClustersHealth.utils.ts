@@ -2,10 +2,10 @@ import {
     findUpgradeState,
     getCredentialExpirationStatus,
 } from 'Containers/Clusters/cluster.helpers';
-import { CertExpiryStatus } from 'Containers/Clusters/clusterTypes'; // TODO types/cluster.proto.ts
-import { Cluster } from 'types/cluster.proto';
+import type { CertExpiryStatus } from 'Containers/Clusters/clusterTypes'; // TODO types/cluster.proto.ts
+import type { Cluster } from 'types/cluster.proto';
 
-import { HealthVariant } from '../CardHeaderIcons';
+import type { HealthVariant } from '../CardHeaderIcons';
 
 export type ClusterStatus = 'HEALTHY' | 'UNHEALTHY' | 'DEGRADED' | 'UNAVAILABLE' | 'UNINITIALIZED';
 

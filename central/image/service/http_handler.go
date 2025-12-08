@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/pkg/errors"
+	clusterUtil "github.com/stackrox/rox/central/cluster/util"
 	iiStore "github.com/stackrox/rox/central/imageintegration/store"
 	"github.com/stackrox/rox/central/risk/manager"
 	"github.com/stackrox/rox/central/role/sachelper"
@@ -53,10 +54,6 @@ func (h sbomHttpHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	// Verify Scanner V4 is enabled.
 	if !features.ScannerV4.Enabled() {
 		httputil.WriteGRPCStyleError(w, codes.Unimplemented, errors.New("Scanner V4 is disabled. Enable Scanner V4 to generate SBOMs"))
-		return
-	}
-	if !features.SBOMGeneration.Enabled() {
-		httputil.WriteGRPCStyleError(w, codes.Unimplemented, errors.New("SBOM feature is not enabled"))
 		return
 	}
 
@@ -124,8 +121,7 @@ func (h sbomHttpHandler) enrichImage(ctx context.Context, enrichmentCtx enricher
 // getSBOM generates an SBOM for the specified parameters.
 func (h sbomHttpHandler) getSBOM(ctx context.Context, params apiparams.SBOMRequestBody) ([]byte, error) {
 	enrichmentCtx := enricher.EnrichmentContext{
-		// TODO(ROX-27920): re-introduce cluster flag when SBOM generation from delegated scans is implemented.
-		// Delegable:       true,
+		Delegable:       true,
 		FetchOpt:        enricher.UseCachesIfPossible,
 		ScannerTypeHint: scannerTypes.ScannerV4,
 	}
@@ -134,18 +130,26 @@ func (h sbomHttpHandler) getSBOM(ctx context.Context, params apiparams.SBOMReque
 		addForceToEnrichmentContext(&enrichmentCtx)
 	}
 
-	// TODO(ROX-27920): re-introduce cluster flag when SBOM generation from delegated scans is implemented.
-	// if params.Cluster != "" {
-	//	// The request indicates enrichment should be delegated to a specific cluster.
-	//	clusterID, err := clusterUtil.GetClusterIDFromNameOrID(ctx, h.clusterSACHelper, params.Cluster, delegateScanPermissions)
-	//	if err != nil {
-	//		return nil, err
-	//	}
-	//	enrichmentCtx.ClusterID = clusterID
-	// }
+	if params.Cluster != "" {
+		// The request indicates enrichment should be delegated to a specific cluster.
+		clusterID, err := clusterUtil.GetClusterIDFromNameOrID(ctx, h.clusterSACHelper, params.Cluster, delegateScanPermissions)
+		if err != nil {
+			return nil, err
+		}
+		enrichmentCtx.ClusterID = clusterID
+		enrichmentCtx.Namespace = params.Namespace
+	}
 
 	img, alreadyForcedEnrichment, err := h.enrichImage(ctx, enrichmentCtx, params.ImageName)
 	if err != nil {
+		if env.AdministrationEventsAdHocScans.BooleanSetting() {
+			log.Errorw("Enriching image",
+				logging.ImageName(params.ImageName),
+				logging.Err(err),
+				logging.Bool("ad_hoc", true),
+			)
+		}
+
 		return nil, err
 	}
 

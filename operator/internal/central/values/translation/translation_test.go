@@ -556,7 +556,7 @@ func TestTranslate(t *testing.T) {
 						},
 					},
 				},
-				clientSet: fake.NewSimpleClientset(
+				clientSet: fake.NewClientset(
 					makeSecret("central-tls-spec-secret",
 						map[string]string{
 							"key":  "central-tls-spec-secret-key-content",
@@ -820,6 +820,86 @@ func TestTranslate(t *testing.T) {
 				},
 				"configAsCode": map[string]interface{}{
 					"enabled": true,
+				},
+			},
+		},
+
+		"configAsCode with deployment settings": {
+			args: args{
+				c: platform.Central{
+					ObjectMeta: metav1.ObjectMeta{
+						Namespace: "stackrox",
+					},
+					Spec: platform.CentralSpec{
+						ConfigAsCode: &platform.ConfigAsCodeSpec{
+							ComponentPolicy: &configAsCodeComponentEnabled,
+							DeploymentSpec: platform.DeploymentSpec{
+								Resources: &corev1.ResourceRequirements{
+									Limits: corev1.ResourceList{
+										corev1.ResourceCPU:    resource.MustParse("2"),
+										corev1.ResourceMemory: resource.MustParse("4Gi"),
+									},
+									Requests: corev1.ResourceList{
+										corev1.ResourceCPU:    resource.MustParse("500m"),
+										corev1.ResourceMemory: resource.MustParse("1Gi"),
+									},
+								},
+								NodeSelector: map[string]string{
+									"node-type": "infra",
+								},
+								Tolerations: []*corev1.Toleration{
+									{
+										Key:      "node-role.kubernetes.io/infra",
+										Operator: corev1.TolerationOpExists,
+										Effect:   corev1.TaintEffectNoSchedule,
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			want: chartutil.Values{
+				"monitoring": map[string]interface{}{
+					"openshift": map[string]interface{}{
+						"enabled": true,
+					},
+				},
+				"central": map[string]interface{}{
+					"exposeMonitoring": false,
+					"telemetry":        telemetryDisabledKey,
+					"db": map[string]interface{}{
+						"persistence": map[string]interface{}{
+							"persistentVolumeClaim": map[string]interface{}{
+								"createClaim": false,
+							},
+						},
+					},
+				},
+				"configAsCode": map[string]interface{}{
+					"enabled": true,
+				},
+				"configController": map[string]interface{}{
+					"resources": map[string]interface{}{
+						"limits": map[string]interface{}{
+							"cpu":    "2",
+							"memory": "4Gi",
+						},
+						"requests": map[string]interface{}{
+							"cpu":    "500m",
+							"memory": "1Gi",
+						},
+					},
+					"nodeSelector": map[string]string{
+						"node-type": "infra",
+					},
+					"tolerations": []map[string]interface{}{
+						{
+							"key":      "node-role.kubernetes.io/infra",
+							"operator": "Exists",
+							"effect":   "NoSchedule",
+						},
+					},
 				},
 			},
 		},

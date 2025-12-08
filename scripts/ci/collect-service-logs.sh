@@ -8,22 +8,23 @@ set -euo pipefail
 # future examination.
 #
 # Usage:
-#   collect-service-logs.sh NAMESPACE [DIR]
+#   collect-service-logs.sh NAMESPACE DIR
 #
 # Example:
-# $ ./scripts/ci/collect-service-logs.sh stackrox
+# $ ./scripts/ci/collect-service-logs.sh stackrox /tmp/some-directory
 #
 # Assumptions:
 # - Must be called from the root of the Apollo git repository.
-# - Logs are saved under /tmp/k8s-service-logs/ or DIR if passed
+# - Requires a two arguments: namespace name, and path to save logs to.
+# - Creates the path if missing.
 
 SCRIPTS_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/../.. && pwd)"
 # shellcheck source=../../scripts/ci/lib.sh
 source "$SCRIPTS_ROOT/scripts/ci/lib.sh"
 
 usage() {
-    echo "./scripts/ci/collect-service-logs.sh <namespace> [<output-dir>]"
-    echo "e.g. ./scripts/ci/collect-service-logs.sh stackrox"
+    echo "./scripts/ci/collect-service-logs.sh <namespace> <output-dir>"
+    echo "e.g. ./scripts/ci/collect-service-logs.sh stackrox /tmp/some-directory"
 }
 
 dump_logs() {
@@ -56,10 +57,10 @@ main() {
         exit 0
     fi
 
-    if [ $# -gt 1 ]; then
-        log_dir="$2"
+    if [ $# -lt 2 ]; then
+        die "Usage: $0 <namespace> <path-to-collect-logs-to>"
     else
-        log_dir="/tmp/k8s-service-logs"
+        log_dir="$2"
     fi
     log_dir="${log_dir}/${namespace}"
     mkdir -p "${log_dir}"

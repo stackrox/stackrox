@@ -305,7 +305,7 @@ spec:
           Recommended for most users.'
         displayName: Persistent volume claim
         path: central.db.persistence.persistentVolumeClaim
-      - description: 'Stores persistent data on a directory on the host. This is not
+      - description: 'Stores persistent data in a directory on the host. This is not
           recommended, and should only
 
           be used together with a node selector (only available in YAML view).'
@@ -499,7 +499,7 @@ spec:
         path: central.persistence.persistentVolumeClaim.storageClassName
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:hidden
-      - description: 'Specifies if Telemetry is enabled.
+      - description: 'Specifies whether Telemetry is enabled.
 
           The default is: true.'
         displayName: Enabled
@@ -523,6 +523,28 @@ spec:
           The default is: Enabled.'
         displayName: Config as Code component
         path: configAsCode.configAsCodeComponent
+      - description: 'Allows overriding the default resource settings for this component.
+          Please consult the documentation
+
+          for an overview of default resource requirements and a sizing guide.'
+        displayName: Resources
+        path: configAsCode.resources
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:resourceRequirements
+      - description: If you want this component to only run on specific nodes, you
+          can configure a node selector here.
+        displayName: Node Selector
+        path: configAsCode.nodeSelector
+      - description: If you want this component to only run on specific nodes, you
+          can configure tolerations of tainted nodes.
+        displayName: Tolerations
+        path: configAsCode.tolerations
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:tolerations
+      - description: HostAliases allows configuring additional hostnames to resolve
+          in the pod's hosts file.
+        displayName: Host Aliases
+        path: configAsCode.hostAliases
       - description: Custom labels to set on all managed objects.
         displayName: Labels
         path: customize.labels
@@ -561,7 +583,7 @@ spec:
         path: monitoring.openshift.enabled
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:booleanSwitch
-      - description: 'To provide security at the network level the ACS Operator creates
+      - description: 'To provide security at the network level, the ACS Operator creates
           NetworkPolicy resources by default. If you want to manage your own NetworkPolicy
           objects then set this to "Disabled".
 
@@ -613,8 +635,8 @@ spec:
         path: overlays[0].patches[0].value
       - description: 'Verbatim value to add, delete or replace.
 
-          Same as Value, however the content is not interpreted as YAML, but treated
-          as literal string instead.
+          Same as Value, but the content is not interpreted as YAML and is treated
+          as a literal string instead.
 
           At least one of Value and Verbatim must be empty.'
         displayName: Verbatim
@@ -794,7 +816,7 @@ spec:
           Recommended for most users.'
         displayName: Persistent volume claim
         path: scannerV4.db.persistence.persistentVolumeClaim
-      - description: 'Stores persistent data on a directory on the host. This is not
+      - description: 'Stores persistent data in a directory on the host. This is not
           recommended, and should only
 
           be used together with a node selector (only available in YAML view).'
@@ -953,6 +975,10 @@ spec:
         path: central.adminPassword.adminPasswordSecretReference
         x-descriptors:
         - urn:alm:descriptor:io.kubernetes:Secret
+      - description: ObservedGeneration is the generation most recently observed by
+          the controller.
+        displayName: Observed Generation
+        path: observedGeneration
       version: v1alpha1
     - description: 'SecuredCluster is the configuration template for the secured cluster
         services. These include Sensor, which is
@@ -1021,6 +1047,9 @@ spec:
       - description: Settings relating to the ingestion of Kubernetes audit logs.
         displayName: Kubernetes Audit Logs Ingestion Settings
         path: auditLogs
+      - description: Settings relating to process baselines.
+        displayName: Process Baselines Settings
+        path: processBaselines
       - description: 'Settings for the Scanner component, which is responsible for
           vulnerability scanning of container
 
@@ -1041,7 +1070,7 @@ spec:
         path: imagePullSecrets
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:advanced
-      - description: Customizations to apply on all Central Services components.
+      - description: Customizations to apply on all Secured Cluster Services components.
         displayName: Customizations
         path: customize
         x-descriptors:
@@ -1074,15 +1103,15 @@ spec:
         path: misc
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:hidden
-      - description: 'Set to false to disable policy enforcement for the admission
+      - description: 'Set to Disabled to disable policy enforcement for the admission
           controller. This is not recommended.
 
-          On new deployments starting with version 4.9, defaults to true.
+          On new deployments starting with version 4.9, defaults to Enabled.
 
-          On old deployments, defaults to true if at least one of listenOnCreates
+          On old deployments, defaults to Enabled if at least one of listenOnCreates
           or listenOnUpdates is true.'
-        displayName: Enforce
-        path: admissionControl.enforce
+        displayName: Enforcement
+        path: admissionControl.enforcement
       - description: 'Enables teams to bypass admission control in a monitored manner
           in the event of an emergency.
 
@@ -1191,7 +1220,7 @@ spec:
         path: monitoring.openshift.enabled
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:booleanSwitch
-      - description: 'To provide security at the network level the ACS Operator creates
+      - description: 'To provide security at the network level, the ACS Operator creates
           NetworkPolicy resources by default. If you want to manage your own NetworkPolicy
           objects then set this to "Disabled".
 
@@ -1243,8 +1272,8 @@ spec:
         path: overlays[0].patches[0].value
       - description: 'Verbatim value to add, delete or replace.
 
-          Same as Value, however the content is not interpreted as YAML, but treated
-          as literal string instead.
+          Same as Value, but the content is not interpreted as YAML and is treated
+          as a literal string instead.
 
           At least one of Value and Verbatim must be empty.'
         displayName: Verbatim
@@ -1263,6 +1292,10 @@ spec:
           for scanning the Nodes' filesystem.
         displayName: Node Scanning Settings
         path: perNode.nodeInventory
+      - description: Settings for the Sensitive File Activity container, which is
+          responsible for file activity monitoring on the Node.
+        displayName: SFA
+        path: perNode.sfa
       - description: 'To ensure comprehensive monitoring of your cluster activity,
           Red Hat Advanced Cluster Security
 
@@ -1283,7 +1316,7 @@ spec:
           If you select "NoCollection", you will not be able to see any information
           about network activity
 
-          and process executions. The remaining settings in these section will not
+          and process executions. The remaining settings in this section will not
           have any effect.
 
           The value is a subject of conversion by the operator if needed, e.g. to
@@ -1330,6 +1363,28 @@ spec:
         path: perNode.nodeInventory.resources
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:resourceRequirements
+      - description: 'Specifies whether Sensitive File Activity agent is deployed.
+
+          The default is: Disabled.'
+        displayName: SFA Agent
+        path: perNode.sfa.agent
+      - description: 'Allows overriding the default resource settings for this component.
+          Please consult the documentation
+
+          for an overview of default resource requirements and a sizing guide.'
+        displayName: Resources
+        path: perNode.sfa.resources
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:resourceRequirements
+      - description: 'Should process baselines be automatically locked when the observation
+          period (1 hour by default) ends.
+
+          The default is: Disabled.'
+        displayName: Auto Lock
+        path: processBaselines.autoLock
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:select:Enabled
+        - urn:alm:descriptor:com.tectonic.ui:select:Disabled
       - description: 'If you do not want to deploy the Red Hat Advanced Cluster Security
           Scanner, you can disable it here
 
@@ -1485,7 +1540,7 @@ spec:
           Recommended for most users.'
         displayName: Persistent volume claim
         path: scannerV4.db.persistence.persistentVolumeClaim
-      - description: 'Stores persistent data on a directory on the host. This is not
+      - description: 'Stores persistent data in a directory on the host. This is not
           recommended, and should only
 
           be used together with a node selector (only available in YAML view).'

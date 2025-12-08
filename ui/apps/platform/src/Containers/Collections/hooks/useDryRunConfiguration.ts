@@ -1,8 +1,8 @@
 import isEqual from 'lodash/isEqual';
-import { useState, useCallback } from 'react';
-import { Collection, CollectionRequest } from 'services/CollectionsService';
+import { useCallback, useState } from 'react';
+import type { Collection, CollectionRequest } from 'services/CollectionsService';
 import { generateRequest } from '../converter';
-import { ClientCollection } from '../types';
+import type { ClientCollection } from '../types';
 
 export default function useDryRunConfiguration(
     collectionId: string | undefined,

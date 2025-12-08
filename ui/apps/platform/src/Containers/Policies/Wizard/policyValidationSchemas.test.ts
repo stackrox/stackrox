@@ -1,4 +1,5 @@
-import { WizardPolicyStep4, initialExcludedDeployment, initialScope } from '../policies.utils';
+import { initialExcludedDeployment, initialScope } from '../policies.utils';
+import type { WizardPolicyStep4 } from '../policies.utils';
 import { validationSchemaStep4 } from './policyValidationSchemas';
 
 // const options = { strict: true };

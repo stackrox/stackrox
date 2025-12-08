@@ -4,7 +4,7 @@ import objects.Deployment
 import services.GraphQLService
 import util.Timer
 
-import spock.lang.IgnoreIf
+import spock.lang.Ignore
 import spock.lang.Shared
 import spock.lang.Tag
 import spock.lang.Unroll
@@ -40,7 +40,7 @@ class VulnScanWithGraphQLTest extends BaseSpecification {
             tag
         }
         scan {
-            components {
+            imageComponents {
                 name
                 layerIndex
                 version
@@ -49,7 +49,7 @@ class VulnScanWithGraphQLTest extends BaseSpecification {
                     type
                     url
                 }
-                vulns {
+                imageVulnerabilities {
                     cve
                     cvss
                     link
@@ -136,8 +136,8 @@ class VulnScanWithGraphQLTest extends BaseSpecification {
         then:
         assert resultRet.getValue() != null
         def image = resultRet.getValue().image
-        assert image?.scan?.components?.vulns != null
-        int cve =  getCVEs(image.scan.components.vulns)
+        assert image?.scan?.imageComponents?.imageVulnerabilities != null
+        int cve =  getCVEs(image.scan.imageComponents.imageVulnerabilities)
         assert cve >= vuln_cve
         where:
         "Data inputs are :"
@@ -147,7 +147,7 @@ class VulnScanWithGraphQLTest extends BaseSpecification {
 
     @Unroll
     // TODO(ROX-29221): Fix the test for fixable image info from CVEID
-    @IgnoreIf({ Env.get("ROX_FLATTEN_CVE_DATA") == "true" })
+    @Ignore("ROX-29221: Fix the test for fixable image info from CVEID")
     def "Verify image info from #CVEID in GraphQL"() {
         when:
         "Fetch the results of the CVE,image from GraphQL "

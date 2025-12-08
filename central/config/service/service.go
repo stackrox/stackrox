@@ -147,10 +147,8 @@ func (s *serviceImpl) PutConfig(ctx context.Context, req *v1.PutConfigRequest) (
 		return nil, errors.Wrap(errox.InvalidArgs, "public config must be specified")
 	}
 
-	if features.UnifiedCVEDeferral.Enabled() {
-		if err := validateExceptionConfigReq(req.GetConfig().GetPrivateConfig().GetVulnerabilityExceptionConfig()); err != nil {
-			return nil, err
-		}
+	if err := validateExceptionConfigReq(req.GetConfig().GetPrivateConfig().GetVulnerabilityExceptionConfig()); err != nil {
+		return nil, err
 	}
 
 	regexes := make([]*regexp.Regexp, 0)
@@ -195,9 +193,6 @@ func (s *serviceImpl) PutConfig(ctx context.Context, req *v1.PutConfigRequest) (
 
 // GetVulnerabilityExceptionConfig returns Central's vulnerability exception configuration.
 func (s *serviceImpl) GetVulnerabilityExceptionConfig(ctx context.Context, _ *v1.Empty) (*v1.GetVulnerabilityExceptionConfigResponse, error) {
-	if !features.UnifiedCVEDeferral.Enabled() {
-		return nil, errors.Errorf("Cannot fulfill request. Environment variable %s=false", features.UnifiedCVEDeferral.EnvVar())
-	}
 	vmExceptionConfig, err := s.datastore.GetVulnerabilityExceptionConfig(ctx)
 	if err != nil {
 		return nil, err
@@ -209,9 +204,6 @@ func (s *serviceImpl) GetVulnerabilityExceptionConfig(ctx context.Context, _ *v1
 
 // UpdateVulnerabilityExceptionConfig updates Central's vulnerability exception configuration.
 func (s *serviceImpl) UpdateVulnerabilityExceptionConfig(ctx context.Context, req *v1.UpdateVulnerabilityExceptionConfigRequest) (*v1.UpdateVulnerabilityExceptionConfigResponse, error) {
-	if !features.UnifiedCVEDeferral.Enabled() {
-		return nil, errors.Errorf("Cannot fulfill request. Environment variable %s=false", features.UnifiedCVEDeferral.EnvVar())
-	}
 	if req == nil {
 		return nil, errors.Wrap(errox.InvalidArgs, "request cannot be nil")
 	}
@@ -267,7 +259,7 @@ func (s *serviceImpl) UpdatePlatformComponentConfig(ctx context.Context, req *v1
 		}
 		regexes = append(regexes, regex)
 	}
-	config, err := s.datastore.UpsertPlatformComponentConfigRules(ctx, req.Rules)
+	config, err := s.datastore.UpsertPlatformComponentConfigRules(ctx, req.GetRules())
 	if err != nil {
 		return nil, err
 	}

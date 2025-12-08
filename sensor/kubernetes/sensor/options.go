@@ -5,6 +5,7 @@ import (
 	"io"
 	"time"
 
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/sensor/queue"
 	"github.com/stackrox/rox/sensor/common/centralclient"
@@ -29,6 +30,13 @@ type CreateOptions struct {
 	networkFlowWriter                  io.Writer
 	processIndicatorWriter             io.Writer
 	networkFlowTicker                  <-chan time.Time
+	deploymentIdentification           *storage.SensorDeploymentIdentification
+	processPipelineObserver            func(ProcessPipelineHandle)
+}
+
+// ProcessPipelineHandle exposes the subset of process pipeline functionality external callers need.
+type ProcessPipelineHandle interface {
+	WaitForShutdown() error
 }
 
 type clusterIDHandler interface {
@@ -153,9 +161,25 @@ func (cfg *CreateOptions) WithProcessIndicatorTraceWriter(writer io.Writer) *Cre
 	return cfg
 }
 
+// WithProcessPipelineObserver exposes the created process pipeline (used by local-sensor).
+// Without this hook, local-sensor cannot await pipeline shutdown and would continue to log
+// errors or panic on late-arriving process signals after Ctrl-C.
+func (cfg *CreateOptions) WithProcessPipelineObserver(observer func(ProcessPipelineHandle)) *CreateOptions {
+	cfg.processPipelineObserver = observer
+	return cfg
+}
+
 // WithNetworkFlowTicker sets the ticker for network flow enrichment.
 // Default: nil
 func (cfg *CreateOptions) WithNetworkFlowTicker(ticker <-chan time.Time) *CreateOptions {
 	cfg.networkFlowTicker = ticker
+	return cfg
+}
+
+// WithDeploymentIdentification overrides the deployment identification.
+// This is primarily used by local-sensor to provide explicit namespace when running outside a pod.
+// Default: nil (will call FetchDeploymentIdentification)
+func (cfg *CreateOptions) WithDeploymentIdentification(deploymentID *storage.SensorDeploymentIdentification) *CreateOptions {
+	cfg.deploymentIdentification = deploymentID
 	return cfg
 }

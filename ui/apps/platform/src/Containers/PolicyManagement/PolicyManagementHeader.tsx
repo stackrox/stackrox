@@ -1,5 +1,3 @@
-import React from 'react';
-
 import TabNavHeader from 'Components/TabNav/TabNavHeader';
 import { policiesBasePath, policyCategoriesPath } from 'routePaths';
 
@@ -18,7 +16,6 @@ function PolicyManagementHeader({ currentTabTitle }: PolicyManagementHeaderProps
             <TabNavHeader
                 currentTabTitle={currentTabTitle}
                 tabLinks={tabLinks}
-                pageTitle="Policy management - Policy categories"
                 mainTitle="Policy management"
             />
         </>

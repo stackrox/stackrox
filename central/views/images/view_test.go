@@ -128,7 +128,7 @@ func (s *ImageViewTestSuite) SetupSuite() {
 		}
 		var sha1, sha2, sha3, sha4 *storage.ImageV2
 		for _, i := range imagesV2 {
-			switch i.GetSha() {
+			switch i.GetDigest() {
 			case "sha1":
 				sha1 = i
 			case "sha2":
@@ -230,11 +230,11 @@ func (s *ImageViewTestSuite) TestGetImagesCore() {
 					var scorei float32
 					var scorej float32
 					if features.FlattenImageData.Enabled() {
-						scorei = s.testImagesV2Map[records[i].ImageV2ID].RiskScore
-						scorej = s.testImagesV2Map[records[j].ImageV2ID].RiskScore
+						scorei = s.testImagesV2Map[records[i].ImageV2ID].GetRiskScore()
+						scorej = s.testImagesV2Map[records[j].ImageV2ID].GetRiskScore()
 					} else {
-						scorei = s.testImagesMap[records[i].ImageID].RiskScore
-						scorej = s.testImagesMap[records[j].ImageID].RiskScore
+						scorei = s.testImagesMap[records[i].GetImageID()].GetRiskScore()
+						scorej = s.testImagesMap[records[j].GetImageID()].GetRiskScore()
 					}
 					if scorei == scorej {
 						if features.FlattenImageData.Enabled() {
@@ -264,11 +264,11 @@ func (s *ImageViewTestSuite) TestGetImagesCore() {
 					var scorei float32
 					var scorej float32
 					if features.FlattenImageData.Enabled() {
-						scorei = s.testImagesV2Map[records[i].ImageV2ID].RiskScore
-						scorej = s.testImagesV2Map[records[j].ImageV2ID].RiskScore
+						scorei = s.testImagesV2Map[records[i].ImageV2ID].GetRiskScore()
+						scorej = s.testImagesV2Map[records[j].ImageV2ID].GetRiskScore()
 					} else {
-						scorei = s.testImagesMap[records[i].ImageID].RiskScore
-						scorej = s.testImagesMap[records[j].ImageID].RiskScore
+						scorei = s.testImagesMap[records[i].GetImageID()].GetRiskScore()
+						scorej = s.testImagesMap[records[j].GetImageID()].GetRiskScore()
 					}
 					if scorei == scorej {
 						if features.FlattenImageData.Enabled() {
@@ -350,8 +350,8 @@ func (s *ImageViewTestSuite) TestGetImagesCore() {
 			hasVulnFilter:           true,
 			hasSortBySeverityCounts: true,
 			matchFilter: matchAllFilter().withVulnFilter(func(vuln *storage.EmbeddedVulnerability) bool {
-				return vuln.Severity == storage.VulnerabilitySeverity_MODERATE_VULNERABILITY_SEVERITY ||
-					vuln.Severity == storage.VulnerabilitySeverity_LOW_VULNERABILITY_SEVERITY
+				return vuln.GetSeverity() == storage.VulnerabilitySeverity_MODERATE_VULNERABILITY_SEVERITY ||
+					vuln.GetSeverity() == storage.VulnerabilitySeverity_LOW_VULNERABILITY_SEVERITY
 			}),
 			less: func(records []*imageResponse) func(i int, j int) bool {
 				return func(i int, j int) bool {

@@ -1,9 +1,9 @@
 import { useCallback, useState } from 'react';
 
 import { createReportConfiguration } from 'services/ReportsService';
-import { ReportConfiguration } from 'services/ReportsService.types';
+import type { ReportConfiguration } from 'services/ReportsService.types';
 import useAnalytics, { VULNERABILITY_REPORT_CREATED } from 'hooks/useAnalytics';
-import { ReportFormValues } from '../forms/useReportFormValues';
+import type { ReportFormValues } from '../forms/useReportFormValues';
 import { getReportConfigurationFromFormValues } from '../utils';
 
 export type UseCreateReportProps = {
@@ -61,6 +61,7 @@ function useCreateReport({ onCompleted }: UseCreateReportProps): CreateReportRes
     const { analyticsTrack } = useAnalytics();
     const [result, setResult] = useState<Result>(defaultResult);
 
+    /* eslint-disable react-hooks/exhaustive-deps */
     const createReport = useCallback((formValues: ReportFormValues) => {
         setResult({
             data: null,
@@ -89,6 +90,9 @@ function useCreateReport({ onCompleted }: UseCreateReportProps): CreateReportRes
                 });
             });
     }, []);
+    // analyticsTrack
+    // onCompleted
+    /* eslint-enable react-hooks/exhaustive-deps */
 
     return {
         ...result,

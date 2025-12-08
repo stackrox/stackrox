@@ -3,6 +3,10 @@
     overflow-x: scroll;
 }
 
+#policy-sections .pf-v5-c-alert {
+    white-space: wrap;
+}
+
 #policy-sections .pf-v5-c-toggle-group .pf-v5-c-toggle-group__button {
     white-space: initial;
 }
@@ -13,5 +17,5 @@
 
 #policy-criteria-keys-container {
     overflow: auto;
-    width: 15rem;
+    width: 19rem;
 }

@@ -1,14 +1,14 @@
 import { deploymentAttributes } from '../attributes/deployment';
 import { imageAttributes } from '../attributes/image';
 import { imageCVEAttributes } from '../attributes/imageCVE';
+import { makeFilterChipDescriptors } from '../components/SearchFilterChips';
 import {
     getDefaultAttributeName,
     getDefaultEntityName,
     getEntityAttributes,
     getSearchFilterConfigWithFeatureFlagDependency,
-    makeFilterChipDescriptors,
 } from './utils';
-import { CompoundSearchFilterEntity } from '../types';
+import type { CompoundSearchFilterEntity } from '../types';
 
 const imageSearchFilterConfig: CompoundSearchFilterEntity = {
     displayName: 'Image',

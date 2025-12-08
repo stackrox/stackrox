@@ -287,7 +287,7 @@ func (s *SubjectSearcherTestSuite) SetupTest() {
 	s.subjectSearcher = NewSubjectSearcher(s.mockBindingsStore)
 	s.testBindings = fixtures.GetMultipleK8sRoleBindings(3, 3)
 	// For one binding, keep only the SERVICE_ACCOUNT kind subject
-	s.testBindings[2].Subjects = s.testBindings[2].Subjects[:1]
+	s.testBindings[2].Subjects = s.testBindings[2].GetSubjects()[:1]
 }
 
 func (s *SubjectSearcherTestSuite) TearDownTest() {
@@ -317,13 +317,13 @@ func (s *SubjectSearcherTestSuite) testCases() []testCase {
 	return []testCase{
 		{
 			desc:             "Search by subject name",
-			query:            search.NewQueryBuilder().AddStrings(search.SubjectName, s.testBindings[0].Subjects[1].Name).ProtoQuery(),
+			query:            search.NewQueryBuilder().AddStrings(search.SubjectName, s.testBindings[0].GetSubjects()[1].GetName()).ProtoQuery(),
 			expectedBindings: []*storage.K8SRoleBinding{s.testBindings[0]},
 			expected: []search.Result{
 				{
-					ID: s.testBindings[0].Subjects[1].Name,
+					ID: s.testBindings[0].GetSubjects()[1].GetName(),
 					Matches: map[string][]string{
-						"subject.name": {s.testBindings[0].Subjects[1].Name},
+						"subject.name": {s.testBindings[0].GetSubjects()[1].GetName()},
 					},
 				},
 			},
@@ -334,25 +334,25 @@ func (s *SubjectSearcherTestSuite) testCases() []testCase {
 			expectedBindings: []*storage.K8SRoleBinding{s.testBindings[0], s.testBindings[1], s.testBindings[2]},
 			expected: []search.Result{
 				{
-					ID: s.testBindings[0].Subjects[1].Name,
+					ID: s.testBindings[0].GetSubjects()[1].GetName(),
 					Matches: map[string][]string{
 						"subject.kind": {"user"},
 					},
 				},
 				{
-					ID: s.testBindings[0].Subjects[2].Name,
+					ID: s.testBindings[0].GetSubjects()[2].GetName(),
 					Matches: map[string][]string{
 						"subject.kind": {"group"},
 					},
 				},
 				{
-					ID: s.testBindings[1].Subjects[1].Name,
+					ID: s.testBindings[1].GetSubjects()[1].GetName(),
 					Matches: map[string][]string{
 						"subject.kind": {"user"},
 					},
 				},
 				{
-					ID: s.testBindings[1].Subjects[2].Name,
+					ID: s.testBindings[1].GetSubjects()[2].GetName(),
 					Matches: map[string][]string{
 						"subject.kind": {"group"},
 					},
@@ -361,19 +361,19 @@ func (s *SubjectSearcherTestSuite) testCases() []testCase {
 		},
 		{
 			desc:             "Search by cluster name",
-			query:            search.NewQueryBuilder().AddStrings(search.Cluster, s.testBindings[1].ClusterName).ProtoQuery(),
+			query:            search.NewQueryBuilder().AddStrings(search.Cluster, s.testBindings[1].GetClusterName()).ProtoQuery(),
 			expectedBindings: []*storage.K8SRoleBinding{s.testBindings[1]},
 			expected: []search.Result{
 				{
-					ID: s.testBindings[1].Subjects[1].Name,
+					ID: s.testBindings[1].GetSubjects()[1].GetName(),
 					Matches: map[string][]string{
-						"k8srolebinding.cluster_name": {s.testBindings[1].ClusterName},
+						"k8srolebinding.cluster_name": {s.testBindings[1].GetClusterName()},
 					},
 				},
 				{
-					ID: s.testBindings[1].Subjects[2].Name,
+					ID: s.testBindings[1].GetSubjects()[2].GetName(),
 					Matches: map[string][]string{
-						"k8srolebinding.cluster_name": {s.testBindings[1].ClusterName},
+						"k8srolebinding.cluster_name": {s.testBindings[1].GetClusterName()},
 					},
 				},
 			},
@@ -384,13 +384,13 @@ func (s *SubjectSearcherTestSuite) testCases() []testCase {
 			expectedBindings: []*storage.K8SRoleBinding{s.testBindings[0], s.testBindings[2]},
 			expected: []search.Result{
 				{
-					ID: s.testBindings[0].Subjects[1].Name,
+					ID: s.testBindings[0].GetSubjects()[1].GetName(),
 					Matches: map[string][]string{
 						"k8srolebinding.cluster_role": {"true"},
 					},
 				},
 				{
-					ID: s.testBindings[0].Subjects[2].Name,
+					ID: s.testBindings[0].GetSubjects()[2].GetName(),
 					Matches: map[string][]string{
 						"k8srolebinding.cluster_role": {"true"},
 					},

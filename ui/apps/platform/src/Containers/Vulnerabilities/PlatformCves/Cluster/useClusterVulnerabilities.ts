@@ -2,8 +2,9 @@ import { gql, useQuery } from '@apollo/client';
 
 import { getPaginationParams } from 'utils/searchUtils';
 
-import { ClientPagination, Pagination } from 'services/types';
-import { ClusterVulnerability, clusterVulnerabilityFragment } from './CVEsTable';
+import type { ClientPagination, Pagination } from 'services/types';
+import { clusterVulnerabilityFragment } from './CVEsTable';
+import type { ClusterVulnerability } from './CVEsTable';
 
 const clusterVulnerabilitiesQuery = gql`
     ${clusterVulnerabilityFragment}

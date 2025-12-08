@@ -72,7 +72,7 @@ func validate(google *storage.GoogleConfig) error {
 }
 
 func newScanner(integration *storage.ImageIntegration) (*googleScanner, error) {
-	googleConfig, ok := integration.IntegrationConfig.(*storage.ImageIntegration_Google)
+	googleConfig, ok := integration.GetIntegrationConfig().(*storage.ImageIntegration_Google)
 	if !ok {
 		return nil, errors.New("Google Container Analysis configuration required")
 	}
@@ -224,8 +224,8 @@ func (c *googleScanner) GetScan(image *storage.Image) (*storage.ImageScan, error
 		}
 		packageIssue := vulnerability.GetPackageIssue()[0]
 		pv := packageAndVersion{
-			name:    packageIssue.AffectedLocation.Package,
-			version: packageIssue.AffectedLocation.GetVersion().GetName(),
+			name:    packageIssue.GetAffectedLocation().GetPackage(),
+			version: packageIssue.GetAffectedLocation().GetVersion().GetName(),
 		}
 
 		if _, ok := componentsToVulns[pv]; ok {

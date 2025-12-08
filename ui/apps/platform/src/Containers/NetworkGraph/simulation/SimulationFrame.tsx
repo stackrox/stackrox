@@ -1,14 +1,14 @@
-import React from 'react';
+import type { ReactElement, ReactNode } from 'react';
 import { ScreenIcon } from '@patternfly/react-icons';
 
 import { Flex, FlexItem } from '@patternfly/react-core';
 
 type SimulationFrameProps = {
     isSimulating: boolean;
-    children: React.ReactNode;
+    children: ReactNode;
 };
 
-function SimulationFrame({ isSimulating, children }: SimulationFrameProps) {
+function SimulationFrame({ isSimulating, children }: SimulationFrameProps): ReactElement {
     let style = {};
     if (isSimulating) {
         style = { position: 'relative', border: '5px solid var(--pf-v5-global--info-color--100' };

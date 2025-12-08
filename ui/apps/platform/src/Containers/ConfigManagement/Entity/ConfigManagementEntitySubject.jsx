@@ -1,4 +1,4 @@
-import React, { useContext } from 'react';
+import { useContext } from 'react';
 import { gql } from '@apollo/client';
 
 import Query from 'Components/ThrowingQuery';
@@ -6,13 +6,14 @@ import Loader from 'Components/Loader';
 import CollapsibleSection from 'Components/CollapsibleSection';
 import RelatedEntityListCount from 'Components/RelatedEntityListCount';
 import Metadata from 'Components/Metadata';
-import ClusterScopedPermissions from 'Containers/ConfigManagement/Entity/widgets/ClusterScopedPermissions';
-import NamespaceScopedPermissions from 'Containers/ConfigManagement/Entity/widgets/NamespaceScopedPermissions';
 import isGQLLoading from 'utils/gqlLoading';
 import queryService from 'utils/queryService';
-import { entityComponentPropTypes, entityComponentDefaultProps } from 'constants/entityPageProps';
+import { entityComponentDefaultProps, entityComponentPropTypes } from 'constants/entityPageProps';
 import searchContext from 'Containers/searchContext';
+
 import EntityList from '../List/EntityList';
+import ClusterScopedPermissions from './widgets/ClusterScopedPermissions';
+import NamespaceScopedPermissions from './widgets/NamespaceScopedPermissions';
 
 const ConfigManagementEntitySubject = ({
     id,

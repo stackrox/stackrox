@@ -5,8 +5,8 @@ import { triggerScan } from '../compliance/Compliance.helpers';
 import {
     clickEntityTableRowThatHasLinkInColumn,
     clickOnCountWidget,
-    clickOnSingularEntityWidgetInSidePanel,
     clickOnSingleEntityInTable,
+    clickOnSingularEntityWidgetInSidePanel,
     hasCountWidgetsFor,
     hasRelatedEntityFor,
     hasTabsFor,

@@ -1,4 +1,4 @@
-import { AdvancedFlowsFilterType } from './types';
+import type { AdvancedFlowsFilterType } from './types';
 import { filtersToSelections, selectionsToFilters } from './advancedFlowsFilterUtils';
 
 describe('advancedFlowsFilterUtils', () => {

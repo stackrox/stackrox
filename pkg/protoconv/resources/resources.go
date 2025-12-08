@@ -296,7 +296,7 @@ func (w *DeploymentWrap) populateContainers(podSpec v1.PodSpec) {
 	w.Deployment.Containers = make([]*storage.Container, 0, len(podSpec.Containers))
 	for _, c := range podSpec.Containers {
 		w.Deployment.Containers = append(w.Deployment.Containers, &storage.Container{
-			Id:   fmt.Sprintf("%s:%s", w.Deployment.Id, c.Name),
+			Id:   fmt.Sprintf("%s:%s", w.Deployment.GetId(), c.Name),
 			Name: c.Name,
 		})
 	}

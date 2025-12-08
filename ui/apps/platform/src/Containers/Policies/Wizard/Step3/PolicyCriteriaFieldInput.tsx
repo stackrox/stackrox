@@ -1,19 +1,21 @@
-import React from 'react';
-import { useField } from 'formik';
+import type { ReactElement } from 'react';
+import { useField, useFormikContext } from 'formik';
 import {
+    FormGroup,
+    SelectOption,
     TextInput,
     ToggleGroup,
     ToggleGroupItem,
-    FormGroup,
-    SelectOption,
 } from '@patternfly/react-core';
 
 import SelectSingle from 'Components/SelectSingle/SelectSingle';
 import CheckboxSelect from 'Components/PatternFly/CheckboxSelect';
+import type { ClientPolicy } from 'types/policy.proto';
 
-import { Descriptor } from './policyCriteriaDescriptors';
+import type { Descriptor } from './policyCriteriaDescriptors';
 import PolicyCriteriaFieldSubInput from './PolicyCriteriaFieldSubInput';
 import TableModalFieldInput from './TableModalFieldInput';
+import { getAvailableOptionsForField } from './policyCriteriaUtils';
 
 type PolicyCriteriaFieldInputProps = {
     descriptor: Descriptor;
@@ -25,10 +27,11 @@ function PolicyCriteriaFieldInput({
     descriptor,
     readOnly = false,
     name,
-}: PolicyCriteriaFieldInputProps): React.ReactElement {
+}: PolicyCriteriaFieldInputProps): ReactElement {
     const [field, , helper] = useField(name);
     const { value } = field;
     const { setValue } = helper;
+    const { values } = useFormikContext<ClientPolicy>();
 
     function handleChangeValue(val: string | string[] | boolean | number) {
         setValue({ value: val });
@@ -106,7 +109,9 @@ function PolicyCriteriaFieldInput({
                     data-testid="policy-criteria-value-number-input"
                 />
             );
-        case 'select':
+        case 'select': {
+            const availableOptions = getAvailableOptionsForField(descriptor.options, name, values);
+
             return (
                 <FormGroup
                     label={descriptor.label}
@@ -120,9 +125,8 @@ function PolicyCriteriaFieldInput({
                         handleSelect={handleChangeSelect}
                         isDisabled={readOnly}
                         placeholderText={descriptor.placeholder || 'Select an option'}
-                        maxWidth="100%"
                     >
-                        {descriptor?.options?.map((option) => (
+                        {availableOptions.map((option) => (
                             <SelectOption
                                 key={option.value}
                                 value={option.value}
@@ -130,10 +134,11 @@ function PolicyCriteriaFieldInput({
                             >
                                 {option.label}
                             </SelectOption>
-                        )) || []}
+                        ))}
                     </SelectSingle>
                 </FormGroup>
             );
+        }
         case 'multiselect':
             return (
                 <FormGroup
@@ -143,7 +148,7 @@ function PolicyCriteriaFieldInput({
                     data-testid="policy-criteria-value-multiselect"
                 >
                     <CheckboxSelect
-                        selections={(value.value as string[]) || []}
+                        selections={(value.value as string[]) ?? []}
                         onChange={handleChangeSelectMultiple}
                         isDisabled={readOnly}
                         placeholderText={descriptor.placeholder || 'Select one or more options'}
@@ -157,7 +162,7 @@ function PolicyCriteriaFieldInput({
                             >
                                 {option.label}
                             </SelectOption>
-                        )) || []}
+                        )) ?? []}
                     </CheckboxSelect>
                 </FormGroup>
             );

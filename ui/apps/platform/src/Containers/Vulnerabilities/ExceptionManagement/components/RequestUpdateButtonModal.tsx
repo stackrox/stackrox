@@ -1,7 +1,6 @@
-import React from 'react';
 import { Button } from '@patternfly/react-core';
 
-import { VulnerabilityException } from 'services/VulnerabilityExceptionService';
+import type { VulnerabilityException } from 'services/VulnerabilityExceptionService';
 
 import useExceptionRequestModal from '../../hooks/useExceptionRequestModal';
 import CompletedExceptionRequestModal from '../../components/ExceptionRequestModal/CompletedExceptionRequestModal';

@@ -13,6 +13,7 @@ import (
 
 	deploymentDataStore "github.com/stackrox/rox/central/deployment/datastore"
 	imageDataStore "github.com/stackrox/rox/central/image/datastore"
+	imageV2DataStore "github.com/stackrox/rox/central/imagev2/datastore"
 	podDatastore "github.com/stackrox/rox/central/pod/datastore"
 	deploymentsView "github.com/stackrox/rox/central/views/deployments"
 	imagesView "github.com/stackrox/rox/central/views/images"
@@ -42,9 +43,15 @@ type ExportServicePostgresTestHelper struct {
 	pool           *pgtest.TestPostgres
 	Deployments    deploymentDataStore.DataStore
 	Images         imageDataStore.DataStore
+	ImagesV2       imageV2DataStore.DataStore
 	ImageView      imagesView.ImageView
 	Pods           podDatastore.DataStore
 	DeploymentView deploymentsView.DeploymentView
+}
+
+// GetDB returns the postgres database connection.
+func (h *ExportServicePostgresTestHelper) GetDB() *pgtest.TestPostgres {
+	return h.pool
 }
 
 // SetupTest prepares the ExportServicePostgresTestHelper struct for testing.
@@ -64,6 +71,7 @@ func (h *ExportServicePostgresTestHelper) SetupTest(tb testing.TB) error {
 	h.Deployments = deploymentStore
 	h.DeploymentView = deploymentsView.NewDeploymentView(h.pool)
 	h.Images = imageDataStore.GetTestPostgresDataStore(tb, h.pool)
+	h.ImagesV2 = imageV2DataStore.GetTestPostgresDataStore(tb, h.pool)
 	h.ImageView = imagesView.NewImageView(h.pool)
 	h.Pods = podDatastore.GetTestPostgresDataStore(tb, h.pool)
 	return nil
@@ -210,17 +218,17 @@ func (h *ExportServicePostgresTestHelper) InjectDeployments(
 			// range. These get reverted to fixed valid values so decoders
 			// do not break.
 			container.Image = containerImage
-			for _, v := range container.Volumes {
+			for _, v := range container.GetVolumes() {
 				v.MountPropagation = storage.Volume_NONE
 			}
-			if container.Config != nil {
-				for _, e := range container.Config.Env {
+			if container.GetConfig() != nil {
+				for _, e := range container.GetConfig().GetEnv() {
 					e.EnvVarSource = storage.ContainerConfig_EnvironmentConfig_UNKNOWN
 				}
 			}
-			for _, portConfig := range container.Ports {
+			for _, portConfig := range container.GetPorts() {
 				portConfig.Exposure = storage.PortConfig_INTERNAL
-				for _, exposureInfo := range portConfig.ExposureInfos {
+				for _, exposureInfo := range portConfig.GetExposureInfos() {
 					exposureInfo.Level = storage.PortConfig_INTERNAL
 				}
 			}
@@ -234,9 +242,9 @@ func (h *ExportServicePostgresTestHelper) InjectDeployments(
 			deployment.Namespace = namepsace90pct
 		}
 		// Set the enum values to valid data.
-		for _, portConfig := range deployment.Ports {
+		for _, portConfig := range deployment.GetPorts() {
 			portConfig.Exposure = storage.PortConfig_INTERNAL
-			for _, exposureInfo := range portConfig.ExposureInfos {
+			for _, exposureInfo := range portConfig.GetExposureInfos() {
 				exposureInfo.Level = storage.PortConfig_INTERNAL
 			}
 		}

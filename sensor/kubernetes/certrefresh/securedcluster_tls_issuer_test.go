@@ -666,7 +666,7 @@ func getFakeK8sClient(conf fakeK8sClientConfig) *fake.Clientset {
 		}
 	}
 
-	k8sClient := fake.NewSimpleClientset(objects...)
+	k8sClient := fake.NewClientset(objects...)
 
 	return k8sClient
 }
@@ -735,7 +735,7 @@ func (m *certsRepoMock) GetServiceCertificates(ctx context.Context) (*storage.Ty
 
 func (m *certsRepoMock) EnsureServiceCertificates(ctx context.Context, certificates *storage.TypedServiceCertificateSet) ([]*storage.TypedServiceCertificate, error) {
 	args := m.Called(ctx, certificates)
-	return certificates.ServiceCerts, args.Error(0)
+	return certificates.GetServiceCerts(), args.Error(0)
 }
 
 func verifySecrets(ctx context.Context, t require.TestingT,

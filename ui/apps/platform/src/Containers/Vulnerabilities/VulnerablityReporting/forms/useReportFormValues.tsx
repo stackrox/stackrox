@@ -1,24 +1,17 @@
-import { FormikProps, useFormik } from 'formik';
+import { useFormik } from 'formik';
+import type { FormikProps } from 'formik';
 import * as yup from 'yup';
 
 import {
     customBodyValidation,
     customSubjectValidation,
 } from 'Components/EmailTemplate/EmailTemplate.utils';
-import {
-    DayOfMonth,
-    DayOfWeek,
-    daysOfMonth,
-    daysOfWeek,
-} from 'Components/PatternFly/DayPickerDropdown';
-import { VulnerabilitySeverity, vulnerabilitySeverities } from 'types/cve.proto';
-import {
-    ImageType,
-    IntervalType,
-    NotifierConfiguration,
-    imageTypes,
-    intervalTypes,
-} from 'services/ReportsService.types';
+import { daysOfMonth, daysOfWeek } from 'Components/PatternFly/DayPickerDropdown';
+import type { DayOfMonth, DayOfWeek } from 'Components/PatternFly/DayPickerDropdown';
+import { vulnerabilitySeverities } from 'types/cve.proto';
+import type { VulnerabilitySeverity } from 'types/cve.proto';
+import { imageTypes, intervalTypes } from 'services/ReportsService.types';
+import type { ImageType, IntervalType, NotifierConfiguration } from 'services/ReportsService.types';
 
 export type ReportFormValues = {
     reportId: string;
@@ -51,7 +44,7 @@ export type ReportParametersFormValues = {
     cvesDiscoveredStartDate: CVESDiscoveredStartDate;
     includeAdvisory: boolean;
     includeEpssProbability: boolean;
-    // Ross CISA KEV includeExploitable
+    // includeKnownExploit: boolean; // ROX_CISA_KEV
     includeNvdCvss: boolean;
     reportScope: ReportScope | null;
 };
@@ -83,7 +76,7 @@ export const defaultReportFormValues: ReportFormValues = {
         cvesDiscoveredStartDate: undefined,
         includeAdvisory: false,
         includeEpssProbability: false,
-        // Ross CISA KEV includeExploitable
+        // includeKnownExploit: false, // ROX_CISA_KEV
         includeNvdCvss: false,
         reportScope: null,
     },

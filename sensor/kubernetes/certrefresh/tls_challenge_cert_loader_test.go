@@ -18,7 +18,7 @@ func TestHandleCABundleConfigMapUpdate(t *testing.T) {
 		t.Setenv("POD_NAMESPACE", "test-namespace")
 		t.Setenv("POD_NAME", "test-pod")
 
-		k8sClient := fake.NewSimpleClientset(createTestPod("test-pod", "test-namespace", "sensor-rs"),
+		k8sClient := fake.NewClientset(createTestPod("test-pod", "test-namespace", "sensor-rs"),
 			createTestReplicaSet("sensor-rs", "test-namespace", "sensor"))
 		centralCAs := []*x509.Certificate{testutils.IssueSelfSignedCert(t, "Primary CA").Leaf,
 			testutils.IssueSelfSignedCert(t, "Secondary CA").Leaf}

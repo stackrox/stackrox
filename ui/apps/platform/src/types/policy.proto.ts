@@ -22,7 +22,14 @@ export type PolicySeverity = (typeof policySeverities)[number];
 
 export type LifecycleStage = 'DEPLOY' | 'BUILD' | 'RUNTIME';
 
-export type PolicyEventSource = 'NOT_APPLICABLE' | 'DEPLOYMENT_EVENT' | 'AUDIT_LOG_EVENT';
+export const policyEventSources = [
+    'NOT_APPLICABLE',
+    'DEPLOYMENT_EVENT',
+    'AUDIT_LOG_EVENT',
+    'NODE_EVENT',
+] as const;
+
+export type PolicyEventSource = (typeof policyEventSources)[number];
 
 export type BasePolicy = {
     rationale: string;
@@ -104,16 +111,16 @@ export type EnforcementAction =
     | 'FAIL_DEPLOYMENT_UPDATE_ENFORCEMENT';
 
 export type PolicySection = {
-    sectionName: string;
+    sectionName?: string;
     policyGroups: PolicyGroup[];
 };
 
-type ClientPolicySection = {
-    sectionName: string;
+export type ClientPolicySection = {
+    sectionName?: string;
     policyGroups: ClientPolicyGroup[];
 };
 
-type ClientPolicyGroup = {
+export type ClientPolicyGroup = {
     fieldName: string;
     booleanOperator: PolicyBooleanOperator;
     negate: boolean;

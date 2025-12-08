@@ -29,7 +29,7 @@ func TestNoDowngraderLeftBehind(t *testing.T) {
 
 func SetupDowngradersForTest(_ *testing.T) {
 	simpleDowngrader := func(policy *storage.Policy) {
-		v, _ := strconv.ParseFloat(policy.PolicyVersion, 64)
+		v, _ := strconv.ParseFloat(policy.GetPolicyVersion(), 64)
 		policy.PolicyVersion = fmt.Sprintf("%.1f", v-1.0)
 	}
 

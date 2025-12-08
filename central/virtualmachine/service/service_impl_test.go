@@ -136,6 +136,16 @@ func TestListVirtualMachines(t *testing.T) {
 		testVMs[i] = storagetov2.VirtualMachine(vm)
 	}
 
+	storageVMsInReversedOrder := make([]*storage.VirtualMachine, len(storageVMs))
+	for i, vm := range storageVMs {
+		storageVMsInReversedOrder[len(storageVMsInReversedOrder)-i-1] = vm
+	}
+
+	testVMsInReversedOrder := make([]*v2.VirtualMachine, len(testVMs))
+	for i, vm := range testVMs {
+		testVMsInReversedOrder[len(testVMsInReversedOrder)-i-1] = vm
+	}
+
 	tests := []struct {
 		name           string
 		request        *v2.ListVirtualMachinesRequest
@@ -148,11 +158,16 @@ func TestListVirtualMachines(t *testing.T) {
 			request: &v2.ListVirtualMachinesRequest{},
 			setupMock: func(mockDS *datastoreMocks.MockDataStore) {
 				mockDS.EXPECT().
-					GetAllVirtualMachines(ctx).
+					SearchRawVirtualMachines(ctx, gomock.Any()).
 					Return(storageVMs, nil)
+				mockDS.EXPECT().
+					CountVirtualMachines(ctx, gomock.Any()).
+					Times(1).
+					Return(len(storageVMs), nil)
 			},
 			expectedResult: &v2.ListVirtualMachinesResponse{
 				VirtualMachines: testVMs,
+				TotalCount:      int32(len(storageVMs)),
 			},
 			expectedError: "",
 		},
@@ -161,8 +176,12 @@ func TestListVirtualMachines(t *testing.T) {
 			request: &v2.ListVirtualMachinesRequest{},
 			setupMock: func(mockDS *datastoreMocks.MockDataStore) {
 				mockDS.EXPECT().
-					GetAllVirtualMachines(ctx).
+					SearchRawVirtualMachines(ctx, gomock.Any()).
 					Return([]*storage.VirtualMachine{}, nil)
+				mockDS.EXPECT().
+					CountVirtualMachines(ctx, gomock.Any()).
+					Times(1).
+					Return(0, nil)
 			},
 			expectedResult: &v2.ListVirtualMachinesResponse{
 				VirtualMachines: []*v2.VirtualMachine{},
@@ -170,12 +189,28 @@ func TestListVirtualMachines(t *testing.T) {
 			expectedError: "",
 		},
 		{
-			name:    "datastore error",
+			name:    "datastore error (count)",
 			request: &v2.ListVirtualMachinesRequest{},
 			setupMock: func(mockDS *datastoreMocks.MockDataStore) {
 				mockDS.EXPECT().
-					GetAllVirtualMachines(ctx).
+					CountVirtualMachines(ctx, gomock.Any()).
+					Times(1).
+					Return(0, errors.New("datastore count error"))
+			},
+			expectedResult: nil,
+			expectedError:  "datastore count error",
+		},
+		{
+			name:    "datastore error (search)",
+			request: &v2.ListVirtualMachinesRequest{},
+			setupMock: func(mockDS *datastoreMocks.MockDataStore) {
+				mockDS.EXPECT().
+					SearchRawVirtualMachines(ctx, gomock.Any()).
 					Return(nil, errors.New("datastore error"))
+				mockDS.EXPECT().
+					CountVirtualMachines(ctx, gomock.Any()).
+					Times(1).
+					Return(len(storageVMs), nil)
 			},
 			expectedResult: nil,
 			expectedError:  "datastore error",

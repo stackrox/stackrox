@@ -18,6 +18,7 @@ var (
 	ContainerMemRequest            = newFieldName("Container Memory Request")
 	ContainerName                  = newFieldName("Container Name")
 	DaysSincePublished             = newFieldName("Days Since CVE Was Published")
+	DaysSinceFixAvailable          = newFieldName("Days Since CVE Fix Was Available")
 	DaysSinceImageFirstDiscovered  = newFieldName("Days Since CVE Was First Discovered In Image")
 	DaysSinceSystemFirstDiscovered = newFieldName("Days Since CVE Was First Discovered In System")
 	DisallowedAnnotation           = newFieldName("Disallowed Annotation")
@@ -82,6 +83,9 @@ var (
 	KubeUserName                   = newFieldName("Kubernetes User Name")
 	KubeUserGroups                 = newFieldName("Kubernetes User Groups")
 	SourceIPAddress                = newFieldName("Source IP Address")
+	NodeFilePath                   = newFieldName("Node File Path")
+	MountedFilePath                = newFieldName("Mounted File Path")
+	FileOperation                  = newFieldName("File Operation")
 )
 
 func newFieldName(field string) string {

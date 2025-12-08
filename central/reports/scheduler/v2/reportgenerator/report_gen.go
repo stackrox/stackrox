@@ -4,7 +4,6 @@ import (
 	"github.com/graph-gophers/graphql-go"
 	blobDS "github.com/stackrox/rox/central/blob/datastore"
 	clusterDS "github.com/stackrox/rox/central/cluster/datastore"
-	imageCVEDS "github.com/stackrox/rox/central/cve/image/datastore"
 	imageCVE2DS "github.com/stackrox/rox/central/cve/image/v2/datastore"
 	deploymentDS "github.com/stackrox/rox/central/deployment/datastore"
 	namespaceDS "github.com/stackrox/rox/central/namespace/datastore"
@@ -36,7 +35,6 @@ func New(
 	blobDatastore blobDS.Datastore,
 	clusterDatastore clusterDS.DataStore,
 	namespaceDatastore namespaceDS.DataStore,
-	imageCVEDatastore imageCVEDS.DataStore,
 	imageCVE2DataStore imageCVE2DS.DataStore,
 	schema *graphql.Schema,
 ) ReportGenerator {
@@ -50,7 +48,6 @@ func New(
 		blobDatastore,
 		clusterDatastore,
 		namespaceDatastore,
-		imageCVEDatastore,
 		imageCVE2DataStore,
 		schema,
 	)
@@ -66,7 +63,6 @@ func newReportGeneratorImpl(
 	blobStore blobDS.Datastore,
 	clusterDatastore clusterDS.DataStore,
 	namespaceDatastore namespaceDS.DataStore,
-	imageCVEDatastore imageCVEDS.DataStore,
 	imageCVE2Datastore imageCVE2DS.DataStore,
 	schema *graphql.Schema,
 ) *reportGeneratorImpl {
@@ -78,7 +74,6 @@ func newReportGeneratorImpl(
 		notificationProcessor:   notificationProcessor,
 		clusterDatastore:        clusterDatastore,
 		namespaceDatastore:      namespaceDatastore,
-		imageCVEDatastore:       imageCVEDatastore,
 		imageCVE2Datastore:      imageCVE2Datastore,
 		blobStore:               blobStore,
 		db:                      db,

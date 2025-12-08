@@ -10,17 +10,17 @@ import (
 )
 
 func copyScopingInfo(alert *storage.Alert) *storage.Alert {
-	switch entity := alert.Entity.(type) {
+	switch entity := alert.GetEntity().(type) {
 	case *storage.Alert_Deployment_:
-		alert.ClusterName = entity.Deployment.ClusterName
-		alert.ClusterId = entity.Deployment.ClusterId
-		alert.Namespace = entity.Deployment.Namespace
-		alert.NamespaceId = entity.Deployment.NamespaceId
+		alert.ClusterName = entity.Deployment.GetClusterName()
+		alert.ClusterId = entity.Deployment.GetClusterId()
+		alert.Namespace = entity.Deployment.GetNamespace()
+		alert.NamespaceId = entity.Deployment.GetNamespaceId()
 	case *storage.Alert_Resource_:
-		alert.ClusterName = entity.Resource.ClusterName
-		alert.ClusterId = entity.Resource.ClusterId
-		alert.Namespace = entity.Resource.Namespace
-		alert.NamespaceId = entity.Resource.NamespaceId
+		alert.ClusterName = entity.Resource.GetClusterName()
+		alert.ClusterId = entity.Resource.GetClusterId()
+		alert.Namespace = entity.Resource.GetNamespace()
+		alert.NamespaceId = entity.Resource.GetNamespaceId()
 	}
 	return alert
 }
@@ -327,6 +327,9 @@ func GetSerializationTestAlert() *storage.Alert {
 		ProcessViolation: &storage.Alert_ProcessViolation{
 			Message: "This is a process violation",
 		},
+		FileAccessViolation: &storage.Alert_FileAccessViolation{
+			Message: "This is a file access violation",
+		},
 		ClusterId:   fixtureconsts.Cluster1,
 		ClusterName: "prod cluster",
 		Namespace:   "stackrox",
@@ -352,6 +355,10 @@ func GetJSONSerializedTestAlertWithDefaults() string {
 	"processViolation": {
 		"message": "This is a process violation",
 		"processes": []
+	},
+	"fileAccessViolation": {
+		"message": "This is a file access violation",
+		"accesses": []
 	},
 	"resolvedAt":null,
 	"state": "ACTIVE",
@@ -388,6 +395,9 @@ func GetJSONSerializedTestAlert() string {
 	"processViolation": {
 		"message": "This is a process violation"
 	},
+	"fileAccessViolation": {
+		"message": "This is a file access violation"
+	},
 	"violations": [
 		{
 			"message": "Deployment is affected by 'CVE-2017-15670'"
@@ -403,4 +413,20 @@ func GetJSONSerializedTestAlert() string {
 		}
 	]
 }`
+}
+
+func GetNodeAlert() *storage.Alert {
+	return copyScopingInfo(&storage.Alert{
+		Id:             fixtureconsts.Alert1,
+		Time:           protocompat.TimestampNow(),
+		LifecycleStage: storage.LifecycleStage_RUNTIME,
+		Entity: &storage.Alert_Node_{
+			Node: &storage.Alert_Node{
+				Name:        fixtureconsts.Node1,
+				Id:          fixtureconsts.Node1,
+				ClusterId:   fixtureconsts.Cluster1,
+				ClusterName: fixtureconsts.ClusterName1,
+			},
+		},
+	})
 }

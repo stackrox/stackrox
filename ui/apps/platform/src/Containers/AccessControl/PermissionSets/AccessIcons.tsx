@@ -1,7 +1,7 @@
-import React, { ReactElement } from 'react';
+import type { ReactElement } from 'react';
 import { CheckIcon, TimesIcon } from '@patternfly/react-icons';
 
-import { AccessLevel } from 'services/RolesService';
+import type { AccessLevel } from 'services/RolesService';
 
 import { Icon } from '@patternfly/react-core';
 import { getIsReadAccess, getIsWriteAccess } from './permissionSets.utils';

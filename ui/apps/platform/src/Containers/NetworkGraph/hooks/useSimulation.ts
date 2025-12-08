@@ -1,5 +1,6 @@
 import useURLParameter from 'hooks/useURLParameter';
-import getSimulation, { Simulation, SimulationType } from '../utils/getSimulation';
+import getSimulation from '../utils/getSimulation';
+import type { Simulation, SimulationType } from '../utils/getSimulation';
 
 export type UseSimulationResult = {
     simulation: Simulation;

@@ -160,7 +160,7 @@ func (s *interceptorTestSuite) TestGrpcRequestInfo() {
 }
 
 func (s *interceptorTestSuite) TestGrpcWithHTTPRequestInfo() {
-	req, _ := http.NewRequest("PATCH", "/wrapped/http", nil)
+	req, _ := http.NewRequest(http.MethodPatch, "/wrapped/http", nil)
 	req.Header.Add(userAgentHeaderKey, "user")
 	rih := requestinfo.NewRequestInfoHandler()
 	ctx := peer.NewContext(context.Background(), &peer.Peer{Addr: &net.UnixAddr{Net: "pipe"}})

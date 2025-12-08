@@ -1,11 +1,11 @@
-import { NetworkPolicyModification } from 'types/networkPolicy.proto';
-import { SearchFilter } from 'types/search';
-import { NetworkScopeHierarchy } from '../types/networkScopeHierarchy';
+import type { NetworkPolicyModification } from 'types/networkPolicy.proto';
+import type { SearchFilter } from 'types/search';
+import type { NetworkScopeHierarchy } from '../types/networkScopeHierarchy';
 
 export function getDisplayYAMLFromNetworkPolicyModification(
     modification: NetworkPolicyModification | null
 ): string {
-    const { applyYaml, toDelete } = modification || {};
+    const { applyYaml, toDelete } = modification ?? {};
     const shouldDelete = toDelete && toDelete.length > 0;
     const showApplyYaml = applyYaml && applyYaml.length >= 2;
 

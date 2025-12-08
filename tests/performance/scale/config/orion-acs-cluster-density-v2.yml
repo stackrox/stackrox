@@ -1,0 +1,123 @@
+tests :
+  - name : 24-node-scale-cdv2
+    index: {{ es_metadata_index }}
+    benchmarkIndex: {{ es_benchmark_index }}
+    metadata:
+      platform: AWS
+      clusterType: self-managed
+      masterNodesType: m6a.xlarge
+      masterNodesCount: 3
+      workerNodesType: m6a.xlarge
+      workerNodesCount: 24
+      benchmark.keyword: cluster-density-v2
+      ocpVersion: {{ version }}
+      networkType: OVNKubernetes
+      jobType: {{ jobtype | default('periodic') }}
+      not:
+        stream: okd
+
+    metrics :
+    - name: collector-cpu
+      metricName: stackrox_container_cpu
+      labels.container: collector
+      threshold: 5
+      metric_of_interest: value
+      not:
+        jobConfig.name: "garbage-collection"
+      agg:
+        value: cpu
+        agg_type: avg
+    - name: collector-mem
+      metricName: stackrox_container_memory_working_set_bytes
+      labels.container: collector
+      threshold: 5
+      metric_of_interest: value
+      not:
+        jobConfig.name: "garbage-collection"
+      agg:
+        value: mem
+        agg_type: avg
+
+    - name: admission-cpu
+      metricName: stackrox_container_cpu
+      labels.container: admission-control
+      threshold: 5
+      metric_of_interest: value
+      not:
+        jobConfig.name: "garbage-collection"
+      agg:
+        value: cpu
+        agg_type: avg
+    - name: admission-mem
+      metricName: stackrox_container_memory_working_set_bytes
+      labels.container: admission-control
+      threshold: 5
+      metric_of_interest: value
+      not:
+        jobConfig.name: "garbage-collection"
+      agg:
+        value: mem
+        agg_type: avg
+
+    - name: central-cpu
+      metricName: stackrox_container_cpu
+      labels.container: central
+      threshold: 5
+      metric_of_interest: value
+      not:
+        jobConfig.name: "garbage-collection"
+      agg:
+        value: cpu
+        agg_type: avg
+    - name: central-mem
+      metricName: stackrox_container_memory_working_set_bytes
+      labels.container: central
+      threshold: 5
+      metric_of_interest: value
+      not:
+        jobConfig.name: "garbage-collection"
+      agg:
+        value: mem
+        agg_type: avg
+
+    - name: central-db-cpu
+      metricName: stackrox_container_cpu
+      labels.container: central-db
+      threshold: 5
+      metric_of_interest: value
+      not:
+        jobConfig.name: "garbage-collection"
+      agg:
+        value: cpu
+        agg_type: avg
+    - name: central-db-mem
+      metricName: stackrox_container_memory_working_set_bytes
+      labels.container: central-db
+      threshold: 5
+      metric_of_interest: value
+      not:
+        jobConfig.name: "garbage-collection"
+      agg:
+        value: mem
+        agg_type: avg
+
+    - name: sensor-cpu
+      metricName: stackrox_container_cpu
+      labels.container: sensor
+      threshold: 5
+      metric_of_interest: value
+      not:
+        jobConfig.name: "garbage-collection"
+      agg:
+        value: cpu
+        agg_type: avg
+    - name: sensor-mem
+      metricName: stackrox_container_memory_working_set_bytes
+      labels.container: sensor
+      threshold: 5
+      metric_of_interest: value
+      not:
+        jobConfig.name: "garbage-collection"
+      agg:
+        value: mem
+        agg_type: avg

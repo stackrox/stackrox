@@ -82,14 +82,18 @@ func (s *pipelineImpl) Run(ctx context.Context, clusterID string, msg *central.M
 		if deployment := a.GetDeployment(); deployment != nil {
 			deployment.ClusterId = clusterID
 			deployment.ClusterName = clusterName
-			a.Namespace = deployment.Namespace
-			a.NamespaceId = deployment.NamespaceId
+			a.Namespace = deployment.GetNamespace()
+			a.NamespaceId = deployment.GetNamespaceId()
 		}
 		if resource := a.GetResource(); resource != nil {
 			resource.ClusterId = clusterID
 			resource.ClusterName = clusterName
-			a.Namespace = resource.Namespace
-			a.NamespaceId = resource.NamespaceId
+			a.Namespace = resource.GetNamespace()
+			a.NamespaceId = resource.GetNamespaceId()
+		}
+		if node := a.GetNode(); node != nil {
+			node.ClusterId = clusterID
+			node.ClusterName = clusterName
 		}
 	}
 
@@ -97,6 +101,13 @@ func (s *pipelineImpl) Run(ctx context.Context, clusterID string, msg *central.M
 	if alertResults.GetSource() == central.AlertResults_AUDIT_EVENT {
 		if err := s.lifecycleManager.HandleResourceAlerts(clusterID, alertResults.GetAlerts(), alertResults.GetStage()); err != nil {
 			return errors.Wrap(err, "error handling resource alerts")
+		}
+		return nil
+	}
+
+	if alertResults.GetSource() == central.AlertResults_NODE_EVENT {
+		if err := s.lifecycleManager.HandleNodeAlerts(clusterID, alertResults.GetAlerts(), alertResults.GetStage()); err != nil {
+			return errors.Wrap(err, "error handling node alerts")
 		}
 		return nil
 	}

@@ -41,25 +41,13 @@ func init() {
 			imageOptionsMap,
 		),
 	)
-	if features.FlattenCVEData.Enabled() {
-		ImageOnlyOptionsMap = search.Difference(
-			schema.ImagesSchema.OptionsMap,
-			search.CombineOptionsMaps(
-				schema.ImageComponentV2Schema.OptionsMap,
-				schema.ImageCvesV2Schema.OptionsMap,
-			),
-		)
-	} else {
-		ImageOnlyOptionsMap = search.Difference(
-			schema.ImagesSchema.OptionsMap,
-			search.CombineOptionsMaps(
-				schema.ImageComponentEdgesSchema.OptionsMap,
-				schema.ImageComponentsSchema.OptionsMap,
-				schema.ImageComponentCveEdgesSchema.OptionsMap,
-				schema.ImageCvesSchema.OptionsMap,
-			),
-		)
-	}
+	ImageOnlyOptionsMap = search.Difference(
+		schema.ImagesSchema.OptionsMap,
+		search.CombineOptionsMaps(
+			schema.ImageComponentV2Schema.OptionsMap,
+			schema.ImageCvesV2Schema.OptionsMap,
+		),
+	)
 	ImageV2OnlyOptionsMap = search.Difference(
 		schema.ImagesV2Schema.OptionsMap,
 		search.CombineOptionsMaps(

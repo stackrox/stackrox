@@ -1,16 +1,17 @@
-import React from 'react';
+import { useState } from 'react';
+import type { MouseEvent } from 'react';
 import {
     ExpandableSection,
     Flex,
     FlexItem,
     Label,
     LabelGroup,
+    Skeleton,
     Text,
     Title,
-    Skeleton,
 } from '@patternfly/react-core';
 
-import { ComplianceProfileSummary } from 'services/ComplianceCommon';
+import type { ComplianceProfileSummary } from 'services/ComplianceCommon';
 
 interface ProfileDetailsHeaderProps {
     isLoading: boolean;
@@ -23,9 +24,9 @@ function ProfileDetailsHeader({
     profileDetails,
     profileName,
 }: ProfileDetailsHeaderProps) {
-    const [isExpanded, setIsExpanded] = React.useState(false);
+    const [isExpanded, setIsExpanded] = useState(false);
 
-    function onToggleDescription(_event: React.MouseEvent, isExpanded: boolean) {
+    function onToggleDescription(_event: MouseEvent, isExpanded: boolean) {
         setIsExpanded(isExpanded);
     }
 

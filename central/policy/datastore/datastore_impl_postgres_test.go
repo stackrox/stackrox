@@ -10,7 +10,6 @@ import (
 	clusterDSMocks "github.com/stackrox/rox/central/cluster/datastore/mocks"
 	notifierDSMocks "github.com/stackrox/rox/central/notifier/datastore/mocks"
 	policyStore "github.com/stackrox/rox/central/policy/store"
-	pgStore "github.com/stackrox/rox/central/policy/store/postgres"
 	policyCategoryDS "github.com/stackrox/rox/central/policycategory/datastore"
 	policyCategoryMocks "github.com/stackrox/rox/central/policycategory/datastore/mocks"
 	categoryPostgres "github.com/stackrox/rox/central/policycategory/store/postgres"
@@ -24,9 +23,9 @@ import (
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	pkgSearch "github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
-	"gorm.io/gorm"
 )
 
 func TestPolicyDataStoreWithPostgres(t *testing.T) {
@@ -38,7 +37,6 @@ type PolicyPostgresDataStoreTestSuite struct {
 
 	ctx            context.Context
 	db             postgres.DB
-	gormDB         *gorm.DB
 	mockClusterDS  *clusterDSMocks.MockDataStore
 	mockNotifierDS *notifierDSMocks.MockDataStore
 
@@ -50,30 +48,18 @@ type PolicyPostgresDataStoreTestSuite struct {
 }
 
 func (s *PolicyPostgresDataStoreTestSuite) SetupSuite() {
-
 	s.ctx = context.Background()
-
-	source := pgtest.GetConnectionString(s.T())
-	config, err := postgres.ParseConfig(source)
-	s.Require().NoError(err)
-
-	pool, err := postgres.New(s.ctx, config)
-	s.NoError(err)
-	s.gormDB = pgtest.OpenGormDB(s.T(), source)
-	s.db = pool
 }
 
 func (s *PolicyPostgresDataStoreTestSuite) SetupTest() {
-	pgStore.Destroy(s.ctx, s.db)
-	categoryPostgres.Destroy(s.ctx, s.db)
-	edgePostgres.Destroy(s.ctx, s.db)
+	s.db = pgtest.ForT(s.T())
 
 	s.mockClusterDS = clusterDSMocks.NewMockDataStore(gomock.NewController(s.T()))
 	s.mockNotifierDS = notifierDSMocks.NewMockDataStore(gomock.NewController(s.T()))
 
-	categoryStorage := categoryPostgres.CreateTableAndNewStore(s.ctx, s.db, s.gormDB)
+	categoryStorage := categoryPostgres.New(s.db)
 
-	edgeStorage := edgePostgres.CreateTableAndNewStore(s.ctx, s.db, s.gormDB)
+	edgeStorage := edgePostgres.New(s.db)
 
 	s.categoryDS = policyCategoryDS.New(categoryStorage, policyCategoryEdgeDS.New(edgeStorage))
 
@@ -84,9 +70,8 @@ func (s *PolicyPostgresDataStoreTestSuite) SetupTest() {
 	s.datastoreWithMockCategoryDS = New(policyStorage, s.mockClusterDS, s.mockNotifierDS, s.mockCategoryDS)
 }
 
-func (s *PolicyPostgresDataStoreTestSuite) TearDownSuite() {
+func (s *PolicyPostgresDataStoreTestSuite) TearDownTest() {
 	s.db.Close()
-	pgtest.CloseGormDB(s.T(), s.gormDB)
 }
 
 func (s *PolicyPostgresDataStoreTestSuite) TestInsertUpdatePolicy() {
@@ -263,8 +248,8 @@ func (s *PolicyPostgresDataStoreTestSuite) TestImportOverwriteDefaultPolicy() {
 			s.Require().NoError(err) // It's not an error just a failure?
 			s.Require().False(allSucceeded)
 			s.Require().Len(responses, 1)
-			s.Require().Len(responses[0].Errors, 1)
-			s.Require().Equal(responses[0].Errors[0].Type, c.expectedImportError)
+			s.Require().Len(responses[0].GetErrors(), 1)
+			s.Require().Equal(responses[0].GetErrors()[0].GetType(), c.expectedImportError)
 
 			// Now try to import with overwrite true
 			responses, allSucceeded, err = s.datastore.ImportPolicies(ctx, []*storage.Policy{c.newPolicy}, true)
@@ -273,8 +258,8 @@ func (s *PolicyPostgresDataStoreTestSuite) TestImportOverwriteDefaultPolicy() {
 				s.Require().NoError(err) // It's not an error just a failure?
 				s.Require().False(allSucceeded)
 				s.Require().Len(responses, 1)
-				s.Require().Len(responses[0].Errors, 1)
-				s.Require().Equal(responses[0].Errors[0].Type, c.expectedImportError) // ... should the error be different?
+				s.Require().Len(responses[0].GetErrors(), 1)
+				s.Require().Equal(responses[0].GetErrors()[0].GetType(), c.expectedImportError) // ... should the error be different?
 
 				// Find the existing policy and validate the name and id
 				result, _, err := s.datastore.GetPolicy(ctx, c.existingPolicy.GetId())
@@ -287,7 +272,7 @@ func (s *PolicyPostgresDataStoreTestSuite) TestImportOverwriteDefaultPolicy() {
 				s.NoError(err) // It's not an error just a failure?
 				s.True(allSucceeded)
 				s.Require().Len(responses, 1)
-				s.Empty(responses[0].Errors)
+				s.Empty(responses[0].GetErrors())
 
 				// Find the new policy and validate the name and id
 				result, _, err := s.datastore.GetPolicy(ctx, c.newPolicy.GetId())
@@ -342,7 +327,7 @@ func (s *PolicyPostgresDataStoreTestSuite) TestSearchRawPolicies() {
 	policies, err := s.datastore.SearchRawPolicies(ctx, pkgSearch.EmptyQuery())
 	s.NoError(err)
 	s.Len(policies, 1)
-	s.Len(policies[0].Categories, 3)
+	s.Len(policies[0].GetCategories(), 3)
 }
 
 func (s *PolicyPostgresDataStoreTestSuite) TestTransactionRollbacks() {
@@ -372,4 +357,107 @@ func (s *PolicyPostgresDataStoreTestSuite) TestTransactionRollbacks() {
 
 	// Clean up policy
 	_ = s.datastoreWithMockCategoryDS.RemovePolicy(ctx, policy)
+}
+
+func (s *PolicyPostgresDataStoreTestSuite) TestAddDefaultsDeduplicatesCategoryNames() {
+	ctx := sac.WithAllAccess(context.Background())
+
+	// Create a policy with incorrect category names that need to be deduplicated
+	policy := fixtures.GetPolicy()
+	policy.Id = "test-policy-dedup"
+	policy.Name = "Test Policy for Deduplication"
+
+	// Add the policy first
+	_, err := s.datastore.AddPolicy(ctx, policy)
+	s.NoError(err)
+
+	// Clear existing categories from the policy
+	err = s.categoryDS.SetPolicyCategoriesForPolicy(ctx, policy.GetId(), []string{})
+	s.NoError(err)
+
+	// Create categories with incorrect names directly using the store to bypass normalization
+	// These are the incorrect names: "Docker Cis" and "Devops Best Practices"
+	categoryStorage := categoryPostgres.New(s.db)
+	edgeStorage := edgePostgres.New(s.db)
+	edgeDS := policyCategoryEdgeDS.New(edgeStorage)
+
+	dockerCisCategory := &storage.PolicyCategory{
+		Id:        uuid.NewV4().String(),
+		Name:      "Docker Cis",
+		IsDefault: false,
+	}
+	devopsCategory := &storage.PolicyCategory{
+		Id:        uuid.NewV4().String(),
+		Name:      "Devops Best Practices",
+		IsDefault: false,
+	}
+
+	// Upsert the incorrect categories directly to the store
+	err = categoryStorage.Upsert(ctx, dockerCisCategory)
+	s.NoError(err)
+	err = categoryStorage.Upsert(ctx, devopsCategory)
+	s.NoError(err)
+
+	// Create edges linking the policy to the incorrect categories
+	dockerCisEdge := &storage.PolicyCategoryEdge{
+		Id:         uuid.NewV4().String(),
+		PolicyId:   policy.GetId(),
+		CategoryId: dockerCisCategory.GetId(),
+	}
+	devopsEdge := &storage.PolicyCategoryEdge{
+		Id:         uuid.NewV4().String(),
+		PolicyId:   policy.GetId(),
+		CategoryId: devopsCategory.GetId(),
+	}
+	err = edgeDS.UpsertMany(ctx, []*storage.PolicyCategoryEdge{dockerCisEdge, devopsEdge})
+	s.NoError(err)
+
+	// Verify the policy has the incorrect category names
+	categories, err := s.categoryDS.GetPolicyCategoriesForPolicy(ctx, policy.GetId())
+	s.NoError(err)
+	s.Len(categories, 2)
+	categoryNames := make([]string, len(categories))
+	for i, c := range categories {
+		categoryNames[i] = c.GetName()
+	}
+	s.Contains(categoryNames, "Docker Cis")
+	s.Contains(categoryNames, "Devops Best Practices")
+
+	// Verify the incorrect category objects exist
+	searchQuery := pkgSearch.NewQueryBuilder().AddExactMatches(pkgSearch.PolicyCategoryName, "Docker Cis", "Devops Best Practices").ProtoQuery()
+	results, err := s.categoryDS.Search(ctx, searchQuery)
+	s.NoError(err)
+	s.Len(results, 2) // Both incorrect categories should exist
+
+	// Now call addDefaults which should fix the category names
+	policyStorage := policyStore.New(s.db)
+	addDefaults(policyStorage, s.categoryDS, s.datastore)
+
+	// Verify the policy now has the correct category names
+	categories, err = s.categoryDS.GetPolicyCategoriesForPolicy(ctx, policy.GetId())
+	s.NoError(err)
+	s.Len(categories, 2)
+	categoryNames = make([]string, len(categories))
+	for i, c := range categories {
+		categoryNames[i] = c.GetName()
+	}
+	s.Contains(categoryNames, "Docker CIS")
+	s.Contains(categoryNames, "DevOps Best Practices")
+	s.NotContains(categoryNames, "Docker Cis")
+	s.NotContains(categoryNames, "Devops Best Practices")
+
+	// Verify the incorrect category objects have been deleted
+	searchQuery = pkgSearch.NewQueryBuilder().AddExactMatches(pkgSearch.PolicyCategoryName, "Docker Cis", "Devops Best Practices").ProtoQuery()
+	results, err = s.categoryDS.Search(ctx, searchQuery)
+	s.NoError(err)
+	s.Len(results, 0) // Both incorrect categories should be deleted
+
+	// Verify the correct category objects exist
+	searchQuery = pkgSearch.NewQueryBuilder().AddExactMatches(pkgSearch.PolicyCategoryName, "Docker CIS", "DevOps Best Practices").ProtoQuery()
+	results, err = s.categoryDS.Search(ctx, searchQuery)
+	s.NoError(err)
+	s.Len(results, 2) // Both correct categories should exist
+
+	// Clean up
+	s.NoError(s.datastore.RemovePolicy(ctx, policy))
 }

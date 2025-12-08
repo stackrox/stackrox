@@ -140,8 +140,8 @@ func (s *serviceImpl) GetNetworkBaselineStatusForExternalFlows(ctx context.Conte
 
 	pg := request.GetPagination()
 	if pg != nil {
-		anomalousFlows = paginated.PaginateSlice(int(pg.Offset), int(pg.Limit), anomalousFlows)
-		baselineFlows = paginated.PaginateSlice(int(pg.Offset), int(pg.Limit), baselineFlows)
+		anomalousFlows = paginated.PaginateSlice(int(pg.GetOffset()), int(pg.GetLimit()), anomalousFlows)
+		baselineFlows = paginated.PaginateSlice(int(pg.GetOffset()), int(pg.GetLimit()), baselineFlows)
 	}
 
 	return &v1.NetworkBaselineExternalStatusResponse{
@@ -292,7 +292,7 @@ func (s *serviceImpl) ModifyBaselineStatusForPeers(ctx context.Context, request 
 }
 
 func (s *serviceImpl) LockNetworkBaseline(ctx context.Context, request *v1.ResourceByID) (*v1.Empty, error) {
-	err := s.manager.ProcessBaselineLockUpdate(ctx, request.Id, true)
+	err := s.manager.ProcessBaselineLockUpdate(ctx, request.GetId(), true)
 	if err != nil {
 		return nil, err
 	}
@@ -300,7 +300,7 @@ func (s *serviceImpl) LockNetworkBaseline(ctx context.Context, request *v1.Resou
 }
 
 func (s *serviceImpl) UnlockNetworkBaseline(ctx context.Context, request *v1.ResourceByID) (*v1.Empty, error) {
-	err := s.manager.ProcessBaselineLockUpdate(ctx, request.Id, false)
+	err := s.manager.ProcessBaselineLockUpdate(ctx, request.GetId(), false)
 	if err != nil {
 		return nil, err
 	}

@@ -1,8 +1,7 @@
-import React from 'react';
 import { ExclamationCircleIcon } from '@patternfly/react-icons';
 
 import EmptyStateTemplate from 'Components/EmptyStateTemplate';
-import { EmptyStateTemplateProps } from 'Components/EmptyStateTemplate/EmptyStateTemplate';
+import type { EmptyStateTemplateProps } from 'Components/EmptyStateTemplate/EmptyStateTemplate';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 import { TbodyFullCentered } from './TbodyFullCentered';
 

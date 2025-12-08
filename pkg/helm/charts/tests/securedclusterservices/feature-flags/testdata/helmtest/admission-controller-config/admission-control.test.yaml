@@ -99,6 +99,10 @@ tests:
       set:
         admissionControl.dynamic.enforceOnUpdates: false
         admissionControl.dynamic.enforceOnCreates: true
+    - name: "if enforceOnCreates and enforceOnUpdates enabled"
+      set:
+        admissionControl.dynamic.enforceOnUpdates: true
+        admissionControl.dynamic.enforceOnCreates: true
 - name: "Warning is emitted when enforcement is disabled"
   expect:
     .notes | assertThat(contains("Admission Controller enforcement will be completely disabled, this is a bad idea"))

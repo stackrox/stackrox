@@ -1,17 +1,24 @@
-import React, { ReactNode } from 'react';
-import { Toolbar, ToolbarGroup, ToolbarContent } from '@patternfly/react-core';
-import { uniq } from 'lodash';
+import type { ReactElement, ReactNode } from 'react';
+import { Toolbar, ToolbarContent, ToolbarGroup } from '@patternfly/react-core';
 
-import CompoundSearchFilter, {
-    CompoundSearchFilterProps,
-} from 'Components/CompoundSearchFilter/components/CompoundSearchFilter';
-import { OnSearchPayload } from 'Components/CompoundSearchFilter/types';
-import { makeFilterChipDescriptors } from 'Components/CompoundSearchFilter/utils/utils';
-import SearchFilterChips, { FilterChip } from 'Components/PatternFly/SearchFilterChips';
-import { SearchFilter } from 'types/search';
-import { getHasSearchApplied, searchValueAsArray } from 'utils/searchUtils';
+import CompoundSearchFilter from 'Components/CompoundSearchFilter/components/CompoundSearchFilter';
+import type { CompoundSearchFilterProps } from 'Components/CompoundSearchFilter/components/CompoundSearchFilter';
+import SearchFilterChips, {
+    FilterChip,
+    makeFilterChipDescriptors,
+} from 'Components/CompoundSearchFilter/components/SearchFilterChips';
+import type { OnSearchPayload } from 'Components/CompoundSearchFilter/types';
+import { updateSearchFilter } from 'Components/CompoundSearchFilter/utils/utils';
+import type { SearchFilter } from 'types/search';
+import { getHasSearchApplied } from 'utils/searchUtils';
 
-import { DefaultFilters } from '../types';
+import type { DefaultFilters } from '../types';
+import {
+    cveSeverityFilterDescriptor,
+    cveSnoozedDescriptor,
+    cveStatusClusterFixableDescriptor,
+    cveStatusFixableDescriptor,
+} from '../filterChipDescriptor';
 import CVESeverityDropdown from './CVESeverityDropdown';
 import CVEStatusDropdown from './CVEStatusDropdown';
 
@@ -64,46 +71,28 @@ function AdvancedFiltersToolbar({
     defaultSearchFilterEntity,
     additionalContextFilter,
     children,
-}: AdvancedFiltersToolbarProps) {
-    const filterChipGroupDescriptors = makeFilterChipDescriptors(searchFilterConfig)
-        .concat({
-            displayName: 'CVE snoozed',
-            searchFilterName: 'CVE Snoozed',
-        })
-        .concat(
-            includeCveSeverityFilters
-                ? makeDefaultFilterDescriptor(defaultFilters, {
-                      displayName: 'CVE severity',
-                      searchFilterName: 'SEVERITY',
-                  })
-                : []
-        )
-        .concat(
-            includeCveStatusFilters
-                ? [
-                      makeDefaultFilterDescriptor(defaultFilters, {
-                          displayName: 'CVE status',
-                          searchFilterName: 'FIXABLE',
-                      }),
-                      makeDefaultFilterDescriptor(defaultFilters, {
-                          displayName: 'CVE status',
-                          searchFilterName: 'CLUSTER CVE FIXABLE',
-                      }),
-                  ]
-                : []
-        );
+}: AdvancedFiltersToolbarProps): ReactElement {
+    const baseDescriptors = makeFilterChipDescriptors(searchFilterConfig);
 
-    function onFilterApplied({ category, value, action }: OnSearchPayload) {
-        const selectedSearchFilter = searchValueAsArray(searchFilter[category]);
+    const severityDescriptors = includeCveSeverityFilters
+        ? [makeDefaultFilterDescriptor(defaultFilters, cveSeverityFilterDescriptor)]
+        : [];
 
-        const newFilter = {
-            ...searchFilter,
-            [category]:
-                action === 'ADD'
-                    ? uniq([...selectedSearchFilter, value])
-                    : selectedSearchFilter.filter((oldValue) => value !== oldValue),
-        };
-        onFilterChange(newFilter, { category, value, action });
+    const statusDescriptors = includeCveStatusFilters
+        ? [
+              makeDefaultFilterDescriptor(defaultFilters, cveStatusFixableDescriptor),
+              makeDefaultFilterDescriptor(defaultFilters, cveStatusClusterFixableDescriptor),
+          ]
+        : [];
+
+    const filterChipGroupDescriptors = baseDescriptors.concat(
+        cveSnoozedDescriptor,
+        severityDescriptors,
+        statusDescriptors
+    );
+
+    function onFilterApplied(payload: OnSearchPayload) {
+        onFilterChange(updateSearchFilter(searchFilter, payload), payload);
     }
 
     return (
@@ -127,11 +116,13 @@ function AdvancedFiltersToolbar({
                             <CVESeverityDropdown
                                 searchFilter={searchFilter}
                                 onSelect={(category, checked, value) =>
-                                    onFilterApplied({
-                                        category,
-                                        value,
-                                        action: checked ? 'ADD' : 'REMOVE',
-                                    })
+                                    onFilterApplied([
+                                        {
+                                            category,
+                                            value,
+                                            action: checked ? 'SELECT_INCLUSIVE' : 'REMOVE',
+                                        },
+                                    ])
                                 }
                             />
                         )}
@@ -140,11 +131,13 @@ function AdvancedFiltersToolbar({
                                 filterField={cveStatusFilterField}
                                 searchFilter={searchFilter}
                                 onSelect={(category, checked, value) =>
-                                    onFilterApplied({
-                                        category,
-                                        value,
-                                        action: checked ? 'ADD' : 'REMOVE',
-                                    })
+                                    onFilterApplied([
+                                        {
+                                            category,
+                                            value,
+                                            action: checked ? 'SELECT_INCLUSIVE' : 'REMOVE',
+                                        },
+                                    ])
                                 }
                             />
                         )}

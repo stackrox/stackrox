@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import {
     Card,
     CardBody,
@@ -13,7 +13,7 @@ import {
     StackItem,
 } from '@patternfly/react-core';
 
-import { EmbeddedSecret } from 'types/deployment.proto';
+import type { EmbeddedSecret } from 'types/deployment.proto';
 
 type ContainerSecretsInfoProps = {
     secrets: EmbeddedSecret[];
@@ -23,7 +23,7 @@ function ContainerSecretsInfo({ secrets }: ContainerSecretsInfoProps) {
     const initialToggleValues = Array.from({ length: secrets.length }, () => true);
     const [secretToggles, setSecretToggles] = useState(initialToggleValues);
 
-    function setToggleAtIndex(i) {
+    function setToggleAtIndex(i: number) {
         const newToggles = [...secretToggles];
         newToggles[i] = !newToggles[i];
 

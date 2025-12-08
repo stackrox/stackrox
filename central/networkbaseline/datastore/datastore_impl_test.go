@@ -7,7 +7,6 @@ import (
 	"testing"
 
 	"github.com/stackrox/rox/central/networkbaseline/store"
-	pgStore "github.com/stackrox/rox/central/networkbaseline/store/postgres"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/postgres"
@@ -42,16 +41,8 @@ var _ interface {
 } = (*NetworkBaselineDataStoreTestSuite)(nil)
 
 func (suite *NetworkBaselineDataStoreTestSuite) SetupSuite() {
-	ctx := context.Background()
-	source := pgtest.GetConnectionString(suite.T())
-	config, err := postgres.ParseConfig(source)
-	suite.NoError(err)
-	suite.pool, err = postgres.New(ctx, config)
-	suite.NoError(err)
-	pgStore.Destroy(ctx, suite.pool)
-	gormDB := pgtest.OpenGormDB(suite.T(), source)
-	defer pgtest.CloseGormDB(suite.T(), gormDB)
-	suite.storage = pgStore.CreateTableAndNewStore(ctx, suite.pool, gormDB)
+	suite.pool = pgtest.ForT(suite.T())
+	suite.storage = store.New(suite.pool)
 	suite.datastore = newNetworkBaselineDataStore(suite.storage)
 }
 
@@ -154,7 +145,7 @@ func (suite *NetworkBaselineDataStoreTestSuite) TestSAC() {
 
 	// Test Update
 	{
-		expectedBaseline.Locked = !expectedBaseline.Locked
+		expectedBaseline.Locked = !expectedBaseline.GetLocked()
 		suite.Error(suite.datastore.UpsertNetworkBaselines(ctxWithWrongClusterReadAccess, []*storage.NetworkBaseline{expectedBaseline}), "permission denied")
 		suite.Error(suite.datastore.UpsertNetworkBaselines(ctxWithReadAccess, []*storage.NetworkBaseline{expectedBaseline}), "permission denied")
 		suite.Error(suite.datastore.UpsertNetworkBaselines(ctxWithWrongClusterWriteAccess, []*storage.NetworkBaseline{expectedBaseline}), "permission denied")
@@ -162,7 +153,7 @@ func (suite *NetworkBaselineDataStoreTestSuite) TestSAC() {
 		// Check updated value
 		result, found := suite.mustGetBaseline(allAllowedCtx, expectedBaseline.GetDeploymentId())
 		suite.True(found)
-		suite.Equal(expectedBaseline.Locked, result.Locked)
+		suite.Equal(expectedBaseline.GetLocked(), result.GetLocked())
 	}
 
 	// Test Get

@@ -1,10 +1,11 @@
 import { useState } from 'react';
-import { useFormik, FormikProps, FormikValues } from 'formik';
-import { Schema } from 'yup';
+import { useFormik } from 'formik';
+import type { FormikProps, FormikValues } from 'formik';
+import type { Schema } from 'yup';
 
-import { IntegrationOptions } from 'services/IntegrationsService';
+import type { IntegrationOptions } from 'services/IntegrationsService';
 
-import { FormResponseMessage } from 'Components/PatternFly/FormMessage';
+import type { FormResponseMessage } from 'Components/PatternFly/FormMessage';
 import useIntegrationActions from '../hooks/useIntegrationActions';
 
 export type UseIntegrationForm<T> = {

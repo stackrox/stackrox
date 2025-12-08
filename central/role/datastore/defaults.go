@@ -163,7 +163,7 @@ func getDefaultRoles() []*storage.Role {
 			Traits: &storage.Traits{
 				Origin: storage.Traits_DEFAULT,
 			},
-			PermissionSetId: permissionSet.Id,
+			PermissionSetId: permissionSet.GetId(),
 		}
 		roles = append(roles, role)
 	}

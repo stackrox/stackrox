@@ -1,5 +1,7 @@
-import path from 'path';
-
 export function readFileFromDownloads(filename: string) {
-    return cy.readFile(path.join(Cypress.config('downloadsFolder'), filename));
+    return cy
+        .task<string>('joinPaths', [Cypress.config('downloadsFolder'), filename])
+        .then((path) => {
+            return cy.readFile(path);
+        });
 }

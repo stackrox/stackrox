@@ -1,5 +1,3 @@
-import React from 'react';
-
 import { selectOptionEventTypes } from 'constants/timelineTypes';
 import Select from 'Components/ReactSelect';
 

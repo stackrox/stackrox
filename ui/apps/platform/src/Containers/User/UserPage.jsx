@@ -1,14 +1,14 @@
-import React from 'react';
 import { NavLink, Route, Routes, useMatch, useParams } from 'react-router-dom-v5-compat';
 import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
-import { createStructuredSelector, createSelector } from 'reselect';
+import { createSelector, createStructuredSelector } from 'reselect';
 import {
     DescriptionListDescription,
     DescriptionListGroup,
     DescriptionListTerm,
     EmptyState,
     EmptyStateBody,
+    EmptyStateHeader,
     Flex,
     FlexItem,
     Nav,
@@ -17,7 +17,6 @@ import {
     NavList,
     PageSection,
     Title,
-    EmptyStateHeader,
 } from '@patternfly/react-core';
 
 import DescriptionListCompact from 'Components/DescriptionListCompact';
@@ -81,7 +80,7 @@ function UserPage({ resourceToAccessByRole, userData }) {
                         </DescriptionListGroup>
                     )}
                     <DescriptionListGroup>
-                        <DescriptionListTerm className="whitespace-nowrap">
+                        <DescriptionListTerm className="pf-v5-u-text-nowrap">
                             Auth provider
                         </DescriptionListTerm>
                         <DescriptionListDescription>{authProviderName}</DescriptionListDescription>

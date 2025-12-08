@@ -163,7 +163,7 @@ func UpdateSortAggs(q *v1.Query) *v1.Query {
 	// We are prefetching IDs, so we only want to aggregate and sort on items being sorted on at this time.
 	// Once we have the subset of IDs we will go back and get the rest of the data.
 	for _, sortOption := range cloned.GetPagination().GetSortOptions() {
-		upperOptions := strings.ToUpper(sortOption.Field)
+		upperOptions := strings.ToUpper(sortOption.GetField())
 
 		switch upperOptions {
 		case search.Severity.ToUpper():

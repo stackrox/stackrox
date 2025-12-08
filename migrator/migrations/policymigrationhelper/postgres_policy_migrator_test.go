@@ -152,10 +152,10 @@ func (s *postgresPolicyMigratorTestSuite) TestAllUnmodifiedPoliciesGetUpdated() 
 				policy.Description = "sfasdf"
 
 				comparisonPolicy := policy.CloneVT()
-				comparisonPolicies[policy.Id] = comparisonPolicy
-				policiesToMigrate[policy.Id] = PolicyChanges{
+				comparisonPolicies[policy.GetId()] = comparisonPolicy
+				policiesToMigrate[policy.GetId()] = PolicyChanges{
 					FieldsToCompare: []FieldComparator{PolicySectionComparator, ExclusionComparator, RemediationComparator, RationaleComparator},
-					ToChange:        PolicyUpdates{Description: strPtr(fmt.Sprintf("%s new description", policy.Id))}, // give them all a new description
+					ToChange:        PolicyUpdates{Description: strPtr(fmt.Sprintf("%s new description", policy.GetId()))}, // give them all a new description
 				}
 			}
 
@@ -164,8 +164,8 @@ func (s *postgresPolicyMigratorTestSuite) TestAllUnmodifiedPoliciesGetUpdated() 
 
 			for _, policy := range policiesToTest {
 				// All the policies should've changed
-				policy.Description = fmt.Sprintf("%s new description", policy.Id)
-				s.comparePolicyWithDB(policy.Id, policy)
+				policy.Description = fmt.Sprintf("%s new description", policy.GetId())
+				s.comparePolicyWithDB(policy.GetId(), policy)
 			}
 		})
 	}
@@ -262,7 +262,7 @@ func (s *postgresPolicyMigratorTestSuite) TestCategoriesAreAddedAndRemovedAsNece
 
 	s.NoError(s.store.Upsert(s.ctx, policy))
 
-	for _, c := range policy.Categories {
+	for _, c := range policy.GetCategories() {
 		s.NoError(s.categoryStore.Upsert(s.ctx, &storage.PolicyCategory{
 			Id:        c,
 			Name:      c,

@@ -37,7 +37,7 @@ func Test_DetermineAction(t *testing.T) {
 			wantAction:       AddSecondary,
 		},
 		"should add secondary just before 4/5 of validity": {
-			now:              "2028-12-31T23:59:59Z",
+			now:              "2028-12-31T00:00:00Z",
 			primaryNotBefore: "2025-01-01T00:00:00Z",
 			primaryNotAfter:  "2030-01-01T00:00:00Z",
 			wantAction:       AddSecondary,
@@ -49,6 +49,12 @@ func Test_DetermineAction(t *testing.T) {
 			secondaryNotBefore: "2028-01-01T00:00:00Z",
 			secondaryNotAfter:  "2033-01-01T00:00:00Z",
 			wantAction:         PromoteSecondary,
+		},
+		"should add secondary and promote it to primary after 4/5 of validity": {
+			now:              "2029-01-02T00:00:00Z",
+			primaryNotBefore: "2025-01-01T00:00:00Z",
+			primaryNotAfter:  "2030-01-01T00:00:00Z",
+			wantAction:       AddSecondaryAndPromote,
 		},
 		"should delete expired secondary": {
 			now:                "2031-01-02T00:00:00Z",

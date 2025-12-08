@@ -30,7 +30,7 @@ func CheckVolumeAccessIsLimited(ctx framework.ComplianceContext) {
 	}
 
 	isServiceAccount := func(subject *storage.Subject) bool {
-		return subject.Kind == storage.SubjectKind_SERVICE_ACCOUNT
+		return subject.GetKind() == storage.SubjectKind_SERVICE_ACCOUNT
 	}
 
 	subjectsWithPersistentVolumeAccess := listSubjectsWithAccess(isServiceAccount, ctx.Data().K8sRoles(), ctx.Data().K8sRoleBindings(), &storage.PolicyRule{
@@ -103,7 +103,7 @@ const LimitedUsersAndGroupsWithClusterAdminInterpretation = `Widespread use of t
 // LimitedUsersAndGroupsWithClusterAdmin checks that only a single user or group exists with cluster admin access.
 func LimitedUsersAndGroupsWithClusterAdmin(ctx framework.ComplianceContext) {
 	serviceAccountsWithClusterAdmin := listSubjectsWithAccess(func(subject *storage.Subject) bool {
-		return subject.Kind == storage.SubjectKind_USER || subject.Kind == storage.SubjectKind_GROUP
+		return subject.GetKind() == storage.SubjectKind_USER || subject.GetKind() == storage.SubjectKind_GROUP
 	}, ctx.Data().K8sRoles(), ctx.Data().K8sRoleBindings(), EffectiveAdmin)
 	if serviceAccountsWithClusterAdmin.Cardinality() > 1 {
 		framework.Fail(ctx, "Multiple User or Group subjects were found with cluster-admin-level access. Typically, a single Group subject is most appropriate.")

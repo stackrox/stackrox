@@ -8,26 +8,25 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/stackrox/rox/central/auth/m2m/mocks"
-	"github.com/stackrox/rox/pkg/errox"
-	"github.com/stackrox/rox/pkg/protoassert"
-	"github.com/stackrox/rox/pkg/protomock"
-	"github.com/stackrox/rox/pkg/uuid"
-	"go.uber.org/mock/gomock"
-
 	m2mDataStore "github.com/stackrox/rox/central/auth/datastore"
 	m2mDataStoreMocks "github.com/stackrox/rox/central/auth/datastore/mocks"
+	"github.com/stackrox/rox/central/auth/m2m/mocks"
 	m2mStore "github.com/stackrox/rox/central/auth/store"
 	healthDataStore "github.com/stackrox/rox/central/declarativeconfig/health/datastore"
 	roleDataStore "github.com/stackrox/rox/central/role/datastore"
 	roleDataStoreMocks "github.com/stackrox/rox/central/role/datastore/mocks"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/declarativeconfig"
+	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/protocompat"
+	"github.com/stackrox/rox/pkg/protomock"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
+	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/suite"
+	"go.uber.org/mock/gomock"
 )
 
 // region Postgres tests
@@ -68,7 +67,7 @@ func (s *authMachineToMachineTestSuite) SetupTest() {
 	s.db = pgtest.ForT(s.T())
 	s.roleDS = roleDataStore.GetTestPostgresDataStore(s.T(), s.db)
 	m2mStorage := m2mStore.New(s.db)
-	s.m2mConfigDS = m2mDataStore.New(m2mStorage, s.roleDS, mockSet, nil)
+	s.m2mConfigDS = m2mDataStore.New(m2mStorage, s.roleDS, mockSet)
 	healthDS := healthDataStore.GetTestPostgresDataStore(s.T(), s.db)
 	s.updater = newAuthM2MConfigUpdater(s.m2mConfigDS, healthDS)
 }

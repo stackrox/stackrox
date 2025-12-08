@@ -19,7 +19,6 @@ import (
 	"github.com/stackrox/rox/pkg/crs"
 	helmUtil "github.com/stackrox/rox/pkg/helm/util"
 	pkgKubernetes "github.com/stackrox/rox/pkg/kubernetes"
-	"github.com/stackrox/rox/pkg/pointers"
 	"github.com/stackrox/rox/pkg/utils"
 	"helm.sh/helm/v3/pkg/chartutil"
 	corev1 "k8s.io/api/core/v1"
@@ -98,7 +97,7 @@ func (t Translator) translate(ctx context.Context, sc platform.SecuredCluster) (
 	if err := platform.MergeSecuredClusterDefaultsIntoSpec(&sc); err != nil {
 		return nil, err
 	}
-	t.setDefaults(&sc)
+	scanner.SetScannerDefaults(&sc.Spec)
 
 	v := translation.NewValuesBuilder()
 
@@ -160,6 +159,8 @@ func (t Translator) translate(ctx context.Context, sc platform.SecuredCluster) (
 	if sc.Spec.Network != nil {
 		v.AddChild("network", translation.GetGlobalNetwork(sc.Spec.Network))
 	}
+
+	v.AddChild("autoLockProcessBaselines", getProcessBaselinesValues(sc.Spec.ProcessBaselines))
 
 	return v.Build()
 }
@@ -322,7 +323,16 @@ func (t Translator) getAdmissionControlValues(admissionControl *platform.Admissi
 	// the CR fields directly below spec.admissionControl. This is because
 	// redeployment is natively part of the CR lifecycle when we have an operator, so
 	// no need to distinguish between the static and dynamic part.
-	acv.SetBool("enforce", admissionControl.Enforce)
+	if admissionControl.Enforcement != nil {
+		switch *admissionControl.Enforcement {
+		case platform.PolicyEnforcementEnabled:
+			acv.SetBoolValue("enforce", true)
+		case platform.PolicyEnforcementDisabled:
+			acv.SetBoolValue("enforce", false)
+		default:
+			return dynamic.SetError(errors.Errorf("invalid spec.admissionControl.enforcement setting %q", *admissionControl.Enforcement))
+		}
+	}
 	if admissionControl.Bypass != nil {
 		switch *admissionControl.Bypass {
 		case platform.BypassBreakGlassAnnotation:
@@ -362,6 +372,16 @@ func (t Translator) getAuditLogsValues(auditLogs *platform.AuditLogsSpec) *trans
 	return &cv
 }
 
+func getProcessBaselinesValues(processBaselines *platform.ProcessBaselinesSpec) *translation.ValuesBuilder {
+	if processBaselines == nil || processBaselines.AutoLock == nil {
+		return nil
+	}
+	cv := translation.NewValuesBuilder()
+	cv.SetBoolValue("enabled", *processBaselines.AutoLock == platform.ProcessBaselinesAutoLockModeEnabled)
+
+	return &cv
+}
+
 func (t Translator) getCollectorValues(perNode *platform.PerNodeSpec) *translation.ValuesBuilder {
 	cv := translation.NewValuesBuilder()
 
@@ -382,6 +402,7 @@ func (t Translator) getCollectorValues(perNode *platform.PerNodeSpec) *translati
 	cv.AddAllFrom(t.getCollectorContainerValues(perNode.Collector))
 	cv.AddAllFrom(t.getComplianceContainerValues(perNode.Compliance))
 	cv.AddAllFrom(t.getNodeInventoryContainerValues(perNode.NodeInventory))
+	cv.AddAllFrom(t.getSFAContainerValues(perNode.SFA))
 
 	return &cv
 }
@@ -437,6 +458,26 @@ func (t Translator) getNodeInventoryContainerValues(nodeInventory *platform.Cont
 	return &cv
 }
 
+func (t Translator) getSFAContainerValues(sfaContainerSpec *platform.SFAContainerSpec) *translation.ValuesBuilder {
+	if sfaContainerSpec == nil {
+		return nil
+	}
+
+	cv := translation.NewValuesBuilder()
+	switch *sfaContainerSpec.Agent {
+	case platform.SFAAgentEnabled:
+		cv.SetBoolValue("sfaEnabled", true)
+	case platform.SFAAgentDisabled:
+		cv.SetBoolValue("sfaEnabled", false)
+	default:
+		return cv.SetError(errors.Errorf("invalid spec.perNode.sfa.agent setting %q", *sfaContainerSpec.Agent))
+	}
+
+	cv.AddChild("sfaResources", translation.GetResources(sfaContainerSpec.Resources))
+
+	return &cv
+}
+
 func (t Translator) getLocalScannerComponentValues(securedCluster platform.SecuredCluster, config scanner.AutoSenseResult) *translation.ValuesBuilder {
 	sv := translation.NewValuesBuilder()
 	s := securedCluster.Spec.Scanner
@@ -466,21 +507,6 @@ func (t Translator) getLocalScannerV4ComponentValues(ctx context.Context, secure
 	}
 
 	return &sv
-}
-
-// Sets defaults that might not be applied on the resource due to ROX-8046.
-// Only defaults that result in behaviour different from the Helm chart defaults should be included here.
-func (t Translator) setDefaults(sc *platform.SecuredCluster) {
-	scanner.SetScannerDefaults(&sc.Spec)
-	if sc.Spec.AdmissionControl == nil {
-		sc.Spec.AdmissionControl = &platform.AdmissionControlComponentSpec{}
-	}
-	if sc.Spec.AdmissionControl.ListenOnCreates == nil {
-		sc.Spec.AdmissionControl.ListenOnCreates = pointers.Bool(true)
-	}
-	if sc.Spec.AdmissionControl.ListenOnUpdates == nil {
-		sc.Spec.AdmissionControl.ListenOnUpdates = pointers.Bool(true)
-	}
 }
 
 func getMetaValues(sc platform.SecuredCluster) *translation.ValuesBuilder {

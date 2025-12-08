@@ -8,6 +8,7 @@ concurrency:
   cancel-in-progress: false
 jobs:
   retest:
+    if:  ${{ github.repository_owner == 'stackrox' }}
     timeout-minutes: 10
     runs-on: ubuntu-latest
     steps:

@@ -115,6 +115,37 @@ const rules = {
             };
         },
     },
+    'Route-replace': {
+        // Require replace prop for React Router Navigate element.
+        // If landing path of route (that is, address in left navigation)
+        // redirects to first tab as (default) push,
+        // then browser history has an additional entry
+        // and user must click Back two times instead of expected one time.
+        // Rule allows replace={false} for theoretical case where push is intended.
+        meta: {
+            type: 'problem',
+            docs: {
+                description: 'Require replace prop for React Router Navigate element',
+            },
+            schema: [],
+        },
+        create(context) {
+            return {
+                JSXOpeningElement(node) {
+                    if (
+                        node.name?.name === 'Navigate' &&
+                        node.attributes.some((attribute) => attribute.name?.name === 'to') &&
+                        !node.attributes.some((attribute) => attribute.name?.name === 'replace')
+                    ) {
+                        context.report({
+                            node,
+                            message: 'Require that React Router Navigate element has replace prop',
+                        });
+                    }
+                },
+            };
+        },
+    },
     'Td-defaultColumns': {
         // Require that Td element has key and title from defaultColumns configuration.
         // That is, if Td element has props for column management:
@@ -345,6 +376,50 @@ const rules = {
             };
         },
     },
+    'import-type-order': {
+        // Require import type to follow corresponding import statement (if it exists).
+        meta: {
+            type: 'problem',
+            docs: {
+                description:
+                    'Require import type to follow corresponding import statement (if it exists).',
+            },
+            schema: [],
+        },
+        create(context) {
+            return {
+                ImportDeclaration(node) {
+                    if (node.importKind === 'type' && typeof node.source?.value === 'string') {
+                        const ancestors = context.sourceCode.getAncestors(node);
+                        if (
+                            ancestors.length >= 1 &&
+                            Array.isArray(ancestors[ancestors.length - 1].body)
+                        ) {
+                            const hasImportKindTypeAndSourceValue = (child) =>
+                                child.type === 'ImportDeclaration' &&
+                                child.importKind === 'type' &&
+                                child.source?.value === node.source.value;
+                            const hasImportKindValueAndSourceValue = (child) =>
+                                child.type === 'ImportDeclaration' &&
+                                child.importKind === 'value' &&
+                                child.source?.value === node.source.value;
+
+                            const { body } = ancestors[ancestors.length - 1];
+                            const indexType = body.findIndex(hasImportKindTypeAndSourceValue);
+                            const indexValue = body.findIndex(hasImportKindValueAndSourceValue);
+                            if (indexType >= 0 && indexValue >= 0 && indexType !== indexValue + 1) {
+                                context.report({
+                                    node,
+                                    message:
+                                        'Move import type to follow corresponding import statement',
+                                });
+                            }
+                        }
+                    }
+                },
+            };
+        },
+    },
     'pagination-function-call': {
         // Require that pagination property has function call like getPaginationParams.
         // Some classic pages have queryService.getPagination function call instead.
@@ -431,6 +506,28 @@ const rules = {
     // If your rule only disallows something, prefix it with no.
     // However, we can write forbid instead of disallow as the verb in description and message.
 
+    'no-TSTypeAssertion': {
+        // Inconsistent with TSAsExpression which is project convention.
+        // TypeScript with erasableSyntaxOnly configuration option reports error for TSTypeAssertion.
+        meta: {
+            type: 'problem',
+            docs: {
+                description: 'Replace TSTypeAssertion with TSAsExpression',
+            },
+            schema: [],
+        },
+        create(context) {
+            return {
+                TSTypeAssertion(node) {
+                    const name = node.typeAnnotation?.typeName?.name ?? 'Whatever';
+                    context.report({
+                        node,
+                        message: `Replace TSTypeAssertion with TSAsExpression: as ${name}`,
+                    });
+                },
+            };
+        },
+    },
     'no-anchor-href-docs-string': {
         // Full path string lacks what getVersionedDocs function provides:
         // Include version number so doc page corresponds to product version.
@@ -465,6 +562,45 @@ const rules = {
                                 message:
                                     'Replace full path string with getVersionedDocs function call in href prop of anchor element for product docs',
                             });
+                        }
+                    }
+                },
+            };
+        },
+    },
+    'no-import-namespace': {
+        // Replace namespace with named import (except for yup package).
+        // In addition to consistency, minimize false negatives,
+        // because import/namespace is slow rule turned off for lint:fast-dev command.
+        meta: {
+            type: 'problem',
+            docs: {
+                description: 'Replace namespace with named import (except for yup package)',
+            },
+            schema: [],
+        },
+        create(context) {
+            return {
+                ImportNamespaceSpecifier(node) {
+                    const ancestors = context.sourceCode.getAncestors(node);
+                    if (ancestors.length >= 1) {
+                        const parent = ancestors[ancestors.length - 1];
+                        if (typeof parent.source?.value === 'string') {
+                            if (parent.source.value !== 'yup') {
+                                context.report({
+                                    node,
+                                    message:
+                                        'Replace namespace with named import (except for yup package)',
+                                });
+                            } else if (
+                                typeof node.local?.name === 'string' &&
+                                node.local.name !== parent.source.value
+                            ) {
+                                context.report({
+                                    node,
+                                    message: `Use namespace that is consistent with package name: ${parent.source.value}`,
+                                });
+                            }
                         }
                     }
                 },

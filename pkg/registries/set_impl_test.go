@@ -52,6 +52,10 @@ func (f *fakeRegistry) HTTPClient() *http.Client {
 	return nil
 }
 
+func (f *fakeRegistry) ListTags(_ context.Context, _ string) ([]string, error) {
+	return nil, nil
+}
+
 func (f *fakeRegistry) DataSource() *storage.DataSource {
 	return nil
 }

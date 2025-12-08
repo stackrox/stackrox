@@ -1,6 +1,6 @@
 import { gql, useQuery } from '@apollo/client';
 
-import { QuerySearchFilter } from '../../types';
+import type { QuerySearchFilter } from '../../types';
 import { getRegexScopedQueryString } from '../../utils/searchUtils';
 
 const entityCountsQuery = gql`

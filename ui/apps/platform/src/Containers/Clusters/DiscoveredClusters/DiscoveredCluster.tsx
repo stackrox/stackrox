@@ -1,8 +1,8 @@
-import React, { ReactElement } from 'react';
+import type { ReactElement } from 'react';
 import { CheckCircleIcon, SecurityIcon, UnknownIcon } from '@patternfly/react-icons';
 import { Icon } from '@patternfly/react-core';
 
-import {
+import type {
     DiscoveredClusterProviderType,
     DiscoveredClusterStatus,
     DiscoveredClusterType,
