@@ -91,7 +91,7 @@ func (h *handlerImpl) ProcessInvalidateImageCache(req *central.InvalidateImageCa
 		keysToDelete := make([]cache.Key, 0, len(req.GetImageKeys()))
 		for _, image := range req.GetImageKeys() {
 			var key string
-			if centralcaps.Has(centralsensor.FlattenImageDataOnCentral) {
+			if centralcaps.Has(centralsensor.FlattenImageData) {
 				key = image.GetImageIdV2()
 			} else {
 				key = image.GetImageId()
