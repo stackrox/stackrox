@@ -31,7 +31,7 @@ const (
 	// so the image integration is also currently used for node integrations.
 	// This decision was made because we currently only support one node scanner (our scanner).
 	ImageIntegrationCategory_NODE_SCANNER ImageIntegrationCategory = 2
-	// TODO: ROX-XXXXX: ensure scanner V4 can also be used as virtual machine scanner
+	// TODO: ROX-32218: ensure scanner V4 can also be used as virtual machine scanner
 	ImageIntegrationCategory_VIRTUAL_MACHINE_SCANNER ImageIntegrationCategory = 4
 )
 
