@@ -51,11 +51,8 @@ jobs:
             "stackrox-operator",
           ]
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
       - name: Check image vulnerabilities
-        uses: ./.github/actions/check-image-vulnerabilities
+        uses: stackrox/actions/release/check-image-vulnerabilities@tm/ROX-image-vuln-check
         with:
           image: ${{ matrix.image }}
           version: ${{ inputs.version }}
@@ -96,11 +93,8 @@ jobs:
             "release-operator",
           ]
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
       - name: Check image vulnerabilities
-        uses: ./.github/actions/check-image-vulnerabilities
+        uses: stackrox/actions/release/check-image-vulnerabilities@tm/ROX-image-vuln-check
         with:
           image: ${{ matrix.image }}
           version: ${{ inputs.version }}
