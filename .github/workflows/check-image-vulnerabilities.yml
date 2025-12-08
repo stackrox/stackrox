@@ -62,10 +62,10 @@ jobs:
           central-url: ${{ vars.ACS_DOGFOODING_CENTRAL_URL }}
 
       - name: Upload scan result artifact
-        if: always()
+        if: always() && hashFiles('scan-result.json') != ''
         uses: actions/upload-artifact@v4
         with:
-          name: scan-result-${{ matrix.image }}
+          name: scan-result-quay.io_rhacs-eng_${{ matrix.image }}_${{ inputs.version || github.ref_name }}.json
           path: scan-result.json
           retention-days: 30
 
@@ -104,9 +104,9 @@ jobs:
           central-url: ${{ vars.ACS_DOGFOODING_CENTRAL_URL }}
 
       - name: Upload scan result artifact
-        if: always()
+        if: always() && hashFiles('scan-result.json') != ''
         uses: actions/upload-artifact@v4
         with:
-          name: scan-result-${{ matrix.image }}
+          name: scan-result-quay.io_rhacs-eng_${{ matrix.image }}_${{ inputs.version || github.ref_name }}.json
           path: scan-result.json
           retention-days: 30
