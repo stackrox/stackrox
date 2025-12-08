@@ -178,7 +178,7 @@ spec:
       - name: name
         value: init
       - name: bundle
-        value: quay.io/konflux-ci/tekton-catalog/task-init:0.2@sha256:a558472b2ff44c4179ae97e90b35098dc2ca1456caf8c16c76f38c6863042c81
+        value: quay.io/konflux-ci/tekton-catalog/task-init:0.2@sha256:d6a10101f672a85da0a402177848a82fe7af439bc54451e54b0fbb1ddbeeb1f6
       - name: kind
         value: task
       resolver: bundles
@@ -202,7 +202,7 @@ spec:
       - name: name
         value: git-clone-oci-ta
       - name: bundle
-        value: quay.io/konflux-ci/tekton-catalog/task-git-clone-oci-ta:0.1@sha256:ea64f5b99202621e78ed3d74b00df5750cbf572c391e6da1956396f5945e4e11
+        value: quay.io/konflux-ci/tekton-catalog/task-git-clone-oci-ta:0.1@sha256:0a89e1a6304076525e9766f63a4cd006763d21d5aca6863281fc427537a23c6f
       - name: kind
         value: task
       resolver: bundles
@@ -305,6 +305,10 @@ spec:
       value: "$(tasks.clone-repository.results.commit-timestamp)"
     - name: IMAGE_APPEND_PLATFORM
       value: "true"
+    - name: HTTP_PROXY
+      value: $(tasks.init.results.http-proxy)
+    - name: NO_PROXY
+      value: $(tasks.init.results.no-proxy)
     taskRef:
       params:
       - name: name
@@ -573,7 +577,7 @@ spec:
       - name: name
         value: rpms-signature-scan
       - name: bundle
-        value: quay.io/konflux-ci/tekton-catalog/task-rpms-signature-scan:0.2@sha256:4e6b53c8fb328683184ed8be5795c137b4bbca79b5dfca67ef060e1c131a1247
+        value: quay.io/konflux-ci/tekton-catalog/task-rpms-signature-scan:0.2@sha256:90c2b32ebf0a00f42c0c1d1675feb75ba71793ad1a4c22ddea7cdc71ed997a04
       - name: kind
         value: task
       resolver: bundles
