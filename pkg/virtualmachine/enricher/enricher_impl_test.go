@@ -11,12 +11,19 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/scanners/scannerv4"
+	scannerTypes "github.com/stackrox/rox/pkg/scanners/types"
 	scannerMocks "github.com/stackrox/rox/pkg/scanners/types/mocks"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
 	"golang.org/x/sync/semaphore"
 )
+
+const mockIntegrationType = "mock scanner"
+
+var testIntegration = &storage.ImageIntegration{
+	Type: mockIntegrationType,
+}
 
 // TestEnrichVirtualMachineWithVulnerabilities_Success tests the successful enrichment flow.
 // The test verifies that the enricher correctly converts vulnerability reports to VM scans
@@ -156,7 +163,8 @@ func TestEnrichVirtualMachineWithVulnerabilities_Success(t *testing.T) {
 			mockScanner.EXPECT().MaxConcurrentNodeScanSemaphore().Return(semaphore.NewWeighted(1))
 			mockScanner.EXPECT().GetVirtualMachineScan(gomock.Any(), gomock.Any()).Return(virtualMachineScan, nil)
 
-			enricher := New(mockScanner)
+			enricher := newWithCreator(getScannerGeneratorForMock(mockScanner))
+			assert.NoError(t, enricher.UpsertVirtualMachineIntegration(testIntegration))
 
 			err := enricher.EnrichVirtualMachineWithVulnerabilities(tt.vm, tt.indexReport)
 			require.NoError(t, err)
@@ -190,7 +198,8 @@ func TestEnrichVirtualMachineWithVulnerabilities_Errors(t *testing.T) {
 	// Make sure the enricher propagates the error returned
 	// by the virtual machine scanner.
 	t.Run("nil virtual machine scanner", func(it *testing.T) {
-		enricher := New(nil)
+		enricher := newWithCreator(getScannerGeneratorForMock(nil))
+		assert.NoError(t, enricher.UpsertVirtualMachineIntegration(testIntegration))
 
 		virtualMachine := &storage.VirtualMachine{
 			Id:   "vm-id",
@@ -202,7 +211,7 @@ func TestEnrichVirtualMachineWithVulnerabilities_Errors(t *testing.T) {
 
 		err := enricher.EnrichVirtualMachineWithVulnerabilities(virtualMachine, indexReport)
 		require.Error(it, err)
-		assert.Contains(it, err.Error(), "Scanner V4 client not available for VM enrichment")
+		assert.Contains(it, err.Error(), "scanner v4 client not available for virtual machine enrichment")
 		expectedNotes := []storage.VirtualMachine_Note{storage.VirtualMachine_MISSING_SCAN_DATA}
 		assert.Equal(it, expectedNotes, virtualMachine.GetNotes())
 	})
@@ -216,7 +225,8 @@ func TestEnrichVirtualMachineWithVulnerabilities_Errors(t *testing.T) {
 		mockScanner.EXPECT().MaxConcurrentNodeScanSemaphore().Return(semaphore.NewWeighted(1))
 		mockScanner.EXPECT().GetVirtualMachineScan(gomock.Any(), gomock.Any()).Return(nil, testError)
 
-		enricher := New(mockScanner)
+		enricher := newWithCreator(getScannerGeneratorForMock(mockScanner))
+		assert.NoError(t, enricher.UpsertVirtualMachineIntegration(testIntegration))
 
 		virtualMachine := &storage.VirtualMachine{
 			Id:   "vm-id",
@@ -229,7 +239,7 @@ func TestEnrichVirtualMachineWithVulnerabilities_Errors(t *testing.T) {
 		err := enricher.EnrichVirtualMachineWithVulnerabilities(virtualMachine, indexReport)
 		assert.Error(it, err)
 		assert.Nil(it, virtualMachine.GetScan())
-		assert.ErrorIs(it, err, testError)
+		assert.ErrorContains(it, err, testError.Error())
 	})
 }
 
@@ -260,7 +270,8 @@ func TestEnrichVirtualMachineWithVulnerabilities_ClearPreExistingNotes(t *testin
 	mockScanner.EXPECT().MaxConcurrentNodeScanSemaphore().Return(semaphore.NewWeighted(1))
 	mockScanner.EXPECT().GetVirtualMachineScan(gomock.Any(), gomock.Any()).Return(virtualMachineScan, nil)
 
-	enricher := New(mockScanner)
+	enricher := newWithCreator(getScannerGeneratorForMock(mockScanner))
+	assert.NoError(t, enricher.UpsertVirtualMachineIntegration(testIntegration))
 
 	err := enricher.EnrichVirtualMachineWithVulnerabilities(vm, indexReport)
 	require.NoError(t, err)
@@ -326,7 +337,8 @@ func TestEnrichVirtualMachineWithVulnerabilities_ComponentConversion(t *testing.
 	mockScanner.EXPECT().MaxConcurrentNodeScanSemaphore().Return(semaphore.NewWeighted(1))
 	mockScanner.EXPECT().GetVirtualMachineScan(gomock.Any(), gomock.Any()).Return(virtualMachineScan, nil)
 
-	enricher := New(mockScanner)
+	enricher := newWithCreator(getScannerGeneratorForMock(mockScanner))
+	assert.NoError(t, enricher.UpsertVirtualMachineIntegration(testIntegration))
 
 	err := enricher.EnrichVirtualMachineWithVulnerabilities(vm, indexReport)
 	require.NoError(t, err)
@@ -420,3 +432,15 @@ func createVulnerabilityReportFromIndexReport(indexReport *v4.IndexReport, vulnC
 		Notes:                  []v4.VulnerabilityReport_Note{},
 	}
 }
+
+// region helpers
+
+func getScannerGeneratorForMock(mock scannerTypes.VirtualMachineScanner) func() (string, func(*storage.ImageIntegration) (scannerTypes.VirtualMachineScanner, error)) {
+	return func() (string, func(*storage.ImageIntegration) (scannerTypes.VirtualMachineScanner, error)) {
+		return mockIntegrationType, func(*storage.ImageIntegration) (scannerTypes.VirtualMachineScanner, error) {
+			return mock, nil
+		}
+	}
+}
+
+// endregion helpers

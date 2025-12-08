@@ -7,6 +7,7 @@ import (
 	"github.com/stackrox/rox/pkg/images/integration"
 	"github.com/stackrox/rox/pkg/nodes/enricher"
 	scannerTypes "github.com/stackrox/rox/pkg/scanners/types"
+	virtualMachineEnricher "github.com/stackrox/rox/pkg/virtualmachine/enricher"
 )
 
 // Manager implements a bit of multiplexing logic between ImageIntegrations and NodeIntegrations
@@ -17,10 +18,16 @@ type Manager interface {
 	Remove(id string) error
 }
 
-func newManager(imageIntegrationSet integration.Set, nodeEnricher enricher.NodeEnricher, cveFetcher fetcher.OrchestratorIstioCVEManager) Manager {
+func newManager(
+	imageIntegrationSet integration.Set,
+	nodeEnricher enricher.NodeEnricher,
+	vmEnricher virtualMachineEnricher.VirtualMachineEnricher,
+	cveFetcher fetcher.OrchestratorIstioCVEManager,
+) Manager {
 	return &managerImpl{
 		imageIntegrationSet: imageIntegrationSet,
 		nodeEnricher:        nodeEnricher,
+		vmEnricher:          vmEnricher,
 		cveFetcher:          cveFetcher,
 	}
 }
@@ -28,6 +35,7 @@ func newManager(imageIntegrationSet integration.Set, nodeEnricher enricher.NodeE
 type managerImpl struct {
 	imageIntegrationSet integration.Set
 	nodeEnricher        enricher.NodeEnricher
+	vmEnricher          virtualMachineEnricher.VirtualMachineEnricher
 	cveFetcher          fetcher.OrchestratorIstioCVEManager
 }
 
@@ -36,6 +44,17 @@ type managerImpl struct {
 func isNodeIntegration(integration *storage.ImageIntegration) bool {
 	for _, category := range integration.GetCategories() {
 		if category == storage.ImageIntegrationCategory_NODE_SCANNER {
+			return true
+		}
+	}
+	return false
+}
+
+// isVirtualMachineIntegration returns "true" if the image integration is also a virtual machine integration.
+// It loops through the categories, which is a very small slice.
+func isVirtualMachineIntegration(integration *storage.ImageIntegration) bool {
+	for _, category := range integration.GetCategories() {
+		if category&storage.ImageIntegrationCategory_VIRTUAL_MACHINE_SCANNER != 0 {
 			return true
 		}
 	}
@@ -92,6 +111,13 @@ func (m *managerImpl) Upsert(integration *storage.ImageIntegration) error {
 		// Use node integration for now because node scanner is also orchestrator scanner.
 		m.cveFetcher.RemoveIntegration(integration.GetId())
 		return nil
+	}
+	if !isVirtualMachineIntegration(integration) {
+		m.vmEnricher.RemoveVirtualMachineIntegration(integration.GetId())
+	} else {
+		if err := m.vmEnricher.UpsertVirtualMachineIntegration(integration); err != nil {
+			return err
+		}
 	}
 	log.Debugf("Converting Integration to Node: %s / %s", integration.GetName(), integration.GetType())
 	nodeIntegration, err := ImageIntegrationToNodeIntegration(integration)
