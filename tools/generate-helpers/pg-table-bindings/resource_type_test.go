@@ -22,7 +22,6 @@ func TestGetResourceType(t *testing.T) {
 		{typ: &storage.Cluster{}, resourceType: directlyScoped},
 		{typ: &storage.Deployment{}, resourceType: directlyScoped},
 		{typ: &storage.Image{}, resourceType: indirectlyScoped},
-		{typ: &storage.CVE{}, resourceType: indirectlyScoped},
 		{typ: &storage.Policy{}, resourceType: globallyScoped},
 		{typ: &storage.Email{}, resourceType: joinTable, joinTable: true},
 		// Evaluate types of the various stores
@@ -53,7 +52,6 @@ func TestGetResourceType(t *testing.T) {
 		{typ: &storage.ComplianceRunResults{}, resourceType: directlyScoped},
 		{typ: &storage.ComplianceStrings{}, resourceType: indirectlyScoped},
 		{typ: &storage.Config{}, resourceType: globallyScoped},
-		{typ: &storage.CVE{}, resourceType: indirectlyScoped},
 		{typ: &storage.DeclarativeConfigHealth{}, resourceType: globallyScoped},
 		{typ: &storage.DelegatedRegistryConfig{}, resourceType: globallyScoped},
 		{typ: &storage.Deployment{}, resourceType: directlyScoped},
