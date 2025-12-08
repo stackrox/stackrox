@@ -93,11 +93,12 @@ jobs:
               # We need a monospaced font for the table layout, and `terraform` has
               # nicer color highlighting than the default language agnostic code block.
               echo '```terraform'
-              roxctl image scan --output=table --force \
-                --image="quay.io/rhacs-eng/${{ matrix.image }}:${{ inputs.version }}" \
-                --severity="IMPORTANT,CRITICAL" \
-                --headers="COMPONENT,VERSION,CVE,SEVERITY,FIXED_VERSION,LINK" \
-                --row-jsonpath-expressions="{result.vulnerabilities.#.componentName,result.vulnerabilities.#.componentVersion,result.vulnerabilities.#.cveId,result.vulnerabilities.#.cveSeverity,result.vulnerabilities.#.componentFixedVersion,result.vulnerabilities.#.cveInfo}"
+              jq -r '
+                .result.vulnerabilities // []
+                | map(select(.cveSeverity == "CRITICAL" or .cveSeverity == "IMPORTANT"))
+                | (["COMPONENT","VERSION","CVE","SEVERITY","FIXED_VERSION","LINK"] | @tsv),
+                  (.[] | [.componentName // "", .componentVersion // "", .cveId // "", .cveSeverity // "", .componentFixedVersion // "", .cveInfo // ""] | @tsv)
+              ' <<< "$RESULT" | column -t -s $'\t'
               echo '```'
             } >> "$GITHUB_STEP_SUMMARY"
             exit 1
@@ -179,11 +180,12 @@ jobs:
               # We need a monospaced font for the table layout, and `terraform` has
               # nicer color highlighting than the default language agnostic code block.
               echo '```terraform'
-              roxctl image scan --output=table --force \
-                --image="quay.io/rhacs-eng/${{ matrix.image }}:${{ inputs.version }}" \
-                --severity="IMPORTANT,CRITICAL" \
-                --headers="COMPONENT,VERSION,CVE,SEVERITY,FIXED_VERSION,LINK" \
-                --row-jsonpath-expressions="{result.vulnerabilities.#.componentName,result.vulnerabilities.#.componentVersion,result.vulnerabilities.#.cveId,result.vulnerabilities.#.cveSeverity,result.vulnerabilities.#.componentFixedVersion,result.vulnerabilities.#.cveInfo}"
+              jq -r '
+                .result.vulnerabilities // []
+                | map(select(.cveSeverity == "CRITICAL" or .cveSeverity == "IMPORTANT"))
+                | (["COMPONENT","VERSION","CVE","SEVERITY","FIXED_VERSION","LINK"] | @tsv),
+                  (.[] | [.componentName // "", .componentVersion // "", .cveId // "", .cveSeverity // "", .componentFixedVersion // "", .cveInfo // ""] | @tsv)
+              ' <<< "$RESULT" | column -t -s $'\t'
               echo '```'
             } >> "$GITHUB_STEP_SUMMARY"
             exit 1
