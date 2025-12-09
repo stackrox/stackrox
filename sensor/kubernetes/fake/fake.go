@@ -82,8 +82,6 @@ func (r *vmReadiness) Wait(ctx context.Context) bool {
 
 var (
 	log = logging.LoggerForModule()
-
-	defaultGuestOSPool = []string{"linux", "windows", "rhel", "ubuntu"}
 )
 
 func init() {
@@ -531,17 +529,11 @@ func (w *WorkloadManager) initializePreexistingResources() {
 				w.workload.VirtualMachineWorkload.NumRepositories)
 		}
 
-		templates := newVMTemplates(
-			w.workload.VirtualMachineWorkload.PoolSize,
-			defaultGuestOSPool,
-			vmBaseVSOCKCID,
-		)
-
 		// Fork management of VM/VMI resources (including index reports if enabled)
 		workload := w.workload.VirtualMachineWorkload
-		for _, tmpl := range templates {
+		for i := range workload.PoolSize {
 			w.wg.Add(1)
-			go w.manageVirtualMachine(w.shutdownCtx, workload, tmpl, reportGen)
+			go w.manageVirtualMachine(w.shutdownCtx, workload, uint32(i), reportGen)
 		}
 	}
 }

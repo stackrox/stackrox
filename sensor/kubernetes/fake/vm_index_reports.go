@@ -15,6 +15,8 @@ const (
 	// reportIntervalJitterPercent defines the percentage of random jitter to apply to report intervals.
 	// With 0.05 (5%), a 60s interval will vary between 57s-63s, making timing more realistic.
 	reportIntervalJitterPercent = 0.05
+	// vmMockDigest may be kept in sync with its copy in pkg/virtualmachine/enricher/enricher_impl.go
+	vmMockDigest = "sha256:900dc0ffee900dc0ffee900dc0ffee900dc0ffee900dc0ffee900dc0ffee900d"
 )
 
 type reportTemplate struct {
@@ -103,13 +105,13 @@ func (g *reportGenerator) nextTemplate() reportTemplate {
 }
 
 // generateFakeIndexReport creates a fake VM index report using the provided generator.
-func generateFakeIndexReport(gen *reportGenerator, vsockCID uint32, vmID string) *v1.IndexReport {
+func generateFakeIndexReport(gen *reportGenerator, vsockCID uint32) *v1.IndexReport {
 	template := gen.nextTemplate()
 
 	return &v1.IndexReport{
 		VsockCid: fmt.Sprintf("%d", vsockCID),
 		IndexV4: &v4.IndexReport{
-			HashId:  fmt.Sprintf("hash-%s", vmID),
+			HashId:  vmMockDigest,
 			State:   "IndexFinished",
 			Success: true,
 			Contents: &v4.Contents{

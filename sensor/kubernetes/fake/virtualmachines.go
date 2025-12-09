@@ -29,6 +29,7 @@ const (
 	// lifecycleJitterPercent is the jitter applied to VM lifecycle duration.
 	// With 0.5 (50%), a 60s lifecycle will vary between 30s-90s.
 	lifecycleJitterPercent = 0.5
+	vmBaseNamespace        = "default"
 )
 
 // Centralized GVR definitions for KubeVirt resources
@@ -43,6 +44,7 @@ var (
 		Version:  "v1",
 		Resource: "virtualmachineinstances",
 	}
+	defaultGuestOSPool = []string{"linux", "windows", "rhel", "ubuntu"}
 )
 
 func validateVMWorkload(workload VirtualMachineWorkload) VirtualMachineWorkload {
@@ -78,35 +80,12 @@ func validateVMWorkload(workload VirtualMachineWorkload) VirtualMachineWorkload 
 	return workload
 }
 
-type vmTemplate struct {
-	index         int // Template index, used for deterministic UUID generation
-	baseName      string
-	baseNamespace string
-	vsockCID      uint32
-	guestOS       string
-}
-
-// newVMTemplates creates a slice of VM templates for the fake workload.
-func newVMTemplates(poolSize int, guestOSPool []string, vsockBaseCID uint32) []*vmTemplate {
-	templates := make([]*vmTemplate, poolSize)
-	for i := 0; i < poolSize; i++ {
-		guestOS := guestOSPool[rand.Intn(len(guestOSPool))]
-		templates[i] = &vmTemplate{
-			index:         i,
-			baseName:      fmt.Sprintf("vm-%d", i),
-			baseNamespace: "default",
-			vsockCID:      vsockBaseCID + uint32(i),
-			guestOS:       guestOS,
-		}
-	}
-	return templates
-}
-
-func (t *vmTemplate) instantiate(iteration int) (*unstructured.Unstructured, *unstructured.Unstructured) {
+func getRandomVMPair(vsockCID uint32, guestOSes []string) (*unstructured.Unstructured, *unstructured.Unstructured) {
 	// Use deterministic UUID based on template index to match index report generation.
 	// This ensures the VM UID in informer events matches the VM ID used in index reports.
-	vmUID := types.UID(fakeVMUUID(t.index))
-	vmName := fmt.Sprintf("%s-%d", t.baseName, iteration)
+	vmUID := types.UID(fakeVMUUID(int(vsockCID)))
+	vmName := fmt.Sprintf("%s-%d", "vm", vsockCID)
+	os := guestOSes[int(vsockCID)%len(defaultGuestOSPool)]
 
 	vm := &kubeVirtV1.VirtualMachine{
 		TypeMeta: metav1.TypeMeta{
@@ -115,7 +94,7 @@ func (t *vmTemplate) instantiate(iteration int) (*unstructured.Unstructured, *un
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      vmName,
-			Namespace: t.baseNamespace,
+			Namespace: vmBaseNamespace,
 			UID:       vmUID,
 			CreationTimestamp: metav1.Time{
 				Time: time.Now(),
@@ -130,9 +109,8 @@ func (t *vmTemplate) instantiate(iteration int) (*unstructured.Unstructured, *un
 
 	// VMI gets a unique UUID based on template index and iteration
 	// Format: 00000000-0000-4000-9000-{6-digit-index}{6-digit-iteration}
-	vmiUID := types.UID(fmt.Sprintf("00000000-0000-4000-9000-%06d%06d", t.index, iteration))
-	vmiName := fmt.Sprintf("%s-%d-vmi", t.baseName, iteration)
-	vsockCID := t.vsockCID
+	vmiUID := types.UID(fmt.Sprintf("00000000-0000-4000-9000-%012d", vsockCID))
+	vmiName := fmt.Sprintf("%s-%d-vmi", "vm", vsockCID)
 	vmi := &kubeVirtV1.VirtualMachineInstance{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "VirtualMachineInstance",
@@ -140,7 +118,7 @@ func (t *vmTemplate) instantiate(iteration int) (*unstructured.Unstructured, *un
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      vmiName,
-			Namespace: t.baseNamespace,
+			Namespace: vmBaseNamespace,
 			UID:       vmiUID,
 			CreationTimestamp: metav1.Time{
 				Time: time.Now(),
@@ -160,7 +138,7 @@ func (t *vmTemplate) instantiate(iteration int) (*unstructured.Unstructured, *un
 			Phase:    kubeVirtV1.Running,
 			VSOCKCID: &vsockCID,
 			GuestOSInfo: kubeVirtV1.VirtualMachineInstanceGuestOSInfo{
-				Name: t.guestOS,
+				Name: os,
 			},
 		},
 	}
@@ -241,7 +219,7 @@ func jsonSafeUint64(value uint64) int64 {
 func (w *WorkloadManager) manageVirtualMachine(
 	ctx context.Context,
 	workload VirtualMachineWorkload,
-	template *vmTemplate,
+	vsockCID uint32,
 	reportGen *reportGenerator,
 ) {
 	defer w.wg.Done()
@@ -251,8 +229,8 @@ func (w *WorkloadManager) manageVirtualMachine(
 		if ctx.Err() != nil {
 			return
 		}
-		vm, vmi := template.instantiate(iteration)
-		w.runVMLifecycle(ctx, workload, template, vm, vmi, reportGen)
+		vm, vmi := getRandomVMPair(vsockCID, defaultGuestOSPool)
+		w.runVMLifecycle(ctx, workload, vsockCID, vm, vmi, reportGen)
 	}
 }
 
@@ -262,7 +240,7 @@ func (w *WorkloadManager) manageVirtualMachine(
 func (w *WorkloadManager) runVMLifecycle(
 	ctx context.Context,
 	workload VirtualMachineWorkload,
-	template *vmTemplate,
+	vsockCID uint32,
 	vm, vmi *unstructured.Unstructured,
 	reportGen *reportGenerator,
 ) {
@@ -299,8 +277,7 @@ func (w *WorkloadManager) runVMLifecycle(
 		go w.sendIndexReportsWhileAlive(
 			reportCtx,
 			reportGen,
-			fakeVMUUID(template.index),
-			template.vsockCID,
+			vsockCID,
 			workload.ReportInterval,
 			workload.InitialReportDelay,
 		)
@@ -358,36 +335,35 @@ func (w *WorkloadManager) runVMLifecycle(
 func (w *WorkloadManager) sendIndexReportsWhileAlive(
 	ctx context.Context,
 	reportGen *reportGenerator,
-	vmID string,
 	vsockCID uint32,
 	interval time.Duration,
 	initialDelay time.Duration,
 ) {
 	// Wait for all prerequisites before sending reports
 	if !w.vmPrerequisitesReady.Wait(ctx) {
-		log.Debugf("VM %s: prerequisites not ready, skipping index reports", vmID)
+		log.Debugf("Prerequisites not ready to start sending fake index reports")
 		return
 	}
 
-	log.Debugf("Starting index report generation for VM %s (vsockCID=%d, interval=%s, initialDelay=%s)", vmID, vsockCID, interval, initialDelay)
+	log.Debugf("Starting index report generation for a VM (vsockCID=%d, interval=%s, initialDelay=%s)", vsockCID, interval, initialDelay)
 
 	reportTicker := time.NewTicker(jitteredInterval(interval, reportIntervalJitterPercent))
 	if initialDelay > 0 {
 		firstPeriod := jitteredInterval(initialDelay, initialReportJitterPercent)
 		reportTicker.Reset(firstPeriod)
 	} else {
-		w.sendOneIndexReport(ctx, reportGen, vmID, vsockCID)
+		w.sendOneIndexReport(ctx, reportGen, vsockCID)
 	}
 	defer reportTicker.Stop()
 
 	for {
 		select {
 		case <-ctx.Done():
-			log.Debugf("Stopping index report generation for VM %s (lifecycle ended)", vmID)
+			log.Debugf("Stopping index report generation for VM with vsockCID %s (lifecycle ended)", vsockCID)
 			return
 		case <-reportTicker.C:
 			reportTicker.Reset(jitteredInterval(interval, reportIntervalJitterPercent))
-			w.sendOneIndexReport(ctx, reportGen, vmID, vsockCID)
+			w.sendOneIndexReport(ctx, reportGen, vsockCID)
 		}
 	}
 }
@@ -396,24 +372,23 @@ func (w *WorkloadManager) sendIndexReportsWhileAlive(
 func (w *WorkloadManager) sendOneIndexReport(
 	ctx context.Context,
 	reportGen *reportGenerator,
-	vmID string,
 	vsockCID uint32,
 ) {
 	if ctx.Err() != nil {
 		return
 	}
 
-	report := generateFakeIndexReport(reportGen, vsockCID, vmID)
+	report := generateFakeIndexReport(reportGen, vsockCID)
 
 	if w.vmIndexReportHandler == nil {
-		log.Debugf("VM index report handler not set, skipping report for VM %s", vmID)
+		log.Debugf("VM index report handler not set, skipping report for VM %d", vsockCID)
 		return
 	}
 
 	if err := w.vmIndexReportHandler.Send(ctx, report); err != nil {
 		// Don't log errors during shutdown
 		if ctx.Err() == nil {
-			log.Debugf("Failed to send index report for VM %s: %v", vmID, err)
+			log.Debugf("Failed to send index report for VM %d: %v", vsockCID, err)
 		}
 	}
 }

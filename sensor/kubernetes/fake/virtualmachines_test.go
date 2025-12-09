@@ -10,7 +10,6 @@ import (
 	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-	"k8s.io/apimachinery/pkg/types"
 	kubeVirtV1 "kubevirt.io/api/core/v1"
 )
 
@@ -87,158 +86,29 @@ func TestValidateVMWorkload(t *testing.T) {
 	}
 }
 
-func TestNewVMTemplates(t *testing.T) {
-	tests := map[string]struct {
-		poolSize     int
-		guestOSPool  []string
-		vsockBaseCID uint32
-	}{
-		"single template": {
-			poolSize:     1,
-			guestOSPool:  []string{"linux"},
-			vsockBaseCID: 100,
-		},
-		"multiple templates": {
-			poolSize:     5,
-			guestOSPool:  []string{"linux", "windows", "fedora"},
-			vsockBaseCID: 1000,
-		},
-		"large pool": {
-			poolSize:     100,
-			guestOSPool:  []string{"rhel"},
-			vsockBaseCID: 3,
-		},
-	}
-
-	for name, tt := range tests {
-		t.Run(name, func(t *testing.T) {
-			templates := newVMTemplates(tt.poolSize, tt.guestOSPool, tt.vsockBaseCID)
-
-			require.Len(t, templates, tt.poolSize, "wrong number of templates")
-
-			for i, tmpl := range templates {
-				assert.Equal(t, i, tmpl.index, "template index mismatch")
-				assert.Equal(t, fmt.Sprintf("vm-%d", i), tmpl.baseName, "baseName mismatch")
-				assert.Equal(t, "default", tmpl.baseNamespace, "baseNamespace mismatch")
-				assert.Equal(t, tt.vsockBaseCID+uint32(i), tmpl.vsockCID, "vsockCID mismatch")
-				assert.Contains(t, tt.guestOSPool, tmpl.guestOS, "guestOS not from pool")
-			}
-
-			// Verify vsockCIDs are unique
-			seenCIDs := make(map[uint32]bool)
-			for _, tmpl := range templates {
-				assert.False(t, seenCIDs[tmpl.vsockCID], "duplicate vsockCID: %d", tmpl.vsockCID)
-				seenCIDs[tmpl.vsockCID] = true
-			}
-		})
-	}
-}
-
-func TestVMTemplateInstantiate(t *testing.T) {
-	template := &vmTemplate{
-		index:         42,
-		baseName:      "test-vm",
-		baseNamespace: "test-ns",
-		vsockCID:      12345,
-		guestOS:       "Red Hat Enterprise Linux",
-	}
-
-	tests := map[string]struct {
-		iteration   int
-		wantVMName  string
-		wantVMIName string
-		wantVMUID   types.UID
-		wantVMIUID  types.UID
-	}{
-		"first iteration": {
-			iteration:   0,
-			wantVMName:  "test-vm-0",
-			wantVMIName: "test-vm-0-vmi",
-			wantVMUID:   types.UID("00000000-0000-4000-8000-000000000042"),
-			wantVMIUID:  types.UID("00000000-0000-4000-9000-000042000000"),
-		},
-		"second iteration": {
-			iteration:   1,
-			wantVMName:  "test-vm-1",
-			wantVMIName: "test-vm-1-vmi",
-			wantVMUID:   types.UID("00000000-0000-4000-8000-000000000042"), // same VM UID (based on index)
-			wantVMIUID:  types.UID("00000000-0000-4000-9000-000042000001"),
-		},
-		"high iteration": {
-			iteration:   999,
-			wantVMName:  "test-vm-999",
-			wantVMIName: "test-vm-999-vmi",
-			wantVMUID:   types.UID("00000000-0000-4000-8000-000000000042"),
-			wantVMIUID:  types.UID("00000000-0000-4000-9000-000042000999"),
-		},
-	}
-
-	for name, tt := range tests {
-		t.Run(name, func(t *testing.T) {
-			vm, vmi := template.instantiate(tt.iteration)
-
-			// Verify VM properties
-			assert.Equal(t, tt.wantVMName, vm.GetName(), "VM name mismatch")
-			assert.Equal(t, "test-ns", vm.GetNamespace(), "VM namespace mismatch")
-			assert.Equal(t, tt.wantVMUID, vm.GetUID(), "VM UID mismatch")
-			assert.Equal(t, "VirtualMachine", vm.GetKind(), "VM kind mismatch")
-			assert.Equal(t, "kubevirt.io/v1", vm.GetAPIVersion(), "VM apiVersion mismatch")
-
-			// Verify VMI properties
-			assert.Equal(t, tt.wantVMIName, vmi.GetName(), "VMI name mismatch")
-			assert.Equal(t, "test-ns", vmi.GetNamespace(), "VMI namespace mismatch")
-			assert.Equal(t, tt.wantVMIUID, vmi.GetUID(), "VMI UID mismatch")
-			assert.Equal(t, "VirtualMachineInstance", vmi.GetKind(), "VMI kind mismatch")
-
-			// Verify VMI owner reference points to VM
-			ownerRefs := vmi.GetOwnerReferences()
-			require.Len(t, ownerRefs, 1, "expected exactly one owner reference")
-			assert.Equal(t, tt.wantVMUID, ownerRefs[0].UID, "owner reference UID mismatch")
-			assert.Equal(t, tt.wantVMName, ownerRefs[0].Name, "owner reference name mismatch")
-			assert.Equal(t, "VirtualMachine", ownerRefs[0].Kind, "owner reference kind mismatch")
-
-			// Verify VMI has vsockCID
-			vsockCID, found, err := unstructured.NestedInt64(vmi.Object, "status", "vsockCID")
-			require.NoError(t, err)
-			require.True(t, found, "vsockCID not found in VMI status")
-			assert.Equal(t, int64(12345), vsockCID, "vsockCID mismatch")
-
-			// Verify VMI has guestOS
-			guestOS, found, err := unstructured.NestedString(vmi.Object, "status", "guestOSInfo", "name")
-			require.NoError(t, err)
-			require.True(t, found, "guestOSInfo.name not found")
-			assert.Equal(t, "Red Hat Enterprise Linux", guestOS)
-		})
-	}
-}
-
 func TestGenerateFakeIndexReport(t *testing.T) {
 	gen := newReportGenerator(10, 3) // 10 packages, 3 repos
 
 	tests := map[string]struct {
 		vsockCID uint32
-		vmID     string
 	}{
 		"basic report": {
 			vsockCID: 1234,
-			vmID:     "test-vm-id-1",
 		},
 		"different VM": {
 			vsockCID: 9999,
-			vmID:     "00000000-0000-4000-8000-000000000042",
 		},
 	}
 
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			report := generateFakeIndexReport(gen, tt.vsockCID, tt.vmID)
+			report := generateFakeIndexReport(gen, tt.vsockCID)
 
 			// Verify vsockCID is set as string
 			assert.Equal(t, fmt.Sprintf("%d", tt.vsockCID), report.GetVsockCid(), "vsockCID mismatch")
 
 			// Verify index report structure
 			require.NotNil(t, report.GetIndexV4(), "IndexV4 should not be nil")
-			assert.Equal(t, fmt.Sprintf("hash-%s", tt.vmID), report.GetIndexV4().GetHashId(), "HashId mismatch")
 			assert.Equal(t, "IndexFinished", report.GetIndexV4().GetState(), "State mismatch")
 			assert.True(t, report.GetIndexV4().GetSuccess(), "Success should be true")
 
@@ -267,7 +137,7 @@ func TestGenerateFakeIndexReport_TemplateRotation(t *testing.T) {
 	numReports := precomputedReportVariants * 2
 
 	for i := 0; i < numReports; i++ {
-		report := generateFakeIndexReport(gen, uint32(i), fmt.Sprintf("vm-%d", i))
+		report := generateFakeIndexReport(gen, uint32(i))
 		// Extract a package ID to identify which template was used
 		for pkgID := range report.GetIndexV4().GetContents().GetPackages() {
 			hashIDs = append(hashIDs, pkgID)
