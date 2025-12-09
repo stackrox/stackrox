@@ -409,13 +409,13 @@ func newNodeScanner(integration *storage.NodeIntegration) (*scannerv4, error) {
 
 // NewVirtualMachineScanner provides a scannerv4 instance that is able to scan virtual machines
 func NewVirtualMachineScanner() (types.VirtualMachineScanner, error) {
+	return newVirtualMachineScanner(getMatcherOnlyScanner)
+}
+
+func newVirtualMachineScanner(clientCreator func(string) (client.Scanner, error)) (types.VirtualMachineScanner, error) {
 	matcherEndpoint := DefaultMatcherEndpoint
 
-	ctx := context.Background()
-	scannerClient, err := client.NewGRPCScanner(
-		ctx,
-		client.WithMatcherAddress(matcherEndpoint),
-	)
+	scannerClient, err := clientCreator(matcherEndpoint)
 	if err != nil {
 		return nil, err
 	}
@@ -428,4 +428,8 @@ func NewVirtualMachineScanner() (types.VirtualMachineScanner, error) {
 		ScanSemaphore:     types.NewSemaphoreWithValue(numConcurrentScans),
 		NodeScanSemaphore: types.NewNodeSemaphoreWithValue(numConcurrentScans),
 	}, nil
+}
+
+func getMatcherOnlyScanner(matcherEndpoint string) (client.Scanner, error) {
+	return client.NewGRPCScanner(context.Background(), client.WithMatcherAddress(matcherEndpoint))
 }

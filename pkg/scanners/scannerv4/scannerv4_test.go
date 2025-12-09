@@ -13,6 +13,7 @@ import (
 	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/protocompat"
+	"github.com/stackrox/rox/pkg/scannerv4/client"
 	s4ClientMocks "github.com/stackrox/rox/pkg/scannerv4/client/mocks"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -466,6 +467,28 @@ func TestGetVirtualMachineScan_Timeout(t *testing.T) {
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "failed to get vulnerability report for VM")
 	assert.Nil(t, scan)
+}
+
+func TestNewVirtualMachineScanner(t *testing.T) {
+	t.Run("successful creation", func(it *testing.T) {
+		ctrl := gomock.NewController(t)
+		mockClient := s4ClientMocks.NewMockScanner(ctrl)
+		getter := func(string) (client.Scanner, error) {
+			return mockClient, nil
+		}
+		scanner, err := newVirtualMachineScanner(getter)
+		assert.NoError(it, err)
+		assert.NotNil(it, scanner)
+	})
+	t.Run("failed creation", func(it *testing.T) {
+		testErr := errors.New("test error")
+		getter := func(string) (client.Scanner, error) {
+			return nil, testErr
+		}
+		scanner, err := newVirtualMachineScanner(getter)
+		assert.ErrorIs(it, err, testErr)
+		assert.Nil(it, scanner)
+	})
 }
 
 // createVulnerabilityReportFromIndexReport creates a vulnerability report for testing.
