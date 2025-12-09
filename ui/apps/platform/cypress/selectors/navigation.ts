@@ -1,4 +1,4 @@
-const navExpandable = 'ul.pf-v6-c-nav__list li.pf-v6-c-nav__item.pf-m-expandable button';
+const navExpandable = 'ul.pf-v6-c-nav__list li.pf-v6-c-nav__item button';
 
 const navigation = {
     allNavLinks: '.pf-v6-c-nav a',
