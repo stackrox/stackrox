@@ -55,7 +55,7 @@ message Image {
     MISSING_SIGNATURE_VERIFICATION_DATA = 3;
   }
   repeated Note notes = 14;
-  repeated BaseImageInfo base_image_info = 19;
+  repeated BaseImageInfo base_image_info = 19; // @gotags: search:"-" sql:"-"
 }
 
 message DataSource {
