@@ -15,16 +15,10 @@ const (
 
 	// BackupClone - backup postgres clone name
 	BackupClone = migrations.BackupDatabase
-
-	// PreviousClone - previous postgres clone used for rollback
-	PreviousClone = migrations.PreviousDatabase
-
-	// TempClone - temp postgres clone
-	TempClone = "central_temp"
 )
 
 var (
-	knownClones = set.NewStringSet(CurrentClone, RestoreClone, BackupClone, PreviousClone)
+	knownClones = set.NewStringSet(CurrentClone, RestoreClone, BackupClone)
 
 	log = logging.CurrentModule().Logger()
 )
@@ -35,7 +29,7 @@ type DBCloneManager interface {
 	Scan() error
 
 	// GetCloneToMigrate -- retrieves the clone that needs moved to the active database.
-	GetCloneToMigrate(rocksVersion *migrations.MigrationVersion) (string, bool, error)
+	GetCloneToMigrate() (string, error)
 
 	// Persist -- moves the clone database to be the active database.
 	Persist(clone string) error
