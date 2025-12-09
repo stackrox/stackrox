@@ -229,19 +229,15 @@ func (w *WorkloadManager) runVMLifecycle(
 	vmiClient := w.client.Dynamic().Resource(vmiGVR).Namespace(vmi.GetNamespace())
 
 	// Create initial resources
-	vmUID := vm.GetUID()
 	vmName := vm.GetName()
 	if _, err := vmClient.Create(ctx, vm, metav1.CreateOptions{}); err != nil {
 		log.Errorf("error creating VirtualMachine: %v", err)
 		return
 	}
-	w.writeID(virtualMachinePrefix, vmUID)
 
 	if _, err := vmiClient.Create(ctx, vmi, metav1.CreateOptions{}); err != nil {
 		log.Errorf("error creating VirtualMachineInstance: %v", err)
 		// Continue even if VMI creation fails
-	} else {
-		w.writeID(vmiPrefix, vmi.GetUID())
 	}
 
 	// Start index report generation if enabled (runs while VM is alive)
@@ -273,14 +269,10 @@ func (w *WorkloadManager) runVMLifecycle(
 			// Delete resources
 			if err := vmiClient.Delete(ctx, vmi.GetName(), metav1.DeleteOptions{}); err != nil {
 				log.Debugf("error deleting VirtualMachineInstance (may not exist): %v", err)
-			} else {
-				w.deleteID(vmiPrefix, vmi.GetUID())
 			}
 
 			if err := vmClient.Delete(ctx, vmName, metav1.DeleteOptions{}); err != nil {
 				log.Debugf("error deleting VirtualMachine (may not exist): %v", err)
-			} else {
-				w.deleteID(virtualMachinePrefix, vmUID)
 			}
 			// Drop the fake tracker entries so unstructured DeepCopy payloads do not accumulate indefinitely.
 			w.cleanupVMHistory(vm.GetNamespace(), vmName, vmi.GetName())

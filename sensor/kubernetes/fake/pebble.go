@@ -21,8 +21,6 @@ const (
 	rolebindingsPrefix   = "rolebindings"
 	servicePrefix        = "services"
 	networkPolicyPrefix  = "networkpolicies"
-	virtualMachinePrefix = "virtualmachines"
-	vmiPrefix            = "virtualmachineinstances"
 )
 
 func idOrNewUID(id string) types.UID {
