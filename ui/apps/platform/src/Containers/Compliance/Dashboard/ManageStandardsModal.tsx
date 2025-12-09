@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import type { ReactElement } from 'react';
 import { Alert, Button, Checkbox, Form, Modal } from '@patternfly/react-core';
 import { useFormik } from 'formik';

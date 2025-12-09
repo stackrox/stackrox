@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import type { ReactElement } from 'react';
 import { useApolloClient } from '@apollo/client';
 import { Alert } from '@patternfly/react-core';

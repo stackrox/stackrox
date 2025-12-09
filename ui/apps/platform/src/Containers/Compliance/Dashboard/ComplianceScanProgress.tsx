@@ -1,4 +1,3 @@
-import React from 'react';
 import { Card, CardBody, CardTitle, Progress } from '@patternfly/react-core';
 import type { CardProps } from '@patternfly/react-core';
 

@@ -1,4 +1,3 @@
-import React from 'react';
 import PropTypes from 'prop-types';
 import { CLUSTER_VERSION_QUERY as QUERY } from 'queries/cluster';
 import { clusterVersionLabels } from 'messages/common';
