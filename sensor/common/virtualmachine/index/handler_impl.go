@@ -10,6 +10,7 @@ import (
 	v1 "github.com/stackrox/rox/generated/internalapi/virtualmachine/v1"
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/utils"
@@ -18,9 +19,6 @@ import (
 	"github.com/stackrox/rox/sensor/common/message"
 	"github.com/stackrox/rox/sensor/common/virtualmachine/metrics"
 )
-
-// TODO: Buffer has been decreased for testing. Increase the buffer again.
-const indexReportsBufferedChannelSize = 1
 
 var (
 	errCapabilityNotSupported = errors.New("Central does not have virtual machine capability")
@@ -140,7 +138,7 @@ func (h *handlerImpl) Start() error {
 	if h.toCentral != nil || h.indexReports != nil {
 		return errStartMoreThanOnce
 	}
-	h.indexReports = make(chan *v1.IndexReport, indexReportsBufferedChannelSize)
+	h.indexReports = make(chan *v1.IndexReport, env.VirtualMachinesIndexReportsBufferSize.IntegerSetting())
 	h.toCentral = h.run(h.indexReports)
 	return nil
 }
