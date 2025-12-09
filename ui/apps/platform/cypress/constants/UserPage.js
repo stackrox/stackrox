@@ -13,9 +13,13 @@ export const selectors = {
     userEmail: 'dl div:contains("User email") dd',
     authProviderName: 'dl div:contains("Auth provider") dd',
 
-    // Nav
-    userPermissionsForRoles: 'nav[aria-label="Roles"] li:contains("User permissions for roles") a',
-    userRoleNames: 'nav[aria-label="Roles"] li:contains("User roles") li a',
+    // Select
+    userRoleSelector: '#user-role-selector',
+
+    // Select Options
+    userPermissionsForRoles:
+        '[role="listbox"] [role="option"]:contains("User permissions for all roles")',
+    userRoleNames: '[role="listbox"] [role="option"]',
 
     // Table
     permissionsTable: scopeSelectors('table', {
