@@ -28,6 +28,7 @@ import (
 	authProviderRegistry "github.com/stackrox/rox/central/authprovider/registry"
 	authProviderSvc "github.com/stackrox/rox/central/authprovider/service"
 	authProviderTelemetry "github.com/stackrox/rox/central/authprovider/telemetry"
+	baseImageService "github.com/stackrox/rox/central/baseimage/service"
 	baseImageWatcher "github.com/stackrox/rox/central/baseimage/watcher"
 	centralHealthService "github.com/stackrox/rox/central/centralhealth/service"
 	"github.com/stackrox/rox/central/certgen"
@@ -432,6 +433,7 @@ func servicesToRegister() []pkgGRPC.APIService {
 		helmcharts.NewService(),
 		iiService.Singleton(),
 		imageService.Singleton(),
+		baseImageService.Singleton(),
 		integrationHealthService.Singleton(),
 		metadataService.New(),
 		mitreService.Singleton(),
