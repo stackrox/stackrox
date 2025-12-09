@@ -28,6 +28,8 @@ type UpdateComputer interface {
 	OnSendConnectionsFailure(unsentConns []*storage.NetworkFlow)
 	// OnSendEndpointsFailure is called after sending with endpoints that failed to send. These items are stored in cache for retry.
 	OnSendEndpointsFailure(unsentEps []*storage.NetworkEndpoint)
+	// OnSendProcessesFailure is called after sending with processes that failed to send. These items are stored in cache for retry.
+	OnSendProcessesFailure(unsentProcs []*storage.ProcessListeningOnPortFromSensor)
 
 	// ResetState resets all internal state (used when clearing historical data).
 	ResetState()
