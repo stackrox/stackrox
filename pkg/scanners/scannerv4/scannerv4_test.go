@@ -470,13 +470,18 @@ func TestGetVirtualMachineScan_Timeout(t *testing.T) {
 }
 
 func TestNewVirtualMachineScanner(t *testing.T) {
+	baseIntegration := &storage.ImageIntegration{
+		IntegrationConfig: &storage.ImageIntegration_ScannerV4{
+			ScannerV4: &storage.ScannerV4Config{},
+		},
+	}
 	t.Run("successful creation", func(it *testing.T) {
 		ctrl := gomock.NewController(t)
 		mockClient := s4ClientMocks.NewMockScanner(ctrl)
 		getter := func(string) (client.Scanner, error) {
 			return mockClient, nil
 		}
-		scanner, err := newVirtualMachineScanner(getter)
+		scanner, err := newVirtualMachineScanner(baseIntegration, getter)
 		assert.NoError(it, err)
 		assert.NotNil(it, scanner)
 	})
@@ -485,7 +490,7 @@ func TestNewVirtualMachineScanner(t *testing.T) {
 		getter := func(string) (client.Scanner, error) {
 			return nil, testErr
 		}
-		scanner, err := newVirtualMachineScanner(getter)
+		scanner, err := newVirtualMachineScanner(baseIntegration, getter)
 		assert.ErrorIs(it, err, testErr)
 		assert.Nil(it, scanner)
 	})
