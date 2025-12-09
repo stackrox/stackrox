@@ -54,7 +54,7 @@ jobs:
       - name: Check image vulnerabilities
         uses: stackrox/actions/release/check-image-vulnerabilities@tm/ROX-image-vuln-check
         with:
-          image: ${{ matrix.image }}
+          image: rhacs-eng/${{ matrix.image }}
           version: ${{ inputs.version || github.ref_name }}
           wait-limit: "7200"
           summary-title: "Upstream vulnerabilities"
@@ -62,7 +62,7 @@ jobs:
           central-url: ${{ vars.ACS_DOGFOODING_CENTRAL_URL }}
 
       - name: Upload scan result artifact
-        if: always() && hashFiles('scan-result.json') != ''
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: scan-result-quay.io_rhacs-eng_${{ matrix.image }}_${{ inputs.version || github.ref_name }}.json
@@ -96,7 +96,7 @@ jobs:
       - name: Check image vulnerabilities
         uses: stackrox/actions/release/check-image-vulnerabilities@tm/ROX-image-vuln-check
         with:
-          image: ${{ matrix.image }}
+          image: rhacs-eng/${{ matrix.image }}
           version: ${{ inputs.version || github.ref_name }}
           wait-limit: "11400"
           summary-title: "Konflux vulnerabilities"
@@ -104,7 +104,7 @@ jobs:
           central-url: ${{ vars.ACS_DOGFOODING_CENTRAL_URL }}
 
       - name: Upload scan result artifact
-        if: always() && hashFiles('scan-result.json') != ''
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: scan-result-quay.io_rhacs-eng_${{ matrix.image }}_${{ inputs.version || github.ref_name }}.json
