@@ -176,6 +176,9 @@ var (
 		},
 	}
 
+	emptyConnUpdate = map[indicator.NetworkConn]timestamp.MicroTS{}
+	emptyProcUpdate = map[indicator.ContainerEndpoint]*indicator.ProcessListeningWithTimestamp{}
+
 	open   = timestamp.InfiniteFuture
 	closed = timestamp.Now()
 )
@@ -205,14 +208,14 @@ func TestTransitionBasedConnectionBatching(t *testing.T) {
 		uc.OnSuccessfulSendConnections(update1)
 
 		// Next call with empty update should return remaining 1 flow
-		flows = uc.ComputeUpdatedConns(map[indicator.NetworkConn]timestamp.MicroTS{})
+		flows = uc.ComputeUpdatedConns(emptyConnUpdate)
 		assert.Len(t, flows, 1)
 
 		// Call successful send again
-		uc.OnSuccessfulSendConnections(map[indicator.NetworkConn]timestamp.MicroTS{})
+		uc.OnSuccessfulSendConnections(emptyConnUpdate)
 
 		// Next call should return empty
-		flows = uc.ComputeUpdatedConns(map[indicator.NetworkConn]timestamp.MicroTS{})
+		flows = uc.ComputeUpdatedConns(emptyConnUpdate)
 		assert.Len(t, flows, 0)
 	})
 
@@ -231,7 +234,7 @@ func TestTransitionBasedConnectionBatching(t *testing.T) {
 
 		// Cache should be empty after successful send
 		uc.OnSuccessfulSendConnections(update1)
-		flows = uc.ComputeUpdatedConns(map[indicator.NetworkConn]timestamp.MicroTS{})
+		flows = uc.ComputeUpdatedConns(emptyConnUpdate)
 		assert.Len(t, flows, 0)
 	})
 }
@@ -259,7 +262,7 @@ func TestTransitionBasedConnectionFailureHandling(t *testing.T) {
 		uc.OnSendConnectionsFailure(flows)
 
 		// Next call should return the same flows again (from front of cache)
-		flows2 := uc.ComputeUpdatedConns(map[indicator.NetworkConn]timestamp.MicroTS{})
+		flows2 := uc.ComputeUpdatedConns(emptyConnUpdate)
 		assert.Len(t, flows2, 3)
 
 		// Verify the flows are the same (order might differ, but all should be present)
@@ -330,7 +333,7 @@ func TestTransitionBasedCacheLimiting(t *testing.T) {
 		uc.OnSuccessfulSendConnections(update1)
 
 		// Next call with empty update should return 0 (cache was cleared)
-		flows = uc.ComputeUpdatedConns(map[indicator.NetworkConn]timestamp.MicroTS{})
+		flows = uc.ComputeUpdatedConns(emptyConnUpdate)
 		assert.Len(t, flows, 0)
 	})
 
@@ -371,7 +374,7 @@ func TestTransitionBasedCacheLimiting(t *testing.T) {
 		assert.Equal(t, 3, closedCount, "Cache should prioritize closed connections - all 3 should be present")
 
 		uc.OnSuccessfulSendConnections(update1)
-		flows = uc.ComputeUpdatedConns(map[indicator.NetworkConn]timestamp.MicroTS{})
+		flows = uc.ComputeUpdatedConns(emptyConnUpdate)
 		assert.Len(t, flows, 0)
 	})
 }
@@ -401,14 +404,14 @@ func TestTransitionBasedEndpointBatching(t *testing.T) {
 		uc.OnSuccessfulSendEndpoints(update1)
 
 		// Next call with empty update should return remaining 1 endpoint
-		eps, _ = uc.ComputeUpdatedEndpointsAndProcesses(map[indicator.ContainerEndpoint]*indicator.ProcessListeningWithTimestamp{})
+		eps, _ = uc.ComputeUpdatedEndpointsAndProcesses(emptyProcUpdate)
 		assert.Len(t, eps, 1)
 
 		// Call successful send again
-		uc.OnSuccessfulSendEndpoints(map[indicator.ContainerEndpoint]*indicator.ProcessListeningWithTimestamp{})
+		uc.OnSuccessfulSendEndpoints(emptyProcUpdate)
 
 		// Next call should return empty
-		eps, _ = uc.ComputeUpdatedEndpointsAndProcesses(map[indicator.ContainerEndpoint]*indicator.ProcessListeningWithTimestamp{})
+		eps, _ = uc.ComputeUpdatedEndpointsAndProcesses(emptyProcUpdate)
 		assert.Len(t, eps, 0)
 	})
 
@@ -429,7 +432,7 @@ func TestTransitionBasedEndpointBatching(t *testing.T) {
 		uc.OnSendEndpointsFailure(eps)
 
 		// Next call should return the same endpoints again (from front of cache)
-		eps2, _ := uc.ComputeUpdatedEndpointsAndProcesses(map[indicator.ContainerEndpoint]*indicator.ProcessListeningWithTimestamp{})
+		eps2, _ := uc.ComputeUpdatedEndpointsAndProcesses(emptyProcUpdate)
 		assert.Len(t, eps2, 3)
 
 		// Verify the endpoints are the same (order might differ, but all should be present)
@@ -464,7 +467,7 @@ func TestTransitionBasedEndpointCacheLimiting(t *testing.T) {
 		uc.OnSuccessfulSendEndpoints(update1)
 
 		// Next call with empty update should return 0 (cache was cleared)
-		eps, _ = uc.ComputeUpdatedEndpointsAndProcesses(map[indicator.ContainerEndpoint]*indicator.ProcessListeningWithTimestamp{})
+		eps, _ = uc.ComputeUpdatedEndpointsAndProcesses(emptyProcUpdate)
 		assert.Len(t, eps, 0)
 	})
 
@@ -506,7 +509,7 @@ func TestTransitionBasedEndpointCacheLimiting(t *testing.T) {
 
 		// Clear cache to verify
 		uc.OnSuccessfulSendEndpoints(update1)
-		eps, _ = uc.ComputeUpdatedEndpointsAndProcesses(map[indicator.ContainerEndpoint]*indicator.ProcessListeningWithTimestamp{})
+		eps, _ = uc.ComputeUpdatedEndpointsAndProcesses(emptyProcUpdate)
 		assert.Len(t, eps, 0)
 	})
 }
@@ -670,14 +673,14 @@ func TestTransitionBasedProcessBatching(t *testing.T) {
 		uc.OnSuccessfulSendProcesses(update1)
 
 		// Next call with empty update should return remaining 1 process
-		_, procs = uc.ComputeUpdatedEndpointsAndProcesses(map[indicator.ContainerEndpoint]*indicator.ProcessListeningWithTimestamp{})
+		_, procs = uc.ComputeUpdatedEndpointsAndProcesses(emptyProcUpdate)
 		assert.Len(t, procs, 1)
 
 		// Call successful send again
-		uc.OnSuccessfulSendProcesses(map[indicator.ContainerEndpoint]*indicator.ProcessListeningWithTimestamp{})
+		uc.OnSuccessfulSendProcesses(emptyProcUpdate)
 
 		// Next call should return empty
-		_, procs = uc.ComputeUpdatedEndpointsAndProcesses(map[indicator.ContainerEndpoint]*indicator.ProcessListeningWithTimestamp{})
+		_, procs = uc.ComputeUpdatedEndpointsAndProcesses(emptyProcUpdate)
 		assert.Len(t, procs, 0)
 	})
 
@@ -696,7 +699,7 @@ func TestTransitionBasedProcessBatching(t *testing.T) {
 
 		// Cache should be empty after successful send
 		uc.OnSuccessfulSendProcesses(update1)
-		_, procs = uc.ComputeUpdatedEndpointsAndProcesses(map[indicator.ContainerEndpoint]*indicator.ProcessListeningWithTimestamp{})
+		_, procs = uc.ComputeUpdatedEndpointsAndProcesses(emptyProcUpdate)
 		assert.Len(t, procs, 0)
 	})
 
@@ -717,7 +720,7 @@ func TestTransitionBasedProcessBatching(t *testing.T) {
 		uc.OnSendProcessesFailure(procs)
 
 		// Next call should return the same processes again (from front of cache)
-		_, procs2 := uc.ComputeUpdatedEndpointsAndProcesses(map[indicator.ContainerEndpoint]*indicator.ProcessListeningWithTimestamp{})
+		_, procs2 := uc.ComputeUpdatedEndpointsAndProcesses(emptyProcUpdate)
 		assert.Len(t, procs2, 3)
 
 		// Verify the processes are the same (order might differ, but all should be present)
@@ -789,7 +792,7 @@ func TestTransitionBasedProcessCacheLimiting(t *testing.T) {
 		uc.OnSuccessfulSendProcesses(update1)
 
 		// Next call with empty update should return 0 (cache was cleared)
-		_, procs = uc.ComputeUpdatedEndpointsAndProcesses(map[indicator.ContainerEndpoint]*indicator.ProcessListeningWithTimestamp{})
+		_, procs = uc.ComputeUpdatedEndpointsAndProcesses(emptyProcUpdate)
 		assert.Len(t, procs, 0)
 	})
 
@@ -831,7 +834,7 @@ func TestTransitionBasedProcessCacheLimiting(t *testing.T) {
 
 		// Clear cache to verify
 		uc.OnSuccessfulSendProcesses(update1)
-		_, procs = uc.ComputeUpdatedEndpointsAndProcesses(map[indicator.ContainerEndpoint]*indicator.ProcessListeningWithTimestamp{})
+		_, procs = uc.ComputeUpdatedEndpointsAndProcesses(emptyProcUpdate)
 		assert.Len(t, procs, 0)
 	})
 }
@@ -862,7 +865,7 @@ func TestOnSuccessfulSendProcesses(t *testing.T) {
 		uc.OnSuccessfulSendProcesses(update1)
 
 		// Next call with empty update should return 0 (cache was cleared)
-		_, procs = uc.ComputeUpdatedEndpointsAndProcesses(map[indicator.ContainerEndpoint]*indicator.ProcessListeningWithTimestamp{})
+		_, procs = uc.ComputeUpdatedEndpointsAndProcesses(emptyProcUpdate)
 		assert.Len(t, procs, 0)
 	})
 
@@ -886,14 +889,14 @@ func TestOnSuccessfulSendProcesses(t *testing.T) {
 		uc.OnSuccessfulSendProcesses(update1)
 
 		// Next call should return remaining 1 process from cache
-		_, procs2 := uc.ComputeUpdatedEndpointsAndProcesses(map[indicator.ContainerEndpoint]*indicator.ProcessListeningWithTimestamp{})
+		_, procs2 := uc.ComputeUpdatedEndpointsAndProcesses(emptyProcUpdate)
 		assert.Len(t, procs2, 1, "With batching enabled, OnSuccessfulSendProcesses should NOT clear the cache")
 
 		// Call successful send again
-		uc.OnSuccessfulSendProcesses(map[indicator.ContainerEndpoint]*indicator.ProcessListeningWithTimestamp{})
+		uc.OnSuccessfulSendProcesses(emptyProcUpdate)
 
 		// Now cache should be empty
-		_, procs3 := uc.ComputeUpdatedEndpointsAndProcesses(map[indicator.ContainerEndpoint]*indicator.ProcessListeningWithTimestamp{})
+		_, procs3 := uc.ComputeUpdatedEndpointsAndProcesses(emptyProcUpdate)
 		assert.Len(t, procs3, 0)
 	})
 }
