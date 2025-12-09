@@ -106,18 +106,18 @@ func (m *managerImpl) Upsert(integration *storage.ImageIntegration) error {
 	if err := m.imageIntegrationSet.UpdateImageIntegration(integration); err != nil {
 		return err
 	}
-	if !isNodeIntegration(integration) {
-		m.nodeEnricher.RemoveNodeIntegration(integration.GetId())
-		// Use node integration for now because node scanner is also orchestrator scanner.
-		m.cveFetcher.RemoveIntegration(integration.GetId())
-		return nil
-	}
 	if !isVirtualMachineIntegration(integration) {
 		m.vmEnricher.RemoveVirtualMachineIntegration(integration.GetId())
 	} else {
 		if err := m.vmEnricher.UpsertVirtualMachineIntegration(integration); err != nil {
 			return err
 		}
+	}
+	if !isNodeIntegration(integration) {
+		m.nodeEnricher.RemoveNodeIntegration(integration.GetId())
+		// Use node integration for now because node scanner is also orchestrator scanner.
+		m.cveFetcher.RemoveIntegration(integration.GetId())
+		return nil
 	}
 	log.Debugf("Converting Integration to Node: %s / %s", integration.GetName(), integration.GetType())
 	nodeIntegration, err := ImageIntegrationToNodeIntegration(integration)
@@ -146,5 +146,6 @@ func (m *managerImpl) Remove(id string) error {
 		return err
 	}
 	m.nodeEnricher.RemoveNodeIntegration(id)
+	m.vmEnricher.RemoveVirtualMachineIntegration(id)
 	return nil
 }

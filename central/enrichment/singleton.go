@@ -65,7 +65,6 @@ func initialize() {
 	cf = fetcher.SingletonManager()
 
 	vmEnricher = virtualMachineEnricher.Singleton()
-
 	initializeManager()
 }
 
