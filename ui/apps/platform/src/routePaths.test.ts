@@ -1,7 +1,9 @@
 import { describe, expect, it, vi } from 'vitest';
-import { isRouteEnabled } from './routePaths';
+
 import type { IsFeatureFlagEnabled } from 'hooks/useFeatureFlags';
 import type { HasReadAccess } from 'hooks/usePermissions';
+
+import { isRouteEnabled } from './routePaths';
 
 describe('routePaths', () => {
     describe('isRouteEnabled for base-images', () => {

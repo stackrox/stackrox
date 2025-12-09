@@ -50,7 +50,7 @@ type FormData = yup.InferType<typeof validationSchema>;
  * Parses a base image path into repository path and tag pattern.
  * Format: "docker.io/library/ubuntu:22.04" -> { repoPath: "docker.io/library/ubuntu", tagPattern: "22.04" }
  */
-function parseBaseImagePath(path: string): { repoPath: string; tagPattern: string } {
+export function parseBaseImagePath(path: string): { repoPath: string; tagPattern: string } {
     const lastColonIndex = path.lastIndexOf(':');
     const repoPath = path.substring(0, lastColonIndex);
     const tagPattern = path.substring(lastColonIndex + 1);
