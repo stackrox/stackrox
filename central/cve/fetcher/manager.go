@@ -17,6 +17,8 @@ import (
 )
 
 // OrchestratorIstioCVEManager is the interface for orchestrator (k8s or openshift) and istio CVEs
+//
+//go:generate mockgen-wrapper
 type OrchestratorIstioCVEManager interface {
 	Start()
 	HandleClusterConnection()

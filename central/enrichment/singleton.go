@@ -74,7 +74,6 @@ func initialize() {
 	orchestratorCVEManager = fetcher.SingletonManager()
 
 	vmEnricher = virtualMachineEnricher.Singleton()
-
 	initializeManager()
 }
 
