@@ -147,18 +147,18 @@ describe('User Profile', () => {
             const { userPermissionsForRoles, userRoleNames, userRoleSelector } = userPageSelectors;
             const userRoleAdmin = `${userRoleNames}:contains("Admin")`;
 
-            // When landing on Users page, "User permissions for roles" should be selected
-            cy.get(userRoleSelector).should('contain.text', 'User permissions for roles');
+            // When landing on Users page, "User permissions for all roles" should be selected
+            cy.get(userRoleSelector).should('contain.text', 'User permissions for all roles');
 
             // After clicking Admin user role:
             cy.get(userRoleSelector).click();
             cy.get(userRoleAdmin).click();
             cy.get(userRoleSelector).should('contain.text', 'Admin');
 
-            // After clicking User permissions for roles:
+            // After clicking User permissions for all roles:
             cy.get(userRoleSelector).click();
             cy.get(userPermissionsForRoles).click();
-            cy.get(userRoleSelector).should('contain.text', 'User permissions for roles');
+            cy.get(userRoleSelector).should('contain.text', 'User permissions for all roles');
         });
 
         it('should display aggregated permissions for basic auth user', () => {

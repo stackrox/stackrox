@@ -25,12 +25,14 @@ import User from 'utils/User';
 import UserPermissionsForRolesTable from './UserPermissionsForRolesTable';
 import UserPermissionsTable from './UserPermissionsTable';
 
+const ALL_ROLES = '##ALL_ROLES##';
+
 function UserPage({ resourceToAccessByRole, userData }) {
     const { email, name, roles, usedAuthProvider } = new User(userData);
     const authProviderName =
         usedAuthProvider?.type === 'basic' ? 'Basic' : (usedAuthProvider?.name ?? '');
 
-    const [selectedRole, setSelectedRole] = useState('ALL');
+    const [selectedRole, setSelectedRole] = useState(ALL_ROLES);
 
     const handleRoleSelect = (_, selection) => {
         setSelectedRole(selection);
@@ -75,11 +77,11 @@ function UserPage({ resourceToAccessByRole, userData }) {
                                 >
                                     {[
                                         <SelectOption
-                                            key="ALL"
-                                            value="ALL"
+                                            key={ALL_ROLES}
+                                            value={ALL_ROLES}
                                             description="View aggregated permissions across all assigned roles"
                                         >
-                                            User permissions for roles
+                                            User permissions for all roles
                                         </SelectOption>,
                                         <Divider key="divider" component="li" />,
                                         <SelectGroup key="roles-group" label="User roles">
@@ -93,7 +95,7 @@ function UserPage({ resourceToAccessByRole, userData }) {
                                 </SelectSingle>
                             </FlexItem>
 
-                            {selectedRole === 'ALL' && (
+                            {selectedRole === ALL_ROLES && (
                                 <FlexItem>
                                     <UserPermissionsForRolesTable
                                         resourceToAccessByRole={resourceToAccessByRole}
@@ -101,7 +103,7 @@ function UserPage({ resourceToAccessByRole, userData }) {
                                 </FlexItem>
                             )}
 
-                            {selectedRole && selectedRole !== 'ALL' && (
+                            {selectedRole && selectedRole !== ALL_ROLES && (
                                 <FlexItem>
                                     <UserPermissionsTable
                                         permissions={
