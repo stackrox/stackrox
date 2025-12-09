@@ -19,8 +19,6 @@ var (
 )
 
 type enricherImpl struct {
-	vmScanner types.VirtualMachineScanner
-
 	scanners map[string]types.VirtualMachineScanner
 	creators map[string]pkgScanners.VirtualMachineScannerCreator
 
