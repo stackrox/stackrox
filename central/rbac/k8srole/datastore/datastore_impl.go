@@ -2,8 +2,8 @@ package datastore
 
 import (
 	"context"
+	"strings"
 
-	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/rbac/k8srole/internal/store"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -24,17 +24,29 @@ func (d *datastoreImpl) GetRole(ctx context.Context, id string) (*storage.K8SRol
 }
 
 func (d *datastoreImpl) SearchRoles(ctx context.Context, q *v1.Query) ([]*v1.SearchResult, error) {
+	if q == nil {
+		q = searchPkg.EmptyQuery()
+	}
+
+	// Add name field to select columns
+	q.Selects = append(q.GetSelects(), searchPkg.NewQuerySelect(searchPkg.RoleName).Proto())
+
 	results, err := d.Search(ctx, q)
 	if err != nil {
 		return nil, err
 	}
-	roles, missingIndices, err := d.storage.GetMany(ctx, searchPkg.ResultsToIDs(results))
-	if err != nil {
-		return nil, err
-	}
-	results = searchPkg.RemoveMissingResults(results, missingIndices)
 
-	return convertMany(roles, results)
+	// Extract name from FieldValues and populate Name in search results
+	searchTag := strings.ToLower(searchPkg.RoleName.String())
+	for i := range results {
+		if results[i].FieldValues != nil {
+			if nameVal, ok := results[i].FieldValues[searchTag]; ok {
+				results[i].Name = nameVal
+			}
+		}
+	}
+
+	return searchPkg.ResultsToSearchResultProtos(results, &K8SRoleSearchResultConverter{}), nil
 }
 
 func (d *datastoreImpl) SearchRawRoles(ctx context.Context, request *v1.Query) ([]*storage.K8SRole, error) {
@@ -63,24 +75,21 @@ func (d *datastoreImpl) Count(ctx context.Context, q *v1.Query) (int, error) {
 	return d.storage.Count(ctx, q)
 }
 
-func convertMany(roles []*storage.K8SRole, results []searchPkg.Result) ([]*v1.SearchResult, error) {
-	if len(roles) != len(results) {
-		return nil, errors.New("mismatch between search results and retrieved roles")
-	}
+type K8SRoleSearchResultConverter struct{}
 
-	outputResults := make([]*v1.SearchResult, len(roles))
-	for index, role := range roles {
-		outputResults[index] = convertOne(role, &results[index])
-	}
-	return outputResults, nil
+func (c *K8SRoleSearchResultConverter) BuildName(result *searchPkg.Result) string {
+	return result.Name
 }
 
-func convertOne(role *storage.K8SRole, result *searchPkg.Result) *v1.SearchResult {
-	return &v1.SearchResult{
-		Category:       v1.SearchCategory_ROLES,
-		Id:             role.GetId(),
-		Name:           role.GetName(),
-		FieldToMatches: searchPkg.GetProtoMatchesMap(result.Matches),
-		Score:          result.Score,
-	}
+func (c *K8SRoleSearchResultConverter) BuildLocation(result *searchPkg.Result) string {
+	// K8SRole does not have a location
+	return ""
+}
+
+func (c *K8SRoleSearchResultConverter) GetCategory() v1.SearchCategory {
+	return v1.SearchCategory_ROLES
+}
+
+func (c *K8SRoleSearchResultConverter) GetScore(result *searchPkg.Result) float64 {
+	return result.Score
 }
