@@ -2,20 +2,17 @@ package clone
 
 import (
 	"context"
-	"fmt"
 	"os"
 	"path/filepath"
 	"testing"
 
 	"github.com/stackrox/rox/generated/storage"
 	pgClone "github.com/stackrox/rox/migrator/clone/postgres"
-	"github.com/stackrox/rox/migrator/clone/rocksdb"
 	migGorm "github.com/stackrox/rox/migrator/postgres/gorm"
 	"github.com/stackrox/rox/migrator/postgreshelper"
 	migVer "github.com/stackrox/rox/migrator/version"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/migrations"
-	migrationtestutils "github.com/stackrox/rox/pkg/migrations/testutils"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgadmin"
 	"github.com/stackrox/rox/pkg/postgres/pgconfig"
@@ -54,28 +51,19 @@ type mockCentral struct {
 	// Set version function has to be provided by test itself.
 	setVersion  func(t *testing.T, ver *versionPair)
 	adminConfig *postgres.Config
-	// May need to run both databases if testing case of upgrading from rocks version to a postgres version
-	runBoth bool
 }
 
 // createCentral - creates a central that runs Rocks OR Postgres OR both.  Need to cover
 // the condition where we have Rocks data that needs migrated to Postgres.  Need to test that
 // we calculate the destination clone appropriately.
-func createCentral(t *testing.T, runBoth bool) *mockCentral {
+func createCentral(t *testing.T) *mockCentral {
 	// Initialize mock test config
 	_ = migGorm.SetupAndGetMockConfig(t)
 
 	mountDir, err := os.MkdirTemp("", "mock-central-")
 	require.NoError(t, err)
-	mock := mockCentral{t: t, mountPath: mountDir, runBoth: runBoth}
+	mock := mockCentral{t: t, mountPath: mountDir}
 	mock.ctx = sac.WithAllAccess(context.Background())
-
-	if runBoth {
-		dbPath := filepath.Join(mountDir, ".db-init")
-		require.NoError(t, os.Mkdir(dbPath, 0755))
-		require.NoError(t, os.Symlink(dbPath, filepath.Join(mountDir, "current")))
-		migrationtestutils.SetDBMountPath(t, mountDir)
-	}
 
 	mock.tp = pgtest.ForTCustomDB(t, "postgres")
 	pgtest.CreateDatabase(t, migrations.GetCurrentClone())
@@ -88,7 +76,6 @@ func createCentral(t *testing.T, runBoth bool) *mockCentral {
 func (m *mockCentral) destroyCentral() {
 	if m.tp != nil {
 		pgtest.DropDatabase(m.t, migrations.GetCurrentClone())
-		pgtest.DropDatabase(m.t, migrations.GetPreviousClone())
 		pgtest.DropDatabase(m.t, migrations.GetBackupClone())
 	}
 	_ = os.RemoveAll(m.mountPath)
@@ -114,31 +101,7 @@ func (m *mockCentral) migrateWithVersion(ver *versionPair, breakpoint string, fo
 	return m.runMigrator(breakpoint, forceRollback)
 }
 
-// legacyUpgrade emulates the legacy database upgrade.
-func (m *mockCentral) legacyUpgrade(t *testing.T, ver *versionPair, previousVer *versionPair) {
-	path := filepath.Join(m.mountPath, rocksdb.CurrentClone)
-	require.NoError(m.t, os.WriteFile(filepath.Join(path, "db"), []byte(fmt.Sprintf("%d", ver.seqNum)), 0644))
-
-	m.setMigrationVersion(path, ver)
-
-	if previousVer != nil {
-		previousDir, err := os.MkdirTemp(migrations.DBMountPath(), ".previous-")
-		require.NoError(t, err)
-		require.NoError(m.t, os.Symlink(filepath.Base(previousDir), filepath.Join(migrations.DBMountPath(), ".previous")))
-
-		prevPath := filepath.Join(m.mountPath, rocksdb.PreviousClone)
-		require.NoError(m.t, os.WriteFile(filepath.Join(prevPath, "db"), []byte(fmt.Sprintf("%d", previousVer.seqNum)), 0644))
-
-		m.setMigrationVersion(prevPath, previousVer)
-	}
-}
-
 func (m *mockCentral) upgradeCentral(ver *versionPair, breakpoint string) error {
-	curVer := &versionPair{
-		version:   version.GetMainVersion(),
-		seqNum:    migrations.CurrentDBVersionSeqNum(),
-		minSeqNum: migrations.MinimumSupportedDBVersionSeqNum()}
-
 	if err := m.migrateWithVersion(ver, breakpoint, ""); err != nil {
 		return err
 	}
@@ -151,26 +114,6 @@ func (m *mockCentral) upgradeCentral(ver *versionPair, breakpoint string) error 
 
 	m.runCentral()
 
-	if m.runBoth {
-		if version.CompareVersions(curVer.version, "3.0.57.0") >= 0 {
-			if exists, _ := pgadmin.CheckIfDBExists(m.adminConfig, pgClone.TempClone); exists {
-				m.verifyClonePostgres(pgClone.TempClone, curVer)
-			}
-		} else {
-			exists, err := pgadmin.CheckIfDBExists(m.adminConfig, pgClone.TempClone)
-			assert.NoError(m.t, err)
-			assert.False(m.t, exists)
-		}
-	} else {
-		if version.CompareVersions(curVer.version, "3.0.57.0") >= 0 {
-			m.verifyClonePostgres(pgClone.PreviousClone, curVer)
-		} else {
-			exists, err := pgadmin.CheckIfDBExists(m.adminConfig, pgClone.PreviousClone)
-			assert.NoError(m.t, err)
-			assert.False(m.t, exists)
-		}
-	}
-
 	return nil
 }
 
@@ -180,9 +123,6 @@ func (m *mockCentral) upgradeDB(pgClone string) {
 		require.NoError(m.t, err)
 		require.LessOrEqual(m.t, cloneVer.SeqNum, migrations.CurrentDBVersionSeqNum())
 	}
-	if !m.runBoth {
-		return
-	}
 }
 
 func (m *mockCentral) downgradeDB(pgClone string) {
@@ -190,9 +130,6 @@ func (m *mockCentral) downgradeDB(pgClone string) {
 		cloneVer, err := migVer.ReadVersionPostgres(m.ctx, pgClone)
 		require.NoError(m.t, err)
 		require.GreaterOrEqual(m.t, cloneVer.SeqNum, migrations.CurrentDBVersionSeqNum())
-	}
-	if !m.runBoth {
-		return
 	}
 }
 
@@ -218,11 +155,6 @@ func (m *mockCentral) runMigrator(breakPoint string, forceRollback string) error
 		return err
 	}
 	require.NotEmpty(m.t, pgClone)
-
-	// If we are running rocks too, we need to either have just a pgClone OR both.
-	if m.runBoth {
-		require.True(m.t, pgClone != "")
-	}
 	if breakPoint == breakAfterGetClone {
 		return nil
 	}
@@ -246,10 +178,6 @@ func (m *mockCentral) runCentral() {
 		migVer.SetCurrentVersionPostgres(m.ctx)
 	}
 	m.verifyCurrent()
-
-	if m.runBoth {
-		require.NoDirExists(m.t, filepath.Join(m.mountPath, rocksdb.BackupClone))
-	}
 }
 
 func (m *mockCentral) restoreCentral(ver *versionPair, breakPoint string, rocksToPostgres bool) error {
@@ -371,7 +299,7 @@ func (m *mockCentral) runMigratorWithBreaksInPersist(breakpoint string) {
 	dbm := pgClone.New("", config, sourceMap)
 	err = dbm.Scan()
 	require.NoError(m.t, err)
-	clone, _, err := dbm.GetCloneToMigrate(nil)
+	clone, err := dbm.GetCloneToMigrate()
 	require.NoError(m.t, err)
 	m.upgradeDB(clone)
 
@@ -379,12 +307,8 @@ func (m *mockCentral) runMigratorWithBreaksInPersist(breakpoint string) {
 	switch clone {
 	case pgClone.CurrentClone:
 		return
-	case pgClone.PreviousClone:
-		prev = ""
 	case pgClone.RestoreClone:
 		prev = pgClone.BackupClone
-	case pgClone.TempClone:
-		prev = pgClone.PreviousClone
 	}
 
 	// Connect to different database for admin functions
@@ -403,8 +327,4 @@ func (m *mockCentral) runMigratorWithBreaksInPersist(breakpoint string) {
 		return
 	}
 	_ = postgreshelper.RenameDB(connectPool, pgClone.CurrentClone, clone)
-}
-
-func (m *mockCentral) removePreviousClone() {
-	pgtest.DropDatabase(m.t, pgClone.PreviousClone)
 }

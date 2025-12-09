@@ -58,7 +58,7 @@ func run() error {
 		log.WriteToStderrf("conf.Maintenance.ForceRollbackVersion: %s", rollbackVersion)
 	}
 
-	// If using internal database, ensure the default database (`central_active`) exists
+	// If using internal database, ensure the database in the connection string exists
 	if !pgconfig.IsExternalDatabase() {
 		if err := ensureDatabaseExists(); err != nil {
 			return err
