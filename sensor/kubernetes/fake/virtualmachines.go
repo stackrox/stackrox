@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"math"
-	"math/rand"
 	"strings"
 	"time"
 
@@ -148,34 +147,10 @@ func getRandomVMPair(vsockCID uint32, guestOSes []string) (*unstructured.Unstruc
 	return vmObj, vmiObj
 }
 
-// randomizeVMObject updates VM metadata while keeping base structure
-func randomizeVMObject(vm *unstructured.Unstructured) {
+// randomizeAnnotationsLabels updates object's metadata while keeping base structure
+func randomizeAnnotationsLabels(vm *unstructured.Unstructured) {
 	vm.SetAnnotations(createRandMap(16, 3))
 	vm.SetLabels(createRandMap(16, 3))
-
-	if rand.Float32() < 0.3 {
-		status, _, _ := unstructured.NestedString(vm.Object, "status", "printableStatus")
-		if status == string(kubeVirtV1.VirtualMachineStatusRunning) {
-			setNestedField(vm, string(kubeVirtV1.VirtualMachineStatusStopped), "status", "printableStatus")
-		} else {
-			setNestedField(vm, string(kubeVirtV1.VirtualMachineStatusRunning), "status", "printableStatus")
-		}
-	}
-}
-
-// randomizeVMIObject updates VM metadata while keeping base structure
-func randomizeVMIObject(vmi *unstructured.Unstructured) {
-	vmi.SetAnnotations(createRandMap(16, 3))
-	vmi.SetLabels(createRandMap(16, 3))
-
-	if rand.Float32() < 0.3 {
-		phase, _, _ := unstructured.NestedString(vmi.Object, "status", "phase")
-		if phase == string(kubeVirtV1.Running) {
-			setNestedField(vmi, string(kubeVirtV1.Scheduled), "status", "phase")
-		} else {
-			setNestedField(vmi, string(kubeVirtV1.Running), "status", "phase")
-		}
-	}
 }
 
 // toUnstructuredVM converts a VirtualMachine to unstructured.Unstructured
@@ -315,13 +290,13 @@ func (w *WorkloadManager) runVMLifecycle(
 			updateTicker.Reset(calculateDurationWithJitter(workload.UpdateInterval))
 
 			// Update VM metadata
-			randomizeVMObject(vm)
+			randomizeAnnotationsLabels(vm)
 			if _, err := vmClient.Update(ctx, vm, metav1.UpdateOptions{}); err != nil {
 				log.Debugf("error updating VirtualMachine: %v", err)
 			}
 
 			// Update VMI metadata
-			randomizeVMIObject(vmi)
+			randomizeAnnotationsLabels(vmi)
 			if _, err := vmiClient.Update(ctx, vmi, metav1.UpdateOptions{}); err != nil {
 				log.Debugf("error updating VirtualMachineInstance: %v", err)
 			}
