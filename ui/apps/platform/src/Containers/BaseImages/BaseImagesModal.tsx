@@ -22,7 +22,7 @@ import useRestMutation from 'hooks/useRestMutation';
 export type BaseImagesModalProps = {
     isOpen: boolean;
     onClose: () => void;
-    onSuccess?: () => void;
+    onSuccess: () => void;
 };
 
 const validationSchema = yup.object({
@@ -87,7 +87,7 @@ function BaseImagesModal({ isOpen, onClose, onSuccess }: BaseImagesModalProps) {
                 {
                     onSuccess: () => {
                         formik.resetForm();
-                        onSuccess?.();
+                        onSuccess();
                     },
                     onSettled: () => {
                         setSubmitting(false);
