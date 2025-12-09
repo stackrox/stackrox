@@ -407,7 +407,7 @@ func (s *LocalScan) enrichImageWithMetadata(ctx context.Context, errorList *erro
 	return nil
 }
 
-// fetchImageAnalysis analyzes an image via the local scanner. Does nothing if errorList contains errors.
+// fetchImageAnalysis analyzes an image via the local scanner.
 func (s *LocalScan) fetchImageAnalysis(ctx context.Context, errorList *errorhelpers.ErrorList, registry registryTypes.ImageRegistry, image *storage.Image) *scannerclient.ImageAnalysis {
 	// Scan the image via local scanner.
 	scannerResp, err := s.scanImg(ctx, image, registry, s.scannerClientSingleton())
