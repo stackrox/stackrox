@@ -334,7 +334,7 @@ func (w *WorkloadManager) sendIndexReportsWhileAlive(
 	for {
 		select {
 		case <-ctx.Done():
-			log.Debugf("Stopping index report generation for VM with vsockCID %s (lifecycle ended)", vsockCID)
+			log.Debugf("Stopping index report generation for VM with vsockCID %d (lifecycle ended)", vsockCID)
 			return
 		case <-reportTicker.C:
 			reportTicker.Reset(jitteredInterval(interval, reportIntervalJitterPercent))
