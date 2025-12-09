@@ -121,30 +121,32 @@ func (p *Pipeline) translate(fs *sensorAPI.FileActivity) *storage.FileAccess {
 }
 
 func (p *Pipeline) getIndicator(process *sensorAPI.ProcessSignal) *storage.ProcessIndicator {
-	pi := &storage.ProcessIndicator{
-		Id: uuid.NewV4().String(),
-		Signal: &storage.ProcessSignal{
-			Id:           process.GetId(),
-			Uid:          process.GetUid(),
-			Gid:          process.GetGid(),
-			Time:         process.GetCreationTime(),
-			Name:         process.GetName(),
-			Args:         process.GetArgs(),
-			ExecFilePath: process.GetExecFilePath(),
-			Pid:          process.GetPid(),
-			Scraped:      process.GetScraped(),
-			ContainerId:  process.GetContainerId(),
-			LineageInfo:  []*storage.ProcessSignal_LineageInfo{},
-		},
+	signal := &storage.ProcessSignal{
+		Id:           process.GetId(),
+		Uid:          process.GetUid(),
+		Gid:          process.GetGid(),
+		Time:         process.GetCreationTime(),
+		Name:         process.GetName(),
+		Args:         process.GetArgs(),
+		ExecFilePath: process.GetExecFilePath(),
+		Pid:          process.GetPid(),
+		Scraped:      process.GetScraped(),
+		ContainerId:  process.GetContainerId(),
+		LineageInfo:  make([]*storage.ProcessSignal_LineageInfo, 0, len(process.GetLineageInfo())),
 	}
 
 	for _, lineage := range process.GetLineageInfo() {
-		pi.GetSignal().LineageInfo = append(pi.GetSignal().LineageInfo,
+		signal.LineageInfo = append(signal.LineageInfo,
 			&storage.ProcessSignal_LineageInfo{
 				ParentUid:          lineage.GetParentUid(),
 				ParentExecFilePath: lineage.GetParentExecFilePath(),
 			},
 		)
+	}
+
+	pi := &storage.ProcessIndicator{
+		Id:     uuid.NewV4().String(),
+		Signal: signal,
 	}
 
 	if process.GetContainerId() == "" {
