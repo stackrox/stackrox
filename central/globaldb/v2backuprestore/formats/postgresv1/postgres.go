@@ -88,7 +88,7 @@ func checkMigrationVersion(_ common.RestoreFileContext, fileReader io.Reader, si
 	}
 
 	if version.SeqNum < migrations.MinimumSupportedDBVersionSeqNum() {
-		dbSupportErr := errors.Errorf("Restoring from this version %q is no longer supported, sequence number %d", version.MainVersion, version.SeqNum)
+		dbSupportErr := errors.Errorf("Restoring from this version %q is no longer supported, sequence number %d matching software version %s", version.MainVersion, version.SeqNum, migrations.MinimumSupportedDBVersion())
 		log.Error(dbSupportErr)
 		return dbSupportErr
 	}
