@@ -1,5 +1,4 @@
-import { useCallback, useState } from 'react';
-import { isAxiosError } from 'axios';
+import { useState } from 'react';
 import {
     Alert,
     Button,
@@ -11,11 +10,7 @@ import {
     Title,
 } from '@patternfly/react-core';
 
-import {
-    addBaseImage as addBaseImageFn,
-    deleteBaseImage as deleteBaseImageFn,
-    getBaseImages,
-} from 'services/BaseImagesService';
+import { deleteBaseImage as deleteBaseImageFn, getBaseImages } from 'services/BaseImagesService';
 import useRestMutation from 'hooks/useRestMutation';
 import useRestQuery from 'hooks/useRestQuery';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
@@ -23,39 +18,22 @@ import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 import BaseImagesModal from './BaseImagesModal';
 import BaseImagesTable from './BaseImagesTable';
 
+/**
+ * Page component for managing base images. Displays a list of approved base images
+ * and provides functionality to add and delete base images.
+ */
 function BaseImagesPage() {
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
 
-    const baseImagesRequest = useRestQuery(useCallback(getBaseImages, []));
+    // Fetch base images on component mount
+    const baseImagesRequest = useRestQuery(getBaseImages);
 
-    const addBaseImageMutation = useRestMutation(
-        (data: { baseImageRepoPath: string; baseImageTagPattern: string }) =>
-            addBaseImageFn(data.baseImageRepoPath, data.baseImageTagPattern),
-        {
-            onSuccess: () => {
-                baseImagesRequest.refetch();
-            },
-        }
-    );
-
+    // Delete mutation that refetches the list after successful deletion to keep UI in sync
     const deleteBaseImageMutation = useRestMutation((id: string) => deleteBaseImageFn(id), {
         onSuccess: () => {
             baseImagesRequest.refetch();
         },
     });
-
-    function handleCloseAddModal() {
-        setIsAddModalOpen(false);
-    }
-
-    function handleOpenAddModal() {
-        addBaseImageMutation.reset();
-        setIsAddModalOpen(true);
-    }
-
-    function handleRemoveBaseImage(id: string) {
-        deleteBaseImageMutation.mutate(id);
-    }
 
     const baseImages = baseImagesRequest.data ?? [];
 
@@ -73,7 +51,7 @@ function BaseImagesPage() {
                             layer-specific filtering
                         </Text>
                     </FlexItem>
-                    <Button variant="primary" onClick={handleOpenAddModal}>
+                    <Button variant="primary" onClick={() => setIsAddModalOpen(true)}>
                         Add base image
                     </Button>
                 </Flex>
@@ -93,7 +71,7 @@ function BaseImagesPage() {
                 )}
                 <BaseImagesTable
                     baseImages={baseImages}
-                    onRemove={(baseImage) => handleRemoveBaseImage(baseImage.id)}
+                    onRemove={(baseImage) => deleteBaseImageMutation.mutate(baseImage.id)}
                     isRemoveInProgress={deleteBaseImageMutation.isLoading}
                     isLoading={baseImagesRequest.isLoading && !baseImagesRequest.data}
                     error={baseImagesRequest.error as Error | null}
@@ -101,17 +79,8 @@ function BaseImagesPage() {
             </PageSection>
             <BaseImagesModal
                 isOpen={isAddModalOpen}
-                onClose={handleCloseAddModal}
-                onSave={() =>
-                    addBaseImageMutation.mutate({
-                        baseImageRepoPath: '',
-                        baseImageTagPattern: '',
-                    })
-                }
-                isSuccess={addBaseImageMutation.isSuccess}
-                isError={addBaseImageMutation.isError}
-                isSubmitting={addBaseImageMutation.isLoading}
-                error={isAxiosError(addBaseImageMutation.error) ? addBaseImageMutation.error : null}
+                onClose={() => setIsAddModalOpen(false)}
+                onSuccess={baseImagesRequest.refetch}
             />
         </>
     );
