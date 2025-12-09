@@ -351,14 +351,3 @@ func (d *dbCloneManagerImpl) rollbackEnabled() bool {
 
 	return currClone.GetSeqNum() != 0
 }
-
-// GetCurrentVersion -- gets the version of the current clone
-func (d *dbCloneManagerImpl) GetCurrentVersion() *migrations.MigrationVersion {
-	ctx := sac.WithAllAccess(context.Background())
-	ver, err := migVer.ReadVersionPostgres(ctx, CurrentClone)
-	if err != nil {
-		return nil
-	}
-
-	return ver
-}

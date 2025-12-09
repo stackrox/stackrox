@@ -33,7 +33,4 @@ type DBCloneManager interface {
 
 	// Persist -- moves the clone database to be the active database.
 	Persist(clone string) error
-
-	// GetCurrentVersion -- gets the version of the current clone
-	GetCurrentVersion() *migrations.MigrationVersion
 }
