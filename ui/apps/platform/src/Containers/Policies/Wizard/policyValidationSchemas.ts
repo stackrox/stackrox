@@ -17,8 +17,15 @@ import { policySectionValidators } from './Step3/policyCriteriaValidators';
 
 type PolicyStep1 = Pick<ClientPolicy, 'name' | 'severity' | 'categories'>;
 
+const policyNameLengthMessage = 'Policy name must be between 5 and 128 characters';
 const validationSchemaStep1: yup.ObjectSchema<PolicyStep1> = yup.object().shape({
-    name: yup.string().trim().required('Policy name is required'),
+    name: yup
+        .string()
+        .trim()
+        .min(5, policyNameLengthMessage)
+        .max(128, policyNameLengthMessage)
+        .matches(/^[^\n$]*$/, 'Policy name must not contain newlines or dollar signs')
+        .required('Policy name is required'),
     severity: yup
         .string()
         .oneOf(['LOW_SEVERITY', 'MEDIUM_SEVERITY', 'HIGH_SEVERITY', 'CRITICAL_SEVERITY'])
