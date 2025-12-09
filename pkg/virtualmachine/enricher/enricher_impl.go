@@ -81,7 +81,7 @@ func enrichVirtualMachineWithScanner(machine *storage.VirtualMachine, indexRepor
 
 func (e *enricherImpl) getScanners() []types.VirtualMachineScanner {
 	e.lock.RLock()
-	e.lock.RUnlock()
+	defer e.lock.RUnlock()
 
 	res := make([]types.VirtualMachineScanner, 0, len(e.scanners))
 	for _, scanner := range e.scanners {

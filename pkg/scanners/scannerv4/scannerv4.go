@@ -410,11 +410,14 @@ func newNodeScanner(integration *storage.NodeIntegration) (*scannerv4, error) {
 // VirtualMachineScannerCreator provides the type scanners.VirtualMachineScannerCreator to add to the scanners registry.
 func VirtualMachineScannerCreator() (string, func(integration *storage.ImageIntegration) (scannerTypes.VirtualMachineScanner, error)) {
 	return scannerTypes.ScannerV4, func(integration *storage.ImageIntegration) (scannerTypes.VirtualMachineScanner, error) {
-		return newVirtualMachineScanner(integration)
+		return newVirtualMachineScanner(integration, getMatcherOnlyScanner)
 	}
 }
 
-func newVirtualMachineScanner(integration *storage.ImageIntegration) (scannerTypes.VirtualMachineScanner, error) {
+func newVirtualMachineScanner(
+	integration *storage.ImageIntegration,
+	clientCreator func(string) (client.Scanner, error),
+) (scannerTypes.VirtualMachineScanner, error) {
 	conf := integration.GetScannerV4()
 	if conf == nil {
 		return nil, errors.New("scanner v4 configuration required")
@@ -436,11 +439,7 @@ func newVirtualMachineScanner(integration *storage.ImageIntegration) (scannerTyp
 		matcherEndpoint,
 		numConcurrentScans,
 	)
-	ctx := context.Background()
-	scannerClient, err := client.NewGRPCScanner(
-		ctx,
-		client.WithMatcherAddress(matcherEndpoint),
-	)
+	scannerClient, err := clientCreator(matcherEndpoint)
 	if err != nil {
 		return nil, err
 	}
@@ -454,30 +453,6 @@ func newVirtualMachineScanner(integration *storage.ImageIntegration) (scannerTyp
 	}
 
 	return scanner, nil
-
-}
-
-// NewVirtualMachineScanner provides a scannerv4 instance that is able to scan virtual machines
-func NewVirtualMachineScanner() (types.VirtualMachineScanner, error) {
-	return newVirtualMachineScanner(getMatcherOnlyScanner)
-}
-
-func newVirtualMachineScanner(clientCreator func(string) (client.Scanner, error)) (types.VirtualMachineScanner, error) {
-	matcherEndpoint := DefaultMatcherEndpoint
-
-	scannerClient, err := clientCreator(matcherEndpoint)
-	if err != nil {
-		return nil, err
-	}
-
-	numConcurrentScans := defaultMaxConcurrentScans
-
-	return &scannerv4{
-		name:              "Virtual machine scanner",
-		scannerClient:     scannerClient,
-		ScanSemaphore:     types.NewSemaphoreWithValue(numConcurrentScans),
-		NodeScanSemaphore: types.NewNodeSemaphoreWithValue(numConcurrentScans),
-	}, nil
 }
 
 func getMatcherOnlyScanner(matcherEndpoint string) (client.Scanner, error) {
