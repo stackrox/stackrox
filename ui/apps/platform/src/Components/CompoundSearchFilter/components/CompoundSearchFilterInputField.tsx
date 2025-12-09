@@ -28,6 +28,8 @@ import {
 } from '../utils/utils';
 import ConditionNumber from './ConditionNumber';
 import SearchFilterAutocomplete from './SearchFilterAutocomplete';
+import SearchFilterSelectExclusiveDouble from './SearchFilterSelectExclusiveDouble';
+import SearchFilterSelectExclusiveSingle from './SearchFilterSelectExclusiveSingle';
 import ConditionDate from './ConditionDate';
 import ConditionText from './ConditionText';
 
@@ -191,6 +193,24 @@ function CompoundSearchFilterInputField({
                     <ArrowRightIcon />
                 </Button>
             </>
+        );
+    }
+    if (attribute.inputType === 'select-exclusive-double') {
+        return (
+            <SearchFilterSelectExclusiveDouble
+                attribute={attribute}
+                onSearch={onSearch}
+                searchFilter={searchFilter}
+            />
+        );
+    }
+    if (attribute.inputType === 'select-exclusive-single') {
+        return (
+            <SearchFilterSelectExclusiveSingle
+                attribute={attribute}
+                onSearch={onSearch}
+                searchFilter={searchFilter}
+            />
         );
     }
     if (isSelectType(attribute)) {

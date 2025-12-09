@@ -6,7 +6,13 @@ import type { ConditionTextInputProps } from './components/ConditionText';
 // Compound search filter types
 
 export type BaseInputType = 'autocomplete' | 'text' | 'date-picker' | 'condition-number';
-export type InputType = BaseInputType | 'condition-text' | 'select';
+export type InputType =
+    | BaseInputType
+    | 'condition-text'
+    | 'select'
+    | 'select-exclusive-double'
+    | 'select-exclusive-single';
+
 export type SelectSearchFilterOptions = {
     options: { label: string; value: string }[];
 };
@@ -36,10 +42,33 @@ export type SelectSearchFilterAttribute = {
     inputProps: SelectSearchFilterOptions | SelectSearchFilterGroupedOptions;
 } & BaseSearchFilterAttribute;
 
+export type SelectExclusiveSingleSearchFilterAttribute = {
+    inputType: 'select-exclusive-single';
+    inputProps: SelectSearchFilterOptions;
+} & BaseSearchFilterAttribute;
+
+export type SelectExclusiveDoubleSearchFilterAttribute = {
+    inputType: 'select-exclusive-double';
+    inputProps: SelectExclusiveDoubleSearchFilterInputProps;
+} & BaseSearchFilterAttribute;
+
+export type SelectExclusiveDoubleSearchFilterInputProps = {
+    category2: string;
+    options: NonEmptyArray<SelectExclusiveDoubleSearchFilterOption>;
+};
+
+export type SelectExclusiveDoubleSearchFilterOption = {
+    label: string;
+    category: string;
+    value: string;
+};
+
 export type CompoundSearchFilterAttribute =
     | ConditionTextFilterAttribute
     | GenericSearchFilterAttribute
-    | SelectSearchFilterAttribute;
+    | SelectSearchFilterAttribute
+    | SelectExclusiveDoubleSearchFilterAttribute
+    | SelectExclusiveSingleSearchFilterAttribute;
 
 export type CompoundSearchFilterEntity = {
     displayName: string;
