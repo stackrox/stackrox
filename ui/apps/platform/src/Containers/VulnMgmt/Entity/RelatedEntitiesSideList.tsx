@@ -1,4 +1,4 @@
-import React, { useContext } from 'react';
+import { useContext } from 'react';
 import type { ReactNode } from 'react';
 
 import { defaultCountKeyMap as countKeyMap } from 'constants/workflowPages.constants';

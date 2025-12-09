@@ -1,4 +1,4 @@
-import React, { useContext } from 'react';
+import { useContext } from 'react';
 import type { ReactElement } from 'react';
 import { Link } from 'react-router-dom-v5-compat';
 import { ChevronRight, ArrowLeft } from 'react-feather';
