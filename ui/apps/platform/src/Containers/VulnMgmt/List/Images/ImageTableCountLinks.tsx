@@ -1,4 +1,4 @@
-import React, { useContext } from 'react';
+import { useContext } from 'react';
 import type { ReactElement } from 'react';
 
 import { resourceTypes } from 'constants/entityTypes';

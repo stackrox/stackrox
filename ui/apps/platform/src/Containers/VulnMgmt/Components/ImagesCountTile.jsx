@@ -1,4 +1,4 @@
-import React, { useContext } from 'react';
+import { useContext } from 'react';
 import entityTypes from 'constants/entityTypes';
 import { gql, useQuery } from '@apollo/client';
 
