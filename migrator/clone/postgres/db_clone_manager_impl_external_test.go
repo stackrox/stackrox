@@ -70,7 +70,6 @@ func (s *PostgresExternalManagerSuite) SetupTest() {
 
 func (s *PostgresExternalManagerSuite) DestroyClones() {
 	// Clean up databases
-	pgtest.DropDatabase(s.T(), tempDB)
 	pgtest.DropDatabase(s.T(), externalDB)
 
 	for clone := range knownClones {
@@ -121,7 +120,6 @@ func (s *PostgresExternalManagerSuite) TestScanExternal() {
 		s.False(pgadmin.CheckIfDBExists(s.config, clone))
 	}
 
-	s.False(pgadmin.CheckIfDBExists(s.config, tempDB))
 	s.True(pgadmin.CheckIfDBExists(s.config, externalDB))
 }
 

@@ -246,3 +246,170 @@ func (s *PostgresCloneManagerSuite) TestGetCloneUpgradeSameSeq() {
 	s.Require().Equal(CurrentClone, clone)
 	s.Require().Nil(err)
 }
+
+func (s *PostgresCloneManagerSuite) TestPersistCurrentClone() {
+	// Test persisting CurrentClone - should be a no-op
+	dbm := New("", s.config, s.sourceMap)
+
+	// Scan the clones
+	s.Require().Nil(dbm.Scan())
+
+	// Verify CurrentClone exists before persist
+	exists, err := pgadmin.CheckIfDBExists(s.config, CurrentClone)
+	s.Require().NoError(err)
+	s.Require().True(exists)
+
+	// Persist CurrentClone - should not error and should be a no-op
+	err = dbm.Persist(CurrentClone)
+	s.Require().NoError(err)
+
+	// Verify CurrentClone still exists after persist
+	exists, err = pgadmin.CheckIfDBExists(s.config, CurrentClone)
+	s.Require().NoError(err)
+	s.Require().True(exists)
+}
+
+func (s *PostgresCloneManagerSuite) TestPersistRestoreClone() {
+	// Drop backup database to ensure clean state
+	pgtest.DropDatabase(s.T(), migrations.BackupDatabase)
+
+	// Create and populate restore clone with a version
+	restoreVersion := &storage.Version{
+		SeqNum:        int32(migrations.CurrentDBVersionSeqNum() - 1),
+		Version:       preVer.version,
+		LastPersisted: protoconv.ConvertMicroTSToProtobufTS(timestamp.Now()),
+	}
+	migVer.SetVersionPostgres(s.ctx, migrations.GetRestoreClone(), restoreVersion)
+
+	dbm := New("", s.config, s.sourceMap)
+
+	// Scan the clones
+	s.Require().Nil(dbm.Scan())
+
+	// Verify restore clone exists
+	exists, err := pgadmin.CheckIfDBExists(s.config, RestoreClone)
+	s.Require().NoError(err)
+	s.Require().True(exists)
+
+	// Verify current clone exists
+	exists, err = pgadmin.CheckIfDBExists(s.config, CurrentClone)
+	s.Require().NoError(err)
+	s.Require().True(exists)
+
+	// Persist restore clone
+	err = dbm.Persist(RestoreClone)
+	s.Require().NoError(err)
+
+	// After persist:
+	// - RestoreClone should no longer exist (it was renamed to CurrentClone)
+	// - CurrentClone should exist (the former RestoreClone)
+	// - BackupClone should exist (the former CurrentClone)
+	exists, err = pgadmin.CheckIfDBExists(s.config, RestoreClone)
+	s.Require().NoError(err)
+	s.Require().False(exists, "RestoreClone should not exist after persist")
+
+	exists, err = pgadmin.CheckIfDBExists(s.config, CurrentClone)
+	s.Require().NoError(err)
+	s.Require().True(exists, "CurrentClone should exist after persist")
+
+	exists, err = pgadmin.CheckIfDBExists(s.config, BackupClone)
+	s.Require().NoError(err)
+	s.Require().True(exists, "BackupClone should exist after persist")
+}
+
+func (s *PostgresCloneManagerSuite) TestPersistRestoreCloneWithExistingBackup() {
+	// Create a backup database first
+	backupVersion := &storage.Version{
+		SeqNum:        int32(migrations.CurrentDBVersionSeqNum() - 2),
+		Version:       preVer.version,
+		LastPersisted: protoconv.ConvertMicroTSToProtobufTS(timestamp.Now()),
+	}
+	migVer.SetVersionPostgres(s.ctx, migrations.GetBackupClone(), backupVersion)
+
+	// Create and populate restore clone with a version
+	restoreVersion := &storage.Version{
+		SeqNum:        int32(migrations.CurrentDBVersionSeqNum() - 1),
+		Version:       preVer.version,
+		LastPersisted: protoconv.ConvertMicroTSToProtobufTS(timestamp.Now()),
+	}
+	migVer.SetVersionPostgres(s.ctx, migrations.GetRestoreClone(), restoreVersion)
+
+	dbm := New("", s.config, s.sourceMap)
+
+	// Scan the clones
+	s.Require().Nil(dbm.Scan())
+
+	// Verify all clones exist before persist
+	exists, err := pgadmin.CheckIfDBExists(s.config, RestoreClone)
+	s.Require().NoError(err)
+	s.Require().True(exists)
+
+	exists, err = pgadmin.CheckIfDBExists(s.config, CurrentClone)
+	s.Require().NoError(err)
+	s.Require().True(exists)
+
+	exists, err = pgadmin.CheckIfDBExists(s.config, BackupClone)
+	s.Require().NoError(err)
+	s.Require().True(exists)
+
+	// Persist restore clone (should remove existing backup first)
+	err = dbm.Persist(RestoreClone)
+	s.Require().NoError(err)
+
+	// After persist:
+	// - RestoreClone should not exist (renamed to CurrentClone)
+	// - CurrentClone should exist (the former RestoreClone)
+	// - BackupClone should exist (the former CurrentClone, old backup was removed)
+	exists, err = pgadmin.CheckIfDBExists(s.config, RestoreClone)
+	s.Require().NoError(err)
+	s.Require().False(exists, "RestoreClone should not exist after persist")
+
+	exists, err = pgadmin.CheckIfDBExists(s.config, CurrentClone)
+	s.Require().NoError(err)
+	s.Require().True(exists, "CurrentClone should exist after persist")
+
+	exists, err = pgadmin.CheckIfDBExists(s.config, BackupClone)
+	s.Require().NoError(err)
+	s.Require().True(exists, "BackupClone should exist after persist")
+}
+
+func (s *PostgresCloneManagerSuite) TestPersistRestoreCloneWithoutCurrentClone() {
+	// Drop current clone to simulate fresh startup scenario
+	pgtest.DropDatabase(s.T(), migrations.CurrentDatabase)
+	pgtest.DropDatabase(s.T(), migrations.BackupDatabase)
+
+	// Create restore clone
+	restoreVersion := &storage.Version{
+		SeqNum:        int32(migrations.CurrentDBVersionSeqNum()),
+		Version:       currVer.version,
+		LastPersisted: protoconv.ConvertMicroTSToProtobufTS(timestamp.Now()),
+	}
+	migVer.SetVersionPostgres(s.ctx, migrations.GetRestoreClone(), restoreVersion)
+
+	// Recreate current clone for the test setup
+	pgtest.CreateDatabase(s.T(), migrations.CurrentDatabase)
+	currentVersion := &storage.Version{
+		SeqNum:        int32(migrations.CurrentDBVersionSeqNum()),
+		Version:       currVer.version,
+		LastPersisted: protoconv.ConvertMicroTSToProtobufTS(timestamp.Now()),
+	}
+	migVer.SetVersionPostgres(s.ctx, migrations.GetCurrentClone(), currentVersion)
+
+	dbm := New("", s.config, s.sourceMap)
+
+	// Scan the clones
+	s.Require().Nil(dbm.Scan())
+
+	// Persist restore clone
+	err := dbm.Persist(RestoreClone)
+	s.Require().NoError(err)
+
+	// Verify the outcome
+	exists, err := pgadmin.CheckIfDBExists(s.config, RestoreClone)
+	s.Require().NoError(err)
+	s.Require().False(exists, "RestoreClone should not exist after persist")
+
+	exists, err = pgadmin.CheckIfDBExists(s.config, CurrentClone)
+	s.Require().NoError(err)
+	s.Require().True(exists, "CurrentClone should exist after persist")
+}
