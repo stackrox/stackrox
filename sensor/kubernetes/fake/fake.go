@@ -533,7 +533,8 @@ func (w *WorkloadManager) initializePreexistingResources() {
 		workload := w.workload.VirtualMachineWorkload
 		for i := range workload.PoolSize {
 			w.wg.Add(1)
-			go w.manageVirtualMachine(w.shutdownCtx, workload, uint32(i), reportGen)
+			cid := vmBaseVSOCKCID + uint32(i)
+			go w.manageVirtualMachine(w.shutdownCtx, workload, cid, reportGen)
 		}
 	}
 }
