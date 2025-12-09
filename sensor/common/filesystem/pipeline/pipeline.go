@@ -134,7 +134,17 @@ func (p *Pipeline) getIndicator(process *sensorAPI.ProcessSignal) *storage.Proce
 			Pid:          process.GetPid(),
 			Scraped:      process.GetScraped(),
 			ContainerId:  process.GetContainerId(),
+			LineageInfo:  []*storage.ProcessSignal_LineageInfo{},
 		},
+	}
+
+	for _, lineage := range process.GetLineageInfo() {
+		pi.GetSignal().LineageInfo = append(pi.GetSignal().LineageInfo,
+			&storage.ProcessSignal_LineageInfo{
+				ParentUid:          lineage.GetParentUid(),
+				ParentExecFilePath: lineage.GetParentExecFilePath(),
+			},
+		)
 	}
 
 	if process.GetContainerId() == "" {
