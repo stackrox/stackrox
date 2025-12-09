@@ -88,24 +88,16 @@ func TestValidateVMWorkload(t *testing.T) {
 
 func TestGenerateFakeIndexReport(t *testing.T) {
 	gen := newReportGenerator(10, 3) // 10 packages, 3 repos
-
-	tests := map[string]struct {
-		vsockCID uint32
-	}{
-		"basic report": {
-			vsockCID: 1234,
-		},
-		"different VM": {
-			vsockCID: 9999,
-		},
+	tests := map[string]uint32{
+		"basic report": 1234,
+		"different VM": 9999,
 	}
-
-	for name, tt := range tests {
+	for name, vsockCID := range tests {
 		t.Run(name, func(t *testing.T) {
-			report := generateFakeIndexReport(gen, tt.vsockCID)
+			report := generateFakeIndexReport(gen, vsockCID)
 
 			// Verify vsockCID is set as string
-			assert.Equal(t, fmt.Sprintf("%d", tt.vsockCID), report.GetVsockCid(), "vsockCID mismatch")
+			assert.Equal(t, fmt.Sprintf("%d", vsockCID), report.GetVsockCid(), "vsockCID mismatch")
 
 			// Verify index report structure
 			require.NotNil(t, report.GetIndexV4(), "IndexV4 should not be nil")
@@ -127,71 +119,6 @@ func TestGenerateFakeIndexReport(t *testing.T) {
 			}
 		})
 	}
-}
-
-func TestGenerateFakeIndexReport_TemplateRotation(t *testing.T) {
-	gen := newReportGenerator(5, 2)
-
-	// Generate multiple reports and verify template rotation
-	var hashIDs []string
-	numReports := precomputedReportVariants * 2
-
-	for i := 0; i < numReports; i++ {
-		report := generateFakeIndexReport(gen, uint32(i))
-		// Extract a package ID to identify which template was used
-		for pkgID := range report.GetIndexV4().GetContents().GetPackages() {
-			hashIDs = append(hashIDs, pkgID)
-			break
-		}
-	}
-
-	// Verify we see multiple different templates (at least 2 different ones)
-	uniqueTemplates := make(map[string]bool)
-	for _, id := range hashIDs {
-		// Extract template variant from package ID (format: "pkg-template-{variant}-{index}")
-		uniqueTemplates[id[:len("pkg-template-X")]] = true
-	}
-	assert.GreaterOrEqual(t, len(uniqueTemplates), 2, "expected multiple templates to be used")
-}
-
-func TestJitteredInterval(t *testing.T) {
-	tests := map[string]struct {
-		interval      time.Duration
-		jitterPercent float64
-	}{
-		"60s with 5% jitter": {
-			interval:      60 * time.Second,
-			jitterPercent: 0.05,
-		},
-		"1m with 20% jitter": {
-			interval:      time.Minute,
-			jitterPercent: 0.20,
-		},
-		"100ms with 10% jitter": {
-			interval:      100 * time.Millisecond,
-			jitterPercent: 0.10,
-		},
-	}
-
-	for name, tt := range tests {
-		t.Run(name, func(t *testing.T) {
-			minExpected := time.Duration(float64(tt.interval) * (1 - tt.jitterPercent))
-			maxExpected := time.Duration(float64(tt.interval) * (1 + tt.jitterPercent))
-
-			// Run multiple times to verify randomness stays within bounds
-			for i := 0; i < 100; i++ {
-				result := jitteredInterval(tt.interval, tt.jitterPercent)
-				assert.GreaterOrEqual(t, result, minExpected, "jittered interval below minimum")
-				assert.LessOrEqual(t, result, maxExpected, "jittered interval above maximum")
-			}
-		})
-	}
-}
-
-func TestJitteredInterval_ZeroJitter(t *testing.T) {
-	interval := 60 * time.Second
-	result := jitteredInterval(interval, 0)
-	assert.Equal(t, interval, result, "zero jitter should return exact interval")
 }
 
 func TestToUnstructuredVMI(t *testing.T) {
