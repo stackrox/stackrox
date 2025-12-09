@@ -302,7 +302,7 @@ type Image struct {
 	//	*Image_TopCvss
 	SetTopCvss    isImage_SetTopCvss `protobuf_oneof:"set_top_cvss"`
 	Notes         []Image_Note       `protobuf:"varint,14,rep,packed,name=notes,proto3,enum=storage.Image_Note" json:"notes,omitempty"`
-	BaseImageInfo []*BaseImageInfo   `protobuf:"bytes,19,rep,name=base_image_info,json=baseImageInfo,proto3" json:"base_image_info,omitempty"`
+	BaseImageInfo []*BaseImageInfo   `protobuf:"bytes,19,rep,name=base_image_info,json=baseImageInfo,proto3" json:"base_image_info,omitempty" search:"-" sql:"-"` // @gotags: search:"-" sql:"-"
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
