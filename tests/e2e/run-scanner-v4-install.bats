@@ -836,9 +836,19 @@ EOT
     # shellcheck disable=SC2030,SC2031
     export ROX_SCANNER_V4="" # Scanner V4 enabled by default.
 
+    local reenable_sfa="false"
+
     _begin "deploy-stackrox"
 
     # Install old version of the operator & deploy StackRox.
+
+    # Old version of the operator might not know about the SFA agent,
+    # temporarily disable it.
+    if [[ "${SFA_AGENT:-}" == "Enabled" ]]; then
+        reenable_sfa="true"
+        export SFA_AGENT="Disabled"
+    fi
+
     VERSION="${OPERATOR_VERSION_TAG}" make -C operator deploy-previous-via-olm
     _deploy_stackrox "" "${CUSTOM_CENTRAL_NAMESPACE}" "${CUSTOM_SENSOR_NAMESPACE}"
 
@@ -852,6 +862,10 @@ EOT
     verify_deployment_scannerV4_env_var_set "${CUSTOM_SENSOR_NAMESPACE}" "sensor"
 
     _begin "upgrade-operator"
+
+    if [[ "${reenable_sfa}" == "true" ]]; then
+	export SFA_AGENT="Enabled"
+    fi
 
     # Upgrade operator
     info "Upgrading StackRox Operator to version ${OPERATOR_VERSION_TAG}..."
