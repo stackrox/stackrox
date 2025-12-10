@@ -65,7 +65,8 @@ networkWorkload:
 # VirtualMachine workload simulates KubeVirt VMs arriving through Kubernetes informers.
 # Optionally generates index reports for each VM while it's alive in the lifecycle.
 virtualMachineWorkload:
-  # Number of VM/VMI templates to maintain (bounded pool for memory efficiency)
+  # Pool size: number of VM/VMI templates to maintain (memory-efficient bounded pool)
+  # This is the number of unique VMs that exist at any given time.
   poolSize: 20
   # Approx this often, update the annotations/labels on the VM/VMI
   updateInterval: 30s
@@ -73,7 +74,7 @@ virtualMachineWorkload:
   lifecycleDuration: 5m
   # Number of times to recreate VMs beyond the initial scale up (0 = infinite)
   numLifecycles: 0
-  # How often each VM sends an index report (0 = no reports, informer events only)
+  # How often each VM sends an index report (0 = no reports, informer events only). 5% jitter applied.
   reportInterval: 60s
   # Number of fake packages to include in each index report
   numPackages: 100

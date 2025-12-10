@@ -24,39 +24,16 @@ rbacWorkload:
   numServiceAccounts: 100
   numBindings: 100
 
-# Unified VirtualMachine workload configuration
-# Handles both informer events AND index reports in one config block
 virtualMachineWorkload:
-  # Pool size: number of VM/VMI templates to maintain (memory-efficient bounded pool)
-  # This is the number of unique VMs that exist at any given time.
-  poolSize: 50
-
-  # How often to update VM/VMI metadata (annotations, labels, status)
-  updateInterval: 30s
-
-  # How long each VM/VMI lifecycle lasts before recreation
-  lifecycleDuration: 5m
-
-  # Number of times to recreate VMs/VMIs (0 = infinite)
+  poolSize: 20000
+  updateInterval: 5m
+  lifecycleDuration: 2h
   numLifecycles: 0
-
-  # === Index Report Settings (optional) ===
-  # Set reportInterval > 0 to enable index report generation.
-  # Reports are only sent while VMs are alive in the lifecycle.
-
-  # How often each VM sends an index report (0 = no reports)
-  reportInterval: 60s
-
-  # Number of fake packages to include in each index report
-  numPackages: 500
-
-  # Number of fake repositories to include in each index report
+  reportInterval: 5m # 5% jitter applied
+  numPackages: 700
   numRepositories: 50
+  initialReportDelay: 30s # ±20% jitter applied
 
-  # Optional: delay before the first index report for each VM (±20% jitter is always applied)
-  initialReportDelay: 30s
-
-# Optional: small background deployment workload
 deploymentWorkload:
 - deploymentType: Deployment
   numDeployments: 10
