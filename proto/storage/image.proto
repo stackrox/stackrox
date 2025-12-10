@@ -143,7 +143,6 @@ message EmbeddedImageScanComponent {
   // Values are cleared after moving to cache, remove them from the grpc return as well
   repeated Executable executables = 12; // @gotags: json:"-"
   string architecture = 13;
-  bool fromBaseImage = 14;
 }
 
 enum SourceType {

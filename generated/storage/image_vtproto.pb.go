@@ -265,7 +265,6 @@ func (m *EmbeddedImageScanComponent) CloneVT() *EmbeddedImageScanComponent {
 	r.RiskScore = m.RiskScore
 	r.FixedBy = m.FixedBy
 	r.Architecture = m.Architecture
-	r.FromBaseImage = m.FromBaseImage
 	if rhs := m.Vulns; rhs != nil {
 		tmpContainer := make([]*EmbeddedVulnerability, len(rhs))
 		for k, v := range rhs {
@@ -1155,9 +1154,6 @@ func (this *EmbeddedImageScanComponent) EqualVT(that *EmbeddedImageScanComponent
 		}
 	}
 	if this.Architecture != that.Architecture {
-		return false
-	}
-	if this.FromBaseImage != that.FromBaseImage {
 		return false
 	}
 	return string(this.unknownFields) == string(that.unknownFields)
@@ -2366,16 +2362,6 @@ func (m *EmbeddedImageScanComponent) MarshalToSizedBufferVT(dAtA []byte) (int, e
 			return 0, err
 		}
 		i -= size
-	}
-	if m.FromBaseImage {
-		i--
-		if m.FromBaseImage {
-			dAtA[i] = 1
-		} else {
-			dAtA[i] = 0
-		}
-		i--
-		dAtA[i] = 0x70
 	}
 	if len(m.Architecture) > 0 {
 		i -= len(m.Architecture)
@@ -3648,9 +3634,6 @@ func (m *EmbeddedImageScanComponent) SizeVT() (n int) {
 	l = len(m.Architecture)
 	if l > 0 {
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
-	}
-	if m.FromBaseImage {
-		n += 2
 	}
 	n += len(m.unknownFields)
 	return n
@@ -5841,26 +5824,6 @@ func (m *EmbeddedImageScanComponent) UnmarshalVT(dAtA []byte) error {
 			}
 			m.Architecture = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
-		case 14:
-			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field FromBaseImage", wireType)
-			}
-			var v int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return protohelpers.ErrIntOverflow
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				v |= int(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			m.FromBaseImage = bool(v != 0)
 		default:
 			iNdEx = preIndex
 			skippy, err := protohelpers.Skip(dAtA[iNdEx:])
@@ -9948,26 +9911,6 @@ func (m *EmbeddedImageScanComponent) UnmarshalVTUnsafe(dAtA []byte) error {
 			}
 			m.Architecture = stringValue
 			iNdEx = postIndex
-		case 14:
-			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field FromBaseImage", wireType)
-			}
-			var v int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return protohelpers.ErrIntOverflow
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				v |= int(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			m.FromBaseImage = bool(v != 0)
 		default:
 			iNdEx = preIndex
 			skippy, err := protohelpers.Skip(dAtA[iNdEx:])

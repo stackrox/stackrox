@@ -824,9 +824,6 @@
         },
         "architecture": {
           "type": "string"
-        },
-        "fromBaseImage": {
-          "type": "boolean"
         }
       },
       "title": "Next Tag: 14"
