@@ -25,7 +25,7 @@ describe(Cypress.spec.relative, () => {
 
     it('should render a loading skeleton instead of content when in a loading state', () => {
         cy.mount(
-            <SummaryCardLayout isLoading>
+            <SummaryCardLayout error={null} isLoading>
                 <SummaryCard
                     loadingText="Loading..."
                     data={{ key: 'does not render' }}
@@ -41,8 +41,8 @@ describe(Cypress.spec.relative, () => {
 
     it('should render a loading skeleton if data is not provided', () => {
         cy.mount(
-            <SummaryCardLayout isLoading={false}>
-                <SummaryCard
+            <SummaryCardLayout error={null} isLoading={false}>
+                <SummaryCard<{ key: string } | null>
                     loadingText="Loading..."
                     data={null}
                     renderer={({ data }) => <div>{data.key}</div>}
@@ -57,7 +57,7 @@ describe(Cypress.spec.relative, () => {
 
     it('should render the provided data', () => {
         cy.mount(
-            <SummaryCardLayout isLoading={false}>
+            <SummaryCardLayout error={null} isLoading={false}>
                 <SummaryCard
                     loadingText="Loading..."
                     data={{ key: 'does render' }}

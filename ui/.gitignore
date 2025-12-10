@@ -12,6 +12,7 @@ npm-debug.log*
 
 # test
 /apps/platform/cypress/downloads/
+/apps/platform/cypress/videos/
 /apps/platform/cypress/test-results
 /apps/platform/test-results
 

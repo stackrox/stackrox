@@ -1,4 +1,5 @@
 import { mount } from 'cypress/react';
+import '@testing-library/cypress';
 
 declare global {
     namespace Cypress {
