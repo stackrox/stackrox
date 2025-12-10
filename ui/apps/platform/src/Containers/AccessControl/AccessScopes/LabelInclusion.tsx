@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import type { ReactElement } from 'react';
-import { Badge, Tab, TabContent, Tabs, TabTitleText } from '@patternfly/react-core';
+import { Badge, Tab, TabContent, TabTitleText, Tabs } from '@patternfly/react-core';
 
 import type { LabelSelector, LabelSelectorsKey } from 'services/AccessScopesService';
 

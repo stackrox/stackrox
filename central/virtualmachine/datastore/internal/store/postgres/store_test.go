@@ -96,6 +96,11 @@ func (s *VirtualMachinesStoreSuite) TestStore() {
 
 	s.NoError(store.UpsertMany(ctx, virtualMachines))
 
+	foundVirtualMachines, missing, err := store.GetMany(ctx, virtualMachineIDs)
+	s.NoError(err)
+	s.Empty(missing)
+	protoassert.ElementsMatch(s.T(), virtualMachines, foundVirtualMachines)
+
 	virtualMachineCount, err = store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)
 	s.Equal(200, virtualMachineCount)

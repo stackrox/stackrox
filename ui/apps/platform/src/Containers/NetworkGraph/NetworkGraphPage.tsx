@@ -41,10 +41,10 @@ import type { DisplayOption } from './components/DisplayOptionsSelect';
 import TimeWindowSelector from './components/TimeWindowSelector';
 import { useScopeHierarchy } from './hooks/useScopeHierarchy';
 import {
-    transformPolicyData,
-    transformActiveData,
     createExtraneousFlowsModel,
     graphModel,
+    transformActiveData,
+    transformPolicyData,
 } from './utils/modelUtils';
 import { getPropertiesForAnalytics } from './utils/networkGraphURLUtils';
 import getSimulation from './utils/getSimulation';

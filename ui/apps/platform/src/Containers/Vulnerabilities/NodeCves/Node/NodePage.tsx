@@ -1,13 +1,12 @@
-import React from 'react';
 import { useParams } from 'react-router-dom-v5-compat';
 import { gql, useQuery } from '@apollo/client';
 import {
-    PageSection,
     Breadcrumb,
-    Divider,
     BreadcrumbItem,
-    Skeleton,
     Bullseye,
+    Divider,
+    PageSection,
+    Skeleton,
     Tab,
     TabContent,
     Tabs,
@@ -23,7 +22,8 @@ import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 import { detailsTabValues } from '../../types';
 import { getOverviewPagePath } from '../../utils/searchUtils';
 
-import NodePageHeader, { NodeMetadata, nodeMetadataFragment } from './NodePageHeader';
+import NodePageHeader, { nodeMetadataFragment } from './NodePageHeader';
+import type { NodeMetadata } from './NodePageHeader';
 import NodePageVulnerabilities from './NodePageVulnerabilities';
 import NodePageDetails from './NodePageDetails';
 

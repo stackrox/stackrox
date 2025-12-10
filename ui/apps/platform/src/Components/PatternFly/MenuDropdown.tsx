@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import type { MouseEvent as ReactMouseEvent, ReactElement, ReactNode, Ref } from 'react';
 import { Bullseye, Dropdown, DropdownList, MenuToggle, Spinner } from '@patternfly/react-core';
 import type {
@@ -43,7 +43,10 @@ function MenuDropdown({
         setIsOpen(!isOpen);
     }
 
-    function onSelectHandler(event, value) {
+    function onSelectHandler(
+        event?: ReactMouseEvent<Element, MouseEvent>,
+        value?: string | number
+    ) {
         setIsOpen(false);
         if (onSelect) {
             onSelect(event, value);

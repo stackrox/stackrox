@@ -84,6 +84,11 @@ func (t *tokenExchangerSet) UpsertTokenExchanger(ctx context.Context, config *st
 		return pkgErrors.Wrapf(err, "creating token exchanger for config %s", config.GetId())
 	}
 
+	if config.GetType() == storage.AuthMachineToMachineConfig_KUBE_SERVICE_ACCOUNT {
+		if serviceAccountIssuer, _ := GetKubernetesIssuer(); serviceAccountIssuer != "" {
+			t.tokenExchangers[serviceAccountIssuer] = tokenExchanger
+		}
+	}
 	t.tokenExchangers[config.GetIssuer()] = tokenExchanger
 	return nil
 }
@@ -91,7 +96,10 @@ func (t *tokenExchangerSet) UpsertTokenExchanger(ctx context.Context, config *st
 // GetTokenExchanger retrieves a TokenExchanger based on the issuer.
 func (t *tokenExchangerSet) GetTokenExchanger(issuer string) (TokenExchanger, bool) {
 	tokenExchanger, exists := t.tokenExchangers[issuer]
-	return tokenExchanger, exists
+	if exists {
+		return tokenExchanger, exists
+	}
+	return nil, false
 }
 
 // RemoveTokenExchanger removes the token exchanger for the specific configuration ID.

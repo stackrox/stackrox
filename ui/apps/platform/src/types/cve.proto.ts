@@ -33,11 +33,8 @@ export type EPSS = {
 };
 
 export type Exploit = {
-    dateAdded: string; // ISO 8601 yyyy-mm-dd
-    shortDescription: string;
-    requiredAction: string;
-    dueDate: string; // ISO 8601 yyyy-mm-dd
-    knownRansomwareCampaignUse: string; // Known or Unknown
+    exists: boolean; // This will always be true.
+    knownRansomwareCampaignUse: boolean;
 };
 
 export type CveBaseInfo = {

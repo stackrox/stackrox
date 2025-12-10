@@ -1,9 +1,9 @@
-import React, { Component } from 'react';
+import { Component } from 'react';
 import PropTypes from 'prop-types';
 import onClickOutside from 'react-onclickoutside';
 import { ChromePicker } from 'react-color';
 
-import { Manager, Target, Popper } from 'react-popper';
+import { Manager, Popper, Target } from 'react-popper';
 
 class ColorPickerComponent extends Component {
     static propTypes = {

@@ -80,7 +80,7 @@ function UserPage({ resourceToAccessByRole, userData }) {
                         </DescriptionListGroup>
                     )}
                     <DescriptionListGroup>
-                        <DescriptionListTerm className="whitespace-nowrap">
+                        <DescriptionListTerm className="pf-v5-u-text-nowrap">
                             Auth provider
                         </DescriptionListTerm>
                         <DescriptionListDescription>{authProviderName}</DescriptionListDescription>

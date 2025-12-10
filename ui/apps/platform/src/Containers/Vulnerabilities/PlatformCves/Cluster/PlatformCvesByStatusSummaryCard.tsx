@@ -1,6 +1,5 @@
-import React from 'react';
 import { gql } from '@apollo/client';
-import { Card, CardTitle, CardBody, Flex, Text, pluralize } from '@patternfly/react-core';
+import { Card, CardBody, CardTitle, Flex, Text, pluralize } from '@patternfly/react-core';
 import { MinusIcon, WrenchIcon } from '@patternfly/react-icons';
 import type { FixableStatus } from '../../types';
 

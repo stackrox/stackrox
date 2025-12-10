@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-unsafe-return */
 import { useMemo } from 'react';
 import type { ComponentClass, FunctionComponent, PropsWithChildren, ReactNode } from 'react';
-import { observer, ScaleDetailsLevel } from '@patternfly/react-topology';
+import { ScaleDetailsLevel, observer } from '@patternfly/react-topology';
 import type {
     Node,
     ShapeProps,
@@ -16,10 +16,8 @@ import DefaultFakeGroup from './DefaultFakeGroup';
 
 const ICON_PADDING = 20;
 
-export enum DataTypes {
-    Default,
-    Alternate,
-}
+type DataTypes = 0 | 1;
+const DataTypesAlternate: DataTypes = 1;
 
 type StyleGroupProps = {
     element: Node;
@@ -42,7 +40,7 @@ const StyleFakeGroup: FunctionComponent<PropsWithChildren<StyleGroupProps>> = ({
 
     const getTypeIcon = (dataType?: DataTypes): ComponentClass<SVGIconProps> => {
         switch (dataType) {
-            case DataTypes.Alternate:
+            case DataTypesAlternate:
                 return AlternateIcon;
             default:
                 return DefaultIcon;

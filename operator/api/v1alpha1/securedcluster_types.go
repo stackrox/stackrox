@@ -87,7 +87,7 @@ type SecuredClusterSpec struct {
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Image Pull Secrets",order=11,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced"}
 	ImagePullSecrets []LocalSecretReference `json:"imagePullSecrets,omitempty"`
 
-	// Customizations to apply on all Central Services components.
+	// Customizations to apply on all Secured Cluster Services components.
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName=Customizations,order=12,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced"}
 	Customize *CustomizeSpec `json:"customize,omitempty"`
 
@@ -200,7 +200,7 @@ type PolicyEnforcement string
 const (
 	// PolicyEnforcementEnabled means: policy enforcement is enabled.
 	PolicyEnforcementEnabled PolicyEnforcement = "Enabled"
-	// PolicyEnforcementDisabled means: polict enforcement is disabled.
+	// PolicyEnforcementDisabled means: policy enforcement is disabled.
 	PolicyEnforcementDisabled PolicyEnforcement = "Disabled"
 )
 
@@ -209,7 +209,7 @@ const (
 type ImageScanPolicy string
 
 const (
-	// ScanIfMissing means that images which do not have a known scan result should be scanned in scope of an admission request.
+	// ScanIfMissing means that images which do not have a known scan result should be scanned as part of an admission request.
 	ScanIfMissing ImageScanPolicy = "ScanIfMissing"
 	// DoNotScanInline means that images which do not have a known scan result will not be scanned when processing an admission request.
 	DoNotScanInline ImageScanPolicy = "DoNotScanInline"
@@ -225,11 +225,11 @@ func (p ImageScanPolicy) Pointer() *ImageScanPolicy {
 type BypassPolicy string
 
 const (
-	// BypassBreakGlassAnnotation means that admission controller can be bypassed by adding an admission.stackrox.io/break-glass annotation to a resource.
+	// BypassBreakGlassAnnotation means that the admission controller can be bypassed by adding an admission.stackrox.io/break-glass annotation to a resource.
 	// Bypassing the admission controller triggers a policy violation which includes deployment details.
 	// We recommend providing an issue-tracker link or some other reference as the value of this annotation so that others can understand why you bypassed the admission controller.
 	BypassBreakGlassAnnotation BypassPolicy = "BreakGlassAnnotation"
-	// BypassDisabled means that admission controller cannot be bypassed.
+	// BypassDisabled means that the admission controller cannot be bypassed.
 	BypassDisabled BypassPolicy = "Disabled"
 )
 
@@ -266,19 +266,23 @@ type PerNodeSpec struct {
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=3,displayName="Node Scanning Settings"
 	NodeInventory *ContainerSpec `json:"nodeInventory,omitempty"`
 
+	// Settings for the Sensitive File Activity container, which is responsible for file activity monitoring on the Node.
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=4,displayName="SFA"
+	SFA *SFAContainerSpec `json:"sfa,omitempty"`
+
 	// To ensure comprehensive monitoring of your cluster activity, Red Hat Advanced Cluster Security
 	// will run services on every node in the cluster, including tainted nodes by default. If you do
 	// not want this behavior, please select 'AvoidTaints' here.
 	// The default is: TolerateTaints.
-	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=4
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=5
 	TaintToleration *TaintTolerationPolicy `json:"taintToleration,omitempty"`
 
 	// HostAliases allows configuring additional hostnames to resolve in the pod's hosts file.
-	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=5,displayName="Host Aliases"
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=6,displayName="Host Aliases"
 	HostAliases []corev1.HostAlias `json:"hostAliases,omitempty"`
 }
 
-// CollectionMethod defines the method of collection used by collector. Options are 'EBPF', 'CORE_BPF', 'None', or 'KernelModule'. Note that the collection method will be switched to CORE_BPF if KernelModule or EBPF is used.
+// CollectionMethod defines the method of collection used by collector. Options are 'EBPF', 'CORE_BPF', 'NoCollection', or 'KernelModule'. Note that the collection method will be switched to CORE_BPF if KernelModule or EBPF is used.
 // +kubebuilder:validation:Enum=EBPF;CORE_BPF;NoCollection;KernelModule
 type CollectionMethod string
 
@@ -347,7 +351,7 @@ func (t TaintTolerationPolicy) Pointer() *TaintTolerationPolicy {
 type CollectorContainerSpec struct {
 	// The method for system-level data collection. CORE_BPF is recommended.
 	// If you select "NoCollection", you will not be able to see any information about network activity
-	// and process executions. The remaining settings in these section will not have any effect.
+	// and process executions. The remaining settings in this section will not have any effect.
 	// The value is a subject of conversion by the operator if needed, e.g. to
 	// remove deprecated methods.
 	// The default is: CORE_BPF.
@@ -364,6 +368,31 @@ type CollectorContainerSpec struct {
 
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=4
 	ContainerSpec `json:",inline"`
+}
+
+// SFAContainerSpec defines settings for the Sensitive File Activity agent container.
+type SFAContainerSpec struct {
+	// Specifies whether Sensitive File Activity agent is deployed.
+	// The default is: Disabled.
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=1,displayName="SFA Agent"
+	Agent *DeploySFAAgent `json:"agent,omitempty"`
+
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=2
+	ContainerSpec `json:",inline"`
+}
+
+// DeploySFAAgent is a type for values of spec.perNode.sfa.agent
+// +kubebuilder:validation:Enum=Enabled;Disabled
+type DeploySFAAgent string
+
+const (
+	SFAAgentEnabled  DeploySFAAgent = "Enabled"
+	SFAAgentDisabled DeploySFAAgent = "Disabled"
+)
+
+// Pointer returns the given DeploySFAAgent value as a pointer, needed in k8s resource structs.
+func (v DeploySFAAgent) Pointer() *DeploySFAAgent {
+	return &v
 }
 
 // ContainerSpec defines container settings.
@@ -487,11 +516,19 @@ type SecuredClusterStatus struct {
 	// cluster name, please delete and recreate this resource.
 	//+operator-sdk:csv:customresourcedefinitions:type=status,displayName="Cluster Name",order=2
 	ClusterName string `json:"clusterName,omitempty"`
+
+	// ObservedGeneration is the generation most recently observed by the controller.
+	//+operator-sdk:csv:customresourcedefinitions:type=status,order=3
+	ObservedGeneration int64 `json:"observedGeneration,omitempty"`
 }
 
 //+kubebuilder:object:root=true
 //+kubebuilder:subresource:status
 //+operator-sdk:csv:customresourcedefinitions:resources={{Deployment,v1,""},{DaemonSet,v1,""}}
+//+kubebuilder:printcolumn:name="Version",type=string,JSONPath=`.status.productVersion`
+//+kubebuilder:printcolumn:name="Message",type=string,JSONPath=`.status.conditions[?(@.type=="Deployed")].message`
+//+kubebuilder:printcolumn:name="Progressing",type=string,JSONPath=`.status.conditions[?(@.type=="Progressing")].status`
+//+kubebuilder:printcolumn:name="Available",type=string,JSONPath=`.status.conditions[?(@.type=="Available")].status`
 //+genclient
 
 // SecuredCluster is the configuration template for the secured cluster services. These include Sensor, which is
@@ -530,3 +567,25 @@ var (
 	LocalScannerV4AutoSense = LocalScannerV4ComponentAutoSense
 	LocalScannerV4Disabled  = LocalScannerV4ComponentDisabled
 )
+
+// GetCondition returns a specific condition by type, or nil if not found.
+func (c *SecuredCluster) GetCondition(condType ConditionType) *StackRoxCondition {
+	return getCondition(c.Status.Conditions, condType)
+}
+
+// SetCondition updates or adds a condition. Returns true if the condition changed.
+func (c *SecuredCluster) SetCondition(updatedCond StackRoxCondition) bool {
+	var updated bool
+	c.Status.Conditions, updated = updateCondition(c.Status.Conditions, updatedCond)
+	return updated
+}
+
+// GetGeneration returns the metadata.generation of the Central resource.
+func (c *SecuredCluster) GetGeneration() int64 {
+	return c.ObjectMeta.GetGeneration()
+}
+
+// GetObservedGeneration returns the observedGeneration of the Central status sub-resource.
+func (c *SecuredCluster) GetObservedGeneration() int64 {
+	return c.Status.ObservedGeneration
+}

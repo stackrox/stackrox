@@ -17,6 +17,7 @@ import type { HasReadAccess } from 'hooks/usePermissions';
 import {
     accessControlBasePath,
     administrationEventsBasePath,
+    baseImagesPath,
     clustersBasePath,
     collectionsBasePath,
     complianceBasePath,
@@ -49,7 +50,7 @@ import {
 
 import NavigationContent from './NavigationContent';
 import NavigationItem from './NavigationItem';
-import { isActiveLink, filterNavDescriptions } from './utils';
+import { filterNavDescriptions, isActiveLink } from './utils';
 import type { ChildDescription, NavDescription } from './utils';
 
 import './NavigationSidebar.css';
@@ -261,6 +262,12 @@ function getNavDescriptions(
                     content: 'System Health',
                     path: systemHealthPath,
                     routeKey: 'system-health',
+                },
+                {
+                    type: 'link',
+                    content: 'Base images',
+                    path: baseImagesPath,
+                    routeKey: 'base-images',
                 },
             ],
         },

@@ -1,4 +1,3 @@
-import React from 'react';
 import type { ReactNode } from 'react';
 import { createStore } from 'redux';
 import type { Store } from 'redux';

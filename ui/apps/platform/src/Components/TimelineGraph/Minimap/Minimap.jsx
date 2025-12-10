@@ -1,8 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import PropTypes from 'prop-types';
 
 import miniMapSelector from 'Components/TimelineGraph/Minimap/selectors';
-import { getWidth, getHeight } from 'utils/d3Utils';
+import { getHeight, getWidth } from 'utils/d3Utils';
 import EventsGraph from 'Components/TimelineGraph/EventsGraph';
 import Axis, { AXIS_HEIGHT } from '../Axis';
 import BrushableOverlay from './BrushableOverlay';

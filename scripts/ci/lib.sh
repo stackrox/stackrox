@@ -83,21 +83,25 @@ handle_dangling_processes() {
     info "Process state at exit:"
     ps -e -O ppid
 
-    local psline this_pid pid
-    ps -e -O ppid | while read -r psline; do
+    local psline pid ppid
+    ps -e -O ppid | while read -r pid ppid psline; do
+        # Example output:
+        #     PID    PPID S TTY          TIME COMMAND
+        #       1       0 S ?        00:00:00 /tmp/entrypoint-wrapper/entrypoint-wrapper /tools/entrypoint
+        # [...]
+        #  179283      25 R ?        00:00:00 ps -e -O ppid
+
         # trim leading whitespace
-        psline="$(echo "$psline" | xargs)"
-        if [[ "$psline" =~ ^PID ]]; then
+        psline="$pid $ppid $psline"
+        if [[ "$pid" == "PID" ]]; then
             # Ignoring header
             continue
         fi
-        this_pid="$$"
-        if [[ "$psline" =~ ^$this_pid ]]; then
+        if [[ "$pid" == "$$" ]]; then
             echo "Ignoring self: $psline"
             continue
         fi
-        # shellcheck disable=SC1087
-        if [[ "$psline" =~ [[:space:]]$this_pid[[:space:]] ]]; then
+        if [[ "$ppid" == "$$" ]]; then
             echo "Ignoring child: $psline"
             continue
         fi
@@ -106,7 +110,6 @@ handle_dangling_processes() {
             continue
         fi
         echo "A candidate to kill: $psline"
-        pid="$(echo "$psline" | cut -d' ' -f1)"
         echo "Will kill $pid"
         kill "$pid" || {
             echo "Error killing $pid"
@@ -863,6 +866,7 @@ EOM
     fi
     rm -f "${fetcher_metrics_json}"
 
+    setup_gcp
     if save_image_prefetches_metrics "${fetcher_metrics}"; then
         info "Image pre-fetcher metrics retrieved and saved."
     else
@@ -1655,7 +1659,7 @@ post_process_test_results() {
         # we will fallback to short commit
         base_link="$(echo "$JOB_SPEC" | jq ".refs.base_link | select( . != null )" -r)"
         calculated_base_link="https://github.com/stackrox/stackrox/commit/$(make --quiet --no-print-directory shortcommit)"
-        curl --retry 5 --retry-connrefused -SsfL https://github.com/stackrox/junit2jira/releases/download/v0.0.24/junit2jira -o junit2jira && \
+        curl --retry 5 --retry-connrefused -SsfL https://github.com/stackrox/junit2jira/releases/download/v0.0.25/junit2jira -o junit2jira && \
         chmod +x junit2jira && \
         ./junit2jira \
             -base-link "${base_link:-$calculated_base_link}" \
@@ -1691,7 +1695,7 @@ gate_flaky_tests() {
     fi
 
     # Prepare flakechecker
-    curl --retry 5 --retry-connrefused -SsfL https://github.com/stackrox/junit2jira/releases/download/v0.0.24/flakechecker -o /tmp/flakechecker || exit "${exit_code}"
+    curl --retry 5 --retry-connrefused -SsfL https://github.com/stackrox/junit2jira/releases/download/v0.0.25/flakechecker -o /tmp/flakechecker || exit "${exit_code}"
     chmod +x /tmp/flakechecker
     setup_gcp || echo "setup_gcp called"
 

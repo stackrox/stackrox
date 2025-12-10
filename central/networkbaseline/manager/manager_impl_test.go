@@ -9,6 +9,7 @@ import (
 	deploymentMocks "github.com/stackrox/rox/central/deployment/datastore/mocks"
 	queueMocks "github.com/stackrox/rox/central/deployment/queue/mocks"
 	"github.com/stackrox/rox/central/networkbaseline/datastore"
+	"github.com/stackrox/rox/central/networkbaseline/datastore/mocks"
 	networkEntityDSMock "github.com/stackrox/rox/central/networkgraph/entity/datastore/mocks"
 	treeMocks "github.com/stackrox/rox/central/networkgraph/entity/networktree/mocks"
 	networkFlowDSMocks "github.com/stackrox/rox/central/networkgraph/flow/datastore/mocks"
@@ -41,6 +42,7 @@ var (
 
 type fakeDS struct {
 	baselines map[string]*storage.NetworkBaseline
+	mockCtrl  *gomock.Controller
 
 	// All methods not overriden in this struct will panic.
 	datastore.DataStore
@@ -79,6 +81,12 @@ func (f *fakeDS) GetNetworkBaseline(_ context.Context, deploymentID string) (*st
 		return baseline, true, nil
 	}
 	return nil, false, nil
+}
+
+func (f *fakeDS) Begin(ctx context.Context) (context.Context, datastore.Tx, error) {
+	tx := mocks.NewMockTx(f.mockCtrl)
+	tx.EXPECT().Commit(gomock.Any()).Return(nil).Times(1)
+	return ctx, tx, nil
 }
 
 func TestManager(t *testing.T) {
@@ -121,7 +129,10 @@ func (suite *ManagerTestSuite) TearDownTest() {
 }
 
 func (suite *ManagerTestSuite) mustInitManager(initialBaselines ...*storage.NetworkBaseline) {
-	suite.ds = &fakeDS{baselines: make(map[string]*storage.NetworkBaseline)}
+	suite.ds = &fakeDS{
+		baselines: make(map[string]*storage.NetworkBaseline),
+		mockCtrl:  suite.mockCtrl,
+	}
 	for _, baseline := range initialBaselines {
 		baseline.ObservationPeriodEnd = protoconv.ConvertMicroTSToProtobufTS(getNewObservationPeriodEnd())
 		suite.ds.baselines[baseline.GetDeploymentId()] = baseline

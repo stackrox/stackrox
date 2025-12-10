@@ -20,6 +20,68 @@ const rules = {
     // ESLint naming convention for positive rules:
     // If your rule is enforcing the inclusion of something, use a short name without a special prefix.
 
+    'feature-flags': {
+        // Feature flag must match pattern and occur in alphabetical order
+        // to minimize merge conflicts when multiple people add or delete strings.
+        // Omit fix function because type union might have comments.
+        meta: {
+            type: 'problem',
+            docs: {
+                description: 'Feature flag must match pattern and occur in alphabetical order',
+            },
+            schema: [],
+        },
+        create(context) {
+            return {
+                TSLiteralType(node) {
+                    const ancestors = context.sourceCode.getAncestors(node);
+                    if (
+                        typeof node.literal?.value === 'string' &&
+                        ancestors.length >= 2 &&
+                        ancestors[ancestors.length - 1].type === 'TSUnionType' &&
+                        ancestors[ancestors.length - 2].type === 'TSTypeAliasDeclaration'
+                    ) {
+                        const ancestor1 = ancestors[ancestors.length - 1];
+                        const ancestor2 = ancestors[ancestors.length - 2];
+                        if (ancestor2.id?.name === 'FeatureFlagEnvVar') {
+                            const { value } = node.literal;
+                            if (!value.match(/^ROX(_[A-Z\d]+)+$/)) {
+                                context.report({
+                                    node,
+                                    message:
+                                        'Feature flags must match pattern: ROX_ONE_OR_MORE_WORDS',
+                                });
+                            } else if (
+                                Array.isArray(ancestor1.types) &&
+                                ancestor1.types.every(
+                                    (type) => typeof type?.literal?.value === 'string'
+                                )
+                            ) {
+                                const { types } = ancestor1;
+                                const indexOfNode = types.indexOf(node);
+                                if (indexOfNode >= 0) {
+                                    // Quadratic complexity to identify particular feature flag
+                                    // seems acceptable for expected number of feature flags.
+                                    const indexFirstNotInAlphabeticalOrder = types.findIndex(
+                                        (type, index) =>
+                                            index !== 0 &&
+                                            types[index - 1].literal.value > type.literal.value
+                                    );
+                                    if (indexOfNode === indexFirstNotInAlphabeticalOrder) {
+                                        context.report({
+                                            node,
+                                            message:
+                                                'Feature flags must occur in alphabetical order',
+                                        });
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+            };
+        },
+    },
     'react-export-default': {
         // Prevent mistaken assumptions about results from Find in Files.
         meta: {
@@ -142,61 +204,186 @@ const rules = {
     // If your rule only disallows something, prefix it with no.
     // However, we can write forbid instead of disallow as the verb in description and message.
 
-    // TODO move rule to pluginGeneric after all errors have been fixed.
-    'no-default-import-react': {
-        // Omit default import of React because it is not needed for JSX tranform.
+    'no-Tailwind': {
+        // Forbid Tailwind classes outside legacy folders.
+        // See ignores array in eslint.config.js file.
+        // See purge array in tailwind.config.js file.
         meta: {
             type: 'problem',
             docs: {
-                description:
-                    'Omit default import of React because it is not needed for JSX tranform',
+                description: 'Forbid Tailwind classes outside legacy folders',
             },
-            fixable: 'code',
             schema: [],
         },
         create(context) {
             return {
-                ImportDefaultSpecifier(node) {
-                    if (node.local?.name === 'React') {
-                        const ancestors = context.sourceCode.getAncestors(node);
-                        if (
-                            ancestors.length >= 1 &&
-                            ancestors[ancestors.length - 1].source?.value === 'react'
-                        ) {
-                            const parent = ancestors[ancestors.length - 1];
-                            context.report({
-                                node,
-                                message:
-                                    'Omit default import of React because it is not needed for JSX tranform',
-                                fix(fixer) {
-                                    const { specifiers } = parent;
-                                    if (Array.isArray(specifiers) && specifiers.length !== 0) {
-                                        // If default import only, remove import declaration.
-                                        if (specifiers.length === 1) {
-                                            // Remove node does not remove following newline.
-                                            // Command line autofixes secondary errors after primary fixes.
-                                            // Integrated development environment requires a second interaction to fix.
-                                            return fixer.remove(parent);
+                JSXOpeningElement(node) {
+                    // Add classes from application-specific .css files.
+                    const classNamesApplication = [
+                        'ConditionTextInput', // Components ConditionText.tsx
+                        'acs-m-manual-inclusion', // AccessControl EffectiveAccessScopeTable.tsx
+                        'acs-pf-horizontal-subnav', // MainPage HorizontalSubnav.tsx
+                        'advanced-filters-toolbar', // Vulnerabilities AdvancedFiltersToolbar.tsx
+                        'advanced-flows-filters-select', // NetworkGraph AdvancedFlowsFilter.tsx
+                        'certificate-input', // AccessControl ConfigurationFormFields.tsx
+                        'cluster-select', // NetworkGraph ClusterSelector.tsx
+                        'cluster-status-panel', // Clusters ClusterSummaryGrid.tsx
+                        'collection-form-expandable-section', // Collections CollectionForm.tsx
+                        'compare-yaml-modal', // NetworkGraph CompareYAMLModal.tsx
+                        'cve-severity-select', // Vulnerabilities CVESeverityDropdown.tsx
+                        'deployment-select', // NetworkGraph DeploymentSelector.tsx
+                        'description', // Policies MitreAttackVectorsFormSection.tsx
+                        'draggable-grip', // Policies PolicyCriteriaKey.tsx
+                        'dropzone', // Policies PolicySectionDropTarget.tsx
+                        'error-boundary-page-column', // Components ErrorBoundaryPage.tsx
+                        'error-boundary-stack', // Components ErrorBoundaryPage.tsx
+                        'error-boundary-stack-column', // Components ErrorBoundaryPage.tsx
+                        'error-boundary-stack-item', // Components ErrorBoundaryPage.tsx
+                        'error-boundary-stacks-row', // Components ErrorBoundaryPage.tsx
+                        'formatted-text', // CheckDetailsInfo.tsx
+                        'json-input', // Integrations Forms folder
+                        'loading-section', // Components LoadingSection.tsx
+                        'microsoft-sentinel-form', // Integrations MicrosoftSentinelIntegrationForm.tsx
+                        'mitre-tactic-item', // Policies MitreAttackVectorsFormSection.tsx
+                        'mitre-tactics-list', // Policies MitreAttackVectorsFormSection.tsx
+                        'mitre-technique-item', // Policies MitreAttackVectorsFormSection.tsx
+                        'mitre-techniques-list', // Policies MitreAttackVectorsFormSection.tsx
+                        'namespace-select', // Dashboard NamespaceSelect.tsx
+                        'namespace-select', // NetworkGraph NamespaceSelect.tsx
+
+                        // NetworkGraph folder
+                        'network-graph',
+                        'network-graph-menu-list',
+                        'network-graph-selector-bar',
+
+                        'network-policies-generation-scope', // NetworkGraph NetworkPoliciesGenerationScope.tsx
+                        'network-policies-yaml', // NetworkGraph NetworkPoliciesYAML.tsx
+                        'or-divider', // Policies BooleanPolicyLogicSection.tsx
+                        'or-divider-container', // Policies BooleanPolicyLogicSection.tsx
+                        'policy-criteria-key', // Policies PolicyCriteriaKey.tsx
+                        'policy-enforcement-card', // Policies PolicyEnforcementForm.tsx
+                        'policy-section-card-body', // Policies PolicySection.tsx
+                        'policy-section-card-header', // Policies PolicySection.tsx
+                        'preview-violations', // Policies ReviewPolicyForm.tsx
+                        'review-policy', // Policies ReviewPolicyForm.tsx
+
+                        // Collections RuleSelector folder
+                        'rule-selector',
+                        'rule-selector-add-value-button',
+                        'rule-selector-delete-value-button',
+                        'rule-selector-label-rule-separator',
+                        'rule-selector-list',
+                        'rule-selector-list-item',
+                        'rule-selector-match-type-select',
+                        'rule-selector-name-value-input',
+
+                        'resource-icon', // Components ResourceIcon.tsx
+                        'search-filter-chips', // Components SearchFilterChips.tsx
+                        'severity-count-labels', // Vulnerabilities SeverityCountLabels.tsx
+                        'truncate-multiline', // SystemConfig components folder
+                        'vm-filter-toolbar-dropdown', // Vulnerabilities components folder
+                        'vulnerability-exception-request-overview', // Vulnerabilities RequestOverview.tsx
+                        'widget-options-menu', // Dashboard WidgetOptionsMenu.tsx
+                        'z-xs-101', // Search SearchPage.tsx
+                    ];
+                    const isTailwind = (className) =>
+                        !className.startsWith('pf-') && !classNamesApplication.includes(className);
+
+                    const attributeClassNameString = node.attributes.find(
+                        (attribute) =>
+                            attribute.name?.name === 'className' &&
+                            typeof attribute.value?.value === 'string' &&
+                            attribute.value.value.length !== 0
+                    );
+                    if (attributeClassNameString) {
+                        attributeClassNameString.value.value.split(' ').forEach((className) => {
+                            if (isTailwind(className)) {
+                                context.report({
+                                    node,
+                                    message: `className: ${className}`,
+                                });
+                            }
+                        });
+                    } else {
+                        const attributeClassNameTemplateLiteral = node.attributes.find(
+                            (attribute) =>
+                                attribute.name?.name === 'className' &&
+                                Array.isArray(attribute.value?.expression?.quasis) &&
+                                attribute.value.expression.quasis.every(
+                                    (quasi) => typeof quasi?.value?.cooked === 'string'
+                                )
+                        );
+                        if (attributeClassNameTemplateLiteral) {
+                            attributeClassNameTemplateLiteral.value.expression.quasis.forEach(
+                                (quasi) => {
+                                    quasi.value.cooked.split(' ').forEach((className) => {
+                                        if (className.length !== 0 && isTailwind(className)) {
+                                            context.report({
+                                                node,
+                                                message: `className: ${className}`,
+                                            });
                                         }
-
-                                        // Because default import precedes named imports,
-                                        // remove from beginning of default import to opening brace.
-
-                                        // Range array consists of [start, end] similar to arguments of slice method.
-                                        const startDefaultSpecifier = node.range[0];
-                                        const endDefaultSpecifier = node.range[1];
-                                        const startNextSpecifier = specifiers[1].range[0];
-                                        const end = context.sourceCode
-                                            .getText()
-                                            .indexOf('{', endDefaultSpecifier);
-                                        if (end !== -1 && end < startNextSpecifier) {
-                                            return fixer.removeRange([startDefaultSpecifier, end]);
-                                        }
-                                    }
-
-                                    return null;
-                                },
-                            });
+                                    });
+                                }
+                            );
+                        }
+                    }
+                },
+            };
+        },
+    },
+    'no-feather-icons': {
+        // Forbid feather icons outside legacy folders.
+        // See ignores array in eslint.config.js file.
+        // See purge array in tailwind.config.js file.
+        meta: {
+            type: 'problem',
+            docs: {
+                description: 'Forbid feather icons outside legacy folders',
+            },
+            schema: [],
+        },
+        create(context) {
+            return {
+                ImportDeclaration(node) {
+                    if (node.source?.value === 'react-feather') {
+                        context.report({
+                            node,
+                            message: 'Replace feather icons with PatternFly icons',
+                        });
+                    }
+                },
+            };
+        },
+    },
+    'no-logical-or-preceding-array-or-object': {
+        // Consistently write more precise nullish coalescing operator.
+        meta: {
+            type: 'problem',
+            docs: {
+                description: 'Replace || with nullish coalescing ??',
+            },
+            schema: [],
+        },
+        create(context) {
+            return {
+                LogicalExpression(node) {
+                    if (node.operator === '||') {
+                        switch (node.right?.type) {
+                            case 'ArrayExpression':
+                                context.report({
+                                    node,
+                                    message: `Replace || with ?? preceding array expression`,
+                                });
+                                break;
+                            case 'ObjectExpression':
+                                context.report({
+                                    node,
+                                    message: `Replace || with ?? preceding object expression`,
+                                });
+                                break;
+                            default:
+                                break;
                         }
                     }
                 },
@@ -216,8 +403,17 @@ const rules = {
         },
         create(context) {
             return {
+                JSXMemberExpression(node) {
+                    // For example, React.Fragment
+                    if (node.object?.name === 'React' && typeof node.property?.name === 'string') {
+                        context.report({
+                            node,
+                            message: `Replace React qualified name with named import: ${node.property.name}`,
+                        });
+                    }
+                },
                 MemberExpression(node) {
-                    // For example, React.Fragment or React.useState
+                    // For example, React.useState
                     if (node.object?.name === 'React' && typeof node.property?.name === 'string') {
                         context.report({
                             node,

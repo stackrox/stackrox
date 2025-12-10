@@ -1,5 +1,4 @@
-import React from 'react';
-import type { ReactElement, ReactNode } from 'react';
+import type { MouseEvent, ReactElement, ReactNode } from 'react';
 import {
     ActionsColumn,
     ExpandableRowContent,
@@ -98,7 +97,7 @@ function ReportJobsTable<T extends Snapshot>({
                                         Delete download
                                     </span>
                                 ),
-                                onClick: (event) => {
+                                onClick: (event: MouseEvent) => {
                                     event.preventDefault();
                                     onDeleteDownload(jobId);
                                 },

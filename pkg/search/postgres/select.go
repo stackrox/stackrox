@@ -11,11 +11,10 @@ import (
 	"github.com/georgysavva/scany/v2/pgxscan"
 	"github.com/pkg/errors"
 	v1 "github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/pkg/env"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stackrox/rox/pkg/postgres/walker"
+	"github.com/stackrox/rox/pkg/search/enumregistry"
 	"github.com/stackrox/rox/pkg/search/paginated"
 	"github.com/stackrox/rox/pkg/search/postgres/aggregatefunc"
 	pgsearch "github.com/stackrox/rox/pkg/search/postgres/query"
@@ -42,6 +41,7 @@ func newDBScanAPI(opts ...dbscan.APIOption) *dbscan.API {
 
 // RunSelectRequestForSchema executes a select request against the database for given schema. The input query must
 // explicitly specify select fields.
+//
 // Deprecated: Use RunSelectRequestForSchemaFn
 func RunSelectRequestForSchema[T any](ctx context.Context, db postgres.DB, schema *walker.Schema, q *v1.Query) ([]*T, error) {
 	result := make([]*T, 0, paginated.GetLimit(q.GetPagination().GetLimit(), 100))
@@ -99,13 +99,6 @@ func standardizeSelectQueryAndPopulatePath(ctx context.Context, q *v1.Query, sch
 	joins, dbFields := getJoinsAndFields(schema, q)
 	if len(q.GetSelects()) == 0 && q.GetQuery() == nil {
 		return nil, nil
-	}
-
-	if env.ImageCVEEdgeCustomJoin.BooleanSetting() && !features.FlattenCVEData.Enabled() {
-		joins, err = handleImageCveEdgesTableInJoins(schema, joins)
-		if err != nil {
-			return nil, err
-		}
 	}
 
 	parsedQuery := &query{
@@ -247,10 +240,26 @@ func selectQueryField(searchField string, field *walker.Field, selectDistinct bo
 	if dataType == "" {
 		dataType = field.DataType
 	}
+
+	// Add PostTransform for enum fields to convert integer values to strings
+	var postTransform func(interface{}) interface{}
+	if dataType == postgres.Enum {
+		var enumFieldPath string
+		if searchFieldObj, ok := field.Schema.OptionsMap.Get(searchField); ok {
+			enumFieldPath = searchFieldObj.FieldPath
+		}
+		postTransform = func(i interface{}) interface{} {
+			// The value from postgres is a *int, convert it to string using enum registry
+			return enumregistry.Lookup(enumFieldPath, int32(*(i.(*int))))
+		}
+	}
+
 	return pgsearch.SelectQueryField{
-		SelectPath:   selectPath,
-		Alias:        strings.Join(strings.Fields(searchField+" "+aggrFunc.Name()), "_"),
-		FieldType:    dataType,
-		DerivedField: aggrFunc != aggregatefunc.Unset,
+		SelectPath:    selectPath,
+		Alias:         strings.Join(strings.Fields(searchField+" "+aggrFunc.Name()), "_"),
+		FieldType:     dataType,
+		FieldPath:     strings.ToLower(searchField), // Store the search field name for FieldValues mapping
+		DerivedField:  aggrFunc != aggregatefunc.Unset,
+		PostTransform: postTransform,
 	}
 }

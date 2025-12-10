@@ -1,4 +1,3 @@
-import React from 'react';
 import type { ReactElement } from 'react';
 import { Flex, Modal, Title } from '@patternfly/react-core';
 
@@ -13,11 +12,14 @@ import FormMessage from 'Components/PatternFly/FormMessage';
 import type { FormResponseMessage } from 'Components/PatternFly/FormMessage';
 import useFormModal from 'hooks/patternfly/useFormModal';
 import { createIntegration } from 'services/IntegrationsService';
+import type { IntegrationBase } from 'services/IntegrationsService';
 import EmailNotifierForm from './EmailNotifierForm';
+
+type FormResponseMessageWithData = FormResponseMessage & { data?: IntegrationBase };
 
 export type EmailNotifierModalProps = {
     isOpen: boolean;
-    updateNotifierList: (string) => void;
+    updateNotifierList: (id: string) => void;
     onToggleEmailNotifierModal: () => void;
 };
 
@@ -37,16 +39,16 @@ function EmailNotifierModal({
             onCancel: onToggleEmailNotifierModal,
         });
 
-    function onSave(emailNotifier: EmailIntegrationFormValues): Promise<FormResponseMessage> {
-        return createIntegration('notifiers', emailNotifier).then((response) => {
-            // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-            // @ts-ignore
-            return { isError: false, message: '', data: response?.data ?? null };
+    function onSave(
+        emailNotifier: EmailIntegrationFormValues
+    ): Promise<FormResponseMessageWithData> {
+        return createIntegration('notifiers', emailNotifier).then((integration) => {
+            return { isError: false, message: '', data: integration };
         });
     }
 
-    function onCompleteRequest(response) {
-        updateNotifierList(response?.data ?? '');
+    function onCompleteRequest(response: FormResponseMessageWithData) {
+        updateNotifierList(response.data?.id ?? '');
         onToggleEmailNotifierModal();
     }
 

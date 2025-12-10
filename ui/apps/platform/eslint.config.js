@@ -26,12 +26,15 @@ const pluginGeneric = require('./eslint-plugins/pluginGeneric');
 const pluginLimited = require('./eslint-plugins/pluginLimited');
 const pluginPatternFly = require('./eslint-plugins/pluginPatternFly');
 
+const parser = parserTypeScriptESLint;
+const parserOptions = {
+    project: './tsconfig.eslint.json',
+    tsconfigRootDir: __dirname,
+};
+
 const parserAndOptions = {
-    parser: parserTypeScriptESLint,
-    parserOptions: {
-        project: './tsconfig.eslint.json',
-        tsconfigRootDir: __dirname,
-    },
+    parser,
+    parserOptions,
 };
 
 module.exports = [
@@ -588,7 +591,15 @@ module.exports = [
         files: ['src/*.{ts,tsx}', 'src/*/**/*.{js,jsx,ts,tsx}'], // product files, except for unit tests (including mockData and test-utils folders)
 
         languageOptions: {
-            ...parserAndOptions,
+            parser,
+            parserOptions: {
+                ...parserOptions,
+
+                // https://typescript-eslint.io/packages/parser/#jsxpragma
+                // If you are using the new JSX transform you can set this to null.
+                jsxPragma: null,
+            },
+
             globals: {
                 ...browserGlobals,
                 process: false, // for JavaScript files which have process.env.NODE_ENV and so on
@@ -600,6 +611,7 @@ module.exports = [
             accessibility: pluginAccessibility,
             generic: pluginGeneric,
             import: pluginImport,
+            limited: pluginLimited,
             patternfly: pluginPatternFly,
             react: pluginReact,
             'react-hooks': pluginReactHooks,
@@ -711,10 +723,16 @@ module.exports = [
             'react/style-prop-object': 'error',
             'react/void-dom-elements-no-children': 'error',
 
-            // https://github.com/facebook/react/blob/main/packages/eslint-plugin-react-hooks/src/index.js
-            ...pluginReactHooks.configs.recommended.rules,
+            // Report as error: React.Whatever
+            'limited/no-qualified-name-react': 'error',
+            // Report as error: import React from 'react';
+            'react/jsx-uses-react': 'off',
+            'react/react-in-jsx-scope': 'off',
 
+            // Explicit configuration because recommended includes React Compiler rules.
+            // Core hooks rules
             'react-hooks/exhaustive-deps': 'error', // instead of 'warn'
+            'react-hooks/rules-of-hooks': 'error',
         },
     },
     {
@@ -749,12 +767,25 @@ module.exports = [
 
             '@typescript-eslint/array-type': 'error',
             '@typescript-eslint/consistent-type-exports': 'error',
+            '@typescript-eslint/consistent-type-imports': 'error',
 
             'import/consistent-type-specifier-style': ['error', 'prefer-top-level'],
         },
     },
-    // Limited rules have ignores for specific files or folders.
-    // When ESLint plugin for Visual Studio Code has support for suppressions, they might supersede limited rules.
+    // Limited rules have specific files or have ignores for specific files or folders.
+    {
+        files: ['src/types/featureFlag.ts'],
+
+        // languageOptions from previous configuration object
+
+        // Key of plugin is namespace of its rules.
+        plugins: {
+            limited: pluginLimited,
+        },
+        rules: {
+            'limited/feature-flags': 'error',
+        },
+    },
     {
         files: ['src/*/**/*.{jsx,ts,tsx}'], // product files, except for unit tests (including test-utils folder)
         ignores: ['src/Containers/Compliance/**'],
@@ -771,24 +802,10 @@ module.exports = [
         },
     },
     {
-        files: ['**/*.{js,jsx,ts,tsx}'], // generic configuration
+        files: ['**/*.{js,jsx,ts,tsx}'], // generic configuration includes cypress and src folders
         ignores: [
-            'cypress/integration/**',
-            'src/Components/**',
-            'src/Containers/AccessControl/**',
-            'src/Containers/Clusters/**',
             'src/Containers/Compliance/**', // deprecated
-            'src/Containers/ConfigManagement/**',
-            'src/Containers/MainPage/**',
-            'src/Containers/NetworkGraph/**',
-            'src/Containers/Policies/**',
-            'src/Containers/PolicyCategories/**',
-            'src/Containers/Risk/**',
-            'src/Containers/SystemConfig/**',
-            'src/Containers/SystemHealth/**',
-            'src/Containers/Violations/**',
             'src/Containers/VulnMgmt/**', // deprecated
-            'src/Containers/Vulnerabilities/**',
         ],
 
         // languageOptions from previous configuration object
@@ -804,11 +821,10 @@ module.exports = [
         },
     },
     {
-        files: ['src/*/**/*.{js,jsx,ts,tsx}'], // product files, except for unit tests (including test-utils folder)
+        files: ['src/*/**/*.{js,jsx,ts,tsx}'],
         ignores: [
             'src/Containers/Compliance/**', // deprecated
             'src/Containers/VulnMgmt/**', // deprecated
-            'src/Containers/Vulnerabilities/**',
             'src/Containers/Workflow/**', // deprecated
         ],
 
@@ -816,72 +832,114 @@ module.exports = [
 
         // Key of plugin is namespace of its rules.
         plugins: {
-            '@typescript-eslint': pluginTypeScriptESLint,
             limited: pluginLimited,
         },
         rules: {
-            '@typescript-eslint/consistent-type-imports': 'error',
-            'limited/no-qualified-name-react': 'error',
             'limited/no-absolute-path-within-container-in-import': 'error',
             'limited/no-relative-path-to-src-in-import': 'error',
         },
     },
     {
-        files: ['**/*.{js,jsx,ts,tsx}'],
+        files: ['src/*/**/*.{js,jsx,ts,tsx}'],
         ignores: [
-            'src/Components/**',
-            'src/ConsolePlugin/**',
-            'src/Containers/AccessControl/**',
-            'src/Containers/Administration/**',
-            'src/Containers/Audit/**',
-            'src/Containers/Clusters/**',
-            'src/Containers/Collections/**',
+            'src/Components/GroupedTabs.jsx', // deprecated
+            'src/Components/ReactSelect/ReactSelect.jsx', // deprecated
+            'src/Components/URLSearchInputWithAutocomplete.jsx', // deprecated
             'src/Containers/Compliance/**', // deprecated
-            'src/Containers/ComplianceEnhanced/**',
             'src/Containers/ConfigManagement/**',
-            'src/Containers/Docs/**',
-            'src/Containers/ExceptionConfiguration/**',
-            'src/Containers/Images/**',
-            'src/Containers/Login/**',
-            'src/Containers/MitreAttackVectors/**',
-            'src/Containers/Policies/**',
-            'src/Containers/Search/**',
+            'src/Containers/SystemConfig/**',
+            'src/Containers/SystemHealth/**',
+            'src/Containers/Violations/**',
             'src/Containers/VulnMgmt/**', // deprecated
             'src/Containers/Vulnerabilities/**',
-            'src/Containers/Workflow/**', // deprecated
-            'src/Containers/*.{js,jsx,ts,tsx}',
-            'src/constants/**',
-            'src/hooks/**',
-            'src/providers/**',
-            'src/test-utils/**',
-            'src/utils/**',
-            'src/*.{js,jsx,ts,tsx}',
+            'src/init/initializeAnalytics.js', // generated from segment api
+            'src/sagas/authSagas.js', // deprecated
+            'src/sagas/groupSagas.js', // deprecated
+            'src/sagas/roleSagas.js', // deprecated
+            'src/utils/URLParser.ts', // deprecated
+            'src/utils/WorkflowState.js', // deprecated
+            'src/utils/entityRelationships.ts', // deprecated
+            'src/utils/getSubListFromEntity.js', // deprecated
+            'src/utils/queryService.js', // deprecated
         ],
 
-        // After deprecated folders have been deleted:
-        // Move jsxPragma property to languageOptions at module scope.
-        // Move react rules into appropriate configuration objects.
+        // languageOptions from previous configuration object
 
-        // Set parserOptions and turn off rules explicitly,
-        // instead of implicitlu via jsx-runtime configuration of eslint-plugin-react package.
-
-        languageOptions: {
-            parserOptions: {
-                // https://typescript-eslint.io/packages/parser/#jsxpragma
-                // If you are using the new JSX transform you can set this to null.
-                jsxPragma: null,
-            },
-        },
-
+        // Key of plugin is namespace of its rules.
         plugins: {
             limited: pluginLimited,
-            react: pluginReact,
         },
         rules: {
-            // After ignores array consists only of deprecated folders, delete limited rule (which has autofix).
-            'limited/no-default-import-react': 'error',
-            'react/jsx-uses-react': 'off',
-            'react/react-in-jsx-scope': 'off',
+            'limited/no-logical-or-preceding-array-or-object': 'error',
+        },
+    },
+    {
+        files: ['src/**/*.{js,jsx,ts,tsx}'],
+        ignores: [
+            'src/Components/*.{js,jsx}', // deprecated
+            'src/Components/Menu.tsx', // deprecated
+
+            'src/Components/BinderTabs/**', // deprecated
+            'src/Components/Button/**', // deprecated
+            'src/Components/ButtonLink/**', // deprecated
+            'src/Components/CVEStackedPill/**', // deprecated
+            'src/Components/CollapsibleSection/**', // deprecated
+            'src/Components/CveType/**', // deprecated
+            'src/Components/DashboardLayout/**', // deprecated
+            'src/Components/DashboardMenu/**', // deprecated
+            'src/Components/FixableCVECount/**', // deprecated
+            'src/Components/HeaderWithSubText/**', // deprecated
+            'src/Components/Labeled/**', // deprecated
+            'src/Components/Menu/**', // deprecated
+            'src/Components/Metadata/**', // deprecated
+            'src/Components/MetadataStatsList/**', // deprecated
+            'src/Components/NoComponentVulnMessage/**', // deprecated
+            'src/Components/PageHeader/**', // deprecated
+            'src/Components/Pagination/**', // deprecated
+            'src/Components/PanelButton/**', // deprecated
+            'src/Components/RiskScore/**', // deprecated
+            'src/Components/RowActionButton/**', // deprecated
+            'src/Components/StatsList/**', // deprecated
+            'src/Components/RadioButtonGroup/**', // deprecated
+            'src/Components/ReactSelect/**', // deprecated
+            'src/Components/ResourceCountPopper/**', // deprecated
+            'src/Components/SidePanelAbsoluteArea.tsx', // deprecated
+            'src/Components/SidePanelAdjacentArea.tsx', // deprecated
+            'src/Components/TableCellLink/**', // deprecated
+            'src/Components/TextSelect/**', // deprecated
+            'src/Components/TileContent/**', // deprecated
+            'src/Components/TileLink/**', // deprecated
+            'src/Components/TimelineGraph/**', // deprecated
+            'src/Components/TimelineOverview/**', // deprecated
+            'src/Components/ToggleSwitch/**', // deprecated
+            'src/Components/TooltipFieldValue/**', // deprecated
+            'src/Components/TopCvssLabel/**', // deprecated
+            'src/Components/Widget/**', // deprecated
+            'src/Components/animations/**', // deprecated
+            'src/Components/forms/**', // replace when we rewrite Login in PatternFly, and then delete
+            'src/Components/visuals/**', // deprecated
+            'src/Components/workflow/**', // deprecated
+
+            'src/Containers/Clusters/**', // fix errors, and then delete; also in tailwind.config.js file
+            'src/Containers/Compliance/**', // deprecated
+            'src/Containers/ConfigManagement/**',
+            'src/Containers/Images/**', // deprecated
+            'src/Containers/Login/**', // rewrite in PatternFly, and then delete; also in tailwind.config.js file
+            'src/Containers/MainPage/Header/Header.tsx', // investigate ignore-react-onclickoutside
+            'src/Containers/Risk/**', // rewrite in PatternFly, and then delete; also in tailwind.config.js file
+            'src/Containers/VulnMgmt/**', // deprecated
+            'src/Containers/Workflow/**', // deprecated
+        ],
+
+        // languageOptions from previous configuration object
+
+        // Key of plugin is namespace of its rules.
+        plugins: {
+            limited: pluginLimited,
+        },
+        rules: {
+            'limited/no-Tailwind': 'error',
+            'limited/no-feather-icons': 'error',
         },
     },
     {

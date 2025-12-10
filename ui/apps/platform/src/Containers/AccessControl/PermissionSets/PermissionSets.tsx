@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import type { ReactElement } from 'react';
 import { useLocation, useNavigate, useParams } from 'react-router-dom-v5-compat';
 import {
@@ -30,7 +30,7 @@ import { getEntityPath, getQueryObject } from '../accessControlPaths';
 
 import PermissionSetForm from './PermissionSetForm';
 import PermissionSetsList from './PermissionSetsList';
-import { getNewPermissionSet, getCompletePermissionSet } from './permissionSets.utils';
+import { getCompletePermissionSet, getNewPermissionSet } from './permissionSets.utils';
 import AccessControlHeaderActionBar from '../AccessControlHeaderActionBar';
 import AccessControlBreadcrumbs from '../AccessControlBreadcrumbs';
 import AccessControlHeading from '../AccessControlHeading';

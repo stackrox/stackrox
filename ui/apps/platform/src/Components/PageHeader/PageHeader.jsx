@@ -1,4 +1,3 @@
-import React from 'react';
 import PropTypes from 'prop-types';
 
 import SubHeader from 'Components/SubHeader';
@@ -26,7 +25,7 @@ PageHeader.propTypes = {
     subHeader: PropTypes.string,
     classes: PropTypes.string,
     bgStyle: PropTypes.shape({}),
-    children: PropTypes.oneOfType([PropTypes.element, PropTypes.arrayOf(PropTypes.element)]),
+    children: PropTypes.node,
 };
 
 PageHeader.defaultProps = {

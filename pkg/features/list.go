@@ -12,12 +12,6 @@ var (
 	// ComplianceEnhancements enables APIs and UI pages for Compliance 2.0
 	ComplianceEnhancements = registerFeature("Compliance enhancements", "ROX_COMPLIANCE_ENHANCEMENTS", enabled)
 
-	// ActiveVulnMgmt defines if the active vuln mgmt feature is enabled
-	ActiveVulnMgmt = registerFeature("Enable Active Vulnerability Management", "ROX_ACTIVE_VULN_MGMT")
-
-	// UnifiedCVEDeferral enables APIs and UI pages for unified deferral workflow.
-	UnifiedCVEDeferral = registerFeature("Enable new unified Vulnerability deferral workflow", "ROX_VULN_MGMT_UNIFIED_CVE_DEFERRAL", enabled)
-
 	// ClusterAwareDeploymentCheck enables roxctl deployment check to check deployments on the cluster level.
 	ClusterAwareDeploymentCheck = registerFeature("Enables cluster level check for the 'roxctl deployment check' command.", "ROX_CLUSTER_AWARE_DEPLOYMENT_CHECK", enabled)
 
@@ -27,7 +21,7 @@ var (
 	// SensorDeploymentBuildOptimization enables a performance improvement by skipping deployments processing when no dependency or spec changed
 	SensorDeploymentBuildOptimization = registerFeature("Enables a performance improvement by skipping deployments processing when no dependency or spec changed", "ROX_DEPLOYMENT_BUILD_OPTIMIZATION", enabled)
 
-	// VulnMgmtLegacySnooze enables APIs and UI for the legacy VM 1.0 "snooze CVE" functionality in the new VM 2.0 sections
+	// VulnMgmtLegacySnooze enables APIs and UI for the legacy VM 1.0 "snooze CVE" functionality in the new VM 2.0 sections.  This applies to cluster and node CVEs ONLY.
 	VulnMgmtLegacySnooze = registerFeature("Enables the ability to snooze Node and Platform CVEs in VM 2.0", "ROX_VULN_MGMT_LEGACY_SNOOZE")
 
 	// NodeIndexEnabled defines whether Compliance will actually run indexing code.
@@ -74,6 +68,9 @@ var (
 	// registry host.
 	SensorPullSecretsByName = registerFeature("Sensor will capture pull secrets by name and registry host instead of just registry host", "ROX_SENSOR_PULL_SECRETS_BY_NAME", enabled)
 
+	// OptimizedBaselineMemory enables optimized memory usage for baseline detector through process set deduplication
+	OptimizedBaselineMemory = registerFeature("Enable optimized memory usage for baseline detector through process set deduplication", "ROX_OPTIMIZED_BASELINE_MEMORY")
+
 	// ExternalIPs enables storing detailed discovered external IPs
 	ExternalIPs = registerFeature("Central will work with discovered external IPs", "ROX_EXTERNAL_IPS", enabled)
 
@@ -84,14 +81,11 @@ var (
 	// Will aggregate to one edge per unique port/protocol/direction instead of one edge per unique IP/port/protocol/direction.
 	NetworkGraphAggregateExternalIPs = registerFeature("Aggregate all external IP graph edges, showing only unique port/protocol pairs", "ROX_NETWORK_GRAPH_AGGREGATE_EXT_IPS")
 
-	// Display Exploit Prediction Scoring System (EPSS) score.
-	EPSSScore = registerFeature("Display Exploit Prediction Scoring System (EPSS) score", "ROX_EPSS_SCORE", enabled)
+	// NetworkFlowBatching enables batching of network flow updates to smooth out data spikes
+	NetworkFlowBatching = registerFeature("Enable batching of network flow updates to smooth out data spikes", "ROX_NETFLOW_BATCHING")
 
-	// Add the ability to generate an SBOM from an image
-	SBOMGeneration = registerFeature("Add the ability to generate an SBOM from an image", "ROX_SBOM_GENERATION", enabled)
-
-	// Flattens CVE Data Model for improved accuracy and performance
-	FlattenCVEData = registerFeature("Uses a flattened CVE Data Model improved accuracy and performance", "ROX_FLATTEN_CVE_DATA", enabled)
+	// NetworkFlowCacheLimiting enables limiting the network flow cache size to prevent memory issues
+	NetworkFlowCacheLimiting = registerFeature("Enable limiting network flow cache size to prevent memory issues", "ROX_NETFLOW_CACHE_LIMITING")
 
 	// Flattens Image Data Model for improved accuracy and performance
 	FlattenImageData = registerFeature("Uses a flattened Image Data Model for improved accuracy and performance", "ROX_FLATTEN_IMAGE_DATA")
@@ -108,8 +102,19 @@ var (
 	// Locks process baselines when their deployments leave the observation period
 	AutoLockProcessBaselines = registerFeature("Locks process baselines when their deployments leave the observation period", "ROX_AUTO_LOCK_PROCESS_BASELINES", enabled)
 
-	// SFA enables monitoring of sensitive files.
-	SensitiveFileActivity = registerFeature("Enable sensitive file monitoring", "ROX_SENSITIVE_FILE_ACTIVITY")
+	// KnownExploitedVulnerabilities enables support for CISA Known Exploited Vulnerabilities (KEV) data.
+	//
+	// This must be enabled in Central and Scanner V4 Matcher to have any effect.
+	KnownExploitedVulnerabilities = registerFeature("Display CISA Known Exploited Vulnerabilities (KEV) data", "ROX_CISA_KEV")
+
+	// SensitiveFileActivity enables monitoring of sensitive files.
+	SensitiveFileActivity = registerFeature("Enable sensitive file monitoring", "ROX_SENSITIVE_FILE_ACTIVITY", enabled)
+
+	// CVEFixTimestampCriteria enables the new CVE Fix timestamp criteria
+	CVEFixTimestampCriteria = registerFeature("Enable grace period criteria based on CVE fix timestamp", "ROX_CVE_FIX_TIMESTAMP")
+
+	// BaseImageDetection enables base image detection and management functionality
+	BaseImageDetection = registerFeature("Enable base image detection and management functionality", "ROX_BASE_IMAGE_DETECTION")
 )
 
 // The following feature flags are related to Scanner V4.
@@ -153,6 +158,5 @@ var (
 	VirtualMachines = registerFeature("Enables virtual machine management", "ROX_VIRTUAL_MACHINES")
 
 	// ScannerV4StoreExternalIndexReports enables storing index reports from delegated scans to Central's Scanner V4 Indexer.
-	// Both ScannerV4StoreExternalIndexReports and SBOMGeneration features must be enabled to store the index reports.
 	ScannerV4StoreExternalIndexReports = registerFeature("Enables storing index reports from delegated scans to Central's Scanner V4 Indexer", "ROX_SCANNER_V4_STORE_EXTERNAL_INDEX_REPORTS", enabled)
 )

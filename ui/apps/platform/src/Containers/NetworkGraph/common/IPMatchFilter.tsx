@@ -2,7 +2,7 @@ import { useState } from 'react';
 import type { ReactElement } from 'react';
 import { Flex, SearchInput } from '@patternfly/react-core';
 
-import { onURLSearch } from 'Components/CompoundSearchFilter/utils/utils';
+import { updateSearchFilter } from 'Components/CompoundSearchFilter/utils/utils';
 import type { SetSearchFilter } from 'hooks/useURLSearch';
 import type { SearchFilter } from 'types/search';
 import { isValidCidrBlock } from 'utils/urlUtils';
@@ -29,11 +29,15 @@ function IPMatchFilter({ searchFilter, setSearchFilter }: IPMatchFilterProps): R
         // this will only work if ipv4 is reported, will need to check if ipv4 or ipv6 and add /128 for ipv6
         const searchValue = isValidCidrBlock(`${ipAddress}/32`) ? `${ipAddress}/32` : ipAddress;
 
-        onURLSearch(searchFilter, setSearchFilter, {
-            action: 'ADD',
-            category: EXTERNAL_SOURCE_ADDRESS_QUERY,
-            value: searchValue,
-        });
+        setSearchFilter(
+            updateSearchFilter(searchFilter, [
+                {
+                    action: 'APPEND',
+                    category: EXTERNAL_SOURCE_ADDRESS_QUERY,
+                    value: searchValue,
+                },
+            ])
+        );
 
         setExternalIP('');
     }

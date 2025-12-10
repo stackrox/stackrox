@@ -1,9 +1,9 @@
-import React, { useCallback, useState } from 'react';
+import { useCallback, useState } from 'react';
 import {
-    PageSection,
     Breadcrumb,
-    Divider,
     BreadcrumbItem,
+    Divider,
+    PageSection,
     Skeleton,
     Tab,
     TabTitleText,
@@ -20,14 +20,11 @@ import TableErrorComponent from 'Components/PatternFly/TableErrorComponent';
 import useURLStringUnion from 'hooks/useURLStringUnion';
 import useURLPagination from 'hooks/useURLPagination';
 import useURLSearch from 'hooks/useURLSearch';
-import useFeatureFlags from 'hooks/useFeatureFlags';
 import usePermissions from 'hooks/usePermissions';
 import type { VulnerabilityState } from 'types/cve.proto';
 
-import DeploymentPageHeader, {
-    DeploymentMetadata,
-    deploymentMetadataFragment,
-} from './DeploymentPageHeader';
+import DeploymentPageHeader, { deploymentMetadataFragment } from './DeploymentPageHeader';
+import type { DeploymentMetadata } from './DeploymentPageHeader';
 import { detailsTabValues } from '../../types';
 import { DEFAULT_VM_PAGE_SIZE } from '../../constants';
 import { getVulnStateScopedQueryString, parseQuerySearchFilter } from '../../utils/searchUtils';
@@ -77,9 +74,7 @@ function DeploymentPage({ showVulnerabilityStateTabs, vulnerabilityState }: Depl
     // Report-specific functionality
     const { hasReadAccess } = usePermissions();
     const hasWorkflowAdminAccess = hasReadAccess('WorkflowAdministration');
-    const { isFeatureFlagEnabled } = useFeatureFlags();
     const isViewBasedReportsEnabled =
-        isFeatureFlagEnabled('ROX_VULNERABILITY_VIEW_BASED_REPORTS') &&
         hasWorkflowAdminAccess &&
         (viewContext === 'User workloads' ||
             viewContext === 'Platform' ||

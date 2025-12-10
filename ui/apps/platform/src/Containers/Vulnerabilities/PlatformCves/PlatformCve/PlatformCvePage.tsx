@@ -1,14 +1,13 @@
-import React from 'react';
 import {
-    PageSection,
     Breadcrumb,
-    Divider,
     BreadcrumbItem,
-    Skeleton,
+    Divider,
     Flex,
     Label,
     LabelGroup,
+    PageSection,
     Pagination,
+    Skeleton,
     Split,
     SplitItem,
     Text,
@@ -32,7 +31,7 @@ import { createFilterTracker } from 'utils/analyticsEventTracking';
 import useAnalytics, { PLATFORM_CVE_FILTER_APPLIED } from 'hooks/useAnalytics';
 import { clusterSearchFilterConfig } from '../../searchFilterConfig';
 import HeaderLoadingSkeleton from '../../components/HeaderLoadingSkeleton';
-import { SummaryCardLayout, SummaryCard } from '../../components/SummaryCardLayout';
+import { SummaryCard, SummaryCardLayout } from '../../components/SummaryCardLayout';
 import { DEFAULT_VM_PAGE_SIZE } from '../../constants';
 import {
     getOverviewPagePath,

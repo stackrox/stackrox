@@ -3,7 +3,6 @@ This file provides guidance when working with code in this repository.
 ## Repository Information
 
 **Upstream Repository**: https://github.com/stackrox/stackrox
-**Legacy Upstream Repository**: https://github.com/stackrox/rox - archived, but may contain valuable past information
 
 ## Workflow
 
@@ -93,6 +92,12 @@ When creating pull requests, you must follow these requirements:
 ### Single Test Examples
 - Run specific Go test: `go test -v ./central/path/to/package -run TestSpecificFunction`
 - Run PostgreSQL integration tests: `go test -v -tags sql_integration ./central/path/to/package`
+- **Testify Suite Pattern**: Many tests use `github.com/stretchr/testify/suite`:
+  - Suite tests have a top-level function like `TestClient` that runs the entire suite
+  - Individual test methods are on a struct (e.g., `func (s *ClientTestSuite) TestSomething()`)
+  - To run the entire suite: `go test ./package -run TestClient`
+  - To run specific subtest: `go test ./package -run TestClient/TestSomething`
+  - **WRONG**: `go test ./package -run TestSomething` (won't find it - it's not a top-level function)
 
 ## Architecture Overview
 
@@ -124,11 +129,25 @@ StackRox is a Kubernetes-native security platform with a distributed microservic
 - `/ui/` - Web frontend application
 - `/roxctl/` - Command-line interface
 - `/operator/` - Kubernetes operator
+- `/image/` - Container image build files, Helm charts, and deployment templates
 - `/generated/` - Auto-generated code from protobuf definitions
 - `/proto/` - Protocol buffer definitions
 - `/pkg/` - Shared Go libraries and utilities
 - `/deploy/` - Deployment scripts and configurations
 - `/qa-tests-backend/` - Integration tests (Groovy/Spock)
+
+### Detailed Documentation
+
+When working on specific areas, refer to these detailed guides:
+
+**Operator Development:**
+- `operator/EXTENDING_CRDS.md` - How to add new fields to CRDs (Central/SecuredCluster)
+- `operator/DEFAULTING.md` - Defaulting mechanisms and best practices for CRD fields
+
+**Helm Chart Development:**
+- `image/templates/README.md` - Working with Helm charts, testing, and development workflow
+- `image/templates/CHART_TEMPLATING.md` - Meta-templating system, feature flags, and chart instantiation
+- `image/templates/CHANGING_CHARTS.md` - How to add/modify Helm values fields and cluster config
 
 ### Development Workflow
 1. Use `make install-dev-tools` to set up development environment
@@ -146,7 +165,7 @@ StackRox is a Kubernetes-native security platform with a distributed microservic
 
 ### Testing Notes
 - PostgreSQL integration tests require Postgres running on port 5432
-- Use `docker run --rm --env POSTGRES_USER="$USER" --env POSTGRES_HOST_AUTH_METHOD=trust --publish 5432:5432 docker.io/library/postgres:13` for test setup
+- Use `docker run --rm --env POSTGRES_USER="$USER" --env POSTGRES_HOST_AUTH_METHOD=trust --publish 5432:5432 docker.io/library/postgres:15` for test setup
 - Integration tests in `/qa-tests-backend/` use Groovy/Spock framework
 - Tests marked with `//go:build sql_integration` require database connectivity
 

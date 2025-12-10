@@ -37,11 +37,25 @@ export CYPRESS_SPEC_PATTERN='cypress/integration/**/*.test.{js,ts}'
 export CYPRESS_ORCHESTRATOR_FLAVOR="${ORCHESTRATOR_FLAVOR}"
 
 if [ "$2" == "--spec" ]; then
-    if [ $# -ne 3 ]; then
-        echo "usage: npm run cypress-spec <spec-file>"
+    if [ $# -lt 3 ]; then
+        echo "usage: npm run cypress-spec <spec-file> [<spec-file> ...]"
         exit 1
     fi
-    cypress run --spec "cypress/integration/$3"
+    # Collect all spec arguments (everything after --spec)
+    shift 2  # Remove script name and --spec
+    all_specs="$*"
+
+    # Support multiple comma-separated spec files by prefixing each individually
+    IFS=',' read -ra specs <<< "$all_specs"
+    prefixed_specs=()
+    for spec in "${specs[@]}"; do
+        # Trim whitespace from each spec
+        spec=$(echo "$spec" | xargs)
+        prefixed_specs+=("cypress/integration/$spec")
+    done
+    # Join with commas for Cypress
+    spec_list=$(IFS=,; echo "${prefixed_specs[*]}")
+    cypress run --spec "$spec_list"
 else
     DEBUG="cypress*" NO_COLOR=1 cypress "$@" 2> /dev/null
 fi

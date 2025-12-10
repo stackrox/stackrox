@@ -113,6 +113,8 @@ spec:
       {{- end }}
 
       [<- if .FeatureFlags.ROX_SENSITIVE_FILE_ACTIVITY >]
+
+      {{- if ._rox.collector.sfaEnabled }}
       - name: fact
         image: {{ quote ._rox.image.fact.fullRef }}
         imagePullPolicy: {{ ._rox.fact.imagePullPolicy }}
@@ -125,9 +127,15 @@ spec:
         env:
         - name: FACT_LOGLEVEL
           value: 'debug'
-        {{- include "srox.envVars" (list . "daemonset" "fact" "fact") | nindent 8 }}
+        - name: FACT_URL
+          value: "https://{{ ._rox.sensor.endpoint }}"
+        - name: FACT_CERTS
+          value: "/var/run/secrets/stackrox.io/certs/"
+        - name: FACT_HOST_MOUNT
+          value: "/host"
+        {{- include "srox.envVars" (list . "daemonset" "collector" "fact") | nindent 8 }}
         resources:
-          {{- ._rox.fact._resources | nindent 10 }}
+          {{- ._rox.collector._sfaResources | nindent 10 }}
         securityContext:
           capabilities:
             drop:
@@ -142,6 +150,16 @@ spec:
         - mountPath: /run/secrets/stackrox.io/certs/
           name: certs
           readOnly: true
+        - mountPath: /host/proc
+          name: proc-ro
+          readOnly: true
+          mountPropagation: HostToContainer
+        - mountPath: /host/etc
+          name: etc-ro
+          readOnly: true
+          mountPropagation: HostToContainer
+      {{- end }}
+
       [<- end >]
 
       - command:

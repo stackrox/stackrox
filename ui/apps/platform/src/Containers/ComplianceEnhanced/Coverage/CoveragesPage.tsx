@@ -1,4 +1,4 @@
-import React, { useCallback, useContext, useState } from 'react';
+import { useCallback, useContext, useState } from 'react';
 import { Navigate, Route, Routes, useParams } from 'react-router-dom-v5-compat';
 import {
     Bullseye,
@@ -17,13 +17,12 @@ import ComplianceUsageDisclaimer, {
     COMPLIANCE_DISCLAIMER_KEY,
 } from 'Components/ComplianceUsageDisclaimer';
 import CompoundSearchFilter from 'Components/CompoundSearchFilter/components/CompoundSearchFilter';
-import {
+import SearchFilterChips, {
     makeFilterChipDescriptors,
-    onURLSearch,
-} from 'Components/CompoundSearchFilter/utils/utils';
-import type { OnSearchPayload } from 'Components/CompoundSearchFilter/types';
+} from 'Components/CompoundSearchFilter/components/SearchFilterChips';
+import type { OnSearchCallback } from 'Components/CompoundSearchFilter/types';
+import { updateSearchFilter } from 'Components/CompoundSearchFilter/utils/utils';
 import PageTitle from 'Components/PageTitle';
-import SearchFilterChips from 'Components/PatternFly/SearchFilterChips';
 import { useBooleanLocalStorage } from 'hooks/useLocalStorage';
 import useRestQuery from 'hooks/useRestQuery';
 import useURLSearch from 'hooks/useURLSearch';
@@ -92,8 +91,8 @@ function CoveragesPage() {
         navigateWithScanConfigQuery(coverageProfileChecksPath, { profileName: selectedProfile });
     }
 
-    const onSearch = (payload: OnSearchPayload) => {
-        onURLSearch(searchFilter, setSearchFilter, payload);
+    const onSearch: OnSearchCallback = (payload) => {
+        setSearchFilter(updateSearchFilter(searchFilter, payload));
     };
 
     const onCheckStatusSelect = (
@@ -101,10 +100,10 @@ function CoveragesPage() {
         checked: boolean,
         selection: string
     ) => {
-        const action = checked ? 'ADD' : 'REMOVE';
+        const action = checked ? 'SELECT_INCLUSIVE' : 'REMOVE';
         const category = filterType;
         const value = selection;
-        onSearch({ action, category, value });
+        onSearch([{ action, category, value }]);
     };
 
     const selectedProfileDetails = scanConfigProfilesResponse?.profiles.find(

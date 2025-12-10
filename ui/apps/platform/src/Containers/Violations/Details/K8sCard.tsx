@@ -3,10 +3,10 @@ import type { ReactElement } from 'react';
 import capitalize from 'lodash/capitalize';
 import {
     Card,
+    CardBody,
+    CardExpandableContent,
     CardHeader,
     CardTitle,
-    CardExpandableContent,
-    CardBody,
     DescriptionList,
 } from '@patternfly/react-core';
 

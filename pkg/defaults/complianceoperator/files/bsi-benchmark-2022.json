@@ -21,6 +21,14 @@
     {
       "profileName": "ocp4-bsi-node-2022",
       "profileVersion": "2022"
+    },
+    {
+      "profileName": "rhcos4-bsi",
+      "profileVersion": "2022"
+    },
+    {
+      "profileName": "rhcos4-bsi-2022",
+      "profileVersion": "2022"
     }
   ]
 }

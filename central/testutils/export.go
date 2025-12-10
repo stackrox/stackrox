@@ -13,6 +13,7 @@ import (
 
 	deploymentDataStore "github.com/stackrox/rox/central/deployment/datastore"
 	imageDataStore "github.com/stackrox/rox/central/image/datastore"
+	imageV2DataStore "github.com/stackrox/rox/central/imagev2/datastore"
 	podDatastore "github.com/stackrox/rox/central/pod/datastore"
 	deploymentsView "github.com/stackrox/rox/central/views/deployments"
 	imagesView "github.com/stackrox/rox/central/views/images"
@@ -42,9 +43,15 @@ type ExportServicePostgresTestHelper struct {
 	pool           *pgtest.TestPostgres
 	Deployments    deploymentDataStore.DataStore
 	Images         imageDataStore.DataStore
+	ImagesV2       imageV2DataStore.DataStore
 	ImageView      imagesView.ImageView
 	Pods           podDatastore.DataStore
 	DeploymentView deploymentsView.DeploymentView
+}
+
+// GetDB returns the postgres database connection.
+func (h *ExportServicePostgresTestHelper) GetDB() *pgtest.TestPostgres {
+	return h.pool
 }
 
 // SetupTest prepares the ExportServicePostgresTestHelper struct for testing.
@@ -64,6 +71,7 @@ func (h *ExportServicePostgresTestHelper) SetupTest(tb testing.TB) error {
 	h.Deployments = deploymentStore
 	h.DeploymentView = deploymentsView.NewDeploymentView(h.pool)
 	h.Images = imageDataStore.GetTestPostgresDataStore(tb, h.pool)
+	h.ImagesV2 = imageV2DataStore.GetTestPostgresDataStore(tb, h.pool)
 	h.ImageView = imagesView.NewImageView(h.pool)
 	h.Pods = podDatastore.GetTestPostgresDataStore(tb, h.pool)
 	return nil

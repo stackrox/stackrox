@@ -103,6 +103,9 @@ var (
 		"processViolation": {
 			"message": "This is a process violation"
 		},
+		"fileAccessViolation": {
+			"message": "This is a file access violation"
+		},
 		"violations": [
 			{
 				"message": "Deployment is affected by 'CVE-2017-15670'"

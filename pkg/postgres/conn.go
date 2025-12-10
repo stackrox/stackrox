@@ -8,6 +8,17 @@ import (
 	"github.com/stackrox/rox/pkg/contextutil"
 )
 
+// Queryable is an interface to support both Tx and Conn
+type Queryable interface {
+	Query(ctx context.Context, sql string, args ...interface{}) (*Rows, error)
+	QueryRow(ctx context.Context, sql string, args ...interface{}) pgx.Row
+}
+
+// Executable is an interface to support both Tx and Conn
+type Executable interface {
+	Exec(ctx context.Context, sql string, args ...interface{}) (pgconn.CommandTag, error)
+}
+
 // Conn is a wrapper around pgxpool.Conn
 type Conn struct {
 	PgxPoolConn
@@ -21,13 +32,14 @@ func (c *Conn) Release() {
 }
 
 // Begin wraps pgxpool.Conn Begin
-func (c *Conn) Begin(ctx context.Context) (*Tx, error) {
+func (c *Conn) Begin(ctx context.Context) (*Tx, context.Context, error) {
 	if tx, ok := TxFromContext(ctx); ok {
-		return &Tx{
+		t := &Tx{
 			Tx:         tx.Tx,
 			cancelFunc: tx.cancelFunc,
 			mode:       inner,
-		}, nil
+		}
+		return t, ContextWithTx(ctx, t), nil
 	}
 
 	ctx, cancel := contextutil.ContextWithTimeoutIfNotExists(ctx, defaultTimeout)
@@ -35,12 +47,13 @@ func (c *Conn) Begin(ctx context.Context) (*Tx, error) {
 	tx, err := c.PgxPoolConn.Begin(ctx)
 	if err != nil {
 		incQueryErrors("begin", err)
-		return nil, err
+		return nil, ctx, err
 	}
-	return &Tx{
+	t := &Tx{
 		Tx:         tx,
 		cancelFunc: cancel,
-	}, nil
+	}
+	return t, ContextWithTx(ctx, t), nil
 }
 
 // Exec wraps pgxpool.Conn Exec

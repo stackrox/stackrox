@@ -1,7 +1,6 @@
-import React from 'react';
 import { Td } from '@patternfly/react-table';
 
-import useMap from 'hooks/useMap';
+import type useMap from 'hooks/useMap';
 
 export type CVESelectionTdProps<T extends { cve: string }> = {
     selectedCves: ReturnType<typeof useMap<string, T>>;

@@ -9,6 +9,7 @@ import (
 	"testing"
 
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/sac"
@@ -77,4 +78,26 @@ func (s *NotifierEncConfigsStoreSuite) TestStore() {
 	s.NoError(err)
 	s.True(exists)
 	protoassert.Equal(s.T(), notifierEncConfig, foundNotifierEncConfig)
+}
+
+func (s *NotifierEncConfigsStoreSuite) TestGetWithTransactionContext() {
+	ctx := sac.WithAllAccess(context.Background())
+	store := s.store
+
+	notifierEncConfig := &storage.NotifierEncConfig{}
+	s.NoError(testutils.FullInit(notifierEncConfig, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
+	s.NoError(store.Upsert(ctx, notifierEncConfig))
+
+	// Create explicit transaction
+	tx, err := s.testDB.DB.Begin(ctx)
+	s.NoError(err)
+	defer tx.Rollback(ctx)
+
+	// Pass transaction context to Get
+	txCtx := postgres.ContextWithTx(ctx, tx)
+	retrieved, exists, err := store.Get(txCtx)
+
+	s.NoError(err)
+	s.True(exists)
+	protoassert.Equal(s.T(), notifierEncConfig, retrieved)
 }

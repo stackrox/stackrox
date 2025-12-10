@@ -1,6 +1,6 @@
 import withAuth from '../../../helpers/basicAuth';
 import { cancelAllCveExceptions } from '../workloadCves/WorkloadCves.helpers';
-import { deferAndVisitRequestDetails, approveRequest } from './ExceptionManagement.helpers';
+import { approveRequest, deferAndVisitRequestDetails } from './ExceptionManagement.helpers';
 
 const deferralProps = {
     comment: 'Defer me',

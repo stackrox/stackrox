@@ -1,18 +1,13 @@
 import static util.Helpers.withRetry
 
 import io.stackrox.annotations.Retry
-import io.stackrox.proto.api.v1.Common
 import io.stackrox.proto.storage.ClusterOuterClass
 import io.stackrox.proto.storage.ClusterOuterClass.AdmissionControllerConfig
 import io.stackrox.proto.storage.ImageOuterClass
 import io.stackrox.proto.storage.PolicyOuterClass
-import io.stackrox.proto.storage.PolicyOuterClass.PolicyGroup
-import io.stackrox.proto.storage.PolicyOuterClass.PolicySection
-import io.stackrox.proto.storage.PolicyOuterClass.PolicyValue
 import io.stackrox.proto.storage.ScopeOuterClass
 
 import objects.Deployment
-import services.CVEService
 import services.ClusterService
 import services.ImageService
 import services.PolicyService
@@ -195,132 +190,6 @@ class AdmissionControllerTest extends BaseSpecification {
         3       | false | false      | BUSYBOX_BYPASS_DEPLOYMENT    | false    | "bypass annotation, non-bypassable"     | false
         3       | false | true       | BUSYBOX_BYPASS_DEPLOYMENT    | true     | "bypass annotation, bypassable"         | false
         30      | true  | false      | SCAN_INLINE_DEPLOYMENT       | false    | "nginx w/ inline scan"                  | true
-    }
-
-    @Unroll
-    @Tag("BAT")
-    @Tag("Parallel")
-    @IgnoreIf({ Env.ROX_VULN_MGMT_UNIFIED_CVE_DEFERRAL == "true" })
-    def "Verify CVE snoozing applies to images scanned by admission controller #image"() {
-        given:
-        "Chaos monkey is prepared"
-        prepareChaosMonkey()
-
-        and:
-        "Scan image"
-        ImageService.scanImage(image)
-
-        "Create policy looking for a specific CVE"
-        // We don't want to block on SEVERITY
-        Services.updatePolicyEnforcement(
-                SEVERITY_FOR_TEST,
-                []
-        )
-
-        AdmissionControllerConfig ac = AdmissionControllerConfig.newBuilder()
-                .setEnabled(true)
-                .setEnforceOnUpdates(false)
-                .setDisableBypass(false)
-                .setScanInline(true)
-                .setTimeoutSeconds(5)
-                .build()
-        assert ClusterService.updateAdmissionController(ac)
-
-        log.info("Admission control configuration updated")
-
-        def policyGroup = PolicyGroup.newBuilder()
-                .setFieldName("CVE")
-                .setBooleanOperator(PolicyOuterClass.BooleanOperator.AND)
-        policyGroup.addAllValues([PolicyValue.newBuilder().setValue(NGINX_CVE).build(),])
-
-        String policyName = "Matching CVE (${NGINX_CVE})"
-        PolicyOuterClass.Policy policy = PolicyOuterClass.Policy.newBuilder()
-                .setName(policyName)
-                .addLifecycleStages(PolicyOuterClass.LifecycleStage.DEPLOY)
-                .addCategories("DevOps Best Practices")
-                .setSeverity(PolicyOuterClass.Severity.HIGH_SEVERITY)
-                .addEnforcementActions(PolicyOuterClass.EnforcementAction.SCALE_TO_ZERO_ENFORCEMENT)
-                .addScope(ScopeOuterClass.Scope.newBuilder().setNamespace(TEST_NAMESPACE))
-                .addPolicySections(
-                        PolicySection.newBuilder().addPolicyGroups(policyGroup.build()).build())
-                .build()
-
-        String policyID = PolicyService.createNewPolicy(policy)
-        assert policyID
-
-        log.info("Policy created to scale-to-zero deployments with ${NGINX_CVE}")
-        // Maximum time to wait for propagation to sensor
-        sleep(15000 * (ClusterService.isOpenShift4() ? 4 : 1))
-        log.info("Sensor and admission-controller _should_ have the policy update")
-
-        def deployment = new Deployment()
-                .setName("admission-suppress-cve")
-                .setNamespace(TEST_NAMESPACE)
-                .setImage(image)
-
-        def created = orchestrator.createDeploymentNoWait(deployment)
-        assert !created
-
-        // CVE needs to be saved into the DB
-        sleep(1000)
-
-        when:
-        "Suppress CVE and check that the deployment can now launch"
-
-        def cve = NGINX_CVE
-        CVEService.suppressImageCVE(cve)
-
-        log.info("Suppressed "+cve)
-        // Allow propagation of CVE suppression and invalidation of cache
-        sleep(5000 * (ClusterService.isOpenShift4() ? 4 : 1))
-        log.info("Expect that the suppression has propagated")
-
-        created = orchestrator.createDeploymentNoWait(deployment)
-        assert created
-
-        deleteDeploymentWithCaution(deployment)
-
-        and:
-        "Unsuppress CVE"
-        CVEService.unsuppressImageCVE(cve)
-
-        log.info("Unsuppressed "+cve)
-        // Allow propagation of CVE suppression and invalidation of cache
-        sleep(15000 * (ClusterService.isOpenShift4() ? 4 : 1))
-        log.info("Expect that the unsuppression has propagated")
-
-        and:
-        "Verify unsuppressing lets the deployment be blocked again"
-        created = orchestrator.createDeploymentNoWait(deployment)
-
-        then:
-        assert !created
-
-        cleanup:
-        "Stop ChaosMonkey ASAP to not lose logs"
-        if (chaosMonkey) {
-            chaosMonkey.stop()
-        }
-
-        and:
-        "Delete policy"
-        PolicyService.policyClient.deletePolicy(Common.ResourceByID.newBuilder().setId(policyID).build())
-
-        if (created) {
-            deleteDeploymentWithCaution(deployment)
-        }
-
-        // Add back enforcement
-        Services.updatePolicyEnforcement(SEVERITY_FOR_TEST,
-                [PolicyOuterClass.EnforcementAction.SCALE_TO_ZERO_ENFORCEMENT,]
-        )
-
-        where:
-        "Data inputs are: "
-
-        image | _
-        NGINX_IMAGE_WITH_SHA | _
-        NGINX_IMAGE | _
     }
 
     @Unroll

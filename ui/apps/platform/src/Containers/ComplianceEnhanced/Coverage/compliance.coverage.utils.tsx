@@ -1,4 +1,3 @@
-import React from 'react';
 import type { ReactElement } from 'react';
 import { Icon } from '@patternfly/react-core';
 import type { LabelProps } from '@patternfly/react-core';

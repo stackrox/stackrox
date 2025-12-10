@@ -160,6 +160,10 @@ func (*fakeRegistryScanner) HTTPClient() *http.Client {
 	return nil
 }
 
+func (*fakeRegistryScanner) ListTags(_ context.Context, _ string) ([]string, error) {
+	return nil, nil
+}
+
 func (f *fakeRegistryScanner) GetScanner() scannertypes.Scanner {
 	return f.scanner
 }
@@ -175,28 +179,6 @@ func (f *fakeRegistryScanner) Source() *storage.ImageIntegration {
 	return &storage.ImageIntegration{
 		Id:   "id",
 		Name: f.Name(),
-	}
-}
-
-type fakeCVESuppressor struct{}
-
-func (f *fakeCVESuppressor) EnrichImageWithSuppressedCVEs(image *storage.Image) {
-	for _, c := range image.GetScan().GetComponents() {
-		for _, v := range c.GetVulns() {
-			if v.GetCve() == "CVE-2020-1234" {
-				v.Suppressed = true
-			}
-		}
-	}
-}
-
-func (f *fakeCVESuppressor) EnrichImageV2WithSuppressedCVEs(image *storage.ImageV2) {
-	for _, c := range image.GetScan().GetComponents() {
-		for _, v := range c.GetVulns() {
-			if v.GetCve() == "CVE-2020-1234" {
-				v.Suppressed = true
-			}
-		}
 	}
 }
 

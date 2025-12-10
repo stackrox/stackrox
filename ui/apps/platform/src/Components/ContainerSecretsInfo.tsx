@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import {
     Card,
     CardBody,
@@ -23,7 +23,7 @@ function ContainerSecretsInfo({ secrets }: ContainerSecretsInfoProps) {
     const initialToggleValues = Array.from({ length: secrets.length }, () => true);
     const [secretToggles, setSecretToggles] = useState(initialToggleValues);
 
-    function setToggleAtIndex(i) {
+    function setToggleAtIndex(i: number) {
         const newToggles = [...secretToggles];
         newToggles[i] = !newToggles[i];
 

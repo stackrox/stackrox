@@ -1,4 +1,3 @@
-import React from 'react';
 import Raven from 'raven-js';
 
 import entityTypes from 'constants/entityTypes';

@@ -7,8 +7,6 @@ var (
 	RiskReprocessInterval = registerDurationSetting("ROX_RISK_REPROCESSING_INTERVAL", 10*time.Minute)
 	// ReprocessInterval will set the duration for which to reprocess all deployments and get new scans
 	ReprocessInterval = registerDurationSetting("ROX_REPROCESSING_INTERVAL", 4*time.Hour)
-	// ActiveVulnRefreshInterval will set the duration for which to refresh active components and vulnerabilities.
-	ActiveVulnRefreshInterval = registerDurationSetting("ROX_ACTIVE_VULN_REFRESH_INTERVAL", 15*time.Minute)
 	// VulnDeferralTimedReObserveInterval will set the duration for when to check to see if timed vuln deferrals need to be checked for expiry.
 	VulnDeferralTimedReObserveInterval = registerDurationSetting("ROX_VULN_TIMED_DEFERRAL_REOBSERVE_INTERVAL", 1*time.Hour)
 	// VulnDeferralFixableReObserveInterval will set the duration for when to check to see if "when fixable" vuln deferrals need to be checked for expiry.
@@ -19,4 +17,8 @@ var (
 	// is exceeded subsequent messages targeting this particular sensor will be skipped until the next reprocessing cycle.
 	// Setting the duration to zero will disable the timeout.
 	ReprocessInjectMessageTimeout = registerDurationSetting("ROX_REPROCESSING_INJECT_MESSAGE_TIMEOUT", 1*time.Minute, WithDurationZeroAllowed())
+	// ReprocessDeploymentsMsgDelay specifies the delay to wait between sending "ReprocessDeployments"
+	// messages to Sensors at the end of Central image reprocessing. When set to 0, messages are sent as fast
+	// as possible
+	ReprocessDeploymentsMsgDelay = registerDurationSetting("ROX_REPROCESS_DEPLOYMENTS_MSG_DELAY", 0, WithDurationZeroAllowed())
 )

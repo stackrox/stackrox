@@ -85,15 +85,10 @@ func (m *machineToMachineTokenExchanger) ExchangeToken(ctx context.Context, rawI
 
 	log.Debugf("Successfully validated ID token (sub=%q) for config %q", idToken.Subject, m.config.GetId())
 
-	var unstructured map[string]interface{}
-	if err := idToken.Claims(&unstructured); err != nil {
+	claims, err := m.roxClaimExtractor.ExtractClaims(idToken)
+	if err != nil {
 		return "", errox.NoCredentials.New("extracting claims from ID token").CausedBy(err)
 	}
-
-	log.Debugf("Unstructured claims of the ID token(sub=%q): %+v", idToken.Subject, unstructured)
-
-	// We currently only support non-nested claims to be used within mappings.
-	claims := mapToStringClaims(unstructured)
 
 	log.Debugf("String claims of the ID token (sub=%q): %+v", idToken.Subject, claims)
 
@@ -106,7 +101,7 @@ func (m *machineToMachineTokenExchanger) ExchangeToken(ctx context.Context, rawI
 		return "", errox.NoCredentials.New("resolving roles for id token").CausedBy(err)
 	}
 
-	roxClaims, err := m.roxClaimExtractor.ExtractRoxClaims(idToken)
+	roxClaims, err := m.roxClaimExtractor.ExtractRoxClaims(claims)
 	if err != nil {
 		return "", errox.NoCredentials.New("creating claims for Central token").CausedBy(err)
 	}
@@ -123,22 +118,6 @@ func (m *machineToMachineTokenExchanger) ExchangeToken(ctx context.Context, rawI
 
 func (m *machineToMachineTokenExchanger) Config() *storage.AuthMachineToMachineConfig {
 	return m.config
-}
-
-func mapToStringClaims(claims map[string]interface{}) map[string][]string {
-	stringClaims := make(map[string][]string, len(claims))
-	for key, value := range claims {
-		switch value := value.(type) {
-		case string:
-			stringClaims[key] = []string{value}
-		case []string:
-			stringClaims[key] = value
-		default:
-			log.Debugf("Dropping value %v for claim %s since its a nested claim or a non-string type %T", value, key, value)
-		}
-	}
-
-	return stringClaims
 }
 
 func createRegexp(config *storage.AuthMachineToMachineConfig) []*regexp.Regexp {

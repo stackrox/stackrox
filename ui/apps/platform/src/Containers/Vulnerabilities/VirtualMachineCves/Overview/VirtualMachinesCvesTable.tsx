@@ -1,23 +1,19 @@
-import React, { useCallback } from 'react';
+import { useCallback } from 'react';
 import { Link } from 'react-router-dom-v5-compat';
 import {
     Flex,
     Pagination,
-    pluralize,
     Skeleton,
     Split,
     SplitItem,
     Title,
+    pluralize,
 } from '@patternfly/react-core';
 import { Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 
 import DateDistance from 'Components/DateDistance';
 import { DynamicTableLabel } from 'Components/DynamicIcon';
 import TbodyUnified from 'Components/TableStateTemplates/TbodyUnified';
-import {
-    virtualMachinesClusterSearchFilterConfig,
-    virtualMachinesSearchFilterConfig,
-} from 'Containers/Vulnerabilities/searchFilterConfig';
 import useRestQuery from 'hooks/useRestQuery';
 import useURLPagination from 'hooks/useURLPagination';
 import useURLSearch from 'hooks/useURLSearch';
@@ -33,6 +29,10 @@ import {
 import AdvancedFiltersToolbar from '../../components/AdvancedFiltersToolbar';
 import SeverityCountLabels from '../../components/SeverityCountLabels';
 import { DEFAULT_VM_PAGE_SIZE } from '../../constants';
+import {
+    virtualMachinesClusterSearchFilterConfig,
+    virtualMachinesSearchFilterConfig,
+} from '../../searchFilterConfig';
 import { getVirtualMachineEntityPagePath } from '../../utils/searchUtils';
 import { VIRTUAL_MACHINE_SORT_FIELD } from '../../utils/sortFields';
 
@@ -165,6 +165,7 @@ function VirtualMachinesCvesTable() {
                                                     unknownCount={
                                                         virtualMachineSeverityCounts.UNKNOWN_VULNERABILITY_SEVERITY
                                                     }
+                                                    entity="virtual machine"
                                                 />
                                             </Td>
                                             <Td dataLabel="Cluster">

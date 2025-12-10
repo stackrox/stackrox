@@ -65,9 +65,6 @@ deploy_stackrox() {
     echo "Sensor deployed. Waiting for sensor to be up"
     sensor_wait "${sensor_namespace}"
 
-    # Bounce collectors to avoid restarts on initial module pull
-    kubectl -n "${sensor_namespace}" delete pod -l app=collector --grace-period=0
-
     sensor_wait "${sensor_namespace}"
 
     wait_for_collectors_to_be_operational "${sensor_namespace}"
@@ -169,7 +166,6 @@ export_test_environment() {
 
     ci_export ROX_BASELINE_GENERATION_DURATION "${ROX_BASELINE_GENERATION_DURATION:-1m}"
     ci_export ROX_NETWORK_BASELINE_OBSERVATION_PERIOD "${ROX_NETWORK_BASELINE_OBSERVATION_PERIOD:-2m}"
-    ci_export ROX_VULN_MGMT_UNIFIED_CVE_DEFERRAL "${ROX_VULN_MGMT_UNIFIED_CVE_DEFERRAL:-true}"
     ci_export ROX_VULN_MGMT_LEGACY_SNOOZE "${ROX_VULN_MGMT_LEGACY_SNOOZE:-true}"
     ci_export ROX_DECLARATIVE_CONFIGURATION "${ROX_DECLARATIVE_CONFIGURATION:-true}"
     ci_export ROX_COMPLIANCE_ENHANCEMENTS "${ROX_COMPLIANCE_ENHANCEMENTS:-true}"
@@ -180,16 +176,17 @@ export_test_environment() {
     ci_export ROX_REGISTRY_CLIENT_TIMEOUT "${ROX_REGISTRY_CLIENT_TIMEOUT:-120s}"
     ci_export ROX_SCAN_SCHEDULE_REPORT_JOBS "${ROX_SCAN_SCHEDULE_REPORT_JOBS:-true}"
     ci_export ROX_PLATFORM_COMPONENTS "${ROX_PLATFORM_COMPONENTS:-true}"
-    ci_export ROX_EPSS_SCORE "${ROX_EPSS_SCORE:-true}"
-    ci_export ROX_SBOM_GENERATION "${ROX_SBOM_GENERATION:-true}"
     ci_export ROX_EXTERNAL_IPS "${ROX_EXTERNAL_IPS:-true}"
     ci_export ROX_NETWORK_GRAPH_AGGREGATE_EXT_IPS "${ROX_NETWORK_GRAPH_AGGREGATE_EXT_IPS:-true}"
     ci_export ROX_NETWORK_GRAPH_EXTERNAL_IPS "${ROX_NETWORK_GRAPH_EXTERNAL_IPS:-false}"
-    ci_export ROX_FLATTEN_CVE_DATA "${ROX_FLATTEN_CVE_DATA:-true}"
     ci_export ROX_FLATTEN_IMAGE_DATA "${ROX_FLATTEN_IMAGE_DATA:-false}"
     ci_export ROX_VULNERABILITY_VIEW_BASED_REPORTS "${ROX_VULNERABILITY_VIEW_BASED_REPORTS:-true}"
     ci_export ROX_CUSTOMIZABLE_PLATFORM_COMPONENTS "${ROX_CUSTOMIZABLE_PLATFORM_COMPONENTS:-true}"
     ci_export ROX_ADMISSION_CONTROLLER_CONFIG "${ROX_ADMISSION_CONTROLLER_CONFIG:-true}"
+    ci_export ROX_CISA_KEV "${ROX_CISA_KEV:-true}"
+    ci_export ROX_SENSITIVE_FILE_ACTIVITY "${ROX_SENSITIVE_FILE_ACTIVITY:-true}"
+    ci_export ROX_CVE_FIX_TIMESTAMP "${ROX_CVE_FIX_TIMESTAMP:-true}"
+    ci_export ROX_BASE_IMAGE_DETECTION "${ROX_BASE_IMAGE_DETECTION:-false}"
 
     if is_in_PR_context && pr_has_label ci-fail-fast; then
         ci_export FAIL_FAST "true"
@@ -259,7 +256,7 @@ deploy_central() {
 # shellcheck disable=SC2120
 deploy_central_via_operator() {
     local central_namespace=${1:-stackrox}
-    info "Deploying central via operator into namespace ${central_namespace}"
+    info "Deploying central using operator into namespace ${central_namespace}"
     if ! kubectl get ns "${central_namespace}" >/dev/null 2>&1; then
         kubectl create ns "${central_namespace}"
     fi
@@ -317,17 +314,11 @@ deploy_central_via_operator() {
     customize_envVars+=$'\n        value: "true"'
     customize_envVars+=$'\n      - name: ROX_PLATFORM_COMPONENTS'
     customize_envVars+=$'\n        value: "true"'
-    customize_envVars+=$'\n      - name: ROX_EPSS_SCORE'
-    customize_envVars+=$'\n        value: "true"'
     customize_envVars+=$'\n      - name: ROX_EXTERNAL_IPS'
     customize_envVars+=$'\n        value: "true"'
     customize_envVars+=$'\n      - name: ROX_NETWORK_GRAPH_EXTERNAL_IPS'
     customize_envVars+=$'\n        value: "false"'
     customize_envVars+=$'\n      - name: ROX_NETWORK_GRAPH_AGGREGATE_EXT_IPS'
-    customize_envVars+=$'\n        value: "true"'
-    customize_envVars+=$'\n      - name: ROX_SBOM_GENERATION'
-    customize_envVars+=$'\n        value: "true"'
-    customize_envVars+=$'\n      - name: ROX_FLATTEN_CVE_DATA'
     customize_envVars+=$'\n        value: "true"'
     customize_envVars+=$'\n      - name: ROX_FLATTEN_IMAGE_DATA'
     customize_envVars+=$'\n        value: "false"'
@@ -337,6 +328,14 @@ deploy_central_via_operator() {
     customize_envVars+=$'\n        value: "true"'
     customize_envVars+=$'\n      - name: ROX_ADMISSION_CONTROLLER_CONFIG'
     customize_envVars+=$'\n        value: "true"'
+    customize_envVars+=$'\n      - name: ROX_CISA_KEV'
+    customize_envVars+=$'\n        value: "true"'
+    customize_envVars+=$'\n      - name: ROX_SENSITIVE_FILE_ACTIVITY'
+    customize_envVars+=$'\n        value: "false"'
+    customize_envVars+=$'\n      - name: ROX_CVE_FIX_TIMESTAMP'
+    customize_envVars+=$'\n        value: "true"'
+    customize_envVars+=$'\n      - name: ROX_BASE_IMAGE_DETECTION'
+    customize_envVars+=$'\n        value: "false"'
 
     local scannerV4ScannerComponent="Default"
     case "${ROX_SCANNER_V4:-}" in
@@ -379,11 +378,11 @@ deploy_sensor() {
         deploy_sensor_via_operator "${sensor_namespace}" "${central_namespace}"
     else
         if [[ "${OUTPUT_FORMAT:-}" == "helm" ]]; then
-            echo "Deploying Sensor using Helm ..."
+            echo "Preparing deployment of Sensor using Helm ..."
             ci_export SENSOR_HELM_DEPLOY "true"
             ci_export ADMISSION_CONTROLLER "true"
         else
-            echo "Deploying sensor using kubectl ... "
+            echo "Preparing deployment of Sensor using kubectl ... "
             if [[ -n "${IS_RACE_BUILD:-}" ]]; then
                 # builds with -race are slow at generating the sensor bundle
                 # https://stack-rox.atlassian.net/browse/ROX-6987
@@ -410,9 +409,10 @@ deploy_sensor_via_operator() {
     local sensor_namespace=${1:-stackrox}
     local central_namespace=${2:-stackrox}
     local scanner_component_setting="Disabled"
+    local sfa_agent_setting="Disabled"
     local central_endpoint="central.${central_namespace}.svc:443"
 
-    info "Deploying sensor via operator into namespace ${sensor_namespace} (central is expected in namespace ${central_namespace})"
+    info "Deploying sensor using operator into namespace ${sensor_namespace} (central is expected in namespace ${central_namespace})"
     if ! kubectl get ns "${sensor_namespace}" >/dev/null 2>&1; then
         kubectl create ns "${sensor_namespace}"
     fi
@@ -427,12 +427,6 @@ deploy_sensor_via_operator() {
         --output-secrets -' \
     | kubectl -n "${sensor_namespace}" apply -f -
 
-    if [[ -n "${COLLECTION_METHOD:-}" ]]; then
-       echo "Overriding the product default collection method due to COLLECTION_METHOD variable: ${COLLECTION_METHOD}"
-    else
-       die "COLLECTION_METHOD not set"
-    fi
-
     if [[ "${SENSOR_SCANNER_SUPPORT:-}" == "true" ]]; then
         scanner_component_setting="AutoSense"
     fi
@@ -442,17 +436,14 @@ deploy_sensor_via_operator() {
         secured_cluster_yaml_path="tests/e2e/yaml/secured-cluster-cr-with-scanner-v4.envsubst.yaml"
     fi
 
-    upper_case_collection_method="$(echo "$COLLECTION_METHOD" | tr '[:lower:]' '[:upper:]')"
-
-    # forceCollection only has an impact when the collection method is EBPF
-    # but upgrade tests can fail if forceCollection is used for 4.3 or older.
-    if [[ "${upper_case_collection_method}" == "CORE_BPF" ]]; then
-      sed -i.bak '/forceCollection/d' "${secured_cluster_yaml_path}"
+    if [[ "${SFA_AGENT:-}" == "Enabled" ]]; then
+       echo "Enabling SFA agent due to SFA_AGENT variable: ${SFA_AGENT}"
+       sfa_agent_setting="Enabled"
     fi
 
     env - \
-      collection_method="$upper_case_collection_method" \
       scanner_component_setting="$scanner_component_setting" \
+      sfa_agent_setting="$sfa_agent_setting" \
       central_endpoint="$central_endpoint" \
     "${envsubst}" \
       < "${secured_cluster_yaml_path}" | kubectl apply -n "${sensor_namespace}" -f -

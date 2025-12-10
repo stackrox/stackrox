@@ -1,16 +1,16 @@
-import React, { Component } from 'react';
+import { Component } from 'react';
 import PropTypes from 'prop-types';
 import findLastIndex from 'lodash/findLastIndex';
 
 import { Creatable } from 'Components/ReactSelect';
 import {
-    placeholderCreator,
+    MultiValue,
     Option,
     ValueContainer,
-    MultiValue,
-    noOptionsMessage,
     createOptionPosition,
     inputMatchesTopOption,
+    noOptionsMessage,
+    placeholderCreator,
     removeValuesForKey,
 } from 'Components/URLSearchInputWithAutocomplete';
 import searchOptionsToQuery from 'services/searchOptionsToQuery';

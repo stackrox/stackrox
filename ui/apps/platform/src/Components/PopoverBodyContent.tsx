@@ -1,4 +1,3 @@
-import React from 'react';
 import type { ReactElement, ReactNode } from 'react';
 
 type PopoverBodyContentProps =
@@ -34,7 +33,7 @@ function PopoverBodyContent(props: PopoverBodyContentProps): ReactElement {
                     </div>
                 </div>
             )}
-            <div className="bodyContent">{props.bodyContent}</div>
+            <div>{props.bodyContent}</div>
             {'footerContent' in props && props.footerContent && (
                 <div className="pf-v5-c-popover__footer">{props.footerContent}</div>
             )}

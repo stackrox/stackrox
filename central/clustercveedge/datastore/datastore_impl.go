@@ -3,7 +3,6 @@ package datastore
 import (
 	"context"
 
-	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/clustercveedge/store"
 	"github.com/stackrox/rox/central/cve/edgefields"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -20,18 +19,17 @@ func (ds *datastoreImpl) Search(ctx context.Context, q *v1.Query) ([]searchPkg.R
 }
 
 func (ds *datastoreImpl) SearchEdges(ctx context.Context, q *v1.Query) ([]*v1.SearchResult, error) {
-	// TODO(ROX-29943): remove 2 pass database queries
-	results, err := ds.Search(ctx, q)
+	results, err := ds.storage.Search(ctx, edgefields.TransformFixableFieldsQuery(q))
 	if err != nil {
 		return nil, err
 	}
 
-	cves, missingIndices, err := ds.storage.GetMany(ctx, searchPkg.ResultsToIDs(results))
-	if err != nil {
-		return nil, err
+	// Populate Name from ID for each result
+	for i := range results {
+		results[i].Name = results[i].ID
 	}
-	results = searchPkg.RemoveMissingResults(results, missingIndices)
-	return convertMany(cves, results)
+
+	return searchPkg.ResultsToSearchResultProtos(results, &ClusterCVEEdgeSearchResultConverter{}), nil
 }
 
 func (ds *datastoreImpl) SearchRawEdges(ctx context.Context, q *v1.Query) ([]*storage.ClusterCVEEdge, error) {
@@ -77,24 +75,22 @@ func (ds *datastoreImpl) GetBatch(ctx context.Context, ids []string) ([]*storage
 	return edges, nil
 }
 
-func convertMany(cves []*storage.ClusterCVEEdge, results []searchPkg.Result) ([]*v1.SearchResult, error) {
-	if len(cves) != len(results) {
-		return nil, errors.Errorf("expected %d CVEs but got %d", len(results), len(cves))
-	}
+type ClusterCVEEdgeSearchResultConverter struct{}
 
-	outputResults := make([]*v1.SearchResult, len(cves))
-	for index, sar := range cves {
-		outputResults[index] = convertOne(sar, &results[index])
-	}
-	return outputResults, nil
+func (c *ClusterCVEEdgeSearchResultConverter) BuildName(result *searchPkg.Result) string {
+	// Name is already populated from ID
+	return result.Name
 }
 
-func convertOne(obj *storage.ClusterCVEEdge, result *searchPkg.Result) *v1.SearchResult {
-	return &v1.SearchResult{
-		Category:       v1.SearchCategory_CLUSTER_VULN_EDGE,
-		Id:             obj.GetId(),
-		Name:           obj.GetId(),
-		FieldToMatches: searchPkg.GetProtoMatchesMap(result.Matches),
-		Score:          result.Score,
-	}
+func (c *ClusterCVEEdgeSearchResultConverter) BuildLocation(result *searchPkg.Result) string {
+	// ClusterCVEEdge does not have a location
+	return ""
+}
+
+func (c *ClusterCVEEdgeSearchResultConverter) GetCategory() v1.SearchCategory {
+	return v1.SearchCategory_CLUSTER_VULN_EDGE
+}
+
+func (c *ClusterCVEEdgeSearchResultConverter) GetScore(result *searchPkg.Result) float64 {
+	return result.Score
 }

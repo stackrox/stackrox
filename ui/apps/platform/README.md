@@ -1,8 +1,7 @@
 # StackRox Kubernetes Security Platform Web Application (UI)
 
-Single-page application (SPA) for StackRox Kubernetes Security Platform. This
-application was bootstrapped with
-[Create React App](https://github.com/facebookincubator/create-react-app).
+Single-page application (SPA) for StackRox Kubernetes Security Platform. Built with
+React 18, TypeScript, and Vite.
 
 ## Development
 
@@ -132,8 +131,8 @@ _Note: At this time https is not supported for local plugin development._
 
 #### Unit Tests
 
-Use `npm run test` to run all unit tests and show test coverage. To run tests and
-continuously watch for changes use `npm run test-watch`.
+Use `npm run test` to run all unit tests and show test coverage. To run specific tests,
+use `npm run test -- --testNamePattern="TestName"` or `npm run test -- src/path/to/test.test.ts`.
 
 #### End-to-end Tests (Cypress)
 
@@ -184,6 +183,8 @@ Given a feature flag environment variable `"ROX_WHATEVER"` in pkg/features/list.
 ```
 
 1. Add `'ROX_WHATEVER'` to string enumeration type `FeatureFlagEnvVar` in ui/apps/platform/src/types/featureFlag.ts
+
+    Add string in alphabetical order on its own line to minimize merge conflicts when multiple people add or delete strings.
 
 2. To include frontend code when the feature flag is enabled, do any of the following:
 
@@ -425,7 +426,7 @@ Read and obey comments to add strings or properties **in alphabetical order to m
         },
         ```
 
-3. Edit ui/apps/platform/src/Containers/MainPage/Sidebar/NavigationSidebar.tsx file, **if** the route has a link.
+3. Edit ui/apps/platform/src/Containers/MainPage/Navigation/NavigationSidebar.tsx file, **if** the route has a link.
 
     * Import a path **without params**.
 

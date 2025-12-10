@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom-v5-compat';
 import {
     Pagination,
@@ -12,12 +12,13 @@ import {
 import { ExpandableRowContent, Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 
 import CompoundSearchFilter from 'Components/CompoundSearchFilter/components/CompoundSearchFilter';
-import { makeFilterChipDescriptors } from 'Components/CompoundSearchFilter/utils/utils';
+import SearchFilterChips, {
+    makeFilterChipDescriptors,
+} from 'Components/CompoundSearchFilter/components/SearchFilterChips';
 import type {
     CompoundSearchFilterConfig,
-    OnSearchPayload,
+    OnSearchCallback,
 } from 'Components/CompoundSearchFilter/types';
-import SearchFilterChips from 'Components/PatternFly/SearchFilterChips';
 import TbodyUnified from 'Components/TableStateTemplates/TbodyUnified';
 import type { UseURLPaginationResult } from 'hooks/useURLPagination';
 import type { UseURLSortResult } from 'hooks/useURLSort';
@@ -44,7 +45,7 @@ export type ClusterDetailsTableProps = {
     searchFilterConfig: CompoundSearchFilterConfig;
     searchFilter: SearchFilter;
     onFilterChange: (newFilter: SearchFilter) => void;
-    onSearch: (payload: OnSearchPayload) => void;
+    onSearch: OnSearchCallback;
     onCheckStatusSelect: (
         filterType: 'Compliance Check Status',
         checked: boolean,

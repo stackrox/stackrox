@@ -1,4 +1,3 @@
-import React from 'react';
 import {
     Flex,
     PageSection,
@@ -33,10 +32,10 @@ import {
     aggregateByCreatedTime,
     aggregateByDistinctCount,
     getScoreVersionsForTopCVSS,
-    sortCveDistroList,
-    getWorkloadCveOverviewSortFields,
-    getWorkloadCveOverviewDefaultSortOption,
     getSeveritySortOptions,
+    getWorkloadCveOverviewDefaultSortOption,
+    getWorkloadCveOverviewSortFields,
+    sortCveDistroList,
 } from '../../utils/sortUtils';
 import { cveListQuery } from '../../WorkloadCves/Tables/WorkloadCVEOverviewTable';
 import type { CVEListQueryResult } from '../../WorkloadCves/Tables/WorkloadCVEOverviewTable';

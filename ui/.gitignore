@@ -24,5 +24,3 @@ npm-debug.log*
 .cursor/
 .cursorrules/
 .claude/
-CLAUDE.md
-GEMINI.md

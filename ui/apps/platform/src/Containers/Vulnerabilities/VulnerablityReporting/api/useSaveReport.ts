@@ -1,8 +1,8 @@
 import { useCallback, useState } from 'react';
 
 import { updateReportConfiguration } from 'services/ReportsService';
-import { ReportConfiguration } from 'services/ReportsService.types';
-import { ReportFormValues } from '../forms/useReportFormValues';
+import type { ReportConfiguration } from 'services/ReportsService.types';
+import type { ReportFormValues } from '../forms/useReportFormValues';
 import { getReportConfigurationFromFormValues } from '../utils';
 
 export type UseSaveReportProps = {

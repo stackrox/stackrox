@@ -56,10 +56,6 @@ func (h sbomHttpHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		httputil.WriteGRPCStyleError(w, codes.Unimplemented, errors.New("Scanner V4 is disabled. Enable Scanner V4 to generate SBOMs"))
 		return
 	}
-	if !features.SBOMGeneration.Enabled() {
-		httputil.WriteGRPCStyleError(w, codes.Unimplemented, errors.New("SBOM feature is not enabled"))
-		return
-	}
 
 	var params apiparams.SBOMRequestBody
 	sbomGenMaxReqSizeBytes := env.SBOMGenerationMaxReqSizeBytes.IntegerSetting()
@@ -146,6 +142,14 @@ func (h sbomHttpHandler) getSBOM(ctx context.Context, params apiparams.SBOMReque
 
 	img, alreadyForcedEnrichment, err := h.enrichImage(ctx, enrichmentCtx, params.ImageName)
 	if err != nil {
+		if env.AdministrationEventsAdHocScans.BooleanSetting() {
+			log.Errorw("Enriching image",
+				logging.ImageName(params.ImageName),
+				logging.Err(err),
+				logging.Bool("ad_hoc", true),
+			)
+		}
+
 		return nil, err
 	}
 

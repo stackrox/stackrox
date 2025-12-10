@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import type { ReactElement } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom-v5-compat';
 import {
@@ -198,7 +198,7 @@ function SearchPage(): ReactElement {
                         </Alert>
                     ) : (
                         <SearchFilterInput
-                            className="theme-light pf-search-shim z-xs-101"
+                            className="pf-search-shim z-xs-101"
                             handleChangeSearchFilter={handleChangeSearchFilter}
                             isDisabled={isLoadingSearchOptions || isLoadingSearchResponse}
                             placeholder="Filter resources"

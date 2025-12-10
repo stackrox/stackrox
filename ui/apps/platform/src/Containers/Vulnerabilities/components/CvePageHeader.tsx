@@ -1,11 +1,10 @@
-import React from 'react';
 import type { ReactNode } from 'react';
-import { Flex, LabelGroup, Label, Text, Title, List, ListItem } from '@patternfly/react-core';
+import { Flex, Label, LabelGroup, List, ListItem, Text, Title } from '@patternfly/react-core';
 import uniqBy from 'lodash/uniqBy';
 
 import ExternalLink from 'Components/PatternFly/IconText/ExternalLink';
 import useFeatureFlags from 'hooks/useFeatureFlags';
-import { CveBaseInfo } from 'types/cve.proto';
+import type { CveBaseInfo } from 'types/cve.proto';
 import { getDateTime } from 'utils/dateUtils';
 
 import {
@@ -14,9 +13,10 @@ import {
 } from '../WorkloadCves/Tables/table.utils';
 import { getDistroLinkText } from '../utils/textUtils';
 import { sortCveDistroList } from '../utils/sortUtils';
-// import { hasKnownExploit, hasKnownRansomwareCampaignUse } from '../utils/vulnerabilityUtils'; // Ross CISA KEV
+import { hasKnownExploit, hasKnownRansomwareCampaignUse } from '../utils/vulnerabilityUtils';
 import HeaderLoadingSkeleton from './HeaderLoadingSkeleton';
-// import KnownExploitLabel from './KnownExploitLabel';
+import KnownExploitLabel from './KnownExploitLabel';
+import KnownRansomwareCampaignLabel from './KnownRansomwareCampaignLabel';
 
 export type CveMetadata = {
     cve: string;
@@ -52,26 +52,18 @@ function CvePageHeader({ data }: CvePageHeaderProps) {
     const hasEpssProbabilityLabel = isEpssProbabilityColumnEnabled && Boolean(cveBaseInfo); // not (yet) for Node CVE
 
     const labels: ReactNode[] = [];
-    /*
-    // Ross CISA KEV
     if (
         isFeatureFlagEnabled('ROX_SCANNER_V4') &&
-        isFeatureFlagEnabled('ROX_KEV_EXPLOIT') &&
+        isFeatureFlagEnabled('ROX_CISA_KEV') &&
         hasKnownExploit(cveBaseInfo?.exploit)
     ) {
         labels.push(<KnownExploitLabel key="exploit" isCompact={false} />);
-        // Future code if design decision is separate labels.
-        // if (hasKnownRansomwareCampaignUse(cveBaseInfo?.exploit) {
-        //     labels.push(
-        //         <KnownExploitLabel
-        //             key="knownRansomwareCampaignUse"
-        //             isCompact={false}
-        //             isKnownToBeUsedInRansomwareCampaigns
-        //         />
-        //     );
-        // }
+        if (hasKnownRansomwareCampaignUse(cveBaseInfo?.exploit)) {
+            labels.push(
+                <KnownRansomwareCampaignLabel key="knownRansomwareCampaignUse" isCompact={false} />
+            );
+        }
     }
-    */
     if (hasEpssProbabilityLabel) {
         labels.push(
             <Label key="epssProbability">

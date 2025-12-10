@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { useState } from 'react';
+import { fireEvent, render, screen } from '@testing-library/react';
 
 import NextPaginationButton from './NextPaginationButton';
 import PaginationInput from '../PaginationInput';

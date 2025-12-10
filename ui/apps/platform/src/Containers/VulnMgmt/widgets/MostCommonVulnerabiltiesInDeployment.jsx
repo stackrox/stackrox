@@ -1,4 +1,4 @@
-import React, { useContext } from 'react';
+import { useContext } from 'react';
 import PropTypes from 'prop-types';
 import { gql, useQuery } from '@apollo/client';
 import sortBy from 'lodash/sortBy';
@@ -6,13 +6,13 @@ import sortBy from 'lodash/sortBy';
 import entityTypes from 'constants/entityTypes';
 import queryService from 'utils/queryService';
 import workflowStateContext from 'Containers/workflowStateContext';
-import { getVulnerabilityChips } from 'utils/vulnerabilityUtils';
 import { cveSortFields } from 'constants/sortFields';
 import { WIDGET_PAGINATION_START_OFFSET } from 'constants/workflowPages.constants';
 import Loader from 'Components/Loader';
 import Widget from 'Components/Widget';
 import NoResultsMessage from 'Components/NoResultsMessage';
 
+import { getVulnerabilityChips } from '../VulnMgmt.utils/vulnerabilityUtils';
 import NumberedList from './NumberedList';
 import ViewAllButton from './ViewAllButton';
 

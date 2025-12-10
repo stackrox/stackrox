@@ -19,10 +19,10 @@ import { getNodeById } from './utils/networkGraphUtils';
 import type { EdgeState } from './components/EdgeStateSelect';
 import type { DisplayOption } from './components/DisplayOptionsSelect';
 import {
-    createExtraneousNodes,
     createExtraneousEdges,
-    graphModel,
+    createExtraneousNodes,
     getConnectedNodeIds,
+    graphModel,
 } from './utils/modelUtils';
 import {
     cidrBlockBadgeColor,
@@ -242,7 +242,7 @@ function fadeOutUnconnectedNodes(
             selectedNode.children.reduce((acc, currId) => {
                 const connectedNodeIds = getConnectedNodeIds(edges, currId);
                 return [...acc, ...connectedNodeIds];
-            }, [] as string[]) || [];
+            }, [] as string[]) ?? [];
         // we include the child nodes so that they aren't faded out
         emphasizedNodeIds = [...emphasizedNodeIds, ...selectedNode.children];
     } else {

@@ -2,7 +2,6 @@ package inputtypes
 
 import (
 	"github.com/graph-gophers/graphql-go"
-	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/protoconv"
 )
@@ -45,76 +44,11 @@ type DeferVulnRequest struct {
 	ExpiresOn        *graphql.Time
 }
 
-// AsV1DeferralRequest converts the deferral request option to proto.
-func (dr *DeferVulnRequest) AsV1DeferralRequest() *v1.DeferVulnRequest {
-	if dr == nil {
-		return nil
-	}
-
-	ret := &v1.DeferVulnRequest{
-		Cve: func() string {
-			if dr.Cve == nil {
-				return ""
-			}
-			return *dr.Cve
-		}(),
-		Comment: func() string {
-			if dr.Comment == nil {
-				return ""
-			}
-			return *dr.Comment
-		}(),
-		Scope: dr.Scope.AsV1VulnerabilityRequestScope(),
-	}
-
-	if dr.ExpiresWhenFixed == nil && dr.ExpiresOn == nil {
-		return ret
-	}
-	if dr.ExpiresWhenFixed != nil {
-		if *dr.ExpiresWhenFixed {
-			ret.Expiry = &v1.DeferVulnRequest_ExpiresWhenFixed{
-				ExpiresWhenFixed: true,
-			}
-		}
-	} else {
-		ts := protoconv.ConvertTimeToTimestampOrNil(dr.ExpiresOn.Time)
-		if ts == nil {
-			return nil
-		}
-		ret.Expiry = &v1.DeferVulnRequest_ExpiresOn{
-			ExpiresOn: ts,
-		}
-	}
-	return ret
-}
-
 // FalsePositiveVulnRequest encapsulates the request data to mark the vulnerability as false-positive.
 type FalsePositiveVulnRequest struct {
 	Cve     *string
 	Comment *string
 	Scope   *VulnReqScope
-}
-
-// AsV1FalsePositiveRequest converts the false positive request option to proto.
-func (fpr *FalsePositiveVulnRequest) AsV1FalsePositiveRequest() *v1.FalsePositiveVulnRequest {
-	if fpr == nil {
-		return nil
-	}
-	return &v1.FalsePositiveVulnRequest{
-		Cve: func() string {
-			if fpr.Cve == nil {
-				return ""
-			}
-			return *fpr.Cve
-		}(),
-		Comment: func() string {
-			if fpr.Comment == nil {
-				return ""
-			}
-			return *fpr.Comment
-		}(),
-		Scope: fpr.Scope.AsV1VulnerabilityRequestScope(),
-	}
 }
 
 // VulnReqScope represents the scope of vulnerability request.

@@ -76,7 +76,7 @@ func TestClusterDeletion(t *testing.T) {
 	assert.NotZero(t, counts.DeploymentCount)
 	assert.NotZero(t, counts.SecretCount)
 	assert.NotZero(t, counts.PodCount)
-	log.Infof("the initial counts are: %+v", counts)
+	t.Logf("the initial counts are: %+v", counts)
 
 	conn := centralgrpc.GRPCConnectionToCentral(t)
 	service := v1.NewClustersServiceClient(conn)
@@ -100,12 +100,12 @@ func TestClusterDeletion(t *testing.T) {
 		counts := getAllCounts(t)
 		if counts.DeploymentCount == 0 {
 			if counts.AllZero() {
-				log.Infof("objects have all drained to 0")
+				t.Logf("objects have all drained to 0")
 				return
 			}
-			log.Infof("resp still has non zero values: %+v", counts)
+			t.Logf("resp still has non zero values: %+v", counts)
 		} else {
-			log.Infof("deployment count is still not zero: %d", counts.DeploymentCount)
+			t.Logf("deployment count is still not zero: %d", counts.DeploymentCount)
 		}
 
 		if previous.DeploymentCount > 0 && previous.DeploymentCount > counts.DeploymentCount {

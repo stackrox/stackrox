@@ -1,7 +1,7 @@
-import React from 'react';
-import { Card, CardBody, CardProps, CardTitle, Progress } from '@patternfly/react-core';
+import { Card, CardBody, CardTitle, Progress } from '@patternfly/react-core';
+import type { CardProps } from '@patternfly/react-core';
 
-import { ComplianceRunStatusResponse } from './useComplianceRunStatuses';
+import type { ComplianceRunStatusResponse } from './useComplianceRunStatuses';
 
 export type ComplianceScanProgressProps = {
     runs: ComplianceRunStatusResponse['complianceRunStatuses']['runs'];

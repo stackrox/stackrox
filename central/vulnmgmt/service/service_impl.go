@@ -18,6 +18,7 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/set"
@@ -41,6 +42,7 @@ var (
 type serviceImpl struct {
 	v1.UnimplementedVulnMgmtServiceServer
 
+	db          postgres.DB
 	deployments deploymentDS.DataStore
 	pods        podDS.DataStore
 	images      imageDS.DataStore
@@ -74,12 +76,28 @@ func (s *serviceImpl) VulnMgmtExportWorkloads(req *v1.VulnMgmtExportWorkloadsReq
 		ctx, cancel = context.WithTimeout(ctx, time.Duration(timeout)*time.Second)
 		defer cancel()
 	}
+
+	// Begin a transaction
+	tx, err := s.db.Begin(ctx)
+	if err != nil {
+		return errors.Wrap(errox.ServerError, "failed to begin transaction")
+	}
+	var committed bool
+	defer func() {
+		if !committed {
+			_ = tx.Rollback(ctx)
+		}
+	}()
+
+	// Add transaction to context
+	txCtx := postgres.ContextWithTx(ctx, tx)
+
 	imageCache, err := lru.New[string, *storage.Image](cacheSize)
 	if err != nil {
 		return errors.Wrap(errox.ServerError, err.Error())
 	}
 
-	return s.deployments.WalkByQuery(ctx, parsedQuery, func(d *storage.Deployment) error {
+	err = s.deployments.WalkByQuery(txCtx, parsedQuery, func(d *storage.Deployment) error {
 		containers := d.GetContainers()
 		images := make([]*storage.Image, 0, len(containers))
 		imageIDs := set.NewStringSet()
@@ -96,7 +114,7 @@ func (s *serviceImpl) VulnMgmtExportWorkloads(req *v1.VulnMgmtExportWorkloadsReq
 				continue
 			}
 
-			img, found, err := s.images.GetImage(ctx, imgID)
+			img, found, err := s.images.GetImage(txCtx, imgID)
 			if err != nil {
 				log.Errorf("Error getting image for container %q (SHA: %s): %v", d.GetName(), container.GetId(), err)
 				continue
@@ -116,7 +134,7 @@ func (s *serviceImpl) VulnMgmtExportWorkloads(req *v1.VulnMgmtExportWorkloadsReq
 			AddRegexes(search.ContainerImageDigest, ".*").
 			ProtoQuery()
 
-		livePods, err := s.pods.Count(ctx, livePodsQ)
+		livePods, err := s.pods.Count(txCtx, livePodsQ)
 		if err != nil {
 			log.Errorf("Error getting live pod count for deployment ID '%s'", d.GetId())
 		}
@@ -126,4 +144,15 @@ func (s *serviceImpl) VulnMgmtExportWorkloads(req *v1.VulnMgmtExportWorkloadsReq
 		}
 		return nil
 	})
+
+	if err != nil {
+		return err
+	}
+
+	// Commit the transaction
+	if err := tx.Commit(txCtx); err != nil {
+		return err
+	}
+	committed = true
+	return nil
 }

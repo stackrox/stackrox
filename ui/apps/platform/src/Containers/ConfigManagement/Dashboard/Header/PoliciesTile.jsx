@@ -1,4 +1,3 @@
-import React from 'react';
 import { gql } from '@apollo/client';
 import { useLocation } from 'react-router-dom-v5-compat';
 import entityTypes from 'constants/entityTypes';

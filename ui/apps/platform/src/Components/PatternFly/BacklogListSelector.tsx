@@ -1,14 +1,13 @@
-import React from 'react';
 import type { Key, ReactElement, ReactNode } from 'react';
 import {
     Badge,
     Button,
     EmptyState,
+    EmptyStateFooter,
+    EmptyStateHeader,
     EmptyStateIcon,
     Flex,
     FormGroup,
-    EmptyStateHeader,
-    EmptyStateFooter,
     Icon,
 } from '@patternfly/react-core';
 import { CubesIcon, MinusCircleIcon, PlusCircleIcon } from '@patternfly/react-icons';

@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import PropTypes from 'prop-types';
 import { gql, useQuery } from '@apollo/client';
 import cloneDeep from 'lodash/cloneDeep';
@@ -14,7 +14,7 @@ import queryService from 'utils/queryService';
 import { createPolicy, savePolicy } from 'services/PoliciesService';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 import { truncate } from 'utils/textUtils';
-import { splitCvesByType } from 'utils/vulnerabilityUtils';
+import { splitCvesByType } from '../../VulnMgmt.utils/vulnerabilityUtils';
 
 import CustomDialogue from '../../Components/CustomDialogue';
 

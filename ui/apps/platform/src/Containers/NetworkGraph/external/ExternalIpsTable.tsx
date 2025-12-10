@@ -11,7 +11,7 @@ import {
 import { InnerScrollContainer, Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 
 import ExternalLink from 'Components/PatternFly/IconText/ExternalLink';
-import SearchFilterChips from 'Components/PatternFly/SearchFilterChips';
+import SearchFilterChips from 'Components/CompoundSearchFilter/components/SearchFilterChips';
 import TbodyUnified from 'Components/TableStateTemplates/TbodyUnified';
 import useMetadata from 'hooks/useMetadata';
 import type { TableUIState } from 'utils/getTableUIState';

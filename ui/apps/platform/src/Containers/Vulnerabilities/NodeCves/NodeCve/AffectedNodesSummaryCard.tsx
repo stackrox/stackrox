@@ -1,4 +1,3 @@
-import React from 'react';
 import { Card, CardBody, CardTitle, Grid, GridItem, pluralize } from '@patternfly/react-core';
 
 export type AffectedNodesSummaryCardProps = {

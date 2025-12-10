@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo } from 'react';
+import { useCallback, useMemo } from 'react';
 import {
     Card,
     CardBody,
@@ -26,7 +26,7 @@ import ReportJobStatusFilter, {
     ensureReportJobStatuses,
 } from 'Components/ReportJob/ReportJobStatusFilter';
 import MyJobsFilter from 'Components/ReportJob/MyJobsFilter';
-import { ReportJobStatus } from 'Components/ReportJob/types';
+import type { ReportJobStatus } from 'Components/ReportJob/types';
 import useAnalytics, { VIEW_BASED_REPORT_FILTER_APPLIED } from 'hooks/useAnalytics';
 import ViewBasedReportsTable from './ViewBasedReportsTable';
 
@@ -118,11 +118,13 @@ function ViewBasedReportsTab() {
 
         // Track filter interaction for additions only
         if (checked) {
-            trackAppliedFilter(VIEW_BASED_REPORT_FILTER_APPLIED, {
-                action: 'ADD',
-                category: 'Report Job Status',
-                value: selectedStatus,
-            });
+            trackAppliedFilter(VIEW_BASED_REPORT_FILTER_APPLIED, [
+                {
+                    action: 'SELECT_INCLUSIVE',
+                    category: 'Report Job Status',
+                    value: selectedStatus,
+                },
+            ]);
         }
     };
 
@@ -132,11 +134,13 @@ function ViewBasedReportsTab() {
 
         // Track filter interaction for enabling my jobs only
         if (checked) {
-            trackAppliedFilter(VIEW_BASED_REPORT_FILTER_APPLIED, {
-                action: 'ADD',
-                category: 'My Jobs',
-                value: 'true',
-            });
+            trackAppliedFilter(VIEW_BASED_REPORT_FILTER_APPLIED, [
+                {
+                    action: 'SELECT_INCLUSIVE',
+                    category: 'My Jobs',
+                    value: 'true',
+                },
+            ]);
         }
     };
 

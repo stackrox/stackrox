@@ -494,39 +494,6 @@ func (evr *EmbeddedVulnerabilityResolver) loadDeployments(ctx context.Context, q
 	return evr.root.wrapListDeployments(ListDeploymentLoader.FromQuery(ctx, query))
 }
 
-// ActiveState shows the activeness of a vulnerability in a deployment context.
-func (evr *EmbeddedVulnerabilityResolver) ActiveState(ctx context.Context, _ RawQuery) (*activeStateResolver, error) {
-	if !features.ActiveVulnMgmt.Enabled() {
-		return &activeStateResolver{}, nil
-	}
-	deploymentID := getDeploymentScope(nil, ctx, evr.ctx)
-	if deploymentID == "" {
-		return nil, nil
-	}
-
-	// We only support OS level component. The active state is not determined if there is no OS level component associate with this vuln.
-	query := search.NewQueryBuilder().AddExactMatches(search.CVE, evr.data.GetCve()).AddExactMatches(search.ComponentSource, storage.SourceType_OS.String()).ProtoQuery()
-	osLevelComponents, err := evr.root.ImageComponentDataStore.Count(ctx, query)
-	if err != nil {
-		return nil, err
-	}
-	if osLevelComponents == 0 {
-		return &activeStateResolver{root: evr.root, state: Undetermined}, nil
-	}
-
-	query = search.ConjunctionQuery(evr.vulnQuery(), search.NewQueryBuilder().AddExactMatches(search.DeploymentID, deploymentID).ProtoQuery())
-	results, err := evr.root.ActiveComponent.Search(ctx, query)
-	if err != nil {
-		return nil, err
-	}
-	ids := search.ResultsToIDs(results)
-	state := Inactive
-	if len(ids) != 0 {
-		state = Active
-	}
-	return &activeStateResolver{root: evr.root, state: state, activeComponentIDs: ids}, nil
-}
-
 // VulnerabilityState return the effective state of this vulnerability (observed, deferred or marked as false positive).
 func (evr *EmbeddedVulnerabilityResolver) VulnerabilityState(_ context.Context) string {
 	return evr.data.GetState().String()

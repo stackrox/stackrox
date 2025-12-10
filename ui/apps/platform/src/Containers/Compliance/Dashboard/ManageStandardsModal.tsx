@@ -1,8 +1,10 @@
-import React, { ReactElement, useState } from 'react';
+import { useState } from 'react';
+import type { ReactElement } from 'react';
 import { Alert, Button, Checkbox, Form, Modal } from '@patternfly/react-core';
 import { useFormik } from 'formik';
 
-import { ComplianceStandardMetadata, patchComplianceStandard } from 'services/ComplianceService';
+import { patchComplianceStandard } from 'services/ComplianceService';
+import type { ComplianceStandardMetadata } from 'services/ComplianceService';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 
 export type ManageStandardsModalProps = {

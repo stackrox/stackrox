@@ -1,21 +1,20 @@
-import { useEffect, useCallback, useRef } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 import { useLocation, useNavigate, useParams } from 'react-router-dom-v5-compat';
 import { Popover } from '@patternfly/react-core';
 import {
     SELECTION_EVENT,
-    useEventListener,
+    TopologyControlBar,
     TopologySideBar,
     TopologyView,
+    VisualizationSurface,
     createTopologyControlButtons,
     defaultControlButtonsOptions,
-    TopologyControlBar,
+    useEventListener,
     useVisualizationController,
-    VisualizationSurface,
 } from '@patternfly/react-topology';
 import type { SelectionEventListener } from '@patternfly/react-topology';
 
 import { networkBasePath } from 'routePaths';
-import useFeatureFlags from 'hooks/useFeatureFlags';
 import usePermissions from 'hooks/usePermissions';
 import useFetchDeploymentCount from 'hooks/useFetchDeploymentCount';
 import { getQueryString } from 'utils/queryStringUtils';
@@ -42,11 +41,7 @@ import type {
 } from './hooks/useNetworkPolicySimulator';
 import type { NetworkScopeHierarchy } from './types/networkScopeHierarchy';
 import { getSearchFilterFromScopeHierarchy } from './utils/simulatorUtils';
-import {
-    CidrBlockIcon,
-    ExternalEntitiesIcon,
-    InternalEntitiesIcon,
-} from './common/NetworkGraphIcons';
+import { CidrBlockIcon, InternalEntitiesIcon } from './common/NetworkGraphIcons';
 import { DEFAULT_NETWORK_GRAPH_PAGE_SIZE } from './NetworkGraph.constants';
 
 import {
@@ -95,9 +90,6 @@ const TopologyComponent = ({
     edgeState,
     scopeHierarchy,
 }: TopologyComponentProps) => {
-    const { isFeatureFlagEnabled } = useFeatureFlags();
-    const isNetworkGraphExternalIpsEnabled = isFeatureFlagEnabled('ROX_NETWORK_GRAPH_EXTERNAL_IPS');
-
     const { hasReadAccess } = usePermissions();
     const hasReadAccessForNetworkPolicy = hasReadAccess('NetworkPolicy');
 
@@ -285,8 +277,8 @@ const TopologyComponent = ({
                         <NamespaceSideBar
                             labelledById={labelledById}
                             namespaceId={selectedNode.id}
-                            nodes={model?.nodes || []}
-                            edges={model?.edges || []}
+                            nodes={model?.nodes ?? []}
+                            edges={model?.edges ?? []}
                             onNodeSelect={onNodeSelect}
                         />
                     )}
@@ -294,8 +286,8 @@ const TopologyComponent = ({
                         <DeploymentSideBar
                             labelledById={labelledById}
                             deploymentId={selectedNode.id}
-                            nodes={model?.nodes || []}
-                            edges={model?.edges || []}
+                            nodes={model?.nodes ?? []}
+                            edges={model?.edges ?? []}
                             edgeState={edgeState}
                             onNodeSelect={onNodeSelect}
                         />
@@ -304,8 +296,8 @@ const TopologyComponent = ({
                         <ExternalGroupSideBar
                             labelledById={labelledById}
                             id={selectedNode.id}
-                            nodes={model?.nodes || []}
-                            edges={model?.edges || []}
+                            nodes={model?.nodes ?? []}
+                            edges={model?.edges ?? []}
                             onNodeSelect={onNodeSelect}
                         />
                     )}
@@ -313,45 +305,32 @@ const TopologyComponent = ({
                         <GenericEntitiesSideBar
                             labelledById={labelledById}
                             id={selectedNode.id}
-                            nodes={model?.nodes || []}
-                            edges={model?.edges || []}
+                            nodes={model?.nodes ?? []}
+                            edges={model?.edges ?? []}
                             onNodeSelect={onNodeSelect}
                             EntityHeaderIcon={<CidrBlockIcon />}
                             sidebarTitle={selectedNode.data.externalSource.cidr ?? ''}
                             flowTableLabel="Cidr block flows"
                         />
                     )}
-                    {selectedNode &&
-                        isNodeOfType('EXTERNAL_ENTITIES', selectedNode) &&
-                        (isNetworkGraphExternalIpsEnabled ? (
-                            <ExternalEntitiesSideBar
-                                labelledById={labelledById}
-                                id={selectedNode.id}
-                                nodes={model?.nodes || []}
-                                edges={model?.edges || []}
-                                scopeHierarchy={scopeHierarchy}
-                                selectedExternalIP={selectedExternalIP}
-                                onNodeSelect={onNodeSelect}
-                                onExternalIPSelect={onExternalIPSelect}
-                            />
-                        ) : (
-                            <GenericEntitiesSideBar
-                                labelledById={labelledById}
-                                id={selectedNode.id}
-                                nodes={model?.nodes || []}
-                                edges={model?.edges || []}
-                                onNodeSelect={onNodeSelect}
-                                EntityHeaderIcon={<ExternalEntitiesIcon />}
-                                sidebarTitle={'Connected entities outside your cluster'}
-                                flowTableLabel="External entities flows"
-                            />
-                        ))}
+                    {selectedNode && isNodeOfType('EXTERNAL_ENTITIES', selectedNode) && (
+                        <ExternalEntitiesSideBar
+                            labelledById={labelledById}
+                            id={selectedNode.id}
+                            nodes={model?.nodes ?? []}
+                            edges={model?.edges ?? []}
+                            scopeHierarchy={scopeHierarchy}
+                            selectedExternalIP={selectedExternalIP}
+                            onNodeSelect={onNodeSelect}
+                            onExternalIPSelect={onExternalIPSelect}
+                        />
+                    )}
                     {selectedNode && isNodeOfType('INTERNAL_ENTITIES', selectedNode) && (
                         <GenericEntitiesSideBar
                             labelledById={labelledById}
                             id={selectedNode.id}
-                            nodes={model?.nodes || []}
-                            edges={model?.edges || []}
+                            nodes={model?.nodes ?? []}
+                            edges={model?.edges ?? []}
                             onNodeSelect={onNodeSelect}
                             EntityHeaderIcon={<InternalEntitiesIcon />}
                             sidebarTitle={'Unknown entity connections within your clusters'}

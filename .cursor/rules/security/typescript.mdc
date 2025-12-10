@@ -1,0 +1,29 @@
+---
+description: Secure coding rules for TypeScript projects
+globs:
+  - "**/*.ts"
+  - "**/*.tsx"
+  - "**/*.mts"
+  - "**/*.cts"
+  - "**/tsconfig.json"
+alwaysApply: false
+---
+
+# Secure coding rules for TypeScript
+
+- Use type guards for runtime validation. Validate external data at runtime, not just compile time.
+- Use parameterized queries or ORMs to prevent SQL injection. Never concatenate user input into queries.
+- Avoid `eval()`, `Function()` constructor, or dynamic code execution with untrusted data.
+- Sanitize HTML to prevent XSS. Use DOMPurify or framework-specific sanitizers.
+- Implement Content Security Policy (CSP) headers to mitigate XSS and injection attacks.
+- Validate and sanitize URLs before redirects to prevent open redirects.
+- Implement proper authentication and session management. Use secure, httpOnly cookies.
+- Use `crypto.randomBytes()` or Web Crypto API for secure random generation.
+- Use `npm audit` regularly to check for vulnerabilities.
+- Pin exact versions in package-lock.json. Avoid `^` or `~` for critical dependencies.
+- Implement rate limiting and input validation to prevent DoS.
+- Implement proper CORS policies. Never use wildcard (`*`) origins in production.
+- Enable strict compiler options (`strict`, `noImplicitAny`, `strictNullChecks`).
+- Avoid `as any`. Use proper type guards and validation instead.
+- Prevent prototype pollution by validating object keys and using proper type definitions.
+- Use `readonly` and `const` to prevent unintended mutations.

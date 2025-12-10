@@ -4,8 +4,6 @@ import (
 	"context"
 	"testing"
 
-	"github.com/stackrox/rox/central/activecomponent/updater"
-	updaterMocks "github.com/stackrox/rox/central/activecomponent/updater/mocks"
 	clusterDatastoreMocks "github.com/stackrox/rox/central/cluster/datastore/mocks"
 	nodeCVEDataStoreMocks "github.com/stackrox/rox/central/cve/node/datastore/mocks"
 	"github.com/stackrox/rox/central/deployment/datastore"
@@ -88,7 +86,6 @@ func Test_TwoPipelines_Run(t *testing.T) {
 		imageStorage      imageDS.DataStore
 		imageV2Storage    imageV2DS.DataStore
 		riskStorage       *riskStoreMock.MockDataStore
-		updater           updater.Updater
 	}
 	tests := map[string]struct {
 		mocks                     *usedMocks
@@ -164,7 +161,7 @@ func Test_TwoPipelines_Run(t *testing.T) {
 					// node arrives
 					m.clusterStore.EXPECT().GetClusterName(gomock.Any(), gomock.Eq(clusterID)).Return(clusterID, true, nil),
 					m.cveDatastore.EXPECT().EnrichNodeWithSuppressedCVEs(gomock.Any()),
-					m.riskStorage.EXPECT().UpsertRisk(gomock.Any(), gomock.Any()).Times(2).Return(nil),
+					m.riskStorage.EXPECT().UpsertRisk(gomock.Any(), gomock.Any()).Times(1).Return(nil),
 					m.nodeDatastore.EXPECT().UpsertNode(gomock.Any(), gomock.Any()).Return(nil),
 
 					// check what got stored in the DB
@@ -187,7 +184,6 @@ func Test_TwoPipelines_Run(t *testing.T) {
 				imageStorage:      imageStoreMock.NewMockDataStore(ctrl),
 				imageV2Storage:    imageV2StoreMock.NewMockDataStore(ctrl),
 				riskStorage:       riskStoreMock.NewMockDataStore(ctrl),
-				updater:           updaterMocks.NewMockUpdater(ctrl),
 			}
 			tt.riskManager = manager.New(
 				tt.mocks.nodeDatastore,
@@ -205,8 +201,6 @@ func Test_TwoPipelines_Run(t *testing.T) {
 				ranking.NamespaceRanker(),
 				ranking.ComponentRanker(),
 				ranking.NodeComponentRanker(),
-
-				tt.mocks.updater,
 
 				nil,
 			)

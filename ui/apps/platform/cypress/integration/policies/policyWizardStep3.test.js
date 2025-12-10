@@ -2,11 +2,11 @@ import { selectors } from '../../constants/PoliciesPage';
 import * as api from '../../constants/apiEndpoints';
 import withAuth from '../../helpers/basicAuth';
 import {
-    visitPolicies,
+    cloneFirstPolicyFromTable,
     doPolicyRowAction,
     editFirstPolicyFromTable,
-    cloneFirstPolicyFromTable,
     goToStep3,
+    visitPolicies,
 } from '../../helpers/policies';
 import { closeModalByButton } from '../../helpers/modal';
 import { hasFeatureFlag } from '../../helpers/features';
@@ -118,7 +118,7 @@ describe.skip('Policy wizard, Step 3 Policy Criteria', () => {
             'Image registry',
             'Image name',
             'Image tag',
-            'Image signature',
+            'Require image signature',
         ];
         cy.get('.pf-v5-c-tree-view__list-item:first').click();
         cy.get(TREE_VIEW_FIRST_LEVEL_CHILD).each((element, index) => {
@@ -387,7 +387,7 @@ describe.skip('Policy wizard, Step 3 Policy Criteria', () => {
 
                 goToPoliciesAndCloneToStep3();
                 clearPolicyCriteriaCards();
-                addPolicyField('Image signature');
+                addPolicyField('Require image signature');
                 cy.wait('@getSignatureIntegrations');
             });
 

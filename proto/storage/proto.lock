@@ -1,79 +1,6 @@
 {
   "definitions": [
     {
-      "protopath": "active_component.proto",
-      "def": {
-        "messages": [
-          {
-            "name": "ActiveComponent",
-            "fields": [
-              {
-                "id": 1,
-                "name": "id",
-                "type": "string"
-              },
-              {
-                "id": 3,
-                "name": "deployment_id",
-                "type": "string"
-              },
-              {
-                "id": 4,
-                "name": "component_id",
-                "type": "string"
-              },
-              {
-                "id": 5,
-                "name": "active_contexts_slice",
-                "type": "ActiveContext",
-                "is_repeated": true
-              }
-            ],
-            "maps": [
-              {
-                "key_type": "string",
-                "field": {
-                  "id": 2,
-                  "name": "DEPRECATED_active_contexts",
-                  "type": "ActiveContext"
-                }
-              }
-            ],
-            "messages": [
-              {
-                "name": "ActiveContext",
-                "fields": [
-                  {
-                    "id": 1,
-                    "name": "container_name",
-                    "type": "string"
-                  },
-                  {
-                    "id": 2,
-                    "name": "image_id",
-                    "type": "string"
-                  }
-                ]
-              }
-            ]
-          }
-        ],
-        "package": {
-          "name": "storage"
-        },
-        "options": [
-          {
-            "name": "go_package",
-            "value": "./storage;storage"
-          },
-          {
-            "name": "java_package",
-            "value": "io.stackrox.proto.storage"
-          }
-        ]
-      }
-    },
-    {
       "protopath": "administration_event.proto",
       "def": {
         "enums": [
@@ -344,6 +271,10 @@
               {
                 "name": "RESOURCE",
                 "integer": 3
+              },
+              {
+                "name": "NODE",
+                "integer": 4
               }
             ]
           },
@@ -464,6 +395,12 @@
                 "oneof_parent": "Entity"
               },
               {
+                "id": 24,
+                "name": "node",
+                "type": "Node",
+                "oneof_parent": "Entity"
+              },
+              {
                 "id": 5,
                 "name": "violations",
                 "type": "Violation",
@@ -473,6 +410,11 @@
                 "id": 13,
                 "name": "process_violation",
                 "type": "ProcessViolation"
+              },
+              {
+                "id": 25,
+                "name": "file_access_violation",
+                "type": "FileAccessViolation"
               },
               {
                 "id": 6,
@@ -640,6 +582,31 @@
                 ]
               },
               {
+                "name": "Node",
+                "fields": [
+                  {
+                    "id": 1,
+                    "name": "id",
+                    "type": "string"
+                  },
+                  {
+                    "id": 2,
+                    "name": "name",
+                    "type": "string"
+                  },
+                  {
+                    "id": 3,
+                    "name": "cluster_id",
+                    "type": "string"
+                  },
+                  {
+                    "id": 4,
+                    "name": "cluster_name",
+                    "type": "string"
+                  }
+                ]
+              },
+              {
                 "name": "Violation",
                 "fields": [
                   {
@@ -774,6 +741,22 @@
                 ]
               },
               {
+                "name": "FileAccessViolation",
+                "fields": [
+                  {
+                    "id": 1,
+                    "name": "message",
+                    "type": "string"
+                  },
+                  {
+                    "id": 2,
+                    "name": "accesses",
+                    "type": "FileAccess",
+                    "is_repeated": true
+                  }
+                ]
+              },
+              {
                 "name": "Enforcement",
                 "fields": [
                   {
@@ -844,6 +827,12 @@
                 "name": "resource",
                 "type": "ResourceEntity",
                 "oneof_parent": "Entity"
+              },
+              {
+                "id": 12,
+                "name": "node",
+                "type": "NodeEntity",
+                "oneof_parent": "Entity"
               }
             ],
             "reserved_ids": [
@@ -882,6 +871,16 @@
               },
               {
                 "name": "ResourceEntity",
+                "fields": [
+                  {
+                    "id": 1,
+                    "name": "name",
+                    "type": "string"
+                  }
+                ]
+              },
+              {
+                "name": "NodeEntity",
                 "fields": [
                   {
                     "id": 1,
@@ -1019,6 +1018,9 @@
           },
           {
             "path": "storage/deployment.proto"
+          },
+          {
+            "path": "storage/file_access.proto"
           },
           {
             "path": "storage/network_flow.proto"
@@ -1337,6 +1339,229 @@
           },
           {
             "path": "storage/traits.proto"
+          }
+        ],
+        "package": {
+          "name": "storage"
+        },
+        "options": [
+          {
+            "name": "go_package",
+            "value": "./storage;storage"
+          },
+          {
+            "name": "java_package",
+            "value": "io.stackrox.proto.storage"
+          }
+        ]
+      }
+    },
+    {
+      "protopath": "base_image.proto",
+      "def": {
+        "messages": [
+          {
+            "name": "BaseImage",
+            "fields": [
+              {
+                "id": 1,
+                "name": "id",
+                "type": "string"
+              },
+              {
+                "id": 2,
+                "name": "base_image_repository_id",
+                "type": "string"
+              },
+              {
+                "id": 3,
+                "name": "repository",
+                "type": "string"
+              },
+              {
+                "id": 4,
+                "name": "tag",
+                "type": "string"
+              },
+              {
+                "id": 5,
+                "name": "manifest_digest",
+                "type": "string"
+              },
+              {
+                "id": 6,
+                "name": "discovered_at",
+                "type": "google.protobuf.Timestamp"
+              },
+              {
+                "id": 7,
+                "name": "active",
+                "type": "bool"
+              },
+              {
+                "id": 8,
+                "name": "first_layer_digest",
+                "type": "string"
+              }
+            ]
+          },
+          {
+            "name": "BaseImageLayer",
+            "fields": [
+              {
+                "id": 1,
+                "name": "id",
+                "type": "string"
+              },
+              {
+                "id": 2,
+                "name": "base_image_id",
+                "type": "string"
+              },
+              {
+                "id": 3,
+                "name": "layer_digest",
+                "type": "string"
+              },
+              {
+                "id": 4,
+                "name": "index",
+                "type": "int32"
+              }
+            ]
+          }
+        ],
+        "imports": [
+          {
+            "path": "google/protobuf/timestamp.proto"
+          }
+        ],
+        "package": {
+          "name": "storage"
+        },
+        "options": [
+          {
+            "name": "go_package",
+            "value": "./storage;storage"
+          },
+          {
+            "name": "java_package",
+            "value": "io.stackrox.proto.storage"
+          }
+        ]
+      }
+    },
+    {
+      "protopath": "base_image_repository.proto",
+      "def": {
+        "enums": [
+          {
+            "name": "BaseImageRepository.HealthStatus",
+            "enum_fields": [
+              {
+                "name": "HEALTHY"
+              },
+              {
+                "name": "UNHEALTHY",
+                "integer": 1
+              },
+              {
+                "name": "DISABLED",
+                "integer": 2
+              }
+            ]
+          }
+        ],
+        "messages": [
+          {
+            "name": "BaseImageRepository",
+            "fields": [
+              {
+                "id": 1,
+                "name": "id",
+                "type": "string"
+              },
+              {
+                "id": 2,
+                "name": "repository_path",
+                "type": "string"
+              },
+              {
+                "id": 3,
+                "name": "tag_pattern",
+                "type": "string"
+              },
+              {
+                "id": 4,
+                "name": "updated_at",
+                "type": "google.protobuf.Timestamp"
+              },
+              {
+                "id": 5,
+                "name": "failure_count",
+                "type": "int32"
+              },
+              {
+                "id": 6,
+                "name": "health_status",
+                "type": "HealthStatus"
+              },
+              {
+                "id": 7,
+                "name": "pattern_hash",
+                "type": "string"
+              }
+            ]
+          },
+          {
+            "name": "BaseImageTag",
+            "fields": [
+              {
+                "id": 1,
+                "name": "id",
+                "type": "string"
+              },
+              {
+                "id": 2,
+                "name": "base_image_repository_id",
+                "type": "string"
+              },
+              {
+                "id": 3,
+                "name": "tag",
+                "type": "string"
+              },
+              {
+                "id": 4,
+                "name": "manifest_digest",
+                "type": "string"
+              },
+              {
+                "id": 5,
+                "name": "is_manifest_list",
+                "type": "bool"
+              },
+              {
+                "id": 6,
+                "name": "created",
+                "type": "google.protobuf.Timestamp"
+              }
+            ],
+            "maps": [
+              {
+                "key_type": "string",
+                "field": {
+                  "id": 7,
+                  "name": "list_digests",
+                  "type": "string"
+                }
+              }
+            ]
+          }
+        ],
+        "imports": [
+          {
+            "path": "google/protobuf/timestamp.proto"
           }
         ],
         "package": {
@@ -8101,11 +8326,11 @@
       }
     },
     {
-      "protopath": "file_activity.proto",
+      "protopath": "file_access.proto",
       "def": {
         "enums": [
           {
-            "name": "FileActivity.Operation",
+            "name": "FileAccess.Operation",
             "enum_fields": [
               {
                 "name": "CREATE"
@@ -8139,7 +8364,7 @@
         ],
         "messages": [
           {
-            "name": "FileActivity",
+            "name": "FileAccess",
             "fields": [
               {
                 "id": 1,
@@ -8154,8 +8379,7 @@
               {
                 "id": 3,
                 "name": "moved",
-                "type": "File",
-                "optional": true
+                "type": "File"
               },
               {
                 "id": 4,
@@ -8166,6 +8390,11 @@
                 "id": 5,
                 "name": "process",
                 "type": "ProcessIndicator"
+              },
+              {
+                "id": 6,
+                "name": "hostname",
+                "type": "string"
               }
             ],
             "messages": [
@@ -8204,12 +8433,12 @@
                 "fields": [
                   {
                     "id": 1,
-                    "name": "path",
+                    "name": "mounted_path",
                     "type": "string"
                   },
                   {
                     "id": 2,
-                    "name": "host_path",
+                    "name": "node_path",
                     "type": "string"
                   },
                   {
@@ -9351,6 +9580,11 @@
                 "id": 14,
                 "name": "image_id_v2",
                 "type": "string"
+              },
+              {
+                "id": 15,
+                "name": "from_base_image",
+                "type": "bool"
               }
             ]
           }
@@ -13104,6 +13338,10 @@
               {
                 "name": "AUDIT_LOG_EVENT",
                 "integer": 2
+              },
+              {
+                "name": "NODE_EVENT",
+                "integer": 3
               }
             ]
           },
@@ -19372,6 +19610,11 @@
               {
                 "id": 16,
                 "name": "first_image_occurrence",
+                "type": "google.protobuf.Timestamp"
+              },
+              {
+                "id": 25,
+                "name": "fix_available_timestamp",
                 "type": "google.protobuf.Timestamp"
               },
               {

@@ -1,5 +1,4 @@
-import React from 'react';
-import { Td, Thead, Tr, Tbody, Th, Table } from '@patternfly/react-table';
+import { Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 
 import type { CveComponentRow } from '../aggregateUtils';
 import AdvisoryLinkOrText from '../../components/AdvisoryLinkOrText';
@@ -15,10 +14,10 @@ function VirtualMachineComponentsTable({ components }: VirtualMachineComponentsT
             <Thead noWrap>
                 <Tr>
                     <Th>Component</Th>
-                    <Th>Type</Th>
                     <Th>Version</Th>
                     <Th>CVE fixed in</Th>
                     <Th>Advisory</Th>
+                    <Th>Type</Th>
                 </Tr>
             </Thead>
             <Tbody>
@@ -26,7 +25,6 @@ function VirtualMachineComponentsTable({ components }: VirtualMachineComponentsT
                     return (
                         <Tr key={name}>
                             <Td dataLabel="Component">{name}</Td>
-                            <Td dataLabel="Type">{sourceType}</Td>
                             <Td dataLabel="Version">{version}</Td>
                             <Td dataLabel="CVE fixed in">
                                 <FixedByVersion fixedByVersion={fixedBy ?? ''} />
@@ -34,6 +32,7 @@ function VirtualMachineComponentsTable({ components }: VirtualMachineComponentsT
                             <Td dataLabel="Advisory">
                                 <AdvisoryLinkOrText advisory={advisory} />
                             </Td>
+                            <Td dataLabel="Type">{sourceType}</Td>
                         </Tr>
                     );
                 })}

@@ -1,10 +1,15 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Flex } from '@patternfly/react-core';
 
 import type { SearchFilter } from 'types/search';
 import { ensureString } from 'utils/ensure';
-import type { CompoundSearchFilterConfig, OnSearchPayload } from '../types';
-import { getDefaultAttributeName, getDefaultEntityName } from '../utils/utils';
+import { isOnSearchPayload } from '../types';
+import type { CompoundSearchFilterConfig, OnSearchCallback } from '../types';
+import {
+    getDefaultAttributeName,
+    getDefaultEntityName,
+    payloadItemFiltererForUpdating,
+} from '../utils/utils';
 
 import EntitySelector from './EntitySelector';
 import type { SelectedEntity } from './EntitySelector';
@@ -19,7 +24,7 @@ export type CompoundSearchFilterProps = {
     defaultAttribute?: string;
     searchFilter: SearchFilter;
     additionalContextFilter?: SearchFilter;
-    onSearch: ({ action, category, value }: OnSearchPayload) => void;
+    onSearch: OnSearchCallback;
 };
 
 function CompoundSearchFilter({
@@ -111,15 +116,13 @@ function CompoundSearchFilter({
                 searchFilter={searchFilter}
                 additionalContextFilter={additionalContextFilter}
                 onSearch={(payload) => {
-                    const { action, category, value } = payload;
-                    const shouldSearch =
-                        (action === 'ADD' &&
-                            value !== '' &&
-                            !searchFilter?.[category]?.includes(value)) ||
-                        (action === 'REMOVE' && value !== '');
+                    // TODO What is pro and con for search filter input field to prevent empty string and filter?
+                    const payloadFiltered = payload.filter((payloadItem) =>
+                        payloadItemFiltererForUpdating(searchFilter, payloadItem)
+                    );
 
-                    if (shouldSearch) {
-                        onSearch(payload);
+                    if (isOnSearchPayload(payloadFiltered)) {
+                        onSearch(payloadFiltered);
                     }
                 }}
                 config={config}

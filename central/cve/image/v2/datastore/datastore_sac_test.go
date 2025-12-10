@@ -9,7 +9,6 @@ import (
 	graphDBTestUtils "github.com/stackrox/rox/central/graphdb/testutils"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/cve"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sac"
@@ -37,10 +36,6 @@ type cveV2DataStoreSACTestSuite struct {
 }
 
 func (s *cveV2DataStoreSACTestSuite) SetupSuite() {
-	if !features.FlattenCVEData.Enabled() {
-		s.T().Setenv(features.FlattenCVEData.EnvVar(), "true")
-	}
-
 	var err error
 	s.testGraphDatastore, err = graphDBTestUtils.NewTestGraphDataStore(s.T())
 	s.Require().NoError(err)
@@ -429,6 +424,11 @@ func (s *cveV2DataStoreSACTestSuite) TestSACImageCVESearchCVEs() {
 		fetchedCVEIDs := make([]string, 0, len(results))
 		for _, result := range results {
 			fetchedCVEIDs = append(fetchedCVEIDs, result.GetId())
+
+			// Verify that each result has proper fields populated
+			// CVE name should be the actual CVE string (e.g., "CVE-1234-0001")
+			// ID is a composite key that includes component and image context
+			s.Contains(result.GetId(), result.GetName(), "CVE ID should contain the CVE name")
 		}
 		s.ElementsMatch(expectedCVEIDs, fetchedCVEIDs)
 	})

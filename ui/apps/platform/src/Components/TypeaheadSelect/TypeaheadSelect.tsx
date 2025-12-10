@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import type {
     FocusEventHandler,
     FormEvent,
@@ -9,13 +9,13 @@ import type {
     Ref,
 } from 'react';
 import {
-    Select,
-    SelectOption,
+    MenuFooter,
     MenuToggle,
+    Select,
     SelectList,
+    SelectOption,
     TextInputGroup,
     TextInputGroupMain,
-    MenuFooter,
 } from '@patternfly/react-core';
 import type { MenuToggleElement } from '@patternfly/react-core';
 

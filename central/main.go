@@ -28,6 +28,7 @@ import (
 	authProviderRegistry "github.com/stackrox/rox/central/authprovider/registry"
 	authProviderSvc "github.com/stackrox/rox/central/authprovider/service"
 	authProviderTelemetry "github.com/stackrox/rox/central/authprovider/telemetry"
+	baseImageWatcher "github.com/stackrox/rox/central/baseimage/watcher"
 	centralHealthService "github.com/stackrox/rox/central/centralhealth/service"
 	"github.com/stackrox/rox/central/certgen"
 	certHandler "github.com/stackrox/rox/central/certs/handlers"
@@ -64,7 +65,6 @@ import (
 	"github.com/stackrox/rox/central/cve/csv"
 	"github.com/stackrox/rox/central/cve/fetcher"
 	imageCveCsv "github.com/stackrox/rox/central/cve/image/csv"
-	imageCVEService "github.com/stackrox/rox/central/cve/image/service"
 	nodeCveCsv "github.com/stackrox/rox/central/cve/node/csv"
 	nodeCVEService "github.com/stackrox/rox/central/cve/node/service"
 	"github.com/stackrox/rox/central/cve/suppress"
@@ -178,7 +178,6 @@ import (
 	virtualmachineService "github.com/stackrox/rox/central/virtualmachine/service"
 	vulnMgmtService "github.com/stackrox/rox/central/vulnmgmt/service"
 	vulnRequestManager "github.com/stackrox/rox/central/vulnmgmt/vulnerabilityrequest/manager/requestmgr"
-	vulnRequestService "github.com/stackrox/rox/central/vulnmgmt/vulnerabilityrequest/service"
 	vulnRequestServiceV2 "github.com/stackrox/rox/central/vulnmgmt/vulnerabilityrequest/service/v2"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/authproviders"
@@ -379,6 +378,9 @@ func startServices() {
 	reprocessor.Singleton().Start()
 	suppress.Singleton().Start()
 	pruning.Singleton().Start()
+	if env.BaseImageWatcherEnabled.BooleanSetting() {
+		baseImageWatcher.Singleton().Start()
+	}
 	gatherer.Singleton().Start()
 	vulnRequestManager.Singleton().Start()
 	apiTokenExpiration.Singleton().Start()
@@ -429,7 +431,6 @@ func servicesToRegister() []pkgGRPC.APIService {
 		grpcPreferences.Singleton(),
 		helmcharts.NewService(),
 		iiService.Singleton(),
-		imageCVEService.Singleton(),
 		imageService.Singleton(),
 		integrationHealthService.Singleton(),
 		metadataService.New(),
@@ -462,9 +463,7 @@ func servicesToRegister() []pkgGRPC.APIService {
 		telemetryService.Singleton(),
 		userService.Singleton(),
 		vulnMgmtService.Singleton(),
-		// TODO: [ROX-20245] Make the "/v1/cve/requests" APIs unavailable.
-		// This cannot be now because the frontend is not ready with the feature flag checks.
-		vulnRequestService.Singleton(),
+		vulnRequestServiceV2.Singleton(),
 	}
 
 	// The scheduled backup service is not applicable when using an external database
@@ -485,10 +484,6 @@ func servicesToRegister() []pkgGRPC.APIService {
 		servicesToRegister = append(servicesToRegister, v2ComplianceRules.Singleton())
 		// TODO: this is only done to initialize the table. Once we have a service we can move this there
 		v2ComplianceBenchmark.Singleton()
-	}
-
-	if features.UnifiedCVEDeferral.Enabled() {
-		servicesToRegister = append(servicesToRegister, vulnRequestServiceV2.Singleton())
 	}
 
 	if features.VirtualMachines.Enabled() {
@@ -998,6 +993,10 @@ func waitForTerminationSignal() {
 		{gcp.Singleton(), "GCP cloud credentials manager"},
 		{cloudSourcesManager.Singleton(), "cloud sources manager"},
 		{administrationEventHandler.Singleton(), "administration events handler"},
+	}
+
+	if env.BaseImageWatcherEnabled.BooleanSetting() {
+		stoppables = append(stoppables, stoppableWithName{baseImageWatcher.Singleton(), "base image watcher"})
 	}
 
 	stoppables = append(stoppables,

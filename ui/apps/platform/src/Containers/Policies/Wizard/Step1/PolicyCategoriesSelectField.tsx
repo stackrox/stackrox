@@ -1,20 +1,20 @@
-import React, { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import type { FormEvent, MouseEvent as ReactMouseEvent, ReactElement, Ref } from 'react';
 import {
+    Button,
+    Chip,
+    ChipGroup,
     FormGroup,
     FormHelperText,
     HelperText,
     HelperTextItem,
-    Select,
-    SelectOption,
-    SelectList,
     MenuToggle,
+    Select,
+    SelectList,
+    SelectOption,
     TextInputGroup,
     TextInputGroupMain,
     TextInputGroupUtilities,
-    ChipGroup,
-    Chip,
-    Button,
 } from '@patternfly/react-core';
 import type { MenuToggleElement } from '@patternfly/react-core';
 import { useField } from 'formik';
@@ -31,7 +31,7 @@ function PolicyCategoriesSelectField(): ReactElement {
     // Used to temporarily prevent dropdown from closing after selecting an item to maintain multi-select UX
     const [preventClose, setPreventClose] = useState(false);
 
-    const selectedCategories: string[] = (field.value as string[]) || [];
+    const selectedCategories: string[] = (field.value as string[]) ?? [];
 
     const onToggle = () => {
         setIsOpen(!isOpen);

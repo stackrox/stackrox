@@ -28,6 +28,8 @@ import (
 	"github.com/stackrox/rox/sensor/common/deploymentenhancer"
 	"github.com/stackrox/rox/sensor/common/detector"
 	"github.com/stackrox/rox/sensor/common/externalsrcs"
+	filesystemPipeline "github.com/stackrox/rox/sensor/common/filesystem/pipeline"
+	filesystemService "github.com/stackrox/rox/sensor/common/filesystem/service"
 	"github.com/stackrox/rox/sensor/common/heritage"
 	"github.com/stackrox/rox/sensor/common/image"
 	"github.com/stackrox/rox/sensor/common/image/cache"
@@ -117,7 +119,7 @@ func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 
 	pubSub := internalmessage.NewMessageSubscriber()
 
-	policyDetector := detector.New(clusterID, enforcer, admCtrlSettingsMgr, storeProvider.Deployments(), storeProvider.ServiceAccounts(), imageCache, auditLogEventsInput, auditLogCollectionManager, storeProvider.NetworkPolicies(), storeProvider.Registries(), localScan)
+	policyDetector := detector.New(clusterID, enforcer, admCtrlSettingsMgr, storeProvider.Deployments(), storeProvider.ServiceAccounts(), imageCache, auditLogEventsInput, auditLogCollectionManager, storeProvider.NetworkPolicies(), storeProvider.Registries(), localScan, storeProvider.Nodes())
 	reprocessorHandler := reprocessor.NewHandler(admCtrlSettingsMgr, policyDetector, imageCache)
 	pipeline := eventpipeline.New(clusterID, cfg.k8sClient, configHandler, policyDetector, reprocessorHandler, k8sNodeName.Setting(), cfg.traceWriter, storeProvider, cfg.eventPipelineQueueSize, pubSub)
 	admCtrlMsgForwarder := admissioncontroller.NewAdmCtrlMsgForwarder(admCtrlSettingsMgr, pipeline)
@@ -128,6 +130,9 @@ func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 	// Create Process Pipeline
 	indicators := make(chan *message.ExpiringMessage, queue.ScaleSizeOnNonDefault(env.ProcessIndicatorBufferSize))
 	processPipeline := processsignal.NewProcessPipeline(indicators, storeProvider.Entities(), processfilter.Singleton(), policyDetector)
+	if cfg.processPipelineObserver != nil {
+		cfg.processPipelineObserver(processPipeline)
+	}
 	var processSignals signalService.Service
 	if cfg.signalServiceAuthFuncOverride != nil && cfg.localSensor {
 		processSignals = signalService.New(processPipeline, indicators,
@@ -211,6 +216,12 @@ func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 
 	if cfg.workloadManager != nil {
 		cfg.workloadManager.SetSignalHandlers(processPipeline, networkFlowManager)
+		if features.VirtualMachines.Enabled() && virtualMachineHandler != nil {
+			cfg.workloadManager.SetVMIndexReportHandler(virtualMachineHandler)
+			cfg.workloadManager.SetVMStore(storeProvider.VirtualMachines())
+			// Register WorkloadManager as a Notifiable so it receives SensorComponentEvent notifications
+			s.AddNotifiable(cfg.workloadManager)
+		}
 	}
 
 	var networkFlowService service.Service
@@ -227,6 +238,13 @@ func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 		complianceService,
 		imageService,
 		deployment.NewService(storeProvider.Deployments(), storeProvider.Pods()),
+	}
+
+	if features.SensitiveFileActivity.Enabled() {
+		activityChan := make(chan *sensorInternal.FileActivity)
+		fileSystemPipeline := filesystemPipeline.NewFileSystemPipeline(policyDetector, storeProvider.Entities(), activityChan)
+		fileSystemService := filesystemService.NewService(fileSystemPipeline, activityChan)
+		apiServices = append(apiServices, fileSystemService)
 	}
 
 	if features.VirtualMachines.Enabled() {

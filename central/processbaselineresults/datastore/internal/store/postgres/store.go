@@ -4,7 +4,6 @@ package postgres
 
 import (
 	"context"
-	"slices"
 	"strings"
 	"time"
 
@@ -22,7 +21,6 @@ import (
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
 	pgSearch "github.com/stackrox/rox/pkg/search/postgres"
-	"gorm.io/gorm"
 )
 
 const (
@@ -139,12 +137,18 @@ func copyFromProcessBaselineResults(ctx context.Context, s pgSearch.Deleter, tx 
 	if len(objs) == 0 {
 		return nil
 	}
-	batchSize := min(len(objs), pgSearch.MaxBatchSize)
-	inputRows := make([][]interface{}, 0, batchSize)
 
-	// This is a copy so first we must delete the rows and re-add them
-	// Which is essentially the desired behaviour of an upsert.
-	deletes := make([]string, 0, batchSize)
+	{
+		// CopyFrom does not upsert, so delete existing rows first to achieve upsert behavior.
+		// Parent deletion cascades to children, so only the top-level parent needs deletion.
+		deletes := make([]string, 0, len(objs))
+		for _, obj := range objs {
+			deletes = append(deletes, obj.GetDeploymentId())
+		}
+		if err := s.DeleteMany(ctx, deletes); err != nil {
+			return err
+		}
+	}
 
 	copyCols := []string{
 		"deploymentid",
@@ -153,66 +157,32 @@ func copyFromProcessBaselineResults(ctx context.Context, s pgSearch.Deleter, tx 
 		"serialized",
 	}
 
-	for objBatch := range slices.Chunk(objs, batchSize) {
-		for _, obj := range objBatch {
-			// Todo: ROX-9499 Figure out how to more cleanly template around this issue.
-			log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj "+
-				"in the loop is not used as it only consists of the parent ID and the index.  Putting this here as a stop gap "+
-				"to simply use the object.  %s", obj)
+	idx := 0
+	inputRows := pgx.CopyFromFunc(func() ([]any, error) {
+		if idx >= len(objs) {
+			return nil, nil
+		}
+		obj := objs[idx]
+		idx++
 
-			serialized, marshalErr := obj.MarshalVT()
-			if marshalErr != nil {
-				return marshalErr
-			}
-
-			inputRows = append(inputRows, []interface{}{
-				pgutils.NilOrUUID(obj.GetDeploymentId()),
-				pgutils.NilOrUUID(obj.GetClusterId()),
-				obj.GetNamespace(),
-				serialized,
-			})
-
-			// Add the ID to be deleted.
-			deletes = append(deletes, obj.GetDeploymentId())
+		serialized, marshalErr := obj.MarshalVT()
+		if marshalErr != nil {
+			return nil, marshalErr
 		}
 
-		// copy does not upsert so have to delete first.  parent deletion cascades so only need to
-		// delete for the top level parent
+		return []interface{}{
+			pgutils.NilOrUUID(obj.GetDeploymentId()),
+			pgutils.NilOrUUID(obj.GetClusterId()),
+			obj.GetNamespace(),
+			serialized,
+		}, nil
+	})
 
-		if err := s.DeleteMany(ctx, deletes); err != nil {
-			return err
-		}
-		// clear the inserts and vals for the next batch
-		deletes = deletes[:0]
-
-		if _, err := tx.CopyFrom(ctx, pgx.Identifier{"process_baseline_results"}, copyCols, pgx.CopyFromRows(inputRows)); err != nil {
-			return err
-		}
-		// clear the input rows for the next batch
-		inputRows = inputRows[:0]
+	if _, err := tx.CopyFrom(ctx, pgx.Identifier{"process_baseline_results"}, copyCols, inputRows); err != nil {
+		return err
 	}
 
 	return nil
 }
 
 // endregion Helper functions
-
-// region Used for testing
-
-// CreateTableAndNewStore returns a new Store instance for testing.
-func CreateTableAndNewStore(ctx context.Context, db postgres.DB, gormDB *gorm.DB) Store {
-	pkgSchema.ApplySchemaForTable(ctx, gormDB, baseTable)
-	return New(db)
-}
-
-// Destroy drops the tables associated with the target object type.
-func Destroy(ctx context.Context, db postgres.DB) {
-	dropTableProcessBaselineResults(ctx, db)
-}
-
-func dropTableProcessBaselineResults(ctx context.Context, db postgres.DB) {
-	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS process_baseline_results CASCADE")
-
-}
-
-// endregion Used for testing
