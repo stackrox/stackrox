@@ -33,7 +33,7 @@ export const KnownExploit: CompoundSearchFilterAttribute = {
         category2: 'Known Ransonware Campaign',
         options: [
             {
-                label: 'Has a known expoit',
+                label: 'Has a known exploit',
                 category: 'Known Exploit',
                 value: 'true',
             },
