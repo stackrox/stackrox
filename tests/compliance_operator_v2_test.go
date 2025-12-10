@@ -276,6 +276,26 @@ func TestComplianceV2CentralSendsScanConfiguration(t *testing.T) {
 		assertScanSettingBinding(wrapCollectT(t, c), scanConfig, scanSettingBinding)
 	}, eventuallyTimeout, 2*time.Second)
 
+	// DEBUG: Query and log all available profiles for this cluster
+	t.Log("========== DEBUG: Listing all available compliance profiles ==========")
+	profileClient := v2.NewComplianceProfileServiceClient(conn)
+	profileList, err := profileClient.ListComplianceProfiles(ctx, &v2.ProfilesForClusterRequest{ClusterId: clusterID})
+	if err != nil {
+		t.Logf("ERROR: Failed to list profiles: %v", err)
+	} else {
+		t.Logf("Found %d total profiles on cluster %s", len(profileList.Profiles), clusterID)
+		for i, profile := range profileList.Profiles {
+			t.Logf("  Profile %d:", i+1)
+			t.Logf("    Name: %s", profile.Name)
+			t.Logf("    Title: %s", profile.Title)
+			t.Logf("    ProfileVersion: %s", profile.ProfileVersion)
+			t.Logf("    ProductType: %s", profile.ProductType)
+			t.Logf("    Description: %s", profile.Description)
+			t.Logf("    ---")
+		}
+	}
+	t.Log("========== END DEBUG: Profile listing ==========")
+
 	// Scale down Sensor
 	assert.NoError(t, scaleToN(ctx, k8sClient, "sensor", stackroxNamespace, 0))
 	waitForDeploymentReady(ctx, t, "sensor", stackroxNamespace, 0)
