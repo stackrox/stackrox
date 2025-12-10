@@ -110,9 +110,9 @@ func getRandomVMPair(vsockCID uint32, guestOSes []string) (*unstructured.Unstruc
 	}
 
 	// VMI gets a unique UUID based on template index and iteration
-	// Format: 00000000-0000-4000-9000-{6-digit-index}{6-digit-iteration}
+	// Format: 00000000-0000-4000-9000-{12-digit-vsockCID}
 	vmiUID := types.UID(fmt.Sprintf("00000000-0000-4000-9000-%012d", vsockCID))
-	vmiName := fmt.Sprintf("%s-%d-vmi", "vm", vsockCID)
+	vmiName := fmt.Sprintf("vm-%d-vmi", vsockCID)
 	vmi := &kubeVirtV1.VirtualMachineInstance{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "VirtualMachineInstance",
