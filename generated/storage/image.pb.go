@@ -863,7 +863,6 @@ type EmbeddedImageScanComponent struct {
 	// Values are cleared after moving to cache, remove them from the grpc return as well
 	Executables   []*EmbeddedImageScanComponent_Executable `protobuf:"bytes,12,rep,name=executables,proto3" json:"-"` // @gotags: json:"-"
 	Architecture  string                                   `protobuf:"bytes,13,opt,name=architecture,proto3" json:"architecture,omitempty"`
-	FromBaseImage bool                                     `protobuf:"varint,14,opt,name=fromBaseImage,proto3" json:"fromBaseImage,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1005,13 +1004,6 @@ func (x *EmbeddedImageScanComponent) GetArchitecture() string {
 		return x.Architecture
 	}
 	return ""
-}
-
-func (x *EmbeddedImageScanComponent) GetFromBaseImage() bool {
-	if x != nil {
-		return x.FromBaseImage
-	}
-	return false
 }
 
 type isEmbeddedImageScanComponent_HasLayerIndex interface {
@@ -2071,7 +2063,7 @@ const file_storage_image_proto_rawDesc = "" +
 	"\x13FAILED_VERIFICATION\x10\x02\x12\x1a\n" +
 	"\x16INVALID_SIGNATURE_ALGO\x10\x03\x12\x17\n" +
 	"\x13CORRUPTED_SIGNATURE\x10\x04\x12\x11\n" +
-	"\rGENERIC_ERROR\x10\x05\"\x90\x05\n" +
+	"\rGENERIC_ERROR\x10\x05\"\xea\x04\n" +
 	"\x1aEmbeddedImageScanComponent\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12\x18\n" +
 	"\aversion\x18\x02 \x01(\tR\aversion\x12*\n" +
@@ -2088,8 +2080,7 @@ const file_storage_image_proto_rawDesc = "" +
 	" \x01(\x02R\triskScore\x12\x19\n" +
 	"\bfixed_by\x18\v \x01(\tR\afixedBy\x12P\n" +
 	"\vexecutables\x18\f \x03(\v2..storage.EmbeddedImageScanComponent.ExecutableR\vexecutables\x12\"\n" +
-	"\farchitecture\x18\r \x01(\tR\farchitecture\x12$\n" +
-	"\rfromBaseImage\x18\x0e \x01(\bR\rfromBaseImage\x1aD\n" +
+	"\farchitecture\x18\r \x01(\tR\farchitecture\x1aD\n" +
 	"\n" +
 	"Executable\x12\x12\n" +
 	"\x04path\x18\x01 \x01(\tR\x04path\x12\"\n" +
