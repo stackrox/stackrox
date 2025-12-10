@@ -4,7 +4,6 @@ package service
 
 import (
 	"context"
-	"slices"
 	"testing"
 
 	deploymentDS "github.com/stackrox/rox/central/deployment/datastore"
@@ -19,9 +18,9 @@ import (
 	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
 )
@@ -222,7 +221,6 @@ func (suite *ProcessBaselineServiceRealTestSuite) TestGetProcessBaselineBulk() {
 	testCases := []struct {
 		name              string
 		query             *v1.ProcessBaselineQuery
-		expectedCount     int
 		expectedBaselines []*storage.ProcessBaseline
 	}{
 		{
@@ -230,7 +228,6 @@ func (suite *ProcessBaselineServiceRealTestSuite) TestGetProcessBaselineBulk() {
 			query: &v1.ProcessBaselineQuery{
 				ClusterIds: []string{cluster1},
 			},
-			expectedCount:     2,
 			expectedBaselines: []*storage.ProcessBaseline{baseline1, baseline2},
 		},
 		{
@@ -238,7 +235,6 @@ func (suite *ProcessBaselineServiceRealTestSuite) TestGetProcessBaselineBulk() {
 			query: &v1.ProcessBaselineQuery{
 				Namespaces: []string{namespace2},
 			},
-			expectedCount:     4,
 			expectedBaselines: []*storage.ProcessBaseline{baseline2, baseline3, baseline4, baseline5},
 		},
 		{
@@ -246,7 +242,6 @@ func (suite *ProcessBaselineServiceRealTestSuite) TestGetProcessBaselineBulk() {
 			query: &v1.ProcessBaselineQuery{
 				DeploymentIds: []string{deployment1ID},
 			},
-			expectedCount:     1,
 			expectedBaselines: []*storage.ProcessBaseline{baseline1},
 		},
 		{
@@ -254,7 +249,6 @@ func (suite *ProcessBaselineServiceRealTestSuite) TestGetProcessBaselineBulk() {
 			query: &v1.ProcessBaselineQuery{
 				ContainerNames: []string{"container1"},
 			},
-			expectedCount:     2,
 			expectedBaselines: []*storage.ProcessBaseline{baseline1, baseline3},
 		},
 		{
@@ -262,7 +256,6 @@ func (suite *ProcessBaselineServiceRealTestSuite) TestGetProcessBaselineBulk() {
 			query: &v1.ProcessBaselineQuery{
 				ContainerNames: []string{"container2"},
 			},
-			expectedCount:     1,
 			expectedBaselines: []*storage.ProcessBaseline{baseline2},
 		},
 		{
@@ -270,7 +263,6 @@ func (suite *ProcessBaselineServiceRealTestSuite) TestGetProcessBaselineBulk() {
 			query: &v1.ProcessBaselineQuery{
 				ContainerNames: []string{"container3"},
 			},
-			expectedCount:     1,
 			expectedBaselines: []*storage.ProcessBaseline{baseline4},
 		},
 		{
@@ -278,7 +270,6 @@ func (suite *ProcessBaselineServiceRealTestSuite) TestGetProcessBaselineBulk() {
 			query: &v1.ProcessBaselineQuery{
 				ContainerNames: []string{"container4"},
 			},
-			expectedCount:     1,
 			expectedBaselines: []*storage.ProcessBaseline{baseline5},
 		},
 		{
@@ -286,7 +277,6 @@ func (suite *ProcessBaselineServiceRealTestSuite) TestGetProcessBaselineBulk() {
 			query: &v1.ProcessBaselineQuery{
 				DeploymentNames: []string{"test-deployment-1"},
 			},
-			expectedCount:     4,
 			expectedBaselines: []*storage.ProcessBaseline{baseline1, baseline3, baseline4, baseline5},
 		},
 		{
@@ -294,7 +284,6 @@ func (suite *ProcessBaselineServiceRealTestSuite) TestGetProcessBaselineBulk() {
 			query: &v1.ProcessBaselineQuery{
 				DeploymentNames: []string{"test-deployment-2"},
 			},
-			expectedCount:     1,
 			expectedBaselines: []*storage.ProcessBaseline{baseline2},
 		},
 		{
@@ -302,7 +291,6 @@ func (suite *ProcessBaselineServiceRealTestSuite) TestGetProcessBaselineBulk() {
 			query: &v1.ProcessBaselineQuery{
 				Images: []string{"nginx:1.19"},
 			},
-			expectedCount:     1,
 			expectedBaselines: []*storage.ProcessBaseline{baseline1},
 		},
 		{
@@ -310,7 +298,6 @@ func (suite *ProcessBaselineServiceRealTestSuite) TestGetProcessBaselineBulk() {
 			query: &v1.ProcessBaselineQuery{
 				Images: []string{"redis:6.0"},
 			},
-			expectedCount:     3,
 			expectedBaselines: []*storage.ProcessBaseline{baseline2, baseline3, baseline4},
 		},
 		{
@@ -319,7 +306,6 @@ func (suite *ProcessBaselineServiceRealTestSuite) TestGetProcessBaselineBulk() {
 				Images:         []string{"redis:6.0"},
 				ContainerNames: []string{"container1"},
 			},
-			expectedCount:     1,
 			expectedBaselines: []*storage.ProcessBaseline{baseline3},
 		},
 		{
@@ -328,7 +314,6 @@ func (suite *ProcessBaselineServiceRealTestSuite) TestGetProcessBaselineBulk() {
 				ClusterIds: []string{cluster1},
 				Namespaces: []string{namespace1},
 			},
-			expectedCount:     1,
 			expectedBaselines: []*storage.ProcessBaseline{baseline1},
 		},
 		{
@@ -337,7 +322,6 @@ func (suite *ProcessBaselineServiceRealTestSuite) TestGetProcessBaselineBulk() {
 				DeploymentNames: []string{"test-deployment-1"},
 				Images:          []string{"nginx:1.19"},
 			},
-			expectedCount:     1,
 			expectedBaselines: []*storage.ProcessBaseline{baseline1},
 		},
 		{
@@ -346,13 +330,11 @@ func (suite *ProcessBaselineServiceRealTestSuite) TestGetProcessBaselineBulk() {
 				Images:         []string{"nginx:1.19"},
 				ContainerNames: []string{"container1"},
 			},
-			expectedCount:     1,
 			expectedBaselines: []*storage.ProcessBaseline{baseline1},
 		},
 		{
 			name:              "No filters returns all baselines",
 			query:             &v1.ProcessBaselineQuery{},
-			expectedCount:     5,
 			expectedBaselines: baselines,
 		},
 		{
@@ -360,7 +342,6 @@ func (suite *ProcessBaselineServiceRealTestSuite) TestGetProcessBaselineBulk() {
 			query: &v1.ProcessBaselineQuery{
 				DeploymentNames: []string{"non-existent"},
 			},
-			expectedCount:     0,
 			expectedBaselines: []*storage.ProcessBaseline{},
 		},
 		{
@@ -368,7 +349,6 @@ func (suite *ProcessBaselineServiceRealTestSuite) TestGetProcessBaselineBulk() {
 			query: &v1.ProcessBaselineQuery{
 				Images: []string{"non-existent:1.0"},
 			},
-			expectedCount:     0,
 			expectedBaselines: []*storage.ProcessBaseline{},
 		},
 	}
@@ -381,24 +361,8 @@ func (suite *ProcessBaselineServiceRealTestSuite) TestGetProcessBaselineBulk() {
 
 			resp, err := suite.service.GetProcessBaselineBulk(writeCtx, request)
 			suite.NoError(err)
-			suite.NotNil(resp)
-			suite.Len(resp.GetBaselines(), tc.expectedCount)
-			suite.Equal(int32(tc.expectedCount), resp.GetTotalCount())
 
-			// Verify the returned baselines match expected
-			returnedKeys := make([]string, 0, len(resp.GetBaselines()))
-			for _, b := range resp.GetBaselines() {
-				returnedKeys = append(returnedKeys, b.GetId())
-			}
-			slices.Sort(returnedKeys)
-
-			expectedKeys := make([]string, 0, len(tc.expectedBaselines))
-			for _, b := range tc.expectedBaselines {
-				expectedKeys = append(expectedKeys, b.GetId())
-			}
-			slices.Sort(expectedKeys)
-
-			assert.Equal(t, expectedKeys, returnedKeys)
+			protoassert.ElementsMatch(t, tc.expectedBaselines, resp.GetBaselines())
 		})
 	}
 }
