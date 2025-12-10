@@ -15,7 +15,6 @@ import (
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	storage "github.com/stackrox/rox/generated/storage"
-	search "github.com/stackrox/rox/pkg/search"
 	gomock "go.uber.org/mock/gomock"
 )
 
@@ -102,21 +101,6 @@ func (m *MockDataStore) GetBatch(ctx context.Context, id []string) ([]*storage.I
 func (mr *MockDataStoreMockRecorder) GetBatch(ctx, id any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetBatch", reflect.TypeOf((*MockDataStore)(nil).GetBatch), ctx, id)
-}
-
-// Search mocks base method.
-func (m *MockDataStore) Search(ctx context.Context, q *v1.Query) ([]search.Result, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Search", ctx, q)
-	ret0, _ := ret[0].([]search.Result)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// Search indicates an expected call of Search.
-func (mr *MockDataStoreMockRecorder) Search(ctx, q any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Search", reflect.TypeOf((*MockDataStore)(nil).Search), ctx, q)
 }
 
 // SearchRawImageCVEInfos mocks base method.
