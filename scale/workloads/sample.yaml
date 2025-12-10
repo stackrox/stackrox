@@ -74,12 +74,12 @@ virtualMachineWorkload:
   lifecycleDuration: 5m
   # Number of times to recreate VMs beyond the initial scale up (0 = infinite)
   numLifecycles: 0
-  # How often each VM sends an index report (0 = no reports, informer events only). 5% jitter applied.
+  # How often each VM sends an index report (0 = no reports, informer events only). ±5% max deviation applied.
   reportInterval: 60s
   # Number of fake packages to include in each index report
   numPackages: 100
   # Number of fake repositories to include in each index report
   numRepositories: 10
-  # Delay before the first index report for each VM (±20% jitter applied)
+  # Delay before the first index report for each VM (±20% max deviation applied)
   initialReportDelay: 10s
 

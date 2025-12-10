@@ -39,14 +39,14 @@ func randString() string {
 	return string(b)
 }
 
-// jitteredInterval returns a duration with random jitter applied.
-// The result is in the range [interval * (1 - jitterPercent), interval * (1 + jitterPercent)].
-// For example, with interval=60s and jitterPercent=0.05, returns a value between 57s and 63s.
-func jitteredInterval(interval time.Duration, jitterPercent float64) time.Duration {
-	// Calculate jitter range: interval * jitterPercent
-	jitterRange := float64(interval) * jitterPercent
-	// Random value in [-jitterRange, +jitterRange]
-	jitter := (rand.Float64()*2 - 1) * jitterRange
-	// Return interval with jitter applied
-	return time.Duration(float64(interval) + jitter)
+// randomizedInterval returns a duration with random deviation applied.
+// The result is uniformly distributed in [interval * (1 - maxDeviation), interval * (1 + maxDeviation)].
+// For example, with interval=60s and maxDeviation=0.05, returns a value between 57s and 63s.
+func randomizedInterval(interval time.Duration, maxDeviation float64) time.Duration {
+	// Calculate deviation range: interval * maxDeviation
+	deviationRange := float64(interval) * maxDeviation
+	// Random value in [-deviationRange, +deviationRange]
+	deviation := (rand.Float64()*2 - 1) * deviationRange
+	// Return interval with deviation applied
+	return time.Duration(float64(interval) + deviation)
 }

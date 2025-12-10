@@ -24,16 +24,16 @@ func setNestedField(obj *unstructured.Unstructured, value interface{}, fields ..
 const (
 	defaultVMLifecycleDuration = 30 * time.Minute
 	defaultVMUpdateInterval    = 3 * time.Minute
-	// initialReportJitterPercent is the jitter applied to the initial report delay.
-	// With 0.2 (20%), a 30s delay will vary between 24s-36s.
-	initialReportJitterPercent = 0.2
-	// reportIntervalJitterPercent defines the percentage of random jitter to apply to report intervals.
-	// With 0.05 (5%), a 60s interval will vary between 57s-63s, making timing more realistic.
-	reportIntervalJitterPercent = 0.05
-	// lifecycleJitterPercent is the jitter applied to VM lifecycle duration.
-	// With 0.5 (50%), a 60s lifecycle will vary between 30s-90s.
-	lifecycleJitterPercent = 0.5
-	vmBaseNamespace        = "default"
+	// initialReportMaxDeviation is the maximum relative deviation applied to the initial report delay.
+	// With 0.2 (20%), a 30s delay will vary uniformly between 24s-36s.
+	initialReportMaxDeviation = 0.2
+	// reportIntervalMaxDeviation is the maximum relative deviation applied to report intervals.
+	// With 0.05 (5%), a 60s interval will vary uniformly between 57s-63s.
+	reportIntervalMaxDeviation = 0.05
+	// lifecycleMaxDeviation is the maximum relative deviation applied to VM lifecycle duration.
+	// With 0.5 (50%), a 60s lifecycle will vary uniformly between 30s-90s.
+	lifecycleMaxDeviation = 0.5
+	vmBaseNamespace       = "default"
 )
 
 // Centralized GVR definitions for KubeVirt resources
@@ -69,8 +69,8 @@ func validateVMWorkload(workload VirtualMachineWorkload) (VirtualMachineWorkload
 	}
 
 	// Sanity check timing relationships
-	lowerBoundVMLifetime := time.Duration(float64(workload.LifecycleDuration) * (1 - lifecycleJitterPercent))
-	upperBoundVMLifetime := time.Duration(float64(workload.LifecycleDuration) * (1 + lifecycleJitterPercent))
+	lowerBoundVMLifetime := time.Duration(float64(workload.LifecycleDuration) * (1 - lifecycleMaxDeviation))
+	upperBoundVMLifetime := time.Duration(float64(workload.LifecycleDuration) * (1 + lifecycleMaxDeviation))
 	lifecycleText := fmt.Sprintf("The VM will live for a random duration between %s and %s", lowerBoundVMLifetime, upperBoundVMLifetime)
 	causeText := func(param string, value time.Duration) string {
 		return fmt.Sprintf("Setting %q=%s", param, value)
@@ -251,7 +251,7 @@ func (w *WorkloadManager) runVMLifecycle(
 	vm, vmi *unstructured.Unstructured,
 	reportGen *reportGenerator,
 ) {
-	lifecycleTimer := newTimerWithJitter(jitteredInterval(workload.LifecycleDuration, lifecycleJitterPercent))
+	lifecycleTimer := newTimerWithJitter(randomizedInterval(workload.LifecycleDuration, lifecycleMaxDeviation))
 	defer lifecycleTimer.Stop()
 
 	updateTicker := time.NewTicker(calculateDurationWithJitter(workload.UpdateInterval))
@@ -346,9 +346,9 @@ func (w *WorkloadManager) sendIndexReportsWhileAlive(
 
 	log.Debugf("Starting index report generation for a VM (vsockCID=%d, interval=%s, initialDelay=%s)", vsockCID, interval, initialDelay)
 
-	reportTicker := time.NewTicker(jitteredInterval(interval, reportIntervalJitterPercent))
+	reportTicker := time.NewTicker(randomizedInterval(interval, reportIntervalMaxDeviation))
 	if initialDelay > 0 {
-		firstPeriod := jitteredInterval(initialDelay, initialReportJitterPercent)
+		firstPeriod := randomizedInterval(initialDelay, initialReportMaxDeviation)
 		reportTicker.Reset(firstPeriod)
 	} else {
 		w.sendOneIndexReport(ctx, reportGen, vsockCID)
@@ -361,7 +361,7 @@ func (w *WorkloadManager) sendIndexReportsWhileAlive(
 			log.Debugf("Stopping index report generation for VM with vsockCID %d (lifecycle ended)", vsockCID)
 			return
 		case <-reportTicker.C:
-			reportTicker.Reset(jitteredInterval(interval, reportIntervalJitterPercent))
+			reportTicker.Reset(randomizedInterval(interval, reportIntervalMaxDeviation))
 			w.sendOneIndexReport(ctx, reportGen, vsockCID)
 		}
 	}

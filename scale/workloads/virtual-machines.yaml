@@ -29,10 +29,10 @@ virtualMachineWorkload:
   updateInterval: 5m
   lifecycleDuration: 2h
   numLifecycles: 0
-  reportInterval: 5m # 5% jitter applied
+  reportInterval: 5m # ±5% max deviation applied
   numPackages: 700
   numRepositories: 50
-  initialReportDelay: 30s # ±20% jitter applied
+  initialReportDelay: 30s # ±20% max deviation applied
 
 deploymentWorkload:
 - deploymentType: Deployment
