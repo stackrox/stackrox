@@ -826,56 +826,99 @@ func (f *fakeRegistryStore) GetMatchingCentralRegistryIntegrations(*storage.Imag
 	return []registryTypes.ImageRegistry{&fakeRegistry{}}
 }
 
-// TestSignaturesFetchedWhenScanFails verifies that signatures are fetched from the registry
-// even when image scanning fails. This is important for images that cannot be scanned
-// (e.g. scratch-based) but are signed. This reproduces ROX-32120 Image signatures not fetched
-// when scan fails.
-func (suite *scanTestSuite) TestSignaturesFetchedWhenScanFails() {
-	ctrl := gomock.NewController(suite.T())
-	defer ctrl.Finish()
-	mirrorStore := mirrorStoreMocks.NewMockStore(ctrl)
-	imageServiceClient := &echoImageServiceClient{}
-
-	var signatureFetchCalled bool
-	fetchSignaturesFunc := func(_ context.Context, _ signatures.SignatureFetcher, _ *storage.Image, _ string,
-		_ registryTypes.Registry) ([]*storage.Signature, error) {
-		signatureFetchCalled = true
-		return []*storage.Signature{{
-			Signature: &storage.Signature_Cosign{Cosign: &storage.CosignSignature{
-				RawSignature:     []byte("test-signature"),
-				SignaturePayload: []byte("test-payload"),
-			}},
-		}}, nil
+// TestSignatureFetchingBehavior verifies when signature fetching is attempted based on
+// metadata and scan success/failure. This test covers the fix for ROX-32120 where
+// signatures were incorrectly skipped when image scanning failed.
+func (suite *scanTestSuite) TestSignatureFetchingBehavior() {
+	type testCase struct {
+		metadataFails    bool
+		scanFails        bool
+		sigFetchExpected bool
+		expectedError    bool
 	}
 
-	scan := LocalScan{
-		scanImg:                   failingScan, // Scan fails (e.g., scratch image)
-		fetchSignaturesWithRetry:  fetchSignaturesFunc,
-		scannerClientSingleton:    emptyScannerClientSingleton,
-		scanSemaphore:             semaphore.NewWeighted(10),
-		getCentralRegistries:      emptyGetMatchingCentralIntegrations,
-		mirrorStore:               mirrorStore,
-		getGlobalRegistries:       emptyGetGlobalRegistriesForImage,
-		createNoAuthImageRegistry: successCreateNoAuthImageRegistry,
-		maxSemaphoreWaitTime:      defaultMaxSemaphoreWaitTime,
+	cases := map[string]testCase{
+		"metadata succeeds, scan succeeds - sigs fetched": {
+			metadataFails:    false,
+			scanFails:        false,
+			sigFetchExpected: true,
+			expectedError:    false,
+		},
+		"metadata succeeds, scan fails - sigs fetched (ROX-32120)": {
+			metadataFails:    false,
+			scanFails:        true,
+			sigFetchExpected: true,
+			expectedError:    true, // Overall enrichment fails due to scan failure
+		},
+		"metadata fails - scan and sigs skipped": {
+			metadataFails:    true,
+			scanFails:        false, // Irrelevant - scan is never attempted when metadata fails
+			sigFetchExpected: false,
+			expectedError:    true,
+		},
 	}
 
 	containerImg, err := utils.GenerateImageFromString("quay.io/hummingbird/nginx:latest")
 	suite.Require().NoError(err, "failed creating test image")
 
-	mirrorStore.EXPECT().PullSources(containerImg.GetName().GetFullName())
+	for name, tc := range cases {
+		suite.Run(name, func() {
+			ctrl := gomock.NewController(suite.T())
+			defer ctrl.Finish()
+			mirrorStore := mirrorStoreMocks.NewMockStore(ctrl)
+			imageServiceClient := &echoImageServiceClient{}
 
-	resultImg, err := scan.EnrichLocalImageInNamespace(context.Background(), imageServiceClient, genScanReq(containerImg, "", "", false))
-	suite.Require().Error(err, "expected error due to scan failure")
-	suite.Require().NotNil(resultImg, "resultImg should not be nil even when scan fails")
+			// Configure scan function based on test case
+			scanFunc := successfulScan
+			if tc.scanFails {
+				scanFunc = failingScan
+			}
 
-	suite.Assert().True(signatureFetchCalled, "signatures should be fetched even when scan fails")
+			// Configure registry function based on test case
+			createRegistryFunc := successCreateNoAuthImageRegistry
+			if tc.metadataFails {
+				createRegistryFunc = failCreateNoAuthImageRegistry
+			}
 
-	// Verify that signatures are present in the result
-	suite.Assert().NotNil(resultImg.GetSignature(), "image signature should not be nil")
-	suite.Assert().Len(resultImg.GetSignature().GetSignatures(), 1, "should have one signature")
-	suite.Assert().NotContains(resultImg.GetNotes(), storage.Image_MISSING_SIGNATURE,
-		"should not have MISSING_SIGNATURE note when signatures were fetched")
+			scan := LocalScan{
+				scanImg:                   scanFunc,
+				fetchSignaturesWithRetry:  successfulFetchSignatures,
+				scannerClientSingleton:    emptyScannerClientSingleton,
+				scanSemaphore:             semaphore.NewWeighted(10),
+				getCentralRegistries:      emptyGetMatchingCentralIntegrations,
+				mirrorStore:               mirrorStore,
+				getGlobalRegistries:       emptyGetGlobalRegistriesForImage,
+				createNoAuthImageRegistry: createRegistryFunc,
+				maxSemaphoreWaitTime:      defaultMaxSemaphoreWaitTime,
+			}
+
+			mirrorStore.EXPECT().PullSources(containerImg.GetName().GetFullName())
+
+			resultImg, err := scan.EnrichLocalImageInNamespace(context.Background(), imageServiceClient, genScanReq(containerImg, "", "", false))
+
+			// Verify error expectations
+			if tc.expectedError {
+				suite.Assert().Error(err, "expected error")
+			} else {
+				suite.Assert().NoError(err, "expected no error")
+			}
+
+			// Verify signature fetch behavior by checking if signatures are present in result
+			if tc.sigFetchExpected {
+				suite.Require().NotNil(resultImg, "resultImg should not be nil when sigs expected")
+				suite.Assert().NotNil(resultImg.GetSignature(), "image signature should not be nil")
+				suite.Assert().Len(resultImg.GetSignature().GetSignatures(), 1, "should have one signature")
+				suite.Assert().NotContains(resultImg.GetNotes(), storage.Image_MISSING_SIGNATURE,
+					"should not have MISSING_SIGNATURE note when signatures were fetched")
+			} else {
+				// When signatures aren't fetched, they shouldn't be present in result
+				if resultImg != nil && resultImg.GetSignature() != nil {
+					suite.Assert().Empty(resultImg.GetSignature().GetSignatures(),
+						"should have no signatures when fetch was skipped")
+				}
+			}
+		})
+	}
 }
 
 func genScanReq(img *storage.ContainerImage, namespace, reqID string, force bool) *LocalScanRequest {
