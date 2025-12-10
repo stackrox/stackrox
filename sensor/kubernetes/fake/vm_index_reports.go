@@ -98,7 +98,7 @@ func buildRepositories(numRepos int) (map[string]*v4.Repository, []string) {
 			Id:   repoID,
 			Name: repoID,
 			Uri:  fmt.Sprintf("https://cdn.redhat.com/content/dist/rhel9/%s", repoID),
-			Key:  "rhel-9",
+			Key:  "rhel-cpe-repository", // Required for ClairCore RHEL matching
 			Cpe:  cpe,
 		}
 	}
