@@ -82,14 +82,24 @@ func (d *datastoreImpl) Upsert(ctx context.Context, rule *storage.ComplianceOper
 	} else if !ok {
 		return errors.Wrap(sac.ErrResourceAccessDenied, "compliance operator rules write")
 	}
+
+	// IMPORTANT: Acquire transaction BEFORE mutex to prevent deadlock with single DB connection.
+	// This ensures consistency between DB state and in-memory cache.
+	ctx, tx, err := d.store.Begin(ctx)
+	if err != nil {
+		return err
+	}
+
 	d.ruleLock.Lock()
 	defer d.ruleLock.Unlock()
 
 	if err := d.store.Upsert(ctx, rule); err != nil {
+		_ = tx.Rollback(ctx)
 		return err
 	}
 	d.addToRulesByNameNoLock(rule)
-	return nil
+
+	return tx.Commit(ctx)
 }
 
 func (d *datastoreImpl) Delete(ctx context.Context, id string) error {
@@ -99,19 +109,29 @@ func (d *datastoreImpl) Delete(ctx context.Context, id string) error {
 		return errors.Wrap(sac.ErrResourceAccessDenied, "compliance operator rules write")
 	}
 
+	// IMPORTANT: Acquire transaction BEFORE mutex to prevent deadlock with single DB connection.
+	// This ensures consistency between DB state and in-memory cache.
+	ctx, tx, err := d.store.Begin(ctx)
+	if err != nil {
+		return err
+	}
+
 	d.ruleLock.Lock()
 	defer d.ruleLock.Unlock()
 
 	rule, exists, err := d.store.Get(ctx, id)
 	if err != nil || !exists {
+		_ = tx.Rollback(ctx)
 		return err
 	}
 
 	if err := d.store.Delete(ctx, rule.GetId()); err != nil {
+		_ = tx.Rollback(ctx)
 		return err
 	}
 	delete(d.rulesByName[rule.GetName()], rule.GetId())
-	return nil
+
+	return tx.Commit(ctx)
 }
 
 func (d *datastoreImpl) GetRulesByName(ctx context.Context, name string) ([]*storage.ComplianceOperatorRule, error) {

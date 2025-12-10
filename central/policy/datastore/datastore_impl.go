@@ -202,12 +202,14 @@ func (ds *datastoreImpl) GetAllPolicies(ctx context.Context) ([]*storage.Policy,
 
 	var policies []*storage.Policy
 	err := ds.storage.Walk(ctx, func(policy *storage.Policy) error {
+		log.Infof("Walk found policy: ID=%s Name=%s", policy.GetId(), policy.GetName())
 		policies = append(policies, policy)
 		return nil
 	})
 	if err != nil {
 		return nil, err
 	}
+	log.Infof("GetAllPolicies: Walk returned %d policies", len(policies))
 
 	err = ds.fillCategoryNames(ctx, policies...)
 	if err != nil {
@@ -252,17 +254,22 @@ func (ds *datastoreImpl) AddPolicy(ctx context.Context, policy *storage.Policy) 
 		policy.Id = uuid.NewV4().String()
 	}
 
+	// IMPORTANT: Acquire transaction BEFORE mutex to prevent deadlock with single DB connection.
+	// With ROX_POSTGRES_MAX_CONNS=1:
+	// - Transaction reserves the DB connection
+	// - Mutex acquisition is safe (we already have the connection)
+	// - No deadlock: we never wait for DB conn while holding mutex
+	ctx, tx, err := ds.storage.Begin(ctx)
+	if err != nil {
+		return "", err
+	}
+
 	ds.policyMutex.Lock()
 	defer ds.policyMutex.Unlock()
 
 	allPolicies, err := ds.GetAllPolicies(ctx)
 	if err != nil {
-		return "", errorsPkg.Wrap(err, "getting all policies")
-	}
-
-	ctx, tx, err := ds.storage.Begin(ctx)
-	if err != nil {
-		return "", err
+		return "", ds.wrapWithRollback(ctx, tx, errorsPkg.Wrap(err, "getting all policies"))
 	}
 
 	policyNameToPolicyMap := make(map[string]*storage.Policy, len(allPolicies))
@@ -291,11 +298,15 @@ func (ds *datastoreImpl) AddPolicy(ctx context.Context, policy *storage.Policy) 
 
 	err = ds.categoriesDatastore.SetPolicyCategoriesForPolicy(ctx, clonedPolicy.GetId(), policyCategories)
 	if err != nil {
+		log.Errorf("SetPolicyCategoriesForPolicy failed: %v", err)
 		return "", ds.wrapWithRollback(ctx, tx, err)
 	}
+	log.Infof("About to commit transaction for policy %s", clonedPolicy.GetId())
 	if err := tx.Commit(ctx); err != nil {
+		log.Errorf("Commit failed: %v", err)
 		return "", ds.wrapWithRollback(ctx, tx, err)
 	}
+	log.Infof("Successfully committed transaction for policy %s", clonedPolicy.GetId())
 
 	if clonedPolicy.GetSource() == storage.PolicySource_DECLARATIVE {
 		metrics.IncrementTotalExternalPoliciesGauge()
@@ -318,13 +329,14 @@ func (ds *datastoreImpl) UpdatePolicy(ctx context.Context, policy *storage.Polic
 
 	policyutils.FillSortHelperFields(policy)
 
-	ds.policyMutex.Lock()
-	defer ds.policyMutex.Unlock()
-
+	// IMPORTANT: Acquire transaction BEFORE mutex to prevent deadlock with single DB connection.
 	ctx, tx, err := ds.storage.Begin(ctx)
 	if err != nil {
 		return err
 	}
+
+	ds.policyMutex.Lock()
+	defer ds.policyMutex.Unlock()
 
 	// Check if categories need to be created/new policy category edges need to be created/
 	// existing policy category edges need to be removed?
@@ -350,16 +362,24 @@ func (ds *datastoreImpl) RemovePolicy(ctx context.Context, policy *storage.Polic
 		return sac.ErrResourceAccessDenied
 	}
 
+	// IMPORTANT: Acquire transaction BEFORE mutex to prevent deadlock with single DB connection.
+	ctx, tx, err := ds.storage.Begin(ctx)
+	if err != nil {
+		return err
+	}
+
 	ds.policyMutex.Lock()
 	defer ds.policyMutex.Unlock()
 
-	err := ds.removePolicyNoLock(ctx, policy.GetId())
+	if err := ds.removePolicyNoLock(ctx, policy.GetId()); err != nil {
+		return ds.wrapWithRollback(ctx, tx, err)
+	}
 
-	if err == nil && policy.GetSource() == storage.PolicySource_DECLARATIVE {
+	if policy.GetSource() == storage.PolicySource_DECLARATIVE {
 		metrics.DecrementTotalExternalPoliciesGauge()
 	}
 
-	return err
+	return tx.Commit(ctx)
 }
 
 func (ds *datastoreImpl) removePolicyNoLock(ctx context.Context, id string) error {
@@ -383,13 +403,20 @@ func (ds *datastoreImpl) ImportPolicies(ctx context.Context, importPolicies []*s
 	// All imported policies must be marked custom policy even if they were exported default policies.
 	markPoliciesAsCustom(importPolicies...)
 
+	// IMPORTANT: Acquire transaction BEFORE mutex to prevent deadlock with single DB connection.
+	// Import operations need to be transactional to ensure consistency.
+	ctx, tx, err := ds.storage.Begin(ctx)
+	if err != nil {
+		return nil, false, err
+	}
+
 	// Store the policies and report any errors
 	ds.policyMutex.Lock()
 	defer ds.policyMutex.Unlock()
 
 	allPolicies, err := ds.GetAllPolicies(ctx)
 	if err != nil {
-		return nil, false, errorsPkg.Wrap(err, "getting all policies")
+		return nil, false, ds.wrapWithRollback(ctx, tx, errorsPkg.Wrap(err, "getting all policies"))
 	}
 	policyNameToPolicyMap := make(map[string]*storage.Policy, len(allPolicies))
 	for _, policy := range allPolicies {
@@ -411,6 +438,11 @@ func (ds *datastoreImpl) ImportPolicies(ctx context.Context, importPolicies []*s
 		}
 
 		responses[i] = response
+	}
+
+	// Commit the transaction at the end
+	if err := tx.Commit(ctx); err != nil {
+		return nil, false, ds.wrapWithRollback(ctx, tx, err)
 	}
 
 	return responses, allSucceeded, nil

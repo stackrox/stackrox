@@ -60,13 +60,23 @@ func (d *datastoreImpl) forEachAuthM2MConfigNoLock(ctx context.Context, fn func(
 
 func (d *datastoreImpl) UpsertAuthM2MConfig(ctx context.Context,
 	config *storage.AuthMachineToMachineConfig) (*storage.AuthMachineToMachineConfig, error) {
+	// IMPORTANT: Acquire transaction BEFORE mutex to prevent deadlock with single DB connection.
+	// With ROX_POSTGRES_MAX_CONNS=1:
+	// - Transaction reserves the DB connection
+	// - Mutex acquisition is safe (we already have the connection)
+	// - No deadlock: we never wait for DB conn while holding mutex
+	ctx, tx, err := d.store.Begin(ctx)
+	if err != nil {
+		return nil, err
+	}
+
 	d.mutex.Lock()
 	defer d.mutex.Unlock()
 
-	return d.upsertAuthM2MConfigNoLock(ctx, config)
+	return d.upsertAuthM2MConfigNoLock(ctx, tx, config)
 }
 
-func (d *datastoreImpl) upsertAuthM2MConfigNoLock(ctx context.Context,
+func (d *datastoreImpl) upsertAuthM2MConfigNoLock(ctx context.Context, tx *pgPkg.Tx,
 	config *storage.AuthMachineToMachineConfig) (*storage.AuthMachineToMachineConfig, error) {
 	if err := sac.VerifyAuthzOK(accessSAC.WriteAllowed(ctx)); err != nil {
 		return nil, err
@@ -82,7 +92,7 @@ func (d *datastoreImpl) upsertAuthM2MConfigNoLock(ctx context.Context,
 		}
 	}
 
-	// Get the existing stored config, if any.
+	// Get the existing stored config, if any (using transaction context).
 	storedConfig, exists, err := d.getAuthM2MConfigNoLock(ctx, config.GetId())
 	if err != nil {
 		return nil, err
@@ -90,13 +100,6 @@ func (d *datastoreImpl) upsertAuthM2MConfigNoLock(ctx context.Context,
 
 	// Get the existing exchanger for the issuer, if any.
 	existingExchanger, _ := d.set.GetTokenExchanger(config.GetIssuer())
-
-	// Create a transaction for the DB operation. Since we can potentially fail during in-memory operations (i.e.
-	// upserting the token exchanger in the set or removal) we want to make sure we can rollback DB changes.
-	ctx, tx, err := d.store.Begin(ctx)
-	if err != nil {
-		return nil, err
-	}
 
 	// Upsert the token exchanger first, ensuring the config is valid and a token exchanger can be successfully
 	// created from it.
@@ -290,8 +293,14 @@ func (d *datastoreImpl) configureConfigControllerAccess(kubeSAConfig *storage.Au
 	ctx := sac.WithGlobalAccessScopeChecker(context.Background(), sac.AllowFixedScopes(
 		sac.AccessModeScopeKeys(storage.Access_READ_WRITE_ACCESS), sac.ResourceScopeKeys(resources.Access)))
 
+	// Create transaction for the upsert operation
+	ctx, tx, err := d.store.Begin(ctx)
+	if err != nil {
+		return pkgErrors.Wrap(err, "Failed to begin transaction for config controller access")
+	}
+
 	// This inits the token exchanger, too
-	if _, err := d.upsertAuthM2MConfigNoLock(ctx, kubeSAConfig); err != nil {
+	if _, err := d.upsertAuthM2MConfigNoLock(ctx, tx, kubeSAConfig); err != nil {
 		return pkgErrors.Wrap(err, "Failed to upsert auth m2m config")
 	}
 
