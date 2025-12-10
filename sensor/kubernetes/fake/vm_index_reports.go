@@ -155,7 +155,7 @@ func newReportGenerator(numPackages, numRepos int, seed int64) *reportGenerator 
 			// No synthetic repos available, use original repo
 			assignedRepoID = pkg.Repo
 		}
-		repoCPE := repositories[assignedRepoID].Cpe
+		repoCPE := repositories[assignedRepoID].GetCpe()
 
 		packages[pkgID] = &v4.Package{
 			Id:             pkgID,
