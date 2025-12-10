@@ -13,6 +13,7 @@ import (
 	"github.com/stackrox/rox/pkg/scanners/scannerv4"
 	scannerTypes "github.com/stackrox/rox/pkg/scanners/types"
 	scannerMocks "github.com/stackrox/rox/pkg/scanners/types/mocks"
+	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
@@ -385,6 +386,54 @@ func TestEnrichVirtualMachineWithVulnerabilities_ComponentConversion(t *testing.
 	assert.Len(t, pkg.GetVulnerabilities(), 1) // pkg-2 has only vuln-1
 }
 
+func TestEnricherUpsertRemoveIntegrations(t *testing.T) {
+	t.Run("successful upsert and remove integration", func(it *testing.T) {
+		ctrl := gomock.NewController(it)
+		defer ctrl.Finish()
+		scannerMock := scannerMocks.NewMockVirtualMachineScanner(ctrl)
+
+		enricher := newWithCreator(getScannerGeneratorForMock(scannerMock))
+		vmEnricher, canCast := enricher.(*enricherImpl)
+		require.True(it, canCast)
+
+		assert.Empty(it, vmEnricher.scanners)
+
+		integration := &storage.ImageIntegration{
+			Id:   uuid.NewTestUUID(1).String(),
+			Type: mockIntegrationType,
+		}
+		err := enricher.UpsertVirtualMachineIntegration(integration)
+		assert.NoError(it, err)
+		assert.Len(it, vmEnricher.scanners, 1)
+		assert.NotNil(it, vmEnricher.scanners[integration.GetId()])
+
+		enricher.RemoveVirtualMachineIntegration(integration.GetId())
+		assert.Empty(it, vmEnricher.scanners)
+	})
+	t.Run("error on scanner creation", func(it *testing.T) {
+		testErr := errors.New("test error")
+
+		scannerGenerator := func() (string, func(*storage.ImageIntegration) (scannerTypes.VirtualMachineScanner, error)) {
+			return "error scanner", func(*storage.ImageIntegration) (scannerTypes.VirtualMachineScanner, error) {
+				return nil, testErr
+			}
+		}
+		enricher := newWithCreator(scannerGenerator)
+
+		vmEnricher, canCast := enricher.(*enricherImpl)
+		require.True(it, canCast)
+
+		assert.Empty(it, vmEnricher.scanners)
+
+		integration := &storage.ImageIntegration{
+			Id:   uuid.NewTestUUID(1).String(),
+			Type: "error scanner",
+		}
+		err := enricher.UpsertVirtualMachineIntegration(integration)
+		assert.ErrorIs(it, err, testErr)
+		assert.Empty(it, vmEnricher.scanners)
+	})
+}
 func createVirtualMachineScanFromIndexReport(indexReport *v4.IndexReport, vulnCount int) *storage.VirtualMachineScan {
 	vulnerabilityReport := createVulnerabilityReportFromIndexReport(indexReport, vulnCount)
 	return scannerv4.ToVirtualMachineScan(vulnerabilityReport)
