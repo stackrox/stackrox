@@ -1,12 +1,5 @@
 import { Fragment } from 'react';
-import {
-    Button,
-    Divider,
-    SearchInput,
-    SelectGroup,
-    SelectList,
-    SelectOption,
-} from '@patternfly/react-core';
+import { Button, Divider, SelectGroup, SelectList, SelectOption } from '@patternfly/react-core';
 import { ArrowRightIcon } from '@patternfly/react-icons';
 
 import type { SearchFilter } from 'types/search';
@@ -30,6 +23,7 @@ import ConditionNumber from './ConditionNumber';
 import SearchFilterAutocomplete from './SearchFilterAutocomplete';
 import SearchFilterSelectExclusiveDouble from './SearchFilterSelectExclusiveDouble';
 import SearchFilterSelectExclusiveSingle from './SearchFilterSelectExclusiveSingle';
+import SearchFilterText from './SearchFilterText';
 import ConditionDate from './ConditionDate';
 import ConditionText from './ConditionText';
 
@@ -75,27 +69,7 @@ function CompoundSearchFilterInputField({
     }
 
     if (attribute.inputType === 'text') {
-        const textLabel = `Filter results by ${attribute.filterChipLabel}`;
-        return (
-            <SearchInput
-                aria-label={textLabel}
-                placeholder={textLabel}
-                value={ensureString(value)}
-                onChange={(_event, _value) => onChange(_value)}
-                onSearch={(_event, _value) => {
-                    onSearch([
-                        {
-                            action: 'APPEND',
-                            category: attribute.searchTerm,
-                            value: _value,
-                        },
-                    ]);
-                    onChange('');
-                }}
-                onClear={() => onChange('')}
-                submitSearchButtonLabel="Apply text input to search"
-            />
-        );
+        return <SearchFilterText attribute={attribute} onSearch={onSearch} />;
     }
     if (attribute.inputType === 'date-picker') {
         return (
