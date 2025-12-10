@@ -553,7 +553,7 @@ module.exports = [
     {
         files: [
             'cypress/integration/**/*.test.{js,ts}', // integration tests
-            'src/**/*.cy.jsx', // component tests
+            'src/**/*.cy.{jsx,tsx}', // component tests
         ],
 
         languageOptions: {
