@@ -69,6 +69,7 @@ func (s *serviceImpl) CreateBaseImageReference(ctx context.Context, req *v2.Crea
 		return nil, status.Errorf(codes.InvalidArgument, "invalid base image tag pattern: %v", err)
 	}
 
+	// TODO(ROX-32170): Populate user information to the base image repository.
 	repo := &storage.BaseImageRepository{
 		RepositoryPath: req.GetBaseImageRepoPath(),
 		TagPattern:     req.GetBaseImageTagPattern(),
