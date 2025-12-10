@@ -18,6 +18,7 @@ import { policySectionValidators } from './Step3/policyCriteriaValidators';
 type PolicyStep1 = Pick<ClientPolicy, 'name' | 'severity' | 'categories'>;
 
 const policyNameLengthMessage = 'Policy name must be between 5 and 128 characters';
+// Backend policy validation reference at central/policy/service/validator.go
 const validationSchemaStep1: yup.ObjectSchema<PolicyStep1> = yup.object().shape({
     name: yup
         .string()
