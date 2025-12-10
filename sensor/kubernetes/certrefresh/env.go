@@ -8,8 +8,7 @@ import (
 // ROX_SENSOR_CA_ROTATION_OPERATOR_ENABLED enables CA rotation support for Operator-managed Sensors.
 // When enabled, Operator-managed Sensors will advertise the SensorCARotationSupported capability to Central,
 // causing Central to issue Secured Cluster certificates signed by the newer CA during CA rotation.
-// TODO(ROX-20262): Enable when epic ROX-20262 is complete.
-var sensorCARotationOperatorEnabled = env.RegisterBooleanSetting("ROX_SENSOR_CA_ROTATION_OPERATOR_ENABLED", false)
+var sensorCARotationOperatorEnabled = env.RegisterBooleanSetting("ROX_SENSOR_CA_ROTATION_OPERATOR_ENABLED", true)
 
 // ROX_SENSOR_CA_ROTATION_HELM_ENABLED enables CA rotation support for Helm-managed Sensors.
 // When enabled, Helm-managed Sensors will advertise the SensorCARotationSupported capability to Central,

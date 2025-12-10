@@ -114,6 +114,60 @@ func ConstructNetworkFlow(flow *NetworkFlowDetails) (*pathutil.AugmentedObj, err
 	return augmentedFlow, nil
 }
 
+func ConstructNode(node *storage.Node) (*pathutil.AugmentedObj, error) {
+	details := NodeDetails{
+		Id:          node.GetId(),
+		Name:        node.GetName(),
+		ClusterName: node.GetClusterName(),
+		ClusterId:   node.GetClusterId(),
+	}
+
+	return pathutil.NewAugmentedObj(&details), nil
+}
+
+func ConstructNodeWithFileAccess(node *storage.Node, fileAccess *storage.FileAccess) (*pathutil.AugmentedObj, error) {
+	nodeObj, err := ConstructNode(node)
+	if err != nil {
+		return nil, err
+	}
+
+	err = nodeObj.AddAugmentedObjAt(
+		pathutil.NewAugmentedObj(fileAccess),
+		pathutil.FieldStep(fileAccessKey),
+	)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return nodeObj, nil
+}
+
+func ConstructDeploymentWithFileAccess(
+	deployment *storage.Deployment,
+	images []*storage.Image,
+	applied *NetworkPoliciesApplied,
+	fileAccess *storage.FileAccess,
+) (*pathutil.AugmentedObj, error) {
+	obj, err := ConstructDeployment(deployment, images, applied)
+	if err != nil {
+		return nil, err
+	}
+
+	err = obj.AddAugmentedObjAt(
+		ConstructFileAccess(fileAccess),
+		pathutil.FieldStep(fileAccessKey),
+	)
+	if err != nil {
+		return nil, err
+	}
+	return obj, nil
+}
+
+func ConstructFileAccess(fileAccess *storage.FileAccess) *pathutil.AugmentedObj {
+	return pathutil.NewAugmentedObj(fileAccess)
+}
+
 // ConstructDeploymentWithNetworkFlowInfo constructs an augmented object with deployment and network flow.
 func ConstructDeploymentWithNetworkFlowInfo(
 	deployment *storage.Deployment,

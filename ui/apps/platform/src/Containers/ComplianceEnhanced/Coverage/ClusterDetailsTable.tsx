@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom-v5-compat';
 import {
     Pagination,
@@ -12,15 +12,19 @@ import {
 import { ExpandableRowContent, Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 
 import CompoundSearchFilter from 'Components/CompoundSearchFilter/components/CompoundSearchFilter';
-import { makeFilterChipDescriptors } from 'Components/CompoundSearchFilter/utils/utils';
-import { CompoundSearchFilterConfig, OnSearchPayload } from 'Components/CompoundSearchFilter/types';
-import SearchFilterChips from 'Components/PatternFly/SearchFilterChips';
+import SearchFilterChips, {
+    makeFilterChipDescriptors,
+} from 'Components/CompoundSearchFilter/components/SearchFilterChips';
+import type {
+    CompoundSearchFilterConfig,
+    OnSearchCallback,
+} from 'Components/CompoundSearchFilter/types';
 import TbodyUnified from 'Components/TableStateTemplates/TbodyUnified';
-import { UseURLPaginationResult } from 'hooks/useURLPagination';
-import { UseURLSortResult } from 'hooks/useURLSort';
-import { ComplianceCheckResult } from 'services/ComplianceResultsService';
-import { TableUIState } from 'utils/getTableUIState';
-import { SearchFilter } from 'types/search';
+import type { UseURLPaginationResult } from 'hooks/useURLPagination';
+import type { UseURLSortResult } from 'hooks/useURLSort';
+import type { ComplianceCheckResult } from 'services/ComplianceResultsService';
+import type { TableUIState } from 'utils/getTableUIState';
+import type { SearchFilter } from 'types/search';
 
 import { DETAILS_TAB, TAB_NAV_QUERY } from './CheckDetailsPage';
 import { CHECK_NAME_QUERY } from './compliance.coverage.constants';
@@ -41,7 +45,7 @@ export type ClusterDetailsTableProps = {
     searchFilterConfig: CompoundSearchFilterConfig;
     searchFilter: SearchFilter;
     onFilterChange: (newFilter: SearchFilter) => void;
-    onSearch: (payload: OnSearchPayload) => void;
+    onSearch: OnSearchCallback;
     onCheckStatusSelect: (
         filterType: 'Compliance Check Status',
         checked: boolean,

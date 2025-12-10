@@ -210,7 +210,7 @@ func getSpecifiedFieldsFromQuery(q *v1.Query) []string {
 		if bq == nil {
 			return
 		}
-		asMFQ, ok := bq.Query.(*v1.BaseQuery_MatchFieldQuery)
+		asMFQ, ok := bq.GetQuery().(*v1.BaseQuery_MatchFieldQuery)
 		if !ok {
 			return
 		}
@@ -239,7 +239,7 @@ func (a *aggregatorImpl) filterOnRunResult(runResults *storage.ComplianceRunResu
 		}
 	}
 	for d, controlResults := range runResults.GetDeploymentResults() {
-		deployment, ok := domain.Deployments[d]
+		deployment, ok := domain.GetDeployments()[d]
 		if !ok {
 			log.Error("Okay that's not good, we have a result for a deployment that isn't even in the domain?")
 			continue
@@ -424,7 +424,7 @@ func handleResult(groups map[groupByKey]*groupByValue, key groupByKey, unitKey s
 		pfCounts = new(passFailCounts)
 		groupByValue.unitMap[unitKey] = pfCounts
 	}
-	switch r.OverallState {
+	switch r.GetOverallState() {
 	case storage.ComplianceState_COMPLIANCE_STATE_SUCCESS:
 		pfCounts.pass++
 	case storage.ComplianceState_COMPLIANCE_STATE_FAILURE, storage.ComplianceState_COMPLIANCE_STATE_ERROR, storage.ComplianceState_COMPLIANCE_STATE_UNKNOWN:
@@ -504,7 +504,7 @@ func (a *aggregatorImpl) aggregateFromDeployments(runResults *storage.Compliance
 	domain := runResults.GetDomain()
 	if deploymentSet := mask.get(storage.ComplianceAggregation_DEPLOYMENT); deploymentSet != nil {
 		for deploymentID := range deploymentSet {
-			deployment := domain.Deployments[deploymentID]
+			deployment := domain.GetDeployments()[deploymentID]
 			if deployment == nil {
 				continue
 			}
@@ -520,7 +520,7 @@ func (a *aggregatorImpl) aggregateFromDeployments(runResults *storage.Compliance
 	}
 
 	for d, controlResults := range runResults.GetDeploymentResults() {
-		deployment, ok := domain.Deployments[d]
+		deployment, ok := domain.GetDeployments()[d]
 		if !ok {
 			log.Errorf("result for deployment %s exists, but it is not included in the domain", d)
 			continue

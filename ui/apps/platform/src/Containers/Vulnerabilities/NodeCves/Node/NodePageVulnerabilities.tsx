@@ -1,4 +1,3 @@
-import React from 'react';
 import {
     Divider,
     Flex,
@@ -18,28 +17,28 @@ import useURLSearch from 'hooks/useURLSearch';
 import useURLSort from 'hooks/useURLSort';
 import { getTableUIState } from 'utils/getTableUIState';
 import { getHasSearchApplied } from 'utils/searchUtils';
-
-import BySeveritySummaryCard from 'Containers/Vulnerabilities/components/BySeveritySummaryCard';
-import CvesByStatusSummaryCard from 'Containers/Vulnerabilities/WorkloadCves/SummaryCards/CvesByStatusSummaryCard';
 import useAnalytics, { NODE_CVE_FILTER_APPLIED } from 'hooks/useAnalytics';
 import { createFilterTracker } from 'utils/analyticsEventTracking';
+
+import BySeveritySummaryCard from '../../components/BySeveritySummaryCard';
 import {
     nodeCVESearchFilterConfig,
     nodeComponentSearchFilterConfig,
-} from 'Containers/Vulnerabilities/searchFilterConfig';
+} from '../../searchFilterConfig';
+
 import {
     getHiddenSeverities,
     getHiddenStatuses,
     getRegexScopedQueryString,
     parseQuerySearchFilter,
 } from '../../utils/searchUtils';
-
 import CVEsTable, { sortFields, defaultSortOption } from './CVEsTable';
 import useNodeVulnerabilities from './useNodeVulnerabilities';
 import useNodeSummaryData from './useNodeSummaryData';
 import { DEFAULT_VM_PAGE_SIZE } from '../../constants';
 import { SummaryCard, SummaryCardLayout } from '../../components/SummaryCardLayout';
 import AdvancedFiltersToolbar from '../../components/AdvancedFiltersToolbar';
+import CvesByStatusSummaryCard from '../../components/CvesByStatusSummaryCard';
 
 const searchFilterConfig = [nodeCVESearchFilterConfig, nodeComponentSearchFilterConfig];
 

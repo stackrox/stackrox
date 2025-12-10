@@ -2,13 +2,24 @@ package updatecomputer
 
 import (
 	"testing"
+	"time"
 
+	"github.com/cespare/xxhash"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/networkgraph"
 	"github.com/stackrox/rox/pkg/timestamp"
 	"github.com/stackrox/rox/sensor/common/networkflow/manager/indicator"
 	"github.com/stretchr/testify/assert"
+)
+
+const (
+	implLegacy          = "Legacy"
+	implTransitionBased = "TransitionBased"
+)
+
+var (
+	closedConnRememberDuration = 5 * time.Minute
+	h                          = xxhash.New()
 )
 
 func TestComputeUpdatedConns(t *testing.T) {
@@ -34,17 +45,17 @@ func TestComputeUpdatedConns(t *testing.T) {
 	// - When we see a new connection
 	// - When we see a closed connection
 	// - When we see a connection that was previously open, but is now closed
-	// - When we see a connection that was previously closed, but is now closed with younger timestamp.
-	// In all other cases, we don't need to notify Central as there is no relevant change that affects any features -
-	// including a situation when previously opened connection disappears.
-	// Any notification that does not need to be sent would be treated by Central as redundant and
-	// consumes additional resources (network between Sensor and Central and Central's CPU and memory).
+	// - When we see a connection that was previously closed, but is now closed with a newer timestamp.
+	// In all other cases, we don't need to notify Central since there's no relevant change that affects any features -
+	// including situations when a previously opened connection disappears.
+	// Any unnecessary notification would be treated by Central as redundant and
+	// consumes additional resources (network bandwidth between Sensor and Central, plus Central's CPU and memory).
 	tests := map[string]struct {
-		initialState  map[indicator.NetworkConn]timestamp.MicroTS
-		currentState  map[indicator.NetworkConn]timestamp.MicroTS
-		expectedCount int
+		initialState     map[indicator.NetworkConn]timestamp.MicroTS
+		currentState     map[indicator.NetworkConn]timestamp.MicroTS
+		expectNumUpdates map[string]int
 	}{
-		// Test-cases for: scenarios most frequently observed in the wild
+		// Test cases for scenarios most frequently observed in production
 		// (i.e., a connection is being closed, or continues to be open).
 		"should send when connection closes": {
 			initialState: map[indicator.NetworkConn]timestamp.MicroTS{
@@ -53,7 +64,7 @@ func TestComputeUpdatedConns(t *testing.T) {
 			currentState: map[indicator.NetworkConn]timestamp.MicroTS{
 				conn1: closedInThePast,
 			},
-			expectedCount: 1,
+			expectNumUpdates: map[string]int{implLegacy: 1, implTransitionBased: 1},
 		},
 		"closing connection in the future should be treated as any other update about connection closing": {
 			initialState: map[indicator.NetworkConn]timestamp.MicroTS{
@@ -62,7 +73,7 @@ func TestComputeUpdatedConns(t *testing.T) {
 			currentState: map[indicator.NetworkConn]timestamp.MicroTS{
 				conn1: closedInTheFuture,
 			},
-			expectedCount: 1,
+			expectNumUpdates: map[string]int{implLegacy: 1, implTransitionBased: 1},
 		},
 		"should not send duplicate open connections": {
 			initialState: map[indicator.NetworkConn]timestamp.MicroTS{
@@ -71,46 +82,50 @@ func TestComputeUpdatedConns(t *testing.T) {
 			currentState: map[indicator.NetworkConn]timestamp.MicroTS{
 				conn1: open,
 			},
-			expectedCount: 0,
+			expectNumUpdates: map[string]int{implLegacy: 0, implTransitionBased: 0},
 		},
-		// Test-cases for disappearance; when the connection that was open in the last state is gone without seeing a close message from Collector.
-		// Correctly handling the disappearance is crucial for opening up the possibility
-		// for Sensor to delete a connection from its state without notifying Central.
+		// Test cases for disappearance: when a connection that was open in the last state is gone without seeing a close message from Collector.
+		// Correctly handling disappearance is crucial for allowing
+		// Sensor to delete a connection from its state without notifying Central.
 		"disappearance of open connection: legacy should send an update": {
 			initialState: map[indicator.NetworkConn]timestamp.MicroTS{
 				conn1: open,
 			},
-			currentState:  map[indicator.NetworkConn]timestamp.MicroTS{},
-			expectedCount: 1, // Legacy tracks deletions and would still produce a message (although undesired).
+			currentState: map[indicator.NetworkConn]timestamp.MicroTS{},
+			// Legacy tracks deletions and still produces a message (undesired behavior).
+			// TransitionBased does not trigger an update (desired behavior).
+			expectNumUpdates: map[string]int{implLegacy: 1, implTransitionBased: 0},
 		},
 		"disappearance of closed connection: legacy should send an update": {
 			initialState: map[indicator.NetworkConn]timestamp.MicroTS{
 				conn1: closedInThePast,
 			},
-			currentState:  map[indicator.NetworkConn]timestamp.MicroTS{},
-			expectedCount: 1, // Legacy method would still produce a message (although undesired).
+			currentState: map[indicator.NetworkConn]timestamp.MicroTS{},
+			// Legacy tracks deletions and still produces a message (undesired behavior).
+			// TransitionBased does not trigger an update (desired behavior).
+			expectNumUpdates: map[string]int{implLegacy: 1, implTransitionBased: 0},
 		},
 		"handling nils": {
-			initialState:  nil,
-			currentState:  nil,
-			expectedCount: 0,
+			initialState:     nil,
+			currentState:     nil,
+			expectNumUpdates: map[string]int{implLegacy: 0, implTransitionBased: 0},
 		},
-		// Test-cases for: Initial state is empty - behavior when a connection is seen for the first time.
+		// Test cases for empty initial state - behavior when a connection is seen for the first time.
 		"new closed connection should always be sent as required update": {
 			initialState: nil,
 			currentState: map[indicator.NetworkConn]timestamp.MicroTS{
 				conn1: closedRecently,
 			},
-			expectedCount: 1,
+			expectNumUpdates: map[string]int{implLegacy: 1, implTransitionBased: 1},
 		},
 		"new open connections should be sent as required update": {
 			initialState: nil,
 			currentState: map[indicator.NetworkConn]timestamp.MicroTS{
 				conn1: open,
 			},
-			expectedCount: 1,
+			expectNumUpdates: map[string]int{implLegacy: 1, implTransitionBased: 1},
 		},
-		// Test-cases for: Handling multiple messages for closing the same connection
+		// Test cases for handling multiple messages about closing the same connection
 		"duplicate updates for closed connection with same timestamp should be skipped": {
 			initialState: map[indicator.NetworkConn]timestamp.MicroTS{
 				conn1: closedRecently,
@@ -118,259 +133,479 @@ func TestComputeUpdatedConns(t *testing.T) {
 			currentState: map[indicator.NetworkConn]timestamp.MicroTS{
 				conn1: closedRecently,
 			},
-			expectedCount: 0,
+			expectNumUpdates: map[string]int{implLegacy: 0, implTransitionBased: 0},
 		},
-		"recent updates for closed connection with younger close timestamps should be sent": {
+		"recent updates for closed connection with newer close timestamps should be sent": {
 			initialState: map[indicator.NetworkConn]timestamp.MicroTS{
-				conn1: closedLongAgo, // Closed connection, but long ago
+				conn1: closedLongAgo,
 			},
 			currentState: map[indicator.NetworkConn]timestamp.MicroTS{
-				conn1: closedRecently, // Closed connection, but younger than the previous close
+				conn1: closedRecently,
 			},
-			expectedCount: 1,
+			expectNumUpdates: map[string]int{implLegacy: 1, implTransitionBased: 1},
 		},
 		"recent updates for closed connection with older close timestamps should be ignored": {
 			initialState: map[indicator.NetworkConn]timestamp.MicroTS{
-				conn1: closedRecently, // Closed connection, but younger than the previous close
+				conn1: closedRecently,
 			},
 			currentState: map[indicator.NetworkConn]timestamp.MicroTS{
-				conn1: closedLongAgo, // Closed connection, but older than the previous close
+				conn1: closedLongAgo,
 			},
-			expectedCount: 0,
+			expectNumUpdates: map[string]int{implLegacy: 0, implTransitionBased: 0},
 		},
 	}
 
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			computer := NewLegacy()
-			if tc.initialState != nil {
-				computer.UpdateState(tc.initialState, nil, nil)
-			}
-			// Call to UpdateState with nils should not change anything in the state
-			computer.UpdateState(nil, nil, nil)
-
-			// Legacy implementation never returns warnings (although it theoretically could)
-			updates := computer.ComputeUpdatedConns(tc.currentState)
-			assert.Len(t, updates, tc.expectedCount)
+			t.Run(implLegacy, func(t *testing.T) {
+				computer := NewLegacy()
+				if tc.initialState != nil {
+					computer.OnSuccessfulSendConnections(tc.initialState)
+				}
+				// Call to OnSuccessfulSendConnections with nils should not change anything in the state
+				computer.OnSuccessfulSendConnections(nil)
+				updates := computer.ComputeUpdatedConns(tc.currentState)
+				assert.Len(t, updates, tc.expectNumUpdates[implLegacy])
+			})
+			t.Run(implTransitionBased, func(t *testing.T) {
+				computer := NewTransitionBased()
+				if tc.initialState != nil {
+					// Trigger a computation + successful send to bring the update computer to the initial state.
+					computer.ComputeUpdatedConns(tc.initialState)
+					computer.OnSuccessfulSendConnections(tc.initialState)
+				}
+				// Call to OnSuccessfulSendConnections with nils should not change anything in the state
+				computer.OnSuccessfulSendConnections(nil)
+				updates := computer.ComputeUpdatedConns(tc.currentState)
+				assert.Len(t, updates, tc.expectNumUpdates[implTransitionBased])
+			})
 		})
 	}
 }
 
-func TestComputeUpdatedEndpoints(t *testing.T) {
+// Test_lookupPrevTimestamp tests the new closed connection tracking functionality
+func Test_lookupPrevTimestamp(t *testing.T) {
+	transitionBased := NewTransitionBased()
+
+	nowTS := timestamp.Now()
+	past := nowTS - 1000
+
+	testCases := map[string]struct {
+		connKey        indicator.BinaryHash
+		setupStore     func(key indicator.BinaryHash)
+		expectedFound  bool
+		expectedPrevTS timestamp.MicroTS
+	}{
+		"Unknown connections should not be found and return 0": {
+			connKey: indicator.BinaryHash(0x1234567890ABCDEF),
+			setupStore: func(key indicator.BinaryHash) {
+				transitionBased.storeClosedConnectionTimestamp(indicator.BinaryHash(0xFEDCBA0987654321), past, closedConnRememberDuration)
+			},
+			expectedFound:  false,
+			expectedPrevTS: 0,
+		},
+		"Open connections should not be found in closed connection tracking": {
+			connKey:        indicator.BinaryHash(0x1111111111111111),
+			setupStore:     func(_ indicator.BinaryHash) {},
+			expectedFound:  false,
+			expectedPrevTS: 0,
+		},
+		"Stored closed connection should be found with correct timestamp": {
+			connKey: indicator.BinaryHash(0x2222222222222222),
+			setupStore: func(key indicator.BinaryHash) {
+				transitionBased.storeClosedConnectionTimestamp(key, past, closedConnRememberDuration)
+			},
+			expectedFound:  true,
+			expectedPrevTS: past,
+		},
+		"Stored closed connection should be found regardless of current timestamp": {
+			connKey: indicator.BinaryHash(0x3333333333333333),
+			setupStore: func(key indicator.BinaryHash) {
+				transitionBased.storeClosedConnectionTimestamp(key, past, closedConnRememberDuration)
+			},
+			expectedFound:  true,
+			expectedPrevTS: past,
+		},
+		"Stored closed connection should be found even with same timestamp": {
+			connKey: indicator.BinaryHash(0x4444444444444444),
+			setupStore: func(key indicator.BinaryHash) {
+				transitionBased.storeClosedConnectionTimestamp(key, past, closedConnRememberDuration)
+			},
+			expectedFound:  true,
+			expectedPrevTS: past,
+		},
+		"Stored closed connection should still be found after cleanup": {
+			connKey: indicator.BinaryHash(0x5555555555555555),
+			setupStore: func(key indicator.BinaryHash) {
+				transitionBased.storeClosedConnectionTimestamp(key, past, closedConnRememberDuration)
+			},
+			expectedFound:  true,
+			expectedPrevTS: past,
+		},
+	}
+
+	for name, tc := range testCases {
+		t.Run(name, func(t *testing.T) {
+			// Setup: store connection if needed
+			if tc.setupStore != nil {
+				tc.setupStore(tc.connKey)
+			}
+
+			// Test: lookup the connection
+			found, prevTS := transitionBased.lookupPrevTimestamp(tc.connKey)
+
+			// Assertions
+			assert.Equal(t, tc.expectedFound, found)
+			assert.Equal(t, tc.expectedPrevTS, prevTS)
+		})
+	}
+
+	// Additional test for cleanup functionality
+	t.Run("should_not_panic_during_cleanup", func(t *testing.T) {
+		now := time.Now()
+		// Force cleanup by setting lastCleanup to a time in the past
+		transitionBased.lastCleanup = now.Add(-2 * time.Minute)
+		transitionBased.PeriodicCleanup(now, time.Minute)
+		// Should not panic and should update lastCleanup
+	})
+}
+
+// Test_lookupPrevTimestamp tests the new closed connection tracking functionality
+func Test_closedConnTimestamps(t *testing.T) {
+	entity1 := networkgraph.Entity{Type: storage.NetworkEntityInfo_DEPLOYMENT, ID: "deployment-1"}
+	entity2 := networkgraph.Entity{Type: storage.NetworkEntityInfo_DEPLOYMENT, ID: "deployment-2"}
+	conn1 := indicator.NetworkConn{
+		SrcEntity: entity1,
+		DstEntity: entity2,
+		DstPort:   80,
+		Protocol:  storage.L4Protocol_L4_PROTOCOL_TCP,
+	}
+	nowGo := time.Now()
+	nowTS := timestamp.FromGoTime(nowGo)
+
+	testCases := map[string]struct {
+		connKey        string
+		currentState   map[indicator.NetworkConn]timestamp.MicroTS
+		nowTS          time.Time
+		rememberPeriod time.Duration
+		expectedLength int
+	}{
+		"Closed connection should be remembered for at least 1000s": {
+			connKey: "conn1",
+			currentState: map[indicator.NetworkConn]timestamp.MicroTS{
+				conn1: nowTS.Add(-1000 * time.Second),
+			},
+			nowTS:          nowGo,
+			rememberPeriod: 2000 * time.Second,
+			expectedLength: 1,
+		},
+		"Closed connection should be forgotten after rememberPeriod": {
+			connKey: "conn1",
+			currentState: map[indicator.NetworkConn]timestamp.MicroTS{
+				conn1: nowTS.Add(-1000 * time.Second),
+			},
+			nowTS:          nowGo,
+			rememberPeriod: 500 * time.Second,
+			expectedLength: 0,
+		},
+	}
+
+	for name, tc := range testCases {
+		t.Run(name, func(t *testing.T) {
+			transitionBased := NewTransitionBased()
+			transitionBased.closedConnRememberDuration = tc.rememberPeriod
+
+			_ = transitionBased.ComputeUpdatedConns(tc.currentState)
+			transitionBased.PeriodicCleanup(tc.nowTS, 0)
+			assert.Equal(t, tc.expectedLength, len(transitionBased.closedConnTimestamps))
+		})
+	}
+}
+
+func TestComputeUpdatedEndpointsAndProcesses(t *testing.T) {
 	entity1 := networkgraph.Entity{Type: storage.NetworkEntityInfo_DEPLOYMENT, ID: "deployment-1"}
 
-	endpoint1 := indicator.ContainerEndpoint{
+	ep1 := indicator.ContainerEndpoint{
 		Entity:   entity1,
 		Port:     8080,
 		Protocol: storage.L4Protocol_L4_PROTOCOL_TCP,
 	}
+	p1 := indicator.ProcessListening{
+		Process: indicator.ProcessInfo{
+			ProcessName: "proc-name",
+			ProcessArgs: "proc-args",
+			ProcessExec: "proc-exec",
+		},
+		PodID:         "",
+		ContainerName: "",
+		DeploymentID:  "",
+		PodUID:        "",
+		Namespace:     "",
+		Protocol:      0,
+		Port:          0,
+	}
+	p2 := indicator.ProcessListening{
+		Process: indicator.ProcessInfo{
+			ProcessName: "proc2-name",
+			ProcessArgs: "proc2-args",
+			ProcessExec: "proc2-exec",
+		},
+		PodID:         "",
+		ContainerName: "",
+		DeploymentID:  "",
+		PodUID:        "",
+		Namespace:     "",
+		Protocol:      0,
+		Port:          0,
+	}
+	// Compute binary hashes for test assertions
+	ep1hash := ep1.BinaryKey(h)
+	p1hash := p1.BinaryKey(h)
+	p2hash := p2.BinaryKey(h)
+	emptyHash := indicator.BinaryHash(0)
+	emptyDeduper := map[indicator.BinaryHash]indicator.BinaryHash{}
 
-	now := timestamp.Now()
+	closedNow := timestamp.Now()
 	open := timestamp.InfiniteFuture
-	past := now - 1000
+	closedInThePast := closedNow - 1000
 
 	testCases := map[string]struct {
-		initial          map[indicator.ContainerEndpoint]timestamp.MicroTS
-		current          map[indicator.ContainerEndpoint]timestamp.MicroTS
-		expectNumUpdates int
+		initialMapping       map[indicator.ContainerEndpoint]*indicator.ProcessListeningWithTimestamp
+		currentMapping       map[indicator.ContainerEndpoint]*indicator.ProcessListeningWithTimestamp
+		expectNumUpdatesEp   map[string]int
+		expectNumUpdatesProc map[string]int
+		expectedDeduperState map[indicator.BinaryHash]indicator.BinaryHash // evaluated only for implTransitionBased!
 	}{
 		"Should send new closed endpoints": {
-			initial: map[indicator.ContainerEndpoint]timestamp.MicroTS{},
-			current: map[indicator.ContainerEndpoint]timestamp.MicroTS{
-				endpoint1: now,
+			initialMapping: map[indicator.ContainerEndpoint]*indicator.ProcessListeningWithTimestamp{},
+			currentMapping: map[indicator.ContainerEndpoint]*indicator.ProcessListeningWithTimestamp{
+				ep1: {
+					ProcessListening: &p1,
+					LastSeen:         closedNow,
+				},
 			},
-			expectNumUpdates: 1,
+			expectNumUpdatesEp:   map[string]int{implLegacy: 1, implTransitionBased: 1},
+			expectNumUpdatesProc: map[string]int{implLegacy: 1, implTransitionBased: 1},
+			expectedDeduperState: emptyDeduper,
 		},
 		"Should send update when open endpoints are closed": {
-			initial: map[indicator.ContainerEndpoint]timestamp.MicroTS{
-				endpoint1: open,
+			initialMapping: map[indicator.ContainerEndpoint]*indicator.ProcessListeningWithTimestamp{
+				ep1: {
+					ProcessListening: &p1,
+					LastSeen:         open,
+				},
 			},
-			current: map[indicator.ContainerEndpoint]timestamp.MicroTS{
-				endpoint1: past,
+			currentMapping: map[indicator.ContainerEndpoint]*indicator.ProcessListeningWithTimestamp{
+				ep1: {
+					ProcessListening: &p1,
+					LastSeen:         closedInThePast,
+				},
 			},
-			expectNumUpdates: 1,
+			expectNumUpdatesEp:   map[string]int{implLegacy: 1, implTransitionBased: 1},
+			expectNumUpdatesProc: map[string]int{implLegacy: 1, implTransitionBased: 1},
+			expectedDeduperState: emptyDeduper,
 		},
 		"Should not send an update when open endpoints remain open": {
-			initial: map[indicator.ContainerEndpoint]timestamp.MicroTS{
-				endpoint1: open,
+			initialMapping: map[indicator.ContainerEndpoint]*indicator.ProcessListeningWithTimestamp{
+				ep1: {
+					ProcessListening: &p1,
+					LastSeen:         open,
+				},
 			},
-			current: map[indicator.ContainerEndpoint]timestamp.MicroTS{
-				endpoint1: open,
+			currentMapping: map[indicator.ContainerEndpoint]*indicator.ProcessListeningWithTimestamp{
+				ep1: {
+					ProcessListening: &p1,
+					LastSeen:         open,
+				},
 			},
-			expectNumUpdates: 0,
+			expectNumUpdatesEp:   map[string]int{implLegacy: 0, implTransitionBased: 0},
+			expectNumUpdatesProc: map[string]int{implLegacy: 0, implTransitionBased: 0},
+			expectedDeduperState: map[indicator.BinaryHash]indicator.BinaryHash{ep1hash: p1hash},
 		},
 		"Should not send update when closed TS is updated to a past value": {
-			initial: map[indicator.ContainerEndpoint]timestamp.MicroTS{
-				endpoint1: now,
+			initialMapping: map[indicator.ContainerEndpoint]*indicator.ProcessListeningWithTimestamp{
+				ep1: {
+					ProcessListening: &p1,
+					LastSeen:         closedNow,
+				},
 			},
-			current: map[indicator.ContainerEndpoint]timestamp.MicroTS{
-				endpoint1: past,
+			currentMapping: map[indicator.ContainerEndpoint]*indicator.ProcessListeningWithTimestamp{
+				ep1: {
+					ProcessListening: &p1,
+					LastSeen:         closedInThePast,
+				},
 			},
-			expectNumUpdates: 0,
+			// We do not track close-timestamps for endpoints as we do for connections.
+			// This results in always sending updates on closed->closed transitions.
+			// This is intentional, as we estimate lower overhead in sending duplicates compared to
+			// tracking all closed endpoints in memory for a limited time (as done for connections).
+			expectNumUpdatesEp:   map[string]int{implLegacy: 0, implTransitionBased: 1},
+			expectNumUpdatesProc: map[string]int{implLegacy: 0, implTransitionBased: 1},
+			expectedDeduperState: emptyDeduper,
 		},
 		"Should send update when closed TS is updated to a younger value": {
-			initial: map[indicator.ContainerEndpoint]timestamp.MicroTS{
-				endpoint1: past,
+			initialMapping: map[indicator.ContainerEndpoint]*indicator.ProcessListeningWithTimestamp{
+				ep1: {
+					ProcessListening: &p1,
+					LastSeen:         closedInThePast,
+				},
 			},
-			current: map[indicator.ContainerEndpoint]timestamp.MicroTS{
-				endpoint1: now,
+			currentMapping: map[indicator.ContainerEndpoint]*indicator.ProcessListeningWithTimestamp{
+				ep1: {
+					ProcessListening: &p1,
+					LastSeen:         closedNow,
+				},
 			},
-			expectNumUpdates: 1,
+			expectNumUpdatesEp:   map[string]int{implLegacy: 1, implTransitionBased: 1},
+			expectNumUpdatesProc: map[string]int{implLegacy: 1, implTransitionBased: 1},
+			expectedDeduperState: emptyDeduper,
 		},
 		"Should produce no updates on empty input": {
-			initial:          map[indicator.ContainerEndpoint]timestamp.MicroTS{},
-			current:          map[indicator.ContainerEndpoint]timestamp.MicroTS{},
-			expectNumUpdates: 0,
+			initialMapping:       map[indicator.ContainerEndpoint]*indicator.ProcessListeningWithTimestamp{},
+			currentMapping:       map[indicator.ContainerEndpoint]*indicator.ProcessListeningWithTimestamp{},
+			expectNumUpdatesEp:   map[string]int{implLegacy: 0, implTransitionBased: 0},
+			expectNumUpdatesProc: map[string]int{implLegacy: 0, implTransitionBased: 0},
+			expectedDeduperState: emptyDeduper,
 		},
-		"Should send an update on deletion (specific for legacy)": {
-			initial: map[indicator.ContainerEndpoint]timestamp.MicroTS{
-				endpoint1: open,
+		"Should send an update on deletion for legacy but not for TransitionBased": {
+			initialMapping: map[indicator.ContainerEndpoint]*indicator.ProcessListeningWithTimestamp{
+				ep1: {
+					ProcessListening: &p1,
+					LastSeen:         open,
+				},
 			},
-			current:          map[indicator.ContainerEndpoint]timestamp.MicroTS{},
-			expectNumUpdates: 1,
+			currentMapping:       map[indicator.ContainerEndpoint]*indicator.ProcessListeningWithTimestamp{},
+			expectNumUpdatesEp:   map[string]int{implLegacy: 1, implTransitionBased: 0},
+			expectNumUpdatesProc: map[string]int{implLegacy: 1, implTransitionBased: 0},
+			expectedDeduperState: map[indicator.BinaryHash]indicator.BinaryHash{ep1hash: p1hash},
 		},
 		"handling nils": {
-			initial:          nil,
-			current:          nil,
-			expectNumUpdates: 0,
+			initialMapping:       nil,
+			currentMapping:       nil,
+			expectNumUpdatesEp:   map[string]int{implLegacy: 0, implTransitionBased: 0},
+			expectNumUpdatesProc: map[string]int{implLegacy: 0, implTransitionBased: 0},
+			expectedDeduperState: emptyDeduper,
 		},
+		// Process-specific cases
+		"Should replace process on two open-endpoint messages": {
+			initialMapping: map[indicator.ContainerEndpoint]*indicator.ProcessListeningWithTimestamp{
+				ep1: {
+					ProcessListening: &p1,
+					LastSeen:         open,
+				},
+			},
+			currentMapping: map[indicator.ContainerEndpoint]*indicator.ProcessListeningWithTimestamp{
+				ep1: {
+					ProcessListening: &p2,
+					LastSeen:         open,
+				},
+			},
+			expectNumUpdatesEp: map[string]int{implLegacy: 0, implTransitionBased: 0},
+			// Legacy sends 2 updates, because first is for p1 to disappear, and second is for p2 to appear.
+			expectNumUpdatesProc: map[string]int{implLegacy: 2, implTransitionBased: 1},
+			expectedDeduperState: map[indicator.BinaryHash]indicator.BinaryHash{ep1hash: p2hash},
+		},
+		"A replacement triggered with a close message should close the correct process": {
+			initialMapping: map[indicator.ContainerEndpoint]*indicator.ProcessListeningWithTimestamp{
+				ep1: {
+					ProcessListening: &p1,
+					LastSeen:         open,
+				},
+			},
+			currentMapping: map[indicator.ContainerEndpoint]*indicator.ProcessListeningWithTimestamp{
+				ep1: {
+					ProcessListening: &p2,
+					LastSeen:         closedNow,
+				},
+			},
+			expectNumUpdatesEp: map[string]int{implLegacy: 1, implTransitionBased: 1}, // for closing ep1
+			// Legacy sends 2 updates, because first is for p1 to disappear, and second is for p2 to appear (as closed).
+			expectNumUpdatesProc: map[string]int{implLegacy: 2, implTransitionBased: 1},
+			expectedDeduperState: emptyDeduper,
+		},
+		"A replacement process is nil but the endpoint stays open": {
+			initialMapping: map[indicator.ContainerEndpoint]*indicator.ProcessListeningWithTimestamp{
+				ep1: {
+					ProcessListening: &p1,
+					LastSeen:         open,
+				},
+			},
+			currentMapping: map[indicator.ContainerEndpoint]*indicator.ProcessListeningWithTimestamp{
+				ep1: {
+					ProcessListening: nil,
+					LastSeen:         open,
+				},
+			},
+			expectNumUpdatesEp: map[string]int{implLegacy: 0, implTransitionBased: 0}, // ep1 remains open
+			// Legacy sends 1 update for p1 disappearing.
+			expectNumUpdatesProc: map[string]int{implLegacy: 1, implTransitionBased: 0},
+			expectedDeduperState: map[indicator.BinaryHash]indicator.BinaryHash{ep1hash: emptyHash}, // Note that deduper gets updated with empty process
+		},
+		"A replacement process is nil and the endpoint is closed": {
+			initialMapping: map[indicator.ContainerEndpoint]*indicator.ProcessListeningWithTimestamp{
+				ep1: {
+					ProcessListening: &p1,
+					LastSeen:         open,
+				},
+			},
+			currentMapping: map[indicator.ContainerEndpoint]*indicator.ProcessListeningWithTimestamp{
+				ep1: {
+					ProcessListening: nil,
+					LastSeen:         closedNow,
+				},
+			},
+			expectNumUpdatesEp: map[string]int{implLegacy: 1, implTransitionBased: 1}, // for closing ep1
+			// Legacy sends 1 update for p1 disappearing.
+			expectNumUpdatesProc: map[string]int{implLegacy: 1, implTransitionBased: 0},
+			expectedDeduperState: emptyDeduper,
+		},
+	}
+
+	executeAssertions := func(t *testing.T, l UpdateComputer,
+		expectedNumUpdatesEp, expectedNumUpdatesProc int,
+		initialMapping, currentMapping map[indicator.ContainerEndpoint]*indicator.ProcessListeningWithTimestamp) {
+		t.Helper()
+		// Bring model to the initial state
+		ie, ip := l.ComputeUpdatedEndpointsAndProcesses(initialMapping)
+		_, _ = ie, ip
+		l.OnSuccessfulSendEndpoints(initialMapping)
+		l.OnSuccessfulSendProcesses(initialMapping)
+		// Call to OnSuccessfulSend with nils should not change anything in the state
+		l.OnSuccessfulSendEndpoints(nil)
+		l.OnSuccessfulSendProcesses(nil)
+
+		updatesEp, updatesProc := l.ComputeUpdatedEndpointsAndProcesses(currentMapping)
+		assert.Len(t, updatesEp, expectedNumUpdatesEp, "num endpoint updates incorrect")
+		assert.Len(t, updatesProc, expectedNumUpdatesProc, "num proc updates incorrect")
+
+		// Verify protobuf conversion
+		for _, update := range updatesEp {
+			assert.NotNil(t, update.GetProps())
+			assert.Equal(t, uint32(8080), update.GetProps().GetPort())
+			assert.Equal(t, storage.L4Protocol_L4_PROTOCOL_TCP, update.GetProps().GetL4Protocol())
+		}
 	}
 
 	for name, tc := range testCases {
 		t.Run(name, func(t *testing.T) {
-			l := NewLegacy()
-			l.UpdateState(nil, tc.initial, nil)
-			// Call to UpdateState with nils should not change anything in the state
-			l.UpdateState(nil, nil, nil)
-			updates := l.ComputeUpdatedEndpoints(tc.current)
-			assert.Len(t, updates, tc.expectNumUpdates)
+			t.Run(implLegacy, func(t *testing.T) {
+				executeAssertions(t, NewLegacy(),
+					tc.expectNumUpdatesEp[implLegacy], tc.expectNumUpdatesProc[implLegacy],
+					tc.initialMapping, tc.currentMapping)
+			})
+			t.Run(implTransitionBased, func(t *testing.T) {
+				uc := NewTransitionBased()
+				executeAssertions(t, uc,
+					tc.expectNumUpdatesEp[implTransitionBased], tc.expectNumUpdatesProc[implTransitionBased],
+					tc.initialMapping, tc.currentMapping)
 
-			// Verify protobuf conversion
-			for _, update := range updates {
-				assert.NotNil(t, update.Props)
-				assert.Equal(t, uint32(8080), update.Props.Port)
-				assert.Equal(t, storage.L4Protocol_L4_PROTOCOL_TCP, update.Props.L4Protocol)
-			}
-		})
-	}
-}
-
-// TestComputeUpdatedProcesses relies on exactly the same method as for endpoints.
-func TestComputeUpdatedProcesses(t *testing.T) {
-	process1 := indicator.ProcessListening{
-		Process: indicator.ProcessInfo{
-			ProcessName: "nginx",
-			ProcessArgs: "-g daemon off;",
-			ProcessExec: "/usr/sbin/nginx",
-		},
-		PodID:         "pod-1",
-		ContainerName: "nginx-container",
-		DeploymentID:  "nginx-deployment",
-		PodUID:        "uid-123",
-		Namespace:     "default",
-		Port:          80,
-		Protocol:      storage.L4Protocol_L4_PROTOCOL_TCP,
-	}
-
-	now := timestamp.Now()
-	open := timestamp.InfiniteFuture
-	past := now - 1000
-
-	testCases := map[string]struct {
-		initial          map[indicator.ProcessListening]timestamp.MicroTS
-		current          map[indicator.ProcessListening]timestamp.MicroTS
-		disableFeature   bool
-		expectNumUpdates int
-	}{
-		"Should not send any updates if feature is disabled": {
-			initial: map[indicator.ProcessListening]timestamp.MicroTS{},
-			current: map[indicator.ProcessListening]timestamp.MicroTS{
-				process1: now, // should generate an update if feat is enabled
-			},
-			disableFeature:   true,
-			expectNumUpdates: 0,
-		},
-		"Should send new closed processes": {
-			initial: map[indicator.ProcessListening]timestamp.MicroTS{},
-			current: map[indicator.ProcessListening]timestamp.MicroTS{
-				process1: now,
-			},
-			expectNumUpdates: 1,
-		},
-		"Should send update when open processes are closed": {
-			initial: map[indicator.ProcessListening]timestamp.MicroTS{
-				process1: open,
-			},
-			current: map[indicator.ProcessListening]timestamp.MicroTS{
-				process1: past,
-			},
-			expectNumUpdates: 1,
-		},
-		"Should not send an update when open processes remain open": {
-			initial: map[indicator.ProcessListening]timestamp.MicroTS{
-				process1: open,
-			},
-			current: map[indicator.ProcessListening]timestamp.MicroTS{
-				process1: open,
-			},
-			expectNumUpdates: 0,
-		},
-		"Should not send update when closed TS is updated to a past value": {
-			initial: map[indicator.ProcessListening]timestamp.MicroTS{
-				process1: now,
-			},
-			current: map[indicator.ProcessListening]timestamp.MicroTS{
-				process1: past,
-			},
-			expectNumUpdates: 0,
-		},
-		"Should send update when closed TS is updated to a younger value": {
-			initial: map[indicator.ProcessListening]timestamp.MicroTS{
-				process1: past,
-			},
-			current: map[indicator.ProcessListening]timestamp.MicroTS{
-				process1: now,
-			},
-			expectNumUpdates: 1,
-		},
-		"Should produce no updates on empty input": {
-			initial:          map[indicator.ProcessListening]timestamp.MicroTS{},
-			current:          map[indicator.ProcessListening]timestamp.MicroTS{},
-			expectNumUpdates: 0,
-		},
-		"Should send an update on deletion (specific for legacy)": {
-			initial: map[indicator.ProcessListening]timestamp.MicroTS{
-				process1: open,
-			},
-			current:          map[indicator.ProcessListening]timestamp.MicroTS{},
-			expectNumUpdates: 1,
-		},
-		"handling nils": {
-			initial:          nil,
-			current:          nil,
-			expectNumUpdates: 0,
-		},
-	}
-
-	for name, tc := range testCases {
-		t.Run(name, func(t *testing.T) {
-			t.Setenv(env.ProcessesListeningOnPort.EnvVar(), "true")
-			if tc.disableFeature {
-				t.Setenv(env.ProcessesListeningOnPort.EnvVar(), "false")
-			}
-			l := NewLegacy()
-			l.UpdateState(nil, nil, tc.initial)
-			// Call to UpdateState with nils should not change anything in the state
-			l.UpdateState(nil, nil, nil)
-			updates := l.ComputeUpdatedProcesses(tc.current)
-			assert.Len(t, updates, tc.expectNumUpdates)
-			// The actual behavior depends on the ProcessesListeningOnPort feature flag, here we do basic checks.
-			for _, update := range updates {
-				assert.NotNil(t, update.Process)
-				assert.Equal(t, uint32(80), update.Port)
-				assert.Equal(t, storage.L4Protocol_L4_PROTOCOL_TCP, update.Protocol)
-				assert.Equal(t, "nginx", update.Process.ProcessName)
-			}
+				assert.Len(t, uc.endpointsDeduper, len(tc.expectedDeduperState))
+				for k, v := range tc.expectedDeduperState {
+					got, found := uc.endpointsDeduper[k]
+					assert.Truef(t, found, "expected to find %x in deduper", k)
+					assert.Equal(t, v, got, "expected to find %x=%x in deduper, but found %x=%x", k, v, k, got)
+				}
+			})
 		})
 	}
 }

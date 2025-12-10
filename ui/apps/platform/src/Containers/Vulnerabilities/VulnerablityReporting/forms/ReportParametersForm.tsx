@@ -1,4 +1,3 @@
-import React from 'react';
 import type { ChangeEvent, FormEvent, ReactElement } from 'react';
 import {
     Checkbox,
@@ -17,15 +16,7 @@ import {
 import type { FormikProps } from 'formik';
 import { cloneDeep } from 'lodash';
 
-import {
-    CVESDiscoveredSince,
-    ReportFormValues,
-} from 'Containers/Vulnerabilities/VulnerablityReporting/forms/useReportFormValues';
 import { fixabilityLabels } from 'constants/reportConstants';
-import {
-    cvesDiscoveredSinceLabelMap,
-    imageTypeLabelMap,
-} from 'Containers/Vulnerabilities/VulnerablityReporting/utils';
 
 import CheckboxSelect from 'Components/PatternFly/CheckboxSelect';
 import SelectSingle from 'Components/SelectSingle/SelectSingle';
@@ -34,7 +25,10 @@ import FormLabelGroup from 'Components/PatternFly/FormLabelGroup';
 import useFeatureFlags from 'hooks/useFeatureFlags';
 import type { CollectionSlim } from 'services/CollectionsService';
 import type { NotifierConfiguration } from 'services/ReportsService.types';
+
 import CollectionSelection from './CollectionSelection';
+import type { CVESDiscoveredSince, ReportFormValues } from './useReportFormValues';
+import { cvesDiscoveredSinceLabelMap, imageTypeLabelMap } from '../utils';
 
 export type ReportParametersFormProps = {
     title: string;
@@ -78,12 +72,11 @@ function ReportParametersForm({ title, formik }: ReportParametersFormProps): Rea
         );
     }
     /*
-    // Ross CISA KEV includeKnownExploit?
-    if (isFeatureFlagEnabled('ROX_SCANNER_V4') && isFeatureFlagEnabled('ROX_WHATEVER')) {
+    if (isFeatureFlagEnabled('ROX_SCANNER_V4') && isFeatureFlagEnabled('ROX_CISA_KEV')) {
         optionalColumnsCheckboxes.push(
             <Checkbox
                 key="includeKnownExploit"
-                label="known exploit"
+                label="Known Exploit and Known Ransomware Campaign"
                 id="reportParameters.includeKnownExploit"
                 isChecked={formik.values.reportParameters.includeKnownExploit}
                 onChange={onChange}
@@ -102,10 +95,9 @@ function ReportParametersForm({ title, formik }: ReportParametersFormProps): Rea
         formik.setFieldValue(fieldName, selection);
     };
 
-    const handleDateSelection =
-        (fieldName: string) => (_event: React.FormEvent, selection: string) => {
-            formik.setFieldValue(fieldName, selection);
-        };
+    const handleDateSelection = (fieldName: string) => (_event: FormEvent, selection: string) => {
+        formik.setFieldValue(fieldName, selection);
+    };
 
     const handleCollectionSelection = (fieldName: string) => (selection: CollectionSlim | null) => {
         formik.setFieldValue(fieldName, selection);

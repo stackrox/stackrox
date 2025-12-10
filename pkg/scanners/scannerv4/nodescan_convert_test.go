@@ -18,7 +18,6 @@ type indexReportConvertSuite struct {
 }
 
 func (s *indexReportConvertSuite) TestToNodeInventory() {
-	r := createVulnerabilityReport()
 	expected := &storage.EmbeddedNodeScanComponent{
 		Name:    "openssh-clients",
 		Version: "8.7p1-38.el9",
@@ -91,13 +90,18 @@ func (s *indexReportConvertSuite) TestToNodeInventory() {
 		},
 	}
 
-	actual := toNodeScan(r, "Red Hat Enterprise Linux CoreOS 417.94.202409121747-0")
+	for _, r := range []*v4.VulnerabilityReport{
+		createVulnerabilityReport(),
+		createVulnerabilityReportDeprecated(),
+	} {
+		actual := toNodeScan(r, "Red Hat Enterprise Linux CoreOS 417.94.202409121747-0")
 
-	s.Equal(storage.NodeScan_SCANNER_V4, actual.GetScannerVersion())
-	s.Len(actual.GetComponents(), 2)
-	s.Len(actual.GetNotes(), 0)
+		s.Equal(storage.NodeScan_SCANNER_V4, actual.GetScannerVersion())
+		s.Len(actual.GetComponents(), 2)
+		s.Len(actual.GetNotes(), 0)
 
-	protoassert.SliceContains(s.T(), actual.GetComponents(), expected)
+		protoassert.SliceContains(s.T(), actual.GetComponents(), expected)
+	}
 }
 
 func (s *indexReportConvertSuite) TestEmptyReportConversionNoPanic() {
@@ -333,7 +337,113 @@ func createVulnerabilityReport() *v4.VulnerabilityReport {
 			"0": {Values: []string{"7401229"}},
 		},
 		Contents: &v4.Contents{
-			Packages: []*v4.Package{
+			Packages: map[string]*v4.Package{
+				"0": {
+					Id:      "0",
+					Name:    "openssh-clients",
+					Version: "8.7p1-38.el9",
+					Kind:    "binary",
+					Source: &v4.Package{
+						Name:    "openssh",
+						Version: "8.7p1-38.el9",
+						Kind:    "source",
+						Source:  nil,
+						Cpe:     "cpe:2.3:*:*:*:*:*:*:*:*:*:*:*",
+					},
+					PackageDb:      "sqlite:usr/share/rpm",
+					RepositoryHint: "hash:sha256:f52ca767328e6919ec11a1da654e92743587bd3c008f0731f8c4de3af19c1830|key:199e2f91fd431d51",
+					Arch:           "x86_64",
+					Cpe:            "cpe:2.3:*:*:*:*:*:*:*:*:*:*:*",
+				},
+				"1": {
+					Id:      "1",
+					Name:    "skopeo",
+					Version: "2:1.14.4-2.rhaos4.16.el9",
+					Kind:    "binary",
+					Source: &v4.Package{
+						Name:    "skopeo",
+						Version: "2:1.14.4-2.rhaos4.16.el9",
+						Kind:    "source",
+						Cpe:     "cpe:2.3:*:*:*:*:*:*:*:*:*:*:*",
+					},
+					PackageDb:      "sqlite:usr/share/rpm",
+					RepositoryHint: "hash:sha256:072a75d1b9b36457751ef05031fd69615f21ebaa935c30d74d827328b78fa694|key:199e2f91fd431d51",
+					Arch:           "x86_64",
+					Cpe:            "cpe:2.3:*:*:*:*:*:*:*:*:*:*:*",
+				},
+			},
+			Repositories: map[string]*v4.Repository{
+				"cpe:/o:redhat:enterprise_linux:9::fastdatapath": {
+					Id:   "0",
+					Name: "cpe:/o:redhat:enterprise_linux:9::fastdatapath",
+					Key:  "rhel-cpe-repository",
+					Cpe:  "cpe:2.3:o:redhat:enterprise_linux:9:*:fastdatapath:*:*:*:*:*",
+				},
+				"cpe:/a:redhat:openshift:4.16::el9": {
+					Id:   "1",
+					Name: "cpe:/a:redhat:openshift:4.16::el9",
+					Key:  "rhel-cpe-repository",
+					Cpe:  "cpe:2.3:a:redhat:openshift:4.16:*:el9:*:*:*:*:*",
+				},
+			},
+			Environments: map[string]*v4.Environment_List{"1": {Environments: []*v4.Environment{
+				{
+					PackageDb:     "sqlite:usr/share/rpm",
+					IntroducedIn:  "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+					RepositoryIds: []string{"cpe:/o:redhat:enterprise_linux:9::fastdatapath", "cpe:/a:redhat:openshift:4.16::el9"},
+				},
+			},
+			}},
+		},
+		Notes: []v4.VulnerabilityReport_Note{v4.VulnerabilityReport_NOTE_OS_UNKNOWN},
+	}
+}
+
+func createVulnerabilityReportDeprecated() *v4.VulnerabilityReport {
+	return &v4.VulnerabilityReport{
+		HashId: "",
+		Vulnerabilities: map[string]*v4.VulnerabilityReport_Vulnerability{
+			"7401229": {
+				Id:                 "7401229",
+				Name:               "RHSA-2024:4616",
+				Description:        "Sample Description",
+				Severity:           "Moderate",
+				NormalizedSeverity: 2,
+				FixedInVersion:     "0:4.16.0-202407111006.p0.gfa84651.assembly.stream.el9",
+				Link:               "https://access.redhat.com/errata/RHSA-2024:4616",
+				Cvss: &v4.VulnerabilityReport_Vulnerability_CVSS{
+					V3: &v4.VulnerabilityReport_Vulnerability_CVSS_V3{
+						BaseScore: 8.2,
+						Vector:    "CVSS:3.1/AV:A/AC:L/PR:N/UI:N/S:C/C:L/I:N/A:H",
+					},
+					Source: v4.VulnerabilityReport_Vulnerability_CVSS_SOURCE_RED_HAT,
+					Url:    "https://access.redhat.com/errata/RHSA-2024:4616",
+				},
+				CvssMetrics: []*v4.VulnerabilityReport_Vulnerability_CVSS{
+					{
+						V3: &v4.VulnerabilityReport_Vulnerability_CVSS_V3{
+							BaseScore: 8.2,
+							Vector:    "CVSS:3.1/AV:A/AC:L/PR:N/UI:N/S:C/C:L/I:N/A:H",
+						},
+						Source: v4.VulnerabilityReport_Vulnerability_CVSS_SOURCE_RED_HAT,
+						Url:    "https://access.redhat.com/errata/RHSA-2024:4616",
+					},
+					{
+						V2: &v4.VulnerabilityReport_Vulnerability_CVSS_V2{
+							BaseScore: 6.4,
+							Vector:    "AV:N/AC:M/Au:M/C:C/I:N/A:P",
+						},
+						Source: v4.VulnerabilityReport_Vulnerability_CVSS_SOURCE_NVD,
+						Url:    "https://nvd.nist.gov/vuln/detail/CVE-1234-567",
+					},
+				},
+			},
+		},
+		PackageVulnerabilities: map[string]*v4.StringList{
+			"0": {Values: []string{"7401229"}},
+		},
+		Contents: &v4.Contents{
+			PackagesDEPRECATED: []*v4.Package{
 				{
 					Id:      "0",
 					Name:    "openssh-clients",
@@ -368,7 +478,7 @@ func createVulnerabilityReport() *v4.VulnerabilityReport {
 					Cpe:            "cpe:2.3:*:*:*:*:*:*:*:*:*:*:*",
 				},
 			},
-			Repositories: []*v4.Repository{
+			RepositoriesDEPRECATED: []*v4.Repository{
 				{
 					Id:   "0",
 					Name: "cpe:/o:redhat:enterprise_linux:9::fastdatapath",
@@ -382,7 +492,7 @@ func createVulnerabilityReport() *v4.VulnerabilityReport {
 					Cpe:  "cpe:2.3:a:redhat:openshift:4.16:*:el9:*:*:*:*:*",
 				},
 			},
-			Environments: map[string]*v4.Environment_List{"1": {Environments: []*v4.Environment{
+			EnvironmentsDEPRECATED: map[string]*v4.Environment_List{"1": {Environments: []*v4.Environment{
 				{
 					PackageDb:     "sqlite:usr/share/rpm",
 					IntroducedIn:  "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
@@ -439,8 +549,8 @@ func createOutOfBoundsReport() *v4.VulnerabilityReport {
 			"1": {Values: []string{"7401229"}},
 		},
 		Contents: &v4.Contents{
-			Packages: []*v4.Package{
-				{
+			Packages: map[string]*v4.Package{
+				"0": {
 					Id:      "0",
 					Name:    "openssh-clients",
 					Version: "8.7p1-38.el9",
@@ -457,7 +567,7 @@ func createOutOfBoundsReport() *v4.VulnerabilityReport {
 					Arch:           "x86_64",
 					Cpe:            "cpe:2.3:*:*:*:*:*:*:*:*:*:*:*",
 				},
-				{
+				"1": {
 					Id:      "1",
 					Name:    "skopeo",
 					Version: "2:1.14.4-2.rhaos4.16.el9",
@@ -474,14 +584,14 @@ func createOutOfBoundsReport() *v4.VulnerabilityReport {
 					Cpe:            "cpe:2.3:*:*:*:*:*:*:*:*:*:*:*",
 				},
 			},
-			Repositories: []*v4.Repository{
-				{
+			Repositories: map[string]*v4.Repository{
+				"0": {
 					Id:   "0",
 					Name: "cpe:/o:redhat:enterprise_linux:9::fastdatapath",
 					Key:  "rhel-cpe-repository",
 					Cpe:  "cpe:2.3:o:redhat:enterprise_linux:9:*:fastdatapath:*:*:*:*:*",
 				},
-				{
+				"1": {
 					Id:   "1",
 					Name: "cpe:/a:redhat:openshift:4.16::el9",
 					Key:  "rhel-cpe-repository",

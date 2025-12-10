@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import { useEffect } from 'react';
 import { gql, useQuery } from '@apollo/client';
 import {
     Breadcrumb,
@@ -22,7 +22,7 @@ import useURLStringUnion from 'hooks/useURLStringUnion';
 import useURLPagination from 'hooks/useURLPagination';
 import useURLSort from 'hooks/useURLSort';
 import { getHasSearchApplied, getPaginationParams } from 'utils/searchUtils';
-import { Pagination as PaginationParam } from 'services/types';
+import type { Pagination as PaginationParam } from 'services/types';
 
 import type { VulnerabilitySeverity, VulnerabilityState } from 'types/cve.proto';
 import useAnalytics, {
@@ -31,46 +31,43 @@ import useAnalytics, {
 } from 'hooks/useAnalytics';
 
 import { DynamicTableLabel } from 'Components/DynamicIcon';
-import {
-    SummaryCardLayout,
-    SummaryCard,
-} from 'Containers/Vulnerabilities/components/SummaryCardLayout';
 import { getTableUIState } from 'utils/getTableUIState';
 import { createFilterTracker } from 'utils/analyticsEventTracking';
 import { overrideManagedColumns, useManagedColumns } from 'hooks/useManagedColumns';
 import type { ColumnConfigOverrides } from 'hooks/useManagedColumns';
-import { HistoryAction } from 'hooks/useURLParameter';
+import type { HistoryAction } from 'hooks/useURLParameter';
 import ColumnManagementButton from 'Components/ColumnManagementButton';
 import type { CompoundSearchFilterEntity } from 'Components/CompoundSearchFilter/types';
-import { WorkloadEntityTab, VulnerabilitySeverityLabel } from '../../types';
 import {
     getHiddenSeverities,
     getStatusesForExceptionCount,
     getVulnStateScopedQueryString,
     parseQuerySearchFilter,
 } from '../../utils/searchUtils';
-import CvePageHeader, { CveMetadata } from '../../components/CvePageHeader';
+import CvePageHeader from '../../components/CvePageHeader';
+import type { CveMetadata } from '../../components/CvePageHeader';
 import { DEFAULT_VM_PAGE_SIZE } from '../../constants';
 
 import AffectedImagesTable, {
-    ImageForCve,
     imagesForCveFragment,
     tableId as affectedImagesTableId,
     defaultColumns as affectedImagesDefaultColumns,
 } from '../Tables/AffectedImagesTable';
+import type { ImageForCve } from '../Tables/AffectedImagesTable';
 import AdvancedFiltersToolbar from '../../components/AdvancedFiltersToolbar';
 import EntityTypeToggleGroup from '../../components/EntityTypeToggleGroup';
+import type { VulnerabilitySeverityLabel, WorkloadEntityTab } from '../../types';
 import AffectedDeploymentsTable, {
-    DeploymentForCve,
     deploymentsForCveFragment,
     tableId as affectedDeploymentsTableId,
     defaultColumns as affectedDeploymentsDefaultColumns,
 } from '../Tables/AffectedDeploymentsTable';
+import type { DeploymentForCve } from '../Tables/AffectedDeploymentsTable';
 import AffectedImages from '../SummaryCards/AffectedImages';
-import BySeveritySummaryCard, {
-    ResourceCountsByCveSeverity,
-} from '../../components/BySeveritySummaryCard';
-import { resourceCountByCveSeverityAndStatusFragment } from '../SummaryCards/CvesByStatusSummaryCard';
+import BySeveritySummaryCard from '../../components/BySeveritySummaryCard';
+import type { ResourceCountsByCveSeverity } from '../../components/BySeveritySummaryCard';
+import { SummaryCard, SummaryCardLayout } from '../../components/SummaryCardLayout';
+import { resourceCountByCveSeverityAndStatusFragment } from '../../components/CvesByStatusSummaryCard';
 import VulnerabilityStateTabs, {
     vulnStateTabContentId,
 } from '../components/VulnerabilityStateTabs';
@@ -342,9 +339,13 @@ function ImageCvePage({
     }
 
     // Track the initial entity tab view
+    /* eslint-disable react-hooks/exhaustive-deps */
     useEffect(() => {
         onEntityTypeChange(entityTab, 'replace');
     }, []);
+    // entityTabKey
+    // onEntityTabChange
+    /* eslint-enable react-hooks/exhaustive-deps */
 
     // If the `imageCVE` field is null, then the CVE ID passed via URL does not exist
     if (metadataRequest.data && metadataRequest.data.imageCVE === null) {
@@ -515,7 +516,7 @@ function ImageCvePage({
                         </SplitItem>
                     </Split>
                     <Divider />
-                    <div className="pf-v5-u-px-lg workload-cves-table-container">
+                    <div className="pf-v5-u-px-lg" style={{ overflowX: 'auto' }}>
                         {entityTab === 'Image' && (
                             <AffectedImagesTable
                                 tableState={imageTableState}

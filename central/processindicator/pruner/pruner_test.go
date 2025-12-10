@@ -64,7 +64,6 @@ func processToIDAndArgs(process *storage.ProcessIndicator) processindicator.IDAn
 }
 
 func TestRabbitMQPruning(t *testing.T) {
-	rand.Seed(time.Now().UnixNano())
 	var processes []processindicator.IDAndArgs
 	processes = append(processes, processToIDAndArgs(deterministicRabbitMQProcess))
 	for i := 0; i < 1000; i++ {

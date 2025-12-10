@@ -70,7 +70,7 @@ func (s *ReportConfigurationDatastoreV2Tests) TestSortReportConfigByCompletionTi
 		},
 	}
 	for i := range reportConfig2.GetNotifiers() {
-		reportConfig2.Notifiers[i] = reportConfig1.Notifiers[i]
+		reportConfig2.Notifiers[i] = reportConfig1.GetNotifiers()[i]
 	}
 
 	configID2, err := s.datastore.AddReportConfiguration(s.ctx, reportConfig2)
@@ -84,7 +84,7 @@ func (s *ReportConfigurationDatastoreV2Tests) TestSortReportConfigByCompletionTi
 		},
 	}
 	for i := range reportConfig2.GetNotifiers() {
-		reportConfig3.Notifiers[i] = reportConfig1.Notifiers[i]
+		reportConfig3.Notifiers[i] = reportConfig1.GetNotifiers()[i]
 	}
 
 	configID3, err := s.datastore.AddReportConfiguration(s.ctx, reportConfig3)
@@ -125,7 +125,7 @@ func (s *ReportConfigurationDatastoreV2Tests) TestSortReportConfigByCompletionTi
 
 	configIDs := make([]string, 0, len(configs))
 	for _, conf := range configs {
-		configIDs = append(configIDs, conf.Id)
+		configIDs = append(configIDs, conf.GetId())
 	}
 	s.Equal(expectedSortedConfigIDs, configIDs)
 
@@ -143,7 +143,7 @@ func (s *ReportConfigurationDatastoreV2Tests) TestSortReportConfigByCompletionTi
 
 	configIDs = make([]string, 0, len(configs))
 	for _, conf := range configs {
-		configIDs = append(configIDs, conf.Id)
+		configIDs = append(configIDs, conf.GetId())
 	}
 	s.Equal(expectedSortedConfigIDs, configIDs)
 }

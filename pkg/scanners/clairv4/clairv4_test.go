@@ -52,6 +52,10 @@ func (m *mockRegistry) HTTPClient() *http.Client {
 	return http.DefaultClient
 }
 
+func (m *mockRegistry) ListTags(_ context.Context, _ string) ([]string, error) {
+	panic("unsupported")
+}
+
 var (
 	_ http.Handler = (*noopHandler)(nil)
 	_ http.Handler = (*mockClair)(nil)
@@ -211,6 +215,6 @@ func TestGetScan(t *testing.T) {
 	scan, err := clair.GetScan(testImage.image)
 	assert.NoError(t, err)
 	expected := testImage.expected
-	protoassert.ElementsMatch(t, expected.Components, scan.Components)
-	assert.Equal(t, expected.OperatingSystem, scan.OperatingSystem)
+	protoassert.ElementsMatch(t, expected.GetComponents(), scan.GetComponents())
+	assert.Equal(t, expected.GetOperatingSystem(), scan.GetOperatingSystem())
 }

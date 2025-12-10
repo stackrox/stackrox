@@ -11,7 +11,6 @@ import (
 	alertMocks "github.com/stackrox/rox/central/alert/datastore/mocks"
 	clusterMocks "github.com/stackrox/rox/central/cluster/datastore/mocks"
 	clusterCVEMocks "github.com/stackrox/rox/central/cve/cluster/datastore/mocks"
-	imageCVEMocks "github.com/stackrox/rox/central/cve/image/datastore/mocks"
 	imageCVEV2Mocks "github.com/stackrox/rox/central/cve/image/v2/datastore/mocks"
 	nodeCVEMocks "github.com/stackrox/rox/central/cve/node/datastore/mocks"
 	deploymentMocks "github.com/stackrox/rox/central/deployment/datastore/mocks"
@@ -19,7 +18,6 @@ import (
 	"github.com/stackrox/rox/central/graphql/resolvers/loaders"
 	imageDS "github.com/stackrox/rox/central/image/datastore"
 	imageMocks "github.com/stackrox/rox/central/image/datastore/mocks"
-	imageComponentMocks "github.com/stackrox/rox/central/imagecomponent/datastore/mocks"
 	imageComponentV2Mocks "github.com/stackrox/rox/central/imagecomponent/v2/datastore/mocks"
 	imageV2Mocks "github.com/stackrox/rox/central/imagev2/datastore/mocks"
 	namespaceMocks "github.com/stackrox/rox/central/namespace/datastore/mocks"
@@ -63,7 +61,6 @@ func TestSearchCategories(t *testing.T) {
 	serviceAccounts := serviceAccountMocks.NewMockDataStore(ctrl)
 	roles := k8sroleMocks.NewMockDataStore(ctrl)
 	rolebindings := k8srolebindingMocks.NewMockDataStore(ctrl)
-	components := imageComponentMocks.NewMockDataStore(ctrl)
 
 	resolver := &Resolver{
 		ClusterDataStore:          cluster,
@@ -78,9 +75,7 @@ func TestSearchCategories(t *testing.T) {
 		NodeDataStore:             nodes,
 		K8sRoleBindingStore:       rolebindings,
 		K8sRoleStore:              roles,
-		ImageComponentDataStore:   components,
 		PolicyCategoryDataStore:   policyCategoryMocks.NewMockDataStore(ctrl),
-		ImageCVEDataStore:         imageCVEMocks.NewMockDataStore(ctrl),
 		NodeCVEDataStore:          nodeCVEMocks.NewMockDataStore(ctrl),
 		ClusterCVEDataStore:       clusterCVEMocks.NewMockDataStore(ctrl),
 		NodeComponentDataStore:    nodeComponentMocks.NewMockDataStore(ctrl),
@@ -384,10 +379,10 @@ func TestSubjectAutocompleteSearch(t *testing.T) {
 		{
 			desc: "Subject name autocomplete",
 			request: searchRequest{
-				Query:      fmt.Sprintf("Subject:%s", roleBindings[0].Subjects[1].Name),
+				Query:      fmt.Sprintf("Subject:%s", roleBindings[0].GetSubjects()[1].GetName()),
 				Categories: &[]string{"SUBJECTS"},
 			},
-			expected: []string{roleBindings[0].Subjects[1].Name},
+			expected: []string{roleBindings[0].GetSubjects()[1].GetName()},
 		},
 		{
 			desc: "Subject Kind autocomplete",
@@ -400,10 +395,10 @@ func TestSubjectAutocompleteSearch(t *testing.T) {
 		{
 			desc: "Cluster name autocomplete",
 			request: searchRequest{
-				Query:      fmt.Sprintf("Cluster:%s", roleBindings[1].ClusterName),
+				Query:      fmt.Sprintf("Cluster:%s", roleBindings[1].GetClusterName()),
 				Categories: &[]string{"SUBJECTS"},
 			},
-			expected: []string{roleBindings[1].ClusterName},
+			expected: []string{roleBindings[1].GetClusterName()},
 		},
 		{
 			desc: "Cluster role autocomplete",
@@ -416,10 +411,10 @@ func TestSubjectAutocompleteSearch(t *testing.T) {
 		{
 			desc: "Cluster name + Subject name autocomplete",
 			request: searchRequest{
-				Query:      fmt.Sprintf("Cluster:%s+Subject:", roleBindings[0].ClusterName),
+				Query:      fmt.Sprintf("Cluster:%s+Subject:", roleBindings[0].GetClusterName()),
 				Categories: &[]string{"SUBJECTS"},
 			},
-			expected: []string{roleBindings[0].Subjects[1].Name, roleBindings[0].Subjects[2].Name},
+			expected: []string{roleBindings[0].GetSubjects()[1].GetName(), roleBindings[0].GetSubjects()[2].GetName()},
 		},
 		{
 			desc: "Autocomplete on unsupported option",
@@ -508,7 +503,6 @@ func TestSubjectGlobalSearch(t *testing.T) {
 	nodes := nodeMocks.NewMockDataStore(ctrl)
 	serviceAccounts := serviceAccountMocks.NewMockDataStore(ctrl)
 	roles := k8sroleMocks.NewMockDataStore(ctrl)
-	components := imageComponentMocks.NewMockDataStore(ctrl)
 
 	resolver := &Resolver{
 		ClusterDataStore:          cluster,
@@ -523,9 +517,7 @@ func TestSubjectGlobalSearch(t *testing.T) {
 		NodeDataStore:             nodes,
 		K8sRoleBindingStore:       roleBindingDatastore,
 		K8sRoleStore:              roles,
-		ImageComponentDataStore:   components,
 		PolicyCategoryDataStore:   policyCategoryMocks.NewMockDataStore(ctrl),
-		ImageCVEDataStore:         imageCVEMocks.NewMockDataStore(ctrl),
 		NodeCVEDataStore:          nodeCVEMocks.NewMockDataStore(ctrl),
 		ClusterCVEDataStore:       clusterCVEMocks.NewMockDataStore(ctrl),
 		NodeComponentDataStore:    nodeComponentMocks.NewMockDataStore(ctrl),
@@ -544,18 +536,18 @@ func TestSubjectGlobalSearch(t *testing.T) {
 		{
 			desc: "Subject name autocomplete",
 			request: searchRequest{
-				Query:      fmt.Sprintf("Subject:%s", roleBindings[0].Subjects[1].Name),
+				Query:      fmt.Sprintf("Subject:%s", roleBindings[0].GetSubjects()[1].GetName()),
 				Categories: &[]string{"SUBJECTS"},
 			},
-			expected: []string{roleBindings[0].Subjects[1].Name},
+			expected: []string{roleBindings[0].GetSubjects()[1].GetName()},
 		},
 		{
 			desc: "Cluster name + Subject name autocomplete",
 			request: searchRequest{
-				Query:      fmt.Sprintf("Cluster:%s+Subject:", roleBindings[0].ClusterName),
+				Query:      fmt.Sprintf("Cluster:%s+Subject:", roleBindings[0].GetClusterName()),
 				Categories: &[]string{"SUBJECTS"},
 			},
-			expected: []string{roleBindings[0].Subjects[1].Name, roleBindings[0].Subjects[2].Name},
+			expected: []string{roleBindings[0].GetSubjects()[1].GetName(), roleBindings[0].GetSubjects()[2].GetName()},
 		},
 		{
 			desc: "Autocomplete on unsupported option",
@@ -580,7 +572,7 @@ func TestSubjectGlobalSearch(t *testing.T) {
 func getResultIDs(results []*searchResultResolver) []string {
 	var ids []string
 	for _, r := range results {
-		ids = append(ids, r.data.Id)
+		ids = append(ids, r.data.GetId())
 	}
 	return ids
 }

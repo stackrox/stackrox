@@ -36,7 +36,7 @@ var (
 )
 
 func TestEnsureServiceCertificates(t *testing.T) {
-	clientSet := fake.NewSimpleClientset(sensorDeployment)
+	clientSet := fake.NewClientset(sensorDeployment)
 	secretsClient := clientSet.CoreV1().Secrets(namespace)
 	ctx := context.Background()
 
@@ -44,7 +44,7 @@ func TestEnsureServiceCertificates(t *testing.T) {
 	persistedCertificates, err := repo.EnsureServiceCertificates(ctx, securedClusterCertificateSet)
 
 	assert.NoError(t, err)
-	protoassert.SlicesEqual(t, securedClusterCertificateSet.ServiceCerts, persistedCertificates)
+	protoassert.SlicesEqual(t, securedClusterCertificateSet.GetServiceCerts(), persistedCertificates)
 
 	expectedSecretNames := []string{
 		securedcluster.SensorTLSSecretName,

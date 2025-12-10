@@ -33,7 +33,6 @@ import (
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
-	"gorm.io/gorm"
 )
 
 func TestNodeDataStoreWithPostgres(t *testing.T) {
@@ -45,7 +44,6 @@ type NodePostgresDataStoreTestSuite struct {
 
 	ctx                context.Context
 	db                 postgres.DB
-	gormDB             *gorm.DB
 	datastore          DataStore
 	mockCtrl           *gomock.Controller
 	mockRisk           *mockRisks.MockDataStore
@@ -56,38 +54,28 @@ type NodePostgresDataStoreTestSuite struct {
 func (suite *NodePostgresDataStoreTestSuite) SetupSuite() {
 
 	suite.ctx = context.Background()
-
-	source := pgtest.GetConnectionString(suite.T())
-	config, err := postgres.ParseConfig(source)
-	suite.Require().NoError(err)
-
-	pool, err := postgres.New(suite.ctx, config)
-	suite.NoError(err)
-	suite.gormDB = pgtest.OpenGormDB(suite.T(), source)
-	suite.db = pool
 }
 
 func (suite *NodePostgresDataStoreTestSuite) SetupTest() {
-	pgStore.Destroy(suite.ctx, suite.db)
+	suite.db = pgtest.ForT(suite.T())
 
 	suite.mockCtrl = gomock.NewController(suite.T())
 	suite.mockRisk = mockRisks.NewMockDataStore(suite.mockCtrl)
-	storage := pgStore.CreateTableAndNewStore(suite.ctx, suite.T(), suite.db, suite.gormDB, false)
+	storage := pgStore.New(suite.db, false, concurrency.NewKeyFence())
 	suite.datastore = NewWithPostgres(storage, suite.mockRisk, ranking.NewRanker(), ranking.NewRanker())
 
-	componentStorage := nodeComponentPostgres.CreateTableAndNewStore(suite.ctx, suite.db, suite.gormDB)
+	componentStorage := nodeComponentPostgres.New(suite.db)
 	suite.componentDataStore = nodeComponentDS.New(componentStorage, suite.mockRisk, ranking.NewRanker())
 
-	cveStorage := nodeCVEPostgres.CreateTableAndNewStore(suite.ctx, suite.db, suite.gormDB)
+	cveStorage := nodeCVEPostgres.New(suite.db)
 	cveDataStore, err := nodeCVEDS.New(cveStorage, concurrency.NewKeyFence())
 	suite.NoError(err)
 	suite.nodeCVEDataStore = cveDataStore
 }
 
-func (suite *NodePostgresDataStoreTestSuite) TearDownSuite() {
+func (suite *NodePostgresDataStoreTestSuite) TearDownTest() {
 	suite.mockCtrl.Finish()
 	suite.db.Close()
-	pgtest.CloseGormDB(suite.T(), suite.gormDB)
 }
 
 func (suite *NodePostgresDataStoreTestSuite) TestBasicOps() {
@@ -98,7 +86,7 @@ func (suite *NodePostgresDataStoreTestSuite) TestBasicOps() {
 	suite.NoError(suite.datastore.UpsertNode(allowAllCtx, node))
 
 	// Get node.
-	storedNode, exists, err := suite.datastore.GetNode(allowAllCtx, node.Id)
+	storedNode, exists, err := suite.datastore.GetNode(allowAllCtx, node.GetId())
 	suite.True(exists)
 	suite.NoError(err)
 	suite.NotNil(storedNode)
@@ -122,7 +110,7 @@ func (suite *NodePostgresDataStoreTestSuite) TestBasicOps() {
 	olderNode := node.CloneVT()
 	olderNode.GetScan().GetScanTime().Seconds = olderNode.GetScan().GetScanTime().GetSeconds() - 500
 	suite.NoError(suite.datastore.UpsertNode(allowAllCtx, olderNode))
-	storedNode, exists, err = suite.datastore.GetNode(allowAllCtx, olderNode.Id)
+	storedNode, exists, err = suite.datastore.GetNode(allowAllCtx, olderNode.GetId())
 	suite.True(exists)
 	suite.NoError(err)
 	// Node is updated.
@@ -142,7 +130,7 @@ func (suite *NodePostgresDataStoreTestSuite) TestBasicOps() {
 	suite.True(exists)
 
 	// Get new node.
-	storedNode, exists, err = suite.datastore.GetNode(allowAllCtx, newNode.Id)
+	storedNode, exists, err = suite.datastore.GetNode(allowAllCtx, newNode.GetId())
 	suite.True(exists)
 	suite.NoError(err)
 	suite.NotNil(storedNode)
@@ -461,7 +449,7 @@ func (suite *NodePostgresDataStoreTestSuite) TestOrphanedNodeTreeDeletion() {
 
 	// Verify that new scan with less components cleans up the old relations correctly.
 	testNode.Scan.ScanTime = protocompat.TimestampNow()
-	testNode.Scan.Components = testNode.Scan.Components[:len(testNode.Scan.Components)-1]
+	testNode.Scan.Components = testNode.GetScan().GetComponents()[:len(testNode.GetScan().GetComponents())-1]
 	cveIDsSet := set.NewStringSet()
 	for _, component := range testNode.GetScan().GetComponents() {
 		for _, cve := range component.GetVulnerabilities() {
@@ -480,7 +468,7 @@ func (suite *NodePostgresDataStoreTestSuite) TestOrphanedNodeTreeDeletion() {
 	// Verify orphaned node components are removed.
 	count, err := suite.componentDataStore.Count(ctx, pkgSearch.EmptyQuery())
 	suite.NoError(err)
-	suite.Equal(len(testNode.Scan.Components), count)
+	suite.Equal(len(testNode.GetScan().GetComponents()), count)
 
 	// Verify orphaned node vulnerabilities are removed.
 	// @TODO : This test expects ROX_ORPHANED_CVES_KEEP_ALIVE to be false. Refactor this test when the flag is turned on by default
@@ -500,7 +488,7 @@ func (suite *NodePostgresDataStoreTestSuite) TestOrphanedNodeTreeDeletion() {
 	// Verify that number of node components remains unchanged since both nodes have same components.
 	count, err = suite.componentDataStore.Count(ctx, pkgSearch.EmptyQuery())
 	suite.NoError(err)
-	suite.Equal(len(testNode.Scan.Components), count)
+	suite.Equal(len(testNode.GetScan().GetComponents()), count)
 
 	// Verify that number of node vulnerabilities remains unchanged since both nodes have same vulns.
 	results, err = suite.nodeCVEDataStore.Search(ctx, pkgSearch.EmptyQuery())
@@ -541,7 +529,7 @@ func (suite *NodePostgresDataStoreTestSuite) TestOrphanedNodeTreeDeletion() {
 	// Verify orphaned node components are removed.
 	count, err = suite.componentDataStore.Count(ctx, pkgSearch.EmptyQuery())
 	suite.NoError(err)
-	suite.Equal(len(testNode2.Scan.Components), count)
+	suite.Equal(len(testNode2.GetScan().GetComponents()), count)
 
 	// Verify orphaned node vulnerabilities are removed.
 	// @TODO : This test expects ROX_ORPHANED_CVES_KEEP_ALIVE to be false. Refactor this test when the flag is turned on by default
@@ -551,7 +539,7 @@ func (suite *NodePostgresDataStoreTestSuite) TestOrphanedNodeTreeDeletion() {
 
 	// Verify that new scan with less components cleans up the old relations correctly.
 	testNode2.Scan.ScanTime = protocompat.TimestampNow()
-	testNode2.Scan.Components = testNode2.Scan.Components[:len(testNode2.Scan.Components)-1]
+	testNode2.Scan.Components = testNode2.GetScan().GetComponents()[:len(testNode2.GetScan().GetComponents())-1]
 	suite.NoError(suite.datastore.UpsertNode(ctx, testNode2))
 
 	// Verify node is built correctly.
@@ -564,7 +552,7 @@ func (suite *NodePostgresDataStoreTestSuite) TestOrphanedNodeTreeDeletion() {
 	// Verify orphaned node components are removed.
 	count, err = suite.componentDataStore.Count(ctx, pkgSearch.EmptyQuery())
 	suite.NoError(err)
-	suite.Equal(len(testNode2.Scan.Components), count)
+	suite.Equal(len(testNode2.GetScan().GetComponents()), count)
 
 	// Verify no vulnerability is removed since all vulns are still connected.
 	results, err = suite.nodeCVEDataStore.Search(ctx, pkgSearch.EmptyQuery())
@@ -618,7 +606,7 @@ func (suite *NodePostgresDataStoreTestSuite) TestGetManyNodeMetadata() {
 	testNode3.Id = fixtureconsts.Node3
 	suite.NoError(suite.datastore.UpsertNode(ctx, testNode3))
 
-	storedNodes, err := suite.datastore.GetManyNodeMetadata(ctx, []string{testNode1.Id, testNode2.Id, testNode3.Id})
+	storedNodes, err := suite.datastore.GetManyNodeMetadata(ctx, []string{testNode1.GetId(), testNode2.GetId(), testNode3.GetId()})
 	suite.NoError(err)
 	suite.Len(storedNodes, 3)
 

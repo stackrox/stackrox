@@ -1,12 +1,13 @@
 package declarativeconfig
 
 import (
+	"maps"
+	"slices"
 	"strings"
 
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/errox"
 	"go.yaml.in/yaml/v3"
-	"golang.org/x/exp/maps"
 )
 
 // MachineToMachineRoleMapping represents the role attribution part
@@ -44,7 +45,7 @@ func (t *AuthMachineToMachineConfigType) UnmarshalYAML(value *yaml.Node) error {
 	i, ok := storage.AuthMachineToMachineConfig_Type_value[v]
 	if !ok {
 		return errox.InvalidArgs.Newf("type %s is invalid, valid types are: [%s]", v, strings.Join(
-			maps.Keys(storage.AuthMachineToMachineConfig_Type_value), ","))
+			slices.Collect(maps.Keys(storage.AuthMachineToMachineConfig_Type_value)), ","))
 	}
 	*t = AuthMachineToMachineConfigType(i)
 	return nil

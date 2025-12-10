@@ -1,4 +1,3 @@
-import React from 'react';
 import {
     Alert,
     Form,
@@ -23,7 +22,7 @@ export type DynamicConfigurationFormProps = {
     dynamicConfig: DynamicClusterConfig;
     handleChange: (path: string, value: boolean | string) => void;
     handleChangeAdmissionControllerEnforcementBehavior: (value: boolean) => void;
-    helmConfig: CompleteClusterConfig;
+    helmConfig: CompleteClusterConfig | null;
     isManagerTypeNonConfigurable: boolean;
 };
 
@@ -45,8 +44,12 @@ function DynamicConfigurationForm({
     // HelmValueWarning precedes FormHelperText element.
     return (
         <Form isWidthLimited>
-            <FormGroup label="Custom default image registry">
+            <FormGroup
+                fieldId="dynamicConfig.registryOverride"
+                label="Custom default image registry"
+            >
                 <TextInput
+                    id="dynamicConfig.registryOverride"
                     type="text"
                     value={dynamicConfig.registryOverride}
                     onChange={(_event, value) =>
@@ -75,6 +78,7 @@ function DynamicConfigurationForm({
                         handleChangeAdmissionControllerEnforcementBehavior(value === 'enabled')
                     }
                     isDisabled={isManagerTypeNonConfigurable}
+                    isFullWidth={false}
                 >
                     <SelectOption value="enabled">Enforce policies</SelectOption>
                     <SelectOption value="disabled">No enforcement</SelectOption>
@@ -124,6 +128,7 @@ function DynamicConfigurationForm({
                     }
                     handleSelect={(id, value) => handleChange(id, value === 'disabled')}
                     isDisabled={isManagerTypeNonConfigurable}
+                    isFullWidth={false}
                 >
                     <SelectOption value="enabled">Enabled</SelectOption>
                     <SelectOption value="disabled">Disabled</SelectOption>
@@ -158,10 +163,11 @@ function DynamicConfigurationForm({
             </FormGroup>
             <FormGroup label="Cluster audit logging">
                 <SelectSingle
-                    id="tolerationsConfig.disabled"
+                    id="dynamicConfig.disableAuditLogs"
                     value={dynamicConfig.disableAuditLogs ? 'disabled' : 'enabled'}
                     handleSelect={(id, value) => handleChange(id, value === 'disabled')}
                     isDisabled={isManagerTypeNonConfigurable || !isLoggingSupported}
+                    isFullWidth={false}
                 >
                     <SelectOption value="enabled">Enabled</SelectOption>
                     <SelectOption value="disabled">Disabled</SelectOption>
@@ -181,6 +187,26 @@ function DynamicConfigurationForm({
                         logging, you must upgrade your cluster to OpenShift 4 or higher.
                     </Alert>
                 )}
+            </FormGroup>
+            <FormGroup label="Automatically lock process baselines">
+                <SelectSingle
+                    id="dynamicConfig.autoLockProcessBaselinesConfig.enabled"
+                    value={
+                        dynamicConfig.autoLockProcessBaselinesConfig?.enabled
+                            ? 'enabled'
+                            : 'disabled'
+                    }
+                    handleSelect={(id, value) => handleChange(id, value === 'enabled')}
+                    isDisabled={isManagerTypeNonConfigurable}
+                    isFullWidth={false}
+                >
+                    <SelectOption value="enabled">Enabled</SelectOption>
+                    <SelectOption value="disabled">Disabled</SelectOption>
+                </SelectSingle>
+                <HelmValueWarning
+                    currentValue={dynamicConfig.autoLockProcessBaselinesConfig?.enabled}
+                    helmValue={helmConfig?.dynamicConfig?.autoLockProcessBaselinesConfig?.enabled}
+                />
             </FormGroup>
         </Form>
     );

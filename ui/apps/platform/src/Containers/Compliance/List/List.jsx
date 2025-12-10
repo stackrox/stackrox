@@ -1,4 +1,3 @@
-import React from 'react';
 import PropTypes from 'prop-types';
 import { useLocation, useNavigate } from 'react-router-dom-v5-compat';
 import lowerCase from 'lodash/lowerCase';
@@ -6,13 +5,13 @@ import pluralize from 'pluralize';
 
 import URLService from 'utils/URLService';
 import { PageBody } from 'Components/Panel';
-import SidePanelAdjacentArea from 'Components/SidePanelAdjacentArea';
 import { searchCategories as searchCategoryTypes } from 'constants/entityTypes';
 import searchContext from 'Containers/searchContext';
 import { searchParams } from 'constants/searchParams';
 import useWorkflowMatch from 'hooks/useWorkflowMatch';
 import ListTable from './Table';
 import SidePanel from './SidePanel';
+import SidePanelAdjacentArea from './SidePanelAdjacentArea';
 import ComplianceSearchInput from '../ComplianceSearchInput';
 
 const ComplianceList = ({ entityType, query, selectedRowId, noSearch }) => {

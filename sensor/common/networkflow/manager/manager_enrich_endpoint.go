@@ -6,7 +6,6 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/env"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/networkgraph"
 	"github.com/stackrox/rox/pkg/timestamp"
 	"github.com/stackrox/rox/sensor/common/clusterentities"
@@ -21,7 +20,7 @@ func (m *networkFlowManager) executeEndpointAction(
 	ep *containerEndpoint,
 	status *connStatus,
 	hostConns *hostConnections,
-	enrichedEndpoints map[indicator.ContainerEndpoint]timestamp.MicroTS,
+	enrichedEndpointsProcesses map[indicator.ContainerEndpoint]*indicator.ProcessListeningWithTimestamp,
 	now timestamp.MicroTS,
 ) {
 	switch action {
@@ -30,14 +29,14 @@ func (m *networkFlowManager) executeEndpointAction(
 		flowMetrics.HostConnectionsOperations.WithLabelValues("remove", "endpoints").Inc()
 	case PostEnrichmentActionMarkInactive:
 		concurrency.WithLock(&m.activeEndpointsMutex, func() {
-			if ok := deactivateEndpointNoLock(ep, m.activeEndpoints, enrichedEndpoints, now); !ok {
+			if ok := deactivateEndpointNoLock(ep, m.activeEndpoints, enrichedEndpointsProcesses, now); !ok {
 				log.Debugf("Cannot mark endpoint as inactive: endpoint is rotten")
 			}
 		})
 	case PostEnrichmentActionRetry:
 		// noop, retry happens through not removing from `hostConns.endpoints`
 	case PostEnrichmentActionCheckRemove:
-		if status.rotten || (status.isClosed() && status.enrichmentConsumption.IsConsumed()) {
+		if status.checkRemoveCondition(env.NetworkFlowUseLegacyUpdateComputer.BooleanSetting(), status.enrichmentConsumption.IsConsumed()) {
 			delete(hostConns.endpoints, *ep)
 			flowMetrics.HostConnectionsOperations.WithLabelValues("remove", "endpoints").Inc()
 			flowMetrics.HostProcessesEvents.WithLabelValues("remove").Inc()
@@ -48,15 +47,14 @@ func (m *networkFlowManager) executeEndpointAction(
 }
 
 func (m *networkFlowManager) enrichHostContainerEndpoints(now timestamp.MicroTS, hostConns *hostConnections,
-	enrichedEndpoints map[indicator.ContainerEndpoint]timestamp.MicroTS,
-	processesListening map[indicator.ProcessListening]timestamp.MicroTS) {
+	enrichedEndpointsProcesses map[indicator.ContainerEndpoint]*indicator.ProcessListeningWithTimestamp) {
 	concurrency.WithLock(&hostConns.mutex, func() {
 		flowMetrics.HostProcessesEvents.WithLabelValues("add").Add(float64(len(hostConns.endpoints)))
 		flowMetrics.HostConnectionsOperations.WithLabelValues("enrich", "endpoints").Add(float64(len(hostConns.endpoints)))
 		for ep, status := range hostConns.endpoints {
-			resultNG, resultPLOP, reasonNG, reasonPLOP := m.enrichContainerEndpoint(now, &ep, status, enrichedEndpoints, processesListening, now)
+			resultNG, resultPLOP, reasonNG, reasonPLOP := m.enrichContainerEndpoint(now, &ep, status, enrichedEndpointsProcesses, now)
 			action := m.handleEndpointEnrichmentResult(resultNG, resultPLOP, reasonNG, reasonPLOP, &ep)
-			m.executeEndpointAction(action, &ep, status, hostConns, enrichedEndpoints, now)
+			m.executeEndpointAction(action, &ep, status, hostConns, enrichedEndpointsProcesses, now)
 			updateEndpointMetric(now, action, resultNG, resultPLOP, reasonNG, reasonPLOP, status)
 		}
 	})
@@ -73,8 +71,7 @@ func (m *networkFlowManager) enrichContainerEndpoint(
 	now timestamp.MicroTS,
 	ep *containerEndpoint,
 	status *connStatus,
-	enrichedEndpoints map[indicator.ContainerEndpoint]timestamp.MicroTS,
-	processesListening map[indicator.ProcessListening]timestamp.MicroTS,
+	enrichedEndpointsProcesses map[indicator.ContainerEndpoint]*indicator.ProcessListeningWithTimestamp,
 	lastUpdate timestamp.MicroTS,
 ) (resultNG, resultPLOP EnrichmentResult, reasonNG, reasonPLOP EnrichmentReasonEp) {
 	isFresh := status.isFresh(now)
@@ -102,11 +99,18 @@ func (m *networkFlowManager) enrichContainerEndpoint(
 	}
 
 	container := containerResult.Container
+	processIndicator := &indicator.ProcessListeningWithTimestamp{
+		ProcessListening: nil,
+		LastSeen:         status.lastSeen,
+	}
 
 	// SECTION: ENRICHMENT OF PROCESSES LISTENING ON PORTS
 	if env.ProcessesListeningOnPort.BooleanSetting() {
 		status.enrichmentConsumption.consumedPLOP = true
-		resultPLOP, reasonPLOP = m.enrichPLOP(ep, container, processesListening, status.lastSeen)
+		var pi *indicator.ProcessListening
+		pi, resultPLOP, reasonPLOP = m.enrichPLOP(ep, container)
+		// Always store processIndicator, even if nil.
+		processIndicator.ProcessListening = pi
 	} else {
 		resultPLOP = EnrichmentResultSkipped
 		reasonPLOP = EnrichmentReasonEpFeaturePlopDisabled
@@ -122,14 +126,11 @@ func (m *networkFlowManager) enrichContainerEndpoint(
 
 	// Multiple endpoints from a collector can result in a single enriched endpoint,
 	// hence update the timestamp only if we have a more recent endpoint than the one we have already enriched.
-	if oldTS, found := enrichedEndpoints[ind]; found && oldTS >= status.lastSeen {
+	if oldValue, found := enrichedEndpointsProcesses[ind]; found && oldValue.LastSeen >= status.lastSeen {
 		return EnrichmentResultSuccess, resultPLOP, EnrichmentReasonEpDuplicate, reasonPLOP
 	}
 
-	enrichedEndpoints[ind] = status.lastSeen
-	if !features.SensorCapturesIntermediateEvents.Enabled() {
-		return EnrichmentResultSuccess, resultPLOP, EnrichmentReasonEpFeatureDisabled, reasonPLOP
-	}
+	enrichedEndpointsProcesses[ind] = processIndicator
 
 	m.activeEndpointsMutex.Lock()
 	defer m.activeEndpointsMutex.Unlock()
@@ -146,12 +147,11 @@ func (m *networkFlowManager) enrichContainerEndpoint(
 func (m *networkFlowManager) enrichPLOP(
 	ep *containerEndpoint,
 	container clusterentities.ContainerMetadata,
-	processesListening map[indicator.ProcessListening]timestamp.MicroTS,
-	lastSeen timestamp.MicroTS) (resultPLOP EnrichmentResult, reasonPLOP EnrichmentReasonEp) {
+) (ind *indicator.ProcessListening, resultPLOP EnrichmentResult, reasonPLOP EnrichmentReasonEp) {
 	if ep.processKey == emptyProcessInfo {
-		return EnrichmentResultInvalidInput, EnrichmentReasonEpEmptyProcessInfo
+		return nil, EnrichmentResultInvalidInput, EnrichmentReasonEpEmptyProcessInfo
 	}
-	indicatorPLOP := indicator.ProcessListening{
+	return &indicator.ProcessListening{
 		PodID:         container.PodID,
 		ContainerName: container.ContainerName,
 		DeploymentID:  container.DeploymentID,
@@ -160,26 +160,40 @@ func (m *networkFlowManager) enrichPLOP(
 		Protocol:      ep.endpoint.L4Proto.ToProtobuf(),
 		PodUID:        container.PodUID,
 		Namespace:     container.Namespace,
-	}
-	processesListening[indicatorPLOP] = lastSeen
-	return EnrichmentResultSuccess, EnrichmentReasonEp("")
+	}, EnrichmentResultSuccess, EnrichmentReasonEp("")
 }
 
 // deactivateEndpointNoLock removes endpoint from active endpoints and sets the timestamp in enrichedEndpoints.
 // It returns error when endpoint is not found in active endpoints.
 func deactivateEndpointNoLock(ep *containerEndpoint,
 	activeEndpoints map[containerEndpoint]*containerEndpointIndicatorWithAge,
-	enrichedEndpoints map[indicator.ContainerEndpoint]timestamp.MicroTS,
+	enrichedEndpointsProcesses map[indicator.ContainerEndpoint]*indicator.ProcessListeningWithTimestamp,
 	now timestamp.MicroTS) bool {
 	activeEp, found := activeEndpoints[*ep]
 	if !found {
 		return false // endpoint rotten
 	}
-	// Active endpoint found for historical container => removing from active endpoints and setting last-seen.
-	enrichedEndpoints[activeEp.ContainerEndpoint] = now
+	// Active endpoint found for historical container =>
+	// (1) setting last-seen - even if not present in enrichedEndpointsProcesses and
+	// (2) removing from active endpoints.
+	setLastSeenOrAdd(enrichedEndpointsProcesses, activeEp.ContainerEndpoint, now)
 	delete(activeEndpoints, *ep)
 	flowMetrics.SetActiveEndpointsTotalGauge(len(activeEndpoints))
 	return true
+}
+
+// setLastSeenOrAdd checks the map `m` for presence of `key`.
+// If `key` is found, it changes the `LastSeen` to `ts` (close active endpoint, keep process as it was).
+// If `key` is not found, it adds it with empty `ProcessListening` and `LastSeen` set to `ts` (artificially close active endpoint).
+func setLastSeenOrAdd(m map[indicator.ContainerEndpoint]*indicator.ProcessListeningWithTimestamp, key indicator.ContainerEndpoint, ts timestamp.MicroTS) {
+	if value := m[key]; value == nil {
+		m[key] = &indicator.ProcessListeningWithTimestamp{
+			ProcessListening: nil,
+			LastSeen:         ts,
+		}
+	} else {
+		m[key].LastSeen = ts
+	}
 }
 
 // handleConnectionEnrichmentResult prints user-readable logs explaining the result of the enrichments and returns an action
@@ -232,8 +246,6 @@ func (m *networkFlowManager) handleEndpointEnrichmentResult(
 			log.Debugf("Enrichment succeeded; marking endpoint as inactive")
 		case EnrichmentReasonEpDuplicate:
 			log.Debugf("Enrichment succeeded; skipping update as newer data is already available")
-		case EnrichmentReasonEpFeatureDisabled:
-			log.Debugf("Enrichment succeeded; skipping update as sensor is not configured to enrich events while in offline mode")
 		}
 		// The default action is the old behavior, in which only inactive connections are removed.
 		return PostEnrichmentActionCheckRemove

@@ -1,4 +1,4 @@
-import React, { useContext } from 'react';
+import { useContext } from 'react';
 import { gql } from '@apollo/client';
 
 import { workflowEntityPropTypes, workflowEntityDefaultProps } from 'constants/entityPageProps';
@@ -67,7 +67,7 @@ const VulnMgmtEntityImage = ({
                         name
                     }
                     notes
-                    components: imageComponents {
+                    imageComponents {
                         id
                         priority
                         name
@@ -75,7 +75,7 @@ const VulnMgmtEntityImage = ({
                         version
                         source
                         location
-                        vulns: imageVulnerabilities {
+                        imageVulnerabilities {
                             ...cveFields
                         }
                     }

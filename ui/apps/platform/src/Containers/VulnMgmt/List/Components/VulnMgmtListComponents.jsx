@@ -1,4 +1,3 @@
-import React from 'react';
 import { gql } from '@apollo/client';
 
 import {
@@ -10,7 +9,6 @@ import TopCvssLabel from 'Components/TopCvssLabel';
 import entityTypes from 'constants/entityTypes';
 import { LIST_PAGE_SIZE } from 'constants/workflowPages.constants';
 import CVEStackedPill from 'Components/CVEStackedPill';
-import TableCountLink from 'Components/workflow/TableCountLink';
 import queryService from 'utils/queryService';
 
 import { VULN_COMPONENT_LIST_FRAGMENT } from 'Containers/VulnMgmt/VulnMgmt.fragments';
@@ -20,6 +18,7 @@ import { componentSortFields } from 'constants/sortFields';
 
 import { getFilteredComponentColumns } from './ListComponents.utils';
 import WorkflowListPage from '../WorkflowListPage';
+import TableCountLink from '../../TableCountLink';
 
 export const defaultComponentSort = [
     {
@@ -75,18 +74,6 @@ export function getComponentTableColumns(workflowState, isFeatureFlagEnabled) {
             id: componentSortFields.CVE_COUNT,
             accessor: 'vulnCounter.all.total',
             sortField: componentSortFields.CVE_COUNT,
-        },
-        {
-            Header: `Active`,
-            headerClassName: `w-1/10 text-center ${nonSortableHeaderClassName}`,
-            className: `w-1/10 ${defaultColumnClassName}`,
-            Cell: ({ original }) => {
-                return original.activeState?.state || 'Undetermined';
-            },
-            id: componentSortFields.ACTIVE,
-            accessor: 'isActive',
-            sortField: componentSortFields.ACTIVE,
-            sortable: false,
         },
         {
             Header: `Fixed In`,

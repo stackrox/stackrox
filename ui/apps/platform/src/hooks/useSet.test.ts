@@ -1,4 +1,4 @@
-import { renderHook, act } from '@testing-library/react';
+import { act, renderHook } from '@testing-library/react';
 import useSet from './useSet';
 
 test('useSet should accept a starting set', () => {

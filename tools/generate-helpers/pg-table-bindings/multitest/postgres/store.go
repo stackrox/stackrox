@@ -43,7 +43,8 @@ type Store interface {
 	Upsert(ctx context.Context, obj *storeType) error
 	UpsertMany(ctx context.Context, objs []*storeType) error
 	Delete(ctx context.Context, key1 string) error
-	DeleteByQuery(ctx context.Context, q *v1.Query) ([]string, error)
+	DeleteByQuery(ctx context.Context, q *v1.Query) error
+	DeleteByQueryWithIDs(ctx context.Context, q *v1.Query) ([]string, error)
 	DeleteMany(ctx context.Context, identifiers []string) error
 	PruneMany(ctx context.Context, identifiers []string) error
 
@@ -155,15 +156,21 @@ func insertIntoTestStructsNesteds(batch *pgx.Batch, obj *storage.TestStruct_Nest
 }
 
 func copyFromTestStructs(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, objs ...*storage.TestStruct) error {
-	batchSize := pgSearch.MaxBatchSize
-	if len(objs) < batchSize {
-		batchSize = len(objs)
+	if len(objs) == 0 {
+		return nil
 	}
-	inputRows := make([][]interface{}, 0, batchSize)
 
-	// This is a copy so first we must delete the rows and re-add them
-	// Which is essentially the desired behaviour of an upsert.
-	deletes := make([]string, 0, batchSize)
+	{
+		// CopyFrom does not upsert, so delete existing rows first to achieve upsert behavior.
+		// Parent deletion cascades to children, so only the top-level parent needs deletion.
+		deletes := make([]string, 0, len(objs))
+		for _, obj := range objs {
+			deletes = append(deletes, obj.GetKey1())
+		}
+		if err := s.DeleteMany(ctx, deletes); err != nil {
+			return err
+		}
+	}
 
 	copyCols := []string{
 		"key1",
@@ -183,18 +190,20 @@ func copyFromTestStructs(ctx context.Context, s pgSearch.Deleter, tx *postgres.T
 		"serialized",
 	}
 
-	for idx, obj := range objs {
-		// Todo: ROX-9499 Figure out how to more cleanly template around this issue.
-		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj "+
-			"in the loop is not used as it only consists of the parent ID and the index.  Putting this here as a stop gap "+
-			"to simply use the object.  %s", obj)
+	idx := 0
+	inputRows := pgx.CopyFromFunc(func() ([]any, error) {
+		if idx >= len(objs) {
+			return nil, nil
+		}
+		obj := objs[idx]
+		idx++
 
 		serialized, marshalErr := obj.MarshalVT()
 		if marshalErr != nil {
-			return marshalErr
+			return nil, marshalErr
 		}
 
-		inputRows = append(inputRows, []interface{}{
+		return []interface{}{
 			obj.GetKey1(),
 			obj.GetKey2(),
 			obj.GetStringSlice(),
@@ -210,33 +219,14 @@ func copyFromTestStructs(ctx context.Context, s pgSearch.Deleter, tx *postgres.T
 			obj.GetInt32Slice(),
 			obj.GetOneofnested().GetNested(),
 			serialized,
-		})
+		}, nil
+	})
 
-		// Add the ID to be deleted.
-		deletes = append(deletes, obj.GetKey1())
-
-		// if we hit our batch size we need to push the data
-		if (idx+1)%batchSize == 0 || idx == len(objs)-1 {
-			// copy does not upsert so have to delete first.  parent deletion cascades so only need to
-			// delete for the top level parent
-
-			if err := s.DeleteMany(ctx, deletes); err != nil {
-				return err
-			}
-			// clear the inserts and vals for the next batch
-			deletes = deletes[:0]
-
-			if _, err := tx.CopyFrom(ctx, pgx.Identifier{"test_structs"}, copyCols, pgx.CopyFromRows(inputRows)); err != nil {
-				return err
-			}
-			// clear the input rows for the next batch
-			inputRows = inputRows[:0]
-		}
+	if _, err := tx.CopyFrom(ctx, pgx.Identifier{"test_structs"}, copyCols, inputRows); err != nil {
+		return err
 	}
 
-	for idx, obj := range objs {
-		_ = idx // idx may or may not be used depending on how nested we are, so avoid compile-time errors.
-
+	for _, obj := range objs {
 		if err := copyFromTestStructsNesteds(ctx, s, tx, obj.GetKey1(), obj.GetNested()...); err != nil {
 			return err
 		}
@@ -246,11 +236,9 @@ func copyFromTestStructs(ctx context.Context, s pgSearch.Deleter, tx *postgres.T
 }
 
 func copyFromTestStructsNesteds(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, testStructKey1 string, objs ...*storage.TestStruct_Nested) error {
-	batchSize := pgSearch.MaxBatchSize
-	if len(objs) < batchSize {
-		batchSize = len(objs)
+	if len(objs) == 0 {
+		return nil
 	}
-	inputRows := make([][]interface{}, 0, batchSize)
 
 	copyCols := []string{
 		"test_structs_key1",
@@ -263,13 +251,15 @@ func copyFromTestStructsNesteds(ctx context.Context, s pgSearch.Deleter, tx *pos
 		"nested2_int64",
 	}
 
-	for idx, obj := range objs {
-		// Todo: ROX-9499 Figure out how to more cleanly template around this issue.
-		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj "+
-			"in the loop is not used as it only consists of the parent ID and the index.  Putting this here as a stop gap "+
-			"to simply use the object.  %s", obj)
+	idx := 0
+	inputRows := pgx.CopyFromFunc(func() ([]any, error) {
+		if idx >= len(objs) {
+			return nil, nil
+		}
+		obj := objs[idx]
+		idx++
 
-		inputRows = append(inputRows, []interface{}{
+		return []interface{}{
 			testStructKey1,
 			idx,
 			obj.GetNested(),
@@ -278,19 +268,11 @@ func copyFromTestStructsNesteds(ctx context.Context, s pgSearch.Deleter, tx *pos
 			obj.GetNested2().GetNested2(),
 			obj.GetNested2().GetIsNested(),
 			obj.GetNested2().GetInt64(),
-		})
+		}, nil
+	})
 
-		// if we hit our batch size we need to push the data
-		if (idx+1)%batchSize == 0 || idx == len(objs)-1 {
-			// copy does not upsert so have to delete first.  parent deletion cascades so only need to
-			// delete for the top level parent
-
-			if _, err := tx.CopyFrom(ctx, pgx.Identifier{"test_structs_nesteds"}, copyCols, pgx.CopyFromRows(inputRows)); err != nil {
-				return err
-			}
-			// clear the input rows for the next batch
-			inputRows = inputRows[:0]
-		}
+	if _, err := tx.CopyFrom(ctx, pgx.Identifier{"test_structs_nesteds"}, copyCols, inputRows); err != nil {
+		return err
 	}
 
 	return nil

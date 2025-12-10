@@ -240,7 +240,7 @@ func (s *securedClusterCertGenSuite) TestServiceIssueLocalScannerCerts() {
 			s.Require().NotNil(certs.GetCaPem())
 			s.Require().NotEmpty(certs.GetServiceCerts())
 			expectedServiceTypes := getServiceTypes().Unfreeze()
-			for _, cert := range certs.ServiceCerts {
+			for _, cert := range certs.GetServiceCerts() {
 				certService := cert.GetServiceType().String()
 				// Verifies that the service types of the returned certificates are supported Scanner service types.
 				s.Contains(expectedServiceTypes, certService, "[%s] unexpected certificate service type %q", tcName, certService)
@@ -292,7 +292,7 @@ func (s *securedClusterCertGenSuite) TestServiceIssueSecuredClusterCerts() {
 			s.Require().NotEmpty(certs.GetServiceCerts())
 
 			expectedServiceTypes := allSupportedServiceTypes.Unfreeze()
-			for _, cert := range certs.ServiceCerts {
+			for _, cert := range certs.GetServiceCerts() {
 				certService := cert.GetServiceType()
 				s.Contains(expectedServiceTypes, certService, "[%s] unexpected certificate service type %q", tcName, certService)
 				expectedServiceTypes.Remove(certService)
@@ -524,7 +524,7 @@ func (s *securedClusterCARotationSuite) TestServiceCertificateGeneration() {
 
 	// Verify all expected service types are present
 	expectedServiceTypes := allSupportedServiceTypes.Unfreeze()
-	for _, cert := range certs.ServiceCerts {
+	for _, cert := range certs.GetServiceCerts() {
 		certService := cert.GetServiceType()
 		s.Contains(expectedServiceTypes, certService)
 		expectedServiceTypes.Remove(certService)

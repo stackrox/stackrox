@@ -21,6 +21,9 @@ func MakeImageFlavorForTest(t *testing.T) defaults.ImageFlavor {
 		CollectorRegistry:      "test.registry",
 		CollectorImageName:     "collector",
 		CollectorImageTag:      "3.2.1",
+		FactRegistry:           "test.registry",
+		FactImageName:          "fact",
+		FactImageTag:           "0.1.0",
 		ScannerImageName:       "scanner",
 		ScannerSlimImageName:   "scanner-slim",
 		ScannerImageTag:        "2.2.2",
@@ -41,6 +44,7 @@ func MakeImageFlavorForTest(t *testing.T) defaults.ImageFlavor {
 			MainVersion:      "1.2.3",
 			ScannerVersion:   "2.2.2",
 			ChartVersion:     "1.23.4",
+			FactVersion:      "0.1.0",
 		},
 	}
 }

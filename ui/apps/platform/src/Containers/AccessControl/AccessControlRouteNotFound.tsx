@@ -1,4 +1,4 @@
-import React, { CSSProperties, ReactElement } from 'react';
+import type { CSSProperties, ReactElement } from 'react';
 import { Alert, List, ListItem, PageSection } from '@patternfly/react-core';
 
 import AccessControlHeading from './AccessControlHeading';

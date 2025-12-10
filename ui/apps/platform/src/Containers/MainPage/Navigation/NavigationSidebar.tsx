@@ -1,5 +1,6 @@
-import React, { ReactElement } from 'react';
-import { Location, matchPath, useLocation } from 'react-router-dom-v5-compat';
+import type { ReactElement } from 'react';
+import { matchPath, useLocation } from 'react-router-dom-v5-compat';
+import type { Location } from 'react-router-dom-v5-compat';
 import {
     Nav,
     NavExpandable,
@@ -9,13 +10,14 @@ import {
     PageSidebarBody,
 } from '@patternfly/react-core';
 
-import { IsFeatureFlagEnabled } from 'hooks/useFeatureFlags';
-import { HasReadAccess } from 'hooks/usePermissions';
+import type { IsFeatureFlagEnabled } from 'hooks/useFeatureFlags';
+import type { HasReadAccess } from 'hooks/usePermissions';
 
 // Import path variables in alphabetical order to minimize merge conflicts when multiple people add routes.
 import {
     accessControlBasePath,
     administrationEventsBasePath,
+    baseImagesPath,
     clustersBasePath,
     collectionsBasePath,
     complianceBasePath,
@@ -48,7 +50,8 @@ import {
 
 import NavigationContent from './NavigationContent';
 import NavigationItem from './NavigationItem';
-import { NavDescription, ChildDescription, isActiveLink, filterNavDescriptions } from './utils';
+import { filterNavDescriptions, isActiveLink } from './utils';
+import type { ChildDescription, NavDescription } from './utils';
 
 import './NavigationSidebar.css';
 
@@ -259,6 +262,12 @@ function getNavDescriptions(
                     content: 'System Health',
                     path: systemHealthPath,
                     routeKey: 'system-health',
+                },
+                {
+                    type: 'link',
+                    content: 'Base images',
+                    path: baseImagesPath,
+                    routeKey: 'base-images',
                 },
             ],
         },

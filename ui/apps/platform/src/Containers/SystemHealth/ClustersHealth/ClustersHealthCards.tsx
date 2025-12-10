@@ -1,8 +1,9 @@
-import React, { ReactElement, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
+import type { ReactElement } from 'react';
 import { GridItem } from '@patternfly/react-core';
 
 import { fetchClusters } from 'services/ClustersService';
-import { Cluster } from 'types/cluster.proto';
+import type { Cluster } from 'types/cluster.proto';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 
 import ClusterStatusCard from './ClusterStatusCard';

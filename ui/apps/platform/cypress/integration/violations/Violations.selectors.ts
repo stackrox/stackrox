@@ -7,7 +7,7 @@ export const selectors = {
     },
     details: {
         title: 'h1.pf-v5-c-title',
-        subtitle: 'h2.pf-v5-c-title',
+        subtitle: 'section:has(> h1) > p',
         tabs: 'li.pf-v5-c-tabs__item',
         violationTab: 'li.pf-v5-c-tabs__item:contains("Violation")',
         enforcementTab: 'li.pf-v5-c-tabs__item:contains("Enforcement")',

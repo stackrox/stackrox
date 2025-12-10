@@ -1,4 +1,3 @@
-import React from 'react';
 import { SummaryCard, SummaryCardLayout } from './SummaryCardLayout';
 
 describe(Cypress.spec.relative, () => {

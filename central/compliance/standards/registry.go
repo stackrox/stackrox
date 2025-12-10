@@ -267,7 +267,7 @@ func (r *Registry) SearchControls(q *v1.Query) ([]search.Result, error) {
 		for _, control := range standard.ToProto().GetControls() {
 			result, ok := pred.Evaluate(control)
 			if ok {
-				result.ID = control.Id
+				result.ID = control.GetId()
 				results = append(results, *result)
 			}
 		}

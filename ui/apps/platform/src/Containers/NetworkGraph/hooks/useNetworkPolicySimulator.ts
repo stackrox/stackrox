@@ -1,14 +1,14 @@
 import { useState } from 'react';
 
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
-import * as networkService from 'services/NetworkService';
+import { generateNetworkModification, getUndoNetworkModification } from 'services/NetworkService';
 import { ensureExhaustive } from 'utils/type.utils';
-import { NetworkPolicyModification } from 'types/networkPolicy.proto';
+import type { NetworkPolicyModification } from 'types/networkPolicy.proto';
 import { getRequestQueryStringForSearchFilter } from 'utils/searchUtils';
 import useDeepCompareEffect from 'use-deep-compare-effect';
-import { Simulation } from '../utils/getSimulation';
+import type { Simulation } from '../utils/getSimulation';
 import { getSearchFilterFromScopeHierarchy } from '../utils/simulatorUtils';
-import { NetworkScopeHierarchy } from '../types/networkScopeHierarchy';
+import type { NetworkScopeHierarchy } from '../types/networkScopeHierarchy';
 
 export type NetworkPolicySimulator =
     | {
@@ -107,15 +107,14 @@ function useNetworkPolicySimulator({
                 });
                 break;
             case 'GENERATED':
-                networkService
-                    .generateNetworkModification(
-                        options.scopeHierarchy.cluster.id,
-                        getRequestQueryStringForSearchFilter(
-                            getSearchFilterFromScopeHierarchy(scopeHierarchy)
-                        ),
-                        options.networkDataSince,
-                        options.excludePortsAndProtocols
-                    )
+                generateNetworkModification(
+                    options.scopeHierarchy.cluster.id,
+                    getRequestQueryStringForSearchFilter(
+                        getSearchFilterFromScopeHierarchy(scopeHierarchy)
+                    ),
+                    options.networkDataSince,
+                    options.excludePortsAndProtocols
+                )
                     .then((data: NetworkPolicyModification) => {
                         setSimulator({
                             state,
@@ -139,8 +138,7 @@ function useNetworkPolicySimulator({
                     });
                 break;
             case 'UNDO':
-                networkService
-                    .getUndoNetworkModification(options.clusterId)
+                getUndoNetworkModification(options.clusterId)
                     .then((data: NetworkPolicyModification) => {
                         setSimulator({
                             state,

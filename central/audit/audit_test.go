@@ -59,27 +59,27 @@ func (suite *AuditLogTestSuite) TestCalculateAuditStatus() {
 	wg.Add(1)
 	_, _ = interceptorFunc(ctxWithNoAuth, nil, serverInfo, handler(nil))
 	wg.Wait()
-	suite.Equal(v1.Audit_AUTH_FAILED, auditMessage.Status)
+	suite.Equal(v1.Audit_AUTH_FAILED, auditMessage.GetStatus())
 
 	// request error --> REQUEST_FAILED
 	wg.Add(1)
 	err := errors.New("test error")
 	_, _ = interceptorFunc(ctxAuthorised, nil, serverInfo, handler(err))
 	wg.Wait()
-	suite.Equal(v1.Audit_REQUEST_FAILED, auditMessage.Status)
-	suite.Equal("test error", auditMessage.StatusReason)
+	suite.Equal(v1.Audit_REQUEST_FAILED, auditMessage.GetStatus())
+	suite.Equal("test error", auditMessage.GetStatusReason())
 
 	// rejected by SAC --> AUTH_FAILED
 	wg.Add(1)
 	_, _ = interceptorFunc(ctxAuthorised, nil, serverInfo, handler(sac.ErrResourceAccessDenied))
 	wg.Wait()
-	suite.Equal(v1.Audit_AUTH_FAILED, auditMessage.Status)
+	suite.Equal(v1.Audit_AUTH_FAILED, auditMessage.GetStatus())
 
 	// no error --> REQUEST_SUCCEEDED
 	wg.Add(1)
 	_, _ = interceptorFunc(ctxAuthorised, nil, serverInfo, handler(nil))
 	wg.Wait()
-	suite.Equal(v1.Audit_REQUEST_SUCCEEDED, auditMessage.Status)
+	suite.Equal(v1.Audit_REQUEST_SUCCEEDED, auditMessage.GetStatus())
 }
 
 func (suite *AuditLogTestSuite) TestPermissionsRemoval() {

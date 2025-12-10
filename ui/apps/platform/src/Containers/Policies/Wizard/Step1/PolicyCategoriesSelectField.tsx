@@ -1,25 +1,26 @@
-import React, { useState, useEffect, ReactElement } from 'react';
+import { useEffect, useState } from 'react';
+import type { FormEvent, MouseEvent as ReactMouseEvent, ReactElement, Ref } from 'react';
 import {
+    Button,
+    Chip,
+    ChipGroup,
     FormGroup,
     FormHelperText,
     HelperText,
     HelperTextItem,
-    Select,
-    SelectOption,
-    SelectList,
     MenuToggle,
-    MenuToggleElement,
+    Select,
+    SelectList,
+    SelectOption,
     TextInputGroup,
     TextInputGroupMain,
     TextInputGroupUtilities,
-    ChipGroup,
-    Chip,
-    Button,
 } from '@patternfly/react-core';
+import type { MenuToggleElement } from '@patternfly/react-core';
 import { useField } from 'formik';
 
 import { getPolicyCategories } from 'services/PolicyCategoriesService';
-import { PolicyCategory } from 'types/policy.proto';
+import type { PolicyCategory } from 'types/policy.proto';
 import { TimesIcon } from '@patternfly/react-icons';
 
 function PolicyCategoriesSelectField(): ReactElement {
@@ -30,14 +31,14 @@ function PolicyCategoriesSelectField(): ReactElement {
     // Used to temporarily prevent dropdown from closing after selecting an item to maintain multi-select UX
     const [preventClose, setPreventClose] = useState(false);
 
-    const selectedCategories: string[] = (field.value as string[]) || [];
+    const selectedCategories: string[] = (field.value as string[]) ?? [];
 
     const onToggle = () => {
         setIsOpen(!isOpen);
     };
 
     const onSelect = (
-        _event: React.MouseEvent<Element, MouseEvent> | undefined,
+        _event: ReactMouseEvent<Element, MouseEvent> | undefined,
         value: string | number | undefined
     ) => {
         if (typeof value === 'string' && !selectedCategories.includes(value)) {
@@ -81,7 +82,7 @@ function PolicyCategoriesSelectField(): ReactElement {
             </SelectOption>
         ));
 
-    const toggle = (toggleRef: React.Ref<MenuToggleElement>) => (
+    const toggle = (toggleRef: Ref<MenuToggleElement>) => (
         <MenuToggle
             variant="typeahead"
             onClick={onToggle}
@@ -93,7 +94,7 @@ function PolicyCategoriesSelectField(): ReactElement {
                 <TextInputGroupMain
                     value={inputValue}
                     onClick={onToggle}
-                    onChange={(_event: React.FormEvent<HTMLInputElement>, value: string) =>
+                    onChange={(_event: FormEvent<HTMLInputElement>, value: string) =>
                         onInputChange(value)
                     }
                     autoComplete="off"
@@ -106,7 +107,7 @@ function PolicyCategoriesSelectField(): ReactElement {
                         {selectedCategories.map((category) => (
                             <Chip
                                 key={category}
-                                onClick={(event: React.MouseEvent) => {
+                                onClick={(event: ReactMouseEvent) => {
                                     event.stopPropagation();
                                     onRemoveChip(category);
                                 }}

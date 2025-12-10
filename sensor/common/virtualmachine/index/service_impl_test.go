@@ -11,7 +11,9 @@ import (
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/centralcaps"
+	"github.com/stackrox/rox/sensor/common/virtualmachine/index/mocks"
 	"github.com/stretchr/testify/suite"
+	"go.uber.org/mock/gomock"
 	"google.golang.org/grpc"
 )
 
@@ -21,16 +23,20 @@ func TestVirtualMachineService(t *testing.T) {
 
 type virtualMachineServiceSuite struct {
 	suite.Suite
+	ctrl    *gomock.Controller
+	store   *mocks.MockVirtualMachineStore
 	service *serviceImpl
 }
 
 func (s *virtualMachineServiceSuite) SetupTest() {
-	s.service = &serviceImpl{handler: NewHandler()}
+	s.ctrl = gomock.NewController(s.T())
+	s.store = mocks.NewMockVirtualMachineStore(s.ctrl)
+	s.service = &serviceImpl{handler: NewHandler(s.store)}
 	centralcaps.Set([]centralsensor.CentralCapability{centralsensor.VirtualMachinesSupported})
 }
 
 func (s *virtualMachineServiceSuite) TestNewService() {
-	svc := NewService(NewHandler())
+	svc := NewService(NewHandler(s.store))
 	s.Require().NotNil(svc)
 	s.Require().IsType(&serviceImpl{}, svc)
 
@@ -73,7 +79,7 @@ func (s *virtualMachineServiceSuite) TestUpsertVirtualMachine_NilConnection() {
 
 	resp, err := s.service.UpsertVirtualMachineIndexReport(ctx, req)
 	s.Assert().NotNil(resp)
-	s.Assert().False(resp.Success)
+	s.Assert().False(resp.GetSuccess())
 	s.Assert().Error(err)
 	s.Assert().ErrorIs(err, errox.ResourceExhausted)
 }
@@ -95,7 +101,7 @@ func (s *virtualMachineServiceSuite) TestUpsertVirtualMachine_WithConnection() {
 
 	resp, err := s.service.UpsertVirtualMachineIndexReport(ctx, req)
 	s.Require().NotNil(resp)
-	s.Require().True(resp.Success)
+	s.Require().True(resp.GetSuccess())
 	s.Require().NoError(err)
 }
 
@@ -110,6 +116,6 @@ func (s *virtualMachineServiceSuite) TestUpsertVirtualMachine_NilVirtualMachine(
 
 	req := &sensor.UpsertVirtualMachineIndexReportRequest{}
 	resp, err := s.service.UpsertVirtualMachineIndexReport(ctx, req)
-	s.Require().Equal(resp.Success, false)
+	s.Require().Equal(resp.GetSuccess(), false)
 	s.Require().ErrorIs(err, errox.InvalidArgs)
 }

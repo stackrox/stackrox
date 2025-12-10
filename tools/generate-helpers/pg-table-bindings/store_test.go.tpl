@@ -128,6 +128,11 @@ func (s *{{$namePrefix}}StoreSuite) TestStore() {
 
 	s.NoError(store.UpsertMany(ctx, {{.TrimmedType|lowerCamelCase}}s))
 
+	found{{.TrimmedType|upperCamelCase}}s, missing, err := store.GetMany(ctx, {{$name}}IDs)
+	s.NoError(err)
+	s.Empty(missing)
+	protoassert.ElementsMatch(s.T(), {{.TrimmedType|lowerCamelCase}}s, found{{.TrimmedType|upperCamelCase}}s)
+
 	{{.TrimmedType|lowerCamelCase}}Count, err = store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)
 	s.Equal(200, {{.TrimmedType|lowerCamelCase}}Count)

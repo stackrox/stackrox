@@ -137,17 +137,17 @@ func createEntityMetadataMap(alerts []*storage.Alert) map[string]EntityMetadata 
 	for _, alert := range alerts {
 		var additionalInfo = map[string]string{}
 		entityID := getEntityIDFromAlert(alert)
-		switch entity := alert.Entity.(type) {
+		switch entity := alert.GetEntity().(type) {
 		case *storage.Alert_Deployment_:
 			if _, exists := result[entityID]; !exists {
-				additionalInfo["name"] = entity.Deployment.Name
-				additionalInfo["type"] = entity.Deployment.Type
-				additionalInfo["namespace"] = entity.Deployment.Namespace
+				additionalInfo["name"] = entity.Deployment.GetName()
+				additionalInfo["type"] = entity.Deployment.GetType()
+				additionalInfo["namespace"] = entity.Deployment.GetNamespace()
 				result[entityID] = EntityMetadata{AdditionalInfo: additionalInfo, ID: entityID}
 			}
 		case *storage.Alert_Image:
 			if _, exists := result[entityID]; !exists {
-				additionalInfo["name"] = entity.Image.Name.GetFullName()
+				additionalInfo["name"] = entity.Image.GetName().GetFullName()
 				additionalInfo["type"] = "image"
 				result[entityID] = EntityMetadata{AdditionalInfo: additionalInfo, ID: entityID}
 			}
@@ -193,11 +193,11 @@ func getEntityMetadataFromMap(m map[string]EntityMetadata) []EntityMetadata {
 
 // getEntityIDFromAlert retrieves the entity ID based on the alert's entity
 func getEntityIDFromAlert(alert *storage.Alert) string {
-	switch entity := alert.Entity.(type) {
+	switch entity := alert.GetEntity().(type) {
 	case *storage.Alert_Deployment_:
 		return entity.Deployment.GetId()
 	case *storage.Alert_Image:
-		return entity.Image.Name.GetFullName()
+		return entity.Image.GetName().GetFullName()
 	}
 	// return an "unknown" id opposed to an empty string; we still create the report, but the metadata
 	// will be empty

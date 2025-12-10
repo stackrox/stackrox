@@ -1,9 +1,10 @@
-import React, { type ReactElement, useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
+import type { ReactElement } from 'react';
 
 import { Switch } from '@patternfly/react-core';
 import {
-    isAutoUpgradeSupported,
     getAutoUpgradeConfig,
+    isAutoUpgradeSupported,
     saveAutoUpgradeConfig,
 } from 'services/ClustersService';
 import type { AutoUpgradeConfig } from 'services/ClustersService';

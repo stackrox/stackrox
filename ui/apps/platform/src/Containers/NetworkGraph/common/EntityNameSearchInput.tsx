@@ -1,9 +1,9 @@
+import type { Dispatch, ReactElement, SetStateAction } from 'react';
 import { SearchInput } from '@patternfly/react-core';
-import React, { ReactElement } from 'react';
 
 type EntityNameSearchInputProps = {
     value: string;
-    setValue: React.Dispatch<React.SetStateAction<string>>;
+    setValue: Dispatch<SetStateAction<string>>;
 };
 
 function EntityNameSearchInput({ value, setValue }: EntityNameSearchInputProps): ReactElement {

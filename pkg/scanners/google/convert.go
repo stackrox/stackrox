@@ -48,8 +48,8 @@ func (c *googleScanner) getSummary(occurrence *grafeas.Occurrence) string {
 		return "Unknown CVE description"
 	}
 	for _, l := range note.GetVulnerability().GetDetails() {
-		if l.CpeUri == occurrence.GetVulnerability().GetPackageIssue()[0].GetAffectedLocation().GetCpeUri() {
-			return l.Description
+		if l.GetCpeUri() == occurrence.GetVulnerability().GetPackageIssue()[0].GetAffectedLocation().GetCpeUri() {
+			return l.GetDescription()
 		}
 	}
 	return "Unknown CVE description"
@@ -74,9 +74,9 @@ func (c *googleScanner) convertVulnsFromOccurrence(occurrence *grafeas.Occurrenc
 	}
 
 	var link string
-	for _, url := range vulnerability.RelatedUrls {
-		if url.Url != "" {
-			link = url.Url
+	for _, url := range vulnerability.GetRelatedUrls() {
+		if url.GetUrl() != "" {
+			link = url.GetUrl()
 			break
 		}
 	}
@@ -100,7 +100,7 @@ func (c *googleScanner) convertVulnsFromOccurrence(occurrence *grafeas.Occurrenc
 
 	vuln.CvssV2 = &storage.CVSSV2{}
 
-	if cvssVector, err := v2.ParseCVSSV2(strings.TrimPrefix(vulnerability.LongDescription, "NIST vectors: ")); err == nil {
+	if cvssVector, err := v2.ParseCVSSV2(strings.TrimPrefix(vulnerability.GetLongDescription(), "NIST vectors: ")); err == nil {
 		vuln.CvssV2 = cvssVector
 	}
 

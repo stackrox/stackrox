@@ -1,16 +1,16 @@
-import React, { ReactElement } from 'react';
+import type { ReactElement, RefObject } from 'react';
 import { Tooltip } from '@patternfly/react-core';
 
 import { eventTypes } from 'constants/timelineTypes';
 import DetailedTooltipContent from 'Components/DetailedTooltipContent';
-import { Event } from './eventTypes';
+import type { Event } from './eventTypes';
 import ProcessActivityTooltipFields from './EventTooltipFields/ProcessActivityTooltipFields';
 import TerminationTooltipFields from './EventTooltipFields/TerminationTooltipFields';
 import DefaultTooltipFields from './EventTooltipFields/DefaultTooltipFields';
 
 export type EventTooltipProps = Event & {
     children: ReactElement;
-    popoverRef: React.RefObject<never>;
+    popoverRef: RefObject<never>;
 };
 
 const EventTooltip = ({

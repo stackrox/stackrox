@@ -338,11 +338,11 @@ func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName strin
 // TODO(cgorman) rework the options for global search to allow for transitive connections (policy <-> deployment, etc)
 func shouldProcessAlerts(q *v1.Query) (shouldProcess bool) {
 	fn := func(bq *v1.BaseQuery) {
-		mfq, ok := bq.Query.(*v1.BaseQuery_MatchFieldQuery)
+		mfq, ok := bq.GetQuery().(*v1.BaseQuery_MatchFieldQuery)
 		if !ok {
 			return
 		}
-		if _, ok := mappings.OptionsMap.Get(mfq.MatchFieldQuery.Field); ok {
+		if _, ok := mappings.OptionsMap.Get(mfq.MatchFieldQuery.GetField()); ok {
 			shouldProcess = true
 		}
 	}
@@ -382,7 +382,7 @@ func GlobalSearch(ctx context.Context, query string, categories []v1.SearchCateg
 		results = append(results, resultsFromCategory...)
 	}
 	// Sort from highest score to lowest
-	sort.SliceStable(results, func(i, j int) bool { return results[i].Score > results[j].Score })
+	sort.SliceStable(results, func(i, j int) bool { return results[i].GetScore() > results[j].GetScore() })
 	return
 }
 

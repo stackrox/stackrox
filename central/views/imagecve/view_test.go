@@ -17,8 +17,6 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/cve"
-	"github.com/stackrox/rox/pkg/env"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/fixtures"
 	imageSamples "github.com/stackrox/rox/pkg/fixtures/image"
 	"github.com/stackrox/rox/pkg/pointers"
@@ -170,8 +168,8 @@ func (s *ImageCVEViewTestSuite) SetupSuite() {
 	}
 
 	s.testImagesToDeployments = make(map[string][]*storage.Deployment)
-	s.testImagesToDeployments[images[1].Id] = []*storage.Deployment{deployments[0], deployments[1]}
-	s.testImagesToDeployments[images[2].Id] = []*storage.Deployment{deployments[2]}
+	s.testImagesToDeployments[images[1].GetId()] = []*storage.Deployment{deployments[0], deployments[1]}
+	s.testImagesToDeployments[images[2].GetId()] = []*storage.Deployment{deployments[2]}
 }
 
 func (s *ImageCVEViewTestSuite) TestGetImageCVECore() {
@@ -619,7 +617,7 @@ func (s *ImageCVEViewTestSuite) testCases() []testCase {
 				Level: v1.SearchCategory_IMAGES,
 				Parent: &scoped.Scope{
 					IDs:   []string{cve.ID("CVE-2022-1552", "debian:8")},
-					Level: v1.SearchCategory_IMAGE_VULNERABILITIES,
+					Level: v1.SearchCategory_IMAGE_VULNERABILITIES_V2,
 				},
 			}),
 			q: search.NewQueryBuilder().
@@ -666,14 +664,14 @@ func (s *ImageCVEViewTestSuite) testCases() []testCase {
 						return true
 					}
 					for _, d := range deps {
-						if !d.PlatformComponent {
+						if !d.GetPlatformComponent() {
 							return true
 						}
 					}
 					return false
 				}).
 				withVulnFilter(func(vuln *storage.EmbeddedVulnerability) bool {
-					return vuln.State == storage.VulnerabilityState_OBSERVED
+					return vuln.GetState() == storage.VulnerabilityState_OBSERVED
 				}),
 		},
 		{
@@ -691,14 +689,14 @@ func (s *ImageCVEViewTestSuite) testCases() []testCase {
 						return true
 					}
 					for _, d := range deps {
-						if d.PlatformComponent {
+						if d.GetPlatformComponent() {
 							return true
 						}
 					}
 					return false
 				}).
 				withVulnFilter(func(vuln *storage.EmbeddedVulnerability) bool {
-					return vuln.State == storage.VulnerabilityState_OBSERVED
+					return vuln.GetState() == storage.VulnerabilityState_OBSERVED
 				}),
 		},
 	}
@@ -726,7 +724,7 @@ func (s *ImageCVEViewTestSuite) paginationTestCases() []testCase {
 			desc: "w/ top cvss sort",
 			q: search.NewQueryBuilder().WithPagination(
 				search.NewPagination().AddSortOption(
-					search.NewSortOption(search.CVSS).AggregateBy(aggregatefunc.Max, false).Reversed(true),
+					search.NewSortOption(search.CVSS).Reversed(true),
 				).AddSortOption(search.NewSortOption(search.CVE)),
 			).ProtoQuery(),
 			less: func(records []*imageCVECoreResponse) func(i, j int) bool {
@@ -940,8 +938,8 @@ func compileExpected(images []*storage.Image, filter *filterImpl, options views.
 						FirstDiscoveredInSystem: &vulnTime,
 						Published:               &vulnPublishDate,
 					}
-					for _, metric := range vuln.CvssMetrics {
-						if metric.Source == storage.Source_SOURCE_NVD {
+					for _, metric := range vuln.GetCvssMetrics() {
+						if metric.GetSource() == storage.Source_SOURCE_NVD {
 							if metric.GetCvssv2() != nil {
 								val.TopNVDCVSS = pointers.Float32(metric.GetCvssv2().GetScore())
 							} else {
@@ -953,22 +951,6 @@ func compileExpected(images []*storage.Image, filter *filterImpl, options views.
 				}
 
 				val.TopCVSS = pointers.Float32(max(val.GetTopCVSS(), vuln.GetCvss()))
-
-				var id string
-				if !features.FlattenCVEData.Enabled() {
-					id = cve.ID(val.GetCVE(), image.GetScan().GetOperatingSystem())
-					var found bool
-					for _, seenID := range val.GetCVEIDs() {
-						if seenID == id {
-							found = true
-							break
-						}
-					}
-
-					if !found {
-						val.CVEIDs = append(val.CVEIDs, id)
-					}
-				}
 
 				if val.GetFirstDiscoveredInSystem().After(vulnTime) {
 					val.FirstDiscoveredInSystem = &vulnTime
@@ -1010,11 +992,6 @@ func compileExpected(images []*storage.Image, filter *filterImpl, options views.
 
 	expected := make([]*imageCVECoreResponse, 0, len(cveMap))
 	for _, entry := range cveMap {
-		if !features.FlattenCVEData.Enabled() {
-			sort.SliceStable(entry.CVEIDs, func(i, j int) bool {
-				return entry.CVEIDs[i] < entry.CVEIDs[j]
-			})
-		}
 		expected = append(expected, entry)
 	}
 	if options.SkipGetImagesBySeverity {
@@ -1158,46 +1135,17 @@ func standardizeImages(images ...*storage.Image) {
 			}
 
 			sort.SliceStable(vulns, func(i, j int) bool {
-				return vulns[i].Cve < vulns[j].Cve
+				return vulns[i].GetCve() < vulns[j].GetCve()
 			})
 		}
 
 		sort.SliceStable(components, func(i, j int) bool {
-			if components[i].Name == components[j].Name {
-				return components[i].Version < components[j].Version
+			if components[i].GetName() == components[j].GetName() {
+				return components[i].GetVersion() < components[j].GetVersion()
 			}
-			return components[i].Name < components[j].Name
+			return components[i].GetName() < components[j].GetName()
 		})
 	}
-}
-
-func TestImageCVEEdgeIsJoinedLast(t *testing.T) {
-	t.Setenv(env.ImageCVEEdgeCustomJoin.EnvVar(), "true")
-	if !env.ImageCVEEdgeCustomJoin.BooleanSetting() {
-		t.Skip("Skip tests when ROX_IMAGE_CVE_EDGE_CUSTOM_JOIN disabled")
-		t.SkipNow()
-	}
-	ctx := sac.WithAllAccess(context.Background())
-	testDB := pgtest.ForT(t)
-
-	// Initialize the datastore.
-	imageStore := imageDS.GetTestPostgresDataStore(t, testDB.DB)
-
-	// Upsert test images.
-	images := testImages()
-	for _, image := range images {
-		assert.NoError(t, imageStore.UpsertImage(ctx, image))
-	}
-
-	cveView := NewCVEView(testDB.DB)
-	query := search.NewQueryBuilder().
-		AddExactMatches(search.CVE, "cve-2018-1").
-		AddBools(search.Fixable, false).
-		AddExactMatches(search.VulnerabilityState, storage.VulnerabilityState_DEFERRED.String()).
-		ProtoQuery()
-	imageIDs, err := cveView.GetImageIDs(ctx, query)
-	assert.NoError(t, err)
-	assert.ElementsMatch(t, []string{"sha2"}, imageIDs)
 }
 
 func TestImageCVEUnknownSeverity(t *testing.T) {

@@ -1,8 +1,8 @@
-import React, { ReactElement } from 'react';
+import type { ReactElement } from 'react';
 import { Alert, Divider, Flex, FlexItem, Form, PageSection, Title } from '@patternfly/react-core';
-import { FormikProps } from 'formik';
+import type { FormikProps } from 'formik';
 
-import { TemplatePreviewArgs } from 'Components/EmailTemplate/EmailTemplateModal';
+import type { TemplatePreviewArgs } from 'Components/EmailTemplate/EmailTemplateModal';
 import NotifierConfigurationForm from 'Components/NotifierConfiguration/NotifierConfigurationForm';
 import RepeatScheduleDropdown from 'Components/PatternFly/RepeatScheduleDropdown';
 import DayPickerDropdown from 'Components/PatternFly/DayPickerDropdown';
@@ -13,7 +13,7 @@ import {
     defaultEmailBody as customBodyDefault,
     getDefaultEmailSubject,
 } from './emailTemplateFormUtils';
-import { ReportFormValues } from './useReportFormValues';
+import type { ReportFormValues } from './useReportFormValues';
 import EmailTemplatePreview from '../components/EmailTemplatePreview';
 
 export type DeliveryDestinationsFormProps = {
@@ -47,11 +47,15 @@ function DeliveryDestinationsForm({ title, formik }: DeliveryDestinationsFormPro
 
     function onDeleteLastNotifierConfiguration() {
         // Update only the schedule because spread ...formik.values overwrites deletion of last notifier.
-        formik.setFieldValue('schedule', {
-            intervalType: null,
-            daysOfWeek: [],
-            daysOfMonth: [],
-        });
+        formik
+            .setFieldValue('schedule', {
+                intervalType: null,
+                daysOfWeek: [],
+                daysOfMonth: [],
+            })
+            // Revalidate form after schedule change completes to update dependent fields
+            // @ts-expect-error Formik's types incorrectly declare setFieldValue as void, but it returns a Promise
+            .then(() => formik.validateForm());
     }
 
     function onScheduledRepeatChange(_id, selection) {

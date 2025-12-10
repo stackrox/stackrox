@@ -1,4 +1,4 @@
-import React from 'react';
+import type { ReactElement, ReactNode } from 'react';
 import {
     DescriptionList,
     DescriptionListDescription,
@@ -8,15 +8,15 @@ import {
     Title,
 } from '@patternfly/react-core';
 
-import { Schedule } from 'services/ComplianceScanConfigurationService';
-import { formatScanSchedule } from '../compliance.scanConfigs.utils';
+import type { Schedule } from 'types/schedule.proto';
+import { formatRecurringSchedule } from 'utils/dateUtils';
 
 type ScanConfigParametersViewProps = {
     headingLevel: 'h2' | 'h3';
     scanName: string;
     description?: string;
     scanSchedule: Schedule;
-    children?: React.ReactNode;
+    children?: ReactNode;
 };
 
 function ScanConfigParametersView({
@@ -25,7 +25,7 @@ function ScanConfigParametersView({
     scanName,
     scanSchedule,
     children,
-}: ScanConfigParametersViewProps): React.ReactElement {
+}: ScanConfigParametersViewProps): ReactElement {
     return (
         <Flex direction={{ default: 'column' }}>
             <Title headingLevel={headingLevel}>Parameters</Title>
@@ -43,7 +43,7 @@ function ScanConfigParametersView({
                 <DescriptionListGroup>
                     <DescriptionListTerm>Schedule</DescriptionListTerm>
                     <DescriptionListDescription>
-                        {formatScanSchedule(scanSchedule)}
+                        {formatRecurringSchedule(scanSchedule)}
                     </DescriptionListDescription>
                 </DescriptionListGroup>
                 {children}

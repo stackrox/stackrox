@@ -54,10 +54,6 @@ persistent=yes
 # the version used to run pylint.
 py-version=3.9
 
-# When enabled, pylint would attempt to guess common misconfiguration and emit
-# user-friendly hints instead of false-positive error messages.
-suggestion-mode=yes
-
 # Allow loading of arbitrary C extensions. Extensions are imported into the
 # active Python interpreter and may run arbitrary code.
 unsafe-load-any-extension=no
@@ -78,8 +74,7 @@ confidence=
 # --enable=similarities". If you want to run only the classes checker, but have
 # no Warning level messages displayed, use "--disable=all --enable=classes
 # --disable=W".
-disable=bad-continuation,
-        raw-checker-failed,
+disable=raw-checker-failed,
         bad-inline-option,
         locally-disabled,
         file-ignored,
@@ -497,7 +492,8 @@ exclude-too-few-public-methods=
 ignored-parents=
 
 # Maximum number of arguments for function / method.
-max-args=5
+max-args=6
+max-positional-arguments=6
 
 # Maximum number of attributes for a class (see R0902).
 max-attributes=7
@@ -572,5 +568,5 @@ preferred-modules=
 
 # Exceptions that will emit a warning when being caught. Defaults to
 # "BaseException, Exception".
-overgeneral-exceptions=BaseException,
-                       Exception
+overgeneral-exceptions=builtins.BaseException,
+                       builtins.Exception

@@ -233,7 +233,7 @@ func assembleManifestFromZIP(file *os.File, supportedCompressionTypes map[v1.DBE
 			manifestFile.EncodedSize = int64(entry.CompressedSize64)
 		} else {
 			manifestFile.Encoding = v1.DBExportManifest_UNCOMPREESSED
-			manifestFile.EncodedSize = manifestFile.DecodedSize
+			manifestFile.EncodedSize = manifestFile.GetDecodedSize()
 		}
 
 		mf.Files = append(mf.Files, manifestFile)

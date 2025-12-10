@@ -1,29 +1,30 @@
-import React from 'react';
+import type { ReactElement } from 'react';
 import {
+    Button,
     Card,
+    CardBody,
     CardHeader,
     CardTitle,
-    CardBody,
     Divider,
-    Button,
-    TextInput,
     Flex,
     FlexItem,
     Form,
     FormGroup,
+    TextInput,
 } from '@patternfly/react-core';
 import { TrashIcon } from '@patternfly/react-icons';
 import { useField } from 'formik';
 
-import TypeaheadSelect, { TypeaheadSelectOption } from 'Components/TypeaheadSelect/TypeaheadSelect';
-import { ClusterScopeObject } from 'services/RolesService';
-import { ListDeployment } from 'types/deployment.proto';
+import SearchFilterAutocomplete from 'Components/CompoundSearchFilter/components/SearchFilterAutocomplete';
+import TypeaheadSelect from 'Components/TypeaheadSelect/TypeaheadSelect';
+import type { TypeaheadSelectOption } from 'Components/TypeaheadSelect/TypeaheadSelect';
+import type { ClusterScopeObject } from 'services/RolesService';
+import type { SearchFilter } from 'types/search';
 
 type PolicyScopeCardProps = {
     type: 'exclusion' | 'inclusion';
     name: string;
     clusters: ClusterScopeObject[];
-    deployments?: ListDeployment[];
     onDelete: () => void;
     hasAuditLogEventSource: boolean;
 };
@@ -32,13 +33,12 @@ function PolicyScopeCard({
     type,
     name,
     clusters,
-    deployments = [],
     onDelete,
     hasAuditLogEventSource = false,
-}: PolicyScopeCardProps): React.ReactElement {
+}: PolicyScopeCardProps): ReactElement {
     const [field, , helper] = useField(name);
     const { value } = field;
-    const { scope } = value || {};
+    const { scope } = value ?? {};
     const { setValue } = helper;
 
     const clusterOptions: TypeaheadSelectOption[] = clusters.map((cluster) => ({
@@ -46,10 +46,13 @@ function PolicyScopeCard({
         label: cluster.name,
     }));
 
-    const deploymentOptions: TypeaheadSelectOption[] = deployments.map((deployment) => ({
-        value: deployment.name,
-        label: deployment.name,
-    }));
+    // Note! Currently this filtering is only relevant to the exclusion scope, therefore accesses `value.scope` instead of `value`.
+    // If at some point the inclusion scope gains a deployment filter, this will need to be updated.
+    const selectedNamespaceValue = scope?.namespace;
+    const deploymentSearchFilter: SearchFilter = {
+        'Cluster ID': scope?.cluster ? [scope.cluster] : undefined,
+        Namespace: selectedNamespaceValue ? [`r/${selectedNamespaceValue}`] : undefined,
+    };
 
     function handleChangeCluster(selectedValue: string) {
         if (type === 'exclusion') {
@@ -60,25 +63,30 @@ function PolicyScopeCard({
     }
 
     function handleChangeDeployment(selectedValue: string) {
-        setValue({ ...value, name: selectedValue });
+        const newValue = { ...value, name: selectedValue };
+        // Do not pass an empty string to the backend, instead remove the field entirely
+        if (!selectedValue) {
+            delete newValue.name;
+        }
+        setValue(newValue);
     }
 
     function handleChangeLabelKey(key) {
         if (type === 'exclusion') {
-            const { label } = scope || {};
+            const { label } = scope ?? {};
             setValue({ ...value, scope: { ...scope, label: { ...label, key } } });
         } else {
-            const { label } = value || {};
+            const { label } = value ?? {};
             setValue({ ...value, label: { ...label, key } });
         }
     }
 
     function handleChangeLabelValue(val) {
         if (type === 'exclusion') {
-            const { label } = scope || {};
+            const { label } = scope ?? {};
             setValue({ ...value, scope: { ...scope, label: { ...label, value: val } } });
         } else {
-            const { label } = value || {};
+            const { label } = value ?? {};
             setValue({ ...value, label: { ...label, value: val } });
         }
     }
@@ -148,15 +156,15 @@ function PolicyScopeCard({
                         {type === 'exclusion' && (
                             <FlexItem>
                                 <FormGroup label="Deployment" fieldId={`${name}-deployment`}>
-                                    <TypeaheadSelect
-                                        id={`${name}-deployment`}
+                                    <SearchFilterAutocomplete
+                                        searchCategory="DEPLOYMENTS"
+                                        searchTerm="Deployment"
                                         value={value.name || ''}
                                         onChange={handleChangeDeployment}
-                                        options={deploymentOptions}
-                                        placeholder="Select a deployment"
+                                        onSearch={handleChangeDeployment}
+                                        textLabel="Select a deployment"
+                                        searchFilter={deploymentSearchFilter}
                                         isDisabled={hasAuditLogEventSource}
-                                        maxHeight="300px"
-                                        className="pf-v5-u-w-100"
                                     />
                                 </FormGroup>
                             </FlexItem>

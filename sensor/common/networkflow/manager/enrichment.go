@@ -123,11 +123,6 @@ const (
 	// Multiple collector messages can report the same endpoint, so we only process the most recent one.
 	EnrichmentReasonEpDuplicate EnrichmentReasonEp = "duplicate"
 
-	// EnrichmentReasonEpFeatureDisabled is returned when the SensorCapturesIntermediateEvents feature is disabled.
-	// This means Sensor is configured to not capture intermediate network events while in offline mode,
-	// so the enrichment should be skipped while in offline mode.
-	EnrichmentReasonEpFeatureDisabled EnrichmentReasonEp = "feature-disabled"
-
 	// EnrichmentReasonEpFeaturePlopDisabled is returned when the ProcessesListeningOnPort feature is disabled.
 	// This means PLoP (Processes Listening on Ports) enrichment will not be performed.
 	EnrichmentReasonEpFeaturePlopDisabled EnrichmentReasonEp = "feature-plop-disabled"
@@ -192,6 +187,16 @@ func (c *connStatus) isFresh(now timestamp.MicroTS) bool {
 }
 func (c *connStatus) pastContainerResolutionDeadline(now timestamp.MicroTS) bool {
 	return c.timeElapsedSinceFirstSeen(now) > env.ContainerIDResolutionGracePeriod.DurationSetting()
+}
+
+// checkRemoveCondition returns true when the given entity can be removed from the enrichment queue.
+// It returns false if the enrichment should be retried in the next tick.
+func (c *connStatus) checkRemoveCondition(useLegacy, isConsumed bool) bool {
+	// Legacy UpdateComputer requires keeping all open entities in the enrichment queue until they are closed.
+	if useLegacy {
+		return c.rotten || (c.isClosed() && isConsumed)
+	}
+	return c.rotten || isConsumed
 }
 
 // containerResolutionResult holds the result of container ID resolution

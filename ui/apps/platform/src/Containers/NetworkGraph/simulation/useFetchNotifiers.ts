@@ -1,9 +1,7 @@
 import { useEffect, useState } from 'react';
 
-import {
-    NotifierIntegrationBase,
-    fetchNotifierIntegrations,
-} from 'services/NotifierIntegrationsService';
+import { fetchNotifierIntegrations } from 'services/NotifierIntegrationsService';
+import type { NotifierIntegrationBase } from 'services/NotifierIntegrationsService';
 
 type Result = { isLoading: boolean; notifiers: NotifierIntegrationBase[]; error: string | null };
 

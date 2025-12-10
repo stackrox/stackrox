@@ -1,8 +1,6 @@
-import React from 'react';
-
 import { Grid, GridItem } from '@patternfly/react-core';
 
-import { ClusterHealthStatus } from 'types/cluster.proto';
+import type { ClusterHealthStatus } from 'types/cluster.proto';
 
 import AdmissionControlPanel from './Components/AdmissionControl/AdmissionControlPanel';
 import CollectorPanel from './Components/Collector/CollectorPanel';

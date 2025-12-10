@@ -3,6 +3,7 @@ package metrics
 import (
 	"reflect"
 	"strings"
+	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stackrox/rox/generated/internalapi/central"
@@ -11,6 +12,11 @@ import (
 	"github.com/stackrox/rox/pkg/version"
 	"github.com/stackrox/rox/sensor/common/centralid"
 	"github.com/stackrox/rox/sensor/common/installmethod"
+)
+
+const (
+	ComponentName = "ComponentName"
+	Operation     = "Operation"
 )
 
 var (
@@ -253,13 +259,49 @@ var (
 		[]string{"central_id", "hosting", "install_method", "sensor_id"},
 	)
 
+	telemetryComplianceOperatorVersion = prometheus.NewGaugeVec(
+		prometheus.GaugeOpts{
+			Namespace:   metrics.PrometheusNamespace,
+			Subsystem:   metrics.SensorSubsystem.String(),
+			Name:        "compliance_operator_version_info",
+			Help:        "Version of compliance operator reported in label with constant value of 1",
+			ConstLabels: telemetryLabels,
+		},
+		[]string{"central_id", "hosting", "install_method", "sensor_id", "compliance_operator_version"},
+	)
+
 	// responsesChannelOperationCount a counter to track the operations in the responses channel
 	responsesChannelOperationCount = prometheus.NewCounterVec(prometheus.CounterOpts{
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.SensorSubsystem.String(),
 		Name:      "num_messages_waiting_for_transmission_to_central",
 		Help:      "A counter that tracks the operations in the responses channel",
-	}, []string{"Operation", "MessageType"})
+	}, []string{Operation, "MessageType"})
+
+	// componentProcessMessageDurationSeconds tracks the duration of ProcessMessage calls for each component
+	componentProcessMessageDurationSeconds = prometheus.NewHistogramVec(prometheus.HistogramOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.SensorSubsystem.String(),
+		Name:      "component_process_message_duration_seconds",
+		Help:      "Time taken to process messages from Central in each sensor component",
+		Buckets:   prometheus.ExponentialBuckets(0.001, 2, 12), // 1ms to ~4s
+	}, []string{ComponentName})
+
+	// ComponentQueueOperations keeps track of the operations of the component queue buffer.
+	ComponentQueueOperations = prometheus.NewCounterVec(prometheus.CounterOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.SensorSubsystem.String(),
+		Name:      "component_queue_operations_total",
+		Help:      "A counter that tracks the number of ADD and REMOVE operations on the component buffer queue. Current size of the queue can be calculated by subtracting the number of remove operations from the add operations",
+	}, []string{ComponentName, Operation})
+
+	// componentProcessMessageErrorsCount tracks the number of errors during ProcessMessage calls for each component
+	componentProcessMessageErrorsCount = prometheus.NewCounterVec(prometheus.CounterOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.SensorSubsystem.String(),
+		Name:      "component_process_message_errors_total",
+		Help:      "Number of errors encountered while processing messages from Central in each sensor component",
+	}, []string{ComponentName})
 )
 
 // IncrementEntityNotFound increments an instance of entity not found
@@ -395,7 +437,7 @@ func getResponsesChannelLabel(op string, msg *central.MsgFromSensor) prometheus.
 	}
 	return prometheus.Labels{
 		"MessageType": msgType,
-		"Operation":   op,
+		Operation:     op,
 	}
 }
 
@@ -431,4 +473,21 @@ func SetTelemetryMetrics(clusterIDPeeker func() string, cm *central.ClusterMetri
 
 	telemetrySecuredVCPU.Reset()
 	telemetrySecuredVCPU.WithLabelValues(labels...).Set(float64(cm.GetCpuCapacity()))
+
+	telemetryComplianceOperatorVersion.Reset()
+	telemetryComplianceOperatorVersion.WithLabelValues(append(labels, cm.GetComplianceOperatorVersion())...).Set(1)
+}
+
+// ObserveCentralReceiverProcessMessageDuration records the duration of a ProcessMessage call
+func ObserveCentralReceiverProcessMessageDuration(componentName string, duration time.Duration) {
+	componentProcessMessageDurationSeconds.With(prometheus.Labels{
+		ComponentName: componentName,
+	}).Observe(duration.Seconds())
+}
+
+// IncrementCentralReceiverProcessMessageErrors increments the error count for a component's ProcessMessage call
+func IncrementCentralReceiverProcessMessageErrors(componentName string) {
+	componentProcessMessageErrorsCount.With(prometheus.Labels{
+		ComponentName: componentName,
+	}).Inc()
 }

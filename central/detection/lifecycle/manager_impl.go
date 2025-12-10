@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/central/activecomponent/updater/aggregator"
+	clusterDatastore "github.com/stackrox/rox/central/cluster/datastore"
 	"github.com/stackrox/rox/central/deployment/cache"
 	deploymentDatastore "github.com/stackrox/rox/central/deployment/datastore"
 	"github.com/stackrox/rox/central/deployment/queue"
@@ -43,7 +43,7 @@ import (
 var (
 	lifecycleMgrCtx = sac.WithGlobalAccessScopeChecker(context.Background(),
 		sac.AllowFixedScopes(sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
-			sac.ResourceScopeKeys(resources.Alert, resources.Deployment, resources.Image,
+			sac.ResourceScopeKeys(resources.Alert, resources.Deployment, resources.Image, resources.Cluster,
 				resources.DeploymentExtension, resources.WorkflowAdministration, resources.Namespace)))
 
 	genDuration = env.BaselineGenerationDuration.DurationSetting()
@@ -65,6 +65,7 @@ type managerImpl struct {
 
 	alertManager alertmanager.AlertManager
 
+	clusterDataStore        clusterDatastore.DataStore
 	deploymentDataStore     deploymentDatastore.DataStore
 	processesDataStore      processIndicatorDatastore.DataStore
 	baselines               baselineDataStore.DataStore
@@ -82,8 +83,6 @@ type managerImpl struct {
 
 	policyAlertsLock          sync.RWMutex
 	removedOrDisabledPolicies set.StringSet
-
-	processAggregator aggregator.ProcessAggregator
 
 	connectionManager connection.Manager
 }
@@ -108,21 +107,20 @@ func (m *managerImpl) buildIndicatorFilter() {
 		return
 	}
 
-	var processesToRemove []string
+	processesToRemove := make([]string, 0, len(deploymentIDs))
 	walkFn := func() error {
-		deploymentIDSet := set.NewStringSet(deploymentIDs...)
 		processesToRemove = processesToRemove[:0]
-		return m.processesDataStore.WalkAll(ctx, func(pi *storage.ProcessIndicator) error {
-			if !deploymentIDSet.Contains(pi.GetDeploymentId()) {
-				// Don't remove as these processes will be removed by GC
-				// but don't add to the filter
-				return nil
-			}
+
+		// Only process indicators for existing deployments
+		fn := func(pi *storage.ProcessIndicator) error {
 			if !m.processFilter.Add(pi) {
 				processesToRemove = append(processesToRemove, pi.GetId())
 			}
 			return nil
-		})
+		}
+
+		query := search.NewQueryBuilder().AddExactMatches(search.DeploymentID, deploymentIDs...).ProtoQuery()
+		return m.processesDataStore.WalkByQuery(ctx, query, fn)
 	}
 	if err := pgutils.RetryIfPostgres(ctx, walkFn); err != nil {
 		utils.Should(errors.Wrap(err, "error building indicator filter"))
@@ -169,30 +167,70 @@ func (m *managerImpl) flushBaselineQueue() {
 		// Grab the first deployment to baseline.
 		// NOTE:  This is the only place from which Pull is called.
 		deployment := m.deploymentObservationQueue.Pull()
+		deploymentId := deployment.DeploymentID
 
-		baselines := m.addBaseline(deployment.DeploymentID)
+		baselines := m.addBaseline(deploymentId)
 
-		if !features.AutoLockProcessBaselines.Enabled() {
+		fullDeployment, found, err := m.deploymentDataStore.GetDeployment(lifecycleMgrCtx, deploymentId)
+
+		if !found {
+			log.Errorf("Error: Cluster not found for deployment %s", deploymentId)
 			continue
 		}
 
-		for _, baseline := range baselines {
-			if baseline == nil || baseline.GetUserLockedTimestamp() != nil {
-				continue
-			}
+		if err != nil {
+			log.Errorf("Error getting cluster for deployment %s: %+v", deploymentId, err)
+			continue
+		}
 
-			baseline.UserLockedTimestamp = protocompat.TimestampNow()
-			_, err := m.baselines.UserLockProcessBaseline(lifecycleMgrCtx, baseline.GetKey(), true)
-			if err != nil {
-				log.Errorf("Error setting user lock for %+v: %v", baseline.GetKey(), err)
-				continue
-			}
-			err = m.SendBaselineToSensor(baseline)
-			if err != nil {
-				log.Errorf("Error sending process baseline %+v: %v", baseline, err)
-			}
+		if m.isAutoLockEnabledForCluster(fullDeployment.GetClusterId()) {
+			m.autoLockProcessBaselines(baselines)
 		}
 	}
+}
+
+func (m *managerImpl) autoLockProcessBaselines(baselines []*storage.ProcessBaseline) {
+	for _, baseline := range baselines {
+		if baseline == nil || baseline.GetUserLockedTimestamp() != nil {
+			continue
+		}
+
+		baseline.UserLockedTimestamp = protocompat.TimestampNow()
+		_, err := m.baselines.UserLockProcessBaseline(lifecycleMgrCtx, baseline.GetKey(), true)
+		if err != nil {
+			log.Errorf("Error setting user lock for %+v: %v", baseline.GetKey(), err)
+			continue
+		}
+		err = m.SendBaselineToSensor(baseline)
+		if err != nil {
+			log.Errorf("Error sending process baseline %+v: %v", baseline, err)
+		}
+	}
+}
+
+// Perhaps the cluster config should be kept in memory and calling the database should not be needed
+func (m *managerImpl) isAutoLockEnabledForCluster(clusterId string) bool {
+	if !features.AutoLockProcessBaselines.Enabled() {
+		return false
+	}
+
+	cluster, found, err := m.clusterDataStore.GetCluster(lifecycleMgrCtx, clusterId)
+
+	if err != nil {
+		log.Errorf("Error getting cluster config %s: %v", clusterId, err)
+		return false
+	}
+
+	if !found {
+		log.Errorf("Error: Unable to find cluster %s", clusterId)
+		return false
+	}
+
+	if cluster.GetManagedBy() == storage.ManagerType_MANAGER_TYPE_MANUAL || cluster.GetManagedBy() == storage.ManagerType_MANAGER_TYPE_UNKNOWN {
+		return cluster.GetDynamicConfig().GetAutoLockProcessBaselinesConfig().GetEnabled()
+	}
+
+	return cluster.GetHelmConfig().GetDynamicConfig().GetAutoLockProcessBaselinesConfig().GetEnabled()
 }
 
 func (m *managerImpl) flushIndicatorQueue() {
@@ -224,10 +262,6 @@ func (m *managerImpl) flushIndicatorQueue() {
 	if err := m.processesDataStore.AddProcessIndicators(lifecycleMgrCtx, indicatorSlice...); err != nil {
 		log.Errorf("Error adding process indicators: %v", err)
 	}
-
-	now := time.Now()
-	m.processAggregator.Add(indicatorSlice)
-	centralMetrics.SetFunctionSegmentDuration(now, "AddProcessToAggregator")
 
 	defer centralMetrics.SetFunctionSegmentDuration(time.Now(), "CheckAndUpdateBaseline")
 
@@ -292,7 +326,7 @@ func (m *managerImpl) SendBaselineToSensor(baseline *storage.ProcessBaseline) er
 		log.Errorf("Error sending process baseline to cluster %q: %v", clusterId, err)
 		return err
 	}
-	log.Infof("Successfully sent process baseline to cluster %q: %s", clusterId, baseline.GetId())
+	log.Debugf("Successfully sent process baseline to cluster %q: %s", clusterId, baseline.GetId())
 
 	return nil
 }
@@ -449,6 +483,19 @@ func (m *managerImpl) HandleResourceAlerts(clusterID string, alerts []*storage.A
 		if _, err := m.alertManager.AlertAndNotify(lifecycleMgrCtx, alerts, opts...); err != nil {
 			return err
 		}
+	}
+	return nil
+}
+
+func (m *managerImpl) HandleNodeAlerts(clusterID string, alerts []*storage.Alert, stage storage.LifecycleStage) error {
+	m.filterOutDisabledPolicies(&alerts)
+	if len(alerts) == 0 && stage == storage.LifecycleStage_RUNTIME {
+		return nil
+	}
+
+	if _, err := m.alertManager.AlertAndNotify(lifecycleMgrCtx, alerts,
+		alertmanager.WithClusterID(clusterID), alertmanager.WithLifecycleStage(stage)); err != nil {
+		return err
 	}
 	return nil
 }

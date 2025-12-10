@@ -5,9 +5,9 @@ import (
 	"time"
 
 	"github.com/jackc/pgx/v5"
-	"github.com/mitchellh/hashstructure/v2"
 	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
+	"github.com/stackrox/hashstructure"
 	convertutils "github.com/stackrox/rox/central/cve/converter/utils"
 	"github.com/stackrox/rox/central/imagev2/datastore/store"
 	"github.com/stackrox/rox/central/imagev2/datastore/store/common"
@@ -33,8 +33,9 @@ const (
 	imagesV2Table              = pkgSchema.ImagesV2TableName
 	imageComponentsV2Table     = pkgSchema.ImageComponentV2TableName
 	imageComponentsV2CVEsTable = pkgSchema.ImageCvesV2TableName
-	imageCVEsLegacyTable       = pkgSchema.ImageCvesTableName
-	imageCVEEdgesLegacyTable   = pkgSchema.ImageCveEdgesTableName
+	// TODO(ROX-29911): really need cache table for the dates.
+	imageCVEsLegacyTable     = "image_cves"
+	imageCVEEdgesLegacyTable = "image_cve_edges"
 )
 
 var (
@@ -44,6 +45,8 @@ var (
 	defaultSortOption = &v1.QuerySortOption{
 		Field: search.LastUpdatedTime.String(),
 	}
+	// Assume it exists
+	legacyCVEExists = true
 )
 
 type imagePartsAsSlice struct {
@@ -119,7 +122,7 @@ func (s *storeImpl) insertIntoImages(
 	if len(existingCVEs) == 0 {
 		// If we did not find any existing CVEs for the image, we may have just upgraded to q version using new CVE data model.
 		// So we try to migrate the CVE created and first image occurrence timestamps from the legacy model.
-		existingCVEs, err = getLegacyImageCVEs(ctx, tx, parts.image.GetSha())
+		existingCVEs, err = getLegacyImageCVEs(ctx, tx, parts.image.GetDigest())
 		if err != nil {
 			return err
 		}
@@ -153,7 +156,7 @@ func (s *storeImpl) insertIntoImages(
 
 	values := []interface{}{
 		cloned.GetId(),
-		cloned.GetSha(),
+		cloned.GetDigest(),
 		cloned.GetName().GetRegistry(),
 		cloned.GetName().GetRemote(),
 		cloned.GetName().GetTag(),
@@ -167,19 +170,19 @@ func (s *storeImpl) insertIntoImages(
 		protocompat.NilOrTime(cloned.GetScan().GetScanTime()),
 		cloned.GetScan().GetOperatingSystem(),
 		protocompat.NilOrTime(cloned.GetSignature().GetFetched()),
-		cloned.GetComponentCount(),
-		cloned.GetCveCount(),
-		cloned.GetFixableCveCount(),
-		cloned.GetUnknownCveCount(),
-		cloned.GetFixableUnknownCveCount(),
-		cloned.GetCriticalCveCount(),
-		cloned.GetFixableCriticalCveCount(),
-		cloned.GetImportantCveCount(),
-		cloned.GetFixableImportantCveCount(),
-		cloned.GetModerateCveCount(),
-		cloned.GetFixableModerateCveCount(),
-		cloned.GetLowCveCount(),
-		cloned.GetFixableLowCveCount(),
+		cloned.GetScanStats().GetComponentCount(),
+		cloned.GetScanStats().GetCveCount(),
+		cloned.GetScanStats().GetFixableCveCount(),
+		cloned.GetScanStats().GetUnknownCveCount(),
+		cloned.GetScanStats().GetFixableUnknownCveCount(),
+		cloned.GetScanStats().GetCriticalCveCount(),
+		cloned.GetScanStats().GetFixableCriticalCveCount(),
+		cloned.GetScanStats().GetImportantCveCount(),
+		cloned.GetScanStats().GetFixableImportantCveCount(),
+		cloned.GetScanStats().GetModerateCveCount(),
+		cloned.GetScanStats().GetFixableModerateCveCount(),
+		cloned.GetScanStats().GetLowCveCount(),
+		cloned.GetScanStats().GetFixableLowCveCount(),
 		protocompat.NilOrTime(cloned.GetLastUpdated()),
 		cloned.GetPriority(),
 		cloned.GetRiskScore(),
@@ -187,7 +190,7 @@ func (s *storeImpl) insertIntoImages(
 		serialized,
 	}
 
-	finalStr := "INSERT INTO " + imagesV2Table + " (Id, Sha, Name_Registry, Name_Remote, Name_Tag, Name_FullName, Metadata_V1_Created, Metadata_V1_User, Metadata_V1_Command, Metadata_V1_Entrypoint, Metadata_V1_Volumes, Metadata_V1_Labels, Scan_ScanTime, Scan_OperatingSystem, Signature_Fetched, ComponentCount, CveCount, FixableCveCount, UnknownCveCount, FixableUnknownCveCount, CriticalCveCount, FixableCriticalCveCount, ImportantCveCount, FixableImportantCveCount, ModerateCveCount, FixableModerateCveCount, LowCveCount, FixableLowCveCount, LastUpdated, Priority, RiskScore, TopCvss, serialized) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28, $29, $30, $31, $32, $33) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Sha = EXCLUDED.Sha, Name_Registry = EXCLUDED.Name_Registry, Name_Remote = EXCLUDED.Name_Remote, Name_Tag = EXCLUDED.Name_Tag, Name_FullName = EXCLUDED.Name_FullName, Metadata_V1_Created = EXCLUDED.Metadata_V1_Created, Metadata_V1_User = EXCLUDED.Metadata_V1_User, Metadata_V1_Command = EXCLUDED.Metadata_V1_Command, Metadata_V1_Entrypoint = EXCLUDED.Metadata_V1_Entrypoint, Metadata_V1_Volumes = EXCLUDED.Metadata_V1_Volumes, Metadata_V1_Labels = EXCLUDED.Metadata_V1_Labels, Scan_ScanTime = EXCLUDED.Scan_ScanTime, Scan_OperatingSystem = EXCLUDED.Scan_OperatingSystem, Signature_Fetched = EXCLUDED.Signature_Fetched, ComponentCount = EXCLUDED.ComponentCount, CveCount = EXCLUDED.CveCount, FixableCveCount = EXCLUDED.FixableCveCount, UnknownCveCount = EXCLUDED.UnknownCveCount, FixableUnknownCveCount = EXCLUDED.FixableUnknownCveCount, CriticalCveCount = EXCLUDED.CriticalCveCount, FixableCriticalCveCount = EXCLUDED.FixableCriticalCveCount, ImportantCveCount = EXCLUDED.ImportantCveCount, FixableImportantCveCount = EXCLUDED.FixableImportantCveCount, ModerateCveCount = EXCLUDED.ModerateCveCount, FixableModerateCveCount = EXCLUDED.FixableModerateCveCount, LowCveCount = EXCLUDED.LowCveCount, FixableLowCveCount = EXCLUDED.FixableLowCveCount, LastUpdated = EXCLUDED.LastUpdated, Priority = EXCLUDED.Priority, RiskScore = EXCLUDED.RiskScore, TopCvss = EXCLUDED.TopCvss, serialized = EXCLUDED.serialized"
+	finalStr := "INSERT INTO " + imagesV2Table + " (Id, Digest, Name_Registry, Name_Remote, Name_Tag, Name_FullName, Metadata_V1_Created, Metadata_V1_User, Metadata_V1_Command, Metadata_V1_Entrypoint, Metadata_V1_Volumes, Metadata_V1_Labels, Scan_ScanTime, Scan_OperatingSystem, Signature_Fetched, ScanStats_ComponentCount, ScanStats_CveCount, ScanStats_FixableCveCount, ScanStats_UnknownCveCount, ScanStats_FixableUnknownCveCount, ScanStats_CriticalCveCount, ScanStats_FixableCriticalCveCount, ScanStats_ImportantCveCount, ScanStats_FixableImportantCveCount, ScanStats_ModerateCveCount, ScanStats_FixableModerateCveCount, ScanStats_LowCveCount, ScanStats_FixableLowCveCount, LastUpdated, Priority, RiskScore, TopCvss, serialized) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28, $29, $30, $31, $32, $33) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Digest = EXCLUDED.Digest, Name_Registry = EXCLUDED.Name_Registry, Name_Remote = EXCLUDED.Name_Remote, Name_Tag = EXCLUDED.Name_Tag, Name_FullName = EXCLUDED.Name_FullName, Metadata_V1_Created = EXCLUDED.Metadata_V1_Created, Metadata_V1_User = EXCLUDED.Metadata_V1_User, Metadata_V1_Command = EXCLUDED.Metadata_V1_Command, Metadata_V1_Entrypoint = EXCLUDED.Metadata_V1_Entrypoint, Metadata_V1_Volumes = EXCLUDED.Metadata_V1_Volumes, Metadata_V1_Labels = EXCLUDED.Metadata_V1_Labels, Scan_ScanTime = EXCLUDED.Scan_ScanTime, Scan_OperatingSystem = EXCLUDED.Scan_OperatingSystem, Signature_Fetched = EXCLUDED.Signature_Fetched, ScanStats_ComponentCount = EXCLUDED.ScanStats_ComponentCount, ScanStats_CveCount = EXCLUDED.ScanStats_CveCount, ScanStats_FixableCveCount = EXCLUDED.ScanStats_FixableCveCount, ScanStats_UnknownCveCount = EXCLUDED.ScanStats_UnknownCveCount, ScanStats_FixableUnknownCveCount = EXCLUDED.ScanStats_FixableUnknownCveCount, ScanStats_CriticalCveCount = EXCLUDED.ScanStats_CriticalCveCount, ScanStats_FixableCriticalCveCount = EXCLUDED.ScanStats_FixableCriticalCveCount, ScanStats_ImportantCveCount = EXCLUDED.ScanStats_ImportantCveCount, ScanStats_FixableImportantCveCount = EXCLUDED.ScanStats_FixableImportantCveCount, ScanStats_ModerateCveCount = EXCLUDED.ScanStats_ModerateCveCount, ScanStats_FixableModerateCveCount = EXCLUDED.ScanStats_FixableModerateCveCount, ScanStats_LowCveCount = EXCLUDED.ScanStats_LowCveCount, ScanStats_FixableLowCveCount = EXCLUDED.ScanStats_FixableLowCveCount, LastUpdated = EXCLUDED.LastUpdated, Priority = EXCLUDED.Priority, RiskScore = EXCLUDED.RiskScore, TopCvss = EXCLUDED.TopCvss, serialized = EXCLUDED.serialized"
 	_, err = tx.Exec(ctx, finalStr, values...)
 	if err != nil {
 		return err
@@ -427,7 +430,7 @@ type hashWrapper struct {
 }
 
 func populateImageScanHash(scan *storage.ImageScan) error {
-	hash, err := hashstructure.Hash(hashWrapper{scan.GetComponents()}, hashstructure.FormatV2, &hashstructure.HashOptions{ZeroNil: true})
+	hash, err := hashstructure.Hash(hashWrapper{scan.GetComponents()}, &hashstructure.HashOptions{ZeroNil: true})
 	if err != nil {
 		return errors.Wrap(err, "calculating hash for image scan")
 	}
@@ -439,19 +442,22 @@ func populateImageScanHash(scan *storage.ImageScan) error {
 
 func fillScanStatsFromExistingImage(oldImage *storage.ImageV2, image *storage.ImageV2) {
 	image.RiskScore = oldImage.GetRiskScore()
-	image.ComponentCount = oldImage.GetComponentCount()
-	image.CveCount = oldImage.GetCveCount()
-	image.FixableCveCount = oldImage.GetFixableCveCount()
-	image.UnknownCveCount = oldImage.GetUnknownCveCount()
-	image.FixableUnknownCveCount = oldImage.GetFixableUnknownCveCount()
-	image.CriticalCveCount = oldImage.GetCriticalCveCount()
-	image.FixableCriticalCveCount = oldImage.GetFixableCriticalCveCount()
-	image.ImportantCveCount = oldImage.GetImportantCveCount()
-	image.FixableImportantCveCount = oldImage.GetFixableImportantCveCount()
-	image.ModerateCveCount = oldImage.GetModerateCveCount()
-	image.FixableModerateCveCount = oldImage.GetFixableModerateCveCount()
-	image.LowCveCount = oldImage.GetLowCveCount()
-	image.FixableLowCveCount = oldImage.GetFixableLowCveCount()
+	if image.GetScanStats() == nil {
+		image.ScanStats = &storage.ImageV2_ScanStats{}
+	}
+	image.GetScanStats().ComponentCount = oldImage.GetScanStats().GetComponentCount()
+	image.GetScanStats().CveCount = oldImage.GetScanStats().GetCveCount()
+	image.GetScanStats().FixableCveCount = oldImage.GetScanStats().GetFixableCveCount()
+	image.GetScanStats().UnknownCveCount = oldImage.GetScanStats().GetUnknownCveCount()
+	image.GetScanStats().FixableUnknownCveCount = oldImage.GetScanStats().GetFixableUnknownCveCount()
+	image.GetScanStats().CriticalCveCount = oldImage.GetScanStats().GetCriticalCveCount()
+	image.GetScanStats().FixableCriticalCveCount = oldImage.GetScanStats().GetFixableCriticalCveCount()
+	image.GetScanStats().ImportantCveCount = oldImage.GetScanStats().GetImportantCveCount()
+	image.GetScanStats().FixableImportantCveCount = oldImage.GetScanStats().GetFixableImportantCveCount()
+	image.GetScanStats().ModerateCveCount = oldImage.GetScanStats().GetModerateCveCount()
+	image.GetScanStats().FixableModerateCveCount = oldImage.GetScanStats().GetFixableModerateCveCount()
+	image.GetScanStats().LowCveCount = oldImage.GetScanStats().GetLowCveCount()
+	image.GetScanStats().FixableLowCveCount = oldImage.GetScanStats().GetFixableLowCveCount()
 	image.TopCvss = oldImage.GetTopCvss()
 }
 
@@ -506,22 +512,16 @@ func (s *storeImpl) upsert(ctx context.Context, obj *storage.ImageV2) error {
 	keys := gatherKeys(imageParts)
 
 	return s.keyFence.DoStatusWithLock(concurrency.DiscreteKeySet(keys...), func() error {
-		conn, release, err := s.acquireConn(ctx, ops.Get, "ImageV2")
-		if err != nil {
-			return err
-		}
-		defer release()
-
-		tx, err := conn.Begin(ctx)
+		tx, ctx, err := s.begin(ctx)
 		if err != nil {
 			return err
 		}
 
 		if err := s.insertIntoImages(ctx, tx, imageParts, metadataUpdated, scanUpdated, iTime); err != nil {
-			if err := tx.Rollback(ctx); err != nil {
-				return err
+			if errTx := tx.Rollback(ctx); errTx != nil {
+				return errors.Wrapf(errTx, "rolling back transaction due to: %v", err)
 			}
-			return err
+			return errors.Wrap(err, "inserting into images")
 		}
 		return tx.Commit(ctx)
 	})
@@ -574,14 +574,6 @@ func (s *storeImpl) retryableExists(ctx context.Context, id string) (bool, error
 	return count == 1, nil
 }
 
-func wrapRollback(ctx context.Context, tx *postgres.Tx, err error) error {
-	rollbackErr := tx.Rollback(ctx)
-	if rollbackErr != nil {
-		return errors.Wrapf(rollbackErr, "rolling back due to err: %v", err)
-	}
-	return err
-}
-
 // Get returns the object, if it exists from the store.
 func (s *storeImpl) Get(ctx context.Context, id string) (*storage.ImageV2, bool, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Get, "ImageV2")
@@ -592,33 +584,18 @@ func (s *storeImpl) Get(ctx context.Context, id string) (*storage.ImageV2, bool,
 }
 
 func (s *storeImpl) retryableGet(ctx context.Context, id string) (*storage.ImageV2, bool, error) {
-	conn, release, err := s.acquireConn(ctx, ops.Get, "ImageV2")
+	tx, ctx, err := s.begin(ctx)
 	if err != nil {
 		return nil, false, err
 	}
-	defer release()
-
-	tx, err := conn.Begin(ctx)
-	if err != nil {
-		return nil, false, err
-	}
-	// Add tx to the context to ensure image metadata plus its components and CVEs are all retrieved
-	// in the same transaction as the updates.
-	ctx = postgres.ContextWithTx(ctx, tx)
+	defer postgres.FinishReadOnlyTransaction(tx)
 
 	image, found, err := s.getFullImage(ctx, id)
-	if err != nil {
-		return nil, false, wrapRollback(ctx, tx, err)
-	}
-
-	if err := tx.Commit(ctx); err != nil {
-		return nil, false, err
-	}
 	return image, found, err
 }
 
 func (s *storeImpl) populateImage(ctx context.Context, tx *postgres.Tx, image *storage.ImageV2) error {
-	components, err := getImageComponents(ctx, tx, image.Id)
+	components, err := getImageComponents(ctx, tx, image.GetId())
 	if err != nil {
 		return err
 	}
@@ -669,13 +646,8 @@ func (s *storeImpl) getFullImage(ctx context.Context, imageID string) (*storage.
 	return image, true, nil
 }
 
-func (s *storeImpl) acquireConn(ctx context.Context, op ops.Op, typ string) (*postgres.Conn, func(), error) {
-	defer metrics.SetAcquireDBConnDuration(time.Now(), op, typ)
-	conn, err := s.db.Acquire(ctx)
-	if err != nil {
-		return nil, nil, err
-	}
-	return conn, conn.Release, nil
+func (s *storeImpl) begin(ctx context.Context) (*postgres.Tx, context.Context, error) {
+	return postgres.GetTransaction(ctx, s.db)
 }
 
 func getImageComponents(ctx context.Context, tx *postgres.Tx, imageID string) ([]*storage.ImageComponentV2, error) {
@@ -731,6 +703,22 @@ func getImageCVEs(ctx context.Context, tx *postgres.Tx, imageID string) ([]*stor
 // in the returned vulns as that information is not necessary for migrating the timestamps.
 func getLegacyImageCVEs(ctx context.Context, tx *postgres.Tx, imageSha string) ([]*storage.EmbeddedVulnerability, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Get, "ImageCVEs")
+
+	if !legacyCVEExists {
+		return nil, nil
+	}
+
+	existenceRow := tx.QueryRow(ctx, "SELECT EXISTS (SELECT 1 FROM information_schema.tables WHERE "+
+		"table_name = $1 AND table_schema = ANY(current_schemas(FALSE)))", imageCVEsLegacyTable)
+	var exists bool
+	if err := existenceRow.Scan(&exists); err != nil {
+		return nil, err
+	}
+	// Old tables do not exist so newer installation.  Set global var  so we skip these checks.
+	if !exists {
+		legacyCVEExists = false
+		return nil, nil
+	}
 
 	// Using this method instead of accessing the legacy image CVE and component stores because the legacy stores
 	// would not be initialized when the new data model is enabled
@@ -791,22 +779,16 @@ func (s *storeImpl) Delete(ctx context.Context, id string) error {
 }
 
 func (s *storeImpl) retryableDelete(ctx context.Context, id string) error {
-	conn, release, err := s.acquireConn(ctx, ops.Remove, "ImageV2")
-	if err != nil {
-		return err
-	}
-	defer release()
-
-	tx, err := conn.Begin(ctx)
+	tx, ctx, err := s.begin(ctx)
 	if err != nil {
 		return err
 	}
 
 	if err := s.deleteImageTree(ctx, tx, id); err != nil {
-		if err := tx.Rollback(ctx); err != nil {
-			return err
+		if errTx := tx.Rollback(ctx); errTx != nil {
+			return errors.Wrapf(errTx, "rolling back transaction due to: %v", err)
 		}
-		return err
+		return errors.Wrap(err, "deleting image tree")
 	}
 	return tx.Commit(ctx)
 }
@@ -840,26 +822,17 @@ func (s *storeImpl) GetByIDs(ctx context.Context, ids []string) ([]*storage.Imag
 }
 
 func (s *storeImpl) retryableGetByIDs(ctx context.Context, ids []string) ([]*storage.ImageV2, error) {
-	conn, release, err := s.acquireConn(ctx, ops.GetMany, "ImageV2")
+	tx, ctx, err := s.begin(ctx)
 	if err != nil {
 		return nil, err
 	}
-	defer release()
-
-	tx, err := conn.Begin(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	// Add tx to the context to ensure image metadata plus its components and CVEs are all retrieved
-	// in the same transaction as the updates.
-	ctx = postgres.ContextWithTx(ctx, tx)
+	defer postgres.FinishReadOnlyTransaction(tx)
 
 	elems := make([]*storage.ImageV2, 0, len(ids))
 	for _, id := range ids {
 		msg, found, err := s.getFullImage(ctx, id)
 		if err != nil {
-			return nil, wrapRollback(ctx, tx, err)
+			return nil, err
 		}
 		if !found {
 			continue
@@ -867,9 +840,6 @@ func (s *storeImpl) retryableGetByIDs(ctx context.Context, ids []string) ([]*sto
 		elems = append(elems, msg)
 	}
 
-	if err := tx.Commit(ctx); err != nil {
-		return nil, err
-	}
 	return elems, nil
 }
 
@@ -879,21 +849,11 @@ func (s *storeImpl) WalkByQuery(ctx context.Context, q *v1.Query, fn func(image 
 
 	q = s.applyDefaultSort(q)
 
-	conn, release, err := s.acquireConn(ctx, ops.WalkByQuery, "ImageV2")
+	tx, ctx, err := s.begin(ctx)
 	if err != nil {
 		return err
 	}
-	defer release()
-
-	tx, err := conn.Begin(ctx)
-	if err != nil {
-		return err
-	}
-	defer func() {
-		if err := tx.Rollback(ctx); err != nil {
-			log.Errorf("error rolling back: %v", err)
-		}
-	}()
+	defer postgres.FinishReadOnlyTransaction(tx)
 
 	callback := func(image *storage.ImageV2) error {
 		err := s.populateImage(ctx, tx, image)
@@ -961,6 +921,24 @@ func (s *storeImpl) GetImagesRiskView(ctx context.Context, q *v1.Query) ([]*view
 	return results, err
 }
 
+// GetImagesIdAndDigestView retrieves an image id and digest for pruning purposes
+func (s *storeImpl) GetImagesIdAndDigestView(ctx context.Context, q *v1.Query) ([]*views.ImageIDAndDigestView, error) {
+	selects := []*v1.QuerySelect{
+		search.NewQuerySelect(search.ImageID).Proto(),
+		search.NewQuerySelect(search.ImageSHA).Proto(),
+	}
+	q.Selects = selects
+	var results []*views.ImageIDAndDigestView
+	err := pgSearch.RunSelectRequestForSchemaFn[views.ImageIDAndDigestView](ctx, s.db, pkgSchema.ImagesV2Schema, q, func(row *views.ImageIDAndDigestView) error {
+		results = append(results, row)
+		return nil
+	})
+	if err != nil {
+		log.Errorf("unable to retrieve image id and digests: %v", err)
+	}
+	return results, err
+}
+
 // UpdateVulnState updates the state of a vulnerability in the store.
 func (s *storeImpl) UpdateVulnState(ctx context.Context, cve string, imageIDs []string, state storage.VulnerabilityState) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Update, "UpdateVulnState")
@@ -975,20 +953,14 @@ func (s *storeImpl) retryableUpdateVulnState(ctx context.Context, cve string, im
 		return nil
 	}
 
-	conn, release, err := s.acquireConn(ctx, ops.Update, "UpdateVulnState")
-	if err != nil {
-		return err
-	}
-	defer release()
-
-	tx, err := conn.Begin(ctx)
+	tx, ctx, err := s.begin(ctx)
 	if err != nil {
 		return err
 	}
 
 	// Collect stored cves for the image.
 	rows, err := tx.Query(ctx, "SELECT serialized FROM "+imageComponentsV2CVEsTable+" "+
-		"WHERE "+imageComponentsV2CVEsTable+".imageidv2 = ANY($1::uuid[]) AND "+imageComponentsV2CVEsTable+".cvebaseinfo_cve = $2", imageIDs, cve)
+		"WHERE "+imageComponentsV2CVEsTable+".imageidv2 = ANY($1) AND "+imageComponentsV2CVEsTable+".cvebaseinfo_cve = $2", imageIDs, cve)
 	if err != nil {
 		return err
 	}
@@ -1016,10 +988,10 @@ func (s *storeImpl) retryableUpdateVulnState(ctx context.Context, cve string, im
 	return s.keyFence.DoStatusWithLock(concurrency.DiscreteKeySet(keys...), func() error {
 		err = s.updateCVEVulnState(ctx, tx, imageCVEs...)
 		if err != nil {
-			if err := tx.Rollback(ctx); err != nil {
-				return err
+			if errTx := tx.Rollback(ctx); errTx != nil {
+				return errors.Wrapf(errTx, "rolling back transaction due to: %v", err)
 			}
-			return err
+			return errors.Wrap(err, "updating CVE vuln state")
 		}
 		return tx.Commit(ctx)
 	})

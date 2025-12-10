@@ -1,4 +1,4 @@
-import React, { ReactElement } from 'react';
+import type { ReactElement } from 'react';
 import { Icon, Spinner } from '@patternfly/react-core';
 import {
     CheckCircleIcon,

@@ -122,8 +122,8 @@ func (s *RunTestSuite) TestFoldNodeResults() {
 	}
 
 	complianceRunResults := testRun.collectResults(testRunData, testNodeResults)
-	s.Require().Contains(complianceRunResults.NodeResults, testNodeID)
-	protoassert.Equal(s.T(), expectedNodeRunResults, complianceRunResults.NodeResults[testNodeID])
+	s.Require().Contains(complianceRunResults.GetNodeResults(), testNodeID)
+	protoassert.Equal(s.T(), expectedNodeRunResults, complianceRunResults.GetNodeResults()[testNodeID])
 
 	protoassert.Equal(s.T(), expectedClusterRunResults, complianceRunResults.GetClusterResults())
 }
@@ -204,7 +204,7 @@ func (s *RunTestSuite) TestMergesMultipleClusterResults() {
 						Evidence: []*storage.ComplianceResultValue_Evidence{
 							evidenceOne,
 						},
-						OverallState: evidenceOne.State,
+						OverallState: evidenceOne.GetState(),
 					},
 				},
 			},
@@ -216,7 +216,7 @@ func (s *RunTestSuite) TestMergesMultipleClusterResults() {
 						Evidence: []*storage.ComplianceResultValue_Evidence{
 							evidenceTwo,
 						},
-						OverallState: evidenceTwo.State,
+						OverallState: evidenceTwo.GetState(),
 					},
 				},
 			},

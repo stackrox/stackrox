@@ -304,7 +304,7 @@ func TestGenerateIngressRule_WithoutInternet(t *testing.T) {
 	}
 
 	rule := generateIngressRule(tgtDeployment, portDesc{}, nss)
-	protoassert.ElementsMatch(t, expectedPeers, rule.From)
+	protoassert.ElementsMatch(t, expectedPeers, rule.GetFrom())
 }
 
 func TestGenerateIngressRule_WithoutInternet_WithPorts(t *testing.T) {
@@ -387,8 +387,8 @@ func TestGenerateIngressRule_WithoutInternet_WithPorts(t *testing.T) {
 	// Modify rules to make sure that all namespace-local peers appear before all foreign-namespace-peers;
 	// otherwise the comparison below might fail.
 	for _, rule := range rules {
-		sort.SliceStable(rule.From, func(i, j int) bool {
-			return rule.From[i].NamespaceSelector == nil && rule.From[j].NamespaceSelector != nil
+		sort.SliceStable(rule.GetFrom(), func(i, j int) bool {
+			return rule.GetFrom()[i].GetNamespaceSelector() == nil && rule.GetFrom()[j].GetNamespaceSelector() != nil
 		})
 	}
 	protoassert.ElementsMatch(t, expectedRules, rules)
@@ -424,7 +424,7 @@ func TestGenerateIngressRule_ScopeAlienDeployment(t *testing.T) {
 		},
 	}
 	rule := generateIngressRule(tgtDeployment, portDesc{}, nss)
-	protoassert.SlicesEqual(t, expectedPeers, rule.From)
+	protoassert.SlicesEqual(t, expectedPeers, rule.GetFrom())
 }
 
 func TestGenerateIngressRule_ScopeAlienNSOnly(t *testing.T) {
@@ -463,7 +463,7 @@ func TestGenerateIngressRule_ScopeAlienNSOnly(t *testing.T) {
 		},
 	}
 	rule := generateIngressRule(tgtDeployment, portDesc{}, nss)
-	protoassert.ElementsMatch(t, expectedPeers, rule.From)
+	protoassert.ElementsMatch(t, expectedPeers, rule.GetFrom())
 }
 
 func TestGenerateIngressRule_FromProtectedNS(t *testing.T) {
@@ -529,5 +529,5 @@ func TestGenerateIngressRule_FromProtectedNS(t *testing.T) {
 
 	rules := generateIngressRules(tgtDeployment, nss)
 	require.Len(t, rules, 1)
-	protoassert.ElementsMatch(t, expectedPeers, rules[0].From)
+	protoassert.ElementsMatch(t, expectedPeers, rules[0].GetFrom())
 }

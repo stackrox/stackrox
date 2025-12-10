@@ -1,7 +1,6 @@
-import React from 'react';
 import { Button, Flex, Modal } from '@patternfly/react-core';
 
-import { NetworkPolicy } from 'types/networkPolicy.proto';
+import type { NetworkPolicy } from 'types/networkPolicy.proto';
 import download from 'utils/download';
 import CodeViewer from 'Components/CodeViewer';
 

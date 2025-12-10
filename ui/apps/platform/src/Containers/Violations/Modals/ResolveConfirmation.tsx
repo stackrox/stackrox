@@ -1,4 +1,4 @@
-import React, { ReactElement } from 'react';
+import type { ReactElement } from 'react';
 import pluralize from 'pluralize';
 import { Button, Modal } from '@patternfly/react-core';
 

@@ -1,13 +1,6 @@
-import React, { ReactElement } from 'react';
-import {
-    Select,
-    MenuToggle,
-    MenuToggleElement,
-    SelectList,
-    MenuFooter,
-    SelectOptionProps,
-    MenuToggleProps,
-} from '@patternfly/react-core';
+import type { FocusEventHandler, ReactElement, ReactNode, Ref } from 'react';
+import { MenuFooter, MenuToggle, Select, SelectList } from '@patternfly/react-core';
+import type { MenuToggleElement, MenuToggleProps, SelectOptionProps } from '@patternfly/react-core';
 
 import useSelectToggleState from './useSelectToggleState';
 
@@ -18,12 +11,13 @@ export type SelectSingleProps = {
     value: string;
     handleSelect: (name: string, value: string) => void;
     isDisabled?: boolean;
+    isFullWidth?: boolean; // TODO make prop required
     children: ReactElement<SelectOptionProps>[];
     direction?: 'up' | 'down';
     placeholderText?: string;
-    onBlur?: React.FocusEventHandler<HTMLDivElement>;
+    onBlur?: FocusEventHandler<HTMLDivElement>;
     menuAppendTo?: () => HTMLElement;
-    footer?: React.ReactNode;
+    footer?: ReactNode;
     maxHeight?: string;
     maxWidth?: string;
     variant?: MenuToggleProps['variant'];
@@ -37,14 +31,15 @@ function SelectSingle({
     value,
     handleSelect,
     isDisabled = false,
+    isFullWidth = true, // TODO make prop required
     children,
     direction = 'down',
     placeholderText = '',
     onBlur,
     menuAppendTo = undefined,
     footer,
-    maxHeight = '300px',
-    maxWidth = '30ch',
+    maxHeight = '50vh',
+    maxWidth = '100%',
     variant = 'default',
     className,
 }: SelectSingleProps): ReactElement {
@@ -65,16 +60,16 @@ function SelectSingle({
         return (selectedChild?.props.children as string) || value;
     };
 
-    const toggle = (toggleRef: React.Ref<MenuToggleElement>) => (
+    const toggle = (toggleRef: Ref<MenuToggleElement>) => (
         <MenuToggle
             ref={toggleRef}
             onClick={onToggle}
             isExpanded={isOpen}
             isDisabled={isDisabled}
+            isFullWidth={isFullWidth}
             aria-label={toggleAriaLabel}
             id={id}
             variant={variant}
-            className="pf-v5-u-w-100"
         >
             <span className="pf-v5-u-display-flex pf-v5-u-align-items-center">
                 {toggleIcon && <span className="pf-v5-u-mr-sm">{toggleIcon}</span>}

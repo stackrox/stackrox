@@ -116,6 +116,10 @@ func (h *commandHandler) waitForTermination(proc *process) {
 	}
 }
 
+func (h *commandHandler) Accepts(msg *central.MsgToSensor) bool {
+	return msg.GetSensorUpgradeTrigger() != nil
+}
+
 func (h *commandHandler) ProcessMessage(_ context.Context, msg *central.MsgToSensor) error {
 	trigger := msg.GetSensorUpgradeTrigger()
 	if trigger == nil {

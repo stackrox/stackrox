@@ -1,8 +1,8 @@
 import { createContext } from 'react';
-import { NonEmptyArray } from 'utils/type.utils';
+import type { NonEmptyArray } from 'utils/type.utils';
 
 import type { VulnerabilityState } from 'types/cve.proto';
-import { QuerySearchFilter, WorkloadEntityTab } from '../types';
+import type { QuerySearchFilter, WorkloadEntityTab } from '../types';
 
 export type WorkloadCveView = {
     urlBuilder: {
@@ -21,6 +21,7 @@ export type WorkloadCveView = {
             },
             vulnerabilityState: VulnerabilityState
         ) => string;
+        exceptionDetails?: (cve: string) => string;
     };
     baseSearchFilter: QuerySearchFilter;
     pageTitle: string;

@@ -15,7 +15,8 @@ type Store interface {
 	Upsert(ctx context.Context, obj *storage.ProcessListeningOnPortStorage) error
 	UpsertMany(ctx context.Context, objs []*storage.ProcessListeningOnPortStorage) error
 	Delete(ctx context.Context, id string) error
-	DeleteByQuery(ctx context.Context, q *v1.Query) ([]string, error)
+	DeleteByQuery(ctx context.Context, q *v1.Query) error
+	DeleteByQueryWithIDs(ctx context.Context, q *v1.Query) ([]string, error)
 	DeleteMany(ctx context.Context, identifiers []string) error
 	PruneMany(ctx context.Context, identifiers []string) error
 

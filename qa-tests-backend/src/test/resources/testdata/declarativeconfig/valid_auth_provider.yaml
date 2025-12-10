@@ -1,0 +1,12 @@
+name: ${AUTH_PROVIDER_KEY}
+minimumRole: "None"
+uiEndpoint: localhost:8000
+groups:
+- key: "email"
+  value: "someone@example.com"
+  role: "Admin"
+oidc:
+  issuer: sso.redhat.com/auth/realms/redhat-external
+  mode: fragment
+  clientID: SOMECLIENTID
+  doNotUseClientSecret: true

@@ -1,16 +1,16 @@
-import React, { ReactElement } from 'react';
-
-import usePageState from './hooks/usePageState';
+import type { ReactElement } from 'react';
 
 import IntegrationPage from './IntegrationPage';
 import IntegrationForm from './IntegrationForm';
 import { getIsMachineAccessConfig } from './utils/integrationUtils';
+import type { IntegrationSource, IntegrationType } from './utils/integrationUtils';
 
-function CreateIntegrationPage(): ReactElement {
-    const {
-        params: { source, type },
-    } = usePageState();
+export type CreateIntegrationPageProps = {
+    source: IntegrationSource;
+    type: IntegrationType;
+};
 
+function CreateIntegrationPage({ source, type }: CreateIntegrationPageProps): ReactElement {
     const title = getIsMachineAccessConfig(source, type)
         ? 'Create configuration'
         : 'Create integration';

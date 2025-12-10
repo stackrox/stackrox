@@ -1,4 +1,4 @@
-import React, { useState, useContext } from 'react';
+import { useState, useContext } from 'react';
 import PropTypes from 'prop-types';
 import pluralize from 'pluralize';
 import { gql, useQuery } from '@apollo/client';
@@ -14,10 +14,10 @@ import { policySeverityColorMap } from 'constants/severityColors';
 import { severityLabels as policySeverityLabels } from 'messages/common';
 import { policySeverities } from 'types/policy.proto';
 import { checkForPermissionErrorMessage } from 'utils/permissionUtils';
-import { getSeverityByCvss } from 'utils/vulnerabilityUtils';
 import { entitySortFieldsMap, cveSortFields } from 'constants/sortFields';
 import { WIDGET_PAGINATION_START_OFFSET } from 'constants/workflowPages.constants';
 import { entityPriorityField } from '../VulnMgmt.constants';
+import { getSeverityByCvss } from '../VulnMgmt.utils/vulnerabilityUtils';
 
 import { entityNounOrdinaryCasePlural } from '../entitiesForVulnerabilityManagement';
 import Scatterplot from './Scatterplot';

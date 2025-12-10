@@ -1,20 +1,20 @@
-import React from 'react';
+import type { FormEvent, ReactElement } from 'react';
 import { FormikProvider, useFormik } from 'formik';
 import {
-    PageSection,
-    Title,
-    Flex,
-    TextInput,
+    ActionGroup,
     Button,
+    Flex,
     Form,
     FormGroup,
-    ActionGroup,
     FormHelperText,
     HelperText,
     HelperTextItem,
+    PageSection,
+    TextInput,
+    Title,
 } from '@patternfly/react-core';
 
-import { PolicyCategory } from 'types/policy.proto';
+import type { PolicyCategory } from 'types/policy.proto';
 import { renamePolicyCategory } from 'services/PolicyCategoriesService';
 
 type PolicyCategorySidePanelProps = {
@@ -31,7 +31,7 @@ function PolicyCategorySidePanel({
     addToast,
     refreshPolicyCategories,
     openDeleteModal,
-}: PolicyCategorySidePanelProps) {
+}: PolicyCategorySidePanelProps): ReactElement {
     const formik = useFormik({
         initialValues: selectedCategory,
         onSubmit: (values, { setSubmitting }) => {
@@ -54,7 +54,7 @@ function PolicyCategorySidePanel({
 
     const { values, handleChange, dirty, handleSubmit } = formik;
 
-    function onChange(event: React.FormEvent) {
+    function onChange(event: FormEvent) {
         handleChange(event);
     }
 

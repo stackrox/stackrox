@@ -46,6 +46,20 @@ func (m *MockDetector) EXPECT() *MockDetectorMockRecorder {
 	return m.recorder
 }
 
+// Accepts mocks base method.
+func (m *MockDetector) Accepts(msg *central.MsgToSensor) bool {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Accepts", msg)
+	ret0, _ := ret[0].(bool)
+	return ret0
+}
+
+// Accepts indicates an expected call of Accepts.
+func (mr *MockDetectorMockRecorder) Accepts(msg any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Accepts", reflect.TypeOf((*MockDetector)(nil).Accepts), msg)
+}
+
 // Capabilities mocks base method.
 func (m *MockDetector) Capabilities() []centralsensor.SensorCapability {
 	m.ctrl.T.Helper()
@@ -96,6 +110,18 @@ func (m *MockDetector) ProcessDeployment(ctx context.Context, deployment *storag
 func (mr *MockDetectorMockRecorder) ProcessDeployment(ctx, deployment, action any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ProcessDeployment", reflect.TypeOf((*MockDetector)(nil).ProcessDeployment), ctx, deployment, action)
+}
+
+// ProcessFileAccess mocks base method.
+func (m *MockDetector) ProcessFileAccess(ctx context.Context, access *storage.FileAccess) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "ProcessFileAccess", ctx, access)
+}
+
+// ProcessFileAccess indicates an expected call of ProcessFileAccess.
+func (mr *MockDetectorMockRecorder) ProcessFileAccess(ctx, access any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ProcessFileAccess", reflect.TypeOf((*MockDetector)(nil).ProcessFileAccess), ctx, access)
 }
 
 // ProcessIndicator mocks base method.

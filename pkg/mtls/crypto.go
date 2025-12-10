@@ -75,7 +75,7 @@ const (
 	ephemeralProfileWithExpirationInDays             = "ephemeralWithExpirationInDays"
 	ephemeralProfileWithExpirationInDaysCertLifetime = 2 * 24 * time.Hour
 
-	crsProfileDefaultValidityPeriod = 1 * time.Hour
+	crsProfileDefaultValidityPeriod = 24 * time.Hour
 )
 
 var (

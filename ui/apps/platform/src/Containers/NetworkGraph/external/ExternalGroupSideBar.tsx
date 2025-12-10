@@ -1,4 +1,5 @@
-import React, { ReactElement } from 'react';
+import { useState } from 'react';
+import type { ReactElement } from 'react';
 import {
     Button,
     Divider,
@@ -15,13 +16,13 @@ import {
 
 import { Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 import { getEdgesByNodeId, getNodeById } from '../utils/networkGraphUtils';
-import {
+import { isOfType } from '../types/topology.type';
+import type {
     CIDRBlockNodeModel,
     CustomEdgeModel,
     CustomNodeModel,
     ExternalEntitiesNodeModel,
     ExternalGroupNodeModel,
-    isOfType,
 } from '../types/topology.type';
 
 import { CidrBlockIcon, ExternalEntitiesIcon } from '../common/NetworkGraphIcons';
@@ -43,7 +44,7 @@ function ExternalGroupSideBar({
     onNodeSelect,
 }: ExternalGroupSideBarProps): ReactElement {
     // component state
-    const [entityNameFilter, setEntityNameFilter] = React.useState<string>('');
+    const [entityNameFilter, setEntityNameFilter] = useState<string>('');
 
     // derived data
     const externalGroupNode = getNodeById(nodes, id) as ExternalGroupNodeModel;

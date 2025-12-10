@@ -132,10 +132,12 @@ type ImageEnricher interface {
 	EnrichWithSignatureVerificationData(ctx context.Context, image *storage.Image) (EnrichmentResult, error)
 }
 
-// TODO(ROX-30117): Remove this and use the CVESuppressorV2 interface after ImageV2 model is fully rolled out.
 // CVESuppressor provides enrichment for suppressed CVEs for an image's components.
 type CVESuppressor interface {
+	// TODO(ROX-30117): Remove this and use the EnrichImageV2WithSuppressedCVEs after ImageV2 model is fully rolled out.
 	EnrichImageWithSuppressedCVEs(image *storage.Image)
+
+	EnrichImageV2WithSuppressedCVEs(image *storage.ImageV2)
 }
 
 // TODO(ROX-30117): Remove this and use ImageGetterV2 after ImageV2 model is fully rolled out.
@@ -145,18 +147,16 @@ type ImageGetter func(ctx context.Context, id string) (*storage.Image, bool, err
 // SignatureIntegrationGetter will be used to retrieve all available signature integrations.
 type SignatureIntegrationGetter func(ctx context.Context) ([]*storage.SignatureIntegration, error)
 
-// TODO(ROX-30117): Remove this and use signatureVerifierForIntegrationsV2 after ImageV2 model is fully rolled out.
 // signatureVerifierForIntegrations will be used to verify signatures for an image using a list of integrations.
 // This is used for mocking purposes, otherwise it will use signatures.VerifyAgainstSignatureIntegrations.
 type signatureVerifierForIntegrations func(ctx context.Context, integrations []*storage.SignatureIntegration, image *storage.Image) []*storage.ImageSignatureVerificationResult
 
 // New returns a new ImageEnricher instance for the given subsystem.
 // (The subsystem is just used for Prometheus metrics.)
-func New(cvesSuppressor CVESuppressor, cvesSuppressorV2 CVESuppressor, is integration.Set, subsystem pkgMetrics.Subsystem, metadataCache cache.ImageMetadata,
+func New(cvesSuppressorV2 CVESuppressor, is integration.Set, subsystem pkgMetrics.Subsystem, metadataCache cache.ImageMetadata,
 	imageGetter ImageGetter, healthReporter integrationhealth.Reporter,
 	signatureIntegrationGetter SignatureIntegrationGetter, scanDelegator delegatedregistry.Delegator) ImageEnricher {
 	enricher := &enricherImpl{
-		cvesSuppressor:   cvesSuppressor,
 		cvesSuppressorV2: cvesSuppressorV2,
 		integrations:     is,
 

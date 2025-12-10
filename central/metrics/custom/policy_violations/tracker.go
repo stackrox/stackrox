@@ -2,38 +2,37 @@ package policy_violations
 
 import (
 	"context"
-	"iter"
 
 	alertDS "github.com/stackrox/rox/central/alert/datastore"
-	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/central/metrics/custom/tracker"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/search"
 )
 
-func New(registryFactory func(string) metrics.CustomRegistry, ds alertDS.DataStore) *tracker.TrackerBase[*finding] {
+func New(ds alertDS.DataStore) *tracker.TrackerBase[*finding] {
 	return tracker.MakeTrackerBase(
-		"alerts",
+		"policy_violation",
 		"policy violations",
 		lazyLabels,
-		func(ctx context.Context, _ tracker.MetricDescriptors) iter.Seq[*finding] {
-			return trackViolations(ctx, ds)
+		func(ctx context.Context, _ tracker.MetricDescriptors) tracker.FindingErrorSequence[*finding] {
+			return track(ctx, ds)
 		},
-		registryFactory)
+	)
 }
 
-func trackViolations(ctx context.Context, ds alertDS.DataStore) iter.Seq[*finding] {
-	f := finding{}
-	return func(yield func(*finding) bool) {
-		_ = ds.WalkByQuery(ctx, search.EmptyQuery(), func(a *storage.Alert) error {
+func track(ctx context.Context, ds alertDS.DataStore) tracker.FindingErrorSequence[*finding] {
+	return func(yield func(*finding, error) bool) {
+		var f finding
+		collector := tracker.NewFindingCollector(yield)
+		collector.Finally(ds.WalkByQuery(ctx, search.EmptyQuery(), func(a *storage.Alert) error {
 			f.Alert = a
 			for _, v := range a.GetViolations() {
 				f.Alert_Violation = v
-				if !yield(&f) {
-					return tracker.ErrStopIterator
+				if err := collector.Yield(&f); err != nil {
+					return err
 				}
 			}
 			return nil
-		})
+		}))
 	}
 }

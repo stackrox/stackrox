@@ -1,58 +1,52 @@
-import React from 'react';
+import type { ReactNode } from 'react';
 import {
     Divider,
     Flex,
     PageSection,
     Pagination,
-    pluralize,
     Split,
     SplitItem,
     Title,
+    pluralize,
 } from '@patternfly/react-core';
 import { gql, useQuery } from '@apollo/client';
+import type { SearchFilter } from 'types/search';
 
 import useFeatureFlags from 'hooks/useFeatureFlags';
-import { UseURLPaginationResult } from 'hooks/useURLPagination';
-import useURLSearch from 'hooks/useURLSearch';
+import type { UseURLPaginationResult } from 'hooks/useURLPagination';
 import useURLSort from 'hooks/useURLSort';
-import { Pagination as PaginationParam } from 'services/types';
+import type { Pagination as PaginationParam } from 'services/types';
 import { getHasSearchApplied, getPaginationParams } from 'utils/searchUtils';
 import type { VulnerabilityState } from 'types/cve.proto';
 import NotFoundMessage from 'Components/NotFoundMessage';
 import { getSearchFilterConfigWithFeatureFlagDependency } from 'Components/CompoundSearchFilter/utils/utils';
 import { DynamicTableLabel } from 'Components/DynamicIcon';
-import {
-    SummaryCardLayout,
-    SummaryCard,
-} from 'Containers/Vulnerabilities/components/SummaryCardLayout';
 import { getTableUIState } from 'utils/getTableUIState';
-import AdvancedFiltersToolbar from 'Containers/Vulnerabilities/components/AdvancedFiltersToolbar';
 import { createFilterTracker } from 'utils/analyticsEventTracking';
 import useAnalytics, { WORKLOAD_CVE_FILTER_APPLIED } from 'hooks/useAnalytics';
-import {
-    imageComponentSearchFilterConfig,
-    imageCVESearchFilterConfig,
-    imageSearchFilterConfig,
-} from 'Containers/Vulnerabilities/searchFilterConfig';
 import { hideColumnIf, overrideManagedColumns, useManagedColumns } from 'hooks/useManagedColumns';
 import ColumnManagementButton from 'Components/ColumnManagementButton';
+import AdvancedFiltersToolbar from '../../components/AdvancedFiltersToolbar';
 import BySeveritySummaryCard from '../../components/BySeveritySummaryCard';
 import CvesByStatusSummaryCard, {
     resourceCountByCveSeverityAndStatusFragment,
-    ResourceCountByCveSeverityAndStatus,
-} from '../SummaryCards/CvesByStatusSummaryCard';
+} from '../../components/CvesByStatusSummaryCard';
+import type { ResourceCountByCveSeverityAndStatus } from '../../components/CvesByStatusSummaryCard';
+import { SummaryCard, SummaryCardLayout } from '../../components/SummaryCardLayout';
 import {
-    parseQuerySearchFilter,
     getHiddenSeverities,
     getHiddenStatuses,
-    getVulnStateScopedQueryString,
     getStatusesForExceptionCount,
+    getVulnStateScopedQueryString,
+    parseQuerySearchFilter,
 } from '../../utils/searchUtils';
 import {
-    DeploymentWithVulnerabilities,
-    formatVulnerabilityData,
-    imageMetadataContextFragment,
-} from '../Tables/table.utils';
+    imageCVESearchFilterConfig,
+    imageComponentSearchFilterConfig,
+    imageSearchFilterConfig,
+} from '../../searchFilterConfig';
+import { formatVulnerabilityData, imageMetadataContextFragment } from '../Tables/table.utils';
+import type { DeploymentWithVulnerabilities } from '../Tables/table.utils';
 import DeploymentVulnerabilitiesTable, {
     defaultColumns,
     deploymentWithVulnerabilitiesFragment,
@@ -98,6 +92,9 @@ export type DeploymentPageVulnerabilitiesProps = {
     pagination: UseURLPaginationResult;
     vulnerabilityState: VulnerabilityState;
     showVulnerabilityStateTabs: boolean;
+    additionalToolbarItems?: ReactNode;
+    searchFilter: SearchFilter;
+    setSearchFilter: (filter: SearchFilter) => void;
 };
 
 function DeploymentPageVulnerabilities({
@@ -105,6 +102,9 @@ function DeploymentPageVulnerabilities({
     pagination,
     vulnerabilityState,
     showVulnerabilityStateTabs,
+    additionalToolbarItems,
+    searchFilter,
+    setSearchFilter,
 }: DeploymentPageVulnerabilitiesProps) {
     const { isFeatureFlagEnabled } = useFeatureFlags();
 
@@ -113,7 +113,6 @@ function DeploymentPageVulnerabilities({
 
     const { baseSearchFilter } = useWorkloadCveViewContext();
 
-    const { searchFilter, setSearchFilter } = useURLSearch();
     const querySearchFilter = parseQuerySearchFilter(searchFilter);
 
     const { page, setPage, perPage, setPerPage } = pagination;
@@ -263,7 +262,9 @@ function DeploymentPageVulnerabilities({
                             'Deployment ID': deploymentId,
                             ...baseSearchFilter,
                         }}
-                    />
+                    >
+                        {additionalToolbarItems}
+                    </AdvancedFiltersToolbar>
                 </div>
                 <SummaryCardLayout error={summaryRequest.error} isLoading={summaryRequest.loading}>
                     <SummaryCard
@@ -319,7 +320,7 @@ function DeploymentPageVulnerabilities({
                                 />
                             </SplitItem>
                         </Split>
-                        <div className="workload-cves-table-container">
+                        <div style={{ overflowX: 'auto' }}>
                             <DeploymentVulnerabilitiesTable
                                 tableState={tableState}
                                 getSortParams={getSortParams}

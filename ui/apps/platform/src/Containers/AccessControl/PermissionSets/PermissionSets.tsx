@@ -1,4 +1,5 @@
-import React, { ReactElement, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
+import type { ReactElement } from 'react';
 import { useLocation, useNavigate, useParams } from 'react-router-dom-v5-compat';
 import {
     Alert,
@@ -11,9 +12,8 @@ import {
 } from '@patternfly/react-core';
 
 import NotFoundMessage from 'Components/NotFoundMessage';
+import usePermissions from 'hooks/usePermissions';
 import {
-    PermissionSet,
-    Role,
     createPermissionSet,
     deletePermissionSet,
     fetchPermissionSets,
@@ -21,6 +21,7 @@ import {
     fetchRolesAsArray,
     updatePermissionSet,
 } from 'services/RolesService';
+import type { PermissionSet, Role } from 'services/RolesService';
 import { isUserResource } from 'utils/traits.utils';
 
 import AccessControlDescription from '../AccessControlDescription';
@@ -29,11 +30,10 @@ import { getEntityPath, getQueryObject } from '../accessControlPaths';
 
 import PermissionSetForm from './PermissionSetForm';
 import PermissionSetsList from './PermissionSetsList';
-import { getNewPermissionSet, getCompletePermissionSet } from './permissionSets.utils';
+import { getCompletePermissionSet, getNewPermissionSet } from './permissionSets.utils';
 import AccessControlHeaderActionBar from '../AccessControlHeaderActionBar';
 import AccessControlBreadcrumbs from '../AccessControlBreadcrumbs';
 import AccessControlHeading from '../AccessControlHeading';
-import usePermissions from '../../../hooks/usePermissions';
 
 const entityType = 'PERMISSION_SET';
 

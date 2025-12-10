@@ -1,9 +1,8 @@
-import React from 'react';
 import {
     EmptyState,
-    EmptyStateIcon,
-    EmptyStateHeader,
     EmptyStateFooter,
+    EmptyStateHeader,
+    EmptyStateIcon,
 } from '@patternfly/react-core';
 import { SearchIcon } from '@patternfly/react-icons';
 

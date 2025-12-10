@@ -6,9 +6,8 @@ import (
 
 	"github.com/go-logr/logr"
 	platform "github.com/stackrox/rox/operator/api/v1alpha1"
-	"github.com/stackrox/rox/operator/internal/common/defaulting"
-	"github.com/stackrox/rox/operator/internal/securedcluster/values/defaults"
-
+	"github.com/stackrox/rox/operator/internal/common"
+	"github.com/stackrox/rox/operator/internal/securedcluster/defaults"
 	"github.com/stackrox/rox/operator/internal/utils/testutils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -26,7 +25,7 @@ type scannerV4DefaultingTestCase struct {
 	Spec                platform.SecuredClusterSpec
 	Status              platform.SecuredClusterStatus
 	ExpectedAnnotations map[string]string
-	ExpectedDefaults    *platform.LocalScannerV4ComponentSpec
+	ExpectedDefault     *platform.LocalScannerV4ComponentPolicy
 }
 
 type admissionControllerDefaultingTestCase struct {
@@ -38,14 +37,12 @@ type admissionControllerDefaultingTestCase struct {
 }
 
 var (
-	nonEmptyStatus = platform.SecuredClusterStatus{
-		DeployedRelease: &platform.StackRoxRelease{
-			Version: "some-version-string",
-		},
+	postInstallStatus = platform.SecuredClusterStatus{
+		ProductVersion: "some-version-string",
 	}
 )
 
-func TestReconcileAdmissionControllerDefaulting(t *testing.T) {
+func TestReconcileAdmissionControllerDef(t *testing.T) {
 	t.Setenv("ROX_ADMISSION_CONTROLLER_CONFIG", "true")
 	cases := map[string]admissionControllerDefaultingTestCase{
 		"install: empty spec": {
@@ -55,16 +52,16 @@ func TestReconcileAdmissionControllerDefaulting(t *testing.T) {
 				Bypass:        ptr.To(platform.BypassBreakGlassAnnotation),
 				FailurePolicy: ptr.To(platform.FailurePolicyIgnore),
 				Replicas:      ptr.To(int32(3)),
-				Enforce:       ptr.To(true),
+				Enforcement:   ptr.To(platform.PolicyEnforcementEnabled),
 			},
 			ExpectedAnnotations: map[string]string{
-				defaults.FeatureDefaultKeyAdmissionControllerEnforce: "true",
+				defaults.FeatureDefaultKeyAdmissionControllerEnforcement: "Enabled",
 			},
 		},
-		"install: explicit enforce false": {
+		"install: explicit enforcement disabled": {
 			Spec: platform.SecuredClusterSpec{
 				AdmissionControl: &platform.AdmissionControlComponentSpec{
-					Enforce: ptr.To(false),
+					Enforcement: ptr.To(platform.PolicyEnforcementDisabled),
 				},
 			},
 			Status: platform.SecuredClusterStatus{},
@@ -72,16 +69,16 @@ func TestReconcileAdmissionControllerDefaulting(t *testing.T) {
 				Bypass:        ptr.To(platform.BypassBreakGlassAnnotation),
 				FailurePolicy: ptr.To(platform.FailurePolicyIgnore),
 				Replicas:      ptr.To(int32(3)),
-				Enforce:       nil,
+				Enforcement:   nil,
 			},
 			ExpectedAnnotations: map[string]string{
-				defaults.FeatureDefaultKeyAdmissionControllerEnforce: "",
+				defaults.FeatureDefaultKeyAdmissionControllerEnforcement: "",
 			},
 		},
-		"install: explicit enforce true": {
+		"install: explicit enforcement enabled": {
 			Spec: platform.SecuredClusterSpec{
 				AdmissionControl: &platform.AdmissionControlComponentSpec{
-					Enforce: ptr.To(true),
+					Enforcement: ptr.To(platform.PolicyEnforcementEnabled),
 				},
 			},
 			Status: platform.SecuredClusterStatus{},
@@ -89,96 +86,96 @@ func TestReconcileAdmissionControllerDefaulting(t *testing.T) {
 				Bypass:        ptr.To(platform.BypassBreakGlassAnnotation),
 				FailurePolicy: ptr.To(platform.FailurePolicyIgnore),
 				Replicas:      ptr.To(int32(3)),
-				Enforce:       nil,
+				Enforcement:   nil,
 			},
 			ExpectedAnnotations: map[string]string{
-				defaults.FeatureDefaultKeyAdmissionControllerEnforce: "",
+				defaults.FeatureDefaultKeyAdmissionControllerEnforcement: "",
 			},
 		},
 		"upgrade: annotation true is picked up": {
 			Spec:   platform.SecuredClusterSpec{},
-			Status: nonEmptyStatus,
+			Status: postInstallStatus,
 			Annotations: map[string]string{
-				defaults.FeatureDefaultKeyAdmissionControllerEnforce: "true",
+				defaults.FeatureDefaultKeyAdmissionControllerEnforcement: "Enabled",
 			},
 			ExpectedDefaults: &platform.AdmissionControlComponentSpec{
 				Bypass:        ptr.To(platform.BypassBreakGlassAnnotation),
 				FailurePolicy: ptr.To(platform.FailurePolicyIgnore),
 				Replicas:      ptr.To(int32(3)),
-				Enforce:       ptr.To(true),
+				Enforcement:   ptr.To(platform.PolicyEnforcementEnabled),
 			},
 			ExpectedAnnotations: map[string]string{
-				defaults.FeatureDefaultKeyAdmissionControllerEnforce: "true",
+				defaults.FeatureDefaultKeyAdmissionControllerEnforcement: "Enabled",
 			},
 		},
 		"upgrade: annotation false is picked up": {
 			Spec:   platform.SecuredClusterSpec{},
-			Status: nonEmptyStatus,
+			Status: postInstallStatus,
 			Annotations: map[string]string{
-				defaults.FeatureDefaultKeyAdmissionControllerEnforce: "false",
+				defaults.FeatureDefaultKeyAdmissionControllerEnforcement: "Disabled",
 			},
 			ExpectedDefaults: &platform.AdmissionControlComponentSpec{
 				Bypass:        ptr.To(platform.BypassBreakGlassAnnotation),
 				FailurePolicy: ptr.To(platform.FailurePolicyIgnore),
 				Replicas:      ptr.To(int32(3)),
-				Enforce:       ptr.To(false),
+				Enforcement:   ptr.To(platform.PolicyEnforcementDisabled),
 			},
 			ExpectedAnnotations: map[string]string{
-				defaults.FeatureDefaultKeyAdmissionControllerEnforce: "false",
+				defaults.FeatureDefaultKeyAdmissionControllerEnforcement: "Disabled",
 			},
 		},
-		"upgrade: enforce disabled if listenOnCreates & listenOnUpdates disabled": {
+		"upgrade: enforcement disabled if listenOnCreates & listenOnUpdates disabled": {
 			Spec: platform.SecuredClusterSpec{
 				AdmissionControl: &platform.AdmissionControlComponentSpec{
 					ListenOnCreates: ptr.To(false),
 					ListenOnUpdates: ptr.To(false),
 				},
 			},
-			Status: nonEmptyStatus,
+			Status: postInstallStatus,
 			ExpectedDefaults: &platform.AdmissionControlComponentSpec{
 				Bypass:        ptr.To(platform.BypassBreakGlassAnnotation),
 				FailurePolicy: ptr.To(platform.FailurePolicyIgnore),
 				Replicas:      ptr.To(int32(3)),
-				Enforce:       ptr.To(false),
+				Enforcement:   ptr.To(platform.PolicyEnforcementDisabled),
 			},
 			ExpectedAnnotations: map[string]string{
-				defaults.FeatureDefaultKeyAdmissionControllerEnforce: "false",
+				defaults.FeatureDefaultKeyAdmissionControllerEnforcement: "Disabled",
 			},
 		},
-		"upgrade: enforce enabled if listenOnCreates enabled": {
+		"upgrade: enforcement enabled if listenOnCreates enabled": {
 			Spec: platform.SecuredClusterSpec{
 				AdmissionControl: &platform.AdmissionControlComponentSpec{
 					ListenOnCreates: ptr.To(true),
 					ListenOnUpdates: ptr.To(false),
 				},
 			},
-			Status: nonEmptyStatus,
+			Status: postInstallStatus,
 			ExpectedDefaults: &platform.AdmissionControlComponentSpec{
 				Bypass:        ptr.To(platform.BypassBreakGlassAnnotation),
 				FailurePolicy: ptr.To(platform.FailurePolicyIgnore),
 				Replicas:      ptr.To(int32(3)),
-				Enforce:       ptr.To(true),
+				Enforcement:   ptr.To(platform.PolicyEnforcementEnabled),
 			},
 			ExpectedAnnotations: map[string]string{
-				defaults.FeatureDefaultKeyAdmissionControllerEnforce: "true",
+				defaults.FeatureDefaultKeyAdmissionControllerEnforcement: "Enabled",
 			},
 		},
-		"upgrade: enforce enabled if listenOnUpdates enabled": {
+		"upgrade: enforcement enabled if listenOnUpdates enabled": {
 			Spec: platform.SecuredClusterSpec{
 				AdmissionControl: &platform.AdmissionControlComponentSpec{
 					ListenOnCreates: ptr.To(false),
 					ListenOnUpdates: ptr.To(true),
 				},
 			},
-			Status: nonEmptyStatus,
+			Status: postInstallStatus,
 			ExpectedDefaults: &platform.AdmissionControlComponentSpec{
 				Bypass:        ptr.To(platform.BypassBreakGlassAnnotation),
 				FailurePolicy: ptr.To(platform.FailurePolicyIgnore),
 				Replicas:      ptr.To(int32(3)),
-				Enforce:       ptr.To(true),
+				Enforcement:   ptr.To(platform.PolicyEnforcementEnabled),
 			},
 			ExpectedAnnotations: map[string]string{
-				defaults.FeatureDefaultKeyAdmissionControllerEnforce: "true",
+				defaults.FeatureDefaultKeyAdmissionControllerEnforcement: "Enabled",
 			},
 		},
 	}
@@ -238,23 +235,19 @@ func TestReconcileAdmissionControllerDefaulting(t *testing.T) {
 func TestReconcileScannerV4FeatureDefaultsExtension(t *testing.T) {
 	cases := map[string]scannerV4DefaultingTestCase{
 		"install: auto-sense by default": {
-			Spec:   platform.SecuredClusterSpec{},
-			Status: platform.SecuredClusterStatus{},
-			ExpectedDefaults: &platform.LocalScannerV4ComponentSpec{
-				ScannerComponent: &platform.LocalScannerV4AutoSense,
-			},
+			Spec:            platform.SecuredClusterSpec{},
+			Status:          platform.SecuredClusterStatus{},
+			ExpectedDefault: &platform.LocalScannerV4AutoSense,
 			ExpectedAnnotations: map[string]string{
-				defaulting.FeatureDefaultKeyScannerV4: string(platform.LocalScannerV4AutoSense),
+				common.FeatureDefaultKeyScannerV4: string(platform.LocalScannerV4AutoSense),
 			},
 		},
 		"upgrade: disabled by default": {
-			Spec:   platform.SecuredClusterSpec{},
-			Status: nonEmptyStatus,
-			ExpectedDefaults: &platform.LocalScannerV4ComponentSpec{
-				ScannerComponent: &platform.LocalScannerV4Disabled,
-			},
+			Spec:            platform.SecuredClusterSpec{},
+			Status:          postInstallStatus,
+			ExpectedDefault: &platform.LocalScannerV4Disabled,
 			ExpectedAnnotations: map[string]string{
-				defaulting.FeatureDefaultKeyScannerV4: string(platform.ScannerV4ComponentDisabled),
+				common.FeatureDefaultKeyScannerV4: string(platform.ScannerV4ComponentDisabled),
 			},
 		},
 		"install: auto-sense explicitly": {
@@ -263,8 +256,8 @@ func TestReconcileScannerV4FeatureDefaultsExtension(t *testing.T) {
 					ScannerComponent: &platform.LocalScannerV4AutoSense,
 				},
 			},
-			Status:           platform.SecuredClusterStatus{},
-			ExpectedDefaults: nil,
+			Status:          platform.SecuredClusterStatus{},
+			ExpectedDefault: nil,
 		},
 		"install: disabled explicitly": {
 			Spec: platform.SecuredClusterSpec{
@@ -272,58 +265,50 @@ func TestReconcileScannerV4FeatureDefaultsExtension(t *testing.T) {
 					ScannerComponent: &platform.LocalScannerV4Disabled,
 				},
 			},
-			Status:           platform.SecuredClusterStatus{},
-			ExpectedDefaults: nil,
+			Status:          platform.SecuredClusterStatus{},
+			ExpectedDefault: nil,
 		},
 		"upgrade: pick up previously persisted default (AutoSense)": {
 			Spec:   platform.SecuredClusterSpec{},
-			Status: nonEmptyStatus,
+			Status: postInstallStatus,
 			Annotations: map[string]string{
-				defaulting.FeatureDefaultKeyScannerV4: string(platform.LocalScannerV4AutoSense),
+				common.FeatureDefaultKeyScannerV4: string(platform.LocalScannerV4AutoSense),
 			},
-			ExpectedDefaults: &platform.LocalScannerV4ComponentSpec{
-				ScannerComponent: &platform.LocalScannerV4AutoSense,
-			},
+			ExpectedDefault: &platform.LocalScannerV4AutoSense,
 			ExpectedAnnotations: map[string]string{
-				defaulting.FeatureDefaultKeyScannerV4: string(platform.LocalScannerV4AutoSense),
+				common.FeatureDefaultKeyScannerV4: string(platform.LocalScannerV4AutoSense),
 			},
 		},
 		"upgrade: pick up previously persisted default (Disabled)": {
 			Spec:   platform.SecuredClusterSpec{},
-			Status: nonEmptyStatus,
+			Status: postInstallStatus,
 			Annotations: map[string]string{
-				defaulting.FeatureDefaultKeyScannerV4: string(platform.ScannerV4ComponentDisabled),
+				common.FeatureDefaultKeyScannerV4: string(platform.ScannerV4ComponentDisabled),
 			},
-			ExpectedDefaults: &platform.LocalScannerV4ComponentSpec{
-				ScannerComponent: &platform.LocalScannerV4Disabled,
-			},
+			ExpectedDefault: &platform.LocalScannerV4Disabled,
 			ExpectedAnnotations: map[string]string{
-				defaulting.FeatureDefaultKeyScannerV4: string(platform.ScannerV4ComponentDisabled),
+				common.FeatureDefaultKeyScannerV4: string(platform.ScannerV4ComponentDisabled),
 			},
 		},
 		"upgrade: ignoring bogus persisted default": {
 			Spec:   platform.SecuredClusterSpec{},
-			Status: nonEmptyStatus,
+			Status: postInstallStatus,
 			Annotations: map[string]string{
-				defaulting.FeatureDefaultKeyScannerV4: "foo",
+				common.FeatureDefaultKeyScannerV4: "foo",
 			},
-			ExpectedDefaults: &platform.LocalScannerV4ComponentSpec{
-				ScannerComponent: &platform.LocalScannerV4Disabled,
-			},
+			ExpectedDefault: &platform.LocalScannerV4Disabled,
 			ExpectedAnnotations: map[string]string{
-				defaulting.FeatureDefaultKeyScannerV4: string(platform.ScannerV4ComponentDisabled),
+				common.FeatureDefaultKeyScannerV4: string(platform.ScannerV4ComponentDisabled),
 			},
 		},
 		"previously persisted default is picked up even if status is empty": {
 			Spec: platform.SecuredClusterSpec{},
 			Annotations: map[string]string{
-				defaulting.FeatureDefaultKeyScannerV4: string(platform.ScannerV4ComponentDisabled),
+				common.FeatureDefaultKeyScannerV4: string(platform.ScannerV4ComponentDisabled),
 			},
-			ExpectedDefaults: &platform.LocalScannerV4ComponentSpec{
-				ScannerComponent: &platform.LocalScannerV4Disabled,
-			},
+			ExpectedDefault: &platform.LocalScannerV4Disabled,
 			ExpectedAnnotations: map[string]string{
-				defaulting.FeatureDefaultKeyScannerV4: string(platform.ScannerV4ComponentDisabled),
+				common.FeatureDefaultKeyScannerV4: string(platform.ScannerV4ComponentDisabled),
 			},
 		},
 	}
@@ -368,7 +353,7 @@ func TestReconcileScannerV4FeatureDefaultsExtension(t *testing.T) {
 			securedClusterDefaults := extractSecuredClusterDefaults(t, unstructuredSecuredCluster)
 
 			// Verify that reconcileFeatureDefaults has modified the scanner v4 defaults as expected.
-			assert.Equal(t, securedClusterDefaults.ScannerV4, c.ExpectedDefaults, "SecuredCluster Defaults do not match expected Defaults")
+			assert.Equal(t, securedClusterDefaults.ScannerV4.ScannerComponent, c.ExpectedDefault, "Central Defaults do not match expected Defaults")
 
 			// Verify that the expected annotations have been persisted via the provided client.
 			for annotationKey, annotationVal := range c.ExpectedAnnotations {

@@ -1,8 +1,8 @@
 import { useCallback, useState } from 'react';
 
 import { updateReportConfiguration } from 'services/ReportsService';
-import { ReportConfiguration } from 'services/ReportsService.types';
-import { ReportFormValues } from '../forms/useReportFormValues';
+import type { ReportConfiguration } from 'services/ReportsService.types';
+import type { ReportFormValues } from '../forms/useReportFormValues';
 import { getReportConfigurationFromFormValues } from '../utils';
 
 export type UseSaveReportProps = {
@@ -28,6 +28,7 @@ const defaultResult = {
 function useSaveReport({ onCompleted }: UseSaveReportProps): SaveReportResult {
     const [result, setResult] = useState<Result>(defaultResult);
 
+    /* eslint-disable react-hooks/exhaustive-deps */
     const saveReport = useCallback((reportId: string, formValues: ReportFormValues) => {
         setResult({
             data: null,
@@ -58,6 +59,8 @@ function useSaveReport({ onCompleted }: UseSaveReportProps): SaveReportResult {
                 });
             });
     }, []);
+    // onCompleted
+    /* eslint-enable react-hooks/exhaustive-deps */
 
     return {
         ...result,

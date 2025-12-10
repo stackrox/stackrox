@@ -1,15 +1,10 @@
-import React from 'react';
-import { Select, SelectOption } from '@patternfly/react-core/deprecated';
+import { SelectOption } from '@patternfly/react-core';
 import pluralize from 'pluralize';
-import { FormikErrors } from 'formik';
+import type { FormikErrors } from 'formik';
 
-import useSelectToggle from 'hooks/patternfly/useSelectToggle';
-import {
-    RuleSelectorOption,
-    ScopedResourceSelector,
-    SelectorEntityType,
-    selectorOptions,
-} from '../types';
+import SelectSingle from 'Components/SelectSingle/SelectSingle';
+import { selectorOptions } from '../types';
+import type { RuleSelectorOption, ScopedResourceSelector, SelectorEntityType } from '../types';
 import ByNameSelector from './ByNameSelector';
 import ByLabelSelector from './ByLabelSelector';
 
@@ -50,10 +45,9 @@ function RuleSelector({
     validationErrors,
     isDisabled = false,
 }: RuleSelectorProps) {
-    const { isOpen, onToggle, closeSelect } = useSelectToggle();
     const pluralEntity = pluralize(entityType);
 
-    function onRuleOptionSelect(_, value) {
+    function onRuleOptionSelect(_id: string, value: string) {
         if (!isRuleSelectorOption(value)) {
             return;
         }
@@ -73,18 +67,18 @@ function RuleSelector({
         };
 
         handleChange(entityType, selectorMap[value]);
-        closeSelect();
     }
 
     const selection = scopedResourceSelector.type;
+    const selectorId = `rule-selector-${entityType.toLowerCase()}`;
+
     return (
         <div className="rule-selector">
-            <Select
+            <SelectSingle
+                id={selectorId}
                 toggleAriaLabel={`Select ${pluralEntity.toLowerCase()} by name or label`}
-                isOpen={isOpen}
-                onToggle={(_e, v) => onToggle(v)}
-                selections={selection}
-                onSelect={onRuleOptionSelect}
+                value={selection}
+                handleSelect={onRuleOptionSelect}
                 isDisabled={isDisabled}
             >
                 <SelectOption value="NoneSpecified">
@@ -94,7 +88,7 @@ function RuleSelector({
                 <SelectOption value="ByLabel">
                     {pluralEntity} with labels matching exactly
                 </SelectOption>
-            </Select>
+            </SelectSingle>
 
             {scopedResourceSelector.type === 'ByName' && (
                 <ByNameSelector

@@ -1,4 +1,5 @@
-import React, { ReactElement, useState } from 'react';
+import { useState } from 'react';
+import type { ReactElement } from 'react';
 import { useNavigate } from 'react-router-dom-v5-compat';
 import {
     ActionGroup,
@@ -13,27 +14,22 @@ import {
     HelperTextItem,
     PageSection,
     Radio,
+    SelectOption,
     TextInput,
 } from '@patternfly/react-core';
-import { Select, SelectOption } from '@patternfly/react-core/deprecated';
 import { useFormik } from 'formik';
 import * as yup from 'yup';
 
 import FormLabelGroup from 'Components/PatternFly/FormLabelGroup';
-import useSelectToggle from 'hooks/patternfly/useSelectToggle';
+import SelectSingle from 'Components/SelectSingle/SelectSingle';
 import useAnalytics, { DOWNLOAD_INIT_BUNDLE } from 'hooks/useAnalytics';
 import { generateClusterInitBundle } from 'services/ClustersService'; // ClusterInitBundle
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 
 import InitBundlesHeader from './InitBundlesHeader';
 
-import {
-    InstallationKey,
-    PlatformKey,
-    downloadBundle,
-    installationOptions,
-    platformOptions,
-} from './InitBundleForm.utils';
+import { downloadBundle, installationOptions, platformOptions } from './InitBundleForm.utils';
+import type { InstallationKey, PlatformKey } from './InitBundleForm.utils';
 
 export type InitBundleFormValues = {
     installation: InstallationKey;
@@ -97,7 +93,6 @@ function InitBundleForm(): ReactElement {
         validateOnMount: true, // disable Next when Name is empty
         validationSchema,
     });
-    const { isOpen, onToggle } = useSelectToggle();
 
     function goBack() {
         navigate(-1); // to InputBundlesTable or NoClustersPage
@@ -117,7 +112,7 @@ function InitBundleForm(): ReactElement {
         });
     }
 
-    function onSelectInstallation(value) {
+    function onSelectInstallation(_id: string, value: string) {
         return setFieldValue('installation', value);
     }
 
@@ -174,16 +169,13 @@ function InitBundleForm(): ReactElement {
                             label="Installation method for secured cluster services"
                             isRequired
                         >
-                            <Select
-                                variant="single"
+                            <SelectSingle
+                                id="installation"
+                                value={values.installation}
+                                handleSelect={onSelectInstallation}
+                                isDisabled={values.platform !== 'OpenShift'}
                                 toggleAriaLabel="Installation method menu toggle"
                                 aria-label="Select an installation method"
-                                isDisabled={values.platform !== 'OpenShift'}
-                                onToggle={(_e, v) => onToggle(v)}
-                                onSelect={(_event, value) => onSelectInstallation(value)}
-                                selections={values.installation}
-                                isOpen={isOpen}
-                                // className="pf-v5-u-flex-basis-0"
                             >
                                 {Object.entries(installationOptions)
                                     .filter(
@@ -196,7 +188,7 @@ function InitBundleForm(): ReactElement {
                                             {installationLabel}
                                         </SelectOption>
                                     ))}
-                            </Select>
+                            </SelectSingle>
                             <FormHelperText>
                                 <HelperText>
                                     <HelperTextItem>

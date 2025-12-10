@@ -1,5 +1,3 @@
-import React from 'react';
-
 import { Grid, GridItem } from '@patternfly/react-core';
 
 import type { Cluster } from 'types/cluster.proto';
@@ -25,29 +23,37 @@ export function ClusterSummaryGrid({
 }: ClusterSummaryGridProps) {
     return (
         <Grid hasGutter>
-            <GridItem span={12} lg={6} xl={3} className="cluster-status-panel">
-                <ClusterHealthPanel header="Cluster metadata">
-                    <ClusterMetadata status={clusterInfo.status} />
-                </ClusterHealthPanel>
-            </GridItem>
-            <GridItem span={12} lg={6} xl={3} className="cluster-status-panel">
-                <SensorUpgradePanel
-                    centralVersion={centralVersion}
-                    sensorVersion={clusterInfo.status?.sensorVersion}
-                    upgradeStatus={clusterInfo.status?.upgradeStatus}
-                />
-            </GridItem>
-            <GridItem span={12} lg={6} xl={3} className="cluster-status-panel">
-                <ClusterHealthPanel header="Credential expiration">
-                    <CredentialExpiration
-                        certExpiryStatus={clusterInfo.status?.certExpiryStatus as CertExpiryStatus}
-                        autoRefreshEnabled={clusterInfo.sensorCapabilities?.includes(
-                            'SecuredClusterCertificatesRefresh'
-                        )}
-                        isList
+            {clusterInfo.status && (
+                <GridItem span={12} lg={6} xl={3} className="cluster-status-panel">
+                    <ClusterHealthPanel header="Cluster metadata">
+                        <ClusterMetadata status={clusterInfo.status} />
+                    </ClusterHealthPanel>
+                </GridItem>
+            )}
+            {clusterInfo.status && (
+                <GridItem span={12} lg={6} xl={3} className="cluster-status-panel">
+                    <SensorUpgradePanel
+                        centralVersion={centralVersion}
+                        sensorVersion={clusterInfo.status?.sensorVersion}
+                        upgradeStatus={clusterInfo.status?.upgradeStatus}
                     />
-                </ClusterHealthPanel>
-            </GridItem>
+                </GridItem>
+            )}
+            {clusterInfo.status && (
+                <GridItem span={12} lg={6} xl={3} className="cluster-status-panel">
+                    <ClusterHealthPanel header="Credential expiration">
+                        <CredentialExpiration
+                            certExpiryStatus={
+                                clusterInfo.status?.certExpiryStatus as CertExpiryStatus
+                            }
+                            autoRefreshEnabled={clusterInfo.sensorCapabilities?.includes(
+                                'SecuredClusterCertificatesRefresh'
+                            )}
+                            isList
+                        />
+                    </ClusterHealthPanel>
+                </GridItem>
+            )}
             <GridItem span={12} lg={6} xl={3} className="cluster-status-panel">
                 <ClusterHealthPanel header="Cluster deletion">
                     <ClusterDeletion clusterRetentionInfo={clusterRetentionInfo} />

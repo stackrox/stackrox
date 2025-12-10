@@ -1,35 +1,35 @@
-import React from 'react';
 import type { ReactNode } from 'react';
 import { Link } from 'react-router-dom-v5-compat';
 import { LabelGroup } from '@patternfly/react-core';
 import { ExpandableRowContent, Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 import { gql } from '@apollo/client';
 
+import useFeatureFlags from 'hooks/useFeatureFlags';
 import useSet from 'hooks/useSet';
-import { UseURLSortResult } from 'hooks/useURLSort';
+import type { UseURLSortResult } from 'hooks/useURLSort';
 import VulnerabilitySeverityIconText from 'Components/PatternFly/IconText/VulnerabilitySeverityIconText';
-import { VulnerabilityState } from 'types/cve.proto';
+import type { VulnerabilityState } from 'types/cve.proto';
 import VulnerabilityFixableIconText from 'Components/PatternFly/IconText/VulnerabilityFixableIconText';
 import { DynamicColumnIcon } from 'Components/DynamicIcon';
 import DateDistance from 'Components/DateDistance';
 import TbodyUnified from 'Components/TableStateTemplates/TbodyUnified';
 import ExpandRowTh from 'Components/ExpandRowTh';
-import { TableUIState } from 'utils/getTableUIState';
-import {
-    generateVisibilityForColumns,
-    getHiddenColumnCount,
-    ManagedColumns,
-} from 'hooks/useManagedColumns';
+import type { TableUIState } from 'utils/getTableUIState';
+import { generateVisibilityForColumns, getHiddenColumnCount } from 'hooks/useManagedColumns';
+import type { ManagedColumns } from 'hooks/useManagedColumns';
 
-// import KnownExploitLabel from '../../components/KnownExploitLabel'; // Ross CISA KEV
+import KnownExploitLabel from '../../components/KnownExploitLabel';
+import KnownRansomwareCampaignLabel from '../../components/KnownRansomwareCampaignLabel';
 import PendingExceptionLabel from '../../components/PendingExceptionLabel';
+import { hasKnownExploit, hasKnownRansomwareCampaignUse } from '../../utils/vulnerabilityUtils';
 import DeploymentComponentVulnerabilitiesTable, {
     deploymentComponentVulnerabilitiesFragment,
 } from './DeploymentComponentVulnerabilitiesTable';
 import PartialCVEDataAlert from '../../components/PartialCVEDataAlert';
 import useWorkloadCveViewContext from '../hooks/useWorkloadCveViewContext';
 import { infoForEpssProbability } from './infoForTh';
-import { FormattedDeploymentVulnerability, formatEpssProbabilityAsPercent } from './table.utils';
+import { formatEpssProbabilityAsPercent } from './table.utils';
+import type { FormattedDeploymentVulnerability } from './table.utils';
 
 export const tableId = 'WorkloadCvesDeploymentVulnerabilitiesTable';
 export const defaultColumns = {
@@ -119,6 +119,7 @@ function DeploymentVulnerabilitiesTable({
     onClearFilters,
     tableConfig,
 }: DeploymentVulnerabilitiesTableProps) {
+    const { isFeatureFlagEnabled } = useFeatureFlags();
     const { urlBuilder } = useWorkloadCveViewContext();
     const getVisibilityClass = generateVisibilityForColumns(tableConfig);
     const hiddenColumnCount = getHiddenColumnCount(tableConfig);
@@ -183,15 +184,29 @@ function DeploymentVulnerabilitiesTable({
                         const epssProbability = cveBaseInfo?.epss?.epssProbability;
 
                         const labels: ReactNode[] = [];
-                        /*
-                        // Ross CISA KEV
-                        if (isFeatureFlagEnabled('ROX_SCANNER_V4') && isFeatureFlagEnabled('ROX_WHATEVER') && TODO) {
-                            labels.push(<KnownExploitLabel isCompact />);
+                        if (
+                            isFeatureFlagEnabled('ROX_SCANNER_V4') &&
+                            isFeatureFlagEnabled('ROX_CISA_KEV') &&
+                            hasKnownExploit(cveBaseInfo?.exploit)
+                        ) {
+                            // Add in deploymentWithVulnerabilitiesFragment following epss:
+                            // exploit {
+                            //     knownRansomwareCampaignUse
+                            // }
+                            labels.push(<KnownExploitLabel key="exploit" isCompact />);
+                            if (hasKnownRansomwareCampaignUse(cveBaseInfo?.exploit)) {
+                                labels.push(
+                                    <KnownRansomwareCampaignLabel
+                                        key="knownRansomwareCampaignUse"
+                                        isCompact
+                                    />
+                                );
+                            }
                         }
-                        */
                         if (pendingExceptionCount > 0) {
                             labels.push(
                                 <PendingExceptionLabel
+                                    key="pendingExceptionCount"
                                     cve={cve}
                                     isCompact
                                     vulnerabilityState={vulnerabilityState}

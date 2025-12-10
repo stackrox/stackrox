@@ -9,7 +9,7 @@ import (
 	"github.com/pkg/errors"
 	blobDS "github.com/stackrox/rox/central/blob/datastore"
 	clusterDS "github.com/stackrox/rox/central/cluster/datastore"
-	imageCVEDS "github.com/stackrox/rox/central/cve/image/datastore"
+	"github.com/stackrox/rox/central/convert/storagetoeffectiveaccessscope"
 	imageCVE2DS "github.com/stackrox/rox/central/cve/image/v2/datastore"
 	deploymentDS "github.com/stackrox/rox/central/deployment/datastore"
 	"github.com/stackrox/rox/central/graphql/resolvers"
@@ -21,8 +21,8 @@ import (
 	watchedImageDS "github.com/stackrox/rox/central/watchedimage/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/errorhelpers"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/grpc/authz/allow"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/notifier"
@@ -33,6 +33,7 @@ import (
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/retry"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/sac/effectiveaccessscope"
 	"github.com/stackrox/rox/pkg/search"
 	pgSearch "github.com/stackrox/rox/pkg/search/postgres"
 	"github.com/stackrox/rox/pkg/set"
@@ -48,6 +49,8 @@ var (
 		Schema:  selectSchema(),
 		Selects: getSelectsDeployedImages(),
 		Pagination: search.NewPagination().
+			Limit(int32(env.ReportMaxRows.IntegerSetting())).
+			Offset(int32(0)).
 			AddSortOption(search.NewSortOption(search.Cluster)).
 			AddSortOption(search.NewSortOption(search.Namespace)).Proto(),
 	}
@@ -56,6 +59,8 @@ var (
 		Schema:  selectSchema(),
 		Selects: getSelectsWatchedImages(),
 		Pagination: search.NewPagination().
+			Limit(int32(env.ReportMaxRows.IntegerSetting())).
+			Offset(int32(0)).
 			AddSortOption(search.NewSortOption(search.ImageName)).Proto(),
 	}
 )
@@ -69,7 +74,6 @@ type reportGeneratorImpl struct {
 	blobStore               blobDS.Datastore
 	clusterDatastore        clusterDS.DataStore
 	namespaceDatastore      namespaceDS.DataStore
-	imageCVEDatastore       imageCVEDS.DataStore
 	imageCVE2Datastore      imageCVE2DS.DataStore
 	db                      postgres.DB
 
@@ -89,18 +93,20 @@ func (rg *reportGeneratorImpl) ProcessReportRequest(req *ReportRequest) {
 		return
 	}
 
-	if req.ReportSnapshot.GetVulnReportFilters().GetSinceLastSentScheduledReport() {
-		req.DataStartTime, err = rg.lastSuccessfulScheduledReportTime(req.ReportSnapshot)
-		if err != nil {
-			rg.logAndUpsertError(errors.Wrap(err, "Error finding last successful scheduled report time"), req)
-			return
-		}
-	} else if req.ReportSnapshot.GetVulnReportFilters().GetSinceStartDate() != nil {
-		sinceStartDate := req.ReportSnapshot.GetVulnReportFilters().GetSinceStartDate()
-		req.DataStartTime, err = protocompat.ConvertTimestampToTimeOrError(sinceStartDate)
-		if err != nil {
-			rg.logAndUpsertError(errors.Wrap(err, "Error finding last successful scheduled report time"), req)
-			return
+	if req.ReportSnapshot.GetVulnReportFilters() != nil {
+		if req.ReportSnapshot.GetVulnReportFilters().GetSinceLastSentScheduledReport() {
+			req.DataStartTime, err = rg.lastSuccessfulScheduledReportTime(req.ReportSnapshot)
+			if err != nil {
+				rg.logAndUpsertError(errors.Wrap(err, "Error finding last successful scheduled report time"), req)
+				return
+			}
+		} else if req.ReportSnapshot.GetVulnReportFilters().GetSinceStartDate() != nil {
+			sinceStartDate := req.ReportSnapshot.GetVulnReportFilters().GetSinceStartDate()
+			req.DataStartTime, err = protocompat.ConvertTimestampToTimeOrError(sinceStartDate)
+			if err != nil {
+				rg.logAndUpsertError(errors.Wrap(err, "Error finding last successful scheduled report time"), req)
+				return
+			}
 		}
 	}
 
@@ -128,13 +134,20 @@ func (rg *reportGeneratorImpl) ProcessReportRequest(req *ReportRequest) {
 /* Report generation helper functions */
 func (rg *reportGeneratorImpl) generateReportAndNotify(req *ReportRequest) error {
 	// Get the results of running the report query
-	reportData, err := rg.getReportDataSQF(req.ReportSnapshot, req.Collection, req.DataStartTime)
+	var err error
+	var reportData *ReportData
+	if req.ReportSnapshot.GetVulnReportFilters() != nil {
+		reportData, err = rg.getReportDataSQF(req.ReportSnapshot, req.Collection, req.DataStartTime)
+	}
+	if req.ReportSnapshot.GetViewBasedVulnReportFilters() != nil {
+		reportData, err = rg.getReportDataViewBased(req.ReportSnapshot)
+	}
 	if err != nil {
 		return err
 	}
 
 	// Format results into CSV
-	zippedCSVData, err := GenerateCSV(reportData.CVEResponses, req.ReportSnapshot.Name, req.ReportSnapshot.GetVulnReportFilters())
+	zippedCSVData, err := GenerateCSV(reportData.CVEResponses, req.ReportSnapshot.GetName(), req.ReportSnapshot)
 	if err != nil {
 		return err
 	}
@@ -144,9 +157,13 @@ func (rg *reportGeneratorImpl) generateReportAndNotify(req *ReportRequest) error
 	if err != nil {
 		return errors.Wrap(err, "Error changing report status to GENERATED")
 	}
-	switch req.ReportSnapshot.ReportStatus.ReportNotificationMethod {
+	switch req.ReportSnapshot.GetReportStatus().GetReportNotificationMethod() {
 	case storage.ReportStatus_DOWNLOAD:
-		if err = rg.saveReportData(req.ReportSnapshot.GetReportConfigurationId(),
+		parentDir := req.ReportSnapshot.GetReportConfigurationId()
+		if req.ReportSnapshot.GetVulnReportFilters() == nil {
+			parentDir = "view-based-report"
+		}
+		if err = rg.saveReportData(parentDir,
 			req.ReportSnapshot.GetReportId(), zippedCSVData); err != nil {
 			return errors.Wrap(err, "error persisting blob")
 		}
@@ -195,7 +212,7 @@ func (rg *reportGeneratorImpl) generateReportAndNotify(req *ReportRequest) error
 				emailSubject = customSubject
 			}
 			emailBodyWithConfigDetails := addReportConfigDetails(emailBody, configDetailsHTML)
-			reportName := req.ReportSnapshot.Name
+			reportName := req.ReportSnapshot.GetName()
 			err := rg.retryableSendReportResults(reportNotifier, notifierSnap.GetEmailConfig().GetMailingLists(),
 				zippedCSVData, emailSubject, emailBodyWithConfigDetails, reportName)
 			if err != nil {
@@ -333,16 +350,18 @@ func (rg *reportGeneratorImpl) getReportDataViewBased(snap *storage.ReportSnapsh
 
 }
 
-func (rg *reportGeneratorImpl) getClustersAndNamespacesForSAC() ([]*storage.Cluster, []*storage.NamespaceMetadata, error) {
+func (rg *reportGeneratorImpl) getClustersAndNamespacesForSAC() ([]effectiveaccessscope.Cluster, []effectiveaccessscope.Namespace, error) {
 	allClusters, err := rg.clusterDatastore.GetClusters(reportGenCtx)
 	if err != nil {
 		return nil, nil, errors.Wrap(err, "error fetching clusters to build report query")
 	}
+	sacClusters := storagetoeffectiveaccessscope.Clusters(allClusters)
 	allNamespaces, err := rg.namespaceDatastore.GetAllNamespaces(reportGenCtx)
 	if err != nil {
 		return nil, nil, errors.Wrap(err, "error fetching namespaces to build report query")
 	}
-	return allClusters, allNamespaces, nil
+	sacNamespaces := storagetoeffectiveaccessscope.Namespaces(allNamespaces)
+	return sacClusters, sacNamespaces, nil
 }
 
 func (rg *reportGeneratorImpl) buildReportQueryViewBased(snap *storage.ReportSnapshot, watchedImages []string) (*common.ReportQueryViewBased, error) {
@@ -436,23 +455,12 @@ func (rg *reportGeneratorImpl) withCVEReferenceLinks(imageCVEResponses []*ImageC
 	}
 
 	var cves []ImageCVEInterface
-	if features.FlattenCVEData.Enabled() {
-		imageCVEV2, err := rg.imageCVE2Datastore.GetBatch(reportGenCtx, cveIDs.AsSlice())
-		if err != nil {
-			return nil, err
-		}
-		for _, v2 := range imageCVEV2 {
-			cves = append(cves, v2)
-		}
-	} else {
-		imageCVE, err := rg.imageCVEDatastore.GetBatch(reportGenCtx, cveIDs.AsSlice())
-		if err != nil {
-			return nil, err
-		}
-		for _, v2 := range imageCVE {
-			cves = append(cves, v2)
-		}
-
+	imageCVEV2, err := rg.imageCVE2Datastore.GetBatch(reportGenCtx, cveIDs.AsSlice())
+	if err != nil {
+		return nil, err
+	}
+	for _, v2 := range imageCVEV2 {
+		cves = append(cves, v2)
 	}
 
 	cveRefLinks := make(map[string]string)
@@ -474,7 +482,7 @@ func (rg *reportGeneratorImpl) updateReportStatus(snapshot *storage.ReportSnapsh
 }
 
 func (rg *reportGeneratorImpl) logAndUpsertError(reportErr error, req *ReportRequest) {
-	if req.ReportSnapshot == nil || req.ReportSnapshot.ReportStatus == nil {
+	if req.ReportSnapshot == nil || req.ReportSnapshot.GetReportStatus() == nil {
 		utils.Should(errors.New("Request does not have non-nil report snapshot with a non-nil report status"))
 		return
 	}
@@ -502,10 +510,7 @@ func filterOnImageType(imageTypes []storage.VulnerabilityReportFilters_ImageType
 }
 
 func selectSchema() *walker.Schema {
-	if features.FlattenCVEData.Enabled() {
-		return pkgSchema.ImageCvesV2Schema
-	}
-	return pkgSchema.ImageCvesSchema
+	return pkgSchema.ImageCvesV2Schema
 }
 
 func getSelectsWatchedImages() []*v1.QuerySelect {
@@ -521,10 +526,8 @@ func getSelectsWatchedImages() []*v1.QuerySelect {
 		search.NewQuerySelect(search.NVDCVSS).Proto(),
 		search.NewQuerySelect(search.FirstImageOccurrenceTimestamp).Proto(),
 		search.NewQuerySelect(search.EPSSProbablity).Proto(),
-	}
-	if features.FlattenCVEData.Enabled() {
-		ret = append(ret, search.NewQuerySelect(search.AdvisoryName).Proto())
-		ret = append(ret, search.NewQuerySelect(search.AdvisoryLink).Proto())
+		search.NewQuerySelect(search.AdvisoryName).Proto(),
+		search.NewQuerySelect(search.AdvisoryLink).Proto(),
 	}
 	return ret
 }
@@ -545,10 +548,8 @@ func getSelectsDeployedImages() []*v1.QuerySelect {
 		search.NewQuerySelect(search.Namespace).Proto(),
 		search.NewQuerySelect(search.DeploymentName).Proto(),
 		search.NewQuerySelect(search.EPSSProbablity).Proto(),
-	}
-	if features.FlattenCVEData.Enabled() {
-		ret = append(ret, search.NewQuerySelect(search.AdvisoryName).Proto())
-		ret = append(ret, search.NewQuerySelect(search.AdvisoryLink).Proto())
+		search.NewQuerySelect(search.AdvisoryName).Proto(),
+		search.NewQuerySelect(search.AdvisoryLink).Proto(),
 	}
 	return ret
 }

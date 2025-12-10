@@ -203,14 +203,15 @@ func (ds *datastoreImpl) GetAllPolicies(ctx context.Context) ([]*storage.Policy,
 	var policies []*storage.Policy
 	err := ds.storage.Walk(ctx, func(policy *storage.Policy) error {
 		policies = append(policies, policy)
-		err := ds.fillCategoryNames(ctx, policy)
-		if err != nil {
-			return errorsPkg.Wrap(err, "failed to fill category names")
-		}
 		return nil
 	})
 	if err != nil {
 		return nil, err
+	}
+
+	err = ds.fillCategoryNames(ctx, policies...)
+	if err != nil {
+		return nil, errorsPkg.Wrap(err, "failed to fill category names")
 	}
 
 	return policies, err
@@ -247,7 +248,7 @@ func (ds *datastoreImpl) AddPolicy(ctx context.Context, policy *storage.Policy) 
 		return "", sac.ErrResourceAccessDenied
 	}
 
-	if policy.Id == "" {
+	if policy.GetId() == "" {
 		policy.Id = uuid.NewV4().String()
 	}
 
@@ -296,11 +297,11 @@ func (ds *datastoreImpl) AddPolicy(ctx context.Context, policy *storage.Policy) 
 		return "", ds.wrapWithRollback(ctx, tx, err)
 	}
 
-	if clonedPolicy.Source == storage.PolicySource_DECLARATIVE {
+	if clonedPolicy.GetSource() == storage.PolicySource_DECLARATIVE {
 		metrics.IncrementTotalExternalPoliciesGauge()
 	}
 
-	return clonedPolicy.Id, nil
+	return clonedPolicy.GetId(), nil
 }
 
 // UpdatePolicy updates a policy from the storage.
@@ -311,7 +312,7 @@ func (ds *datastoreImpl) UpdatePolicy(ctx context.Context, policy *storage.Polic
 		return sac.ErrResourceAccessDenied
 	}
 
-	if policy.Id == "" {
+	if policy.GetId() == "" {
 		return errors.New("policy id not specified")
 	}
 
@@ -354,7 +355,7 @@ func (ds *datastoreImpl) RemovePolicy(ctx context.Context, policy *storage.Polic
 
 	err := ds.removePolicyNoLock(ctx, policy.GetId())
 
-	if err == nil && policy.Source == storage.PolicySource_DECLARATIVE {
+	if err == nil && policy.GetSource() == storage.PolicySource_DECLARATIVE {
 		metrics.DecrementTotalExternalPoliciesGauge()
 	}
 
@@ -399,7 +400,7 @@ func (ds *datastoreImpl) ImportPolicies(ctx context.Context, importPolicies []*s
 	responses := make([]*v1.ImportPolicyResponse, len(importPolicies))
 	for i, policy := range importPolicies {
 		response := ds.importPolicy(ctx, policy, overwrite, policyNameToPolicyMap)
-		if !response.Succeeded {
+		if !response.GetSucceeded() {
 			allSucceeded = false
 		}
 		if changedIndices.Contains(i) {

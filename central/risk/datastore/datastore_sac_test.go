@@ -187,7 +187,7 @@ func (s *riskDatastoreSACSuite) runSearchRawTest(c testutils.SACSearchTestCase) 
 	s.Require().NoError(err)
 	resultObjs := make([]sac.NamespaceScopedObject, 0, len(results))
 	for i := range results {
-		resultObjs = append(resultObjs, results[i].Subject)
+		resultObjs = append(resultObjs, results[i].GetSubject())
 	}
 	resultCounts := testutils.CountSearchResultObjectsPerClusterAndNamespace(s.T(), resultObjs)
 	testutils.ValidateSACSearchResultDistribution(&s.Suite, c.Results, resultCounts)

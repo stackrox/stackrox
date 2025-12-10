@@ -73,7 +73,7 @@ func TestSendMessage(t *testing.T) {
 			expectedError: errors.New("failed with HTTP status: 400"),
 			ctx:           defaultContext,
 			response: &http.Response{
-				StatusCode: 400,
+				StatusCode: http.StatusBadRequest,
 			},
 		},
 		"successful request": {
@@ -81,7 +81,7 @@ func TestSendMessage(t *testing.T) {
 			inputMessage: defaultMsg,
 			ctx:          defaultContext,
 			response: &http.Response{
-				StatusCode: 200,
+				StatusCode: http.StatusOK,
 			},
 			expectedHeader: map[string][]string{
 				"Content-Type":  {"application/json; charset=UTF-8"},
@@ -149,7 +149,7 @@ func TestTransportWithAdditonalCA(t *testing.T) {
 	testServerCalled := false
 	tlsServ := httptest.NewUnstartedServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		testServerCalled = true
-		w.WriteHeader(200)
+		w.WriteHeader(http.StatusOK)
 	}))
 
 	tlsServ.TLS = &tls.Config{

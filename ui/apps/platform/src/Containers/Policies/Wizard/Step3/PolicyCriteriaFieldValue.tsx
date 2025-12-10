@@ -1,8 +1,7 @@
-import React from 'react';
-import { Flex, Button } from '@patternfly/react-core';
+import { Button, Flex } from '@patternfly/react-core';
 import { TimesIcon } from '@patternfly/react-icons';
 
-import { Descriptor } from './policyCriteriaDescriptors';
+import type { Descriptor } from './policyCriteriaDescriptors';
 import PolicyCriteriaFieldInput from './PolicyCriteriaFieldInput';
 
 type FieldValueProps = {

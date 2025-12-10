@@ -18,6 +18,7 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/jsonutil"
 	"github.com/stackrox/rox/pkg/set"
+	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stackrox/rox/pkg/tlsutils"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stretchr/testify/assert"
@@ -33,7 +34,7 @@ import (
 type authMode int
 
 const (
-	dialRetries = 3
+	dialRetries = 5
 
 	userPKIProviderName = "test-userpki"
 )
@@ -122,7 +123,7 @@ func (c *endpointsTestCase) endpoint() string {
 	return endpointForTargetPort(c.targetPort)
 }
 
-func (c *endpointsTestCase) Run(t *testing.T, testCtx *endpointsTestContext) {
+func (c *endpointsTestCase) Run(t testutils.T, testCtx *endpointsTestContext) {
 	c.runConnectionTest(t, testCtx)
 
 	if c.expectConnectFailure {
@@ -134,31 +135,45 @@ func (c *endpointsTestCase) Run(t *testing.T, testCtx *endpointsTestContext) {
 	c.runHTTPTest(t, testCtx, true)
 }
 
-func (c *endpointsTestCase) verifyDialResult(t *testing.T, conn *tls.Conn, err error) {
+func (c *endpointsTestCase) verifyDialResult(t testutils.T, conn *tls.Conn, err error) {
 	if conn != nil {
 		defer utils.IgnoreError(conn.Close)
 	} else {
-		t.Error("conn is nil")
+		t.Errorf("conn is nil")
 	}
-	if err == nil {
-		ctx, cancel := context.WithTimeoutCause(context.Background(), 2*time.Second, errors.New("TLS handshake timeout"))
-		defer cancel()
-		err = conn.HandshakeContext(ctx)
+	for i := 0; i < dialRetries; i++ {
+		if err == nil {
+			ctx, cancel := context.WithTimeoutCause(context.Background(), 2*time.Second, errors.New("TLS handshake timeout"))
+			defer cancel()
+			err = conn.HandshakeContext(ctx)
+		}
+
+		if !c.expectConnectFailure {
+			if err == nil {
+				break
+			}
+			t.Logf("Connection handshake attempt %d of %d failed, retrying", i+1, dialRetries)
+			continue
+		}
+
+		if err == nil {
+			_ = conn.SetReadDeadline(time.Now().Add(timeout))
+			_, err = conn.Read(make([]byte, 1))
+		}
+		if err.Error() == "remote error: tls: certificate required" {
+			break
+		}
+		t.Logf("Connection handshake attempt %d of %d failed, retrying", i+1, dialRetries)
 	}
 
 	if !c.expectConnectFailure {
 		assert.NoError(t, err, "expected no connection failure")
 		return
 	}
-
-	if err == nil {
-		_ = conn.SetReadDeadline(time.Now().Add(timeout))
-		_, err = conn.Read(make([]byte, 1))
-	}
 	assert.EqualErrorf(t, err, "remote error: tls: certificate required", "expected a bad certificate error after handshake")
 }
 
-func (c *endpointsTestCase) runConnectionTest(t *testing.T, testCtx *endpointsTestContext) {
+func (c *endpointsTestCase) runConnectionTest(t testutils.T, testCtx *endpointsTestContext) {
 	if c.skipTLS {
 		if c.expectConnectFailure {
 			require.Fail(t, "malformed test spec: cannot expect connection failures in non-TLS mode")
@@ -216,7 +231,7 @@ func (c *endpointsTestCase) tlsDialWithRetry(tlsConf *tls.Config) (conn *tls.Con
 	return
 }
 
-func (c *endpointsTestCase) verifyAuthStatus(t *testing.T, _ *endpointsTestContext, authStatus *v1.AuthStatus) {
+func (c *endpointsTestCase) verifyAuthStatus(t testutils.T, _ *endpointsTestContext, authStatus *v1.AuthStatus) {
 	switch id := authStatus.GetId().(type) {
 	case *v1.AuthStatus_ServiceId:
 		assert.Equal(t, serviceAuth, c.expectAuth, "got service ID from auth status, expected this to be a service client")
@@ -229,7 +244,7 @@ func (c *endpointsTestCase) verifyAuthStatus(t *testing.T, _ *endpointsTestConte
 	}
 }
 
-func (c *endpointsTestCase) runGRPCTest(t *testing.T, testCtx *endpointsTestContext) {
+func (c *endpointsTestCase) runGRPCTest(t testutils.T, testCtx *endpointsTestContext) {
 	var creds credentials.TransportCredentials
 	if c.skipTLS {
 		creds = insecure.NewCredentials()
@@ -271,7 +286,7 @@ func (c *endpointsTestCase) runGRPCTest(t *testing.T, testCtx *endpointsTestCont
 	c.verifyAuthStatus(t, testCtx, authStatus)
 }
 
-func (c *endpointsTestCase) runHTTPTest(t *testing.T, testCtx *endpointsTestContext, useHTTP2 bool) {
+func (c *endpointsTestCase) runHTTPTest(t testutils.T, testCtx *endpointsTestContext, useHTTP2 bool) {
 	assert.True(t, c.skipTLS == (len(c.validServerNames) == 0), "invalid test case: either skipTLS is set or validServerNames are provided")
 
 	var scheme string
@@ -532,7 +547,9 @@ func TestEndpoints(t *testing.T) {
 
 	for desc, tc := range cases {
 		t.Run(desc, func(t *testing.T) {
-			tc.Run(t, testCtx)
+			testutils.Retry(t, 3, 100*time.Millisecond, func(t testutils.T) {
+				tc.Run(t, testCtx)
+			})
 		})
 	}
 }

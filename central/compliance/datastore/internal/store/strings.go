@@ -23,7 +23,7 @@ func newStringCollector(runID string) *stringCollector {
 func (c *stringCollector) Collect(s string) int {
 	idx, ok := c.stringIndices[s]
 	if !ok {
-		idx = len(c.stringsProto.Strings)
+		idx = len(c.stringsProto.GetStrings())
 		c.stringsProto.Strings = append(c.stringsProto.Strings, s)
 		c.stringIndices[s] = idx
 	}
@@ -48,10 +48,10 @@ func ExternalizeStrings(resultsProto *storage.ComplianceRunResults) *storage.Com
 func externalizeStringsForEntity(entityResults *storage.ComplianceRunResults_EntityResults, strings *stringCollector) {
 	for _, resultVal := range entityResults.GetControlResults() {
 		for _, e := range resultVal.GetEvidence() {
-			if e.Message == "" {
+			if e.GetMessage() == "" {
 				continue
 			}
-			e.MessageId = int32(strings.Collect(e.Message)) + 1
+			e.MessageId = int32(strings.Collect(e.GetMessage())) + 1
 			e.Message = ""
 		}
 	}
@@ -79,11 +79,11 @@ func reconstituteStringsForEntity(entityResults *storage.ComplianceRunResults_En
 			}
 			idx := int(e.GetMessageId()) - 1
 			var msg string
-			if idx < 0 || idx >= len(stringsProto.Strings) {
+			if idx < 0 || idx >= len(stringsProto.GetStrings()) {
 				msg = fmt.Sprintf("#Invalid message ID %d", idx)
 				allFound = false
 			} else {
-				msg = stringsProto.Strings[idx]
+				msg = stringsProto.GetStrings()[idx]
 			}
 			e.Message = msg
 			e.MessageId = 0

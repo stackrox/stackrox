@@ -8,16 +8,16 @@ import (
 	"github.com/operator-framework/helm-operator-plugins/pkg/extensions"
 	"github.com/pkg/errors"
 	platform "github.com/stackrox/rox/operator/api/v1alpha1"
-	"github.com/stackrox/rox/operator/internal/central/values/defaults"
-	"github.com/stackrox/rox/operator/internal/common/defaulting"
+	"github.com/stackrox/rox/operator/internal/central/defaults"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrlClient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-var defaultingFlows = []defaulting.CentralDefaultingFlow{
+var defaultingFlows = []defaults.CentralDefaultingFlow{
 	defaults.CentralStaticDefaults, // Must go first.
-	defaulting.CentralScannerV4DefaultingFlow,
+	defaults.CentralScannerV4DefaultingFlow,
+	defaults.CentralDBPersistenceDefaultingFlow,
 }
 
 // FeatureDefaultingExtension executes "defaulting flows". A Central defaulting flow is of type
@@ -69,7 +69,8 @@ func reconcileFeatureDefaults(ctx context.Context, client ctrlClient.Client, u *
 }
 
 func setDefaultsAndPersist(ctx context.Context, logger logr.Logger, central *platform.Central, client ctrlClient.Client) error {
-	origCentral := central.DeepCopy()
+	baseCentral := central.DeepCopy()
+	patch := ctrlClient.MergeFrom(baseCentral)
 
 	// This may update central.Defaults and central's embedded annotations.
 	for _, flow := range defaultingFlows {
@@ -77,19 +78,31 @@ func setDefaultsAndPersist(ctx context.Context, logger logr.Logger, central *pla
 			return err
 		}
 	}
+	centralDefaults := central.Defaults
 
 	// We persist the annotations immediately during (first-time) execution of this extension to make sure
 	// that this information is already persisted in the Kubernetes resource before we
 	// can realistically end up in a situation where reconcilliation might need to be retried.
-	newResourceVersion, err := patchCentralAnnotations(ctx, logger, client, origCentral, central.GetAnnotations())
+	//
+	// This updates central both on the cluster and in memory, which is crucial since this object is used for the final
+	// updating within helm-operator and we have concurrently running controllers (the status controller),
+	// whose changes we must preserve.
+	err := client.Patch(ctx, central, patch)
 	if err != nil {
 		return errors.Wrap(err, "patching Central annotations")
 	}
-	central.SetResourceVersion(newResourceVersion)
+
+	logger.Info("patched Central object",
+		"oldResourceVersion", baseCentral.GetResourceVersion(),
+		"newResourceVersion", central.GetResourceVersion(),
+	)
+
+	// Retain the defaults, which are not in the patched object after cluster refresh.
+	central.Defaults = centralDefaults
 	return nil
 }
 
-func executeSingleDefaultingFlow(logger logr.Logger, central *platform.Central, client ctrlClient.Client, flow defaulting.CentralDefaultingFlow) error {
+func executeSingleDefaultingFlow(logger logr.Logger, central *platform.Central, client ctrlClient.Client, flow defaults.CentralDefaultingFlow) error {
 	logger = logger.WithName(fmt.Sprintf("defaulting-flow-%s", flow.Name))
 	annotations := central.GetAnnotations()
 	if annotations == nil {
@@ -107,21 +120,4 @@ func executeSingleDefaultingFlow(logger logr.Logger, central *platform.Central, 
 	central.SetAnnotations(annotations)
 
 	return nil
-}
-
-func patchCentralAnnotations(ctx context.Context, logger logr.Logger, client ctrlClient.Client, central *platform.Central, annotations map[string]string) (string, error) {
-	// MergeFromWithOptimisticLock causes the resourceVersion to be checked prior to patching.
-	patch := ctrlClient.MergeFromWithOptions(central, ctrlClient.MergeFromWithOptimisticLock{})
-	newCentral := central.DeepCopy()
-	newCentral.SetAnnotations(annotations)
-	if err := client.Patch(ctx, newCentral, patch); err != nil {
-		return "", err
-	}
-
-	newResourceVersion := newCentral.GetResourceVersion()
-	logger.Info("patched Central object",
-		"oldResourceVersion", central.GetResourceVersion(),
-		"newResourceVersion", newResourceVersion)
-
-	return newResourceVersion, nil
 }

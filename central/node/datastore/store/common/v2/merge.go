@@ -49,8 +49,8 @@ func mergeComponents(parts *NodeParts, node *storage.Node) {
 		return components[i].GetName() < components[j].GetName()
 	})
 	for _, comp := range components {
-		sort.SliceStable(comp.Vulnerabilities, func(i, j int) bool {
-			return comp.Vulnerabilities[i].GetCveBaseInfo().GetCve() < comp.Vulnerabilities[j].GetCveBaseInfo().GetCve()
+		sort.SliceStable(comp.GetVulnerabilities(), func(i, j int) bool {
+			return comp.GetVulnerabilities()[i].GetCveBaseInfo().GetCve() < comp.GetVulnerabilities()[j].GetCveBaseInfo().GetCve()
 		})
 	}
 }

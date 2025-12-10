@@ -50,3 +50,28 @@ func (c *vulnerabilitiesMultiplier) Score(_ context.Context, image *storage.Imag
 		Score: score,
 	}
 }
+
+// ScoreV2 takes an image and evaluates its risk based on vulnerabilities
+func (c *vulnerabilitiesMultiplier) ScoreV2(_ context.Context, image *storage.ImageV2) *storage.Risk_Result {
+	imgComponents := image.GetScan().GetComponents()
+	components := make([]scancomponent.ScanComponent, 0, len(imgComponents))
+	for _, imgComponent := range imgComponents {
+		components = append(components, scancomponent.NewFromImageComponent(imgComponent))
+	}
+	min, max, sum, num := vulns.ProcessComponents(components)
+	if num == 0 {
+		return nil
+	}
+
+	score := multipliers.NormalizeScore(sum, vulnSaturation, vulnMaxScore)
+	return &storage.Risk_Result{
+		Name: VulnerabilitiesHeading,
+		Factors: []*storage.Risk_Result_Factor{
+			{
+				Message: fmt.Sprintf("Image %q contains %d CVEs with severities ranging between %s and %s",
+					image.GetName().GetFullName(), num, min.Severity, max.Severity),
+			},
+		},
+		Score: score,
+	}
+}

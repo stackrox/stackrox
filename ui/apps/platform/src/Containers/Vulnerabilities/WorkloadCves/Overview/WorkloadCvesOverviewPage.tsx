@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
     Button,
     Card,
@@ -31,17 +31,11 @@ import useAnalytics, {
     WORKLOAD_CVE_ENTITY_CONTEXT_VIEWED,
 } from 'hooks/useAnalytics';
 import useLocalStorage from 'hooks/useLocalStorage';
-import { SearchFilter } from 'types/search';
-import {
-    getWorkloadCveOverviewDefaultSortOption,
-    getDefaultZeroCveSortOption,
-    getWorkloadCveOverviewSortFields,
-    syncSeveritySortOption,
-} from 'Containers/Vulnerabilities/utils/sortUtils';
+import type { SearchFilter } from 'types/search';
 import { useIsFirstRender } from 'hooks/useIsFirstRender';
 import { hideColumnIf } from 'hooks/useManagedColumns';
 import useURLSort from 'hooks/useURLSort';
-import { VulnerabilityState } from 'types/cve.proto';
+import type { VulnerabilityState } from 'types/cve.proto';
 import LinkShim from 'Components/PatternFly/LinkShim';
 
 import {
@@ -51,20 +45,21 @@ import {
     imageComponentSearchFilterConfig,
     imageSearchFilterConfig,
     namespaceSearchFilterConfig,
-} from 'Containers/Vulnerabilities/searchFilterConfig';
+} from '../../searchFilterConfig';
+import { isVulnMgmtLocalStorage, workloadEntityTabValues } from '../../types';
+import type { DefaultFilters, VulnMgmtLocalStorage, WorkloadEntityTab } from '../../types';
 import {
-    DefaultFilters,
-    WorkloadEntityTab,
-    VulnMgmtLocalStorage,
-    workloadEntityTabValues,
-    isVulnMgmtLocalStorage,
-} from '../../types';
-import {
-    parseQuerySearchFilter,
+    getNamespaceViewPagePath,
     getVulnStateScopedQueryString,
     getZeroCveScopedQueryString,
-    getNamespaceViewPagePath,
+    parseQuerySearchFilter,
 } from '../../utils/searchUtils';
+import {
+    getDefaultZeroCveSortOption,
+    getWorkloadCveOverviewDefaultSortOption,
+    getWorkloadCveOverviewSortFields,
+    syncSeveritySortOption,
+} from '../../utils/sortUtils';
 import { DEFAULT_VM_PAGE_SIZE } from '../../constants';
 
 import WatchedImagesModal from '../WatchedImages/WatchedImagesModal';
@@ -140,6 +135,7 @@ function WorkloadCvesOverviewPage() {
     const hasWriteAccessForWatchedImage = hasReadWriteAccess('WatchedImage');
     const hasReadAccessForNamespaces = hasReadAccess('Namespace');
     const hasWriteAccessForImage = hasReadWriteAccess('Image'); // SBOM Generation mutates image scan state.
+    const hasWorkflowAdminAccess = hasReadAccess('WorkflowAdministration');
 
     const { analyticsTrack } = useAnalytics();
 
@@ -254,20 +250,28 @@ function WorkloadCvesOverviewPage() {
     }
 
     // Track the current entity tab when the page is initially visited.
+    /* eslint-disable react-hooks/exhaustive-deps */
     useEffect(() => {
         onEntityTabChange(activeEntityTabKey);
     }, []);
+    // activeEntityTabKey
+    // onEntityTabChange
+    /* eslint-enable react-hooks/exhaustive-deps */
 
     // When the page is initially visited and no local filters are applied, apply the default filters.
     //
     // Note that this _does not_ take into account a direct navigation via the left navigation when the user
     // is already on the page. This is because we do not distinguish between navigation via the
     // sidebar and e.g. clearing the page filters.
+    /* eslint-disable react-hooks/exhaustive-deps */
     useEffect(() => {
         if (shouldSyncDefaultFilters) {
             applyDefaultFilters();
         }
     }, []);
+    // applyDefaultFilters
+    // shouldSyncDefaultFilters
+    /* eslint-enable react-hooks/exhaustive-deps */
 
     const [defaultWatchedImageName, setDefaultWatchedImageName] = useState('');
     const watchedImagesModalToggle = useSelectToggle();
@@ -296,10 +300,9 @@ function WorkloadCvesOverviewPage() {
 
     // Report-specific state management
     const [isCreateViewBasedReportModalOpen, setIsCreateViewBasedReportModalOpen] = useState(false);
-    const isViewBasedReportsEnabled = isFeatureFlagEnabled('ROX_VULNERABILITY_VIEW_BASED_REPORTS');
 
-    const isOnDemandReportsVisible =
-        isViewBasedReportsEnabled &&
+    const isViewBasedReportsEnabled =
+        hasWorkflowAdminAccess &&
         (viewContext === 'User workloads' ||
             viewContext === 'Platform' ||
             viewContext === 'All vulnerable images' ||
@@ -399,7 +402,7 @@ function WorkloadCvesOverviewPage() {
                                 onEntityTabChange={onEntityTabChange}
                                 activeEntityTabKey={activeEntityTabKey}
                                 additionalToolbarItems={
-                                    isOnDemandReportsVisible && (
+                                    isViewBasedReportsEnabled && (
                                         <CreateReportDropdown
                                             onSelect={() => {
                                                 setIsCreateViewBasedReportModalOpen(true);
@@ -493,7 +496,7 @@ function WorkloadCvesOverviewPage() {
                     }}
                     onWatchedImagesChange={onWatchedImagesChange}
                 />
-                {isOnDemandReportsVisible && (
+                {isViewBasedReportsEnabled && (
                     <CreateViewBasedReportModal
                         isOpen={isCreateViewBasedReportModalOpen}
                         setIsOpen={setIsCreateViewBasedReportModalOpen}

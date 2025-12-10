@@ -1,4 +1,4 @@
-import React, { ReactElement } from 'react';
+import type { ReactElement } from 'react';
 import { Helmet } from 'react-helmet';
 
 import { getProductBranding } from 'constants/productBranding';

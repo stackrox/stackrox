@@ -4,7 +4,7 @@ import { hasFeatureFlag } from '../../helpers/features';
 import { assertVisibleTableColumns } from '../../helpers/tableHelpers';
 import { selectors } from '../../integration/vulnerabilities/vulnerabilities.selectors';
 import { selectProject } from '../../helpers/ocpConsole';
-import { compoundFiltersSelectors } from '../../helpers/compoundFilters';
+import { assertSearchEntities } from '../../integration/vulnerabilities/workloadCves/WorkloadCves.helpers';
 
 describe('Security vulnerabilities page', () => {
     it('should display only the expected table columns for each entity type', () => {
@@ -49,14 +49,6 @@ describe('Security vulnerabilities page', () => {
     });
 
     it('should restrict the UI based on the status of the selected project', () => {
-        function assertSearchEntities(entities: string[]) {
-            cy.get(compoundFiltersSelectors.entityMenuToggle).click();
-            cy.get(compoundFiltersSelectors.entityMenuItem).should('have.length', entities.length);
-            entities.forEach((entity) => {
-                cy.get(compoundFiltersSelectors.entityMenuItem).contains(entity);
-            });
-        }
-
         withOcpAuth();
         visitFromConsoleLeftNavExpandable('Security', 'Vulnerabilities');
 

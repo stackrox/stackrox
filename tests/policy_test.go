@@ -67,7 +67,7 @@ func tearDownImportExportTest(t *testing.T) {
 
 	var cleanupErrors []error
 	for _, id := range addedPolicies {
-		log.Infof("Added policy: %s", id)
+		t.Logf("Added policy: %s", id)
 		if id == knownPolicyID {
 			continue
 		}
@@ -77,7 +77,7 @@ func tearDownImportExportTest(t *testing.T) {
 		})
 		cancel()
 		if err != nil {
-			log.Infof("error deleting policy %s, error: %v", id, err)
+			t.Logf("error deleting policy %s, error: %v", id, err)
 			cleanupErrors = append(cleanupErrors, err)
 		}
 	}
@@ -101,7 +101,7 @@ func exportPolicy(t *testing.T, service v1.PolicyServiceClient, id string) *stor
 	require.Len(t, resp.GetPolicies(), 1)
 	require.Equal(t, id, resp.GetPolicies()[0].GetId())
 
-	return resp.Policies[0]
+	return resp.GetPolicies()[0]
 }
 
 func validateExportFails(t *testing.T, service v1.PolicyServiceClient, _ string, expectedErrors []*v1.PolicyOperationError) {
@@ -135,7 +135,7 @@ func validateImport(t *testing.T, importResp *v1.ImportPoliciesResponse, policie
 
 func validateSuccess(t *testing.T, importPolicyResponse *v1.ImportPolicyResponse, expectedPolicy *storage.Policy, ignoreID bool) {
 	require.True(t, importPolicyResponse.GetSucceeded())
-	log.Infof("Adding policy %s with id: %s", importPolicyResponse.GetPolicy().GetName(), importPolicyResponse.GetPolicy().GetId())
+	t.Logf("Adding policy %s with id: %s", importPolicyResponse.GetPolicy().GetName(), importPolicyResponse.GetPolicy().GetId())
 	addedPolicies = append(addedPolicies, importPolicyResponse.GetPolicy().GetId())
 	if ignoreID {
 		expectedPolicy.Id = ""
@@ -228,7 +228,7 @@ func validateExclusionOrScopeOrNotifierRemoved(t *testing.T, importResp *v1.Impo
 	protoassert.Equal(t, expectedPolicy, importPolicyResponse.GetPolicy())
 	require.Len(t, importPolicyResponse.GetErrors(), 1)
 
-	policyErrors := importResp.GetResponses()[0].Errors
+	policyErrors := importResp.GetResponses()[0].GetErrors()
 	require.Len(t, policyErrors, 1)
 	policyError := policyErrors[0]
 	require.Equal(t, removedClustersOrNotifiers, policyError.GetType())

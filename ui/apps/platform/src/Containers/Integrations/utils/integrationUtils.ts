@@ -2,11 +2,11 @@ import isEqual from 'lodash/isEqual';
 import set from 'lodash/set';
 import pluralize from 'pluralize';
 
-import { IntegrationBase } from 'services/IntegrationsService';
-import { IntegrationSource, IntegrationType } from 'types/integration';
-import { ImageIntegrationCategory } from 'types/imageIntegration.proto';
+import type { IntegrationBase } from 'services/IntegrationsService';
+import type { IntegrationSource, IntegrationType } from 'types/integration';
+import type { ImageIntegrationCategory } from 'types/imageIntegration.proto';
 
-import { Traits } from 'types/traits.proto';
+import type { Traits } from 'types/traits.proto';
 
 export type { IntegrationSource, IntegrationType };
 
@@ -125,20 +125,6 @@ export const daysOfWeek = [
 export const timesOfDay = new Array(24)
     .fill(1)
     .map((_, t) => `${t.toString().padStart(2, '0')}:00`);
-
-export function backupScheduleDescriptor() {
-    return {
-        accessor: ({ schedule }) => {
-            if (schedule.intervalType === 'WEEKLY') {
-                return `Weekly on ${daysOfWeek[schedule.weekly.day]} at ${
-                    timesOfDay[schedule.hour]
-                } UTC`;
-            }
-            return `Daily at ${timesOfDay[schedule.hour]} UTC`;
-        },
-        Header: 'Schedule',
-    };
-}
 
 // Utilities for image integrations which can have either or both of two categories.
 

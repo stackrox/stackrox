@@ -1,9 +1,8 @@
-import React from 'react';
 import {
     DescriptionList,
+    DescriptionListDescription,
     DescriptionListGroup,
     DescriptionListTerm,
-    DescriptionListDescription,
 } from '@patternfly/react-core';
 
 import type { ClusterStatus } from 'types/cluster.proto';
@@ -18,7 +17,7 @@ function ClusterMetadata({ status }: ClusterMetadataProps) {
     return (
         <DescriptionList>
             <DescriptionListGroup>
-                <DescriptionListTerm>ClusterStatus</DescriptionListTerm>
+                <DescriptionListTerm>Kubernetes version</DescriptionListTerm>
                 <DescriptionListDescription>
                     {formatKubernetesVersion(status?.orchestratorMetadata)}
                 </DescriptionListDescription>

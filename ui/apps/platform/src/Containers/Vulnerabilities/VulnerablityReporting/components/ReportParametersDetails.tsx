@@ -1,4 +1,3 @@
-import React from 'react';
 import type { ReactElement } from 'react';
 import {
     DescriptionList,
@@ -10,15 +9,12 @@ import {
     Title,
 } from '@patternfly/react-core';
 
-import { ReportFormValues } from 'Containers/Vulnerabilities/VulnerablityReporting/forms/useReportFormValues';
 import { fixabilityLabels } from 'constants/reportConstants';
-import {
-    getCVEsDiscoveredSinceText,
-    imageTypeLabelMap,
-} from 'Containers/Vulnerabilities/VulnerablityReporting/utils';
-
 import VulnerabilitySeverityIconText from 'Components/PatternFly/IconText/VulnerabilitySeverityIconText';
 import useFeatureFlags from 'hooks/useFeatureFlags';
+
+import type { ReportFormValues } from '../forms/useReportFormValues';
+import { getCVEsDiscoveredSinceText, imageTypeLabelMap } from '../utils';
 
 export type ReportParametersDetailsProps = {
     headingLevel: 'h2' | 'h3';
@@ -54,15 +50,14 @@ function ReportParametersDetails({
         );
     }
     /*
-    // Ross CISA KEV includeKnownExploit?
     if (
         isFeatureFlagEnabled('ROX_SCANNER_V4') &&
-        isFeatureFlagEnabled('ROX_WHATEVER') &&
+        isFeatureFlagEnabled('ROX_CISA_KEV') &&
         formValues.reportParameters.includeKnownExploit
     ) {
         optionalColumnsDescriptions.push(
             <DescriptionListDescription key="includeKnownExploit">
-                Known exploit
+                Known Exploit and Known Ransomware Campaign
             </DescriptionListDescription>
         );
     }

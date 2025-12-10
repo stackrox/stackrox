@@ -93,7 +93,7 @@ func (p *pipelineImpl) Run(
 		logging.GetRateLimitedLogger().Warn(
 			"Error while trying to update secured units usage: ", err.Error())
 	}
-	clusterTelemetry.UpdateSecuredClusterIdentity(ctx, clusterID, clusterMetrics)
+	go clusterTelemetry.UpdateSecuredClusterIdentity(ctx, clusterID, clusterMetrics)
 	return nil
 }
 

@@ -142,7 +142,7 @@ func Test_probeServerHandler_Central(t *testing.T) {
 			}, tt.source)
 
 			res := httptest.NewRecorder()
-			req, err := http.NewRequest("GET", tt.reqURL, nil)
+			req, err := http.NewRequest(http.MethodGet, tt.reqURL, nil)
 			assert.NoError(t, err)
 			h.ServeHTTP(res, req)
 

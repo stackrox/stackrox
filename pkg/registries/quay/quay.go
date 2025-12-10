@@ -126,7 +126,7 @@ func NewRegistryFromConfig(config *storage.QuayConfig, integration *storage.Imag
 func newRegistry(integration *storage.ImageIntegration, disableRepoList bool,
 	metricsHandler *types.MetricsHandler,
 ) (types.Registry, error) {
-	quayConfig, ok := integration.IntegrationConfig.(*storage.ImageIntegration_Quay)
+	quayConfig, ok := integration.GetIntegrationConfig().(*storage.ImageIntegration_Quay)
 	if !ok {
 		return nil, errors.New("Quay config must be specified")
 	}

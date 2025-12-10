@@ -14,6 +14,7 @@ export type ScanComponent = {
     fixedBy: string;
     executables: ScanComponentExecutable[];
     architecture: string;
+    notes: Note[];
 };
 
 type ScanComponentExecutable = {
@@ -21,7 +22,9 @@ type ScanComponentExecutable = {
     dependencies: string[];
 };
 
-type SourceType =
+type Note = 'UNSPECIFIED' | 'UNSCANNED';
+
+export type SourceType =
     | 'OS'
     | 'PYTHON'
     | 'JAVA'

@@ -1,6 +1,6 @@
-import { ListenPort } from 'types/networkFlow.proto';
-import { CustomEdgeModel, CustomNodeModel, DeploymentNodeModel } from '../types/topology.type';
-import { Flow } from '../types/flow.type';
+import type { ListenPort } from 'types/networkFlow.proto';
+import type { CustomEdgeModel, CustomNodeModel, DeploymentNodeModel } from '../types/topology.type';
+import type { Flow } from '../types/flow.type';
 
 /* node helper functions */
 

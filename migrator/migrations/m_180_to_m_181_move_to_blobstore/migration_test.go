@@ -85,7 +85,7 @@ func (s *blobMigrationTestSuite) TestScannerDefinitionMigration() {
 	tx := s.db.GetGormDB().Begin()
 	s.Require().NoError(err)
 	los := &largeobject.LargeObjects{DB: tx}
-	s.Require().NoError(los.Get(blob.Oid, buf))
+	s.Require().NoError(los.Get(blob.GetOid(), buf))
 	s.Equal(len(randomData), buf.Len())
 	s.Equal(randomData, buf.Bytes())
 	s.NoError(tx.Commit().Error)
@@ -96,7 +96,7 @@ func (s *blobMigrationTestSuite) TestScannerDefinitionMigration() {
 	tx = s.db.GetGormDB().Begin()
 	los = &largeobject.LargeObjects{DB: tx}
 	s.Require().NoError(err)
-	s.Require().NoError(los.Get(blob.Oid, buf))
+	s.Require().NoError(los.Get(blob.GetOid(), buf))
 	s.Equal(len(randomData), buf.Len())
 	s.Equal(randomData, buf.Bytes())
 	s.NoError(tx.Commit().Error)
@@ -138,8 +138,8 @@ func (s *blobMigrationTestSuite) TestUploadProbeMigration() {
 	tx := s.db.GetGormDB().Begin()
 	s.Require().NoError(err)
 	los := &largeobject.LargeObjects{DB: tx}
-	s.Require().NoError(los.Get(blob.Oid, buf))
-	s.Equal(binenc.BigEndian.EncodeUint32(crc32Sum), []byte(blob.Checksum))
+	s.Require().NoError(los.Get(blob.GetOid(), buf))
+	s.Equal(binenc.BigEndian.EncodeUint32(crc32Sum), []byte(blob.GetChecksum()))
 	s.Equal(len(data), buf.Len())
 	s.Equal(data, buf.Bytes())
 	s.NoError(tx.Commit().Error)
@@ -150,8 +150,8 @@ func (s *blobMigrationTestSuite) TestUploadProbeMigration() {
 	tx = s.db.GetGormDB().Begin()
 	los = &largeobject.LargeObjects{DB: tx}
 	s.Require().NoError(err)
-	s.Require().NoError(los.Get(blob.Oid, buf))
-	s.Equal(binenc.BigEndian.EncodeUint32(crc32Sum), []byte(blob.Checksum))
+	s.Require().NoError(los.Get(blob.GetOid(), buf))
+	s.Equal(binenc.BigEndian.EncodeUint32(crc32Sum), []byte(blob.GetChecksum()))
 	s.Equal(len(data), buf.Len())
 	s.Equal(data, buf.Bytes())
 	s.NoError(tx.Commit().Error)

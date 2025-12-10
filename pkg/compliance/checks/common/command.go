@@ -49,7 +49,7 @@ func getFailOverride(overrides []FailOverride) FailOverride {
 // GetProcess returns the commandline object that matches the process name
 func GetProcess(ret *standards.ComplianceData, processName string) (*compliance.CommandLine, bool) {
 	for _, c := range ret.CommandLines {
-		if strings.Contains(c.Process, processName) {
+		if strings.Contains(c.GetProcess(), processName) {
 			return c, true
 		}
 	}
@@ -83,7 +83,7 @@ func GetValuesForCommandFromFlagsAndConfig(args []*compliance.CommandLine_Args, 
 func GetValuesForFlag(args []*compliance.CommandLine_Args, key string) []string {
 	var values []string
 	for _, a := range args {
-		if a.Key == key {
+		if a.GetKey() == key {
 			values = append(values, a.GetValues()...)
 		}
 	}
@@ -93,7 +93,7 @@ func GetValuesForFlag(args []*compliance.CommandLine_Args, key string) []string 
 // GetArgForFlag returns the arg that matches the passed key
 func GetArgForFlag(args []*compliance.CommandLine_Args, key string) *compliance.CommandLine_Args {
 	for _, a := range args {
-		if a.Key == key {
+		if a.GetKey() == key {
 			return a
 		}
 	}
@@ -296,7 +296,7 @@ func MasterNodeKubernetesCommandlineCheck(processName, key, target, defaultVal s
 				}
 				return nil
 			}
-			values := GetValuesForCommandFromFlagsAndConfig(process.Args, nil, key)
+			values := GetValuesForCommandFromFlagsAndConfig(process.GetArgs(), nil, key)
 			return evalFunc(values, key, target, defaultVal, failOverride...)
 		},
 		Metadata: &standards.Metadata{

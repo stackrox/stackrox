@@ -80,12 +80,12 @@ func stripTypePrefix(s string) string {
 func (s *sensorEventHandler) addMultiplexed(ctx context.Context, msg *central.MsgFromSensor) {
 	event := msg.GetEvent()
 	if event == nil {
-		log.Errorf("Received unknown msg from cluster %s (%s) of type %T. May be due to Sensor (%s) version mismatch with Central (%s)", s.cluster.GetName(), s.cluster.GetId(), msg.Msg, s.sensorVersion, version.GetMainVersion())
+		log.Errorf("Received unknown msg from cluster %s (%s) of type %T. May be due to Sensor (%s) version mismatch with Central (%s)", s.cluster.GetName(), s.cluster.GetId(), msg.GetMsg(), s.sensorVersion, version.GetMainVersion())
 		return
 	}
 
 	var workerType string
-	switch event.Resource.(type) {
+	switch event.GetResource().(type) {
 	// The occurrence of a "Synced" event from the sensor marks the conclusion
 	// of the initial synchronization process.
 	case *central.SensorEvent_Synced:
@@ -134,9 +134,9 @@ func (s *sensorEventHandler) addMultiplexed(ctx context.Context, msg *central.Ms
 		}
 
 		// Default worker type is the event type.
-		workerType = reflectutils.Type(event.Resource)
+		workerType = reflectutils.Type(event.GetResource())
 		if !s.reconciliationMap.IsClosed() {
-			s.reconciliationMap.Add(event.Resource, event.Id)
+			s.reconciliationMap.Add(event.GetResource(), event.GetId())
 		}
 	}
 

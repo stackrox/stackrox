@@ -10,9 +10,9 @@ Let us assume that there is a new (fictitious) feature "Low Energy Consumption M
 ### 1. Add the new setting to the API
 
 Add a new setting for the feature to the appropriate structs within `operator/api/<VERSION>/securedcluster_types.go` and/or `operator/api/<VERSION>/central_types.go`.
-Note the [style recommendations](#style-recommendations) below.
+**Do note** the [style recommendations](#style-recommendations) below first, do not just reuse a pattern from another field without reading them.
 
-For example:
+Here is an example of an string-enum-typed field:
 
 ```go
 // EnergyConsumptionMode is a type for values of spec.energyConsumptionMode.
@@ -46,13 +46,12 @@ The `kubebuilder` validation marker ensures the only possible values are the enu
 For a description of the `kubebuilder`-markers we use in `central_types.go` and `securedcluster_types.go`, see the
 [kubebuilder manual](https://book.kubebuilder.io/reference/markers.html).
 
-Note that as of May 2025 we avoid using static default values, as in e.g.
+Note that as of 2025 Q3 we no longer use static default values, as in e.g.
 
 ```go
 //+kubebuilder:default=...
 ```
 
-You might still see examples of these in legacy code. They are being removed as part of ROX-22588 and ROX-30279.
 Instead, we use:
 - a line in the field's description comment to describe the default (see above), and
 - runtime defaulting in the operator code, which you will add next
@@ -60,7 +59,7 @@ Instead, we use:
 
 ### 2. Set the default value
 
-Add something like this in the [central](https://github.com/stackrox/stackrox/blob/master/operator/internal/central/values/defaults/defaults.go) `defaults.go` file:
+Add something like this in the [central](https://github.com/stackrox/stackrox/blob/master/operator/internal/central/defaults/static.go) `static.go` file:
 
 ```go
 var staticDefaults = platform.CentralSpec{
@@ -70,7 +69,7 @@ var staticDefaults = platform.CentralSpec{
 }
 ```
 
-There is also a [secured cluster](https://github.com/stackrox/stackrox/blob/master/operator/internal/securedcluster/values/defaults/defaults.go) counterpart if you are modifying the `SecuredCluster` CRD.
+There is also a [secured cluster](https://github.com/stackrox/stackrox/blob/master/operator/internal/securedcluster/defaults/static.go) counterpart if you are modifying the `SecuredCluster` CRD.
 
 Note that the last line in the field description should explain how the default is set, using the specific syntax shown above.
 There are unit tests that enforce that the comment matches the default set in the code.
@@ -186,11 +185,18 @@ For certain use-cases some data types are recommended, in particular:
 * `ObjectReference` to refer to specific objects, see [API conventions](https://book.kubebuilder.io/cronjob-tutorial/api-design.html).
 * Use integers with specific width, see [API conventions](https://github.com/kubernetes/community/blob/master/contributors/devel/sig-architecture/api-conventions.md#primitive-types).
 
+**Booleans are forbidden for new fields.**
+* See [API conventions](https://github.com/kubernetes/community/blob/master/contributors/devel/sig-architecture/api-conventions.md#primitive-types) for some of the reasons for discouraging them.
+* In the past we had tolerated these, but these days we have a stronger stance on this topic.
+* The additional reason is that they provide for a poor UX in the OpenShift console operator form-based web UI, now that we stopped using static in-schema defaults.
+* The specific problem is that when a boolean field does not have a schema-level default, it will show as "off" in the UI.
+  However, if its runtime default value is `true`, then there is no obvious way in the UI to switch it off, and - once specified - no real way to make it "unspecified" such that the default kick in.
+  This is because lack of value and false value are expressed in the same way in the UI.
+
 Some data types are discouraged, in particular:
 * Avoid floats in spec, avoid floats in status if possible.
 * Avoid unsigned integers.
 * Avoid iota-based enums, prefer named string constants instead.
-* Think twice about booleans: See [API conventions](https://github.com/kubernetes/community/blob/master/contributors/devel/sig-architecture/api-conventions.md#primitive-types).
 * Maps: See [API conventions](https://github.com/kubernetes/community/blob/master/contributors/devel/sig-architecture/api-conventions.md#lists-of-named-subobjects-preferred-over-maps).
 
 ### Other considerations related to data types:
@@ -200,6 +206,7 @@ Some data types are discouraged, in particular:
 * Constants/Enums: See [API conventions](https://github.com/kubernetes/community/blob/master/contributors/devel/sig-architecture/api-conventions.md#constants).
 * Unions: See [API conventions](https://github.com/kubernetes/community/blob/master/contributors/devel/sig-architecture/api-conventions.md#unions).
 * Defaulting: See [API conventions](https://github.com/kubernetes/community/blob/master/contributors/devel/sig-architecture/api-conventions.md#defaulting) and [Kubernetes Documentation](https://kubernetes.io/docs/tasks/extend-kubernetes/custom-resources/custom-resource-definitions/#defaulting).
+  Note however that we depart somewhat from the conventions as described in [DEFAULTING.md](DEFAULTING.md).
 * Nullability: See [Kubernetes Documentation](https://kubernetes.io/docs/tasks/extend-kubernetes/custom-resources/custom-resource-definitions/#defaulting-and-nullable).
 * Late initialization: See [API Conventions](https://github.com/kubernetes/community/blob/master/contributors/devel/sig-architecture/api-conventions.md#late-initialization).
 * Labels, Selector and Annotations: See [API conventions](https://github.com/kubernetes/community/blob/master/contributors/devel/sig-architecture/api-conventions.md#label-selector-and-annotation-conventions).

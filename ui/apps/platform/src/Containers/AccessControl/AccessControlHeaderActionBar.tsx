@@ -1,4 +1,4 @@
-import React, { ReactElement, ReactNode } from 'react';
+import type { ReactElement, ReactNode } from 'react';
 import { Divider, PageSection, Split, SplitItem } from '@patternfly/react-core';
 
 export type AccessControlHeaderActionBarProps = {

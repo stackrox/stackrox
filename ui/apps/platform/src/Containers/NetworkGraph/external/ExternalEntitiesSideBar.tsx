@@ -1,4 +1,4 @@
-import React, { ReactElement } from 'react';
+import type { ReactElement } from 'react';
 import {
     Divider,
     Flex,
@@ -11,13 +11,13 @@ import {
     ToggleGroupItem,
 } from '@patternfly/react-core';
 
-import { QueryValue } from 'hooks/useURLParameter';
+import type { QueryValue } from 'hooks/useURLParameter';
 
 import { ExternalEntitiesIcon } from '../common/NetworkGraphIcons';
 import ExternalFlowsTable from './ExternalFlowsTable';
 import ExternalIpsContainer from './ExternalIpsContainer';
-import { NetworkScopeHierarchy } from '../types/networkScopeHierarchy';
-import { CustomEdgeModel, CustomNodeModel } from '../types/topology.type';
+import type { NetworkScopeHierarchy } from '../types/networkScopeHierarchy';
+import type { CustomEdgeModel, CustomNodeModel } from '../types/topology.type';
 import { getNodeById } from '../utils/networkGraphUtils';
 import EntityDetails from './EntityDetails';
 

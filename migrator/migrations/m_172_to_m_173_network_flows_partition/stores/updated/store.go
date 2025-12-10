@@ -170,7 +170,7 @@ func (s *flowStoreImpl) readRows(rows pgx.Rows, pred func(*storage.NetworkFlowPr
 		}
 
 		// Apply the predicate function.  Will phase out as we move away form Rocks to where clause
-		if pred == nil || pred(flow.Props) {
+		if pred == nil || pred(flow.GetProps()) {
 			flows = append(flows, flow)
 		}
 	}
@@ -305,15 +305,4 @@ func (s *flowStoreImpl) RemoveStaleFlows(ctx context.Context) error {
 // GetPartitionName - returns the partition name
 func (s *flowStoreImpl) GetPartitionName() string {
 	return s.partitionName
-}
-
-//// Used for testing
-
-func dropTableNetworkflow(ctx context.Context, db postgres.DB) {
-	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS network_flows_v2 CASCADE")
-}
-
-// Destroy destroys the tables
-func Destroy(ctx context.Context, db postgres.DB) {
-	dropTableNetworkflow(ctx, db)
 }

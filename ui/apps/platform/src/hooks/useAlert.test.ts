@@ -1,4 +1,4 @@
-import { renderHook, act } from '@testing-library/react';
+import { act, renderHook } from '@testing-library/react';
 
 import useAlert from './useAlert';
 import type { AlertObj } from './useAlert';

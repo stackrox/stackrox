@@ -302,7 +302,7 @@ func (c *openshiftConnector) identity(ctx context.Context, s Scopes, token *oaut
 func (c *openshiftConnector) user(ctx context.Context, client *http.Client) (u user, err error) {
 	url := strings.TrimSuffix(c.apiURL, "/") + openshiftUsersURL
 
-	req, err := http.NewRequest("GET", url, nil)
+	req, err := http.NewRequest(http.MethodGet, url, nil)
 	if err != nil {
 		return u, errors.Wrap(err, "creating a users request")
 	}

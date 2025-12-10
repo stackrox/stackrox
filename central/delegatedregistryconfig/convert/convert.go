@@ -20,23 +20,23 @@ func StorageToPublicAPI(from *storage.DelegatedRegistryConfig) *v1.DelegatedRegi
 
 	var regs []*v1.DelegatedRegistryConfig_DelegatedRegistry
 
-	if len(from.Registries) > 0 {
-		regs = make([]*v1.DelegatedRegistryConfig_DelegatedRegistry, len(from.Registries))
+	if len(from.GetRegistries()) > 0 {
+		regs = make([]*v1.DelegatedRegistryConfig_DelegatedRegistry, len(from.GetRegistries()))
 
-		for i, reg := range from.Registries {
+		for i, reg := range from.GetRegistries() {
 			regs[i] = &v1.DelegatedRegistryConfig_DelegatedRegistry{
-				ClusterId: reg.ClusterId,
-				Path:      reg.Path,
+				ClusterId: reg.GetClusterId(),
+				Path:      reg.GetPath(),
 			}
 		}
 	}
 
 	// defaults to 0 (NONE) if not found in map
-	enabledFor := v1.DelegatedRegistryConfig_EnabledFor_value[from.EnabledFor.String()]
+	enabledFor := v1.DelegatedRegistryConfig_EnabledFor_value[from.GetEnabledFor().String()]
 
 	return &v1.DelegatedRegistryConfig{
 		EnabledFor:       v1.DelegatedRegistryConfig_EnabledFor(enabledFor),
-		DefaultClusterId: from.DefaultClusterId,
+		DefaultClusterId: from.GetDefaultClusterId(),
 		Registries:       regs,
 	}
 }
@@ -50,23 +50,23 @@ func PublicAPIToStorage(from *v1.DelegatedRegistryConfig) *storage.DelegatedRegi
 
 	var regs []*storage.DelegatedRegistryConfig_DelegatedRegistry
 
-	if len(from.Registries) > 0 {
-		regs = make([]*storage.DelegatedRegistryConfig_DelegatedRegistry, len(from.Registries))
+	if len(from.GetRegistries()) > 0 {
+		regs = make([]*storage.DelegatedRegistryConfig_DelegatedRegistry, len(from.GetRegistries()))
 
-		for i, reg := range from.Registries {
+		for i, reg := range from.GetRegistries() {
 			regs[i] = &storage.DelegatedRegistryConfig_DelegatedRegistry{
-				ClusterId: reg.ClusterId,
-				Path:      reg.Path,
+				ClusterId: reg.GetClusterId(),
+				Path:      reg.GetPath(),
 			}
 		}
 	}
 
 	// defaults to 0 (NONE) if not found in map
-	enabledFor := storage.DelegatedRegistryConfig_EnabledFor_value[from.EnabledFor.String()]
+	enabledFor := storage.DelegatedRegistryConfig_EnabledFor_value[from.GetEnabledFor().String()]
 
 	return &storage.DelegatedRegistryConfig{
 		EnabledFor:       storage.DelegatedRegistryConfig_EnabledFor(enabledFor),
-		DefaultClusterId: from.DefaultClusterId,
+		DefaultClusterId: from.GetDefaultClusterId(),
 		Registries:       regs,
 	}
 }
@@ -80,18 +80,18 @@ func PublicAPIToInternalAPI(from *v1.DelegatedRegistryConfig) *central.Delegated
 
 	var regs []*central.DelegatedRegistryConfig_DelegatedRegistry
 
-	if len(from.Registries) > 0 {
-		regs = make([]*central.DelegatedRegistryConfig_DelegatedRegistry, len(from.Registries))
+	if len(from.GetRegistries()) > 0 {
+		regs = make([]*central.DelegatedRegistryConfig_DelegatedRegistry, len(from.GetRegistries()))
 
-		for i, reg := range from.Registries {
+		for i, reg := range from.GetRegistries() {
 			regs[i] = &central.DelegatedRegistryConfig_DelegatedRegistry{
-				Path: reg.Path,
+				Path: reg.GetPath(),
 			}
 		}
 	}
 
 	// defaults to 0 (NONE) if not found in map
-	enabledFor := storage.DelegatedRegistryConfig_EnabledFor_value[from.EnabledFor.String()]
+	enabledFor := storage.DelegatedRegistryConfig_EnabledFor_value[from.GetEnabledFor().String()]
 
 	return &central.DelegatedRegistryConfig{
 		EnabledFor: central.DelegatedRegistryConfig_EnabledFor(enabledFor),
@@ -108,18 +108,18 @@ func StorageToInternalAPI(from *storage.DelegatedRegistryConfig) *central.Delega
 
 	var regs []*central.DelegatedRegistryConfig_DelegatedRegistry
 
-	if len(from.Registries) > 0 {
-		regs = make([]*central.DelegatedRegistryConfig_DelegatedRegistry, len(from.Registries))
+	if len(from.GetRegistries()) > 0 {
+		regs = make([]*central.DelegatedRegistryConfig_DelegatedRegistry, len(from.GetRegistries()))
 
-		for i, reg := range from.Registries {
+		for i, reg := range from.GetRegistries() {
 			regs[i] = &central.DelegatedRegistryConfig_DelegatedRegistry{
-				Path: reg.Path,
+				Path: reg.GetPath(),
 			}
 		}
 	}
 
 	// defaults to 0 (NONE) if not found in map
-	enabledFor := v1.DelegatedRegistryConfig_EnabledFor_value[from.EnabledFor.String()]
+	enabledFor := v1.DelegatedRegistryConfig_EnabledFor_value[from.GetEnabledFor().String()]
 
 	return &central.DelegatedRegistryConfig{
 		EnabledFor: central.DelegatedRegistryConfig_EnabledFor(enabledFor),

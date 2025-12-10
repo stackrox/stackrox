@@ -1,4 +1,3 @@
-import React from 'react';
 import { Link } from 'react-router-dom-v5-compat';
 import {
     Pagination,
@@ -10,16 +9,20 @@ import {
 import { Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 
 import TbodyUnified from 'Components/TableStateTemplates/TbodyUnified';
-import { UseURLPaginationResult } from 'hooks/useURLPagination';
-import { UseURLSortResult } from 'hooks/useURLSort';
-import { ClusterCheckStatus } from 'services/ComplianceResultsService';
-import { TableUIState } from 'utils/getTableUIState';
+import type { UseURLPaginationResult } from 'hooks/useURLPagination';
+import type { UseURLSortResult } from 'hooks/useURLSort';
+import type { ClusterCheckStatus } from 'services/ComplianceResultsService';
+import type { TableUIState } from 'utils/getTableUIState';
 
 import CompoundSearchFilter from 'Components/CompoundSearchFilter/components/CompoundSearchFilter';
-import { makeFilterChipDescriptors } from 'Components/CompoundSearchFilter/utils/utils';
-import SearchFilterChips from 'Components/PatternFly/SearchFilterChips';
-import { CompoundSearchFilterConfig, OnSearchPayload } from 'Components/CompoundSearchFilter/types';
-import { SearchFilter } from 'types/search';
+import SearchFilterChips, {
+    makeFilterChipDescriptors,
+} from 'Components/CompoundSearchFilter/components/SearchFilterChips';
+import type {
+    CompoundSearchFilterConfig,
+    OnSearchCallback,
+} from 'Components/CompoundSearchFilter/types';
+import type { SearchFilter } from 'types/search';
 
 import { coverageClusterDetailsPath } from './compliance.coverage.routes';
 import {
@@ -43,7 +46,7 @@ export type CheckDetailsTableProps = {
     searchFilterConfig: CompoundSearchFilterConfig;
     searchFilter: SearchFilter;
     onFilterChange: (newFilter: SearchFilter) => void;
-    onSearch: (payload: OnSearchPayload) => void;
+    onSearch: OnSearchCallback;
     onCheckStatusSelect: (
         filterType: 'Compliance Check Status',
         checked: boolean,

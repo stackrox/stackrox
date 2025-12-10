@@ -32,8 +32,14 @@ export type EPSS = {
     epssPercentile: number; // float fraction between 0 and 1 inclusive
 };
 
+export type Exploit = {
+    exists: boolean; // This will always be true.
+    knownRansomwareCampaignUse: boolean;
+};
+
 export type CveBaseInfo = {
     epss: EPSS | null;
+    exploit: Exploit | null; // null if no known exploit
 };
 
 export type CVSSV2 = {

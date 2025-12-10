@@ -1,4 +1,5 @@
-import { nodeScanMessages, ScanMessage } from 'messages/vulnMgmt.messages';
+import { nodeScanMessages } from 'messages/vulnMgmt.messages';
+import type { ScanMessage } from 'messages/vulnMgmt.messages';
 
 export default function getNodeScanMessage(nodeNotes: string[], scanNotes: string[]): ScanMessage {
     const hasMissingScanData = nodeNotes?.includes('MISSING_SCAN_DATA');

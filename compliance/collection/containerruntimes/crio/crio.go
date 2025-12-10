@@ -37,7 +37,7 @@ func GetContainerRuntimeData() (*compliance.ContainerRuntimeInfo, error) {
 		}
 	}
 
-	common.AugmentInsecureRegistriesConfig(cri.InsecureRegistries)
+	common.AugmentInsecureRegistriesConfig(cri.GetInsecureRegistries())
 
 	return cri, nil
 }

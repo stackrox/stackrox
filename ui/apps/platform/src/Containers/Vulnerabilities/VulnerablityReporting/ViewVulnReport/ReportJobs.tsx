@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import {
     ActionsColumn,
     ExpandableRowContent,
@@ -29,33 +29,33 @@ import {
 } from '@patternfly/react-core';
 import { ExclamationCircleIcon, FilterIcon } from '@patternfly/react-icons';
 
-import { ReportConfiguration } from 'services/ReportsService.types';
+import type { ConfiguredReportSnapshot, ReportConfiguration } from 'services/ReportsService.types';
 import { getDateTime } from 'utils/dateUtils';
-import { sanitizeFilename } from 'utils/fileUtils';
-import { getReportFormValuesFromConfiguration } from 'Containers/Vulnerabilities/VulnerablityReporting/utils';
 import useSet from 'hooks/useSet';
 import useURLPagination from 'hooks/useURLPagination';
 import useInterval from 'hooks/useInterval';
-import useFetchReportHistory from 'Containers/Vulnerabilities/VulnerablityReporting/api/useFetchReportHistory';
-import { getRequestQueryString } from 'Containers/Vulnerabilities/VulnerablityReporting/api/apiUtils';
 import useURLSort from 'hooks/useURLSort';
-import { saveFile } from 'services/DownloadService';
-import useDeleteDownloadModal from 'Containers/Vulnerabilities/VulnerablityReporting/hooks/useDeleteDownloadModal';
+import { deleteDownloadableReport, downloadReportByJobId } from 'services/ReportsService';
 import useAuthStatus from 'hooks/useAuthStatus';
 
 import DeleteModal from 'Components/PatternFly/DeleteModal';
 import EmptyStateTemplate from 'Components/EmptyStateTemplate/EmptyStateTemplate';
 import CheckboxSelect from 'Components/PatternFly/CheckboxSelect';
-import { TemplatePreviewArgs } from 'Components/EmailTemplate/EmailTemplateModal';
+import type { TemplatePreviewArgs } from 'Components/EmailTemplate/EmailTemplateModal';
 import NotifierConfigurationView from 'Components/NotifierConfiguration/NotifierConfigurationView';
 
-import { RunState, runStates } from 'types/reportJob';
-import { deleteDownloadableReport } from 'services/ReportsService';
+import { runStates } from 'types/reportJob';
+import type { RunState } from 'types/reportJob';
 import ReportJobStatus from 'Components/ReportJob/ReportJobStatus';
+
+import { getRequestQueryString } from '../api/apiUtils';
+import useFetchReportHistory from '../api/useFetchReportHistory';
 import EmailTemplatePreview from '../components/EmailTemplatePreview';
 import ReportParametersDetails from '../components/ReportParametersDetails';
 import ScheduleDetails from '../components/ScheduleDetails';
 import { defaultEmailBody, getDefaultEmailSubject } from '../forms/emailTemplateFormUtils';
+import useDeleteDownloadModal from '../hooks/useDeleteDownloadModal';
+import { getReportFormValuesFromConfiguration } from '../utils';
 import JobDetails from './JobDetails';
 
 export type ReportJobsProps = {
@@ -69,12 +69,23 @@ const sortOptions = {
 
 const headingLevel = 'h2';
 
+const onDownload = (snapshot: ConfiguredReportSnapshot) => () => {
+    const { reportJobId, name, reportStatus } = snapshot;
+    const { completedAt } = reportStatus;
+    const filename = `${name}-${completedAt}`;
+    return downloadReportByJobId({
+        reportJobId,
+        filename,
+        fileExtension: 'zip',
+    });
+};
+
 function ReportJobs({ reportId }: ReportJobsProps) {
     const { currentUser } = useAuthStatus();
     const { page, perPage, setPage, setPerPage } = useURLPagination(10);
     const { sortOption, getSortParams } = useURLSort(sortOptions);
     const [filteredStatuses, setFilteredStatuses] = useState<RunState[]>([]);
-    const [showOnlyMyJobs, setShowOnlyMyJobs] = React.useState<boolean>(false);
+    const [showOnlyMyJobs, setShowOnlyMyJobs] = useState<boolean>(false);
     const expandedRowSet = useSet<string>();
 
     const query = getRequestQueryString({
@@ -263,19 +274,6 @@ function ReportJobs({ reportId }: ReportJobsProps) {
                             getReportFormValuesFromConfiguration(reportConfiguration);
                         const areDownloadActionsDisabled = currentUser.userId !== user.id;
 
-                        function onDownload() {
-                            const { completedAt } = reportStatus;
-                            const filename = `${name}-${completedAt}`;
-                            const sanitizedFilename = sanitizeFilename(filename);
-                            return saveFile({
-                                method: 'get',
-                                url: `/api/reports/jobs/download?id=${reportJobId}`,
-                                data: null,
-                                timeout: 300000,
-                                name: `${sanitizedFilename}.zip`,
-                            });
-                        }
-
                         const rowActions = [
                             {
                                 title: (
@@ -310,7 +308,7 @@ function ReportJobs({ reportId }: ReportJobsProps) {
                                             reportStatus={reportSnapshot.reportStatus}
                                             isDownloadAvailable={reportSnapshot.isDownloadAvailable}
                                             areDownloadActionsDisabled={areDownloadActionsDisabled}
-                                            onDownload={onDownload}
+                                            onDownload={onDownload(reportSnapshot)}
                                         />
                                     </Td>
                                     <Td dataLabel="Requester">{user.name}</Td>

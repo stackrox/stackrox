@@ -1,5 +1,5 @@
-import React from 'react';
+import { createContext } from 'react';
 
-const ClusteredEventsVisibilityContext = React.createContext(false);
+const ClusteredEventsVisibilityContext = createContext(false);
 
 export default ClusteredEventsVisibilityContext;

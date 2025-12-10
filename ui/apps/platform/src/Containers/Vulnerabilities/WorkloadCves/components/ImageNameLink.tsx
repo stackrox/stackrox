@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Link } from 'react-router-dom-v5-compat';
 import { Button, Flex, FlexItem, Tooltip, Truncate } from '@patternfly/react-core';
 import { OutlinedCopyIcon } from '@patternfly/react-icons';
@@ -15,10 +15,9 @@ export type ImageNameLinkProps = {
         tag: string;
     };
     id: string;
-    children?: React.ReactNode;
 };
 
-function ImageNameLink({ name, id, children }: ImageNameLinkProps) {
+function ImageNameLink({ name, id }: ImageNameLinkProps) {
     const { urlBuilder } = useWorkloadCveViewContext();
     const vulnerabilityState = useVulnerabilityState();
     const [copyIconTooltip, setCopyIconTooltip] = useState('Copy image name');
@@ -45,7 +44,6 @@ function ImageNameLink({ name, id, children }: ImageNameLinkProps) {
                     <Truncate position="middle" content={baseName} />
                 </Link>{' '}
                 <span className="pf-v5-u-color-200 pf-v5-u-font-size-sm">in {registry}</span>
-                <div>{children}</div>
             </Flex>
             <FlexItem>
                 <Tooltip

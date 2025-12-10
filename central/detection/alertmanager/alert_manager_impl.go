@@ -174,6 +174,14 @@ func lastTime(processes []*storage.ProcessIndicator) (*time.Time, error) {
 	return lastTime, nil
 }
 
+func lastFileTime(files []*storage.FileAccess) (*time.Time, error) {
+	if len(files) == 0 {
+		return nil, errors.New("Unexpected: no files found in the alert")
+	}
+	lastTime := protocompat.ConvertTimestampToTimeOrNil(files[len(files)-1].GetTimestamp())
+	return lastTime, nil
+}
+
 // Some processes in the old alert might have been deleted from the process store because of our pruning,
 // which means they only exist in the old alert, and will not be in the new generated alert.
 // We don't want to lose them, though, so we keep all the processes from the old alert, and add ones from the new, if any.
@@ -216,10 +224,11 @@ func mergeProcessesFromOldIntoNew(old, newAlert *storage.Alert) (newAlertHasNewP
 		return
 	}
 	if len(newProcessesSlice) > maxRunTimeViolationsPerAlert {
-		newProcessesSlice = newProcessesSlice[:maxRunTimeViolationsPerAlert]
+		// prioritize newer events over old ones
+		newProcessesSlice = newProcessesSlice[len(newProcessesSlice)-maxRunTimeViolationsPerAlert:]
 	}
 	newAlert.ProcessViolation.Processes = newProcessesSlice
-	printer.UpdateProcessAlertViolationMessage(newAlert.ProcessViolation)
+	printer.UpdateProcessAlertViolationMessage(newAlert.GetProcessViolation())
 	return
 }
 
@@ -229,12 +238,60 @@ func mergeNetworkFlowViolations(old, new *storage.Alert) bool {
 	return mergeAlertsByLatestFirst(old, new, storage.Alert_Violation_NETWORK_FLOW)
 }
 
+func mergeFileAccessViolations(oldAlert, newAlert *storage.Alert) bool {
+	newViolations := newAlert.GetFileAccessViolation()
+	oldViolations := oldAlert.GetFileAccessViolation()
+
+	numNewAccesses := len(newViolations.GetAccesses())
+	numOldAccesses := len(oldViolations.GetAccesses())
+
+	if numNewAccesses == 0 || numOldAccesses >= maxRunTimeViolationsPerAlert {
+		return false
+	}
+
+	// start with old violations and merge with new
+	mergedFileAccesses := oldViolations.GetAccesses()
+	lastAccessTime, err := lastFileTime(mergedFileAccesses)
+	if err != nil {
+		log.Errorf(
+			"Failed to merge alerts. "+
+				"New alert %s (policy=%s) has %d file accesses and old alert %s (policy=%s) has %d file accesses: %v",
+			newAlert.GetId(), newAlert.GetPolicy().GetName(), numNewAccesses,
+			oldAlert.GetId(), oldAlert.GetPolicy().GetName(), numOldAccesses, err,
+		)
+		// At this point, we know that the new alert has non-zero file violations but it cannot be merged.
+		return true
+	}
+
+	hasNewAccesses := false
+	for _, access := range newViolations.GetAccesses() {
+		if protocompat.CompareTimestampToTime(access.GetTimestamp(), lastAccessTime) > 0 {
+			hasNewAccesses = true
+			mergedFileAccesses = append(mergedFileAccesses, access)
+		}
+	}
+	// If there are no new accesses, we'll just use the old alert.
+	if !hasNewAccesses {
+		return hasNewAccesses
+	}
+
+	if len(mergedFileAccesses) > maxRunTimeViolationsPerAlert {
+		// prioritize newer events over old ones
+		mergedFileAccesses = mergedFileAccesses[len(mergedFileAccesses)-maxRunTimeViolationsPerAlert:]
+	}
+
+	newAlert.FileAccessViolation.Accesses = mergedFileAccesses
+	printer.UpdateFileAccessAlertViolationMessage(newAlert.GetFileAccessViolation())
+	return true
+}
+
 // mergeRunTimeAlerts merges run-time alerts, and returns true if new alert has at least one new run-time violation.
 func mergeRunTimeAlerts(old, newAlert *storage.Alert) bool {
 	newAlertHasNewProcesses := mergeProcessesFromOldIntoNew(old, newAlert)
 	newAlertHasNewEventViolations := mergeK8sEventViolations(old, newAlert)
 	newAlertHasNewNetworkFlowViolations := mergeNetworkFlowViolations(old, newAlert)
-	return newAlertHasNewProcesses || newAlertHasNewEventViolations || newAlertHasNewNetworkFlowViolations
+	newAlertHasNewFileAccessViolations := mergeFileAccessViolations(old, newAlert)
+	return newAlertHasNewProcesses || newAlertHasNewEventViolations || newAlertHasNewNetworkFlowViolations || newAlertHasNewFileAccessViolations
 }
 
 // Given the nature of an event, each event it anticipated to generate exactly one alert (one or more violations).
@@ -444,6 +501,8 @@ func alertsAreForSamePolicyAndEntity(a1, a2 *storage.Alert) bool {
 		return a1.GetDeployment().GetId() == a2.GetDeployment().GetId()
 	} else if a1.GetResource() != nil && a2.GetResource() != nil {
 		return alertsAreForSameResource(a1.GetResource(), a2.GetResource())
+	} else if a1.GetNode() != nil && a2.GetNode() != nil {
+		return alertsAreForSameNode(a1.GetNode(), a2.GetNode())
 	}
 	return false
 }
@@ -453,4 +512,10 @@ func alertsAreForSameResource(a1, a2 *storage.Alert_Resource) bool {
 		a1.GetName() == a2.GetName() &&
 		a1.GetClusterId() == a2.GetClusterId() &&
 		a1.GetNamespace() == a2.GetNamespace()
+}
+
+func alertsAreForSameNode(a1, a2 *storage.Alert_Node) bool {
+	return a1.GetId() == a2.GetId() &&
+		a1.GetName() == a2.GetName() &&
+		a1.GetClusterId() == a2.GetClusterId()
 }

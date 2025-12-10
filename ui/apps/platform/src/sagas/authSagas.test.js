@@ -1,10 +1,10 @@
-import { select, call } from 'redux-saga/effects';
+import { call, select } from 'redux-saga/effects';
 import { push } from 'connected-react-router';
 import { expectSaga } from 'redux-saga-test-plan';
 import { dynamic, throwError } from 'redux-saga-test-plan/providers';
 
 import { selectors } from 'reducers';
-import { actions, AUTH_STATUS } from 'reducers/auth';
+import { AUTH_STATUS, actions } from 'reducers/auth';
 import {
     AuthHttpError as AuthServiceAuthHttpError,
     exchangeAuthToken as authServiceExchangeAuthToken,

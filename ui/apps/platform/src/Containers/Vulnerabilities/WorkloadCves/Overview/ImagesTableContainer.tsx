@@ -1,21 +1,18 @@
-import React from 'react';
 import { Divider, ToolbarItem } from '@patternfly/react-core';
 
-import useURLSort from 'hooks/useURLSort';
-import useURLPagination from 'hooks/useURLPagination';
+import type useURLSort from 'hooks/useURLSort';
+import type useURLPagination from 'hooks/useURLPagination';
 
 import { getTableUIState } from 'utils/getTableUIState';
-import { SearchFilter } from 'types/search';
+import type { SearchFilter } from 'types/search';
 import { overrideManagedColumns, useManagedColumns } from 'hooks/useManagedColumns';
 import type { ColumnConfigOverrides } from 'hooks/useManagedColumns';
 import ColumnManagementButton from 'Components/ColumnManagementButton';
-import ImageOverviewTable, {
-    ImageOverviewTableProps,
-    defaultColumns,
-    tableId,
-} from '../Tables/ImageOverviewTable';
-import { VulnerabilitySeverityLabel } from '../../types';
-import TableEntityToolbar, { TableEntityToolbarProps } from '../../components/TableEntityToolbar';
+import ImageOverviewTable, { defaultColumns, tableId } from '../Tables/ImageOverviewTable';
+import type { ImageOverviewTableProps } from '../Tables/ImageOverviewTable';
+import type { VulnerabilitySeverityLabel } from '../../types';
+import TableEntityToolbar from '../../components/TableEntityToolbar';
+import type { TableEntityToolbarProps } from '../../components/TableEntityToolbar';
 import { useImages } from './useImages';
 
 type ImagesTableContainerProps = {
@@ -89,7 +86,7 @@ function ImagesTableContainer({
             </TableEntityToolbar>
             <Divider component="div" />
             <div
-                className="workload-cves-table-container"
+                style={{ overflowX: 'auto' }}
                 aria-live="polite"
                 aria-busy={loading ? 'true' : 'false'}
             >

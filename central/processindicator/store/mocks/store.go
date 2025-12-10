@@ -59,12 +59,11 @@ func (mr *MockStoreMockRecorder) Count(ctx, q any) *gomock.Call {
 }
 
 // DeleteByQuery mocks base method.
-func (m *MockStore) DeleteByQuery(ctx context.Context, query *v1.Query) ([]string, error) {
+func (m *MockStore) DeleteByQuery(ctx context.Context, query *v1.Query) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "DeleteByQuery", ctx, query)
-	ret0, _ := ret[0].([]string)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
+	ret0, _ := ret[0].(error)
+	return ret0
 }
 
 // DeleteByQuery indicates an expected call of DeleteByQuery.
@@ -175,4 +174,18 @@ func (m *MockStore) Walk(arg0 context.Context, arg1 func(*storage.ProcessIndicat
 func (mr *MockStoreMockRecorder) Walk(arg0, arg1 any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Walk", reflect.TypeOf((*MockStore)(nil).Walk), arg0, arg1)
+}
+
+// WalkByQuery mocks base method.
+func (m *MockStore) WalkByQuery(arg0 context.Context, arg1 *v1.Query, arg2 func(*storage.ProcessIndicator) error) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "WalkByQuery", arg0, arg1, arg2)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// WalkByQuery indicates an expected call of WalkByQuery.
+func (mr *MockStoreMockRecorder) WalkByQuery(arg0, arg1, arg2 any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "WalkByQuery", reflect.TypeOf((*MockStore)(nil).WalkByQuery), arg0, arg1, arg2)
 }

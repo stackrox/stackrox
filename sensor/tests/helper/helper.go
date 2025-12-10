@@ -9,6 +9,7 @@ import (
 	"net"
 	"os"
 	"path"
+	"slices"
 	"strings"
 	"sync/atomic"
 	"testing"
@@ -39,6 +40,9 @@ import (
 	v1 "k8s.io/api/core/v1"
 	v13 "k8s.io/api/networking/v1"
 	v12 "k8s.io/api/rbac/v1"
+	k8sErrors "k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
 
 	// import gcp
@@ -70,7 +74,13 @@ const (
 	certID = "00000000-0000-4000-A000-000000000000"
 
 	// defaultNamespaceCreateTimeout maximum time the test will retry to create a namespace
-	defaultNamespaceCreateTimeout = 10 * time.Minute
+	defaultNamespaceCreateTimeout = 2 * time.Minute
+
+	// crdDeleteMaxWaitTime maximum time the helper will wait for CRDs to be deleted
+	crdDeleteMaxWaitTime = 5 * time.Minute
+
+	// crdDeleteCheckInterval interval for checking CRD deletion status
+	crdDeleteCheckInterval = 10 * time.Second
 )
 
 // K8sResourceInfo is a test file in YAML or a struct
@@ -242,6 +252,11 @@ func (c *TestContext) Resources() *resources.Resources {
 	return c.r
 }
 
+// GetKubernetesClient returns a Kubernetes client interface for direct API access.
+func (c *TestContext) GetKubernetesClient() client.Interface {
+	return client.MustCreateInterfaceFromRest(c.r.GetConfig())
+}
+
 func (c *TestContext) deleteNs(ctx context.Context, t *testing.T, name string) error {
 	nsObj := v1.Namespace{}
 	nsObj.Name = name
@@ -323,7 +338,7 @@ func (c *TestContext) StartFakeGRPC(centralCaps ...string) {
 		message.PolicySync(c.config.InitialSystemPolicies),
 		message.BaselineSync([]*storage.ProcessBaseline{}),
 		message.NetworkBaselineSync(nil),
-		message.DeduperState(c.deduperState.ResourceHashes, c.deduperState.Current, c.deduperState.Total))
+		message.DeduperState(c.deduperState.GetResourceHashes(), c.deduperState.GetCurrent(), c.deduperState.GetTotal()))
 
 	fakeCentral.EnableDeduperState(c.config.SendDeduperState)
 	fakeCentral.SetDeduperState(c.deduperState)
@@ -452,9 +467,9 @@ type GetLastMessageTypeMatcher func(m *central.MsgFromSensor) bool
 
 // GetLastMessageWithEventIDAndType returns the last state sent to central that matches this ID.
 func GetLastMessageWithEventIDAndType(messages []*central.MsgFromSensor, id string, fn GetLastMessageTypeMatcher) *central.MsgFromSensor {
-	for i := len(messages) - 1; i >= 0; i-- {
-		if messages[i].GetEvent().GetId() == id && fn(messages[i]) {
-			return messages[i]
+	for _, msg := range slices.Backward(messages) {
+		if msg.GetEvent().GetId() == id && fn(msg) {
+			return msg
 		}
 	}
 	return nil
@@ -700,9 +715,9 @@ func (c *TestContext) EventIDNotReceived(t *testing.T, id string, typeFn GetLast
 
 // GetLastMessageMatching finds last element in slice matching `matchFn`.
 func GetLastMessageMatching(messages []*central.MsgFromSensor, matchFn MatchResource) *central.MsgFromSensor {
-	for i := len(messages) - 1; i >= 0; i-- {
-		if matchFn(messages[i]) {
-			return messages[i]
+	for _, msg := range slices.Backward(messages) {
+		if matchFn(msg) {
+			return msg
 		}
 	}
 	return nil
@@ -755,6 +770,17 @@ func AssertViolationsMatch(violations ...string) func(result *central.AlertResul
 func AssertNoViolations() func(result *central.AlertResults) error {
 	return func(result *central.AlertResults) error {
 		return alertResultMatchesFn(result)
+	}
+}
+
+// AssertNoEmptyAlertResults creates a matcher function that checks that no empty alert results are sent.
+func AssertNoEmptyAlertResults() func(result *central.AlertResults) error {
+	return func(result *central.AlertResults) error {
+		if len(result.GetAlerts()) == 0 {
+			return errors.New("found empty alert results")
+		}
+
+		return nil
 	}
 }
 
@@ -1000,7 +1026,10 @@ func (c *TestContext) ApplyWithManifestDir(ctx context.Context, dirPath string, 
 		return nil, err
 	}
 	return func() error {
-		return decoder.DeleteWithManifestDir(ctx, c.r, dirPath, pattern, []resources.DeleteOption{})
+		if err := decoder.DeleteWithManifestDir(ctx, c.r, dirPath, pattern, []resources.DeleteOption{}); err != nil {
+			return errors.Wrap(err, "failed to delete manifest resources")
+		}
+		return c.waitForCRDsDeletion(ctx, dirPath, pattern)
 	}, nil
 }
 
@@ -1136,59 +1165,64 @@ func GetFirstMessageWithDeploymentName(messages []*central.MsgFromSensor, ns, na
 
 // GetLastMessageWithDeploymentID find most recent sensor messages by namespace and deployment name
 func GetLastMessageWithDeploymentID(messages []*central.MsgFromSensor, id string) *central.MsgFromSensor {
-	var lastMessage *central.MsgFromSensor
-	for i := len(messages) - 1; i >= 0; i-- {
-		deployment := messages[i].GetEvent().GetDeployment()
+	for _, msg := range slices.Backward(messages) {
+		deployment := msg.GetEvent().GetDeployment()
 		if deployment.GetId() == id {
-			lastMessage = messages[i]
-			break
+			return msg
 		}
 	}
-	return lastMessage
+	return nil
 }
 
 // GetLastMessageWithDeploymentName find most recent sensor messages by namespace and deployment name
 func GetLastMessageWithDeploymentName(messages []*central.MsgFromSensor, ns, name string) *central.MsgFromSensor {
-	var lastMessage *central.MsgFromSensor
-	for i := len(messages) - 1; i >= 0; i-- {
-		deployment := messages[i].GetEvent().GetDeployment()
+	for _, msg := range slices.Backward(messages) {
+		deployment := msg.GetEvent().GetDeployment()
 		if deployment.GetName() == name && deployment.GetNamespace() == ns {
-			lastMessage = messages[i]
-			break
+			return msg
 		}
 	}
-	return lastMessage
+	return nil
 }
 
-// GetAllAlertsWithDeploymentID find all alert messages by deployment ID. If checkEmptyAlerts is set to true it will also check for AlertResults with no Alerts
-func GetAllAlertsWithDeploymentID(messages []*central.MsgFromSensor, id string, checkEmptyAlertResults bool) []*central.MsgFromSensor {
+// GetAllAlertsWithDeploymentID find all alert messages by deployment ID. If onlyEmptyAlertResults is set to true it will return only AlertResults with no Alerts
+func GetAllAlertsWithDeploymentID(messages []*central.MsgFromSensor, id string, onlyEmptyAlertResults bool) []*central.MsgFromSensor {
 	var alerts []*central.MsgFromSensor
-	for i := len(messages) - 1; i >= 0; i-- {
-		if checkEmptyAlertResults && messages[i].GetEvent().GetAlertResults().GetDeploymentId() == id && len(messages[i].GetEvent().GetAlertResults().GetAlerts()) == 0 {
-			alerts = append(alerts, messages[i])
+	for _, msg := range slices.Backward(messages) {
+		alertResults := msg.GetEvent().GetAlertResults()
+		if alertResults.GetDeploymentId() != id {
 			continue
 		}
-		if messages[i].GetEvent().GetAlertResults().GetDeploymentId() == id {
-			alerts = append(alerts, messages[i])
+
+		if !onlyEmptyAlertResults {
+			alerts = append(alerts, msg)
+			continue
+		}
+
+		if len(alertResults.GetAlerts()) == 0 {
+			alerts = append(alerts, msg)
 		}
 	}
 	return alerts
 }
 
-// GetLastAlertsWithDeploymentID find most recent alert message by deployment ID. If checkEmptyAlerts is set to true it will also check for AlertResults with no Alerts
-func GetLastAlertsWithDeploymentID(messages []*central.MsgFromSensor, id string, checkEmptyAlertResults bool) *central.MsgFromSensor {
-	var lastMessage *central.MsgFromSensor
-	for i := len(messages) - 1; i >= 0; i-- {
-		if checkEmptyAlertResults && messages[i].GetEvent().GetAlertResults().GetDeploymentId() == id && len(messages[i].GetEvent().GetAlertResults().GetAlerts()) == 0 {
-			lastMessage = messages[i]
-			break
+// GetLastAlertsWithDeploymentID find most recent alert message by deployment ID. If onlyEmptyAlertResults is set to true it will return only AlertResults with no Alerts
+func GetLastAlertsWithDeploymentID(messages []*central.MsgFromSensor, id string, onlyEmptyAlertResults bool) *central.MsgFromSensor {
+	for _, msg := range slices.Backward(messages) {
+		alertResults := msg.GetEvent().GetAlertResults()
+		if alertResults.GetDeploymentId() != id {
+			continue
 		}
-		if messages[i].GetEvent().GetAlertResults().GetDeploymentId() == id {
-			lastMessage = messages[i]
-			break
+
+		if !onlyEmptyAlertResults {
+			return msg
+		}
+
+		if len(alertResults.GetAlerts()) == 0 {
+			return msg
 		}
 	}
-	return lastMessage
+	return nil
 }
 
 // GetUniquePodNamesFromPrefix find all unique pod names from sensor events
@@ -1264,4 +1298,59 @@ func newTestRun(options ...TestRunFunc) (*testRun, error) {
 	}
 
 	return t, nil
+}
+
+// waitForCRDsDeletion waits for CustomResourceDefinitions to be fully deleted from the cluster.
+func (c *TestContext) waitForCRDsDeletion(ctx context.Context, dirPath string, pattern string) error {
+	allCRDs, err := decoder.DecodeAllFiles(ctx, os.DirFS(dirPath), pattern)
+	if err != nil {
+		return errors.Wrapf(err, "failed to decode CRDs in %q with pattern %q", dirPath, pattern)
+	}
+
+	crdNames := set.StringSet{}
+	for _, crd := range allCRDs {
+		crdNames.Add(crd.GetName())
+	}
+
+	return execWithRetry(crdDeleteMaxWaitTime, crdDeleteCheckInterval, func() error {
+		for crdName := range crdNames {
+			exists, err := c.crdExists(ctx, crdName)
+
+			if err != nil {
+				return errors.Wrapf(err, "error checking existence of CRD %s", crdName)
+			}
+
+			if !exists {
+				crdNames.Remove(crdName)
+			}
+		}
+
+		if crdNames.Cardinality() > 0 {
+			return errors.Errorf("CRDs %v still exist", crdNames.AsSlice())
+		}
+
+		return nil
+	})
+}
+
+// crdExists checks if a CustomResourceDefinition exists in the cluster.
+func (c *TestContext) crdExists(ctx context.Context, crdName string) (bool, error) {
+	k8sClient := c.GetKubernetesClient()
+
+	resource := schema.GroupVersionResource{
+		Group:    "apiextensions.k8s.io",
+		Version:  "v1",
+		Resource: "customresourcedefinitions",
+	}
+	_, err := k8sClient.Dynamic().Resource(resource).Get(ctx, crdName, metav1.GetOptions{})
+
+	if err == nil {
+		return true, nil
+	}
+
+	if k8sErrors.IsNotFound(err) {
+		return false, nil
+	}
+
+	return false, err
 }

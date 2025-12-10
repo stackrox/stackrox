@@ -1,11 +1,9 @@
-import React from 'react';
 import PropTypes from 'prop-types';
 import { gql } from '@apollo/client';
 
 import ImageActiveIconText from 'Components/PatternFly/IconText/ImageActiveIconText';
 import TableCellLink from 'Components/TableCellLink';
 import TopCvssLabel from 'Components/TopCvssLabel';
-import ImageTableCountLinks from 'Components/workflow/ImageTableCountLinks';
 import CVEStackedPill from 'Components/CVEStackedPill';
 import DateTimeField from 'Components/DateTimeField';
 import {
@@ -23,6 +21,7 @@ import { imageSortFields } from 'constants/sortFields';
 import queryService from 'utils/queryService';
 import WorkflowListPage from '../WorkflowListPage';
 import { getVulnMgmtPathForEntitiesAndId } from '../../VulnMgmt.utils/entities';
+import ImageTableCountLinks from './ImageTableCountLinks';
 
 export const defaultImageSort = [
     {

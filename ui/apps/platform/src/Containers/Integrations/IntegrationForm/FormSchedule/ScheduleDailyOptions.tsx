@@ -1,4 +1,4 @@
-import React, { ReactElement } from 'react';
+import type { ReactElement } from 'react';
 import { FormSelectOption } from '@patternfly/react-core';
 
 import { timesOfDay } from '../../utils/integrationUtils';

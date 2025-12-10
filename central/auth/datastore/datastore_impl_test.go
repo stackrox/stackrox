@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/stackrox/rox/central/auth/m2m"
 	"github.com/stackrox/rox/central/auth/m2m/mocks"
 	"github.com/stackrox/rox/central/auth/store"
 	roleDataStore "github.com/stackrox/rox/central/role/datastore"
@@ -46,6 +47,7 @@ type datastorePostgresTestSuite struct {
 }
 
 func (s *datastorePostgresTestSuite) SetupTest() {
+	m2m.SetKubernetesIssuerForTest(s.T(), testIssuer)
 	s.ctx = sac.WithGlobalAccessScopeChecker(context.Background(),
 		sac.AllowFixedScopes(
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
@@ -78,10 +80,7 @@ func (s *datastorePostgresTestSuite) SetupTest() {
 	s.mockSet.EXPECT().GetTokenExchanger(gomock.Any()).Return(nil, true).AnyTimes()
 	s.mockSet.EXPECT().RollbackExchanger(gomock.Any(), gomock.Any()).Return(nil).AnyTimes()
 
-	issuerFetcher := mocks.NewMockServiceAccountIssuerFetcher(controller)
-	issuerFetcher.EXPECT().GetServiceAccountIssuer().Return("https://localhost", nil).AnyTimes()
-
-	s.authDataStore = New(authStore, s.roleDataStore, s.mockSet, issuerFetcher)
+	s.authDataStore = New(authStore, s.roleDataStore, s.mockSet)
 }
 
 func (s *datastorePostgresTestSuite) TestKubeServiceAccountConfig() {
@@ -90,13 +89,10 @@ func (s *datastorePostgresTestSuite) TestKubeServiceAccountConfig() {
 	authStore := store.New(s.pool.DB)
 
 	mockSet := mocks.NewMockTokenExchangerSet(controller)
-	issuerFetcher := mocks.NewMockServiceAccountIssuerFetcher(controller)
-
-	issuerFetcher.EXPECT().GetServiceAccountIssuer().Return(testIssuer, nil).Times(1)
 	mockSet.EXPECT().UpsertTokenExchanger(gomock.Any(), gomock.Any()).Return(nil).Times(1)
 	mockSet.EXPECT().GetTokenExchanger(gomock.Any()).Return(nil, false).Times(1)
 
-	authDataStore := New(authStore, s.roleDataStore, mockSet, issuerFetcher)
+	authDataStore := New(authStore, s.roleDataStore, mockSet)
 	s.NoError(authDataStore.InitializeTokenExchangers())
 }
 
@@ -107,7 +103,7 @@ type kubeSAMatcher struct{}
 
 func (m kubeSAMatcher) Matches(x any) bool {
 	kubeSAConfig, ok := x.(*storage.AuthMachineToMachineConfig)
-	return ok && kubeSAConfig.Issuer == testIssuer
+	return ok && kubeSAConfig.GetIssuer() == testIssuer
 }
 
 func (m kubeSAMatcher) String() string {
@@ -120,14 +116,11 @@ func (s *datastorePostgresTestSuite) kubeSAM2MConfig(authDataStoreMutator authDa
 	store := store.New(s.pool.DB)
 
 	mockSet := mocks.NewMockTokenExchangerSet(controller)
-	issuerFetcher := mocks.NewMockServiceAccountIssuerFetcher(controller)
-
-	issuerFetcher.EXPECT().GetServiceAccountIssuer().Return(testIssuer, nil).Times(2)
 	mockSet.EXPECT().UpsertTokenExchanger(gomock.Any(), kubeSAMatcher{}).Return(nil).MinTimes(1)
 	mockSet.EXPECT().GetTokenExchanger(gomock.Any()).Return(nil, false).AnyTimes()
 	mockSet.EXPECT().RemoveTokenExchanger(gomock.AssignableToTypeOf("")).Return(nil).AnyTimes()
 
-	authDataStore := New(store, s.roleDataStore, mockSet, issuerFetcher)
+	authDataStore := New(store, s.roleDataStore, mockSet)
 	s.NoError(authDataStore.InitializeTokenExchangers())
 	authDataStoreMutator(authDataStore)
 
@@ -136,12 +129,12 @@ func (s *datastorePostgresTestSuite) kubeSAM2MConfig(authDataStoreMutator authDa
 	mockSet.EXPECT().UpsertTokenExchanger(gomock.Any(), kubeSAMatcher{}).Return(nil).MinTimes(1)
 	mockSet.EXPECT().GetTokenExchanger(gomock.Any()).Return(nil, false).AnyTimes()
 
-	authDataStore = New(store, s.roleDataStore, mockSet, issuerFetcher)
+	authDataStore = New(store, s.roleDataStore, mockSet)
 	s.NoError(authDataStore.InitializeTokenExchangers())
 
 	var kubeSAConfig *storage.AuthMachineToMachineConfig
 	err := authDataStore.ForEachAuthM2MConfig(s.ctx, func(obj *storage.AuthMachineToMachineConfig) error {
-		if obj.Issuer == testIssuer {
+		if obj.GetIssuer() == testIssuer {
 			kubeSAConfig = obj
 		}
 		return nil
@@ -154,21 +147,21 @@ func (s *datastorePostgresTestSuite) TestKubeSAM2MConfigPersistsAfterDelete() {
 	authDataStoreMutator := func(authDataStore DataStore) {
 		var kubeSAConfig *storage.AuthMachineToMachineConfig
 		err := authDataStore.ForEachAuthM2MConfig(s.ctx, func(obj *storage.AuthMachineToMachineConfig) error {
-			if obj.Issuer == testIssuer {
+			if obj.GetIssuer() == testIssuer {
 				kubeSAConfig = obj
 			}
 			return nil
 		})
 		s.NoError(err)
 		s.NotNil(kubeSAConfig)
-		s.NoError(authDataStore.RemoveAuthM2MConfig(s.ctx, kubeSAConfig.Id))
+		s.NoError(authDataStore.RemoveAuthM2MConfig(s.ctx, kubeSAConfig.GetId()))
 	}
 	authDataStoreValidator := func(kubeSAConfig *storage.AuthMachineToMachineConfig) {
 		s.NotNil(kubeSAConfig)
-		s.Equal(1, len(kubeSAConfig.Mappings))
-		s.Equal("sub", kubeSAConfig.Mappings[0].Key)
-		s.Equal("Configuration Controller", kubeSAConfig.Mappings[0].Role)
-		s.Contains(kubeSAConfig.Mappings[0].ValueExpression, "config-controller")
+		s.Equal(1, len(kubeSAConfig.GetMappings()))
+		s.Equal("sub", kubeSAConfig.GetMappings()[0].GetKey())
+		s.Equal("Configuration Controller", kubeSAConfig.GetMappings()[0].GetRole())
+		s.Contains(kubeSAConfig.GetMappings()[0].GetValueExpression(), "config-controller")
 	}
 
 	s.kubeSAM2MConfig(authDataStoreMutator, authDataStoreValidator)
@@ -178,10 +171,10 @@ func (s *datastorePostgresTestSuite) TestKubeSAM2MConfigPersistsAfterRestart() {
 	authDataStoreMutator := func(authDataStore DataStore) {}
 	authDataStoreValidator := func(kubeSAConfig *storage.AuthMachineToMachineConfig) {
 		s.NotNil(kubeSAConfig)
-		s.Equal(1, len(kubeSAConfig.Mappings))
-		s.Equal("sub", kubeSAConfig.Mappings[0].Key)
-		s.Equal("Configuration Controller", kubeSAConfig.Mappings[0].Role)
-		s.Contains(kubeSAConfig.Mappings[0].ValueExpression, "config-controller")
+		s.Equal(1, len(kubeSAConfig.GetMappings()))
+		s.Equal("sub", kubeSAConfig.GetMappings()[0].GetKey())
+		s.Equal("Configuration Controller", kubeSAConfig.GetMappings()[0].GetRole())
+		s.Contains(kubeSAConfig.GetMappings()[0].GetValueExpression(), "config-controller")
 	}
 
 	s.kubeSAM2MConfig(authDataStoreMutator, authDataStoreValidator)
@@ -202,7 +195,7 @@ func (s *datastorePostgresTestSuite) TestKubeSAM2MConfigPersistsAfterModificatio
 	authDataStoreMutator := func(authDataStore DataStore) {
 		var kubeSAConfig *storage.AuthMachineToMachineConfig
 		err := authDataStore.ForEachAuthM2MConfig(s.ctx, func(obj *storage.AuthMachineToMachineConfig) error {
-			if obj.Issuer == testIssuer {
+			if obj.GetIssuer() == testIssuer {
 				kubeSAConfig = obj
 			}
 			return nil
@@ -215,18 +208,18 @@ func (s *datastorePostgresTestSuite) TestKubeSAM2MConfigPersistsAfterModificatio
 	}
 	authDataStoreValidator := func(kubeSAConfig *storage.AuthMachineToMachineConfig) {
 		s.NotNil(kubeSAConfig)
-		s.Equal(2, len(kubeSAConfig.Mappings))
+		s.Equal(2, len(kubeSAConfig.GetMappings()))
 		for _, mapping := range []*storage.AuthMachineToMachineConfig_Mapping{&testMapping, &configControllerMapping} {
 			found := false
-			for _, kubeSAMapping := range kubeSAConfig.Mappings {
-				fmt.Printf("key=%s; role=%s; valueExpression=%s\n", kubeSAMapping.Key, kubeSAMapping.Role, kubeSAMapping.ValueExpression)
-				if kubeSAMapping.Key == mapping.Key && kubeSAMapping.Role == mapping.Role && kubeSAMapping.ValueExpression == mapping.ValueExpression {
+			for _, kubeSAMapping := range kubeSAConfig.GetMappings() {
+				fmt.Printf("key=%s; role=%s; valueExpression=%s\n", kubeSAMapping.GetKey(), kubeSAMapping.GetRole(), kubeSAMapping.GetValueExpression())
+				if kubeSAMapping.GetKey() == mapping.GetKey() && kubeSAMapping.GetRole() == mapping.GetRole() && kubeSAMapping.GetValueExpression() == mapping.GetValueExpression() {
 					found = true
 					break
 				}
 			}
 			if !found {
-				s.FailNowf("Failed to find role mapping", "key=%s; role=%s; valueExpression=%s", mapping.Key, mapping.Role, mapping.ValueExpression)
+				s.FailNowf("Failed to find role mapping", "key=%s; role=%s; valueExpression=%s", mapping.GetKey(), mapping.GetRole(), mapping.GetValueExpression())
 			}
 		}
 	}

@@ -1,21 +1,21 @@
-import React, { ReactElement } from 'react';
+import type { ReactElement } from 'react';
 import { Badge, SelectOption } from '@patternfly/react-core';
-import { Table, Tbody, Td, Thead, Th, Tr } from '@patternfly/react-table';
+import { Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 
 import SelectSingle from 'Components/SelectSingle';
+import {
+    deprecatedResourceRowStyle,
+    replacedResourceMapping,
+    resourceRemovalReleaseVersions,
+    resourceSubstitutions,
+} from 'constants/accessControl';
 import { accessControl as accessTypeLabels } from 'messages/common';
-import { PermissionsMap } from 'services/RolesService';
+import type { PermissionsMap } from 'services/RolesService';
+import type { ResourceName } from 'types/roleResources';
 
 import { ReadAccessIcon, WriteAccessIcon } from './AccessIcons';
 import { getReadAccessCount, getWriteAccessCount } from './permissionSets.utils';
 import { ResourceDescription } from './ResourceDescription';
-import {
-    replacedResourceMapping,
-    resourceRemovalReleaseVersions,
-    resourceSubstitutions,
-    deprecatedResourceRowStyle,
-} from '../../../constants/accessControl';
-import { ResourceName } from '../../../types/roleResources';
 
 export type PermissionsTableProps = {
     resourceToAccess: PermissionsMap;

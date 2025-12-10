@@ -96,6 +96,11 @@ func (s *K8sRolesStoreSuite) TestStore() {
 
 	s.NoError(store.UpsertMany(ctx, k8SRoles))
 
+	foundK8SRoles, missing, err := store.GetMany(ctx, k8SRoleIDs)
+	s.NoError(err)
+	s.Empty(missing)
+	protoassert.ElementsMatch(s.T(), k8SRoles, foundK8SRoles)
+
 	k8SRoleCount, err = store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)
 	s.Equal(200, k8SRoleCount)

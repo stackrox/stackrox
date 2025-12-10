@@ -2,6 +2,7 @@ package postgres
 
 import (
 	"context"
+	"slices"
 	"time"
 
 	"github.com/jackc/pgx/v5"
@@ -72,12 +73,15 @@ type Store[T any, PT pgutils.Unmarshaler[T]] interface {
 	GetIDs(ctx context.Context) ([]string, error)
 	GetIDsByQuery(ctx context.Context, query *v1.Query) ([]string, error)
 	GetMany(ctx context.Context, identifiers []string) ([]PT, []int, error)
-	DeleteByQuery(ctx context.Context, query *v1.Query) ([]string, error)
+	DeleteByQuery(ctx context.Context, query *v1.Query) error
+	DeleteByQueryWithIDs(ctx context.Context, query *v1.Query) ([]string, error)
 	Delete(ctx context.Context, id string) error
 	DeleteMany(ctx context.Context, identifiers []string) error
 	PruneMany(ctx context.Context, identifiers []string) error
 	Upsert(ctx context.Context, obj PT) error
 	UpsertMany(ctx context.Context, objs []PT) error
+	// Deprecated: Use with caution it's unsafe but fast 🐉
+	GetAllFromCacheForSAC() []PT
 }
 
 // genericStore implements subset of Store interface for resources with single ID.
@@ -248,6 +252,7 @@ func (s *genericStore[T, PT]) GetByQueryFn(ctx context.Context, query *v1.Query,
 }
 
 // GetByQuery returns the objects from the store matching the query.
+//
 // Deprecated: Use GetByQueryFn instead
 func (s *genericStore[T, PT]) GetByQuery(ctx context.Context, query *v1.Query) ([]*T, error) {
 	defer s.setPostgresOperationDurationTime(time.Now(), ops.GetByQuery)
@@ -325,7 +330,14 @@ func (s *genericStore[T, PT]) GetMany(ctx context.Context, identifiers []string)
 }
 
 // DeleteByQuery removes the objects from the store based on the passed query.
-func (s *genericStore[T, PT]) DeleteByQuery(ctx context.Context, query *v1.Query) ([]string, error) {
+func (s *genericStore[T, PT]) DeleteByQuery(ctx context.Context, query *v1.Query) error {
+	defer s.setPostgresOperationDurationTime(time.Now(), ops.Remove)
+
+	return RunDeleteRequestForSchema(ctx, s.schema, query, s.db)
+}
+
+// DeleteByQueryWithIDs removes the objects from the store based on the passed query returning deleted IDs.
+func (s *genericStore[T, PT]) DeleteByQueryWithIDs(ctx context.Context, query *v1.Query) ([]string, error) {
 	defer s.setPostgresOperationDurationTime(time.Now(), ops.Remove)
 
 	return RunDeleteRequestReturningIDsForSchema(ctx, s.schema, query, s.db)
@@ -400,7 +412,7 @@ func (s *genericStore[T, PT]) UpsertMany(ctx context.Context, objs []PT) error {
 		// Lock since copyFrom requires a delete first before being executed.  If multiple processes are updating
 		// same subset of rows, both deletes could occur before the copyFrom resulting in unique constraint
 		// violations
-		if len(objs) < batchAfter {
+		if len(objs) < batchAfter || s.copyFromObj == nil {
 			s.mutex.RLock()
 			defer s.mutex.RUnlock()
 
@@ -408,13 +420,13 @@ func (s *genericStore[T, PT]) UpsertMany(ctx context.Context, objs []PT) error {
 		}
 		s.mutex.Lock()
 		defer s.mutex.Unlock()
-
-		if s.copyFromObj == nil {
-			return s.upsert(ctx, objs...)
-		}
-
 		return s.copyFrom(ctx, objs...)
 	})
+}
+
+// GetAllFromCache panics as generic store has no cache.
+func (s *genericStore[T, PT]) GetAllFromCacheForSAC() []PT {
+	panic("generic store has no cache")
 }
 
 func GetDefaultSort(sortOption string, reversed bool) *v1.QuerySortOption {
@@ -445,11 +457,6 @@ func (s *genericStore[T, PT]) upsert(ctx context.Context, objs ...PT) error {
 	if s.insertInto == nil {
 		return utils.ShouldErr(errInvalidOperation)
 	}
-	conn, err := s.acquireConn(ctx, ops.Upsert)
-	if err != nil {
-		return err
-	}
-	defer conn.Release()
 
 	batch := &pgx.Batch{}
 	for _, obj := range objs {
@@ -457,6 +464,21 @@ func (s *genericStore[T, PT]) upsert(ctx context.Context, objs ...PT) error {
 			return errors.Wrap(err, "error on insertInto")
 		}
 	}
+
+	if tx, parentTxExists := postgres.TxFromContext(ctx); parentTxExists {
+		batchResults := postgres.BatchResultsFromPgx(tx.SendBatch(ctx, batch))
+		if err := batchResults.Close(); err != nil {
+			return errors.Wrap(err, "closing batch on transaction")
+		}
+		return nil
+	}
+
+	conn, err := s.acquireConn(ctx, ops.Upsert)
+	if err != nil {
+		return err
+	}
+	defer conn.Release()
+
 	batchResults := conn.SendBatch(ctx, batch)
 	if err := batchResults.Close(); err != nil {
 		return errors.Wrap(err, "closing batch")
@@ -469,46 +491,50 @@ func (s *genericStore[T, PT]) copyFrom(ctx context.Context, objs ...PT) error {
 		return utils.ShouldErr(errInvalidOperation)
 	}
 
-	conn, err := s.acquireConn(ctx, ops.UpsertAll)
-	if err != nil {
-		return err
-	}
-	defer conn.Release()
-
-	tx, err := conn.Begin(ctx)
-	if err != nil {
-		return errors.Wrap(err, "could not begin transaction")
+	// Check if we are already in transaction.
+	// If not let's create one.
+	tx, parentTxExists := postgres.TxFromContext(ctx)
+	if !parentTxExists {
+		conn, err := s.acquireConn(ctx, ops.UpsertAll)
+		if err != nil {
+			return err
+		}
+		defer conn.Release()
+		tx, ctx, err = conn.Begin(ctx)
+		if err != nil {
+			return errors.Wrap(err, "could not begin transaction")
+		}
 	}
 
 	if err := s.copyFromObj(ctx, s, tx, objs...); err != nil {
-		if rollbackErr := tx.Rollback(ctx); rollbackErr != nil {
-			return errors.Wrap(rollbackErr, "could not rollback transaction")
+		// Only rollback if we created the transaction
+		if !parentTxExists {
+			if rollbackErr := tx.Rollback(ctx); rollbackErr != nil {
+				return errors.Wrap(rollbackErr, "could not rollback transaction")
+			}
 		}
 		return errors.Wrap(err, "copy from objects failed")
 	}
-	if err := tx.Commit(ctx); err != nil {
-		return errors.Wrap(err, "could not commit transaction")
+
+	// Only commit if we created the transaction
+	if !parentTxExists {
+		if err := tx.Commit(ctx); err != nil {
+			return errors.Wrap(err, "could not commit transaction")
+		}
 	}
 	return nil
 }
 
 func (s *genericStore[T, PT]) deleteMany(ctx context.Context, identifiers []string, initialBatchSize int, continueOnError bool) error {
 	// Batch the deletes
-	localBatchSize := initialBatchSize
 	deletedCount := 0
 	numberToDelete := len(identifiers)
 
-	for {
-		if len(identifiers) == 0 {
-			break
-		}
+	if initialBatchSize <= 0 {
+		return errors.New("batch size must be greater than 0")
+	}
 
-		if len(identifiers) < localBatchSize {
-			localBatchSize = len(identifiers)
-		}
-
-		identifierBatch := identifiers[:localBatchSize]
-
+	for identifierBatch := range slices.Chunk(identifiers, initialBatchSize) {
 		q := search.NewQueryBuilder().AddDocIDs(identifierBatch...).ProtoQuery()
 
 		if err := RunDeleteRequestForSchema(ctx, s.schema, q, s.db); err != nil {
@@ -523,9 +549,6 @@ func (s *genericStore[T, PT]) deleteMany(ctx context.Context, identifiers []stri
 		}
 		deletedCount = deletedCount + len(identifierBatch)
 		log.Debugf("deleted batch of %d records", len(identifierBatch))
-
-		// Move the slice forward to start the next batch
-		identifiers = identifiers[localBatchSize:]
 	}
 
 	log.Debugf("successfully deleted %d of %d records", deletedCount, numberToDelete)

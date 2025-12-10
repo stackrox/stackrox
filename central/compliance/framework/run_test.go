@@ -62,19 +62,19 @@ func TestOKRun(t *testing.T) {
 	nodeCheckFn := func(ctx ComplianceContext, node *storage.Node) {
 		seenNodeIDs.Add(node.GetId())
 	}
-	expectedNodeIDs := set.NewStringSet(testNodes[0].Id, testNodes[1].Id)
+	expectedNodeIDs := set.NewStringSet(testNodes[0].GetId(), testNodes[1].GetId())
 
 	seenDeploymentIDs := set.NewStringSet()
 	deploymentCheckFn := func(ctx ComplianceContext, deployment *storage.Deployment) {
 		seenDeploymentIDs.Add(deployment.GetId())
 	}
-	expectedDeploymentIDs := set.NewStringSet(testDeployments[0].Id, testDeployments[1].Id)
+	expectedDeploymentIDs := set.NewStringSet(testDeployments[0].GetId(), testDeployments[1].GetId())
 
 	seenClusterIDs := set.NewStringSet()
 	clusterCheckFn := func(ctx ComplianceContext) {
 		seenClusterIDs.Add(ctx.Domain().Cluster().Cluster().GetId())
 	}
-	expectedClusterIDs := set.NewStringSet(testCluster.Id)
+	expectedClusterIDs := set.NewStringSet(testCluster.GetId())
 
 	nodeCheck := NewCheckFromFunc(
 		CheckMetadata{ID: "node-check", Scope: framework.NodeKind},

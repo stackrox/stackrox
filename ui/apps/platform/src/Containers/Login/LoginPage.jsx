@@ -1,4 +1,4 @@
-import React, { Component } from 'react';
+import { Component } from 'react';
 import PropTypes from 'prop-types';
 import { Link } from 'react-router-dom-v5-compat';
 import { connect } from 'react-redux';
@@ -18,12 +18,11 @@ import ReduxPasswordField from 'Components/forms/ReduxPasswordField';
 import Labeled from 'Components/Labeled';
 import CollapsibleAnimatedDiv from 'Components/animations/CollapsibleAnimatedDiv';
 import BrandLogo from 'Components/PatternFly/BrandLogo';
+import { loginWithBasicAuth } from 'services/AuthService';
+import { parseAndDecodeFragment } from 'utils/parseAndDecodeFragment';
 
 import ServerStatusBanner from '../MainPage/Banners/ServerStatusBanner';
 import LoginNotice from './LoginNotice';
-
-import { loginWithBasicAuth } from '../../services/AuthService';
-import { parseAndDecodeFragment } from '../../utils/parseAndDecodeFragment';
 
 const unknownErrorResponse = {
     error: 'Unknown error',

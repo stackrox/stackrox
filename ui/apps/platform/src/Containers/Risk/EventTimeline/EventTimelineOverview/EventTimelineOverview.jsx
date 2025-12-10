@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { memo, useState } from 'react';
 import PropTypes from 'prop-types';
 import { useQuery } from '@apollo/client';
 import Raven from 'raven-js';
@@ -74,4 +74,4 @@ EventTimelineOverview.propTypes = {
     deploymentId: PropTypes.string.isRequired,
 };
 
-export default React.memo(EventTimelineOverview);
+export default memo(EventTimelineOverview);

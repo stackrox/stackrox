@@ -1,33 +1,33 @@
 import { EdgeStyle, EdgeTerminalType, NodeShape } from '@patternfly/react-topology';
 
-import {
+import type {
     DeploymentNetworkEntityInfo,
+    EdgeProperties,
     ExternalSourceNetworkEntityInfo,
+    InternalNetworkEntitiesInfo,
     InternetNetworkEntityInfo,
+    L4Protocol,
     NetworkEntityInfo,
     Node,
     OutEdges,
-    L4Protocol,
-    EdgeProperties,
-    InternalNetworkEntitiesInfo,
 } from 'types/networkFlow.proto';
 import { ensureExhaustive } from 'utils/type.utils';
-import {
-    CustomModel,
-    CustomNodeModel,
-    ExternalGroupNodeModel,
-    ExternalGroupData,
-    NamespaceData,
-    NamespaceNodeModel,
-    DeploymentNodeModel,
-    ExtraneousNodeModel,
-    NetworkPolicyState,
-    ExternalEntitiesNodeModel,
+import type {
+    CIDRBlockData,
     CIDRBlockNodeModel,
     CustomEdgeModel,
+    CustomModel,
+    CustomNodeModel,
     DeploymentData,
-    CIDRBlockData,
+    DeploymentNodeModel,
+    ExternalEntitiesNodeModel,
+    ExternalGroupData,
+    ExternalGroupNodeModel,
+    ExtraneousNodeModel,
     InternalEntitiesNodeModel,
+    NamespaceData,
+    NamespaceNodeModel,
+    NetworkPolicyState,
 } from '../types/topology.type';
 import { protocolLabel } from './flowUtils';
 
@@ -245,12 +245,12 @@ export function transformActiveData(
 
     nodes.forEach(({ entity, outEdges }) => {
         const { type, id } = entity;
-        const { networkPolicyState } = policyNodeMap[id]?.data || {};
+        const { networkPolicyState } = policyNodeMap[id]?.data ?? {};
         const isExternallyConnected = Object.keys(outEdges).some((nodeIdx) => {
             const { entity: targetEntity } = nodes[nodeIdx];
             return targetEntity.type === 'EXTERNAL_SOURCE' || targetEntity.type === 'INTERNET';
         });
-        const policyIds = policyNodeMap[id]?.data.policyIds || [];
+        const policyIds = policyNodeMap[id]?.data.policyIds ?? [];
 
         // to group deployments into namespaces
         if (type === 'DEPLOYMENT') {
@@ -340,7 +340,7 @@ export function transformActiveData(
     if (externalNodeIds.length > 0) {
         // adding external outEdges to nodes to indicate externally connected state
         Object.values(externalNodes).forEach((externalNode) => {
-            const { outEdges } = externalNode.data || {};
+            const { outEdges } = externalNode.data ?? {};
             Object.keys(outEdges).forEach((nodeIdx) => {
                 const { id: targetNodeId } = nodes[nodeIdx];
                 if (deploymentNodes[targetNodeId]) {

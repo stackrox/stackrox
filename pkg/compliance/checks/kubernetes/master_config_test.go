@@ -190,7 +190,7 @@ func TestMasterConfigChecks(t *testing.T) {
 			checkResults := check.CheckFunc(mockNodeData)
 			require.Len(t, checkResults, c.numResults)
 			for _, checkResult := range checkResults {
-				assert.Equal(t, c.status, checkResult.State)
+				assert.Equal(t, c.status, checkResult.GetState())
 			}
 		})
 	}

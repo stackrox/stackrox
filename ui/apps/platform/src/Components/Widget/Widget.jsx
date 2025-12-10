@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { Children, cloneElement, useState } from 'react';
 import PropTypes from 'prop-types';
 import { PagerButtonGroup } from 'Components/PagerControls';
 
@@ -51,11 +51,7 @@ function Widget({
 
     const childrenWithPageProp =
         pages && pages > 1 ? (
-            <>
-                {React.Children.map(children, (child) =>
-                    React.cloneElement(child, { currentPage })
-                )}
-            </>
+            <>{Children.map(children, (child) => cloneElement(child, { currentPage }))}</>
         ) : (
             children
         );

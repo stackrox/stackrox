@@ -43,9 +43,9 @@ func (m *MockReportGetter) EXPECT() *MockReportGetterMockRecorder {
 }
 
 // GetIndexReport mocks base method.
-func (m *MockReportGetter) GetIndexReport(arg0 context.Context, arg1 string) (*claircore.IndexReport, bool, error) {
+func (m *MockReportGetter) GetIndexReport(arg0 context.Context, arg1 string, arg2 bool) (*claircore.IndexReport, bool, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetIndexReport", arg0, arg1)
+	ret := m.ctrl.Call(m, "GetIndexReport", arg0, arg1, arg2)
 	ret0, _ := ret[0].(*claircore.IndexReport)
 	ret1, _ := ret[1].(bool)
 	ret2, _ := ret[2].(error)
@@ -53,9 +53,48 @@ func (m *MockReportGetter) GetIndexReport(arg0 context.Context, arg1 string) (*c
 }
 
 // GetIndexReport indicates an expected call of GetIndexReport.
-func (mr *MockReportGetterMockRecorder) GetIndexReport(arg0, arg1 any) *gomock.Call {
+func (mr *MockReportGetterMockRecorder) GetIndexReport(arg0, arg1, arg2 any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetIndexReport", reflect.TypeOf((*MockReportGetter)(nil).GetIndexReport), arg0, arg1)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetIndexReport", reflect.TypeOf((*MockReportGetter)(nil).GetIndexReport), arg0, arg1, arg2)
+}
+
+// MockReportStorer is a mock of ReportStorer interface.
+type MockReportStorer struct {
+	ctrl     *gomock.Controller
+	recorder *MockReportStorerMockRecorder
+	isgomock struct{}
+}
+
+// MockReportStorerMockRecorder is the mock recorder for MockReportStorer.
+type MockReportStorerMockRecorder struct {
+	mock *MockReportStorer
+}
+
+// NewMockReportStorer creates a new mock instance.
+func NewMockReportStorer(ctrl *gomock.Controller) *MockReportStorer {
+	mock := &MockReportStorer{ctrl: ctrl}
+	mock.recorder = &MockReportStorerMockRecorder{mock}
+	return mock
+}
+
+// EXPECT returns an object that allows the caller to indicate expected use.
+func (m *MockReportStorer) EXPECT() *MockReportStorerMockRecorder {
+	return m.recorder
+}
+
+// StoreIndexReport mocks base method.
+func (m *MockReportStorer) StoreIndexReport(ctx context.Context, hashID, indexerVersion string, report *claircore.IndexReport) (string, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "StoreIndexReport", ctx, hashID, indexerVersion, report)
+	ret0, _ := ret[0].(string)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// StoreIndexReport indicates an expected call of StoreIndexReport.
+func (mr *MockReportStorerMockRecorder) StoreIndexReport(ctx, hashID, indexerVersion, report any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "StoreIndexReport", reflect.TypeOf((*MockReportStorer)(nil).StoreIndexReport), ctx, hashID, indexerVersion, report)
 }
 
 // MockIndexer is a mock of Indexer interface.
@@ -97,9 +136,9 @@ func (mr *MockIndexerMockRecorder) Close(arg0 any) *gomock.Call {
 }
 
 // GetIndexReport mocks base method.
-func (m *MockIndexer) GetIndexReport(arg0 context.Context, arg1 string) (*claircore.IndexReport, bool, error) {
+func (m *MockIndexer) GetIndexReport(arg0 context.Context, arg1 string, arg2 bool) (*claircore.IndexReport, bool, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetIndexReport", arg0, arg1)
+	ret := m.ctrl.Call(m, "GetIndexReport", arg0, arg1, arg2)
 	ret0, _ := ret[0].(*claircore.IndexReport)
 	ret1, _ := ret[1].(bool)
 	ret2, _ := ret[2].(error)
@@ -107,9 +146,9 @@ func (m *MockIndexer) GetIndexReport(arg0 context.Context, arg1 string) (*clairc
 }
 
 // GetIndexReport indicates an expected call of GetIndexReport.
-func (mr *MockIndexerMockRecorder) GetIndexReport(arg0, arg1 any) *gomock.Call {
+func (mr *MockIndexerMockRecorder) GetIndexReport(arg0, arg1, arg2 any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetIndexReport", reflect.TypeOf((*MockIndexer)(nil).GetIndexReport), arg0, arg1)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetIndexReport", reflect.TypeOf((*MockIndexer)(nil).GetIndexReport), arg0, arg1, arg2)
 }
 
 // IndexContainerImage mocks base method.
@@ -144,4 +183,19 @@ func (m *MockIndexer) Ready(arg0 context.Context) error {
 func (mr *MockIndexerMockRecorder) Ready(arg0 any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Ready", reflect.TypeOf((*MockIndexer)(nil).Ready), arg0)
+}
+
+// StoreIndexReport mocks base method.
+func (m *MockIndexer) StoreIndexReport(ctx context.Context, hashID, indexerVersion string, report *claircore.IndexReport) (string, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "StoreIndexReport", ctx, hashID, indexerVersion, report)
+	ret0, _ := ret[0].(string)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// StoreIndexReport indicates an expected call of StoreIndexReport.
+func (mr *MockIndexerMockRecorder) StoreIndexReport(ctx, hashID, indexerVersion, report any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "StoreIndexReport", reflect.TypeOf((*MockIndexer)(nil).StoreIndexReport), ctx, hashID, indexerVersion, report)
 }

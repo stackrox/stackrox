@@ -1,11 +1,9 @@
-import React from 'react';
 import type { ReactNode } from 'react';
 import { Link } from 'react-router-dom-v5-compat';
 import { gql } from '@apollo/client';
 import {
     ActionsColumn,
     ExpandableRowContent,
-    IAction,
     Table,
     Tbody,
     Td,
@@ -13,41 +11,42 @@ import {
     Thead,
     Tr,
 } from '@patternfly/react-table';
+import type { IAction } from '@patternfly/react-table';
 import { LabelGroup, Text } from '@patternfly/react-core';
 
-import { UseURLSortResult } from 'hooks/useURLSort';
+import useFeatureFlags from 'hooks/useFeatureFlags';
+import type { UseURLSortResult } from 'hooks/useURLSort';
 import useSet from 'hooks/useSet';
-import useMap from 'hooks/useMap';
-import { CveBaseInfo, VulnerabilityState } from 'types/cve.proto';
+import type useMap from 'hooks/useMap';
+import type { CveBaseInfo, VulnerabilityState } from 'types/cve.proto';
 import TooltipTh from 'Components/TooltipTh';
 import { DynamicColumnIcon } from 'Components/DynamicIcon';
 import CvssFormatted from 'Components/CvssFormatted';
 import DateDistance from 'Components/DateDistance';
-import { TableUIState } from 'utils/getTableUIState';
+import type { TableUIState } from 'utils/getTableUIState';
 import TbodyUnified from 'Components/TableStateTemplates/TbodyUnified';
 import ExpandRowTh from 'Components/ExpandRowTh';
 import { ACTION_COLUMN_POPPER_PROPS } from 'constants/tables';
-import {
-    generateVisibilityForColumns,
-    getHiddenColumnCount,
-    ManagedColumns,
-} from 'hooks/useManagedColumns';
-import { VulnerabilitySeverityLabel } from '../../types';
+import { generateVisibilityForColumns, getHiddenColumnCount } from 'hooks/useManagedColumns';
+import type { ManagedColumns } from 'hooks/useManagedColumns';
+import type { VulnerabilitySeverityLabel } from '../../types';
+import { hasKnownExploit, hasKnownRansomwareCampaignUse } from '../../utils/vulnerabilityUtils';
 import SeverityCountLabels from '../../components/SeverityCountLabels';
 import {
-    getScoreVersionsForTopCVSS,
-    getScoreVersionsForTopNvdCVSS,
-    sortCveDistroList,
     aggregateByCVSS,
-    aggregateByEPSS,
     aggregateByCreatedTime,
     aggregateByDistinctCount,
+    aggregateByEPSS,
+    getScoreVersionsForTopCVSS,
+    getScoreVersionsForTopNvdCVSS,
     getSeveritySortOptions,
+    sortCveDistroList,
 } from '../../utils/sortUtils';
-import { CveSelectionsProps } from '../../components/ExceptionRequestModal/CveSelections';
+import type { CveSelectionsProps } from '../../components/ExceptionRequestModal/CveSelections';
 import CVESelectionTh from '../../components/CVESelectionTh';
 import CVESelectionTd from '../../components/CVESelectionTd';
-// import KnownExploitLabel from '../../components/KnownExploitLabel'; // Ross CISA KEV
+import KnownExploitLabel from '../../components/KnownExploitLabel';
+import KnownRansomwareCampaignLabel from '../../components/KnownRansomwareCampaignLabel';
 import PendingExceptionLabel from '../../components/PendingExceptionLabel';
 import ExceptionDetailsCell from '../components/ExceptionDetailsCell';
 import PartialCVEDataAlert from '../../components/PartialCVEDataAlert';
@@ -225,6 +224,7 @@ function WorkloadCVEOverviewTable({
     onClearFilters,
     columnVisibilityState,
 }: WorkloadCVEOverviewTableProps) {
+    const { isFeatureFlagEnabled } = useFeatureFlags();
     const { urlBuilder } = useWorkloadCveViewContext();
     const expandedRowSet = useSet<string>();
     const getVisibilityClass = generateVisibilityForColumns(columnVisibilityState);
@@ -346,15 +346,29 @@ function WorkloadCVEOverviewTable({
                                 prioritizedDistros.length > 0 ? prioritizedDistros[0].summary : '';
 
                             const labels: ReactNode[] = [];
-                            /*
-                            // Ross CISA KEV
-                            if (isFeatureFlagEnabled('ROX_SCANNER_V4') && isFeatureFlagEnabled('ROX_WHATEVER') && TODO) {
-                                labels.push(<KnownExploitLabel isCompact />);
+                            if (
+                                isFeatureFlagEnabled('ROX_SCANNER_V4') &&
+                                isFeatureFlagEnabled('ROX_CISA_KEV') &&
+                                hasKnownExploit(cveBaseInfo?.exploit)
+                            ) {
+                                // Add in cveListQuery following epss:
+                                // exploit {
+                                //     knownRansomwareCampaignUse
+                                // }
+                                labels.push(<KnownExploitLabel key="exploit" isCompact />);
+                                if (hasKnownRansomwareCampaignUse(cveBaseInfo?.exploit)) {
+                                    labels.push(
+                                        <KnownRansomwareCampaignLabel
+                                            key="knownRansomwareCampaignUse"
+                                            isCompact
+                                        />
+                                    );
+                                }
                             }
-                            */
                             if (pendingExceptionCount > 0) {
                                 labels.push(
                                     <PendingExceptionLabel
+                                        key="pendingExceptionCount"
                                         cve={cve}
                                         isCompact
                                         vulnerabilityState={vulnerabilityState}

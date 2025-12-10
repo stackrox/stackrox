@@ -44,7 +44,7 @@ type ImageResolver interface {
 	Notes(ctx context.Context) []string
 	Priority(ctx context.Context) int32
 	RiskScore(ctx context.Context) float64
-	Sha(ctx context.Context) string
+	Digest(ctx context.Context) string
 	Signature(ctx context.Context) (*imageSignatureResolver, error)
 	SignatureVerificationData(ctx context.Context) (*imageSignatureVerificationDataResolver, error)
 	TopCvss(ctx context.Context) float64
@@ -139,6 +139,10 @@ func (resolver *Resolver) Images(ctx context.Context, args PaginatedQuery) ([]Im
 		return nil, err
 	}
 	images, err := imageLoader.FromQuery(ctx, q)
+	if err != nil {
+		log.Error(err)
+		return nil, err
+	}
 	resolvers, err := resolver.wrapImagesWithContext(ctx, images, err)
 	res := make([]ImageResolver, 0, len(resolvers))
 	for _, resolver := range resolvers {
@@ -262,7 +266,12 @@ func (resolver *imageResolver) ImageCVECountBySeverity(ctx context.Context, q Ra
 
 func (resolver *imageResolver) ImageComponents(ctx context.Context, args PaginatedQuery) ([]ImageComponentResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Images, "ImageComponents")
-	return resolver.root.ImageComponents(resolver.withImageScopeContext(ctx), args)
+	imgResolver, err := resolver.root.ImageComponents(resolver.withImageScopeContext(ctx), args)
+	if err != nil {
+		log.Error(err)
+		return nil, err
+	}
+	return imgResolver, err
 }
 
 func (resolver *imageResolver) ImageComponentCount(ctx context.Context, args RawQuery) (int32, error) {
@@ -492,7 +501,7 @@ func (resolver *imageResolver) UnknownCveCount(_ context.Context) int32 {
 	return 0
 }
 
-func (resolver *imageResolver) Sha(ctx context.Context) string {
+func (resolver *imageResolver) Digest(ctx context.Context) string {
 	resolver.ensureData(ctx)
 	return resolver.data.GetId()
 }

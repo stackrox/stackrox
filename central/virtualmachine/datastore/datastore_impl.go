@@ -2,131 +2,58 @@ package datastore
 
 import (
 	"context"
+	"math"
 	"time"
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/metrics"
+	virtualMachineStore "github.com/stackrox/rox/central/virtualmachine/datastore/internal/store"
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/protocompat"
-	"github.com/stackrox/rox/pkg/sac"
-	"github.com/stackrox/rox/pkg/sac/resources"
+	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/sync"
 )
 
-var (
-	virtualMachinesSAC = sac.ForResource(resources.VirtualMachine)
+const (
+	defaultPageSize = 100
+	preAllocateCap  = math.MaxUint16
 )
 
 type datastoreImpl struct {
-	mutex           sync.RWMutex
-	virtualMachines map[string]*storage.VirtualMachine
+	store virtualMachineStore.VirtualMachineStore
+
+	mutex sync.Mutex
 }
 
-func newDatastoreImpl() DataStore {
+func newDatastoreImpl(store virtualMachineStore.VirtualMachineStore) DataStore {
 	ds := &datastoreImpl{
-		mutex:           sync.RWMutex{},
-		virtualMachines: map[string]*storage.VirtualMachine{},
+		store: store,
 	}
 	return ds
 }
 
 // CountVirtualMachines delegates to the underlying store.
-func (ds *datastoreImpl) CountVirtualMachines(ctx context.Context) (int, error) {
-	if ok, err := virtualMachinesSAC.ReadAllowed(ctx); err != nil {
-		return 0, err
-	} else if !ok {
-		return 0, sac.ErrResourceAccessDenied
+func (ds *datastoreImpl) CountVirtualMachines(ctx context.Context, query *v1.Query) (int, error) {
+	defer metrics.SetDatastoreFunctionDuration(time.Now(), "VirtualMachine", "CountVirtualMachines")
+	if query == nil {
+		query = search.EmptyQuery()
 	}
 
-	ds.mutex.RLock()
-	defer ds.mutex.RUnlock()
-
-	return len(ds.virtualMachines), nil
+	return ds.store.Count(ctx, query)
 }
 
 // GetVirtualMachine delegates to the underlying store.
 func (ds *datastoreImpl) GetVirtualMachine(ctx context.Context, id string) (*storage.VirtualMachine, bool, error) {
-	if ok, err := virtualMachinesSAC.ReadAllowed(ctx); err != nil {
-		return &storage.VirtualMachine{}, false, err
-	} else if !ok {
-		return &storage.VirtualMachine{}, false, sac.ErrResourceAccessDenied
-	}
+	defer metrics.SetDatastoreFunctionDuration(time.Now(), "VirtualMachine", "GetVirtualMachine")
 
-	if id == "" {
-		return nil, false, errors.New("Please specify an id")
-	}
-
-	ds.mutex.RLock()
-	defer ds.mutex.RUnlock()
-
-	vm, found := ds.virtualMachines[id]
-
-	if found {
-		cloned := vm.CloneVT()
-		return cloned, true, nil
-	}
-
-	return nil, false, nil
-}
-
-// GetAllVirtualMachines delegates to the underlying store.
-func (ds *datastoreImpl) GetAllVirtualMachines(ctx context.Context) ([]*storage.VirtualMachine, error) {
-	if ok, err := virtualMachinesSAC.ReadAllowed(ctx); err != nil {
-		return []*storage.VirtualMachine{}, err
-	} else if !ok {
-		return []*storage.VirtualMachine{}, sac.ErrResourceAccessDenied
-	}
-
-	ds.mutex.RLock()
-	defer ds.mutex.RUnlock()
-
-	ret := make([]*storage.VirtualMachine, 0, len(ds.virtualMachines))
-
-	for _, v := range ds.virtualMachines {
-		ret = append(ret, v.CloneVT())
-	}
-
-	return ret, nil
-}
-
-// CreateVirtualMachine works like upsert except it rejects requests for VMs that already exist in the underlying data structure
-func (ds *datastoreImpl) CreateVirtualMachine(ctx context.Context, virtualMachine *storage.VirtualMachine) error {
-	defer metrics.SetDatastoreFunctionDuration(time.Now(), "VirtualMachine", "CreateVirtualMachine")
-
-	if ok, err := virtualMachinesSAC.WriteAllowed(ctx); err != nil {
-		return err
-	} else if !ok {
-		return sac.ErrResourceAccessDenied
-	}
-
-	if virtualMachine.GetId() == "" {
-		return errors.New("cannot create a virtualMachine without an id")
-	}
-
-	now := time.Now()
-	virtualMachine.LastUpdated = protocompat.ConvertTimeToTimestampOrNil(&now)
-
-	ds.mutex.Lock()
-	defer ds.mutex.Unlock()
-
-	if _, exists := ds.virtualMachines[virtualMachine.GetId()]; exists {
-		return errors.New("Already exists")
-	}
-
-	ds.virtualMachines[virtualMachine.GetId()] = virtualMachine
-
-	return nil
+	return ds.store.Get(ctx, id)
 }
 
 // UpsertVirtualMachine sets the virtualMachine in the underlying data structure.
 func (ds *datastoreImpl) UpsertVirtualMachine(ctx context.Context, virtualMachine *storage.VirtualMachine) error {
 	defer metrics.SetDatastoreFunctionDuration(time.Now(), "VirtualMachine", "UpsertVirtualMachine")
-
-	if ok, err := virtualMachinesSAC.WriteAllowed(ctx); err != nil {
-		return err
-	} else if !ok {
-		return sac.ErrResourceAccessDenied
-	}
 
 	if virtualMachine.GetId() == "" {
 		return errors.New("cannot upsert a virtualMachine without an id")
@@ -137,60 +64,96 @@ func (ds *datastoreImpl) UpsertVirtualMachine(ctx context.Context, virtualMachin
 
 	ds.mutex.Lock()
 	defer ds.mutex.Unlock()
+	oldVM, found, err := ds.GetVirtualMachine(ctx, virtualMachine.GetId())
+	if err != nil {
+		return errors.Wrap(err, "retrieving old virtual machine")
+	}
+	if found && oldVM != nil {
+		// Propagate previous scan information to updated virtual machine
+		virtualMachine.Scan = oldVM.GetScan()
+	}
 
-	ds.virtualMachines[virtualMachine.GetId()] = virtualMachine
+	return ds.store.UpsertMany(ctx, []*storage.VirtualMachine{virtualMachine})
+}
 
-	return nil
+func (ds *datastoreImpl) UpdateVirtualMachineScan(
+	ctx context.Context,
+	virtualMachineID string,
+	scanData *storage.VirtualMachineScan,
+) error {
+	defer metrics.SetDatastoreFunctionDuration(time.Now(), "VirtualMachine", "UpdateVirtualMachineScan")
+
+	ds.mutex.Lock()
+	defer ds.mutex.Unlock()
+	vmToUpdate, found, err := ds.store.Get(ctx, virtualMachineID)
+	if err != nil {
+		return errors.Wrap(err, "retrieving virtual machine for scan update")
+	}
+	if !found {
+		return errox.NotFound
+	}
+	vmToUpdate.Scan = scanData
+
+	return ds.store.UpsertMany(ctx, []*storage.VirtualMachine{vmToUpdate})
 }
 
 func (ds *datastoreImpl) DeleteVirtualMachines(ctx context.Context, ids ...string) error {
 	defer metrics.SetDatastoreFunctionDuration(time.Now(), "VirtualMachine", "DeleteVirtualMachines")
 
-	if ok, err := virtualMachinesSAC.WriteAllowed(ctx); err != nil {
-		return err
-	} else if !ok {
-		return sac.ErrResourceAccessDenied
-	}
-
 	ds.mutex.Lock()
 	defer ds.mutex.Unlock()
-
-	missingIds := make([]string, 0)
-
-	// First check which IDs exist
-	for _, id := range ids {
-		if _, exists := ds.virtualMachines[id]; !exists {
-			missingIds = append(missingIds, id)
-		}
-	}
-
-	if len(missingIds) > 0 {
-		return errors.Errorf("The following virtual machines ids not found: %v", missingIds)
-	}
-
-	// Only proceed with deletion if all IDs exist
-	for _, id := range ids {
-		delete(ds.virtualMachines, id)
-	}
-
-	return nil
+	return ds.store.DeleteMany(ctx, ids)
 }
 
 func (ds *datastoreImpl) Exists(ctx context.Context, id string) (bool, error) {
 	defer metrics.SetDatastoreFunctionDuration(time.Now(), "VirtualMachine", "Exists")
-	if ok, err := virtualMachinesSAC.ReadAllowed(ctx); err != nil {
-		return false, err
-	} else if !ok {
-		return false, sac.ErrResourceAccessDenied
+	return ds.store.Exists(ctx, id)
+}
+
+func (ds *datastoreImpl) SearchRawVirtualMachines(
+	ctx context.Context,
+	query *v1.Query,
+) ([]*storage.VirtualMachine, error) {
+	defer metrics.SetDatastoreFunctionDuration(time.Now(), "VirtualMachine", "SearchRawVirtualMachines")
+	// Sort by default by virtual machine name and namespace (does not apply if sort options are provided).
+	// TODO(ROX-31024): Move default sorting over multiple columns to store
+	searchQuery := query.CloneVT()
+	if len(searchQuery.GetPagination().GetSortOptions()) == 0 {
+		if searchQuery.GetPagination() == nil {
+			searchQuery.Pagination = &v1.QueryPagination{}
+		}
+		searchQuery.Pagination.SortOptions = []*v1.QuerySortOption{
+			{
+				Field: search.VirtualMachineName.String(),
+			},
+			{
+				Field: search.Namespace.String(),
+			},
+		}
 	}
-
-	if id == "" {
-		return false, errors.New("Please specify a valid id")
+	pageSize := searchQuery.GetPagination().GetLimit()
+	if pageSize <= 0 {
+		pageSize = defaultPageSize
 	}
+	// Limit pre-allocation size (some code paths set the pagination limit to
+	// math.MaxInt32) and risk of OOMKills.
+	if pageSize > preAllocateCap {
+		pageSize = preAllocateCap
+	}
+	results := make([]*storage.VirtualMachine, 0, pageSize)
+	err := ds.store.WalkByQuery(ctx, searchQuery, func(vm *storage.VirtualMachine) error {
+		results = append(results, vm)
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+	return results, nil
+}
 
-	ds.mutex.RLock()
-	defer ds.mutex.RUnlock()
-
-	_, exists := ds.virtualMachines[id]
-	return exists, nil
+// Walk iterates over all virtual machines and invokes the provided function for each.
+// This method is optimized for processing VMs without loading them all into memory.
+func (ds *datastoreImpl) Walk(ctx context.Context, fn func(vm *storage.VirtualMachine) error) error {
+	defer metrics.SetDatastoreFunctionDuration(time.Now(), "VirtualMachine", "Walk")
+	return ds.store.Walk(ctx, fn)
 }

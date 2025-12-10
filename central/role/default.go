@@ -10,7 +10,7 @@ import (
 
 var (
 	// defaultScopesIDs is a string set containing the names of all default (built-in) scopes.
-	defaultScopesIDs = set.NewFrozenStringSet(AccessScopeIncludeAll.Id, AccessScopeExcludeAll.Id)
+	defaultScopesIDs = set.NewFrozenStringSet(AccessScopeIncludeAll.GetId(), AccessScopeExcludeAll.GetId())
 
 	// AccessScopeExcludeAll has empty rules and hence excludes all
 	// scoped resources. Global resources must be unaffected.

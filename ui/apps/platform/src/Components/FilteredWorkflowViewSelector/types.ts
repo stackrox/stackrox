@@ -1,4 +1,4 @@
-import { HistoryAction } from 'hooks/useURLParameter';
+import type { HistoryAction } from 'hooks/useURLParameter';
 
 export const userWorkloadWorkflowView = 'Applications view';
 export const platformWorkflowView = 'Platform view';

@@ -301,7 +301,7 @@ func truncateResults(results []*storage.ComplianceAggregation_Result, domainMap 
 
 	collapsedResults := make(map[string][]*storage.ComplianceAggregation_Result)
 	for _, result := range results {
-		collapsedResults[result.AggregationKeys[collapseIndex].Id] = append(collapsedResults[result.AggregationKeys[collapseIndex].Id], result)
+		collapsedResults[result.GetAggregationKeys()[collapseIndex].GetId()] = append(collapsedResults[result.GetAggregationKeys()[collapseIndex].GetId()], result)
 	}
 
 	if len(collapsedResults) <= aggregationLimit {
@@ -333,7 +333,7 @@ func validateCollapseBy(scopes []*storage.ComplianceAggregation_AggregationKey, 
 		return false, -1
 	}
 	for i, scope := range scopes {
-		if collapseBy == scope.Scope {
+		if collapseBy == scope.GetScope() {
 			return true, i
 		}
 	}
@@ -437,8 +437,8 @@ func (resolver *complianceDomainKeyResolver) ToComplianceControlGroup() (group *
 func (resolver *complianceAggregationResultWithDomainResolver) Keys(ctx context.Context) ([]*complianceDomainKeyResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Compliance, "Keys")
 
-	output := make([]*complianceDomainKeyResolver, len(resolver.data.AggregationKeys))
-	for i, v := range resolver.data.AggregationKeys {
+	output := make([]*complianceDomainKeyResolver, len(resolver.data.GetAggregationKeys()))
+	for i, v := range resolver.data.GetAggregationKeys() {
 		wrapped := newComplianceDomainKeyResolverWrapped(ctx, resolver.root, resolver.domain, v)
 		output[i] = &complianceDomainKeyResolver{
 			wrapped: wrapped,
@@ -794,7 +794,7 @@ func getScopeIDFromAggregationResult(result *storage.ComplianceAggregation_Resul
 		return "", errors.New("empty aggregation result encountered: compliance aggregation result is nil")
 	}
 	for _, k := range result.GetAggregationKeys() {
-		if k.Scope == scope {
+		if k.GetScope() == scope {
 			return k.GetId(), nil
 		}
 	}

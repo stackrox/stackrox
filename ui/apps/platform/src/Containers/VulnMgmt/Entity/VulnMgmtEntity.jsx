@@ -1,4 +1,3 @@
-import React from 'react';
 import entityTypes from 'constants/entityTypes';
 import useCases from 'constants/useCaseTypes';
 

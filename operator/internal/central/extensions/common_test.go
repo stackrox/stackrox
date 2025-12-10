@@ -7,8 +7,12 @@ import (
 
 	"github.com/go-logr/logr"
 	platform "github.com/stackrox/rox/operator/api/v1alpha1"
+	"github.com/stackrox/rox/operator/internal/common/confighash"
+	"github.com/stackrox/rox/operator/internal/common/rendercache"
 	"github.com/stackrox/rox/operator/internal/types"
 	"github.com/stackrox/rox/operator/internal/utils/testutils"
+	commonLabels "github.com/stackrox/rox/pkg/labels"
+	"github.com/stackrox/rox/pkg/mtls"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	v1 "k8s.io/api/core/v1"
@@ -61,16 +65,17 @@ func basicSpecWithScanner(scannerEnabled bool, scannerV4Enabled bool) platform.C
 	return spec
 }
 
-func testSecretReconciliation(t *testing.T, runFn func(ctx context.Context, central *platform.Central, client ctrlClient.Client, direct ctrlClient.Reader, statusUpdater func(updateStatusFunc), log logr.Logger) error, c secretReconciliationTestCase) {
+func testSecretReconciliation(t *testing.T, runFn func(ctx context.Context, central *platform.Central, client ctrlClient.Client, direct ctrlClient.Reader, statusUpdater func(updateStatusFunc), log logr.Logger, renderCache *rendercache.RenderCache) error, c secretReconciliationTestCase) {
 	central := buildFakeCentral(c)
 	client := buildFakeClient(t, c, central)
 	statusUpdater := func(statusFunc updateStatusFunc) {
 		statusFunc(&central.Status)
 	}
+	renderCache := rendercache.NewRenderCache()
 
 	// Verify that an initial invocation does not touch any of the existing unmanaged secrets, and creates
 	// the expected managed ones.
-	err := runFn(context.Background(), central.DeepCopy(), client, client, statusUpdater, logr.Discard())
+	err := runFn(context.Background(), central.DeepCopy(), client, client, statusUpdater, logr.Discard(), renderCache)
 	if c.ExpectedError == "" {
 		require.NoError(t, err)
 	} else {
@@ -86,11 +91,12 @@ func testSecretReconciliation(t *testing.T, runFn func(ctx context.Context, cent
 	secretsList, secretsByName := listSecrets(t, client)
 	verifyUnmanagedSecretsNotChanged(t, c.Existing, secretsByName)
 	verifyNotCreatedSecrets(t, c.ExpectedNotExistingSecrets, secretsByName)
-	verifyCreatedSecrets(t, c.ExpectedCreatedSecrets, secretsByName, central.Name, nil)
+	caHash, _ := renderCache.GetCAHash(central)
+	verifyCreatedSecrets(t, c.ExpectedCreatedSecrets, secretsByName, central.Name, nil, caHash)
 	assert.Empty(t, secretsByName, "one or more unexpected secrets exist")
 
 	// Verify that a second invocation does not further change the cluster state
-	err = runFn(context.Background(), central.DeepCopy(), client, client, statusUpdater, logr.Discard())
+	err = runFn(context.Background(), central.DeepCopy(), client, client, statusUpdater, logr.Discard(), renderCache)
 	assert.NoError(t, err, "second invocation of reconciliation function failed")
 	if c.VerifyStatus != nil {
 		c.VerifyStatus(t, &central.Status)
@@ -101,8 +107,13 @@ func testSecretReconciliation(t *testing.T, runFn func(ctx context.Context, cent
 	central.DeletionTimestamp = new(metav1.Time)
 	*central.DeletionTimestamp = metav1.Now()
 
-	err = runFn(context.Background(), central.DeepCopy(), client, client, statusUpdater, logr.Discard())
+	err = runFn(context.Background(), central.DeepCopy(), client, client, statusUpdater, logr.Discard(), renderCache)
 	assert.NoError(t, err, "deletion of CR resulted in error")
+
+	// Verify that CA hash is removed from render cache after deletion
+	if _, found := renderCache.GetCAHash(central); found {
+		t.Error("CA hash should be removed from render cache after CR deletion")
+	}
 
 	_, postDeletionSecretsByName := listSecrets(t, client)
 	verifyUnmanagedSecretsNotChanged(t, c.Existing, postDeletionSecretsByName)
@@ -113,17 +124,19 @@ func testSecretReconciliationAtTime(
 	t *testing.T,
 	central *platform.Central,
 	client ctrlClient.Client,
-	runFn func(ctx context.Context, central *platform.Central, client ctrlClient.Client, direct ctrlClient.Reader, statusUpdater func(updateStatusFunc), log logr.Logger, atTime time.Time) error,
+	runFn func(ctx context.Context, central *platform.Central, client ctrlClient.Client, direct ctrlClient.Reader,
+		statusUpdater func(updateStatusFunc), log logr.Logger, renderCache *rendercache.RenderCache, atTime time.Time) error,
 	c secretReconciliationTestCase,
 	reconcileTime time.Time,
 ) {
 	statusUpdater := func(statusFunc updateStatusFunc) {
 		statusFunc(&central.Status)
 	}
+	renderCache := rendercache.NewRenderCache()
 
 	// Verify that an initial invocation does not touch any of the existing unmanaged secrets, and creates
 	// the expected managed ones
-	err := runFn(context.Background(), central.DeepCopy(), client, client, statusUpdater, logr.Discard(), reconcileTime)
+	err := runFn(context.Background(), central.DeepCopy(), client, client, statusUpdater, logr.Discard(), renderCache, reconcileTime)
 	if c.ExpectedError == "" {
 		require.NoError(t, err)
 	} else {
@@ -139,11 +152,12 @@ func testSecretReconciliationAtTime(
 	secretsList, secretsByName := listSecrets(t, client)
 	verifyUnmanagedSecretsNotChanged(t, c.Existing, secretsByName)
 	verifyNotCreatedSecrets(t, c.ExpectedNotExistingSecrets, secretsByName)
-	verifyCreatedSecrets(t, c.ExpectedCreatedSecrets, secretsByName, central.Name, &reconcileTime)
+	caHash, _ := renderCache.GetCAHash(central)
+	verifyCreatedSecrets(t, c.ExpectedCreatedSecrets, secretsByName, central.Name, &reconcileTime, caHash)
 	assert.Empty(t, secretsByName, "one or more unexpected secrets exist")
 
 	// Verify that a second invocation does not further change the cluster state at the same point in time
-	err = runFn(context.Background(), central.DeepCopy(), client, client, statusUpdater, logr.Discard(), reconcileTime)
+	err = runFn(context.Background(), central.DeepCopy(), client, client, statusUpdater, logr.Discard(), renderCache, reconcileTime)
 	assert.NoError(t, err, "second invocation of reconciliation function failed")
 	if c.VerifyStatus != nil {
 		c.VerifyStatus(t, &central.Status)
@@ -235,6 +249,7 @@ func verifyCreatedSecrets(
 	secretsByName map[string]v1.Secret,
 	ownerName string,
 	atTime *time.Time,
+	caHash string,
 ) {
 	for name, verifyFunc := range expectedCreatedSecrets {
 		found, ok := secretsByName[name]
@@ -249,8 +264,32 @@ func verifyCreatedSecrets(
 		}
 		assert.Truef(t, hasOwnerRef, "newly created secret %s is missing owner reference", name)
 		verifyFunc(t, found.Data, atTime)
+
+		if isTLSSecret(found) {
+			verifyCertMatchesCAHash(t, found.Data, caHash, name)
+		}
+
 		delete(secretsByName, name)
 	}
+}
+
+func isTLSSecret(secret v1.Secret) bool {
+	if secret.Labels == nil {
+		return false
+	}
+	return secret.Labels[commonLabels.TLSSecretLabelKey] == "true"
+}
+
+func verifyCertMatchesCAHash(t *testing.T, secretData types.SecretDataMap, cachedCAHash, secretName string) {
+	caPEM, hasCACert := secretData[mtls.CACertFileName]
+	if !hasCACert {
+		t.Errorf("Secret %s should contain CA certificate but %s is missing", secretName, mtls.CACertFileName)
+		return
+	}
+
+	secretCAHash := confighash.ComputeCAHash(caPEM)
+	assert.Equal(t, secretCAHash, cachedCAHash,
+		"CA hash in RenderCache should match the CA certificate in secret %s", secretName)
 }
 
 func verifySecretsMatch(

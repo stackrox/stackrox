@@ -364,7 +364,7 @@
           "fullMetaSearch": false,
           "includeNullMetadata": true,
           "instant": false,
-          "legendFormat": "{{object}} closedTS={{closedTS}}",
+          "legendFormat": "{{object}} {{status}}",
           "range": true,
           "refId": "A",
           "useBackend": false

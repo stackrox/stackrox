@@ -5,7 +5,6 @@ import (
 	"math/rand"
 	"net"
 	"testing"
-	"time"
 
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
@@ -40,8 +39,6 @@ var (
 )
 
 func init() {
-	rand.Seed(time.Now().UnixNano())
-
 	serviceAccounts = make([]string, 1000)
 	for i := 0; i < 1000; i++ {
 		serviceAccounts[i] = randString(5)

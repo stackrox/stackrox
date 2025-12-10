@@ -13,6 +13,7 @@ jobs:
   offline-bundle-matrix:
     runs-on: ubuntu-latest
     if: >
+      github.repository_owner == 'stackrox' &&
       github.event_name == 'schedule' ||
       (github.event_name == 'pull_request' &&
        contains(github.event.pull_request.labels.*.name, 'pr-update-scanner-vulns'))
@@ -20,7 +21,7 @@ jobs:
       matrix: ${{ steps.output-matrix.outputs.matrix }}
     steps:
     - name: Checkout code
-      uses: actions/checkout@v5
+      uses: actions/checkout@v6
       with:
         fetch-depth: 0
 
@@ -30,7 +31,7 @@ jobs:
         set -o pipefail
         EOF=$(dd if=/dev/urandom bs=15 count=1 status=none | base64)
         echo "matrix<<$EOF" >> "$GITHUB_OUTPUT"
-        .github/workflows/scripts/scanner-offline-bundle-matrix.sh | tee -a "$GITHUB_OUTPUT"
+        SCANNER_RELEASE_ALLOW_RC=true .github/workflows/scripts/scanner-offline-bundle-matrix.sh | tee -a "$GITHUB_OUTPUT"
         echo "$EOF" >> "$GITHUB_OUTPUT"
 
   offline-bundle-generate:
@@ -45,7 +46,7 @@ jobs:
       SUPPORTED_RELEASES: ${{ matrix.versions.supported_releases }}
     steps:
     - name: Checkout code
-      uses: actions/checkout@v5
+      uses: actions/checkout@v6
 
     - name: Set up Google Cloud SDK
       uses: google-github-actions/setup-gcloud@v3
@@ -72,7 +73,7 @@ jobs:
     needs:
     - offline-bundle-generate
     steps:
-    - uses: actions/download-artifact@v5
+    - uses: actions/download-artifact@v6
       with:
         path: bundles
         pattern: offline-bundle-*

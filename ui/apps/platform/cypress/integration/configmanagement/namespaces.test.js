@@ -3,8 +3,8 @@ import withAuth from '../../helpers/basicAuth';
 import {
     clickEntityTableRowThatHasLinkInColumn,
     clickOnCountWidget,
-    clickOnSingularEntityWidgetInSidePanel,
     clickOnSingleEntityInTable,
+    clickOnSingularEntityWidgetInSidePanel,
     hasCountWidgetsFor,
     hasRelatedEntityFor,
     hasTabsFor,

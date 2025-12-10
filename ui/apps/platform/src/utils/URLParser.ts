@@ -1,24 +1,24 @@
 import { matchPath } from 'react-router-dom-v5-compat';
-import type { Location } from 'react-router-dom-v5-compat';
+import type { Path } from 'react-router-dom-v5-compat';
 import qs from 'qs';
 import type { ParsedQs } from 'qs';
 
 import useCases from 'constants/useCaseTypes';
-import { searchParams, sortParams, pagingParams } from 'constants/searchParams';
+import { pagingParams, searchParams, sortParams } from 'constants/searchParams';
 import WorkflowEntity from './WorkflowEntity';
 import { WorkflowState } from './WorkflowState';
 import {
-    workflowPaths,
+    accessControlPath,
+    clustersPathWithParam,
+    policiesPath,
+    riskPath,
     urlEntityListTypes,
     urlEntityTypes,
-    clustersPathWithParam,
-    riskPath,
-    violationsPath,
-    policiesPath,
     userRolePath,
-    accessControlPath,
     validPageEntityListTypes,
     validPageEntityTypes,
+    violationsPath,
+    workflowPaths,
 } from '../routePaths';
 
 type ParamsWithContext = {
@@ -150,14 +150,14 @@ function formatSort(sort?: ParsedQs | ParsedQs[]): Record<string, unknown>[] | n
 }
 
 // Convert URL to workflow state and search objects
-// note: this will read strictly from 'location' as 'match' is relative to the closest Route component
-function parseURL(location: Location): WorkflowState {
-    if (!location) {
+// note: this will read strictly from 'path' as 'match' is relative to the closest Route component
+function parseURL(path: Pick<Path, 'pathname' | 'search'>): WorkflowState {
+    if (!path) {
         // TODO: be more specific, it could be an exception instead of a dummy object
         return new WorkflowState();
     }
 
-    const { pathname, search } = location;
+    const { pathname, search } = path;
 
     const rawParams = getParams(pathname);
     const params = {

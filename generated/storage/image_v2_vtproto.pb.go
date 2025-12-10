@@ -24,18 +24,11 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-func (m *ImageV2) CloneVT() *ImageV2 {
+func (m *ImageV2_ScanStats) CloneVT() *ImageV2_ScanStats {
 	if m == nil {
-		return (*ImageV2)(nil)
+		return (*ImageV2_ScanStats)(nil)
 	}
-	r := new(ImageV2)
-	r.Id = m.Id
-	r.Sha = m.Sha
-	r.Name = m.Name.CloneVT()
-	r.Metadata = m.Metadata.CloneVT()
-	r.Scan = m.Scan.CloneVT()
-	r.SignatureVerificationData = m.SignatureVerificationData.CloneVT()
-	r.Signature = m.Signature.CloneVT()
+	r := new(ImageV2_ScanStats)
 	r.ComponentCount = m.ComponentCount
 	r.CveCount = m.CveCount
 	r.FixableCveCount = m.FixableCveCount
@@ -49,6 +42,30 @@ func (m *ImageV2) CloneVT() *ImageV2 {
 	r.FixableModerateCveCount = m.FixableModerateCveCount
 	r.LowCveCount = m.LowCveCount
 	r.FixableLowCveCount = m.FixableLowCveCount
+	if len(m.unknownFields) > 0 {
+		r.unknownFields = make([]byte, len(m.unknownFields))
+		copy(r.unknownFields, m.unknownFields)
+	}
+	return r
+}
+
+func (m *ImageV2_ScanStats) CloneMessageVT() proto.Message {
+	return m.CloneVT()
+}
+
+func (m *ImageV2) CloneVT() *ImageV2 {
+	if m == nil {
+		return (*ImageV2)(nil)
+	}
+	r := new(ImageV2)
+	r.Id = m.Id
+	r.Digest = m.Digest
+	r.Name = m.Name.CloneVT()
+	r.Metadata = m.Metadata.CloneVT()
+	r.Scan = m.Scan.CloneVT()
+	r.SignatureVerificationData = m.SignatureVerificationData.CloneVT()
+	r.Signature = m.Signature.CloneVT()
+	r.ScanStats = m.ScanStats.CloneVT()
 	r.LastUpdated = (*timestamppb.Timestamp)((*timestamppb1.Timestamp)(m.LastUpdated).CloneVT())
 	r.NotPullable = m.NotPullable
 	r.IsClusterLocal = m.IsClusterLocal
@@ -95,31 +112,10 @@ func (m *ListImageV2) CloneMessageVT() proto.Message {
 	return m.CloneVT()
 }
 
-func (this *ImageV2) EqualVT(that *ImageV2) bool {
+func (this *ImageV2_ScanStats) EqualVT(that *ImageV2_ScanStats) bool {
 	if this == that {
 		return true
 	} else if this == nil || that == nil {
-		return false
-	}
-	if this.Id != that.Id {
-		return false
-	}
-	if this.Sha != that.Sha {
-		return false
-	}
-	if !this.Name.EqualVT(that.Name) {
-		return false
-	}
-	if !this.Metadata.EqualVT(that.Metadata) {
-		return false
-	}
-	if !this.Scan.EqualVT(that.Scan) {
-		return false
-	}
-	if !this.SignatureVerificationData.EqualVT(that.SignatureVerificationData) {
-		return false
-	}
-	if !this.Signature.EqualVT(that.Signature) {
 		return false
 	}
 	if this.ComponentCount != that.ComponentCount {
@@ -159,6 +155,46 @@ func (this *ImageV2) EqualVT(that *ImageV2) bool {
 		return false
 	}
 	if this.FixableLowCveCount != that.FixableLowCveCount {
+		return false
+	}
+	return string(this.unknownFields) == string(that.unknownFields)
+}
+
+func (this *ImageV2_ScanStats) EqualMessageVT(thatMsg proto.Message) bool {
+	that, ok := thatMsg.(*ImageV2_ScanStats)
+	if !ok {
+		return false
+	}
+	return this.EqualVT(that)
+}
+func (this *ImageV2) EqualVT(that *ImageV2) bool {
+	if this == that {
+		return true
+	} else if this == nil || that == nil {
+		return false
+	}
+	if this.Id != that.Id {
+		return false
+	}
+	if this.Digest != that.Digest {
+		return false
+	}
+	if !this.Name.EqualVT(that.Name) {
+		return false
+	}
+	if !this.Metadata.EqualVT(that.Metadata) {
+		return false
+	}
+	if !this.Scan.EqualVT(that.Scan) {
+		return false
+	}
+	if !this.SignatureVerificationData.EqualVT(that.SignatureVerificationData) {
+		return false
+	}
+	if !this.Signature.EqualVT(that.Signature) {
+		return false
+	}
+	if !this.ScanStats.EqualVT(that.ScanStats) {
 		return false
 	}
 	if !(*timestamppb1.Timestamp)(this.LastUpdated).EqualVT((*timestamppb1.Timestamp)(that.LastUpdated)) {
@@ -238,6 +274,104 @@ func (this *ListImageV2) EqualMessageVT(thatMsg proto.Message) bool {
 	}
 	return this.EqualVT(that)
 }
+func (m *ImageV2_ScanStats) MarshalVT() (dAtA []byte, err error) {
+	if m == nil {
+		return nil, nil
+	}
+	size := m.SizeVT()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBufferVT(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *ImageV2_ScanStats) MarshalToVT(dAtA []byte) (int, error) {
+	size := m.SizeVT()
+	return m.MarshalToSizedBufferVT(dAtA[:size])
+}
+
+func (m *ImageV2_ScanStats) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
+	if m == nil {
+		return 0, nil
+	}
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.unknownFields != nil {
+		i -= len(m.unknownFields)
+		copy(dAtA[i:], m.unknownFields)
+	}
+	if m.FixableLowCveCount != 0 {
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(m.FixableLowCveCount))
+		i--
+		dAtA[i] = 0x68
+	}
+	if m.LowCveCount != 0 {
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(m.LowCveCount))
+		i--
+		dAtA[i] = 0x60
+	}
+	if m.FixableModerateCveCount != 0 {
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(m.FixableModerateCveCount))
+		i--
+		dAtA[i] = 0x58
+	}
+	if m.ModerateCveCount != 0 {
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(m.ModerateCveCount))
+		i--
+		dAtA[i] = 0x50
+	}
+	if m.FixableImportantCveCount != 0 {
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(m.FixableImportantCveCount))
+		i--
+		dAtA[i] = 0x48
+	}
+	if m.ImportantCveCount != 0 {
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(m.ImportantCveCount))
+		i--
+		dAtA[i] = 0x40
+	}
+	if m.FixableCriticalCveCount != 0 {
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(m.FixableCriticalCveCount))
+		i--
+		dAtA[i] = 0x38
+	}
+	if m.CriticalCveCount != 0 {
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(m.CriticalCveCount))
+		i--
+		dAtA[i] = 0x30
+	}
+	if m.FixableUnknownCveCount != 0 {
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(m.FixableUnknownCveCount))
+		i--
+		dAtA[i] = 0x28
+	}
+	if m.UnknownCveCount != 0 {
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(m.UnknownCveCount))
+		i--
+		dAtA[i] = 0x20
+	}
+	if m.FixableCveCount != 0 {
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(m.FixableCveCount))
+		i--
+		dAtA[i] = 0x18
+	}
+	if m.CveCount != 0 {
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(m.CveCount))
+		i--
+		dAtA[i] = 0x10
+	}
+	if m.ComponentCount != 0 {
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(m.ComponentCount))
+		i--
+		dAtA[i] = 0x8
+	}
+	return len(dAtA) - i, nil
+}
+
 func (m *ImageV2) MarshalVT() (dAtA []byte, err error) {
 	if m == nil {
 		return nil, nil
@@ -287,32 +421,24 @@ func (m *ImageV2) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 		}
 		i = protohelpers.EncodeVarint(dAtA, i, uint64(pksize2))
 		i--
-		dAtA[i] = 0x1
-		i--
-		dAtA[i] = 0xda
+		dAtA[i] = 0x7a
 	}
 	if m.TopCvss != 0 {
 		i -= 4
 		binary.LittleEndian.PutUint32(dAtA[i:], uint32(math.Float32bits(float32(m.TopCvss))))
 		i--
-		dAtA[i] = 0x1
-		i--
-		dAtA[i] = 0xd5
+		dAtA[i] = 0x75
 	}
 	if m.RiskScore != 0 {
 		i -= 4
 		binary.LittleEndian.PutUint32(dAtA[i:], uint32(math.Float32bits(float32(m.RiskScore))))
 		i--
-		dAtA[i] = 0x1
-		i--
-		dAtA[i] = 0xcd
+		dAtA[i] = 0x6d
 	}
 	if m.Priority != 0 {
 		i = protohelpers.EncodeVarint(dAtA, i, uint64(m.Priority))
 		i--
-		dAtA[i] = 0x1
-		i--
-		dAtA[i] = 0xc0
+		dAtA[i] = 0x60
 	}
 	if m.IsClusterLocal {
 		i--
@@ -322,9 +448,7 @@ func (m *ImageV2) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 			dAtA[i] = 0
 		}
 		i--
-		dAtA[i] = 0x1
-		i--
-		dAtA[i] = 0xb8
+		dAtA[i] = 0x58
 	}
 	if m.NotPullable {
 		i--
@@ -334,9 +458,7 @@ func (m *ImageV2) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 			dAtA[i] = 0
 		}
 		i--
-		dAtA[i] = 0x1
-		i--
-		dAtA[i] = 0xb0
+		dAtA[i] = 0x50
 	}
 	if m.LastUpdated != nil {
 		size, err := (*timestamppb1.Timestamp)(m.LastUpdated).MarshalToSizedBufferVT(dAtA[:i])
@@ -346,84 +468,17 @@ func (m *ImageV2) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 		i -= size
 		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
 		i--
-		dAtA[i] = 0x1
-		i--
-		dAtA[i] = 0xaa
+		dAtA[i] = 0x4a
 	}
-	if m.FixableLowCveCount != 0 {
-		i = protohelpers.EncodeVarint(dAtA, i, uint64(m.FixableLowCveCount))
+	if m.ScanStats != nil {
+		size, err := m.ScanStats.MarshalToSizedBufferVT(dAtA[:i])
+		if err != nil {
+			return 0, err
+		}
+		i -= size
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
 		i--
-		dAtA[i] = 0x1
-		i--
-		dAtA[i] = 0xa0
-	}
-	if m.LowCveCount != 0 {
-		i = protohelpers.EncodeVarint(dAtA, i, uint64(m.LowCveCount))
-		i--
-		dAtA[i] = 0x1
-		i--
-		dAtA[i] = 0x98
-	}
-	if m.FixableModerateCveCount != 0 {
-		i = protohelpers.EncodeVarint(dAtA, i, uint64(m.FixableModerateCveCount))
-		i--
-		dAtA[i] = 0x1
-		i--
-		dAtA[i] = 0x90
-	}
-	if m.ModerateCveCount != 0 {
-		i = protohelpers.EncodeVarint(dAtA, i, uint64(m.ModerateCveCount))
-		i--
-		dAtA[i] = 0x1
-		i--
-		dAtA[i] = 0x88
-	}
-	if m.FixableImportantCveCount != 0 {
-		i = protohelpers.EncodeVarint(dAtA, i, uint64(m.FixableImportantCveCount))
-		i--
-		dAtA[i] = 0x1
-		i--
-		dAtA[i] = 0x80
-	}
-	if m.ImportantCveCount != 0 {
-		i = protohelpers.EncodeVarint(dAtA, i, uint64(m.ImportantCveCount))
-		i--
-		dAtA[i] = 0x78
-	}
-	if m.FixableCriticalCveCount != 0 {
-		i = protohelpers.EncodeVarint(dAtA, i, uint64(m.FixableCriticalCveCount))
-		i--
-		dAtA[i] = 0x70
-	}
-	if m.CriticalCveCount != 0 {
-		i = protohelpers.EncodeVarint(dAtA, i, uint64(m.CriticalCveCount))
-		i--
-		dAtA[i] = 0x68
-	}
-	if m.FixableUnknownCveCount != 0 {
-		i = protohelpers.EncodeVarint(dAtA, i, uint64(m.FixableUnknownCveCount))
-		i--
-		dAtA[i] = 0x60
-	}
-	if m.UnknownCveCount != 0 {
-		i = protohelpers.EncodeVarint(dAtA, i, uint64(m.UnknownCveCount))
-		i--
-		dAtA[i] = 0x58
-	}
-	if m.FixableCveCount != 0 {
-		i = protohelpers.EncodeVarint(dAtA, i, uint64(m.FixableCveCount))
-		i--
-		dAtA[i] = 0x50
-	}
-	if m.CveCount != 0 {
-		i = protohelpers.EncodeVarint(dAtA, i, uint64(m.CveCount))
-		i--
-		dAtA[i] = 0x48
-	}
-	if m.ComponentCount != 0 {
-		i = protohelpers.EncodeVarint(dAtA, i, uint64(m.ComponentCount))
-		i--
-		dAtA[i] = 0x40
+		dAtA[i] = 0x42
 	}
 	if m.Signature != nil {
 		size, err := m.Signature.MarshalToSizedBufferVT(dAtA[:i])
@@ -475,10 +530,10 @@ func (m *ImageV2) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 		i--
 		dAtA[i] = 0x1a
 	}
-	if len(m.Sha) > 0 {
-		i -= len(m.Sha)
-		copy(dAtA[i:], m.Sha)
-		i = protohelpers.EncodeVarint(dAtA, i, uint64(len(m.Sha)))
+	if len(m.Digest) > 0 {
+		i -= len(m.Digest)
+		copy(dAtA[i:], m.Digest)
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(len(m.Digest)))
 		i--
 		dAtA[i] = 0x12
 	}
@@ -579,40 +634,12 @@ func (m *ListImageV2) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *ImageV2) SizeVT() (n int) {
+func (m *ImageV2_ScanStats) SizeVT() (n int) {
 	if m == nil {
 		return 0
 	}
 	var l int
 	_ = l
-	l = len(m.Id)
-	if l > 0 {
-		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
-	}
-	l = len(m.Sha)
-	if l > 0 {
-		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
-	}
-	if m.Name != nil {
-		l = m.Name.SizeVT()
-		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
-	}
-	if m.Metadata != nil {
-		l = m.Metadata.SizeVT()
-		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
-	}
-	if m.Scan != nil {
-		l = m.Scan.SizeVT()
-		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
-	}
-	if m.SignatureVerificationData != nil {
-		l = m.SignatureVerificationData.SizeVT()
-		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
-	}
-	if m.Signature != nil {
-		l = m.Signature.SizeVT()
-		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
-	}
 	if m.ComponentCount != 0 {
 		n += 1 + protohelpers.SizeOfVarint(uint64(m.ComponentCount))
 	}
@@ -638,45 +665,87 @@ func (m *ImageV2) SizeVT() (n int) {
 		n += 1 + protohelpers.SizeOfVarint(uint64(m.ImportantCveCount))
 	}
 	if m.FixableImportantCveCount != 0 {
-		n += 2 + protohelpers.SizeOfVarint(uint64(m.FixableImportantCveCount))
+		n += 1 + protohelpers.SizeOfVarint(uint64(m.FixableImportantCveCount))
 	}
 	if m.ModerateCveCount != 0 {
-		n += 2 + protohelpers.SizeOfVarint(uint64(m.ModerateCveCount))
+		n += 1 + protohelpers.SizeOfVarint(uint64(m.ModerateCveCount))
 	}
 	if m.FixableModerateCveCount != 0 {
-		n += 2 + protohelpers.SizeOfVarint(uint64(m.FixableModerateCveCount))
+		n += 1 + protohelpers.SizeOfVarint(uint64(m.FixableModerateCveCount))
 	}
 	if m.LowCveCount != 0 {
-		n += 2 + protohelpers.SizeOfVarint(uint64(m.LowCveCount))
+		n += 1 + protohelpers.SizeOfVarint(uint64(m.LowCveCount))
 	}
 	if m.FixableLowCveCount != 0 {
-		n += 2 + protohelpers.SizeOfVarint(uint64(m.FixableLowCveCount))
+		n += 1 + protohelpers.SizeOfVarint(uint64(m.FixableLowCveCount))
+	}
+	n += len(m.unknownFields)
+	return n
+}
+
+func (m *ImageV2) SizeVT() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = len(m.Id)
+	if l > 0 {
+		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
+	}
+	l = len(m.Digest)
+	if l > 0 {
+		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
+	}
+	if m.Name != nil {
+		l = m.Name.SizeVT()
+		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
+	}
+	if m.Metadata != nil {
+		l = m.Metadata.SizeVT()
+		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
+	}
+	if m.Scan != nil {
+		l = m.Scan.SizeVT()
+		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
+	}
+	if m.SignatureVerificationData != nil {
+		l = m.SignatureVerificationData.SizeVT()
+		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
+	}
+	if m.Signature != nil {
+		l = m.Signature.SizeVT()
+		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
+	}
+	if m.ScanStats != nil {
+		l = m.ScanStats.SizeVT()
+		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
 	if m.LastUpdated != nil {
 		l = (*timestamppb1.Timestamp)(m.LastUpdated).SizeVT()
-		n += 2 + l + protohelpers.SizeOfVarint(uint64(l))
+		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
 	if m.NotPullable {
-		n += 3
+		n += 2
 	}
 	if m.IsClusterLocal {
-		n += 3
+		n += 2
 	}
 	if m.Priority != 0 {
-		n += 2 + protohelpers.SizeOfVarint(uint64(m.Priority))
+		n += 1 + protohelpers.SizeOfVarint(uint64(m.Priority))
 	}
 	if m.RiskScore != 0 {
-		n += 6
+		n += 5
 	}
 	if m.TopCvss != 0 {
-		n += 6
+		n += 5
 	}
 	if len(m.Notes) > 0 {
 		l = 0
 		for _, e := range m.Notes {
 			l += protohelpers.SizeOfVarint(uint64(e))
 		}
-		n += 2 + protohelpers.SizeOfVarint(uint64(l)) + l
+		n += 1 + protohelpers.SizeOfVarint(uint64(l)) + l
 	}
 	n += len(m.unknownFields)
 	return n
@@ -720,6 +789,304 @@ func (m *ListImageV2) SizeVT() (n int) {
 	return n
 }
 
+func (m *ImageV2_ScanStats) UnmarshalVT(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return protohelpers.ErrIntOverflow
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: ImageV2_ScanStats: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: ImageV2_ScanStats: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ComponentCount", wireType)
+			}
+			m.ComponentCount = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.ComponentCount |= int32(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 2:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field CveCount", wireType)
+			}
+			m.CveCount = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.CveCount |= int32(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 3:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field FixableCveCount", wireType)
+			}
+			m.FixableCveCount = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.FixableCveCount |= int32(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 4:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field UnknownCveCount", wireType)
+			}
+			m.UnknownCveCount = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.UnknownCveCount |= int32(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 5:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field FixableUnknownCveCount", wireType)
+			}
+			m.FixableUnknownCveCount = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.FixableUnknownCveCount |= int32(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 6:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field CriticalCveCount", wireType)
+			}
+			m.CriticalCveCount = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.CriticalCveCount |= int32(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 7:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field FixableCriticalCveCount", wireType)
+			}
+			m.FixableCriticalCveCount = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.FixableCriticalCveCount |= int32(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 8:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ImportantCveCount", wireType)
+			}
+			m.ImportantCveCount = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.ImportantCveCount |= int32(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 9:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field FixableImportantCveCount", wireType)
+			}
+			m.FixableImportantCveCount = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.FixableImportantCveCount |= int32(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 10:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ModerateCveCount", wireType)
+			}
+			m.ModerateCveCount = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.ModerateCveCount |= int32(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 11:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field FixableModerateCveCount", wireType)
+			}
+			m.FixableModerateCveCount = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.FixableModerateCveCount |= int32(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 12:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field LowCveCount", wireType)
+			}
+			m.LowCveCount = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.LowCveCount |= int32(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 13:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field FixableLowCveCount", wireType)
+			}
+			m.FixableLowCveCount = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.FixableLowCveCount |= int32(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		default:
+			iNdEx = preIndex
+			skippy, err := protohelpers.Skip(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.unknownFields = append(m.unknownFields, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
 func (m *ImageV2) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
@@ -783,7 +1150,7 @@ func (m *ImageV2) UnmarshalVT(dAtA []byte) error {
 			iNdEx = postIndex
 		case 2:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Sha", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field Digest", wireType)
 			}
 			var stringLen uint64
 			for shift := uint(0); ; shift += 7 {
@@ -811,7 +1178,7 @@ func (m *ImageV2) UnmarshalVT(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.Sha = string(dAtA[iNdEx:postIndex])
+			m.Digest = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
 		case 3:
 			if wireType != 2 {
@@ -994,10 +1361,10 @@ func (m *ImageV2) UnmarshalVT(dAtA []byte) error {
 			}
 			iNdEx = postIndex
 		case 8:
-			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field ComponentCount", wireType)
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ScanStats", wireType)
 			}
-			m.ComponentCount = 0
+			var msglen int
 			for shift := uint(0); ; shift += 7 {
 				if shift >= 64 {
 					return protohelpers.ErrIntOverflow
@@ -1007,240 +1374,29 @@ func (m *ImageV2) UnmarshalVT(dAtA []byte) error {
 				}
 				b := dAtA[iNdEx]
 				iNdEx++
-				m.ComponentCount |= int32(b&0x7F) << shift
+				msglen |= int(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}
 			}
+			if msglen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.ScanStats == nil {
+				m.ScanStats = &ImageV2_ScanStats{}
+			}
+			if err := m.ScanStats.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
 		case 9:
-			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field CveCount", wireType)
-			}
-			m.CveCount = 0
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return protohelpers.ErrIntOverflow
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				m.CveCount |= int32(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-		case 10:
-			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field FixableCveCount", wireType)
-			}
-			m.FixableCveCount = 0
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return protohelpers.ErrIntOverflow
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				m.FixableCveCount |= int32(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-		case 11:
-			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field UnknownCveCount", wireType)
-			}
-			m.UnknownCveCount = 0
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return protohelpers.ErrIntOverflow
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				m.UnknownCveCount |= int32(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-		case 12:
-			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field FixableUnknownCveCount", wireType)
-			}
-			m.FixableUnknownCveCount = 0
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return protohelpers.ErrIntOverflow
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				m.FixableUnknownCveCount |= int32(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-		case 13:
-			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field CriticalCveCount", wireType)
-			}
-			m.CriticalCveCount = 0
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return protohelpers.ErrIntOverflow
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				m.CriticalCveCount |= int32(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-		case 14:
-			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field FixableCriticalCveCount", wireType)
-			}
-			m.FixableCriticalCveCount = 0
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return protohelpers.ErrIntOverflow
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				m.FixableCriticalCveCount |= int32(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-		case 15:
-			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field ImportantCveCount", wireType)
-			}
-			m.ImportantCveCount = 0
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return protohelpers.ErrIntOverflow
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				m.ImportantCveCount |= int32(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-		case 16:
-			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field FixableImportantCveCount", wireType)
-			}
-			m.FixableImportantCveCount = 0
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return protohelpers.ErrIntOverflow
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				m.FixableImportantCveCount |= int32(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-		case 17:
-			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field ModerateCveCount", wireType)
-			}
-			m.ModerateCveCount = 0
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return protohelpers.ErrIntOverflow
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				m.ModerateCveCount |= int32(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-		case 18:
-			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field FixableModerateCveCount", wireType)
-			}
-			m.FixableModerateCveCount = 0
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return protohelpers.ErrIntOverflow
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				m.FixableModerateCveCount |= int32(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-		case 19:
-			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field LowCveCount", wireType)
-			}
-			m.LowCveCount = 0
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return protohelpers.ErrIntOverflow
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				m.LowCveCount |= int32(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-		case 20:
-			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field FixableLowCveCount", wireType)
-			}
-			m.FixableLowCveCount = 0
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return protohelpers.ErrIntOverflow
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				m.FixableLowCveCount |= int32(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-		case 21:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field LastUpdated", wireType)
 			}
@@ -1276,7 +1432,7 @@ func (m *ImageV2) UnmarshalVT(dAtA []byte) error {
 				return err
 			}
 			iNdEx = postIndex
-		case 22:
+		case 10:
 			if wireType != 0 {
 				return fmt.Errorf("proto: wrong wireType = %d for field NotPullable", wireType)
 			}
@@ -1296,7 +1452,7 @@ func (m *ImageV2) UnmarshalVT(dAtA []byte) error {
 				}
 			}
 			m.NotPullable = bool(v != 0)
-		case 23:
+		case 11:
 			if wireType != 0 {
 				return fmt.Errorf("proto: wrong wireType = %d for field IsClusterLocal", wireType)
 			}
@@ -1316,7 +1472,7 @@ func (m *ImageV2) UnmarshalVT(dAtA []byte) error {
 				}
 			}
 			m.IsClusterLocal = bool(v != 0)
-		case 24:
+		case 12:
 			if wireType != 0 {
 				return fmt.Errorf("proto: wrong wireType = %d for field Priority", wireType)
 			}
@@ -1335,7 +1491,7 @@ func (m *ImageV2) UnmarshalVT(dAtA []byte) error {
 					break
 				}
 			}
-		case 25:
+		case 13:
 			if wireType != 5 {
 				return fmt.Errorf("proto: wrong wireType = %d for field RiskScore", wireType)
 			}
@@ -1346,7 +1502,7 @@ func (m *ImageV2) UnmarshalVT(dAtA []byte) error {
 			v = uint32(binary.LittleEndian.Uint32(dAtA[iNdEx:]))
 			iNdEx += 4
 			m.RiskScore = float32(math.Float32frombits(v))
-		case 26:
+		case 14:
 			if wireType != 5 {
 				return fmt.Errorf("proto: wrong wireType = %d for field TopCvss", wireType)
 			}
@@ -1357,7 +1513,7 @@ func (m *ImageV2) UnmarshalVT(dAtA []byte) error {
 			v = uint32(binary.LittleEndian.Uint32(dAtA[iNdEx:]))
 			iNdEx += 4
 			m.TopCvss = float32(math.Float32frombits(v))
-		case 27:
+		case 15:
 			if wireType == 0 {
 				var v ImageV2_Note
 				for shift := uint(0); ; shift += 7 {
@@ -1711,6 +1867,304 @@ func (m *ListImageV2) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
+func (m *ImageV2_ScanStats) UnmarshalVTUnsafe(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return protohelpers.ErrIntOverflow
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: ImageV2_ScanStats: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: ImageV2_ScanStats: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ComponentCount", wireType)
+			}
+			m.ComponentCount = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.ComponentCount |= int32(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 2:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field CveCount", wireType)
+			}
+			m.CveCount = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.CveCount |= int32(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 3:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field FixableCveCount", wireType)
+			}
+			m.FixableCveCount = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.FixableCveCount |= int32(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 4:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field UnknownCveCount", wireType)
+			}
+			m.UnknownCveCount = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.UnknownCveCount |= int32(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 5:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field FixableUnknownCveCount", wireType)
+			}
+			m.FixableUnknownCveCount = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.FixableUnknownCveCount |= int32(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 6:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field CriticalCveCount", wireType)
+			}
+			m.CriticalCveCount = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.CriticalCveCount |= int32(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 7:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field FixableCriticalCveCount", wireType)
+			}
+			m.FixableCriticalCveCount = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.FixableCriticalCveCount |= int32(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 8:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ImportantCveCount", wireType)
+			}
+			m.ImportantCveCount = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.ImportantCveCount |= int32(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 9:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field FixableImportantCveCount", wireType)
+			}
+			m.FixableImportantCveCount = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.FixableImportantCveCount |= int32(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 10:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ModerateCveCount", wireType)
+			}
+			m.ModerateCveCount = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.ModerateCveCount |= int32(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 11:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field FixableModerateCveCount", wireType)
+			}
+			m.FixableModerateCveCount = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.FixableModerateCveCount |= int32(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 12:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field LowCveCount", wireType)
+			}
+			m.LowCveCount = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.LowCveCount |= int32(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 13:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field FixableLowCveCount", wireType)
+			}
+			m.FixableLowCveCount = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.FixableLowCveCount |= int32(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		default:
+			iNdEx = preIndex
+			skippy, err := protohelpers.Skip(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.unknownFields = append(m.unknownFields, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
 func (m *ImageV2) UnmarshalVTUnsafe(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
@@ -1778,7 +2232,7 @@ func (m *ImageV2) UnmarshalVTUnsafe(dAtA []byte) error {
 			iNdEx = postIndex
 		case 2:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Sha", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field Digest", wireType)
 			}
 			var stringLen uint64
 			for shift := uint(0); ; shift += 7 {
@@ -1810,7 +2264,7 @@ func (m *ImageV2) UnmarshalVTUnsafe(dAtA []byte) error {
 			if intStringLen > 0 {
 				stringValue = unsafe.String(&dAtA[iNdEx], intStringLen)
 			}
-			m.Sha = stringValue
+			m.Digest = stringValue
 			iNdEx = postIndex
 		case 3:
 			if wireType != 2 {
@@ -1993,10 +2447,10 @@ func (m *ImageV2) UnmarshalVTUnsafe(dAtA []byte) error {
 			}
 			iNdEx = postIndex
 		case 8:
-			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field ComponentCount", wireType)
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ScanStats", wireType)
 			}
-			m.ComponentCount = 0
+			var msglen int
 			for shift := uint(0); ; shift += 7 {
 				if shift >= 64 {
 					return protohelpers.ErrIntOverflow
@@ -2006,240 +2460,29 @@ func (m *ImageV2) UnmarshalVTUnsafe(dAtA []byte) error {
 				}
 				b := dAtA[iNdEx]
 				iNdEx++
-				m.ComponentCount |= int32(b&0x7F) << shift
+				msglen |= int(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}
 			}
+			if msglen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.ScanStats == nil {
+				m.ScanStats = &ImageV2_ScanStats{}
+			}
+			if err := m.ScanStats.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
 		case 9:
-			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field CveCount", wireType)
-			}
-			m.CveCount = 0
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return protohelpers.ErrIntOverflow
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				m.CveCount |= int32(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-		case 10:
-			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field FixableCveCount", wireType)
-			}
-			m.FixableCveCount = 0
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return protohelpers.ErrIntOverflow
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				m.FixableCveCount |= int32(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-		case 11:
-			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field UnknownCveCount", wireType)
-			}
-			m.UnknownCveCount = 0
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return protohelpers.ErrIntOverflow
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				m.UnknownCveCount |= int32(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-		case 12:
-			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field FixableUnknownCveCount", wireType)
-			}
-			m.FixableUnknownCveCount = 0
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return protohelpers.ErrIntOverflow
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				m.FixableUnknownCveCount |= int32(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-		case 13:
-			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field CriticalCveCount", wireType)
-			}
-			m.CriticalCveCount = 0
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return protohelpers.ErrIntOverflow
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				m.CriticalCveCount |= int32(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-		case 14:
-			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field FixableCriticalCveCount", wireType)
-			}
-			m.FixableCriticalCveCount = 0
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return protohelpers.ErrIntOverflow
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				m.FixableCriticalCveCount |= int32(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-		case 15:
-			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field ImportantCveCount", wireType)
-			}
-			m.ImportantCveCount = 0
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return protohelpers.ErrIntOverflow
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				m.ImportantCveCount |= int32(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-		case 16:
-			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field FixableImportantCveCount", wireType)
-			}
-			m.FixableImportantCveCount = 0
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return protohelpers.ErrIntOverflow
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				m.FixableImportantCveCount |= int32(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-		case 17:
-			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field ModerateCveCount", wireType)
-			}
-			m.ModerateCveCount = 0
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return protohelpers.ErrIntOverflow
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				m.ModerateCveCount |= int32(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-		case 18:
-			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field FixableModerateCveCount", wireType)
-			}
-			m.FixableModerateCveCount = 0
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return protohelpers.ErrIntOverflow
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				m.FixableModerateCveCount |= int32(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-		case 19:
-			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field LowCveCount", wireType)
-			}
-			m.LowCveCount = 0
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return protohelpers.ErrIntOverflow
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				m.LowCveCount |= int32(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-		case 20:
-			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field FixableLowCveCount", wireType)
-			}
-			m.FixableLowCveCount = 0
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return protohelpers.ErrIntOverflow
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				m.FixableLowCveCount |= int32(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-		case 21:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field LastUpdated", wireType)
 			}
@@ -2275,7 +2518,7 @@ func (m *ImageV2) UnmarshalVTUnsafe(dAtA []byte) error {
 				return err
 			}
 			iNdEx = postIndex
-		case 22:
+		case 10:
 			if wireType != 0 {
 				return fmt.Errorf("proto: wrong wireType = %d for field NotPullable", wireType)
 			}
@@ -2295,7 +2538,7 @@ func (m *ImageV2) UnmarshalVTUnsafe(dAtA []byte) error {
 				}
 			}
 			m.NotPullable = bool(v != 0)
-		case 23:
+		case 11:
 			if wireType != 0 {
 				return fmt.Errorf("proto: wrong wireType = %d for field IsClusterLocal", wireType)
 			}
@@ -2315,7 +2558,7 @@ func (m *ImageV2) UnmarshalVTUnsafe(dAtA []byte) error {
 				}
 			}
 			m.IsClusterLocal = bool(v != 0)
-		case 24:
+		case 12:
 			if wireType != 0 {
 				return fmt.Errorf("proto: wrong wireType = %d for field Priority", wireType)
 			}
@@ -2334,7 +2577,7 @@ func (m *ImageV2) UnmarshalVTUnsafe(dAtA []byte) error {
 					break
 				}
 			}
-		case 25:
+		case 13:
 			if wireType != 5 {
 				return fmt.Errorf("proto: wrong wireType = %d for field RiskScore", wireType)
 			}
@@ -2345,7 +2588,7 @@ func (m *ImageV2) UnmarshalVTUnsafe(dAtA []byte) error {
 			v = uint32(binary.LittleEndian.Uint32(dAtA[iNdEx:]))
 			iNdEx += 4
 			m.RiskScore = float32(math.Float32frombits(v))
-		case 26:
+		case 14:
 			if wireType != 5 {
 				return fmt.Errorf("proto: wrong wireType = %d for field TopCvss", wireType)
 			}
@@ -2356,7 +2599,7 @@ func (m *ImageV2) UnmarshalVTUnsafe(dAtA []byte) error {
 			v = uint32(binary.LittleEndian.Uint32(dAtA[iNdEx:]))
 			iNdEx += 4
 			m.TopCvss = float32(math.Float32frombits(v))
-		case 27:
+		case 15:
 			if wireType == 0 {
 				var v ImageV2_Note
 				for shift := uint(0); ; shift += 7 {

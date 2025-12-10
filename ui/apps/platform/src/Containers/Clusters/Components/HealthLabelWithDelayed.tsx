@@ -1,7 +1,7 @@
-import React, { ReactElement } from 'react';
+import type { ReactElement } from 'react';
 
 import { healthStatusLabels } from '../cluster.constants';
-import { ClusterHealthItemStatus, ClusterHealthItem } from '../clusterTypes';
+import type { ClusterHealthItem, ClusterHealthItemStatus } from '../clusterTypes';
 
 type HealthLabelWithDelayedProps = {
     delayedText: string;

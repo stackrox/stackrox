@@ -11,6 +11,7 @@ package postgres
 
 import (
     "context"
+    "slices"
     "strings"
     "time"
 
@@ -60,7 +61,8 @@ type Store interface {
     Upsert(ctx context.Context, obj *storeType) error
     UpsertMany(ctx context.Context, objs []*storeType) error
     Delete(ctx context.Context, {{$primaryKeyName}} {{$primaryKeyType}}) error
-    DeleteByQuery(ctx context.Context, q *v1.Query) ([]string, error)
+    DeleteByQuery(ctx context.Context, q *v1.Query) error
+    DeleteByQueryWithIDs(ctx context.Context, q *v1.Query) ([]string, error)
     DeleteMany(ctx context.Context, identifiers []{{$primaryKeyType}}) error
     PruneMany(ctx context.Context, identifiers []{{$primaryKeyType}}) error
 {{- end }}
@@ -80,6 +82,11 @@ type Store interface {
 
     Walk(ctx context.Context, fn callback) error
     WalkByQuery(ctx context.Context, query *v1.Query, fn callback) error
+
+{{- if and .CachedStore .ForSAC }}
+    // Deprecated: Use for SAC only
+    GetAllFromCacheForSAC() []*storeType
+{{- end }}
 }
 
 {{ define "defineScopeChecker" }}scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_{{ . }}_ACCESS).Resource(targetResource){{ end }}
@@ -252,16 +259,23 @@ func {{ template "insertFunctionName" $schema }}(batch *pgx.Batch, obj {{$schema
 
 {{- define "copyObject"}}
 {{- $schema := .schema }}
+{{- $singlePK := index $schema.PrimaryKeys 0 }}
 func {{ template "copyFunctionName" $schema }}(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, {{ range $index, $field := $schema.FieldsReferringToParent }} {{$field.Name}} {{$field.Type}},{{end}} objs ...{{$schema.Type}}) error {
-    batchSize := pgSearch.MaxBatchSize
-    if len(objs) < batchSize {
-        batchSize = len(objs)
+    if len(objs) == 0 {
+        return nil
     }
-    inputRows := make([][]interface{}, 0, batchSize)
     {{if not $schema.Parent }}
-    // This is a copy so first we must delete the rows and re-add them
-    // Which is essentially the desired behaviour of an upsert.
-    deletes := make([]string, 0, batchSize)
+    {
+        // CopyFrom does not upsert, so delete existing rows first to achieve upsert behavior.
+        // Parent deletion cascades to children, so only the top-level parent needs deletion.
+        deletes := make([]string, 0, len(objs))
+        for _, obj := range objs {
+            deletes = append(deletes, {{ $singlePK.Getter "obj" }})
+        }
+        if err := s.DeleteMany(ctx, deletes); err != nil {
+            return err
+        }
+    }
     {{end}}
 
     copyCols := []string {
@@ -270,51 +284,33 @@ func {{ template "copyFunctionName" $schema }}(ctx context.Context, s pgSearch.D
     {{- end }}
     }
 
-    for idx, obj := range objs {
-        // Todo: ROX-9499 Figure out how to more cleanly template around this issue.
-        log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj "+
-		"in the loop is not used as it only consists of the parent ID and the index.  Putting this here as a stop gap "+
-		"to simply use the object.  %s", obj)
-        {{/* If embedded, the top-level has the full serialized object */}}
+    idx := 0
+    inputRows := pgx.CopyFromFunc(func() ([]any, error) {
+        if idx >= len(objs) {
+            return nil, nil
+        }
+        obj := objs[idx]
+        idx++
+
         {{if not $schema.Parent }}
         serialized, marshalErr := obj.MarshalVT()
         if marshalErr != nil {
-            return marshalErr
+            return nil, marshalErr
         }
         {{end}}
 
-        inputRows = append(inputRows, []interface{}{
+        return []interface{}{
             {{- template "insertValues" $schema }}
-        })
+        }, nil
+    })
 
-        {{ if not $schema.Parent }}
-        // Add the ID to be deleted.
-        deletes = append(deletes, {{ range $field := $schema.PrimaryKeys }}{{$field.Getter "obj"}}, {{end}})
-        {{end}}
-
-        // if we hit our batch size we need to push the data
-        if (idx + 1) % batchSize == 0 || idx == len(objs) - 1  {
-            // copy does not upsert so have to delete first.  parent deletion cascades so only need to
-            // delete for the top level parent
-            {{if not $schema.Parent }}
-            if err := s.DeleteMany(ctx, deletes); err != nil {
-                return err
-            }
-            // clear the inserts and vals for the next batch
-            deletes = deletes[:0]
-            {{end}}
-            if _, err := tx.CopyFrom(ctx, pgx.Identifier{"{{$schema.Table|lowerCase}}"}, copyCols, pgx.CopyFromRows(inputRows)); err != nil {
-                return err
-            }
-            // clear the input rows for the next batch
-            inputRows = inputRows[:0]
-        }
+    if _, err := tx.CopyFrom(ctx, pgx.Identifier{"{{$schema.Table|lowerCase}}"}, copyCols, inputRows); err != nil {
+            return err
     }
 
     {{if $schema.Children }}
-    for idx, obj := range objs {
-        _ = idx // idx may or may not be used depending on how nested we are, so avoid compile-time errors.
-        {{range $child := $schema.Children }}
+    for _, obj := range objs {
+        {{- range $child := $schema.Children }}
         if err := {{ template "copyFunctionName" $child }}(ctx, s, tx{{ range $index, $field := $schema.PrimaryKeys }}, {{$field.Getter "obj"}}{{end}}, obj.{{$child.ObjectGetter}}...); err != nil {
             return err
         }
@@ -334,21 +330,7 @@ func {{ template "copyFunctionName" $schema }}(ctx context.Context, s pgSearch.D
 
 // endregion Helper functions
 
-// region Used for testing
-
-// CreateTableAndNewStore returns a new Store instance for testing.
-func CreateTableAndNewStore(ctx context.Context, db postgres.DB, gormDB *gorm.DB) Store {
-	pkgSchema.ApplySchemaForTable(ctx, gormDB, baseTable)
-	return New(db)
-}
-
 {{- define "dropTableFunctionName"}}dropTable{{.Table | upperCamelCase}}{{end}}
-
-
-// Destroy drops the tables associated with the target object type.
-func Destroy(ctx context.Context, db postgres.DB) {
-    {{template "dropTableFunctionName" .Schema}}(ctx, db)
-}
 
 {{- define "dropTable"}}
 {{- $schema := . }}
@@ -360,6 +342,21 @@ func {{ template "dropTableFunctionName" $schema }}(ctx context.Context, db post
 {{range $child := $schema.Children}}{{ template "dropTable" $child }}{{end}}
 {{- end}}
 
+{{ if .GenerateDataModelHelpers -}}
+// region Used for testing
+
+// CreateTableAndNewStore returns a new Store instance for testing.
+func CreateTableAndNewStore(ctx context.Context, db postgres.DB, gormDB *gorm.DB) Store {
+	pkgSchema.ApplySchemaForTable(ctx, gormDB, baseTable)
+	return New(db)
+}
+
+// Destroy drops the tables associated with the target object type.
+func Destroy(ctx context.Context, db postgres.DB) {
+    {{template "dropTableFunctionName" .Schema}}(ctx, db)
+}
+
 {{template "dropTable" .Schema}}
 
 // endregion Used for testing
+{{- end }}

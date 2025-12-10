@@ -3,7 +3,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.18.0
+    controller-gen.kubebuilder.io/version: v0.19.0
   name: centrals.platform.stackrox.io
 spec:
   group: platform.stackrox.io
@@ -14,7 +14,23 @@ spec:
     singular: central
   scope: Namespaced
   versions:
-  - name: v1alpha1
+  - additionalPrinterColumns:
+    - jsonPath: .status.productVersion
+      name: Version
+      type: string
+    - jsonPath: .status.central.adminPassword.adminPasswordSecretReference
+      name: AdminPassword
+      type: string
+    - jsonPath: .status.conditions[?(@.type=="Deployed")].message
+      name: Message
+      type: string
+    - jsonPath: .status.conditions[?(@.type=="Progressing")].status
+      name: Progressing
+      type: string
+    - jsonPath: .status.conditions[?(@.type=="Available")].status
+      name: Available
+      type: string
+    name: v1alpha1
     schema:
       openAPIV3Schema:
         description: |-
@@ -80,16 +96,16 @@ spec:
                         description: Configures the database connection pool size.
                         properties:
                           maxConnections:
-                            default: 90
-                            description: Maximum number of connections in the connection
-                              pool.
+                            description: |-
+                              Maximum number of connections in the connection pool.
+                              The default is: 90.
                             format: int32
                             minimum: 1
                             type: integer
                           minConnections:
-                            default: 10
-                            description: Minimum number of connections in the connection
-                              pool.
+                            description: |-
+                              Minimum number of connections in the connection pool.
+                              The default is: 10.
                             format: int32
                             minimum: 1
                             type: integer
@@ -125,11 +141,9 @@ spec:
                           type: object
                         type: array
                       isEnabled:
-                        default: Default
                         description: |-
-                          Deprecated field. It is no longer necessary to specify it.
+                          Obsolete field.
                           This field will be removed in a future release.
-                          Central is configured to use PostgreSQL by default.
                         enum:
                         - Default
                         - Enabled
@@ -160,7 +174,7 @@ spec:
                         properties:
                           hostPath:
                             description: |-
-                              Stores persistent data on a directory on the host. This is not recommended, and should only
+                              Stores persistent data in a directory on the host. This is not recommended, and should only
                               be used together with a node selector (only available in YAML view).
                             properties:
                               path:
@@ -173,10 +187,10 @@ spec:
                               Recommended for most users.
                             properties:
                               claimName:
-                                default: central-db
                                 description: |-
                                   The name of the PVC to manage persistent data. If no PVC with the given name exists, it will be
-                                  created. Defaults to "central-db" if not set.
+                                  created.
+                                  The default is: central-db.
                                 type: string
                               size:
                                 description: |-
@@ -202,7 +216,7 @@ spec:
                               Claims lists the names of resources, defined in spec.resourceClaims,
                               that are used by this container.
 
-                              This is an alpha field and requires enabling the
+                              This field depends on the
                               DynamicResourceAllocation feature gate.
 
                               This field is immutable. It can only be set for containers.
@@ -347,15 +361,14 @@ spec:
                         description: Expose Central through a load balancer service.
                         properties:
                           enabled:
-                            default: false
+                            description: 'The default is: false.'
                             type: boolean
                           ip:
                             description: If you have a static IP address reserved
                               for your load balancer, you can enter it here.
                             type: string
                           port:
-                            default: 443
-                            description: Defaults to 443 if not set.
+                            description: 'The default is: 443.'
                             format: int32
                             maximum: 65535
                             minimum: 1
@@ -365,7 +378,7 @@ spec:
                         description: Expose Central through a node port.
                         properties:
                           enabled:
-                            default: false
+                            description: 'The default is: false.'
                             type: boolean
                           port:
                             description: Use this to specify an explicit node port.
@@ -379,8 +392,9 @@ spec:
                         description: Expose Central through an OpenShift route.
                         properties:
                           enabled:
-                            default: false
-                            description: Expose Central with a passthrough route.
+                            description: |-
+                              Expose Central with a passthrough route.
+                              The default is: false.
                             type: boolean
                           host:
                             description: |-
@@ -395,10 +409,10 @@ spec:
                               [user] --TLS--> [OpenShift router] --TLS--> [Central]
                             properties:
                               enabled:
-                                default: false
                                 description: |-
                                   Expose Central with a reencrypt route.
                                   Should not be used for sensor communication.
+                                  The default is: false.
                                 type: boolean
                               host:
                                 description: |-
@@ -483,9 +497,9 @@ spec:
                       in the Central DB.
                     properties:
                       enabled:
-                        default: false
-                        description: Enables the encryption of notifier secrets stored
-                          in the Central DB.
+                        description: |-
+                          Enables the encryption of notifier secrets stored in the Central DB.
+                          The default is: false.
                         type: boolean
                     type: object
                   persistence:
@@ -523,7 +537,7 @@ spec:
                           Claims lists the names of resources, defined in spec.resourceClaims,
                           that are used by this container.
 
-                          This is an alpha field and requires enabling the
+                          This field depends on the
                           DynamicResourceAllocation feature gate.
 
                           This field is immutable. It can only be set for containers.
@@ -580,8 +594,9 @@ spec:
                       data to a remote storage backend.
                     properties:
                       enabled:
-                        default: true
-                        description: Specifies if Telemetry is enabled.
+                        description: |-
+                          Specifies whether Telemetry is enabled.
+                          The default is: true.
                         type: boolean
                       storage:
                         description: Defines the telemetry storage backend for Central.
@@ -640,13 +655,141 @@ spec:
                 description: Config-as-Code configuration.
                 properties:
                   configAsCodeComponent:
-                    default: Enabled
-                    description: If you want to deploy the Config as Code component,
-                      set this to "Enabled"
+                    description: |-
+                      If you want to deploy the Config as Code component, set this to "Enabled"
+                      The default is: Enabled.
                     enum:
                     - Enabled
                     - Disabled
                     type: string
+                  hostAliases:
+                    description: HostAliases allows configuring additional hostnames
+                      to resolve in the pod's hosts file.
+                    items:
+                      description: |-
+                        HostAlias holds the mapping between IP and hostnames that will be injected as an entry in the
+                        pod's hosts file.
+                      properties:
+                        hostnames:
+                          description: Hostnames for the above IP address.
+                          items:
+                            type: string
+                          type: array
+                          x-kubernetes-list-type: atomic
+                        ip:
+                          description: IP address of the host file entry.
+                          type: string
+                      required:
+                      - ip
+                      type: object
+                    type: array
+                  nodeSelector:
+                    additionalProperties:
+                      type: string
+                    description: If you want this component to only run on specific
+                      nodes, you can configure a node selector here.
+                    type: object
+                  resources:
+                    description: |-
+                      Allows overriding the default resource settings for this component. Please consult the documentation
+                      for an overview of default resource requirements and a sizing guide.
+                    properties:
+                      claims:
+                        description: |-
+                          Claims lists the names of resources, defined in spec.resourceClaims,
+                          that are used by this container.
+
+                          This field depends on the
+                          DynamicResourceAllocation feature gate.
+
+                          This field is immutable. It can only be set for containers.
+                        items:
+                          description: ResourceClaim references one entry in PodSpec.ResourceClaims.
+                          properties:
+                            name:
+                              description: |-
+                                Name must match the name of one entry in pod.spec.resourceClaims of
+                                the Pod where this field is used. It makes that resource available
+                                inside a container.
+                              type: string
+                            request:
+                              description: |-
+                                Request is the name chosen for a request in the referenced claim.
+                                If empty, everything from the claim is made available, otherwise
+                                only the result of this request.
+                              type: string
+                          required:
+                          - name
+                          type: object
+                        type: array
+                        x-kubernetes-list-map-keys:
+                        - name
+                        x-kubernetes-list-type: map
+                      limits:
+                        additionalProperties:
+                          anyOf:
+                          - type: integer
+                          - type: string
+                          pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                          x-kubernetes-int-or-string: true
+                        description: |-
+                          Limits describes the maximum amount of compute resources allowed.
+                          More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
+                        type: object
+                      requests:
+                        additionalProperties:
+                          anyOf:
+                          - type: integer
+                          - type: string
+                          pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                          x-kubernetes-int-or-string: true
+                        description: |-
+                          Requests describes the minimum amount of compute resources required.
+                          If Requests is omitted for a container, it defaults to Limits if that is explicitly specified,
+                          otherwise to an implementation-defined value. Requests cannot exceed Limits.
+                          More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
+                        type: object
+                    type: object
+                  tolerations:
+                    description: If you want this component to only run on specific
+                      nodes, you can configure tolerations of tainted nodes.
+                    items:
+                      description: |-
+                        The pod this Toleration is attached to tolerates any taint that matches
+                        the triple <key,value,effect> using the matching operator <operator>.
+                      properties:
+                        effect:
+                          description: |-
+                            Effect indicates the taint effect to match. Empty means match all taint effects.
+                            When specified, allowed values are NoSchedule, PreferNoSchedule and NoExecute.
+                          type: string
+                        key:
+                          description: |-
+                            Key is the taint key that the toleration applies to. Empty means match all taint keys.
+                            If the key is empty, operator must be Exists; this combination means to match all values and all keys.
+                          type: string
+                        operator:
+                          description: |-
+                            Operator represents a key's relationship to the value.
+                            Valid operators are Exists and Equal. Defaults to Equal.
+                            Exists is equivalent to wildcard for value, so that a pod can
+                            tolerate all taints of a particular category.
+                          type: string
+                        tolerationSeconds:
+                          description: |-
+                            TolerationSeconds represents the period of time the toleration (which must be
+                            of effect NoExecute, otherwise this field is ignored) tolerates the taint. By default,
+                            it is not set, which means tolerate the taint forever (do not evict). Zero and
+                            negative values will be treated as 0 (evict immediately) by the system.
+                          format: int64
+                          type: integer
+                        value:
+                          description: |-
+                            Value is the taint value the toleration matches to.
+                            If the operator is Exists, the value should be empty, otherwise just a regular string.
+                          type: string
+                      type: object
+                    type: array
                 type: object
               customize:
                 description: Customizations to apply on all Central Services components.
@@ -664,8 +807,9 @@ spec:
                         in a Container.
                       properties:
                         name:
-                          description: Name of the environment variable. Must be a
-                            C_IDENTIFIER.
+                          description: |-
+                            Name of the environment variable.
+                            May consist of any printable ASCII characters except '='.
                           type: string
                         value:
                           description: |-
@@ -721,6 +865,43 @@ spec:
                                   type: string
                               required:
                               - fieldPath
+                              type: object
+                              x-kubernetes-map-type: atomic
+                            fileKeyRef:
+                              description: |-
+                                FileKeyRef selects a key of the env file.
+                                Requires the EnvFiles feature gate to be enabled.
+                              properties:
+                                key:
+                                  description: |-
+                                    The key within the env file. An invalid key will prevent the pod from starting.
+                                    The keys defined within a source may consist of any printable ASCII characters except '='.
+                                    During Alpha stage of the EnvFiles feature gate, the key size is limited to 128 characters.
+                                  type: string
+                                optional:
+                                  default: false
+                                  description: |-
+                                    Specify whether the file or its key must be defined. If the file or key
+                                    does not exist, then the env var is not published.
+                                    If optional is set to true and the specified key does not exist,
+                                    the environment variable will not be set in the Pod's containers.
+
+                                    If optional is set to false and the specified key does not exist,
+                                    an error will be returned during Pod creation.
+                                  type: boolean
+                                path:
+                                  description: |-
+                                    The path within the volume from which to select the file.
+                                    Must be relative and may not contain the '..' path or start with '..'.
+                                  type: string
+                                volumeName:
+                                  description: The name of the volume mount containing
+                                    the env file.
+                                  type: string
+                              required:
+                              - key
+                              - path
+                              - volumeName
                               type: object
                               x-kubernetes-map-type: atomic
                             resourceFieldRef:
@@ -830,7 +1011,7 @@ spec:
                       Monitoring
                     properties:
                       enabled:
-                        default: true
+                        description: 'The default is: true.'
                         type: boolean
                     required:
                     - enabled
@@ -840,11 +1021,9 @@ spec:
                 description: Network configuration.
                 properties:
                   policies:
-                    default: Enabled
-                    description: To provide security at the network level the ACS
-                      Operator creates NetworkPolicy resources by default. If you
-                      want to manage your own NetworkPolicy objects then set this
-                      to "Disabled".
+                    description: |-
+                      To provide security at the network level, the ACS Operator creates NetworkPolicy resources by default. If you want to manage your own NetworkPolicy objects then set this to "Disabled".
+                      The default is: Enabled.
                     enum:
                     - Enabled
                     - Disabled
@@ -866,7 +1045,7 @@ spec:
                     an ingress to a network policy\n\n\tapiVersion: networking.k8s.io/v1\n\tkind:
                     NetworkPolicy\n\tname: allow-ext-to-central\n\tpatches:\n\t- path:
                     spec.ingress[-1]\n\t  value: |\n\t    ports:\n\t    - port: 999\n\t
-                    \     protocol: TCP\n\n## Changing the value of a configMap\n\n\tapiVersion:
+                    \     protocol: TCP\n\n## Changing the value of a ConfigMap\n\n\tapiVersion:
                     v1\n\tkind: ConfigMap\n\tname: central-endpoints\n\tpatches:\n\t-
                     path: data.endpoints\\.yaml:\n\t  verbatim: |\n\t    disableDefault:
                     false\n\n## Adding a container to a deployment\n\n\tapiVersion:
@@ -914,7 +1093,7 @@ spec:
                           verbatim:
                             description: |-
                               Verbatim value to add, delete or replace.
-                              Same as Value, however the content is not interpreted as YAML, but treated as literal string instead.
+                              Same as Value, but the content is not interpreted as YAML and is treated as a literal string instead.
                               At least one of Value and Verbatim must be empty.
                             type: string
                         type: object
@@ -967,7 +1146,7 @@ spec:
                               Claims lists the names of resources, defined in spec.resourceClaims,
                               that are used by this container.
 
-                              This is an alpha field and requires enabling the
+                              This field depends on the
                               DynamicResourceAllocation feature gate.
 
                               This field is immutable. It can only be set for containers.
@@ -1023,29 +1202,28 @@ spec:
                           autoscaling.
                         properties:
                           autoScaling:
-                            default: Enabled
                             description: |-
                               When enabled, the number of component replicas is managed dynamically based on the load, within the limits
                               specified below.
+                              The default is: Enabled.
                             enum:
                             - Enabled
                             - Disabled
                             type: string
                           maxReplicas:
-                            default: 5
+                            description: 'The default is: 5.'
                             format: int32
                             minimum: 1
                             type: integer
                           minReplicas:
-                            default: 2
+                            description: 'The default is: 2.'
                             format: int32
                             minimum: 1
                             type: integer
                           replicas:
-                            default: 3
-                            description: When autoscaling is disabled, the number
-                              of replicas will always be configured to match this
-                              value.
+                            description: |-
+                              When autoscaling is disabled, the number of replicas will always be configured to match this value.
+                              The default is: 3.
                             format: int32
                             minimum: 1
                             type: integer
@@ -1132,7 +1310,7 @@ spec:
                               Claims lists the names of resources, defined in spec.resourceClaims,
                               that are used by this container.
 
-                              This is an alpha field and requires enabling the
+                              This field depends on the
                               DynamicResourceAllocation feature gate.
 
                               This field is immutable. It can only be set for containers.
@@ -1292,7 +1470,7 @@ spec:
                         properties:
                           hostPath:
                             description: |-
-                              Stores persistent data on a directory on the host. This is not recommended, and should only
+                              Stores persistent data in a directory on the host. This is not recommended, and should only
                               be used together with a node selector (only available in YAML view).
                             properties:
                               path:
@@ -1305,10 +1483,10 @@ spec:
                               Recommended for most users.
                             properties:
                               claimName:
-                                default: scanner-v4-db
                                 description: |-
                                   The name of the PVC to manage persistent data. If no PVC with the given name exists, it will be
-                                  created. Defaults to "scanner-v4-db" if not set.
+                                  created.
+                                  The default is: scanner-v4-db.
                                 type: string
                               size:
                                 description: |-
@@ -1334,7 +1512,7 @@ spec:
                               Claims lists the names of resources, defined in spec.resourceClaims,
                               that are used by this container.
 
-                              This is an alpha field and requires enabling the
+                              This field depends on the
                               DynamicResourceAllocation feature gate.
 
                               This field is immutable. It can only be set for containers.
@@ -1466,7 +1644,7 @@ spec:
                               Claims lists the names of resources, defined in spec.resourceClaims,
                               that are used by this container.
 
-                              This is an alpha field and requires enabling the
+                              This field depends on the
                               DynamicResourceAllocation feature gate.
 
                               This field is immutable. It can only be set for containers.
@@ -1522,29 +1700,28 @@ spec:
                           for this component.
                         properties:
                           autoScaling:
-                            default: Enabled
                             description: |-
                               When enabled, the number of component replicas is managed dynamically based on the load, within the limits
                               specified below.
+                              The default is: Enabled.
                             enum:
                             - Enabled
                             - Disabled
                             type: string
                           maxReplicas:
-                            default: 5
+                            description: 'The default is: 5.'
                             format: int32
                             minimum: 1
                             type: integer
                           minReplicas:
-                            default: 2
+                            description: 'The default is: 2.'
                             format: int32
                             minimum: 1
                             type: integer
                           replicas:
-                            default: 3
-                            description: When autoscaling is disabled, the number
-                              of replicas will always be configured to match this
-                              value.
+                            description: |-
+                              When autoscaling is disabled, the number of replicas will always be configured to match this value.
+                              The default is: 3.
                             format: int32
                             minimum: 1
                             type: integer
@@ -1630,7 +1807,7 @@ spec:
                               Claims lists the names of resources, defined in spec.resourceClaims,
                               that are used by this container.
 
-                              This is an alpha field and requires enabling the
+                              This field depends on the
                               DynamicResourceAllocation feature gate.
 
                               This field is immutable. It can only be set for containers.
@@ -1686,29 +1863,28 @@ spec:
                           for this component.
                         properties:
                           autoScaling:
-                            default: Enabled
                             description: |-
                               When enabled, the number of component replicas is managed dynamically based on the load, within the limits
                               specified below.
+                              The default is: Enabled.
                             enum:
                             - Enabled
                             - Disabled
                             type: string
                           maxReplicas:
-                            default: 5
+                            description: 'The default is: 5.'
                             format: int32
                             minimum: 1
                             type: integer
                           minReplicas:
-                            default: 2
+                            description: 'The default is: 2.'
                             format: int32
                             minimum: 1
                             type: integer
                           replicas:
-                            default: 3
-                            description: When autoscaling is disabled, the number
-                              of replicas will always be configured to match this
-                              value.
+                            description: |-
+                              When autoscaling is disabled, the number of replicas will always be configured to match this value.
+                              The default is: 3.
                             format: int32
                             minimum: 1
                             type: integer
@@ -1783,9 +1959,11 @@ spec:
                     type: string
                 type: object
               tls:
-                description: Allows you to specify additional trusted Root CAs.
+                description: Settings related to Transport Layer Security, such as
+                  Certificate Authorities.
                 properties:
                   additionalCAs:
+                    description: Allows you to specify additional trusted Root CAs.
                     items:
                       description: AdditionalCA defines a certificate for an additional
                         Certificate Authority.
@@ -1858,6 +2036,11 @@ spec:
                   version:
                     type: string
                 type: object
+              observedGeneration:
+                description: ObservedGeneration is the generation most recently observed
+                  by the controller.
+                format: int64
+                type: integer
               productVersion:
                 description: The deployed version of the product.
                 type: string

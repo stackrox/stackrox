@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import { useMemo } from 'react';
 import { Route, Routes } from 'react-router-dom-v5-compat';
 import { PageSection } from '@patternfly/react-core';
 
@@ -6,6 +6,7 @@ import PageNotFound from 'Components/PageNotFound';
 import PageTitle from 'Components/PageTitle';
 
 import {
+    exceptionManagementPath,
     vulnerabilitiesAllImagesPath,
     vulnerabilitiesImagesWithoutCvesPath,
     vulnerabilitiesInactiveImagesPath,
@@ -13,9 +14,11 @@ import {
     vulnerabilitiesUserWorkloadsPath,
 } from 'routePaths';
 import ScannerV4IntegrationBanner from 'Components/ScannerV4IntegrationBanner';
-import useFeatureFlags, { IsFeatureFlagEnabled } from 'hooks/useFeatureFlags';
+import useFeatureFlags from 'hooks/useFeatureFlags';
+import type { IsFeatureFlagEnabled } from 'hooks/useFeatureFlags';
 import usePermissions from 'hooks/usePermissions';
-import { NonEmptyArray } from 'utils/type.utils';
+import { getUrlQueryStringForSearchFilter } from 'utils/searchUtils';
+import type { NonEmptyArray } from 'utils/type.utils';
 import type { VulnerabilityState } from 'types/cve.proto';
 
 import DeploymentPageRoute from './Deployment/DeploymentPageRoute';
@@ -23,10 +26,10 @@ import ImagePageRoute from './Image/ImagePageRoute';
 import WorkloadCvesOverviewPage from './Overview/WorkloadCvesOverviewPage';
 import ImageCvePageRoute from './ImageCve/ImageCvePageRoute';
 import NamespaceViewPage from './NamespaceView/NamespaceViewPage';
-import { WorkloadCveView, WorkloadCveViewContext } from './WorkloadCveViewContext';
+import { WorkloadCveViewContext } from './WorkloadCveViewContext';
+import type { WorkloadCveView } from './WorkloadCveViewContext';
 
-import './WorkloadCvesPage.css';
-import { QuerySearchFilter, WorkloadEntityTab } from '../types';
+import type { QuerySearchFilter, WorkloadEntityTab } from '../types';
 import { getOverviewPagePath, getWorkloadEntityPagePath } from '../utils/searchUtils';
 
 export const userWorkloadViewId = 'user-workloads';
@@ -97,6 +100,10 @@ function getUrlBuilder(viewId: string): WorkloadCveView['urlBuilder'] {
             getAbsoluteUrl(
                 getWorkloadEntityPagePath('Deployment', workload.id, vulnerabilityState)
             ),
+        exceptionDetails: (cve: string) => {
+            const query = getUrlQueryStringForSearchFilter({ CVE: [cve] });
+            return `${exceptionManagementPath}/pending-requests?${query}`;
+        },
     };
 }
 

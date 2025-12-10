@@ -91,7 +91,7 @@ func (s *GraphQLNodeVulnerabilityTestSuite) SetupSuite() {
 		for _, comp := range node.GetScan().GetComponents() {
 			for idx, vuln := range comp.GetVulnerabilities() {
 				if strings.Contains(vuln.GetCveBaseInfo().GetCve(), "orphaned") {
-					comp.Vulnerabilities = append(comp.Vulnerabilities[:idx], comp.Vulnerabilities[idx+1:]...)
+					comp.Vulnerabilities = append(comp.Vulnerabilities[:idx], comp.GetVulnerabilities()[idx+1:]...)
 					nodeUpdated = true
 				}
 			}

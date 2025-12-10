@@ -1,10 +1,9 @@
-import React from 'react';
 import entityTypes from 'constants/entityTypes';
-import { defaultHeaderClassName, defaultColumnClassName } from 'Components/Table';
+import { defaultColumnClassName, defaultHeaderClassName } from 'Components/Table';
 import { gql } from '@apollo/client';
 import queryService from 'utils/queryService';
 import { sortSeverity } from 'sorters/sorters';
-import { BasePolicy } from 'types/policy.proto';
+import type { BasePolicy } from 'types/policy.proto';
 
 import NoResultsMessage from 'Components/NoResultsMessage';
 import Query from 'Components/ThrowingQuery';

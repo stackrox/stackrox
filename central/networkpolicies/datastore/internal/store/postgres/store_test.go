@@ -96,6 +96,11 @@ func (s *NetworkpoliciesStoreSuite) TestStore() {
 
 	s.NoError(store.UpsertMany(ctx, networkPolicys))
 
+	foundNetworkPolicys, missing, err := store.GetMany(ctx, networkPolicyIDs)
+	s.NoError(err)
+	s.Empty(missing)
+	protoassert.ElementsMatch(s.T(), networkPolicys, foundNetworkPolicys)
+
 	networkPolicyCount, err = store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)
 	s.Equal(200, networkPolicyCount)

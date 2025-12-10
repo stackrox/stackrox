@@ -1,26 +1,25 @@
-import React, { useMemo, useRef, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
+import type { FormEvent, KeyboardEvent, MouseEvent as ReactMouseEvent, Ref } from 'react';
 import {
-    Select,
-    SelectOption,
-    SelectList,
-    SelectOptionProps,
+    Button,
+    Flex,
     MenuToggle,
-    MenuToggleElement,
+    Select,
+    SelectList,
+    SelectOption,
+    Skeleton,
     TextInputGroup,
     TextInputGroupMain,
     TextInputGroupUtilities,
-    Button,
-    Skeleton,
-    Flex,
     debounce,
 } from '@patternfly/react-core';
-import { ArrowRightIcon, SearchIcon, TimesIcon } from '@patternfly/react-icons';
+import type { MenuToggleElement, SelectOptionProps } from '@patternfly/react-core';
+import { SearchIcon, TimesIcon } from '@patternfly/react-icons';
 import { useQuery } from '@apollo/client';
-import SEARCH_AUTOCOMPLETE_QUERY, {
-    SearchAutocompleteQueryResponse,
-} from 'queries/searchAutocomplete';
+import SEARCH_AUTOCOMPLETE_QUERY from 'queries/searchAutocomplete';
+import type { SearchAutocompleteQueryResponse } from 'queries/searchAutocomplete';
 import { getRequestQueryStringForSearchFilter } from 'utils/searchUtils';
-import { SearchFilter } from 'types/search';
+import type { SearchFilter } from 'types/search';
 import { ensureString } from 'utils/ensure';
 
 type SearchFilterAutocompleteProps = {
@@ -32,6 +31,7 @@ type SearchFilterAutocompleteProps = {
     textLabel: string;
     searchFilter: SearchFilter;
     additionalContextFilter?: SearchFilter;
+    isDisabled?: boolean;
 };
 
 function getSelectOptions(
@@ -93,6 +93,7 @@ function SearchFilterAutocomplete({
     textLabel,
     searchFilter,
     additionalContextFilter,
+    isDisabled = false,
 }: SearchFilterAutocompleteProps) {
     const [isOpen, setIsOpen] = useState(false);
     const [filterValue, setFilterValue] = useState('');
@@ -160,7 +161,7 @@ function SearchFilterAutocomplete({
     };
 
     const onSelect = (
-        _event: React.MouseEvent<Element, MouseEvent> | undefined,
+        _event: ReactMouseEvent<Element, MouseEvent> | undefined,
         value: string | number | undefined
     ) => {
         if (value) {
@@ -172,7 +173,7 @@ function SearchFilterAutocomplete({
         setActiveItem(null);
     };
 
-    const onTextInputChange = (_event: React.FormEvent<HTMLInputElement>, value: string) => {
+    const onTextInputChange = (_event: FormEvent<HTMLInputElement>, value: string) => {
         onChange(value);
         if (!isOpen) {
             setIsOpen(true);
@@ -211,7 +212,7 @@ function SearchFilterAutocomplete({
         }
     };
 
-    const onInputKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
+    const onInputKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {
         const enabledMenuItems = selectOptions.filter((option) => !option.isDisabled);
         const [firstMenuItem] = enabledMenuItems;
         const focusedItem = focusedItemIndex ? enabledMenuItems[focusedItemIndex] : firstMenuItem;
@@ -245,12 +246,13 @@ function SearchFilterAutocomplete({
         }
     };
 
-    const toggle = (toggleRef: React.Ref<MenuToggleElement>) => (
+    const toggle = (toggleRef: Ref<MenuToggleElement>) => (
         <MenuToggle
             ref={toggleRef}
             variant="typeahead"
             onClick={onToggleClick}
             isExpanded={isOpen}
+            isDisabled={isDisabled}
             isFullWidth
             aria-labelledby="Filter results menu toggle"
         >
@@ -280,6 +282,7 @@ function SearchFilterAutocomplete({
                                 textInputRef?.current?.focus();
                             }}
                             aria-label="Clear input value"
+                            isDisabled={isDisabled}
                         >
                             <TimesIcon aria-hidden />
                         </Button>
@@ -290,44 +293,33 @@ function SearchFilterAutocomplete({
     );
 
     return (
-        <>
-            <Select
-                isOpen={isOpen}
-                selected={value}
-                onSelect={onSelect}
-                onOpenChange={() => {
-                    setIsOpen(false);
-                }}
-                toggle={toggle}
-            >
-                <SelectList id="select-typeahead-listbox" aria-label="Filter results select menu">
-                    {selectOptions.map((option, index) => (
-                        <SelectOption
-                            key={option.value || option.children}
-                            isFocused={focusedItemIndex === index}
-                            isSelected={false}
-                            className={option.className}
-                            onClick={() => {
-                                onChange(option.value);
-                                onSearch(option.value);
-                            }}
-                            id={`select-typeahead-${option?.value?.replace(' ', '-space-')}`}
-                            {...option}
-                            ref={null}
-                        />
-                    ))}
-                </SelectList>
-            </Select>
-            <Button
-                variant="control"
-                aria-label="Apply autocomplete input to search"
-                onClick={() => {
-                    onSearch(value);
-                }}
-            >
-                <ArrowRightIcon />
-            </Button>
-        </>
+        <Select
+            isOpen={isOpen && !isDisabled}
+            selected={value}
+            onSelect={onSelect}
+            onOpenChange={() => {
+                setIsOpen(false);
+            }}
+            toggle={toggle}
+        >
+            <SelectList id="select-typeahead-listbox" aria-label="Filter results select menu">
+                {selectOptions.map((option, index) => (
+                    <SelectOption
+                        key={option.value || option.children}
+                        isFocused={focusedItemIndex === index}
+                        isSelected={false}
+                        className={option.className}
+                        onClick={() => {
+                            onChange(option.value);
+                            onSearch(option.value);
+                        }}
+                        id={`select-typeahead-${option?.value?.replace(' ', '-space-')}`}
+                        {...option}
+                        ref={null}
+                    />
+                ))}
+            </SelectList>
+        </Select>
     );
 }
 

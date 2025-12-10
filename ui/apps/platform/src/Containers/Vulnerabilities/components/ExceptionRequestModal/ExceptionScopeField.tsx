@@ -1,15 +1,14 @@
-import React from 'react';
 import {
     FormGroup,
-    FormGroupProps,
     FormHelperText,
     HelperText,
     HelperTextItem,
     Radio,
 } from '@patternfly/react-core';
+import type { FormGroupProps } from '@patternfly/react-core';
 
-import { useFormik } from 'formik';
-import { DeferralValues, ScopeContext } from './utils';
+import type { useFormik } from 'formik';
+import type { DeferralValues, ScopeContext } from './utils';
 
 export const ALL = '.*';
 

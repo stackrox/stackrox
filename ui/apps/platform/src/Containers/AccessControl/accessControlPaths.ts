@@ -1,8 +1,9 @@
 import qs from 'qs';
 
 import { accessControlBasePath } from 'routePaths';
-import { AccessControlEntityType } from 'constants/entityTypes';
-import { BasePageAction, getQueryObject as baseGetQueryObject } from 'utils/queryStringUtils';
+import type { AccessControlEntityType } from 'constants/entityTypes';
+import { getQueryObject as baseGetQueryObject } from 'utils/queryStringUtils';
+import type { BasePageAction } from 'utils/queryStringUtils';
 
 export type AccessControlQueryAction = BasePageAction;
 

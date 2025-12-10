@@ -48,6 +48,12 @@
         "logline": "checking central status failed after"
     },
     {
+        "comment": "Central may still hold handle to closed connection due to various db restarts",
+        "job": "upgrade",
+        "logfile": "central-previous",
+        "logline": "panic: close of closed channel"
+    },
+    {
         "comment": "collector restart due to sensor bounce in compliance test",
         "job": "compliance-e2e-tests",
         "logfile": "collector-previous",
@@ -64,5 +70,11 @@
         "job": "gke-external-pg-17-qa-e2e-tests",
         "logfile": "matcher-previous",
         "logline": "panic: migrate: failed to connect to"
+    },
+    {
+        "comment": "config-controller restart due to m2m auth OIDC discovery failure - ROX-32040",
+        "job": ".*",
+        "logfile": "config-controller.*-manager-previous",
+        "logline": "could not exchange token.*forbidden.*openid"
     }
 ]

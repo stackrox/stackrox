@@ -55,12 +55,31 @@ func fakeNodeIndex(arch string) *v4.IndexReport {
 		HashId:  fmt.Sprintf("sha256:%s", strings.Repeat("a", 64)),
 		Success: true,
 		Contents: &v4.Contents{
-			Packages: []*v4.Package{
+			Packages: map[string]*v4.Package{
+				"0": exemplaryPackage("0", "vim-minimal", arch),
+				"1": exemplaryPackage("1", "vim-minimal-noarch", "noarch"),
+				"2": exemplaryPackage("2", "vim-minimal-empty-arch", ""),
+			},
+			Repositories: map[string]*v4.Repository{
+				"0": exemplaryRepo("0"),
+				"1": exemplaryRepo("1"),
+				"2": exemplaryRepo("2"),
+			},
+		},
+	}
+}
+
+func fakeDeprecatedNodeIndex(arch string) *v4.IndexReport {
+	return &v4.IndexReport{
+		HashId:  fmt.Sprintf("sha256:%s", strings.Repeat("a", 64)),
+		Success: true,
+		Contents: &v4.Contents{
+			PackagesDEPRECATED: []*v4.Package{
 				exemplaryPackage("0", "vim-minimal", arch),
 				exemplaryPackage("1", "vim-minimal-noarch", "noarch"),
 				exemplaryPackage("2", "vim-minimal-empty-arch", ""),
 			},
-			Repositories: []*v4.Repository{
+			RepositoriesDEPRECATED: []*v4.Repository{
 				exemplaryRepo("0"),
 				exemplaryRepo("1"),
 				exemplaryRepo("2"),
@@ -134,6 +153,8 @@ func (s *NodeInventoryHandlerTestSuite) TestExtractArch() {
 		s.Run(name, func() {
 			got := extractArch(fakeNodeIndex(tc.rpmArch))
 			s.Equal(tc.expectedArch, got)
+			got = extractArch(fakeDeprecatedNodeIndex(tc.rpmArch))
+			s.Equal(tc.expectedArch, got)
 		})
 	}
 }
@@ -158,6 +179,16 @@ func (s *NodeInventoryHandlerTestSuite) TestAttachRPMtoRHCOS() {
 	s.Equal("rhcos", rhcosPKG.GetName())
 	s.Equal(arch, rhcosPKG.GetArch())
 	s.Equal("600", rhcosPKG.GetId())
+	for _, p := range got.GetContents().GetPackagesDEPRECATED() {
+		if p.GetName() == "rhcos" {
+			rhcosPKG = p
+			break
+		}
+	}
+	s.Require().NotNil(rhcosPKG, "the 'rhcos' pkg should exist in node index")
+	s.Equal("rhcos", rhcosPKG.GetName())
+	s.Equal(arch, rhcosPKG.GetArch())
+	s.Equal("600", rhcosPKG.GetId())
 
 	var rhcosRepo *v4.Repository
 	for _, r := range got.GetContents().GetRepositories() {
@@ -167,7 +198,17 @@ func (s *NodeInventoryHandlerTestSuite) TestAttachRPMtoRHCOS() {
 		}
 	}
 	s.Require().NotNil(rhcosRepo, "the golden repos should exist in node index")
-	s.Equal("", rhcosRepo.GetKey())
+	s.Equal(goldenKey, rhcosRepo.GetKey())
+	s.Equal(goldenName, rhcosRepo.GetName())
+	s.Equal(goldenURI, rhcosRepo.GetUri())
+	for _, r := range got.GetContents().GetRepositoriesDEPRECATED() {
+		if r.GetId() == "600" {
+			rhcosRepo = r
+			break
+		}
+	}
+	s.Require().NotNil(rhcosRepo, "the golden repos should exist in node index")
+	s.Equal(goldenKey, rhcosRepo.GetKey())
 	s.Equal(goldenName, rhcosRepo.GetName())
 	s.Equal(goldenURI, rhcosRepo.GetUri())
 }

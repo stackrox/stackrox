@@ -29,6 +29,6 @@ func GetPoliciesFromFile(fileName string) (policies []*storage.Policy, retError 
 		errorList.AddStringf("error unmarshaling %s: %s\n", fileName, err)
 		return
 	}
-	policies = append(policies, policiesMsg.Policies...)
+	policies = append(policies, policiesMsg.GetPolicies()...)
 	return policies, nil
 }

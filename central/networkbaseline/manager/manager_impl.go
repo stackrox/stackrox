@@ -741,7 +741,17 @@ func (m *manager) initFromStore() error {
 	walkFn := func() error {
 		seenClusterAndNamespace := make(map[clusterNamespacePair]struct{})
 		m.baselinesByDeploymentID = make(map[string]*networkbaseline.BaselineInfo)
-		return m.ds.Walk(managerCtx, func(baseline *storage.NetworkBaseline) error {
+		// We will make multiple queries we need a transaction that will be used in walk and queries
+		// so we will work on a single connection.
+		ctxWithTx, tx, err := m.ds.Begin(managerCtx)
+		if err != nil {
+			return err
+		}
+		defer func() {
+			err := tx.Commit(managerCtx)
+			utils.Should(err)
+		}()
+		return m.ds.Walk(ctxWithTx, func(baseline *storage.NetworkBaseline) error {
 			baselineInfo, err := networkbaseline.ConvertBaselineInfoFromProto(baseline)
 			if err != nil {
 				return err
@@ -755,13 +765,13 @@ func (m *manager) initFromStore() error {
 				// Mark seen
 				seenClusterAndNamespace[curPair] = struct{}{}
 
-				policies, err := m.networkPolicyDS.GetNetworkPolicies(managerCtx, baseline.ClusterId, baseline.Namespace)
+				policies, err := m.networkPolicyDS.GetNetworkPolicies(ctxWithTx, baseline.GetClusterId(), baseline.GetNamespace())
 				if err != nil {
 					return err
 				}
 				for _, policy := range policies {
 					// On start treat all policies as have just been created.
-					hash, err := m.getHashOfNetworkPolicyWithResourceAction(central.ResourceAction_CREATE_RESOURCE, policy)
+					hash, err := getHashOfNetworkPolicyWithResourceAction(central.ResourceAction_CREATE_RESOURCE, policy)
 					if err != nil {
 						return err
 					}
@@ -1061,8 +1071,8 @@ func (m *manager) putFlowsInMap(newFlows []*storage.NetworkFlow) map[networkgrap
 	out := make(map[networkgraph.NetworkConnIndicator]timestamp.MicroTS, len(newFlows))
 	now := timestamp.Now()
 	for _, newFlow := range newFlows {
-		t := timestamp.FromProtobuf(newFlow.LastSeenTimestamp)
-		if newFlow.LastSeenTimestamp == nil {
+		t := timestamp.FromProtobuf(newFlow.GetLastSeenTimestamp())
+		if newFlow.GetLastSeenTimestamp() == nil {
 			t = now
 		}
 
@@ -1073,12 +1083,12 @@ func (m *manager) putFlowsInMap(newFlows []*storage.NetworkFlow) map[networkgrap
 
 func (m *manager) enrichFlows(listDeployment *storage.ListDeployment, flows []*storage.NetworkFlow) []*storage.NetworkFlow {
 	networkTree := tree.NewMultiNetworkTree(
-		m.treeManager.GetReadOnlyNetworkTree(managerCtx, listDeployment.ClusterId),
+		m.treeManager.GetReadOnlyNetworkTree(managerCtx, listDeployment.GetClusterId()),
 		m.treeManager.GetDefaultNetworkTree(managerCtx),
 	)
 
 	listDeploymentMap := map[string]*storage.ListDeployment{
-		listDeployment.Id: listDeployment,
+		listDeployment.GetId(): listDeployment,
 	}
 
 	flows, missingInfoFlows := networkgraph.UpdateFlowsWithEntityDesc(flows, listDeploymentMap,

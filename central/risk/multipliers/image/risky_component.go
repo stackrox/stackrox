@@ -77,6 +77,38 @@ func (c *riskyComponentCountMultiplier) Score(_ context.Context, image *storage.
 	}
 }
 
+// ScoreV2 takes an image and evaluates its risk based on risky components
+func (c *riskyComponentCountMultiplier) ScoreV2(_ context.Context, image *storage.ImageV2) *storage.Risk_Result {
+	// Create a name to version map of all the image components.
+	presentComponents := set.NewStringSet()
+	for _, component := range image.GetScan().GetComponents() {
+		presentComponents.Add(component.GetName())
+	}
+
+	// Count how many known risky components match a labeled component.
+	riskySet := RiskyComponents.Intersect(presentComponents)
+
+	if riskySet.Cardinality() == 0 {
+		return nil
+	}
+
+	// Linear increase between 10 components and 20 components from weight of 1 to 1.5.
+	score := float32(1.0) + float32(riskySet.Cardinality()-
+		riskyComponentCountFloor)/float32(riskyComponentCountCeil-
+		riskyComponentCountFloor)/float32(2)
+	if score > maxRiskyScore {
+		score = maxRiskyScore
+	}
+
+	return &storage.Risk_Result{
+		Name: RiskyComponentCountHeading,
+		Factors: []*storage.Risk_Result_Factor{
+			{Message: generateMessage(image.GetName().GetFullName(), riskySet.AsSlice())},
+		},
+		Score: score,
+	}
+}
+
 func generateMessage(imageName string, largestRiskySet []string) string {
 	return fmt.Sprintf("%s %s", generatePrefix(imageName), generateSuffix(largestRiskySet))
 }

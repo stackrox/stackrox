@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import PropTypes from 'prop-types';
-import { ChevronRight, ChevronDown } from 'react-feather';
+import { ChevronDown, ChevronRight } from 'react-feather';
 
 import CollapsibleAnimatedDiv from 'Components/animations/CollapsibleAnimatedDiv';
 

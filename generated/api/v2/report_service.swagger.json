@@ -605,39 +605,39 @@
         },
         "parameters": [
           {
-            "name": "query",
+            "name": "reportParamQuery.query",
             "in": "query",
             "required": false,
             "type": "string"
           },
           {
-            "name": "pagination.limit",
+            "name": "reportParamQuery.pagination.limit",
             "in": "query",
             "required": false,
             "type": "integer",
             "format": "int32"
           },
           {
-            "name": "pagination.offset",
+            "name": "reportParamQuery.pagination.offset",
             "in": "query",
             "required": false,
             "type": "integer",
             "format": "int32"
           },
           {
-            "name": "pagination.sortOption.field",
+            "name": "reportParamQuery.pagination.sortOption.field",
             "in": "query",
             "required": false,
             "type": "string"
           },
           {
-            "name": "pagination.sortOption.reversed",
+            "name": "reportParamQuery.pagination.sortOption.reversed",
             "in": "query",
             "required": false,
             "type": "boolean"
           },
           {
-            "name": "pagination.sortOption.aggregateBy.aggrFunc",
+            "name": "reportParamQuery.pagination.sortOption.aggregateBy.aggrFunc",
             "in": "query",
             "required": false,
             "type": "string",
@@ -650,7 +650,7 @@
             "default": "UNSET"
           },
           {
-            "name": "pagination.sortOption.aggregateBy.distinct",
+            "name": "reportParamQuery.pagination.sortOption.aggregateBy.distinct",
             "in": "query",
             "required": false,
             "type": "boolean"
@@ -663,7 +663,7 @@
     },
     "/v2/reports/view-based/my-history": {
       "get": {
-        "operationId": "ReportService_GetViewBasedReportMyHistory",
+        "operationId": "ReportService_GetViewBasedMyReportHistory",
         "responses": {
           "200": {
             "description": "A successful response.",
@@ -680,39 +680,39 @@
         },
         "parameters": [
           {
-            "name": "query",
+            "name": "reportParamQuery.query",
             "in": "query",
             "required": false,
             "type": "string"
           },
           {
-            "name": "pagination.limit",
+            "name": "reportParamQuery.pagination.limit",
             "in": "query",
             "required": false,
             "type": "integer",
             "format": "int32"
           },
           {
-            "name": "pagination.offset",
+            "name": "reportParamQuery.pagination.offset",
             "in": "query",
             "required": false,
             "type": "integer",
             "format": "int32"
           },
           {
-            "name": "pagination.sortOption.field",
+            "name": "reportParamQuery.pagination.sortOption.field",
             "in": "query",
             "required": false,
             "type": "string"
           },
           {
-            "name": "pagination.sortOption.reversed",
+            "name": "reportParamQuery.pagination.sortOption.reversed",
             "in": "query",
             "required": false,
             "type": "boolean"
           },
           {
-            "name": "pagination.sortOption.aggregateBy.aggrFunc",
+            "name": "reportParamQuery.pagination.sortOption.aggregateBy.aggrFunc",
             "in": "query",
             "required": false,
             "type": "string",
@@ -725,7 +725,7 @@
             "default": "UNSET"
           },
           {
-            "name": "pagination.sortOption.aggregateBy.distinct",
+            "name": "reportParamQuery.pagination.sortOption.aggregateBy.distinct",
             "in": "query",
             "required": false,
             "type": "boolean"
@@ -1159,6 +1159,9 @@
         },
         "isDownloadAvailable": {
           "type": "boolean"
+        },
+        "areaOfConcern": {
+          "type": "string"
         }
       }
     },

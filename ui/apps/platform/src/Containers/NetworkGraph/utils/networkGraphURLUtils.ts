@@ -1,6 +1,6 @@
 import { networkBasePath } from 'routePaths';
 import { getQueryString } from 'utils/queryStringUtils';
-import { SearchFilter } from 'types/search';
+import type { SearchFilter } from 'types/search';
 
 type GetURLLinkToDeploymentParams = {
     cluster: string;

@@ -2,12 +2,13 @@ package image_vulnerabilities
 
 import (
 	"context"
+	"io"
+	"net/http/httptest"
 	"testing"
 
-	"github.com/prometheus/client_golang/prometheus"
 	deploymentMockDS "github.com/stackrox/rox/central/deployment/datastore/mocks"
 	"github.com/stackrox/rox/central/metrics"
-	"github.com/stackrox/rox/central/metrics/mocks"
+	"github.com/stackrox/rox/central/metrics/custom/tracker"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/authproviders"
@@ -58,10 +59,10 @@ func getTestData(t *testing.T) ([]*storage.Deployment, map[string][]*storage.Ima
 	}
 
 	deploymentImages := map[string][]*storage.Image{
-		deployments[0].Id: {images[0]},
-		deployments[1].Id: {images[0], images[1]},
-		deployments[2].Id: {images[2]},
-		deployments[3].Id: {images[3]},
+		deployments[0].GetId(): {images[0]},
+		deployments[1].GetId(): {images[0], images[1]},
+		deployments[2].GetId(): {images[2]},
+		deployments[3].GetId(): {images[3]},
 	}
 	return deployments, deploymentImages
 }
@@ -92,11 +93,6 @@ func getTestCVEs(*testing.T) []*storage.EmbeddedVulnerability {
 	}
 }
 
-type labelsTotal struct {
-	labels prometheus.Labels
-	total  int
-}
-
 func TestQueryDeploymentsAndImages(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	ds := deploymentMockDS.NewMockDataStore(ctrl)
@@ -114,26 +110,10 @@ func TestQueryDeploymentsAndImages(t *testing.T) {
 
 	for _, deployment := range deployments {
 		ds.EXPECT().GetImagesForDeployment(gomock.Any(), deployment).
-			Times(1).Return(deploymentImages[deployment.Id], nil)
+			Times(1).Return(deploymentImages[deployment.GetId()], nil)
 	}
 
-	var actual = make(map[string][]*labelsTotal)
-
-	mr := mocks.NewMockCustomRegistry(ctrl)
-	tracker := New(func(string) metrics.CustomRegistry { return mr }, ds)
-	mr.EXPECT().RegisterMetric(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
-		Times(3)
-	mr.EXPECT().SetTotal(gomock.Any(), gomock.Any(), gomock.Any()).
-		AnyTimes().Do(
-		func(metric string, labels prometheus.Labels, total int) {
-			actual[metric] = append(actual[metric], &labelsTotal{labels, total})
-		},
-	)
-	mr.EXPECT().Lock()
-	mr.EXPECT().Reset("Severity_count")
-	mr.EXPECT().Reset("Cluster_Namespace_Severity_count")
-	mr.EXPECT().Reset("Deployment_ImageTag_count")
-	mr.EXPECT().Unlock()
+	tracker := New(ds)
 
 	cfg, err := tracker.NewConfiguration(
 		&storage.PrometheusMetrics_Group{
@@ -154,46 +134,54 @@ func TestQueryDeploymentsAndImages(t *testing.T) {
 	tracker.Reconfigure(cfg)
 	tracker.Gather(makeAdminContext(t))
 
-	expected := map[string][]*labelsTotal{
-		"Severity_count": {
-			{prometheus.Labels{"Severity": "CRITICAL_VULNERABILITY_SEVERITY"}, 3},
-			{prometheus.Labels{"Severity": "MODERATE_VULNERABILITY_SEVERITY"}, 4},
-			{prometheus.Labels{"Severity": "LOW_VULNERABILITY_SEVERITY"}, 2},
-		},
-		"Cluster_Namespace_Severity_count": {
-			{prometheus.Labels{"Cluster": "cluster-1", "Namespace": "namespace-1", "Severity": "CRITICAL_VULNERABILITY_SEVERITY"}, 1},
-			{prometheus.Labels{"Cluster": "cluster-1", "Namespace": "namespace-2", "Severity": "CRITICAL_VULNERABILITY_SEVERITY"}, 2},
-			{prometheus.Labels{"Cluster": "cluster-1", "Namespace": "namespace-2", "Severity": "MODERATE_VULNERABILITY_SEVERITY"}, 2},
-			{prometheus.Labels{"Cluster": "cluster-2", "Namespace": "namespace-2", "Severity": "MODERATE_VULNERABILITY_SEVERITY"}, 2},
-			{prometheus.Labels{"Cluster": "cluster-2", "Namespace": "namespace-2", "Severity": "LOW_VULNERABILITY_SEVERITY"}, 2},
-		},
-		"Deployment_ImageTag_count": {
-			{prometheus.Labels{"Deployment": "D0", "ImageTag": "tag"}, 1},
-			{prometheus.Labels{"Deployment": "D1", "ImageTag": "tag"}, 3},
-			{prometheus.Labels{"Deployment": "D2", "ImageTag": "tag"}, 1},
-			{prometheus.Labels{"Deployment": "D3", "ImageTag": "tag"}, 2},
-			{prometheus.Labels{"Deployment": "D3", "ImageTag": "latest"}, 2},
-		},
+	rec := httptest.NewRecorder()
+	req := httptest.NewRequestWithContext(makeAdminContext(t),
+		"GET", "/metrics", nil)
+
+	r, err := metrics.GetCustomRegistry("Admin")
+	if assert.NoError(t, err) {
+		r.ServeHTTP(rec, req)
 	}
 
-	for metric := range expected {
-		assert.Contains(t, actual, metric)
-	}
-	for metric, records := range actual {
-		assert.ElementsMatch(t, expected[metric], records, metric)
-	}
+	result := rec.Result()
+	assert.Equal(t, 200, result.StatusCode)
+	body, err := io.ReadAll(result.Body)
+	_ = result.Body.Close()
+	assert.NoError(t, err)
+	assert.Equal(t,
+		`# HELP rox_central_image_vuln_Cluster_Namespace_Severity_count The total number of image vulnerabilities aggregated by Cluster,Namespace,Severity and gathered every 2h1m0s
+# TYPE rox_central_image_vuln_Cluster_Namespace_Severity_count gauge
+rox_central_image_vuln_Cluster_Namespace_Severity_count{Cluster="cluster-1",Namespace="namespace-1",Severity="CRITICAL_VULNERABILITY_SEVERITY"} 1
+rox_central_image_vuln_Cluster_Namespace_Severity_count{Cluster="cluster-1",Namespace="namespace-2",Severity="CRITICAL_VULNERABILITY_SEVERITY"} 2
+rox_central_image_vuln_Cluster_Namespace_Severity_count{Cluster="cluster-1",Namespace="namespace-2",Severity="MODERATE_VULNERABILITY_SEVERITY"} 2
+rox_central_image_vuln_Cluster_Namespace_Severity_count{Cluster="cluster-2",Namespace="namespace-2",Severity="LOW_VULNERABILITY_SEVERITY"} 2
+rox_central_image_vuln_Cluster_Namespace_Severity_count{Cluster="cluster-2",Namespace="namespace-2",Severity="MODERATE_VULNERABILITY_SEVERITY"} 2
+# HELP rox_central_image_vuln_Deployment_ImageTag_count The total number of image vulnerabilities aggregated by Deployment,ImageTag and gathered every 2h1m0s
+# TYPE rox_central_image_vuln_Deployment_ImageTag_count gauge
+rox_central_image_vuln_Deployment_ImageTag_count{Deployment="D0",ImageTag="tag"} 1
+rox_central_image_vuln_Deployment_ImageTag_count{Deployment="D1",ImageTag="tag"} 3
+rox_central_image_vuln_Deployment_ImageTag_count{Deployment="D2",ImageTag="tag"} 1
+rox_central_image_vuln_Deployment_ImageTag_count{Deployment="D3",ImageTag="latest"} 2
+rox_central_image_vuln_Deployment_ImageTag_count{Deployment="D3",ImageTag="tag"} 2
+# HELP rox_central_image_vuln_Severity_count The total number of image vulnerabilities aggregated by Severity and gathered every 2h1m0s
+# TYPE rox_central_image_vuln_Severity_count gauge
+rox_central_image_vuln_Severity_count{Severity="CRITICAL_VULNERABILITY_SEVERITY"} 3
+rox_central_image_vuln_Severity_count{Severity="LOW_VULNERABILITY_SEVERITY"} 2
+rox_central_image_vuln_Severity_count{Severity="MODERATE_VULNERABILITY_SEVERITY"} 4
+`,
+		string(body))
 }
 
 func Test_forEachImageVuln(t *testing.T) {
 	i := 0
-	interrupt := func(*finding) bool { i++; return false }
-	pass := func(*finding) bool { i++; return true }
+	interrupt := func(*finding, error) bool { i++; return false }
+	pass := func(*finding, error) bool { i++; return true }
 
 	t.Run("no panic on empty finding", func(t *testing.T) {
 		i = 0
-		assert.True(t, forEachImageVuln(interrupt, &finding{}))
+		assert.NoError(t, forEachImageVuln(tracker.NewFindingCollector(interrupt), &finding{}))
 		assert.Zero(t, i)
-		assert.True(t, forEachImageVuln(pass, &finding{}))
+		assert.NoError(t, forEachImageVuln(tracker.NewFindingCollector(pass), &finding{}))
 		assert.Zero(t, i)
 	})
 
@@ -205,12 +193,12 @@ func Test_forEachImageVuln(t *testing.T) {
 		cves := getTestCVEs(t)
 		image.withCVE(cves...)
 
-		assert.True(t, forEachImageVuln(pass, &finding{
+		assert.NoError(t, forEachImageVuln(tracker.NewFindingCollector(pass), &finding{
 			image: (*storage.Image)(image),
 		}))
 		assert.Equal(t, len(cves), i)
 
-		assert.False(t, forEachImageVuln(interrupt, &finding{
+		assert.Error(t, forEachImageVuln(tracker.NewFindingCollector(interrupt), &finding{
 			image: (*storage.Image)(image),
 		}))
 		assert.Equal(t, len(cves)+1, i)
