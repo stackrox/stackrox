@@ -22,9 +22,14 @@ func setNestedField(obj *unstructured.Unstructured, value interface{}, fields ..
 }
 
 const (
-	defaultVMLifecycleDuration = 30 * time.Second
-	defaultVMUpdateInterval    = 10 * time.Second
+	defaultVMLifecycleDuration = 30 * time.Minute
+	defaultVMUpdateInterval    = 3 * time.Minute
+	// initialReportJitterPercent is the jitter applied to the initial report delay.
+	// With 0.2 (20%), a 30s delay will vary between 24s-36s.
 	initialReportJitterPercent = 0.2
+	// reportIntervalJitterPercent defines the percentage of random jitter to apply to report intervals.
+	// With 0.05 (5%), a 60s interval will vary between 57s-63s, making timing more realistic.
+	reportIntervalJitterPercent = 0.05
 	// lifecycleJitterPercent is the jitter applied to VM lifecycle duration.
 	// With 0.5 (50%), a 60s lifecycle will vary between 30s-90s.
 	lifecycleJitterPercent = 0.5
@@ -49,37 +54,61 @@ var (
 	defaultGuestOSPool = []string{"rhel7", "rhel8", "rhel9", "rhel10", "fedora", "centos", "ubuntu", "debian"}
 )
 
-func validateVMWorkload(workload VirtualMachineWorkload) VirtualMachineWorkload {
+func validateVMWorkload(workload VirtualMachineWorkload) (VirtualMachineWorkload, error) {
 	// Skip validation and defaults if workload is disabled (poolSize=0)
 	if workload.PoolSize <= 0 {
-		return workload
+		return workload, nil
 	}
 	if workload.LifecycleDuration <= 0 {
-		log.Warnf("virtualMachineWorkload.lifecycleDuration not set or <= 0; defaulting to %s", defaultVMLifecycleDuration)
 		workload.LifecycleDuration = defaultVMLifecycleDuration
+		return workload, fmt.Errorf("virtualMachineWorkload.lifecycleDuration not set or <= 0; defaulting to %s", defaultVMLifecycleDuration)
 	}
 	if workload.UpdateInterval <= 0 {
-		log.Warnf("virtualMachineWorkload.updateInterval not set or <= 0; defaulting to %s", defaultVMUpdateInterval)
 		workload.UpdateInterval = defaultVMUpdateInterval
+		return workload, fmt.Errorf("virtualMachineWorkload.updateInterval not set or <= 0; defaulting to %s", defaultVMUpdateInterval)
 	}
 
 	// Sanity check timing relationships
-	minLifecycle := time.Duration(float64(workload.LifecycleDuration) * (1 - lifecycleJitterPercent))
-	if workload.UpdateInterval > minLifecycle {
-		log.Warnf("virtualMachineWorkload.updateInterval (%s) > minimum lifecycle (%s); updates may never occur",
-			workload.UpdateInterval, minLifecycle)
+	lowerBoundVMLifetime := time.Duration(float64(workload.LifecycleDuration) * (1 - lifecycleJitterPercent))
+	upperBoundVMLifetime := time.Duration(float64(workload.LifecycleDuration) * (1 + lifecycleJitterPercent))
+	lifecycleText := fmt.Sprintf("The VM will live for a random duration between %s and %s", lowerBoundVMLifetime, upperBoundVMLifetime)
+	causeText := func(param string, value time.Duration) string {
+		return fmt.Sprintf("Setting %q=%s", param, value)
+	}
+	actionText := func(param string) string {
+		return fmt.Sprintf("Lower the value of %q or increase the 'lifecycleDuration'.", param)
+	}
+
+	// Check timing: interval should be < lowerBound for guaranteed firing
+	// - interval < lowerBound: OK (fires before shortest-lived VM dies)
+	// - interval in [lowerBound, upperBound]: some VMs may miss it
+	// - interval > upperBound: no VM will ever see it (all die first)
+	if workload.UpdateInterval > upperBoundVMLifetime {
+		return workload, fmt.Errorf("%s. %s causes none of the VMs to ever receive an update. %s",
+			lifecycleText, causeText("updateInterval", workload.UpdateInterval), actionText("updateInterval"))
+	} else if workload.UpdateInterval > lowerBoundVMLifetime {
+		return workload, fmt.Errorf("%s. %s may cause some VMs to never receive an update. %s",
+			lifecycleText, causeText("updateInterval", workload.UpdateInterval), actionText("updateInterval"))
 	}
 	if workload.ReportInterval > 0 {
-		if workload.ReportInterval > minLifecycle {
-			log.Warnf("virtualMachineWorkload.reportInterval (%s) > minimum lifecycle (%s); reports may never fire",
-				workload.ReportInterval, minLifecycle)
+		if workload.ReportInterval > upperBoundVMLifetime {
+			return workload, fmt.Errorf("%s. %s causes the workload to never send any index reports. %s",
+				lifecycleText, causeText("reportInterval", workload.ReportInterval), actionText("reportInterval"))
 		}
-		if workload.InitialReportDelay > minLifecycle {
-			log.Warnf("virtualMachineWorkload.initialReportDelay (%s) > minimum lifecycle (%s); first report may never fire",
-				workload.InitialReportDelay, minLifecycle)
+		if workload.ReportInterval > lowerBoundVMLifetime {
+			return workload, fmt.Errorf("%s. %s may cause some VMs to never send any index reports. %s",
+				lifecycleText, causeText("reportInterval", workload.ReportInterval), actionText("reportInterval"))
+		}
+		if workload.InitialReportDelay > upperBoundVMLifetime {
+			return workload, fmt.Errorf("%s. %s causes the workload to never send any index reports. %s",
+				lifecycleText, causeText("initialReportDelay", workload.InitialReportDelay), actionText("initialReportDelay"))
+		}
+		if workload.InitialReportDelay > lowerBoundVMLifetime {
+			return workload, fmt.Errorf("%s. %s may cause some VMs to never send any index reports. %s",
+				lifecycleText, causeText("initialReportDelay", workload.InitialReportDelay), actionText("initialReportDelay"))
 		}
 	}
-	return workload
+	return workload, nil
 }
 
 func getRandomVMPair(vsockCID uint32, guestOSes []string) (*unstructured.Unstructured, *unstructured.Unstructured) {

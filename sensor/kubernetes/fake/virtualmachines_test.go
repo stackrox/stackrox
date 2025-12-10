@@ -15,11 +15,10 @@ import (
 
 func TestValidateVMWorkload(t *testing.T) {
 	tests := map[string]struct {
-		input                    VirtualMachineWorkload
-		wantLifecycleDuration    time.Duration
-		wantUpdateInterval       time.Duration
-		expectLifecycleDefaulted bool
-		expectUpdateIntervalDef  bool
+		input                 VirtualMachineWorkload
+		wantLifecycleDuration time.Duration
+		wantUpdateInterval    time.Duration
+		wantErr               string // empty string means no error expected
 	}{
 		"disabled workload (poolSize=0) should skip validation": {
 			input: VirtualMachineWorkload{
@@ -27,61 +26,126 @@ func TestValidateVMWorkload(t *testing.T) {
 				LifecycleDuration: 0,
 				UpdateInterval:    0,
 			},
-			wantLifecycleDuration: 0, // stays 0, not defaulted
-			wantUpdateInterval:    0, // stays 0, not defaulted
+			wantLifecycleDuration: 0,
+			wantUpdateInterval:    0,
+			wantErr:               "",
 		},
-		"enabled workload with missing durations should apply defaults": {
+		"enabled workload with missing lifecycleDuration should default it": {
 			input: VirtualMachineWorkload{
 				PoolSize:          10,
 				LifecycleDuration: 0,
+				UpdateInterval:    10 * time.Second,
+			},
+			wantLifecycleDuration: defaultVMLifecycleDuration,
+			wantUpdateInterval:    10 * time.Second,
+			wantErr:               "virtualMachineWorkload.lifecycleDuration not set or <= 0; defaulting to 30m0s",
+		},
+		"enabled workload with missing updateInterval should default it": {
+			input: VirtualMachineWorkload{
+				PoolSize:          10,
+				LifecycleDuration: 2 * time.Minute,
 				UpdateInterval:    0,
 			},
-			wantLifecycleDuration:    defaultVMLifecycleDuration,
-			wantUpdateInterval:       defaultVMUpdateInterval,
-			expectLifecycleDefaulted: true,
-			expectUpdateIntervalDef:  true,
+			wantLifecycleDuration: 2 * time.Minute,
+			wantUpdateInterval:    defaultVMUpdateInterval,
+			wantErr:               "virtualMachineWorkload.updateInterval not set or <= 0; defaulting to 3m0s",
 		},
 		"enabled workload with valid durations should keep them": {
 			input: VirtualMachineWorkload{
 				PoolSize:          5,
 				LifecycleDuration: 2 * time.Minute,
-				UpdateInterval:    30 * time.Second,
+				UpdateInterval:    20 * time.Second, // < lowerBound (1min), OK
 			},
 			wantLifecycleDuration: 2 * time.Minute,
-			wantUpdateInterval:    30 * time.Second,
+			wantUpdateInterval:    20 * time.Second,
+			wantErr:               "",
 		},
-		"enabled workload with negative durations should apply defaults": {
+		"enabled workload with negative lifecycleDuration should default it": {
 			input: VirtualMachineWorkload{
 				PoolSize:          5,
 				LifecycleDuration: -1 * time.Second,
-				UpdateInterval:    -1 * time.Second,
+				UpdateInterval:    10 * time.Second,
 			},
-			wantLifecycleDuration:    defaultVMLifecycleDuration,
-			wantUpdateInterval:       defaultVMUpdateInterval,
-			expectLifecycleDefaulted: true,
-			expectUpdateIntervalDef:  true,
+			wantLifecycleDuration: defaultVMLifecycleDuration,
+			wantUpdateInterval:    10 * time.Second,
+			wantErr:               "virtualMachineWorkload.lifecycleDuration not set or <= 0; defaulting to 30m0s",
 		},
-		"workload with report intervals exceeding lifecycle logs warning but keeps values": {
+		"updateInterval in jitter range warns about potential missed updates": {
+			input: VirtualMachineWorkload{
+				PoolSize:          5,
+				LifecycleDuration: 60 * time.Second, // bounds: 30s-90s
+				UpdateInterval:    45 * time.Second, // in range, some VMs may miss
+			},
+			wantLifecycleDuration: 60 * time.Second,
+			wantUpdateInterval:    45 * time.Second,
+			wantErr: `The VM will live for a random duration between 30s and 1m30s. ` +
+				`Setting "updateInterval"=45s may cause some VMs to never receive an update. ` +
+				`Lower the value of "updateInterval" or increase the 'lifecycleDuration'.`,
+		},
+		"updateInterval below lower bound is OK": {
+			input: VirtualMachineWorkload{
+				PoolSize:          5,
+				LifecycleDuration: 60 * time.Second, // bounds: 30s-90s
+				UpdateInterval:    20 * time.Second, // < 30s lower bound, all VMs get updates
+			},
+			wantLifecycleDuration: 60 * time.Second,
+			wantUpdateInterval:    20 * time.Second,
+			wantErr:               "",
+		},
+		"updateInterval above upper bound causes none": {
+			input: VirtualMachineWorkload{
+				PoolSize:          5,
+				LifecycleDuration: 60 * time.Second,  // bounds: 30s-90s
+				UpdateInterval:    100 * time.Second, // > 90s upper bound, no VM gets updates
+			},
+			wantLifecycleDuration: 60 * time.Second,
+			wantUpdateInterval:    100 * time.Second,
+			wantErr: `The VM will live for a random duration between 30s and 1m30s. ` +
+				`Setting "updateInterval"=1m40s causes none of the VMs to ever receive an update. ` +
+				`Lower the value of "updateInterval" or increase the 'lifecycleDuration'.`,
+		},
+		"reportInterval in jitter range warns": {
+			input: VirtualMachineWorkload{
+				PoolSize:          5,
+				LifecycleDuration: 60 * time.Second, // bounds: 30s-90s
+				UpdateInterval:    20 * time.Second, // < lower bound, OK
+				ReportInterval:    45 * time.Second, // in range
+			},
+			wantLifecycleDuration: 60 * time.Second,
+			wantUpdateInterval:    20 * time.Second,
+			wantErr: `The VM will live for a random duration between 30s and 1m30s. ` +
+				`Setting "reportInterval"=45s may cause some VMs to never send any index reports. ` +
+				`Lower the value of "reportInterval" or increase the 'lifecycleDuration'.`,
+		},
+		"initialReportDelay in jitter range warns": {
 			input: VirtualMachineWorkload{
 				PoolSize:           5,
-				LifecycleDuration:  30 * time.Second,
-				UpdateInterval:     10 * time.Second,
-				ReportInterval:     60 * time.Second, // > lifecycle, will warn
-				InitialReportDelay: 45 * time.Second, // > min lifecycle, will warn
+				LifecycleDuration:  60 * time.Second, // bounds: 30s-90s
+				UpdateInterval:     20 * time.Second, // < lower bound, OK
+				ReportInterval:     20 * time.Second, // < lower bound, OK
+				InitialReportDelay: 45 * time.Second, // in range
 			},
-			wantLifecycleDuration: 30 * time.Second,
-			wantUpdateInterval:    10 * time.Second,
+			wantLifecycleDuration: 60 * time.Second,
+			wantUpdateInterval:    20 * time.Second,
+			wantErr: `The VM will live for a random duration between 30s and 1m30s. ` +
+				`Setting "initialReportDelay"=45s may cause some VMs to never send any index reports. ` +
+				`Lower the value of "initialReportDelay" or increase the 'lifecycleDuration'.`,
 		},
 	}
 
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			result := validateVMWorkload(tt.input)
+			result, err := validateVMWorkload(tt.input)
 
 			assert.Equal(t, tt.wantLifecycleDuration, result.LifecycleDuration, "lifecycleDuration mismatch")
 			assert.Equal(t, tt.wantUpdateInterval, result.UpdateInterval, "updateInterval mismatch")
-			// PoolSize should never change
 			assert.Equal(t, tt.input.PoolSize, result.PoolSize, "poolSize should not change")
+
+			if tt.wantErr == "" {
+				assert.NoError(t, err, "expected no error")
+			} else {
+				assert.EqualError(t, err, tt.wantErr)
+			}
 		})
 	}
 }
