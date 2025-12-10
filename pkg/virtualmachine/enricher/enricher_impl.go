@@ -102,7 +102,7 @@ func (e *enricherImpl) getScannerCreator(integration *storage.ImageIntegration) 
 func (e *enricherImpl) UpsertVirtualMachineIntegration(integration *storage.ImageIntegration) error {
 	vmScanner, err := e.createVirtualMachineScanner(integration)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "adding or updating integration")
 	}
 
 	e.lock.Lock()
