@@ -1,5 +1,21 @@
 package fake
 
+// Design decision: This file contains package data as a Go slice literal rather than using
+// embedding with CSV parsing or code generation. We considered these alternatives:
+//
+// - Embedding CSV + runtime parsing: Adds runtime overhead to parse ~500 entries on every use.
+//   The data is static and never changes at runtime, so parsing is wasteful.
+//
+// - Code generation from CSV: Adds build tooling complexity and an extra build step.
+//   The data rarely changes, so the maintenance benefit doesn't justify the complexity.
+//
+// The current approach (Go literal) provides:
+// - Zero runtime overhead (compiled directly into binary)
+// - Type safety and IDE support
+// - Simple updates: edit the slice directly or regenerate from packages.csv
+//
+// The source data (packages.csv) is kept alongside for reference and easier bulk updates.
+
 // packageFixture represents a package from RHEL 9 system with its metadata.
 type packageFixture struct {
 	Name    string // Package name (e.g., "NetworkManager")
