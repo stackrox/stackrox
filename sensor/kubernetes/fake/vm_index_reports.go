@@ -55,7 +55,7 @@ type reportGenerator struct {
 // - numRequested <= 0: returns all indices sequentially [0, 1, ..., totalAvailable-1]
 // - numRequested < totalAvailable: randomly samples numRequested indices
 // - numRequested >= totalAvailable: uses all indices, then duplicates randomly to fill
-func selectPackageIndices(numRequested, totalAvailable int) []int {
+func selectPackageIndices(rng *rand.Rand, numRequested, totalAvailable int) []int {
 	switch {
 	case numRequested <= 0:
 		// Use all packages sequentially
@@ -66,7 +66,7 @@ func selectPackageIndices(numRequested, totalAvailable int) []int {
 		return indices
 	case numRequested < totalAvailable:
 		// Randomly sample numRequested from available packages
-		return rand.Perm(totalAvailable)[:numRequested]
+		return rng.Perm(totalAvailable)[:numRequested]
 	default:
 		// numRequested >= totalAvailable: use all, then duplicate randomly to fill
 		indices := make([]int, numRequested)
@@ -74,7 +74,7 @@ func selectPackageIndices(numRequested, totalAvailable int) []int {
 			indices[i] = i
 		}
 		for i := totalAvailable; i < numRequested; i++ {
-			indices[i] = rand.Intn(totalAvailable)
+			indices[i] = rng.Intn(totalAvailable)
 		}
 		return indices
 	}
@@ -126,9 +126,12 @@ func buildRepositories(numRepos int) (map[string]*v4.Repository, []string) {
 // When numPackages > available, packages are duplicated to reach the requested count.
 // The numRepos parameter specifies how many repositories to include (0 = real repos only).
 // When numRepos > available, synthetic repositories are created to reach the requested count.
-func newReportGenerator(numPackages, numRepos int) *reportGenerator {
+// The seed parameter controls random selection for reproducibility.
+func newReportGenerator(numPackages, numRepos int, seed int64) *reportGenerator {
+	rng := rand.New(rand.NewSource(seed))
+
 	totalPkgs := len(rhel9Packages)
-	indices := selectPackageIndices(numPackages, totalPkgs)
+	indices := selectPackageIndices(rng, numPackages, totalPkgs)
 	repositories, syntheticRepoIDs := buildRepositories(numRepos)
 
 	// Build packages from fixture data using selected indices

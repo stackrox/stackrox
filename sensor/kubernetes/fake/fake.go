@@ -44,6 +44,9 @@ const (
 	// Starting CID for VM population. This is used as a part of the name and its value does not matter
 	// as long as it is unique and different than 0, 1, and 2 (reserved values).
 	vmBaseVSOCKCID = uint32(1000)
+
+	// reportGeneratorSeed is the seed for deterministic package selection in VM index reports.
+	reportGeneratorSeed = int64(42)
 )
 
 // vmReadiness encapsulates the three readiness signals needed before VM workload can start
@@ -526,6 +529,7 @@ func (w *WorkloadManager) initializePreexistingResources() {
 			reportGen = newReportGenerator(
 				w.workload.VirtualMachineWorkload.NumPackages,
 				w.workload.VirtualMachineWorkload.NumRepositories,
+				reportGeneratorSeed,
 			)
 			log.Infof("VM index reports enabled: interval=%s, packages=%d, repos=%d",
 				w.workload.VirtualMachineWorkload.ReportInterval,

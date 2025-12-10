@@ -151,7 +151,7 @@ func TestValidateVMWorkload(t *testing.T) {
 }
 
 func TestGenerateFakeIndexReport(t *testing.T) {
-	gen := newReportGenerator(10, 5) // 10 packages, 5 repos (2 real + 3 synthetic)
+	gen := newReportGenerator(10, 5, 42) // 10 packages, 5 repos (2 real + 3 synthetic), seed=42 for reproducibility
 	tests := map[string]uint32{
 		"basic report": 1234,
 		"different VM": 9999,
