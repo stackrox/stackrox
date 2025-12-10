@@ -488,8 +488,7 @@ func expandPinToNodes(pinToNodes *platform.PinToNodesPolicy) SchedulingConstrain
 	}
 }
 
-// GetSchedulingWithFallback returns the scheduling values for a component with fallback to defaults.
-func GetSchedulingWithFallback(spec *platform.DeploymentSpec, defaults SchedulingConstraints) (map[string]string, []*corev1.Toleration) {
+func getSchedulingWithFallback(spec *platform.DeploymentSpec, defaults SchedulingConstraints) (map[string]string, []*corev1.Toleration) {
 	var nodeSelector map[string]string
 	var tolerations []*corev1.Toleration
 
@@ -510,7 +509,7 @@ func GetSchedulingWithFallback(spec *platform.DeploymentSpec, defaults Schedulin
 
 // SetScheduling sets nodeSelector and tolerations values with fallback to defaults.
 func (v *ValuesBuilder) SetScheduling(nodeSelectorKey, tolerationsKey string, spec *platform.DeploymentSpec, defaults SchedulingConstraints) {
-	nodeSelector, tolerations := GetSchedulingWithFallback(spec, defaults)
+	nodeSelector, tolerations := getSchedulingWithFallback(spec, defaults)
 	v.SetStringMap(nodeSelectorKey, nodeSelector)
 	v.AddAllFrom(GetTolerations(tolerationsKey, tolerations))
 }

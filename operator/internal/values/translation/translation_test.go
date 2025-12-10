@@ -954,7 +954,7 @@ func TestGetSchedulingWithFallback(t *testing.T) {
 
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			nodeSelector, tolerations := GetSchedulingWithFallback(tc.spec, tc.defaults)
+			nodeSelector, tolerations := getSchedulingWithFallback(tc.spec, tc.defaults)
 			assert.Equal(t, tc.wantNodeSelector, nodeSelector)
 			assert.Equal(t, tc.wantTolerations, tolerations)
 		})
