@@ -845,8 +845,11 @@ EOT
     # Old version of the operator might not know about the SFA agent,
     # temporarily disable it.
     if [[ "${SFA_AGENT:-}" == "Enabled" ]]; then
+	echo "Disabling SFA_AGENT for the old deployment"
         reenable_sfa="true"
         export SFA_AGENT="Disabled"
+    else
+	echo "SFA_AGENT value for the old deployment ${SFA_AGENT:-}"
     fi
 
     VERSION="${OPERATOR_VERSION_TAG}" make -C operator deploy-previous-via-olm
@@ -864,6 +867,7 @@ EOT
     _begin "upgrade-operator"
 
     if [[ "${reenable_sfa}" == "true" ]]; then
+	echo "Reenabling SFA_AGENT"
 	export SFA_AGENT="Enabled"
     fi
 
