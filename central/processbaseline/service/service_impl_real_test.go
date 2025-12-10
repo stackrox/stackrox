@@ -1,0 +1,503 @@
+//go:build sql_integration
+
+package service
+
+import (
+	"context"
+	"slices"
+	"testing"
+
+	deploymentDS "github.com/stackrox/rox/central/deployment/datastore"
+	lifecycleMocks "github.com/stackrox/rox/central/detection/lifecycle/mocks"
+	"github.com/stackrox/rox/central/processbaseline/datastore"
+	postgresStore "github.com/stackrox/rox/central/processbaseline/store/postgres"
+	resultsMocks "github.com/stackrox/rox/central/processbaselineresults/datastore/mocks"
+	indicatorMocks "github.com/stackrox/rox/central/processindicator/datastore/mocks"
+	"github.com/stackrox/rox/central/reprocessor/mocks"
+	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
+	"github.com/stackrox/rox/pkg/postgres"
+	"github.com/stackrox/rox/pkg/postgres/pgtest"
+	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/sac/resources"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/suite"
+	"go.uber.org/mock/gomock"
+)
+
+var (
+	writeCtx = sac.WithGlobalAccessScopeChecker(context.Background(),
+		sac.AllowFixedScopes(sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
+			sac.ResourceScopeKeys(resources.DeploymentExtension, resources.Deployment)))
+
+	// Create test baselines with different deployment and cluster IDs
+	cluster1      = fixtureconsts.Cluster1
+	cluster2      = fixtureconsts.Cluster2
+	namespace1    = "namespace1"
+	namespace2    = "namespace2"
+	deployment1ID = fixtureconsts.Deployment1
+	deployment2ID = fixtureconsts.Deployment2
+	deployment3ID = fixtureconsts.Deployment3
+
+	// Create and add real deployments to the deployment datastore
+	deployment1 = &storage.Deployment{
+		Id:        deployment1ID,
+		Name:      "test-deployment-1",
+		Namespace: namespace1,
+		ClusterId: cluster1,
+		Containers: []*storage.Container{
+			{
+				Name: "container1",
+				Image: &storage.ContainerImage{
+					Name: &storage.ImageName{
+						FullName: "nginx:1.19",
+					},
+				},
+			},
+		},
+	}
+
+	deployment2 = &storage.Deployment{
+		Id:        deployment2ID,
+		Name:      "test-deployment-2",
+		Namespace: namespace2,
+		ClusterId: cluster1,
+		Containers: []*storage.Container{
+			{
+				Name: "container2",
+				Image: &storage.ContainerImage{
+					Name: &storage.ImageName{
+						FullName: "redis:6.0",
+					},
+				},
+			},
+		},
+	}
+
+	deployment3 = &storage.Deployment{
+		Id:        deployment3ID,
+		Name:      "test-deployment-1",
+		Namespace: namespace2,
+		ClusterId: cluster2,
+		Containers: []*storage.Container{
+			{
+				Name: "container1",
+				Image: &storage.ContainerImage{
+					Name: &storage.ImageName{
+						FullName: "redis:6.0",
+					},
+				},
+			},
+			{
+				Name: "container3",
+				Image: &storage.ContainerImage{
+					Name: &storage.ImageName{
+						FullName: "redis:6.0",
+					},
+				},
+			},
+			{
+				Name: "container4",
+				Image: &storage.ContainerImage{
+					Name: &storage.ImageName{
+						FullName: "redis:7.0",
+					},
+				},
+			},
+		},
+	}
+
+	baseline1 = &storage.ProcessBaseline{
+		Key: &storage.ProcessBaselineKey{
+			ClusterId:     cluster1,
+			Namespace:     namespace1,
+			DeploymentId:  deployment1ID,
+			ContainerName: "container1",
+		},
+	}
+
+	baseline2 = &storage.ProcessBaseline{
+		Key: &storage.ProcessBaselineKey{
+			ClusterId:     cluster1,
+			Namespace:     namespace2,
+			DeploymentId:  deployment2ID,
+			ContainerName: "container2",
+		},
+	}
+
+	baseline3 = &storage.ProcessBaseline{
+		Key: &storage.ProcessBaselineKey{
+			ClusterId:     cluster2,
+			Namespace:     namespace2,
+			DeploymentId:  deployment3ID,
+			ContainerName: "container1",
+		},
+	}
+
+	baseline4 = &storage.ProcessBaseline{
+		Key: &storage.ProcessBaselineKey{
+			ClusterId:     cluster2,
+			Namespace:     namespace2,
+			DeploymentId:  deployment3ID,
+			ContainerName: "container3",
+		},
+	}
+
+	baseline5 = &storage.ProcessBaseline{
+		Key: &storage.ProcessBaselineKey{
+			ClusterId:     cluster2,
+			Namespace:     namespace2,
+			DeploymentId:  deployment3ID,
+			ContainerName: "container4",
+		},
+	}
+)
+
+func TestProcessBaselineServiceReal(t *testing.T) {
+	suite.Run(t, new(ProcessBaselineServiceRealTestSuite))
+}
+
+type ProcessBaselineServiceRealTestSuite struct {
+	suite.Suite
+	baselineDatastore datastore.DataStore
+	deploymentDS      deploymentDS.DataStore
+	service           Service
+
+	pool postgres.DB
+
+	reprocessor        *mocks.MockLoop
+	resultDatastore    *resultsMocks.MockDataStore
+	indicatorMockStore *indicatorMocks.MockDataStore
+	mockCtrl           *gomock.Controller
+	lifecycleManager   *lifecycleMocks.MockManager
+}
+
+func (suite *ProcessBaselineServiceRealTestSuite) SetupTest() {
+	pgtestbase := pgtest.ForT(suite.T())
+	suite.Require().NotNil(pgtestbase)
+	suite.pool = pgtestbase.DB
+
+	// Set up baseline datastore
+	baselineStore := postgresStore.New(suite.pool)
+	suite.mockCtrl = gomock.NewController(suite.T())
+	suite.resultDatastore = resultsMocks.NewMockDataStore(suite.mockCtrl)
+	suite.resultDatastore.EXPECT().DeleteBaselineResults(gomock.Any(), gomock.Any()).AnyTimes()
+	suite.indicatorMockStore = indicatorMocks.NewMockDataStore(suite.mockCtrl)
+	suite.baselineDatastore = datastore.New(baselineStore, suite.resultDatastore, suite.indicatorMockStore)
+
+	// Set up real deployment datastore
+	var err error
+	suite.deploymentDS, err = deploymentDS.GetTestPostgresDataStore(suite.T(), suite.pool)
+	suite.Require().NoError(err)
+
+	suite.reprocessor = mocks.NewMockLoop(suite.mockCtrl)
+	suite.lifecycleManager = lifecycleMocks.NewMockManager(suite.mockCtrl)
+	suite.service = New(suite.baselineDatastore, suite.reprocessor, suite.deploymentDS, suite.lifecycleManager)
+}
+
+func (suite *ProcessBaselineServiceRealTestSuite) TearDownTest() {
+	suite.mockCtrl.Finish()
+	suite.pool.Close()
+}
+
+func (suite *ProcessBaselineServiceRealTestSuite) TestGetProcessBaselineBulk() {
+	// Add deployments to the datastore
+	err := suite.deploymentDS.UpsertDeployment(writeCtx, deployment1)
+	suite.Require().NoError(err)
+	err = suite.deploymentDS.UpsertDeployment(writeCtx, deployment2)
+	suite.Require().NoError(err)
+	err = suite.deploymentDS.UpsertDeployment(writeCtx, deployment3)
+	suite.Require().NoError(err)
+	defer func() {
+		_ = suite.deploymentDS.RemoveDeployment(writeCtx, cluster1, deployment1ID)
+		_ = suite.deploymentDS.RemoveDeployment(writeCtx, cluster1, deployment2ID)
+		_ = suite.deploymentDS.RemoveDeployment(writeCtx, cluster2, deployment3ID)
+	}()
+
+	baselines := []*storage.ProcessBaseline{baseline1, baseline2, baseline3, baseline4, baseline5}
+	fillDB(suite.T(), suite.baselineDatastore, baselines)
+	defer emptyDB(suite.T(), suite.baselineDatastore, baselines)
+
+	testCases := []struct {
+		name              string
+		query             *v1.ProcessBaselineQuery
+		expectedCount     int
+		expectedBaselines []*storage.ProcessBaseline
+	}{
+		{
+			name: "Filter by cluster ID",
+			query: &v1.ProcessBaselineQuery{
+				ClusterIds: []string{cluster1},
+			},
+			expectedCount:     2,
+			expectedBaselines: []*storage.ProcessBaseline{baseline1, baseline2},
+		},
+		{
+			name: "Filter by namespace",
+			query: &v1.ProcessBaselineQuery{
+				Namespaces: []string{namespace2},
+			},
+			expectedCount:     4,
+			expectedBaselines: []*storage.ProcessBaseline{baseline2, baseline3, baseline4, baseline5},
+		},
+		{
+			name: "Filter by deployment ID",
+			query: &v1.ProcessBaselineQuery{
+				DeploymentIds: []string{deployment1ID},
+			},
+			expectedCount:     1,
+			expectedBaselines: []*storage.ProcessBaseline{baseline1},
+		},
+		{
+			name: "Filter by container name container1",
+			query: &v1.ProcessBaselineQuery{
+				ContainerNames: []string{"container1"},
+			},
+			expectedCount:     2,
+			expectedBaselines: []*storage.ProcessBaseline{baseline1, baseline3},
+		},
+		{
+			name: "Filter by container name container2",
+			query: &v1.ProcessBaselineQuery{
+				ContainerNames: []string{"container2"},
+			},
+			expectedCount:     1,
+			expectedBaselines: []*storage.ProcessBaseline{baseline2},
+		},
+		{
+			name: "Filter by container name container3",
+			query: &v1.ProcessBaselineQuery{
+				ContainerNames: []string{"container3"},
+			},
+			expectedCount:     1,
+			expectedBaselines: []*storage.ProcessBaseline{baseline4},
+		},
+		{
+			name: "Filter by container name container4",
+			query: &v1.ProcessBaselineQuery{
+				ContainerNames: []string{"container4"},
+			},
+			expectedCount:     1,
+			expectedBaselines: []*storage.ProcessBaseline{baseline5},
+		},
+		{
+			name: "Filter by deployment name",
+			query: &v1.ProcessBaselineQuery{
+				DeploymentNames: []string{"test-deployment-1"},
+			},
+			expectedCount:     4,
+			expectedBaselines: []*storage.ProcessBaseline{baseline1, baseline3, baseline4, baseline5},
+		},
+		{
+			name: "Filter by deployment name test-deployment-2",
+			query: &v1.ProcessBaselineQuery{
+				DeploymentNames: []string{"test-deployment-2"},
+			},
+			expectedCount:     1,
+			expectedBaselines: []*storage.ProcessBaseline{baseline2},
+		},
+		{
+			name: "Filter by image nginx:1.19",
+			query: &v1.ProcessBaselineQuery{
+				Images: []string{"nginx:1.19"},
+			},
+			expectedCount:     1,
+			expectedBaselines: []*storage.ProcessBaseline{baseline1},
+		},
+		{
+			name: "Filter by image redis:6.0",
+			query: &v1.ProcessBaselineQuery{
+				Images: []string{"redis:6.0"},
+			},
+			expectedCount:     3,
+			expectedBaselines: []*storage.ProcessBaseline{baseline2, baseline3, baseline4},
+		},
+		{
+			name: "Filter by image redis:6.0 and container1",
+			query: &v1.ProcessBaselineQuery{
+				Images:         []string{"redis:6.0"},
+				ContainerNames: []string{"container1"},
+			},
+			expectedCount:     1,
+			expectedBaselines: []*storage.ProcessBaseline{baseline3},
+		},
+		{
+			name: "Filter by cluster and namespace",
+			query: &v1.ProcessBaselineQuery{
+				ClusterIds: []string{cluster1},
+				Namespaces: []string{namespace1},
+			},
+			expectedCount:     1,
+			expectedBaselines: []*storage.ProcessBaseline{baseline1},
+		},
+		{
+			name: "Filter by deployment name and image",
+			query: &v1.ProcessBaselineQuery{
+				DeploymentNames: []string{"test-deployment-1"},
+				Images:          []string{"nginx:1.19"},
+			},
+			expectedCount:     1,
+			expectedBaselines: []*storage.ProcessBaseline{baseline1},
+		},
+		{
+			name: "Filter by image and container name",
+			query: &v1.ProcessBaselineQuery{
+				Images:         []string{"nginx:1.19"},
+				ContainerNames: []string{"container1"},
+			},
+			expectedCount:     1,
+			expectedBaselines: []*storage.ProcessBaseline{baseline1},
+		},
+		{
+			name:              "No filters returns all baselines",
+			query:             &v1.ProcessBaselineQuery{},
+			expectedCount:     5,
+			expectedBaselines: baselines,
+		},
+		{
+			name: "Filter by non-existent deployment name",
+			query: &v1.ProcessBaselineQuery{
+				DeploymentNames: []string{"non-existent"},
+			},
+			expectedCount:     0,
+			expectedBaselines: []*storage.ProcessBaseline{},
+		},
+		{
+			name: "Filter by non-existent image",
+			query: &v1.ProcessBaselineQuery{
+				Images: []string{"non-existent:1.0"},
+			},
+			expectedCount:     0,
+			expectedBaselines: []*storage.ProcessBaseline{},
+		},
+	}
+
+	for _, tc := range testCases {
+		suite.T().Run(tc.name, func(t *testing.T) {
+			request := &v1.GetProcessBaselinesBulkRequest{
+				Query: tc.query,
+			}
+
+			resp, err := suite.service.GetProcessBaselineBulk(writeCtx, request)
+			suite.NoError(err)
+			suite.NotNil(resp)
+			suite.Len(resp.GetBaselines(), tc.expectedCount)
+			suite.Equal(int32(tc.expectedCount), resp.GetTotalCount())
+
+			// Verify the returned baselines match expected
+			returnedKeys := make([]string, 0, len(resp.GetBaselines()))
+			for _, b := range resp.GetBaselines() {
+				returnedKeys = append(returnedKeys, b.GetId())
+			}
+			slices.Sort(returnedKeys)
+
+			expectedKeys := make([]string, 0, len(tc.expectedBaselines))
+			for _, b := range tc.expectedBaselines {
+				expectedKeys = append(expectedKeys, b.GetId())
+			}
+			slices.Sort(expectedKeys)
+
+			assert.Equal(t, expectedKeys, returnedKeys)
+		})
+	}
+}
+
+func (suite *ProcessBaselineServiceRealTestSuite) TestGetProcessBaselineBulkPagination() {
+	// Add deployments to the datastore
+	err := suite.deploymentDS.UpsertDeployment(writeCtx, deployment1)
+	suite.Require().NoError(err)
+	err = suite.deploymentDS.UpsertDeployment(writeCtx, deployment2)
+	suite.Require().NoError(err)
+	err = suite.deploymentDS.UpsertDeployment(writeCtx, deployment3)
+	suite.Require().NoError(err)
+	defer func() {
+		_ = suite.deploymentDS.RemoveDeployment(writeCtx, cluster1, deployment1ID)
+		_ = suite.deploymentDS.RemoveDeployment(writeCtx, cluster1, deployment2ID)
+		_ = suite.deploymentDS.RemoveDeployment(writeCtx, cluster2, deployment3ID)
+	}()
+
+	baselines := []*storage.ProcessBaseline{baseline1, baseline2, baseline3, baseline4, baseline5}
+	fillDB(suite.T(), suite.baselineDatastore, baselines)
+	defer emptyDB(suite.T(), suite.baselineDatastore, baselines)
+
+	suite.T().Run("Pagination - offset 0, limit 2", func(t *testing.T) {
+		request := &v1.GetProcessBaselinesBulkRequest{
+			Query: &v1.ProcessBaselineQuery{},
+			Pagination: &v1.Pagination{
+				Offset: 0,
+				Limit:  2,
+			},
+		}
+
+		resp, err := suite.service.GetProcessBaselineBulk(writeCtx, request)
+		suite.NoError(err)
+		suite.NotNil(resp)
+		suite.Len(resp.GetBaselines(), 2)
+		suite.Equal(int32(5), resp.GetTotalCount())
+	})
+
+	suite.T().Run("Pagination - offset 1, limit 2", func(t *testing.T) {
+		request := &v1.GetProcessBaselinesBulkRequest{
+			Query: &v1.ProcessBaselineQuery{},
+			Pagination: &v1.Pagination{
+				Offset: 1,
+				Limit:  2,
+			},
+		}
+
+		resp, err := suite.service.GetProcessBaselineBulk(writeCtx, request)
+		suite.NoError(err)
+		suite.NotNil(resp)
+		suite.Len(resp.GetBaselines(), 2)
+		suite.Equal(int32(5), resp.GetTotalCount())
+	})
+
+	suite.T().Run("Pagination - offset 2, limit 2", func(t *testing.T) {
+		request := &v1.GetProcessBaselinesBulkRequest{
+			Query: &v1.ProcessBaselineQuery{},
+			Pagination: &v1.Pagination{
+				Offset: 4,
+				Limit:  2,
+			},
+		}
+
+		resp, err := suite.service.GetProcessBaselineBulk(writeCtx, request)
+		suite.NoError(err)
+		suite.NotNil(resp)
+		suite.Len(resp.GetBaselines(), 1)
+		suite.Equal(int32(5), resp.GetTotalCount())
+	})
+
+	suite.T().Run("Pagination - offset beyond available results", func(t *testing.T) {
+		request := &v1.GetProcessBaselinesBulkRequest{
+			Query: &v1.ProcessBaselineQuery{},
+			Pagination: &v1.Pagination{
+				Offset: 10,
+				Limit:  2,
+			},
+		}
+
+		resp, err := suite.service.GetProcessBaselineBulk(writeCtx, request)
+		suite.NoError(err)
+		suite.NotNil(resp)
+		suite.Len(resp.GetBaselines(), 0)
+		suite.Equal(int32(5), resp.GetTotalCount())
+	})
+
+	suite.T().Run("Pagination - limit only", func(t *testing.T) {
+		request := &v1.GetProcessBaselinesBulkRequest{
+			Query: &v1.ProcessBaselineQuery{},
+			Pagination: &v1.Pagination{
+				Offset: 0,
+				Limit:  1,
+			},
+		}
+
+		resp, err := suite.service.GetProcessBaselineBulk(writeCtx, request)
+		suite.NoError(err)
+		suite.NotNil(resp)
+		suite.Len(resp.GetBaselines(), 1)
+		suite.Equal(int32(5), resp.GetTotalCount())
+	})
+}
