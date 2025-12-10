@@ -6,20 +6,15 @@ import (
 	"github.com/stackrox/rox/central/cve/info/datastore/store"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	searchPkg "github.com/stackrox/rox/pkg/search"
 )
 
 type datastoreImpl struct {
 	storage store.Store
 }
 
-func (ds *datastoreImpl) Search(ctx context.Context, q *v1.Query) ([]searchPkg.Result, error) {
-	return ds.storage.Search(ctx, q)
-}
-
 func (ds *datastoreImpl) SearchRawImageCVEInfos(ctx context.Context, q *v1.Query) ([]*storage.ImageCVEInfo, error) {
 	times := make([]*storage.ImageCVEInfo, 0)
-	err := ds.storage.GetByQueryFn(ctx, q, func(cve *storage.ImageCVEInfo) error {
+	err := ds.storage.WalkByQuery(ctx, q, func(cve *storage.ImageCVEInfo) error {
 		times = append(times, cve)
 		return nil
 	})
