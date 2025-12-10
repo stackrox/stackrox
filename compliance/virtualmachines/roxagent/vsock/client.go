@@ -9,6 +9,7 @@ import (
 	"github.com/mdlayher/vsock"
 	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
 	v1 "github.com/stackrox/rox/generated/internalapi/virtualmachine/v1"
+	"github.com/stackrox/rox/pkg/jsonutil"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/protocompat"
 )
@@ -18,9 +19,28 @@ var log = logging.LoggerForModule()
 type Client struct {
 	Port    uint32
 	Timeout time.Duration
+	Verbose bool
 }
 
 func (c *Client) SendIndexReport(report *v4.IndexReport) error {
+	vsockCid, err := vsock.ContextID()
+	if err != nil {
+		return fmt.Errorf("getting vsock context id: %w", err)
+	}
+	wrappedReport := &v1.IndexReport{
+		VsockCid: strconv.FormatUint(uint64(vsockCid), 10),
+		IndexV4:  report,
+	}
+
+	if c.Verbose {
+		reportJson, err := jsonutil.ProtoToJSON(wrappedReport)
+		if err != nil {
+			log.Errorf("Failed to convert index report to JSON (vsockCid=%d): %v", vsockCid, err)
+		} else {
+			fmt.Println(reportJson)
+		}
+	}
+
 	conn, err := vsock.Dial(vsock.Host, c.Port, &vsock.Config{})
 	if err != nil {
 		return fmt.Errorf("dialing vsock connection: %w", err)
@@ -33,13 +53,7 @@ func (c *Client) SendIndexReport(report *v4.IndexReport) error {
 	if err := conn.SetDeadline(time.Now().Add(c.Timeout)); err != nil {
 		return fmt.Errorf("setting connection deadline: %w", err)
 	}
-	vsockCid, err := vsock.ContextID()
-	if err != nil {
-		return fmt.Errorf("getting vsock context id: %w", err)
-	}
-	return c.writeIndexReport(conn,
-		&v1.IndexReport{VsockCid: strconv.Itoa(int(vsockCid)), IndexV4: report},
-	)
+	return c.writeIndexReport(conn, wrappedReport)
 }
 
 func (c *Client) writeIndexReport(conn net.Conn, report *v1.IndexReport) error {
