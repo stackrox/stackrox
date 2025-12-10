@@ -81,8 +81,8 @@ func selectPackageIndices(numRequested, totalAvailable int) []int {
 }
 
 // buildRepositories creates real RHEL 9 repositories and synthetic ones if numRepos exceeds available.
-// Returns the repositories map, all repo IDs, and synthetic repo IDs (for assigning duplicated packages).
-func buildRepositories(numRepos int) (map[string]*v4.Repository, []string, []string) {
+// Returns the repositories map and synthetic repo IDs (for assigning duplicated packages).
+func buildRepositories(numRepos int) (map[string]*v4.Repository, []string) {
 	totalRealRepos := len(rhel9Repositories)
 	repoCount := totalRealRepos
 	if numRepos > totalRealRepos {
@@ -90,7 +90,6 @@ func buildRepositories(numRepos int) (map[string]*v4.Repository, []string, []str
 	}
 
 	repositories := make(map[string]*v4.Repository, repoCount)
-	repoIDs := make([]string, 0, repoCount)
 
 	// Add real repositories first
 	for repoID, cpe := range rhel9Repositories {
@@ -101,7 +100,6 @@ func buildRepositories(numRepos int) (map[string]*v4.Repository, []string, []str
 			Key:  "rhel-9",
 			Cpe:  cpe,
 		}
-		repoIDs = append(repoIDs, repoID)
 	}
 
 	// Add synthetic repositories if requested
@@ -115,11 +113,10 @@ func buildRepositories(numRepos int) (map[string]*v4.Repository, []string, []str
 			Key:  fmt.Sprintf("synthetic-%d", i),
 			Cpe:  fmt.Sprintf("cpe:2.3:a:example:synthetic_repo:%d:*:*:*:*:*:*:*", i),
 		}
-		repoIDs = append(repoIDs, repoID)
 		syntheticRepoIDs = append(syntheticRepoIDs, repoID)
 	}
 
-	return repositories, repoIDs, syntheticRepoIDs
+	return repositories, syntheticRepoIDs
 }
 
 // newReportGenerator creates a report generator using real RHEL 9 package data.
@@ -131,12 +128,14 @@ func buildRepositories(numRepos int) (map[string]*v4.Repository, []string, []str
 func newReportGenerator(numPackages, numRepos int) *reportGenerator {
 	totalPkgs := len(rhel9Packages)
 	indices := selectPackageIndices(numPackages, totalPkgs)
-	repositories, repoIDs, syntheticRepoIDs := buildRepositories(numRepos)
+	repositories, syntheticRepoIDs := buildRepositories(numRepos)
 
 	// Build packages from fixture data using selected indices
 	// - Real packages (first totalPkgs) keep their original repo from fixture
 	// - Duplicated packages (beyond totalPkgs) are distributed across synthetic repos
 	packages := make(map[string]*v4.Package, len(indices))
+	environments := make(map[string]*v4.Environment_List, len(indices))
+
 	for i, idx := range indices {
 		pkg := rhel9Packages[idx]
 		pkgID := fmt.Sprintf("%s-%d", pkg.Name, i)
@@ -175,17 +174,14 @@ func newReportGenerator(numPackages, numRepos int) *reportGenerator {
 				V:    normalizeRPMVersion(pkg.Version),
 			},
 		}
-	}
 
-	// Build environment mapping - one environment per repository
-	environments := make(map[string]*v4.Environment_List, len(repoIDs))
-	for _, repoID := range repoIDs {
-		environments[repoID] = &v4.Environment_List{
+		// Environment maps package ID to its repository
+		environments[pkgID] = &v4.Environment_List{
 			Environments: []*v4.Environment{
 				{
 					PackageDb:     "sqlite:usr/share/rpm",
 					IntroducedIn:  "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
-					RepositoryIds: []string{repoID},
+					RepositoryIds: []string{assignedRepoID},
 				},
 			},
 		}
