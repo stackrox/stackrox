@@ -16,6 +16,7 @@ message BaseImage {
   google.protobuf.Timestamp discovered_at = 6; // @gotags: search:"Base Image Discovered At,hidden"
   bool active = 7; // @gotags: search:"Base Image Active,hidden"
   string first_layer_digest = 8; // @gotags: search:"Base Image First Layer Digest,hidden" sql:"index=btree"
+  repeated BaseImageLayer layers = 9;
 }
 
 message BaseImageLayer {

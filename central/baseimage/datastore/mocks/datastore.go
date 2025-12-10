@@ -41,6 +41,21 @@ func (m *MockDataStore) EXPECT() *MockDataStoreMockRecorder {
 	return m.recorder
 }
 
+// ListCandidateBaseImages mocks base method.
+func (m *MockDataStore) ListCandidateBaseImages(ctx context.Context, firstLayer string) ([]*storage.BaseImage, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ListCandidateBaseImages", ctx, firstLayer)
+	ret0, _ := ret[0].([]*storage.BaseImage)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ListCandidateBaseImages indicates an expected call of ListCandidateBaseImages.
+func (mr *MockDataStoreMockRecorder) ListCandidateBaseImages(ctx, firstLayer any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListCandidateBaseImages", reflect.TypeOf((*MockDataStore)(nil).ListCandidateBaseImages), ctx, firstLayer)
+}
+
 // ListRepositories mocks base method.
 func (m *MockDataStore) ListRepositories(ctx context.Context) ([]*storage.BaseImageRepository, error) {
 	m.ctrl.T.Helper()

@@ -32,3 +32,8 @@ func (ds *datastoreImpl) ListRepositories(ctx context.Context) ([]*storage.BaseI
 
 	return repos, nil
 }
+
+func (ds *datastoreImpl) ListCandidateBaseImages(ctx context.Context, firstLayer string) ([]*storage.BaseImage, error) {
+	//TODO implement me
+	panic("implement me")
+}
