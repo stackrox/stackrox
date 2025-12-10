@@ -82,6 +82,7 @@ func selectPackageIndices(numRequested, totalAvailable int) []int {
 
 // buildRepositories creates real RHEL 9 repositories and synthetic ones if numRepos exceeds available.
 // Returns the repositories map and synthetic repo IDs (for assigning duplicated packages).
+// If less than `len(rhel9Repositories)==2` are requested, then it always returns the two real repositories.
 func buildRepositories(numRepos int) (map[string]*v4.Repository, []string) {
 	totalRealRepos := len(rhel9Repositories)
 	repoCount := totalRealRepos
