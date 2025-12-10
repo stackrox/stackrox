@@ -62,7 +62,7 @@ func RegisterNewReconciler(mgr ctrl.Manager, selector string) error {
 		pkgReconciler.WithPredicate(statusController.SkipStatusControllerUpdates[ctrlClient.Object]{}),
 	}
 
-	opts := make([]pkgReconciler.Option, 0, len(otherPreExtensions)+len(postExtensions)+len(predicates)+9)
+	opts := make([]pkgReconciler.Option, 0, len(otherPreExtensions)+len(postExtensions)+len(predicates)+8)
 	opts = append(opts, extraEventWatcher)
 	opts = append(opts, pkgReconciler.WithPreExtension(extensions.VerifyCollisionFreeCentral(mgr.GetClient())))
 	opts = append(opts, pkgReconciler.WithPreExtension(extensions.FeatureDefaultingExtension(mgr.GetClient())))
@@ -72,7 +72,6 @@ func RegisterNewReconciler(mgr ctrl.Manager, selector string) error {
 	opts = append(opts, pkgReconciler.WithAggressiveConflictResolution(true))
 	opts = append(opts, pkgReconciler.WithReconcilePeriod(extensions.InitBundleReconcilePeriod))
 	opts = append(opts, pkgReconciler.WithPauseReconcileAnnotation(commonExtensions.PauseReconcileAnnotation))
-	opts = append(opts, pkgReconciler.StripManifestFromStatus(true))
 
 	opts, err := commonExtensions.AddSelectorOptionIfNeeded(selector, opts)
 	if err != nil {
