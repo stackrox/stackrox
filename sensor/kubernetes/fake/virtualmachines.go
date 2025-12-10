@@ -43,7 +43,10 @@ var (
 		Version:  "v1",
 		Resource: "virtualmachineinstances",
 	}
-	defaultGuestOSPool = []string{"linux", "windows", "rhel", "ubuntu"}
+	// defaultGuestOSPool is an arbitrary list of OS names.
+	// They do not indicate any support of ACS'es roxagent for the given OS.
+	// The values does not matter - we could have used any strings.
+	defaultGuestOSPool = []string{"rhel7", "rhel8", "rhel9", "rhel10", "fedora", "centos", "ubuntu", "debian"}
 )
 
 func validateVMWorkload(workload VirtualMachineWorkload) VirtualMachineWorkload {
@@ -84,7 +87,7 @@ func getRandomVMPair(vsockCID uint32, guestOSes []string) (*unstructured.Unstruc
 	// This ensures the VM UID in informer events matches the VM ID used in index reports.
 	vmUID := types.UID(fakeVMUUID(int(vsockCID)))
 	vmName := fmt.Sprintf("%s-%d", "vm", vsockCID)
-	os := guestOSes[int(vsockCID)%len(defaultGuestOSPool)]
+	os := guestOSes[int(vsockCID)%len(guestOSes)]
 
 	vm := &kubeVirtV1.VirtualMachine{
 		TypeMeta: metav1.TypeMeta{
