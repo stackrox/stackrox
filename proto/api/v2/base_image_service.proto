@@ -39,8 +39,8 @@ message DeleteBaseImageReferenceRequest {
   string id = 1;
 }
 
-// ImageServiceV2 APIs manages base image references.
-service ImageServiceV2 {
+// BaseImageServiceV2 APIs manages base image references.
+service BaseImageServiceV2 {
   // GetBaseImageReferences returns all base image references.
   rpc GetBaseImageReferences(Empty) returns (GetBaseImageReferenceResponse) {
     option (google.api.http) = {get: "/v2/baseimages"};

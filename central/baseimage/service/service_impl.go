@@ -25,19 +25,19 @@ var (
 	// TODO(ROX-32170): Review and finalize RBAC for base image repository operations.
 	authorizer = perrpc.FromMap(map[authz.Authorizer][]string{
 		user.With(permissions.View(resources.Administration)): {
-			v2.ImageServiceV2_GetBaseImageReferences_FullMethodName,
+			v2.BaseImageServiceV2_GetBaseImageReferences_FullMethodName,
 		},
 		user.With(permissions.Modify(resources.Administration)): {
-			v2.ImageServiceV2_CreateBaseImageReference_FullMethodName,
-			v2.ImageServiceV2_UpdateBaseImageTagPattern_FullMethodName,
-			v2.ImageServiceV2_DeleteBaseImageReference_FullMethodName,
+			v2.BaseImageServiceV2_CreateBaseImageReference_FullMethodName,
+			v2.BaseImageServiceV2_UpdateBaseImageTagPattern_FullMethodName,
+			v2.BaseImageServiceV2_DeleteBaseImageReference_FullMethodName,
 		},
 	})
 )
 
 // serviceImpl provides APIs for base image references.
 type serviceImpl struct {
-	v2.UnimplementedImageServiceV2Server
+	v2.UnimplementedBaseImageServiceV2Server
 
 	datastore repository.DataStore
 }
@@ -135,12 +135,12 @@ func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName strin
 
 // RegisterServiceServer registers this service with the given gRPC server.
 func (s *serviceImpl) RegisterServiceServer(grpcServer *grpc.Server) {
-	v2.RegisterImageServiceV2Server(grpcServer, s)
+	v2.RegisterBaseImageServiceV2Server(grpcServer, s)
 }
 
 // RegisterServiceHandler registers this service with the given gRPC gateway.
 func (s *serviceImpl) RegisterServiceHandler(ctx context.Context, mux *runtime.ServeMux, conn *grpc.ClientConn) error {
-	return v2.RegisterImageServiceV2Handler(ctx, mux, conn)
+	return v2.RegisterBaseImageServiceV2Handler(ctx, mux, conn)
 }
 
 // convertStorageToAPI converts a storage.BaseImageRepository to a v2.BaseImageReference.

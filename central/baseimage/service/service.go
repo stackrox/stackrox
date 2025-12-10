@@ -14,7 +14,7 @@ type Service interface {
 
 	AuthFuncOverride(ctx context.Context, fullMethodName string) (context.Context, error)
 
-	v2.ImageServiceV2Server
+	v2.BaseImageServiceV2Server
 }
 
 // New returns a new Service instance using the given DataStore.
