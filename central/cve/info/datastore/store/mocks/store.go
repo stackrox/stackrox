@@ -89,20 +89,6 @@ func (mr *MockStoreMockRecorder) Get(ctx, id any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Get", reflect.TypeOf((*MockStore)(nil).Get), ctx, id)
 }
 
-// GetByQueryFn mocks base method.
-func (m *MockStore) GetByQueryFn(ctx context.Context, query *v1.Query, fn func(*storage.ImageCVEInfo) error) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetByQueryFn", ctx, query, fn)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// GetByQueryFn indicates an expected call of GetByQueryFn.
-func (mr *MockStoreMockRecorder) GetByQueryFn(ctx, query, fn any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetByQueryFn", reflect.TypeOf((*MockStore)(nil).GetByQueryFn), ctx, query, fn)
-}
-
 // GetMany mocks base method.
 func (m *MockStore) GetMany(ctx context.Context, ids []string) ([]*storage.ImageCVEInfo, []int, error) {
 	m.ctrl.T.Helper()
@@ -160,4 +146,18 @@ func (m *MockStore) UpsertMany(ctx context.Context, times []*storage.ImageCVEInf
 func (mr *MockStoreMockRecorder) UpsertMany(ctx, times any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpsertMany", reflect.TypeOf((*MockStore)(nil).UpsertMany), ctx, times)
+}
+
+// WalkByQuery mocks base method.
+func (m *MockStore) WalkByQuery(ctx context.Context, query *v1.Query, fn func(*storage.ImageCVEInfo) error) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "WalkByQuery", ctx, query, fn)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// WalkByQuery indicates an expected call of WalkByQuery.
+func (mr *MockStoreMockRecorder) WalkByQuery(ctx, query, fn any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "WalkByQuery", reflect.TypeOf((*MockStore)(nil).WalkByQuery), ctx, query, fn)
 }
