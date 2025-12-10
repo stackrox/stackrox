@@ -9,14 +9,12 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres"
-	searchPkg "github.com/stackrox/rox/pkg/search"
 )
 
 // DataStore is an intermediary to the ImageCVEInfo storage.
 //
 //go:generate mockgen-wrapper
 type DataStore interface {
-	Search(ctx context.Context, q *v1.Query) ([]searchPkg.Result, error)
 	SearchRawImageCVEInfos(ctx context.Context, q *v1.Query) ([]*storage.ImageCVEInfo, error)
 
 	Exists(ctx context.Context, id string) (bool, error)
