@@ -2,13 +2,19 @@ package repository
 
 import (
 	"context"
+	"time"
 
 	repoStore "github.com/stackrox/rox/central/baseimage/store/repository/postgres"
+	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/uuid"
+)
+
+const (
+	resourceType = "BaseImage"
 )
 
 var (
@@ -21,19 +27,19 @@ type datastoreImpl struct {
 }
 
 func (d *datastoreImpl) GetRepository(ctx context.Context, id string) (*storage.BaseImageRepository, bool, error) {
-	if ok, err := baseImageRepositorySAC.ReadAllowed(ctx); err != nil {
+	defer metrics.SetDatastoreFunctionDuration(time.Now(), resourceType, "GetRepository")
+
+	if err := sac.VerifyAuthzOK(baseImageRepositorySAC.ReadAllowed(ctx)); err != nil {
 		return nil, false, err
-	} else if !ok {
-		return nil, false, sac.ErrResourceAccessDenied
 	}
 	return d.store.Get(ctx, id)
 }
 
 func (d *datastoreImpl) ListRepositories(ctx context.Context) ([]*storage.BaseImageRepository, error) {
-	if ok, err := baseImageRepositorySAC.ReadAllowed(ctx); err != nil {
+	defer metrics.SetDatastoreFunctionDuration(time.Now(), resourceType, "ListRepositories")
+
+	if err := sac.VerifyAuthzOK(baseImageRepositorySAC.ReadAllowed(ctx)); err != nil {
 		return nil, err
-	} else if !ok {
-		return nil, sac.ErrResourceAccessDenied
 	}
 
 	var repos []*storage.BaseImageRepository
@@ -51,10 +57,10 @@ func (d *datastoreImpl) ListRepositories(ctx context.Context) ([]*storage.BaseIm
 }
 
 func (d *datastoreImpl) UpsertRepository(ctx context.Context, repo *storage.BaseImageRepository) (*storage.BaseImageRepository, error) {
-	if ok, err := baseImageRepositorySAC.WriteAllowed(ctx); err != nil {
+	defer metrics.SetDatastoreFunctionDuration(time.Now(), resourceType, "UpsertRepository")
+
+	if err := sac.VerifyAuthzOK(baseImageRepositorySAC.WriteAllowed(ctx)); err != nil {
 		return nil, err
-	} else if !ok {
-		return nil, sac.ErrResourceAccessDenied
 	}
 
 	if repo.GetId() == "" {
@@ -69,10 +75,10 @@ func (d *datastoreImpl) UpsertRepository(ctx context.Context, repo *storage.Base
 }
 
 func (d *datastoreImpl) DeleteRepository(ctx context.Context, id string) error {
-	if ok, err := baseImageRepositorySAC.WriteAllowed(ctx); err != nil {
+	defer metrics.SetDatastoreFunctionDuration(time.Now(), resourceType, "DeleteRepository")
+
+	if err := sac.VerifyAuthzOK(baseImageRepositorySAC.WriteAllowed(ctx)); err != nil {
 		return err
-	} else if !ok {
-		return sac.ErrResourceAccessDenied
 	}
 	return d.store.Delete(ctx, id)
 }
