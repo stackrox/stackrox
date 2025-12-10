@@ -2,7 +2,7 @@ import Tabs from 'Components/Tabs';
 import Tab from 'Components/Tab';
 import usePermissions from 'hooks/usePermissions';
 import type { Deployment } from 'types/deployment.proto';
-import type { Risk } from 'types/risk.proto';
+import type { Risk } from 'services/DeploymentsService';
 
 import DeploymentDetails from './DeploymentDetails';
 import RiskIndicators from './Indicators/RiskIndicators';

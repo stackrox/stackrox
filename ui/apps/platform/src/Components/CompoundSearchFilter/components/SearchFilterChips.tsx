@@ -6,6 +6,11 @@ import { Globe } from 'react-feather'; // eslint-disable-line limited/no-feather
 import type { SearchFilter } from 'types/search';
 import { searchValueAsArray } from 'utils/searchUtils';
 
+import type { CompoundSearchFilterConfig, CompoundSearchFilterEntity } from '../types';
+import { hasGroupedSelectOptions, isSelectType, updateSearchFilter } from '../utils/utils';
+
+import { convertFromInternalToExternalConditionText } from './ConditionText';
+
 import './SearchFilterChips.css';
 
 export type FilterChipProps = {
@@ -34,6 +39,59 @@ export type FilterChipGroupDescriptor = {
     render?: (filter: string) => ReactNode;
 };
 
+/**
+ * Helper function to convert a search filter config object into an
+ * array of FilterChipGroupDescriptor objects for use in the SearchFilterChips component
+ *
+ * @param searchFilterConfig Config object for the search filter
+ * @returns An array of FilterChipGroupDescriptor objects
+ */
+export function makeFilterChipDescriptors(
+    config: CompoundSearchFilterConfig
+): FilterChipGroupDescriptor[] {
+    const filterChipDescriptors = config.flatMap(
+        ({ attributes = [] }: CompoundSearchFilterEntity) =>
+            attributes.map((attribute) => {
+                const baseConfig = {
+                    displayName: attribute.filterChipLabel,
+                    searchFilterName: attribute.searchTerm,
+                };
+
+                if (isSelectType(attribute)) {
+                    const options = hasGroupedSelectOptions(attribute.inputProps)
+                        ? attribute.inputProps.groupOptions.flatMap((group) => group.options)
+                        : attribute.inputProps.options;
+                    return {
+                        ...baseConfig,
+                        render: (filter: string) => {
+                            const option = options.find((option) => option.value === filter);
+                            return <FilterChip name={option?.label || 'N/A'} />;
+                        },
+                    };
+                }
+
+                if (attribute.inputType === 'condition-text') {
+                    return {
+                        ...baseConfig,
+                        render: (filter: string) => {
+                            return (
+                                <FilterChip
+                                    name={convertFromInternalToExternalConditionText(
+                                        attribute.inputProps,
+                                        filter
+                                    )}
+                                />
+                            );
+                        },
+                    };
+                }
+
+                return baseConfig;
+            })
+    );
+    return filterChipDescriptors;
+}
+
 export type SearchFilterChipsProps = {
     /** The search filter categories to display */
     filterChipGroupDescriptors: FilterChipGroupDescriptor[];
@@ -57,17 +115,14 @@ function SearchFilterChips({
     }
 
     function onDelete(category: string, chip: ToolbarChip | string) {
-        const newSearchFilter = { ...searchFilter };
-        const newSearchFilterValues = searchValueAsArray(searchFilter[category]);
-        const chipKey = typeof chip === 'string' ? chip : chip.key;
-        newSearchFilter[category] = newSearchFilterValues.filter((fil: string) => fil !== chipKey);
-        onChangeSearchFilter(newSearchFilter);
+        const value = typeof chip === 'string' ? chip : chip.key;
+        onChangeSearchFilter(
+            updateSearchFilter(searchFilter, [{ action: 'REMOVE', category, value }])
+        );
     }
 
     function onDeleteGroup(category: string) {
-        const newSearchFilter = { ...searchFilter };
-        delete newSearchFilter[category];
-        onChangeSearchFilter(newSearchFilter);
+        onChangeSearchFilter(updateSearchFilter(searchFilter, [{ action: 'DELETE', category }]));
     }
 
     function onDeleteAll() {

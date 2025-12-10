@@ -22,14 +22,13 @@ import useURLPagination from 'hooks/useURLPagination';
 import useURLSort from 'hooks/useURLSort';
 
 import CompoundSearchFilter from 'Components/CompoundSearchFilter/components/CompoundSearchFilter';
-import type { OnSearchCallback } from 'Components/CompoundSearchFilter/types';
-import {
+import SearchFilterChips, {
     makeFilterChipDescriptors,
-    updateSearchFilter,
-} from 'Components/CompoundSearchFilter/utils/utils';
+} from 'Components/CompoundSearchFilter/components/SearchFilterChips';
+import type { OnSearchCallback } from 'Components/CompoundSearchFilter/types';
+import { updateSearchFilter } from 'Components/CompoundSearchFilter/utils/utils';
 import BreadcrumbItemLink from 'Components/BreadcrumbItemLink';
 import PageTitle from 'Components/PageTitle';
-import SearchFilterChips from 'Components/PatternFly/SearchFilterChips';
 import KeyValueListModal from 'Components/KeyValueListModal';
 import TbodyUnified from 'Components/TableStateTemplates/TbodyUnified';
 import useAnalytics, { WORKLOAD_CVE_FILTER_APPLIED } from 'hooks/useAnalytics';

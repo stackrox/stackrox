@@ -59,11 +59,12 @@ import (
 )
 
 const (
-	envCentralLabelSelector            = "CENTRAL_LABEL_SELECTOR"
-	envSecuredClusterLabelSelector     = "SECURED_CLUSTER_LABEL_SELECTOR"
-	envCentralReconcilerEnabled        = "CENTRAL_RECONCILER_ENABLED"
-	envSecuredClusterReconcilerEnabled = "SECURED_CLUSTER_RECONCILER_ENABLED"
-	envCentralStatusControllerEnabled  = "CENTRAL_STATUS_CONTROLLER_ENABLED"
+	envCentralLabelSelector                  = "CENTRAL_LABEL_SELECTOR"
+	envSecuredClusterLabelSelector           = "SECURED_CLUSTER_LABEL_SELECTOR"
+	envCentralReconcilerEnabled              = "CENTRAL_RECONCILER_ENABLED"
+	envSecuredClusterReconcilerEnabled       = "SECURED_CLUSTER_RECONCILER_ENABLED"
+	envCentralStatusControllerEnabled        = "CENTRAL_STATUS_CONTROLLER_ENABLED"
+	envSecuredClusterStatusControllerEnabled = "SECURED_CLUSTER_STATUS_CONTROLLER_ENABLED"
 )
 
 var (
@@ -89,6 +90,8 @@ var (
 	securedClusterReconcilerEnabled = env.RegisterBooleanSetting(envSecuredClusterReconcilerEnabled, true)
 	// centralStatusControllerEnabled enables registering central status controller if set to true otherwise skips it
 	centralStatusControllerEnabled = env.RegisterBooleanSetting(envCentralStatusControllerEnabled, true)
+	// securedClusterStatusControllerEnabled enables registering secured-cluster status controller if set to true otherwise skips it
+	securedClusterStatusControllerEnabled = env.RegisterBooleanSetting(envSecuredClusterStatusControllerEnabled, true)
 )
 
 func init() {
@@ -233,6 +236,16 @@ func run() error {
 	if securedClusterReconcilerEnabled.BooleanSetting() {
 		if err = securedClusterReconciler.RegisterNewReconciler(mgr, securedClusterLabelSelector); err != nil {
 			return errors.Wrap(err, "unable to set up SecuredCluster reconciler")
+		}
+
+		// Register the SecuredCluster status controller for real-time status updates.
+		if securedClusterStatusControllerEnabled.BooleanSetting() {
+			statusReconciler := status.New[*platform.SecuredCluster](mgr.GetClient(), "SecuredCluster")
+			if err = statusReconciler.SetupWithManager(mgr); err != nil {
+				return errors.Wrap(err, "unable to set up SecuredCluster status controller")
+			}
+		} else {
+			setupLog.Info("skip registering secured-cluster status controller because " + envSecuredClusterStatusControllerEnabled + "==false")
 		}
 	} else {
 		setupLog.Info("skip registering secured cluster reconciler because " + envSecuredClusterReconcilerEnabled + "==false")

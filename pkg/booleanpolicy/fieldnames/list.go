@@ -84,6 +84,7 @@ var (
 	KubeUserGroups                 = newFieldName("Kubernetes User Groups")
 	SourceIPAddress                = newFieldName("Source IP Address")
 	NodeFilePath                   = newFieldName("Node File Path")
+	MountedFilePath                = newFieldName("Mounted File Path")
 	FileOperation                  = newFieldName("File Operation")
 )
 

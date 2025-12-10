@@ -1459,6 +1459,10 @@ spec:
           cluster name, please delete and recreate this resource.
         displayName: Cluster Name
         path: clusterName
+      - description: ObservedGeneration is the generation most recently observed by
+          the controller.
+        displayName: Observed Generation
+        path: observedGeneration
       version: v1alpha1
   description: |
     ## Why use Red Hat Advanced Cluster Security for Kubernetes?

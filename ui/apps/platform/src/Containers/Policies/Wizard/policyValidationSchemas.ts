@@ -62,7 +62,7 @@ const validationSchemaStep3: yup.ObjectSchema<PolicyStep3> = yup.object().shape(
                 yup
                     .object()
                     .shape({
-                        sectionName: yup.string().trim().required(),
+                        sectionName: yup.string().trim().optional(),
                         policyGroups: yup
                             .array()
                             .of(

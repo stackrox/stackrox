@@ -1,40 +1,41 @@
-import PropTypes from 'prop-types';
-
 import NoResultsMessage from 'Components/NoResultsMessage';
 import Table from 'Components/TableV2';
 
+import type { ListDeploymentWithProcessInfo } from 'services/DeploymentsService';
+import type { UseURLSortResult } from 'hooks/useURLSort';
+import type { SortOption } from 'types/table';
+
 import riskTableColumnDescriptors from './riskTableColumnDescriptors';
 
-function sortOptionFromTableState(state) {
-    let sortOption = null;
+function convertTableSortToURLSetterSort(state): SortOption | null {
+    let sortOption: SortOption | null = null;
     if (state.sorted.length && state.sorted[0].id) {
         const column = riskTableColumnDescriptors.find(
             (col) => col.accessor === state.sorted[0].id
         );
         sortOption = {
-            field: column.searchField,
-            reversed: state.sorted[0].desc,
+            // TODO we should be able to assert that column.searchField is not undefined after migrating away
+            // from the legacy TableV2 and descriptor pattern
+            field: column?.searchField ?? '',
+            direction: state.sorted[0].desc ? 'desc' : 'asc',
         };
     }
     return sortOption;
 }
 
-function RiskTable({
-    currentDeployments,
-    setSelectedDeploymentId,
-    selectedDeploymentId,
-    setSortOption,
-}) {
+type RiskTableProps = {
+    currentDeployments: ListDeploymentWithProcessInfo[];
+    selectedDeploymentId: string | undefined;
+    setSortOption: UseURLSortResult['setSortOption'];
+};
+
+function RiskTable({ currentDeployments, selectedDeploymentId, setSortOption }: RiskTableProps) {
     function onFetchData(state) {
-        const newSortOption = sortOptionFromTableState(state);
+        const newSortOption = convertTableSortToURLSetterSort(state);
         if (!newSortOption) {
             return;
         }
         setSortOption(newSortOption);
-    }
-
-    function updateSelectedDeployment({ deployment }) {
-        setSelectedDeploymentId(deployment.id);
     }
 
     if (!currentDeployments.length) {
@@ -45,23 +46,11 @@ function RiskTable({
             idAttribute="deployment.id"
             rows={currentDeployments}
             columns={riskTableColumnDescriptors}
-            onRowClick={updateSelectedDeployment}
             selectedRowId={selectedDeploymentId}
             onFetchData={onFetchData}
             noDataText="No results found. Please refine your search."
         />
     );
 }
-
-RiskTable.propTypes = {
-    currentDeployments: PropTypes.arrayOf(PropTypes.object).isRequired,
-    selectedDeploymentId: PropTypes.string,
-    setSelectedDeploymentId: PropTypes.func.isRequired,
-    setSortOption: PropTypes.func.isRequired,
-};
-
-RiskTable.defaultProps = {
-    selectedDeploymentId: undefined,
-};
 
 export default RiskTable;

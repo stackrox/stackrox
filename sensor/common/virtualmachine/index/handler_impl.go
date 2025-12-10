@@ -3,12 +3,14 @@ package index
 import (
 	"context"
 	"strconv"
+	"time"
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	v1 "github.com/stackrox/rox/generated/internalapi/virtualmachine/v1"
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/utils"
@@ -17,9 +19,6 @@ import (
 	"github.com/stackrox/rox/sensor/common/message"
 	"github.com/stackrox/rox/sensor/common/virtualmachine/metrics"
 )
-
-// TODO: Buffer has been decreased for testing. Increase the buffer again.
-const indexReportsBufferedChannelSize = 1
 
 var (
 	errCapabilityNotSupported = errors.New("Central does not have virtual machine capability")
@@ -58,13 +57,37 @@ func (h *handlerImpl) Send(ctx context.Context, vm *v1.IndexReport) error {
 
 	h.lock.RLock()
 	defer h.lock.RUnlock()
+
+	blockingStart := time.Now()
+	blocked := false
+	outcome := metrics.IndexReportEnqueueOutcomeSuccess
+	defer func() {
+		if blocked {
+			metrics.IndexReportBlockingEnqueueDurationMilliseconds.
+				WithLabelValues(outcome).
+				Observe(metrics.StartTimeToMS(blockingStart))
+		}
+	}()
+
+	// Fast-path select to detect blocking on the channel for metrics
+	select {
+	case <-ctx.Done():
+		// Handled in the next select statement
+	case h.indexReports <- vm:
+		return nil
+	default:
+		blocked = true
+		blockingStart = time.Now()
+		metrics.IndexReportEnqueueBlockedTotal.Inc()
+	}
+
 	select {
 	case <-ctx.Done():
 		if err := ctx.Err(); errors.Is(err, context.DeadlineExceeded) {
-			metrics.IndexReportsSent.With(metrics.StatusTimeoutLabels).Inc()
+			outcome = metrics.IndexReportEnqueueOutcomeTimeout
 			return err //nolint:wrapcheck
 		}
-		metrics.IndexReportsSent.With(metrics.StatusErrorLabels).Inc()
+		outcome = metrics.IndexReportEnqueueOutcomeCanceled
 		return ctx.Err() //nolint:wrapcheck
 	case h.indexReports <- vm:
 		return nil
@@ -115,7 +138,7 @@ func (h *handlerImpl) Start() error {
 	if h.toCentral != nil || h.indexReports != nil {
 		return errStartMoreThanOnce
 	}
-	h.indexReports = make(chan *v1.IndexReport, indexReportsBufferedChannelSize)
+	h.indexReports = make(chan *v1.IndexReport, env.VirtualMachinesIndexReportsBufferSize.IntegerSetting())
 	h.toCentral = h.run(h.indexReports)
 	return nil
 }
@@ -171,12 +194,22 @@ func (h *handlerImpl) handleIndexReport(
 	toCentral chan *message.ExpiringMessage,
 	indexReport *v1.IndexReport,
 ) {
-	log.Debugf("Handling virtual machine index report with vsock_cid=%q...", indexReport.GetVsockCid())
+	startTime := time.Now()
+	outcome := metrics.IndexReportHandlingMessageToCentralSuccess
+	defer func() {
+		metrics.IndexReportProcessingDurationMilliseconds.
+			WithLabelValues(outcome).
+			Observe(metrics.StartTimeToMS(startTime))
+	}()
+
 	if indexReport == nil {
+		outcome = metrics.IndexReportHandlingMessageToCentralNilReport
 		log.Warn("Received nil virtual machine index report: not sending to Central")
 		return
 	}
-	msg, err := h.newMessageToCentral(indexReport)
+	log.Debugf("Handling virtual machine index report with vsock_cid=%q...", indexReport.GetVsockCid())
+
+	msg, outcome, err := h.newMessageToCentral(indexReport)
 	if err != nil {
 		// TODO: send a message the sensor relay to retry later if the VM was not found
 		log.Warnf("unable to send index report message for the virtual machine with vsock cid %q to central: %v", indexReport.GetVsockCid(), err)
@@ -186,16 +219,16 @@ func (h *handlerImpl) handleIndexReport(
 	metrics.IndexReportsSent.With(metrics.StatusSuccessLabels).Inc()
 }
 
-func (h *handlerImpl) newMessageToCentral(indexReport *v1.IndexReport) (*message.ExpiringMessage, error) {
+func (h *handlerImpl) newMessageToCentral(indexReport *v1.IndexReport) (*message.ExpiringMessage, string, error) {
 	cid, err := strconv.ParseUint(indexReport.GetVsockCid(), 10, 32)
 	if err != nil {
-		return nil, errors.Wrapf(err, "Received an invalid Vsock CID: %q", indexReport.GetVsockCid())
+		return nil, metrics.IndexReportHandlingMessageToCentralInvalidCID, errors.Wrapf(err, "Received an invalid Vsock CID: %q", indexReport.GetVsockCid())
 	}
 
 	vmInfo := h.store.GetFromCID(uint32(cid))
 	if vmInfo == nil {
 		// Return retryable error if the virtual machine is not yet known to Sensor.
-		return nil, errors.Wrapf(errVirtualMachineNotFound, "VirtualMachine with Vsock CID %q not found", indexReport.GetVsockCid())
+		return nil, metrics.IndexReportHandlingMessageToCentralVMUnknown, errors.Wrapf(errVirtualMachineNotFound, "VirtualMachine with Vsock CID %q not found", indexReport.GetVsockCid())
 	}
 
 	return message.New(&central.MsgFromSensor{
@@ -211,7 +244,7 @@ func (h *handlerImpl) newMessageToCentral(indexReport *v1.IndexReport) (*message
 				},
 			},
 		},
-	}), nil
+	}), metrics.IndexReportHandlingMessageToCentralSuccess, nil
 }
 
 func (h *handlerImpl) sendIndexReportEvent(

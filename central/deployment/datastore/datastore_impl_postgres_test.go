@@ -4,6 +4,7 @@ package datastore
 
 import (
 	"context"
+	"fmt"
 	"testing"
 
 	imageDataStore "github.com/stackrox/rox/central/image/datastore"
@@ -363,6 +364,27 @@ func (s *DeploymentPostgresDataStoreTestSuite) TestSearchWithPostgres() {
 				}
 			} else {
 				actual, err = s.deploymentDatastore.Search(tc.ctx, tc.query)
+				searchRes, errRes := s.deploymentDatastore.SearchDeployments(tc.ctx, tc.query)
+				assert.NoError(t, errRes)
+				assert.Len(t, searchRes, len(tc.expectedIDs))
+
+				// Verify SearchResult fields are properly populated with exact values
+				for _, result := range searchRes {
+					assert.Equal(t, v1.SearchCategory_DEPLOYMENTS, result.GetCategory(), "Result category should be DEPLOYMENTS")
+					assert.NotNil(t, result.GetFieldToMatches(), "FieldToMatches should not be nil")
+
+					// Fetch the actual deployment to verify exact name and location
+					deployment, found, fetchErr := s.deploymentDatastore.GetDeployment(tc.ctx, result.GetId())
+					assert.NoError(t, fetchErr, "Should be able to fetch deployment")
+					assert.True(t, found, "Deployment should exist")
+					assert.Equal(t, deployment.GetName(), result.GetName(), "SearchResult name should match deployment name")
+					// Verify exact location matches expected format "/ClusterName/Namespace"
+					expectedLocation := ""
+					if deployment.GetClusterName() != "" && deployment.GetNamespace() != "" {
+						expectedLocation = fmt.Sprintf("/%s/%s", deployment.GetClusterName(), deployment.GetNamespace())
+					}
+					assert.Equal(t, expectedLocation, result.GetLocation(), "SearchResult location should match /ClusterName/Namespace format")
+				}
 			}
 			assert.NoError(t, err)
 			assert.Len(t, actual, len(tc.expectedIDs))

@@ -1,19 +1,19 @@
-import { FilterChip } from 'Components/PatternFly/SearchFilterChips';
-import type { FilterChipGroupDescriptor } from 'Components/PatternFly/SearchFilterChips';
 import type { SearchFilter } from 'types/search';
 import type { IsFeatureFlagEnabled } from 'hooks/useFeatureFlags';
 import { searchValueAsArray } from 'utils/searchUtils';
+import { ensureExhaustive } from 'utils/type.utils';
+
 import type {
     CompoundSearchFilterAttribute,
     CompoundSearchFilterConfig,
     CompoundSearchFilterEntity,
     OnSearchPayload,
     OnSearchPayloadItem,
+    OnSearchPayloadItemAdd,
     SelectSearchFilterAttribute,
     SelectSearchFilterGroupedOptions,
     SelectSearchFilterOptions,
 } from '../types';
-import { convertFromInternalToExternalConditionText } from '../components/ConditionText';
 
 export const conditionMap = {
     'Is greater than': '>',
@@ -140,59 +140,6 @@ export function hasSelectOptions(
     return 'options' in inputProps;
 }
 
-/**
- * Helper function to convert a search filter config object into an
- * array of FilterChipGroupDescriptor objects for use in the SearchFilterChips component
- *
- * @param searchFilterConfig Config object for the search filter
- * @returns An array of FilterChipGroupDescriptor objects
- */
-export function makeFilterChipDescriptors(
-    config: CompoundSearchFilterConfig
-): FilterChipGroupDescriptor[] {
-    const filterChipDescriptors = config.flatMap(
-        ({ attributes = [] }: CompoundSearchFilterEntity) =>
-            attributes.map((attribute) => {
-                const baseConfig = {
-                    displayName: attribute.filterChipLabel,
-                    searchFilterName: attribute.searchTerm,
-                };
-
-                if (isSelectType(attribute)) {
-                    const options = hasGroupedSelectOptions(attribute.inputProps)
-                        ? attribute.inputProps.groupOptions.flatMap((group) => group.options)
-                        : attribute.inputProps.options;
-                    return {
-                        ...baseConfig,
-                        render: (filter: string) => {
-                            const option = options.find((option) => option.value === filter);
-                            return <FilterChip name={option?.label || 'N/A'} />;
-                        },
-                    };
-                }
-
-                if (attribute.inputType === 'condition-text') {
-                    return {
-                        ...baseConfig,
-                        render: (filter: string) => {
-                            return (
-                                <FilterChip
-                                    name={convertFromInternalToExternalConditionText(
-                                        attribute.inputProps,
-                                        filter
-                                    )}
-                                />
-                            );
-                        },
-                    };
-                }
-
-                return baseConfig;
-            })
-    );
-    return filterChipDescriptors;
-}
-
 // Pure function returns searchFilter updated according to payload from interactions.
 // Assume that update is needed because payload has already been filtered and is non-empty.
 export function updateSearchFilter(
@@ -201,18 +148,35 @@ export function updateSearchFilter(
 ): SearchFilter {
     const searchFilterUpdated = { ...searchFilter };
     payload.forEach((payloadItem) => {
-        switch (payloadItem.action) {
-            case 'ADD':
-            case 'REMOVE': {
-                const { action, category, value } = payloadItem;
+        const { action } = payloadItem;
+        switch (action) {
+            case 'APPEND':
+            case 'SELECT_INCLUSIVE': {
+                const { category, value } = payloadItem;
                 const values = searchValueAsArray(searchFilterUpdated[category]);
-                searchFilterUpdated[category] =
-                    action === 'ADD'
-                        ? [...values, value]
-                        : values.filter((valueInSearchFilter) => valueInSearchFilter !== value);
+                searchFilterUpdated[category] = [...values, value];
+                break;
+            }
+            case 'SELECT_EXCLUSIVE': {
+                const { category, value } = payloadItem;
+                searchFilterUpdated[category] = [value];
+                break;
+            }
+            case 'DELETE': {
+                const { category } = payloadItem;
+                delete searchFilterUpdated[category];
+                break;
+            }
+            case 'REMOVE': {
+                const { category, value } = payloadItem;
+                const values = searchValueAsArray(searchFilterUpdated[category]);
+                searchFilterUpdated[category] = values.filter(
+                    (valueInSearchFilter) => valueInSearchFilter !== value
+                );
                 break;
             }
             default:
+                ensureExhaustive(action);
                 break;
         }
     });
@@ -226,8 +190,7 @@ export function payloadItemFiltererForUpdating(
     payloadItem: OnSearchPayloadItem
 ) {
     switch (payloadItem.action) {
-        case 'ADD':
-        case 'REMOVE': {
+        case 'APPEND': {
             const { category, value } = payloadItem;
             if (value === '') {
                 // TODO What is pro and con for search filter input field to prevent empty string?
@@ -235,22 +198,21 @@ export function payloadItemFiltererForUpdating(
             }
 
             const values = searchValueAsArray(searchFilter[category]);
-            const hasValue = values.includes(value);
-            if (payloadItem.action === 'REMOVE') {
-                return hasValue;
-            }
-
-            return !hasValue;
+            return !values.includes(value); // omit payload item if user entered redundant value
         }
         default:
-            return false;
+            return true;
     }
 }
 
 // Pure function returns whether payload item is relevant for analytics tracking.
-export function payloadItemFiltererForTracking(payloadItem: OnSearchPayloadItem) {
+export function payloadItemFiltererForTracking(
+    payloadItem: OnSearchPayloadItem
+): payloadItem is OnSearchPayloadItemAdd {
     switch (payloadItem.action) {
-        case 'ADD':
+        case 'APPEND': // open set of values which analytics might omit
+        case 'SELECT_INCLUSIVE': // closed set of values
+        case 'SELECT_EXCLUSIVE': // closed set of values
             return true;
         default:
             return false;

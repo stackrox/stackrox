@@ -26,12 +26,15 @@ const pluginGeneric = require('./eslint-plugins/pluginGeneric');
 const pluginLimited = require('./eslint-plugins/pluginLimited');
 const pluginPatternFly = require('./eslint-plugins/pluginPatternFly');
 
+const parser = parserTypeScriptESLint;
+const parserOptions = {
+    project: './tsconfig.eslint.json',
+    tsconfigRootDir: __dirname,
+};
+
 const parserAndOptions = {
-    parser: parserTypeScriptESLint,
-    parserOptions: {
-        project: './tsconfig.eslint.json',
-        tsconfigRootDir: __dirname,
-    },
+    parser,
+    parserOptions,
 };
 
 module.exports = [
@@ -588,7 +591,15 @@ module.exports = [
         files: ['src/*.{ts,tsx}', 'src/*/**/*.{js,jsx,ts,tsx}'], // product files, except for unit tests (including mockData and test-utils folders)
 
         languageOptions: {
-            ...parserAndOptions,
+            parser,
+            parserOptions: {
+                ...parserOptions,
+
+                // https://typescript-eslint.io/packages/parser/#jsxpragma
+                // If you are using the new JSX transform you can set this to null.
+                jsxPragma: null,
+            },
+
             globals: {
                 ...browserGlobals,
                 process: false, // for JavaScript files which have process.env.NODE_ENV and so on
@@ -600,6 +611,7 @@ module.exports = [
             accessibility: pluginAccessibility,
             generic: pluginGeneric,
             import: pluginImport,
+            limited: pluginLimited,
             patternfly: pluginPatternFly,
             react: pluginReact,
             'react-hooks': pluginReactHooks,
@@ -711,6 +723,12 @@ module.exports = [
             'react/style-prop-object': 'error',
             'react/void-dom-elements-no-children': 'error',
 
+            // Report as error: React.Whatever
+            'limited/no-qualified-name-react': 'error',
+            // Report as error: import React from 'react';
+            'react/jsx-uses-react': 'off',
+            'react/react-in-jsx-scope': 'off',
+
             // Explicit configuration because recommended includes React Compiler rules.
             // Core hooks rules
             'react-hooks/exhaustive-deps': 'error', // instead of 'warn'
@@ -749,6 +767,7 @@ module.exports = [
 
             '@typescript-eslint/array-type': 'error',
             '@typescript-eslint/consistent-type-exports': 'error',
+            '@typescript-eslint/consistent-type-imports': 'error',
 
             'import/consistent-type-specifier-style': ['error', 'prefer-top-level'],
         },
@@ -799,56 +818,6 @@ module.exports = [
         // Separate from the following configuration to limit size of contributions.
         rules: {
             'limited/sort-named-imports': 'error',
-        },
-    },
-    {
-        files: ['src/**/*.{js,jsx,ts,tsx}'],
-        ignores: [
-            'src/Containers/Compliance/**', // deprecated
-            'src/Containers/VulnMgmt/**', // deprecated
-            'src/Containers/Workflow/**', // deprecated
-        ],
-
-        // After deprecated folders have been deleted:
-        // Move jsxPragma property to languageOptions at module scope.
-        // Move react rules into appropriate configuration objects.
-
-        // Set parserOptions and turn off rules explicitly,
-        // instead of implicitlu via jsx-runtime configuration of eslint-plugin-react package.
-
-        languageOptions: {
-            parserOptions: {
-                // https://typescript-eslint.io/packages/parser/#jsxpragma
-                // If you are using the new JSX transform you can set this to null.
-                jsxPragma: null,
-            },
-        },
-
-        plugins: {
-            limited: pluginLimited,
-            react: pluginReact,
-        },
-        rules: {
-            'limited/no-qualified-name-react': 'error',
-            'react/jsx-uses-react': 'off',
-            'react/react-in-jsx-scope': 'off',
-        },
-    },
-    {
-        files: ['src/**/*.{ts,tsx}'],
-        ignores: [
-            'src/Containers/Compliance/**', // deprecated
-            'src/Containers/VulnMgmt/**', // deprecated
-        ],
-
-        // languageOptions from previous configuration object
-
-        // Key of plugin is namespace of its rules.
-        plugins: {
-            '@typescript-eslint': pluginTypeScriptESLint,
-        },
-        rules: {
-            '@typescript-eslint/consistent-type-imports': 'error',
         },
     },
     {

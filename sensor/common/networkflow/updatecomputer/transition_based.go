@@ -217,6 +217,16 @@ func isEndpointClosed(endpoint *storage.NetworkEndpoint) bool {
 	return ts.GetSeconds() != timestamp.InfiniteFuture.GoTime().Unix()
 }
 
+// isProcClosed returns true if the process listening on port represents a closed process.
+func isProcClosed(proc *storage.ProcessListeningOnPortFromSensor) bool {
+	ts := proc.GetCloseTimestamp()
+	if ts == nil {
+		return false
+	}
+
+	return ts.GetSeconds() != timestamp.InfiniteFuture.GoTime().Unix()
+}
+
 // limitCacheSize limits the cache to maxSize by discarding open events first,
 // since sending an open event without a closing event would result in stale
 // connections and endpoints.
@@ -393,19 +403,35 @@ func (c *TransitionBased) ComputeUpdatedEndpointsAndProcesses(
 		if features.NetworkFlowCacheLimiting.Enabled() {
 			NetworkFlowMaxCacheSize := env.NetworkFlowMaxCacheSize.IntegerSetting()
 			c.cachedUpdatesEp = limitCacheSizeWithMetrics(c.cachedUpdatesEp, NetworkFlowMaxCacheSize, isEndpointClosed, EndpointEnrichedEntity)
+			if plopEnabled {
+				c.cachedUpdatesProc = limitCacheSizeWithMetrics(c.cachedUpdatesProc, NetworkFlowMaxCacheSize, isProcClosed, ProcessEnrichedEntity)
+			}
 		}
 	}
 
 	if features.NetworkFlowBatching.Enabled() {
 		NetworkFlowMaxUpdateSize := env.NetworkFlowMaxUpdateSize.IntegerSetting()
+		var epUpdate []*storage.NetworkEndpoint
+		var procUpdate []*storage.ProcessListeningOnPortFromSensor
 		if len(c.cachedUpdatesEp) > NetworkFlowMaxUpdateSize {
-			epUpdate := c.cachedUpdatesEp[:NetworkFlowMaxUpdateSize]
+			epUpdate = c.cachedUpdatesEp[:NetworkFlowMaxUpdateSize]
 			c.cachedUpdatesEp = c.cachedUpdatesEp[NetworkFlowMaxUpdateSize:]
-			return epUpdate, c.cachedUpdatesProc
+		} else {
+			epUpdate = c.cachedUpdatesEp
+			c.cachedUpdatesEp = make([]*storage.NetworkEndpoint, 0)
 		}
-		epUpdate := c.cachedUpdatesEp
-		c.cachedUpdatesEp = make([]*storage.NetworkEndpoint, 0)
-		return epUpdate, c.cachedUpdatesProc
+		if plopEnabled {
+			if len(c.cachedUpdatesProc) > NetworkFlowMaxUpdateSize {
+				procUpdate = c.cachedUpdatesProc[:NetworkFlowMaxUpdateSize]
+				c.cachedUpdatesProc = c.cachedUpdatesProc[NetworkFlowMaxUpdateSize:]
+			} else {
+				procUpdate = c.cachedUpdatesProc
+				c.cachedUpdatesProc = make([]*storage.ProcessListeningOnPortFromSensor, 0)
+			}
+		} else {
+			procUpdate = c.cachedUpdatesProc
+		}
+		return epUpdate, procUpdate
 	}
 	return c.cachedUpdatesEp, c.cachedUpdatesProc
 }
@@ -474,7 +500,7 @@ func (c *TransitionBased) OnSuccessfulSendEndpoints(enrichedEndpointsProcesses m
 
 // OnSuccessfulSendProcesses contains actions that should be executed after successful sending of processesListening updates to Central.
 func (c *TransitionBased) OnSuccessfulSendProcesses(enrichedEndpointsProcesses map[indicator.ContainerEndpoint]*indicator.ProcessListeningWithTimestamp) {
-	if enrichedEndpointsProcesses != nil {
+	if !features.NetworkFlowBatching.Enabled() && enrichedEndpointsProcesses != nil {
 		c.cachedUpdatesProc = make([]*storage.ProcessListeningOnPortFromSensor, 0)
 	}
 }
@@ -488,6 +514,12 @@ func (c *TransitionBased) OnSendConnectionsFailure(unsentConns []*storage.Networ
 func (c *TransitionBased) OnSendEndpointsFailure(unsentEps []*storage.NetworkEndpoint) {
 	if features.NetworkFlowBatching.Enabled() {
 		c.cachedUpdatesEp = append(unsentEps, c.cachedUpdatesEp...)
+	}
+}
+
+func (c *TransitionBased) OnSendProcessesFailure(unsentProcs []*storage.ProcessListeningOnPortFromSensor) {
+	if features.NetworkFlowBatching.Enabled() {
+		c.cachedUpdatesProc = append(unsentProcs, c.cachedUpdatesProc...)
 	}
 }
 

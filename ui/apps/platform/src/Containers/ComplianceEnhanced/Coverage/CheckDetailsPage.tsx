@@ -148,7 +148,7 @@ function CheckDetailsPage() {
         checked: boolean,
         selection: string
     ) => {
-        const action = checked ? 'ADD' : 'REMOVE';
+        const action = checked ? 'SELECT_INCLUSIVE' : 'REMOVE';
         const category = filterType;
         const value = selection;
         onSearch([{ action, category, value }]);

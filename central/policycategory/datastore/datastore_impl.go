@@ -3,11 +3,9 @@ package datastore
 import (
 	"context"
 	"fmt"
-	"strings"
 
 	errorsPkg "github.com/pkg/errors"
 	"github.com/stackrox/rox/central/policycategory/store"
-	"github.com/stackrox/rox/central/policycategory/views"
 	"github.com/stackrox/rox/central/policycategoryedge/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -19,7 +17,6 @@ import (
 	searchPkg "github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/policycategory"
 	"github.com/stackrox/rox/pkg/set"
-	"github.com/stackrox/rox/pkg/sliceutils"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/uuid"
 	"golang.org/x/text/cases"
@@ -35,8 +32,7 @@ var (
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
 			sac.ResourceScopeKeys(resources.WorkflowAdministration)))
 
-	titleCase          = cases.Title(language.English, cases.NoLower)
-	incorrectTitleCase = cases.Title(language.English)
+	titleCase = cases.Title(language.English, cases.NoLower)
 )
 
 type datastoreImpl struct {
@@ -326,72 +322,6 @@ func (ds *datastoreImpl) DeletePolicyCategory(ctx context.Context, id string) er
 	}
 	delete(ds.categoryNameIDMap, category.GetName())
 	return nil
-}
-
-func (ds *datastoreImpl) GetDuplicatePolicyCategories(ctx context.Context) ([]*views.DuplicateCategoryView, error) {
-	seenCategories := make(map[string][]*storage.PolicyCategory)
-	err := ds.storage.GetByQueryFn(ctx, searchPkg.EmptyQuery(), func(category *storage.PolicyCategory) error {
-		lowerCategoryName := strings.ToLower(category.GetName())
-		if _, found := seenCategories[lowerCategoryName]; !found {
-			seenCategories[lowerCategoryName] = make([]*storage.PolicyCategory, 0)
-		}
-		seenCategories[lowerCategoryName] = append(seenCategories[lowerCategoryName], category)
-		return nil
-	})
-	res := make([]*views.DuplicateCategoryView, 0)
-	for _, categories := range seenCategories {
-		if len(categories) == 1 {
-			// Not a duplicate so we can just skip it
-			continue
-		}
-		res = sliceutils.Concat[[]*views.DuplicateCategoryView](
-			sliceutils.ConvertSlice[*storage.PolicyCategory, *views.DuplicateCategoryView](
-				categories,
-				func(c *storage.PolicyCategory) *views.DuplicateCategoryView {
-					return &views.DuplicateCategoryView{
-						Id:           c.GetId(),
-						Name:         c.GetName(),
-						TrueCategory: ds.categoryNameIDMap[c.GetName()] == c.GetId(),
-					}
-				}))
-	}
-	return res, err
-}
-
-func (ds *datastoreImpl) CleanupCategories(ctx context.Context) error {
-	categories := make(map[string]*struct {
-		trueCategory string
-		list         []*storage.PolicyCategory
-	})
-	err := ds.storage.Walk(ctx, func(c *storage.PolicyCategory) error {
-		lowerName := strings.ToLower(c.GetName())
-		if _, found := categories[lowerName]; !found {
-			categories[lowerName] = &struct {
-				trueCategory string
-				list         []*storage.PolicyCategory
-			}{
-				trueCategory: "",
-				list:         make([]*storage.PolicyCategory, 0),
-			}
-		}
-		if len(categories[lowerName].list) == 0 || incorrectTitleCase.String(c.GetName()) != c.GetName() {
-			categories[lowerName].trueCategory = c.GetName()
-		}
-		categories[lowerName].list = append(categories[lowerName].list, c)
-		return nil
-	})
-	if err != nil {
-		return err
-	}
-	toDelete := make([]string, 0)
-	for _, entry := range categories {
-		for _, category := range entry.list {
-			if category.GetName() != entry.trueCategory {
-				toDelete = append(toDelete, category.GetId())
-			}
-		}
-	}
-	return ds.storage.DeleteMany(ctx, toDelete)
 }
 
 // convertCategory returns proto search result from a category object and the internal search result

@@ -2,7 +2,6 @@ package datastore
 
 import (
 	"context"
-	"strings"
 
 	clusterDS "github.com/stackrox/rox/central/cluster/datastore"
 	"github.com/stackrox/rox/central/globaldb"
@@ -14,7 +13,9 @@ import (
 	"github.com/stackrox/rox/pkg/defaults/policies"
 	"github.com/stackrox/rox/pkg/policyutils"
 	"github.com/stackrox/rox/pkg/sac"
+	searchPkg "github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/set"
+	"github.com/stackrox/rox/pkg/sliceutils"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/utils"
 )
@@ -46,60 +47,67 @@ func Singleton() DataStore {
 // TODO: ROX-11279: Data migration for postgres should take care of removing default policies in the bolt bucket named removed_default_policies
 // from the policies table in postgres
 func addDefaults(s policyStore.Store, categoriesDS categoriesDS.DataStore, fullStore DataStore) {
-	// This is unrelated to default policies, but since we're already looping through all the policies here,
-	// this was a good place to add it.
-	duplicateCategories, err := categoriesDS.GetDuplicatePolicyCategories(workflowAdministrationCtx)
-	if err != nil {
-		panic(err)
-	}
-	lowerCategoryNameToProperName := make(map[string]string)
-	for _, category := range duplicateCategories {
-		if category.TrueCategory {
-			lowerCategoryNameToProperName[strings.ToLower(category.Name)] = category.Name
-		}
-	}
-	policiesToCheck := make([]*storage.Policy, 0)
-	toReupsert := make([]*storage.Policy, 0)
 	policyIDSet := set.NewStringSet()
-	err = s.Walk(workflowAdministrationCtx, func(p *storage.Policy) error {
+	storedPolicies := make([]*storage.Policy, 0)
+	err := s.Walk(workflowAdministrationCtx, func(p *storage.Policy) error {
 		policyIDSet.Add(p.GetId())
 		// Unrelated to adding/checking default policies, this was put here to prevent looping through all policies a second time
 		if p.GetSource() == storage.PolicySource_DECLARATIVE {
 			metrics.IncrementTotalExternalPoliciesGauge()
 		}
-		policiesToCheck = append(policiesToCheck, p)
+		storedPolicies = append(storedPolicies, p)
 		return nil
 	})
-	// Do this outside of the Walk because of DB connection leaks by doing nested DB ops while a connection is being used
-	for _, p := range policiesToCheck {
-		var categories []*storage.PolicyCategory
-		categories, err = categoriesDS.GetPolicyCategoriesForPolicy(workflowAdministrationCtx, p.GetId())
-		shouldReupsert := false
-		for _, category := range categories {
-			if correctCategory, found := lowerCategoryNameToProperName[strings.ToLower(category.GetName())]; found {
-				p.Categories = append(p.Categories, correctCategory)
-				shouldReupsert = true
-			} else {
-				p.Categories = append(p.Categories, category.GetName())
-			}
-		}
-		if shouldReupsert {
-			toReupsert = append(toReupsert, p)
-		}
-	}
+
 	if err != nil {
 		panic(err)
 	}
-	for _, policy := range toReupsert {
-		err = fullStore.UpdatePolicy(sac.WithAllAccess(context.Background()), policy)
+
+	// ROX-31406: Fix categories that were impacted by previous bug
+	for _, p := range storedPolicies {
+		var categories []*storage.PolicyCategory
+		categories, err = categoriesDS.GetPolicyCategoriesForPolicy(workflowAdministrationCtx, p.GetId())
+		if err != nil {
+			panic(err)
+		}
+		shouldReupsert := false
+		p.Categories = sliceutils.Map[*storage.PolicyCategory, string](categories, func(c *storage.PolicyCategory) string {
+			// Both Docker CIS and DevOps Best Practices were broken as a result of a change made in 4.8 that added
+			// a title case enforcement on policies that were added, not accounting for the fact that words may have
+			// more than just the first character capitalized. This code section just fixes the default categories
+			// that may have been duplicated as a result of this.
+			if c.GetName() == "Docker Cis" {
+				shouldReupsert = true
+				return "Docker CIS"
+			} else if c.GetName() == "Devops Best Practices" {
+				shouldReupsert = true
+				return "DevOps Best Practices"
+			}
+			return c.GetName()
+		})
+		if shouldReupsert {
+			// Update policy, taking advantage of the full datastore updating edges for us
+			err = fullStore.UpdatePolicy(sac.WithAllAccess(context.Background()), p)
+			if err != nil {
+				panic(err)
+			}
+		}
+	}
+
+	// Clean up invalid policy categories
+	var results []searchPkg.Result
+	q := searchPkg.NewQueryBuilder().AddExactMatches(searchPkg.PolicyCategoryName, "Devops Best Practices", "Docker Cis").ProtoQuery()
+	results, err = categoriesDS.Search(workflowAdministrationCtx, q)
+	if err != nil {
+		panic(err)
+	}
+	for _, result := range results {
+		err = categoriesDS.DeletePolicyCategory(sac.WithAllAccess(context.Background()), result.ID)
 		if err != nil {
 			panic(err)
 		}
 	}
-	err = categoriesDS.CleanupCategories(sac.WithAllAccess(context.Background()))
-	if err != nil {
-		panic(err)
-	}
+	// End ROX-31406-specific code
 
 	// Preload the default policies.
 	defaultPolicies, err := policies.DefaultPolicies()

@@ -1,4 +1,4 @@
-import React, { useState, useContext } from 'react';
+import { useState, useContext } from 'react';
 import PropTypes from 'prop-types';
 import { useNavigate } from 'react-router-dom-v5-compat';
 import resolvePath from 'object-resolve-path';

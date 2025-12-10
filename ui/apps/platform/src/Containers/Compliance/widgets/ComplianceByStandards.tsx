@@ -1,9 +1,9 @@
-import React, { ReactElement } from 'react';
+import type { ReactElement } from 'react';
 import { useQuery } from '@apollo/client';
 
 import Loader from 'Components/Loader';
 import { STANDARDS_QUERY } from 'queries/standard';
-import { ComplianceStandardScope } from 'services/ComplianceService';
+import type { ComplianceStandardScope } from 'services/ComplianceService';
 
 import ComplianceByStandard from './ComplianceByStandard';
 

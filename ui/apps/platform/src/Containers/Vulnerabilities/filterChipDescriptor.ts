@@ -6,7 +6,7 @@
  */
 
 import type { ReactNode } from 'react';
-import type { FilterChipGroupDescriptor } from 'Components/PatternFly/SearchFilterChips';
+import type { FilterChipGroupDescriptor } from 'Components/CompoundSearchFilter/components/SearchFilterChips';
 
 function renderFixableStatus(value: string): ReactNode {
     if (value === 'true') {

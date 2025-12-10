@@ -3,6 +3,7 @@ package scan
 import (
 	"context"
 	"errors"
+	"fmt"
 	"io/fs"
 	"testing"
 	"time"
@@ -665,6 +666,35 @@ func (suite *scanTestSuite) TestNotes() {
 		suite.Require().NoError(err)
 		suite.Require().Contains(resultImg.GetNotes(), storage.Image_MISSING_SIGNATURE)
 	})
+}
+
+func (suite *scanTestSuite) TestScanLimits() {
+	tcs := []struct {
+		maxParallel         int
+		maxAdHoc            int
+		wantActiveScanLimit int
+		wantAdHocScanLimit  int
+	}{
+		{30, 5, 25, 5}, // default
+		{10, 10, 1, 9},
+		{10, 9, 1, 9},
+		{10, 5, 5, 5},
+		{10, 1, 9, 1},
+		{10, 0, 9, 1},
+		{5, 10, 1, 4},
+		{1, 1, 1, 1},
+		{0, 0, 1, 1},
+		{-1, -1, 1, 1},
+		{-1, 10, 1, 1},
+		{10, -1, 9, 1},
+	}
+	for _, tc := range tcs {
+		suite.Run(fmt.Sprintf("%v", tc), func() {
+			gotActiveScanLimit, gotAdHocScanLimit := scanLimits(tc.maxParallel, tc.maxAdHoc)
+			suite.Equal(tc.wantActiveScanLimit, gotActiveScanLimit, "unexpected active scan limit")
+			suite.Equal(tc.wantAdHocScanLimit, gotAdHocScanLimit, "unexpected ad hoc scan limit")
+		})
+	}
 }
 
 func successfulScan(_ context.Context, _ *storage.Image,

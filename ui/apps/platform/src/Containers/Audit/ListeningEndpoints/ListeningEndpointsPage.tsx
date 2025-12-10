@@ -28,7 +28,7 @@ import cloneDeep from 'lodash/cloneDeep';
 
 import PageTitle from 'Components/PageTitle';
 import EmptyStateTemplate from 'Components/EmptyStateTemplate/EmptyStateTemplate';
-import SearchFilterChips from 'Components/PatternFly/SearchFilterChips';
+import SearchFilterChips from 'Components/CompoundSearchFilter/components/SearchFilterChips';
 import SelectSingle from 'Components/SelectSingle/SelectSingle';
 import { searchCategories } from 'constants/entityTypes';
 import { toggleItemInArray } from 'utils/arrayUtils';

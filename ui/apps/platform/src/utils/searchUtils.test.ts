@@ -1,3 +1,4 @@
+import type { GraphQLSortOption } from 'types/search';
 import {
     convertSortToGraphQLFormat,
     convertSortToRestFormat,
@@ -11,6 +12,7 @@ import {
     hasSearchKeyValue,
     searchValueAsArray,
 } from './searchUtils';
+import type { NonEmptyArray } from './type.utils';
 
 describe('searchUtils', () => {
     describe('getViewStateFromSearch', () => {
@@ -182,7 +184,7 @@ describe('searchUtils', () => {
 
     describe('convertSortToRestFormat', () => {
         it('should return an object the keys of the other object converted', () => {
-            const restSort = [
+            const restSort: NonEmptyArray<GraphQLSortOption> = [
                 {
                     id: 'Priority',
                     desc: true,

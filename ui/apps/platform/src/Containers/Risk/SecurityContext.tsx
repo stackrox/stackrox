@@ -1,4 +1,7 @@
+import type { ReactNode } from 'react';
 import CollapsibleCard from 'Components/CollapsibleCard';
+
+import type { Container, Deployment } from 'types/deployment.proto';
 
 import KeyValuePairs from './KeyValuePairs';
 
@@ -8,16 +11,22 @@ const containerSecurityContextMap = {
     drop_capabilities: { label: 'Drop Capabilities' },
 };
 
-const getSecurityContext = (container) => {
+const getSecurityContext = (container: Container) => {
     if (!container.securityContext) {
         return null;
     }
+    // @ts-expect-error TODO: add_capabilities and drop_capabilities are not typed in the proto file
+    // TODO: Do we need to update the proto file or the code here? Should be camelCase?
     const { privileged, add_capabilities, drop_capabilities } = container.securityContext;
     return { privileged, add_capabilities, drop_capabilities };
 };
 
-const SecurityContext = ({ deployment }) => {
-    let containers = [];
+type SecurityContextProps = {
+    deployment: Deployment;
+};
+
+function SecurityContext({ deployment }: SecurityContextProps) {
+    let containers: ReactNode | ReactNode[] = [];
     if (deployment.containers) {
         containers = deployment.containers
             .filter((container) => container.securityContext)
@@ -32,7 +41,7 @@ const SecurityContext = ({ deployment }) => {
                     </div>
                 );
             });
-        if (!containers.length) {
+        if (!Array.isArray(containers) || containers.length === 0) {
             containers = <span className="py-3">None</span>;
         }
     } else {
@@ -47,6 +56,6 @@ const SecurityContext = ({ deployment }) => {
             </div>
         </div>
     );
-};
+}
 
 export default SecurityContext;

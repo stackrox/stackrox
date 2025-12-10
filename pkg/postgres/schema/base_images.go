@@ -31,8 +31,9 @@ var (
 		}
 		schema = walker.Walk(reflect.TypeOf((*storage.BaseImage)(nil)), "base_images")
 		referencedSchemas := map[string]*walker.Schema{
-			"storage.Image":   ImagesSchema,
-			"storage.ImageV2": ImagesV2Schema,
+			"storage.BaseImageRepository": BaseImageRepositoriesSchema,
+			"storage.Image":               ImagesSchema,
+			"storage.ImageV2":             ImagesV2Schema,
 		}
 
 		schema.ResolveReferences(func(messageTypeName string) *walker.Schema {
@@ -47,7 +48,7 @@ var (
 			v1.SearchCategory_NAMESPACES,
 			v1.SearchCategory_CLUSTERS,
 		}...)
-		schema.ScopingResource = resources.Administration
+		schema.ScopingResource = resources.ImageAdministration
 		RegisterTable(schema, CreateTableBaseImagesStmt)
 		mapping.RegisterCategoryToTable(v1.SearchCategory_BASE_IMAGES, schema)
 		return schema
@@ -61,13 +62,14 @@ const (
 
 // BaseImages holds the Gorm model for Postgres table `base_images`.
 type BaseImages struct {
-	ID                    string     `gorm:"column:id;type:varchar;primaryKey"`
-	BaseImageRepositoryID string     `gorm:"column:baseimagerepositoryid;type:varchar"`
-	Repository            string     `gorm:"column:repository;type:varchar"`
-	Tag                   string     `gorm:"column:tag;type:varchar"`
-	ManifestDigest        string     `gorm:"column:manifestdigest;type:varchar"`
-	DiscoveredAt          *time.Time `gorm:"column:discoveredat;type:timestamp"`
-	Active                bool       `gorm:"column:active;type:bool"`
-	FirstLayerDigest      string     `gorm:"column:firstlayerdigest;type:varchar;index:baseimages_firstlayerdigest,type:btree"`
-	Serialized            []byte     `gorm:"column:serialized;type:bytea"`
+	ID                       string                `gorm:"column:id;type:uuid;primaryKey"`
+	BaseImageRepositoryID    string                `gorm:"column:baseimagerepositoryid;type:varchar"`
+	Repository               string                `gorm:"column:repository;type:varchar"`
+	Tag                      string                `gorm:"column:tag;type:varchar"`
+	ManifestDigest           string                `gorm:"column:manifestdigest;type:varchar"`
+	DiscoveredAt             *time.Time            `gorm:"column:discoveredat;type:timestamp"`
+	Active                   bool                  `gorm:"column:active;type:bool"`
+	FirstLayerDigest         string                `gorm:"column:firstlayerdigest;type:varchar;index:baseimages_firstlayerdigest,type:btree"`
+	Serialized               []byte                `gorm:"column:serialized;type:bytea"`
+	BaseImageRepositoriesRef BaseImageRepositories `gorm:"foreignKey:baseimagerepositoryid;references:id;belongsTo;constraint:OnDelete:CASCADE"`
 }

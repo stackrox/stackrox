@@ -2,6 +2,8 @@ import type { ComponentType, PropsWithChildren } from 'react';
 import { DefaultEdge, DefaultGroup, DefaultNode, GraphComponent } from '@patternfly/react-topology';
 import type { ComponentFactory, GraphElement } from '@patternfly/react-topology';
 
+import { ensureExhaustive } from 'utils/type.utils';
+
 type CustomModelKind = 'node' | 'graph' | 'edge' | 'fakeGroup';
 
 const defaultComponentFactory: ComponentFactory = (
@@ -28,7 +30,7 @@ const defaultComponentFactory: ComponentFactory = (
                 case 'fakeGroup':
                     return DefaultNode;
                 default:
-                    return undefined;
+                    return ensureExhaustive(kind);
             }
     }
 };

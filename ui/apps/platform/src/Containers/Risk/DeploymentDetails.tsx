@@ -1,5 +1,4 @@
 import { useEffect, useState } from 'react';
-import PropTypes from 'prop-types';
 import { Alert } from '@patternfly/react-core';
 
 import { fetchDeployment } from 'services/DeploymentsService';
@@ -9,17 +8,20 @@ import { portExposureLabels } from 'messages/common';
 import SecurityContext from './SecurityContext';
 import ContainerConfigurations from './ContainerConfigurations';
 import KeyValuePairs from './KeyValuePairs';
+import type { Deployment, PortConfig } from 'types/deployment.proto';
 
-export const formatDeploymentPorts = (ports) => {
+export function formatDeploymentPorts(ports: Deployment['ports']): Deployment['ports'] {
     return ports.map(({ exposure, exposureInfos, ...rest }) => {
-        const formattedPort = { ...rest };
+        const formattedPort: PortConfig = { ...rest, exposure: 'UNSET', exposureInfos: [] };
+        // @ts-expect-error TODO: The type of `portExposureLabels` is not correct based on declared types.
         formattedPort.exposure = portExposureLabels[exposure] || portExposureLabels.UNSET;
+        // @ts-expect-error TODO: The type of `portExposureLabels` is not correct based on declared types.
         formattedPort.exposureInfos = exposureInfos.map(({ level, ...restInfo }) => {
             return { ...restInfo, level: portExposureLabels[level] };
         });
         return formattedPort;
     });
-};
+}
 
 const deploymentDetailsMap = {
     id: { label: 'Deployment ID' },
@@ -36,18 +38,22 @@ const deploymentDetailsMap = {
     annotations: { label: 'Annotations' },
     ports: {
         label: 'Port configuration',
-        formatValue: (v) => formatDeploymentPorts(v),
+        formatValue: (v: Deployment['ports']) => formatDeploymentPorts(v),
     },
     serviceAccount: { label: 'Service Account' },
     imagePullSecrets: {
         label: 'Image Pull Secrets',
-        formatValue: (v) => v.join(', '),
+        formatValue: (v: Deployment['imagePullSecrets']) => v.join(', '),
     },
 };
 
-const DeploymentDetails = ({ deployment }) => {
+type DeploymentDetailsProps = {
+    deployment: Deployment;
+};
+
+function DeploymentDetails({ deployment }: DeploymentDetailsProps) {
     // attempt to fetch related deployment to selected alert
-    const [relatedDeployment, setRelatedDeployment] = useState(deployment);
+    const [relatedDeployment, setRelatedDeployment] = useState<Deployment | null>(deployment);
 
     useEffect(() => {
         fetchDeployment(deployment.id).then(
@@ -80,13 +86,6 @@ const DeploymentDetails = ({ deployment }) => {
             <SecurityContext deployment={relatedDeployment || deployment} />
         </div>
     );
-};
-
-DeploymentDetails.propTypes = {
-    deployment: PropTypes.shape({
-        id: PropTypes.string.isRequired,
-        containers: PropTypes.arrayOf(PropTypes.object),
-    }).isRequired,
-};
+}
 
 export default DeploymentDetails;
