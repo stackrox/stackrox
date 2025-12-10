@@ -12,6 +12,7 @@ import (
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/booleanpolicy/augmentedobjs"
+	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/contextutil"
 	"github.com/stackrox/rox/pkg/env"
@@ -19,6 +20,7 @@ import (
 	"github.com/stackrox/rox/pkg/images/types"
 	"github.com/stackrox/rox/pkg/protoutils"
 	"github.com/stackrox/rox/pkg/utils"
+	"github.com/stackrox/rox/sensor/common/centralcaps"
 	"github.com/stackrox/rox/sensor/common/detector/metrics"
 	"github.com/stackrox/rox/sensor/common/image/cache"
 	"github.com/stackrox/rox/sensor/common/registry"
@@ -301,7 +303,9 @@ func (e *enricher) runScan(ctx context.Context, req *scanImageRequest) imageChan
 	img, ok := e.getImageFromCache(key)
 	if ok {
 		// If the container image name is already within the cached images names, we can short-circuit.
-		if protoutils.SliceContains(req.containerImage.GetName(), img.GetNames()) {
+		// For flattened images, we can directly short circuit if the image already exists in the cache.
+		if centralcaps.Has(centralsensor.FlattenImageData) ||
+			protoutils.SliceContains(req.containerImage.GetName(), img.GetNames()) {
 			log.Debugf("Image scan loaded from cache: %s: Components: (%d)", req.containerImage.GetName().GetFullName(), len(img.GetScan().GetComponents()))
 			return imageChanResult{
 				image:        img,
