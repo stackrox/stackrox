@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
@@ -12,6 +13,7 @@ import (
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/sensor/common/metrics"
+	"github.com/stackrox/rox/sensor/common/pubsub"
 	"github.com/stackrox/rox/sensor/common/store"
 	"github.com/stackrox/rox/sensor/kubernetes/eventpipeline/component"
 )
@@ -46,7 +48,9 @@ type resolverImpl struct {
 
 // Start the resolverImpl component
 func (r *resolverImpl) Start() error {
-	go r.runResolver()
+	if !features.SensorInternalPubSub.Enabled() {
+		go r.runResolver()
+	}
 	if features.SensorAggregateDeploymentReferenceOptimization.Enabled() && r.deploymentRefQueue != nil {
 		go r.runPullAndResolve()
 	}
@@ -55,18 +59,36 @@ func (r *resolverImpl) Start() error {
 
 // Stop the resolverImpl component
 func (r *resolverImpl) Stop() {
-	if !r.stopper.Client().Stopped().IsDone() {
-		defer func() {
-			_ = r.stopper.Client().Stopped().Wait()
-		}()
+	if features.SensorAggregateDeploymentReferenceOptimization.Enabled() {
+		if !r.stopper.Client().Stopped().IsDone() {
+			defer func() {
+				_ = r.stopper.Client().Stopped().Wait()
+			}()
+		}
+		r.stopper.Client().Stop()
 	}
-	r.stopper.Client().Stop()
 }
 
 // Send a ResourceEvent message to the inner queue
 func (r *resolverImpl) Send(event *component.ResourceEvent) {
+	if features.SensorInternalPubSub.Enabled() {
+		log.Errorf("should not use Send if %q is enabled", features.SensorInternalPubSub.EnvVar())
+		return
+	}
 	r.innerQueue <- event
 	metrics.IncResolverChannelSize()
+}
+
+func (r *resolverImpl) ProcessResourceEvent(event pubsub.Event) error {
+	if event.Topic() != pubsub.KubernetesDispatcherEventTopic && event.Topic() != pubsub.FromCentralResolverEventTopic {
+		return errors.Errorf("received an event of topic %q in the resolver", event.Topic().String())
+	}
+	msg, ok := event.(*component.ResourceEvent)
+	if !ok {
+		return errors.New("unable to convert the event to *component.ResourceEvent")
+	}
+	r.processMessage(msg)
+	return nil
 }
 
 // runResolver reads messages from the inner queue and process the message

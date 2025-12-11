@@ -5,6 +5,7 @@ import (
 
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/sensor/common/pubsub"
 	"github.com/stackrox/rox/sensor/common/store/resolver"
 )
 
@@ -58,11 +59,39 @@ type ResourceEvent struct {
 
 	// Context contains a context that determines if the message is still valid.
 	Context context.Context
+
+	topic *pubsub.Topic
+	lane  *pubsub.LaneID
 }
 
 // NewEvent creates a resource event with preset sensor event messages.
 func NewEvent(msg ...*central.SensorEvent) *ResourceEvent {
 	return &ResourceEvent{ForwardMessages: msg, Context: context.Background()}
+}
+
+// NewEventWithTopicAndLane creates a resource event with preset sensor event messages,
+// a topic, and a lane
+func NewEventWithTopicAndLane(topic pubsub.Topic, lane pubsub.LaneID, msg ...*central.SensorEvent) *ResourceEvent {
+	return &ResourceEvent{
+		ForwardMessages: msg,
+		Context:         context.Background(),
+		topic:           &topic,
+		lane:            &lane,
+	}
+}
+
+func (e *ResourceEvent) Topic() pubsub.Topic {
+	if e.topic == nil {
+		return pubsub.KubernetesDispatcherEventTopic
+	}
+	return *e.topic
+}
+
+func (e *ResourceEvent) Lane() pubsub.LaneID {
+	if e.lane == nil {
+		return pubsub.KubernetesDispatcherEventLane
+	}
+	return *e.lane
 }
 
 // AddSensorEvent appends central sensor events to be bundled with this resource event.

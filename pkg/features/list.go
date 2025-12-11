@@ -115,6 +115,9 @@ var (
 
 	// BaseImageDetection enables base image detection and management functionality
 	BaseImageDetection = registerFeature("Enable base image detection and management functionality", "ROX_BASE_IMAGE_DETECTION")
+
+	// SensorInternalPubSub enables the internal pubsub system in sensor
+	SensorInternalPubSub = registerFeature("Enables the internal PubSub system in Sensor", "ROX_SENSOR_PUBSUB", enabled)
 )
 
 // The following feature flags are related to Scanner V4.

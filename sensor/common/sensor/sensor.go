@@ -71,7 +71,8 @@ type Sensor struct {
 	webhookServer   pkgGRPC.API
 	profilingServer *http.Server
 
-	pubSub *internalmessage.MessageSubscriber
+	pubSub           *internalmessage.MessageSubscriber
+	pubSubDispatcher common.PubSubDispatcher
 
 	currentState    common.SensorComponentEvent
 	currentStateMtx *sync.Mutex
@@ -99,6 +100,7 @@ func NewSensor(
 	imageService image.Service,
 	centralConnectionFactory centralclient.CentralConnectionFactory,
 	pubSub *internalmessage.MessageSubscriber,
+	pubSubDispatcher common.PubSubDispatcher,
 	certLoader centralclient.CertLoader,
 	components ...common.SensorComponent,
 ) *Sensor {
@@ -107,7 +109,9 @@ func NewSensor(
 		centralEndpoint:    env.CentralEndpoint.Setting(),
 		advertisedEndpoint: env.AdvertisedEndpoint.Setting(),
 
-		pubSub:        pubSub,
+		pubSub:           pubSub,
+		pubSubDispatcher: pubSubDispatcher,
+
 		configHandler: configHandler,
 		detector:      detector,
 		imageService:  imageService,
@@ -345,6 +349,10 @@ func (s *Sensor) Stop() {
 
 	if s.webhookServer != nil && !s.webhookServer.Stop() {
 		log.Warnf("Sensor webhook server stop was called more than once")
+	}
+
+	if s.pubSubDispatcher != nil {
+		s.pubSubDispatcher.Stop()
 	}
 
 	log.Info("Sensor shutdown complete")
