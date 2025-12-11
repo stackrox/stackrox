@@ -31,7 +31,6 @@ func TestMigration(t *testing.T) {
 func (s *migrationTestSuite) SetupSuite() {
 	s.ctx = sac.WithAllAccess(context.Background())
 	s.db = pghelper.ForT(s.T(), false)
-	// TODO(dont-merge): Create the schemas and tables required for the pre-migration dataset push to DB
 }
 
 func (s *migrationTestSuite) TestMigration() {
@@ -106,5 +105,3 @@ func (s *migrationTestSuite) TestMigration() {
 	s.Require().True(exists)
 
 }
-
-// TODO(dont-merge): remove any pending TODO
