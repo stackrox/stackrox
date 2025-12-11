@@ -27,6 +27,7 @@ import (
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	pkgSearch "github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
 	"gorm.io/gorm"
@@ -377,4 +378,107 @@ func (s *PolicyPostgresDataStoreTestSuite) TestTransactionRollbacks() {
 
 	// Clean up policy
 	_ = s.datastoreWithMockCategoryDS.RemovePolicy(ctx, policy)
+}
+
+func (s *PolicyPostgresDataStoreTestSuite) TestAddDefaultsDeduplicatesCategoryNames() {
+	ctx := sac.WithAllAccess(context.Background())
+
+	// Create a policy with incorrect category names that need to be deduplicated
+	policy := fixtures.GetPolicy()
+	policy.Id = "test-policy-dedup"
+	policy.Name = "Test Policy for Deduplication"
+
+	// Add the policy first
+	_, err := s.datastore.AddPolicy(ctx, policy)
+	s.NoError(err)
+
+	// Clear existing categories from the policy
+	err = s.categoryDS.SetPolicyCategoriesForPolicy(ctx, policy.GetId(), []string{})
+	s.NoError(err)
+
+	// Create categories with incorrect names directly using the store to bypass normalization
+	// These are the incorrect names: "Docker Cis" and "Devops Best Practices"
+	categoryStorage := categoryPostgres.New(s.db)
+	edgeStorage := edgePostgres.New(s.db)
+	edgeDS := policyCategoryEdgeDS.New(edgeStorage, edgeSearch.New(edgeStorage))
+
+	dockerCisCategory := &storage.PolicyCategory{
+		Id:        uuid.NewV4().String(),
+		Name:      "Docker Cis",
+		IsDefault: false,
+	}
+	devopsCategory := &storage.PolicyCategory{
+		Id:        uuid.NewV4().String(),
+		Name:      "Devops Best Practices",
+		IsDefault: false,
+	}
+
+	// Upsert the incorrect categories directly to the store
+	err = categoryStorage.Upsert(ctx, dockerCisCategory)
+	s.NoError(err)
+	err = categoryStorage.Upsert(ctx, devopsCategory)
+	s.NoError(err)
+
+	// Create edges linking the policy to the incorrect categories
+	dockerCisEdge := &storage.PolicyCategoryEdge{
+		Id:         uuid.NewV4().String(),
+		PolicyId:   policy.GetId(),
+		CategoryId: dockerCisCategory.GetId(),
+	}
+	devopsEdge := &storage.PolicyCategoryEdge{
+		Id:         uuid.NewV4().String(),
+		PolicyId:   policy.GetId(),
+		CategoryId: devopsCategory.GetId(),
+	}
+	err = edgeDS.UpsertMany(ctx, []*storage.PolicyCategoryEdge{dockerCisEdge, devopsEdge})
+	s.NoError(err)
+
+	// Verify the policy has the incorrect category names
+	categories, err := s.categoryDS.GetPolicyCategoriesForPolicy(ctx, policy.GetId())
+	s.NoError(err)
+	s.Len(categories, 2)
+	categoryNames := make([]string, len(categories))
+	for i, c := range categories {
+		categoryNames[i] = c.GetName()
+	}
+	s.Contains(categoryNames, "Docker Cis")
+	s.Contains(categoryNames, "Devops Best Practices")
+
+	// Verify the incorrect category objects exist
+	searchQuery := pkgSearch.NewQueryBuilder().AddExactMatches(pkgSearch.PolicyCategoryName, "Docker Cis", "Devops Best Practices").ProtoQuery()
+	results, err := s.categoryDS.Search(ctx, searchQuery)
+	s.NoError(err)
+	s.Len(results, 2) // Both incorrect categories should exist
+
+	// Now call addDefaults which should fix the category names
+	policyStorage := policyStore.New(s.db)
+	addDefaults(policyStorage, s.categoryDS, s.datastore)
+
+	// Verify the policy now has the correct category names
+	categories, err = s.categoryDS.GetPolicyCategoriesForPolicy(ctx, policy.GetId())
+	s.NoError(err)
+	s.Len(categories, 2)
+	categoryNames = make([]string, len(categories))
+	for i, c := range categories {
+		categoryNames[i] = c.GetName()
+	}
+	s.Contains(categoryNames, "Docker CIS")
+	s.Contains(categoryNames, "DevOps Best Practices")
+	s.NotContains(categoryNames, "Docker Cis")
+	s.NotContains(categoryNames, "Devops Best Practices")
+
+	// Verify the incorrect category objects have been deleted
+	searchQuery = pkgSearch.NewQueryBuilder().AddExactMatches(pkgSearch.PolicyCategoryName, "Docker Cis", "Devops Best Practices").ProtoQuery()
+	results, err = s.categoryDS.Search(ctx, searchQuery)
+	s.NoError(err)
+	s.Len(results, 0) // Both incorrect categories should be deleted
+
+	// Verify the correct category objects exist
+	searchQuery = pkgSearch.NewQueryBuilder().AddExactMatches(pkgSearch.PolicyCategoryName, "Docker CIS", "DevOps Best Practices").ProtoQuery()
+	results, err = s.categoryDS.Search(ctx, searchQuery)
+	s.NoError(err)
+	s.Len(results, 2) // Both correct categories should exist
+
+	// Clean up
+	s.NoError(s.datastore.RemovePolicy(ctx, policy))
 }
