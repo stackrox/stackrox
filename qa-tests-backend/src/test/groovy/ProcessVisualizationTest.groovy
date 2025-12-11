@@ -30,6 +30,7 @@ class ProcessVisualizationTest extends BaseSpecification {
                 .addLabel ( "app", "test" ),
             new Deployment()
                 .setName (STRUTSDEPLOYMENT)
+                .setImagePrefetcherAffinity()
                 .setImage("quay.io/rhacs-eng/qa-multi-arch:struts-app")
                 .addLabel ("app", "test" ),
             new Deployment()
@@ -39,25 +40,30 @@ class ProcessVisualizationTest extends BaseSpecification {
                 .addLabel ("app", "test" ),
             new Deployment()
                 .setName (FEDORADEPLOYMENT)
+                .setImagePrefetcherAffinity()
                 .setImage ("quay.io/rhacs-eng/qa-multi-arch:fedora-"+
                            "6fb84ba634fe68572a2ac99741062695db24b921d0aa72e61ee669902f88c187")
                 .setCommand(["/bin/sh", "-c", "/bin/sleep 600"])
                 .addLabel ("app", "test" ),
             new Deployment()
                 .setName (ELASTICDEPLOYMENT)
+                .setImagePrefetcherAffinity()
                 .setImage ("quay.io/rhacs-eng/qa-multi-arch:elasticsearch-"+
                            "cdeb134689bb0318a773e03741f4414b3d1d0ee443b827d5954f957775db57eb")
                 .addLabel ("app", "test" ),
             new Deployment()
                 .setName (MONGODEPLOYMENT)
+                .setImagePrefetcherAffinity()
                 .setImage ("quay.io/rhacs-eng/qa-multi-arch:mongodb")
                 .addLabel ("app", "test" ),
             new Deployment()
                 .setName (ROX4751DEPLOYMENT)
+                .setImagePrefetcherAffinity()
                 .setImage ("quay.io/rhacs-eng/qa-multi-arch:ROX4751")
                 .addLabel ("app", "test" ),
             new Deployment()
                 .setName (ROX4979DEPLOYMENT)
+                .setImagePrefetcherAffinity()
                 .setImage ("quay.io/rhacs-eng/qa-multi-arch:ROX4979")
                 .addLabel ("app", "test" ),
      ]
