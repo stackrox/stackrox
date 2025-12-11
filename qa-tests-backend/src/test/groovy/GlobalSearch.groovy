@@ -16,6 +16,7 @@ class GlobalSearch extends BaseSpecification {
 
     static final private DEPLOYMENT = new Deployment()
             .setName("qaglobalsearch")
+            .setImagePrefetcherAffinity()
             .setImage("quay.io/rhacs-eng/qa-multi-arch-busybox:latest")
             .addPort(22)
             .addLabel("app", "test")

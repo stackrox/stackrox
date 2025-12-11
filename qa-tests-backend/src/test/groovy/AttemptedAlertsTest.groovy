@@ -61,6 +61,7 @@ class AttemptedAlertsTest extends BaseSpecification {
                 .setName(name)
                 .setImage(image)
                 .addLabel("app", "test")
+                .setImagePrefetcherAffinity()
         return deployment
     }
 

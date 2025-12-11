@@ -141,20 +141,34 @@ func (c *endpointsTestCase) verifyDialResult(t testutils.T, conn *tls.Conn, err 
 	} else {
 		t.Errorf("conn is nil")
 	}
-	if err == nil {
-		ctx, cancel := context.WithTimeoutCause(context.Background(), 2*time.Second, errors.New("TLS handshake timeout"))
-		defer cancel()
-		err = conn.HandshakeContext(ctx)
+	for i := 0; i < dialRetries; i++ {
+		if err == nil {
+			ctx, cancel := context.WithTimeoutCause(context.Background(), 2*time.Second, errors.New("TLS handshake timeout"))
+			defer cancel()
+			err = conn.HandshakeContext(ctx)
+		}
+
+		if !c.expectConnectFailure {
+			if err == nil {
+				break
+			}
+			t.Logf("Connection handshake attempt %d of %d failed, retrying", i+1, dialRetries)
+			continue
+		}
+
+		if err == nil {
+			_ = conn.SetReadDeadline(time.Now().Add(timeout))
+			_, err = conn.Read(make([]byte, 1))
+		}
+		if err.Error() == "remote error: tls: certificate required" {
+			break
+		}
+		t.Logf("Connection handshake attempt %d of %d failed, retrying", i+1, dialRetries)
 	}
 
 	if !c.expectConnectFailure {
 		assert.NoError(t, err, "expected no connection failure")
 		return
-	}
-
-	if err == nil {
-		_ = conn.SetReadDeadline(time.Now().Add(timeout))
-		_, err = conn.Read(make([]byte, 1))
 	}
 	assert.EqualErrorf(t, err, "remote error: tls: certificate required", "expected a bad certificate error after handshake")
 }

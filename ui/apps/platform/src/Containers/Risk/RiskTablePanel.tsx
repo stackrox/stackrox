@@ -7,37 +7,46 @@ import EmptyStateTemplate from 'Components/EmptyStateTemplate/EmptyStateTemplate
 import TableHeader from 'Components/TableHeader';
 import { PanelBody, PanelHead, PanelHeadEnd, PanelNew } from 'Components/Panel';
 import TablePagination from 'Components/TablePagination';
-import { DEFAULT_PAGE_SIZE } from 'Components/Table';
-import useURLSearch from 'hooks/useURLSearch';
-import useURLSort from 'hooks/useURLSort';
-import useURLPagination from 'hooks/useURLPagination';
+import type { UseURLPaginationResult } from 'hooks/useURLPagination';
 import {
     fetchDeploymentsCount,
     fetchDeploymentsWithProcessInfo,
 } from 'services/DeploymentsService';
 import type { ListDeploymentWithProcessInfo } from 'services/DeploymentsService';
+import type { ApiSortOption, SearchFilter } from 'types/search';
+import type { SortOption } from 'types/table';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 import { ORCHESTRATOR_COMPONENTS_KEY } from 'utils/orchestratorComponents';
+
 import RiskTable from './RiskTable';
 
-const sortFields = ['Deployment', 'Created', 'Cluster', 'Namespace', 'Deployment Risk Priority'];
-const defaultSortOption = { field: 'Deployment Risk Priority', direction: 'asc' } as const;
+export const sortFields = [
+    'Deployment',
+    'Created',
+    'Cluster',
+    'Namespace',
+    'Deployment Risk Priority',
+];
+export const defaultSortOption = { field: 'Deployment Risk Priority', direction: 'asc' } as const;
 
 type RiskTablePanelProps = {
     selectedDeploymentId: string | undefined;
     isViewFiltered: boolean;
-    setIsViewFiltered: (isViewFiltered: boolean) => void;
+    sortOption: ApiSortOption;
+    onSortOptionChange: (newSortOption: SortOption | SortOption[]) => void;
+    searchFilter: SearchFilter;
+    pagination: UseURLPaginationResult;
 };
 
 function RiskTablePanel({
     selectedDeploymentId = undefined,
     isViewFiltered,
-    setIsViewFiltered,
+    sortOption,
+    onSortOptionChange,
+    searchFilter,
+    pagination,
 }: RiskTablePanelProps) {
-    const { searchFilter } = useURLSearch();
-    const { sortOption, setSortOption } = useURLSort({ sortFields, defaultSortOption });
-    const { page, perPage, setPage } = useURLPagination(DEFAULT_PAGE_SIZE);
-
+    const { page, perPage, setPage } = pagination;
     const [currentDeployments, setCurrentDeployments] = useState<ListDeploymentWithProcessInfo[]>(
         []
     );
@@ -73,9 +82,6 @@ function RiskTablePanel({
             .catch(() => {
                 setDeploymentsCount(0);
             });
-
-        const hasSearchFilters = Object.keys(searchFilter).length > 0;
-        setIsViewFiltered(hasSearchFilters);
     }, [searchFilter, sortOption, page, shouldHideOrchestratorComponents]);
 
     return (
@@ -111,10 +117,7 @@ function RiskTablePanel({
                     <RiskTable
                         currentDeployments={currentDeployments}
                         selectedDeploymentId={selectedDeploymentId}
-                        setSortOption={(sortOption) => {
-                            setSortOption(sortOption);
-                            setPage(1);
-                        }}
+                        setSortOption={onSortOptionChange}
                     />
                 )}
             </PanelBody>

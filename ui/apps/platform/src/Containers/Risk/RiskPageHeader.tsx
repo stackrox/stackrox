@@ -7,25 +7,30 @@ import {
 import SearchFilterInput from 'Components/SearchFilterInput';
 import useIsRouteEnabled from 'hooks/useIsRouteEnabled';
 import usePermissions from 'hooks/usePermissions';
-import useURLSearch from 'hooks/useURLSearch';
 import searchOptionsToQuery from 'services/searchOptionsToQuery';
 
 import CreatePolicyFromSearch from './CreatePolicyFromSearch';
+import type { SearchFilter } from 'types/search';
 
 type RiskPageHeaderProps = {
     isViewFiltered: boolean;
     searchOptions: string[];
+    searchFilter: SearchFilter;
+    onSearch: (newSearchFilter: SearchFilter) => void;
 };
 
-function RiskPageHeader({ isViewFiltered, searchOptions }: RiskPageHeaderProps) {
+function RiskPageHeader({
+    isViewFiltered,
+    searchOptions,
+    searchFilter,
+    onSearch,
+}: RiskPageHeaderProps) {
     const isRouteEnabled = useIsRouteEnabled();
     const { hasReadWriteAccess } = usePermissions();
-
     // Require READ_WRITE_ACCESS to create plus READ_ACCESS to other resources for Policies route.
     const hasWriteAccessForCreatePolicy =
         hasReadWriteAccess('WorkflowAdministration') && isRouteEnabled('policy-management');
 
-    const { searchFilter, setSearchFilter } = useURLSearch();
     const subHeader = isViewFiltered ? 'Filtered view' : 'Default view';
     const autoCompleteCategory = searchCategories[entityTypes.DEPLOYMENT];
 
@@ -40,7 +45,7 @@ function RiskPageHeader({ isViewFiltered, searchOptions }: RiskPageHeaderProps) 
                 searchOptions={searchOptions}
                 searchCategory={autoCompleteCategory}
                 placeholder="Filter deployments"
-                handleChangeSearchFilter={(filter) => setSearchFilter(filter, 'push')}
+                handleChangeSearchFilter={onSearch}
                 autocompleteQueryPrefix={searchOptionsToQuery(prependAutocompleteQuery)}
             />
             {hasWriteAccessForCreatePolicy && <CreatePolicyFromSearch />}
