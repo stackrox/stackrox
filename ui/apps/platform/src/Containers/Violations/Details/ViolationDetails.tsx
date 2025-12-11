@@ -1,5 +1,5 @@
 import type { ReactElement } from 'react';
-import { Divider, Flex, FlexItem, Title } from '@patternfly/react-core';
+import { Stack, Title } from '@patternfly/react-core';
 
 import type { LifecycleStage } from 'types/policy.proto';
 import type { FileAccessViolation, ProcessViolation, Violation } from 'types/alert.proto';
@@ -26,30 +26,17 @@ function ViolationDetails({
         lifecycleStage === 'RUNTIME';
     const showDeploytimeMessages = lifecycleStage === 'DEPLOY';
     return (
-        <Flex>
-            <Flex direction={{ default: 'column' }} flex={{ default: 'flex_1' }}>
-                <FlexItem>
-                    <Title headingLevel="h2" className="pf-v6-u-mb-md">
-                        Violation events
-                    </Title>
-                    <Divider component="div" />
-                </FlexItem>
-                {showRuntimeMessages && (
-                    <FlexItem>
-                        <RuntimeMessages
-                            processViolation={processViolation}
-                            fileAccessViolation={fileAccessViolation}
-                            violations={violations}
-                        />
-                    </FlexItem>
-                )}
-                {showDeploytimeMessages && (
-                    <FlexItem>
-                        <DeploytimeMessages violations={violations} />
-                    </FlexItem>
-                )}
-            </Flex>
-        </Flex>
+        <Stack hasGutter>
+            <Title headingLevel="h2">Violation events</Title>
+            {showRuntimeMessages && (
+                <RuntimeMessages
+                    processViolation={processViolation}
+                    fileAccessViolation={fileAccessViolation}
+                    violations={violations}
+                />
+            )}
+            {showDeploytimeMessages && <DeploytimeMessages violations={violations} />}
+        </Stack>
     );
 }
 

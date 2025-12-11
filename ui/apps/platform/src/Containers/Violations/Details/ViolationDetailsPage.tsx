@@ -4,7 +4,6 @@ import { useParams } from 'react-router-dom-v5-compat';
 import startCase from 'lodash/startCase';
 import {
     Bullseye,
-    Divider,
     Label,
     LabelGroup,
     PageSection,
@@ -12,7 +11,6 @@ import {
     Tab,
     TabTitleText,
     Tabs,
-    Title,
 } from '@patternfly/react-core';
 import PageHeader from '@patternfly/react-component-groups/dist/dynamic/PageHeader';
 
@@ -164,10 +162,6 @@ function ViolationDetailsPage(): ReactElement {
                     {isRouteEnabledForPolicy && (
                         <Tab eventKey={3} title={<TabTitleText>Policy</TabTitleText>}>
                             <PageSection hasBodyWrapper={false} variant="default">
-                                <Title headingLevel="h2" className="pf-v6-u-mb-md">
-                                    Policy overview
-                                </Title>
-                                <Divider component="div" className="pf-v6-u-pb-md" />
                                 <PolicyDetailContent policy={getClientWizardPolicy(policy)} />
                             </PageSection>
                         </Tab>
