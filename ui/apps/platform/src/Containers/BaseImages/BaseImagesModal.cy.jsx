@@ -2,7 +2,7 @@ import BaseImagesModal from './BaseImagesModal';
 
 describe('BaseImagesModal', () => {
     beforeEach(() => {
-        cy.intercept('POST', '/v1/baseimages', { statusCode: 200, body: {} }).as('addBaseImage');
+        cy.intercept('POST', '/v2/baseimages', { statusCode: 200, body: {} }).as('addBaseImage');
     });
 
     describe('form validation', () => {
@@ -57,7 +57,7 @@ describe('BaseImagesModal', () => {
         });
 
         it('should show error alert when submission fails', () => {
-            cy.intercept('POST', '/v1/baseimages', {
+            cy.intercept('POST', '/v2/baseimages', {
                 statusCode: 500,
                 body: { message: 'Internal server error' },
             }).as('addBaseImageError');
@@ -77,7 +77,7 @@ describe('BaseImagesModal', () => {
 
     describe('modal behavior', () => {
         it('should prevent closing while submission is in progress', () => {
-            cy.intercept('POST', '/v1/baseimages', {
+            cy.intercept('POST', '/v2/baseimages', {
                 delay: 1000,
                 statusCode: 200,
                 body: {},

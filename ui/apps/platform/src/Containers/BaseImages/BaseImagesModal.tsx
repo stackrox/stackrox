@@ -75,6 +75,7 @@ function BaseImagesModal({ isOpen, onClose, onSuccess }: BaseImagesModalProps) {
     const formik = useFormik({
         initialValues: { baseImagePath: '' },
         validationSchema,
+        validateOnMount: true,
         onSubmit: (formValues: FormData, { setSubmitting }: FormikHelpers<FormData>) => {
             // Parse user input (e.g., "docker.io/library/ubuntu:22.04") into separate components
             const { repoPath, tagPattern } = parseBaseImagePath(formValues.baseImagePath);
