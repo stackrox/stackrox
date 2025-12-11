@@ -27,11 +27,12 @@ func (d *datastoreImpl) SearchRoles(ctx context.Context, q *v1.Query) ([]*v1.Sea
 	if q == nil {
 		q = searchPkg.EmptyQuery()
 	}
+	qClone := q.CloneVT()
 
 	// Add name field to select columns
-	q.Selects = append(q.GetSelects(), searchPkg.NewQuerySelect(searchPkg.RoleName).Proto())
+	qClone.Selects = append(qClone.GetSelects(), searchPkg.NewQuerySelect(searchPkg.RoleName).Proto())
 
-	results, err := d.Search(ctx, q)
+	results, err := d.Search(ctx, qClone)
 	if err != nil {
 		return nil, err
 	}
