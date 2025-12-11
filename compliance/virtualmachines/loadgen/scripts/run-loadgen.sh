@@ -12,7 +12,7 @@ DEPLOY_DIR="$(cd "${SCRIPT_DIR}/../deploy" && pwd)"
 CONFIG_FILE="${1:-${DEPLOY_DIR}/loadgen-config.yaml}"
 MANIFEST="${DEPLOY_DIR}/vsock-loadgen-daemonset.yaml"
 
-IMAGE_NAME="${VSOCK_LOADGEN_IMAGE:-quay.io/gualvare/stackrox/vsock-loadgen}"
+IMAGE_NAME="${VSOCK_LOADGEN_IMAGE:-quay.io/${USER}/stackrox/vsock-loadgen}"
 IMAGE_TAG="${VSOCK_LOADGEN_TAG:-latest}"
 FULL_IMAGE="${IMAGE_NAME}:${IMAGE_TAG}"
 
@@ -49,9 +49,9 @@ kubectl -n stackrox create configmap vsock-loadgen-config \
 echo "   ✓ ConfigMap created/updated"
 echo ""
 
-# Deploy DaemonSet
+# Deploy DaemonSet (substitute $USER in manifest)
 echo "🚀 Deploying DaemonSet..."
-kubectl apply -f "$MANIFEST"
+envsubst < "$MANIFEST" | kubectl apply -f -
 
 echo ""
 echo "⏳ Waiting for pods to be ready..."
