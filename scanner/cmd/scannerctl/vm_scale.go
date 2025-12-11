@@ -5,9 +5,12 @@ import (
 	"fmt"
 	"log"
 	"net"
+	"sort"
 	"sync"
 	"sync/atomic"
 	"time"
+
+	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
 
 	"github.com/google/go-containerregistry/pkg/name"
 	"github.com/prometheus/client_golang/prometheus"
@@ -60,6 +63,72 @@ func resolvePodIPs(address string) ([]string, error) {
 	return addresses, nil
 }
 
+// selectPackagesFromLearnedData selects package indices based on learned vulnerability data.
+// Returns the selected indices and expected vulnerability count.
+func selectPackagesFromLearnedData(learned *LearnedVulnData, numPackages int, targetVulns int, zeroVulnsOnly bool, vulnerableOnly bool) ([]int, int) {
+	// Separate packages by vulnerability status
+	var withVulns, withoutVulns []PackageVulnData
+	for _, pkg := range learned.Packages {
+		if pkg.Vulns < 0 {
+			continue // Skip errored packages
+		}
+		if pkg.Vulns > 0 {
+			withVulns = append(withVulns, pkg)
+		} else {
+			withoutVulns = append(withoutVulns, pkg)
+		}
+	}
+
+	// Sort vulnerable packages by vuln count (descending) for easier selection
+	sort.Slice(withVulns, func(i, j int) bool {
+		return withVulns[i].Vulns > withVulns[j].Vulns
+	})
+
+	var selected []int
+	expectedVulns := 0
+
+	switch {
+	case zeroVulnsOnly:
+		// Only use packages with 0 vulnerabilities
+		for i := 0; i < numPackages && i < len(withoutVulns); i++ {
+			selected = append(selected, withoutVulns[i].Index)
+		}
+
+	case vulnerableOnly:
+		// Only use packages with vulnerabilities
+		for i := 0; i < numPackages && i < len(withVulns); i++ {
+			selected = append(selected, withVulns[i].Index)
+			expectedVulns += withVulns[i].Vulns
+		}
+
+	case targetVulns > 0:
+		// Select packages to reach target vulnerability count
+		// Strategy: add vulnerable packages until we reach target, fill rest with non-vulnerable
+		for _, pkg := range withVulns {
+			if expectedVulns >= targetVulns {
+				break
+			}
+			selected = append(selected, pkg.Index)
+			expectedVulns += pkg.Vulns
+		}
+		// Fill remaining slots with non-vulnerable packages
+		for i := 0; len(selected) < numPackages && i < len(withoutVulns); i++ {
+			selected = append(selected, withoutVulns[i].Index)
+		}
+
+	default:
+		// Default: use first N packages (original behavior)
+		for i := 0; i < numPackages && i < len(learned.Packages); i++ {
+			if learned.Packages[i].Vulns >= 0 {
+				selected = append(selected, learned.Packages[i].Index)
+				expectedVulns += learned.Packages[i].Vulns
+			}
+		}
+	}
+
+	return selected, expectedVulns
+}
+
 // vmScaleCmd creates the VM scale test command
 func vmScaleCmd(ctx context.Context) *cobra.Command {
 	cmd := cobra.Command{
@@ -75,6 +144,11 @@ Example:
 
   # Sustain 3 requests/second for 60 seconds
   scannerctl vm-scale --rate 3 --duration 60s --packages 2000
+
+  # Use learned vulnerability data to control vulnerability count
+  scannerctl vm-learn --output vulns.json
+  scannerctl vm-scale --vuln-data vulns.json --target-vulns 100 --packages 50
+  scannerctl vm-scale --vuln-data vulns.json --zero-vulns --packages 500
 `,
 	}
 
@@ -87,6 +161,12 @@ Example:
 	duration := flags.Duration("duration", 0, "Run for this duration (0 = run until --requests completed)")
 	verbose := flags.Bool("verbose", false, "Print each request result")
 	directPodIPs := flags.Bool("direct-pod-ips", false, "Resolve service DNS and connect directly to pod IPs (distributes load)")
+
+	// Learned data options
+	vulnDataFile := flags.String("vuln-data", "", "Path to learned vulnerability data (from vm-learn command)")
+	targetVulns := flags.Int("target-vulns", 0, "Target number of vulnerabilities (requires --vuln-data)")
+	zeroVulnsOnly := flags.Bool("zero-vulns", false, "Use only packages with 0 vulnerabilities (requires --vuln-data)")
+	vulnerableOnly := flags.Bool("vulnerable-only", false, "Use only packages with vulnerabilities (requires --vuln-data)")
 
 	cmd.RunE = func(cmd *cobra.Command, args []string) error {
 		matcherAddr, _ := cmd.Flags().GetString("matcher-address")
@@ -107,6 +187,16 @@ Example:
 		log.Printf("  Packages per report: %d", *numPackages)
 		log.Printf("  Repositories: %d", *numRepos)
 		log.Printf("  Direct pod IPs: %v", *directPodIPs)
+		if *vulnDataFile != "" {
+			log.Printf("  Vuln data file: %s", *vulnDataFile)
+			if *zeroVulnsOnly {
+				log.Printf("  Mode: zero-vulns only")
+			} else if *vulnerableOnly {
+				log.Printf("  Mode: vulnerable-only")
+			} else if *targetVulns > 0 {
+				log.Printf("  Target vulns: %d", *targetVulns)
+			}
+		}
 		if *duration > 0 {
 			log.Printf("  Duration: %v", *duration)
 			log.Printf("  Rate limit: %.2f req/s", *rateLimit)
@@ -115,11 +205,32 @@ Example:
 		}
 
 		// Generate the index report template (reused for all requests)
-		// Uses shared pkg/fixtures/vmindexreport package
-		gen := vmindexreport.NewGenerator(*numPackages, *numRepos)
-		indexReport := gen.GenerateV4IndexReport()
-		log.Printf("Generated index report with %d packages, %d repos",
-			gen.NumPackages(), gen.NumRepositories())
+		var indexReport *v4.IndexReport
+		var expectedVulns int
+
+		if *vulnDataFile != "" {
+			// Load learned data and select packages
+			learned, err := LoadLearnedData(*vulnDataFile)
+			if err != nil {
+				return fmt.Errorf("loading vuln data: %w", err)
+			}
+			log.Printf("Loaded vulnerability data for %d packages (learned at %s)",
+				len(learned.Packages), learned.LearnedAt.Format(time.RFC3339))
+
+			indices, vulns := selectPackagesFromLearnedData(learned, *numPackages, *targetVulns, *zeroVulnsOnly, *vulnerableOnly)
+			expectedVulns = vulns
+
+			gen := vmindexreport.NewGeneratorWithPackageIndices(indices, *numRepos)
+			indexReport = gen.GenerateV4IndexReport()
+			log.Printf("Generated index report with %d packages, %d repos (expected ~%d vulns)",
+				gen.NumPackages(), gen.NumRepositories(), expectedVulns)
+		} else {
+			// Default behavior: use standard generator
+			gen := vmindexreport.NewGenerator(*numPackages, *numRepos)
+			indexReport = gen.GenerateV4IndexReport()
+			log.Printf("Generated index report with %d packages, %d repos",
+				gen.NumPackages(), gen.NumRepositories())
+		}
 
 		digest, err := name.NewDigest(vmindexreport.MockDigestWithRegistry)
 		if err != nil {
@@ -178,7 +289,7 @@ Example:
 					}
 
 					start := time.Now()
-					_, err := scanner.GetVulnerabilities(ctx, digest, indexReport.GetContents())
+					vulnReport, err := scanner.GetVulnerabilities(ctx, digest, indexReport.GetContents())
 					elapsed := time.Since(start)
 
 					errStr := "false"
@@ -196,8 +307,12 @@ Example:
 					} else {
 						stats.success.Add(1)
 						vmScaleTotalRequests.WithLabelValues("success").Inc()
+						vulnCount := 0
+						if vulnReport != nil {
+							vulnCount = len(vulnReport.GetVulnerabilities())
+						}
 						if *verbose {
-							log.Printf("[worker-%d]%s req=%d OK (%.2fs)", workerID, podInfo, reqID, elapsed.Seconds())
+							log.Printf("[worker-%d]%s req=%d OK (%.2fs) vulns=%d", workerID, podInfo, reqID, elapsed.Seconds(), vulnCount)
 						}
 					}
 
