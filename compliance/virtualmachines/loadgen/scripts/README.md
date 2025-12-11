@@ -18,7 +18,7 @@ Builds the load generator binary and container image, then pushes to a registry.
 - `--no-restart`: Don't restart DaemonSet after push (only if deployed)
 
 **Environment Variables:**
-- `VSOCK_LOADGEN_IMAGE`: Image repository (default: `quay.io/gualvare/stackrox/vsock-loadgen`)
+- `VSOCK_LOADGEN_IMAGE`: Image repository (default: `quay.io/${USER}/stackrox/vsock-loadgen`)
 - `VSOCK_LOADGEN_TAG`: Image tag (default: `latest`)
 
 **Examples:**

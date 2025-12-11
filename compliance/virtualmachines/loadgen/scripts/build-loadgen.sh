@@ -11,7 +11,7 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/../../../.." && pwd)"
 
-IMAGE_NAME="${VSOCK_LOADGEN_IMAGE:-quay.io/gualvare/stackrox/vsock-loadgen}"
+IMAGE_NAME="${VSOCK_LOADGEN_IMAGE:-quay.io/${USER}/stackrox/vsock-loadgen}"
 IMAGE_TAG="${VSOCK_LOADGEN_TAG:-latest}"
 FULL_IMAGE="${IMAGE_NAME}:${IMAGE_TAG}"
 
