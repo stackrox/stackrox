@@ -212,6 +212,7 @@ YTuoC8lh1tt0nLkIQpdAJMuWndZJkRHcZriW1Qc2l3Mau0DtuYK17uz7pEwci+tK
             .addLabel("app", "image-with-signature-distroless-test")
             .setCommand(["sleep", "6000"])
             .setNamespace(SIGNATURE_TESTING_NAMESPACE)
+            .setImagePrefetcherAffinity()
 
     // Deployment holding an image which has a cosign signature that is verifiable with the TEKTON_PUBLIC_KEY.
     static final private Deployment TEKTON_DEPLOYMENT = new Deployment()
@@ -221,6 +222,7 @@ YTuoC8lh1tt0nLkIQpdAJMuWndZJkRHcZriW1Qc2l3Mau0DtuYK17uz7pEwci+tK
             .addLabel("app", "image-with-signature-tekton-test")
             .setCommand(["/bin/sh", "-c", "/bin/sleep 600"])
             .setNamespace(SIGNATURE_TESTING_NAMESPACE)
+            .setImagePrefetcherAffinity()
 
     // Deployment holding an image which has a cosign signature that is not verifiable by any cosign public key.
     static final private Deployment UNVERIFIABLE_DEPLOYMENT = new Deployment()
@@ -230,6 +232,7 @@ YTuoC8lh1tt0nLkIQpdAJMuWndZJkRHcZriW1Qc2l3Mau0DtuYK17uz7pEwci+tK
             .addLabel("app", "image-with-unverifiable-signature-test")
             .setCommand(["/bin/sh", "-c", "/bin/sleep 600"])
             .setNamespace(SIGNATURE_TESTING_NAMESPACE)
+            .setImagePrefetcherAffinity()
 
     // Deployment holding an image which does not have a cosign signature.
     static final private Deployment WITHOUT_SIGNATURE_DEPLOYMENT = new Deployment()
@@ -238,6 +241,7 @@ YTuoC8lh1tt0nLkIQpdAJMuWndZJkRHcZriW1Qc2l3Mau0DtuYK17uz7pEwci+tK
             .setImage("quay.io/rhacs-eng/qa-multi-arch@$WITHOUT_SIGNATURE_IMAGE_DIGEST")
             .addLabel("app", "image-without-signature")
             .setNamespace(SIGNATURE_TESTING_NAMESPACE)
+            .setImagePrefetcherAffinity()
 
     // Deployment holding an image with the same digest as quay.io/rhacs-eng/qa-signatures:nginx that does
     // not have a cosign signature associated with it.
@@ -247,6 +251,7 @@ YTuoC8lh1tt0nLkIQpdAJMuWndZJkRHcZriW1Qc2l3Mau0DtuYK17uz7pEwci+tK
             .setImage("quay.io/rhacs-eng/qa-multi-arch@$SAME_DIGEST_NO_SIGNATURE_IMAGE_DIGEST")
             .addLabel("app", "image-same-digest-without-signature")
             .setNamespace(SIGNATURE_TESTING_NAMESPACE)
+            .setImagePrefetcherAffinity()
 
     // Deployment holding an image with the same digest as quay.io/rhacs-eng/qa:enforcement that does
     // have a cosign signature associated with it.
@@ -256,6 +261,7 @@ YTuoC8lh1tt0nLkIQpdAJMuWndZJkRHcZriW1Qc2l3Mau0DtuYK17uz7pEwci+tK
             .setImage("quay.io/rhacs-eng/qa-signatures:nginx-multiarch@$SAME_DIGEST_WITH_SIGNATURE_IMAGE_DIGEST")
             .addLabel("app", "image-same-digest-with-signature")
             .setNamespace(SIGNATURE_TESTING_NAMESPACE)
+            .setImagePrefetcherAffinity()
 
     // Deployment holding an image with BYOPKI. BYOPKI means that the image signature
     // also has a certificate and certificate chain attached, which can be used to verify the signature.
@@ -265,6 +271,7 @@ YTuoC8lh1tt0nLkIQpdAJMuWndZJkRHcZriW1Qc2l3Mau0DtuYK17uz7pEwci+tK
             .addLabel("app", "image-with-byopki")
             .setCommand(["sleep", "600"])
             .setNamespace(SIGNATURE_TESTING_NAMESPACE)
+            .setImagePrefetcherAffinity()
 
     // Deployment holding an image signed by keyless Cosign using public Sigstore instances.
     static final private Deployment KEYLESS_SIGSTORE_DEPLOYMENT = new Deployment()
@@ -273,6 +280,7 @@ YTuoC8lh1tt0nLkIQpdAJMuWndZJkRHcZriW1Qc2l3Mau0DtuYK17uz7pEwci+tK
             .addLabel("app", "image-with-keyless-sigstore")
             .setCommand(["sleep", "600"])
             .setNamespace(SIGNATURE_TESTING_NAMESPACE)
+            .setImagePrefetcherAffinity()
 
     // Deployment holding an image signed by keyless Cosign using the staging-central RHTAS instance.
     static final private Deployment KEYLESS_RHTAS_DEPLOYMENT = new Deployment()
@@ -281,6 +289,7 @@ YTuoC8lh1tt0nLkIQpdAJMuWndZJkRHcZriW1Qc2l3Mau0DtuYK17uz7pEwci+tK
             .addLabel("app", "image-with-keyless-rhtas")
             .setCommand(["sleep", "600"])
             .setNamespace(SIGNATURE_TESTING_NAMESPACE)
+            .setImagePrefetcherAffinity()
 
     // List of deployments used within the tests. This will be used during setup of the spec / teardown to create /
     // delete all deployments.
