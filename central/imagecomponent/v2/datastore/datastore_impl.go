@@ -2,6 +2,7 @@ package datastore
 
 import (
 	"context"
+	"strings"
 
 	pgStore "github.com/stackrox/rox/central/imagecomponent/v2/datastore/store/postgres"
 	"github.com/stackrox/rox/central/ranking"
@@ -46,6 +47,15 @@ func (ds *datastoreImpl) SearchImageComponents(ctx context.Context, q *v1.Query)
 	results, err := ds.Search(ctx, q)
 	if err != nil {
 		return nil, err
+	}
+
+	searchTag := strings.ToLower(pkgSearch.Component.String())
+	for i := range results {
+		if results[i].FieldValues != nil {
+			if nameVal, ok := results[i].FieldValues[searchTag]; ok {
+				results[i].Name = nameVal
+			}
+		}
 	}
 
 	return pkgSearch.ResultsToSearchResultProtos(results, &ImageComponentSearchResultConverter{}), nil
@@ -116,7 +126,7 @@ func (ds *datastoreImpl) updateImageComponentPriority(ics ...*storage.ImageCompo
 	}
 }
 
-// ImageComponentSearchResultConverter converts image component search results to proto search results
+// ImageComponentSearchResultConverter implements search.SearchResultConverter for image component search results.
 type ImageComponentSearchResultConverter struct{}
 
 func (c *ImageComponentSearchResultConverter) BuildName(result *pkgSearch.Result) string {
