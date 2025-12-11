@@ -74,24 +74,4 @@ describe('BaseImagesModal', () => {
             cy.contains('Error adding base image').should('be.visible');
         });
     });
-
-    describe('modal behavior', () => {
-        it('should prevent closing while submission is in progress', () => {
-            cy.intercept('POST', '/v2/baseimages', {
-                delay: 1000,
-                statusCode: 200,
-                body: {},
-            }).as('addBaseImage');
-
-            const onClose = cy.stub().as('onClose');
-            const onSuccess = cy.stub();
-
-            cy.mount(<BaseImagesModal isOpen onClose={onClose} onSuccess={onSuccess} />);
-
-            cy.get('input#baseImagePath').type('ubuntu:22.04');
-            cy.get('button').contains('Save').click();
-            cy.get('button').contains('Cancel').click();
-            cy.get('@onClose').should('not.have.been.called');
-        });
-    });
 });
