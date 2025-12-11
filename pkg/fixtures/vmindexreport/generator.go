@@ -72,7 +72,7 @@ func selectPackageIndices(rng *rand.Rand, numRequested, totalAvailable int) []in
 	default:
 		// numRequested >= totalAvailable: use all, then duplicate randomly to fill
 		indices := make([]int, numRequested)
-		for i := 0; i < totalAvailable; i++ {
+		for i := range totalAvailable {
 			indices[i] = i
 		}
 		for i := totalAvailable; i < numRequested; i++ {
