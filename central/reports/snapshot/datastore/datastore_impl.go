@@ -80,7 +80,7 @@ func (ds *datastoreImpl) SearchResults(ctx context.Context, q *v1.Query) ([]*v1.
 		return nil, err
 	}
 
-	// Populate Name from ID for each result (report snapshots use ID as name)
+	// Populate Name from ID for each result (report snapshots use ID as name).
 	for i := range results {
 		results[i].Name = results[i].ID
 	}
