@@ -196,3 +196,70 @@ func (g *Generator) NumPackages() int {
 func (g *Generator) NumRepositories() int {
 	return len(g.repositories)
 }
+
+// NewGeneratorWithPackageIndices creates a Generator using specific package indices from Rhel9Packages.
+// This allows precise control over which packages are included in the generated report.
+// Useful for testing specific vulnerability scenarios.
+func NewGeneratorWithPackageIndices(indices []int, numRepos int) *Generator {
+	repositories, syntheticRepoIDs := buildRepositories(numRepos)
+	totalPkgs := len(Rhel9Packages)
+
+	packages := make(map[string]*v4.Package, len(indices))
+	environments := make(map[string]*v4.Environment_List, len(indices))
+
+	for i, idx := range indices {
+		if idx < 0 || idx >= totalPkgs {
+			continue // Skip invalid indices
+		}
+		pkg := Rhel9Packages[idx]
+		pkgID := fmt.Sprintf("%s-%d", pkg.Name, i)
+
+		var assignedRepoID string
+		if i < totalPkgs {
+			assignedRepoID = pkg.Repo
+		} else if len(syntheticRepoIDs) > 0 {
+			assignedRepoID = syntheticRepoIDs[(i-totalPkgs)%len(syntheticRepoIDs)]
+		} else {
+			assignedRepoID = pkg.Repo
+		}
+		repoCPE := repositories[assignedRepoID].GetCpe()
+
+		packages[pkgID] = &v4.Package{
+			Id:             pkgID,
+			Name:           pkg.Name,
+			Version:        pkg.Version,
+			Kind:           "binary",
+			Arch:           "x86_64",
+			RepositoryHint: "hash:sha256:f52ca767328e6919ec11a1da654e92743587bd3c008f0731f8c4de3af19c1830|key:199e2f91fd431d51",
+			Cpe:            repoCPE,
+			PackageDb:      "sqlite:usr/share/rpm",
+			Source: &v4.Package{
+				Id:      pkgID + "-src",
+				Name:    pkg.Name,
+				Version: pkg.Version,
+				Kind:    "source",
+				Cpe:     repoCPE,
+			},
+			NormalizedVersion: &v4.NormalizedVersion{
+				Kind: "rpm",
+				V:    NormalizeRPMVersion(pkg.Version),
+			},
+		}
+
+		environments[pkgID] = &v4.Environment_List{
+			Environments: []*v4.Environment{
+				{
+					PackageDb:     "sqlite:usr/share/rpm",
+					IntroducedIn:  "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+					RepositoryIds: []string{assignedRepoID},
+				},
+			},
+		}
+	}
+
+	return &Generator{
+		repositories: repositories,
+		packages:     packages,
+		environments: environments,
+	}
+}
