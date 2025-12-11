@@ -40,7 +40,7 @@ const (
 // ImageCveInfos holds the Gorm model for Postgres table `image_cve_infos`.
 type ImageCveInfos struct {
 	ID                    string     `gorm:"column:id;type:varchar;primaryKey"`
-	FixTimestampAvailable *time.Time `gorm:"column:fixtimestampavailable;type:timestamp"`
+	FixAvailableTimestamp *time.Time `gorm:"column:fixavailabletimestamp;type:timestamp"`
 	FirstSystemOccurence  *time.Time `gorm:"column:firstsystemoccurence;type:timestamp"`
 	Serialized            []byte     `gorm:"column:serialized;type:bytea"`
 }

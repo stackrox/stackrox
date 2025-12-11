@@ -123,8 +123,7 @@
                 "IMAGES_V2",
                 "VIRTUAL_MACHINES",
                 "BASE_IMAGES",
-                "BASE_IMAGE_LAYERS",
-                "IMAGE_CVE_INFO"
+                "BASE_IMAGE_LAYERS"
               ]
             },
             "collectionFormat": "multi"
@@ -242,8 +241,7 @@
                 "IMAGES_V2",
                 "VIRTUAL_MACHINES",
                 "BASE_IMAGES",
-                "BASE_IMAGE_LAYERS",
-                "IMAGE_CVE_INFO"
+                "BASE_IMAGE_LAYERS"
               ]
             },
             "collectionFormat": "multi"
@@ -355,8 +353,7 @@
                 "IMAGES_V2",
                 "VIRTUAL_MACHINES",
                 "BASE_IMAGES",
-                "BASE_IMAGE_LAYERS",
-                "IMAGE_CVE_INFO"
+                "BASE_IMAGE_LAYERS"
               ]
             },
             "collectionFormat": "multi"
@@ -511,11 +508,10 @@
         "IMAGES_V2",
         "VIRTUAL_MACHINES",
         "BASE_IMAGES",
-        "BASE_IMAGE_LAYERS",
-        "IMAGE_CVE_INFO"
+        "BASE_IMAGE_LAYERS"
       ],
       "default": "SEARCH_UNSET",
-      "title": "Next available tag: 78"
+      "title": "Next available tag: 80"
     },
     "v1SearchOptionsResponse": {
       "type": "object",

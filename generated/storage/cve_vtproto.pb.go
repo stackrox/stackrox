@@ -447,7 +447,7 @@ func (m *ImageCVEInfo) CloneVT() *ImageCVEInfo {
 	}
 	r := new(ImageCVEInfo)
 	r.Id = m.Id
-	r.FixTimestampAvailable = (*timestamppb.Timestamp)((*timestamppb1.Timestamp)(m.FixTimestampAvailable).CloneVT())
+	r.FixAvailableTimestamp = (*timestamppb.Timestamp)((*timestamppb1.Timestamp)(m.FixAvailableTimestamp).CloneVT())
 	r.FirstSystemOccurence = (*timestamppb.Timestamp)((*timestamppb1.Timestamp)(m.FirstSystemOccurence).CloneVT())
 	if len(m.unknownFields) > 0 {
 		r.unknownFields = make([]byte, len(m.unknownFields))
@@ -1223,7 +1223,7 @@ func (this *ImageCVEInfo) EqualVT(that *ImageCVEInfo) bool {
 	if this.Id != that.Id {
 		return false
 	}
-	if !(*timestamppb1.Timestamp)(this.FixTimestampAvailable).EqualVT((*timestamppb1.Timestamp)(that.FixTimestampAvailable)) {
+	if !(*timestamppb1.Timestamp)(this.FixAvailableTimestamp).EqualVT((*timestamppb1.Timestamp)(that.FixAvailableTimestamp)) {
 		return false
 	}
 	if !(*timestamppb1.Timestamp)(this.FirstSystemOccurence).EqualVT((*timestamppb1.Timestamp)(that.FirstSystemOccurence)) {
@@ -2713,8 +2713,8 @@ func (m *ImageCVEInfo) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 		i--
 		dAtA[i] = 0x4a
 	}
-	if m.FixTimestampAvailable != nil {
-		size, err := (*timestamppb1.Timestamp)(m.FixTimestampAvailable).MarshalToSizedBufferVT(dAtA[:i])
+	if m.FixAvailableTimestamp != nil {
+		size, err := (*timestamppb1.Timestamp)(m.FixAvailableTimestamp).MarshalToSizedBufferVT(dAtA[:i])
 		if err != nil {
 			return 0, err
 		}
@@ -3357,8 +3357,8 @@ func (m *ImageCVEInfo) SizeVT() (n int) {
 	if l > 0 {
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
-	if m.FixTimestampAvailable != nil {
-		l = (*timestamppb1.Timestamp)(m.FixTimestampAvailable).SizeVT()
+	if m.FixAvailableTimestamp != nil {
+		l = (*timestamppb1.Timestamp)(m.FixAvailableTimestamp).SizeVT()
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
 	if m.FirstSystemOccurence != nil {
@@ -7310,7 +7310,7 @@ func (m *ImageCVEInfo) UnmarshalVT(dAtA []byte) error {
 			iNdEx = postIndex
 		case 4:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field FixTimestampAvailable", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field FixAvailableTimestamp", wireType)
 			}
 			var msglen int
 			for shift := uint(0); ; shift += 7 {
@@ -7337,10 +7337,10 @@ func (m *ImageCVEInfo) UnmarshalVT(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			if m.FixTimestampAvailable == nil {
-				m.FixTimestampAvailable = &timestamppb.Timestamp{}
+			if m.FixAvailableTimestamp == nil {
+				m.FixAvailableTimestamp = &timestamppb.Timestamp{}
 			}
-			if err := (*timestamppb1.Timestamp)(m.FixTimestampAvailable).UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := (*timestamppb1.Timestamp)(m.FixAvailableTimestamp).UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -11451,7 +11451,7 @@ func (m *ImageCVEInfo) UnmarshalVTUnsafe(dAtA []byte) error {
 			iNdEx = postIndex
 		case 4:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field FixTimestampAvailable", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field FixAvailableTimestamp", wireType)
 			}
 			var msglen int
 			for shift := uint(0); ; shift += 7 {
@@ -11478,10 +11478,10 @@ func (m *ImageCVEInfo) UnmarshalVTUnsafe(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			if m.FixTimestampAvailable == nil {
-				m.FixTimestampAvailable = &timestamppb.Timestamp{}
+			if m.FixAvailableTimestamp == nil {
+				m.FixAvailableTimestamp = &timestamppb.Timestamp{}
 			}
-			if err := (*timestamppb1.Timestamp)(m.FixTimestampAvailable).UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
+			if err := (*timestamppb1.Timestamp)(m.FixAvailableTimestamp).UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
