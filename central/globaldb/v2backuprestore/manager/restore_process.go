@@ -14,6 +14,8 @@ import (
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/ioutils"
+	"github.com/stackrox/rox/pkg/postgres/pgadmin"
+	"github.com/stackrox/rox/pkg/postgres/pgconfig"
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/timeutil"
@@ -153,6 +155,12 @@ func (p *restoreProcess) run(tempOutputDir string) {
 	go p.resumeCtrl()
 
 	err := p.doRun(ctx, tempOutputDir)
+
+	// If the restore failed for a Postgres bundle, clean up the restore database
+	if err != nil && p.postgresBundle {
+		p.cleanupRestoreDatabase()
+	}
+
 	p.currentAttemptSig.SignalWithError(err)
 	p.completionSig.SignalWithError(err)
 }
@@ -166,6 +174,22 @@ func (p *restoreProcess) doRun(ctx context.Context, tempOutputDir string) error 
 	}
 
 	return restoreCtx.waitForAsyncChecks()
+}
+
+func (p *restoreProcess) cleanupRestoreDatabase() {
+	log.Info("Cleaning up restore database after failed restore attempt")
+	sourceMap, dbConfig, err := pgconfig.GetPostgresConfig()
+	if err != nil {
+		log.Errorf("Failed to get postgres config for cleanup: %v", err)
+		return
+	}
+
+	// Drop the restore database - use the same name as in restore/postgres.go
+	if err := pgadmin.DropDB(sourceMap, dbConfig, "central_restore"); err != nil {
+		log.Errorf("Failed to drop restore database during cleanup: %v", err)
+	} else {
+		log.Info("Successfully cleaned up restore database")
+	}
 }
 
 func (p *restoreProcess) Cancel() {
