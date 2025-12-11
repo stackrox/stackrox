@@ -36,8 +36,8 @@ type ServiceAccount struct {
 	Annotations      map[string]string      `protobuf:"bytes,7,rep,name=annotations,proto3" json:"annotations,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value" search:"Service Account Annotation"` // @gotags: search:"Service Account Annotation"
 	CreatedAt        *timestamppb.Timestamp `protobuf:"bytes,8,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
 	AutomountToken   bool                   `protobuf:"varint,9,opt,name=automount_token,json=automountToken,proto3" json:"automount_token,omitempty"`
-	Secrets          []string               `protobuf:"bytes,10,rep,name=secrets,proto3" json:"secrets,omitempty"`
-	ImagePullSecrets []string               `protobuf:"bytes,11,rep,name=image_pull_secrets,json=imagePullSecrets,proto3" json:"image_pull_secrets,omitempty"`
+	Secrets          []string               `protobuf:"bytes,10,rep,name=secrets,proto3" json:"secrets,omitempty" sensorhash:"set"`                                             // @gotags: sensorhash:"set"
+	ImagePullSecrets []string               `protobuf:"bytes,11,rep,name=image_pull_secrets,json=imagePullSecrets,proto3" json:"image_pull_secrets,omitempty" sensorhash:"set"` // @gotags: sensorhash:"set"
 	unknownFields    protoimpl.UnknownFields
 	sizeCache        protoimpl.SizeCache
 }
