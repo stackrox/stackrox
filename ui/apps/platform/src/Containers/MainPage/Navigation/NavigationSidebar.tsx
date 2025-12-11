@@ -265,7 +265,7 @@ function getNavDescriptions(
                 },
                 {
                     type: 'link',
-                    content: 'Base images',
+                    content: 'Base Images',
                     path: baseImagesPath,
                     routeKey: 'base-images',
                 },
