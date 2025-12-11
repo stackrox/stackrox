@@ -101,7 +101,7 @@ func insertIntoBaseImageLayers(batch *pgx.Batch, obj *storage.BaseImageLayer) er
 	values := []interface{}{
 		// parent primary keys start
 		pgutils.NilOrUUID(obj.GetId()),
-		obj.GetBaseImageId(),
+		pgutils.NilOrUUID(obj.GetBaseImageId()),
 		obj.GetLayerDigest(),
 		obj.GetIndex(),
 		serialized,
@@ -153,7 +153,7 @@ func copyFromBaseImageLayers(ctx context.Context, s pgSearch.Deleter, tx *postgr
 
 		return []interface{}{
 			pgutils.NilOrUUID(obj.GetId()),
-			obj.GetBaseImageId(),
+			pgutils.NilOrUUID(obj.GetBaseImageId()),
 			obj.GetLayerDigest(),
 			obj.GetIndex(),
 			serialized,

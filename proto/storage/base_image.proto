@@ -20,7 +20,7 @@ message BaseImage {
 
 message BaseImageLayer {
   string id = 1; // @gotags: sql:"pk,type(uuid)"
-  string base_image_id = 2; // @gotags: sql:"fk(BaseImage:id),index=category:unique;name:base_image_id_layer"
+  string base_image_id = 2; // @gotags: sql:"fk(BaseImage:id),type(uuid),index=category:unique;name:base_image_id_layer"
   string layer_digest = 3; // @gotags: search:"Base Image Layer Digest,hidden" sql:"index=category:unique;name:base_image_id_layer"
   int32 index = 4; // @gotags: search:"Base Image Index,hidden"
 }
