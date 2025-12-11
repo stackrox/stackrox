@@ -13,6 +13,7 @@ import (
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/sac"
 	pkgSearch "github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -48,7 +49,7 @@ func (s *K8SRolePostgresDataStoreTestSuite) TestSearchRoles() {
 
 	// Create test roles
 	role1 := &storage.K8SRole{
-		Id:          "role-1",
+		Id:          uuid.NewV4().String(),
 		Name:        "cluster-admin",
 		Namespace:   "default",
 		ClusterId:   "cluster-1",
@@ -56,7 +57,7 @@ func (s *K8SRolePostgresDataStoreTestSuite) TestSearchRoles() {
 	}
 
 	role2 := &storage.K8SRole{
-		Id:          "role-2",
+		Id:          uuid.NewV4().String(),
 		Name:        "read-only",
 		Namespace:   "kube-system",
 		ClusterId:   "cluster-1",
@@ -64,7 +65,7 @@ func (s *K8SRolePostgresDataStoreTestSuite) TestSearchRoles() {
 	}
 
 	role3 := &storage.K8SRole{
-		Id:          "role-3",
+		Id:          uuid.NewV4().String(),
 		Name:        "system:node",
 		Namespace:   "default",
 		ClusterId:   "cluster-2",
@@ -91,7 +92,7 @@ func (s *K8SRolePostgresDataStoreTestSuite) TestSearchRoles() {
 			name:          "empty query returns all roles with names populated",
 			query:         pkgSearch.EmptyQuery(),
 			expectedCount: 3,
-			expectedIDs:   []string{"role-1", "role-2", "role-3"},
+			expectedIDs:   []string{role1.GetId(), role2.GetId(), role3.GetId()},
 			expectedNames: []string{"cluster-admin", "read-only", "system:node"},
 		},
 		{
@@ -104,7 +105,7 @@ func (s *K8SRolePostgresDataStoreTestSuite) TestSearchRoles() {
 			name:          "query by cluster ID",
 			query:         pkgSearch.NewQueryBuilder().AddExactMatches(pkgSearch.ClusterID, "cluster-1").ProtoQuery(),
 			expectedCount: 2,
-			expectedIDs:   []string{"role-1", "role-2"},
+			expectedIDs:   []string{role1.GetId(), role2.GetId()},
 			expectedNames: []string{"cluster-admin", "read-only"},
 		},
 	}
