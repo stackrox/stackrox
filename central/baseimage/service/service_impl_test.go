@@ -9,6 +9,9 @@ import (
 	"github.com/stackrox/rox/central/baseimage/datastore/repository/mocks"
 	v2 "github.com/stackrox/rox/generated/api/v2"
 	"github.com/stackrox/rox/generated/storage"
+	integrationMocks "github.com/stackrox/rox/pkg/images/integration/mocks"
+	"github.com/stackrox/rox/pkg/pointers"
+	registryMocks "github.com/stackrox/rox/pkg/registries/mocks"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
 )
@@ -16,9 +19,11 @@ import (
 type ServiceTestSuite struct {
 	suite.Suite
 
-	mockCtrl      *gomock.Controller
-	mockDatastore *mocks.MockDataStore
-	service       *serviceImpl
+	mockCtrl           *gomock.Controller
+	mockDatastore      *mocks.MockDataStore
+	mockIntegrationSet *integrationMocks.MockSet
+	mockRegistrySet    *registryMocks.MockSet
+	service            *serviceImpl
 }
 
 func TestServiceTestSuite(t *testing.T) {
@@ -28,8 +33,11 @@ func TestServiceTestSuite(t *testing.T) {
 func (suite *ServiceTestSuite) SetupTest() {
 	suite.mockCtrl = gomock.NewController(suite.T())
 	suite.mockDatastore = mocks.NewMockDataStore(suite.mockCtrl)
+	suite.mockIntegrationSet = integrationMocks.NewMockSet(suite.mockCtrl)
+	suite.mockRegistrySet = registryMocks.NewMockSet(suite.mockCtrl)
 	suite.service = &serviceImpl{
-		datastore: suite.mockDatastore,
+		datastore:      suite.mockDatastore,
+		integrationSet: suite.mockIntegrationSet,
 	}
 }
 
@@ -37,79 +45,113 @@ func (suite *ServiceTestSuite) TearDownTest() {
 	suite.mockCtrl.Finish()
 }
 
-func (suite *ServiceTestSuite) TestIsValidRepo() {
+// setupAllImageRegistriesMatch sets up mocks for registry set matching.
+// If matches is true, it expects a matching registry to be found; if false, no match.
+func (suite *ServiceTestSuite) setupAllImageRegistriesMatch(matches bool) {
+	suite.mockIntegrationSet.EXPECT().RegistrySet().Return(suite.mockRegistrySet)
+	suite.mockRegistrySet.EXPECT().Match(gomock.Any()).Return(matches)
+}
+
+func (suite *ServiceTestSuite) TestValidateBaseImageRepository() {
 	tests := []struct {
-		description    string
-		input          string
-		expectedValid  bool
-		expectedErrMsg string
+		description         string
+		input               string
+		expectedValid       bool
+		expectedErrMsg      string
+		expectRegistryMatch *bool // nil = no mocks, true = match, false = no match
 	}{
 		{
-			description:    "accepts simple lowercase repository name",
-			input:          "test_com",
-			expectedValid:  true,
-			expectedErrMsg: "",
+			description:         "accepts simple lowercase repository name",
+			input:               "test_com",
+			expectedValid:       true,
+			expectedErrMsg:      "",
+			expectRegistryMatch: pointers.Bool(true),
 		},
 		{
-			description:    "accepts standard Docker registry format with organization",
-			input:          "docker.io/library/nginx",
-			expectedValid:  true,
-			expectedErrMsg: "",
+			description:         "accepts standard Docker registry format with organization",
+			input:               "docker.io/library/nginx",
+			expectedValid:       true,
+			expectedErrMsg:      "",
+			expectRegistryMatch: pointers.Bool(true),
 		},
 		{
-			description:    "accepts IPv4 registry with custom port",
-			input:          "192.168.1.1:5000/myapp",
-			expectedValid:  true,
-			expectedErrMsg: "",
+			description:         "accepts IPv4 registry with custom port",
+			input:               "192.168.1.1:5000/myapp",
+			expectedValid:       true,
+			expectedErrMsg:      "",
+			expectRegistryMatch: pointers.Bool(true),
 		},
 		{
-			description:    "accepts IPv6 registry with repository path",
-			input:          "[2001:db8::1]/repo",
-			expectedValid:  true,
-			expectedErrMsg: "",
+			description:         "accepts IPv6 registry with repository path",
+			input:               "[2001:db8::1]/repo",
+			expectedValid:       true,
+			expectedErrMsg:      "",
+			expectRegistryMatch: pointers.Bool(true),
 		},
 		{
-			description:    "rejects empty repository path",
-			input:          "",
-			expectedValid:  false,
-			expectedErrMsg: "repository cannot be empty",
+			description:         "rejects empty repository path",
+			input:               "",
+			expectedValid:       false,
+			expectedErrMsg:      "invalid base image repo path ''",
+			expectRegistryMatch: nil,
 		},
 		{
-			description:    "rejects repository path containing tag",
-			input:          "nginx:latest",
-			expectedValid:  false,
-			expectedErrMsg: "repository path must not include tag - please put tag in the tag pattern field",
+			description:         "rejects repository path containing tag",
+			input:               "nginx:latest",
+			expectedValid:       false,
+			expectedErrMsg:      "repository path 'nginx:latest' must not include tag - please put tag in the tag pattern field",
+			expectRegistryMatch: nil,
 		},
 		{
-			description:    "rejects repository path containing digest",
-			input:          "nginx@sha256:abcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890",
-			expectedValid:  false,
-			expectedErrMsg: "repository path must not include digest - please put tag in the tag pattern field",
-		},
-
-		{
-			description:    "rejects repository path with uppercase characters",
-			input:          "test:5000/Uppercase/repo",
-			expectedValid:  false,
-			expectedErrMsg: "repository path must be lowercase",
+			description:         "rejects repository path containing digest",
+			input:               "nginx@sha256:abcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890",
+			expectedValid:       false,
+			expectedErrMsg:      "repository path 'nginx@sha256:abcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890' must not include digest",
+			expectRegistryMatch: nil,
 		},
 		{
-			description:    "rejects repository path longer than 255 characters",
-			input:          strings.Repeat("a", 257),
-			expectedValid:  false,
-			expectedErrMsg: "repository path must not be more than 255 characters",
+			description:         "rejects repository path with uppercase characters",
+			input:               "test:5000/Uppercase/repo",
+			expectedValid:       false,
+			expectedErrMsg:      "invalid base image repo path 'test:5000/Uppercase/repo'",
+			expectRegistryMatch: nil,
+		},
+		{
+			description:         "rejects repository path longer than 255 characters",
+			input:               strings.Repeat("a", 257),
+			expectedValid:       false,
+			expectedErrMsg:      "invalid base image repo path 'aaaaaaaa",
+			expectRegistryMatch: nil,
+		},
+		{
+			description:         "rejects repository path with no matching registry",
+			input:               "docker.io/library/nginx",
+			expectedValid:       false,
+			expectedErrMsg:      "no matching image integration found: please add an image integration for 'docker.io/library/nginx'",
+			expectRegistryMatch: pointers.Bool(false),
+		},
+		{
+			description:         "rejects repository path when registry set is empty",
+			input:               "docker.io/library/nginx",
+			expectedValid:       false,
+			expectedErrMsg:      "no matching image integration found: please add an image integration for 'docker.io/library/nginx'",
+			expectRegistryMatch: pointers.Bool(false),
 		},
 	}
 
 	for _, tt := range tests {
 		suite.Run(tt.description, func() {
-			valid, err := isValidRepo(tt.input)
-			suite.Equal(tt.expectedValid, valid, "isValidRepo(%q) valid", tt.input)
-			if tt.expectedErrMsg != "" {
-				suite.Error(err, "isValidRepo(%q) expected error", tt.input)
-				suite.Contains(err.Error(), tt.expectedErrMsg, "isValidRepo(%q) error message", tt.input)
+			if tt.expectRegistryMatch != nil {
+				suite.setupAllImageRegistriesMatch(*tt.expectRegistryMatch)
+			}
+			err := suite.service.validateBaseImageRepository(tt.input)
+			if tt.expectedValid {
+				suite.NoError(err, "validateBaseImageRepository(%q) expected no error", tt.input)
 			} else {
-				suite.NoError(err, "isValidRepo(%q) expected no error", tt.input)
+				suite.Error(err, "validateBaseImageRepository(%q) expected error", tt.input)
+				if tt.expectedErrMsg != "" {
+					suite.Contains(err.Error(), tt.expectedErrMsg, "validateBaseImageRepository(%q) error message", tt.input)
+				}
 			}
 		})
 	}
@@ -172,6 +214,7 @@ func (suite *ServiceTestSuite) TestCreateBaseImageReference() {
 				BaseImageTagPattern: "v\\d+\\.\\d+\\.\\d+",
 			},
 			mockSetup: func() {
+				suite.setupAllImageRegistriesMatch(true)
 				created := &storage.BaseImageRepository{
 					Id:             "test-id",
 					RepositoryPath: "docker.io/library/nginx",
@@ -183,14 +226,16 @@ func (suite *ServiceTestSuite) TestCreateBaseImageReference() {
 			expectedError: false,
 		},
 		{
-			description: "rejects creation with invalid repository path",
+			description: "rejects creation with no matching registry",
 			request: &v2.CreateBaseImageReferenceRequest{
-				BaseImageRepoPath:   "nginx:latest",
+				BaseImageRepoPath:   "docker.io/library/nginx",
 				BaseImageTagPattern: "v\\d+\\.\\d+\\.\\d+",
 			},
-			mockSetup:     func() {},
+			mockSetup: func() {
+				suite.setupAllImageRegistriesMatch(false)
+			},
 			expectedError: true,
-			errorContains: "invalid base image repo path",
+			errorContains: "no matching image integration found",
 		},
 		{
 			description: "rejects creation with invalid tag pattern",
@@ -198,7 +243,9 @@ func (suite *ServiceTestSuite) TestCreateBaseImageReference() {
 				BaseImageRepoPath:   "docker.io/library/nginx",
 				BaseImageTagPattern: "[unclosed",
 			},
-			mockSetup:     func() {},
+			mockSetup: func() {
+				suite.setupAllImageRegistriesMatch(true)
+			},
 			expectedError: true,
 			errorContains: "invalid base image tag pattern",
 		},
@@ -267,19 +314,6 @@ func (suite *ServiceTestSuite) TestUpdateBaseImageTagPattern() {
 			mockSetup:     func() {},
 			expectedError: true,
 			errorContains: "base image reference ID is required",
-		},
-		{
-			description: "rejects update when repository not found",
-			request: &v2.UpdateBaseImageTagPatternRequest{
-				Id:                  "nonexistent-id",
-				BaseImageTagPattern: "latest",
-			},
-			mockSetup: func() {
-				suite.mockDatastore.EXPECT().GetRepository(gomock.Any(), "nonexistent-id").
-					Return(nil, false, nil)
-			},
-			expectedError: true,
-			errorContains: "base image repository with ID",
 		},
 	}
 

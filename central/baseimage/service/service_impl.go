@@ -15,6 +15,8 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
+	"github.com/stackrox/rox/pkg/images/integration"
+	imgUtils "github.com/stackrox/rox/pkg/images/utils"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -39,7 +41,8 @@ var (
 type serviceImpl struct {
 	v2.UnimplementedBaseImageServiceV2Server
 
-	datastore repository.DataStore
+	datastore      repository.DataStore
+	integrationSet integration.Set
 }
 
 // GetBaseImageReferences returns all base image references.
@@ -61,8 +64,8 @@ func (s *serviceImpl) GetBaseImageReferences(ctx context.Context, _ *v2.Empty) (
 
 // CreateBaseImageReference creates a new base image reference.
 func (s *serviceImpl) CreateBaseImageReference(ctx context.Context, req *v2.CreateBaseImageReferenceRequest) (*v2.CreateBaseImageReferenceResponse, error) {
-	if valid, err := isValidRepo(req.GetBaseImageRepoPath()); !valid {
-		return nil, status.Errorf(codes.InvalidArgument, "invalid base image repo path: %v", err)
+	if err := s.validateBaseImageRepository(req.GetBaseImageRepoPath()); err != nil {
+		return nil, err
 	}
 
 	if valid, err := isValidTagPattern(req.GetBaseImageTagPattern()); !valid {
@@ -153,38 +156,28 @@ func convertStorageToAPI(repo *storage.BaseImageRepository) *v2.BaseImageReferen
 	}
 }
 
-// isValidRepo checks if the given string is a valid repository reference.
-// It uses distribution/reference.Parse to validate the input.
-// Returns true only if the string represents a valid repository reference without tag or digest.
-// Returns false with a specific error message for invalid references.
-func isValidRepo(repo string) (bool, error) {
-	ref, err := reference.Parse(repo)
+// validateBaseImageRepository validate the provided base image repository path,
+// Returns an error if the repository path is malformed or no matching image integration is found.
+func (s *serviceImpl) validateBaseImageRepository(repoPath string) error {
+	imageName, ref, err := imgUtils.GenerateImageNameFromString(repoPath)
 	if err != nil {
-		// Map distribution errors to more user-friendly messages
-		switch err {
-		case reference.ErrNameEmpty:
-			return false, errox.InvalidArgs.New("repository cannot be empty")
-		case reference.ErrNameContainsUppercase:
-			return false, errox.InvalidArgs.New("repository path must be lowercase")
-		case reference.ErrReferenceInvalidFormat:
-			return false, errox.InvalidArgs.New("invalid repository path format")
-		case reference.ErrNameTooLong:
-			return false, errox.InvalidArgs.New("repository path must not be more than 255 characters")
-		default:
-			return false, errox.InvalidArgs.CausedBy(errors.Wrap(err, "invalid repository reference"))
-		}
-	}
-
-	// Reject references that include digests - these should be in separate fields
-	if _, ok := ref.(reference.Digested); ok {
-		return false, errox.InvalidArgs.New("repository path must not include digest - please put tag in the tag pattern field")
+		return errox.InvalidArgs.Newf("invalid base image repo path '%s'", repoPath).CausedBy(err)
 	}
 	// Reject references that include tags - these should be in separate fields
-	if _, ok := ref.(reference.Tagged); ok {
-		return false, errox.InvalidArgs.New("repository path must not include tag - please put tag in the tag pattern field")
+	if imageName.GetTag() != "" {
+		return errox.InvalidArgs.Newf("repository path '%s' must not include tag - please put tag in the tag pattern field", repoPath)
+	}
+	// Reject references that include digests
+	if _, ok := ref.(reference.Digested); ok {
+		return errox.InvalidArgs.Newf("repository path '%s' must not include digest", repoPath)
 	}
 
-	return true, nil
+	// Check if there's a matching image integration for this repository
+	if !s.integrationSet.RegistrySet().Match(imageName) {
+		return errox.InvalidArgs.Newf("no matching image integration found: please add an image integration for '%s'", repoPath)
+	}
+
+	return nil
 }
 
 // isValidTagPattern checks if the given string is a valid regex pattern.
