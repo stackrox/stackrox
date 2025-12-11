@@ -54,6 +54,17 @@ func (e *enricherImpl) EnrichVirtualMachineWithVulnerabilities(vm *storage.Virtu
 	return errorList.ToError()
 }
 
+func (e *enricherImpl) getScanners() []types.VirtualMachineScanner {
+	e.lock.RLock()
+	defer e.lock.RUnlock()
+
+	res := make([]types.VirtualMachineScanner, 0, len(e.scanners))
+	for _, scanner := range e.scanners {
+		res = append(res, scanner)
+	}
+	return res
+}
+
 func enrichVirtualMachineWithScanner(machine *storage.VirtualMachine, indexReport *v4.IndexReport, scanner types.VirtualMachineScanner) error {
 	if scanner == nil {
 		machine.Notes = append(machine.Notes, storage.VirtualMachine_MISSING_SCAN_DATA)
@@ -77,28 +88,6 @@ func enrichVirtualMachineWithScanner(machine *storage.VirtualMachine, indexRepor
 	return nil
 }
 
-func (e *enricherImpl) getScanners() []types.VirtualMachineScanner {
-	e.lock.RLock()
-	defer e.lock.RUnlock()
-
-	res := make([]types.VirtualMachineScanner, 0, len(e.scanners))
-	for _, scanner := range e.scanners {
-		res = append(res, scanner)
-	}
-	return res
-}
-
-func (e *enricherImpl) createVirtualMachineScanner(integration *storage.ImageIntegration) (types.VirtualMachineScanner, error) {
-	return e.getScannerCreator(integration)(integration)
-}
-
-func (e *enricherImpl) getScannerCreator(integration *storage.ImageIntegration) func(*storage.ImageIntegration) (types.VirtualMachineScanner, error) {
-	e.lock.RLock()
-	defer e.lock.RUnlock()
-
-	return e.creators[integration.GetType()]
-}
-
 func (e *enricherImpl) UpsertVirtualMachineIntegration(integration *storage.ImageIntegration) error {
 	vmScanner, err := e.createVirtualMachineScanner(integration)
 	if err != nil {
@@ -110,6 +99,17 @@ func (e *enricherImpl) UpsertVirtualMachineIntegration(integration *storage.Imag
 
 	e.scanners[integration.GetId()] = vmScanner
 	return nil
+}
+
+func (e *enricherImpl) createVirtualMachineScanner(integration *storage.ImageIntegration) (types.VirtualMachineScanner, error) {
+	return e.getScannerCreator(integration)(integration)
+}
+
+func (e *enricherImpl) getScannerCreator(integration *storage.ImageIntegration) func(*storage.ImageIntegration) (types.VirtualMachineScanner, error) {
+	e.lock.RLock()
+	defer e.lock.RUnlock()
+
+	return e.creators[integration.GetType()]
 }
 
 func (e *enricherImpl) RemoveVirtualMachineIntegration(id string) {

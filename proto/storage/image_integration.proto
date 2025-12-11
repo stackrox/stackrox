@@ -153,5 +153,5 @@ enum ImageIntegrationCategory {
   // This decision was made because we currently only support one node scanner (our scanner).
   NODE_SCANNER = 2;
   // TODO: ROX-32218: ensure scanner V4 can also be used as virtual machine scanner
-  VIRTUAL_MACHINE_SCANNER = 4;
+  VIRTUAL_MACHINE_SCANNER = 3;
 }
