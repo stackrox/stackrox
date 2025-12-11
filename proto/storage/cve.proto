@@ -334,6 +334,6 @@ message CVSSV3 {
 
 message ImageCVEInfo {
   string id = 1; // @gotags: search:"CVE Info" sql:"pk"
-  google.protobuf.Timestamp fix_timestamp_available = 4; // @gotags: search:"CVE Fix Available Timestamp,hidden"
+  google.protobuf.Timestamp fix_available_timestamp = 4; // @gotags: search:"CVE Fix Available Timestamp,hidden"
   google.protobuf.Timestamp first_system_occurence = 9; // @gotags: search:"First System Occurrence Timestamp,hidden"
 }

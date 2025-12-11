@@ -98,12 +98,12 @@ func insertIntoImageCveInfos(batch *pgx.Batch, obj *storage.ImageCVEInfo) error 
 	values := []interface{}{
 		// parent primary keys start
 		obj.GetId(),
-		protocompat.NilOrTime(obj.GetFixTimestampAvailable()),
+		protocompat.NilOrTime(obj.GetFixAvailableTimestamp()),
 		protocompat.NilOrTime(obj.GetFirstSystemOccurence()),
 		serialized,
 	}
 
-	finalStr := "INSERT INTO image_cve_infos (Id, FixTimestampAvailable, FirstSystemOccurence, serialized) VALUES($1, $2, $3, $4) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, FixTimestampAvailable = EXCLUDED.FixTimestampAvailable, FirstSystemOccurence = EXCLUDED.FirstSystemOccurence, serialized = EXCLUDED.serialized"
+	finalStr := "INSERT INTO image_cve_infos (Id, FixAvailableTimestamp, FirstSystemOccurence, serialized) VALUES($1, $2, $3, $4) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, FixAvailableTimestamp = EXCLUDED.FixAvailableTimestamp, FirstSystemOccurence = EXCLUDED.FirstSystemOccurence, serialized = EXCLUDED.serialized"
 	batch.Queue(finalStr, values...)
 
 	return nil
@@ -128,7 +128,7 @@ func copyFromImageCveInfos(ctx context.Context, s pgSearch.Deleter, tx *postgres
 
 	copyCols := []string{
 		"id",
-		"fixtimestampavailable",
+		"fixavailabletimestamp",
 		"firstsystemoccurence",
 		"serialized",
 	}
@@ -148,7 +148,7 @@ func copyFromImageCveInfos(ctx context.Context, s pgSearch.Deleter, tx *postgres
 
 		return []interface{}{
 			obj.GetId(),
-			protocompat.NilOrTime(obj.GetFixTimestampAvailable()),
+			protocompat.NilOrTime(obj.GetFixAvailableTimestamp()),
 			protocompat.NilOrTime(obj.GetFirstSystemOccurence()),
 			serialized,
 		}, nil
