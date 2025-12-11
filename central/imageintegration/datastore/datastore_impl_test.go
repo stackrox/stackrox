@@ -837,6 +837,158 @@ func (suite *ImageIntegrationDataStoreTestSuite) TestSearchConsistencyBetweenMet
 	}
 }
 
+func (suite *ImageIntegrationDataStoreTestSuite) TestSearchImageIntegrationsFieldValidation() {
+	ctx := sac.WithGlobalAccessScopeChecker(context.Background(), sac.AllowAllAccessScopeChecker())
+
+	// Generate test cluster IDs
+	testCluster1ID := uuid.NewV4().String()
+	testCluster2ID := uuid.NewV4().String()
+
+	// Create test integrations
+	integration1 := &storage.ImageIntegration{
+		Id:        uuid.NewV4().String(),
+		Name:      "docker-hub-integration",
+		ClusterId: testCluster1ID,
+		IntegrationConfig: &storage.ImageIntegration_Docker{
+			Docker: &storage.DockerConfig{
+				Endpoint: "https://registry.hub.docker.com",
+			},
+		},
+	}
+
+	integration2 := &storage.ImageIntegration{
+		Id:        uuid.NewV4().String(),
+		Name:      "quay-io-integration",
+		ClusterId: testCluster1ID,
+		IntegrationConfig: &storage.ImageIntegration_Quay{
+			Quay: &storage.QuayConfig{
+				Endpoint: "https://quay.io",
+			},
+		},
+	}
+
+	integration3 := &storage.ImageIntegration{
+		Id:        uuid.NewV4().String(),
+		Name:      "gcr-integration",
+		ClusterId: testCluster2ID,
+		IntegrationConfig: &storage.ImageIntegration_Google{
+			Google: &storage.GoogleConfig{
+				Endpoint: "https://gcr.io",
+			},
+		},
+	}
+
+	// Add integrations
+	_, err := suite.datastore.AddImageIntegration(ctx, integration1)
+	suite.NoError(err)
+	_, err = suite.datastore.AddImageIntegration(ctx, integration2)
+	suite.NoError(err)
+	_, err = suite.datastore.AddImageIntegration(ctx, integration3)
+	suite.NoError(err)
+
+	suite.Run("SearchImageIntegrations with empty query", func() {
+		searchResults, err := suite.datastore.SearchImageIntegrations(ctx, pkgSearch.EmptyQuery())
+		suite.NoError(err)
+		suite.Len(searchResults, 3)
+
+		// Verify all fields are properly populated
+		for _, result := range searchResults {
+			suite.NotEmpty(result.GetId(), "Integration ID should not be empty")
+			suite.NotEmpty(result.GetName(), "Integration name should not be empty")
+			suite.Equal(v1.SearchCategory_IMAGE_INTEGRATIONS, result.GetCategory(), "Result category should be IMAGE_INTEGRATIONS")
+			suite.NotNil(result.GetFieldToMatches(), "FieldToMatches should not be nil")
+		}
+	})
+
+	suite.Run("SearchImageIntegrations with exact field verification", func() {
+		searchResults, err := suite.datastore.SearchImageIntegrations(ctx, pkgSearch.EmptyQuery())
+		suite.NoError(err)
+		suite.Len(searchResults, 3)
+
+		// Build a map for easy lookup
+		resultMap := make(map[string]*v1.SearchResult)
+		for _, result := range searchResults {
+			resultMap[result.GetId()] = result
+		}
+
+		// Verify integration1
+		result1 := resultMap[integration1.GetId()]
+		suite.Require().NotNil(result1)
+		suite.Equal(integration1.GetId(), result1.GetId())
+		suite.Equal(integration1.GetName(), result1.GetName())
+		suite.Equal(v1.SearchCategory_IMAGE_INTEGRATIONS, result1.GetCategory())
+		suite.NotNil(result1.GetFieldToMatches())
+
+		// Verify integration2
+		result2 := resultMap[integration2.GetId()]
+		suite.Require().NotNil(result2)
+		suite.Equal(integration2.GetId(), result2.GetId())
+		suite.Equal(integration2.GetName(), result2.GetName())
+
+		// Verify integration3
+		result3 := resultMap[integration3.GetId()]
+		suite.Require().NotNil(result3)
+		suite.Equal(integration3.GetId(), result3.GetId())
+		suite.Equal(integration3.GetName(), result3.GetName())
+	})
+
+	suite.Run("SearchImageIntegrations with name filter", func() {
+		query := pkgSearch.NewQueryBuilder().
+			AddExactMatches(pkgSearch.ImageIntegrationName, integration1.GetName()).
+			ProtoQuery()
+
+		searchResults, err := suite.datastore.SearchImageIntegrations(ctx, query)
+		suite.NoError(err)
+		suite.Len(searchResults, 1)
+		suite.Equal(integration1.GetId(), searchResults[0].GetId())
+		suite.Equal(integration1.GetName(), searchResults[0].GetName())
+		suite.Equal(v1.SearchCategory_IMAGE_INTEGRATIONS, searchResults[0].GetCategory())
+	})
+
+	suite.Run("SearchImageIntegrations with cluster filter", func() {
+		query := pkgSearch.NewQueryBuilder().
+			AddStrings(pkgSearch.ClusterID, testCluster1ID).
+			ProtoQuery()
+
+		searchResults, err := suite.datastore.SearchImageIntegrations(ctx, query)
+		suite.NoError(err)
+		suite.Len(searchResults, 2)
+
+		ids := make([]string, len(searchResults))
+		for i, result := range searchResults {
+			ids[i] = result.GetId()
+			suite.NotEmpty(result.GetName())
+			suite.Equal(v1.SearchCategory_IMAGE_INTEGRATIONS, result.GetCategory())
+		}
+		suite.ElementsMatch([]string{integration1.GetId(), integration2.GetId()}, ids)
+	})
+
+	suite.Run("SearchImageIntegrations with exact name and category verification", func() {
+		searchResults, err := suite.datastore.SearchImageIntegrations(ctx, pkgSearch.EmptyQuery())
+		suite.NoError(err)
+		suite.Len(searchResults, 3)
+
+		// Verify SearchResult fields match actual integration values
+		for _, result := range searchResults {
+			// Fetch the actual integration to verify exact name
+			integration, found, fetchErr := suite.datastore.GetImageIntegration(ctx, result.GetId())
+			suite.NoError(fetchErr, "Should be able to fetch integration")
+			suite.True(found, "Integration should exist")
+			if found && fetchErr == nil {
+				// Verify exact name matches
+				suite.Equal(integration.GetName(), result.GetName(), "SearchResult name should match integration name")
+				// Verify category is correct
+				suite.Equal(v1.SearchCategory_IMAGE_INTEGRATIONS, result.GetCategory(), "SearchResult category should be IMAGE_INTEGRATIONS")
+			}
+		}
+	})
+
+	// Clean up
+	suite.NoError(suite.datastore.RemoveImageIntegration(ctx, integration1.GetId()))
+	suite.NoError(suite.datastore.RemoveImageIntegration(ctx, integration2.GetId()))
+	suite.NoError(suite.datastore.RemoveImageIntegration(ctx, integration3.GetId()))
+}
+
 func (suite *ImageIntegrationDataStoreTestSuite) TestSearchWithAccessControlScenarios() {
 	// Generate test cluster IDs as proper UUIDs
 	sacCluster1ID := uuid.NewV4().String()
