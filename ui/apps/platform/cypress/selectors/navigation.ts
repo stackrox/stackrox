@@ -2,8 +2,8 @@ const navExpandable = 'ul.pf-v6-c-nav__list li.pf-v6-c-nav__item button';
 
 const navigation = {
     allNavLinks: '.pf-v6-c-nav a',
-    horizontalNavBar: 'nav.pf-m-horizontal-subnav',
-    horizontalNavLinks: 'nav.pf-m-horizontal-subnav a',
+    horizontalNavBar: 'nav.pf-m-horizontal.pf-m-subnav',
+    horizontalNavLinks: 'nav.pf-m-horizontal.pf-m-subnav a',
     navLinks: '.pf-v6-c-nav > ul.pf-v6-c-nav__list > li > a',
     navExpandable,
     navExpandablePlatformConfiguration: `${navExpandable}:contains("Platform Configuration")`,

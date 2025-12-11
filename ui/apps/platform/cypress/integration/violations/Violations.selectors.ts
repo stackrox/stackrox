@@ -1,13 +1,15 @@
 export const selectors = {
     actions: {
         btn: 'td .pf-v6-c-menu-toggle[aria-label="Kebab toggle"]', // via ActionsColumn element
-        excludeDeploymentBtn: 'button:contains("Exclude deployment")',
-        resolveBtn: 'button:contains("Mark as resolved")',
-        resolveAndAddToBaselineBtn: 'button:contains("Resolve and add to process baseline")',
+        excludeDeploymentBtn:
+            '.pf-v6-c-menu__list button:contains("Exclude deployment from policy")',
+        resolveBtn: '.pf-v6-c-menu__list button:contains("Mark as resolved")',
+        resolveAndAddToBaselineBtn:
+            '.pf-v6-c-menu__list button:contains("Resolve and add to process baseline")',
     },
     details: {
-        title: 'h1.pf-v6-c-title',
-        subtitle: 'section:has(> h1) > p',
+        title: '[data-ouia-component-id="PageHeader-title"]',
+        subtitle: '[data-ouia-component-id="PageHeader-subtitle"]',
         tabs: 'li.pf-v6-c-tabs__item',
         violationTab: 'li.pf-v6-c-tabs__item:contains("Violation")',
         enforcementTab: 'li.pf-v6-c-tabs__item:contains("Enforcement")',

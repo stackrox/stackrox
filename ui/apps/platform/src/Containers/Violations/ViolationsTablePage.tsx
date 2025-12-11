@@ -316,7 +316,7 @@ function ViolationsTablePage(): ReactElement {
                 </Content>
             </PageSection>
             {isLoadingAlerts && (
-                <PageSection variant="default" id={tabContentId}>
+                <PageSection variant="default" id={tabContentId} hasBodyWrapper={false}>
                     <Bullseye>
                         <Spinner size="xl" />
                     </Bullseye>
