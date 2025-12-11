@@ -57,6 +57,7 @@ export type ComponentVulnerabilityBase = {
     location: string;
     source: SourceType;
     layerIndex: number | null;
+    inBaseImageLayer?: boolean;
     imageVulnerabilities: {
         severity: string;
         fixedByVersion: string;
@@ -105,6 +106,7 @@ export type TableDataRow = {
         value: string;
     } | null;
     pendingExceptionCount: number;
+    inBaseImageLayer?: boolean;
 };
 
 /**
