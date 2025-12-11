@@ -41,8 +41,6 @@ func migrate(database *types.Databases) error {
 	// in the field where the indexes have already been moved to btree, we do not want to
 	// force that instance to remigrate.  So we will not simply drop and re-add, but
 	// verify index is hash, drop old index, re-add it as btree.
-	log.Infof("Process indicator index migration complete")
-
 	// Purposefully doing this one at a time like this to be very specific on what we are doing.
 	err := migrateIndex(database.DBCtx, database.PostgresDB, deploymentIndex, deploymentColumn)
 	if err != nil {
