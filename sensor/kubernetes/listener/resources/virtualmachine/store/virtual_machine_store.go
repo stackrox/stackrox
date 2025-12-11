@@ -77,6 +77,13 @@ func (s *VirtualMachineStore) ClearState(id virtualmachine.VMID) {
 func (s *VirtualMachineStore) Cleanup() {
 	s.lock.Lock()
 	defer s.lock.Unlock()
+
+	// In test mode, preserve auto-generated test VMs in the vm-load-test namespace
+	if env.IsVMTestModeEnabled() {
+		log.Debug("Skipping VM store cleanup in test mode to preserve auto-generated VMs")
+		return
+	}
+
 	clear(s.virtualMachines)
 	clear(s.namespaceToID)
 	clear(s.cidToID)
