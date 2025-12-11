@@ -842,18 +842,8 @@ EOT
 
     # Install old version of the operator & deploy StackRox.
 
-    # Old version of the operator might not know about the SFA agent,
-    # temporarily disable it.
-    if [[ "${SFA_AGENT:-}" == "Enabled" ]]; then
-	echo "Disabling SFA_AGENT for the old deployment"
-        reenable_sfa="true"
-        export SFA_AGENT="Disabled"
-    else
-	echo "SFA_AGENT value for the old deployment ${SFA_AGENT:-}"
-    fi
-
     VERSION="${OPERATOR_VERSION_TAG}" make -C operator deploy-previous-via-olm
-    _deploy_stackrox "" "${CUSTOM_CENTRAL_NAMESPACE}" "${CUSTOM_SENSOR_NAMESPACE}"
+    _deploy_stackrox "" "${CUSTOM_CENTRAL_NAMESPACE}" "${CUSTOM_SENSOR_NAMESPACE}" "false"
 
     _begin "verify"
 
@@ -865,11 +855,6 @@ EOT
     verify_deployment_scannerV4_env_var_set "${CUSTOM_SENSOR_NAMESPACE}" "sensor"
 
     _begin "upgrade-operator"
-
-    if [[ "${reenable_sfa}" == "true" ]]; then
-	echo "Reenabling SFA_AGENT"
-	export SFA_AGENT="Enabled"
-    fi
 
     # Upgrade operator
     info "Upgrading StackRox Operator to version ${OPERATOR_VERSION_TAG}..."
@@ -1147,6 +1132,7 @@ _deploy_stackrox() {
     local tls_client_certs=${1:-}
     local central_namespace=${2:-stackrox}
     local sensor_namespace=${3:-stackrox}
+    local validate=${4:-true}
 
     _deploy_central "${central_namespace}"
     # shellcheck disable=SC2031
@@ -1159,7 +1145,7 @@ _deploy_stackrox() {
     setup_client_TLS_certs "${tls_client_certs}"
     record_build_info "${central_namespace}"
 
-    _deploy_sensor "${sensor_namespace}" "${central_namespace}"
+    _deploy_sensor "${sensor_namespace}" "${central_namespace}" "${validate}"
     echo "Sensor deployed. Waiting for sensor to be up"
     sensor_wait "${sensor_namespace}"
 
@@ -1509,8 +1495,9 @@ EOF
 _deploy_sensor() {
     local sensor_namespace=${1:-stackrox}
     local central_namespace=${2:-stackrox}
+    local validate=${3:-true}
     create_sensor_pull_secrets "$sensor_namespace"
-    deploy_sensor "${sensor_namespace}" "${central_namespace}"
+    deploy_sensor "${sensor_namespace}" "${central_namespace}" "${validate}"
     patch_down_sensor "${sensor_namespace}"
 }
 
