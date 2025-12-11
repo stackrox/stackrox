@@ -487,6 +487,7 @@ main-build-nodeps:
 	$(GOBUILD) \
 		central \
 		compliance/cmd/compliance \
+		cmd/vsock-loadgen \
 		config-controller \
 		migrator \
 		sensor/admission-control \
@@ -683,6 +684,7 @@ endif
 	cp bin/linux_$(GOARCH)/upgrader          image/rhel/bin/sensor-upgrader
 	cp bin/linux_$(GOARCH)/admission-control image/rhel/bin/admission-control
 	cp bin/linux_$(GOARCH)/compliance        image/rhel/bin/compliance
+	cp bin/linux_$(GOARCH)/vsock-loadgen     image/rhel/bin/vsock-loadgen
 	# Workaround to bug in lima: https://github.com/lima-vm/lima/issues/602
 	find image/rhel/bin -not -path "*/.*" -type f -exec chmod +x {} \;
 

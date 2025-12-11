@@ -1,0 +1,193 @@
+---
+# ServiceAccount for vsock-loadgen
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: vsock-loadgen
+  namespace: stackrox
+  labels:
+    app: vsock-loadgen
+    component: load-testing
+
+---
+# ClusterRole to list nodes (needed for CID range partitioning)
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: vsock-loadgen-node-reader
+  labels:
+    app: vsock-loadgen
+    component: load-testing
+rules:
+- apiGroups: [""]
+  resources: ["nodes"]
+  verbs: ["get", "list"]
+
+---
+# ClusterRoleBinding to bind the role to the service account
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: vsock-loadgen-node-reader
+  labels:
+    app: vsock-loadgen
+    component: load-testing
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: vsock-loadgen-node-reader
+subjects:
+- kind: ServiceAccount
+  name: vsock-loadgen
+  namespace: stackrox
+
+---
+# Role to use privileged SCC (OpenShift only)
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: vsock-loadgen-use-privileged-scc
+  namespace: stackrox
+  labels:
+    app: vsock-loadgen
+    component: load-testing
+rules:
+- apiGroups:
+  - security.openshift.io
+  resources:
+  - securitycontextconstraints
+  resourceNames:
+  - privileged
+  verbs:
+  - use
+
+---
+# RoleBinding to allow vsock-loadgen to use privileged SCC
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: vsock-loadgen-use-privileged-scc
+  namespace: stackrox
+  labels:
+    app: vsock-loadgen
+    component: load-testing
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: vsock-loadgen-use-privileged-scc
+subjects:
+- kind: ServiceAccount
+  name: vsock-loadgen
+  namespace: stackrox
+
+---
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: vsock-loadgen
+  namespace: stackrox
+  labels:
+    app: vsock-loadgen
+    component: load-testing
+spec:
+  selector:
+    matchLabels:
+      app: vsock-loadgen
+  template:
+    metadata:
+      labels:
+        app: vsock-loadgen
+        component: load-testing
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "9090"
+        prometheus.io/path: "/metrics"
+    spec:
+      # Exclude control plane nodes (works for both OpenShift and GKE)
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            # Match nodes that don't have control plane labels
+            - matchExpressions:
+              - key: node-role.kubernetes.io/control-plane
+                operator: DoesNotExist
+              - key: node-role.kubernetes.io/master
+                operator: DoesNotExist
+
+      # Use dedicated service account with node read permissions
+      serviceAccountName: vsock-loadgen
+
+      # Required for vsock device access
+      hostNetwork: true
+      hostPID: false
+
+      containers:
+      - name: loadgen
+        # Use dedicated vsock-loadgen image (minimal distroless-based image)
+        # Override with VSOCK_LOADGEN_IMAGE and VSOCK_LOADGEN_TAG env vars if needed
+        image: quay.io/gualvare/stackrox/vsock-loadgen:latest
+        imagePullPolicy: Always
+
+        # Auto-start load generation from config file
+        command:
+          - /usr/local/bin/vsock-loadgen
+          - --config
+          - /etc/loadgen/config.yaml
+
+        env:
+          # Enable test mode for VM load testing
+          - name: ROX_VM_TEST_MODE
+            value: "true"
+          - name: NODE_NAME
+            valueFrom:
+              fieldRef:
+                fieldPath: spec.nodeName
+          - name: POD_NAME
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.name
+
+        ports:
+          - name: metrics
+            containerPort: 9090
+            protocol: TCP
+
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "500m"
+
+        securityContext:
+          # Required for vsock device access
+          privileged: true
+          runAsUser: 0
+          capabilities:
+            add:
+              - NET_ADMIN
+              - SYS_ADMIN
+
+        volumeMounts:
+          # Mount vsock device
+          - name: vsock
+            mountPath: /dev/vsock
+          # Mount load generator config
+          - name: loadgen-config
+            mountPath: /etc/loadgen
+            readOnly: true
+
+      volumes:
+        - name: vsock
+          hostPath:
+            path: /dev/vsock
+            type: CharDevice
+        - name: loadgen-config
+          configMap:
+            name: vsock-loadgen-config
+
+      # Tolerations to ensure it can run on all worker nodes
+      tolerations:
+        - effect: NoSchedule
+          operator: Exists
+        - effect: NoExecute
+          operator: Exists
