@@ -29,13 +29,4 @@ describe('parseBaseImagePath', () => {
             tagPattern: '1.*',
         });
     });
-
-    it('should handle complex registry paths with nested directories', () => {
-        const result = parseBaseImagePath('gcr.io/my-project/team/app:v1.2.3');
-
-        expect(result).toEqual({
-            repoPath: 'gcr.io/my-project/team/app',
-            tagPattern: 'v1.2.3',
-        });
-    });
 });

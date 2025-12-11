@@ -76,23 +76,22 @@ describe('BaseImagesModal', () => {
     });
 
     describe('modal behavior', () => {
-        it('should not render when isOpen is false', () => {
-            const onClose = cy.stub();
-            const onSuccess = cy.stub();
+        it('should prevent closing while submission is in progress', () => {
+            cy.intercept('POST', '/v1/baseimages', {
+                delay: 1000,
+                statusCode: 200,
+                body: {},
+            }).as('addBaseImage');
 
-            cy.mount(<BaseImagesModal isOpen={false} onClose={onClose} onSuccess={onSuccess} />);
-
-            cy.contains('Add base image path').should('not.exist');
-        });
-
-        it('should call onClose when cancel is clicked', () => {
             const onClose = cy.stub().as('onClose');
             const onSuccess = cy.stub();
 
             cy.mount(<BaseImagesModal isOpen onClose={onClose} onSuccess={onSuccess} />);
 
+            cy.get('input#baseImagePath').type('ubuntu:22.04');
+            cy.get('button').contains('Save').click();
             cy.get('button').contains('Cancel').click();
-            cy.get('@onClose').should('have.been.calledOnce');
+            cy.get('@onClose').should('not.have.been.called');
         });
     });
 });

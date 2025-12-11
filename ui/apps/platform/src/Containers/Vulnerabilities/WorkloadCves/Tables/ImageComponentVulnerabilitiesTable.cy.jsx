@@ -122,4 +122,3 @@ describe('ImageComponentVulnerabilitiesTable', () => {
         });
     });
 });
-
