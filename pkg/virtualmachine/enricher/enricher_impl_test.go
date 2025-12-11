@@ -23,6 +23,7 @@ import (
 const mockIntegrationType = "mock scanner"
 
 var testIntegration = &storage.ImageIntegration{
+	Id:   uuid.NewTestUUID(1).String(),
 	Type: mockIntegrationType,
 }
 
@@ -398,16 +399,12 @@ func TestEnricherUpsertRemoveIntegrations(t *testing.T) {
 
 		assert.Empty(it, vmEnricher.scanners)
 
-		integration := &storage.ImageIntegration{
-			Id:   uuid.NewTestUUID(1).String(),
-			Type: mockIntegrationType,
-		}
-		err := enricher.UpsertVirtualMachineIntegration(integration)
+		err := enricher.UpsertVirtualMachineIntegration(testIntegration)
 		assert.NoError(it, err)
 		assert.Len(it, vmEnricher.scanners, 1)
-		assert.NotNil(it, vmEnricher.scanners[integration.GetId()])
+		assert.NotNil(it, vmEnricher.scanners[testIntegration.GetId()])
 
-		enricher.RemoveVirtualMachineIntegration(integration.GetId())
+		enricher.RemoveVirtualMachineIntegration(testIntegration.GetId())
 		assert.Empty(it, vmEnricher.scanners)
 	})
 	t.Run("error on scanner creation", func(it *testing.T) {
