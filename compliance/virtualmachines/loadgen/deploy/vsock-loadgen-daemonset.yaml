@@ -86,7 +86,8 @@ spec:
       - name: loadgen
         # Use dedicated vsock-loadgen image (minimal distroless-based image)
         # Override with VSOCK_LOADGEN_IMAGE and VSOCK_LOADGEN_TAG env vars if needed
-        image: quay.io/gualvare/stackrox/vsock-loadgen:latest
+        # Note: Image URL uses $USER placeholder - scripts will substitute at deployment time
+        image: quay.io/${USER}/stackrox/vsock-loadgen:latest
         imagePullPolicy: Always
 
         # Auto-start load generation from config file
