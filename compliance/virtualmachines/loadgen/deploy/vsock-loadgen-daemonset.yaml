@@ -42,45 +42,6 @@ subjects:
   namespace: stackrox
 
 ---
-# Role to use privileged SCC (OpenShift only)
-apiVersion: rbac.authorization.k8s.io/v1
-kind: Role
-metadata:
-  name: vsock-loadgen-use-privileged-scc
-  namespace: stackrox
-  labels:
-    app: vsock-loadgen
-    component: load-testing
-rules:
-- apiGroups:
-  - security.openshift.io
-  resources:
-  - securitycontextconstraints
-  resourceNames:
-  - privileged
-  verbs:
-  - use
-
----
-# RoleBinding to allow vsock-loadgen to use privileged SCC
-apiVersion: rbac.authorization.k8s.io/v1
-kind: RoleBinding
-metadata:
-  name: vsock-loadgen-use-privileged-scc
-  namespace: stackrox
-  labels:
-    app: vsock-loadgen
-    component: load-testing
-roleRef:
-  apiGroup: rbac.authorization.k8s.io
-  kind: Role
-  name: vsock-loadgen-use-privileged-scc
-subjects:
-- kind: ServiceAccount
-  name: vsock-loadgen
-  namespace: stackrox
-
----
 apiVersion: apps/v1
 kind: DaemonSet
 metadata:
@@ -118,7 +79,6 @@ spec:
       # Use dedicated service account with node read permissions
       serviceAccountName: vsock-loadgen
 
-      # Required for vsock device access
       hostNetwork: true
       hostPID: false
 
@@ -159,13 +119,7 @@ spec:
             cpu: "500m"
 
         securityContext:
-          # Required for vsock device access
-          privileged: true
           runAsUser: 0
-          capabilities:
-            add:
-              - NET_ADMIN
-              - SYS_ADMIN
 
         volumeMounts:
           # Mount vsock device
