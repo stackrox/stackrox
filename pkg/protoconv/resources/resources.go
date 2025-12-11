@@ -153,12 +153,12 @@ func getMountPropagation(mountPropagation *v1.MountPropagationMode) storage.Volu
 
 func getSeccompProfileType(profileType v1.SeccompProfileType) storage.SecurityContext_SeccompProfile_ProfileType {
 	switch profileType {
-	case v1.SeccompProfileTypeUnconfined:
-		return storage.SecurityContext_SeccompProfile_UNCONFINED
+	case v1.SeccompProfileTypeRuntimeDefault:
+		return storage.SecurityContext_SeccompProfile_RUNTIME_DEFAULT
 	case v1.SeccompProfileTypeLocalhost:
 		return storage.SecurityContext_SeccompProfile_LOCALHOST
 	default:
-		return storage.SecurityContext_SeccompProfile_RUNTIME_DEFAULT
+		return storage.SecurityContext_SeccompProfile_UNCONFINED
 	}
 }
 
