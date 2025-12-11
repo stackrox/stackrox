@@ -9639,7 +9639,7 @@
               },
               {
                 "name": "VIRTUAL_MACHINE_SCANNER",
-                "integer": 4
+                "integer": 3
               }
             ]
           }
