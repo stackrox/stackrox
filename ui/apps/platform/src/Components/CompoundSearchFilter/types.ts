@@ -13,11 +13,19 @@ export type InputType =
     | 'select-exclusive-double'
     | 'select-exclusive-single';
 
-export type SelectSearchFilterOptions = {
-    options: { label: string; value: string }[];
+export type SelectSearchFilterOption = {
+    label: string;
+    value: string;
 };
+export type SelectSearchFilterOptions = {
+    options: SelectSearchFilterOption[];
+};
+
+export type SelectSearchFilterGroupedOption = {
+    name: string;
+} & SelectSearchFilterOptions;
 export type SelectSearchFilterGroupedOptions = {
-    groupOptions: { name: string; options: { label: string; value: string }[] }[];
+    groupOptions: SelectSearchFilterGroupedOption[];
 };
 
 type BaseSearchFilterAttribute = {
@@ -58,10 +66,8 @@ export type SelectExclusiveDoubleSearchFilterInputProps = {
 };
 
 export type SelectExclusiveDoubleSearchFilterOption = {
-    label: string;
     category: string;
-    value: string;
-};
+} & SelectSearchFilterOption;
 
 export type CompoundSearchFilterAttribute =
     | ConditionTextFilterAttribute
