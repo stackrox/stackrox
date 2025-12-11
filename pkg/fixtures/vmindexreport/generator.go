@@ -16,9 +16,6 @@ import (
 const (
 	// MockDigest is kept in sync with pkg/virtualmachine/enricher/enricher_impl.go
 	MockDigest = "sha256:900dc0ffee900dc0ffee900dc0ffee900dc0ffee900dc0ffee900dc0ffee900d"
-
-	// MockDigestWithRegistry is the digest with a mock registry prefix for use with name.NewDigest()
-	MockDigestWithRegistry = "vm-registry/repository@sha256:900dc0ffee900dc0ffee900dc0ffee900dc0ffee900dc0ffee900dc0ffee900d"
 )
 
 // numericRegex matches sequences of digits in a version string.
@@ -87,7 +84,9 @@ func selectPackageIndices(rng *rand.Rand, numRequested, totalAvailable int) []in
 
 // buildRepositories creates real RHEL 9 repositories and synthetic ones if numRepos exceeds available.
 // Returns the repositories map and synthetic repo IDs (for assigning duplicated packages).
-// If less than `len(Rhel9Repositories)==2` are requested, then it always returns the two real repositories.
+// If numRepos <= len(Rhel9Repositories), all real repositories are always included to ensure
+// packages have valid repository references. Synthetic repos are only added when numRepos exceeds
+// the number of real repos available.
 func buildRepositories(numRepos int) (map[string]*v4.Repository, []string) {
 	totalRealRepos := len(Rhel9Repositories)
 	repoCount := totalRealRepos
