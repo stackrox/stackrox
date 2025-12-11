@@ -71,7 +71,7 @@ func (s *migrationTestSuite) TestMigration() {
 	s.Require().NoError(row.Scan(&exists))
 	s.Require().True(exists)
 
-	row = s.db.QueryRow(s.ctx, hashIndexQuery, tableName, deploymentIndex)
+	row = s.db.QueryRow(s.ctx, hashIndexQuery, tableName, podIndex)
 	s.Require().NoError(row.Scan(&exists))
 	s.Require().True(exists)
 
@@ -82,7 +82,7 @@ func (s *migrationTestSuite) TestMigration() {
 	s.Require().NoError(row.Scan(&exists))
 	s.Require().False(exists)
 
-	row = s.db.QueryRow(s.ctx, hashIndexQuery, tableName, deploymentIndex)
+	row = s.db.QueryRow(s.ctx, hashIndexQuery, tableName, podIndex)
 	s.Require().NoError(row.Scan(&exists))
 	s.Require().False(exists)
 
@@ -100,7 +100,7 @@ func (s *migrationTestSuite) TestMigration() {
 	s.Require().NoError(row.Scan(&exists))
 	s.Require().True(exists)
 
-	row = s.db.QueryRow(s.ctx, btreeIndexQuery, tableName, deploymentIndex)
+	row = s.db.QueryRow(s.ctx, btreeIndexQuery, tableName, podIndex)
 	s.Require().NoError(row.Scan(&exists))
 	s.Require().True(exists)
 
