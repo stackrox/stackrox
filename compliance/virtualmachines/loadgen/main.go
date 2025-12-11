@@ -18,9 +18,10 @@ import (
 	"time"
 
 	"github.com/HdrHistogram/hdrhistogram-go"
+	"github.com/mdlayher/vsock"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
-	"github.com/stackrox/rox/compliance/virtualmachines/relay/vsock"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/fixtures/vmindexreport"
 	"google.golang.org/protobuf/proto"
 	"gopkg.in/yaml.v3"
@@ -555,9 +556,10 @@ func sendVMReport(cid uint32, payload []byte, timeout time.Duration, stats *stat
 }
 
 func sendReport(payload []byte, timeout time.Duration) error {
-	// Use DialLocal for loopback connections when running on the same host as the relay
+	// Use vsock.Local for loopback connections when running in test mode on the same host as the relay
 	// This is the typical case for load testing with vsock-loadgen in the collector pod
-	conn, err := vsock.DialLocal()
+	port := env.VirtualMachinesVsockPort.IntegerSetting()
+	conn, err := vsock.Dial(vsock.Local, uint32(port), &vsock.Config{})
 	if err != nil {
 		return fmt.Errorf("dial: %w", err)
 	}
