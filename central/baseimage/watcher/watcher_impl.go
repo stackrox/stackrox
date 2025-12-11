@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/stackrox/rox/central/baseimage/datastore"
+	repoDS "github.com/stackrox/rox/central/baseimage/datastore/repository"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/env"
@@ -19,7 +19,7 @@ import (
 var log = logging.LoggerForModule()
 
 type watcherImpl struct {
-	datastore    datastore.DataStore
+	datastore    repoDS.DataStore
 	pollInterval time.Duration
 
 	stopper     concurrency.Stopper
@@ -28,7 +28,7 @@ type watcherImpl struct {
 }
 
 // New creates a new base image watcher.
-func New(ds datastore.DataStore) Watcher {
+func New(ds repoDS.DataStore) Watcher {
 	return &watcherImpl{
 		datastore:    ds,
 		pollInterval: env.BaseImageWatcherPollInterval.DurationSetting(),
