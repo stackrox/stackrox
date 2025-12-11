@@ -15,6 +15,67 @@ The VM load generator simulates hundreds to thousands of virtual machines sendin
 
 ## Architecture
 
+The vsock load generator simulates VM compliance reporting by generating fake vsock traffic to test the StackRox VM compliance pipeline at scale.
+
+### System Overview
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│ Kubernetes Cluster                                              │
+│                                                                 │
+│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐         │
+│  │ Worker Node  │  │ Worker Node  │  │ Worker Node  │         │
+│  │              │  │              │  │              │         │
+│  │  ┌────────┐  │  │  ┌────────┐  │  │  ┌────────┐  │         │
+│  │  │Loadgen │  │  │  │Loadgen │  │  │  │Loadgen │  │         │
+│  │  │  Pod   │  │  │  │  Pod   │  │  │  │  Pod   │  │         │
+│  │  │        │  │  │  │        │  │  │  │        │  │         │
+│  │  │CID 3-  │  │  │  │CID     │  │  │  │CID     │  │         │
+│  │  │  150   │  │  │  │10003-  │  │  │  │20003-  │  │         │
+│  │  │        │  │  │  │10150   │  │  │  │20150   │  │         │
+│  │  └───┬────┘  │  │  └───┬────┘  │  │  └───┬────┘  │         │
+│  │      │vsock  │  │      │vsock  │  │      │vsock  │         │
+│  │  /dev/vsock   │  │  /dev/vsock   │  │  /dev/vsock   │         │
+│  └──────┼────────┘  └──────┼────────┘  └──────┼────────┘         │
+│         │                  │                  │                 │
+│         └──────────────────┼──────────────────┘                 │
+│                            │                                    │
+│  ┌─────────────────────────▼──────────────────────────┐         │
+│  │ Collector DaemonSet (each worker node)            │         │
+│  │                                                    │         │
+│  │  ┌──────────────┐  ┌──────────────────────┐      │         │
+│  │  │  Collector   │  │  Compliance          │      │         │
+│  │  │  Container   │  │  Container           │      │         │
+│  │  │              │  │                      │      │         │
+│  │  │              │  │  ┌────────────────┐  │      │         │
+│  │  │              │  │  │  VM Relay      │  │      │         │
+│  │  │              │  │  │  (Port 818)    │  │      │         │
+│  │  │              │  │  │                │  │      │         │
+│  │  │              │  │  │  - Accept conn │  │      │         │
+│  │  │              │  │  │  - Parse index │  │      │         │
+│  │  │              │  │  │  - Forward to  │  │      │         │
+│  │  │              │  │  │    Sensor      │  │      │         │
+│  │  └──────────────┘  │  └────────┬───────┘  │      │         │
+│  └─────────────────────────────────┼──────────┘      │         │
+│                                    │                 │         │
+│                                    │ gRPC            │         │
+│  ┌─────────────────────────────────▼──────────────┐  │         │
+│  │ Sensor Deployment                              │  │         │
+│  │  - Aggregates VM reports from all nodes        │  │         │
+│  │  - Forwards to Central                         │  │         │
+│  └─────────────────────────────────┬──────────────┘  │         │
+│                                    │                 │         │
+└────────────────────────────────────┼─────────────────┘
+                                     │ gRPC
+                                     │
+                        ┌────────────▼──────────────┐
+                        │ Central                   │
+                        │  - Stores VM index reports│
+                        │  - Policy enforcement     │
+                        │  - UI/API                 │
+                        └───────────────────────────┘
+```
+
 ### Components
 
 - **Main Binary** (`main.go`): The load generator binary that runs in each DaemonSet pod
@@ -24,6 +85,33 @@ The VM load generator simulates hundreds to thousands of virtual machines sendin
 - **Scripts** (`scripts/`): Helper scripts for building and deploying
   - `build-loadgen.sh`: Builds the binary and container image, pushes to registry
   - `run-loadgen.sh`: Deploys the load generator to the cluster
+
+### Data Flow
+
+1. **Load Generation**: Each loadgen pod simulates multiple VMs (goroutines), each with a unique CID
+2. **Report Creation**: Pre-generated index reports (protobuf messages) with realistic package data
+3. **Vsock Connection**: Connects to `/dev/vsock` and dials the relay on port 818
+4. **Report Transmission**: Sends protobuf-encoded index reports over vsock connection
+5. **Relay Processing**: VM relay in compliance container receives, validates, and forwards to Sensor
+6. **Sensor Aggregation**: Sensor aggregates reports from all nodes and forwards to Central
+7. **Central Storage**: Central stores VM compliance data in PostgreSQL
+
+### Network Architecture
+
+The loadgen uses `hostNetwork: true` to access the node's `/dev/vsock` device directly:
+
+- **No privileged mode required**: Access to `/dev/vsock` works with `runAsUser: 0` only
+- **Direct vsock access**: Connects to relay running on the same node via vsock
+- **No network isolation**: Shares node's network namespace for vsock communication
+
+### Security Context
+
+The loadgen runs with minimal security privileges:
+
+- **runAsUser: 0**: Required for `/dev/vsock` device access
+- **NO privileged mode**: Not needed for vsock operations
+- **NO additional capabilities**: NET_ADMIN and SYS_ADMIN not required
+- **Read-only /dev/vsock**: Mounted as CharDevice from host
 
 ### CID Assignment (No Overlap)
 
