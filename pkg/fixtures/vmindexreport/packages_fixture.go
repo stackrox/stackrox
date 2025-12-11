@@ -23,9 +23,9 @@ type PackageFixture struct {
 	Repo    string // Repository ID (e.g., "rhel-9-for-x86_64-baseos-rpms")
 }
 
-// Rhel9Packages contains real package data from a RHEL 9 system.
+// packagesFixture contains real package data from a RHEL 9 system.
 // This data is used to generate realistic VM index reports.
-var Rhel9Packages = []PackageFixture{
+var packagesFixture = []PackageFixture{
 	{"NetworkManager", "1:1.54.0-3.el9_7", "rhel-9-for-x86_64-baseos-rpms"},
 	{"NetworkManager-libnm", "1:1.54.0-3.el9_7", "rhel-9-for-x86_64-baseos-rpms"},
 	{"NetworkManager-team", "1:1.54.0-3.el9_7", "rhel-9-for-x86_64-baseos-rpms"},
@@ -536,8 +536,8 @@ var Rhel9Packages = []PackageFixture{
 	{"zlib", "1.2.11-40.el9", "rhel-9-for-x86_64-baseos-rpms"},
 }
 
-// Rhel9Repositories maps repository IDs to their CPEs in CPE 2.3 format.
-var Rhel9Repositories = map[string]string{
+// repoToCPEMapping maps repository IDs to their CPEs in CPE 2.3 format.
+var repoToCPEMapping = map[string]string{
 	"rhel-9-for-x86_64-baseos-rpms":    "cpe:2.3:o:redhat:enterprise_linux:9:*:baseos:*:*:*:*:*",
 	"rhel-9-for-x86_64-appstream-rpms": "cpe:2.3:a:redhat:enterprise_linux:9:*:appstream:*:*:*:*:*",
 }

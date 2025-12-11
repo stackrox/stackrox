@@ -53,7 +53,7 @@ type Generator struct {
 	environments map[string]*v4.Environment_List
 }
 
-// selectPackageIndices returns a slice of indices into Rhel9Packages based on numRequested.
+// selectPackageIndices returns a slice of indices into packagesFixture based on numRequested.
 // - numRequested <= 0: returns all indices sequentially [0, 1, ..., totalAvailable-1]
 // - numRequested < totalAvailable: randomly samples numRequested indices
 // - numRequested >= totalAvailable: uses all indices, then duplicates randomly to fill
@@ -82,13 +82,14 @@ func selectPackageIndices(rng *rand.Rand, numRequested, totalAvailable int) []in
 	}
 }
 
-// buildRepositories creates real RHEL 9 repositories and synthetic ones if numRepos exceeds available.
+// buildRepositories creates two arbitrary selected real RHEL repositories
+// and adds synthetic ones if numRepos exceeds available.
 // Returns the repositories map and synthetic repo IDs (for assigning duplicated packages).
-// If numRepos <= len(Rhel9Repositories), all real repositories are always included to ensure
+// If numRepos <= len(repoToCPEMapping), all real repositories are always included to ensure
 // packages have valid repository references. Synthetic repos are only added when numRepos exceeds
 // the number of real repos available.
 func buildRepositories(numRepos int) (map[string]*v4.Repository, []string) {
-	totalRealRepos := len(Rhel9Repositories)
+	totalRealRepos := len(repoToCPEMapping)
 	repoCount := totalRealRepos
 	if numRepos > totalRealRepos {
 		repoCount = numRepos
@@ -97,7 +98,7 @@ func buildRepositories(numRepos int) (map[string]*v4.Repository, []string) {
 	repositories := make(map[string]*v4.Repository, repoCount)
 
 	// Add real repositories first
-	for repoID, cpe := range Rhel9Repositories {
+	for repoID, cpe := range repoToCPEMapping {
 		repositories[repoID] = &v4.Repository{
 			Id:   repoID,
 			Name: repoID,
@@ -139,7 +140,7 @@ func NewGenerator(numPackages, numRepos int) *Generator {
 func NewGeneratorWithSeed(numPackages, numRepos int, seed int64) *Generator {
 	rng := rand.New(rand.NewSource(seed))
 
-	totalPkgs := len(Rhel9Packages)
+	totalPkgs := len(packagesFixture)
 	indices := selectPackageIndices(rng, numPackages, totalPkgs)
 	repositories, syntheticRepoIDs := buildRepositories(numRepos)
 
@@ -150,7 +151,7 @@ func NewGeneratorWithSeed(numPackages, numRepos int, seed int64) *Generator {
 	environments := make(map[string]*v4.Environment_List, len(indices))
 
 	for i, idx := range indices {
-		pkg := Rhel9Packages[idx]
+		pkg := packagesFixture[idx]
 		pkgID := fmt.Sprintf("%s-%d", pkg.Name, i)
 
 		var assignedRepoID string
