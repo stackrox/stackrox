@@ -394,7 +394,7 @@
     },
     {
       "datasource": null,
-      "description": "Scanner Pod CPU Usage",
+      "description": "Scanner V4 Indexer Pod CPU Usage",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -444,7 +444,7 @@
         "x": 0,
         "y": 19
       },
-      "id": 23763571997,
+      "id": 23763572006,
       "interval": "",
       "options": {
         "legend": {
@@ -468,20 +468,20 @@
             "uid": "PBFA97CFB590B2093"
           },
           "exemplar": true,
-          "expr": "rate(container_cpu_usage_seconds_total{namespace=\"stackrox\", container=\"scanner\"}[$__rate_interval])",
+          "expr": "sum by(pod)(\n  rate(container_cpu_usage_seconds_total{namespace=\"stackrox\", pod=~\"scanner-v4-indexer.*\", container=\"indexer\"}[$__rate_interval])\n)",
           "instant": false,
           "interval": "",
           "intervalFactor": 1,
-          "legendFormat": "{{container}}",
+          "legendFormat": "{{pod}}",
           "refId": "A"
         }
       ],
-      "title": "Scanner Pod CPU Usage",
+      "title": "Scanner V4 Indexer Pod CPU Usage",
       "type": "timeseries"
     },
     {
       "datasource": null,
-      "description": "Scanner Pod Memory Usage",
+      "description": "Scanner V4 Indexer Pod Memory Usage",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -534,7 +534,7 @@
         "x": 12,
         "y": 19
       },
-      "id": 23763572002,
+      "id": 23763572007,
       "interval": "",
       "options": {
         "legend": {
@@ -558,20 +558,20 @@
             "uid": "PBFA97CFB590B2093"
           },
           "exemplar": true,
-          "expr": "container_memory_usage_bytes{namespace=\"stackrox\", container=\"scanner\"}",
+          "expr": "sum by(pod)(\n  container_memory_usage_bytes{namespace=\"stackrox\", pod=~\"scanner-v4-indexer.*\", container=\"indexer\"}\n)",
           "instant": false,
           "interval": "",
           "intervalFactor": 1,
-          "legendFormat": "{{container}}",
+          "legendFormat": "{{pod}}",
           "refId": "A"
         }
       ],
-      "title": "Scanner Pod Memory Usage",
+      "title": "Scanner V4 Indexer Pod Memory Usage",
       "type": "timeseries"
     },
     {
       "datasource": null,
-      "description": "Scanner-db Pod CPU Usage",
+      "description": "Scanner V4 Matcher Pod CPU Usage",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -621,7 +621,7 @@
         "x": 0,
         "y": 28
       },
-      "id": 23763571998,
+      "id": 23763572008,
       "interval": "",
       "options": {
         "legend": {
@@ -645,20 +645,20 @@
             "uid": "PBFA97CFB590B2093"
           },
           "exemplar": true,
-          "expr": "rate(container_cpu_usage_seconds_total{namespace=\"stackrox\", container=\"scanner-db\"}[$__rate_interval])",
+          "expr": "sum by(pod)(\n  rate(container_cpu_usage_seconds_total{namespace=\"stackrox\", pod=~\"scanner-v4-matcher.*\", container=\"matcher\"}[$__rate_interval])\n)",
           "instant": false,
           "interval": "",
           "intervalFactor": 1,
-          "legendFormat": "{{container}}",
+          "legendFormat": "{{pod}}",
           "refId": "A"
         }
       ],
-      "title": "Scanner-db Pod CPU Usage",
+      "title": "Scanner V4 Matcher Pod CPU Usage",
       "type": "timeseries"
     },
     {
       "datasource": null,
-      "description": "Scanner-db Pod Memory Usage",
+      "description": "Scanner V4 Matcher Pod Memory Usage",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -711,7 +711,7 @@
         "x": 12,
         "y": 28
       },
-      "id": 23763572003,
+      "id": 23763572009,
       "interval": "",
       "options": {
         "legend": {
@@ -735,20 +735,20 @@
             "uid": "PBFA97CFB590B2093"
           },
           "exemplar": true,
-          "expr": "container_memory_usage_bytes{namespace=\"stackrox\", container=\"scanner-db\"}",
+          "expr": "sum by(pod)(\n  container_memory_usage_bytes{namespace=\"stackrox\", pod=~\"scanner-v4-matcher.*\", container=\"matcher\"}\n)",
           "instant": false,
           "interval": "",
           "intervalFactor": 1,
-          "legendFormat": "{{container}}",
+          "legendFormat": "{{pod}}",
           "refId": "A"
         }
       ],
-      "title": "Scanner-db Pod Memory Usage",
+      "title": "Scanner V4 Matcher Pod Memory Usage",
       "type": "timeseries"
     },
     {
       "datasource": null,
-      "description": "Collector Pod CPU Usage",
+      "description": "Scanner V4 DB Pod CPU Usage",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -798,7 +798,7 @@
         "x": 0,
         "y": 37
       },
-      "id": 23763571992,
+      "id": 23763572010,
       "interval": "",
       "options": {
         "legend": {
@@ -822,7 +822,7 @@
             "uid": "PBFA97CFB590B2093"
           },
           "exemplar": true,
-          "expr": "sum by(pod)(\n  rate(container_cpu_usage_seconds_total{namespace=\"stackrox\", container=~\"(collector|compliance|node-inventory)\"}[$__rate_interval])\n)",
+          "expr": "rate(container_cpu_usage_seconds_total{namespace=\"stackrox\", pod=~\"scanner-v4-db.*\", container=\"db\"}[$__rate_interval])",
           "instant": false,
           "interval": "",
           "intervalFactor": 1,
@@ -830,12 +830,12 @@
           "refId": "A"
         }
       ],
-      "title": "Collector Pod CPU Usage",
+      "title": "Scanner V4 DB Pod CPU Usage",
       "type": "timeseries"
     },
     {
       "datasource": null,
-      "description": "Collector Pod Memory Usage",
+      "description": "Scanner V4 DB Pod Memory Usage",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -888,7 +888,7 @@
         "x": 12,
         "y": 37
       },
-      "id": 23763571993,
+      "id": 23763572011,
       "interval": "",
       "options": {
         "legend": {
@@ -912,7 +912,7 @@
             "uid": "PBFA97CFB590B2093"
           },
           "exemplar": true,
-          "expr": "sum by(pod)(\ncontainer_memory_usage_bytes{namespace=\"stackrox\", container=~\"(collector|compliance|node-inventory)\"}\n)",
+          "expr": "container_memory_usage_bytes{namespace=\"stackrox\", pod=~\"scanner-v4-db.*\", container=\"db\"}",
           "instant": false,
           "interval": "",
           "intervalFactor": 1,
@@ -920,7 +920,7 @@
           "refId": "A"
         }
       ],
-      "title": "Collector Pod Memory Usage",
+      "title": "Scanner V4 DB Pod Memory Usage",
       "type": "timeseries"
     },
     {
@@ -1102,7 +1102,7 @@
     },
     {
       "datasource": null,
-      "description": "Admission Control Pod CPU Usage",
+      "description": "Collector Pod CPU Usage",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -1151,6 +1151,183 @@
         "w": 12,
         "x": 0,
         "y": 55
+      },
+      "id": 23763571992,
+      "interval": "",
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        },
+        "tooltipOptions": {
+          "mode": "single"
+        }
+      },
+      "pluginVersion": "8.4.5",
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PBFA97CFB590B2093"
+          },
+          "exemplar": true,
+          "expr": "sum by(pod)(\n  rate(container_cpu_usage_seconds_total{namespace=\"stackrox\", container=~\"(collector|compliance|node-inventory)\"}[$__rate_interval])\n)",
+          "instant": false,
+          "interval": "",
+          "intervalFactor": 1,
+          "legendFormat": "{{container}}",
+          "refId": "A"
+        }
+      ],
+      "title": "Collector Pod CPU Usage",
+      "type": "timeseries"
+    },
+    {
+      "datasource": null,
+      "description": "Collector Pod Memory Usage",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisLabel": "Memory Usage",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": {
+              "graph": false,
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "lineInterpolation": "stepAfter",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": true
+          },
+          "links": [],
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "bytes"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 9,
+        "w": 12,
+        "x": 12,
+        "y": 55
+      },
+      "id": 23763571993,
+      "interval": "",
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        },
+        "tooltipOptions": {
+          "mode": "single"
+        }
+      },
+      "pluginVersion": "8.4.5",
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PBFA97CFB590B2093"
+          },
+          "exemplar": true,
+          "expr": "sum by(pod)(\ncontainer_memory_usage_bytes{namespace=\"stackrox\", container=~\"(collector|compliance|node-inventory)\"}\n)",
+          "instant": false,
+          "interval": "",
+          "intervalFactor": 1,
+          "legendFormat": "{{container}}",
+          "refId": "A"
+        }
+      ],
+      "title": "Collector Pod Memory Usage",
+      "type": "timeseries"
+    },
+    {
+      "datasource": null,
+      "description": "Admission Control Pod CPU Usage",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisLabel": "CPU Usage [Cores]",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": {
+              "graph": false,
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": true
+          },
+          "links": [],
+          "mappings": [],
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "unit": "none"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 9,
+        "w": 12,
+        "x": 0,
+        "y": 64
       },
       "id": 23763571999,
       "interval": "",
@@ -1240,7 +1417,7 @@
         "h": 9,
         "w": 12,
         "x": 12,
-        "y": 55
+        "y": 64
       },
       "id": 23763572001,
       "interval": "",
@@ -1275,6 +1452,360 @@
         }
       ],
       "title": "Admission Control Pod Memory Usage",
+      "type": "timeseries"
+    },
+    {
+      "datasource": null,
+      "description": "Scanner V2 Pod CPU Usage (deprecated)",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisLabel": "CPU Usage [Cores]",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": {
+              "graph": false,
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": true
+          },
+          "links": [],
+          "mappings": [],
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "unit": "none"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 9,
+        "w": 12,
+        "x": 0,
+        "y": 73
+      },
+      "id": 23763571997,
+      "interval": "",
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        },
+        "tooltipOptions": {
+          "mode": "single"
+        }
+      },
+      "pluginVersion": "8.4.5",
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PBFA97CFB590B2093"
+          },
+          "exemplar": true,
+          "expr": "rate(container_cpu_usage_seconds_total{namespace=\"stackrox\", container=\"scanner\"}[$__rate_interval])",
+          "instant": false,
+          "interval": "",
+          "intervalFactor": 1,
+          "legendFormat": "{{container}}",
+          "refId": "A"
+        }
+      ],
+      "title": "Scanner V2 Pod CPU Usage (deprecated)",
+      "type": "timeseries"
+    },
+    {
+      "datasource": null,
+      "description": "Scanner V2 Pod Memory Usage (deprecated)",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisLabel": "Memory Usage",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": {
+              "graph": false,
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "lineInterpolation": "stepAfter",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": true
+          },
+          "links": [],
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "bytes"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 9,
+        "w": 12,
+        "x": 12,
+        "y": 73
+      },
+      "id": 23763572002,
+      "interval": "",
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        },
+        "tooltipOptions": {
+          "mode": "single"
+        }
+      },
+      "pluginVersion": "8.4.5",
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PBFA97CFB590B2093"
+          },
+          "exemplar": true,
+          "expr": "container_memory_usage_bytes{namespace=\"stackrox\", container=\"scanner\"}",
+          "instant": false,
+          "interval": "",
+          "intervalFactor": 1,
+          "legendFormat": "{{container}}",
+          "refId": "A"
+        }
+      ],
+      "title": "Scanner V2 Pod Memory Usage (deprecated)",
+      "type": "timeseries"
+    },
+    {
+      "datasource": null,
+      "description": "Scanner V2 DB Pod CPU Usage (deprecated)",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisLabel": "CPU Usage [Cores]",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": {
+              "graph": false,
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": true
+          },
+          "links": [],
+          "mappings": [],
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "unit": "none"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 9,
+        "w": 12,
+        "x": 0,
+        "y": 82
+      },
+      "id": 23763571998,
+      "interval": "",
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        },
+        "tooltipOptions": {
+          "mode": "single"
+        }
+      },
+      "pluginVersion": "8.4.5",
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PBFA97CFB590B2093"
+          },
+          "exemplar": true,
+          "expr": "rate(container_cpu_usage_seconds_total{namespace=\"stackrox\", container=\"scanner-db\"}[$__rate_interval])",
+          "instant": false,
+          "interval": "",
+          "intervalFactor": 1,
+          "legendFormat": "{{container}}",
+          "refId": "A"
+        }
+      ],
+      "title": "Scanner V2 DB Pod CPU Usage (deprecated)",
+      "type": "timeseries"
+    },
+    {
+      "datasource": null,
+      "description": "Scanner V2 DB Pod Memory Usage (deprecated)",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisLabel": "Memory Usage",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": {
+              "graph": false,
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "lineInterpolation": "stepAfter",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": true
+          },
+          "links": [],
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "bytes"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 9,
+        "w": 12,
+        "x": 12,
+        "y": 82
+      },
+      "id": 23763572003,
+      "interval": "",
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        },
+        "tooltipOptions": {
+          "mode": "single"
+        }
+      },
+      "pluginVersion": "8.4.5",
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PBFA97CFB590B2093"
+          },
+          "exemplar": true,
+          "expr": "container_memory_usage_bytes{namespace=\"stackrox\", container=\"scanner-db\"}",
+          "instant": false,
+          "interval": "",
+          "intervalFactor": 1,
+          "legendFormat": "{{container}}",
+          "refId": "A"
+        }
+      ],
+      "title": "Scanner V2 DB Pod Memory Usage (deprecated)",
       "type": "timeseries"
     },
     {
@@ -1330,7 +1861,7 @@
         "h": 9,
         "w": 12,
         "x": 12,
-        "y": 64
+        "y": 91
       },
       "id": 4,
       "options": {
@@ -1391,7 +1922,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 73
+        "y": 100
       },
       "id": 24,
       "panels": [],
@@ -1450,7 +1981,7 @@
         "h": 9,
         "w": 12,
         "x": 0,
-        "y": 74
+        "y": 101
       },
       "id": 18,
       "options": {
@@ -1536,7 +2067,7 @@
         "h": 9,
         "w": 12,
         "x": 12,
-        "y": 74
+        "y": 101
       },
       "id": 20,
       "options": {
@@ -1581,7 +2112,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 83
+        "y": 110
       },
       "id": 22,
       "panels": [],
@@ -1640,7 +2171,7 @@
         "h": 9,
         "w": 12,
         "x": 0,
-        "y": 84
+        "y": 111
       },
       "id": 28,
       "options": {
@@ -1720,7 +2251,7 @@
         "h": 9,
         "w": 12,
         "x": 12,
-        "y": 84
+        "y": 111
       },
       "id": 30,
       "options": {
