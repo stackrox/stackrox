@@ -433,7 +433,6 @@ func servicesToRegister() []pkgGRPC.APIService {
 		helmcharts.NewService(),
 		iiService.Singleton(),
 		imageService.Singleton(),
-		baseImageService.Singleton(),
 		integrationHealthService.Singleton(),
 		metadataService.New(),
 		mitreService.Singleton(),
@@ -490,6 +489,10 @@ func servicesToRegister() []pkgGRPC.APIService {
 
 	if features.VirtualMachines.Enabled() {
 		servicesToRegister = append(servicesToRegister, virtualmachineService.Singleton())
+	}
+
+	if features.BaseImageDetection.Enabled() {
+		servicesToRegister = append(servicesToRegister, baseImageService.Singleton())
 	}
 
 	autoTriggerUpgrades := sensorUpgradeService.Singleton().AutoUpgradeSetting()
