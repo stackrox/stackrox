@@ -2,6 +2,7 @@ package datastore
 
 import (
 	"context"
+	"strings"
 
 	"github.com/stackrox/rox/central/serviceaccount/internal/store"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -39,12 +40,31 @@ func (d *datastoreImpl) SearchRawServiceAccounts(ctx context.Context, q *v1.Quer
 }
 
 func (d *datastoreImpl) SearchServiceAccounts(ctx context.Context, q *v1.Query) ([]*v1.SearchResult, error) {
-	serviceAccounts, results, err := d.searchServiceAccounts(ctx, q)
+	if q == nil {
+		q = searchPkg.EmptyQuery()
+	} else {
+		q = q.CloneVT()
+	}
+
+	// Add name field to select columns
+	q.Selects = append(q.GetSelects(), searchPkg.NewQuerySelect(searchPkg.ServiceAccountName).Proto())
+
+	results, err := d.storage.Search(ctx, q)
 	if err != nil {
 		return nil, err
 	}
 
-	return convertMany(serviceAccounts, results), nil
+	// Extract name from FieldValues and populate Name in search results
+	searchTag := strings.ToLower(searchPkg.ServiceAccountName.String())
+	for i := range results {
+		if results[i].FieldValues != nil {
+			if nameVal, ok := results[i].FieldValues[searchTag]; ok {
+				results[i].Name = nameVal
+			}
+		}
+	}
+
+	return searchPkg.ResultsToSearchResultProtos(results, &ServiceAccountSearchResultConverter{}), nil
 }
 
 func (d *datastoreImpl) UpsertServiceAccount(ctx context.Context, request *storage.ServiceAccount) error {
@@ -64,33 +84,21 @@ func (d *datastoreImpl) Count(ctx context.Context, q *v1.Query) (int, error) {
 	return d.storage.Count(ctx, q)
 }
 
-func (d *datastoreImpl) searchServiceAccounts(ctx context.Context, q *v1.Query) ([]*storage.ServiceAccount, []searchPkg.Result, error) {
-	results, err := d.Search(ctx, q)
-	if err != nil {
-		return nil, nil, err
-	}
-	serviceAccounts, missingIndices, err := d.storage.GetMany(ctx, searchPkg.ResultsToIDs(results))
-	if err != nil {
-		return nil, nil, err
-	}
-	results = searchPkg.RemoveMissingResults(results, missingIndices)
-	return serviceAccounts, results, nil
+type ServiceAccountSearchResultConverter struct{}
+
+func (c *ServiceAccountSearchResultConverter) BuildName(result *searchPkg.Result) string {
+	return result.Name
 }
 
-func convertMany(serviceAccounts []*storage.ServiceAccount, results []searchPkg.Result) []*v1.SearchResult {
-	outputResults := make([]*v1.SearchResult, len(serviceAccounts))
-	for index, sar := range serviceAccounts {
-		outputResults[index] = convertServiceAccount(sar, &results[index])
-	}
-	return outputResults
+func (c *ServiceAccountSearchResultConverter) BuildLocation(result *searchPkg.Result) string {
+	// ServiceAccounts do not have a location
+	return ""
 }
 
-func convertServiceAccount(sa *storage.ServiceAccount, result *searchPkg.Result) *v1.SearchResult {
-	return &v1.SearchResult{
-		Category:       v1.SearchCategory_SERVICE_ACCOUNTS,
-		Id:             sa.GetId(),
-		Name:           sa.GetName(),
-		FieldToMatches: searchPkg.GetProtoMatchesMap(result.Matches),
-		Score:          result.Score,
-	}
+func (c *ServiceAccountSearchResultConverter) GetCategory() v1.SearchCategory {
+	return v1.SearchCategory_SERVICE_ACCOUNTS
+}
+
+func (c *ServiceAccountSearchResultConverter) GetScore(result *searchPkg.Result) float64 {
+	return result.Score
 }
