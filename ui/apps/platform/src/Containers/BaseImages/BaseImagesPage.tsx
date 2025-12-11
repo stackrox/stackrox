@@ -110,14 +110,14 @@ function BaseImagesPage() {
                                 {getAxiosErrorMessage(deleteBaseImageMutation.error)}
                             </Alert>
                         )}
-                        <span>
-                            Are you sure you want to delete the base image{' '}
+                        <p>
+                            Permanently delete base image{' '}
                             <strong>
                                 {baseImageToDelete.baseImageRepoPath}:
                                 {baseImageToDelete.baseImageTagPattern}
                             </strong>
-                            ?
-                        </span>
+                            .
+                        </p>
                     </Flex>
                 </ConfirmationModal>
             )}
