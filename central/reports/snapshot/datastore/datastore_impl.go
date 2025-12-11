@@ -71,11 +71,11 @@ func (ds *datastoreImpl) SearchResults(ctx context.Context, q *v1.Query) ([]*v1.
 
 	if q == nil {
 		q = pkgSearch.EmptyQuery()
+	} else {
+		q = q.CloneVT()
 	}
 
-	clonedQuery := q.CloneVT()
-
-	results, err := ds.Search(ctx, clonedQuery)
+	results, err := ds.Search(ctx, q)
 	if err != nil {
 		return nil, err
 	}

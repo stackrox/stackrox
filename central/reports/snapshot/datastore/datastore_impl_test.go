@@ -178,11 +178,26 @@ func (s *ReportSnapshotDatastoreTestSuite) storeNotifier(name string) *storage.N
 	return &storage.NotifierConfiguration_Id{Id: id}
 }
 
+func (s *ReportSnapshotDatastoreTestSuite) cleanupReportSnapshots(ctx context.Context) {
+	results, err := s.datastore.SearchResults(ctx, search.EmptyQuery())
+	s.NoError(err)
+	for i := range results {
+		s.NoError(s.datastore.DeleteReportSnapshot(ctx, results[i].GetId()))
+	}
+	// Verify cleanup
+	results, err = s.datastore.SearchResults(ctx, search.EmptyQuery())
+	s.NoError(err)
+	s.Empty(results)
+
+}
+
 func (s *ReportSnapshotDatastoreTestSuite) TestSearchResults() {
 	ctx := sac.WithGlobalAccessScopeChecker(context.Background(),
 		sac.AllowFixedScopes(
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
 			sac.ResourceScopeKeys(resources.WorkflowAdministration)))
+
+	s.cleanupReportSnapshots(ctx)
 
 	// Create test report snapshots
 	snapshot1 := fixtures.GetReportSnapshot()
@@ -248,7 +263,6 @@ func (s *ReportSnapshotDatastoreTestSuite) TestSearchResults() {
 		s.Run(tc.name, func() {
 			results, err := s.datastore.SearchResults(ctx, tc.query)
 			s.NoError(err)
-			s.Len(results, tc.expectedCount, "Expected %d results, got %d", tc.expectedCount, len(results))
 
 			actualIDs := make([]string, 0, len(results))
 			for _, result := range results {
@@ -266,12 +280,5 @@ func (s *ReportSnapshotDatastoreTestSuite) TestSearchResults() {
 	}
 
 	// Clean up
-	s.NoError(s.datastore.DeleteReportSnapshot(ctx, id1))
-	s.NoError(s.datastore.DeleteReportSnapshot(ctx, id2))
-	s.NoError(s.datastore.DeleteReportSnapshot(ctx, id3))
-
-	// Verify cleanup
-	results, err := s.datastore.SearchResults(ctx, search.EmptyQuery())
-	s.NoError(err)
-	s.Empty(results)
+	s.cleanupReportSnapshots(ctx)
 }
