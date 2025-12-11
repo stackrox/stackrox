@@ -35,6 +35,13 @@ func (m *BaseImage) CloneVT() *BaseImage {
 	r.DiscoveredAt = (*timestamppb.Timestamp)((*timestamppb1.Timestamp)(m.DiscoveredAt).CloneVT())
 	r.Active = m.Active
 	r.FirstLayerDigest = m.FirstLayerDigest
+	if rhs := m.Layers; rhs != nil {
+		tmpContainer := make([]*BaseImageLayer, len(rhs))
+		for k, v := range rhs {
+			tmpContainer[k] = v.CloneVT()
+		}
+		r.Layers = tmpContainer
+	}
 	if len(m.unknownFields) > 0 {
 		r.unknownFields = make([]byte, len(m.unknownFields))
 		copy(r.unknownFields, m.unknownFields)
@@ -95,6 +102,23 @@ func (this *BaseImage) EqualVT(that *BaseImage) bool {
 	}
 	if this.FirstLayerDigest != that.FirstLayerDigest {
 		return false
+	}
+	if len(this.Layers) != len(that.Layers) {
+		return false
+	}
+	for i, vx := range this.Layers {
+		vy := that.Layers[i]
+		if p, q := vx, vy; p != q {
+			if p == nil {
+				p = &BaseImageLayer{}
+			}
+			if q == nil {
+				q = &BaseImageLayer{}
+			}
+			if !p.EqualVT(q) {
+				return false
+			}
+		}
 	}
 	return string(this.unknownFields) == string(that.unknownFields)
 }
@@ -163,6 +187,18 @@ func (m *BaseImage) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	if m.unknownFields != nil {
 		i -= len(m.unknownFields)
 		copy(dAtA[i:], m.unknownFields)
+	}
+	if len(m.Layers) > 0 {
+		for iNdEx := len(m.Layers) - 1; iNdEx >= 0; iNdEx-- {
+			size, err := m.Layers[iNdEx].MarshalToSizedBufferVT(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+			i--
+			dAtA[i] = 0x4a
+		}
 	}
 	if len(m.FirstLayerDigest) > 0 {
 		i -= len(m.FirstLayerDigest)
@@ -324,6 +360,12 @@ func (m *BaseImage) SizeVT() (n int) {
 	l = len(m.FirstLayerDigest)
 	if l > 0 {
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
+	}
+	if len(m.Layers) > 0 {
+		for _, e := range m.Layers {
+			l = e.SizeVT()
+			n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
+		}
 	}
 	n += len(m.unknownFields)
 	return n
@@ -630,6 +672,40 @@ func (m *BaseImage) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.FirstLayerDigest = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 9:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Layers", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Layers = append(m.Layers, &BaseImageLayer{})
+			if err := m.Layers[len(m.Layers)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
 			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
@@ -1119,6 +1195,40 @@ func (m *BaseImage) UnmarshalVTUnsafe(dAtA []byte) error {
 				stringValue = unsafe.String(&dAtA[iNdEx], intStringLen)
 			}
 			m.FirstLayerDigest = stringValue
+			iNdEx = postIndex
+		case 9:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Layers", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Layers = append(m.Layers, &BaseImageLayer{})
+			if err := m.Layers[len(m.Layers)-1].UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
 			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
