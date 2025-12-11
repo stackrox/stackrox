@@ -80,9 +80,24 @@ func GetRoxctlHTTPClient(config *HttpClientConfig) (RoxctlHTTPClient, error) {
 	retryClient := retryablehttp.NewClient()
 	retryClient.CheckRetry = func(ctx context.Context, resp *http.Response, err error) (bool, error) {
 		retry, err := retryablehttp.ErrorPropagatedRetryPolicy(ctx, resp, err)
-		if !retry || status.Code(err) == codes.PermissionDenied {
+		
+		// Don't retry on permanent failures like permission denied or failed preconditions (e.g., version incompatibility)
+		// Check both the error code and if there's a response with an embedded gRPC status
+		errCode := status.Code(err)
+		if !retry || errCode == codes.PermissionDenied || errCode == codes.FailedPrecondition {
 			return false, nil
 		}
+		
+		// Also check for FailedPrecondition in 5xx responses by examining the response body
+		// This catches cases where the server returns HTTP 500 with a gRPC FailedPrecondition status
+		if resp != nil && resp.StatusCode >= 500 && resp.StatusCode < 600 {
+			// Check if the error message contains "FailedPrecondition" 
+			// This is a heuristic but avoids having to parse the full response body
+			if err != nil && strings.Contains(err.Error(), "FailedPrecondition") {
+				return false, nil
+			}
+		}
+		
 		if err != nil {
 			config.Logger.WarnfLn(err.Error())
 		}
@@ -202,3 +217,4 @@ func (client *roxctlClientImpl) NewReq(method string, path string, body io.Reade
 
 	return req, nil
 }
+
