@@ -13,7 +13,11 @@ import (
 
 // ExtractVsockCIDFromConnection extracts and validates the vsock context ID.
 // Rejects CIDs ≤2 which are reserved (0=ANY, 1=LOCAL, 2=HOST per vsock spec).
+// In test mode, returns vsock.Local to enable loopback testing.
 func ExtractVsockCIDFromConnection(conn net.Conn) (uint32, error) {
+	if env.IsVMTestModeEnabled() {
+		return vsock.Local, nil
+	}
 	remoteAddr, ok := conn.RemoteAddr().(*vsock.Addr)
 	if !ok {
 		return 0, fmt.Errorf("failed to extract remote address from vsock connection: unexpected type %T, value: %v",
@@ -28,11 +32,18 @@ func ExtractVsockCIDFromConnection(conn net.Conn) (uint32, error) {
 	return remoteAddr.ContextID, nil
 }
 
-// NewListener creates a vsock listener on the host context ID (vsock.Host) using the port
-// from VirtualMachinesVsockPort env var. Caller must close the returned listener.
+// NewListener creates a vsock listener using the port from VirtualMachinesVsockPort env var.
+// In test mode, binds to vsock.Local for loopback testing. Otherwise binds to vsock.Host for production.
+// Caller must close the returned listener.
 func NewListener() (net.Listener, error) {
 	port := env.VirtualMachinesVsockPort.IntegerSetting()
-	listener, err := vsock.ListenContextID(vsock.Host, uint32(port), nil)
+
+	var contextID uint32 = vsock.Host
+	if env.IsVMTestModeEnabled() {
+		contextID = vsock.Local
+	}
+
+	listener, err := vsock.ListenContextID(contextID, uint32(port), nil)
 	if err != nil {
 		return nil, errors.Wrapf(err, "listening on vsock port %d", port)
 	}

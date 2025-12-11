@@ -6,6 +6,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/compliance/virtualmachines/relay/sender"
 	v1 "github.com/stackrox/rox/generated/internalapi/virtualmachine/v1"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/logging"
 )
 
@@ -34,6 +35,10 @@ func New(reportStream IndexReportStream, reportSender sender.IndexReportSender) 
 
 func (r *Relay) Run(ctx context.Context) error {
 	log.Info("Starting virtual machine relay")
+
+	if env.IsVMTestModeEnabled() {
+		log.Warn("VM test mode is enabled; vsock CID validation is bypassed. Use only for load testing.")
+	}
 
 	reportChan, err := r.reportStream.Start(ctx)
 	if err != nil {
