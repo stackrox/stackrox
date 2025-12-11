@@ -63,17 +63,20 @@ function getLabelOfSelectedOption(
 
 export type SearchFilterSelectExclusiveDoubleProps = {
     attribute: SelectExclusiveDoubleSearchFilterAttribute;
+    isSeparate?: boolean; // default false if within CompoundSearchFilter
     onSearch: OnSearchCallback;
     searchFilter: SearchFilter;
 };
 
 function SearchFilterSelectExclusiveDouble({
     attribute,
+    isSeparate = false,
     onSearch,
     searchFilter,
 }: SearchFilterSelectExclusiveDoubleProps): ReactElement {
     const { displayName, inputProps, searchTerm: category1 } = attribute;
     const { category2, options } = inputProps;
+    const placeholderText = isSeparate ? displayName : `Filter by ${displayName}`;
 
     function handleSelect(_id, labelSelected: string) {
         const option = options.find(({ label }) => label === labelSelected);
@@ -93,8 +96,8 @@ function SearchFilterSelectExclusiveDouble({
         <SelectSingle
             id={category1}
             isFullWidth={false}
-            placeholderText={`Filter by ${displayName}`}
-            toggleAriaLabel={`Filter by ${displayName} select menu`}
+            placeholderText={placeholderText}
+            toggleAriaLabel={`${placeholderText} select menu`}
             value={labelOfSelectedOption}
             handleSelect={handleSelect}
         >

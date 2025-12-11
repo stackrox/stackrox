@@ -9,17 +9,20 @@ import type { OnSearchCallback, SelectExclusiveSingleSearchFilterAttribute } fro
 
 export type SearchFilterSelectExclusiveSingleProps = {
     attribute: SelectExclusiveSingleSearchFilterAttribute;
+    isSeparate?: boolean; // default false if within CompoundSearchFilter
     onSearch: OnSearchCallback;
     searchFilter: SearchFilter;
 };
 
 function SearchFilterSelectExclusiveSingle({
     attribute,
+    isSeparate = false,
     onSearch,
     searchFilter,
 }: SearchFilterSelectExclusiveSingleProps): ReactElement {
     const { displayName, inputProps, searchTerm: category } = attribute;
     const { options } = inputProps;
+    const placeholderText = isSeparate ? displayName : `Filter by ${displayName}`;
 
     function handleSelect(_id, value: string) {
         onSearch([
@@ -38,8 +41,8 @@ function SearchFilterSelectExclusiveSingle({
         <SelectSingle
             id={category}
             isFullWidth={false}
-            placeholderText={`Filter by ${displayName}`}
-            toggleAriaLabel={`Filter by ${displayName} select menu`}
+            placeholderText={placeholderText}
+            toggleAriaLabel={`${placeholderText} select menu`}
             value={value}
             handleSelect={handleSelect}
         >

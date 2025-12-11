@@ -11,17 +11,20 @@ import { hasGroupedSelectOptions, hasSelectOptions } from '../utils/utils';
 
 export type SearchFilterSelectInclusiveProps = {
     attribute: SelectSearchFilterAttribute;
+    isSeparate?: boolean; // default false if within CompoundSearchFilter
     onSearch: OnSearchCallback;
     searchFilter: SearchFilter;
 };
 
 function SearchFilterSelectInclusive({
     attribute,
+    isSeparate = false,
     onSearch,
     searchFilter,
 }: SearchFilterSelectInclusiveProps): ReactElement {
-    const { displayName: attributeLabel, inputProps, searchTerm: category } = attribute;
+    const { displayName, inputProps, searchTerm: category } = attribute;
     const selection = searchValueAsArray(searchFilter?.[category]);
+    const toggleLabel = isSeparate ? displayName : `Filter by ${displayName}`;
 
     let content: JSX.Element | JSX.Element[] = (
         <SelectList>
@@ -80,8 +83,8 @@ function SearchFilterSelectInclusive({
                     },
                 ]);
             }}
-            ariaLabelMenu={`Filter by ${attributeLabel} select menu`}
-            toggleLabel={`Filter by ${attributeLabel}`}
+            ariaLabelMenu={`${toggleLabel} select menu`}
+            toggleLabel={toggleLabel}
         >
             {content}
         </CheckboxSelect>
