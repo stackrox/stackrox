@@ -54,7 +54,7 @@ func isNodeIntegration(integration *storage.ImageIntegration) bool {
 // It loops through the categories, which is a very small slice.
 func isVirtualMachineIntegration(integration *storage.ImageIntegration) bool {
 	for _, category := range integration.GetCategories() {
-		if category&storage.ImageIntegrationCategory_VIRTUAL_MACHINE_SCANNER != 0 {
+		if category == storage.ImageIntegrationCategory_VIRTUAL_MACHINE_SCANNER {
 			return true
 		}
 	}

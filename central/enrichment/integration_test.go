@@ -139,15 +139,6 @@ func TestIsVirtualMachineIntegration(t *testing.T) {
 			},
 			expected: true,
 		},
-		"one category that matches virtual machine": {
-			integration: &storage.ImageIntegration{
-				Categories: []storage.ImageIntegrationCategory{
-					storage.ImageIntegrationCategory_VIRTUAL_MACHINE_SCANNER + storage.ImageIntegrationCategory_SCANNER + storage.ImageIntegrationCategory_REGISTRY,
-					storage.ImageIntegrationCategory_SCANNER,
-				},
-			},
-			expected: true,
-		},
 	} {
 		t.Run(name, func(it *testing.T) {
 			res := isVirtualMachineIntegration(tc.integration)

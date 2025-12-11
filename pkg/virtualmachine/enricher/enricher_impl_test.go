@@ -145,8 +145,8 @@ func TestEnrichVirtualMachineWithVulnerabilities_Success(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			ctrl := gomock.NewController(t)
+		t.Run(tt.name, func(it *testing.T) {
+			ctrl := gomock.NewController(it)
 			defer ctrl.Finish()
 
 			virtualMachineScan := createVirtualMachineScanFromIndexReport(tt.indexReport, tt.expectedVulnerabilitiesCount)
@@ -166,32 +166,32 @@ func TestEnrichVirtualMachineWithVulnerabilities_Success(t *testing.T) {
 			mockScanner.EXPECT().GetVirtualMachineScan(gomock.Any(), gomock.Any()).Return(virtualMachineScan, nil)
 
 			enricher := newWithCreator(getScannerGeneratorForMock(mockScanner))
-			assert.NoError(t, enricher.UpsertVirtualMachineIntegration(testIntegration))
+			assert.NoError(it, enricher.UpsertVirtualMachineIntegration(testIntegration))
 
 			err := enricher.EnrichVirtualMachineWithVulnerabilities(tt.vm, tt.indexReport)
-			require.NoError(t, err)
+			require.NoError(it, err)
 
 			// Verify the scan was created
-			require.NotNil(t, tt.vm.GetScan())
+			require.NotNil(it, tt.vm.GetScan())
 			expectedComponentsCount := len(tt.indexReport.GetContents().GetPackages())
-			assert.Equal(t, expectedComponentsCount, len(tt.vm.GetScan().GetComponents()))
+			assert.Equal(it, expectedComponentsCount, len(tt.vm.GetScan().GetComponents()))
 
 			// Count total vulnerabilities across all components
 			totalVulns := 0
 			for _, component := range tt.vm.GetScan().GetComponents() {
 				totalVulns += len(component.GetVulnerabilities())
 			}
-			assert.Equal(t, tt.expectedVulnerabilitiesCount, totalVulns)
+			assert.Equal(it, tt.expectedVulnerabilitiesCount, totalVulns)
 
 			// Verify VM notes are cleared
-			assert.Empty(t, tt.vm.GetNotes())
+			assert.Empty(it, tt.vm.GetNotes())
 
 			// Verify scan notes count
-			assert.Len(t, tt.vm.GetScan().GetNotes(), tt.expectedScanNotesCount)
+			assert.Len(it, tt.vm.GetScan().GetNotes(), tt.expectedScanNotesCount)
 
 			// Verify scan metadata
-			assert.NotNil(t, tt.vm.GetScan().GetScanTime())
-			assert.Equal(t, "", tt.vm.GetScan().GetOperatingSystem())
+			assert.NotNil(it, tt.vm.GetScan().GetScanTime())
+			assert.Equal(it, "", tt.vm.GetScan().GetOperatingSystem())
 		})
 	}
 }
@@ -201,7 +201,7 @@ func TestEnrichVirtualMachineWithVulnerabilities_Errors(t *testing.T) {
 	// by the virtual machine scanner.
 	t.Run("nil virtual machine scanner", func(it *testing.T) {
 		enricher := newWithCreator(getScannerGeneratorForMock(nil))
-		assert.NoError(t, enricher.UpsertVirtualMachineIntegration(testIntegration))
+		assert.NoError(it, enricher.UpsertVirtualMachineIntegration(testIntegration))
 
 		virtualMachine := &storage.VirtualMachine{
 			Id:   "vm-id",
@@ -228,7 +228,7 @@ func TestEnrichVirtualMachineWithVulnerabilities_Errors(t *testing.T) {
 		mockScanner.EXPECT().GetVirtualMachineScan(gomock.Any(), gomock.Any()).Return(nil, testError)
 
 		enricher := newWithCreator(getScannerGeneratorForMock(mockScanner))
-		assert.NoError(t, enricher.UpsertVirtualMachineIntegration(testIntegration))
+		assert.NoError(it, enricher.UpsertVirtualMachineIntegration(testIntegration))
 
 		virtualMachine := &storage.VirtualMachine{
 			Id:   "vm-id",
@@ -431,6 +431,9 @@ func TestEnricherUpsertRemoveIntegrations(t *testing.T) {
 		assert.Empty(it, vmEnricher.scanners)
 	})
 }
+
+// region helpers
+
 func createVirtualMachineScanFromIndexReport(indexReport *v4.IndexReport, vulnCount int) *storage.VirtualMachineScan {
 	vulnerabilityReport := createVulnerabilityReportFromIndexReport(indexReport, vulnCount)
 	return scannerv4.ToVirtualMachineScan(vulnerabilityReport)
@@ -478,8 +481,6 @@ func createVulnerabilityReportFromIndexReport(indexReport *v4.IndexReport, vulnC
 		Notes:                  []v4.VulnerabilityReport_Note{},
 	}
 }
-
-// region helpers
 
 func getScannerGeneratorForMock(mock scannerTypes.VirtualMachineScanner) func() (string, func(*storage.ImageIntegration) (scannerTypes.VirtualMachineScanner, error)) {
 	return func() (string, func(*storage.ImageIntegration) (scannerTypes.VirtualMachineScanner, error)) {
