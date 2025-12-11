@@ -5,9 +5,13 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/logging"
 	ops "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/sync"
 )
+
+var log = logging.LoggerForModule()
+var rateLimitedLog = logging.GetRateLimitedLogger()
 
 // Item defines the interface that the queue items need to implement
 type Item[K comparable] interface {
@@ -38,6 +42,20 @@ func WithQueueName[K comparable](name string) OptionFunc[K] {
 	}
 }
 
+// WithMaxQueueDepth provides a maximum queue depth limit. When the limit is reached, new items will be dropped.
+func WithMaxQueueDepth[K comparable](maxDepth int) OptionFunc[K] {
+	return func(queue *DedupingQueue[K]) {
+		queue.maxQueueDepth = maxDepth
+	}
+}
+
+// WithDroppedMetric provides a counter to track dropped messages when queue is at capacity.
+func WithDroppedMetric[K comparable](metric prometheus.Counter) OptionFunc[K] {
+	return func(queue *DedupingQueue[K]) {
+		queue.droppedMetric = metric
+	}
+}
+
 // DedupingQueue a queue with unique values.
 type DedupingQueue[K comparable] struct {
 	lock            sync.Mutex
@@ -46,7 +64,10 @@ type DedupingQueue[K comparable] struct {
 	indexer         map[K]*list.Element
 	sizeMetric      prometheus.Gauge
 	operationMetric func(ops.Op, string)
+	droppedMetric   prometheus.Counter
 	name            string
+	maxQueueDepth   int // Maximum queue depth (0 = unlimited)
+	droppedCount    int // Count of items dropped due to queue depth limit
 }
 
 // NewDedupingQueue creates a new DedupingQueue
@@ -113,7 +134,29 @@ func (q *DedupingQueue[K]) Push(item Item[K]) {
 			q.sizeMetric.Set(float64(q.queue.Len()))
 		}
 	}()
+
 	key := item.GetDedupeKey()
+
+	// Check if adding a new item would exceed the queue depth limit
+	// Only check for new items (not deduped replacements)
+	if q.maxQueueDepth > 0 && q.queue.Len() >= q.maxQueueDepth {
+		// If the item already exists (deduping case), allow the replacement
+		if _, ok := q.indexer[key]; !ok {
+			// New item would exceed limit - drop it
+			q.droppedCount++
+			if q.droppedMetric != nil {
+				q.droppedMetric.Inc()
+			}
+			rateLimitedLog.WarnL("dedupingqueue-drop",
+				"Deduping queue %q at capacity (%d items max %d), dropping message (total dropped: %d)",
+				q.name, q.queue.Len(), q.maxQueueDepth, q.droppedCount)
+			if q.operationMetric != nil {
+				q.operationMetric(ops.Remove, q.name+"-dropped")
+			}
+			return
+		}
+	}
+
 	if key == *new(K) {
 		if q.operationMetric != nil {
 			q.operationMetric(ops.Add, q.name)

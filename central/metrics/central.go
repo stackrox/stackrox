@@ -91,6 +91,20 @@ var (
 		Help:      "Number of elements in removed from the queue",
 	}, []string{"Operation", "Type"})
 
+	sensorEventQueueDroppedCounterVec = prometheus.NewCounterVec(prometheus.CounterOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.CentralSubsystem.String(),
+		Name:      "sensor_event_queue_dropped_total",
+		Help:      "Total number of sensor events dropped due to queue capacity limits",
+	}, []string{"Type"})
+
+	sensorEventQueueDepthGaugeVec = prometheus.NewGaugeVec(prometheus.GaugeOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.CentralSubsystem.String(),
+		Name:      "sensor_event_queue_depth",
+		Help:      "Current depth of sensor event queues",
+	}, []string{"Type"})
+
 	resourceProcessedCounterVec = prometheus.NewCounterVec(prometheus.CounterOpts{
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.CentralSubsystem.String(),
@@ -402,6 +416,16 @@ func IncrementSensorConnect(clusterID, state string) {
 // IncrementSensorEventQueueCounter increments the counter for the passed operation.
 func IncrementSensorEventQueueCounter(op metrics.Op, t string) {
 	sensorEventQueueCounterVec.With(prometheus.Labels{"Operation": op.String(), "Type": t}).Inc()
+}
+
+// GetSensorEventQueueDroppedCounter returns the dropped counter metric for a specific queue type.
+func GetSensorEventQueueDroppedCounter(queueType string) prometheus.Counter {
+	return sensorEventQueueDroppedCounterVec.With(prometheus.Labels{"Type": queueType})
+}
+
+// GetSensorEventQueueDepthGauge returns the depth gauge metric for a specific queue type.
+func GetSensorEventQueueDepthGauge(queueType string) prometheus.Gauge {
+	return sensorEventQueueDepthGaugeVec.With(prometheus.Labels{"Type": queueType})
 }
 
 // IncrementResourceProcessedCounter is a counter for how many times a resource has been processed in Central.

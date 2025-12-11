@@ -12,6 +12,7 @@ import (
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/dedupingqueue"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stackrox/rox/pkg/sync"
 )
@@ -34,10 +35,19 @@ type workerQueue struct {
 func newWorkerQueue(poolSize int, typ string, injector common.MessageInjector) *workerQueue {
 	totalSize := poolSize + 1
 	queues := make([]*dedupingqueue.DedupingQueue[string], totalSize)
+
+	// Get metrics for this queue type
+	droppedCounter := metrics.GetSensorEventQueueDroppedCounter(typ)
+	depthGauge := metrics.GetSensorEventQueueDepthGauge(typ)
+	maxQueueDepth := env.CentralSensorWorkerQueueDepth.IntegerSetting()
+
 	for i := 0; i < totalSize; i++ {
 		queues[i] = dedupingqueue.NewDedupingQueue[string](
 			dedupingqueue.WithQueueName[string](typ),
-			dedupingqueue.WithOperationMetricsFunc[string](metrics.IncrementSensorEventQueueCounter))
+			dedupingqueue.WithOperationMetricsFunc[string](metrics.IncrementSensorEventQueueCounter),
+			dedupingqueue.WithMaxQueueDepth[string](maxQueueDepth),
+			dedupingqueue.WithDroppedMetric[string](droppedCounter),
+			dedupingqueue.WithSizeMetrics[string](depthGauge))
 	}
 
 	return &workerQueue{
