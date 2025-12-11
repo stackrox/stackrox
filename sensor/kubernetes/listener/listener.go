@@ -9,6 +9,7 @@ import (
 	"github.com/stackrox/rox/sensor/common/awscredentials"
 	"github.com/stackrox/rox/sensor/common/config"
 	"github.com/stackrox/rox/sensor/common/internalmessage"
+	pubsubDispatcher "github.com/stackrox/rox/sensor/common/pubsub"
 	"github.com/stackrox/rox/sensor/kubernetes/client"
 	"github.com/stackrox/rox/sensor/kubernetes/eventpipeline/component"
 	"github.com/stackrox/rox/sensor/kubernetes/listener/resources"
@@ -19,8 +20,22 @@ var (
 	log = logging.LoggerForModule()
 )
 
+//go:generate mockgen-wrapper
+type pubSubPublisher interface {
+	Publish(pubsubDispatcher.Event) error
+}
+
 // New returns a new kubernetes listener.
-func New(clusterID clusterIDWaiter, client client.Interface, configHandler config.Handler, nodeName string, traceWriter io.Writer, queue component.Resolver, storeProvider *resources.StoreProvider, pubSub *internalmessage.MessageSubscriber) component.ContextListener {
+func New(clusterID clusterIDWaiter,
+	client client.Interface,
+	configHandler config.Handler,
+	nodeName string,
+	traceWriter io.Writer,
+	queue component.Resolver,
+	storeProvider *resources.StoreProvider,
+	pubSub *internalmessage.MessageSubscriber,
+	pubSubDispatcher pubSubPublisher,
+) component.ContextListener {
 	k := &listenerImpl{
 		client:             client,
 		stopSig:            concurrency.NewSignal(),
@@ -31,6 +46,7 @@ func New(clusterID clusterIDWaiter, client client.Interface, configHandler confi
 		storeProvider:      storeProvider,
 		mayCreateHandlers:  concurrency.NewSignal(),
 		pubSub:             pubSub,
+		pubSubDispatcher:   pubSubDispatcher,
 		clusterID:          clusterID,
 	}
 	k.mayCreateHandlers.Signal()

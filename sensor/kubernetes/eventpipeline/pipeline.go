@@ -4,6 +4,7 @@ import (
 	"io"
 	"sync/atomic"
 
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/config"
@@ -12,6 +13,7 @@ import (
 	"github.com/stackrox/rox/sensor/common/message"
 	"github.com/stackrox/rox/sensor/common/reprocessor"
 	"github.com/stackrox/rox/sensor/kubernetes/client"
+	"github.com/stackrox/rox/sensor/kubernetes/eventpipeline/component"
 	"github.com/stackrox/rox/sensor/kubernetes/eventpipeline/output"
 	"github.com/stackrox/rox/sensor/kubernetes/eventpipeline/resolver"
 	"github.com/stackrox/rox/sensor/kubernetes/listener"
@@ -32,25 +34,40 @@ import (
 // This component introduces a new type of component to sensor:
 // - The event pipeline is a sensor component. That means, it can send messages to the gRPC stream via the .ResponseC function.
 // - Pipeline components are sub-components inside the event pipeline that process a kubernetes event from start to finish (listener, resolver and output are all pipeline components)
-func New(clusterID clusterIDWaiter, client client.Interface, configHandler config.Handler, detector detector.Detector, reprocessor reprocessor.Handler, nodeName string, traceWriter io.Writer, storeProvider *resources.StoreProvider, queueSize int, pubSub *internalmessage.MessageSubscriber) common.SensorComponent {
+func New(clusterID clusterIDWaiter,
+	client client.Interface,
+	configHandler config.Handler,
+	detector detector.Detector,
+	reprocessor reprocessor.Handler,
+	nodeName string,
+	traceWriter io.Writer,
+	storeProvider *resources.StoreProvider,
+	queueSize int,
+	pubSub *internalmessage.MessageSubscriber,
+	pubSubDispatcher component.PubSubDispatcher,
+) (common.SensorComponent, error) {
 	outputQueue := output.New(detector, queueSize)
-	depResolver := resolver.New(outputQueue, storeProvider, queueSize)
-	resourceListener := listener.New(clusterID, client, configHandler, nodeName, traceWriter, depResolver, storeProvider, pubSub)
+	depResolver, err := resolver.New(outputQueue, storeProvider, queueSize, pubSubDispatcher)
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to initialize the event pipeline")
+	}
+	resourceListener := listener.New(clusterID, client, configHandler, nodeName, traceWriter, depResolver, storeProvider, pubSub, pubSubDispatcher)
 
 	offlineMode := &atomic.Bool{}
 	offlineMode.Store(true)
 
 	pipelineResponses := make(chan *message.ExpiringMessage)
 	return &eventPipeline{
-		eventsC:     pipelineResponses,
-		stopper:     concurrency.NewStopper(),
-		output:      outputQueue,
-		resolver:    depResolver,
-		listener:    resourceListener,
-		detector:    detector,
-		reprocessor: reprocessor,
-		offlineMode: offlineMode,
-	}
+		pubsubDispatcher: pubSubDispatcher,
+		eventsC:          pipelineResponses,
+		stopper:          concurrency.NewStopper(),
+		output:           outputQueue,
+		resolver:         depResolver,
+		listener:         resourceListener,
+		detector:         detector,
+		reprocessor:      reprocessor,
+		offlineMode:      offlineMode,
+	}, nil
 }
 
 type clusterIDWaiter interface {

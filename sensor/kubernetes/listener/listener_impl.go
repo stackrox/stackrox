@@ -49,6 +49,7 @@ type listenerImpl struct {
 	mayCreateHandlers         concurrency.Signal
 	context                   context.Context
 	pubSub                    *internalmessage.MessageSubscriber
+	pubSubDispatcher          pubSubPublisher
 	sifLock                   sync.Mutex
 	sharedInformersToShutdown []stoppable
 	clusterID                 clusterIDWaiter

@@ -4,11 +4,15 @@ type Topic int
 
 const (
 	DefaultTopic Topic = iota
+	KubernetesDispatcherEventTopic
+	FromCentralResolverEventTopic
 )
 
 var (
 	topicToString = map[Topic]string{
-		DefaultTopic: "Default",
+		DefaultTopic:                   "Default",
+		KubernetesDispatcherEventTopic: "KubernetesDispatcherEvent",
+		FromCentralResolverEventTopic:  "FromCentralResolverEvent",
 	}
 )
 
