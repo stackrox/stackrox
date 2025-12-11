@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"net"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -13,6 +14,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/spf13/cobra"
 	"github.com/stackrox/rox/pkg/fixtures/vmindexreport"
+	"github.com/stackrox/rox/pkg/scannerv4/client"
 )
 
 var (
@@ -36,6 +38,26 @@ type vmScaleStats struct {
 
 func (s *vmScaleStats) String() string {
 	return fmt.Sprintf("success: %d, failure: %d", s.success.Load(), s.failure.Load())
+}
+
+// resolvePodIPs resolves a service address to individual pod IPs
+func resolvePodIPs(address string) ([]string, error) {
+	host, port, err := net.SplitHostPort(address)
+	if err != nil {
+		return nil, fmt.Errorf("invalid address %q: %w", address, err)
+	}
+
+	ips, err := net.LookupHost(host)
+	if err != nil {
+		return nil, fmt.Errorf("DNS lookup failed for %q: %w", host, err)
+	}
+
+	// Append port to each IP
+	addresses := make([]string, len(ips))
+	for i, ip := range ips {
+		addresses[i] = net.JoinHostPort(ip, port)
+	}
+	return addresses, nil
 }
 
 // vmScaleCmd creates the VM scale test command
@@ -64,23 +86,32 @@ Example:
 	rateLimit := flags.Float64("rate", 0, "Target requests per second (0 = unlimited)")
 	duration := flags.Duration("duration", 0, "Run for this duration (0 = run until --requests completed)")
 	verbose := flags.Bool("verbose", false, "Print each request result")
+	directPodIPs := flags.Bool("direct-pod-ips", false, "Resolve service DNS and connect directly to pod IPs (distributes load)")
 
 	cmd.RunE = func(cmd *cobra.Command, args []string) error {
+		matcherAddr, _ := cmd.Flags().GetString("matcher-address")
+
+		// Resolve pod IPs if direct mode is enabled
+		var podAddresses []string
+		if *directPodIPs && matcherAddr != "" {
+			var err error
+			podAddresses, err = resolvePodIPs(matcherAddr)
+			if err != nil {
+				return fmt.Errorf("resolving pod IPs: %w", err)
+			}
+			log.Printf("Resolved %d pod IPs: %v", len(podAddresses), podAddresses)
+		}
+
 		log.Printf("VM Scale Test Configuration:")
 		log.Printf("  Workers: %d", *numWorkers)
 		log.Printf("  Packages per report: %d", *numPackages)
 		log.Printf("  Repositories: %d", *numRepos)
+		log.Printf("  Direct pod IPs: %v", *directPodIPs)
 		if *duration > 0 {
 			log.Printf("  Duration: %v", *duration)
 			log.Printf("  Rate limit: %.2f req/s", *rateLimit)
 		} else {
 			log.Printf("  Total requests: %d", *numRequests)
-		}
-
-		// Create scanner client
-		scanner, err := factory.Create(ctx)
-		if err != nil {
-			return fmt.Errorf("creating scanner client: %w", err)
 		}
 
 		// Generate the index report template (reused for all requests)
@@ -108,12 +139,39 @@ Example:
 			rateLimiter = time.Tick(interval)
 		}
 
-		// Start workers
+		// Start workers - each with its OWN scanner client for load balancing
 		for i := 0; i < *numWorkers; i++ {
 			wg.Add(1)
 			workerID := i
+
+			// If direct pod IPs mode, assign each worker to a specific pod (round-robin)
+			var workerPodAddr string
+			if len(podAddresses) > 0 {
+				workerPodAddr = podAddresses[workerID%len(podAddresses)]
+			}
+
 			go func() {
 				defer wg.Done()
+
+				var scanner client.Scanner
+				var err error
+
+				if workerPodAddr != "" {
+					// Connect directly to assigned pod IP
+					log.Printf("[worker-%d] connecting to pod %s", workerID, workerPodAddr)
+					scanner, err = client.NewGRPCScanner(ctx,
+						client.WithMatcherAddress(workerPodAddr),
+						client.SkipTLSVerification,
+					)
+				} else {
+					// Use factory (connects to service address)
+					scanner, err = factory.Create(ctx)
+				}
+				if err != nil {
+					log.Printf("[worker-%d] failed to create scanner client: %v", workerID, err)
+					return
+				}
+
 				for reqID := range workC {
 					if rateLimiter != nil {
 						<-rateLimiter
@@ -124,18 +182,22 @@ Example:
 					elapsed := time.Since(start)
 
 					errStr := "false"
+					podInfo := ""
+					if workerPodAddr != "" {
+						podInfo = fmt.Sprintf(" [pod=%s]", workerPodAddr)
+					}
 					if err != nil {
 						errStr = "true"
 						stats.failure.Add(1)
 						vmScaleTotalRequests.WithLabelValues("error").Inc()
 						if *verbose {
-							log.Printf("[worker-%d] req=%d FAILED (%.2fs): %v", workerID, reqID, elapsed.Seconds(), err)
+							log.Printf("[worker-%d]%s req=%d FAILED (%.2fs): %v", workerID, podInfo, reqID, elapsed.Seconds(), err)
 						}
 					} else {
 						stats.success.Add(1)
 						vmScaleTotalRequests.WithLabelValues("success").Inc()
 						if *verbose {
-							log.Printf("[worker-%d] req=%d OK (%.2fs)", workerID, reqID, elapsed.Seconds())
+							log.Printf("[worker-%d]%s req=%d OK (%.2fs)", workerID, podInfo, reqID, elapsed.Seconds())
 						}
 					}
 
