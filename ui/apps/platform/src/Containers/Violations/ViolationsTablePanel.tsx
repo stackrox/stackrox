@@ -300,115 +300,120 @@ function ViolationsTablePanel({
                 </Toolbar>
             </PageSection>
             <Divider component="div" />
-            <div className="pf-v6-u-h-100" style={{ overflow: 'auto' }}>
-                <Table variant="compact" isStickyHeader>
-                    <Thead>
-                        <Tr>
-                            {hasActions && (
-                                <Th
-                                    select={{
-                                        onSelect: onSelectAll,
-                                        isSelected: allRowsSelected,
-                                    }}
-                                />
-                            )}
-                            {columns.map(({ Header, sortField }) => {
-                                const sortParams = sortField
-                                    ? { sort: getSortParams(sortField) }
-                                    : {};
-                                return (
-                                    <Th key={Header} modifier="wrap" {...sortParams}>
-                                        {Header}
+            <PageSection hasBodyWrapper={false}>
+                <div style={{ overflowX: 'auto' }}>
+                    <Table variant="compact">
+                        <Thead>
+                            <Tr>
+                                {hasActions && (
+                                    <Th
+                                        select={{
+                                            onSelect: onSelectAll,
+                                            isSelected: allRowsSelected,
+                                        }}
+                                    />
+                                )}
+                                {columns.map(({ Header, sortField }) => {
+                                    const sortParams = sortField
+                                        ? { sort: getSortParams(sortField) }
+                                        : {};
+                                    return (
+                                        <Th key={Header} modifier="wrap" {...sortParams}>
+                                            {Header}
+                                        </Th>
+                                    );
+                                })}
+                                {hasActions && (
+                                    <Th>
+                                        <span className="pf-v6-screen-reader">Row actions</span>
                                     </Th>
+                                )}
+                            </Tr>
+                        </Thead>
+                        <Tbody
+                            aria-live="polite"
+                            aria-busy={isTableDataUpdating ? 'true' : 'false'}
+                        >
+                            {violations.map((violation, rowIndex) => {
+                                const { state, lifecycleStage, enforcementAction, policy, id } =
+                                    violation;
+                                const isAttemptedViolation = state === VIOLATION_STATES.ATTEMPTED;
+                                const isResolved = state === VIOLATION_STATES.RESOLVED;
+                                const isRuntimeAlert = lifecycleStage === LIFECYCLE_STAGES.RUNTIME;
+                                const isDeployCreateAttemptedAlert =
+                                    enforcementAction ===
+                                    ENFORCEMENT_ACTIONS.FAIL_DEPLOYMENT_CREATE_ENFORCEMENT;
+
+                                // Instead of items prop of Td element, render ActionsColumn element
+                                // so every cell has vertical ellipsis (also known as kabob)
+                                // even if its items array is empty. For example:
+                                // hasWriteAccessForAlert but alert is not Runtime lifecycle.
+                                // !hasWriteAccessForWorkflowAdministration
+                                const actionItems: ActionItem[] = [];
+                                if (hasWriteAccessForAlert && !isResolved) {
+                                    if (isRuntimeAlert) {
+                                        actionItems.push({
+                                            title: 'Resolve and add to process baseline',
+                                            onClick: () => resolveAlertAction(true, violation.id),
+                                        });
+                                    }
+                                    if (isRuntimeAlert || isAttemptedViolation) {
+                                        actionItems.push({
+                                            title: 'Mark as resolved',
+                                            onClick: () => resolveAlertAction(false, violation.id),
+                                        });
+                                    }
+                                }
+                                if (
+                                    hasWriteAccessForExcludeDeploymentsFromPolicy &&
+                                    !isDeployCreateAttemptedAlert &&
+                                    'deployment' in violation
+                                ) {
+                                    actionItems.push({
+                                        title: 'Exclude deployment from policy',
+                                        onClick: () =>
+                                            excludeDeploymentMutation.mutate({
+                                                policyId: policy.id,
+                                                deploymentNames: [violation.deployment.name],
+                                            }),
+                                    });
+                                }
+                                return (
+                                    <Tr key={id}>
+                                        {hasActions && (
+                                            <Td
+                                                select={{
+                                                    rowIndex,
+                                                    onSelect,
+                                                    isSelected: selected[rowIndex],
+                                                }}
+                                            />
+                                        )}
+                                        {columns.map((column) => {
+                                            return (
+                                                <TableCell
+                                                    key={column.Header}
+                                                    row={violation}
+                                                    column={column}
+                                                />
+                                            );
+                                        })}
+                                        {hasActions && (
+                                            <Td isActionCell>
+                                                <ActionsColumn
+                                                    // menuAppendTo={() => document.body}
+                                                    isDisabled={actionItems.length === 0}
+                                                    items={actionItems}
+                                                />
+                                            </Td>
+                                        )}
+                                    </Tr>
                                 );
                             })}
-                            {hasActions && (
-                                <Th>
-                                    <span className="pf-v6-screen-reader">Row actions</span>
-                                </Th>
-                            )}
-                        </Tr>
-                    </Thead>
-                    <Tbody aria-live="polite" aria-busy={isTableDataUpdating ? 'true' : 'false'}>
-                        {violations.map((violation, rowIndex) => {
-                            const { state, lifecycleStage, enforcementAction, policy, id } =
-                                violation;
-                            const isAttemptedViolation = state === VIOLATION_STATES.ATTEMPTED;
-                            const isResolved = state === VIOLATION_STATES.RESOLVED;
-                            const isRuntimeAlert = lifecycleStage === LIFECYCLE_STAGES.RUNTIME;
-                            const isDeployCreateAttemptedAlert =
-                                enforcementAction ===
-                                ENFORCEMENT_ACTIONS.FAIL_DEPLOYMENT_CREATE_ENFORCEMENT;
-
-                            // Instead of items prop of Td element, render ActionsColumn element
-                            // so every cell has vertical ellipsis (also known as kabob)
-                            // even if its items array is empty. For example:
-                            // hasWriteAccessForAlert but alert is not Runtime lifecycle.
-                            // !hasWriteAccessForWorkflowAdministration
-                            const actionItems: ActionItem[] = [];
-                            if (hasWriteAccessForAlert && !isResolved) {
-                                if (isRuntimeAlert) {
-                                    actionItems.push({
-                                        title: 'Resolve and add to process baseline',
-                                        onClick: () => resolveAlertAction(true, violation.id),
-                                    });
-                                }
-                                if (isRuntimeAlert || isAttemptedViolation) {
-                                    actionItems.push({
-                                        title: 'Mark as resolved',
-                                        onClick: () => resolveAlertAction(false, violation.id),
-                                    });
-                                }
-                            }
-                            if (
-                                hasWriteAccessForExcludeDeploymentsFromPolicy &&
-                                !isDeployCreateAttemptedAlert &&
-                                'deployment' in violation
-                            ) {
-                                actionItems.push({
-                                    title: 'Exclude deployment from policy',
-                                    onClick: () =>
-                                        excludeDeploymentMutation.mutate({
-                                            policyId: policy.id,
-                                            deploymentNames: [violation.deployment.name],
-                                        }),
-                                });
-                            }
-                            return (
-                                <Tr key={id}>
-                                    {hasActions && (
-                                        <Td
-                                            select={{
-                                                rowIndex,
-                                                onSelect,
-                                                isSelected: selected[rowIndex],
-                                            }}
-                                        />
-                                    )}
-                                    {columns.map((column) => {
-                                        return (
-                                            <TableCell
-                                                key={column.Header}
-                                                row={violation}
-                                                column={column}
-                                            />
-                                        );
-                                    })}
-                                    {hasActions && (
-                                        <Td isActionCell>
-                                            <ActionsColumn
-                                                // menuAppendTo={() => document.body}
-                                                isDisabled={actionItems.length === 0}
-                                                items={actionItems}
-                                            />
-                                        </Td>
-                                    )}
-                                </Tr>
-                            );
-                        })}
-                    </Tbody>
-                </Table>
-            </div>
+                        </Tbody>
+                    </Table>
+                </div>
+            </PageSection>
             <ExcludeConfirmation
                 isOpen={modalType === 'excludeScopes'}
                 excludableAlerts={excludableAlerts}
