@@ -2,6 +2,7 @@ package index
 
 import (
 	"context"
+	"fmt"
 	"strconv"
 	"time"
 
@@ -14,9 +15,11 @@ import (
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/utils"
+	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/centralcaps"
 	"github.com/stackrox/rox/sensor/common/message"
+	"github.com/stackrox/rox/sensor/common/virtualmachine"
 	"github.com/stackrox/rox/sensor/common/virtualmachine/metrics"
 )
 
@@ -249,8 +252,15 @@ func (h *handlerImpl) newMessageToCentral(indexReport *v1.IndexReport) (*message
 
 	vmInfo := h.store.GetFromCID(uint32(cid))
 	if vmInfo == nil {
-		// Return retryable error if the virtual machine is not yet known to Sensor.
-		return nil, metrics.IndexReportHandlingMessageToCentralVMUnknown, errors.Wrapf(errVirtualMachineNotFound, "VirtualMachine with Vsock CID %q not found", indexReport.GetVsockCid())
+		// In test mode, auto-generate VMs on-the-fly when index reports arrive
+		if env.IsVMTestModeEnabled() {
+			vmInfo = h.generateAndStoreVM(uint32(cid))
+			log.Infof("Auto-generated VM %s (name: %s, CID: %d) on-the-fly for load testing",
+				vmInfo.ID, vmInfo.Name, *vmInfo.VSOCKCID)
+		} else {
+			// Return retryable error if the virtual machine is not yet known to Sensor.
+			return nil, metrics.IndexReportHandlingMessageToCentralVMUnknown, errors.Wrapf(errVirtualMachineNotFound, "VirtualMachine with Vsock CID %q not found", indexReport.GetVsockCid())
+		}
 	}
 
 	return message.New(&central.MsgFromSensor{
@@ -277,4 +287,40 @@ func (h *handlerImpl) sendIndexReportEvent(
 	case <-h.stopper.Flow().StopRequested():
 	case toCentral <- msg:
 	}
+}
+
+// generateAndStoreVM creates a new VM on-the-fly for load testing.
+// This function generates a deterministic UUID based on the vsock CID and
+// creates a minimal VM with the required fields, then adds it to the store.
+func (h *handlerImpl) generateAndStoreVM(cid uint32) *virtualmachine.Info {
+	const testNamespace = "vm-load-test"
+
+	// Generate deterministic UUID based on CID for test mode
+	// This ensures VMs with the same CID get the same UUID across restarts
+	vmID := virtualmachine.VMID(generateDeterministicUUID(cid).String())
+	vsockCID := new(uint32)
+	*vsockCID = cid
+
+	vmInfo := &virtualmachine.Info{
+		ID:        vmID,
+		Name:      fmt.Sprintf("vm-%d", cid),
+		Namespace: testNamespace,
+		VSOCKCID:  vsockCID,
+		Running:   true,
+		GuestOS:   "linux",
+	}
+
+	// Add to store and return the stored version
+	return h.store.AddOrUpdate(vmInfo)
+}
+
+// generateDeterministicUUID creates a deterministic UUID v5 based on the vsock CID.
+// This ensures the same CID always produces the same UUID, which is useful for
+// test scenarios where VMs may be recreated with the same CID.
+func generateDeterministicUUID(cid uint32) uuid.UUID {
+	// Use a namespace UUID for StackRox VM test mode
+	// This is a custom namespace UUID for "stackrox.io/vm-test"
+	namespace := uuid.FromStringOrPanic("6ba7b810-9dad-11d1-80b4-00c04fd430c8")
+	// Generate UUID v5 using the CID as the name
+	return uuid.NewV5(namespace, fmt.Sprintf("vm-cid-%d", cid))
 }

@@ -192,6 +192,20 @@ func (m *MockVirtualMachineStore) EXPECT() *MockVirtualMachineStoreMockRecorder 
 	return m.recorder
 }
 
+// AddOrUpdate mocks base method.
+func (m *MockVirtualMachineStore) AddOrUpdate(vm *virtualmachine.Info) *virtualmachine.Info {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "AddOrUpdate", vm)
+	ret0, _ := ret[0].(*virtualmachine.Info)
+	return ret0
+}
+
+// AddOrUpdate indicates an expected call of AddOrUpdate.
+func (mr *MockVirtualMachineStoreMockRecorder) AddOrUpdate(vm any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddOrUpdate", reflect.TypeOf((*MockVirtualMachineStore)(nil).AddOrUpdate), vm)
+}
+
 // GetFromCID mocks base method.
 func (m *MockVirtualMachineStore) GetFromCID(cid uint32) *virtualmachine.Info {
 	m.ctrl.T.Helper()
