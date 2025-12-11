@@ -14,6 +14,7 @@ import {
     Title,
     Toolbar,
     ToolbarContent,
+    ToolbarGroup,
     ToolbarItem,
     pluralize,
 } from '@patternfly/react-core';
@@ -235,67 +236,71 @@ function ViolationsTablePanel({
                     </Alert>
                 ))}
             </AlertGroup>
-            <ViolationsTableSearchFilter
-                searchFilter={searchFilter}
-                onFilterChange={onFilterChange}
-                onSearch={onSearch}
-                additionalContextFilter={additionalContextFilter}
-            />
+            <PageSection hasBodyWrapper={false} className="pf-v6-u-py-0">
+                <ViolationsTableSearchFilter
+                    searchFilter={searchFilter}
+                    onFilterChange={onFilterChange}
+                    onSearch={onSearch}
+                    additionalContextFilter={additionalContextFilter}
+                />
+            </PageSection>
             <Divider component="div" />
-            <Toolbar>
-                <ToolbarContent>
-                    <ToolbarItem>
-                        <Title headingLevel="h2" className="pf-v6-u-color-100">
-                            {pluralize(violationsCount, 'result')} found
-                        </Title>
-                    </ToolbarItem>
-                    {hasActions && (
-                        <ToolbarItem align={{ default: 'alignEnd' }}>
-                            <Select
-                                isOpen={isSelectOpen}
-                                onOpenChange={setIsSelectOpen}
-                                toggle={toggle}
-                            >
-                                <SelectList>
-                                    <SelectOption
-                                        value="resolve"
-                                        isDisabled={!hasWriteAccessForAlert || numResolveable === 0}
-                                        onClick={showResolveConfirmationDialog}
-                                    >
-                                        Mark as resolved ({numResolveable})
-                                    </SelectOption>
-                                    <SelectOption
-                                        value="exclude"
-                                        isDisabled={
-                                            !hasWriteAccessForExcludeDeploymentsFromPolicy ||
-                                            numScopesToExclude === 0
-                                        }
-                                        onClick={showExcludeConfirmationDialog}
-                                    >
-                                        Exclude deployments from policy ({numScopesToExclude})
-                                    </SelectOption>
-                                </SelectList>
-                            </Select>
+            <PageSection hasBodyWrapper={false} className="pf-v6-u-py-0">
+                <Toolbar className="pf-v6-u-py-md">
+                    <ToolbarContent>
+                        <ToolbarItem alignSelf="center">
+                            <Title headingLevel="h2" className="pf-v6-u-color-100">
+                                {pluralize(violationsCount, 'result')} found
+                            </Title>
                         </ToolbarItem>
-                    )}
-                    <ToolbarItem align={{ default: 'alignEnd' }} variant="pagination">
-                        <Pagination
-                            itemCount={violationsCount}
-                            page={currentPage}
-                            onSetPage={changePage}
-                            perPage={perPage}
-                            onPerPageSelect={changePerPage}
-                        />
-                    </ToolbarItem>
-                </ToolbarContent>
-            </Toolbar>
+                        <ToolbarGroup align={{ default: 'alignEnd' }}>
+                            {hasActions && (
+                                <ToolbarItem>
+                                    <Select
+                                        isOpen={isSelectOpen}
+                                        onOpenChange={setIsSelectOpen}
+                                        toggle={toggle}
+                                    >
+                                        <SelectList>
+                                            <SelectOption
+                                                value="resolve"
+                                                isDisabled={
+                                                    !hasWriteAccessForAlert || numResolveable === 0
+                                                }
+                                                onClick={showResolveConfirmationDialog}
+                                            >
+                                                Mark as resolved ({numResolveable})
+                                            </SelectOption>
+                                            <SelectOption
+                                                value="exclude"
+                                                isDisabled={
+                                                    !hasWriteAccessForExcludeDeploymentsFromPolicy ||
+                                                    numScopesToExclude === 0
+                                                }
+                                                onClick={showExcludeConfirmationDialog}
+                                            >
+                                                Exclude deployments from policy (
+                                                {numScopesToExclude})
+                                            </SelectOption>
+                                        </SelectList>
+                                    </Select>
+                                </ToolbarItem>
+                            )}
+                            <ToolbarItem variant="pagination">
+                                <Pagination
+                                    itemCount={violationsCount}
+                                    page={currentPage}
+                                    onSetPage={changePage}
+                                    perPage={perPage}
+                                    onPerPageSelect={changePerPage}
+                                />
+                            </ToolbarItem>
+                        </ToolbarGroup>
+                    </ToolbarContent>
+                </Toolbar>
+            </PageSection>
             <Divider component="div" />
-            <PageSection
-                hasBodyWrapper={false}
-                isFilled
-                padding={{ default: 'noPadding' }}
-                hasOverflowScroll
-            >
+            <div className="pf-v6-u-h-100" style={{ overflow: 'auto' }}>
                 <Table variant="compact" isStickyHeader>
                     <Thead>
                         <Tr>
@@ -403,7 +408,7 @@ function ViolationsTablePanel({
                         })}
                     </Tbody>
                 </Table>
-            </PageSection>
+            </div>
             <ExcludeConfirmation
                 isOpen={modalType === 'excludeScopes'}
                 excludableAlerts={excludableAlerts}
