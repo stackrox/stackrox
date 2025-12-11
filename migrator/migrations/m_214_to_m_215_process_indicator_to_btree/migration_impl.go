@@ -25,7 +25,7 @@ const (
 	podIndex         = "processindicators_poduid"
 	podColumn        = "poduid"
 	deploymentIndex  = "processindicators_deploymentid"
-	deploymentColumn = "deployment_id"
+	deploymentColumn = "deploymentid"
 
 	dropIndex   = "DROP INDEX if exists %s"
 	createIndex = "CREATE INDEX CONCURRENTLY IF NOT EXISTS %s ON %s USING BTREE (%s)"
@@ -75,15 +75,16 @@ func migrateIndex(dbCtx context.Context, db postgres.DB, indexName string, index
 
 	// drop the index
 	dropStatement := fmt.Sprintf(dropIndex, indexName)
-	log.Infof(dropStatement)
 	_, err := db.Exec(ctx, dropStatement)
 	if err != nil {
 		log.Error(errors.Wrapf(err, "unable to drop index %s", indexName))
 	}
 
 	// create the new index concurrently
+	// Note: this is not really necessary because the indexes will be created when the
+	// schema updates are processed, HOWEVER, that will not create the indexes
+	// concurrently; we want to do them concurrently in this case for performance reasons.
 	createStatement := fmt.Sprintf(createIndex, indexName, tableName, indexColumn)
-	log.Infof(createStatement)
 	_, err = db.Exec(ctx, createStatement)
 	if err != nil {
 		log.Error(errors.Wrapf(err, "unable to create index %s", indexName))
