@@ -687,10 +687,11 @@
       "enum": [
         "REGISTRY",
         "SCANNER",
-        "NODE_SCANNER"
+        "NODE_SCANNER",
+        "VIRTUAL_MACHINE_SCANNER"
       ],
       "default": "REGISTRY",
-      "description": " - NODE_SCANNER: Image and Node integrations are currently done on the same form in the UI\nso the image integration is also currently used for node integrations.\nThis decision was made because we currently only support one node scanner (our scanner)."
+      "title": "- NODE_SCANNER: Image and Node integrations are currently done on the same form in the UI\nso the image integration is also currently used for node integrations.\nThis decision was made because we currently only support one node scanner (our scanner).\n - VIRTUAL_MACHINE_SCANNER: TODO: ROX-32218: ensure scanner V4 can also be used as virtual machine scanner"
     },
     "storageImageIntegrationSource": {
       "type": "object",

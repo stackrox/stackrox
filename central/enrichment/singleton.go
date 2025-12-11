@@ -32,6 +32,7 @@ import (
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/utils"
+	virtualMachineEnricher "github.com/stackrox/rox/pkg/virtualmachine/enricher"
 )
 
 var (
@@ -39,6 +40,7 @@ var (
 
 	ie                    imageEnricher.ImageEnricher
 	ne                    nodeEnricher.NodeEnricher
+	vmEnricher            virtualMachineEnricher.VirtualMachineEnricher
 	en                    Enricher
 	cf                    fetcher.OrchestratorIstioCVEManager
 	manager               Manager
@@ -61,12 +63,14 @@ func initialize() {
 	ne = nodeEnricher.New(nodeCVEDataStore.Singleton(), metrics.CentralSubsystem)
 	en = New(datastore.Singleton(), ie)
 	cf = fetcher.SingletonManager()
+
+	vmEnricher = virtualMachineEnricher.Singleton()
 	initializeManager()
 }
 
 func initializeManager() {
 	ctx := sac.WithAllAccess(context.Background())
-	manager = newManager(imageintegration.Set(), ne, cf)
+	manager = newManager(imageintegration.Set(), ne, vmEnricher, cf)
 
 	imageIntegrationStore = imageIntegrationDS.Singleton()
 	integrations, err := imageIntegrationStore.GetImageIntegrations(ctx, &v1.GetImageIntegrationsRequest{})

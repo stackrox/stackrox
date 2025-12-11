@@ -407,27 +407,52 @@ func newNodeScanner(integration *storage.NodeIntegration) (*scannerv4, error) {
 	return scanner, nil
 }
 
-// NewVirtualMachineScanner provides a scannerv4 instance that is able to scan virtual machines
-func NewVirtualMachineScanner() (types.VirtualMachineScanner, error) {
-	return newVirtualMachineScanner(getMatcherOnlyScanner)
+// VirtualMachineScannerCreator provides the type scanners.VirtualMachineScannerCreator to add to the scanners registry.
+func VirtualMachineScannerCreator() (string, func(integration *storage.ImageIntegration) (scannerTypes.VirtualMachineScanner, error)) {
+	return scannerTypes.ScannerV4, func(integration *storage.ImageIntegration) (scannerTypes.VirtualMachineScanner, error) {
+		return newVirtualMachineScanner(integration, getMatcherOnlyScanner)
+	}
 }
 
-func newVirtualMachineScanner(clientCreator func(string) (client.Scanner, error)) (types.VirtualMachineScanner, error) {
-	matcherEndpoint := DefaultMatcherEndpoint
+func newVirtualMachineScanner(
+	integration *storage.ImageIntegration,
+	clientCreator func(string) (client.Scanner, error),
+) (scannerTypes.VirtualMachineScanner, error) {
+	conf := integration.GetScannerV4()
+	if conf == nil {
+		return nil, errors.New("scanner v4 configuration required")
+	}
 
+	matcherEndpoint := DefaultMatcherEndpoint
+	if conf.GetMatcherEndpoint() != "" {
+		matcherEndpoint = conf.GetMatcherEndpoint()
+	}
+
+	numConcurrentScans := defaultMaxConcurrentScans
+	if conf.GetNumConcurrentScans() > 0 {
+		numConcurrentScans = int64(conf.GetNumConcurrentScans())
+	}
+
+	log.Debugf(
+		"Creating Scanner V4 with name [%s] matcher address [%s], num concurrent scans [%d]",
+		integration.GetName(),
+		matcherEndpoint,
+		numConcurrentScans,
+	)
 	scannerClient, err := clientCreator(matcherEndpoint)
 	if err != nil {
 		return nil, err
 	}
 
-	numConcurrentScans := defaultMaxConcurrentScans
-
-	return &scannerv4{
-		name:              "Virtual machine scanner",
-		scannerClient:     scannerClient,
+	scanner := &scannerv4{
+		name:              integration.GetName(),
+		activeRegistries:  nil,
 		ScanSemaphore:     types.NewSemaphoreWithValue(numConcurrentScans),
 		NodeScanSemaphore: types.NewNodeSemaphoreWithValue(numConcurrentScans),
-	}, nil
+		scannerClient:     scannerClient,
+	}
+
+	return scanner, nil
 }
 
 func getMatcherOnlyScanner(matcherEndpoint string) (client.Scanner, error) {
