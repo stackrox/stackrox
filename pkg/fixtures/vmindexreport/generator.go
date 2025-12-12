@@ -82,22 +82,11 @@ func selectPackageIndices(rng *rand.Rand, numRequested, totalAvailable int) []in
 	}
 }
 
-// buildRepositories creates two arbitrary selected real RHEL repositories
-// and adds synthetic ones if numRepos exceeds available.
-// Returns the repositories map and synthetic repo IDs (for assigning duplicated packages).
-// If numRepos <= len(repoToCPEMapping), all real repositories are always included to ensure
-// packages have valid repository references. Synthetic repos are only added when numRepos exceeds
-// the number of real repos available.
-func buildRepositories(numRepos int) (map[string]*v4.Repository, []string) {
-	totalRealRepos := len(repoToCPEMapping)
-	repoCount := totalRealRepos
-	if numRepos > totalRealRepos {
-		repoCount = numRepos
-	}
+// buildRepositories creates the two real RHEL repositories from the fixture.
+func buildRepositories() map[string]*v4.Repository {
+	repositories := make(map[string]*v4.Repository, len(repoToCPEMapping))
 
-	repositories := make(map[string]*v4.Repository, repoCount)
-
-	// Add real repositories first
+	// Add real repositories
 	for repoID, cpe := range repoToCPEMapping {
 		repositories[repoID] = &v4.Repository{
 			Id:   repoID,
@@ -108,45 +97,29 @@ func buildRepositories(numRepos int) (map[string]*v4.Repository, []string) {
 		}
 	}
 
-	// Add synthetic repositories if requested
-	var syntheticRepoIDs []string
-	for i := totalRealRepos; i < numRepos; i++ {
-		repoID := fmt.Sprintf("synthetic-repo-%d", i)
-		repositories[repoID] = &v4.Repository{
-			Id:   repoID,
-			Name: fmt.Sprintf("Synthetic Repository %d", i),
-			Uri:  fmt.Sprintf("https://example.com/repos/synthetic-%d", i),
-			Key:  fmt.Sprintf("synthetic-%d", i),
-			Cpe:  fmt.Sprintf("cpe:2.3:a:example:synthetic_repo:%d:*:*:*:*:*:*:*", i),
-		}
-		syntheticRepoIDs = append(syntheticRepoIDs, repoID)
-	}
-
-	return repositories, syntheticRepoIDs
+	return repositories
 }
 
-// NewGenerator creates a new Generator with the specified number of packages and repositories.
+// NewGenerator creates a new Generator with the specified number of packages.
 // The numPackages parameter specifies how many packages to include (0 = all available).
 // When numPackages < available, packages are randomly sampled.
 // When numPackages > available, packages are duplicated to reach the requested count.
-// The numRepos parameter specifies how many repositories to include (0 = real repos only).
-// When numRepos > available, synthetic repositories are created to reach the requested count.
+// All packages use the two real RHEL repositories from the fixture.
 // The seed parameter controls random selection for reproducibility.
-func NewGenerator(numPackages, numRepos int) *Generator {
-	return NewGeneratorWithSeed(numPackages, numRepos, 42) // Default seed for reproducibility
+func NewGenerator(numPackages int) *Generator {
+	return NewGeneratorWithSeed(numPackages, 42) // Default seed for reproducibility
 }
 
 // NewGeneratorWithSeed creates a new Generator with a specific random seed.
-func NewGeneratorWithSeed(numPackages, numRepos int, seed int64) *Generator {
+func NewGeneratorWithSeed(numPackages int, seed int64) *Generator {
 	rng := rand.New(rand.NewSource(seed))
 
 	totalPkgs := len(packagesFixture)
 	indices := selectPackageIndices(rng, numPackages, totalPkgs)
-	repositories, syntheticRepoIDs := buildRepositories(numRepos)
+	repositories := buildRepositories()
 
 	// Build packages from fixture data using selected indices
-	// - Real packages (first totalPkgs) keep their original repo from fixture
-	// - Duplicated packages (beyond totalPkgs) are distributed across synthetic repos
+	// All packages use their original repo from the fixture
 	packages := make(map[string]*v4.Package, len(indices))
 	environments := make(map[string]*v4.Environment_List, len(indices))
 
@@ -154,18 +127,8 @@ func NewGeneratorWithSeed(numPackages, numRepos int, seed int64) *Generator {
 		pkg := packagesFixture[idx]
 		pkgID := fmt.Sprintf("%s-%d", pkg.Name, i)
 
-		var assignedRepoID string
-		if i < totalPkgs {
-			// Real package: keep original repo from fixture
-			assignedRepoID = pkg.Repo
-		} else if len(syntheticRepoIDs) > 0 {
-			// Duplicated package: assign to synthetic repos round-robin
-			assignedRepoID = syntheticRepoIDs[(i-totalPkgs)%len(syntheticRepoIDs)]
-		} else {
-			// No synthetic repos available, use original repo
-			assignedRepoID = pkg.Repo
-		}
-		repoCPE := repositories[assignedRepoID].GetCpe()
+		// All packages use their original repo from the fixture
+		repoCPE := repositories[pkg.Repo].GetCpe()
 
 		packages[pkgID] = &v4.Package{
 			Id:             pkgID,
@@ -195,7 +158,7 @@ func NewGeneratorWithSeed(numPackages, numRepos int, seed int64) *Generator {
 				{
 					PackageDb:     "sqlite:usr/share/rpm",
 					IntroducedIn:  "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
-					RepositoryIds: []string{assignedRepoID},
+					RepositoryIds: []string{pkg.Repo},
 				},
 			},
 		}
