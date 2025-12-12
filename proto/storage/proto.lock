@@ -6870,7 +6870,7 @@
               },
               {
                 "id": 4,
-                "name": "fix_timestamp_available",
+                "name": "fix_available_timestamp",
                 "type": "google.protobuf.Timestamp"
               },
               {
