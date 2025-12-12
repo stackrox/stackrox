@@ -60,6 +60,10 @@ func validateVMWorkload(workload VirtualMachineWorkload) (VirtualMachineWorkload
 	if workload.PoolSize <= 0 {
 		return workload, nil
 	}
+	if workload.NumPackages < 0 {
+		workload.NumPackages = 0
+		return workload, fmt.Errorf("virtualMachineWorkload.numPackages must be non-negative; defaulting to 0")
+	}
 	if workload.LifecycleDuration <= 0 {
 		workload.LifecycleDuration = defaultVMLifecycleDuration
 		return workload, fmt.Errorf("virtualMachineWorkload.lifecycleDuration not set or <= 0; defaulting to %s", defaultVMLifecycleDuration)
