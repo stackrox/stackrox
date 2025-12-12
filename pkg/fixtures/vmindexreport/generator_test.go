@@ -9,7 +9,7 @@ import (
 )
 
 func TestNewGeneratorWithSeed(t *testing.T) {
-	totalAvailable := len(packagesFixture)
+	totalAvailable := len(PackagesData)
 
 	tests := map[string]struct {
 		numPackages      int

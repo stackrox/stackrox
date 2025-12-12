@@ -25,7 +25,7 @@ type PackageFixture struct {
 
 // packagesFixture contains real package data from a RHEL 9 system.
 // This data is used to generate realistic VM index reports.
-var packagesFixture = []PackageFixture{
+var PackagesData = []PackageFixture{
 	{"NetworkManager", "1:1.54.0-3.el9_7", "rhel-9-for-x86_64-baseos-rpms"},
 	{"NetworkManager-libnm", "1:1.54.0-3.el9_7", "rhel-9-for-x86_64-baseos-rpms"},
 	{"NetworkManager-team", "1:1.54.0-3.el9_7", "rhel-9-for-x86_64-baseos-rpms"},
