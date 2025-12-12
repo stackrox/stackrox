@@ -87,15 +87,28 @@ func (e *enforcer) ProcessAlertResults(action central.ResourceAction, stage stor
 				},
 			}
 		case storage.LifecycleStage_RUNTIME:
-			if numProcesses := len(a.GetProcessViolation().GetProcesses()); numProcesses != 1 {
-				log.Errorf("Runtime alert on policy %q and deployment %q has %d process violations. Expected only 1", a.GetPolicy().GetName(), a.GetDeployment().GetName(), numProcesses)
+			numProcesses := len(a.GetProcessViolation().GetProcesses())
+			numFileAccesses := len(a.GetFileAccessViolation().GetAccesses())
+
+			if numProcesses != 1 && numFileAccesses != 1 {
+				log.Errorf("Runtime alert on policy %q and deployment %q has %d process violations and %d file violations. Expected only 1 of either", a.GetPolicy().GetName(), a.GetDeployment().GetName(), numProcesses, numFileAccesses)
 				continue
 			}
+
+			var podId string
+			if numProcesses == 1 {
+				podId = a.GetProcessViolation().GetProcesses()[0].GetPodId()
+			}
+
+			if numFileAccesses == 1 {
+				podId = a.GetFileAccessViolation().GetAccesses()[0].GetProcess().GetPodId()
+			}
+
 			e.actionsC <- &central.SensorEnforcement{
 				Enforcement: a.GetEnforcement().GetAction(),
 				Resource: &central.SensorEnforcement_ContainerInstance{
 					ContainerInstance: &central.ContainerInstanceEnforcement{
-						PodId:                 a.GetProcessViolation().GetProcesses()[0].GetPodId(),
+						PodId:                 podId,
 						DeploymentEnforcement: generateDeploymentEnforcement(a),
 					},
 				},
