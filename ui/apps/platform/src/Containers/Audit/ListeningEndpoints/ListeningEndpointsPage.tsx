@@ -96,7 +96,7 @@ const sortOptions = {
 };
 
 function ListeningEndpointsPage() {
-    const { page, perPage, setPage, setPerPage } = useURLPagination(20);
+    const { page, perPage, setPage, setPerPage } = useURLPagination(10);
     const { sortOption, getSortParams } = useURLSort(sortOptions);
     const { searchFilter, setSearchFilter } = useURLSearch();
     const [entity, setEntity] = useState('Deployment');
