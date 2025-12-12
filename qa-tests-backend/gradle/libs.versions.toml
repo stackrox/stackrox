@@ -22,7 +22,7 @@ spock-core = { module = "org.spockframework:spock-core" }
 spock-junit4 = { module = "org.spockframework:spock-junit4" }
 rest-assured = { module = "io.rest-assured:rest-assured", version = "5.5.6" }
 snakeyaml = { module = "org.yaml:snakeyaml", version = "2.5" }
-logback-classic = { module = "ch.qos.logback:logback-classic", version = "1.5.21" }
+logback-classic = { module = "ch.qos.logback:logback-classic", version = "1.5.22" }
 jackson-core = { module = "com.fasterxml.jackson.core:jackson-core", version.ref = "jackson" }
 jackson-annotations = { module = "com.fasterxml.jackson.core:jackson-annotations", version.ref = "jackson" }
 jackson-databind = { module = "com.fasterxml.jackson.core:jackson-databind", version.ref = "jackson" }
