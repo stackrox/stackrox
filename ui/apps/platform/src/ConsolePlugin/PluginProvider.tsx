@@ -8,6 +8,7 @@ import { UserPermissionProvider } from 'providers/UserPermissionProvider';
 import { FeatureFlagsProvider } from 'providers/FeatureFlagProvider';
 import { MetadataProvider } from 'providers/MetadataProvider';
 import { PublicConfigProvider } from 'providers/PublicConfigProvider';
+import { TelemetryConfigProvider } from 'providers/TelemetryConfigProvider';
 
 import consoleFetchAxiosAdapter from './consoleFetchAxiosAdapter';
 import PluginContent from './PluginContent';
@@ -33,7 +34,9 @@ function PluginProviderContent({ children }: { children: ReactNode }) {
                 <FeatureFlagsProvider>
                     <MetadataProvider>
                         <PublicConfigProvider>
-                            <PluginContent>{children}</PluginContent>
+                            <TelemetryConfigProvider>
+                                <PluginContent>{children}</PluginContent>
+                            </TelemetryConfigProvider>
                         </PublicConfigProvider>
                     </MetadataProvider>
                 </FeatureFlagsProvider>
