@@ -161,7 +161,7 @@ function extractCommonComponentFields(
     component: ComponentVulnerabilityBase,
     vulnerability: ComponentVulnerabilityBase['imageVulnerabilities'][0] | undefined
 ): TableDataRow {
-    const { name, version, location, source, layerIndex } = component;
+    const { name, version, location, source, layerIndex, inBaseImageLayer } = component;
 
     let layer: TableDataRow['layer'] = null;
 
@@ -195,6 +195,7 @@ function extractCommonComponentFields(
         fixedByVersion,
         advisory,
         pendingExceptionCount,
+        inBaseImageLayer,
     };
 }
 
