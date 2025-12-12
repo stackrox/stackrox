@@ -100,17 +100,12 @@ func buildRepositories() map[string]*v4.Repository {
 	return repositories
 }
 
-// NewGenerator creates a new Generator with the specified number of packages.
+// NewGeneratorWithSeed creates a new Generator with a specific random seed.
 // The numPackages parameter specifies how many packages to include (0 = all available).
 // When numPackages < available, packages are randomly sampled.
 // When numPackages > available, packages are duplicated to reach the requested count.
 // All packages use the two real RHEL repositories from the fixture.
 // The seed parameter controls random selection for reproducibility.
-func NewGenerator(numPackages int) *Generator {
-	return NewGeneratorWithSeed(numPackages, 42) // Default seed for reproducibility
-}
-
-// NewGeneratorWithSeed creates a new Generator with a specific random seed.
 func NewGeneratorWithSeed(numPackages int, seed int64) *Generator {
 	rng := rand.New(rand.NewSource(seed))
 
