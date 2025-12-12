@@ -102,22 +102,21 @@ func migrateIndex(dbCtx context.Context, db postgres.DB, indexName string, index
 	createStatement := fmt.Sprintf(createIndex, tmpIndexName, tableName, indexColumn)
 	_, err := db.Exec(ctx, createStatement)
 	if err != nil {
-		log.Error(errors.Wrapf(err, "unable to create index %s", indexName))
+		return errors.Wrapf(err, "unable to create index %s", indexName)
 	}
 
 	// drop the index
 	dropStatement := fmt.Sprintf(dropIndex, indexName)
 	_, err = db.Exec(ctx, dropStatement)
 	if err != nil {
-		log.Error(errors.Wrapf(err, "unable to drop index %s", indexName))
+		return errors.Wrapf(err, "unable to drop index %s", indexName)
 	}
 
 	// rename the tmp index to be the old index
 	renameStatement := fmt.Sprintf(renameIndex, tmpIndexName, indexName)
-	log.Info(renameStatement)
 	_, err = db.Exec(ctx, renameStatement)
 	if err != nil {
-		log.Error(errors.Wrapf(err, "unable to reanme index %s", tmpIndexName))
+		return errors.Wrapf(err, "unable to reanme index %s", tmpIndexName)
 	}
 
 	log.Infof("Migration of index %s is complete", indexName)
