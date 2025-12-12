@@ -296,7 +296,7 @@ func doTestForceRollbackRocksToPostgresFailure(t *testing.T) {
 			withPrevious:         false,
 			forceRollback:        "",
 			toVersion:            futureVerDifferentMin,
-			expectedErrorMessage: fmt.Sprintf(metadata.ErrSoftwareNotCompatibleWithDatabase, currVer.seqNum, futureVerDifferentMin.minSeqNum),
+			expectedErrorMessage: fmt.Sprintf(metadata.ErrSoftwareNotCompatibleWithDatabase, currVer.seqNum, futureVerDifferentMin.minSeqNum, migrations.MinimumSupportedDBVersion()),
 		},
 		{
 			// Any rollbacks to 4.1 or later will only use central_active
@@ -304,7 +304,7 @@ func doTestForceRollbackRocksToPostgresFailure(t *testing.T) {
 			withPrevious:         false,
 			forceRollback:        currVer.version,
 			toVersion:            futureVerDifferentMin,
-			expectedErrorMessage: fmt.Sprintf(metadata.ErrSoftwareNotCompatibleWithDatabase, currVer.seqNum, futureVerDifferentMin.minSeqNum),
+			expectedErrorMessage: fmt.Sprintf(metadata.ErrSoftwareNotCompatibleWithDatabase, currVer.seqNum, futureVerDifferentMin.minSeqNum, migrations.MinimumSupportedDBVersion()),
 		},
 		{
 			description:          "force rollback with previous",
@@ -318,14 +318,14 @@ func doTestForceRollbackRocksToPostgresFailure(t *testing.T) {
 			withPrevious:         true,
 			forceRollback:        "",
 			toVersion:            futureVerDifferentMin,
-			expectedErrorMessage: fmt.Sprintf(metadata.ErrSoftwareNotCompatibleWithDatabase, currVer.seqNum, futureVerDifferentMin.minSeqNum),
+			expectedErrorMessage: fmt.Sprintf(metadata.ErrSoftwareNotCompatibleWithDatabase, currVer.seqNum, futureVerDifferentMin.minSeqNum, migrations.MinimumSupportedDBVersion()),
 		},
 		{
 			description:          "with force rollback code does not support min sequence in DB",
 			withPrevious:         true,
 			forceRollback:        currVer.version,
 			toVersion:            futureVerDifferentMin,
-			expectedErrorMessage: fmt.Sprintf(metadata.ErrSoftwareNotCompatibleWithDatabase, currVer.seqNum, futureVerDifferentMin.minSeqNum),
+			expectedErrorMessage: fmt.Sprintf(metadata.ErrSoftwareNotCompatibleWithDatabase, currVer.seqNum, futureVerDifferentMin.minSeqNum, migrations.MinimumSupportedDBVersion()),
 			wrongVersion:         true,
 		},
 	}

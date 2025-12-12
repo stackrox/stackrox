@@ -31,8 +31,8 @@ const (
 )
 
 var (
-	preVer    = versionPair{version: "3.0.57.0", seqNum: 63, minSeqNum: 0}
-	currVer   = versionPair{version: "3.0.58.0", seqNum: migrations.CurrentDBVersionSeqNum(), minSeqNum: migrations.MinimumSupportedDBVersionSeqNum()}
+	preVer    = versionPair{version: "4.7.22.0", seqNum: 63, minSeqNum: 0}
+	currVer   = versionPair{version: "4.10.58.0", seqNum: migrations.CurrentDBVersionSeqNum(), minSeqNum: migrations.MinimumSupportedDBVersionSeqNum()}
 	futureVer = versionPair{version: "10001.0.0.0", seqNum: 6533, minSeqNum: 2011}
 )
 
@@ -148,7 +148,7 @@ func (s *PostgresCloneManagerSuite) TestScanCurrentPrevious() {
 	pgtest.DropDatabase(s.T(), migrations.PreviousDatabase)
 
 	// Scan the clones
-	errorMessage := fmt.Sprintf(metadata.ErrSoftwareNotCompatibleWithDatabase, migrations.CurrentDBVersionSeqNum(), futureVersion.GetMinSeqNum())
+	errorMessage := fmt.Sprintf(metadata.ErrSoftwareNotCompatibleWithDatabase, migrations.CurrentDBVersionSeqNum(), futureVersion.GetMinSeqNum(), migrations.MinimumSupportedDBVersion())
 	s.Require().EqualError(dbm.Scan(), errorMessage)
 
 	// Create a previous and set its version to current one
@@ -310,7 +310,7 @@ func (s *PostgresCloneManagerSuite) TestGetCloneUpgrade() {
 	s.Require().Nil(dbm.Scan())
 
 	clone, migrateRocks, err := dbm.GetCloneToMigrate(nil)
-	s.Require().Equal(TempClone, clone)
+	s.Require().Equal(migrations.CurrentDatabase, clone)
 	s.Require().False(migrateRocks)
 	s.Require().Nil(err)
 }
