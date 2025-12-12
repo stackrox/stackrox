@@ -819,6 +819,19 @@ func (s *CollectionPostgresDataStoreTestSuite) TestResolveCollectionQuery() {
 	assert.Equal(s.T(), expectedQuery.String(), query.String())
 }
 
+func (s *CollectionPostgresDataStoreTestSuite) cleanupCollections(ctx context.Context) {
+	results, err := s.datastore.SearchResults(ctx, pkgSearch.EmptyQuery())
+	s.NoError(err)
+	for i := range results {
+		err = s.datastore.DeleteCollection(ctx, results[i].GetId())
+		s.NoError(err)
+	}
+	// Verify cleanup
+	results, err = s.datastore.SearchResults(ctx, pkgSearch.EmptyQuery())
+	s.NoError(err)
+	s.Empty(results)
+}
+
 func (s *CollectionPostgresDataStoreTestSuite) TestSearchResults() {
 	ctx := sac.WithAllAccess(context.Background())
 
@@ -863,7 +876,7 @@ func (s *CollectionPostgresDataStoreTestSuite) TestSearchResults() {
 	s.NoError(err)
 	s.NotEmpty(id2)
 
-	collection3 := getTestCollection("test-collection-3", []string{id1})
+	collection3 := getTestCollection("test-collection-3", nil)
 	collection3.ResourceSelectors = []*storage.ResourceSelector{
 		{
 			Rules: []*storage.SelectorRule{
@@ -934,8 +947,8 @@ func (s *CollectionPostgresDataStoreTestSuite) TestSearchResults() {
 		})
 	}
 
-	// Clean up
-	s.NoError(s.datastore.DeleteCollection(ctx, id3))
+	// Clean up - delete in reverse dependency order (children before parents)
+	s.NoError(s.datastore.DeleteCollection(ctx, id3)) // has reference to id1, delete first
 	s.NoError(s.datastore.DeleteCollection(ctx, id2))
 	s.NoError(s.datastore.DeleteCollection(ctx, id1))
 
