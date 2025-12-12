@@ -65,9 +65,9 @@ function ListeningEndpointsPage() {
     return (
         <>
             <PageTitle title="Listening Endpoints" />
-            <PageSection hasBodyWrapper={false}>
+            <PageSection hasBodyWrapper={false} variant="default">
                 <Title headingLevel="h1">Listening endpoints</Title>
-                <Content component="p" className="pf-v6-u-pt-xs">
+                <Content component="p">
                     Audit listening endpoints of deployments in your clusters
                 </Content>
             </PageSection>
@@ -95,6 +95,7 @@ function ListeningEndpointsPage() {
                                 searchFilter={searchFilter}
                             />
                         </ToolbarGroup>
+                        <ToolbarItem variant="separator" />
                         <ToolbarGroup className="pf-v6-u-w-100">
                             <ToolbarItem variant="pagination" align={{ default: 'alignEnd' }}>
                                 <Pagination
@@ -110,7 +111,7 @@ function ListeningEndpointsPage() {
                         </ToolbarGroup>
                     </ToolbarContent>
                 </Toolbar>
-                <div className="pf-v6-u-background-color-100">
+                <div>
                     {error && (
                         <Bullseye>
                             <EmptyStateTemplate
