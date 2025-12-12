@@ -2,7 +2,7 @@ package service
 
 import (
 	"context"
-	"regexp"
+	"path"
 
 	"github.com/distribution/reference"
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
@@ -180,11 +180,17 @@ func (s *serviceImpl) validateBaseImageRepository(repoPath string) error {
 	return nil
 }
 
-// isValidTagPattern checks if the given string is a valid regex pattern.
-// The tag pattern must be a valid regular expression.
+// isValidTagPattern checks if the given string is a valid [path.Match] glob pattern.
 func isValidTagPattern(tagPattern string) (bool, error) {
-	if _, err := regexp.Compile(tagPattern); err != nil {
-		return false, errox.InvalidArgs.CausedBy(errors.Wrap(err, "invalid tag pattern regex"))
+	// Reject empty tag patterns, should use * instead
+	if tagPattern == "" {
+		return false, errox.InvalidArgs.New("tag pattern cannot be empty")
+	}
+	// Validate the pattern by attempting to match it against an empty string.
+	// If the pattern is malformed, path.Match will return an error.
+	_, err := path.Match(tagPattern, "")
+	if err != nil {
+		return false, errox.InvalidArgs.CausedBy(errors.Wrap(err, "invalid tag pattern"))
 	}
 
 	return true, nil

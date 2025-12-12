@@ -165,22 +165,40 @@ func (suite *ServiceTestSuite) TestIsValidTagPattern() {
 		expectedErrMsg string
 	}{
 		{
-			description:    "accepts valid regex pattern for version matching",
-			input:          "v\\d+\\.\\d+\\.\\d+",
+			description:    "accepts valid pattern for version matching",
+			input:          "8.*",
 			expectedValid:  true,
 			expectedErrMsg: "",
 		},
 		{
-			description:    "accepts empty regex pattern",
+			description:    "accepts tag pattern with multiple wildcards",
+			input:          "v*.*.*",
+			expectedValid:  true,
+			expectedErrMsg: "",
+		},
+		{
+			description:    "accepts literal tag pattern",
+			input:          "latest",
+			expectedValid:  true,
+			expectedErrMsg: "",
+		},
+		{
+			description:    "accepts wildcard pattern",
+			input:          "*",
+			expectedValid:  true,
+			expectedErrMsg: "",
+		},
+		{
+			description:    "rejects empty tag pattern",
 			input:          "",
-			expectedValid:  true,
-			expectedErrMsg: "",
+			expectedValid:  false,
+			expectedErrMsg: "tag pattern cannot be empty",
 		},
 		{
-			description:    "rejects malformed regex pattern",
-			input:          "[unclosed",
-			expectedValid:  false,
-			expectedErrMsg: "invalid tag pattern regex: error parsing regexp: missing closing ]: `[unclosed`",
+			description:    "accepts tag pattern with question mark",
+			input:          "v?.?",
+			expectedValid:  true,
+			expectedErrMsg: "",
 		},
 	}
 
@@ -211,14 +229,14 @@ func (suite *ServiceTestSuite) TestCreateBaseImageReference() {
 			description: "creates base image reference with valid inputs",
 			request: &v2.CreateBaseImageReferenceRequest{
 				BaseImageRepoPath:   "docker.io/library/nginx",
-				BaseImageTagPattern: "v\\d+\\.\\d+\\.\\d+",
+				BaseImageTagPattern: "8.*",
 			},
 			mockSetup: func() {
 				suite.setupAllImageRegistriesMatch(true)
 				created := &storage.BaseImageRepository{
 					Id:             "test-id",
 					RepositoryPath: "docker.io/library/nginx",
-					TagPattern:     "v\\d+\\.\\d+\\.\\d+",
+					TagPattern:     "8.*",
 				}
 				suite.mockDatastore.EXPECT().UpsertRepository(gomock.Any(), gomock.Any()).
 					Return(created, nil)
@@ -229,7 +247,7 @@ func (suite *ServiceTestSuite) TestCreateBaseImageReference() {
 			description: "rejects creation with no matching registry",
 			request: &v2.CreateBaseImageReferenceRequest{
 				BaseImageRepoPath:   "docker.io/library/nginx",
-				BaseImageTagPattern: "v\\d+\\.\\d+\\.\\d+",
+				BaseImageTagPattern: "8.*",
 			},
 			mockSetup: func() {
 				suite.setupAllImageRegistriesMatch(false)
@@ -277,10 +295,10 @@ func (suite *ServiceTestSuite) TestUpdateBaseImageTagPattern() {
 		errorContains string
 	}{
 		{
-			description: "updates tag pattern with valid regex",
+			description: "updates tag pattern with valid glob",
 			request: &v2.UpdateBaseImageTagPatternRequest{
 				Id:                  "test-id",
-				BaseImageTagPattern: "v\\d+\\.\\d+\\.\\d+",
+				BaseImageTagPattern: "8.*",
 			},
 			mockSetup: func() {
 				existing := &storage.BaseImageRepository{
@@ -296,7 +314,7 @@ func (suite *ServiceTestSuite) TestUpdateBaseImageTagPattern() {
 			expectedError: false,
 		},
 		{
-			description: "rejects update with invalid regex pattern",
+			description: "rejects update with invalid tag pattern",
 			request: &v2.UpdateBaseImageTagPatternRequest{
 				Id:                  "test-id",
 				BaseImageTagPattern: "[unclosed",
@@ -349,7 +367,7 @@ func (suite *ServiceTestSuite) TestGetBaseImageReferences() {
 					{
 						Id:             "id-1",
 						RepositoryPath: "docker.io/library/nginx",
-						TagPattern:     "v\\d+\\.\\d+\\.\\d+",
+						TagPattern:     "8.*",
 					},
 					{
 						Id:             "id-2",
