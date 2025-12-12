@@ -836,8 +836,6 @@ EOT
     # shellcheck disable=SC2030,SC2031
     export ROX_SCANNER_V4="" # Scanner V4 enabled by default.
 
-    local reenable_sfa="false"
-
     _begin "deploy-stackrox"
 
     # Install old version of the operator & deploy StackRox.

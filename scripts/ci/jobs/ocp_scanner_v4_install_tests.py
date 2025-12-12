@@ -26,7 +26,7 @@ try:
     EXPR = r"openshift-4-ocp/\w+-(?P<major>\d+).(?P<minor>\d+)"
 
     m = re.match(EXPR, ocp_variant)
-    if int(m.group("major")) >= 4 and int(m.group("minor")) > 16:
+    if int(m.group("major")) >= 4 and int(m.group("minor")) >= 16:
         os.environ["SFA_AGENT"] = "Enabled"
 except Exception as ex:
     print(f"Could not identify the OCP version, {ex}, SFA is disabled")
