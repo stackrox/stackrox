@@ -45,3 +45,7 @@ body {
   position: relative;
   width: 100%;
 }
+
+.pf-v6-c-page__main-container {
+  height: 100%;
+}
