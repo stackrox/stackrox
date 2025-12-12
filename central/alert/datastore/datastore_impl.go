@@ -26,6 +26,8 @@ import (
 	searchCommon "github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/paginated"
 	"github.com/stackrox/rox/pkg/sync"
+	"golang.org/x/text/cases"
+	"golang.org/x/text/language"
 )
 
 const whenUnlimited = 100
@@ -96,7 +98,9 @@ func (ds *datastoreImpl) SearchAlerts(ctx context.Context, q *v1.Query) ([]*v1.S
 		search.NewQuerySelect(search.Cluster).Proto(),
 		search.NewQuerySelect(search.Namespace).Proto(),
 		search.NewQuerySelect(search.DeploymentName).Proto(),
+		search.NewQuerySelect(search.EntityType).Proto(),
 		search.NewQuerySelect(search.ResourceName).Proto(),
+		search.NewQuerySelect(search.ResourceType).Proto(),
 	}
 	clonedQuery.Selects = append(clonedQuery.GetSelects(), selectSelects...)
 
@@ -420,26 +424,27 @@ func (c *AlertSearchResultConverter) BuildLocation(result *search.Result) string
 	clusterName := fv[strings.ToLower(search.Cluster.String())]
 	namespace := fv[strings.ToLower(search.Namespace.String())]
 	deploymentName := fv[strings.ToLower(search.DeploymentName.String())]
+	entityType := fv[strings.ToLower(search.EntityType.String())]
 	resourceName := fv[strings.ToLower(search.ResourceName.String())]
+	resourceType := fv[strings.ToLower(search.ResourceType.String())]
 
-	var entityName, resourceType string
-	if deploymentName != "" {
+	var entityName string
+	if entityType == "DEPLOYMENT" {
 		entityName = deploymentName
-		resourceType = "Deployment"
-	} else if resourceName != "" {
+		resourceType = entityType
+	} else if entityType == "RESOURCE" {
 		entityName = resourceName
-		resourceType = "Resource"
 	}
 
 	var location string
-	if entityName != "" {
-		if namespace != "" {
-			location = fmt.Sprintf("/%s/%s/%s/%s",
-				clusterName, namespace, resourceType, entityName)
-		} else {
-			location = fmt.Sprintf("/%s/%s/%s",
-				clusterName, resourceType, entityName)
-		}
+
+	casePkg := cases.Title(language.English)
+	if namespace != "" {
+		location = fmt.Sprintf("/%s/%s/%s/%s",
+			clusterName, namespace, casePkg.String(resourceType), entityName)
+	} else {
+		location = fmt.Sprintf("/%s/%s/%s",
+			clusterName, casePkg.String(resourceType), entityName)
 	}
 	return location
 }
