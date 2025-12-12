@@ -10,12 +10,14 @@ import (
 	"time"
 
 	"github.com/graph-gophers/graphql-go"
+	mbgraphql "github.com/machinebox/graphql"
 	"github.com/stackrox/rox/central/graphql/resolvers/inputtypes"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/clientconn"
 	"github.com/stackrox/rox/pkg/mtls"
 	"github.com/stackrox/rox/pkg/netutil"
+	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sliceutils"
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stretchr/testify/require"
@@ -165,6 +167,9 @@ func TestPod(testT *testing.T) {
 		eventNames := sliceutils.Map(events, func(event Event) string { return event.Name })
 		retryEventsT.Logf("Event names: %+v", eventNames)
 
+		// Required processes from both containers
+		requiredProcesses := []string{"/usr/sbin/nginx", "/bin/sh", "/bin/date", "/bin/sleep"}
+
 		// Diagnostics should not influence the test outcome. We run it best-effort and log any failures
 		// instead of failing the test.
 		//
@@ -174,11 +179,31 @@ func TestPod(testT *testing.T) {
 		if curLen > 0 && curLen != prevEventNamesLen {
 			retryEventsT.Logf("pod.events length changed: %d -> %d (attempt %d/%d)", prevEventNamesLen, curLen, attempt, eventRetries)
 			dumpTestPodDiagnostics(retryEventsT, k8sPod.GetNamespace(), k8sPod.GetName(), deploymentID, pod, events)
+
+			// Aggregation mismatch report:
+			// If Central has the expected processes per-container but pod.events is missing them, log a clear
+			// classification to guide debugging (API aggregation/association vs ingestion gap).
+			missing := missingFrom(eventNames, requiredProcesses)
+			if len(missing) > 0 {
+				perContainer, err := tryGetGroupedContainerEventNamesByPodID(retryEventsT, string(pod.ID))
+				if err != nil {
+					retryEventsT.Logf("C1: unable to query groupedContainerInstances for aggregation mismatch classification (best-effort): %v", err)
+				} else {
+					firstOK := containsAll(perContainer["1st"], []string{"/usr/sbin/nginx"})
+					secondOK := containsAll(perContainer["2nd"], []string{"/bin/sh", "/bin/date", "/bin/sleep"})
+					retryEventsT.Logf("C1: pod.events missing=%v ; per-container 1st=%v ; per-container 2nd=%v",
+						missing, perContainer["1st"], perContainer["2nd"])
+					if firstOK && secondOK {
+						retryEventsT.Logf("C1 classification: aggregation mismatch (per-container OK, but pod.events missing)")
+					} else {
+						retryEventsT.Logf("C1 classification: ingestion gap (per-container missing too)")
+					}
+				}
+			}
+
 			prevEventNamesLen = curLen
 		}
 
-		// Required processes from both containers
-		requiredProcesses := []string{"/usr/sbin/nginx", "/bin/sh", "/bin/date", "/bin/sleep"}
 		require.Subsetf(retryEventsT, eventNames, requiredProcesses,
 			"Pod: required processes: %v not found in events: %v", requiredProcesses, eventNames)
 
@@ -189,6 +214,58 @@ func TestPod(testT *testing.T) {
 		retryEventsT.Logf("Verifying CSV export with %d events", len(eventNames))
 		verifyRiskEventTimelineCSV(retryEventsT, deploymentID, eventNames)
 	})
+}
+
+func missingFrom(have []string, required []string) []string {
+	haveSet := set.NewStringSet(have...)
+	var missing []string
+	for _, r := range required {
+		if !haveSet.Contains(r) {
+			missing = append(missing, r)
+		}
+	}
+	return missing
+}
+
+func containsAll(have []string, required []string) bool {
+	return len(missingFrom(have, required)) == 0
+}
+
+func tryGetGroupedContainerEventNamesByPodID(t testutils.T, podID string) (map[string][]string, error) {
+	// Best-effort: never fail the test when gathering diagnostics.
+	// Also avoid initializing graphqlClient here (it uses require/assert in graphql_utils.go).
+	if graphqlClient == nil {
+		return nil, fmt.Errorf("graphql client not initialized")
+	}
+
+	var respData struct {
+		GroupedContainerInstances []struct {
+			Name   string  `json:"name"`
+			Events []Event `json:"events"`
+		} `json:"groupedContainerInstances"`
+	}
+
+	req := mbgraphql.NewRequest(`
+		query getGroupedContainerInstances($containersQuery: String) {
+			groupedContainerInstances(query: $containersQuery) {
+				name
+				events { name timestamp }
+			}
+		}
+	`)
+	req.Var("containersQuery", fmt.Sprintf("Pod ID: %s", podID))
+
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+	if err := graphqlClient.Run(ctx, req, &respData); err != nil {
+		return nil, err
+	}
+
+	out := make(map[string][]string, len(respData.GroupedContainerInstances))
+	for _, g := range respData.GroupedContainerInstances {
+		out[g.Name] = sliceutils.Map(g.Events, func(e Event) string { return e.Name })
+	}
+	return out, nil
 }
 
 func dumpTestPodDiagnostics(t testutils.T, podNamespace, podName, deploymentID string, pod Pod, podEvents []Event) {
