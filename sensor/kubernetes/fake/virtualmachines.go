@@ -7,6 +7,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/stackrox/rox/pkg/fixtures/vmindexreport"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -227,7 +228,7 @@ func (w *WorkloadManager) manageVirtualMachine(
 	ctx context.Context,
 	workload VirtualMachineWorkload,
 	vsockCID uint32,
-	reportGen *reportGenerator,
+	reportGen *vmindexreport.Generator,
 ) {
 	defer w.wg.Done()
 
@@ -249,7 +250,7 @@ func (w *WorkloadManager) runVMLifecycle(
 	workload VirtualMachineWorkload,
 	vsockCID uint32,
 	vm, vmi *unstructured.Unstructured,
-	reportGen *reportGenerator,
+	reportGen *vmindexreport.Generator,
 ) {
 	lifecycleTimer := newTimerWithJitter(randomizedInterval(workload.LifecycleDuration, lifecycleMaxDeviation))
 	defer lifecycleTimer.Stop()
@@ -333,7 +334,7 @@ func (w *WorkloadManager) runVMLifecycle(
 // until the context is cancelled (when the VM lifecycle ends).
 func (w *WorkloadManager) sendIndexReportsWhileAlive(
 	ctx context.Context,
-	reportGen *reportGenerator,
+	reportGen *vmindexreport.Generator,
 	vsockCID uint32,
 	interval time.Duration,
 	initialDelay time.Duration,
@@ -370,14 +371,14 @@ func (w *WorkloadManager) sendIndexReportsWhileAlive(
 // sendOneIndexReport generates and sends a single index report for a VM.
 func (w *WorkloadManager) sendOneIndexReport(
 	ctx context.Context,
-	reportGen *reportGenerator,
+	reportGen *vmindexreport.Generator,
 	vsockCID uint32,
 ) {
 	if ctx.Err() != nil {
 		return
 	}
 
-	report := generateFakeIndexReport(reportGen, vsockCID)
+	report := reportGen.GenerateV1IndexReport(vsockCID)
 
 	if w.vmIndexReportHandler == nil {
 		log.Debugf("VM index report handler not set, skipping report for VM %d", vsockCID)
