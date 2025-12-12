@@ -180,4 +180,3 @@ If DNS resolution fails:
 ### Only One Matcher Gets Load
 
 Make sure to use `--direct-pod-ips` flag. Without it, gRPC load balancing doesn't work correctly with headless services.
-
