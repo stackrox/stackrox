@@ -13,6 +13,7 @@ import (
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/sac"
 	pkgSearch "github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -46,32 +47,36 @@ func (s *K8SRoleBindingPostgresDataStoreTestSuite) TearDownTest() {
 func (s *K8SRoleBindingPostgresDataStoreTestSuite) TestSearchRoleBindings() {
 	ctx := sac.WithAllAccess(context.Background())
 
+	// Generate UUIDs for test data
+	cluster1ID := uuid.NewV4().String()
+	cluster2ID := uuid.NewV4().String()
+
 	// Create test role bindings
 	binding1 := &storage.K8SRoleBinding{
-		Id:          "binding-1",
+		Id:          uuid.NewV4().String(),
 		Name:        "admin-binding",
 		Namespace:   "default",
-		ClusterId:   "cluster-1",
+		ClusterId:   cluster1ID,
 		ClusterName: "test-cluster-1",
-		RoleId:      "role-1",
+		RoleId:      uuid.NewV4().String(),
 	}
 
 	binding2 := &storage.K8SRoleBinding{
-		Id:          "binding-2",
+		Id:          uuid.NewV4().String(),
 		Name:        "read-binding",
 		Namespace:   "kube-system",
-		ClusterId:   "cluster-1",
+		ClusterId:   cluster1ID,
 		ClusterName: "test-cluster-1",
-		RoleId:      "role-2",
+		RoleId:      uuid.NewV4().String(),
 	}
 
 	binding3 := &storage.K8SRoleBinding{
-		Id:          "binding-3",
+		Id:          uuid.NewV4().String(),
 		Name:        "node-binding",
 		Namespace:   "default",
-		ClusterId:   "cluster-2",
+		ClusterId:   cluster2ID,
 		ClusterName: "test-cluster-2",
-		RoleId:      "role-3",
+		RoleId:      uuid.NewV4().String(),
 	}
 
 	// Add role bindings
@@ -94,7 +99,7 @@ func (s *K8SRoleBindingPostgresDataStoreTestSuite) TestSearchRoleBindings() {
 			name:          "empty query returns all role bindings with names populated",
 			query:         pkgSearch.EmptyQuery(),
 			expectedCount: 3,
-			expectedIDs:   []string{"binding-1", "binding-2", "binding-3"},
+			expectedIDs:   []string{binding1.GetId(), binding2.GetId(), binding3.GetId()},
 			expectedNames: []string{"admin-binding", "read-binding", "node-binding"},
 		},
 		{
@@ -105,9 +110,9 @@ func (s *K8SRoleBindingPostgresDataStoreTestSuite) TestSearchRoleBindings() {
 		},
 		{
 			name:          "query by cluster ID",
-			query:         pkgSearch.NewQueryBuilder().AddExactMatches(pkgSearch.ClusterID, "cluster-1").ProtoQuery(),
+			query:         pkgSearch.NewQueryBuilder().AddExactMatches(pkgSearch.ClusterID, cluster1ID).ProtoQuery(),
 			expectedCount: 2,
-			expectedIDs:   []string{"binding-1", "binding-2"},
+			expectedIDs:   []string{binding1.GetId(), binding2.GetId()},
 			expectedNames: []string{"admin-binding", "read-binding"},
 		},
 	}
