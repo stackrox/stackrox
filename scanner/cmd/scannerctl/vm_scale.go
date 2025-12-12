@@ -156,7 +156,6 @@ Example:
 	numRequests := flags.Int("requests", 100, "Total number of requests to send (ignored if --duration is set)")
 	numWorkers := flags.Int("workers", 15, "Number of parallel workers")
 	numPackages := flags.Int("packages", 2000, "Number of packages per VM index report")
-	numRepos := flags.Int("repos", 10, "Number of repositories per VM index report")
 	rateLimit := flags.Float64("rate", 0, "Target requests per second (0 = unlimited)")
 	duration := flags.Duration("duration", 0, "Run for this duration (0 = run until --requests completed)")
 	verbose := flags.Bool("verbose", false, "Print each request result")
@@ -185,7 +184,6 @@ Example:
 		log.Printf("VM Scale Test Configuration:")
 		log.Printf("  Workers: %d", *numWorkers)
 		log.Printf("  Packages per report: %d", *numPackages)
-		log.Printf("  Repositories: %d", *numRepos)
 		log.Printf("  Direct pod IPs: %v", *directPodIPs)
 		if *vulnDataFile != "" {
 			log.Printf("  Vuln data file: %s", *vulnDataFile)
@@ -220,13 +218,13 @@ Example:
 			indices, vulns := selectPackagesFromLearnedData(learned, *numPackages, *targetVulns, *zeroVulnsOnly, *vulnerableOnly)
 			expectedVulns = vulns
 
-			gen := vmindexreport.NewGeneratorWithPackageIndices(indices, *numRepos)
+			gen := vmindexreport.NewGeneratorWithPackageIndices(indices)
 			indexReport = gen.GenerateV4IndexReport()
 			log.Printf("Generated index report with %d packages, %d repos (expected ~%d vulns)",
 				gen.NumPackages(), gen.NumRepositories(), expectedVulns)
 		} else {
 			// Default behavior: use standard generator
-			gen := vmindexreport.NewGenerator(*numPackages, *numRepos)
+			gen := vmindexreport.NewGeneratorWithSeed(*numPackages, 42)
 			indexReport = gen.GenerateV4IndexReport()
 			log.Printf("Generated index report with %d packages, %d repos",
 				gen.NumPackages(), gen.NumRepositories())

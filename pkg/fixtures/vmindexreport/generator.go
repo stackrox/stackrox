@@ -16,6 +16,9 @@ import (
 const (
 	// MockDigest is kept in sync with pkg/virtualmachine/enricher/enricher_impl.go
 	MockDigest = "sha256:900dc0ffee900dc0ffee900dc0ffee900dc0ffee900dc0ffee900dc0ffee900d"
+
+	// MockDigestWithRegistry is MockDigest prefixed with a registry for use with go-containerregistry.
+	MockDigestWithRegistry = "registry.example.com/image@" + MockDigest
 )
 
 // numericRegex matches sequences of digits in a version string.
@@ -108,7 +111,7 @@ func NewGeneratorWithSeed(numPackages int, seed int64) *Generator {
 	}
 	rng := rand.New(rand.NewSource(seed))
 
-	totalPkgs := len(packagesFixture)
+	totalPkgs := len(PackagesData)
 	indices := selectPackageIndices(rng, numPackages, totalPkgs)
 	repositories := buildRepositories()
 
@@ -118,7 +121,7 @@ func NewGeneratorWithSeed(numPackages int, seed int64) *Generator {
 	environments := make(map[string]*v4.Environment_List, len(indices))
 
 	for i, idx := range indices {
-		pkg := packagesFixture[idx]
+		pkg := PackagesData[idx]
 		pkgID := fmt.Sprintf("%s-%d", pkg.Name, i)
 
 		// All packages use their original repo from the fixture
@@ -197,12 +200,12 @@ func (g *Generator) NumRepositories() int {
 	return len(g.repositories)
 }
 
-// NewGeneratorWithPackageIndices creates a Generator using specific package indices from Rhel9Packages.
+// NewGeneratorWithPackageIndices creates a Generator using specific package indices from packagesFixture.
 // This allows precise control over which packages are included in the generated report.
 // Useful for testing specific vulnerability scenarios.
-func NewGeneratorWithPackageIndices(indices []int, numRepos int) *Generator {
-	repositories, syntheticRepoIDs := buildRepositories(numRepos)
-	totalPkgs := len(Rhel9Packages)
+func NewGeneratorWithPackageIndices(indices []int) *Generator {
+	repositories := buildRepositories()
+	totalPkgs := len(PackagesData)
 
 	packages := make(map[string]*v4.Package, len(indices))
 	environments := make(map[string]*v4.Environment_List, len(indices))
@@ -211,18 +214,10 @@ func NewGeneratorWithPackageIndices(indices []int, numRepos int) *Generator {
 		if idx < 0 || idx >= totalPkgs {
 			continue // Skip invalid indices
 		}
-		pkg := Rhel9Packages[idx]
+		pkg := PackagesData[idx]
 		pkgID := fmt.Sprintf("%s-%d", pkg.Name, i)
 
-		var assignedRepoID string
-		if i < totalPkgs {
-			assignedRepoID = pkg.Repo
-		} else if len(syntheticRepoIDs) > 0 {
-			assignedRepoID = syntheticRepoIDs[(i-totalPkgs)%len(syntheticRepoIDs)]
-		} else {
-			assignedRepoID = pkg.Repo
-		}
-		repoCPE := repositories[assignedRepoID].GetCpe()
+		repoCPE := repositories[pkg.Repo].GetCpe()
 
 		packages[pkgID] = &v4.Package{
 			Id:             pkgID,
@@ -251,7 +246,7 @@ func NewGeneratorWithPackageIndices(indices []int, numRepos int) *Generator {
 				{
 					PackageDb:     "sqlite:usr/share/rpm",
 					IntroducedIn:  "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
-					RepositoryIds: []string{assignedRepoID},
+					RepositoryIds: []string{pkg.Repo},
 				},
 			},
 		}

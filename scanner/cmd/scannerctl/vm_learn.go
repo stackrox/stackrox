@@ -80,7 +80,7 @@ Example:
 	cmd.RunE = func(cmd *cobra.Command, args []string) error {
 		matcherAddr, _ := cmd.Flags().GetString("matcher-address")
 
-		log.Printf("Learning vulnerability data for %d packages...", len(vmindexreport.Rhel9Packages))
+		log.Printf("Learning vulnerability data for %d packages...", len(vmindexreport.PackagesData))
 		log.Printf("This may take a few minutes.")
 
 		// Create scanner client
@@ -98,20 +98,20 @@ Example:
 		learned := &LearnedVulnData{
 			LearnedAt:   time.Now(),
 			MatcherAddr: matcherAddr,
-			TotalPkgs:   len(vmindexreport.Rhel9Packages),
-			Packages:    make([]PackageVulnData, 0, len(vmindexreport.Rhel9Packages)),
+			TotalPkgs:   len(vmindexreport.PackagesData),
+			Packages:    make([]PackageVulnData, 0, len(vmindexreport.PackagesData)),
 		}
 
 		// Query each package individually
-		for i, pkg := range vmindexreport.Rhel9Packages {
+		for i, pkg := range vmindexreport.PackagesData {
 			// Generate index report with just this one package
-			gen := vmindexreport.NewGeneratorWithPackageIndices([]int{i}, 2)
+			gen := vmindexreport.NewGeneratorWithPackageIndices([]int{i})
 			indexReport := gen.GenerateV4IndexReport()
 
 			// Query scanner
 			vulnReport, err := scanner.GetVulnerabilities(ctx, digest, indexReport.GetContents())
 			if err != nil {
-				log.Printf("[%d/%d] %s: ERROR - %v", i+1, len(vmindexreport.Rhel9Packages), pkg.Name, err)
+				log.Printf("[%d/%d] %s: ERROR - %v", i+1, len(vmindexreport.PackagesData), pkg.Name, err)
 				// Store with -1 vulns to indicate error
 				learned.Packages = append(learned.Packages, PackageVulnData{
 					Index:   i,
@@ -137,9 +137,9 @@ Example:
 			})
 
 			if *verbose {
-				log.Printf("[%d/%d] %s (%s): %d vulns", i+1, len(vmindexreport.Rhel9Packages), pkg.Name, pkg.Version, vulnCount)
+				log.Printf("[%d/%d] %s (%s): %d vulns", i+1, len(vmindexreport.PackagesData), pkg.Name, pkg.Version, vulnCount)
 			} else if (i+1)%50 == 0 {
-				log.Printf("Progress: %d/%d packages scanned...", i+1, len(vmindexreport.Rhel9Packages))
+				log.Printf("Progress: %d/%d packages scanned...", i+1, len(vmindexreport.PackagesData))
 			}
 		}
 
