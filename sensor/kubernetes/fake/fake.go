@@ -529,13 +529,11 @@ func (w *WorkloadManager) initializePreexistingResources() {
 		if w.workload.VirtualMachineWorkload.ReportInterval > 0 {
 			reportGen = vmindexreport.NewGeneratorWithSeed(
 				w.workload.VirtualMachineWorkload.NumPackages,
-				w.workload.VirtualMachineWorkload.NumRepositories,
 				reportGeneratorSeed,
 			)
-			log.Infof("VM index reports enabled: interval=%s, packages=%d, repos=%d",
+			log.Infof("VM index reports enabled: interval=%s, packages=%d",
 				w.workload.VirtualMachineWorkload.ReportInterval,
-				w.workload.VirtualMachineWorkload.NumPackages,
-				w.workload.VirtualMachineWorkload.NumRepositories)
+				w.workload.VirtualMachineWorkload.NumPackages)
 		}
 
 		// Fork management of VM/VMI resources (including index reports if enabled)

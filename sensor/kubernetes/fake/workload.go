@@ -104,8 +104,6 @@ type VirtualMachineWorkload struct {
 	ReportInterval time.Duration `yaml:"reportInterval"`
 	// NumPackages is the number of fake packages to include in each index report
 	NumPackages int `yaml:"numPackages"`
-	// NumRepositories is the number of fake repositories to include in each index report
-	NumRepositories int `yaml:"numRepositories"`
 }
 
 // Workload is the definition of a scale workload

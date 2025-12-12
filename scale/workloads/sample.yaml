@@ -78,8 +78,6 @@ virtualMachineWorkload:
   reportInterval: 60s
   # Number of fake packages to include in each index report
   numPackages: 100
-  # Number of fake repositories to include in each index report
-  numRepositories: 10
   # Delay before the first index report for each VM (±20% max deviation applied)
   initialReportDelay: 10s
 

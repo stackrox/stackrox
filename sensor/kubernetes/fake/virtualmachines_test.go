@@ -152,7 +152,7 @@ func TestValidateVMWorkload(t *testing.T) {
 }
 
 func TestGenerateFakeIndexReport(t *testing.T) {
-	gen := vmindexreport.NewGeneratorWithSeed(10, 5, 42) // 10 packages, 5 repos (2 real + 3 synthetic), seed=42 for reproducibility
+	gen := vmindexreport.NewGeneratorWithSeed(10, 42) // 10 packages, seed=42 for reproducibility
 	tests := map[string]uint32{
 		"basic report": 1234,
 		"different VM": 9999,
@@ -172,7 +172,7 @@ func TestGenerateFakeIndexReport(t *testing.T) {
 			// Verify contents
 			require.NotNil(t, report.GetIndexV4().GetContents(), "Contents should not be nil")
 			assert.Len(t, report.GetIndexV4().GetContents().GetPackages(), 10, "expected 10 packages")
-			assert.Len(t, report.GetIndexV4().GetContents().GetRepositories(), 5, "expected 5 repositories (2 real + 3 synthetic)")
+			assert.Len(t, report.GetIndexV4().GetContents().GetRepositories(), 2, "expected 2 real repositories")
 
 			// Verify packages have valid CPEs (regression test for WFN error)
 			for _, pkg := range report.GetIndexV4().GetContents().GetPackages() {
