@@ -11,11 +11,17 @@ import (
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/stackrox/rox/central/graphql/resolvers/inputtypes"
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/clientconn"
+	"github.com/stackrox/rox/pkg/mtls"
+	"github.com/stackrox/rox/pkg/netutil"
 	"github.com/stackrox/rox/pkg/sliceutils"
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stretchr/testify/require"
+	"google.golang.org/grpc"
 	coreV1 "k8s.io/api/core/v1"
+	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 type IDStruct struct {
@@ -138,10 +144,15 @@ func TestPod(testT *testing.T) {
 	// after any previous tests that may have restarted Sensor.
 	waitForSensorHealthy(testT)
 
-	_, deploymentID, pod, cleanup := setupMultiContainerPodTest(testT)
+	k8sPod, deploymentID, pod, cleanup := setupMultiContainerPodTest(testT)
 	defer cleanup()
 
-	testutils.Retry(testT, 30, 5*time.Second, func(retryEventsT testutils.T) {
+	const eventRetries = 30
+	attempt := 0
+	prevEventNamesLen := -1
+	testutils.Retry(testT, eventRetries, 5*time.Second, func(retryEventsT testutils.T) {
+		attempt++
+
 		events := getEvents(retryEventsT, pod)
 		retryEventsT.Logf("Found %d events: %+v", len(events), events)
 
@@ -153,6 +164,18 @@ func TestPod(testT *testing.T) {
 
 		eventNames := sliceutils.Map(events, func(event Event) string { return event.Name })
 		retryEventsT.Logf("Event names: %+v", eventNames)
+
+		// Diagnostics should not influence the test outcome. We run it best-effort and log any failures
+		// instead of failing the test.
+		//
+		// Trigger diagnostics when eventNames length changes (but skip the noisy zero-length case).
+		// This provides snapshots for both successful runs and flakes, enabling comparisons across runs.
+		curLen := len(eventNames)
+		if curLen > 0 && curLen != prevEventNamesLen {
+			retryEventsT.Logf("pod.events length changed: %d -> %d (attempt %d/%d)", prevEventNamesLen, curLen, attempt, eventRetries)
+			dumpTestPodDiagnostics(retryEventsT, k8sPod.GetNamespace(), k8sPod.GetName(), deploymentID, pod, events)
+			prevEventNamesLen = curLen
+		}
 
 		// Required processes from both containers
 		requiredProcesses := []string{"/usr/sbin/nginx", "/bin/sh", "/bin/date", "/bin/sleep"}
@@ -166,6 +189,126 @@ func TestPod(testT *testing.T) {
 		retryEventsT.Logf("Verifying CSV export with %d events", len(eventNames))
 		verifyRiskEventTimelineCSV(retryEventsT, deploymentID, eventNames)
 	})
+}
+
+func dumpTestPodDiagnostics(t testutils.T, podNamespace, podName, deploymentID string, pod Pod, podEvents []Event) {
+	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
+	defer cancel()
+
+	t.Logf("=== TestPod diagnostics (on failure) ===")
+	t.Logf("Central pod ID: %s, Pod name: %s, DeploymentID: %s", pod.ID, pod.Name, deploymentID)
+
+	// K8s pod state (helps detect stale pod reuse / container restarts / container IDs).
+	k8s := createK8sClient(t)
+	if k8sPod, err := k8s.CoreV1().Pods(podNamespace).Get(ctx, podName, metaV1.GetOptions{}); err != nil {
+		t.Logf("K8s: failed to get pod %s/%s: %v", podNamespace, podName, err)
+	} else {
+		t.Logf("K8s pod %s/%s: uid=%s phase=%s creation=%s deletion=%v",
+			podNamespace, podName, k8sPod.UID, k8sPod.Status.Phase, k8sPod.CreationTimestamp.UTC(), k8sPod.DeletionTimestamp)
+		for _, cs := range k8sPod.Status.ContainerStatuses {
+			startedAt := ""
+			if cs.State.Running != nil {
+				startedAt = cs.State.Running.StartedAt.UTC().String()
+			}
+			t.Logf("K8s container %q: ready=%v restart=%d image=%q imageID=%q containerID=%q startedAt=%q state=%+v",
+				cs.Name, cs.Ready, cs.RestartCount, cs.Image, cs.ImageID, cs.ContainerID, startedAt, cs.State)
+		}
+	}
+
+	// Sensor restart evidence.
+	if sensorPods, err := k8s.CoreV1().Pods("stackrox").List(ctx, metaV1.ListOptions{LabelSelector: "app=sensor"}); err != nil {
+		t.Logf("K8s: failed to list sensor pods: %v", err)
+	} else {
+		for _, sp := range sensorPods.Items {
+			t.Logf("K8s sensor pod: %s uid=%s phase=%s", sp.Name, sp.UID, sp.Status.Phase)
+			for _, cs := range sp.Status.ContainerStatuses {
+				if cs.Name != "sensor" {
+					continue
+				}
+				startedAt := ""
+				if cs.State.Running != nil {
+					startedAt = cs.State.Running.StartedAt.UTC().String()
+				}
+				t.Logf("K8s sensor container: pod=%s restart=%d startedAt=%q containerID=%q", sp.Name, cs.RestartCount, startedAt, cs.ContainerID)
+			}
+		}
+	}
+
+	// Central view (cluster health, process service) must be best-effort: never fail the test due to transient
+	// network flakes while gathering diagnostics.
+	if conn, err := tryGRPCConnectionToCentral(ctx); err != nil {
+		t.Logf("Central: skipping gRPC diagnostics (unable to connect): %v", err)
+	} else {
+		defer conn.Close()
+
+		// Central view of cluster health (includes last contact).
+		clustersSvc := v1.NewClustersServiceClient(conn)
+		if clustersResp, err := clustersSvc.GetClusters(ctx, &v1.GetClustersRequest{}); err != nil {
+			t.Logf("Central: GetClusters failed: %v", err)
+		} else if len(clustersResp.GetClusters()) == 1 {
+			c := clustersResp.GetClusters()[0]
+			hs := c.GetHealthStatus()
+			t.Logf("Central cluster health: sensor=%s collector=%s overall=%s lastContact=%v",
+				hs.GetSensorHealthStatus(), hs.GetCollectorHealthStatus(), hs.GetOverallHealthStatus(), hs.GetLastContact())
+		} else {
+			t.Logf("Central: expected 1 cluster, got %d", len(clustersResp.GetClusters()))
+		}
+
+		// ProcessService view (bypasses GraphQL Pod.events aggregation).
+		procSvc := v1.NewProcessServiceClient(conn)
+		if procsResp, err := procSvc.GetGroupedProcessByDeploymentAndContainer(ctx, &v1.GetProcessesByDeploymentRequest{DeploymentId: deploymentID}); err != nil {
+			t.Logf("Central: ProcessService GetGroupedProcessByDeploymentAndContainer failed: %v", err)
+		} else {
+			t.Logf("Central: ProcessService groups=%d (name+container)", len(procsResp.GetGroups()))
+			for _, g := range procsResp.GetGroups() {
+				t.Logf("Central process group: container=%q name=%q timesExecuted=%d suspicious=%v",
+					g.GetContainerName(), g.GetName(), g.GetTimesExecuted(), g.GetSuspicious())
+			}
+		}
+	}
+
+	// What GraphQL pod.events returned on the failing attempt.
+	eventNames := sliceutils.Map(podEvents, func(e Event) string { return e.Name })
+	t.Logf("GraphQL pod.events count=%d names=%v", len(podEvents), eventNames)
+}
+
+func tryGRPCConnectionToCentral(ctx context.Context) (*grpc.ClientConn, error) {
+	// Avoid centralgrpc helpers here: they call require/assert internally and would fail the test.
+	// This function is used only for diagnostics and must be best-effort.
+
+	// In CI tests this is typically provided as API_ENDPOINT (see pkg/testutils/centralgrpc),
+	// but we also accept ROX_ENDPOINT for convenience.
+	endpoint := os.Getenv("API_ENDPOINT")
+	if endpoint == "" {
+		endpoint = os.Getenv("ROX_ENDPOINT")
+	}
+	if endpoint == "" {
+		return nil, fmt.Errorf("missing central endpoint env (API_ENDPOINT or ROX_ENDPOINT)")
+	}
+
+	host, _, _, err := netutil.ParseEndpoint(endpoint)
+	if err != nil {
+		return nil, fmt.Errorf("parsing endpoint %q: %w", endpoint, err)
+	}
+
+	opts := clientconn.Options{
+		TLS: clientconn.TLSConfigOptions{
+			InsecureSkipVerify: true,
+			ServerName:         host,
+		},
+	}
+
+	// Best-effort basic auth (optional for diagnostics; if missing, calls may still succeed depending on config).
+	user := os.Getenv("ROX_USERNAME")
+	pass := os.Getenv("ROX_ADMIN_PASSWORD")
+	if user != "" && pass != "" {
+		opts.ConfigureBasicAuth(user, pass)
+	}
+
+	dialCtx, cancel := context.WithTimeout(ctx, 5*time.Second)
+	defer cancel()
+
+	return clientconn.GRPCConnection(dialCtx, mtls.CentralSubject, endpoint, opts)
 }
 
 func getDeploymentID(t testutils.T, deploymentName string) string {
