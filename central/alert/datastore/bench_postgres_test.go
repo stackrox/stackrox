@@ -100,15 +100,13 @@ func BenchmarkAlertDatabaseOps(b *testing.B) {
 	}
 	for _, batchSize := range batchSizes {
 		curBatch := make([]*storage.Alert, batchSize)
-		for i := 0; i < batchSize; i++ {
+		for i := range batchSize {
 			curBatch[i] = alertBatch[i%len(alertBatch)]
 		}
 		b.Run(fmt.Sprintf("UpsertMany/%d", batchSize), func(ib *testing.B) {
-			ib.StartTimer()
 			for ib.Loop() {
 				assert.NoError(ib, datastore.UpsertAlerts(ctx, curBatch))
 			}
-			ib.StopTimer()
 		})
 	}
 }
