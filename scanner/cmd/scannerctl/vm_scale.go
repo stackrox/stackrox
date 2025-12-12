@@ -6,18 +6,17 @@ import (
 	"log"
 	"net"
 	"sort"
-	"sync"
 	"sync/atomic"
 	"time"
-
-	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
 
 	"github.com/google/go-containerregistry/pkg/name"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/spf13/cobra"
+	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
 	"github.com/stackrox/rox/pkg/fixtures/vmindexreport"
 	"github.com/stackrox/rox/pkg/scannerv4/client"
+	"github.com/stackrox/rox/pkg/sync"
 )
 
 var (
