@@ -89,7 +89,7 @@ var (
 	requiredKubeEventFields     = set.NewFrozenStringSet(augmentedobjs.KubernetesAPIVerbCustomTag, augmentedobjs.KubernetesResourceCustomTag)
 	requiredNetworkFlowFields   = set.NewFrozenStringSet(augmentedobjs.NotInNetworkBaselineCustomTag)
 	requiredNetworkPolicyFields = set.NewFrozenStringSet(augmentedobjs.HasEgressPolicyCustomTag, augmentedobjs.HasIngressPolicyCustomTag)
-	requiredFileAccessFields    = set.NewFrozenStringSet(search.NodeFilePath.String(), search.MountedFilePath.String(), search.FileOperation.String())
+	requiredFileAccessFields    = set.NewFrozenStringSet(search.ActualFilePath.String(), search.EffectiveFilePath.String(), search.FileOperation.String())
 )
 
 func containsAllRequiredFields(fieldMap map[string][]string, required set.StringSet) bool {

@@ -930,8 +930,8 @@ func initializeFieldMetadata() FieldMetadata {
 	)
 
 	if features.SensitiveFileActivity.Enabled() {
-		f.registerFieldMetadata(fieldnames.NodeFilePath,
-			querybuilders.ForFieldLabelExact(search.NodeFilePath), nil,
+		f.registerFieldMetadata(fieldnames.ActualFilePath,
+			querybuilders.ForFieldLabelExact(search.ActualFilePath), nil,
 			func(*validateConfiguration) *regexp.Regexp {
 				// TODO(ROX-31449): change to an absolute path regex when arbitrary
 				// paths are supported
@@ -941,8 +941,8 @@ func initializeFieldMetadata() FieldMetadata {
 			[]RuntimeFieldType{FileAccess}, negationForbidden,
 		)
 
-		f.registerFieldMetadata(fieldnames.MountedFilePath,
-			querybuilders.ForFieldLabelExact(search.MountedFilePath), nil,
+		f.registerFieldMetadata(fieldnames.EffectiveFilePath,
+			querybuilders.ForFieldLabelExact(search.EffectiveFilePath), nil,
 			func(*validateConfiguration) *regexp.Regexp {
 				// TODO(ROX-31449): change to an absolute path regex when arbitrary
 				// paths are supported

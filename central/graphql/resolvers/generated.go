@@ -675,9 +675,9 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"timestamp: Time",
 	}))
 	utils.Must(builder.AddType("FileAccess_File", []string{
+		"actualFilePath: String!",
+		"effectiveFilePath: String!",
 		"meta: FileAccess_FileMetadata",
-		"mountedPath: String!",
-		"nodePath: String!",
 	}))
 	utils.Must(builder.AddType("FileAccess_FileMetadata", []string{
 		"gid: Int!",
@@ -8130,19 +8130,19 @@ func (resolver *Resolver) wrapFileAccess_FilesWithContext(ctx context.Context, v
 	return output, nil
 }
 
+func (resolver *fileAccess_FileResolver) ActualFilePath(ctx context.Context) string {
+	value := resolver.data.GetActualFilePath()
+	return value
+}
+
+func (resolver *fileAccess_FileResolver) EffectiveFilePath(ctx context.Context) string {
+	value := resolver.data.GetEffectiveFilePath()
+	return value
+}
+
 func (resolver *fileAccess_FileResolver) Meta(ctx context.Context) (*fileAccess_FileMetadataResolver, error) {
 	value := resolver.data.GetMeta()
 	return resolver.root.wrapFileAccess_FileMetadata(value, true, nil)
-}
-
-func (resolver *fileAccess_FileResolver) MountedPath(ctx context.Context) string {
-	value := resolver.data.GetMountedPath()
-	return value
-}
-
-func (resolver *fileAccess_FileResolver) NodePath(ctx context.Context) string {
-	value := resolver.data.GetNodePath()
-	return value
 }
 
 type fileAccess_FileMetadataResolver struct {

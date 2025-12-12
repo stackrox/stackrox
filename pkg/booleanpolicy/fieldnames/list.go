@@ -83,8 +83,8 @@ var (
 	KubeUserName                   = newFieldName("Kubernetes User Name")
 	KubeUserGroups                 = newFieldName("Kubernetes User Groups")
 	SourceIPAddress                = newFieldName("Source IP Address")
-	NodeFilePath                   = newFieldName("Node File Path")
-	MountedFilePath                = newFieldName("Mounted File Path")
+	ActualFilePath                 = newFieldName("Actual File Path")
+	EffectiveFilePath              = newFieldName("Effective File Path")
 	FileOperation                  = newFieldName("File Operation")
 )
 

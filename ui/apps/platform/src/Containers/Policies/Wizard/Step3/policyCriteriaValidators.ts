@@ -49,11 +49,11 @@ export const policySectionValidators: PolicySectionValidator[] = [
             context.eventSource === 'DEPLOYMENT_EVENT',
         validate: ({ policyGroups }) => {
             const hasFileOperation = policyGroupsHasCriterion(policyGroups, 'File Operation');
-            const hasMountedFilePath = policyGroupsHasCriterion(policyGroups, 'Mounted File Path');
-            const hasNodeFilePath = policyGroupsHasCriterion(policyGroups, 'Node File Path');
+            const hasEffectiveFilePath = policyGroupsHasCriterion(policyGroups, 'Effective File Path');
+            const hasActualFilePath = policyGroupsHasCriterion(policyGroups, 'Actual File Path');
 
-            if (hasFileOperation && !hasMountedFilePath && !hasNodeFilePath) {
-                return 'Criterion must be present with at least one value when using File operation: Mounted file path or Node file path';
+            if (hasFileOperation && !hasEffectiveFilePath && !hasActualFilePath) {
+                return 'Criterion must be present with at least one value when using File operation: Effective File Path or Actual File Path';
             }
             return undefined;
         },
@@ -64,10 +64,10 @@ export const policySectionValidators: PolicySectionValidator[] = [
             context.lifecycleStages.includes('RUNTIME') && context.eventSource === 'NODE_EVENT',
         validate: ({ policyGroups }) => {
             const hasFileOperation = policyGroupsHasCriterion(policyGroups, 'File Operation');
-            const hasNodeFilePath = policyGroupsHasCriterion(policyGroups, 'Node File Path');
+            const hasActualFilePath = policyGroupsHasCriterion(policyGroups, 'Actual File Path');
 
-            if (hasFileOperation && !hasNodeFilePath) {
-                return 'Criterion must be present with at least one value when using File operation: Node file path';
+            if (hasFileOperation && !hasActualFilePath) {
+                return 'Criterion must be present with at least one value when using File operation: Actual File Path';
             }
             return undefined;
         },

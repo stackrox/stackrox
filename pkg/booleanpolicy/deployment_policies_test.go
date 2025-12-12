@@ -994,9 +994,9 @@ func (s *DeploymentDetectionTestSuite) TestDeploymentDualPathMatching() {
 func (s *DeploymentDetectionTestSuite) getFileAccessEvent(path string, operation storage.FileAccess_Operation, isNodePath bool) *storage.FileAccess {
 	file := &storage.FileAccess_File{}
 	if isNodePath {
-		file.NodePath = path
+		file.ActualFilePath = path
 	} else {
-		file.MountedPath = path
+		file.EffectiveFilePath = path
 	}
 	return &storage.FileAccess{
 		File:      file,
@@ -1021,9 +1021,9 @@ func (s *DeploymentDetectionTestSuite) getFileAccessPolicy(isNodePath bool, oper
 		})
 	}
 
-	fieldName := fieldnames.NodeFilePath
+	fieldName := fieldnames.ActualFilePath
 	if !isNodePath {
-		fieldName = fieldnames.MountedFilePath
+		fieldName = fieldnames.EffectiveFilePath
 	}
 
 	policyGroups := []*storage.PolicyGroup{

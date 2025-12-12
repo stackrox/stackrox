@@ -54,30 +54,30 @@ func (p *Pipeline) translate(fs *sensorAPI.FileActivity) *storage.FileAccess {
 	switch fs.GetFile().(type) {
 	case *sensorAPI.FileActivity_Creation:
 		access.File = &storage.FileAccess_File{
-			MountedPath: fs.GetCreation().GetActivity().GetPath(),
-			NodePath:    fs.GetCreation().GetActivity().GetHostPath(),
+			EffectiveFilePath: fs.GetCreation().GetActivity().GetPath(),
+			ActualFilePath:    fs.GetCreation().GetActivity().GetHostPath(),
 		}
 		access.Operation = storage.FileAccess_CREATE
 	case *sensorAPI.FileActivity_Unlink:
 		access.File = &storage.FileAccess_File{
-			MountedPath: fs.GetUnlink().GetActivity().GetPath(),
-			NodePath:    fs.GetUnlink().GetActivity().GetHostPath(),
+			EffectiveFilePath: fs.GetUnlink().GetActivity().GetPath(),
+			ActualFilePath:    fs.GetUnlink().GetActivity().GetHostPath(),
 		}
 		access.Operation = storage.FileAccess_UNLINK
 	case *sensorAPI.FileActivity_Rename:
 		access.File = &storage.FileAccess_File{
-			MountedPath: fs.GetRename().GetOld().GetPath(),
-			NodePath:    fs.GetRename().GetOld().GetHostPath(),
+			EffectiveFilePath: fs.GetRename().GetOld().GetPath(),
+			ActualFilePath:    fs.GetRename().GetOld().GetHostPath(),
 		}
 		access.Moved = &storage.FileAccess_File{
-			MountedPath: fs.GetRename().GetNew().GetPath(),
-			NodePath:    fs.GetRename().GetNew().GetHostPath(),
+			EffectiveFilePath: fs.GetRename().GetNew().GetPath(),
+			ActualFilePath:    fs.GetRename().GetNew().GetHostPath(),
 		}
 		access.Operation = storage.FileAccess_RENAME
 	case *sensorAPI.FileActivity_Permission:
 		access.File = &storage.FileAccess_File{
-			MountedPath: fs.GetPermission().GetActivity().GetPath(),
-			NodePath:    fs.GetPermission().GetActivity().GetHostPath(),
+			EffectiveFilePath: fs.GetPermission().GetActivity().GetPath(),
+			ActualFilePath:    fs.GetPermission().GetActivity().GetHostPath(),
 			Meta: &storage.FileAccess_FileMetadata{
 				Mode: fs.GetPermission().GetMode(),
 			},
@@ -85,8 +85,8 @@ func (p *Pipeline) translate(fs *sensorAPI.FileActivity) *storage.FileAccess {
 		access.Operation = storage.FileAccess_PERMISSION_CHANGE
 	case *sensorAPI.FileActivity_Ownership:
 		access.File = &storage.FileAccess_File{
-			MountedPath: fs.GetOwnership().GetActivity().GetPath(),
-			NodePath:    fs.GetOwnership().GetActivity().GetHostPath(),
+			EffectiveFilePath: fs.GetOwnership().GetActivity().GetPath(),
+			ActualFilePath:    fs.GetOwnership().GetActivity().GetHostPath(),
 			Meta: &storage.FileAccess_FileMetadata{
 				Uid:      fs.GetOwnership().GetUid(),
 				Gid:      fs.GetOwnership().GetGid(),
@@ -97,14 +97,14 @@ func (p *Pipeline) translate(fs *sensorAPI.FileActivity) *storage.FileAccess {
 		access.Operation = storage.FileAccess_OWNERSHIP_CHANGE
 	case *sensorAPI.FileActivity_Write:
 		access.File = &storage.FileAccess_File{
-			MountedPath: fs.GetWrite().GetActivity().GetPath(),
-			NodePath:    fs.GetWrite().GetActivity().GetHostPath(),
+			EffectiveFilePath: fs.GetWrite().GetActivity().GetPath(),
+			ActualFilePath:    fs.GetWrite().GetActivity().GetHostPath(),
 		}
 		access.Operation = storage.FileAccess_WRITE
 	case *sensorAPI.FileActivity_Open:
 		access.File = &storage.FileAccess_File{
-			MountedPath: fs.GetOpen().GetActivity().GetPath(),
-			NodePath:    fs.GetOpen().GetActivity().GetHostPath(),
+			EffectiveFilePath: fs.GetOpen().GetActivity().GetPath(),
+			ActualFilePath:    fs.GetOpen().GetActivity().GetHostPath(),
 		}
 		access.Operation = storage.FileAccess_OPEN
 	default:
@@ -114,7 +114,7 @@ func (p *Pipeline) translate(fs *sensorAPI.FileActivity) *storage.FileAccess {
 
 	if fsUtils.IsNodeFileAccess(access) {
 		// TODO: remove when full host path resolution is complete
-		access.File.NodePath = access.GetFile().GetMountedPath()
+		access.File.ActualFilePath = access.GetFile().GetEffectiveFilePath()
 	}
 
 	return access
