@@ -21,6 +21,7 @@ func init() {
 		&storage.AuthMachineToMachineConfig{}:                   resources.Access,
 		&storage.AuthProvider{}:                                 resources.Access,
 		&storage.BaseImage{}:                                    resources.ImageAdministration,
+		&storage.BaseImageLayer{}:                               resources.ImageAdministration,
 		&storage.BaseImageRepository{}:                          resources.ImageAdministration,
 		&storage.BaseImageTag{}:                                 resources.ImageAdministration,
 		&storage.Blob{}:                                         resources.Administration,
