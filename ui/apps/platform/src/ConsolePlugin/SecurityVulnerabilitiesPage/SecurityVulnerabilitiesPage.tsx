@@ -1,5 +1,9 @@
 import { PageSection, Title } from '@patternfly/react-core';
-import { DocumentTitle, NamespaceBar } from '@openshift-console/dynamic-plugin-sdk';
+import {
+    DocumentTitle,
+    NamespaceBar,
+    useActiveNamespace,
+} from '@openshift-console/dynamic-plugin-sdk';
 
 import { namespaceSearchFilterConfig } from 'Containers/Vulnerabilities/searchFilterConfig';
 import { WorkloadCveViewContext } from 'Containers/Vulnerabilities/WorkloadCves/WorkloadCveViewContext';
@@ -8,8 +12,12 @@ import { deleteKeysCaseInsensitive } from 'utils/searchUtils';
 
 import { VulnerabilitiesOverviewContainer } from '../Components/VulnerabilitiesOverviewContainer';
 import { useDefaultWorkloadCveViewContext } from '../hooks/useDefaultWorkloadCveViewContext';
+import { useNamespaceScope } from '../ScopeContext';
 
 export function SecurityVulnerabilitiesPage() {
+    const [activeNamespace] = useActiveNamespace();
+    // Set namespace scope for API requests
+    useNamespaceScope(activeNamespace);
     const { searchFilter, setSearchFilter } = useURLSearch();
     const context = useDefaultWorkloadCveViewContext();
 

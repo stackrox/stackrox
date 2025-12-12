@@ -4,6 +4,7 @@ import useURLSearch from 'hooks/useURLSearch';
 import { hideColumnIf } from 'hooks/useManagedColumns';
 import { ALL_NAMESPACES_KEY } from 'ConsolePlugin/constants';
 import { useDefaultWorkloadCveViewContext } from 'ConsolePlugin/hooks/useDefaultWorkloadCveViewContext';
+import { useNamespaceScope } from 'ConsolePlugin/ScopeContext';
 import { WorkloadCveViewContext } from 'Containers/Vulnerabilities/WorkloadCves/WorkloadCveViewContext';
 import {
     deploymentSearchFilterConfig,
@@ -15,6 +16,8 @@ import ImageCvePage from 'Containers/Vulnerabilities/WorkloadCves/ImageCve/Image
 
 export function CveDetailPage() {
     const [activeNamespace] = useActiveNamespace();
+    // Set namespace scope for API requests
+    useNamespaceScope(activeNamespace);
     const { searchFilter, setSearchFilter } = useURLSearch();
     const context = useDefaultWorkloadCveViewContext();
     const searchFilterConfig = [
