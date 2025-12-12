@@ -35,3 +35,11 @@ func RenameDB(adminPool postgres.DB, originalDB, newDB string) error {
 
 	return err
 }
+
+func WrapRollback(ctx context.Context, tx *postgres.Tx, err error) error {
+	rollbackErr := tx.Rollback(ctx)
+	if rollbackErr != nil {
+		return errors.Wrapf(rollbackErr, "rolling back due to err: %v", err)
+	}
+	return err
+}
