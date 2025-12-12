@@ -54,18 +54,14 @@ type Generator struct {
 }
 
 // selectPackageIndices returns a slice of indices into packagesFixture based on numRequested.
-// - numRequested <= 0: returns all indices sequentially [0, 1, ..., totalAvailable-1]
+// - numRequested <= 0: returns empty slice (no packages)
 // - numRequested < totalAvailable: randomly samples numRequested indices
 // - numRequested >= totalAvailable: uses all indices, then duplicates randomly to fill
 func selectPackageIndices(rng *rand.Rand, numRequested, totalAvailable int) []int {
 	switch {
 	case numRequested <= 0:
-		// Use all packages sequentially
-		indices := make([]int, totalAvailable)
-		for i := range indices {
-			indices[i] = i
-		}
-		return indices
+		// Return empty slice (no packages)
+		return []int{}
 	case numRequested < totalAvailable:
 		// Randomly sample numRequested from available packages
 		return rng.Perm(totalAvailable)[:numRequested]
@@ -101,12 +97,16 @@ func buildRepositories() map[string]*v4.Repository {
 }
 
 // NewGeneratorWithSeed creates a new Generator with a specific random seed.
-// The numPackages parameter specifies how many packages to include (0 = all available).
+// The numPackages parameter specifies how many packages to include.
+// When numPackages == 0, no packages are included (empty report).
 // When numPackages < available, packages are randomly sampled.
 // When numPackages > available, packages are duplicated to reach the requested count.
 // All packages use the two real RHEL repositories from the fixture.
 // The seed parameter controls random selection for reproducibility.
 func NewGeneratorWithSeed(numPackages int, seed int64) *Generator {
+	if numPackages < 0 {
+		panic(fmt.Sprintf("numPackages must be non-negative, got %d", numPackages))
+	}
 	rng := rand.New(rand.NewSource(seed))
 
 	totalPkgs := len(packagesFixture)
