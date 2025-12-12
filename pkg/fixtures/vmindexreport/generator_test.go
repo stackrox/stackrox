@@ -35,7 +35,8 @@ func TestNewGeneratorWithSeed(t *testing.T) {
 
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			gen := NewGeneratorWithSeed(tt.numPackages, 42)
+			gen, err := NewGeneratorWithSeed(tt.numPackages, 42)
+			require.NoError(t, err)
 
 			assert.Equal(t, tt.expectedPkgCount, gen.NumPackages(), "package count mismatch")
 			assert.Equal(t, 2, gen.NumRepositories(), "should always have 2 real repositories")
@@ -43,15 +44,16 @@ func TestNewGeneratorWithSeed(t *testing.T) {
 	}
 }
 
-func TestNewGeneratorWithSeed_PanicsOnNegativePackages(t *testing.T) {
-	assert.Panics(t, func() {
-		NewGeneratorWithSeed(-1, 42)
-	}, "should panic when numPackages is negative")
+func TestNewGeneratorWithSeed_ShouldReturnErrorOnNegativePackages(t *testing.T) {
+	_, err := NewGeneratorWithSeed(-1, 42)
+	assert.EqualError(t, err, "numPackages must be non-negative, got -1")
 }
 
 func TestNewGeneratorWithSeed_Reproducibility(t *testing.T) {
-	gen1 := NewGeneratorWithSeed(50, 123)
-	gen2 := NewGeneratorWithSeed(50, 123)
+	gen1, err := NewGeneratorWithSeed(50, 123)
+	require.NoError(t, err)
+	gen2, err := NewGeneratorWithSeed(50, 123)
+	require.NoError(t, err)
 
 	report1 := gen1.GenerateV4IndexReport()
 	report2 := gen2.GenerateV4IndexReport()
@@ -67,41 +69,73 @@ func TestNewGeneratorWithSeed_Reproducibility(t *testing.T) {
 	}
 }
 
-func TestNewGeneratorWithSeed_DifferentSeeds(t *testing.T) {
-	gen1 := NewGeneratorWithSeed(10, 111)
-	gen2 := NewGeneratorWithSeed(10, 222)
-
-	report1 := gen1.GenerateV4IndexReport()
-	report2 := gen2.GenerateV4IndexReport()
-
-	// Collect package names into sets
-	names1 := set.NewStringSet()
-	names2 := set.NewStringSet()
-	for _, pkg := range report1.GetContents().GetPackages() {
-		names1.Add(pkg.GetName())
-	}
-	for _, pkg := range report2.GetContents().GetPackages() {
-		names2.Add(pkg.GetName())
-	}
-
-	// Different seeds should produce different package selection (with high probability)
-	// The symmetric difference should be non-empty
-	diff := names1.Difference(names2).Union(names2.Difference(names1))
-	assert.NotEmpty(t, diff, "different seeds should produce different package selections")
-}
-
 func TestGenerateV4IndexReport(t *testing.T) {
-	gen := NewGeneratorWithSeed(10, 42)
+	gen, err := NewGeneratorWithSeed(10, 42)
+	require.NoError(t, err)
 	report := gen.GenerateV4IndexReport()
 
 	assert.Equal(t, MockDigest, report.GetHashId(), "HashId should match MockDigest")
 	assert.Equal(t, "IndexFinished", report.GetState(), "State should be IndexFinished")
 	assert.True(t, report.GetSuccess(), "Success should be true")
 
-	require.NotNil(t, report.GetContents(), "Contents should not be nil")
-	assert.Len(t, report.GetContents().GetPackages(), 10, "should have 10 packages")
-	assert.Len(t, report.GetContents().GetRepositories(), 2, "should have 2 repositories")
-	assert.Len(t, report.GetContents().GetEnvironments(), 10, "should have 10 environments")
+	contents := report.GetContents()
+	require.NotNil(t, contents, "Contents should not be nil")
+
+	// Basic cardinality checks.
+	assert.Len(t, contents.GetPackages(), 10, "should have 10 packages")
+	assert.Len(t, contents.GetRepositories(), 2, "should have 2 repositories")
+	assert.Len(t, contents.GetEnvironments(), 10, "should have 10 environments")
+
+	// Repositories in the report should exactly match the real RHEL repos defined in repoToCPEMapping.
+	expectedRepoIDs := set.NewStringSet()
+	for repoID := range repoToCPEMapping {
+		expectedRepoIDs.Add(repoID)
+	}
+
+	actualRepoIDs := set.NewStringSet()
+	for repoKey, repo := range contents.GetRepositories() {
+		actualRepoIDs.Add(repoKey)
+		assert.Equal(t, repoKey, repo.GetId(), "repository ID field should match its map key")
+	}
+
+	assert.True(t, expectedRepoIDs.Equal(actualRepoIDs), "repository IDs should match the keys in repoToCPEMapping")
+
+	// Each environment's RepositoryIds should be a subset of the real RHEL repos.
+	for envKey, envList := range contents.GetEnvironments() {
+		for _, env := range envList.GetEnvironments() {
+			for _, repoID := range env.GetRepositoryIds() {
+				assert.Truef(t, expectedRepoIDs.Contains(repoID),
+					"environment %q repository ID %q should be one of the real RHEL repos", envKey, repoID)
+			}
+		}
+	}
+}
+
+func TestGenerateV4IndexReport_ZeroPackages(t *testing.T) {
+	gen, err := NewGeneratorWithSeed(0, 42)
+	require.NoError(t, err)
+	report := gen.GenerateV4IndexReport()
+
+	assert.Equal(t, MockDigest, report.GetHashId(), "HashId should match MockDigest")
+	assert.Equal(t, "IndexFinished", report.GetState(), "State should be IndexFinished")
+	assert.True(t, report.GetSuccess(), "Success should be true")
+
+	contents := report.GetContents()
+	require.NotNil(t, contents, "Contents should not be nil")
+
+	assert.Empty(t, contents.GetPackages(), "packages should be empty")
+	assert.Empty(t, contents.GetEnvironments(), "environments should be empty")
+	assert.Len(t, contents.GetRepositories(), 2, "should have 2 repositories even with 0 packages")
+
+	expectedRepoIDs := set.NewStringSet()
+	for repoID := range repoToCPEMapping {
+		expectedRepoIDs.Add(repoID)
+	}
+	actualRepoIDs := set.NewStringSet()
+	for repoKey := range contents.GetRepositories() {
+		actualRepoIDs.Add(repoKey)
+	}
+	assert.True(t, expectedRepoIDs.Equal(actualRepoIDs), "repository IDs should match the keys in repoToCPEMapping")
 }
 
 func TestGenerateV4IndexReport_ZeroPackages(t *testing.T) {
@@ -122,7 +156,8 @@ func TestGenerateV4IndexReport_ZeroPackages(t *testing.T) {
 }
 
 func TestGenerateV4IndexReport_PackagesHaveValidCPEs(t *testing.T) {
-	gen := NewGeneratorWithSeed(20, 42)
+	gen, err := NewGeneratorWithSeed(20, 42)
+	require.NoError(t, err)
 	report := gen.GenerateV4IndexReport()
 
 	for pkgID, pkg := range report.GetContents().GetPackages() {

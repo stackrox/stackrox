@@ -527,10 +527,15 @@ func (w *WorkloadManager) initializePreexistingResources() {
 		// Initialize report generator if index reports are enabled
 		var reportGen *vmindexreport.Generator
 		if w.workload.VirtualMachineWorkload.ReportInterval > 0 {
-			reportGen = vmindexreport.NewGeneratorWithSeed(
+			var err error
+			reportGen, err = vmindexreport.NewGeneratorWithSeed(
 				w.workload.VirtualMachineWorkload.NumPackages,
 				reportGeneratorSeed,
 			)
+			if err != nil {
+				log.Warnf("VM index reports disabled: failed to create generator: %v", err)
+				reportGen = nil
+			}
 			log.Infof("VM index reports enabled: interval=%s, packages=%d",
 				w.workload.VirtualMachineWorkload.ReportInterval,
 				w.workload.VirtualMachineWorkload.NumPackages)

@@ -169,6 +169,10 @@ Example:
 	cmd.RunE = func(cmd *cobra.Command, args []string) error {
 		matcherAddr, _ := cmd.Flags().GetString("matcher-address")
 
+		if *numPackages < 0 {
+			return fmt.Errorf("--packages must be non-negative, got %d", *numPackages)
+		}
+
 		// Resolve pod IPs if direct mode is enabled
 		var podAddresses []string
 		if *directPodIPs && matcherAddr != "" {
@@ -223,7 +227,10 @@ Example:
 				gen.NumPackages(), gen.NumRepositories(), expectedVulns)
 		} else {
 			// Default behavior: use standard generator
-			gen := vmindexreport.NewGeneratorWithSeed(*numPackages, 42)
+			gen, err := vmindexreport.NewGeneratorWithSeed(*numPackages, 42)
+			if err != nil {
+				return fmt.Errorf("creating VM index report generator: %w", err)
+			}
 			indexReport = gen.GenerateV4IndexReport()
 			log.Printf("Generated index report with %d packages, %d repos",
 				gen.NumPackages(), gen.NumRepositories())

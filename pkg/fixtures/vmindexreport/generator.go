@@ -3,6 +3,7 @@
 package vmindexreport
 
 import (
+	"errors"
 	"fmt"
 	"math/rand"
 	"regexp"
@@ -105,13 +106,16 @@ func buildRepositories() map[string]*v4.Repository {
 // When numPackages > available, packages are duplicated to reach the requested count.
 // All packages use the two real RHEL repositories from the fixture.
 // The seed parameter controls random selection for reproducibility.
-func NewGeneratorWithSeed(numPackages int, seed int64) *Generator {
+func NewGeneratorWithSeed(numPackages int, seed int64) (*Generator, error) {
 	if numPackages < 0 {
-		panic(fmt.Sprintf("numPackages must be non-negative, got %d", numPackages))
+		return nil, fmt.Errorf("numPackages must be non-negative, got %d", numPackages)
 	}
 	rng := rand.New(rand.NewSource(seed))
 
 	totalPkgs := len(PackagesData)
+	if totalPkgs <= 0 {
+		return nil, errors.New("no package fixtures available")
+	}
 	indices := selectPackageIndices(rng, numPackages, totalPkgs)
 	repositories := buildRepositories()
 
@@ -165,7 +169,7 @@ func NewGeneratorWithSeed(numPackages int, seed int64) *Generator {
 		repositories: repositories,
 		packages:     packages,
 		environments: environments,
-	}
+	}, nil
 }
 
 // GenerateV1IndexReport creates a fake v1.IndexReport (used by Sensor for sending to Central).
