@@ -89,12 +89,12 @@ func updateTimestamps(old, new *storage.ImageCVEInfo) *storage.ImageCVEInfo {
 	// Update timestamps to use the earlier of the two timestamps, where applicable.
 	if protocompat.IsZeroTimestamp(new.GetFirstSystemOccurence()) {
 		new.FirstSystemOccurence = old.GetFirstSystemOccurence()
-	} else if old.GetFirstSystemOccurence().Nanos < new.GetFirstSystemOccurence().Nanos {
+	} else if protocompat.CompareTimestamps(old.GetFirstSystemOccurence(), new.GetFirstSystemOccurence()) < 0 {
 		new.FirstSystemOccurence = old.GetFirstSystemOccurence()
 	}
 	if protocompat.IsZeroTimestamp(new.GetFixAvailableTimestamp()) {
 		new.FixAvailableTimestamp = old.GetFixAvailableTimestamp()
-	} else if old.GetFixAvailableTimestamp().Nanos < new.GetFixAvailableTimestamp().Nanos {
+	} else if protocompat.CompareTimestamps(old.GetFixAvailableTimestamp(), new.GetFixAvailableTimestamp()) < 0 {
 		new.FixAvailableTimestamp = old.GetFixAvailableTimestamp()
 	}
 	return new
