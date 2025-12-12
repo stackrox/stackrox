@@ -213,6 +213,16 @@ func (r *v2Restorer) Run(ctx context.Context, file *os.File) (*http.Response, er
 			return resp, err
 		}
 
+		// If the error indicates a permanent failure (e.g., FailedPrecondition for version incompatibility),
+		// don't attempt to resume - just fail immediately. Network errors like Unavailable or DeadlineExceeded
+		// are not checked here because they're temporary and should be retried.
+		if err != nil {
+			errCode := status.Code(err)
+			if errCode == codes.FailedPrecondition || errCode == codes.PermissionDenied || errCode == codes.InvalidArgument {
+				return nil, err
+			}
+		}
+
 		for i := 0; i < resumeRetries && err != nil; i++ {
 			r.errorLine.SetTextStatic(err.Error())
 
