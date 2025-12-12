@@ -37,13 +37,12 @@ var (
 	// DebugLogs, NetworkGraphConfig, ProbeUpload, ScannerBundle,
 	// ScannerDefinitions, SensorUpgradeConfig, ServiceIdentity.
 	Administration = newResourceMetadata("Administration", permissions.GlobalScope)
-	Alert          = newResourceMetadata("Alert", permissions.NamespaceScope)
-	BaseImage      = newResourceMetadata("BaseImage", permissions.GlobalScope)
-	BaseImageLayer = newResourceMetadata("BaseImageLayer", permissions.GlobalScope)
-	CVE            = newResourceMetadata("CVE", permissions.NamespaceScope)
-	Cluster        = newResourceMetadata("Cluster", permissions.ClusterScope)
-	Compliance     = newResourceMetadata("Compliance", permissions.ClusterScope)
-	Deployment     = newResourceMetadata("Deployment", permissions.NamespaceScope)
+
+	Alert      = newResourceMetadata("Alert", permissions.NamespaceScope)
+	CVE        = newResourceMetadata("CVE", permissions.NamespaceScope)
+	Cluster    = newResourceMetadata("Cluster", permissions.ClusterScope)
+	Compliance = newResourceMetadata("Compliance", permissions.ClusterScope)
+	Deployment = newResourceMetadata("Deployment", permissions.NamespaceScope)
 
 	// DeploymentExtension aims to cover our extensions to deployments. For
 	// instance, it has replaced: Indicator, NetworkBaseline, ProcessWhitelist,
