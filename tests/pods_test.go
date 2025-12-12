@@ -20,6 +20,7 @@ import (
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sliceutils"
 	"github.com/stackrox/rox/pkg/testutils"
+	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
 	coreV1 "k8s.io/api/core/v1"
@@ -33,6 +34,7 @@ type IDStruct struct {
 type Pod struct {
 	IDStruct
 	Name           string       `json:"name"`
+	DeploymentID   string       `json:"deploymentId"`
 	ContainerCount int32        `json:"containerCount"`
 	Started        graphql.Time `json:"started"`
 	Events         []Event      `json:"events"`
@@ -49,6 +51,17 @@ type Event struct {
 // Returns: k8sPod, deploymentID, pod, cleanup function
 func setupMultiContainerPodTest(t *testing.T) (*coreV1.Pod, string, Pod, func()) {
 	kPod := getPodFromFile(t, "yamls/multi-container-pod.yaml")
+
+	// Make the pod name unique per test run to avoid reusing stale pods left behind by previous
+	// runs (e.g., if cleanup failed). This prevents false negatives like "events remain empty forever"
+	// when the test unintentionally attaches to an old pod.
+	baseName := kPod.GetName()
+	if baseName != "" {
+		// Keep well below the 63-char DNS label limit.
+		kPod.Name = fmt.Sprintf("%s-%s", baseName, uuid.NewV4().String()[:8])
+		t.Logf("Using unique pod name %q (base %q)", kPod.Name, baseName)
+	}
+
 	client := createK8sClient(t)
 
 	var k8sPod *coreV1.Pod
@@ -83,6 +96,9 @@ func setupMultiContainerPodTest(t *testing.T) (*coreV1.Pod, string, Pod, func())
 		require.Len(deplRetryT, pods, 1)
 		pod = pods[0]
 		require.Equal(deplRetryT, int32(2), pod.ContainerCount)
+		deplRetryT.Logf("Pod deployment ID comparison: pods query returned %q vs deployments query returned %q", pod.DeploymentID, deploymentID)
+		// This should always match. If it doesn't, GraphQL pod(id).events will query the wrong deployment.
+		require.Equal(deplRetryT, deploymentID, pod.DeploymentID, "Pod deploymentId mismatch between GraphQL pod and deployment lookup")
 		deplRetryT.Logf("Creation timestamps comparison: %s vs %s",
 			k8sPod.GetCreationTimestamp().Time.UTC(), pod.Started.UTC())
 		require.Equal(deplRetryT, k8sPod.GetCreationTimestamp().Time.UTC(), pod.Started.UTC())
@@ -149,11 +165,12 @@ func TestPod(testT *testing.T) {
 	k8sPod, deploymentID, pod, cleanup := setupMultiContainerPodTest(testT)
 	defer cleanup()
 
-	const eventRetries = 30
+	const eventRetries = 20
 	attempt := 0
 	prevEventNamesLen := -1
 	testutils.Retry(testT, eventRetries, 5*time.Second, func(retryEventsT testutils.T) {
 		attempt++
+		isFinalAttempt := attempt == eventRetries
 
 		events := getEvents(retryEventsT, pod)
 		retryEventsT.Logf("Found %d events: %+v", len(events), events)
@@ -185,7 +202,20 @@ func TestPod(testT *testing.T) {
 			// classification to guide debugging (API aggregation/association vs ingestion gap).
 			missing := missingFrom(eventNames, requiredProcesses)
 			if len(missing) > 0 {
-				perContainer, err := tryGetGroupedContainerEventNamesByPodID(retryEventsT, string(pod.ID))
+				// Prefer ProcessService for classification: it is deployment-scoped and bypasses GraphQL pod.events association logic.
+				procByContainer, err := tryGetProcessServiceProcessNamesByContainer(deploymentID)
+				if err != nil {
+					retryEventsT.Logf("C1: ProcessService classification skipped (best-effort): %v", err)
+				} else {
+					// If ProcessService sees the required processes but pod.events is missing them,
+					// this is a GraphQL association/filtering issue (not an ingestion gap).
+					procAll := sliceutils.Concat(procByContainer["1st"], procByContainer["2nd"])
+					if containsAll(procAll, requiredProcesses) {
+						retryEventsT.Logf("C1 classification: GraphQL association mismatch (ProcessService has required processes, but pod.events missing)")
+					}
+				}
+
+				perContainer, err := tryGetGroupedContainerEventNamesByPodID(retryEventsT, deploymentID, string(pod.ID))
 				if err != nil {
 					retryEventsT.Logf("C1: unable to query groupedContainerInstances for aggregation mismatch classification (best-effort): %v", err)
 				} else {
@@ -196,12 +226,44 @@ func TestPod(testT *testing.T) {
 					if firstOK && secondOK {
 						retryEventsT.Logf("C1 classification: aggregation mismatch (per-container OK, but pod.events missing)")
 					} else {
-						retryEventsT.Logf("C1 classification: ingestion gap (per-container missing too)")
+						retryEventsT.Logf("C1 classification: GraphQL association mismatch or ingestion gap (per-container missing too)")
 					}
 				}
 			}
 
 			prevEventNamesLen = curLen
+		}
+
+		// If we never see any events at all, we still want diagnostics on the final attempt to
+		// help distinguish "no ingestion" from "aggregation mismatch".
+		if isFinalAttempt && len(eventNames) == 0 {
+			retryEventsT.Logf("Final attempt with zero pod.events; dumping diagnostics")
+			dumpTestPodDiagnostics(retryEventsT, k8sPod.GetNamespace(), k8sPod.GetName(), deploymentID, pod, events)
+
+			// Prefer ProcessService for classification: it is deployment-scoped and bypasses GraphQL pod.events association logic.
+			if procByContainer, err := tryGetProcessServiceProcessNamesByContainer(deploymentID); err != nil {
+				retryEventsT.Logf("C1: ProcessService classification skipped (best-effort): %v", err)
+			} else {
+				procAll := sliceutils.Concat(procByContainer["1st"], procByContainer["2nd"])
+				if containsAll(procAll, requiredProcesses) {
+					retryEventsT.Logf("C1 classification: GraphQL association mismatch (ProcessService has required processes, but pod.events is empty)")
+				}
+			}
+
+			perContainer, err := tryGetGroupedContainerEventNamesByPodID(retryEventsT, deploymentID, string(pod.ID))
+			if err != nil {
+				retryEventsT.Logf("C1: unable to query groupedContainerInstances for aggregation mismatch classification (best-effort): %v", err)
+			} else {
+				retryEventsT.Logf("C1: pod.events missing=%v ; per-container 1st=%v ; per-container 2nd=%v",
+					requiredProcesses, perContainer["1st"], perContainer["2nd"])
+				firstOK := containsAll(perContainer["1st"], []string{"/usr/sbin/nginx"})
+				secondOK := containsAll(perContainer["2nd"], []string{"/bin/sh", "/bin/date", "/bin/sleep"})
+				if firstOK && secondOK {
+					retryEventsT.Logf("C1 classification: aggregation mismatch (per-container OK, but pod.events missing)")
+				} else {
+					retryEventsT.Logf("C1 classification: GraphQL association mismatch or ingestion gap (per-container missing too)")
+				}
+			}
 		}
 
 		require.Subsetf(retryEventsT, eventNames, requiredProcesses,
@@ -231,7 +293,7 @@ func containsAll(have []string, required []string) bool {
 	return len(missingFrom(have, required)) == 0
 }
 
-func tryGetGroupedContainerEventNamesByPodID(t testutils.T, podID string) (map[string][]string, error) {
+func tryGetGroupedContainerEventNames(t testutils.T, containersQuery string) (map[string][]string, error) {
 	// Best-effort: never fail the test when gathering diagnostics.
 	// Also avoid initializing graphqlClient here (it uses require/assert in graphql_utils.go).
 	if graphqlClient == nil {
@@ -253,7 +315,7 @@ func tryGetGroupedContainerEventNamesByPodID(t testutils.T, podID string) (map[s
 			}
 		}
 	`)
-	req.Var("containersQuery", fmt.Sprintf("Pod ID: %s", podID))
+	req.Var("containersQuery", containersQuery)
 
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
@@ -268,12 +330,20 @@ func tryGetGroupedContainerEventNamesByPodID(t testutils.T, podID string) (map[s
 	return out, nil
 }
 
+func tryGetGroupedContainerEventNamesByPodID(t testutils.T, deploymentID, podID string) (map[string][]string, error) {
+	return tryGetGroupedContainerEventNames(t, fmt.Sprintf("Deployment ID: %s+Pod ID: %s", deploymentID, podID))
+}
+
+func tryGetGroupedContainerEventNamesByPodName(t testutils.T, deploymentID, podName string) (map[string][]string, error) {
+	return tryGetGroupedContainerEventNames(t, fmt.Sprintf("Deployment ID: %s+Pod Name: %s", deploymentID, podName))
+}
+
 func dumpTestPodDiagnostics(t testutils.T, podNamespace, podName, deploymentID string, pod Pod, podEvents []Event) {
 	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
 	defer cancel()
 
 	t.Logf("=== TestPod diagnostics (on failure) ===")
-	t.Logf("Central pod ID: %s, Pod name: %s, DeploymentID: %s", pod.ID, pod.Name, deploymentID)
+	t.Logf("Central pod ID: %s, Pod name: %s, DeploymentID: %s (pod.deploymentId=%s)", pod.ID, pod.Name, deploymentID, pod.DeploymentID)
 
 	// K8s pod state (helps detect stale pod reuse / container restarts / container IDs).
 	k8s := createK8sClient(t)
@@ -342,11 +412,192 @@ func dumpTestPodDiagnostics(t testutils.T, podNamespace, podName, deploymentID s
 					g.GetContainerName(), g.GetName(), g.GetTimesExecuted(), g.GetSuspicious())
 			}
 		}
+
+		// Raw ProcessIndicators sample: this helps confirm whether the ProcessIndicators are associated to the pod
+		// via PodId and/or PodUid as expected by GraphQL pod.events.
+		if indicators, err := procSvc.GetProcessesByDeployment(ctx, &v1.GetProcessesByDeploymentRequest{DeploymentId: deploymentID}); err != nil {
+			t.Logf("Central: ProcessService GetProcessesByDeployment failed: %v", err)
+		} else {
+			const maxSample = 10
+			procs := indicators.GetProcesses()
+			if len(procs) > maxSample {
+				procs = procs[:maxSample]
+			}
+			t.Logf("Central: ProcessService sample processIndicators=%d (showing up to %d)", len(indicators.GetProcesses()), maxSample)
+			for i, pi := range procs {
+				signalTime := "<nil>"
+				if pi.GetSignal().GetTime() != nil {
+					signalTime = pi.GetSignal().GetTime().String()
+				}
+				containerStartTime := "<nil>"
+				if pi.GetContainerStartTime() != nil {
+					containerStartTime = pi.GetContainerStartTime().String()
+				}
+
+				t.Logf("Central processIndicator[%d]: container=%q podId=%q podUid=%q exec=%q name=%q signal.time=%s containerStartTime=%s",
+					i, pi.GetContainerName(), pi.GetPodId(), pi.GetPodUid(), pi.GetSignal().GetExecFilePath(), pi.GetSignal().GetName(), signalTime, containerStartTime)
+			}
+		}
+
+		// ProcessService CountProcesses diagnostics: compare search behavior between deployment-only and deployment+pod filters.
+		// This helps detect mismatches where ProcessIndicators exist, but the Pod ID field isn't queryable as expected.
+		deploymentOnlyQuery := fmt.Sprintf("Deployment ID: %s", deploymentID)
+		deploymentAndPodIDQuery := fmt.Sprintf("Deployment ID: %s+Pod ID: %s", deploymentID, podName)
+		deploymentAndPodUIDQuery := fmt.Sprintf("Deployment ID: %s+Pod UID: %s", deploymentID, pod.ID)
+		deploymentAndPodNameQuery := fmt.Sprintf("Deployment ID: %s+Pod Name: %s", deploymentID, podName)
+		if count, err := countProcessesBestEffort(ctx, procSvc, deploymentOnlyQuery); err != nil {
+			t.Logf("Central: CountProcesses failed for query %q: %v", deploymentOnlyQuery, err)
+		} else {
+			t.Logf("Central: CountProcesses query=%q -> %d", deploymentOnlyQuery, count)
+		}
+		if count, err := countProcessesBestEffort(ctx, procSvc, deploymentAndPodIDQuery); err != nil {
+			t.Logf("Central: CountProcesses failed for query %q: %v", deploymentAndPodIDQuery, err)
+		} else {
+			t.Logf("Central: CountProcesses query=%q -> %d", deploymentAndPodIDQuery, count)
+		}
+		if count, err := countProcessesBestEffort(ctx, procSvc, deploymentAndPodUIDQuery); err != nil {
+			t.Logf("Central: CountProcesses failed for query %q: %v", deploymentAndPodUIDQuery, err)
+		} else {
+			t.Logf("Central: CountProcesses query=%q -> %d", deploymentAndPodUIDQuery, count)
+		}
+		// Best-effort: Pod Name is not necessarily supported for ProcessIndicators, but if it is, this helps understand field semantics.
+		if count, err := countProcessesBestEffort(ctx, procSvc, deploymentAndPodNameQuery); err != nil {
+			t.Logf("Central: CountProcesses failed for query %q (best-effort): %v", deploymentAndPodNameQuery, err)
+		} else {
+			t.Logf("Central: CountProcesses query=%q -> %d", deploymentAndPodNameQuery, count)
+		}
+
+		// Container-scoped counts: pod.events and groupedContainerInstances ultimately rely on container-specific process queries.
+		for _, container := range []string{"1st", "2nd"} {
+			qPodID := fmt.Sprintf("Deployment ID: %s+Pod ID: %s+Container Name: %s", deploymentID, podName, container)
+			if count, err := countProcessesBestEffort(ctx, procSvc, qPodID); err != nil {
+				t.Logf("Central: CountProcesses failed for query %q: %v", qPodID, err)
+			} else {
+				t.Logf("Central: CountProcesses query=%q -> %d", qPodID, count)
+			}
+
+			qPodUID := fmt.Sprintf("Deployment ID: %s+Pod UID: %s+Container Name: %s", deploymentID, pod.ID, container)
+			if count, err := countProcessesBestEffort(ctx, procSvc, qPodUID); err != nil {
+				t.Logf("Central: CountProcesses failed for query %q: %v", qPodUID, err)
+			} else {
+				t.Logf("Central: CountProcesses query=%q -> %d", qPodUID, count)
+			}
+
+			qPodName := fmt.Sprintf("Deployment ID: %s+Pod Name: %s+Container Name: %s", deploymentID, podName, container)
+			if count, err := countProcessesBestEffort(ctx, procSvc, qPodName); err != nil {
+				t.Logf("Central: CountProcesses failed for query %q (best-effort): %v", qPodName, err)
+			} else {
+				t.Logf("Central: CountProcesses query=%q -> %d", qPodName, count)
+			}
+		}
+	}
+
+	// GraphQL-side probe: deployment(id).groupedProcesses hits the ProcessIndicatorStore without pod scoping.
+	// If this is non-empty while pod(id).events is empty, it suggests the pod-scoped query/filtering is the issue.
+	if graphqlClient == nil {
+		t.Logf("GraphQL: skipping deployment.groupedProcesses probe (graphql client not initialized)")
+	} else {
+		var respData struct {
+			Deployment struct {
+				ID                 string `json:"id"`
+				ProcessActivityCnt int32  `json:"processActivityCount"`
+				GroupedProcesses   []struct {
+					Name string `json:"name"`
+				} `json:"groupedProcesses"`
+			} `json:"deployment"`
+		}
+
+		req := mbgraphql.NewRequest(`
+			query getDeploymentProcessInfo($deploymentId: ID!) {
+				deployment(id: $deploymentId) {
+					id
+					processActivityCount
+					groupedProcesses { name }
+				}
+			}
+		`)
+		req.Var("deploymentId", deploymentID)
+
+		gqlCtx, gqlCancel := context.WithTimeout(context.Background(), 10*time.Second)
+		defer gqlCancel()
+		if err := graphqlClient.Run(gqlCtx, req, &respData); err != nil {
+			t.Logf("GraphQL: deployment(id).groupedProcesses probe failed (best-effort): %v", err)
+		} else {
+			names := make([]string, 0, len(respData.Deployment.GroupedProcesses))
+			for _, gp := range respData.Deployment.GroupedProcesses {
+				names = append(names, gp.Name)
+			}
+			t.Logf("GraphQL: deployment(id).processActivityCount=%d groupedProcesses=%d names(sample)=%v",
+				respData.Deployment.ProcessActivityCnt, len(names), truncateStrings(names, 10))
+		}
+	}
+
+	// GraphQL-side probe: groupedContainerInstances is backed by PodDataStore (pods) + per-container event population.
+	// We query it two ways:
+	// - Pod ID: uses the GraphQL pod UUID (matches PodDataStore IDs).
+	// - Pod Name: uses the pod name (matches PodDataStore name field).
+	// This helps us learn which one actually returns container groups/events in practice.
+	{
+		byPodID, err := tryGetGroupedContainerEventNamesByPodID(t, deploymentID, string(pod.ID))
+		if err != nil {
+			t.Logf("GraphQL: groupedContainerInstances probe (Deployment ID + Pod ID(uuid)) failed (best-effort): %v", err)
+		} else {
+			t.Logf("GraphQL: groupedContainerInstances (Deployment ID + Pod ID(uuid)) groups=%d 1st.events=%d 2nd.events=%d",
+				len(byPodID), len(byPodID["1st"]), len(byPodID["2nd"]))
+		}
+
+		byPodName, err := tryGetGroupedContainerEventNamesByPodName(t, deploymentID, podName)
+		if err != nil {
+			t.Logf("GraphQL: groupedContainerInstances probe (Deployment ID + Pod Name) failed (best-effort): %v", err)
+		} else {
+			t.Logf("GraphQL: groupedContainerInstances (Deployment ID + Pod Name) groups=%d 1st.events=%d 2nd.events=%d",
+				len(byPodName), len(byPodName["1st"]), len(byPodName["2nd"]))
+		}
 	}
 
 	// What GraphQL pod.events returned on the failing attempt.
 	eventNames := sliceutils.Map(podEvents, func(e Event) string { return e.Name })
 	t.Logf("GraphQL pod.events count=%d names=%v", len(podEvents), eventNames)
+}
+
+func truncateStrings(in []string, max int) []string {
+	if max <= 0 {
+		return nil
+	}
+	if len(in) <= max {
+		return in
+	}
+	return append(in[:max], fmt.Sprintf("...(+%d more)", len(in)-max))
+}
+
+func countProcessesBestEffort(ctx context.Context, procSvc v1.ProcessServiceClient, q string) (int, error) {
+	resp, err := procSvc.CountProcesses(ctx, &v1.RawQuery{Query: q})
+	if err != nil {
+		return 0, err
+	}
+	return int(resp.GetCount()), nil
+}
+
+func tryGetProcessServiceProcessNamesByContainer(deploymentID string) (map[string][]string, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	conn, err := tryGRPCConnectionToCentral(ctx)
+	if err != nil {
+		return nil, err
+	}
+	defer conn.Close()
+
+	procSvc := v1.NewProcessServiceClient(conn)
+	procsResp, err := procSvc.GetGroupedProcessByDeploymentAndContainer(ctx, &v1.GetProcessesByDeploymentRequest{DeploymentId: deploymentID})
+	if err != nil {
+		return nil, err
+	}
+	out := make(map[string][]string, 2)
+	for _, g := range procsResp.GetGroups() {
+		out[g.GetContainerName()] = append(out[g.GetContainerName()], g.GetName())
+	}
+	return out, nil
 }
 
 func tryGRPCConnectionToCentral(ctx context.Context) (*grpc.ClientConn, error) {
@@ -431,6 +682,7 @@ func getPods(t testutils.T, deploymentID string) []Pod {
 			pods(query: $podsQuery, pagination: $pagination) {
 				id
 				name
+				deploymentId
 				containerCount
 				started
 				events {
@@ -477,6 +729,7 @@ func getEvents(t testutils.T, pod Pod) []Event {
 			pod(id: $podId) {
 				id
 				name
+				deploymentId
 				containerCount
 				started
 				events {
