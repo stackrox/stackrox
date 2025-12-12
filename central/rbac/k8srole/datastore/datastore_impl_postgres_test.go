@@ -48,11 +48,13 @@ func (s *K8SRolePostgresDataStoreTestSuite) TestSearchRoles() {
 	ctx := sac.WithAllAccess(context.Background())
 
 	// Create test roles
+	cluster1Id := uuid.NewV4().String()
+	cluster2Id := uuid.NewV4().String()
 	role1 := &storage.K8SRole{
 		Id:          uuid.NewV4().String(),
 		Name:        "cluster-admin",
 		Namespace:   "default",
-		ClusterId:   "cluster-1",
+		ClusterId:   cluster1Id,
 		ClusterName: "test-cluster-1",
 	}
 
@@ -60,7 +62,7 @@ func (s *K8SRolePostgresDataStoreTestSuite) TestSearchRoles() {
 		Id:          uuid.NewV4().String(),
 		Name:        "read-only",
 		Namespace:   "kube-system",
-		ClusterId:   "cluster-1",
+		ClusterId:   cluster1Id,
 		ClusterName: "test-cluster-1",
 	}
 
@@ -68,7 +70,7 @@ func (s *K8SRolePostgresDataStoreTestSuite) TestSearchRoles() {
 		Id:          uuid.NewV4().String(),
 		Name:        "system:node",
 		Namespace:   "default",
-		ClusterId:   "cluster-2",
+		ClusterId:   cluster2Id,
 		ClusterName: "test-cluster-2",
 	}
 
@@ -103,7 +105,7 @@ func (s *K8SRolePostgresDataStoreTestSuite) TestSearchRoles() {
 		},
 		{
 			name:          "query by cluster ID",
-			query:         pkgSearch.NewQueryBuilder().AddExactMatches(pkgSearch.ClusterID, "cluster-1").ProtoQuery(),
+			query:         pkgSearch.NewQueryBuilder().AddExactMatches(pkgSearch.ClusterID, cluster1Id).ProtoQuery(),
 			expectedCount: 2,
 			expectedIDs:   []string{role1.GetId(), role2.GetId()},
 			expectedNames: []string{"cluster-admin", "read-only"},
