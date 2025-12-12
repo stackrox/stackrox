@@ -103,5 +103,4 @@ func (s *migrationTestSuite) TestMigration() {
 	row = s.db.QueryRow(s.ctx, btreeIndexQuery, tableName, podIndex)
 	s.Require().NoError(row.Scan(&exists))
 	s.Require().True(exists)
-
 }

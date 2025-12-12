@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/migrator/postgreshelper"
 	"github.com/stackrox/rox/migrator/types"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/postgres"
@@ -21,14 +22,17 @@ const (
 	am.amname = 'hash' AND cls.relname = $2
 	)`
 
-	tableName        = "process_indicators"
-	podIndex         = "processindicators_poduid"
-	podColumn        = "poduid"
-	deploymentIndex  = "processindicators_deploymentid"
-	deploymentColumn = "deploymentid"
+	tableName          = "process_indicators"
+	podIndex           = "processindicators_poduid"
+	tmpPodIndex        = "processindicators_poduid_tmp"
+	podColumn          = "poduid"
+	deploymentIndex    = "processindicators_deploymentid"
+	tmpDeploymentIndex = "processindicators_deploymentid_tmp"
+	deploymentColumn   = "deploymentid"
 
 	dropIndex   = "DROP INDEX if exists %s"
-	createIndex = "CREATE INDEX CONCURRENTLY IF NOT EXISTS %s ON %s USING BTREE (%s)"
+	createIndex = "CREATE INDEX IF NOT EXISTS %s ON %s USING BTREE (%s)"
+	renameIndex = "ALTER INDEX IF EXISTS %s RENAME TO %s"
 )
 
 var (
@@ -41,26 +45,41 @@ func migrate(database *types.Databases) error {
 	// in the field where the indexes have already been moved to btree, we do not want to
 	// force that instance to remigrate.  So we will not simply drop and re-add, but
 	// verify index is hash, drop old index, re-add it as btree.
-	// Purposefully doing this one at a time like this to be very specific on what we are doing.
-	err := migrateIndex(database.DBCtx, database.PostgresDB, deploymentIndex, deploymentColumn)
+	tx, err := database.PostgresDB.Begin(database.DBCtx)
 	if err != nil {
 		return err
 	}
+	ctx := postgres.ContextWithTx(database.DBCtx, tx)
 
-	err = migrateIndex(database.DBCtx, database.PostgresDB, podIndex, podColumn)
+	// Purposefully doing this one at a time like this to be very specific on what we are doing.
+	err = migrateIndex(ctx, database.PostgresDB, deploymentIndex, deploymentColumn, tmpDeploymentIndex)
 	if err != nil {
-		return err
+		return postgreshelper.WrapRollback(ctx, tx, err)
+	}
+
+	err = migrateIndex(ctx, database.PostgresDB, podIndex, podColumn, tmpPodIndex)
+	if err != nil {
+		return postgreshelper.WrapRollback(ctx, tx, err)
+	}
+
+	err = tx.Commit(ctx)
+	if err != nil {
+		return postgreshelper.WrapRollback(ctx, tx, errors.Wrapf(err, "unable to commit migration starting at %d", startSeqNum))
 	}
 
 	log.Infof("Process indicator index migration complete")
 	return nil
 }
 
-func migrateIndex(dbCtx context.Context, db postgres.DB, indexName string, indexColumn string) error {
+func migrateIndex(dbCtx context.Context, db postgres.DB, indexName string, indexColumn string, tmpIndexName string) error {
 	log.Infof("Migrating %s index %s on column %s to btree", tableName, indexName, indexColumn)
 	ctx, cancel := context.WithTimeout(dbCtx, types.DefaultMigrationTimeout)
 	defer cancel()
 
+	// Check if the hash index exists.  If it does not, we can fall through as either
+	// the index already exists in the desired type in which case we have nothing to do
+	// OR the index name does not exist at all in which case Gorm will take care of it when
+	// all schemas are applied at the end.
 	row := db.QueryRow(ctx, hashIndexQuery, tableName, indexName)
 	var exists bool
 	if err := row.Scan(&exists); err != nil {
@@ -71,21 +90,34 @@ func migrateIndex(dbCtx context.Context, db postgres.DB, indexName string, index
 		return nil
 	}
 
-	// drop the index
-	dropStatement := fmt.Sprintf(dropIndex, indexName)
-	_, err := db.Exec(ctx, dropStatement)
-	if err != nil {
-		log.Error(errors.Wrapf(err, "unable to drop index %s", indexName))
-	}
+	// To minimize time without an index and to care for the even of failure forcing a
+	// rollback which would recreate the hash index if failure occurred after the drop
+	// we are going to create a tmp new one, drop the old one, and then rename the
+	// temp one to minimize risk.
 
 	// create the new index concurrently
 	// Note: this is not really necessary because the indexes will be created when the
 	// schema updates are processed, HOWEVER, that will not create the indexes
 	// concurrently; we want to do them concurrently in this case for performance reasons.
-	createStatement := fmt.Sprintf(createIndex, indexName, tableName, indexColumn)
-	_, err = db.Exec(ctx, createStatement)
+	createStatement := fmt.Sprintf(createIndex, tmpIndexName, tableName, indexColumn)
+	_, err := db.Exec(ctx, createStatement)
 	if err != nil {
 		log.Error(errors.Wrapf(err, "unable to create index %s", indexName))
+	}
+
+	// drop the index
+	dropStatement := fmt.Sprintf(dropIndex, indexName)
+	_, err = db.Exec(ctx, dropStatement)
+	if err != nil {
+		log.Error(errors.Wrapf(err, "unable to drop index %s", indexName))
+	}
+
+	// rename the tmp index to be the old index
+	renameStatement := fmt.Sprintf(renameIndex, tmpIndexName, indexName)
+	log.Info(renameStatement)
+	_, err = db.Exec(ctx, renameStatement)
+	if err != nil {
+		log.Error(errors.Wrapf(err, "unable to reanme index %s", tmpIndexName))
 	}
 
 	log.Infof("Migration of index %s is complete", indexName)
