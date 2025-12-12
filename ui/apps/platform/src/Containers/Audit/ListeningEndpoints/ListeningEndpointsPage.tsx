@@ -197,29 +197,23 @@ function ListeningEndpointsPage() {
     return (
         <>
             <PageTitle title="Listening Endpoints" />
-            <PageSection hasBodyWrapper={false}>
+            <PageSection hasBodyWrapper={false} variant="default">
                 <Title headingLevel="h1">Listening endpoints</Title>
-                <Content component="p" className="pf-v6-u-pt-xs">
+                <Content component="p">
                     Audit listening endpoints of deployments in your clusters
                 </Content>
             </PageSection>
             <Divider component="div" />
-            <PageSection
-                hasBodyWrapper={false}
-                id="listening-endpoints-page"
-                isFilled
-                className="pf-v6-u-display-flex pf-v6-u-flex-direction-column"
-            >
-                <Toolbar>
+            <PageSection hasBodyWrapper={false}>
+                <Toolbar className="pf-v6-u-pb-0">
                     <ToolbarContent>
-                        <ToolbarGroup className="pf-v6-u-flex-grow-1">
-                            <ToolbarItem className="pf-v6-u-display-flex pf-v6-u-flex-grow-1">
+                        <ToolbarGroup variant="filter-group" className="pf-v6-u-flex-grow-1">
+                            <ToolbarItem>
                                 <SelectSingle
                                     id="entity-filter"
                                     value={entity}
                                     handleSelect={onEntitySelect}
                                     toggleAriaLabel="Search entity selection menu toggle"
-                                    isFullWidth={false}
                                 >
                                     <SelectOption key="Deployment" value="Deployment">
                                         Deployment
@@ -231,6 +225,8 @@ function ListeningEndpointsPage() {
                                         Cluster
                                     </SelectOption>
                                 </SelectSingle>
+                            </ToolbarItem>
+                            <ToolbarItem className="pf-v6-u-flex-grow-1">
                                 <Select
                                     id="autocomplete-filter"
                                     isOpen={autocompleteOpen}
@@ -264,6 +260,7 @@ function ListeningEndpointsPage() {
                                 </Select>
                             </ToolbarItem>
                         </ToolbarGroup>
+                        <ToolbarItem variant="separator" />
                         <ToolbarGroup>
                             <ToolbarItem variant="pagination" align={{ default: 'alignEnd' }}>
                                 <Pagination
@@ -277,7 +274,6 @@ function ListeningEndpointsPage() {
                                 />
                             </ToolbarItem>
                         </ToolbarGroup>
-
                         <ToolbarGroup className="pf-v6-u-w-100">
                             <SearchFilterChips
                                 searchFilter={searchFilter}
@@ -291,59 +287,64 @@ function ListeningEndpointsPage() {
                         </ToolbarGroup>
                     </ToolbarContent>
                 </Toolbar>
-                <div className="pf-v6-u-background-color-100">
-                    {error && (
-                        <Bullseye>
-                            <EmptyStateTemplate
-                                title="Error loading deployments with listening endpoints"
-                                headingLevel="h2"
-                                icon={ExclamationCircleIcon}
-                                status="danger"
-                            >
-                                {getAxiosErrorMessage(error.message)}
-                            </EmptyStateTemplate>
-                        </Bullseye>
-                    )}
-                    {isLoading && (
-                        <Bullseye>
-                            <Spinner aria-label="Loading listening endpoints for deployments" />
-                        </Bullseye>
-                    )}
-                    {!error && !isLoading && data && (
-                        <>
-                            {data.length === 0 ? (
-                                <Bullseye>
-                                    <EmptyStateTemplate
-                                        title="No deployments with listening endpoints found"
-                                        headingLevel="h2"
+            </PageSection>
+            <PageSection
+                hasBodyWrapper={false}
+                id="listening-endpoints-page"
+                isFilled
+                padding={{ default: 'noPadding' }}
+            >
+                {error && (
+                    <Bullseye>
+                        <EmptyStateTemplate
+                            title="Error loading deployments with listening endpoints"
+                            headingLevel="h2"
+                            icon={ExclamationCircleIcon}
+                            status="danger"
+                        >
+                            {getAxiosErrorMessage(error.message)}
+                        </EmptyStateTemplate>
+                    </Bullseye>
+                )}
+                {isLoading && (
+                    <Bullseye>
+                        <Spinner aria-label="Loading listening endpoints for deployments" />
+                    </Bullseye>
+                )}
+                {!error && !isLoading && data && (
+                    <>
+                        {data.length === 0 ? (
+                            <Bullseye>
+                                <EmptyStateTemplate
+                                    title="No deployments with listening endpoints found"
+                                    headingLevel="h2"
+                                >
+                                    <Content component="p">
+                                        Clear any search value and try again
+                                    </Content>
+                                    <Button
+                                        variant="link"
+                                        onClick={() => {
+                                            setPage(1);
+                                            setAutocompleteInputValue('');
+                                            setDebouncedSearchValue('');
+                                            setSearchFilter({});
+                                        }}
                                     >
-                                        <Content component="p">
-                                            Clear any search value and try again
-                                        </Content>
-                                        <Button
-                                            variant="link"
-                                            onClick={() => {
-                                                setPage(1);
-                                                setAutocompleteInputValue('');
-                                                setDebouncedSearchValue('');
-                                                setSearchFilter({});
-                                            }}
-                                        >
-                                            Clear search
-                                        </Button>
-                                    </EmptyStateTemplate>
-                                </Bullseye>
-                            ) : (
-                                <ListeningEndpointsTable
-                                    deployments={data}
-                                    getSortParams={getSortParams}
-                                    areAllRowsExpanded={areAllRowsExpanded}
-                                    setAllRowsExpanded={setAllRowsExpanded}
-                                />
-                            )}
-                        </>
-                    )}
-                </div>
+                                        Clear search
+                                    </Button>
+                                </EmptyStateTemplate>
+                            </Bullseye>
+                        ) : (
+                            <ListeningEndpointsTable
+                                deployments={data}
+                                getSortParams={getSortParams}
+                                areAllRowsExpanded={areAllRowsExpanded}
+                                setAllRowsExpanded={setAllRowsExpanded}
+                            />
+                        )}
+                    </>
+                )}
             </PageSection>
         </>
     );
