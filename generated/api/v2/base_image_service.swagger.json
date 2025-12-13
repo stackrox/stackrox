@@ -1,0 +1,242 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "title": "api/v2/base_image_service.proto",
+    "version": "version not set"
+  },
+  "tags": [
+    {
+      "name": "BaseImageServiceV2"
+    }
+  ],
+  "consumes": [
+    "application/json"
+  ],
+  "produces": [
+    "application/json"
+  ],
+  "paths": {
+    "/v2/baseimages": {
+      "get": {
+        "summary": "GetBaseImageReferences returns all base image references.",
+        "operationId": "BaseImageServiceV2_GetBaseImageReferences",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v2GetBaseImageReferenceResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "tags": [
+          "BaseImageServiceV2"
+        ]
+      },
+      "post": {
+        "summary": "CreateBaseImageReference creates a new base image reference.",
+        "operationId": "BaseImageServiceV2_CreateBaseImageReference",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v2CreateBaseImageReferenceResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/v2CreateBaseImageReferenceRequest"
+            }
+          }
+        ],
+        "tags": [
+          "BaseImageServiceV2"
+        ]
+      }
+    },
+    "/v2/baseimages/{id}": {
+      "delete": {
+        "summary": "DeleteBaseImageReference deletes a base image reference.",
+        "operationId": "BaseImageServiceV2_DeleteBaseImageReference",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v2Empty"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "BaseImageServiceV2"
+        ]
+      },
+      "put": {
+        "summary": "UpdateBaseImageTagPattern updates the tag pattern of an existing base image reference.",
+        "operationId": "BaseImageServiceV2_UpdateBaseImageTagPattern",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v2Empty"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/BaseImageServiceV2UpdateBaseImageTagPatternBody"
+            }
+          }
+        ],
+        "tags": [
+          "BaseImageServiceV2"
+        ]
+      }
+    }
+  },
+  "definitions": {
+    "BaseImageServiceV2UpdateBaseImageTagPatternBody": {
+      "type": "object",
+      "properties": {
+        "baseImageTagPattern": {
+          "type": "string"
+        }
+      }
+    },
+    "protobufAny": {
+      "type": "object",
+      "properties": {
+        "@type": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": {}
+    },
+    "rpcStatus": {
+      "type": "object",
+      "properties": {
+        "code": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "message": {
+          "type": "string"
+        },
+        "details": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/protobufAny"
+          }
+        }
+      }
+    },
+    "v2BaseImageReference": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "baseImageRepoPath": {
+          "type": "string"
+        },
+        "baseImageTagPattern": {
+          "type": "string"
+        },
+        "user": {
+          "$ref": "#/definitions/v2SlimUser"
+        }
+      }
+    },
+    "v2CreateBaseImageReferenceRequest": {
+      "type": "object",
+      "properties": {
+        "baseImageRepoPath": {
+          "type": "string"
+        },
+        "baseImageTagPattern": {
+          "type": "string"
+        }
+      }
+    },
+    "v2CreateBaseImageReferenceResponse": {
+      "type": "object",
+      "properties": {
+        "baseImageReference": {
+          "$ref": "#/definitions/v2BaseImageReference"
+        }
+      }
+    },
+    "v2Empty": {
+      "type": "object"
+    },
+    "v2GetBaseImageReferenceResponse": {
+      "type": "object",
+      "properties": {
+        "baseImageReferences": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v2BaseImageReference"
+          }
+        }
+      }
+    },
+    "v2SlimUser": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        }
+      }
+    }
+  }
+}
