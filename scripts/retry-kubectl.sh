@@ -20,8 +20,8 @@ EOT
 )
 
 tmp_in="$(mktemp)"
-tmp_out="$(mktemp --suffix=-stdout.txt)"
-tmp_err="$(mktemp --suffix=-stderr.txt)"
+tmp_out="$(mktemp)"
+tmp_err="$(mktemp)"
 grep_out="$(mktemp)"
 trap 'cat ${tmp_out}; cat ${tmp_err} >&2; rm -f ${tmp_in} ${tmp_out} ${tmp_err} ${grep_out}' EXIT
 
