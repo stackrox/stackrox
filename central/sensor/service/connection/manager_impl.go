@@ -506,3 +506,12 @@ func (m *manager) PushExternalNetworkEntitiesToAllSensors(ctx context.Context) e
 	}
 	return errs.ToError()
 }
+
+func (m *manager) AllSensorsHaveCapability(capability centralsensor.SensorCapability) bool {
+	for _, conn := range m.GetActiveConnections() {
+		if !conn.HasCapability(capability) {
+			return false
+		}
+	}
+	return true
+}
