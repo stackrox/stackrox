@@ -81,6 +81,7 @@ message ImageV2 {
     MISSING_SIGNATURE_VERIFICATION_DATA = 3;
   }
   repeated Note notes = 15;
+  repeated BaseImageInfo base_image_info = 16; // @gotags: search:"-" sql:"-"
 }
 
 message ListImageV2 {

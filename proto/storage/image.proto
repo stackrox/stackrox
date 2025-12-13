@@ -55,6 +55,7 @@ message Image {
     MISSING_SIGNATURE_VERIFICATION_DATA = 3;
   }
   repeated Note notes = 14;
+  repeated BaseImageInfo base_image_info = 19; // @gotags: search:"-" sql:"-"
 }
 
 message DataSource {
@@ -252,4 +253,10 @@ message ListImage {
 
 message WatchedImage {
   string name = 1; // @gotags: sql:"pk"
+}
+
+message BaseImageInfo {
+  string base_image_id = 1;
+  string base_image_full_name = 2;
+  string base_image_digest = 3;
 }
