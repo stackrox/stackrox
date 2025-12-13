@@ -14,12 +14,13 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/deduperkey"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/reflectutils"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/version"
 )
 
-const workerQueueSize = 16
+var workerQueueSize = env.CentralSensorWorkerQueueSize.IntegerSetting()
 
 var (
 	deploymentEventType = reflectutils.Type((*central.SensorEvent_Deployment)(nil))
