@@ -9,7 +9,7 @@ option java_package = "io.stackrox.proto.storage";
 
 message BaseImage {
   string id = 1; // @gotags: search:"Base Image Id,store,hidden" sql:"pk,type(uuid)"
-  string base_image_repository_id = 2; // @gotags: sql:"fk(BaseImageRepository:id)"
+  string base_image_repository_id = 2; // @gotags: sql:"fk(BaseImageRepository:id),allow-null"
   string repository = 3; // @gotags: search:"Base Image Repository,store"
   string tag = 4; // @gotags: search:"Base Image Tag,hidden"
   string manifest_digest = 5; // @gotags: search:"Base Image Manifest Digest,store"

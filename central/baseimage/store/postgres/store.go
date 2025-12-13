@@ -102,7 +102,7 @@ func insertIntoBaseImages(batch *pgx.Batch, obj *storage.BaseImage) error {
 	values := []interface{}{
 		// parent primary keys start
 		pgutils.NilOrUUID(obj.GetId()),
-		obj.GetBaseImageRepositoryId(),
+		pgutils.NilOrString(obj.GetBaseImageRepositoryId()),
 		obj.GetRepository(),
 		obj.GetTag(),
 		obj.GetManifestDigest(),
@@ -188,7 +188,7 @@ func copyFromBaseImages(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx
 
 		return []interface{}{
 			pgutils.NilOrUUID(obj.GetId()),
-			obj.GetBaseImageRepositoryId(),
+			pgutils.NilOrString(obj.GetBaseImageRepositoryId()),
 			obj.GetRepository(),
 			obj.GetTag(),
 			obj.GetManifestDigest(),

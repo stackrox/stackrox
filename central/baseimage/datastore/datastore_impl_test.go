@@ -9,6 +9,7 @@ import (
 	"github.com/stackrox/rox/central/baseimage/store/postgres"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
+	postgresSchema "github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/suite"
@@ -42,11 +43,10 @@ func (s *BaseImageDataStoreTestSuite) TearDownSuite() {
 	}
 }
 
-/*
 func (s *BaseImageDataStoreTestSuite) TearDownTest() {
 	s.truncateTable(postgresSchema.BaseImagesSchema)
 	s.truncateTable(postgresSchema.BaseImageLayersSchema)
-} */
+}
 
 func (s *BaseImageDataStoreTestSuite) TestUpsertImage() {
 	imageID := uuid.NewV4().String()
@@ -81,7 +81,6 @@ func (s *BaseImageDataStoreTestSuite) TestUpsertImage() {
 }
 
 func (s *BaseImageDataStoreTestSuite) TestUpsertImagesBatch() {
-	// Create map for batch upsert
 	batch := make(map[*storage.BaseImage][]*storage.BaseImageLayer)
 
 	// Image 1
@@ -157,4 +156,34 @@ func (s *BaseImageDataStoreTestSuite) TestGetBaseImageNotFound() {
 	s.NoError(err)
 	s.False(found)
 	s.Nil(img)
+}
+
+func (s *BaseImageDataStoreTestSuite) TestFirstLayerDigestMismatch() {
+	id := uuid.NewV4().String()
+	img := &storage.BaseImage{
+		Id:               id,
+		ManifestDigest:   "sha256:mismatch-manifest",
+		FirstLayerDigest: "sha256:not-equal",
+	}
+	layers := []*storage.BaseImageLayer{{LayerDigest: "sha256:actual-first"}}
+
+	err := s.datastore.UpsertImage(s.ctx, img, layers)
+	s.Require().Error(err, "FirstLayerDigest mismatch should fail")
+}
+
+func (s *BaseImageDataStoreTestSuite) TestContextCancellation() {
+	ctx, cancel := context.WithCancel(s.ctx)
+	cancel()
+
+	err := s.datastore.UpsertImage(ctx, &storage.BaseImage{
+		Id:             uuid.NewV4().String(),
+		ManifestDigest: "sha256:ctx-cancel",
+	}, nil)
+	s.Require().Error(err)
+}
+
+func (s *ImageV2DataStoreTestSuite) truncateTable(name string) {
+	sql := fmt.Sprintf("TRUNCATE %s CASCADE", name)
+	_, err := s.testDB.Exec(s.ctx, sql)
+	s.NoError(err)
 }

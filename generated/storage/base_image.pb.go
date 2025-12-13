@@ -25,7 +25,7 @@ const (
 type BaseImage struct {
 	state                 protoimpl.MessageState `protogen:"open.v1"`
 	Id                    string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" search:"Base Image Id,store,hidden" sql:"pk,type(uuid)"`                                                                        // @gotags: search:"Base Image Id,store,hidden" sql:"pk,type(uuid)"
-	BaseImageRepositoryId string                 `protobuf:"bytes,2,opt,name=base_image_repository_id,json=baseImageRepositoryId,proto3" json:"base_image_repository_id,omitempty" sql:"fk(BaseImageRepository:id)"` // @gotags: sql:"fk(BaseImageRepository:id)"
+	BaseImageRepositoryId string                 `protobuf:"bytes,2,opt,name=base_image_repository_id,json=baseImageRepositoryId,proto3" json:"base_image_repository_id,omitempty" sql:"fk(BaseImageRepository:id),allow-null"` // @gotags: sql:"fk(BaseImageRepository:id),allow-null"
 	Repository            string                 `protobuf:"bytes,3,opt,name=repository,proto3" json:"repository,omitempty" search:"Base Image Repository,store"`                                                        // @gotags: search:"Base Image Repository,store"
 	Tag                   string                 `protobuf:"bytes,4,opt,name=tag,proto3" json:"tag,omitempty" search:"Base Image Tag,hidden"`                                                                      // @gotags: search:"Base Image Tag,hidden"
 	ManifestDigest        string                 `protobuf:"bytes,5,opt,name=manifest_digest,json=manifestDigest,proto3" json:"manifest_digest,omitempty" search:"Base Image Manifest Digest,store"`                          // @gotags: search:"Base Image Manifest Digest,store"
