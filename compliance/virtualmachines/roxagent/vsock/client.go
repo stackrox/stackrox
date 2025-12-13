@@ -35,7 +35,7 @@ func (c *Client) SendIndexReport(report *v4.IndexReport) error {
 	if c.Verbose {
 		reportJson, err := jsonutil.ProtoToJSON(wrappedReport)
 		if err != nil {
-			log.Errorf("Failed to convert index report to JSON (vsockCid=%s): %v", wrappedReport.VsockCid, err)
+			log.Errorf("Failed to convert index report to JSON (vsockCid=%s): %v", wrappedReport.GetVsockCid(), err)
 		} else {
 			fmt.Println(reportJson)
 		}
