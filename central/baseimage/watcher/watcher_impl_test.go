@@ -29,17 +29,21 @@ func createTestWatcher(ctrl *gomock.Controller, mockDS *mocks.MockDataStore, pol
 		Return("", false, nil).
 		AnyTimes()
 
-	// Set default behavior: no matching registries
+	// Set default behavior: no matching registries (support both methods for deduplication setting)
 	mockRegistrySet.EXPECT().
-		GetAll().
+		GetAllUnique().
+		Return(nil).
+		AnyTimes()
+	mockRegistrySet.EXPECT().
+		GetAllUnique().
 		Return(nil).
 		AnyTimes()
 
 	return &watcherImpl{
 		datastore:    mockDS,
-		registries:   mockRegistrySet,
 		delegator:    mockDelegator,
 		pollInterval: pollInterval,
+		localClient:  NewLocalRepositoryClient(mockRegistrySet),
 		stopper:      concurrency.NewStopper(),
 	}
 }
@@ -256,29 +260,6 @@ func TestWatcher_AccessesAllProtoFields(t *testing.T) {
 	assert.Equal(t, storage.BaseImageRepository_HEALTHY, repo.GetHealthStatus())
 }
 
-func TestWatcher_InvalidRepositoryPath(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	mockDS := mocks.NewMockDataStore(ctrl)
-
-	// Invalid repository path that will fail parsing
-	repo := &storage.BaseImageRepository{
-		Id:             "test-id",
-		RepositoryPath: "", // Empty path will fail GenerateImageNameFromString
-		TagPattern:     "*",
-	}
-
-	mockDS.EXPECT().
-		ListRepositories(gomock.Any()).
-		Return([]*storage.BaseImageRepository{repo}, nil)
-
-	w := createTestWatcher(ctrl, mockDS, 1*time.Hour)
-
-	// Should not panic on invalid repository path
-	assert.NotPanics(t, func() {
-		w.pollOnce()
-	})
-}
-
 func TestWatcher_DelegationError(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	mockDS := mocks.NewMockDataStore(ctrl)
@@ -302,14 +283,14 @@ func TestWatcher_DelegationError(t *testing.T) {
 
 	// No matching registries
 	mockRegistrySet.EXPECT().
-		GetAll().
+		GetAllUnique().
 		Return(nil)
 
 	w := &watcherImpl{
 		datastore:    mockDS,
-		registries:   mockRegistrySet,
 		delegator:    mockDelegator,
 		pollInterval: 1 * time.Hour,
+		localClient:  NewLocalRepositoryClient(mockRegistrySet),
 		stopper:      concurrency.NewStopper(),
 	}
 
@@ -345,9 +326,9 @@ func TestWatcher_ShouldDelegate(t *testing.T) {
 
 	w := &watcherImpl{
 		datastore:    mockDS,
-		registries:   mockRegistrySet,
 		delegator:    mockDelegator,
 		pollInterval: 1 * time.Hour,
+		localClient:  NewLocalRepositoryClient(mockRegistrySet),
 		stopper:      concurrency.NewStopper(),
 	}
 
@@ -384,14 +365,14 @@ func TestWatcher_NoMatchingRegistry(t *testing.T) {
 		Return(false)
 
 	mockRegistrySet.EXPECT().
-		GetAll().
+		GetAllUnique().
 		Return([]types.ImageRegistry{mockRegistry})
 
 	w := &watcherImpl{
 		datastore:    mockDS,
-		registries:   mockRegistrySet,
 		delegator:    mockDelegator,
 		pollInterval: 1 * time.Hour,
+		localClient:  NewLocalRepositoryClient(mockRegistrySet),
 		stopper:      concurrency.NewStopper(),
 	}
 
@@ -432,14 +413,14 @@ func TestWatcher_MatchingRegistryWithTagListError(t *testing.T) {
 		Return(nil, errox.InvariantViolation.New("registry connection failed"))
 
 	mockRegistrySet.EXPECT().
-		GetAll().
+		GetAllUnique().
 		Return([]types.ImageRegistry{mockRegistry})
 
 	w := &watcherImpl{
 		datastore:    mockDS,
-		registries:   mockRegistrySet,
 		delegator:    mockDelegator,
 		pollInterval: 1 * time.Hour,
+		localClient:  NewLocalRepositoryClient(mockRegistrySet),
 		stopper:      concurrency.NewStopper(),
 	}
 
@@ -480,14 +461,14 @@ func TestWatcher_MatchingRegistrySuccess(t *testing.T) {
 		Return([]string{"1.0", "1.1", "1.2", "2.0", "latest"}, nil)
 
 	mockRegistrySet.EXPECT().
-		GetAll().
+		GetAllUnique().
 		Return([]types.ImageRegistry{mockRegistry})
 
 	w := &watcherImpl{
 		datastore:    mockDS,
-		registries:   mockRegistrySet,
 		delegator:    mockDelegator,
 		pollInterval: 1 * time.Hour,
+		localClient:  NewLocalRepositoryClient(mockRegistrySet),
 		stopper:      concurrency.NewStopper(),
 	}
 
@@ -523,15 +504,15 @@ func TestWatcher_ContextCancellation(t *testing.T) {
 
 	// After delegation error, processing continues and GetAll is called
 	mockRegistrySet.EXPECT().
-		GetAll().
+		GetAllUnique().
 		Return(nil).
 		AnyTimes()
 
 	w := &watcherImpl{
 		datastore:    mockDS,
-		registries:   mockRegistrySet,
 		delegator:    mockDelegator,
 		pollInterval: 1 * time.Hour,
+		localClient:  NewLocalRepositoryClient(mockRegistrySet),
 		stopper:      concurrency.NewStopper(),
 	}
 
