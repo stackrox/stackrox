@@ -334,11 +334,13 @@ func (ds *datastoreImpl) GetProfilesNames(ctx context.Context, q *v1.Query) ([]s
 }
 
 type distinctProfileCount struct {
-	TotalCount int    `db:"compliance_config_profile_name_count"`
-	Name       string `db:"compliance_config_profile_name"`
+	TotalCount int    `db:"compliance_profile_name_count"`
+	Name       string `db:"compliance_profile_name"`
 }
 
-// DistinctProfiles returns a map where the keys are profile names and the values are their counts, for profiles matching the query.
+// DistinctProfiles returns a map where the keys are profile names and the values are
+// their counts, for profiles matching the query. Returns only profiles that exist in
+// the profile table.
 func (ds *datastoreImpl) DistinctProfiles(ctx context.Context, q *v1.Query) (map[string]int, error) {
 	var err error
 	q, err = withSACFilter(ctx, resources.Compliance, q)
@@ -346,15 +348,22 @@ func (ds *datastoreImpl) DistinctProfiles(ctx context.Context, q *v1.Query) (map
 		return nil, err
 	}
 
-	query := q.CloneVT()
+	// Build a conjunction query that combines the original filters with a requirement that
+	// the profile is referenced by at least one scan configuration.
+	query := search.ConjunctionQuery(
+		q,
+		search.NewQueryBuilder().AddStrings(
+			search.ComplianceOperatorConfigProfileName, search.WildcardString,
+		).ProtoQuery(),
+	)
 
 	query.GroupBy = &v1.QueryGroupBy{
 		Fields: []string{
-			search.ComplianceOperatorConfigProfileName.String(),
+			search.ComplianceOperatorProfileName.String(),
 		},
 	}
 
-	result, err := pgSearch.RunSelectRequestForSchema[distinctProfileCount](ctx, ds.db, schema.ComplianceOperatorScanConfigurationV2Schema, withCountQuery(query, search.ComplianceOperatorConfigProfileName))
+	result, err := pgSearch.RunSelectRequestForSchema[distinctProfileCount](ctx, ds.db, schema.ComplianceOperatorProfileV2Schema, withCountQuery(query, search.ComplianceOperatorProfileName))
 	if err != nil {
 		return nil, err
 	}

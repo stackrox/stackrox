@@ -537,7 +537,7 @@ func (s *ComplianceScanConfigServiceTestSuite) TestGetComplianceScanConfiguratio
 	}
 }
 
-func (s *ComplianceScanConfigServiceTestSuite) ListComplianceScanConfigProfiles() {
+func (s *ComplianceScanConfigServiceTestSuite) TestListComplianceScanConfigProfiles() {
 	allAccessContext := sac.WithAllAccess(context.Background())
 
 	testCases := []struct {
@@ -572,16 +572,10 @@ func (s *ComplianceScanConfigServiceTestSuite) ListComplianceScanConfigProfiles(
 
 	for _, tc := range testCases {
 		s.T().Run(tc.desc, func(t *testing.T) {
-			expectedResp := &apiV2.ListComplianceScanConfigsProfileResponse{
-				Profiles:   nil,
-				TotalCount: 6,
-			}
-
-			s.scanConfigDatastore.EXPECT().GetProfilesNames(gomock.Any(), tc.query).Return([]string{"ocp4"}, nil).Times(1)
+			s.scanConfigDatastore.EXPECT().GetProfilesNames(gomock.Any(), tc.expectedQ).Return([]string{"ocp4"}, nil).Times(1)
 			s.scanConfigDatastore.EXPECT().DistinctProfiles(gomock.Any(), tc.expectedCountQ).Return(map[string]int{"ocp4": 1}, nil).Times(1)
 
 			searchQuery := search.NewQueryBuilder().AddSelectFields().AddExactMatches(search.ComplianceOperatorProfileName, "ocp4").ProtoQuery()
-			searchQuery.Pagination = &v1.QueryPagination{}
 
 			profiles := []*storage.ComplianceOperatorProfileV2{
 				{
@@ -622,7 +616,9 @@ func (s *ComplianceScanConfigServiceTestSuite) ListComplianceScanConfigProfiles(
 
 			configProfiles, err := s.service.ListComplianceScanConfigProfiles(allAccessContext, tc.query)
 			s.Require().NoError(err)
-			protoassert.Equal(s.T(), expectedResp, configProfiles)
+			s.Require().NotNil(configProfiles)
+			s.Assert().Equal(int32(1), configProfiles.GetTotalCount())
+			s.Assert().Len(configProfiles.GetProfiles(), 1)
 		})
 	}
 }
