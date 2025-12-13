@@ -12,7 +12,7 @@ import {
     Tr,
 } from '@patternfly/react-table';
 import type { IAction } from '@patternfly/react-table';
-import { LabelGroup, Text } from '@patternfly/react-core';
+import { Content, LabelGroup } from '@patternfly/react-core';
 
 import useFeatureFlags from 'hooks/useFeatureFlags';
 import type { UseURLSortResult } from 'hooks/useURLSort';
@@ -302,7 +302,7 @@ function WorkloadCVEOverviewTable({
                     </TooltipTh>
                     {/* eslint-disable-next-line generic/Th-defaultColumns */}
                     <Th className={getVisibilityClass('rowActions')}>
-                        <span className="pf-v5-screen-reader">Row actions</span>
+                        <span className="pf-v6-screen-reader">Row actions</span>
                     </Th>
                 </Tr>
             </Thead>
@@ -517,7 +517,7 @@ function WorkloadCVEOverviewTable({
                                         <Td colSpan={colSpan - 1}>
                                             <ExpandableRowContent>
                                                 {summary ? (
-                                                    <Text>{summary}</Text>
+                                                    <Content component="p">{summary}</Content>
                                                 ) : (
                                                     <PartialCVEDataAlert />
                                                 )}

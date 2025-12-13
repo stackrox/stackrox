@@ -44,29 +44,29 @@ function DisplayOptionsSelect({
         >
             <SelectGroup label="Deployment visuals" key="deployment">
                 <SelectOption key={0} value="policyStatusBadge">
-                    <NoPolicyRules width="22px" height="22px" className="pf-v5-u-mr-xs" />
+                    <NoPolicyRules width="22px" height="22px" className="pf-v6-u-mr-xs" />
                     Network policy status badge
                 </SelectOption>
                 <SelectOption key={1} value="externalBadge">
-                    <PficonNetworkRangeIcon className="pf-v5-u-ml-xs pf-v5-u-mr-sm" /> Active
+                    <PficonNetworkRangeIcon className="pf-v6-u-ml-xs pf-v6-u-mr-sm" /> Active
                     external traffic badge
                 </SelectOption>
             </SelectGroup>
             <SelectGroup label="Edge visuals" key="edge">
                 <SelectOption key={2} value="edgeLabel">
-                    <PortLabel width="22px" height="22px" className="pf-v5-u-mr-xs" />
+                    <PortLabel width="22px" height="22px" className="pf-v6-u-mr-xs" />
                     Port and protocol label
                 </SelectOption>
             </SelectGroup>
             <SelectGroup label="Selection indicators" key="selection-indicator">
                 <SelectOption key={3} value="selectionIndicator">
                     <Split>
-                        <SplitItem className="pf-v5-u-mr-xs">
+                        <SplitItem className="pf-v6-u-mr-xs">
                             <FilteredEntity width="24px" height="24px" />
                         </SplitItem>
                         <SplitItem>Filtered</SplitItem>
-                        <SplitItem className="pf-v5-u-mx-sm">&</SplitItem>
-                        <SplitItem className="pf-v5-u-mr-xs">
+                        <SplitItem className="pf-v6-u-mx-sm">&</SplitItem>
+                        <SplitItem className="pf-v6-u-mr-xs">
                             <RelatedEntity width="18px" height="18px" />
                         </SplitItem>
                         <SplitItem>Related entities</SplitItem>
@@ -76,13 +76,13 @@ function DisplayOptionsSelect({
             <SelectGroup label="Object type labels" key="object-type-labels">
                 <SelectOption key={4} value="objectTypeLabel">
                     <Split>
-                        <SplitItem className="pf-v5-u-mr-xs">
+                        <SplitItem className="pf-v6-u-mr-xs">
                             <NamespaceIcon screenReaderText="namespace" />
                         </SplitItem>
-                        <SplitItem className="pf-v5-u-mr-xs">
+                        <SplitItem className="pf-v6-u-mr-xs">
                             <DeploymentIcon screenReaderText="deployment" />
                         </SplitItem>
-                        <SplitItem className="pf-v5-u-mr-xs">
+                        <SplitItem className="pf-v6-u-mr-xs">
                             <CidrBlockIcon screenReaderText="cidr block" />
                         </SplitItem>
                         <SplitItem>Labels</SplitItem>

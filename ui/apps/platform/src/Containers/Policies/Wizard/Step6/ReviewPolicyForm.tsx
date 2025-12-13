@@ -105,17 +105,17 @@ function ReviewPolicyForm({
                     flex={{ default: 'flex_1' }}
                     direction={{ default: 'column' }}
                     alignSelf={{ default: 'alignSelfStretch' }}
-                    className="review-policy pf-v5-u-p-lg"
+                    className="review-policy pf-v6-u-p-lg"
                 >
                     <Flex direction={{ default: 'column', xl: 'row' }}>
                         <FlexItem flex={{ default: 'flex_1' }}>
                             <Title headingLevel="h2">Review policy</Title>
-                            <div className="pf-v5-u-mt-sm">
+                            <div className="pf-v6-u-mt-sm">
                                 Review policy settings and violations.
                             </div>
                         </FlexItem>
                         <FlexItem
-                            className="pf-v5-u-pr-md"
+                            className="pf-v6-u-pr-md"
                             alignSelf={{ default: 'alignSelfCenter' }}
                         >
                             <Button
@@ -138,7 +138,7 @@ function ReviewPolicyForm({
                     )}
                 </Flex>
                 <Divider component="div" />
-                <FlexItem className="pf-v5-u-p-lg">
+                <FlexItem className="pf-v6-u-p-lg">
                     <PolicyDetailContent policy={values} isReview />
                 </FlexItem>
             </Flex>
@@ -148,20 +148,20 @@ function ReviewPolicyForm({
                     <Flex
                         direction={{ default: 'column' }}
                         alignSelf={{ default: 'alignSelfStretch' }}
-                        className="preview-violations pf-v5-u-p-lg pf-v5-u-w-50"
+                        className="preview-violations pf-v6-u-p-lg pf-v6-u-w-50"
                     >
                         <Title headingLevel="h2">Preview violations</Title>
-                        <div className="pf-v5-u-mb-md pf-v5-u-mt-sm">
+                        <div className="pf-v6-u-mb-md pf-v6-u-mt-sm">
                             The policy settings you have selected will generate violations for the
                             Build or Deploy lifecycle stages. Runtime violations are not available
                             in this preview because they are generated in response to future events.
                         </div>
-                        <div className="pf-v5-u-mb-md">
+                        <div className="pf-v6-u-mb-md">
                             Before you save the policy, verify that the violations seem accurate.
                         </div>
                         {values.disabled && (
                             <Alert
-                                className="pf-v5-u-mb-md"
+                                className="pf-v6-u-mb-md"
                                 isInline
                                 variant="info"
                                 title="Policy disabled"

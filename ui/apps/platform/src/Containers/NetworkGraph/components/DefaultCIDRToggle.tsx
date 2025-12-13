@@ -36,7 +36,7 @@ function DefaultCIDRToggle({ updateNetworkNodes = () => {} }): ReactElement {
     }
 
     return (
-        <Flex className="pf-v5-u-mb-md">
+        <Flex className="pf-v6-u-mb-md">
             <Switch
                 id="default-cidr-toggle"
                 isChecked={showDefaultExternalSrcs}

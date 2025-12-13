@@ -2,8 +2,6 @@ import type { ErrorInfo, ReactElement } from 'react';
 import {
     EmptyState,
     EmptyStateFooter,
-    EmptyStateHeader,
-    EmptyStateIcon,
     Flex,
     FlexItem,
     PageSection,
@@ -34,22 +32,14 @@ export type ErrorBoundaryPageProps = {
  */
 function ErrorBoundaryPage({ error, errorInfo }: ErrorBoundaryPageProps): ReactElement {
     return (
-        <PageSection id="error-boundary-page" variant="light">
+        <PageSection hasBodyWrapper={false} id="error-boundary-page">
             <Flex
                 className="error-boundary-page-column"
                 direction={{ default: 'column' }}
                 flexWrap={{ default: 'nowrap' }}
                 spaceItems={{ default: 'spaceItemsXl' }}
             >
-                <EmptyState>
-                    <EmptyStateHeader
-                        icon={
-                            <EmptyStateIcon
-                                icon={ExclamationCircleIcon}
-                                color="var(--pf-v5-global--danger-color--200)"
-                            />
-                        }
-                    />
+                <EmptyState icon={ExclamationCircleIcon}>
                     <EmptyStateFooter>
                         <Flex
                             direction={{ default: 'column' }}

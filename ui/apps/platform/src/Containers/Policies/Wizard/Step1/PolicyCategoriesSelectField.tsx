@@ -2,12 +2,12 @@ import { useEffect, useState } from 'react';
 import type { FormEvent, MouseEvent as ReactMouseEvent, ReactElement, Ref } from 'react';
 import {
     Button,
-    Chip,
-    ChipGroup,
     FormGroup,
     FormHelperText,
     HelperText,
     HelperTextItem,
+    Label,
+    LabelGroup,
     MenuToggle,
     Select,
     SelectList,
@@ -16,6 +16,7 @@ import {
     TextInputGroupMain,
     TextInputGroupUtilities,
 } from '@patternfly/react-core';
+
 import type { MenuToggleElement } from '@patternfly/react-core';
 import { useField } from 'formik';
 
@@ -88,7 +89,7 @@ function PolicyCategoriesSelectField(): ReactElement {
             onClick={onToggle}
             innerRef={toggleRef}
             isExpanded={isOpen}
-            className="pf-v5-u-w-100"
+            className="pf-v6-u-w-100"
         >
             <TextInputGroup isPlain>
                 <TextInputGroupMain
@@ -103,31 +104,31 @@ function PolicyCategoriesSelectField(): ReactElement {
                     isExpanded={isOpen}
                     aria-controls="select-multi-typeahead-listbox"
                 >
-                    <ChipGroup>
+                    <LabelGroup>
                         {selectedCategories.map((category) => (
-                            <Chip
+                            <Label
+                                variant="outline"
                                 key={category}
-                                onClick={(event: ReactMouseEvent) => {
+                                onClose={(event: ReactMouseEvent) => {
                                     event.stopPropagation();
                                     onRemoveChip(category);
                                 }}
                                 aria-label={`Remove ${category} category`}
                             >
                                 {category}
-                            </Chip>
+                            </Label>
                         ))}
-                    </ChipGroup>
+                    </LabelGroup>
                 </TextInputGroupMain>
                 <TextInputGroupUtilities>
                     {selectedCategories.length > 0 && (
                         <Button
+                            icon={<TimesIcon aria-hidden />}
                             variant="plain"
                             onClick={onClearAll}
                             aria-label="Clear all selected categories"
                             type="button"
-                        >
-                            <TimesIcon aria-hidden />
-                        </Button>
+                        />
                     )}
                 </TextInputGroupUtilities>
             </TextInputGroup>

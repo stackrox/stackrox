@@ -78,8 +78,8 @@ function CheckDetailsTable({
         <div id={tabContentIdForResults}>
             <Toolbar>
                 <ToolbarContent>
-                    <ToolbarGroup className="pf-v5-u-w-100">
-                        <ToolbarItem className="pf-v5-u-flex-1">
+                    <ToolbarGroup className="pf-v6-u-w-100">
+                        <ToolbarItem className="pf-v6-u-flex-1">
                             <CompoundSearchFilter
                                 config={searchFilterConfig}
                                 searchFilter={searchFilter}
@@ -92,7 +92,7 @@ function CheckDetailsTable({
                                 onSelect={onCheckStatusSelect}
                             />
                         </ToolbarItem>
-                        <ToolbarItem variant="pagination" align={{ default: 'alignRight' }}>
+                        <ToolbarItem variant="pagination" align={{ default: 'alignEnd' }}>
                             <Pagination
                                 itemCount={checkResultsCount}
                                 page={page}
@@ -102,7 +102,7 @@ function CheckDetailsTable({
                             />
                         </ToolbarItem>
                     </ToolbarGroup>
-                    <ToolbarGroup className="pf-v5-u-w-100">
+                    <ToolbarGroup className="pf-v6-u-w-100">
                         <SearchFilterChips
                             searchFilter={searchFilter}
                             onFilterChange={onFilterChange}

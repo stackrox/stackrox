@@ -74,13 +74,13 @@ describe('Download Diagnostic Data', () => {
 
             const clusterName = 'remote';
 
-            cy.get(`.pf-v5-c-chip-group__list-item:contains("${clusterName}")`).should('not.exist');
+            cy.get(`.pf-v6-c-chip-group__list-item:contains("${clusterName}")`).should('not.exist');
 
             // TODO factor out as helper function
             cy.get('[placeholder="Type a cluster name"]').click();
             cy.get(`[role="option"]:contains("${clusterName}")`).click();
 
-            cy.get(`.pf-v5-c-chip-group__list-item:contains("${clusterName}")`).should('exist');
+            cy.get(`.pf-v6-c-chip-group__list-item:contains("${clusterName}")`).should('exist');
         });
 
         it('should disable other fields when "Database diagnostics only" is checked', () => {

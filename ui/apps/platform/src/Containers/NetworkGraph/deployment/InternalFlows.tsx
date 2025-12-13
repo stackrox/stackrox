@@ -154,7 +154,7 @@ function InternalFlows({
                         variant="danger"
                         title={networkFlowsError || modifyError}
                         component="p"
-                        className="pf-v5-u-mb-sm"
+                        className="pf-v6-u-mb-sm"
                     />
                 </StackItem>
             )}
@@ -175,15 +175,15 @@ function InternalFlows({
                     </FlexItem>
                 </Flex>
             </StackItem>
-            <Divider component="hr" className="pf-v5-u-py-md" />
+            <Divider component="hr" className="pf-v6-u-py-md" />
             <StackItem>
-                <Toolbar className="pf-v5-u-p-0">
-                    <ToolbarContent className="pf-v5-u-px-0">
+                <Toolbar className="pf-v6-u-p-0">
+                    <ToolbarContent className="pf-v6-u-px-0">
                         <ToolbarItem>
                             <FlowsTableHeaderText type={edgeState} numFlows={totalFlows} />
                         </ToolbarItem>
                         {hasWriteAccessForActions && (
-                            <ToolbarItem align={{ default: 'alignRight' }}>
+                            <ToolbarItem align={{ default: 'alignEnd' }}>
                                 <FlowsBulkActions
                                     type="active"
                                     selectedRows={selectedRows}

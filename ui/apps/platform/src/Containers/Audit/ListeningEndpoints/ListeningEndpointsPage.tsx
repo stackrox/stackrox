@@ -3,6 +3,7 @@ import type { MouseEvent as ReactMouseEvent, Ref } from 'react';
 import {
     Bullseye,
     Button,
+    Content,
     Divider,
     MenuToggle,
     PageSection,
@@ -11,7 +12,6 @@ import {
     SelectList,
     SelectOption,
     Spinner,
-    Text,
     TextInputGroup,
     TextInputGroupMain,
     Title,
@@ -197,31 +197,23 @@ function ListeningEndpointsPage() {
     return (
         <>
             <PageTitle title="Listening Endpoints" />
-            <PageSection variant="light">
+            <PageSection hasBodyWrapper={false} variant="default">
                 <Title headingLevel="h1">Listening endpoints</Title>
-                <Text className="pf-v5-u-pt-xs">
+                <Content component="p">
                     Audit listening endpoints of deployments in your clusters
-                </Text>
+                </Content>
             </PageSection>
             <Divider component="div" />
-            <PageSection
-                id="listening-endpoints-page"
-                isFilled
-                className="pf-v5-u-display-flex pf-v5-u-flex-direction-column"
-            >
-                <Toolbar>
+            <PageSection hasBodyWrapper={false}>
+                <Toolbar className="pf-v6-u-pb-0">
                     <ToolbarContent>
-                        <ToolbarGroup className="pf-v5-u-flex-grow-1">
-                            <ToolbarItem
-                                variant="search-filter"
-                                className="pf-v5-u-display-flex pf-v5-u-flex-grow-1"
-                            >
+                        <ToolbarGroup variant="filter-group" className="pf-v6-u-flex-grow-1">
+                            <ToolbarItem>
                                 <SelectSingle
                                     id="entity-filter"
                                     value={entity}
                                     handleSelect={onEntitySelect}
                                     toggleAriaLabel="Search entity selection menu toggle"
-                                    isFullWidth={false}
                                 >
                                     <SelectOption key="Deployment" value="Deployment">
                                         Deployment
@@ -233,6 +225,8 @@ function ListeningEndpointsPage() {
                                         Cluster
                                     </SelectOption>
                                 </SelectSingle>
+                            </ToolbarItem>
+                            <ToolbarItem className="pf-v6-u-flex-grow-1">
                                 <Select
                                     id="autocomplete-filter"
                                     isOpen={autocompleteOpen}
@@ -240,7 +234,7 @@ function ListeningEndpointsPage() {
                                     onSelect={onSelectAutocompleteValue}
                                     onOpenChange={(isOpen) => setAutocompleteOpen(isOpen)}
                                     toggle={autocompleteToggle}
-                                    className="pf-v5-u-flex-grow-1"
+                                    className="pf-v6-u-flex-grow-1"
                                 >
                                     <SelectList id="autocomplete-listbox">
                                         {autocompleteOptions.length > 0 ? (
@@ -266,8 +260,9 @@ function ListeningEndpointsPage() {
                                 </Select>
                             </ToolbarItem>
                         </ToolbarGroup>
+                        <ToolbarItem variant="separator" />
                         <ToolbarGroup>
-                            <ToolbarItem variant="pagination" align={{ default: 'alignRight' }}>
+                            <ToolbarItem variant="pagination" align={{ default: 'alignEnd' }}>
                                 <Pagination
                                     itemCount={countQuery.data ?? 0}
                                     page={page}
@@ -279,8 +274,7 @@ function ListeningEndpointsPage() {
                                 />
                             </ToolbarItem>
                         </ToolbarGroup>
-
-                        <ToolbarGroup className="pf-v5-u-w-100">
+                        <ToolbarGroup className="pf-v6-u-w-100">
                             <SearchFilterChips
                                 searchFilter={searchFilter}
                                 onFilterChange={onSearchFilterChange}
@@ -293,57 +287,64 @@ function ListeningEndpointsPage() {
                         </ToolbarGroup>
                     </ToolbarContent>
                 </Toolbar>
-                <div className="pf-v5-u-background-color-100">
-                    {error && (
-                        <Bullseye>
-                            <EmptyStateTemplate
-                                title="Error loading deployments with listening endpoints"
-                                headingLevel="h2"
-                                icon={ExclamationCircleIcon}
-                                iconClassName="pf-v5-u-danger-color-100"
-                            >
-                                {getAxiosErrorMessage(error.message)}
-                            </EmptyStateTemplate>
-                        </Bullseye>
-                    )}
-                    {isLoading && (
-                        <Bullseye>
-                            <Spinner aria-label="Loading listening endpoints for deployments" />
-                        </Bullseye>
-                    )}
-                    {!error && !isLoading && data && (
-                        <>
-                            {data.length === 0 ? (
-                                <Bullseye>
-                                    <EmptyStateTemplate
-                                        title="No deployments with listening endpoints found"
-                                        headingLevel="h2"
+            </PageSection>
+            <PageSection
+                hasBodyWrapper={false}
+                id="listening-endpoints-page"
+                isFilled
+                padding={{ default: 'noPadding' }}
+            >
+                {error && (
+                    <Bullseye>
+                        <EmptyStateTemplate
+                            title="Error loading deployments with listening endpoints"
+                            headingLevel="h2"
+                            icon={ExclamationCircleIcon}
+                            status="danger"
+                        >
+                            {getAxiosErrorMessage(error.message)}
+                        </EmptyStateTemplate>
+                    </Bullseye>
+                )}
+                {isLoading && (
+                    <Bullseye>
+                        <Spinner aria-label="Loading listening endpoints for deployments" />
+                    </Bullseye>
+                )}
+                {!error && !isLoading && data && (
+                    <>
+                        {data.length === 0 ? (
+                            <Bullseye>
+                                <EmptyStateTemplate
+                                    title="No deployments with listening endpoints found"
+                                    headingLevel="h2"
+                                >
+                                    <Content component="p">
+                                        Clear any search value and try again
+                                    </Content>
+                                    <Button
+                                        variant="link"
+                                        onClick={() => {
+                                            setPage(1);
+                                            setAutocompleteInputValue('');
+                                            setDebouncedSearchValue('');
+                                            setSearchFilter({});
+                                        }}
                                     >
-                                        <Text>Clear any search value and try again</Text>
-                                        <Button
-                                            variant="link"
-                                            onClick={() => {
-                                                setPage(1);
-                                                setAutocompleteInputValue('');
-                                                setDebouncedSearchValue('');
-                                                setSearchFilter({});
-                                            }}
-                                        >
-                                            Clear search
-                                        </Button>
-                                    </EmptyStateTemplate>
-                                </Bullseye>
-                            ) : (
-                                <ListeningEndpointsTable
-                                    deployments={data}
-                                    getSortParams={getSortParams}
-                                    areAllRowsExpanded={areAllRowsExpanded}
-                                    setAllRowsExpanded={setAllRowsExpanded}
-                                />
-                            )}
-                        </>
-                    )}
-                </div>
+                                        Clear search
+                                    </Button>
+                                </EmptyStateTemplate>
+                            </Bullseye>
+                        ) : (
+                            <ListeningEndpointsTable
+                                deployments={data}
+                                getSortParams={getSortParams}
+                                areAllRowsExpanded={areAllRowsExpanded}
+                                setAllRowsExpanded={setAllRowsExpanded}
+                            />
+                        )}
+                    </>
+                )}
             </PageSection>
         </>
     );

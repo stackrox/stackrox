@@ -30,30 +30,30 @@ function ClustersByTypeSummaryCard({ clusterCounts }: ClustersByTypeSummaryCardP
     const totalCount = generic + kubernetes + openshift + openshift4;
 
     return (
-        <Card isCompact isFlat isFullHeight>
+        <Card isCompact isFullHeight>
             <CardTitle>Clusters by type</CardTitle>
             <CardBody>
                 {totalCount > 0 ? (
                     <Grid>
                         {generic > 0 && (
-                            <GridItem span={12} className="pf-v5-u-pt-xs">
+                            <GridItem span={12} className="pf-v6-u-pt-xs">
                                 {generic} Generic
                             </GridItem>
                         )}
                         {kubernetes > 0 && (
-                            <GridItem span={12} className="pf-v5-u-pt-xs">
+                            <GridItem span={12} className="pf-v6-u-pt-xs">
                                 {kubernetes} Kubernetes
                             </GridItem>
                         )}
                         {openshift + openshift4 > 0 && (
-                            <GridItem span={12} className="pf-v5-u-pt-xs">
+                            <GridItem span={12} className="pf-v6-u-pt-xs">
                                 {openshift + openshift4} OpenShift
                             </GridItem>
                         )}
                     </Grid>
                 ) : (
                     <Grid>
-                        <GridItem span={12} className="pf-v5-u-pt-xs">
+                        <GridItem span={12} className="pf-v6-u-pt-xs">
                             No affected clusters found
                         </GridItem>
                     </Grid>

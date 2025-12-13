@@ -79,7 +79,7 @@ function PolicyGroupCard({
 
     return (
         <>
-            <Card isFlat isCompact data-testid="policy-criteria-group-card">
+            <Card isCompact data-testid="policy-criteria-group-card">
                 <CardHeader
                     actions={{
                         actions: (
@@ -107,13 +107,12 @@ function PolicyGroupCard({
                                             component="div"
                                         />
                                         <Button
+                                            icon={<TrashIcon />}
                                             variant="plain"
-                                            className="pf-v5-u-mr-xs pf-v5-u-px-sm pf-v5-u-py-md"
+                                            className="pf-v6-u-mr-xs pf-v6-u-px-sm pf-v6-u-py-md"
                                             onClick={onDeleteGroup}
                                             title="Delete policy field"
-                                        >
-                                            <TrashIcon />
-                                        </Button>
+                                        />
                                     </>
                                 )}
                             </>
@@ -121,17 +120,17 @@ function PolicyGroupCard({
                         hasNoOffset: true,
                         className: 'policy-group-card',
                     }}
-                    className="pf-v5-u-p-0"
+                    className="pf-v6-u-p-0"
                 >
-                    <CardTitle className="pf-v5-u-pl-md">
+                    <CardTitle className="pf-v6-u-pl-md">
                         <Flex
                             alignItems={{ default: 'alignItemsCenter' }}
-                            className="pf-v5-u-py-sm pf-v5-u-text-wrap-on-sm"
+                            className="pf-v6-u-py-sm pf-v6-u-text-wrap-on-sm"
                         >
                             <Stack>
                                 <StackItem>{descriptor.shortName}</StackItem>
                                 {headerLongText && headerLongText !== descriptor.shortName && (
-                                    <StackItem className="pf-v5-u-font-size-sm pf-v5-u-font-weight-normal">
+                                    <StackItem className="pf-v6-u-font-size-sm pf-v6-u-font-weight-normal">
                                         {headerLongText}:
                                     </StackItem>
                                 )}
@@ -147,7 +146,7 @@ function PolicyGroupCard({
                             isInline
                             title={descriptor.infoText}
                             component="p"
-                            className="pf-v5-u-mb-md"
+                            className="pf-v6-u-mb-md"
                         />
                     )}
                     {group.values.map((_, valueIndex) => {
@@ -187,9 +186,10 @@ function PolicyGroupCard({
                             <Flex
                                 direction={{ default: 'column' }}
                                 alignItems={{ default: 'alignItemsCenter' }}
-                                className="pf-v5-u-pt-sm"
+                                className="pf-v6-u-pt-sm"
                             >
                                 <Button
+                                    icon={<PlusIcon />}
                                     onClick={handleAddValue}
                                     variant="plain"
                                     isDisabled={isAddValueDisabled}
@@ -208,7 +208,7 @@ function PolicyGroupCard({
             {(policyGroups.length - 1 !== groupIndex || !readOnly) && (
                 <Flex
                     direction={{ default: 'row' }}
-                    className="pf-v5-u-my-sm"
+                    className="pf-v6-u-my-sm"
                     justifyContent={{ default: 'justifyContentCenter' }}
                 >
                     — and —

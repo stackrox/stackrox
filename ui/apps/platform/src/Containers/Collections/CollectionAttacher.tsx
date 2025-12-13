@@ -82,7 +82,7 @@ function CollectionAttacher({
             )}
             {hasMore && (
                 <Button
-                    className="pf-v5-u-align-self-flex-start"
+                    className="pf-v6-u-align-self-flex-start"
                     variant="secondary"
                     onClick={() => fetchMore(searchValue)}
                     isLoading={isFetchingMore}

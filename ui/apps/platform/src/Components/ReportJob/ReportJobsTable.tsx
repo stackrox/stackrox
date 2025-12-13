@@ -61,7 +61,7 @@ function ReportJobsTable<T extends Snapshot>({
             <Thead>
                 <Tr>
                     <Th>
-                        <span className="pf-v5-screen-reader">Row expansion</span>
+                        <span className="pf-v6-screen-reader">Row expansion</span>
                     </Th>
                     <Th width={25} sort={getSortParams('Compliance Report Completed Time')}>
                         Completed
@@ -69,7 +69,7 @@ function ReportJobsTable<T extends Snapshot>({
                     <Th>Status</Th>
                     <Th>Requester</Th>
                     <Th>
-                        <span className="pf-v5-screen-reader">Row actions</span>
+                        <span className="pf-v6-screen-reader">Row actions</span>
                     </Th>
                 </Tr>
             </Thead>
@@ -93,7 +93,7 @@ function ReportJobsTable<T extends Snapshot>({
                         const rowActions = [
                             {
                                 title: (
-                                    <span className="pf-v5-u-danger-color-100">
+                                    <span className="pf-v6-u-text-color-status-danger">
                                         Delete download
                                     </span>
                                 ),
