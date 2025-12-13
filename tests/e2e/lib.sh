@@ -368,6 +368,7 @@ deploy_central_via_operator() {
 deploy_sensor() {
     local sensor_namespace=${1:-stackrox}
     local central_namespace=${2:-stackrox}
+    local validate=${3:-true}
 
     info "Deploying sensor into namespace ${sensor_namespace} (central is expected in namespace ${central_namespace})"
 
@@ -375,7 +376,7 @@ deploy_sensor() {
     ci_export ROX_COLLECTOR_INTROSPECTION_ENABLE "true"
 
     if [[ "${DEPLOY_STACKROX_VIA_OPERATOR}" == "true" ]]; then
-        deploy_sensor_via_operator "${sensor_namespace}" "${central_namespace}"
+        deploy_sensor_via_operator "${sensor_namespace}" "${central_namespace}" "${validate}"
     else
         if [[ "${OUTPUT_FORMAT:-}" == "helm" ]]; then
             echo "Preparing deployment of Sensor using Helm ..."
@@ -408,6 +409,7 @@ deploy_sensor() {
 deploy_sensor_via_operator() {
     local sensor_namespace=${1:-stackrox}
     local central_namespace=${2:-stackrox}
+    local validate=${3:-true}
     local scanner_component_setting="Disabled"
     local sfa_agent_setting="Disabled"
     local central_endpoint="central.${central_namespace}.svc:443"
@@ -446,7 +448,7 @@ deploy_sensor_via_operator() {
       sfa_agent_setting="$sfa_agent_setting" \
       central_endpoint="$central_endpoint" \
     "${envsubst}" \
-      < "${secured_cluster_yaml_path}" | kubectl apply -n "${sensor_namespace}" -f -
+      < "${secured_cluster_yaml_path}" | kubectl apply -n "${sensor_namespace}" --validate="${validate}" -f -
 
     wait_for_object_to_appear "${sensor_namespace}" deploy/sensor 300
     wait_for_object_to_appear "${sensor_namespace}" ds/collector 300
