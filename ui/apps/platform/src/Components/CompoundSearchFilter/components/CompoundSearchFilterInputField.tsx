@@ -1,17 +1,7 @@
-import { Fragment } from 'react';
-import {
-    Button,
-    Divider,
-    SearchInput,
-    SelectGroup,
-    SelectList,
-    SelectOption,
-} from '@patternfly/react-core';
+import { Button } from '@patternfly/react-core';
 import { ArrowRightIcon } from '@patternfly/react-icons';
-
 import type { SearchFilter } from 'types/search';
-import CheckboxSelect from 'Components/CheckboxSelect';
-import { ensureString, ensureStringArray } from 'utils/ensure';
+import { ensureString } from 'utils/ensure';
 import type { SelectedEntity } from './EntitySelector';
 import type { SelectedAttribute } from './AttributeSelector';
 import type { CompoundSearchFilterConfig, OnSearchCallback } from '../types';
@@ -22,12 +12,13 @@ import {
     ensureConditionNumber,
     getAttribute,
     getEntity,
-    hasGroupedSelectOptions,
-    hasSelectOptions,
-    isSelectType,
 } from '../utils/utils';
 import ConditionNumber from './ConditionNumber';
 import SearchFilterAutocomplete from './SearchFilterAutocomplete';
+import SearchFilterSelectExclusiveDouble from './SearchFilterSelectExclusiveDouble';
+import SearchFilterSelectExclusiveSingle from './SearchFilterSelectExclusiveSingle';
+import SearchFilterInclusive from './SearchFilterSelectInclusive';
+import SearchFilterText from './SearchFilterText';
 import ConditionDate from './ConditionDate';
 import ConditionText from './ConditionText';
 
@@ -73,27 +64,7 @@ function CompoundSearchFilterInputField({
     }
 
     if (attribute.inputType === 'text') {
-        const textLabel = `Filter results by ${attribute.filterChipLabel}`;
-        return (
-            <SearchInput
-                aria-label={textLabel}
-                placeholder={textLabel}
-                value={ensureString(value)}
-                onChange={(_event, _value) => onChange(_value)}
-                onSearch={(_event, _value) => {
-                    onSearch([
-                        {
-                            action: 'APPEND',
-                            category: attribute.searchTerm,
-                            value: _value,
-                        },
-                    ]);
-                    onChange('');
-                }}
-                onClear={() => onChange('')}
-                submitSearchButtonLabel="Apply text input to search"
-            />
-        );
+        return <SearchFilterText attribute={attribute} onSearch={onSearch} />;
     }
     if (attribute.inputType === 'date-picker') {
         return (
@@ -193,80 +164,31 @@ function CompoundSearchFilterInputField({
             </>
         );
     }
-    if (isSelectType(attribute)) {
-        const attributeLabel = attribute.displayName;
-        const { searchTerm } = attribute;
-        const selection = ensureStringArray(searchFilter?.[searchTerm]);
-
-        let content: JSX.Element | JSX.Element[] = (
-            <SelectList>
-                <SelectOption isDisabled>No options available</SelectOption>
-            </SelectList>
-        );
-
-        if (
-            hasGroupedSelectOptions(attribute.inputProps) &&
-            attribute.inputProps.groupOptions.length !== 0
-        ) {
-            content = attribute.inputProps.groupOptions.map(({ name, options }, index) => {
-                return (
-                    <Fragment key={name}>
-                        <SelectGroup label={name}>
-                            <SelectList>
-                                {options.map((option) => (
-                                    <SelectOption
-                                        key={option.value}
-                                        hasCheckbox
-                                        value={option.value}
-                                        isSelected={selection.includes(option.value)}
-                                    >
-                                        {option.label}
-                                    </SelectOption>
-                                ))}
-                            </SelectList>
-                        </SelectGroup>
-                        {index !== options.length - 1 && <Divider component="div" />}
-                    </Fragment>
-                );
-            });
-        } else if (
-            hasSelectOptions(attribute.inputProps) &&
-            attribute.inputProps.options.length !== 0
-        ) {
-            content = (
-                <SelectList>
-                    {attribute.inputProps.options.map((option) => (
-                        <SelectOption
-                            key={option.value}
-                            hasCheckbox
-                            value={option.value}
-                            isSelected={selection.includes(option.value)}
-                        >
-                            {option.label}
-                        </SelectOption>
-                    ))}
-                </SelectList>
-            );
-        }
-
+    if (attribute.inputType === 'select-exclusive-double') {
         return (
-            <CheckboxSelect
-                selection={selection}
-                onChange={(checked, _value) => {
-                    onChange(value);
-                    onSearch([
-                        {
-                            action: checked ? 'SELECT_INCLUSIVE' : 'REMOVE',
-                            category: attribute.searchTerm,
-                            value: _value,
-                        },
-                    ]);
-                }}
-                ariaLabelMenu={`Filter by ${attributeLabel} select menu`}
-                toggleLabel={`Filter by ${attributeLabel}`}
-            >
-                {content}
-            </CheckboxSelect>
+            <SearchFilterSelectExclusiveDouble
+                attribute={attribute}
+                onSearch={onSearch}
+                searchFilter={searchFilter}
+            />
+        );
+    }
+    if (attribute.inputType === 'select-exclusive-single') {
+        return (
+            <SearchFilterSelectExclusiveSingle
+                attribute={attribute}
+                onSearch={onSearch}
+                searchFilter={searchFilter}
+            />
+        );
+    }
+    if (attribute.inputType === 'select') {
+        return (
+            <SearchFilterInclusive
+                attribute={attribute}
+                onSearch={onSearch}
+                searchFilter={searchFilter}
+            />
         );
     }
     return <div />;
