@@ -182,7 +182,7 @@ func (s *BaseImageDataStoreTestSuite) TestContextCancellation() {
 	s.Require().Error(err)
 }
 
-func (s *ImageV2DataStoreTestSuite) truncateTable(name string) {
+func (s *BaseImageDataStoreTestSuite) truncateTable(name string) {
 	sql := fmt.Sprintf("TRUNCATE %s CASCADE", name)
 	_, err := s.testDB.Exec(s.ctx, sql)
 	s.NoError(err)
