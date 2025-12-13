@@ -17,9 +17,10 @@ func TestStorageToResource(t *testing.T) {
 	assert.Equal(t, "Cluster", storageToResource("*storage.Cluster"))
 	assert.Equal(t, "Cluster", storageToResource("storage.Cluster"))
 	assert.Equal(t, "Integration", storageToResource("storage.SignatureIntegration"))
-	assert.Equal(t, "*fake", storageToResource("fake"))
-	assert.Equal(t, "fake", storageToResource("storage.fake"))
-	assert.Equal(t, "fake", storageToResource("*storage.fake"))
+	// Unknown types do not get same name resource anymore.
+	assert.Equal(t, "", storageToResource("fake"))
+	assert.Equal(t, "", storageToResource("storage.fake"))
+	assert.Equal(t, "", storageToResource("*storage.fake"))
 }
 
 func TestClusterGetter(t *testing.T) {

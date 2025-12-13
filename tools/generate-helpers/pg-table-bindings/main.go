@@ -209,6 +209,15 @@ func main() {
 			}
 		}
 
+		scopingResource := storageToResource(props.Type)
+		if len(scopingResource) == 0 {
+			return fmt.Errorf(
+				"no scoping resource found for type %q, please add a mapping in %s",
+				props.Type,
+				"tools/generate-helpers/pg-table-bindings/list.go",
+			)
+		}
+
 		templateMap := map[string]interface{}{
 			"Type":           props.Type,
 			"TrimmedType":    trimmedType,
@@ -220,6 +229,7 @@ func main() {
 				storageType: props.Type,
 				schema:      schema,
 			},
+			"ScopingResource":      scopingResource,
 			"NoCopyFrom":           props.NoCopyFrom,
 			"Cycle":                embeddedFK != "",
 			"EmbeddedFK":           embeddedFK,
