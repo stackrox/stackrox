@@ -34,8 +34,8 @@ type config struct {
 	vmCount  int
 	duration time.Duration
 
-	payloadSize string
-	payloadFile string
+	numPackages     int
+	numRepositories int
 
 	port           uint
 	metricsPort    int
@@ -47,13 +47,14 @@ type config struct {
 // yamlConfig represents the structure of the YAML config file
 type yamlConfig struct {
 	Loadgen struct {
-		VmCount        int    `yaml:"vmCount"`
-		PayloadSize    string `yaml:"payloadSize"`
-		StatsInterval  string `yaml:"statsInterval"`
-		Port           uint   `yaml:"port"`
-		MetricsPort    int    `yaml:"metricsPort"`
-		RequestTimeout string `yaml:"requestTimeout,omitempty"`
-		ReportInterval string `yaml:"reportInterval,omitempty"`
+		VmCount         int    `yaml:"vmCount"`
+		NumPackages     int    `yaml:"numPackages"`
+		NumRepositories int    `yaml:"numRepositories"`
+		StatsInterval   string `yaml:"statsInterval"`
+		Port            uint   `yaml:"port"`
+		MetricsPort     int    `yaml:"metricsPort"`
+		RequestTimeout  string `yaml:"requestTimeout,omitempty"`
+		ReportInterval  string `yaml:"reportInterval,omitempty"`
 	} `yaml:"loadgen"`
 }
 
@@ -111,8 +112,8 @@ func main() {
 		}(cid)
 	}
 
-	log.Printf("vsock-loadgen starting: vms=%d report-interval=%s duration=%s payload=%s cid-range=[%d-%d] port=%d",
-		vmsThisNode, cfg.reportInterval, cfg.duration, describePayload(cfg), startCID, endCID, cfg.port)
+	log.Printf("vsock-loadgen starting: vms=%d report-interval=%s duration=%s packages=%d repos=%d cid-range=[%d-%d] port=%d",
+		vmsThisNode, cfg.reportInterval, cfg.duration, cfg.numPackages, cfg.numRepositories, startCID, endCID, cfg.port)
 
 	ticker := time.NewTicker(cfg.statsInterval)
 	defer ticker.Stop()
@@ -140,8 +141,8 @@ func parseConfig() config {
 	flag.IntVar(&cfg.vmCount, "vm-count", 50, "Number of VMs to simulate")
 	flag.DurationVar(&cfg.duration, "duration", 0, "Stop after this duration (0 = unbounded)")
 
-	flag.StringVar(&cfg.payloadSize, "payload-size", "small", "Embedded payload size to use (small|avg|large)")
-	flag.StringVar(&cfg.payloadFile, "payload-file", "", "Path to JSON payload fixture (overrides payload-size)")
+	flag.IntVar(&cfg.numPackages, "num-packages", 700, "Number of packages per VM index report")
+	flag.IntVar(&cfg.numRepositories, "num-repositories", 0, "Number of repositories per VM index report (0 = use real RHEL repos)")
 
 	flag.UintVar(&cfg.port, "port", 818, "Vsock port for the relay")
 	flag.IntVar(&cfg.metricsPort, "metrics-port", 9090, "Expose Prometheus metrics on this port (0 = disabled)")
@@ -200,8 +201,11 @@ func applyYAMLConfig(cfg *config, yamlCfg *yamlConfig, setFlags map[string]bool)
 	if !setFlags["vm-count"] && yamlCfg.Loadgen.VmCount > 0 {
 		cfg.vmCount = yamlCfg.Loadgen.VmCount
 	}
-	if !setFlags["payload-size"] && yamlCfg.Loadgen.PayloadSize != "" {
-		cfg.payloadSize = yamlCfg.Loadgen.PayloadSize
+	if !setFlags["num-packages"] && yamlCfg.Loadgen.NumPackages > 0 {
+		cfg.numPackages = yamlCfg.Loadgen.NumPackages
+	}
+	if !setFlags["num-repositories"] && yamlCfg.Loadgen.NumRepositories > 0 {
+		cfg.numRepositories = yamlCfg.Loadgen.NumRepositories
 	}
 	if !setFlags["port"] && yamlCfg.Loadgen.Port > 0 {
 		cfg.port = yamlCfg.Loadgen.Port
@@ -226,48 +230,17 @@ func applyYAMLConfig(cfg *config, yamlCfg *yamlConfig, setFlags map[string]bool)
 	}
 }
 
-// payloadSizeToPackages maps payload size names to package counts.
-// These values match the original fixture sizes:
-// - small: 514 packages
-// - avg: 700 packages
-// - large: 1500 packages
-var payloadSizeToPackages = map[string]int{
-	"small": 514,
-	"avg":   700,
-	"large": 1500,
-}
-
 // createReportGenerator creates a VM index report generator based on configuration.
-// It uses the new vmindexreport.Generator framework instead of static fixtures.
 func createReportGenerator(cfg config) (*vmindexreport.Generator, error) {
-	// For custom payload files, we'll use the avg size as default
-	// (Note: Custom JSON files are not commonly used in practice)
-	numPackages := payloadSizeToPackages["avg"]
-
-	if cfg.payloadFile != "" {
-		log.Printf("Warning: Custom payload files are deprecated. Using generator with %d packages instead.", numPackages)
-	} else {
-		var ok bool
-		numPackages, ok = payloadSizeToPackages[cfg.payloadSize]
-		if !ok {
-			return nil, fmt.Errorf("unknown payload size %q (valid: small, avg, large)", cfg.payloadSize)
-		}
+	if cfg.numPackages <= 0 {
+		return nil, fmt.Errorf("num-packages must be > 0")
 	}
 
-	// Create generator with specified package count
-	// numRepos=0 uses real RHEL repos only (2 repos)
-	generator := vmindexreport.NewGenerator(numPackages, 0)
+	generator := vmindexreport.NewGenerator(cfg.numPackages, cfg.numRepositories)
 	log.Printf("Created report generator with %d packages, %d repositories",
 		generator.NumPackages(), generator.NumRepositories())
 
 	return generator, nil
-}
-
-func describePayload(cfg config) string {
-	if cfg.payloadFile != "" {
-		return fmt.Sprintf("file:%s", cfg.payloadFile)
-	}
-	return fmt.Sprintf("embedded:%s", cfg.payloadSize)
 }
 
 func setupSignalHandler(cancel context.CancelFunc) {
