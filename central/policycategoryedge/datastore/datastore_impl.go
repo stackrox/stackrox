@@ -3,7 +3,6 @@ package datastore
 import (
 	"context"
 
-	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/policycategoryedge/store"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -28,18 +27,22 @@ func (ds *datastoreImpl) Search(ctx context.Context, q *v1.Query) ([]searchPkg.R
 }
 
 func (ds *datastoreImpl) SearchEdges(ctx context.Context, q *v1.Query) ([]*v1.SearchResult, error) {
-	// TODO(ROX-29943): remove 2 pass database calls
-	results, err := ds.Search(ctx, q)
+	if q == nil {
+		q = searchPkg.EmptyQuery()
+	}
+	clonedQuery := q.CloneVT()
+
+	results, err := ds.storage.Search(ctx, clonedQuery)
 	if err != nil {
 		return nil, err
 	}
 
-	edges, missingIndices, err := ds.storage.GetMany(ctx, searchPkg.ResultsToIDs(results))
-	if err != nil {
-		return nil, err
+	// Populate Name from ID for each result
+	for i := range results {
+		results[i].Name = results[i].ID
 	}
-	results = searchPkg.RemoveMissingResults(results, missingIndices)
-	return convertMany(edges, results)
+
+	return searchPkg.ResultsToSearchResultProtos(results, &PolicyCategoryEdgeSearchResultConverter{}), nil
 }
 
 func (ds *datastoreImpl) SearchRawEdges(ctx context.Context, q *v1.Query) ([]*storage.PolicyCategoryEdge, error) {
@@ -144,24 +147,22 @@ func (ds *datastoreImpl) DeleteByQuery(ctx context.Context, q *v1.Query) error {
 	return ds.storage.DeleteByQuery(ctx, q)
 }
 
-func convertMany(edges []*storage.PolicyCategoryEdge, results []searchPkg.Result) ([]*v1.SearchResult, error) {
-	if len(edges) != len(results) {
-		return nil, errors.Errorf("expected %d results, got %d", len(edges), len(results))
-	}
+type PolicyCategoryEdgeSearchResultConverter struct{}
 
-	outputResults := make([]*v1.SearchResult, len(edges))
-	for index, edge := range edges {
-		outputResults[index] = convertOne(edge, &results[index])
-	}
-	return outputResults, nil
+func (c *PolicyCategoryEdgeSearchResultConverter) BuildName(result *searchPkg.Result) string {
+	// Name is already populated from ID
+	return result.Name
 }
 
-func convertOne(obj *storage.PolicyCategoryEdge, result *searchPkg.Result) *v1.SearchResult {
-	return &v1.SearchResult{
-		Category:       v1.SearchCategory_POLICY_CATEGORY_EDGE,
-		Id:             obj.GetId(),
-		Name:           obj.GetId(),
-		FieldToMatches: searchPkg.GetProtoMatchesMap(result.Matches),
-		Score:          result.Score,
-	}
+func (c *PolicyCategoryEdgeSearchResultConverter) BuildLocation(result *searchPkg.Result) string {
+	// PolicyCategoryEdge does not have a location
+	return ""
+}
+
+func (c *PolicyCategoryEdgeSearchResultConverter) GetCategory() v1.SearchCategory {
+	return v1.SearchCategory_POLICY_CATEGORY_EDGE
+}
+
+func (c *PolicyCategoryEdgeSearchResultConverter) GetScore(result *searchPkg.Result) float64 {
+	return result.Score
 }
