@@ -47,8 +47,12 @@ loadgen:
   # This simulates the periodic reporting behavior of real VMs
   reportInterval: 60s
 
-  # Payload size for index reports: small (~2.3MB), avg (~10MB), large (~50MB)
-  payloadSize: small
+  # Number of packages per VM index report
+  # Typical values: 514 (small), 700 (average), 1500 (large)
+  numPackages: 700
+
+  # Number of repositories per VM index report (0 = use real RHEL repos only)
+  numRepositories: 0
 
   # Stats reporting interval (e.g., 30s, 1m, 5m)
   statsInterval: 30s
