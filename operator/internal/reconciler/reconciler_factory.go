@@ -112,6 +112,7 @@ func SetupReconcilerWithManager(mgr ctrl.Manager, gvk schema.GroupVersionKind, c
 		reconciler.SkipPrimaryGVKSchemeRegistration(true),
 		reconciler.WithLog(logger),
 		reconciler.WithActionClientGetter(actionClientGetter),
+		reconciler.StripManifestFromStatus(true),
 	}
 	reconcilerOpts = append(reconcilerOpts, extraOpts...)
 
