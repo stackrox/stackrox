@@ -1,0 +1,32 @@
+apiVersion: platform.stackrox.io/v1alpha1
+kind: SecuredCluster
+metadata:
+  name: stackrox-secured-cluster-services
+  namespace: stackrox
+spec:
+  perNode:
+    collector:
+      collection: KernelModule
+      imageFlavor: Regular
+    taintToleration: TolerateTaints
+  sensor:
+    imagePullPolicy: IfNotPresent
+  admission:
+    enforceOnUpdates: false
+    contactImageScanners: DoNotScanInline
+    listenOnUpdates: true
+    listenOnCreates: true
+  scanner:
+    analyzer:
+      scaling:
+        autoScaling: Enabled
+        maxReplicas: 5
+        minReplicas: 2
+        replicas: 3
+    db:
+      persistence:
+        persistentVolumeClaim:
+          claimName: ""
+          size: 100Gi
+  clusterName: "local-cluster"
+  centralEndpoint: "central.stackrox.svc:443"
