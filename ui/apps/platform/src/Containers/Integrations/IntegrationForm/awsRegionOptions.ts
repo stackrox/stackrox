@@ -1,6 +1,3 @@
-import type { ReactElement } from 'react';
-import { FormSelectOption } from '@patternfly/react-core';
-
 export const regionOptions = [
     {
         value: 'us-east-1',
@@ -83,22 +80,3 @@ export const regionOptions = [
         label: 'South America (São Paulo) sa-east-1',
     },
 ];
-
-function AwsRegionOptions(): ReactElement {
-    return (
-        <>
-            <FormSelectOption label="Choose one..." value="" isDisabled />
-            {regionOptions.map((option) => {
-                return (
-                    <FormSelectOption
-                        key={option.label}
-                        label={option.label}
-                        value={option.value}
-                    />
-                );
-            })}
-        </>
-    );
-}
-
-export default AwsRegionOptions;
