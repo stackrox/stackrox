@@ -108,6 +108,12 @@ func insertIntoSimpleAccessScopes(batch *pgx.Batch, obj *storage.SimpleAccessSco
 	return nil
 }
 
+var copyColsSimpleAccessScopes = []string{
+	"id",
+	"name",
+	"serialized",
+}
+
 func copyFromSimpleAccessScopes(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, objs ...*storage.SimpleAccessScope) error {
 	if len(objs) == 0 {
 		return nil
@@ -123,12 +129,6 @@ func copyFromSimpleAccessScopes(ctx context.Context, s pgSearch.Deleter, tx *pos
 		if err := s.DeleteMany(ctx, deletes); err != nil {
 			return err
 		}
-	}
-
-	copyCols := []string{
-		"id",
-		"name",
-		"serialized",
 	}
 
 	idx := 0
@@ -151,7 +151,7 @@ func copyFromSimpleAccessScopes(ctx context.Context, s pgSearch.Deleter, tx *pos
 		}, nil
 	})
 
-	if _, err := tx.CopyFrom(ctx, pgx.Identifier{"simple_access_scopes"}, copyCols, inputRows); err != nil {
+	if _, err := tx.CopyFrom(ctx, pgx.Identifier{"simple_access_scopes"}, copyColsSimpleAccessScopes, inputRows); err != nil {
 		return err
 	}
 

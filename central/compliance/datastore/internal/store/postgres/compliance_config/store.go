@@ -106,6 +106,11 @@ func insertIntoComplianceConfigs(batch *pgx.Batch, obj *storage.ComplianceConfig
 	return nil
 }
 
+var copyColsComplianceConfigs = []string{
+	"standardid",
+	"serialized",
+}
+
 func copyFromComplianceConfigs(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, objs ...*storage.ComplianceConfig) error {
 	if len(objs) == 0 {
 		return nil
@@ -121,11 +126,6 @@ func copyFromComplianceConfigs(ctx context.Context, s pgSearch.Deleter, tx *post
 		if err := s.DeleteMany(ctx, deletes); err != nil {
 			return err
 		}
-	}
-
-	copyCols := []string{
-		"standardid",
-		"serialized",
 	}
 
 	idx := 0
@@ -147,7 +147,7 @@ func copyFromComplianceConfigs(ctx context.Context, s pgSearch.Deleter, tx *post
 		}, nil
 	})
 
-	if _, err := tx.CopyFrom(ctx, pgx.Identifier{"compliance_configs"}, copyCols, inputRows); err != nil {
+	if _, err := tx.CopyFrom(ctx, pgx.Identifier{"compliance_configs"}, copyColsComplianceConfigs, inputRows); err != nil {
 		return err
 	}
 

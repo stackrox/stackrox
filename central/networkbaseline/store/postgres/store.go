@@ -133,6 +133,13 @@ func insertIntoNetworkBaselines(batch *pgx.Batch, obj *storage.NetworkBaseline) 
 	return nil
 }
 
+var copyColsNetworkBaselines = []string{
+	"deploymentid",
+	"clusterid",
+	"namespace",
+	"serialized",
+}
+
 func copyFromNetworkBaselines(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, objs ...*storage.NetworkBaseline) error {
 	if len(objs) == 0 {
 		return nil
@@ -148,13 +155,6 @@ func copyFromNetworkBaselines(ctx context.Context, s pgSearch.Deleter, tx *postg
 		if err := s.DeleteMany(ctx, deletes); err != nil {
 			return err
 		}
-	}
-
-	copyCols := []string{
-		"deploymentid",
-		"clusterid",
-		"namespace",
-		"serialized",
 	}
 
 	idx := 0
@@ -178,7 +178,7 @@ func copyFromNetworkBaselines(ctx context.Context, s pgSearch.Deleter, tx *postg
 		}, nil
 	})
 
-	if _, err := tx.CopyFrom(ctx, pgx.Identifier{"network_baselines"}, copyCols, inputRows); err != nil {
+	if _, err := tx.CopyFrom(ctx, pgx.Identifier{"network_baselines"}, copyColsNetworkBaselines, inputRows); err != nil {
 		return err
 	}
 

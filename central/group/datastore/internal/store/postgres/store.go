@@ -110,6 +110,15 @@ func insertIntoGroups(batch *pgx.Batch, obj *storage.Group) error {
 	return nil
 }
 
+var copyColsGroups = []string{
+	"props_id",
+	"props_authproviderid",
+	"props_key",
+	"props_value",
+	"rolename",
+	"serialized",
+}
+
 func copyFromGroups(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, objs ...*storage.Group) error {
 	if len(objs) == 0 {
 		return nil
@@ -125,15 +134,6 @@ func copyFromGroups(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, ob
 		if err := s.DeleteMany(ctx, deletes); err != nil {
 			return err
 		}
-	}
-
-	copyCols := []string{
-		"props_id",
-		"props_authproviderid",
-		"props_key",
-		"props_value",
-		"rolename",
-		"serialized",
 	}
 
 	idx := 0
@@ -159,7 +159,7 @@ func copyFromGroups(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, ob
 		}, nil
 	})
 
-	if _, err := tx.CopyFrom(ctx, pgx.Identifier{"groups"}, copyCols, inputRows); err != nil {
+	if _, err := tx.CopyFrom(ctx, pgx.Identifier{"groups"}, copyColsGroups, inputRows); err != nil {
 		return err
 	}
 

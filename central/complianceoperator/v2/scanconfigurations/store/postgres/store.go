@@ -183,6 +183,13 @@ func insertIntoComplianceOperatorScanConfigurationV2Notifiers(batch *pgx.Batch, 
 	return nil
 }
 
+var copyColsComplianceOperatorScanConfigurationV2 = []string{
+	"id",
+	"scanconfigname",
+	"modifiedby_name",
+	"serialized",
+}
+
 func copyFromComplianceOperatorScanConfigurationV2(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, objs ...*storage.ComplianceOperatorScanConfigurationV2) error {
 	if len(objs) == 0 {
 		return nil
@@ -198,13 +205,6 @@ func copyFromComplianceOperatorScanConfigurationV2(ctx context.Context, s pgSear
 		if err := s.DeleteMany(ctx, deletes); err != nil {
 			return err
 		}
-	}
-
-	copyCols := []string{
-		"id",
-		"scanconfigname",
-		"modifiedby_name",
-		"serialized",
 	}
 
 	idx := 0
@@ -228,7 +228,7 @@ func copyFromComplianceOperatorScanConfigurationV2(ctx context.Context, s pgSear
 		}, nil
 	})
 
-	if _, err := tx.CopyFrom(ctx, pgx.Identifier{"compliance_operator_scan_configuration_v2"}, copyCols, inputRows); err != nil {
+	if _, err := tx.CopyFrom(ctx, pgx.Identifier{"compliance_operator_scan_configuration_v2"}, copyColsComplianceOperatorScanConfigurationV2, inputRows); err != nil {
 		return err
 	}
 
@@ -247,15 +247,15 @@ func copyFromComplianceOperatorScanConfigurationV2(ctx context.Context, s pgSear
 	return nil
 }
 
+var copyColsComplianceOperatorScanConfigurationV2Profiles = []string{
+	"compliance_operator_scan_configuration_v2_id",
+	"idx",
+	"profilename",
+}
+
 func copyFromComplianceOperatorScanConfigurationV2Profiles(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, complianceOperatorScanConfigurationV2ID string, objs ...*storage.ComplianceOperatorScanConfigurationV2_ProfileName) error {
 	if len(objs) == 0 {
 		return nil
-	}
-
-	copyCols := []string{
-		"compliance_operator_scan_configuration_v2_id",
-		"idx",
-		"profilename",
 	}
 
 	idx := 0
@@ -273,22 +273,22 @@ func copyFromComplianceOperatorScanConfigurationV2Profiles(ctx context.Context, 
 		}, nil
 	})
 
-	if _, err := tx.CopyFrom(ctx, pgx.Identifier{"compliance_operator_scan_configuration_v2_profiles"}, copyCols, inputRows); err != nil {
+	if _, err := tx.CopyFrom(ctx, pgx.Identifier{"compliance_operator_scan_configuration_v2_profiles"}, copyColsComplianceOperatorScanConfigurationV2Profiles, inputRows); err != nil {
 		return err
 	}
 
 	return nil
 }
 
+var copyColsComplianceOperatorScanConfigurationV2Clusters = []string{
+	"compliance_operator_scan_configuration_v2_id",
+	"idx",
+	"clusterid",
+}
+
 func copyFromComplianceOperatorScanConfigurationV2Clusters(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, complianceOperatorScanConfigurationV2ID string, objs ...*storage.ComplianceOperatorScanConfigurationV2_Cluster) error {
 	if len(objs) == 0 {
 		return nil
-	}
-
-	copyCols := []string{
-		"compliance_operator_scan_configuration_v2_id",
-		"idx",
-		"clusterid",
 	}
 
 	idx := 0
@@ -306,22 +306,22 @@ func copyFromComplianceOperatorScanConfigurationV2Clusters(ctx context.Context, 
 		}, nil
 	})
 
-	if _, err := tx.CopyFrom(ctx, pgx.Identifier{"compliance_operator_scan_configuration_v2_clusters"}, copyCols, inputRows); err != nil {
+	if _, err := tx.CopyFrom(ctx, pgx.Identifier{"compliance_operator_scan_configuration_v2_clusters"}, copyColsComplianceOperatorScanConfigurationV2Clusters, inputRows); err != nil {
 		return err
 	}
 
 	return nil
 }
 
+var copyColsComplianceOperatorScanConfigurationV2Notifiers = []string{
+	"compliance_operator_scan_configuration_v2_id",
+	"idx",
+	"id",
+}
+
 func copyFromComplianceOperatorScanConfigurationV2Notifiers(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, complianceOperatorScanConfigurationV2ID string, objs ...*storage.NotifierConfiguration) error {
 	if len(objs) == 0 {
 		return nil
-	}
-
-	copyCols := []string{
-		"compliance_operator_scan_configuration_v2_id",
-		"idx",
-		"id",
 	}
 
 	idx := 0
@@ -339,7 +339,7 @@ func copyFromComplianceOperatorScanConfigurationV2Notifiers(ctx context.Context,
 		}, nil
 	})
 
-	if _, err := tx.CopyFrom(ctx, pgx.Identifier{"compliance_operator_scan_configuration_v2_notifiers"}, copyCols, inputRows); err != nil {
+	if _, err := tx.CopyFrom(ctx, pgx.Identifier{"compliance_operator_scan_configuration_v2_notifiers"}, copyColsComplianceOperatorScanConfigurationV2Notifiers, inputRows); err != nil {
 		return err
 	}
 

@@ -146,6 +146,20 @@ func insertIntoComplianceOperatorReportSnapshotV2Scans(batch *pgx.Batch, obj *st
 	return nil
 }
 
+var copyColsComplianceOperatorReportSnapshotV2 = []string{
+	"reportid",
+	"scanconfigurationid",
+	"name",
+	"reportstatus_runstate",
+	"reportstatus_startedat",
+	"reportstatus_completedat",
+	"reportstatus_reportrequesttype",
+	"reportstatus_reportnotificationmethod",
+	"user_id",
+	"user_name",
+	"serialized",
+}
+
 func copyFromComplianceOperatorReportSnapshotV2(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, objs ...*storage.ComplianceOperatorReportSnapshotV2) error {
 	if len(objs) == 0 {
 		return nil
@@ -161,20 +175,6 @@ func copyFromComplianceOperatorReportSnapshotV2(ctx context.Context, s pgSearch.
 		if err := s.DeleteMany(ctx, deletes); err != nil {
 			return err
 		}
-	}
-
-	copyCols := []string{
-		"reportid",
-		"scanconfigurationid",
-		"name",
-		"reportstatus_runstate",
-		"reportstatus_startedat",
-		"reportstatus_completedat",
-		"reportstatus_reportrequesttype",
-		"reportstatus_reportnotificationmethod",
-		"user_id",
-		"user_name",
-		"serialized",
 	}
 
 	idx := 0
@@ -205,7 +205,7 @@ func copyFromComplianceOperatorReportSnapshotV2(ctx context.Context, s pgSearch.
 		}, nil
 	})
 
-	if _, err := tx.CopyFrom(ctx, pgx.Identifier{"compliance_operator_report_snapshot_v2"}, copyCols, inputRows); err != nil {
+	if _, err := tx.CopyFrom(ctx, pgx.Identifier{"compliance_operator_report_snapshot_v2"}, copyColsComplianceOperatorReportSnapshotV2, inputRows); err != nil {
 		return err
 	}
 
@@ -218,16 +218,16 @@ func copyFromComplianceOperatorReportSnapshotV2(ctx context.Context, s pgSearch.
 	return nil
 }
 
+var copyColsComplianceOperatorReportSnapshotV2Scans = []string{
+	"compliance_operator_report_snapshot_v2_reportid",
+	"idx",
+	"scanrefid",
+	"laststartedtime",
+}
+
 func copyFromComplianceOperatorReportSnapshotV2Scans(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, complianceOperatorReportSnapshotV2ReportId string, objs ...*storage.ComplianceOperatorReportSnapshotV2_Scan) error {
 	if len(objs) == 0 {
 		return nil
-	}
-
-	copyCols := []string{
-		"compliance_operator_report_snapshot_v2_reportid",
-		"idx",
-		"scanrefid",
-		"laststartedtime",
 	}
 
 	idx := 0
@@ -246,7 +246,7 @@ func copyFromComplianceOperatorReportSnapshotV2Scans(ctx context.Context, s pgSe
 		}, nil
 	})
 
-	if _, err := tx.CopyFrom(ctx, pgx.Identifier{"compliance_operator_report_snapshot_v2_scans"}, copyCols, inputRows); err != nil {
+	if _, err := tx.CopyFrom(ctx, pgx.Identifier{"compliance_operator_report_snapshot_v2_scans"}, copyColsComplianceOperatorReportSnapshotV2Scans, inputRows); err != nil {
 		return err
 	}
 

@@ -115,6 +115,12 @@ func insertIntoSignatureIntegrations(batch *pgx.Batch, obj *storage.SignatureInt
 	return nil
 }
 
+var copyColsSignatureIntegrations = []string{
+	"id",
+	"name",
+	"serialized",
+}
+
 func copyFromSignatureIntegrations(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, objs ...*storage.SignatureIntegration) error {
 	if len(objs) == 0 {
 		return nil
@@ -130,12 +136,6 @@ func copyFromSignatureIntegrations(ctx context.Context, s pgSearch.Deleter, tx *
 		if err := s.DeleteMany(ctx, deletes); err != nil {
 			return err
 		}
-	}
-
-	copyCols := []string{
-		"id",
-		"name",
-		"serialized",
 	}
 
 	idx := 0
@@ -158,7 +158,7 @@ func copyFromSignatureIntegrations(ctx context.Context, s pgSearch.Deleter, tx *
 		}, nil
 	})
 
-	if _, err := tx.CopyFrom(ctx, pgx.Identifier{"signature_integrations"}, copyCols, inputRows); err != nil {
+	if _, err := tx.CopyFrom(ctx, pgx.Identifier{"signature_integrations"}, copyColsSignatureIntegrations, inputRows); err != nil {
 		return err
 	}
 

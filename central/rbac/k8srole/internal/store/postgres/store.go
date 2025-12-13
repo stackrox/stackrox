@@ -138,6 +138,18 @@ func insertIntoK8sRoles(batch *pgx.Batch, obj *storage.K8SRole) error {
 	return nil
 }
 
+var copyColsK8sRoles = []string{
+	"id",
+	"name",
+	"namespace",
+	"clusterid",
+	"clustername",
+	"clusterrole",
+	"labels",
+	"annotations",
+	"serialized",
+}
+
 func copyFromK8sRoles(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, objs ...*storage.K8SRole) error {
 	if len(objs) == 0 {
 		return nil
@@ -153,18 +165,6 @@ func copyFromK8sRoles(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, 
 		if err := s.DeleteMany(ctx, deletes); err != nil {
 			return err
 		}
-	}
-
-	copyCols := []string{
-		"id",
-		"name",
-		"namespace",
-		"clusterid",
-		"clustername",
-		"clusterrole",
-		"labels",
-		"annotations",
-		"serialized",
 	}
 
 	idx := 0
@@ -193,7 +193,7 @@ func copyFromK8sRoles(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, 
 		}, nil
 	})
 
-	if _, err := tx.CopyFrom(ctx, pgx.Identifier{"k8s_roles"}, copyCols, inputRows); err != nil {
+	if _, err := tx.CopyFrom(ctx, pgx.Identifier{"k8s_roles"}, copyColsK8sRoles, inputRows); err != nil {
 		return err
 	}
 

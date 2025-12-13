@@ -133,6 +133,13 @@ func insertIntoProcessBaselineResults(batch *pgx.Batch, obj *storage.ProcessBase
 	return nil
 }
 
+var copyColsProcessBaselineResults = []string{
+	"deploymentid",
+	"clusterid",
+	"namespace",
+	"serialized",
+}
+
 func copyFromProcessBaselineResults(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, objs ...*storage.ProcessBaselineResults) error {
 	if len(objs) == 0 {
 		return nil
@@ -148,13 +155,6 @@ func copyFromProcessBaselineResults(ctx context.Context, s pgSearch.Deleter, tx 
 		if err := s.DeleteMany(ctx, deletes); err != nil {
 			return err
 		}
-	}
-
-	copyCols := []string{
-		"deploymentid",
-		"clusterid",
-		"namespace",
-		"serialized",
 	}
 
 	idx := 0
@@ -178,7 +178,7 @@ func copyFromProcessBaselineResults(ctx context.Context, s pgSearch.Deleter, tx 
 		}, nil
 	})
 
-	if _, err := tx.CopyFrom(ctx, pgx.Identifier{"process_baseline_results"}, copyCols, inputRows); err != nil {
+	if _, err := tx.CopyFrom(ctx, pgx.Identifier{"process_baseline_results"}, copyColsProcessBaselineResults, inputRows); err != nil {
 		return err
 	}
 

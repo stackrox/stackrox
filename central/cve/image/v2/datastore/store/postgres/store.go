@@ -128,6 +128,28 @@ func insertIntoImageCvesV2(batch *pgx.Batch, obj *storage.ImageCVEV2) error {
 	return nil
 }
 
+var copyColsImageCvesV2 = []string{
+	"id",
+	"imageid",
+	"cvebaseinfo_cve",
+	"cvebaseinfo_publishedon",
+	"cvebaseinfo_createdat",
+	"cvebaseinfo_epss_epssprobability",
+	"cvss",
+	"severity",
+	"impactscore",
+	"nvdcvss",
+	"firstimageoccurrence",
+	"state",
+	"isfixable",
+	"fixedby",
+	"componentid",
+	"advisory_name",
+	"advisory_link",
+	"imageidv2",
+	"serialized",
+}
+
 func copyFromImageCvesV2(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, objs ...*storage.ImageCVEV2) error {
 	if len(objs) == 0 {
 		return nil
@@ -143,28 +165,6 @@ func copyFromImageCvesV2(ctx context.Context, s pgSearch.Deleter, tx *postgres.T
 		if err := s.DeleteMany(ctx, deletes); err != nil {
 			return err
 		}
-	}
-
-	copyCols := []string{
-		"id",
-		"imageid",
-		"cvebaseinfo_cve",
-		"cvebaseinfo_publishedon",
-		"cvebaseinfo_createdat",
-		"cvebaseinfo_epss_epssprobability",
-		"cvss",
-		"severity",
-		"impactscore",
-		"nvdcvss",
-		"firstimageoccurrence",
-		"state",
-		"isfixable",
-		"fixedby",
-		"componentid",
-		"advisory_name",
-		"advisory_link",
-		"imageidv2",
-		"serialized",
 	}
 
 	idx := 0
@@ -203,7 +203,7 @@ func copyFromImageCvesV2(ctx context.Context, s pgSearch.Deleter, tx *postgres.T
 		}, nil
 	})
 
-	if _, err := tx.CopyFrom(ctx, pgx.Identifier{"image_cves_v2"}, copyCols, inputRows); err != nil {
+	if _, err := tx.CopyFrom(ctx, pgx.Identifier{"image_cves_v2"}, copyColsImageCvesV2, inputRows); err != nil {
 		return err
 	}
 

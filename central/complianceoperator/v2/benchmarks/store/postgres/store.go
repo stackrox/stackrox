@@ -139,6 +139,14 @@ func insertIntoComplianceOperatorBenchmarkV2Profiles(batch *pgx.Batch, obj *stor
 	return nil
 }
 
+var copyColsComplianceOperatorBenchmarkV2 = []string{
+	"id",
+	"name",
+	"version",
+	"shortname",
+	"serialized",
+}
+
 func copyFromComplianceOperatorBenchmarkV2(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, objs ...*storage.ComplianceOperatorBenchmarkV2) error {
 	if len(objs) == 0 {
 		return nil
@@ -154,14 +162,6 @@ func copyFromComplianceOperatorBenchmarkV2(ctx context.Context, s pgSearch.Delet
 		if err := s.DeleteMany(ctx, deletes); err != nil {
 			return err
 		}
-	}
-
-	copyCols := []string{
-		"id",
-		"name",
-		"version",
-		"shortname",
-		"serialized",
 	}
 
 	idx := 0
@@ -186,7 +186,7 @@ func copyFromComplianceOperatorBenchmarkV2(ctx context.Context, s pgSearch.Delet
 		}, nil
 	})
 
-	if _, err := tx.CopyFrom(ctx, pgx.Identifier{"compliance_operator_benchmark_v2"}, copyCols, inputRows); err != nil {
+	if _, err := tx.CopyFrom(ctx, pgx.Identifier{"compliance_operator_benchmark_v2"}, copyColsComplianceOperatorBenchmarkV2, inputRows); err != nil {
 		return err
 	}
 
@@ -199,16 +199,16 @@ func copyFromComplianceOperatorBenchmarkV2(ctx context.Context, s pgSearch.Delet
 	return nil
 }
 
+var copyColsComplianceOperatorBenchmarkV2Profiles = []string{
+	"compliance_operator_benchmark_v2_id",
+	"idx",
+	"profilename",
+	"profileversion",
+}
+
 func copyFromComplianceOperatorBenchmarkV2Profiles(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, complianceOperatorBenchmarkV2ID string, objs ...*storage.ComplianceOperatorBenchmarkV2_Profile) error {
 	if len(objs) == 0 {
 		return nil
-	}
-
-	copyCols := []string{
-		"compliance_operator_benchmark_v2_id",
-		"idx",
-		"profilename",
-		"profileversion",
 	}
 
 	idx := 0
@@ -227,7 +227,7 @@ func copyFromComplianceOperatorBenchmarkV2Profiles(ctx context.Context, s pgSear
 		}, nil
 	})
 
-	if _, err := tx.CopyFrom(ctx, pgx.Identifier{"compliance_operator_benchmark_v2_profiles"}, copyCols, inputRows); err != nil {
+	if _, err := tx.CopyFrom(ctx, pgx.Identifier{"compliance_operator_benchmark_v2_profiles"}, copyColsComplianceOperatorBenchmarkV2Profiles, inputRows); err != nil {
 		return err
 	}
 

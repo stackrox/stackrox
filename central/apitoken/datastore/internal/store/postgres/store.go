@@ -112,6 +112,13 @@ func insertIntoAPITokens(batch *pgx.Batch, obj *storage.TokenMetadata) error {
 	return nil
 }
 
+var copyColsAPITokens = []string{
+	"id",
+	"expiration",
+	"revoked",
+	"serialized",
+}
+
 func copyFromAPITokens(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, objs ...*storage.TokenMetadata) error {
 	if len(objs) == 0 {
 		return nil
@@ -127,13 +134,6 @@ func copyFromAPITokens(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx,
 		if err := s.DeleteMany(ctx, deletes); err != nil {
 			return err
 		}
-	}
-
-	copyCols := []string{
-		"id",
-		"expiration",
-		"revoked",
-		"serialized",
 	}
 
 	idx := 0
@@ -157,7 +157,7 @@ func copyFromAPITokens(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx,
 		}, nil
 	})
 
-	if _, err := tx.CopyFrom(ctx, pgx.Identifier{"api_tokens"}, copyCols, inputRows); err != nil {
+	if _, err := tx.CopyFrom(ctx, pgx.Identifier{"api_tokens"}, copyColsAPITokens, inputRows); err != nil {
 		return err
 	}
 

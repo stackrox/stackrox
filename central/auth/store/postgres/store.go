@@ -133,6 +133,12 @@ func insertIntoAuthMachineToMachineConfigsMappings(batch *pgx.Batch, obj *storag
 	return nil
 }
 
+var copyColsAuthMachineToMachineConfigs = []string{
+	"id",
+	"issuer",
+	"serialized",
+}
+
 func copyFromAuthMachineToMachineConfigs(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, objs ...*storage.AuthMachineToMachineConfig) error {
 	if len(objs) == 0 {
 		return nil
@@ -148,12 +154,6 @@ func copyFromAuthMachineToMachineConfigs(ctx context.Context, s pgSearch.Deleter
 		if err := s.DeleteMany(ctx, deletes); err != nil {
 			return err
 		}
-	}
-
-	copyCols := []string{
-		"id",
-		"issuer",
-		"serialized",
 	}
 
 	idx := 0
@@ -176,7 +176,7 @@ func copyFromAuthMachineToMachineConfigs(ctx context.Context, s pgSearch.Deleter
 		}, nil
 	})
 
-	if _, err := tx.CopyFrom(ctx, pgx.Identifier{"auth_machine_to_machine_configs"}, copyCols, inputRows); err != nil {
+	if _, err := tx.CopyFrom(ctx, pgx.Identifier{"auth_machine_to_machine_configs"}, copyColsAuthMachineToMachineConfigs, inputRows); err != nil {
 		return err
 	}
 
@@ -189,15 +189,15 @@ func copyFromAuthMachineToMachineConfigs(ctx context.Context, s pgSearch.Deleter
 	return nil
 }
 
+var copyColsAuthMachineToMachineConfigsMappings = []string{
+	"auth_machine_to_machine_configs_id",
+	"idx",
+	"role",
+}
+
 func copyFromAuthMachineToMachineConfigsMappings(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, authMachineToMachineConfigID string, objs ...*storage.AuthMachineToMachineConfig_Mapping) error {
 	if len(objs) == 0 {
 		return nil
-	}
-
-	copyCols := []string{
-		"auth_machine_to_machine_configs_id",
-		"idx",
-		"role",
 	}
 
 	idx := 0
@@ -215,7 +215,7 @@ func copyFromAuthMachineToMachineConfigsMappings(ctx context.Context, s pgSearch
 		}, nil
 	})
 
-	if _, err := tx.CopyFrom(ctx, pgx.Identifier{"auth_machine_to_machine_configs_mappings"}, copyCols, inputRows); err != nil {
+	if _, err := tx.CopyFrom(ctx, pgx.Identifier{"auth_machine_to_machine_configs_mappings"}, copyColsAuthMachineToMachineConfigsMappings, inputRows); err != nil {
 		return err
 	}
 

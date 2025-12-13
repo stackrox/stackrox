@@ -111,6 +111,13 @@ func insertIntoTestShortCircuits(batch *pgx.Batch, obj *storage.TestShortCircuit
 	return nil
 }
 
+var copyColsTestShortCircuits = []string{
+	"id",
+	"childid",
+	"g2grandchildid",
+	"serialized",
+}
+
 func copyFromTestShortCircuits(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, objs ...*storage.TestShortCircuit) error {
 	if len(objs) == 0 {
 		return nil
@@ -126,13 +133,6 @@ func copyFromTestShortCircuits(ctx context.Context, s pgSearch.Deleter, tx *post
 		if err := s.DeleteMany(ctx, deletes); err != nil {
 			return err
 		}
-	}
-
-	copyCols := []string{
-		"id",
-		"childid",
-		"g2grandchildid",
-		"serialized",
 	}
 
 	idx := 0
@@ -156,7 +156,7 @@ func copyFromTestShortCircuits(ctx context.Context, s pgSearch.Deleter, tx *post
 		}, nil
 	})
 
-	if _, err := tx.CopyFrom(ctx, pgx.Identifier{"test_short_circuits"}, copyCols, inputRows); err != nil {
+	if _, err := tx.CopyFrom(ctx, pgx.Identifier{"test_short_circuits"}, copyColsTestShortCircuits, inputRows); err != nil {
 		return err
 	}
 

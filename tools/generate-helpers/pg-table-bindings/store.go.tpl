@@ -260,6 +260,12 @@ func {{ template "insertFunctionName" $schema }}(batch *pgx.Batch, obj {{$schema
 {{- define "copyObject"}}
 {{- $schema := .schema }}
 {{- $singlePK := index $schema.PrimaryKeys 0 }}
+var copyCols{{$schema.Table|upperCamelCase}} = []string{
+{{- range $index, $field := $schema.DBColumnFields }}
+    "{{$field.ColumnName|lowerCase}}",
+{{- end }}
+}
+
 func {{ template "copyFunctionName" $schema }}(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, {{ range $index, $field := $schema.FieldsReferringToParent }} {{$field.Name}} {{$field.Type}},{{end}} objs ...{{$schema.Type}}) error {
     if len(objs) == 0 {
         return nil
@@ -277,12 +283,6 @@ func {{ template "copyFunctionName" $schema }}(ctx context.Context, s pgSearch.D
         }
     }
     {{end}}
-
-    copyCols := []string {
-    {{- range $index, $field := $schema.DBColumnFields }}
-        "{{$field.ColumnName|lowerCase}}",
-    {{- end }}
-    }
 
     idx := 0
     inputRows := pgx.CopyFromFunc(func() ([]any, error) {
@@ -304,8 +304,8 @@ func {{ template "copyFunctionName" $schema }}(ctx context.Context, s pgSearch.D
         }, nil
     })
 
-    if _, err := tx.CopyFrom(ctx, pgx.Identifier{"{{$schema.Table|lowerCase}}"}, copyCols, inputRows); err != nil {
-            return err
+    if _, err := tx.CopyFrom(ctx, pgx.Identifier{"{{$schema.Table|lowerCase}}"}, copyCols{{$schema.Table|upperCamelCase}}, inputRows); err != nil {
+        return err
     }
 
     {{if $schema.Children }}

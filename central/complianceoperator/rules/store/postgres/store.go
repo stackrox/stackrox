@@ -106,6 +106,11 @@ func insertIntoComplianceOperatorRules(batch *pgx.Batch, obj *storage.Compliance
 	return nil
 }
 
+var copyColsComplianceOperatorRules = []string{
+	"id",
+	"serialized",
+}
+
 func copyFromComplianceOperatorRules(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, objs ...*storage.ComplianceOperatorRule) error {
 	if len(objs) == 0 {
 		return nil
@@ -121,11 +126,6 @@ func copyFromComplianceOperatorRules(ctx context.Context, s pgSearch.Deleter, tx
 		if err := s.DeleteMany(ctx, deletes); err != nil {
 			return err
 		}
-	}
-
-	copyCols := []string{
-		"id",
-		"serialized",
 	}
 
 	idx := 0
@@ -147,7 +147,7 @@ func copyFromComplianceOperatorRules(ctx context.Context, s pgSearch.Deleter, tx
 		}, nil
 	})
 
-	if _, err := tx.CopyFrom(ctx, pgx.Identifier{"compliance_operator_rules"}, copyCols, inputRows); err != nil {
+	if _, err := tx.CopyFrom(ctx, pgx.Identifier{"compliance_operator_rules"}, copyColsComplianceOperatorRules, inputRows); err != nil {
 		return err
 	}
 

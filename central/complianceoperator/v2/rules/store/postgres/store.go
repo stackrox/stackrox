@@ -162,6 +162,16 @@ func insertIntoComplianceOperatorRuleV2Controls(batch *pgx.Batch, obj *storage.R
 	return nil
 }
 
+var copyColsComplianceOperatorRuleV2 = []string{
+	"id",
+	"name",
+	"ruletype",
+	"severity",
+	"clusterid",
+	"rulerefid",
+	"serialized",
+}
+
 func copyFromComplianceOperatorRuleV2(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, objs ...*storage.ComplianceOperatorRuleV2) error {
 	if len(objs) == 0 {
 		return nil
@@ -177,16 +187,6 @@ func copyFromComplianceOperatorRuleV2(ctx context.Context, s pgSearch.Deleter, t
 		if err := s.DeleteMany(ctx, deletes); err != nil {
 			return err
 		}
-	}
-
-	copyCols := []string{
-		"id",
-		"name",
-		"ruletype",
-		"severity",
-		"clusterid",
-		"rulerefid",
-		"serialized",
 	}
 
 	idx := 0
@@ -213,7 +213,7 @@ func copyFromComplianceOperatorRuleV2(ctx context.Context, s pgSearch.Deleter, t
 		}, nil
 	})
 
-	if _, err := tx.CopyFrom(ctx, pgx.Identifier{"compliance_operator_rule_v2"}, copyCols, inputRows); err != nil {
+	if _, err := tx.CopyFrom(ctx, pgx.Identifier{"compliance_operator_rule_v2"}, copyColsComplianceOperatorRuleV2, inputRows); err != nil {
 		return err
 	}
 
@@ -226,16 +226,16 @@ func copyFromComplianceOperatorRuleV2(ctx context.Context, s pgSearch.Deleter, t
 	return nil
 }
 
+var copyColsComplianceOperatorRuleV2Controls = []string{
+	"compliance_operator_rule_v2_id",
+	"idx",
+	"standard",
+	"control",
+}
+
 func copyFromComplianceOperatorRuleV2Controls(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, complianceOperatorRuleV2ID string, objs ...*storage.RuleControls) error {
 	if len(objs) == 0 {
 		return nil
-	}
-
-	copyCols := []string{
-		"compliance_operator_rule_v2_id",
-		"idx",
-		"standard",
-		"control",
 	}
 
 	idx := 0
@@ -254,7 +254,7 @@ func copyFromComplianceOperatorRuleV2Controls(ctx context.Context, s pgSearch.De
 		}, nil
 	})
 
-	if _, err := tx.CopyFrom(ctx, pgx.Identifier{"compliance_operator_rule_v2_controls"}, copyCols, inputRows); err != nil {
+	if _, err := tx.CopyFrom(ctx, pgx.Identifier{"compliance_operator_rule_v2_controls"}, copyColsComplianceOperatorRuleV2Controls, inputRows); err != nil {
 		return err
 	}
 

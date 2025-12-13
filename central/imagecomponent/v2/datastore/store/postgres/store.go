@@ -121,6 +121,22 @@ func insertIntoImageComponentV2(batch *pgx.Batch, obj *storage.ImageComponentV2)
 	return nil
 }
 
+var copyColsImageComponentV2 = []string{
+	"id",
+	"name",
+	"version",
+	"priority",
+	"source",
+	"riskscore",
+	"topcvss",
+	"operatingsystem",
+	"imageid",
+	"location",
+	"imageidv2",
+	"frombaseimage",
+	"serialized",
+}
+
 func copyFromImageComponentV2(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, objs ...*storage.ImageComponentV2) error {
 	if len(objs) == 0 {
 		return nil
@@ -136,22 +152,6 @@ func copyFromImageComponentV2(ctx context.Context, s pgSearch.Deleter, tx *postg
 		if err := s.DeleteMany(ctx, deletes); err != nil {
 			return err
 		}
-	}
-
-	copyCols := []string{
-		"id",
-		"name",
-		"version",
-		"priority",
-		"source",
-		"riskscore",
-		"topcvss",
-		"operatingsystem",
-		"imageid",
-		"location",
-		"imageidv2",
-		"frombaseimage",
-		"serialized",
 	}
 
 	idx := 0
@@ -184,7 +184,7 @@ func copyFromImageComponentV2(ctx context.Context, s pgSearch.Deleter, tx *postg
 		}, nil
 	})
 
-	if _, err := tx.CopyFrom(ctx, pgx.Identifier{"image_component_v2"}, copyCols, inputRows); err != nil {
+	if _, err := tx.CopyFrom(ctx, pgx.Identifier{"image_component_v2"}, copyColsImageComponentV2, inputRows); err != nil {
 		return err
 	}
 

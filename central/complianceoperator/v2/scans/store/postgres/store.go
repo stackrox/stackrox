@@ -140,6 +140,19 @@ func insertIntoComplianceOperatorScanV2(batch *pgx.Batch, obj *storage.Complianc
 	return nil
 }
 
+var copyColsComplianceOperatorScanV2 = []string{
+	"id",
+	"scanconfigname",
+	"clusterid",
+	"profile_profilerefid",
+	"status_result",
+	"lastexecutedtime",
+	"scanname",
+	"scanrefid",
+	"laststartedtime",
+	"serialized",
+}
+
 func copyFromComplianceOperatorScanV2(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, objs ...*storage.ComplianceOperatorScanV2) error {
 	if len(objs) == 0 {
 		return nil
@@ -155,19 +168,6 @@ func copyFromComplianceOperatorScanV2(ctx context.Context, s pgSearch.Deleter, t
 		if err := s.DeleteMany(ctx, deletes); err != nil {
 			return err
 		}
-	}
-
-	copyCols := []string{
-		"id",
-		"scanconfigname",
-		"clusterid",
-		"profile_profilerefid",
-		"status_result",
-		"lastexecutedtime",
-		"scanname",
-		"scanrefid",
-		"laststartedtime",
-		"serialized",
 	}
 
 	idx := 0
@@ -197,7 +197,7 @@ func copyFromComplianceOperatorScanV2(ctx context.Context, s pgSearch.Deleter, t
 		}, nil
 	})
 
-	if _, err := tx.CopyFrom(ctx, pgx.Identifier{"compliance_operator_scan_v2"}, copyCols, inputRows); err != nil {
+	if _, err := tx.CopyFrom(ctx, pgx.Identifier{"compliance_operator_scan_v2"}, copyColsComplianceOperatorScanV2, inputRows); err != nil {
 		return err
 	}
 

@@ -147,6 +147,16 @@ func insertIntoNamespaces(batch *pgx.Batch, obj *storage.NamespaceMetadata) erro
 	return nil
 }
 
+var copyColsNamespaces = []string{
+	"id",
+	"name",
+	"clusterid",
+	"clustername",
+	"labels",
+	"annotations",
+	"serialized",
+}
+
 func copyFromNamespaces(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, objs ...*storage.NamespaceMetadata) error {
 	if len(objs) == 0 {
 		return nil
@@ -162,16 +172,6 @@ func copyFromNamespaces(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx
 		if err := s.DeleteMany(ctx, deletes); err != nil {
 			return err
 		}
-	}
-
-	copyCols := []string{
-		"id",
-		"name",
-		"clusterid",
-		"clustername",
-		"labels",
-		"annotations",
-		"serialized",
 	}
 
 	idx := 0
@@ -198,7 +198,7 @@ func copyFromNamespaces(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx
 		}, nil
 	})
 
-	if _, err := tx.CopyFrom(ctx, pgx.Identifier{"namespaces"}, copyCols, inputRows); err != nil {
+	if _, err := tx.CopyFrom(ctx, pgx.Identifier{"namespaces"}, copyColsNamespaces, inputRows); err != nil {
 		return err
 	}
 

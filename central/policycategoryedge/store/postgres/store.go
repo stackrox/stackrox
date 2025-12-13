@@ -111,6 +111,13 @@ func insertIntoPolicyCategoryEdges(batch *pgx.Batch, obj *storage.PolicyCategory
 	return nil
 }
 
+var copyColsPolicyCategoryEdges = []string{
+	"id",
+	"policyid",
+	"categoryid",
+	"serialized",
+}
+
 func copyFromPolicyCategoryEdges(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, objs ...*storage.PolicyCategoryEdge) error {
 	if len(objs) == 0 {
 		return nil
@@ -126,13 +133,6 @@ func copyFromPolicyCategoryEdges(ctx context.Context, s pgSearch.Deleter, tx *po
 		if err := s.DeleteMany(ctx, deletes); err != nil {
 			return err
 		}
-	}
-
-	copyCols := []string{
-		"id",
-		"policyid",
-		"categoryid",
-		"serialized",
 	}
 
 	idx := 0
@@ -156,7 +156,7 @@ func copyFromPolicyCategoryEdges(ctx context.Context, s pgSearch.Deleter, tx *po
 		}, nil
 	})
 
-	if _, err := tx.CopyFrom(ctx, pgx.Identifier{"policy_category_edges"}, copyCols, inputRows); err != nil {
+	if _, err := tx.CopyFrom(ctx, pgx.Identifier{"policy_category_edges"}, copyColsPolicyCategoryEdges, inputRows); err != nil {
 		return err
 	}
 

@@ -106,6 +106,11 @@ func insertIntoServiceIdentities(batch *pgx.Batch, obj *storage.ServiceIdentity)
 	return nil
 }
 
+var copyColsServiceIdentities = []string{
+	"serialstr",
+	"serialized",
+}
+
 func copyFromServiceIdentities(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, objs ...*storage.ServiceIdentity) error {
 	if len(objs) == 0 {
 		return nil
@@ -121,11 +126,6 @@ func copyFromServiceIdentities(ctx context.Context, s pgSearch.Deleter, tx *post
 		if err := s.DeleteMany(ctx, deletes); err != nil {
 			return err
 		}
-	}
-
-	copyCols := []string{
-		"serialstr",
-		"serialized",
 	}
 
 	idx := 0
@@ -147,7 +147,7 @@ func copyFromServiceIdentities(ctx context.Context, s pgSearch.Deleter, tx *post
 		}, nil
 	})
 
-	if _, err := tx.CopyFrom(ctx, pgx.Identifier{"service_identities"}, copyCols, inputRows); err != nil {
+	if _, err := tx.CopyFrom(ctx, pgx.Identifier{"service_identities"}, copyColsServiceIdentities, inputRows); err != nil {
 		return err
 	}
 

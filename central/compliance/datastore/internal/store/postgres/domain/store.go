@@ -109,6 +109,11 @@ func insertIntoComplianceDomains(batch *pgx.Batch, obj *storage.ComplianceDomain
 	return nil
 }
 
+var copyColsComplianceDomains = []string{
+	"id",
+	"serialized",
+}
+
 func copyFromComplianceDomains(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, objs ...*storage.ComplianceDomain) error {
 	if len(objs) == 0 {
 		return nil
@@ -124,11 +129,6 @@ func copyFromComplianceDomains(ctx context.Context, s pgSearch.Deleter, tx *post
 		if err := s.DeleteMany(ctx, deletes); err != nil {
 			return err
 		}
-	}
-
-	copyCols := []string{
-		"id",
-		"serialized",
 	}
 
 	idx := 0
@@ -150,7 +150,7 @@ func copyFromComplianceDomains(ctx context.Context, s pgSearch.Deleter, tx *post
 		}, nil
 	})
 
-	if _, err := tx.CopyFrom(ctx, pgx.Identifier{"compliance_domains"}, copyCols, inputRows); err != nil {
+	if _, err := tx.CopyFrom(ctx, pgx.Identifier{"compliance_domains"}, copyColsComplianceDomains, inputRows); err != nil {
 		return err
 	}
 

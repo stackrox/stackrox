@@ -133,6 +133,13 @@ func insertIntoComplianceOperatorSuiteV2(batch *pgx.Batch, obj *storage.Complian
 	return nil
 }
 
+var copyColsComplianceOperatorSuiteV2 = []string{
+	"id",
+	"name",
+	"clusterid",
+	"serialized",
+}
+
 func copyFromComplianceOperatorSuiteV2(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, objs ...*storage.ComplianceOperatorSuiteV2) error {
 	if len(objs) == 0 {
 		return nil
@@ -148,13 +155,6 @@ func copyFromComplianceOperatorSuiteV2(ctx context.Context, s pgSearch.Deleter, 
 		if err := s.DeleteMany(ctx, deletes); err != nil {
 			return err
 		}
-	}
-
-	copyCols := []string{
-		"id",
-		"name",
-		"clusterid",
-		"serialized",
 	}
 
 	idx := 0
@@ -178,7 +178,7 @@ func copyFromComplianceOperatorSuiteV2(ctx context.Context, s pgSearch.Deleter, 
 		}, nil
 	})
 
-	if _, err := tx.CopyFrom(ctx, pgx.Identifier{"compliance_operator_suite_v2"}, copyCols, inputRows); err != nil {
+	if _, err := tx.CopyFrom(ctx, pgx.Identifier{"compliance_operator_suite_v2"}, copyColsComplianceOperatorSuiteV2, inputRows); err != nil {
 		return err
 	}
 

@@ -113,6 +113,14 @@ func insertIntoTestChild2(batch *pgx.Batch, obj *storage.TestChild2) error {
 	return nil
 }
 
+var copyColsTestChild2 = []string{
+	"id",
+	"parentid",
+	"grandparentid",
+	"val",
+	"serialized",
+}
+
 func copyFromTestChild2(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, objs ...*storage.TestChild2) error {
 	if len(objs) == 0 {
 		return nil
@@ -128,14 +136,6 @@ func copyFromTestChild2(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx
 		if err := s.DeleteMany(ctx, deletes); err != nil {
 			return err
 		}
-	}
-
-	copyCols := []string{
-		"id",
-		"parentid",
-		"grandparentid",
-		"val",
-		"serialized",
 	}
 
 	idx := 0
@@ -160,7 +160,7 @@ func copyFromTestChild2(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx
 		}, nil
 	})
 
-	if _, err := tx.CopyFrom(ctx, pgx.Identifier{"test_child2"}, copyCols, inputRows); err != nil {
+	if _, err := tx.CopyFrom(ctx, pgx.Identifier{"test_child2"}, copyColsTestChild2, inputRows); err != nil {
 		return err
 	}
 

@@ -189,6 +189,16 @@ func insertIntoSecretsFilesRegistries(batch *pgx.Batch, obj *storage.ImagePullSe
 	return nil
 }
 
+var copyColsSecrets = []string{
+	"id",
+	"name",
+	"clusterid",
+	"clustername",
+	"namespace",
+	"createdat",
+	"serialized",
+}
+
 func copyFromSecrets(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, objs ...*storage.Secret) error {
 	if len(objs) == 0 {
 		return nil
@@ -204,16 +214,6 @@ func copyFromSecrets(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, o
 		if err := s.DeleteMany(ctx, deletes); err != nil {
 			return err
 		}
-	}
-
-	copyCols := []string{
-		"id",
-		"name",
-		"clusterid",
-		"clustername",
-		"namespace",
-		"createdat",
-		"serialized",
 	}
 
 	idx := 0
@@ -240,7 +240,7 @@ func copyFromSecrets(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, o
 		}, nil
 	})
 
-	if _, err := tx.CopyFrom(ctx, pgx.Identifier{"secrets"}, copyCols, inputRows); err != nil {
+	if _, err := tx.CopyFrom(ctx, pgx.Identifier{"secrets"}, copyColsSecrets, inputRows); err != nil {
 		return err
 	}
 
@@ -253,16 +253,16 @@ func copyFromSecrets(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, o
 	return nil
 }
 
+var copyColsSecretsFiles = []string{
+	"secrets_id",
+	"idx",
+	"type",
+	"cert_enddate",
+}
+
 func copyFromSecretsFiles(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, secretID string, objs ...*storage.SecretDataFile) error {
 	if len(objs) == 0 {
 		return nil
-	}
-
-	copyCols := []string{
-		"secrets_id",
-		"idx",
-		"type",
-		"cert_enddate",
 	}
 
 	idx := 0
@@ -281,7 +281,7 @@ func copyFromSecretsFiles(ctx context.Context, s pgSearch.Deleter, tx *postgres.
 		}, nil
 	})
 
-	if _, err := tx.CopyFrom(ctx, pgx.Identifier{"secrets_files"}, copyCols, inputRows); err != nil {
+	if _, err := tx.CopyFrom(ctx, pgx.Identifier{"secrets_files"}, copyColsSecretsFiles, inputRows); err != nil {
 		return err
 	}
 
@@ -294,16 +294,16 @@ func copyFromSecretsFiles(ctx context.Context, s pgSearch.Deleter, tx *postgres.
 	return nil
 }
 
+var copyColsSecretsFilesRegistries = []string{
+	"secrets_id",
+	"secrets_files_idx",
+	"idx",
+	"name",
+}
+
 func copyFromSecretsFilesRegistries(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, secretID string, secretFileIdx int, objs ...*storage.ImagePullSecret_Registry) error {
 	if len(objs) == 0 {
 		return nil
-	}
-
-	copyCols := []string{
-		"secrets_id",
-		"secrets_files_idx",
-		"idx",
-		"name",
 	}
 
 	idx := 0
@@ -322,7 +322,7 @@ func copyFromSecretsFilesRegistries(ctx context.Context, s pgSearch.Deleter, tx 
 		}, nil
 	})
 
-	if _, err := tx.CopyFrom(ctx, pgx.Identifier{"secrets_files_registries"}, copyCols, inputRows); err != nil {
+	if _, err := tx.CopyFrom(ctx, pgx.Identifier{"secrets_files_registries"}, copyColsSecretsFilesRegistries, inputRows); err != nil {
 		return err
 	}
 

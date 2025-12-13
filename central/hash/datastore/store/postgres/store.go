@@ -106,6 +106,11 @@ func insertIntoHashes(batch *pgx.Batch, obj *storage.Hash) error {
 	return nil
 }
 
+var copyColsHashes = []string{
+	"clusterid",
+	"serialized",
+}
+
 func copyFromHashes(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, objs ...*storage.Hash) error {
 	if len(objs) == 0 {
 		return nil
@@ -121,11 +126,6 @@ func copyFromHashes(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, ob
 		if err := s.DeleteMany(ctx, deletes); err != nil {
 			return err
 		}
-	}
-
-	copyCols := []string{
-		"clusterid",
-		"serialized",
 	}
 
 	idx := 0
@@ -147,7 +147,7 @@ func copyFromHashes(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, ob
 		}, nil
 	})
 
-	if _, err := tx.CopyFrom(ctx, pgx.Identifier{"hashes"}, copyCols, inputRows); err != nil {
+	if _, err := tx.CopyFrom(ctx, pgx.Identifier{"hashes"}, copyColsHashes, inputRows); err != nil {
 		return err
 	}
 

@@ -135,6 +135,15 @@ func insertIntoRisks(batch *pgx.Batch, obj *storage.Risk) error {
 	return nil
 }
 
+var copyColsRisks = []string{
+	"id",
+	"subject_namespace",
+	"subject_clusterid",
+	"subject_type",
+	"score",
+	"serialized",
+}
+
 func copyFromRisks(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, objs ...*storage.Risk) error {
 	if len(objs) == 0 {
 		return nil
@@ -150,15 +159,6 @@ func copyFromRisks(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, obj
 		if err := s.DeleteMany(ctx, deletes); err != nil {
 			return err
 		}
-	}
-
-	copyCols := []string{
-		"id",
-		"subject_namespace",
-		"subject_clusterid",
-		"subject_type",
-		"score",
-		"serialized",
 	}
 
 	idx := 0
@@ -184,7 +184,7 @@ func copyFromRisks(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, obj
 		}, nil
 	})
 
-	if _, err := tx.CopyFrom(ctx, pgx.Identifier{"risks"}, copyCols, inputRows); err != nil {
+	if _, err := tx.CopyFrom(ctx, pgx.Identifier{"risks"}, copyColsRisks, inputRows); err != nil {
 		return err
 	}
 

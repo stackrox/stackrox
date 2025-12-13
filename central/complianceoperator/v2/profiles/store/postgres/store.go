@@ -163,6 +163,18 @@ func insertIntoComplianceOperatorProfileV2Rules(batch *pgx.Batch, obj *storage.C
 	return nil
 }
 
+var copyColsComplianceOperatorProfileV2 = []string{
+	"id",
+	"profileid",
+	"name",
+	"profileversion",
+	"producttype",
+	"standard",
+	"clusterid",
+	"profilerefid",
+	"serialized",
+}
+
 func copyFromComplianceOperatorProfileV2(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, objs ...*storage.ComplianceOperatorProfileV2) error {
 	if len(objs) == 0 {
 		return nil
@@ -178,18 +190,6 @@ func copyFromComplianceOperatorProfileV2(ctx context.Context, s pgSearch.Deleter
 		if err := s.DeleteMany(ctx, deletes); err != nil {
 			return err
 		}
-	}
-
-	copyCols := []string{
-		"id",
-		"profileid",
-		"name",
-		"profileversion",
-		"producttype",
-		"standard",
-		"clusterid",
-		"profilerefid",
-		"serialized",
 	}
 
 	idx := 0
@@ -218,7 +218,7 @@ func copyFromComplianceOperatorProfileV2(ctx context.Context, s pgSearch.Deleter
 		}, nil
 	})
 
-	if _, err := tx.CopyFrom(ctx, pgx.Identifier{"compliance_operator_profile_v2"}, copyCols, inputRows); err != nil {
+	if _, err := tx.CopyFrom(ctx, pgx.Identifier{"compliance_operator_profile_v2"}, copyColsComplianceOperatorProfileV2, inputRows); err != nil {
 		return err
 	}
 
@@ -231,15 +231,15 @@ func copyFromComplianceOperatorProfileV2(ctx context.Context, s pgSearch.Deleter
 	return nil
 }
 
+var copyColsComplianceOperatorProfileV2Rules = []string{
+	"compliance_operator_profile_v2_id",
+	"idx",
+	"rulename",
+}
+
 func copyFromComplianceOperatorProfileV2Rules(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, complianceOperatorProfileV2ID string, objs ...*storage.ComplianceOperatorProfileV2_Rule) error {
 	if len(objs) == 0 {
 		return nil
-	}
-
-	copyCols := []string{
-		"compliance_operator_profile_v2_id",
-		"idx",
-		"rulename",
 	}
 
 	idx := 0
@@ -257,7 +257,7 @@ func copyFromComplianceOperatorProfileV2Rules(ctx context.Context, s pgSearch.De
 		}, nil
 	})
 
-	if _, err := tx.CopyFrom(ctx, pgx.Identifier{"compliance_operator_profile_v2_rules"}, copyCols, inputRows); err != nil {
+	if _, err := tx.CopyFrom(ctx, pgx.Identifier{"compliance_operator_profile_v2_rules"}, copyColsComplianceOperatorProfileV2Rules, inputRows); err != nil {
 		return err
 	}
 

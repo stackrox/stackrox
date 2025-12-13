@@ -121,6 +121,22 @@ func insertIntoPolicies(batch *pgx.Batch, obj *storage.Policy) error {
 	return nil
 }
 
+var copyColsPolicies = []string{
+	"id",
+	"name",
+	"description",
+	"disabled",
+	"categories",
+	"lifecyclestages",
+	"severity",
+	"enforcementactions",
+	"lastupdated",
+	"sortname",
+	"sortlifecyclestage",
+	"sortenforcement",
+	"serialized",
+}
+
 func copyFromPolicies(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, objs ...*storage.Policy) error {
 	if len(objs) == 0 {
 		return nil
@@ -136,22 +152,6 @@ func copyFromPolicies(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, 
 		if err := s.DeleteMany(ctx, deletes); err != nil {
 			return err
 		}
-	}
-
-	copyCols := []string{
-		"id",
-		"name",
-		"description",
-		"disabled",
-		"categories",
-		"lifecyclestages",
-		"severity",
-		"enforcementactions",
-		"lastupdated",
-		"sortname",
-		"sortlifecyclestage",
-		"sortenforcement",
-		"serialized",
 	}
 
 	idx := 0
@@ -184,7 +184,7 @@ func copyFromPolicies(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, 
 		}, nil
 	})
 
-	if _, err := tx.CopyFrom(ctx, pgx.Identifier{"policies"}, copyCols, inputRows); err != nil {
+	if _, err := tx.CopyFrom(ctx, pgx.Identifier{"policies"}, copyColsPolicies, inputRows); err != nil {
 		return err
 	}
 

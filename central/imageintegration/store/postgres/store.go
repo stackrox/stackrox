@@ -120,6 +120,13 @@ func insertIntoImageIntegrations(batch *pgx.Batch, obj *storage.ImageIntegration
 	return nil
 }
 
+var copyColsImageIntegrations = []string{
+	"id",
+	"name",
+	"clusterid",
+	"serialized",
+}
+
 func copyFromImageIntegrations(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, objs ...*storage.ImageIntegration) error {
 	if len(objs) == 0 {
 		return nil
@@ -135,13 +142,6 @@ func copyFromImageIntegrations(ctx context.Context, s pgSearch.Deleter, tx *post
 		if err := s.DeleteMany(ctx, deletes); err != nil {
 			return err
 		}
-	}
-
-	copyCols := []string{
-		"id",
-		"name",
-		"clusterid",
-		"serialized",
 	}
 
 	idx := 0
@@ -165,7 +165,7 @@ func copyFromImageIntegrations(ctx context.Context, s pgSearch.Deleter, tx *post
 		}, nil
 	})
 
-	if _, err := tx.CopyFrom(ctx, pgx.Identifier{"image_integrations"}, copyCols, inputRows); err != nil {
+	if _, err := tx.CopyFrom(ctx, pgx.Identifier{"image_integrations"}, copyColsImageIntegrations, inputRows); err != nil {
 		return err
 	}
 
