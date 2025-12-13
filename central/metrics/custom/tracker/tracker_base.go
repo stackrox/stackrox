@@ -123,6 +123,7 @@ func (tracker *TrackerBase[F]) NewConfiguration(cfg *storage.PrometheusMetrics_G
 		toAdd:    toAdd,
 		toDelete: toDelete,
 		period:   time.Minute * time.Duration(cfg.GetGatheringPeriodMinutes()),
+		enabled:  cfg.GetEnabled(),
 	}, nil
 }
 
@@ -134,7 +135,7 @@ func (tracker *TrackerBase[F]) Reconfigure(cfg *Configuration) {
 	}
 	previous := tracker.setConfiguration(cfg)
 	if previous != nil {
-		if cfg.period == 0 {
+		if cfg.period == 0 || (tracker.generator == nil && !cfg.enabled) {
 			log.Debugf("Metrics collection has been disabled for %s", tracker.description)
 			tracker.unregisterMetrics(slices.Collect(maps.Keys(previous.metrics)))
 			return
@@ -171,12 +172,27 @@ func (tracker *TrackerBase[Finding]) registerMetrics(cfg *Configuration, metrics
 }
 
 func (tracker *TrackerBase[Finding]) registerMetric(gatherer *gatherer, cfg *Configuration, metric MetricName) {
-	if err := gatherer.registry.RegisterMetric(
-		string(metric),
-		tracker.description,
-		cfg.period,
-		labelsAsStrings(cfg.metrics[metric]),
-	); err != nil {
+	labels := labelsAsStrings(cfg.metrics[metric])
+
+	var err error
+	if tracker.generator == nil {
+		// No generator means this is a counter tracker (real-time increments).
+		err = gatherer.registry.RegisterCounter(
+			string(metric),
+			tracker.description,
+			labels,
+		)
+	} else {
+		// Has generator means this is a gauge tracker (periodic gathering).
+		err = gatherer.registry.RegisterMetric(
+			string(metric),
+			tracker.description,
+			cfg.period,
+			labels,
+		)
+	}
+
+	if err != nil {
 		log.Errorf("Failed to register %s metric %q: %v", tracker.description, metric, err)
 		return
 	}
@@ -199,7 +215,7 @@ func (tracker *TrackerBase[Finding]) setConfiguration(config *Configuration) *Co
 
 // track aggregates the fetched findings and updates the gauges.
 func (tracker *TrackerBase[Finding]) track(ctx context.Context, registry metrics.CustomRegistry, metrics MetricDescriptors) error {
-	if len(metrics) == 0 {
+	if len(metrics) == 0 || tracker.generator == nil {
 		return nil
 	}
 	aggregator := makeAggregator(metrics, tracker.getters)
@@ -254,6 +270,39 @@ func (tracker *TrackerBase[Finding]) Gather(ctx context.Context) {
 		descriptionTitle+" metrics gathered", nil,
 		telemeter.WithTraits(tracker.makeProps(descriptionTitle, end.Sub(begin))),
 		telemeter.WithNoDuplicates(tracker.metricPrefix))
+}
+
+// IncrementCounter increments a counter metric with label values extracted from the finding.
+// This should only be called on counter trackers (created with nil generator).
+// The counter is incremented in ALL existing user registries since counters track system-wide
+// events that happen independently of which Prometheus user is scraping metrics.
+// If no gatherers exist yet (no Prometheus users have accessed /metrics), the increment is
+// a no-op. When the first user accesses /metrics, the counter starts from 0.
+func (tracker *TrackerBase[F]) IncrementCounter(finding F) {
+	if tracker.generator != nil {
+		// This is a gauge tracker, not a counter tracker
+		return
+	}
+
+	cfg := tracker.getConfiguration()
+	if cfg == nil {
+		return
+	}
+
+	aggregator := makeAggregator(cfg.metrics, tracker.getters)
+	aggregator.count(finding)
+
+	// Increment counter in all existing registries. New registries created
+	// later will start from 0, which is correct for counters.
+	tracker.gatherers.Range(func(_, g any) bool {
+		for metric, records := range aggregator.result {
+			gatherer := g.(*gatherer)
+			for _, rec := range records {
+				gatherer.registry.IncrementCounter(string(metric), rec.labels)
+			}
+		}
+		return true
+	})
 }
 
 func (tracker *TrackerBase[Finding]) makeProps(descriptionTitle string, duration time.Duration) map[string]any {
