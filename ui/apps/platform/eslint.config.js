@@ -846,12 +846,8 @@ module.exports = [
             'src/Components/ReactSelect/ReactSelect.jsx', // deprecated
             'src/Components/URLSearchInputWithAutocomplete.jsx', // deprecated
             'src/Containers/Compliance/**', // deprecated
-            'src/Containers/ConfigManagement/**',
-            'src/Containers/SystemConfig/**',
-            'src/Containers/SystemHealth/**',
-            'src/Containers/Violations/**',
+            'src/Containers/SystemConfig/Details/components/PrometheusMetricsCard.tsx', // prevent merge conflict with 17937
             'src/Containers/VulnMgmt/**', // deprecated
-            'src/Containers/Vulnerabilities/**',
             'src/init/initializeAnalytics.js', // generated from segment api
             'src/sagas/authSagas.js', // deprecated
             'src/sagas/groupSagas.js', // deprecated

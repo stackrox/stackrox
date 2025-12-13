@@ -67,7 +67,7 @@ function useRequestCVEsDetails(exception: VulnerabilityException): UseAffectedIm
                 summary: prioritizedDistros.length > 0 ? prioritizedDistros[0].summary : '',
                 numAffectedImages: imageCVE.affectedImageCount,
             };
-        }) || [];
+        }) ?? [];
 
     return {
         isLoading,
