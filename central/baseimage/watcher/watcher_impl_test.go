@@ -40,6 +40,7 @@ func createTestWatcher(ctrl *gomock.Controller, mockDS *mocks.MockDataStore, pol
 		registries:   mockRegistrySet,
 		delegator:    mockDelegator,
 		pollInterval: pollInterval,
+		localClient:  NewLocalRepositoryClient(mockRegistrySet),
 		stopper:      concurrency.NewStopper(),
 	}
 }
@@ -310,6 +311,7 @@ func TestWatcher_DelegationError(t *testing.T) {
 		registries:   mockRegistrySet,
 		delegator:    mockDelegator,
 		pollInterval: 1 * time.Hour,
+		localClient:  NewLocalRepositoryClient(mockRegistrySet),
 		stopper:      concurrency.NewStopper(),
 	}
 
@@ -348,6 +350,7 @@ func TestWatcher_ShouldDelegate(t *testing.T) {
 		registries:   mockRegistrySet,
 		delegator:    mockDelegator,
 		pollInterval: 1 * time.Hour,
+		localClient:  NewLocalRepositoryClient(mockRegistrySet),
 		stopper:      concurrency.NewStopper(),
 	}
 
@@ -392,6 +395,7 @@ func TestWatcher_NoMatchingRegistry(t *testing.T) {
 		registries:   mockRegistrySet,
 		delegator:    mockDelegator,
 		pollInterval: 1 * time.Hour,
+		localClient:  NewLocalRepositoryClient(mockRegistrySet),
 		stopper:      concurrency.NewStopper(),
 	}
 
@@ -440,6 +444,7 @@ func TestWatcher_MatchingRegistryWithTagListError(t *testing.T) {
 		registries:   mockRegistrySet,
 		delegator:    mockDelegator,
 		pollInterval: 1 * time.Hour,
+		localClient:  NewLocalRepositoryClient(mockRegistrySet),
 		stopper:      concurrency.NewStopper(),
 	}
 
@@ -488,6 +493,7 @@ func TestWatcher_MatchingRegistrySuccess(t *testing.T) {
 		registries:   mockRegistrySet,
 		delegator:    mockDelegator,
 		pollInterval: 1 * time.Hour,
+		localClient:  NewLocalRepositoryClient(mockRegistrySet),
 		stopper:      concurrency.NewStopper(),
 	}
 
@@ -532,6 +538,7 @@ func TestWatcher_ContextCancellation(t *testing.T) {
 		registries:   mockRegistrySet,
 		delegator:    mockDelegator,
 		pollInterval: 1 * time.Hour,
+		localClient:  NewLocalRepositoryClient(mockRegistrySet),
 		stopper:      concurrency.NewStopper(),
 	}
 
