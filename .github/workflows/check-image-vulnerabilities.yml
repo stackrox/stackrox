@@ -52,7 +52,7 @@ jobs:
           ]
     steps:
       - name: Check image vulnerabilities
-        uses: stackrox/actions/release/check-image-vulnerabilities@tm/ROX-image-vuln-check
+        uses: stackrox/actions/release/scan-image-vulnerabilities@tm/ROX-image-vuln-check
         with:
           image: rhacs-eng/${{ matrix.image }}
           version: ${{ inputs.version || github.ref_name }}
@@ -94,7 +94,7 @@ jobs:
           ]
     steps:
       - name: Check image vulnerabilities
-        uses: stackrox/actions/release/check-image-vulnerabilities@tm/ROX-image-vuln-check
+        uses: stackrox/actions/release/scan-image-vulnerabilities@tm/ROX-image-vuln-check
         with:
           image: rhacs-eng/${{ matrix.image }}
           version: ${{ inputs.version || github.ref_name }}
