@@ -3,7 +3,6 @@ package main
 import (
 	"flag"
 	"fmt"
-	"log"
 	"os"
 	"time"
 
@@ -65,7 +64,8 @@ func parseConfig() config {
 	if configFile != "" {
 		yamlCfg, err := loadYAMLConfig(configFile)
 		if err != nil {
-			log.Fatalf("loading config file: %v", err)
+			log.Errorf("loading config file: %v", err)
+			os.Exit(1)
 		}
 		applyYAMLConfig(&cfg, yamlCfg, setFlags)
 	}
@@ -121,22 +121,26 @@ func applyYAMLConfig(cfg *config, yamlCfg *yamlConfig, setFlags map[string]bool)
 
 func validateConfig(cfg config) {
 	if cfg.vmCount <= 0 {
-		log.Fatalf("vm-count must be > 0")
+		log.Error("vm-count must be > 0")
+		os.Exit(1)
 	}
 	if cfg.vmCount > 100000 {
-		log.Fatalf("vm-count must be <= 100000")
+		log.Error("vm-count must be <= 100000")
+		os.Exit(1)
 	}
 	if cfg.reportInterval <= 0 {
-		log.Fatalf("report-interval must be > 0")
+		log.Error("report-interval must be > 0")
+		os.Exit(1)
 	}
 	if cfg.numPackages <= 0 {
-		log.Fatalf("num-packages must be > 0")
+		log.Error("num-packages must be > 0")
+		os.Exit(1)
 	}
 }
 
 func createReportGenerator(cfg config) (*vmindexreport.Generator, error) {
 	generator := vmindexreport.NewGenerator(cfg.numPackages, cfg.numRepositories)
-	log.Printf("Created report generator with %d packages, %d repositories",
+	log.Infof("Created report generator with %d packages, %d repositories",
 		generator.NumPackages(), generator.NumRepositories())
 	return generator, nil
 }

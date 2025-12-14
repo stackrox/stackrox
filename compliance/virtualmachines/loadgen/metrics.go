@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"log"
 	"net/http"
 	"time"
 
@@ -71,8 +70,8 @@ func serveMetrics(ctx context.Context, port int) {
 		_ = server.Shutdown(shutdownCtx)
 	}()
 
-	log.Printf("metrics server listening on :%d", port)
+	log.Infof("metrics server listening on :%d", port)
 	if err := server.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
-		log.Printf("metrics server error: %v", err)
+		log.Errorf("metrics server error: %v", err)
 	}
 }

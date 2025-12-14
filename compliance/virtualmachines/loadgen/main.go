@@ -2,12 +2,13 @@ package main
 
 import (
 	"context"
-	"log"
 	"os"
 	"os/signal"
 	"sync"
 	"syscall"
 	"time"
+
+	"github.com/stackrox/rox/pkg/logging"
 )
 
 func main() {
@@ -23,30 +24,33 @@ func main() {
 
 	generator, err := createReportGenerator(cfg)
 	if err != nil {
-		log.Fatalf("creating report generator: %v", err)
+		log.Errorf("creating report generator: %v", err)
+		os.Exit(1)
 	}
 
 	nodeName := os.Getenv("NODE_NAME")
 	if nodeName == "" {
-		log.Fatalf("NODE_NAME environment variable not set")
+		log.Error("NODE_NAME environment variable not set")
+		os.Exit(1)
 	}
 
 	cidInfo, err := calculateCIDRange(ctx, nodeName, cfg.vmCount)
 	if err != nil {
-		log.Fatalf("calculating CID range: %v", err)
+		log.Errorf("calculating CID range: %v", err)
+		os.Exit(1)
 	}
 
-	log.Printf("Node %s (index %d/%d) assigned CID range [%d-%d] for %d VMs (total cluster: %d VMs)",
+	log.Infof("Node %s (index %d/%d) assigned CID range [%d-%d] for %d VMs (total cluster: %d VMs)",
 		nodeName, cidInfo.NodeIndex, cidInfo.TotalNodes, cidInfo.StartCID, cidInfo.EndCID, cidInfo.VMsThisNode, cfg.vmCount)
 
 	payloads, err := newPayloadProvider(generator, cidInfo.VMsThisNode, cidInfo.StartCID)
 	if err != nil {
-		log.Fatalf("creating payload provider: %v", err)
+		log.Errorf("creating payload provider: %v", err)
+		os.Exit(1)
 	}
 
 	stats := newStatsCollector()
 	metrics := newMetricsRegistry()
-	errorLimiter := newErrorLogLimiter(cfg.statsInterval / 10)
 
 	if cfg.metricsPort > 0 {
 		go serveMetrics(ctx, cfg.metricsPort)
@@ -58,11 +62,11 @@ func main() {
 		wg.Add(1)
 		go func(vmCID uint32) {
 			defer wg.Done()
-			vmSimulator(ctx, vmCID, cfg, payloads, stats, metrics, errorLimiter)
+			vmSimulator(ctx, vmCID, cfg, payloads, stats, metrics)
 		}(cid)
 	}
 
-	log.Printf("vsock-loadgen starting: vms=%d report-interval=%s duration=%s packages=%d repos=%d cid-range=[%d-%d] port=%d",
+	log.Infof("vsock-loadgen starting: vms=%d report-interval=%s duration=%s packages=%d repos=%d cid-range=[%d-%d] port=%d",
 		cidInfo.VMsThisNode, cfg.reportInterval, cfg.duration, cfg.numPackages, cfg.numRepositories, cidInfo.StartCID, cidInfo.EndCID, cfg.port)
 
 	start := time.Now()
@@ -86,7 +90,7 @@ func setupSignalHandler(cancel context.CancelFunc) {
 	signal.Notify(sigCh, syscall.SIGINT, syscall.SIGTERM)
 	go func() {
 		<-sigCh
-		log.Printf("received shutdown signal, stopping...")
+		logging.LoggerForModule().Info("received shutdown signal, stopping...")
 		cancel()
 	}()
 }
