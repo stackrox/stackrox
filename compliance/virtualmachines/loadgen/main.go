@@ -7,8 +7,6 @@ import (
 	"sync"
 	"syscall"
 	"time"
-
-	"github.com/stackrox/rox/pkg/logging"
 )
 
 func main() {
@@ -90,7 +88,7 @@ func setupSignalHandler(cancel context.CancelFunc) {
 	signal.Notify(sigCh, syscall.SIGINT, syscall.SIGTERM)
 	go func() {
 		<-sigCh
-		logging.LoggerForModule().Info("received shutdown signal, stopping...")
+		log.Info("received shutdown signal, stopping...")
 		cancel()
 	}()
 }

@@ -85,8 +85,8 @@ spec:
       containers:
       - name: loadgen
         # Use dedicated vsock-loadgen image (minimal distroless-based image)
-        # Override with VSOCK_LOADGEN_IMAGE and VSOCK_LOADGEN_TAG env vars if needed
-        # Note: Image URL uses $USER placeholder - scripts will substitute at deployment time
+        # IMPORTANT: Deploy via run-loadgen.sh which uses envsubst to replace ${USER}
+        # Or override with: VSOCK_LOADGEN_IMAGE=your/image ./run-loadgen.sh
         image: quay.io/${USER}/stackrox/vsock-loadgen:latest
         imagePullPolicy: Always
 
