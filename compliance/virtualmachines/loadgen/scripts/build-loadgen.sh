@@ -11,7 +11,8 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/../../../.." && pwd)"
 
-IMAGE_NAME="${VSOCK_LOADGEN_IMAGE:-quay.io/${USER}/stackrox/vsock-loadgen}"
+DEFAULT_USER="${USER:-developer}"
+IMAGE_NAME="${VSOCK_LOADGEN_IMAGE:-quay.io/${DEFAULT_USER}/stackrox/vsock-loadgen}"
 IMAGE_TAG="${VSOCK_LOADGEN_TAG:-latest}"
 FULL_IMAGE="${IMAGE_NAME}:${IMAGE_TAG}"
 
@@ -47,15 +48,18 @@ echo ""
 # Step 1: Build binary locally (fast, no Docker build stage needed)
 echo "🔨 Building Go binary..."
 cd "${REPO_ROOT}"
-CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -ldflags="-w -s" -o /tmp/vsock-loadgen ./compliance/virtualmachines/loadgen
+if ! CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -ldflags="-w -s" -o /tmp/vsock-loadgen ./compliance/virtualmachines/loadgen; then
+    echo "   ✗ Go build failed"
+    exit 1
+fi
 echo "   ✓ Binary built"
 echo ""
 
 # Step 2: Create minimal Dockerfile
+# Note: DaemonSet runs as root (runAsUser: 0) for /dev/vsock access
 cat > /tmp/Dockerfile.vsock-loadgen <<EOF
 FROM gcr.io/distroless/static-debian12:nonroot
 COPY vsock-loadgen /usr/local/bin/vsock-loadgen
-USER nonroot:nonroot
 ENTRYPOINT ["/usr/local/bin/vsock-loadgen"]
 EOF
 

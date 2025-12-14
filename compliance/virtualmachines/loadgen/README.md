@@ -10,7 +10,7 @@ The VM load generator simulates hundreds to thousands of virtual machines sendin
 
 - **VM Behavior**: Each goroutine simulates a single VM with a unique CID (Context Identifier)
 - **Periodic Reporting**: VMs send index reports at configurable intervals with realistic timing jitter
-- **Realistic Payloads**: Pre-generates unique index reports for each VM with configurable sizes (small/avg/large)
+- **Realistic Payloads**: Pre-generates unique index reports for each VM with configurable package and repository counts
 - **Distributed Load**: Deployed as a DaemonSet across worker nodes with automatic CID range partitioning
 
 ## Architecture
@@ -150,7 +150,8 @@ Example: With 3 worker nodes and `vmCount=1000`:
    loadgen:
      vmCount: 1000          # Total VMs across all nodes
      reportInterval: 60s    # How often each VM reports
-     payloadSize: small     # small (~2.3MB), avg (~10MB), large (~50MB)
+     numPackages: 700       # Packages per report (514=small, 700=avg, 1500=large)
+     numRepositories: 0     # Repositories per report (0 = use real RHEL repos)
      statsInterval: 30s     # How often to print stats
    ```
 
@@ -205,10 +206,8 @@ export VSOCK_LOADGEN_TAG="v1.0"
 
 - **`vmCount`**: Total number of VMs to simulate across ALL nodes (max: 100,000)
 - **`reportInterval`**: Interval at which each VM sends reports (e.g., 30s, 1m, 5m)
-- **`payloadSize`**: Size of index reports
-  - `small`: ~2.3MB (514 packages)
-  - `avg`: ~10MB (700 packages)
-  - `large`: ~50MB (1500 packages)
+- **`numPackages`**: Number of packages per VM index report (e.g., 514=small, 700=avg, 1500=large)
+- **`numRepositories`**: Number of repositories per report (0 = use real RHEL repos only)
 - **`statsInterval`**: How often to print statistics to logs (e.g., 30s, 1m)
 - **`port`**: Vsock port to connect to (default: 818, relay's listening port)
 - **`metricsPort`**: Prometheus metrics port (default: 9090, 0 to disable)
@@ -277,7 +276,7 @@ make compliance/virtualmachines/loadgen
 ./bin/linux_amd64/loadgen \
   --vm-count 10 \
   --report-interval 30s \
-  --payload-size small \
+  --num-packages 700 \
   --port 818
 ```
 

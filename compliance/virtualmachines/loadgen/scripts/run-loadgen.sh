@@ -12,7 +12,8 @@ DEPLOY_DIR="$(cd "${SCRIPT_DIR}/../deploy" && pwd)"
 CONFIG_FILE="${1:-${DEPLOY_DIR}/loadgen-config.yaml}"
 MANIFEST="${DEPLOY_DIR}/vsock-loadgen-daemonset.yaml"
 
-IMAGE_NAME="${VSOCK_LOADGEN_IMAGE:-quay.io/${USER}/stackrox/vsock-loadgen}"
+DEFAULT_USER="${USER:-developer}"
+IMAGE_NAME="${VSOCK_LOADGEN_IMAGE:-quay.io/${DEFAULT_USER}/stackrox/vsock-loadgen}"
 IMAGE_TAG="${VSOCK_LOADGEN_TAG:-latest}"
 FULL_IMAGE="${IMAGE_NAME}:${IMAGE_TAG}"
 
@@ -51,6 +52,7 @@ echo ""
 
 # Deploy DaemonSet (substitute $USER in manifest)
 echo "🚀 Deploying DaemonSet..."
+export USER="${USER:-developer}"
 envsubst < "$MANIFEST" | kubectl apply -f -
 
 echo ""
