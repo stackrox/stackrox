@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"fmt"
-	"log"
 	"sort"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -72,7 +71,7 @@ func listWorkerNodes(ctx context.Context, clientset *kubernetes.Clientset) ([]st
 	}
 
 	// Fall back to all nodes excluding control plane (for GKE, etc.)
-	log.Printf("no nodes with worker label found, listing all nodes and excluding control plane")
+	log.Info("no nodes with worker label found, listing all nodes and excluding control plane")
 	nodes, err = clientset.CoreV1().Nodes().List(ctx, metav1.ListOptions{})
 	if err != nil {
 		return nil, fmt.Errorf("list all nodes: %w", err)
@@ -94,7 +93,7 @@ func listWorkerNodes(ctx context.Context, clientset *kubernetes.Clientset) ([]st
 		return nil, fmt.Errorf("no worker nodes found (found %d total nodes, all are control plane)", len(nodes.Items))
 	}
 
-	log.Printf("found %d worker nodes out of %d total nodes", len(workerNodes), len(nodes.Items))
+	log.Infof("found %d worker nodes out of %d total nodes", len(workerNodes), len(nodes.Items))
 	return workerNodes, nil
 }
 

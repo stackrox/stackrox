@@ -1,7 +1,6 @@
 package main
 
 import (
-	"log"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -92,6 +91,6 @@ func logSnapshot(prefix string, snap statsSnapshot) {
 	if snap.Elapsed > 0 {
 		successRate = float64(snap.Success) / snap.Elapsed.Seconds()
 	}
-	log.Printf("[%s] sent=%d success=%d failure=%d throughput=%.2f req/s success_rate=%.2f req/s data=%.2f MiB p50=%s p95=%s p99=%s",
+	log.Infof("[%s] sent=%d success=%d failure=%d throughput=%.2f req/s success_rate=%.2f req/s data=%.2f MiB p50=%s p95=%s p99=%s",
 		prefix, snap.Total, snap.Success, snap.Failure, snap.Throughput, successRate, mbSent, snap.P50, snap.P95, snap.P99)
 }

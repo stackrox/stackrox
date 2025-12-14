@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"log"
 	"time"
 
 	"github.com/stackrox/rox/pkg/fixtures/vmindexreport"
@@ -17,7 +16,7 @@ type payloadProvider struct {
 func newPayloadProvider(generator *vmindexreport.Generator, vmCount int, startCID uint32) (*payloadProvider, error) {
 	endCID := startCID + uint32(vmCount) - 1
 
-	log.Printf("pre-generating %d unique reports for CID range [%d-%d]...", vmCount, startCID, endCID)
+	log.Infof("pre-generating %d unique reports for CID range [%d-%d]...", vmCount, startCID, endCID)
 	start := time.Now()
 
 	payloads := make(map[uint32][]byte)
@@ -33,7 +32,7 @@ func newPayloadProvider(generator *vmindexreport.Generator, vmCount int, startCI
 		payloads[cid] = data
 	}
 
-	log.Printf("pre-generated %d unique reports in %s", len(payloads), time.Since(start))
+	log.Infof("pre-generated %d unique reports in %s", len(payloads), time.Since(start))
 	return &payloadProvider{payloads: payloads}, nil
 }
 

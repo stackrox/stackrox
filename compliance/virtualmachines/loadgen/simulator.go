@@ -4,21 +4,23 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"log"
 	"math/rand"
 	"strings"
 	"time"
 
 	"github.com/mdlayher/vsock"
 	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/logging"
 )
+
+var log = logging.LoggerForModule()
 
 // vmSimulator simulates a single VM sending index reports periodically.
 // It staggers the initial delay and adds jitter to report intervals.
-func vmSimulator(ctx context.Context, cid uint32, cfg config, provider *payloadProvider, stats *statsCollector, metrics *metricsRegistry, limiter *errorLogLimiter) {
+func vmSimulator(ctx context.Context, cid uint32, cfg config, provider *payloadProvider, stats *statsCollector, metrics *metricsRegistry) {
 	payload, err := provider.get(cid)
 	if err != nil {
-		log.Printf("VM[%d]: failed to get payload: %v", cid, err)
+		log.Errorf("VM[%d]: failed to get payload: %v", cid, err)
 		return
 	}
 
@@ -32,7 +34,7 @@ func vmSimulator(ctx context.Context, cid uint32, cfg config, provider *payloadP
 	case <-time.After(initialDelay):
 	}
 
-	sendVMReport(cid, payload, cfg.requestTimeout, stats, metrics, limiter)
+	sendVMReport(cid, payload, cfg.requestTimeout, stats, metrics)
 
 	for {
 		// Add ±5% jitter to report interval
@@ -43,24 +45,22 @@ func vmSimulator(ctx context.Context, cid uint32, cfg config, provider *payloadP
 		case <-ctx.Done():
 			return
 		case <-time.After(nextInterval):
-			sendVMReport(cid, payload, cfg.requestTimeout, stats, metrics, limiter)
+			sendVMReport(cid, payload, cfg.requestTimeout, stats, metrics)
 		}
 	}
 }
 
-func sendVMReport(cid uint32, payload []byte, timeout time.Duration, stats *statsCollector, metrics *metricsRegistry, limiter *errorLogLimiter) {
+func sendVMReport(cid uint32, payload []byte, timeout time.Duration, stats *statsCollector, metrics *metricsRegistry) {
 	start := time.Now()
 	err := sendReport(payload, timeout)
 	latency := time.Since(start)
 
 	if err != nil {
-		if shouldLog, droppedCount := limiter.shouldLog(); shouldLog {
-			if droppedCount > 0 {
-				log.Printf("VM[%d]: send error: %v (suppressed %d similar errors)", cid, err, droppedCount)
-			} else {
-				log.Printf("VM[%d]: send error: %v", cid, err)
-			}
-		}
+		logging.GetRateLimitedLogger().ErrorL(
+			"vsock-send",
+			"VM[%d]: send error: %v",
+			cid, err,
+		)
 		metrics.observeFailure(errorLabel(err))
 		stats.recordFailure()
 		return
