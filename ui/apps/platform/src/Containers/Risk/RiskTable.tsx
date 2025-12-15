@@ -4,8 +4,46 @@ import Table from 'Components/TableV2';
 import type { ListDeploymentWithProcessInfo } from 'services/DeploymentsService';
 import type { UseURLSortResult } from 'hooks/useURLSort';
 import type { SortOption } from 'types/table';
+import { sortDate, sortValue } from 'sorters/sorters';
+import { getDateTime } from 'utils/dateUtils';
 
-import riskTableColumnDescriptors from './riskTableColumnDescriptors';
+import { DeploymentNameColumn } from './DeploymentNameColumn';
+
+const riskTableColumnDescriptors = [
+    {
+        Header: 'Name',
+        accessor: 'deployment.name',
+        searchField: 'Deployment',
+        Cell: DeploymentNameColumn,
+    },
+    {
+        Header: 'Created',
+        accessor: 'deployment.created',
+        searchField: 'Created',
+        Cell: ({ value }) => <span>{getDateTime(value)}</span>,
+        sortMethod: sortDate,
+    },
+    {
+        Header: 'Cluster',
+        searchField: 'Cluster',
+        accessor: 'deployment.cluster',
+    },
+    {
+        Header: 'Namespace',
+        searchField: 'Namespace',
+        accessor: 'deployment.namespace',
+    },
+    {
+        Header: 'Priority',
+        searchField: 'Deployment Risk Priority',
+        accessor: 'deployment.priority',
+        Cell: ({ value }: { value: string }) => {
+            const asInt = parseInt(value, 10);
+            return Number.isNaN(asInt) || asInt < 1 ? '-' : value;
+        },
+        sortMethod: sortValue,
+    },
+];
 
 function convertTableSortToURLSetterSort(state): SortOption | null {
     let sortOption: SortOption | null = null;
