@@ -64,6 +64,7 @@ func createVMIndexMessage(vmID string, action central.ResourceAction) *central.M
 					VirtualMachineIndexReport: &v1.IndexReportEvent{
 						Id: vmID,
 						Index: &v1.IndexReport{
+							VsockCid: "100",
 							IndexV4: &v4.IndexReport{
 								Contents: &v4.Contents{
 									Packages: map[string]*v4.Package{
@@ -143,7 +144,7 @@ func (suite *PipelineTestSuite) TestRun_UpdateScanError() {
 
 	err := suite.pipeline.Run(ctx, testClusterID, msg, nil)
 	suite.Error(err)
-	suite.Contains(err.Error(), "failed to upsert VM vm-1 to datastore: datastore error")
+	suite.Contains(err.Error(), "failed to update VM vm-1 scan in datastore: datastore error")
 	suite.Contains(err.Error(), "datastore error")
 }
 
