@@ -13,13 +13,13 @@ import (
 
 const (
 	hashIndexQuery = `SELECT EXISTS(
-	SELECT tab.relname, cls.relname, am.amname
-	FROM pg_index idx
-	JOIN pg_class cls ON cls.oid=idx.indexrelid
-	JOIN pg_class tab ON tab.oid=idx.indrelid
-	JOIN pg_am am ON am.oid=cls.relam
-	where tab.relname = $1 AND
-	am.amname = 'hash' AND cls.relname = $2
+	SELECT tab.relname, idx.relname, am.amname
+	FROM pg_index x
+	JOIN pg_class idx ON idx.oid=x.indexrelid
+	JOIN pg_class tab ON tab.oid=x.indrelid
+	JOIN pg_am am ON am.oid=idx.relam
+	WHERE tab.relname = $1 AND
+	am.amname = 'hash' AND idx.relname = $2
 	)`
 
 	tableName          = "process_indicators"
