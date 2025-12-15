@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"math"
+	"strings"
 	"time"
 
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
@@ -21,6 +22,7 @@ import (
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
+	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/features"
@@ -235,10 +237,28 @@ func internalScanRespFromImage(img *storage.Image) *v1.ScanImageInternalResponse
 	}
 }
 
-func internalScanRespFromImageV2(imgV2 *storage.ImageV2) *v1.ScanImageInternalResponse {
+func (s *serviceImpl) internalScanRespFromImageV2(ctx context.Context, imgV2 *storage.ImageV2) *v1.ScanImageInternalResponse {
 	utils.FilterSuppressedCVEsNoCloneV2(imgV2)
 	utils.StripCVEDescriptionsNoCloneV2(imgV2)
-	img := utils.ConvertToV1(imgV2)
+
+	// Gather all known image names for this digest to ensure backward compatibility when sending image data
+	// to sensors that don't have the FlattenImageData capability.
+	// Skip if all sensors have the capability.
+	var allNames []*storage.ImageName
+	if !s.connManager.AllSensorsHaveCapability(centralsensor.FlattenImageData) {
+		var err error
+		allNames, err = s.datastoreV2.GetImageNames(ctx, imgV2.GetDigest())
+		if err != nil {
+			log.Warnw("Failed to retrieve image names by digest",
+				logging.FromContext(ctx),
+				logging.ImageName(imgV2.GetName().GetFullName()),
+				logging.ImageID(imgV2.GetId()),
+				logging.String("digest", imgV2.GetDigest()),
+				logging.Err(err),
+			)
+		}
+	}
+	img := utils.ConvertToV1(imgV2, allNames...)
 	return &v1.ScanImageInternalResponse{
 		Image: img,
 	}
@@ -401,7 +421,7 @@ func (s *serviceImpl) scanImageV2Internal(ctx context.Context, request *v1.ScanI
 			}
 
 			if !clusterLocalScanExpired {
-				return internalScanRespFromImageV2(existingImgV2), nil
+				return s.internalScanRespFromImageV2(ctx, existingImgV2), nil
 			}
 
 			log.Debugw("Scan cache ignored enriching image",
@@ -430,7 +450,7 @@ func (s *serviceImpl) scanImageV2Internal(ctx context.Context, request *v1.ScanI
 	if err := s.enrichImageV2(ctx, imgV2, fetchOpt, request); err != nil && imgExists {
 		// In case we hit an error during enriching, and the image previously existed, we will _not_ upsert it in
 		// central, since it could lead to us overriding an enriched image with a non-enriched image.
-		return internalScanRespFromImageV2(imgV2), nil
+		return s.internalScanRespFromImageV2(ctx, imgV2), nil
 	}
 	// Due to discrepancies in digests retrieved from metadata pulls and k8s, only upsert if the request
 	// contained a digest.
@@ -438,7 +458,7 @@ func (s *serviceImpl) scanImageV2Internal(ctx context.Context, request *v1.ScanI
 		_ = s.saveImageV2(imgV2)
 	}
 
-	return internalScanRespFromImageV2(imgV2), nil
+	return s.internalScanRespFromImageV2(ctx, imgV2), nil
 }
 
 // scanExpired returns true when the scan associated with the image
@@ -715,7 +735,7 @@ func (s *serviceImpl) getImageV2VulnerabilitiesInternal(ctx context.Context, req
 		// If the scan exists, and reprocessing has not run since, return the scan.
 		// Otherwise, run the enrichment pipeline to ensure we do not return stale data.
 		if exists && !scanExpired(existingImg.GetScan()) {
-			return internalScanRespFromImageV2(existingImg), nil
+			return s.internalScanRespFromImageV2(ctx, existingImg), nil
 		}
 	}
 
@@ -739,7 +759,7 @@ func (s *serviceImpl) getImageV2VulnerabilitiesInternal(ctx context.Context, req
 		_ = s.saveImageV2(imgV2)
 	}
 
-	return internalScanRespFromImageV2(imgV2), nil
+	return s.internalScanRespFromImageV2(ctx, imgV2), nil
 }
 
 func (s *serviceImpl) acquireScanSemaphore(ctx context.Context) error {
@@ -993,7 +1013,7 @@ func (s *serviceImpl) enrichLocalImageV2Internal(ctx context.Context, request *v
 		if imgExists {
 			if !forceScanUpdate && !forceSigVerificationUpdate {
 				s.informScanWaiterV2(request.GetRequestId(), existingImg, nil)
-				return internalScanRespFromImageV2(existingImg), nil
+				return s.internalScanRespFromImageV2(ctx, existingImg), nil
 			}
 
 			log.Debugw("Scan cache ignored enriching image with vulnerabilities",
@@ -1072,7 +1092,7 @@ func (s *serviceImpl) enrichLocalImageV2Internal(ctx context.Context, request *v
 	}
 
 	s.informScanWaiterV2(request.GetRequestId(), img, err)
-	return internalScanRespFromImageV2(img), nil
+	return s.internalScanRespFromImageV2(ctx, img), nil
 }
 
 func (s *serviceImpl) enrichWithVulnerabilitiesV2(img *storage.ImageV2, request *v1.EnrichLocalImageInternalRequest) error {
@@ -1178,6 +1198,12 @@ func (s *serviceImpl) DeleteImages(ctx context.Context, request *v1.DeleteImages
 
 	var results []search.Result
 	if features.FlattenImageData.Enabled() {
+		// Add selects to retrieve Image SHA in the search results
+		selectSelects := []*v1.QuerySelect{
+			search.NewQuerySelect(search.ImageSHA).Proto(),
+			search.NewQuerySelect(search.ImageName).Proto(),
+		}
+		query.Selects = append(query.GetSelects(), selectSelects...)
 		results, err = s.datastoreV2.Search(ctx, query)
 	} else {
 		results, err = s.datastore.Search(ctx, query)
@@ -1205,20 +1231,45 @@ func (s *serviceImpl) DeleteImages(ctx context.Context, request *v1.DeleteImages
 		return nil, err
 	}
 
-	keys := make([]*central.InvalidateImageCache_ImageKey, 0, len(idSlice))
-	for _, id := range idSlice {
-		keys = append(keys, &central.InvalidateImageCache_ImageKey{
-			ImageId: id,
+	if features.FlattenImageData.Enabled() {
+		// Extract ImageV2 ID and SHA from search results
+		keys := make([]*central.InvalidateImageCache_ImageKey, 0, len(results))
+		for _, res := range results {
+			if res.FieldValues != nil {
+				// Set both ImageId (SHA for old sensors) and ImageIdV2 (ImageV2 ID for new sensors)
+				keys = append(keys, &central.InvalidateImageCache_ImageKey{
+					ImageId:       res.FieldValues[strings.ToLower(search.ImageSHA.String())], // SHA for backward compatibility
+					ImageIdV2:     res.ID,                                                     // ImageV2 ID for new sensors
+					ImageFullName: res.FieldValues[strings.ToLower(search.ImageName.String())],
+				})
+			}
+		}
+
+		if len(keys) > 0 {
+			s.connManager.BroadcastMessage(&central.MsgToSensor{
+				Msg: &central.MsgToSensor_InvalidateImageCache{
+					InvalidateImageCache: &central.InvalidateImageCache{
+						ImageKeys: keys,
+					},
+				},
+			})
+		}
+	} else {
+		keys := make([]*central.InvalidateImageCache_ImageKey, 0, len(idSlice))
+		for _, id := range idSlice {
+			keys = append(keys, &central.InvalidateImageCache_ImageKey{
+				ImageId: id,
+			})
+		}
+
+		s.connManager.BroadcastMessage(&central.MsgToSensor{
+			Msg: &central.MsgToSensor_InvalidateImageCache{
+				InvalidateImageCache: &central.InvalidateImageCache{
+					ImageKeys: keys,
+				},
+			},
 		})
 	}
-
-	s.connManager.BroadcastMessage(&central.MsgToSensor{
-		Msg: &central.MsgToSensor_InvalidateImageCache{
-			InvalidateImageCache: &central.InvalidateImageCache{
-				ImageKeys: keys,
-			},
-		},
-	})
 
 	return response, nil
 }

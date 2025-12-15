@@ -12,6 +12,7 @@ import (
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/deduperkey"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/safe"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sliceutils"
@@ -153,6 +154,9 @@ func (s *centralCommunicationImpl) sendEvents(client central.SensorServiceClient
 		capsSet.AddAll(component.Capabilities()...)
 	}
 	capsSet.Add(centralsensor.SendDeduperStateOnReconnect)
+	if features.FlattenImageData.Enabled() {
+		capsSet.Add(centralsensor.FlattenImageData)
+	}
 	sensorHello.Capabilities = sliceutils.StringSlice(capsSet.AsSlice()...)
 
 	// Inject desired Helm configuration, if any.
