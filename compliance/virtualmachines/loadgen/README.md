@@ -1,286 +1,91 @@
 # VM Load Generator
 
-A load testing tool for StackRox VM compliance infrastructure that simulates VMs sending index reports via vsock.
+Simulates VMs sending index reports via vsock to test the VM compliance pipeline at scale.
 
-## Overview
-
-The VM load generator simulates hundreds to thousands of virtual machines sending index reports to the relay service via vsock connections. It's designed to test the scalability and performance of the VM compliance pipeline under realistic load conditions.
-
-### What It Simulates
-
-- **VM Behavior**: Each goroutine simulates a single VM with a unique CID (Context Identifier)
-- **Periodic Reporting**: VMs send index reports at configurable intervals with realistic timing jitter
-- **Realistic Payloads**: Pre-generates unique index reports for each VM with configurable package and repository counts
-- **Distributed Load**: Deployed as a DaemonSet across worker nodes with automatic CID range partitioning
-
-## Architecture
-
-The vsock load generator simulates VM compliance reporting by generating fake vsock traffic to test the StackRox VM compliance pipeline at scale.
-
-### System Overview
-
-```
-┌─────────────────────────────────────────────────────────────────┐
-│ Kubernetes Cluster                                              │
-│                                                                 │
-│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐         │
-│  │ Worker Node  │  │ Worker Node  │  │ Worker Node  │         │
-│  │              │  │              │  │              │         │
-│  │  ┌────────┐  │  │  ┌────────┐  │  │  ┌────────┐  │         │
-│  │  │Loadgen │  │  │  │Loadgen │  │  │  │Loadgen │  │         │
-│  │  │  Pod   │  │  │  │  Pod   │  │  │  │  Pod   │  │         │
-│  │  │        │  │  │  │        │  │  │  │        │  │         │
-│  │  │CID 3-  │  │  │  │CID     │  │  │  │CID     │  │         │
-│  │  │  150   │  │  │  │10003-  │  │  │  │20003-  │  │         │
-│  │  │        │  │  │  │10150   │  │  │  │20150   │  │         │
-│  │  └───┬────┘  │  │  └───┬────┘  │  │  └───┬────┘  │         │
-│  │      │vsock  │  │      │vsock  │  │      │vsock  │         │
-│  │  /dev/vsock   │  │  /dev/vsock   │  │  /dev/vsock   │         │
-│  └──────┼────────┘  └──────┼────────┘  └──────┼────────┘         │
-│         │                  │                  │                 │
-│         └──────────────────┼──────────────────┘                 │
-│                            │                                    │
-│  ┌─────────────────────────▼──────────────────────────┐         │
-│  │ Collector DaemonSet (each worker node)            │         │
-│  │                                                    │         │
-│  │  ┌──────────────┐  ┌──────────────────────┐      │         │
-│  │  │  Collector   │  │  Compliance          │      │         │
-│  │  │  Container   │  │  Container           │      │         │
-│  │  │              │  │                      │      │         │
-│  │  │              │  │  ┌────────────────┐  │      │         │
-│  │  │              │  │  │  VM Relay      │  │      │         │
-│  │  │              │  │  │  (Port 818)    │  │      │         │
-│  │  │              │  │  │                │  │      │         │
-│  │  │              │  │  │  - Accept conn │  │      │         │
-│  │  │              │  │  │  - Parse index │  │      │         │
-│  │  │              │  │  │  - Forward to  │  │      │         │
-│  │  │              │  │  │    Sensor      │  │      │         │
-│  │  └──────────────┘  │  └────────┬───────┘  │      │         │
-│  └─────────────────────────────────┼──────────┘      │         │
-│                                    │                 │         │
-│                                    │ gRPC            │         │
-│  ┌─────────────────────────────────▼──────────────┐  │         │
-│  │ Sensor Deployment                              │  │         │
-│  │  - Aggregates VM reports from all nodes        │  │         │
-│  │  - Forwards to Central                         │  │         │
-│  └─────────────────────────────────┬──────────────┘  │         │
-│                                    │                 │         │
-└────────────────────────────────────┼─────────────────┘
-                                     │ gRPC
-                                     │
-                        ┌────────────▼──────────────┐
-                        │ Central                   │
-                        │  - Stores VM index reports│
-                        │  - Policy enforcement     │
-                        │  - UI/API                 │
-                        └───────────────────────────┘
-```
-
-### Components
-
-- **Main Binary** (`main.go`): The load generator binary that runs in each DaemonSet pod
-- **Deploy Manifests** (`deploy/`): Kubernetes manifests for deploying the load generator
-  - `vsock-loadgen-daemonset.yaml`: DaemonSet, ServiceAccount, RBAC configuration
-  - `loadgen-config.yaml`: ConfigMap with load test parameters
-- **Scripts** (`scripts/`): Helper scripts for building and deploying
-  - `build-loadgen.sh`: Builds the binary and container image, pushes to registry
-  - `run-loadgen.sh`: Deploys the load generator to the cluster
-
-### Data Flow
-
-1. **Load Generation**: Each loadgen pod simulates multiple VMs (goroutines), each with a unique CID
-2. **Report Creation**: Pre-generated index reports (protobuf messages) with realistic package data
-3. **Vsock Connection**: Connects to `/dev/vsock` and dials the relay on port 818
-4. **Report Transmission**: Sends protobuf-encoded index reports over vsock connection
-5. **Relay Processing**: VM relay in compliance container receives, validates, and forwards to Sensor
-6. **Sensor Aggregation**: Sensor aggregates reports from all nodes and forwards to Central
-7. **Central Storage**: Central stores VM compliance data in PostgreSQL
-
-### Network Architecture
-
-The loadgen uses `hostNetwork: true` to access the node's `/dev/vsock` device directly:
-
-- **No privileged mode required**: Access to `/dev/vsock` works with `runAsUser: 0` only
-- **Direct vsock access**: Connects to relay running on the same node via vsock
-- **No network isolation**: Shares node's network namespace for vsock communication
-
-### Security Context
-
-The loadgen runs with minimal security privileges:
-
-- **runAsUser: 0**: Required for `/dev/vsock` device access
-- **NO privileged mode**: Not needed for vsock operations
-- **NO additional capabilities**: NET_ADMIN and SYS_ADMIN not required
-- **Read-only /dev/vsock**: Mounted as CharDevice from host
-
-### CID Assignment (No Overlap)
-
-When deployed as a DaemonSet, each pod automatically calculates a unique CID range based on its node's position in the cluster:
-
-- Nodes are sorted alphabetically by name for deterministic ordering
-- Each node gets a partition with 10,000 CID spacing to prevent overlap:
-  - Node 0: starts at CID 3
-  - Node 1: starts at CID 10003
-  - Node 2: starts at CID 20003
-
-Example: With 3 worker nodes and `vmCount=1000`:
-- Node "worker-0" (index 0): 334 VMs, CIDs 3-336
-- Node "worker-1" (index 1): 333 VMs, CIDs 10003-10335
-- Node "worker-2" (index 2): 333 VMs, CIDs 20003-20335
-
-## Usage
-
-### Prerequisites
-
-- Running StackRox deployment with VM compliance enabled
-- Docker/Podman for building images
-- Access to a container registry (e.g., quay.io)
-- kubectl access to the cluster
-
-### Quick Start
-
-1. **Build and push the load generator image:**
-   ```bash
-   cd compliance/virtualmachines/loadgen/scripts
-   ./build-loadgen.sh
-   ```
-
-2. **Configure the load test** (edit `deploy/loadgen-config.yaml`):
-   ```yaml
-   loadgen:
-     vmCount: 1000          # Total VMs across all nodes
-     reportInterval: 60s    # How often each VM reports
-     numPackages: 700       # Packages per report (514=small, 700=avg, 1500=large)
-     numRepositories: 0     # Repositories per report (0 = use real RHEL repos)
-     statsInterval: 30s     # How often to print stats
-   ```
-
-3. **Deploy the load generator:**
-   ```bash
-   ./run-loadgen.sh
-   ```
-
-4. **Monitor the load:**
-   ```bash
-   # View logs from all pods
-   kubectl -n stackrox logs -f -l app=vsock-loadgen --max-log-requests=10
-
-   # Check Prometheus metrics (if enabled)
-   kubectl -n stackrox port-forward daemonset/vsock-loadgen 9090:9090
-   # Visit: http://localhost:9090/metrics
-   ```
-
-5. **Stop and cleanup:**
-   ```bash
-   kubectl -n stackrox delete daemonset vsock-loadgen
-   kubectl -n stackrox delete configmap vsock-loadgen-config
-   ```
-
-### Advanced Usage
-
-#### Custom Build Options
+## Quick Start
 
 ```bash
-# Build locally without pushing
-./build-loadgen.sh --no-push
+# Build and push image
+cd scripts && ./build-loadgen.sh
 
-# Push without restarting DaemonSet
-./build-loadgen.sh --no-restart
+# Edit config
+vi deploy/loadgen-config.yaml
 
-# Use custom image repository
-export VSOCK_LOADGEN_IMAGE="quay.io/myorg/vsock-loadgen"
-export VSOCK_LOADGEN_TAG="v1.0"
-./build-loadgen.sh
+# Deploy
+./run-loadgen.sh
+
+# Monitor
+kubectl -n stackrox logs -f -l app=vsock-loadgen
+
+# Cleanup
+kubectl -n stackrox delete daemonset vsock-loadgen
+kubectl -n stackrox delete configmap vsock-loadgen-config
 ```
 
-#### Custom Configuration
+## Configuration
 
-```bash
-# Use a custom config file
-./run-loadgen.sh /path/to/custom-config.yaml
+Edit `deploy/loadgen-config.yaml`:
+
+```yaml
+loadgen:
+  vmCount: 1000           # Total VMs across all nodes
+  reportInterval: 60s     # How often each VM reports
+  numPackages: 700        # Packages per report (controls payload size)
+  numRepositories: 0      # 0 = use real RHEL repos
+  statsInterval: 30s
+  port: 818
+  metricsPort: 9090       # 0 to disable
+  requestTimeout: 10s
 ```
 
-## Configuration Reference
+## How It Works
 
-### `loadgen-config.yaml`
+- Deployed as DaemonSet across worker nodes
+- Each pod simulates multiple VMs (goroutines) with unique CIDs
+- CID ranges are automatically partitioned per node (10,000 spacing)
+- Pre-generates payloads at startup for zero per-request overhead
+- Sends protobuf-encoded index reports over vsock to the relay
 
-- **`vmCount`**: Total number of VMs to simulate across ALL nodes (max: 100,000)
-- **`reportInterval`**: Interval at which each VM sends reports (e.g., 30s, 1m, 5m)
-- **`numPackages`**: Number of packages per VM index report (e.g., 514=small, 700=avg, 1500=large)
-- **`numRepositories`**: Number of repositories per report (0 = use real RHEL repos only)
-- **`statsInterval`**: How often to print statistics to logs (e.g., 30s, 1m)
-- **`port`**: Vsock port to connect to (default: 818, relay's listening port)
-- **`metricsPort`**: Prometheus metrics port (default: 9090, 0 to disable)
-- **`requestTimeout`**: Per-request vsock deadline (default: 10s)
+### CID Assignment
 
-## Performance Optimization
-
-The load generator uses several optimizations for high throughput:
-
-1. **Pre-generation**: All index reports are generated and marshaled at startup
-2. **No per-request overhead**: Eliminates protobuf cloning and marshaling during load test
-3. **Realistic timing**: Random initial delays and jittered intervals prevent thundering herd
-4. **Error rate limiting**: Prevents log spam from overwhelming the cluster
+Nodes are sorted alphabetically; each gets a non-overlapping CID range:
+- Node 0: CIDs 3-10002
+- Node 1: CIDs 10003-20002
+- Node 2: CIDs 20003-30002
 
 ## Metrics
 
-When `metricsPort` is enabled (default: 9090), the following Prometheus metrics are exposed:
+When `metricsPort` is enabled:
 
-- `vsock_loadgen_requests_total{result}`: Total requests by result (success/dial/write/etc.)
-- `vsock_loadgen_bytes_total`: Total bytes sent to the relay
-- `vsock_loadgen_request_latency_seconds`: Request latency histogram
+```bash
+kubectl -n stackrox port-forward daemonset/vsock-loadgen 9090:9090
+curl http://localhost:9090/metrics
+```
+
+Available metrics:
+- `vsock_loadgen_requests_total{result}` - request counts
+- `vsock_loadgen_bytes_total` - bytes sent
+- `vsock_loadgen_request_latency_seconds` - latency histogram
 
 ## Troubleshooting
 
-### Pods not starting
-
-Check if vsock device is available:
 ```bash
+# Check pod logs
 kubectl -n stackrox logs -l app=vsock-loadgen
-```
 
-### CID range conflicts
-
-Check node assignments:
-```bash
+# Verify CID assignments
 kubectl -n stackrox logs -l app=vsock-loadgen | grep "assigned CID range"
-```
 
-### Low throughput
-
-- Increase resources in the DaemonSet manifest
-- Check relay service logs for bottlenecks
-- Verify network connectivity between pods and relay
-
-### Metrics not available
-
-Ensure port-forward is set up correctly:
-```bash
-kubectl -n stackrox get pods -l app=vsock-loadgen
-kubectl -n stackrox port-forward <pod-name> 9090:9090
+# Check pod events
+kubectl -n stackrox describe pod -l app=vsock-loadgen
 ```
 
 ## Development
 
-### Building from source
-
 ```bash
-cd /path/to/stackrox
-make compliance/virtualmachines/loadgen
+# Build from source
+go build ./compliance/virtualmachines/loadgen
+
+# Run locally (requires vsock device)
+./loadgen --config /path/to/config.yaml
 ```
-
-### Running locally
-
-```bash
-# Requires vsock device and relay running
-./bin/linux_amd64/loadgen \
-  --vm-count 10 \
-  --report-interval 30s \
-  --num-packages 700 \
-  --port 818
-```
-
-## Related Components
-
-- **Relay** (`../relay/`): The vsock relay service that receives index reports
-- **roxagent** (`../roxagent/`): The agent running inside VMs that creates real index reports
