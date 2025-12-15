@@ -90,7 +90,7 @@ func migrateIndex(dbCtx context.Context, db postgres.DB, indexName string, index
 		return nil
 	}
 
-	// To minimize time without an index and to care for the even of failure forcing a
+	// To minimize time without an index and to care for the event of failure forcing a
 	// rollback which would recreate the hash index if failure occurred after the drop
 	// we are going to create a tmp new one, drop the old one, and then rename the
 	// temp one to minimize risk.
