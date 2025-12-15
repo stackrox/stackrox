@@ -64,8 +64,8 @@ func main() {
 		}(cid)
 	}
 
-	log.Infof("vsock-loadgen starting: vms=%d report-interval=%s duration=%s packages=%d repos=%d cid-range=[%d-%d] port=%d",
-		cidInfo.VMsThisNode, cfg.reportInterval, cfg.duration, cfg.numPackages, cfg.numRepositories, cidInfo.StartCID, cidInfo.EndCID, cfg.port)
+	log.Infof("vsock-loadgen starting: vms=%d report-interval=%s duration=%s packages=%d cid-range=[%d-%d] port=%d",
+		cidInfo.VMsThisNode, cfg.reportInterval, cfg.duration, cfg.numPackages, cidInfo.StartCID, cidInfo.EndCID, cfg.port)
 
 	start := time.Now()
 	ticker := time.NewTicker(cfg.statsInterval)

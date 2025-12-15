@@ -51,9 +51,6 @@ loadgen:
   # Typical values: 514 (small), 700 (average), 1500 (large)
   numPackages: 700
 
-  # Number of repositories per VM index report (0 = use real RHEL repos only)
-  numRepositories: 0
-
   # Stats reporting interval (e.g., 30s, 1m, 5m)
   statsInterval: 30s
 
