@@ -498,11 +498,11 @@ func (l *loopImpl) reprocessImageV2(id string, fetchOpt imageEnricher.FetchOptio
 }
 
 func (l *loopImpl) reprocessImagesV2AndResyncDeployments(fetchOpt imageEnricher.FetchOption,
-	imgReprocessingFunc imageReprocessingFuncV2, imageQuery *v1.Query) {
+	imgReprocessingFunc imageReprocessingFuncV2) {
 	if l.stopSig.IsDone() {
 		return
 	}
-	results, err := l.imagesV2.Search(allAccessCtx, imageQuery)
+	results, err := l.deployments.GetContainerImageResponses(allAccessCtx)
 	if err != nil {
 		log.Errorw("Error searching for active image IDs", logging.Err(err))
 		return
@@ -523,8 +523,7 @@ func (l *loopImpl) reprocessImagesV2AndResyncDeployments(fetchOpt imageEnricher.
 			log.Errorw("Reprocessing stopped", logging.Err(err))
 			return
 		}
-		// Duplicates can exist if the image is within multiple deployments
-		clusterIDSet := set.NewStringSet(result.Matches[imageClusterIDFieldPath]...)
+		clusterIDSet := set.NewStringSet(result.GetClusterIDs()...)
 		go func(id string, clusterIDs set.StringSet) {
 			defer sema.Release(1)
 			defer wg.Add(-1)
@@ -590,7 +589,7 @@ func (l *loopImpl) reprocessImagesV2AndResyncDeployments(fetchOpt imageEnricher.
 					)
 				}
 			}
-		}(result.ID, clusterIDSet)
+		}(result.GetImageID(), clusterIDSet)
 	}
 	select {
 	case <-wg.Done():
@@ -807,7 +806,7 @@ func (l *loopImpl) runReprocessing(imageFetchOpt imageEnricher.FetchOption) {
 	l.reprocessNodes()
 	l.reprocessWatchedImages()
 	if features.FlattenImageData.Enabled() {
-		l.reprocessImagesV2AndResyncDeployments(imageFetchOpt, l.enrichImageV2, allImagesQuery)
+		l.reprocessImagesV2AndResyncDeployments(imageFetchOpt, l.enrichImageV2)
 	} else {
 		l.reprocessImagesAndResyncDeployments(imageFetchOpt, l.enrichImage, allImagesQuery)
 	}
@@ -826,7 +825,7 @@ func (l *loopImpl) runSignatureVerificationReprocessing() {
 
 	if features.FlattenImageData.Enabled() {
 		l.reprocessImagesV2AndResyncDeployments(imageEnricher.ForceRefetchSignaturesOnly,
-			l.forceEnrichImageSignatureVerificationResultsV2, query)
+			l.forceEnrichImageSignatureVerificationResultsV2)
 	} else {
 		l.reprocessImagesAndResyncDeployments(imageEnricher.ForceRefetchSignaturesOnly,
 			l.forceEnrichImageSignatureVerificationResults, query)

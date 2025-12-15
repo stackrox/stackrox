@@ -480,11 +480,6 @@ func (ds *datastoreImpl) GetContainerImageResponses(ctx context.Context) ([]*vie
 	return ds.deploymentStore.GetContainerImageResponses(ctx)
 }
 
-func (ds *datastoreImpl) CountContainerImages(ctx context.Context) (int, error) {
-	defer metrics.SetDatastoreFunctionDuration(time.Now(), "Deployment", "CountContainerImages")
-	return ds.deploymentStore.CountContainerImages(ctx)
-}
-
 type DeploymentSearchResultConverter struct{}
 
 func (c *DeploymentSearchResultConverter) BuildName(result *pkgSearch.Result) string {

@@ -17,7 +17,6 @@ import (
 	"github.com/stackrox/rox/pkg/sac/resources"
 	pkgSearch "github.com/stackrox/rox/pkg/search"
 	pgSearch "github.com/stackrox/rox/pkg/search/postgres"
-	"github.com/stackrox/rox/pkg/search/postgres/aggregatefunc"
 	"gorm.io/gorm"
 )
 
@@ -94,36 +93,6 @@ func (f *fullStoreImpl) GetContainerImageResponses(ctx context.Context) ([]*view
 	}
 
 	return results, nil
-}
-
-type containerImageCount struct {
-	ImageIDCount int `db:"image_id_count"`
-}
-
-func (f *fullStoreImpl) CountContainerImages(ctx context.Context) (int, error) {
-	q, err := common.WithSACFilter(ctx, resources.Deployment, pkgSearch.EmptyQuery())
-	if err != nil {
-		return 0, err
-	}
-	q.Selects = []*v1.QuerySelect{
-		pkgSearch.NewQuerySelect(pkgSearch.ImageID).AggrFunc(aggregatefunc.Count).Distinct().Proto(),
-	}
-
-	queryCtx, cancel := contextutil.ContextWithTimeoutIfNotExists(ctx, queryTimeout)
-	defer cancel()
-
-	var result *containerImageCount
-	err = pgSearch.RunSelectRequestForSchemaFn(queryCtx, f.db, pkgSchema.DeploymentsSchema, q, func(response *containerImageCount) error {
-		result = response
-		return nil
-	})
-	if err != nil {
-		return 0, err
-	}
-	if result == nil {
-		return 0, nil
-	}
-	return result.ImageIDCount, nil
 }
 
 // NewFullTestStore is used for testing.

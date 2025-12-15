@@ -24,6 +24,7 @@ import (
 	"github.com/stackrox/rox/pkg/search/postgres"
 	"github.com/stackrox/rox/pkg/search/postgres/aggregatefunc"
 	"github.com/stackrox/rox/pkg/search/scoped"
+	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -451,6 +452,7 @@ func TestSelectQueryOnDeployments(t *testing.T) {
 }
 
 func TestContainerImagesView(t *testing.T) {
+	testutils.MustUpdateFeature(t, features.FlattenImageData, true)
 	ctx := sac.WithAllAccess(context.Background())
 	testDB := pgtest.ForT(t)
 
@@ -596,11 +598,4 @@ func TestContainerImagesView(t *testing.T) {
 	assert.Contains(t, responseMap, uniqueImageIDV2)
 	assert.ElementsMatch(t, []string{cluster2}, responseMap[uniqueImageIDV2],
 		"uniqueImageIDV2 should be only in cluster2")
-
-	// Test CountContainerImages
-	count, err := deploymentDS.CountContainerImages(ctx)
-	require.NoError(t, err)
-
-	// Expected: 3 distinct images despite having 7 containers across 4 deployments in 2 clusters
-	assert.Equal(t, 3, count, "Should be 3 distinct container image IDs")
 }

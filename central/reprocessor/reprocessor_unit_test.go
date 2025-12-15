@@ -7,6 +7,8 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
+	mockDeploymentDataStore "github.com/stackrox/rox/central/deployment/datastore/mocks"
+	"github.com/stackrox/rox/central/deployment/views"
 	mockImageDataStore "github.com/stackrox/rox/central/image/datastore/mocks"
 	mockImageV2DataStore "github.com/stackrox/rox/central/imagev2/datastore/mocks"
 	nodeDatastoreMocks "github.com/stackrox/rox/central/node/datastore/mocks"
@@ -535,15 +537,13 @@ func TestReprocessImagesV2AndResyncDeployments_SkipBrokenSensor(t *testing.T) {
 		}
 	}
 
-	results := []search.Result{}
+	containerImageResponses := []*views.ContainerImagesResponse{}
 	for _, img := range imgs {
-		results = append(results, search.Result{
-			ID: img.GetId(),
-			Matches: map[string][]string{
-				// Last character of image ID is the cluster.
-				imageClusterIDFieldPath: {img.GetId()[len(img.GetId())-1:]},
-			}},
-		)
+		containerImageResponses = append(containerImageResponses, &views.ContainerImagesResponse{
+			ImageIDV2: img.GetId(),
+			// Last character of image ID is the cluster.
+			ClusterIDs: []string{img.GetId()[len(img.GetId())-1:]},
+		})
 	}
 
 	newReprocessorLoop := func(t *testing.T) (*loopImpl, *connectionMocks.MockSensorConnection, *connectionMocks.MockSensorConnection) {
@@ -552,6 +552,7 @@ func TestReprocessImagesV2AndResyncDeployments_SkipBrokenSensor(t *testing.T) {
 		connA := connectionMocks.NewMockSensorConnection(ctrl)
 		connB := connectionMocks.NewMockSensorConnection(ctrl)
 		connManager := connectionMocks.NewMockManager(ctrl)
+		deploymentDS := mockDeploymentDataStore.NewMockDataStore(ctrl)
 		imageDS := mockImageV2DataStore.NewMockDataStore(ctrl)
 		riskManager := riskManagerMocks.NewMockManager(ctrl)
 
@@ -563,7 +564,7 @@ func TestReprocessImagesV2AndResyncDeployments_SkipBrokenSensor(t *testing.T) {
 		connManager.EXPECT().GetActiveConnections().Return([]connection.SensorConnection{connA, connB})
 		connManager.EXPECT().AllSensorsHaveCapability(gomock.Any()).AnyTimes().Return(false)
 
-		imageDS.EXPECT().Search(gomock.Any(), gomock.Any()).AnyTimes().Return(results, nil)
+		deploymentDS.EXPECT().GetContainerImageResponses(gomock.Any()).AnyTimes().Return(containerImageResponses, nil)
 		for _, img := range imgs {
 			imageDS.EXPECT().GetImage(gomock.Any(), img.GetId()).AnyTimes().Return(img, true, nil)
 			imageDS.EXPECT().GetImageNames(gomock.Any(), img.GetDigest()).
@@ -574,6 +575,7 @@ func TestReprocessImagesV2AndResyncDeployments_SkipBrokenSensor(t *testing.T) {
 		riskManager.EXPECT().CalculateRiskAndUpsertImageV2(gomock.Any()).AnyTimes().Return(nil)
 
 		testLoop := &loopImpl{
+			deployments: deploymentDS,
 			imagesV2:    imageDS,
 			risk:        riskManager,
 			connManager: connManager,
@@ -603,7 +605,7 @@ func TestReprocessImagesV2AndResyncDeployments_SkipBrokenSensor(t *testing.T) {
 		connA.EXPECT().InjectMessage(gomock.Any(), reprocessDeploymentsTypeCond).Times(1).Return(nil)
 		connB.EXPECT().InjectMessage(gomock.Any(), reprocessDeploymentsTypeCond).Times(1).Return(nil)
 
-		testLoop.reprocessImagesV2AndResyncDeployments(0, reprocessFuncUpdate, nil)
+		testLoop.reprocessImagesV2AndResyncDeployments(0, reprocessFuncUpdate)
 	})
 
 	t.Run("skip some messages when are broken clusters", func(t *testing.T) {
@@ -618,7 +620,7 @@ func TestReprocessImagesV2AndResyncDeployments_SkipBrokenSensor(t *testing.T) {
 		// No reprocess deployments message is sent due to previous failures.
 		connB.EXPECT().InjectMessage(gomock.Any(), reprocessDeploymentsTypeCond).Times(0).Return(nil)
 
-		testLoop.reprocessImagesV2AndResyncDeployments(0, reprocessFuncUpdate, nil)
+		testLoop.reprocessImagesV2AndResyncDeployments(0, reprocessFuncUpdate)
 	})
 }
 
