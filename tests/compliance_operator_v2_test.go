@@ -42,7 +42,7 @@ const (
 var (
 	scanName        = "sync-test"
 	initialProfiles = []string{"ocp4-cis"}
-	updatedProfiles = []string{"ocp4-cis-1-4", "ocp4-cis-node-1-4"}
+	updatedProfiles = []string{"ocp4-high", "ocp4-cis-node"}
 	initialSchedule = &v2.Schedule{
 		Hour:         12,
 		Minute:       0,
