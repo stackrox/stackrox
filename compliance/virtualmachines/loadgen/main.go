@@ -4,9 +4,10 @@ import (
 	"context"
 	"os"
 	"os/signal"
-	"sync"
 	"syscall"
 	"time"
+
+	"github.com/stackrox/rox/pkg/sync"
 )
 
 func main() {

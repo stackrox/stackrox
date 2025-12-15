@@ -1,11 +1,11 @@
 package main
 
 import (
-	"sync"
 	"sync/atomic"
 	"time"
 
 	"github.com/HdrHistogram/hdrhistogram-go"
+	"github.com/stackrox/rox/pkg/sync"
 )
 
 type statsCollector struct {

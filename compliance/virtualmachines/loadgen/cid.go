@@ -2,8 +2,9 @@ package main
 
 import (
 	"context"
+	"errors"
 	"fmt"
-	"sort"
+	"slices"
 )
 
 const (
@@ -39,10 +40,10 @@ func calculateCIDRange(ctx context.Context, nodeName string, vmCountTotal int) (
 
 func computeCIDRange(nodeNames []string, nodeName string, vmCountTotal int) (cidRange, error) {
 	if len(nodeNames) == 0 {
-		return cidRange{}, fmt.Errorf("no worker nodes found")
+		return cidRange{}, errors.New("no worker nodes found")
 	}
 
-	sort.Strings(nodeNames)
+	slices.Sort(nodeNames)
 	totalNodes := len(nodeNames)
 
 	nodeIndex := -1
