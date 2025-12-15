@@ -846,7 +846,6 @@ module.exports = [
             'src/Components/ReactSelect/ReactSelect.jsx', // deprecated
             'src/Components/URLSearchInputWithAutocomplete.jsx', // deprecated
             'src/Containers/Compliance/**', // deprecated
-            'src/Containers/SystemConfig/Details/components/PrometheusMetricsCard.tsx', // prevent merge conflict with 17937
             'src/Containers/VulnMgmt/**', // deprecated
             'src/init/initializeAnalytics.js', // generated from segment api
             'src/sagas/authSagas.js', // deprecated

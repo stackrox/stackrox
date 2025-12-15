@@ -172,8 +172,8 @@ function hasMetric(
     metric: string,
     labels: PrometheusMetricsLabels
 ): boolean {
-    const cfgLabels = descriptors?.[metric]?.labels || [];
-    const cfgFilters = descriptors?.[metric]?.filters || {};
+    const cfgLabels = descriptors?.[metric]?.labels ?? [];
+    const cfgFilters = descriptors?.[metric]?.filters ?? {};
     const ll = labels.labels;
     const lf = labels.filters;
     return (
@@ -261,7 +261,7 @@ function PrometheusMetricsTable({
                         return null;
                     }
                 )}
-                {Object.entries(descriptors || {}).map(([metric, labels]) => {
+                {Object.entries(descriptors ?? {}).map(([metric, labels]) => {
                     // Predefined are rendered above.
                     if (hasMetric(predefinedMetrics[category], metric, labels)) {
                         return null;
