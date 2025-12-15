@@ -30,7 +30,7 @@ const (
 	tmpDeploymentIndex = "processindicators_deploymentid_tmp"
 	deploymentColumn   = "deploymentid"
 
-	dropIndex   = "DROP INDEX if exists %s"
+	dropIndex   = "DROP INDEX IF EXISTS %s"
 	createIndex = "CREATE INDEX IF NOT EXISTS %s ON %s USING BTREE (%s)"
 	renameIndex = "ALTER INDEX IF EXISTS %s RENAME TO %s"
 )
