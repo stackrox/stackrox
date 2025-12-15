@@ -215,7 +215,8 @@ func (c *cacheValue) scanAndSetWithLock(ctx context.Context, svc v1.ImageService
 	defer c.lock.Unlock()
 
 	// Check to see if another routine already enriched this name, if so, short circuit.
-	if protoutils.SliceContains(req.containerImage.GetName(), c.image.GetNames()) {
+	// For flattened images, we want to scan for each image name separately.
+	if !centralcaps.Has(centralsensor.FlattenImageData) && protoutils.SliceContains(req.containerImage.GetName(), c.image.GetNames()) {
 		log.Debugf("Image scan loaded from cache %q (ID %q): Components: (%d) - short circuit", req.containerImage.GetName().GetFullName(), req.containerImage.GetId(), len(c.image.GetScan().GetComponents()))
 		return
 	}
