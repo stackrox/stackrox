@@ -11,13 +11,11 @@ import (
 )
 
 func TestShouldAdoptResource(t *testing.T) {
-	tests := []struct {
-		name     string
+	tests := map[string]struct {
 		obj      metav1.Object
 		expected bool
 	}{
-		{
-			name: "should adopt - has operator managed-by label, no ownerReferences",
+		"should adopt - has operator managed-by label, no ownerReferences": {
 			obj: &corev1.Secret{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "test-secret",
@@ -29,8 +27,7 @@ func TestShouldAdoptResource(t *testing.T) {
 			},
 			expected: true,
 		},
-		{
-			name: "should not adopt - no labels",
+		"should not adopt - no labels": {
 			obj: &corev1.Secret{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "test-secret",
@@ -39,8 +36,7 @@ func TestShouldAdoptResource(t *testing.T) {
 			},
 			expected: false,
 		},
-		{
-			name: "should not adopt - managed by sensor",
+		"should not adopt - managed by sensor": {
 			obj: &corev1.Secret{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "test-secret",
@@ -52,8 +48,7 @@ func TestShouldAdoptResource(t *testing.T) {
 			},
 			expected: false,
 		},
-		{
-			name: "should not adopt - has ownerReference",
+		"should not adopt - has ownerReference": {
 			obj: &corev1.Secret{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "test-secret",
@@ -75,8 +70,8 @@ func TestShouldAdoptResource(t *testing.T) {
 		},
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
 			result := ShouldAdoptResource(tt.obj)
 			assert.Equal(t, tt.expected, result)
 		})
