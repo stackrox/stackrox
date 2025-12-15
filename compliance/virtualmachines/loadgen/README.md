@@ -31,7 +31,6 @@ loadgen:
   vmCount: 1000           # Total VMs across all nodes
   reportInterval: 60s     # How often each VM reports
   numPackages: 700        # Packages per report (controls payload size)
-  numRepositories: 0      # 0 = use real RHEL repos
   statsInterval: 30s
   port: 818
   metricsPort: 9090       # 0 to disable

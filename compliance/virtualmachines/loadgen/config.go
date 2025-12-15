@@ -14,8 +14,7 @@ type config struct {
 	vmCount  int
 	duration time.Duration
 
-	numPackages     int
-	numRepositories int
+	numPackages int
 
 	port           uint
 	metricsPort    int
@@ -27,10 +26,9 @@ type config struct {
 // yamlConfig represents the structure of the YAML config file.
 type yamlConfig struct {
 	Loadgen struct {
-		VmCount         int    `yaml:"vmCount"`
-		NumPackages     int    `yaml:"numPackages"`
-		NumRepositories int    `yaml:"numRepositories"`
-		StatsInterval   string `yaml:"statsInterval"`
+		VmCount       int    `yaml:"vmCount"`
+		NumPackages   int    `yaml:"numPackages"`
+		StatsInterval string `yaml:"statsInterval"`
 		Port            uint   `yaml:"port"`
 		MetricsPort     int    `yaml:"metricsPort"`
 		RequestTimeout  string `yaml:"requestTimeout,omitempty"`
@@ -73,11 +71,10 @@ func loadYAMLConfig(path string) (*yamlConfig, error) {
 
 func configFromYAML(yamlCfg *yamlConfig) config {
 	cfg := config{
-		vmCount:         yamlCfg.Loadgen.VmCount,
-		numPackages:     yamlCfg.Loadgen.NumPackages,
-		numRepositories: yamlCfg.Loadgen.NumRepositories,
-		port:            yamlCfg.Loadgen.Port,
-		metricsPort:     yamlCfg.Loadgen.MetricsPort,
+		vmCount:     yamlCfg.Loadgen.VmCount,
+		numPackages: yamlCfg.Loadgen.NumPackages,
+		port:        yamlCfg.Loadgen.Port,
+		metricsPort: yamlCfg.Loadgen.MetricsPort,
 	}
 
 	// Apply defaults
@@ -142,7 +139,7 @@ func validateConfig(cfg config) {
 }
 
 func createReportGenerator(cfg config) (*vmindexreport.Generator, error) {
-	generator := vmindexreport.NewGenerator(cfg.numPackages, cfg.numRepositories)
+	generator := vmindexreport.NewGeneratorWithSeed(cfg.numPackages, 0)
 	log.Infof("Created report generator with %d packages, %d repositories",
 		generator.NumPackages(), generator.NumRepositories())
 	return generator, nil
