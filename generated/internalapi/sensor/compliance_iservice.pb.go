@@ -543,11 +543,11 @@ type MsgToCompliance_AuditLogCollectionRequest_ struct {
 }
 
 type MsgToCompliance_Ack struct {
-	Ack *MsgToCompliance_NodeInventoryACK `protobuf:"bytes,4,opt,name=ack,proto3,oneof"` // Deprecated, kept for compatibility
+	Ack *MsgToCompliance_NodeInventoryACK `protobuf:"bytes,4,opt,name=ack,proto3,oneof"` // Deprecated in favor of ComplianceACK.
 }
 
 type MsgToCompliance_ComplianceAck struct {
-	ComplianceAck *MsgToCompliance_ComplianceACK `protobuf:"bytes,5,opt,name=compliance_ack,json=complianceAck,proto3,oneof"` // Use this instead
+	ComplianceAck *MsgToCompliance_ComplianceACK `protobuf:"bytes,5,opt,name=compliance_ack,json=complianceAck,proto3,oneof"`
 }
 
 func (*MsgToCompliance_Config) isMsgToCompliance_Msg() {}
