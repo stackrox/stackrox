@@ -95,10 +95,7 @@ func migrateIndex(dbCtx context.Context, db postgres.DB, indexName string, index
 	// we are going to create a tmp new one, drop the old one, and then rename the
 	// temp one to minimize risk.
 
-	// create the new index concurrently
-	// Note: this is not really necessary because the indexes will be created when the
-	// schema updates are processed, HOWEVER, that will not create the indexes
-	// concurrently; we want to do them concurrently in this case for performance reasons.
+	// create the new index
 	createStatement := fmt.Sprintf(createIndex, tmpIndexName, tableName, indexColumn)
 	_, err := db.Exec(ctx, createStatement)
 	if err != nil {
