@@ -172,12 +172,12 @@ linters:
       - linters:
           - wrapcheck
         # The exclusion for pkg was changed from folder-wide to all subfolders except pkg/virtualmachines
-        # Packages that start with `pkg/v...` need to be explicitly added to the paths below (as needed).  
+        # Packages that start with `pkg/v...` need to be explicitly added to the paths below (as needed).
         path: ^(central|compliance|integration-tests|local|migrator|operator|pkg/[abcdefghijklmnopqrstuwxz](.*)|pkg/v2backuprestore|pkg/version|scanner|sensor/tests/helper|tests|tools|scale)/
       - linters:
           - forbidigo
         # The exclusion for pkg was changed from folder-wide to all subfolders except pkg/virtualmachines
-        # Packages that start with `pkg/v...` need to be explicitly added to the paths below (as needed).  
+        # Packages that start with `pkg/v...` need to be explicitly added to the paths below (as needed).
         path: (central/graphql/schema/print|compliance|integration-tests|local|migrator|operator|pkg/[abcdefghijklmnopqrstuwxz](.*)|pkg/v2backuprestore|pkg/version|scanner|sensor|tests|tools|scale|govulncheck|compliance/virtualmachines/agent)/
       - linters:
           - forbidigo
