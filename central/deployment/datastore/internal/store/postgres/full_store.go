@@ -95,6 +95,47 @@ func (f *fullStoreImpl) GetContainerImageResponses(ctx context.Context) ([]*view
 	return results, nil
 }
 
+const (
+	// Query to get the serialized deployment that contains a container with the given image ID.
+	// The deployments_containers table doesn't have a serialized column, but the parent
+	// deployments table does, so we join to get the full deployment data.
+	getDeploymentByContainerImageIDStmt = `
+		SELECT d.serialized
+		FROM deployments d
+		INNER JOIN deployments_containers dc ON d.id = dc.deployments_id
+		WHERE dc.image_idv2 = $1
+		LIMIT 1
+	`
+)
+
+// GetDeploymentContainer queries the deployments table by image ID and returns
+// the container with all fields populated from the serialized deployment data.
+func (f *fullStoreImpl) GetDeploymentContainer(ctx context.Context, imageID string) (*storage.Container, error) {
+	queryCtx, cancel := contextutil.ContextWithTimeoutIfNotExists(ctx, queryTimeout)
+	defer cancel()
+
+	row := f.db.QueryRow(queryCtx, getDeploymentByContainerImageIDStmt, imageID)
+
+	var data []byte
+	if err := row.Scan(&data); err != nil {
+		return nil, err
+	}
+
+	var deployment storage.Deployment
+	if err := deployment.UnmarshalVTUnsafe(data); err != nil {
+		return nil, err
+	}
+
+	// Find the container with the matching image ID
+	for _, container := range deployment.GetContainers() {
+		if container.GetImage().GetIdV2() == imageID {
+			return container, nil
+		}
+	}
+
+	return nil, nil
+}
+
 // NewFullTestStore is used for testing.
 func NewFullTestStore(ctx context.Context, _ testing.TB, store Store, db postgres.DB, gormDB *gorm.DB) store.Store {
 	pkgSchema.ApplySchemaForTable(ctx, gormDB, baseTable)
