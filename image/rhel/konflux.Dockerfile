@@ -64,6 +64,7 @@ RUN dnf install \
     --installroot=/out/ \
     --releasever=8 \
     --setopt=install_weak_deps=0 \
+    --setopt=reposdir=/etc/yum.repos.d/ \
     --nodocs \
     --nogpgcheck \
     -y \
