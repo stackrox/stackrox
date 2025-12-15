@@ -90,7 +90,9 @@ func (e *enforcer) ProcessAlertResults(action central.ResourceAction, stage stor
 			numProcesses := len(a.GetProcessViolation().GetProcesses())
 			numFileAccesses := len(a.GetFileAccessViolation().GetAccesses())
 
-			if numProcesses != 1 && numFileAccesses != 1 {
+			if (numProcesses == 1) == (numFileAccesses == 1) {
+				// expect a single process XOR a single file access. one or the
+				// other but not neither or both.
 				log.Errorf("Runtime alert on policy %q and deployment %q has %d process violations and %d file violations. Expected only 1 of either", a.GetPolicy().GetName(), a.GetDeployment().GetName(), numProcesses, numFileAccesses)
 				continue
 			}
@@ -98,9 +100,7 @@ func (e *enforcer) ProcessAlertResults(action central.ResourceAction, stage stor
 			var podId string
 			if numProcesses == 1 {
 				podId = a.GetProcessViolation().GetProcesses()[0].GetPodId()
-			}
-
-			if numFileAccesses == 1 {
+			} else if numFileAccesses == 1 {
 				podId = a.GetFileAccessViolation().GetAccesses()[0].GetProcess().GetPodId()
 			}
 
