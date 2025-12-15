@@ -26,13 +26,14 @@ type config struct {
 // yamlConfig represents the structure of the YAML config file.
 type yamlConfig struct {
 	Loadgen struct {
-		VmCount       int    `yaml:"vmCount"`
-		NumPackages   int    `yaml:"numPackages"`
-		StatsInterval string `yaml:"statsInterval"`
-		Port            uint   `yaml:"port"`
-		MetricsPort     int    `yaml:"metricsPort"`
-		RequestTimeout  string `yaml:"requestTimeout,omitempty"`
-		ReportInterval  string `yaml:"reportInterval,omitempty"`
+		VmCount        int    `yaml:"vmCount"`
+		NumPackages    int    `yaml:"numPackages"`
+		StatsInterval  string `yaml:"statsInterval"`
+		Port           uint   `yaml:"port"`
+		MetricsPort    int    `yaml:"metricsPort"`
+		RequestTimeout string `yaml:"requestTimeout,omitempty"`
+		ReportInterval string `yaml:"reportInterval,omitempty"`
+		Duration       string `yaml:"duration,omitempty"`
 	} `yaml:"loadgen"`
 }
 
@@ -114,6 +115,13 @@ func configFromYAML(yamlCfg *yamlConfig) config {
 	}
 	if cfg.reportInterval == 0 {
 		cfg.reportInterval = 30 * time.Second
+	}
+
+	// Parse optional duration (0 means run indefinitely)
+	if yamlCfg.Loadgen.Duration != "" {
+		if d, err := time.ParseDuration(yamlCfg.Loadgen.Duration); err == nil {
+			cfg.duration = d
+		}
 	}
 
 	return cfg

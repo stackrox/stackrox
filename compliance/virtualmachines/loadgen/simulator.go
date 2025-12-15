@@ -9,7 +9,6 @@ import (
 	"time"
 
 	"github.com/mdlayher/vsock"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/logging"
 )
 
@@ -34,7 +33,7 @@ func simulateVM(ctx context.Context, cid uint32, cfg config, provider *payloadPr
 	case <-time.After(initialDelay):
 	}
 
-	sendVMReport(cid, payload, cfg.requestTimeout, stats, metrics)
+	sendVMReport(cid, payload, cfg.port, cfg.requestTimeout, stats, metrics)
 
 	for {
 		// Add ±5% jitter to report interval
@@ -45,14 +44,14 @@ func simulateVM(ctx context.Context, cid uint32, cfg config, provider *payloadPr
 		case <-ctx.Done():
 			return
 		case <-time.After(nextInterval):
-			sendVMReport(cid, payload, cfg.requestTimeout, stats, metrics)
+			sendVMReport(cid, payload, cfg.port, cfg.requestTimeout, stats, metrics)
 		}
 	}
 }
 
-func sendVMReport(cid uint32, payload []byte, timeout time.Duration, stats *statsCollector, metrics *metricsRegistry) {
+func sendVMReport(cid uint32, payload []byte, port uint, timeout time.Duration, stats *statsCollector, metrics *metricsRegistry) {
 	start := time.Now()
-	err := sendReport(payload, timeout)
+	err := sendReport(payload, port, timeout)
 	latency := time.Since(start)
 
 	if err != nil {
@@ -70,8 +69,7 @@ func sendVMReport(cid uint32, payload []byte, timeout time.Duration, stats *stat
 	stats.recordSuccess(latency, len(payload))
 }
 
-func sendReport(payload []byte, timeout time.Duration) error {
-	port := env.VirtualMachinesVsockPort.IntegerSetting()
+func sendReport(payload []byte, port uint, timeout time.Duration) error {
 	conn, err := vsock.Dial(vsock.Local, uint32(port), &vsock.Config{})
 	if err != nil {
 		return fmt.Errorf("dial: %w", err)
