@@ -40,36 +40,21 @@ type yamlConfig struct {
 
 func parseConfig() config {
 	var configFile string
-	var cfg config
-
-	flag.StringVar(&configFile, "config", "", "Path to YAML config file")
-	flag.IntVar(&cfg.vmCount, "vm-count", 50, "Number of VMs to simulate")
-	flag.DurationVar(&cfg.duration, "duration", 0, "Stop after this duration (0 = unbounded)")
-
-	flag.IntVar(&cfg.numPackages, "num-packages", 700, "Number of packages per VM index report")
-	flag.IntVar(&cfg.numRepositories, "num-repositories", 0, "Number of repositories per VM index report (0 = use real RHEL repos)")
-
-	flag.UintVar(&cfg.port, "port", 818, "Vsock port for the relay")
-	flag.IntVar(&cfg.metricsPort, "metrics-port", 9090, "Expose Prometheus metrics on this port (0 = disabled)")
-	flag.DurationVar(&cfg.statsInterval, "stats-interval", 10*time.Second, "Console stats interval")
-	flag.DurationVar(&cfg.requestTimeout, "request-timeout", 10*time.Second, "Per-request vsock deadline")
-	flag.DurationVar(&cfg.reportInterval, "report-interval", 30*time.Second, "Interval at which each VM sends reports")
+	flag.StringVar(&configFile, "config", "", "Path to YAML config file (required)")
 	flag.Parse()
 
-	setFlags := make(map[string]bool)
-	flag.Visit(func(f *flag.Flag) {
-		setFlags[f.Name] = true
-	})
-
-	if configFile != "" {
-		yamlCfg, err := loadYAMLConfig(configFile)
-		if err != nil {
-			log.Errorf("loading config file: %v", err)
-			os.Exit(1)
-		}
-		applyYAMLConfig(&cfg, yamlCfg, setFlags)
+	if configFile == "" {
+		log.Error("--config flag is required")
+		os.Exit(1)
 	}
 
+	yamlCfg, err := loadYAMLConfig(configFile)
+	if err != nil {
+		log.Errorf("loading config file: %v", err)
+		os.Exit(1)
+	}
+
+	cfg := configFromYAML(yamlCfg)
 	validateConfig(cfg)
 	return cfg
 }
@@ -86,54 +71,72 @@ func loadYAMLConfig(path string) (*yamlConfig, error) {
 	return &cfg, nil
 }
 
-func applyYAMLConfig(cfg *config, yamlCfg *yamlConfig, setFlags map[string]bool) {
-	if !setFlags["vm-count"] && yamlCfg.Loadgen.VmCount > 0 {
-		cfg.vmCount = yamlCfg.Loadgen.VmCount
+func configFromYAML(yamlCfg *yamlConfig) config {
+	cfg := config{
+		vmCount:         yamlCfg.Loadgen.VmCount,
+		numPackages:     yamlCfg.Loadgen.NumPackages,
+		numRepositories: yamlCfg.Loadgen.NumRepositories,
+		port:            yamlCfg.Loadgen.Port,
+		metricsPort:     yamlCfg.Loadgen.MetricsPort,
 	}
-	if !setFlags["num-packages"] && yamlCfg.Loadgen.NumPackages > 0 {
-		cfg.numPackages = yamlCfg.Loadgen.NumPackages
+
+	// Apply defaults
+	if cfg.vmCount == 0 {
+		cfg.vmCount = 50
 	}
-	if !setFlags["num-repositories"] && yamlCfg.Loadgen.NumRepositories > 0 {
-		cfg.numRepositories = yamlCfg.Loadgen.NumRepositories
+	if cfg.numPackages == 0 {
+		cfg.numPackages = 700
 	}
-	if !setFlags["port"] && yamlCfg.Loadgen.Port > 0 {
-		cfg.port = yamlCfg.Loadgen.Port
+	if cfg.port == 0 {
+		cfg.port = 818
 	}
-	if !setFlags["metrics-port"] {
-		cfg.metricsPort = yamlCfg.Loadgen.MetricsPort
-	}
-	if !setFlags["stats-interval"] && yamlCfg.Loadgen.StatsInterval != "" {
+
+	// Parse durations with defaults
+	if yamlCfg.Loadgen.StatsInterval != "" {
 		if d, err := time.ParseDuration(yamlCfg.Loadgen.StatsInterval); err == nil {
 			cfg.statsInterval = d
 		}
 	}
-	if !setFlags["request-timeout"] && yamlCfg.Loadgen.RequestTimeout != "" {
+	if cfg.statsInterval == 0 {
+		cfg.statsInterval = 10 * time.Second
+	}
+
+	if yamlCfg.Loadgen.RequestTimeout != "" {
 		if d, err := time.ParseDuration(yamlCfg.Loadgen.RequestTimeout); err == nil {
 			cfg.requestTimeout = d
 		}
 	}
-	if !setFlags["report-interval"] && yamlCfg.Loadgen.ReportInterval != "" {
+	if cfg.requestTimeout == 0 {
+		cfg.requestTimeout = 10 * time.Second
+	}
+
+	if yamlCfg.Loadgen.ReportInterval != "" {
 		if d, err := time.ParseDuration(yamlCfg.Loadgen.ReportInterval); err == nil {
 			cfg.reportInterval = d
 		}
 	}
+	if cfg.reportInterval == 0 {
+		cfg.reportInterval = 30 * time.Second
+	}
+
+	return cfg
 }
 
 func validateConfig(cfg config) {
 	if cfg.vmCount <= 0 {
-		log.Error("vm-count must be > 0")
+		log.Error("vmCount must be > 0")
 		os.Exit(1)
 	}
 	if cfg.vmCount > 100000 {
-		log.Error("vm-count must be <= 100000")
+		log.Error("vmCount must be <= 100000")
 		os.Exit(1)
 	}
 	if cfg.reportInterval <= 0 {
-		log.Error("report-interval must be > 0")
+		log.Error("reportInterval must be > 0")
 		os.Exit(1)
 	}
 	if cfg.numPackages <= 0 {
-		log.Error("num-packages must be > 0")
+		log.Error("numPackages must be > 0")
 		os.Exit(1)
 	}
 }
