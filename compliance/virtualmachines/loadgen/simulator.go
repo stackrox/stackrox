@@ -15,9 +15,9 @@ import (
 
 var log = logging.LoggerForModule()
 
-// vmSimulator simulates a single VM sending index reports periodically.
+// simulateVM simulates a single VM sending index reports periodically.
 // It staggers the initial delay and adds jitter to report intervals.
-func vmSimulator(ctx context.Context, cid uint32, cfg config, provider *payloadProvider, stats *statsCollector, metrics *metricsRegistry) {
+func simulateVM(ctx context.Context, cid uint32, cfg config, provider *payloadProvider, stats *statsCollector, metrics *metricsRegistry) {
 	payload, err := provider.get(cid)
 	if err != nil {
 		log.Errorf("VM[%d]: failed to get payload: %v", cid, err)

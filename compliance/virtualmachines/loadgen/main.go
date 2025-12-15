@@ -60,7 +60,7 @@ func main() {
 		wg.Add(1)
 		go func(vmCID uint32) {
 			defer wg.Done()
-			vmSimulator(ctx, vmCID, cfg, payloads, stats, metrics)
+			simulateVM(ctx, vmCID, cfg, payloads, stats, metrics)
 		}(cid)
 	}
 
