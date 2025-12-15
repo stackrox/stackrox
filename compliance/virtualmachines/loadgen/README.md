@@ -78,13 +78,3 @@ kubectl -n stackrox logs -l app=vsock-loadgen | grep "assigned CID range"
 # Check pod events
 kubectl -n stackrox describe pod -l app=vsock-loadgen
 ```
-
-## Development
-
-```bash
-# Build from source
-go build ./compliance/virtualmachines/loadgen
-
-# Run locally (requires vsock device)
-./loadgen --config /path/to/config.yaml
-```
