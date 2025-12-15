@@ -3,7 +3,7 @@ package virtualmachine
 import (
 	"fmt"
 
-	"github.com/google/uuid"
+	"github.com/stackrox/rox/pkg/uuid"
 )
 
 const (
@@ -16,7 +16,7 @@ const (
 // generating deterministic VM IDs via UUID v5 (SHA-1 based). We use the DNS namespace
 // as a base and hash "vm-cid-{CID}" to produce stable, reproducible UUIDs.
 // Hoisted to package-level to avoid re-parsing on each call.
-var testModeNamespaceUUID = uuid.MustParse("6ba7b810-9dad-11d1-80b4-00c04fd430c8")
+var testModeNamespaceUUID = uuid.FromStringOrPanic("6ba7b810-9dad-11d1-80b4-00c04fd430c8")
 
 // GenerateTestModeVMID creates a deterministic UUID v5 (SHA-1 based) for a vsock CID.
 // Uses the DNS namespace UUID as the namespace and "vm-cid-{CID}" as the name,
@@ -26,7 +26,7 @@ var testModeNamespaceUUID = uuid.MustParse("6ba7b810-9dad-11d1-80b4-00c04fd430c8
 //
 // Both components must use this function to ensure VM IDs match.
 func GenerateTestModeVMID(cid uint32) string {
-	return uuid.NewSHA1(testModeNamespaceUUID, []byte(fmt.Sprintf("vm-cid-%d", cid))).String()
+	return uuid.NewV5(testModeNamespaceUUID, fmt.Sprintf("vm-cid-%d", cid)).String()
 }
 
 // GenerateTestModeVMName returns the standard name for a test mode VM based on its CID.
