@@ -51,7 +51,7 @@ func getKeyTestCases() []getKeyTestCase {
 			expectedWithFlattenImgCap:    Key("docker.io/library/nginx:latest"),
 		},
 		{
-			name: "image with different name and ID",
+			name: "image with ID and imageName2 returns ID as key without cap, UUID V5 with cap",
 			image: &storage.ContainerImage{
 				Id:   "sha256:def456",
 				Name: imageName2,
