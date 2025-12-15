@@ -10,7 +10,6 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-
 // TestShouldResetBackoff tests the backoff reset decision logic
 func TestShouldResetBackoff(t *testing.T) {
 	tests := []struct {
@@ -46,7 +45,6 @@ func TestShouldResetBackoff(t *testing.T) {
 		})
 	}
 }
-
 
 // TestHandleBackoffOnConnectionStop tests the backoff management logic on connection stop
 func TestHandleBackoffOnConnectionStop(t *testing.T) {
@@ -101,7 +99,7 @@ func TestHandleBackoffOnConnectionStop(t *testing.T) {
 			exponential.MaxInterval = 5 * time.Minute
 			exponential.MaxElapsedTime = 0
 			exponential.RandomizationFactor = 0 // Disable randomization for deterministic testing
-			exponential.Multiplier = 2           // Explicit multiplier for doubling
+			exponential.Multiplier = 2          // Explicit multiplier for doubling
 			exponential.Reset()
 
 			// Advance backoff state to verify reset behavior
@@ -168,28 +166,28 @@ func TestShouldDisableReconcile(t *testing.T) {
 // TestHandleReconnectionError tests the reconnection error handling logic
 func TestHandleReconnectionError(t *testing.T) {
 	tests := []struct {
-		name                  string
-		err                   error
+		name                   string
+		err                    error
 		expectDisableReconcile bool
 	}{
 		{
-			name:                  "no error - reconciliation enabled",
-			err:                   nil,
+			name:                   "no error - reconciliation enabled",
+			err:                    nil,
 			expectDisableReconcile: false,
 		},
 		{
-			name:                  "generic error - reconciliation enabled",
-			err:                   assert.AnError,
+			name:                   "generic error - reconciliation enabled",
+			err:                    assert.AnError,
 			expectDisableReconcile: false,
 		},
 		{
-			name:                  "can't reconcile error - disable reconciliation",
-			err:                   errCantReconcile,
+			name:                   "can't reconcile error - disable reconciliation",
+			err:                    errCantReconcile,
 			expectDisableReconcile: true,
 		},
 		{
-			name:                  "large payload error - disable reconciliation",
-			err:                   errLargePayload,
+			name:                   "large payload error - disable reconciliation",
+			err:                    errLargePayload,
 			expectDisableReconcile: true,
 		},
 	}
