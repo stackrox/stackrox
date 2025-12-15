@@ -6,7 +6,6 @@ import { SEARCH_OPTIONS_QUERY } from 'queries/search';
 import useURLPagination from 'hooks/useURLPagination';
 import useURLSort from 'hooks/useURLSort';
 import useURLSearch from 'hooks/useURLSearch';
-import { getHasSearchApplied } from 'utils/searchUtils';
 
 import SearchFilterInput from 'Components/SearchFilterInput';
 import searchOptionsToQuery from 'services/searchOptionsToQuery';
@@ -29,8 +28,6 @@ function RiskTablePage() {
     const urlPagination = useURLPagination(DEFAULT_RISK_PAGE_SIZE);
     const urlSearch = useURLSearch();
 
-    const isViewFiltered = getHasSearchApplied(urlSearch.searchFilter);
-
     const searchQueryOptions = {
         variables: {
             categories: [searchCategories.DEPLOYMENT],
@@ -50,7 +47,7 @@ function RiskTablePage() {
 
     return (
         <>
-            <RiskPageHeader isViewFiltered={isViewFiltered} />
+            <RiskPageHeader />
             {/* Nested PageSection here for visual consistency **as-is**. Once we move to Patternfly 6, we can remove this and clean up */}
             <PageSection>
                 <PageSection variant="light" component="div">
