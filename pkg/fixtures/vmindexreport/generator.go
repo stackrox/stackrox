@@ -82,7 +82,6 @@ func selectPackageIndices(rng *rand.Rand, numRequested, totalAvailable int) []in
 func buildRepositories() map[string]*v4.Repository {
 	repositories := make(map[string]*v4.Repository, len(repoToCPEMapping))
 
-	// Add real repositories
 	for repoID, cpe := range repoToCPEMapping {
 		repositories[repoID] = &v4.Repository{
 			Id:   repoID,
