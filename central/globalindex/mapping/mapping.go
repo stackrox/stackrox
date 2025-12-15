@@ -47,6 +47,11 @@ func GetEntityOptionsMap() map[v1.SearchCategory]search.OptionsMap {
 		schema.RoleBindingsSchema.OptionsMap,
 	)
 
+	complianceScanConfigurationSearchOptions := search.CombineOptionsMaps(
+		schema.ComplianceOperatorScanConfigurationV2Schema.OptionsMap,
+		schema.ComplianceOperatorProfileV2Schema.OptionsMap,
+	)
+
 	// EntityOptionsMap is a mapping from search categories to the options map for that category.
 	// search document maps are also built off this map
 	entityOptionsMap := map[v1.SearchCategory]search.OptionsMap{
@@ -56,6 +61,7 @@ func GetEntityOptionsMap() map[v1.SearchCategory]search.OptionsMap {
 		v1.SearchCategory_CLUSTERS:                schema.ClustersSchema.OptionsMap,
 		v1.SearchCategory_COMPLIANCE_STANDARD:     index.StandardOptions,
 		v1.SearchCategory_COMPLIANCE_CONTROL:      index.ControlOptions,
+		v1.SearchCategory_COMPLIANCE_PROFILES:     complianceScanConfigurationSearchOptions,
 		v1.SearchCategory_DEPLOYMENTS:             deploymentsCustomSearchOptions,
 		v1.SearchCategory_IMAGE_INTEGRATIONS:      schema.ImageIntegrationsSchema.OptionsMap,
 		v1.SearchCategory_NAMESPACES:              schema.NamespacesSchema.OptionsMap,
