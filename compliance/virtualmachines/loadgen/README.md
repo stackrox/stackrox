@@ -12,7 +12,7 @@ cd scripts && ./build-loadgen.sh
 vi deploy/loadgen-config.yaml
 
 # Deploy
-./run-loadgen.sh
+cd scripts && ./run-loadgen.sh
 
 # Monitor
 kubectl -n stackrox logs -f -l app=vsock-loadgen
@@ -20,6 +20,10 @@ kubectl -n stackrox logs -f -l app=vsock-loadgen
 # Cleanup
 kubectl -n stackrox delete daemonset vsock-loadgen
 kubectl -n stackrox delete configmap vsock-loadgen-config
+kubectl delete clusterrole vsock-loadgen-node-reader
+kubectl delete clusterrolebinding vsock-loadgen-node-reader
+kubectl -n stackrox delete serviceaccount vsock-loadgen
+
 ```
 
 ## Configuration
@@ -41,7 +45,7 @@ loadgen:
 
 - Deployed as DaemonSet across worker nodes
 - Each pod simulates multiple VMs (goroutines) with unique CIDs
-- CID ranges are automatically partitioned per node (10,000 spacing)
+- CID ranges are automatically partitioned (max 10,000 per node)
 - Pre-generates payloads at startup for zero per-request overhead
 - Sends protobuf-encoded index reports over vsock to the relay
 
