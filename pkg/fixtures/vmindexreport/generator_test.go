@@ -104,6 +104,23 @@ func TestGenerateV4IndexReport(t *testing.T) {
 	assert.Len(t, report.GetContents().GetEnvironments(), 10, "should have 10 environments")
 }
 
+func TestGenerateV4IndexReport_ZeroPackages(t *testing.T) {
+	gen := NewGeneratorWithSeed(0, 42)
+	report := gen.GenerateV4IndexReport()
+
+	// Report metadata should be unchanged
+	assert.Equal(t, MockDigest, report.GetHashId(), "HashId should match MockDigest")
+	assert.Equal(t, "IndexFinished", report.GetState(), "State should be IndexFinished")
+	assert.True(t, report.GetSuccess(), "Success should be true")
+
+	require.NotNil(t, report.GetContents(), "Contents should not be nil")
+	// Packages and Environments should be empty when numPackages is 0
+	assert.Empty(t, report.GetContents().GetPackages(), "Packages should be empty when numPackages is 0")
+	assert.Empty(t, report.GetContents().GetEnvironments(), "Environments should be empty when numPackages is 0")
+	// Repositories should still have the two real repos
+	assert.Len(t, report.GetContents().GetRepositories(), 2, "should still have 2 repositories even with 0 packages")
+}
+
 func TestGenerateV4IndexReport_PackagesHaveValidCPEs(t *testing.T) {
 	gen := NewGeneratorWithSeed(20, 42)
 	report := gen.GenerateV4IndexReport()
