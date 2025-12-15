@@ -31,9 +31,9 @@ const (
 )
 
 var (
-	preVer       = versionPair{version: "4.7.22.0", seqNum: 63, minSeqNum: 0}
-	currVer      = versionPair{version: "4.10.58.0", seqNum: migrations.CurrentDBVersionSeqNum(), minSeqNum: migrations.MinimumSupportedDBVersionSeqNum()}
-	futureVer    = versionPair{version: "10001.0.0.0", seqNum: 6533, minSeqNum: 2011}
+	preVer         = versionPair{version: "4.7.22.0", seqNum: 63, minSeqNum: 0}
+	currVer        = versionPair{version: "4.10.58.0", seqNum: migrations.CurrentDBVersionSeqNum(), minSeqNum: migrations.MinimumSupportedDBVersionSeqNum()}
+	futureVer      = versionPair{version: "10001.0.0.0", seqNum: 6533, minSeqNum: 2011}
 	unsupportedVer = versionPair{version: "4.3.1", seqNum: 194, minSeqNum: 0} // Below minimum supported version (209 / 4.6)
 )
 
