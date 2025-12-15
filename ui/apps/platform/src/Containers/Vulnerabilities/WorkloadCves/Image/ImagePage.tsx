@@ -58,8 +58,8 @@ import CreateViewBasedReportModal from '../components/CreateViewBasedReportModal
 export const imageDetailsQuery = gql`
     ${imageDetailsFragment}
     query getImageDetails($id: ID!) {
-        image(id: $id) {
-            id
+        imageV2(id: $id) {
+            digest
             name {
                 registry
                 remote
@@ -101,8 +101,9 @@ function ImagePage({
     const { imageId } = useParams() as { imageId: string };
     const { data, error } = useQuery<
         {
-            image: {
+            imageV2: {
                 id: string;
+                digest: string;
                 name: {
                     registry: string;
                     remote: string;
@@ -153,7 +154,7 @@ function ImagePage({
         return getVulnStateScopedQueryString(combinedFilter, vulnerabilityState);
     }, [imageId, baseSearchFilter, querySearchFilter, vulnerabilityState]);
 
-    const imageData = data && data.image;
+    const imageData = data && data.imageV2;
     const imageName = imageData?.name;
     const imageDisplayName =
         imageData && imageName
@@ -180,7 +181,7 @@ function ImagePage({
             </PageSection>
         );
     } else {
-        const sha = imageData?.id;
+        const sha = imageData?.digest;
         mainContent = (
             <>
                 <PageSection variant="light">
