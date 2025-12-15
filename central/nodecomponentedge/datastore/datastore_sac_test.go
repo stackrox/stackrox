@@ -341,6 +341,7 @@ func (s *nodeComponentEdgeDatastoreSACTestSuite) TestSearchEdges() {
 			s.True(c.expectedEdgeFound[r.GetId()])
 		}
 		s.ElementsMatch(expectedIDs, fetchedIDs)
+		// for nodecomponentedge name is set to id
 		s.ElementsMatch(expectedIDs, fetchedNames)
 	})
 }
