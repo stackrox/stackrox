@@ -462,6 +462,7 @@ func (l *loopImpl) reprocessImageV2(id string, fetchOpt imageEnricher.FetchOptio
 		log.Errorw("Error fetching image from database", logging.ImageID(id), logging.Err(err))
 		return nil, false
 	}
+
 	if image == nil || !exists || image.GetNotPullable() || image.GetIsClusterLocal() {
 		return nil, false
 	}
