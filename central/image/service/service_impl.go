@@ -249,7 +249,7 @@ func (s *serviceImpl) internalScanRespFromImageV2(ctx context.Context, imgV2 *st
 		var err error
 		allNames, err = s.datastoreV2.GetImageNames(ctx, imgV2.GetDigest())
 		if err != nil {
-			log.Errorw("Failed to retrieve image names by digest",
+			log.Warnw("Failed to retrieve image names by digest",
 				logging.FromContext(ctx),
 				logging.ImageName(imgV2.GetName().GetFullName()),
 				logging.ImageID(imgV2.GetId()),
