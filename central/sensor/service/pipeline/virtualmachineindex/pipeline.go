@@ -18,6 +18,7 @@ import (
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/metrics"
+	pkgvm "github.com/stackrox/rox/pkg/virtualmachine"
 	vmEnricher "github.com/stackrox/rox/pkg/virtualmachine/enricher"
 )
 
@@ -117,9 +118,9 @@ func (p *pipelineImpl) Run(ctx context.Context, _ string, msg *central.MsgFromSe
 		if errors.Is(err, errox.NotFound) && env.IsVMTestModeEnabled() {
 			log.Debugf("VM %s not found in database - auto-creating VM record with scan data (test mode enabled)", vm.GetId())
 
-			// Populate VM metadata from index report for test mode
-			vm.Name = "vm-" + vsockCidStr
-			vm.Namespace = "vm-load-test"
+			// Populate VM metadata using shared test mode utilities for consistency with Sensor
+			vm.Name = pkgvm.GenerateTestModeVMName(uint32(vsockCid))
+			vm.Namespace = pkgvm.TestNamespace
 			vm.State = storage.VirtualMachine_RUNNING
 
 			if upsertErr := p.vmDatastore.UpsertVirtualMachine(ctx, vm); upsertErr != nil {
