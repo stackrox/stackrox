@@ -163,6 +163,14 @@ func insertIntoTestGrandparentsEmbeddedsEmbedded2(batch *pgx.Batch, obj *storage
 	return nil
 }
 
+var copyColsTestGrandparents = []string{
+	"id",
+	"val",
+	"priority",
+	"riskscore",
+	"serialized",
+}
+
 func copyFromTestGrandparents(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, objs ...*storage.TestGrandparent) error {
 	if len(objs) == 0 {
 		return nil
@@ -178,14 +186,6 @@ func copyFromTestGrandparents(ctx context.Context, s pgSearch.Deleter, tx *postg
 		if err := s.DeleteMany(ctx, deletes); err != nil {
 			return err
 		}
-	}
-
-	copyCols := []string{
-		"id",
-		"val",
-		"priority",
-		"riskscore",
-		"serialized",
 	}
 
 	idx := 0
@@ -210,7 +210,7 @@ func copyFromTestGrandparents(ctx context.Context, s pgSearch.Deleter, tx *postg
 		}, nil
 	})
 
-	if _, err := tx.CopyFrom(ctx, pgx.Identifier{"test_grandparents"}, copyCols, inputRows); err != nil {
+	if _, err := tx.CopyFrom(ctx, pgx.Identifier{"test_grandparents"}, copyColsTestGrandparents, inputRows); err != nil {
 		return err
 	}
 
@@ -223,15 +223,15 @@ func copyFromTestGrandparents(ctx context.Context, s pgSearch.Deleter, tx *postg
 	return nil
 }
 
+var copyColsTestGrandparentsEmbeddeds = []string{
+	"test_grandparents_id",
+	"idx",
+	"val",
+}
+
 func copyFromTestGrandparentsEmbeddeds(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, testGrandparentID string, objs ...*storage.TestGrandparent_Embedded) error {
 	if len(objs) == 0 {
 		return nil
-	}
-
-	copyCols := []string{
-		"test_grandparents_id",
-		"idx",
-		"val",
 	}
 
 	idx := 0
@@ -249,7 +249,7 @@ func copyFromTestGrandparentsEmbeddeds(ctx context.Context, s pgSearch.Deleter, 
 		}, nil
 	})
 
-	if _, err := tx.CopyFrom(ctx, pgx.Identifier{"test_grandparents_embeddeds"}, copyCols, inputRows); err != nil {
+	if _, err := tx.CopyFrom(ctx, pgx.Identifier{"test_grandparents_embeddeds"}, copyColsTestGrandparentsEmbeddeds, inputRows); err != nil {
 		return err
 	}
 
@@ -262,16 +262,16 @@ func copyFromTestGrandparentsEmbeddeds(ctx context.Context, s pgSearch.Deleter, 
 	return nil
 }
 
+var copyColsTestGrandparentsEmbeddedsEmbedded2 = []string{
+	"test_grandparents_id",
+	"test_grandparents_embeddeds_idx",
+	"idx",
+	"val",
+}
+
 func copyFromTestGrandparentsEmbeddedsEmbedded2(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, testGrandparentID string, testGrandparentEmbeddedIdx int, objs ...*storage.TestGrandparent_Embedded_Embedded2) error {
 	if len(objs) == 0 {
 		return nil
-	}
-
-	copyCols := []string{
-		"test_grandparents_id",
-		"test_grandparents_embeddeds_idx",
-		"idx",
-		"val",
 	}
 
 	idx := 0
@@ -290,7 +290,7 @@ func copyFromTestGrandparentsEmbeddedsEmbedded2(ctx context.Context, s pgSearch.
 		}, nil
 	})
 
-	if _, err := tx.CopyFrom(ctx, pgx.Identifier{"test_grandparents_embeddeds_embedded2"}, copyCols, inputRows); err != nil {
+	if _, err := tx.CopyFrom(ctx, pgx.Identifier{"test_grandparents_embeddeds_embedded2"}, copyColsTestGrandparentsEmbeddedsEmbedded2, inputRows); err != nil {
 		return err
 	}
 

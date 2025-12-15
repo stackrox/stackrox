@@ -143,6 +143,22 @@ func insertIntoComplianceOperatorCheckResultV2(batch *pgx.Batch, obj *storage.Co
 	return nil
 }
 
+var copyColsComplianceOperatorCheckResultV2 = []string{
+	"id",
+	"checkid",
+	"checkname",
+	"clusterid",
+	"status",
+	"severity",
+	"createdtime",
+	"scanconfigname",
+	"rationale",
+	"scanrefid",
+	"rulerefid",
+	"laststartedtime",
+	"serialized",
+}
+
 func copyFromComplianceOperatorCheckResultV2(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, objs ...*storage.ComplianceOperatorCheckResultV2) error {
 	if len(objs) == 0 {
 		return nil
@@ -158,22 +174,6 @@ func copyFromComplianceOperatorCheckResultV2(ctx context.Context, s pgSearch.Del
 		if err := s.DeleteMany(ctx, deletes); err != nil {
 			return err
 		}
-	}
-
-	copyCols := []string{
-		"id",
-		"checkid",
-		"checkname",
-		"clusterid",
-		"status",
-		"severity",
-		"createdtime",
-		"scanconfigname",
-		"rationale",
-		"scanrefid",
-		"rulerefid",
-		"laststartedtime",
-		"serialized",
 	}
 
 	idx := 0
@@ -206,7 +206,7 @@ func copyFromComplianceOperatorCheckResultV2(ctx context.Context, s pgSearch.Del
 		}, nil
 	})
 
-	if _, err := tx.CopyFrom(ctx, pgx.Identifier{"compliance_operator_check_result_v2"}, copyCols, inputRows); err != nil {
+	if _, err := tx.CopyFrom(ctx, pgx.Identifier{"compliance_operator_check_result_v2"}, copyColsComplianceOperatorCheckResultV2, inputRows); err != nil {
 		return err
 	}
 

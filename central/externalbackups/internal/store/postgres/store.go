@@ -106,6 +106,11 @@ func insertIntoExternalBackups(batch *pgx.Batch, obj *storage.ExternalBackup) er
 	return nil
 }
 
+var copyColsExternalBackups = []string{
+	"id",
+	"serialized",
+}
+
 func copyFromExternalBackups(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, objs ...*storage.ExternalBackup) error {
 	if len(objs) == 0 {
 		return nil
@@ -121,11 +126,6 @@ func copyFromExternalBackups(ctx context.Context, s pgSearch.Deleter, tx *postgr
 		if err := s.DeleteMany(ctx, deletes); err != nil {
 			return err
 		}
-	}
-
-	copyCols := []string{
-		"id",
-		"serialized",
 	}
 
 	idx := 0
@@ -147,7 +147,7 @@ func copyFromExternalBackups(ctx context.Context, s pgSearch.Deleter, tx *postgr
 		}, nil
 	})
 
-	if _, err := tx.CopyFrom(ctx, pgx.Identifier{"external_backups"}, copyCols, inputRows); err != nil {
+	if _, err := tx.CopyFrom(ctx, pgx.Identifier{"external_backups"}, copyColsExternalBackups, inputRows); err != nil {
 		return err
 	}
 

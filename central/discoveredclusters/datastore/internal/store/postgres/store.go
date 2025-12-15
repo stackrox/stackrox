@@ -117,6 +117,17 @@ func insertIntoDiscoveredClusters(batch *pgx.Batch, obj *storage.DiscoveredClust
 	return nil
 }
 
+var copyColsDiscoveredClusters = []string{
+	"id",
+	"metadata_name",
+	"metadata_type",
+	"metadata_firstdiscoveredat",
+	"status",
+	"sourceid",
+	"lastupdatedat",
+	"serialized",
+}
+
 func copyFromDiscoveredClusters(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, objs ...*storage.DiscoveredCluster) error {
 	if len(objs) == 0 {
 		return nil
@@ -132,17 +143,6 @@ func copyFromDiscoveredClusters(ctx context.Context, s pgSearch.Deleter, tx *pos
 		if err := s.DeleteMany(ctx, deletes); err != nil {
 			return err
 		}
-	}
-
-	copyCols := []string{
-		"id",
-		"metadata_name",
-		"metadata_type",
-		"metadata_firstdiscoveredat",
-		"status",
-		"sourceid",
-		"lastupdatedat",
-		"serialized",
 	}
 
 	idx := 0
@@ -170,7 +170,7 @@ func copyFromDiscoveredClusters(ctx context.Context, s pgSearch.Deleter, tx *pos
 		}, nil
 	})
 
-	if _, err := tx.CopyFrom(ctx, pgx.Identifier{"discovered_clusters"}, copyCols, inputRows); err != nil {
+	if _, err := tx.CopyFrom(ctx, pgx.Identifier{"discovered_clusters"}, copyColsDiscoveredClusters, inputRows); err != nil {
 		return err
 	}
 
