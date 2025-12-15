@@ -17,6 +17,7 @@ os.environ["ROX_BASELINE_GENERATION_DURATION"] = "5m"
 os.environ["ROX_SCANNER_V4"] = "true"
 os.environ["ENABLE_OPERATOR_TESTS"] = "true"
 
+# ROX-32314, move out
 try:
     # SFA Agent supports OCP starting from 4.16, since we test oldest (4.12) and
     # latest (4.20 at the moment), exclude the former one.
