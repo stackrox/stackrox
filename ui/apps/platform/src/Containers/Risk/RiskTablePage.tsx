@@ -1,6 +1,6 @@
 import { useQuery } from '@apollo/client';
+import { PageSection } from '@patternfly/react-core';
 
-import { PageBody } from 'Components/Panel';
 import { searchCategories } from 'constants/entityTypes';
 import { SEARCH_OPTIONS_QUERY } from 'queries/search';
 import useURLPagination from 'hooks/useURLPagination';
@@ -45,10 +45,10 @@ function RiskTablePage() {
                     urlSearch.setSearchFilter(newSearchFilter);
                 }}
             />
-            <PageBody>
-                <div className="flex-shrink-1 overflow-hidden w-full">
+            {/* Nested PageSection here for visual consistency **as-is**. Once we move to Patternfly 6, we can remove this and clean up */}
+            <PageSection>
+                <PageSection variant="light" component="div">
                     <RiskTablePanel
-                        isViewFiltered={isViewFiltered}
                         sortOption={urlSort.sortOption}
                         getSortParams={urlSort.getSortParams}
                         searchFilter={urlSearch.searchFilter}
@@ -58,8 +58,8 @@ function RiskTablePage() {
                         }}
                         pagination={urlPagination}
                     />
-                </div>
-            </PageBody>
+                </PageSection>
+            </PageSection>
         </>
     );
 }
