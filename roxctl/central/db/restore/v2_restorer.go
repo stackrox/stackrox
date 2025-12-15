@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/binary"
+	"encoding/json"
 	"fmt"
 	"hash"
 	"hash/crc32"
@@ -12,6 +13,7 @@ import (
 	"os"
 	"path/filepath"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/VividCortex/ewma"
@@ -218,6 +220,10 @@ func (r *v2Restorer) Run(ctx context.Context, file *os.File) (*http.Response, er
 		// are not checked here because they're temporary and should be retried.
 		if err != nil {
 			errCode := status.Code(err)
+			// If we couldn't get a gRPC code from the error directly, try to extract it from the HTTP error message
+			if errCode == codes.Unknown {
+				errCode = extractGRPCCodeFromHTTPError(err)
+			}
 			if errCode == codes.FailedPrecondition || errCode == codes.PermissionDenied || errCode == codes.InvalidArgument {
 				return nil, err
 			}
@@ -485,4 +491,50 @@ func (r *v2Restorer) resumeAfterError(ctx context.Context) (*http.Request, error
 	}
 
 	return r.prepareResumeRequest(resumeInfo)
+}
+
+// extractGRPCCodeFromHTTPError attempts to extract a gRPC status code from an HTTP error message.
+// The server may return HTTP 500 with an error message containing JSON like:
+// {"code":13,"message":"database restore failed: rpc error: code = FailedPrecondition desc = ..."}
+// where the outer code is typically Internal (13) but the nested message contains the actual error like FailedPrecondition.
+func extractGRPCCodeFromHTTPError(err error) codes.Code {
+	if err == nil {
+		return codes.Unknown
+	}
+
+	errMsg := err.Error()
+	// Look for the pattern "error message: {" which indicates the JSON payload starts
+	jsonStart := strings.Index(errMsg, "error message: {")
+	if jsonStart == -1 {
+		return codes.Unknown
+	}
+
+	// Extract the JSON portion (everything after "error message: ")
+	jsonStr := errMsg[jsonStart+len("error message: "):]
+
+	// Try to parse as JSON to extract the gRPC code
+	var grpcResponse struct {
+		Code    int    `json:"code"`
+		Message string `json:"message"`
+	}
+	if jsonErr := json.Unmarshal([]byte(jsonStr), &grpcResponse); jsonErr != nil {
+		return codes.Unknown
+	}
+
+	// The server often wraps errors in an Internal (code 13) error, so check the message
+	// for specific error strings that indicate permanent failures
+	if grpcResponse.Code == int(codes.Internal) {
+		// Check if the message contains indicators of permanent failure conditions
+		if strings.Contains(grpcResponse.Message, "code = FailedPrecondition") {
+			return codes.FailedPrecondition
+		}
+		if strings.Contains(grpcResponse.Message, "code = PermissionDenied") {
+			return codes.PermissionDenied
+		}
+		if strings.Contains(grpcResponse.Message, "code = InvalidArgument") {
+			return codes.InvalidArgument
+		}
+	}
+
+	return codes.Code(grpcResponse.Code)
 }
