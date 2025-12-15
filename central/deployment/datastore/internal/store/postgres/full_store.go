@@ -17,6 +17,7 @@ import (
 	"github.com/stackrox/rox/pkg/sac/resources"
 	pkgSearch "github.com/stackrox/rox/pkg/search"
 	pgSearch "github.com/stackrox/rox/pkg/search/postgres"
+	"github.com/stackrox/rox/pkg/search/postgres/aggregatefunc"
 	"gorm.io/gorm"
 )
 
@@ -33,9 +34,10 @@ func NewFullStore(db postgres.DB) store.Store {
 }
 
 // FullStoreWrap augments the wrapped store with ListDeployment functions.
-func FullStoreWrap(wrapped Store) store.Store {
+func FullStoreWrap(wrapped Store, db postgres.DB) store.Store {
 	return &fullStoreImpl{
 		Store: wrapped,
+		db:    db,
 	}
 }
 
@@ -104,7 +106,7 @@ func (f *fullStoreImpl) CountContainerImages(ctx context.Context) (int, error) {
 		return 0, err
 	}
 	q.Selects = []*v1.QuerySelect{
-		pkgSearch.NewQuerySelect(pkgSearch.ImageID).Distinct().Proto(),
+		pkgSearch.NewQuerySelect(pkgSearch.ImageID).AggrFunc(aggregatefunc.Count).Distinct().Proto(),
 	}
 
 	queryCtx, cancel := contextutil.ContextWithTimeoutIfNotExists(ctx, queryTimeout)
