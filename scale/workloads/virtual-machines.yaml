@@ -31,7 +31,6 @@ virtualMachineWorkload:
   numLifecycles: 0
   reportInterval: 5m # ±5% max deviation applied
   numPackages: 700
-  numRepositories: 50
   initialReportDelay: 30s # ±20% max deviation applied
 
 deploymentWorkload:
