@@ -471,6 +471,15 @@ func (m *MsgToSensor_IssueSecuredClusterCertsResponse) CloneVT() isMsgToSensor_M
 	return r
 }
 
+func (m *MsgToSensor_SensorAck) CloneVT() isMsgToSensor_Msg {
+	if m == nil {
+		return (*MsgToSensor_SensorAck)(nil)
+	}
+	r := new(MsgToSensor_SensorAck)
+	r.SensorAck = m.SensorAck.CloneVT()
+	return r
+}
+
 func (m *DeduperState) CloneVT() *DeduperState {
 	if m == nil {
 		return (*DeduperState)(nil)
@@ -493,6 +502,26 @@ func (m *DeduperState) CloneVT() *DeduperState {
 }
 
 func (m *DeduperState) CloneMessageVT() proto.Message {
+	return m.CloneVT()
+}
+
+func (m *SensorACK) CloneVT() *SensorACK {
+	if m == nil {
+		return (*SensorACK)(nil)
+	}
+	r := new(SensorACK)
+	r.Action = m.Action
+	r.MessageType = m.MessageType
+	r.ResourceId = m.ResourceId
+	r.Reason = m.Reason
+	if len(m.unknownFields) > 0 {
+		r.unknownFields = make([]byte, len(m.unknownFields))
+		copy(r.unknownFields, m.unknownFields)
+	}
+	return r
+}
+
+func (m *SensorACK) CloneMessageVT() proto.Message {
 	return m.CloneVT()
 }
 
@@ -1795,6 +1824,31 @@ func (this *MsgToSensor_IssueSecuredClusterCertsResponse) EqualVT(thatIface isMs
 	return true
 }
 
+func (this *MsgToSensor_SensorAck) EqualVT(thatIface isMsgToSensor_Msg) bool {
+	that, ok := thatIface.(*MsgToSensor_SensorAck)
+	if !ok {
+		return false
+	}
+	if this == that {
+		return true
+	}
+	if this == nil && that != nil || this != nil && that == nil {
+		return false
+	}
+	if p, q := this.SensorAck, that.SensorAck; p != q {
+		if p == nil {
+			p = &SensorACK{}
+		}
+		if q == nil {
+			q = &SensorACK{}
+		}
+		if !p.EqualVT(q) {
+			return false
+		}
+	}
+	return true
+}
+
 func (this *DeduperState) EqualVT(that *DeduperState) bool {
 	if this == that {
 		return true
@@ -1824,6 +1878,34 @@ func (this *DeduperState) EqualVT(that *DeduperState) bool {
 
 func (this *DeduperState) EqualMessageVT(thatMsg proto.Message) bool {
 	that, ok := thatMsg.(*DeduperState)
+	if !ok {
+		return false
+	}
+	return this.EqualVT(that)
+}
+func (this *SensorACK) EqualVT(that *SensorACK) bool {
+	if this == that {
+		return true
+	} else if this == nil || that == nil {
+		return false
+	}
+	if this.Action != that.Action {
+		return false
+	}
+	if this.MessageType != that.MessageType {
+		return false
+	}
+	if this.ResourceId != that.ResourceId {
+		return false
+	}
+	if this.Reason != that.Reason {
+		return false
+	}
+	return string(this.unknownFields) == string(that.unknownFields)
+}
+
+func (this *SensorACK) EqualMessageVT(thatMsg proto.Message) bool {
+	that, ok := thatMsg.(*SensorACK)
 	if !ok {
 		return false
 	}
@@ -3229,6 +3311,33 @@ func (m *MsgToSensor_IssueSecuredClusterCertsResponse) MarshalToSizedBufferVT(dA
 	}
 	return len(dAtA) - i, nil
 }
+func (m *MsgToSensor_SensorAck) MarshalToVT(dAtA []byte) (int, error) {
+	size := m.SizeVT()
+	return m.MarshalToSizedBufferVT(dAtA[:size])
+}
+
+func (m *MsgToSensor_SensorAck) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	if m.SensorAck != nil {
+		size, err := m.SensorAck.MarshalToSizedBufferVT(dAtA[:i])
+		if err != nil {
+			return 0, err
+		}
+		i -= size
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+		i--
+		dAtA[i] = 0x1
+		i--
+		dAtA[i] = 0xea
+	} else {
+		i = protohelpers.EncodeVarint(dAtA, i, 0)
+		i--
+		dAtA[i] = 0x1
+		i--
+		dAtA[i] = 0xea
+	}
+	return len(dAtA) - i, nil
+}
 func (m *DeduperState) MarshalVT() (dAtA []byte, err error) {
 	if m == nil {
 		return nil, nil
@@ -3285,6 +3394,63 @@ func (m *DeduperState) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 			i--
 			dAtA[i] = 0xa
 		}
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *SensorACK) MarshalVT() (dAtA []byte, err error) {
+	if m == nil {
+		return nil, nil
+	}
+	size := m.SizeVT()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBufferVT(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *SensorACK) MarshalToVT(dAtA []byte) (int, error) {
+	size := m.SizeVT()
+	return m.MarshalToSizedBufferVT(dAtA[:size])
+}
+
+func (m *SensorACK) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
+	if m == nil {
+		return 0, nil
+	}
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.unknownFields != nil {
+		i -= len(m.unknownFields)
+		copy(dAtA[i:], m.unknownFields)
+	}
+	if len(m.Reason) > 0 {
+		i -= len(m.Reason)
+		copy(dAtA[i:], m.Reason)
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(len(m.Reason)))
+		i--
+		dAtA[i] = 0x22
+	}
+	if len(m.ResourceId) > 0 {
+		i -= len(m.ResourceId)
+		copy(dAtA[i:], m.ResourceId)
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(len(m.ResourceId)))
+		i--
+		dAtA[i] = 0x1a
+	}
+	if m.MessageType != 0 {
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(m.MessageType))
+		i--
+		dAtA[i] = 0x10
+	}
+	if m.Action != 0 {
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(m.Action))
+		i--
+		dAtA[i] = 0x8
 	}
 	return len(dAtA) - i, nil
 }
@@ -4276,6 +4442,20 @@ func (m *MsgToSensor_IssueSecuredClusterCertsResponse) SizeVT() (n int) {
 	}
 	return n
 }
+func (m *MsgToSensor_SensorAck) SizeVT() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.SensorAck != nil {
+		l = m.SensorAck.SizeVT()
+		n += 2 + l + protohelpers.SizeOfVarint(uint64(l))
+	} else {
+		n += 3
+	}
+	return n
+}
 func (m *DeduperState) SizeVT() (n int) {
 	if m == nil {
 		return 0
@@ -4295,6 +4475,30 @@ func (m *DeduperState) SizeVT() (n int) {
 	}
 	if m.Total != 0 {
 		n += 1 + protohelpers.SizeOfVarint(uint64(m.Total))
+	}
+	n += len(m.unknownFields)
+	return n
+}
+
+func (m *SensorACK) SizeVT() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.Action != 0 {
+		n += 1 + protohelpers.SizeOfVarint(uint64(m.Action))
+	}
+	if m.MessageType != 0 {
+		n += 1 + protohelpers.SizeOfVarint(uint64(m.MessageType))
+	}
+	l = len(m.ResourceId)
+	if l > 0 {
+		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
+	}
+	l = len(m.Reason)
+	if l > 0 {
+		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
 	n += len(m.unknownFields)
 	return n
@@ -6429,6 +6633,47 @@ func (m *MsgToSensor) UnmarshalVT(dAtA []byte) error {
 				m.Msg = &MsgToSensor_IssueSecuredClusterCertsResponse{IssueSecuredClusterCertsResponse: v}
 			}
 			iNdEx = postIndex
+		case 29:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field SensorAck", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if oneof, ok := m.Msg.(*MsgToSensor_SensorAck); ok {
+				if err := oneof.SensorAck.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+			} else {
+				v := &SensorACK{}
+				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+				m.Msg = &MsgToSensor_SensorAck{SensorAck: v}
+			}
+			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
 			skippy, err := protohelpers.Skip(dAtA[iNdEx:])
@@ -6631,6 +6876,159 @@ func (m *DeduperState) UnmarshalVT(dAtA []byte) error {
 					break
 				}
 			}
+		default:
+			iNdEx = preIndex
+			skippy, err := protohelpers.Skip(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.unknownFields = append(m.unknownFields, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *SensorACK) UnmarshalVT(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return protohelpers.ErrIntOverflow
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: SensorACK: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: SensorACK: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Action", wireType)
+			}
+			m.Action = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.Action |= SensorACK_Action(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 2:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field MessageType", wireType)
+			}
+			m.MessageType = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.MessageType |= SensorACK_MessageType(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 3:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ResourceId", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.ResourceId = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 4:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Reason", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Reason = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
 			skippy, err := protohelpers.Skip(dAtA[iNdEx:])
@@ -9498,6 +9896,47 @@ func (m *MsgToSensor) UnmarshalVTUnsafe(dAtA []byte) error {
 				m.Msg = &MsgToSensor_IssueSecuredClusterCertsResponse{IssueSecuredClusterCertsResponse: v}
 			}
 			iNdEx = postIndex
+		case 29:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field SensorAck", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if oneof, ok := m.Msg.(*MsgToSensor_SensorAck); ok {
+				if err := oneof.SensorAck.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+			} else {
+				v := &SensorACK{}
+				if err := v.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+				m.Msg = &MsgToSensor_SensorAck{SensorAck: v}
+			}
+			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
 			skippy, err := protohelpers.Skip(dAtA[iNdEx:])
@@ -9704,6 +10143,167 @@ func (m *DeduperState) UnmarshalVTUnsafe(dAtA []byte) error {
 					break
 				}
 			}
+		default:
+			iNdEx = preIndex
+			skippy, err := protohelpers.Skip(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.unknownFields = append(m.unknownFields, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *SensorACK) UnmarshalVTUnsafe(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return protohelpers.ErrIntOverflow
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: SensorACK: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: SensorACK: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Action", wireType)
+			}
+			m.Action = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.Action |= SensorACK_Action(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 2:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field MessageType", wireType)
+			}
+			m.MessageType = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.MessageType |= SensorACK_MessageType(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 3:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ResourceId", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			var stringValue string
+			if intStringLen > 0 {
+				stringValue = unsafe.String(&dAtA[iNdEx], intStringLen)
+			}
+			m.ResourceId = stringValue
+			iNdEx = postIndex
+		case 4:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Reason", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			var stringValue string
+			if intStringLen > 0 {
+				stringValue = unsafe.String(&dAtA[iNdEx], intStringLen)
+			}
+			m.Reason = stringValue
+			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
 			skippy, err := protohelpers.Skip(dAtA[iNdEx:])

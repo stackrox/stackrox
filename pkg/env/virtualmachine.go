@@ -25,4 +25,16 @@ var (
 	// index reports before they are sent to Central.
 	VirtualMachinesIndexReportsBufferSize = RegisterIntegerSetting("ROX_VIRTUAL_MACHINES_INDEX_REPORTS_BUFFER_SIZE", 100).
 						WithMinimum(0)
+
+	// VMIndexReportRateLimit defines the maximum number of VM index reports per second that Central will accept
+	// across all sensors. Each sensor gets an equal share (1/N) of this global capacity.
+	// Set to 0 to disable rate limiting (unlimited).
+	// Default: 0 (disabled) for safe rollout; recommended production value: 3
+	VMIndexReportRateLimit = RegisterIntegerSetting("ROX_VM_INDEX_REPORT_RATE_LIMIT", 0).WithMinimum(0)
+
+	// VMIndexReportBurstDuration defines the burst window duration for VM index report rate limiting.
+	// This allows temporary bursts above the sustained rate limit.
+	// For example, with rate=3 req/sec and burst=5s, a sensor can send up to 15 reports in a 5-second window.
+	// Default: 5 seconds
+	VMIndexReportBurstDuration = registerDurationSetting("ROX_VM_INDEX_REPORT_BURST_DURATION", 5*time.Second)
 )
