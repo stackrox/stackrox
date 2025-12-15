@@ -455,15 +455,41 @@ func (l *loopImpl) reprocessImagesAndResyncDeployments(fetchOpt imageEnricher.Fe
 	l.sendReprocessDeployments(skipClusterIDs)
 }
 
-func (l *loopImpl) reprocessImageV2(id string, fetchOpt imageEnricher.FetchOption,
+func (l *loopImpl) reprocessImageV2(id string, digest string, fetchOpt imageEnricher.FetchOption,
 	reprocessingFunc imageReprocessingFuncV2) (*storage.ImageV2, bool) {
 	image, exists, err := l.imagesV2.GetImage(allAccessCtx, id)
 	if err != nil {
 		log.Errorw("Error fetching image from database", logging.ImageID(id), logging.Err(err))
 		return nil, false
 	}
+	migrateToV2 := false
+	if !exists {
+		// The image was not found in ImageV2 store, but it might be in the legacy ImageV1 store
+		var legacyImage *storage.Image
+		legacyImage, exists, err = l.images.GetImage(allAccessCtx, digest)
+		if err != nil {
+			log.Errorw("Error fetching legacy image from database", logging.ImageID(id), logging.Err(err))
+			return nil, false
+		}
+		if !exists {
+			return nil, false
+		}
+		image = utils.ConvertToV2(legacyImage)
+		migrateToV2 = true
+	}
 
-	if image == nil || !exists || image.GetNotPullable() || image.GetIsClusterLocal() {
+	if image == nil || !exists {
+		return nil, false
+	}
+
+	if image.GetNotPullable() || image.GetIsClusterLocal() {
+		// Skip reprocessing as sensor will handle cluster-local images. But we still need to migrate the image to V2.
+		if migrateToV2 {
+			if err := l.risk.CalculateRiskAndUpsertImageV2(image); err != nil {
+				log.Errorw("Error calculating risk for image", logging.ImageName(image.GetName().GetFullName()), logging.ImageID(image.GetId()), logging.Err(err))
+				return nil, false
+			}
+		}
 		return nil, false
 	}
 

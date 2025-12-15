@@ -480,10 +480,6 @@ func (ds *datastoreImpl) GetContainerImageResponses(ctx context.Context) ([]*vie
 	return ds.deploymentStore.GetContainerImageResponses(ctx)
 }
 
-func (ds *datastoreImpl) GetDeploymentContainer(ctx context.Context, containerID string) (*storage.Container, error) {
-	return ds.deploymentStore.GetDeploymentContainer(ctx, containerID)
-}
-
 type DeploymentSearchResultConverter struct{}
 
 func (c *DeploymentSearchResultConverter) BuildName(result *pkgSearch.Result) string {

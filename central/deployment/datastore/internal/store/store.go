@@ -29,5 +29,4 @@ type Store interface {
 	GetIDs(ctx context.Context) ([]string, error)
 
 	GetContainerImageResponses(ctx context.Context) ([]*views.ContainerImagesResponse, error)
-	GetDeploymentContainer(ctx context.Context, containerID string) (*storage.Container, error)
 }
