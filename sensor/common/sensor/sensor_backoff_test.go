@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/cenkalti/backoff/v3"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stretchr/testify/assert"
 )
 
