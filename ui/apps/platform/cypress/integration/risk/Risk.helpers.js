@@ -57,9 +57,7 @@ export function viewRiskDeploymentByName(deploymentName) {
         //
         // Call contains method with RegExp for exact match and only first element.
         // Unlike contains pseudo-selector which would require :nth(0) in case of multiple matches.
-        cy.get(
-            `.rt-tbody .rt-tr:has('.rt-td:nth-child(4):contains("stackrox")') .rt-td:nth-child(1)`
-        )
+        cy.get(`tbody tr:has('td:nth-child(4):contains("stackrox")') td:nth-child(1)`)
             .contains(new RegExp(`^${deploymentName}$`))
             .click();
     }, routeMatcherMapForDeployment);

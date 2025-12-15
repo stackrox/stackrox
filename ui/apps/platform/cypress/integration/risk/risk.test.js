@@ -25,11 +25,11 @@ describe('Risk', () => {
 
             cy.title().should('match', getRegExpForTitleWithBranding('Risk'));
 
-            cy.get('.rt-th:contains("Name")');
-            cy.get('.rt-th:contains("Created")');
-            cy.get('.rt-th:contains("Cluster")');
-            cy.get('.rt-th:contains("Namespace")');
-            cy.get('.rt-th:contains("Priority")');
+            cy.get('th:contains("Name")');
+            cy.get('th:contains("Created")');
+            cy.get('th:contains("Cluster")');
+            cy.get('th:contains("Namespace")');
+            cy.get('th:contains("Priority")');
         });
 
         it('should open detail page for deployment', () => {
@@ -84,7 +84,7 @@ describe('Risk', () => {
             const nsOption = 'Namespace';
             const nsValue = 'stackrox';
             cy.get(
-                `${RiskPageSelectors.table.dataRows} .rt-td:nth-child(4):contains("${nsValue}")`
+                `${RiskPageSelectors.table.dataRows} td:nth-child(4):contains("${nsValue}")`
             ).then((stackroxDeps) => {
                 const stackroxCount = stackroxDeps.length;
 
@@ -115,7 +115,7 @@ describe('Risk', () => {
             const deployOption = 'Deployment';
             const deployValue = 'scanner';
             cy.get(
-                `${RiskPageSelectors.table.dataRows} .rt-td:nth-child(1):contains("${deployValue}")`
+                `${RiskPageSelectors.table.dataRows} td:nth-child(1):contains("${deployValue}")`
             ).then((staticDeps) => {
                 const staticCount = staticDeps.length;
 
