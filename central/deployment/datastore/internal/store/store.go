@@ -3,6 +3,7 @@ package store
 import (
 	"context"
 
+	"github.com/stackrox/rox/central/deployment/views"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/search"
@@ -26,4 +27,7 @@ type Store interface {
 	Delete(ctx context.Context, id string) error
 
 	GetIDs(ctx context.Context) ([]string, error)
+
+	GetContainerImageResponses(ctx context.Context) ([]*views.ContainerImagesResponse, error)
+	CountContainerImages(ctx context.Context) (int, error)
 }

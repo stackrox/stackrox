@@ -449,3 +449,158 @@ func TestSelectQueryOnDeployments(t *testing.T) {
 	assert.NoError(t, err)
 	assert.ElementsMatch(t, expected, results)
 }
+
+func TestContainerImagesView(t *testing.T) {
+	ctx := sac.WithAllAccess(context.Background())
+	testDB := pgtest.ForT(t)
+
+	deploymentDS, err := GetTestPostgresDataStore(t, testDB.DB)
+	require.NoError(t, err)
+
+	// Define common image IDs that will be shared across deployments and containers
+	sharedImageIDV2_1 := "imagev2-id-shared-1"
+	sharedImageIDV2_2 := "imagev2-id-shared-2"
+	uniqueImageIDV2 := "imagev2-id-unique"
+
+	cluster1 := testconsts.Cluster1
+	cluster2 := testconsts.Cluster2
+
+	// Create deployments with multiple containers running the same images
+	deployments := []*storage.Deployment{
+		{
+			// Deployment 1 in cluster1 with 2 containers using the same shared image
+			Id:          uuid.NewV4().String(),
+			Name:        "dep1",
+			ClusterId:   cluster1,
+			ClusterName: cluster1,
+			Namespace:   "ns1",
+			NamespaceId: cluster1 + "ns1",
+			Containers: []*storage.Container{
+				{
+					Name: "container1",
+					Image: &storage.ContainerImage{
+						IdV2: sharedImageIDV2_1,
+						Name: &storage.ImageName{FullName: "nginx:1.0"},
+					},
+				},
+				{
+					Name: "container2",
+					Image: &storage.ContainerImage{
+						IdV2: sharedImageIDV2_1, // Same image as container1
+						Name: &storage.ImageName{FullName: "nginx:1.0"},
+					},
+				},
+			},
+		},
+		{
+			// Deployment 2 in cluster1 with 1 container using the same shared image as dep1
+			Id:          uuid.NewV4().String(),
+			Name:        "dep2",
+			ClusterId:   cluster1,
+			ClusterName: cluster1,
+			Namespace:   "ns2",
+			NamespaceId: cluster1 + "ns2",
+			Containers: []*storage.Container{
+				{
+					Name: "container1",
+					Image: &storage.ContainerImage{
+						IdV2: sharedImageIDV2_1, // Same image as dep1
+						Name: &storage.ImageName{FullName: "nginx:1.0"},
+					},
+				},
+			},
+		},
+		{
+			// Deployment 3 in cluster2 with containers using shared and unique images
+			Id:          uuid.NewV4().String(),
+			Name:        "dep3",
+			ClusterId:   cluster2,
+			ClusterName: cluster2,
+			Namespace:   "ns1",
+			NamespaceId: cluster2 + "ns1",
+			Containers: []*storage.Container{
+				{
+					Name: "container1",
+					Image: &storage.ContainerImage{
+						IdV2: sharedImageIDV2_1, // Same image as dep1, but in cluster2
+						Name: &storage.ImageName{FullName: "nginx:1.0"},
+					},
+				},
+				{
+					Name: "container2",
+					Image: &storage.ContainerImage{
+						IdV2: sharedImageIDV2_2,
+						Name: &storage.ImageName{FullName: "redis:latest"},
+					},
+				},
+				{
+					Name: "container3",
+					Image: &storage.ContainerImage{
+						IdV2: uniqueImageIDV2,
+						Name: &storage.ImageName{FullName: "postgres:15"},
+					},
+				},
+			},
+		},
+		{
+			// Deployment 4 in cluster2 with the second shared image
+			Id:          uuid.NewV4().String(),
+			Name:        "dep4",
+			ClusterId:   cluster2,
+			ClusterName: cluster2,
+			Namespace:   "ns2",
+			NamespaceId: cluster2 + "ns2",
+			Containers: []*storage.Container{
+				{
+					Name: "container1",
+					Image: &storage.ContainerImage{
+						IdV2: sharedImageIDV2_2, // Same image as dep3.container2
+						Name: &storage.ImageName{FullName: "redis:latest"},
+					},
+				},
+			},
+		},
+	}
+
+	for _, dep := range deployments {
+		require.NoError(t, deploymentDS.UpsertDeployment(ctx, dep))
+	}
+
+	// Test GetContainerImageResponses
+	responses, err := deploymentDS.GetContainerImageResponses(ctx)
+	require.NoError(t, err)
+
+	// Expected results:
+	// - sharedImageIDV2_1: deployed in cluster1 and cluster2
+	// - sharedImageIDV2_2: deployed in cluster2 only
+	// - uniqueImageIDV2: deployed in cluster2 only
+	assert.Len(t, responses, 3, "Should return 3 distinct responses")
+
+	// Build a map for easier assertion
+	responseMap := make(map[string][]string)
+	for _, resp := range responses {
+		responseMap[resp.GetImageID()] = resp.GetClusterIDs()
+	}
+
+	// Verify sharedImageIDV2_1 is in both clusters
+	assert.Contains(t, responseMap, sharedImageIDV2_1)
+	assert.ElementsMatch(t, []string{cluster1, cluster2}, responseMap[sharedImageIDV2_1],
+		"sharedImageIDV2_1 should be in both cluster1 and cluster2")
+
+	// Verify sharedImageIDV2_2 is only in cluster2
+	assert.Contains(t, responseMap, sharedImageIDV2_2)
+	assert.ElementsMatch(t, []string{cluster2}, responseMap[sharedImageIDV2_2],
+		"sharedImageIDV2_2 should be only in cluster2")
+
+	// Verify uniqueImageIDV2 is only in cluster2
+	assert.Contains(t, responseMap, uniqueImageIDV2)
+	assert.ElementsMatch(t, []string{cluster2}, responseMap[uniqueImageIDV2],
+		"uniqueImageIDV2 should be only in cluster2")
+
+	// Test CountContainerImages
+	count, err := deploymentDS.CountContainerImages(ctx)
+	require.NoError(t, err)
+
+	// Expected: 3 distinct images despite having 7 containers across 4 deployments in 2 clusters
+	assert.Equal(t, 3, count, "Should be 3 distinct container image IDs")
+}

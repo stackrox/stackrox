@@ -9,6 +9,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/deployment/cache"
 	deploymentStore "github.com/stackrox/rox/central/deployment/datastore/internal/store"
+	"github.com/stackrox/rox/central/deployment/views"
 	"github.com/stackrox/rox/central/globaldb"
 	imageDS "github.com/stackrox/rox/central/image/datastore"
 	imageV2DS "github.com/stackrox/rox/central/imagev2/datastore"
@@ -21,6 +22,7 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/images/types"
@@ -34,6 +36,7 @@ import (
 
 var (
 	deploymentsSAC = sac.ForResource(resources.Deployment)
+	queryTimeout   = env.PostgresVMStatementTimeout.DurationSetting()
 )
 
 type datastoreImpl struct {
@@ -470,6 +473,16 @@ func (ds *datastoreImpl) updateDeploymentPriority(deployments ...*storage.Deploy
 
 func (ds *datastoreImpl) GetDeploymentIDs(ctx context.Context) ([]string, error) {
 	return ds.deploymentStore.GetIDs(ctx)
+}
+
+func (ds *datastoreImpl) GetContainerImageResponses(ctx context.Context) ([]*views.ContainerImagesResponse, error) {
+	defer metrics.SetDatastoreFunctionDuration(time.Now(), "Deployment", "GetContainerImageResponses")
+	return ds.deploymentStore.GetContainerImageResponses(ctx)
+}
+
+func (ds *datastoreImpl) CountContainerImages(ctx context.Context) (int, error) {
+	defer metrics.SetDatastoreFunctionDuration(time.Now(), "Deployment", "CountContainerImages")
+	return ds.deploymentStore.CountContainerImages(ctx)
 }
 
 type DeploymentSearchResultConverter struct{}

@@ -13,6 +13,7 @@ import (
 	context "context"
 	reflect "reflect"
 
+	views "github.com/stackrox/rox/central/deployment/views"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	storage "github.com/stackrox/rox/generated/storage"
 	search "github.com/stackrox/rox/pkg/search"
@@ -58,6 +59,21 @@ func (mr *MockStoreMockRecorder) Count(ctx, q any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Count", reflect.TypeOf((*MockStore)(nil).Count), ctx, q)
 }
 
+// CountContainerImages mocks base method.
+func (m *MockStore) CountContainerImages(ctx context.Context) (int, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CountContainerImages", ctx)
+	ret0, _ := ret[0].(int)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// CountContainerImages indicates an expected call of CountContainerImages.
+func (mr *MockStoreMockRecorder) CountContainerImages(ctx any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CountContainerImages", reflect.TypeOf((*MockStore)(nil).CountContainerImages), ctx)
+}
+
 // Delete mocks base method.
 func (m *MockStore) Delete(ctx context.Context, id string) error {
 	m.ctrl.T.Helper()
@@ -86,6 +102,21 @@ func (m *MockStore) Get(ctx context.Context, id string) (*storage.Deployment, bo
 func (mr *MockStoreMockRecorder) Get(ctx, id any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Get", reflect.TypeOf((*MockStore)(nil).Get), ctx, id)
+}
+
+// GetContainerImageResponses mocks base method.
+func (m *MockStore) GetContainerImageResponses(ctx context.Context) ([]*views.ContainerImagesResponse, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetContainerImageResponses", ctx)
+	ret0, _ := ret[0].([]*views.ContainerImagesResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetContainerImageResponses indicates an expected call of GetContainerImageResponses.
+func (mr *MockStoreMockRecorder) GetContainerImageResponses(ctx any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetContainerImageResponses", reflect.TypeOf((*MockStore)(nil).GetContainerImageResponses), ctx)
 }
 
 // GetIDs mocks base method.
