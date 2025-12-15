@@ -13,8 +13,10 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/rate"
 	vmEnricherMocks "github.com/stackrox/rox/pkg/virtualmachine/enricher/mocks"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
 )
@@ -24,6 +26,13 @@ const (
 )
 
 var ctx = context.Background()
+
+// mustNewLimiter creates a rate limiter or fails the test.
+func mustNewLimiter(t require.TestingT, workloadName string, globalRate float64, bucketCapacity int) *rate.Limiter {
+	limiter, err := rate.NewLimiter(workloadName, globalRate, bucketCapacity)
+	require.NoError(t, err)
+	return limiter
+}
 
 func TestPipeline(t *testing.T) {
 	suite.Run(t, new(PipelineTestSuite))
@@ -43,9 +52,12 @@ func (suite *PipelineTestSuite) SetupTest() {
 	suite.mockCtrl = gomock.NewController(suite.T())
 	suite.vmDatastore = vmDatastoreMocks.NewMockDataStore(suite.mockCtrl)
 	suite.enricher = vmEnricherMocks.NewMockVirtualMachineEnricher(suite.mockCtrl)
+	// Use unlimited rate limiter for tests (rate=0)
+	rateLimiter := mustNewLimiter(suite.T(), "test", 0, 50)
 	suite.pipeline = &pipelineImpl{
 		vmDatastore: suite.vmDatastore,
 		enricher:    suite.enricher,
+		rateLimiter: rateLimiter,
 	}
 }
 
@@ -176,13 +188,15 @@ func (suite *PipelineTestSuite) TestGetPipeline() {
 func (suite *PipelineTestSuite) TestNewPipeline() {
 	mockDatastore := vmDatastoreMocks.NewMockDataStore(suite.mockCtrl)
 	mockEnricher := vmEnricherMocks.NewMockVirtualMachineEnricher(suite.mockCtrl)
-	pipeline := newPipeline(mockDatastore, mockEnricher)
+	rateLimiter := mustNewLimiter(suite.T(), "test", 0, 50)
+	pipeline := newPipeline(mockDatastore, mockEnricher, rateLimiter)
 	suite.NotNil(pipeline)
 
 	impl, ok := pipeline.(*pipelineImpl)
 	suite.True(ok, "Should return pipelineImpl instance")
 	suite.Equal(mockDatastore, impl.vmDatastore)
 	suite.Equal(mockEnricher, impl.enricher)
+	suite.Equal(rateLimiter, impl.rateLimiter)
 }
 
 // Test table-driven approach for different actions
@@ -229,9 +243,11 @@ func TestPipelineRun_DifferentActions(t *testing.T) {
 
 			vmDatastore := vmDatastoreMocks.NewMockDataStore(ctrl)
 			enricher := vmEnricherMocks.NewMockVirtualMachineEnricher(ctrl)
+			rateLimiter := mustNewLimiter(t, "test", 0, 50)
 			pipeline := &pipelineImpl{
 				vmDatastore: vmDatastore,
 				enricher:    enricher,
+				rateLimiter: rateLimiter,
 			}
 
 			vmID := "vm-1"
@@ -272,7 +288,11 @@ func TestPipelineEdgeCases(t *testing.T) {
 	defer ctrl.Finish()
 
 	vmDatastore := vmDatastoreMocks.NewMockDataStore(ctrl)
-	pipeline := &pipelineImpl{vmDatastore: vmDatastore}
+	rateLimiter := mustNewLimiter(t, "test", 0, 50)
+	pipeline := &pipelineImpl{
+		vmDatastore: vmDatastore,
+		rateLimiter: rateLimiter,
+	}
 
 	t.Run("nil message", func(t *testing.T) {
 		result := pipeline.Match(nil)
@@ -328,9 +348,11 @@ func TestPipelineRun_DisabledFeature(t *testing.T) {
 
 	vmDatastore := vmDatastoreMocks.NewMockDataStore(ctrl)
 	enricher := vmEnricherMocks.NewMockVirtualMachineEnricher(ctrl)
+	rateLimiter := mustNewLimiter(t, "test", 0, 50)
 	pipeline := &pipelineImpl{
 		vmDatastore: vmDatastore,
 		enricher:    enricher,
+		rateLimiter: rateLimiter,
 	}
 
 	vmID := "vm-1"
@@ -339,4 +361,74 @@ func TestPipelineRun_DisabledFeature(t *testing.T) {
 	err := pipeline.Run(ctx, testClusterID, msg, nil)
 
 	assert.NoError(t, err)
+}
+
+// TestPipelineRun_RateLimitDisabled tests that rate limiting is disabled when configured with 0
+func TestPipelineRun_RateLimitDisabled(t *testing.T) {
+	t.Setenv(features.VirtualMachines.EnvVar(), "true")
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	vmDatastore := vmDatastoreMocks.NewMockDataStore(ctrl)
+	enricher := vmEnricherMocks.NewMockVirtualMachineEnricher(ctrl)
+	rateLimiter := mustNewLimiter(t, "test", 0, 50) // Disabled
+
+	pipeline := &pipelineImpl{
+		vmDatastore: vmDatastore,
+		enricher:    enricher,
+		rateLimiter: rateLimiter,
+	}
+
+	vmID := "vm-1"
+	msg := createVMIndexMessage(vmID, central.ResourceAction_SYNC_RESOURCE)
+
+	// Should process all 100 requests without rate limiting
+	for i := 0; i < 100; i++ {
+		enricher.EXPECT().
+			EnrichVirtualMachineWithVulnerabilities(gomock.Any(), gomock.Any()).
+			Return(nil)
+		vmDatastore.EXPECT().
+			UpdateVirtualMachineScan(ctx, vmID, gomock.Any()).
+			Return(nil)
+
+		err := pipeline.Run(ctx, testClusterID, msg, nil)
+		assert.NoError(t, err, "request %d should succeed with rate limiting disabled", i)
+	}
+}
+
+// TestPipelineRun_RateLimitEnabled tests that rate limiting rejects requests when enabled
+func TestPipelineRun_RateLimitEnabled(t *testing.T) {
+	t.Setenv(features.VirtualMachines.EnvVar(), "true")
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	vmDatastore := vmDatastoreMocks.NewMockDataStore(ctrl)
+	enricher := vmEnricherMocks.NewMockVirtualMachineEnricher(ctrl)
+	rateLimiter := mustNewLimiter(t, "test", 5, 5) // 5 req/s, bucket capacity=5
+
+	pipeline := &pipelineImpl{
+		vmDatastore: vmDatastore,
+		enricher:    enricher,
+		rateLimiter: rateLimiter,
+	}
+
+	vmID := "vm-1"
+	msg := createVMIndexMessage(vmID, central.ResourceAction_SYNC_RESOURCE)
+
+	// First 5 requests should succeed (burst capacity)
+	for i := 0; i < 5; i++ {
+		enricher.EXPECT().
+			EnrichVirtualMachineWithVulnerabilities(gomock.Any(), gomock.Any()).
+			Return(nil)
+		vmDatastore.EXPECT().
+			UpdateVirtualMachineScan(ctx, vmID, gomock.Any()).
+			Return(nil)
+
+		err := pipeline.Run(ctx, testClusterID, msg, nil)
+		assert.NoError(t, err, "request %d should succeed within burst", i)
+	}
+
+	// 6th request should be rejected (no NACK sent since injector is nil in test)
+	err := pipeline.Run(ctx, testClusterID, msg, nil)
+	assert.NoError(t, err, "rate limited request should not return error (NACK sent instead)")
 }
