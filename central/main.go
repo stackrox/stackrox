@@ -649,6 +649,8 @@ func startPhonehomeTelemetryCollection(config *pkgGRPC.Config, basicAuthProvider
 		c := phonehomeClient.Singleton()
 		c.GrantConsent()
 		c.RegisterCentralClient(config, basicAuthProviderID)
+		c.AddStaticPropsGatherer()
+		c.AddInterceptorFuncs()
 		addCentralIdentityGatherers(c)
 		c.Enable()
 		log.Infof("Telemetry Client Configuration: %s", c)

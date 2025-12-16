@@ -105,6 +105,7 @@ func Test_centralClient_flow(t *testing.T) {
 	t.Setenv(env.TelemetryEndpoint.EnvVar(), s.URL)
 
 	c := newCentralClient("test-instance")
+	c.AddStaticPropsGatherer()
 
 	var gathered atomic.Bool
 	c.Gatherer().AddGatherer(func(context.Context) (map[string]any, error) {
