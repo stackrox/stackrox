@@ -12,6 +12,7 @@ import (
 	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
 	"github.com/stackrox/rox/generated/internalapi/sensor"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/testutils/goleak"
@@ -219,7 +220,9 @@ func (s *NodeInventoryHandlerTestSuite) TestCapabilities() {
 	reports := make(chan *index.IndexReportWrap)
 	defer close(reports)
 	h := NewNodeInventoryHandler(inventories, reports, &mockAlwaysHitNodeIDMatcher{}, &mockRHCOSNodeMatcher{})
-	s.Nil(h.Capabilities())
+	caps := h.Capabilities()
+	s.Require().Len(caps, 1)
+	s.Equal(centralsensor.SensorACKSupport, caps[0])
 }
 
 func (s *NodeInventoryHandlerTestSuite) TestResponsesCShouldPanicWhenNotStarted() {
@@ -370,6 +373,154 @@ func (s *NodeInventoryHandlerTestSuite) TestHandlerCentralACKsToCompliance() {
 
 	}
 
+}
+
+// TestHandlerSensorACKsToCompliance tests the new SensorACK message handling.
+// Node-related SensorACK messages from Central 4.10+ should be forwarded to Compliance as ComplianceACK.
+// Non-node messages (like VM_INDEX_REPORT) should be ignored.
+func (s *NodeInventoryHandlerTestSuite) TestHandlerSensorACKsToCompliance() {
+	cases := map[string]struct {
+		sensorACK           *central.SensorACK
+		shouldForward       bool // true if message should be forwarded to Compliance
+		expectedAction      sensor.MsgToCompliance_ComplianceACK_Action
+		expectedMessageType sensor.MsgToCompliance_ComplianceACK_MessageType
+	}{
+		"NODE_INVENTORY ACK should be forwarded": {
+			sensorACK: &central.SensorACK{
+				Action:      central.SensorACK_ACK,
+				MessageType: central.SensorACK_NODE_INVENTORY,
+				ResourceId:  "node-1",
+			},
+			shouldForward:       true,
+			expectedAction:      sensor.MsgToCompliance_ComplianceACK_ACK,
+			expectedMessageType: sensor.MsgToCompliance_ComplianceACK_NODE_INVENTORY,
+		},
+		"NODE_INDEX_REPORT ACK should be forwarded": {
+			sensorACK: &central.SensorACK{
+				Action:      central.SensorACK_ACK,
+				MessageType: central.SensorACK_NODE_INDEX_REPORT,
+				ResourceId:  "node-2",
+			},
+			shouldForward:       true,
+			expectedAction:      sensor.MsgToCompliance_ComplianceACK_ACK,
+			expectedMessageType: sensor.MsgToCompliance_ComplianceACK_NODE_INDEX_REPORT,
+		},
+		"VM_INDEX_REPORT ACK should be ignored": {
+			sensorACK: &central.SensorACK{
+				Action:      central.SensorACK_ACK,
+				MessageType: central.SensorACK_VM_INDEX_REPORT,
+				ResourceId:  "vm-1",
+			},
+			shouldForward: false,
+		},
+	}
+
+	for name, tc := range cases {
+		s.Run(name, func() {
+			ch := make(chan *storage.NodeInventory)
+			defer close(ch)
+			reports := make(chan *index.IndexReportWrap)
+			defer close(reports)
+			handler := NewNodeInventoryHandler(ch, reports, &mockAlwaysHitNodeIDMatcher{}, &mockRHCOSNodeMatcher{})
+			s.NoError(handler.Start())
+			handler.Notify(common.SensorComponentEventCentralReachable)
+
+			if tc.shouldForward {
+				// Start a goroutine to receive the ComplianceACK before sending
+				// (channel is unbuffered so we need a receiver ready)
+				var msg common.MessageToComplianceWithAddress
+				received := concurrency.NewSignal()
+				go func() {
+					defer received.Signal()
+					select {
+					case msg = <-handler.ComplianceC():
+					case <-time.After(3 * time.Second):
+						s.Fail("ComplianceACK message not received within 3 seconds")
+					}
+				}()
+
+				// Send the SensorACK message
+				err := handler.ProcessMessage(s.T().Context(), &central.MsgToSensor{
+					Msg: &central.MsgToSensor_SensorAck{SensorAck: tc.sensorACK},
+				})
+				s.NoError(err)
+
+				received.Wait()
+
+				// Verify ComplianceACK was sent to Compliance
+				complianceAck := msg.Msg.GetComplianceAck()
+				s.Require().NotNil(complianceAck, "Expected ComplianceACK message")
+				s.Equal(tc.expectedAction, complianceAck.GetAction())
+				s.Equal(tc.expectedMessageType, complianceAck.GetMessageType())
+				s.Equal(tc.sensorACK.GetResourceId(), complianceAck.GetResourceId())
+				s.Equal(tc.sensorACK.GetReason(), complianceAck.GetReason())
+				s.Equal(tc.sensorACK.GetResourceId(), msg.Hostname)
+			} else {
+				// Send the SensorACK message
+				err := handler.ProcessMessage(s.T().Context(), &central.MsgToSensor{
+					Msg: &central.MsgToSensor_SensorAck{SensorAck: tc.sensorACK},
+				})
+				s.NoError(err)
+
+				// Verify nothing was sent to Compliance (non-blocking check)
+				select {
+				case msg := <-handler.ComplianceC():
+					s.Failf("Message should not be forwarded to Compliance", "got: %v", msg)
+				default:
+					// Expected - nothing should be sent
+				}
+			}
+
+			handler.Stop()
+			s.NoError(handler.Stopped().Wait())
+		})
+	}
+}
+
+// TestHandlerAcceptsBothAckTypes tests that the handler accepts both legacy NodeInventoryACK
+// and new SensorACK message types.
+func (s *NodeInventoryHandlerTestSuite) TestHandlerAcceptsBothAckTypes() {
+	ch := make(chan *storage.NodeInventory)
+	defer close(ch)
+	reports := make(chan *index.IndexReportWrap)
+	defer close(reports)
+	handler := NewNodeInventoryHandler(ch, reports, &mockAlwaysHitNodeIDMatcher{}, &mockRHCOSNodeMatcher{})
+
+	// Test legacy NodeInventoryACK
+	legacyMsg := &central.MsgToSensor{
+		Msg: &central.MsgToSensor_NodeInventoryAck{NodeInventoryAck: &central.NodeInventoryACK{
+			ClusterId: "cluster-1",
+			NodeName:  "node-1",
+			Action:    central.NodeInventoryACK_ACK,
+		}},
+	}
+	s.True(handler.Accepts(legacyMsg), "Handler should accept legacy NodeInventoryACK")
+
+	// Test new SensorACK for node-related messages
+	nodeAckMsg := &central.MsgToSensor{
+		Msg: &central.MsgToSensor_SensorAck{SensorAck: &central.SensorACK{
+			Action:      central.SensorACK_ACK,
+			MessageType: central.SensorACK_NODE_INDEX_REPORT,
+			ResourceId:  "node-1",
+		}},
+	}
+	s.True(handler.Accepts(nodeAckMsg), "Handler should accept SensorACK for node messages")
+
+	// Test SensorACK for VM messages (also accepted by Accepts, but ignored in ProcessMessage)
+	vmAckMsg := &central.MsgToSensor{
+		Msg: &central.MsgToSensor_SensorAck{SensorAck: &central.SensorACK{
+			Action:      central.SensorACK_ACK,
+			MessageType: central.SensorACK_VM_INDEX_REPORT,
+			ResourceId:  "vm-1",
+		}},
+	}
+	s.True(handler.Accepts(vmAckMsg), "Handler accepts SensorACK for VM messages (but ignores in ProcessMessage)")
+
+	// Test message without ACK
+	otherMsg := &central.MsgToSensor{
+		Msg: &central.MsgToSensor_ClusterConfig{},
+	}
+	s.False(handler.Accepts(otherMsg), "Handler should not accept other message types")
 }
 
 // This test simulates a running Sensor loosing connection to Central, followed by a reconnect.

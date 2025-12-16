@@ -223,6 +223,34 @@ func (s *virtualMachineHandlerSuite) TestCapabilities() {
 	s.Require().Empty(caps)
 }
 
+func (s *virtualMachineHandlerSuite) TestAccepts() {
+	// Should accept SensorACK with VM_INDEX_REPORT type
+	vmAckMsg := &central.MsgToSensor{
+		Msg: &central.MsgToSensor_SensorAck{SensorAck: &central.SensorACK{
+			Action:      central.SensorACK_ACK,
+			MessageType: central.SensorACK_VM_INDEX_REPORT,
+			ResourceId:  "vm-1",
+		}},
+	}
+	s.Assert().True(s.handler.Accepts(vmAckMsg), "Handler should accept SensorACK for VM_INDEX_REPORT")
+
+	// Should not accept SensorACK with other types
+	nodeAckMsg := &central.MsgToSensor{
+		Msg: &central.MsgToSensor_SensorAck{SensorAck: &central.SensorACK{
+			Action:      central.SensorACK_ACK,
+			MessageType: central.SensorACK_NODE_INDEX_REPORT,
+			ResourceId:  "node-1",
+		}},
+	}
+	s.Assert().False(s.handler.Accepts(nodeAckMsg), "Handler should not accept SensorACK for NODE_INDEX_REPORT")
+
+	// Should not accept other message types
+	otherMsg := &central.MsgToSensor{
+		Msg: &central.MsgToSensor_ClusterConfig{},
+	}
+	s.Assert().False(s.handler.Accepts(otherMsg), "Handler should not accept other message types")
+}
+
 func (s *virtualMachineHandlerSuite) TestProcessMessage() {
 	msg := &central.MsgToSensor{}
 	err := s.handler.ProcessMessage(context.Background(), msg)
