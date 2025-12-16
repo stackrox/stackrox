@@ -113,6 +113,14 @@ func insertIntoNetworkEntities(batch *pgx.Batch, obj *storage.NetworkEntity) err
 	return nil
 }
 
+var copyColsNetworkEntities = []string{
+	"info_id",
+	"info_externalsource_cidr",
+	"info_externalsource_default",
+	"info_externalsource_discovered",
+	"serialized",
+}
+
 func copyFromNetworkEntities(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, objs ...*storage.NetworkEntity) error {
 	if len(objs) == 0 {
 		return nil
@@ -128,14 +136,6 @@ func copyFromNetworkEntities(ctx context.Context, s pgSearch.Deleter, tx *postgr
 		if err := s.DeleteMany(ctx, deletes); err != nil {
 			return err
 		}
-	}
-
-	copyCols := []string{
-		"info_id",
-		"info_externalsource_cidr",
-		"info_externalsource_default",
-		"info_externalsource_discovered",
-		"serialized",
 	}
 
 	idx := 0
@@ -160,7 +160,7 @@ func copyFromNetworkEntities(ctx context.Context, s pgSearch.Deleter, tx *postgr
 		}, nil
 	})
 
-	if _, err := tx.CopyFrom(ctx, pgx.Identifier{"network_entities"}, copyCols, inputRows); err != nil {
+	if _, err := tx.CopyFrom(ctx, pgx.Identifier{"network_entities"}, copyColsNetworkEntities, inputRows); err != nil {
 		return err
 	}
 

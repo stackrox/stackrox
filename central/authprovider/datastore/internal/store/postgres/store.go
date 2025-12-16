@@ -110,6 +110,12 @@ func insertIntoAuthProviders(batch *pgx.Batch, obj *storage.AuthProvider) error 
 	return nil
 }
 
+var copyColsAuthProviders = []string{
+	"id",
+	"name",
+	"serialized",
+}
+
 func copyFromAuthProviders(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, objs ...*storage.AuthProvider) error {
 	if len(objs) == 0 {
 		return nil
@@ -125,12 +131,6 @@ func copyFromAuthProviders(ctx context.Context, s pgSearch.Deleter, tx *postgres
 		if err := s.DeleteMany(ctx, deletes); err != nil {
 			return err
 		}
-	}
-
-	copyCols := []string{
-		"id",
-		"name",
-		"serialized",
 	}
 
 	idx := 0
@@ -153,7 +153,7 @@ func copyFromAuthProviders(ctx context.Context, s pgSearch.Deleter, tx *postgres
 		}, nil
 	})
 
-	if _, err := tx.CopyFrom(ctx, pgx.Identifier{"auth_providers"}, copyCols, inputRows); err != nil {
+	if _, err := tx.CopyFrom(ctx, pgx.Identifier{"auth_providers"}, copyColsAuthProviders, inputRows); err != nil {
 		return err
 	}
 

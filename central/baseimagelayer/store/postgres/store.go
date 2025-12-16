@@ -113,6 +113,14 @@ func insertIntoBaseImageLayers(batch *pgx.Batch, obj *storage.BaseImageLayer) er
 	return nil
 }
 
+var copyColsBaseImageLayers = []string{
+	"id",
+	"baseimageid",
+	"layerdigest",
+	"index",
+	"serialized",
+}
+
 func copyFromBaseImageLayers(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, objs ...*storage.BaseImageLayer) error {
 	if len(objs) == 0 {
 		return nil
@@ -128,14 +136,6 @@ func copyFromBaseImageLayers(ctx context.Context, s pgSearch.Deleter, tx *postgr
 		if err := s.DeleteMany(ctx, deletes); err != nil {
 			return err
 		}
-	}
-
-	copyCols := []string{
-		"id",
-		"baseimageid",
-		"layerdigest",
-		"index",
-		"serialized",
 	}
 
 	idx := 0
@@ -160,7 +160,7 @@ func copyFromBaseImageLayers(ctx context.Context, s pgSearch.Deleter, tx *postgr
 		}, nil
 	})
 
-	if _, err := tx.CopyFrom(ctx, pgx.Identifier{"base_image_layers"}, copyCols, inputRows); err != nil {
+	if _, err := tx.CopyFrom(ctx, pgx.Identifier{"base_image_layers"}, copyColsBaseImageLayers, inputRows); err != nil {
 		return err
 	}
 

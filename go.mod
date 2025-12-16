@@ -29,10 +29,10 @@ require (
 	github.com/aws/aws-sdk-go-v2/config v1.32.5
 	github.com/aws/aws-sdk-go-v2/credentials v1.19.5
 	github.com/aws/aws-sdk-go-v2/feature/ec2/imds v1.18.16
-	github.com/aws/aws-sdk-go-v2/feature/s3/manager v1.20.15
+	github.com/aws/aws-sdk-go-v2/feature/s3/manager v1.20.16
 	github.com/aws/aws-sdk-go-v2/service/ecr v1.54.4
-	github.com/aws/aws-sdk-go-v2/service/s3 v1.93.2
-	github.com/aws/aws-sdk-go-v2/service/securityhub v1.67.1
+	github.com/aws/aws-sdk-go-v2/service/s3 v1.94.0
+	github.com/aws/aws-sdk-go-v2/service/securityhub v1.67.2
 	github.com/aws/aws-sdk-go-v2/service/sts v1.41.5
 	github.com/aws/smithy-go v1.24.0
 	github.com/cenkalti/backoff/v3 v3.2.2
@@ -161,7 +161,7 @@ require (
 	gopkg.in/robfig/cron.v2 v2.0.0-20150107220207-be2e0b0deed5
 	gorm.io/driver/postgres v1.6.0
 	gorm.io/gorm v1.31.1
-	helm.sh/helm/v3 v3.19.3
+	helm.sh/helm/v3 v3.19.4
 	k8s.io/api v0.34.3
 	k8s.io/apiextensions-apiserver v0.34.3
 	k8s.io/apimachinery v0.34.3
@@ -277,7 +277,7 @@ require (
 	github.com/containers/storage v1.59.1 // indirect
 	github.com/cpuguy83/go-md2man/v2 v2.0.7 // indirect
 	github.com/cyberphone/json-canonicalization v0.0.0-20241213102144-19d51d7fe467 // indirect
-	github.com/cyphar/filepath-securejoin v0.6.0 // indirect
+	github.com/cyphar/filepath-securejoin v0.6.1 // indirect
 	github.com/digitorus/pkcs7 v0.0.0-20230818184609-3a137a874352 // indirect
 	github.com/digitorus/timestamp v0.0.0-20231217203849-220c5c2851b7 // indirect
 	github.com/dimchansky/utfbom v1.1.1 // indirect

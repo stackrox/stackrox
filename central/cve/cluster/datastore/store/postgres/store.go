@@ -120,6 +120,21 @@ func insertIntoClusterCves(batch *pgx.Batch, obj *storage.ClusterCVE) error {
 	return nil
 }
 
+var copyColsClusterCves = []string{
+	"id",
+	"cvebaseinfo_cve",
+	"cvebaseinfo_publishedon",
+	"cvebaseinfo_createdat",
+	"cvebaseinfo_epss_epssprobability",
+	"cvss",
+	"severity",
+	"impactscore",
+	"snoozed",
+	"snoozeexpiry",
+	"type",
+	"serialized",
+}
+
 func copyFromClusterCves(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, objs ...*storage.ClusterCVE) error {
 	if len(objs) == 0 {
 		return nil
@@ -135,21 +150,6 @@ func copyFromClusterCves(ctx context.Context, s pgSearch.Deleter, tx *postgres.T
 		if err := s.DeleteMany(ctx, deletes); err != nil {
 			return err
 		}
-	}
-
-	copyCols := []string{
-		"id",
-		"cvebaseinfo_cve",
-		"cvebaseinfo_publishedon",
-		"cvebaseinfo_createdat",
-		"cvebaseinfo_epss_epssprobability",
-		"cvss",
-		"severity",
-		"impactscore",
-		"snoozed",
-		"snoozeexpiry",
-		"type",
-		"serialized",
 	}
 
 	idx := 0
@@ -181,7 +181,7 @@ func copyFromClusterCves(ctx context.Context, s pgSearch.Deleter, tx *postgres.T
 		}, nil
 	})
 
-	if _, err := tx.CopyFrom(ctx, pgx.Identifier{"cluster_cves"}, copyCols, inputRows); err != nil {
+	if _, err := tx.CopyFrom(ctx, pgx.Identifier{"cluster_cves"}, copyColsClusterCves, inputRows); err != nil {
 		return err
 	}
 

@@ -107,6 +107,11 @@ func insertIntoDeclarativeConfigHealths(batch *pgx.Batch, obj *storage.Declarati
 	return nil
 }
 
+var copyColsDeclarativeConfigHealths = []string{
+	"id",
+	"serialized",
+}
+
 func copyFromDeclarativeConfigHealths(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, objs ...*storage.DeclarativeConfigHealth) error {
 	if len(objs) == 0 {
 		return nil
@@ -122,11 +127,6 @@ func copyFromDeclarativeConfigHealths(ctx context.Context, s pgSearch.Deleter, t
 		if err := s.DeleteMany(ctx, deletes); err != nil {
 			return err
 		}
-	}
-
-	copyCols := []string{
-		"id",
-		"serialized",
 	}
 
 	idx := 0
@@ -148,7 +148,7 @@ func copyFromDeclarativeConfigHealths(ctx context.Context, s pgSearch.Deleter, t
 		}, nil
 	})
 
-	if _, err := tx.CopyFrom(ctx, pgx.Identifier{"declarative_config_healths"}, copyCols, inputRows); err != nil {
+	if _, err := tx.CopyFrom(ctx, pgx.Identifier{"declarative_config_healths"}, copyColsDeclarativeConfigHealths, inputRows); err != nil {
 		return err
 	}
 
