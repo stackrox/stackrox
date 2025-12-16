@@ -1,0 +1,30 @@
+syntax = "proto3";
+
+package storage;
+
+option go_package = "./storage;storage";
+option java_package = "io.stackrox.proto.storage";
+
+// DynamicAccessScope represents an ephemeral access scope that is embedded
+// in token claims and not persisted to the database. It defines a runtime
+// scope for short-lived tokens to limit access to specific cluster resources.
+//
+// Unlike SimpleAccessScope, DynamicAccessScope is:
+// - Never persisted to the database
+// - Embedded directly in JWT token claims
+// - Used for short-lived, namespace/deployment-scoped tokens
+// - Created dynamically at token issuance time
+message DynamicAccessScope {
+  // The cluster name this scope applies to. Must match the cluster
+  // where the token is being issued.
+  string cluster_name = 1;
+
+  // The namespace this scope is limited to. If empty, grants access
+  // to all namespaces in the cluster (subject to K8s RBAC).
+  string namespace = 2;
+
+  // The deployment name this scope is limited to. Only meaningful
+  // if namespace is also specified. If empty, grants access to all
+  // deployments in the namespace (subject to K8s RBAC).
+  string deployment = 3;
+}
