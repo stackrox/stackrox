@@ -18,7 +18,6 @@ import type { SelectedEntity } from './EntitySelector';
 import AttributeSelector from './AttributeSelector';
 import type { SelectedAttribute } from './AttributeSelector';
 import CompoundSearchFilterInputField from './CompoundSearchFilterInputField';
-import type { InputFieldValue } from './CompoundSearchFilterInputField';
 
 export type CompoundSearchFilterProps = {
     config: CompoundSearchFilterConfig;
@@ -65,8 +64,6 @@ function CompoundSearchFilter({
         ? selectedAttribute
         : getDefaultAttributeName(config, currentEntity ?? '');
 
-    const [inputValue, setInputValue] = useState<InputFieldValue>('');
-
     useEffect(() => {
         if (defaultEntity) {
             setSelectedEntity(defaultEntity);
@@ -97,7 +94,6 @@ function CompoundSearchFilter({
                     const defaultAttributeName = getDefaultAttributeName(config, entityName);
                     setSelectedEntity(entityName);
                     setSelectedAttribute(defaultAttributeName);
-                    setInputValue('');
                 }}
                 config={config}
             />
@@ -107,7 +103,6 @@ function CompoundSearchFilter({
                 selectedAttribute={currentAttribute}
                 onChange={(value) => {
                     setSelectedAttribute(ensureString(value));
-                    setInputValue('');
                 }}
                 config={config}
             />
@@ -115,10 +110,6 @@ function CompoundSearchFilter({
                 <CompoundSearchFilterInputField
                     entity={entity}
                     attribute={attribute}
-                    value={inputValue}
-                    onChange={(value) => {
-                        setInputValue(value);
-                    }}
                     searchFilter={searchFilter}
                     additionalContextFilter={additionalContextFilter}
                     onSearch={(payload) => {

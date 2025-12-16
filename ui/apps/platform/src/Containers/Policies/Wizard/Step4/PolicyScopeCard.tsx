@@ -15,7 +15,7 @@ import {
 import { TrashIcon } from '@patternfly/react-icons';
 import { useField } from 'formik';
 
-import SearchFilterAutocomplete from 'Components/CompoundSearchFilter/components/SearchFilterAutocomplete';
+import AutocompleteSelect from 'Components/CompoundSearchFilter/components/AutocompleteSelect';
 import TypeaheadSelect from 'Components/TypeaheadSelect/TypeaheadSelect';
 import type { TypeaheadSelectOption } from 'Components/TypeaheadSelect/TypeaheadSelect';
 import type { ClusterScopeObject } from 'services/RolesService';
@@ -156,7 +156,7 @@ function PolicyScopeCard({
                         {type === 'exclusion' && (
                             <FlexItem>
                                 <FormGroup label="Deployment" fieldId={`${name}-deployment`}>
-                                    <SearchFilterAutocomplete
+                                    <AutocompleteSelect
                                         searchCategory="DEPLOYMENTS"
                                         searchTerm="Deployment"
                                         value={value.name || ''}
