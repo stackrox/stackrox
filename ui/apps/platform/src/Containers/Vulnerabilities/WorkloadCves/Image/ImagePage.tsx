@@ -20,7 +20,7 @@ import {
 } from '@patternfly/react-core';
 import { ExclamationCircleIcon } from '@patternfly/react-icons';
 import { useParams } from 'react-router-dom-v5-compat';
-import { gql, useQuery } from '@apollo/client';
+import { DocumentNode, gql, useQuery } from '@apollo/client';
 import isEmpty from 'lodash/isEmpty';
 
 import BreadcrumbItemLink from 'Components/BreadcrumbItemLink';
@@ -54,8 +54,24 @@ import useWorkloadCveViewContext from '../hooks/useWorkloadCveViewContext';
 import type { defaultColumns as deploymentResourcesDefaultColumns } from './DeploymentResourceTable';
 import CreateReportDropdown from '../components/CreateReportDropdown';
 import CreateViewBasedReportModal from '../components/CreateViewBasedReportModal';
+import useFeatureFlags from 'hooks/useFeatureFlags';
 
-export const imageDetailsQuery = gql`
+const imageDetailsQuery = gql`
+    ${imageDetailsFragment}
+    query getImageDetails($id: ID!) {
+        image(id: $id) {
+            name {
+                registry
+                remote
+                tag
+                fullName
+            }
+            ...ImageDetails
+        }
+    }
+`;
+
+const imageV2DetailsQuery = gql`
     ${imageDetailsFragment}
     query getImageDetails($id: ID!) {
         imageV2(id: $id) {
@@ -70,6 +86,8 @@ export const imageDetailsQuery = gql`
         }
     }
 `;
+
+export const getImageDetailsQuery = (isNewImageDataModelEnabled: boolean) : DocumentNode => isNewImageDataModelEnabled ? imageV2DetailsQuery : imageDetailsQuery;
 
 function OptionalSbomButtonTooltip({
     children,
@@ -92,30 +110,36 @@ export type ImagePageProps = {
     >;
 };
 
+type ImageData = {
+    id: string;
+    name: {
+        registry: string;
+        remote: string;
+        tag: string;
+        fullName: string;
+    } | null;
+} & ImageDetails;
+
+type ImageV2Data = ImageData & { digest: string };
+
 function ImagePage({
     vulnerabilityState,
     showVulnerabilityStateTabs,
     deploymentResourceColumnOverrides,
 }: ImagePageProps) {
+    const { isFeatureFlagEnabled } = useFeatureFlags();
+    const isNewImageDataModelEnabled = isFeatureFlagEnabled('ROX_FLATTEN_IMAGE_DATA');
     const { urlBuilder, pageTitle, baseSearchFilter, viewContext } = useWorkloadCveViewContext();
     const { imageId } = useParams() as { imageId: string };
     const { data, error } = useQuery<
         {
-            imageV2: {
-                id: string;
-                digest: string;
-                name: {
-                    registry: string;
-                    remote: string;
-                    tag: string;
-                    fullName: string;
-                } | null;
-            } & ImageDetails;
+            image: ImageData | null, // Legacy image data model, will be null when ROX_FLATTEN_IMAGE_DATA is enabled
+            imageV2: ImageV2Data | null; // New image data model, will be null when ROX_FLATTEN_IMAGE_DATA is disabled
         },
         {
             id: string;
         }
-    >(imageDetailsQuery, {
+    >(getImageDetailsQuery(isNewImageDataModelEnabled), {
         variables: { id: imageId },
     });
     const [activeTabKey, setActiveTabKey] = useURLStringUnion('detailsTab', detailsTabValues);
@@ -154,7 +178,7 @@ function ImagePage({
         return getVulnStateScopedQueryString(combinedFilter, vulnerabilityState);
     }, [imageId, baseSearchFilter, querySearchFilter, vulnerabilityState]);
 
-    const imageData = data && data.imageV2;
+    const imageData = data && (isNewImageDataModelEnabled ? data.imageV2 : data.image);
     const imageName = imageData?.name;
     const imageDisplayName =
         imageData && imageName
@@ -181,7 +205,7 @@ function ImagePage({
             </PageSection>
         );
     } else {
-        const sha = imageData?.digest;
+        const sha = isNewImageDataModelEnabled ? (imageData as ImageV2Data)?.digest : imageData?.id;
         mainContent = (
             <>
                 <PageSection variant="light">
