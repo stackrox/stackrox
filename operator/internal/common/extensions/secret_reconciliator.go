@@ -115,9 +115,18 @@ func (r *SecretReconciliator) EnsureSecret(ctx context.Context, name string, val
 
 func (r *SecretReconciliator) updateExisting(ctx context.Context, secret *coreV1.Secret, validate validateSecretDataFunc, generate generateSecretDataFunc, desiredLabels map[string]string) error {
 	isManaged := metav1.IsControlledBy(secret, r.obj)
+	needsUpdate := false
+
+	// Check if the secret should be adopted. This handles backup/restore scenarios
+	// where ownerReferences were stripped but the managed-by label remains.
+	if !isManaged && utils.ShouldAdoptResource(secret) {
+		secret.SetOwnerReferences([]metav1.OwnerReference{*metav1.NewControllerRef(r.obj, r.obj.GroupVersionKind())})
+		isManaged = true
+		needsUpdate = true
+	}
+
 	validateErr := validate(secret.Data, isManaged)
 
-	needsUpdate := false
 	// If the secret is unmanaged, we cannot fix it, so we should fail.
 	if validateErr != nil && !isManaged {
 		return errors.Wrapf(validateErr,
