@@ -224,6 +224,8 @@ func (s *AlertDatastoreImplSuite) TestSearchAlerts() {
 	s.Len(searchResults, 1)
 	s.Equal(alert.GetId(), searchResults[0].GetId())
 	s.Equal(alert.GetPolicy().GetName(), searchResults[0].GetName())
+	expectedLocation := fmt.Sprintf("/%s/%s/Deployment/%s", alert.GetClusterName(), alert.GetNamespace(), alert.GetDeployment().GetName())
+	s.Equal(searchResults[0].GetLocation(), expectedLocation)
 }
 
 // TestSearchRawAlerts tests the SearchRawAlerts functionality with real data
