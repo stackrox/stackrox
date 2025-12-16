@@ -50,7 +50,7 @@ func TestProcessInvalidateImageCache_WithoutFlattenImageData(t *testing.T) {
 			Name: &storage.ImageName{FullName: "quay.io/stackrox/main:4.0.0"},
 		},
 	})
-	//Images without IDs (cached by full name)
+	// Images without IDs (cached by full name)
 	imageCache.Add(cache.Key("redis:alpine"), &mockImageCacheValue{
 		image: &storage.Image{
 			Id:   "",
@@ -134,7 +134,7 @@ func TestProcessInvalidateImageCache_WithFlattenImageData(t *testing.T) {
 			Name: &storage.ImageName{FullName: "quay.io/stackrox/main:4.0.0"},
 		},
 	})
-	//Images without IDs (cached by full name)
+	// Images without IDs (cached by full name)
 	imageCache.Add(cache.Key("redis:alpine"), &mockImageCacheValue{
 		image: &storage.Image{
 			Id:   "",
