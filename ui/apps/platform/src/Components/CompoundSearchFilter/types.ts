@@ -1,7 +1,7 @@
 import type { SearchCategory } from 'services/SearchService';
 import type { FeatureFlagEnvVar } from 'types/featureFlag';
 import type { NonEmptyArray } from 'utils/type.utils';
-import type { ConditionTextInputProps } from './components/ConditionText';
+import type { ConditionTextInputProps } from './components/SearchFilterConditionText';
 
 // Compound search filter types
 

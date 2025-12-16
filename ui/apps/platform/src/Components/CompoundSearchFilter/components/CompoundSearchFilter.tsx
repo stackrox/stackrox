@@ -6,8 +6,10 @@ import { ensureString } from 'utils/ensure';
 import { isOnSearchPayload } from '../types';
 import type { CompoundSearchFilterConfig, OnSearchCallback } from '../types';
 import {
+    getAttribute,
     getDefaultAttributeName,
     getDefaultEntityName,
+    getEntity,
     payloadItemFiltererForUpdating,
 } from '../utils/utils';
 
@@ -77,6 +79,9 @@ function CompoundSearchFilter({
         }
     }, [defaultAttribute]);
 
+    const entity = getEntity(config, currentEntity ?? '');
+    const attribute = getAttribute(config, currentEntity ?? '', currentAttribute ?? '');
+
     return (
         <Flex
             direction={{ default: 'row' }}
@@ -106,27 +111,28 @@ function CompoundSearchFilter({
                 }}
                 config={config}
             />
-            <CompoundSearchFilterInputField
-                selectedEntity={currentEntity}
-                selectedAttribute={currentAttribute}
-                value={inputValue}
-                onChange={(value) => {
-                    setInputValue(value);
-                }}
-                searchFilter={searchFilter}
-                additionalContextFilter={additionalContextFilter}
-                onSearch={(payload) => {
-                    // TODO What is pro and con for search filter input field to prevent empty string and filter?
-                    const payloadFiltered = payload.filter((payloadItem) =>
-                        payloadItemFiltererForUpdating(searchFilter, payloadItem)
-                    );
+            {entity && attribute && (
+                <CompoundSearchFilterInputField
+                    entity={entity}
+                    attribute={attribute}
+                    value={inputValue}
+                    onChange={(value) => {
+                        setInputValue(value);
+                    }}
+                    searchFilter={searchFilter}
+                    additionalContextFilter={additionalContextFilter}
+                    onSearch={(payload) => {
+                        // TODO What is pro and con for search filter input field to prevent empty string and filter?
+                        const payloadFiltered = payload.filter((payloadItem) =>
+                            payloadItemFiltererForUpdating(searchFilter, payloadItem)
+                        );
 
-                    if (isOnSearchPayload(payloadFiltered)) {
-                        onSearch(payloadFiltered);
-                    }
-                }}
-                config={config}
-            />
+                        if (isOnSearchPayload(payloadFiltered)) {
+                            onSearch(payloadFiltered);
+                        }
+                    }}
+                />
+            )}
         </Flex>
     );
 }
