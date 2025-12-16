@@ -59,21 +59,6 @@ func (mr *MockDataStoreMockRecorder) Count(ctx, q any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Count", reflect.TypeOf((*MockDataStore)(nil).Count), ctx, q)
 }
 
-// CountContainerImages mocks base method.
-func (m *MockDataStore) CountContainerImages(ctx context.Context, q *v1.Query) (int, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "CountContainerImages", ctx, q)
-	ret0, _ := ret[0].(int)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// CountContainerImages indicates an expected call of CountContainerImages.
-func (mr *MockDataStoreMockRecorder) CountContainerImages(ctx, q any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CountContainerImages", reflect.TypeOf((*MockDataStore)(nil).CountContainerImages), ctx, q)
-}
-
 // CountDeployments mocks base method.
 func (m *MockDataStore) CountDeployments(ctx context.Context) (int, error) {
 	m.ctrl.T.Helper()
@@ -87,6 +72,21 @@ func (m *MockDataStore) CountDeployments(ctx context.Context) (int, error) {
 func (mr *MockDataStoreMockRecorder) CountDeployments(ctx any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CountDeployments", reflect.TypeOf((*MockDataStore)(nil).CountDeployments), ctx)
+}
+
+// GetContainerImageResponses mocks base method.
+func (m *MockDataStore) GetContainerImageResponses(ctx context.Context) ([]*views.ContainerImagesResponse, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetContainerImageResponses", ctx)
+	ret0, _ := ret[0].([]*views.ContainerImagesResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetContainerImageResponses indicates an expected call of GetContainerImageResponses.
+func (mr *MockDataStoreMockRecorder) GetContainerImageResponses(ctx any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetContainerImageResponses", reflect.TypeOf((*MockDataStore)(nil).GetContainerImageResponses), ctx)
 }
 
 // GetDeployment mocks base method.
@@ -193,21 +193,6 @@ func (m *MockDataStore) Search(ctx context.Context, q *v1.Query) ([]search.Resul
 func (mr *MockDataStoreMockRecorder) Search(ctx, q any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Search", reflect.TypeOf((*MockDataStore)(nil).Search), ctx, q)
-}
-
-// SearchContainerImages mocks base method.
-func (m *MockDataStore) SearchContainerImages(ctx context.Context, q *v1.Query) ([]*views.ContainerImagesResponse, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "SearchContainerImages", ctx, q)
-	ret0, _ := ret[0].([]*views.ContainerImagesResponse)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// SearchContainerImages indicates an expected call of SearchContainerImages.
-func (mr *MockDataStoreMockRecorder) SearchContainerImages(ctx, q any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SearchContainerImages", reflect.TypeOf((*MockDataStore)(nil).SearchContainerImages), ctx, q)
 }
 
 // SearchDeployments mocks base method.

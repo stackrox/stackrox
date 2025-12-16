@@ -464,6 +464,11 @@ func TestContainerImagesView(t *testing.T) {
 	sharedImageIDV2_2 := "imagev2-id-shared-2"
 	uniqueImageIDV2 := "imagev2-id-unique"
 
+	// Define image digests (SHA) for each image
+	sharedImageDigest_1 := "sha256:shared1digest"
+	sharedImageDigest_2 := "sha256:shared2digest"
+	uniqueImageDigest := "sha256:uniquedigest"
+
 	cluster1 := testconsts.Cluster1
 	cluster2 := testconsts.Cluster2
 
@@ -481,6 +486,7 @@ func TestContainerImagesView(t *testing.T) {
 				{
 					Name: "container1",
 					Image: &storage.ContainerImage{
+						Id:   sharedImageDigest_1,
 						IdV2: sharedImageIDV2_1,
 						Name: &storage.ImageName{FullName: "nginx:1.0"},
 					},
@@ -488,7 +494,8 @@ func TestContainerImagesView(t *testing.T) {
 				{
 					Name: "container2",
 					Image: &storage.ContainerImage{
-						IdV2: sharedImageIDV2_1, // Same image as container1
+						Id:   sharedImageDigest_1, // Same digest as container1
+						IdV2: sharedImageIDV2_1,   // Same image as container1
 						Name: &storage.ImageName{FullName: "nginx:1.0"},
 					},
 				},
@@ -506,7 +513,8 @@ func TestContainerImagesView(t *testing.T) {
 				{
 					Name: "container1",
 					Image: &storage.ContainerImage{
-						IdV2: sharedImageIDV2_1, // Same image as dep1
+						Id:   sharedImageDigest_1, // Same digest as dep1
+						IdV2: sharedImageIDV2_1,   // Same image as dep1
 						Name: &storage.ImageName{FullName: "nginx:1.0"},
 					},
 				},
@@ -524,13 +532,15 @@ func TestContainerImagesView(t *testing.T) {
 				{
 					Name: "container1",
 					Image: &storage.ContainerImage{
-						IdV2: sharedImageIDV2_1, // Same image as dep1, but in cluster2
+						Id:   sharedImageDigest_1, // Same digest as dep1
+						IdV2: sharedImageIDV2_1,   // Same image as dep1, but in cluster2
 						Name: &storage.ImageName{FullName: "nginx:1.0"},
 					},
 				},
 				{
 					Name: "container2",
 					Image: &storage.ContainerImage{
+						Id:   sharedImageDigest_2,
 						IdV2: sharedImageIDV2_2,
 						Name: &storage.ImageName{FullName: "redis:latest"},
 					},
@@ -538,6 +548,7 @@ func TestContainerImagesView(t *testing.T) {
 				{
 					Name: "container3",
 					Image: &storage.ContainerImage{
+						Id:   uniqueImageDigest,
 						IdV2: uniqueImageIDV2,
 						Name: &storage.ImageName{FullName: "postgres:15"},
 					},
@@ -556,7 +567,8 @@ func TestContainerImagesView(t *testing.T) {
 				{
 					Name: "container1",
 					Image: &storage.ContainerImage{
-						IdV2: sharedImageIDV2_2, // Same image as dep3.container2
+						Id:   sharedImageDigest_2, // Same digest as dep3.container2
+						IdV2: sharedImageIDV2_2,   // Same image as dep3.container2
 						Name: &storage.ImageName{FullName: "redis:latest"},
 					},
 				},
@@ -578,24 +590,37 @@ func TestContainerImagesView(t *testing.T) {
 	// - uniqueImageIDV2: deployed in cluster2 only
 	assert.Len(t, responses, 3, "Should return 3 distinct responses")
 
-	// Build a map for easier assertion
-	responseMap := make(map[string][]string)
+	// Build maps for easier assertion
+	type imageInfo struct {
+		digest     string
+		clusterIDs []string
+	}
+	responseMap := make(map[string]imageInfo)
 	for _, resp := range responses {
-		responseMap[resp.GetImageID()] = resp.GetClusterIDs()
+		responseMap[resp.GetImageID()] = imageInfo{
+			digest:     resp.GetImageDigest(),
+			clusterIDs: resp.GetClusterIDs(),
+		}
 	}
 
-	// Verify sharedImageIDV2_1 is in both clusters
+	// Verify sharedImageIDV2_1 is in both clusters with correct digest
 	assert.Contains(t, responseMap, sharedImageIDV2_1)
-	assert.ElementsMatch(t, []string{cluster1, cluster2}, responseMap[sharedImageIDV2_1],
+	assert.Equal(t, sharedImageDigest_1, responseMap[sharedImageIDV2_1].digest,
+		"sharedImageIDV2_1 should have correct digest")
+	assert.ElementsMatch(t, []string{cluster1, cluster2}, responseMap[sharedImageIDV2_1].clusterIDs,
 		"sharedImageIDV2_1 should be in both cluster1 and cluster2")
 
-	// Verify sharedImageIDV2_2 is only in cluster2
+	// Verify sharedImageIDV2_2 is only in cluster2 with correct digest
 	assert.Contains(t, responseMap, sharedImageIDV2_2)
-	assert.ElementsMatch(t, []string{cluster2}, responseMap[sharedImageIDV2_2],
+	assert.Equal(t, sharedImageDigest_2, responseMap[sharedImageIDV2_2].digest,
+		"sharedImageIDV2_2 should have correct digest")
+	assert.ElementsMatch(t, []string{cluster2}, responseMap[sharedImageIDV2_2].clusterIDs,
 		"sharedImageIDV2_2 should be only in cluster2")
 
-	// Verify uniqueImageIDV2 is only in cluster2
+	// Verify uniqueImageIDV2 is only in cluster2 with correct digest
 	assert.Contains(t, responseMap, uniqueImageIDV2)
-	assert.ElementsMatch(t, []string{cluster2}, responseMap[uniqueImageIDV2],
+	assert.Equal(t, uniqueImageDigest, responseMap[uniqueImageIDV2].digest,
+		"uniqueImageIDV2 should have correct digest")
+	assert.ElementsMatch(t, []string{cluster2}, responseMap[uniqueImageIDV2].clusterIDs,
 		"uniqueImageIDV2 should be only in cluster2")
 }

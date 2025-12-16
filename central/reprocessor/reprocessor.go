@@ -466,7 +466,7 @@ func (l *loopImpl) reprocessImageV2(id string, digest string, fetchOpt imageEnri
 	if !exists {
 		// The image was not found in ImageV2 store, but it might be in the legacy ImageV1 store
 		var legacyImage *storage.Image
-		legacyImage, exists, err = l.images.GetImage(allAccessCtx, digest)
+		legacyImage, exists, err = l.images.GetImageMetadata(allAccessCtx, digest)
 		if err != nil {
 			log.Errorw("Error fetching legacy image from database", logging.ImageID(id), logging.Err(err))
 			return nil, false
@@ -485,8 +485,8 @@ func (l *loopImpl) reprocessImageV2(id string, digest string, fetchOpt imageEnri
 	if image.GetNotPullable() || image.GetIsClusterLocal() {
 		// Skip reprocessing. Sensor will handle cluster-local images. But we still need to migrate the image to V2.
 		if migrateToV2 {
-			if err := l.risk.CalculateRiskAndUpsertImageV2(image); err != nil {
-				log.Errorw("Error calculating risk for image", logging.ImageName(image.GetName().GetFullName()), logging.ImageID(image.GetId()), logging.Err(err))
+			if err := l.imagesV2.UpsertImage(allAccessCtx, image); err != nil {
+				log.Errorw("Error migrating image to imageV2 store", logging.ImageName(image.GetName().GetFullName()), logging.ImageID(image.GetId()), logging.Err(err))
 				return nil, false
 			}
 		}
@@ -551,11 +551,11 @@ func (l *loopImpl) reprocessImagesV2AndResyncDeployments(fetchOpt imageEnricher.
 			return
 		}
 		clusterIDSet := set.NewStringSet(result.GetClusterIDs()...)
-		go func(id string, clusterIDs set.StringSet) {
+		go func(id string, digest string, clusterIDs set.StringSet) {
 			defer sema.Release(1)
 			defer wg.Add(-1)
 
-			image, successfullyProcessed := l.reprocessImageV2(id, fetchOpt, imgReprocessingFunc)
+			image, successfullyProcessed := l.reprocessImageV2(id, digest, fetchOpt, imgReprocessingFunc)
 			if !successfullyProcessed {
 				return
 			}
@@ -616,7 +616,7 @@ func (l *loopImpl) reprocessImagesV2AndResyncDeployments(fetchOpt imageEnricher.
 					)
 				}
 			}
-		}(result.GetImageID(), clusterIDSet)
+		}(result.GetImageID(), result.GetImageDigest(), clusterIDSet)
 	}
 	select {
 	case <-wg.Done():

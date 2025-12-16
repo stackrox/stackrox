@@ -17,6 +17,7 @@ import (
 	"github.com/stackrox/rox/pkg/sac/resources"
 	pkgSearch "github.com/stackrox/rox/pkg/search"
 	pgSearch "github.com/stackrox/rox/pkg/search/postgres"
+	"github.com/stackrox/rox/pkg/search/postgres/aggregatefunc"
 	"gorm.io/gorm"
 )
 
@@ -74,6 +75,7 @@ func (f *fullStoreImpl) GetContainerImageResponses(ctx context.Context) ([]*view
 	}
 	q.Selects = []*v1.QuerySelect{
 		pkgSearch.NewQuerySelect(pkgSearch.ImageID).Proto(),
+		pkgSearch.NewQuerySelect(pkgSearch.ImageSHA).Distinct().AggrFunc(aggregatefunc.Min).Proto(),
 		pkgSearch.NewQuerySelect(pkgSearch.ClusterID).Distinct().Proto(),
 	}
 	q.GroupBy = &v1.QueryGroupBy{
