@@ -268,6 +268,7 @@ func (s *ReportSnapshotDatastoreTestSuite) TestSearchResults() {
 			for _, result := range results {
 				actualIDs = append(actualIDs, result.GetId())
 				// Verify name is populated (should equal ID for report snapshots)
+				s.NotEmpty(result.GetId())
 				s.Equal(result.GetId(), result.GetName(), "Name should equal ID for report snapshots")
 				s.Equal(v1.SearchCategory_REPORT_SNAPSHOT, result.GetCategory())
 				s.Empty(result.GetLocation(), "Location should be empty for report snapshots")
