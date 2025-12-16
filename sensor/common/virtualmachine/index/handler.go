@@ -22,7 +22,6 @@ type Handler interface {
 //go:generate mockgen-wrapper
 type VirtualMachineStore interface {
 	GetFromCID(cid uint32) *virtualmachine.Info
-	AddOrUpdate(vm *virtualmachine.Info) *virtualmachine.Info
 }
 
 // NewHandler returns the virtual machine component for Sensor to use.

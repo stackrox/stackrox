@@ -206,11 +206,7 @@ func parseIndexReport(data []byte) (*v1.IndexReport, error) {
 }
 
 // validateReportedVsockCID ensures the report's vsock CID matches the connection.
-// In test mode, validation is bypassed to allow load testing with simulated VMs.
 func validateReportedVsockCID(indexReport *v1.IndexReport, connVsockCID uint32) error {
-	if env.IsVMTestModeEnabled() {
-		return nil
-	}
 	if indexReport.GetVsockCid() != strconv.FormatUint(uint64(connVsockCID), 10) {
 		metrics.IndexReportsMismatchingVsockCID.Inc()
 		return errors.Errorf("mismatch between reported (%s) and real (%d) vsock CIDs", indexReport.GetVsockCid(), connVsockCID)

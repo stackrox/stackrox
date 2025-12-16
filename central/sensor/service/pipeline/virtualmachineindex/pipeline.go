@@ -2,7 +2,6 @@ package virtualmachineindex
 
 import (
 	"context"
-	"strconv"
 
 	"github.com/pkg/errors"
 	countMetrics "github.com/stackrox/rox/central/metrics"
@@ -13,12 +12,9 @@ import (
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/centralsensor"
-	"github.com/stackrox/rox/pkg/env"
-	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/metrics"
-	pkgvm "github.com/stackrox/rox/pkg/virtualmachine"
 	vmEnricher "github.com/stackrox/rox/pkg/virtualmachine/enricher"
 )
 
@@ -86,18 +82,8 @@ func (p *pipelineImpl) Run(ctx context.Context, _ string, msg *central.MsgFromSe
 
 	log.Debugf("Received virtual machine index report: %s", index.GetId())
 
-	// Parse vsock CID from index report
-	vsockCidStr := index.GetIndex().GetVsockCid()
-	vsockCid, err := strconv.ParseInt(vsockCidStr, 10, 32)
-	if err != nil {
-		return errors.Wrapf(err, "invalid vsock CID in index report: %q", vsockCidStr)
-	}
-
 	// Get or create VM
-	vm := &storage.VirtualMachine{
-		Id:       index.GetId(),
-		VsockCid: int32(vsockCid),
-	}
+	vm := &storage.VirtualMachine{Id: index.GetId()}
 
 	// Extract Scanner V4 index report from VM index report event
 	indexV4 := index.GetIndex().GetIndexV4()
@@ -106,35 +92,18 @@ func (p *pipelineImpl) Run(ctx context.Context, _ string, msg *central.MsgFromSe
 	}
 
 	// Enrich VM with vulnerabilities
-	err = p.enricher.EnrichVirtualMachineWithVulnerabilities(vm, indexV4)
+	err := p.enricher.EnrichVirtualMachineWithVulnerabilities(vm, indexV4)
 	if err != nil {
 		return errors.Wrapf(err, "failed to enrich VM %s with vulnerabilities", index.GetId())
 	}
 
 	// Store enriched VM
-	err = p.vmDatastore.UpdateVirtualMachineScan(ctx, vm.GetId(), vm.GetScan())
-	if err != nil {
-		// If VM doesn't exist and test mode is enabled, auto-create it
-		if errors.Is(err, errox.NotFound) && env.IsVMTestModeEnabled() {
-			log.Debugf("VM %s not found in database - auto-creating VM record with scan data (test mode enabled)", vm.GetId())
-
-			// Populate VM metadata using shared test mode utilities for consistency with Sensor
-			vm.Name = pkgvm.GenerateTestModeVMName(uint32(vsockCid))
-			vm.Namespace = pkgvm.TestNamespace
-			vm.State = storage.VirtualMachine_RUNNING
-
-			if upsertErr := p.vmDatastore.UpsertVirtualMachine(ctx, vm); upsertErr != nil {
-				return errors.Wrapf(upsertErr, "failed to create VM %s in datastore", index.GetId())
-			}
-			log.Debugf("Successfully auto-created VM %s (name: %s) with %d components from index report",
-				vm.GetId(), vm.GetName(), len(vm.GetScan().GetComponents()))
-		} else {
-			return errors.Wrapf(err, "failed to update VM %s scan in datastore", index.GetId())
-		}
-	} else {
-		log.Infof("Successfully enriched and stored VM %s with %d components",
-			vm.GetId(), len(vm.GetScan().GetComponents()))
+	if err := p.vmDatastore.UpdateVirtualMachineScan(ctx, vm.GetId(), vm.GetScan()); err != nil {
+		return errors.Wrapf(err, "failed to upsert VM %s to datastore", index.GetId())
 	}
+
+	log.Infof("Successfully enriched and stored VM %s with %d components",
+		vm.GetId(), len(vm.GetScan().GetComponents()))
 
 	return nil
 }

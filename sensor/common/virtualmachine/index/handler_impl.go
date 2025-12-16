@@ -14,11 +14,9 @@ import (
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/utils"
-	pkgvm "github.com/stackrox/rox/pkg/virtualmachine"
 	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/centralcaps"
 	"github.com/stackrox/rox/sensor/common/message"
-	"github.com/stackrox/rox/sensor/common/virtualmachine"
 	"github.com/stackrox/rox/sensor/common/virtualmachine/metrics"
 )
 
@@ -229,15 +227,8 @@ func (h *handlerImpl) newMessageToCentral(indexReport *v1.IndexReport) (*message
 
 	vmInfo := h.store.GetFromCID(uint32(cid))
 	if vmInfo == nil {
-		// In test mode, auto-generate VMs on-the-fly when index reports arrive
-		if env.IsVMTestModeEnabled() {
-			vmInfo = h.generateAndStoreVM(uint32(cid))
-			log.Infof("Auto-generated VM %s (name: %s, CID: %d) on-the-fly for load testing",
-				vmInfo.ID, vmInfo.Name, *vmInfo.VSOCKCID)
-		} else {
-			// Return retryable error if the virtual machine is not yet known to Sensor.
-			return nil, metrics.IndexReportHandlingMessageToCentralVMUnknown, errors.Wrapf(errVirtualMachineNotFound, "VirtualMachine with Vsock CID %q not found", indexReport.GetVsockCid())
-		}
+		// Return retryable error if the virtual machine is not yet known to Sensor.
+		return nil, metrics.IndexReportHandlingMessageToCentralVMUnknown, errors.Wrapf(errVirtualMachineNotFound, "VirtualMachine with Vsock CID %q not found", indexReport.GetVsockCid())
 	}
 
 	return message.New(&central.MsgFromSensor{
@@ -264,25 +255,4 @@ func (h *handlerImpl) sendIndexReportEvent(
 	case <-h.stopper.Flow().StopRequested():
 	case toCentral <- msg:
 	}
-}
-
-// generateAndStoreVM creates a new VM on-the-fly for load testing.
-// This function uses the shared pkgvm.GenerateTestModeVMID to generate a
-// deterministic UUID based on the vsock CID, ensuring consistency between
-// Sensor and Central when both auto-generate VMs in test mode.
-func (h *handlerImpl) generateAndStoreVM(cid uint32) *virtualmachine.Info {
-	vsockCID := new(uint32)
-	*vsockCID = cid
-
-	vmInfo := &virtualmachine.Info{
-		ID:        virtualmachine.VMID(pkgvm.GenerateTestModeVMID(cid)),
-		Name:      pkgvm.GenerateTestModeVMName(cid),
-		Namespace: pkgvm.TestNamespace,
-		VSOCKCID:  vsockCID,
-		Running:   true,
-		GuestOS:   "linux",
-	}
-
-	// Add to store and return the stored version
-	return h.store.AddOrUpdate(vmInfo)
 }
