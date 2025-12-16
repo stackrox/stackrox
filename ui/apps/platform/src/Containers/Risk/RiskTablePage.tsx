@@ -1,8 +1,6 @@
-import { useParams } from 'react-router-dom-v5-compat';
 import { useQuery } from '@apollo/client';
 
 import { PageBody } from 'Components/Panel';
-import { DEFAULT_PAGE_SIZE } from 'Components/Table';
 import { searchCategories } from 'constants/entityTypes';
 import { SEARCH_OPTIONS_QUERY } from 'queries/search';
 import useURLPagination from 'hooks/useURLPagination';
@@ -13,11 +11,15 @@ import { getHasSearchApplied } from 'utils/searchUtils';
 import RiskPageHeader from './RiskPageHeader';
 import RiskTablePanel, { sortFields, defaultSortOption } from './RiskTablePanel';
 
+const DEFAULT_RISK_PAGE_SIZE = 20;
+
 function RiskTablePage() {
-    const params = useParams();
-    const { deploymentId } = params;
-    const urlSort = useURLSort({ sortFields, defaultSortOption });
-    const urlPagination = useURLPagination(DEFAULT_PAGE_SIZE);
+    const urlSort = useURLSort({
+        sortFields,
+        defaultSortOption,
+        onSort: () => urlPagination.setPage(1),
+    });
+    const urlPagination = useURLPagination(DEFAULT_RISK_PAGE_SIZE);
     const urlSearch = useURLSearch();
 
     const isViewFiltered = getHasSearchApplied(urlSearch.searchFilter);
@@ -46,14 +48,14 @@ function RiskTablePage() {
             <PageBody>
                 <div className="flex-shrink-1 overflow-hidden w-full">
                     <RiskTablePanel
-                        selectedDeploymentId={deploymentId}
                         isViewFiltered={isViewFiltered}
                         sortOption={urlSort.sortOption}
-                        onSortOptionChange={(sortOption) => {
-                            urlSort.setSortOption(sortOption);
+                        getSortParams={urlSort.getSortParams}
+                        searchFilter={urlSearch.searchFilter}
+                        onSearchFilterChange={(newSearchFilter) => {
+                            urlSearch.setSearchFilter(newSearchFilter);
                             urlPagination.setPage(1);
                         }}
-                        searchFilter={urlSearch.searchFilter}
                         pagination={urlPagination}
                     />
                 </div>
