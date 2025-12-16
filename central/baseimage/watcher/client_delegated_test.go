@@ -24,7 +24,7 @@ func TestDelegatedRepositoryClient_ScanRepository_ReturnsNotImplementedError(t *
 
 	req := ScanRequest{
 		Pattern:   "*",
-		CheckTags: make(map[string]struct{}),
+		CheckTags: make(map[string]*storage.BaseImageTag),
 		SkipTags:  make(map[string]struct{}),
 	}
 

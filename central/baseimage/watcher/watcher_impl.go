@@ -184,29 +184,41 @@ func (w *watcherImpl) processRepository(ctx context.Context, repo *storage.BaseI
 	}
 
 	// Build scan request.
+	// TODO(ROX-31923): Populate CheckTags and SkipTags from cache for incremental updates.
 	req := ScanRequest{
 		Pattern:   repo.GetTagPattern(),
-		CheckTags: make(map[string]struct{}),
+		CheckTags: make(map[string]*storage.BaseImageTag),
 		SkipTags:  make(map[string]struct{}),
 	}
 
-	// List and filter tags on the repository.
+	// Scan repository: list tags, fetch metadata, and emit events.
 	start := time.Now()
-	var tags []string
+	var metadataCount, errorCount int
 	for event, err := range client.ScanRepository(ctx, repo, req) {
 		if err != nil {
 			log.Errorf("scanning repository %q: %v", repo.GetRepositoryPath(), err)
-			recordTagListDuration(name.GetRegistry(), repo.GetRepositoryPath(), start, 0, err)
+			recordScanDuration(name.GetRegistry(), repo.GetRepositoryPath(), client.Name(), start, 0, 0, err)
 			return
 		}
-		tags = append(tags, event.Tag)
+
+		switch event.Type {
+		case TagEventMetadata:
+			metadataCount++
+			log.Debugf("Tag %s: digest=%s, created=%v",
+				event.Tag, event.Metadata.ManifestDigest, event.Metadata.Created)
+			// TODO(ROX-31923): Store tag metadata in cache.
+
+		case TagEventDeleted:
+			log.Infof("Tag %s was deleted from registry", event.Tag)
+			// TODO(ROX-31923): Remove tag from cache.
+
+		case TagEventError:
+			errorCount++
+			log.Warnf("Failed to fetch metadata for tag %s: %v", event.Tag, event.Error)
+		}
 	}
 
-	recordTagListDuration(name.GetRegistry(), repo.GetRepositoryPath(), start, len(tags), nil)
-	log.Infof("Found %d matching tags for repository %s with pattern %q",
-		len(tags), repo.GetRepositoryPath(), repo.GetTagPattern())
-
-	// TODO(ROX-31922): Add metadata fetching for discovered tags
-
-	log.Infof("Repository processed successfully: %s", repo.GetRepositoryPath())
+	recordScanDuration(name.GetRegistry(), repo.GetRepositoryPath(), client.Name(), start, metadataCount, errorCount, nil)
+	log.Infof("Repository %s: processed %d tags (%d metadata, %d errors) with pattern %q",
+		repo.GetRepositoryPath(), metadataCount+errorCount, metadataCount, errorCount, repo.GetTagPattern())
 }
