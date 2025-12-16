@@ -311,6 +311,7 @@ func (d *deduperImpl) ShouldProcess(msg *central.MsgFromSensor) bool {
 	case central.ResourceAction_REMOVE_RESOURCE:
 		d.hashLock.Lock()
 		defer d.hashLock.Unlock()
+		log.Infof("SHREWS -- Remove %v", key)
 
 		delete(d.received, key)
 		delete(d.successfullyProcessed, key)
@@ -343,7 +344,7 @@ func (d *deduperImpl) ShouldProcess(msg *central.MsgFromSensor) bool {
 	defer d.hashLock.Unlock()
 
 	prevValue, ok := d.getValueNoLock(key)
-	log.Infof("SHREWS -- old %v vs new %v", prevValue, event.GetSensorHash())
+	log.Infof("SHREWS -- key %v old %v vs new %v", key, prevValue, event.GetSensorHash())
 	if ok && prevValue == event.GetSensorHash() {
 		return false
 	}
