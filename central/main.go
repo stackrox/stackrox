@@ -647,12 +647,18 @@ func startPhonehomeTelemetryCollection(config *pkgGRPC.Config, basicAuthProvider
 	telemetryCfg := pubcfg.GetTelemetry()
 	if telemetryCfg == nil || telemetryCfg.GetEnabled() {
 		c := phonehomeClient.Singleton()
-		c.GrantConsent()
-		c.RegisterCentralClient(config, basicAuthProviderID)
-		c.AddStaticPropsGatherer()
-		c.AddInterceptorFuncs()
-		addCentralIdentityGatherers(c)
-		c.Enable()
+		// Reconfigure loads remote configuration:
+		if err := c.Reconfigure(); err == nil {
+			log.Debug("telemetry enabled")
+			c.AddInterceptorFuncs()
+			c.AddStaticPropsGatherer()
+			addCentralIdentityGatherers(c)
+			c.RegisterCentralClient(config, basicAuthProviderID)
+			// Start the gathering.
+			c.Start()
+		} else {
+			log.Warnf("Could not reconfigure telemetry: %v", err)
+		}
 		log.Infof("Telemetry Client Configuration: %s", c)
 	}
 }

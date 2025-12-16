@@ -157,17 +157,22 @@ func (c *Client) WithGroups() []telemeter.Option {
 	return c.config.groups
 }
 
-// Reconfigure updates the client's key from the provided URL and returns the
-// remote configuration and an error.
-// It will not update an inactive client.
+// Reconfigure updates the client's key from the provided URL and can disable
+// the client if remote configuration tells so.
 func (c *Client) Reconfigure() error {
+	log.Debug("reconfiguring the client")
+	if c.config.configURL == "" {
+		return nil
+	}
 	// Allow for reconfiguring a not yet configured client, which is
 	// temporarily inactive as the key is not set.
 	if c.storageKey.IsSet() && c.storageKey.Get() == DisabledKey {
 		return errox.InvalidArgs.New("telemetry is disabled")
 	}
 	rc, err := downloadConfig(c.config.configURL)
+	log.Debugf("remote config: %q", rc)
 	if err != nil {
+		log.Debugf("error %v", err)
 		return err
 	}
 	if c.storageKey.IsSet() && c.storageKey.Get() != rc.Key {
@@ -196,6 +201,7 @@ func (c *Client) Reconfigure() error {
 	} else if c.config.onReconfigure != nil {
 		c.config.onReconfigure(rc)
 	}
+	log.Debug("reconfiguration completed")
 	return nil
 }
 
@@ -296,6 +302,7 @@ func (c *Client) Telemeter() telemeter.Telemeter {
 
 // GetGRPCInterceptor returns an API interceptor function for GRPC requests.
 func (c *Client) GetGRPCInterceptor() grpc.UnaryServerInterceptor {
+	log.Debug("created grpc interceptor")
 	return func(ctx context.Context, req any, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (any, error) {
 		resp, err := handler(ctx, req)
 		rp := getGRPCRequestDetails(ctx, err, info.FullMethod, req)
@@ -306,6 +313,7 @@ func (c *Client) GetGRPCInterceptor() grpc.UnaryServerInterceptor {
 
 // GetHTTPInterceptor returns an API interceptor function for HTTP requests.
 func (c *Client) GetHTTPInterceptor() httputil.HTTPInterceptor {
+	log.Debug("created http interceptor")
 	return func(handler http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			statusTrackingWriter := httputil.NewStatusTrackingWriter(w)
@@ -329,6 +337,7 @@ func (c *Client) AddInterceptorFuncs(event string, f ...Interceptor) {
 		c.interceptors = make(map[string][]Interceptor, len(f))
 	}
 	c.interceptors[event] = append(c.interceptors[event], f...)
+	log.Debugf("interceptors for event %s: ", event, len(c.interceptors[event]))
 }
 
 // startPeriodicReload reloads and applies the configuration from the remote

@@ -133,7 +133,7 @@ func Test_centralClient_flow(t *testing.T) {
 		printMessage(<-data))
 
 	wg.Wait()
-	go c.Enable()
+	go c.Start()
 
 	// Initial central identity with a prefixed message ID to drop duplicates.
 	assert.Equal(t, `type: identify,`+
@@ -161,7 +161,7 @@ func Test_centralClient_flow(t *testing.T) {
 		`type: track, event: Telemetry Enabled, context: map[device:map[type:Central Server]]`}, events)
 
 	assert.True(t, c.IsActive())
-	go c.Disable()
+	go c.Stop()
 	assert.Equal(t, `type: track, event: Telemetry Disabled, context: map[device:map[type:Central Server]]`,
 		printMessage(<-data))
 }

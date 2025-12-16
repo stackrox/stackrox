@@ -180,9 +180,9 @@ func (s *serviceImpl) PutConfig(ctx context.Context, req *v1.PutConfigRequest) (
 	// Application:
 
 	if req.GetConfig().GetPublicConfig().GetTelemetry().GetEnabled() {
-		phonehome.Singleton().Enable()
+		phonehome.Singleton().Start()
 	} else {
-		phonehome.Singleton().Disable()
+		phonehome.Singleton().Stop()
 	}
 	matcher.Singleton().SetRegexes(regexes)
 	go reprocessor.Singleton().RunReprocessor()
