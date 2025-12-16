@@ -36,7 +36,7 @@ export function getCertificateExpirationCounts(
                     break;
                 }
                 default: {
-                    const { certExpiryStatus } = cluster.status || {};
+                    const { certExpiryStatus } = cluster.status ?? {};
                     const key = getCredentialExpirationStatus(
                         certExpiryStatus as CertExpiryStatus,
                         currentDatetime
@@ -62,7 +62,7 @@ export function getSensorUpgradeCounts(clusters: Cluster[]): ClusterStatusCounts
                     break;
                 }
                 default: {
-                    const { upgradeStatus } = cluster.status || {};
+                    const { upgradeStatus } = cluster.status ?? {};
                     const upgradeState = findUpgradeState(upgradeStatus);
 
                     const key =

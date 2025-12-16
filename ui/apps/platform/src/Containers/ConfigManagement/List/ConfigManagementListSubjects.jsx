@@ -98,7 +98,7 @@ const buildTableColumns = (match, location) => {
     return tableColumns;
 };
 
-const createTableRows = (data) => data?.results || [];
+const createTableRows = (data) => data?.results ?? [];
 
 const ConfigManagementListSubjects = ({
     selectedRowId,
