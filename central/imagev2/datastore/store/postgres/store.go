@@ -125,7 +125,7 @@ func (s *storeImpl) insertIntoImages(
 	if len(existingCVEs) == 0 {
 		// If migrating from a version that already has the new CVE model, we try to get the existing CVEs from the new CVE model using the legacy image ID.
 		// This should only run the first time an image is scanned after migrating to the new image model.
-		existingCVEs, err = getImageCVEs(ctx, tx, parts.image.GetSha(), LegacyImageIDField)
+		existingCVEs, err = getImageCVEs(ctx, tx, parts.image.GetDigest(), LegacyImageIDField)
 		if err != nil {
 			return err
 		}
