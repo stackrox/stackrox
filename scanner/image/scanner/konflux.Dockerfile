@@ -7,14 +7,14 @@ ENV BUILD_TAG="$BUILD_TAG"
 ENV GOFLAGS=""
 # TODO(ROX-20240): enable non-release development builds.
 # TODO(ROX-27054): Remove the redundant strictfipsruntime option if one is found to be so.
-ENV GOTAGS="release,strictfipsruntime"
-ENV GOEXPERIMENT=strictfipsruntime
+ENV GOTAGS="release"
+ENV GOEXPERIMENT=""
 ENV CI=1
 
 COPY . /src
 WORKDIR /src
 
-RUN make -C scanner NODEPS=1 CGO_ENABLED=1 image/scanner/bin/scanner copy-scripts
+RUN make -C scanner NODEPS=1 CGO_ENABLED=0 image/scanner/bin/scanner copy-scripts
 
 
 FROM registry.access.redhat.com/ubi8-minimal:latest@sha256:a670c5b613280e17a666c858c9263a50aafe1a023a8d5730c7a83cb53771487b

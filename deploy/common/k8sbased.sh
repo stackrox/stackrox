@@ -366,15 +366,6 @@ function launch_central {
         helm_args+=(-f "${COMMON_DIR}/ci-values.yaml")
       fi
 
-      if [[ "${CGO_CHECKS}" == "true" ]]; then
-        echo "CGO_CHECKS set to true. Setting GOEXPERIMENT=cgocheck2 and MUTEX_WATCHDOG_TIMEOUT_SECS=15"
-        # Extend mutex watchdog timeout because cgochecks hamper performance
-        helm_args+=(
-          --set customize.central.envVars.GOEXPERIMENT=cgocheck2
-          --set customize.central.envVars.MUTEX_WATCHDOG_TIMEOUT_SECS=15
-        )
-      fi
-
       # set logging options
       if [[ -n $LOGLEVEL ]]; then
         helm_args+=(
@@ -494,7 +485,7 @@ function launch_central {
       if [[ "${CGO_CHECKS}" == "true" ]]; then
         echo "CGO_CHECKS set to true. Setting GOEXPERIMENT=cgocheck2 and MUTEX_WATCHDOG_TIMEOUT_SECS=15"
         # Extend mutex watchdog timeout because cgochecks hamper performance
-        ${ORCH_CMD} -n stackrox set env deploy/central GOEXPERIMENT=cgocheck2 MUTEX_WATCHDOG_TIMEOUT_SECS=15
+        ${ORCH_CMD} -n stackrox set env deploy/central MUTEX_WATCHDOG_TIMEOUT_SECS=15
       fi
 
       # set logging options
