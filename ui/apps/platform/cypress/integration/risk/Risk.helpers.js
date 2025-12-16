@@ -50,14 +50,9 @@ export function viewRiskDeploymentByName(deploymentName) {
     };
 
     interactAndWaitForResponses(() => {
-        // Specify nth-child(4) for Namespace to make sure it is stackrox.
-        // For example, prevent multiple matches with collector in gmp-system namespace.
-        //
-        // Specify nth-child(1) for Name of deployment.
-        //
-        // Call contains method with RegExp for exact match and only first element.
-        // Unlike contains pseudo-selector which would require :nth(0) in case of multiple matches.
-        cy.get(`tbody tr:has('td:nth-child(4):contains("stackrox")') td:nth-child(1)`)
+        cy.get(
+            `tbody tr:has('td[data-label="Namespace"]:contains("stackrox")') td[data-label="Name"]`
+        )
             .contains(new RegExp(`^${deploymentName}$`))
             .click();
     }, routeMatcherMapForDeployment);

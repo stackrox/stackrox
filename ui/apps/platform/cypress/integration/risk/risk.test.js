@@ -84,7 +84,7 @@ describe('Risk', () => {
             const nsOption = 'Namespace';
             const nsValue = 'stackrox';
             cy.get(
-                `${RiskPageSelectors.table.dataRows} td:nth-child(4):contains("${nsValue}")`
+                `${RiskPageSelectors.table.dataRows} td[data-label="Namespace"]:contains("${nsValue}")`
             ).then((stackroxDeps) => {
                 const stackroxCount = stackroxDeps.length;
 
@@ -115,7 +115,7 @@ describe('Risk', () => {
             const deployOption = 'Deployment';
             const deployValue = 'scanner';
             cy.get(
-                `${RiskPageSelectors.table.dataRows} td:nth-child(1):contains("${deployValue}")`
+                `${RiskPageSelectors.table.dataRows} td[data-label="Name"]:contains("${deployValue}")`
             ).then((staticDeps) => {
                 const staticCount = staticDeps.length;
 
