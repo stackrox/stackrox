@@ -95,6 +95,7 @@ type ImageComponentResolver interface {
 	TopImageVulnerability(ctx context.Context) (ImageVulnerabilityResolver, error)
 	UnusedVarSink(ctx context.Context, args RawQuery) *int32
 	Version(ctx context.Context) string
+	FromBaseImage(ctx context.Context) bool
 
 	// deprecated functions
 
