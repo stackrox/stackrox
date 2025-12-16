@@ -1,5 +1,3 @@
-import { useState } from 'react';
-import useDeepCompareEffect from 'use-deep-compare-effect';
 import { Bullseye } from '@patternfly/react-core';
 import { ExclamationTriangleIcon } from '@patternfly/react-icons';
 
@@ -8,16 +6,12 @@ import TableHeader from 'Components/TableHeader';
 import { PanelBody, PanelHead, PanelHeadEnd, PanelNew } from 'Components/Panel';
 import TablePagination from 'Components/TablePagination';
 import type { UseURLPaginationResult } from 'hooks/useURLPagination';
-import {
-    fetchDeploymentsCount,
-    fetchDeploymentsWithProcessInfo,
-} from 'services/DeploymentsService';
-import type { ListDeploymentWithProcessInfo } from 'services/DeploymentsService';
 import type { ApiSortOption, SearchFilter } from 'types/search';
 import type { SortOption } from 'types/table';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
-import { ORCHESTRATOR_COMPONENTS_KEY } from 'utils/orchestratorComponents';
 
+import useDeploymentsCount from './useDeploymentsCount';
+import useDeploymentsWithProcessInfo from './useDeploymentsWithProcessInfo';
 import RiskTable from './RiskTable';
 
 export const sortFields = [
@@ -47,42 +41,20 @@ function RiskTablePanel({
     pagination,
 }: RiskTablePanelProps) {
     const { page, perPage, setPage } = pagination;
-    const [currentDeployments, setCurrentDeployments] = useState<ListDeploymentWithProcessInfo[]>(
-        []
-    );
-    const [errorMessageDeployments, setErrorMessageDeployments] = useState('');
-    const [deploymentCount, setDeploymentsCount] = useState(0);
 
-    const shouldHideOrchestratorComponents =
-        localStorage.getItem(ORCHESTRATOR_COMPONENTS_KEY) !== 'true';
+    const { data, error } = useDeploymentsWithProcessInfo({
+        searchFilter,
+        sortOption,
+        page,
+        perPage,
+    });
+    const currentDeployments = data ?? [];
 
-    useDeepCompareEffect(() => {
-        const effectiveSearchFilter = {
-            ...searchFilter,
-            ...(shouldHideOrchestratorComponents ? { 'Orchestrator Component': 'false' } : {}),
-        };
-        const { request } = fetchDeploymentsWithProcessInfo(
-            effectiveSearchFilter,
-            sortOption,
-            page,
-            perPage
-        );
+    const { data: deploymentCount = 0 } = useDeploymentsCount({
+        searchFilter,
+    });
 
-        request.then(setCurrentDeployments).catch((error) => {
-            setCurrentDeployments([]);
-            setErrorMessageDeployments(getAxiosErrorMessage(error));
-        });
-
-        /*
-         * Although count does not depend on change to sort option or page offset,
-         * request in case of change to count of deployments in Kubernetes environment.
-         */
-        fetchDeploymentsCount(effectiveSearchFilter)
-            .then(setDeploymentsCount)
-            .catch(() => {
-                setDeploymentsCount(0);
-            });
-    }, [searchFilter, sortOption, page, shouldHideOrchestratorComponents]);
+    const errorMessageDeployments = error ? getAxiosErrorMessage(error) : '';
 
     return (
         <PanelNew testid="panel">
