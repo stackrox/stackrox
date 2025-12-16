@@ -627,13 +627,14 @@ func startGRPCServer() {
 		centralSAC.GetEnricher().GetPreAuthContextEnricher(authzTraceSink),
 	)
 
+	// Telemetry has to add interceptors before starting the server.
+	startPhonehomeTelemetryCollection(&config, basicAuthProvider.ID())
+
 	server := pkgGRPC.NewAPI(config)
 	server.Register(servicesToRegister()...)
 	startedSig := server.Start()
 
 	go watchdog(startedSig, grpcServerWatchdogTimeout)
-
-	go startPhonehomeTelemetryCollection(&config, basicAuthProvider.ID())
 
 	go startServices()
 }

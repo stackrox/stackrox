@@ -78,7 +78,9 @@ func newCentralClient(instanceId string) *CentralClient {
 		groupID = instanceId
 	}
 
-	c := &CentralClient{}
+	c := &CentralClient{
+		telemetryCampaign: permanentTelemetryCampaign,
+	}
 	c.Client = phonehome.NewClient(instanceId, "Central", version.GetMainVersion(),
 		phonehome.WithEndpoint(env.TelemetryEndpoint.Setting()),
 		phonehome.WithStorageKey(env.TelemetryStorageKey.Setting()),
