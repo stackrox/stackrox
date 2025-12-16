@@ -2,6 +2,8 @@ package service
 
 import (
 	"context"
+	"crypto/sha256"
+	"encoding/hex"
 	"path"
 
 	"github.com/distribution/reference"
@@ -21,6 +23,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 var (
@@ -72,10 +75,13 @@ func (s *serviceImpl) CreateBaseImageReference(ctx context.Context, req *v2.Crea
 		return nil, status.Errorf(codes.InvalidArgument, "invalid base image tag pattern: %v", err)
 	}
 
+	hash := sha256.Sum256([]byte(req.GetBaseImageTagPattern()))
 	// TODO(ROX-32170): Populate user information to the base image repository.
 	repo := &storage.BaseImageRepository{
 		RepositoryPath: req.GetBaseImageRepoPath(),
 		TagPattern:     req.GetBaseImageTagPattern(),
+		PatternHash:    hex.EncodeToString(hash[:]),
+		UpdatedAt:      timestamppb.Now(),
 	}
 
 	created, err := s.datastore.UpsertRepository(ctx, repo)
@@ -107,8 +113,10 @@ func (s *serviceImpl) UpdateBaseImageTagPattern(ctx context.Context, req *v2.Upd
 		return nil, status.Errorf(codes.NotFound, "base image repository with ID %q not found", req.GetId())
 	}
 
-	// Update the repository (only tag pattern can be updated)
+	// Update the repository
 	existing.TagPattern = req.GetBaseImageTagPattern()
+	hash := sha256.Sum256([]byte(req.GetBaseImageTagPattern()))
+	existing.PatternHash = hex.EncodeToString(hash[:])
 
 	_, err = s.datastore.UpsertRepository(ctx, existing)
 	if err != nil {

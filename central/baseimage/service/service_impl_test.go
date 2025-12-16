@@ -2,9 +2,12 @@ package service
 
 import (
 	"context"
+	"crypto/sha256"
+	"encoding/hex"
 	"errors"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/stackrox/rox/central/baseimage/datastore/repository/mocks"
 	v2 "github.com/stackrox/rox/generated/api/v2"
@@ -239,7 +242,23 @@ func (suite *ServiceTestSuite) TestCreateBaseImageReference() {
 					TagPattern:     "8.*",
 				}
 				suite.mockDatastore.EXPECT().UpsertRepository(gomock.Any(), gomock.Any()).
-					Return(created, nil)
+					DoAndReturn(func(ctx context.Context, repo *storage.BaseImageRepository) (*storage.BaseImageRepository, error) {
+						// Verify PatternHash is correctly computed
+						hashBytes := sha256.Sum256([]byte("8.*"))
+						expectedHash := hex.EncodeToString(hashBytes[:])
+						suite.Equal(expectedHash, repo.GetPatternHash(), "PatternHash should be SHA256 of tag pattern")
+
+						// Verify UpdatedAt is set to a recent timestamp
+						suite.NotNil(repo.GetUpdatedAt(), "UpdatedAt should be set")
+						suite.True(time.Since(repo.GetUpdatedAt().AsTime()) < time.Minute, "UpdatedAt should be recent")
+
+						// Verify other fields
+						suite.Equal("docker.io/library/nginx", repo.GetRepositoryPath(), "RepositoryPath should match request")
+						suite.Equal("8.*", repo.GetTagPattern(), "TagPattern should match request")
+						suite.Equal(storage.BaseImageRepository_HEALTHY, repo.GetHealthStatus(), "HealthStatus should be HEALTHY")
+
+						return created, nil
+					})
 			},
 			expectedError: false,
 		},
