@@ -34,10 +34,12 @@ import (
 	"github.com/stackrox/rox/sensor/common/chaos"
 	"github.com/stackrox/rox/sensor/common/config"
 	"github.com/stackrox/rox/sensor/common/detector"
+	"github.com/stackrox/rox/sensor/common/graphqlgateway"
 	"github.com/stackrox/rox/sensor/common/image"
 	"github.com/stackrox/rox/sensor/common/internalmessage"
 	"github.com/stackrox/rox/sensor/common/scannerclient"
 	"github.com/stackrox/rox/sensor/common/scannerdefinitions"
+	"k8s.io/client-go/kubernetes"
 )
 
 const (
@@ -89,6 +91,13 @@ type Sensor struct {
 	reconcile  atomic.Bool
 
 	clusterID clusterIDPeekSetter
+
+	// graphqlGatewayHandler provides HTTP endpoint for OCP console plugin GraphQL queries
+	graphqlGatewayHandler common.Notifiable
+
+	// k8sClient is the Kubernetes client (only set for Kubernetes platforms)
+	// Used for GraphQL gateway Kubernetes RBAC validation
+	k8sClientForGraphQL interface{}
 }
 
 // NewSensor initializes a Sensor, including reading configurations from the environment.
@@ -136,6 +145,19 @@ func (s *Sensor) AddAPIServices(services ...pkgGRPC.APIService) {
 // state changes. All components passed to NewSensor are added by default.
 func (s *Sensor) AddNotifiable(notifiable common.Notifiable) {
 	s.notifyList = append(s.notifyList, notifiable)
+}
+
+// SetGraphQLGatewayHandler sets the GraphQL gateway handler for OCP console plugin integration.
+// This should be called PRIOR to Start() from platform-specific sensor initialization code.
+func (s *Sensor) SetGraphQLGatewayHandler(handler common.Notifiable) {
+	s.graphqlGatewayHandler = handler
+	s.AddNotifiable(handler)
+}
+
+// SetK8sClientForGraphQL sets the Kubernetes client for GraphQL gateway RBAC validation.
+// This should be called PRIOR to Start() from Kubernetes-specific sensor initialization code.
+func (s *Sensor) SetK8sClientForGraphQL(k8sClient interface{}) {
+	s.k8sClientForGraphQL = k8sClient
 }
 
 func (s *Sensor) startProfilingServer() *http.Server {
@@ -236,6 +258,12 @@ func (s *Sensor) Start() {
 		s.AddNotifiable(scannerclient.ResetNotifiable())
 	}
 
+	// Enable GraphQL gateway endpoint for OCP console plugin (Kubernetes platforms only)
+	if graphQLGatewayRoute := s.newGraphQLGatewayRoute(s.centralEndpoint, centralCertificates); graphQLGatewayRoute != nil {
+		customRoutes = append(customRoutes, *graphQLGatewayRoute)
+		log.Info("GraphQL gateway route registered for OCP console plugin integration")
+	}
+
 	// Create grpc server with custom routes
 	mtlsServiceIDExtractor, err := serviceAuthn.NewExtractor()
 	if err != nil {
@@ -321,6 +349,46 @@ func (s *Sensor) newScannerDefinitionsRoute(centralEndpoint string, centralCerti
 		Authorizer:    or.Or(idcheck.ScannerOnly(), idcheck.ScannerV4IndexerOnly(), idcheck.CollectorOnly()),
 		ServerHandler: handler,
 	}, nil
+}
+
+// newGraphQLGatewayRoute creates the GraphQL gateway route for OCP console plugin if k8s client is configured.
+// This returns nil if the GraphQL gateway is not configured (non-Kubernetes platforms or k8s client not set).
+func (s *Sensor) newGraphQLGatewayRoute(centralEndpoint string, centralCertificates []*x509.Certificate) *routes.CustomRoute {
+	// Check if k8s client is configured (only set for Kubernetes platforms)
+	if s.k8sClientForGraphQL == nil {
+		return nil
+	}
+
+	// Type assert k8s client
+	k8sClient, ok := s.k8sClientForGraphQL.(kubernetes.Interface)
+	if !ok {
+		log.Warn("k8sClientForGraphQL is not a kubernetes.Interface")
+		return nil
+	}
+
+	// Create the GraphQL gateway handler with all dependencies
+	handler, err := graphqlgateway.NewGraphQLGatewayHandler(
+		centralEndpoint,
+		centralCertificates,
+		k8sClient,
+		s.centralConnection, // LazyClientConn implements grpc.ClientConnInterface
+		s.clusterID.GetNoWait(),
+		nil, // centralSignal is optional (nil-safe in TokenManager)
+	)
+	if err != nil {
+		log.Warnf("Failed to create GraphQL gateway handler: %v", err)
+		return nil
+	}
+
+	// Store handler as Notifiable so it receives connectivity events
+	s.SetGraphQLGatewayHandler(handler)
+
+	return &routes.CustomRoute{
+		Route:         "/api/graphql-gateway",
+		Authorizer:    allow.Anonymous(),
+		ServerHandler: handler,
+		Compression:   true,
+	}
 }
 
 // Stop shuts down background tasks.

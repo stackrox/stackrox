@@ -29,12 +29,12 @@ type TokenResponse struct {
 
 // TokenClient handles communication with Central's ScopedTokenService.
 type TokenClient struct {
-	centralConn *grpc.ClientConn
+	centralConn grpc.ClientConnInterface
 	clusterName string
 }
 
 // NewTokenClient creates a new token client for requesting scoped tokens from Central.
-func NewTokenClient(centralConn *grpc.ClientConn, clusterName string) *TokenClient {
+func NewTokenClient(centralConn grpc.ClientConnInterface, clusterName string) *TokenClient {
 	return &TokenClient{
 		centralConn: centralConn,
 		clusterName: clusterName,

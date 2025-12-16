@@ -258,5 +258,9 @@ func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 	apiServices = append(apiServices, certdistribution.NewService(clusterID, cfg.k8sClient.Kubernetes(), sensorNamespace))
 
 	s.AddAPIServices(apiServices...)
+
+	// Store k8s client for GraphQL gateway (used during Start() to create handler)
+	s.SetK8sClientForGraphQL(cfg.k8sClient.Kubernetes())
+
 	return s, nil
 }

@@ -79,15 +79,17 @@ func (m *TokenManager) GetToken(ctx context.Context, bearerToken, namespace, dep
 	)
 
 	// Step 3: Request new token from Central
-	// Check if Central is reachable
-	if err := m.centralSignal.Err(); err != nil {
-		// Central is offline
-		log.Warnw("Central is offline, cannot request new token",
-			logging.Err(err),
-			logging.String("user", userInfo.Username),
-		)
-		// We already checked cache above, so no cached token available
-		return "", errox.ServerError.New("Central is offline and no cached token available")
+	// Check if Central is reachable (if signal is available)
+	if m.centralSignal != nil {
+		if err := m.centralSignal.Err(); err != nil {
+			// Central is offline
+			log.Warnw("Central is offline, cannot request new token",
+				logging.Err(err),
+				logging.String("user", userInfo.Username),
+			)
+			// We already checked cache above, so no cached token available
+			return "", errox.ServerError.New("Central is offline and no cached token available")
+		}
 	}
 
 	tokenResp, err := m.tokenClient.RequestToken(ctx, userInfo.Username, namespace, deployment)
