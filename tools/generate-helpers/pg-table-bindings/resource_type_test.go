@@ -117,10 +117,20 @@ func TestGetResourceType(t *testing.T) {
 		})
 	}
 
-	t.Run("panics on unknown resource", func(t *testing.T) {
-		email := &storage.Email{}
-		assert.Panics(t, func() {
-			getResourceType(fmt.Sprintf("%T", email), walker.Walk(reflect.TypeOf(email), ""), false)
+	for _, tc := range []struct {
+		typ protocompat.Message
+	}{
+		{typ: &storage.Email{}},
+		{typ: &storage.CVE{}},
+	} {
+		t.Run(fmt.Sprintf("panics on unknown resource %T", tc.typ), func(t *testing.T) {
+			assert.PanicsWithValue(
+				t,
+				"unknown resource: . Please add the resource to tools/generate-helpers/pg-table-bindings/list.go.",
+				func() {
+					getResourceType(fmt.Sprintf("%T", tc.typ), walker.Walk(reflect.TypeOf(tc.typ), ""), false)
+				},
+			)
 		})
-	})
+	}
 }
