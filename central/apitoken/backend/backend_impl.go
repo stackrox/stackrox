@@ -71,6 +71,34 @@ func (c *backendImpl) RevokeToken(ctx context.Context, tokenID string) (bool, er
 	return true, nil
 }
 
+// IssueEphemeralScopedToken issues a short-lived token with an embedded dynamic access scope.
+// This token is NOT persisted to the database - it exists only as a JWT with embedded claims.
+// Intended for use by Sensor's GraphQL gateway for scoped, temporary access to Central.
+func (c *backendImpl) IssueEphemeralScopedToken(ctx context.Context, name string, roleNames []string, dynamicScope *storage.DynamicAccessScope, ttl time.Duration) (string, *time.Time, error) {
+	if ttl <= 0 {
+		return "", nil, errox.InvalidArgs.New("TTL must be positive")
+	}
+
+	expireAt := time.Now().Add(ttl)
+	claims := tokens.RoxClaims{
+		RoleNames:    roleNames,
+		Name:         name,
+		ExpireAt:     &expireAt,
+		DynamicScope: dynamicScope,
+	}
+
+	tokenInfo, err := c.issuer.Issue(ctx, claims)
+	if err != nil {
+		return "", nil, err
+	}
+
+	// Note: Explicitly NOT storing token metadata in the database.
+	// This token is ephemeral and will expire based on the TTL.
+	// The dynamic scope exists only in the token claims.
+
+	return tokenInfo.Token, &expireAt, nil
+}
+
 func metadataFromTokenInfo(name string, info *tokens.TokenInfo) *storage.TokenMetadata {
 	var singleRole string
 	if len(info.RoleNames) == 1 {
