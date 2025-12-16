@@ -43,23 +43,18 @@ func (s *migrationTestSuite) TestMigration() {
 	pgutils.CreateTableFromModel(dbs.DBCtx, dbs.GormDB, oldSchema.CreateTableProcessIndicatorsStmt)
 
 	// Add some process indicators
-	var indicators []*storage.ProcessIndicator
+	var convertedProcessIndicators []oldSchema.ProcessIndicators
 	numIndicators := 3000
 	for i := 0; i < numIndicators; i++ {
 		processIndicator := &storage.ProcessIndicator{}
 		s.NoError(testutils.FullInit(processIndicator, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
-		indicators = append(indicators, processIndicator)
-	}
-
-	var convertedProcessIndicators []oldSchema.ProcessIndicators
-	for _, processIndicator := range indicators {
-		// spreading these across some deployments to set up search test
 		processIndicator.Id = uuid.NewV4().String()
 
 		converted, err := oldSchema.ConvertProcessIndicatorFromProto(processIndicator)
 		s.Require().NoError(err)
 		convertedProcessIndicators = append(convertedProcessIndicators, *converted)
 	}
+
 	if len(convertedProcessIndicators) > 0 {
 		s.Require().NoError(dbs.GormDB.CreateInBatches(convertedProcessIndicators, numIndicators).Error)
 	}
