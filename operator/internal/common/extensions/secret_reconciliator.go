@@ -120,7 +120,7 @@ func (r *SecretReconciliator) updateExisting(ctx context.Context, secret *coreV1
 	// Check if the secret should be adopted. This handles backup/restore scenarios
 	// where ownerReferences were stripped but the managed-by label remains.
 	if !isManaged && utils.ShouldAdoptResource(secret) {
-		secret.SetOwnerReferences(append(secret.GetOwnerReferences(), *metav1.NewControllerRef(r.obj, r.obj.GroupVersionKind())))
+		secret.SetOwnerReferences([]metav1.OwnerReference{*metav1.NewControllerRef(r.obj, r.obj.GroupVersionKind())})
 		isManaged = true
 		needsUpdate = true
 	}
