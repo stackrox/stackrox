@@ -119,6 +119,7 @@ func (s *serviceImpl) getAutocompleteSearchers() map[v1.SearchCategory]search.Se
 	}
 	if features.FlattenImageData.Enabled() {
 		searchers[v1.SearchCategory_IMAGES_V2] = s.imagesV2
+		searchers[v1.SearchCategory_IMAGES] = s.imagesV2
 	} else {
 		searchers[v1.SearchCategory_IMAGES] = s.images
 	}
