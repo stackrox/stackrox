@@ -147,7 +147,9 @@ func Test_BackoffPreservedOnRapidReconnection(t *testing.T) {
 	t.Setenv("ROX_SENSOR_CONNECTION_RETRY_INITIAL_INTERVAL", "1s")
 	t.Setenv("ROX_SENSOR_CONNECTION_RETRY_MAX_INTERVAL", "8s")
 	// Set short stable duration to avoid accidental backoff resets during rapid reconnects
-	t.Setenv("ROX_SENSOR_CONNECTION_STABLE_DURATION", "1s")
+	// 15s provides margin for test framework overhead and backoff delays while still being
+	// short enough to test the backoff preservation mechanism in local and CI environments
+	t.Setenv("ROX_SENSOR_CONNECTION_STABLE_DURATION", "15s")
 
 	c, err := helper.NewContextWithConfig(t, helper.Config{
 		InitialSystemPolicies: nil,
@@ -163,24 +165,45 @@ func Test_BackoffPreservedOnRapidReconnection(t *testing.T) {
 		// Track reconnect start times and sync completion times separately
 		var reconnectStartTimes []time.Time
 		var reconnectSyncTimes []time.Time
+		var cycleDurations []time.Duration
+
+		const stableDuration = 15 * time.Second
 
 		// Simulate rapid disconnections (before stable duration)
 		// Each disconnection should preserve backoff, leading to increasing intervals
-		for range 3 {
+		for i := range 3 {
+			// Track cycle start for duration measurement
+			cycleStart := time.Now()
+
 			// Record time just before initiating reconnect
 			reconnectStartTimes = append(reconnectStartTimes, time.Now())
 
 			// Restart connection quickly (simulating failure before stable duration)
+			// No sleep - minimize overhead to avoid accidental stability
 			testContext.RestartFakeCentralConnection()
-
-			// Small sleep to ensure we don't accidentally reach stable duration
-			time.Sleep(200 * time.Millisecond)
 
 			// Wait for reconnection
 			testContext.WaitForSyncEvent(t, 30*time.Second)
 
 			// Record time after sync completes
-			reconnectSyncTimes = append(reconnectSyncTimes, time.Now())
+			syncTime := time.Now()
+			reconnectSyncTimes = append(reconnectSyncTimes, syncTime)
+
+			// Calculate and record cycle duration
+			cycleDuration := syncTime.Sub(cycleStart)
+			cycleDurations = append(cycleDurations, cycleDuration)
+
+			t.Logf("Cycle %d: restart→sync took %v (stable duration threshold: %v)",
+				i, cycleDuration, stableDuration)
+
+			// Warn if cycle is slow - may indicate environment can't reliably test backoff preservation
+			// We don't fail here because the backoff interval assertions below are the real test
+			if cycleDuration >= stableDuration {
+				t.Logf("WARNING: Cycle %d took %v which exceeds stable duration %v. "+
+					"Test environment may be too slow for reliable backoff preservation testing. "+
+					"However, interval assertions will still verify backoff behavior.",
+					i, cycleDuration, stableDuration)
+			}
 		}
 
 		// Verify that retry intervals increased (backoff was preserved, not reset)
@@ -196,6 +219,7 @@ func Test_BackoffPreservedOnRapidReconnection(t *testing.T) {
 		}
 
 		t.Logf("Reconnection intervals (start to sync): %v, %v, %v", intervals[0], intervals[1], intervals[2])
+		t.Logf("Cycle durations (restart to sync): %v, %v, %v", cycleDurations[0], cycleDurations[1], cycleDurations[2])
 
 		// Verify backoff is preserved: intervals should not decrease significantly
 		// Use conservative factor to tolerate CI variance while confirming backoff preservation
