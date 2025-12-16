@@ -13,7 +13,9 @@ import { ArrowRightIcon } from '@patternfly/react-icons';
 
 import type { NonEmptyArray } from 'utils/type.utils';
 
-import './ConditionText.css';
+import type { ConditionTextFilterAttribute, OnSearchCallback } from '../types';
+
+import './SearchFilterConditionText.css';
 
 // Potentially reusable for condition-number and date-picker components.
 export type ConditionEntry = [conditionKey: string, conditionText: string];
@@ -73,12 +75,14 @@ export function convertFromInternalToExternalConditionText(
     return `“${internalConditionText}” is not valid`; // query string in page address
 }
 
-export type ConditionTextProps = {
-    inputProps: ConditionTextInputProps;
-    onSearch: (internalConditionText: string) => void;
+export type SearchFilterConditionTextProps = {
+    attribute: ConditionTextFilterAttribute;
+    onSearch: OnSearchCallback;
+    // does not depend on searchFilter
 };
 
-function ConditionText({ inputProps, onSearch }: ConditionTextProps) {
+function SearchFilterConditionText({ attribute, onSearch }: SearchFilterConditionTextProps) {
+    const { inputProps, searchTerm: category } = attribute;
     const {
         conditionProps: { conditionEntries },
         textProps: { convertFromExternalToInternalText, externalTextDefault, validateExternalText },
@@ -152,7 +156,13 @@ function ConditionText({ inputProps, onSearch }: ConditionTextProps) {
                 isDisabled={!validateExternalText(externalText)}
                 onClick={() => {
                     const internalText = convertFromExternalToInternalText(externalText);
-                    onSearch(joinConditionText(conditionKey, internalText));
+                    onSearch([
+                        {
+                            action: 'APPEND',
+                            category,
+                            value: joinConditionText(conditionKey, internalText),
+                        },
+                    ]);
                 }}
                 variant="control"
             >
@@ -162,4 +172,4 @@ function ConditionText({ inputProps, onSearch }: ConditionTextProps) {
     );
 }
 
-export default ConditionText;
+export default SearchFilterConditionText;

@@ -9,7 +9,7 @@ import { searchValueAsArray } from 'utils/searchUtils';
 import type { CompoundSearchFilterConfig, CompoundSearchFilterEntity } from '../types';
 import { hasGroupedSelectOptions, isSelectType, updateSearchFilter } from '../utils/utils';
 
-import { convertFromInternalToExternalConditionText } from './ConditionText';
+import { convertFromInternalToExternalConditionText } from './SearchFilterConditionText';
 
 import './SearchFilterChips.css';
 

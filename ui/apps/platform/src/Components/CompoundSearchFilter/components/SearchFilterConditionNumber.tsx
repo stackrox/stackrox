@@ -1,21 +1,17 @@
+import { useState } from 'react';
 import type { FormEvent } from 'react';
 import { Button, NumberInput, SelectOption } from '@patternfly/react-core';
 import { ArrowRightIcon } from '@patternfly/react-icons';
 import clamp from 'lodash/clamp';
 
-import { ensureString } from 'utils/ensure';
-import { conditions } from '../utils/utils';
+import type { GenericSearchFilterAttribute, OnSearchCallback } from '../types';
+import { conditionMap, conditions } from '../utils/utils';
 
 import SimpleSelect from './SimpleSelect';
 
 export type ConditionNumber = { condition: string; number: number };
 
-export type ConditionNumberProps = {
-    value: ConditionNumber;
-    onChange: (value: { condition: string; number: number }) => void;
-    onSearch: (value: { condition: string; number: number }) => void;
-};
-
+// Move to attribute if we ever need to support number other than CVSS.
 const minValue = 0;
 const maxValue = 10;
 const incrementValue = 0.1;
@@ -24,9 +20,20 @@ function roundToOneDecimalPlace(value: number) {
     return parseFloat(value.toFixed(1));
 }
 
-function ConditionNumber({ value, onChange, onSearch }: ConditionNumberProps) {
+export type SearchFilterConditionNumberProps = {
+    attribute: GenericSearchFilterAttribute;
+    onSearch: OnSearchCallback;
+    // does not depend on searchFilter
+};
+
+function SearchFilterConditionNumber({ attribute, onSearch }: SearchFilterConditionNumberProps) {
+    const { searchTerm: category } = attribute;
+
+    const [conditionExternal, setConditionExternal] = useState(conditions[0]);
+    const [value, setValue] = useState(minValue);
+
     const updateNumber = (operation: 'minus' | 'plus') => {
-        let incrementedNumber = value.number || 0;
+        let incrementedNumber = value;
         if (operation === 'minus') {
             incrementedNumber -= incrementValue;
         } else if (operation === 'plus') {
@@ -34,10 +41,7 @@ function ConditionNumber({ value, onChange, onSearch }: ConditionNumberProps) {
         }
         const roundedNumber = roundToOneDecimalPlace(incrementedNumber);
         const normalizedNumber = clamp(roundedNumber, minValue, maxValue);
-        onChange({
-            ...value,
-            number: normalizedNumber,
-        });
+        setValue(normalizedNumber);
     };
 
     const onMinus = () => updateNumber('minus');
@@ -47,12 +51,9 @@ function ConditionNumber({ value, onChange, onSearch }: ConditionNumberProps) {
     return (
         <>
             <SimpleSelect
-                value={value.condition || conditions[0]}
-                onChange={(val) =>
-                    onChange({
-                        ...value,
-                        condition: ensureString(val),
-                    })
+                value={conditionExternal}
+                onChange={(conditionSelected) =>
+                    setConditionExternal(conditionSelected as (typeof conditions)[number])
                 }
                 ariaLabelMenu="Condition selector menu"
                 ariaLabelToggle="Condition selector toggle"
@@ -67,15 +68,12 @@ function ConditionNumber({ value, onChange, onSearch }: ConditionNumberProps) {
             </SimpleSelect>
             <NumberInput
                 inputAriaLabel="Condition value input"
-                value={value.number || minValue}
-                min={0}
-                max={10}
+                value={value}
+                min={minValue}
+                max={maxValue}
                 onChange={(event: FormEvent<HTMLInputElement>) => {
-                    const { value: newNumber } = event.target as HTMLInputElement;
-                    onChange({
-                        ...value,
-                        number: Number(newNumber),
-                    });
+                    const { value: valueChanged } = event.target as HTMLInputElement;
+                    setValue(Number(valueChanged));
                 }}
                 onBlur={(event: FormEvent<HTMLInputElement>) => {
                     const target = event.target as HTMLInputElement;
@@ -86,10 +84,7 @@ function ConditionNumber({ value, onChange, onSearch }: ConditionNumberProps) {
                         minValue,
                         maxValue
                     );
-                    onChange({
-                        ...value,
-                        number: normalizedNumber,
-                    });
+                    setValue(normalizedNumber);
                 }}
                 onMinus={onMinus}
                 onPlus={onPlus}
@@ -100,7 +95,16 @@ function ConditionNumber({ value, onChange, onSearch }: ConditionNumberProps) {
                 variant="control"
                 aria-label="Apply condition and number input to search"
                 onClick={() => {
-                    onSearch(value);
+                    const conditionInternal = conditionMap[conditionExternal];
+                    if (conditionInternal) {
+                        onSearch([
+                            {
+                                action: 'APPEND',
+                                category,
+                                value: `${conditionInternal}${value}`,
+                            },
+                        ]);
+                    }
                 }}
             >
                 <ArrowRightIcon />
@@ -109,4 +113,4 @@ function ConditionNumber({ value, onChange, onSearch }: ConditionNumberProps) {
     );
 }
 
-export default ConditionNumber;
+export default SearchFilterConditionNumber;
