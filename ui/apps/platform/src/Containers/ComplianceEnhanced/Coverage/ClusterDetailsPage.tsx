@@ -110,17 +110,6 @@ function ClusterDetailsPage() {
         setSearchFilter(updateSearchFilter(searchFilter, payload));
     };
 
-    const onCheckStatusSelect = (
-        filterType: 'Compliance Check Status',
-        checked: boolean,
-        selection: string
-    ) => {
-        const action = checked ? 'SELECT_INCLUSIVE' : 'REMOVE';
-        const category = filterType;
-        const value = selection;
-        onSearch([{ action, category, value }]);
-    };
-
     function onClearFilters() {
         setSearchFilter({});
         setPage(1);
@@ -231,7 +220,6 @@ function ClusterDetailsPage() {
                             searchFilter={searchFilter}
                             onFilterChange={setSearchFilter}
                             onSearch={onSearch}
-                            onCheckStatusSelect={onCheckStatusSelect}
                             onClearFilters={onClearFilters}
                         />
                     </>

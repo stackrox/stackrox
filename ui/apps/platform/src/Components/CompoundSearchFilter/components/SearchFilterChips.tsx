@@ -6,7 +6,11 @@ import { Globe } from 'react-feather'; // eslint-disable-line limited/no-feather
 import type { SearchFilter } from 'types/search';
 import { searchValueAsArray } from 'utils/searchUtils';
 
-import type { CompoundSearchFilterConfig, CompoundSearchFilterEntity } from '../types';
+import type {
+    CompoundSearchFilterAttribute,
+    CompoundSearchFilterConfig,
+    CompoundSearchFilterEntity,
+} from '../types';
 import { hasGroupedSelectOptions, isSelectType, updateSearchFilter } from '../utils/utils';
 
 import { convertFromInternalToExternalConditionText } from './ConditionText';
@@ -51,45 +55,49 @@ export function makeFilterChipDescriptors(
 ): FilterChipGroupDescriptor[] {
     const filterChipDescriptors = config.flatMap(
         ({ attributes = [] }: CompoundSearchFilterEntity) =>
-            attributes.map((attribute) => {
-                const baseConfig = {
-                    displayName: attribute.filterChipLabel,
-                    searchFilterName: attribute.searchTerm,
-                };
-
-                if (isSelectType(attribute)) {
-                    const options = hasGroupedSelectOptions(attribute.inputProps)
-                        ? attribute.inputProps.groupOptions.flatMap((group) => group.options)
-                        : attribute.inputProps.options;
-                    return {
-                        ...baseConfig,
-                        render: (filter: string) => {
-                            const option = options.find((option) => option.value === filter);
-                            return <FilterChip name={option?.label || 'N/A'} />;
-                        },
-                    };
-                }
-
-                if (attribute.inputType === 'condition-text') {
-                    return {
-                        ...baseConfig,
-                        render: (filter: string) => {
-                            return (
-                                <FilterChip
-                                    name={convertFromInternalToExternalConditionText(
-                                        attribute.inputProps,
-                                        filter
-                                    )}
-                                />
-                            );
-                        },
-                    };
-                }
-
-                return baseConfig;
-            })
+            attributes.map(makeFilterChipDescriptorFromAttribute)
     );
     return filterChipDescriptors;
+}
+
+export function makeFilterChipDescriptorFromAttribute(
+    attribute: CompoundSearchFilterAttribute
+): FilterChipGroupDescriptor {
+    const baseConfig = {
+        displayName: attribute.filterChipLabel,
+        searchFilterName: attribute.searchTerm,
+    };
+
+    if (isSelectType(attribute)) {
+        const options = hasGroupedSelectOptions(attribute.inputProps)
+            ? attribute.inputProps.groupOptions.flatMap((group) => group.options)
+            : attribute.inputProps.options;
+        return {
+            ...baseConfig,
+            render: (filter: string) => {
+                const option = options.find((option) => option.value === filter);
+                return <FilterChip name={option?.label || 'N/A'} />;
+            },
+        };
+    }
+
+    if (attribute.inputType === 'condition-text') {
+        return {
+            ...baseConfig,
+            render: (filter: string) => {
+                return (
+                    <FilterChip
+                        name={convertFromInternalToExternalConditionText(
+                            attribute.inputProps,
+                            filter
+                        )}
+                    />
+                );
+            },
+        };
+    }
+
+    return baseConfig;
 }
 
 export type SearchFilterChipsProps = {
