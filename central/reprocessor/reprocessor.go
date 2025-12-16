@@ -483,7 +483,7 @@ func (l *loopImpl) reprocessImageV2(id string, digest string, fetchOpt imageEnri
 	}
 
 	if image.GetNotPullable() || image.GetIsClusterLocal() {
-		// Skip reprocessing as sensor will handle cluster-local images. But we still need to migrate the image to V2.
+		// Skip reprocessing. Sensor will handle cluster-local images. But we still need to migrate the image to V2.
 		if migrateToV2 {
 			if err := l.risk.CalculateRiskAndUpsertImageV2(image); err != nil {
 				log.Errorw("Error calculating risk for image", logging.ImageName(image.GetName().GetFullName()), logging.ImageID(image.GetId()), logging.Err(err))
