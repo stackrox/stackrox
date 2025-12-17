@@ -102,7 +102,7 @@ func insertIntoBaseImages(batch *pgx.Batch, obj *storage.BaseImage) error {
 	values := []interface{}{
 		// parent primary keys start
 		pgutils.NilOrUUID(obj.GetId()),
-		obj.GetBaseImageRepositoryId(),
+		pgutils.NilOrString(obj.GetBaseImageRepositoryId()),
 		obj.GetRepository(),
 		obj.GetTag(),
 		obj.GetManifestDigest(),
@@ -113,6 +113,32 @@ func insertIntoBaseImages(batch *pgx.Batch, obj *storage.BaseImage) error {
 	}
 
 	finalStr := "INSERT INTO base_images (Id, BaseImageRepositoryId, Repository, Tag, ManifestDigest, DiscoveredAt, Active, FirstLayerDigest, serialized) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, BaseImageRepositoryId = EXCLUDED.BaseImageRepositoryId, Repository = EXCLUDED.Repository, Tag = EXCLUDED.Tag, ManifestDigest = EXCLUDED.ManifestDigest, DiscoveredAt = EXCLUDED.DiscoveredAt, Active = EXCLUDED.Active, FirstLayerDigest = EXCLUDED.FirstLayerDigest, serialized = EXCLUDED.serialized"
+	batch.Queue(finalStr, values...)
+
+	var query string
+
+	for childIndex, child := range obj.GetLayers() {
+		if err := insertIntoBaseImagesLayers(batch, child, obj.GetId(), childIndex); err != nil {
+			return err
+		}
+	}
+
+	query = "delete from base_images_layers where base_images_Id = $1 AND idx >= $2"
+	batch.Queue(query, pgutils.NilOrUUID(obj.GetId()), len(obj.GetLayers()))
+	return nil
+}
+
+func insertIntoBaseImagesLayers(batch *pgx.Batch, obj *storage.BaseImageLayer, baseImageID string, idx int) error {
+
+	values := []interface{}{
+		// parent primary keys start
+		pgutils.NilOrUUID(baseImageID),
+		idx,
+		obj.GetLayerDigest(),
+		obj.GetIndex(),
+	}
+
+	finalStr := "INSERT INTO base_images_layers (base_images_Id, idx, LayerDigest, Index) VALUES($1, $2, $3, $4) ON CONFLICT(base_images_Id, idx) DO UPDATE SET base_images_Id = EXCLUDED.base_images_Id, idx = EXCLUDED.idx, LayerDigest = EXCLUDED.LayerDigest, Index = EXCLUDED.Index"
 	batch.Queue(finalStr, values...)
 
 	return nil
@@ -162,7 +188,7 @@ func copyFromBaseImages(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx
 
 		return []interface{}{
 			pgutils.NilOrUUID(obj.GetId()),
-			obj.GetBaseImageRepositoryId(),
+			pgutils.NilOrString(obj.GetBaseImageRepositoryId()),
 			obj.GetRepository(),
 			obj.GetTag(),
 			obj.GetManifestDigest(),
@@ -174,6 +200,47 @@ func copyFromBaseImages(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx
 	})
 
 	if _, err := tx.CopyFrom(ctx, pgx.Identifier{"base_images"}, copyColsBaseImages, inputRows); err != nil {
+		return err
+	}
+
+	for _, obj := range objs {
+		if err := copyFromBaseImagesLayers(ctx, s, tx, obj.GetId(), obj.GetLayers()...); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+var copyColsBaseImagesLayers = []string{
+	"base_images_id",
+	"idx",
+	"layerdigest",
+	"index",
+}
+
+func copyFromBaseImagesLayers(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, baseImageID string, objs ...*storage.BaseImageLayer) error {
+	if len(objs) == 0 {
+		return nil
+	}
+
+	idx := 0
+	inputRows := pgx.CopyFromFunc(func() ([]any, error) {
+		if idx >= len(objs) {
+			return nil, nil
+		}
+		obj := objs[idx]
+		idx++
+
+		return []interface{}{
+			pgutils.NilOrUUID(baseImageID),
+			idx,
+			obj.GetLayerDigest(),
+			obj.GetIndex(),
+		}, nil
+	})
+
+	if _, err := tx.CopyFrom(ctx, pgx.Identifier{"base_images_layers"}, copyColsBaseImagesLayers, inputRows); err != nil {
 		return err
 	}
 
