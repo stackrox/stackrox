@@ -1,4 +1,4 @@
-import React, { useState, useContext } from 'react';
+import { useState, useContext } from 'react';
 import PropTypes from 'prop-types';
 import pluralize from 'pluralize';
 import { gql, useQuery } from '@apollo/client';

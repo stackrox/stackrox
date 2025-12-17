@@ -865,7 +865,7 @@ function launch_sensor {
         extra_helm_config+=(--set "collector.priorityClassName=$collector_priority_class_name")
       fi
 
-      if [[ "${ROX_SENSITIVE_FILE_ACTIVITY:-false}" == "true" ]]; then
+      if [[ "${SFA_AGENT:-false}" == "true" ]]; then
         echo "Enable Sensitive File Activity agent"
         extra_helm_config+=(--set "collector.sfaEnabled=true")
       fi

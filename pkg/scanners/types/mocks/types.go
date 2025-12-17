@@ -688,3 +688,84 @@ func (mr *MockOrchestratorScannerMockRecorder) Type() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Type", reflect.TypeOf((*MockOrchestratorScanner)(nil).Type))
 }
+
+// MockVirtualMachineScanner is a mock of VirtualMachineScanner interface.
+type MockVirtualMachineScanner struct {
+	ctrl     *gomock.Controller
+	recorder *MockVirtualMachineScannerMockRecorder
+	isgomock struct{}
+}
+
+// MockVirtualMachineScannerMockRecorder is the mock recorder for MockVirtualMachineScanner.
+type MockVirtualMachineScannerMockRecorder struct {
+	mock *MockVirtualMachineScanner
+}
+
+// NewMockVirtualMachineScanner creates a new mock instance.
+func NewMockVirtualMachineScanner(ctrl *gomock.Controller) *MockVirtualMachineScanner {
+	mock := &MockVirtualMachineScanner{ctrl: ctrl}
+	mock.recorder = &MockVirtualMachineScannerMockRecorder{mock}
+	return mock
+}
+
+// EXPECT returns an object that allows the caller to indicate expected use.
+func (m *MockVirtualMachineScanner) EXPECT() *MockVirtualMachineScannerMockRecorder {
+	return m.recorder
+}
+
+// GetVirtualMachineScan mocks base method.
+func (m *MockVirtualMachineScanner) GetVirtualMachineScan(vm *storage.VirtualMachine, indexReport *v4.IndexReport) (*storage.VirtualMachineScan, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetVirtualMachineScan", vm, indexReport)
+	ret0, _ := ret[0].(*storage.VirtualMachineScan)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetVirtualMachineScan indicates an expected call of GetVirtualMachineScan.
+func (mr *MockVirtualMachineScannerMockRecorder) GetVirtualMachineScan(vm, indexReport any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetVirtualMachineScan", reflect.TypeOf((*MockVirtualMachineScanner)(nil).GetVirtualMachineScan), vm, indexReport)
+}
+
+// MaxConcurrentNodeScanSemaphore mocks base method.
+func (m *MockVirtualMachineScanner) MaxConcurrentNodeScanSemaphore() *semaphore.Weighted {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "MaxConcurrentNodeScanSemaphore")
+	ret0, _ := ret[0].(*semaphore.Weighted)
+	return ret0
+}
+
+// MaxConcurrentNodeScanSemaphore indicates an expected call of MaxConcurrentNodeScanSemaphore.
+func (mr *MockVirtualMachineScannerMockRecorder) MaxConcurrentNodeScanSemaphore() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "MaxConcurrentNodeScanSemaphore", reflect.TypeOf((*MockVirtualMachineScanner)(nil).MaxConcurrentNodeScanSemaphore))
+}
+
+// Name mocks base method.
+func (m *MockVirtualMachineScanner) Name() string {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Name")
+	ret0, _ := ret[0].(string)
+	return ret0
+}
+
+// Name indicates an expected call of Name.
+func (mr *MockVirtualMachineScannerMockRecorder) Name() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Name", reflect.TypeOf((*MockVirtualMachineScanner)(nil).Name))
+}
+
+// Type mocks base method.
+func (m *MockVirtualMachineScanner) Type() string {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Type")
+	ret0, _ := ret[0].(string)
+	return ret0
+}
+
+// Type indicates an expected call of Type.
+func (mr *MockVirtualMachineScannerMockRecorder) Type() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Type", reflect.TypeOf((*MockVirtualMachineScanner)(nil).Type))
+}

@@ -1,24 +1,28 @@
-import { useState } from 'react';
-import { useLocation, useParams } from 'react-router-dom-v5-compat';
 import { useQuery } from '@apollo/client';
 
 import { PageBody } from 'Components/Panel';
 import { searchCategories } from 'constants/entityTypes';
 import { SEARCH_OPTIONS_QUERY } from 'queries/search';
-import workflowStateContext from 'Containers/workflowStateContext';
-import parseURL from 'utils/URLParser';
+import useURLPagination from 'hooks/useURLPagination';
+import useURLSort from 'hooks/useURLSort';
+import useURLSearch from 'hooks/useURLSearch';
+import { getHasSearchApplied } from 'utils/searchUtils';
+
 import RiskPageHeader from './RiskPageHeader';
-import RiskTablePanel from './RiskTablePanel';
+import RiskTablePanel, { sortFields, defaultSortOption } from './RiskTablePanel';
+
+const DEFAULT_RISK_PAGE_SIZE = 20;
 
 function RiskTablePage() {
-    const location = useLocation();
-    const params = useParams();
-    const { deploymentId } = params;
-    const { pathname, search } = location;
-    const workflowState = parseURL({ pathname, search });
+    const urlSort = useURLSort({
+        sortFields,
+        defaultSortOption,
+        onSort: () => urlPagination.setPage(1),
+    });
+    const urlPagination = useURLPagination(DEFAULT_RISK_PAGE_SIZE);
+    const urlSearch = useURLSearch();
 
-    // Handle changes to applied search options.
-    const [isViewFiltered, setIsViewFiltered] = useState(false);
+    const isViewFiltered = getHasSearchApplied(urlSearch.searchFilter);
 
     const searchQueryOptions = {
         variables: {
@@ -31,18 +35,32 @@ function RiskTablePage() {
         (option) => option !== 'Orchestrator Component'
     );
     return (
-        <workflowStateContext.Provider value={workflowState}>
-            <RiskPageHeader isViewFiltered={isViewFiltered} searchOptions={filteredSearchOptions} />
+        <>
+            <RiskPageHeader
+                isViewFiltered={isViewFiltered}
+                searchOptions={filteredSearchOptions}
+                searchFilter={urlSearch.searchFilter}
+                onSearch={(newSearchFilter) => {
+                    urlPagination.setPage(1);
+                    urlSearch.setSearchFilter(newSearchFilter);
+                }}
+            />
             <PageBody>
                 <div className="flex-shrink-1 overflow-hidden w-full">
                     <RiskTablePanel
-                        selectedDeploymentId={deploymentId}
                         isViewFiltered={isViewFiltered}
-                        setIsViewFiltered={setIsViewFiltered}
+                        sortOption={urlSort.sortOption}
+                        getSortParams={urlSort.getSortParams}
+                        searchFilter={urlSearch.searchFilter}
+                        onSearchFilterChange={(newSearchFilter) => {
+                            urlSearch.setSearchFilter(newSearchFilter);
+                            urlPagination.setPage(1);
+                        }}
+                        pagination={urlPagination}
                     />
                 </div>
             </PageBody>
-        </workflowStateContext.Provider>
+        </>
     );
 }
 

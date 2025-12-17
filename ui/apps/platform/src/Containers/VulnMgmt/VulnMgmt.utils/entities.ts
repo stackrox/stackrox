@@ -1,5 +1,5 @@
 import useCaseTypes from 'constants/useCaseTypes';
-import { VulnerabilityManagementEntityType } from 'utils/entityRelationships';
+import type { VulnerabilityManagementEntityType } from 'utils/entityRelationships';
 import { WorkflowState } from 'utils/WorkflowState';
 
 const useCase = useCaseTypes.VULN_MANAGEMENT;

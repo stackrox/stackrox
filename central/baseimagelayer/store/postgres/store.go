@@ -13,6 +13,7 @@ import (
 	"github.com/stackrox/rox/pkg/logging"
 	ops "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/postgres"
+	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
@@ -27,7 +28,7 @@ const (
 var (
 	log            = logging.LoggerForModule()
 	schema         = pkgSchema.BaseImageLayersSchema
-	targetResource = resources.Administration
+	targetResource = resources.ImageAdministration
 )
 
 type (
@@ -99,8 +100,8 @@ func insertIntoBaseImageLayers(batch *pgx.Batch, obj *storage.BaseImageLayer) er
 
 	values := []interface{}{
 		// parent primary keys start
-		obj.GetId(),
-		obj.GetBaseImageId(),
+		pgutils.NilOrUUID(obj.GetId()),
+		pgutils.NilOrUUID(obj.GetBaseImageId()),
 		obj.GetLayerDigest(),
 		obj.GetIndex(),
 		serialized,
@@ -110,6 +111,14 @@ func insertIntoBaseImageLayers(batch *pgx.Batch, obj *storage.BaseImageLayer) er
 	batch.Queue(finalStr, values...)
 
 	return nil
+}
+
+var copyColsBaseImageLayers = []string{
+	"id",
+	"baseimageid",
+	"layerdigest",
+	"index",
+	"serialized",
 }
 
 func copyFromBaseImageLayers(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, objs ...*storage.BaseImageLayer) error {
@@ -129,14 +138,6 @@ func copyFromBaseImageLayers(ctx context.Context, s pgSearch.Deleter, tx *postgr
 		}
 	}
 
-	copyCols := []string{
-		"id",
-		"baseimageid",
-		"layerdigest",
-		"index",
-		"serialized",
-	}
-
 	idx := 0
 	inputRows := pgx.CopyFromFunc(func() ([]any, error) {
 		if idx >= len(objs) {
@@ -151,15 +152,15 @@ func copyFromBaseImageLayers(ctx context.Context, s pgSearch.Deleter, tx *postgr
 		}
 
 		return []interface{}{
-			obj.GetId(),
-			obj.GetBaseImageId(),
+			pgutils.NilOrUUID(obj.GetId()),
+			pgutils.NilOrUUID(obj.GetBaseImageId()),
 			obj.GetLayerDigest(),
 			obj.GetIndex(),
 			serialized,
 		}, nil
 	})
 
-	if _, err := tx.CopyFrom(ctx, pgx.Identifier{"base_image_layers"}, copyCols, inputRows); err != nil {
+	if _, err := tx.CopyFrom(ctx, pgx.Identifier{"base_image_layers"}, copyColsBaseImageLayers, inputRows); err != nil {
 		return err
 	}
 

@@ -1,6 +1,7 @@
 package tracker
 
 import (
+	"regexp"
 	"testing"
 
 	"github.com/prometheus/client_golang/prometheus"
@@ -13,7 +14,7 @@ func Test_aggregator(t *testing.T) {
 		"Cluster":   func(tf testFinding) string { return testData[tf]["Cluster"] },
 		"Namespace": func(tf testFinding) string { return testData[tf]["Namespace"] },
 	}
-	a := makeAggregator(makeTestMetricDescriptors(t), getters)
+	a := makeAggregator(makeTestMetricDescriptors(t), nil, getters)
 	assert.NotNil(t, a)
 	assert.Equal(t, map[MetricName]map[aggregationKey]*aggregatedRecord{
 		"test_Test_aggregator_metric1": {},
@@ -107,9 +108,57 @@ func Test_aggregator(t *testing.T) {
 	}, a.result)
 }
 
+func Test_filter(t *testing.T) {
+	clusterFilter := make(map[Label]*regexp.Regexp)
+	clusterFilter[Label("Cluster")] = regexp.MustCompile("^cluster [^5]$")
+
+	severityFilter := make(map[Label]*regexp.Regexp)
+	severityFilter[Label("Severity")] = regexp.MustCompile("^CRITICAL|HIGH$")
+
+	lf := make(LabelFilters)
+	lf[MetricName("test_Test_filter_metric1")] = severityFilter
+	lf[MetricName("test_Test_filter_metric2")] = clusterFilter
+
+	md := makeTestMetricDescriptors(t)
+	a := makeAggregator(md, lf, testLabelGetters)
+
+	// Count all test data:
+	for i := range testData {
+		a.count(testFinding(i))
+	}
+	assert.Equal(t, map[MetricName]map[aggregationKey]*aggregatedRecord{
+		// "LOW" severity findings are filtered out:
+		"test_Test_filter_metric1": {
+			"cluster 1|CRITICAL": &aggregatedRecord{
+				labels: prometheus.Labels{"Cluster": "cluster 1", "Severity": "CRITICAL"},
+				total:  2,
+			},
+			"cluster 2|HIGH": &aggregatedRecord{
+				labels: prometheus.Labels{"Cluster": "cluster 2", "Severity": "HIGH"},
+				total:  1,
+			},
+		},
+		// "cluster 5" findings are filtered out:
+		"test_Test_filter_metric2": {
+			"ns 1": &aggregatedRecord{
+				labels: prometheus.Labels{"Namespace": "ns 1"},
+				total:  1,
+			},
+			"ns 2": &aggregatedRecord{
+				labels: prometheus.Labels{"Namespace": "ns 2"},
+				total:  1,
+			},
+			"ns 3": &aggregatedRecord{
+				labels: prometheus.Labels{"Namespace": "ns 3"},
+				total:  2,
+			},
+		},
+	}, a.result)
+}
+
 func Test_makeAggregationKey(t *testing.T) {
 	md := makeTestMetricDescriptors(t)
-	a := makeAggregator(md, testLabelGetters)
+	a := makeAggregator(md, nil, testLabelGetters)
 
 	var metric = MetricName("test_" + t.Name() + "_metric1")
 	key, labels := a.makeAggregationKey(
@@ -162,7 +211,7 @@ func TestFinding_GetIncrement(t *testing.T) {
 		"l1": func(tf *withIncrement) string { return "v1" },
 	}
 	a := makeAggregator(
-		MetricDescriptors{"m1": []Label{"l1"}},
+		MetricDescriptors{"m1": []Label{"l1"}}, nil,
 		getters)
 	a.count(&f)
 	f.n = 7

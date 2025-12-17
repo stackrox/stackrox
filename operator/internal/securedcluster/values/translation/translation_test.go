@@ -1396,3 +1396,120 @@ func createCaBundleConfigMap(namespace string, data map[string]string) *v1.Confi
 		Data: data,
 	}
 }
+
+func TestDeploymentDefaults(t *testing.T) {
+	componentPaths := []testingUtils.ComponentPath{
+		{Name: "sensor", NodeSelectorPath: "sensor.nodeSelector", TolerationsPath: "sensor.tolerations"},
+		{Name: "admissionControl", NodeSelectorPath: "admissionControl.nodeSelector", TolerationsPath: "admissionControl.tolerations"},
+		{Name: "scanner", NodeSelectorPath: "scanner.nodeSelector", TolerationsPath: "scanner.tolerations"},
+		{Name: "scanner-db", NodeSelectorPath: "scanner.dbNodeSelector", TolerationsPath: "scanner.dbTolerations"},
+		{Name: "scannerV4-indexer", NodeSelectorPath: "scannerV4.indexer.nodeSelector", TolerationsPath: "scannerV4.indexer.tolerations"},
+		{Name: "scannerV4-db", NodeSelectorPath: "scannerV4.db.nodeSelector", TolerationsPath: "scannerV4.db.tolerations"},
+	}
+
+	tests := map[string]struct {
+		securedCluster platform.SecuredCluster
+		expectations   testingUtils.SchedulingExpectations
+	}{
+		"pinToNodes InfraRole": {
+			securedCluster: platform.SecuredCluster{
+				ObjectMeta: metav1.ObjectMeta{Namespace: "stackrox"},
+				Spec: platform.SecuredClusterSpec{
+					ClusterName: ptr.To("test-cluster"),
+					ScannerV4: &platform.LocalScannerV4ComponentSpec{
+						ScannerComponent: ptr.To(platform.LocalScannerV4ComponentAutoSense),
+					},
+					Customize: &platform.CustomizeSpec{
+						DeploymentDefaults: &platform.DeploymentDefaultsSpec{
+							PinToNodes: ptr.To(platform.PinToNodesInfraRole),
+						},
+					},
+				},
+			},
+			expectations: testingUtils.NewSchedulingExpectations(componentPaths, testingUtils.InfraScheduling),
+		},
+		"explicit nodeSelector and tolerations": {
+			securedCluster: platform.SecuredCluster{
+				ObjectMeta: metav1.ObjectMeta{Namespace: "stackrox"},
+				Spec: platform.SecuredClusterSpec{
+					ClusterName: ptr.To("test-cluster"),
+					ScannerV4: &platform.LocalScannerV4ComponentSpec{
+						ScannerComponent: ptr.To(platform.LocalScannerV4ComponentAutoSense),
+					},
+					Customize: &platform.CustomizeSpec{
+						DeploymentDefaults: &platform.DeploymentDefaultsSpec{
+							NodeSelector: map[string]string{"global-label": "global-value"},
+							Tolerations: []*v1.Toleration{
+								{Key: "global-taint", Operator: v1.TolerationOpExists},
+							},
+						},
+					},
+				},
+			},
+			expectations: testingUtils.NewSchedulingExpectations(componentPaths, testingUtils.GlobalScheduling),
+		},
+		"component-specific overrides global": {
+			securedCluster: platform.SecuredCluster{
+				ObjectMeta: metav1.ObjectMeta{Namespace: "stackrox"},
+				Spec: platform.SecuredClusterSpec{
+					ClusterName: ptr.To("test-cluster"),
+					ScannerV4: &platform.LocalScannerV4ComponentSpec{
+						ScannerComponent: ptr.To(platform.LocalScannerV4ComponentAutoSense),
+					},
+					Sensor: &platform.SensorComponentSpec{
+						DeploymentSpec: platform.DeploymentSpec{
+							NodeSelector: map[string]string{"sensor-label": "sensor-value"},
+							Tolerations: []*v1.Toleration{
+								{Key: "sensor-taint", Effect: v1.TaintEffectNoExecute},
+							},
+						},
+					},
+					Customize: &platform.CustomizeSpec{
+						DeploymentDefaults: &platform.DeploymentDefaultsSpec{
+							NodeSelector: map[string]string{"global-label": "global-value"},
+							Tolerations: []*v1.Toleration{
+								{Key: "global-taint", Operator: v1.TolerationOpExists},
+							},
+						},
+					},
+				},
+			},
+			expectations: testingUtils.NewSchedulingExpectations(componentPaths, testingUtils.GlobalScheduling).
+				WithOverride("sensor", testingUtils.SchedulingExpectation{
+					NodeSelector: map[string]any{"sensor-label": "sensor-value"},
+					Tolerations:  []any{map[string]any{"effect": "NoExecute", "key": "sensor-taint"}},
+				}),
+		},
+	}
+
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			client := newDefaultFakeClient(t)
+			translator := Translator{client: client, direct: client}
+			values, err := translator.translate(t.Context(), tt.securedCluster)
+			require.NoError(t, err)
+
+			flatValues, err := flatten.Flatten(values, "", flatten.DotStyle)
+			require.NoError(t, err)
+
+			for _, path := range componentPaths {
+				t.Run(path.Name, func(t *testing.T) {
+					exp := tt.expectations[path.Name]
+					flatExpected, err := flatten.Flatten(map[string]any{
+						path.NodeSelectorPath: exp.NodeSelector,
+						path.TolerationsPath:  exp.Tolerations,
+					}, "", flatten.DotStyle)
+					require.NoError(t, err)
+
+					for k, v := range flatExpected {
+						assert.Equal(t, v, flatValues[k], "mismatch at %s", k)
+					}
+				})
+			}
+
+			// Collector is a DaemonSet and does not inherit deployment scheduling defaults
+			assert.Nil(t, flatValues["collector.nodeSelector"], "collector should not have nodeSelector from deployment defaults")
+			assert.Nil(t, flatValues["collector.tolerations"], "collector should not have tolerations from deployment defaults")
+		})
+	}
+}

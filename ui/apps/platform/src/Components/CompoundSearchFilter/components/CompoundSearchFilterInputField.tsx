@@ -1,33 +1,20 @@
-import { Fragment } from 'react';
-import {
-    Divider,
-    SearchInput,
-    SelectGroup,
-    SelectList,
-    SelectOption,
-} from '@patternfly/react-core';
-
+import { Button } from '@patternfly/react-core';
+import { ArrowRightIcon } from '@patternfly/react-icons';
 import type { SearchFilter } from 'types/search';
-import CheckboxSelect from 'Components/CheckboxSelect';
-import { ensureString, ensureStringArray } from 'utils/ensure';
-import type { SelectedEntity } from './EntitySelector';
-import type { SelectedAttribute } from './AttributeSelector';
-import type { CompoundSearchFilterConfig, OnSearchCallback } from '../types';
-import {
-    conditionMap,
-    dateConditionMap,
-    ensureConditionDate,
-    ensureConditionNumber,
-    getAttribute,
-    getEntity,
-    hasGroupedSelectOptions,
-    hasSelectOptions,
-    isSelectType,
-} from '../utils/utils';
-import ConditionNumber from './ConditionNumber';
+import { ensureString } from 'utils/ensure';
+import type {
+    CompoundSearchFilterAttribute,
+    CompoundSearchFilterEntity,
+    OnSearchCallback,
+} from '../types';
+import SearchFilterConditionDate from './SearchFilterConditionDate';
+import SearchFilterConditionNumber from './SearchFilterConditionNumber';
+import SearchFilterConditionText from './SearchFilterConditionText';
 import SearchFilterAutocomplete from './SearchFilterAutocomplete';
-import ConditionDate from './ConditionDate';
-import ConditionText from './ConditionText';
+import SearchFilterSelectExclusiveDouble from './SearchFilterSelectExclusiveDouble';
+import SearchFilterSelectExclusiveSingle from './SearchFilterSelectExclusiveSingle';
+import SearchFilterSelectInclusive from './SearchFilterSelectInclusive';
+import SearchFilterText from './SearchFilterText';
 
 export type InputFieldValue =
     | string
@@ -39,221 +26,100 @@ export type InputFieldValue =
 export type InputFieldOnChange = (value: InputFieldValue) => void;
 
 export type CompoundSearchFilterInputFieldProps = {
-    selectedEntity: SelectedEntity;
-    selectedAttribute: SelectedAttribute;
+    entity: CompoundSearchFilterEntity;
+    attribute: CompoundSearchFilterAttribute;
     value: InputFieldValue;
     searchFilter: SearchFilter;
     additionalContextFilter?: SearchFilter;
     onSearch: OnSearchCallback;
     onChange: InputFieldOnChange;
-    config: CompoundSearchFilterConfig;
 };
 
 function CompoundSearchFilterInputField({
-    selectedEntity,
-    selectedAttribute,
+    entity,
+    attribute,
     value,
     searchFilter,
     additionalContextFilter,
     onSearch,
     onChange,
-    config,
 }: CompoundSearchFilterInputFieldProps) {
-    if (!selectedEntity || !selectedAttribute) {
-        return null;
-    }
-
-    const entity = getEntity(config, selectedEntity);
-    const attribute = getAttribute(config, selectedEntity, selectedAttribute);
-
-    if (!attribute) {
-        return null;
-    }
-
     if (attribute.inputType === 'text') {
-        const textLabel = `Filter results by ${attribute.filterChipLabel}`;
-        return (
-            <SearchInput
-                aria-label={textLabel}
-                placeholder={textLabel}
-                value={ensureString(value)}
-                onChange={(_event, _value) => onChange(_value)}
-                onSearch={(_event, _value) => {
-                    onSearch([
-                        {
-                            action: 'APPEND',
-                            category: attribute.searchTerm,
-                            value: _value,
-                        },
-                    ]);
-                    onChange('');
-                }}
-                onClear={() => onChange('')}
-                submitSearchButtonLabel="Apply text input to search"
-            />
-        );
+        return <SearchFilterText attribute={attribute} onSearch={onSearch} />;
     }
     if (attribute.inputType === 'date-picker') {
-        return (
-            <ConditionDate
-                value={ensureConditionDate(value)}
-                onChange={(newValue) => {
-                    onChange(newValue);
-                }}
-                onSearch={(newValue) => {
-                    const { condition, date } = newValue;
-                    onSearch([
-                        {
-                            action: 'APPEND',
-                            category: attribute.searchTerm,
-                            value: `${dateConditionMap[condition]}${date}`,
-                        },
-                    ]);
-                    onChange({ ...newValue, date: '' });
-                }}
-            />
-        );
+        return <SearchFilterConditionDate attribute={attribute} onSearch={onSearch} />;
     }
     if (attribute.inputType === 'condition-number') {
-        return (
-            <ConditionNumber
-                value={ensureConditionNumber(value)}
-                onChange={(newValue) => {
-                    onChange(newValue);
-                }}
-                onSearch={(newValue) => {
-                    const { condition, number } = newValue;
-                    onChange(newValue);
-                    onSearch([
-                        {
-                            action: 'APPEND',
-                            category: attribute.searchTerm,
-                            value: `${conditionMap[condition]}${number}`,
-                        },
-                    ]);
-                }}
-            />
-        );
+        return <SearchFilterConditionNumber attribute={attribute} onSearch={onSearch} />;
     }
     if (attribute.inputType === 'condition-text') {
-        return (
-            <ConditionText
-                inputProps={attribute.inputProps}
-                onSearch={(internalConditionText) => {
-                    // onChange(newValue); // inputText seems unused in CompoundSearchFilter
-                    onSearch([
-                        {
-                            action: 'APPEND',
-                            category: attribute.searchTerm,
-                            value: internalConditionText,
-                        },
-                    ]);
-                }}
-            />
-        );
+        return <SearchFilterConditionText attribute={attribute} onSearch={onSearch} />;
     }
-    if (entity && entity.searchCategory && attribute.inputType === 'autocomplete') {
+    if (attribute.inputType === 'autocomplete') {
         const { searchCategory } = entity;
         const { searchTerm, filterChipLabel } = attribute;
         const textLabel = `Filter results by ${filterChipLabel}`;
+
+        const handleSearch = (newValue: string) => {
+            onSearch([
+                {
+                    action: 'APPEND',
+                    category: attribute.searchTerm,
+                    value: newValue,
+                },
+            ]);
+            onChange('');
+        };
         return (
-            <SearchFilterAutocomplete
-                searchCategory={searchCategory}
-                searchTerm={searchTerm}
-                value={ensureString(value)}
-                onChange={(newValue) => {
-                    onChange(newValue);
-                }}
-                onSearch={(newValue) => {
-                    onSearch([
-                        {
-                            action: 'APPEND',
-                            category: attribute.searchTerm,
-                            value: newValue,
-                        },
-                    ]);
-                    onChange('');
-                }}
-                textLabel={textLabel}
+            <>
+                <SearchFilterAutocomplete
+                    searchCategory={searchCategory}
+                    searchTerm={searchTerm}
+                    value={ensureString(value)}
+                    onChange={(newValue) => {
+                        onChange(newValue);
+                    }}
+                    onSearch={handleSearch}
+                    textLabel={textLabel}
+                    searchFilter={searchFilter}
+                    additionalContextFilter={additionalContextFilter}
+                />
+                <Button
+                    variant="control"
+                    aria-label="Apply autocomplete input to search"
+                    onClick={() => handleSearch(ensureString(value))}
+                >
+                    <ArrowRightIcon />
+                </Button>
+            </>
+        );
+    }
+    if (attribute.inputType === 'select-exclusive-double') {
+        return (
+            <SearchFilterSelectExclusiveDouble
+                attribute={attribute}
+                onSearch={onSearch}
                 searchFilter={searchFilter}
-                additionalContextFilter={additionalContextFilter}
             />
         );
     }
-    if (isSelectType(attribute)) {
-        const attributeLabel = attribute.displayName;
-        const { searchTerm } = attribute;
-        const selection = ensureStringArray(searchFilter?.[searchTerm]);
-
-        let content: JSX.Element | JSX.Element[] = (
-            <SelectList>
-                <SelectOption isDisabled>No options available</SelectOption>
-            </SelectList>
-        );
-
-        if (
-            hasGroupedSelectOptions(attribute.inputProps) &&
-            attribute.inputProps.groupOptions.length !== 0
-        ) {
-            content = attribute.inputProps.groupOptions.map(({ name, options }, index) => {
-                return (
-                    <Fragment key={name}>
-                        <SelectGroup label={name}>
-                            <SelectList>
-                                {options.map((option) => (
-                                    <SelectOption
-                                        key={option.value}
-                                        hasCheckbox
-                                        value={option.value}
-                                        isSelected={selection.includes(option.value)}
-                                    >
-                                        {option.label}
-                                    </SelectOption>
-                                ))}
-                            </SelectList>
-                        </SelectGroup>
-                        {index !== options.length - 1 && <Divider component="div" />}
-                    </Fragment>
-                );
-            });
-        } else if (
-            hasSelectOptions(attribute.inputProps) &&
-            attribute.inputProps.options.length !== 0
-        ) {
-            content = (
-                <SelectList>
-                    {attribute.inputProps.options.map((option) => (
-                        <SelectOption
-                            key={option.value}
-                            hasCheckbox
-                            value={option.value}
-                            isSelected={selection.includes(option.value)}
-                        >
-                            {option.label}
-                        </SelectOption>
-                    ))}
-                </SelectList>
-            );
-        }
-
+    if (attribute.inputType === 'select-exclusive-single') {
         return (
-            <CheckboxSelect
-                selection={selection}
-                onChange={(checked, _value) => {
-                    onChange(value);
-                    onSearch([
-                        {
-                            action: checked ? 'SELECT_INCLUSIVE' : 'REMOVE',
-                            category: attribute.searchTerm,
-                            value: _value,
-                        },
-                    ]);
-                }}
-                ariaLabelMenu={`Filter by ${attributeLabel} select menu`}
-                toggleLabel={`Filter by ${attributeLabel}`}
-            >
-                {content}
-            </CheckboxSelect>
+            <SearchFilterSelectExclusiveSingle
+                attribute={attribute}
+                onSearch={onSearch}
+                searchFilter={searchFilter}
+            />
+        );
+    }
+    if (attribute.inputType === 'select') {
+        return (
+            <SearchFilterSelectInclusive
+                attribute={attribute}
+                onSearch={onSearch}
+                searchFilter={searchFilter}
+            />
         );
     }
     return <div />;

@@ -31,7 +31,7 @@ kubectl -n stackrox set env deploy/central ROX_DONT_COMPARE_DEV_BUILDS=true
 	ErrUnableToRestore = "The backup bundle being restored is from an upgraded version of central and thus cannot applied.  The restored version %s, current version %s"
 
 	// ErrSoftwareNotCompatibleWithDatabase -- downgrade is not supported as software is incompatible with the data.
-	ErrSoftwareNotCompatibleWithDatabase = "Software downgrade is not supported.  The software supports database version of %d but the database requires the software support a database version to be at least least %d"
+	ErrSoftwareNotCompatibleWithDatabase = "Software downgrade is not supported.  The software supports database migration version of %d but the database requires the software support a database migration version to be at least %d which is software version %s"
 )
 
 // DBClone -- holds information related to DB clones

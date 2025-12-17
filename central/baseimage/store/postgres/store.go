@@ -13,6 +13,7 @@ import (
 	"github.com/stackrox/rox/pkg/logging"
 	ops "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/postgres"
+	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/sac/resources"
@@ -28,7 +29,7 @@ const (
 var (
 	log            = logging.LoggerForModule()
 	schema         = pkgSchema.BaseImagesSchema
-	targetResource = resources.Administration
+	targetResource = resources.ImageAdministration
 )
 
 type (
@@ -100,7 +101,7 @@ func insertIntoBaseImages(batch *pgx.Batch, obj *storage.BaseImage) error {
 
 	values := []interface{}{
 		// parent primary keys start
-		obj.GetId(),
+		pgutils.NilOrUUID(obj.GetId()),
 		obj.GetBaseImageRepositoryId(),
 		obj.GetRepository(),
 		obj.GetTag(),
@@ -115,6 +116,18 @@ func insertIntoBaseImages(batch *pgx.Batch, obj *storage.BaseImage) error {
 	batch.Queue(finalStr, values...)
 
 	return nil
+}
+
+var copyColsBaseImages = []string{
+	"id",
+	"baseimagerepositoryid",
+	"repository",
+	"tag",
+	"manifestdigest",
+	"discoveredat",
+	"active",
+	"firstlayerdigest",
+	"serialized",
 }
 
 func copyFromBaseImages(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, objs ...*storage.BaseImage) error {
@@ -134,18 +147,6 @@ func copyFromBaseImages(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx
 		}
 	}
 
-	copyCols := []string{
-		"id",
-		"baseimagerepositoryid",
-		"repository",
-		"tag",
-		"manifestdigest",
-		"discoveredat",
-		"active",
-		"firstlayerdigest",
-		"serialized",
-	}
-
 	idx := 0
 	inputRows := pgx.CopyFromFunc(func() ([]any, error) {
 		if idx >= len(objs) {
@@ -160,7 +161,7 @@ func copyFromBaseImages(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx
 		}
 
 		return []interface{}{
-			obj.GetId(),
+			pgutils.NilOrUUID(obj.GetId()),
 			obj.GetBaseImageRepositoryId(),
 			obj.GetRepository(),
 			obj.GetTag(),
@@ -172,7 +173,7 @@ func copyFromBaseImages(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx
 		}, nil
 	})
 
-	if _, err := tx.CopyFrom(ctx, pgx.Identifier{"base_images"}, copyCols, inputRows); err != nil {
+	if _, err := tx.CopyFrom(ctx, pgx.Identifier{"base_images"}, copyColsBaseImages, inputRows); err != nil {
 		return err
 	}
 

@@ -20,6 +20,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	pkgCVE "github.com/stackrox/rox/pkg/cve"
 	"github.com/stackrox/rox/pkg/fixtures"
+	imageTypes "github.com/stackrox/rox/pkg/images/types"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	postgresSchema "github.com/stackrox/rox/pkg/postgres/schema"
@@ -97,6 +98,10 @@ func (s *ImageFlatPostgresDataStoreTestSuite) TestSearchWithPostgres() {
 	results, err = s.datastore.Search(ctx, q)
 	s.NoError(err)
 	s.Len(results, 1)
+	searchRes, errRes := s.datastore.SearchImages(ctx, q)
+	s.NoError(errRes)
+	s.Len(searchRes, 1)
+	s.Equal(imageTypes.NewDigest(image.GetId()).Digest(), searchRes[0].GetId())
 
 	// Sort by impact score
 	q = pkgSearch.EmptyQuery()
@@ -541,6 +546,9 @@ func (s *ImageFlatPostgresDataStoreTestSuite) truncateTable(name string) {
 func getTestImage(id string) *storage.Image {
 	return &storage.Image{
 		Id: id,
+		Name: &storage.ImageName{
+			FullName: "remote1/repo1:tag1",
+		},
 		Scan: &storage.ImageScan{
 			OperatingSystem: "blah",
 			ScanTime:        protocompat.TimestampNow(),

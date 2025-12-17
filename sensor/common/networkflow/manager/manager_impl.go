@@ -409,6 +409,8 @@ func (m *networkFlowManager) send(result *enrichmentResult) {
 		if sent := m.sendProcesses(result.updatedProcesses); sent {
 			// Inform the updateComputer that sending has succeeded
 			m.updateComputer.OnSuccessfulSendProcesses(result.currentEndpointsProcesses)
+		} else {
+			m.updateComputer.OnSendProcessesFailure(result.updatedProcesses)
 		}
 	}
 	metrics.SetNetworkFlowBufferSizeGauge(len(m.sensorUpdates))

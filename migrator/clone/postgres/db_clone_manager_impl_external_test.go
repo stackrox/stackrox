@@ -143,7 +143,7 @@ func (s *PostgresExternalManagerSuite) TestScanIncompatibleExternal() {
 	pgtest.DropDatabase(s.T(), migrations.PreviousDatabase)
 
 	// Scan the clones
-	errorMessage := fmt.Sprintf(metadata.ErrSoftwareNotCompatibleWithDatabase, migrations.CurrentDBVersionSeqNum(), futureVersion.GetMinSeqNum())
+	errorMessage := fmt.Sprintf(metadata.ErrSoftwareNotCompatibleWithDatabase, migrations.CurrentDBVersionSeqNum(), futureVersion.GetMinSeqNum(), migrations.MinimumSupportedDBVersion())
 	s.EqualError(dbm.Scan(), errorMessage)
 }
 

@@ -114,7 +114,7 @@ const SecretValues = ({ files }) => {
     const widgetHeader = `${filesCount} ${pluralize('value', filesCount)}`;
     const secretValues = filesWithoutImagePullSecrets.map((file) => {
         const { name, type, metadata } = file;
-        const { algorithm } = metadata || {};
+        const { algorithm } = metadata ?? {};
         const collapsibleRowHeader = (
             <div className="flex flex-1 w-full">
                 <div className="flex flex-1">{name}</div>

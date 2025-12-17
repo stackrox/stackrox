@@ -32,7 +32,7 @@ jobs:
         - /opt:/mnt/opt
     steps:
     - name: Checkout
-      uses: actions/checkout@v5
+      uses: actions/checkout@v6
       with:
         fetch-depth: 0
 
@@ -107,7 +107,7 @@ jobs:
         echo "/usr/pgsql-${{ matrix.pg }}/bin" >> "${GITHUB_PATH}"
 
     - name: Checkout
-      uses: actions/checkout@v5
+      uses: actions/checkout@v6
       with:
         fetch-depth: 0
 
@@ -167,7 +167,7 @@ jobs:
         echo "/usr/pgsql-15/bin" >> "${GITHUB_PATH}"
 
     - name: Checkout
-      uses: actions/checkout@v5
+      uses: actions/checkout@v6
       with:
         fetch-depth: 0
 
@@ -210,7 +210,7 @@ jobs:
       image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.4.9
     steps:
     - name: Checkout
-      uses: actions/checkout@v5
+      uses: actions/checkout@v6
 
     - uses: ./.github/actions/job-preamble
       with:
@@ -246,7 +246,7 @@ jobs:
       image: quay.io/stackrox-io/apollo-ci:stackrox-ui-test-0.4.9
     steps:
     - name: Checkout
-      uses: actions/checkout@v5
+      uses: actions/checkout@v6
 
     - uses: ./.github/actions/job-preamble
       with:
@@ -292,7 +292,7 @@ jobs:
         - /opt:/mnt/opt
     steps:
     - name: Checkout
-      uses: actions/checkout@v5
+      uses: actions/checkout@v6
       with:
         fetch-depth: 0
         ref: ${{ github.event.pull_request.head.sha }}
@@ -333,7 +333,7 @@ jobs:
       image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.4.9
     steps:
     - name: Checkout
-      uses: actions/checkout@v5
+      uses: actions/checkout@v6
       with:
         fetch-depth: 0
         ref: ${{ github.event.pull_request.head.sha }}
@@ -367,7 +367,7 @@ jobs:
       image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.4.9
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           fetch-depth: 0
           ref: ${{ github.event.pull_request.head.sha }}
@@ -387,7 +387,7 @@ jobs:
       new-jiras: ${{ steps.junit2jira.outputs.new-jiras }}
     steps:
     - name: Checkout
-      uses: actions/checkout@v5
+      uses: actions/checkout@v6
       with:
         fetch-depth: 0
 
@@ -452,7 +452,7 @@ jobs:
       actions: read
     steps:
     - name: Checkout
-      uses: actions/checkout@v5
+      uses: actions/checkout@v6
 
     - name: Slack message
       env:

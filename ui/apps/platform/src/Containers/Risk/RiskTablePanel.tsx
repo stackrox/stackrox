@@ -1,101 +1,59 @@
-import { useCallback, useContext, useState } from 'react';
-import { useNavigate } from 'react-router-dom-v5-compat';
-import useDeepCompareEffect from 'use-deep-compare-effect';
-import { Bullseye } from '@patternfly/react-core';
-import { ExclamationTriangleIcon } from '@patternfly/react-icons';
+import { Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 
-import EmptyStateTemplate from 'Components/EmptyStateTemplate/EmptyStateTemplate';
 import TableHeader from 'Components/TableHeader';
 import { PanelBody, PanelHead, PanelHeadEnd, PanelNew } from 'Components/Panel';
 import TablePagination from 'Components/TablePagination';
-import { DEFAULT_PAGE_SIZE } from 'Components/Table';
-import { pagingParams, searchParams, sortParams } from 'constants/searchParams';
-import workflowStateContext from 'Containers/workflowStateContext';
-import {
-    fetchDeploymentsCountLegacy,
-    fetchDeploymentsWithProcessInfoLegacy as fetchDeploymentsWithProcessInfo,
-} from 'services/DeploymentsService';
-import type { ListDeploymentWithProcessInfo } from 'services/DeploymentsService';
-import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
-import {
-    convertSortToGraphQLFormat,
-    convertSortToRestFormat,
-    convertToRestSearch,
-} from 'utils/searchUtils';
-import RiskTable from './RiskTable';
+import TbodyUnified from 'Components/TableStateTemplates/TbodyUnified';
+import type { UseURLPaginationResult } from 'hooks/useURLPagination';
+import type { UseURLSortResult } from 'hooks/useURLSort';
+import type { ApiSortOption, SearchFilter } from 'types/search';
+import { getDateTime } from 'utils/dateUtils';
+import { getTableUIState } from 'utils/getTableUIState';
 
-const DEFAULT_RISK_SORT = [{ id: 'Deployment Risk Priority', desc: false }] as const;
+import { DeploymentNameColumn } from './DeploymentNameColumn';
+import useDeploymentsCount from './useDeploymentsCount';
+import useDeploymentsWithProcessInfo from './useDeploymentsWithProcessInfo';
+
+export const sortFields = [
+    'Deployment',
+    'Created',
+    'Cluster',
+    'Namespace',
+    'Deployment Risk Priority',
+];
+export const defaultSortOption = { field: 'Deployment Risk Priority', direction: 'asc' } as const;
 
 type RiskTablePanelProps = {
-    selectedDeploymentId: string | undefined;
     isViewFiltered: boolean;
-    setIsViewFiltered: (isViewFiltered: boolean) => void;
+    sortOption: ApiSortOption;
+    getSortParams: UseURLSortResult['getSortParams'];
+    searchFilter: SearchFilter;
+    onSearchFilterChange: (newSearchFilter: SearchFilter) => void;
+    pagination: UseURLPaginationResult;
 };
 
 function RiskTablePanel({
-    selectedDeploymentId = undefined,
     isViewFiltered,
-    setIsViewFiltered,
+    sortOption,
+    getSortParams,
+    searchFilter,
+    onSearchFilterChange,
+    pagination,
 }: RiskTablePanelProps) {
-    const navigate = useNavigate();
-    const workflowState = useContext(workflowStateContext);
-    const pageSearch = workflowState.search[searchParams.page];
-    const sortOption = workflowState.sort[sortParams.page] || DEFAULT_RISK_SORT;
-    const currentPage = workflowState.paging[pagingParams.page];
+    const { page, perPage, setPage } = pagination;
 
-    const [currentDeployments, setCurrentDeployments] = useState<ListDeploymentWithProcessInfo[]>(
-        []
-    );
-    const [errorMessageDeployments, setErrorMessageDeployments] = useState('');
-    const [deploymentCount, setDeploymentsCount] = useState(0);
+    const { data, error, isLoading } = useDeploymentsWithProcessInfo({
+        searchFilter,
+        sortOption,
+        page,
+        perPage,
+    });
 
-    function setPage(newPage) {
-        navigate(workflowState.setPage(newPage).toUrl());
-    }
-    const setSortOption = useCallback(
-        (newSortOption) => {
-            const convertedSortOption = convertSortToGraphQLFormat(newSortOption);
+    const { data: deploymentCount = 0 } = useDeploymentsCount({
+        searchFilter,
+    });
 
-            const newUrl = workflowState.setSort(convertedSortOption).setPage(0).toUrl();
-
-            navigate(newUrl);
-        },
-        [navigate, workflowState]
-    );
-
-    /*
-     * Compute outside hook to avoid double requests if no page search options
-     * before and after response to request for searchOptions.
-     */
-    const restSearch = convertToRestSearch(pageSearch ?? {});
-    const restSort = convertSortToRestFormat(
-        sortOption.length > 0 ? sortOption : DEFAULT_RISK_SORT
-    );
-
-    useDeepCompareEffect(() => {
-        fetchDeploymentsWithProcessInfo(restSearch, restSort, currentPage, DEFAULT_PAGE_SIZE)
-            .then(setCurrentDeployments)
-            .catch((error) => {
-                setCurrentDeployments([]);
-                setErrorMessageDeployments(getAxiosErrorMessage(error));
-            });
-
-        /*
-         * Although count does not depend on change to sort option or page offset,
-         * request in case of change to count of deployments in Kubernetes environment.
-         */
-        fetchDeploymentsCountLegacy(restSearch)
-            .then(setDeploymentsCount)
-            .catch(() => {
-                setDeploymentsCount(0);
-            });
-
-        if (restSearch.length) {
-            setIsViewFiltered(true);
-        } else {
-            setIsViewFiltered(false);
-        }
-    }, [restSearch, restSort, currentPage]);
+    const tableState = getTableUIState({ isLoading, data, error, searchFilter });
 
     return (
         <PanelNew testid="panel">
@@ -107,32 +65,66 @@ function RiskTablePanel({
                 />
                 <PanelHeadEnd>
                     <TablePagination
-                        page={currentPage}
+                        page={page - 1}
                         dataLength={deploymentCount}
-                        pageSize={DEFAULT_PAGE_SIZE}
-                        setPage={setPage}
+                        pageSize={perPage}
+                        setPage={(newPage) => setPage(newPage + 1)}
                     />
                 </PanelHeadEnd>
             </PanelHead>
             <PanelBody>
-                {errorMessageDeployments ? (
-                    <Bullseye>
-                        <EmptyStateTemplate
-                            title="Unable to load deployments"
-                            headingLevel="h2"
-                            icon={ExclamationTriangleIcon}
-                            iconClassName="pf-v5-u-warning-color-100"
-                        >
-                            {errorMessageDeployments}
-                        </EmptyStateTemplate>
-                    </Bullseye>
-                ) : (
-                    <RiskTable
-                        currentDeployments={currentDeployments}
-                        selectedDeploymentId={selectedDeploymentId}
-                        setSortOption={setSortOption}
+                <Table variant="compact">
+                    <Thead noWrap>
+                        <Tr>
+                            <Th width={25} sort={getSortParams('Deployment')}>
+                                Name
+                            </Th>
+                            <Th width={25} sort={getSortParams('Created')}>
+                                Created
+                            </Th>
+                            <Th sort={getSortParams('Cluster')}>Cluster</Th>
+                            <Th sort={getSortParams('Namespace')}>Namespace</Th>
+                            <Th width={10} sort={getSortParams('Deployment Risk Priority')}>
+                                Priority
+                            </Th>
+                        </Tr>
+                    </Thead>
+                    <TbodyUnified
+                        tableState={tableState}
+                        colSpan={5}
+                        emptyProps={{ message: 'No results found' }}
+                        filteredEmptyProps={{ onClearFilters: () => onSearchFilterChange({}) }}
+                        renderer={({ data }) =>
+                            data.map((deploymentWithProcessInfo) => {
+                                const { deployment } = deploymentWithProcessInfo;
+
+                                const priorityAsInt = parseInt(deployment.priority, 10);
+                                const priorityDisplay =
+                                    Number.isNaN(priorityAsInt) || priorityAsInt < 1
+                                        ? '-'
+                                        : priorityAsInt;
+
+                                return (
+                                    <Tbody key={deployment.id}>
+                                        <Tr>
+                                            <Td dataLabel="Name">
+                                                <DeploymentNameColumn
+                                                    original={deploymentWithProcessInfo}
+                                                />
+                                            </Td>
+                                            <Td dataLabel="Created">
+                                                {getDateTime(deployment.created)}
+                                            </Td>
+                                            <Td dataLabel="Cluster">{deployment.cluster}</Td>
+                                            <Td dataLabel="Namespace">{deployment.namespace}</Td>
+                                            <Td dataLabel="Priority">{priorityDisplay}</Td>
+                                        </Tr>
+                                    </Tbody>
+                                );
+                            })
+                        }
                     />
-                )}
+                </Table>
             </PanelBody>
         </PanelNew>
     );

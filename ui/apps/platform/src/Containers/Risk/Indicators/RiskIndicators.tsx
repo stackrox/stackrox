@@ -5,7 +5,7 @@ import CollapsibleCard from 'Components/CollapsibleCard';
 import { getURLLinkToDeployment } from 'Containers/NetworkGraph/utils/networkGraphURLUtils';
 import useIsRouteEnabled from 'hooks/useIsRouteEnabled';
 import type { Deployment } from 'types/deployment.proto';
-import type { Risk, RiskFactor } from 'types/risk.proto';
+import type { Risk, RiskFactor } from 'services/DeploymentsService';
 
 type FactorProps = {
     factor: RiskFactor;

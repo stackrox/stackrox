@@ -1,4 +1,4 @@
-import React, { useContext } from 'react';
+import { useContext } from 'react';
 import PropTypes from 'prop-types';
 import URLService from 'utils/URLService';
 import entityTypes from 'constants/entityTypes';

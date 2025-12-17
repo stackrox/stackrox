@@ -27,20 +27,24 @@ class NetworkSimulator extends BaseSpecification {
     static final private List<Deployment> DEPLOYMENTS = [
             new Deployment()
                     .setName(WEBDEPLOYMENT)
+                    .setImagePrefetcherAffinity()
                     .setImage("quay.io/rhacs-eng/qa-multi-arch:nginx")
                     .addPort(80)
                     .addLabel("app", WEBDEPLOYMENT),
             new Deployment()
                     .setName(WEB2DEPLOYMENT)
+                    .setImagePrefetcherAffinity()
                     .setImage("quay.io/rhacs-eng/qa-multi-arch:nginx")
                     .addLabel("app", WEB2DEPLOYMENT),
             new Deployment()
                     .setName(CLIENTDEPLOYMENT)
+                    .setImagePrefetcherAffinity()
                     .setImage("quay.io/rhacs-eng/qa-multi-arch:nginx")
                     .addPort(443)
                     .addLabel("app", CLIENTDEPLOYMENT),
             new Deployment()
                     .setName(CLIENT2DEPLOYMENT)
+                    .setImagePrefetcherAffinity()
                     .setImage("quay.io/rhacs-eng/qa-multi-arch:nginx")
                     .addLabel("app", CLIENT2DEPLOYMENT),
     ]

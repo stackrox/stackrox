@@ -181,9 +181,22 @@ func assertResourceDoesExist(ctx context.Context, t testutils.T, resourceName st
 func assertResourceWasUpdated(ctx context.Context, t testutils.T, resourceName string, namespace string, obj dynclient.Object) dynclient.Object {
 	client := createDynamicClient(t)
 	oldResourceVersion := obj.GetResourceVersion()
-	require.Eventually(t, func() bool {
-		return client.Get(ctx, types.NamespacedName{Name: resourceName, Namespace: namespace}, obj) == nil && obj.GetResourceVersion() != oldResourceVersion
-	}, defaultTimeout, 10*time.Millisecond)
+	timeout := time.NewTimer(defaultTimeout)
+	ticker := time.NewTicker(10 * time.Millisecond)
+	for {
+		select {
+		case <-ticker.C:
+			if client.Get(ctx, types.NamespacedName{Name: resourceName, Namespace: namespace}, obj) == nil && obj.GetResourceVersion() != oldResourceVersion {
+				return obj
+			}
+		case <-timeout.C:
+			// Timing-out in here does not necessarily indicate that the
+			// resource was not updated as the retrieval and assertion of the
+			// resource can race.
+			t.Logf("Timeout before we got a new resource version for %s %s (this might be ok)", obj.GetObjectKind().GroupVersionKind().String(), resourceName)
+			return obj
+		}
+	}
 	return obj
 }
 

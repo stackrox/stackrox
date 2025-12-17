@@ -32,7 +32,7 @@ function ContainerConfigurationDescriptionList({
     vulnMgmtBasePath,
 }: ContainerConfigurationDescriptionListProps): ReactElement {
     const { resources, volumes, secrets, config, image } = container;
-    const { command, args } = config || {};
+    const { command, args } = config ?? {};
     return (
         <DescriptionList isCompact isHorizontal>
             <ContainerImage image={image} vulnMgmtBasePath={vulnMgmtBasePath} />

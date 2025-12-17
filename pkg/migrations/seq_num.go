@@ -24,6 +24,12 @@ func MinimumSupportedDBVersionSeqNum() int {
 	return internal.MinimumSupportedDBVersionSeqNum
 }
 
+// MinimumSupportedDBVersion is the oldest database version supported
+// by the schema at this point in time.
+func MinimumSupportedDBVersion() string {
+	return internal.MinimumSupportedDBVersion
+}
+
 // LastRocksDBVersionSeqNum is the sequence number for the last RocksDB version.
 func LastRocksDBVersionSeqNum() int {
 	return internal.LastRocksDBVersionSeqNum

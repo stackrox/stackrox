@@ -20,4 +20,9 @@ var (
 	// connections carrying virtual machine index reports.
 	VirtualMachinesVsockPort = RegisterIntegerSetting("ROX_VIRTUAL_MACHINES_VSOCK_PORT", 818).
 					WithMaximum(65535).WithMinimum(0)
+
+	// VirtualMachinesIndexReportsBufferSize defines the buffer size for the channel receiving virtual machine
+	// index reports before they are sent to Central.
+	VirtualMachinesIndexReportsBufferSize = RegisterIntegerSetting("ROX_VIRTUAL_MACHINES_INDEX_REPORTS_BUFFER_SIZE", 100).
+						WithMinimum(0)
 )
