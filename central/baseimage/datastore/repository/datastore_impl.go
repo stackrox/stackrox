@@ -23,7 +23,6 @@ const (
 )
 
 var (
-	// TODO(ROX-32170): RBAC - review and finalize resource permissions
 	baseImageRepositorySAC = sac.ForResource(resources.ImageAdministration)
 )
 

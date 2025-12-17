@@ -83,8 +83,6 @@ func (s *BaseImageRepositoryDatastoreTestSuite) mustGetRepository(ctx context.Co
 	return repo, found
 }
 
-// TODO(ROX-32170): Add RBAC tests for BaseImageRepository datastore
-
 func (s *BaseImageRepositoryDatastoreTestSuite) TestBaseImageRepositoryDatastore() {
 	ctx := s.imgAdminCtx
 
