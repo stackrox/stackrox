@@ -78,7 +78,7 @@ func main() {
 	defer cancel()
 
 	// Initialize logging and setup context.
-	err = initializeLogging(zerolog.Level(cfg.LogLevel))
+	err = initializeLogging(cfg.LogLevel)
 	if err != nil {
 		golog.Fatalf("failed to initialize logging: %v", err)
 	}

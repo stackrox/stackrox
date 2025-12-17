@@ -123,7 +123,7 @@ func (r *v2Restorer) updateTransferStatus(cancelCond concurrency.Waitable) {
 			}
 
 			remaining := r.headerSize + r.totalDataSize - currVal
-			remainingSecs := int64(remaining / avgSpeed)
+			remainingSecs := remaining / avgSpeed
 
 			newText := fmt.Sprintf(
 				"Transferring data at % 10.1f/s (ETA %02d:%02d:%02d)",
