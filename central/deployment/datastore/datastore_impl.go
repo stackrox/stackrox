@@ -22,7 +22,6 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/images/types"
@@ -36,7 +35,6 @@ import (
 
 var (
 	deploymentsSAC = sac.ForResource(resources.Deployment)
-	queryTimeout   = env.PostgresVMStatementTimeout.DurationSetting()
 )
 
 type datastoreImpl struct {
