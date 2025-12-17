@@ -23,10 +23,15 @@ const (
 )
 
 var (
-	// k8sNameRegex validates Kubernetes resource names (RFC 1123 DNS label format).
+	// k8sLabelRegex validates Kubernetes namespace names (RFC 1123 DNS label format).
+	// Must consist of lower case alphanumeric characters or '-', and must
+	// start and end with an alphanumeric character. No dots allowed.
+	k8sLabelRegex = regexp.MustCompile(`^[a-z0-9]([-a-z0-9]*[a-z0-9])?$`)
+
+	// k8sSubdomainRegex validates Kubernetes deployment names (RFC 1123 DNS subdomain format).
 	// Must consist of lower case alphanumeric characters, '-' or '.', and must
 	// start and end with an alphanumeric character.
-	k8sNameRegex = regexp.MustCompile(`^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$`)
+	k8sSubdomainRegex = regexp.MustCompile(`^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$`)
 )
 
 // BuildDynamicScope creates a DynamicAccessScope for embedding in token claims.
@@ -62,7 +67,7 @@ func BuildDynamicScope(clusterName, namespace, deployment string) (*storage.Dyna
 		if len(namespace) > MaxNamespaceNameLength {
 			return nil, errox.InvalidArgs.Newf("namespace name exceeds maximum length of %d", MaxNamespaceNameLength)
 		}
-		if !k8sNameRegex.MatchString(namespace) {
+		if !k8sLabelRegex.MatchString(namespace) {
 			return nil, errox.InvalidArgs.Newf("namespace name %q is not a valid Kubernetes resource name", namespace)
 		}
 	}
@@ -75,7 +80,7 @@ func BuildDynamicScope(clusterName, namespace, deployment string) (*storage.Dyna
 		if len(deployment) > MaxDeploymentNameLength {
 			return nil, errox.InvalidArgs.Newf("deployment name exceeds maximum length of %d", MaxDeploymentNameLength)
 		}
-		if !k8sNameRegex.MatchString(deployment) {
+		if !k8sSubdomainRegex.MatchString(deployment) {
 			return nil, errox.InvalidArgs.Newf("deployment name %q is not a valid Kubernetes resource name", deployment)
 		}
 	}

@@ -95,9 +95,10 @@ type Sensor struct {
 	// graphqlGatewayHandler provides HTTP endpoint for OCP console plugin GraphQL queries
 	graphqlGatewayHandler common.Notifiable
 
-	// k8sClient is the Kubernetes client (only set for Kubernetes platforms)
-	// Used for GraphQL gateway Kubernetes RBAC validation
-	k8sClientForGraphQL interface{}
+	// k8sClientForGraphQL is the Kubernetes client (only set for Kubernetes platforms).
+	// Used for GraphQL gateway Kubernetes RBAC validation.
+	// Nil on non-Kubernetes platforms.
+	k8sClientForGraphQL kubernetes.Interface
 }
 
 // NewSensor initializes a Sensor, including reading configurations from the environment.
@@ -156,7 +157,7 @@ func (s *Sensor) SetGraphQLGatewayHandler(handler common.Notifiable) {
 
 // SetK8sClientForGraphQL sets the Kubernetes client for GraphQL gateway RBAC validation.
 // This should be called PRIOR to Start() from Kubernetes-specific sensor initialization code.
-func (s *Sensor) SetK8sClientForGraphQL(k8sClient interface{}) {
+func (s *Sensor) SetK8sClientForGraphQL(k8sClient kubernetes.Interface) {
 	s.k8sClientForGraphQL = k8sClient
 }
 
@@ -359,18 +360,11 @@ func (s *Sensor) newGraphQLGatewayRoute(centralEndpoint string, centralCertifica
 		return nil
 	}
 
-	// Type assert k8s client
-	k8sClient, ok := s.k8sClientForGraphQL.(kubernetes.Interface)
-	if !ok {
-		log.Warn("k8sClientForGraphQL is not a kubernetes.Interface")
-		return nil
-	}
-
 	// Create the GraphQL gateway handler with all dependencies
 	handler, err := graphqlgateway.NewGraphQLGatewayHandler(
 		centralEndpoint,
 		centralCertificates,
-		k8sClient,
+		s.k8sClientForGraphQL,
 		s.centralConnection, // LazyClientConn implements grpc.ClientConnInterface
 		s.clusterID.GetNoWait(),
 		nil, // centralSignal is optional (nil-safe in TokenManager)

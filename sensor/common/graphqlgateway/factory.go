@@ -55,7 +55,6 @@ func NewGraphQLGatewayHandler(
 	handler, err := NewHandler(
 		centralEndpoint,
 		centralCertificates,
-		k8sClient,
 		tokenManager,
 	)
 	if err != nil {

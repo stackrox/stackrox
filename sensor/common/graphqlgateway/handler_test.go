@@ -9,6 +9,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/httputil"
 	"github.com/stackrox/rox/sensor/common"
 	"github.com/stretchr/testify/assert"
@@ -231,19 +232,19 @@ func TestHandler_ServeHTTP_TokenManagerErrors(t *testing.T) {
 	}{
 		{
 			name:          "invalid credentials error",
-			tokenError:    errors.New("invalid credentials"),
+			tokenError:    errox.NoCredentials.New("invalid credentials"),
 			expectedCode:  http.StatusUnauthorized,
 			errorContains: "credentials",
 		},
 		{
 			name:          "permission denied error",
-			tokenError:    errors.New("not authorized to access deployment"),
+			tokenError:    errox.NotAuthorized.New("not authorized to access deployment"),
 			expectedCode:  http.StatusForbidden,
 			errorContains: "not authorized",
 		},
 		{
 			name:          "central offline error",
-			tokenError:    errors.New("Central is offline and no cached token available"),
+			tokenError:    errox.ServerError.New("Central is offline and no cached token available"),
 			expectedCode:  http.StatusServiceUnavailable,
 			errorContains: "offline",
 		},

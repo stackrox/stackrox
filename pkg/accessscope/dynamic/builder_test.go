@@ -47,17 +47,25 @@ func TestBuildDynamicScope(t *testing.T) {
 			wantErr:     false,
 		},
 		{
-			name:        "namespace with dots",
+			name:        "invalid namespace - dots not allowed",
 			clusterName: "cluster-1",
 			namespace:   "namespace.example",
 			deployment:  "",
-			wantErr:     false,
+			wantErr:     true,
+			errType:     errox.InvalidArgs,
 		},
 		{
 			name:        "deployment with hyphens",
 			clusterName: "cluster-1",
 			namespace:   "default",
 			deployment:  "my-deployment-v2",
+			wantErr:     false,
+		},
+		{
+			name:        "deployment with dots allowed",
+			clusterName: "cluster-1",
+			namespace:   "default",
+			deployment:  "my-deployment.v2",
 			wantErr:     false,
 		},
 		{

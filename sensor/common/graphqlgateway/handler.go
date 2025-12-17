@@ -6,17 +6,16 @@ import (
 	"io"
 	"net/http"
 	"net/url"
-	"strings"
 	"sync/atomic"
 
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/httputil"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/centralclient"
 	"google.golang.org/grpc/codes"
-	"k8s.io/client-go/kubernetes"
 )
 
 const (
@@ -63,12 +62,10 @@ type Handler struct {
 // Parameters:
 // - centralEndpoint: The Central HTTP endpoint (e.g., "https://central.stackrox:443")
 // - centralCertificates: Central's CA certificates for mTLS
-// - k8sClient: Kubernetes client for RBAC validation
 // - tokenManager: Token manager for acquiring scoped tokens
 func NewHandler(
 	centralEndpoint string,
 	centralCertificates []*x509.Certificate,
-	k8sClient kubernetes.Interface,
 	tokenManager TokenManager,
 ) (*Handler, error) {
 	client, err := centralclient.AuthenticatedCentralHTTPClient(centralEndpoint, centralCertificates)
@@ -131,8 +128,7 @@ func (h *Handler) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
 		return
 	}
 
-	ocpToken := strings.TrimPrefix(authHeader, BearerPrefix)
-	if ocpToken == authHeader {
+	if len(authHeader) <= len(BearerPrefix) || authHeader[:len(BearerPrefix)] != BearerPrefix {
 		// Bearer prefix was not found
 		log.Warnw("Invalid Authorization header format (missing 'Bearer ' prefix)",
 			logging.String("trace_id", traceID),
@@ -140,6 +136,7 @@ func (h *Handler) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
 		httputil.WriteGRPCStyleErrorf(writer, codes.Unauthenticated, "invalid Authorization header format")
 		return
 	}
+	ocpToken := authHeader[len(BearerPrefix):]
 
 	// Acquire scoped token (validates K8s RBAC and gets/creates scoped token)
 	scopedToken, err := h.tokenManager.GetToken(request.Context(), ocpToken, namespace, deployment)
@@ -155,13 +152,13 @@ func (h *Handler) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
 			logging.String("trace_id", traceID),
 		)
 
-		// Determine appropriate gRPC code from error
+		// Determine appropriate gRPC code from error type
 		code := codes.Internal
-		if strings.Contains(err.Error(), "not authorized") || strings.Contains(err.Error(), "permission") {
+		if errox.IsAny(err, errox.NotAuthorized) {
 			code = codes.PermissionDenied
-		} else if strings.Contains(err.Error(), "credentials") || strings.Contains(err.Error(), "invalid") {
+		} else if errox.IsAny(err, errox.NoCredentials) {
 			code = codes.Unauthenticated
-		} else if strings.Contains(err.Error(), "offline") || strings.Contains(err.Error(), "unavailable") {
+		} else if errox.IsAny(err, errox.ServerError) {
 			code = codes.Unavailable
 		}
 
