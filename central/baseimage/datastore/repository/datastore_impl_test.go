@@ -56,7 +56,7 @@ func (s *BaseImageRepositoryDatastoreTestSuite) SetupSuite() {
 	mockID.EXPECT().FriendlyName().Return("name").AnyTimes()
 	s.mockID = mockID
 
-	ctx := sac.WithGlobalAccessScopeChecker(context.Background(),
+	ctx := sac.WithGlobalAccessScopeChecker(s.T().Context(),
 		sac.AllowFixedScopes(
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
 			sac.ResourceScopeKeys(resources.ImageAdministration),
