@@ -473,9 +473,9 @@ func (ds *datastoreImpl) GetDeploymentIDs(ctx context.Context) ([]string, error)
 	return ds.deploymentStore.GetIDs(ctx)
 }
 
-func (ds *datastoreImpl) GetContainerImageResponses(ctx context.Context) ([]*views.ContainerImagesResponse, error) {
+func (ds *datastoreImpl) GetContainerImageViews(ctx context.Context, q *v1.Query) ([]*views.ContainerImageView, error) {
 	defer metrics.SetDatastoreFunctionDuration(time.Now(), "Deployment", "GetContainerImageResponses")
-	return ds.deploymentStore.GetContainerImageResponses(ctx)
+	return ds.deploymentStore.GetContainerImageViews(ctx, q)
 }
 
 type DeploymentSearchResultConverter struct{}

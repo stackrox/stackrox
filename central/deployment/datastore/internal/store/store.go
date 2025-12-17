@@ -28,5 +28,5 @@ type Store interface {
 
 	GetIDs(ctx context.Context) ([]string, error)
 
-	GetContainerImageResponses(ctx context.Context) ([]*views.ContainerImagesResponse, error)
+	GetContainerImageViews(ctx context.Context, q *v1.Query) ([]*views.ContainerImageView, error)
 }

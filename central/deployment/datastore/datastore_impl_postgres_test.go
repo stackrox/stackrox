@@ -580,8 +580,8 @@ func TestContainerImagesView(t *testing.T) {
 		require.NoError(t, deploymentDS.UpsertDeployment(ctx, dep))
 	}
 
-	// Test GetContainerImageResponses
-	responses, err := deploymentDS.GetContainerImageResponses(ctx)
+	// Test GetContainerImageViews
+	responses, err := deploymentDS.GetContainerImageViews(ctx, pkgSearch.EmptyQuery())
 	require.NoError(t, err)
 
 	// Expected results:

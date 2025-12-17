@@ -604,9 +604,9 @@ func TestReprocessImagesV2AndResyncDeployments_SkipBrokenSensor(t *testing.T) {
 		}
 	}
 
-	containerImageResponses := []*views.ContainerImagesResponse{}
+	containerImageViews := []*views.ContainerImageView{}
 	for _, img := range imgs {
-		containerImageResponses = append(containerImageResponses, &views.ContainerImagesResponse{
+		containerImageViews = append(containerImageViews, &views.ContainerImageView{
 			ImageIDV2: img.GetId(),
 			// Last character of image ID is the cluster.
 			ClusterIDs: []string{img.GetId()[len(img.GetId())-1:]},
@@ -631,7 +631,7 @@ func TestReprocessImagesV2AndResyncDeployments_SkipBrokenSensor(t *testing.T) {
 		connManager.EXPECT().GetActiveConnections().Return([]connection.SensorConnection{connA, connB})
 		connManager.EXPECT().AllSensorsHaveCapability(gomock.Any()).AnyTimes().Return(false)
 
-		deploymentDS.EXPECT().GetContainerImageResponses(gomock.Any()).AnyTimes().Return(containerImageResponses, nil)
+		deploymentDS.EXPECT().GetContainerImageViews(gomock.Any(), gomock.Any()).AnyTimes().Return(containerImageViews, nil)
 		for _, img := range imgs {
 			imageDS.EXPECT().GetImage(gomock.Any(), img.GetId()).AnyTimes().Return(img, true, nil)
 			imageDS.EXPECT().GetImageNames(gomock.Any(), img.GetDigest()).
@@ -672,7 +672,7 @@ func TestReprocessImagesV2AndResyncDeployments_SkipBrokenSensor(t *testing.T) {
 		connA.EXPECT().InjectMessage(gomock.Any(), reprocessDeploymentsTypeCond).Times(1).Return(nil)
 		connB.EXPECT().InjectMessage(gomock.Any(), reprocessDeploymentsTypeCond).Times(1).Return(nil)
 
-		testLoop.reprocessImagesV2AndResyncDeployments(0, reprocessFuncUpdate)
+		testLoop.reprocessImagesV2AndResyncDeployments(0, reprocessFuncUpdate, search.EmptyQuery())
 	})
 
 	t.Run("skip some messages when are broken clusters", func(t *testing.T) {
@@ -687,7 +687,7 @@ func TestReprocessImagesV2AndResyncDeployments_SkipBrokenSensor(t *testing.T) {
 		// No reprocess deployments message is sent due to previous failures.
 		connB.EXPECT().InjectMessage(gomock.Any(), reprocessDeploymentsTypeCond).Times(0).Return(nil)
 
-		testLoop.reprocessImagesV2AndResyncDeployments(0, reprocessFuncUpdate)
+		testLoop.reprocessImagesV2AndResyncDeployments(0, reprocessFuncUpdate, search.EmptyQuery())
 	})
 }
 

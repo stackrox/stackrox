@@ -68,6 +68,9 @@ var (
 	allImagesQuery = search.NewQueryBuilder().AddStringsHighlighted(search.ClusterID, search.WildcardString).
 			ProtoQuery()
 
+	// allV2ImagesQuery selects all deployment containers with a non-null and non-empty ImageID (V2 image ID).
+	allV2ImagesQuery = search.NewQueryBuilder().AddRegexes(search.ImageID, ".+").ProtoQuery()
+
 	imagesWithSignaturesQuery = search.NewQueryBuilder().
 		// We take all images into account irrespective whether they have a cluster associated with them
 		// or not. The reason is that we want to reprocess those in case e.g. a previous signature
@@ -478,7 +481,7 @@ func (l *loopImpl) reprocessImageV2(id string, digest string, fetchOpt imageEnri
 		migrateToV2 = true
 	}
 
-	if image == nil || !exists {
+	if image == nil {
 		return nil, false
 	}
 
@@ -525,11 +528,11 @@ func (l *loopImpl) reprocessImageV2(id string, digest string, fetchOpt imageEnri
 }
 
 func (l *loopImpl) reprocessImagesV2AndResyncDeployments(fetchOpt imageEnricher.FetchOption,
-	imgReprocessingFunc imageReprocessingFuncV2) {
+	imgReprocessingFunc imageReprocessingFuncV2, imageQuery *v1.Query) {
 	if l.stopSig.IsDone() {
 		return
 	}
-	results, err := l.deployments.GetContainerImageResponses(allAccessCtx)
+	results, err := l.deployments.GetContainerImageViews(allAccessCtx, imageQuery)
 	if err != nil {
 		log.Errorw("Error searching for active image IDs", logging.Err(err))
 		return
@@ -833,7 +836,7 @@ func (l *loopImpl) runReprocessing(imageFetchOpt imageEnricher.FetchOption) {
 	l.reprocessNodes()
 	l.reprocessWatchedImages()
 	if features.FlattenImageData.Enabled() {
-		l.reprocessImagesV2AndResyncDeployments(imageFetchOpt, l.enrichImageV2)
+		l.reprocessImagesV2AndResyncDeployments(imageFetchOpt, l.enrichImageV2, allV2ImagesQuery)
 	} else {
 		l.reprocessImagesAndResyncDeployments(imageFetchOpt, l.enrichImage, allImagesQuery)
 	}
@@ -852,7 +855,7 @@ func (l *loopImpl) runSignatureVerificationReprocessing() {
 
 	if features.FlattenImageData.Enabled() {
 		l.reprocessImagesV2AndResyncDeployments(imageEnricher.ForceRefetchSignaturesOnly,
-			l.forceEnrichImageSignatureVerificationResultsV2)
+			l.forceEnrichImageSignatureVerificationResultsV2, allV2ImagesQuery)
 	} else {
 		l.reprocessImagesAndResyncDeployments(imageEnricher.ForceRefetchSignaturesOnly,
 			l.forceEnrichImageSignatureVerificationResults, query)

@@ -89,19 +89,19 @@ func (mr *MockStoreMockRecorder) Get(ctx, id any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Get", reflect.TypeOf((*MockStore)(nil).Get), ctx, id)
 }
 
-// GetContainerImageResponses mocks base method.
-func (m *MockStore) GetContainerImageResponses(ctx context.Context) ([]*views.ContainerImagesResponse, error) {
+// GetContainerImageViews mocks base method.
+func (m *MockStore) GetContainerImageViews(ctx context.Context, q *v1.Query) ([]*views.ContainerImageView, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetContainerImageResponses", ctx)
-	ret0, _ := ret[0].([]*views.ContainerImagesResponse)
+	ret := m.ctrl.Call(m, "GetContainerImageViews", ctx, q)
+	ret0, _ := ret[0].([]*views.ContainerImageView)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// GetContainerImageResponses indicates an expected call of GetContainerImageResponses.
-func (mr *MockStoreMockRecorder) GetContainerImageResponses(ctx any) *gomock.Call {
+// GetContainerImageViews indicates an expected call of GetContainerImageViews.
+func (mr *MockStoreMockRecorder) GetContainerImageViews(ctx, q any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetContainerImageResponses", reflect.TypeOf((*MockStore)(nil).GetContainerImageResponses), ctx)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetContainerImageViews", reflect.TypeOf((*MockStore)(nil).GetContainerImageViews), ctx, q)
 }
 
 // GetIDs mocks base method.

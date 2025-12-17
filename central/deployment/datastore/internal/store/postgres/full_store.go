@@ -17,7 +17,6 @@ import (
 	"github.com/stackrox/rox/pkg/sac/resources"
 	pkgSearch "github.com/stackrox/rox/pkg/search"
 	pgSearch "github.com/stackrox/rox/pkg/search/postgres"
-	"github.com/stackrox/rox/pkg/search/postgres/aggregatefunc"
 	"gorm.io/gorm"
 )
 
@@ -68,25 +67,28 @@ func (f *fullStoreImpl) GetManyListDeployments(ctx context.Context, ids ...strin
 	return listDeployments, missing, nil
 }
 
-func (f *fullStoreImpl) GetContainerImageResponses(ctx context.Context) ([]*views.ContainerImagesResponse, error) {
-	q, err := common.WithSACFilter(ctx, resources.Deployment, pkgSearch.EmptyQuery())
+func (f *fullStoreImpl) GetContainerImageViews(ctx context.Context, q *v1.Query) ([]*views.ContainerImageView, error) {
+	if err := common.ValidateQuery(q); err != nil {
+		return nil, err
+	}
+	q, err := common.WithSACFilter(ctx, resources.Deployment, q)
 	if err != nil {
 		return nil, err
 	}
 	q.Selects = []*v1.QuerySelect{
 		pkgSearch.NewQuerySelect(pkgSearch.ImageID).Proto(),
-		pkgSearch.NewQuerySelect(pkgSearch.ImageSHA).Distinct().AggrFunc(aggregatefunc.Min).Proto(),
+		pkgSearch.NewQuerySelect(pkgSearch.ImageSHA).Proto(),
 		pkgSearch.NewQuerySelect(pkgSearch.ClusterID).Distinct().Proto(),
 	}
 	q.GroupBy = &v1.QueryGroupBy{
-		Fields: []string{pkgSearch.ImageID.String()},
+		Fields: []string{pkgSearch.ImageID.String(), pkgSearch.ImageSHA.String()},
 	}
 
 	queryCtx, cancel := contextutil.ContextWithTimeoutIfNotExists(ctx, queryTimeout)
 	defer cancel()
 
-	var results []*views.ContainerImagesResponse
-	err = pgSearch.RunSelectRequestForSchemaFn(queryCtx, f.db, pkgSchema.DeploymentsSchema, q, func(response *views.ContainerImagesResponse) error {
+	var results []*views.ContainerImageView
+	err = pgSearch.RunSelectRequestForSchemaFn(queryCtx, f.db, pkgSchema.DeploymentsSchema, q, func(response *views.ContainerImageView) error {
 		results = append(results, response)
 		return nil
 	})
