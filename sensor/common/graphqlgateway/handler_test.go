@@ -13,7 +13,6 @@ import (
 	"github.com/stackrox/rox/pkg/httputil"
 	"github.com/stackrox/rox/sensor/common"
 	"github.com/stretchr/testify/assert"
-	"k8s.io/client-go/kubernetes"
 )
 
 // mockTokenManager is a mock implementation of the TokenManager for testing
