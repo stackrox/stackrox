@@ -59,7 +59,7 @@ function RiskTablePanel({
     const tableState = getTableUIState({ isLoading, data, error, searchFilter });
 
     return (
-        <>
+        <div>
             <Toolbar>
                 <ToolbarContent>
                     <ToolbarItem>
@@ -128,7 +128,7 @@ function RiskTablePanel({
                     }
                 />
             </Table>
-        </>
+        </div>
     );
 }
 

@@ -1,7 +1,7 @@
 import { useQuery } from '@apollo/client';
-import { Divider, PageSection } from '@patternfly/react-core';
+import { Flex, PageSection } from '@patternfly/react-core';
 
-import entityTypes, { searchCategories } from 'constants/entityTypes';
+import { searchCategories } from 'constants/entityTypes';
 import { SEARCH_OPTIONS_QUERY } from 'queries/search';
 import useURLPagination from 'hooks/useURLPagination';
 import useURLSort from 'hooks/useURLSort';
@@ -39,7 +39,7 @@ function RiskTablePage() {
         (option) => option !== 'Orchestrator Component'
     );
 
-    const autoCompleteCategory = searchCategories[entityTypes.DEPLOYMENT];
+    const autoCompleteCategory = searchCategories.DEPLOYMENT;
 
     const orchestratorComponentShowState = localStorage.getItem(ORCHESTRATOR_COMPONENTS_KEY);
     const prependAutocompleteQuery =
@@ -51,29 +51,33 @@ function RiskTablePage() {
             {/* Nested PageSection here for visual consistency **as-is**. Once we move to Patternfly 6, we can remove this and clean up */}
             <PageSection>
                 <PageSection variant="light" component="div">
-                    <SearchFilterInput
-                        className="w-full"
-                        searchFilter={urlSearch.searchFilter}
-                        searchOptions={filteredSearchOptions}
-                        searchCategory={autoCompleteCategory}
-                        placeholder="Filter deployments"
-                        handleChangeSearchFilter={(newSearchFilter) => {
-                            urlSearch.setSearchFilter(newSearchFilter);
-                            urlPagination.setPage(1);
-                        }}
-                        autocompleteQueryPrefix={searchOptionsToQuery(prependAutocompleteQuery)}
-                    />
-                    <Divider component="div" className="pf-v5-u-mt-lg" />
-                    <RiskTablePanel
-                        sortOption={urlSort.sortOption}
-                        getSortParams={urlSort.getSortParams}
-                        searchFilter={urlSearch.searchFilter}
-                        onSearchFilterChange={(newSearchFilter) => {
-                            urlSearch.setSearchFilter(newSearchFilter);
-                            urlPagination.setPage(1);
-                        }}
-                        pagination={urlPagination}
-                    />
+                    <Flex
+                        direction={{ default: 'column' }}
+                        spaceItems={{ default: 'spaceItemsMd' }}
+                    >
+                        <SearchFilterInput
+                            className="w-full"
+                            searchFilter={urlSearch.searchFilter}
+                            searchOptions={filteredSearchOptions}
+                            searchCategory={autoCompleteCategory}
+                            placeholder="Filter deployments"
+                            handleChangeSearchFilter={(newSearchFilter) => {
+                                urlSearch.setSearchFilter(newSearchFilter);
+                                urlPagination.setPage(1);
+                            }}
+                            autocompleteQueryPrefix={searchOptionsToQuery(prependAutocompleteQuery)}
+                        />
+                        <RiskTablePanel
+                            sortOption={urlSort.sortOption}
+                            getSortParams={urlSort.getSortParams}
+                            searchFilter={urlSearch.searchFilter}
+                            onSearchFilterChange={(newSearchFilter) => {
+                                urlSearch.setSearchFilter(newSearchFilter);
+                                urlPagination.setPage(1);
+                            }}
+                            pagination={urlPagination}
+                        />
+                    </Flex>
                 </PageSection>
             </PageSection>
         </>
