@@ -156,6 +156,7 @@ PROJECT_DIR := $(dir $(abspath $(lastword $(MAKEFILE_LIST))))
 include $(PROJECT_DIR)/../make/gotools.mk
 
 ## Tool Binaries
+KUBECTL ?= kubectl
 $(call go-tool, KUSTOMIZE, sigs.k8s.io/kustomize/kustomize/v5, $(PROJECT_DIR)/../operator/tools/kustomize)
 $(call go-tool, CONTROLLER_GEN, sigs.k8s.io/controller-tools/cmd/controller-gen, $(PROJECT_DIR)/../operator/tools/controller-gen)
 $(call go-tool, ENVTEST, sigs.k8s.io/controller-runtime/tools/setup-envtest, $(PROJECT_DIR)/../operator/tools/envtest)
