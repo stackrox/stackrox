@@ -143,17 +143,6 @@ function CheckDetailsPage() {
         setPage(1);
     }
 
-    const onCheckStatusSelect = (
-        filterType: 'Compliance Check Status',
-        checked: boolean,
-        selection: string
-    ) => {
-        const action = checked ? 'SELECT_INCLUSIVE' : 'REMOVE';
-        const category = filterType;
-        const value = selection;
-        onSearch([{ action, category, value }]);
-    };
-
     return (
         <>
             <PageTitle title="Compliance coverage - Check" />
@@ -220,7 +209,6 @@ function CheckDetailsPage() {
                         searchFilter={searchFilter}
                         onFilterChange={setSearchFilter}
                         onSearch={onSearch}
-                        onCheckStatusSelect={onCheckStatusSelect}
                         onClearFilters={onClearFilters}
                     />
                 )}
