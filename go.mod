@@ -169,7 +169,7 @@ require (
 	k8s.io/cli-runtime v0.34.3
 	k8s.io/client-go v0.34.3
 	k8s.io/kubectl v0.34.3
-	k8s.io/kubelet v0.32.10
+	k8s.io/kubelet v0.32.11
 	k8s.io/utils v0.0.0-20250820121507-0af2bda4dd1d
 	kubevirt.io/api v1.7.0
 	sigs.k8s.io/controller-runtime v0.21.0
