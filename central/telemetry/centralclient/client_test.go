@@ -105,7 +105,6 @@ func Test_centralClient_flow(t *testing.T) {
 	t.Setenv(env.TelemetryEndpoint.EnvVar(), s.URL)
 
 	c := newCentralClient("test-instance")
-	c.AddStaticPropsGatherer()
 
 	var gathered atomic.Bool
 	c.Gatherer().AddGatherer(func(context.Context) (map[string]any, error) {
@@ -133,7 +132,7 @@ func Test_centralClient_flow(t *testing.T) {
 		printMessage(<-data))
 
 	wg.Wait()
-	go c.Start()
+	go c.Enable()
 
 	// Initial central identity with a prefixed message ID to drop duplicates.
 	assert.Equal(t, `type: identify,`+
@@ -161,7 +160,7 @@ func Test_centralClient_flow(t *testing.T) {
 		`type: track, event: Telemetry Enabled, context: map[device:map[type:Central Server]]`}, events)
 
 	assert.True(t, c.IsActive())
-	go c.Stop()
+	go c.Disable()
 	assert.Equal(t, `type: track, event: Telemetry Disabled, context: map[device:map[type:Central Server]]`,
 		printMessage(<-data))
 }

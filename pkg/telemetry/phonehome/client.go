@@ -173,7 +173,7 @@ func (c *Client) Reconfigure() error {
 	if err != nil {
 		return err
 	}
-	log.Debugf("Remote config: key %q, campaign %v", rc.Key, rc.APICallCampaign)
+	log.Debugf("Remote configuration key: %q", rc.Key)
 	if c.storageKey.IsSet() && c.storageKey.Get() != rc.Key {
 		// The key has changed, the telemeter needs to be reset.
 		c.telemeterMux.Lock()
@@ -300,7 +300,6 @@ func (c *Client) Telemeter() telemeter.Telemeter {
 
 // GetGRPCInterceptor returns an API interceptor function for GRPC requests.
 func (c *Client) GetGRPCInterceptor() grpc.UnaryServerInterceptor {
-	log.Debug("Created telemetry gRPC interceptor")
 	return func(ctx context.Context, req any, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (any, error) {
 		resp, err := handler(ctx, req)
 		rp := getGRPCRequestDetails(ctx, err, info.FullMethod, req)
@@ -311,7 +310,6 @@ func (c *Client) GetGRPCInterceptor() grpc.UnaryServerInterceptor {
 
 // GetHTTPInterceptor returns an API interceptor function for HTTP requests.
 func (c *Client) GetHTTPInterceptor() httputil.HTTPInterceptor {
-	log.Debug("Created telemetry HTTP interceptor")
 	return func(handler http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			statusTrackingWriter := httputil.NewStatusTrackingWriter(w)
@@ -335,7 +333,6 @@ func (c *Client) AddInterceptorFuncs(event string, f ...Interceptor) {
 		c.interceptors = make(map[string][]Interceptor, len(f))
 	}
 	c.interceptors[event] = append(c.interceptors[event], f...)
-	log.Debugf("interceptors for %q: %d", event, len(c.interceptors[event]))
 }
 
 // startPeriodicReload reloads and applies the configuration from the remote

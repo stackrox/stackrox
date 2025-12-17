@@ -648,18 +648,16 @@ func startPhonehomeTelemetryCollection(config *pkgGRPC.Config, basicAuthProvider
 	telemetryCfg := pubcfg.GetTelemetry()
 	if telemetryCfg == nil || telemetryCfg.GetEnabled() {
 		c := phonehomeClient.Singleton()
-		c.AddInterceptorFuncs()
-		c.AddStaticPropsGatherer()
-		addCentralIdentityGatherers(c)
 		log.Debug("User configuration grants consent for telemetry collection")
 		// Sending the initial client identity requires user consent.
 		c.GrantConsent()
 		c.RegisterCentralClient(config, basicAuthProviderID)
+		addCentralIdentityGatherers(c)
 		// Start the gathering.
 		// For release versions, the remote configuration will be periodically
-		// downloaded. For non-release versions, you can call
-		// /v1.TelemetryService/PostConfigReload to reload the configuration.
-		c.Start()
+		// downloaded. For non-release versions, you can call POST to
+		// /v1/telemetry/config/reload to reload the configuration.
+		c.Enable()
 		log.Infof("Telemetry Client Configuration: %s", c)
 	}
 }

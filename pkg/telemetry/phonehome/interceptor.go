@@ -48,7 +48,7 @@ func (c *Client) track(rp *RequestParams) {
 func getGRPCRequestDetails(ctx context.Context, err error, grpcFullMethod string, req any) *RequestParams {
 	id, iderr := authn.IdentityFromContext(ctx)
 	if iderr != nil {
-		log.Debug("Cannot identify user from context: ", iderr)
+		log.Debugf("Cannot identify user from context for method call %q: %v", grpcFullMethod, iderr)
 	}
 
 	ri := requestinfo.FromContext(ctx)

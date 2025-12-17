@@ -98,21 +98,16 @@ func newCentralClient(instanceId string) *CentralClient {
 		phonehome.WithBatchSize(1),
 		phonehome.WithPushInterval(env.TelemetryFrequency.DurationSetting()),
 	)
-	return c
-}
+	if !c.IsEnabled() {
+		return c
+	}
+	c.AddInterceptorFuncs("API Call", c.apiCallInterceptor(), addDefaultProps)
 
-// AddInterceptorFuncs registers API call interceptors.
-func (c *CentralClient) AddInterceptorFuncs() {
-	c.Client.AddInterceptorFuncs("API Call", c.apiCallInterceptor(), addDefaultProps)
-}
-
-// AddStaticPropsGatherer adds a gatherer that just returns static central
-// properties.
-func (c *CentralClient) AddStaticPropsGatherer() {
 	props := getCentralDeploymentProperties()
 	c.Gatherer().AddGatherer(func(ctx context.Context) (map[string]any, error) {
 		return props, nil
 	})
+	return c
 }
 
 func getCentralDeploymentProperties() map[string]any {
@@ -192,8 +187,8 @@ func (c *CentralClient) RegisterCentralClient(gc *grpc.Config, basicAuthProvider
 	c.Group(append(groups, telemeter.WithUserID(adminHash))...)
 }
 
-// Stop and disable telemetry collection.
-func (c *CentralClient) Stop() {
+// Disable telemetry collection.
+func (c *CentralClient) Disable() {
 	if c.Client.IsActive() {
 		log.Info("Telemetry collection has been disabled on demand.")
 		c.Track("Telemetry Disabled", nil)
@@ -202,8 +197,8 @@ func (c *CentralClient) Stop() {
 	c.Client.WithdrawConsent()
 }
 
-// Start telemetry collection, grant consent and send initial client identity.
-func (c *CentralClient) Start() {
+// Enable telemetry collection: grant consent and send initial client identity.
+func (c *CentralClient) Enable() {
 	if !c.IsEnabled() {
 		return
 	}
