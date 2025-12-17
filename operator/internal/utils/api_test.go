@@ -3,7 +3,7 @@ package utils
 import (
 	"testing"
 
-	pkgLabels "github.com/stackrox/rox/pkg/labels"
+	"github.com/stackrox/rox/operator/internal/common/labels"
 	"github.com/stretchr/testify/assert"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -21,7 +21,7 @@ func TestShouldAdoptResource(t *testing.T) {
 					Name:      "test-secret",
 					Namespace: "test-ns",
 					Labels: map[string]string{
-						pkgLabels.ManagedByLabelKey: pkgLabels.ManagedByOperator,
+						labels.ManagedByLabelKey: labels.ManagedByOperator,
 					},
 				},
 			},
@@ -42,7 +42,7 @@ func TestShouldAdoptResource(t *testing.T) {
 					Name:      "test-secret",
 					Namespace: "test-ns",
 					Labels: map[string]string{
-						pkgLabels.ManagedByLabelKey: pkgLabels.ManagedBySensor,
+						labels.ManagedByLabelKey: "sensor",
 					},
 				},
 			},
@@ -54,7 +54,7 @@ func TestShouldAdoptResource(t *testing.T) {
 					Name:      "test-secret",
 					Namespace: "test-ns",
 					Labels: map[string]string{
-						pkgLabels.ManagedByLabelKey: pkgLabels.ManagedByOperator,
+						labels.ManagedByLabelKey: labels.ManagedByOperator,
 					},
 					OwnerReferences: []metav1.OwnerReference{
 						{

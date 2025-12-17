@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"github.com/pkg/errors"
-	pkgLabels "github.com/stackrox/rox/pkg/labels"
+	commonLabels "github.com/stackrox/rox/operator/internal/common/labels"
 	apiErrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	ctrlClient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -47,7 +47,7 @@ func ShouldAdoptResource(obj metav1.Object) bool {
 		return false
 	}
 
-	if labels[pkgLabels.ManagedByLabelKey] != pkgLabels.ManagedByOperator {
+	if labels[commonLabels.ManagedByLabelKey] != commonLabels.ManagedByOperator {
 		return false
 	}
 
