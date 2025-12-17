@@ -262,12 +262,6 @@ func (d *deploymentCheckCommand) getAlertsAndIgnoredObjectRefs(deploymentYaml st
 	ctx, cancel := context.WithTimeout(context.Background(), d.timeout)
 	defer cancel()
 
-	if d.cluster != "" {
-		d.env.Logger().InfofLn("Sending deployment check request with cluster=%q, namespace=%q", d.cluster, d.namespace)
-	} else {
-		d.env.Logger().InfofLn("Sending deployment check request without cluster (cluster-scoped policies will not be evaluated)")
-	}
-
 	response, err := svc.DetectDeployTimeFromYAML(ctx, &v1.DeployYAMLDetectionRequest{
 		Yaml:             deploymentYaml,
 		PolicyCategories: d.policyCategories,

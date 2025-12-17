@@ -480,20 +480,6 @@ func (s *serviceImpl) DetectDeployTimeFromYAML(ctx context.Context, req *apiV1.D
 		log.Warnf("Deployment YAMLs failed to parse: %v", errs)
 	}
 
-	// Set cluster ID and name on deployments if cluster is provided
-	// This is critical for policy scope matching, which checks deployment.GetClusterId()
-	if eCtx.ClusterID != "" {
-		log.Debugf("Setting cluster ID %s on %d deployment(s) for policy scope evaluation", eCtx.ClusterID, len(deployments))
-		for _, d := range deployments {
-			if err := s.populateDeploymentWithClusterInfo(ctx, eCtx.ClusterID, d); err != nil {
-				return nil, errors.Wrapf(err, "failed to populate cluster info for deployment %s", d.GetName())
-			}
-			log.Debugf("Deployment %s/%s now has ClusterId=%s, ClusterName=%s", d.GetNamespace(), d.GetName(), d.GetClusterId(), d.GetClusterName())
-		}
-	} else {
-		log.Debugf("No cluster provided, deployments will not have ClusterId set (cluster-scoped policies will not match)")
-	}
-
 	// If a cluster is provided and Sensor has the capability, enhance deployments with additional info from Sensor
 	if eCtx.ClusterID != "" {
 		conn := s.connManager.GetConnection(eCtx.ClusterID)
