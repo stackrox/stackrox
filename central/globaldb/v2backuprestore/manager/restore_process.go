@@ -9,6 +9,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/globaldb/v2backuprestore/common"
+	"github.com/stackrox/rox/central/globaldb/v2backuprestore/restore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/backup"
 	"github.com/stackrox/rox/pkg/concurrency"
@@ -185,7 +186,7 @@ func (p *restoreProcess) cleanupRestoreDatabase() {
 	}
 
 	// Drop the restore database - use the same name as in restore/postgres.go
-	if err := pgadmin.DropDB(sourceMap, dbConfig, "central_restore"); err != nil {
+	if err := pgadmin.DropDB(sourceMap, dbConfig, restore.GetRestoreDBName()); err != nil {
 		log.Errorf("Failed to drop restore database during cleanup: %v", err)
 	} else {
 		log.Info("Successfully cleaned up restore database")
