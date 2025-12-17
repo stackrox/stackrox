@@ -73,7 +73,7 @@ jobs:
     needs:
     - offline-bundle-generate
     steps:
-    - uses: actions/download-artifact@v6
+    - uses: actions/download-artifact@v7
       with:
         path: bundles
         pattern: offline-bundle-*
