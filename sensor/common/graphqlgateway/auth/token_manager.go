@@ -70,7 +70,7 @@ func (m *TokenManager) GetToken(ctx context.Context, bearerToken, namespace, dep
 	userInfo, err := m.k8sValidator.ValidateDeploymentAccess(ctx, bearerToken, namespace, deployment)
 	if err != nil {
 		// This returns PermissionDenied or Unauthenticated error
-		return "", err
+		return "", errors.Wrap(err, "failed to validate K8s RBAC")
 	}
 
 	// Step 2: Check cache
@@ -113,7 +113,7 @@ func (m *TokenManager) GetToken(ctx context.Context, bearerToken, namespace, dep
 	}
 
 	// Step 4: Cache the new token
-	ttl := tokenResp.ExpiresAt.Sub(time.Now())
+	ttl := time.Until(tokenResp.ExpiresAt)
 	if ttl > 0 {
 		m.tokenCache.Set(ctx, cacheKey, tokenResp.Token, ttl)
 		log.Debugw("Cached new token",

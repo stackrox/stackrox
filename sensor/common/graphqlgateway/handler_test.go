@@ -364,9 +364,9 @@ func TestHandler_ServeHTTP_TraceIDHeader(t *testing.T) {
 func TestHandler_ServeHTTP_ResponseStreaming(t *testing.T) {
 	expectedBody := `{"data": {"deployments": [{"name": "nginx"}, {"name": "postgres"}]}}`
 	expectedHeaders := http.Header{
-		"Content-Type":   []string{"application/json"},
-		"Cache-Control":  []string{"no-cache"},
-		"Custom-Header":  []string{"test-value"},
+		"Content-Type":  []string{"application/json"},
+		"Cache-Control": []string{"no-cache"},
+		"Custom-Header": []string{"test-value"},
 	}
 
 	handler := &Handler{

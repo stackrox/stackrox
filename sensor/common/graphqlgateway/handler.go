@@ -208,7 +208,14 @@ func (h *Handler) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
 		httputil.WriteGRPCStyleErrorf(writer, codes.Internal, "failed to contact central: %v", err)
 		return
 	}
-	defer resp.Body.Close()
+	defer func() {
+		if err := resp.Body.Close(); err != nil {
+			log.Warnw("Failed to close response body",
+				logging.Err(err),
+				logging.String("trace_id", traceID),
+			)
+		}
+	}()
 
 	// Copy response headers from Central
 	for k, vs := range resp.Header {

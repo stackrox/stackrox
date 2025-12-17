@@ -210,10 +210,10 @@ func TestMemoryCache_ReplaceEntry(t *testing.T) {
 
 func TestCacheKey_Generation(t *testing.T) {
 	tests := []struct {
-		name   string
-		key1   CacheKey
-		key2   CacheKey
-		equal  bool
+		name  string
+		key1  CacheKey
+		key2  CacheKey
+		equal bool
 	}{
 		{
 			name:  "identical keys should produce same hash",

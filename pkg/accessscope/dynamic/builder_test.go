@@ -146,9 +146,9 @@ func TestBuildDynamicScope(t *testing.T) {
 			} else {
 				require.NoError(t, err)
 				require.NotNil(t, scope)
-				assert.Equal(t, tt.clusterName, scope.ClusterName)
-				assert.Equal(t, tt.namespace, scope.Namespace)
-				assert.Equal(t, tt.deployment, scope.Deployment)
+				assert.Equal(t, tt.clusterName, scope.GetClusterName())
+				assert.Equal(t, tt.namespace, scope.GetNamespace())
+				assert.Equal(t, tt.deployment, scope.GetDeployment())
 			}
 		})
 	}

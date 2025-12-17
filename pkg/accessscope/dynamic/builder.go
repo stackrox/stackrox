@@ -98,32 +98,32 @@ func ScopeDescription(scope *storage.DynamicAccessScope) string {
 		return "unrestricted"
 	}
 
-	if scope.Deployment != "" {
+	if scope.GetDeployment() != "" {
 		return fmt.Sprintf("cluster=%s, namespace=%s, deployment=%s",
-			scope.ClusterName, scope.Namespace, scope.Deployment)
+			scope.GetClusterName(), scope.GetNamespace(), scope.GetDeployment())
 	}
 
-	if scope.Namespace != "" {
+	if scope.GetNamespace() != "" {
 		return fmt.Sprintf("cluster=%s, namespace=%s (all deployments)",
-			scope.ClusterName, scope.Namespace)
+			scope.GetClusterName(), scope.GetNamespace())
 	}
 
-	return fmt.Sprintf("cluster=%s (all namespaces)", scope.ClusterName)
+	return fmt.Sprintf("cluster=%s (all namespaces)", scope.GetClusterName())
 }
 
 // IsClusterScoped returns true if the scope grants access to the entire cluster
 // (i.e., no namespace/deployment restrictions).
 func IsClusterScoped(scope *storage.DynamicAccessScope) bool {
-	return scope != nil && scope.Namespace == "" && scope.Deployment == ""
+	return scope != nil && scope.GetNamespace() == "" && scope.GetDeployment() == ""
 }
 
 // IsNamespaceScoped returns true if the scope grants access to a specific
 // namespace but all deployments within it.
 func IsNamespaceScoped(scope *storage.DynamicAccessScope) bool {
-	return scope != nil && scope.Namespace != "" && scope.Deployment == ""
+	return scope != nil && scope.GetNamespace() != "" && scope.GetDeployment() == ""
 }
 
 // IsDeploymentScoped returns true if the scope grants access to a specific deployment.
 func IsDeploymentScoped(scope *storage.DynamicAccessScope) bool {
-	return scope != nil && scope.Deployment != ""
+	return scope != nil && scope.GetDeployment() != ""
 }
