@@ -162,7 +162,10 @@ func (s *BaseImageDataStoreTestSuite) TestFirstLayerDigestMismatch() {
 	layers := []*storage.BaseImageLayer{{LayerDigest: "sha256:actual-first"}}
 
 	err := s.datastore.UpsertImage(s.ctx, img, layers)
-	s.Require().Error(err, "FirstLayerDigest mismatch should fail")
+
+	s.Require().NoError(err, "Upsert should succeed with auto-correction")
+
+	s.Equal("sha256:actual-first", img.FirstLayerDigest)
 }
 
 func (s *BaseImageDataStoreTestSuite) TestContextCancellation() {
