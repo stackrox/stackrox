@@ -7,7 +7,8 @@ import (
 	"testing"
 
 	"github.com/stackrox/rox/generated/storage"
-	oldSchema "github.com/stackrox/rox/migrator/migrations/m_212_to_m_213_add_container_start_column_to_indicators/test/schema"
+	"github.com/stackrox/rox/migrator/migrations/indexhelper"
+	oldSchema "github.com/stackrox/rox/migrator/migrations/m_214_to_m_215_process_indicator_to_btree/test/schema"
 	pghelper "github.com/stackrox/rox/migrator/migrations/postgreshelper"
 	"github.com/stackrox/rox/migrator/types"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
@@ -61,41 +62,38 @@ func (s *migrationTestSuite) TestMigration() {
 	log.Info("Created the indicators")
 
 	// Verify hash indexes
-	row := s.db.QueryRow(s.ctx, hashIndexQuery, tableName, deploymentIndex)
-	var exists bool
-	s.Require().NoError(row.Scan(&exists))
+	exists, err := indexhelper.IndexExists(s.ctx, s.db, tableName, deploymentIndex, "hash")
+	s.Require().NoError(err)
 	s.Require().True(exists)
 
-	row = s.db.QueryRow(s.ctx, hashIndexQuery, tableName, podIndex)
-	s.Require().NoError(row.Scan(&exists))
+	exists, err = indexhelper.IndexExists(s.ctx, s.db, tableName, podIndex, "hash")
 	s.Require().True(exists)
 
 	s.Require().NoError(migration.Run(dbs))
 
+	s.verifyNewIndexes()
+
+	// Run the migration a second time to ensure idempotentcy.
+	s.Require().NoError(migration.Run(dbs))
+
+	s.verifyNewIndexes()
+}
+
+func (s *migrationTestSuite) verifyNewIndexes() {
 	// Verfiy hash indexes no longer exist.
-	row = s.db.QueryRow(s.ctx, hashIndexQuery, tableName, deploymentIndex)
-	s.Require().NoError(row.Scan(&exists))
+	exists, err := indexhelper.IndexExists(s.ctx, s.db, tableName, deploymentIndex, "hash")
+	s.Require().NoError(err)
 	s.Require().False(exists)
 
-	row = s.db.QueryRow(s.ctx, hashIndexQuery, tableName, podIndex)
-	s.Require().NoError(row.Scan(&exists))
+	exists, err = indexhelper.IndexExists(s.ctx, s.db, tableName, podIndex, "hash")
+	s.Require().NoError(err)
 	s.Require().False(exists)
 
-	// Verify btree indexes
-	btreeIndexQuery := `SELECT EXISTS(
-	SELECT tab.relname, cls.relname, am.amname
-	FROM pg_index idx
-	JOIN pg_class cls ON cls.oid=idx.indexrelid
-	JOIN pg_class tab ON tab.oid=idx.indrelid
-	JOIN pg_am am ON am.oid=cls.relam
-	where tab.relname = $1 AND
-	am.amname = 'btree' AND cls.relname = $2
-	)`
-	row = s.db.QueryRow(s.ctx, btreeIndexQuery, tableName, deploymentIndex)
-	s.Require().NoError(row.Scan(&exists))
+	exists, err = indexhelper.IndexExists(s.ctx, s.db, tableName, deploymentIndex, "btree")
+	s.Require().NoError(err)
 	s.Require().True(exists)
 
-	row = s.db.QueryRow(s.ctx, btreeIndexQuery, tableName, podIndex)
-	s.Require().NoError(row.Scan(&exists))
+	exists, err = indexhelper.IndexExists(s.ctx, s.db, tableName, podIndex, "btree")
+	s.Require().NoError(err)
 	s.Require().True(exists)
 }
