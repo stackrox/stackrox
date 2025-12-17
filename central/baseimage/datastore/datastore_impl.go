@@ -47,14 +47,17 @@ func (ds *datastoreImpl) UpsertImage(ctx context.Context, image *storage.BaseIma
 	} else if !ok {
 		return sac.ErrResourceAccessDenied
 	}
+
 	for i, layer := range layers {
 		if layer.GetId() == "" {
 			layer.Id = uuid.NewV4().String()
 		}
 
 		layer.BaseImageId = image.GetId()
-
 		layer.Index = int32(i)
+	}
+	if len(layers) > 0 {
+		image.FirstLayerDigest = layers[0].GetLayerDigest()
 	}
 
 	image.Layers = layers
@@ -73,8 +76,8 @@ func (ds *datastoreImpl) UpsertImages(ctx context.Context, imagesWithLayers map[
 		// Attach layers to the parent
 		image.Layers = layers
 
-		if image.GetFirstLayerDigest() != layers[0].GetLayerDigest() {
-			log.Errorf("FirstLayerDigest mismatch for image %s: claims %s but first layer is %s. Auto-correcting.",
+		if len(layers) > 0 && image.GetFirstLayerDigest() != layers[0].GetLayerDigest() {
+			log.Errorf("FirstLayerDigest mismatch for image %s: claims %s but first layer is %s.",
 				image.GetId(), image.GetFirstLayerDigest(), layers[0].GetLayerDigest())
 			image.FirstLayerDigest = layers[0].GetLayerDigest()
 		}

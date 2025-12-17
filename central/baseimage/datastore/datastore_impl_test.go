@@ -165,7 +165,7 @@ func (s *BaseImageDataStoreTestSuite) TestFirstLayerDigestMismatch() {
 
 	s.Require().NoError(err, "Upsert should succeed with auto-correction")
 
-	s.Equal("sha256:actual-first", img.FirstLayerDigest)
+	s.Equal("sha256:actual-first", img.GetFirstLayerDigest())
 }
 
 func (s *BaseImageDataStoreTestSuite) TestContextCancellation() {
