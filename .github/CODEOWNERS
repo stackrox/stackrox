@@ -45,7 +45,9 @@ qa-tests-backend/**/*       @janisz
 
 /ui/**/* @stackrox/ui
 
-operator/**/* @stackrox/install
+image/templates/** @stackrox/install
+operator/**        @stackrox/install
+pkg/helm/**        @stackrox/install
 
 # Scanner team's responsibilities include anything related to the scanner itself and scanning utilities
 # such as vulnerability uploading and image integrations.
