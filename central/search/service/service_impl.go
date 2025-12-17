@@ -90,7 +90,7 @@ func (s *serviceImpl) getSearchFuncs() map[v1.SearchCategory]SearchFunc {
 	}
 	if features.FlattenImageData.Enabled() {
 		searchfuncs[v1.SearchCategory_IMAGES_V2] = s.imagesV2.SearchImages
-		searchfuncs[v1.SearchCategory_IMAGES] = s.images.SearchImages
+		searchfuncs[v1.SearchCategory_IMAGES] = s.imagesV2.SearchImages
 	} else {
 		searchfuncs[v1.SearchCategory_IMAGES] = s.images.SearchImages
 	}
