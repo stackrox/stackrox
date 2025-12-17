@@ -66,6 +66,7 @@ func (m *managerImpl) flushHashes(ctx context.Context) {
 			ClusterId: cluster,
 			Hashes:    deduper.GetSuccessfulHashes(),
 		}
+		log.Infof("Flushing hashes for cluster %d", len(hash.GetHashes()))
 		if err := m.datastore.UpsertHash(ctx, hash); err != nil {
 			log.Errorf("flushing hashes: %v", err)
 		}
