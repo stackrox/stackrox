@@ -318,7 +318,17 @@ check-ci-setup: ## Make sure this target is not started in CI environment.
 	$(SILENT)if [ -n "$${CI:-}" ]; then echo "Setup error: operator should be installed and started by OLM." >&2; exit 1; fi
 
 .PHONY: run
-run: check-ci-setup manifests generate ensure-rox-main-image-exists fmt vet ## Run operator from your host without deploying it to a cluster.
+run: check-ci-setup manifests generate ensure-rox-main-image-exists fmt vet quick-run ## Run operator from your host without deploying it to a cluster.
+
+.PHONY: quick-run
+quick-run: ## Same as run, but without ensuring dependencies.
+	@if [[ -n "$$MAIN_IMAGE_TAG" ]]; then \
+		echo "MAIN_IMAGE_TAG=$$MAIN_IMAGE_TAG specified, using related images with this tag."; \
+		IMAGE_REGISTRY=$(IMAGE_REPO) make -s related-images-with-main-tags | while read -r line; do \
+			echo " * $$line"; \
+			export "$$line"; \
+		done; \
+	fi ;\
 	../scripts/go-run.sh ./cmd/main.go
 
 .PHONY: ensure-rox-main-image-exists
@@ -595,3 +605,7 @@ docker-buildx: smuggled-status-sh test build/Dockerfile.gen ## Build and push do
 	- docker buildx build --platform=$(PLATFORMS) --push --tag ${IMG} -f build/Dockerfile.cross ..
 	- docker buildx rm project-v3-builder
 	rm build/Dockerfile.cross
+
+.PHONY: related-images-with-main-tags
+related-images-with-main-tags: ## Print related images with tags matching the main image tag.
+	@./hack/related-images-with-main-tags.sh
