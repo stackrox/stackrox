@@ -1,6 +1,7 @@
 package graphqlgateway
 
 import (
+	"context"
 	"crypto/x509"
 	"io"
 	"net/http"
@@ -14,7 +15,6 @@ import (
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/centralclient"
-	"github.com/stackrox/rox/sensor/common/graphqlgateway/auth"
 	"google.golang.org/grpc/codes"
 	"k8s.io/client-go/kubernetes"
 )
@@ -43,12 +43,18 @@ var (
 	log = logging.LoggerForModule()
 )
 
+// TokenManager defines the interface for acquiring scoped tokens.
+// This interface allows for easier testing by enabling mock implementations.
+type TokenManager interface {
+	GetToken(ctx context.Context, bearerToken, namespace, deployment string) (string, error)
+}
+
 // Handler handles GraphQL requests from the OCP console plugin,
 // validates Kubernetes RBAC, acquires scoped tokens, and proxies
 // queries to Central's GraphQL API.
 type Handler struct {
 	centralClient    *http.Client
-	tokenManager     *auth.TokenManager
+	tokenManager     TokenManager
 	centralReachable atomic.Bool
 }
 
@@ -58,13 +64,12 @@ type Handler struct {
 // - centralEndpoint: The Central HTTP endpoint (e.g., "https://central.stackrox:443")
 // - centralCertificates: Central's CA certificates for mTLS
 // - k8sClient: Kubernetes client for RBAC validation
-// - centralConn: gRPC connection to Central for token requests
-// - clusterName: The name of this Sensor's cluster
+// - tokenManager: Token manager for acquiring scoped tokens
 func NewHandler(
 	centralEndpoint string,
 	centralCertificates []*x509.Certificate,
 	k8sClient kubernetes.Interface,
-	tokenManager *auth.TokenManager,
+	tokenManager TokenManager,
 ) (*Handler, error) {
 	client, err := centralclient.AuthenticatedCentralHTTPClient(centralEndpoint, centralCertificates)
 	if err != nil {

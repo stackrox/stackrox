@@ -11,14 +11,24 @@ import (
 	"github.com/stackrox/rox/sensor/common/graphqlgateway/cache"
 )
 
+// K8sValidatorInterface defines the interface for validating Kubernetes RBAC.
+type K8sValidatorInterface interface {
+	ValidateDeploymentAccess(ctx context.Context, token, namespace, deployment string) (*K8sUserInfo, error)
+}
+
+// TokenClientInterface defines the interface for requesting scoped tokens from Central.
+type TokenClientInterface interface {
+	RequestToken(ctx context.Context, userID, namespace, deployment string) (*TokenResponse, error)
+}
+
 // TokenManager orchestrates token acquisition flow:
 // 1. Validates K8s RBAC (SubjectAccessReview)
 // 2. Checks cache for existing token
 // 3. Requests new token from Central if cache miss
 // 4. Caches the new token
 type TokenManager struct {
-	k8sValidator  *K8sValidator
-	tokenClient   *TokenClient
+	k8sValidator  K8sValidatorInterface
+	tokenClient   TokenClientInterface
 	tokenCache    cache.TokenCache
 	centralSignal concurrency.ReadOnlyErrorSignal
 }
@@ -31,8 +41,8 @@ type TokenManager struct {
 // - tokenCache: Caches tokens to reduce Central load
 // - centralSignal: Signal indicating Central connectivity status
 func NewTokenManager(
-	k8sValidator *K8sValidator,
-	tokenClient *TokenClient,
+	k8sValidator K8sValidatorInterface,
+	tokenClient TokenClientInterface,
 	tokenCache cache.TokenCache,
 	centralSignal concurrency.ReadOnlyErrorSignal,
 ) *TokenManager {
