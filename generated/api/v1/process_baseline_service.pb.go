@@ -778,7 +778,7 @@ const file_api_v1_process_baseline_service_proto_rawDesc = "" +
 	"\x18BulkLockProcessBaselines\x12\x1f.v1.BulkProcessBaselinesRequest\x1a&.v1.BulkUpdateProcessBaselinesResponse\")\x82\xd3\xe4\x93\x02#:\x01*\x1a\x1e/v1/processbaselines/bulk/lock\x12\x92\x01\n" +
 	"\x1aBulkUnlockProcessBaselines\x12\x1f.v1.BulkProcessBaselinesRequest\x1a&.v1.BulkUpdateProcessBaselinesResponse\"+\x82\xd3\xe4\x93\x02%:\x01*\x1a /v1/processbaselines/bulk/unlock\x12}\n" +
 	"\x16DeleteProcessBaselines\x12!.v1.DeleteProcessBaselinesRequest\x1a\".v1.DeleteProcessBaselinesResponse\"\x1c\x82\xd3\xe4\x93\x02\x16*\x14/v1/processbaselines\x12\x8b\x01\n" +
-	"\x16GetProcessBaselineBulk\x12\".v1.GetProcessBaselinesBulkRequest\x1a#.v1.GetProcessBaselinesBulkResponse\"(\x82\xd3\xe4\x93\x02\":\x01*\x1a\x1d/v1/processbaselines/bulk/getB'\n" +
+	"\x16GetProcessBaselineBulk\x12\".v1.GetProcessBaselinesBulkRequest\x1a#.v1.GetProcessBaselinesBulkResponse\"(\x82\xd3\xe4\x93\x02\":\x01*\"\x1d/v1/processbaselines/bulk/getB'\n" +
 	"\x18io.stackrox.proto.api.v1Z\v./api/v1;v1X\x01b\x06proto3"
 
 var (

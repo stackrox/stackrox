@@ -85,7 +85,7 @@
       }
     },
     "/v1/processbaselines/bulk/get": {
-      "put": {
+      "post": {
         "summary": "`GetProcessBaselineBulk` returns process baselines matching the provided query.",
         "operationId": "ProcessBaselineService_GetProcessBaselineBulk",
         "responses": {

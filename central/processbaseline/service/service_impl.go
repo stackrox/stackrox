@@ -319,13 +319,18 @@ func (s *serviceImpl) GetProcessBaselineBulk(ctx context.Context, request *v1.Ge
 		return nil, errors.Wrap(errox.InvalidArgs, "query must not be nil")
 	}
 
+	clusters := query.GetClusterIds()
+	if len(clusters) == 0 {
+		return nil, errors.Wrap(errox.InvalidArgs, "Clusters list cannot be empty. Set the list of clusters to *, if you want process baselines in all clusters")
+	}
+
 	// First we search for matching deployments and containers. Since process baselines are created lazily not process baselines
 	// that we are interested exist and we may need to create them. The information that we need is in the deployments datastore
 	// and might not be in the process baselines datastore. Also some fields that we are interested in such as image names are
 	// availabe in the deployments datastore and not in process baselines datastore.
 	deploymentQueryBuilder := search.NewQueryBuilder()
 
-	if len(query.GetClusterIds()) > 0 {
+	if !(len(clusters) == 1 && clusters[0] == "*") {
 		deploymentQueryBuilder = deploymentQueryBuilder.AddExactMatches(search.ClusterID, query.GetClusterIds()...)
 	}
 	if len(query.GetNamespaces()) > 0 {
@@ -381,6 +386,8 @@ func (s *serviceImpl) GetProcessBaselineBulk(ctx context.Context, request *v1.Ge
 		baseline, err := s.getProcessBaseline(ctx, baselineKey)
 		if err == nil {
 			baselines = append(baselines, baseline)
+		} else {
+			log.Errorf("Unable to get process baseline from process baseline key %+v: %+v", baseline, err)
 		}
 	}
 

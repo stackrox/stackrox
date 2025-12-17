@@ -131,7 +131,7 @@ service ProcessBaselineService {
   // `GetProcessBaselineBulk` returns process baselines matching the provided query.
   rpc GetProcessBaselineBulk(GetProcessBaselinesBulkRequest) returns (GetProcessBaselinesBulkResponse) {
     option (google.api.http) = {
-      put: "/v1/processbaselines/bulk/get"
+      post: "/v1/processbaselines/bulk/get"
       body: "*"
     };
   }
