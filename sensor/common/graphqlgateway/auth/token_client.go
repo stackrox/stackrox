@@ -13,6 +13,11 @@ import (
 	durationpb "google.golang.org/protobuf/types/known/durationpb"
 )
 
+// clusterIDGetter defines the interface for lazily getting the cluster ID.
+type clusterIDGetter interface {
+	GetNoWait() string
+}
+
 const (
 	// TokenRequestTimeout is the timeout for token requests to Central
 	TokenRequestTimeout = 10 * time.Second
@@ -29,15 +34,15 @@ type TokenResponse struct {
 
 // TokenClient handles communication with Central's ScopedTokenService.
 type TokenClient struct {
-	centralConn grpc.ClientConnInterface
-	clusterName string
+	centralConn     grpc.ClientConnInterface
+	clusterIDGetter clusterIDGetter
 }
 
 // NewTokenClient creates a new token client for requesting scoped tokens from Central.
-func NewTokenClient(centralConn grpc.ClientConnInterface, clusterName string) *TokenClient {
+func NewTokenClient(centralConn grpc.ClientConnInterface, clusterIDGetter clusterIDGetter) *TokenClient {
 	return &TokenClient{
-		centralConn: centralConn,
-		clusterName: clusterName,
+		centralConn:     centralConn,
+		clusterIDGetter: clusterIDGetter,
 	}
 }
 
@@ -54,7 +59,7 @@ func (c *TokenClient) RequestToken(ctx context.Context, userID, namespace, deplo
 
 	req := &v1.IssueScopedTokenRequest{
 		UserIdentifier: userID,
-		ClusterName:    c.clusterName,
+		ClusterName:    c.clusterIDGetter.GetNoWait(),
 		Namespace:      namespace,
 		Deployment:     deployment,
 		Ttl:            durationpb.New(DefaultTokenTTL),

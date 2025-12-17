@@ -17,6 +17,11 @@ const (
 	TokenCacheCleanupInterval = 1 * time.Minute
 )
 
+// clusterIDGetter defines the interface for lazily getting the cluster ID.
+type clusterIDGetter interface {
+	GetNoWait() string
+}
+
 // NewGraphQLGatewayHandler creates a new GraphQL gateway handler with all dependencies.
 //
 // Parameters:
@@ -24,21 +29,21 @@ const (
 // - centralCertificates: Central's CA certificates for mTLS
 // - k8sClient: Kubernetes client for RBAC validation
 // - centralConn: gRPC connection to Central for token requests
-// - clusterName: The name of this Sensor's cluster
+// - clusterIDGetter: Lazy getter for this Sensor's cluster ID
 // - centralSignal: Signal indicating Central connectivity status
 func NewGraphQLGatewayHandler(
 	centralEndpoint string,
 	centralCertificates []*x509.Certificate,
 	k8sClient kubernetes.Interface,
 	centralConn grpc.ClientConnInterface,
-	clusterName string,
+	clusterIDGetter clusterIDGetter,
 	centralSignal concurrency.ReadOnlyErrorSignal,
 ) (*Handler, error) {
 	// Create K8s validator
 	k8sValidator := auth.NewK8sValidator(k8sClient)
 
 	// Create token client
-	tokenClient := auth.NewTokenClient(centralConn, clusterName)
+	tokenClient := auth.NewTokenClient(centralConn, clusterIDGetter)
 
 	// Create token cache
 	tokenCache := cache.NewMemoryCache(TokenCacheCleanupInterval)

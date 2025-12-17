@@ -366,8 +366,8 @@ func (s *Sensor) newGraphQLGatewayRoute(centralEndpoint string, centralCertifica
 		centralCertificates,
 		s.k8sClientForGraphQL,
 		s.centralConnection, // LazyClientConn implements grpc.ClientConnInterface
-		s.clusterID.GetNoWait(),
-		nil, // centralSignal is optional (nil-safe in TokenManager)
+		s.clusterID,         // Pass cluster ID object for lazy evaluation
+		nil,                 // centralSignal is optional (nil-safe in TokenManager)
 	)
 	if err != nil {
 		log.Warnf("Failed to create GraphQL gateway handler: %v", err)
