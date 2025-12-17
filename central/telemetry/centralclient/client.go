@@ -79,6 +79,7 @@ func newCentralClient(instanceId string) *CentralClient {
 	}
 
 	c := &CentralClient{
+		// The default campaign is the permanent one:
 		telemetryCampaign: permanentTelemetryCampaign,
 	}
 	c.Client = phonehome.NewClient(instanceId, "Central", version.GetMainVersion(),
@@ -107,6 +108,7 @@ func newCentralClient(instanceId string) *CentralClient {
 	c.Gatherer().AddGatherer(func(ctx context.Context) (map[string]any, error) {
 		return props, nil
 	})
+
 	return c
 }
 
@@ -197,7 +199,8 @@ func (c *CentralClient) Disable() {
 	c.Client.WithdrawConsent()
 }
 
-// Enable telemetry collection: grant consent and send initial client identity.
+// Enable telemetry collection: grant consent and confirm the initial client
+// identity has been sent.
 func (c *CentralClient) Enable() {
 	if !c.IsEnabled() {
 		return
