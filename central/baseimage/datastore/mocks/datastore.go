@@ -73,21 +73,21 @@ func (mr *MockDataStoreMockRecorder) ListCandidateBaseImages(ctx, firstLayer any
 }
 
 // UpsertImage mocks base method.
-func (m *MockDataStore) UpsertImage(ctx context.Context, image *storage.BaseImage, layers []*storage.BaseImageLayer) error {
+func (m *MockDataStore) UpsertImage(ctx context.Context, image *storage.BaseImage, digests []string) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "UpsertImage", ctx, image, layers)
+	ret := m.ctrl.Call(m, "UpsertImage", ctx, image, digests)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // UpsertImage indicates an expected call of UpsertImage.
-func (mr *MockDataStoreMockRecorder) UpsertImage(ctx, image, layers any) *gomock.Call {
+func (mr *MockDataStoreMockRecorder) UpsertImage(ctx, image, digests any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpsertImage", reflect.TypeOf((*MockDataStore)(nil).UpsertImage), ctx, image, layers)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpsertImage", reflect.TypeOf((*MockDataStore)(nil).UpsertImage), ctx, image, digests)
 }
 
 // UpsertImages mocks base method.
-func (m *MockDataStore) UpsertImages(ctx context.Context, imagesWithLayers map[*storage.BaseImage][]*storage.BaseImageLayer) error {
+func (m *MockDataStore) UpsertImages(ctx context.Context, imagesWithLayers map[*storage.BaseImage][]string) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "UpsertImages", ctx, imagesWithLayers)
 	ret0, _ := ret[0].(error)

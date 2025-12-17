@@ -41,59 +41,61 @@ func New(store baseImageStore.Store, db postgres.DB) DataStore {
 	}
 }
 
-func (ds *datastoreImpl) UpsertImage(ctx context.Context, image *storage.BaseImage, layers []*storage.BaseImageLayer) error {
-	if ok, err := imagesSAC.WriteAllowed(ctx); err != nil {
+func (ds *datastoreImpl) UpsertImage(ctx context.Context, image *storage.BaseImage, digests []string) error {
+	ok, err := imagesSAC.WriteAllowed(ctx)
+	if err != nil {
 		return err
-	} else if !ok {
+	}
+	if !ok {
 		return sac.ErrResourceAccessDenied
 	}
 
-	for i, layer := range layers {
-		if layer.GetId() == "" {
-			layer.Id = uuid.NewV4().String()
-		}
-
-		layer.BaseImageId = image.GetId()
-		layer.Index = int32(i)
-	}
-	if len(layers) > 0 {
-		image.FirstLayerDigest = layers[0].GetLayerDigest()
-	}
-
-	image.Layers = layers
+	layers(image, digests)
 	return ds.storage.Upsert(ctx, image)
 }
 
-func (ds *datastoreImpl) UpsertImages(ctx context.Context, imagesWithLayers map[*storage.BaseImage][]*storage.BaseImageLayer) error {
-	if ok, err := imagesSAC.WriteAllowed(ctx); err != nil {
+func (ds *datastoreImpl) UpsertImages(
+	ctx context.Context, imagesWithLayer map[*storage.BaseImage][]string,
+) error {
+	ok, err := imagesSAC.WriteAllowed(ctx)
+	if err != nil {
 		return err
-	} else if !ok {
+	}
+	if !ok {
 		return sac.ErrResourceAccessDenied
 	}
-	batch := make([]*storage.BaseImage, 0, len(imagesWithLayers))
 
-	for image, layers := range imagesWithLayers {
-		// Attach layers to the parent
-		image.Layers = layers
-
-		if len(layers) > 0 && image.GetFirstLayerDigest() != layers[0].GetLayerDigest() {
-			log.Errorf("FirstLayerDigest mismatch for image %s: claims %s but first layer is %s.",
-				image.GetId(), image.GetFirstLayerDigest(), layers[0].GetLayerDigest())
-			image.FirstLayerDigest = layers[0].GetLayerDigest()
-		}
-
-		for i, layer := range image.GetLayers() {
-			if layer.GetId() == "" {
-				layer.Id = uuid.NewV4().String()
-			}
-			layer.BaseImageId = image.GetId()
-			layer.Index = int32(i)
-		}
-
-		batch = append(batch, image)
+	batch := make([]*storage.BaseImage, 0, len(imagesWithLayer))
+	for img, digests := range imagesWithLayer {
+		layers(img, digests)
+		batch = append(batch, img)
 	}
 
 	return ds.storage.UpsertMany(ctx, batch)
+}
+
+func layers(image *storage.BaseImage, digests []string) []*storage.BaseImageLayer {
+	layers := make([]*storage.BaseImageLayer, 0, len(digests))
+
+	for i, digest := range digests {
+		layers = append(layers, &storage.BaseImageLayer{
+			Id:          uuid.NewV4().String(),
+			BaseImageId: image.GetId(),
+			Index:       int32(i),
+			LayerDigest: digest,
+		})
+	}
+
+	if len(digests) > 0 && image.GetFirstLayerDigest() != digests[0] {
+		log.Warnf(
+			"FirstLayerDigest mismatch for image %s: claims %s but first layer is %s.",
+			image.GetId(), image.GetFirstLayerDigest(), digests[0],
+		)
+		image.FirstLayerDigest = digests[0]
+	}
+
+	image.Layers = layers
+	return layers
 }
 
 func (ds *datastoreImpl) ListCandidateBaseImages(ctx context.Context, firstLayer string) ([]*storage.BaseImage, error) {
@@ -134,7 +136,7 @@ func (ds *datastoreImpl) ListCandidateBaseImages(ctx context.Context, firstLayer
 }
 
 func (ds *datastoreImpl) GetBaseImage(ctx context.Context, manifestDigest string) (*storage.BaseImage, bool, error) {
-	if ok, err := imagesSAC.WriteAllowed(ctx); err != nil {
+	if ok, err := imagesSAC.ReadAllowed(ctx); err != nil {
 		return nil, false, err
 	} else if !ok {
 		return nil, false, sac.ErrResourceAccessDenied

@@ -41,7 +41,6 @@ func (s *BaseImageDataStoreTestSuite) TearDownSuite() {
 		s.pool.Close()
 	}
 }
-
 func (s *BaseImageDataStoreTestSuite) TestUpsertImage() {
 	imageID := uuid.NewV4().String()
 	baseImage := &storage.BaseImage{
@@ -50,12 +49,12 @@ func (s *BaseImageDataStoreTestSuite) TestUpsertImage() {
 		FirstLayerDigest: "sha256:layer1",
 	}
 
-	layers := []*storage.BaseImageLayer{
-		{LayerDigest: "sha256:layer1"}, // Index 0
-		{LayerDigest: "sha256:layer2"}, // Index 1
+	digests := []string{
+		"sha256:layer1", // Index 0
+		"sha256:layer2", // Index 1
 	}
 
-	err := s.datastore.UpsertImage(s.ctx, baseImage, layers)
+	err := s.datastore.UpsertImage(s.ctx, baseImage, digests)
 	s.Require().NoError(err)
 
 	// Verify Retrieval
@@ -66,28 +65,37 @@ func (s *BaseImageDataStoreTestSuite) TestUpsertImage() {
 	s.Len(img.GetLayers(), 2)
 
 	// Verify generated fields
+	s.NotEmpty(img.GetLayers()[0].GetId())
 	s.Equal(int32(0), img.GetLayers()[0].GetIndex())
 	s.Equal(imageID, img.GetLayers()[0].GetBaseImageId())
 	s.Equal("sha256:layer1", img.GetLayers()[0].GetLayerDigest())
 
+	s.NotEmpty(img.GetLayers()[1].GetId())
 	s.Equal(int32(1), img.GetLayers()[1].GetIndex())
+	s.Equal(imageID, img.GetLayers()[1].GetBaseImageId())
 	s.Equal("sha256:layer2", img.GetLayers()[1].GetLayerDigest())
 }
 
 func (s *BaseImageDataStoreTestSuite) TestUpsertImagesBatch() {
-	batch := make(map[*storage.BaseImage][]*storage.BaseImageLayer)
+	batch := make(map[*storage.BaseImage][]string)
 
 	// Image 1
 	id1 := uuid.NewV4().String()
-	img1 := &storage.BaseImage{Id: id1, ManifestDigest: "digestA"}
-	layers1 := []*storage.BaseImageLayer{{LayerDigest: "layerA"}}
-	batch[img1] = layers1
+	img1 := &storage.BaseImage{
+		Id:               id1,
+		ManifestDigest:   "digestA",
+		FirstLayerDigest: "layerA",
+	}
+	batch[img1] = []string{"layerA"}
 
 	// Image 2
 	id2 := uuid.NewV4().String()
-	img2 := &storage.BaseImage{Id: id2, ManifestDigest: "digestB"}
-	layers2 := []*storage.BaseImageLayer{{LayerDigest: "layerB"}}
-	batch[img2] = layers2
+	img2 := &storage.BaseImage{
+		Id:               id2,
+		ManifestDigest:   "digestB",
+		FirstLayerDigest: "layerB",
+	}
+	batch[img2] = []string{"layerB"}
 
 	// Execute Batch Upsert
 	err := s.datastore.UpsertImages(s.ctx, batch)
@@ -98,19 +106,17 @@ func (s *BaseImageDataStoreTestSuite) TestUpsertImagesBatch() {
 	s.True(found)
 	s.Equal(id1, fetched1.GetId())
 	s.Len(fetched1.GetLayers(), 1)
+	s.Equal("layerA", fetched1.GetLayers()[0].GetLayerDigest())
 
 	fetched2, found, err := s.datastore.GetBaseImage(s.ctx, "digestB")
 	s.Require().NoError(err)
 	s.True(found)
 	s.Equal(id2, fetched2.GetId())
+	s.Len(fetched2.GetLayers(), 1)
+	s.Equal("layerB", fetched2.GetLayers()[0].GetLayerDigest())
 }
 
 func (s *BaseImageDataStoreTestSuite) TestListCandidateBaseImages() {
-	// Scenario: We have 3 images.
-	// Image A: First Layer = "common_layer"
-	// Image B: First Layer = "common_layer"
-	// Image C: First Layer = "unique_layer"
-
 	commonDigest := "sha256:common"
 	uniqueDigest := "sha256:unique"
 
@@ -118,18 +124,15 @@ func (s *BaseImageDataStoreTestSuite) TestListCandidateBaseImages() {
 	imgB := &storage.BaseImage{Id: uuid.NewV4().String(), FirstLayerDigest: commonDigest, ManifestDigest: "d2"}
 	imgC := &storage.BaseImage{Id: uuid.NewV4().String(), FirstLayerDigest: uniqueDigest, ManifestDigest: "d3"}
 
-	err := s.datastore.UpsertImage(s.ctx, imgA, []*storage.BaseImageLayer{})
-	s.Require().NoError(err)
-	err = s.datastore.UpsertImage(s.ctx, imgB, []*storage.BaseImageLayer{})
-	s.Require().NoError(err)
-	err = s.datastore.UpsertImage(s.ctx, imgC, []*storage.BaseImageLayer{})
-	s.Require().NoError(err)
+	// No layers provided; FirstLayerDigest is already set and should remain.
+	s.Require().NoError(s.datastore.UpsertImage(s.ctx, imgA, nil))
+	s.Require().NoError(s.datastore.UpsertImage(s.ctx, imgB, nil))
+	s.Require().NoError(s.datastore.UpsertImage(s.ctx, imgC, nil))
 
 	candidates, err := s.datastore.ListCandidateBaseImages(s.ctx, commonDigest)
 	s.Require().NoError(err)
 	s.Len(candidates, 2)
 
-	// Collect IDs to verify
 	candidateIDs := []string{candidates[0].GetId(), candidates[1].GetId()}
 	s.Contains(candidateIDs, imgA.GetId())
 	s.Contains(candidateIDs, imgB.GetId())
@@ -159,10 +162,9 @@ func (s *BaseImageDataStoreTestSuite) TestFirstLayerDigestMismatch() {
 		ManifestDigest:   "sha256:mismatch-manifest",
 		FirstLayerDigest: "sha256:not-equal",
 	}
-	layers := []*storage.BaseImageLayer{{LayerDigest: "sha256:actual-first"}}
+	digests := []string{"sha256:actual-first"}
 
-	err := s.datastore.UpsertImage(s.ctx, img, layers)
-
+	err := s.datastore.UpsertImage(s.ctx, img, digests)
 	s.Require().NoError(err, "Upsert should succeed with auto-correction")
 
 	s.Equal("sha256:actual-first", img.GetFirstLayerDigest())
