@@ -170,18 +170,19 @@ func (r *Reconciler[T]) updateProgressing(_ context.Context, obj T) *platform.St
 // determineProgressingState infers if Helm reconciliation is in progress.
 // Returns (isProgressing, reason, message).
 func (r *Reconciler[T]) determineProgressingState(obj T) (platform.ConditionStatus, platform.ConditionReason, string) {
-	// If Irreconcilable is True, there's a problem.
-	if cond := obj.GetCondition(platform.ConditionIrreconcilable); cond != nil && cond.Status == platform.StatusTrue {
-		return platform.StatusTrue, "Irreconcilable", cond.Message
-	}
-
 	// Check observedGeneration. If metadata.generation > status.observedGeneration, spec has changed and reconcile
-	// is pending
+	// is pending.
 	if obj.GetGeneration() > obj.GetObservedGeneration() {
 		return platform.StatusTrue, "Reconciling", "Reconciliation in progress"
 	}
 
-	// No signs of active reconciliation.
+	// observedGeneration matches generation.
+
+	// If Irreconcilable is True, surface it.
+	if cond := obj.GetCondition(platform.ConditionIrreconcilable); cond != nil && cond.Status == platform.StatusTrue {
+		return platform.StatusTrue, "Irreconcilable", cond.Message
+	}
+
 	return platform.StatusFalse, "ReconcileSuccessful", "Reconciliation completed"
 }
 
