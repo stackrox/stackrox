@@ -5,16 +5,16 @@ import (
 	"crypto/x509"
 	"io"
 	"net/http"
-	"net/url"
 	"sync/atomic"
 
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/pkg/clientconn"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/httputil"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/mtls"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stackrox/rox/sensor/common"
-	"github.com/stackrox/rox/sensor/common/centralclient"
 	"google.golang.org/grpc/codes"
 )
 
@@ -68,9 +68,21 @@ func NewHandler(
 	centralCertificates []*x509.Certificate,
 	tokenManager TokenManager,
 ) (*Handler, error) {
-	client, err := centralclient.AuthenticatedCentralHTTPClient(centralEndpoint, centralCertificates)
+	// Create HTTP client WITHOUT service cert token
+	// The GraphQL gateway provides its own Authorization header (scoped token),
+	// so we don't want the automatic service cert token injection
+	var opts []clientconn.ConnectionOption
+	if len(centralCertificates) != 0 {
+		opts = append(opts, clientconn.AddRootCAs(centralCertificates...))
+	}
+
+	transport, err := clientconn.AuthenticatedHTTPTransport(centralEndpoint, mtls.CentralSubject, nil, opts...)
 	if err != nil {
-		return nil, errors.Wrap(err, "instantiating central HTTP transport")
+		return nil, errors.Wrap(err, "creating http transport")
+	}
+
+	client := &http.Client{
+		Transport: transport,
 	}
 
 	return &Handler{
@@ -166,15 +178,12 @@ func (h *Handler) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
 		return
 	}
 
-	// Prepare Central's GraphQL request
-	centralURL := url.URL{
-		Path: GraphQLPath,
-	}
-
+	// Prepare Central's GraphQL request with path-only URL
+	// The HTTP client transport will automatically fill in the scheme and host
 	centralRequest, err := http.NewRequestWithContext(
 		request.Context(),
 		http.MethodPost,
-		centralURL.String(),
+		GraphQLPath,
 		request.Body,
 	)
 	if err != nil {
