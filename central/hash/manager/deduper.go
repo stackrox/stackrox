@@ -90,6 +90,7 @@ func skipDedupe(msg *central.MsgFromSensor) bool {
 	case *central.SensorEvent_Synced:
 		return false
 	case *central.SensorEvent_Pod:
+		log.Infof("SHREWS -- pod: %v -- hash -- %v", msg.GetEvent().GetPod().GetName(), msg.GetEvent().GetSensorHash())
 		return false
 	case *central.SensorEvent_Deployment:
 		return false
