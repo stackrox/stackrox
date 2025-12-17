@@ -48,7 +48,7 @@ func (s *migrationTestSuite) TestMigration() {
 	numIndicators := 3000
 	for i := 0; i < numIndicators; i++ {
 		processIndicator := &storage.ProcessIndicator{}
-		s.NoError(testutils.FullInit(processIndicator, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
+		s.Require().NoError(testutils.FullInit(processIndicator, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 		processIndicator.Id = uuid.NewV4().String()
 
 		converted, err := oldSchema.ConvertProcessIndicatorFromProto(processIndicator)
@@ -69,12 +69,12 @@ func (s *migrationTestSuite) TestMigration() {
 	exists, err = indexhelper.IndexExists(s.ctx, s.db, tableName, podIndex, "hash")
 	s.Require().True(exists)
 
-	s.Require().NoError(migration.Run(dbs))
+	s.Assert().NoError(migration.Run(dbs))
 
 	s.verifyNewIndexes()
 
 	// Run the migration a second time to ensure idempotentcy.
-	s.Require().NoError(migration.Run(dbs))
+	s.Assert().NoError(migration.Run(dbs))
 
 	s.verifyNewIndexes()
 }
@@ -82,18 +82,18 @@ func (s *migrationTestSuite) TestMigration() {
 func (s *migrationTestSuite) verifyNewIndexes() {
 	// Verfiy hash indexes no longer exist.
 	exists, err := indexhelper.IndexExists(s.ctx, s.db, tableName, deploymentIndex, "hash")
-	s.Require().NoError(err)
-	s.Require().False(exists)
+	s.Assert().NoError(err)
+	s.Assert().False(exists)
 
 	exists, err = indexhelper.IndexExists(s.ctx, s.db, tableName, podIndex, "hash")
-	s.Require().NoError(err)
-	s.Require().False(exists)
+	s.Assert().NoError(err)
+	s.Assert().False(exists)
 
 	exists, err = indexhelper.IndexExists(s.ctx, s.db, tableName, deploymentIndex, "btree")
-	s.Require().NoError(err)
-	s.Require().True(exists)
+	s.Assert().NoError(err)
+	s.Assert().True(exists)
 
 	exists, err = indexhelper.IndexExists(s.ctx, s.db, tableName, podIndex, "btree")
-	s.Require().NoError(err)
-	s.Require().True(exists)
+	s.Assert().NoError(err)
+	s.Assert().True(exists)
 }
