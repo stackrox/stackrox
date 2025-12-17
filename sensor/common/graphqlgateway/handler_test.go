@@ -439,8 +439,3 @@ func TestHandler_Notify(t *testing.T) {
 func TestNewHandler(t *testing.T) {
 	t.Skip("NewHandler requires actual Central endpoint and certificates - test in integration tests")
 }
-
-// fakeK8sClient is a minimal fake for testing NewHandler
-type fakeK8sClient struct {
-	kubernetes.Interface
-}

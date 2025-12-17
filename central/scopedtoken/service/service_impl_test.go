@@ -520,9 +520,9 @@ func TestDetermineTTL(t *testing.T) {
 
 func TestValidateRequest(t *testing.T) {
 	tests := []struct {
-		name        string
-		req         *v1.IssueScopedTokenRequest
-		expectError bool
+		name          string
+		req           *v1.IssueScopedTokenRequest
+		expectError   bool
 		errorContains string
 	}{
 		{
