@@ -51,14 +51,9 @@ func reconcileFeatureDefaults(ctx context.Context, client ctrlClient.Client, u *
 		return errors.Wrap(err, "converting unstructured object to Central")
 	}
 
-	err := setDefaultsAndPersist(ctx, logger, &central, client)
+	err := setDefaultsAndPersist(ctx, logger, u, &central, client)
 	if err != nil {
 		return err
-	}
-
-	u.Object, err = runtime.DefaultUnstructuredConverter.ToUnstructured(&central)
-	if err != nil {
-		return errors.Wrap(err, "converting Central to unstructured object after extension execution")
 	}
 
 	if err := platform.AddCentralDefaultsToUnstructured(u, &central); err != nil {
@@ -68,13 +63,13 @@ func reconcileFeatureDefaults(ctx context.Context, client ctrlClient.Client, u *
 	return nil
 }
 
-func setDefaultsAndPersist(ctx context.Context, logger logr.Logger, central *platform.Central, client ctrlClient.Client) error {
-	baseCentral := central.DeepCopy()
+func setDefaultsAndPersist(ctx context.Context, logger logr.Logger, u *unstructured.Unstructured, central *platform.Central, client ctrlClient.Client) error {
+	baseCentral := u.DeepCopy()
 	patch := ctrlClient.MergeFrom(baseCentral)
 
-	// This may update central.Defaults and central's embedded annotations.
+	// This may update central.Defaults and central's embedded annotations in the unstructured u -- NOT in central.
 	for _, flow := range defaultingFlows {
-		if err := executeSingleDefaultingFlow(logger, central, client, flow); err != nil {
+		if err := executeSingleDefaultingFlow(logger, u, central, flow); err != nil {
 			return err
 		}
 	}
@@ -87,7 +82,7 @@ func setDefaultsAndPersist(ctx context.Context, logger logr.Logger, central *pla
 	// This updates central both on the cluster and in memory, which is crucial since this object is used for the final
 	// updating within helm-operator and we have concurrently running controllers (the status controller),
 	// whose changes we must preserve.
-	err := client.Patch(ctx, central, patch)
+	err := client.Patch(ctx, u, patch)
 	if err != nil {
 		return errors.Wrap(err, "patching Central annotations")
 	}
@@ -102,9 +97,9 @@ func setDefaultsAndPersist(ctx context.Context, logger logr.Logger, central *pla
 	return nil
 }
 
-func executeSingleDefaultingFlow(logger logr.Logger, central *platform.Central, client ctrlClient.Client, flow defaults.CentralDefaultingFlow) error {
+func executeSingleDefaultingFlow(logger logr.Logger, u *unstructured.Unstructured, central *platform.Central, flow defaults.CentralDefaultingFlow) error {
 	logger = logger.WithName(fmt.Sprintf("defaulting-flow-%s", flow.Name))
-	annotations := central.GetAnnotations()
+	annotations := u.GetAnnotations()
 	if annotations == nil {
 		annotations = make(map[string]string)
 	}
@@ -117,7 +112,7 @@ func executeSingleDefaultingFlow(logger logr.Logger, central *platform.Central, 
 	if err != nil {
 		return errors.Wrapf(err, "Central defaulting flow %s failed", flow.Name)
 	}
-	central.SetAnnotations(annotations)
+	u.SetAnnotations(annotations)
 
 	return nil
 }

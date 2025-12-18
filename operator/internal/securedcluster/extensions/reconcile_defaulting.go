@@ -51,14 +51,9 @@ func reconcileFeatureDefaults(ctx context.Context, client ctrlClient.Client, u *
 		return errors.Wrap(err, "converting unstructured object to SecuredCluster")
 	}
 
-	err := setDefaultsAndPersist(ctx, logger, &securedCluster, client)
+	err := setDefaultsAndPersist(ctx, logger, u, &securedCluster, client)
 	if err != nil {
 		return err
-	}
-
-	u.Object, err = runtime.DefaultUnstructuredConverter.ToUnstructured(&securedCluster)
-	if err != nil {
-		return errors.Wrap(err, "converting SecuredCluster to unstructured object after extension execution")
 	}
 
 	if err := platform.AddSecuredClusterDefaultsToUnstructured(u, &securedCluster); err != nil {
@@ -68,18 +63,18 @@ func reconcileFeatureDefaults(ctx context.Context, client ctrlClient.Client, u *
 	return nil
 }
 
-func setDefaultsAndPersist(ctx context.Context, logger logr.Logger, securedCluster *platform.SecuredCluster, client ctrlClient.Client) error {
+func setDefaultsAndPersist(ctx context.Context, logger logr.Logger, u *unstructured.Unstructured, securedCluster *platform.SecuredCluster, client ctrlClient.Client) error {
 	effectiveDefaultingFlows := defaultingFlows
 	if features.AdmissionControllerConfig.Enabled() {
 		effectiveDefaultingFlows = append(effectiveDefaultingFlows, defaults.SecuredClusterAdmissionControllerDefaultingFlow)
 	}
 
-	baseSecuredCluster := securedCluster.DeepCopy()
+	baseSecuredCluster := u.DeepCopy()
 	patch := ctrlClient.MergeFrom(baseSecuredCluster)
 
-	// This may update securedCluster.Defaults and securedCluster's embedded annotations.
+	// This may update securedCluster.Defaults and securedCluster's embedded annotations in the unstructured u -- NOT in securedCluster.
 	for _, flow := range effectiveDefaultingFlows {
-		if err := executeSingleDefaultingFlow(logger, securedCluster, flow); err != nil {
+		if err := executeSingleDefaultingFlow(logger, u, securedCluster, flow); err != nil {
 			return err
 		}
 	}
@@ -92,7 +87,7 @@ func setDefaultsAndPersist(ctx context.Context, logger logr.Logger, securedClust
 	// This updates securedCluster both on the cluster and in memory, which is crucial since this object is used for the final
 	// updating within helm-operator and we have concurrently running controllers (the status controller),
 	// whose changes we must preserve.
-	err := client.Patch(ctx, securedCluster, patch)
+	err := client.Patch(ctx, u, patch)
 	if err != nil {
 		return errors.Wrap(err, "patching SecuredCluster annotations")
 	}
@@ -107,9 +102,9 @@ func setDefaultsAndPersist(ctx context.Context, logger logr.Logger, securedClust
 	return nil
 }
 
-func executeSingleDefaultingFlow(logger logr.Logger, securedCluster *platform.SecuredCluster, flow defaults.SecuredClusterDefaultingFlow) error {
+func executeSingleDefaultingFlow(logger logr.Logger, u *unstructured.Unstructured, securedCluster *platform.SecuredCluster, flow defaults.SecuredClusterDefaultingFlow) error {
 	logger = logger.WithName(fmt.Sprintf("defaulting-flow-%s", flow.Name))
-	annotations := securedCluster.GetAnnotations()
+	annotations := u.GetAnnotations()
 	if annotations == nil {
 		annotations = make(map[string]string)
 	}
@@ -122,7 +117,7 @@ func executeSingleDefaultingFlow(logger logr.Logger, securedCluster *platform.Se
 	if err != nil {
 		return errors.Wrapf(err, "SecuredCluster defaulting flow %s failed", flow.Name)
 	}
-	securedCluster.SetAnnotations(annotations)
+	u.SetAnnotations(annotations)
 
 	return nil
 }
