@@ -2,6 +2,8 @@
 # https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners#about-code-owners
 # This will automatically assign a team / people as reviewers for PRs based on the files changed within the PR.
 
+# NOTE: the LAST matching line wins.
+
 # Core team's main responsibilities include policies including default policies and policy management workflows,
 # detection and alerting, integrations and notifiers, risk, vulnerability management and reporting, migrator and
 # interactions with Postgres.
@@ -45,9 +47,15 @@ qa-tests-backend/**/*       @janisz
 
 /ui/**/* @stackrox/ui
 
-image/templates/** @stackrox/install
-operator/**        @stackrox/install
-pkg/helm/**        @stackrox/install
+# Install team owns everything installation-related, including TLS cert management.
+central/securedclustercertgen/** @stackrox/install
+image/templates/**               @stackrox/install
+operator/**                      @stackrox/install
+pkg/crs/**                       @stackrox/install
+pkg/helm/**                      @stackrox/install
+sensor/kubernetes/certrefresh/** @stackrox/install @stackrox/sensor-ecosystem
+sensor/kubernetes/crs/**         @stackrox/install @stackrox/sensor-ecosystem
+roxctl/central/crs/**            @stackrox/install @stackrox/sensor-ecosystem
 
 # Scanner team's responsibilities include anything related to the scanner itself and scanning utilities
 # such as vulnerability uploading and image integrations.
