@@ -2,6 +2,7 @@ package postgres
 
 import (
 	"context"
+	"testing"
 	"time"
 
 	"github.com/jackc/pgx/v5"
@@ -1031,4 +1032,14 @@ func applyDefaultSort(q *v1.Query) *v1.Query {
 	}
 	// Add pagination sort order if needed.
 	return paginated.FillDefaultSortOption(q, defaultSortOption.CloneVT())
+}
+
+// For tesing only
+// NewForTest returns a new store instance for testing
+func NewForTest(_ testing.TB, db postgres.DB, noUpdateTimestamps bool, keyFence concurrency.KeyFence) store.Store {
+	return &storeImpl{
+		db:                 db,
+		noUpdateTimestamps: noUpdateTimestamps,
+		keyFence:           keyFence,
+	}
 }

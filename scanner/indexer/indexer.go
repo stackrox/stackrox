@@ -290,7 +290,7 @@ func NewIndexer(ctx context.Context, cfg config.IndexerConfig) (Indexer, error) 
 		vscnrs:          vscnrs,
 		pool:            pool,
 		root:            root,
-		getLayerTimeout: time.Duration(cfg.GetLayerTimeout),
+		getLayerTimeout: cfg.GetLayerTimeout,
 
 		metadataStore:          metadataStore,
 		externalIndexStore:     externalIndexStore,

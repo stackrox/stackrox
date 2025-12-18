@@ -265,7 +265,7 @@ func CollectPostgresDatabaseSizes(postgresConfig *postgres.Config) []*stats.Data
 
 		dbDetails := &stats.DatabaseDetailsStats{
 			DatabaseName: database,
-			DatabaseSize: int64(dbSize),
+			DatabaseSize: dbSize,
 		}
 		detailsSlice = append(detailsSlice, dbDetails)
 	}

@@ -306,7 +306,7 @@ func IPNetworkFromCIDR(cidr string) IPNetwork {
 
 	return IPNetwork{
 		ip:        IPFromBytes(ipNet.IP),
-		prefixLen: byte(uint8(ones)),
+		prefixLen: uint8(ones),
 	}
 }
 
@@ -320,7 +320,7 @@ func IPNetworkFromIPNet(ipNet net.IPNet) IPNetwork {
 
 	return IPNetwork{
 		ip:        addr,
-		prefixLen: byte(uint8(ones)),
+		prefixLen: uint8(ones),
 	}
 }
 
