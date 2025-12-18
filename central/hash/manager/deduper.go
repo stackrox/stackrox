@@ -126,12 +126,10 @@ func skipDedupe(msg *central.MsgFromSensor) bool {
 
 	// RBAC Resources
 	case *central.SensorEvent_ServiceAccount:
-		log.Infof("SHREWS -- service account: %v", msg.GetEvent().GetServiceAccount().GetName())
 		return false
 	case *central.SensorEvent_Role:
 		return false
 	case *central.SensorEvent_Binding:
-		log.Infof("SHREWS -- role binding: %v -- hash -- %v", msg.GetEvent().GetBinding().GetName(), msg.GetEvent().GetSensorHash())
 		return false
 
 	// Process and Runtime
@@ -343,7 +341,6 @@ func (d *deduperImpl) ShouldProcess(msg *central.MsgFromSensor) bool {
 	defer d.hashLock.Unlock()
 
 	prevValue, ok := d.getValueNoLock(key)
-	log.Infof("SHREWS -- old %v vs new %v", prevValue, event.GetSensorHash())
 	if ok && prevValue == event.GetSensorHash() {
 		return false
 	}
