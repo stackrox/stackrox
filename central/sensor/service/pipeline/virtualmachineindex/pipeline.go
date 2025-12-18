@@ -23,7 +23,7 @@ import (
 
 const (
 	// rateLimiterWorkload is the workload name used for rate limiting VM index reports.
-	rateLimiterWorkload = "vm_index_report"
+	rateLimiterWorkload = "vm-index-report"
 )
 
 var (
@@ -164,7 +164,7 @@ func sendVMIndexReportResponse(ctx context.Context, vmID string, action central.
 		HasCapability(centralsensor.SensorCapability) bool
 	})
 	if !ok || !conn.HasCapability(centralsensor.SensorACKSupport) {
-		log.Debugf("Sensor does not support SensorACK, skipping VM index report response for %s", vmID)
+		log.Debugf("Sensor does not support SensorACK; skipping VM index report response for %s", vmID)
 		return
 	}
 

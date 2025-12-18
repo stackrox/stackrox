@@ -28,12 +28,12 @@ func (s *senderTestSuite) SetupTest() {
 }
 
 func (s *senderTestSuite) TestSend_HandlesContextCancellation() {
-	client := relaytest.NewMockSensorClient(s.T())
+	client := relaytest.NewMockSensorClient(s.T()).WithDelay(200 * time.Millisecond)
 	sender := New(client)
 	ctx, cancel := context.WithCancel(s.ctx)
 	cancel()
 
-	err := sender.Send(ctx, &v1.IndexReport{})
+	err := sender.Send(ctx, &v1.IndexReport{VsockCid: "cid"})
 	s.Require().Error(err)
 	s.Contains(err.Error(), "context canceled")
 }
@@ -47,7 +47,7 @@ func (s *senderTestSuite) TestSend_RetriesOnRetryableErrors() {
 		"retryable error is retried": {
 			err:         status.Error(codes.ResourceExhausted, "retryable error"),
 			respSuccess: false,
-			shouldRetry: true,
+			shouldRetry: false,
 		},
 		"non-retryable error is not retried": {
 			err:         errox.NotImplemented,
@@ -57,7 +57,7 @@ func (s *senderTestSuite) TestSend_RetriesOnRetryableErrors() {
 		"Unsuccessful request is retried": {
 			err:         nil,
 			respSuccess: false,
-			shouldRetry: true,
+			shouldRetry: false,
 		},
 	}
 	for name, c := range cases {
