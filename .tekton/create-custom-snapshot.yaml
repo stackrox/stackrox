@@ -260,7 +260,7 @@ spec:
         - name: name
           value: create-snapshot-from-bundle
         - name: bundle
-          value: quay.io/rhacs-eng/konflux-tasks:pr-86@sha256:d3eb459dbb7db99dde6d18cf338a080999bb1c494b68b223e3498fb0a1cec37a
+          value: quay.io/rhacs-eng/konflux-tasks:pr-86@sha256:2e85cbf0d99bf4a78d9f3407fa94d8e1ffdc08c9e9563c682f96aa99ed11aaa5
         - name: kind
           value: task
         resolver: bundles
