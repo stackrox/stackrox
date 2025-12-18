@@ -1,15 +1,21 @@
 import { useQuery } from '@apollo/client';
+import { Flex, PageSection } from '@patternfly/react-core';
 
-import { PageBody } from 'Components/Panel';
 import { searchCategories } from 'constants/entityTypes';
 import { SEARCH_OPTIONS_QUERY } from 'queries/search';
 import useURLPagination from 'hooks/useURLPagination';
 import useURLSort from 'hooks/useURLSort';
 import useURLSearch from 'hooks/useURLSearch';
-import { getHasSearchApplied } from 'utils/searchUtils';
 
-import RiskPageHeader from './RiskPageHeader';
+import SearchFilterInput from 'Components/SearchFilterInput';
+import searchOptionsToQuery from 'services/searchOptionsToQuery';
+import {
+    ORCHESTRATOR_COMPONENTS_KEY,
+    orchestratorComponentsOption,
+} from 'utils/orchestratorComponents';
+
 import RiskTablePanel, { sortFields, defaultSortOption } from './RiskTablePanel';
+import RiskPageHeader from './RiskPageHeader';
 
 const DEFAULT_RISK_PAGE_SIZE = 20;
 
@@ -22,8 +28,6 @@ function RiskTablePage() {
     const urlPagination = useURLPagination(DEFAULT_RISK_PAGE_SIZE);
     const urlSearch = useURLSearch();
 
-    const isViewFiltered = getHasSearchApplied(urlSearch.searchFilter);
-
     const searchQueryOptions = {
         variables: {
             categories: [searchCategories.DEPLOYMENT],
@@ -34,32 +38,48 @@ function RiskTablePage() {
     const filteredSearchOptions = searchOptions.filter(
         (option) => option !== 'Orchestrator Component'
     );
+
+    const autoCompleteCategory = searchCategories.DEPLOYMENT;
+
+    const orchestratorComponentShowState = localStorage.getItem(ORCHESTRATOR_COMPONENTS_KEY);
+    const prependAutocompleteQuery =
+        orchestratorComponentShowState !== 'true' ? orchestratorComponentsOption : [];
+
     return (
         <>
-            <RiskPageHeader
-                isViewFiltered={isViewFiltered}
-                searchOptions={filteredSearchOptions}
-                searchFilter={urlSearch.searchFilter}
-                onSearch={(newSearchFilter) => {
-                    urlPagination.setPage(1);
-                    urlSearch.setSearchFilter(newSearchFilter);
-                }}
-            />
-            <PageBody>
-                <div className="flex-shrink-1 overflow-hidden w-full">
-                    <RiskTablePanel
-                        isViewFiltered={isViewFiltered}
-                        sortOption={urlSort.sortOption}
-                        getSortParams={urlSort.getSortParams}
-                        searchFilter={urlSearch.searchFilter}
-                        onSearchFilterChange={(newSearchFilter) => {
-                            urlSearch.setSearchFilter(newSearchFilter);
-                            urlPagination.setPage(1);
-                        }}
-                        pagination={urlPagination}
-                    />
-                </div>
-            </PageBody>
+            <RiskPageHeader />
+            {/* Nested PageSection here for visual consistency **as-is**. Once we move to Patternfly 6, we can remove this and clean up */}
+            <PageSection>
+                <PageSection variant="light" component="div">
+                    <Flex
+                        direction={{ default: 'column' }}
+                        spaceItems={{ default: 'spaceItemsMd' }}
+                    >
+                        <SearchFilterInput
+                            className="w-full"
+                            searchFilter={urlSearch.searchFilter}
+                            searchOptions={filteredSearchOptions}
+                            searchCategory={autoCompleteCategory}
+                            placeholder="Filter deployments"
+                            handleChangeSearchFilter={(newSearchFilter) => {
+                                urlSearch.setSearchFilter(newSearchFilter);
+                                urlPagination.setPage(1);
+                            }}
+                            autocompleteQueryPrefix={searchOptionsToQuery(prependAutocompleteQuery)}
+                        />
+                        <RiskTablePanel
+                            sortOption={urlSort.sortOption}
+                            getSortParams={urlSort.getSortParams}
+                            searchFilter={urlSearch.searchFilter}
+                            onSearchFilterChange={(newSearchFilter) => {
+                                urlSearch.setSearchFilter(newSearchFilter);
+                                urlPagination.setPage(1);
+                            }}
+                            pagination={urlPagination}
+                        />
+                    </Flex>
+                </PageSection>
+            </PageSection>
         </>
     );
 }

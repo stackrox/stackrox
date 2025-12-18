@@ -147,24 +147,5 @@ describe('Risk', () => {
                 cy.get(RiskPageSelectors.table.dataRows).should('have.length', staticCount);
             });
         });
-
-        it('should not use invalid URL search param key/value pair in its search bar', () => {
-            visitRiskDeployments();
-
-            const sillyOption = 'Wingardium';
-            const sillyValue = 'leviosa';
-            cy.get(RiskPageSelectors.table.dataRows).then((allDeps) => {
-                const allCount = allDeps.length;
-
-                visitRiskDeploymentsWithSearchQuery(`?s[${sillyOption}]=${sillyValue}`);
-
-                // Positive assertion:
-                cy.get(searchPlaceholderSelector);
-                // Negative assertion:
-                cy.get(RiskPageSelectors.search.searchLabels).should('not.exist');
-
-                cy.get(RiskPageSelectors.table.dataRows).should('have.length', allCount);
-            });
-        });
     });
 });
