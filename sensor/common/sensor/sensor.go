@@ -402,22 +402,12 @@ func (s *Sensor) notifyAllOnSignal(signal *concurrency.Signal, centralCommunicat
 	}
 }
 
-// shouldResetBackoff determines whether exponential backoff should be reset
-// based on connection stability duration.
-func shouldResetBackoff(connectionStart time.Time, stableDuration time.Duration) bool {
-	if stableDuration == 0 {
-		return true // Legacy behavior
-	}
-	elapsed := time.Since(connectionStart)
-	return elapsed >= stableDuration
-}
-
-// handleBackoffOnConnectionStop manages backoff reset and logging based on connection stability.
-// Returns true if backoff was reset, false if preserved.
+// handleBackoffOnConnectionStop resets backoff if connection was stable long enough, otherwise preserves it.
 func handleBackoffOnConnectionStop(exponential *backoff.ExponentialBackOff, connectionStart time.Time, stableDuration time.Duration, err error) bool {
 	elapsed := time.Since(connectionStart)
 
-	if shouldResetBackoff(connectionStart, stableDuration) {
+	// Reset logic (includes legacy behavior when stableDuration == 0)
+	if stableDuration == 0 || elapsed >= stableDuration {
 		exponential.Reset()
 		if stableDuration == 0 {
 			log.Info("Connection stable duration is 0, resetting exponential backoff immediately (legacy behavior)")
@@ -429,51 +419,43 @@ func handleBackoffOnConnectionStop(exponential *backoff.ExponentialBackOff, conn
 	}
 
 	// Preserve backoff to prevent rapid retries; distinguish intentional shutdowns from failures
-	if err != nil && errors.Is(err, context.Canceled) {
+	switch {
+	case err != nil && errors.Is(err, context.Canceled):
 		log.Infof("Connection stopped after %s (before stable duration %s); intentional shutdown, preserving exponential backoff state",
 			elapsed.Round(time.Second), stableDuration)
-	} else if err != nil {
+	case err != nil:
 		log.Warnf("Connection failed after %s (before stable duration %s), preserving exponential backoff to prevent rapid retries",
 			elapsed.Round(time.Second), stableDuration)
-	} else {
+	default:
 		log.Infof("Connection stopped after %s (before stable duration %s), preserving exponential backoff state",
 			elapsed.Round(time.Second), stableDuration)
 	}
 	return false
 }
 
-// shouldDisableReconcile determines if client reconciliation should be disabled based on the error.
-// Returns true if reconciliation should be disabled.
-func shouldDisableReconcile(err error) bool {
-	if err == nil {
-		return false
-	}
-	return errors.Is(err, errCantReconcile)
-}
-
-// handleReconnectionError logs appropriate messages for reconnection errors and determines
-// if reconciliation should be disabled. Returns true if reconciliation should be disabled.
-func handleReconnectionError(err error) bool {
-	if err == nil {
+// handleReconnectionError logs reconnection errors and returns true if reconciliation should be disabled.
+func handleReconnectionError(err error) (disableReconcile bool) {
+	switch {
+	case err == nil:
 		log.Info("Communication with Central stopped. Retrying.")
 		return false
-	}
 
-	disableReconcile := false
-	if errors.Is(err, errCantReconcile) {
+	case errors.Is(err, errCantReconcile):
 		if errors.Is(err, errLargePayload) {
-			log.Warnf("Deduper payload is too large for sensor to handle. Sensor will reconnect without client reconciliation. " +
-				"Consider increasing the maximum receive message size in sensor 'ROX_GRPC_MAX_MESSAGE_SIZE'")
+			log.Warnf(
+				"Deduper payload is too large for sensor to handle. Sensor will reconnect without client reconciliation. " +
+					"Consider increasing the maximum receive message size in sensor 'ROX_GRPC_MAX_MESSAGE_SIZE'",
+			)
 		} else {
 			log.Warnf("Sensor cannot reconcile due to: %v", err)
 		}
-		disableReconcile = true
 		log.Infof("Communication with Central stopped with error: %v. Retrying.", err)
-	}
-	if !errors.Is(err, errCantReconcile) {
+		return true
+
+	default:
 		log.Infof("Communication with Central stopped: %v. Retrying.", err)
+		return false
 	}
-	return disableReconcile
 }
 
 func (s *Sensor) communicationWithCentralWithRetries(centralReachable *concurrency.Flag) {
@@ -513,7 +495,6 @@ func (s *Sensor) communicationWithCentralWithRetries(centralReachable *concurren
 		centralCommunication.Start(central.NewSensorServiceClient(s.centralConnection), centralReachable, &syncDone, s.configHandler, s.detector)
 		go s.notifySyncDone(&syncDone, centralCommunication)
 
-		// Track connection start time to determine when to reset backoff.
 		// We only reset backoff after the connection has been stable for the configured duration.
 		// This prevents rapid retries when initial sync (config, policy, deduper state) fails.
 		// See ROX-29270: Sensor backoff reset DoS issue.
@@ -524,17 +505,14 @@ func (s *Sensor) communicationWithCentralWithRetries(centralReachable *concurren
 		case <-s.centralCommunication.Stopped().WaitC():
 			err := s.centralCommunication.Stopped().Err()
 
-			// Handle backoff reset decision and logging
 			handleBackoffOnConnectionStop(exponential, connectionStartTime, stableDuration, err)
 
-			// Handle reconnection error logging and reconciliation decision
 			if handleReconnectionError(err) {
 				s.reconcile.Store(false)
 			}
 
 			s.changeState(common.SensorComponentEventOfflineMode)
 			s.reconnect.Store(true)
-			// Check s.centralConnectionFactory.*Signal() to probe connection state
 			go s.centralConnectionFactory.SetCentralConnectionWithRetries(s.clusterID, s.centralConnection, s.certLoader)
 			return wrapOrNewError(err, "communication stopped")
 		case <-s.stoppedSig.WaitC():

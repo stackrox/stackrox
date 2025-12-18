@@ -9,42 +9,6 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-// TestShouldResetBackoff tests the backoff reset decision logic
-func TestShouldResetBackoff(t *testing.T) {
-	tests := []struct {
-		name            string
-		connectionStart time.Time
-		stableDuration  time.Duration
-		expectedReset   bool
-	}{
-		{
-			name:            "legacy mode - zero duration always resets",
-			connectionStart: time.Now().Add(-30 * time.Second),
-			stableDuration:  0,
-			expectedReset:   true,
-		},
-		{
-			name:            "connection stable - should reset",
-			connectionStart: time.Now().Add(-70 * time.Second),
-			stableDuration:  60 * time.Second,
-			expectedReset:   true,
-		},
-		{
-			name:            "early failure - preserve backoff",
-			connectionStart: time.Now().Add(-15 * time.Second),
-			stableDuration:  60 * time.Second,
-			expectedReset:   false,
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			result := shouldResetBackoff(tt.connectionStart, tt.stableDuration)
-			assert.Equal(t, tt.expectedReset, result)
-		})
-	}
-}
-
 // TestHandleBackoffOnConnectionStop tests the backoff management logic on connection stop
 func TestHandleBackoffOnConnectionStop(t *testing.T) {
 	tests := []struct {
@@ -121,43 +85,6 @@ func TestHandleBackoffOnConnectionStop(t *testing.T) {
 				assert.Greater(t, nextInterval, interval2,
 					"Without reset, backoff should continue growing beyond %v, got %v", interval2, nextInterval)
 			}
-		})
-	}
-}
-
-// TestShouldDisableReconcile tests the reconciliation disable decision
-func TestShouldDisableReconcile(t *testing.T) {
-	tests := []struct {
-		name           string
-		err            error
-		expectDisabled bool
-	}{
-		{
-			name:           "no error - reconciliation enabled",
-			err:            nil,
-			expectDisabled: false,
-		},
-		{
-			name:           "generic error - reconciliation enabled",
-			err:            assert.AnError,
-			expectDisabled: false,
-		},
-		{
-			name:           "can't reconcile error - disable reconciliation",
-			err:            errCantReconcile,
-			expectDisabled: true,
-		},
-		{
-			name:           "large payload error - disable reconciliation",
-			err:            errLargePayload,
-			expectDisabled: true,
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			result := shouldDisableReconcile(tt.err)
-			assert.Equal(t, tt.expectDisabled, result)
 		})
 	}
 }
