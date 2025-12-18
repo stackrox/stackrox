@@ -151,7 +151,7 @@ func (suite *ServiceTestSuite) TestValidateBaseImageRepository() {
 			if tt.expectedValid {
 				suite.NoError(err, "validateBaseImageRepository(%q) expected no error", tt.input)
 			} else {
-				suite.Error(err, "validateBaseImageRepository(%q) expected error", tt.input)
+				suite.Errorf(err, "validateBaseImageRepository(%q) expected error", tt.input)
 				if tt.expectedErrMsg != "" {
 					suite.Contains(err.Error(), tt.expectedErrMsg, "validateBaseImageRepository(%q) error message", tt.input)
 				}
@@ -210,7 +210,7 @@ func (suite *ServiceTestSuite) TestIsValidTagPattern() {
 			valid, err := isValidTagPattern(tt.input)
 			suite.Equal(tt.expectedValid, valid, "isValidTagPattern(%q) valid", tt.input)
 			if tt.expectedErrMsg != "" {
-				suite.Error(err, "isValidTagPattern(%q) expected error", tt.input)
+				suite.Errorf(err, "isValidTagPattern(%q) expected error", tt.input)
 				suite.Contains(err.Error(), tt.expectedErrMsg, "isValidTagPattern(%q) error message", tt.input)
 			} else {
 				suite.NoError(err, "isValidTagPattern(%q) expected no error", tt.input)
