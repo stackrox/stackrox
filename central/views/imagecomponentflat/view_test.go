@@ -16,7 +16,6 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/sac"
@@ -81,10 +80,6 @@ func (f *filterImpl) withComponentFilter(fn func(component *storage.EmbeddedImag
 }
 
 func TestImageComponentFlatView(t *testing.T) {
-	if !features.FlattenCVEData.Enabled() {
-		t.Skip("FlattenCVEData is disabled")
-	}
-
 	suite.Run(t, new(ImageComponentFlatViewTestSuite))
 }
 
@@ -412,55 +407,55 @@ func (s *ImageComponentFlatViewTestSuite) testCases() []testCase {
 		{
 			desc: "search one component",
 			ctx:  context.Background(),
-			q:    search.NewQueryBuilder().AddExactMatches(search.Component, "postgresql-libs").ProtoQuery(),
+			q:    search.NewQueryBuilder().AddExactMatches(search.Component, "bash").ProtoQuery(),
 			matchFilter: matchAllFilter().withComponentFilter(func(component *storage.EmbeddedImageScanComponent) bool {
-				return component.GetName() == "postgresql-libs"
+				return component.GetName() == "bash"
 			}),
 		},
 		{
 			desc: "search one image",
 			ctx:  context.Background(),
 			q: search.NewQueryBuilder().
-				AddExactMatches(search.ImageName, "quay.io/appcontainers/wordpress:latest").ProtoQuery(),
+				AddExactMatches(search.ImageName, "docker.io/library/ubuntu:20.04").ProtoQuery(),
 			matchFilter: matchAllFilter().withImageFilter(func(image *storage.Image) bool {
-				return image.GetName().GetFullName() == "quay.io/appcontainers/wordpress:latest"
+				return image.GetName().GetFullName() == "docker.io/library/ubuntu:20.04"
 			}),
 		},
 		{
 			desc: "search one component + one image",
 			ctx:  context.Background(),
 			q: search.NewQueryBuilder().
-				AddExactMatches(search.Component, "base-files").
-				AddExactMatches(search.ImageName, "quay.io/appcontainers/wordpress:debian").
+				AddExactMatches(search.Component, "curl").
+				AddExactMatches(search.ImageName, "docker.io/library/debian:bullseye").
 				ProtoQuery(),
 			matchFilter: matchAllFilter().
 				withImageFilter(func(image *storage.Image) bool {
-					return image.GetName().GetFullName() == "quay.io/appcontainers/wordpress:debian"
+					return image.GetName().GetFullName() == "docker.io/library/debian:bullseye"
 				}).
 				withComponentFilter(func(component *storage.EmbeddedImageScanComponent) bool {
-					return component.GetName() == "base-files"
+					return component.GetName() == "curl"
 				}),
 		},
 		{
 			desc: "search component version",
 			ctx:  context.Background(),
 			q: search.NewQueryBuilder().
-				AddExactMatches(search.ComponentVersion, "8.4.20-6.el6").
+				AddExactMatches(search.ComponentVersion, "1.21.3-r0").
 				ProtoQuery(),
 			matchFilter: matchAllFilter().
 				withComponentFilter(func(component *storage.EmbeddedImageScanComponent) bool {
-					return component.GetVersion() == "8.4.20-6.el6"
+					return component.GetVersion() == "1.21.3-r0"
 				}),
 		},
 		{
 			desc: "search operating system",
 			ctx:  context.Background(),
 			q: search.NewQueryBuilder().
-				AddExactMatches(search.OperatingSystem, "debian:8").
+				AddExactMatches(search.OperatingSystem, "debian:bullseye").
 				ProtoQuery(),
 			matchFilter: matchAllFilter().
 				withImageFilter(func(image *storage.Image) bool {
-					return image.GetScan().GetOperatingSystem() == "debian:8"
+					return image.GetScan().GetOperatingSystem() == "debian:bullseye"
 				}),
 		},
 		{
@@ -642,7 +637,7 @@ func (s *ImageComponentFlatViewTestSuite) compileExpected(images []*storage.Imag
 			continue
 		}
 
-		for _, component := range image.GetScan().GetComponents() {
+		for idx, component := range image.GetScan().GetComponents() {
 			if !filter.matchComponent(component) {
 				continue
 			}
@@ -654,10 +649,7 @@ func (s *ImageComponentFlatViewTestSuite) compileExpected(images []*storage.Imag
 			val := componentMap[key]
 			if val == nil {
 				// Generate component ID for this specific component in this image
-				componentID, err := scancomponent.ComponentIDV2(component, image.GetId())
-				if err != nil {
-					continue // Skip this component if ID generation fails
-				}
+				componentID := scancomponent.ComponentIDV2(component, image.GetId(), idx)
 
 				// Initialize new component entry
 				topCvss := component.GetTopCvss()
@@ -673,10 +665,7 @@ func (s *ImageComponentFlatViewTestSuite) compileExpected(images []*storage.Imag
 				componentMap[key] = val
 			} else {
 				// Aggregate data for the same component (same name+version+OS across different images)
-				componentID, err := scancomponent.ComponentIDV2(component, image.GetId())
-				if err != nil {
-					continue // Skip this component if ID generation fails
-				}
+				componentID := scancomponent.ComponentIDV2(component, image.GetId(), idx)
 
 				// Add this component ID to the list (DISTINCT aggregation in SQL)
 				val.ComponentIDs = append(val.ComponentIDs, componentID)
