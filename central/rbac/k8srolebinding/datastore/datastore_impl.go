@@ -29,6 +29,7 @@ func (d *datastoreImpl) SearchRoleBindings(ctx context.Context, q *v1.Query) ([]
 	if q == nil {
 		q = searchPkg.EmptyQuery()
 	}
+	q = q.CloneVT()
 
 	// Add name field to select columns
 	q.Selects = append(q.GetSelects(), searchPkg.NewQuerySelect(searchPkg.RoleBindingName).Proto())
