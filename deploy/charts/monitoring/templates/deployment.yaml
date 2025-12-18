@@ -74,6 +74,9 @@ spec:
           - name: grafana-dashboards-volume
             mountPath: /etc/grafana/provisioning/dashboards
             readOnly: true
+          - name: grafana-dashboards-vm-volume
+            mountPath: /etc/grafana/provisioning/dashboards-vm
+            readOnly: true
           - name: grafana-plugins-volume
             mountPath: /etc/grafana/provisioning/plugins
           - name: grafana-notifiers-volume
@@ -124,6 +127,9 @@ spec:
       - name: grafana-dashboards-volume
         configMap:
           name: grafana-dashboards
+      - name: grafana-dashboards-vm-volume
+        configMap:
+          name: grafana-dashboards-vm
       - name: grafana-var-volume
         emptyDir: {}
       - name: grafana-notifiers-volume
