@@ -11,7 +11,7 @@ func TestTranslateConfiguration(t *testing.T) {
 	config := makeTestMetricLabels(t)
 	testFilters := makeTestLabelFilters(t)
 
-	tracker := MakeTrackerBase("test", "desc", testLabelGetters, nil)
+	tracker := MakeTrackerBase("test", "desc", testLabelGetters, nilGatherFunc)
 	md, lf, err := tracker.translateStorageConfiguration(config)
 	assert.NoError(t, err)
 	assert.Equal(t, makeTestMetricDescriptors(t), md)
@@ -55,7 +55,7 @@ func Test_validateMetricName(t *testing.T) {
 }
 
 func Test_noLabels(t *testing.T) {
-	tracker := MakeTrackerBase("test", "desc", testLabelGetters, nil)
+	tracker := MakeTrackerBase("test", "desc", testLabelGetters, nilGatherFunc)
 
 	for _, labels := range []*storage.PrometheusMetrics_Group_Labels{{Labels: []string{}}, {}, nil} {
 		config := map[string]*storage.PrometheusMetrics_Group_Labels{
@@ -77,7 +77,7 @@ func Test_parseErrors(t *testing.T) {
 			Labels: []string{"unknown"},
 		},
 	}
-	tracker := MakeTrackerBase("test", "desc", testLabelGetters, nil)
+	tracker := MakeTrackerBase("test", "desc", testLabelGetters, nilGatherFunc)
 
 	md, _, err := tracker.translateStorageConfiguration(config)
 	assert.Equal(t, `invalid configuration: label "unknown" for metric "test_metric1" is not in the list of known labels [CVE CVSS Cluster IsFixable Namespace Severity test]`, err.Error())
@@ -97,7 +97,7 @@ func Test_parseErrors(t *testing.T) {
 			},
 		},
 	}
-	tracker = MakeTrackerBase("test", "desc", testLabelGetters, nil)
+	tracker = MakeTrackerBase("test", "desc", testLabelGetters, nilGatherFunc)
 
 	md, _, err = tracker.translateStorageConfiguration(config)
 	assert.Equal(t, `invalid configuration: label "filter_unknown_label" for metric "test_metric1" is not in the list of known labels [CVE CVSS Cluster IsFixable Namespace Severity test]`, err.Error())
@@ -111,7 +111,7 @@ func Test_parseErrors(t *testing.T) {
 			},
 		},
 	}
-	tracker = MakeTrackerBase("test", "desc", testLabelGetters, nil)
+	tracker = MakeTrackerBase("test", "desc", testLabelGetters, nilGatherFunc)
 
 	md, _, err = tracker.translateStorageConfiguration(config)
 	assert.Equal(t, "invalid configuration: bad filter expression for metric \"test_metric1\" label \"Namespace\": error parsing regexp: invalid character class range: `1-$`", err.Error())
