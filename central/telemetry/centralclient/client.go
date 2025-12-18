@@ -11,7 +11,6 @@ import (
 	installationDS "github.com/stackrox/rox/central/installation/store"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/env"
-	"github.com/stackrox/rox/pkg/grpc"
 	"github.com/stackrox/rox/pkg/grpc/client/authn/basic"
 	"github.com/stackrox/rox/pkg/images/defaults"
 	"github.com/stackrox/rox/pkg/logging"
@@ -174,10 +173,7 @@ func Singleton() *CentralClient {
 
 // RegisterCentralClient adds call interceptors, adds central and admin user
 // to the tenant group.
-func (c *CentralClient) RegisterCentralClient(gc *grpc.Config, basicAuthProviderID string) {
-	gc.HTTPInterceptors = append(gc.HTTPInterceptors, c.GetHTTPInterceptor())
-	gc.UnaryInterceptors = append(gc.UnaryInterceptors, c.GetGRPCInterceptor())
-
+func (c *CentralClient) RegisterCentralClient(basicAuthProviderID string) {
 	groups := c.WithGroups()
 	// Central adds itself to the tenant group, with no group properties:
 	c.Group(groups...)
