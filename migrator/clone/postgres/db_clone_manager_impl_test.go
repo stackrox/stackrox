@@ -133,8 +133,6 @@ func (s *PostgresCloneManagerSuite) TestScanRestoreFromFuture() {
 }
 
 func (s *PostgresCloneManagerSuite) TestScanRestoreFromUnsupportedVersion() {
-	pgtest.DropDatabase(s.T(), tempDB)
-	pgtest.DropDatabase(s.T(), migrations.PreviousDatabase)
 	pgtest.DropDatabase(s.T(), migrations.BackupDatabase)
 
 	dbm := New("", s.config, s.sourceMap)
