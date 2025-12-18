@@ -6,6 +6,7 @@ import (
 	"context"
 	"testing"
 
+	"github.com/pkg/errors"
 	deploymentDS "github.com/stackrox/rox/central/deployment/datastore"
 	lifecycleMocks "github.com/stackrox/rox/central/detection/lifecycle/mocks"
 	"github.com/stackrox/rox/central/processbaseline/datastore"
@@ -15,6 +16,7 @@ import (
 	"github.com/stackrox/rox/central/reprocessor/mocks"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
@@ -151,6 +153,8 @@ var (
 			ContainerName: "container4",
 		},
 	}
+
+	noCriteriaError = errors.Wrap(errox.InvalidArgs, "At least one parameter must not be empty or a wild card, not counting container name")
 )
 
 func TestProcessBaselineServiceReal(t *testing.T) {
@@ -222,6 +226,7 @@ func (suite *ProcessBaselineServiceRealTestSuite) TestGetProcessBaselineBulk() {
 		name              string
 		query             *v1.ProcessBaselineQuery
 		expectedBaselines []*storage.ProcessBaseline
+		err               error
 	}{
 		{
 			name: "Filter by cluster ID",
@@ -229,6 +234,7 @@ func (suite *ProcessBaselineServiceRealTestSuite) TestGetProcessBaselineBulk() {
 				ClusterIds: []string{cluster1},
 			},
 			expectedBaselines: []*storage.ProcessBaseline{baseline1, baseline2},
+			err:               nil,
 		},
 		{
 			name: "Filter by namespace",
@@ -237,6 +243,7 @@ func (suite *ProcessBaselineServiceRealTestSuite) TestGetProcessBaselineBulk() {
 				ClusterIds: []string{"*"},
 			},
 			expectedBaselines: []*storage.ProcessBaseline{baseline2, baseline3, baseline4, baseline5},
+			err:               nil,
 		},
 		{
 			name: "Filter by deployment ID",
@@ -245,38 +252,43 @@ func (suite *ProcessBaselineServiceRealTestSuite) TestGetProcessBaselineBulk() {
 				ClusterIds:    []string{"*"},
 			},
 			expectedBaselines: []*storage.ProcessBaseline{baseline1},
+			err:               nil,
 		},
 		{
 			name: "Filter by container name container1",
 			query: &v1.ProcessBaselineQuery{
 				ContainerNames: []string{"container1"},
-				ClusterIds:     []string{"*"},
+				ClusterIds:     []string{cluster1, cluster2},
 			},
 			expectedBaselines: []*storage.ProcessBaseline{baseline1, baseline3},
+			err:               nil,
 		},
 		{
 			name: "Filter by container name container2",
 			query: &v1.ProcessBaselineQuery{
 				ContainerNames: []string{"container2"},
-				ClusterIds:     []string{"*"},
+				ClusterIds:     []string{cluster1, cluster2},
 			},
 			expectedBaselines: []*storage.ProcessBaseline{baseline2},
+			err:               nil,
 		},
 		{
 			name: "Filter by container name container3",
 			query: &v1.ProcessBaselineQuery{
 				ContainerNames: []string{"container3"},
-				ClusterIds:     []string{"*"},
+				ClusterIds:     []string{cluster1, cluster2},
 			},
 			expectedBaselines: []*storage.ProcessBaseline{baseline4},
+			err:               nil,
 		},
 		{
 			name: "Filter by container name container4",
 			query: &v1.ProcessBaselineQuery{
 				ContainerNames: []string{"container4"},
-				ClusterIds:     []string{"*"},
+				ClusterIds:     []string{cluster1, cluster2},
 			},
 			expectedBaselines: []*storage.ProcessBaseline{baseline5},
+			err:               nil,
 		},
 		{
 			name: "Filter by deployment name",
@@ -285,6 +297,7 @@ func (suite *ProcessBaselineServiceRealTestSuite) TestGetProcessBaselineBulk() {
 				ClusterIds:      []string{"*"},
 			},
 			expectedBaselines: []*storage.ProcessBaseline{baseline1, baseline3, baseline4, baseline5},
+			err:               nil,
 		},
 		{
 			name: "Filter by deployment name test-deployment-2",
@@ -293,6 +306,7 @@ func (suite *ProcessBaselineServiceRealTestSuite) TestGetProcessBaselineBulk() {
 				ClusterIds:      []string{"*"},
 			},
 			expectedBaselines: []*storage.ProcessBaseline{baseline2},
+			err:               nil,
 		},
 		{
 			name: "Filter by image nginx:1.19",
@@ -301,6 +315,7 @@ func (suite *ProcessBaselineServiceRealTestSuite) TestGetProcessBaselineBulk() {
 				ClusterIds: []string{"*"},
 			},
 			expectedBaselines: []*storage.ProcessBaseline{baseline1},
+			err:               nil,
 		},
 		{
 			name: "Filter by image redis:6.0",
@@ -309,6 +324,7 @@ func (suite *ProcessBaselineServiceRealTestSuite) TestGetProcessBaselineBulk() {
 				ClusterIds: []string{"*"},
 			},
 			expectedBaselines: []*storage.ProcessBaseline{baseline2, baseline3, baseline4},
+			err:               nil,
 		},
 		{
 			name: "Filter by image redis:6.0 and container1",
@@ -318,6 +334,7 @@ func (suite *ProcessBaselineServiceRealTestSuite) TestGetProcessBaselineBulk() {
 				ClusterIds:     []string{"*"},
 			},
 			expectedBaselines: []*storage.ProcessBaseline{baseline3},
+			err:               nil,
 		},
 		{
 			name: "Filter by cluster and namespace",
@@ -326,6 +343,7 @@ func (suite *ProcessBaselineServiceRealTestSuite) TestGetProcessBaselineBulk() {
 				Namespaces: []string{namespace1},
 			},
 			expectedBaselines: []*storage.ProcessBaseline{baseline1},
+			err:               nil,
 		},
 		{
 			name: "Filter by deployment name and image",
@@ -335,6 +353,7 @@ func (suite *ProcessBaselineServiceRealTestSuite) TestGetProcessBaselineBulk() {
 				ClusterIds:      []string{"*"},
 			},
 			expectedBaselines: []*storage.ProcessBaseline{baseline1},
+			err:               nil,
 		},
 		{
 			name: "Filter by image and container name",
@@ -344,13 +363,15 @@ func (suite *ProcessBaselineServiceRealTestSuite) TestGetProcessBaselineBulk() {
 				ClusterIds:     []string{"*"},
 			},
 			expectedBaselines: []*storage.ProcessBaseline{baseline1},
+			err:               nil,
 		},
 		{
 			name: "No filters returns all baselines",
 			query: &v1.ProcessBaselineQuery{
 				ClusterIds: []string{"*"},
 			},
-			expectedBaselines: baselines,
+			expectedBaselines: nil,
+			err:               noCriteriaError,
 		},
 		{
 			name: "Filter by non-existent deployment name",
@@ -359,6 +380,7 @@ func (suite *ProcessBaselineServiceRealTestSuite) TestGetProcessBaselineBulk() {
 				ClusterIds:      []string{"*"},
 			},
 			expectedBaselines: []*storage.ProcessBaseline{},
+			err:               nil,
 		},
 		{
 			name: "Filter by non-existent image",
@@ -367,6 +389,7 @@ func (suite *ProcessBaselineServiceRealTestSuite) TestGetProcessBaselineBulk() {
 				ClusterIds: []string{"*"},
 			},
 			expectedBaselines: []*storage.ProcessBaseline{},
+			err:               nil,
 		},
 	}
 
@@ -377,7 +400,11 @@ func (suite *ProcessBaselineServiceRealTestSuite) TestGetProcessBaselineBulk() {
 			}
 
 			resp, err := suite.service.GetProcessBaselineBulk(writeCtx, request)
-			suite.NoError(err)
+			if tc.err == nil {
+				suite.NoError(err)
+			} else {
+				suite.Error(err)
+			}
 
 			protoassert.ElementsMatch(t, tc.expectedBaselines, resp.GetBaselines())
 		})
@@ -405,7 +432,7 @@ func (suite *ProcessBaselineServiceRealTestSuite) TestGetProcessBaselineBulkPagi
 	suite.T().Run("Pagination - offset 0, limit 2", func(t *testing.T) {
 		request := &v1.GetProcessBaselinesBulkRequest{
 			Query: &v1.ProcessBaselineQuery{
-				ClusterIds: []string{"*"},
+				ClusterIds: []string{cluster1, cluster2},
 			},
 			Pagination: &v1.Pagination{
 				Offset: 0,
@@ -423,7 +450,7 @@ func (suite *ProcessBaselineServiceRealTestSuite) TestGetProcessBaselineBulkPagi
 	suite.T().Run("Pagination - offset 1, limit 2", func(t *testing.T) {
 		request := &v1.GetProcessBaselinesBulkRequest{
 			Query: &v1.ProcessBaselineQuery{
-				ClusterIds: []string{"*"},
+				ClusterIds: []string{cluster1, cluster2},
 			},
 			Pagination: &v1.Pagination{
 				Offset: 1,
@@ -441,7 +468,7 @@ func (suite *ProcessBaselineServiceRealTestSuite) TestGetProcessBaselineBulkPagi
 	suite.T().Run("Pagination - offset 2, limit 2", func(t *testing.T) {
 		request := &v1.GetProcessBaselinesBulkRequest{
 			Query: &v1.ProcessBaselineQuery{
-				ClusterIds: []string{"*"},
+				ClusterIds: []string{cluster1, cluster2},
 			},
 			Pagination: &v1.Pagination{
 				Offset: 4,
@@ -459,7 +486,7 @@ func (suite *ProcessBaselineServiceRealTestSuite) TestGetProcessBaselineBulkPagi
 	suite.T().Run("Pagination - offset beyond available results", func(t *testing.T) {
 		request := &v1.GetProcessBaselinesBulkRequest{
 			Query: &v1.ProcessBaselineQuery{
-				ClusterIds: []string{"*"},
+				ClusterIds: []string{cluster1, cluster2},
 			},
 			Pagination: &v1.Pagination{
 				Offset: 10,
@@ -477,7 +504,7 @@ func (suite *ProcessBaselineServiceRealTestSuite) TestGetProcessBaselineBulkPagi
 	suite.T().Run("Pagination - limit only", func(t *testing.T) {
 		request := &v1.GetProcessBaselinesBulkRequest{
 			Query: &v1.ProcessBaselineQuery{
-				ClusterIds: []string{"*"},
+				ClusterIds: []string{cluster1, cluster2},
 			},
 			Pagination: &v1.Pagination{
 				Offset: 0,

@@ -316,7 +316,7 @@ func (s *serviceImpl) reprocessUpdatedBaselines(resp **v1.UpdateProcessBaselines
 func (s *serviceImpl) GetProcessBaselineBulk(ctx context.Context, request *v1.GetProcessBaselinesBulkRequest) (*v1.GetProcessBaselinesBulkResponse, error) {
 	query := request.GetQuery()
 	if query == nil {
-		return nil, errors.Wrap(errox.InvalidArgs, "query must not be nil")
+		return nil, errors.Wrap(errox.InvalidArgs, "Query must not be nil")
 	}
 
 	clusters := query.GetClusterIds()
@@ -344,6 +344,10 @@ func (s *serviceImpl) GetProcessBaselineBulk(ctx context.Context, request *v1.Ge
 	}
 	if len(query.GetImages()) > 0 {
 		deploymentQueryBuilder = deploymentQueryBuilder.AddExactMatches(search.ImageName, query.GetImages()...)
+	}
+
+	if deploymentQueryBuilder.Query() == "" {
+		return nil, errors.Wrap(errox.InvalidArgs, "At least one parameter must not be empty or a wild card, not counting container name")
 	}
 
 	deployments, err := s.deployments.SearchRawDeployments(ctx, deploymentQueryBuilder.ProtoQuery())
