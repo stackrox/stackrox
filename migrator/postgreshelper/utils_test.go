@@ -4,6 +4,7 @@ package postgreshelper
 
 import (
 	"context"
+	"fmt"
 	"testing"
 
 	"github.com/pkg/errors"
@@ -109,32 +110,22 @@ func (s *PostgresRestoreSuite) TestUtilities() {
 	s.NotNil(activePool.Ping(s.ctx))
 }
 
-func (s *PostgresRestoreSuite) TestWrapRollbackErrorPath() {
+func (s *PostgresRestoreSuite) TestWrapRollback() {
 	// Create a transaction
 	tx, err := s.pool.Begin(s.ctx)
 	s.Require().NoError(err)
 
-	// Commit the transaction to make it invalid for rollback
-	err = tx.Commit(s.ctx)
-	s.Require().NoError(err)
-
-	// Verify that attempting to rollback an already-committed transaction fails
-	rollbackErr := tx.Rollback(s.ctx)
-	s.NotNil(rollbackErr, "Rollback should fail on a committed transaction")
-
-	// Now test WrapRollback with the same scenario
-	// This exercises the error path: if rollbackErr != nil { return errors.Wrapf(...) }
 	originalErr := errors.New("original operation failed")
+	// Roll back the first time. The rollback itself succeeds and the original error is passed back.
 	wrappedErr := WrapRollback(s.ctx, tx, originalErr)
+	s.Assert().Error(wrappedErr)
+	s.Assert().Equal(originalErr, wrappedErr)
 
-	// Verify the error is not nil
-	s.NotNil(wrappedErr)
-
-	// The wrapped error should NOT be the original error (since rollback failed)
-	s.NotEqual(originalErr, wrappedErr, "WrapRollback should return the wrapped rollback error, not the original error")
-
-	// The wrapped error should contain information about the rollback failure
-	s.Contains(wrappedErr.Error(), "tx is closed", "Error should mention rollback failure")
-	// And it should mention the original error in the message
-	s.Contains(wrappedErr.Error(), "original operation failed", "Error should include original error message")
+	// Roll back the second time. Since the transaction is rolled back already, the rollback should fail and the info
+	// about it should be added to the returned error.
+	wrappedErr = WrapRollback(s.ctx, tx, originalErr)
+	s.Assert().Error(wrappedErr)
+	s.Assert().ErrorContains(wrappedErr, originalErr.Error())
+	s.Assert().ErrorContains(wrappedErr, "tx is closed")
+	fmt.Println(wrappedErr.Error())
 }

@@ -14,7 +14,7 @@ const (
 	JOIN pg_class tab ON tab.oid=x.indrelid
 	JOIN pg_am am ON am.oid=idx.relam
 	WHERE tab.relname = $1 AND
-	am.amname = $2 AND idx.relname = $3
+	idx.relname = $2 AND am.amname = $3
 	)`
 )
 
@@ -22,7 +22,7 @@ const (
 // This could have been more generic, but in the migrator it is best to be very explicit
 // on what we are working with.
 func IndexExists(ctx context.Context, db postgres.DB, tableName, indexName, indexType string) (bool, error) {
-	row := db.QueryRow(ctx, indexQuery, tableName, indexType, indexName)
+	row := db.QueryRow(ctx, indexQuery, tableName, indexName, indexType)
 	var exists bool
 	if err := row.Scan(&exists); err != nil {
 		return false, err

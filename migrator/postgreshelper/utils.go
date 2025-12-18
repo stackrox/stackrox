@@ -40,7 +40,7 @@ func RenameDB(adminPool postgres.DB, originalDB, newDB string) error {
 func WrapRollback(ctx context.Context, tx *postgres.Tx, err error) error {
 	rollbackErr := tx.Rollback(ctx)
 	if rollbackErr != nil {
-		return pkgErrors.Wrap(rollbackErr, err.Error())
+		return errors.Join(err, pkgErrors.Wrapf(rollbackErr, "additionally, unable to rollback transaction"))
 	}
 	return err
 }

@@ -67,6 +67,7 @@ func (s *migrationTestSuite) TestMigration() {
 	s.Require().True(exists)
 
 	exists, err = indexhelper.IndexExists(s.ctx, s.db, tableName, podIndex, "hash")
+	s.Require().NoError(err)
 	s.Require().True(exists)
 
 	s.Assert().NoError(migration.Run(dbs))
