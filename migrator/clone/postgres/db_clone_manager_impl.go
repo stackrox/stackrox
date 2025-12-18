@@ -249,9 +249,8 @@ func (d *dbCloneManagerImpl) doPersist(cloneName string, backup string) error {
 		return errors.New("no backup clone provided")
 	}
 
-	var moveCurrent string
 	// Remove backup clone if exist.
-	moveCurrent = backup
+	moveCurrent := backup
 	d.safeRemove(backup)
 	d.cloneMap[backup] = d.cloneMap[CurrentClone]
 
