@@ -188,7 +188,7 @@ func isValidTagPattern(tagPattern string) (bool, error) {
 	// If the pattern is malformed, path.Match will return an error.
 	_, err := path.Match(tagPattern, "")
 	if err != nil {
-		return false, errox.InvalidArgs.CausedBy(errors.Wrap(err, "invalid tag pattern"))
+		return false, errox.InvalidArgs.CausedBy(fmt.Errorf("invalid tag pattern: %w", err))
 	}
 
 	return true, nil
