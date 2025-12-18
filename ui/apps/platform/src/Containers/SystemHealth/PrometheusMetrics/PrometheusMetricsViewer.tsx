@@ -1,19 +1,19 @@
-import { useState, useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import type { ReactElement, Ref } from 'react';
 import {
+    Button,
     Card,
     CardBody,
     CardHeader,
     CardTitle,
-    Button,
+    Divider,
+    Flex,
+    FlexItem,
+    MenuToggle,
+    SearchInput,
     Select,
     SelectList,
     SelectOption,
-    MenuToggle,
-    SearchInput,
-    Flex,
-    FlexItem,
-    Divider,
 } from '@patternfly/react-core';
 import type { MenuToggleElement } from '@patternfly/react-core';
 import { PlusCircleIcon, SyncIcon } from '@patternfly/react-icons';
@@ -35,7 +35,7 @@ function PrometheusMetricsViewer(): ReactElement {
 
     const parsedMetrics = useMemo(() => {
         if (!metricsText) {
-            return { metrics: [], metricNames: [] };
+            return { metrics: [], metricNames: [], metricInfoMap: {} };
         }
         return parsePrometheusMetrics(metricsText);
     }, [metricsText]);
@@ -156,11 +156,20 @@ function PrometheusMetricsViewer(): ReactElement {
                                             />
                                         </div>
                                         <Divider />
-                                        {filteredMetricNames.map((metricName) => (
-                                            <SelectOption key={metricName} value={metricName}>
-                                                {metricName}
-                                            </SelectOption>
-                                        ))}
+                                        {filteredMetricNames.map((metricName) => {
+                                            const metricInfo =
+                                                parsedMetrics.metricInfoMap[metricName];
+                                            const helpText = metricInfo?.help;
+                                            return (
+                                                <SelectOption
+                                                    key={metricName}
+                                                    value={metricName}
+                                                    description={helpText}
+                                                >
+                                                    {metricName}
+                                                </SelectOption>
+                                            );
+                                        })}
                                     </SelectList>
                                 </Select>
                             </FlexItem>
@@ -178,19 +187,24 @@ function PrometheusMetricsViewer(): ReactElement {
 
                         {metricSelectors.length === 0 && (
                             <div className="pf-v5-u-color-200">
-                                Select a metric from the dropdown above and click Add to view its data
+                                Select a metric from the dropdown above and click Add to view its
+                                data
                             </div>
                         )}
 
-                        {metricSelectors.map((selector) => (
-                            <div key={selector.id} className="pf-v5-u-mb-md">
-                                <MetricTable
-                                    metricName={selector.metricName}
-                                    samples={getSamplesForMetric(selector.metricName)}
-                                    onDelete={() => handleDeleteMetric(selector.id)}
-                                />
-                            </div>
-                        ))}
+                        {metricSelectors.map((selector) => {
+                            const metricInfo = parsedMetrics.metricInfoMap[selector.metricName];
+                            return (
+                                <div key={selector.id} className="pf-v5-u-mb-md">
+                                    <MetricTable
+                                        metricName={selector.metricName}
+                                        metricHelp={metricInfo?.help}
+                                        samples={getSamplesForMetric(selector.metricName)}
+                                        onDelete={() => handleDeleteMetric(selector.id)}
+                                    />
+                                </div>
+                            );
+                        })}
                     </>
                 )}
             </CardBody>

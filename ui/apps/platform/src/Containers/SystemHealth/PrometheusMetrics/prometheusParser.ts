@@ -10,36 +10,26 @@ function splitLabelPairs(labelsString: string): string[] {
     let insideQuotes = false;
     let escapeNext = false;
 
-    for (let i = 0; i < labelsString.length; i++) {
+    for (let i = 0; i < labelsString.length; i += 1) {
         const char = labelsString[i];
 
         if (escapeNext) {
             currentPair += char;
             escapeNext = false;
-            continue;
-        }
-
-        if (char === '\\') {
+        } else if (char === '\\') {
             currentPair += char;
             escapeNext = true;
-            continue;
-        }
-
-        if (char === '"') {
+        } else if (char === '"') {
             insideQuotes = !insideQuotes;
             currentPair += char;
-            continue;
-        }
-
-        if (char === ',' && !insideQuotes) {
+        } else if (char === ',' && !insideQuotes) {
             if (currentPair.trim()) {
                 pairs.push(currentPair);
             }
             currentPair = '';
-            continue;
+        } else {
+            currentPair += char;
         }
-
-        currentPair += char;
     }
 
     // Add the last pair
@@ -53,44 +43,71 @@ function splitLabelPairs(labelsString: string): string[] {
 /**
  * Parse Prometheus text exposition format
  * Format: metric_name{label1="value1",label2="value2"} value [timestamp]
+ * HELP comments: # HELP metric_name description
  */
 export function parsePrometheusMetrics(text: string): ParsedMetrics {
     const metrics: MetricSample[] = [];
     const metricNamesSet = new Set<string>();
+    const metricInfoMap: Record<string, { name: string; help?: string }> = {};
 
     const lines = text.split('\n');
 
-    for (const line of lines) {
+    lines.forEach((line) => {
         const trimmedLine = line.trim();
 
-        // Skip comments and empty lines
-        if (!trimmedLine || trimmedLine.startsWith('#')) {
-            continue;
+        // Skip empty lines
+        if (!trimmedLine) {
+            return;
         }
 
-        try {
-            const parsed = parseMetricLine(trimmedLine);
-            if (parsed) {
-                metrics.push(parsed);
-                metricNamesSet.add(parsed.metricName);
+        // Parse HELP comments
+        if (trimmedLine.startsWith('# HELP ')) {
+            const helpMatch = trimmedLine.match(/^# HELP\s+([a-zA-Z_:][a-zA-Z0-9_:.-]*)\s+(.*)$/);
+            if (helpMatch) {
+                const metricName = helpMatch[1];
+                const helpText = helpMatch[2];
+                // Add metric name even if there's no data yet
+                metricNamesSet.add(metricName);
+                if (!metricInfoMap[metricName]) {
+                    metricInfoMap[metricName] = { name: metricName };
+                }
+                metricInfoMap[metricName].help = helpText;
             }
-        } catch (error) {
-            // Skip malformed lines
-            console.warn('Failed to parse metric line:', trimmedLine, error);
+            return;
         }
-    }
+
+        // Skip other comments
+        if (trimmedLine.startsWith('#')) {
+            return;
+        }
+
+        const parsed = parseMetricLine(trimmedLine);
+        if (parsed) {
+            metrics.push(parsed);
+            metricNamesSet.add(parsed.metricName);
+            // Ensure metric exists in info map even without HELP
+            if (!metricInfoMap[parsed.metricName]) {
+                metricInfoMap[parsed.metricName] = { name: parsed.metricName };
+            }
+        } else if (trimmedLine && !trimmedLine.startsWith('#')) {
+            // eslint-disable-next-line no-console
+            console.log('Failed to parse line:', trimmedLine.substring(0, 100));
+        }
+    });
 
     return {
         metrics,
         metricNames: Array.from(metricNamesSet).sort(),
+        metricInfoMap,
     };
 }
 
 function parseMetricLine(line: string): MetricSample | null {
     // Match metric_name{labels} value [timestamp]
     // or metric_name value [timestamp]
+    // Relaxed pattern to allow common non-standard metric names (with hyphens, dots, etc.)
 
-    const metricNameMatch = line.match(/^([a-zA-Z_:][a-zA-Z0-9_:]*)/);
+    const metricNameMatch = line.match(/^([a-zA-Z_:][a-zA-Z0-9_:.-]*)/);
     if (!metricNameMatch) {
         return null;
     }
@@ -113,15 +130,15 @@ function parseMetricLine(line: string): MetricSample | null {
         // Parse labels: label1="value1",label2="value2"
         // We need to split by commas but respect quoted strings
         const labelPairs = splitLabelPairs(labelsString);
-        for (const pair of labelPairs) {
+        labelPairs.forEach((pair) => {
             const trimmedPair = pair.trim();
             if (!trimmedPair) {
-                continue;
+                return;
             }
 
             const equalIndex = trimmedPair.indexOf('=');
             if (equalIndex === -1) {
-                continue;
+                return;
             }
 
             const labelName = trimmedPair.substring(0, equalIndex).trim();
@@ -131,11 +148,14 @@ function parseMetricLine(line: string): MetricSample | null {
             if (labelValue.startsWith('"') && labelValue.endsWith('"')) {
                 labelValue = labelValue.substring(1, labelValue.length - 1);
                 // Unescape special characters
-                labelValue = labelValue.replace(/\\"/g, '"').replace(/\\\\/g, '\\').replace(/\\n/g, '\n');
+                labelValue = labelValue
+                    .replace(/\\"/g, '"')
+                    .replace(/\\\\/g, '\\')
+                    .replace(/\\n/g, '\n');
             }
 
             labels[labelName] = labelValue;
-        }
+        });
     }
 
     // Parse value and optional timestamp
