@@ -1,7 +1,4 @@
-import { Button } from '@patternfly/react-core';
-import { ArrowRightIcon } from '@patternfly/react-icons';
 import type { SearchFilter } from 'types/search';
-import { ensureString } from 'utils/ensure';
 import type {
     CompoundSearchFilterAttribute,
     CompoundSearchFilterEntity,
@@ -10,39 +7,26 @@ import type {
 import SearchFilterConditionDate from './SearchFilterConditionDate';
 import SearchFilterConditionNumber from './SearchFilterConditionNumber';
 import SearchFilterConditionText from './SearchFilterConditionText';
-import SearchFilterAutocomplete from './SearchFilterAutocomplete';
+import SearchFilterAutocompleteSelect from './SearchFilterAutocompleteSelect';
 import SearchFilterSelectExclusiveDouble from './SearchFilterSelectExclusiveDouble';
 import SearchFilterSelectExclusiveSingle from './SearchFilterSelectExclusiveSingle';
 import SearchFilterSelectInclusive from './SearchFilterSelectInclusive';
 import SearchFilterText from './SearchFilterText';
 
-export type InputFieldValue =
-    | string
-    | number
-    | undefined
-    | string[]
-    | { condition: string; number: number }
-    | { condition: string; date: string };
-export type InputFieldOnChange = (value: InputFieldValue) => void;
-
 export type CompoundSearchFilterInputFieldProps = {
     entity: CompoundSearchFilterEntity;
     attribute: CompoundSearchFilterAttribute;
-    value: InputFieldValue;
+    onSearch: OnSearchCallback;
     searchFilter: SearchFilter;
     additionalContextFilter?: SearchFilter;
-    onSearch: OnSearchCallback;
-    onChange: InputFieldOnChange;
 };
 
 function CompoundSearchFilterInputField({
     entity,
     attribute,
-    value,
+    onSearch,
     searchFilter,
     additionalContextFilter,
-    onSearch,
-    onChange,
 }: CompoundSearchFilterInputFieldProps) {
     if (attribute.inputType === 'text') {
         return <SearchFilterText attribute={attribute} onSearch={onSearch} />;
@@ -57,42 +41,14 @@ function CompoundSearchFilterInputField({
         return <SearchFilterConditionText attribute={attribute} onSearch={onSearch} />;
     }
     if (attribute.inputType === 'autocomplete') {
-        const { searchCategory } = entity;
-        const { searchTerm, filterChipLabel } = attribute;
-        const textLabel = `Filter results by ${filterChipLabel}`;
-
-        const handleSearch = (newValue: string) => {
-            onSearch([
-                {
-                    action: 'APPEND',
-                    category: attribute.searchTerm,
-                    value: newValue,
-                },
-            ]);
-            onChange('');
-        };
         return (
-            <>
-                <SearchFilterAutocomplete
-                    searchCategory={searchCategory}
-                    searchTerm={searchTerm}
-                    value={ensureString(value)}
-                    onChange={(newValue) => {
-                        onChange(newValue);
-                    }}
-                    onSearch={handleSearch}
-                    textLabel={textLabel}
-                    searchFilter={searchFilter}
-                    additionalContextFilter={additionalContextFilter}
-                />
-                <Button
-                    variant="control"
-                    aria-label="Apply autocomplete input to search"
-                    onClick={() => handleSearch(ensureString(value))}
-                >
-                    <ArrowRightIcon />
-                </Button>
-            </>
+            <SearchFilterAutocompleteSelect
+                additionalContextFilter={additionalContextFilter}
+                attribute={attribute}
+                onSearch={onSearch}
+                searchCategory={entity.searchCategory}
+                searchFilter={searchFilter}
+            />
         );
     }
     if (attribute.inputType === 'select-exclusive-double') {

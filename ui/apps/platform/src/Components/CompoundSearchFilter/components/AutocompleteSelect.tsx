@@ -22,7 +22,7 @@ import { getRequestQueryStringForSearchFilter } from 'utils/searchUtils';
 import type { SearchFilter } from 'types/search';
 import { ensureString } from 'utils/ensure';
 
-type SearchFilterAutocompleteProps = {
+type AutocompleteSelectProps = {
     searchCategory: string;
     searchTerm: string;
     value: string;
@@ -84,7 +84,7 @@ function getSelectOptions(
     ];
 }
 
-function SearchFilterAutocomplete({
+function AutocompleteSelect({
     searchCategory,
     searchTerm,
     value,
@@ -94,7 +94,7 @@ function SearchFilterAutocomplete({
     searchFilter,
     additionalContextFilter,
     isDisabled = false,
-}: SearchFilterAutocompleteProps) {
+}: AutocompleteSelectProps) {
     const [isOpen, setIsOpen] = useState(false);
     const [filterValue, setFilterValue] = useState('');
     const [isTyping, setIsTyping] = useState(false);
@@ -323,4 +323,4 @@ function SearchFilterAutocomplete({
     );
 }
 
-export default SearchFilterAutocomplete;
+export default AutocompleteSelect;
