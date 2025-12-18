@@ -2,6 +2,7 @@ package virtualmachineindex
 
 import (
 	"context"
+	"strconv"
 
 	"github.com/pkg/errors"
 	countMetrics "github.com/stackrox/rox/central/metrics"
@@ -12,10 +13,17 @@ import (
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/centralsensor"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/metrics"
+	"github.com/stackrox/rox/pkg/rate"
 	vmEnricher "github.com/stackrox/rox/pkg/virtualmachine/enricher"
+)
+
+const (
+	// rateLimiterWorkload is the workload name used for rate limiting VM index reports.
+	rateLimiterWorkload = "vm_index_report"
 )
 
 var (
@@ -26,26 +34,43 @@ var (
 
 // GetPipeline returns an instantiation of this particular pipeline
 func GetPipeline() pipeline.Fragment {
+	rateLimit, err := strconv.ParseFloat(env.VMIndexReportRateLimit.Setting(), 64)
+	if err != nil {
+		log.Panicf("Invalid %s value: %v", env.VMIndexReportRateLimit.EnvVar(), err)
+	}
+	rateLimiter, err := rate.RegisterLimiter(
+		rateLimiterWorkload,
+		rateLimit,
+		env.VMIndexReportBucketCapacity.IntegerSetting(),
+	)
+	if err != nil {
+		log.Panicf("Failed to create rate limiter for %s: %v", rateLimiterWorkload, err)
+	}
 	return newPipeline(
 		vmDatastore.Singleton(),
 		vmEnricher.Singleton(),
+		rateLimiter,
 	)
 }
 
 // newPipeline returns a new instance of Pipeline.
-func newPipeline(vms vmDatastore.DataStore, enricher vmEnricher.VirtualMachineEnricher) pipeline.Fragment {
+func newPipeline(vms vmDatastore.DataStore, enricher vmEnricher.VirtualMachineEnricher, rateLimiter *rate.Limiter) pipeline.Fragment {
 	return &pipelineImpl{
 		vmDatastore: vms,
 		enricher:    enricher,
+		rateLimiter: rateLimiter,
 	}
 }
 
 type pipelineImpl struct {
 	vmDatastore vmDatastore.DataStore
 	enricher    vmEnricher.VirtualMachineEnricher
+	rateLimiter *rate.Limiter
 }
 
-func (p *pipelineImpl) OnFinish(_ string) {
+func (p *pipelineImpl) OnFinish(clusterID string) {
+	// Notify rate limiter that this sensor disconnected so it can rebalance
+	p.rateLimiter.OnSensorDisconnect(clusterID)
 }
 
 func (p *pipelineImpl) Capabilities() []centralsensor.CentralCapability {
@@ -60,7 +85,7 @@ func (p *pipelineImpl) Match(msg *central.MsgFromSensor) bool {
 	return msg.GetEvent().GetVirtualMachineIndexReport() != nil
 }
 
-func (p *pipelineImpl) Run(ctx context.Context, _ string, msg *central.MsgFromSensor, _ common.MessageInjector) error {
+func (p *pipelineImpl) Run(ctx context.Context, _ string, msg *central.MsgFromSensor, injector common.MessageInjector) error {
 	defer countMetrics.IncrementResourceProcessedCounter(pipeline.ActionToOperation(msg.GetEvent().GetAction()), metrics.VirtualMachineIndex)
 
 	if !features.VirtualMachines.Enabled() {
@@ -81,6 +106,18 @@ func (p *pipelineImpl) Run(ctx context.Context, _ string, msg *central.MsgFromSe
 	}
 
 	log.Debugf("Received virtual machine index report: %s", index.GetId())
+
+	// Extract cluster ID from injector (connection metadata)
+	clusterID := extractClusterID(injector)
+
+	// Rate limit check
+	allowed, reason := p.rateLimiter.TryConsume(clusterID)
+	if !allowed {
+		log.Infof("Rate limit exceeded for VM %s from cluster %s: %s",
+			index.GetId(), clusterID, reason)
+		sendVMIndexReportResponse(ctx, index.GetId(), central.SensorACK_NACK, reason, injector)
+		return nil // Don't return error - would cause pipeline retry
+	}
 
 	// Get or create VM
 	vm := &storage.VirtualMachine{Id: index.GetId()}
@@ -105,5 +142,45 @@ func (p *pipelineImpl) Run(ctx context.Context, _ string, msg *central.MsgFromSe
 	log.Infof("Successfully enriched and stored VM %s with %d components",
 		vm.GetId(), len(vm.GetScan().GetComponents()))
 
+	// Send ACK to Sensor
+	sendVMIndexReportResponse(ctx, index.GetId(), central.SensorACK_ACK, "", injector)
+
 	return nil
+}
+
+// extractClusterID extracts the cluster ID from the message injector (connection metadata).
+func extractClusterID(injector common.MessageInjector) string {
+	// MessageInjector is actually a SensorConnection which has ClusterID()
+	if conn, ok := injector.(interface{ ClusterID() string }); ok {
+		return conn.ClusterID()
+	}
+	log.Warn("Unable to extract cluster ID from injector, using unknown")
+	return "unknown"
+}
+
+// sendVMIndexReportResponse sends an ACK or NACK for a VM index report.
+func sendVMIndexReportResponse(ctx context.Context, vmID string, action central.SensorACK_Action, reason string, injector common.MessageInjector) {
+	conn, ok := injector.(interface {
+		HasCapability(centralsensor.SensorCapability) bool
+	})
+	if !ok || !conn.HasCapability(centralsensor.SensorACKSupport) {
+		log.Debugf("Sensor does not support SensorACK, skipping VM index report response for %s", vmID)
+		return
+	}
+
+	msg := &central.MsgToSensor{
+		Msg: &central.MsgToSensor_SensorAck{
+			SensorAck: &central.SensorACK{
+				Action:      action,
+				MessageType: central.SensorACK_VM_INDEX_REPORT,
+				ResourceId:  vmID,
+				Reason:      reason,
+			},
+		},
+	}
+	if err := injector.InjectMessage(ctx, msg); err != nil {
+		log.Warnf("Failed sending VM index report %s for %s: %v", action.String(), vmID, err)
+	} else {
+		log.Debugf("Sent VM index report %s for %s (reason=%q)", action.String(), vmID, reason)
+	}
 }
