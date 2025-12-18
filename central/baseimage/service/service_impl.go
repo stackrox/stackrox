@@ -2,11 +2,11 @@ package service
 
 import (
 	"context"
+	"fmt"
 	"path"
 
 	"github.com/distribution/reference"
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
-	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/baseimage/datastore/repository"
 	v2 "github.com/stackrox/rox/generated/api/v2"
 	"github.com/stackrox/rox/generated/storage"
@@ -147,10 +147,15 @@ func (s *serviceImpl) RegisterServiceHandler(ctx context.Context, mux *runtime.S
 
 // convertStorageToAPI converts a storage.BaseImageRepository to a v2.BaseImageReference.
 func convertStorageToAPI(repo *storage.BaseImageRepository) *v2.BaseImageReference {
+	user := &v2.SlimUser{
+		Id:   repo.GetCreatedBy().GetId(),
+		Name: repo.GetCreatedBy().GetName(),
+	}
 	return &v2.BaseImageReference{
 		Id:                  repo.GetId(),
 		BaseImageRepoPath:   repo.GetRepositoryPath(),
 		BaseImageTagPattern: repo.GetTagPattern(),
+		User:                user,
 	}
 }
 
