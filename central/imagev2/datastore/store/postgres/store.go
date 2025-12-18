@@ -36,6 +36,9 @@ const (
 	// TODO(ROX-29911): really need cache table for the dates.
 	imageCVEsLegacyTable     = "image_cves"
 	imageCVEEdgesLegacyTable = "image_cve_edges"
+
+	LegacyImageIDField = "imageid"
+	NewImageIDField    = "imageidv2"
 )
 
 var (
@@ -114,14 +117,23 @@ func (s *storeImpl) insertIntoImages(
 	}
 
 	// Grab all CVEs for the image.
-	existingCVEs, err := getImageCVEs(ctx, tx, parts.image.GetId())
+	existingCVEs, err := getImageCVEs(ctx, tx, parts.image.GetId(), NewImageIDField)
 	if err != nil {
 		return err
 	}
 
 	if len(existingCVEs) == 0 {
-		// If we did not find any existing CVEs for the image, we may have just upgraded to q version using new CVE data model.
-		// So we try to migrate the CVE created and first image occurrence timestamps from the legacy model.
+		// If migrating from a version that already has the new CVE model, we try to get the existing CVEs from the new CVE model using the legacy image ID.
+		// This should only run the first time an image is scanned after migrating to the new image model.
+		existingCVEs, err = getImageCVEs(ctx, tx, parts.image.GetDigest(), LegacyImageIDField)
+		if err != nil {
+			return err
+		}
+	}
+
+	if len(existingCVEs) == 0 {
+		// If migrating from a version that did not even have the new CVE model, we try to get the existing CVEs from the legacy CVE model.
+		// This should only run the first time an image is scanned after migrating to the new image model.
 		existingCVEs, err = getLegacyImageCVEs(ctx, tx, parts.image.GetDigest())
 		if err != nil {
 			return err
@@ -674,12 +686,12 @@ func getImageComponentCVEs(ctx context.Context, tx *postgres.Tx, componentID str
 	return pgutils.ScanRows[storage.ImageCVEV2, *storage.ImageCVEV2](rows)
 }
 
-func getImageCVEs(ctx context.Context, tx *postgres.Tx, imageID string) ([]*storage.EmbeddedVulnerability, error) {
+func getImageCVEs(ctx context.Context, tx *postgres.Tx, imageID string, imageIDField string) ([]*storage.EmbeddedVulnerability, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Get, "ImageCVEsV2")
 
 	// Using this method instead of accessing the component store to ensure the query is in the same transaction as
 	// the updates.  That may prove to not matter, but for now doing it this way.
-	rows, err := tx.Query(ctx, "SELECT serialized FROM "+imageComponentsV2CVEsTable+" WHERE imageidv2 = $1", imageID)
+	rows, err := tx.Query(ctx, "SELECT serialized FROM "+imageComponentsV2CVEsTable+" WHERE "+imageIDField+" = $1", imageID)
 	if err != nil {
 		return nil, err
 	}
