@@ -2,6 +2,7 @@ package postgres
 
 import (
 	"context"
+	"testing"
 	"time"
 
 	"github.com/jackc/pgx/v5"
@@ -30,13 +31,12 @@ import (
 )
 
 const (
-	imagesTable                      = pkgSchema.ImagesTableName
-	imageComponentsV2Table           = pkgSchema.ImageComponentV2TableName
-	imageComponentsV2CVEsTable       = pkgSchema.ImageCvesV2TableName
-	imageCVEsLegacyTable             = pkgSchema.ImageCvesTableName
-	imageCVEEdgesLegacyTable         = pkgSchema.ImageCveEdgesTableName
-	cveCreatedAtFieldName            = "cveBaseInfo_CVE"
-	cveFirstImageOccurrenceFieldName = "FirstImageOccurrence"
+	imagesTable                = pkgSchema.ImagesTableName
+	imageComponentsV2Table     = pkgSchema.ImageComponentV2TableName
+	imageComponentsV2CVEsTable = pkgSchema.ImageCvesV2TableName
+	// TODO(ROX-29911): really need cache table for the dates.
+	imageCVEsLegacyTable     = "image_cves"
+	imageCVEEdgesLegacyTable = "image_cve_edges"
 
 	getImageMetaStmt = "SELECT serialized FROM " + imagesTable + " WHERE Id = $1"
 )
@@ -44,6 +44,9 @@ const (
 var (
 	log    = logging.LoggerForModule()
 	schema = pkgSchema.ImagesSchema
+
+	// Assume it exists
+	legacyCVEExists = true
 )
 
 type imagePartsAsSlice struct {
@@ -476,13 +479,7 @@ func (s *storeImpl) upsert(ctx context.Context, obj *storage.Image) error {
 	keys := gatherKeys(imageParts)
 
 	return s.keyFence.DoStatusWithLock(concurrency.DiscreteKeySet(keys...), func() error {
-		conn, release, err := s.acquireConn(ctx, ops.Get, "Image")
-		if err != nil {
-			return err
-		}
-		defer release()
-
-		tx, err := conn.Begin(ctx)
+		tx, ctx, err := s.begin(ctx)
 		if err != nil {
 			return err
 		}
@@ -554,21 +551,14 @@ func (s *storeImpl) Get(ctx context.Context, id string) (*storage.Image, bool, e
 }
 
 func (s *storeImpl) retryableGet(ctx context.Context, id string) (*storage.Image, bool, error) {
-	conn, release, err := s.acquireConn(ctx, ops.Get, "Image")
+	tx, ctx, err := s.begin(ctx)
 	if err != nil {
 		return nil, false, err
 	}
-	defer release()
+	defer postgres.FinishReadOnlyTransaction(tx)
 
-	tx, err := conn.Begin(ctx)
-	if err != nil {
-		return nil, false, err
-	}
 	image, found, err := s.getFullImage(ctx, tx, id)
-	// No changes are made to the database, so COMMIT or ROLLBACK have same effect.
-	if err := tx.Commit(ctx); err != nil {
-		return nil, false, err
-	}
+
 	return image, found, err
 }
 
@@ -624,13 +614,8 @@ func (s *storeImpl) getFullImage(ctx context.Context, tx *postgres.Tx, imageID s
 	return &image, true, nil
 }
 
-func (s *storeImpl) acquireConn(ctx context.Context, op ops.Op, typ string) (*postgres.Conn, func(), error) {
-	defer metrics.SetAcquireDBConnDuration(time.Now(), op, typ)
-	conn, err := s.db.Acquire(ctx)
-	if err != nil {
-		return nil, nil, err
-	}
-	return conn, conn.Release, nil
+func (s *storeImpl) begin(ctx context.Context) (*postgres.Tx, context.Context, error) {
+	return postgres.GetTransaction(ctx, s.db)
 }
 
 func getImageComponents(ctx context.Context, tx *postgres.Tx, imageID string) ([]*storage.ImageComponentV2, error) {
@@ -686,6 +671,22 @@ func getImageCVEs(ctx context.Context, tx *postgres.Tx, imageID string) ([]*stor
 // in the returned vulns as that information is not necessary for migrating the timestamps.
 func getLegacyImageCVEs(ctx context.Context, tx *postgres.Tx, imageID string) ([]*storage.EmbeddedVulnerability, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Get, "ImageCVEs")
+
+	if !legacyCVEExists {
+		return nil, nil
+	}
+
+	existenceRow := tx.QueryRow(ctx, "SELECT EXISTS (SELECT 1 FROM information_schema.tables WHERE "+
+		"table_name = $1 AND table_schema = ANY(current_schemas(FALSE)))", imageCVEsLegacyTable)
+	var exists bool
+	if err := existenceRow.Scan(&exists); err != nil {
+		return nil, err
+	}
+	// Old tables do not exist so newer installation.  Set global var  so we skip these checks.
+	if !exists {
+		legacyCVEExists = false
+		return nil, nil
+	}
 
 	// Using this method instead of accessing the legacy image CVE and component stores because the legacy stores
 	// would not be initialized when the new data model is enabled
@@ -748,22 +749,16 @@ func (s *storeImpl) Delete(ctx context.Context, id string) error {
 }
 
 func (s *storeImpl) retryableDelete(ctx context.Context, id string) error {
-	conn, release, err := s.acquireConn(ctx, ops.Remove, "Image")
-	if err != nil {
-		return err
-	}
-	defer release()
-
-	tx, err := conn.Begin(ctx)
+	tx, ctx, err := s.begin(ctx)
 	if err != nil {
 		return err
 	}
 
 	if err := s.deleteImageTree(ctx, tx, id); err != nil {
-		if err := tx.Rollback(ctx); err != nil {
-			return err
+		if errTx := tx.Rollback(ctx); errTx != nil {
+			return errors.Wrapf(errTx, "rollbacking transaction due to previous error: %v", err)
 		}
-		return err
+		return errors.Wrap(err, "deleting image tree")
 	}
 	return tx.Commit(ctx)
 }
@@ -797,25 +792,16 @@ func (s *storeImpl) GetByIDs(ctx context.Context, ids []string) ([]*storage.Imag
 }
 
 func (s *storeImpl) retryableGetByIDs(ctx context.Context, ids []string) ([]*storage.Image, error) {
-	conn, release, err := s.acquireConn(ctx, ops.GetMany, "Image")
+	tx, ctx, err := s.begin(ctx)
 	if err != nil {
 		return nil, err
 	}
-	defer release()
-
-	tx, err := conn.Begin(ctx)
-	if err != nil {
-		return nil, err
-	}
+	defer postgres.FinishReadOnlyTransaction(tx)
 
 	elems := make([]*storage.Image, 0, len(ids))
 	for _, id := range ids {
 		msg, found, err := s.getFullImage(ctx, tx, id)
 		if err != nil {
-			// No changes are made to the database, so COMMIT or ROLLBACK have the same effect.
-			if err := tx.Commit(ctx); err != nil {
-				return nil, err
-			}
 			return nil, err
 		}
 		if !found {
@@ -824,10 +810,6 @@ func (s *storeImpl) retryableGetByIDs(ctx context.Context, ids []string) ([]*sto
 		elems = append(elems, msg)
 	}
 
-	// No changes are made to the database, so COMMIT or ROLLBACK have the same effect.
-	if err := tx.Commit(ctx); err != nil {
-		return nil, err
-	}
 	return elems, nil
 }
 
@@ -837,19 +819,13 @@ func (s *storeImpl) WalkByQuery(ctx context.Context, q *v1.Query, fn func(image 
 
 	q = applyDefaultSort(q)
 
-	conn, release, err := s.acquireConn(ctx, ops.WalkByQuery, "Image")
-	if err != nil {
-		return err
-	}
-	defer release()
-
-	tx, err := conn.Begin(ctx)
+	tx, ctx, err := s.begin(ctx)
 	if err != nil {
 		return err
 	}
 	defer func() {
-		if err := tx.Rollback(ctx); err != nil {
-			log.Errorf("error rolling back: %v", err)
+		if err := tx.Commit(ctx); err != nil {
+			log.Errorf("error comitting transaction: %v", err)
 		}
 	}()
 
@@ -870,33 +846,29 @@ func (s *storeImpl) WalkByQuery(ctx context.Context, q *v1.Query, fn func(image 
 	return nil
 }
 
+func (s *storeImpl) WalkMetadataByQuery(ctx context.Context, q *v1.Query, fn func(img *storage.Image) error) error {
+	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.WalkMetadataByQuery, "Image")
+
+	q = applyDefaultSort(q)
+
+	err := pgSearch.RunCursorQueryForSchemaFn(ctx, pkgSchema.ImagesSchema, q, s.db, fn)
+	if err != nil {
+		return errors.Wrap(err, "cursor by query")
+	}
+	return nil
+}
+
 // GetImageMetadata returns the image without scan/component data.
 func (s *storeImpl) GetImageMetadata(ctx context.Context, id string) (*storage.Image, bool, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Get, "ImageMetadata")
 
-	return pgutils.Retry3(ctx, func() (*storage.Image, bool, error) {
-		return s.retryableGetImageMetadata(ctx, id)
+	imageMetadata, err := pgutils.Retry2(ctx, func() ([]*storage.Image, error) {
+		return s.retryableGetManyImageMetadata(ctx, []string{id})
 	})
-}
-
-func (s *storeImpl) retryableGetImageMetadata(ctx context.Context, id string) (*storage.Image, bool, error) {
-	conn, release, err := s.acquireConn(ctx, ops.Get, "Image")
-	if err != nil {
+	if err != nil || len(imageMetadata) == 0 {
 		return nil, false, err
 	}
-	defer release()
-
-	row := conn.QueryRow(ctx, getImageMetaStmt, id)
-	var data []byte
-	if err := row.Scan(&data); err != nil {
-		return nil, false, pgutils.ErrNilIfNoRows(err)
-	}
-
-	var msg storage.Image
-	if err := msg.UnmarshalVTUnsafe(data); err != nil {
-		return nil, false, err
-	}
-	return &msg, true, nil
+	return imageMetadata[0], true, nil
 }
 
 // GetManyImageMetadata returns images without scan/component data.
@@ -942,13 +914,7 @@ func (s *storeImpl) retryableUpdateVulnState(ctx context.Context, cve string, im
 		return nil
 	}
 
-	conn, release, err := s.acquireConn(ctx, ops.Update, "UpdateVulnState")
-	if err != nil {
-		return err
-	}
-	defer release()
-
-	tx, err := conn.Begin(ctx)
+	tx, ctx, err := s.begin(ctx)
 	if err != nil {
 		return err
 	}
@@ -1066,4 +1032,14 @@ func applyDefaultSort(q *v1.Query) *v1.Query {
 	}
 	// Add pagination sort order if needed.
 	return paginated.FillDefaultSortOption(q, defaultSortOption.CloneVT())
+}
+
+// For tesing only
+// NewForTest returns a new store instance for testing
+func NewForTest(_ testing.TB, db postgres.DB, noUpdateTimestamps bool, keyFence concurrency.KeyFence) store.Store {
+	return &storeImpl{
+		db:                 db,
+		noUpdateTimestamps: noUpdateTimestamps,
+		keyFence:           keyFence,
+	}
 }

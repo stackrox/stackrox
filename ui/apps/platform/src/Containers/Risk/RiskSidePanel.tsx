@@ -4,17 +4,15 @@ import { Alert, Bullseye, Spinner } from '@patternfly/react-core';
 import { fetchDeploymentWithRisk } from 'services/DeploymentsService';
 import type { DeploymentWithRisk } from 'services/DeploymentsService';
 
-import CloseButton from 'Components/CloseButton';
-import { PanelNew, PanelBody, PanelHead, PanelHeadEnd, PanelTitle } from 'Components/Panel';
+import { PanelBody, PanelHead, PanelNew, PanelTitle } from 'Components/Panel';
 
 import RiskSidePanelTabs from './RiskSidePanelTabs';
 
 export type RiskSidePanelProps = {
     selectedDeploymentId: string;
-    setSelectedDeploymentId: (string) => void;
 };
 
-function RiskSidePanel({ selectedDeploymentId, setSelectedDeploymentId }: RiskSidePanelProps) {
+function RiskSidePanel({ selectedDeploymentId }: RiskSidePanelProps) {
     const [selectedDeployment, setSelectedDeployment] = useState<DeploymentWithRisk | null>(null);
     const [isFetching, setIsFetching] = useState(false);
 
@@ -32,10 +30,6 @@ function RiskSidePanel({ selectedDeploymentId, setSelectedDeploymentId }: RiskSi
             });
     }, [selectedDeploymentId, setIsFetching]);
 
-    function unselectDeployment() {
-        setSelectedDeploymentId(undefined);
-    }
-
     const header = !selectedDeployment ? 'Unknown Deployment' : selectedDeployment.deployment.name;
 
     /*
@@ -45,12 +39,6 @@ function RiskSidePanel({ selectedDeploymentId, setSelectedDeploymentId }: RiskSi
         <PanelNew testid="panel">
             <PanelHead>
                 <PanelTitle testid="panel-header" text={header} />
-                <PanelHeadEnd>
-                    <CloseButton
-                        onClose={unselectDeployment}
-                        className="border-base-400 border-l"
-                    />
-                </PanelHeadEnd>
             </PanelHead>
             <PanelBody>
                 {isFetching ? (

@@ -1,4 +1,3 @@
-import React from 'react';
 import type { Dispatch, SetStateAction } from 'react';
 import { Link } from 'react-router-dom-v5-compat';
 import { Card, Text } from '@patternfly/react-core';

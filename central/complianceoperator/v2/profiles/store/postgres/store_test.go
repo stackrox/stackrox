@@ -103,6 +103,11 @@ func (s *ComplianceOperatorProfileV2StoreSuite) TestStore() {
 
 	s.NoError(store.UpsertMany(ctx, complianceOperatorProfileV2s))
 
+	foundComplianceOperatorProfileV2s, missing, err := store.GetMany(ctx, complianceOperatorProfileV2IDs)
+	s.NoError(err)
+	s.Empty(missing)
+	protoassert.ElementsMatch(s.T(), complianceOperatorProfileV2s, foundComplianceOperatorProfileV2s)
+
 	complianceOperatorProfileV2Count, err = store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)
 	s.Equal(200, complianceOperatorProfileV2Count)

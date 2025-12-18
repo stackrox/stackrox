@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import type { ReactElement } from 'react';
 import { gql, useQuery } from '@apollo/client';
 
@@ -93,7 +93,7 @@ function MitreAttackVectorsViewContainer({
     );
 
     const policyMitreAttackVectors =
-        policyFormAttackVectors || data?.policy?.mitreAttackVectors || [];
+        policyFormAttackVectors ?? data?.policy?.mitreAttackVectors ?? [];
 
     return (
         <MitreAttackVectorsView

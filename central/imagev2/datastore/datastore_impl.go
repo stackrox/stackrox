@@ -2,6 +2,7 @@ package datastore
 
 import (
 	"context"
+	"strings"
 	"time"
 
 	"github.com/pkg/errors"
@@ -69,30 +70,41 @@ func (ds *datastoreImpl) Count(ctx context.Context, q *v1.Query) (int, error) {
 	return ds.storage.Count(ctx, q)
 }
 
-// TODO(ROX-29943): Eliminate unnecessary 2 pass database queries
+// SearchImages returns search results for images with all necessary fields populated in a single query pass.
+// This implementation eliminates the traditional 2-pass database query pattern (ROX-29943).
 func (ds *datastoreImpl) SearchImages(ctx context.Context, q *v1.Query) ([]*v1.SearchResult, error) {
 	defer metrics.SetDatastoreFunctionDuration(time.Now(), "ImageV2", "SearchImages")
 
-	results, err := ds.Search(ctx, q)
+	if q == nil {
+		q = search.EmptyQuery()
+	}
+	// Clone the query and add select fields for SearchResult construction
+	clonedQuery := q.CloneVT()
+
+	// Add required fields for SearchResult proto: name (image name) and location info
+	// ForSearchResults will add these as select fields to the query
+	// We'll add these selects to the query using a new builder
+	selectSelects := []*v1.QuerySelect{
+		search.NewQuerySelect(pkgSearch.ImageName).Proto(),
+	}
+	clonedQuery.Selects = append(clonedQuery.GetSelects(), selectSelects...)
+
+	results, err := ds.Search(ctx, clonedQuery)
 	if err != nil {
 		return nil, err
 	}
-	var images []*storage.ImageV2
-	var existing []search.Result
-	for _, result := range results {
-		image, exists, err := ds.storage.GetImageMetadata(ctx, result.ID)
-		if err != nil {
-			return nil, err
+
+	// Populate Name field from FieldValues for each result
+	for i := range results {
+		if results[i].FieldValues != nil {
+			if nameVal, ok := results[i].FieldValues[strings.ToLower(pkgSearch.ImageName.String())]; ok {
+				results[i].Name = nameVal
+			}
 		}
-		// The result may not exist if the object was deleted after the search
-		if !exists {
-			continue
-		}
-		images = append(images, image)
-		existing = append(existing, result)
 	}
 
-	return convertMany(images, existing)
+	// Convert search Results directly to SearchResult protos without a second database pass
+	return search.ResultsToSearchResultProtos(results, &ImageSearchResultConverter{}), nil
 }
 
 // TODO(ROX-29943): Eliminate unnecessary 2 pass database queries
@@ -207,6 +219,41 @@ func (ds *datastoreImpl) GetImagesBatch(ctx context.Context, ids []string) ([]*s
 	return imgs, nil
 }
 
+// GetImageNames returns all image names with the same digest.
+func (ds *datastoreImpl) GetImageNames(ctx context.Context, digest string) ([]*storage.ImageName, error) {
+	defer metrics.SetDatastoreFunctionDuration(time.Now(), "ImageV2", "GetImageNames")
+
+	if digest == "" {
+		return nil, nil
+	}
+
+	// Query all images with this digest
+	query := search.NewQueryBuilder().AddExactMatches(search.ImageSHA, digest).
+		ForSearchResults(search.ImageRegistry, search.ImageRemote, search.ImageTag, search.ImageName).
+		ProtoQuery()
+	results, err := ds.Search(ctx, query)
+	if err != nil {
+		return nil, err
+	}
+
+	// Collect all image names
+	allNames := make([]*storage.ImageName, 0, len(results))
+	for _, res := range results {
+		if res.FieldValues != nil {
+			if nameVal, ok := res.FieldValues[strings.ToLower(search.ImageName.String())]; ok {
+				allNames = append(allNames, &storage.ImageName{
+					Registry: res.FieldValues[strings.ToLower(search.ImageRegistry.String())],
+					Remote:   res.FieldValues[strings.ToLower(search.ImageRemote.String())],
+					Tag:      res.FieldValues[strings.ToLower(search.ImageTag.String())],
+					FullName: nameVal,
+				})
+			}
+		}
+	}
+
+	return allNames, nil
+}
+
 // UpsertImage dedupes the image with the underlying storage and adds the image to the index.
 func (ds *datastoreImpl) UpsertImage(ctx context.Context, image *storage.ImageV2) error {
 	defer metrics.SetDatastoreFunctionDuration(time.Now(), "ImageV2", "UpsertImage")
@@ -307,6 +354,11 @@ func (ds *datastoreImpl) initializeRankers() {
 	log.Infof("Initialized image ranking with %d images", len(results))
 }
 
+func (ds *datastoreImpl) GetImageIDsAndDigests(ctx context.Context, q *v1.Query) ([]*views.ImageIDAndDigestView, error) {
+	defer metrics.SetDatastoreFunctionDuration(time.Now(), "ImageV2", "GetImageIDsAndDigest")
+	return ds.storage.GetImagesIdAndDigestView(ctx, q)
+}
+
 func (ds *datastoreImpl) updateImagePriority(images ...*storage.ImageV2) {
 	for _, image := range images {
 		image.Priority = ds.imageRanker.GetRankForID(image.GetId())
@@ -324,24 +376,18 @@ func (ds *datastoreImpl) updateComponentRisk(image *storage.ImageV2) {
 	}
 }
 
-func convertMany(images []*storage.ImageV2, results []search.Result) ([]*v1.SearchResult, error) {
-	if len(images) != len(results) {
-		return nil, errors.New("mismatch between search results and retrieved images")
-	}
+// ImageSearchResultConverter implements search.SearchResultConverter for image search results.
+// This enables single-pass query construction for SearchResult protos.
+type ImageSearchResultConverter struct{}
 
-	searchResults := make([]*v1.SearchResult, 0, len(images))
-	for i, image := range images {
-		searchResults = append(searchResults, convertOne(image, &results[i]))
-	}
-	return searchResults, nil
+func (c *ImageSearchResultConverter) BuildName(result *search.Result) string {
+	return result.Name
 }
 
-func convertOne(image *storage.ImageV2, result *search.Result) *v1.SearchResult {
-	return &v1.SearchResult{
-		Category:       v1.SearchCategory_IMAGES,
-		Id:             image.GetId(),
-		Name:           image.GetName().GetFullName(),
-		FieldToMatches: search.GetProtoMatchesMap(result.Matches),
-		Score:          result.Score,
-	}
+func (c *ImageSearchResultConverter) BuildLocation(result *search.Result) string {
+	return result.Location
+}
+
+func (c *ImageSearchResultConverter) GetCategory() v1.SearchCategory {
+	return v1.SearchCategory_IMAGES
 }

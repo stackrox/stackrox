@@ -18,6 +18,7 @@ import {
     GridItem,
     HelperText,
     HelperTextItem,
+    SelectOption,
     Split,
     SplitItem,
     Switch,
@@ -25,7 +26,6 @@ import {
     TextArea,
     TextInput,
     Title,
-    SelectOption,
 } from '@patternfly/react-core';
 import { useFormik } from 'formik';
 import * as yup from 'yup';
@@ -77,7 +77,6 @@ export type SystemConfigFormProps = {
     systemConfig: SystemConfig;
     setSystemConfig: (systemConfig: SystemConfig) => void;
     setIsNotEditing: () => void;
-    isCustomizingPlatformComponentsEnabled: boolean;
     defaultRedHatLayeredProductsRule: string;
 };
 
@@ -112,7 +111,6 @@ const SystemConfigForm = ({
     systemConfig,
     setSystemConfig,
     setIsNotEditing,
-    isCustomizingPlatformComponentsEnabled,
     defaultRedHatLayeredProductsRule,
 }: SystemConfigFormProps): ReactElement => {
     const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -146,10 +144,7 @@ const SystemConfigForm = ({
                 (rule) => rule.name === '' || rule.namespaceRule.regex === ''
             );
 
-            if (
-                isCustomizingPlatformComponentsEnabled &&
-                (isRedHatLayeredProductsRuleEmpty || hasEmptyCustomRule)
-            ) {
+            if (isRedHatLayeredProductsRuleEmpty || hasEmptyCustomRule) {
                 setSubmitting(false);
                 if (isRedHatLayeredProductsRuleEmpty) {
                     setErrorMessage('The Red Hat layered products rule cannot be empty.');
@@ -161,9 +156,7 @@ const SystemConfigForm = ({
                 return;
             }
 
-            const platformComponentConfig = isCustomizingPlatformComponentsEnabled
-                ? convertConfigRulesToComponentConfig(rules)
-                : systemConfig.platformComponentConfig;
+            const platformComponentConfig = convertConfigRulesToComponentConfig(rules);
 
             // Payload for privateConfig allows strings as number values.
             saveSystemConfig({
@@ -240,14 +233,12 @@ const SystemConfigForm = ({
                     </Alert>
                 )}
                 <Form>
-                    {isCustomizingPlatformComponentsEnabled && (
-                        <PlatformComponentsConfigForm
-                            values={values}
-                            onChange={onChange}
-                            onCustomChange={onCustomChange}
-                            defaultRedHatLayeredProductsRule={defaultRedHatLayeredProductsRule}
-                        />
-                    )}
+                    <PlatformComponentsConfigForm
+                        values={values}
+                        onChange={onChange}
+                        onCustomChange={onCustomChange}
+                        defaultRedHatLayeredProductsRule={defaultRedHatLayeredProductsRule}
+                    />
                     <Title headingLevel="h2">Private data retention configuration</Title>
                     <Grid hasGutter md={6}>
                         <GridItem>

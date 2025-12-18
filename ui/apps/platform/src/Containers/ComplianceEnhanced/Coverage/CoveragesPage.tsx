@@ -1,4 +1,4 @@
-import React, { useCallback, useContext, useState } from 'react';
+import { useCallback, useContext, useState } from 'react';
 import { Navigate, Route, Routes, useParams } from 'react-router-dom-v5-compat';
 import {
     Bullseye,
@@ -17,13 +17,14 @@ import ComplianceUsageDisclaimer, {
     COMPLIANCE_DISCLAIMER_KEY,
 } from 'Components/ComplianceUsageDisclaimer';
 import CompoundSearchFilter from 'Components/CompoundSearchFilter/components/CompoundSearchFilter';
-import {
+import SearchFilterChips, {
+    makeFilterChipDescriptorFromAttribute,
     makeFilterChipDescriptors,
-    onURLSearch,
-} from 'Components/CompoundSearchFilter/utils/utils';
-import type { OnSearchPayload } from 'Components/CompoundSearchFilter/types';
+} from 'Components/CompoundSearchFilter/components/SearchFilterChips';
+import SearchFilterSelectInclusive from 'Components/CompoundSearchFilter/components/SearchFilterSelectInclusive';
+import type { OnSearchCallback } from 'Components/CompoundSearchFilter/types';
+import { updateSearchFilter } from 'Components/CompoundSearchFilter/utils/utils';
 import PageTitle from 'Components/PageTitle';
-import SearchFilterChips from 'Components/PatternFly/SearchFilterChips';
 import { useBooleanLocalStorage } from 'hooks/useLocalStorage';
 import useRestQuery from 'hooks/useRestQuery';
 import useURLSearch from 'hooks/useURLSearch';
@@ -34,7 +35,6 @@ import { defaultChartHeight } from 'utils/chartUtils';
 import { coverageProfileChecksPath } from './compliance.coverage.routes';
 import { createScanConfigFilter } from './compliance.coverage.utils';
 import { ComplianceProfilesContext } from './ComplianceProfilesProvider';
-import CheckStatusDropdown from './components/CheckStatusDropdown';
 import ProfileDetailsHeader from './components/ProfileDetailsHeader';
 import ProfileStatsWidget from './components/ProfileStatsWidget';
 import ScanConfigurationSelect from './components/ScanConfigurationSelect';
@@ -45,8 +45,8 @@ import ProfileChecksPage from './ProfileChecksPage';
 import ProfileClustersPage from './ProfileClustersPage';
 import { ScanConfigurationsContext } from './ScanConfigurationsProvider';
 import {
+    attributeForComplianceCheckStatus,
     clusterSearchFilterConfig,
-    complianceStatusFilterChipDescriptors,
     profileCheckSearchFilterConfig,
 } from '../searchFilterConfig';
 
@@ -92,19 +92,8 @@ function CoveragesPage() {
         navigateWithScanConfigQuery(coverageProfileChecksPath, { profileName: selectedProfile });
     }
 
-    const onSearch = (payload: OnSearchPayload) => {
-        onURLSearch(searchFilter, setSearchFilter, payload);
-    };
-
-    const onCheckStatusSelect = (
-        filterType: 'Compliance Check Status',
-        checked: boolean,
-        selection: string
-    ) => {
-        const action = checked ? 'ADD' : 'REMOVE';
-        const category = filterType;
-        const value = selection;
-        onSearch({ action, category, value });
+    const onSearch: OnSearchCallback = (payload) => {
+        setSearchFilter(updateSearchFilter(searchFilter, payload));
     };
 
     const selectedProfileDetails = scanConfigProfilesResponse?.profiles.find(
@@ -190,9 +179,11 @@ function CoveragesPage() {
                                             />
                                         </ToolbarItem>
                                         <ToolbarItem>
-                                            <CheckStatusDropdown
+                                            <SearchFilterSelectInclusive
+                                                attribute={attributeForComplianceCheckStatus}
+                                                isSeparate
+                                                onSearch={onSearch}
                                                 searchFilter={searchFilter}
-                                                onSelect={onCheckStatusSelect}
                                             />
                                         </ToolbarItem>
                                     </ToolbarGroup>
@@ -202,7 +193,9 @@ function CoveragesPage() {
                                             onFilterChange={setSearchFilter}
                                             filterChipGroupDescriptors={[
                                                 ...filterChipGroupDescriptors,
-                                                complianceStatusFilterChipDescriptors,
+                                                makeFilterChipDescriptorFromAttribute(
+                                                    attributeForComplianceCheckStatus
+                                                ),
                                             ]}
                                         />
                                     </ToolbarGroup>

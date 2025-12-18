@@ -1,5 +1,3 @@
-import React from 'react';
-
 import CollapsibleSection from 'Components/CollapsibleSection';
 import CveType from 'Components/CveType';
 import Metadata from 'Components/Metadata';

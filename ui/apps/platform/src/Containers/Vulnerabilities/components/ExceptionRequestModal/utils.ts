@@ -1,7 +1,7 @@
 import { addDays, isAfter } from 'date-fns';
 import * as yup from 'yup';
 
-import {
+import type {
     CreateDeferVulnerabilityExceptionRequest,
     CreateFalsePositiveVulnerabilityExceptionRequest,
     VulnerabilityExceptionScope,

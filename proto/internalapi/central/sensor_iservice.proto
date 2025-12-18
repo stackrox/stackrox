@@ -133,6 +133,7 @@ message InvalidateImageCache {
   message ImageKey {
     string image_id = 1;
     string image_full_name = 2;
+    string image_id_v2 = 3;
   }
 
   repeated ImageKey image_keys = 1;

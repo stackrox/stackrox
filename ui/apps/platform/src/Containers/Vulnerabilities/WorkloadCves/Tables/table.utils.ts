@@ -3,14 +3,10 @@ import { min, parse } from 'date-fns';
 import sortBy from 'lodash/sortBy';
 import uniq from 'lodash/uniq';
 
-import {
-    Advisory,
-    CveBaseInfo,
-    VulnerabilitySeverity,
-    isVulnerabilitySeverity,
-} from 'types/cve.proto';
-import { SourceType } from 'types/image.proto';
-import { ApiSortOptionSingle } from 'types/search';
+import { isVulnerabilitySeverity } from 'types/cve.proto';
+import type { Advisory, CveBaseInfo, VulnerabilitySeverity } from 'types/cve.proto';
+import type { SourceType } from 'types/image.proto';
+import type { ApiSortOptionSingle } from 'types/search';
 
 import {
     getHighestVulnerabilitySeverity,
@@ -61,6 +57,7 @@ export type ComponentVulnerabilityBase = {
     location: string;
     source: SourceType;
     layerIndex: number | null;
+    inBaseImageLayer?: boolean;
     imageVulnerabilities: {
         severity: string;
         fixedByVersion: string;
@@ -109,6 +106,7 @@ export type TableDataRow = {
         value: string;
     } | null;
     pendingExceptionCount: number;
+    inBaseImageLayer?: boolean;
 };
 
 /**
@@ -163,7 +161,7 @@ function extractCommonComponentFields(
     component: ComponentVulnerabilityBase,
     vulnerability: ComponentVulnerabilityBase['imageVulnerabilities'][0] | undefined
 ): TableDataRow {
-    const { name, version, location, source, layerIndex } = component;
+    const { name, version, location, source, layerIndex, inBaseImageLayer } = component;
 
     let layer: TableDataRow['layer'] = null;
 
@@ -197,6 +195,7 @@ function extractCommonComponentFields(
         fixedByVersion,
         advisory,
         pendingExceptionCount,
+        inBaseImageLayer,
     };
 }
 

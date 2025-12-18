@@ -1,16 +1,15 @@
-import React from 'react';
 import { useLocation } from 'react-router-dom-v5-compat';
 import { gql } from '@apollo/client';
 import pluralize from 'pluralize';
 
 import {
-    defaultHeaderClassName,
     defaultColumnClassName,
+    defaultHeaderClassName,
     nonSortableHeaderClassName,
 } from 'Components/Table';
 import TableCellLink from 'Components/TableCellLink';
 import PolicyStatusIconText from 'Components/PatternFly/IconText/PolicyStatusIconText';
-import { entityListPropTypes, entityListDefaultprops } from 'constants/entityPageProps';
+import { entityListDefaultprops, entityListPropTypes } from 'constants/entityPageProps';
 import { CLIENT_SIDE_SEARCH_OPTIONS as SEARCH_OPTIONS } from 'constants/searchOptions';
 import { clusterSortFields } from 'constants/sortFields';
 import useWorkflowMatch from 'hooks/useWorkflowMatch';
@@ -211,7 +210,7 @@ const ConfigManagementListClusters = ({ className, selectedRowId, onRowClick, qu
     const match = useWorkflowMatch();
     const autoFocusSearchInput = !selectedRowId;
     const tableColumns = buildTableColumns(match, location);
-    const { [SEARCH_OPTIONS.POLICY_STATUS.CATEGORY]: policyStatus, ...restQuery } = query || {};
+    const { [SEARCH_OPTIONS.POLICY_STATUS.CATEGORY]: policyStatus, ...restQuery } = query ?? {};
     const queryObject = { ...restQuery };
     const queryText = queryService.objectToWhereClause(queryObject);
     const variables = queryText ? { query: queryText } : null;

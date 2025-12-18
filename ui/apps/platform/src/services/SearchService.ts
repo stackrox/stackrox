@@ -12,7 +12,6 @@ const autoCompleteURL = `${baseUrl}/autocomplete`;
 // prettier-ignore
 export type SearchCategory =
     | 'SEARCH_UNSET'
-    | 'ACTIVE_COMPONENT'
     | 'ALERTS'
     | 'CLUSTER_HEALTH'
     | 'CLUSTER_VULN_EDGE'
@@ -158,5 +157,5 @@ export function fetchAutoCompleteResults(rawSearchRequest: RawSearchRequest): Pr
     const params = qs.stringify(rawSearchRequest, { arrayFormat: 'repeat' });
     return axios
         .get<AutocompleteResponse>(`${autoCompleteURL}?${params}`)
-        .then((response) => response?.data?.values || []);
+        .then((response) => response?.data?.values ?? []);
 }

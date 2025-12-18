@@ -62,3 +62,22 @@ networkWorkload:
   # i.e., multiple processes listening on the same port.
   openPortReuseProbability: 0.05
 
+# VirtualMachine workload simulates KubeVirt VMs arriving through Kubernetes informers.
+# Optionally generates index reports for each VM while it's alive in the lifecycle.
+virtualMachineWorkload:
+  # Pool size: number of VM/VMI templates to maintain (memory-efficient bounded pool)
+  # This is the number of unique VMs that exist at any given time.
+  poolSize: 20
+  # Approx this often, update the annotations/labels on the VM/VMI
+  updateInterval: 30s
+  # Approx this often, destroy and recreate the VM/VMI
+  lifecycleDuration: 5m
+  # Number of times to recreate VMs beyond the initial scale up (0 = infinite)
+  numLifecycles: 0
+  # How often each VM sends an index report (0 = no reports, informer events only). ±5% max deviation applied.
+  reportInterval: 60s
+  # Number of fake packages to include in each index report
+  numPackages: 100
+  # Delay before the first index report for each VM (±20% max deviation applied)
+  initialReportDelay: 10s
+

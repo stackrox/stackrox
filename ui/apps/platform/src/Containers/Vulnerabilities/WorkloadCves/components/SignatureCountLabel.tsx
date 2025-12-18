@@ -1,4 +1,3 @@
-import React from 'react';
 import { Flex, FlexItem, Label, Popover, Text } from '@patternfly/react-core';
 
 import useMetadata from 'hooks/useMetadata';

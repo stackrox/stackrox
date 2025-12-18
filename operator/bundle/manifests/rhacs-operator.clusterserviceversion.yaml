@@ -183,12 +183,16 @@ spec:
         path: central.resources
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:resourceRequirements
-      - description: If you want this component to only run on specific nodes, you
+      - description: 'If you want this component to only run on specific nodes, you
           can configure a node selector here.
+
+          This setting overrides spec.customize.deploymentDefaults.nodeSelector.'
         displayName: Node Selector
         path: central.nodeSelector
-      - description: If you want this component to only run on specific nodes, you
+      - description: 'If you want this component to only run on specific nodes, you
           can configure tolerations of tainted nodes.
+
+          This setting overrides spec.customize.deploymentDefaults.tolerations.'
         displayName: Tolerations
         path: central.tolerations
         x-descriptors:
@@ -258,12 +262,16 @@ spec:
         path: central.db.resources
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:resourceRequirements
-      - description: If you want this component to only run on specific nodes, you
+      - description: 'If you want this component to only run on specific nodes, you
           can configure a node selector here.
+
+          This setting overrides spec.customize.deploymentDefaults.nodeSelector.'
         displayName: Node Selector
         path: central.db.nodeSelector
-      - description: If you want this component to only run on specific nodes, you
+      - description: 'If you want this component to only run on specific nodes, you
           can configure tolerations of tainted nodes.
+
+          This setting overrides spec.customize.deploymentDefaults.tolerations.'
         displayName: Tolerations
         path: central.db.tolerations
         x-descriptors:
@@ -305,7 +313,7 @@ spec:
           Recommended for most users.'
         displayName: Persistent volume claim
         path: central.db.persistence.persistentVolumeClaim
-      - description: 'Stores persistent data on a directory on the host. This is not
+      - description: 'Stores persistent data in a directory on the host. This is not
           recommended, and should only
 
           be used together with a node selector (only available in YAML view).'
@@ -499,7 +507,7 @@ spec:
         path: central.persistence.persistentVolumeClaim.storageClassName
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:hidden
-      - description: 'Specifies if Telemetry is enabled.
+      - description: 'Specifies whether Telemetry is enabled.
 
           The default is: true.'
         displayName: Enabled
@@ -523,6 +531,32 @@ spec:
           The default is: Enabled.'
         displayName: Config as Code component
         path: configAsCode.configAsCodeComponent
+      - description: 'Allows overriding the default resource settings for this component.
+          Please consult the documentation
+
+          for an overview of default resource requirements and a sizing guide.'
+        displayName: Resources
+        path: configAsCode.resources
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:resourceRequirements
+      - description: 'If you want this component to only run on specific nodes, you
+          can configure a node selector here.
+
+          This setting overrides spec.customize.deploymentDefaults.nodeSelector.'
+        displayName: Node Selector
+        path: configAsCode.nodeSelector
+      - description: 'If you want this component to only run on specific nodes, you
+          can configure tolerations of tainted nodes.
+
+          This setting overrides spec.customize.deploymentDefaults.tolerations.'
+        displayName: Tolerations
+        path: configAsCode.tolerations
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:tolerations
+      - description: HostAliases allows configuring additional hostnames to resolve
+          in the pod's hosts file.
+        displayName: Host Aliases
+        path: configAsCode.hostAliases
       - description: Custom labels to set on all managed objects.
         displayName: Labels
         path: customize.labels
@@ -532,6 +566,45 @@ spec:
       - description: Custom environment variables to set on managed pods' containers.
         displayName: Environment Variables
         path: customize.envVars
+      - description: 'Global nodeSelector and tolerations for Deployment-based components.
+          DaemonSets (Collector) are not affected.
+
+          Component-level nodeSelector and tolerations settings override these defaults
+          on a field-by-field basis.'
+        displayName: Deployment Defaults
+        path: customize.deploymentDefaults
+      - description: 'Pin all Deployment-based components to specific node types.
+          This is a convenience setting
+
+          that automatically configures both nodeSelector and tolerations with predefined
+          values.
+
+          Use this for common scenarios like running on OpenShift infrastructure nodes.
+
+          For custom node selection, use the explicit nodeSelector and tolerations
+          fields instead.
+
+          Cannot be used together with nodeSelector or tolerations fields.
+
+          The default is: None.'
+        displayName: Pin To Nodes
+        path: customize.deploymentDefaults.pinToNodes
+      - description: 'Default nodeSelector applied to all Deployment-based components.
+          Use this for custom node
+
+          selection criteria.
+
+          Cannot be used together with pinToNodes.'
+        displayName: Node Selector
+        path: customize.deploymentDefaults.nodeSelector
+      - description: 'Default tolerations applied to all Deployment-based components.
+          Use this when your target
+
+          nodes have custom taints that pods must tolerate.
+
+          Cannot be used together with pinToNodes.'
+        displayName: Tolerations
+        path: customize.deploymentDefaults.tolerations
       - description: 'Configures whether Red Hat Advanced Cluster Security should
           run in online or offline (disconnected) mode.
 
@@ -561,7 +634,7 @@ spec:
         path: monitoring.openshift.enabled
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:booleanSwitch
-      - description: 'To provide security at the network level the ACS Operator creates
+      - description: 'To provide security at the network level, the ACS Operator creates
           NetworkPolicy resources by default. If you want to manage your own NetworkPolicy
           objects then set this to "Disabled".
 
@@ -613,8 +686,8 @@ spec:
         path: overlays[0].patches[0].value
       - description: 'Verbatim value to add, delete or replace.
 
-          Same as Value, however the content is not interpreted as YAML, but treated
-          as literal string instead.
+          Same as Value, but the content is not interpreted as YAML and is treated
+          as a literal string instead.
 
           At least one of Value and Verbatim must be empty.'
         displayName: Verbatim
@@ -656,12 +729,16 @@ spec:
         path: scanner.analyzer.resources
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:resourceRequirements
-      - description: If you want this component to only run on specific nodes, you
+      - description: 'If you want this component to only run on specific nodes, you
           can configure a node selector here.
+
+          This setting overrides spec.customize.deploymentDefaults.nodeSelector.'
         displayName: Node Selector
         path: scanner.analyzer.nodeSelector
-      - description: If you want this component to only run on specific nodes, you
+      - description: 'If you want this component to only run on specific nodes, you
           can configure tolerations of tainted nodes.
+
+          This setting overrides spec.customize.deploymentDefaults.tolerations.'
         displayName: Tolerations
         path: scanner.analyzer.tolerations
         x-descriptors:
@@ -702,12 +779,16 @@ spec:
         path: scanner.db.resources
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:resourceRequirements
-      - description: If you want this component to only run on specific nodes, you
+      - description: 'If you want this component to only run on specific nodes, you
           can configure a node selector here.
+
+          This setting overrides spec.customize.deploymentDefaults.nodeSelector.'
         displayName: Node Selector
         path: scanner.db.nodeSelector
-      - description: If you want this component to only run on specific nodes, you
+      - description: 'If you want this component to only run on specific nodes, you
           can configure tolerations of tainted nodes.
+
+          This setting overrides spec.customize.deploymentDefaults.tolerations.'
         displayName: Tolerations
         path: scanner.db.tolerations
         x-descriptors:
@@ -774,12 +855,16 @@ spec:
         path: scannerV4.db.resources
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:resourceRequirements
-      - description: If you want this component to only run on specific nodes, you
+      - description: 'If you want this component to only run on specific nodes, you
           can configure a node selector here.
+
+          This setting overrides spec.customize.deploymentDefaults.nodeSelector.'
         displayName: Node Selector
         path: scannerV4.db.nodeSelector
-      - description: If you want this component to only run on specific nodes, you
+      - description: 'If you want this component to only run on specific nodes, you
           can configure tolerations of tainted nodes.
+
+          This setting overrides spec.customize.deploymentDefaults.tolerations.'
         displayName: Tolerations
         path: scannerV4.db.tolerations
         x-descriptors:
@@ -794,7 +879,7 @@ spec:
           Recommended for most users.'
         displayName: Persistent volume claim
         path: scannerV4.db.persistence.persistentVolumeClaim
-      - description: 'Stores persistent data on a directory on the host. This is not
+      - description: 'Stores persistent data in a directory on the host. This is not
           recommended, and should only
 
           be used together with a node selector (only available in YAML view).'
@@ -841,12 +926,16 @@ spec:
         path: scannerV4.indexer.resources
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:resourceRequirements
-      - description: If you want this component to only run on specific nodes, you
+      - description: 'If you want this component to only run on specific nodes, you
           can configure a node selector here.
+
+          This setting overrides spec.customize.deploymentDefaults.nodeSelector.'
         displayName: Node Selector
         path: scannerV4.indexer.nodeSelector
-      - description: If you want this component to only run on specific nodes, you
+      - description: 'If you want this component to only run on specific nodes, you
           can configure tolerations of tainted nodes.
+
+          This setting overrides spec.customize.deploymentDefaults.tolerations.'
         displayName: Tolerations
         path: scannerV4.indexer.tolerations
         x-descriptors:
@@ -890,12 +979,16 @@ spec:
         path: scannerV4.matcher.resources
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:resourceRequirements
-      - description: If you want this component to only run on specific nodes, you
+      - description: 'If you want this component to only run on specific nodes, you
           can configure a node selector here.
+
+          This setting overrides spec.customize.deploymentDefaults.nodeSelector.'
         displayName: Node Selector
         path: scannerV4.matcher.nodeSelector
-      - description: If you want this component to only run on specific nodes, you
+      - description: 'If you want this component to only run on specific nodes, you
           can configure tolerations of tainted nodes.
+
+          This setting overrides spec.customize.deploymentDefaults.tolerations.'
         displayName: Tolerations
         path: scannerV4.matcher.tolerations
         x-descriptors:
@@ -953,6 +1046,10 @@ spec:
         path: central.adminPassword.adminPasswordSecretReference
         x-descriptors:
         - urn:alm:descriptor:io.kubernetes:Secret
+      - description: ObservedGeneration is the generation most recently observed by
+          the controller.
+        displayName: Observed Generation
+        path: observedGeneration
       version: v1alpha1
     - description: 'SecuredCluster is the configuration template for the secured cluster
         services. These include Sensor, which is
@@ -1044,7 +1141,7 @@ spec:
         path: imagePullSecrets
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:advanced
-      - description: Customizations to apply on all Central Services components.
+      - description: Customizations to apply on all Secured Cluster Services components.
         displayName: Customizations
         path: customize
         x-descriptors:
@@ -1114,12 +1211,16 @@ spec:
         path: admissionControl.resources
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:resourceRequirements
-      - description: If you want this component to only run on specific nodes, you
+      - description: 'If you want this component to only run on specific nodes, you
           can configure a node selector here.
+
+          This setting overrides spec.customize.deploymentDefaults.nodeSelector.'
         displayName: Node Selector
         path: admissionControl.nodeSelector
-      - description: If you want this component to only run on specific nodes, you
+      - description: 'If you want this component to only run on specific nodes, you
           can configure tolerations of tainted nodes.
+
+          This setting overrides spec.customize.deploymentDefaults.tolerations.'
         displayName: Tolerations
         path: admissionControl.tolerations
         x-descriptors:
@@ -1174,6 +1275,45 @@ spec:
       - description: Custom environment variables to set on managed pods' containers.
         displayName: Environment Variables
         path: customize.envVars
+      - description: 'Global nodeSelector and tolerations for Deployment-based components.
+          DaemonSets (Collector) are not affected.
+
+          Component-level nodeSelector and tolerations settings override these defaults
+          on a field-by-field basis.'
+        displayName: Deployment Defaults
+        path: customize.deploymentDefaults
+      - description: 'Pin all Deployment-based components to specific node types.
+          This is a convenience setting
+
+          that automatically configures both nodeSelector and tolerations with predefined
+          values.
+
+          Use this for common scenarios like running on OpenShift infrastructure nodes.
+
+          For custom node selection, use the explicit nodeSelector and tolerations
+          fields instead.
+
+          Cannot be used together with nodeSelector or tolerations fields.
+
+          The default is: None.'
+        displayName: Pin To Nodes
+        path: customize.deploymentDefaults.pinToNodes
+      - description: 'Default nodeSelector applied to all Deployment-based components.
+          Use this for custom node
+
+          selection criteria.
+
+          Cannot be used together with pinToNodes.'
+        displayName: Node Selector
+        path: customize.deploymentDefaults.nodeSelector
+      - description: 'Default tolerations applied to all Deployment-based components.
+          Use this when your target
+
+          nodes have custom taints that pods must tolerate.
+
+          Cannot be used together with pinToNodes.'
+        displayName: Tolerations
+        path: customize.deploymentDefaults.tolerations
       - description: The name of the referenced secret.
         displayName: Name
         path: imagePullSecrets[0].name
@@ -1194,7 +1334,7 @@ spec:
         path: monitoring.openshift.enabled
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:booleanSwitch
-      - description: 'To provide security at the network level the ACS Operator creates
+      - description: 'To provide security at the network level, the ACS Operator creates
           NetworkPolicy resources by default. If you want to manage your own NetworkPolicy
           objects then set this to "Disabled".
 
@@ -1246,8 +1386,8 @@ spec:
         path: overlays[0].patches[0].value
       - description: 'Verbatim value to add, delete or replace.
 
-          Same as Value, however the content is not interpreted as YAML, but treated
-          as literal string instead.
+          Same as Value, but the content is not interpreted as YAML and is treated
+          as a literal string instead.
 
           At least one of Value and Verbatim must be empty.'
         displayName: Verbatim
@@ -1266,6 +1406,10 @@ spec:
           for scanning the Nodes' filesystem.
         displayName: Node Scanning Settings
         path: perNode.nodeInventory
+      - description: Settings for the Sensitive File Activity container, which is
+          responsible for file activity monitoring on the Node.
+        displayName: SFA
+        path: perNode.sfa
       - description: 'To ensure comprehensive monitoring of your cluster activity,
           Red Hat Advanced Cluster Security
 
@@ -1286,7 +1430,7 @@ spec:
           If you select "NoCollection", you will not be able to see any information
           about network activity
 
-          and process executions. The remaining settings in these section will not
+          and process executions. The remaining settings in this section will not
           have any effect.
 
           The value is a subject of conversion by the operator if needed, e.g. to
@@ -1333,6 +1477,19 @@ spec:
         path: perNode.nodeInventory.resources
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:resourceRequirements
+      - description: 'Specifies whether Sensitive File Activity agent is deployed.
+
+          The default is: Disabled.'
+        displayName: SFA Agent
+        path: perNode.sfa.agent
+      - description: 'Allows overriding the default resource settings for this component.
+          Please consult the documentation
+
+          for an overview of default resource requirements and a sizing guide.'
+        displayName: Resources
+        path: perNode.sfa.resources
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:resourceRequirements
       - description: 'Should process baselines be automatically locked when the observation
           period (1 hour by default) ends.
 
@@ -1370,12 +1527,16 @@ spec:
         path: scanner.analyzer.resources
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:resourceRequirements
-      - description: If you want this component to only run on specific nodes, you
+      - description: 'If you want this component to only run on specific nodes, you
           can configure a node selector here.
+
+          This setting overrides spec.customize.deploymentDefaults.nodeSelector.'
         displayName: Node Selector
         path: scanner.analyzer.nodeSelector
-      - description: If you want this component to only run on specific nodes, you
+      - description: 'If you want this component to only run on specific nodes, you
           can configure tolerations of tainted nodes.
+
+          This setting overrides spec.customize.deploymentDefaults.tolerations.'
         displayName: Tolerations
         path: scanner.analyzer.tolerations
         x-descriptors:
@@ -1416,12 +1577,16 @@ spec:
         path: scanner.db.resources
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:resourceRequirements
-      - description: If you want this component to only run on specific nodes, you
+      - description: 'If you want this component to only run on specific nodes, you
           can configure a node selector here.
+
+          This setting overrides spec.customize.deploymentDefaults.nodeSelector.'
         displayName: Node Selector
         path: scanner.db.nodeSelector
-      - description: If you want this component to only run on specific nodes, you
+      - description: 'If you want this component to only run on specific nodes, you
           can configure tolerations of tainted nodes.
+
+          This setting overrides spec.customize.deploymentDefaults.tolerations.'
         displayName: Tolerations
         path: scanner.db.tolerations
         x-descriptors:
@@ -1477,12 +1642,16 @@ spec:
         path: scannerV4.db.resources
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:resourceRequirements
-      - description: If you want this component to only run on specific nodes, you
+      - description: 'If you want this component to only run on specific nodes, you
           can configure a node selector here.
+
+          This setting overrides spec.customize.deploymentDefaults.nodeSelector.'
         displayName: Node Selector
         path: scannerV4.db.nodeSelector
-      - description: If you want this component to only run on specific nodes, you
+      - description: 'If you want this component to only run on specific nodes, you
           can configure tolerations of tainted nodes.
+
+          This setting overrides spec.customize.deploymentDefaults.tolerations.'
         displayName: Tolerations
         path: scannerV4.db.tolerations
         x-descriptors:
@@ -1497,7 +1666,7 @@ spec:
           Recommended for most users.'
         displayName: Persistent volume claim
         path: scannerV4.db.persistence.persistentVolumeClaim
-      - description: 'Stores persistent data on a directory on the host. This is not
+      - description: 'Stores persistent data in a directory on the host. This is not
           recommended, and should only
 
           be used together with a node selector (only available in YAML view).'
@@ -1544,12 +1713,16 @@ spec:
         path: scannerV4.indexer.resources
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:resourceRequirements
-      - description: If you want this component to only run on specific nodes, you
+      - description: 'If you want this component to only run on specific nodes, you
           can configure a node selector here.
+
+          This setting overrides spec.customize.deploymentDefaults.nodeSelector.'
         displayName: Node Selector
         path: scannerV4.indexer.nodeSelector
-      - description: If you want this component to only run on specific nodes, you
+      - description: 'If you want this component to only run on specific nodes, you
           can configure tolerations of tainted nodes.
+
+          This setting overrides spec.customize.deploymentDefaults.tolerations.'
         displayName: Tolerations
         path: scannerV4.indexer.tolerations
         x-descriptors:
@@ -1597,12 +1770,16 @@ spec:
         path: sensor.resources
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:resourceRequirements
-      - description: If you want this component to only run on specific nodes, you
+      - description: 'If you want this component to only run on specific nodes, you
           can configure a node selector here.
+
+          This setting overrides spec.customize.deploymentDefaults.nodeSelector.'
         displayName: Node Selector
         path: sensor.nodeSelector
-      - description: If you want this component to only run on specific nodes, you
+      - description: 'If you want this component to only run on specific nodes, you
           can configure tolerations of tainted nodes.
+
+          This setting overrides spec.customize.deploymentDefaults.tolerations.'
         displayName: Tolerations
         path: sensor.tolerations
         x-descriptors:
@@ -1624,6 +1801,10 @@ spec:
           cluster name, please delete and recreate this resource.'
         displayName: Cluster Name
         path: clusterName
+      - description: ObservedGeneration is the generation most recently observed by
+          the controller.
+        displayName: Observed Generation
+        path: observedGeneration
       version: v1alpha1
   description: "## Why use Red Hat Advanced Cluster Security for Kubernetes?\n\nProtecting\
     \ cloud-native applications requires significant changes in how we approach security\u2014\

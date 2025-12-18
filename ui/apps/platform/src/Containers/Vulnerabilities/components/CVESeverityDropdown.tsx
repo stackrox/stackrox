@@ -1,9 +1,8 @@
-import React, { useState } from 'react';
-import { Select, SelectOption } from '@patternfly/react-core/deprecated';
+import { SelectOption } from '@patternfly/react-core';
 
-import { SearchFilter } from 'types/search';
-
-import './FilterDropdowns.css';
+import CheckboxSelect from 'Components/PatternFly/CheckboxSelect';
+import { searchValueAsArray } from 'utils/searchUtils';
+import type { SearchFilter } from 'types/search';
 
 type CVESeverityDropdownProps = {
     searchFilter: SearchFilter;
@@ -11,32 +10,27 @@ type CVESeverityDropdownProps = {
 };
 
 function CVESeverityDropdown({ searchFilter, onSelect }: CVESeverityDropdownProps) {
-    const [cveSeverityIsOpen, setCveSeverityIsOpen] = useState(false);
+    const selections = searchValueAsArray(searchFilter.SEVERITY);
 
-    function onCveSeverityToggle(isOpen: boolean) {
-        setCveSeverityIsOpen(isOpen);
+    function handleItemSelect(selection: string, checked: boolean) {
+        onSelect('SEVERITY', checked, selection);
     }
 
     return (
-        <Select
-            variant="checkbox"
-            aria-label="CVE severity filter menu items"
+        <CheckboxSelect
+            selections={selections}
+            onItemSelect={handleItemSelect}
+            ariaLabel="CVE severity filter menu items"
             toggleAriaLabel="CVE severity filter menu toggle"
-            onToggle={(_event, isOpen: boolean) => onCveSeverityToggle(isOpen)}
-            onSelect={(e, selection) => {
-                onSelect('SEVERITY', (e.target as HTMLInputElement).checked, selection as string);
-            }}
-            selections={searchFilter.SEVERITY}
-            isOpen={cveSeverityIsOpen}
             placeholderText="CVE severity"
             className="vm-filter-toolbar-dropdown cve-severity-select"
         >
-            <SelectOption key="Critical" value="Critical" />
-            <SelectOption key="Important" value="Important" />
-            <SelectOption key="Moderate" value="Moderate" />
-            <SelectOption key="Low" value="Low" />
-            <SelectOption key="Unknown" value="Unknown" />
-        </Select>
+            <SelectOption value="Critical">Critical</SelectOption>
+            <SelectOption value="Important">Important</SelectOption>
+            <SelectOption value="Moderate">Moderate</SelectOption>
+            <SelectOption value="Low">Low</SelectOption>
+            <SelectOption value="Unknown">Unknown</SelectOption>
+        </CheckboxSelect>
     );
 }
 

@@ -3,6 +3,7 @@
 package tests
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"testing"
@@ -10,6 +11,7 @@ import (
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/stackrox/rox/central/graphql/resolvers/inputtypes"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/sliceutils"
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stretchr/testify/require"
@@ -50,13 +52,13 @@ func setupMultiContainerPodTest(t *testing.T) (*coreV1.Pod, string, Pod, func())
 		ensurePodExists(retryT, client, kPod)
 		// Wait for pod to be fully running with all containers ready
 		k8sPod = waitForPodRunning(retryT, client, kPod.GetNamespace(), kPod.GetName())
-		t.Logf("Pod %s is running with all containers ready", kPod.GetName())
+		retryT.Logf("Pod %s is running with all containers ready", kPod.GetName())
 
 		// Now wait for Central to see the deployment
 		// This can take time as Sensor needs to detect the pod and report it to Central
-		t.Logf("Waiting for Central to see deployment %s", kPod.GetName())
-		waitForDeployment(retryT, kPod.GetName())
-		t.Logf("Central now sees deployment %s", kPod.GetName())
+		retryT.Logf("Waiting for Central to see deployment %s", kPod.GetName())
+		waitForDeploymentInCentral(retryT, kPod.GetName())
+		retryT.Logf("Central now sees deployment %s", kPod.GetName())
 	})
 
 	deploymentID := ""
@@ -89,6 +91,29 @@ func skipIfNoCollection(t *testing.T) {
 	}
 }
 
+// waitForSensorHealthy waits for Sensor to be healthy both in Kubernetes and as reported by Central.
+// This ensures the Collector->Sensor->Central event pipeline is ready before tests that depend on process events.
+func waitForSensorHealthy(t *testing.T) {
+	ctx := context.Background()
+	client := createK8sClient(t)
+
+	t.Log("Waiting for Sensor to be healthy before starting test")
+
+	// Create a minimal KubernetesSuite to use existing helper methods
+	ks := &KubernetesSuite{
+		k8s: client,
+	}
+	ks.SetT(t)
+
+	// Wait for Sensor deployment to be ready in Kubernetes
+	ks.waitUntilK8sDeploymentReady(ctx, "stackrox", "sensor")
+
+	// Wait for Central to report healthy connection with Sensor
+	waitUntilCentralSensorConnectionIs(t, ctx, storage.ClusterHealthStatus_HEALTHY)
+
+	t.Log("Sensor is healthy and ready")
+}
+
 // verifyStartTimeBeforeEvents verifies that a start time is not after the earliest event timestamp
 func verifyStartTimeBeforeEvents(t testutils.T, startTime graphql.Time, events []Event, contextMsg string) {
 	if len(events) == 0 {
@@ -108,7 +133,11 @@ func verifyStartTimeBeforeEvents(t testutils.T, startTime graphql.Time, events [
 
 func TestPod(testT *testing.T) {
 	skipIfNoCollection(testT)
-	// TODO(ROX-31331): Collector cannot reliably detect all processes in this test's images.
+
+	// Wait for Sensor to be healthy to ensure the event collection pipeline is ready
+	// after any previous tests that may have restarted Sensor.
+	waitForSensorHealthy(testT)
+
 	_, deploymentID, pod, cleanup := setupMultiContainerPodTest(testT)
 	defer cleanup()
 
@@ -126,9 +155,7 @@ func TestPod(testT *testing.T) {
 		retryEventsT.Logf("Event names: %+v", eventNames)
 
 		// Required processes from both containers
-		// TODO(ROX-31331): Collector cannot reliably detect /bin/sh /bin/date or /bin/sleep in ubuntu image,
-		// thus not including it in the required processes.
-		requiredProcesses := []string{"/usr/sbin/nginx"}
+		requiredProcesses := []string{"/usr/sbin/nginx", "/bin/sh", "/bin/date", "/bin/sleep"}
 		require.Subsetf(retryEventsT, eventNames, requiredProcesses,
 			"Pod: required processes: %v not found in events: %v", requiredProcesses, eventNames)
 
@@ -156,7 +183,7 @@ func getDeploymentID(t testutils.T, deploymentName string) string {
 	`, map[string]interface{}{
 		"query": fmt.Sprintf("Deployment: %s", deploymentName),
 	}, &respData, timeout)
-	log.Info(respData)
+	t.Logf("%+v", respData)
 	require.Len(t, respData.Deployments, 1)
 
 	return string(respData.Deployments[0].ID)
@@ -196,7 +223,7 @@ func getPods(t testutils.T, deploymentID string) []Pod {
 		"podsQuery":  fmt.Sprintf("Deployment ID: %s", deploymentID),
 		"pagination": pagination,
 	}, &respData, timeout)
-	log.Infof("%+v", respData)
+	t.Logf("%+v", respData)
 
 	return respData.Pods
 }
@@ -215,7 +242,7 @@ func getPodCountInCentral(t testutils.T, deploymentID string) int {
 	`, map[string]interface{}{
 		"podsQuery": fmt.Sprintf("Deployment ID: %s", deploymentID),
 	}, &respData, timeout)
-	log.Infof("Pod count in Central for deployment %s: %d", deploymentID, respData.PodCount)
+	t.Logf("Pod count in Central for deployment %s: %d", deploymentID, respData.PodCount)
 
 	return int(respData.PodCount)
 }
@@ -242,7 +269,7 @@ func getEvents(t testutils.T, pod Pod) []Event {
 	`, map[string]interface{}{
 		"podId": pod.ID,
 	}, &respData, timeout)
-	log.Infof("Get Events: %+v", respData)
+	t.Logf("Get Events: %+v", respData)
 
 	return respData.Pod.Events
 }

@@ -4,7 +4,6 @@ package postgres
 
 import (
 	"context"
-	"slices"
 	"time"
 
 	"github.com/jackc/pgx/v5"
@@ -18,7 +17,6 @@ import (
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
 	pgSearch "github.com/stackrox/rox/pkg/search/postgres"
-	"gorm.io/gorm"
 )
 
 const (
@@ -112,88 +110,60 @@ func insertIntoGroups(batch *pgx.Batch, obj *storage.Group) error {
 	return nil
 }
 
+var copyColsGroups = []string{
+	"props_id",
+	"props_authproviderid",
+	"props_key",
+	"props_value",
+	"rolename",
+	"serialized",
+}
+
 func copyFromGroups(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, objs ...*storage.Group) error {
 	if len(objs) == 0 {
 		return nil
 	}
-	batchSize := min(len(objs), pgSearch.MaxBatchSize)
-	inputRows := make([][]interface{}, 0, batchSize)
 
-	// This is a copy so first we must delete the rows and re-add them
-	// Which is essentially the desired behaviour of an upsert.
-	deletes := make([]string, 0, batchSize)
-
-	copyCols := []string{
-		"props_id",
-		"props_authproviderid",
-		"props_key",
-		"props_value",
-		"rolename",
-		"serialized",
-	}
-
-	for objBatch := range slices.Chunk(objs, batchSize) {
-		for _, obj := range objBatch {
-			// Todo: ROX-9499 Figure out how to more cleanly template around this issue.
-			log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj "+
-				"in the loop is not used as it only consists of the parent ID and the index.  Putting this here as a stop gap "+
-				"to simply use the object.  %s", obj)
-
-			serialized, marshalErr := obj.MarshalVT()
-			if marshalErr != nil {
-				return marshalErr
-			}
-
-			inputRows = append(inputRows, []interface{}{
-				obj.GetProps().GetId(),
-				obj.GetProps().GetAuthProviderId(),
-				obj.GetProps().GetKey(),
-				obj.GetProps().GetValue(),
-				obj.GetRoleName(),
-				serialized,
-			})
-
-			// Add the ID to be deleted.
+	{
+		// CopyFrom does not upsert, so delete existing rows first to achieve upsert behavior.
+		// Parent deletion cascades to children, so only the top-level parent needs deletion.
+		deletes := make([]string, 0, len(objs))
+		for _, obj := range objs {
 			deletes = append(deletes, obj.GetProps().GetId())
 		}
-
-		// copy does not upsert so have to delete first.  parent deletion cascades so only need to
-		// delete for the top level parent
-
 		if err := s.DeleteMany(ctx, deletes); err != nil {
 			return err
 		}
-		// clear the inserts and vals for the next batch
-		deletes = deletes[:0]
+	}
 
-		if _, err := tx.CopyFrom(ctx, pgx.Identifier{"groups"}, copyCols, pgx.CopyFromRows(inputRows)); err != nil {
-			return err
+	idx := 0
+	inputRows := pgx.CopyFromFunc(func() ([]any, error) {
+		if idx >= len(objs) {
+			return nil, nil
 		}
-		// clear the input rows for the next batch
-		inputRows = inputRows[:0]
+		obj := objs[idx]
+		idx++
+
+		serialized, marshalErr := obj.MarshalVT()
+		if marshalErr != nil {
+			return nil, marshalErr
+		}
+
+		return []interface{}{
+			obj.GetProps().GetId(),
+			obj.GetProps().GetAuthProviderId(),
+			obj.GetProps().GetKey(),
+			obj.GetProps().GetValue(),
+			obj.GetRoleName(),
+			serialized,
+		}, nil
+	})
+
+	if _, err := tx.CopyFrom(ctx, pgx.Identifier{"groups"}, copyColsGroups, inputRows); err != nil {
+		return err
 	}
 
 	return nil
 }
 
 // endregion Helper functions
-
-// region Used for testing
-
-// CreateTableAndNewStore returns a new Store instance for testing.
-func CreateTableAndNewStore(ctx context.Context, db postgres.DB, gormDB *gorm.DB) Store {
-	pkgSchema.ApplySchemaForTable(ctx, gormDB, baseTable)
-	return New(db)
-}
-
-// Destroy drops the tables associated with the target object type.
-func Destroy(ctx context.Context, db postgres.DB) {
-	dropTableGroups(ctx, db)
-}
-
-func dropTableGroups(ctx context.Context, db postgres.DB) {
-	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS groups CASCADE")
-
-}
-
-// endregion Used for testing

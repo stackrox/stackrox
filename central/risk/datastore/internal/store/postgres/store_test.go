@@ -96,6 +96,11 @@ func (s *RisksStoreSuite) TestStore() {
 
 	s.NoError(store.UpsertMany(ctx, risks))
 
+	foundRisks, missing, err := store.GetMany(ctx, riskIDs)
+	s.NoError(err)
+	s.Empty(missing)
+	protoassert.ElementsMatch(s.T(), risks, foundRisks)
+
 	riskCount, err = store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)
 	s.Equal(200, riskCount)

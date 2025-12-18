@@ -1,4 +1,4 @@
-import React, { useContext, useState } from 'react';
+import { useContext, useState } from 'react';
 
 import entityTypes from 'constants/entityTypes';
 import Widget from 'Components/Widget';

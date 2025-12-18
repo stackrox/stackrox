@@ -87,6 +87,7 @@ var _ types.Registry = (*FakeReg)(nil)
 
 func (*FakeReg) Config(ctx context.Context) *types.Config                  { return nil }
 func (*FakeReg) HTTPClient() *http.Client                                  { return nil }
+func (*FakeReg) ListTags(_ context.Context, _ string) ([]string, error)    { return nil, nil }
 func (*FakeReg) Match(_ *storage.ImageName) bool                           { return false }
 func (*FakeReg) Metadata(_ *storage.Image) (*storage.ImageMetadata, error) { return nil, nil }
 func (f *FakeReg) Name() string                                            { return f.name }

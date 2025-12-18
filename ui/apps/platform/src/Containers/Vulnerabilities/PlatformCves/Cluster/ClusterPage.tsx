@@ -1,12 +1,11 @@
-import React from 'react';
 import { useParams } from 'react-router-dom-v5-compat';
 import {
-    PageSection,
     Breadcrumb,
-    Divider,
     BreadcrumbItem,
-    Skeleton,
     Bullseye,
+    Divider,
+    PageSection,
+    Skeleton,
     Tab,
     TabContent,
     Tabs,

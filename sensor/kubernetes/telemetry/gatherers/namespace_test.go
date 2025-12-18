@@ -36,7 +36,7 @@ func (s *NamespaceGathererTestSuite) TestGatherNamespaces() {
 		},
 	}
 	gatherer := newNamespaceGatherer(
-		fake.NewSimpleClientset(knownNamespace, unknownNamespace),
+		fake.NewClientset(knownNamespace, unknownNamespace),
 		resources.InitializeStore(nil).Deployments())
 	namespaces, err := gatherer.Gather(context.Background())
 	s.Empty(err)

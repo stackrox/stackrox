@@ -31,7 +31,6 @@ import (
 
 const (
 	defaultMaxSemaphoreWaitTime = 5 * time.Second
-	imageScanLowerBound         = 10
 )
 
 var (
@@ -99,17 +98,23 @@ func NewLocalScan(registryStore registryStore, mirrorStore registrymirror.Store)
 			docker.CreatorWithoutRepoList,
 		},
 	})
-	activeScanSemaLimit := max(imageScanLowerBound, env.MaxParallelImageScanInternal.IntegerSetting()-env.MaxParallelAdHocScan.IntegerSetting())
-	adHocSemaLimit := env.MaxParallelAdHocScan.IntegerSetting()
-	images.SetSensorScanSemaphoreLimit(float64(activeScanSemaLimit), "sensor")
-	images.SetSensorScanSemaphoreLimit(float64(adHocSemaLimit), "central")
+
+	activeScanLimit, adHocScanLimit := scanLimits(
+		env.MaxParallelImageScanInternal.IntegerSetting(),
+		env.MaxParallelAdHocScan.IntegerSetting(),
+	)
+
+	log.Infof("Local simultaneous active deployment scan limit: %d, ad hoc scan limit: %d", activeScanLimit, adHocScanLimit)
+
+	images.SetSensorScanSemaphoreLimit(float64(activeScanLimit), "sensor")
+	images.SetSensorScanSemaphoreLimit(float64(adHocScanLimit), "central")
 
 	ls := &LocalScan{
 		scanImg:                   scanImage,
 		fetchSignaturesWithRetry:  signatures.FetchImageSignaturesWithRetries,
 		scannerClientSingleton:    scannerclient.GRPCClientSingleton,
-		scanSemaphore:             semaphore.NewWeighted(int64(activeScanSemaLimit)),
-		adHocScanSemaphore:        semaphore.NewWeighted(int64(adHocSemaLimit)),
+		scanSemaphore:             semaphore.NewWeighted(int64(activeScanLimit)),
+		adHocScanSemaphore:        semaphore.NewWeighted(int64(adHocScanLimit)),
 		maxSemaphoreWaitTime:      defaultMaxSemaphoreWaitTime,
 		regFactory:                regFactory,
 		mirrorStore:               mirrorStore,
@@ -186,12 +191,18 @@ func (s *LocalScan) EnrichLocalImageInNamespace(ctx context.Context, centralClie
 		return nil, errors.Join(errorList.ToError(), ErrEnrichNotStarted)
 	}
 
-	// Perform partial scan (image analysis / identify components) via local scanner.
-	scannerResp := s.fetchImageAnalysis(ctx, errorList, reg, pullSourceImage)
+	var scannerResp *scannerclient.ImageAnalysis
+	var sigs []*storage.Signature
 
-	// Fetch signatures associated with image from registry.
-	sigs := s.fetchSignatures(ctx, errorList, reg, pullSourceImage)
+	// Only proceed if metadata was fetched successfully
+	if errorList.Empty() {
+		// Perform partial scan (image analysis / identify components) via local scanner.
+		scannerResp = s.fetchImageAnalysis(ctx, errorList, reg, pullSourceImage)
 
+		// Fetch signatures associated with image from registry. Do this even if the scan above failed, because that
+		// doesn't necessarily mean signatures cannot be fetched
+		sigs = s.fetchSignatures(ctx, reg, pullSourceImage)
+	}
 	// Send local enriched data to central to receive a fully enrich image. This includes image vulnerabilities and
 	// signature verification results.
 	centralResp, err := centralClient.EnrichLocalImageInternal(ctx, &v1.EnrichLocalImageInternalRequest{
@@ -401,13 +412,8 @@ func (s *LocalScan) enrichImageWithMetadata(ctx context.Context, errorList *erro
 	return nil
 }
 
-// fetchImageAnalysis analyzes an image via the local scanner. Does nothing if errorList contains errors.
+// fetchImageAnalysis analyzes an image via the local scanner.
 func (s *LocalScan) fetchImageAnalysis(ctx context.Context, errorList *errorhelpers.ErrorList, registry registryTypes.ImageRegistry, image *storage.Image) *scannerclient.ImageAnalysis {
-	if !errorList.Empty() {
-		// do nothing if errors previously encountered.
-		return nil
-	}
-
 	// Scan the image via local scanner.
 	scannerResp, err := s.scanImg(ctx, image, registry, s.scannerClientSingleton())
 	if err != nil {
@@ -420,13 +426,8 @@ func (s *LocalScan) fetchImageAnalysis(ctx context.Context, errorList *errorhelp
 	return scannerResp
 }
 
-// fetchSignatures fetches signatures from the registry for an image. Does nothing if errorList contains errors.
-func (s *LocalScan) fetchSignatures(ctx context.Context, errorList *errorhelpers.ErrorList, registry registryTypes.ImageRegistry, image *storage.Image) []*storage.Signature {
-	if !errorList.Empty() {
-		// do nothing if errors previously encountered.
-		return nil
-	}
-
+// fetchSignatures fetches signatures from the registry for an image.
+func (s *LocalScan) fetchSignatures(ctx context.Context, registry registryTypes.ImageRegistry, image *storage.Image) []*storage.Signature {
 	// Fetch signatures from cluster-local registry.
 	sigs, err := s.fetchSignaturesWithRetry(ctx, signatures.NewSignatureFetcher(), image, image.GetName().GetFullName(), registry)
 	if err != nil {
@@ -517,4 +518,23 @@ func validateRequest(req *LocalScanRequest) error {
 	}
 
 	return nil
+}
+
+// scanLimits calculates the maximum number of allowed simultaneous local
+// scans for active deployments and ad hoc requests.
+func scanLimits(maxParallelScans, maxAdHocScans int) (int, int) {
+	// Max parallel scans minimum is 2: 1 active deployment scan + 1 ad hoc scan.
+	maxParallelScans = max(2, maxParallelScans) // minimum of 2
+
+	// The max number of ad hoc scans must be lower than max parallel scans to allow
+	// for at least 1 active deployment scan.
+	maxAdHocScans = max(1, maxAdHocScans) // minimum of 1
+	if maxAdHocScans >= maxParallelScans {
+		maxAdHocScans = maxParallelScans - 1
+	}
+
+	// At this point we know that max parallel scans are greater than max ad hoc scans.
+	maxActiveScanLimit := maxParallelScans - maxAdHocScans
+
+	return maxActiveScanLimit, maxAdHocScans
 }

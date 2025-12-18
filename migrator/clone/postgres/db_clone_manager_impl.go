@@ -57,7 +57,7 @@ func (d *dbCloneManagerImpl) ensureVersionCompatible(ver *migrations.MigrationVe
 		// minimum sequence number from the database > current software sequence number -- DO NOT ROLLBACK
 		// This implies an unsupported rollback where structure and data may have changed
 		if ver.MinimumSeqNum > migrations.CurrentDBVersionSeqNum() {
-			return errors.Errorf(metadata.ErrSoftwareNotCompatibleWithDatabase, migrations.CurrentDBVersionSeqNum(), ver.MinimumSeqNum)
+			return errors.Errorf(metadata.ErrSoftwareNotCompatibleWithDatabase, migrations.CurrentDBVersionSeqNum(), ver.MinimumSeqNum, migrations.MinimumSupportedDBVersion())
 		}
 	}
 
@@ -142,6 +142,11 @@ func (d *dbCloneManagerImpl) Scan() error {
 		// Restore from a newer version of central
 		if restoreClone.GetSeqNum() > migrations.CurrentDBVersionSeqNum() || version.CompareVersions(restoreClone.GetVersion(), version.GetMainVersion()) > 0 {
 			return errors.Errorf(metadata.ErrUnableToRestore, restoreClone.GetVersion(), version.GetMainVersion())
+		}
+		// Restore from an unsupported old version (but skip check for seqNum 0 which represents a fresh/empty database)
+		if restoreClone.GetSeqNum() > 0 && restoreClone.GetSeqNum() < migrations.MinimumSupportedDBVersionSeqNum() {
+			return errors.Errorf("Restoring from version %q (sequence number %d) is not supported. The minimum supported version is %s (sequence number %d)",
+				restoreClone.GetVersion(), restoreClone.GetSeqNum(), migrations.MinimumSupportedDBVersion(), migrations.MinimumSupportedDBVersionSeqNum())
 		}
 	}
 
@@ -382,7 +387,7 @@ func (d *dbCloneManagerImpl) moveClones(previousClone, updatedClone string) erro
 	defer conn.Release()
 
 	// Start a transaction
-	tx, err := conn.Begin(ctx)
+	tx, ctx, err := conn.Begin(ctx)
 	if err != nil {
 		return err
 	}

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import type { ReactElement } from 'react';
 import { Alert, Button, Flex } from '@patternfly/react-core';
 import { TrashIcon } from '@patternfly/react-icons';

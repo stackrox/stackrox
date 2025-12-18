@@ -96,6 +96,11 @@ func (s *AlertsStoreSuite) TestStore() {
 
 	s.NoError(store.UpsertMany(ctx, alerts))
 
+	foundAlerts, missing, err := store.GetMany(ctx, alertIDs)
+	s.NoError(err)
+	s.Empty(missing)
+	protoassert.ElementsMatch(s.T(), alerts, foundAlerts)
+
 	alertCount, err = store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)
 	s.Equal(200, alertCount)

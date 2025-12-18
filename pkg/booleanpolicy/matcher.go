@@ -10,11 +10,14 @@ import (
 )
 
 var (
-	deploymentEvalFactory = evaluator.MustCreateNewFactory(augmentedobjs.DeploymentMeta)
-	processEvalFactory    = evaluator.MustCreateNewFactory(augmentedobjs.ProcessMeta)
-	imageEvalFactory      = evaluator.MustCreateNewFactory(augmentedobjs.ImageMeta)
-	kubeEventFactory      = evaluator.MustCreateNewFactory(augmentedobjs.KubeEventMeta)
-	networkFlowFactory    = evaluator.MustCreateNewFactory(augmentedobjs.NetworkFlowMeta)
+	deploymentEvalFactory       = evaluator.MustCreateNewFactory(augmentedobjs.DeploymentMeta)
+	deploymentFileAccessFactory = evaluator.MustCreateNewFactory(augmentedobjs.DeploymentFileAccessMeta)
+	processEvalFactory          = evaluator.MustCreateNewFactory(augmentedobjs.ProcessMeta)
+	imageEvalFactory            = evaluator.MustCreateNewFactory(augmentedobjs.ImageMeta)
+	kubeEventFactory            = evaluator.MustCreateNewFactory(augmentedobjs.KubeEventMeta)
+	networkFlowFactory          = evaluator.MustCreateNewFactory(augmentedobjs.NetworkFlowMeta)
+	nodeEvalFactory             = evaluator.MustCreateNewFactory(augmentedobjs.NodeMeta)
+	fileAccessFactory           = evaluator.MustCreateNewFactory(augmentedobjs.FileAccessMeta)
 )
 
 // A CacheReceptacle is an optional argument that can be passed to the Match* functions of the Matchers below, that
@@ -34,6 +37,9 @@ type CacheReceptacle struct {
 
 	// Used only by MatchDeploymentWithNetworkFlow
 	augmentedNetworkFlow *pathutil.AugmentedObj
+
+	// Used only by MatchDeploymentWithFileAccess
+	augmentedFileAccess *pathutil.AugmentedObj
 }
 
 // EnhancedDeployment holds the deployment object plus the additional resources used for the matching.
@@ -45,8 +51,9 @@ type EnhancedDeployment struct {
 
 // Violations represents a list of violation sub-objects.
 type Violations struct {
-	ProcessViolation *storage.Alert_ProcessViolation
-	AlertViolations  []*storage.Alert_Violation
+	ProcessViolation    *storage.Alert_ProcessViolation
+	FileAccessViolation *storage.Alert_FileAccessViolation
+	AlertViolations     []*storage.Alert_Violation
 }
 
 // An ImageMatcher matches images against a policy.
@@ -77,6 +84,15 @@ type AuditLogEventMatcher interface {
 // A DeploymentWithNetworkFlowMatcher matches deployments, and a network flow against a policy.
 type DeploymentWithNetworkFlowMatcher interface {
 	MatchDeploymentWithNetworkFlowInfo(cache *CacheReceptacle, enhancedDeployment EnhancedDeployment, flow *augmentedobjs.NetworkFlowDetails) (Violations, error)
+}
+
+// A NodeEventMatcher matches file events from a node against a policy.
+type NodeEventMatcher interface {
+	MatchNodeWithFileAccess(cache *CacheReceptacle, node *storage.Node, access *storage.FileAccess) (Violations, error)
+}
+
+type DeploymentWithFileAccessMatcher interface {
+	MatchDeploymentWithFileAccess(cache *CacheReceptacle, enhancedDeployment EnhancedDeployment, fileAccess *storage.FileAccess) (Violations, error)
 }
 
 type sectionAndEvaluator struct {
@@ -227,6 +243,44 @@ func BuildDeploymentWithNetworkFlowMatcher(p *storage.Policy, options ...Validat
 	}, nil
 }
 
+func BuildDeploymentWithFileAccessMatcher(p *storage.Policy, options ...ValidateOption) (DeploymentWithFileAccessMatcher, error) {
+	sectionsAndEvals, err := getSectionsAndEvals(&deploymentFileAccessFactory, p, storage.LifecycleStage_DEPLOY, options...)
+	if err != nil {
+		log.Error(err)
+		return nil, err
+	}
+
+	fileAccessOnlyEvaluators := make([]evaluator.Evaluator, 0, len(p.GetPolicySections()))
+	for _, section := range p.GetPolicySections() {
+		if len(section.GetPolicyGroups()) == 0 {
+			return nil, errors.Errorf("no groups in section %q", section.GetSectionName())
+		}
+
+		// Conjunction of process fields and events fields is not supported.
+		if !ContainsDiscreteRuntimeFieldCategorySections(p) {
+			return nil, errors.New("a runtime policy section must contain only a single runtime event constraint")
+		}
+
+		fieldQueries, err := sectionTypeToFieldQueries(section, FileAccess)
+		if err != nil {
+			return nil, errors.Wrapf(err, "converting to field queries for section %q", section.GetSectionName())
+		}
+
+		eval, err := fileAccessFactory.GenerateEvaluator(&query.Query{FieldQueries: fieldQueries})
+		if err != nil {
+			return nil, errors.Wrapf(err, "generating file access evaluator for section %q", section.GetSectionName())
+		}
+		fileAccessOnlyEvaluators = append(fileAccessOnlyEvaluators, eval)
+	}
+
+	return &fileAccessMatcherImpl{
+		matcherImpl: matcherImpl{
+			evaluators: sectionsAndEvals,
+		},
+		fileAccessOnlyEvaluators: fileAccessOnlyEvaluators,
+	}, nil
+}
+
 // BuildDeploymentMatcher builds a matcher for deployments against the given policy,
 // which must be a boolean policy.
 func BuildDeploymentMatcher(p *storage.Policy, options ...ValidateOption) (DeploymentMatcher, error) {
@@ -249,6 +303,20 @@ func BuildImageMatcher(p *storage.Policy, options ...ValidateOption) (ImageMatch
 	}
 	return &matcherImpl{
 		evaluators: sectionsAndEvals,
+	}, nil
+}
+
+// BuildNodeEventMatcher builds a matcher for nodes against the given policy.
+// It currently only supports runtime fields for node event policies, but may change in the future.
+func BuildNodeEventMatcher(p *storage.Policy, options ...ValidateOption) (NodeEventMatcher, error) {
+	sectionsAndEvals, err := getSectionsAndEvals(&nodeEvalFactory, p, storage.LifecycleStage_RUNTIME, options...)
+	if err != nil {
+		return nil, err
+	}
+	return &nodeEventMatcher{
+		matcherImpl: matcherImpl{
+			evaluators: sectionsAndEvals,
+		},
 	}, nil
 }
 

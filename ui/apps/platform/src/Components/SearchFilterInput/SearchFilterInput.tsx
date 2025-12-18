@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 
 import SearchInput, { createSearchModifiers } from 'Components/SearchInput';
 import { fetchAutoCompleteResults } from 'services/SearchService';

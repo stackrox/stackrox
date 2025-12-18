@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import {
     Card,
     CardBody,
@@ -23,7 +23,7 @@ function ContainerVolumesInfo({ volumes }: ContainerVolumesInfoProps) {
     const initialToggleValues = Array.from({ length: volumes.length }, () => true);
     const [volumeToggles, setVolumeToggles] = useState(initialToggleValues);
 
-    function setToggleAtIndex(i) {
+    function setToggleAtIndex(i: number) {
         const newToggles = [...volumeToggles];
         newToggles[i] = !newToggles[i];
 

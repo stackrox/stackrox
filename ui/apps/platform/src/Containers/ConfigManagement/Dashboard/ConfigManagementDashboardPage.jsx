@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import useCaseLabels from 'messages/useCase';
 import useCaseTypes from 'constants/useCaseTypes';
 import { standardTypes } from 'constants/entityTypes';

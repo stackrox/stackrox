@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import type { ReactElement } from 'react';
 import { Formik } from 'formik';
-import { Flex, Title, Divider, Grid } from '@patternfly/react-core';
+import { Divider, Flex, Grid, Title } from '@patternfly/react-core';
 
 import { fetchNotifierIntegrations } from 'services/NotifierIntegrationsService';
 import type { NotifierIntegration } from 'types/notifier.proto';
@@ -34,7 +34,7 @@ function PolicyDetailContent({ policy, isReview = false }: PolicyDetailContentPr
         <div data-testid="policy-details">
             <Flex direction={{ default: 'column' }}>
                 <PolicyOverview policy={policy} notifiers={notifiers} isReview={isReview} />
-                <Title headingLevel="h3" className="pf-v5-u-mb-md pf-v5-u-pt-lg">
+                <Title headingLevel="h2" className="pf-v5-u-mb-md pf-v5-u-pt-lg">
                     Policy behavior
                 </Title>
                 <Divider component="div" className="pf-v5-u-mb-md" />
@@ -46,7 +46,7 @@ function PolicyDetailContent({ policy, isReview = false }: PolicyDetailContentPr
                 <Formik initialValues={policy} onSubmit={() => {}}>
                     {() => (
                         <>
-                            <Title headingLevel="h3" className="pf-v5-u-mb-md pf-v5-u-pt-lg">
+                            <Title headingLevel="h2" className="pf-v5-u-mb-md pf-v5-u-pt-lg">
                                 Policy criteria
                             </Title>
                             <Divider component="div" />
@@ -59,7 +59,7 @@ function PolicyDetailContent({ policy, isReview = false }: PolicyDetailContentPr
                 </Formik>
                 {(scope?.length > 0 || exclusions?.length > 0) && (
                     <>
-                        <Title headingLevel="h3" className="pf-v5-u-mb-md pf-v5-u-pt-lg">
+                        <Title headingLevel="h2" className="pf-v5-u-mb-md pf-v5-u-pt-lg">
                             Policy scope
                         </Title>
                         <Divider component="div" />

@@ -4,6 +4,7 @@ package datastore
 
 import (
 	"context"
+	"fmt"
 	"math/rand"
 	"testing"
 
@@ -17,6 +18,7 @@ import (
 	pkgSearch "github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/postgres"
 	"github.com/stackrox/rox/pkg/search/postgres/aggregatefunc"
+	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -83,6 +85,30 @@ func BenchmarkAlertDatabaseOps(b *testing.B) {
 			require.NoError(b, err)
 		}
 	})
+
+	batchSizes := []int{2, 4, 8, 16, 32, 64, 128, 256, 512, 1024, 2048, 4096}
+	alertBatch := make([]*storage.Alert, 8192)
+	for i := range alertBatch {
+		alertBatch[i] = &storage.Alert{}
+		require.NoError(b, testutils.FullInit(alertBatch[i], testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
+		alertDeployment := &storage.Alert_Deployment{}
+		require.NoError(b, testutils.FullInit(alertDeployment, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
+		alertBatch[i].EntityType = storage.Alert_DEPLOYMENT
+		alertBatch[i].Entity = &storage.Alert_Deployment_{
+			Deployment: alertDeployment,
+		}
+	}
+	for _, batchSize := range batchSizes {
+		curBatch := make([]*storage.Alert, batchSize)
+		for i := range batchSize {
+			curBatch[i] = alertBatch[i%len(alertBatch)]
+		}
+		b.Run(fmt.Sprintf("UpsertMany/%d", batchSize), func(ib *testing.B) {
+			for ib.Loop() {
+				assert.NoError(ib, datastore.UpsertAlerts(ctx, curBatch))
+			}
+		})
+	}
 }
 
 func runSearchAndGroupResults(ctx context.Context, t testing.TB, datastore DataStore, query *v1.Query, expected []*violationsBySeverity) {

@@ -33,11 +33,10 @@ export type EPSS = {
 };
 
 export type Exploit = {
-    dateAdded: string; // ISO 8601 yyyy-mm-dd
-    shortDescription: string;
-    requiredAction: string;
-    dueDate: string; // ISO 8601 yyyy-mm-dd
-    knownRansomwareCampaignUse: string; // Known or Unknown
+    // This must always be set to true.
+    // This field solely exists for search purposes.
+    // exists: boolean; // search:"Known Exploit,store"
+    knownRansomwareCampaignUse: boolean; // search:"Known Ransomware Campaign,store"
 };
 
 export type CveBaseInfo = {

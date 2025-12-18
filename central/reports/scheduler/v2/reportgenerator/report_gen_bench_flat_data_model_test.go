@@ -18,7 +18,6 @@ import (
 	imagesView "github.com/stackrox/rox/central/views/images"
 	watchedImageDS "github.com/stackrox/rox/central/watchedimage/datastore"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/uuid"
@@ -41,9 +40,6 @@ type FlatDataModelReportGeneratorBenchmarkTestSuite struct {
 }
 
 func BenchmarkFlatDataModelReportGenerator(b *testing.B) {
-	if !features.FlattenCVEData.Enabled() {
-		b.Skip()
-	}
 	bts := &FlatDataModelReportGeneratorBenchmarkTestSuite{b: b}
 	bts.setupTestSuite()
 
@@ -107,7 +103,7 @@ func (bts *FlatDataModelReportGeneratorBenchmarkTestSuite) setupTestSuite() {
 		resolvers.CreateTestDeploymentDatastore(bts.b, bts.testDB, mockCtrl, imageDataStore),
 		deploymentsView.NewDeploymentView(bts.testDB.DB),
 	)
-	collectionStore := collectionPostgres.CreateTableAndNewStore(bts.ctx, bts.testDB.DB, bts.testDB.GetGormDB(bts.b))
+	collectionStore := collectionPostgres.New(bts.testDB)
 	_, collectionQueryResolver, err := collectionDS.New(collectionStore)
 	require.NoError(bts.b, err)
 	bts.clusterDatastore = clusterDSMocks.NewMockDataStore(mockCtrl)
@@ -115,7 +111,7 @@ func (bts *FlatDataModelReportGeneratorBenchmarkTestSuite) setupTestSuite() {
 
 	bts.reportGenerator = newReportGeneratorImpl(bts.testDB, nil, bts.resolver.DeploymentDataStore,
 		bts.watchedImageDatastore, collectionQueryResolver, nil, nil, bts.clusterDatastore,
-		bts.namespaceDatastore, bts.resolver.ImageCVEDataStore, bts.resolver.ImageCVEV2DataStore, schema)
+		bts.namespaceDatastore, bts.resolver.ImageCVEV2DataStore, schema)
 }
 
 func (bts *FlatDataModelReportGeneratorBenchmarkTestSuite) upsertManyImages(images []*storage.Image) {

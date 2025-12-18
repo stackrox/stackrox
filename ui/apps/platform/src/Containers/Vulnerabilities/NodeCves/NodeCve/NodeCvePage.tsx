@@ -1,4 +1,3 @@
-import React from 'react';
 import {
     Breadcrumb,
     BreadcrumbItem,
@@ -22,15 +21,12 @@ import { getTableUIState } from 'utils/getTableUIState';
 import { getHasSearchApplied } from 'utils/searchUtils';
 import { DynamicTableLabel } from 'Components/DynamicIcon';
 
-import {
-    SummaryCardLayout,
-    SummaryCard,
-} from 'Containers/Vulnerabilities/components/SummaryCardLayout';
 import useURLSort from 'hooks/useURLSort';
 import { createFilterTracker } from 'utils/analyticsEventTracking';
 import useAnalytics, { NODE_CVE_FILTER_APPLIED } from 'hooks/useAnalytics';
 import AdvancedFiltersToolbar from '../../components/AdvancedFiltersToolbar';
 import BySeveritySummaryCard from '../../components/BySeveritySummaryCard';
+import { SummaryCard, SummaryCardLayout } from '../../components/SummaryCardLayout';
 import {
     getHiddenSeverities,
     getOverviewPagePath,
@@ -39,9 +35,9 @@ import {
 } from '../../utils/searchUtils';
 import CvePageHeader from '../../components/CvePageHeader';
 import {
-    nodeSearchFilterConfig,
-    nodeComponentSearchFilterConfig,
     clusterSearchFilterConfig,
+    nodeComponentSearchFilterConfig,
+    nodeSearchFilterConfig,
 } from '../../searchFilterConfig';
 import { DEFAULT_VM_PAGE_SIZE } from '../../constants';
 import AffectedNodesTable, { defaultSortOption, sortFields } from './AffectedNodesTable';

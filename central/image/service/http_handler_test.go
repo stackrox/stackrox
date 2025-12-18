@@ -66,7 +66,6 @@ func TestHttpHandler_ServeHTTP(t *testing.T) {
 
 	// Test case: valid json body and enricher returns error
 	t.Run("valid json body with error from enricher", func(t *testing.T) {
-		t.Setenv(features.SBOMGeneration.EnvVar(), "true")
 		t.Setenv(features.ScannerV4.EnvVar(), "true")
 		ctrl := gomock.NewController(t)
 		defer ctrl.Finish()
@@ -94,7 +93,6 @@ func TestHttpHandler_ServeHTTP(t *testing.T) {
 
 	// Test case: valid json body and validate enricher being called
 	t.Run("valid json body", func(t *testing.T) {
-		t.Setenv(features.SBOMGeneration.EnvVar(), "true")
 		t.Setenv(features.ScannerV4.EnvVar(), "true")
 		ctrl := gomock.NewController(t)
 		defer ctrl.Finish()
@@ -134,7 +132,6 @@ func TestHttpHandler_ServeHTTP(t *testing.T) {
 
 	// Test case: invalid json body
 	t.Run("invalid json body", func(t *testing.T) {
-		t.Setenv(features.SBOMGeneration.EnvVar(), "true")
 		t.Setenv(features.ScannerV4.EnvVar(), "true")
 		invalidJson := `{"cluster": "test-cluster", "imageName": "test-image", "force": true,`
 		req := httptest.NewRequest(http.MethodPost, "/sbom", bytes.NewBufferString(invalidJson))
@@ -151,7 +148,6 @@ func TestHttpHandler_ServeHTTP(t *testing.T) {
 
 	// Test case: empty image name
 	t.Run("empty image name", func(t *testing.T) {
-		t.Setenv(features.SBOMGeneration.EnvVar(), "true")
 		t.Setenv(features.ScannerV4.EnvVar(), "true")
 
 		reqBody := []byte(`{"imageName": "   "}`)
@@ -183,25 +179,8 @@ func TestHttpHandler_ServeHTTP(t *testing.T) {
 		assert.Equal(t, http.StatusNotImplemented, res.StatusCode)
 	})
 
-	// Test case: SBOM feature not enabled
-	t.Run("SBOM feature not enabled", func(t *testing.T) {
-		t.Setenv(features.ScannerV4.EnvVar(), "true")
-		t.Setenv(features.SBOMGeneration.EnvVar(), "false")
-		req := httptest.NewRequest(http.MethodPost, "/sbom", nil)
-		recorder := httptest.NewRecorder()
-
-		handler := SBOMHandler(imageintegration.Set(), nil, nil, nil)
-		handler.ServeHTTP(recorder, req)
-
-		res := recorder.Result()
-		err := res.Body.Close()
-		assert.NoError(t, err)
-		assert.Equal(t, http.StatusNotImplemented, res.StatusCode)
-	})
-
 	// Test case: request body size exceeds limit
 	t.Run("request body size exceeds limit", func(t *testing.T) {
-		t.Setenv(features.SBOMGeneration.EnvVar(), "true")
 		t.Setenv(features.ScannerV4.EnvVar(), "true")
 		t.Setenv(env.SBOMGenerationMaxReqSizeBytes.EnvVar(), "2")
 		largeRequestBody := []byte(`{"cluster": "test-cluster", "imageName": "test-image", "force": true}`)
@@ -221,7 +200,6 @@ func TestHttpHandler_ServeHTTP(t *testing.T) {
 	// but the Scanner V4 Indexer did not have the corresponding index report.
 	// A forced enrichment is expected and the result saved to Central DB.
 	t.Run("image saved to Central when index report did not exist", func(t *testing.T) {
-		t.Setenv(features.SBOMGeneration.EnvVar(), "true")
 		t.Setenv(features.ScannerV4.EnvVar(), "true")
 
 		// enrichImageFunc will fake enrich an image by Scanner V4.

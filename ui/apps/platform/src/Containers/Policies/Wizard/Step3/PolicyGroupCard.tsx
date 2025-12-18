@@ -1,19 +1,19 @@
-import React, { Fragment } from 'react';
+import { Fragment } from 'react';
 import {
     Alert,
+    Button,
     Card,
+    CardBody,
     CardHeader,
     CardTitle,
-    CardBody,
+    Checkbox,
     Divider,
     Flex,
     FlexItem,
-    Button,
-    Checkbox,
     Stack,
     StackItem,
 } from '@patternfly/react-core';
-import { TrashIcon, PlusIcon } from '@patternfly/react-icons';
+import { PlusIcon, TrashIcon } from '@patternfly/react-icons';
 import { useFormikContext } from 'formik';
 
 import type { Policy } from 'types/policy.proto';
@@ -72,6 +72,10 @@ function PolicyGroupCard({
     const hasNegation = !readOnly && 'negatedName' in descriptor && descriptor.negatedName;
     const headerLongText =
         group.negate && 'negatedName' in descriptor ? descriptor.negatedName : descriptor.longName;
+
+    const fieldOptions = 'options' in descriptor ? descriptor.options : [];
+    const isAddValueDisabled =
+        descriptor.type === 'select' && group.values.length >= fieldOptions.length;
 
     return (
         <>
@@ -188,7 +192,12 @@ function PolicyGroupCard({
                                 <Button
                                     onClick={handleAddValue}
                                     variant="plain"
-                                    title="Add value of policy field"
+                                    isDisabled={isAddValueDisabled}
+                                    title={
+                                        isAddValueDisabled
+                                            ? 'All options for this field have been selected'
+                                            : 'Add value of policy field'
+                                    }
                                 >
                                     <PlusIcon />
                                 </Button>

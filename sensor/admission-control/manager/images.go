@@ -10,6 +10,7 @@ import (
 	"github.com/stackrox/rox/generated/internalapi/sensor"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/images/types"
+	"github.com/stackrox/rox/pkg/images/utils"
 	"github.com/stackrox/rox/pkg/protoconv/resources"
 	"github.com/stackrox/rox/pkg/set"
 	"google.golang.org/grpc/connectivity"
@@ -25,26 +26,36 @@ type imageCacheEntry struct {
 	timestamp time.Time
 }
 
-func (m *manager) getCachedImage(img *storage.ContainerImage) *storage.Image {
+func (m *manager) getCachedImage(img *storage.ContainerImage, s *state) *storage.Image {
 	if img.GetId() == "" {
 		return nil
 	}
 
-	cachedImg, ok := m.imageCache.Get(img.GetId())
+	id := img.GetId()
+	if s.GetFlattenImageData() {
+		id = utils.NewImageV2ID(img.GetName(), img.GetId())
+	}
+
+	cachedImg, ok := m.imageCache.Get(id)
 	if !ok {
 		return nil
 	}
 	if time.Since(cachedImg.timestamp) > imageCacheTTL {
-		m.imageCache.RemoveIf(img.GetId(), func(entry imageCacheEntry) bool { return entry == cachedImg })
+		m.imageCache.RemoveIf(id, func(entry imageCacheEntry) bool { return entry == cachedImg })
 		return nil
 	}
 
 	return cachedImg.Image
 }
 
-func (m *manager) cacheImage(img *storage.Image) {
+func (m *manager) cacheImage(img *storage.Image, s *state) {
 	if img.GetId() == "" {
 		return
+	}
+
+	id := img.GetId()
+	if s.GetFlattenImageData() {
+		id = utils.NewImageV2ID(img.GetName(), img.GetId())
 	}
 
 	cacheEntry := imageCacheEntry{
@@ -52,7 +63,7 @@ func (m *manager) cacheImage(img *storage.Image) {
 		timestamp: time.Now(),
 	}
 
-	m.imageCache.Add(img.GetId(), cacheEntry)
+	m.imageCache.Add(id, cacheEntry)
 }
 
 type fetchImageResult struct {
@@ -106,7 +117,7 @@ func (m *manager) fetchImage(ctx context.Context, s *state, resultChan chan<- fe
 		return
 	}
 
-	m.cacheImage(scannedImg)
+	m.cacheImage(scannedImg, s)
 	// resultChan is exactly sized so this will be nonblocking
 	resultChan <- fetchImageResult{
 		idx: idx,
@@ -125,7 +136,7 @@ func (m *manager) getAvailableImagesAndKickOffScans(ctx context.Context, s *stat
 	for idx, container := range deployment.GetContainers() {
 		image := container.GetImage()
 		if image.GetId() != "" || scanInline {
-			cachedImage := m.getCachedImage(image)
+			cachedImage := m.getCachedImage(image, s)
 			if cachedImage != nil {
 				images[idx] = cachedImage
 			}

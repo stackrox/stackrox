@@ -31,6 +31,8 @@ func AlertToListAlert(alert *storage.Alert) *storage.ListAlert {
 		populateListAlertEntityInfoForDeployment(listAlert, alert.GetDeployment())
 	} else if alert.GetResource() != nil {
 		populateListAlertEntityInfoForResource(listAlert, alert.GetResource())
+	} else if alert.GetNode() != nil {
+		populateListAlertEntityInfoForNode(listAlert, alert)
 	}
 
 	return listAlert
@@ -72,6 +74,18 @@ func populateListAlertEntityInfoForDeployment(listAlert *storage.ListAlert, depl
 		Namespace:    deployment.GetNamespace(),
 		NamespaceId:  deployment.GetNamespaceId(),
 		ResourceType: storage.ListAlert_DEPLOYMENT,
+	}
+}
+
+func populateListAlertEntityInfoForNode(listAlert *storage.ListAlert, alert *storage.Alert) {
+	listAlert.Entity = &storage.ListAlert_Node{
+		Node: &storage.ListAlert_NodeEntity{
+			Name: alert.GetNode().GetName(),
+		},
+	}
+	listAlert.CommonEntityInfo = &storage.ListAlert_CommonEntityInfo{
+		ClusterName: alert.GetClusterName(),
+		ClusterId:   alert.GetClusterId(),
 	}
 }
 
@@ -144,6 +158,16 @@ func ToAlertResource(kubeEvent *storage.KubernetesEvent) *storage.Alert_Resource
 			Name:         kubeEvent.GetObject().GetName(),
 			ClusterId:    kubeEvent.GetObject().GetClusterId(),
 			Namespace:    kubeEvent.GetObject().GetNamespace(),
+		},
+	}
+}
+
+// ToAlertNode converts a storage.Node to an Alert_Node_
+func ToAlertNode(node *storage.Node) *storage.Alert_Node_ {
+	return &storage.Alert_Node_{
+		Node: &storage.Alert_Node{
+			Id:   node.GetId(),
+			Name: node.GetName(),
 		},
 	}
 }

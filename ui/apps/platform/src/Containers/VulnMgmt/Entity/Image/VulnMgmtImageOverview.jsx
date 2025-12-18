@@ -1,4 +1,3 @@
-import React from 'react';
 import pluralize from 'pluralize';
 import cloneDeep from 'lodash/cloneDeep';
 import { Alert, Button } from '@patternfly/react-core';

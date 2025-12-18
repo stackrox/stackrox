@@ -1,14 +1,14 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Button, Modal } from '@patternfly/react-core';
 import { Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 import { differenceInDays } from 'date-fns';
 
 import type { ViewBasedReportSnapshot } from 'services/ReportsService.types';
 import useAuthStatus from 'hooks/useAuthStatus';
-import { GetSortParams } from 'hooks/useURLSort';
+import type { GetSortParams } from 'hooks/useURLSort';
 import useModal from 'hooks/useModal';
 import { getDateTime } from 'utils/dateUtils';
-import { TableUIState } from 'utils/getTableUIState';
+import type { TableUIState } from 'utils/getTableUIState';
 import ReportJobStatus from 'Components/ReportJob/ReportJobStatus';
 import TbodyUnified from 'Components/TableStateTemplates/TbodyUnified';
 import { downloadReportByJobId } from 'services/ReportsService';

@@ -1,4 +1,4 @@
-import React, { useContext } from 'react';
+import { useContext } from 'react';
 import PropTypes from 'prop-types';
 import { gql, useQuery } from '@apollo/client';
 import sortBy from 'lodash/sortBy';
@@ -9,10 +9,10 @@ import workflowStateContext from 'Containers/workflowStateContext';
 import Loader from 'Components/Loader';
 import Widget from 'Components/Widget';
 import { checkForPermissionErrorMessage } from 'utils/permissionUtils';
-import { getVulnerabilityChips } from 'utils/vulnerabilityUtils';
 import NoResultsMessage from 'Components/NoResultsMessage';
 import { cveSortFields } from 'constants/sortFields';
 
+import { getVulnerabilityChips } from '../VulnMgmt.utils/vulnerabilityUtils';
 import NumberedList from './NumberedList';
 import ViewAllButton from './ViewAllButton';
 

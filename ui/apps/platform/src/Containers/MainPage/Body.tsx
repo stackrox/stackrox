@@ -10,46 +10,47 @@ import {
     administrationEventsPathWithParam,
     apidocsPath,
     apidocsPathV2,
+    baseImagesPath,
+    clustersClusterRegistrationSecretsPathWithParam,
     clustersDelegatedScanningPath,
     clustersDiscoveredClustersPath,
     clustersInitBundlesPathWithParam,
-    clustersClusterRegistrationSecretsPathWithParam,
     clustersPathWithParam,
-    clustersSecureClusterPath,
     clustersSecureClusterCrsPath,
+    clustersSecureClusterPath,
     collectionsPath,
+    complianceBasePath,
     complianceEnhancedCoveragePath,
     complianceEnhancedSchedulesPath,
-    complianceBasePath,
     configManagementPath,
     dashboardPath,
-    exceptionConfigurationPath,
     deprecatedPoliciesPath,
+    exceptionConfigurationPath,
+    exceptionManagementPath,
     integrationsPath,
     isRouteEnabled, // predicate function
     listeningEndpointsBasePath,
     mainPath,
     networkPath,
+    policiesBasePath,
     policyManagementBasePath,
-    riskPath,
+    riskBasePath,
     searchPath,
     systemConfigPath,
     systemHealthPath,
     userBasePath,
     violationsBasePath,
     vulnManagementPath,
-    vulnerabilitiesWorkloadCvesPath,
-    vulnerabilityReportsPath,
-    exceptionManagementPath,
+    vulnerabilitiesAllImagesPath,
+    vulnerabilitiesImagesWithoutCvesPath,
+    vulnerabilitiesInactiveImagesPath,
     vulnerabilitiesNodeCvesPath,
     vulnerabilitiesPlatformCvesPath,
-    policiesBasePath,
-    vulnerabilitiesUserWorkloadsPath,
     vulnerabilitiesPlatformPath,
-    vulnerabilitiesAllImagesPath,
-    vulnerabilitiesInactiveImagesPath,
-    vulnerabilitiesImagesWithoutCvesPath,
+    vulnerabilitiesUserWorkloadsPath,
     vulnerabilitiesVirtualMachineCvesPath,
+    vulnerabilitiesWorkloadCvesPath,
+    vulnerabilityReportsPath,
 } from 'routePaths';
 import type { RouteKey } from 'routePaths';
 
@@ -211,8 +212,8 @@ const routeComponentMap: Record<RouteKey, RouteComponent> = {
         path: policyManagementBasePath,
     },
     risk: {
-        component: asyncComponent(() => import('Containers/Risk/RiskPage')),
-        path: riskPath,
+        component: asyncComponent(() => import('Containers/Risk/RiskRoutes')),
+        path: riskBasePath,
     },
     search: {
         component: asyncComponent(() => import('Containers/Search/SearchPage')),
@@ -269,6 +270,10 @@ const routeComponentMap: Record<RouteKey, RouteComponent> = {
     'vulnerabilities/all-images': {
         component: makeVulnMgmtUserWorkloadView('all-images'),
         path: vulnerabilitiesAllImagesPath,
+    },
+    'base-images': {
+        component: asyncComponent(() => import('Containers/BaseImages/BaseImagesPage')),
+        path: baseImagesPath,
     },
     'vulnerabilities/inactive-images': {
         component: makeVulnMgmtUserWorkloadView('inactive-images'),
@@ -329,7 +334,7 @@ function Body({ hasReadAccess, isFeatureFlagEnabled }: BodyProps): ReactElement 
     const routePredicates = { hasReadAccess, isFeatureFlagEnabled };
 
     return (
-        <div className="flex flex-col h-full w-full relative overflow-auto bg-base-100">
+        <div id="BodyRoutes">
             <ErrorBoundary>
                 <Routes>
                     <Route path="/" element={<Navigate to={dashboardPath} replace />} />

@@ -21,6 +21,7 @@ message AdmissionControlSettings {
 
   string cluster_id = 6;
   storage.PolicyList runtime_policies = 7;
+  bool flatten_image_data = 8;
 }
 
 message AdmissionControlAlerts {

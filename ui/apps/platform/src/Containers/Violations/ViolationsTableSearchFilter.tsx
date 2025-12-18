@@ -1,43 +1,43 @@
-import { Toolbar, ToolbarGroup, ToolbarContent, ToolbarItem } from '@patternfly/react-core';
+import { Toolbar, ToolbarContent, ToolbarGroup, ToolbarItem } from '@patternfly/react-core';
 
 import type { SearchFilter } from 'types/search';
 import useAnalytics from 'hooks/useAnalytics';
 import { createFilterTracker } from 'utils/analyticsEventTracking';
-import { makeFilterChipDescriptors } from 'Components/CompoundSearchFilter/utils/utils';
 import type {
     CompoundSearchFilterConfig,
     OnSearchCallback,
-    OnSearchPayload,
 } from 'Components/CompoundSearchFilter/types';
-import SearchFilterChips from 'Components/PatternFly/SearchFilterChips';
 import CompoundSearchFilter from 'Components/CompoundSearchFilter/components/CompoundSearchFilter';
+import SearchFilterChips, {
+    makeFilterChipDescriptors,
+} from 'Components/CompoundSearchFilter/components/SearchFilterChips';
 import {
     Category as PolicyCategory,
-    Name as PolicyName,
     LifecycleStage as PolicyLifecycleStage,
+    Name as PolicyName,
     Severity as PolicySeverity,
 } from 'Components/CompoundSearchFilter/attributes/policy';
 import {
-    ViolationTime as AlertViolationTime,
     EntityType as AlertEntityType,
+    ViolationTime as AlertViolationTime,
 } from 'Components/CompoundSearchFilter/attributes/alert';
 import {
-    clusterNameAttribute,
     clusterIdAttribute,
     clusterLabelAttribute,
+    clusterNameAttribute,
 } from 'Components/CompoundSearchFilter/attributes/cluster';
 import {
-    ID as NamespaceID,
-    Name as NamespaceName,
-    Label as NamespaceLabel,
     Annotation as NamespaceAnnotation,
+    ID as NamespaceID,
+    Label as NamespaceLabel,
+    Name as NamespaceName,
 } from 'Components/CompoundSearchFilter/attributes/namespace';
 import {
+    Annotation as DeploymentAnnotation,
     ID as DeploymentID,
-    Name as DeploymentName,
     Inactive as DeploymentInactive,
     Label as DeploymentLabel,
-    Annotation as DeploymentAnnotation,
+    Name as DeploymentName,
 } from 'Components/CompoundSearchFilter/attributes/deployment';
 import { Name as ResourceName } from 'Components/CompoundSearchFilter/attributes/resource';
 
@@ -98,10 +98,10 @@ function ViolationsTableSearchFilter({
 
     const filterChipGroupDescriptors = makeFilterChipDescriptors(searchFilterConfig);
 
-    function onSearchHandler(payload: OnSearchPayload) {
+    const onSearchHandler: OnSearchCallback = (payload) => {
         onSearch(payload);
         trackAppliedFilter('Policy Violations Filter Applied', payload);
-    }
+    };
 
     return (
         <Toolbar>

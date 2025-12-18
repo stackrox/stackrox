@@ -1,14 +1,13 @@
-import React from 'react';
 import type { ErrorInfo, ReactElement } from 'react';
 import {
     EmptyState,
+    EmptyStateFooter,
+    EmptyStateHeader,
     EmptyStateIcon,
     Flex,
     FlexItem,
     PageSection,
     Title,
-    EmptyStateHeader,
-    EmptyStateFooter,
 } from '@patternfly/react-core';
 import { ExclamationCircleIcon } from '@patternfly/react-icons';
 

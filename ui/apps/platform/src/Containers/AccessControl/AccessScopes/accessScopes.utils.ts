@@ -1,8 +1,8 @@
 import type {
     LabelSelector,
-    LabelSelectorsKey,
     LabelSelectorOperator,
     LabelSelectorRequirement,
+    LabelSelectorsKey,
     SimpleAccessScopeRules,
 } from 'services/AccessScopesService';
 

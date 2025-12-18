@@ -2,6 +2,7 @@ import type { ContainerImage } from './deployment.proto';
 import type { L4Protocol, NetworkEntityInfoType } from './networkFlow.proto';
 import type { EnforcementAction, LifecycleStage, Policy, PolicySeverity } from './policy.proto';
 import type { ProcessIndicator } from './processIndicator.proto';
+import type { FileAccess } from './fileAccess.proto';
 
 // Alert is for violation page.
 
@@ -74,6 +75,7 @@ export type BaseAlert = {
     lifecycleStage: LifecycleStage;
     violations: Violation[]; // For run-time phase alert, a maximum of 40 violations are retained.
     processViolation: ProcessViolation | null;
+    fileAccessViolation: FileAccessViolation | null;
     enforcement: AlertEnforcement | null;
     time: string; // ISO 8601 date string
     firstOccurred: string; // ISO 8601 date string
@@ -131,6 +133,11 @@ export type ViolationType = 'GENERIC' | 'K8S_EVENT' | 'NETWORK_FLOW' | 'NETWORK_
 export type ProcessViolation = {
     message: string;
     processes: ProcessIndicator[];
+};
+
+export type FileAccessViolation = {
+    message: string;
+    accesses: FileAccess[];
 };
 
 export type AlertEnforcement = {

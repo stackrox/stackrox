@@ -93,6 +93,11 @@ func (s *WatchedImagesStoreSuite) TestStore() {
 
 	s.NoError(store.UpsertMany(ctx, watchedImages))
 
+	foundWatchedImages, missing, err := store.GetMany(ctx, watchedImageIDs)
+	s.NoError(err)
+	s.Empty(missing)
+	protoassert.ElementsMatch(s.T(), watchedImages, foundWatchedImages)
+
 	watchedImageCount, err = store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)
 	s.Equal(200, watchedImageCount)

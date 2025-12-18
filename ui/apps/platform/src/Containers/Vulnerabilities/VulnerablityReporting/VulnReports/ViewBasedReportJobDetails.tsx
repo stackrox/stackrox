@@ -1,4 +1,3 @@
-import React from 'react';
 import {
     Chip,
     ChipGroup,
@@ -12,6 +11,7 @@ import {
 } from '@patternfly/react-core';
 
 import type { ViewBasedReportSnapshot } from 'services/ReportsService.types';
+import { makeFilterChipDescriptors } from 'Components/CompoundSearchFilter/components/SearchFilterChips';
 import VulnerabilitySeverityIconText from 'Components/PatternFly/IconText/VulnerabilitySeverityIconText';
 import {
     getSearchFilterFromSearchString,
@@ -20,7 +20,6 @@ import {
 } from 'utils/searchUtils';
 import { isVulnerabilitySeverity } from 'types/cve.proto';
 import { formatCveDiscoveredTime } from '../../utils/vulnerabilityUtils';
-import { makeFilterChipDescriptors } from 'Components/CompoundSearchFilter/utils/utils';
 import { viewBasedReportSearchFilterConfigs } from '../../searchFilterConfig';
 import { viewBasedReportFilterChipDescriptors } from '../../filterChipDescriptor';
 

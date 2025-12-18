@@ -1,9 +1,8 @@
-import React, { useMemo } from 'react';
+import { useMemo } from 'react';
 import {
     Flex,
     PageSection,
     Pagination,
-    pluralize,
     Skeleton,
     Split,
     SplitItem,
@@ -12,14 +11,14 @@ import {
     ToolbarContent,
     ToolbarGroup,
     ToolbarItem,
+    pluralize,
 } from '@patternfly/react-core';
 
 import CompoundSearchFilter from 'Components/CompoundSearchFilter/components/CompoundSearchFilter';
-import ComponentScannableStatusDropdown from 'Containers/Vulnerabilities/components/ComponentScannableStatusDropdown';
-import type { OnSearchPayload } from 'Components/CompoundSearchFilter/types';
-import { onURLSearch } from 'Components/CompoundSearchFilter/utils/utils';
+import SearchFilterChips from 'Components/CompoundSearchFilter/components/SearchFilterChips';
+import type { OnSearchCallback } from 'Components/CompoundSearchFilter/types';
+import { updateSearchFilter } from 'Components/CompoundSearchFilter/utils/utils';
 import { DynamicTableLabel } from 'Components/DynamicIcon';
-import SearchFilterChips from 'Components/PatternFly/SearchFilterChips';
 import type { UseURLPaginationResult } from 'hooks/useURLPagination';
 import type { UseUrlSearchReturn } from 'hooks/useURLSearch';
 import type { UseURLSortResult } from 'hooks/useURLSort';
@@ -32,6 +31,7 @@ import {
     applyVirtualMachinePackagesTableSort,
     getVirtualMachinePackagesTableData,
 } from '../aggregateUtils';
+import ComponentScannableStatusDropdown from '../../components/ComponentScannableStatusDropdown';
 import { virtualMachineComponentSearchFilterConfig } from '../../searchFilterConfig';
 import VirtualMachinePackagesTable from './VirtualMachinePackagesTable';
 
@@ -103,8 +103,8 @@ function VirtualMachinePagePackages({
         setPage(1);
     }
 
-    const onSearch = (payload: OnSearchPayload) => {
-        onURLSearch(searchFilter, setSearchFilter, payload);
+    const onSearch: OnSearchCallback = (payload) => {
+        setSearchFilter(updateSearchFilter(searchFilter, payload));
         setPage(1);
     };
 
@@ -113,10 +113,10 @@ function VirtualMachinePagePackages({
         checked: boolean,
         selection: string
     ) => {
-        const action = checked ? 'ADD' : 'REMOVE';
+        const action = checked ? 'SELECT_INCLUSIVE' : 'REMOVE';
         const category = filterType;
         const value = selection;
-        onURLSearch(searchFilter, setSearchFilter, { action, category, value });
+        setSearchFilter(updateSearchFilter(searchFilter, [{ action, category, value }]));
         setPage(1);
     };
 

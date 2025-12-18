@@ -14,6 +14,7 @@ import (
 	"github.com/stackrox/rox/pkg/booleanpolicy/fieldnames"
 	"github.com/stackrox/rox/pkg/booleanpolicy/policyversion"
 	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/policies"
 	"github.com/stackrox/rox/pkg/scopecomp"
 	"github.com/stackrox/rox/pkg/set"
@@ -156,7 +157,7 @@ func (s *policyValidator) removeEnforcementsForMissingLifecycles(policy *storage
 
 func (s *policyValidator) validateEventSource(policy *storage.Policy) error {
 	if policies.AppliesAtRunTime(policy) && policy.GetEventSource() == storage.EventSource_NOT_APPLICABLE {
-		return errors.New("event source must be deployment or audit event for runtime policies")
+		return s.eventSourceError()
 	}
 
 	if (policies.AppliesAtBuildTime(policy) || policies.AppliesAtDeployTime(policy)) &&
@@ -185,6 +186,11 @@ func (s *policyValidator) validateEventSource(policy *storage.Policy) error {
 			}
 		}
 	}
+
+	if err := s.validateNodeEventPolicy(policy); err != nil {
+		return err
+	}
+
 	// TODO(@khushboo): ROX-7252: Modify this validation once migration to account for new policy field event source is in
 	return nil
 }
@@ -353,12 +359,25 @@ func (s *policyValidator) compilesForRunTime(policy *storage.Policy, options ...
 		return errors.New("A runtime policy section must contain only one criterion from process, network flow, audit log events, or Kubernetes events criteria categories")
 	}
 
+	if err := s.validateNodeEventPolicy(policy); err != nil {
+		return err
+	}
+
 	var err error
 	if s.isAuditEventPolicy(policy) {
 		_, err = booleanpolicy.BuildAuditLogEventMatcher(policy, booleanpolicy.ValidateSourceIsAuditLogEvents())
+	} else if s.isNodeEventPolicy(policy) {
+		_, err = booleanpolicy.BuildNodeEventMatcher(policy, options...)
 	} else {
-		// build a deployment matcher to check for all runtime fields that are evaluated against a deployment
-		_, err = booleanpolicy.BuildDeploymentMatcher(policy, options...)
+		if booleanpolicy.ContainsOneOf(policy, booleanpolicy.FileAccess) {
+			// FileAccesses are handled slightly differently and can't use the default
+			// deployment matcher because it is not aware of file access fields.
+			// Look at pkg/booleanpolicy/augmentedobjs/meta.go for more details.
+			_, err = booleanpolicy.BuildDeploymentWithFileAccessMatcher(policy, options...)
+		} else {
+			// build a deployment matcher to check for all runtime fields that are evaluated against a deployment
+			_, err = booleanpolicy.BuildDeploymentMatcher(policy, options...)
+		}
 	}
 	if err != nil {
 		return errors.Wrap(err, "policy configuration is invalid for runtime")
@@ -403,6 +422,10 @@ func (s *policyValidator) isAuditEventPolicy(policy *storage.Policy) bool {
 	return policy.GetEventSource() == storage.EventSource_AUDIT_LOG_EVENT
 }
 
+func (s *policyValidator) isNodeEventPolicy(policy *storage.Policy) bool {
+	return policy.GetEventSource() == storage.EventSource_NODE_EVENT
+}
+
 func (s *policyValidator) validateEnforcement(policy *storage.Policy) error {
 	if len(policy.GetEnforcementActions()) > 0 {
 		for _, section := range policy.GetPolicySections() {
@@ -416,4 +439,35 @@ func (s *policyValidator) validateEnforcement(policy *storage.Policy) error {
 		}
 	}
 	return nil
+}
+
+func (s *policyValidator) validateNodeEventPolicy(policy *storage.Policy) error {
+	if !s.isNodeEventPolicy(policy) {
+		return nil
+	}
+
+	if !features.SensitiveFileActivity.Enabled() {
+		// There's a possibility that a node event policy is provided via the
+		// API without the feature flag enabled (via JSON import or CR) so prevent
+		// further validation
+		return fmt.Errorf("%s is disabled, Node event policies are unavailable.", features.SensitiveFileActivity.EnvVar())
+	}
+
+	if !booleanpolicy.HasDiscreteEventSource(policy, storage.EventSource_NODE_EVENT) {
+		return errors.New("Node event policies must contain only node fields")
+	}
+
+	return nil
+}
+
+func (s *policyValidator) eventSourceError() error {
+	eventSources := []string{
+		"deployment", "audit event",
+	}
+
+	if features.SensitiveFileActivity.Enabled() {
+		eventSources = append(eventSources, "node")
+	}
+
+	return fmt.Errorf("event source must be %s for runtime policies", strings.Join(eventSources, " or "))
 }

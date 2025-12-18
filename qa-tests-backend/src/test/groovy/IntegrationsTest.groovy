@@ -49,6 +49,7 @@ class IntegrationsTest extends BaseSpecification {
     static final private List<Deployment> DEPLOYMENTS = [
             new Deployment()
                     .setName(NOTIFIERDEPLOYMENT)
+                    .setImagePrefetcherAffinity()
                     .setImage("quay.io/rhacs-eng/qa-multi-arch-nginx:latest")
                     .addLabel("app", NOTIFIERDEPLOYMENT),
     ]
@@ -723,7 +724,7 @@ class IntegrationsTest extends BaseSpecification {
 
         when:
         "the integration is tested"
-        def outcome = ImageIntegrationService.getImageIntegrationClient().testImageIntegration(
+        def outcome = ImageIntegrationService.testImageIntegration(
                 imageIntegration.getCustomBuilder(customArgs).build()
         )
 
@@ -766,7 +767,7 @@ class IntegrationsTest extends BaseSpecification {
 
         when:
         "the integration is tested"
-        ImageIntegrationService.getImageIntegrationClient().testImageIntegration(
+        ImageIntegrationService.testImageIntegration(
                 imageIntegration.getCustomBuilder(getCustomArgs()).build()
         )
 

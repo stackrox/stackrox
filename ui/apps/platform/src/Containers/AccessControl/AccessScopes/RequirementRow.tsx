@@ -1,11 +1,11 @@
-import React, { useRef, useState } from 'react';
+import { useRef, useState } from 'react';
 import type { ReactElement } from 'react';
 import { Button, Icon, TextInput, Tooltip, ValidatedOptions } from '@patternfly/react-core';
 import {
     CheckCircleIcon,
     MinusCircleIcon,
-    PlusCircleIcon,
     PencilAltIcon,
+    PlusCircleIcon,
     TimesCircleIcon,
 } from '@patternfly/react-icons';
 import { Td, Tr } from '@patternfly/react-table';

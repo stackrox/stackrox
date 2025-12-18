@@ -205,7 +205,7 @@ func (s *flowStoreImpl) copyFrom(ctx context.Context, objs ...*storage.NetworkFl
 	}
 	defer release()
 
-	tx, err := conn.Begin(ctx)
+	tx, ctx, err := conn.Begin(ctx)
 	if err != nil {
 		return err
 	}
@@ -230,7 +230,7 @@ func (s *flowStoreImpl) upsert(ctx context.Context, objs ...*storage.NetworkFlow
 	defer release()
 
 	// Moved the transaction outside the loop which greatly improved the performance of these individual inserts.
-	tx, err := conn.Begin(ctx)
+	tx, ctx, err := conn.Begin(ctx)
 	if err != nil {
 		return err
 	}
@@ -439,15 +439,4 @@ func (s *flowStoreImpl) RemoveStaleFlows(ctx context.Context) error {
 	// It is also currently prone to statement timeouts
 	_, err = conn.Exec(ctx, pruneStaleNetworkFlowsStmt, s.clusterID)
 	return err
-}
-
-//// Used for testing
-
-func dropTableNetworkflow(ctx context.Context, db postgres.DB) {
-	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS network_flows CASCADE")
-}
-
-// Destroy destroys the tables
-func Destroy(ctx context.Context, db postgres.DB) {
-	dropTableNetworkflow(ctx, db)
 }

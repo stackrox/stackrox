@@ -1,11 +1,11 @@
 import withAuth from '../../helpers/basicAuth';
 
 import {
-    clickOnSingularEntityWidgetInSidePanel,
     clickOnSingleEntityInTable,
+    clickOnSingularEntityWidgetInSidePanel,
     hasCountWidgetsFor,
-    hasTabsFor,
     hasRelatedEntityFor,
+    hasTabsFor,
     navigateToSingleEntityPage,
     verifyWidgetLinkToTableFromSidePanel,
     verifyWidgetLinkToTableFromSinglePage,

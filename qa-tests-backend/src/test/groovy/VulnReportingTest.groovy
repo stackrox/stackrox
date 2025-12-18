@@ -21,11 +21,13 @@ class VulnReportingTest extends BaseSpecification {
             new Deployment()
                     .setName("struts-deployment")
                     .setNamespace(Constants.ORCHESTRATOR_NAMESPACE)
+                    .setImagePrefetcherAffinity()
                     .setImage("quay.io/rhacs-eng/qa-multi-arch:struts-app")
                     .addLabel("app", "struts-test"),
             new Deployment()
                     .setName("registry-deployment")
                     .setNamespace(SECONDARY_NAMESPACE)
+                    .setImagePrefetcherAffinity()
                     .setImage("quay.io/rhacs-eng/qa-multi-arch:struts-app")
                     .addLabel("app", "registry-image-test")
             // Use these if you want to actually test what the value of the report CSV is

@@ -1,4 +1,3 @@
-import React from 'react';
 import { Link } from 'react-router-dom-v5-compat';
 import {
     Pagination,
@@ -16,11 +15,14 @@ import type { ClusterCheckStatus } from 'services/ComplianceResultsService';
 import type { TableUIState } from 'utils/getTableUIState';
 
 import CompoundSearchFilter from 'Components/CompoundSearchFilter/components/CompoundSearchFilter';
-import { makeFilterChipDescriptors } from 'Components/CompoundSearchFilter/utils/utils';
-import SearchFilterChips from 'Components/PatternFly/SearchFilterChips';
+import SearchFilterChips, {
+    makeFilterChipDescriptorFromAttribute,
+    makeFilterChipDescriptors,
+} from 'Components/CompoundSearchFilter/components/SearchFilterChips';
+import SearchFilterSelectInclusive from 'Components/CompoundSearchFilter/components/SearchFilterSelectInclusive';
 import type {
     CompoundSearchFilterConfig,
-    OnSearchPayload,
+    OnSearchCallback,
 } from 'Components/CompoundSearchFilter/types';
 import type { SearchFilter } from 'types/search';
 
@@ -29,10 +31,9 @@ import {
     getClusterResultsStatusObject,
     getTimeDifferenceAsPhrase,
 } from './compliance.coverage.utils';
-import CheckStatusDropdown from './components/CheckStatusDropdown';
 import StatusIcon from './components/StatusIcon';
 import useScanConfigRouter from './hooks/useScanConfigRouter';
-import { complianceStatusFilterChipDescriptors } from '../searchFilterConfig';
+import { attributeForComplianceCheckStatus } from '../searchFilterConfig';
 
 export const tabContentIdForResults = 'check-details-Results-tab-section';
 
@@ -46,12 +47,7 @@ export type CheckDetailsTableProps = {
     searchFilterConfig: CompoundSearchFilterConfig;
     searchFilter: SearchFilter;
     onFilterChange: (newFilter: SearchFilter) => void;
-    onSearch: (payload: OnSearchPayload) => void;
-    onCheckStatusSelect: (
-        filterType: 'Compliance Check Status',
-        checked: boolean,
-        selection: string
-    ) => void;
+    onSearch: OnSearchCallback;
     onClearFilters: () => void;
 };
 
@@ -66,7 +62,6 @@ function CheckDetailsTable({
     searchFilter,
     onFilterChange,
     onSearch,
-    onCheckStatusSelect,
     onClearFilters,
 }: CheckDetailsTableProps) {
     const { generatePathWithScanConfig } = useScanConfigRouter();
@@ -87,9 +82,11 @@ function CheckDetailsTable({
                             />
                         </ToolbarItem>
                         <ToolbarItem>
-                            <CheckStatusDropdown
+                            <SearchFilterSelectInclusive
+                                attribute={attributeForComplianceCheckStatus}
+                                isSeparate
+                                onSearch={onSearch}
                                 searchFilter={searchFilter}
-                                onSelect={onCheckStatusSelect}
                             />
                         </ToolbarItem>
                         <ToolbarItem variant="pagination" align={{ default: 'alignRight' }}>
@@ -108,7 +105,9 @@ function CheckDetailsTable({
                             onFilterChange={onFilterChange}
                             filterChipGroupDescriptors={[
                                 ...filterChipGroupDescriptors,
-                                complianceStatusFilterChipDescriptors,
+                                makeFilterChipDescriptorFromAttribute(
+                                    attributeForComplianceCheckStatus
+                                ),
                             ]}
                         />
                     </ToolbarGroup>

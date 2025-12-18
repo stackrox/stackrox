@@ -1,4 +1,4 @@
-import { Split, SplitItem, SelectGroup, SelectOption } from '@patternfly/react-core';
+import { SelectGroup, SelectOption, Split, SplitItem } from '@patternfly/react-core';
 import { PficonNetworkRangeIcon } from '@patternfly/react-icons';
 
 import CheckboxSelect from 'Components/PatternFly/CheckboxSelect';

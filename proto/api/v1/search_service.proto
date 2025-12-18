@@ -18,7 +18,7 @@ enum SearchCategory {
   IMAGE_COMPONENT_EDGE = 23;
   POLICIES = 3;
   DEPLOYMENTS = 4;
-  ACTIVE_COMPONENT = 30;
+  reserved 30;
   PODS = 25;
   SECRETS = 5;
   PROCESS_INDICATORS = 6;
@@ -88,6 +88,8 @@ enum SearchCategory {
   IMAGE_VULNERABILITIES_V2 = 75;
   IMAGES_V2 = 76;
   VIRTUAL_MACHINES = 77;
+  BASE_IMAGES = 78;
+  BASE_IMAGE_LAYERS = 79;
 }
 
 enum SearchDataType {

@@ -4,7 +4,6 @@ package postgres
 
 import (
 	"context"
-	"slices"
 	"time"
 
 	"github.com/jackc/pgx/v5"
@@ -20,7 +19,6 @@ import (
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
 	pgSearch "github.com/stackrox/rox/pkg/search/postgres"
-	"gorm.io/gorm"
 )
 
 const (
@@ -148,75 +146,67 @@ func insertIntoComplianceOperatorReportSnapshotV2Scans(batch *pgx.Batch, obj *st
 	return nil
 }
 
+var copyColsComplianceOperatorReportSnapshotV2 = []string{
+	"reportid",
+	"scanconfigurationid",
+	"name",
+	"reportstatus_runstate",
+	"reportstatus_startedat",
+	"reportstatus_completedat",
+	"reportstatus_reportrequesttype",
+	"reportstatus_reportnotificationmethod",
+	"user_id",
+	"user_name",
+	"serialized",
+}
+
 func copyFromComplianceOperatorReportSnapshotV2(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, objs ...*storage.ComplianceOperatorReportSnapshotV2) error {
 	if len(objs) == 0 {
 		return nil
 	}
-	batchSize := min(len(objs), pgSearch.MaxBatchSize)
-	inputRows := make([][]interface{}, 0, batchSize)
 
-	// This is a copy so first we must delete the rows and re-add them
-	// Which is essentially the desired behaviour of an upsert.
-	deletes := make([]string, 0, batchSize)
-
-	copyCols := []string{
-		"reportid",
-		"scanconfigurationid",
-		"name",
-		"reportstatus_runstate",
-		"reportstatus_startedat",
-		"reportstatus_completedat",
-		"reportstatus_reportrequesttype",
-		"reportstatus_reportnotificationmethod",
-		"user_id",
-		"user_name",
-		"serialized",
-	}
-
-	for objBatch := range slices.Chunk(objs, batchSize) {
-		for _, obj := range objBatch {
-			// Todo: ROX-9499 Figure out how to more cleanly template around this issue.
-			log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj "+
-				"in the loop is not used as it only consists of the parent ID and the index.  Putting this here as a stop gap "+
-				"to simply use the object.  %s", obj)
-
-			serialized, marshalErr := obj.MarshalVT()
-			if marshalErr != nil {
-				return marshalErr
-			}
-
-			inputRows = append(inputRows, []interface{}{
-				pgutils.NilOrUUID(obj.GetReportId()),
-				obj.GetScanConfigurationId(),
-				obj.GetName(),
-				obj.GetReportStatus().GetRunState(),
-				protocompat.NilOrTime(obj.GetReportStatus().GetStartedAt()),
-				protocompat.NilOrTime(obj.GetReportStatus().GetCompletedAt()),
-				obj.GetReportStatus().GetReportRequestType(),
-				obj.GetReportStatus().GetReportNotificationMethod(),
-				obj.GetUser().GetId(),
-				obj.GetUser().GetName(),
-				serialized,
-			})
-
-			// Add the ID to be deleted.
+	{
+		// CopyFrom does not upsert, so delete existing rows first to achieve upsert behavior.
+		// Parent deletion cascades to children, so only the top-level parent needs deletion.
+		deletes := make([]string, 0, len(objs))
+		for _, obj := range objs {
 			deletes = append(deletes, obj.GetReportId())
 		}
-
-		// copy does not upsert so have to delete first.  parent deletion cascades so only need to
-		// delete for the top level parent
-
 		if err := s.DeleteMany(ctx, deletes); err != nil {
 			return err
 		}
-		// clear the inserts and vals for the next batch
-		deletes = deletes[:0]
+	}
 
-		if _, err := tx.CopyFrom(ctx, pgx.Identifier{"compliance_operator_report_snapshot_v2"}, copyCols, pgx.CopyFromRows(inputRows)); err != nil {
-			return err
+	idx := 0
+	inputRows := pgx.CopyFromFunc(func() ([]any, error) {
+		if idx >= len(objs) {
+			return nil, nil
 		}
-		// clear the input rows for the next batch
-		inputRows = inputRows[:0]
+		obj := objs[idx]
+		idx++
+
+		serialized, marshalErr := obj.MarshalVT()
+		if marshalErr != nil {
+			return nil, marshalErr
+		}
+
+		return []interface{}{
+			pgutils.NilOrUUID(obj.GetReportId()),
+			obj.GetScanConfigurationId(),
+			obj.GetName(),
+			obj.GetReportStatus().GetRunState(),
+			protocompat.NilOrTime(obj.GetReportStatus().GetStartedAt()),
+			protocompat.NilOrTime(obj.GetReportStatus().GetCompletedAt()),
+			obj.GetReportStatus().GetReportRequestType(),
+			obj.GetReportStatus().GetReportNotificationMethod(),
+			obj.GetUser().GetId(),
+			obj.GetUser().GetName(),
+			serialized,
+		}, nil
+	})
+
+	if _, err := tx.CopyFrom(ctx, pgx.Identifier{"compliance_operator_report_snapshot_v2"}, copyColsComplianceOperatorReportSnapshotV2, inputRows); err != nil {
+		return err
 	}
 
 	for _, obj := range objs {
@@ -228,75 +218,39 @@ func copyFromComplianceOperatorReportSnapshotV2(ctx context.Context, s pgSearch.
 	return nil
 }
 
+var copyColsComplianceOperatorReportSnapshotV2Scans = []string{
+	"compliance_operator_report_snapshot_v2_reportid",
+	"idx",
+	"scanrefid",
+	"laststartedtime",
+}
+
 func copyFromComplianceOperatorReportSnapshotV2Scans(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, complianceOperatorReportSnapshotV2ReportId string, objs ...*storage.ComplianceOperatorReportSnapshotV2_Scan) error {
 	if len(objs) == 0 {
 		return nil
 	}
-	batchSize := min(len(objs), pgSearch.MaxBatchSize)
-	inputRows := make([][]interface{}, 0, batchSize)
-
-	copyCols := []string{
-		"compliance_operator_report_snapshot_v2_reportid",
-		"idx",
-		"scanrefid",
-		"laststartedtime",
-	}
 
 	idx := 0
-	for objBatch := range slices.Chunk(objs, batchSize) {
-		for _, obj := range objBatch {
-			// Todo: ROX-9499 Figure out how to more cleanly template around this issue.
-			log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj "+
-				"in the loop is not used as it only consists of the parent ID and the index.  Putting this here as a stop gap "+
-				"to simply use the object.  %s", obj)
-
-			inputRows = append(inputRows, []interface{}{
-				pgutils.NilOrUUID(complianceOperatorReportSnapshotV2ReportId),
-				idx,
-				obj.GetScanRefId(),
-				protocompat.NilOrTime(obj.GetLastStartedTime()),
-			})
-
-			idx++
+	inputRows := pgx.CopyFromFunc(func() ([]any, error) {
+		if idx >= len(objs) {
+			return nil, nil
 		}
+		obj := objs[idx]
+		idx++
 
-		// copy does not upsert so have to delete first.  parent deletion cascades so only need to
-		// delete for the top level parent
+		return []interface{}{
+			pgutils.NilOrUUID(complianceOperatorReportSnapshotV2ReportId),
+			idx,
+			obj.GetScanRefId(),
+			protocompat.NilOrTime(obj.GetLastStartedTime()),
+		}, nil
+	})
 
-		if _, err := tx.CopyFrom(ctx, pgx.Identifier{"compliance_operator_report_snapshot_v2_scans"}, copyCols, pgx.CopyFromRows(inputRows)); err != nil {
-			return err
-		}
-		// clear the input rows for the next batch
-		inputRows = inputRows[:0]
+	if _, err := tx.CopyFrom(ctx, pgx.Identifier{"compliance_operator_report_snapshot_v2_scans"}, copyColsComplianceOperatorReportSnapshotV2Scans, inputRows); err != nil {
+		return err
 	}
 
 	return nil
 }
 
 // endregion Helper functions
-
-// region Used for testing
-
-// CreateTableAndNewStore returns a new Store instance for testing.
-func CreateTableAndNewStore(ctx context.Context, db postgres.DB, gormDB *gorm.DB) Store {
-	pkgSchema.ApplySchemaForTable(ctx, gormDB, baseTable)
-	return New(db)
-}
-
-// Destroy drops the tables associated with the target object type.
-func Destroy(ctx context.Context, db postgres.DB) {
-	dropTableComplianceOperatorReportSnapshotV2(ctx, db)
-}
-
-func dropTableComplianceOperatorReportSnapshotV2(ctx context.Context, db postgres.DB) {
-	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS compliance_operator_report_snapshot_v2 CASCADE")
-	dropTableComplianceOperatorReportSnapshotV2Scans(ctx, db)
-
-}
-
-func dropTableComplianceOperatorReportSnapshotV2Scans(ctx context.Context, db postgres.DB) {
-	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS compliance_operator_report_snapshot_v2_scans CASCADE")
-
-}
-
-// endregion Used for testing

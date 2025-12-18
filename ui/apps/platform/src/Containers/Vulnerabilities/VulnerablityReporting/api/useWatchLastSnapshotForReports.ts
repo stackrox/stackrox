@@ -1,7 +1,7 @@
 import { useCallback } from 'react';
 
 import { fetchReportHistory } from 'services/ReportsService';
-import { ReportConfiguration, ReportSnapshot } from 'services/ReportsService.types';
+import type { ReportConfiguration, ReportSnapshot } from 'services/ReportsService.types';
 import useInterval from 'hooks/useInterval';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 import useRestQuery from 'hooks/useRestQuery';
@@ -69,7 +69,7 @@ export function useWatchLastSnapshotForReports(
     useInterval(refetch, 10000);
 
     const result: FetchLastSnapshotReturn = {
-        reportSnapshots: data || {},
+        reportSnapshots: data ?? {},
         isLoading,
         error: error ? getAxiosErrorMessage(error) : null,
         fetchSnapshots: refetch,

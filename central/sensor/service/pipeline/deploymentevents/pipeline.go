@@ -3,9 +3,9 @@ package deploymentevents
 import (
 	"context"
 
-	"github.com/stackrox/rox/central/activecomponent/updater/aggregator"
 	clusterDataStore "github.com/stackrox/rox/central/cluster/datastore"
 	deploymentDataStore "github.com/stackrox/rox/central/deployment/datastore"
+	deploymentutils "github.com/stackrox/rox/central/deployment/utils"
 	"github.com/stackrox/rox/central/detection/lifecycle"
 	countMetrics "github.com/stackrox/rox/central/metrics"
 	networkBaselineManager "github.com/stackrox/rox/central/networkbaseline/manager"
@@ -17,6 +17,7 @@ import (
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/centralsensor"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/search"
@@ -39,8 +40,7 @@ func GetPipeline() pipeline.Fragment {
 		lifecycle.SingletonManager(),
 		graph.Singleton(),
 		reprocessor.Singleton(),
-		networkBaselineManager.Singleton(),
-		aggregator.Singleton())
+		networkBaselineManager.Singleton())
 }
 
 // NewPipeline returns a new instance of Pipeline.
@@ -51,7 +51,6 @@ func NewPipeline(
 	graphEvaluator graph.Evaluator,
 	reprocessor reprocessor.Loop,
 	networkBaselines networkBaselineManager.Manager,
-	processAggregator aggregator.ProcessAggregator,
 ) pipeline.Fragment {
 	return &pipelineImpl{
 		validateInput:     newValidateInput(),
@@ -64,8 +63,6 @@ func NewPipeline(
 		networkBaselines: networkBaselines,
 
 		reprocessor: reprocessor,
-
-		processAggregator: processAggregator,
 	}
 }
 
@@ -81,8 +78,6 @@ type pipelineImpl struct {
 	reprocessor      reprocessor.Loop
 
 	graphEvaluator graph.Evaluator
-
-	processAggregator aggregator.ProcessAggregator
 }
 
 func (s *pipelineImpl) Capabilities() []centralsensor.CentralCapability {
@@ -181,6 +176,11 @@ func (s *pipelineImpl) runGeneralPipeline(ctx context.Context, deployment *stora
 		return err
 	}
 
+	if features.FlattenImageData.Enabled() {
+		// IDV2s may not be set if sensor is running an older version
+		deploymentutils.PopulateContainerImageIDV2s(deployment)
+	}
+
 	incrementNetworkGraphEpoch := true
 	// Only need to get if it's an update call
 	if action == central.ResourceAction_UPDATE_RESOURCE || action == central.ResourceAction_SYNC_RESOURCE {
@@ -199,8 +199,6 @@ func (s *pipelineImpl) runGeneralPipeline(ctx context.Context, deployment *stora
 			incrementNetworkGraphEpoch = !compareMap(oldDeployment.GetPodLabels(), deployment.GetPodLabels())
 		}
 	}
-
-	go s.processAggregator.RefreshDeployment(deployment)
 
 	// Add/Update the deployment from persistence depending on the deployment action.
 	if err := s.deployments.UpsertDeployment(ctx, deployment); err != nil {

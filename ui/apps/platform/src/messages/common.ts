@@ -57,6 +57,7 @@ export const eventSourceLabels: Record<PolicyEventSource, string> = Object.freez
     NOT_APPLICABLE: 'N/A',
     DEPLOYMENT_EVENT: 'Deployment',
     AUDIT_LOG_EVENT: 'Audit log',
+    NODE_EVENT: 'Node',
 });
 
 export const accessControl = Object.freeze({
@@ -152,6 +153,7 @@ export const policyCriteriaCategories = Object.freeze({
     USER_ISSUED_CONTAINER_COMMANDS: 'User issued container commands',
     RESOURCE_OPERATION: 'Resource operation (Required)',
     RESOURCE_ATTRIBUTES: 'Resource attributes',
+    FILE_ACTIVITY: 'File activity',
 });
 
 export type PolicyCriteriaCategoryKey = ValueOf<typeof policyCriteriaCategories>;

@@ -1,4 +1,3 @@
-import React from 'react';
 import { Flex, Skeleton } from '@patternfly/react-core';
 
 export type HeaderLoadingSkeletonProps = {

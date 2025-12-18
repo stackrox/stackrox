@@ -1,5 +1,4 @@
-import React from 'react';
-import { Flex, Button } from '@patternfly/react-core';
+import { Button, Flex } from '@patternfly/react-core';
 import { TimesIcon } from '@patternfly/react-icons';
 
 import type { Descriptor } from './policyCriteriaDescriptors';

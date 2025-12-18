@@ -1,4 +1,3 @@
-import React from 'react';
 import { Link } from 'react-router-dom-v5-compat';
 import { Card, CardBody, CardTitle } from '@patternfly/react-core';
 

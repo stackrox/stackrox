@@ -1,4 +1,4 @@
-import React, { useContext } from 'react';
+import { useContext } from 'react';
 import { gql } from '@apollo/client';
 
 import Query from 'Components/ThrowingQuery';
@@ -9,7 +9,7 @@ import RelatedEntityListCount from 'Components/RelatedEntityListCount';
 import Metadata from 'Components/Metadata';
 import BinderTabs from 'Components/BinderTabs';
 import Tab from 'Components/Tab';
-import { entityComponentPropTypes, entityComponentDefaultProps } from 'constants/entityPageProps';
+import { entityComponentDefaultProps, entityComponentPropTypes } from 'constants/entityPageProps';
 import searchContext from 'Containers/searchContext';
 import isGQLLoading from 'utils/gqlLoading';
 import getSubListFromEntity from 'utils/getSubListFromEntity';
@@ -129,7 +129,7 @@ const ConfigManagementEntityCluster = ({
                         listData = listData.map((listItem) => {
                             return {
                                 ...listItem,
-                                subjectWithClusterID: listItem?.subject?.subjectWithClusterID || [],
+                                subjectWithClusterID: listItem?.subject?.subjectWithClusterID ?? [],
                             };
                         });
                     }

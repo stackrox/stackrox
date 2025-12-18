@@ -202,9 +202,9 @@ describe('Violations', () => {
         visitViolationWithFixture('alerts/alertFirstInAlerts.json');
 
         cy.get(selectors.details.policyTab).click();
-        cy.get('h3:contains("Policy overview")');
-        cy.get('h3:contains("Policy behavior")');
-        cy.get('h3:contains("Policy criteria")');
+        cy.get('h2:contains("Policy overview")');
+        cy.get('h2:contains("Policy behavior")');
+        cy.get('h2:contains("Policy criteria")');
         // Conditionally rendered: Policy scope
     });
 
@@ -221,7 +221,7 @@ describe('Violations', () => {
         const tdSelector = 'td[data-label="Severity"]';
 
         // 0. Initial table state is sorted descending by Time.
-        cy.get(thSelector).should('have.attr', 'aria-sort', 'none');
+        cy.get(thSelector).should('not.have.attr', 'aria-sort');
 
         // 1. Sort descending by the Severity column.
         interactAndWaitForViolationsResponses(() => {

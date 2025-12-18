@@ -31,9 +31,10 @@ const (
 )
 
 var (
-	preVer    = versionPair{version: "3.0.57.0", seqNum: 63, minSeqNum: 0}
-	currVer   = versionPair{version: "3.0.58.0", seqNum: migrations.CurrentDBVersionSeqNum(), minSeqNum: migrations.MinimumSupportedDBVersionSeqNum()}
-	futureVer = versionPair{version: "10001.0.0.0", seqNum: 6533, minSeqNum: 2011}
+	preVer         = versionPair{version: "4.7.22.0", seqNum: 63, minSeqNum: 0}
+	currVer        = versionPair{version: "4.10.58.0", seqNum: migrations.CurrentDBVersionSeqNum(), minSeqNum: migrations.MinimumSupportedDBVersionSeqNum()}
+	futureVer      = versionPair{version: "10001.0.0.0", seqNum: 6533, minSeqNum: 2011}
+	unsupportedVer = versionPair{version: "4.3.1", seqNum: 194, minSeqNum: 0} // Below minimum supported version (209 / 4.6)
 )
 
 type versionPair struct {
@@ -148,7 +149,7 @@ func (s *PostgresCloneManagerSuite) TestScanCurrentPrevious() {
 	pgtest.DropDatabase(s.T(), migrations.PreviousDatabase)
 
 	// Scan the clones
-	errorMessage := fmt.Sprintf(metadata.ErrSoftwareNotCompatibleWithDatabase, migrations.CurrentDBVersionSeqNum(), futureVersion.GetMinSeqNum())
+	errorMessage := fmt.Sprintf(metadata.ErrSoftwareNotCompatibleWithDatabase, migrations.CurrentDBVersionSeqNum(), futureVersion.GetMinSeqNum(), migrations.MinimumSupportedDBVersion())
 	s.Require().EqualError(dbm.Scan(), errorMessage)
 
 	// Create a previous and set its version to current one
@@ -192,6 +193,30 @@ func (s *PostgresCloneManagerSuite) TestScanRestoreFromFuture() {
 	migVer.SetVersionPostgres(s.ctx, migrations.GetRestoreClone(), futureVersion)
 
 	s.Require().EqualError(dbm.Scan(), fmt.Sprintf(metadata.ErrUnableToRestore, futureVersion.GetVersion(), version.GetMainVersion()))
+}
+
+func (s *PostgresCloneManagerSuite) TestScanRestoreFromUnsupportedVersion() {
+	pgtest.DropDatabase(s.T(), tempDB)
+	pgtest.DropDatabase(s.T(), migrations.PreviousDatabase)
+	pgtest.DropDatabase(s.T(), migrations.BackupDatabase)
+
+	dbm := New("", s.config, s.sourceMap)
+
+	// Set central_restore to an unsupported old version (4.3.1, seq 194)
+	// This is below the minimum supported version (4.6, seq 209)
+	oldVersion := &storage.Version{
+		SeqNum:        int32(unsupportedVer.seqNum),
+		Version:       unsupportedVer.version,
+		MinSeqNum:     int32(unsupportedVer.minSeqNum),
+		LastPersisted: protoconv.ConvertMicroTSToProtobufTS(timestamp.Now()),
+	}
+	migVer.SetVersionPostgres(s.ctx, migrations.GetRestoreClone(), oldVersion)
+
+	// The scan should detect that we're trying to restore from an unsupported version
+	// and return an error indicating the restore is not compatible
+	err := dbm.Scan()
+	s.Require().Error(err, "Expected error when scanning restore from unsupported version")
+	s.Require().Contains(err.Error(), "not supported", "Error message should indicate version not supported")
 }
 
 func (s *PostgresCloneManagerSuite) TestGetRestoreClone() {
@@ -310,7 +335,7 @@ func (s *PostgresCloneManagerSuite) TestGetCloneUpgrade() {
 	s.Require().Nil(dbm.Scan())
 
 	clone, migrateRocks, err := dbm.GetCloneToMigrate(nil)
-	s.Require().Equal(TempClone, clone)
+	s.Require().Equal(migrations.CurrentDatabase, clone)
 	s.Require().False(migrateRocks)
 	s.Require().Nil(err)
 }

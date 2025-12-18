@@ -1,4 +1,4 @@
-import React, { Children, cloneElement, isValidElement, useMemo, useRef, useState } from 'react';
+import { Children, cloneElement, isValidElement, useMemo, useRef, useState } from 'react';
 import type {
     FocusEvent,
     FocusEventHandler,
@@ -8,20 +8,21 @@ import type {
     Ref,
 } from 'react';
 import {
-    Select,
-    SelectOption,
-    SelectGroup,
-    MenuToggle,
     Badge,
     Flex,
     FlexItem,
+    MenuToggle,
+    Select,
+    SelectGroup,
     SelectList,
+    SelectOption,
 } from '@patternfly/react-core';
 import type {
     MenuToggleElement,
     SelectOptionProps,
     SelectPopperProps,
 } from '@patternfly/react-core';
+import { toggleItemInArray } from 'utils/arrayUtils';
 
 // Enhance children to automatically inject hasCheckbox and isSelected props
 function enhanceSelectOptions(children: ReactNode, selectionsSet: Set<string>): ReactNode {
@@ -52,30 +53,46 @@ function enhanceSelectOptions(children: ReactNode, selectionsSet: Set<string>): 
     });
 }
 
-export type CheckboxSelectProps = {
+type CheckboxSelectBaseProps = {
     id?: string;
+    className?: string;
     selections: string[];
-    onChange: (selection: string[]) => void;
     onBlur?: FocusEventHandler<HTMLDivElement>;
     ariaLabel: string;
     children: ReactElement<SelectOptionProps>[];
     placeholderText?: string;
     toggleIcon?: ReactElement;
     toggleId?: string;
+    toggleAriaLabel?: string;
     isDisabled?: boolean;
     popperProps?: SelectPopperProps;
 };
 
+type CheckboxSelectWithArrayCallback = CheckboxSelectBaseProps & {
+    onChange: (selections: string[]) => void;
+    onItemSelect?: never;
+};
+
+type CheckboxSelectWithItemCallback = CheckboxSelectBaseProps & {
+    onChange?: never;
+    onItemSelect: (selection: string, checked: boolean) => void;
+};
+
+export type CheckboxSelectProps = CheckboxSelectWithArrayCallback | CheckboxSelectWithItemCallback;
+
 function CheckboxSelect({
     id,
+    className,
     selections,
     onChange,
+    onItemSelect,
     onBlur,
     ariaLabel,
     children,
     placeholderText = 'Filter by value',
     toggleIcon,
     toggleId,
+    toggleAriaLabel,
     isDisabled = false,
     popperProps,
 }: CheckboxSelectProps): ReactElement {
@@ -117,13 +134,14 @@ function CheckboxSelect({
         _event: ReactMouseEvent<Element, MouseEvent> | undefined,
         selection: string | number | undefined
     ) {
-        if (typeof selection !== 'string' || !selections || !onChange) {
+        if (typeof selection !== 'string' || !selections) {
             return;
         }
-        if (selections.includes(selection)) {
-            onChange(selections.filter((item) => item !== selection));
-        } else {
-            onChange([...selections, selection]);
+
+        if (onItemSelect) {
+            onItemSelect(selection, !selections.includes(selection));
+        } else if (onChange) {
+            onChange(toggleItemInArray(selections, selection));
         }
     }
 
@@ -136,11 +154,12 @@ function CheckboxSelect({
             isExpanded={isOpen}
             isDisabled={isDisabled}
             icon={toggleIcon}
-            aria-label={ariaLabel}
+            aria-label={toggleAriaLabel}
         >
             <Flex
                 alignItems={{ default: 'alignItemsCenter' }}
                 spaceItems={{ default: 'spaceItemsSm' }}
+                flexWrap={{ default: 'nowrap' }}
             >
                 <FlexItem>{placeholderText}</FlexItem>
                 {selections.length > 0 && <Badge isRead>{selections.length}</Badge>}
@@ -157,7 +176,7 @@ function CheckboxSelect({
     }, [children, selectionsSet]);
 
     return (
-        <div ref={selectRef} onBlur={handleBlur}>
+        <div ref={selectRef} onBlur={handleBlur} className={className}>
             <Select
                 id={id}
                 aria-label={ariaLabel}

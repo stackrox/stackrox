@@ -1,11 +1,10 @@
-import React, { ReactNode, useContext } from 'react';
+import { useContext } from 'react';
+import type { ReactNode } from 'react';
 
 import { defaultCountKeyMap as countKeyMap } from 'constants/workflowPages.constants';
 import workflowStateContext from 'Containers/workflowStateContext';
-import {
-    VulnerabilityManagementEntityType,
-    getVulnerabilityManagementEntityTypesByRelationship,
-} from 'utils/entityRelationships';
+import { getVulnerabilityManagementEntityTypesByRelationship } from 'utils/entityRelationships';
+import type { VulnerabilityManagementEntityType } from 'utils/entityRelationships';
 
 import TileList from './TileList';
 

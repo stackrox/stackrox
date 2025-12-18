@@ -1,4 +1,4 @@
-import React, { useCallback } from 'react';
+import { useCallback } from 'react';
 import { PageSection, Pagination, ToolbarItem } from '@patternfly/react-core';
 import { Table, Td, Th, Thead, Tr } from '@patternfly/react-table';
 
@@ -14,13 +14,13 @@ import TbodyUnified from 'Components/TableStateTemplates/TbodyUnified';
 import type { SearchFilter } from 'types/search';
 import { getTableUIState } from 'utils/getTableUIState';
 import {
+    RequestCreatedAt,
     RequestExpires,
     RequestIDLink,
+    RequestScope,
     RequestedAction,
     RequestedItems,
-    RequestCreatedAt,
     Requester,
-    RequestScope,
 } from './components/ExceptionRequestTableCells';
 import AdvancedFiltersToolbar from '../components/AdvancedFiltersToolbar';
 import { DEFAULT_VM_PAGE_SIZE } from '../constants';

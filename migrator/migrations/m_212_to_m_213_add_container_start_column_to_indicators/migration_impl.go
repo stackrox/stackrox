@@ -26,8 +26,22 @@ func migrate(database *types.Databases) error {
 	pgutils.CreateTableFromModel(database.DBCtx, db, updatedSchema.CreateTableProcessIndicatorsStmt)
 	db = db.WithContext(database.DBCtx).Table(updatedSchema.ClustersTableName)
 
+	// Drop the indexes except the cluster one.
+	resultDB := db.Exec("DROP INDEX if exists processindicators_deploymentid")
+	if resultDB.Error != nil {
+		log.Error(errors.Wrap(resultDB.Error, "unable to drop index processindicators_deploymentid"))
+	}
+	resultDB = db.Exec("DROP INDEX if exists processindicators_poduid")
+	if resultDB.Error != nil {
+		log.Error(errors.Wrap(resultDB.Error, "unable to drop index processindicators_poduid"))
+	}
+	resultDB = db.Exec("DROP INDEX if exists processindicators_signal_time")
+	if resultDB.Error != nil {
+		log.Error(errors.Wrap(resultDB.Error, "unable to drop index processindicators_signal_time"))
+	}
+
 	var clusters []string
-	if err := db.Model(&updatedSchema.Clusters{}).Pluck("id", &clusters).Error; err != nil {
+	if err := db.Order("id").Model(&updatedSchema.Clusters{}).Pluck("id", &clusters).Error; err != nil {
 		return err
 	}
 	log.Infof("clusters found: %v", clusters)
@@ -38,6 +52,20 @@ func migrate(database *types.Databases) error {
 		if err := migrateByCluster(cluster, database); err != nil {
 			return err
 		}
+	}
+
+	// Add the indexes back
+	resultDB = db.Exec("CREATE INDEX CONCURRENTLY IF NOT EXISTS processindicators_deploymentid ON process_indicators USING HASH (deploymentid)")
+	if resultDB.Error != nil {
+		log.Error(errors.Wrap(resultDB.Error, "unable to create index processindicators_deploymentid"))
+	}
+	resultDB = db.Exec("CREATE INDEX CONCURRENTLY IF NOT EXISTS processindicators_poduid ON process_indicators USING HASH (poduid)")
+	if resultDB.Error != nil {
+		log.Error(errors.Wrap(resultDB.Error, "unable to create index processindicators_poduid"))
+	}
+	resultDB = db.Exec("CREATE INDEX CONCURRENTLY IF NOT EXISTS processindicators_signal_time ON process_indicators (signal_time)")
+	if resultDB.Error != nil {
+		log.Error(errors.Wrap(resultDB.Error, "unable to create index processindicators_signal_time"))
 	}
 
 	log.Info("Process Indicators migrated")

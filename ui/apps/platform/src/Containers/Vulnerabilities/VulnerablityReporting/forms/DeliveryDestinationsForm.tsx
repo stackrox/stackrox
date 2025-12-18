@@ -1,8 +1,8 @@
-import React, { ReactElement } from 'react';
+import type { ReactElement } from 'react';
 import { Alert, Divider, Flex, FlexItem, Form, PageSection, Title } from '@patternfly/react-core';
-import { FormikProps } from 'formik';
+import type { FormikProps } from 'formik';
 
-import { TemplatePreviewArgs } from 'Components/EmailTemplate/EmailTemplateModal';
+import type { TemplatePreviewArgs } from 'Components/EmailTemplate/EmailTemplateModal';
 import NotifierConfigurationForm from 'Components/NotifierConfiguration/NotifierConfigurationForm';
 import RepeatScheduleDropdown from 'Components/PatternFly/RepeatScheduleDropdown';
 import DayPickerDropdown from 'Components/PatternFly/DayPickerDropdown';
@@ -13,7 +13,7 @@ import {
     defaultEmailBody as customBodyDefault,
     getDefaultEmailSubject,
 } from './emailTemplateFormUtils';
-import { ReportFormValues } from './useReportFormValues';
+import type { ReportFormValues } from './useReportFormValues';
 import EmailTemplatePreview from '../components/EmailTemplatePreview';
 
 export type DeliveryDestinationsFormProps = {
@@ -172,9 +172,9 @@ function DeliveryDestinationsForm({ title, formik }: DeliveryDestinationsFormPro
                                                     : 'schedule.daysOfMonth'
                                             }
                                             value={
-                                                formik.values.schedule.intervalType === 'WEEKLY'
-                                                    ? formik.values.schedule.daysOfWeek || []
-                                                    : formik.values.schedule.daysOfMonth || []
+                                                (formik.values.schedule.intervalType === 'WEEKLY'
+                                                    ? formik.values.schedule.daysOfWeek
+                                                    : formik.values.schedule.daysOfMonth) ?? []
                                             }
                                             handleSelect={onScheduledDaysChange}
                                             intervalType={formik.values.schedule.intervalType}

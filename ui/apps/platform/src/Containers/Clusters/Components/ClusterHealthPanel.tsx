@@ -1,6 +1,5 @@
-import React from 'react';
 import type { ReactElement, ReactNode } from 'react';
-import { Panel, PanelHeader, PanelMain, PanelMainBody, Divider } from '@patternfly/react-core';
+import { Divider, Panel, PanelHeader, PanelMain, PanelMainBody } from '@patternfly/react-core';
 
 type ClusterHealthPanelProps = {
     children: ReactNode;

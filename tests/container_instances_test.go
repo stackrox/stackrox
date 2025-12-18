@@ -21,8 +21,11 @@ type ContainerNameGroup struct {
 }
 
 func TestContainerInstances(testT *testing.T) {
-	// TODO(ROX-31331): Collector cannot reliably detect all processes in this test's images.
 	skipIfNoCollection(testT)
+
+	// Wait for Sensor to be healthy to ensure the event collection pipeline is ready
+	// after any previous tests that may have restarted Sensor.
+	waitForSensorHealthy(testT)
 
 	_, deploymentID, pod, cleanup := setupMultiContainerPodTest(testT)
 	defer cleanup()
@@ -60,10 +63,7 @@ func TestContainerInstances(testT *testing.T) {
 		retryEventsT.Logf("Second container (%s) events: %+v", groupedContainers[1].Name, secondContainerEvents)
 
 		// Second container: ubuntu running a loop with date and sleep
-		// TODO(ROX-31331): Collector cannot reliably detect /bin/sh /bin/date or /bin/sleep in ubuntu image,
-		// thus not including it in the required processes.
-		// If this flakes again, see ROX-31331 and follow-up on the discussion in the ticket.
-		requiredSecondContainer := []string{"/bin/sh"}
+		requiredSecondContainer := []string{"/bin/sh", "/bin/date", "/bin/sleep"}
 		require.Subsetf(retryEventsT, secondContainerEvents, requiredSecondContainer,
 			"Second container: required processes: %v not found in events: %v", requiredSecondContainer, secondContainerEvents)
 
@@ -97,7 +97,7 @@ func getGroupedContainerInstances(t testutils.T, podID string) []ContainerNameGr
 	`, map[string]interface{}{
 		"containersQuery": fmt.Sprintf("Pod ID: %s", podID),
 	}, &respData, timeout)
-	log.Info(respData)
+	t.Logf("%+v", respData)
 
 	return respData.GroupedContainerInstances
 }

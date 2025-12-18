@@ -1,15 +1,21 @@
-import React from 'react';
 import type { ReactElement } from 'react';
-import { Button, ModalBoxBody, ModalBoxFooter, Alert } from '@patternfly/react-core';
+import {
+    Alert,
+    Button,
+    List,
+    ListItem,
+    ModalBoxBody,
+    ModalBoxFooter,
+} from '@patternfly/react-core';
 import { Formik } from 'formik';
 import * as yup from 'yup';
 
 import type { Policy } from 'types/policy.proto';
 import {
     MIN_POLICY_NAME_LENGTH,
+    checkForBlockedSubmit,
     hasDuplicateIdOnly,
     policyOverwriteAllowed,
-    checkForBlockedSubmit,
 } from './PolicyImport.utils';
 import type { PolicyImportError, PolicyResolution } from './PolicyImport.utils';
 import DuplicatePolicyForm from './DuplicatePolicyForm';
@@ -82,13 +88,11 @@ function ImportPolicyJSONModalError({
                         className="pf-v5-u-mt-md"
                         isInline
                     >
-                        <ul>
+                        <List isPlain>
                             {errorMessages.map((msg) => (
-                                <li key={msg} className="py-2">
-                                    {msg}
-                                </li>
+                                <ListItem key={msg}>{msg}</ListItem>
                             ))}
-                        </ul>
+                        </List>
                         {duplicateErrorsOnly && (
                             <DuplicatePolicyForm
                                 updateResolution={updateResolution}

@@ -1,4 +1,3 @@
-import React from 'react';
 import { gql } from '@apollo/client';
 
 import {
@@ -90,18 +89,6 @@ export function getComponentTableColumns() {
                 id: componentSortFields.CVE_COUNT,
                 accessor: 'vulnCounter.all.total',
                 sortField: componentSortFields.CVE_COUNT,
-            },
-            {
-                Header: `Active`,
-                headerClassName: `w-1/10 text-center ${nonSortableHeaderClassName}`,
-                className: `w-1/10 ${defaultColumnClassName}`,
-                Cell: ({ original }) => {
-                    return original.activeState?.state || 'Undetermined';
-                },
-                id: componentSortFields.ACTIVE,
-                accessor: 'isActive',
-                sortField: componentSortFields.ACTIVE,
-                sortable: false,
             },
             {
                 Header: `Fixed In`,

@@ -1,4 +1,3 @@
-import React from 'react';
 import { Th } from '@patternfly/react-table';
 import type { ThProps } from '@patternfly/react-table';
 

@@ -54,22 +54,34 @@ class DeclarativeConfigTest extends BaseSpecification {
     // here is increased accordingly.
     static final private int AUTH_PROVIDER_RETRIES = 180
 
+    private static String load_yaml_template_file(String path, Map<String, String> substitutions = [:]) {
+        String yamlFileData = new File(DeclarativeConfigTest.getResource(path).toURI()).text
+
+        [
+            'ACCESS_SCOPE_KEY':   ACCESS_SCOPE_KEY,
+            'AUTH_PROVIDER_KEY':  AUTH_PROVIDER_KEY,
+            'NOTIFIER_KEY':       NOTIFIER_KEY,
+            'PERMISSION_SET_KEY': PERMISSION_SET_KEY,
+            'ROLE_KEY':           ROLE_KEY
+        ].each { key, value ->
+            yamlFileData = yamlFileData.replace("\${${key}}", value)
+        }
+
+        substitutions.each { key, value ->
+            yamlFileData = yamlFileData.replace("\${${key}}", value)
+        }
+
+        return yamlFileData
+    }
+
     // Values used within testing for permission sets.
     // These include:
     //  - a valid permission set YAML (valid == upserting these will work)
     //  - a valid permission set proto object (based on the values defined in the previous YAML)
     //  - an invalid permission set YAML (invalid == failure during upserting the generated proto from these values)
-    static final private String VALID_PERMISSION_SET_YAML = """\
-name: ${PERMISSION_SET_KEY}
-description: declarative permission set used in testing
-resources:
-- resource: Integration
-  access: READ_ACCESS
-- resource: Administration
-  access: READ_ACCESS
-- resource: Access
-  access: READ_ACCESS
-"""
+    static final private String VALID_PERMISSION_SET_YAML = load_yaml_template_file(
+        '/testdata/declarativeconfig/valid_permission_set.yaml'
+    )
     static final private VALID_PERMISSION_SET = PermissionSet.newBuilder()
             .setName(PERMISSION_SET_KEY)
             .setDescription("declarative permission set used in testing")
@@ -79,26 +91,18 @@ resources:
                     "Access"        : Access.READ_ACCESS,
                     "Administration": Access.READ_ACCESS,
             ]).build()
-    static final private String INVALID_PERMISSION_SET_YAML = """\
-name: ${PERMISSION_SET_KEY}
-description: invalid declarative permission set used in testing
-resources:
-- resource: non-existent-resource
-  access: READ_ACCESS
-"""
+    static final private String INVALID_PERMISSION_SET_YAML = load_yaml_template_file(
+        '/testdata/declarativeconfig/invalid_permission_set.yaml'
+    )
 
     // Values used within testing for access scopes.
     // These include:
     //  - a valid access scope YAML (valid == upserting these will work)
     //  - a valid access scope proto object (based on the values defined in the previous YAML)
     //  - an invalid access scope YAML (invalid == failure during upserting the generated proto from these values)
-    static final private String VALID_ACCESS_SCOPE_YAML = """\
-name: ${ACCESS_SCOPE_KEY}
-description: declarative access scope used in testing
-rules:
-  included:
-  - cluster: remote
-"""
+    static final private String VALID_ACCESS_SCOPE_YAML = load_yaml_template_file(
+        '/testdata/declarativeconfig/valid_access_scope.yaml'
+    )
     static final private VALID_ACCESS_SCOPE = SimpleAccessScope.newBuilder()
             .setName(ACCESS_SCOPE_KEY)
             .setDescription("declarative access scope used in testing")
@@ -108,40 +112,26 @@ rules:
             )
             .setTraits(Traits.newBuilder().setOrigin(Traits.Origin.DECLARATIVE))
             .build()
-    static final private String INVALID_ACCESS_SCOPE_YAML = """\
-name: ${ACCESS_SCOPE_KEY}
-description: invalid declarative access scope used in testing
-rules:
-  included:
-  - cluster: remote
-  clusterLabelSelectors:
-  - requirements:
-    - key: a
-      operator: IN
-"""
+    static final private String INVALID_ACCESS_SCOPE_YAML = load_yaml_template_file(
+        '/testdata/declarativeconfig/invalid_access_scope.yaml'
+    )
 
     // Values used within testing for roles.
     // These include:
     //  - a valid role YAML (valid == upserting these will work)
     //  - a valid role proto object (based on the values defined in the previous YAML)
     //  - an invalid role YAML (invalid == failure during upserting the generated proto from these values)
-    static final private String VALID_ROLE_YAML = """\
-name: ${ROLE_KEY}
-description: declarative role used in testing
-permissionSet: ${PERMISSION_SET_KEY}
-accessScope: ${ACCESS_SCOPE_KEY}
-"""
+    static final private String VALID_ROLE_YAML = load_yaml_template_file(
+        '/testdata/declarativeconfig/valid_role.yaml'
+    )
     static final private VALID_ROLE = Role.newBuilder()
             .setName(ROLE_KEY)
             .setDescription("declarative role used in testing")
             .setTraits(Traits.newBuilder().setOrigin(Traits.Origin.DECLARATIVE))
             .build()
-    static final private String INVALID_ROLE_YAML = """\
-name: ${ROLE_KEY}
-description: invalid declarative role used in testing
-permissionSet: non-existent-permission-set
-accessScope: ${ACCESS_SCOPE_KEY}
-"""
+    static final private String INVALID_ROLE_YAML = load_yaml_template_file(
+        '/testdata/declarativeconfig/invalid_role.yaml'
+    )
 
     // Values used within testing for auth providers.
     // These include:
@@ -149,19 +139,9 @@ accessScope: ${ACCESS_SCOPE_KEY}
     //  - a valid auth provider proto object (based on the values defined in the previous YAML)
     //  - two valid group proto objects (based on the values defined in the previous YAML)
     //  - an invalid auth provider YAML (invalid == failure during upserting the generated proto from these values)
-    static final private String VALID_AUTH_PROVIDER_YAML = """\
-name: ${AUTH_PROVIDER_KEY}
-minimumRole: "None"
-uiEndpoint: localhost:8000
-groups:
-- key: "email"
-  value: "someone@example.com"
-  role: "Admin"
-oidc:
-  issuer: sso.redhat.com/auth/realms/redhat-external
-  mode: fragment
-  clientID: SOMECLIENTID
-"""
+    static final private String VALID_AUTH_PROVIDER_YAML = load_yaml_template_file(
+        '/testdata/declarativeconfig/valid_auth_provider.yaml'
+    )
     static final private VALID_AUTH_PROVIDER = AuthProvider.newBuilder()
             .setName(AUTH_PROVIDER_KEY)
             .setUiEndpoint("localhost:8000")
@@ -173,6 +153,7 @@ oidc:
                      "mode"         : "fragment",
                      "client_id"    : "SOMECLIENTID",
                      "client_secret": "",
+                     "extra_scopes" : "",
                     ])
             .setTraits(Traits.newBuilder().setOrigin(Traits.Origin.DECLARATIVE))
             .build()
@@ -193,32 +174,18 @@ oidc:
                     .setTraits(Traits.newBuilder().setOrigin(Traits.Origin.DECLARATIVE))
             )
             .build()
-    static final private String INVALID_AUTH_PROVIDER_YAML = """\
-name: ${AUTH_PROVIDER_KEY}
-minimumRole: "None"
-uiEndpoint: localhost:8000
-oidc:
-  issuer: example.com
-  mode: fragment
-  clientID: SOMECLIENTID
-"""
+    static final private String INVALID_AUTH_PROVIDER_YAML = load_yaml_template_file(
+        '/testdata/declarativeconfig/invalid_auth_provider.yaml'
+    )
 
     // Values used within testing for notifiers.
     // These include:
     //  - a valid splunk notifier YAML (valid == upserting these will work)
     //  - a valid notifier proto object (based on the values defined in the previous YAML)
     //  - an invalid splunk notifier YAML (invalid == failure during upserting the generated proto from these values)
-    static final private String VALID_NOTIFIER_YAML = """\
-name: ${NOTIFIER_KEY}
-splunk:
-    token: stackrox-token
-    endpoint: stackrox-endpoint
-    sourceTypes:
-        - key: audit
-          sourceType: stackrox-audit-message
-        - key: alert
-          sourceType: stackrox-alert
-"""
+    static final private String VALID_NOTIFIER_YAML = load_yaml_template_file(
+        '/testdata/declarativeconfig/valid_notifier.yaml'
+    )
     static final private VALID_NOTIFIER = Notifier.newBuilder()
             .setName(NOTIFIER_KEY)
             .setTraits(Traits.newBuilder().setOrigin(Traits.Origin.DECLARATIVE))

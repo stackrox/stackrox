@@ -2,6 +2,7 @@ package pgutils
 
 import (
 	"context"
+	"fmt"
 	"io"
 	"testing"
 
@@ -70,6 +71,8 @@ func TestWrappedErrors(t *testing.T) {
 		},
 	}
 	for _, c := range cases {
-		assert.Equal(t, c.transient, IsTransientError(c.err))
+		t.Run(fmt.Sprintf("%s", c.err), func(t *testing.T) {
+			assert.Equal(t, c.transient, IsTransientError(c.err))
+		})
 	}
 }

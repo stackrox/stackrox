@@ -1,4 +1,4 @@
-import React, { useContext, useState } from 'react';
+import { useContext, useState } from 'react';
 import PropTypes from 'prop-types';
 import { gql } from '@apollo/client';
 import { Archive, Bell, BellOff, Plus, Zap } from 'react-feather';
@@ -123,18 +123,6 @@ export function getCveTableColumns(workflowState, isFeatureFlagEnabled) {
             id: cveSortFields.FIXABLE,
             accessor: 'isFixable',
             sortField: cveSortFields.FIXABLE,
-            sortable: false,
-        },
-        {
-            Header: `Active`,
-            headerClassName: `w-1/10 ${nonSortableHeaderClassName}`,
-            className: `w-1/10 ${defaultColumnClassName}`,
-            Cell: ({ original }) => {
-                return original.activeState?.state || 'Undetermined';
-            },
-            id: cveSortFields.ACTIVE,
-            accessor: 'isActive',
-            sortField: cveSortFields.ACTIVE,
             sortable: false,
         },
         {

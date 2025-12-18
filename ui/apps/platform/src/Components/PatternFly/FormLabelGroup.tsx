@@ -1,4 +1,3 @@
-import React from 'react';
 import type { ReactElement } from 'react';
 import {
     FormGroup,
@@ -8,7 +7,7 @@ import {
     ValidatedOptions,
 } from '@patternfly/react-core';
 import type { FormGroupProps } from '@patternfly/react-core';
-import type { FormikTouched, FormikErrors } from 'formik';
+import type { FormikErrors, FormikTouched } from 'formik';
 import get from 'lodash/get';
 
 export interface FormLabelGroupProps<T> extends FormGroupProps {

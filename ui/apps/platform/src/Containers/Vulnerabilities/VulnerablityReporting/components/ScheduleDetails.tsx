@@ -1,9 +1,9 @@
+import type { ReactElement } from 'react';
 import { Flex, FlexItem, Text, TextContent, TextVariants, Title } from '@patternfly/react-core';
-import React, { ReactElement } from 'react';
 
-import { commaSeparateWithAnd } from 'Containers/Vulnerabilities/VulnerablityReporting/utils';
 import { daysOfMonthMap, daysOfWeekMap } from 'Components/PatternFly/DayPickerDropdown';
-import { ReportFormValues } from 'Containers/Vulnerabilities/VulnerablityReporting/forms/useReportFormValues';
+import type { ReportFormValues } from '../forms/useReportFormValues';
+import { commaSeparateWithAnd } from '../utils';
 
 export type ScheduleDetailsProps = {
     formValues: ReportFormValues;
@@ -15,12 +15,12 @@ function ScheduleDetails({ formValues }: ScheduleDetailsProps): ReactElement {
 
     if (formValues.schedule.intervalType === 'WEEKLY') {
         interval = 'week';
-        const daysArr = formValues.schedule.daysOfWeek?.map((day) => daysOfWeekMap[day]) || [];
+        const daysArr = formValues.schedule.daysOfWeek?.map((day) => daysOfWeekMap[day]) ?? [];
         days = commaSeparateWithAnd(daysArr);
     } else if (formValues.schedule.intervalType === 'MONTHLY') {
         interval = 'month';
         const daysArr =
-            formValues.schedule.daysOfMonth?.map((day) => daysOfMonthMap[day].toLowerCase()) || [];
+            formValues.schedule.daysOfMonth?.map((day) => daysOfMonthMap[day].toLowerCase()) ?? [];
         days = commaSeparateWithAnd(daysArr);
     }
 

@@ -1,4 +1,4 @@
-import React, { render, screen } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import { cloneDeep } from 'lodash';
 import '@testing-library/jest-dom';
 

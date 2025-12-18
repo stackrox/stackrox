@@ -1,4 +1,3 @@
-import React from 'react';
 import type { ReactElement } from 'react';
 import {
     Pagination,
@@ -10,7 +9,7 @@ import {
 
 // Comment out Names filter for 4.4 MVP because testers expected partial match instead of exact match.
 
-import SearchFilterChips from 'Components/PatternFly/SearchFilterChips';
+import SearchFilterChips from 'Components/CompoundSearchFilter/components/SearchFilterChips';
 import {
     getDiscoveredClustersFilter,
     isStatus,

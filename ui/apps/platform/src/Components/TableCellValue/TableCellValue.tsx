@@ -1,4 +1,3 @@
-import React from 'react';
 import type { ReactElement } from 'react';
 import resolvePath from 'object-resolve-path';
 
@@ -6,7 +5,7 @@ type TableCellValueProps<T> = {
     row: T;
     column: {
         Header: string;
-        accessor: ((data) => string) | string;
+        accessor: ((data: T) => string) | string;
     };
 };
 

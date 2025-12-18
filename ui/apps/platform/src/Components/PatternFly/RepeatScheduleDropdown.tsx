@@ -1,4 +1,3 @@
-import React from 'react';
 import type { FocusEventHandler, ReactElement } from 'react';
 import { SelectOption } from '@patternfly/react-core';
 
@@ -7,7 +6,7 @@ import SelectSingle from 'Components/SelectSingle';
 export type RepeatScheduleDropdownProps = {
     fieldId: string;
     value: string;
-    handleSelect: (id, selection) => void;
+    handleSelect: (id: string, selection: string) => void;
     isEditable?: boolean;
     showNoResultsOption?: boolean;
     includeDailyOption?: boolean;

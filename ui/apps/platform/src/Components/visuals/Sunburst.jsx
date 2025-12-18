@@ -1,5 +1,5 @@
-import React, { Component } from 'react';
-import { Sunburst as SunburstReactVis, DiscreteColorLegend, LabelSeries } from 'react-vis';
+import { Component } from 'react';
+import { DiscreteColorLegend, LabelSeries, Sunburst as SunburstReactVis } from 'react-vis';
 import PropTypes from 'prop-types';
 import merge from 'deepmerge';
 

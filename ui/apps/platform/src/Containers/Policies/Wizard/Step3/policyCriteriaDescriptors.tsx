@@ -1,9 +1,9 @@
 import {
-    portExposureLabels,
     envVarSrcLabels,
-    rbacPermissionLabels,
-    policyCriteriaCategories,
     mountPropagationLabels,
+    policyCriteriaCategories,
+    portExposureLabels,
+    rbacPermissionLabels,
     seccompProfileTypeLabels,
     severityRatings,
 } from 'messages/common';
@@ -128,6 +128,22 @@ const APIVerbs: DescriptorOption[] = ['CREATE', 'DELETE', 'GET', 'PATCH', 'UPDAT
     label: verb,
     value: verb,
 }));
+
+const fileOperationOptions: DescriptorOption[] = [
+    ['OPEN', 'Open'],
+    ['CREATE', 'Create'],
+    ['UNLINK', 'Delete'],
+    ['RENAME', 'Rename'],
+    ['PERMISSION_CHANGE', 'Permission change'],
+    ['OWNERSHIP_CHANGE', 'Ownership change'],
+].map(([value, label]) => ({ value, label }));
+
+const fileActivityPathOptions: DescriptorOption[] = [
+    '/etc/passwd',
+    '/etc/ssh/sshd_config',
+    '/etc/shadow',
+    '/etc/sudoers',
+].map((path) => ({ label: path, value: path }));
 
 const subComponentsForContainerMemory: SubComponent[] = [
     {
@@ -355,10 +371,10 @@ export const policyCriteriaDescriptors: Descriptor[] = [
         lifecycleStages: ['BUILD', 'DEPLOY', 'RUNTIME'],
     },
     {
-        label: 'Image signature',
+        label: 'Require image signature',
         name: imageSigningCriteriaName,
-        shortName: 'Image signature',
-        longName: 'Image signature is missing or wrong',
+        shortName: 'Require image signature',
+        longName: 'Image must be signed by a trusted signer',
         category: policyCriteriaCategories.IMAGE_REGISTRY,
         type: 'tableModal',
         tableType: 'imageSigning',
@@ -591,6 +607,17 @@ export const policyCriteriaDescriptors: Descriptor[] = [
         placeholder: '0',
         canBooleanLogic: false,
         lifecycleStages: ['BUILD', 'DEPLOY', 'RUNTIME'],
+    },
+    {
+        label: 'Days Since CVE Fix Was Available',
+        name: 'Days Since CVE Fix Was Available',
+        shortName: 'Days since CVE fix was available',
+        category: policyCriteriaCategories.IMAGE_SCANNING,
+        type: 'number',
+        placeholder: '0',
+        canBooleanLogic: false,
+        lifecycleStages: ['BUILD', 'DEPLOY', 'RUNTIME'],
+        featureFlagDependency: ['ROX_CVE_FIX_TIMESTAMP'],
     },
     {
         label: 'Days Since CVE Was First Discovered In Image',
@@ -1475,6 +1502,42 @@ export const policyCriteriaDescriptors: Descriptor[] = [
         canBooleanLogic: false,
         lifecycleStages: ['DEPLOY', 'RUNTIME'],
     },
+    {
+        label: 'Mounted file path',
+        name: 'Mounted File Path',
+        shortName: 'Mounted file path',
+        category: policyCriteriaCategories.FILE_ACTIVITY,
+        type: 'select',
+        placeholder: 'Select a file path',
+        options: fileActivityPathOptions,
+        canBooleanLogic: false,
+        lifecycleStages: ['RUNTIME'],
+        featureFlagDependency: ['ROX_SENSITIVE_FILE_ACTIVITY'],
+    },
+    {
+        label: 'Node file path',
+        name: 'Node File Path',
+        shortName: 'Node file path',
+        category: policyCriteriaCategories.FILE_ACTIVITY,
+        type: 'select',
+        placeholder: 'Select a file path',
+        options: fileActivityPathOptions,
+        canBooleanLogic: false,
+        lifecycleStages: ['RUNTIME'],
+        featureFlagDependency: ['ROX_SENSITIVE_FILE_ACTIVITY'],
+    },
+    {
+        label: 'File operation',
+        name: 'File Operation',
+        shortName: 'File operation',
+        category: policyCriteriaCategories.FILE_ACTIVITY,
+        type: 'select',
+        placeholder: 'Select an option',
+        options: fileOperationOptions,
+        canBooleanLogic: false,
+        lifecycleStages: ['RUNTIME'],
+        featureFlagDependency: ['ROX_SENSITIVE_FILE_ACTIVITY'],
+    },
 ];
 
 export const auditLogDescriptor: Descriptor[] = [
@@ -1591,6 +1654,31 @@ export const auditLogDescriptor: Descriptor[] = [
             { text: 'True', value: true },
             { text: 'False', value: false },
         ],
+        canBooleanLogic: false,
+        lifecycleStages: ['RUNTIME'],
+    },
+];
+
+export const nodeEventDescriptor: Descriptor[] = [
+    {
+        label: 'Node file path',
+        name: 'Node File Path',
+        shortName: 'Node file path',
+        category: policyCriteriaCategories.FILE_ACTIVITY,
+        type: 'select',
+        placeholder: 'Select a file path',
+        options: fileActivityPathOptions,
+        canBooleanLogic: false,
+        lifecycleStages: ['RUNTIME'],
+    },
+    {
+        label: 'File operation',
+        name: 'File Operation',
+        shortName: 'File operation',
+        category: policyCriteriaCategories.FILE_ACTIVITY,
+        type: 'select',
+        placeholder: 'Select an option',
+        options: fileOperationOptions,
         canBooleanLogic: false,
         lifecycleStages: ['RUNTIME'],
     },

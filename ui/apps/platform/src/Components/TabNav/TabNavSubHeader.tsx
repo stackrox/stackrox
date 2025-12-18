@@ -1,6 +1,5 @@
-import React from 'react';
 import type { ReactElement, ReactNode } from 'react';
-import { PageSection, Flex, Toolbar, ToolbarContent, ToolbarItem } from '@patternfly/react-core';
+import { Flex, PageSection, Toolbar, ToolbarContent, ToolbarItem } from '@patternfly/react-core';
 
 type TabNavSubHeaderProps = {
     description: string;
