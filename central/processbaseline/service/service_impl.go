@@ -391,7 +391,7 @@ func (s *serviceImpl) GetProcessBaselineBulk(ctx context.Context, request *v1.Ge
 		if err == nil {
 			baselines = append(baselines, baseline)
 		} else {
-			log.Errorf("Unable to get process baseline from process baseline key %+v: %+v", baseline, err)
+			log.Errorf("Unable to get process baseline from process baseline key %+v: %v", baselineKey, err)
 		}
 	}
 
