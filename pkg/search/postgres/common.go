@@ -962,6 +962,7 @@ func RunCountRequestForSchema(ctx context.Context, schema *walker.Schema, q *v1.
 		return 0, err
 	}
 	queryStr := query.AsSQL()
+	log.Infof("[Cve->IsFixable] Query is %s and Vars are [%v]", queryStr, query.Data)
 
 	var pool postgres.Queryable
 	pool = db
@@ -976,6 +977,7 @@ func RunCountRequestForSchema(ctx context.Context, schema *walker.Schema, q *v1.
 			log.Errorf("Query issue: %s: %v", queryStr, err)
 			return 0, errors.Wrap(err, "error executing query")
 		}
+		log.Infof("[Cve->IsFixable] Count is %d", count)
 		return count, nil
 	})
 }
