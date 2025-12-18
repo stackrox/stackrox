@@ -99,10 +99,12 @@ func insertIntoBaseImageRepositories(batch *pgx.Batch, obj *storage.BaseImageRep
 		// parent primary keys start
 		pgutils.NilOrUUID(obj.GetId()),
 		obj.GetRepositoryPath(),
+		obj.GetCreatedBy().GetId(),
+		obj.GetCreatedBy().GetName(),
 		serialized,
 	}
 
-	finalStr := "INSERT INTO base_image_repositories (Id, RepositoryPath, serialized) VALUES($1, $2, $3) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, RepositoryPath = EXCLUDED.RepositoryPath, serialized = EXCLUDED.serialized"
+	finalStr := "INSERT INTO base_image_repositories (Id, RepositoryPath, CreatedBy_Id, CreatedBy_Name, serialized) VALUES($1, $2, $3, $4, $5) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, RepositoryPath = EXCLUDED.RepositoryPath, CreatedBy_Id = EXCLUDED.CreatedBy_Id, CreatedBy_Name = EXCLUDED.CreatedBy_Name, serialized = EXCLUDED.serialized"
 	batch.Queue(finalStr, values...)
 
 	return nil
@@ -111,6 +113,8 @@ func insertIntoBaseImageRepositories(batch *pgx.Batch, obj *storage.BaseImageRep
 var copyColsBaseImageRepositories = []string{
 	"id",
 	"repositorypath",
+	"createdby_id",
+	"createdby_name",
 	"serialized",
 }
 
@@ -147,6 +151,8 @@ func copyFromBaseImageRepositories(ctx context.Context, s pgSearch.Deleter, tx *
 		return []interface{}{
 			pgutils.NilOrUUID(obj.GetId()),
 			obj.GetRepositoryPath(),
+			obj.GetCreatedBy().GetId(),
+			obj.GetCreatedBy().GetName(),
 			serialized,
 		}, nil
 	})
