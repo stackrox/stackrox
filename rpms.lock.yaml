@@ -228,13 +228,13 @@ arches:
     name: diffutils
     evr: 3.6-6.el8
     sourcerpm: diffutils-3.6-6.el8.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/aarch64/baseos/os/Packages/d/dracut-049-237.git20250603.el8_10.aarch64.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/aarch64/baseos/os/Packages/d/dracut-049-239.git20251127.el8_10.aarch64.rpm
     repoid: rhel-8-for-aarch64-baseos-rpms
-    size: 386612
-    checksum: sha256:485383318e0416890ceaa3e50a54607b7a72faa1dc7bca5308b5b8bf18a419ab
+    size: 385684
+    checksum: sha256:5134465376f9c8e8a9418c449a13d69bef53eaeb5670681e03b36ae9e1316dcb
     name: dracut
-    evr: 049-237.git20250603.el8_10
-    sourcerpm: dracut-049-237.git20250603.el8_10.src.rpm
+    evr: 049-239.git20251127.el8_10
+    sourcerpm: dracut-049-239.git20251127.el8_10.src.rpm
   - url: https://cdn.redhat.com/content/dist/rhel8/8/aarch64/baseos/os/Packages/e/elfutils-debuginfod-client-0.190-2.el8.aarch64.rpm
     repoid: rhel-8-for-aarch64-baseos-rpms
     size: 76564
@@ -907,13 +907,13 @@ arches:
     name: p11-kit-trust
     evr: 0.23.22-2.el8
     sourcerpm: p11-kit-0.23.22-2.el8.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/aarch64/baseos/os/Packages/p/pam-1.3.1-38.el8_10.aarch64.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/aarch64/baseos/os/Packages/p/pam-1.3.1-39.el8_10.aarch64.rpm
     repoid: rhel-8-for-aarch64-baseos-rpms
-    size: 760744
-    checksum: sha256:3cc2caeb4d85c06b13dba9d8cac0ea82c25c3acd0ffb703646936ba2c09cfb2a
+    size: 760956
+    checksum: sha256:aaa134b795b6e6a121d41c20589af4a2bd19a109a1fad429652c55c72676a45b
     name: pam
-    evr: 1.3.1-38.el8_10
-    sourcerpm: pam-1.3.1-38.el8_10.src.rpm
+    evr: 1.3.1-39.el8_10
+    sourcerpm: pam-1.3.1-39.el8_10.src.rpm
   - url: https://cdn.redhat.com/content/dist/rhel8/8/aarch64/baseos/os/Packages/p/pcre-8.42-6.el8.aarch64.rpm
     repoid: rhel-8-for-aarch64-baseos-rpms
     size: 191584
@@ -1110,13 +1110,13 @@ arches:
     name: trousers-lib
     evr: 0.3.15-2.el8
     sourcerpm: trousers-0.3.15-2.el8.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/aarch64/baseos/os/Packages/t/tzdata-2025b-1.el8.noarch.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/aarch64/baseos/os/Packages/t/tzdata-2025c-1.el8.noarch.rpm
     repoid: rhel-8-for-aarch64-baseos-rpms
-    size: 488428
-    checksum: sha256:338539f7f0cd2770694153af81e2e65121b050a1bb555ad66a6fb6f562732602
+    size: 560812
+    checksum: sha256:e4b6cf905fb2111d9a45c3b6b95f6e0c5199bf9b3d576f2a06b4dcb49a63d55e
     name: tzdata
-    evr: 2025b-1.el8
-    sourcerpm: tzdata-2025b-1.el8.src.rpm
+    evr: 2025c-1.el8
+    sourcerpm: tzdata-2025c-1.el8.src.rpm
   - url: https://cdn.redhat.com/content/dist/rhel8/8/aarch64/baseos/os/Packages/u/util-linux-2.32.1-46.el8.aarch64.rpm
     repoid: rhel-8-for-aarch64-baseos-rpms
     size: 2588284
@@ -1303,12 +1303,12 @@ arches:
     checksum: sha256:1308e782ad4f9b17a5cbbac9734be496948db857de7458b3388645bf1786892d
     name: diffutils
     evr: 3.6-6.el8
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/aarch64/baseos/source/SRPMS/Packages/d/dracut-049-237.git20250603.el8_10.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/aarch64/baseos/source/SRPMS/Packages/d/dracut-049-239.git20251127.el8_10.src.rpm
     repoid: rhel-8-for-aarch64-baseos-source-rpms
-    size: 584456
-    checksum: sha256:82c025577bb9b0b42696376d7db8a9e2271995d8b42ab79af42911863b7928d0
+    size: 585830
+    checksum: sha256:559705b03309fdae2474df8798242da457ed1dd7d4014c37462188975bb3bf2e
     name: dracut
-    evr: 049-237.git20250603.el8_10
+    evr: 049-239.git20251127.el8_10
   - url: https://cdn.redhat.com/content/dist/rhel8/8/aarch64/baseos/source/SRPMS/Packages/e/e2fsprogs-1.45.6-7.el8_10.src.rpm
     repoid: rhel-8-for-aarch64-baseos-source-rpms
     size: 5680546
@@ -1687,12 +1687,12 @@ arches:
     checksum: sha256:9dece924ffd6e5698e7cb865f01976d7786b8c3cc65e743cf9ce3a856baff95e
     name: p11-kit
     evr: 0.23.22-2.el8
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/aarch64/baseos/source/SRPMS/Packages/p/pam-1.3.1-38.el8_10.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/aarch64/baseos/source/SRPMS/Packages/p/pam-1.3.1-39.el8_10.src.rpm
     repoid: rhel-8-for-aarch64-baseos-source-rpms
-    size: 1183015
-    checksum: sha256:868a69dca0a6655a20c150bff64b3fdb058a9b9ee763094ff4b70052d9db6c74
+    size: 1185014
+    checksum: sha256:dbbbd55c9700e19c59e4e425a6b6f08eb4cb77f68967e773b318a8dfbdfdfb93
     name: pam
-    evr: 1.3.1-38.el8_10
+    evr: 1.3.1-39.el8_10
   - url: https://cdn.redhat.com/content/dist/rhel8/8/aarch64/baseos/source/SRPMS/Packages/p/pcre-8.42-6.el8.src.rpm
     repoid: rhel-8-for-aarch64-baseos-source-rpms
     size: 1617186
@@ -1813,12 +1813,12 @@ arches:
     checksum: sha256:ad79eab11673ac2f172276a993d98f2bf98c77728863f656d7cc0ab595d5b593
     name: trousers
     evr: 0.3.15-2.el8
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/aarch64/baseos/source/SRPMS/Packages/t/tzdata-2025b-1.el8.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/aarch64/baseos/source/SRPMS/Packages/t/tzdata-2025c-1.el8.src.rpm
     repoid: rhel-8-for-aarch64-baseos-source-rpms
-    size: 946701
-    checksum: sha256:2f0ba51d371713287a690d9d1635b534113258aa2571862603d52870c1c8b60d
+    size: 960798
+    checksum: sha256:c9798a08b98344921713d3183bda98727df494d83f96924604b6b755ddc30f61
     name: tzdata
-    evr: 2025b-1.el8
+    evr: 2025c-1.el8
   - url: https://cdn.redhat.com/content/dist/rhel8/8/aarch64/baseos/source/SRPMS/Packages/u/util-linux-2.32.1-46.el8.src.rpm
     repoid: rhel-8-for-aarch64-baseos-source-rpms
     size: 4816801
@@ -1850,10 +1850,10 @@ arches:
     name: zstd
     evr: 1.4.4-1.el8
   module_metadata:
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/aarch64/appstream/os/repodata/358af995dc3b058c117ec6e3dbc01e3ebc9ea45e9b3fa6eada9f40ecd102247d-modules.yaml.gz
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/aarch64/appstream/os/repodata/6164ec006aeb84482fc891c60a3f2e11c39a0823315dcf88fe81e99e6f9a607c-modules.yaml.gz
     repoid: rhel-8-for-aarch64-appstream-rpms
-    size: 744510
-    checksum: sha256:358af995dc3b058c117ec6e3dbc01e3ebc9ea45e9b3fa6eada9f40ecd102247d
+    size: 751978
+    checksum: sha256:6164ec006aeb84482fc891c60a3f2e11c39a0823315dcf88fe81e99e6f9a607c
 - arch: ppc64le
   packages:
   - url: https://cdn.redhat.com/content/dist/rhel8/8/ppc64le/appstream/os/Packages/j/jq-1.6-11.el8_10.ppc64le.rpm
@@ -2080,13 +2080,13 @@ arches:
     name: diffutils
     evr: 3.6-6.el8
     sourcerpm: diffutils-3.6-6.el8.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/ppc64le/baseos/os/Packages/d/dracut-049-237.git20250603.el8_10.ppc64le.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/ppc64le/baseos/os/Packages/d/dracut-049-239.git20251127.el8_10.ppc64le.rpm
     repoid: rhel-8-for-ppc64le-baseos-rpms
-    size: 393168
-    checksum: sha256:1a8b74595e1b73d7e5cdbdda7324f598e83de9f402bab09d62cbb6c86ef3d5d1
+    size: 392252
+    checksum: sha256:dbdc5c407045d45227507d079dcad14a43939aef0d2ca1900b508af0eb938025
     name: dracut
-    evr: 049-237.git20250603.el8_10
-    sourcerpm: dracut-049-237.git20250603.el8_10.src.rpm
+    evr: 049-239.git20251127.el8_10
+    sourcerpm: dracut-049-239.git20251127.el8_10.src.rpm
   - url: https://cdn.redhat.com/content/dist/rhel8/8/ppc64le/baseos/os/Packages/e/elfutils-debuginfod-client-0.190-2.el8.ppc64le.rpm
     repoid: rhel-8-for-ppc64le-baseos-rpms
     size: 78824
@@ -2766,13 +2766,13 @@ arches:
     name: p11-kit-trust
     evr: 0.23.22-2.el8
     sourcerpm: p11-kit-0.23.22-2.el8.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/ppc64le/baseos/os/Packages/p/pam-1.3.1-38.el8_10.ppc64le.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/ppc64le/baseos/os/Packages/p/pam-1.3.1-39.el8_10.ppc64le.rpm
     repoid: rhel-8-for-ppc64le-baseos-rpms
-    size: 813804
-    checksum: sha256:b6644c8cd92d7d7778011a7e13bdad7267e3d5f5265e348f3da1bbe22ed03502
+    size: 814188
+    checksum: sha256:124fb0871d7ec940aab122357dd21ff64954fc8e9ab9840046c2cf9a80900496
     name: pam
-    evr: 1.3.1-38.el8_10
-    sourcerpm: pam-1.3.1-38.el8_10.src.rpm
+    evr: 1.3.1-39.el8_10
+    sourcerpm: pam-1.3.1-39.el8_10.src.rpm
   - url: https://cdn.redhat.com/content/dist/rhel8/8/ppc64le/baseos/os/Packages/p/pcre-8.42-6.el8.ppc64le.rpm
     repoid: rhel-8-for-ppc64le-baseos-rpms
     size: 211436
@@ -2969,13 +2969,13 @@ arches:
     name: trousers-lib
     evr: 0.3.15-2.el8
     sourcerpm: trousers-0.3.15-2.el8.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/ppc64le/baseos/os/Packages/t/tzdata-2025b-1.el8.noarch.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/ppc64le/baseos/os/Packages/t/tzdata-2025c-1.el8.noarch.rpm
     repoid: rhel-8-for-ppc64le-baseos-rpms
-    size: 488428
-    checksum: sha256:338539f7f0cd2770694153af81e2e65121b050a1bb555ad66a6fb6f562732602
+    size: 560812
+    checksum: sha256:e4b6cf905fb2111d9a45c3b6b95f6e0c5199bf9b3d576f2a06b4dcb49a63d55e
     name: tzdata
-    evr: 2025b-1.el8
-    sourcerpm: tzdata-2025b-1.el8.src.rpm
+    evr: 2025c-1.el8
+    sourcerpm: tzdata-2025c-1.el8.src.rpm
   - url: https://cdn.redhat.com/content/dist/rhel8/8/ppc64le/baseos/os/Packages/u/util-linux-2.32.1-46.el8.ppc64le.rpm
     repoid: rhel-8-for-ppc64le-baseos-rpms
     size: 2701400
@@ -3162,12 +3162,12 @@ arches:
     checksum: sha256:1308e782ad4f9b17a5cbbac9734be496948db857de7458b3388645bf1786892d
     name: diffutils
     evr: 3.6-6.el8
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/ppc64le/baseos/source/SRPMS/Packages/d/dracut-049-237.git20250603.el8_10.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/ppc64le/baseos/source/SRPMS/Packages/d/dracut-049-239.git20251127.el8_10.src.rpm
     repoid: rhel-8-for-ppc64le-baseos-source-rpms
-    size: 584456
-    checksum: sha256:82c025577bb9b0b42696376d7db8a9e2271995d8b42ab79af42911863b7928d0
+    size: 585830
+    checksum: sha256:559705b03309fdae2474df8798242da457ed1dd7d4014c37462188975bb3bf2e
     name: dracut
-    evr: 049-237.git20250603.el8_10
+    evr: 049-239.git20251127.el8_10
   - url: https://cdn.redhat.com/content/dist/rhel8/8/ppc64le/baseos/source/SRPMS/Packages/e/e2fsprogs-1.45.6-7.el8_10.src.rpm
     repoid: rhel-8-for-ppc64le-baseos-source-rpms
     size: 5680546
@@ -3552,12 +3552,12 @@ arches:
     checksum: sha256:9dece924ffd6e5698e7cb865f01976d7786b8c3cc65e743cf9ce3a856baff95e
     name: p11-kit
     evr: 0.23.22-2.el8
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/ppc64le/baseos/source/SRPMS/Packages/p/pam-1.3.1-38.el8_10.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/ppc64le/baseos/source/SRPMS/Packages/p/pam-1.3.1-39.el8_10.src.rpm
     repoid: rhel-8-for-ppc64le-baseos-source-rpms
-    size: 1183015
-    checksum: sha256:868a69dca0a6655a20c150bff64b3fdb058a9b9ee763094ff4b70052d9db6c74
+    size: 1185014
+    checksum: sha256:dbbbd55c9700e19c59e4e425a6b6f08eb4cb77f68967e773b318a8dfbdfdfb93
     name: pam
-    evr: 1.3.1-38.el8_10
+    evr: 1.3.1-39.el8_10
   - url: https://cdn.redhat.com/content/dist/rhel8/8/ppc64le/baseos/source/SRPMS/Packages/p/pcre-8.42-6.el8.src.rpm
     repoid: rhel-8-for-ppc64le-baseos-source-rpms
     size: 1617186
@@ -3678,12 +3678,12 @@ arches:
     checksum: sha256:ad79eab11673ac2f172276a993d98f2bf98c77728863f656d7cc0ab595d5b593
     name: trousers
     evr: 0.3.15-2.el8
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/ppc64le/baseos/source/SRPMS/Packages/t/tzdata-2025b-1.el8.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/ppc64le/baseos/source/SRPMS/Packages/t/tzdata-2025c-1.el8.src.rpm
     repoid: rhel-8-for-ppc64le-baseos-source-rpms
-    size: 946701
-    checksum: sha256:2f0ba51d371713287a690d9d1635b534113258aa2571862603d52870c1c8b60d
+    size: 960798
+    checksum: sha256:c9798a08b98344921713d3183bda98727df494d83f96924604b6b755ddc30f61
     name: tzdata
-    evr: 2025b-1.el8
+    evr: 2025c-1.el8
   - url: https://cdn.redhat.com/content/dist/rhel8/8/ppc64le/baseos/source/SRPMS/Packages/u/util-linux-2.32.1-46.el8.src.rpm
     repoid: rhel-8-for-ppc64le-baseos-source-rpms
     size: 4816801
@@ -3715,10 +3715,10 @@ arches:
     name: zstd
     evr: 1.4.4-1.el8
   module_metadata:
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/ppc64le/appstream/os/repodata/d3d12d70889576d4bdbc22115e6c5043f47ffd2af399189a51e1aafa75aec813-modules.yaml.gz
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/ppc64le/appstream/os/repodata/18a38d9bd7610761d6a20a8510b525f59bb1d1f5e78d9ebe5be644f079566ec4-modules.yaml.gz
     repoid: rhel-8-for-ppc64le-appstream-rpms
-    size: 740375
-    checksum: sha256:d3d12d70889576d4bdbc22115e6c5043f47ffd2af399189a51e1aafa75aec813
+    size: 747330
+    checksum: sha256:18a38d9bd7610761d6a20a8510b525f59bb1d1f5e78d9ebe5be644f079566ec4
 - arch: s390x
   packages:
   - url: https://cdn.redhat.com/content/dist/rhel8/8/s390x/appstream/os/Packages/j/jq-1.6-11.el8_10.s390x.rpm
@@ -4575,13 +4575,13 @@ arches:
     name: p11-kit-trust
     evr: 0.23.22-2.el8
     sourcerpm: p11-kit-0.23.22-2.el8.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/s390x/baseos/os/Packages/p/pam-1.3.1-38.el8_10.s390x.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/s390x/baseos/os/Packages/p/pam-1.3.1-39.el8_10.s390x.rpm
     repoid: rhel-8-for-s390x-baseos-rpms
-    size: 745604
-    checksum: sha256:52835d115a32fc8c29e83195bd9290368b48ace8709582b81a911597fd6d5719
+    size: 745912
+    checksum: sha256:acce7bdddf4ac5c3a25f3042f3f90b490cf0e575c246d0b659a13699fe97e11f
     name: pam
-    evr: 1.3.1-38.el8_10
-    sourcerpm: pam-1.3.1-38.el8_10.src.rpm
+    evr: 1.3.1-39.el8_10
+    sourcerpm: pam-1.3.1-39.el8_10.src.rpm
   - url: https://cdn.redhat.com/content/dist/rhel8/8/s390x/baseos/os/Packages/p/pcre-8.42-6.el8.s390x.rpm
     repoid: rhel-8-for-s390x-baseos-rpms
     size: 133532
@@ -5030,13 +5030,13 @@ arches:
     name: trousers-lib
     evr: 0.3.15-2.el8
     sourcerpm: trousers-0.3.15-2.el8.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/s390x/baseos/os/Packages/t/tzdata-2025b-1.el8.noarch.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/s390x/baseos/os/Packages/t/tzdata-2025c-1.el8.noarch.rpm
     repoid: rhel-8-for-s390x-baseos-rpms
-    size: 488428
-    checksum: sha256:338539f7f0cd2770694153af81e2e65121b050a1bb555ad66a6fb6f562732602
+    size: 560812
+    checksum: sha256:e4b6cf905fb2111d9a45c3b6b95f6e0c5199bf9b3d576f2a06b4dcb49a63d55e
     name: tzdata
-    evr: 2025b-1.el8
-    sourcerpm: tzdata-2025b-1.el8.src.rpm
+    evr: 2025c-1.el8
+    sourcerpm: tzdata-2025c-1.el8.src.rpm
   - url: https://cdn.redhat.com/content/dist/rhel8/8/s390x/baseos/os/Packages/u/util-linux-2.32.1-46.el8.s390x.rpm
     repoid: rhel-8-for-s390x-baseos-rpms
     size: 2499112
@@ -5599,12 +5599,12 @@ arches:
     checksum: sha256:9dece924ffd6e5698e7cb865f01976d7786b8c3cc65e743cf9ce3a856baff95e
     name: p11-kit
     evr: 0.23.22-2.el8
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/s390x/baseos/source/SRPMS/Packages/p/pam-1.3.1-38.el8_10.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/s390x/baseos/source/SRPMS/Packages/p/pam-1.3.1-39.el8_10.src.rpm
     repoid: rhel-8-for-s390x-baseos-source-rpms
-    size: 1183015
-    checksum: sha256:868a69dca0a6655a20c150bff64b3fdb058a9b9ee763094ff4b70052d9db6c74
+    size: 1185014
+    checksum: sha256:dbbbd55c9700e19c59e4e425a6b6f08eb4cb77f68967e773b318a8dfbdfdfb93
     name: pam
-    evr: 1.3.1-38.el8_10
+    evr: 1.3.1-39.el8_10
   - url: https://cdn.redhat.com/content/dist/rhel8/8/s390x/baseos/source/SRPMS/Packages/p/pcre-8.42-6.el8.src.rpm
     repoid: rhel-8-for-s390x-baseos-source-rpms
     size: 1617186
@@ -5905,12 +5905,12 @@ arches:
     checksum: sha256:ad79eab11673ac2f172276a993d98f2bf98c77728863f656d7cc0ab595d5b593
     name: trousers
     evr: 0.3.15-2.el8
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/s390x/baseos/source/SRPMS/Packages/t/tzdata-2025b-1.el8.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/s390x/baseos/source/SRPMS/Packages/t/tzdata-2025c-1.el8.src.rpm
     repoid: rhel-8-for-s390x-baseos-source-rpms
-    size: 946701
-    checksum: sha256:2f0ba51d371713287a690d9d1635b534113258aa2571862603d52870c1c8b60d
+    size: 960798
+    checksum: sha256:c9798a08b98344921713d3183bda98727df494d83f96924604b6b755ddc30f61
     name: tzdata
-    evr: 2025b-1.el8
+    evr: 2025c-1.el8
   - url: https://cdn.redhat.com/content/dist/rhel8/8/s390x/baseos/source/SRPMS/Packages/u/util-linux-2.32.1-46.el8.src.rpm
     repoid: rhel-8-for-s390x-baseos-source-rpms
     size: 4816801
@@ -5936,10 +5936,10 @@ arches:
     name: zstd
     evr: 1.4.4-1.el8
   module_metadata:
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/s390x/appstream/os/repodata/5a6fc588701b5d38d4c98646ae66a536139ff446aa1c75f185d50c980b7d5047-modules.yaml.gz
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/s390x/appstream/os/repodata/3057e8a7036f75d2991c559a947bcef9a208eb450df5b4b5ad5ea2f1e7379f4f-modules.yaml.gz
     repoid: rhel-8-for-s390x-appstream-rpms
-    size: 745194
-    checksum: sha256:5a6fc588701b5d38d4c98646ae66a536139ff446aa1c75f185d50c980b7d5047
+    size: 750152
+    checksum: sha256:3057e8a7036f75d2991c559a947bcef9a208eb450df5b4b5ad5ea2f1e7379f4f
 - arch: x86_64
   packages:
   - url: https://cdn.redhat.com/content/dist/rhel8/8/x86_64/appstream/os/Packages/j/jq-1.6-11.el8_10.x86_64.rpm
@@ -6166,13 +6166,13 @@ arches:
     name: diffutils
     evr: 3.6-6.el8
     sourcerpm: diffutils-3.6-6.el8.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/x86_64/baseos/os/Packages/d/dracut-049-237.git20250603.el8_10.x86_64.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/x86_64/baseos/os/Packages/d/dracut-049-239.git20251127.el8_10.x86_64.rpm
     repoid: rhel-8-for-x86_64-baseos-rpms
-    size: 389684
-    checksum: sha256:8f3e8df550a96923e1ab3d1004c10a640d7218a1242d9a59fdd88c86707e8cc4
+    size: 388772
+    checksum: sha256:02e50ff63cdfd01e3a2b9f6b83efb3ea20ec35aa65c632b6f2dd9dfd343f7bc0
     name: dracut
-    evr: 049-237.git20250603.el8_10
-    sourcerpm: dracut-049-237.git20250603.el8_10.src.rpm
+    evr: 049-239.git20251127.el8_10
+    sourcerpm: dracut-049-239.git20251127.el8_10.src.rpm
   - url: https://cdn.redhat.com/content/dist/rhel8/8/x86_64/baseos/os/Packages/e/elfutils-debuginfod-client-0.190-2.el8.x86_64.rpm
     repoid: rhel-8-for-x86_64-baseos-rpms
     size: 77672
@@ -6845,13 +6845,13 @@ arches:
     name: p11-kit-trust
     evr: 0.23.22-2.el8
     sourcerpm: p11-kit-0.23.22-2.el8.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/x86_64/baseos/os/Packages/p/pam-1.3.1-38.el8_10.x86_64.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/x86_64/baseos/os/Packages/p/pam-1.3.1-39.el8_10.x86_64.rpm
     repoid: rhel-8-for-x86_64-baseos-rpms
-    size: 766432
-    checksum: sha256:b81e74975a11ce17f0ab9ccf40ddfafa7f942b1f6b729c62eeb0b3692811bd8c
+    size: 766824
+    checksum: sha256:55f3b294c9a4fbfaea0353a5ed38d15fb87fb9ca79f6cbfe4238923bd76cf4f3
     name: pam
-    evr: 1.3.1-38.el8_10
-    sourcerpm: pam-1.3.1-38.el8_10.src.rpm
+    evr: 1.3.1-39.el8_10
+    sourcerpm: pam-1.3.1-39.el8_10.src.rpm
   - url: https://cdn.redhat.com/content/dist/rhel8/8/x86_64/baseos/os/Packages/p/pcre-8.42-6.el8.x86_64.rpm
     repoid: rhel-8-for-x86_64-baseos-rpms
     size: 215668
@@ -7048,13 +7048,13 @@ arches:
     name: trousers-lib
     evr: 0.3.15-2.el8
     sourcerpm: trousers-0.3.15-2.el8.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/x86_64/baseos/os/Packages/t/tzdata-2025b-1.el8.noarch.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/x86_64/baseos/os/Packages/t/tzdata-2025c-1.el8.noarch.rpm
     repoid: rhel-8-for-x86_64-baseos-rpms
-    size: 488428
-    checksum: sha256:338539f7f0cd2770694153af81e2e65121b050a1bb555ad66a6fb6f562732602
+    size: 560812
+    checksum: sha256:e4b6cf905fb2111d9a45c3b6b95f6e0c5199bf9b3d576f2a06b4dcb49a63d55e
     name: tzdata
-    evr: 2025b-1.el8
-    sourcerpm: tzdata-2025b-1.el8.src.rpm
+    evr: 2025c-1.el8
+    sourcerpm: tzdata-2025c-1.el8.src.rpm
   - url: https://cdn.redhat.com/content/dist/rhel8/8/x86_64/baseos/os/Packages/u/util-linux-2.32.1-46.el8.x86_64.rpm
     repoid: rhel-8-for-x86_64-baseos-rpms
     size: 2597616
@@ -7241,12 +7241,12 @@ arches:
     checksum: sha256:1308e782ad4f9b17a5cbbac9734be496948db857de7458b3388645bf1786892d
     name: diffutils
     evr: 3.6-6.el8
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/x86_64/baseos/source/SRPMS/Packages/d/dracut-049-237.git20250603.el8_10.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/x86_64/baseos/source/SRPMS/Packages/d/dracut-049-239.git20251127.el8_10.src.rpm
     repoid: rhel-8-for-x86_64-baseos-source-rpms
-    size: 584456
-    checksum: sha256:82c025577bb9b0b42696376d7db8a9e2271995d8b42ab79af42911863b7928d0
+    size: 585830
+    checksum: sha256:559705b03309fdae2474df8798242da457ed1dd7d4014c37462188975bb3bf2e
     name: dracut
-    evr: 049-237.git20250603.el8_10
+    evr: 049-239.git20251127.el8_10
   - url: https://cdn.redhat.com/content/dist/rhel8/8/x86_64/baseos/source/SRPMS/Packages/e/e2fsprogs-1.45.6-7.el8_10.src.rpm
     repoid: rhel-8-for-x86_64-baseos-source-rpms
     size: 5680546
@@ -7625,12 +7625,12 @@ arches:
     checksum: sha256:9dece924ffd6e5698e7cb865f01976d7786b8c3cc65e743cf9ce3a856baff95e
     name: p11-kit
     evr: 0.23.22-2.el8
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/x86_64/baseos/source/SRPMS/Packages/p/pam-1.3.1-38.el8_10.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/x86_64/baseos/source/SRPMS/Packages/p/pam-1.3.1-39.el8_10.src.rpm
     repoid: rhel-8-for-x86_64-baseos-source-rpms
-    size: 1183015
-    checksum: sha256:868a69dca0a6655a20c150bff64b3fdb058a9b9ee763094ff4b70052d9db6c74
+    size: 1185014
+    checksum: sha256:dbbbd55c9700e19c59e4e425a6b6f08eb4cb77f68967e773b318a8dfbdfdfb93
     name: pam
-    evr: 1.3.1-38.el8_10
+    evr: 1.3.1-39.el8_10
   - url: https://cdn.redhat.com/content/dist/rhel8/8/x86_64/baseos/source/SRPMS/Packages/p/pcre-8.42-6.el8.src.rpm
     repoid: rhel-8-for-x86_64-baseos-source-rpms
     size: 1617186
@@ -7751,12 +7751,12 @@ arches:
     checksum: sha256:ad79eab11673ac2f172276a993d98f2bf98c77728863f656d7cc0ab595d5b593
     name: trousers
     evr: 0.3.15-2.el8
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/x86_64/baseos/source/SRPMS/Packages/t/tzdata-2025b-1.el8.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/x86_64/baseos/source/SRPMS/Packages/t/tzdata-2025c-1.el8.src.rpm
     repoid: rhel-8-for-x86_64-baseos-source-rpms
-    size: 946701
-    checksum: sha256:2f0ba51d371713287a690d9d1635b534113258aa2571862603d52870c1c8b60d
+    size: 960798
+    checksum: sha256:c9798a08b98344921713d3183bda98727df494d83f96924604b6b755ddc30f61
     name: tzdata
-    evr: 2025b-1.el8
+    evr: 2025c-1.el8
   - url: https://cdn.redhat.com/content/dist/rhel8/8/x86_64/baseos/source/SRPMS/Packages/u/util-linux-2.32.1-46.el8.src.rpm
     repoid: rhel-8-for-x86_64-baseos-source-rpms
     size: 4816801
@@ -7788,7 +7788,7 @@ arches:
     name: zstd
     evr: 1.4.4-1.el8
   module_metadata:
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/x86_64/appstream/os/repodata/de23fa9e77ebe06ba24e5b1514be3e13cf5efb176d97a76c68a0400fa7aba1ee-modules.yaml.gz
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/x86_64/appstream/os/repodata/67a783ccd89a7b934d49e0e8c42bad3bfbfbea886957ef1961a3b3b3030e6b0c-modules.yaml.gz
     repoid: rhel-8-for-x86_64-appstream-rpms
-    size: 766779
-    checksum: sha256:de23fa9e77ebe06ba24e5b1514be3e13cf5efb176d97a76c68a0400fa7aba1ee
+    size: 772560
+    checksum: sha256:67a783ccd89a7b934d49e0e8c42bad3bfbfbea886957ef1961a3b3b3030e6b0c
