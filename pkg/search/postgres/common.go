@@ -821,6 +821,7 @@ func tracedQueryRow(ctx context.Context, pool postgres.Queryable, sql string, ar
 
 func retryableRunSearchRequestForSchema(ctx context.Context, query *query, schema *walker.Schema, db postgres.Queryable) ([]searchPkg.Result, error) {
 	queryStr := query.AsSQL()
+	log.Infof("Search Query SQL: %s", queryStr)
 
 	// Assumes that ids are strings.
 	numPrimaryKeys := len(schema.PrimaryKeys())
