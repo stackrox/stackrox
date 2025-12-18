@@ -122,7 +122,7 @@ function AdvancedFiltersToolbar({
                     />
                 </ToolbarGroup>
                 {(includeCveSeverityFilters || includeCveStatusFilters) && (
-                    <ToolbarGroup>
+                    <ToolbarGroup className="vm-filter-toolbar-dropdown">
                         {includeCveSeverityFilters && (
                             <SearchFilterSelectInclusive
                                 attribute={attributeForSeverity}
