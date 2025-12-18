@@ -363,7 +363,8 @@ func GlobalSearch(ctx context.Context, query string, categories []v1.SearchCateg
 		categories = GetAllSearchableCategories()
 	}
 	for _, category := range categories {
-		if category == v1.SearchCategory_ALERTS && !shouldProcessAlerts(parsedRequest) {
+		queryCategory := parsedRequest.CloneVT()
+		if category == v1.SearchCategory_ALERTS && !shouldProcessAlerts(queryCategory) {
 			counts = append(counts, &v1.SearchResponse_Count{Category: category, Count: 0})
 			continue
 		}
@@ -373,7 +374,7 @@ func GlobalSearch(ctx context.Context, query string, categories []v1.SearchCateg
 			return
 		}
 		var resultsFromCategory []*v1.SearchResult
-		resultsFromCategory, err = searchFunc(ctx, parsedRequest)
+		resultsFromCategory, err = searchFunc(ctx, queryCategory)
 		if err != nil {
 			log.Errorf("error searching for %s: %v", category, err)
 			return
