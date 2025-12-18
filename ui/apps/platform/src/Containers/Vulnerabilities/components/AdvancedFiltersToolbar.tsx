@@ -5,22 +5,22 @@ import CompoundSearchFilter from 'Components/CompoundSearchFilter/components/Com
 import type { CompoundSearchFilterProps } from 'Components/CompoundSearchFilter/components/CompoundSearchFilter';
 import SearchFilterChips, {
     FilterChip,
+    makeFilterChipDescriptorFromAttribute,
     makeFilterChipDescriptors,
 } from 'Components/CompoundSearchFilter/components/SearchFilterChips';
+import SearchFilterSelectInclusive from 'Components/CompoundSearchFilter/components/SearchFilterSelectInclusive';
 import type { OnSearchPayload } from 'Components/CompoundSearchFilter/types';
 import { updateSearchFilter } from 'Components/CompoundSearchFilter/utils/utils';
 import type { SearchFilter } from 'types/search';
 import { getHasSearchApplied } from 'utils/searchUtils';
 
 import type { DefaultFilters } from '../types';
+import { cveSnoozedDescriptor } from '../filterChipDescriptor';
 import {
-    cveSeverityFilterDescriptor,
-    cveSnoozedDescriptor,
-    cveStatusClusterFixableDescriptor,
-    cveStatusFixableDescriptor,
-} from '../filterChipDescriptor';
-import CVESeverityDropdown from './CVESeverityDropdown';
-import CVEStatusDropdown from './CVEStatusDropdown';
+    attributeForClusterCveFixable,
+    attributeForFixable,
+    attributeForSeverity,
+} from '../searchFilterConfig';
 
 import './AdvancedFiltersToolbar.css';
 
@@ -75,13 +75,24 @@ function AdvancedFiltersToolbar({
     const baseDescriptors = makeFilterChipDescriptors(searchFilterConfig);
 
     const severityDescriptors = includeCveSeverityFilters
-        ? [makeDefaultFilterDescriptor(defaultFilters, cveSeverityFilterDescriptor)]
+        ? [
+              makeDefaultFilterDescriptor(
+                  defaultFilters,
+                  makeFilterChipDescriptorFromAttribute(attributeForSeverity)
+              ),
+          ]
         : [];
 
     const statusDescriptors = includeCveStatusFilters
         ? [
-              makeDefaultFilterDescriptor(defaultFilters, cveStatusFixableDescriptor),
-              makeDefaultFilterDescriptor(defaultFilters, cveStatusClusterFixableDescriptor),
+              makeDefaultFilterDescriptor(
+                  defaultFilters,
+                  makeFilterChipDescriptorFromAttribute(attributeForFixable)
+              ),
+              makeDefaultFilterDescriptor(
+                  defaultFilters,
+                  makeFilterChipDescriptorFromAttribute(attributeForClusterCveFixable)
+              ),
           ]
         : [];
 
@@ -113,32 +124,23 @@ function AdvancedFiltersToolbar({
                 {(includeCveSeverityFilters || includeCveStatusFilters) && (
                     <ToolbarGroup>
                         {includeCveSeverityFilters && (
-                            <CVESeverityDropdown
+                            <SearchFilterSelectInclusive
+                                attribute={attributeForSeverity}
+                                isSeparate
+                                onSearch={onFilterApplied}
                                 searchFilter={searchFilter}
-                                onSelect={(category, checked, value) =>
-                                    onFilterApplied([
-                                        {
-                                            category,
-                                            value,
-                                            action: checked ? 'SELECT_INCLUSIVE' : 'REMOVE',
-                                        },
-                                    ])
-                                }
                             />
                         )}
                         {includeCveStatusFilters && (
-                            <CVEStatusDropdown
-                                filterField={cveStatusFilterField}
-                                searchFilter={searchFilter}
-                                onSelect={(category, checked, value) =>
-                                    onFilterApplied([
-                                        {
-                                            category,
-                                            value,
-                                            action: checked ? 'SELECT_INCLUSIVE' : 'REMOVE',
-                                        },
-                                    ])
+                            <SearchFilterSelectInclusive
+                                attribute={
+                                    cveStatusFilterField === 'FIXABLE'
+                                        ? attributeForFixable
+                                        : attributeForClusterCveFixable
                                 }
+                                isSeparate
+                                onSearch={onFilterApplied}
+                                searchFilter={searchFilter}
                             />
                         )}
                     </ToolbarGroup>
