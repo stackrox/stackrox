@@ -24,6 +24,7 @@ import (
 )
 
 const inactiveGathererTTL = 2 * 24 * time.Hour
+const globalScopeID = ""
 
 var (
 	log = logging.CreateLogger(logging.ModuleForName("central_metrics"), 1)
@@ -105,6 +106,7 @@ type TrackerBase[F Finding] struct {
 	description  string
 	getters      LazyLabelGetters[F]
 	generator    FindingGenerator[F]
+	isScoped     bool
 
 	// metricsConfig can be changed with an API call.
 	config           *Configuration
@@ -116,17 +118,39 @@ type TrackerBase[F Finding] struct {
 	registryFactory func(userID string) (metrics.CustomRegistry, error) // for mocking in tests.
 }
 
-// MakeTrackerBase initializes a tracker without any period or metrics
+// MakeTrackerBase initializes a scoped tracker without any period or metrics
 // configuration. Call Reconfigure to configure the period and the metrics.
 func MakeTrackerBase[F Finding](metricPrefix, description string,
 	getters LazyLabelGetters[F], generator FindingGenerator[F],
 ) *TrackerBase[F] {
+	return makeTrackerBase(metricPrefix, description, true, getters, generator)
+}
+
+// MakeGlobalTrackerBase creates a global, i.e. non-scoped tracker.
+func MakeGlobalTrackerBase[F Finding](metricPrefix, description string,
+	getters LazyLabelGetters[F], generator FindingGenerator[F],
+) *TrackerBase[F] {
+	return makeTrackerBase(metricPrefix, description, false, getters, generator)
+}
+
+func globalRegistryFactory(string) (metrics.CustomRegistry, error) {
+	return metrics.GetGlobalRegistry()
+}
+
+func makeTrackerBase[F Finding](metricPrefix, description string, scoped bool,
+	getters LazyLabelGetters[F], generator FindingGenerator[F],
+) *TrackerBase[F] {
+	registryFactory := globalRegistryFactory
+	if scoped {
+		registryFactory = metrics.GetCustomRegistry
+	}
 	return &TrackerBase[F]{
 		metricPrefix:    metricPrefix,
 		description:     description,
 		getters:         getters,
 		generator:       generator,
-		registryFactory: metrics.GetCustomRegistry,
+		isScoped:        scoped,
+		registryFactory: registryFactory,
 	}
 }
 
@@ -272,17 +296,21 @@ func (tracker *TrackerBase[F]) setConfiguration(config *Configuration) *Configur
 
 // Gather the data not more often then maxAge.
 func (tracker *TrackerBase[F]) Gather(ctx context.Context) {
+	id := globalScopeID
+	if tracker.isScoped {
+		userID, err := authn.IdentityFromContext(ctx)
+		if err != nil {
+			utils.Should(err)
+			return
+		}
+		id = userID.UID()
+	}
 	cfg := tracker.getConfiguration()
 	if !cfg.isEnabled() {
 		return
 	}
-	id, err := authn.IdentityFromContext(ctx)
-	if err != nil {
-		utils.Should(err)
-		return
-	}
 	// Pass the cfg so that the same configuration is used there and here.
-	gatherer := tracker.getGatherer(id.UID(), cfg)
+	gatherer := tracker.getGatherer(id, cfg)
 	// getGatherer() returns nil if the gatherer is still running.
 	if gatherer == nil {
 		return
