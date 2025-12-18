@@ -9,7 +9,6 @@ import (
 	"github.com/lib/pq"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/sac/resources"
@@ -46,9 +45,7 @@ var (
 		}...)
 		schema.ScopingResource = resources.Image
 		RegisterTable(schema, CreateTableImagesStmt)
-		if !features.FlattenImageData.Enabled() {
-			mapping.RegisterCategoryToTable(v1.SearchCategory_IMAGES, schema)
-		}
+		mapping.RegisterCategoryToTable(v1.SearchCategory_IMAGES, schema)
 		return schema
 	}()
 )

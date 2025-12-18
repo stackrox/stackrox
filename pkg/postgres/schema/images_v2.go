@@ -48,9 +48,6 @@ var (
 		schema.ScopingResource = resources.Image
 		RegisterTable(schema, CreateTableImagesV2Stmt, features.FlattenImageData.Enabled)
 		mapping.RegisterCategoryToTable(v1.SearchCategory_IMAGES_V2, schema)
-		if features.FlattenImageData.Enabled() {
-			mapping.RegisterCategoryToTable(v1.SearchCategory_IMAGES, schema)
-		}
 		return schema
 	}()
 )
