@@ -6,7 +6,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/sigstore/cosign/v2/pkg/cosign/bundle"
+	"github.com/sigstore/cosign/v3/pkg/cosign/bundle"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/images/types"
