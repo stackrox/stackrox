@@ -9,15 +9,13 @@ import (
 	"testing"
 
 	deploymentDS "github.com/stackrox/rox/central/deployment/datastore"
-	imageDS "github.com/stackrox/rox/central/image/datastore"
-	imagePostgresV2 "github.com/stackrox/rox/central/image/datastore/store/v2/postgres"
-	"github.com/stackrox/rox/central/ranking"
-	mockRisks "github.com/stackrox/rox/central/risk/datastore/mocks"
+	imageV2DS "github.com/stackrox/rox/central/imagev2/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/sac/testconsts"
@@ -25,10 +23,9 @@ import (
 	"github.com/stackrox/rox/pkg/scancomponent"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/postgres/aggregatefunc"
+	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
-	"go.uber.org/mock/gomock"
-	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 type testCase struct {
@@ -43,13 +40,13 @@ type testCase struct {
 type lessFunc func(records []*imageComponentFlatResponse) func(i, j int) bool
 
 type filterImpl struct {
-	matchImage     func(image *storage.Image) bool
+	matchImage     func(image *storage.ImageV2) bool
 	matchComponent func(component *storage.EmbeddedImageScanComponent) bool
 }
 
 func matchAllFilter() *filterImpl {
 	return &filterImpl{
-		matchImage: func(_ *storage.Image) bool {
+		matchImage: func(_ *storage.ImageV2) bool {
 			return true
 		},
 		matchComponent: func(_ *storage.EmbeddedImageScanComponent) bool {
@@ -60,7 +57,7 @@ func matchAllFilter() *filterImpl {
 
 func matchNoneFilter() *filterImpl {
 	return &filterImpl{
-		matchImage: func(_ *storage.Image) bool {
+		matchImage: func(_ *storage.ImageV2) bool {
 			return false
 		},
 		matchComponent: func(_ *storage.EmbeddedImageScanComponent) bool {
@@ -69,7 +66,7 @@ func matchNoneFilter() *filterImpl {
 	}
 }
 
-func (f *filterImpl) withImageFilter(fn func(image *storage.Image) bool) *filterImpl {
+func (f *filterImpl) withImageFilter(fn func(image *storage.ImageV2) bool) *filterImpl {
 	f.matchImage = fn
 	return f
 }
@@ -80,6 +77,10 @@ func (f *filterImpl) withComponentFilter(fn func(component *storage.EmbeddedImag
 }
 
 func TestImageComponentFlatView(t *testing.T) {
+	if !features.FlattenImageData.Enabled() {
+		t.Skip("FlattenImageData is disabled")
+	}
+
 	suite.Run(t, new(ImageComponentFlatViewTestSuite))
 }
 
@@ -88,35 +89,17 @@ type ImageComponentFlatViewTestSuite struct {
 
 	testDB         *pgtest.TestPostgres
 	componentView  ComponentFlatView
-	testImages     []*storage.Image
+	testImages     []*storage.ImageV2
 	testComponents map[string][]*storage.EmbeddedImageScanComponent
 }
 
 func (s *ImageComponentFlatViewTestSuite) SetupSuite() {
-	mockCtrl := gomock.NewController(s.T())
 	ctx := sac.WithAllAccess(context.Background())
 	s.testDB = pgtest.ForT(s.T())
 
-	mockRisk := mockRisks.NewMockDataStore(mockCtrl)
-
-	// Initialize the datastore.
-	imageStore := imageDS.NewWithPostgres(
-		imagePostgresV2.New(s.testDB.DB, false, concurrency.NewKeyFence()),
-		mockRisk,
-		ranking.ImageRanker(),
-		ranking.ComponentRanker(),
-	)
-	deploymentStore, err := deploymentDS.NewTestDataStore(
-		s.T(),
-		s.testDB,
-		&deploymentDS.DeploymentTestStoreParams{
-			ImagesDataStore:  imageStore,
-			RisksDataStore:   mockRisk,
-			ClusterRanker:    ranking.ClusterRanker(),
-			NamespaceRanker:  ranking.NamespaceRanker(),
-			DeploymentRanker: ranking.DeploymentRanker(),
-		},
-	)
+	// Initialize the ImageV2 datastore
+	imageStore := imageV2DS.GetTestPostgresDataStore(s.T(), s.testDB.DB)
+	deploymentStore, err := deploymentDS.GetTestPostgresDataStore(s.T(), s.testDB.DB)
 	s.Require().NoError(err)
 
 	// Create controlled test images with known components
@@ -148,9 +131,9 @@ func (s *ImageComponentFlatViewTestSuite) SetupSuite() {
 	// Create some deployments for testing
 	s.Require().Len(images, 3)
 	deployments := []*storage.Deployment{
-		fixtures.GetDeploymentWithImage(testconsts.Cluster1, testconsts.NamespaceA, images[0]),
-		fixtures.GetDeploymentWithImage(testconsts.Cluster2, testconsts.NamespaceB, images[1]),
-		fixtures.GetDeploymentWithImage(testconsts.Cluster2, testconsts.NamespaceB, images[2]),
+		fixtures.GetDeploymentWithImageV2(testconsts.Cluster1, testconsts.NamespaceA, images[0]),
+		fixtures.GetDeploymentWithImageV2(testconsts.Cluster2, testconsts.NamespaceB, images[1]),
+		fixtures.GetDeploymentWithImageV2(testconsts.Cluster2, testconsts.NamespaceB, images[2]),
 	}
 	for _, d := range deployments {
 		s.Require().NoError(deploymentStore.UpsertDeployment(ctx, d))
@@ -298,24 +281,20 @@ func (s *ImageComponentFlatViewTestSuite) TestCountImageComponentFlatSAC() {
 }
 
 // createTestImages creates a small, controlled set of test images with known components
-func (s *ImageComponentFlatViewTestSuite) createTestImages() []*storage.Image {
-	return []*storage.Image{
+func (s *ImageComponentFlatViewTestSuite) createTestImages() []*storage.ImageV2 {
+	return []*storage.ImageV2{
 		// Image 1: Ubuntu with bash and openssl
 		{
-			Id: "image1-ubuntu",
+			Id:     uuid.NewV5FromNonUUIDs("docker.io/library/ubuntu:20.04", "sha256:ubuntu1").String(),
+			Digest: "sha256:ubuntu1",
 			Name: &storage.ImageName{
 				Registry: "docker.io",
 				Remote:   "library/ubuntu",
 				Tag:      "20.04",
 				FullName: "docker.io/library/ubuntu:20.04",
 			},
-			Metadata: &storage.ImageMetadata{
-				V1: &storage.V1Metadata{
-					Created: timestamppb.Now(),
-				},
-			},
 			Scan: &storage.ImageScan{
-				ScanTime:        timestamppb.Now(),
+				ScanTime:        protocompat.TimestampNow(),
 				OperatingSystem: "ubuntu:20.04",
 				Components: []*storage.EmbeddedImageScanComponent{
 					{
@@ -335,20 +314,16 @@ func (s *ImageComponentFlatViewTestSuite) createTestImages() []*storage.Image {
 		},
 		// Image 2: Debian with curl and nginx
 		{
-			Id: "image2-debian",
+			Id:     uuid.NewV5FromNonUUIDs("docker.io/library/debian:bullseye", "sha256:debian1").String(),
+			Digest: "sha256:debian1",
 			Name: &storage.ImageName{
 				Registry: "docker.io",
 				Remote:   "library/debian",
 				Tag:      "bullseye",
 				FullName: "docker.io/library/debian:bullseye",
 			},
-			Metadata: &storage.ImageMetadata{
-				V1: &storage.V1Metadata{
-					Created: timestamppb.Now(),
-				},
-			},
 			Scan: &storage.ImageScan{
-				ScanTime:        timestamppb.Now(),
+				ScanTime:        protocompat.TimestampNow(),
 				OperatingSystem: "debian:bullseye",
 				Components: []*storage.EmbeddedImageScanComponent{
 					{
@@ -368,20 +343,16 @@ func (s *ImageComponentFlatViewTestSuite) createTestImages() []*storage.Image {
 		},
 		// Image 3: Alpine with wget
 		{
-			Id: "image3-alpine",
+			Id:     uuid.NewV5FromNonUUIDs("docker.io/library/alpine:3.16", "sha256:alpine1").String(),
+			Digest: "sha256:alpine1",
 			Name: &storage.ImageName{
 				Registry: "docker.io",
 				Remote:   "library/alpine",
 				Tag:      "3.16",
 				FullName: "docker.io/library/alpine:3.16",
 			},
-			Metadata: &storage.ImageMetadata{
-				V1: &storage.V1Metadata{
-					Created: timestamppb.Now(),
-				},
-			},
 			Scan: &storage.ImageScan{
-				ScanTime:        timestamppb.Now(),
+				ScanTime:        protocompat.TimestampNow(),
 				OperatingSystem: "alpine:3.16",
 				Components: []*storage.EmbeddedImageScanComponent{
 					{
@@ -417,7 +388,7 @@ func (s *ImageComponentFlatViewTestSuite) testCases() []testCase {
 			ctx:  context.Background(),
 			q: search.NewQueryBuilder().
 				AddExactMatches(search.ImageName, "docker.io/library/ubuntu:20.04").ProtoQuery(),
-			matchFilter: matchAllFilter().withImageFilter(func(image *storage.Image) bool {
+			matchFilter: matchAllFilter().withImageFilter(func(image *storage.ImageV2) bool {
 				return image.GetName().GetFullName() == "docker.io/library/ubuntu:20.04"
 			}),
 		},
@@ -429,7 +400,7 @@ func (s *ImageComponentFlatViewTestSuite) testCases() []testCase {
 				AddExactMatches(search.ImageName, "docker.io/library/debian:bullseye").
 				ProtoQuery(),
 			matchFilter: matchAllFilter().
-				withImageFilter(func(image *storage.Image) bool {
+				withImageFilter(func(image *storage.ImageV2) bool {
 					return image.GetName().GetFullName() == "docker.io/library/debian:bullseye"
 				}).
 				withComponentFilter(func(component *storage.EmbeddedImageScanComponent) bool {
@@ -454,7 +425,7 @@ func (s *ImageComponentFlatViewTestSuite) testCases() []testCase {
 				AddExactMatches(search.OperatingSystem, "debian:bullseye").
 				ProtoQuery(),
 			matchFilter: matchAllFilter().
-				withImageFilter(func(image *storage.Image) bool {
+				withImageFilter(func(image *storage.ImageV2) bool {
 					return image.GetScan().GetOperatingSystem() == "debian:bullseye"
 				}),
 		},
@@ -627,7 +598,7 @@ func applyPaginationProps(baseTc *testCase, paginationTc testCase) {
 }
 
 // compileExpected builds the expected results by replicating the view's aggregation logic
-func (s *ImageComponentFlatViewTestSuite) compileExpected(images []*storage.Image, filter *filterImpl, less lessFunc) []ComponentFlat {
+func (s *ImageComponentFlatViewTestSuite) compileExpected(images []*storage.ImageV2, filter *filterImpl, less lessFunc) []ComponentFlat {
 	// Build expected results by iterating through images and their components,
 	// then aggregating according to the view's grouping logic: (component name, version, OS)
 	componentMap := make(map[string]*imageComponentFlatResponse)
@@ -723,7 +694,7 @@ func (s *ImageComponentFlatViewTestSuite) compileExpectedWithSAC(sacKey string, 
 	s.Require().True(exists, "SAC test case %s should exist", sacKey)
 
 	// Filter images based on SAC visibility
-	var visibleImages []*storage.Image
+	var visibleImages []*storage.ImageV2
 	for _, image := range s.testImages {
 		if visible, exists := visibilityMap[image.GetId()]; exists && visible {
 			visibleImages = append(visibleImages, image)
