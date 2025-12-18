@@ -4,7 +4,6 @@ package postgreshelper
 
 import (
 	"context"
-	"fmt"
 	"testing"
 
 	"github.com/pkg/errors"
@@ -127,5 +126,4 @@ func (s *PostgresRestoreSuite) TestWrapRollback() {
 	s.Assert().Error(wrappedErr)
 	s.Assert().ErrorContains(wrappedErr, originalErr.Error())
 	s.Assert().ErrorContains(wrappedErr, "tx is closed")
-	fmt.Println(wrappedErr.Error())
 }
