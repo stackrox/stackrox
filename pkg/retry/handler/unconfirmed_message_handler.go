@@ -123,13 +123,13 @@ func (h *UnconfirmedMessageHandlerImpl) ObserveSending(resourceID string) {
 
 // HandleACK is called when an ACK is received for a resource.
 func (h *UnconfirmedMessageHandlerImpl) HandleACK(resourceID string) {
+	h.mu.Lock()
+	defer h.mu.Unlock()
+
 	// Check if handler is stopped before any operations
 	if h.ctx.Err() != nil {
 		return
 	}
-
-	h.mu.Lock()
-	defer h.mu.Unlock()
 
 	state, exists := h.resources[resourceID]
 	if exists {
@@ -181,35 +181,34 @@ func (h *UnconfirmedMessageHandlerImpl) resetTimer(resourceID string, state *res
 
 // onTimerFired is called when a resource's retry timer fires.
 func (h *UnconfirmedMessageHandlerImpl) onTimerFired(resourceID string) {
+	h.mu.Lock()
+	defer h.mu.Unlock()
 	// Check context
 	if h.ctx.Err() != nil {
 		return
 	}
+	state, exists := h.resources[resourceID]
+	if !exists || state.numUnackedSendings == 0 {
+		return
+	}
 
-	concurrency.WithLock(&h.mu, func() {
-		state, exists := h.resources[resourceID]
-		if !exists || state.numUnackedSendings == 0 {
-			return
-		}
+	state.retry++
+	nextInterval := h.calculateNextInterval(state.retry)
 
-		state.retry++
-		nextInterval := h.calculateNextInterval(state.retry)
+	log.Infof("[%s] Resource %s has %d unacked messages, suggesting retry %d (next in %s)",
+		h.handlerName, resourceID, state.numUnackedSendings, state.retry, nextInterval)
 
-		log.Infof("[%s] Resource %s has %d unacked messages, suggesting retry %d (next in %s)",
-			h.handlerName, resourceID, state.numUnackedSendings, state.retry, nextInterval)
+	// Schedule next retry
+	h.resetTimer(resourceID, state, nextInterval)
 
-		// Schedule next retry
-		h.resetTimer(resourceID, state, nextInterval)
-
-		// Signal retry (non-blocking); if the channel is full we log and drop the signal.
-		select {
-		case <-h.ctx.Done():
-			return
-		case h.retryCommandCh <- resourceID:
-		default:
-			log.Warnf("[%s] Retry channel full, dropping retry signal for %s", h.handlerName, resourceID)
-		}
-	})
+	// Signal retry (non-blocking); if the channel is full we log and drop the signal.
+	select {
+	case <-h.ctx.Done():
+		return
+	case h.retryCommandCh <- resourceID:
+	default:
+		log.Warnf("[%s] Retry channel full, dropping retry signal for %s", h.handlerName, resourceID)
+	}
 }
 
 // calculateNextInterval returns the next retry interval with exponential backoff.
