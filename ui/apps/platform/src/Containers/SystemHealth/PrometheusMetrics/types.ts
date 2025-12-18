@@ -5,9 +5,15 @@ export type MetricSample = {
     timestamp?: number;
 };
 
+export type MetricInfo = {
+    name: string;
+    help?: string;
+};
+
 export type ParsedMetrics = {
     metrics: MetricSample[];
     metricNames: string[];
+    metricInfoMap: Record<string, MetricInfo>;
 };
 
 export type MetricSelector = {

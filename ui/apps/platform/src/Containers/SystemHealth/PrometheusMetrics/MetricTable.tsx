@@ -1,30 +1,36 @@
-import { useState, useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import type { ReactElement } from 'react';
 import {
+    Button,
     Card,
     CardBody,
     CardHeader,
     CardTitle,
+    Flex,
+    FlexItem,
     TextInput,
     Toolbar,
     ToolbarContent,
     ToolbarItem,
-    Button,
-    Flex,
-    FlexItem,
 } from '@patternfly/react-core';
-import { Table, Thead, Tr, Th, Tbody, Td } from '@patternfly/react-table';
+import { Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 import { TrashIcon } from '@patternfly/react-icons';
 
 import type { MetricSample } from './types';
 
 type MetricTableProps = {
     metricName: string;
+    metricHelp?: string;
     samples: MetricSample[];
     onDelete: () => void;
 };
 
-function MetricTable({ metricName, samples, onDelete }: MetricTableProps): ReactElement {
+function MetricTable({
+    metricName,
+    metricHelp,
+    samples,
+    onDelete,
+}: MetricTableProps): ReactElement {
     const [filters, setFilters] = useState<Record<string, string>>({});
 
     // Extract all unique label names from samples
@@ -66,6 +72,11 @@ function MetricTable({ metricName, samples, onDelete }: MetricTableProps): React
                 <Flex className="pf-v5-u-flex-grow-1">
                     <FlexItem flex={{ default: 'flex_1' }}>
                         <CardTitle component="h3">{metricName}</CardTitle>
+                        {metricHelp && (
+                            <div className="pf-v5-u-color-200 pf-v5-u-font-size-sm pf-v5-u-mt-xs">
+                                {metricHelp}
+                            </div>
+                        )}
                     </FlexItem>
                     <FlexItem>
                         <Button
@@ -122,14 +133,20 @@ function MetricTable({ metricName, samples, onDelete }: MetricTableProps): React
                                 </Td>
                             </Tr>
                         ) : (
-                            filteredSamples.map((sample, idx) => (
-                                <Tr key={idx}>
-                                    {labelNames.map((labelName) => (
-                                        <Td key={labelName}>{sample.labels[labelName] || '-'}</Td>
-                                    ))}
-                                    <Td>{sample.value}</Td>
-                                </Tr>
-                            ))
+                            filteredSamples.map((sample) => {
+                                // Create a stable key from labels and value
+                                const key = `${JSON.stringify(sample.labels)}-${sample.value}`;
+                                return (
+                                    <Tr key={key}>
+                                        {labelNames.map((labelName) => (
+                                            <Td key={labelName}>
+                                                {sample.labels[labelName] ?? '-'}
+                                            </Td>
+                                        ))}
+                                        <Td>{sample.value}</Td>
+                                    </Tr>
+                                );
+                            })
                         )}
                     </Tbody>
                 </Table>

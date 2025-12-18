@@ -156,7 +156,7 @@ function predefinedMetricTableRow(
             <Td key={`${category}-${metric}-descriptors`}>
                 {labelGroup(predefinedMetrics[category][metric])}
             </Td>
-            {showFilters ?? (
+            {showFilters && (
                 <Td key={`${category}-${metric}-filters`}>
                     {filterGroup(predefinedMetrics[category][metric])}
                 </Td>
@@ -231,7 +231,7 @@ function PrometheusMetricsTable({
                     <Th width={30}>Metric name</Th>
                     <Th width={10}>Origin</Th>
                     <Th>Labels</Th>
-                    {showFilters ?? <Th>Filters</Th>}
+                    {showFilters && <Th>Filters</Th>}
                 </Tr>
             </Thead>
             <Tbody>
@@ -283,7 +283,7 @@ function PrometheusMetricsTable({
                             </Td>
                             <Td>Custom</Td>
                             <Td>{labelGroup(labels)}</Td>
-                            {showFilters ?? <Td>{filterGroup(labels)}</Td>}
+                            {showFilters && <Td>{filterGroup(labels)}</Td>}
                         </Tr>
                     );
                 })}
