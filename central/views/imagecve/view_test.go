@@ -103,8 +103,8 @@ func TestImageCVEView(t *testing.T) {
 type ImageCVEViewTestSuite struct {
 	suite.Suite
 
-	testDB  *pgtest.TestPostgres
-	cveView CveView
+	testDB   *pgtest.TestPostgres
+	cveView  CveView
 	suiteCtx context.Context
 
 	testImages              []*storage.Image
