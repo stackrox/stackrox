@@ -172,7 +172,7 @@ const List = ({
                             />
                         );
                     }
-                    const tableRows = createTableRows(queryData) || [];
+                    const tableRows = createTableRows(queryData) ?? [];
                     const totalCount = queryData?.count || 0;
                     const headerComponents = getHeaderComponents(totalCount);
 

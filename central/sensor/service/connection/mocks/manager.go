@@ -18,6 +18,7 @@ import (
 	pipeline "github.com/stackrox/rox/central/sensor/service/pipeline"
 	central "github.com/stackrox/rox/generated/internalapi/central"
 	storage "github.com/stackrox/rox/generated/storage"
+	centralsensor "github.com/stackrox/rox/pkg/centralsensor"
 	concurrency "github.com/stackrox/rox/pkg/concurrency"
 	gomock "go.uber.org/mock/gomock"
 )
@@ -44,6 +45,20 @@ func NewMockManager(ctrl *gomock.Controller) *MockManager {
 // EXPECT returns an object that allows the caller to indicate expected use.
 func (m *MockManager) EXPECT() *MockManagerMockRecorder {
 	return m.recorder
+}
+
+// AllSensorsHaveCapability mocks base method.
+func (m *MockManager) AllSensorsHaveCapability(capability centralsensor.SensorCapability) bool {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "AllSensorsHaveCapability", capability)
+	ret0, _ := ret[0].(bool)
+	return ret0
+}
+
+// AllSensorsHaveCapability indicates an expected call of AllSensorsHaveCapability.
+func (mr *MockManagerMockRecorder) AllSensorsHaveCapability(capability any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AllSensorsHaveCapability", reflect.TypeOf((*MockManager)(nil).AllSensorsHaveCapability), capability)
 }
 
 // BroadcastMessage mocks base method.

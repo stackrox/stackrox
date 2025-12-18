@@ -239,28 +239,30 @@ func (ds *datastoreImpl) SearchCollections(ctx context.Context, q *v1.Query) ([]
 func (ds *datastoreImpl) SearchResults(ctx context.Context, q *v1.Query) ([]*v1.SearchResult, error) {
 	defer metrics.SetDatastoreFunctionDuration(time.Now(), resourceType, "SearchResults")
 
-	// TODO(ROX-29943): remove 2 pass database queries
-	results, err := ds.Search(ctx, q)
+	if q == nil {
+		q = pkgSearch.EmptyQuery()
+	}
+	clonedQuery := q.CloneVT()
+
+	// Add name field to select columns
+	clonedQuery.Selects = append(clonedQuery.GetSelects(), pkgSearch.NewQuerySelect(pkgSearch.CollectionName).Proto())
+
+	results, err := ds.Search(ctx, clonedQuery)
 	if err != nil {
 		return nil, err
 	}
 
-	collections, missingIndices, err := ds.storage.GetMany(ctx, pkgSearch.ResultsToIDs(results))
-	if err != nil {
-		return nil, err
+	// Extract name from FieldValues and populate Name in search results
+	searchTag := strings.ToLower(pkgSearch.CollectionName.String())
+	for i := range results {
+		if results[i].FieldValues != nil {
+			if nameVal, ok := results[i].FieldValues[searchTag]; ok {
+				results[i].Name = nameVal
+			}
+		}
 	}
 
-	results = pkgSearch.RemoveMissingResults(results, missingIndices)
-
-	if len(collections) != len(results) {
-		return nil, errors.Errorf("expected %d collections but got %d", len(results), len(collections))
-	}
-
-	protoResults := make([]*v1.SearchResult, 0, len(collections))
-	for i, collection := range collections {
-		protoResults = append(protoResults, convertOne(collection, results[i]))
-	}
-	return protoResults, nil
+	return pkgSearch.ResultsToSearchResultProtos(results, &ResourceCollectionSearchResultConverter{}), nil
 }
 
 func (ds *datastoreImpl) Get(ctx context.Context, id string) (*storage.ResourceCollection, bool, error) {
@@ -646,12 +648,20 @@ func verifyCollectionConstraints(collection *storage.ResourceCollection) error {
 	return nil
 }
 
-func convertOne(collection *storage.ResourceCollection, result pkgSearch.Result) *v1.SearchResult {
-	return &v1.SearchResult{
-		Category:       v1.SearchCategory_COLLECTIONS,
-		Id:             collection.GetId(),
-		Name:           collection.GetName(),
-		FieldToMatches: pkgSearch.GetProtoMatchesMap(result.Matches),
-		Score:          result.Score,
-	}
+type ResourceCollectionSearchResultConverter struct{}
+
+func (c *ResourceCollectionSearchResultConverter) BuildName(result *pkgSearch.Result) string {
+	return result.Name
+}
+
+func (c *ResourceCollectionSearchResultConverter) BuildLocation(result *pkgSearch.Result) string {
+	return ""
+}
+
+func (c *ResourceCollectionSearchResultConverter) GetCategory() v1.SearchCategory {
+	return v1.SearchCategory_COLLECTIONS
+}
+
+func (c *ResourceCollectionSearchResultConverter) GetScore(result *pkgSearch.Result) float64 {
+	return result.Score
 }

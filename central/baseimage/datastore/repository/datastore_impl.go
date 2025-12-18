@@ -2,15 +2,20 @@ package repository
 
 import (
 	"context"
+	"crypto/sha256"
+	"encoding/hex"
 	"time"
 
+	"github.com/pkg/errors"
 	repoStore "github.com/stackrox/rox/central/baseimage/store/repository/postgres"
 	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/uuid"
+	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 const (
@@ -18,8 +23,7 @@ const (
 )
 
 var (
-	// TODO(ROX-32170): RBAC - review and finalize resource permissions
-	baseImageRepositorySAC = sac.ForResource(resources.Administration)
+	baseImageRepositorySAC = sac.ForResource(resources.ImageAdministration)
 )
 
 type datastoreImpl struct {
@@ -66,8 +70,18 @@ func (d *datastoreImpl) UpsertRepository(ctx context.Context, repo *storage.Base
 	if repo.GetId() == "" {
 		// Generate ID if not provided
 		repo.Id = uuid.NewV4().String()
+
+		// Fill in the CreatedBy field.
+		slimUser := authn.UserFromContext(ctx)
+		if slimUser == nil {
+			return nil, errors.New("Could not determine user identity from provided context")
+		}
+		repo.CreatedBy = slimUser
 	}
 
+	repo.UpdatedAt = timestamppb.Now()
+	hash := sha256.Sum256([]byte(repo.GetTagPattern()))
+	repo.PatternHash = hex.EncodeToString(hash[:])
 	if err := d.store.Upsert(ctx, repo); err != nil {
 		return nil, err
 	}

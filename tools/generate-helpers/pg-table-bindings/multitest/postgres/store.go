@@ -155,6 +155,24 @@ func insertIntoTestStructsNesteds(batch *pgx.Batch, obj *storage.TestStruct_Nest
 	return nil
 }
 
+var copyColsTestStructs = []string{
+	"key1",
+	"key2",
+	"stringslice",
+	"bool",
+	"uint64",
+	"int64",
+	"float",
+	"labels",
+	"timestamp",
+	"enum",
+	"enums",
+	"string_",
+	"int32slice",
+	"oneofnested_nested",
+	"serialized",
+}
+
 func copyFromTestStructs(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, objs ...*storage.TestStruct) error {
 	if len(objs) == 0 {
 		return nil
@@ -170,24 +188,6 @@ func copyFromTestStructs(ctx context.Context, s pgSearch.Deleter, tx *postgres.T
 		if err := s.DeleteMany(ctx, deletes); err != nil {
 			return err
 		}
-	}
-
-	copyCols := []string{
-		"key1",
-		"key2",
-		"stringslice",
-		"bool",
-		"uint64",
-		"int64",
-		"float",
-		"labels",
-		"timestamp",
-		"enum",
-		"enums",
-		"string_",
-		"int32slice",
-		"oneofnested_nested",
-		"serialized",
 	}
 
 	idx := 0
@@ -222,7 +222,7 @@ func copyFromTestStructs(ctx context.Context, s pgSearch.Deleter, tx *postgres.T
 		}, nil
 	})
 
-	if _, err := tx.CopyFrom(ctx, pgx.Identifier{"test_structs"}, copyCols, inputRows); err != nil {
+	if _, err := tx.CopyFrom(ctx, pgx.Identifier{"test_structs"}, copyColsTestStructs, inputRows); err != nil {
 		return err
 	}
 
@@ -235,20 +235,20 @@ func copyFromTestStructs(ctx context.Context, s pgSearch.Deleter, tx *postgres.T
 	return nil
 }
 
+var copyColsTestStructsNesteds = []string{
+	"test_structs_key1",
+	"idx",
+	"nested",
+	"isnested",
+	"int64",
+	"nested2_nested2",
+	"nested2_isnested",
+	"nested2_int64",
+}
+
 func copyFromTestStructsNesteds(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, testStructKey1 string, objs ...*storage.TestStruct_Nested) error {
 	if len(objs) == 0 {
 		return nil
-	}
-
-	copyCols := []string{
-		"test_structs_key1",
-		"idx",
-		"nested",
-		"isnested",
-		"int64",
-		"nested2_nested2",
-		"nested2_isnested",
-		"nested2_int64",
 	}
 
 	idx := 0
@@ -271,7 +271,7 @@ func copyFromTestStructsNesteds(ctx context.Context, s pgSearch.Deleter, tx *pos
 		}, nil
 	})
 
-	if _, err := tx.CopyFrom(ctx, pgx.Identifier{"test_structs_nesteds"}, copyCols, inputRows); err != nil {
+	if _, err := tx.CopyFrom(ctx, pgx.Identifier{"test_structs_nesteds"}, copyColsTestStructsNesteds, inputRows); err != nil {
 		return err
 	}
 

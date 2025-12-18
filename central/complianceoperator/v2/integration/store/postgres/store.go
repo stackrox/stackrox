@@ -135,6 +135,15 @@ func insertIntoComplianceIntegrations(batch *pgx.Batch, obj *storage.ComplianceI
 	return nil
 }
 
+var copyColsComplianceIntegrations = []string{
+	"id",
+	"version",
+	"clusterid",
+	"operatorinstalled",
+	"operatorstatus",
+	"serialized",
+}
+
 func copyFromComplianceIntegrations(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, objs ...*storage.ComplianceIntegration) error {
 	if len(objs) == 0 {
 		return nil
@@ -150,15 +159,6 @@ func copyFromComplianceIntegrations(ctx context.Context, s pgSearch.Deleter, tx 
 		if err := s.DeleteMany(ctx, deletes); err != nil {
 			return err
 		}
-	}
-
-	copyCols := []string{
-		"id",
-		"version",
-		"clusterid",
-		"operatorinstalled",
-		"operatorstatus",
-		"serialized",
 	}
 
 	idx := 0
@@ -184,7 +184,7 @@ func copyFromComplianceIntegrations(ctx context.Context, s pgSearch.Deleter, tx 
 		}, nil
 	})
 
-	if _, err := tx.CopyFrom(ctx, pgx.Identifier{"compliance_integrations"}, copyCols, inputRows); err != nil {
+	if _, err := tx.CopyFrom(ctx, pgx.Identifier{"compliance_integrations"}, copyColsComplianceIntegrations, inputRows); err != nil {
 		return err
 	}
 

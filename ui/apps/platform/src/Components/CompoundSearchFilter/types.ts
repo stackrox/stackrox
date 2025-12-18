@@ -1,17 +1,31 @@
 import type { SearchCategory } from 'services/SearchService';
 import type { FeatureFlagEnvVar } from 'types/featureFlag';
 import type { NonEmptyArray } from 'utils/type.utils';
-import type { ConditionTextInputProps } from './components/ConditionText';
+import type { ConditionTextInputProps } from './components/SearchFilterConditionText';
 
 // Compound search filter types
 
 export type BaseInputType = 'autocomplete' | 'text' | 'date-picker' | 'condition-number';
-export type InputType = BaseInputType | 'condition-text' | 'select';
-export type SelectSearchFilterOptions = {
-    options: { label: string; value: string }[];
+export type InputType =
+    | BaseInputType
+    | 'condition-text'
+    | 'select'
+    | 'select-exclusive-double'
+    | 'select-exclusive-single';
+
+export type SelectSearchFilterOption = {
+    label: string;
+    value: string;
 };
+export type SelectSearchFilterOptions = {
+    options: SelectSearchFilterOption[];
+};
+
+export type SelectSearchFilterGroupedOption = {
+    name: string;
+} & SelectSearchFilterOptions;
 export type SelectSearchFilterGroupedOptions = {
-    groupOptions: { name: string; options: { label: string; value: string }[] }[];
+    groupOptions: SelectSearchFilterGroupedOption[];
 };
 
 type BaseSearchFilterAttribute = {
@@ -36,10 +50,31 @@ export type SelectSearchFilterAttribute = {
     inputProps: SelectSearchFilterOptions | SelectSearchFilterGroupedOptions;
 } & BaseSearchFilterAttribute;
 
+export type SelectExclusiveSingleSearchFilterAttribute = {
+    inputType: 'select-exclusive-single';
+    inputProps: SelectSearchFilterOptions;
+} & BaseSearchFilterAttribute;
+
+export type SelectExclusiveDoubleSearchFilterAttribute = {
+    inputType: 'select-exclusive-double';
+    inputProps: SelectExclusiveDoubleSearchFilterInputProps;
+} & BaseSearchFilterAttribute;
+
+export type SelectExclusiveDoubleSearchFilterInputProps = {
+    category2: string;
+    options: NonEmptyArray<SelectExclusiveDoubleSearchFilterOption>;
+};
+
+export type SelectExclusiveDoubleSearchFilterOption = {
+    category: string;
+} & SelectSearchFilterOption;
+
 export type CompoundSearchFilterAttribute =
     | ConditionTextFilterAttribute
     | GenericSearchFilterAttribute
-    | SelectSearchFilterAttribute;
+    | SelectSearchFilterAttribute
+    | SelectExclusiveDoubleSearchFilterAttribute
+    | SelectExclusiveSingleSearchFilterAttribute;
 
 export type CompoundSearchFilterEntity = {
     displayName: string;

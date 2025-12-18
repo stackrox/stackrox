@@ -112,6 +112,13 @@ func insertIntoBlobs(batch *pgx.Batch, obj *storage.Blob) error {
 	return nil
 }
 
+var copyColsBlobs = []string{
+	"name",
+	"length",
+	"modifiedtime",
+	"serialized",
+}
+
 func copyFromBlobs(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, objs ...*storage.Blob) error {
 	if len(objs) == 0 {
 		return nil
@@ -127,13 +134,6 @@ func copyFromBlobs(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, obj
 		if err := s.DeleteMany(ctx, deletes); err != nil {
 			return err
 		}
-	}
-
-	copyCols := []string{
-		"name",
-		"length",
-		"modifiedtime",
-		"serialized",
 	}
 
 	idx := 0
@@ -157,7 +157,7 @@ func copyFromBlobs(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, obj
 		}, nil
 	})
 
-	if _, err := tx.CopyFrom(ctx, pgx.Identifier{"blobs"}, copyCols, inputRows); err != nil {
+	if _, err := tx.CopyFrom(ctx, pgx.Identifier{"blobs"}, copyColsBlobs, inputRows); err != nil {
 		return err
 	}
 

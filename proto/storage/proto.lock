@@ -1510,6 +1510,11 @@
                 "id": 7,
                 "name": "pattern_hash",
                 "type": "string"
+              },
+              {
+                "id": 8,
+                "name": "created_by",
+                "type": "SlimUser"
               }
             ]
           },
@@ -1562,6 +1567,9 @@
         "imports": [
           {
             "path": "google/protobuf/timestamp.proto"
+          },
+          {
+            "path": "storage/user.proto"
           }
         ],
         "package": {
@@ -5497,6 +5505,16 @@
                         "name": "labels",
                         "type": "string",
                         "is_repeated": true
+                      }
+                    ],
+                    "maps": [
+                      {
+                        "key_type": "string",
+                        "field": {
+                          "id": 2,
+                          "name": "filters",
+                          "type": "string"
+                        }
                       }
                     ]
                   }

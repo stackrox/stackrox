@@ -4,7 +4,8 @@ import "time"
 
 var (
 	// BaseImageWatcherEnabled controls whether the base image watcher is enabled.
-	BaseImageWatcherEnabled = RegisterBooleanSetting("ROX_BASE_IMAGE_WATCHER_ENABLED", false)
+	// This setting is only consulted when the ROX_BASE_IMAGE_DETECTION feature flag is true.
+	BaseImageWatcherEnabled = RegisterBooleanSetting("ROX_BASE_IMAGE_WATCHER_ENABLED", true)
 
 	// BaseImageWatcherPollInterval controls how often the base image watcher polls for new tags.
 	BaseImageWatcherPollInterval = registerDurationSetting("ROX_BASE_IMAGE_WATCHER_POLL_INTERVAL", 4*time.Hour)

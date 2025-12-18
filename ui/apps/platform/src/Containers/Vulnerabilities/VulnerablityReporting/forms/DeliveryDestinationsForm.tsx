@@ -172,9 +172,9 @@ function DeliveryDestinationsForm({ title, formik }: DeliveryDestinationsFormPro
                                                     : 'schedule.daysOfMonth'
                                             }
                                             value={
-                                                formik.values.schedule.intervalType === 'WEEKLY'
-                                                    ? formik.values.schedule.daysOfWeek || []
-                                                    : formik.values.schedule.daysOfMonth || []
+                                                (formik.values.schedule.intervalType === 'WEEKLY'
+                                                    ? formik.values.schedule.daysOfWeek
+                                                    : formik.values.schedule.daysOfMonth) ?? []
                                             }
                                             handleSelect={onScheduledDaysChange}
                                             intervalType={formik.values.schedule.intervalType}

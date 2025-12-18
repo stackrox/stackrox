@@ -13,6 +13,9 @@ import (
 	"github.com/stackrox/rox/pkg/migrations"
 	"github.com/stackrox/rox/pkg/postgres/pgadmin"
 	"github.com/stackrox/rox/pkg/postgres/pgconfig"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
+	"gopkg.in/yaml.v3"
 )
 
 var (
@@ -65,6 +68,33 @@ func checkPostgresSize(_ common.RestoreFileContext, fileReader io.Reader, size i
 	hasSpace := float64(availableBytes) > float64(requiredBytes)
 	if !hasSpace {
 		return errors.Errorf("restoring backup requires %d bytes of free disk space, but Postgres only has %d bytes available", requiredBytes, availableBytes)
+	}
+
+	return nil
+}
+
+func checkMigrationVersion(_ common.RestoreFileContext, fileReader io.Reader, size int64) error {
+	bytes := make([]byte, size)
+
+	bytesRead, err := fileReader.Read(bytes)
+	if int64(bytesRead) < size || (err != nil && err != io.EOF) {
+		log.Errorf("Could not determine RHACS version for Postgres: %v. Assuming invalid version.", err)
+		return status.Error(codes.FailedPrecondition, err.Error())
+	}
+
+	var version migrations.MigrationVersion
+	err = yaml.Unmarshal(bytes, &version)
+	if err != nil {
+		log.Errorf("Could not parse RHACS version: %v. Assuming invalid version.", err)
+		return status.Error(codes.FailedPrecondition, err.Error())
+	}
+
+	if version.SeqNum < migrations.MinimumSupportedDBVersionSeqNum() {
+		// Use FailedPrecondition status to indicate this is a permanent validation failure,
+		// not a transient error that should be retried.
+		errMsg := errors.Errorf("Restoring from this version %q is no longer supported, sequence number %d matching software version %s", version.MainVersion, version.SeqNum, migrations.MinimumSupportedDBVersion())
+		log.Error(errMsg)
+		return status.Error(codes.FailedPrecondition, errMsg.Error())
 	}
 
 	return nil

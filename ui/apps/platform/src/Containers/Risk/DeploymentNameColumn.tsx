@@ -3,9 +3,7 @@ import find from 'lodash/find';
 import { Tooltip } from '@patternfly/react-core';
 import { CheckIcon, ExclamationCircleIcon } from '@patternfly/react-icons';
 
-import { sortDate, sortValue } from 'sorters/sorters';
 import { riskBasePath } from 'routePaths';
-import { getDateTime } from 'utils/dateUtils';
 
 type DeploymentNameColumnProps = {
     original: {
@@ -14,7 +12,7 @@ type DeploymentNameColumnProps = {
     };
 };
 
-function DeploymentNameColumn({ original }: DeploymentNameColumnProps) {
+export function DeploymentNameColumn({ original }: DeploymentNameColumnProps) {
     const isSuspicious = find(original.baselineStatuses, {
         anomalousProcessesExecuted: true,
     });
@@ -40,41 +38,3 @@ function DeploymentNameColumn({ original }: DeploymentNameColumnProps) {
         </div>
     );
 }
-
-const riskTableColumnDescriptors = [
-    {
-        Header: 'Name',
-        accessor: 'deployment.name',
-        searchField: 'Deployment',
-        Cell: DeploymentNameColumn,
-    },
-    {
-        Header: 'Created',
-        accessor: 'deployment.created',
-        searchField: 'Created',
-        Cell: ({ value }) => <span>{getDateTime(value)}</span>,
-        sortMethod: sortDate,
-    },
-    {
-        Header: 'Cluster',
-        searchField: 'Cluster',
-        accessor: 'deployment.cluster',
-    },
-    {
-        Header: 'Namespace',
-        searchField: 'Namespace',
-        accessor: 'deployment.namespace',
-    },
-    {
-        Header: 'Priority',
-        searchField: 'Deployment Risk Priority',
-        accessor: 'deployment.priority',
-        Cell: ({ value }: { value: string }) => {
-            const asInt = parseInt(value, 10);
-            return Number.isNaN(asInt) || asInt < 1 ? '-' : value;
-        },
-        sortMethod: sortValue,
-    },
-];
-
-export default riskTableColumnDescriptors;

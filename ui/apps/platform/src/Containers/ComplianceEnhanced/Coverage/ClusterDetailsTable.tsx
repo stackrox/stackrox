@@ -13,8 +13,10 @@ import { ExpandableRowContent, Table, Tbody, Td, Th, Thead, Tr } from '@patternf
 
 import CompoundSearchFilter from 'Components/CompoundSearchFilter/components/CompoundSearchFilter';
 import SearchFilterChips, {
+    makeFilterChipDescriptorFromAttribute,
     makeFilterChipDescriptors,
 } from 'Components/CompoundSearchFilter/components/SearchFilterChips';
+import SearchFilterSelectInclusive from 'Components/CompoundSearchFilter/components/SearchFilterSelectInclusive';
 import type {
     CompoundSearchFilterConfig,
     OnSearchCallback,
@@ -30,11 +32,10 @@ import { DETAILS_TAB, TAB_NAV_QUERY } from './CheckDetailsPage';
 import { CHECK_NAME_QUERY } from './compliance.coverage.constants';
 import { coverageCheckDetailsPath } from './compliance.coverage.routes';
 import { getClusterResultsStatusObject } from './compliance.coverage.utils';
-import CheckStatusDropdown from './components/CheckStatusDropdown';
 import ControlLabels from './components/ControlLabels';
 import StatusIcon from './components/StatusIcon';
 import useScanConfigRouter from './hooks/useScanConfigRouter';
-import { complianceStatusFilterChipDescriptors } from '../searchFilterConfig';
+import { attributeForComplianceCheckStatus } from '../searchFilterConfig';
 
 export type ClusterDetailsTableProps = {
     checkResultsCount: number;
@@ -46,11 +47,6 @@ export type ClusterDetailsTableProps = {
     searchFilter: SearchFilter;
     onFilterChange: (newFilter: SearchFilter) => void;
     onSearch: OnSearchCallback;
-    onCheckStatusSelect: (
-        filterType: 'Compliance Check Status',
-        checked: boolean,
-        selection: string
-    ) => void;
     onClearFilters: () => void;
 };
 
@@ -64,7 +60,6 @@ function ClusterDetailsTable({
     searchFilter,
     onFilterChange,
     onSearch,
-    onCheckStatusSelect,
     onClearFilters,
 }: ClusterDetailsTableProps) {
     const { page, perPage, setPage, setPerPage } = pagination;
@@ -97,9 +92,11 @@ function ClusterDetailsTable({
                             />
                         </ToolbarItem>
                         <ToolbarItem>
-                            <CheckStatusDropdown
+                            <SearchFilterSelectInclusive
+                                attribute={attributeForComplianceCheckStatus}
+                                isSeparate
+                                onSearch={onSearch}
                                 searchFilter={searchFilter}
-                                onSelect={onCheckStatusSelect}
                             />
                         </ToolbarItem>
                         <ToolbarItem variant="pagination" align={{ default: 'alignRight' }}>
@@ -118,7 +115,9 @@ function ClusterDetailsTable({
                             onFilterChange={onFilterChange}
                             filterChipGroupDescriptors={[
                                 ...filterChipGroupDescriptors,
-                                complianceStatusFilterChipDescriptors,
+                                makeFilterChipDescriptorFromAttribute(
+                                    attributeForComplianceCheckStatus
+                                ),
                             ]}
                         />
                     </ToolbarGroup>
