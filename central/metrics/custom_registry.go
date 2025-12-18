@@ -45,12 +45,13 @@ type customRegistry struct {
 
 var (
 	userRegistries map[string]*customRegistry = make(map[string]*customRegistry)
+	globalRegistry *customRegistry
 	registriesMux  sync.Mutex
 	ErrTooMany     = errox.ResourceExhausted.New("too many custom registries")
 )
 
 // GetCustomRegistry is a CustomRegistry factory that returns the existing or
-// a new registry for the user.
+// a new registry for the user. This is used for scoped (per-user) metrics.
 func GetCustomRegistry(userID string) (CustomRegistry, error) {
 	registriesMux.Lock()
 	defer registriesMux.Unlock()
@@ -66,6 +67,21 @@ func GetCustomRegistry(userID string) (CustomRegistry, error) {
 		userRegistries[userID] = registry
 	}
 	return registry, nil
+}
+
+// GetGlobalRegistry returns the shared global registry for non-scoped metrics.
+// This registry is shared across all users and contains metrics that are not
+// user-specific (e.g., API request counters).
+func GetGlobalRegistry() (CustomRegistry, error) {
+	registriesMux.Lock()
+	defer registriesMux.Unlock()
+	if globalRegistry == nil {
+		globalRegistry = &customRegistry{
+			Registry: prometheus.NewRegistry(),
+		}
+		globalRegistry.Handler = promhttp.HandlerFor(globalRegistry, promhttp.HandlerOpts{})
+	}
+	return globalRegistry, nil
 }
 
 // DeleteCustomRegistry unregisters all metrics and deletes a registry for the
