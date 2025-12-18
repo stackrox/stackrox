@@ -90,11 +90,25 @@ type TrackerBase[F Finding] struct {
 	registryFactory func(userID string) (metrics.CustomRegistry, error) // for mocking in tests.
 }
 
+// isCounter returns true if this is a counter tracker (real-time increments).
+func (tracker *TrackerBase[F]) isCounter() bool {
+	return tracker.generator == nil
+}
+
+// isGauge returns true if this is a gauge tracker (periodic gathering).
+func (tracker *TrackerBase[F]) isGauge() bool {
+	return tracker.generator != nil
+}
+
 // MakeTrackerBase initializes a scoped tracker without any period or metrics
 // configuration. Call Reconfigure to configure the period and the metrics.
+// NOTE: Scoped counter trackers (generator == nil) are not supported and will panic.
 func MakeTrackerBase[F Finding](metricPrefix, description string,
 	getters LazyLabelGetters[F], generator FindingGenerator[F],
 ) *TrackerBase[F] {
+	if generator == nil {
+		panic("scoped counter trackers are not supported; use MakeGlobalTrackerBase for counters")
+	}
 	return makeTrackerBase(metricPrefix, description, true, getters, generator)
 }
 
@@ -160,23 +174,13 @@ func (tracker *TrackerBase[F]) Reconfigure(cfg *Configuration) {
 	}
 	previous := tracker.setConfiguration(cfg)
 	if previous != nil {
-		if cfg.period == 0 || (tracker.generator == nil && !cfg.enabled) {
+		if cfg.period == 0 || (tracker.isCounter() && !cfg.enabled) {
 			log.Debugf("Metrics collection has been disabled for %s", tracker.description)
 			tracker.unregisterMetrics(slices.Collect(maps.Keys(previous.metrics)))
 			return
 		}
 		tracker.unregisterMetrics(cfg.toDelete)
 	}
-
-	// For non-scoped counter trackers, ensure the global gatherer exists
-	// so that IncrementCounter() calls don't get lost before the first /metrics scrape.
-	if !tracker.scoped && tracker.generator == nil && cfg.enabled && len(cfg.metrics) > 0 {
-		if gr := tracker.getGatherer(globalScopeID, cfg); gr != nil {
-			gr.running.Store(false) // Reset running state since we're just initializing.
-			log.Debugf("Created global gatherer for %s counter tracker", tracker.description)
-		}
-	}
-
 	tracker.registerMetrics(cfg, cfg.toAdd)
 }
 
@@ -210,15 +214,15 @@ func (tracker *TrackerBase[Finding]) registerMetric(gatherer *gatherer, cfg *Con
 	labels := labelsAsStrings(cfg.metrics[metric])
 
 	var err error
-	if tracker.generator == nil {
-		// No generator means this is a counter tracker (real-time increments).
+	if tracker.isCounter() {
+		// Counter tracker: real-time increments.
 		err = gatherer.registry.RegisterCounter(
 			string(metric),
 			tracker.description,
 			labels,
 		)
 	} else {
-		// Has generator means this is a gauge tracker (periodic gathering).
+		// Gauge tracker: periodic gathering.
 		err = gatherer.registry.RegisterMetric(
 			string(metric),
 			tracker.description,
@@ -250,7 +254,7 @@ func (tracker *TrackerBase[Finding]) setConfiguration(config *Configuration) *Co
 
 // track aggregates the fetched findings and updates the gauges.
 func (tracker *TrackerBase[Finding]) track(ctx context.Context, registry metrics.CustomRegistry, cfg *Configuration) error {
-	if len(cfg.metrics) == 0 || tracker.generator == nil {
+	if len(cfg.metrics) == 0 || tracker.isCounter() {
 		return nil
 	}
 	aggregator := makeAggregator(cfg.metrics, cfg.filters, tracker.getters)
@@ -315,22 +319,30 @@ func (tracker *TrackerBase[Finding]) Gather(ctx context.Context) {
 // This should only be called on counter trackers (created with nil generator).
 // If no configuration exists, the increment is a no-op.
 func (tracker *TrackerBase[F]) IncrementCounter(finding F) {
-	if tracker.generator != nil {
+	if tracker.isGauge() {
 		// This is a gauge tracker, not a counter tracker
 		return
 	}
 
 	cfg := tracker.getConfiguration()
-	if cfg == nil {
+	if cfg == nil || len(cfg.metrics) == 0 {
 		return
 	}
 
 	aggregator := makeAggregator(cfg.metrics, cfg.filters, tracker.getters)
 	aggregator.count(finding)
+	if len(aggregator.result) == 0 {
+		return
+	}
 
-	// Increment counters in all gatherers.
-	// For scoped trackers: multiple gatherers (one per user).
-	// For non-scoped trackers: single global gatherer created during Reconfigure.
+	// Ensure the global gatherer exists (counter trackers are always global).
+	if _, exists := tracker.gatherers.Load(globalScopeID); !exists {
+		// Lazy-create the global gatherer and keep it marked as running
+		// to prevent cleanup (counter trackers are always active).
+		tracker.getGatherer(globalScopeID, cfg)
+	}
+
+	// Increment counters in the global gatherer.
 	tracker.gatherers.Range(func(_, g any) bool {
 		for metric, records := range aggregator.result {
 			gatherer := g.(*gatherer)
