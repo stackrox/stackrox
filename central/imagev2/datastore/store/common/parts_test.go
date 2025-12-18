@@ -516,7 +516,7 @@ func TestSplitAndMergeImageV2(t *testing.T) {
 
 	imageActual := Merge(splitActual)
 	expectedFinalImage := dedupedImageV2(imageID, imageName, imageSha)
-	expectedFinalImage.BaseImageInfo = imageV2.BaseImageInfo
+	expectedFinalImage.BaseImageInfo = imageV2.GetBaseImageInfo()
 	protoassert.Equal(t, expectedFinalImage, imageActual)
 }
 
