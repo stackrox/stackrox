@@ -44,6 +44,14 @@ func TestMakeTrackerBase(t *testing.T) {
 	tracker := MakeTrackerBase("test", "Test", testLabelGetters, nilGatherFunc)
 	assert.NotNil(t, tracker)
 	assert.Nil(t, tracker.getConfiguration())
+	assert.True(t, tracker.scoped)
+}
+
+func Test_makeTrackerBase(t *testing.T) {
+	tracker := makeTrackerBase("test", "Test", false, testLabelGetters, nilGatherFunc)
+	assert.NotNil(t, tracker)
+	assert.Nil(t, tracker.getConfiguration())
+	assert.False(t, tracker.scoped)
 }
 
 func TestTrackerBase_Reconfigure(t *testing.T) {

@@ -81,7 +81,7 @@ type TrackerBase[F Finding] struct {
 	description  string
 	getters      LazyLabelGetters[F]
 	generator    FindingGenerator[F]
-	isScoped     bool
+	scoped       bool
 
 	// metricsConfig can be changed with an API call.
 	config           *Configuration
@@ -124,7 +124,7 @@ func makeTrackerBase[F Finding](metricPrefix, description string, scoped bool,
 		description:     description,
 		getters:         getters,
 		generator:       generator,
-		isScoped:        scoped,
+		scoped:          scoped,
 		registryFactory: registryFactory,
 	}
 }
@@ -295,7 +295,7 @@ func (tracker *TrackerBase[F]) track(ctx context.Context, gatherer *gatherer[F],
 // Gather the data not more often then maxAge.
 func (tracker *TrackerBase[F]) Gather(ctx context.Context) {
 	id := globalScopeID
-	if tracker.isScoped {
+	if tracker.scoped {
 		userID, err := authn.IdentityFromContext(ctx)
 		if err != nil {
 			return
