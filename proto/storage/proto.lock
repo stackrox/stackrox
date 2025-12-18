@@ -1510,6 +1510,11 @@
                 "id": 7,
                 "name": "pattern_hash",
                 "type": "string"
+              },
+              {
+                "id": 8,
+                "name": "created_by",
+                "type": "SlimUser"
               }
             ]
           },
@@ -1562,6 +1567,9 @@
         "imports": [
           {
             "path": "google/protobuf/timestamp.proto"
+          },
+          {
+            "path": "storage/user.proto"
           }
         ],
         "package": {

@@ -51,7 +51,7 @@ func CreateSecurityCenterClientFromConfig(ctx context.Context,
 		return securitycenter.NewClient(ctx, option.WithGRPCDialOption(grpc.WithContextDialer(proxy.AwareDialContext)))
 	}
 	return securitycenter.NewClient(ctx,
-		option.WithCredentialsJSON([]byte(decCreds)),
+		option.WithCredentialsJSON(decCreds),
 		option.WithGRPCDialOption(grpc.WithContextDialer(proxy.AwareDialContext)),
 	)
 }
@@ -67,7 +67,7 @@ func CreateSecurityCenterClientFromConfigWithManager(ctx context.Context,
 		)
 	}
 	return securitycenter.NewClient(ctx,
-		option.WithCredentialsJSON([]byte(decCreds)),
+		option.WithCredentialsJSON(decCreds),
 		option.WithGRPCDialOption(grpc.WithContextDialer(proxy.AwareDialContext)),
 	)
 }

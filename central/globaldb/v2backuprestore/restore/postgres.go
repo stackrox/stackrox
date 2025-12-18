@@ -29,7 +29,7 @@ func LoadRestoreStream(fileReader io.Reader) error {
 	}
 
 	// Build the restore database name
-	restoreDB := getRestoreDBName()
+	restoreDB := GetRestoreDBName()
 
 	// Now recreate the DB
 	err = pgadmin.CreateDB(sourceMap, dbConfig, pgadmin.EmptyDB, restoreDB)
@@ -81,6 +81,6 @@ func runRestoreStream(fileReader io.Reader, sourceMap map[string]string, config 
 	return nil
 }
 
-func getRestoreDBName() string {
+func GetRestoreDBName() string {
 	return restoreDB
 }

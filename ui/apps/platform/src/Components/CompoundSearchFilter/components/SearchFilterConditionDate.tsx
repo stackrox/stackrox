@@ -1,19 +1,12 @@
+import { useState } from 'react';
 import { Button, DatePicker, Flex, SelectOption } from '@patternfly/react-core';
 import { ArrowRightIcon } from '@patternfly/react-icons';
 import { format } from 'date-fns';
 
-import { ensureString } from 'utils/ensure';
-import { dateConditions } from '../utils/utils';
+import { dateConditionMap, dateConditions } from '../utils/utils';
+import type { GenericSearchFilterAttribute, OnSearchCallback } from '../types';
 
 import SimpleSelect from './SimpleSelect';
-
-export type ConditionDate = { condition: string; date: string };
-
-export type ConditionDateProps = {
-    value: ConditionDate;
-    onChange: (value: ConditionDate) => void;
-    onSearch: (value: ConditionDate) => void;
-};
 
 function dateFormat(date: Date): string {
     return format(date, 'MM/DD/YYYY');
@@ -35,16 +28,24 @@ function dateParse(date: string): Date {
     );
 }
 
-function ConditionDate({ value, onChange, onSearch }: ConditionDateProps) {
+export type SearchFilterConditionDateProps = {
+    attribute: GenericSearchFilterAttribute;
+    onSearch: OnSearchCallback;
+    // does not depend on searchFilter
+};
+
+function SearchFilterConditionDate({ attribute, onSearch }: SearchFilterConditionDateProps) {
+    const { searchTerm: category } = attribute;
+
+    const [conditionExternal, setConditionExternal] = useState(dateConditions[1]);
+    const [dateString, setDateString] = useState('');
+
     return (
         <Flex spaceItems={{ default: 'spaceItemsNone' }}>
             <SimpleSelect
-                value={value.condition}
-                onChange={(val) =>
-                    onChange({
-                        ...value,
-                        condition: ensureString(val),
-                    })
+                value={conditionExternal}
+                onChange={(conditionSelected) =>
+                    setConditionExternal(conditionSelected as (typeof dateConditions)[number])
                 }
                 ariaLabelMenu="Condition selector menu"
                 ariaLabelToggle="Condition selector toggle"
@@ -60,9 +61,9 @@ function ConditionDate({ value, onChange, onSearch }: ConditionDateProps) {
             <DatePicker
                 aria-label="Filter by date"
                 buttonAriaLabel="Filter by date toggle"
-                value={value.date}
-                onChange={(_, newValue) => {
-                    onChange({ ...value, date: newValue });
+                value={dateString}
+                onChange={(_, datePicked) => {
+                    setDateString(datePicked);
                 }}
                 dateFormat={dateFormat}
                 dateParse={dateParse}
@@ -73,10 +74,17 @@ function ConditionDate({ value, onChange, onSearch }: ConditionDateProps) {
                 variant="control"
                 aria-label="Apply condition and date input to search"
                 onClick={() => {
-                    const date = dateParse(value.date);
-                    if (!Number.isNaN(date.getTime())) {
-                        onSearch(value);
-                        onChange({ ...value, date: '' });
+                    const dateConditionInternal = dateConditionMap[conditionExternal];
+                    const date = dateParse(dateString);
+                    if (dateConditionInternal && !Number.isNaN(date.getTime())) {
+                        onSearch([
+                            {
+                                action: 'APPEND',
+                                category,
+                                value: `${dateConditionInternal}${dateString}`,
+                            },
+                        ]);
+                        setDateString('');
                     }
                 }}
             >
@@ -86,4 +94,4 @@ function ConditionDate({ value, onChange, onSearch }: ConditionDateProps) {
     );
 }
 
-export default ConditionDate;
+export default SearchFilterConditionDate;

@@ -6,8 +6,10 @@ import { ensureString } from 'utils/ensure';
 import { isOnSearchPayload } from '../types';
 import type { CompoundSearchFilterConfig, OnSearchCallback } from '../types';
 import {
+    getAttribute,
     getDefaultAttributeName,
     getDefaultEntityName,
+    getEntity,
     payloadItemFiltererForUpdating,
 } from '../utils/utils';
 
@@ -16,7 +18,6 @@ import type { SelectedEntity } from './EntitySelector';
 import AttributeSelector from './AttributeSelector';
 import type { SelectedAttribute } from './AttributeSelector';
 import CompoundSearchFilterInputField from './CompoundSearchFilterInputField';
-import type { InputFieldValue } from './CompoundSearchFilterInputField';
 
 export type CompoundSearchFilterProps = {
     config: CompoundSearchFilterConfig;
@@ -63,8 +64,6 @@ function CompoundSearchFilter({
         ? selectedAttribute
         : getDefaultAttributeName(config, currentEntity ?? '');
 
-    const [inputValue, setInputValue] = useState<InputFieldValue>('');
-
     useEffect(() => {
         if (defaultEntity) {
             setSelectedEntity(defaultEntity);
@@ -76,6 +75,9 @@ function CompoundSearchFilter({
             setSelectedAttribute(defaultAttribute);
         }
     }, [defaultAttribute]);
+
+    const entity = getEntity(config, currentEntity ?? '');
+    const attribute = getAttribute(config, currentEntity ?? '', currentAttribute ?? '');
 
     return (
         <Flex
@@ -92,7 +94,6 @@ function CompoundSearchFilter({
                     const defaultAttributeName = getDefaultAttributeName(config, entityName);
                     setSelectedEntity(entityName);
                     setSelectedAttribute(defaultAttributeName);
-                    setInputValue('');
                 }}
                 config={config}
             />
@@ -102,31 +103,30 @@ function CompoundSearchFilter({
                 selectedAttribute={currentAttribute}
                 onChange={(value) => {
                     setSelectedAttribute(ensureString(value));
-                    setInputValue('');
                 }}
                 config={config}
             />
-            <CompoundSearchFilterInputField
-                selectedEntity={currentEntity}
-                selectedAttribute={currentAttribute}
-                value={inputValue}
-                onChange={(value) => {
-                    setInputValue(value);
-                }}
-                searchFilter={searchFilter}
-                additionalContextFilter={additionalContextFilter}
-                onSearch={(payload) => {
-                    // TODO What is pro and con for search filter input field to prevent empty string and filter?
-                    const payloadFiltered = payload.filter((payloadItem) =>
-                        payloadItemFiltererForUpdating(searchFilter, payloadItem)
-                    );
+            {entity && attribute && (
+                <CompoundSearchFilterInputField
+                    // Change in key causes React to instantiate a new input element,
+                    // which has side effect to clear input state if same type as previous element.
+                    key={`${entity.displayName} ${attribute.displayName}`}
+                    entity={entity}
+                    attribute={attribute}
+                    searchFilter={searchFilter}
+                    additionalContextFilter={additionalContextFilter}
+                    onSearch={(payload) => {
+                        // TODO What is pro and con for search filter input field to prevent empty string and filter?
+                        const payloadFiltered = payload.filter((payloadItem) =>
+                            payloadItemFiltererForUpdating(searchFilter, payloadItem)
+                        );
 
-                    if (isOnSearchPayload(payloadFiltered)) {
-                        onSearch(payloadFiltered);
-                    }
-                }}
-                config={config}
-            />
+                        if (isOnSearchPayload(payloadFiltered)) {
+                            onSearch(payloadFiltered);
+                        }
+                    }}
+                />
+            )}
         </Flex>
     );
 }

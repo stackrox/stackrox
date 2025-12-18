@@ -31,6 +31,12 @@ func BackupPostgres(ctx context.Context, postgresDB postgres.DB, backupListener 
 		return err
 	}
 
+	// CRITICAL: migration_version.yaml MUST be first in the backup to ensure version validation
+	// happens before any database restoration is attempted during restore.
+	if err := generators.PutStreamInZip(dbs.NewPostgresVersion(postgresDB), backup.MigrationVersion).WriteTo(ctx, zipWriter); err != nil {
+		return listen(errors.Wrap(err, "unable to get postgres version"))
+	}
+
 	if err := generators.PutStreamInZip(dbs.NewPostgresSize(postgresDB), backup.PostgresSizeFileName).WriteTo(ctx, zipWriter); err != nil {
 		return listen(errors.Wrap(err, "unable to get postgres size"))
 	}
@@ -49,8 +55,5 @@ func BackupPostgres(ctx context.Context, postgresDB postgres.DB, backupListener 
 		}
 	}
 
-	if err := generators.PutStreamInZip(dbs.NewPostgresVersion(postgresDB), backup.MigrationVersion).WriteTo(ctx, zipWriter); err != nil {
-		return listen(errors.Wrap(err, "unable to get postgres version"))
-	}
 	return listen(zipWriter.Close())
 }

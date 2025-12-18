@@ -40,5 +40,7 @@ const (
 type BaseImageRepositories struct {
 	ID             string `gorm:"column:id;type:uuid;primaryKey"`
 	RepositoryPath string `gorm:"column:repositorypath;type:varchar;unique"`
+	CreatedByID    string `gorm:"column:createdby_id;type:varchar"`
+	CreatedByName  string `gorm:"column:createdby_name;type:varchar"`
 	Serialized     []byte `gorm:"column:serialized;type:bytea"`
 }
