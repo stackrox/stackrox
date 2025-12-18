@@ -98,6 +98,7 @@ func (ds *datastoreImpl) SearchPolicies(ctx context.Context, q *v1.Query) ([]*v1
 	}
 
 	// Add name field to select columns
+	q = q.CloneVT()
 	q.Selects = append(q.GetSelects(), searchPkg.NewQuerySelect(searchPkg.PolicyName).Proto())
 
 	results, err := ds.Search(ctx, q)
