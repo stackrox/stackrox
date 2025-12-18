@@ -7,6 +7,7 @@ import (
 
 	repoDS "github.com/stackrox/rox/central/baseimage/datastore/repository"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/baseimage/reposcan"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/delegatedregistry"
 	"github.com/stackrox/rox/pkg/env"
@@ -25,7 +26,7 @@ type watcherImpl struct {
 	datastore    repoDS.DataStore
 	delegator    delegatedregistry.Delegator
 	pollInterval time.Duration
-	localClient  *LocalRepositoryClient
+	localScanner *reposcan.LocalScanner
 
 	stopper     concurrency.Stopper
 	startedOnce sync.Once
@@ -38,7 +39,7 @@ func New(ds repoDS.DataStore, registries registries.Set, delegator delegatedregi
 		datastore:    ds,
 		delegator:    delegator,
 		pollInterval: env.BaseImageWatcherPollInterval.DurationSetting(),
-		localClient:  NewLocalRepositoryClient(registries),
+		localScanner: reposcan.NewLocalScanner(registries),
 		stopper:      concurrency.NewStopper(),
 	}
 }
@@ -175,17 +176,17 @@ func (w *watcherImpl) processRepository(ctx context.Context, repo *storage.BaseI
 		shouldDelegate = false
 	}
 
-	// Determine client based on delegation.
-	var client RepositoryClient
+	// Determine scanner based on delegation.
+	var scanner reposcan.Scanner
 	if shouldDelegate {
-		client = NewDelegatedRepositoryClient(w.delegator, clusterID)
+		scanner = NewDelegatedScanner(w.delegator, clusterID)
 	} else {
-		client = w.localClient
+		scanner = w.localScanner
 	}
 
 	// Build scan request.
 	// TODO(ROX-31923): Populate CheckTags and SkipTags from cache for incremental updates.
-	req := ScanRequest{
+	req := reposcan.ScanRequest{
 		Pattern:   repo.GetTagPattern(),
 		CheckTags: make(map[string]*storage.BaseImageTag),
 		SkipTags:  make(map[string]struct{}),
@@ -194,31 +195,31 @@ func (w *watcherImpl) processRepository(ctx context.Context, repo *storage.BaseI
 	// Scan repository: list tags, fetch metadata, and emit events.
 	start := time.Now()
 	var metadataCount, errorCount int
-	for event, err := range client.ScanRepository(ctx, repo, req) {
+	for event, err := range scanner.ScanRepository(ctx, repo, req) {
 		if err != nil {
 			log.Errorf("scanning repository %q: %v", repo.GetRepositoryPath(), err)
-			recordScanDuration(name.GetRegistry(), repo.GetRepositoryPath(), client.Name(), start, 0, 0, err)
+			recordScanDuration(name.GetRegistry(), repo.GetRepositoryPath(), scanner.Name(), start, 0, 0, err)
 			return
 		}
 
 		switch event.Type {
-		case TagEventMetadata:
+		case reposcan.TagEventMetadata:
 			metadataCount++
 			log.Debugf("Tag %s: digest=%s, created=%v",
 				event.Tag, event.Metadata.ManifestDigest, event.Metadata.Created)
 			// TODO(ROX-31923): Store tag metadata in cache.
 
-		case TagEventDeleted:
+		case reposcan.TagEventDeleted:
 			log.Infof("Tag %s was deleted from registry", event.Tag)
 			// TODO(ROX-31923): Remove tag from cache.
 
-		case TagEventError:
+		case reposcan.TagEventError:
 			errorCount++
 			log.Warnf("Failed to fetch metadata for tag %s: %v", event.Tag, event.Error)
 		}
 	}
 
-	recordScanDuration(name.GetRegistry(), repo.GetRepositoryPath(), client.Name(), start, metadataCount, errorCount, nil)
+	recordScanDuration(name.GetRegistry(), repo.GetRepositoryPath(), scanner.Name(), start, metadataCount, errorCount, nil)
 	log.Infof("Repository %s: processed %d tags (%d metadata, %d errors) with pattern %q",
 		repo.GetRepositoryPath(), metadataCount+errorCount, metadataCount, errorCount, repo.GetTagPattern())
 }

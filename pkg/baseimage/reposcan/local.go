@@ -1,4 +1,4 @@
-package watcher
+package reposcan
 
 import (
 	"context"
@@ -9,14 +9,17 @@ import (
 	"github.com/stackrox/rox/pkg/baseimage/tagfetcher"
 	"github.com/stackrox/rox/pkg/env"
 	imageUtils "github.com/stackrox/rox/pkg/images/utils"
+	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/registries"
 	"github.com/stackrox/rox/pkg/registries/types"
 	"github.com/stackrox/rox/pkg/sync"
 	"golang.org/x/time/rate"
 )
 
-// LocalRepositoryClient scans repositories directly from Central.
-type LocalRepositoryClient struct {
+var log = logging.LoggerForModule()
+
+// LocalScanner scans repositories directly from Central.
+type LocalScanner struct {
 	registries registries.Set
 
 	// rateLimiters stores per-integration rate limiters. The key is the
@@ -26,21 +29,21 @@ type LocalRepositoryClient struct {
 	rateLimitersMu sync.Mutex
 }
 
-// NewLocalRepositoryClient creates a LocalRepositoryClient with the given registries.
-func NewLocalRepositoryClient(registries registries.Set) *LocalRepositoryClient {
-	return &LocalRepositoryClient{
+// NewLocalScanner creates a LocalScanner with the given registries.
+func NewLocalScanner(registries registries.Set) *LocalScanner {
+	return &LocalScanner{
 		registries:   registries,
 		rateLimiters: make(map[string]*rate.Limiter),
 	}
 }
 
-// Name implements RepositoryClient.
-func (c *LocalRepositoryClient) Name() string {
+// Name implements Scanner.
+func (c *LocalScanner) Name() string {
 	return "local"
 }
 
-// ScanRepository implements RepositoryClient.
-func (c *LocalRepositoryClient) ScanRepository(
+// ScanRepository implements Scanner.
+func (c *LocalScanner) ScanRepository(
 	ctx context.Context,
 	repo *storage.BaseImageRepository,
 	req ScanRequest,
@@ -61,7 +64,7 @@ func (c *LocalRepositoryClient) ScanRepository(
 		}
 
 		// List and filter tags.
-		tags, err := listAndFilterTags(ctx, reg, name.GetRemote(), req.Pattern)
+		tags, err := ListAndFilterTags(ctx, reg, name.GetRemote(), req.Pattern)
 		if err != nil {
 			yield(TagEvent{}, fmt.Errorf("listing tags for repository %s: %w", repo.GetRepositoryPath(), err))
 			return
@@ -136,7 +139,7 @@ func (c *LocalRepositoryClient) ScanRepository(
 	}
 }
 
-func (c *LocalRepositoryClient) findRegistry(name *storage.ImageName) types.ImageRegistry {
+func (c *LocalScanner) findRegistry(name *storage.ImageName) types.ImageRegistry {
 	var regs []types.ImageRegistry
 	if env.DedupeImageIntegrations.BooleanSetting() {
 		regs = c.registries.GetAllUnique()
@@ -153,7 +156,7 @@ func (c *LocalRepositoryClient) findRegistry(name *storage.ImageName) types.Imag
 
 // getRateLimiter returns the rate limiter for the given integration.
 // If one doesn't exist, it creates a new one using the configured rate limit.
-func (c *LocalRepositoryClient) getRateLimiter(integrationID string) *rate.Limiter {
+func (c *LocalScanner) getRateLimiter(integrationID string) *rate.Limiter {
 	c.rateLimitersMu.Lock()
 	defer c.rateLimitersMu.Unlock()
 

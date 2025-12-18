@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/baseimage/reposcan"
 	"github.com/stackrox/rox/pkg/errox"
 	registryMocks "github.com/stackrox/rox/pkg/registries/mocks"
 	"github.com/stackrox/rox/pkg/registries/types"
@@ -14,7 +15,7 @@ import (
 	"go.uber.org/mock/gomock"
 )
 
-func TestLocalRepositoryClient_ScanRepository_Success(t *testing.T) {
+func TestLocalScanner_ScanRepository_Success(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	mockRegistrySet := registryMocks.NewMockSet(ctrl)
 	mockRegistry := registryTypesMocks.NewMockImageRegistry(ctrl)
@@ -57,18 +58,18 @@ func TestLocalRepositoryClient_ScanRepository_Success(t *testing.T) {
 		Return([]types.ImageRegistry{mockRegistry}).
 		AnyTimes()
 
-	client := NewLocalRepositoryClient(mockRegistrySet)
+	scanner := reposcan.NewLocalScanner(mockRegistrySet)
 
-	req := ScanRequest{
+	req := reposcan.ScanRequest{
 		Pattern:   "1.*",
 		CheckTags: make(map[string]*storage.BaseImageTag),
 		SkipTags:  make(map[string]struct{}),
 	}
 
-	var metadataEvents []TagEvent
-	for event, err := range client.ScanRepository(context.Background(), repo, req) {
+	var metadataEvents []reposcan.TagEvent
+	for event, err := range scanner.ScanRepository(context.Background(), repo, req) {
 		require.NoError(t, err)
-		if event.Type == TagEventMetadata {
+		if event.Type == reposcan.TagEventMetadata {
 			metadataEvents = append(metadataEvents, event)
 		}
 	}
@@ -83,7 +84,7 @@ func TestLocalRepositoryClient_ScanRepository_Success(t *testing.T) {
 	}
 }
 
-func TestLocalRepositoryClient_ScanRepository_NoMatchingRegistry(t *testing.T) {
+func TestLocalScanner_ScanRepository_NoMatchingRegistry(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	mockRegistrySet := registryMocks.NewMockSet(ctrl)
 	mockRegistry := registryTypesMocks.NewMockImageRegistry(ctrl)
@@ -101,16 +102,16 @@ func TestLocalRepositoryClient_ScanRepository_NoMatchingRegistry(t *testing.T) {
 		GetAllUnique().
 		Return([]types.ImageRegistry{mockRegistry})
 
-	client := NewLocalRepositoryClient(mockRegistrySet)
+	scanner := reposcan.NewLocalScanner(mockRegistrySet)
 
-	req := ScanRequest{
+	req := reposcan.ScanRequest{
 		Pattern:   "*",
 		CheckTags: make(map[string]*storage.BaseImageTag),
 		SkipTags:  make(map[string]struct{}),
 	}
 
 	var fatalErr error
-	for _, err := range client.ScanRepository(context.Background(), repo, req) {
+	for _, err := range scanner.ScanRepository(context.Background(), repo, req) {
 		if err != nil {
 			fatalErr = err
 			break
@@ -121,7 +122,7 @@ func TestLocalRepositoryClient_ScanRepository_NoMatchingRegistry(t *testing.T) {
 	assert.Contains(t, fatalErr.Error(), "no matching image integration found")
 }
 
-func TestLocalRepositoryClient_ScanRepository_ListTagsError(t *testing.T) {
+func TestLocalScanner_ScanRepository_ListTagsError(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	mockRegistrySet := registryMocks.NewMockSet(ctrl)
 	mockRegistry := registryTypesMocks.NewMockImageRegistry(ctrl)
@@ -143,16 +144,16 @@ func TestLocalRepositoryClient_ScanRepository_ListTagsError(t *testing.T) {
 		GetAllUnique().
 		Return([]types.ImageRegistry{mockRegistry})
 
-	client := NewLocalRepositoryClient(mockRegistrySet)
+	scanner := reposcan.NewLocalScanner(mockRegistrySet)
 
-	req := ScanRequest{
+	req := reposcan.ScanRequest{
 		Pattern:   "*",
 		CheckTags: make(map[string]*storage.BaseImageTag),
 		SkipTags:  make(map[string]struct{}),
 	}
 
 	var fatalErr error
-	for _, err := range client.ScanRepository(context.Background(), repo, req) {
+	for _, err := range scanner.ScanRepository(context.Background(), repo, req) {
 		if err != nil {
 			fatalErr = err
 			break
@@ -163,7 +164,7 @@ func TestLocalRepositoryClient_ScanRepository_ListTagsError(t *testing.T) {
 	assert.Contains(t, fatalErr.Error(), "connection failed")
 }
 
-func TestLocalRepositoryClient_ScanRepository_InvalidRepositoryPath(t *testing.T) {
+func TestLocalScanner_ScanRepository_InvalidRepositoryPath(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	mockRegistrySet := registryMocks.NewMockSet(ctrl)
 
@@ -172,16 +173,16 @@ func TestLocalRepositoryClient_ScanRepository_InvalidRepositoryPath(t *testing.T
 		RepositoryPath: "", // Invalid empty path.
 	}
 
-	client := NewLocalRepositoryClient(mockRegistrySet)
+	scanner := reposcan.NewLocalScanner(mockRegistrySet)
 
-	req := ScanRequest{
+	req := reposcan.ScanRequest{
 		Pattern:   "*",
 		CheckTags: make(map[string]*storage.BaseImageTag),
 		SkipTags:  make(map[string]struct{}),
 	}
 
 	var fatalErr error
-	for _, err := range client.ScanRepository(context.Background(), repo, req) {
+	for _, err := range scanner.ScanRepository(context.Background(), repo, req) {
 		if err != nil {
 			fatalErr = err
 			break
@@ -192,7 +193,7 @@ func TestLocalRepositoryClient_ScanRepository_InvalidRepositoryPath(t *testing.T
 	assert.Contains(t, fatalErr.Error(), "parsing repository path")
 }
 
-func TestLocalRepositoryClient_ScanRepository_EmptyResult(t *testing.T) {
+func TestLocalScanner_ScanRepository_EmptyResult(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	mockRegistrySet := registryMocks.NewMockSet(ctrl)
 	mockRegistry := registryTypesMocks.NewMockImageRegistry(ctrl)
@@ -214,16 +215,16 @@ func TestLocalRepositoryClient_ScanRepository_EmptyResult(t *testing.T) {
 		GetAllUnique().
 		Return([]types.ImageRegistry{mockRegistry})
 
-	client := NewLocalRepositoryClient(mockRegistrySet)
+	scanner := reposcan.NewLocalScanner(mockRegistrySet)
 
-	req := ScanRequest{
+	req := reposcan.ScanRequest{
 		Pattern:   "*",
 		CheckTags: make(map[string]*storage.BaseImageTag),
 		SkipTags:  make(map[string]struct{}),
 	}
 
 	var eventCount int
-	for _, err := range client.ScanRepository(context.Background(), repo, req) {
+	for _, err := range scanner.ScanRepository(context.Background(), repo, req) {
 		require.NoError(t, err)
 		eventCount++
 	}
@@ -232,26 +233,26 @@ func TestLocalRepositoryClient_ScanRepository_EmptyResult(t *testing.T) {
 	assert.Equal(t, 0, eventCount)
 }
 
-func TestLocalRepositoryClient_Name(t *testing.T) {
+func TestLocalScanner_Name(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	mockRegistrySet := registryMocks.NewMockSet(ctrl)
 
-	client := NewLocalRepositoryClient(mockRegistrySet)
+	scanner := reposcan.NewLocalScanner(mockRegistrySet)
 
-	assert.Equal(t, "local", client.Name())
+	assert.Equal(t, "local", scanner.Name())
 }
 
-func TestLocalRepositoryClient_ImplementsInterface(t *testing.T) {
+func TestLocalScanner_ImplementsInterface(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	mockRegistrySet := registryMocks.NewMockSet(ctrl)
 
-	client := NewLocalRepositoryClient(mockRegistrySet)
+	scanner := reposcan.NewLocalScanner(mockRegistrySet)
 
-	// Verify LocalRepositoryClient implements RepositoryClient interface.
-	var _ RepositoryClient = client
+	// Verify LocalScanner implements Scanner interface.
+	var _ reposcan.Scanner = scanner
 }
 
-func TestLocalRepositoryClient_ScanRepository_DeletionEvents(t *testing.T) {
+func TestLocalScanner_ScanRepository_DeletionEvents(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	mockRegistrySet := registryMocks.NewMockSet(ctrl)
 	mockRegistry := registryTypesMocks.NewMockImageRegistry(ctrl)
@@ -288,10 +289,10 @@ func TestLocalRepositoryClient_ScanRepository_DeletionEvents(t *testing.T) {
 		Return([]types.ImageRegistry{mockRegistry}).
 		AnyTimes()
 
-	client := NewLocalRepositoryClient(mockRegistrySet)
+	scanner := reposcan.NewLocalScanner(mockRegistrySet)
 
 	// CheckTags contains tags that were previously cached.
-	req := ScanRequest{
+	req := reposcan.ScanRequest{
 		Pattern: "*",
 		CheckTags: map[string]*storage.BaseImageTag{
 			"1.0": {Tag: "1.0", ManifestDigest: "sha256:old"},
@@ -303,13 +304,13 @@ func TestLocalRepositoryClient_ScanRepository_DeletionEvents(t *testing.T) {
 		},
 	}
 
-	var metadataEvents, deletedEvents []TagEvent
-	for event, err := range client.ScanRepository(context.Background(), repo, req) {
+	var metadataEvents, deletedEvents []reposcan.TagEvent
+	for event, err := range scanner.ScanRepository(context.Background(), repo, req) {
 		require.NoError(t, err)
 		switch event.Type {
-		case TagEventMetadata:
+		case reposcan.TagEventMetadata:
 			metadataEvents = append(metadataEvents, event)
-		case TagEventDeleted:
+		case reposcan.TagEventDeleted:
 			deletedEvents = append(deletedEvents, event)
 		}
 	}
@@ -329,7 +330,7 @@ func TestLocalRepositoryClient_ScanRepository_DeletionEvents(t *testing.T) {
 	assert.True(t, deletedTags["1.3"], "expected 1.3 to be deleted")
 }
 
-func TestLocalRepositoryClient_ScanRepository_SkipTags(t *testing.T) {
+func TestLocalScanner_ScanRepository_SkipTags(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	mockRegistrySet := registryMocks.NewMockSet(ctrl)
 	mockRegistry := registryTypesMocks.NewMockImageRegistry(ctrl)
@@ -370,9 +371,9 @@ func TestLocalRepositoryClient_ScanRepository_SkipTags(t *testing.T) {
 		Return([]types.ImageRegistry{mockRegistry}).
 		AnyTimes()
 
-	client := NewLocalRepositoryClient(mockRegistrySet)
+	scanner := reposcan.NewLocalScanner(mockRegistrySet)
 
-	req := ScanRequest{
+	req := reposcan.ScanRequest{
 		Pattern:   "*",
 		CheckTags: make(map[string]*storage.BaseImageTag),
 		SkipTags: map[string]struct{}{
@@ -381,10 +382,10 @@ func TestLocalRepositoryClient_ScanRepository_SkipTags(t *testing.T) {
 		},
 	}
 
-	var metadataEvents []TagEvent
-	for event, err := range client.ScanRepository(context.Background(), repo, req) {
+	var metadataEvents []reposcan.TagEvent
+	for event, err := range scanner.ScanRepository(context.Background(), repo, req) {
 		require.NoError(t, err)
-		if event.Type == TagEventMetadata {
+		if event.Type == reposcan.TagEventMetadata {
 			metadataEvents = append(metadataEvents, event)
 		}
 	}
@@ -394,7 +395,7 @@ func TestLocalRepositoryClient_ScanRepository_SkipTags(t *testing.T) {
 	assert.Equal(t, "1.0", metadataEvents[0].Tag)
 }
 
-func TestLocalRepositoryClient_ScanRepository_MetadataFetchError(t *testing.T) {
+func TestLocalScanner_ScanRepository_MetadataFetchError(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	mockRegistrySet := registryMocks.NewMockSet(ctrl)
 	mockRegistry := registryTypesMocks.NewMockImageRegistry(ctrl)
@@ -437,21 +438,21 @@ func TestLocalRepositoryClient_ScanRepository_MetadataFetchError(t *testing.T) {
 		Return([]types.ImageRegistry{mockRegistry}).
 		AnyTimes()
 
-	client := NewLocalRepositoryClient(mockRegistrySet)
+	scanner := reposcan.NewLocalScanner(mockRegistrySet)
 
-	req := ScanRequest{
+	req := reposcan.ScanRequest{
 		Pattern:   "*",
 		CheckTags: make(map[string]*storage.BaseImageTag),
 		SkipTags:  make(map[string]struct{}),
 	}
 
-	var metadataEvents, errorEvents []TagEvent
-	for event, err := range client.ScanRepository(context.Background(), repo, req) {
+	var metadataEvents, errorEvents []reposcan.TagEvent
+	for event, err := range scanner.ScanRepository(context.Background(), repo, req) {
 		require.NoError(t, err, "iterator error should be nil, errors come via events")
 		switch event.Type {
-		case TagEventMetadata:
+		case reposcan.TagEventMetadata:
 			metadataEvents = append(metadataEvents, event)
-		case TagEventError:
+		case reposcan.TagEventError:
 			errorEvents = append(errorEvents, event)
 		}
 	}

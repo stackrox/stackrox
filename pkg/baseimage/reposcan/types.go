@@ -1,4 +1,5 @@
-package watcher
+// Package reposcan provides types and interfaces for scanning container image repositories.
+package reposcan
 
 import (
 	"context"
@@ -8,7 +9,7 @@ import (
 	"github.com/stackrox/rox/pkg/baseimage/tagfetcher"
 )
 
-// ScanRequest contains the pattern for scanning.
+// ScanRequest contains the parameters for scanning a repository.
 type ScanRequest struct {
 	// Pattern is the tag filtering pattern.
 	Pattern string
@@ -42,8 +43,8 @@ type TagEvent struct {
 	Error error
 }
 
-// RepositoryClient scans a repository for tags.
-type RepositoryClient interface {
+// Scanner scans a repository for tags.
+type Scanner interface {
 	// Name returns a short identifier for logging, tracing or metrics (e.g., "local", "delegated").
 	Name() string
 
