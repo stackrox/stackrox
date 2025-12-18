@@ -511,7 +511,9 @@ func TestSplitAndMergeImage(t *testing.T) {
 	}
 
 	imageActual := MergeV2(splitActual)
-	protoassert.Equal(t, dedupedImage(), imageActual)
+	expectedFinalImage := dedupedImage()
+	expectedFinalImage.BaseImageInfo = image.GetBaseImageInfo()
+	protoassert.Equal(t, expectedFinalImage, imageActual)
 }
 
 func getTestComponentID(testComponent *storage.EmbeddedImageScanComponent, imageID string, index int) string {
