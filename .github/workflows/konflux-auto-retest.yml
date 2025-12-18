@@ -8,10 +8,10 @@ on:
 
 jobs:
   retest-failed-builds:
-    runs-on: ubuntu-latest
-    steps:
-    - name: Retest failed builds
-      uses: stackrox/actions/konflux/auto-retest@v1
-      with:
-        max_retries: 3
-        check_name_suffix: '-on-push'
+    uses: stackrox/actions/konflux/auto-retest@v1
+    with:
+      max_retries: 3
+      check_name_suffix: '-on-push'
+    permissions:
+      pull-requests: write
+      issues: write
