@@ -159,7 +159,7 @@ func convertStorageToAPI(repo *storage.BaseImageRepository) *v2.BaseImageReferen
 func (s *serviceImpl) validateBaseImageRepository(repoPath string) error {
 	imageName, ref, err := imgUtils.GenerateImageNameFromString(repoPath)
 	if err != nil {
-		return errox.InvalidArgs.Newf("invalid base image repo path '%s'", repoPath).CausedBy(err)
+		return errox.InvalidArgs.Newf("invalid base image repository path '%s'", repoPath).CausedBy(err)
 	}
 	// Reject references that include tags - these should be in separate fields
 	if imageName.GetTag() != "" {
