@@ -3,6 +3,7 @@ package extensions
 import (
 	"context"
 	"fmt"
+	"reflect"
 
 	"github.com/go-logr/logr"
 	"github.com/operator-framework/helm-operator-plugins/pkg/extensions"
@@ -74,6 +75,10 @@ func setDefaultsAndPersist(ctx context.Context, logger logr.Logger, u *unstructu
 		}
 	}
 
+	if reflect.DeepEqual(uBase.Object, u.Object) {
+		return nil
+	}
+
 	// We persist the annotations immediately during (first-time) execution of this extension to make sure
 	// that this information is already persisted in the Kubernetes resource before we
 	// can realistically end up in a situation where reconcilliation might need to be retried.
@@ -81,6 +86,7 @@ func setDefaultsAndPersist(ctx context.Context, logger logr.Logger, u *unstructu
 	// This updates central both on the cluster and in memory, which is crucial since this object is used for the final
 	// updating within helm-operator and we have concurrently running controllers (the status controller),
 	// whose changes we must preserve.
+	logger.Info("updating defaulting annotations on Central object")
 	err := client.Patch(ctx, u, patch)
 	if err != nil {
 		return errors.Wrap(err, "patching Central annotations")
