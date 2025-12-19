@@ -3,10 +3,12 @@ package watcher
 import (
 	"context"
 	"testing"
+	"time"
 
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/baseimage/reposcan"
 	"github.com/stackrox/rox/pkg/errox"
+	"github.com/stackrox/rox/pkg/protocompat"
 	registryMocks "github.com/stackrox/rox/pkg/registries/mocks"
 	"github.com/stackrox/rox/pkg/registries/types"
 	registryTypesMocks "github.com/stackrox/rox/pkg/registries/types/mocks"
@@ -41,11 +43,17 @@ func TestLocalScanner_ScanRepository_Success(t *testing.T) {
 		Return(&storage.ImageIntegration{Id: "integration-1"}).
 		AnyTimes()
 
+	createdTime := time.Date(2024, 3, 15, 10, 30, 0, 0, time.UTC)
+	protoTime := protocompat.ConvertTimeToTimestampOrNil(&createdTime)
+
 	// Mock Metadata calls for the 3 matching tags (1.0, 1.1, 1.2).
 	mockRegistry.EXPECT().
 		Metadata(gomock.Any()).
 		DoAndReturn(func(img *storage.Image) (*storage.ImageMetadata, error) {
 			return &storage.ImageMetadata{
+				V1: &storage.V1Metadata{
+					Created: protoTime,
+				},
 				V2: &storage.V2Metadata{
 					Digest: "sha256:abc123" + img.GetName().GetTag(),
 				},
@@ -278,9 +286,15 @@ func TestLocalScanner_ScanRepository_DeletionEvents(t *testing.T) {
 		Return(&storage.ImageIntegration{Id: "integration-1"}).
 		AnyTimes()
 
+	createdTime := time.Date(2024, 3, 15, 10, 30, 0, 0, time.UTC)
+	protoTime := protocompat.ConvertTimeToTimestampOrNil(&createdTime)
+
 	mockRegistry.EXPECT().
 		Metadata(gomock.Any()).
 		Return(&storage.ImageMetadata{
+			V1: &storage.V1Metadata{
+				Created: protoTime,
+			},
 			V2: &storage.V2Metadata{Digest: "sha256:abc123"},
 		}, nil)
 
@@ -356,12 +370,18 @@ func TestLocalScanner_ScanRepository_SkipTags(t *testing.T) {
 		Return(&storage.ImageIntegration{Id: "integration-1"}).
 		AnyTimes()
 
+	createdTime := time.Date(2024, 3, 15, 10, 30, 0, 0, time.UTC)
+	protoTime := protocompat.ConvertTimeToTimestampOrNil(&createdTime)
+
 	// Only 1 metadata call for "1.0" - other tags are skipped.
 	mockRegistry.EXPECT().
 		Metadata(gomock.Any()).
 		DoAndReturn(func(img *storage.Image) (*storage.ImageMetadata, error) {
 			assert.Equal(t, "1.0", img.GetName().GetTag(), "only 1.0 should be fetched")
 			return &storage.ImageMetadata{
+				V1: &storage.V1Metadata{
+					Created: protoTime,
+				},
 				V2: &storage.V2Metadata{Digest: "sha256:abc123"},
 			}, nil
 		})
@@ -420,6 +440,9 @@ func TestLocalScanner_ScanRepository_MetadataFetchError(t *testing.T) {
 		Return(&storage.ImageIntegration{Id: "integration-1"}).
 		AnyTimes()
 
+	createdTime := time.Date(2024, 3, 15, 10, 30, 0, 0, time.UTC)
+	protoTime := protocompat.ConvertTimeToTimestampOrNil(&createdTime)
+
 	// First tag succeeds, second tag fails.
 	mockRegistry.EXPECT().
 		Metadata(gomock.Any()).
@@ -428,6 +451,9 @@ func TestLocalScanner_ScanRepository_MetadataFetchError(t *testing.T) {
 				return nil, errox.InvariantViolation.New("manifest not found")
 			}
 			return &storage.ImageMetadata{
+				V1: &storage.V1Metadata{
+					Created: protoTime,
+				},
 				V2: &storage.V2Metadata{Digest: "sha256:abc123"},
 			}, nil
 		}).

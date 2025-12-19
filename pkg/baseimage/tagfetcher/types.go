@@ -19,20 +19,12 @@ type TagMetadata struct {
 	// for multi-arch images).
 	ManifestDigest string
 
-	// IsManifestList indicates if the manifest is a multi-arch manifest list.
-	IsManifestList bool
-
 	// Created is the image creation timestamp from the config blob.
 	Created *time.Time
 
 	// LayerDigests contains the SHA256 digests of all layers in order.
 	// Used for base image matching via layer commonality.
 	LayerDigests []string
-
-	// ListDigests maps "os/arch" to platform-specific manifest digest for
-	// multi-arch images. Used to detect which platforms changed and need
-	// refetching. Empty for single-arch images.
-	ListDigests map[string]string
 
 	// Error contains any error that occurred during metadata fetching.
 	// If non-nil, only Tag is guaranteed to be populated.

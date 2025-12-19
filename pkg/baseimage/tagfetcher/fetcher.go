@@ -9,6 +9,7 @@ import (
 	imageUtils "github.com/stackrox/rox/pkg/images/utils"
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/registries/types"
+	"github.com/stackrox/rox/pkg/stringutils"
 	"github.com/stackrox/rox/pkg/sync"
 	"golang.org/x/sync/semaphore"
 	"golang.org/x/time/rate"
@@ -130,27 +131,31 @@ func (f *TagFetcher) metadata(ctx context.Context, name *storage.ImageName) (*st
 	if metadata == nil {
 		return nil, errors.New("nil metadata returned")
 	}
+	if metadata.GetV1() == nil {
+		return nil, errors.New("nil V1 metadata returned")
+	}
+	if metadata.GetV1().GetCreated() == nil {
+		return nil, errors.New("nil V1 created metadata returned")
+	}
 	return metadata, nil
 }
 
 // tagMetadata extracts TagMetadata from storage.ImageMetadata.
-// TODO(ROX-32382): IsManifestList and ListDigests are not populated because
-// the current Metadata() API doesn't expose manifest list information.
+//
+// TODO(ROX-32382): Manifest lists are not handled currently, and it will require
+// a new interface to retrieve metadata from the registry.
 func tagMetadata(tag string, metadata *storage.ImageMetadata) TagMetadata {
 	result := TagMetadata{Tag: tag}
 
-	// Extract manifest digest from V2 metadata.
-	if v2 := metadata.GetV2(); v2 != nil {
-		result.ManifestDigest = v2.GetDigest()
-	}
+	// Extract digest from V2 fallback to V1
+	result.ManifestDigest = stringutils.FirstNonEmpty(
+		metadata.GetV2().GetDigest(),
+		metadata.GetV1().GetDigest(),
+	)
 
 	// Extract creation timestamp from V1 metadata.
-	if v1 := metadata.GetV1(); v1 != nil {
-		if created := v1.GetCreated(); created != nil {
-			t := protocompat.ConvertTimestampToTimeOrNil(created)
-			result.Created = t
-		}
-	}
+	t := protocompat.ConvertTimestampToTimeOrNil(metadata.GetV1().GetCreated())
+	result.Created = t
 
 	// Extract layer digests for base image matching via layer commonality.
 	result.LayerDigests = metadata.GetLayerShas()

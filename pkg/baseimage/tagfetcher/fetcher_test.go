@@ -100,8 +100,14 @@ func TestTagFetcher_MultipleTagsConcurrent(t *testing.T) {
 
 	tags := []string{"v1.0.0", "v1.1.0", "v1.2.0"}
 
+	createdTime := time.Date(2024, 3, 15, 10, 30, 0, 0, time.UTC)
+	protoTime := protocompat.ConvertTimeToTimestampOrNil(&createdTime)
+
 	reg.EXPECT().Metadata(gomock.Any()).Times(3).DoAndReturn(func(img *storage.Image) (*storage.ImageMetadata, error) {
 		return &storage.ImageMetadata{
+			V1: &storage.V1Metadata{
+				Created: protoTime,
+			},
 			V2: &storage.V2Metadata{
 				Digest: "sha256:" + img.GetName().GetTag(),
 			},
@@ -131,11 +137,17 @@ func TestTagFetcher_WithErrors(t *testing.T) {
 	reg := mocks.NewMockRegistry(ctrl)
 	name := testImageName("registry.example.com", "repo/image")
 
+	createdTime := time.Date(2024, 3, 15, 10, 30, 0, 0, time.UTC)
+	protoTime := protocompat.ConvertTimeToTimestampOrNil(&createdTime)
+
 	reg.EXPECT().Metadata(gomock.Any()).DoAndReturn(func(img *storage.Image) (*storage.ImageMetadata, error) {
 		if img.GetName().GetTag() == "v1.1.0" {
 			return nil, errors.New("registry error")
 		}
 		return &storage.ImageMetadata{
+			V1: &storage.V1Metadata{
+				Created: protoTime,
+			},
 			V2: &storage.V2Metadata{
 				Digest: "sha256:" + img.GetName().GetTag(),
 			},
@@ -203,11 +215,15 @@ func TestTagFetcher_ContextCancellationDuringFetch(t *testing.T) {
 	// Track how many metadata calls started.
 	var callsStarted int32
 
+	createdTime := time.Date(2024, 3, 15, 10, 30, 0, 0, time.UTC)
+	protoTime := protocompat.ConvertTimeToTimestampOrNil(&createdTime)
+
 	// Mock returns with a short delay. Goroutines will be in-flight when we cancel.
 	reg.EXPECT().Metadata(gomock.Any()).AnyTimes().DoAndReturn(func(img *storage.Image) (*storage.ImageMetadata, error) {
 		atomic.AddInt32(&callsStarted, 1)
 		time.Sleep(100 * time.Millisecond)
 		return &storage.ImageMetadata{
+			V1: &storage.V1Metadata{Created: protoTime},
 			V2: &storage.V2Metadata{Digest: "sha256:" + img.GetName().GetTag()},
 		}, nil
 	})
@@ -248,14 +264,19 @@ func TestTagFetcher_SkipsUnchangedDigests(t *testing.T) {
 		"v1.1.0": "sha256:old-digest",
 	}
 
+	createdTime := time.Date(2024, 3, 15, 10, 30, 0, 0, time.UTC)
+	protoTime := protocompat.ConvertTimeToTimestampOrNil(&createdTime)
+
 	reg.EXPECT().Metadata(gomock.Any()).Times(2).DoAndReturn(func(img *storage.Image) (*storage.ImageMetadata, error) {
 		tag := img.GetName().GetTag()
 		if tag == "v1.0.0" {
 			return &storage.ImageMetadata{
+				V1: &storage.V1Metadata{Created: protoTime},
 				V2: &storage.V2Metadata{Digest: "sha256:unchanged"}, // Same as known.
 			}, nil
 		}
 		return &storage.ImageMetadata{
+			V1: &storage.V1Metadata{Created: protoTime},
 			V2: &storage.V2Metadata{Digest: "sha256:new-digest"}, // Different from known.
 		}, nil
 	})
@@ -293,36 +314,45 @@ func Test_tagMetadata_FullMetadata(t *testing.T) {
 	assert.Nil(t, result.Error)
 }
 
-func Test_tagMetadata_MissingV1(t *testing.T) {
-	metadata := &storage.ImageMetadata{
-		V2: &storage.V2Metadata{
-			Digest: "sha256:abc123",
-		},
-		LayerShas: []string{"sha256:layer1"},
-	}
-
-	result := tagMetadata("v1.0.0", metadata)
-
-	assert.Equal(t, "sha256:abc123", result.ManifestDigest)
-	assert.Nil(t, result.Created) // No V1 metadata means no timestamp.
-	assert.Equal(t, []string{"sha256:layer1"}, result.LayerDigests)
-	assert.Nil(t, result.Error)
-}
-
-func Test_tagMetadata_MissingV2(t *testing.T) {
+func Test_tagMetadata_MissingV2FallsBackToV1Digest(t *testing.T) {
 	createdTime := time.Date(2024, 1, 15, 12, 0, 0, 0, time.UTC)
 	protoTime := protocompat.ConvertTimeToTimestampOrNil(&createdTime)
 
 	metadata := &storage.ImageMetadata{
 		V1: &storage.V1Metadata{
+			Digest:  "sha256:v1-digest",
 			Created: protoTime,
+		},
+		// V2 is nil - should fallback to V1 digest
+	}
+
+	result := tagMetadata("v1.0.0", metadata)
+
+	assert.Equal(t, "sha256:v1-digest", result.ManifestDigest) // Fallback to V1 digest.
+	assert.NotNil(t, result.Created)
+	assert.Equal(t, createdTime, *result.Created)
+	assert.Empty(t, result.LayerDigests) // No layers in metadata.
+	assert.Nil(t, result.Error)
+}
+
+func Test_tagMetadata_V2DigestPreferredOverV1(t *testing.T) {
+	createdTime := time.Date(2024, 1, 15, 12, 0, 0, 0, time.UTC)
+	protoTime := protocompat.ConvertTimeToTimestampOrNil(&createdTime)
+
+	metadata := &storage.ImageMetadata{
+		V1: &storage.V1Metadata{
+			Digest:  "sha256:v1-digest",
+			Created: protoTime,
+		},
+		V2: &storage.V2Metadata{
+			Digest: "sha256:v2-digest",
 		},
 	}
 
 	result := tagMetadata("v1.0.0", metadata)
 
-	assert.Empty(t, result.ManifestDigest) // No V2 metadata.
+	// V2 digest should be preferred when both exist.
+	assert.Equal(t, "sha256:v2-digest", result.ManifestDigest)
 	assert.NotNil(t, result.Created)
-	assert.Empty(t, result.LayerDigests) // No layers in metadata.
 	assert.Nil(t, result.Error)
 }
