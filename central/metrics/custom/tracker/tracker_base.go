@@ -133,7 +133,6 @@ func (tracker *TrackerBase[F]) Reconfigure(cfg *Configuration) {
 	if cfg == nil {
 		cfg = &Configuration{}
 	}
-
 	previous, enabled := tracker.setConfiguration(cfg)
 	if previous != nil {
 		if !enabled {
@@ -193,12 +192,13 @@ func (tracker *TrackerBase[Finding]) isEnabledNoLock() bool {
 	return cfg.period > 0
 }
 
-func (tracker *TrackerBase[Finding]) setConfiguration(cfg *Configuration) (*Configuration, bool) {
-	tracker.metricsConfigMux.Lock()
-	defer tracker.metricsConfigMux.Unlock()
-	previous := tracker.config
-	tracker.config = cfg
-	return previous, tracker.isEnabledNoLock()
+func (tracker *TrackerBase[Finding]) getConfigurationIfEnabled() *Configuration {
+	tracker.metricsConfigMux.RLock()
+	defer tracker.metricsConfigMux.RUnlock()
+	if !tracker.isEnabledNoLock() {
+		return nil
+	}
+	return tracker.config
 }
 
 func (tracker *TrackerBase[Finding]) getConfiguration() *Configuration {
@@ -207,13 +207,12 @@ func (tracker *TrackerBase[Finding]) getConfiguration() *Configuration {
 	return tracker.config
 }
 
-func (tracker *TrackerBase[Finding]) getConfigurationIfEnabled() *Configuration {
-	tracker.metricsConfigMux.RLock()
-	defer tracker.metricsConfigMux.RUnlock()
-	if !tracker.isEnabledNoLock() {
-		return nil
-	}
-	return tracker.config
+func (tracker *TrackerBase[Finding]) setConfiguration(config *Configuration) (*Configuration, bool) {
+	tracker.metricsConfigMux.Lock()
+	defer tracker.metricsConfigMux.Unlock()
+	previous := tracker.config
+	tracker.config = config
+	return previous, tracker.isEnabledNoLock()
 }
 
 // track aggregates the fetched findings and updates the gauges.
