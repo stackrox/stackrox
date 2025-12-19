@@ -58,7 +58,7 @@ function RiskDetailTabs({ deployment, risk }) {
             <PageSection variant="default" id={activeTabKey}>
                 {activeTabKey === riskIndicatorsTab && (
                     <div className="flex flex-col">
-                        <RiskIndicators deployment={deployment} risk={risk} />
+                        <RiskIndicators risk={risk} />
                     </div>
                 )}
                 {activeTabKey === deploymentDetailsTab && (

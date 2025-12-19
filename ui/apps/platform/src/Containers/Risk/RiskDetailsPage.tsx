@@ -3,6 +3,9 @@ import {
     Breadcrumb,
     BreadcrumbItem,
     Bullseye,
+    Button,
+    Flex,
+    FlexItem,
     PageBreadcrumb,
     PageSection,
     Skeleton,
@@ -12,8 +15,10 @@ import {
 import { useParams } from 'react-router-dom-v5-compat';
 
 import BreadcrumbItemLink from 'Components/BreadcrumbItemLink';
+import LinkShim from 'Components/PatternFly/LinkShim/LinkShim';
 import TableErrorComponent from 'Components/PatternFly/TableErrorComponent';
-import { riskBasePath } from 'routePaths';
+import { getLinkToDeploymentInNetworkGraph, riskBasePath } from 'routePaths';
+import useIsRouteEnabled from 'hooks/useIsRouteEnabled';
 
 import RiskDetailTabs from './RiskDetailTabs';
 import useDeploymentWithRisk from './useDeploymentWithRisk';
@@ -25,6 +30,9 @@ function RiskDetailsPage(): ReactElement {
     const { data, isLoading, error } = useDeploymentWithRisk(deploymentId);
     const deploymentName = data?.deployment.name;
 
+    const isRouteEnabled = useIsRouteEnabled();
+    const isRouteEnabledForNetworkGraph = isRouteEnabled('network-graph');
+
     return (
         <>
             <PageBreadcrumb>
@@ -34,13 +42,33 @@ function RiskDetailsPage(): ReactElement {
                 </Breadcrumb>
             </PageBreadcrumb>
             <PageSection variant="light">
-                {deploymentName ? (
-                    <Title headingLevel="h1" className="pf-v5-u-mb-sm">
-                        {deploymentName}
-                    </Title>
-                ) : (
-                    <Skeleton width="25%" screenreaderText="Loading deployment information" />
-                )}
+                <Flex
+                    justifyContent={{ default: 'justifyContentSpaceBetween' }}
+                    alignItems={{ default: 'alignItemsCenter' }}
+                >
+                    {deploymentName ? (
+                        <Title headingLevel="h1" className="pf-v5-u-mb-sm">
+                            {deploymentName}
+                        </Title>
+                    ) : (
+                        <Skeleton width="25%" screenreaderText="Loading deployment information" />
+                    )}
+                    <FlexItem>
+                        {isRouteEnabledForNetworkGraph && data && (
+                            <Button
+                                variant="secondary"
+                                href={getLinkToDeploymentInNetworkGraph({
+                                    cluster: data.deployment.clusterName,
+                                    namespace: data.deployment.namespace,
+                                    deploymentId: data.deployment.id,
+                                })}
+                                component={LinkShim}
+                            >
+                                View Deployment in Network Graph
+                            </Button>
+                        )}
+                    </FlexItem>
+                </Flex>
             </PageSection>
             {error && (
                 <TableErrorComponent

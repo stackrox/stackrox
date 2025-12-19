@@ -60,8 +60,8 @@ export function viewRiskDeploymentByName(deploymentName) {
     cy.get(`h1:contains("${deploymentName}")`);
 }
 
-export function viewRiskDeploymentInNetworkGraph() {
-    interactAndVisitNetworkGraphWithDeploymentSelected(() => {
+export function viewRiskDeploymentInNetworkGraph(deploymentName) {
+    interactAndVisitNetworkGraphWithDeploymentSelected(deploymentName, () => {
         cy.get('a:contains("View Deployment in Network Graph")').click();
     });
 }
