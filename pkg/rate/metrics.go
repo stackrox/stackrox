@@ -19,6 +19,7 @@ func init() {
 		RequestsRejected,
 		PerSensorRate,
 		PerSensorBucketCapacity,
+		PerSensorTokens,
 	)
 }
 
@@ -78,5 +79,17 @@ var (
 				"This is the maximum number of requests that can be accepted in a burst before rate limiting kicks in.",
 		},
 		[]string{"workload"},
+	)
+
+	// PerSensorTokens tracks the current token count in each sensor's bucket.
+	PerSensorTokens = prometheus.NewGaugeVec(
+		prometheus.GaugeOpts{
+			Namespace: metrics.PrometheusNamespace,
+			Subsystem: metrics.CentralSubsystem.String(),
+			Name:      "rate_limiter_per_sensor_tokens_current",
+			Help: "Current token count in each sensor's bucket. " +
+				"Useful for observing near-saturation conditions and confirming limiter configuration.",
+		},
+		[]string{"workload", "sensor_id"},
 	)
 )

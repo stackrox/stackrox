@@ -27,7 +27,7 @@ const (
 // Each sensor gets an equal share (1/N) of the global capacity, with automatic
 // rebalancing when sensors connect or disconnect.
 type Limiter struct {
-	workloadName   string  // name for logging/metrics (e.g., "vm_index_report")
+	workloadName   string  // name for logging/metrics (e.g., "vm-index-report")
 	globalRate     float64 // requests per second (0 = unlimited)
 	bucketCapacity int     // max tokens per sensor bucket (allows temporary bursts)
 
@@ -37,7 +37,7 @@ type Limiter struct {
 // NewLimiter creates a new per-sensor rate limiter for the given workload.
 // globalRate of 0 disables rate limiting (unlimited).
 // bucketCapacity is the max tokens per sensor bucket (allows temporary bursts above sustained rate).
-// workloadName is used for logging and metrics (e.g., "vm_index_report", "node_inventory").
+// workloadName is used for logging and metrics (e.g., "vm-index-report", "node-inventory").
 //
 // Returns error if:
 //   - workloadName is empty
@@ -74,11 +74,13 @@ func (l *Limiter) TryConsume(sensorID string) (allowed bool, reason string) {
 	if limiter.Allow() {
 		RequestsTotal.WithLabelValues(l.workloadName, OutcomeAccepted).Inc()
 		RequestsAccepted.WithLabelValues(l.workloadName, sensorID).Inc()
+		PerSensorTokens.WithLabelValues(l.workloadName, sensorID).Set(limiter.Tokens())
 		return true, ""
 	}
 
 	RequestsTotal.WithLabelValues(l.workloadName, OutcomeRejected).Inc()
 	RequestsRejected.WithLabelValues(l.workloadName, sensorID, ReasonRateLimitExceeded).Inc()
+	PerSensorTokens.WithLabelValues(l.workloadName, sensorID).Set(limiter.Tokens())
 	return false, ReasonRateLimitExceeded
 }
 
@@ -96,6 +98,7 @@ func (l *Limiter) getOrCreateLimiter(sensorID string) *gorate.Limiter {
 
 	limiter := gorate.NewLimiter(gorate.Limit(perSensorRate), bucketCapacity)
 	l.buckets.Store(sensorID, limiter)
+	PerSensorTokens.WithLabelValues(l.workloadName, sensorID).Set(limiter.Tokens())
 
 	log.Infof("New sensor %s registered for %s rate limiting (sensors: %d, rate: %.2f req/s, max bucket capacity: %d)",
 		sensorID, l.workloadName, numSensors, perSensorRate, bucketCapacity)
@@ -148,6 +151,11 @@ func (l *Limiter) rebalanceLimiters() {
 
 	PerSensorRate.WithLabelValues(l.workloadName).Set(perSensorRate)
 	PerSensorBucketCapacity.WithLabelValues(l.workloadName).Set(float64(bucketCapacity))
+	l.buckets.Range(func(key, val interface{}) bool {
+		limiter := val.(*gorate.Limiter)
+		PerSensorTokens.WithLabelValues(l.workloadName, key.(string)).Set(limiter.Tokens())
+		return true
+	})
 
 	log.Debugf("Rebalanced %s rate limiters: %d sensors, %.2f req/s each, burst %d",
 		l.workloadName, numSensors, perSensorRate, bucketCapacity)
@@ -167,6 +175,7 @@ func (l *Limiter) OnSensorDisconnect(sensorID string) {
 	}
 
 	l.buckets.Delete(sensorID)
+	PerSensorTokens.DeleteLabelValues(l.workloadName, sensorID)
 
 	numSensors := l.countActiveSensors()
 	log.Infof("Sensor %s disconnected from %s rate limiting (remaining sensors: %d)",
