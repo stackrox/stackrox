@@ -19,7 +19,6 @@ import (
 	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
 )
@@ -225,6 +224,8 @@ func (s *AlertDatastoreImplSuite) TestSearchAlerts() {
 	s.Len(searchResults, 1)
 	s.Equal(alert.GetId(), searchResults[0].GetId())
 	s.Equal(alert.GetPolicy().GetName(), searchResults[0].GetName())
+	expectedLocation := fmt.Sprintf("/%s/%s/Deployment/%s", alert.GetClusterName(), alert.GetNamespace(), alert.GetDeployment().GetName())
+	s.Equal(searchResults[0].GetLocation(), expectedLocation)
 }
 
 // TestSearchRawAlerts tests the SearchRawAlerts functionality with real data
@@ -379,39 +380,6 @@ func (s *AlertDatastoreImplSuite) TestSearchListAlerts() {
 
 	expectedListAlert := convert.AlertToListAlert(matchingCreatedAlert)
 	protoassert.Equal(s.T(), expectedListAlert, returnedAlert)
-}
-
-// TestConvertAlert covers the same functionality as searcher_impl_test.go TestConvertAlert
-func (s *AlertDatastoreImplSuite) TestConvertAlert() {
-	nonNamespacedResourceAlert := fixtures.GetResourceAlert()
-	nonNamespacedResourceAlert.GetResource().Namespace = ""
-
-	for _, testCase := range []struct {
-		desc             string
-		alert            *storage.ListAlert
-		expectedLocation string
-	}{
-		{
-			desc:             "Deployment alert",
-			alert:            convert.AlertToListAlert(fixtures.GetAlert()),
-			expectedLocation: "/prod cluster/stackrox/Deployment/nginx_server",
-		},
-		{
-			desc:             "Namespaced resource alert",
-			alert:            convert.AlertToListAlert(fixtures.GetResourceAlert()),
-			expectedLocation: "/prod cluster/stackrox/Secrets/my-secret",
-		},
-		{
-			desc:             "Non-namespaced resource alert",
-			alert:            convert.AlertToListAlert(nonNamespacedResourceAlert),
-			expectedLocation: "/prod cluster/Secrets/my-secret",
-		},
-	} {
-		s.T().Run(testCase.desc, func(t *testing.T) {
-			res := convertAlert(testCase.alert, search.Result{})
-			assert.Equal(t, testCase.expectedLocation, res.GetLocation())
-		})
-	}
 }
 
 // TestCountAlerts tests the CountAlerts functionality
