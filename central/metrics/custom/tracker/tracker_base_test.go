@@ -4,6 +4,7 @@ import (
 	"context"
 	"maps"
 	"regexp"
+	"net/http/httptest"
 	"slices"
 	"strings"
 	"testing"
@@ -13,6 +14,7 @@ import (
 	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/central/metrics/mocks"
 	"github.com/stackrox/rox/pkg/auth/authproviders"
+	"github.com/stackrox/rox/pkg/defaults/accesscontrol"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/grpc/authn/basic"
@@ -595,4 +597,174 @@ func Test_formatMetricsHelp(t *testing.T) {
 			},
 			period: time.Hour,
 		}, "metric1"))
+}
+
+func makeScopedGatherFunc(ctx context.Context, _ MetricDescriptors) FindingErrorSequence[testFinding] {
+	return func(yield func(testFinding, error) bool) {
+		identity, err := authn.IdentityFromContext(ctx)
+		if err != nil {
+			return
+		}
+
+		username := identity.UID()
+		var finding testFinding
+		for idx := range testData {
+			cluster := testData[idx]["Cluster"]
+
+			shouldYield := false
+			switch username {
+			case accesscontrol.Admin:
+				shouldYield = true
+			case "No Access": // see basic.ContextWithNoAccessIdentity code.
+				shouldYield = cluster == "cluster 1"
+			case accesscontrol.None:
+				shouldYield = false
+			}
+
+			if shouldYield && !yield(finding, nil) {
+				return
+			}
+			finding++
+		}
+	}
+}
+
+func makeTestCtxIdentity(t *testing.T, provider authproviders.Provider, accessCtxFunc func(*testing.T, authproviders.Provider) context.Context) (context.Context, authn.Identity) {
+	ctx := accessCtxFunc(t, provider)
+	id, _ := authn.IdentityFromContext(ctx)
+	return ctx, id
+}
+
+func Test_scope(t *testing.T) {
+	t.Run("scoped access", func(t *testing.T) {
+		tracker := MakeTrackerBase("test", "Test",
+			testLabelGetters,
+			makeScopedGatherFunc)
+
+		md := makeTestMetricDescriptors(t)
+		tracker.Reconfigure(&Configuration{
+			metrics: md,
+			toAdd:   slices.Collect(maps.Keys(md)),
+			period:  time.Hour,
+		})
+
+		provider, _ := authproviders.NewProvider(
+			authproviders.WithEnabled(true),
+			authproviders.WithID(uuid.NewV4().String()),
+			authproviders.WithName("test"),
+		)
+
+		adminCtx, adminIdentity := makeTestCtxIdentity(t, provider,
+			basic.ContextWithAdminIdentity)
+		cluster1Ctx, cluster1Identity := makeTestCtxIdentity(t, provider,
+			basic.ContextWithNoAccessIdentity)
+		noAccessCtx, noAccessIdentity := makeTestCtxIdentity(t, provider,
+			basic.ContextWithNoneIdentity)
+
+		tracker.Gather(adminCtx)
+		tracker.Gather(cluster1Ctx)
+		tracker.Gather(noAccessCtx)
+		tracker.cleanupWG.Wait()
+
+		adminGatherer, _ := tracker.gatherers.Load(adminIdentity.UID())
+		cluster1Gatherer, _ := tracker.gatherers.Load(cluster1Identity.UID())
+		noAccessGatherer, _ := tracker.gatherers.Load(noAccessIdentity.UID())
+
+		adminRegistry := adminGatherer.(*gatherer).registry
+		cluster1Registry := cluster1Gatherer.(*gatherer).registry
+		noAccessRegistry := noAccessGatherer.(*gatherer).registry
+
+		adminMetrics := readMetrics(adminRegistry)
+		cluster1Metrics := readMetrics(cluster1Registry)
+		noAccessMetrics := readMetrics(noAccessRegistry)
+
+		const expectedAdminMetrics = `# HELP rox_central_test_Test_scope_scoped_access_metric1 The total number of Test aggregated by Cluster,Severity and gathered every 1h0m0s
+# TYPE rox_central_test_Test_scope_scoped_access_metric1 gauge
+rox_central_test_Test_scope_scoped_access_metric1{Cluster="cluster 1",Severity="CRITICAL"} 2
+rox_central_test_Test_scope_scoped_access_metric1{Cluster="cluster 2",Severity="HIGH"} 1
+rox_central_test_Test_scope_scoped_access_metric1{Cluster="cluster 3",Severity="LOW"} 1
+rox_central_test_Test_scope_scoped_access_metric1{Cluster="cluster 5",Severity="LOW"} 1
+# HELP rox_central_test_Test_scope_scoped_access_metric2 The total number of Test aggregated by Namespace and gathered every 1h0m0s
+# TYPE rox_central_test_Test_scope_scoped_access_metric2 gauge
+rox_central_test_Test_scope_scoped_access_metric2{Namespace="ns 1"} 1
+rox_central_test_Test_scope_scoped_access_metric2{Namespace="ns 2"} 1
+rox_central_test_Test_scope_scoped_access_metric2{Namespace="ns 3"} 3
+`
+
+		const expectedCluster1Metrics = `# HELP rox_central_test_Test_scope_scoped_access_metric1 The total number of Test aggregated by Cluster,Severity and gathered every 1h0m0s
+# TYPE rox_central_test_Test_scope_scoped_access_metric1 gauge
+rox_central_test_Test_scope_scoped_access_metric1{Cluster="cluster 1",Severity="CRITICAL"} 2
+# HELP rox_central_test_Test_scope_scoped_access_metric2 The total number of Test aggregated by Namespace and gathered every 1h0m0s
+# TYPE rox_central_test_Test_scope_scoped_access_metric2 gauge
+rox_central_test_Test_scope_scoped_access_metric2{Namespace="ns 1"} 1
+rox_central_test_Test_scope_scoped_access_metric2{Namespace="ns 3"} 1
+`
+
+		assert.Equal(t, expectedAdminMetrics, adminMetrics)
+		assert.Equal(t, expectedCluster1Metrics, cluster1Metrics)
+		assert.Empty(t, noAccessMetrics)
+
+		t.Cleanup(func() {
+			metrics.DeleteCustomRegistry(adminIdentity.UID())
+			metrics.DeleteCustomRegistry(cluster1Identity.UID())
+			metrics.DeleteCustomRegistry(noAccessIdentity.UID())
+		})
+	})
+
+	t.Run("global access", func(t *testing.T) {
+		tracker := MakeGlobalTrackerBase("test", "Test",
+			testLabelGetters,
+			makeTestGatherFunc(testData))
+
+		md := makeTestMetricDescriptors(t)
+		tracker.Reconfigure(&Configuration{
+			metrics: md,
+			toAdd:   slices.Collect(maps.Keys(md)),
+			period:  time.Hour,
+		})
+
+		provider, _ := authproviders.NewProvider(
+			authproviders.WithEnabled(true),
+			authproviders.WithID(uuid.NewV4().String()),
+			authproviders.WithName("test"),
+		)
+
+		adminCtx, _ := makeTestCtxIdentity(t, provider,
+			basic.ContextWithAdminIdentity)
+		cluster1Ctx, _ := makeTestCtxIdentity(t, provider,
+			basic.ContextWithNoAccessIdentity)
+		noAccessCtx, _ := makeTestCtxIdentity(t, provider,
+			basic.ContextWithNoneIdentity)
+
+		tracker.Gather(adminCtx)
+		tracker.Gather(cluster1Ctx)
+		tracker.Gather(noAccessCtx)
+		tracker.cleanupWG.Wait()
+
+		globalRegistry, err := metrics.GetGlobalRegistry()
+		require.NoError(t, err)
+
+		const expectedMetrics = `# HELP rox_central_test_Test_scope_global_access_metric1 The total number of Test aggregated by Cluster,Severity and gathered every 1h0m0s
+# TYPE rox_central_test_Test_scope_global_access_metric1 gauge
+rox_central_test_Test_scope_global_access_metric1{Cluster="cluster 1",Severity="CRITICAL"} 2
+rox_central_test_Test_scope_global_access_metric1{Cluster="cluster 2",Severity="HIGH"} 1
+rox_central_test_Test_scope_global_access_metric1{Cluster="cluster 3",Severity="LOW"} 1
+rox_central_test_Test_scope_global_access_metric1{Cluster="cluster 5",Severity="LOW"} 1
+# HELP rox_central_test_Test_scope_global_access_metric2 The total number of Test aggregated by Namespace and gathered every 1h0m0s
+# TYPE rox_central_test_Test_scope_global_access_metric2 gauge
+rox_central_test_Test_scope_global_access_metric2{Namespace="ns 1"} 1
+rox_central_test_Test_scope_global_access_metric2{Namespace="ns 2"} 1
+rox_central_test_Test_scope_global_access_metric2{Namespace="ns 3"} 3
+`
+
+		// All users should see the same global metrics.
+		globalMetrics := readMetrics(globalRegistry)
+		assert.Equal(t, expectedMetrics, globalMetrics)
+	})
+}
+
+func readMetrics(registry metrics.CustomRegistry) string {
+	rec := httptest.NewRecorder()
+	registry.ServeHTTP(rec, httptest.NewRequest("GET", "/metrics", nil))
+	return rec.Body.String()
 }
