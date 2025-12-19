@@ -125,10 +125,9 @@ func ToProtoV4VulnerabilityReport(ctx context.Context, r *claircore.Vulnerabilit
 	if err != nil {
 		return nil, fmt.Errorf("internal error: parsing EPSS items: %w", err)
 	}
-	// TODO(ROX-26672): Remove this line.
-	// The CSAF advisories are currently a temporary solution
-	// until we start showing CVEs for fixed vulnerabilities affecting
-	// Red Hat products.
+	// TODO(ROX-26672): Remove reference to temporary solution below.
+	// The CSAF advisories are used to obtain fixed dates for RH vulns and
+	// as a temporary solution when showing top level advisories (instead of CVEs).
 	csafAdvisories, err := redhatCSAFAdvisories(ctx, r.Enrichments)
 	if err != nil {
 		return nil, fmt.Errorf("internal error: parsing Red Hat CSAF advisories: %w", err)
@@ -660,6 +659,9 @@ func toProtoV4VulnerabilitiesMap(
 				Str("nvd_published", nvdVuln.Published).
 				Msg("issued time invalid: leaving empty")
 		}
+
+		fixed := fixedTime(csafAdvisory)
+
 		var vulnEPSS *epss.EPSSItem
 		if epssVulnItem, ok := epssItems[v.ID]; ok {
 			if v, ok := epssVulnItem[cve]; foundCVE && ok {
@@ -690,6 +692,7 @@ func toProtoV4VulnerabilitiesMap(
 			Cvss:               preferredCVSS,
 			CvssMetrics:        metrics,
 			Updater:            v.Updater,
+			FixedDate:          fixed,
 		}
 		if vulnEPSS != nil {
 			vulnerabilities[k].EpssMetrics = &v4.VulnerabilityReport_Vulnerability_EPSS{
@@ -701,6 +704,16 @@ func toProtoV4VulnerabilitiesMap(
 		}
 	}
 	return vulnerabilities, nil
+}
+
+// fixedTime returns the fixed time for a vulnerability as indicated by the
+// associated advisory. Will return nil if not found or an error occurs.
+func fixedTime(advisory csaf.Advisory) *timestamppb.Timestamp {
+	if !advisory.ReleaseDate.IsZero() {
+		return protocompat.ConvertTimeToTimestampOrNil(&advisory.ReleaseDate)
+	}
+
+	return nil
 }
 
 // issuedTime attempts to return the issued time for the vulnerability.
