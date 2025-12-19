@@ -10,9 +10,8 @@ import (
 )
 
 var (
-	log                   = logging.LoggerForModule()
-	defaultBaseInterval   = 1 * time.Minute
-	defaultAckChannelSize = 100
+	log                 = logging.LoggerForModule()
+	defaultBaseInterval = 1 * time.Minute
 )
 
 // resourceState tracks the retry state for a single resource.
@@ -36,9 +35,8 @@ type UnconfirmedMessageHandlerImpl struct {
 
 	// retryCommandCh emits resourceID when a retry should be attempted
 	retryCommandCh chan string
-	// ackCh emits resourceID when an ACK is received.
-	// The channel is buffered to avoid blocking in case the caller is not immediately interested in the stream of ACKed resources.
-	ackCh chan string
+	// onACK is called when an ACK is received for a resource (optional)
+	onACK func(resourceID string)
 	ctx   context.Context
 
 	// cleanupDone signals when cleanup is complete
@@ -53,7 +51,6 @@ func NewUnconfirmedMessageHandler(ctx context.Context, handlerName string, baseI
 		baseInterval:   baseInterval,
 		resources:      make(map[string]*resourceState),
 		retryCommandCh: make(chan string),
-		ackCh:          make(chan string, defaultAckChannelSize),
 		ctx:            ctx,
 		cleanupDone:    concurrency.NewStopper(),
 	}
@@ -62,18 +59,16 @@ func NewUnconfirmedMessageHandler(ctx context.Context, handlerName string, baseI
 	go func() {
 		defer h.cleanupDone.Flow().ReportStopped()
 		<-ctx.Done()
-		// resourcesMutex also ensures that closing ackCh and writing to ackCh are not concurrent.
 		h.mu.Lock()
 		defer h.mu.Unlock()
-		// First stop all timers to prevent more sends to channels
+		// Stop all timers to prevent more sends to channels
 		for _, state := range h.resources {
 			if state.timer != nil {
 				state.timer.Stop()
 			}
 		}
-		// Close channels after timers are stopped
+		// Close channel after timers are stopped
 		close(h.retryCommandCh)
-		close(h.ackCh)
 	}()
 
 	return h
@@ -90,9 +85,13 @@ func (h *UnconfirmedMessageHandlerImpl) RetryCommand() <-chan string {
 	return h.retryCommandCh
 }
 
-// AckedResources returns a channel emitting resourceIDs when ACKs are received.
-func (h *UnconfirmedMessageHandlerImpl) AckedResources() <-chan string {
-	return h.ackCh
+// OnACK registers a callback to be invoked when an ACK is received for a resource.
+// The callback is invoked outside the lock, so it is safe to perform blocking operations.
+// Only one callback can be registered; subsequent calls replace the previous callback.
+func (h *UnconfirmedMessageHandlerImpl) OnACK(callback func(resourceID string)) {
+	h.mu.Lock()
+	defer h.mu.Unlock()
+	h.onACK = callback
 }
 
 // ObserveSending should be called when a message is sent for a resource.
@@ -123,32 +122,28 @@ func (h *UnconfirmedMessageHandlerImpl) ObserveSending(resourceID string) {
 
 // HandleACK is called when an ACK is received for a resource.
 func (h *UnconfirmedMessageHandlerImpl) HandleACK(resourceID string) {
-	h.mu.Lock()
-	defer h.mu.Unlock()
-
-	// Check if handler is stopped before any operations
-	if h.ctx.Err() != nil {
-		return
-	}
-
-	state, exists := h.resources[resourceID]
-	if exists {
-		if state.timer != nil {
-			state.timer.Stop()
+	concurrency.WithLock(&h.mu, func() {
+		// Check if handler is stopped before any operations
+		if h.ctx.Err() != nil {
+			return
 		}
-		state.retry = 0
-		state.numUnackedSendings = 0
-		log.Debugf("[%s] Received ACK for resource %s", h.handlerName, resourceID)
-	} else {
-		log.Debugf("[%s] Received ACK for unknown resource %s", h.handlerName, resourceID)
-	}
 
-	// Non-blocking notify of ACK (channel may be closed if handler stopped)
-	select {
-	case <-h.ctx.Done():
-		return
-	case h.ackCh <- resourceID:
-	default:
+		state, exists := h.resources[resourceID]
+		if exists {
+			if state.timer != nil {
+				state.timer.Stop()
+			}
+			state.retry = 0
+			state.numUnackedSendings = 0
+			log.Debugf("[%s] Received ACK for resource %s", h.handlerName, resourceID)
+		} else {
+			log.Debugf("[%s] Received ACK for unknown resource %s", h.handlerName, resourceID)
+		}
+	})
+
+	// Invoke callback outside lock
+	if h.onACK != nil {
+		h.onACK(resourceID)
 	}
 }
 

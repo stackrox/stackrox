@@ -280,7 +280,6 @@ func (s *relayTestSuite) TestRelay_UMHInteraction() {
 
 	umh := &mockUMH{
 		retryCh: make(chan string, 1),
-		ackCh:   make(chan string, 1),
 	}
 
 	relay := New(mockIndexReportStream, mockIndexReportSender, umh, 0, 4*time.Hour)
@@ -306,7 +305,7 @@ func (s *relayTestSuite) TestRelay_UMHInteraction() {
 	umh.mu.Unlock()
 
 	// Send an ACK via UMH and ensure relay records it in cache.
-	umh.ackCh <- "100"
+	umh.HandleACK("100")
 	time.Sleep(50 * time.Millisecond)
 
 	relay.mu.Lock()
@@ -393,18 +392,16 @@ type mockUMH struct {
 	nacks   []string
 	sends   []string
 	retryCh chan string
-	ackCh   chan string
+	onACKCb func(resourceID string)
 }
 
 func (m *mockUMH) HandleACK(resourceID string) {
 	m.mu.Lock()
-	defer m.mu.Unlock()
 	m.acks = append(m.acks, resourceID)
-	if m.ackCh != nil {
-		select {
-		case m.ackCh <- resourceID:
-		default:
-		}
+	cb := m.onACKCb
+	m.mu.Unlock()
+	if cb != nil {
+		cb(resourceID)
 	}
 }
 
@@ -427,9 +424,8 @@ func (m *mockUMH) RetryCommand() <-chan string {
 	return m.retryCh
 }
 
-func (m *mockUMH) AckedResources() <-chan string {
-	if m.ackCh == nil {
-		m.ackCh = make(chan string)
-	}
-	return m.ackCh
+func (m *mockUMH) OnACK(callback func(resourceID string)) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	m.onACKCb = callback
 }

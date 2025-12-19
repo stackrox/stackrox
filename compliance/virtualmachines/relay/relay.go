@@ -37,7 +37,7 @@ type UnconfirmedMessageHandler interface {
 	HandleNACK(resourceID string)
 	ObserveSending(resourceID string)
 	RetryCommand() <-chan string
-	AckedResources() <-chan string
+	OnACK(callback func(resourceID string))
 }
 
 // Relay receives index reports from VMs and forwards them to Sensor.
@@ -66,7 +66,7 @@ func New(
 	maxReportsPerMinute float64,
 	staleAckThreshold time.Duration,
 ) *Relay {
-	return &Relay{
+	r := &Relay{
 		reportStream:        reportStream,
 		reportSender:        reportSender,
 		umh:                 umh,
@@ -75,6 +75,9 @@ func New(
 		cache:               make(map[string]*cachedReportMetadata),
 		limiters:            make(map[string]*rate.Limiter),
 	}
+	// Register callback for ACKs
+	r.umh.OnACK(r.markAcked)
+	return r
 }
 
 // Run starts the relay, processing incoming reports and retry commands.
@@ -90,13 +93,6 @@ func (r *Relay) Run(ctx context.Context) error {
 		select {
 		case <-ctx.Done():
 			return ctx.Err()
-
-		case vsockID, ok := <-r.umh.AckedResources():
-			if !ok {
-				log.Warn("UMH ack channel closed; stopping relay")
-				return errors.New("UMH ack channel closed unexpectedly")
-			}
-			r.markAcked(vsockID)
 
 		case vsockID, ok := <-r.umh.RetryCommand():
 			if !ok {

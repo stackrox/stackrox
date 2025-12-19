@@ -35,6 +35,6 @@ type UnconfirmedMessageHandler interface {
 	HandleACK(resourceID string)
 	HandleNACK(resourceID string)
 	ObserveSending(resourceID string)
-	RetryCommand() <-chan string   // Returns resourceID to retry
-	AckedResources() <-chan string // Returns resourceID when ACKed
+	RetryCommand() <-chan string // Returns resourceID to retry
+	OnACK(callback func(resourceID string))
 }

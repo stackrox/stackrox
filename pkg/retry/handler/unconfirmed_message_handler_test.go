@@ -143,29 +143,30 @@ func (suite *UnconfirmedMessageHandlerTestSuite) TestMultipleResources() {
 	}
 }
 
-func (suite *UnconfirmedMessageHandlerTestSuite) TestAckedResources() {
+func (suite *UnconfirmedMessageHandlerTestSuite) TestOnACKCallback() {
 	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
 	baseInterval := 50 * time.Millisecond
 	umh := NewUnconfirmedMessageHandler(ctx, "test", baseInterval)
 
-	// ACK should emit resource ID on AckedResources.
+	var ackedResources []string
+	wg := concurrency.NewWaitGroup(3)
+	umh.OnACK(func(resourceID string) {
+		defer wg.Add(-1)
+		ackedResources = append(ackedResources, resourceID)
+	})
+
+	// ACK should invoke the callback
 	umh.HandleACK("resource-ack-1")
 	umh.HandleACK("resource-ack-2")
 	umh.HandleACK("resource-ack-3")
 
 	select {
-	case got, ok := <-umh.AckedResources():
-		suite.True(ok)
-		suite.Equal("resource-ack-1", got)
-	case <-time.After(time.Second):
-		suite.Fail("expected resource-ack-<n> to be acked")
+	case <-time.After(100 * time.Millisecond):
+		suite.Fail("expected all callbacks to be invoked")
+	case <-wg.Done():
 	}
-	cancel()
-	// Acks channel is still open and not drained
-	got, ok := <-umh.AckedResources()
-	suite.True(ok)
-	suite.Equal("resource-ack-2", got)
-
+	suite.Equal([]string{"resource-ack-1", "resource-ack-2", "resource-ack-3"}, ackedResources)
 }
 
 func (suite *UnconfirmedMessageHandlerTestSuite) TestShutdown() {
@@ -223,25 +224,17 @@ func (suite *UnconfirmedMessageHandlerTestSuite) TestOperationsOnDeadHandler() {
 		umh.HandleNACK("resource-2")
 		umh.HandleNACK("unknown-resource")
 
-		// Channel accessors should return closed channels
+		// Channel accessor should return closed channel
 		_ = umh.RetryCommand()
-		_ = umh.AckedResources()
 		_ = umh.Stopped()
 	})
 
-	// Verify channels are closed (receive should not block)
+	// Verify RetryCommand channel is closed (receive should not block)
 	select {
 	case _, ok := <-umh.RetryCommand():
 		suite.False(ok, "RetryCommand channel should be closed")
 	case <-time.After(100 * time.Millisecond):
 		suite.Fail("RetryCommand channel should not block")
-	}
-
-	select {
-	case _, ok := <-umh.AckedResources():
-		suite.False(ok, "AckedResources channel should be closed")
-	case <-time.After(100 * time.Millisecond):
-		suite.Fail("AckedResources channel should not block")
 	}
 
 	// Stopped should already be signaled

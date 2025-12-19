@@ -20,22 +20,16 @@ type mockUnconfirmedMessageHandler struct {
 	ackCount  int
 	nackCount int
 	retryC    chan string
-	ackC      chan string
 }
 
 func newMockUnconfirmedMessageHandler() *mockUnconfirmedMessageHandler {
 	return &mockUnconfirmedMessageHandler{
 		retryC: make(chan string),
-		ackC:   make(chan string),
 	}
 }
 
 func (m *mockUnconfirmedMessageHandler) HandleACK(_ string) {
 	m.ackCount++
-	select {
-	case m.ackC <- "ack":
-	default:
-	}
 }
 
 func (m *mockUnconfirmedMessageHandler) HandleNACK(_ string) {
@@ -48,8 +42,8 @@ func (m *mockUnconfirmedMessageHandler) RetryCommand() <-chan string {
 	return m.retryC
 }
 
-func (m *mockUnconfirmedMessageHandler) AckedResources() <-chan string {
-	return m.ackC
+func (m *mockUnconfirmedMessageHandler) OnACK(_ func(resourceID string)) {
+	// no-op for test mock
 }
 
 func (s *ComplianceTestSuite) TestHandleComplianceACK() {
