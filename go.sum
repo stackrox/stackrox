@@ -1533,8 +1533,8 @@ github.com/stackrox/external-network-pusher v0.0.0-20231115153210-b82d72f500a2 h
 github.com/stackrox/external-network-pusher v0.0.0-20231115153210-b82d72f500a2/go.mod h1:M22zIb5zuZCYbYwcn9iOWswNBrxE+YPkAHU5Bkg5XE4=
 github.com/stackrox/hashstructure v0.0.4 h1:m6n9oRdmsfI7/oIZjsGU6hDCHPzQn5rQ1fQkUqgTq+c=
 github.com/stackrox/hashstructure v0.0.4/go.mod h1:FkaQJi8DJhUs7swo1VKuqzh9kYSKAr2R23/gMC26Gqc=
-github.com/stackrox/helm-operator v0.8.1-0.20251208094835-6f1985043d0d h1:vi8OBPMlPQzcQaIwWRQDQzqFWhZq6HoVDZQWQXARByA=
-github.com/stackrox/helm-operator v0.8.1-0.20251208094835-6f1985043d0d/go.mod h1:Sc+8bE38xTCgCChBUvtq/PxatEg9fAypr7S5iAw8nlA=
+github.com/stackrox/helm-operator v0.8.1-0.20251219085743-ad004fb0e741 h1:niO1ppy2bGh2x2Qp6iN4qIydZ2HlN2db7v487m3w2+4=
+github.com/stackrox/helm-operator v0.8.1-0.20251219085743-ad004fb0e741/go.mod h1:Sc+8bE38xTCgCChBUvtq/PxatEg9fAypr7S5iAw8nlA=
 github.com/stackrox/helmtest v0.0.8 h1:42gop8zRw0/Q9bIJ/f9rgcILSugTs2vs2G0QXYaGDeU=
 github.com/stackrox/helmtest v0.0.8/go.mod h1:V8ntXFPB1ReepRgg7REARB0vvdM155dyODPCFP2d2EY=
 github.com/stackrox/istio-cves v0.0.0-20221007013142-0bde9b541ec8 h1:rUIvoAHokPcd92aJT2gJwVeyE8tMuaqS5l5s3cEgXFY=
