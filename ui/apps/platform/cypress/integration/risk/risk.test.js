@@ -60,11 +60,10 @@ describe('Risk', () => {
     });
 
     describe('with actual API', () => {
-        // TODO fix uncaught exception in Network Graph 2.0
-        it.skip('should navigate to network page with selected deployment', () => {
+        it('should navigate to network page with selected deployment', () => {
             visitRiskDeployments();
             viewRiskDeploymentByName('collector');
-            viewRiskDeploymentInNetworkGraph();
+            viewRiskDeploymentInNetworkGraph('collector');
         });
 
         const searchPlaceholderSelector = `${RiskPageSelectors.search.valueContainer} input[placeholder="Filter deployments"]`;
