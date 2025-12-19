@@ -14,7 +14,7 @@ option java_package = "io.stackrox.proto.storage";
 message ProcessBaselineKey {
   // The idea is for the keys to be flexible.
   // Only certain combinations of these will be supported.
-  string deployment_id = 1; // @gotags: search:"Deployment ID,hidden" sql:"type(uuid),index=hash"
+  string deployment_id = 1; // @gotags: search:"Deployment ID,hidden" sql:"type(uuid),index"
   string container_name = 2;
   string cluster_id = 3; // @gotags: search:"Cluster ID,hidden" sql:"type(uuid)"
   string namespace = 4; // @gotags: search:"Namespace,hidden"
