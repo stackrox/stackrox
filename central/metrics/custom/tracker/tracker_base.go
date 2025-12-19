@@ -139,7 +139,7 @@ func (tracker *TrackerBase[F]) Reconfigure(cfg *Configuration) {
 	}
 	previous := tracker.setConfiguration(cfg)
 	if previous != nil {
-		if cfg.period == 0 {
+		if !cfg.isEnabled() {
 			log.Debugf("Metrics collection has been disabled for %s", tracker.description)
 			tracker.unregisterMetrics(slices.Collect(maps.Keys(previous.metrics)))
 			return
@@ -229,12 +229,23 @@ func formatMetricHelp(description string, cfg *Configuration, metric MetricName)
 	return help.String()
 }
 
+func (tracker *TrackerBase[Finding]) getConfigurationIfEnabled() *Configuration {
+	tracker.metricsConfigMux.RLock()
+	defer tracker.metricsConfigMux.RUnlock()
+	if !tracker.config.isEnabled() {
+		return nil
+	}
+	return tracker.config
+}
+
 func (tracker *TrackerBase[F]) getConfiguration() *Configuration {
 	tracker.metricsConfigMux.RLock()
 	defer tracker.metricsConfigMux.RUnlock()
 	return tracker.config
 }
 
+// setConfiguration updates the tracker configuration and returns the previous
+// one.
 func (tracker *TrackerBase[F]) setConfiguration(config *Configuration) *Configuration {
 	tracker.metricsConfigMux.Lock()
 	defer tracker.metricsConfigMux.Unlock()
@@ -245,9 +256,7 @@ func (tracker *TrackerBase[F]) setConfiguration(config *Configuration) *Configur
 
 // track aggregates the fetched findings and updates the gauges.
 func (tracker *TrackerBase[F]) track(ctx context.Context, gatherer *gatherer[F], cfg *Configuration) error {
-	if len(cfg.metrics) == 0 {
-		return nil
-	}
+	
 	aggregator := gatherer.aggregator
 	registry := gatherer.registry
 	aggregator.reset()
@@ -270,12 +279,12 @@ func (tracker *TrackerBase[F]) track(ctx context.Context, gatherer *gatherer[F],
 
 // Gather the data not more often then maxAge.
 func (tracker *TrackerBase[F]) Gather(ctx context.Context) {
-	id, err := authn.IdentityFromContext(ctx)
-	if err != nil {
+	cfg := tracker.getConfigurationIfEnabled()
+	if cfg == nil {
 		return
 	}
-	cfg := tracker.getConfiguration()
-	if cfg == nil {
+	id, err := authn.IdentityFromContext(ctx)
+	if err != nil {
 		return
 	}
 	// Pass the cfg so that the same configuration is used there and here.
@@ -287,7 +296,7 @@ func (tracker *TrackerBase[F]) Gather(ctx context.Context) {
 	defer tracker.cleanupInactiveGatherers()
 	defer gatherer.running.Store(false)
 
-	if cfg.period == 0 || time.Since(gatherer.lastGather) < cfg.period {
+	if time.Since(gatherer.lastGather) < cfg.period {
 		return
 	}
 	begin := time.Now()
