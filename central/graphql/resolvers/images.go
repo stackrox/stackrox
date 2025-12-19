@@ -48,6 +48,7 @@ type ImageResolver interface {
 	Signature(ctx context.Context) (*imageSignatureResolver, error)
 	SignatureVerificationData(ctx context.Context) (*imageSignatureVerificationDataResolver, error)
 	TopCvss(ctx context.Context) float64
+	BaseImageInfo(ctx context.Context) ([]*baseImageInfoResolver, error)
 	UnknownCveCount(ctx context.Context) int32
 
 	Deployments(ctx context.Context, args PaginatedQuery) ([]*deploymentResolver, error)
