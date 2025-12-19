@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom-v5-compat';
 import { Alert } from '@patternfly/react-core';
 
 import CollapsibleCard from 'Components/CollapsibleCard';
-import { getURLLinkToDeployment } from 'Containers/NetworkGraph/utils/networkGraphURLUtils';
+import { getLinkToDeploymentInNetworkGraph } from 'routePaths';
 import useIsRouteEnabled from 'hooks/useIsRouteEnabled';
 import type { Deployment } from 'types/deployment.proto';
 import type { Risk, RiskFactor } from 'services/DeploymentsService';
@@ -46,7 +46,7 @@ function RiskIndicators({ deployment, risk }: RiskIndicatorsProps) {
             {isRouteEnabledForNetworkGraph && (
                 <Link
                     className="btn btn-base h-10 no-underline mt-4 ml-3 mr-3"
-                    to={getURLLinkToDeployment({
+                    to={getLinkToDeploymentInNetworkGraph({
                         cluster: deployment.clusterName,
                         namespace: deployment.namespace,
                         deploymentId: deployment.id,

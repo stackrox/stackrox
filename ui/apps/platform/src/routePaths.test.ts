@@ -3,7 +3,7 @@ import { describe, expect, it, vi } from 'vitest';
 import type { IsFeatureFlagEnabled } from 'hooks/useFeatureFlags';
 import type { HasReadAccess } from 'hooks/usePermissions';
 
-import { isRouteEnabled } from './routePaths';
+import { getLinkToDeploymentInNetworkGraph, isRouteEnabled } from './routePaths';
 
 /*
  * TODO: Consider refactoring route access tests to use persona-based testing.
@@ -43,6 +43,18 @@ describe('routePaths', () => {
             const enabled = isRouteEnabled({ hasReadAccess, isFeatureFlagEnabled }, 'base-images');
 
             expect(enabled).toBe(false);
+        });
+    });
+
+    describe('getURLLinkToDeployment', () => {
+        it('should get the URL to a specific deployment in the network graph', () => {
+            const cluster = 'remote';
+            const namespace = 'stackrox';
+            const deploymentId = '8cbfde79-3450-45bb-a5c9-4185b9d1d0f1';
+            const url = getLinkToDeploymentInNetworkGraph({ cluster, namespace, deploymentId });
+            expect(url).toEqual(
+                '/main/network-graph/deployment/8cbfde79-3450-45bb-a5c9-4185b9d1d0f1?s[Cluster]=remote&s[Namespace]=stackrox'
+            );
         });
     });
 });

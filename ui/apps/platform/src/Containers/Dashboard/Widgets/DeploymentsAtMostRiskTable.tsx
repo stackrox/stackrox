@@ -3,10 +3,9 @@ import { Truncate } from '@patternfly/react-core';
 import { Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 
 import type { ListDeployment } from 'types/deployment.proto';
-import { riskBasePath } from 'routePaths';
+import { getLinkToDeploymentInNetworkGraph, riskBasePath } from 'routePaths';
 import type { SearchFilter } from 'types/search';
 import { getUrlQueryStringForSearchFilter } from 'utils/searchUtils';
-import { getURLLinkToDeployment } from 'Containers/NetworkGraph/utils/networkGraphURLUtils';
 
 function riskPageLinkToDeployment(id: string, name: string, searchFilter: SearchFilter): string {
     const query = getUrlQueryStringForSearchFilter({
@@ -36,7 +35,7 @@ function DeploymentsAtMostRiskTable({
             </Thead>
             <Tbody>
                 {deployments.map(({ id: deploymentId, name, cluster, namespace, priority }) => {
-                    const networkGraphLink = getURLLinkToDeployment({
+                    const networkGraphLink = getLinkToDeploymentInNetworkGraph({
                         cluster,
                         namespace,
                         deploymentId,
