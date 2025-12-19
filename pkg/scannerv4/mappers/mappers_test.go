@@ -193,6 +193,7 @@ func Test_ToProtoV4VulnerabilityReport(t *testing.T) {
 						DistributionId:     "sample vuln distribution id",
 						RepositoryId:       "sample vuln repository id",
 						FixedInVersion:     "sample vuln fixed in",
+						Updater:            "rhel8",
 					},
 					"1": {
 						Id:                 "1",
@@ -206,6 +207,7 @@ func Test_ToProtoV4VulnerabilityReport(t *testing.T) {
 						DistributionId:     "sample vuln distribution id",
 						RepositoryId:       "sample vuln repository id 2",
 						FixedInVersion:     "sample vuln fixed in",
+						Updater:            "rhel8",
 					},
 				},
 				PackageVulnerabilities: map[string]*v4.StringList{
@@ -270,6 +272,7 @@ func Test_ToProtoV4VulnerabilityReport(t *testing.T) {
 						DistributionId:     "sample vuln distribution id",
 						RepositoryId:       "sample vuln repository id",
 						FixedInVersion:     "sample vuln fixed in",
+						Updater:            "rhel8",
 					},
 					"1": {
 						Id:                 "1",
@@ -283,6 +286,7 @@ func Test_ToProtoV4VulnerabilityReport(t *testing.T) {
 						DistributionId:     "sample vuln distribution id",
 						RepositoryId:       "sample vuln repository id 2",
 						FixedInVersion:     "sample vuln fixed in",
+						Updater:            "rhel8-2",
 					},
 				},
 				PackageVulnerabilities: map[string]*v4.StringList{
