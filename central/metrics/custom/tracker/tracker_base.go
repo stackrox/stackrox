@@ -54,6 +54,11 @@ type Tracker interface {
 	NewConfiguration(*storage.PrometheusMetrics_Group) (*Configuration, error)
 	// Reconfigure the tracker with the provided tracker configuration.
 	Reconfigure(*Configuration)
+	// GetPrefix returns the metric prefix.
+	GetPrefix() string
+	// Refresh the data on the next scrape request without waiting for the next
+	// gathering period.
+	Refresh()
 }
 
 // FindingErrorSequence is a sequence of pairs of findings and errors.
@@ -102,6 +107,10 @@ func MakeTrackerBase[F Finding](metricPrefix, description string,
 	}
 }
 
+func (tracker *TrackerBase[F]) GetPrefix() string {
+	return tracker.metricPrefix
+}
+
 // NewConfiguration does not apply the configuration.
 func (tracker *TrackerBase[F]) NewConfiguration(cfg *storage.PrometheusMetrics_Group) (*Configuration, error) {
 	current := tracker.getConfiguration()
@@ -128,7 +137,7 @@ func (tracker *TrackerBase[F]) NewConfiguration(cfg *storage.PrometheusMetrics_G
 }
 
 // Reconfigure assumes the configuration has been validated, so doesn't return
-// an error.
+// an error. It also schedules gatherers refresh if metrics have changed.
 func (tracker *TrackerBase[F]) Reconfigure(cfg *Configuration) {
 	if cfg == nil {
 		cfg = &Configuration{}
@@ -143,6 +152,43 @@ func (tracker *TrackerBase[F]) Reconfigure(cfg *Configuration) {
 		tracker.unregisterMetrics(cfg.toDelete)
 	}
 	tracker.registerMetrics(cfg, cfg.toAdd)
+	if len(cfg.toAdd) != 0 || len(cfg.toDelete) != 0 {
+		tracker.Refresh()
+	}
+}
+
+// retry f() until either it returns true, or maxAttempts is reached with
+// exponentially increasing retry period. Returns true if f() returned true, or
+// false otherwise.
+func retry(f func() bool, d time.Duration, maxAttempts int) bool {
+	for attempt := range maxAttempts {
+		if attempt > 0 {
+			time.Sleep(d)
+			d = d * 2
+		}
+		if f() {
+			return true
+		}
+	}
+	return false
+}
+
+// Refresh shifts the last gathering time of every gatherer back by period+1.
+func (tracker *TrackerBase[F]) Refresh() {
+	cfg := tracker.getConfiguration()
+	if cfg == nil {
+		return
+	}
+
+	const maxAttempts = 5
+	tracker.gatherers.Range(func(userID, gv any) bool {
+		g := gv.(*gatherer)
+		if !retry(func() bool { return g.shift(-(cfg.period + 1)) }, time.Minute, maxAttempts) {
+			log.Warnf("Failed to refresh a gatherer of the %s tracker after %d retries",
+				tracker.metricPrefix, maxAttempts)
+		}
+		return true
+	})
 }
 
 func labelsAsStrings(labels []Label) []string {
@@ -307,6 +353,16 @@ func (tracker *TrackerBase[Finding]) getGatherer(userID string, cfg *Configurati
 
 func (g *gatherer) trySetRunning() bool {
 	return g.running.CompareAndSwap(false, true)
+}
+
+// shift the last gathering timestamp by duration d.
+func (g *gatherer) shift(d time.Duration) bool {
+	ok := g.trySetRunning()
+	if ok {
+		g.lastGather = g.lastGather.Add(d)
+		g.running.Store(false)
+	}
+	return ok
 }
 
 // cleanupInactiveGatherers frees the registries for the userIDs, that haven't
