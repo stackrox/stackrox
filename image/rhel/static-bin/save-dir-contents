@@ -19,5 +19,6 @@ for dir in "$@"; do
 
 	target_dir="/.init-dirs/${dir_no_leading_slash}"
 	mkdir -p "${target_dir}"
-	cp -rpP "${dir}"/* "${target_dir}"
+	cp --recursive --preserve=mode,ownership --no-dereference \
+	    "${dir}"/* "${target_dir}"
 done
