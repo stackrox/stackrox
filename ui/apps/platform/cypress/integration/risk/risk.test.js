@@ -43,9 +43,9 @@ describe('Risk', () => {
             visitRiskDeployments();
             viewRiskDeploymentByName('collector');
 
-            cy.get('button[data-testid="tab"]:contains("Risk Indicators")');
-            cy.get('button[data-testid="tab"]:contains("Deployment Details")');
-            cy.get('button[data-testid="tab"]:contains("Process Discovery")');
+            cy.get('[role="tab"]:contains("Risk Indicators")');
+            cy.get('[role="tab"]:contains("Deployment Details")');
+            cy.get('[role="tab"]:contains("Process Discovery")');
         });
 
         it('should navigate from Risk Page to Vulnerability Management Image Page', () => {

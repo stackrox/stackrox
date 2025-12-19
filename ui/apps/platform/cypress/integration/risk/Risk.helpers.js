@@ -152,7 +152,7 @@ export function clickFirstDrillDownButtonInEventTimeline(fixtureForPodEventTimel
 // interact
 
 export function clickTab(tabText) {
-    cy.get(`button[data-testid="tab"]:contains("${tabText}")`).click();
+    cy.get(`*[role="tablist"] button:contains("${tabText}")`).click();
 }
 
 export function filterEventsByType(eventType) {

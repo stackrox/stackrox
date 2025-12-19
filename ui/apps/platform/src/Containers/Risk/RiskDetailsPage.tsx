@@ -15,7 +15,7 @@ import BreadcrumbItemLink from 'Components/BreadcrumbItemLink';
 import TableErrorComponent from 'Components/PatternFly/TableErrorComponent';
 import { riskBasePath } from 'routePaths';
 
-import RiskSidePanel from './RiskSidePanel';
+import RiskDetailTabs from './RiskDetailTabs';
 import useDeploymentWithRisk from './useDeploymentWithRisk';
 
 function RiskDetailsPage(): ReactElement {
@@ -53,7 +53,7 @@ function RiskDetailsPage(): ReactElement {
                     <Spinner aria-label="Loading deployment information" />
                 </Bullseye>
             )}
-            {data && !error && <RiskSidePanel deploymentWithRisk={data} />}
+            {data && !error && <RiskDetailTabs deployment={data.deployment} risk={data.risk} />}
         </>
     );
 }
