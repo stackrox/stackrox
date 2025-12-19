@@ -56,7 +56,7 @@ message K8sRoleBinding {
   map<string, string> annotations = 8; // @gotags: search:"Role Binding Annotation"
   google.protobuf.Timestamp created_at = 9;
 
-  repeated Subject subjects = 10;
+  repeated Subject subjects = 10; // @gotags: sensorhash:"set"
   string role_id = 11; // @gotags: search:"Role ID" sql:"type(uuid)"
 }
 
