@@ -6,6 +6,7 @@ import (
 	"github.com/stackrox/rox/central/deployment/cache"
 	"github.com/stackrox/rox/central/deployment/datastore/internal/store"
 	pgStore "github.com/stackrox/rox/central/deployment/datastore/internal/store/postgres"
+	"github.com/stackrox/rox/central/deployment/views"
 	imageDS "github.com/stackrox/rox/central/image/datastore"
 	imageV2DS "github.com/stackrox/rox/central/imagev2/datastore"
 	nfDS "github.com/stackrox/rox/central/networkgraph/flow/datastore"
@@ -45,6 +46,8 @@ type DataStore interface {
 	GetDeploymentIDs(ctx context.Context) ([]string, error)
 
 	WalkByQuery(ctx context.Context, query *v1.Query, fn func(deployment *storage.Deployment) error) error
+
+	GetContainerImageViews(ctx context.Context, q *v1.Query) ([]*views.ContainerImageView, error)
 }
 
 func newDataStore(

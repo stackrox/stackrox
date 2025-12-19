@@ -9,6 +9,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/deployment/cache"
 	deploymentStore "github.com/stackrox/rox/central/deployment/datastore/internal/store"
+	"github.com/stackrox/rox/central/deployment/views"
 	"github.com/stackrox/rox/central/globaldb"
 	imageDS "github.com/stackrox/rox/central/image/datastore"
 	imageV2DS "github.com/stackrox/rox/central/imagev2/datastore"
@@ -470,6 +471,11 @@ func (ds *datastoreImpl) updateDeploymentPriority(deployments ...*storage.Deploy
 
 func (ds *datastoreImpl) GetDeploymentIDs(ctx context.Context) ([]string, error) {
 	return ds.deploymentStore.GetIDs(ctx)
+}
+
+func (ds *datastoreImpl) GetContainerImageViews(ctx context.Context, q *v1.Query) ([]*views.ContainerImageView, error) {
+	defer metrics.SetDatastoreFunctionDuration(time.Now(), "Deployment", "GetContainerImageViews")
+	return ds.deploymentStore.GetContainerImageViews(ctx, q)
 }
 
 type DeploymentSearchResultConverter struct{}
