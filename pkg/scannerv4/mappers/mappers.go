@@ -408,8 +408,8 @@ func toProtoV4PackageVulnerabilitiesMap(ccPkgVulnerabilities map[string][]string
 		// This may happen, for example, when we match the same vulnerability to multiple CPEs
 		// in Red Hat's OVAL or VEX data.
 		vulnIDs = dedupeVulns(vulnIDs, ccVulnerabilities)
-		// Only do the following if we want to use the CSAF enrichment data.
-		if features.ScannerV4RedHatCSAF.Enabled() {
+		// Only do the following if we want RH advisories to be top level.
+		if !features.ScannerV4RedHatCVEs.Enabled() {
 			// Next, sort by NVD CVSS score.
 			sortByNVDCVSS(vulnIDs, vulnerabilities)
 			// Next, deduplicate and vulnerabilities with the same Red Hat advisory name.
@@ -594,11 +594,10 @@ func toProtoV4VulnerabilitiesMap(
 		}
 
 		name := vulnerabilityName(v)
-		// TODO(ROX-26672): Remove this line.
 		csafAdvisory, csafAdvisoryExists := csafAdvisories[v.ID]
 
 		normalizedSeverity := toProtoV4VulnerabilitySeverity(ctx, v.NormalizedSeverity)
-		if csafAdvisoryExists {
+		if csafAdvisoryExists && !features.ScannerV4RedHatCVEs.Enabled() {
 			// Replace the normalized severity for the CVE with the severity of the related Red Hat advisory.
 			normalizedSeverity = toProtoV4VulnerabilitySeverityFromString(ctx, csafAdvisory.Severity)
 		}
@@ -630,7 +629,7 @@ func toProtoV4VulnerabilitiesMap(
 		}
 
 		description := v.Description
-		if csafAdvisoryExists {
+		if csafAdvisoryExists && !features.ScannerV4RedHatCVEs.Enabled() {
 			// Replace the description for the CVE with the description of the related Red Hat advisory.
 			description = csafAdvisory.Description
 		}
@@ -642,7 +641,7 @@ func toProtoV4VulnerabilitiesMap(
 		}
 
 		vulnPublished := v.Issued
-		if csafAdvisoryExists {
+		if csafAdvisoryExists && !features.ScannerV4RedHatCVEs.Enabled() {
 			// Replace the published date for the CVE with the published date of the related Red Hat advisory.
 			vulnPublished = csafAdvisory.ReleaseDate
 		}
@@ -652,6 +651,7 @@ func toProtoV4VulnerabilitiesMap(
 				Str("vuln_id", v.ID).
 				Str("vuln_name", v.Name).
 				Str("vuln_updater", v.Updater).
+				Bool("feature_rh_cves_enabled", features.ScannerV4RedHatCVEs.Enabled()).
 				Bool("csaf_advisory_exists", csafAdvisoryExists).
 				// Use Str instead of Time because the latter will format the time into
 				// RFC3339 form, which may not be valid for this.
@@ -966,16 +966,12 @@ func nvdVulnerabilities(enrichments map[string][]json.RawMessage) (map[string]ma
 	return ret, nil
 }
 
-// TODO(ROX-26672): Remove this function when we no longer require reading advisory data.
 func redhatCSAFAdvisories(ctx context.Context, enrichments map[string][]json.RawMessage) (map[string]csaf.Advisory, error) {
 	// Do not read CSAF data if it's not enabled.
 	if !features.ScannerV4RedHatCSAF.Enabled() {
 		return nil, nil
 	}
-	// No reason to read CSAF data when we want to only show CVEs.
-	if features.ScannerV4RedHatCVEs.Enabled() {
-		return nil, nil
-	}
+
 	enrichmentsList := enrichments[csaf.Type]
 	if len(enrichmentsList) == 0 {
 		return nil, nil
@@ -1206,8 +1202,8 @@ func cvssMetrics(_ context.Context, vuln *claircore.Vulnerability, vulnName stri
 	var preferredErr error
 	switch {
 	case strings.EqualFold(vuln.Updater, RedHatUpdaterName):
-		// If the Name is empty, then the whole advisory is.
-		if advisory.Name == "" {
+		// If the Name is empty, then the whole advisory is, also ignore advisory if CVEs are top level.
+		if advisory.Name == "" || features.ScannerV4RedHatCVEs.Enabled() {
 			preferredCVSS, preferredErr = vulnCVSS(vuln, v4.VulnerabilityReport_Vulnerability_CVSS_SOURCE_RED_HAT)
 		} else {
 			// Set the preferred CVSS metrics to the ones provided by the related Red Hat advisory.
@@ -1526,8 +1522,6 @@ func vulnsEqual(a, b *claircore.Vulnerability) bool {
 }
 
 // dedupeAdvisories deduplicates repeat advisories out of vulnIDs and returns the result.
-// This function will only filter if ROX_SCANNER_V4_RED_HAT_CSAF is enabled; otherwise,
-// it'll just return the original slice of vulnIDs.
 // This function does not guarantee order is preserved.
 func dedupeAdvisories(vulnIDs []string, protoVulns map[string]*v4.VulnerabilityReport_Vulnerability) []string {
 	filtered := make([]string, 0, len(vulnIDs))
