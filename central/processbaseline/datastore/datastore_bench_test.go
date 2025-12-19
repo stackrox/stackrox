@@ -208,9 +208,8 @@ func BenchmarkSearchProcessBaseline(b *testing.B) {
 				b.Run(query.name, func(b *testing.B) {
 					b.ResetTimer()
 					for i := 0; i < b.N; i++ {
-						results, err := datastore.Search(benchmarkCtx, query.query)
+						_, err := datastore.Search(benchmarkCtx, query.query)
 						require.NoError(b, err)
-						_ = results // Prevent optimization
 					}
 				})
 			}
@@ -272,10 +271,8 @@ func BenchmarkSearchRawProcessBaselines(b *testing.B) {
 				b.Run(query.name, func(b *testing.B) {
 					b.ResetTimer()
 					for i := 0; i < b.N; i++ {
-						results, err := datastore.SearchRawProcessBaselines(benchmarkCtx, query.query)
+						_, err := datastore.SearchRawProcessBaselines(benchmarkCtx, query.query)
 						require.NoError(b, err)
-						// Access the results to prevent optimization
-						_ = len(results)
 					}
 				})
 			}
