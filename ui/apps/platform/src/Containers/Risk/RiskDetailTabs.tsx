@@ -1,23 +1,24 @@
-import { PageSection, Tab, TabTitleText, Tabs } from '@patternfly/react-core';
+import { Flex, PageSection, Tab, TabTitleText, Tabs } from '@patternfly/react-core';
+
 import usePermissions from 'hooks/usePermissions';
 import useURLStringUnion from 'hooks/useURLStringUnion';
 import type { Deployment } from 'types/deployment.proto';
 import type { Risk } from 'services/DeploymentsService';
 
 import DeploymentDetails from './DeploymentDetails';
-import RiskIndicators from './Indicators/RiskIndicators';
 import ProcessDiscovery from './Process/ProcessDiscovery';
+import RiskIndicatorCard from './Indicators/RiskIndicatorCard';
 
-const riskIndicatorsTab = 'Risk Indicators';
-const deploymentDetailsTab = 'Deployment Details';
-const processDiscoveryTab = 'Process Discovery';
+const riskIndicatorsTab = 'risk-tab-risk-indicators';
+const deploymentDetailsTab = 'risk-tab-deployment-details';
+const processDiscoveryTab = 'risk-tab-process-discovery';
 
-export type RiskSidePanelTabsProps = {
+export type RiskDetailTabsProps = {
     deployment: Deployment;
-    risk: Risk | null | undefined;
+    risk: Risk;
 };
 
-function RiskDetailTabs({ deployment, risk }) {
+function RiskDetailTabs({ deployment, risk }: RiskDetailTabsProps) {
     const { hasReadAccess } = usePermissions();
     const hasReadAccessForDeploymentExtension = hasReadAccess('DeploymentExtension');
 
@@ -29,7 +30,7 @@ function RiskDetailTabs({ deployment, risk }) {
 
     return (
         <>
-            <PageSection variant="light" padding={{ default: 'noPadding' }}>
+            <PageSection type="tabs" variant="light" padding={{ default: 'noPadding' }}>
                 <Tabs
                     activeKey={activeTabKey}
                     onSelect={(_event, tabKey) => setActiveTabKey(tabKey)}
@@ -55,11 +56,16 @@ function RiskDetailTabs({ deployment, risk }) {
                     )}
                 </Tabs>
             </PageSection>
-            <PageSection variant="default" id={activeTabKey}>
+            <PageSection id={activeTabKey}>
                 {activeTabKey === riskIndicatorsTab && (
-                    <div className="flex flex-col">
-                        <RiskIndicators risk={risk} />
-                    </div>
+                    <Flex
+                        direction={{ default: 'column' }}
+                        spaceItems={{ default: 'spaceItemsMd' }}
+                    >
+                        {risk.results.map((result) => (
+                            <RiskIndicatorCard key={result.name} result={result} />
+                        ))}
+                    </Flex>
                 )}
                 {activeTabKey === deploymentDetailsTab && (
                     <div className="flex flex-1 flex-col relative">
