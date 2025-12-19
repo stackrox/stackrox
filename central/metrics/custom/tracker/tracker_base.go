@@ -133,9 +133,14 @@ func (tracker *TrackerBase[F]) Reconfigure(cfg *Configuration) {
 	if cfg == nil {
 		cfg = &Configuration{}
 	}
-	previous := tracker.setConfiguration(cfg)
+
+	tracker.metricsConfigMux.Lock()
+	defer tracker.metricsConfigMux.Unlock()
+	previous := tracker.config
+	tracker.config = cfg
+
 	if previous != nil {
-		if cfg.period == 0 {
+		if !tracker.isEnabledNoLock() {
 			log.Debugf("Metrics collection has been disabled for %s", tracker.description)
 			tracker.unregisterMetrics(slices.Collect(maps.Keys(previous.metrics)))
 			return
@@ -184,25 +189,31 @@ func (tracker *TrackerBase[Finding]) registerMetric(gatherer *gatherer, cfg *Con
 	log.Debugf("Registered %s Prometheus metric %q", tracker.description, metric)
 }
 
+func (tracker *TrackerBase[Finding]) isEnabledNoLock() bool {
+	cfg := tracker.config
+	if cfg == nil || len(cfg.metrics) == 0 {
+		return false
+	}
+	return cfg.period > 0
+}
+
 func (tracker *TrackerBase[Finding]) getConfiguration() *Configuration {
 	tracker.metricsConfigMux.RLock()
 	defer tracker.metricsConfigMux.RUnlock()
 	return tracker.config
 }
 
-func (tracker *TrackerBase[Finding]) setConfiguration(config *Configuration) *Configuration {
-	tracker.metricsConfigMux.Lock()
-	defer tracker.metricsConfigMux.Unlock()
-	previous := tracker.config
-	tracker.config = config
-	return previous
+func (tracker *TrackerBase[Finding]) getConfigurationIfEnabled() *Configuration {
+	tracker.metricsConfigMux.RLock()
+	defer tracker.metricsConfigMux.RUnlock()
+	if !tracker.isEnabledNoLock() {
+		return nil
+	}
+	return tracker.config
 }
 
 // track aggregates the fetched findings and updates the gauges.
 func (tracker *TrackerBase[Finding]) track(ctx context.Context, registry metrics.CustomRegistry, cfg *Configuration) error {
-	if len(cfg.metrics) == 0 {
-		return nil
-	}
 	aggregator := makeAggregator(cfg.metrics, cfg.filters, tracker.getters)
 	for finding, err := range tracker.generator(ctx, cfg.metrics) {
 		if err != nil {
@@ -223,12 +234,12 @@ func (tracker *TrackerBase[Finding]) track(ctx context.Context, registry metrics
 
 // Gather the data not more often then maxAge.
 func (tracker *TrackerBase[Finding]) Gather(ctx context.Context) {
-	id, err := authn.IdentityFromContext(ctx)
-	if err != nil {
+	cfg := tracker.getConfigurationIfEnabled()
+	if cfg == nil {
 		return
 	}
-	cfg := tracker.getConfiguration()
-	if cfg == nil {
+	id, err := authn.IdentityFromContext(ctx)
+	if err != nil {
 		return
 	}
 	// Pass the cfg so that the same configuration is used there and here.
@@ -240,7 +251,7 @@ func (tracker *TrackerBase[Finding]) Gather(ctx context.Context) {
 	defer tracker.cleanupInactiveGatherers()
 	defer gatherer.running.Store(false)
 
-	if cfg.period == 0 || time.Since(gatherer.lastGather) < cfg.period {
+	if time.Since(gatherer.lastGather) < cfg.period {
 		return
 	}
 	begin := time.Now()
