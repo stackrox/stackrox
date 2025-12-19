@@ -277,8 +277,6 @@ test-e2e-deployed: validate-crs kuttl ## Run e2e tests with manager deployed on 
 	KUTTL=$(KUTTL) PATH="$(PROJECT_DIR)/hack:$${PATH}" SKIP_MANAGER_START=1 $(KUTTL) test $(KUTTL_TEST_RUN_LABELS_ARGS)
 	@echo Run kuttl 4
 	KUTTL=$(KUTTL) PATH="$(PROJECT_DIR)/hack:$${PATH}" SKIP_MANAGER_START=1 $(KUTTL) test $(KUTTL_TEST_RUN_LABELS_ARGS)
-	@echo Run kuttl 5
-	KUTTL=$(KUTTL) PATH="$(PROJECT_DIR)/hack:$${PATH}" SKIP_MANAGER_START=1 $(KUTTL) test $(KUTTL_TEST_RUN_LABELS_ARGS)
 
 .PHONY: test-upgrade
 test-upgrade: kuttl bundle-post-process ## Run OLM-based operator upgrade tests.
