@@ -3,6 +3,7 @@ package extensions
 import (
 	"context"
 	"fmt"
+	"reflect"
 
 	"github.com/go-logr/logr"
 	"github.com/operator-framework/helm-operator-plugins/pkg/extensions"
@@ -73,7 +74,11 @@ func setDefaultsAndPersist(ctx context.Context, logger logr.Logger, u *unstructu
 			return err
 		}
 	}
-	centralDefaults := central.Defaults
+
+	if reflect.DeepEqual(baseCentral.Object, u.Object) {
+		logger.Info("no changes to Central defaulting annotations detected; skipping patch")
+		return nil
+	}
 
 	// We persist the annotations immediately during (first-time) execution of this extension to make sure
 	// that this information is already persisted in the Kubernetes resource before we
@@ -92,8 +97,6 @@ func setDefaultsAndPersist(ctx context.Context, logger logr.Logger, u *unstructu
 		"newResourceVersion", central.GetResourceVersion(),
 	)
 
-	// Retain the defaults, which are not in the patched object after cluster refresh.
-	central.Defaults = centralDefaults
 	return nil
 }
 
