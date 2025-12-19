@@ -134,13 +134,9 @@ func (tracker *TrackerBase[F]) Reconfigure(cfg *Configuration) {
 		cfg = &Configuration{}
 	}
 
-	tracker.metricsConfigMux.Lock()
-	defer tracker.metricsConfigMux.Unlock()
-	previous := tracker.config
-	tracker.config = cfg
-
+	previous, enabled := tracker.setConfiguration(cfg)
 	if previous != nil {
-		if !tracker.isEnabledNoLock() {
+		if !enabled {
 			log.Debugf("Metrics collection has been disabled for %s", tracker.description)
 			tracker.unregisterMetrics(slices.Collect(maps.Keys(previous.metrics)))
 			return
@@ -195,6 +191,14 @@ func (tracker *TrackerBase[Finding]) isEnabledNoLock() bool {
 		return false
 	}
 	return cfg.period > 0
+}
+
+func (tracker *TrackerBase[Finding]) setConfiguration(cfg *Configuration) (*Configuration, bool) {
+	tracker.metricsConfigMux.Lock()
+	defer tracker.metricsConfigMux.Unlock()
+	previous := tracker.config
+	tracker.config = cfg
+	return previous, tracker.isEnabledNoLock()
 }
 
 func (tracker *TrackerBase[Finding]) getConfiguration() *Configuration {
