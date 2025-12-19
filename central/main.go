@@ -627,32 +627,42 @@ func startGRPCServer() {
 		centralSAC.GetEnricher().GetPreAuthContextEnricher(authzTraceSink),
 	)
 
+	// Telemetry client has to add interceptors before starting the server.
+	c := phonehomeClient.Singleton()
+	config.HTTPInterceptors = append(config.HTTPInterceptors, c.GetHTTPInterceptor())
+	config.UnaryInterceptors = append(config.UnaryInterceptors, c.GetGRPCInterceptor())
+
 	server := pkgGRPC.NewAPI(config)
 	server.Register(servicesToRegister()...)
 	startedSig := server.Start()
 
 	go watchdog(startedSig, grpcServerWatchdogTimeout)
 
-	go startPhonehomeTelemetryCollection(&config, basicAuthProvider.ID())
+	go startPhonehomeTelemetryCollection(c, basicAuthProvider.ID())
 
 	go startServices()
 }
 
-func startPhonehomeTelemetryCollection(config *pkgGRPC.Config, basicAuthProviderID string) {
+func startPhonehomeTelemetryCollection(c *phonehomeClient.CentralClient, basicAuthProviderID string) {
 	pubcfg, err := configDS.Singleton().GetPublicConfig()
 	if err != nil {
 		log.Warnw("Failed to read telemetry configuration", logging.Err(err))
 		return
 	}
-	telemetryCfg := pubcfg.GetTelemetry()
-	if telemetryCfg == nil || telemetryCfg.GetEnabled() {
-		c := phonehomeClient.Singleton()
-		c.GrantConsent()
-		c.RegisterCentralClient(config, basicAuthProviderID)
-		addCentralIdentityGatherers(c)
-		c.Enable()
-		log.Infof("Telemetry Client Configuration: %s", c)
+	if cfg := pubcfg.GetTelemetry(); cfg != nil && !cfg.GetEnabled() {
+		return
 	}
+	log.Debug("User configuration grants consent for telemetry collection")
+	// Sending the initial client identity requires user consent.
+	c.GrantConsent()
+	c.RegisterCentralClient(basicAuthProviderID)
+	addCentralIdentityGatherers(c)
+	// Start the gathering.
+	// For release versions, the remote configuration will be periodically
+	// downloaded. For non-release versions, you can call POST to
+	// /v1/telemetry/config/reload to reload the configuration.
+	c.Enable()
+	log.Infof("Telemetry Client Configuration: %s", c)
 }
 
 func addCentralIdentityGatherers(c *phonehomeClient.CentralClient) {
