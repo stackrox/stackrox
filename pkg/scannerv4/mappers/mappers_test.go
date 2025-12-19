@@ -2166,6 +2166,7 @@ func Test_toProtoV4VulnerabilitiesMap(t *testing.T) {
 							Url:    "https://nvd.nist.gov/vuln/detail/CVE-2021-44228",
 						},
 					},
+					FixedDate: protoNow,
 				},
 			},
 		},
@@ -2313,6 +2314,7 @@ func Test_toProtoV4VulnerabilitiesMap(t *testing.T) {
 							Url:    "https://access.redhat.com/errata/RHSA-2024:10775",
 						},
 					},
+					FixedDate: protoNow,
 				},
 				"bar": {
 					Id:                 "bar",
@@ -2340,6 +2342,7 @@ func Test_toProtoV4VulnerabilitiesMap(t *testing.T) {
 							Url:    "https://access.redhat.com/errata/RHSA-2024:10775",
 						},
 					},
+					FixedDate: protoNow,
 				},
 			},
 		},
