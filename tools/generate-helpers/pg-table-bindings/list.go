@@ -63,6 +63,7 @@ func init() {
 		&storage.Hash{}:                                         resources.Hash,
 		&storage.Image{}:                                        resources.Image,
 		&storage.ImageComponentV2{}:                             resources.Image,
+		&storage.ImageCVEInfo{}:                                 resources.Image,
 		&storage.ImageCVEV2{}:                                   resources.Image,
 		&storage.ImageIntegration{}:                             resources.Integration,
 		&storage.ImageV2{}:                                      resources.Image,

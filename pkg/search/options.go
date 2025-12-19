@@ -68,6 +68,8 @@ var (
 	AdvisoryName       = newFieldLabel("Advisory Name")
 	AdvisoryLink       = newFieldLabel("Advisory Link")
 
+	CVEInfo = newFieldLabel("CVE Info")
+
 	Component                      = newFieldLabel("Component")
 	ComponentID                    = newFieldLabel("Component ID")
 	ComponentVersion               = newFieldLabel("Component Version")
@@ -78,6 +80,7 @@ var (
 	DockerfileInstructionValue     = newFieldLabel("Dockerfile Instruction Value")
 	FirstImageOccurrenceTimestamp  = newFieldLabel("First Image Occurrence Timestamp")
 	FirstSystemOccurrenceTimestamp = newFieldLabel("First System Occurrence Timestamp")
+	FixableSinceTimestamp          = newFieldLabel("Fixable Since Timestamp")
 	HostIPC                        = newFieldLabel("Host IPC")
 	HostNetwork                    = newFieldLabel("Host Network")
 	HostPID                        = newFieldLabel("Host PID")
