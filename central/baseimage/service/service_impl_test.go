@@ -9,6 +9,7 @@ import (
 	"github.com/stackrox/rox/central/baseimage/datastore/repository/mocks"
 	v2 "github.com/stackrox/rox/generated/api/v2"
 	"github.com/stackrox/rox/generated/storage"
+	delegatorMocks "github.com/stackrox/rox/pkg/delegatedregistry/mocks"
 	integrationMocks "github.com/stackrox/rox/pkg/images/integration/mocks"
 	"github.com/stackrox/rox/pkg/pointers"
 	registryMocks "github.com/stackrox/rox/pkg/registries/mocks"
@@ -23,6 +24,7 @@ type ServiceTestSuite struct {
 	mockDatastore      *mocks.MockDataStore
 	mockIntegrationSet *integrationMocks.MockSet
 	mockRegistrySet    *registryMocks.MockSet
+	mockDelegator      *delegatorMocks.MockDelegator
 	service            *serviceImpl
 }
 
@@ -35,9 +37,11 @@ func (suite *ServiceTestSuite) SetupTest() {
 	suite.mockDatastore = mocks.NewMockDataStore(suite.mockCtrl)
 	suite.mockIntegrationSet = integrationMocks.NewMockSet(suite.mockCtrl)
 	suite.mockRegistrySet = registryMocks.NewMockSet(suite.mockCtrl)
+	suite.mockDelegator = delegatorMocks.NewMockDelegator(suite.mockCtrl)
 	suite.service = &serviceImpl{
 		datastore:      suite.mockDatastore,
 		integrationSet: suite.mockIntegrationSet,
+		delegator:      suite.mockDelegator,
 	}
 }
 
@@ -52,6 +56,16 @@ func (suite *ServiceTestSuite) setupAllImageRegistriesMatch(matches bool) {
 	suite.mockRegistrySet.EXPECT().Match(gomock.Any()).Return(matches)
 }
 
+// setupDelegatorExpectation sets up mocks for delegator behavior.
+// If shouldDelegate is true, expects delegation to succeed; if false, expects no delegation.
+func (suite *ServiceTestSuite) setupDelegatorExpectation(shouldDelegate bool, repoPath string) {
+	if shouldDelegate {
+		suite.mockDelegator.EXPECT().GetDelegateClusterID(gomock.Any(), gomock.Any()).Return("cluster-1", true, nil)
+	} else {
+		suite.mockDelegator.EXPECT().GetDelegateClusterID(gomock.Any(), gomock.Any()).Return("", false, nil)
+	}
+}
+
 func (suite *ServiceTestSuite) TestValidateBaseImageRepository() {
 	tests := []struct {
 		description         string
@@ -59,6 +73,7 @@ func (suite *ServiceTestSuite) TestValidateBaseImageRepository() {
 		expectedValid       bool
 		expectedErrMsg      string
 		expectRegistryMatch *bool // nil = no mocks, true = match, false = no match
+		expectDelegation    *bool // nil = no delegation check, true = should delegate, false = should not delegate
 	}{
 		{
 			description:         "accepts simple lowercase repository name",
@@ -129,6 +144,7 @@ func (suite *ServiceTestSuite) TestValidateBaseImageRepository() {
 			expectedValid:       false,
 			expectedErrMsg:      "no matching image integration found: please add an image integration for 'docker.io/library/nginx'",
 			expectRegistryMatch: pointers.Bool(false),
+			expectDelegation:    pointers.Bool(false),
 		},
 		{
 			description:         "rejects repository path when registry set is empty",
@@ -136,6 +152,23 @@ func (suite *ServiceTestSuite) TestValidateBaseImageRepository() {
 			expectedValid:       false,
 			expectedErrMsg:      "no matching image integration found: please add an image integration for 'docker.io/library/nginx'",
 			expectRegistryMatch: pointers.Bool(false),
+			expectDelegation:    pointers.Bool(false),
+		},
+		{
+			description:         "accepts repository path with delegated registry when no central integration exists",
+			input:               "delegated.registry.com/myapp",
+			expectedValid:       true,
+			expectedErrMsg:      "",
+			expectRegistryMatch: pointers.Bool(false), // No central integration
+			expectDelegation:    pointers.Bool(true),  // But delegation is configured
+		},
+		{
+			description:         "rejects repository path when neither central integration nor delegation exists",
+			input:               "unknown.registry.com/myapp",
+			expectedValid:       false,
+			expectedErrMsg:      "no matching image integration found: please add an image integration for 'unknown.registry.com/myapp'",
+			expectRegistryMatch: pointers.Bool(false), // No central integration
+			expectDelegation:    pointers.Bool(false), // No delegation either
 		},
 	}
 
@@ -143,6 +176,9 @@ func (suite *ServiceTestSuite) TestValidateBaseImageRepository() {
 		suite.Run(tt.description, func() {
 			if tt.expectRegistryMatch != nil {
 				suite.setupAllImageRegistriesMatch(*tt.expectRegistryMatch)
+			}
+			if tt.expectDelegation != nil {
+				suite.setupDelegatorExpectation(*tt.expectDelegation, tt.input)
 			}
 			err := suite.service.validateBaseImageRepository(tt.input)
 			if tt.expectedValid {
@@ -256,6 +292,7 @@ func (suite *ServiceTestSuite) TestCreateBaseImageReference() {
 			},
 			mockSetup: func() {
 				suite.setupAllImageRegistriesMatch(false)
+				suite.setupDelegatorExpectation(false, "docker.io/library/nginx")
 			},
 			expectedError: true,
 			errorContains: "no matching image integration found",

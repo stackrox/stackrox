@@ -5,6 +5,7 @@ import (
 
 	"github.com/stackrox/rox/central/baseimage/datastore/repository"
 	v2 "github.com/stackrox/rox/generated/api/v2"
+	"github.com/stackrox/rox/pkg/delegatedregistry"
 	"github.com/stackrox/rox/pkg/grpc"
 	"github.com/stackrox/rox/pkg/images/integration"
 )
@@ -19,9 +20,10 @@ type Service interface {
 }
 
 // New returns a new Service instance using the given DataStores.
-func New(datastore repository.DataStore, integrationSet integration.Set) Service {
+func New(datastore repository.DataStore, integrationSet integration.Set, delegator delegatedregistry.Delegator) Service {
 	return &serviceImpl{
 		datastore:      datastore,
 		integrationSet: integrationSet,
+		delegator:      delegator,
 	}
 }

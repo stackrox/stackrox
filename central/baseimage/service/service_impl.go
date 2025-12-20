@@ -11,12 +11,14 @@ import (
 	v2 "github.com/stackrox/rox/generated/api/v2"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
+	"github.com/stackrox/rox/pkg/delegatedregistry"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
 	"github.com/stackrox/rox/pkg/images/integration"
 	imgUtils "github.com/stackrox/rox/pkg/images/utils"
+	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -34,6 +36,8 @@ var (
 			v2.BaseImageServiceV2_DeleteBaseImageReference_FullMethodName,
 		},
 	})
+
+	log = logging.LoggerForModule()
 )
 
 // serviceImpl provides APIs for base image references.
@@ -42,6 +46,7 @@ type serviceImpl struct {
 
 	datastore      repository.DataStore
 	integrationSet integration.Set
+	delegator      delegatedregistry.Delegator
 }
 
 // GetBaseImageReferences returns all base image references.
@@ -177,6 +182,16 @@ func (s *serviceImpl) validateBaseImageRepository(repoPath string) error {
 
 	// Check if there's a matching image integration for this repository
 	if !s.integrationSet.RegistrySet().Match(imageName) {
+		// If no central integration found, check if delegation to a secured cluster is configured
+		if s.delegator != nil {
+			if _, shouldDelegate, err := s.delegator.GetDelegateClusterID(context.Background(), imageName); err != nil {
+				// Checking delegation errors shouldn't block validation
+				log.Warnf("Error checking delegation for %s: %v", repoPath, err)
+			} else if shouldDelegate {
+				// Image can be delegated to a secured cluster, so it's valid
+				return nil
+			}
+		}
 		return errox.InvalidArgs.Newf("no matching image integration found: please add an image integration for '%s'", repoPath)
 	}
 
