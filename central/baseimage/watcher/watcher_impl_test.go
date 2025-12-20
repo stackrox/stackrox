@@ -44,7 +44,7 @@ func createTestWatcher(ctrl *gomock.Controller, mockDS *mocks.MockDataStore, pol
 		datastore:    mockDS,
 		delegator:    mockDelegator,
 		pollInterval: pollInterval,
-		localScanner: reposcan.NewLocalScanner(mockRegistrySet),
+		localScanner: reposcan.NewLocalScanner(reposcan.NewRegistryMatcher(mockRegistrySet)),
 		stopper:      concurrency.NewStopper(),
 	}
 }
@@ -307,7 +307,7 @@ func TestWatcher_DelegationError(t *testing.T) {
 		datastore:    mockDS,
 		delegator:    mockDelegator,
 		pollInterval: 1 * time.Hour,
-		localScanner: reposcan.NewLocalScanner(mockRegistrySet),
+		localScanner: reposcan.NewLocalScanner(reposcan.NewRegistryMatcher(mockRegistrySet)),
 		stopper:      concurrency.NewStopper(),
 	}
 
@@ -345,7 +345,7 @@ func TestWatcher_ShouldDelegate(t *testing.T) {
 		datastore:    mockDS,
 		delegator:    mockDelegator,
 		pollInterval: 1 * time.Hour,
-		localScanner: reposcan.NewLocalScanner(mockRegistrySet),
+		localScanner: reposcan.NewLocalScanner(reposcan.NewRegistryMatcher(mockRegistrySet)),
 		stopper:      concurrency.NewStopper(),
 	}
 
@@ -394,7 +394,7 @@ func TestWatcher_NoMatchingRegistry(t *testing.T) {
 		datastore:    mockDS,
 		delegator:    mockDelegator,
 		pollInterval: 1 * time.Hour,
-		localScanner: reposcan.NewLocalScanner(mockRegistrySet),
+		localScanner: reposcan.NewLocalScanner(reposcan.NewRegistryMatcher(mockRegistrySet)),
 		stopper:      concurrency.NewStopper(),
 	}
 
@@ -447,7 +447,7 @@ func TestWatcher_MatchingRegistryWithTagListError(t *testing.T) {
 		datastore:    mockDS,
 		delegator:    mockDelegator,
 		pollInterval: 1 * time.Hour,
-		localScanner: reposcan.NewLocalScanner(mockRegistrySet),
+		localScanner: reposcan.NewLocalScanner(reposcan.NewRegistryMatcher(mockRegistrySet)),
 		stopper:      concurrency.NewStopper(),
 	}
 
@@ -519,7 +519,7 @@ func TestWatcher_MatchingRegistrySuccess(t *testing.T) {
 		datastore:    mockDS,
 		delegator:    mockDelegator,
 		pollInterval: 1 * time.Hour,
-		localScanner: reposcan.NewLocalScanner(mockRegistrySet),
+		localScanner: reposcan.NewLocalScanner(reposcan.NewRegistryMatcher(mockRegistrySet)),
 		stopper:      concurrency.NewStopper(),
 	}
 
@@ -567,7 +567,7 @@ func TestWatcher_ContextCancellation(t *testing.T) {
 		datastore:    mockDS,
 		delegator:    mockDelegator,
 		pollInterval: 1 * time.Hour,
-		localScanner: reposcan.NewLocalScanner(mockRegistrySet),
+		localScanner: reposcan.NewLocalScanner(reposcan.NewRegistryMatcher(mockRegistrySet)),
 		stopper:      concurrency.NewStopper(),
 	}
 

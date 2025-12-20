@@ -66,7 +66,7 @@ func TestLocalScanner_ScanRepository_Success(t *testing.T) {
 		Return([]types.ImageRegistry{mockRegistry}).
 		AnyTimes()
 
-	scanner := reposcan.NewLocalScanner(mockRegistrySet)
+	scanner := reposcan.NewLocalScanner(reposcan.NewRegistryMatcher(mockRegistrySet))
 
 	req := reposcan.ScanRequest{
 		Pattern:   "1.*",
@@ -110,7 +110,7 @@ func TestLocalScanner_ScanRepository_NoMatchingRegistry(t *testing.T) {
 		GetAllUnique().
 		Return([]types.ImageRegistry{mockRegistry})
 
-	scanner := reposcan.NewLocalScanner(mockRegistrySet)
+	scanner := reposcan.NewLocalScanner(reposcan.NewRegistryMatcher(mockRegistrySet))
 
 	req := reposcan.ScanRequest{
 		Pattern:   "*",
@@ -152,7 +152,7 @@ func TestLocalScanner_ScanRepository_ListTagsError(t *testing.T) {
 		GetAllUnique().
 		Return([]types.ImageRegistry{mockRegistry})
 
-	scanner := reposcan.NewLocalScanner(mockRegistrySet)
+	scanner := reposcan.NewLocalScanner(reposcan.NewRegistryMatcher(mockRegistrySet))
 
 	req := reposcan.ScanRequest{
 		Pattern:   "*",
@@ -181,7 +181,7 @@ func TestLocalScanner_ScanRepository_InvalidRepositoryPath(t *testing.T) {
 		RepositoryPath: "", // Invalid empty path.
 	}
 
-	scanner := reposcan.NewLocalScanner(mockRegistrySet)
+	scanner := reposcan.NewLocalScanner(reposcan.NewRegistryMatcher(mockRegistrySet))
 
 	req := reposcan.ScanRequest{
 		Pattern:   "*",
@@ -223,7 +223,7 @@ func TestLocalScanner_ScanRepository_EmptyResult(t *testing.T) {
 		GetAllUnique().
 		Return([]types.ImageRegistry{mockRegistry})
 
-	scanner := reposcan.NewLocalScanner(mockRegistrySet)
+	scanner := reposcan.NewLocalScanner(reposcan.NewRegistryMatcher(mockRegistrySet))
 
 	req := reposcan.ScanRequest{
 		Pattern:   "*",
@@ -245,7 +245,7 @@ func TestLocalScanner_Name(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	mockRegistrySet := registryMocks.NewMockSet(ctrl)
 
-	scanner := reposcan.NewLocalScanner(mockRegistrySet)
+	scanner := reposcan.NewLocalScanner(reposcan.NewRegistryMatcher(mockRegistrySet))
 
 	assert.Equal(t, "local", scanner.Name())
 }
@@ -254,7 +254,7 @@ func TestLocalScanner_ImplementsInterface(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	mockRegistrySet := registryMocks.NewMockSet(ctrl)
 
-	scanner := reposcan.NewLocalScanner(mockRegistrySet)
+	scanner := reposcan.NewLocalScanner(reposcan.NewRegistryMatcher(mockRegistrySet))
 
 	// Verify LocalScanner implements Scanner interface.
 	var _ reposcan.Scanner = scanner
@@ -303,7 +303,7 @@ func TestLocalScanner_ScanRepository_DeletionEvents(t *testing.T) {
 		Return([]types.ImageRegistry{mockRegistry}).
 		AnyTimes()
 
-	scanner := reposcan.NewLocalScanner(mockRegistrySet)
+	scanner := reposcan.NewLocalScanner(reposcan.NewRegistryMatcher(mockRegistrySet))
 
 	// CheckTags contains tags that were previously cached.
 	req := reposcan.ScanRequest{
@@ -391,7 +391,7 @@ func TestLocalScanner_ScanRepository_SkipTags(t *testing.T) {
 		Return([]types.ImageRegistry{mockRegistry}).
 		AnyTimes()
 
-	scanner := reposcan.NewLocalScanner(mockRegistrySet)
+	scanner := reposcan.NewLocalScanner(reposcan.NewRegistryMatcher(mockRegistrySet))
 
 	req := reposcan.ScanRequest{
 		Pattern:   "*",
@@ -464,7 +464,7 @@ func TestLocalScanner_ScanRepository_MetadataFetchError(t *testing.T) {
 		Return([]types.ImageRegistry{mockRegistry}).
 		AnyTimes()
 
-	scanner := reposcan.NewLocalScanner(mockRegistrySet)
+	scanner := reposcan.NewLocalScanner(reposcan.NewRegistryMatcher(mockRegistrySet))
 
 	req := reposcan.ScanRequest{
 		Pattern:   "*",

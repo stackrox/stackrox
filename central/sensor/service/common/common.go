@@ -42,6 +42,8 @@ func GetMessageType(msg *central.MsgFromSensor) string {
 		return "ComplianceResponse"
 	case *central.MsgFromSensor_DeploymentEnhancementResponse:
 		return "DeploymentEnhancementResponse"
+	case *central.MsgFromSensor_RepoScanResponse:
+		return "RepoScanResponse"
 	default:
 		log.Errorf("UNEXPECTED:  Unknown message type: %T", t)
 		return "Unknown"
