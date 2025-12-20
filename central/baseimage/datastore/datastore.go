@@ -12,6 +12,10 @@ import (
 type DataStore interface {
 	UpsertImage(ctx context.Context, image *storage.BaseImage, digests []string) error
 
+	// UpsertImages upserts multiple BaseImage objects and their associated layer digests.
+	// Images are processed in chunks to avoid oversized requests.
+	// If a chunk fails, earlier chunks remain committed.
+	// No retry logic for failed chunks.
 	UpsertImages(ctx context.Context, imagesWithLayers map[*storage.BaseImage][]string) error
 
 	GetBaseImage(ctx context.Context, manifestDigest string) (*storage.BaseImage, bool, error)
