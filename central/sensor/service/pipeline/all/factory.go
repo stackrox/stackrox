@@ -35,6 +35,7 @@ import (
 	"github.com/stackrox/rox/central/sensor/service/pipeline/podevents"
 	"github.com/stackrox/rox/central/sensor/service/pipeline/processindicators"
 	"github.com/stackrox/rox/central/sensor/service/pipeline/processlisteningonport"
+	"github.com/stackrox/rox/central/sensor/service/pipeline/reposcan"
 	"github.com/stackrox/rox/central/sensor/service/pipeline/reprocessing"
 	"github.com/stackrox/rox/central/sensor/service/pipeline/rolebindings"
 	"github.com/stackrox/rox/central/sensor/service/pipeline/roles"
@@ -100,6 +101,7 @@ func (s *factoryImpl) PipelineForCluster(ctx context.Context, clusterID string) 
 		nodeindex.GetPipeline(),
 		virtualmachineindex.GetPipeline(),
 		virtualmachines.GetPipeline(),
+		reposcan.GetPipeline(),
 	}
 
 	deduper := s.manager.GetDeduper(ctx, clusterID)

@@ -10,8 +10,6 @@ import (
 	"github.com/stackrox/rox/pkg/env"
 	imageUtils "github.com/stackrox/rox/pkg/images/utils"
 	"github.com/stackrox/rox/pkg/logging"
-	"github.com/stackrox/rox/pkg/registries"
-	"github.com/stackrox/rox/pkg/registries/types"
 	"github.com/stackrox/rox/pkg/sync"
 	"golang.org/x/time/rate"
 )
@@ -20,7 +18,7 @@ var log = logging.LoggerForModule()
 
 // LocalScanner scans repositories directly from Central.
 type LocalScanner struct {
-	registries registries.Set
+	matcher RegistryMatcher
 
 	// rateLimiters stores per-integration rate limiters. The key is the
 	// integration ID. All repositories using the same integration share
@@ -29,10 +27,10 @@ type LocalScanner struct {
 	rateLimitersMu sync.Mutex
 }
 
-// NewLocalScanner creates a LocalScanner with the given registries.
-func NewLocalScanner(registries registries.Set) *LocalScanner {
+// NewLocalScanner creates a LocalScanner with the given registry matcher.
+func NewLocalScanner(matcher RegistryMatcher) *LocalScanner {
 	return &LocalScanner{
-		registries:   registries,
+		matcher:      matcher,
 		rateLimiters: make(map[string]*rate.Limiter),
 	}
 }
@@ -57,7 +55,7 @@ func (c *LocalScanner) ScanRepository(
 		}
 
 		// Find matching registry integration.
-		reg := c.findRegistry(name)
+		reg := c.matcher(name)
 		if reg == nil {
 			yield(TagEvent{}, fmt.Errorf("no matching image integration found for repository %s", repo.GetRepositoryPath()))
 			return
@@ -138,21 +136,6 @@ func (c *LocalScanner) ScanRepository(
 			}
 		}
 	}
-}
-
-func (c *LocalScanner) findRegistry(name *storage.ImageName) types.ImageRegistry {
-	var regs []types.ImageRegistry
-	if env.DedupeImageIntegrations.BooleanSetting() {
-		regs = c.registries.GetAllUnique()
-	} else {
-		regs = c.registries.GetAll()
-	}
-	for _, r := range regs {
-		if r.Match(name) {
-			return r
-		}
-	}
-	return nil
 }
 
 // getRateLimiter returns the rate limiter for the given integration.

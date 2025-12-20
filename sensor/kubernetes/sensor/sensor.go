@@ -8,6 +8,7 @@ import (
 	"github.com/pkg/errors"
 	sensorInternal "github.com/stackrox/rox/generated/internalapi/sensor"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/baseimage/reposcan"
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/env"
@@ -40,6 +41,7 @@ import (
 	"github.com/stackrox/rox/sensor/common/networkflow/updatecomputer"
 	"github.com/stackrox/rox/sensor/common/processfilter"
 	"github.com/stackrox/rox/sensor/common/processsignal"
+	"github.com/stackrox/rox/sensor/common/reposcanhandler"
 	"github.com/stackrox/rox/sensor/common/reprocessor"
 	"github.com/stackrox/rox/sensor/common/scan"
 	"github.com/stackrox/rox/sensor/common/sensor"
@@ -163,6 +165,14 @@ func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 		imageService,
 		enhancer,
 		complianceService,
+	}
+
+	// Add repository scan handler if base image detection is enabled.
+	if features.BaseImageDetection.Enabled() {
+		matcher := reposcan.NewRegistryMatcherFromStore(storeProvider.Registries())
+		scanner := reposcan.NewLocalScanner(matcher)
+		repoScanHandler := reposcanhandler.NewHandler(scanner)
+		components = append(components, repoScanHandler)
 	}
 
 	var virtualMachineHandler vmIndex.Handler
