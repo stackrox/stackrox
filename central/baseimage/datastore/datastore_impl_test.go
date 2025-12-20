@@ -124,10 +124,9 @@ func (s *BaseImageDataStoreTestSuite) TestListCandidateBaseImages() {
 	imgB := &storage.BaseImage{Id: uuid.NewV4().String(), FirstLayerDigest: commonDigest, ManifestDigest: "d2"}
 	imgC := &storage.BaseImage{Id: uuid.NewV4().String(), FirstLayerDigest: uniqueDigest, ManifestDigest: "d3"}
 
-	// No layers provided; FirstLayerDigest is already set and should remain.
-	s.Require().NoError(s.datastore.UpsertImage(s.ctx, imgA, nil))
-	s.Require().NoError(s.datastore.UpsertImage(s.ctx, imgB, nil))
-	s.Require().NoError(s.datastore.UpsertImage(s.ctx, imgC, nil))
+	s.Require().NoError(s.datastore.UpsertImage(s.ctx, imgA, []string{commonDigest}))
+	s.Require().NoError(s.datastore.UpsertImage(s.ctx, imgB, []string{commonDigest}))
+	s.Require().NoError(s.datastore.UpsertImage(s.ctx, imgC, []string{uniqueDigest}))
 
 	candidates, err := s.datastore.ListCandidateBaseImages(s.ctx, commonDigest)
 	s.Require().NoError(err)
