@@ -198,9 +198,9 @@ func (s *testScopeCheckerCoreTestSuite) TestFullMapTestScopeCheckerHierarchyTryA
 func createTestReadMultipleResourcesSomeWithNamespaceScope(t *testing.T) sac.ScopeCheckerCore {
 	testScope := map[storage.Access]map[permissions.Resource]*sac.TestResourceScope{
 		storage.Access_READ_ACCESS: {
-			permissions.Resource(resourceCluster): &sac.TestResourceScope{Included: true},
-			permissions.Resource(resourceNode):    &sac.TestResourceScope{Included: true},
-			permissions.Resource(resourceDeployment): &sac.TestResourceScope{
+			resourceCluster: &sac.TestResourceScope{Included: true},
+			resourceNode:    &sac.TestResourceScope{Included: true},
+			resourceDeployment: &sac.TestResourceScope{
 				Included: false,
 				Clusters: map[string]*sac.TestClusterScope{
 					clusterClusterID: {
@@ -217,7 +217,7 @@ func createTestReadMultipleResourcesSomeWithNamespaceScope(t *testing.T) sac.Sco
 func createTestReadMultipleResourcesWithDifferentNamespaceScope(t *testing.T) sac.ScopeCheckerCore {
 	testScope := map[storage.Access]map[permissions.Resource]*sac.TestResourceScope{
 		storage.Access_READ_ACCESS: {
-			permissions.Resource(resourceDeployment): &sac.TestResourceScope{
+			resourceDeployment: &sac.TestResourceScope{
 				Included: false,
 				Clusters: map[string]*sac.TestClusterScope{
 					clusterMyCluster: {
@@ -226,7 +226,7 @@ func createTestReadMultipleResourcesWithDifferentNamespaceScope(t *testing.T) sa
 					},
 				},
 			},
-			permissions.Resource(resourceNetworkGraph): &sac.TestResourceScope{
+			resourceNetworkGraph: &sac.TestResourceScope{
 				Included: false,
 				Clusters: map[string]*sac.TestClusterScope{
 					clusterMyCluster: {
