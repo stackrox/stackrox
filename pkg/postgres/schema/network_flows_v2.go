@@ -33,8 +33,8 @@ var (
 			) PARTITION BY LIST (ClusterId)`,
 		Partition: true,
 		PostStmts: []string{
-			"CREATE INDEX IF NOT EXISTS network_flows_src_v2 ON network_flows_v2 USING hash(props_srcentity_Id)",
-			"CREATE INDEX IF NOT EXISTS network_flows_dst_v2 ON network_flows_v2 USING hash(props_dstentity_Id)",
+			"CREATE INDEX IF NOT EXISTS network_flows_src_v2 ON network_flows_v2 USING btree(props_srcentity_Id)",
+			"CREATE INDEX IF NOT EXISTS network_flows_dst_v2 ON network_flows_v2 USING btree(props_dstentity_Id)",
 			"CREATE INDEX IF NOT EXISTS network_flows_lastseentimestamp_v2 ON network_flows_v2 USING brin (lastseentimestamp)",
 			"CREATE INDEX IF NOT EXISTS network_flows_updatedat_v2 ON network_flows_v2 USING brin (updatedat)",
 		},
