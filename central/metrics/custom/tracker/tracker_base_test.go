@@ -57,6 +57,7 @@ func TestMakeTrackerBase_PanicsOnScopedCounter(t *testing.T) {
 }
 
 func Test_makeTrackerBase(t *testing.T) {
+	metrics.DeleteGlobalRegistry()
 	// Test global counter tracker.
 	tracker := makeTrackerBase("test", "Test", false, testLabelGetters, nil)
 	assert.NotNil(t, tracker)
@@ -752,6 +753,7 @@ rox_central_test_Test_scope_scoped_access_metric2{Namespace="ns 3"} 1
 	})
 
 	t.Run("global access", func(t *testing.T) {
+		metrics.DeleteGlobalRegistry()
 		tracker := MakeGlobalTrackerBase("test", "Test",
 			testLabelGetters,
 			makeTestGatherFunc(testData))
@@ -811,6 +813,8 @@ func readMetrics(registry metrics.CustomRegistry) string {
 
 func TestTrackerBase_IncrementCounter(t *testing.T) {
 	t.Run("increments counter in global registry", func(t *testing.T) {
+		metrics.DeleteGlobalRegistry()
+
 		ctrl := gomock.NewController(t)
 		mockRegistry := mocks.NewMockCustomRegistry(ctrl)
 
@@ -869,6 +873,7 @@ func TestTrackerBase_IncrementCounter(t *testing.T) {
 	})
 
 	t.Run("no-op when no gatherers exist", func(t *testing.T) {
+		metrics.DeleteGlobalRegistry()
 		tracker := MakeGlobalTrackerBase("test", "test counter", testLabelGetters, nil)
 
 		md := MetricDescriptors{
@@ -914,6 +919,7 @@ func TestTrackerBase_IncrementCounter(t *testing.T) {
 	})
 
 	t.Run("returns early when configuration is nil", func(t *testing.T) {
+		metrics.DeleteGlobalRegistry()
 		tracker := MakeGlobalTrackerBase("test", "test counter", testLabelGetters, nil)
 		tracker.IncrementCounter(testFinding(0))
 	})

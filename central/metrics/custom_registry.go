@@ -109,6 +109,17 @@ func DeleteCustomRegistry(userID string) {
 	delete(userRegistries, userID)
 }
 
+func DeleteGlobalRegistry() {
+	registriesMux.Lock()
+	defer registriesMux.Unlock()
+	if globalRegistry == nil {
+		return
+	}
+	globalRegistry.gauges.Clear()
+	globalRegistry.counters.Clear()
+	globalRegistry = nil
+}
+
 var _ CustomRegistry = (*customRegistry)(nil)
 
 // UnregisterMetric unregister the given metric by name.
