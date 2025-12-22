@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import type { ReactElement } from 'react';
 import {
     Button,
@@ -8,15 +8,19 @@ import {
     CardTitle,
     Flex,
     FlexItem,
+    Pagination,
     TextInput,
     Toolbar,
     ToolbarContent,
     ToolbarItem,
 } from '@patternfly/react-core';
 import { Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
+import type { ThProps } from '@patternfly/react-table';
 import { TrashIcon } from '@patternfly/react-icons';
 
 import type { MetricSample } from './types';
+
+type SortDirection = 'asc' | 'desc';
 
 type MetricTableProps = {
     metricName: string;
@@ -32,6 +36,10 @@ function MetricTable({
     onDelete,
 }: MetricTableProps): ReactElement {
     const [filters, setFilters] = useState<Record<string, string>>({});
+    const [sortColumn, setSortColumn] = useState<string | null>(null);
+    const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
+    const [page, setPage] = useState(1);
+    const [perPage, setPerPage] = useState(20);
 
     // Extract all unique label names from samples
     const labelNames = useMemo(() => {
@@ -42,9 +50,9 @@ function MetricTable({
         return Array.from(names).sort();
     }, [samples]);
 
-    // Filter samples based on label filters
-    const filteredSamples = useMemo(() => {
-        return samples.filter((sample) => {
+    // Filter and sort samples
+    const filteredAndSortedSamples = useMemo(() => {
+        const filtered = samples.filter((sample) => {
             return Object.entries(filters).every(([labelName, filterValue]) => {
                 if (!filterValue) {
                     return true;
@@ -53,7 +61,34 @@ function MetricTable({
                 return labelValue.toLowerCase().includes(filterValue.toLowerCase());
             });
         });
-    }, [samples, filters]);
+
+        if (!sortColumn) {
+            return filtered;
+        }
+
+        return [...filtered].sort((a, b) => {
+            let aValue: string;
+            let bValue: string;
+
+            if (sortColumn === 'value') {
+                aValue = a.value;
+                bValue = b.value;
+            } else {
+                aValue = a.labels[sortColumn] ?? '';
+                bValue = b.labels[sortColumn] ?? '';
+            }
+
+            const comparison = aValue.localeCompare(bValue, undefined, { numeric: true });
+            return sortDirection === 'asc' ? comparison : -comparison;
+        });
+    }, [samples, filters, sortColumn, sortDirection]);
+
+    // Paginate samples
+    const paginatedSamples = useMemo(() => {
+        const startIndex = (page - 1) * perPage;
+        const endIndex = startIndex + perPage;
+        return filteredAndSortedSamples.slice(startIndex, endIndex);
+    }, [filteredAndSortedSamples, page, perPage]);
 
     const handleFilterChange = (labelName: string, value: string) => {
         setFilters((prev) => ({
@@ -65,6 +100,23 @@ function MetricTable({
     const clearFilters = () => {
         setFilters({});
     };
+
+    const getSortParams = (columnName: string): ThProps['sort'] => ({
+        sortBy: {
+            index: sortColumn === columnName ? 0 : undefined,
+            direction: sortDirection,
+        },
+        onSort: (_event, _index, direction) => {
+            setSortColumn(columnName);
+            setSortDirection(direction);
+        },
+        columnIndex: 0,
+    });
+
+    // Reset to page 1 when filters or sorting changes
+    useEffect(() => {
+        setPage(1);
+    }, [filters, sortColumn, sortDirection]);
 
     return (
         <Card isCompact>
@@ -119,13 +171,15 @@ function MetricTable({
                     <Thead>
                         <Tr>
                             {labelNames.map((labelName) => (
-                                <Th key={labelName}>{labelName}</Th>
+                                <Th key={labelName} sort={getSortParams(labelName)}>
+                                    {labelName}
+                                </Th>
                             ))}
-                            <Th>Value</Th>
+                            <Th sort={getSortParams('value')}>Value</Th>
                         </Tr>
                     </Thead>
                     <Tbody>
-                        {filteredSamples.length === 0 ? (
+                        {filteredAndSortedSamples.length === 0 ? (
                             <Tr>
                                 <Td colSpan={labelNames.length + 1}>
                                     No metrics found
@@ -133,7 +187,7 @@ function MetricTable({
                                 </Td>
                             </Tr>
                         ) : (
-                            filteredSamples.map((sample) => {
+                            paginatedSamples.map((sample) => {
                                 // Create a stable key from labels and value
                                 const key = `${JSON.stringify(sample.labels)}-${sample.value}`;
                                 return (
@@ -150,9 +204,20 @@ function MetricTable({
                         )}
                     </Tbody>
                 </Table>
-                <div className="pf-v5-u-mt-sm pf-v5-u-color-200">
-                    Showing {filteredSamples.length} of {samples.length} samples
-                </div>
+                {filteredAndSortedSamples.length > 0 && (
+                    <Pagination
+                        itemCount={filteredAndSortedSamples.length}
+                        perPage={perPage}
+                        page={page}
+                        onSetPage={(_event, newPage) => setPage(newPage)}
+                        onPerPageSelect={(_event, newPerPage) => {
+                            setPerPage(newPerPage);
+                            setPage(1);
+                        }}
+                        variant="bottom"
+                        isCompact
+                    />
+                )}
             </CardBody>
         </Card>
     );
