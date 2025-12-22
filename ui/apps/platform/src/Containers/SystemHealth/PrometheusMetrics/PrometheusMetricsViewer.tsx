@@ -22,11 +22,10 @@ import useRestQuery from 'hooks/useRestQuery';
 import { fetchPrometheusMetrics } from 'services/PrometheusMetricsService';
 import { parsePrometheusMetrics } from './prometheusParser';
 import MetricTable from './MetricTable';
-import type { MetricSelector } from './types';
 import { ErrorIcon, SpinnerIcon, SuccessIcon } from '../CardHeaderIcons';
 
 function PrometheusMetricsViewer(): ReactElement {
-    const [metricSelectors, setMetricSelectors] = useState<MetricSelector[]>([]);
+    const [metricSelectors, setMetricSelectors] = useState<string[]>([]);
     const [isSelectOpen, setIsSelectOpen] = useState(false);
     const [selectedMetricName, setSelectedMetricName] = useState<string>('');
     const [filterValue, setFilterValue] = useState('');
@@ -35,34 +34,34 @@ function PrometheusMetricsViewer(): ReactElement {
 
     const parsedMetrics = useMemo(() => {
         if (!metricsText) {
-            return { metrics: [], metricNames: [], metricInfoMap: {} };
+            return { metrics: {}, metricInfoMap: {}, parseErrors: [] };
         }
         return parsePrometheusMetrics(metricsText);
     }, [metricsText]);
 
+    const metricNames = useMemo(() => {
+        return Object.keys(parsedMetrics.metrics).sort();
+    }, [parsedMetrics.metrics]);
+
     const filteredMetricNames = useMemo(() => {
         if (!filterValue) {
-            return parsedMetrics.metricNames;
+            return metricNames;
         }
-        return parsedMetrics.metricNames.filter((name) =>
+        return metricNames.filter((name) =>
             name.toLowerCase().includes(filterValue.toLowerCase())
         );
-    }, [parsedMetrics.metricNames, filterValue]);
+    }, [metricNames, filterValue]);
 
     const handleAddMetric = () => {
-        if (selectedMetricName) {
-            const newSelector: MetricSelector = {
-                id: `${selectedMetricName}-${Date.now()}`,
-                metricName: selectedMetricName,
-            };
-            setMetricSelectors([...metricSelectors, newSelector]);
+        if (selectedMetricName && !metricSelectors.includes(selectedMetricName)) {
+            setMetricSelectors([...metricSelectors, selectedMetricName]);
             setSelectedMetricName('');
             setFilterValue('');
         }
     };
 
-    const handleDeleteMetric = (id: string) => {
-        setMetricSelectors(metricSelectors.filter((selector) => selector.id !== id));
+    const handleDeleteMetric = (metricName: string) => {
+        setMetricSelectors(metricSelectors.filter((name) => name !== metricName));
     };
 
     const handleMetricSelect = (_event, selection: string | number | undefined) => {
@@ -81,7 +80,7 @@ function PrometheusMetricsViewer(): ReactElement {
     };
 
     const getSamplesForMetric = (metricName: string) => {
-        return parsedMetrics.metrics.filter((sample) => sample.metricName === metricName);
+        return parsedMetrics.metrics[metricName] || [];
     };
 
     let icon = SpinnerIcon;
@@ -89,7 +88,7 @@ function PrometheusMetricsViewer(): ReactElement {
         icon = SpinnerIcon;
     } else if (error) {
         icon = ErrorIcon;
-    } else if (parsedMetrics.metricNames.length > 0) {
+    } else if (metricNames.length > 0) {
         icon = SuccessIcon;
     }
 
@@ -103,7 +102,7 @@ function PrometheusMetricsViewer(): ReactElement {
                     </FlexItem>
                     {!isLoading && !error && (
                         <FlexItem align={{ default: 'alignRight' }}>
-                            {parsedMetrics.metricNames.length} metrics available
+                            {metricNames.length} metrics available
                         </FlexItem>
                     )}
                     <FlexItem align={{ default: 'alignRight' }}>
@@ -124,6 +123,21 @@ function PrometheusMetricsViewer(): ReactElement {
                 {error && (
                     <div className="pf-v5-u-danger-color-100 pf-v5-u-mb-md">
                         Error loading metrics: {error.message}
+                    </div>
+                )}
+                {!isLoading && !error && parsedMetrics.parseErrors.length > 0 && (
+                    <div className="pf-v5-u-warning-color-100 pf-v5-u-mb-md">
+                        <strong>Parse warnings:</strong> Failed to parse {parsedMetrics.parseErrors.length} line(s)
+                        <ul className="pf-v5-u-mt-sm">
+                            {parsedMetrics.parseErrors.slice(0, 5).map((parseError) => (
+                                <li key={parseError.lineNumber}>
+                                    Line {parseError.lineNumber}: {parseError.line}
+                                </li>
+                            ))}
+                            {parsedMetrics.parseErrors.length > 5 && (
+                                <li>... and {parsedMetrics.parseErrors.length - 5} more</li>
+                            )}
+                        </ul>
                     </div>
                 )}
                 {!isLoading && !error && (
@@ -157,9 +171,7 @@ function PrometheusMetricsViewer(): ReactElement {
                                         </div>
                                         <Divider />
                                         {filteredMetricNames.map((metricName) => {
-                                            const metricInfo =
-                                                parsedMetrics.metricInfoMap[metricName];
-                                            const helpText = metricInfo?.help;
+                                            const helpText = parsedMetrics.metricInfoMap[metricName];
                                             return (
                                                 <SelectOption
                                                     key={metricName}
@@ -192,15 +204,15 @@ function PrometheusMetricsViewer(): ReactElement {
                             </div>
                         )}
 
-                        {metricSelectors.map((selector) => {
-                            const metricInfo = parsedMetrics.metricInfoMap[selector.metricName];
+                        {metricSelectors.map((metricName) => {
+                            const metricHelp = parsedMetrics.metricInfoMap[metricName];
                             return (
-                                <div key={selector.id} className="pf-v5-u-mb-md">
+                                <div key={metricName} className="pf-v5-u-mb-md">
                                     <MetricTable
-                                        metricName={selector.metricName}
-                                        metricHelp={metricInfo?.help}
-                                        samples={getSamplesForMetric(selector.metricName)}
-                                        onDelete={() => handleDeleteMetric(selector.id)}
+                                        metricName={metricName}
+                                        metricHelp={metricHelp}
+                                        samples={getSamplesForMetric(metricName)}
+                                        onDelete={() => handleDeleteMetric(metricName)}
                                     />
                                 </div>
                             );

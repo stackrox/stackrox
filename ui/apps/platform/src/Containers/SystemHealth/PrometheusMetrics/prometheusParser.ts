@@ -41,68 +41,69 @@ function splitLabelPairs(labelsString: string): string[] {
 }
 
 /**
- * Parse Prometheus text exposition format
+ * Parse Prometheus text exposition format.
  * Format: metric_name{label1="value1",label2="value2"} value [timestamp]
  * HELP comments: # HELP metric_name description
  */
 export function parsePrometheusMetrics(text: string): ParsedMetrics {
-    const metrics: MetricSample[] = [];
-    const metricNamesSet = new Set<string>();
-    const metricInfoMap: Record<string, { name: string; help?: string }> = {};
+    const metrics: Record<string, MetricSample[]> = {};
+    const metricInfoMap: Record<string, string | undefined> = {};
+    const parseErrors: { line: string; lineNumber: number }[] = [];
 
     const lines = text.split('\n');
 
-    lines.forEach((line) => {
+    lines.forEach((line, index) => {
         const trimmedLine = line.trim();
 
-        // Skip empty lines
         if (!trimmedLine) {
             return;
         }
 
-        // Parse HELP comments
         if (trimmedLine.startsWith('# HELP ')) {
             const helpMatch = trimmedLine.match(/^# HELP\s+([a-zA-Z_:][a-zA-Z0-9_:.-]*)\s+(.*)$/);
             if (helpMatch) {
                 const metricName = helpMatch[1];
                 const helpText = helpMatch[2];
-                // Add metric name even if there's no data yet
-                metricNamesSet.add(metricName);
-                if (!metricInfoMap[metricName]) {
-                    metricInfoMap[metricName] = { name: metricName };
+                metricInfoMap[metricName] = helpText;
+                if (!metrics[metricName]) {
+                    metrics[metricName] = [];
                 }
-                metricInfoMap[metricName].help = helpText;
             }
             return;
         }
 
-        // Skip other comments
+        // Skip other comments.
         if (trimmedLine.startsWith('#')) {
             return;
         }
 
         const parsed = parseMetricLine(trimmedLine);
         if (parsed) {
-            metrics.push(parsed);
-            metricNamesSet.add(parsed.metricName);
-            // Ensure metric exists in info map even without HELP
-            if (!metricInfoMap[parsed.metricName]) {
-                metricInfoMap[parsed.metricName] = { name: parsed.metricName };
+            const { metricName, sample } = parsed;
+            if (!metrics[metricName]) {
+                metrics[metricName] = [];
+            }
+            metrics[metricName].push(sample);
+            // Ensure metric exists in info map even without HELP.
+            if (!(metricName in metricInfoMap)) {
+                metricInfoMap[metricName] = undefined;
             }
         } else if (trimmedLine && !trimmedLine.startsWith('#')) {
-            // eslint-disable-next-line no-console
-            console.log('Failed to parse line:', trimmedLine.substring(0, 100));
+            parseErrors.push({
+                line: trimmedLine.substring(0, 100),
+                lineNumber: index + 1,
+            });
         }
     });
 
     return {
         metrics,
-        metricNames: Array.from(metricNamesSet).sort(),
         metricInfoMap,
+        parseErrors,
     };
 }
 
-function parseMetricLine(line: string): MetricSample | null {
+function parseMetricLine(line: string): { metricName: string; sample: MetricSample } | null {
     // Match metric_name{labels} value [timestamp]
     // or metric_name value [timestamp]
     // Relaxed pattern to allow common non-standard metric names (with hyphens, dots, etc.)
@@ -169,8 +170,10 @@ function parseMetricLine(line: string): MetricSample | null {
 
     return {
         metricName,
-        labels,
-        value,
-        timestamp,
+        sample: {
+            labels,
+            value,
+            timestamp,
+        },
     };
 }
