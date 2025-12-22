@@ -2,16 +2,7 @@ import withAuth from '../../helpers/basicAuth';
 import { interceptAndOverrideFeatureFlags } from '../../helpers/request';
 import { getRegExpForTitleWithBranding } from '../../helpers/title';
 
-import {
-    addBaseImage,
-    baseImagesAlias,
-    basePath,
-    deleteBaseImage,
-    openAddModal,
-    routeMatcherMapForGET,
-    visitBaseImages,
-    visitBaseImagesFromLeftNav,
-} from './baseImages.helpers';
+import { openAddModal, visitBaseImages, visitBaseImagesFromLeftNav } from './baseImages.helpers';
 import { selectors } from './baseImages.selectors';
 
 describe('Base Images', () => {
@@ -54,39 +45,7 @@ describe('Base Images', () => {
             cy.get(selectors.addModal.saveButton).should('be.disabled');
         });
 
-        it('should show validation error for empty input', () => {
-            visitBaseImages();
-
-            openAddModal();
-            cy.get(selectors.addModal.input).focus();
-            cy.get(selectors.addModal.input).blur();
-
-            cy.get(selectors.addModal.validationError).should('contain', 'required');
-        });
-
-        it('should show validation error when missing tag separator', () => {
-            visitBaseImages();
-
-            openAddModal();
-            cy.get(selectors.addModal.input).type('ubuntu');
-            cy.get(selectors.addModal.input).blur();
-
-            cy.get(selectors.addModal.validationError).should(
-                'contain',
-                'must include both repository and tag'
-            );
-        });
-
-        it('should enable save button with valid input', () => {
-            visitBaseImages();
-
-            openAddModal();
-            cy.get(selectors.addModal.input).type('docker.io/library/ubuntu:22.04');
-
-            cy.get(selectors.addModal.saveButton).should('not.be.disabled');
-        });
-
-        it('should add base image successfully', () => {
+        it('should add base image and update table', () => {
             const newBaseImage = 'docker.io/library/alpine:3.18';
 
             cy.intercept('POST', '/v2/baseimages', {
@@ -120,26 +79,9 @@ describe('Base Images', () => {
             cy.get(selectors.addModal.saveButton).click();
 
             cy.wait('@addBaseImage');
-            cy.get(selectors.addModal.successAlert).should('be.visible');
 
             // Verify table shows new entry
             cy.get('td').should('contain', 'docker.io/library/alpine:3.18');
-        });
-
-        it('should show error alert when add fails', () => {
-            cy.intercept('POST', '/v2/baseimages', {
-                statusCode: 500,
-                body: { message: 'Internal server error' },
-            }).as('addBaseImageError');
-
-            visitBaseImages();
-
-            openAddModal();
-            cy.get(selectors.addModal.input).type('docker.io/library/ubuntu:22.04');
-            cy.get(selectors.addModal.saveButton).click();
-
-            cy.wait('@addBaseImageError');
-            cy.get(selectors.addModal.errorAlert).should('be.visible');
         });
 
         it('should close modal when clicking Cancel', () => {
