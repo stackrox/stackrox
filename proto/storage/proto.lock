@@ -1402,6 +1402,12 @@
                 "id": 8,
                 "name": "first_layer_digest",
                 "type": "string"
+              },
+              {
+                "id": 9,
+                "name": "layers",
+                "type": "BaseImageLayer",
+                "is_repeated": true
               }
             ]
           },
