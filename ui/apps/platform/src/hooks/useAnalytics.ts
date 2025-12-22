@@ -86,6 +86,13 @@ export const COMPLIANCE_REPORT_JOB_STATUS_FILTERED = 'Compliance Report Job Stat
 export const COMPLIANCE_SCHEDULES_WIZARD_SAVE_CLICKED = 'Compliance Schedules Wizard Save Clicked';
 export const COMPLIANCE_SCHEDULES_WIZARD_STEP_CHANGED = 'Compliance Schedules Wizard Step Changed';
 
+// base images
+export const BASE_IMAGE_REFERENCE_ADD_MODAL_OPENED = 'Base Image Reference Add Modal Opened';
+export const BASE_IMAGE_REFERENCE_ADD_SUBMITTED = 'Base Image Reference Add Submitted';
+export const BASE_IMAGE_REFERENCE_ADD_SUCCESS = 'Base Image Reference Add Success';
+export const BASE_IMAGE_REFERENCE_ADD_FAILURE = 'Base Image Reference Add Failure';
+export const BASE_IMAGE_REFERENCE_DELETED = 'Base Image Reference Deleted';
+
 /**
  * Boolean fields should be tracked with 0 or 1 instead of true/false. This
  * allows us to use the boolean fields in numeric aggregations in the
@@ -102,6 +109,7 @@ type AnalyticsBoolean = 0 | 1;
  */
 export const searchCategoriesWithFilter = [
     'Component Source',
+    'Component Layer Type',
     'SEVERITY',
     'FIXABLE',
     'CLUSTER CVE FIXABLE',
@@ -495,7 +503,22 @@ export type AnalyticsEvent =
           properties: {
               step: string;
           };
-      };
+      }
+    /** Tracks each time the user opens the "Add base image" modal */
+    | typeof BASE_IMAGE_REFERENCE_ADD_MODAL_OPENED
+    /** Tracks each time the user submits the base image add form */
+    | typeof BASE_IMAGE_REFERENCE_ADD_SUBMITTED
+    /** Tracks each successful base image addition */
+    | typeof BASE_IMAGE_REFERENCE_ADD_SUCCESS
+    /** Tracks each failed base image addition with error categorization */
+    | {
+          event: typeof BASE_IMAGE_REFERENCE_ADD_FAILURE;
+          properties: {
+              errorType: string;
+          };
+      }
+    /** Tracks each time a base image is deleted */
+    | typeof BASE_IMAGE_REFERENCE_DELETED;
 
 export const redactedHostReplacement = 'redacted.host.invalid';
 export const redactedSearchReplacement = '*****';
