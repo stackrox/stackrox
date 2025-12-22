@@ -219,3 +219,29 @@ func TestFinding_GetIncrement(t *testing.T) {
 
 	assert.Equal(t, 12, a.result["m1"]["v1"].total)
 }
+
+func Test_aggregator_reset(t *testing.T) {
+	md := makeTestMetricDescriptors(t)
+	a := makeAggregator(md, nil, testLabelGetters)
+
+	for i := range testData {
+		a.count(testFinding(i))
+	}
+
+	assert.NotEmpty(t, a.result["test_Test_aggregator_reset_metric1"])
+	assert.NotEmpty(t, a.result["test_Test_aggregator_reset_metric2"])
+
+	a.reset()
+
+	assert.Empty(t, a.result["test_Test_aggregator_reset_metric1"])
+	assert.Empty(t, a.result["test_Test_aggregator_reset_metric2"])
+
+	assert.Len(t, a.result, 2)
+	assert.Contains(t, a.result, MetricName("test_Test_aggregator_reset_metric1"))
+	assert.Contains(t, a.result, MetricName("test_Test_aggregator_reset_metric2"))
+
+	// Verify aggregator works correctly after reset.
+	a.count(testFinding(0))
+	assert.Len(t, a.result["test_Test_aggregator_reset_metric1"], 1)
+	assert.Equal(t, 1, a.result["test_Test_aggregator_reset_metric1"]["cluster 1|CRITICAL"].total)
+}

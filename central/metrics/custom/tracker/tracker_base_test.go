@@ -145,7 +145,7 @@ func TestTrackerBase_Reconfigure(t *testing.T) {
 			identity, _ := authn.IdentityFromContext(ctx)
 			gRaw, ok := tracker.gatherers.Load(identity.UID())
 			require.True(t, ok)
-			g := gRaw.(*gatherer)
+			g := gRaw.(*gatherer[testFinding])
 			// Make it temporarily running to avoid data race on lastGather.
 			require.Eventually(t, g.trySetRunning, 5*time.Second, 10*time.Millisecond)
 			g.lastGather = time.Time{}
@@ -192,7 +192,11 @@ func TestTrackerBase_Track(t *testing.T) {
 	tracker.config = &Configuration{
 		metrics: makeTestMetricDescriptors(t),
 	}
-	assert.NoError(t, tracker.track(context.Background(), rf, tracker.config))
+	testGatherer := &gatherer[testFinding]{
+		registry:   rf,
+		aggregator: makeAggregator(tracker.config.metrics, tracker.config.filters, tracker.getters),
+	}
+	assert.NoError(t, tracker.track(context.Background(), testGatherer, tracker.config))
 
 	if assert.Len(t, result, 2) &&
 		assert.Contains(t, result, "test_TestTrackerBase_Track_metric1") &&
@@ -252,7 +256,11 @@ func TestTrackerBase_error(t *testing.T) {
 	tracker.config = &Configuration{
 		metrics: makeTestMetricDescriptors(t),
 	}
-	assert.ErrorIs(t, tracker.track(context.Background(), rf, tracker.config),
+	testGatherer := &gatherer[testFinding]{
+		registry:   rf,
+		aggregator: makeAggregator(tracker.config.metrics, tracker.config.filters, tracker.getters),
+	}
+	assert.ErrorIs(t, tracker.track(context.Background(), testGatherer, tracker.config),
 		errox.InvariantViolation)
 }
 
@@ -294,6 +302,130 @@ func TestTrackerBase_Gather(t *testing.T) {
 	tracker.Gather(ctx)
 	assert.Empty(t, result)
 	tracker.cleanupWG.Wait()
+}
+
+func TestTrackerBase_Gather_resetBetweenRuns(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	rf := mocks.NewMockCustomRegistry(ctrl)
+	tracker := MakeTrackerBase("test", "Test",
+		testLabelGetters,
+		makeTestGatherFunc(testData),
+	)
+	tracker.registryFactory = func(string) (metrics.CustomRegistry, error) { return rf, nil }
+
+	// Track all SetTotal calls with their totals.
+	var allTotals []int
+	rf.EXPECT().RegisterMetric(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Times(2)
+	rf.EXPECT().SetTotal(gomock.Any(), gomock.Any(), gomock.Any()).
+		AnyTimes().Do(func(_ string, _ prometheus.Labels, total int) {
+		allTotals = append(allTotals, total)
+	})
+	rf.EXPECT().Reset(gomock.Any()).AnyTimes()
+	rf.EXPECT().Lock().AnyTimes()
+	rf.EXPECT().Unlock().AnyTimes()
+
+	md := makeTestMetricDescriptors(t)
+	tracker.Reconfigure(&Configuration{
+		metrics: md,
+		toAdd:   slices.Collect(maps.Keys(md)),
+		period:  time.Nanosecond, // Very short period to allow immediate re-gather.
+	})
+
+	ctx := makeAdminContext(t)
+
+	// First gather.
+	tracker.Gather(ctx)
+	tracker.cleanupWG.Wait()
+	firstRunTotals := append([]int{}, allTotals...)
+	assert.NotEmpty(t, firstRunTotals, "first gather should produce results")
+
+	// Reset tracking and force immediate re-gather.
+	allTotals = nil
+	identity, _ := authn.IdentityFromContext(ctx)
+	gRaw, _ := tracker.gatherers.Load(identity.UID())
+	g := gRaw.(*gatherer[testFinding])
+	require.Eventually(t, g.trySetRunning, 5*time.Second, 10*time.Millisecond)
+	g.lastGather = time.Time{} // Reset to allow immediate gather.
+	g.running.Store(false)
+
+	// Second gather.
+	tracker.Gather(ctx)
+	tracker.cleanupWG.Wait()
+
+	// Verify second run produced the same totals (not accumulated).
+	assert.ElementsMatch(t, firstRunTotals, allTotals,
+		"second gather should produce same totals, not accumulated values")
+}
+
+func TestTrackerBase_Gather_afterReconfiguration(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	rf := mocks.NewMockCustomRegistry(ctrl)
+	tracker := MakeTrackerBase("test", "Test",
+		testLabelGetters,
+		makeTestGatherFunc(testData),
+	)
+	tracker.registryFactory = func(string) (metrics.CustomRegistry, error) { return rf, nil }
+
+	var gatheredMetrics []string
+	rf.EXPECT().RegisterMetric(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
+	rf.EXPECT().UnregisterMetric(gomock.Any()).AnyTimes()
+	rf.EXPECT().SetTotal(gomock.Any(), gomock.Any(), gomock.Any()).
+		AnyTimes().Do(func(metricName string, _ prometheus.Labels, _ int) {
+		gatheredMetrics = append(gatheredMetrics, metricName)
+	})
+	rf.EXPECT().Reset(gomock.Any()).AnyTimes()
+	rf.EXPECT().Lock().AnyTimes()
+	rf.EXPECT().Unlock().AnyTimes()
+
+	// Initial configuration with 2 metrics.
+	md1 := makeTestMetricDescriptors(t)
+	cfg1 := &Configuration{
+		metrics: md1,
+		toAdd:   slices.Collect(maps.Keys(md1)),
+		period:  time.Nanosecond,
+	}
+	tracker.Reconfigure(cfg1)
+
+	ctx := makeAdminContext(t)
+	tracker.Gather(ctx)
+	tracker.cleanupWG.Wait()
+
+	assert.NotEmpty(t, gatheredMetrics, "should gather metrics with initial config")
+	initialMetrics := slices.Compact(slices.Sorted(slices.Values(gatheredMetrics)))
+
+	// Reconfigure with different metrics (only metric1).
+	gatheredMetrics = nil
+	md2 := MetricDescriptors{
+		"test_" + MetricName(t.Name()) + "_new_metric": {"Severity"},
+	}
+	cfg2 := &Configuration{
+		metrics:  md2,
+		toAdd:    []MetricName{"test_" + MetricName(t.Name()) + "_new_metric"},
+		toDelete: slices.Collect(maps.Keys(md1)),
+		period:   time.Nanosecond,
+	}
+	tracker.Reconfigure(cfg2)
+
+	// Reset lastGather to allow immediate gather.
+	identity, _ := authn.IdentityFromContext(ctx)
+	gRaw, _ := tracker.gatherers.Load(identity.UID())
+	g := gRaw.(*gatherer[testFinding])
+	require.Eventually(t, g.trySetRunning, 5*time.Second, 10*time.Millisecond)
+	g.lastGather = time.Time{}
+	g.running.Store(false)
+
+	// Gather with new configuration.
+	tracker.Gather(ctx)
+	tracker.cleanupWG.Wait()
+
+	assert.NotEmpty(t, gatheredMetrics, "should gather metrics after reconfiguration")
+	newMetrics := slices.Compact(slices.Sorted(slices.Values(gatheredMetrics)))
+
+	// Verify we're gathering different metrics now.
+	assert.NotEqual(t, initialMetrics, newMetrics,
+		"metrics after reconfiguration should differ from initial")
+	assert.Contains(t, newMetrics, "test_"+t.Name()+"_new_metric",
+		"should contain the new metric")
 }
 
 func TestTrackerBase_getGatherer(t *testing.T) {
