@@ -89,6 +89,7 @@ func GetEntityOptionsMap() map[v1.SearchCategory]search.OptionsMap {
 	entityOptionsMap[v1.SearchCategory_IMAGE_COMPONENTS_V2] = imageToVulnerabilityV2SearchOptions
 	entityOptionsMap[v1.SearchCategory_IMAGE_VULNERABILITIES_V2] = imageToVulnerabilityV2SearchOptions
 	entityOptionsMap[v1.SearchCategory_IMAGES] = imageToVulnerabilityV2SearchOptions
+	entityOptionsMap[v1.SearchCategory_IMAGES_V2] = imageToVulnerabilityV2SearchOptions
 
 	return entityOptionsMap
 }
