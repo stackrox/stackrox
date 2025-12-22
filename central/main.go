@@ -48,7 +48,6 @@ import (
 	complianceHandlers "github.com/stackrox/rox/central/compliance/handlers"
 	complianceManagerService "github.com/stackrox/rox/central/compliance/manager/service"
 	complianceService "github.com/stackrox/rox/central/compliance/service"
-	v2ComplianceBenchmark "github.com/stackrox/rox/central/complianceoperator/v2/benchmarks/datastore"
 	v2ComplianceResults "github.com/stackrox/rox/central/complianceoperator/v2/checkresults/service"
 	v2ComplianceStats "github.com/stackrox/rox/central/complianceoperator/v2/checkresults/stats/service"
 	v2ComplianceMgr "github.com/stackrox/rox/central/complianceoperator/v2/compliancemanager"
@@ -483,8 +482,6 @@ func servicesToRegister() []pkgGRPC.APIService {
 		servicesToRegister = append(servicesToRegister, v2ComplianceStats.Singleton())
 		servicesToRegister = append(servicesToRegister, v2ComplianceProfiles.Singleton())
 		servicesToRegister = append(servicesToRegister, v2ComplianceRules.Singleton())
-		// TODO: this is only done to initialize the table. Once we have a service we can move this there
-		v2ComplianceBenchmark.Singleton()
 	}
 
 	if features.VirtualMachines.Enabled() {
