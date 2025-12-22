@@ -1,4 +1,4 @@
-name: Auto-retest Konflux Builds
+name: Retest Konflux Builds
 
 on:
   check_run:
@@ -8,10 +8,10 @@ on:
 
 jobs:
   retest-failed-builds:
-    uses: stackrox/actions/konflux/auto-retest@v1
-    with:
-      max_retries: 3
-      check_name_suffix: '-on-push'
+    uses: stackrox/actions/.github/workflows/retest-konflux-builds.yml@v1
     permissions:
       pull-requests: write
       issues: write
+    with:
+      max_retries: 3
+      check_name_suffix: '-on-push'
