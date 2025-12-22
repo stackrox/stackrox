@@ -101,13 +101,12 @@ func insertIntoBaseImageLayers(batch *pgx.Batch, obj *storage.BaseImageLayer) er
 	values := []interface{}{
 		// parent primary keys start
 		pgutils.NilOrUUID(obj.GetId()),
-		pgutils.NilOrUUID(obj.GetBaseImageId()),
 		obj.GetLayerDigest(),
 		obj.GetIndex(),
 		serialized,
 	}
 
-	finalStr := "INSERT INTO base_image_layers (Id, BaseImageId, LayerDigest, Index, serialized) VALUES($1, $2, $3, $4, $5) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, BaseImageId = EXCLUDED.BaseImageId, LayerDigest = EXCLUDED.LayerDigest, Index = EXCLUDED.Index, serialized = EXCLUDED.serialized"
+	finalStr := "INSERT INTO base_image_layers (Id, LayerDigest, Index, serialized) VALUES($1, $2, $3, $4) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, LayerDigest = EXCLUDED.LayerDigest, Index = EXCLUDED.Index, serialized = EXCLUDED.serialized"
 	batch.Queue(finalStr, values...)
 
 	return nil
@@ -115,7 +114,6 @@ func insertIntoBaseImageLayers(batch *pgx.Batch, obj *storage.BaseImageLayer) er
 
 var copyColsBaseImageLayers = []string{
 	"id",
-	"baseimageid",
 	"layerdigest",
 	"index",
 	"serialized",
@@ -153,7 +151,6 @@ func copyFromBaseImageLayers(ctx context.Context, s pgSearch.Deleter, tx *postgr
 
 		return []interface{}{
 			pgutils.NilOrUUID(obj.GetId()),
-			pgutils.NilOrUUID(obj.GetBaseImageId()),
 			obj.GetLayerDigest(),
 			obj.GetIndex(),
 			serialized,
