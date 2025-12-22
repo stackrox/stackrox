@@ -172,7 +172,7 @@ func (s *interceptorTestSuite) TestGrpcWithHTTPRequestInfo() {
 
 	rp := GetGRPCRequestDetails(ctx, err, "ignored grpc method", "request")
 	s.Equal(http.StatusOK, rp.Code)
-	s.Equal([]string{"gateway", "user"}, rp.Headers(userAgentHeaderKey))
+	s.Equal([]string{"user", "gateway"}, rp.Headers(userAgentHeaderKey))
 	s.Nil(rp.UserID)
 	s.Equal("request", rp.GRPCReq)
 	s.Equal("/wrapped/http", rp.Path)
