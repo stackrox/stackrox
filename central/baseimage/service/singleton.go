@@ -1,12 +1,12 @@
 package service
 
 import (
+	"github.com/stackrox/rox/central/baseimage/datastore/repository"
 	clusterDataStore "github.com/stackrox/rox/central/cluster/datastore"
 	delegatedRegistryConfigDS "github.com/stackrox/rox/central/delegatedregistryconfig/datastore"
 	"github.com/stackrox/rox/central/delegatedregistryconfig/delegator"
 	"github.com/stackrox/rox/central/delegatedregistryconfig/scanwaiter"
 	"github.com/stackrox/rox/central/delegatedregistryconfig/scanwaiterv2"
-	"github.com/stackrox/rox/central/baseimage/datastore/repository"
 	"github.com/stackrox/rox/central/imageintegration"
 	namespaceDataStore "github.com/stackrox/rox/central/namespace/datastore"
 	"github.com/stackrox/rox/central/role/sachelper"
