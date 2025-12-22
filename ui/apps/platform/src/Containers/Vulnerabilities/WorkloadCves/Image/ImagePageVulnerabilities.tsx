@@ -196,7 +196,7 @@ function ImagePageVulnerabilities({
         },
     });
 
-    const imageData = data && (isNewImageDataModelEnabled ? data.imageV2 : data.image);
+    const imageData = data && (isNewImageDataModelEnabled ? data.imageV2 : data.image) || undefined;
 
     const isFiltered = getHasSearchApplied(querySearchFilter);
 
