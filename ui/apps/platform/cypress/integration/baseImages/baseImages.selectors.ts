@@ -33,4 +33,3 @@ export const selectors = {
         errorAlert: '.pf-v5-c-alert:contains("Error removing base image")',
     },
 };
-
