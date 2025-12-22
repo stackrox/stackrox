@@ -374,6 +374,159 @@ describe('Workload CVE Image Single page', () => {
         });
     });
 
+    describe('Layer type column tests', () => {
+        it('should display Layer type column when feature flag is enabled', () => {
+            interceptAndOverrideFeatureFlags({ ROX_BASE_IMAGE_DETECTION: true });
+
+            const opname = 'getCVEsForImage';
+            const routeMatcherMap = getRouteMatcherMapForGraphQL([opname]);
+            const body = {
+                data: {
+                    image: {
+                        id: 'sha256:test123',
+                        name: {
+                            registry: 'quay.io',
+                            remote: 'test/image',
+                            tag: 'latest',
+                            __typename: 'ImageName',
+                        },
+                        metadata: {
+                            v1: {
+                                layers: [
+                                    {
+                                        instruction: 'ADD',
+                                        value: 'file:test in /',
+                                        __typename: 'ImageLayer',
+                                    },
+                                ],
+                                __typename: 'V1Metadata',
+                            },
+                            __typename: 'ImageMetadata',
+                        },
+                        __typename: 'Image',
+                        imageCVECountBySeverity: {
+                            unknown: {
+                                total: 0,
+                                fixable: 0,
+                                __typename: 'ResourceCountByFixability',
+                            },
+                            low: {
+                                total: 0,
+                                fixable: 0,
+                                __typename: 'ResourceCountByFixability',
+                            },
+                            moderate: {
+                                total: 1,
+                                fixable: 1,
+                                __typename: 'ResourceCountByFixability',
+                            },
+                            important: {
+                                total: 0,
+                                fixable: 0,
+                                __typename: 'ResourceCountByFixability',
+                            },
+                            critical: {
+                                total: 0,
+                                fixable: 0,
+                                __typename: 'ResourceCountByFixability',
+                            },
+                            __typename: 'ResourceCountByCVESeverity',
+                        },
+                        imageVulnerabilityCount: 1,
+                        imageVulnerabilities: [
+                            {
+                                severity: 'MODERATE_VULNERABILITY_SEVERITY',
+                                cve: 'CVE-2023-TEST',
+                                summary: 'Test vulnerability',
+                                cvss: 5.3,
+                                scoreVersion: 'V3',
+                                discoveredAtImage: '2024-04-03T19:44:55.837891332Z',
+                                pendingExceptionCount: 0,
+                                imageComponents: [
+                                    {
+                                        name: 'base-component',
+                                        version: 'v1.0.0',
+                                        location: 'usr/bin/test',
+                                        source: 'OS',
+                                        layerIndex: 0,
+                                        inBaseImageLayer: true,
+                                        imageVulnerabilities: [
+                                            {
+                                                vulnerabilityId: 'CVE-2023-TEST#rhel:9',
+                                                severity: 'MODERATE_VULNERABILITY_SEVERITY',
+                                                fixedByVersion: '1.0.1',
+                                                pendingExceptionCount: 0,
+                                                __typename: 'ImageVulnerability',
+                                            },
+                                        ],
+                                        __typename: 'ImageComponent',
+                                    },
+                                    {
+                                        name: 'app-component',
+                                        version: 'v2.0.0',
+                                        location: 'app/bin/test',
+                                        source: 'GO',
+                                        layerIndex: 0,
+                                        inBaseImageLayer: false,
+                                        imageVulnerabilities: [
+                                            {
+                                                vulnerabilityId: 'CVE-2023-TEST#rhel:9',
+                                                severity: 'MODERATE_VULNERABILITY_SEVERITY',
+                                                fixedByVersion: '2.0.1',
+                                                pendingExceptionCount: 0,
+                                                __typename: 'ImageVulnerability',
+                                            },
+                                        ],
+                                        __typename: 'ImageComponent',
+                                    },
+                                ],
+                                __typename: 'ImageVulnerability',
+                            },
+                        ],
+                    },
+                },
+            };
+
+            const staticResponseMap = { [opname]: { body } };
+
+            interactAndWaitForResponses(
+                () => {
+                    visitFirstImage();
+                },
+                routeMatcherMap,
+                staticResponseMap
+            );
+
+            // Expand the CVE row to see components
+            cy.get(vulnSelectors.expandRowButton).click();
+
+            // Verify Layer type column header is visible
+            cy.get('th:contains("Layer type")').should('be.visible');
+
+            // Verify Base image label is displayed for base component
+            cy.get('tr:contains("base-component") td[data-label="Layer type"]')
+                .find('.pf-v5-c-label')
+                .should('contain', 'Base image');
+
+            // Verify Application label is displayed for app component
+            cy.get('tr:contains("app-component") td[data-label="Layer type"]')
+                .find('.pf-v5-c-label')
+                .should('contain', 'Application');
+        });
+
+        it('should hide Layer type column when feature flag is disabled', () => {
+            interceptAndOverrideFeatureFlags({ ROX_BASE_IMAGE_DETECTION: false });
+
+            visitFirstImage();
+
+            // Expand the CVE row to see components
+            cy.get(vulnSelectors.expandRowButton).click();
+
+            // Verify Layer type column is not visible
+            cy.get('th:contains("Layer type")').should('not.exist');
+        });
+    });
+
     describe('SBOM generation tests', () => {
         const headerSbomModalButton = 'section:has(h1) button:contains("Generate SBOM")';
         const generateSbomButton = '[role="dialog"] button:contains("Generate SBOM")';
