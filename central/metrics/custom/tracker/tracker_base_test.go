@@ -812,12 +812,9 @@ func readMetrics(registry metrics.CustomRegistry) string {
 func TestTrackerBase_IncrementCounter(t *testing.T) {
 	t.Run("increments counter in global registry", func(t *testing.T) {
 		ctrl := gomock.NewController(t)
-
-		// Create a global counter tracker (nil generator)
-		tracker := MakeGlobalTrackerBase("test", "test counter", testLabelGetters, nil)
-
-		// Create mock global registry
 		mockRegistry := mocks.NewMockCustomRegistry(ctrl)
+
+		tracker := MakeGlobalTrackerBase("test", "test counter", testLabelGetters, nil)
 
 		tracker.registryFactory = func(userID string) (metrics.CustomRegistry, error) {
 			if userID == globalScopeID {
@@ -826,18 +823,16 @@ func TestTrackerBase_IncrementCounter(t *testing.T) {
 			return nil, errox.InvariantViolation.Newf("unexpected userID: %s", userID)
 		}
 
-		// Configure the tracker
 		md := MetricDescriptors{
 			"test_counter": {"Cluster", "Severity"},
 		}
 		cfg := &Configuration{
 			metrics: md,
 			toAdd:   slices.Collect(maps.Keys(md)),
-			period:  0, // Counter trackers don't use period
+			period:  0, // Counter trackers don't use period.
 			enabled: true,
 		}
 
-		// Expect RegisterCounter to be called when the global gatherer is created
 		mockRegistry.EXPECT().RegisterCounter("test_counter", "test counter", []string{"Cluster", "Severity"}).Return(nil)
 
 		tracker.Reconfigure(cfg)
@@ -857,7 +852,6 @@ func TestTrackerBase_IncrementCounter(t *testing.T) {
 			return true
 		})
 
-		// Expect IncrementCounter to be called on ALL three registries
 		// Expect IncrementCounter to be called on the global registry
 		expectedLabels := prometheus.Labels{
 			"Cluster":  "cluster 1",
@@ -865,20 +859,18 @@ func TestTrackerBase_IncrementCounter(t *testing.T) {
 		}
 		mockRegistry.EXPECT().IncrementCounter("test_counter", expectedLabels)
 
-		// Increment the counter - this should lazy-create the global gatherer
+		// Increment the counter - this should lazy-create the global gatherer.
 		tracker.IncrementCounter(testFinding(0))
 
-		// Verify the global gatherer exists and is marked as running
+		// Verify the global gatherer exists and is marked as running.
 		gr, exists := tracker.gatherers.Load(globalScopeID)
 		require.True(t, exists, "global gatherer should exist after first increment")
 		require.True(t, gr.(*gatherer[testFinding]).running.Load(), "global gatherer should be marked as running")
 	})
 
 	t.Run("no-op when no gatherers exist", func(t *testing.T) {
-		// Create a global counter tracker with no gatherers
 		tracker := MakeGlobalTrackerBase("test", "test counter", testLabelGetters, nil)
 
-		// Configure the tracker
 		md := MetricDescriptors{
 			"test_counter": {"Cluster"},
 		}
@@ -888,17 +880,15 @@ func TestTrackerBase_IncrementCounter(t *testing.T) {
 		}
 		tracker.Reconfigure(cfg)
 
-		// Increment should be a no-op (no panic, no error)
+		// Increment should be a no-op (no panic, no error).
 		tracker.IncrementCounter(testFinding(0))
 	})
 
 	t.Run("does nothing on gauge tracker", func(t *testing.T) {
 		ctrl := gomock.NewController(t)
-
-		// Create a gauge tracker (non-nil generator)
-		tracker := MakeTrackerBase("test", "test gauge", testLabelGetters, nilGatherFunc)
-
 		mockRegistry := mocks.NewMockCustomRegistry(ctrl)
+
+		tracker := MakeTrackerBase("test", "test gauge", testLabelGetters, nilGatherFunc)
 		tracker.registryFactory = func(string) (metrics.CustomRegistry, error) {
 			return mockRegistry, nil
 		}
@@ -913,30 +903,26 @@ func TestTrackerBase_IncrementCounter(t *testing.T) {
 		}
 		tracker.Reconfigure(cfg)
 
-		// Expect RegisterMetric (not RegisterCounter) to be called
+		// Expect RegisterMetric (not RegisterCounter) to be called.
 		mockRegistry.EXPECT().RegisterMetric("test_metric", "test gauge", []string{"Cluster"}).Return(nil)
 
 		tracker.getGatherer("user1", cfg)
 
-		// IncrementCounter should be a no-op for gauge trackers
-		// No IncrementCounter expectation - it should not be called
+		// IncrementCounter should be a no-op for gauge trackers.
+		// No IncrementCounter expectation - it should not be called.
 		tracker.IncrementCounter(testFinding(0))
 	})
 
 	t.Run("returns early when configuration is nil", func(t *testing.T) {
 		tracker := MakeGlobalTrackerBase("test", "test counter", testLabelGetters, nil)
-
-		// No configuration set
-		// IncrementCounter should return early without panicking
 		tracker.IncrementCounter(testFinding(0))
 	})
 
 	t.Run("extracts correct label values from finding", func(t *testing.T) {
 		ctrl := gomock.NewController(t)
+		mockRegistry := mocks.NewMockCustomRegistry(ctrl)
 
 		tracker := MakeGlobalTrackerBase("test", "test counter", testLabelGetters, nil)
-
-		mockRegistry := mocks.NewMockCustomRegistry(ctrl)
 		tracker.registryFactory = func(userID string) (metrics.CustomRegistry, error) {
 			if userID == globalScopeID {
 				return mockRegistry, nil
@@ -953,7 +939,7 @@ func TestTrackerBase_IncrementCounter(t *testing.T) {
 			enabled: true,
 		}
 
-		// Expect RegisterCounter to be called when the global gatherer is lazy-created
+		// Expect RegisterCounter to be called when the global gatherer is lazy-created.
 		mockRegistry.EXPECT().RegisterCounter("test_counter", "test counter",
 			[]string{"Cluster", "Namespace", "CVE", "Severity"}).Return(nil)
 
@@ -964,7 +950,7 @@ func TestTrackerBase_IncrementCounter(t *testing.T) {
 		})
 		tracker.Reconfigure(cfg)
 
-		// Expect correct labels extracted from testFinding(1)
+		// Expect correct labels extracted from testFinding(1).
 		expectedLabels := prometheus.Labels{
 			"Cluster":   testData[1]["Cluster"],
 			"Namespace": testData[1]["Namespace"],
@@ -973,7 +959,7 @@ func TestTrackerBase_IncrementCounter(t *testing.T) {
 		}
 		mockRegistry.EXPECT().IncrementCounter("test_counter", expectedLabels)
 
-		// This should lazy-create the global gatherer and increment the counter
+		// This should lazy-create the global gatherer and increment the counter.
 		tracker.IncrementCounter(testFinding(1))
 	})
 }
