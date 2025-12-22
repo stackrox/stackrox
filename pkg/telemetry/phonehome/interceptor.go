@@ -62,11 +62,13 @@ func GetGRPCRequestDetails(ctx context.Context, err error, grpcFullMethod string
 		if ri.HTTPRequest.URL != nil {
 			path = ri.HTTPRequest.URL.Path
 		}
-		// This is either the gRPC client or the grpc-gateway user agent:
-		grpcClientAgent := ri.Metadata.Get(userAgentHeaderKey)
+		// This is a list of the User-Agents of the original client (first) and,
+		// potentially, the gRPC-gateway (second):
+		var grpcClientAgent []string
 		if clientAgent := ri.HTTPRequest.Headers.Get(userAgentHeaderKey); clientAgent != "" {
-			grpcClientAgent = append(grpcClientAgent, clientAgent)
+			grpcClientAgent = append(grpcClientAgent, clientAgent) // Original client UA first.
 		}
+		grpcClientAgent = append(grpcClientAgent, ri.Metadata.Get(userAgentHeaderKey)...) // Gateway's UA last.
 		return &RequestParams{
 			UserID:  id,
 			Method:  ri.HTTPRequest.Method,
