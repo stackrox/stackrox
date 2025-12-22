@@ -4,10 +4,9 @@ import (
 	"context"
 
 	"github.com/pkg/errors"
-	benchmarkDS "github.com/stackrox/rox/central/complianceoperator/v2/benchmarks/datastore"
+	"github.com/stackrox/rox/central/complianceoperator/v2/benchmark"
 	complianceRuleDS "github.com/stackrox/rox/central/complianceoperator/v2/rules/datastore"
 	complianceScanDS "github.com/stackrox/rox/central/complianceoperator/v2/scans/datastore"
-	"github.com/stackrox/rox/pkg/errox"
 	types "github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/search"
 )
@@ -36,22 +35,15 @@ func GetLastScanTime(ctx context.Context, clusterID string, profileName string, 
 	return lastScanTime, nil
 }
 
-func GetControlsForScanResults(ctx context.Context, ruleDS complianceRuleDS.DataStore, ruleNames []string, profileName string, benchmarkDS benchmarkDS.DataStore) ([]*complianceRuleDS.ControlResult, error) {
-	benchmarks, err := benchmarkDS.GetBenchmarksByProfileName(ctx, profileName)
-	if err != nil {
-		return nil, errors.Wrapf(errox.NotFound, "Unable to retrieve benchmarks for profile %v", profileName)
-	}
+func GetControlsForScanResults(ctx context.Context, ruleDS complianceRuleDS.DataStore, ruleNames []string, profileName string) ([]*complianceRuleDS.ControlResult, error) {
+	shortName := benchmark.GetBenchmarkShortNameFromProfileName(profileName)
+
 	// If the profile does not map to a benchmark then we cannot map control data.
-	if len(benchmarks) == 0 {
+	if shortName == "" {
 		return nil, nil
 	}
 
-	var benchmarkShortNames []string
-	for _, benchmark := range benchmarks {
-		benchmarkShortNames = append(benchmarkShortNames, benchmark.GetShortName())
-	}
-
-	controls, err := ruleDS.GetControlsByRulesAndBenchmarks(ctx, ruleNames, benchmarkShortNames)
+	controls, err := ruleDS.GetControlsByRulesAndBenchmarks(ctx, ruleNames, []string{shortName})
 	if err != nil {
 		return nil, errors.Wrap(err, "could not receive controls by rule controls")
 	}

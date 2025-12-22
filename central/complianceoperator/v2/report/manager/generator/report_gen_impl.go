@@ -6,7 +6,6 @@ import (
 
 	"github.com/pkg/errors"
 	blobDS "github.com/stackrox/rox/central/blob/datastore"
-	benchmarksDS "github.com/stackrox/rox/central/complianceoperator/v2/benchmarks/datastore"
 	checkResults "github.com/stackrox/rox/central/complianceoperator/v2/checkresults/datastore"
 	profileDS "github.com/stackrox/rox/central/complianceoperator/v2/profiles/datastore"
 	remediationDS "github.com/stackrox/rox/central/complianceoperator/v2/remediations/datastore"
@@ -56,7 +55,6 @@ type complianceReportGeneratorImpl struct {
 	scanDS                   scanDS.DataStore
 	profileDS                profileDS.DataStore
 	remediationDS            remediationDS.DataStore
-	benchmarkDS              benchmarksDS.DataStore
 	complianceRuleDS         complianceRuleDS.DataStore
 	snapshotDS               snapshotDataStore.DataStore
 	blobStore                blobDS.Datastore
