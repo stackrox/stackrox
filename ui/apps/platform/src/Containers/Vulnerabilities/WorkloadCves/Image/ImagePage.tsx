@@ -180,9 +180,13 @@ function ImagePage({
 
     const imageData = data && (isNewImageDataModelEnabled ? data.imageV2 : data.image);
     const imageName = imageData?.name;
+    // For ImageV2, the SHA is in the digest field; for legacy Image, it's in the id field
+    const imageSha = isNewImageDataModelEnabled 
+        ? (imageData as ImageV2Data | null)?.digest 
+        : imageData?.id;
     const imageDisplayName =
         imageData && imageName
-            ? `${imageName.registry}/${getImageBaseNameDisplay(imageData.id, imageName)}`
+            ? `${imageName.registry}/${getImageBaseNameDisplay(imageSha || imageData.id, imageName)}`
             : 'NAME UNKNOWN';
     const scanMessage = getImageScanMessage(imageData?.notes ?? [], imageData?.scanNotes ?? []);
     const hasScanMessage = !isEmpty(scanMessage);
@@ -205,7 +209,6 @@ function ImagePage({
             </PageSection>
         );
     } else {
-        const sha = isNewImageDataModelEnabled ? (imageData as ImageV2Data)?.digest : imageData?.id;
         mainContent = (
             <>
                 <PageSection variant="light">
@@ -220,14 +223,14 @@ function ImagePage({
                                     spaceItems={{ default: 'spaceItemsSm' }}
                                 >
                                     <Title headingLevel="h1">{imageDisplayName}</Title>
-                                    {sha && (
+                                    {(imageSha || imageData?.id) && (
                                         <ClipboardCopy
                                             hoverTip="Copy SHA"
                                             clickTip="Copied!"
                                             variant="inline-compact"
                                             className="pf-v5-u-font-size-sm"
                                         >
-                                            {sha}
+                                            {imageSha || imageData?.id}
                                         </ClipboardCopy>
                                     )}
                                     <ImageDetailBadges imageData={imageData} />
