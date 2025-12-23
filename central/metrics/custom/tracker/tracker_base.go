@@ -3,6 +3,7 @@ package tracker
 import (
 	"cmp"
 	"context"
+	"fmt"
 	"iter"
 	"maps"
 	"net/http"
@@ -177,16 +178,57 @@ func (tracker *TrackerBase[F]) registerMetrics(cfg *Configuration, metrics []Met
 }
 
 func (tracker *TrackerBase[F]) registerMetric(gatherer *gatherer[F], cfg *Configuration, metric MetricName) {
+	help := formatMetricHelp(tracker.description, cfg, metric)
+
 	if err := gatherer.registry.RegisterMetric(
 		string(metric),
-		tracker.description,
-		cfg.period,
+		help,
 		labelsAsStrings(cfg.metrics[metric]),
 	); err != nil {
 		log.Errorf("Failed to register %s metric %q: %v", tracker.description, metric, err)
 		return
 	}
 	log.Debugf("Registered %s Prometheus metric %q", tracker.description, metric)
+}
+
+func formatMetricHelp(description string, cfg *Configuration, metric MetricName) string {
+	var help strings.Builder
+	help.WriteString("The total number of ")
+	help.WriteString(description)
+	if len(cfg.metrics[metric]) > 0 {
+		help.WriteString(" aggregated by ")
+		for i, label := range cfg.metrics[metric] {
+			if i > 0 {
+				help.WriteRune(',')
+			}
+			help.WriteString(string(label))
+		}
+	}
+	if len(cfg.includeFilters[metric]) > 0 {
+		help.WriteString(", including only ")
+		zero := help.Len()
+		for k, v := range cfg.includeFilters[metric] {
+			if help.Len() > zero {
+				help.WriteRune(',')
+			}
+			fmt.Fprintf(&help, "%s≈%q", k, v.String())
+		}
+	}
+	if len(cfg.excludeFilters[metric]) > 0 {
+		help.WriteString(", excluding ")
+		zero := help.Len()
+		for k, v := range cfg.excludeFilters[metric] {
+			if help.Len() > zero {
+				help.WriteRune(',')
+			}
+			fmt.Fprintf(&help, "%s≈%q", k, v.String())
+		}
+	}
+	if cfg.period > 0 {
+		help.WriteString(", and gathered every ")
+		help.WriteString(cfg.period.String())
+	}
+	return help.String()
 }
 
 func (tracker *TrackerBase[F]) getConfiguration() *Configuration {
