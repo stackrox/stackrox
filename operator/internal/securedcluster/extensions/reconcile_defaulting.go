@@ -92,7 +92,6 @@ func setDefaultsAndPersist(ctx context.Context, logger logr.Logger, u *unstructu
 	// This updates securedCluster both on the cluster and in memory, which is crucial since this object is used for the final
 	// updating within helm-operator and we have concurrently running controllers (the status controller),
 	// whose changes we must preserve.
-	logger.Info("updating defaulting annotations on SecuredCluster object")
 	err := client.Patch(ctx, u, patch)
 	if err != nil {
 		return errors.Wrap(err, "patching SecuredCluster annotations")
