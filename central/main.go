@@ -685,6 +685,7 @@ func addCentralIdentityGatherers(c *phonehomeClient.CentralClient) {
 	add(roleDataStore.Gather)
 	add(signatureIntegrationDS.Gather)
 	add(complianceScanDS.GatherProfiles(complianceScanDS.Singleton()))
+	add(policyDataStore.Gather)
 }
 
 func registerDelayedIntegrations(integrationsInput []iiStore.DelayedIntegration) {
