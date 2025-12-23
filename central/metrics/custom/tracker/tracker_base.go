@@ -111,7 +111,7 @@ func (tracker *TrackerBase[F]) NewConfiguration(cfg *storage.PrometheusMetrics_G
 		current = &Configuration{}
 	}
 
-	md, lf, err := tracker.translateStorageConfiguration(cfg.GetDescriptors())
+	md, incFilters, excFilters, err := tracker.translateStorageConfiguration(cfg.GetDescriptors())
 	if err != nil {
 		return nil, err
 	}
@@ -121,11 +121,12 @@ func (tracker *TrackerBase[F]) NewConfiguration(cfg *storage.PrometheusMetrics_G
 	}
 
 	return &Configuration{
-		metrics:  md,
-		filters:  lf,
-		toAdd:    toAdd,
-		toDelete: toDelete,
-		period:   time.Minute * time.Duration(cfg.GetGatheringPeriodMinutes()),
+		metrics:        md,
+		includeFilters: incFilters,
+		excludeFilters: excFilters,
+		toAdd:          toAdd,
+		toDelete:       toDelete,
+		period:         time.Minute * time.Duration(cfg.GetGatheringPeriodMinutes()),
 	}, nil
 }
 
@@ -295,7 +296,7 @@ func (tracker *TrackerBase[F]) getGatherer(userID string, cfg *Configuration) *g
 		}
 		gr = &gatherer[F]{
 			registry:   r,
-			aggregator: makeAggregator(cfg.metrics, cfg.filters, tracker.getters),
+			aggregator: makeAggregator(cfg.metrics, cfg.includeFilters, cfg.excludeFilters, tracker.getters),
 			config:     cfg,
 		}
 		gr.running.Store(true)
@@ -312,7 +313,7 @@ func (tracker *TrackerBase[F]) getGatherer(userID string, cfg *Configuration) *g
 		}
 		// Recreate aggregator if config has changed since last run.
 		if gr.config != cfg {
-			gr.aggregator = makeAggregator(cfg.metrics, cfg.filters, tracker.getters)
+			gr.aggregator = makeAggregator(cfg.metrics, cfg.includeFilters, cfg.excludeFilters, tracker.getters)
 			gr.config = cfg
 		}
 	}

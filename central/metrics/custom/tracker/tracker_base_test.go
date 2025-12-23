@@ -194,7 +194,7 @@ func TestTrackerBase_Track(t *testing.T) {
 	}
 	testGatherer := &gatherer[testFinding]{
 		registry:   rf,
-		aggregator: makeAggregator(tracker.config.metrics, tracker.config.filters, tracker.getters),
+		aggregator: makeAggregator(tracker.config.metrics, tracker.config.includeFilters, tracker.config.excludeFilters, tracker.getters),
 	}
 	assert.NoError(t, tracker.track(context.Background(), testGatherer, tracker.config))
 
@@ -258,7 +258,7 @@ func TestTrackerBase_error(t *testing.T) {
 	}
 	testGatherer := &gatherer[testFinding]{
 		registry:   rf,
-		aggregator: makeAggregator(tracker.config.metrics, tracker.config.filters, tracker.getters),
+		aggregator: makeAggregator(tracker.config.metrics, tracker.config.includeFilters, tracker.config.excludeFilters, tracker.getters),
 	}
 	assert.ErrorIs(t, tracker.track(context.Background(), testGatherer, tracker.config),
 		errox.InvariantViolation)
