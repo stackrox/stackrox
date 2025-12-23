@@ -206,22 +206,20 @@ func formatMetricHelp(description string, cfg *Configuration, metric MetricName)
 	}
 	if len(cfg.includeFilters[metric]) > 0 {
 		help.WriteString(", including only ")
-		zero := help.Len()
-		for k, v := range cfg.includeFilters[metric] {
-			if help.Len() > zero {
+		for i, label := range slices.Sorted(maps.Keys(cfg.includeFilters[metric])) {
+			if i > 0 {
 				help.WriteRune(',')
 			}
-			fmt.Fprintf(&help, "%s≈%q", k, v.String())
+			fmt.Fprintf(&help, "%s≈%q", label, cfg.includeFilters[metric][label].String())
 		}
 	}
 	if len(cfg.excludeFilters[metric]) > 0 {
 		help.WriteString(", excluding ")
-		zero := help.Len()
-		for k, v := range cfg.excludeFilters[metric] {
-			if help.Len() > zero {
+		for i, label := range slices.Sorted(maps.Keys(cfg.excludeFilters[metric])) {
+			if i > 0 {
 				help.WriteRune(',')
 			}
-			fmt.Fprintf(&help, "%s≈%q", k, v.String())
+			fmt.Fprintf(&help, "%s≈%q", label, cfg.excludeFilters[metric][label].String())
 		}
 	}
 	if cfg.period > 0 {

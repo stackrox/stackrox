@@ -483,9 +483,9 @@ func (x *ReportRetentionConfig) GetDownloadableReportGlobalRetentionBytes() uint
 // next available tag: 4
 type PrometheusMetrics struct {
 	state                protoimpl.MessageState   `protogen:"open.v1"`
-	ImageVulnerabilities *PrometheusMetrics_Group `protobuf:"bytes,1,opt,name=image_vulnerabilities,json=imageVulnerabilities,proto3" json:"image_vulnerabilities,omitempty"`
-	PolicyViolations     *PrometheusMetrics_Group `protobuf:"bytes,2,opt,name=policy_violations,json=policyViolations,proto3" json:"policy_violations,omitempty"`
-	NodeVulnerabilities  *PrometheusMetrics_Group `protobuf:"bytes,3,opt,name=node_vulnerabilities,json=nodeVulnerabilities,proto3" json:"node_vulnerabilities,omitempty"`
+	ImageVulnerabilities *PrometheusMetrics_Group `protobuf:"bytes,1,opt,name=image_vulnerabilities,json=imageVulnerabilities,proto3" json:"image_vulnerabilities,omitempty" crYaml:",omitempty"` // @gotags: crYaml:",omitempty"
+	PolicyViolations     *PrometheusMetrics_Group `protobuf:"bytes,2,opt,name=policy_violations,json=policyViolations,proto3" json:"policy_violations,omitempty" crYaml:",omitempty"`             // @gotags: crYaml:",omitempty"
+	NodeVulnerabilities  *PrometheusMetrics_Group `protobuf:"bytes,3,opt,name=node_vulnerabilities,json=nodeVulnerabilities,proto3" json:"node_vulnerabilities,omitempty" crYaml:",omitempty"`    // @gotags: crYaml:",omitempty"
 	unknownFields        protoimpl.UnknownFields
 	sizeCache            protoimpl.SizeCache
 }
@@ -557,7 +557,7 @@ type PrivateConfig struct {
 	AdministrationEventsConfig          *AdministrationEventsConfig           `protobuf:"bytes,8,opt,name=administration_events_config,json=administrationEventsConfig,proto3" json:"administration_events_config,omitempty"`
 	// This field defines groups of custom Prometheus metrics to be exposed by the
 	// backend on the API endpoint.
-	Metrics       *PrometheusMetrics `protobuf:"bytes,9,opt,name=metrics,proto3" json:"metrics,omitempty"`
+	Metrics       *PrometheusMetrics `protobuf:"bytes,9,opt,name=metrics,proto3" json:"metrics,omitempty" crYaml:",omitempty"` // @gotags: crYaml:",omitempty"
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1006,7 +1006,7 @@ type PrometheusMetrics_Group_Labels struct {
 	// specified, a metric record is only counted if all label values match
 	// the according label expression. Patterns are full-match only
 	// (automatically wrapped with ^ and $).
-	IncludeFilters map[string]string `protobuf:"bytes,2,rep,name=include_filters,json=includeFilters,proto3" json:"include_filters,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	IncludeFilters map[string]string `protobuf:"bytes,2,rep,name=include_filters,json=includeFilters,proto3" json:"include_filters,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value" crYaml:",omitempty"` // @gotags: crYaml:",omitempty"
 	// A map of label name to a filter regular expression for this label
 	// value. See the RE2 syntax reference:
 	// https://github.com/google/re2/wiki/Syntax. If exclude_filters are
@@ -1014,7 +1014,7 @@ type PrometheusMetrics_Group_Labels struct {
 	// according label expression. Patterns are full-match only (automatically
 	// wrapped with ^ and $). Exclude filters are applied after include
 	// filters.
-	ExcludeFilters map[string]string `protobuf:"bytes,3,rep,name=exclude_filters,json=excludeFilters,proto3" json:"exclude_filters,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	ExcludeFilters map[string]string `protobuf:"bytes,3,rep,name=exclude_filters,json=excludeFilters,proto3" json:"exclude_filters,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value" crYaml:",omitempty"` // @gotags: crYaml:",omitempty"
 	unknownFields  protoimpl.UnknownFields
 	sizeCache      protoimpl.SizeCache
 }

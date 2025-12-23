@@ -561,17 +561,31 @@ func Test_formatMetricsHelp(t *testing.T) {
 	assert.Equal(t, "The total number of my metric",
 		formatMetricHelp("my metric", &Configuration{}, "my_metric"))
 
-	assert.Equal(t, `The total number of my metric aggregated by Label1,Label2, including only Label3≈"EXPR1", excluding Label4≈"EXPR2", and gathered every 1h0m0s`,
+	assert.Equal(t, `The total number of my metric aggregated by Label1,Label2, and gathered every 1h0m0s`,
+		formatMetricHelp("my metric", &Configuration{
+			metrics: MetricDescriptors{
+				"metric1": []Label{"Label1", "Label2"},
+			},
+			period: time.Hour,
+		}, "metric1"))
+
+	assert.Equal(t, `The total number of my metric aggregated by Label1,Label2, including only Label3≈"EXPR1",Label4≈"EXPR11", excluding Label4≈"EXPR2",Label5≈"EXPR2", and gathered every 1h0m0s`,
 		formatMetricHelp("my metric", &Configuration{
 			metrics: MetricDescriptors{
 				"metric1": []Label{"Label1", "Label2"},
 			},
 			includeFilters: LabelFilters{
 				"metric1": {
-					"Label3": regexp.MustCompile("EXPR1")}},
+					"Label3": regexp.MustCompile("EXPR1"),
+					"Label4": regexp.MustCompile("EXPR11"),
+				},
+			},
 			excludeFilters: LabelFilters{
 				"metric1": {
-					"Label4": regexp.MustCompile("EXPR2")}},
+					"Label4": regexp.MustCompile("EXPR2"),
+					"Label5": regexp.MustCompile("EXPR2"),
+				},
+			},
 			period: time.Hour,
 		}, "metric1"))
 }
