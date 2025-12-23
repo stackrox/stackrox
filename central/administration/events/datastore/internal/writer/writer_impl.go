@@ -40,43 +40,67 @@ func (c *writerImpl) resetNoLock() {
 	c.buffer = make(map[string]*storage.AdministrationEvent)
 }
 
-func (c *writerImpl) flushNoLock(ctx context.Context) error {
-	// Short-circuit here in case we have no events to be added.
-	if len(c.buffer) == 0 {
+// flushEventsToDatabase performs database operations for a snapshot of events.
+// This function does NOT hold the mutex and is safe to call with slow DB operations.
+func (c *writerImpl) flushEventsToDatabase(ctx context.Context, eventsToFlush []*storage.AdministrationEvent) error {
+	// Short-circuit if no events to flush
+	if len(eventsToFlush) == 0 {
 		return nil
 	}
 
-	eventsToAdd := slices.Collect(maps.Values(c.buffer))
+	ids := protoutils.GetIDs(eventsToFlush)
 
-	ids := protoutils.GetIDs(eventsToAdd)
 	// The events we currently hold in the buffer are de-duplicated within the context of the buffer. However, they are
 	// not de-duplicated against stored events from the database. The reason why we do the de-duplication during Flush
 	// instead of upon adding is to lower the amount of database operations, since adding events may be done quite
 	// frequently (i.e. for each emitted log statement that is subject to administration events creation).
+	//
+	// Database query (no mutex held)
 	storedEvents, missingIndicies, err := c.store.GetMany(ctx, ids)
 	if err != nil {
 		return errors.Wrap(err, "failed to query for existing records")
 	}
 
+	// Event merging logic (in-memory, no mutex needed)
 	// Remove the events that didn't exist within the database from the events to add and keep them separate.
 	// This way, the indices match between stored events and events to add.
-	notStoredEvents := getNotStoredEvents(eventsToAdd, missingIndicies)
-	mergedEvents := sliceutils.Without(eventsToAdd, notStoredEvents)
+	notStoredEvents := getNotStoredEvents(eventsToFlush, missingIndicies)
+	mergedEvents := sliceutils.Without(eventsToFlush, notStoredEvents)
 
 	// Merge the events in the buffer with the stored event's information (i.e. timestamps and occurrences).
 	for i, storedEvent := range storedEvents {
 		mergedEvents[i] = mergeEvents(mergedEvents[i], storedEvent)
 	}
 
+	// Database upsert (no mutex held)
 	// After merging events, upsert both the newly added events, and the merged events.
 	if err := c.store.UpsertMany(ctx, append(mergedEvents, notStoredEvents...)); err != nil {
 		return errors.Wrap(err, "failed to upsert events chunk")
 	}
 
-	// After successful DB operations, reset the buffer.
+	return nil
+}
+
+func (c *writerImpl) flushNoLock(ctx context.Context) error {
+	// Caller (Upsert) already holds mutex
+	// Extract events and clear buffer
+	eventsToFlush := slices.Collect(maps.Values(c.buffer))
 	c.resetNoLock()
 
-	return nil
+	// IMPORTANT: Release mutex BEFORE database operations to prevent timeouts.
+	// With a single DB connection, holding mutex while waiting for the connection causes timeouts:
+	// - Thread A: Holds mutex → waits for DB connection (blocked for >10s) → PANIC
+	// - Thread B: Holds DB connection → waits for mutex (blocked)
+	// Solution: Acquire mutex ONLY for updating the in-memory buffer, not during DB operations.
+	c.mutex.Unlock()
+
+	// Perform database operations without holding mutex
+	err := c.flushEventsToDatabase(ctx, eventsToFlush)
+
+	// Re-acquire mutex before returning to caller (Upsert expects lock held)
+	c.mutex.Lock()
+
+	return err
 }
 
 func (c *writerImpl) Upsert(ctx context.Context, event *events.AdministrationEvent) error {
@@ -115,9 +139,16 @@ func (c *writerImpl) Upsert(ctx context.Context, event *events.AdministrationEve
 }
 
 func (c *writerImpl) Flush(ctx context.Context) error {
+	// Acquire mutex ONLY to snapshot and clear the buffer.
+	// This prevents mutex timeout when DB operations are slow.
 	c.mutex.Lock()
-	defer c.mutex.Unlock()
-	return c.flushNoLock(ctx)
+	eventsToFlush := slices.Collect(maps.Values(c.buffer))
+	c.resetNoLock()
+	c.mutex.Unlock()
+
+	// Perform database operations WITHOUT holding mutex.
+	// This prevents mutex timeout when DB operations take >10 seconds.
+	return c.flushEventsToDatabase(ctx, eventsToFlush)
 }
 
 // Modifies `updated` with the values of the base event and returns the merged event.
