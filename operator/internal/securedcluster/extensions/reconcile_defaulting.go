@@ -99,7 +99,7 @@ func setDefaultsAndPersist(ctx context.Context, logger logr.Logger, u *unstructu
 	}
 	logger.Info("patched SecuredCluster object",
 		"oldResourceVersion", uBase.GetResourceVersion(),
-		"newResourceVersion", securedCluster.GetResourceVersion(),
+		"newResourceVersion", u.GetResourceVersion(),
 	)
 
 	// If we would not react to a generation mismatch here, this effectively means that the CR spec
