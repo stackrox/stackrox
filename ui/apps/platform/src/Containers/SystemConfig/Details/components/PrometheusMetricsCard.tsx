@@ -110,14 +110,14 @@ function filterGroup(labels: PrometheusMetricsLabels): ReactElement {
             {includeEntries.map(([label, pattern]) => {
                 return (
                     <Label isCompact key={`include-${label}`} color="green">
-                        +{label}: {pattern}
+                        +{label}: <code>{pattern}</code>
                     </Label>
                 );
             })}
             {excludeEntries.map(([label, pattern]) => {
                 return (
                     <Label isCompact key={`exclude-${label}`} color="red">
-                        -{label}: {pattern}
+                        &minus;{label}: <code>{pattern}</code>
                     </Label>
                 );
             })}
