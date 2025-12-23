@@ -72,7 +72,7 @@ const predefinedMetrics: Record<
     policyViolations: {
         namespace_severity: {
             labels: ['Cluster', 'Namespace', 'IsPlatformComponent', 'Action', 'Severity'],
-            filters: { State: 'ACTIVE' },
+            includeFilters: { State: 'ACTIVE' },
         },
         deployment_severity: {
             labels: [
@@ -83,7 +83,7 @@ const predefinedMetrics: Record<
                 'Action',
                 'Severity',
             ],
-            filters: { State: 'ACTIVE' },
+            includeFilters: { State: 'ACTIVE' },
         },
     },
 };
@@ -103,12 +103,21 @@ function labelGroup(labels: PrometheusMetricsLabels): ReactElement {
 }
 
 function filterGroup(labels: PrometheusMetricsLabels): ReactElement {
+    const includeEntries = Object.entries(labels.includeFilters ?? {});
+    const excludeEntries = Object.entries(labels.excludeFilters ?? {});
     return (
         <LabelGroup isCompact numLabels={Infinity}>
-            {Object.entries(labels.filters ?? {}).map(([label, pattern]) => {
+            {includeEntries.map(([label, pattern]) => {
                 return (
-                    <Label isCompact key={label}>
-                        {label}: {pattern}
+                    <Label isCompact key={`include-${label}`} color="green">
+                        +{label}: {pattern}
+                    </Label>
+                );
+            })}
+            {excludeEntries.map(([label, pattern]) => {
+                return (
+                    <Label isCompact key={`exclude-${label}`} color="red">
+                        -{label}: {pattern}
                     </Label>
                 );
             })}
@@ -173,14 +182,29 @@ function hasMetric(
     labels: PrometheusMetricsLabels
 ): boolean {
     const cfgLabels = descriptors?.[metric]?.labels ?? [];
-    const cfgFilters = descriptors?.[metric]?.filters ?? {};
+    const cfgIncludeFilters = descriptors?.[metric]?.includeFilters ?? {};
+    const cfgExcludeFilters = descriptors?.[metric]?.excludeFilters ?? {};
     const ll = labels.labels;
-    const lf = labels.filters;
+    const incFilters = labels.includeFilters;
+    const excFilters = labels.excludeFilters;
     return (
         cfgLabels.length === ll.length &&
         cfgLabels.every((label) => ll.includes(label)) &&
-        Object.keys(cfgFilters).length === Object.keys(lf ?? {}).length &&
-        Object.entries(cfgFilters).every(([label, pattern]) => lf?.[label] === pattern)
+        Object.keys(cfgIncludeFilters).length === Object.keys(incFilters ?? {}).length &&
+        Object.entries(cfgIncludeFilters).every(
+            ([label, pattern]) => incFilters?.[label] === pattern
+        ) &&
+        Object.keys(cfgExcludeFilters).length === Object.keys(excFilters ?? {}).length &&
+        Object.entries(cfgExcludeFilters).every(
+            ([label, pattern]) => excFilters?.[label] === pattern
+        )
+    );
+}
+
+function labelsHaveFilters(labels: PrometheusMetricsLabels): boolean {
+    return (
+        Object.keys(labels.includeFilters ?? {}).length > 0 ||
+        Object.keys(labels.excludeFilters ?? {}).length > 0
     );
 }
 
@@ -192,18 +216,12 @@ function metricsHaveFilters(
     // In edit mode, check all predefined metrics.
     // In view mode, only check enabled metrics (those in descriptors).
     const hasFiltersInPredefined = editMode
-        ? Object.values(predefinedMetrics[category]).some(
-              (labels) => labels.filters && Object.keys(labels.filters).length > 0
-          )
+        ? Object.values(predefinedMetrics[category]).some(labelsHaveFilters)
         : Object.entries(predefinedMetrics[category]).some(
               ([metric, labels]) =>
-                  hasMetric(descriptors, metric, labels) &&
-                  labels.filters &&
-                  Object.keys(labels.filters).length > 0
+                  hasMetric(descriptors, metric, labels) && labelsHaveFilters(labels)
           );
-    const hasFiltersInDescriptors = Object.values(descriptors ?? {}).some(
-        (labels) => labels.filters && Object.keys(labels.filters).length > 0
-    );
+    const hasFiltersInDescriptors = Object.values(descriptors ?? {}).some(labelsHaveFilters);
     const showFilters = hasFiltersInPredefined || hasFiltersInDescriptors;
     return showFilters;
 }
