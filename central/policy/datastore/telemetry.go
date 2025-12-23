@@ -198,8 +198,7 @@ var Gather phonehome.GatherFunc = func(ctx context.Context) (map[string]any, err
 		// Count policy field names used in policy groups
 		for _, section := range policy.GetPolicySections() {
 			for _, group := range section.GetPolicyGroups() {
-				fieldName := group.GetFieldName()
-				if fieldName != "" {
+				if fieldName := group.GetFieldName(); fieldName != "" {
 					policyFieldCounts[fieldName]++
 				}
 			}
