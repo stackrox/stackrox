@@ -103,8 +103,12 @@ function labelGroup(labels: PrometheusMetricsLabels): ReactElement {
 }
 
 function filterGroup(labels: PrometheusMetricsLabels): ReactElement {
-    const includeEntries = Object.entries(labels.includeFilters ?? {});
-    const excludeEntries = Object.entries(labels.excludeFilters ?? {});
+    const includeEntries = Object.entries(labels.includeFilters ?? {}).sort(([a], [b]) =>
+        a.localeCompare(b)
+    );
+    const excludeEntries = Object.entries(labels.excludeFilters ?? {}).sort(([a], [b]) =>
+        a.localeCompare(b)
+    );
     return (
         <LabelGroup isCompact numLabels={Infinity}>
             {includeEntries.map(([label, pattern]) => {
