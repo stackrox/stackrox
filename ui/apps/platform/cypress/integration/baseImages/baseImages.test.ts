@@ -16,20 +16,13 @@ describe('Base Images', () => {
         it('should navigate to Base Images page from left nav', () => {
             visitBaseImagesFromLeftNav();
 
+            // Verify page loaded correctly
+            cy.title().should('match', getRegExpForTitleWithBranding('Base Images'));
             cy.get(selectors.pageTitle).should('be.visible');
             cy.get(selectors.pageDescription).should('be.visible');
+
+            // Verify table renders with expected headers
             cy.get(selectors.table).should('exist');
-        });
-
-        it('should have correct page title', () => {
-            visitBaseImages();
-
-            cy.title().should('match', getRegExpForTitleWithBranding('Base Images'));
-        });
-
-        it('should display table with correct headers', () => {
-            visitBaseImages();
-
             cy.get(selectors.tableHeader.baseImagePath).should('be.visible');
             cy.get(selectors.tableHeader.addedBy).should('be.visible');
         });
