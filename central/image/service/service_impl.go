@@ -10,6 +10,7 @@ import (
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
+	baseImageDatastore "github.com/stackrox/rox/central/baseimage/datastore"
 	clusterUtil "github.com/stackrox/rox/central/cluster/util"
 	"github.com/stackrox/rox/central/image/datastore"
 	iiStore "github.com/stackrox/rox/central/imageintegration/store"
@@ -102,10 +103,11 @@ var (
 type serviceImpl struct {
 	v1.UnimplementedImageServiceServer
 
-	datastore        datastore.DataStore
-	datastoreV2      imageV2Datastore.DataStore
-	mappingDatastore datastore.DataStore
-	riskManager      manager.Manager
+	datastore          datastore.DataStore
+	datastoreV2        imageV2Datastore.DataStore
+	baseImageDatastore baseImageDatastore.DataStore
+	mappingDatastore   datastore.DataStore
+	riskManager        manager.Manager
 
 	metadataCache cache.ImageMetadata
 
@@ -1043,6 +1045,9 @@ func (s *serviceImpl) enrichLocalImageV2Internal(ctx context.Context, request *v
 
 	if !hasErrors {
 		if forceScanUpdate {
+			if features.BaseImageDetection.Enabled() {
+				//TODO ROX-31842
+			}
 			if err := s.enrichWithVulnerabilitiesV2(img, request); err != nil {
 				imgName := pkgUtils.IfThenElse(existingImg != nil, existingImg.GetName().GetFullName(), request.GetImageName().GetFullName())
 				log.Errorw("Enriching image with vulnerabilities",
