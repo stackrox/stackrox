@@ -19,24 +19,9 @@ export type BaseImagesResponse = {
  * Fetch the list of configured base images.
  */
 export function getBaseImages(): Promise<BaseImageReference[]> {
-    // TODO: Replace with actual API call once backend is ready
-    // return axios
-    //     .get<BaseImagesResponse>(baseImagesUrl)
-    //     .then((response) => response.data.baseImageReferences ?? []);
-    return Promise.resolve([
-        {
-            id: '1',
-            baseImageRepoPath: 'library/ubuntu',
-            baseImageTagPattern: '20.04.*',
-            user: { id: '1', username: 'admin', name: 'Admin User' },
-        },
-        {
-            id: '2',
-            baseImageRepoPath: 'library/alpine',
-            baseImageTagPattern: '3.*',
-            user: { id: '2', username: 'admin', name: 'Admin User' },
-        },
-    ]);
+    return axios
+        .get<BaseImagesResponse>(baseImagesUrl)
+        .then((response) => response.data.baseImageReferences ?? []);
 }
 
 /**
