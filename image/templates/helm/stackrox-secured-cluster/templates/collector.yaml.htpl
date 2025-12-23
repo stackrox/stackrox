@@ -45,10 +45,6 @@ spec:
       hostAliases: {{ toYaml ._rox.collector.hostAliases | nindent 8 }}
       {{- end }}
       serviceAccountName: collector
-      initContainers:
-      {{- if ._rox._securedClusterCertRefresh }}
-      - {{ include "srox.tlsCertsInitContainer" (list .) | indent 8 | trim }}
-      {{- end }}
       containers:
       {{- if ne ._rox.collector.collectionMethod "NO_COLLECTION"}}
       - name: collector
@@ -293,7 +289,9 @@ spec:
           path: /dev
         name: dev-ro
       {{- if ._rox._securedClusterCertRefresh }}
-      {{- include "srox.tlsCertsInitContainerVolumes" (list "collector") | indent 6 }}
+      - name: certs
+        secret:
+          secretName: tls-cert-collector
       {{- else }}
       - name: certs
         secret:
