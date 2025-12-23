@@ -105,10 +105,10 @@ class OperatorE2eTest(BaseTest):
                         self.OLM_SETUP_TIMEOUT_SEC,
                     )
                     break
-                except Exception as e:
+                except Exception as ex:
                     if attempt == attempts:
                         raise
-                    print(f"OLM install failed with {e} (attempt {attempt}/{attempts}), retrying...")
+                    print(f"OLM install failed with {ex} (attempt {attempt}/{attempts}), retrying...")
             print("Removing unused catalog source(s)")
             self.run_with_graceful_kill(
                 ["kubectl", "delete", "catalogsource.operators.coreos.com",
