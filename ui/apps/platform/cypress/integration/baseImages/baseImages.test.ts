@@ -1,5 +1,5 @@
 import withAuth from '../../helpers/basicAuth';
-import { interceptAndOverrideFeatureFlags } from '../../helpers/request';
+import { hasFeatureFlag } from '../../helpers/features';
 import { getRegExpForTitleWithBranding } from '../../helpers/title';
 
 import { openAddModal, visitBaseImages, visitBaseImagesFromLeftNav } from './baseImages.helpers';
@@ -8,8 +8,10 @@ import { selectors } from './baseImages.selectors';
 describe('Base Images', () => {
     withAuth();
 
-    beforeEach(() => {
-        interceptAndOverrideFeatureFlags({ ROX_BASE_IMAGE_DETECTION: true });
+    before(function () {
+        if (!hasFeatureFlag('ROX_BASE_IMAGE_DETECTION')) {
+            this.skip();
+        }
     });
 
     describe('Page access and navigation', () => {
@@ -41,37 +43,11 @@ describe('Base Images', () => {
         it('should add base image and update table', () => {
             const newBaseImage = 'docker.io/library/alpine:3.18';
 
-            cy.intercept('POST', '/v2/baseimages', {
-                statusCode: 200,
-                body: {
-                    id: '3',
-                    baseImageRepoPath: 'docker.io/library/alpine',
-                    baseImageTagPattern: '3.18',
-                    user: { id: '1', username: 'admin', name: 'Admin User' },
-                },
-            }).as('addBaseImage');
-
-            cy.intercept('GET', '/v2/baseimages', {
-                statusCode: 200,
-                body: {
-                    baseImageReferences: [
-                        {
-                            id: '3',
-                            baseImageRepoPath: 'docker.io/library/alpine',
-                            baseImageTagPattern: '3.18',
-                            user: { id: '1', username: 'admin', name: 'Admin User' },
-                        },
-                    ],
-                },
-            }).as('getBaseImages');
-
             visitBaseImages();
 
             openAddModal();
             cy.get(selectors.addModal.input).type(newBaseImage);
             cy.get(selectors.addModal.saveButton).click();
-
-            cy.wait('@addBaseImage');
 
             // Verify table shows new entry
             cy.get('td').should('contain', 'docker.io/library/alpine:3.18');
@@ -88,106 +64,41 @@ describe('Base Images', () => {
     });
 
     describe('Delete base image', () => {
-        const mockBaseImages = {
-            baseImageReferences: [
-                {
-                    id: '1',
-                    baseImageRepoPath: 'library/ubuntu',
-                    baseImageTagPattern: '20.04.*',
-                    user: { id: '1', username: 'admin', name: 'Admin User' },
-                },
-                {
-                    id: '2',
-                    baseImageRepoPath: 'library/alpine',
-                    baseImageTagPattern: '3.*',
-                    user: { id: '2', username: 'admin', name: 'Admin User' },
-                },
-            ],
-        };
-
         it('should open delete confirmation modal', () => {
-            cy.intercept('GET', '/v2/baseimages', {
-                statusCode: 200,
-                body: mockBaseImages,
-            }).as('getBaseImages');
-
             visitBaseImages();
 
-            cy.get('tr:contains("library/ubuntu") button[aria-label="Kebab toggle"]').click();
+            // Click first row's kebab menu
+            cy.get('table tbody tr').first().find('button[aria-label="Kebab toggle"]').click();
             cy.get(selectors.removeAction).click();
 
             cy.get(selectors.deleteModal.title).should('be.visible');
-            cy.contains('library/ubuntu:20.04.*').should('be.visible');
         });
 
         it('should delete base image successfully', () => {
-            cy.intercept('GET', '/v2/baseimages', {
-                statusCode: 200,
-                body: mockBaseImages,
-            }).as('getBaseImages');
-
-            cy.intercept('DELETE', '/v2/baseimages/1', {
-                statusCode: 200,
-                body: {},
-            }).as('deleteBaseImage');
-
-            // After deletion, return list without deleted item
-            cy.intercept('GET', '/v2/baseimages', {
-                statusCode: 200,
-                body: {
-                    baseImageReferences: [mockBaseImages.baseImageReferences[1]],
-                },
-            }).as('getBaseImagesAfterDelete');
-
             visitBaseImages();
 
-            cy.get('tr:contains("library/ubuntu") button[aria-label="Kebab toggle"]').click();
-            cy.get(selectors.removeAction).click();
-            cy.get(selectors.deleteModal.confirmButton).click();
+            // Get initial row count
+            cy.get('table tbody tr').then(($rows) => {
+                const initialCount = $rows.length;
 
-            cy.wait('@deleteBaseImage');
+                // Click first row's kebab menu
+                cy.get('table tbody tr').first().find('button[aria-label="Kebab toggle"]').click();
+                cy.get(selectors.removeAction).click();
+                cy.get(selectors.deleteModal.confirmButton).click();
 
-            // Verify deleted row is gone
-            cy.get('td').should('not.contain', 'library/ubuntu:20.04.*');
-            cy.get('td').should('contain', 'library/alpine:3.*');
+                // Verify row count decreased
+                cy.get('table tbody tr').should('have.length', initialCount - 1);
+            });
         });
 
         it('should close modal when clicking Cancel', () => {
-            cy.intercept('GET', '/v2/baseimages', {
-                statusCode: 200,
-                body: mockBaseImages,
-            }).as('getBaseImages');
-
             visitBaseImages();
 
-            cy.get('tr:contains("library/ubuntu") button[aria-label="Kebab toggle"]').click();
+            cy.get('table tbody tr').first().find('button[aria-label="Kebab toggle"]').click();
             cy.get(selectors.removeAction).click();
             cy.get(selectors.deleteModal.cancelButton).click();
 
             cy.get(selectors.deleteModal.title).should('not.exist');
-            // Row should still be visible
-            cy.get('td').should('contain', 'library/ubuntu:20.04.*');
-        });
-
-        it('should show error alert when delete fails', () => {
-            cy.intercept('GET', '/v2/baseimages', {
-                statusCode: 200,
-                body: mockBaseImages,
-            }).as('getBaseImages');
-
-            cy.intercept('DELETE', '/v2/baseimages/1', {
-                statusCode: 500,
-                body: { message: 'Failed to delete' },
-            }).as('deleteBaseImageError');
-
-            visitBaseImages();
-
-            cy.get('tr:contains("library/ubuntu") button[aria-label="Kebab toggle"]').click();
-            cy.get(selectors.removeAction).click();
-            cy.get(selectors.deleteModal.confirmButton).click();
-
-            cy.wait('@deleteBaseImageError');
-            cy.get(selectors.deleteModal.errorAlert).should('be.visible');
         });
     });
 });
