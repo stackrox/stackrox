@@ -4,6 +4,7 @@ import (
 	"context"
 	"maps"
 	"regexp"
+	"net/http"
 	"net/http/httptest"
 	"slices"
 	"strings"
@@ -765,6 +766,6 @@ rox_central_test_Test_scope_global_access_metric2{Namespace="ns 3"} 3
 
 func readMetrics(registry metrics.CustomRegistry) string {
 	rec := httptest.NewRecorder()
-	registry.ServeHTTP(rec, httptest.NewRequest("GET", "/metrics", nil))
+	registry.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/metrics", nil))
 	return rec.Body.String()
 }
