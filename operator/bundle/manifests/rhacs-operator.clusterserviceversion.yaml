@@ -1973,16 +1973,16 @@ spec:
                 - --metrics-bind-address=0.0.0.0:8443
                 - --leader-elect
                 env:
-                - name: RELATED_IMAGE_MAIN
+                - name: RELATED_IMAGE_MAIN ## tags: uses-main-tag,image-name=main
                 - name: RELATED_IMAGE_SCANNER
                 - name: RELATED_IMAGE_SCANNER_SLIM
                 - name: RELATED_IMAGE_SCANNER_DB
                 - name: RELATED_IMAGE_SCANNER_DB_SLIM
                 - name: RELATED_IMAGE_COLLECTOR
                 - name: RELATED_IMAGE_ROXCTL
-                - name: RELATED_IMAGE_CENTRAL_DB
-                - name: RELATED_IMAGE_SCANNER_V4_DB
-                - name: RELATED_IMAGE_SCANNER_V4
+                - name: RELATED_IMAGE_CENTRAL_DB ## tags:uses-main-tag,image-name=central-db
+                - name: RELATED_IMAGE_SCANNER_V4_DB ## tags: uses-main-tag,image-name=scanner-v4-db
+                - name: RELATED_IMAGE_SCANNER_V4 ## tags: uses-main-tag,image-name=scanner-v4
                 - name: MEMORY_LIMIT_BYTES
                   valueFrom:
                     resourceFieldRef:
