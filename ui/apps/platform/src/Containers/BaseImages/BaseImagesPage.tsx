@@ -22,10 +22,11 @@ import BaseImagesTable from './BaseImagesTable';
 
 /**
  * Page component for managing base images. Displays a list of approved base images
- * and provides functionality to add and delete base images.
+ * and provides functionality to add, edit, and delete base images.
  */
 function BaseImagesPage() {
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+    const [baseImageToEdit, setBaseImageToEdit] = useState<BaseImageReference | null>(null);
     const [baseImageToDelete, setBaseImageToDelete] = useState<BaseImageReference | null>(null);
 
     // Fetch base images on component mount
@@ -50,7 +51,18 @@ function BaseImagesPage() {
         setBaseImageToDelete(null);
     };
 
+    const handleModalClose = () => {
+        setIsAddModalOpen(false);
+        setBaseImageToEdit(null);
+    };
+
+    const handleModalSuccess = () => {
+        handleModalClose();
+        baseImagesRequest.refetch();
+    };
+
     const baseImages = baseImagesRequest.data ?? [];
+    const isModalOpen = isAddModalOpen || baseImageToEdit !== null;
 
     return (
         <>
@@ -75,16 +87,18 @@ function BaseImagesPage() {
             <PageSection>
                 <BaseImagesTable
                     baseImages={baseImages}
+                    onEdit={setBaseImageToEdit}
                     onRemove={setBaseImageToDelete}
-                    isRemoveInProgress={deleteBaseImageMutation.isLoading}
+                    isActionInProgress={deleteBaseImageMutation.isLoading}
                     isLoading={baseImagesRequest.isLoading && !baseImagesRequest.data}
                     error={baseImagesRequest.error as Error | null}
                 />
             </PageSection>
             <BaseImagesModal
-                isOpen={isAddModalOpen}
-                onClose={() => setIsAddModalOpen(false)}
-                onSuccess={baseImagesRequest.refetch}
+                isOpen={isModalOpen}
+                onClose={handleModalClose}
+                onSuccess={handleModalSuccess}
+                baseImageToEdit={baseImageToEdit}
             />
             {baseImageToDelete && (
                 <ConfirmationModal

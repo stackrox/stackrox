@@ -57,3 +57,12 @@ export function addBaseImage(
 export function deleteBaseImage(id: string): Promise<Empty> {
     return axios.delete<Empty>(`${baseImagesUrl}/${id}`).then((response) => response.data);
 }
+
+/**
+ * Update the tag pattern of an existing base image.
+ */
+export function updateBaseImageTagPattern(id: string, baseImageTagPattern: string): Promise<Empty> {
+    return axios
+        .put<Empty>(`${baseImagesUrl}/${id}`, { baseImageTagPattern })
+        .then((response) => response.data);
+}
