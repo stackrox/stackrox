@@ -97,10 +97,18 @@ class OperatorE2eTest(BaseTest):
             olm_ns = "openshift-operator-lifecycle-manager"
         else:
             print("Installing OLM")
-            self.run_with_graceful_kill(
-                ["make", "-C", "operator", "olm-install"],
-                self.OLM_SETUP_TIMEOUT_SEC,
-            )
+            attempts = 3
+            for attempt in range(1, attempts + 1):
+                try:
+                    self.run_with_graceful_kill(
+                        ["make", "-C", "operator", "olm-install"],
+                        self.OLM_SETUP_TIMEOUT_SEC,
+                    )
+                    break
+                except Exception as e:
+                    if attempt == attempts:
+                        raise
+                    print(f"OLM install failed (attempt {attempt}/{attempts}), retrying...")
             print("Removing unused catalog source(s)")
             self.run_with_graceful_kill(
                 ["kubectl", "delete", "catalogsource.operators.coreos.com",
