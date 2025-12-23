@@ -94,7 +94,7 @@ func setDefaultsAndPersist(ctx context.Context, logger logr.Logger, u *unstructu
 	}
 	logger.Info("patched Central object",
 		"oldResourceVersion", uBase.GetResourceVersion(),
-		"newResourceVersion", central.GetResourceVersion(),
+		"newResourceVersion", u.GetResourceVersion(),
 	)
 
 	// If we would not react to a generation mismatch here, this effectively means that the CR spec
