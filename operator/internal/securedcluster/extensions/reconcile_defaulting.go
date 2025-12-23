@@ -116,6 +116,9 @@ func setDefaultsAndPersist(ctx context.Context, logger logr.Logger, u *unstructu
 	return nil
 }
 
+// Defaulting flows have two side-effects:
+// 1. They may update the metadata annotations (to be persisted on the cluster); this is happening in the unstructured u.
+// 2. They may update securedCLuster.Defaults (they only exist in-memory, not on the cluster); this is happening in the typed securedCluster object.
 func executeSingleDefaultingFlow(logger logr.Logger, u *unstructured.Unstructured, securedCluster *platform.SecuredCluster, flow defaults.SecuredClusterDefaultingFlow) error {
 	logger = logger.WithName(fmt.Sprintf("defaulting-flow-%s", flow.Name))
 	annotations := u.GetAnnotations()
