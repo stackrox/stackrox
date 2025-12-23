@@ -54,49 +54,71 @@ func (tracker *TrackerBase[F]) validateLabel(label string, metricName string) (L
 	return Label(label), nil
 }
 
+// parseFilters parses a map of label names to regex patterns, validating each label and pattern.
+func (tracker *TrackerBase[F]) parseFilters(filters map[string]string, metricName, filterType string) (map[Label]*regexp.Regexp, error) {
+	if len(filters) == 0 {
+		return nil, nil
+	}
+	patterns := make(map[Label]*regexp.Regexp, len(filters))
+	for label, pattern := range filters {
+		validated, err := tracker.validateLabel(label, metricName)
+		if err != nil {
+			return nil, err
+		}
+		if !strings.HasPrefix(pattern, "^") {
+			pattern = "^" + pattern
+		}
+		if !strings.HasSuffix(pattern, "$") {
+			pattern = pattern + "$"
+		}
+		patterns[validated], err = regexp.Compile(pattern)
+		if err != nil {
+			return nil, errInvalidConfiguration.CausedByf(
+				"bad %s expression for metric %q label %q: %v",
+				filterType, metricName, label, err)
+		}
+	}
+	return patterns, nil
+}
+
 // translateStorageConfiguration converts the storage object to the usable map,
 // validating the values.
-func (tracker *TrackerBase[F]) translateStorageConfiguration(config map[string]*storage.PrometheusMetrics_Group_Labels) (MetricDescriptors, LabelFilters, error) {
+func (tracker *TrackerBase[F]) translateStorageConfiguration(config map[string]*storage.PrometheusMetrics_Group_Labels) (MetricDescriptors, LabelFilters, LabelFilters, error) {
 	result := make(MetricDescriptors, len(config))
 	metricPrefix := tracker.metricPrefix
 	if metricPrefix != "" {
 		metricPrefix += "_"
 	}
-	filters := make(LabelFilters)
+	includeFilters := make(LabelFilters)
+	excludeFilters := make(LabelFilters)
 	for metricName, labels := range config {
 		metricName = metricPrefix + metricName
 		if err := validateMetricName(metricName); err != nil {
-			return nil, nil, errInvalidConfiguration.CausedByf(
+			return nil, nil, nil, errInvalidConfiguration.CausedByf(
 				"invalid metric name %q: %v", metricName, err)
 		}
 		metricLabels, err := tracker.validateLabels(labels.GetLabels(), metricName)
 		if err != nil {
-			return nil, nil, err
+			return nil, nil, nil, err
 		}
 
-		if len(labels.GetFilters()) > 0 {
-			patterns := make(map[Label]*regexp.Regexp)
-			for label, pattern := range labels.GetFilters() {
-				validated, err := tracker.validateLabel(label, metricName)
-				if err != nil {
-					return nil, nil, err
-				}
-				if !strings.HasPrefix(pattern, "^") {
-					pattern = "^" + pattern
-				}
-				if !strings.HasSuffix(pattern, "$") {
-					pattern = pattern + "$"
-				}
-				patterns[validated], err = regexp.Compile(pattern)
-				if err != nil {
-					return nil, nil, errInvalidConfiguration.CausedByf(
-						"bad filter expression for metric %q label %q: %v",
-						metricName, label, err)
-				}
-			}
-			filters[MetricName(metricName)] = patterns
+		incPatterns, err := tracker.parseFilters(labels.GetIncludeFilters(), metricName, "include_filter")
+		if err != nil {
+			return nil, nil, nil, err
 		}
+		if len(incPatterns) > 0 {
+			includeFilters[MetricName(metricName)] = incPatterns
+		}
+
+		excPatterns, err := tracker.parseFilters(labels.GetExcludeFilters(), metricName, "exclude_filter")
+		if err != nil {
+			return nil, nil, nil, err
+		}
+		if len(excPatterns) > 0 {
+			excludeFilters[MetricName(metricName)] = excPatterns
+		}
+
 		result[MetricName(metricName)] = metricLabels
 	}
-	return result, filters, nil
+	return result, includeFilters, excludeFilters, nil
 }

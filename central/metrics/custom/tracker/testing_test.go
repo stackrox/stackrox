@@ -54,7 +54,7 @@ func makeTestMetricLabels(t *testing.T) map[string]*storage.PrometheusMetrics_Gr
 	return map[string]*storage.PrometheusMetrics_Group_Labels{
 		pfx + "_metric1": {Labels: []string{"Cluster", "Severity"}},
 		pfx + "_metric2": {Labels: []string{"Namespace"},
-			Filters: map[string]string{"Namespace": "ns.*"}},
+			IncludeFilters: map[string]string{"Namespace": "ns.*"}},
 	}
 }
 

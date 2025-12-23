@@ -109,7 +109,7 @@ func (tracker *TrackerBase[F]) NewConfiguration(cfg *storage.PrometheusMetrics_G
 		current = &Configuration{}
 	}
 
-	md, lf, err := tracker.translateStorageConfiguration(cfg.GetDescriptors())
+	md, incFilters, excFilters, err := tracker.translateStorageConfiguration(cfg.GetDescriptors())
 	if err != nil {
 		return nil, err
 	}
@@ -119,11 +119,12 @@ func (tracker *TrackerBase[F]) NewConfiguration(cfg *storage.PrometheusMetrics_G
 	}
 
 	return &Configuration{
-		metrics:  md,
-		filters:  lf,
-		toAdd:    toAdd,
-		toDelete: toDelete,
-		period:   time.Minute * time.Duration(cfg.GetGatheringPeriodMinutes()),
+		metrics:        md,
+		includeFilters: incFilters,
+		excludeFilters: excFilters,
+		toAdd:          toAdd,
+		toDelete:       toDelete,
+		period:         time.Minute * time.Duration(cfg.GetGatheringPeriodMinutes()),
 	}, nil
 }
 
@@ -203,7 +204,7 @@ func (tracker *TrackerBase[Finding]) track(ctx context.Context, registry metrics
 	if len(cfg.metrics) == 0 {
 		return nil
 	}
-	aggregator := makeAggregator(cfg.metrics, cfg.filters, tracker.getters)
+	aggregator := makeAggregator(cfg.metrics, cfg.includeFilters, cfg.excludeFilters, tracker.getters)
 	for finding, err := range tracker.generator(ctx, cfg.metrics) {
 		if err != nil {
 			return err
