@@ -72,6 +72,7 @@ func setDefaultsAndPersist(ctx context.Context, logger logr.Logger, u *unstructu
 	}
 
 	uBase := u.DeepCopy()
+	uBaseGeneration := uBase.GetGeneration()
 	patch := ctrlClient.MergeFrom(uBase)
 
 	for _, flow := range effectiveDefaultingFlows {
@@ -96,11 +97,21 @@ func setDefaultsAndPersist(ctx context.Context, logger logr.Logger, u *unstructu
 	if err != nil {
 		return errors.Wrap(err, "patching SecuredCluster annotations")
 	}
-
 	logger.Info("patched SecuredCluster object",
 		"oldResourceVersion", uBase.GetResourceVersion(),
 		"newResourceVersion", securedCluster.GetResourceVersion(),
 	)
+
+	// If we would not react to a generation mismatch here, this effectively means that the CR spec
+	// currently under reconciliation has changed during the reconciliation flow, specifically during
+	// execution of pre-extensions.
+	// This might not pose a problem given that by our convention the defaulting extension is
+	// expected to run first, but it is cleaner to just abort reconciliation and start over with the new spec.
+	uGeneration := u.GetGeneration()
+	if uGeneration != uBaseGeneration {
+		return fmt.Errorf("SecuredCluster resource spec was modified (generation: %d -> %d), aborting reconciliation to start over with new spec",
+			uBaseGeneration, uGeneration)
+	}
 
 	return nil
 }
