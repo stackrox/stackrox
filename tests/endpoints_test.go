@@ -442,7 +442,7 @@ func TestEndpoints(t *testing.T) {
 		},
 		"service-only TLS port with no client cert": {
 			targetPort:           8444,
-			validServerNames:     []string{"central.stackrox"},
+			validServerNames:     []string{defaultCertDNSName},
 			expectConnectFailure: true,
 		},
 		"service-only TLS port with service client cert": {
@@ -455,7 +455,7 @@ func TestEndpoints(t *testing.T) {
 		},
 		"service-only TLS port with user client cert": {
 			targetPort:           8444,
-			validServerNames:     []string{"central.stackrox"},
+			validServerNames:     []string{defaultCertDNSName},
 			clientCert:           &userCert,
 			expectConnectFailure: true,
 		},
