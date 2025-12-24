@@ -16,8 +16,34 @@ import {
 } from '@patternfly/react-core';
 
 import { addBaseImage } from 'services/BaseImagesService';
+import useAnalytics, {
+    BASE_IMAGE_REFERENCE_ADD_SUBMITTED,
+    BASE_IMAGE_REFERENCE_ADD_SUCCESS,
+    BASE_IMAGE_REFERENCE_ADD_FAILURE,
+} from 'hooks/useAnalytics';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 import useRestMutation from 'hooks/useRestMutation';
+
+/**
+ * Categorizes API errors into meaningful error types for analytics tracking.
+ */
+function categorizeErrorType(error: unknown): string {
+    const errorMessage = getAxiosErrorMessage(error).toLowerCase();
+
+    if (errorMessage.includes('invalid') || errorMessage.includes('format')) {
+        return 'INVALID_IMAGE_NAME';
+    }
+    if (errorMessage.includes('duplicate') || errorMessage.includes('already exists')) {
+        return 'DUPLICATE_ENTRY';
+    }
+    if (errorMessage.includes('integration') || errorMessage.includes('registry')) {
+        return 'NO_VALID_INTEGRATION';
+    }
+    if (errorMessage.includes('network') || errorMessage.includes('timeout')) {
+        return 'NETWORK_ERROR';
+    }
+    return 'UNKNOWN';
+}
 
 export type BaseImagesModalProps = {
     isOpen: boolean;
@@ -62,6 +88,8 @@ export function parseBaseImagePath(path: string): { repoPath: string; tagPattern
  * parsing the input path into repo path and tag pattern components.
  */
 function BaseImagesModal({ isOpen, onClose, onSuccess }: BaseImagesModalProps) {
+    const { analyticsTrack } = useAnalytics();
+
     const addBaseImageMutation = useRestMutation(
         ({
             baseImageRepoPath,
@@ -77,6 +105,8 @@ function BaseImagesModal({ isOpen, onClose, onSuccess }: BaseImagesModalProps) {
         validationSchema,
         validateOnMount: true,
         onSubmit: (formValues: FormData, { setSubmitting }: FormikHelpers<FormData>) => {
+            analyticsTrack(BASE_IMAGE_REFERENCE_ADD_SUBMITTED);
+
             // Parse user input (e.g., "docker.io/library/ubuntu:22.04") into separate components
             const { repoPath, tagPattern } = parseBaseImagePath(formValues.baseImagePath);
 
@@ -87,8 +117,15 @@ function BaseImagesModal({ isOpen, onClose, onSuccess }: BaseImagesModalProps) {
                 },
                 {
                     onSuccess: () => {
+                        analyticsTrack(BASE_IMAGE_REFERENCE_ADD_SUCCESS);
                         formik.resetForm();
                         onSuccess();
+                    },
+                    onError: (error) => {
+                        analyticsTrack({
+                            event: BASE_IMAGE_REFERENCE_ADD_FAILURE,
+                            properties: { errorType: categorizeErrorType(error) },
+                        });
                     },
                     onSettled: () => {
                         setSubmitting(false);
