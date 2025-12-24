@@ -267,7 +267,7 @@ function BaseImagesModal({
                                 onChange={(e) => editFormik.handleChange(e)}
                                 onBlur={editFormik.handleBlur}
                                 isDisabled={isSubmitting}
-                                placeholder="e.g., 22.04, 3.*, latest"
+                                placeholder="22.04 or 3.*"
                                 isRequired
                             />
                             <FormHelperText>
