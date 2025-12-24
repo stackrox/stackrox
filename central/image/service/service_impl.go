@@ -1047,6 +1047,45 @@ func (s *serviceImpl) enrichLocalImageV2Internal(ctx context.Context, request *v
 		if forceScanUpdate {
 			if features.BaseImageDetection.Enabled() {
 				//TODO ROX-31842
+				if len(img.GetMetadata().GetLayerShas()) == 0 {
+					log.Infof("Base Image matching: not able to get image layers from %s", img.GetName())
+					img.BaseImageInfo = nil
+				} else {
+					firstLayer := img.GetMetadata().GetLayerShas()[0]
+					candidates, err := s.baseImageDatastore.ListCandidateBaseImages(ctx, firstLayer)
+					if err != nil {
+						log.Errorw("Matching image with base images",
+							logging.FromContext(ctx),
+							logging.ImageID(imgID),
+							logging.Err(err),
+							logging.String("request_image", request.GetImageName().GetFullName()),
+							logging.String("request_id", request.GetRequestId()))
+						img.BaseImageInfo = nil
+					} else {
+						// match with candidates
+						for _, c := range candidates {
+							l := c.GetLayers()
+							if len(img.GetMetadata().GetLayerShas()) != len(l) {
+								continue
+							}
+							yes := true
+							for i, m := range l {
+								if img.GetMetadata().GetLayerShas()[i] != m.GetLayerDigest() {
+									yes = false
+									break
+								}
+							}
+							if yes {
+								info := storage.BaseImageInfo{
+									BaseImageId:     c.GetId(),
+									BaseImageDigest: c.GetManifestDigest(),
+								}
+								img.BaseImageInfo = append(img.BaseImageInfo, &info)
+							}
+						}
+					}
+				}
+
 			}
 			if err := s.enrichWithVulnerabilitiesV2(img, request); err != nil {
 				imgName := pkgUtils.IfThenElse(existingImg != nil, existingImg.GetName().GetFullName(), request.GetImageName().GetFullName())
