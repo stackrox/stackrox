@@ -3,7 +3,6 @@ import { hasFeatureFlag } from '../../helpers/features';
 import { getRegExpForTitleWithBranding } from '../../helpers/title';
 
 import { openAddModal, visitBaseImages, visitBaseImagesFromLeftNav } from './baseImages.helpers';
-import { selectors } from './baseImages.selectors';
 
 describe('Base Images', () => {
     withAuth();
@@ -19,13 +18,13 @@ describe('Base Images', () => {
 
         // Verify page loaded correctly
         cy.title().should('match', getRegExpForTitleWithBranding('Base Images'));
-        cy.get(selectors.pageTitle).should('be.visible');
-        cy.get(selectors.pageDescription).should('be.visible');
+        cy.get('h1:contains("Base Images")').should('be.visible');
+        cy.get('p:contains("Manage approved base images")').should('be.visible');
 
         // Verify table renders with expected headers
-        cy.get(selectors.table).should('exist');
-        cy.get(selectors.tableHeader.baseImagePath).should('be.visible');
-        cy.get(selectors.tableHeader.addedBy).should('be.visible');
+        cy.get('table').should('exist');
+        cy.get('th:contains("Base image path")').should('be.visible');
+        cy.get('th:contains("Added by")').should('be.visible');
     });
 
     it('should add base image and update table', () => {
@@ -34,8 +33,8 @@ describe('Base Images', () => {
         visitBaseImages();
 
         openAddModal();
-        cy.get(selectors.addModal.input).type(newBaseImage);
-        cy.get(selectors.addModal.saveButton).click();
+        cy.get('input#baseImagePath').type(newBaseImage);
+        cy.get('button:contains("Save")').click();
 
         // Verify table shows new entry
         cy.get('td').should('contain', 'docker.io/library/alpine:3.18');
@@ -50,8 +49,8 @@ describe('Base Images', () => {
 
             // Click first row's kebab menu
             cy.get('table tbody tr').first().find('button[aria-label="Kebab toggle"]').click();
-            cy.get(selectors.removeAction).click();
-            cy.get(selectors.deleteModal.confirmButton).click();
+            cy.get('button:contains("Remove")').click();
+            cy.get('*[role="dialog"] button:contains("Delete")').click();
 
             // Verify row count decreased
             cy.get('table tbody tr').should('have.length', initialCount - 1);
