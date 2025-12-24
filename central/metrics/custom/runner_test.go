@@ -148,7 +148,7 @@ func TestRunner_ServeHTTP(t *testing.T) {
 
 	expectedBody := func(metricName, decription, labels, vector string) string {
 		metricName = "rox_central_" + metricName
-		return fmt.Sprintf("# HELP %s The total number of %s aggregated by %s and gathered every 10m0s\n"+
+		return fmt.Sprintf("# HELP %s The total number of %s aggregated by %s, and gathered every 10m0s\n"+
 			"# TYPE %s gauge\n%s{%s} 1\n", metricName, decription, labels, metricName, metricName, vector)
 	}
 
