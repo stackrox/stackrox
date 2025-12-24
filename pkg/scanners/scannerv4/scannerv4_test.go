@@ -470,25 +470,79 @@ func TestGetVirtualMachineScan_Timeout(t *testing.T) {
 }
 
 func TestNewVirtualMachineScanner(t *testing.T) {
-	t.Run("successful creation", func(it *testing.T) {
-		ctrl := gomock.NewController(t)
-		mockClient := s4ClientMocks.NewMockScanner(ctrl)
-		getter := func(string) (client.Scanner, error) {
-			return mockClient, nil
-		}
-		scanner, err := newVirtualMachineScanner(getter)
-		assert.NoError(it, err)
-		assert.NotNil(it, scanner)
-	})
 	t.Run("failed creation", func(it *testing.T) {
 		testErr := errors.New("test error")
 		getter := func(string) (client.Scanner, error) {
 			return nil, testErr
 		}
-		scanner, err := newVirtualMachineScanner(getter)
+		baseIntegration := &storage.ImageIntegration{
+			IntegrationConfig: &storage.ImageIntegration_ScannerV4{
+				ScannerV4: &storage.ScannerV4Config{},
+			},
+		}
+		scanner, err := newVirtualMachineScanner(baseIntegration, getter)
 		assert.ErrorIs(it, err, testErr)
 		assert.Nil(it, scanner)
 	})
+	const fakeEndpoint = "fake.endpoint"
+	for name, tc := range map[string]struct {
+		integration      *storage.ImageIntegration
+		expectError      bool
+		expectedEndpoint string
+	}{
+		"No ScannerV4 config": {
+			integration: &storage.ImageIntegration{},
+			expectError: true,
+		},
+		"ScannerV4 config, no override": {
+			integration: &storage.ImageIntegration{
+				IntegrationConfig: &storage.ImageIntegration_ScannerV4{
+					ScannerV4: &storage.ScannerV4Config{},
+				},
+			},
+			expectError:      false,
+			expectedEndpoint: "scanner-v4-matcher.stackrox.svc:8443",
+		},
+		"ScannerV4 config, override endpoint and concurrent scan count": {
+			integration: &storage.ImageIntegration{
+				IntegrationConfig: &storage.ImageIntegration_ScannerV4{
+					ScannerV4: &storage.ScannerV4Config{
+						NumConcurrentScans: 5,
+						MatcherEndpoint:    fakeEndpoint,
+					},
+				},
+			},
+			expectError:      false,
+			expectedEndpoint: fakeEndpoint,
+		},
+	} {
+		t.Run(name, func(it *testing.T) {
+			if tc.expectError {
+				called := false
+				getter := func(string) (client.Scanner, error) {
+					called = true
+					return nil, nil
+				}
+				scanner, err := newVirtualMachineScanner(tc.integration, getter)
+				assert.Error(it, err)
+				assert.Nil(it, scanner)
+				assert.False(it, called)
+			} else {
+				called := false
+				getter := func(matcherEndpoint string) (client.Scanner, error) {
+					assert.Equal(it, tc.expectedEndpoint, matcherEndpoint)
+					called = true
+					ctrl := gomock.NewController(it)
+					mockClient := s4ClientMocks.NewMockScanner(ctrl)
+					return mockClient, nil
+				}
+				scanner, err := newVirtualMachineScanner(tc.integration, getter)
+				assert.NoError(it, err)
+				assert.NotNil(it, scanner)
+				assert.True(it, called)
+			}
+		})
+	}
 }
 
 // createVulnerabilityReportFromIndexReport creates a vulnerability report for testing.
