@@ -20,7 +20,7 @@ groovy = { module = "org.apache.groovy:groovy", version.ref = "groovy" }
 spock-bom = { module = "org.spockframework:spock-bom", version = "2.3-groovy-4.0" }
 spock-core = { module = "org.spockframework:spock-core" }
 spock-junit4 = { module = "org.spockframework:spock-junit4" }
-rest-assured = { module = "io.rest-assured:rest-assured", version = "5.5.6" }
+rest-assured = { module = "io.rest-assured:rest-assured", version = "6.0.0" }
 snakeyaml = { module = "org.yaml:snakeyaml", version = "2.5" }
 logback-classic = { module = "ch.qos.logback:logback-classic", version = "1.5.22" }
 jackson-core = { module = "com.fasterxml.jackson.core:jackson-core", version.ref = "jackson" }
