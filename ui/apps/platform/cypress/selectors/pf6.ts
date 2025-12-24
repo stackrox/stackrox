@@ -16,8 +16,25 @@ const navSelectors = {
     navItem: `li[data-ouia-component-type="PF6/NavItem"]`,
 } as const;
 
+const tabSelectors = {
+    tab: 'li.pf-v6-c-tabs__item',
+} as const;
+
+const actionsColumnSelectors = {
+    kebabToggle: '.pf-v6-c-menu-toggle',
+    menuListButton: '.pf-v6-c-menu__list button',
+} as const;
+
+const pageHeaderSelectors = {
+    pageHeaderTitle: '[data-ouia-component-id="PageHeader-title"]',
+    pageHeaderSubtitle: '[data-ouia-component-id="PageHeader-subtitle"]',
+} as const;
+
 export default {
     ...dropdownSelectors,
     ...menuSelectors,
     ...navSelectors,
+    ...tabSelectors,
+    ...actionsColumnSelectors,
+    ...pageHeaderSelectors,
 };
