@@ -8,13 +8,9 @@ import util.Env
 trait ImageIntegration {
     abstract static ImageIntegrationOuterClass.ImageIntegration.Builder getCustomBuilder(Map customArgs)
 
-    static ImageIntegrationOuterClass.ImageIntegration.Builder getDefaultBuilder() {
-        getCustomBuilder()
-    }
-
     static String createDefaultIntegration() {
         ImageIntegrationService.createImageIntegration(
-                getDefaultBuilder().build()
+                getCustomBuilder([:]).build()
         )
     }
 
