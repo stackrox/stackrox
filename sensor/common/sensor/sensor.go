@@ -402,6 +402,62 @@ func (s *Sensor) notifyAllOnSignal(signal *concurrency.Signal, centralCommunicat
 	}
 }
 
+// handleBackoffOnConnectionStop resets backoff if connection was stable long enough, otherwise preserves it.
+func handleBackoffOnConnectionStop(exponential *backoff.ExponentialBackOff, connectionStart time.Time, stableDuration time.Duration, err error) bool {
+	elapsed := time.Since(connectionStart)
+
+	// Reset logic (includes legacy behavior when stableDuration == 0)
+	if stableDuration == 0 || elapsed >= stableDuration {
+		exponential.Reset()
+		if stableDuration == 0 {
+			log.Info("Connection stable duration is 0, resetting exponential backoff immediately (legacy behavior)")
+		} else {
+			log.Infof("Connection stable for %s (threshold: %s), resetting exponential backoff",
+				elapsed.Round(time.Second), stableDuration)
+		}
+		return true
+	}
+
+	// Preserve backoff to prevent rapid retries; distinguish intentional shutdowns from failures
+	switch {
+	case err != nil && errors.Is(err, context.Canceled):
+		log.Infof("Connection stopped after %s (before stable duration %s); intentional shutdown, preserving exponential backoff state",
+			elapsed.Round(time.Second), stableDuration)
+	case err != nil:
+		log.Warnf("Connection failed after %s (before stable duration %s), preserving exponential backoff to prevent rapid retries",
+			elapsed.Round(time.Second), stableDuration)
+	default:
+		log.Infof("Connection stopped after %s (before stable duration %s), preserving exponential backoff state",
+			elapsed.Round(time.Second), stableDuration)
+	}
+	return false
+}
+
+// handleReconnectionError logs reconnection errors and returns true if reconciliation should be disabled.
+func handleReconnectionError(err error) (disableReconcile bool) {
+	switch {
+	case err == nil:
+		log.Info("Communication with Central stopped. Retrying.")
+		return false
+
+	case errors.Is(err, errCantReconcile):
+		if errors.Is(err, errLargePayload) {
+			log.Warnf(
+				"Deduper payload is too large for sensor to handle. Sensor will reconnect without client reconciliation. " +
+					"Consider increasing the maximum receive message size in sensor 'ROX_GRPC_MAX_MESSAGE_SIZE'",
+			)
+		} else {
+			log.Warnf("Sensor cannot reconcile due to: %v", err)
+		}
+		log.Infof("Communication with Central stopped with error: %v. Retrying.", err)
+		return true
+
+	default:
+		log.Infof("Communication with Central stopped: %v. Retrying.", err)
+		return false
+	}
+}
+
 func (s *Sensor) communicationWithCentralWithRetries(centralReachable *concurrency.Flag) {
 	// Attempt a simple restart strategy: if connection broke, re-establish the connection with exponential back-offs.
 	// This approach does not consider messages that were already sent to central_sender but weren't written to the stream.
@@ -438,33 +494,27 @@ func (s *Sensor) communicationWithCentralWithRetries(centralReachable *concurren
 		})
 		centralCommunication.Start(central.NewSensorServiceClient(s.centralConnection), centralReachable, &syncDone, s.configHandler, s.detector)
 		go s.notifySyncDone(&syncDone, centralCommunication)
-		// Reset the exponential back-off if the connection succeeds
-		exponential.Reset()
+
+		// We only reset backoff after the connection has been stable for the configured duration.
+		// This prevents rapid retries when initial sync (config, policy, deduper state) fails.
+		// See ROX-29270: Sensor backoff reset DoS issue.
+		connectionStartTime := time.Now()
+		stableDuration := env.ConnectionStableDuration.DurationSetting()
+
 		select {
 		case <-s.centralCommunication.Stopped().WaitC():
-			if err := s.centralCommunication.Stopped().Err(); err != nil {
-				if errors.Is(err, errCantReconcile) {
-					if errors.Is(err, errLargePayload) {
-						log.Warnf("Deduper payload is too large for sensor to handle. Sensor will reconnect without client reconciliation." +
-							"Consider increasing the maximum receive message size in sensor 'ROX_GRPC_MAX_MESSAGE_SIZE'")
-					} else {
-						log.Warnf("Sensor cannot reconcile due to: %v", err)
-					}
-					s.reconcile.Store(false)
-					log.Infof("Communication with Central stopped with error: %v. Retrying.", err)
-				}
-				log.Infof("Communication with Central stopped: %v. Retrying.", err)
-			} else {
-				log.Info("Communication with Central stopped. Retrying.")
+			err := s.centralCommunication.Stopped().Err()
+
+			handleBackoffOnConnectionStop(exponential, connectionStartTime, stableDuration, err)
+
+			if handleReconnectionError(err) {
+				s.reconcile.Store(false)
 			}
-			// Communication either ended or there was an error. Either way we should retry.
-			// Send notification to all components that we are running in offline mode
+
 			s.changeState(common.SensorComponentEventOfflineMode)
 			s.reconnect.Store(true)
-			// Trigger goroutine that will attempt the connection. s.centralConnectionFactory.*Signal() should be
-			// checked to probe connection state.
 			go s.centralConnectionFactory.SetCentralConnectionWithRetries(s.clusterID, s.centralConnection, s.certLoader)
-			return wrapOrNewError(s.centralCommunication.Stopped().Err(), "communication stopped")
+			return wrapOrNewError(err, "communication stopped")
 		case <-s.stoppedSig.WaitC():
 			// This means sensor was signaled to finish, this error shouldn't be retried
 			log.Info("Received stop signal from Sensor. Stopping without retrying")
