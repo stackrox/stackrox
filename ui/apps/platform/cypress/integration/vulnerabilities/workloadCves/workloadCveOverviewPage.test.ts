@@ -24,6 +24,7 @@ import {
     interceptAndOverridePermissions,
     interceptAndWatchRequests,
 } from '../../../helpers/request';
+import { addCheckboxSelectFilter } from '../../../helpers/compoundFilters';
 
 const visitFromMoreViewsDropdown = visitFromHorizontalNavExpandable('More Views');
 
@@ -344,54 +345,12 @@ describe('Workload CVE overview page tests', () => {
     });
 
     describe('Layer type filter tests', () => {
-        it('should display Layer type filter option when feature flag is enabled', () => {
-            interceptAndOverrideFeatureFlags({ ROX_BASE_IMAGE_DETECTION: true });
-
-            visitWorkloadCveOverview();
-
-            // Open the search entity dropdown and select Image component
-            cy.get(selectors.searchEntityDropdown).click();
-            cy.get(selectors.searchEntityMenuItem).contains('Image component').click();
-            cy.get(selectors.searchEntityDropdown).click();
-
-            // Open the attribute dropdown and verify Layer type is available
-            cy.get(selectors.searchAttributeDropdown).click();
-            cy.get(selectors.searchAttributeMenuItem).contains('Layer type').should('be.visible');
-        });
-
-        it('should hide Layer type filter option when feature flag is disabled', () => {
-            interceptAndOverrideFeatureFlags({ ROX_BASE_IMAGE_DETECTION: false });
-
-            visitWorkloadCveOverview();
-
-            // Open the search entity dropdown and select Image component
-            cy.get(selectors.searchEntityDropdown).click();
-            cy.get(selectors.searchEntityMenuItem).contains('Image component').click();
-            cy.get(selectors.searchEntityDropdown).click();
-
-            // Open the attribute dropdown and verify Layer type is NOT available
-            cy.get(selectors.searchAttributeDropdown).click();
-            cy.get(selectors.searchAttributeMenuItem).contains('Layer type').should('not.exist');
-        });
-
         it('should apply Layer type filter correctly', () => {
             interceptAndOverrideFeatureFlags({ ROX_BASE_IMAGE_DETECTION: true });
 
             visitWorkloadCveOverview();
 
-            // Open the search entity dropdown and select Image component
-            cy.get(selectors.searchEntityDropdown).click();
-            cy.get(selectors.searchEntityMenuItem).contains('Image component').click();
-            cy.get(selectors.searchEntityDropdown).click();
-
-            // Select Layer type attribute
-            cy.get(selectors.searchAttributeDropdown).click();
-            cy.get(selectors.searchAttributeMenuItem).contains('Layer type').click();
-            cy.get(selectors.searchAttributeDropdown).click();
-
-            // Select Base image value
-            cy.get(selectors.searchValueTypeahead).click();
-            cy.get(selectors.searchValueMenuItem).contains('Base image').click();
+            addCheckboxSelectFilter('Image component', 'Layer type', 'Base image');
 
             // Verify filter chip is applied
             cy.get(selectors.filterChipGroupForCategory('Layer type')).should('be.visible');

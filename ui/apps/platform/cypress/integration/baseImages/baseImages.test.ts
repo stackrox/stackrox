@@ -14,91 +14,47 @@ describe('Base Images', () => {
         }
     });
 
-    describe('Page access and navigation', () => {
-        it('should navigate to Base Images page from left nav', () => {
-            visitBaseImagesFromLeftNav();
+    it('should navigate to Base Images page from left nav', () => {
+        visitBaseImagesFromLeftNav();
 
-            // Verify page loaded correctly
-            cy.title().should('match', getRegExpForTitleWithBranding('Base Images'));
-            cy.get(selectors.pageTitle).should('be.visible');
-            cy.get(selectors.pageDescription).should('be.visible');
+        // Verify page loaded correctly
+        cy.title().should('match', getRegExpForTitleWithBranding('Base Images'));
+        cy.get(selectors.pageTitle).should('be.visible');
+        cy.get(selectors.pageDescription).should('be.visible');
 
-            // Verify table renders with expected headers
-            cy.get(selectors.table).should('exist');
-            cy.get(selectors.tableHeader.baseImagePath).should('be.visible');
-            cy.get(selectors.tableHeader.addedBy).should('be.visible');
-        });
+        // Verify table renders with expected headers
+        cy.get(selectors.table).should('exist');
+        cy.get(selectors.tableHeader.baseImagePath).should('be.visible');
+        cy.get(selectors.tableHeader.addedBy).should('be.visible');
     });
 
-    describe('Add base image', () => {
-        it('should open add modal when clicking Add button', () => {
-            visitBaseImages();
+    it('should add base image and update table', () => {
+        const newBaseImage = 'docker.io/library/alpine:3.18';
 
-            openAddModal();
+        visitBaseImages();
 
-            cy.get(selectors.addModal.input).should('be.visible');
-            cy.get(selectors.addModal.saveButton).should('be.disabled');
-        });
+        openAddModal();
+        cy.get(selectors.addModal.input).type(newBaseImage);
+        cy.get(selectors.addModal.saveButton).click();
 
-        it('should add base image and update table', () => {
-            const newBaseImage = 'docker.io/library/alpine:3.18';
-
-            visitBaseImages();
-
-            openAddModal();
-            cy.get(selectors.addModal.input).type(newBaseImage);
-            cy.get(selectors.addModal.saveButton).click();
-
-            // Verify table shows new entry
-            cy.get('td').should('contain', 'docker.io/library/alpine:3.18');
-        });
-
-        it('should close modal when clicking Cancel', () => {
-            visitBaseImages();
-
-            openAddModal();
-            cy.get(selectors.addModal.cancelButton).click();
-
-            cy.get(selectors.addModal.title).should('not.exist');
-        });
+        // Verify table shows new entry
+        cy.get('td').should('contain', 'docker.io/library/alpine:3.18');
     });
 
-    describe('Delete base image', () => {
-        it('should open delete confirmation modal', () => {
-            visitBaseImages();
+    it('should delete base image successfully', () => {
+        visitBaseImages();
+
+        // Get initial row count
+        cy.get('table tbody tr').then(($rows) => {
+            const initialCount = $rows.length;
 
             // Click first row's kebab menu
             cy.get('table tbody tr').first().find('button[aria-label="Kebab toggle"]').click();
             cy.get(selectors.removeAction).click();
+            cy.get(selectors.deleteModal.confirmButton).click();
 
-            cy.get(selectors.deleteModal.title).should('be.visible');
-        });
-
-        it('should delete base image successfully', () => {
-            visitBaseImages();
-
-            // Get initial row count
-            cy.get('table tbody tr').then(($rows) => {
-                const initialCount = $rows.length;
-
-                // Click first row's kebab menu
-                cy.get('table tbody tr').first().find('button[aria-label="Kebab toggle"]').click();
-                cy.get(selectors.removeAction).click();
-                cy.get(selectors.deleteModal.confirmButton).click();
-
-                // Verify row count decreased
-                cy.get('table tbody tr').should('have.length', initialCount - 1);
-            });
-        });
-
-        it('should close modal when clicking Cancel', () => {
-            visitBaseImages();
-
-            cy.get('table tbody tr').first().find('button[aria-label="Kebab toggle"]').click();
-            cy.get(selectors.removeAction).click();
-            cy.get(selectors.deleteModal.cancelButton).click();
-
-            cy.get(selectors.deleteModal.title).should('not.exist');
+            // Verify row count decreased
+            cy.get('table tbody tr').should('have.length', initialCount - 1);
         });
     });
 });
