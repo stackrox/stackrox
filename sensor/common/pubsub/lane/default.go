@@ -1,6 +1,8 @@
 package lane
 
 import (
+	"time"
+
 	"github.com/pkg/errors"
 
 	"github.com/stackrox/rox/pkg/concurrency"
@@ -9,6 +11,7 @@ import (
 	"github.com/stackrox/rox/sensor/common/pubsub"
 	"github.com/stackrox/rox/sensor/common/pubsub/consumer"
 	pubsubErrors "github.com/stackrox/rox/sensor/common/pubsub/errors"
+	"github.com/stackrox/rox/sensor/common/pubsub/metrics"
 )
 
 type DefaultConfig struct {
@@ -59,7 +62,8 @@ func (c *DefaultConfig) NewLane() pubsub.Lane {
 			newConsumerFn: c.newConsumer,
 			consumers:     make(map[pubsub.Topic][]pubsub.Consumer),
 		},
-		stopper: concurrency.NewStopper(),
+		stopper:         concurrency.NewStopper(),
+		metricsRecorder: metrics.DefaultRecorder,
 	}
 	for _, opt := range c.opts {
 		opt(lane)
@@ -71,10 +75,11 @@ func (c *DefaultConfig) NewLane() pubsub.Lane {
 
 type defaultLane struct {
 	Lane
-	mu      sync.Mutex
-	size    int
-	ch      chan pubsub.Event
-	stopper concurrency.Stopper
+	mu              sync.Mutex
+	size            int
+	ch              chan pubsub.Event
+	stopper         concurrency.Stopper
+	metricsRecorder metrics.Recorder
 }
 
 func (l *defaultLane) Publish(event pubsub.Event) error {
@@ -84,13 +89,17 @@ func (l *defaultLane) Publish(event pubsub.Event) error {
 	defer l.mu.Unlock()
 	select {
 	case <-l.stopper.Flow().StopRequested():
+		l.metricsRecorder.RecordOperation(l.id, event.Topic(), metrics.PublishError)
 		return errors.Wrap(pubsubErrors.NewPublishOnStoppedLaneErr(l.id), "unable to publish event")
 	default:
 	}
 	select {
 	case <-l.stopper.Flow().StopRequested():
+		l.metricsRecorder.RecordOperation(l.id, event.Topic(), metrics.PublishError)
 		return errors.Wrap(pubsubErrors.NewPublishOnStoppedLaneErr(l.id), "unable to publish event")
 	case l.ch <- event:
+		l.metricsRecorder.RecordOperation(l.id, event.Topic(), metrics.Published)
+		l.metricsRecorder.SetQueueSize(l.id, len(l.ch))
 		return nil
 	}
 }
@@ -113,10 +122,17 @@ func (l *defaultLane) run() {
 }
 
 func (l *defaultLane) handleEvent(event pubsub.Event) error {
+	start := time.Now()
+	defer func() {
+		l.metricsRecorder.ObserveProcessingDuration(l.id, event.Topic(), time.Since(start))
+		l.metricsRecorder.SetQueueSize(l.id, len(l.ch))
+	}()
+
 	l.consumerLock.RLock()
 	defer l.consumerLock.RUnlock()
 	consumers, ok := l.consumers[event.Topic()]
 	if !ok {
+		l.metricsRecorder.RecordOperation(l.id, event.Topic(), metrics.NoConsumers)
 		return errors.Wrap(pubsubErrors.NewConsumersNotFoundForTopicErr(event.Topic(), l.id), "unable to handle event")
 	}
 	errList := errorhelpers.NewErrorList("handle event")
@@ -125,11 +141,17 @@ func (l *defaultLane) handleEvent(event pubsub.Event) error {
 		// This will block if we have a slow consumer
 		case err := <-c.Consume(l.stopper.Client().Stopped(), event):
 			if err != nil {
+				l.metricsRecorder.RecordOperation(l.id, event.Topic(), metrics.ConsumerError)
 				errList.AddErrors(pubsubErrors.WrapConsumeErr(err, event.Topic(), l.id))
 			}
 		case <-l.stopper.Flow().StopRequested():
 		}
 	}
+
+	if errList.ToError() == nil {
+		l.metricsRecorder.RecordOperation(l.id, event.Topic(), metrics.Processed)
+	}
+
 	return errList.ToError()
 }
 
@@ -144,6 +166,7 @@ func (l *defaultLane) RegisterConsumer(topic pubsub.Topic, callback pubsub.Event
 	l.consumerLock.Lock()
 	defer l.consumerLock.Unlock()
 	l.consumers[topic] = append(l.consumers[topic], c)
+	l.metricsRecorder.RecordConsumerCount(l.id, topic, len(l.consumers[topic]))
 	return nil
 }
 

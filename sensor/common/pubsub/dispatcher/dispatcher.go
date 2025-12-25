@@ -3,9 +3,13 @@ package dispatcher
 import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/sensor/common/pubsub"
 )
+
+var log = logging.LoggerForModule()
 
 type Option func(*dispatcher)
 
@@ -43,6 +47,9 @@ type dispatcher struct {
 }
 
 func (d *dispatcher) Publish(event pubsub.Event) error {
+	if d == nil && features.SensorInternalPubSub.Enabled() {
+		return errors.Errorf("calling Publish when the Pubsub is `nil` and %q is enabled", features.SensorInternalPubSub.EnvVar())
+	}
 	if event == nil {
 		return errors.New("trying to publish a 'nil' event")
 	}
@@ -54,6 +61,9 @@ func (d *dispatcher) Publish(event pubsub.Event) error {
 }
 
 func (d *dispatcher) RegisterConsumer(topic pubsub.Topic, callback pubsub.EventCallback) error {
+	if d == nil && features.SensorInternalPubSub.Enabled() {
+		return errors.Errorf("calling RegisterConsumer when the Pubsub is `nil` and %q is enabled", features.SensorInternalPubSub.EnvVar())
+	}
 	if callback == nil {
 		return errors.New("cannot register a 'nil' callback")
 	}
@@ -68,7 +78,25 @@ func (d *dispatcher) RegisterConsumer(topic pubsub.Topic, callback pubsub.EventC
 	return errList.ToError()
 }
 
+func (d *dispatcher) RegisterConsumerToLane(topic pubsub.Topic, laneID pubsub.LaneID, callback pubsub.EventCallback) error {
+	if d == nil && features.SensorInternalPubSub.Enabled() {
+		return errors.Errorf("calling RegisterConsumerToLane when the Pubsub is `nil` and %q is enabled", features.SensorInternalPubSub.EnvVar())
+	}
+	if callback == nil {
+		return errors.New("cannot register a 'nil' callback")
+	}
+	lane, err := d.getLane(laneID)
+	if err != nil {
+		return errors.Errorf("lane with ID %q not found: %v", laneID, err)
+	}
+	return d.registerConsumerToLane(topic, lane, callback)
+}
+
 func (d *dispatcher) Stop() {
+	if d == nil && features.SensorInternalPubSub.Enabled() {
+		log.Errorf("calling Stop when the Pubsub is `nil` and %q is enabled", features.SensorInternalPubSub.EnvVar())
+		return
+	}
 	d.laneLock.RLock()
 	defer d.laneLock.RUnlock()
 	for _, lane := range d.lanes {
