@@ -151,6 +151,7 @@ import (
 	centralSAC "github.com/stackrox/rox/central/sac"
 	"github.com/stackrox/rox/central/scanner"
 	scannerDefinitionsHandler "github.com/stackrox/rox/central/scannerdefinitions/handler"
+	scopedTokenService "github.com/stackrox/rox/central/scopedtoken/service"
 	searchService "github.com/stackrox/rox/central/search/service"
 	secretService "github.com/stackrox/rox/central/secret/service"
 	sensorService "github.com/stackrox/rox/central/sensor/service"
@@ -453,6 +454,7 @@ func servicesToRegister() []pkgGRPC.APIService {
 		rbacService.Singleton(),
 		roleService.Singleton(),
 		searchService.Singleton(),
+		scopedTokenService.Singleton(),
 		secretService.Singleton(),
 		sensorService.New(connection.ManagerSingleton(), all.Singleton(), clusterDataStore.Singleton(), installationStore.Singleton()),
 		sensorUpgradeControlService.Singleton(),

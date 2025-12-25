@@ -1,0 +1,76 @@
+syntax = "proto3";
+
+package v1;
+
+import "google/protobuf/duration.proto";
+import "google/protobuf/timestamp.proto";
+
+option go_package = "./api/v1;v1";
+option java_package = "io.stackrox.proto.api.v1";
+
+message IssueScopedTokenRequest {
+  // The identifier of the user requesting the token (from K8s TokenReview).
+  // This is typically the Kubernetes service account or user principal.
+  string user_identifier = 1;
+
+  // The cluster name where the token will be used. Must match the cluster
+  // identity of the requesting Sensor.
+  string cluster_name = 2;
+
+  // The namespace to scope the token to. If empty, the token grants access
+  // to all namespaces in the cluster (subject to K8s RBAC validation).
+  string namespace = 3;
+
+  // The deployment name to scope the token to. Only meaningful if namespace
+  // is specified. If empty, the token grants access to all deployments in
+  // the namespace (subject to K8s RBAC validation).
+  string deployment = 4;
+
+  // The requested time-to-live for the token. If not specified or if the
+  // requested TTL exceeds the maximum allowed (5 minutes), the maximum TTL
+  // will be used instead.
+  google.protobuf.Duration ttl = 5;
+}
+
+message IssueScopedTokenResponse {
+  // The issued JWT token with embedded dynamic scope claims.
+  // This token should be used in the Authorization header when making
+  // requests to Central's GraphQL API.
+  string token = 1;
+
+  // The timestamp when this token will expire.
+  google.protobuf.Timestamp expires_at = 2;
+}
+
+// ScopedTokenService provides APIs for Sensor to request short-lived,
+// scope-limited tokens for proxying user requests to Central.
+//
+// This service is only accessible to authenticated Sensor instances via mTLS.
+// It issues tokens with the Analyst role scoped to specific namespaces and/or
+// deployments based on Kubernetes RBAC validation performed by the requesting
+// Sensor.
+//
+// Security Considerations:
+// - Only Sensor services can call this API (enforced via mTLS)
+// - Sensor must validate K8s RBAC before requesting tokens
+// - Issued tokens are ephemeral (max 5 minutes TTL)
+// - Tokens are not persisted to the database
+// - Dynamic scopes are embedded in JWT claims
+service ScopedTokenService {
+  // IssueToken generates a short-lived, scoped token for a validated user.
+  //
+  // The requesting Sensor must:
+  // 1. Authenticate via mTLS (service certificate)
+  // 2. Provide a user_identifier from a K8s TokenReview
+  // 3. Have validated the user's K8s RBAC permissions
+  // 4. Match cluster_name to its own cluster identity
+  //
+  // The issued token will:
+  // - Have the Analyst role
+  // - Include a dynamic access scope (cluster/namespace/deployment)
+  // - Expire in at most 5 minutes
+  // - Not be stored in the database (ephemeral)
+  //
+  // This endpoint is NOT exposed via HTTP, only gRPC.
+  rpc IssueToken(IssueScopedTokenRequest) returns (IssueScopedTokenResponse) {}
+}

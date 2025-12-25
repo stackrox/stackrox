@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/go-jose/go-jose/v4/jwt"
+	"github.com/stackrox/rox/generated/storage"
 )
 
 // ExternalUserClaim represents the claim that this token identifies a user from an external identity provider.
@@ -30,6 +31,11 @@ type RoxClaims struct {
 	// Name represents the name of the token assigned by the creator.
 	Name     string `json:"name,omitempty"`
 	ExpireAt *time.Time
+	// DynamicScope represents an ephemeral access scope embedded in the token claims.
+	// Unlike regular access scopes (referenced by ID), dynamic scopes are never persisted
+	// to the database and are used for short-lived, scoped tokens (e.g., from Sensor's
+	// GraphQL gateway for OCP console plugin requests).
+	DynamicScope *storage.DynamicAccessScope `json:"dynamic_scope,omitempty"`
 }
 
 // Claims are the claims contained in a token.

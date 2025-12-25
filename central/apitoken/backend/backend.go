@@ -16,6 +16,11 @@ type Backend interface {
 	GetTokens(ctx context.Context, req *v1.GetAPITokensRequest) ([]*storage.TokenMetadata, error)
 
 	IssueRoleToken(ctx context.Context, name string, roleNames []string, expireAt *time.Time) (string, *storage.TokenMetadata, error)
+	// IssueEphemeralScopedToken issues a short-lived token with an embedded dynamic access scope.
+	// Unlike IssueRoleToken, this method does NOT persist token metadata to the database.
+	// The dynamic scope is embedded directly in the token claims.
+	// This is intended for short-lived (e.g., 5 minute) tokens used by Sensor's GraphQL gateway.
+	IssueEphemeralScopedToken(ctx context.Context, name string, roleNames []string, dynamicScope *storage.DynamicAccessScope, ttl time.Duration) (string, *time.Time, error)
 	RevokeToken(ctx context.Context, tokenID string) (bool, error)
 }
 

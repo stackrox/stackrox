@@ -275,6 +275,11 @@ rules:
   apiGroups: ["authentication.k8s.io"]
   verbs:
   - create
+- resources:
+  - subjectaccessreviews
+  apiGroups: ["authorization.k8s.io"]
+  verbs:
+  - create
 ---
 kind: ClusterRoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
