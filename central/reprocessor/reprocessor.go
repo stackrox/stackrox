@@ -66,7 +66,7 @@ var (
 	imageClusterIDFieldPath = imageMapping.ImageDeploymentOptions.MustGet(search.ClusterID.String()).GetFieldPath()
 
 	allImagesQuery = search.NewQueryBuilder().AddStringsHighlighted(search.ClusterID, search.WildcardString).
-			ProtoQuery()
+		ProtoQuery()
 
 	// allV2ImagesQuery selects all deployment containers with a non-null and non-empty ImageID (V2 image ID).
 	allV2ImagesQuery = search.NewQueryBuilder().AddRegexes(search.ImageID, ".+").ProtoQuery()
@@ -380,9 +380,9 @@ func (l *loopImpl) reprocessImagesAndResyncDeployments(fetchOpt imageEnricher.Fe
 	}
 
 	log.Infof("Found %d images to scan", len(results))
-	if len(results) == 0 {
-		return
-	}
+	//if len(results) == 0 {
+	//	return
+	//}
 
 	sema := semaphore.NewWeighted(imageReprocessorSemaphoreSize)
 	wg := concurrency.NewWaitGroup(0)
