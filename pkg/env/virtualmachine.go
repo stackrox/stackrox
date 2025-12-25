@@ -1,6 +1,10 @@
 package env
 
-import "time"
+import (
+	"time"
+
+	"github.com/stackrox/rox/pkg/buildinfo"
+)
 
 var (
 	// VirtualMachinesMaxConcurrentVsockConnections defines the maximum number of vsock connections handled in parallel.
@@ -25,4 +29,19 @@ var (
 	// index reports before they are sent to Central.
 	VirtualMachinesIndexReportsBufferSize = RegisterIntegerSetting("ROX_VIRTUAL_MACHINES_INDEX_REPORTS_BUFFER_SIZE", 100).
 						WithMinimum(0)
+
+	// VirtualMachinesTestMode enables test mode for VM load testing across all components.
+	// When enabled:
+	// - Relay: bypasses vsock CID validation for loopback testing
+	// - Sensor: auto-generates VMs on-the-fly, skips VM store cleanup
+	// - Central: auto-creates missing VMs when receiving index reports
+	// Use only for load testing scenarios.
+	VirtualMachinesTestMode = RegisterBooleanSetting("ROX_VM_TEST_MODE", false)
 )
+
+// IsVMTestModeEnabled returns true if VM test mode is enabled via environment variable
+// AND this is not a release build. This ensures test mode cannot be accidentally enabled
+// in production releases.
+func IsVMTestModeEnabled() bool {
+	return VirtualMachinesTestMode.BooleanSetting() && !buildinfo.ReleaseBuild
+}
