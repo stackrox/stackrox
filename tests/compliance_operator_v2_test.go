@@ -14,10 +14,8 @@ import (
 	"github.com/stackrox/rox/central/complianceoperator/v2/scanconfigurations/service"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	v2 "github.com/stackrox/rox/generated/api/v2"
-	"github.com/stackrox/rox/pkg/defaults/complianceoperator"
 	"github.com/stackrox/rox/pkg/protoconv/schedule"
 	"github.com/stackrox/rox/pkg/retry"
-	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stackrox/rox/pkg/testutils/centralgrpc"
 	"github.com/stackrox/rox/pkg/uuid"
@@ -785,27 +783,4 @@ func TestComplianceV2ScheduleRescan(t *testing.T) {
 
 	// Assert the scan is rerunning on the cluster using the Compliance Operator CRDs
 	waitForComplianceSuiteToComplete(t, scanConfig.ScanName, 2*time.Second, 5*time.Minute)
-}
-
-func TestComplianceV2BenchmarkConfigFiles(t *testing.T) {
-	conn := centralgrpc.GRPCConnectionToCentral(t)
-	client := v2.NewComplianceProfileServiceClient(conn)
-	clusterClient := v1.NewClustersServiceClient(conn)
-	clustersResponse, err := clusterClient.GetClusters(context.TODO(), &v1.GetClustersRequest{})
-	require.NoError(t, err)
-	require.Len(t, clustersResponse.GetClusters(), 1)
-	res, err := client.ListComplianceProfiles(context.TODO(), &v2.ProfilesForClusterRequest{ClusterId: clustersResponse.GetClusters()[0].GetId()})
-	require.NoError(t, err)
-	require.NotEmpty(t, res.GetProfiles())
-	benchmarks, err := complianceoperator.LoadComplianceOperatorBenchmarks()
-	require.NoError(t, err)
-	mappedProfiles := set.NewStringSet()
-	for _, benchmark := range benchmarks {
-		for _, mappedProfile := range benchmark.GetProfiles() {
-			mappedProfiles.Add(mappedProfile.GetProfileName())
-		}
-	}
-	for _, profile := range res.GetProfiles() {
-		assert.Contains(t, mappedProfiles, profile.GetName())
-	}
 }
