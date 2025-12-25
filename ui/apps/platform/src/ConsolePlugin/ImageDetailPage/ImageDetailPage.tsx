@@ -4,6 +4,7 @@ import { ALL_NAMESPACES_KEY } from 'ConsolePlugin/constants';
 import useURLSearch from 'hooks/useURLSearch';
 import ImagePage from 'Containers/Vulnerabilities/WorkloadCves/Image/ImagePage';
 import { useDefaultWorkloadCveViewContext } from 'ConsolePlugin/hooks/useDefaultWorkloadCveViewContext';
+import { useNamespaceScope } from 'ConsolePlugin/ScopeContext';
 import { WorkloadCveViewContext } from 'Containers/Vulnerabilities/WorkloadCves/WorkloadCveViewContext';
 import { hideColumnIf } from 'hooks/useManagedColumns';
 
@@ -11,6 +12,8 @@ export function ImageDetailPage() {
     const { searchFilter, setSearchFilter } = useURLSearch();
     const context = useDefaultWorkloadCveViewContext();
     const [activeNamespace] = useActiveNamespace();
+    // Set namespace scope for API requests
+    useNamespaceScope(activeNamespace);
 
     return (
         <WorkloadCveViewContext.Provider value={context}>

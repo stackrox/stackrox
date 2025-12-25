@@ -3,15 +3,27 @@ import { consoleFetch } from '@openshift-console/dynamic-plugin-sdk';
 import { AxiosError } from 'axios';
 import type { InternalAxiosRequestConfig } from 'axios';
 
+import type { ScopeGetter } from './ScopeContext';
+
 export default function consoleFetchAxiosAdapter(
     baseUrl: string,
-    config: InternalAxiosRequestConfig
+    config: InternalAxiosRequestConfig,
+    getScope: ScopeGetter = () => ({})
 ) {
     const updatedHeaders = { ...config.headers };
     // Note - in production authorization is handled in-cluster by the console and will overwrite this header. When
     // running locally, we need to inject the token manually to allow API requests to the ACS API.
     if (process.env.NODE_ENV === 'development' && process.env.ACS_CONSOLE_DEV_TOKEN) {
         updatedHeaders.Authorization = `Bearer ${process.env.ACS_CONSOLE_DEV_TOKEN}`;
+    }
+
+    // Add scope headers to assist in authorization decisions
+    const scope = getScope();
+    if (scope.namespace) {
+        updatedHeaders['X-ACS-AUTH-NAMESPACE-SCOPE'] = scope.namespace;
+    }
+    if (scope.workload) {
+        updatedHeaders['X-ACS-AUTH-WORKLOAD-SCOPE'] = scope.workload;
     }
 
     return consoleFetch(`${baseUrl}${config.url}`, {

@@ -12,12 +12,15 @@ import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 
 import { useDefaultWorkloadCveViewContext } from '../hooks/useDefaultWorkloadCveViewContext';
 import { useWorkloadId } from '../hooks/useWorkloadId';
+import { useWorkloadScope } from '../ScopeContext';
 
 export function WorkloadSecurityTab() {
     const context = useDefaultWorkloadCveViewContext();
     const pagination = useURLPagination(DEFAULT_VM_PAGE_SIZE);
     const { searchFilter, setSearchFilter } = useURLSearch();
     const { ns, name } = useParams();
+    // Set workload scope for API requests
+    useWorkloadScope(ns, name);
     // TODO This is not usable with multiple clusters without backend support, as we cannot filter by cluster via information in the console
     const { id, isLoading, error } = useWorkloadId({ ns, name });
 
