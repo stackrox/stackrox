@@ -5,7 +5,11 @@
  * add it to the viewBasedReportSearchFilterConfigs array at the bottom of this file.
  */
 
-import type { CompoundSearchFilterEntity } from 'Components/CompoundSearchFilter/types';
+import type {
+    CompoundSearchFilterEntity,
+    SelectSearchFilterAttribute,
+    SelectSearchFilterOption,
+} from 'Components/CompoundSearchFilter/types';
 import {
     clusterIdAttribute,
     clusterLabelAttribute,
@@ -118,6 +122,49 @@ export const virtualMachinesClusterSearchFilterConfig: CompoundSearchFilterEntit
     displayName: 'Cluster',
     searchCategory: 'CLUSTERS',
     attributes: [clusterIdAttribute, clusterNameAttribute],
+};
+
+// attributes for separate search filter elements in AdvancedFiltersToolbar.tsx file
+
+const optionsForFixable: SelectSearchFilterOption[] = [
+    { label: 'Fixable', value: 'Fixable' }, // true?
+    { label: 'Not fixable', value: 'Not fixable' }, // false?
+]; // fixableStatuses in types.ts file?
+
+export const attributeForClusterCveFixable: SelectSearchFilterAttribute = {
+    displayName: 'CVE status',
+    filterChipLabel: 'CVE status',
+    searchTerm: 'CLUSTER CVE FIXABLE', // why ALL CAPS instead of 'Cluster CVE Fixable'
+    inputType: 'select',
+    inputProps: {
+        options: optionsForFixable,
+    },
+};
+
+export const attributeForFixable: SelectSearchFilterAttribute = {
+    displayName: 'CVE status',
+    filterChipLabel: 'CVE status',
+    searchTerm: 'FIXABLE', // why ALL CAPS instead of 'Fixable'
+    inputType: 'select',
+    inputProps: {
+        options: optionsForFixable,
+    },
+};
+
+export const attributeForSeverity: SelectSearchFilterAttribute = {
+    displayName: 'CVE severity',
+    filterChipLabel: 'CVE severity',
+    searchTerm: 'SEVERITY', // why ALL CAPS instead of 'Severity'
+    inputType: 'select',
+    inputProps: {
+        options: [
+            { label: 'Critical', value: 'Critical' },
+            { label: 'Important', value: 'Important' },
+            { label: 'Moderate', value: 'Moderate' },
+            { label: 'Low', value: 'Low' },
+            { label: 'Unknown', value: 'Unknown' },
+        ], // vulnerabilitySeverityLabels in types.ts file?
+    },
 };
 
 // This array includes filter configs that are relevant to view-based reports.
