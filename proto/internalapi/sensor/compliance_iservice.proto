@@ -53,7 +53,31 @@ message MsgToCompliance {
       StopRequest stop_req = 2;
     }
   }
+  // ComplianceACK is a generic acknowledgement message from Sensor to Compliance
+  // for any compliance-originated message (node inventory, node index, VM index, etc.)
+  message ComplianceACK {
+    Action action = 1;
+    enum Action {
+      ACK = 0;
+      NACK = 1;
+    }
+
+    MessageType message_type = 2;
+    enum MessageType {
+      NODE_INVENTORY = 0; // v2 node scanning (being deprecated)
+      NODE_INDEX_REPORT = 1; // v4 node scanning
+      VM_INDEX_REPORT = 2; // VM vulnerability scanning
+    }
+
+    string resource_id = 3; // Resource identifier (node name, VM ID, etc.)
+    string reason = 4; // Optional reason for NACK (e.g., "rate limit exceeded")
+  }
+
+  // Deprecated: Use ComplianceACK instead. Kept for backward compatibility with Sensor 4.9 and earlier.
+  // Keep for 4.10 and 4.11. Can be considered for removal in 4.12.
   message NodeInventoryACK {
+    option deprecated = true;
+
     Action action = 1;
     enum Action {
       ACK = 0;
@@ -70,7 +94,8 @@ message MsgToCompliance {
     ScrapeConfig config = 1;
     TriggerRun trigger = 2;
     AuditLogCollectionRequest audit_log_collection_request = 3;
-    NodeInventoryACK ack = 4;
+    NodeInventoryACK ack = 4; // Deprecated in favor of ComplianceACK.
+    ComplianceACK compliance_ack = 5;
   }
 }
 
