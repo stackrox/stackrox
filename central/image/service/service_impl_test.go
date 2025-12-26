@@ -6,6 +6,7 @@ import (
 	"testing"
 	"time"
 
+	baseImageMocks "github.com/stackrox/rox/central/baseimage/datastore/mocks"
 	imageDSMocks "github.com/stackrox/rox/central/image/datastore/mocks"
 	iiStore "github.com/stackrox/rox/central/imageintegration/store"
 	imageV2DSMocks "github.com/stackrox/rox/central/imagev2/datastore/mocks"
@@ -559,4 +560,98 @@ func TestDeleteImages_V2(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, uint32(2), resp.GetNumDeleted())
 	assert.False(t, resp.GetDryRun())
+}
+
+func TestBaseImages(t *testing.T) {
+	ctx := context.Background()
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	mockDS := baseImageMocks.NewMockDataStore(ctrl)
+	s := &serviceImpl{baseImageDatastore: mockDS}
+
+	tcs := []struct {
+		desc      string
+		imgLayers []string
+		mockSetup func()
+		expected  []*storage.BaseImageInfo
+	}{
+		{
+			desc:      "Match found: Base image is a subset (2 layers vs 3)",
+			imgLayers: []string{"layer1", "layer2", "layer3"},
+			mockSetup: func() {
+				mockDS.EXPECT().
+					ListCandidateBaseImages(gomock.Any(), "layer1").
+					Return([]*storage.BaseImage{
+						{
+							Id:         "rhel-8",
+							Repository: "rhel",
+							Tag:        "8.5",
+							Layers:     []*storage.BaseImageLayer{{LayerDigest: "layer1"}, {LayerDigest: "layer2"}},
+						},
+					}, nil)
+			},
+			expected: []*storage.BaseImageInfo{
+				{BaseImageId: "rhel-8", BaseImageFullName: "rhel:8.5"},
+			},
+		},
+		{
+			desc:      "Self-match prevention: Image and Base have identical layers",
+			imgLayers: []string{"layer1", "layer2"},
+			mockSetup: func() {
+				mockDS.EXPECT().
+					ListCandidateBaseImages(gomock.Any(), "layer1").
+					Return([]*storage.BaseImage{
+						{
+							Id:     "identical-image-in-base-table",
+							Layers: []*storage.BaseImageLayer{{LayerDigest: "layer1"}, {LayerDigest: "layer2"}},
+						},
+					}, nil)
+			},
+			expected: nil, // Should be ignored because len(img) is not > len(base)
+		},
+		{
+			desc:      "No match: Candidate is 'thicker' than current image",
+			imgLayers: []string{"layer1"},
+			mockSetup: func() {
+				mockDS.EXPECT().
+					ListCandidateBaseImages(gomock.Any(), "layer1").
+					Return([]*storage.BaseImage{
+						{
+							Layers: []*storage.BaseImageLayer{{LayerDigest: "layer1"}, {LayerDigest: "layer2"}},
+						},
+					}, nil)
+			},
+			expected: nil,
+		},
+		{
+			desc:      "No match: Layers match in count but digests differ",
+			imgLayers: []string{"layer1", "layer2", "layer-v2"},
+			mockSetup: func() {
+				mockDS.EXPECT().
+					ListCandidateBaseImages(gomock.Any(), "layer1").
+					Return([]*storage.BaseImage{
+						{
+							Layers: []*storage.BaseImageLayer{{LayerDigest: "layer1"}, {LayerDigest: "layer2"}, {LayerDigest: "layer-v1"}},
+						},
+					}, nil)
+			},
+			expected: nil,
+		},
+	}
+
+	for _, tc := range tcs {
+		t.Run(tc.desc, func(t *testing.T) {
+			tc.mockSetup()
+
+			actual := s.baseImages(ctx, tc.imgLayers, "test-img", "test-id")
+
+			if tc.expected == nil {
+				assert.Empty(t, actual)
+			} else {
+				require.Equal(t, len(tc.expected), len(actual))
+				assert.Equal(t, tc.expected[0].BaseImageId, actual[0].BaseImageId)
+			}
+		})
+	}
 }
