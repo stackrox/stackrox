@@ -10,6 +10,7 @@ import (
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
+	baseImageDatastore "github.com/stackrox/rox/central/baseimage/datastore"
 	clusterUtil "github.com/stackrox/rox/central/cluster/util"
 	"github.com/stackrox/rox/central/image/datastore"
 	iiStore "github.com/stackrox/rox/central/imageintegration/store"
@@ -102,10 +103,11 @@ var (
 type serviceImpl struct {
 	v1.UnimplementedImageServiceServer
 
-	datastore        datastore.DataStore
-	datastoreV2      imageV2Datastore.DataStore
-	mappingDatastore datastore.DataStore
-	riskManager      manager.Manager
+	datastore          datastore.DataStore
+	datastoreV2        imageV2Datastore.DataStore
+	baseImageDatastore baseImageDatastore.DataStore
+	mappingDatastore   datastore.DataStore
+	riskManager        manager.Manager
 
 	metadataCache cache.ImageMetadata
 
@@ -366,6 +368,11 @@ func (s *serviceImpl) ScanImageInternal(ctx context.Context, request *v1.ScanIma
 		img = types.ToImage(request.GetImage())
 	}
 
+	if features.BaseImageDetection.Enabled() {
+		baseImages := s.baseImages(ctx, img.GetMetadata().GetLayerShas(), request.GetImage().GetName().GetFullName(), request.GetImage().GetIdV2())
+		img.BaseImageInfo = baseImages
+	}
+
 	if err := s.enrichImage(ctx, img, fetchOpt, request); err != nil && imgExists {
 		// In case we hit an error during enriching, and the image previously existed, we will _not_ upsert it in
 		// central, since it could lead to us overriding an enriched image with a non-enriched image.
@@ -445,6 +452,11 @@ func (s *serviceImpl) scanImageV2Internal(ctx context.Context, request *v1.ScanI
 			fetchOpt = enricher.ForceRefetch
 		}
 		imgV2 = types.ToImageV2(request.GetImage())
+	}
+	
+	if features.BaseImageDetection.Enabled() {
+		baseImages := s.baseImages(ctx, imgV2.GetMetadata().GetLayerShas(), request.GetImage().GetName().GetFullName(), request.GetImage().GetIdV2())
+		imgV2.BaseImageInfo = baseImages
 	}
 
 	if err := s.enrichImageV2(ctx, imgV2, fetchOpt, request); err != nil && imgExists {
@@ -887,6 +899,10 @@ func (s *serviceImpl) EnrichLocalImageInternal(ctx context.Context, request *v1.
 	}
 
 	if !hasErrors {
+		if features.BaseImageDetection.Enabled() {
+			baseImages := s.baseImages(ctx, img.GetMetadata().GetLayerShas(), request.GetImageName().GetFullName(), request.GetImageId())
+			img.BaseImageInfo = baseImages
+		}
 		if forceScanUpdate {
 			if err := s.enrichWithVulnerabilities(img, request); err != nil {
 				imgName := pkgUtils.IfThenElse(existingImg != nil, existingImg.GetName().GetFullName(), request.GetImageName().GetFullName())
@@ -1040,6 +1056,10 @@ func (s *serviceImpl) enrichLocalImageV2Internal(ctx context.Context, request *v
 
 	if !hasErrors {
 		if forceScanUpdate {
+			if features.BaseImageDetection.Enabled() {
+				baseImages := s.baseImages(ctx, img.GetMetadata().GetLayerShas(), request.GetImageName().GetFullName(), request.GetImageId())
+				img.BaseImageInfo = baseImages
+			}
 			if err := s.enrichWithVulnerabilitiesV2(img, request); err != nil {
 				imgName := pkgUtils.IfThenElse(existingImg != nil, existingImg.GetName().GetFullName(), request.GetImageName().GetFullName())
 				log.Errorw("Enriching image with vulnerabilities",
@@ -1099,6 +1119,48 @@ func (s *serviceImpl) enrichWithVulnerabilitiesV2(img *storage.ImageV2, request 
 	comps := scannerTypes.NewScanComponents(request.GetIndexerVersion(), request.GetComponents(), request.GetV4Contents())
 	_, err := s.enricherV2.EnrichWithVulnerabilities(img, comps, request.GetNotes())
 	return err
+}
+
+func (s *serviceImpl) baseImages(ctx context.Context, layers []string, imgName string, imgId string) []*storage.BaseImageInfo {
+	// TODO ROX-31842
+	if len(layers) == 0 {
+		log.Infof("Base Image matching: not able to get image layers from %s", imgName)
+		return nil
+	}
+	firstLayer := layers[0]
+	candidates, err := s.baseImageDatastore.ListCandidateBaseImages(ctx, firstLayer)
+	if err != nil {
+		log.Errorw("Matching image with base images",
+			logging.FromContext(ctx),
+			logging.ImageID(imgId),
+			logging.Err(err),
+			logging.String("request_image", imgName))
+		return nil
+	}
+	var baseImages []*storage.BaseImageInfo
+	// match with candidates
+	for _, c := range candidates {
+		l := c.GetLayers()
+		if len(layers) != len(l) {
+			continue
+		}
+		yes := true
+		for i, m := range l {
+			if layers[i] != m.GetLayerDigest() {
+				yes = false
+				break
+			}
+		}
+		if yes {
+			info := storage.BaseImageInfo{
+				BaseImageId:       c.GetId(),
+				BaseImageFullName: c.GetRepository() + ":" + c.GetTag(),
+				BaseImageDigest:   c.GetManifestDigest(),
+			}
+			baseImages = append(baseImages, &info)
+		}
+	}
+	return baseImages
 }
 
 // shouldUpdateExistingScan will return true if an image should be scanned / re-scanned, false otherwise.
@@ -1335,7 +1397,6 @@ func (s *serviceImpl) WatchImage(ctx context.Context, request *v1.WatchImageRequ
 			ErrorMessage: "could not get SHA after scanning image",
 		}, nil
 	}
-
 	if err := s.saveImage(img); err != nil {
 		return nil, errors.Errorf("failed to store image: %v", err)
 	}
