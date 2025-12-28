@@ -68,7 +68,7 @@ func (s *serviceImpl) GetBaseImageReferences(ctx context.Context, _ *v2.Empty) (
 
 // CreateBaseImageReference creates a new base image reference.
 func (s *serviceImpl) CreateBaseImageReference(ctx context.Context, req *v2.CreateBaseImageReferenceRequest) (*v2.CreateBaseImageReferenceResponse, error) {
-	if err := s.validateBaseImageRepository(req.GetBaseImageRepoPath()); err != nil {
+	if err := s.validateBaseImageRepository(ctx, req.GetBaseImageRepoPath()); err != nil {
 		return nil, err
 	}
 
@@ -166,7 +166,7 @@ func convertStorageToAPI(repo *storage.BaseImageRepository) *v2.BaseImageReferen
 
 // validateBaseImageRepository validate the provided base image repository path,
 // Returns an error if the repository path is malformed or no matching image integration is found.
-func (s *serviceImpl) validateBaseImageRepository(repoPath string) error {
+func (s *serviceImpl) validateBaseImageRepository(ctx context.Context, repoPath string) error {
 	imageName, ref, err := imgUtils.GenerateImageNameFromString(repoPath)
 	if err != nil {
 		return errox.InvalidArgs.Newf("invalid base image repository path '%s'", repoPath).CausedBy(err)
@@ -180,19 +180,13 @@ func (s *serviceImpl) validateBaseImageRepository(repoPath string) error {
 		return errox.InvalidArgs.Newf("repository path '%s' must not include digest", repoPath)
 	}
 
-	// Check if there's a matching image integration for this repository
-	if !s.integrationSet.RegistrySet().Match(imageName) {
-		// If no central integration found, check if delegation to a secured cluster is configured
-		if s.delegator != nil {
-			if _, shouldDelegate, err := s.delegator.GetDelegateClusterID(context.Background(), imageName); err != nil {
-				// Checking delegation errors shouldn't block validation
-				log.Warnf("Error checking delegation for %s: %v", repoPath, err)
-			} else if shouldDelegate {
-				// Image can be delegated to a secured cluster, so it's valid
-				return nil
-			}
+	// Check delegated registry config
+	_, shouldDelegate, err := s.delegator.GetDelegateClusterID(ctx, imageName)
+	if err != nil || !shouldDelegate {
+		// Check central registry config
+		if !s.integrationSet.RegistrySet().Match(imageName) {
+			return errox.InvalidArgs.Newf("no matching image integration found: please add an image integration for '%s'", repoPath)
 		}
-		return errox.InvalidArgs.Newf("no matching image integration found: please add an image integration for '%s'", repoPath)
 	}
 
 	return nil

@@ -58,7 +58,7 @@ func (suite *ServiceTestSuite) setupAllImageRegistriesMatch(matches bool) {
 
 // setupDelegatorExpectation sets up mocks for delegator behavior.
 // If shouldDelegate is true, expects delegation to succeed; if false, expects no delegation.
-func (suite *ServiceTestSuite) setupDelegatorExpectation(shouldDelegate bool, repoPath string) {
+func (suite *ServiceTestSuite) setupDelegatorExpectation(shouldDelegate bool) {
 	if shouldDelegate {
 		suite.mockDelegator.EXPECT().GetDelegateClusterID(gomock.Any(), gomock.Any()).Return("cluster-1", true, nil)
 	} else {
@@ -72,7 +72,7 @@ func (suite *ServiceTestSuite) TestValidateBaseImageRepository() {
 		input               string
 		expectedValid       bool
 		expectedErrMsg      string
-		expectRegistryMatch *bool // nil = no mocks, true = match, false = no match
+		expectRegistryMatch *bool // nil = no match check, true = match, false = no match
 		expectDelegation    *bool // nil = no delegation check, true = should delegate, false = should not delegate
 	}{
 		{
@@ -81,6 +81,7 @@ func (suite *ServiceTestSuite) TestValidateBaseImageRepository() {
 			expectedValid:       true,
 			expectedErrMsg:      "",
 			expectRegistryMatch: pointers.Bool(true),
+			expectDelegation:    pointers.Bool(false),
 		},
 		{
 			description:         "accepts standard Docker registry format with organization",
@@ -88,6 +89,7 @@ func (suite *ServiceTestSuite) TestValidateBaseImageRepository() {
 			expectedValid:       true,
 			expectedErrMsg:      "",
 			expectRegistryMatch: pointers.Bool(true),
+			expectDelegation:    pointers.Bool(false),
 		},
 		{
 			description:         "accepts IPv4 registry with custom port",
@@ -95,6 +97,7 @@ func (suite *ServiceTestSuite) TestValidateBaseImageRepository() {
 			expectedValid:       true,
 			expectedErrMsg:      "",
 			expectRegistryMatch: pointers.Bool(true),
+			expectDelegation:    pointers.Bool(false),
 		},
 		{
 			description:         "accepts IPv6 registry with repository path",
@@ -102,41 +105,37 @@ func (suite *ServiceTestSuite) TestValidateBaseImageRepository() {
 			expectedValid:       true,
 			expectedErrMsg:      "",
 			expectRegistryMatch: pointers.Bool(true),
+			expectDelegation:    pointers.Bool(false),
 		},
 		{
-			description:         "rejects empty repository path",
-			input:               "",
-			expectedValid:       false,
-			expectedErrMsg:      "invalid base image repository path ''",
-			expectRegistryMatch: nil,
+			description:    "rejects empty repository path",
+			input:          "",
+			expectedValid:  false,
+			expectedErrMsg: "invalid base image repository path ''",
 		},
 		{
-			description:         "rejects repository path containing tag",
-			input:               "nginx:latest",
-			expectedValid:       false,
-			expectedErrMsg:      "repository path 'nginx:latest' must not include tag - please put tag in the tag pattern field",
-			expectRegistryMatch: nil,
+			description:    "rejects repository path containing tag",
+			input:          "nginx:latest",
+			expectedValid:  false,
+			expectedErrMsg: "repository path 'nginx:latest' must not include tag - please put tag in the tag pattern field",
 		},
 		{
-			description:         "rejects repository path containing digest",
-			input:               "nginx@sha256:abcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890",
-			expectedValid:       false,
-			expectedErrMsg:      "repository path 'nginx@sha256:abcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890' must not include digest",
-			expectRegistryMatch: nil,
+			description:    "rejects repository path containing digest",
+			input:          "nginx@sha256:abcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890",
+			expectedValid:  false,
+			expectedErrMsg: "repository path 'nginx@sha256:abcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890' must not include digest",
 		},
 		{
-			description:         "rejects repository path with uppercase characters",
-			input:               "test:5000/Uppercase/repo",
-			expectedValid:       false,
-			expectedErrMsg:      "invalid base image repository path 'test:5000/Uppercase/repo'",
-			expectRegistryMatch: nil,
+			description:    "rejects repository path with uppercase characters",
+			input:          "test:5000/Uppercase/repo",
+			expectedValid:  false,
+			expectedErrMsg: "invalid base image repository path 'test:5000/Uppercase/repo'",
 		},
 		{
-			description:         "rejects repository path longer than 255 characters",
-			input:               strings.Repeat("a", 257),
-			expectedValid:       false,
-			expectedErrMsg:      "invalid base image repository path 'aaaaaaaa",
-			expectRegistryMatch: nil,
+			description:    "rejects repository path longer than 255 characters",
+			input:          strings.Repeat("a", 257),
+			expectedValid:  false,
+			expectedErrMsg: "invalid base image repository path 'aaaaaaaa",
 		},
 		{
 			description:         "rejects repository path with no matching registry",
@@ -147,40 +146,32 @@ func (suite *ServiceTestSuite) TestValidateBaseImageRepository() {
 			expectDelegation:    pointers.Bool(false),
 		},
 		{
-			description:         "rejects repository path when registry set is empty",
-			input:               "docker.io/library/nginx",
-			expectedValid:       false,
-			expectedErrMsg:      "no matching image integration found: please add an image integration for 'docker.io/library/nginx'",
-			expectRegistryMatch: pointers.Bool(false),
-			expectDelegation:    pointers.Bool(false),
-		},
-		{
-			description:         "accepts repository path with delegated registry when no central integration exists",
+			description:         "accepts repository path with matching central integration",
 			input:               "delegated.registry.com/myapp",
 			expectedValid:       true,
 			expectedErrMsg:      "",
-			expectRegistryMatch: pointers.Bool(false), // No central integration
-			expectDelegation:    pointers.Bool(true),  // But delegation is configured
+			expectRegistryMatch: pointers.Bool(true),
+			expectDelegation:    pointers.Bool(false),
 		},
 		{
 			description:         "rejects repository path when neither central integration nor delegation exists",
 			input:               "unknown.registry.com/myapp",
 			expectedValid:       false,
 			expectedErrMsg:      "no matching image integration found: please add an image integration for 'unknown.registry.com/myapp'",
-			expectRegistryMatch: pointers.Bool(false), // No central integration
-			expectDelegation:    pointers.Bool(false), // No delegation either
+			expectRegistryMatch: pointers.Bool(false),
+			expectDelegation:    pointers.Bool(false),
 		},
 	}
 
 	for _, tt := range tests {
 		suite.Run(tt.description, func() {
+			if tt.expectDelegation != nil {
+				suite.setupDelegatorExpectation(*tt.expectDelegation)
+			}
 			if tt.expectRegistryMatch != nil {
 				suite.setupAllImageRegistriesMatch(*tt.expectRegistryMatch)
 			}
-			if tt.expectDelegation != nil {
-				suite.setupDelegatorExpectation(*tt.expectDelegation, tt.input)
-			}
-			err := suite.service.validateBaseImageRepository(tt.input)
+			err := suite.service.validateBaseImageRepository(context.Background(), tt.input)
 			if tt.expectedValid {
 				suite.NoError(err, "validateBaseImageRepository(%q) expected no error", tt.input)
 			} else {
@@ -269,6 +260,7 @@ func (suite *ServiceTestSuite) TestCreateBaseImageReference() {
 			},
 			mockSetup: func() {
 				suite.setupAllImageRegistriesMatch(true)
+				suite.setupDelegatorExpectation(false)
 				created := &storage.BaseImageRepository{
 					Id:             "test-id",
 					RepositoryPath: "docker.io/library/nginx",
@@ -292,7 +284,7 @@ func (suite *ServiceTestSuite) TestCreateBaseImageReference() {
 			},
 			mockSetup: func() {
 				suite.setupAllImageRegistriesMatch(false)
-				suite.setupDelegatorExpectation(false, "docker.io/library/nginx")
+				suite.setupDelegatorExpectation(false)
 			},
 			expectedError: true,
 			errorContains: "no matching image integration found",
@@ -305,6 +297,7 @@ func (suite *ServiceTestSuite) TestCreateBaseImageReference() {
 			},
 			mockSetup: func() {
 				suite.setupAllImageRegistriesMatch(true)
+				suite.setupDelegatorExpectation(false)
 			},
 			expectedError: true,
 			errorContains: "invalid base image tag pattern",
