@@ -197,7 +197,7 @@ func layer(ctx context.Context, digest string, hostPath string) (*claircore.Laye
 	log.Debugf("Realizing mount path: %s", hostPath)
 	desc := &claircore.LayerDescription{
 		Digest:    digest,
-		URI:       hostPath,
+		URI:       "file://" + hostPath,
 		MediaType: layerMediaType,
 	}
 
