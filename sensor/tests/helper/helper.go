@@ -420,9 +420,9 @@ func (c *TestContext) runWithResourcesPermutation(t *testing.T, tr *testRun) {
 		copy(newF, f)
 		newTestRun := tr.copy()
 		newTestRun.resources = newF
-		t.Run(fmt.Sprintf("Permutation_%s", permutationKind(newF)), func(_ *testing.T) {
-			err := c.runWithResources(t, tr.resources, tr.testCase, tr.retryCallback)
-			require.NoError(t, err)
+		t.Run(fmt.Sprintf("Permutation_%s", permutationKind(newF)), func(subT *testing.T) {
+			err := c.runWithResources(subT, tr.resources, tr.testCase, tr.retryCallback)
+			require.NoError(subT, err)
 		})
 	})
 }
