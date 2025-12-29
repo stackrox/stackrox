@@ -1010,7 +1010,7 @@ func (s *PolicyValidatorTestSuite) TestValidateEffectivePathEventSource() {
 			p: booleanPolicyWithFields(storage.LifecycleStage_RUNTIME, storage.EventSource_DEPLOYMENT_EVENT,
 				map[string]string{
 					fieldnames.EffectiveFilePath: "/etc/shadow",
-					fieldnames.FileOperation:   "open",
+					fieldnames.FileOperation:     "open",
 				}),
 		},
 		{
@@ -1127,7 +1127,7 @@ func (s *PolicyValidatorTestSuite) TestValidateNodeEventSource() {
 			p: booleanPolicyWithFields(storage.LifecycleStage_RUNTIME, storage.EventSource_NODE_EVENT,
 				map[string]string{
 					fieldnames.ActualFilePath: "/var/log/audit.log",
-					fieldnames.ProcessName:  "suspicious-binary",
+					fieldnames.ProcessName:    "suspicious-binary",
 				}),
 			errExpected: true,
 		},
@@ -1135,8 +1135,8 @@ func (s *PolicyValidatorTestSuite) TestValidateNodeEventSource() {
 			description: "Node policy with Actual File Path and invalid container fields",
 			p: booleanPolicyWithFields(storage.LifecycleStage_RUNTIME, storage.EventSource_NODE_EVENT,
 				map[string]string{
-					fieldnames.ActualFilePath:  "/etc/shadow",
-					fieldnames.ContainerName: "malicious-container",
+					fieldnames.ActualFilePath: "/etc/shadow",
+					fieldnames.ContainerName:  "malicious-container",
 				}),
 			errExpected: true,
 		},
@@ -1176,8 +1176,8 @@ func (s *PolicyValidatorTestSuite) TestValidateNodeEventSource() {
 			description: "Node policy with FileOperation and valid Actual File Path field",
 			p: booleanPolicyWithFields(storage.LifecycleStage_RUNTIME, storage.EventSource_NODE_EVENT,
 				map[string]string{
-					fieldnames.FileOperation: "open",
-					fieldnames.ActualFilePath:  "/etc/passwd",
+					fieldnames.FileOperation:  "open",
+					fieldnames.ActualFilePath: "/etc/passwd",
 				}),
 		},
 		{
