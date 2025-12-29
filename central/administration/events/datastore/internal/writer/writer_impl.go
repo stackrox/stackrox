@@ -83,15 +83,15 @@ func (c *writerImpl) flushEventsToDatabase(ctx context.Context, eventsToFlush []
 
 func (c *writerImpl) flushNoLock(ctx context.Context) error {
 	// Caller (Upsert) already holds mutex
-	// Extract events and clear buffer
+	// Extract events but DON'T clear buffer yet
 	eventsToFlush := slices.Collect(maps.Values(c.buffer))
-	c.resetNoLock()
 
 	// IMPORTANT: Release mutex BEFORE database operations to prevent timeouts.
 	// With a single DB connection, holding mutex while waiting for the connection causes timeouts:
 	// - Thread A: Holds mutex → waits for DB connection (blocked for >10s) → PANIC
 	// - Thread B: Holds DB connection → waits for mutex (blocked)
 	// Solution: Acquire mutex ONLY for updating the in-memory buffer, not during DB operations.
+	// During DB operations, other threads may add NEW events to the buffer.
 	c.mutex.Unlock()
 
 	// Perform database operations without holding mutex
@@ -100,7 +100,23 @@ func (c *writerImpl) flushNoLock(ctx context.Context) error {
 	// Re-acquire mutex before returning to caller (Upsert expects lock held)
 	c.mutex.Lock()
 
-	return err
+	// Only remove events that were successfully persisted.
+	// IMPORTANT: Don't use resetNoLock() because new events may have been
+	// added to the buffer while we were doing DB operations.
+	if err != nil {
+		return err
+	}
+
+	// Selectively remove only the events we just persisted.
+	// CRITICAL: Only delete if the buffer still contains the SAME pointer we snapshotted.
+	// If the event was updated after snapshot, the buffer will have a different pointer,
+	// and we must NOT delete it (the update wasn't persisted yet).
+	for _, event := range eventsToFlush {
+		if c.buffer[event.GetId()] == event {
+			delete(c.buffer, event.GetId())
+		}
+	}
+	return nil
 }
 
 func (c *writerImpl) Upsert(ctx context.Context, event *events.AdministrationEvent) error {
@@ -139,16 +155,37 @@ func (c *writerImpl) Upsert(ctx context.Context, event *events.AdministrationEve
 }
 
 func (c *writerImpl) Flush(ctx context.Context) error {
-	// Acquire mutex ONLY to snapshot and clear the buffer.
+	// Acquire mutex ONLY to snapshot the buffer (NOT to clear it yet).
 	// This prevents mutex timeout when DB operations are slow.
 	c.mutex.Lock()
 	eventsToFlush := slices.Collect(maps.Values(c.buffer))
-	c.resetNoLock()
 	c.mutex.Unlock()
 
 	// Perform database operations WITHOUT holding mutex.
 	// This prevents mutex timeout when DB operations take >10 seconds.
-	return c.flushEventsToDatabase(ctx, eventsToFlush)
+	// During this time, other threads may add NEW events to the buffer.
+	err := c.flushEventsToDatabase(ctx, eventsToFlush)
+
+	// Only remove events that were successfully persisted
+	if err != nil {
+		return err
+	}
+
+	// Re-acquire mutex to remove only the events we just persisted.
+	// IMPORTANT: Don't use resetNoLock() because new events may have been
+	// added to the buffer while we were doing DB operations.
+	c.mutex.Lock()
+	// CRITICAL: Only delete if the buffer still contains the SAME pointer we snapshotted.
+	// If the event was updated after snapshot, the buffer will have a different pointer,
+	// and we must NOT delete it (the update wasn't persisted yet).
+	for _, event := range eventsToFlush {
+		if c.buffer[event.GetId()] == event {
+			delete(c.buffer, event.GetId())
+		}
+	}
+	c.mutex.Unlock()
+
+	return nil
 }
 
 // Modifies `updated` with the values of the base event and returns the merged event.
