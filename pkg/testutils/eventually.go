@@ -6,7 +6,7 @@ import (
 )
 
 // Eventually works similarly to assert.Eventually, but it does not call
-// t.Fail() when the deadline expires. This is useful for when retrying
+// t.Fail() when the deadline expires. This is useful for retrying
 // calls to Eventually.
 func Eventually(t *testing.T, condition func() bool, waitFor, tick time.Duration) bool {
 	ch := make(chan bool, 1)
