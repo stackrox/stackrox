@@ -6,23 +6,20 @@ import (
 	"github.com/stackrox/rox/pkg/sync"
 )
 
-const (
-	maxExactPathMatches = 5
-)
-
 var (
 	singletonInstance sync.Once
 
-	maxUniqueProcesses = env.ProcessFilterMaxProcessPaths.IntegerSetting()
+	maxExactPathMatches = env.ProcessFilterMaxExactPathMatches.IntegerSetting()
+	maxUniqueProcesses  = env.ProcessFilterMaxProcessPaths.IntegerSetting()
+	fanOutLevels        = env.ProcessFilterFanOutLevels.IntegerArraySetting()
 
-	bucketSizes     = []int{8, 6, 4, 2}
 	singletonFilter filter.Filter
 )
 
 // Singleton returns a global, threadsafe process filter
 func Singleton() filter.Filter {
 	singletonInstance.Do(func() {
-		singletonFilter = filter.NewFilter(maxExactPathMatches, maxUniqueProcesses, bucketSizes)
+		singletonFilter = filter.NewFilter(maxExactPathMatches, maxUniqueProcesses, fanOutLevels)
 	})
 	return singletonFilter
 }

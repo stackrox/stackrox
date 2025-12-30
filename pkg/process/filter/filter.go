@@ -33,6 +33,18 @@ type BinaryHash uint64
 // 	the level for that specific process. No process exec file paths are limited because we want to see all new binaries.
 // 	Then recursively sift through the args and create a level for each argument (up to len(fanOut)) that has a parent of the
 //  previous argument. If the fan out or the number of maxExactPathMatches has been exceeded, then return false. Otherwise, return true
+//
+// Configuration:
+// The filter can be configured via environment variables:
+//   - ROX_PROCESS_FILTER_MAX_EXACT_PATH_MATCHES
+//     Maximum number of times an exact path (same deployment+container+process+args) can appear before being filtered
+//   - ROX_PROCESS_FILTER_FAN_OUT_LEVELS
+//     Fan-out limits per argument level as comma-separated integers
+//     Each value represents the maximum number of unique children at that level
+//     Example: "10,8,6,4" increases first-level fan-out to 10
+//     Empty string "" results in only tracking unique processes without arguments
+//   - ROX_PROCESS_FILTER_MAX_PROCESS_PATHS
+//     Maximum number of unique process executable paths per container
 
 const (
 	maxArgSize = 16
