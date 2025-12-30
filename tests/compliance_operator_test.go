@@ -50,6 +50,39 @@ const defaultWaitTime = 600 * time.Second
 const defaultSleepTime = 10 * time.Second
 const defaultTickTime = 2 * time.Second
 
+func waitForRunAndGetResults(t testutils.T, run *v1.ComplianceRun, managementService v1.ComplianceManagementServiceClient, complianceService v1.ComplianceServiceClient) *storage.ComplianceRunResults {
+	if run == nil {
+		return nil
+	}
+
+	// Wait for the run to complete
+	err := retry.WithRetry(func() error {
+		statusRunResp, err := managementService.GetRunStatuses(context.Background(), &v1.GetComplianceRunStatusesRequest{
+			RunIds: []string{run.GetId()},
+		})
+		require.NoError(t, err)
+		assert.NotEmpty(t, statusRunResp.GetRuns())
+
+		for _, statusRun := range statusRunResp.GetRuns() {
+			if statusRun.GetState() != v1.ComplianceRun_FINISHED {
+				t.Logf("Run for %v is in state %v", statusRun.GetStandardId(), statusRun.GetState())
+				return errors.New("run not finished")
+			}
+		}
+		return nil
+	}, retry.BetweenAttempts(func(previousAttemptNumber int) {
+		time.Sleep(5 * time.Second)
+	}), retry.Tries(10))
+	assert.NoError(t, err)
+
+	resp, err := complianceService.GetRunResults(context.Background(), &v1.GetComplianceRunResultsRequest{
+		StandardId: run.GetStandardId(),
+		ClusterId:  run.GetClusterId(),
+	})
+	require.NoError(t, err, "failed to get results for run %q on cluster %q", run.GetStandardId(), run.GetClusterId())
+	return resp.GetResults()
+}
+
 func getCurrentComplianceResults(t testutils.T) (rhcos, ocp *storage.ComplianceRunResults) {
 	conn := centralgrpc.GRPCConnectionToCentral(t)
 	managementService := v1.NewComplianceManagementServiceClient(conn)
@@ -74,47 +107,12 @@ func getCurrentComplianceResults(t testutils.T) (rhcos, ocp *storage.ComplianceR
 		}
 	}
 
-	// Retry logic
-	// Wait for the run to complete
-	err = retry.WithRetry(func() error {
-		statusRunResp, err := managementService.GetRunStatuses(context.Background(), &v1.GetComplianceRunStatusesRequest{
-			RunIds: []string{rhcosRun.GetId(), ocpRun.GetId()},
-		})
-		require.NoError(t, err)
-		assert.NotEmpty(t, statusRunResp.GetRuns())
-
-		finished := true
-		for _, run := range statusRunResp.GetRuns() {
-			if run.GetState() != v1.ComplianceRun_FINISHED {
-				finished = false
-				t.Logf("Run for %v is in state %v", run.GetStandardId(), run.GetState())
-			}
-		}
-		if finished {
-			return nil
-		}
-		return errors.New("not all runs are finished")
-	}, retry.BetweenAttempts(func(previousAttemptNumber int) {
-		time.Sleep(5 * time.Second)
-	}), retry.Tries(10))
-	assert.NoError(t, err)
-
 	complianceService := v1.NewComplianceServiceClient(conn)
 
-	// rhcos4 results
+	rhcosResults := waitForRunAndGetResults(t, rhcosRun, managementService, complianceService)
+	ocpResults := waitForRunAndGetResults(t, ocpRun, managementService, complianceService)
 
-	rhcosResults, _ := complianceService.GetRunResults(context.Background(), &v1.GetComplianceRunResultsRequest{
-		StandardId: rhcosRun.GetStandardId(),
-		ClusterId:  rhcosRun.GetClusterId(),
-	})
-
-	// ocp4 results
-	ocpResults, _ := complianceService.GetRunResults(context.Background(), &v1.GetComplianceRunResultsRequest{
-		StandardId: ocpRun.GetStandardId(),
-		ClusterId:  ocpRun.GetClusterId(),
-	})
-
-	return rhcosResults.GetResults(), ocpResults.GetResults()
+	return rhcosResults, ocpResults
 }
 
 func checkResult(t assert.TestingT, results map[string]*storage.ComplianceResultValue, rule string, state storage.ComplianceState) {
