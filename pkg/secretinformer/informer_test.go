@@ -6,6 +6,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	v1 "k8s.io/api/core/v1"
@@ -147,12 +148,11 @@ func TestSecretInformer(t *testing.T) {
 					return false
 				}
 
-				return assert.Eventually(t,
-					func() bool {
-						return onAddCnt.Load() == int32(c.expectedOnAddCnt) &&
-							onUpdateCnt.Load() == int32(c.expectedOnUpdateCnt) &&
-							onDeleteCnt.Load() == int32(c.expectedOnDeleteCnt)
-					}, 200*time.Millisecond, 10*time.Millisecond)
+				return testutils.Eventually(t, func() bool {
+					return onAddCnt.Load() == int32(c.expectedOnAddCnt) &&
+						onUpdateCnt.Load() == int32(c.expectedOnUpdateCnt) &&
+						onDeleteCnt.Load() == int32(c.expectedOnDeleteCnt)
+				}, 200*time.Millisecond, 10*time.Millisecond)
 			}, 10*time.Second, 200*time.Millisecond, "callbacks not invoked as expected (add: %d/%d, update: %d/%d, delete: %d/%d)",
 				onAddCnt.Load(), c.expectedOnAddCnt, onUpdateCnt.Load(), c.expectedOnUpdateCnt,
 				onDeleteCnt.Load(), c.expectedOnDeleteCnt)
