@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/stretchr/testify/assert"
+	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stretchr/testify/require"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -139,7 +139,7 @@ func TestCredentialManager(t *testing.T) {
 					return false
 				}
 
-				return assert.Eventually(t,
+				return testutils.Eventually(t,
 					func() bool {
 						manager.mutex.RLock()
 						defer manager.mutex.RUnlock()
