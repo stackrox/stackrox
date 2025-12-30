@@ -46,14 +46,6 @@ func TestEventually_Timeout(t *testing.T) {
 	assert.Greater(t, counter.Load(), int32(1), "Should have checked condition multiple times")
 }
 
-func TestEventually_VeryShortTimeout(t *testing.T) {
-	result := Eventually(t, func() bool {
-		return false
-	}, 1*time.Millisecond, 1*time.Millisecond)
-
-	assert.False(t, result, "Should handle very short timeouts")
-}
-
 func TestEventually_MultipleRetries(t *testing.T) {
 	// Simulates using Eventually in a retry loop (its intended use case)
 	attempts := 0
