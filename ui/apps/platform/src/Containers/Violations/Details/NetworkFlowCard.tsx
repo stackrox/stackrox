@@ -36,7 +36,7 @@ function NetworkFlowCard({ networkFlowInfo, message, time }: NetworkFlowCardProp
                     <CardTitle>{message}</CardTitle>
                 </CardHeader>
                 <CardExpandableContent>
-                    <CardBody>
+                    <CardBody className="pf-v6-u-mt-lg">
                         <DescriptionList>
                             <DescriptionListItem
                                 term="Source entity type"
