@@ -76,9 +76,9 @@ export function visitFromHorizontalNav(linkTitle: string) {
 
 export function visitFromHorizontalNavExpandable(expandableItemTitle: string) {
     return (linkTitle: string) => {
-        cy.get(`nav.pf-m-horizontal-subnav button:contains("${expandableItemTitle}")`).click();
+        cy.get(`nav.pf-m-horizontal.pf-m-subnav button:contains("${expandableItemTitle}")`).click();
         cy.get(
-            `nav.pf-m-horizontal-subnav .pf-v6-c-menu a[role="menuitem"]:contains("${linkTitle}")`
+            `nav.pf-m-horizontal.pf-m-subnav .pf-v6-c-menu a[role="menuitem"]:contains("${linkTitle}")`
         ).click();
     };
 }
