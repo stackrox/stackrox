@@ -63,7 +63,7 @@ function FileAccessCardContent({ event }: FileAccessCardContentProps): ReactElem
     return (
         <Flex direction={{ default: 'column' }} spaceItems={{ default: 'spaceItemsMd' }}>
             <Divider component="div" />
-            <Title headingLevel="h3" className="pf-v5-u-pb-sm">
+            <Title headingLevel="h3" className="pf-v6-u-pb-sm">
                 {file.actualPath}
             </Title>
             <DescriptionList columnModifier={{ default: '2Col' }}>
