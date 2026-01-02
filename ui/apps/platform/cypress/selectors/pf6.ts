@@ -1,3 +1,8 @@
+const actionsColumnSelectors = {
+    kebabToggle: '.pf-v6-c-menu-toggle',
+    menuListButton: '.pf-v6-c-menu__list button',
+} as const;
+
 const dropdownSelectors = {
     dropdown: 'div[data-ouia-component-type="PF6/Dropdown"]',
     dropdownItem: '*[data-ouia-component-type="PF6/DropdownItem"]',
@@ -15,6 +20,10 @@ const navSelectors = {
     navExpandable: `li[data-ouia-component-type="PF6/NavExpandable"]`,
     navItem: `li[data-ouia-component-type="PF6/NavItem"]`,
 } as const;
+const pageHeaderSelectors = {
+    pageHeaderTitle: '[data-ouia-component-id="PageHeader-title"]',
+    pageHeaderSubtitle: '[data-ouia-component-id="PageHeader-subtitle"]',
+} as const;
 
 const tabsSelectors = {
     tab: '[data-ouia-component-type="PF6/Tab"]',
@@ -22,8 +31,10 @@ const tabsSelectors = {
 } as const;
 
 export default {
+    ...actionsColumnSelectors,
     ...dropdownSelectors,
     ...menuSelectors,
     ...navSelectors,
+    ...pageHeaderSelectors,
     ...tabsSelectors,
 };
