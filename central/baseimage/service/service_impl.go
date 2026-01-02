@@ -18,7 +18,6 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
 	"github.com/stackrox/rox/pkg/images/integration"
 	imgUtils "github.com/stackrox/rox/pkg/images/utils"
-	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -36,8 +35,6 @@ var (
 			v2.BaseImageServiceV2_DeleteBaseImageReference_FullMethodName,
 		},
 	})
-
-	log = logging.LoggerForModule()
 )
 
 // serviceImpl provides APIs for base image references.
