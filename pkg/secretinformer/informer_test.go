@@ -6,7 +6,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	v1 "k8s.io/api/core/v1"
@@ -110,45 +109,39 @@ func TestSecretInformer(t *testing.T) {
 
 	for name, c := range cases {
 		t.Run(name, func(t *testing.T) {
-			k8sClient := fake.NewClientset()
 			var onAddCnt, onUpdateCnt, onDeleteCnt atomic.Int32
-			informer := NewSecretInformer(
-				namespace,
-				secretName,
-				k8sClient,
-				func(s *v1.Secret) {
-					assert.Equal(t, c.expectedData, string(s.Data[secretKey]))
-					onAddCnt.Add(1)
-				},
-				func(s *v1.Secret) {
-					assert.Equal(t, c.expectedData, string(s.Data[secretKey]))
-					onUpdateCnt.Add(1)
-				},
-				func() {
-					onDeleteCnt.Add(1)
-				},
-			)
-
-			err := informer.Start()
-			require.NoError(t, err)
-			defer informer.Stop()
-			require.Eventually(t, informer.HasSynced, 5*time.Second, 100*time.Millisecond)
 
 			// Use Eventually to retry the entire operation with a configurable timeout.
 			// This handles the k8s fake client potentially losing events.
-			require.Eventually(t, func() bool {
+			require.EventuallyWithT(t, func(ct *assert.CollectT) {
+				k8sClient := fake.NewClientset()
+				informer := NewSecretInformer(
+					namespace,
+					secretName,
+					k8sClient,
+					func(s *v1.Secret) {
+						assert.Equal(ct, c.expectedData, string(s.Data[secretKey]))
+						onAddCnt.Add(1)
+					},
+					func(s *v1.Secret) {
+						assert.Equal(ct, c.expectedData, string(s.Data[secretKey]))
+						onUpdateCnt.Add(1)
+					},
+					func() {
+						onDeleteCnt.Add(1)
+					},
+				)
+				err := informer.Start()
+				require.NoError(ct, err)
+				defer informer.Stop()
+				require.Eventually(ct, informer.HasSynced, 5*time.Second, 100*time.Millisecond)
+
 				onAddCnt.Store(0)
 				onUpdateCnt.Store(0)
 				onDeleteCnt.Store(0)
+				require.NoError(ct, c.setupFn(k8sClient))
 
-				// Clean up any existing secret from previous attempts.
-				_ = k8sClient.CoreV1().Secrets(namespace).Delete(context.Background(), secretName, metav1.DeleteOptions{})
-
-				if err := c.setupFn(k8sClient); err != nil {
-					return false
-				}
-
-				return testutils.Eventually(t, func() bool {
+				assert.Eventually(ct, func() bool {
 					return onAddCnt.Load() == int32(c.expectedOnAddCnt) &&
 						onUpdateCnt.Load() == int32(c.expectedOnUpdateCnt) &&
 						onDeleteCnt.Load() == int32(c.expectedOnDeleteCnt)

@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/stackrox/rox/pkg/testutils"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -118,40 +118,30 @@ func TestCredentialManager(t *testing.T) {
 
 	for name, c := range cases {
 		t.Run(name, func(t *testing.T) {
-			k8sClient := fake.NewClientset()
 			var changeCount atomic.Int32
-			manager := newCredentialsManagerImpl(k8sClient, namespace, secretName, func() {
-				changeCount.Add(1)
-			})
-			manager.Start()
-			defer manager.Stop()
-			require.Eventually(t, manager.informer.HasSynced, 5*time.Second, 100*time.Millisecond)
 
 			// Use Eventually to retry the entire operation with a configurable timeout.
 			// This handles the k8s fake client potentially losing events.
-			require.Eventually(t, func() bool {
+			require.EventuallyWithT(t, func(ct *assert.CollectT) {
+				k8sClient := fake.NewClientset()
+				manager := newCredentialsManagerImpl(k8sClient, namespace, secretName, func() {
+					changeCount.Add(1)
+				})
+				manager.Start()
+				defer manager.Stop()
+				require.Eventually(ct, manager.informer.HasSynced, 5*time.Second, 100*time.Millisecond)
+
 				changeCount.Store(0)
+				require.NoError(ct, c.setupFn(k8sClient))
 
-				// Clean up any existing secret from previous attempts.
-				_ = k8sClient.CoreV1().Secrets(namespace).Delete(context.Background(), secretName, metav1.DeleteOptions{})
-
-				if err := c.setupFn(k8sClient); err != nil {
-					return false
-				}
-
-				return testutils.Eventually(t,
-					func() bool {
-						manager.mutex.RLock()
-						defer manager.mutex.RUnlock()
-						return changeCount.Load() == int32(c.changes) &&
-							string(manager.stsConfig) == c.expected
-					}, 200*time.Millisecond, 10*time.Millisecond)
-			}, 10*time.Second, 200*time.Millisecond, "callbacks not invoked as expected or state incorrect (changes: %d/%d, expected: %q, actual: %q)",
-				changeCount.Load(), c.changes, c.expected, func() string {
+				assert.Eventually(ct, func() bool {
 					manager.mutex.RLock()
 					defer manager.mutex.RUnlock()
-					return string(manager.stsConfig)
-				}())
+					return changeCount.Load() == int32(c.changes) &&
+						string(manager.stsConfig) == c.expected
+				}, 200*time.Millisecond, 10*time.Millisecond)
+			}, 10*time.Second, 200*time.Millisecond, "callbacks not invoked as expected or state incorrect (changes: %d/%d)",
+				changeCount.Load(), c.changes)
 		})
 	}
 }
