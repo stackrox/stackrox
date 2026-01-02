@@ -157,6 +157,17 @@ func TestSplitAndMergeImage(t *testing.T) {
 		Id: "sha",
 		Name: &storage.ImageName{
 			FullName: "name",
+		}, BaseImageInfo: []*storage.BaseImageInfo{
+			{
+				BaseImageId:       "some-id",
+				BaseImageFullName: "registry.example.com/ns/base:tag",
+				BaseImageDigest:   "sha256:...",
+			},
+			{
+				BaseImageId:       "another-id",
+				BaseImageFullName: "registry.example.com/ns/other:tag",
+				BaseImageDigest:   "sha256:...",
+			},
 		},
 		Metadata: &storage.ImageMetadata{
 			V1: &storage.V1Metadata{
@@ -286,6 +297,18 @@ func TestSplitAndMergeImage(t *testing.T) {
 					Created: ts,
 				},
 			},
+			BaseImageInfo: []*storage.BaseImageInfo{
+				{
+					BaseImageId:       "some-id",
+					BaseImageFullName: "registry.example.com/ns/base:tag",
+					BaseImageDigest:   "sha256:...",
+				},
+				{
+					BaseImageId:       "another-id",
+					BaseImageFullName: "registry.example.com/ns/other:tag",
+					BaseImageDigest:   "sha256:...",
+				},
+			},
 			Scan: &storage.ImageScan{
 				ScanTime: ts,
 			},
@@ -309,6 +332,7 @@ func TestSplitAndMergeImage(t *testing.T) {
 					HasLayerIndex: &storage.ImageComponentV2_LayerIndex{
 						LayerIndex: 1,
 					},
+					FromBaseImage: true,
 				},
 				Children: []CVEParts{},
 			},
@@ -321,6 +345,7 @@ func TestSplitAndMergeImage(t *testing.T) {
 					HasLayerIndex: &storage.ImageComponentV2_LayerIndex{
 						LayerIndex: 3,
 					},
+					FromBaseImage: true,
 				},
 				Children: []CVEParts{
 					{
@@ -381,6 +406,7 @@ func TestSplitAndMergeImage(t *testing.T) {
 					HasLayerIndex: &storage.ImageComponentV2_LayerIndex{
 						LayerIndex: 2,
 					},
+					FromBaseImage: true,
 				},
 				Children: []CVEParts{
 					{
@@ -424,6 +450,7 @@ func TestSplitAndMergeImage(t *testing.T) {
 					HasLayerIndex: &storage.ImageComponentV2_LayerIndex{
 						LayerIndex: 2,
 					},
+					FromBaseImage: true,
 				},
 				Children: []CVEParts{
 					{
@@ -484,7 +511,9 @@ func TestSplitAndMergeImage(t *testing.T) {
 	}
 
 	imageActual := MergeV2(splitActual)
-	protoassert.Equal(t, dedupedImage(), imageActual)
+	expectedFinalImage := dedupedImage()
+	expectedFinalImage.BaseImageInfo = image.GetBaseImageInfo()
+	protoassert.Equal(t, expectedFinalImage, imageActual)
 }
 
 func getTestComponentID(testComponent *storage.EmbeddedImageScanComponent, imageID string, index int) string {

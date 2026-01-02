@@ -48,7 +48,7 @@ func (c *SuitesDispatcher) ProcessEvent(obj, _ interface{}, action central.Resou
 					Status: &central.ComplianceOperatorStatus{
 						Phase:        string(complianceSuite.Status.Phase),
 						Result:       string(complianceSuite.Status.Result),
-						ErrorMessage: string(complianceSuite.Status.ErrorMessage),
+						ErrorMessage: complianceSuite.Status.ErrorMessage,
 						Conditions:   getStatusConditions(complianceSuite.Status.Conditions),
 					},
 				},

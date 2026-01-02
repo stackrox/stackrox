@@ -8,7 +8,6 @@ import (
 	"testing"
 
 	"github.com/stackrox/rox/pkg/env"
-	"github.com/stackrox/rox/pkg/grpc"
 	"github.com/stackrox/rox/pkg/images/defaults"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/telemetry/phonehome/segment/mock"
@@ -118,7 +117,7 @@ func Test_centralClient_flow(t *testing.T) {
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		c.RegisterCentralClient(&grpc.Config{}, "basic")
+		c.RegisterCentralClient("basic")
 	}()
 
 	c.GrantConsent()

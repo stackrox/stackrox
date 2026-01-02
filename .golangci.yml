@@ -35,7 +35,7 @@ linters:
     - staticcheck
     - wrapcheck
   # - nakedret TODO: add in follow-up
-  # - unconvert TODO: add in follow-up
+    - unconvert
   # - unparam TODO: add in follow-up
   # - unused // enabled in Makefile as it fails with release tag
     - usestdlibvars

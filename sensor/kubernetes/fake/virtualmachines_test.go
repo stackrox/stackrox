@@ -172,7 +172,7 @@ func TestGenerateFakeIndexReport(t *testing.T) {
 			// Verify contents
 			require.NotNil(t, report.GetIndexV4().GetContents(), "Contents should not be nil")
 			assert.Len(t, report.GetIndexV4().GetContents().GetPackages(), 10, "expected 10 packages")
-			assert.Len(t, report.GetIndexV4().GetContents().GetRepositories(), 2, "expected 2 real repositories")
+			assert.Len(t, report.GetIndexV4().GetContents().GetRepositories(), 3, "expected 3 real repositories")
 
 			// Verify packages have valid CPEs (regression test for WFN error)
 			for _, pkg := range report.GetIndexV4().GetContents().GetPackages() {

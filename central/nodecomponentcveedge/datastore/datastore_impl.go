@@ -3,7 +3,6 @@ package datastore
 import (
 	"context"
 
-	"github.com/pkg/errors"
 	pgStore "github.com/stackrox/rox/central/nodecomponentcveedge/datastore/store/postgres"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -19,18 +18,21 @@ func (ds *datastoreImpl) Search(ctx context.Context, q *v1.Query) ([]searchPkg.R
 }
 
 func (ds *datastoreImpl) SearchEdges(ctx context.Context, q *v1.Query) ([]*v1.SearchResult, error) {
-	// TODO(ROX-29943): remove 2 pass database queries
-	results, err := ds.Search(ctx, q)
+	if q == nil {
+		q = searchPkg.EmptyQuery()
+	}
+
+	results, err := ds.storage.Search(ctx, q)
 	if err != nil {
 		return nil, err
 	}
 
-	edges, missingIndices, err := ds.storage.GetMany(ctx, searchPkg.ResultsToIDs(results))
-	if err != nil {
-		return nil, err
+	// Populate Name from ID for each result
+	for i := range results {
+		results[i].Name = results[i].ID
 	}
-	results = searchPkg.RemoveMissingResults(results, missingIndices)
-	return convertMany(edges, results)
+
+	return searchPkg.ResultsToSearchResultProtos(results, &NodeComponentCVEEdgeSearchResultConverter{}), nil
 }
 
 func (ds *datastoreImpl) SearchRawEdges(ctx context.Context, q *v1.Query) ([]*storage.NodeComponentCVEEdge, error) {
@@ -66,24 +68,22 @@ func (ds *datastoreImpl) Exists(ctx context.Context, id string) (bool, error) {
 	return true, nil
 }
 
-func convertMany(edges []*storage.NodeComponentCVEEdge, results []searchPkg.Result) ([]*v1.SearchResult, error) {
-	if len(edges) != len(results) {
-		return nil, errors.Errorf("expected %d edges but got %d", len(results), len(edges))
-	}
+type NodeComponentCVEEdgeSearchResultConverter struct{}
 
-	outputResults := make([]*v1.SearchResult, len(edges))
-	for index, sar := range edges {
-		outputResults[index] = convertOne(sar, &results[index])
-	}
-	return outputResults, nil
+func (c *NodeComponentCVEEdgeSearchResultConverter) BuildName(result *searchPkg.Result) string {
+	// Name is already populated from ID
+	return result.Name
 }
 
-func convertOne(obj *storage.NodeComponentCVEEdge, result *searchPkg.Result) *v1.SearchResult {
-	return &v1.SearchResult{
-		Category:       v1.SearchCategory_NODE_COMPONENT_CVE_EDGE,
-		Id:             obj.GetId(),
-		Name:           obj.GetId(),
-		FieldToMatches: searchPkg.GetProtoMatchesMap(result.Matches),
-		Score:          result.Score,
-	}
+func (c *NodeComponentCVEEdgeSearchResultConverter) BuildLocation(result *searchPkg.Result) string {
+	// NodeComponentCVEEdge does not have a location
+	return ""
+}
+
+func (c *NodeComponentCVEEdgeSearchResultConverter) GetCategory() v1.SearchCategory {
+	return v1.SearchCategory_NODE_COMPONENT_CVE_EDGE
+}
+
+func (c *NodeComponentCVEEdgeSearchResultConverter) GetScore(result *searchPkg.Result) float64 {
+	return result.Score
 }

@@ -570,7 +570,7 @@ func excludeEntityForGraphConfig(graphConfig *storage.NetworkGraphConfig, entity
 }
 
 func getScopeKey(id string) ([]sac.ScopeKey, error) {
-	decodedID, err := sac.ParseResourceID(string(id))
+	decodedID, err := sac.ParseResourceID(id)
 	if err != nil {
 		return nil, err
 	}

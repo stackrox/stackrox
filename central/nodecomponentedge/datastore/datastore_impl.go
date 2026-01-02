@@ -3,7 +3,6 @@ package datastore
 import (
 	"context"
 
-	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/nodecomponentedge/store"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -19,18 +18,17 @@ func (ds *datastoreImpl) Search(ctx context.Context, q *v1.Query) ([]searchPkg.R
 }
 
 func (ds *datastoreImpl) SearchEdges(ctx context.Context, q *v1.Query) ([]*v1.SearchResult, error) {
-	// TODO(ROX-29943): remove 2 pass database queries
-	results, err := ds.Search(ctx, q)
+	results, err := ds.storage.Search(ctx, q)
 	if err != nil {
 		return nil, err
 	}
 
-	edges, missingIndices, err := ds.storage.GetMany(ctx, searchPkg.ResultsToIDs(results))
-	if err != nil {
-		return nil, err
+	// Populate Name from ID for each result
+	for i := range results {
+		results[i].Name = results[i].ID
 	}
-	results = searchPkg.RemoveMissingResults(results, missingIndices)
-	return convertMany(edges, results)
+
+	return searchPkg.ResultsToSearchResultProtos(results, &NodeComponentEdgeSearchResultConverter{}), nil
 }
 
 func (ds *datastoreImpl) SearchRawEdges(ctx context.Context, q *v1.Query) ([]*storage.NodeComponentEdge, error) {
@@ -75,24 +73,22 @@ func (ds *datastoreImpl) GetBatch(ctx context.Context, ids []string) ([]*storage
 	return edges, nil
 }
 
-func convertMany(edges []*storage.NodeComponentEdge, results []searchPkg.Result) ([]*v1.SearchResult, error) {
-	if len(edges) != len(results) {
-		return nil, errors.Errorf("expected %d edges but got %d", len(results), len(edges))
-	}
+type NodeComponentEdgeSearchResultConverter struct{}
 
-	outputResults := make([]*v1.SearchResult, len(edges))
-	for index, sar := range edges {
-		outputResults[index] = convertOne(sar, &results[index])
-	}
-	return outputResults, nil
+func (c *NodeComponentEdgeSearchResultConverter) BuildName(result *searchPkg.Result) string {
+	// Name is already populated from ID
+	return result.Name
 }
 
-func convertOne(obj *storage.NodeComponentEdge, result *searchPkg.Result) *v1.SearchResult {
-	return &v1.SearchResult{
-		Category:       v1.SearchCategory_NODE_COMPONENT_EDGE,
-		Id:             obj.GetId(),
-		Name:           obj.GetId(),
-		FieldToMatches: searchPkg.GetProtoMatchesMap(result.Matches),
-		Score:          result.Score,
-	}
+func (c *NodeComponentEdgeSearchResultConverter) BuildLocation(result *searchPkg.Result) string {
+	// NodeComponentEdge does not have a location
+	return ""
+}
+
+func (c *NodeComponentEdgeSearchResultConverter) GetCategory() v1.SearchCategory {
+	return v1.SearchCategory_NODE_COMPONENT_EDGE
+}
+
+func (c *NodeComponentEdgeSearchResultConverter) GetScore(result *searchPkg.Result) float64 {
+	return result.Score
 }

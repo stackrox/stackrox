@@ -115,7 +115,7 @@ type Secret struct {
 	CreatedAt   *timestamppb.Timestamp `protobuf:"bytes,9,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty" search:"Created Time"` // @gotags: search:"Created Time"
 	// Metadata about the secrets.
 	// The secret need not be a file, but rather may be an arbitrary value.
-	Files         []*SecretDataFile   `protobuf:"bytes,10,rep,name=files,proto3" json:"files,omitempty"`
+	Files         []*SecretDataFile   `protobuf:"bytes,10,rep,name=files,proto3" json:"files,omitempty" sensorhash:"set"` // @gotags: sensorhash:"set"
 	Relationship  *SecretRelationship `protobuf:"bytes,11,opt,name=relationship,proto3" json:"relationship,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache

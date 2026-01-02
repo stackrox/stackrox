@@ -4,12 +4,7 @@ import { Flex } from '@patternfly/react-core';
 import type { SearchFilter } from 'types/search';
 import { ensureString } from 'utils/ensure';
 import { isOnSearchPayload } from '../types';
-import type {
-    CompoundSearchFilterAttribute,
-    CompoundSearchFilterConfig,
-    CompoundSearchFilterEntity,
-    OnSearchCallback,
-} from '../types';
+import type { CompoundSearchFilterConfig, OnSearchCallback } from '../types';
 import {
     getAttribute,
     getDefaultAttributeName,
@@ -23,15 +18,6 @@ import type { SelectedEntity } from './EntitySelector';
 import AttributeSelector from './AttributeSelector';
 import type { SelectedAttribute } from './AttributeSelector';
 import CompoundSearchFilterInputField from './CompoundSearchFilterInputField';
-
-// Change in key causes React to instantiate a new input element,
-// which has side effect to clear input state if same type as previous element.
-function getEntityAttributeKey(
-    entity: CompoundSearchFilterEntity,
-    attribute: CompoundSearchFilterAttribute
-) {
-    return `${entity.displayName} ${attribute.displayName}`;
-}
 
 export type CompoundSearchFilterProps = {
     config: CompoundSearchFilterConfig;
@@ -122,7 +108,9 @@ function CompoundSearchFilter({
             />
             {entity && attribute && (
                 <CompoundSearchFilterInputField
-                    key={getEntityAttributeKey(entity, attribute)}
+                    // Change in key causes React to instantiate a new input element,
+                    // which has side effect to clear input state if same type as previous element.
+                    key={`${entity.displayName} ${attribute.displayName}`}
                     entity={entity}
                     attribute={attribute}
                     searchFilter={searchFilter}
