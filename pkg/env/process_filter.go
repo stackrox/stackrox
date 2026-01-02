@@ -9,9 +9,10 @@ var (
 	).WithMinimum(1).WithMaximum(1000)
 
 	// ProcessFilterFanOutLevels sets the fan-out limits for each argument level.
-	// Format: comma-separated integers (e.g., "8,6,4,2")
+	// Format: comma-separated integers within brackets (e.g., "[8,6,4,2]")
 	// Each value represents the maximum number of unique children allowed at that level.
-	// An empty string results in an empty array, which means only unique processes are tracked without argument tracking.
+	// An empty value "" results in the default value being used.
+	// An empty array "[]" means only unique processes are tracked without argument tracking.
 	ProcessFilterFanOutLevels = RegisterIntegerArraySetting(
 		"ROX_PROCESS_FILTER_FAN_OUT_LEVELS",
 		[]int{8, 6, 4, 2},

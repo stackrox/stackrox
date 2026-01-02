@@ -11,6 +11,12 @@ import (
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/stringutils"
 	"github.com/stackrox/rox/pkg/sync"
+
+	"github.com/stackrox/rox/pkg/logging"
+)
+
+var (
+	log     = logging.LoggerForModule()
 )
 
 // BinaryHash represents a 64-bit hash for memory-efficient key storage.
@@ -39,10 +45,11 @@ type BinaryHash uint64
 //   - ROX_PROCESS_FILTER_MAX_EXACT_PATH_MATCHES
 //     Maximum number of times an exact path (same deployment+container+process+args) can appear before being filtered
 //   - ROX_PROCESS_FILTER_FAN_OUT_LEVELS
-//     Fan-out limits per argument level as comma-separated integers
+//     Fan-out limits per argument level as comma-separated integers within brackets
 //     Each value represents the maximum number of unique children at that level
-//     Example: "10,8,6,4" increases first-level fan-out to 10
-//     Empty string "" results in only tracking unique processes without arguments
+//     Example: "[10,8,6,4]" increases first-level fan-out to 10
+//     Empty value "" results in default value [8,6,4,2]
+//     Empty array "[]" results in only tracking unique processes without arguments
 //   - ROX_PROCESS_FILTER_MAX_PROCESS_PATHS
 //     Maximum number of unique process executable paths per container
 
@@ -119,6 +126,9 @@ func (f *filterImpl) siftNoLock(level *level, args []string, levelNum int) bool 
 
 // NewFilter returns an empty filter to start loading processes into
 func NewFilter(maxExactPathMatches, maxUniqueProcesses int, fanOut []int) Filter {
+	log.Infof("maxExactPathMatches= %+v", maxExactPathMatches)
+	log.Infof("maxUniqueProcesses= %+v", maxUniqueProcesses)
+	log.Infof("fanOut= %+v", fanOut)
 	return &filterImpl{
 		maxExactPathMatches: maxExactPathMatches,
 		maxUniqueProcesses:  maxUniqueProcesses,

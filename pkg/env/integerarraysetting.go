@@ -37,17 +37,30 @@ func (s *IntegerArraySetting) Setting() string {
 	for i, v := range arr {
 		strArr[i] = strconv.Itoa(v)
 	}
-	return strings.Join(strArr, ",")
+	return "[" + strings.Join(strArr, ",") + "]"
 }
 
 // IntegerArraySetting returns the integer slice represented by the environment variable
 func (s *IntegerArraySetting) IntegerArraySetting() []int {
 	val := os.Getenv(s.envVar)
 	if val == "" {
+		return s.defaultValue
+	}
+
+	// Strip brackets if present
+	val = strings.TrimSpace(val)
+	if strings.HasPrefix(val, "[") && strings.HasSuffix(val, "]") {
+		val = val[1 : len(val)-1]
+	}
+
+	// If the value is empty after stripping brackets (i.e., "[]"), return empty array
+	val = strings.TrimSpace(val)
+	if val == "" {
 		if s.minLength == 0 {
-			// Empty string returns empty array (allows for 0-length arrays)
+			// Empty array "[]" is allowed when minLength is 0
 			return []int{}
 		} else {
+			// Empty array not allowed, return default
 			return s.defaultValue
 		}
 	}
