@@ -1,19 +1,21 @@
+import pf6 from '../../selectors/pf6';
+
 export const selectors = {
     actions: {
-        btn: 'td .pf-v6-c-menu-toggle[aria-label="Kebab toggle"]', // via ActionsColumn element
-        excludeDeploymentBtn: 'button:contains("Exclude deployment")',
-        resolveBtn: 'button:contains("Mark as resolved")',
-        resolveAndAddToBaselineBtn: 'button:contains("Resolve and add to process baseline")',
+        btn: `td ${pf6.kebabToggle}[aria-label="Kebab toggle"]`, // via ActionsColumn element
+        excludeDeploymentBtn: `${pf6.menuListButton}:contains("Exclude deployment from policy")`,
+        resolveBtn: `${pf6.menuListButton}:contains("Mark as resolved")`,
+        resolveAndAddToBaselineBtn: `${pf6.menuListButton}:contains("Resolve and add to process baseline")`,
     },
     details: {
-        title: 'h1.pf-v6-c-title',
-        subtitle: 'section:has(> h1) > p',
-        tabs: 'li.pf-v6-c-tabs__item',
-        violationTab: 'li.pf-v6-c-tabs__item:contains("Violation")',
-        enforcementTab: 'li.pf-v6-c-tabs__item:contains("Enforcement")',
-        deploymentTab: 'li.pf-v6-c-tabs__item:contains("Deployment")',
-        policyTab: 'li.pf-v6-c-tabs__item:contains("Policy")',
-        networkPoliciesTab: 'li.pf-v6-c-tabs__item:contains("Network policies")',
+        title: pf6.pageHeaderTitle,
+        subtitle: pf6.pageHeaderSubtitle,
+        tabs: pf6.tab,
+        violationTab: `${pf6.tab}:contains("Violation")`,
+        enforcementTab: `${pf6.tab}:contains("Enforcement")`,
+        deploymentTab: `${pf6.tab}:contains("Deployment")`,
+        policyTab: `${pf6.tab}:contains("Policy")`,
+        networkPoliciesTab: `${pf6.tab}:contains("Network policies")`,
     },
     enforcement: {
         detailMessage: '[aria-label="Enforcement detail message"]',

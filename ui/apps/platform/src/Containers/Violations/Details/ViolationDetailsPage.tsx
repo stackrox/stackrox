@@ -7,7 +7,6 @@ import {
     Card,
     CardBody,
     CardTitle,
-    Divider,
     Label,
     LabelGroup,
     PageSection,
@@ -15,8 +14,8 @@ import {
     Tab,
     TabTitleText,
     Tabs,
-    Title,
 } from '@patternfly/react-core';
+import PageHeader from '@patternfly/react-component-groups/dist/dynamic/PageHeader';
 
 import PolicyDetailContent from 'Containers/Policies/Detail/PolicyDetailContent';
 import { getClientWizardPolicy } from 'Containers/Policies/policies.utils';
@@ -108,23 +107,29 @@ function ViolationDetailsPage(): ReactElement {
 
     return (
         <>
-            <ViolationsBreadcrumbs current={title} filteredWorkflowView={filteredWorkflowView} />
-            <PageSection hasBodyWrapper={false}>
-                <Title headingLevel="h1">{title}</Title>
-                <Title
-                    headingLevel="h2"
-                    className="pf-v6-u-mb-sm"
-                >{`in "${entityName}" ${displayedResourceType}`}</Title>
-                <LabelGroup numLabels={2} aria-label="Violation state and resolution">
-                    <Label>State: {VIOLATION_STATE_LABELS[alert.state]}</Label>
-                    {alert.state === 'RESOLVED' && (
-                        <Label>
-                            Resolved on:{' '}
-                            {alert.resolvedAt ? getDateTime(alert.resolvedAt) : 'Not available'}
-                        </Label>
-                    )}
-                </LabelGroup>
-            </PageSection>
+            <PageHeader
+                title={title}
+                subtitle={`in "${entityName}" ${displayedResourceType}`}
+                breadcrumbs={
+                    <ViolationsBreadcrumbs
+                        current={title}
+                        filteredWorkflowView={filteredWorkflowView}
+                    />
+                }
+            />
+            <LabelGroup
+                className="pf-v6-u-px-lg pf-v6-u-pb-md"
+                numLabels={2}
+                aria-label="Violation state and resolution"
+            >
+                <Label>State: {VIOLATION_STATE_LABELS[alert.state]}</Label>
+                {alert.state === 'RESOLVED' && (
+                    <Label>
+                        Resolved on:{' '}
+                        {alert.resolvedAt ? getDateTime(alert.resolvedAt) : 'Not available'}
+                    </Label>
+                )}
+            </LabelGroup>
             <PageSection
                 hasBodyWrapper={false}
                 variant="default"
@@ -182,10 +187,6 @@ function ViolationDetailsPage(): ReactElement {
                     {isRouteEnabledForPolicy && (
                         <Tab eventKey={4} title={<TabTitleText>Policy</TabTitleText>}>
                             <PageSection hasBodyWrapper={false} variant="default">
-                                <Title headingLevel="h2" className="pf-v6-u-mb-md">
-                                    Policy overview
-                                </Title>
-                                <Divider component="div" className="pf-v6-u-pb-md" />
                                 <PolicyDetailContent policy={getClientWizardPolicy(policy)} />
                             </PageSection>
                         </Tab>
