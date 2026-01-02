@@ -315,13 +315,15 @@ function ViolationsTablePage(): ReactElement {
                     {getDescriptionForSelectedViolationState(selectedViolationStateTab)}
                 </Content>
             </PageSection>
-            <PageSection hasBodyWrapper={false} variant="default" id={tabContentId}>
-                {isLoadingAlerts && (
+            {isLoadingAlerts && (
+                <PageSection variant="default" id={tabContentId} hasBodyWrapper={false}>
                     <Bullseye>
                         <Spinner size="xl" />
                     </Bullseye>
-                )}
-                {!isLoadingAlerts && currentPageAlertsErrorMessage && (
+                </PageSection>
+            )}
+            {!isLoadingAlerts && currentPageAlertsErrorMessage && (
+                <PageSection variant="default" id={tabContentId} hasBodyWrapper={false}>
                     <Bullseye>
                         <Alert
                             variant="danger"
@@ -329,30 +331,28 @@ function ViolationsTablePage(): ReactElement {
                             component="p"
                         />
                     </Bullseye>
-                )}
-                {!isLoadingAlerts && !currentPageAlertsErrorMessage && (
-                    <PageSection hasBodyWrapper={false}>
-                        <ViolationsTablePanel
-                            violations={currentPageAlerts}
-                            violationsCount={alertCount}
-                            currentPage={page}
-                            setCurrentPage={setPage}
-                            resolvableAlerts={resolvableAlerts}
-                            excludableAlerts={excludableAlerts}
-                            perPage={perPage}
-                            setPerPage={setPerPage}
-                            getSortParams={getSortParams}
-                            columns={columns}
-                            searchFilter={searchFilter}
-                            onFilterChange={setSearchFilter}
-                            onSearch={onSearch}
-                            additionalContextFilter={additionalContextFilter}
-                            hasActiveViolations={selectedViolationStateTab === 'ACTIVE'}
-                            isTableDataUpdating={isTableDataUpdating}
-                        />
-                    </PageSection>
-                )}
-            </PageSection>
+                </PageSection>
+            )}
+            {!isLoadingAlerts && !currentPageAlertsErrorMessage && (
+                <ViolationsTablePanel
+                    violations={currentPageAlerts}
+                    violationsCount={alertCount}
+                    currentPage={page}
+                    setCurrentPage={setPage}
+                    resolvableAlerts={resolvableAlerts}
+                    excludableAlerts={excludableAlerts}
+                    perPage={perPage}
+                    setPerPage={setPerPage}
+                    getSortParams={getSortParams}
+                    columns={columns}
+                    searchFilter={searchFilter}
+                    onFilterChange={setSearchFilter}
+                    onSearch={onSearch}
+                    additionalContextFilter={additionalContextFilter}
+                    hasActiveViolations={selectedViolationStateTab === 'ACTIVE'}
+                    isTableDataUpdating={isTableDataUpdating}
+                />
+            )}
         </>
     );
 }
