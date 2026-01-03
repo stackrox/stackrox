@@ -25,6 +25,10 @@ func UpdateFileAccessAlertViolationMessage(v *storage.Alert_FileAccessViolation)
 	pathToOperation := make(map[string][]string, 0)
 	for _, fa := range v.GetAccesses() {
 		path := fa.GetFile().GetActualPath()
+		// Skip empty paths - they provide no useful information
+		if path == "" {
+			continue
+		}
 		pathToOperation[path] = append(pathToOperation[path], fa.GetOperation().String())
 	}
 

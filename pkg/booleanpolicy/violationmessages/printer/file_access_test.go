@@ -185,7 +185,7 @@ func TestUpdateFileAccessMessage(t *testing.T) {
 			expected: "'/tmp/chmod_file' accessed (PERMISSION_CHANGE); '/tmp/chown_file' accessed (OWNERSHIP_CHANGE); '/tmp/new_file' accessed (CREATE); '/tmp/old_file' accessed (UNLINK); '/tmp/renamed_file' accessed (RENAME)",
 		},
 		{
-			desc: "nil file path handling",
+			desc: "nil file path handling - should not display empty path",
 			activity: []*storage.FileAccess{
 				{
 					File:      nil,
@@ -195,7 +195,7 @@ func TestUpdateFileAccessMessage(t *testing.T) {
 					},
 				},
 			},
-			expected: "'' accessed (OPEN)",
+			expected: "",
 		},
 		{
 			desc: "nil process handling",
@@ -222,7 +222,7 @@ func TestUpdateFileAccessMessage(t *testing.T) {
 			expected: "'/test/file' accessed (OPEN)",
 		},
 		{
-			desc: "empty file path",
+			desc: "empty file path - should not display empty path",
 			activity: []*storage.FileAccess{
 				{
 					File:      &storage.FileAccess_File{ActualPath: ""},
@@ -232,7 +232,7 @@ func TestUpdateFileAccessMessage(t *testing.T) {
 					},
 				},
 			},
-			expected: "'' accessed (OPEN)",
+			expected: "",
 		},
 		{
 			desc: "empty process name",
