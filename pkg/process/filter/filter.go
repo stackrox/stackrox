@@ -11,12 +11,6 @@ import (
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/stringutils"
 	"github.com/stackrox/rox/pkg/sync"
-
-	"github.com/stackrox/rox/pkg/logging"
-)
-
-var (
-	log     = logging.LoggerForModule()
 )
 
 // BinaryHash represents a 64-bit hash for memory-efficient key storage.
@@ -126,9 +120,6 @@ func (f *filterImpl) siftNoLock(level *level, args []string, levelNum int) bool 
 
 // NewFilter returns an empty filter to start loading processes into
 func NewFilter(maxExactPathMatches, maxUniqueProcesses int, fanOut []int) Filter {
-	log.Infof("maxExactPathMatches= %+v", maxExactPathMatches)
-	log.Infof("maxUniqueProcesses= %+v", maxUniqueProcesses)
-	log.Infof("fanOut= %+v", fanOut)
 	return &filterImpl{
 		maxExactPathMatches: maxExactPathMatches,
 		maxUniqueProcesses:  maxUniqueProcesses,
