@@ -17,7 +17,10 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  define-ci-versions:
+    uses: ./.github/workflows/define-ci-versions.yaml
   go:
+    needs: define-ci-versions
     strategy:
       fail-fast: false
       matrix:
@@ -26,7 +29,7 @@ jobs:
     outputs:
       new-jiras: ${{ steps.junit2jira.outputs.new-jiras }}
     container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.4.9
+      image: ${{ needs.define-ci-versions.outputs.apollo-ci-test-image }}
       volumes:
         - /usr:/mnt/usr
         - /opt:/mnt/opt
@@ -88,6 +91,7 @@ jobs:
         directory: 'junit-reports'
 
   go-postgres:
+    needs: define-ci-versions
     strategy:
       fail-fast: false
       matrix:
@@ -97,7 +101,7 @@ jobs:
     outputs:
       new-jiras: ${{ steps.junit2jira.outputs.new-jiras }}
     container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.4.9
+      image: ${{ needs.define-ci-versions.outputs.apollo-ci-test-image }}
       volumes:
         - /usr:/mnt/usr
         - /opt:/mnt/opt
@@ -155,9 +159,10 @@ jobs:
         directory: 'junit-reports'
 
   go-bench:
+    needs: define-ci-versions
     runs-on: ubuntu-latest
     container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.4.9
+      image: ${{ needs.define-ci-versions.outputs.apollo-ci-test-image }}
       volumes:
         - /usr:/mnt/usr
         - /opt:/mnt/opt
@@ -203,11 +208,12 @@ jobs:
     # https://github.com/jstemmer/go-junit-report/issues/174
 
   ui:
+    needs: define-ci-versions
     runs-on: ubuntu-latest
     outputs:
       new-jiras: ${{ steps.junit2jira.outputs.new-jiras }}
     container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.4.9
+      image: ${{ needs.define-ci-versions.outputs.apollo-ci-test-image }}
     steps:
     - name: Checkout
       uses: actions/checkout@v6
@@ -239,11 +245,12 @@ jobs:
         directory: 'ui/apps/platform/test-results/reports'
 
   ui-component:
+    needs: define-ci-versions
     runs-on: ubuntu-latest
     outputs:
       new-jiras: ${{ steps.junit2jira.outputs.new-jiras }}
     container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-ui-test-0.4.9
+      image: ${{ needs.define-ci-versions.outputs.apollo-ci-ui-image }}
     steps:
     - name: Checkout
       uses: actions/checkout@v6
@@ -282,11 +289,12 @@ jobs:
         directory: 'ui/apps/platform/cypress/test-results/reports'
 
   local-roxctl-tests:
+    needs: define-ci-versions
     runs-on: ubuntu-latest
     outputs:
       new-jiras: ${{ steps.junit2jira.outputs.new-jiras }}
     container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.4.9
+      image: ${{ needs.define-ci-versions.outputs.apollo-ci-test-image }}
       volumes:
         - /usr:/mnt/usr
         - /opt:/mnt/opt
@@ -326,11 +334,12 @@ jobs:
         directory: 'roxctl-test-output'
 
   shell-unit-tests:
+    needs: define-ci-versions
     runs-on: ubuntu-latest
     outputs:
       new-jiras: ${{ steps.junit2jira.outputs.new-jiras }}
     container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.4.9
+      image: ${{ needs.define-ci-versions.outputs.apollo-ci-test-image }}
     steps:
     - name: Checkout
       uses: actions/checkout@v6
@@ -362,9 +371,10 @@ jobs:
         directory: 'shell-test-output'
 
   openshift-ci-unit-tests:
+    needs: define-ci-versions
     runs-on: ubuntu-latest
     container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.4.9
+      image: ${{ needs.define-ci-versions.outputs.apollo-ci-test-image }}
     steps:
       - name: Checkout
         uses: actions/checkout@v6
@@ -380,6 +390,7 @@ jobs:
         run: make -C .openshift-ci test
 
   sensor-integration-tests:
+    needs: define-ci-versions
     env:
       KUBECONFIG: "/tmp/kubeconfig"
     runs-on: ubuntu-latest

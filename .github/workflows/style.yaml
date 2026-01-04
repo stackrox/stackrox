@@ -19,12 +19,16 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  define-ci-versions:
+    uses: ./.github/workflows/define-ci-versions.yaml
+
   check-generated-files:
     env:
       ARTIFACT_DIR: junit-reports/
     runs-on: ubuntu-latest
+    needs: define-ci-versions
     container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.4.9
+      image: ${{ needs.define-ci-versions.outputs.apollo-ci-test-image }}
     steps:
     - name: Checkout
       uses: actions/checkout@v6
@@ -49,8 +53,9 @@ jobs:
     env:
       ARTIFACT_DIR: junit-reports/
     runs-on: ubuntu-latest
+    needs: define-ci-versions
     container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.4.9
+      image: ${{ needs.define-ci-versions.outputs.apollo-ci-test-image }}
     steps:
     - name: Checkout
       uses: actions/checkout@v6
@@ -90,8 +95,9 @@ jobs:
 
   style-check:
     runs-on: ubuntu-latest
+    needs: define-ci-versions
     container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.4.9
+      image: ${{ needs.define-ci-versions.outputs.apollo-ci-test-image }}
       volumes:
         - /usr:/mnt/usr
         - /opt:/mnt/opt
@@ -235,8 +241,9 @@ jobs:
 
   openshift-ci-lint:
     runs-on: ubuntu-latest
+    needs: define-ci-versions
     container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.4.9
+      image: ${{ needs.define-ci-versions.outputs.apollo-ci-test-image }}
     steps:
       - name: Checkout
         uses: actions/checkout@v6
@@ -267,6 +274,7 @@ jobs:
     name: Post failure message to Slack
     runs-on: ubuntu-latest
     needs:
+      - define-ci-versions
       - check-generated-files
       - misc-checks
       - style-check

@@ -337,7 +337,7 @@ smuggled-status-sh:
 .PHONY: build/Dockerfile.gen
 build/Dockerfile.gen: Dockerfile
 	mkdir -p build/
-	sed -e 's,$${ROX_IMAGE_FLAVOR},$(ROX_IMAGE_FLAVOR),g; s,$${BUILD_IMAGE_VERSION},$(shell sed 's/\s*\#.*//' ../BUILD_IMAGE_VERSION),' < $< > $@
+	sed -e 's,$${ROX_IMAGE_FLAVOR},$(ROX_IMAGE_FLAVOR),g; s,$${CI_IMAGE_VERSION},$(shell sed 's/\s*\#.*//' ../CI_IMAGE_VERSION),' < $< > $@
 
 .PHONY: docker-build
 docker-build: build/Dockerfile.gen smuggled-status-sh ## Build docker image with the operator.
