@@ -9,7 +9,8 @@
 #
 #   (you need to point $BATS_CORE_ROOT to your directory containing checkouts of:
 #     https://github.com/bats-core/bats-core
-#     https://github.com/bats-core/bats-assert)
+#     https://github.com/bats-core/bats-assert
+#     https://github.com/bats-core/bats-support)
 #
 
 set -euo pipefail
