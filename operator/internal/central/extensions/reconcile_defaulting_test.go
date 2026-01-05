@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/go-logr/logr"
+	"github.com/pkg/errors"
 	platform "github.com/stackrox/rox/operator/api/v1alpha1"
 	"github.com/stackrox/rox/operator/internal/common"
 	"github.com/stackrox/rox/operator/internal/utils/testutils"
@@ -140,7 +141,10 @@ func TestReconcileScannerV4FeatureDefaultsExtension(t *testing.T) {
 			unstructuredCentral := centralToUnstructured(t, central)
 
 			err := reconcileFeatureDefaults(ctx, client, unstructuredCentral, logr.Discard())
-			assert.Nil(t, err, "reconcileScannerV4StatusDefaults returned error")
+			if errors.Is(err, common.ErrorAnnotationsUpdated) {
+				err = reconcileFeatureDefaults(ctx, client, unstructuredCentral, logr.Discard())
+			}
+			assert.NoError(t, err, "reconcileFeatureDefaults returned error")
 
 			centralFetched := platform.Central{}
 			err = client.Get(ctx, ctrlClient.ObjectKey{Namespace: testutils.TestNamespace, Name: centralName}, &centralFetched)
