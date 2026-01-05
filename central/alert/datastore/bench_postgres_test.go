@@ -12,6 +12,7 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/fixtures"
+	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/sac"
@@ -43,14 +44,36 @@ func BenchmarkAlertDatabaseOps(b *testing.B) {
 	datastore := GetTestPostgresDataStore(b, testDB.DB)
 
 	var ids []string
-	var deploymentIDs []string
+	// Deployment IDs to distribute alerts across (60/25/15 ratio)
+	deploymentIDs := []string{
+		fixtureconsts.Deployment1,
+		fixtureconsts.Deployment2,
+		fixtureconsts.Deployment3,
+	}
 	sevToCount := make(map[storage.Severity]int)
 
 	// Keep the count low in CI. You can run w/ higher numbers locally.
-	for i := 0; i < 1000; i++ {
+	totalAlerts := 1000
+	for i := 0; i < totalAlerts; i++ {
 		id := uuid.NewV4().String()
 		ids = append(ids, id)
 		a := fixtures.GetAlertWithID(id)
+
+		// Distribute alerts across 3 deployments with 60/25/15 ratio using weighted random selection
+		// This shuffles them to reflect real-world insertion patterns
+		randVal := rand.Intn(100)
+		var deploymentID string
+		if randVal < 60 {
+			// 60% chance -> Deployment1
+			deploymentID = fixtureconsts.Deployment1
+		} else if randVal < 85 {
+			// 25% chance (60-85) -> Deployment2
+			deploymentID = fixtureconsts.Deployment2
+		} else {
+			// 15% chance (85-100) -> Deployment3
+			deploymentID = fixtureconsts.Deployment3
+		}
+		a.GetDeployment().Id = deploymentID
 
 		// Distribute alerts across real default policies
 		policyInfo := defaultPolicyIDs[rand.Intn(len(defaultPolicyIDs))]
@@ -71,11 +94,6 @@ func BenchmarkAlertDatabaseOps(b *testing.B) {
 			storage.ViolationState_ATTEMPTED,
 		}
 		a.State = states[rand.Intn(len(states))]
-
-		// Track some deployment IDs for query testing
-		if len(deploymentIDs) < 10 {
-			deploymentIDs = append(deploymentIDs, a.GetDeployment().GetId())
-		}
 
 		sevToCount[a.GetPolicy().GetSeverity()]++
 		require.NoError(b, datastore.UpsertAlert(ctx, a))
