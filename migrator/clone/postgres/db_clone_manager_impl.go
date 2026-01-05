@@ -24,7 +24,6 @@ type dbCloneManagerImpl struct {
 	forceRollbackVersion string
 	adminConfig          *postgres.Config
 	sourceMap            map[string]string
-	supportPrevious      bool
 }
 
 // New - returns a new ready-to-use store.
@@ -65,13 +64,6 @@ func (d *dbCloneManagerImpl) ensureVersionCompatible(ver *migrations.MigrationVe
 // Scan - checks the persistent data of central and gather the clone information
 // from disk.
 func (d *dbCloneManagerImpl) Scan() error {
-	// Beginning in 4.2 we are transitioning away from having multiple copies of the database.  Rollbacks to
-	// 4.1 and later will all occur within the working database.  As we transition we need to check the
-	// version to determine if it is valid to have other databases.  For instance if we are upgrading from 4.0 to 4.2
-	// then we need to create a `central_previous`.  However, if we are upgrading from 4.1 or later to 4.2 or later,
-	// then we do not.  Additionally, if we are upgrading from 4.1 and a `central_previous` still exists, we need to
-	// remove it for consistency.
-
 	// Get the version of the working database
 	ctx := sac.WithAllAccess(context.Background())
 	if pgconfig.IsExternalDatabase() {
@@ -93,11 +85,6 @@ func (d *dbCloneManagerImpl) Scan() error {
 
 	if err := d.ensureVersionCompatible(ver); err != nil {
 		return err
-	}
-
-	// Check to see if we are coming from pre-4.1 version where we may need to create and maintain `central_previous`
-	if version.CompareVersions(ver.MainVersion, migrations.LastPostgresPreviousVersion) < 0 {
-		d.supportPrevious = true
 	}
 
 	// We use clones to collect all db clones (directory starting with db- or .restore-) matching upgrade or restore pattern.
