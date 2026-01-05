@@ -53,7 +53,6 @@ func addIndicators(b *testing.B, ctx context.Context, ds DataStore, plops []*sto
 			b.Fatalf("Failed to add indicator batch: %v", err)
 		}
 	}
-	b.Logf("Inserted %d unique Process Indicators.", len(initialIndicators))
 }
 
 // setupBenchmark sets up the necessary datastore and prerequisites for the benchmark.
@@ -93,14 +92,16 @@ func benchmarkAddPLOPs(b *testing.B, nPort int, nProcess int, nPod int) func(*te
 	return func(b *testing.B) {
 		// Generate the data once before the loop
 		plopObjects := makeRandomPlops(nPort, nProcess, nPod, fixtureconsts.Deployment1)
-		b.Logf("Benchmarking processing of %d new PLOP objects...", len(plopObjects))
+
+		// Setup database once before the benchmark loop
+		ctx, ds := setupBenchmark(b)
 
 		b.ReportAllocs()
 
 		b.ResetTimer()
 
 		for i := 0; i < b.N; i++ {
-			ctx, ds := setupBenchmark(b)
+			b.StopTimer()
 			// Insert all indicators so lookups hit existing data
 			addIndicators(b, ctx, ds, plopObjects)
 
@@ -108,7 +109,53 @@ func benchmarkAddPLOPs(b *testing.B, nPort int, nProcess int, nPod int) func(*te
 			if err := ds.AddProcessListeningOnPort(ctx, fixtureconsts.Cluster1, plopObjects...); err != nil {
 				require.NoError(b, err)
 			}
+		}
+	}
+}
+
+// BenchmarkRemovePlopsByPod measures the performance of removing PLOPs by pod UID
+func BenchmarkRemovePlopsByPod(b *testing.B) {
+	b.Run("2K PLOPs/30 Pods", benchmarkRemovePlopsByPod(b, 10, 10, 30))
+	b.Run("16K PLOPs/100 Pods", benchmarkRemovePlopsByPod(b, 20, 20, 100))
+}
+
+func benchmarkRemovePlopsByPod(b *testing.B, nPort int, nProcess int, nPod int) func(*testing.B) {
+	return func(b *testing.B) {
+		// Generate the data once before the loop
+		plopObjects := makeRandomPlops(nPort, nProcess, nPod, fixtureconsts.Deployment1)
+
+		// Extract unique pod UIDs
+		podUIDs := make([]string, 0, nPod)
+		seenPods := make(map[string]bool)
+		for _, plop := range plopObjects {
+			uid := plop.GetPodUid()
+			if !seenPods[uid] {
+				seenPods[uid] = true
+				podUIDs = append(podUIDs, uid)
+			}
+		}
+
+		// Setup database once before the benchmark loop
+		ctx, ds := setupBenchmark(b)
+
+		b.ReportAllocs()
+
+		b.ResetTimer()
+
+		for i := 0; i < b.N; i++ {
 			b.StopTimer()
+			// Insert all indicators and PLOPs for this iteration
+			addIndicators(b, ctx, ds, plopObjects)
+			if err := ds.AddProcessListeningOnPort(ctx, fixtureconsts.Cluster1, plopObjects...); err != nil {
+				require.NoError(b, err)
+			}
+
+			// Benchmark removing PLOPs for one pod UID
+			podUIDToRemove := podUIDs[0]
+			b.StartTimer()
+			if err := ds.RemovePlopsByPod(ctx, podUIDToRemove); err != nil {
+				require.NoError(b, err)
+			}
 		}
 	}
 }
