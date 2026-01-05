@@ -3,13 +3,13 @@ package extensions
 import (
 	"context"
 	"fmt"
-	"reflect"
 
 	"github.com/go-logr/logr"
 	"github.com/operator-framework/helm-operator-plugins/pkg/extensions"
 	"github.com/pkg/errors"
 	platform "github.com/stackrox/rox/operator/api/v1alpha1"
 	"github.com/stackrox/rox/operator/internal/central/defaults"
+	"github.com/stackrox/rox/operator/internal/common"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrlClient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -64,10 +64,12 @@ func reconcileFeatureDefaults(ctx context.Context, client ctrlClient.Client, u *
 	return nil
 }
 
-// This may update central.Defaults and central's embedded annotations in the unstructured u -- NOT in central.
+// Sets Defaults in the typed central object by executing the defaulting flows and, if required, persists the resulting
+// defaulting annotations on the cluster. If no updating of the cluster object is necessary, the function returns nil.
+// If an update is necessary, it patches the object on the cluster and returns an error to indicate that reconciliation should be retried.
+// In this case the provided unstructured u will also be updated as part of the patching.
 func setDefaultsAndPersist(ctx context.Context, logger logr.Logger, u *unstructured.Unstructured, central *platform.Central, client ctrlClient.Client) error {
 	uBase := u.DeepCopy()
-	uBaseGeneration := uBase.GetGeneration()
 	patch := ctrlClient.MergeFrom(uBase)
 
 	for _, flow := range defaultingFlows {
@@ -76,7 +78,7 @@ func setDefaultsAndPersist(ctx context.Context, logger logr.Logger, u *unstructu
 		}
 	}
 
-	if reflect.DeepEqual(uBase.Object, u.Object) {
+	if common.AnnotationsEqual(uBase, u) {
 		return nil
 	}
 
@@ -84,9 +86,9 @@ func setDefaultsAndPersist(ctx context.Context, logger logr.Logger, u *unstructu
 	// that this information is already persisted in the Kubernetes resource before we
 	// can realistically end up in a situation where reconcilliation might need to be retried.
 	//
-	// This updates central both on the cluster and in memory, which is crucial since this object is used for the final
-	// updating within helm-operator and we have concurrently running controllers (the status controller),
-	// whose changes we must preserve.
+	// To keep the flow conceptually simple, we patch the annotations here and then return with an error, which
+	// will cause reconciliation to be requeued.
+	// This way, we avoid having to deal with generation changes and keeping th in-memory object in sync.
 	err := client.Patch(ctx, u, patch)
 	if err != nil {
 		return errors.Wrap(err, "patching Central annotations")
@@ -96,18 +98,7 @@ func setDefaultsAndPersist(ctx context.Context, logger logr.Logger, u *unstructu
 		"newResourceVersion", u.GetResourceVersion(),
 	)
 
-	// If we would not react to a generation mismatch here, this effectively means that the CR spec
-	// currently under reconciliation has changed during the reconciliation flow, specifically during
-	// execution of pre-extensions.
-	// This might not pose a problem given that by our convention the defaulting extension is
-	// expected to run first, but it is cleaner to just abort reconciliation and start over with the new spec.
-	uGeneration := u.GetGeneration()
-	if uGeneration != uBaseGeneration {
-		return fmt.Errorf("Central resource spec was modified (generation: %d -> %d), aborting reconciliation to start over with new spec",
-			uBaseGeneration, uGeneration)
-	}
-
-	return nil
+	return common.ErrorAnnotationsUpdated
 }
 
 // Defaulting flows have two side-effects:
