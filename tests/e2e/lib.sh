@@ -528,7 +528,7 @@ install_the_compliance_operator() {
         oc create -f "${ROOT}/tests/e2e/yaml/compliance-operator/catalog-source.yaml"
         oc create -f "${ROOT}/tests/e2e/yaml/compliance-operator/operator-group.yaml"
         oc create -f "${ROOT}/tests/e2e/yaml/compliance-operator/subscription.yaml"
-        wait_for_object_to_appear openshift-compliance deploy/compliance-operator
+        wait_for_object_to_appear openshift-compliance deploy/compliance-operator 900
     else
         info "Reusing existing compliance operator deployment from $csv subscription"
     fi
@@ -1580,8 +1580,8 @@ wait_for_log_line() {
 }
 
 wait_for_profile_bundles_to_be_ready() {
-    wait_for_object_to_appear openshift-compliance profilebundle/ocp4
-    wait_for_object_to_appear openshift-compliance profilebundle/rhcos4
+    wait_for_object_to_appear openshift-compliance profilebundle/ocp4 900
+    wait_for_object_to_appear openshift-compliance profilebundle/rhcos4 900
     for pb in $(oc get pb -n openshift-compliance -o jsonpath="{.items[*].metadata.name}"); do
         local delay="300"
         local waitInterval=10

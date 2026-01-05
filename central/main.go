@@ -28,6 +28,7 @@ import (
 	authProviderRegistry "github.com/stackrox/rox/central/authprovider/registry"
 	authProviderSvc "github.com/stackrox/rox/central/authprovider/service"
 	authProviderTelemetry "github.com/stackrox/rox/central/authprovider/telemetry"
+	baseImageService "github.com/stackrox/rox/central/baseimage/service"
 	baseImageWatcher "github.com/stackrox/rox/central/baseimage/watcher"
 	centralHealthService "github.com/stackrox/rox/central/centralhealth/service"
 	"github.com/stackrox/rox/central/certgen"
@@ -490,6 +491,10 @@ func servicesToRegister() []pkgGRPC.APIService {
 		servicesToRegister = append(servicesToRegister, virtualmachineService.Singleton())
 	}
 
+	if features.BaseImageDetection.Enabled() {
+		servicesToRegister = append(servicesToRegister, baseImageService.Singleton())
+	}
+
 	autoTriggerUpgrades := sensorUpgradeService.Singleton().AutoUpgradeSetting()
 	if err := connection.ManagerSingleton().Start(
 		clusterDataStore.Singleton(),
@@ -685,6 +690,7 @@ func addCentralIdentityGatherers(c *phonehomeClient.CentralClient) {
 	add(roleDataStore.Gather)
 	add(signatureIntegrationDS.Gather)
 	add(complianceScanDS.GatherProfiles(complianceScanDS.Singleton()))
+	add(policyDataStore.Gather)
 }
 
 func registerDelayedIntegrations(integrationsInput []iiStore.DelayedIntegration) {
