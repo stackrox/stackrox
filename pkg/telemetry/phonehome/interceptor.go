@@ -4,6 +4,7 @@ import (
 	"context"
 	"net/http"
 
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	erroxGRPC "github.com/stackrox/rox/pkg/errox/grpc"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	grpcError "github.com/stackrox/rox/pkg/grpc/errors"
@@ -47,8 +48,8 @@ func (c *Client) track(rp *RequestParams) {
 
 func getGRPCRequestDetails(ctx context.Context, err error, grpcFullMethod string, req any) *RequestParams {
 	id, iderr := authn.IdentityFromContext(ctx)
-	if iderr != nil {
-		log.Debug("Cannot identify user from context: ", iderr)
+	if iderr != nil && grpcFullMethod != v1.PingService_Ping_FullMethodName { // Ignore readiness probes.
+		log.Debugf("Cannot identify user from context for method call %q: %v", grpcFullMethod, iderr)
 	}
 
 	ri := requestinfo.FromContext(ctx)

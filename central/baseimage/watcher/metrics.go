@@ -12,8 +12,9 @@ func init() {
 	prometheus.MustRegister(
 		pollDurationHistogram,
 		repositoryCountGauge,
-		tagListingDuration,
 		tagsListedGauge,
+		metadataFetchErrors,
+		scanDuration,
 	)
 }
 
@@ -36,18 +37,6 @@ var (
 		Help:      "Number of base image repositories being watched",
 	})
 
-	tagListingDuration = prometheus.NewHistogramVec(prometheus.HistogramOpts{
-		Namespace: metrics.PrometheusNamespace,
-		Subsystem: "base_image_watcher",
-		Name:      "tag_listing_duration_seconds",
-		Help:      "Time taken to list and filter tags from registry",
-		Buckets:   prometheus.ExponentialBuckets(0.01, 2, 14), // 10ms to ~163s
-	}, []string{
-		"registry_domain",
-		"repository_path",
-		"error",
-	})
-
 	tagsListedGauge = prometheus.NewGaugeVec(prometheus.GaugeOpts{
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: "base_image_watcher",
@@ -56,6 +45,31 @@ var (
 	}, []string{
 		"registry_domain",
 		"repository_path",
+		"source",
+	})
+
+	metadataFetchErrors = prometheus.NewGaugeVec(prometheus.GaugeOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: "base_image_watcher",
+		Name:      "metadata_fetch_errors",
+		Help:      "Number of metadata fetch errors per repository",
+	}, []string{
+		"registry_domain",
+		"repository_path",
+		"source",
+	})
+
+	scanDuration = prometheus.NewHistogramVec(prometheus.HistogramOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: "base_image_watcher",
+		Name:      "scan_duration_seconds",
+		Help:      "Time taken to scan a repository (list tags + fetch metadata)",
+		Buckets:   prometheus.ExponentialBuckets(0.1, 2, 12), // 0.1s to ~409s
+	}, []string{
+		"registry_domain",
+		"repository_path",
+		"source",
+		"error",
 	})
 )
 
@@ -67,17 +81,24 @@ func recordRepositoryCount(count int) {
 	repositoryCountGauge.Set(float64(count))
 }
 
-func recordTagListDuration(registryDomain, repositoryPath string, startTime time.Time, tagCount int, err error) {
+func recordScanDuration(registryDomain, repositoryPath, source string, startTime time.Time, metadataCount int, errorCount int, err error) {
 	duration := time.Since(startTime).Seconds()
-	tagListingDuration.With(prometheus.Labels{
+	scanDuration.With(prometheus.Labels{
 		"registry_domain": registryDomain,
 		"repository_path": repositoryPath,
+		"source":          source,
 		"error":           fmt.Sprintf("%t", err != nil),
 	}).Observe(duration)
 	if err == nil {
 		tagsListedGauge.With(prometheus.Labels{
 			"registry_domain": registryDomain,
 			"repository_path": repositoryPath,
-		}).Set(float64(tagCount))
+			"source":          source,
+		}).Set(float64(metadataCount))
+		metadataFetchErrors.With(prometheus.Labels{
+			"registry_domain": registryDomain,
+			"repository_path": repositoryPath,
+			"source":          source,
+		}).Set(float64(errorCount))
 	}
 }

@@ -159,6 +159,8 @@ func getDynamicClientGenerator(t *testing.T) dynamic.Interface {
 	config, err := clientcmd.BuildConfigFromFlags("", kubeconfig)
 	require.NoError(t, err)
 
+	configureRetryableTransport(t, config)
+
 	dynamicClientGenerator, err := dynamic.NewForConfig(config)
 	require.NoError(t, err)
 	return dynamicClientGenerator
@@ -171,10 +173,10 @@ func TestDeleteAndAddRule(t *testing.T) {
 	// Remove a rule from the profile and verify it's gone from the results
 	ruleClient := dynamicClientGenerator.Resource(complianceoperator.Rule.GroupVersionResource()).Namespace(coNamespace)
 	rule, err := ruleClient.Get(context.Background(), envVarRule, metav1.GetOptions{})
-	assert.NoError(t, err)
+	require.NoError(t, err, "Failed to get rule %s before deletion", envVarRule)
 
 	err = ruleClient.Delete(context.Background(), envVarRule, metav1.DeleteOptions{})
-	assert.NoError(t, err)
+	require.NoError(t, err, "Failed to delete rule %s", envVarRule)
 
 	time.Sleep(defaultSleepTime)
 
@@ -199,7 +201,8 @@ func TestDeleteAndAddRule(t *testing.T) {
 
 	rule.SetResourceVersion("")
 	_, err = ruleClient.Create(context.Background(), rule, metav1.CreateOptions{})
-	assert.NoError(t, err)
+	require.NoError(t, err, "Failed to recreate rule %s", envVarRule)
+	t.Logf("Successfully recreated rule %s", envVarRule)
 
 	time.Sleep(defaultSleepTime)
 
@@ -214,10 +217,10 @@ func TestDeleteAndAddScanSettingBinding(t *testing.T) {
 	// Delete a scansettingbinding
 	ssbClient := dynamicClientGenerator.Resource(complianceoperator.ScanSettingBinding.GroupVersionResource()).Namespace(coNamespace)
 	ssb, err := ssbClient.Get(context.Background(), rhcosProfileName, metav1.GetOptions{})
-	assert.NoError(t, err)
+	require.NoError(t, err, "Failed to get ScanSettingBinding %s before deletion", rhcosProfileName)
 
 	err = ssbClient.Delete(context.Background(), rhcosProfileName, metav1.DeleteOptions{})
-	assert.NoError(t, err)
+	require.NoError(t, err, "Failed to delete ScanSettingBinding %s", rhcosProfileName)
 
 	time.Sleep(defaultSleepTime)
 
@@ -233,7 +236,8 @@ func TestDeleteAndAddScanSettingBinding(t *testing.T) {
 
 	ssb.SetResourceVersion("")
 	_, err = ssbClient.Create(context.Background(), ssb, metav1.CreateOptions{})
-	assert.NoError(t, err)
+	require.NoError(t, err, "Failed to recreate ScanSettingBinding %s", rhcosProfileName)
+	t.Logf("Successfully recreated ScanSettingBinding %s", rhcosProfileName)
 
 	time.Sleep(defaultSleepTime)
 
@@ -248,10 +252,10 @@ func TestDeleteAndAddProfile(t *testing.T) {
 	// Remove a profile and verify that the profile is gone
 	profileClient := dynamicClientGenerator.Resource(complianceoperator.Profile.GroupVersionResource()).Namespace(coNamespace)
 	profile, err := profileClient.Get(context.Background(), rhcosProfileName, metav1.GetOptions{})
-	assert.NoError(t, err)
+	require.NoError(t, err, "Failed to get Profile %s before deletion", rhcosProfileName)
 
 	err = profileClient.Delete(context.Background(), rhcosProfileName, metav1.DeleteOptions{})
-	require.NoError(t, err)
+	require.NoError(t, err, "Failed to delete Profile %s", rhcosProfileName)
 
 	time.Sleep(defaultSleepTime)
 
@@ -267,7 +271,8 @@ func TestDeleteAndAddProfile(t *testing.T) {
 
 	profile.SetResourceVersion("")
 	_, err = profileClient.Create(context.Background(), profile, metav1.CreateOptions{})
-	assert.NoError(t, err)
+	require.NoError(t, err, "Failed to recreate Profile %s", rhcosProfileName)
+	t.Logf("Successfully recreated Profile %s", rhcosProfileName)
 
 	time.Sleep(defaultSleepTime)
 
@@ -282,7 +287,7 @@ func TestUpdateProfile(t *testing.T) {
 	// Remove a profile and verify that the profile is gone
 	profileClient := dynamicClientGenerator.Resource(complianceoperator.Profile.GroupVersionResource()).Namespace(coNamespace)
 	profileObj, err := profileClient.Get(context.Background(), rhcosProfileName, metav1.GetOptions{})
-	assert.NoError(t, err)
+	require.NoError(t, err, "Failed to get Profile %s before update", rhcosProfileName)
 
 	originalRules := profileObj.Object["rules"]
 
@@ -291,7 +296,7 @@ func TestUpdateProfile(t *testing.T) {
 		chownRule,
 	}
 	profileObj, err = profileClient.Update(context.Background(), profileObj, metav1.UpdateOptions{})
-	assert.NoError(t, err)
+	require.NoError(t, err, "Failed to update Profile %s", rhcosProfileName)
 
 	time.Sleep(defaultSleepTime)
 
@@ -314,7 +319,8 @@ func TestUpdateProfile(t *testing.T) {
 
 	profileObj.Object["rules"] = originalRules
 	_, err = profileClient.Update(context.Background(), profileObj, metav1.UpdateOptions{})
-	assert.NoError(t, err)
+	require.NoError(t, err, "Failed to restore Profile %s to original rules", rhcosProfileName)
+	t.Logf("Successfully restored Profile %s to original rules", rhcosProfileName)
 
 	time.Sleep(defaultSleepTime)
 

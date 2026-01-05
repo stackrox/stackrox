@@ -20,7 +20,12 @@ var (
 	// CreateTableBaseImagesStmt holds the create statement for table `base_images`.
 	CreateTableBaseImagesStmt = &postgres.CreateStmts{
 		GormModel: (*BaseImages)(nil),
-		Children:  []*postgres.CreateStmts{},
+		Children: []*postgres.CreateStmts{
+			&postgres.CreateStmts{
+				GormModel: (*BaseImagesLayers)(nil),
+				Children:  []*postgres.CreateStmts{},
+			},
+		},
 	}
 
 	// BaseImagesSchema is the go schema for table `base_images`.
@@ -58,6 +63,8 @@ var (
 const (
 	// BaseImagesTableName specifies the name of the table in postgres.
 	BaseImagesTableName = "base_images"
+	// BaseImagesLayersTableName specifies the name of the table in postgres.
+	BaseImagesLayersTableName = "base_images_layers"
 )
 
 // BaseImages holds the Gorm model for Postgres table `base_images`.
@@ -72,4 +79,13 @@ type BaseImages struct {
 	FirstLayerDigest         string                `gorm:"column:firstlayerdigest;type:varchar;index:baseimages_firstlayerdigest,type:btree"`
 	Serialized               []byte                `gorm:"column:serialized;type:bytea"`
 	BaseImageRepositoriesRef BaseImageRepositories `gorm:"foreignKey:baseimagerepositoryid;references:id;belongsTo;constraint:OnDelete:CASCADE"`
+}
+
+// BaseImagesLayers holds the Gorm model for Postgres table `base_images_layers`.
+type BaseImagesLayers struct {
+	BaseImagesID  string     `gorm:"column:base_images_id;type:uuid;primaryKey"`
+	Idx           int        `gorm:"column:idx;type:integer;primaryKey;index:baseimageslayers_idx,type:btree"`
+	LayerDigest   string     `gorm:"column:layerdigest;type:varchar;uniqueIndex:base_image_id_layer"`
+	Index         int32      `gorm:"column:index;type:integer"`
+	BaseImagesRef BaseImages `gorm:"foreignKey:base_images_id;references:id;belongsTo;constraint:OnDelete:CASCADE"`
 }

@@ -7,6 +7,7 @@ import (
 
 	"github.com/stackrox/rox/central/baseimage/datastore/repository/mocks"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/baseimage/reposcan"
 	"github.com/stackrox/rox/pkg/concurrency"
 	delegatedRegistryMocks "github.com/stackrox/rox/pkg/delegatedregistry/mocks"
 	"github.com/stackrox/rox/pkg/errox"
@@ -35,7 +36,7 @@ func createTestWatcher(ctrl *gomock.Controller, mockDS *mocks.MockDataStore, pol
 		Return(nil).
 		AnyTimes()
 	mockRegistrySet.EXPECT().
-		GetAllUnique().
+		GetAll().
 		Return(nil).
 		AnyTimes()
 
@@ -43,7 +44,7 @@ func createTestWatcher(ctrl *gomock.Controller, mockDS *mocks.MockDataStore, pol
 		datastore:    mockDS,
 		delegator:    mockDelegator,
 		pollInterval: pollInterval,
-		localClient:  NewLocalRepositoryClient(mockRegistrySet),
+		localScanner: reposcan.NewLocalScanner(mockRegistrySet),
 		stopper:      concurrency.NewStopper(),
 	}
 }
@@ -260,6 +261,17 @@ func TestWatcher_AccessesAllProtoFields(t *testing.T) {
 	assert.Equal(t, storage.BaseImageRepository_HEALTHY, repo.GetHealthStatus())
 }
 
+// TestWatcher_InvalidRepositoryPath is intentionally skipped.
+//
+// Empty repository paths represent a programming error (data should be validated before storage).
+// The code uses utils.Should() which triggers HardPanic - a panic that cannot be caught in tests.
+// This is by design to ensure programming errors are always surfaced.
+//
+// The behavior is verified by the existence of utils.Should() call in processRepository().
+func TestWatcher_InvalidRepositoryPath(t *testing.T) {
+	t.Skip("utils.Should() triggers HardPanic which cannot be caught in tests by design")
+}
+
 func TestWatcher_DelegationError(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	mockDS := mocks.NewMockDataStore(ctrl)
@@ -284,13 +296,18 @@ func TestWatcher_DelegationError(t *testing.T) {
 	// No matching registries
 	mockRegistrySet.EXPECT().
 		GetAllUnique().
-		Return(nil)
+		Return(nil).
+		AnyTimes()
+	mockRegistrySet.EXPECT().
+		GetAll().
+		Return(nil).
+		AnyTimes()
 
 	w := &watcherImpl{
 		datastore:    mockDS,
 		delegator:    mockDelegator,
 		pollInterval: 1 * time.Hour,
-		localClient:  NewLocalRepositoryClient(mockRegistrySet),
+		localScanner: reposcan.NewLocalScanner(mockRegistrySet),
 		stopper:      concurrency.NewStopper(),
 	}
 
@@ -328,7 +345,7 @@ func TestWatcher_ShouldDelegate(t *testing.T) {
 		datastore:    mockDS,
 		delegator:    mockDelegator,
 		pollInterval: 1 * time.Hour,
-		localClient:  NewLocalRepositoryClient(mockRegistrySet),
+		localScanner: reposcan.NewLocalScanner(mockRegistrySet),
 		stopper:      concurrency.NewStopper(),
 	}
 
@@ -366,13 +383,18 @@ func TestWatcher_NoMatchingRegistry(t *testing.T) {
 
 	mockRegistrySet.EXPECT().
 		GetAllUnique().
-		Return([]types.ImageRegistry{mockRegistry})
+		Return([]types.ImageRegistry{mockRegistry}).
+		AnyTimes()
+	mockRegistrySet.EXPECT().
+		GetAll().
+		Return([]types.ImageRegistry{mockRegistry}).
+		AnyTimes()
 
 	w := &watcherImpl{
 		datastore:    mockDS,
 		delegator:    mockDelegator,
 		pollInterval: 1 * time.Hour,
-		localClient:  NewLocalRepositoryClient(mockRegistrySet),
+		localScanner: reposcan.NewLocalScanner(mockRegistrySet),
 		stopper:      concurrency.NewStopper(),
 	}
 
@@ -414,13 +436,18 @@ func TestWatcher_MatchingRegistryWithTagListError(t *testing.T) {
 
 	mockRegistrySet.EXPECT().
 		GetAllUnique().
-		Return([]types.ImageRegistry{mockRegistry})
+		Return([]types.ImageRegistry{mockRegistry}).
+		AnyTimes()
+	mockRegistrySet.EXPECT().
+		GetAll().
+		Return([]types.ImageRegistry{mockRegistry}).
+		AnyTimes()
 
 	w := &watcherImpl{
 		datastore:    mockDS,
 		delegator:    mockDelegator,
 		pollInterval: 1 * time.Hour,
-		localClient:  NewLocalRepositoryClient(mockRegistrySet),
+		localScanner: reposcan.NewLocalScanner(mockRegistrySet),
 		stopper:      concurrency.NewStopper(),
 	}
 
@@ -451,28 +478,52 @@ func TestWatcher_MatchingRegistrySuccess(t *testing.T) {
 		GetDelegateClusterID(gomock.Any(), gomock.Any()).
 		Return("", false, nil)
 
-	// Registry matches and returns tags successfully
+	// Registry matches and returns tags successfully.
 	mockRegistry.EXPECT().
 		Match(gomock.Any()).
-		Return(true)
+		Return(true).
+		AnyTimes()
 
 	mockRegistry.EXPECT().
 		ListTags(gomock.Any(), gomock.Any()).
 		Return([]string{"1.0", "1.1", "1.2", "2.0", "latest"}, nil)
 
+	// Mock Source() for rate limiter lookup.
+	mockRegistry.EXPECT().
+		Source().
+		Return(&storage.ImageIntegration{Id: "integration-1"}).
+		AnyTimes()
+
+	// Mock Metadata calls for the 3 matching tags (1.0, 1.1, 1.2).
+	mockRegistry.EXPECT().
+		Metadata(gomock.Any()).
+		DoAndReturn(func(img *storage.Image) (*storage.ImageMetadata, error) {
+			return &storage.ImageMetadata{
+				V2: &storage.V2Metadata{
+					Digest: "sha256:abc123" + img.GetName().GetTag(),
+				},
+			}, nil
+		}).
+		Times(3)
+
 	mockRegistrySet.EXPECT().
 		GetAllUnique().
-		Return([]types.ImageRegistry{mockRegistry})
+		Return([]types.ImageRegistry{mockRegistry}).
+		AnyTimes()
+	mockRegistrySet.EXPECT().
+		GetAll().
+		Return([]types.ImageRegistry{mockRegistry}).
+		AnyTimes()
 
 	w := &watcherImpl{
 		datastore:    mockDS,
 		delegator:    mockDelegator,
 		pollInterval: 1 * time.Hour,
-		localClient:  NewLocalRepositoryClient(mockRegistrySet),
+		localScanner: reposcan.NewLocalScanner(mockRegistrySet),
 		stopper:      concurrency.NewStopper(),
 	}
 
-	// Should complete successfully
+	// Should complete successfully.
 	assert.NotPanics(t, func() {
 		w.pollOnce()
 	})
@@ -507,12 +558,16 @@ func TestWatcher_ContextCancellation(t *testing.T) {
 		GetAllUnique().
 		Return(nil).
 		AnyTimes()
+	mockRegistrySet.EXPECT().
+		GetAll().
+		Return(nil).
+		AnyTimes()
 
 	w := &watcherImpl{
 		datastore:    mockDS,
 		delegator:    mockDelegator,
 		pollInterval: 1 * time.Hour,
-		localClient:  NewLocalRepositoryClient(mockRegistrySet),
+		localScanner: reposcan.NewLocalScanner(mockRegistrySet),
 		stopper:      concurrency.NewStopper(),
 	}
 

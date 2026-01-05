@@ -263,15 +263,14 @@ func (r *Registry) HTTPClient() *http.Client {
 // This uses google/go-containerregistry which properly handles pagination with
 // relative URLs, but uses the same transport used by the docker-registry-client
 // configuration. Reuse of the existing client's transport gives us,
-// authentication, transport timeouts,TLS settings, proxy config and metrics.
+// authentication, transport timeouts, TLS settings, proxy config and metrics.
+//
+// This function does not impose an overall timeout. The transport's per-request
+// timeouts (DialTimeout, ResponseHeaderTimeout) protect against hung requests.
+// Callers needing an overall timeout should pass a context with deadline.
 func (r *Registry) ListTags(ctx context.Context, repository string) ([]string, error) {
 	if ctx == nil {
 		ctx = context.Background()
-	}
-	if r.clientTimeout > 0 {
-		var cancel context.CancelFunc
-		ctx, cancel = context.WithTimeout(ctx, r.clientTimeout)
-		defer cancel()
 	}
 	repoPath := fmt.Sprintf("%s/%s", r.registry, repository)
 	repo, err := name.NewRepository(repoPath)

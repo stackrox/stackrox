@@ -38,7 +38,7 @@ func TestNewGeneratorWithSeed(t *testing.T) {
 			gen := NewGeneratorWithSeed(tt.numPackages, 42)
 
 			assert.Equal(t, tt.expectedPkgCount, gen.NumPackages(), "package count mismatch")
-			assert.Equal(t, 2, gen.NumRepositories(), "should always have 2 real repositories")
+			assert.Equal(t, 3, gen.NumRepositories(), "should always have 3 real repositories")
 		})
 	}
 }
@@ -100,7 +100,7 @@ func TestGenerateV4IndexReport(t *testing.T) {
 
 	require.NotNil(t, report.GetContents(), "Contents should not be nil")
 	assert.Len(t, report.GetContents().GetPackages(), 10, "should have 10 packages")
-	assert.Len(t, report.GetContents().GetRepositories(), 2, "should have 2 repositories")
+	assert.Len(t, report.GetContents().GetRepositories(), 3, "should have 3 repositories")
 	assert.Len(t, report.GetContents().GetEnvironments(), 10, "should have 10 environments")
 }
 
@@ -117,8 +117,8 @@ func TestGenerateV4IndexReport_ZeroPackages(t *testing.T) {
 	// Packages and Environments should be empty when numPackages is 0
 	assert.Empty(t, report.GetContents().GetPackages(), "Packages should be empty when numPackages is 0")
 	assert.Empty(t, report.GetContents().GetEnvironments(), "Environments should be empty when numPackages is 0")
-	// Repositories should still have the two real repos
-	assert.Len(t, report.GetContents().GetRepositories(), 2, "should still have 2 repositories even with 0 packages")
+	// Repositories should still have the three real repos
+	assert.Len(t, report.GetContents().GetRepositories(), 3, "should still have 3 repositories even with 0 packages")
 }
 
 func TestGenerateV4IndexReport_PackagesHaveValidCPEs(t *testing.T) {
