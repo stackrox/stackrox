@@ -934,7 +934,7 @@ func (suite *ImageIntegrationDataStoreTestSuite) TestSearchImageIntegrationsFiel
 
 	suite.Run("SearchImageIntegrations with name filter", func() {
 		query := pkgSearch.NewQueryBuilder().
-			AddExactMatches(pkgSearch.ImageIntegrationName, integration1.GetName()).
+			AddExactMatches(pkgSearch.IntegrationName, integration1.GetName()).
 			ProtoQuery()
 
 		searchResults, err := suite.datastore.SearchImageIntegrations(ctx, query)

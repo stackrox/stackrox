@@ -4,7 +4,6 @@ package datastore
 
 import (
 	"context"
-	"strings"
 	"testing"
 
 	graphDBTestUtils "github.com/stackrox/rox/central/graphdb/testutils"
@@ -286,11 +285,9 @@ func (s *cveDataStoreSACTestSuite) TestSACNodeComponentSearchNodeComponents() {
 		results, err := s.nodeComponentStore.SearchNodeComponents(testCtx, nil)
 		s.NoError(err)
 		expectedComponentIDs := make([]string, 0, len(c.expectedComponentFound))
-		expectedNames := make([]string, 0, len(c.expectedComponentFound))
 		for ID, visible := range c.expectedComponentFound {
 			if visible {
 				expectedComponentIDs = append(expectedComponentIDs, ID)
-				expectedNames = append(expectedNames, strings.Split(ID, "#")[0])
 			}
 		}
 		fetchedComponentIDset := make(map[string]bool, 0)
