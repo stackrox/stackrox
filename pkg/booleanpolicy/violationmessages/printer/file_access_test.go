@@ -195,7 +195,7 @@ func TestUpdateFileAccessMessage(t *testing.T) {
 					},
 				},
 			},
-			expected: "",
+			expected: "'" + UNKNOWN_FILE + "' accessed (OPEN)",
 		},
 		{
 			desc: "nil process handling",
@@ -232,7 +232,20 @@ func TestUpdateFileAccessMessage(t *testing.T) {
 					},
 				},
 			},
-			expected: "",
+			expected: "'" + UNKNOWN_FILE + "' accessed (OPEN)",
+		},
+		{
+			desc: "Use mounted path if NodePath is empty",
+			activity: []*storage.FileAccess{
+				{
+					File:      &storage.FileAccess_File{NodePath: "", MountedPath: "/test/file"},
+					Operation: storage.FileAccess_OPEN,
+					Process: &storage.ProcessIndicator{
+						Signal: &storage.ProcessSignal{Name: "test"},
+					},
+				},
+			},
+			expected: "'/test/file' accessed (OPEN)",
 		},
 		{
 			desc: "empty process name",
