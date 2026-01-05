@@ -1,6 +1,6 @@
 module github.com/stackrox/stackrox/performance-scale-tests
 
-go 1.24.0
+go 1.25
 
 require (
 	github.com/cloud-bulldozer/go-commons v1.0.11
