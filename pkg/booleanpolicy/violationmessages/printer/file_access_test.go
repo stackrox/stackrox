@@ -235,7 +235,7 @@ func TestUpdateFileAccessMessage(t *testing.T) {
 			expected: "'" + UNKNOWN_FILE + "' accessed (OPEN)",
 		},
 		{
-			desc: "Use mounted path if NodePath is empty",
+			desc: "Use MountedPath if NodePath is empty",
 			activity: []*storage.FileAccess{
 				{
 					File:      &storage.FileAccess_File{NodePath: "", MountedPath: "/test/file"},
