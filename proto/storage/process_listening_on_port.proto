@@ -63,7 +63,7 @@ message ProcessListeningOnPortStorage {
 
   string deployment_id = 8; // @gotags: search:"Deployment ID" sql:"fk(Deployment:id),no-fk-constraint,index=btree,type(uuid)"
 
-  string pod_uid = 9; // @gotags: search:"Pod UID,hidden" sql:"fk(Pod:id),no-fk-constraint,index=hash,type(uuid)"
+  string pod_uid = 9; // @gotags: search:"Pod UID,hidden" sql:"fk(Pod:id),no-fk-constraint,index,type(uuid)"
 
   string cluster_id = 10; // @gotags: search:"Cluster ID" sql:"type(uuid)"
 

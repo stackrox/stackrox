@@ -257,7 +257,7 @@ type ProcessListeningOnPortStorage struct {
 	// able to find references process in the database
 	Process       *ProcessIndicatorUniqueKey `protobuf:"bytes,7,opt,name=process,proto3" json:"process,omitempty"`
 	DeploymentId  string                     `protobuf:"bytes,8,opt,name=deployment_id,json=deploymentId,proto3" json:"deployment_id,omitempty" search:"Deployment ID" sql:"fk(Deployment:id),no-fk-constraint,index=btree,type(uuid)"` // @gotags: search:"Deployment ID" sql:"fk(Deployment:id),no-fk-constraint,index=btree,type(uuid)"
-	PodUid        string                     `protobuf:"bytes,9,opt,name=pod_uid,json=podUid,proto3" json:"pod_uid,omitempty" search:"Pod UID,hidden" sql:"fk(Pod:id),no-fk-constraint,index=hash,type(uuid)"`                   // @gotags: search:"Pod UID,hidden" sql:"fk(Pod:id),no-fk-constraint,index=hash,type(uuid)"
+	PodUid        string                     `protobuf:"bytes,9,opt,name=pod_uid,json=podUid,proto3" json:"pod_uid,omitempty" search:"Pod UID,hidden" sql:"fk(Pod:id),no-fk-constraint,index,type(uuid)"`                   // @gotags: search:"Pod UID,hidden" sql:"fk(Pod:id),no-fk-constraint,index,type(uuid)"
 	ClusterId     string                     `protobuf:"bytes,10,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty" search:"Cluster ID" sql:"type(uuid)"`         // @gotags: search:"Cluster ID" sql:"type(uuid)"
 	Namespace     string                     `protobuf:"bytes,11,opt,name=namespace,proto3" json:"namespace,omitempty" search:"Namespace"`                          // @gotags: search:"Namespace"
 	unknownFields protoimpl.UnknownFields
