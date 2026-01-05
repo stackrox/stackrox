@@ -25,4 +25,12 @@ type DataStore interface {
 	// Returns empty slice if no base images matched.
 	// Returns error only for system failures (database connection, etc.).
 	ListCandidateBaseImages(ctx context.Context, firstLayer string) ([]*storage.BaseImage, error)
+
+	// ListByRepository returns all base images for a specific repository.
+	// Returns empty slice if no base images exist for the repository.
+	// Returns error only for system failures (database connection, etc.).
+	ListByRepository(ctx context.Context, repositoryID string) ([]*storage.BaseImage, error)
+
+	// DeleteMany removes multiple base images by ID in a batch.
+	DeleteMany(ctx context.Context, ids []string) error
 }

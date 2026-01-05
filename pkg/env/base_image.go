@@ -27,4 +27,10 @@ var (
 	// to accumulate before flushing to the database. Larger batches reduce database round-trips
 	// but increase memory usage. Smaller batches reduce memory pressure but increase DB calls.
 	BaseImageWatcherTagBatchSize = RegisterIntegerSetting("ROX_BASE_IMAGE_WATCHER_TAG_BATCH_SIZE", 100)
+
+	// BaseImageWatcherAgeThresholdDays controls the maximum age in days for base image tags
+	// to be stored in the base_images table for active matching. Tags older than this threshold
+	// are cached in base_image_tags but not promoted to base_images for workload matching.
+	// Set to 0 to disable age-based filtering (store all discovered tags).
+	BaseImageWatcherAgeThresholdDays = RegisterIntegerSetting("ROX_BASE_IMAGE_WATCHER_AGE_THRESHOLD_DAYS", 30)
 )

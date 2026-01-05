@@ -6,10 +6,12 @@ import (
 	"fmt"
 	"time"
 
+	baseImageDS "github.com/stackrox/rox/central/baseimage/datastore"
 	repoDS "github.com/stackrox/rox/central/baseimage/datastore/repository"
 	tagDS "github.com/stackrox/rox/central/baseimage/datastore/tag"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/baseimage/reposcan"
+	"github.com/stackrox/rox/pkg/baseimage/tagfetcher"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/delegatedregistry"
 	"github.com/stackrox/rox/pkg/env"
@@ -29,9 +31,10 @@ var log = logging.LoggerForModule()
 type watcherImpl struct {
 	repoDS       repoDS.DataStore
 	tagDS        tagDS.DataStore
+	baseImageDS  baseImageDS.DataStore
 	delegator    delegatedregistry.Delegator
 	pollInterval time.Duration
-	localScanner *reposcan.LocalScanner
+	localScanner reposcan.Scanner
 
 	stopper     concurrency.Stopper
 	startedOnce sync.Once
@@ -43,6 +46,7 @@ type watcherImpl struct {
 func New(
 	repoDS repoDS.DataStore,
 	tagDS tagDS.DataStore,
+	baseImageDS baseImageDS.DataStore,
 	registries registries.Set,
 	delegator delegatedregistry.Delegator,
 	pollInterval time.Duration,
@@ -51,6 +55,7 @@ func New(
 	return &watcherImpl{
 		repoDS:       repoDS,
 		tagDS:        tagDS,
+		baseImageDS:  baseImageDS,
 		delegator:    delegator,
 		pollInterval: pollInterval,
 		batchSize:    batchSize,
@@ -230,9 +235,13 @@ func (w *watcherImpl) processRepository(ctx context.Context, repo *storage.BaseI
 	// Scan repository: list tags, fetch metadata, and emit events.
 	start := time.Now()
 
+	// Two independent batching pipelines for recent and old tags. For recent tags,
+	// we keep the base image entries to promote.
 	var metadataCount, errorCount, deleteCount int
-	var adds []*storage.BaseImageTag
-	var dels []string
+	imgs := make(map[*storage.BaseImage][]string)
+	var recentTags []*storage.BaseImageTag
+	var oldTags []*storage.BaseImageTag
+	var deletedTags []string
 
 	for event, err := range scanner.ScanRepository(ctx, repo, req) {
 		log.Debugf("Processing repository: scan event: err=%v event=%v repo=%v", err, event, repo)
@@ -257,35 +266,58 @@ func (w *watcherImpl) processRepository(ctx context.Context, repo *storage.BaseI
 		switch event.Type {
 		case reposcan.TagEventMetadata:
 			metadata := event.Metadata
-			adds = append(adds, &storage.BaseImageTag{
+			tag := &storage.BaseImageTag{
 				Id:                    tagID,
 				BaseImageRepositoryId: repo.GetId(),
 				Tag:                   event.Tag,
 				ManifestDigest:        metadata.ManifestDigest,
 				Created:               protocompat.ConvertTimeToTimestampOrNil(metadata.Created),
-			})
-			if len(adds) >= w.batchSize {
-				if err := w.tagDS.UpsertMany(ctx, adds); err != nil {
-					log.Errorf("Failed to upsert %d tags: repository=%q: %v", len(adds), repo.GetRepositoryPath(), err)
-					errorCount += len(adds)
-					adds = adds[:0]
-					continue
+			}
+
+			if tagIsRecent(metadata) {
+				bi := &storage.BaseImage{
+					Id:                    tag.GetId(),
+					BaseImageRepositoryId: tag.GetBaseImageRepositoryId(),
+					Repository:            repo.GetRepositoryPath(),
+					Tag:                   tag.GetTag(),
+					ManifestDigest:        tag.GetManifestDigest(),
+					DiscoveredAt:          protocompat.TimestampNow(),
+					Active:                true,
 				}
-				metadataCount += len(adds)
-				adds = adds[:0]
+				imgs[bi] = metadata.LayerDigests
+				recentTags = append(recentTags, tag)
+			} else {
+				oldTags = append(oldTags, tag)
+			}
+
+			// Flush recent tags batch.
+			if len(recentTags) >= w.batchSize {
+				count, errs := w.flushRecentTags(ctx, repo, imgs, recentTags)
+				metadataCount += count
+				errorCount += errs
+				imgs = make(map[*storage.BaseImage][]string)
+				recentTags = recentTags[:0]
+			}
+
+			// Flush old tags batch.
+			if len(oldTags) >= w.batchSize {
+				count, errs := w.flushOldTags(ctx, oldTags)
+				metadataCount += count
+				errorCount += errs
+				oldTags = oldTags[:0]
 			}
 
 		case reposcan.TagEventDeleted:
-			dels = append(dels, tagID)
-			if len(dels) >= w.batchSize {
-				if err := w.tagDS.DeleteMany(ctx, dels); err != nil {
-					log.Errorf("Failed to delete %d tags: repository=%q: %v", len(dels), repo.GetRepositoryPath(), err)
-					errorCount += len(dels)
-					dels = dels[:0]
+			deletedTags = append(deletedTags, tagID)
+			if len(deletedTags) >= w.batchSize {
+				if err := w.tagDS.DeleteMany(ctx, deletedTags); err != nil {
+					log.Errorf("Failed to delete %d tags: repository=%q: %v", len(deletedTags), repo.GetRepositoryPath(), err)
+					errorCount += len(deletedTags)
+					deletedTags = deletedTags[:0]
 					continue
 				}
-				deleteCount += len(dels)
-				dels = dels[:0]
+				deleteCount += len(deletedTags)
+				deletedTags = deletedTags[:0]
 			}
 
 		case reposcan.TagEventError:
@@ -295,21 +327,21 @@ func (w *watcherImpl) processRepository(ctx context.Context, repo *storage.BaseI
 
 	}
 
-	if len(adds) > 0 {
-		if err := w.tagDS.UpsertMany(ctx, adds); err != nil {
-			log.Errorf("Failed to upsert %d tags: repository=%q: %v", len(adds), repo.GetRepositoryPath(), err)
-			errorCount += len(adds)
-		} else {
-			metadataCount += len(adds)
-		}
-	}
+	// Final flush of remaining tags.
+	count, errs := w.flushRecentTags(ctx, repo, imgs, recentTags)
+	metadataCount += count
+	errorCount += errs
 
-	if len(dels) > 0 {
-		if err := w.tagDS.DeleteMany(ctx, dels); err != nil {
-			log.Errorf("Failed to delete %d tags: repository=%q: %v", len(dels), repo.GetRepositoryPath(), err)
-			errorCount += len(dels)
+	count, errs = w.flushOldTags(ctx, oldTags)
+	metadataCount += count
+	errorCount += errs
+
+	if len(deletedTags) > 0 {
+		if err := w.tagDS.DeleteMany(ctx, deletedTags); err != nil {
+			log.Errorf("Failed to delete %d tags: repository=%q: %v", len(deletedTags), repo.GetRepositoryPath(), err)
+			errorCount += len(deletedTags)
 		} else {
-			deleteCount += len(dels)
+			deleteCount += len(deletedTags)
 		}
 	}
 
@@ -318,18 +350,141 @@ func (w *watcherImpl) processRepository(ctx context.Context, repo *storage.BaseI
 	log.Infof("Repository scan completed: repository=%q pattern=%q processed=%d metadata=%d errors=%d deletes=%d",
 		repo.GetRepositoryPath(), repo.GetTagPattern(), metadataCount+errorCount+deleteCount, metadataCount, errorCount, deleteCount)
 
-	// TODO(ROX-31923): Promote tags from cache to active base_images table.
-	// Algorithm:
-	// 1. Fetch all tags from base_image_tags cache for this repository (sorted by created timestamp, newest first)
-	// 2. Select top N tags (using ROX_BASE_IMAGE_WATCHER_PER_REPO_TAG_LIMIT, default 100)
-	// 3. For each tag in top N:
-	//    - If tag exists in base_images: UPDATE metadata (manifest_digest, created, discovered_at)
-	//    - If tag doesn't exist: INSERT new base_image entry
-	// 4. For tags in base_images but NOT in top N:
-	//    - DELETE from base_images (they aged out of the active list)
-	//
-	// This ensures base_images contains only the N most recent tags for matching against workload images.
-	log.Infof("Tag cache updated: repository=%q (promotion to base_images deferred)", repo.GetRepositoryPath())
+	// Promote tags: apply count-based limit to keep only top N recent tags in base_images.
+	if err := w.promoteTags(ctx, repo); err != nil {
+		log.Errorf("Failed to promote tags: repository=%q: %v", repo.GetRepositoryPath(), err)
+	}
+}
+
+func tagIsRecent(metadata *tagfetcher.TagMetadata) bool {
+	// Determine if tag is recent, only add to base_images if recent.
+	ageThresholdDays := env.BaseImageWatcherAgeThresholdDays.IntegerSetting()
+	isRecent := false
+	if ageThresholdDays == 0 {
+		// Age filtering disabled, store all tags
+		isRecent = true
+	} else if metadata.Created != nil {
+		ageThreshold := time.Now().Add(-time.Duration(ageThresholdDays) * 24 * time.Hour)
+		isRecent = metadata.Created.After(ageThreshold)
+	}
+	return isRecent
+}
+
+// flushRecentTags writes recent tags to both base_images and cache.
+// If base_images write fails, cache write is skipped to enable retry in next cycle.
+func (w *watcherImpl) flushRecentTags(
+	ctx context.Context,
+	repo *storage.BaseImageRepository,
+	imgs map[*storage.BaseImage][]string,
+	tags []*storage.BaseImageTag,
+) (metadataCount, errorCount int) {
+	if len(imgs) == 0 {
+		return 0, 0
+	}
+
+	if err := w.baseImageDS.UpsertImages(ctx, imgs); err != nil {
+		log.Errorf("Failed to upsert %d base images: repository=%q: %v", len(imgs), repo.GetRepositoryPath(), err)
+		log.Warnf("Skipped caching %d recent tags due to base_images write failure (will retry next cycle): repository=%q",
+			len(tags), repo.GetRepositoryPath())
+		return 0, len(imgs)
+	}
+
+	if err := w.tagDS.UpsertMany(ctx, tags); err != nil {
+		log.Errorf("Failed to upsert %d tags: repository=%q: %v", len(tags), repo.GetRepositoryPath(), err)
+		return 0, len(tags)
+	}
+
+	return len(tags), 0
+}
+
+// flushOldTags writes old tags to cache only.
+// These tags are beyond age threshold and not stored in base_images.
+func (w *watcherImpl) flushOldTags(
+	ctx context.Context,
+	tags []*storage.BaseImageTag,
+) (metadataCount, errorCount int) {
+	if len(tags) == 0 {
+		return 0, 0
+	}
+
+	if err := w.tagDS.UpsertMany(ctx, tags); err != nil {
+		log.Errorf("Failed to upsert %d tags: %v", len(tags), err)
+		return 0, len(tags)
+	}
+
+	return len(tags), 0
+}
+
+// promoteTags applies count-based limit to base_images after all tags discovered.
+// Deletes tags beyond tag_limit from base_images while keeping cache intact.
+func (w *watcherImpl) promoteTags(ctx context.Context, repo *storage.BaseImageRepository) error {
+	start := time.Now()
+	defer func() {
+		recordPromotionDuration(repo.GetRepositoryPath(), start)
+	}()
+
+	// 1. Get all cached tags sorted by created desc (newest first)
+	allTags, err := w.tagDS.ListTagsByRepository(ctx, repo.GetId())
+	if err != nil {
+		recordPromotionResult(repo.GetRepositoryPath(), err)
+		return fmt.Errorf("listing cached tags: %w", err)
+	}
+
+	// 2. Apply age filter and take top N
+	ageThresholdDays := env.BaseImageWatcherAgeThresholdDays.IntegerSetting()
+	var ageThreshold time.Time
+	if ageThresholdDays > 0 {
+		ageThreshold = time.Now().Add(-time.Duration(ageThresholdDays) * 24 * time.Hour)
+	}
+	tagLimit := env.BaseImageWatcherPerRepoTagLimit.IntegerSetting()
+
+	var recentTags []*storage.BaseImageTag
+	for _, tag := range allTags {
+		created := protocompat.NilOrTime(tag.GetCreated())
+		// If age threshold is 0 (disabled) or tag is recent enough
+		if ageThresholdDays == 0 || (created != nil && created.After(ageThreshold)) {
+			recentTags = append(recentTags, tag)
+			if len(recentTags) >= tagLimit {
+				break
+			}
+		}
+	}
+
+	// 3. Build keep list (tags that should remain in base_images)
+	keepIDs := make(map[string]struct{}, len(recentTags))
+	for _, tag := range recentTags {
+		keepIDs[tag.GetId()] = struct{}{}
+	}
+
+	// 4. Get all base images for this repository
+	baseImages, err := w.baseImageDS.ListByRepository(ctx, repo.GetId())
+	if err != nil {
+		return fmt.Errorf("listing base images: %w", err)
+	}
+
+	// 5. Identify stale base images (not in keep list)
+	var staleIDs []string
+	for _, bi := range baseImages {
+		if _, keep := keepIDs[bi.GetId()]; !keep {
+			staleIDs = append(staleIDs, bi.GetId())
+		}
+	}
+
+	// 6. Delete stale base images
+	if len(staleIDs) > 0 {
+		if err := w.baseImageDS.DeleteMany(ctx, staleIDs); err != nil {
+			recordPromotionResult(repo.GetRepositoryPath(), err)
+			return fmt.Errorf("deleting %d stale base images: %w", len(staleIDs), err)
+		}
+		log.Infof("Promotion: deleted %d stale base images: repository=%q", len(staleIDs), repo.GetRepositoryPath())
+	}
+
+	// 7. Record cache/base_images divergence metric
+	recordCacheOnlyTags(repo.GetRepositoryPath(), len(allTags), len(baseImages))
+
+	log.Infof("Promotion completed: repository=%q kept=%d deleted=%d", repo.GetRepositoryPath(), len(recentTags), len(staleIDs))
+	recordPromotionResult(repo.GetRepositoryPath(), nil)
+	return nil
 }
 
 func validate(event reposcan.TagEvent) error {

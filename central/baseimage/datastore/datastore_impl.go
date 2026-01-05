@@ -139,3 +139,23 @@ func (ds *datastoreImpl) GetBaseImage(ctx context.Context, manifestDigest string
 	}
 	return ds.storage.Get(ctx, id)
 }
+
+func (ds *datastoreImpl) ListByRepository(ctx context.Context, repositoryID string) ([]*storage.BaseImage, error) {
+	var baseImages []*storage.BaseImage
+
+	err := ds.storage.Walk(ctx, func(bi *storage.BaseImage) error {
+		if bi.GetBaseImageRepositoryId() == repositoryID {
+			baseImages = append(baseImages, bi)
+		}
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return baseImages, nil
+}
+
+func (ds *datastoreImpl) DeleteMany(ctx context.Context, ids []string) error {
+	return ds.storage.DeleteMany(ctx, ids)
+}

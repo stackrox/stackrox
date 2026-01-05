@@ -1,6 +1,7 @@
 package watcher
 
 import (
+	baseImageDS "github.com/stackrox/rox/central/baseimage/datastore"
 	repoDS "github.com/stackrox/rox/central/baseimage/datastore/repository"
 	tagDS "github.com/stackrox/rox/central/baseimage/datastore/tag"
 	clusterDataStore "github.com/stackrox/rox/central/cluster/datastore"
@@ -35,6 +36,7 @@ func Singleton() Watcher {
 		watcher = New(
 			repoDS.Singleton(),
 			tagDS.Singleton(),
+			baseImageDS.Singleton(),
 			imageintegration.Set().RegistrySet(),
 			scanDelegator,
 			env.BaseImageWatcherPollInterval.DurationSetting(),
