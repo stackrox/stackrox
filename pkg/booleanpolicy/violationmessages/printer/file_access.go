@@ -11,7 +11,7 @@ import (
 )
 
 const (
-	maxPaths = 10
+	maxPaths     = 10
 	UNKNOWN_FILE = "Unknown file"
 )
 
