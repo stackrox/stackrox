@@ -12,6 +12,7 @@ import (
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/sac/testconsts"
 	pkgSearch "github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/suite"
@@ -47,9 +48,8 @@ func (s *K8SRolePostgresDataStoreTestSuite) TearDownTest() {
 func (s *K8SRolePostgresDataStoreTestSuite) TestSearchRoles() {
 	ctx := sac.WithAllAccess(context.Background())
 
-	// Create test roles
-	cluster1Id := uuid.NewV4().String()
-	cluster2Id := uuid.NewV4().String()
+	cluster1Id := testconsts.Cluster1
+	cluster2Id := testconsts.Cluster2
 	role1 := &storage.K8SRole{
 		Id:          uuid.NewV4().String(),
 		Name:        "cluster-admin",

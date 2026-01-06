@@ -12,6 +12,7 @@ import (
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/sac/testconsts"
 	pkgSearch "github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/suite"
@@ -48,8 +49,8 @@ func (s *K8SRoleBindingPostgresDataStoreTestSuite) TestSearchRoleBindings() {
 	ctx := sac.WithAllAccess(context.Background())
 
 	// Generate UUIDs for test data
-	cluster1ID := uuid.NewV4().String()
-	cluster2ID := uuid.NewV4().String()
+	cluster1ID := testconsts.Cluster1
+	cluster2ID := testconsts.Cluster2
 
 	// Create test role bindings
 	binding1 := &storage.K8SRoleBinding{
