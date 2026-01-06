@@ -13,7 +13,6 @@ import (
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	pkgSearch "github.com/stackrox/rox/pkg/search"
-	"google.golang.org/protobuf/proto"
 )
 
 var (
@@ -40,7 +39,7 @@ func (ds *datastoreImpl) SearchNodeComponents(ctx context.Context, q *v1.Query) 
 	if q == nil {
 		q = pkgSearch.EmptyQuery()
 	} else {
-		q = proto.Clone(q).(*v1.Query)
+		q = q.CloneVT()
 	}
 
 	q.Selects = append(q.GetSelects(), pkgSearch.NewQuerySelect(pkgSearch.Component).Proto())

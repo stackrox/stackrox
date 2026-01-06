@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	graphDBTestUtils "github.com/stackrox/rox/central/graphdb/testutils"
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/sac"
@@ -293,6 +294,12 @@ func (s *cveDataStoreSACTestSuite) TestSACNodeComponentSearchNodeComponents() {
 		fetchedComponentIDset := make(map[string]bool, 0)
 		for _, result := range results {
 			fetchedComponentIDset[result.GetId()] = true
+
+			// Verify SearchResult fields are properly populated
+			s.NotEmpty(result.GetId(), "Result ID should not be empty")
+			s.NotEmpty(result.GetName(), "Result name should not be empty")
+			s.Equal(v1.SearchCategory_NODE_COMPONENTS, result.GetCategory(), "Result category should be NODE_COMPONENTS")
+			s.NotNil(result.GetFieldToMatches(), "FieldToMatches should not be nil")
 		}
 		fetchedComponentIDs := make([]string, 0, len(fetchedComponentIDset))
 		for id := range fetchedComponentIDset {
