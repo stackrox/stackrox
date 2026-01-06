@@ -161,6 +161,7 @@ func TestProcessAlertResults(t *testing.T) {
 func TestFileAccessAlertResults(t *testing.T) {
 	alert1 := fixtures.GetAlert()
 	alert1.GetDeployment().Id = "dep1"
+	alert1.ProcessViolation = nil
 	alert1.FileAccessViolation = &storage.Alert_FileAccessViolation{
 		Accesses: []*storage.FileAccess{
 			{
@@ -174,6 +175,7 @@ func TestFileAccessAlertResults(t *testing.T) {
 
 	alert2 := fixtures.GetAlert()
 	alert2.GetDeployment().Id = "dep2"
+	alert2.ProcessViolation = nil
 	alert2.FileAccessViolation = &storage.Alert_FileAccessViolation{
 		Accesses: []*storage.FileAccess{
 			{

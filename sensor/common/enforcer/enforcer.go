@@ -87,8 +87,8 @@ func (e *enforcer) ProcessAlertResults(action central.ResourceAction, stage stor
 				},
 			}
 		case storage.LifecycleStage_RUNTIME:
-			isProcessAlert := len(a.GetProcessViolation().GetProcesses()) > 0
-			isFileAlert := len(a.GetFileAccessViolation().GetAccesses()) > 0
+			isProcessAlert := a.GetProcessViolation() != nil && len(a.GetProcessViolation().GetProcesses()) > 0
+			isFileAlert := a.GetFileAccessViolation() != nil && len(a.GetFileAccessViolation().GetAccesses()) > 0
 
 			if isProcessAlert && isFileAlert {
 				log.Errorf("Invalid alert state: must contain one of process violation or file violation")
