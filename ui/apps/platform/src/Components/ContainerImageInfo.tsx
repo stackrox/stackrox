@@ -9,7 +9,7 @@ type ContainerImageInfoProps = {
 };
 
 function ContainerImageInfo({ image }: ContainerImageInfoProps) {
-    const imageDetailsPageURL = `${vulnerabilitiesAllImagesPath}/${image.id}`;
+    const imageDetailsPageURL = `${vulnerabilitiesAllImagesPath}/images/${image.idV2 ?? image.id}`;
 
     if (image.id === '' || image.notPullable) {
         const unavailableText = image.notPullable

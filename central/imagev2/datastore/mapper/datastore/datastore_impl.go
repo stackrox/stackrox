@@ -36,8 +36,19 @@ func (ds *datastoreImpl) SearchListImages(ctx context.Context, q *v1.Query) ([]*
 		return ds.imageDataStore.SearchListImages(ctx, q)
 	}
 
-	// Get v2 images
-	images, err := ds.imageV2DataStore.SearchRawImages(ctx, q)
+	// Get image IDs from search (fast)
+	results, err := ds.imageV2DataStore.Search(ctx, q)
+	if err != nil {
+		return nil, err
+	}
+
+	// Get image metadata in bulk (much faster than GetByIDs with full scan data)
+	ids := make([]string, 0, len(results))
+	for _, result := range results {
+		ids = append(ids, result.ID)
+	}
+	
+	images, err := ds.imageV2DataStore.GetManyImageMetadata(ctx, ids)
 	if err != nil {
 		return nil, err
 	}

@@ -15,6 +15,7 @@ import {
 
 export type ImageMetadataContext = {
     id: string;
+    digest?: string; // Only present in ImageV2
     name: {
         registry: string;
         remote: string;
@@ -33,6 +34,26 @@ export type ImageMetadataContext = {
 export const imageMetadataContextFragment = gql`
     fragment ImageMetadataContext on Image {
         id
+        name {
+            registry
+            remote
+            tag
+        }
+        metadata {
+            v1 {
+                layers {
+                    instruction
+                    value
+                }
+            }
+        }
+    }
+`;
+
+export const imageV2MetadataContextFragment = gql`
+    fragment ImageMetadataContext on ImageV2 {
+        id
+        digest
         name {
             registry
             remote

@@ -44,7 +44,6 @@ import (
 )
 
 func TestSearchCategoryToOptionsMultiMap(t *testing.T) {
-
 	for cat := range autocompleteCategories {
 		_, ok := categoryToOptionsMultimap[cat]
 		assert.True(t, ok, "no options multimap for category", cat)

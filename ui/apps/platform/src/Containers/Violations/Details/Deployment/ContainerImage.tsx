@@ -13,12 +13,13 @@ type ContainerImageProps = {
         };
         notPullable: boolean;
         id: string;
+        idV2: string;
     };
     vulnMgmtBasePath: string;
 };
 
 function ContainerImage({ image, vulnMgmtBasePath }: ContainerImageProps): ReactElement {
-    const imageDetailsPageURL = `${vulnMgmtBasePath}/images/${image.id}`;
+    const imageDetailsPageURL = `${vulnMgmtBasePath}/images/${image.idV2 ?? image.id}`;
 
     if (image.id === '' || image.notPullable) {
         const unavailableText = image.notPullable

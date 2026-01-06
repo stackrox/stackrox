@@ -145,6 +145,7 @@ func (resolver *Resolver) getAutoCompleteSearchers() map[v1.SearchCategory]searc
 	}
 	if features.FlattenImageData.Enabled() {
 		searcherMap[v1.SearchCategory_IMAGES_V2] = resolver.ImageV2DataStore
+		searcherMap[v1.SearchCategory_IMAGES] = resolver.ImageV2DataStore
 	} else {
 		searcherMap[v1.SearchCategory_IMAGES] = resolver.ImageDataStore
 	}
@@ -173,6 +174,7 @@ func (resolver *Resolver) getSearchFuncs() map[v1.SearchCategory]searchService.S
 	}
 	if features.FlattenImageData.Enabled() {
 		searcherFuncMap[v1.SearchCategory_IMAGES_V2] = resolver.ImageV2DataStore.SearchImages
+		searcherFuncMap[v1.SearchCategory_IMAGES] = resolver.ImageV2DataStore.SearchImages
 	} else {
 		searcherFuncMap[v1.SearchCategory_IMAGES] = resolver.ImageDataStore.SearchImages
 	}
