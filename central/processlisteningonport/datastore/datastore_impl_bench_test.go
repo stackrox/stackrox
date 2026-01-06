@@ -96,19 +96,36 @@ func benchmarkAddPLOPs(b *testing.B, nPort int, nProcess int, nPod int) func(*te
 		// Setup database once before the benchmark loop
 		ctx, ds := setupBenchmark(b)
 
-		b.ReportAllocs()
+		// Insert all indicators once before timing - they are relatively stable
+		addIndicators(b, ctx, ds, plopObjects)
 
+		// Extract pod UIDs for cleanup
+		podUIDs := make([]string, 0, nPod)
+		seenPods := make(map[string]bool)
+		for _, plop := range plopObjects {
+			uid := plop.GetPodUid()
+			if !seenPods[uid] {
+				seenPods[uid] = true
+				podUIDs = append(podUIDs, uid)
+			}
+		}
+
+		b.ReportAllocs()
 		b.ResetTimer()
 
 		for i := 0; i < b.N; i++ {
-			b.StopTimer()
-			// Insert all indicators so lookups hit existing data
-			addIndicators(b, ctx, ds, plopObjects)
-
-			b.StartTimer()
 			if err := ds.AddProcessListeningOnPort(ctx, fixtureconsts.Cluster1, plopObjects...); err != nil {
 				require.NoError(b, err)
 			}
+
+			// Clean up PLOPs for next iteration to avoid lock contention on updates
+			b.StopTimer()
+			for _, podUID := range podUIDs {
+				if err := ds.RemovePlopsByPod(ctx, podUID); err != nil {
+					require.NoError(b, err)
+				}
+			}
+			b.StartTimer()
 		}
 	}
 }
@@ -121,39 +138,38 @@ func BenchmarkRemovePlopsByPod(b *testing.B) {
 
 func benchmarkRemovePlopsByPod(b *testing.B, nPort int, nProcess int, nPod int) func(*testing.B) {
 	return func(b *testing.B) {
-		// Generate the data once before the loop
-		plopObjects := makeRandomPlops(nPort, nProcess, nPod, fixtureconsts.Deployment1)
-
-		// Extract unique pod UIDs
-		podUIDs := make([]string, 0, nPod)
-		seenPods := make(map[string]bool)
-		for _, plop := range plopObjects {
-			uid := plop.GetPodUid()
-			if !seenPods[uid] {
-				seenPods[uid] = true
-				podUIDs = append(podUIDs, uid)
-			}
-		}
-
 		// Setup database once before the benchmark loop
 		ctx, ds := setupBenchmark(b)
 
-		b.ReportAllocs()
+		// Generate a dataset with nPod pods (background data)
+		allPodData := makeRandomPlops(nPort, nProcess, nPod, fixtureconsts.Deployment1)
+		
+		// Generate data for one additional pod that we'll repeatedly insert/delete
+		targetPodData := makeRandomPlops(nPort, nProcess, 1, fixtureconsts.Deployment1)
+		targetPodUID := targetPodData[0].GetPodUid()
 
+		// Insert indicators for all data once
+		addIndicators(b, ctx, ds, append(allPodData, targetPodData...))
+		
+		// Insert the background data once (stays for all iterations)
+		if err := ds.AddProcessListeningOnPort(ctx, fixtureconsts.Cluster1, allPodData...); err != nil {
+			require.NoError(b, err)
+		}
+
+		b.ReportAllocs()
 		b.ResetTimer()
 
+		// Benchmark: insert target pod's PLOPs then delete them
 		for i := 0; i < b.N; i++ {
 			b.StopTimer()
-			// Insert all indicators and PLOPs for this iteration
-			addIndicators(b, ctx, ds, plopObjects)
-			if err := ds.AddProcessListeningOnPort(ctx, fixtureconsts.Cluster1, plopObjects...); err != nil {
+			// Insert target pod's PLOPs
+			if err := ds.AddProcessListeningOnPort(ctx, fixtureconsts.Cluster1, targetPodData...); err != nil {
 				require.NoError(b, err)
 			}
-
-			// Benchmark removing PLOPs for one pod UID
-			podUIDToRemove := podUIDs[0]
 			b.StartTimer()
-			if err := ds.RemovePlopsByPod(ctx, podUIDToRemove); err != nil {
+
+			// Benchmark the deletion
+			if err := ds.RemovePlopsByPod(ctx, targetPodUID); err != nil {
 				require.NoError(b, err)
 			}
 		}
