@@ -47,7 +47,7 @@ func (ds *datastoreImpl) SearchListImages(ctx context.Context, q *v1.Query) ([]*
 	for _, result := range results {
 		ids = append(ids, result.ID)
 	}
-	
+
 	images, err := ds.imageV2DataStore.GetManyImageMetadata(ctx, ids)
 	if err != nil {
 		return nil, err
