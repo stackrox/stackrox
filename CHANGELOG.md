@@ -31,6 +31,7 @@ Changes should still be described appropriately in JIRA/doc input pages, for inc
 - ROX-31295: The lower limit for `ROX_MAX_PARALLEL_IMAGE_SCAN_INTERNAL` on Sensor has been reduced to one (from 10).
 - ROX-32125: The operator now adopts secrets that have the `app.stackrox.io/managed-by: operator` label but no `ownerReferences`. This fixes reconciliation failures after backup/restore operations that strip `ownerReferences` from secrets.
 - ROX-32394: Remove init-tls-certs init container from all Secured Cluster services, except for Sensor (where it's needed for supporting both init bundles and CRS tokens).
+- ROX-28352: Remove Sensor's certdistribution API, which was used by the admission controller to retrieve its TLS certificate from Sensor (no longer needed)
 
 ## [4.9.0]
 
