@@ -115,5 +115,5 @@ func TestSearchNodeComponents(t *testing.T) {
 		assert.Equal(t, nodeComponent1.GetName(), result.GetName())
 		assert.Equal(t, v1.SearchCategory_NODE_COMPONENTS, result.GetCategory())
 	})
-	
+
 }
