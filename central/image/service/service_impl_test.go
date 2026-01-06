@@ -577,62 +577,90 @@ func TestBaseImages(t *testing.T) {
 		expected  []*storage.BaseImageInfo
 	}{
 		{
-			desc:      "Match found: Base image is a subset (2 layers vs 3)",
-			imgLayers: []string{"layer1", "layer2", "layer3"},
+			desc:      "Match found: Base image layers are returned out of order",
+			imgLayers: []string{"layer-A", "layer-B", "layer-C"},
 			mockSetup: func() {
 				mockDS.EXPECT().
-					ListCandidateBaseImages(gomock.Any(), "layer1").
+					ListCandidateBaseImages(gomock.Any(), "layer-A").
 					Return([]*storage.BaseImage{
 						{
-							Id:         "rhel-8",
-							Repository: "rhel",
-							Tag:        "8.5",
-							Layers:     []*storage.BaseImageLayer{{LayerDigest: "layer1"}, {LayerDigest: "layer2"}},
+							Id:             "base-1",
+							Repository:     "rhel",
+							Tag:            "8",
+							ManifestDigest: "sha-base",
+							Layers: []*storage.BaseImageLayer{
+								{LayerDigest: "layer-B", Index: 1}, // Index 1 comes first in slice
+								{LayerDigest: "layer-A", Index: 0}, // Index 0 comes second
+							},
 						},
 					}, nil)
 			},
 			expected: []*storage.BaseImageInfo{
-				{BaseImageId: "rhel-8", BaseImageFullName: "rhel:8.5"},
+				{
+					BaseImageId:       "base-1",
+					BaseImageFullName: "rhel:8",
+					BaseImageDigest:   "sha-base",
+				},
 			},
 		},
 		{
-			desc:      "Self-match prevention: Image and Base have identical layers",
-			imgLayers: []string{"layer1", "layer2"},
+			desc:      "No match: Layers match content but not order (index check)",
+			imgLayers: []string{"layer-A", "layer-B", "layer-C"},
 			mockSetup: func() {
 				mockDS.EXPECT().
-					ListCandidateBaseImages(gomock.Any(), "layer1").
+					ListCandidateBaseImages(gomock.Any(), "layer-A").
 					Return([]*storage.BaseImage{
 						{
-							Id:     "identical-image-in-base-table",
-							Layers: []*storage.BaseImageLayer{{LayerDigest: "layer1"}, {LayerDigest: "layer2"}},
+							Id: "wrong-order-base",
+							Layers: []*storage.BaseImageLayer{
+								{LayerDigest: "layer-A", Index: 1}, // A is at Index 1
+								{LayerDigest: "layer-B", Index: 0}, // B is at Index 0
+							},
 						},
 					}, nil)
 			},
-			expected: nil, // Should be ignored because len(img) is not > len(base)
+			expected: nil, // Should fail because imgLayers[0] (A) != sorted layers[0] (B)
 		},
 		{
-			desc:      "No match: Candidate is 'thicker' than current image",
-			imgLayers: []string{"layer1"},
+			desc:      "Multiple candidates: One matches, one does not",
+			imgLayers: []string{"L1", "L2", "L3"},
 			mockSetup: func() {
 				mockDS.EXPECT().
-					ListCandidateBaseImages(gomock.Any(), "layer1").
+					ListCandidateBaseImages(gomock.Any(), "L1").
 					Return([]*storage.BaseImage{
 						{
-							Layers: []*storage.BaseImageLayer{{LayerDigest: "layer1"}, {LayerDigest: "layer2"}},
+							Id: "match",
+							Layers: []*storage.BaseImageLayer{
+								{LayerDigest: "L1", Index: 0},
+								{LayerDigest: "L2", Index: 1},
+							},
+						},
+						{
+							Id: "no-match-different-content",
+							Layers: []*storage.BaseImageLayer{
+								{LayerDigest: "L1", Index: 0},
+								{LayerDigest: "LX", Index: 1},
+							},
 						},
 					}, nil)
 			},
-			expected: nil,
+			expected: []*storage.BaseImageInfo{
+				{BaseImageId: "match"},
+			},
 		},
 		{
-			desc:      "No match: Layers match in count but digests differ",
-			imgLayers: []string{"layer1", "layer2", "layer-v2"},
+			desc:      "Self-match prevention: Exact layer count and content",
+			imgLayers: []string{"L1", "L2"},
 			mockSetup: func() {
 				mockDS.EXPECT().
-					ListCandidateBaseImages(gomock.Any(), "layer1").
+					ListCandidateBaseImages(gomock.Any(), "L1").
 					Return([]*storage.BaseImage{
 						{
-							Layers: []*storage.BaseImageLayer{{LayerDigest: "layer1"}, {LayerDigest: "layer2"}, {LayerDigest: "layer-v1"}},
+							Id: "identical",
+							Layers: []*storage.BaseImageLayer{
+								{LayerDigest: "L1", Index: 0},
+								{LayerDigest: "L2", Index: 1},
+							},
 						},
 					}, nil)
 			},
@@ -650,7 +678,12 @@ func TestBaseImages(t *testing.T) {
 				assert.Empty(t, actual)
 			} else {
 				require.Equal(t, len(tc.expected), len(actual))
-				assert.Equal(t, tc.expected[0].BaseImageId, actual[0].BaseImageId)
+				for i := range tc.expected {
+					assert.Equal(t, tc.expected[i].BaseImageId, actual[i].BaseImageId)
+					if tc.expected[i].BaseImageFullName != "" {
+						assert.Equal(t, tc.expected[i].BaseImageFullName, actual[i].BaseImageFullName)
+					}
+				}
 			}
 		})
 	}

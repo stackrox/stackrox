@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"math"
+	"slices"
 	"strings"
 	"time"
 
@@ -1145,6 +1146,9 @@ func (s *serviceImpl) baseImages(ctx context.Context, layers []string, imgName s
 	var baseImages []*storage.BaseImageInfo
 	for _, c := range candidates {
 		candidateLayers := c.GetLayers()
+		slices.SortFunc(candidateLayers, func(a, b *storage.BaseImageLayer) int {
+			return int(a.GetIndex() - b.GetIndex())
+		})
 		if len(layers) <= len(candidateLayers) {
 			continue
 		}
