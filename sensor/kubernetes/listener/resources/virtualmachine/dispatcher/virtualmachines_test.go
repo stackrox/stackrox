@@ -50,6 +50,7 @@ func (s *virtualMachineSuite) SetupSubTest() {
 
 func (s *virtualMachineSuite) TearDownSubTest() {
 	s.mockCtrl.Finish()
+	centralcaps.Set(nil)
 }
 
 func (s *virtualMachineSuite) Test_VirtualMachineEvents() {
