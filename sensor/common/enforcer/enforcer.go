@@ -87,21 +87,21 @@ func (e *enforcer) ProcessAlertResults(action central.ResourceAction, stage stor
 				},
 			}
 		case storage.LifecycleStage_RUNTIME:
-			numProcesses := len(a.GetProcessViolation().GetProcesses())
-			numFileAccesses := len(a.GetFileAccessViolation().GetAccesses())
+			isProcessAlert := len(a.GetProcessViolation().GetProcesses()) > 0
+			isFileAlert := len(a.GetFileAccessViolation().GetAccesses()) > 0
 
-			if (numProcesses == 1) == (numFileAccesses == 1) {
-				// expect a single process XOR a single file access. one or the
-				// other but not neither or both.
-				log.Errorf("Runtime alert on policy %q and deployment %q has %d process violations and %d file violations. Expected only 1 of either", a.GetPolicy().GetName(), a.GetDeployment().GetName(), numProcesses, numFileAccesses)
+			if isProcessAlert && isFileAlert {
+				log.Errorf("Invalid alert state: must contain one of process violation or file violation")
 				continue
 			}
 
 			var podId string
-			if numProcesses == 1 {
+			if isProcessAlert {
 				podId = a.GetProcessViolation().GetProcesses()[0].GetPodId()
-			} else if numFileAccesses == 1 {
+			} else if isFileAlert {
 				podId = a.GetFileAccessViolation().GetAccesses()[0].GetProcess().GetPodId()
+			} else {
+				log.Errorf("Invalid alert state: does not contain enforcable violations")
 			}
 
 			e.actionsC <- &central.SensorEnforcement{
