@@ -679,9 +679,9 @@ func TestBaseImages(t *testing.T) {
 			} else {
 				require.Equal(t, len(tc.expected), len(actual))
 				for i := range tc.expected {
-					assert.Equal(t, tc.expected[i].BaseImageId, actual[i].BaseImageId)
-					if tc.expected[i].BaseImageFullName != "" {
-						assert.Equal(t, tc.expected[i].BaseImageFullName, actual[i].BaseImageFullName)
+					assert.Equal(t, tc.expected[i].GetBaseImageId(), actual[i].GetBaseImageId())
+					if tc.expected[i].GetBaseImageFullName() != "" {
+						assert.Equal(t, tc.expected[i].GetBaseImageFullName(), actual[i].GetBaseImageFullName())
 					}
 				}
 			}
