@@ -8,6 +8,7 @@ import (
 	"github.com/stackrox/rox/central/externalbackups/datastore"
 	"github.com/stackrox/rox/central/externalbackups/manager"
 	"github.com/stackrox/rox/central/externalbackups/service/internal"
+	"github.com/stackrox/rox/central/metadata/centralcapabilities"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/endpoints"
@@ -79,6 +80,11 @@ func (s *serviceImpl) GetExternalBackups(ctx context.Context, _ *v1.Empty) (*v1.
 func validateBackup(backup *storage.ExternalBackup) error {
 	errorList := errorhelpers.NewErrorList("external backup validation")
 
+	// Check if cloud backup integrations are available
+	if err := validateCloudBackupCapability(); err != nil {
+		errorList.AddError(err)
+	}
+
 	err := endpoints.ValidateEndpoints(backup.GetConfig())
 	if err != nil {
 		errorList.AddWrap(err, "invalid endpoint")
@@ -93,6 +99,14 @@ func validateBackup(backup *storage.ExternalBackup) error {
 		errorList.AddError(err)
 	}
 	return errorList.ToError()
+}
+
+func validateCloudBackupCapability() error {
+	capabilities := centralcapabilities.GetCentralCapabilities()
+	if capabilities.GetCentralCanUseCloudBackupIntegrations() == v1.CentralServicesCapabilities_CapabilityDisabled {
+		return errors.New("cloud backup integrations are not available in this environment")
+	}
+	return nil
 }
 
 func (s *serviceImpl) testBackup(ctx context.Context, backup *storage.ExternalBackup) error {
@@ -121,6 +135,9 @@ func (s *serviceImpl) TestUpdatedExternalBackup(ctx context.Context, request *v1
 func (s *serviceImpl) TriggerExternalBackup(ctx context.Context, request *v1.ResourceByID) (*v1.Empty, error) {
 	if request.GetId() == "" {
 		return nil, errors.Wrap(errox.InvalidArgs, "id must be specified when triggering a backup")
+	}
+	if err := validateCloudBackupCapability(); err != nil {
+		return nil, errors.Wrap(errox.InvalidArgs, err.Error())
 	}
 	if err := s.manager.Backup(ctx, request.GetId()); err != nil {
 		log.Errorf("error trigger backup: %v", err)
