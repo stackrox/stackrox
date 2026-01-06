@@ -61,6 +61,8 @@ const (
 	IndexReportHandlingMessageToCentralInvalidCID = "invalid_vsock_cid"
 	// IndexReportHandlingMessageToCentralVMUnknown marks flows that exit because the virtual machine is not known to Sensor.
 	IndexReportHandlingMessageToCentralVMUnknown = "vm_unknown_to_sensor"
+	// IndexReportHandlingMessageToCentralCapabilityMissing marks flows that exit because Central does not support VM capability.
+	IndexReportHandlingMessageToCentralCapabilityMissing = "central_capability_missing"
 )
 
 // IndexReportProcessingDurationMilliseconds tracks how long Sensor spends processing index reports after dequeuing them.
