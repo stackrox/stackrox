@@ -52,6 +52,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/proto"
 )
 
 const (
@@ -1152,8 +1153,10 @@ func (s *serviceImpl) baseImages(ctx context.Context, layers []string, imgName s
 		if len(layers) <= len(candidateLayers) {
 			continue
 		}
+		log.Infof(">>>> Getting base images candidates: %s, %s", c.GetRepository(), c.GetTag())
 		match := true
 		for i, l := range candidateLayers {
+			log.Infof(">>>> Getting base image layer: %s, %s", layers[i], l.GetLayerDigest())
 			if layers[i] != l.GetLayerDigest() {
 				match = false
 				break
@@ -1397,6 +1400,26 @@ func (s *serviceImpl) WatchImage(ctx context.Context, request *v1.WatchImageRequ
 		}, nil
 	}
 	if features.BaseImageDetection.Enabled() {
+		// TODO Remove: base image entities are manually populated with serialized blobs
+		// to enable search-framework testing until a proper API is available.
+		sample := &storage.BaseImage{
+			Id:               "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11",
+			Repository:       "alpine",
+			Tag:              "3.20.3",
+			FirstLayerDigest: "sha256:da9db072f522755cbeb85be2b3f84059b70571b229512f1571d9217b77e1087f",
+			Layers: []*storage.BaseImageLayer{
+				{
+					Id:          "c4015846-71d4-4fc3-85c1-3765e951279c",
+					BaseImageId: "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11",
+					LayerDigest: "sha256:da9db072f522755cbeb85be2b3f84059b70571b229512f1571d9217b77e1087f",
+					Index:       0,
+				},
+			},
+		}
+		blob, _ := proto.Marshal(sample)
+		log.Info(">>>>")
+		log.Infof("UPDATE base_images SET serialized = '\\x%x' WHERE id = '%s';", blob, sample.Id)
+		// end of mocking, will delete the testing block later
 		img.BaseImageInfo = s.baseImages(ctx, img.GetMetadata().GetLayerShas(), img.GetName().GetFullName(), img.GetId())
 	}
 	// Save the image
