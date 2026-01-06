@@ -7,6 +7,7 @@ import (
 	"github.com/pkg/errors"
 	countMetrics "github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/central/sensor/service/common"
+	"github.com/stackrox/rox/central/sensor/service/connection"
 	"github.com/stackrox/rox/central/sensor/service/pipeline"
 	"github.com/stackrox/rox/central/sensor/service/pipeline/reconciliation"
 	vmDatastore "github.com/stackrox/rox/central/virtualmachine/datastore"
@@ -85,7 +86,7 @@ func (p *pipelineImpl) Match(msg *central.MsgFromSensor) bool {
 	return msg.GetEvent().GetVirtualMachineIndexReport() != nil
 }
 
-func (p *pipelineImpl) Run(ctx context.Context, _ string, msg *central.MsgFromSensor, injector common.MessageInjector) error {
+func (p *pipelineImpl) Run(ctx context.Context, clusterID string, msg *central.MsgFromSensor, injector common.MessageInjector) error {
 	defer countMetrics.IncrementResourceProcessedCounter(pipeline.ActionToOperation(msg.GetEvent().GetAction()), metrics.VirtualMachineIndex)
 
 	if !features.VirtualMachines.Enabled() {
@@ -107,15 +108,21 @@ func (p *pipelineImpl) Run(ctx context.Context, _ string, msg *central.MsgFromSe
 
 	log.Debugf("Received virtual machine index report: %s", index.GetId())
 
-	// Extract cluster ID from injector (connection metadata)
-	clusterID := extractClusterID(injector)
+	if clusterID == "" {
+		return errors.New("missing cluster ID in pipeline context")
+	}
 
-	// Rate limit check
+	// Extract connection for capability checks; cluster ID is taken from the pipeline argument.
+	conn := connection.FromContext(ctx)
+
+	// Rate limit check. Drop message if rate limit exceeded and send NACK to Sensor if Sensor supports it.
 	allowed, reason := p.rateLimiter.TryConsume(clusterID)
 	if !allowed {
-		log.Infof("Rate limit exceeded for VM %s from cluster %s: %s",
-			index.GetId(), clusterID, reason)
-		sendVMIndexReportResponse(ctx, index.GetId(), central.SensorACK_NACK, reason, injector)
+		log.Infof("Rate limit %q exceeded for VM %s from cluster %s: %s",
+			p.rateLimiter.WorkloadName(), index.GetId(), clusterID, reason)
+		if conn != nil && conn.HasCapability(centralsensor.SensorACKSupport) {
+			sendVMIndexReportResponse(ctx, index.GetId(), central.SensorACK_NACK, reason, injector)
+		}
 		return nil // Don't return error - would cause pipeline retry
 	}
 
@@ -139,35 +146,18 @@ func (p *pipelineImpl) Run(ctx context.Context, _ string, msg *central.MsgFromSe
 		return errors.Wrapf(err, "failed to upsert VM %s to datastore", index.GetId())
 	}
 
-	log.Infof("Successfully enriched and stored VM %s with %d components",
+	log.Debugf("Successfully enriched and stored VM %s with %d components",
 		vm.GetId(), len(vm.GetScan().GetComponents()))
 
-	// Send ACK to Sensor
-	sendVMIndexReportResponse(ctx, index.GetId(), central.SensorACK_ACK, "", injector)
-
-	return nil
-}
-
-// extractClusterID extracts the cluster ID from the message injector (connection metadata).
-func extractClusterID(injector common.MessageInjector) string {
-	// MessageInjector is actually a SensorConnection which has ClusterID()
-	if conn, ok := injector.(interface{ ClusterID() string }); ok {
-		return conn.ClusterID()
+	// Send ACK to Sensor if Sensor supports it
+	if conn != nil && conn.HasCapability(centralsensor.SensorACKSupport) {
+		sendVMIndexReportResponse(ctx, index.GetId(), central.SensorACK_ACK, "", injector)
 	}
-	log.Warn("Unable to extract cluster ID from injector, using unknown")
-	return "unknown"
+	return nil
 }
 
 // sendVMIndexReportResponse sends an ACK or NACK for a VM index report.
 func sendVMIndexReportResponse(ctx context.Context, vmID string, action central.SensorACK_Action, reason string, injector common.MessageInjector) {
-	conn, ok := injector.(interface {
-		HasCapability(centralsensor.SensorCapability) bool
-	})
-	if !ok || !conn.HasCapability(centralsensor.SensorACKSupport) {
-		log.Debugf("Sensor does not support SensorACK, skipping VM index report response for %s", vmID)
-		return
-	}
-
 	msg := &central.MsgToSensor{
 		Msg: &central.MsgToSensor_SensorAck{
 			SensorAck: &central.SensorACK{
