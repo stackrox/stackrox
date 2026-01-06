@@ -24,6 +24,7 @@ func init() {
 	utils.Must(schema.AddType("ImageComponentV2", []string{
 		"architecture: String!",
 		"fixedBy: String!",
+		"fromBaseImage: Boolean!",
 		"id: ID!",
 		"imageId: String!",
 		"name: String!",
