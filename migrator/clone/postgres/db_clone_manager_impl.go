@@ -159,7 +159,6 @@ func (d *dbCloneManagerImpl) databaseExists(clone string) (bool, error) {
 }
 
 // GetCloneToMigrate - finds a clone to migrate.
-// It returns the database clone name, flag informing if Rocks should be used as well and error if fails.
 func (d *dbCloneManagerImpl) GetCloneToMigrate() (string, error) {
 	log.Info("GetCloneToMigrate")
 	if pgconfig.IsExternalDatabase() {

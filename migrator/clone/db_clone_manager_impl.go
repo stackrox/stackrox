@@ -11,18 +11,16 @@ type dbCloneManagerImpl struct {
 	forceRollbackVersion string
 	adminConfig          *postgres.Config
 	sourceMap            map[string]string
-	basePath             string
 	dbmPostgres          pgClone.DBCloneManager
 	external             bool
 }
 
 // NewPostgres - returns a new ready-to-use manager.
-func NewPostgres(basePath string, forceVersion string, adminConfig *postgres.Config, sourceMap map[string]string) DBCloneManager {
+func NewPostgres(forceVersion string, adminConfig *postgres.Config, sourceMap map[string]string) DBCloneManager {
 	return &dbCloneManagerImpl{
 		forceRollbackVersion: forceVersion,
 		adminConfig:          adminConfig,
 		sourceMap:            sourceMap,
-		basePath:             basePath,
 		dbmPostgres:          pgClone.New(forceVersion, adminConfig, sourceMap),
 		external:             pgconfig.IsExternalDatabase(),
 	}
@@ -35,7 +33,7 @@ func (d *dbCloneManagerImpl) Scan() error {
 }
 
 // GetCloneToMigrate - finds a clone to migrate.
-// It returns the clone link, path to database, postgres database name and error if fails.
+// It returns the postgres database name and error if fails.
 func (d *dbCloneManagerImpl) GetCloneToMigrate() (string, error) {
 	var pgClone string
 	var err error
