@@ -51,6 +51,7 @@ var (
 		search.VolumeSource:                  newMapper(fieldnames.VolumeSource, directMap),
 		search.VolumeType:                    newMapper(fieldnames.VolumeType, directMap),
 		search.NodeFilePath:                  newMapper(fieldnames.NodeFilePath, directMap),
+		search.MountedFilePath:               newMapper(fieldnames.MountedFilePath, directMap),
 	}
 )
 

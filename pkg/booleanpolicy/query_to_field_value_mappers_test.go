@@ -407,6 +407,10 @@ func (s *SearchMapperTestSuite) TestConvertVolumeType() {
 	s.testDirectMapSearchString(search.VolumeType, fieldnames.VolumeType)
 }
 
-func (s *SearchMapperTestSuite) TestConvertFilePath() {
+func (s *SearchMapperTestSuite) TestConvertNodeFilePath() {
 	s.testDirectMapSearchString(search.NodeFilePath, fieldnames.NodeFilePath)
+}
+
+func (s *SearchMapperTestSuite) TestConvertMountedFilePath() {
+	s.testDirectMapSearchString(search.MountedFilePath, fieldnames.MountedFilePath)
 }
