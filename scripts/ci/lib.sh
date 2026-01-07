@@ -1499,8 +1499,8 @@ post_process_test_results() {
         return 0
     fi
 
-    if [[ -z "${ARTIFACT_DIR:-}" ]]; then
-        info "ERROR: ARTIFACT_DIR is not set which is expected in openshift CI"
+    if [[ -z "${ARTIFACT_DIR:-}" || ! -d "${ARTIFACT_DIR:-}" ]]; then
+        info "Skipping junit processing: ARTIFACT_DIR is unset or missing (${ARTIFACT_DIR:-unset})."
         return 0
     fi
 
