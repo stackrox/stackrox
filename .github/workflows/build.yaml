@@ -741,8 +741,6 @@ jobs:
           push_context="merge-to-master"
         fi
         push_operator_manifest_lists "$push_context" "${{ env.ROX_PRODUCT_BRANDING }}" ${{ matrix.archs }}
-
->>>>>>> c972ddf33d (ROX-32281: update test image to 0.5.1 (#18205))
   scan-go-binaries:
     if: |
       contains(github.event.pull_request.labels.*.name, 'scan-go-binaries')
