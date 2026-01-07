@@ -7,16 +7,18 @@ import TBodyUnified from 'Components/TableStateTemplates/TbodyUnified';
 
 export type BaseImagesTableProps = {
     baseImages: BaseImageReference[];
-    onRemove: (baseImage: BaseImageReference) => void;
-    isRemoveInProgress: boolean;
+    onEdit: (baseImage: BaseImageReference) => void;
+    onDelete: (baseImage: BaseImageReference) => void;
+    isActionInProgress: boolean;
     isLoading: boolean;
     error: Error | null;
 };
 
 function BaseImagesTable({
     baseImages,
-    onRemove,
-    isRemoveInProgress,
+    onEdit,
+    onDelete,
+    isActionInProgress,
     isLoading,
     error = null,
 }: BaseImagesTableProps) {
@@ -51,11 +53,15 @@ function BaseImagesTable({
                                 <Td>{baseImage.user.name}</Td>
                                 <Td isActionCell>
                                     <ActionsColumn
-                                        isDisabled={isRemoveInProgress}
+                                        isDisabled={isActionInProgress}
                                         items={[
                                             {
-                                                title: 'Remove',
-                                                onClick: () => onRemove(baseImage),
+                                                title: 'Edit tag pattern',
+                                                onClick: () => onEdit(baseImage),
+                                            },
+                                            {
+                                                title: 'Delete base image',
+                                                onClick: () => onDelete(baseImage),
                                             },
                                         ]}
                                     />
