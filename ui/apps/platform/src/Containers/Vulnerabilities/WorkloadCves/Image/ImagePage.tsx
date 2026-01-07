@@ -44,7 +44,10 @@ import ImagePageVulnerabilities from './ImagePageVulnerabilities';
 import ImagePageResources from './ImagePageResources';
 import ImagePageSignatureVerification from './ImagePageSignatureVerification';
 import { detailsTabValues } from '../../types';
-import ImageDetailBadges, { imageDetailsFragment, imageV2DetailsFragment } from '../components/ImageDetailBadges';
+import ImageDetailBadges, {
+    imageDetailsFragment,
+    imageV2DetailsFragment,
+} from '../components/ImageDetailBadges';
 import type { ImageDetails } from '../components/ImageDetailBadges';
 import getImageScanMessage from '../utils/getImageScanMessage';
 import { DEFAULT_VM_PAGE_SIZE } from '../../constants';
