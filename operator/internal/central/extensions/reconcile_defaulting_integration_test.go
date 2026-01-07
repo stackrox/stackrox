@@ -87,7 +87,6 @@ var _ = Describe("FeatureDefaultingExtension", func() {
 		}
 		err := k8sClient.Create(ctx, namespace)
 		Expect(err).NotTo(HaveOccurred())
-
 	})
 
 	AfterEach(func() {
