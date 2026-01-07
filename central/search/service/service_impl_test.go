@@ -29,9 +29,9 @@ import (
 	riskDatastoreMocks "github.com/stackrox/rox/central/risk/datastore/mocks"
 	secretMocks "github.com/stackrox/rox/central/secret/datastore/mocks"
 	serviceAccountMocks "github.com/stackrox/rox/central/serviceaccount/datastore/mocks"
+	"github.com/stackrox/rox/central/testutils"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
 	"github.com/stackrox/rox/pkg/postgres"
@@ -52,22 +52,6 @@ func TestSearchCategoryToOptionsMultiMap(t *testing.T) {
 	}
 }
 
-// setFlattenImageDataForTest sets the FlattenImageData feature flag for testing and returns a restore function.
-func setFlattenImageDataForTest(t *testing.T, enabled bool) func() {
-	originalValue := features.FlattenImageData.Enabled()
-	t.Setenv(features.FlattenImageData.EnvVar(), "false")
-	if enabled {
-		t.Setenv(features.FlattenImageData.EnvVar(), "true")
-	}
-	return func() {
-		if originalValue {
-			t.Setenv(features.FlattenImageData.EnvVar(), "true")
-		} else {
-			t.Setenv(features.FlattenImageData.EnvVar(), "false")
-		}
-	}
-}
-
 func TestGetSearchFuncs_FlattenImageDataRoutesImageSearch(t *testing.T) {
 	ctx := context.Background()
 	q := &v1.Query{}
@@ -79,7 +63,7 @@ func TestGetSearchFuncs_FlattenImageDataRoutesImageSearch(t *testing.T) {
 		imagesStore := imageMocks.NewMockDataStore(mockCtrl)
 		imagesV2Store := imageV2DatastoreMocks.NewMockDataStore(mockCtrl)
 
-		restore := setFlattenImageDataForTest(t, false)
+		restore := testutils.SetFlattenImageDataForTest(t, false)
 		defer restore()
 
 		svc := NewBuilder().
@@ -106,6 +90,10 @@ func TestGetSearchFuncs_FlattenImageDataRoutesImageSearch(t *testing.T) {
 		imageSearchFunc, ok := searchFuncs[v1.SearchCategory_IMAGES]
 		assert.True(t, ok, "expected search func for IMAGES category")
 
+		// Verify IMAGES_V2 category is not exposed when FlattenImageData is disabled
+		_, v2Ok := searchFuncs[v1.SearchCategory_IMAGES_V2]
+		assert.False(t, v2Ok, "IMAGES_V2 category should not be registered when FlattenImageData is disabled")
+
 		imagesStore.EXPECT().SearchImages(ctx, q).Return(nil, nil).Times(1)
 		imagesV2Store.EXPECT().SearchImages(ctx, q).Times(0)
 
@@ -120,7 +108,7 @@ func TestGetSearchFuncs_FlattenImageDataRoutesImageSearch(t *testing.T) {
 		imagesStore := imageMocks.NewMockDataStore(mockCtrl)
 		imagesV2Store := imageV2DatastoreMocks.NewMockDataStore(mockCtrl)
 
-		restore := setFlattenImageDataForTest(t, true)
+		restore := testutils.SetFlattenImageDataForTest(t, true)
 		defer restore()
 
 		svc := NewBuilder().
@@ -172,7 +160,7 @@ func TestGetAutocompleteSearchers_FlattenImageDataRoutesImageAutocomplete(t *tes
 		imagesStore := imageMocks.NewMockDataStore(mockCtrl)
 		imagesV2Store := imageV2DatastoreMocks.NewMockDataStore(mockCtrl)
 
-		restore := setFlattenImageDataForTest(t, false)
+		restore := testutils.SetFlattenImageDataForTest(t, false)
 		defer restore()
 
 		svc := NewBuilder().
@@ -214,7 +202,7 @@ func TestGetAutocompleteSearchers_FlattenImageDataRoutesImageAutocomplete(t *tes
 		imagesStore := imageMocks.NewMockDataStore(mockCtrl)
 		imagesV2Store := imageV2DatastoreMocks.NewMockDataStore(mockCtrl)
 
-		restore := setFlattenImageDataForTest(t, true)
+		restore := testutils.SetFlattenImageDataForTest(t, true)
 		defer restore()
 
 		svc := NewBuilder().

@@ -10,9 +10,10 @@ type ContainerImageProps = {
 };
 
 function ContainerImage({ image, vulnMgmtBasePath }: ContainerImageProps): ReactElement {
-    const imageDetailsPageURL = `${vulnMgmtBasePath}/images/${image.idV2 ?? image.id}`;
+    const imageId = image.idV2 ?? image.id;
+    const imageDetailsPageURL = `${vulnMgmtBasePath}/images/${imageId}`;
 
-    if (image.id === '' || image.notPullable) {
+    if (imageId === '' || image.notPullable) {
         const unavailableText = image.notPullable
             ? 'image not currently pullable'
             : 'image not available until deployment is running';

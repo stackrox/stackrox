@@ -13,7 +13,7 @@ function ContainerImageInfo({ image }: ContainerImageInfoProps) {
     const imageId = image.idV2 ?? image.id;
     const imageDetailsPageURL = `${vulnerabilitiesAllImagesPath}/${getWorkloadEntityPagePath('Image', imageId, 'OBSERVED')}`;
 
-    if (image.id === '' || image.notPullable) {
+    if (imageId === '' || image.notPullable) {
         const unavailableText = image.notPullable
             ? 'image not currently pullable'
             : 'image not available until deployment is running';

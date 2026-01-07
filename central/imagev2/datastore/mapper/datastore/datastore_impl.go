@@ -53,9 +53,20 @@ func (ds *datastoreImpl) SearchListImages(ctx context.Context, q *v1.Query) ([]*
 		return nil, err
 	}
 
-	// Convert to list images
-	listImages := make([]*storage.ListImage, 0, len(images))
+	// Build a map for O(1) lookup when reordering
+	imageByID := make(map[string]*storage.ImageV2, len(images))
 	for _, image := range images {
+		imageByID[image.GetId()] = image
+	}
+
+	// Convert to list images, preserving the original search order from results
+	listImages := make([]*storage.ListImage, 0, len(ids))
+	for _, id := range ids {
+		image, exists := imageByID[id]
+		if !exists {
+			// Image may have been deleted between search and lookup, skip it
+			continue
+		}
 		// Convert v2 to v1
 		v1Image := imageUtils.ConvertToV1(image)
 		// Convert v1 to ListImage
