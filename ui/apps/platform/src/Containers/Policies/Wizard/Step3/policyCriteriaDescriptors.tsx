@@ -1519,7 +1519,8 @@ export const policyCriteriaDescriptors: Descriptor[] = [
         label: 'Actual file path',
         name: 'Actual File Path',
         shortName: 'Actual file path',
-        longName: 'The path to the physical file that is modified on the filesystem or underlying mount',
+        longName:
+            'The path to the physical file that is modified on the filesystem or underlying mount',
         category: policyCriteriaCategories.FILE_ACTIVITY,
         type: 'select',
         placeholder: 'Select a file path',
