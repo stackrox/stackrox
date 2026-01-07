@@ -158,6 +158,9 @@ func (p *pipelineImpl) Run(ctx context.Context, clusterID string, msg *central.M
 
 // sendVMIndexReportResponse sends an ACK or NACK for a VM index report.
 func sendVMIndexReportResponse(ctx context.Context, vmID string, action central.SensorACK_Action, reason string, injector common.MessageInjector) {
+	if injector == nil {
+		return
+	}
 	msg := &central.MsgToSensor{
 		Msg: &central.MsgToSensor_SensorAck{
 			SensorAck: &central.SensorACK{
