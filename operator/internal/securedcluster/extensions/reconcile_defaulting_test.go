@@ -2,6 +2,7 @@ package extensions
 
 import (
 	"context"
+	"errors"
 	"testing"
 
 	"github.com/go-logr/logr"
@@ -210,6 +211,9 @@ func TestReconcileAdmissionControllerDef(t *testing.T) {
 			unstructuredSecuredCluster := securedClusterToUnstructured(t, baseSecuredCluster)
 
 			err := reconcileFeatureDefaults(ctx, client, unstructuredSecuredCluster, logr.Discard())
+			if errors.Is(err, common.ErrorAnnotationsUpdated) {
+				err = reconcileFeatureDefaults(ctx, client, unstructuredSecuredCluster, logr.Discard())
+			}
 			assert.NoError(t, err, "reconcileFeatureDefaults returned error")
 
 			securedClusterFetched := platform.SecuredCluster{}
@@ -344,7 +348,10 @@ func TestReconcileScannerV4FeatureDefaultsExtension(t *testing.T) {
 			unstructuredSecuredCluster := securedClusterToUnstructured(t, baseSecuredCluster)
 
 			err := reconcileFeatureDefaults(ctx, client, unstructuredSecuredCluster, logr.Discard())
-			assert.Nil(t, err, "reconcileFeatureDefaults returned error")
+			if errors.Is(err, common.ErrorAnnotationsUpdated) {
+				err = reconcileFeatureDefaults(ctx, client, unstructuredSecuredCluster, logr.Discard())
+			}
+			assert.NoError(t, err, "reconcileFeatureDefaults returned error")
 
 			securedClusterFetched := platform.SecuredCluster{}
 			err = client.Get(ctx, ctrlClient.ObjectKey{Namespace: testutils.TestNamespace, Name: clusterName}, &securedClusterFetched)
