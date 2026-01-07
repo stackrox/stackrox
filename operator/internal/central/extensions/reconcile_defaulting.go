@@ -88,7 +88,7 @@ func setDefaultsAndPersist(ctx context.Context, logger logr.Logger, u *unstructu
 	//
 	// To keep the flow conceptually simple, we patch the annotations here and then return with an error, which
 	// will cause reconciliation to be requeued.
-	// This way, we avoid having to deal with generation changes and keeping th in-memory object in sync.
+	// This way, we avoid having to deal with generation changes and keeping the in-memory object in sync.
 	err := client.Patch(ctx, u, patch)
 	if err != nil {
 		return errors.Wrap(err, "patching Central annotations")
