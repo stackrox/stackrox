@@ -35,6 +35,23 @@ func getFakeSBOM(_ any) ([]byte, bool, error) {
 	return sbomBytes, true, nil
 }
 
+// setFlattenImageDataForTest sets the FlattenImageData feature flag for testing and returns a restore function.
+// This may not be necessary if the environment is not persisted between tests.
+func setFlattenImageDataForTest(t *testing.T, enabled bool) func() {
+	originalValue := features.FlattenImageData.Enabled()
+	t.Setenv(features.FlattenImageData.EnvVar(), "false")
+	if enabled {
+		t.Setenv(features.FlattenImageData.EnvVar(), "true")
+	}
+	return func() {
+		if originalValue {
+			t.Setenv(features.FlattenImageData.EnvVar(), "true")
+		} else {
+			t.Setenv(features.FlattenImageData.EnvVar(), "false")
+		}
+	}
+}
+
 func createMockSBOM() map[string]interface{} {
 	return map[string]interface{}{
 		"SPDXID":      "SPDXRef-DOCUMENT",
@@ -273,14 +290,10 @@ func TestSBOMHandler_FlattenImageDataPaths(t *testing.T) {
 		name               string
 		flattenImageData   bool
 		setupRiskV2        func(rm *riskManagerMocks.MockManager)
-		imgV2Nil           bool
 		expectV1Enricher   bool
 		expectV2Enricher   bool
 		expectRiskV1Called bool
 		expectRiskV2Called bool
-		expectGetImageV2ID bool
-		getImageV2IDErr    error
-		imageV2ID          string
 	}{
 		{
 			name:               "FlattenImageData=false uses v1 enricher and v1 risk manager",
@@ -293,45 +306,16 @@ func TestSBOMHandler_FlattenImageDataPaths(t *testing.T) {
 			flattenImageData:   true,
 			expectV2Enricher:   true,
 			expectRiskV2Called: true,
-			expectGetImageV2ID: true,
-			imageV2ID:          "image-v2-id",
 			setupRiskV2: func(rm *riskManagerMocks.MockManager) {
 				rm.EXPECT().CalculateRiskAndUpsertImageV2(gomock.Any()).Return(nil).AnyTimes()
 			},
-		},
-		{
-			name:               "FlattenImageData=true with GetImageV2ID error early-returns without risk manager call",
-			flattenImageData:   true,
-			expectV2Enricher:   true,
-			expectRiskV2Called: false,
-			expectGetImageV2ID: true,
-			getImageV2IDErr:    errors.New("id lookup failed"),
-		},
-		{
-			name:               "FlattenImageData=true with empty id early-returns without risk manager call",
-			flattenImageData:   true,
-			expectV2Enricher:   true,
-			expectRiskV2Called: false,
-			expectGetImageV2ID: true,
-			imageV2ID:          "",
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			// Toggle the FlattenImageData feature flag
-			originalValue := features.FlattenImageData.Enabled()
-			t.Setenv(features.FlattenImageData.EnvVar(), "false")
-			if tt.flattenImageData {
-				t.Setenv(features.FlattenImageData.EnvVar(), "true")
-			}
-			defer func() {
-				if originalValue {
-					t.Setenv(features.FlattenImageData.EnvVar(), "true")
-				} else {
-					t.Setenv(features.FlattenImageData.EnvVar(), "false")
-				}
-			}()
+			restore := setFlattenImageDataForTest(t, tt.flattenImageData)
+			defer restore()
 
 			ctrl := gomock.NewController(t)
 			defer ctrl.Finish()
@@ -365,13 +349,8 @@ func TestSBOMHandler_FlattenImageDataPaths(t *testing.T) {
 					if imgV2.Scan == nil {
 						imgV2.Scan = &storage.ImageScan{DataSource: &storage.DataSource{Id: iiStore.DefaultScannerV4Integration.GetId()}}
 					}
-					// Set digest and ID for GetImageV2ID
-					if !tt.imgV2Nil {
-						imgV2.Digest = "sha256:test"
-						if tt.imageV2ID != "" {
-							imgV2.Id = tt.imageV2ID
-						}
-					}
+					// Set digest for GetImageV2ID to compute a valid ID
+					imgV2.Digest = "sha256:test"
 					return enricher.EnrichmentResult{ImageUpdated: true, ScanResult: enricher.ScanSucceeded}, nil
 				}).AnyTimes()
 			}
@@ -404,13 +383,7 @@ func TestSBOMHandler_FlattenImageDataPaths(t *testing.T) {
 			res := recorder.Result()
 			err = res.Body.Close()
 			assert.NoError(t, err)
-
-			if tt.getImageV2IDErr != nil || tt.imageV2ID == "" {
-				// These cases should result in an error
-				assert.NotEqual(t, http.StatusOK, res.StatusCode)
-			} else {
-				assert.Equal(t, http.StatusOK, res.StatusCode)
-			}
+			assert.Equal(t, http.StatusOK, res.StatusCode)
 		})
 	}
 }

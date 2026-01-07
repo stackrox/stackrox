@@ -97,6 +97,9 @@ func (h sbomHttpHandler) enrichByNameWithModelSwitch(
 	imgName string,
 ) (img *storage.Image, imgV2 *storage.ImageV2, err error) {
 	if features.FlattenImageData.Enabled() {
+		if h.enricherV2 == nil {
+			return nil, nil, fmt.Errorf("enricherV2 is nil when FlattenImageData is enabled")
+		}
 		imgV2, err = enricher.EnrichImageV2ByName(ctx, h.enricherV2, enrichmentCtx, imgName)
 		if err != nil {
 			return nil, nil, err
@@ -191,7 +194,8 @@ func (h sbomHttpHandler) getSBOM(ctx context.Context, params apiparams.SBOMReque
 		// Since the Index Report for image does not exist, force scan by Scanner V4.
 		addForceToEnrichmentContext(&enrichmentCtx)
 
-		img, imgV2, err := h.enrichByNameWithModelSwitch(ctx, enrichmentCtx, params.ImageName)
+		var imgV2 *storage.ImageV2
+		img, imgV2, err = h.enrichByNameWithModelSwitch(ctx, enrichmentCtx, params.ImageName)
 		if err != nil {
 			return nil, err
 		}

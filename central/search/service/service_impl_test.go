@@ -52,6 +52,22 @@ func TestSearchCategoryToOptionsMultiMap(t *testing.T) {
 	}
 }
 
+// setFlattenImageDataForTest sets the FlattenImageData feature flag for testing and returns a restore function.
+func setFlattenImageDataForTest(t *testing.T, enabled bool) func() {
+	originalValue := features.FlattenImageData.Enabled()
+	t.Setenv(features.FlattenImageData.EnvVar(), "false")
+	if enabled {
+		t.Setenv(features.FlattenImageData.EnvVar(), "true")
+	}
+	return func() {
+		if originalValue {
+			t.Setenv(features.FlattenImageData.EnvVar(), "true")
+		} else {
+			t.Setenv(features.FlattenImageData.EnvVar(), "false")
+		}
+	}
+}
+
 func TestGetSearchFuncs_FlattenImageDataRoutesImageSearch(t *testing.T) {
 	ctx := context.Background()
 	q := &v1.Query{}
@@ -63,16 +79,8 @@ func TestGetSearchFuncs_FlattenImageDataRoutesImageSearch(t *testing.T) {
 		imagesStore := imageMocks.NewMockDataStore(mockCtrl)
 		imagesV2Store := imageV2DatastoreMocks.NewMockDataStore(mockCtrl)
 
-		// Set FlattenImageData to false
-		originalValue := features.FlattenImageData.Enabled()
-		t.Setenv(features.FlattenImageData.EnvVar(), "false")
-		defer func() {
-			if originalValue {
-				t.Setenv(features.FlattenImageData.EnvVar(), "true")
-			} else {
-				t.Setenv(features.FlattenImageData.EnvVar(), "false")
-			}
-		}()
+		restore := setFlattenImageDataForTest(t, false)
+		defer restore()
 
 		svc := NewBuilder().
 			WithAlertStore(alertMocks.NewMockDataStore(mockCtrl)).
@@ -112,16 +120,8 @@ func TestGetSearchFuncs_FlattenImageDataRoutesImageSearch(t *testing.T) {
 		imagesStore := imageMocks.NewMockDataStore(mockCtrl)
 		imagesV2Store := imageV2DatastoreMocks.NewMockDataStore(mockCtrl)
 
-		// Set FlattenImageData to true
-		originalValue := features.FlattenImageData.Enabled()
-		t.Setenv(features.FlattenImageData.EnvVar(), "true")
-		defer func() {
-			if originalValue {
-				t.Setenv(features.FlattenImageData.EnvVar(), "true")
-			} else {
-				t.Setenv(features.FlattenImageData.EnvVar(), "false")
-			}
-		}()
+		restore := setFlattenImageDataForTest(t, true)
+		defer restore()
 
 		svc := NewBuilder().
 			WithAlertStore(alertMocks.NewMockDataStore(mockCtrl)).
@@ -172,16 +172,8 @@ func TestGetAutocompleteSearchers_FlattenImageDataRoutesImageAutocomplete(t *tes
 		imagesStore := imageMocks.NewMockDataStore(mockCtrl)
 		imagesV2Store := imageV2DatastoreMocks.NewMockDataStore(mockCtrl)
 
-		// Set FlattenImageData to false
-		originalValue := features.FlattenImageData.Enabled()
-		t.Setenv(features.FlattenImageData.EnvVar(), "false")
-		defer func() {
-			if originalValue {
-				t.Setenv(features.FlattenImageData.EnvVar(), "true")
-			} else {
-				t.Setenv(features.FlattenImageData.EnvVar(), "false")
-			}
-		}()
+		restore := setFlattenImageDataForTest(t, false)
+		defer restore()
 
 		svc := NewBuilder().
 			WithAlertStore(alertMocks.NewMockDataStore(mockCtrl)).
@@ -222,16 +214,8 @@ func TestGetAutocompleteSearchers_FlattenImageDataRoutesImageAutocomplete(t *tes
 		imagesStore := imageMocks.NewMockDataStore(mockCtrl)
 		imagesV2Store := imageV2DatastoreMocks.NewMockDataStore(mockCtrl)
 
-		// Set FlattenImageData to true
-		originalValue := features.FlattenImageData.Enabled()
-		t.Setenv(features.FlattenImageData.EnvVar(), "true")
-		defer func() {
-			if originalValue {
-				t.Setenv(features.FlattenImageData.EnvVar(), "true")
-			} else {
-				t.Setenv(features.FlattenImageData.EnvVar(), "false")
-			}
-		}()
+		restore := setFlattenImageDataForTest(t, true)
+		defer restore()
 
 		svc := NewBuilder().
 			WithAlertStore(alertMocks.NewMockDataStore(mockCtrl)).
