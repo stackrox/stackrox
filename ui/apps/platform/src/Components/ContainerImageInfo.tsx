@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom-v5-compat';
 import { Card, CardBody, CardTitle } from '@patternfly/react-core';
 
 import { vulnerabilitiesAllImagesPath } from 'routePaths';
+import { getWorkloadEntityPagePath } from 'Containers/Vulnerabilities/utils/searchUtils';
 import type { ContainerImage } from 'types/deployment.proto';
 
 type ContainerImageInfoProps = {
@@ -9,7 +10,8 @@ type ContainerImageInfoProps = {
 };
 
 function ContainerImageInfo({ image }: ContainerImageInfoProps) {
-    const imageDetailsPageURL = `${vulnerabilitiesAllImagesPath}/images/${image.idV2 ?? image.id}`;
+    const imageId = image.idV2 ?? image.id;
+    const imageDetailsPageURL = `${vulnerabilitiesAllImagesPath}/${getWorkloadEntityPagePath('Image', imageId, 'OBSERVED')}`;
 
     if (image.id === '' || image.notPullable) {
         const unavailableText = image.notPullable

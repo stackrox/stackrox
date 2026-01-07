@@ -265,3 +265,152 @@ func TestHttpHandler_ServeHTTP(t *testing.T) {
 		assert.Equal(t, http.StatusOK, res.StatusCode)
 	})
 }
+
+func TestSBOMHandler_FlattenImageDataPaths(t *testing.T) {
+	t.Setenv(features.ScannerV4.EnvVar(), "true")
+
+	tests := []struct {
+		name               string
+		flattenImageData   bool
+		setupRiskV2        func(rm *riskManagerMocks.MockManager)
+		imgV2Nil           bool
+		expectV1Enricher   bool
+		expectV2Enricher   bool
+		expectRiskV1Called bool
+		expectRiskV2Called bool
+		expectGetImageV2ID bool
+		getImageV2IDErr    error
+		imageV2ID          string
+	}{
+		{
+			name:               "FlattenImageData=false uses v1 enricher and v1 risk manager",
+			flattenImageData:   false,
+			expectV1Enricher:   true,
+			expectRiskV1Called: true,
+		},
+		{
+			name:               "FlattenImageData=true uses v2 enricher, ConvertToV1 and v2 risk manager",
+			flattenImageData:   true,
+			expectV2Enricher:   true,
+			expectRiskV2Called: true,
+			expectGetImageV2ID: true,
+			imageV2ID:          "image-v2-id",
+			setupRiskV2: func(rm *riskManagerMocks.MockManager) {
+				rm.EXPECT().CalculateRiskAndUpsertImageV2(gomock.Any()).Return(nil).AnyTimes()
+			},
+		},
+		{
+			name:               "FlattenImageData=true with GetImageV2ID error early-returns without risk manager call",
+			flattenImageData:   true,
+			expectV2Enricher:   true,
+			expectRiskV2Called: false,
+			expectGetImageV2ID: true,
+			getImageV2IDErr:    errors.New("id lookup failed"),
+		},
+		{
+			name:               "FlattenImageData=true with empty id early-returns without risk manager call",
+			flattenImageData:   true,
+			expectV2Enricher:   true,
+			expectRiskV2Called: false,
+			expectGetImageV2ID: true,
+			imageV2ID:          "",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			// Toggle the FlattenImageData feature flag
+			originalValue := features.FlattenImageData.Enabled()
+			t.Setenv(features.FlattenImageData.EnvVar(), "false")
+			if tt.flattenImageData {
+				t.Setenv(features.FlattenImageData.EnvVar(), "true")
+			}
+			defer func() {
+				if originalValue {
+					t.Setenv(features.FlattenImageData.EnvVar(), "true")
+				} else {
+					t.Setenv(features.FlattenImageData.EnvVar(), "false")
+				}
+			}()
+
+			ctrl := gomock.NewController(t)
+			defer ctrl.Finish()
+
+			// Initialize mocks
+			v1Enricher := enricherMock.NewMockImageEnricher(ctrl)
+			v2Enricher := enricherMock.NewMockImageEnricherV2(ctrl)
+			riskMgr := riskManagerMocks.NewMockManager(ctrl)
+
+			// Setup scanner mocks
+			scannerSet := scannerMocks.NewMockSet(ctrl)
+			set := intergrationMocks.NewMockSet(ctrl)
+			scanner := scannerTypesMocks.NewMockScannerSBOMer(ctrl)
+			fsr := scannerTypesMocks.NewMockImageScannerWithDataSource(ctrl)
+
+			scanner.EXPECT().Type().Return(scannerTypes.ScannerV4).AnyTimes()
+			scanner.EXPECT().GetSBOM(gomock.Any()).DoAndReturn(getFakeSBOM).AnyTimes()
+			set.EXPECT().ScannerSet().Return(scannerSet).AnyTimes()
+			fsr.EXPECT().GetScanner().Return(scanner).AnyTimes()
+			scannerSet.EXPECT().GetAll().Return([]scannerTypes.ImageScannerWithDataSource{fsr}).AnyTimes()
+
+			// Setup enricher expectations
+			if tt.expectV1Enricher {
+				v1Enricher.EXPECT().EnrichImage(gomock.Any(), gomock.Any(), gomock.Any()).Return(enricher.EnrichmentResult{ImageUpdated: true, ScanResult: enricher.ScanSucceeded}, nil).AnyTimes()
+			}
+
+			if tt.expectV2Enricher {
+				// EnrichImageV2ByName calls EnrichImage on the V2 enricher with an ImageV2
+				v2Enricher.EXPECT().EnrichImage(gomock.Any(), gomock.Any(), gomock.Any()).DoAndReturn(func(ctx context.Context, enrichCtx enricher.EnrichmentContext, imgV2 *storage.ImageV2) (enricher.EnrichmentResult, error) {
+					// Set up the image V2 with scan data so scannedByScannerV4 works
+					if imgV2.Scan == nil {
+						imgV2.Scan = &storage.ImageScan{DataSource: &storage.DataSource{Id: iiStore.DefaultScannerV4Integration.GetId()}}
+					}
+					// Set digest and ID for GetImageV2ID
+					if !tt.imgV2Nil {
+						imgV2.Digest = "sha256:test"
+						if tt.imageV2ID != "" {
+							imgV2.Id = tt.imageV2ID
+						}
+					}
+					return enricher.EnrichmentResult{ImageUpdated: true, ScanResult: enricher.ScanSucceeded}, nil
+				}).AnyTimes()
+			}
+
+			// Setup risk manager expectations
+			if tt.setupRiskV2 != nil {
+				tt.setupRiskV2(riskMgr)
+			}
+
+			if tt.expectRiskV1Called {
+				riskMgr.EXPECT().CalculateRiskAndUpsertImage(gomock.Any()).Return(nil).AnyTimes()
+			}
+
+			// Prepare the SBOM generation request
+			reqBody := &apiparams.SBOMRequestBody{
+				ImageName: "quay.io/quay-qetest/nodejs-test-image:latest",
+				Force:     false,
+			}
+			reqJson, err := json.Marshal(reqBody)
+			assert.NoError(t, err)
+			req := httptest.NewRequest(http.MethodPost, "/sbom", bytes.NewReader(reqJson))
+			recorder := httptest.NewRecorder()
+
+			handler := SBOMHandler(set, v1Enricher, v2Enricher, nil, riskMgr)
+
+			// Make the SBOM generation request
+			handler.ServeHTTP(recorder, req)
+
+			// Validate results
+			res := recorder.Result()
+			err = res.Body.Close()
+			assert.NoError(t, err)
+
+			if tt.getImageV2IDErr != nil || tt.imageV2ID == "" {
+				// These cases should result in an error
+				assert.NotEqual(t, http.StatusOK, res.StatusCode)
+			} else {
+				assert.Equal(t, http.StatusOK, res.StatusCode)
+			}
+		})
+	}
+}
