@@ -6,7 +6,6 @@ import (
 	"context"
 	"fmt"
 	"testing"
-	"time"
 
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/migrator/clone/metadata"
@@ -24,10 +23,6 @@ import (
 	"github.com/stackrox/rox/pkg/version"
 	"github.com/stackrox/rox/pkg/version/testutils"
 	"github.com/stretchr/testify/suite"
-)
-
-const (
-	tempDB = TempClone
 )
 
 var (
@@ -79,8 +74,6 @@ func (s *PostgresCloneManagerSuite) SetupTest() {
 }
 
 func (s *PostgresCloneManagerSuite) CreateClones() {
-	pgtest.CreateDatabase(s.T(), tempDB)
-
 	for clone := range knownClones {
 		pgtest.CreateDatabase(s.T(), clone)
 	}
@@ -88,8 +81,6 @@ func (s *PostgresCloneManagerSuite) CreateClones() {
 
 func (s *PostgresCloneManagerSuite) DestroyClones() {
 	// Clean up databases
-	pgtest.DropDatabase(s.T(), tempDB)
-
 	for clone := range knownClones {
 		pgtest.DropDatabase(s.T(), clone)
 	}
@@ -110,8 +101,6 @@ func (s *PostgresCloneManagerSuite) setVersion(t *testing.T, ver *versionPair) {
 }
 
 func (s *PostgresCloneManagerSuite) TestScan() {
-	s.Require().True(pgadmin.CheckIfDBExists(s.config, tempDB))
-
 	for clone := range knownClones {
 		s.Require().True(pgadmin.CheckIfDBExists(s.config, clone))
 	}
@@ -125,61 +114,9 @@ func (s *PostgresCloneManagerSuite) TestScan() {
 	for clone := range knownClones {
 		s.Require().True(pgadmin.CheckIfDBExists(s.config, clone))
 	}
-
-	s.Require().False(pgadmin.CheckIfDBExists(s.config, tempDB))
-}
-
-func (s *PostgresCloneManagerSuite) TestScanCurrentPrevious() {
-	pgtest.DropDatabase(s.T(), tempDB)
-	pgtest.DropDatabase(s.T(), migrations.RestoreDatabase)
-	pgtest.DropDatabase(s.T(), migrations.BackupDatabase)
-
-	dbm := New(currVer.version, s.config, s.sourceMap)
-
-	// Set central_active in the future and have no previous
-	futureVersion := &storage.Version{
-		SeqNum:        int32(migrations.CurrentDBVersionSeqNum() + 2),
-		Version:       futureVer.version,
-		LastPersisted: protoconv.ConvertMicroTSToProtobufTS(timestamp.Now()),
-		MinSeqNum:     int32(migrations.CurrentDBVersionSeqNum() + 2),
-	}
-	migVer.SetVersionPostgres(s.ctx, migrations.GetCurrentClone(), futureVersion)
-
-	// Drop previous
-	pgtest.DropDatabase(s.T(), migrations.PreviousDatabase)
-
-	// Scan the clones
-	errorMessage := fmt.Sprintf(metadata.ErrSoftwareNotCompatibleWithDatabase, migrations.CurrentDBVersionSeqNum(), futureVersion.GetMinSeqNum(), migrations.MinimumSupportedDBVersion())
-	s.Require().EqualError(dbm.Scan(), errorMessage)
-
-	// Create a previous and set its version to current one
-	pgtest.CreateDatabase(s.T(), migrations.PreviousDatabase)
-	verForPrevClone := &storage.Version{
-		SeqNum:        int32(migrations.CurrentDBVersionSeqNum()),
-		Version:       currVer.version,
-		LastPersisted: protoconv.ConvertMicroTSToProtobufTS(timestamp.Now()),
-	}
-	migVer.SetVersionPostgres(s.ctx, migrations.GetPreviousClone(), verForPrevClone)
-
-	// Scan the clones
-	s.Require().EqualError(dbm.Scan(), errorMessage)
-
-	// Set previous clone version so it doesn't match current sw version
-	verForPrevClone = &storage.Version{
-		SeqNum:        int32(migrations.CurrentDBVersionSeqNum() - 2),
-		Version:       preVer.version,
-		LastPersisted: protoconv.ConvertMicroTSToProtobufTS(timestamp.Now()),
-	}
-	migVer.SetVersionPostgres(s.ctx, migrations.GetPreviousClone(), verForPrevClone)
-
-	// New manager with force rollback version set
-	dbm = New(currVer.version, s.config, s.sourceMap)
-	s.Require().EqualError(dbm.Scan(), errorMessage)
 }
 
 func (s *PostgresCloneManagerSuite) TestScanRestoreFromFuture() {
-	pgtest.DropDatabase(s.T(), tempDB)
-	pgtest.DropDatabase(s.T(), migrations.PreviousDatabase)
 	pgtest.DropDatabase(s.T(), migrations.BackupDatabase)
 
 	dbm := New("", s.config, s.sourceMap)
@@ -196,8 +133,6 @@ func (s *PostgresCloneManagerSuite) TestScanRestoreFromFuture() {
 }
 
 func (s *PostgresCloneManagerSuite) TestScanRestoreFromUnsupportedVersion() {
-	pgtest.DropDatabase(s.T(), tempDB)
-	pgtest.DropDatabase(s.T(), migrations.PreviousDatabase)
 	pgtest.DropDatabase(s.T(), migrations.BackupDatabase)
 
 	dbm := New("", s.config, s.sourceMap)
@@ -225,58 +160,9 @@ func (s *PostgresCloneManagerSuite) TestGetRestoreClone() {
 	// Scan the clones
 	s.Require().Nil(dbm.Scan())
 
-	clone, migrateRocks, err := dbm.GetCloneToMigrate(nil)
+	clone, err := dbm.GetCloneToMigrate()
 	s.Require().Nil(err)
 	s.Require().Equal(clone, migrations.RestoreDatabase)
-	s.Require().False(migrateRocks)
-}
-
-func (s *PostgresCloneManagerSuite) TestGetCloneMigrateRocks() {
-	pgtest.DropDatabase(s.T(), tempDB)
-	pgtest.DropDatabase(s.T(), migrations.RestoreDatabase)
-	pgtest.DropDatabase(s.T(), migrations.BackupDatabase)
-
-	dbm := New("", s.config, s.sourceMap)
-
-	// Scan the clones
-	s.Require().Nil(dbm.Scan())
-
-	rocksVersion := &migrations.MigrationVersion{
-		SeqNum:        currVer.seqNum,
-		MainVersion:   currVer.version,
-		LastPersisted: time.Now(),
-	}
-
-	// No central_active exists so we return the temp clone to use and migrate from rocks
-	clone, migrateRocks, err := dbm.GetCloneToMigrate(rocksVersion)
-	s.Require().EqualError(err, "Effective release 4.5, upgrades from pre-4.0 releases are no longer supported.")
-	s.Require().Equal("", clone)
-	s.Require().True(migrateRocks)
-
-	// Need to migrate from Rocks because Rocks exists and Postgres is fresh.
-	pgtest.CreateDatabase(s.T(), migrations.CurrentDatabase)
-
-	// Still migrate from Rocks because no version in Postgres meaning it is empty
-	clone, migrateRocks, err = dbm.GetCloneToMigrate(rocksVersion)
-	s.Require().EqualError(err, "Effective release 4.5, upgrades from pre-4.0 releases are no longer supported.")
-	s.Require().Equal("", clone)
-	s.Require().True(migrateRocks)
-
-	// Set central_active version
-	currVersion := &storage.Version{
-		SeqNum:        int32(migrations.CurrentDBVersionSeqNum()),
-		Version:       currVer.version,
-		LastPersisted: protoconv.ConvertMicroTSToProtobufTS(timestamp.Now()),
-	}
-	migVer.SetVersionPostgres(s.ctx, migrations.GetCurrentClone(), currVersion)
-
-	// Need to re-scan to get the updated clone version
-	s.Require().Nil(dbm.Scan())
-	// Need to use the Postgres database so migrateRocks will be false.
-	clone, migrateRocks, err = dbm.GetCloneToMigrate(rocksVersion)
-	s.Require().Nil(err)
-	s.Require().Equal(clone, CurrentClone)
-	s.Require().False(migrateRocks)
 }
 
 func (s *PostgresCloneManagerSuite) TestGetCloneFreshCurrent() {
@@ -288,9 +174,8 @@ func (s *PostgresCloneManagerSuite) TestGetCloneFreshCurrent() {
 	// Scan the clones
 	s.Require().Nil(dbm.Scan())
 
-	clone, migrateRocks, err := dbm.GetCloneToMigrate(nil)
+	clone, err := dbm.GetCloneToMigrate()
 	s.Require().Equal(clone, CurrentClone)
-	s.Require().False(migrateRocks)
 	s.Require().Nil(err)
 }
 
@@ -311,9 +196,8 @@ func (s *PostgresCloneManagerSuite) TestGetCloneCurrentCurrent() {
 	// Scan the clones
 	s.Require().Nil(dbm.Scan())
 
-	clone, migrateRocks, err := dbm.GetCloneToMigrate(nil)
+	clone, err := dbm.GetCloneToMigrate()
 	s.Require().Equal(CurrentClone, clone)
-	s.Require().False(migrateRocks)
 	s.Require().Nil(err)
 }
 
@@ -334,9 +218,8 @@ func (s *PostgresCloneManagerSuite) TestGetCloneUpgrade() {
 	// Scan the clones
 	s.Require().Nil(dbm.Scan())
 
-	clone, migrateRocks, err := dbm.GetCloneToMigrate(nil)
+	clone, err := dbm.GetCloneToMigrate()
 	s.Require().Equal(migrations.CurrentDatabase, clone)
-	s.Require().False(migrateRocks)
 	s.Require().Nil(err)
 }
 
@@ -357,41 +240,174 @@ func (s *PostgresCloneManagerSuite) TestGetCloneUpgradeSameSeq() {
 	// Scan the clones
 	s.Require().Nil(dbm.Scan())
 
-	clone, migrateRocks, err := dbm.GetCloneToMigrate(nil)
+	clone, err := dbm.GetCloneToMigrate()
 	s.Require().Equal(CurrentClone, clone)
-	s.Require().False(migrateRocks)
 	s.Require().Nil(err)
 }
 
-func (s *PostgresCloneManagerSuite) TestGetClonePrevious() {
-	pgtest.DropDatabase(s.T(), migrations.RestoreDatabase)
-	pgtest.DropDatabase(s.T(), migrations.BackupDatabase)
-
-	// Set central_active in the future and have no previous
-	futureVersion := &storage.Version{
-		SeqNum:        int32(migrations.CurrentDBVersionSeqNum() + 2),
-		Version:       futureVer.version,
-		LastPersisted: protoconv.ConvertMicroTSToProtobufTS(timestamp.Now()),
-		MinSeqNum:     int32(migrations.MinimumSupportedDBVersionSeqNum()),
-	}
-	migVer.SetVersionPostgres(s.ctx, migrations.GetCurrentClone(), futureVersion)
-
-	// Set previous to the current version to simulate a rollback
-	currVersion := &storage.Version{
-		SeqNum:        int32(migrations.CurrentDBVersionSeqNum()),
-		Version:       currVer.version,
-		LastPersisted: protoconv.ConvertMicroTSToProtobufTS(timestamp.Now()),
-		MinSeqNum:     int32(migrations.MinimumSupportedDBVersionSeqNum()),
-	}
-	migVer.SetVersionPostgres(s.ctx, migrations.GetPreviousClone(), currVersion)
-
-	dbm := New(currVer.version, s.config, s.sourceMap)
+func (s *PostgresCloneManagerSuite) TestPersistCurrentClone() {
+	// Test persisting CurrentClone - should be a no-op
+	dbm := New("", s.config, s.sourceMap)
 
 	// Scan the clones
 	s.Require().Nil(dbm.Scan())
 
-	clone, migrateRocks, err := dbm.GetCloneToMigrate(nil)
-	s.Require().Equal(clone, CurrentClone)
-	s.Require().False(migrateRocks)
-	s.Require().Nil(err)
+	// Verify CurrentClone exists before persist
+	exists, err := pgadmin.CheckIfDBExists(s.config, CurrentClone)
+	s.Require().NoError(err)
+	s.Require().True(exists)
+
+	// Persist CurrentClone - should not error and should be a no-op
+	err = dbm.Persist(CurrentClone)
+	s.Require().NoError(err)
+
+	// Verify CurrentClone still exists after persist
+	exists, err = pgadmin.CheckIfDBExists(s.config, CurrentClone)
+	s.Require().NoError(err)
+	s.Require().True(exists)
+}
+
+func (s *PostgresCloneManagerSuite) TestPersistRestoreClone() {
+	// Drop backup database to ensure clean state
+	pgtest.DropDatabase(s.T(), migrations.BackupDatabase)
+
+	// Create and populate restore clone with a version
+	restoreVersion := &storage.Version{
+		SeqNum:        int32(migrations.CurrentDBVersionSeqNum() - 1),
+		Version:       preVer.version,
+		LastPersisted: protoconv.ConvertMicroTSToProtobufTS(timestamp.Now()),
+	}
+	migVer.SetVersionPostgres(s.ctx, migrations.GetRestoreClone(), restoreVersion)
+
+	dbm := New("", s.config, s.sourceMap)
+
+	// Scan the clones
+	s.Require().Nil(dbm.Scan())
+
+	// Verify restore clone exists
+	exists, err := pgadmin.CheckIfDBExists(s.config, RestoreClone)
+	s.Require().NoError(err)
+	s.Require().True(exists)
+
+	// Verify current clone exists
+	exists, err = pgadmin.CheckIfDBExists(s.config, CurrentClone)
+	s.Require().NoError(err)
+	s.Require().True(exists)
+
+	// Persist restore clone
+	err = dbm.Persist(RestoreClone)
+	s.Require().NoError(err)
+
+	// After persist:
+	// - RestoreClone should no longer exist (it was renamed to CurrentClone)
+	// - CurrentClone should exist (the former RestoreClone)
+	// - BackupClone should exist (the former CurrentClone)
+	exists, err = pgadmin.CheckIfDBExists(s.config, RestoreClone)
+	s.Require().NoError(err)
+	s.Require().False(exists, "RestoreClone should not exist after persist")
+
+	exists, err = pgadmin.CheckIfDBExists(s.config, CurrentClone)
+	s.Require().NoError(err)
+	s.Require().True(exists, "CurrentClone should exist after persist")
+
+	exists, err = pgadmin.CheckIfDBExists(s.config, BackupClone)
+	s.Require().NoError(err)
+	s.Require().True(exists, "BackupClone should exist after persist")
+}
+
+func (s *PostgresCloneManagerSuite) TestPersistRestoreCloneWithExistingBackup() {
+	// Create a backup database first
+	backupVersion := &storage.Version{
+		SeqNum:        int32(migrations.CurrentDBVersionSeqNum() - 2),
+		Version:       preVer.version,
+		LastPersisted: protoconv.ConvertMicroTSToProtobufTS(timestamp.Now()),
+	}
+	migVer.SetVersionPostgres(s.ctx, migrations.GetBackupClone(), backupVersion)
+
+	// Create and populate restore clone with a version
+	restoreVersion := &storage.Version{
+		SeqNum:        int32(migrations.CurrentDBVersionSeqNum() - 1),
+		Version:       preVer.version,
+		LastPersisted: protoconv.ConvertMicroTSToProtobufTS(timestamp.Now()),
+	}
+	migVer.SetVersionPostgres(s.ctx, migrations.GetRestoreClone(), restoreVersion)
+
+	dbm := New("", s.config, s.sourceMap)
+
+	// Scan the clones
+	s.Require().Nil(dbm.Scan())
+
+	// Verify all clones exist before persist
+	exists, err := pgadmin.CheckIfDBExists(s.config, RestoreClone)
+	s.Require().NoError(err)
+	s.Require().True(exists)
+
+	exists, err = pgadmin.CheckIfDBExists(s.config, CurrentClone)
+	s.Require().NoError(err)
+	s.Require().True(exists)
+
+	exists, err = pgadmin.CheckIfDBExists(s.config, BackupClone)
+	s.Require().NoError(err)
+	s.Require().True(exists)
+
+	// Persist restore clone (should remove existing backup first)
+	err = dbm.Persist(RestoreClone)
+	s.Require().NoError(err)
+
+	// After persist:
+	// - RestoreClone should not exist (renamed to CurrentClone)
+	// - CurrentClone should exist (the former RestoreClone)
+	// - BackupClone should exist (the former CurrentClone, old backup was removed)
+	exists, err = pgadmin.CheckIfDBExists(s.config, RestoreClone)
+	s.Require().NoError(err)
+	s.Require().False(exists, "RestoreClone should not exist after persist")
+
+	exists, err = pgadmin.CheckIfDBExists(s.config, CurrentClone)
+	s.Require().NoError(err)
+	s.Require().True(exists, "CurrentClone should exist after persist")
+
+	exists, err = pgadmin.CheckIfDBExists(s.config, BackupClone)
+	s.Require().NoError(err)
+	s.Require().True(exists, "BackupClone should exist after persist")
+}
+
+func (s *PostgresCloneManagerSuite) TestPersistRestoreCloneWithoutCurrentClone() {
+	// Drop current clone to simulate fresh startup scenario
+	pgtest.DropDatabase(s.T(), migrations.CurrentDatabase)
+	pgtest.DropDatabase(s.T(), migrations.BackupDatabase)
+
+	// Create restore clone
+	restoreVersion := &storage.Version{
+		SeqNum:        int32(migrations.CurrentDBVersionSeqNum()),
+		Version:       currVer.version,
+		LastPersisted: protoconv.ConvertMicroTSToProtobufTS(timestamp.Now()),
+	}
+	migVer.SetVersionPostgres(s.ctx, migrations.GetRestoreClone(), restoreVersion)
+
+	// Recreate current clone for the test setup
+	pgtest.CreateDatabase(s.T(), migrations.CurrentDatabase)
+	currentVersion := &storage.Version{
+		SeqNum:        int32(migrations.CurrentDBVersionSeqNum()),
+		Version:       currVer.version,
+		LastPersisted: protoconv.ConvertMicroTSToProtobufTS(timestamp.Now()),
+	}
+	migVer.SetVersionPostgres(s.ctx, migrations.GetCurrentClone(), currentVersion)
+
+	dbm := New("", s.config, s.sourceMap)
+
+	// Scan the clones
+	s.Require().Nil(dbm.Scan())
+
+	// Persist restore clone
+	err := dbm.Persist(RestoreClone)
+	s.Require().NoError(err)
+
+	// Verify the outcome
+	exists, err := pgadmin.CheckIfDBExists(s.config, RestoreClone)
+	s.Require().NoError(err)
+	s.Require().False(exists, "RestoreClone should not exist after persist")
+
+	exists, err = pgadmin.CheckIfDBExists(s.config, CurrentClone)
+	s.Require().NoError(err)
+	s.Require().True(exists, "CurrentClone should exist after persist")
 }

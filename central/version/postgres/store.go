@@ -14,19 +14,13 @@ import (
 )
 
 const (
-	getStmt = "SELECT seqnum, version, minseqnum, lastpersisted FROM versions LIMIT 1"
-	// TODO(ROX-18005) -- remove this.  During transition away from serialized version, UpgradeStatus will make this call against
-	// the older database.  In that case we will need to process the serialized data.
-	getPreviousStmt = "SELECT serialized FROM versions LIMIT 1"
-	deleteStmt      = "DELETE FROM versions"
+	getStmt    = "SELECT seqnum, version, minseqnum, lastpersisted FROM versions LIMIT 1"
+	deleteStmt = "DELETE FROM versions"
 )
 
 // Store access versions in database
 type Store interface {
 	Get(ctx context.Context) (*storage.Version, bool, error)
-	// TODO(ROX-18005) -- remove this.  During transition away from serialized version, UpgradeStatus will make this call against
-	// the older database.  In that case we will need to process the serialized data.
-	GetPrevious(ctx context.Context) (*storage.Version, bool, error)
 	Upsert(ctx context.Context, obj *storage.Version) error
 	Delete(ctx context.Context) error
 }
@@ -122,36 +116,6 @@ func (s *storeImpl) retryableGet(ctx context.Context) (*storage.Version, bool, e
 
 	if lastPersistedTime != nil {
 		msg.LastPersisted = protoconv.MustConvertTimeToTimestamp(*lastPersistedTime)
-	}
-	return &msg, true, nil
-}
-
-// GetPrevious returns the object, if it exists from central_previous
-// TODO(ROX-18005) -- remove this.  During transition away from serialized version, UpgradeStatus will make this call against
-// the older database.  In that case we will need to process the serialized data.
-func (s *storeImpl) GetPrevious(ctx context.Context) (*storage.Version, bool, error) {
-	return pgutils.Retry3(ctx, func() (*storage.Version, bool, error) {
-		return s.retryableGetPrevious(ctx)
-	})
-}
-
-// TODO(ROX-18005) -- remove this.  During transition away from serialized version, UpgradeStatus will make this call against
-// the older database.  In that case we will need to process the serialized data.
-func (s *storeImpl) retryableGetPrevious(ctx context.Context) (*storage.Version, bool, error) {
-	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_ACCESS)
-	if !scopeChecker.IsAllowed() {
-		return nil, false, nil
-	}
-
-	row := s.db.QueryRow(ctx, getPreviousStmt)
-	var data []byte
-	if err := row.Scan(&data); err != nil {
-		return nil, false, pgutils.ErrNilIfNoRows(err)
-	}
-
-	var msg storage.Version
-	if err := msg.UnmarshalVTUnsafe(data); err != nil {
-		return nil, false, err
 	}
 	return &msg, true, nil
 }

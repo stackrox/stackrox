@@ -676,14 +676,14 @@ func getConfig(t testutils.T) *rest.Config {
 	restCfg, err := clientcmd.NewDefaultClientConfig(*config, &clientcmd.ConfigOverrides{}).ClientConfig()
 	require.NoError(t, err, "could not get REST client config from kubernetes config")
 
+	configureRetryableTransport(t, restCfg)
+
 	return restCfg
 }
 
-func createK8sClient(t testutils.T) kubernetes.Interface {
-	return createK8sClientWithConfig(t, getConfig(t))
-}
-
-func createK8sClientWithConfig(t testutils.T, restCfg *rest.Config) kubernetes.Interface {
+// configureRetryableTransport configures a rest.Config to use retryable HTTP client
+// for network resilience. This adds automatic retry logic for transient network errors.
+func configureRetryableTransport(t testutils.T, restCfg *rest.Config) {
 	// Configure retryable HTTP client for network resilience
 	retryClient := retryablehttp.NewClient()
 	retryClient.RetryMax = 3
@@ -706,7 +706,13 @@ func createK8sClientWithConfig(t testutils.T, restCfg *rest.Config) kubernetes.I
 		retryClient.HTTPClient.Transport = rt
 		return retryClient.StandardClient().Transport
 	}
+}
 
+func createK8sClient(t testutils.T) kubernetes.Interface {
+	return createK8sClientWithConfig(t, getConfig(t))
+}
+
+func createK8sClientWithConfig(t testutils.T, restCfg *rest.Config) kubernetes.Interface {
 	k8sClient, err := kubernetes.NewForConfig(restCfg)
 	require.NoError(t, err, "creating Kubernetes client from REST config")
 
