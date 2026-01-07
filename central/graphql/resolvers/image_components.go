@@ -41,6 +41,7 @@ func init() {
 			"deploymentCount(query: String, scopeQuery: String): Int!",
 			"deployments(query: String, scopeQuery: String, pagination: Pagination): [Deployment!]!",
 			"fixedBy: String!",
+			"fromBaseImage: Boolean!",
 			"id: ID!",
 			"imageCount(query: String, scopeQuery: String): Int!",
 			"images(query: String, scopeQuery: String, pagination: Pagination): [Image!]!",
