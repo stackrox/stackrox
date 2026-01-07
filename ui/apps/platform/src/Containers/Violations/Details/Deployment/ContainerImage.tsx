@@ -2,19 +2,10 @@ import type { ReactElement } from 'react';
 import { Link } from 'react-router-dom-v5-compat';
 
 import DescriptionListItem from 'Components/DescriptionListItem';
+import type { ContainerImage as ContainerImageType } from 'types/deployment.proto';
 
 type ContainerImageProps = {
-    image: {
-        name: {
-            fullName: string;
-            registry: string;
-            remote: string;
-            tag: string;
-        };
-        notPullable: boolean;
-        id: string;
-        idV2: string;
-    };
+    image: ContainerImageType;
     vulnMgmtBasePath: string;
 };
 
