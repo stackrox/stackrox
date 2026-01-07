@@ -87,15 +87,17 @@ func (e *enforcer) ProcessAlertResults(action central.ResourceAction, stage stor
 				},
 			}
 		case storage.LifecycleStage_RUNTIME:
-			if numProcesses := len(a.GetProcessViolation().GetProcesses()); numProcesses != 1 {
-				log.Errorf("Runtime alert on policy %q and deployment %q has %d process violations. Expected only 1", a.GetPolicy().GetName(), a.GetDeployment().GetName(), numProcesses)
+			podId, err := getRuntimePodId(a)
+			if err != nil {
+				log.Error(err)
 				continue
 			}
+
 			e.actionsC <- &central.SensorEnforcement{
 				Enforcement: a.GetEnforcement().GetAction(),
 				Resource: &central.SensorEnforcement_ContainerInstance{
 					ContainerInstance: &central.ContainerInstanceEnforcement{
-						PodId:                 a.GetProcessViolation().GetProcesses()[0].GetPodId(),
+						PodId:                 podId,
 						DeploymentEnforcement: generateDeploymentEnforcement(a),
 					},
 				},
@@ -161,3 +163,20 @@ func (e *enforcer) Stop() {
 }
 
 func (e *enforcer) Notify(common.SensorComponentEvent) {}
+
+func getRuntimePodId(alert *storage.Alert) (string, error) {
+	isProcessAlert := alert.GetProcessViolation() != nil && len(alert.GetProcessViolation().GetProcesses()) > 0
+	isFileAlert := alert.GetFileAccessViolation() != nil && len(alert.GetFileAccessViolation().GetAccesses()) > 0
+
+	if isProcessAlert && isFileAlert {
+		return "", errors.New("Invalid alert state: must contain one of process violation or file violation")
+	}
+
+	if isProcessAlert {
+		return alert.GetProcessViolation().GetProcesses()[0].GetPodId(), nil
+	} else if isFileAlert {
+		return alert.GetFileAccessViolation().GetAccesses()[0].GetProcess().GetPodId(), nil
+	}
+
+	return "", errors.New("Invalid alert state: does not contain enforcable violations")
+}

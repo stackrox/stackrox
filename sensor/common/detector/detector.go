@@ -914,6 +914,10 @@ func (d *detectorImpl) processFileAccess() {
 				Source:       source,
 			}
 
+			if fsUtils.IsDeploymentFileAccess(item.Access) {
+				d.enforcer.ProcessAlertResults(central.ResourceAction_CREATE_RESOURCE, storage.LifecycleStage_RUNTIME, alertResults)
+			}
+
 			select {
 			case <-d.alertStopSig.Done():
 				continue
