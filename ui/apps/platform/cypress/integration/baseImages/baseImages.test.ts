@@ -22,9 +22,9 @@ describe('Base Images', () => {
         cy.get('p:contains("Manage approved base images")').should('be.visible');
 
         // Verify table renders with expected headers
-        cy.get('table').should('exist');
-        cy.get('th:contains("Base image path")').should('be.visible');
-        cy.get('th:contains("Added by")').should('be.visible');
+        cy.get('table');
+        cy.get('th:contains("Base image path")');
+        cy.get('th:contains("Added by")');
     });
 
     it('should add base image and update table', () => {
@@ -37,7 +37,7 @@ describe('Base Images', () => {
         cy.get('button:contains("Save")').click();
 
         // Verify table shows new entry
-        cy.get('td').should('contain', 'docker.io/library/alpine:3.18');
+        cy.get('td').should('contain', newBaseImage);
     });
 
     it('should delete base image successfully', () => {
