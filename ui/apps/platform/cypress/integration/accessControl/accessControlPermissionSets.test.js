@@ -39,7 +39,7 @@ describe('Access Control Permission sets', () => {
         cy.get('th:contains("Origin")');
         cy.get('th:contains("Description")');
         cy.get('th:contains("Roles")');
-        cy.get(`th:has('span.pf-v5-screen-reader:contains("Row actions")')`);
+        cy.get(`th:has('span.pf-v6-screen-reader:contains("Row actions")')`);
     });
 
     it('list has default names', () => {
@@ -57,7 +57,7 @@ describe('Access Control Permission sets', () => {
         clickEntityNameInTable(entitiesKey, entityName);
 
         cy.get('h1').should('have.text', entityName);
-        cy.get(`li.pf-v5-c-breadcrumb__item:nth-child(2):contains("${entityName}")`);
+        cy.get(`li.pf-v6-c-breadcrumb__item:nth-child(2):contains("${entityName}")`);
 
         cy.get(selectors.form.notEditableLabel).should('exist');
         cy.get(selectors.form.editButton).should('not.exist');

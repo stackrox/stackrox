@@ -1,12 +1,12 @@
 import type { NavigateFunction } from 'react-router-dom-v5-compat';
-import { ChartThemeColor, getTheme } from '@patternfly/react-charts';
-import type { ChartBarProps, ChartLabelProps } from '@patternfly/react-charts';
+import { ChartThemeColor, getTheme } from '@patternfly/react-charts/victory';
+import type { ChartBarProps, ChartLabelProps } from '@patternfly/react-charts/victory';
 import merge from 'lodash/merge';
 
 import { policySeverityColorMap } from 'constants/severityColors';
 import type { ValueOf } from './type.utils';
 
-export const solidBlueChartColor = 'var(--pf-v5-global--palette--blue-400)';
+export const solidBlueChartColor = 'var(--pf-t--color--blue--40)';
 
 export const severityColorScale = Object.values(policySeverityColorMap);
 

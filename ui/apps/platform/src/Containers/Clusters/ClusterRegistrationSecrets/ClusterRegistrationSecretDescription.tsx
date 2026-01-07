@@ -19,7 +19,7 @@ function ClusterRegistrationSecretDescription({
         <DescriptionList
             isCompact
             isHorizontal
-            className="pf-v5-u-background-color-100 pf-v5-u-p-lg"
+            className="pf-v6-u-background-color-100 pf-v6-u-p-lg"
         >
             <DescriptionListGroup>
                 <DescriptionListTerm>Name</DescriptionListTerm>

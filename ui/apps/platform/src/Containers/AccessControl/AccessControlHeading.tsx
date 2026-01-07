@@ -20,11 +20,11 @@ function AccessControlHeading({
 }: AccessControlHeadingProps): ReactElement {
     return (
         <>
-            <PageSection variant="light">
+            <PageSection hasBodyWrapper={false}>
                 <Title headingLevel="h1">Access Control</Title>
             </PageSection>
             {isNavHidden || (
-                <PageSection variant="light" className="pf-v5-u-px-sm pf-v5-u-py-0">
+                <PageSection hasBodyWrapper={false} className="pf-v6-u-px-sm pf-v6-u-py-0">
                     <AccessControlNav entityType={entityType} />
                 </PageSection>
             )}

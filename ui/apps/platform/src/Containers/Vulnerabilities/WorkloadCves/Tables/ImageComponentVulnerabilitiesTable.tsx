@@ -128,7 +128,7 @@ function ImageComponentVulnerabilitiesTable({
                             </Td>
                         </Tr>
                         <Tr>
-                            <Td colSpan={colSpanForDockerfileLayer} className="pf-v5-u-pt-0">
+                            <Td colSpan={colSpanForDockerfileLayer} className="pf-v6-u-pt-0">
                                 <DockerfileLayer layer={layer} />
                             </Td>
                         </Tr>

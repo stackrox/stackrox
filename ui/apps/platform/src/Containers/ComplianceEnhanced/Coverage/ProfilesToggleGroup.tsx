@@ -112,7 +112,7 @@ function ProfilesToggleGroup({
             <ToggleGroup
                 id={tabContentId}
                 aria-label="Toggle for selected profile view"
-                className="pf-v5-u-background-color-100 pf-v5-u-p-md"
+                className="pf-v6-u-background-color-100 pf-v6-u-p-md"
             >
                 {filteredProfiles.map(({ name }) => (
                     <ToggleGroupItem

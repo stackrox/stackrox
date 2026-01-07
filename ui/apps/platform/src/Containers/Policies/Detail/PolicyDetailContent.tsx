@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import type { ReactElement } from 'react';
 import { Formik } from 'formik';
-import { Divider, Flex, Grid, Title } from '@patternfly/react-core';
+import { Flex, Grid, Title } from '@patternfly/react-core';
 
 import { fetchNotifierIntegrations } from 'services/NotifierIntegrationsService';
 import type { NotifierIntegration } from 'types/notifier.proto';
@@ -33,11 +33,13 @@ function PolicyDetailContent({ policy, isReview = false }: PolicyDetailContentPr
     return (
         <div data-testid="policy-details">
             <Flex direction={{ default: 'column' }}>
+                <Title headingLevel="h2" className="pf-v6-u-mb-md">
+                    Policy overview
+                </Title>
                 <PolicyOverview policy={policy} notifiers={notifiers} isReview={isReview} />
-                <Title headingLevel="h2" className="pf-v5-u-mb-md pf-v5-u-pt-lg">
+                <Title headingLevel="h2" className="pf-v6-u-mt-xl pf-v6-u-mb-md">
                     Policy behavior
                 </Title>
-                <Divider component="div" className="pf-v5-u-mb-md" />
                 <PolicyBehaviorSection
                     lifecycleStages={lifecycleStages}
                     eventSource={eventSource}
@@ -46,10 +48,9 @@ function PolicyDetailContent({ policy, isReview = false }: PolicyDetailContentPr
                 <Formik initialValues={policy} onSubmit={() => {}}>
                     {() => (
                         <>
-                            <Title headingLevel="h2" className="pf-v5-u-mb-md pf-v5-u-pt-lg">
+                            <Title headingLevel="h2" className="pf-v6-u-mt-xl pf-v6-u-mb-md">
                                 Policy criteria
                             </Title>
-                            <Divider component="div" />
                             {/* this grid component specifies a GridItem to span 5 columns by default for policy sections */}
                             <Grid hasGutter lg={5}>
                                 <BooleanPolicyLogicSection readOnly />
@@ -59,10 +60,9 @@ function PolicyDetailContent({ policy, isReview = false }: PolicyDetailContentPr
                 </Formik>
                 {(scope?.length > 0 || exclusions?.length > 0) && (
                     <>
-                        <Title headingLevel="h2" className="pf-v5-u-mb-md pf-v5-u-pt-lg">
+                        <Title headingLevel="h2" className="pf-v6-u-mt-xl pf-v6-u-mb-md">
                             Policy scope
                         </Title>
-                        <Divider component="div" />
                         <PolicyScopeSection scope={scope} exclusions={exclusions} />
                     </>
                 )}

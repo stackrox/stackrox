@@ -18,7 +18,7 @@ function NetworkSimulatorActions({
     openNotifyYAMLModal,
 }: NetworkSimulatorActionsProps) {
     return (
-        <Split hasGutter className="pf-v5-u-p-md">
+        <Split hasGutter className="pf-v6-u-p-md">
             <SplitItem>
                 <UploadYAMLButton onFileInputChange={onFileInputChange} />
             </SplitItem>

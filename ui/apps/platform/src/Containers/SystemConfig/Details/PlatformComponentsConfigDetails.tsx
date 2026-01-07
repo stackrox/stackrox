@@ -4,11 +4,11 @@ import {
     CardBody,
     CardTitle,
     CodeBlock,
+    Content,
     Divider,
     Grid,
     GridItem,
     Stack,
-    Text,
 } from '@patternfly/react-core';
 
 import type { PlatformComponentsConfig } from 'types/config.proto';
@@ -31,18 +31,18 @@ const PlatformComponentsConfigDetails = ({
     return (
         <Grid hasGutter>
             <GridItem sm={12} md={6} lg={4}>
-                <Card isFlat>
+                <Card>
                     <CardTitle>Core system</CardTitle>
                     <CardBody>
                         <Stack hasGutter>
-                            <Text>
+                            <Content component="p">
                                 Components found in core Openshift and Kubernetes namespaces are
                                 included in the platform definition by default.
-                            </Text>
+                            </Content>
                             <Divider component="div" />
-                            <Text component="small" className="pf-v5-u-color-200">
+                            <Content component="small" className="pf-v6-u-color-200">
                                 Namespaces match (Regex)
-                            </Text>
+                            </Content>
                             <CodeBlock>{coreSystemRule?.namespaceRule?.regex || 'None'}</CodeBlock>
                         </Stack>
                     </CardBody>

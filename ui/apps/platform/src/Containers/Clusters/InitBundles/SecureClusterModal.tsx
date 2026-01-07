@@ -6,12 +6,12 @@ import {
     Divider,
     Flex,
     FlexItem,
-    Modal,
     Tab,
     TabContent,
     TabTitleText,
     Tabs,
 } from '@patternfly/react-core';
+import { Modal } from '@patternfly/react-core/deprecated';
 
 import SecureClusterUsingHelmChart from './SecureClusterUsingHelmChart';
 import SecureClusterUsingOperator from './SecureClusterUsingOperator';

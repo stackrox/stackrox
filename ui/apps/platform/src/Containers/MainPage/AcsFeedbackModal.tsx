@@ -9,6 +9,9 @@ import redFeedbackImage from 'images/feedback_illo.svg';
 import { selectors } from 'reducers';
 import { actions } from 'reducers/feedback';
 
+// Required for PatternFly v6 FeedbackModal styling
+import '@patternfly/react-user-feedback/dist/esm/Feedback/Feedback.css';
+
 const feedbackState = createStructuredSelector({
     feedback: selectors.feedbackSelector,
 });

@@ -65,7 +65,7 @@ function RiskTablePanel({
                     <ToolbarItem>
                         <Title headingLevel="h2">{pluralize(deploymentCount, 'deployment')}</Title>
                     </ToolbarItem>
-                    <ToolbarItem align={{ default: 'alignRight' }} variant="pagination">
+                    <ToolbarItem align={{ default: 'alignEnd' }} variant="pagination">
                         <Pagination
                             itemCount={deploymentCount}
                             page={page}

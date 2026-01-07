@@ -1,15 +1,8 @@
 import { useState } from 'react';
 import type { ReactElement } from 'react';
 import pluralize from 'pluralize';
-import {
-    Button,
-    FileUpload,
-    Flex,
-    FlexItem,
-    ModalBoxBody,
-    ModalBoxFooter,
-    Title,
-} from '@patternfly/react-core';
+import { Button, FileUpload, Flex, FlexItem, Title } from '@patternfly/react-core';
+import { ModalBoxBody, ModalBoxFooter } from '@patternfly/react-core/deprecated';
 
 import type { ListPolicy } from 'types/policy.proto';
 
@@ -72,7 +65,7 @@ function ImportPolicyJSONUpload({
                 <FileUpload
                     id="policies-json-import"
                     type="text"
-                    className="pf-v5-u-mt-md"
+                    className="pf-v6-u-mt-md"
                     value={fileContent}
                     filename={filename}
                     filenamePlaceholder="Drag and drop a file or upload one"
@@ -89,7 +82,7 @@ function ImportPolicyJSONUpload({
                     }}
                 />
                 {policies?.length > 0 && fileContent && (
-                    <Flex direction={{ default: 'column' }} className="pf-v5-u-mt-md">
+                    <Flex direction={{ default: 'column' }} className="pf-v6-u-mt-md">
                         <FlexItem>
                             <Title headingLevel="h3">
                                 The following {`${pluralize('policy', policies.length)}`} will be
@@ -98,7 +91,7 @@ function ImportPolicyJSONUpload({
                         </FlexItem>
                         <FlexItem data-testid="policies-to-import">
                             {policies.map(({ id, name }, idx) => (
-                                <div key={id} className={idx === 0 ? '' : 'pf-v5-u-pt-sm'}>
+                                <div key={id} className={idx === 0 ? '' : 'pf-v6-u-pt-sm'}>
                                     {name}
                                 </div>
                             ))}

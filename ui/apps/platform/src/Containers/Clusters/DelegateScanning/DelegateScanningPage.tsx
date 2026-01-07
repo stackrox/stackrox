@@ -75,7 +75,7 @@ function DelegateScanningPage() {
     return (
         <>
             <PageTitle title={displayedPageTitle} />
-            <PageSection variant="light">
+            <PageSection hasBodyWrapper={false}>
                 <Flex direction={{ default: 'column' }}>
                     <FlexItem>
                         <Breadcrumb>
@@ -106,7 +106,7 @@ function DelegateScanningPage() {
                 </Flex>
             </PageSection>
             <Divider component="div" />
-            <PageSection variant="light">
+            <PageSection hasBodyWrapper={false}>
                 {isLoading ? (
                     <Bullseye>
                         <Spinner />

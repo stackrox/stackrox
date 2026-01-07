@@ -65,10 +65,10 @@ function ClusterRegistrationSecretsPage({
             />
 
             <Divider component="div" />
-            <PageSection component="div" variant="light">
+            <PageSection hasBodyWrapper={false} component="div">
                 <ClusterRegistrationSecretTechPreviewAlert />
             </PageSection>
-            <PageSection component="div">
+            <PageSection hasBodyWrapper={false} component="div">
                 {isFetching ? (
                     <Bullseye>
                         <Spinner />

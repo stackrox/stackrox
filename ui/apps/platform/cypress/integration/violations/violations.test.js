@@ -57,7 +57,7 @@ describe('Violations', () => {
 
         // check audit log type
         cy.get('tbody tr:nth-child(2) td[data-label="Entity"]').should('contain', 'test-scc'); // table cell also has cluster
-        cy.get('tbody tr:nth-child(2) td[data-label="Entity"] div.pf-v5-u-font-size-xs').should(
+        cy.get('tbody tr:nth-child(2) td[data-label="Entity"] div.pf-v6-u-font-size-xs').should(
             'have.text',
             'in "aaa_remote"'
         ); // table cell also has cluster
@@ -104,16 +104,16 @@ describe('Violations', () => {
 
         // Lifecycle: Runtime
         cy.get(`tbody tr:nth-child(1) ${btn}`).click(); // click kabob to open actions menu
-        cy.get(`tbody tr:nth-child(1) ${excludeDeploymentBtn}`).should('exist');
-        cy.get(`tbody tr:nth-child(1) ${resolveBtn}`).should('exist');
-        cy.get(`tbody tr:nth-child(1) ${resolveAndAddToBaselineBtn}`).should('exist');
+        cy.get(excludeDeploymentBtn).should('exist');
+        cy.get(resolveBtn).should('exist');
+        cy.get(resolveAndAddToBaselineBtn).should('exist');
         cy.get(`tbody tr:nth-child(1) ${btn}`).click(); // click kabob to close actions menu
 
         // Lifecycle: Deploy
         cy.get(`tbody tr:nth-child(3) ${btn}`).click(); // click kabob to open actions menu
-        cy.get(`tbody tr:nth-child(3) ${resolveBtn}`).should('not.exist');
-        cy.get(`tbody tr:nth-child(3) ${resolveAndAddToBaselineBtn}`).should('not.exist');
-        cy.get(`tbody tr:nth-child(3) ${excludeDeploymentBtn}`).should('exist');
+        cy.get(resolveBtn).should('not.exist');
+        cy.get(resolveAndAddToBaselineBtn).should('not.exist');
+        cy.get(excludeDeploymentBtn).should('exist');
         cy.get(`tbody tr:nth-child(3) ${btn}`).click(); // click kabob to close actions menu
     });
 
@@ -138,8 +138,8 @@ describe('Violations', () => {
 
         cy.get(selectors.deployment.overview);
         cy.get(selectors.deployment.overview)
-            .find('.pf-v5-c-description-list__term:contains("Deployment type")')
-            .siblings('.pf-v5-c-description-list__description:contains("DaemonSet")');
+            .find('.pf-v6-c-description-list__term:contains("Deployment type")')
+            .siblings('.pf-v6-c-description-list__description:contains("DaemonSet")');
         cy.get(selectors.deployment.containerConfiguration);
         cy.get(`${selectors.deployment.containerConfiguration} *[aria-label="Commands"]`).should(
             'not.exist'

@@ -12,7 +12,7 @@ export function TbodyFullCentered({ colSpan, children }: TbodyFullCenteredProps)
         <Tbody>
             <Tr>
                 <Td colSpan={colSpan}>
-                    <Bullseye className="pf-v5-u-my-2xl">{children}</Bullseye>
+                    <Bullseye className="pf-v6-u-my-2xl">{children}</Bullseye>
                 </Td>
             </Tr>
         </Tbody>
