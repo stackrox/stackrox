@@ -1,10 +1,10 @@
 package rate
 
 import (
-	"sync"
 	"testing"
 	"time"
 
+	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
