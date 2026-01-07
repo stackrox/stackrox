@@ -57,8 +57,7 @@ export function viewRiskDeploymentByName(deploymentName) {
             .click();
     }, routeMatcherMapForDeployment);
 
-    // Unlike some classic containers, risk list header has different data-testid attribute.
-    cy.get(`[data-testid="panel-header"]:contains("${deploymentName}")`);
+    cy.get(`h1:contains("${deploymentName}")`);
 }
 
 export function viewRiskDeploymentInNetworkGraph() {
