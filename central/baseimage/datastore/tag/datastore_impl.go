@@ -9,7 +9,7 @@ import (
 	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
-	"github.com/stackrox/rox/pkg/protocompat"
+	"github.com/stackrox/rox/pkg/protoconv"
 )
 
 const (
@@ -52,27 +52,14 @@ func (d *datastoreImpl) ListTagsByRepository(ctx context.Context, repositoryID s
 	// Sort by created timestamp descending (newest first).
 	// Nil timestamps are not expected, and we sort them last.
 	slices.SortFunc(tags, func(a, b *storage.BaseImageTag) int {
-		aTime := protocompat.NilOrTime(a.GetCreated())
-		bTime := protocompat.NilOrTime(b.GetCreated())
+		aTime := protoconv.ConvertTimestampToTimeOrDefault(a.GetCreated(), time.Time{})
+		bTime := protoconv.ConvertTimestampToTimeOrDefault(b.GetCreated(), time.Time{})
 
-		// Both nil - equal
-		if aTime == nil && bTime == nil {
-			return 0
-		}
-		// Only a is nil - a is older (goes last)
-		if aTime == nil {
-			return 1
-		}
-		// Only b is nil - b is older (goes last)
-		if bTime == nil {
+		// Compare in descending order (newer first)
+		if aTime.After(bTime) {
 			return -1
 		}
-
-		// Both have timestamps - compare descending (newer first)
-		if aTime.After(*bTime) {
-			return -1
-		}
-		if aTime.Before(*bTime) {
+		if aTime.Before(bTime) {
 			return 1
 		}
 		return 0

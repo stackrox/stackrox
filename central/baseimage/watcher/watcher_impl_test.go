@@ -774,7 +774,7 @@ func TestWatcher_IncrementalUpdate_CheckTagsConstruction(t *testing.T) {
 // more cached tags than the tag limit, the excess tags go into SkipTags.
 func TestWatcher_IncrementalUpdate_SkipTagsWithLargeCache(t *testing.T) {
 	// Set a low limit for testing (automatically restored after test)
-	t.Setenv(env.BaseImageWatcherTagLimit.EnvVar(), "2")
+	t.Setenv(env.BaseImageWatcherPerRepoTagLimit.EnvVar(), "2")
 
 	ctrl := gomock.NewController(t)
 	mockRepoDS := repoDSMocks.NewMockDataStore(ctrl)

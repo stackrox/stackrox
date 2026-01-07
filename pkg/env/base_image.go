@@ -19,9 +19,9 @@ var (
 	// Lower to 1-2 for unauthenticated Docker Hub or aggressive rate-limited registries.
 	BaseImageWatcherRegistryRateLimit = RegisterIntegerSetting("ROX_BASE_IMAGE_WATCHER_REGISTRY_RATE_LIMIT", 5)
 
-	// BaseImageWatcherTagLimit controls the maximum number of tags promoted from cache
+	// BaseImageWatcherPerRepoTagLimit controls the maximum number of tags promoted from cache
 	// (base_image_tags) to active list (base_images) per repository.
-	BaseImageWatcherTagLimit = RegisterIntegerSetting("ROX_BASE_IMAGE_WATCHER_TAG_LIMIT", 100)
+	BaseImageWatcherPerRepoTagLimit = RegisterIntegerSetting("ROX_BASE_IMAGE_WATCHER_PER_REPO_TAG_LIMIT", 100)
 
 	// BaseImageWatcherTagBatchSize controls the number of tag operations (upserts or deletes)
 	// to accumulate before flushing to the database. Larger batches reduce database round-trips

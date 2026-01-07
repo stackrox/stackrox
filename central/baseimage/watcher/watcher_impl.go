@@ -218,7 +218,7 @@ func (w *watcherImpl) processRepository(ctx context.Context, repo *storage.BaseI
 		SkipTags:  make(map[string]struct{}),
 	}
 	for i, t := range tags {
-		if i < env.BaseImageWatcherTagLimit.IntegerSetting() {
+		if i < env.BaseImageWatcherPerRepoTagLimit.IntegerSetting() {
 			req.CheckTags[t.GetTag()] = t
 		} else {
 			req.SkipTags[t.GetTag()] = struct{}{}
@@ -321,7 +321,7 @@ func (w *watcherImpl) processRepository(ctx context.Context, repo *storage.BaseI
 	// TODO(ROX-31923): Promote tags from cache to active base_images table.
 	// Algorithm:
 	// 1. Fetch all tags from base_image_tags cache for this repository (sorted by created timestamp, newest first)
-	// 2. Select top N tags (using ROX_BASE_IMAGE_WATCHER_TAG_LIMIT, default 100)
+	// 2. Select top N tags (using ROX_BASE_IMAGE_WATCHER_PER_REPO_TAG_LIMIT, default 100)
 	// 3. For each tag in top N:
 	//    - If tag exists in base_images: UPDATE metadata (manifest_digest, created, discovered_at)
 	//    - If tag doesn't exist: INSERT new base_image entry
