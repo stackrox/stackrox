@@ -53,7 +53,7 @@ function RiskDetailsPage(): ReactElement {
                     <Spinner aria-label="Loading deployment information" />
                 </Bullseye>
             )}
-            {data && <RiskSidePanel deploymentWithRisk={data} />}
+            {data && !error && <RiskSidePanel deploymentWithRisk={data} />}
         </>
     );
 }
