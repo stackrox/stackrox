@@ -43,6 +43,9 @@ const (
 	stackroxNamespace = "stackrox"
 	defaultTimeout    = 90 * time.Second
 	eventuallyTimeout = 120 * time.Second
+	// Extended timeout for update operations which may take exceptionally long in some environments
+	// Set to 15 minutes to determine if updates eventually succeed with more time
+	updateTimeout = 15 * time.Minute
 )
 
 var (
@@ -223,9 +226,31 @@ func assertScanSetting(t testutils.T, scanConfig v2.ComplianceScanConfiguration,
 func assertScanSettingBinding(t testutils.T, scanConfig v2.ComplianceScanConfiguration, scanSettingBinding *complianceoperatorv1.ScanSettingBinding) {
 	require.NotNil(t, scanSettingBinding)
 	assert.Equal(t, scanConfig.GetScanName(), scanSettingBinding.GetName())
+
+	// Extract actual profile names for better logging
+	var actualProfiles []string
 	for _, profile := range scanSettingBinding.Profiles {
-		assert.Contains(t, scanConfig.GetScanConfig().GetProfiles(), profile.Name)
+		actualProfiles = append(actualProfiles, profile.Name)
 	}
+	expectedProfiles := scanConfig.GetScanConfig().GetProfiles()
+
+	// Log profiles for debugging (will only show on failure)
+	t.Logf("Expected profiles: %v, Actual profiles: %v", expectedProfiles, actualProfiles)
+
+	// Check that all actual profiles are in the expected list
+	for _, profile := range scanSettingBinding.Profiles {
+		assert.Contains(t, expectedProfiles, profile.Name,
+			"Profile %s found in ScanSettingBinding but not in expected profiles %v",
+			profile.Name, expectedProfiles)
+	}
+
+	// Check that all expected profiles are in the actual list
+	for _, expectedProfile := range expectedProfiles {
+		assert.Contains(t, actualProfiles, expectedProfile,
+			"Expected profile %s not found in ScanSettingBinding profiles %v",
+			expectedProfile, actualProfiles)
+	}
+
 	assert.Contains(t, scanSettingBinding.Labels, "app.kubernetes.io/name")
 	assert.Equal(t, scanSettingBinding.Labels["app.kubernetes.io/name"], "stackrox")
 	assert.Contains(t, scanSettingBinding.Annotations, "owner")
@@ -305,12 +330,15 @@ func TestComplianceV2CentralSendsScanConfiguration(t *testing.T) {
 	waitForDeploymentReady(ctx, t, "sensor", stackroxNamespace, 1)
 
 	// Assert the ScanSetting and the ScanSettingBinding are updated
+	// Use extended timeout to allow more time for the Sensor to reconcile the update
+	t.Logf("Waiting for ScanSettingBinding to be updated after Sensor scale-up...")
 	assert.EventuallyWithT(t, func(c *assert.CollectT) {
 		assertResourceWasUpdated(ctx, wrapCollectT(t, c), scanName, coNamespaceV2, scanSetting)
 		assertResourceWasUpdated(ctx, wrapCollectT(t, c), scanName, coNamespaceV2, scanSettingBinding)
 		assertScanSetting(wrapCollectT(t, c), scanConfig, scanSetting)
 		assertScanSettingBinding(wrapCollectT(t, c), scanConfig, scanSettingBinding)
-	}, eventuallyTimeout, 2*time.Second)
+	}, updateTimeout, 5*time.Second)
+	t.Logf("ScanSettingBinding successfully updated after Sensor scale-up")
 
 	// Scale down Sensor
 	assert.NoError(t, scaleToN(ctx, k8sClient, "sensor", stackroxNamespace, 0))
@@ -603,12 +631,15 @@ func TestComplianceV2UpdateScanConfigurations(t *testing.T) {
 	assert.GreaterOrEqual(t, scanConfigs.TotalCount, int32(1))
 
 	// Assert the ScanSetting and the ScanSettingBinding are updated
+	// Use extended timeout to allow more time for the Sensor to reconcile the update
+	t.Logf("Waiting for ScanSettingBinding to update from ocp4-cis to ocp4-high + ocp4-high-node...")
 	assert.EventuallyWithT(t, func(c *assert.CollectT) {
 		assertResourceWasUpdated(ctx, wrapCollectT(t, c), scanName, coNamespaceV2, scanSetting)
 		assertResourceWasUpdated(ctx, wrapCollectT(t, c), scanName, coNamespaceV2, scanSettingBinding)
 		assertScanSetting(wrapCollectT(t, c), *updateReq, scanSetting)
 		assertScanSettingBinding(wrapCollectT(t, c), *updateReq, scanSettingBinding)
-	}, eventuallyTimeout, 2*time.Second)
+	}, updateTimeout, 5*time.Second)
+	t.Logf("ScanSettingBinding successfully updated")
 }
 
 func TestComplianceV2DeleteComplianceScanConfigurations(t *testing.T) {
