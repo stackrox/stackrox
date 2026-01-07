@@ -20,7 +20,7 @@ import {
 } from '@patternfly/react-core';
 import { ExclamationCircleIcon } from '@patternfly/react-icons';
 import { useParams } from 'react-router-dom-v5-compat';
-import { DocumentNode, gql, useQuery } from '@apollo/client';
+import { gql, useQuery } from '@apollo/client';
 import isEmpty from 'lodash/isEmpty';
 
 import BreadcrumbItemLink from 'Components/BreadcrumbItemLink';
@@ -60,6 +60,7 @@ const imageDetailsQuery = gql`
     ${imageDetailsFragment}
     query getImageDetails($id: ID!) {
         image(id: $id) {
+            id
             name {
                 registry
                 remote
@@ -74,8 +75,8 @@ const imageDetailsQuery = gql`
 const imageV2DetailsQuery = gql`
     ${imageV2DetailsFragment}
     query getImageDetails($id: ID!) {
-        imageV2(id: $id) {
-            digest
+        image: imageV2(id: $id) {
+            id: digest
             name {
                 registry
                 remote
@@ -86,8 +87,6 @@ const imageV2DetailsQuery = gql`
         }
     }
 `;
-
-export const getImageDetailsQuery = (isNewImageDataModelEnabled: boolean) : DocumentNode => isNewImageDataModelEnabled ? imageV2DetailsQuery : imageDetailsQuery;
 
 function OptionalSbomButtonTooltip({
     children,
@@ -120,8 +119,6 @@ type ImageData = {
     } | null;
 } & ImageDetails;
 
-type ImageV2Data = ImageData & { digest: string };
-
 function ImagePage({
     vulnerabilityState,
     showVulnerabilityStateTabs,
@@ -131,17 +128,19 @@ function ImagePage({
     const isNewImageDataModelEnabled = isFeatureFlagEnabled('ROX_FLATTEN_IMAGE_DATA');
     const { urlBuilder, pageTitle, baseSearchFilter, viewContext } = useWorkloadCveViewContext();
     const { imageId } = useParams() as { imageId: string };
-    const { data, error } = useQuery<
-        {
-            image: ImageData | null, // Legacy image data model, will be null when ROX_FLATTEN_IMAGE_DATA is enabled
-            imageV2: ImageV2Data | null; // New image data model, will be null when ROX_FLATTEN_IMAGE_DATA is disabled
-        },
-        {
-            id: string;
-        }
-    >(getImageDetailsQuery(isNewImageDataModelEnabled), {
+
+    const v1Query = useQuery<{ image: ImageData }, { id: string }>(imageDetailsQuery, {
         variables: { id: imageId },
+        skip: isNewImageDataModelEnabled,
     });
+
+    const v2Query = useQuery<{ image: ImageData }, { id: string }>(imageV2DetailsQuery, {
+        variables: { id: imageId },
+        skip: !isNewImageDataModelEnabled,
+    });
+
+    const data = isNewImageDataModelEnabled ? v2Query.data : v1Query.data;
+    const error = isNewImageDataModelEnabled ? v2Query.error : v1Query.error;
     const [activeTabKey, setActiveTabKey] = useURLStringUnion('detailsTab', detailsTabValues);
     const { invalidateAll: refetchAll } = useInvalidateVulnerabilityQueries();
 
@@ -178,7 +177,7 @@ function ImagePage({
         return getVulnStateScopedQueryString(combinedFilter, vulnerabilityState);
     }, [imageId, baseSearchFilter, querySearchFilter, vulnerabilityState]);
 
-    const imageData = data && (isNewImageDataModelEnabled ? data.imageV2 : data.image);
+    const imageData = data?.image;
     const imageName = imageData?.name;
     const imageDisplayName =
         imageData && imageName
@@ -205,7 +204,7 @@ function ImagePage({
             </PageSection>
         );
     } else {
-        const sha = isNewImageDataModelEnabled ? (imageData as ImageV2Data)?.digest : imageData?.id;
+        const sha = imageData?.id;
         mainContent = (
             <>
                 <PageSection variant="light">

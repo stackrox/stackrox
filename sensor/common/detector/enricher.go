@@ -305,7 +305,7 @@ func (e *enricher) runScan(ctx context.Context, req *scanImageRequest) imageChan
 	if ok {
 		// If the container image name is already within the cached images names, we can short-circuit.
 		// For flattened images, we can directly short circuit if the image already exists in the cache.
-		if centralcaps.Has(centralsensor.FlattenImageData) ||
+		if (features.FlattenImageData.Enabled() && centralcaps.Has(centralsensor.FlattenImageData)) ||
 			protoutils.SliceContains(req.containerImage.GetName(), img.GetNames()) {
 			log.Debugf("Image scan loaded from cache: %s: Components: (%d)", req.containerImage.GetName().GetFullName(), len(img.GetScan().GetComponents()))
 			return imageChanResult{
