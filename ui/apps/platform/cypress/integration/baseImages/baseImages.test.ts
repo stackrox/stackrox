@@ -2,7 +2,7 @@ import withAuth from '../../helpers/basicAuth';
 import { hasFeatureFlag } from '../../helpers/features';
 import { getRegExpForTitleWithBranding } from '../../helpers/title';
 
-import { openAddModal, visitBaseImages, visitBaseImagesFromLeftNav } from './baseImages.helpers';
+import { addBaseImage, visitBaseImages, visitBaseImagesFromLeftNav } from './baseImages.helpers';
 
 describe('Base Images', () => {
     withAuth();
@@ -18,8 +18,8 @@ describe('Base Images', () => {
 
         // Verify page loaded correctly
         cy.title().should('match', getRegExpForTitleWithBranding('Base Images'));
-        cy.get('h1:contains("Base Images")').should('be.visible');
-        cy.get('p:contains("Manage approved base images")').should('be.visible');
+        cy.get('h1:contains("Base Images")');
+        cy.get('p:contains("Manage approved base images")');
 
         // Verify table renders with expected headers
         cy.get('table');
@@ -31,29 +31,31 @@ describe('Base Images', () => {
         const newBaseImage = 'docker.io/library/alpine:3.18';
 
         visitBaseImages();
-
-        openAddModal();
-        cy.get('input#baseImagePath').type(newBaseImage);
-        cy.get('button:contains("Save")').click();
+        addBaseImage(newBaseImage);
 
         // Verify table shows new entry
-        cy.get('td').should('contain', newBaseImage);
+        cy.get('table tbody tr').should('contain', newBaseImage);
     });
 
     it('should delete base image successfully', () => {
+        const testBaseImage = 'docker.io/library/nginx:1.25';
+
         visitBaseImages();
+        addBaseImage(testBaseImage);
 
-        // Get initial row count
-        cy.get('table tbody tr').then(($rows) => {
-            const initialCount = $rows.length;
+        // Set up DELETE intercept
+        cy.intercept('DELETE', '/v2/baseimages/*').as('deleteBaseImage');
 
-            // Click first row's kebab menu
-            cy.get('table tbody tr').first().find('button[aria-label="Kebab toggle"]').click();
-            cy.get('button:contains("Remove")').click();
-            cy.get('*[role="dialog"] button:contains("Delete")').click();
+        // Delete the base image
+        cy.get('table tbody tr').contains('td', testBaseImage).parents('tr').as('targetRow');
+        cy.get('@targetRow').find('button[aria-label="Kebab toggle"]').click();
+        cy.get('button:contains("Remove")').click();
+        cy.get('[role="dialog"] button:contains("Delete")').click();
 
-            // Verify row count decreased
-            cy.get('table tbody tr').should('have.length', initialCount - 1);
-        });
+        // Wait for delete to complete
+        cy.wait('@deleteBaseImage');
+
+        // Verify it's gone
+        cy.get('table tbody tr').should('not.contain', testBaseImage);
     });
 });
