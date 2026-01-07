@@ -8,9 +8,9 @@ import DeploymentDetails from './DeploymentDetails';
 import RiskIndicators from './Indicators/RiskIndicators';
 import ProcessDiscovery from './Process/ProcessDiscovery';
 
-const riskIndicatorsTab = 'Risk Indicators';
-const deploymentDetailsTab = 'Deployment Details';
-const processDiscoveryTab = 'Process Discovery';
+const riskIndicatorsTab = 'Risk indicators';
+const deploymentDetailsTab = 'Deployment details';
+const processDiscoveryTab = 'Process discovery';
 
 export type RiskSidePanelTabsProps = {
     deployment: Deployment;
@@ -38,18 +38,18 @@ function RiskDetailTabs({ deployment, risk }) {
                 >
                     <Tab
                         eventKey={riskIndicatorsTab}
-                        title={<TabTitleText>Risk Indicators</TabTitleText>}
+                        title={<TabTitleText>Risk indicators</TabTitleText>}
                         tabContentId={riskIndicatorsTab}
                     />
                     <Tab
                         eventKey={deploymentDetailsTab}
-                        title={<TabTitleText>Deployment Details</TabTitleText>}
+                        title={<TabTitleText>Deployment details</TabTitleText>}
                         tabContentId={deploymentDetailsTab}
                     />
                     {hasReadAccessForDeploymentExtension && (
                         <Tab
                             eventKey={processDiscoveryTab}
-                            title={<TabTitleText>Process Discovery</TabTitleText>}
+                            title={<TabTitleText>Process discovery</TabTitleText>}
                             tabContentId={processDiscoveryTab}
                         />
                     )}
