@@ -1,7 +1,7 @@
 package rate
 
 import (
-	"context"
+	"sync"
 	"testing"
 	"time"
 
@@ -11,10 +11,43 @@ import (
 
 const workloadName = "test_workload"
 
+// TestClock allows manual time control in tests.
+type TestClock struct {
+	mu  sync.Mutex
+	now time.Time
+}
+
+// NewTestClock creates a TestClock starting at the given time.
+func NewTestClock(start time.Time) *TestClock {
+	return &TestClock{now: start}
+}
+
+// Now returns the current frozen time.
+func (c *TestClock) Now() time.Time {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	return c.now
+}
+
+// Advance moves the clock forward by the given duration.
+func (c *TestClock) Advance(d time.Duration) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	c.now = c.now.Add(d)
+}
+
 // mustNewLimiter creates a limiter or fails the test.
 func mustNewLimiter(t *testing.T, workloadName string, globalRate float64, bucketCapacity int) *Limiter {
 	t.Helper()
 	limiter, err := NewLimiter(workloadName, globalRate, bucketCapacity)
+	require.NoError(t, err)
+	return limiter
+}
+
+// mustNewLimiterWithClock creates a limiter with an injectable clock or fails the test.
+func mustNewLimiterWithClock(t *testing.T, workloadName string, globalRate float64, bucketCapacity int, clock Clock) *Limiter {
+	t.Helper()
+	limiter, err := NewLimiterWithClock(workloadName, globalRate, bucketCapacity, clock)
 	require.NoError(t, err)
 	return limiter
 }
@@ -65,7 +98,8 @@ func TestTryConsume_Disabled(t *testing.T) {
 }
 
 func TestTryConsume_SingleSensor(t *testing.T) {
-	limiter := mustNewLimiter(t, "test", 10, 50) // rate=10 req/s, bucket capacity=50
+	clock := NewTestClock(time.Now())
+	limiter := mustNewLimiterWithClock(t, "test", 10, 50, clock) // rate=10 req/s, bucket capacity=50
 
 	// With 1 sensor, per-sensor burst = 50/1 = 50 requests
 	for i := range 50 {
@@ -74,16 +108,25 @@ func TestTryConsume_SingleSensor(t *testing.T) {
 		assert.Empty(t, reason)
 	}
 
-	// TODO: FLAKE MAGNET: what if new token is added to the bucket?
-
+	// Time is frozen - no new tokens can be added between requests.
 	// 51st request should be rejected (burst exhausted)
 	allowed, reason := limiter.TryConsume("sensor-1")
 	assert.False(t, allowed, "request should be rejected after burst exhausted")
 	assert.Equal(t, "rate limit exceeded", reason)
+
+	// Advance time and verify tokens refill correctly
+	clock.Advance(500 * time.Millisecond) // At 10 req/s, expect ~5 tokens
+	for i := range 5 {
+		allowed, _ := limiter.TryConsume("sensor-1")
+		assert.True(t, allowed, "request %d should be allowed after time advance", i)
+	}
+	allowed, _ = limiter.TryConsume("sensor-1")
+	assert.False(t, allowed, "should be rejected after consuming refilled tokens")
 }
 
 func TestTryConsume_MultipleSensors_Fairness(t *testing.T) {
-	limiter := mustNewLimiter(t, "test", 12, 60) // rate=12 req/s, bucket capacity=60
+	clock := NewTestClock(time.Now())
+	limiter := mustNewLimiterWithClock(t, "test", 12, 60, clock) // rate=12 req/s, bucket capacity=60
 
 	sensor1 := "sensor-1"
 	sensor2 := "sensor-2"
@@ -113,7 +156,7 @@ func TestTryConsume_MultipleSensors_Fairness(t *testing.T) {
 		assert.True(t, allowed, "sensor-3 request %d should be allowed", i)
 	}
 
-	// All sensors exhausted
+	// All sensors exhausted - time is frozen so no tokens refilled
 	allowed, _ = limiter.TryConsume(sensor2)
 	assert.False(t, allowed, "sensor-2 should be rate limited")
 	allowed, _ = limiter.TryConsume(sensor3)
@@ -121,12 +164,9 @@ func TestTryConsume_MultipleSensors_Fairness(t *testing.T) {
 }
 
 func TestTryConsume_Rebalancing(t *testing.T) {
-	// Set test deadline to fail fast if something goes wrong
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
-
+	clock := NewTestClock(time.Now())
 	// rate=10 req/s, bucket capacity=100
-	limiter := mustNewLimiter(t, workloadName, 10, 100)
+	limiter := mustNewLimiterWithClock(t, workloadName, 10, 100, clock)
 
 	// Start with sensor-1: per-sensor burst = 100/1 = 100
 	for i := range 100 {
@@ -145,18 +185,11 @@ func TestTryConsume_Rebalancing(t *testing.T) {
 	allowed, _ = limiter.TryConsume("sensor-2")
 	assert.False(t, allowed, "sensor-2 should be rate limited after burst")
 
-	// Wait for token refill (at 5 req/s per sensor, ~7 tokens refill in 1.5 seconds)
-	waitDuration := 1500 * time.Millisecond
-	select {
-	case <-time.After(waitDuration):
-		// Normal path - waited successfully
-	case <-ctx.Done():
-		require.Fail(t, "test deadline exceeded while waiting for token refill")
-		return
-	}
+	// Advance time for token refill (at 5 req/s per sensor, 7 tokens refill in 1.4 seconds)
+	clock.Advance(1500 * time.Millisecond)
 
-	// Both sensors should get ~7-8 tokens back (5 req/s * 1.5s)
-	// Just verify we can make a few requests
+	// Both sensors should get ~7 tokens back (5 req/s * 1.5s)
+	// Verify we can make a few requests
 	for range 5 {
 		allowed, _ := limiter.TryConsume("sensor-1")
 		assert.True(t, allowed, "sensor-1 should have refilled tokens")
@@ -166,12 +199,9 @@ func TestTryConsume_Rebalancing(t *testing.T) {
 }
 
 func TestTryConsume_BurstWindow(t *testing.T) {
-	// Set test deadline to fail fast if something goes wrong
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
-
+	clock := NewTestClock(time.Now())
 	// rate=10 req/s, bucket capacity=100
-	limiter := mustNewLimiter(t, "test", 10, 100)
+	limiter := mustNewLimiterWithClock(t, "test", 10, 100, clock)
 
 	// With 1 sensor, per-sensor burst = 100/1 = 100
 	for i := range 100 {
@@ -183,15 +213,8 @@ func TestTryConsume_BurstWindow(t *testing.T) {
 	allowed, _ := limiter.TryConsume("sensor-1")
 	assert.False(t, allowed, "request should be rejected after burst exhausted")
 
-	// Wait for refill (at 10 req/s, ~15 tokens refill in 1.5 second)
-	waitDuration := 1500 * time.Millisecond
-	select {
-	case <-time.After(waitDuration):
-		// Normal path - waited successfully
-	case <-ctx.Done():
-		require.Fail(t, "test deadline exceeded during sleep")
-		return
-	}
+	// Advance time for refill (at 10 req/s, 15 tokens refill in 1.5 seconds)
+	clock.Advance(1500 * time.Millisecond)
 
 	// Should get ~15 tokens back - verify we can make at least 10 requests
 	for range 10 {
@@ -233,12 +256,9 @@ func TestPerSensorBurst(t *testing.T) {
 }
 
 func TestRebalancing_DynamicSensorCount(t *testing.T) {
-	// Set test deadline to fail fast if something goes wrong
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
-
+	clock := NewTestClock(time.Now())
 	// rate=30 req/s, bucket capacity=300
-	limiter := mustNewLimiter(t, "test", 30, 300)
+	limiter := mustNewLimiterWithClock(t, "test", 30, 300, clock)
 
 	// Sensor 1: gets 30/1 = 30 req/s, burst = 30*10s = 300
 	for range 300 {
@@ -258,7 +278,7 @@ func TestRebalancing_DynamicSensorCount(t *testing.T) {
 		assert.True(t, allowed)
 	}
 
-	// All sensors should be limited now
+	// All sensors should be limited now - time is frozen
 	allowed, _ := limiter.TryConsume("sensor-1")
 	assert.False(t, allowed)
 	allowed, _ = limiter.TryConsume("sensor-2")
@@ -266,16 +286,8 @@ func TestRebalancing_DynamicSensorCount(t *testing.T) {
 	allowed, _ = limiter.TryConsume("sensor-3")
 	assert.False(t, allowed)
 
-	// Wait for token refill (at 10 req/s, ~15 tokens refill in 1.5s)
-	// Use select with context timeout to fail fast if test hangs
-	waitDuration := 1500 * time.Millisecond
-	select {
-	case <-time.After(waitDuration):
-		// Normal path - waited successfully
-	case <-ctx.Done():
-		require.Fail(t, "test deadline exceeded during sleep")
-		return
-	}
+	// Advance time for token refill (at 10 req/s per sensor, 15 tokens refill in 1.5s)
+	clock.Advance(1500 * time.Millisecond)
 
 	// Each sensor should get ~15 tokens back - verify at least 10 work
 	for range 10 {
@@ -289,7 +301,8 @@ func TestRebalancing_DynamicSensorCount(t *testing.T) {
 }
 
 func TestOnSensorDisconnect(t *testing.T) {
-	limiter := mustNewLimiter(t, "test", 20, 100) // rate=20 req/s, bucket capacity=100
+	clock := NewTestClock(time.Now())
+	limiter := mustNewLimiterWithClock(t, "test", 20, 100, clock) // rate=20 req/s, bucket capacity=100
 
 	// Create 2 sensors: each gets 20/2 = 10 req/s, burst = 10*5s = 50
 	limiter.getOrCreateLimiter("sensor-1")

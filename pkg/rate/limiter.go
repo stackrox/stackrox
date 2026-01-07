@@ -1,6 +1,8 @@
 package rate
 
 import (
+	"time"
+
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sync"
@@ -23,6 +25,11 @@ const (
 	ReasonRateLimitExceeded = "rate limit exceeded"
 )
 
+// Clock provides an abstraction over time for testing.
+type Clock interface {
+	Now() time.Time
+}
+
 // Limiter provides per-sensor fair rate limiting for any workload type.
 // Each sensor gets an equal share (1/N) of the global capacity, with automatic
 // rebalancing when sensors connect or disconnect.
@@ -32,6 +39,15 @@ type Limiter struct {
 	bucketCapacity int     // max tokens per sensor bucket (allows temporary bursts)
 
 	buckets sync.Map // map[sensorID]*gorate.Limiter
+	clock   Clock    // time source (injectable for testing)
+}
+
+// RealClock uses the system clock.
+type RealClock struct{}
+
+// Now returns the current time.
+func (RealClock) Now() time.Time {
+	return time.Now()
 }
 
 // NewLimiter creates a new per-sensor rate limiter for the given workload.
@@ -44,6 +60,13 @@ type Limiter struct {
 //   - globalRate is negative
 //   - bucketCapacity is less than 1
 func NewLimiter(workloadName string, globalRate float64, bucketCapacity int) (*Limiter, error) {
+	return NewLimiterWithClock(workloadName, globalRate, bucketCapacity, RealClock{})
+}
+
+// NewLimiterWithClock creates a new per-sensor rate limiter with an injectable clock.
+// This is primarily useful for testing to control time and avoid flaky tests.
+// For production use, prefer NewLimiter which uses the real system clock.
+func NewLimiterWithClock(workloadName string, globalRate float64, bucketCapacity int, clock Clock) (*Limiter, error) {
 	if workloadName == "" {
 		return nil, ErrEmptyWorkloadName
 	}
@@ -57,6 +80,7 @@ func NewLimiter(workloadName string, globalRate float64, bucketCapacity int) (*L
 		workloadName:   workloadName,
 		globalRate:     globalRate,
 		bucketCapacity: bucketCapacity,
+		clock:          clock,
 	}, nil
 }
 
@@ -71,7 +95,8 @@ func (l *Limiter) TryConsume(sensorID string) (allowed bool, reason string) {
 
 	limiter := l.getOrCreateLimiter(sensorID)
 
-	if limiter.Allow() {
+	// Use AllowN with clock.Now() to support time injection for testing.
+	if limiter.AllowN(l.clock.Now(), 1) {
 		RequestsTotal.WithLabelValues(l.workloadName, OutcomeAccepted).Inc()
 		RequestsAccepted.WithLabelValues(l.workloadName, sensorID).Inc()
 		return true, ""
