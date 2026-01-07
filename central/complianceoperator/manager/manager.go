@@ -85,7 +85,7 @@ func NewManager(registry *standards.Registry, profiles profileDatastore.DataStor
 	// Postgres retries in addProfileNoLock(...)
 
 	// For debug, make a context with a very short timeout.
-	ctx, cancel := contextutil.ContextWithTimeoutIfNotExists(allAccessCtx, 1*time.Second)
+	ctx, cancel := contextutil.ContextWithTimeoutIfNotExists(allAccessCtx, 10*time.Millisecond)
 	defer cancel()
 	err := profiles.Walk(ctx, func(profile *storage.ComplianceOperatorProfile) error {
 		return mgr.addProfileNoLock(profile)
@@ -177,7 +177,7 @@ func (m *managerImpl) AddProfile(profile *storage.ComplianceOperatorProfile) err
 
 func (m *managerImpl) addProfileNoLock(profile *storage.ComplianceOperatorProfile) error {
 	var existingProfiles []*storage.ComplianceOperatorProfile
-	ctx, cancel := contextutil.ContextWithTimeoutIfNotExists(allAccessCtx, 1*time.Second)
+	ctx, cancel := contextutil.ContextWithTimeoutIfNotExists(allAccessCtx, 10*time.Millisecond)
 	defer cancel()
 	walkFn := func() error {
 		existingProfiles = []*storage.ComplianceOperatorProfile{
