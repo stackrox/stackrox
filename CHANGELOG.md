@@ -30,7 +30,7 @@ Changes should still be described appropriately in JIRA/doc input pages, for inc
 - ROX-30769: Update Node.js requirement for ui folder to 22.13.0
 - ROX-31295: The lower limit for `ROX_MAX_PARALLEL_IMAGE_SCAN_INTERNAL` on Sensor has been reduced to one (from 10).
 - ROX-32125: The operator now adopts secrets that have the `app.stackrox.io/managed-by: operator` label but no `ownerReferences`. This fixes reconciliation failures after backup/restore operations that strip `ownerReferences` from secrets.
-- ROX-32394: Remove init-tls-certs init container from all Secured Cluster services, except for Sensor (where it's needed for supporting both init bundles and CRS tokens).
+- ROX-32394, ROX-32554: Remove init-tls-certs init container from all Secured Cluster services. The certificate initialization logic for Sensor is now performed at Sensor startup.
 - ROX-28352: Remove Sensor's certdistribution API, which was used by the admission controller to retrieve its TLS certificate from Sensor (no longer needed)
 - ROX-26374: Upgrading from a version prior to 4.6 is no longer supported. If upgrading from a version prior to 4.6, then you must upgrade to 4.6, 4.7, 4.8 or 4.9 first, before upgrading to 4.10. Similarly, once on 4.10 or higher, rollback to a version prior to 4.6 is no longer supported.  For example:
 	  - 4.5 -> 4.10 -- not supported must go to 4.6, 4.7, 4.8 or 4.9 first and then go to 4.10.

@@ -1,4 +1,4 @@
-package main
+package certinit
 
 import (
 	"context"
@@ -38,7 +38,7 @@ func (s *initTLSCertsSuite) TestFileCopy() {
 		{
 			name: "Only legacySourceDir contains files",
 			setupDirs: func() {
-				s.createFiles(legacySourceDir, 3, "legacycert")
+				s.createFiles(legacySourceDir, 3, "legacycert", "")
 			},
 			expectedFiles:  3,
 			expectedPrefix: "legacycert",
@@ -47,7 +47,7 @@ func (s *initTLSCertsSuite) TestFileCopy() {
 		{
 			name: "Only newSourceDir contains files",
 			setupDirs: func() {
-				s.createFiles(newSourceDir, 3, "newcert")
+				s.createFiles(newSourceDir, 3, "newcert", "")
 			},
 			expectedFiles:  3,
 			expectedPrefix: "newcert",
@@ -56,8 +56,8 @@ func (s *initTLSCertsSuite) TestFileCopy() {
 		{
 			name: "Both legacySourceDir and newSourceDir contain files",
 			setupDirs: func() {
-				s.createFiles(legacySourceDir, 3, "legacycert")
-				s.createFiles(newSourceDir, 3, "newcert")
+				s.createFiles(legacySourceDir, 3, "legacycert", "")
+				s.createFiles(newSourceDir, 3, "newcert", "")
 			},
 			expectedFiles:  3,
 			expectedPrefix: "newcert", // prefer new certs if both exist
@@ -140,11 +140,46 @@ func (s *initTLSCertsSuite) TestSanityCheckDestination() {
 	}
 }
 
-func (s *initTLSCertsSuite) createFiles(dir string, count int, prefix string) {
+func (s *initTLSCertsSuite) createFiles(dir string, count int, prefix, content string) {
 	for i := 0; i < count; i++ {
-		_, err := os.Create(filepath.Join(dir, fmt.Sprintf("%s%d", prefix, i)))
+		err := os.WriteFile(filepath.Join(dir, fmt.Sprintf("%s%d", prefix, i)), []byte(content), 0600)
 		s.Require().NoError(err, "Failed to create cert file in %s", dir)
 	}
+}
+
+func (s *initTLSCertsSuite) TestRun() {
+	s.Run("skips when no source directories exist", func() {
+		legacySourceDir = "/nonexistent/legacy"
+		newSourceDir = "/nonexistent/new"
+		destinationDir = s.T().TempDir()
+		s.createFiles(destinationDir, 3, "existing", "")
+
+		err := Run()
+
+		s.NoError(err)
+		destFiles, err := os.ReadDir(destinationDir)
+		s.Require().NoError(err)
+		s.Len(destFiles, 3)
+	})
+
+	s.Run("copies files from source to destination and overwrites existing", func() {
+		s.createDirs()
+		s.createFiles(newSourceDir, 3, "cert", "new")
+		s.createFiles(legacySourceDir, 3, "legacy", "")
+		s.createFiles(destinationDir, 3, "cert", "old")
+
+		err := Run()
+
+		s.Require().NoError(err)
+		destFiles, err := os.ReadDir(destinationDir)
+		s.Require().NoError(err)
+		s.Require().Len(destFiles, 3)
+		for _, f := range destFiles {
+			content, err := os.ReadFile(filepath.Join(destinationDir, f.Name()))
+			s.Require().NoError(err)
+			s.Equal("new", string(content), "expected file %q to have new content", f.Name())
+		}
+	})
 }
 
 func (s *initTLSCertsSuite) createDirs() {

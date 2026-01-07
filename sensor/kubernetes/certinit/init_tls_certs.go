@@ -1,11 +1,9 @@
-package main
+package certinit
 
 import (
 	"context"
-	"flag"
 	"fmt"
 	"io/fs"
-	"log"
 	"os"
 	"path"
 	"path/filepath"
@@ -13,52 +11,59 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/fileutils"
+	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/mtls"
 )
 
+var log = logging.LoggerForModule()
+
 var (
-	destinationDir  string
-	legacySourceDir string
-	newSourceDir    string
+	destinationDir  = mtls.CertsPrefix
+	legacySourceDir = env.RegisterSetting("ROX_CERTS_LEGACY_DIR", env.WithDefault("/run/secrets/stackrox.io/certs-legacy/")).Setting()
+	newSourceDir    = env.RegisterSetting("ROX_CERTS_NEW_DIR", env.WithDefault("/run/secrets/stackrox.io/certs-new/")).Setting()
 )
 
 const timeout = 5 * time.Minute
 
-func main() {
-	setupFlags()
+// Run sets up TLS certificates by copying them from new or legacy source directories
+// to mtls.CertsPrefix. New certificates (from the tls-cert-sensor secret) have precedence
+// over legacy certificates (from the sensor-tls secret).
+// It skips initialization if these directories do not exist.
+func Run() error {
+	newCertsExist, err := fileutils.Exists(newSourceDir)
+	if err != nil {
+		log.Warnf("Error checking %q: %v", newSourceDir, err)
+	}
+	legacyCertsExist, err := fileutils.Exists(legacySourceDir)
+	if err != nil {
+		log.Warnf("Error checking %q: %v", legacySourceDir, err)
+	}
+	if !newCertsExist && !legacyCertsExist {
+		// this should only be the case for legacy manifest-based deployments
+		log.Infof("Skipping TLS cert initialization: neither %q nor %q exist, assuming certs are mounted directly", newSourceDir, legacySourceDir)
+		return nil
+	}
 
 	realDest, err := sanityCheckDestination()
 	if err != nil {
-		log.Fatalf("Unusable destination directory %q: %s", destinationDir, err)
+		return errors.Wrapf(err, "unusable destination directory %q", destinationDir)
 	}
-	log.Printf("Destination directory %q looks sane.", destinationDir)
 
 	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
 
 	files, err := waitForSource(ctx)
 	if err != nil {
-		log.Fatalf("Failed to load certificates: %v", err)
+		return errors.Wrap(err, "failed to load certificates")
 	}
 
 	if err = copyFiles(files, realDest); err != nil {
-		log.Fatalf("Cannot copy files: %v", err)
-	}
-}
-
-func setupFlags() {
-	flag.StringVar(&legacySourceDir, "legacy", "", "Source directory for legacy certs")
-	flag.StringVar(&newSourceDir, "new", "", "Source directory for new certs")
-	flag.StringVar(&destinationDir, "destination", "", "Destination directory for certs")
-
-	flag.Parse()
-
-	if legacySourceDir == "" || newSourceDir == "" || destinationDir == "" {
-		log.Fatalf("All parameters are mandatory: -legacy, -new, and -destination must be provided.")
+		return errors.Wrap(err, "cannot copy files")
 	}
 
-	log.Println("New certs directory:", newSourceDir)
-	log.Println("Legacy certs directory:", legacySourceDir)
-	log.Println("Destination directory:", destinationDir)
+	return nil
 }
 
 func copyFiles(files []string, destDir string) error {
@@ -72,13 +77,12 @@ func copyFiles(files []string, destDir string) error {
 		if err = os.WriteFile(destPath, content, perm); err != nil {
 			return errors.Wrapf(err, "writing certificate file to %s", destPath)
 		}
-		log.Printf("Copied %q to %q", file, destPath)
+		log.Infof("Copied %q to %q", file, destPath)
 	}
 	return nil
 }
 
 func waitForSource(ctx context.Context) ([]string, error) {
-	log.Printf("Looking for files in the source directory %q.", legacySourceDir)
 	for {
 		select {
 		case <-ctx.Done():
@@ -87,22 +91,22 @@ func waitForSource(ctx context.Context) ([]string, error) {
 			// Check new certificates first
 			files, err := findFiles(newSourceDir)
 			if err != nil {
-				log.Printf("Error checking certificates in %q: %s", newSourceDir, err)
+				log.Debugf("Error checking certificates in %q: %s", newSourceDir, err)
 			} else {
-				log.Printf("Using %d new certificate files from %q.", len(files), newSourceDir)
+				log.Infof("Using %d new certificate files from %q.", len(files), newSourceDir)
 				return files, nil
 			}
 
 			// Fall back to legacy certificates
 			files, err = findFiles(legacySourceDir)
 			if err != nil {
-				log.Printf("Error checking legacy certificates in %q: %s", legacySourceDir, err)
+				log.Debugf("Error checking legacy certificates in %q: %s", legacySourceDir, err)
 			} else {
-				log.Printf("Using %d legacy certificates from %q.", len(files), legacySourceDir)
+				log.Infof("Using %d legacy certificates from %q.", len(files), legacySourceDir)
 				return files, nil
 			}
 
-			log.Printf("No certificates found. Retrying...")
+			log.Info("No certificates found. Retrying...")
 			time.Sleep(5 * time.Second)
 		}
 	}
@@ -114,28 +118,28 @@ func findFiles(sourceDir string) ([]string, error) {
 		return nil, fmt.Errorf("evaluating symlinks for %q: %w", sourceDir, err)
 	}
 
-	log.Printf("Walking %q.", realSource)
+	log.Debugf("Walking %q.", realSource)
 	var files []string
 	err = filepath.WalkDir(realSource, func(path string, d fs.DirEntry, walkErr error) error {
 		if walkErr != nil {
-			log.Printf("Error accessing path %q: %s", path, walkErr)
+			log.Debugf("Error accessing path %q: %s", path, walkErr)
 			return nil
 		}
 
 		base := filepath.Base(path)
 		if strings.HasPrefix(base, ".") {
 			if d.IsDir() {
-				log.Printf("Ignoring hidden dir %q", path)
+				log.Debugf("Ignoring hidden dir %q", path)
 				return filepath.SkipDir
 			}
 
-			log.Printf("Ignoring hidden file %q", path)
+			log.Debugf("Ignoring hidden file %q", path)
 			return nil
 		}
 
 		realFile, err := filepath.EvalSymlinks(path)
 		if err != nil {
-			log.Printf("Ignoring file %q: %s", path, err)
+			log.Debugf("Ignoring file %q: %s", path, err)
 			return nil
 		}
 
@@ -143,7 +147,7 @@ func findFiles(sourceDir string) ([]string, error) {
 			return nil
 		}
 
-		log.Printf("Found file %q (%q)", path, realFile)
+		log.Debugf("Found file %q (%q)", path, realFile)
 		files = append(files, realFile)
 		return nil
 	})
