@@ -81,6 +81,9 @@ jobs:
       matrix: ${{ fromJson(needs.define-scanner-job-matrix.outputs.matrix).pre_build_scanner_go_binary }}
     container:
       image: quay.io/stackrox-io/apollo-ci:scanner-test-0.5.1
+      volumes:
+        - /usr:/mnt/usr
+        - /opt:/mnt/opt
     steps:
     - name: Checkout
       uses: actions/checkout@v5
@@ -192,6 +195,9 @@ jobs:
       matrix: ${{ fromJson(needs.define-scanner-job-matrix.outputs.matrix).build_and_push_scanner }}
     container:
       image: quay.io/stackrox-io/apollo-ci:scanner-test-0.5.1
+      volumes:
+        - /usr:/mnt/usr
+        - /opt:/mnt/opt
       env:
         QUAY_RHACS_ENG_RW_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RW_USERNAME }}
         QUAY_RHACS_ENG_RW_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RW_PASSWORD }}
