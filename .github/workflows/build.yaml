@@ -110,9 +110,6 @@ jobs:
     runs-on: ubuntu-latest
     container:
       image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.1
-      volumes:
-        - /usr:/mnt/usr
-        - /opt:/mnt/opt
     steps:
       - name: Checkout
         uses: actions/checkout@v5
@@ -145,9 +142,6 @@ jobs:
     runs-on: ubuntu-latest
     container:
       image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.1
-      volumes:
-        - /usr:/mnt/usr
-        - /opt:/mnt/opt
     steps:
       - name: Checkout
         uses: actions/checkout@v5
@@ -186,9 +180,6 @@ jobs:
     runs-on: ubuntu-latest
     container:
       image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.1
-      volumes:
-        - /usr:/mnt/usr
-        - /opt:/mnt/opt
     steps:
       - name: Checkout
         uses: actions/checkout@v5
@@ -256,9 +247,6 @@ jobs:
     runs-on: ubuntu-latest
     container:
       image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.1
-      volumes:
-        - /usr:/mnt/usr
-        - /opt:/mnt/opt
     steps:
       - name: Checkout
         uses: actions/checkout@v5
@@ -316,9 +304,6 @@ jobs:
       ROX_PRODUCT_BRANDING: ""
     container:
       image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.1
-      volumes:
-        - /usr:/mnt/usr
-        - /opt:/mnt/opt
       env:
         QUAY_RHACS_ENG_RO_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
         QUAY_RHACS_ENG_RO_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
@@ -500,9 +485,6 @@ jobs:
       ROX_PRODUCT_BRANDING: ""
     container:
       image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.1
-      volumes:
-        - /usr:/mnt/usr
-        - /opt:/mnt/opt
       env:
         QUAY_RHACS_ENG_RO_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
         QUAY_RHACS_ENG_RO_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}

@@ -194,8 +194,6 @@ jobs:
       volumes:
       # The updater makes heavy use of /tmp files.
       - /tmp:/tmp
-      - /usr:/mnt/usr
-      - /opt:/mnt/opt
     strategy:
       fail-fast: false
       max-parallel: 1
@@ -286,8 +284,6 @@ jobs:
       volumes:
       # The updater makes heavy use of /tmp files.
       - /tmp:/tmp
-      - /usr:/mnt/usr
-      - /opt:/mnt/opt
     steps:
     # Checkout master to get the latest local actions
     - name: Checkout repository
