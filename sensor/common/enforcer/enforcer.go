@@ -87,21 +87,9 @@ func (e *enforcer) ProcessAlertResults(action central.ResourceAction, stage stor
 				},
 			}
 		case storage.LifecycleStage_RUNTIME:
-			isProcessAlert := a.GetProcessViolation() != nil && len(a.GetProcessViolation().GetProcesses()) > 0
-			isFileAlert := a.GetFileAccessViolation() != nil && len(a.GetFileAccessViolation().GetAccesses()) > 0
-
-			if isProcessAlert && isFileAlert {
-				log.Errorf("Invalid alert state: must contain one of process violation or file violation")
-				continue
-			}
-
-			var podId string
-			if isProcessAlert {
-				podId = a.GetProcessViolation().GetProcesses()[0].GetPodId()
-			} else if isFileAlert {
-				podId = a.GetFileAccessViolation().GetAccesses()[0].GetProcess().GetPodId()
-			} else {
-				log.Error("Invalid alert state: does not contain enforcable violations")
+			podId, err := getRuntimePodId(a)
+			if err != nil {
+				log.Error(err)
 				continue
 			}
 
@@ -175,3 +163,20 @@ func (e *enforcer) Stop() {
 }
 
 func (e *enforcer) Notify(common.SensorComponentEvent) {}
+
+func getRuntimePodId(alert *storage.Alert) (string, error) {
+	isProcessAlert := alert.GetProcessViolation() != nil && len(alert.GetProcessViolation().GetProcesses()) > 0
+	isFileAlert := alert.GetFileAccessViolation() != nil && len(alert.GetFileAccessViolation().GetAccesses()) > 0
+
+	if isProcessAlert && isFileAlert {
+		return "", errors.New("Invalid alert state: must contain one of process violation or file violation")
+	}
+
+	if isProcessAlert {
+		return alert.GetProcessViolation().GetProcesses()[0].GetPodId(), nil
+	} else if isFileAlert {
+		return alert.GetFileAccessViolation().GetAccesses()[0].GetProcess().GetPodId(), nil
+	}
+
+	return "", errors.New("Invalid alert state: does not contain enforcable violations")
+}
