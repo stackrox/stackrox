@@ -51,6 +51,6 @@ func migrate(database *types.Databases) error {
 		return postgreshelper.WrapRollback(ctx, tx, errors.Wrapf(err, "unable to update process indicator indexes in migration %d", startSeqNum))
 	}
 
-	log.Infof("Process indicator indexes migration complete")
+	log.Info("Process indicator indexes migration complete")
 	return nil
 }

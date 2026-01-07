@@ -40,6 +40,6 @@ func migrate(database *types.Databases) error {
 		return postgreshelper.WrapRollback(ctx, tx, errors.Wrapf(err, "unable to update process baseline indexes in migration %d", startSeqNum))
 	}
 
-	log.Infof("Process baseline indexes migration complete")
+	log.Info("Process baseline indexes migration complete")
 	return nil
 }
