@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"time"
 
 	"github.com/ComplianceAsCode/compliance-operator/pkg/apis/compliance/v1alpha1"
 	complianceDatastore "github.com/stackrox/rox/central/compliance/datastore"
@@ -17,6 +18,7 @@ import (
 	scanSettingBindingDatastore "github.com/stackrox/rox/central/complianceoperator/scansettingbinding/datastore"
 	"github.com/stackrox/rox/generated/storage"
 	pkgFramework "github.com/stackrox/rox/pkg/compliance/framework"
+	"github.com/stackrox/rox/pkg/contextutil"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stackrox/rox/pkg/sac"
@@ -81,7 +83,11 @@ func NewManager(registry *standards.Registry, profiles profileDatastore.DataStor
 		results:             results,
 	}
 	// Postgres retries in addProfileNoLock(...)
-	err := profiles.Walk(allAccessCtx, func(profile *storage.ComplianceOperatorProfile) error {
+
+	// For debug, make a context with a very short timeout.
+	ctx, cancel := contextutil.ContextWithTimeoutIfNotExists(allAccessCtx, 10*time.Millisecond)
+	defer cancel()
+	err := profiles.Walk(ctx, func(profile *storage.ComplianceOperatorProfile) error {
 		return mgr.addProfileNoLock(profile)
 	})
 	if err != nil {
@@ -102,7 +108,7 @@ func productTypeToTarget(s string) pkgFramework.TargetKind {
 }
 
 func getRuleName(rule *storage.ComplianceOperatorRule) string {
-	if ruleName, ok := rule.GetAnnotations()[v1alpha1.RuleIDAnnotationKey]; ok {
+	if ruleName, ok := rule.Annotations[v1alpha1.RuleIDAnnotationKey]; ok {
 		return ruleName
 	}
 	// This field is checked within the pipeline so it should never be empty
@@ -171,11 +177,13 @@ func (m *managerImpl) AddProfile(profile *storage.ComplianceOperatorProfile) err
 
 func (m *managerImpl) addProfileNoLock(profile *storage.ComplianceOperatorProfile) error {
 	var existingProfiles []*storage.ComplianceOperatorProfile
+	ctx, cancel := contextutil.ContextWithTimeoutIfNotExists(allAccessCtx, 10*time.Millisecond)
+	defer cancel()
 	walkFn := func() error {
 		existingProfiles = []*storage.ComplianceOperatorProfile{
 			profile,
 		}
-		return m.profiles.Walk(allAccessCtx, func(existingProfile *storage.ComplianceOperatorProfile) error {
+		return m.profiles.Walk(ctx, func(existingProfile *storage.ComplianceOperatorProfile) error {
 			if existingProfile.GetClusterId() != profile.GetClusterId() && existingProfile.GetName() == profile.GetName() {
 				existingProfiles = append(existingProfiles, existingProfile)
 			}
@@ -237,7 +245,7 @@ func (m *managerImpl) addProfileNoLock(profile *storage.ComplianceOperatorProfil
 
 	standard.Categories = []metadata.Category{category}
 
-	profileProductType := productTypeToTarget(profile.GetAnnotations()[v1alpha1.ProductTypeAnnotation])
+	profileProductType := productTypeToTarget(profile.Annotations[v1alpha1.ProductTypeAnnotation])
 	for _, rule := range ruleSlice {
 		fullRule, err := m.getRule(rule)
 		if err != nil {
@@ -411,7 +419,7 @@ func (m *managerImpl) GetMachineConfigs(clusterID string) (map[string][]string, 
 	walkFn := func() error {
 		profileIDsToNames = make(map[string]string)
 		return m.profiles.Walk(allAccessCtx, func(profile *storage.ComplianceOperatorProfile) error {
-			if profile.GetClusterId() == clusterID && profile.GetAnnotations()[v1alpha1.ProductTypeAnnotation] == string(v1alpha1.ScanTypeNode) {
+			if profile.GetClusterId() == clusterID && profile.Annotations[v1alpha1.ProductTypeAnnotation] == string(v1alpha1.ScanTypeNode) {
 				profileIDsToNames[profile.GetProfileId()] = profile.GetName()
 			}
 			return nil
