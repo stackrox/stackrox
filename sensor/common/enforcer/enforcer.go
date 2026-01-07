@@ -101,7 +101,8 @@ func (e *enforcer) ProcessAlertResults(action central.ResourceAction, stage stor
 			} else if isFileAlert {
 				podId = a.GetFileAccessViolation().GetAccesses()[0].GetProcess().GetPodId()
 			} else {
-				log.Errorf("Invalid alert state: does not contain enforcable violations")
+				log.Error("Invalid alert state: does not contain enforcable violations")
+				continue
 			}
 
 			e.actionsC <- &central.SensorEnforcement{
