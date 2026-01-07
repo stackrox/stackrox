@@ -120,7 +120,7 @@ spec:
 			err = k8sClient.Create(ctx, unstructuredCentral)
 			Expect(err).NotTo(HaveOccurred())
 
-			// Refetch the object to ensure we have the latest version as stores on the cluster.
+			// Refetch the object to ensure we have the latest version as stored on the cluster.
 			unstructuredCentral = &unstructured.Unstructured{}
 			unstructuredCentral.SetGroupVersionKind(gvk)
 			err = k8sClient.Get(ctx, objectKey, unstructuredCentral)
