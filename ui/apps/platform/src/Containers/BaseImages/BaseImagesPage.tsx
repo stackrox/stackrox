@@ -12,6 +12,10 @@ import {
 
 import { deleteBaseImage as deleteBaseImageFn, getBaseImages } from 'services/BaseImagesService';
 import type { BaseImageReference } from 'services/BaseImagesService';
+import useAnalytics, {
+    BASE_IMAGE_REFERENCE_ADD_MODAL_OPENED,
+    BASE_IMAGE_REFERENCE_DELETED,
+} from 'hooks/useAnalytics';
 import useRestMutation from 'hooks/useRestMutation';
 import useRestQuery from 'hooks/useRestQuery';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
@@ -27,6 +31,7 @@ import BaseImagesTable from './BaseImagesTable';
 function BaseImagesPage() {
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
     const [baseImageToDelete, setBaseImageToDelete] = useState<BaseImageReference | null>(null);
+    const { analyticsTrack } = useAnalytics();
 
     // Fetch base images on component mount
     const baseImagesRequest = useRestQuery(getBaseImages);
@@ -34,10 +39,16 @@ function BaseImagesPage() {
     // Delete mutation that refetches the list after successful deletion to keep UI in sync
     const deleteBaseImageMutation = useRestMutation((id: string) => deleteBaseImageFn(id), {
         onSuccess: () => {
+            analyticsTrack(BASE_IMAGE_REFERENCE_DELETED);
             setBaseImageToDelete(null);
             baseImagesRequest.refetch();
         },
     });
+
+    function onOpenAddModal() {
+        analyticsTrack(BASE_IMAGE_REFERENCE_ADD_MODAL_OPENED);
+        setIsAddModalOpen(true);
+    }
 
     const onConfirmDelete = () => {
         if (baseImageToDelete) {
@@ -66,7 +77,7 @@ function BaseImagesPage() {
                             layer-specific filtering
                         </Text>
                     </FlexItem>
-                    <Button variant="primary" onClick={() => setIsAddModalOpen(true)}>
+                    <Button variant="primary" onClick={onOpenAddModal}>
                         Add base image
                     </Button>
                 </Flex>
