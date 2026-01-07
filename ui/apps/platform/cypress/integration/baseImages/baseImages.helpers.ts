@@ -35,4 +35,7 @@ export function addBaseImage(imagePath: string) {
     cy.get('input#baseImagePath').type(imagePath);
     cy.get('button:contains("Save")').click();
     cy.wait('@addBaseImage');
+
+    // Close the modal after adding
+    cy.get('[role="dialog"] button[aria-label="Close"]').click();
 }
