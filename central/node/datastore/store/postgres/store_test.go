@@ -262,7 +262,7 @@ func stripComponents(n *storage.Node) *storage.Node {
 }
 
 func (s *NodesStoreSuite) TestGetWithTransactionContext() {
-	store := New(s.pool, false, concurrency.NewKeyFence())
+	store := CreateTableAndNewStore(s.ctx, s.T(), s.pool, s.gormDB, false)
 
 	node := &storage.Node{}
 	s.NoError(testutils.FullInit(node, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
@@ -288,7 +288,7 @@ func (s *NodesStoreSuite) TestGetWithTransactionContext() {
 }
 
 func (s *NodesStoreSuite) TestGetManyWithTransactionContext() {
-	store := New(s.pool, false, concurrency.NewKeyFence())
+	store := CreateTableAndNewStore(s.ctx, s.T(), s.pool, s.gormDB, false)
 
 	node1 := &storage.Node{}
 	s.NoError(testutils.FullInit(node1, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
@@ -321,7 +321,7 @@ func (s *NodesStoreSuite) TestGetManyWithTransactionContext() {
 }
 
 func (s *NodesStoreSuite) TestWalkByQueryWithTransactionContext() {
-	store := New(s.pool, false, concurrency.NewKeyFence())
+	store := CreateTableAndNewStore(s.ctx, s.T(), s.pool, s.gormDB, false)
 
 	node := &storage.Node{}
 	s.NoError(testutils.FullInit(node, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
