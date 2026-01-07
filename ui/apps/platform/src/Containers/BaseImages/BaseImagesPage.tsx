@@ -99,7 +99,7 @@ function BaseImagesPage() {
                 <BaseImagesTable
                     baseImages={baseImages}
                     onEdit={setBaseImageToEdit}
-                    onRemove={setBaseImageToDelete}
+                    onDelete={setBaseImageToDelete}
                     isActionInProgress={deleteBaseImageMutation.isLoading}
                     isLoading={baseImagesRequest.isLoading && !baseImagesRequest.data}
                     error={baseImagesRequest.error as Error | null}
@@ -129,7 +129,7 @@ function BaseImagesPage() {
                             <Alert
                                 variant="danger"
                                 isInline
-                                title="Error removing base image"
+                                title="Error deleting base image"
                                 component="p"
                             >
                                 {getAxiosErrorMessage(deleteBaseImageMutation.error)}
