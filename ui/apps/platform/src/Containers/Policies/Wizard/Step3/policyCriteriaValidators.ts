@@ -49,10 +49,7 @@ export const policySectionValidators: PolicySectionValidator[] = [
             context.eventSource === 'DEPLOYMENT_EVENT',
         validate: ({ policyGroups }) => {
             const hasFileOperation = policyGroupsHasCriterion(policyGroups, 'File Operation');
-            const hasEffectivePath = policyGroupsHasCriterion(
-                policyGroups,
-                'Effective Path'
-            );
+            const hasEffectivePath = policyGroupsHasCriterion(policyGroups, 'Effective Path');
             const hasActualPath = policyGroupsHasCriterion(policyGroups, 'Actual Path');
 
             if (hasFileOperation && !hasEffectivePath && !hasActualPath) {

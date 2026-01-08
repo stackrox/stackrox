@@ -226,7 +226,7 @@ var (
 	// FileActivity Search fields
 	EffectivePath = newFieldLabel("Effective Path")
 	ActualPath    = newFieldLabel("Actual Path")
-	FileOperation     = newFieldLabel("File Operation")
+	FileOperation = newFieldLabel("File Operation")
 
 	// ProcessListeningOnPort Search fields
 	Closed     = newFieldLabel("Closed")
