@@ -54,7 +54,6 @@ func New(
 	return &serviceImpl{
 		datastore:             datastore,
 		datastoreV2:           datastoreV2,
-		baseImageDatastore:    baseImageDatastore,
 		mappingDatastore:      mappingDatastore,
 		watchedImages:         watchedImages,
 		riskManager:           riskManager,
