@@ -83,7 +83,7 @@ func (s *serviceImpl) GetStandards(ctx context.Context, _ *v1.Empty) (*v1.GetCom
 	filteredStandards := standards[:0]
 	for _, standard := range standards {
 		hide, exists, _ := s.complianceDataStore.GetConfig(ctx, standard.GetId())
-		if s.manager.IsStandardActive(standard.GetId()) {
+		if s.manager != nil && s.manager.IsStandardActive(standard.GetId()) {
 			if exists {
 				standard.HideScanResults = hide.GetHideScanResults()
 			}

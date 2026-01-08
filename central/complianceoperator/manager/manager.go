@@ -70,24 +70,25 @@ type managerImpl struct {
 
 // NewManager returns a new manager of compliance operator resources
 func NewManager(registry *standards.Registry, profiles profileDatastore.DataStore, scans scansDatastore.DataStore, scanSettingBindings scanSettingBindingDatastore.DataStore, rules rulesDatastore.DataStore, results checkResultsDatastore.DataStore, compliance complianceDatastore.DataStore) (Manager, error) {
-	mgr := &managerImpl{
-		registry: registry,
-
-		compliance:          compliance,
-		profiles:            profiles,
-		scans:               scans,
-		scanSettingBindings: scanSettingBindings,
-		rules:               rules,
-		results:             results,
-	}
-	// Postgres retries in addProfileNoLock(...)
-	err := profiles.Walk(allAccessCtx, func(profile *storage.ComplianceOperatorProfile) error {
-		return mgr.addProfileNoLock(profile)
-	})
-	if err != nil {
-		return nil, err
-	}
-	return mgr, nil
+	return nil, errors.New("tests")
+	//mgr := &managerImpl{
+	//	registry: registry,
+	//
+	//	compliance:          compliance,
+	//	profiles:            profiles,
+	//	scans:               scans,
+	//	scanSettingBindings: scanSettingBindings,
+	//	rules:               rules,
+	//	results:             results,
+	//}
+	//// Postgres retries in addProfileNoLock(...)
+	//err := profiles.Walk(allAccessCtx, func(profile *storage.ComplianceOperatorProfile) error {
+	//	return mgr.addProfileNoLock(profile)
+	//})
+	//if err != nil {
+	//	return nil, err
+	//}
+	//return mgr, nil
 }
 
 func productTypeToTarget(s string) pkgFramework.TargetKind {
