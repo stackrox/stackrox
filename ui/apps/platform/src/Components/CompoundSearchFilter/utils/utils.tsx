@@ -261,7 +261,7 @@ export function getCompoundSearchFilterLabelDescriptionOrNull(
 
     switch (inputType) {
         case 'autocomplete':
-        case 'condition-number': // TODO verify and also verify text below
+        case 'condition-number':
         case 'date-picker':
         case 'text': {
             if (values.length === 0) {
