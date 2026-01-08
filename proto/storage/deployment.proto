@@ -37,10 +37,10 @@ message Deployment {
   repeated string image_pull_secrets = 17; // @gotags: search:"Image Pull Secret"
   string service_account = 18; // @gotags: search:"Service Account"
   PermissionLevel service_account_permission_level = 28; // @gotags: search:"Service Account Permission Level"
-  bool automount_service_account_token = 25; // @gotags: policy:"Automount Service Account Token"
-  bool host_network = 21; // @gotags: policy:"Host Network"
-  bool host_pid = 31; // @gotags: policy:"Host PID"
-  bool host_ipc = 32; // @gotags: policy:"Host IPC"
+  bool automount_service_account_token = 25; // @gotags: search:"Automount Service Account Token" policy:"Automount Service Account Token"
+  bool host_network = 21; // @gotags: search:"Host Network" policy:"Host Network"
+  bool host_pid = 31; // @gotags: search:"Host PID" policy:"Host PID"
+  bool host_ipc = 32; // @gotags: search:"Host IPC" policy:"Host IPC"
   string runtime_class = 34; // @gotags: policy:"Runtime Class"
   repeated Toleration tolerations = 22; // @gotags: search:"-"
   repeated PortConfig ports = 24; // @gotags: policy:"Ports"
@@ -266,7 +266,7 @@ message SecurityContext {
     string localhost_profile = 2;
   }
   SeccompProfile seccomp_profile = 6;
-  bool allow_privilege_escalation = 7; // @gotags: policy:"Allow Privilege Escalation"
+  bool allow_privilege_escalation = 7; // @gotags: search:"Allow Privilege Escalation" policy:"Allow Privilege Escalation"
 }
 
 // Next available tag: 9
