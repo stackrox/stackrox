@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"math"
-	"slices"
 	"strings"
 	"time"
 
@@ -52,7 +51,6 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
-	"google.golang.org/protobuf/proto"
 )
 
 const (
@@ -370,11 +368,6 @@ func (s *serviceImpl) ScanImageInternal(ctx context.Context, request *v1.ScanIma
 		img = types.ToImage(request.GetImage())
 	}
 
-	if features.BaseImageDetection.Enabled() {
-		baseImages := s.baseImages(ctx, img.GetMetadata().GetLayerShas(), request.GetImage().GetName().GetFullName(), request.GetImage().GetIdV2())
-		img.BaseImageInfo = baseImages
-	}
-
 	if err := s.enrichImage(ctx, img, fetchOpt, request); err != nil && imgExists {
 		// In case we hit an error during enriching, and the image previously existed, we will _not_ upsert it in
 		// central, since it could lead to us overriding an enriched image with a non-enriched image.
@@ -460,7 +453,7 @@ func (s *serviceImpl) scanImageV2Internal(ctx context.Context, request *v1.ScanI
 	}
 
 	if features.BaseImageDetection.Enabled() {
-		baseImages := s.baseImages(ctx, imgV2.GetMetadata().GetLayerShas(), request.GetImage().GetName().GetFullName(), request.GetImage().GetIdV2())
+		baseImages := s.enricherV2.EnrichWithBaseImages(ctx, imgV2.GetMetadata().GetLayerShas(), request.GetImage().GetName().GetFullName(), request.GetImage().GetIdV2())
 		imgV2.BaseImageInfo = baseImages
 	}
 
@@ -621,7 +614,7 @@ func (s *serviceImpl) ScanImage(ctx context.Context, request *v1.ScanImageReques
 			return nil, err
 		}
 		if features.BaseImageDetection.Enabled() {
-			imgV2.BaseImageInfo = s.baseImages(ctx, imgV2.GetMetadata().GetLayerShas(), imgV2.GetName().GetFullName(), imgV2.GetId())
+			imgV2.BaseImageInfo = s.enricherV2.EnrichWithBaseImages(ctx, imgV2.GetMetadata().GetLayerShas(), imgV2.GetName().GetFullName(), imgV2.GetId())
 		}
 		// Save the image
 		imgV2.Digest = utils.GetSHAV2(imgV2)
@@ -650,9 +643,6 @@ func (s *serviceImpl) ScanImage(ctx context.Context, request *v1.ScanImageReques
 			)
 		}
 		return nil, err
-	}
-	if features.BaseImageDetection.Enabled() {
-		img.BaseImageInfo = s.baseImages(ctx, img.GetMetadata().GetLayerShas(), img.GetName().GetFullName(), img.GetId())
 	}
 	// Save the image
 	img.Id = utils.GetSHA(img)
@@ -906,10 +896,6 @@ func (s *serviceImpl) EnrichLocalImageInternal(ctx context.Context, request *v1.
 	}
 
 	if !hasErrors {
-		if features.BaseImageDetection.Enabled() {
-			baseImages := s.baseImages(ctx, img.GetMetadata().GetLayerShas(), request.GetImageName().GetFullName(), request.GetImageId())
-			img.BaseImageInfo = baseImages
-		}
 		if forceScanUpdate {
 			if err := s.enrichWithVulnerabilities(img, request); err != nil {
 				imgName := pkgUtils.IfThenElse(existingImg != nil, existingImg.GetName().GetFullName(), request.GetImageName().GetFullName())
@@ -1064,7 +1050,7 @@ func (s *serviceImpl) enrichLocalImageV2Internal(ctx context.Context, request *v
 	if !hasErrors {
 		if forceScanUpdate {
 			if features.BaseImageDetection.Enabled() {
-				baseImages := s.baseImages(ctx, img.GetMetadata().GetLayerShas(), request.GetImageName().GetFullName(), request.GetImageId())
+				baseImages := s.enricherV2.EnrichWithBaseImages(ctx, img.GetMetadata().GetLayerShas(), request.GetImageName().GetFullName(), request.GetImageId())
 				img.BaseImageInfo = baseImages
 			}
 			if err := s.enrichWithVulnerabilitiesV2(img, request); err != nil {
@@ -1126,52 +1112,6 @@ func (s *serviceImpl) enrichWithVulnerabilitiesV2(img *storage.ImageV2, request 
 	comps := scannerTypes.NewScanComponents(request.GetIndexerVersion(), request.GetComponents(), request.GetV4Contents())
 	_, err := s.enricherV2.EnrichWithVulnerabilities(img, comps, request.GetNotes())
 	return err
-}
-
-// baseImages returns metadata of base images that serve as layer foundation for the given image.
-func (s *serviceImpl) baseImages(ctx context.Context, layers []string, imgName string, imgId string) []*storage.BaseImageInfo {
-	if len(layers) == 0 {
-		log.Infof("Base Image matching: not able to get image layers from %s", imgName)
-		return nil
-	}
-	firstLayer := layers[0]
-	candidates, err := s.baseImageDatastore.ListCandidateBaseImages(ctx, firstLayer)
-	if err != nil {
-		log.Errorw("Matching image with base images",
-			logging.FromContext(ctx),
-			logging.ImageID(imgId),
-			logging.Err(err),
-			logging.String("request_image", imgName))
-		return nil
-	}
-	var baseImages []*storage.BaseImageInfo
-	for _, c := range candidates {
-		candidateLayers := c.GetLayers()
-		slices.SortFunc(candidateLayers, func(a, b *storage.BaseImageLayer) int {
-			return int(a.GetIndex() - b.GetIndex())
-		})
-		if len(layers) <= len(candidateLayers) {
-			continue
-		}
-		log.Infof(">>>> Getting base images candidates: %s, %s", c.GetRepository(), c.GetTag())
-		match := true
-		for i, l := range candidateLayers {
-			log.Infof(">>>> Getting base image layer: %s, %s", layers[i], l.GetLayerDigest())
-			if layers[i] != l.GetLayerDigest() {
-				match = false
-				break
-			}
-		}
-
-		if match {
-			baseImages = append(baseImages, &storage.BaseImageInfo{
-				BaseImageId:       c.GetId(),
-				BaseImageFullName: fmt.Sprintf("%s:%s", c.GetRepository(), c.GetTag()),
-				BaseImageDigest:   c.GetManifestDigest(),
-			})
-		}
-	}
-	return baseImages
 }
 
 // shouldUpdateExistingScan will return true if an image should be scanned / re-scanned, false otherwise.
@@ -1399,29 +1339,7 @@ func (s *serviceImpl) WatchImage(ctx context.Context, request *v1.WatchImageRequ
 			ErrorType:    v1.WatchImageResponse_NO_VALID_INTEGRATION,
 		}, nil
 	}
-	if features.BaseImageDetection.Enabled() {
-		// TODO Remove: base image entities are manually populated with serialized blobs
-		// to enable search-framework testing until a proper API is available.
-		sample := &storage.BaseImage{
-			Id:               "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11",
-			Repository:       "alpine",
-			Tag:              "3.20.3",
-			FirstLayerDigest: "sha256:da9db072f522755cbeb85be2b3f84059b70571b229512f1571d9217b77e1087f",
-			Layers: []*storage.BaseImageLayer{
-				{
-					Id:          "c4015846-71d4-4fc3-85c1-3765e951279c",
-					BaseImageId: "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11",
-					LayerDigest: "sha256:da9db072f522755cbeb85be2b3f84059b70571b229512f1571d9217b77e1087f",
-					Index:       0,
-				},
-			},
-		}
-		blob, _ := proto.Marshal(sample)
-		log.Info(">>>>")
-		log.Infof("UPDATE base_images SET serialized = '\\x%x' WHERE id = '%s';", blob, sample.Id)
-		// end of mocking, will delete the testing block later
-		img.BaseImageInfo = s.baseImages(ctx, img.GetMetadata().GetLayerShas(), img.GetName().GetFullName(), img.GetId())
-	}
+
 	// Save the image
 	img.Id = utils.GetSHA(img)
 	if img.GetId() == "" {
