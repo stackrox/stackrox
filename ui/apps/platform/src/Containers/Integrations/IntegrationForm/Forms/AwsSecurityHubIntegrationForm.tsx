@@ -104,7 +104,7 @@ export const defaultValues: AwsSecurityHubIntegrationFormValues = {
         name: '',
         awsSecurityHub: {
             accountId: '',
-            region: 'us-east-1',
+            region: '',
             credentials: {
                 accessKeyId: '',
                 secretAccessKey: '',
