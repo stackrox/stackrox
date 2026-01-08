@@ -14,8 +14,8 @@ import { getLinkToDeploymentInNetworkGraph, isRouteEnabled } from './routePaths'
  */
 describe('routePaths', () => {
     describe('isRouteEnabled for base-images', () => {
-        it('should enable route when feature flag is enabled and user has Image read access', () => {
-            const hasReadAccess: HasReadAccess = vi.fn((resource) => resource === 'Image');
+        it('should enable route when feature flag is enabled and user has ImageAdministration read access', () => {
+            const hasReadAccess: HasReadAccess = vi.fn((resource) => resource === 'ImageAdministration');
             const isFeatureFlagEnabled: IsFeatureFlagEnabled = vi.fn(
                 (flag) => flag === 'ROX_BASE_IMAGE_DETECTION'
             );
@@ -23,7 +23,7 @@ describe('routePaths', () => {
             const enabled = isRouteEnabled({ hasReadAccess, isFeatureFlagEnabled }, 'base-images');
 
             expect(enabled).toBe(true);
-            expect(hasReadAccess).toHaveBeenCalledWith('Image');
+            expect(hasReadAccess).toHaveBeenCalledWith('ImageAdministration');
             expect(isFeatureFlagEnabled).toHaveBeenCalledWith('ROX_BASE_IMAGE_DETECTION');
         });
 
@@ -36,7 +36,7 @@ describe('routePaths', () => {
             expect(enabled).toBe(false);
         });
 
-        it('should disable route when user lacks Image read access', () => {
+        it('should disable route when user lacks ImageAdministration read access', () => {
             const hasReadAccess: HasReadAccess = vi.fn(() => false);
             const isFeatureFlagEnabled: IsFeatureFlagEnabled = vi.fn(() => true);
 
