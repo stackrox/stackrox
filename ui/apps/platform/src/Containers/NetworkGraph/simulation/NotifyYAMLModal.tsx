@@ -46,7 +46,7 @@ function NotifyYAMLModal({
     function onClose() {
         onClearAll();
         setErrorMessage(null);
-        setIsModalOpen(!isModalOpen);
+        setIsModalOpen((prev) => !prev);
     }
 
     let content: ReactElement = <div />;

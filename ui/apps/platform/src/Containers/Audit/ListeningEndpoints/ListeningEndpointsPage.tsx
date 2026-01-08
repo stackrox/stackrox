@@ -172,14 +172,14 @@ function ListeningEndpointsPage() {
         <MenuToggle
             ref={toggleRef}
             variant="typeahead"
-            onClick={() => setAutocompleteOpen(!autocompleteOpen)}
+            onClick={() => setAutocompleteOpen((prev) => !prev)}
             isExpanded={autocompleteOpen}
             isFullWidth
         >
             <TextInputGroup isPlain>
                 <TextInputGroupMain
                     value={autocompleteInputValue}
-                    onClick={() => setAutocompleteOpen(!autocompleteOpen)}
+                    onClick={() => setAutocompleteOpen((prev) => !prev)}
                     onChange={(_event, value) => {
                         setAutocompleteInputValue(value);
                         updateSearchValue(value);
