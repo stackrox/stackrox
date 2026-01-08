@@ -3,42 +3,25 @@ import { Toolbar, ToolbarContent, ToolbarGroup } from '@patternfly/react-core';
 
 import CompoundSearchFilter from 'Components/CompoundSearchFilter/components/CompoundSearchFilter';
 import type { CompoundSearchFilterProps } from 'Components/CompoundSearchFilter/components/CompoundSearchFilter';
-import SearchFilterChips, {
-    FilterChip,
-    makeFilterChipDescriptorFromAttribute,
-    makeFilterChipDescriptors,
-} from 'Components/CompoundSearchFilter/components/SearchFilterChips';
+import CompoundSearchFilterLabels from 'Components/CompoundSearchFilter/components/CompoundSearchFilterLabels';
 import SearchFilterSelectInclusive from 'Components/CompoundSearchFilter/components/SearchFilterSelectInclusive';
-import type { OnSearchPayload } from 'Components/CompoundSearchFilter/types';
+import type {
+    CompoundSearchFilterAttribute,
+    OnSearchPayload,
+} from 'Components/CompoundSearchFilter/types';
 import { updateSearchFilter } from 'Components/CompoundSearchFilter/utils/utils';
 import type { SearchFilter } from 'types/search';
-import { getHasSearchApplied } from 'utils/searchUtils';
+import { getHasSearchApplied, searchValueAsArray } from 'utils/searchUtils';
 
 import type { DefaultFilters } from '../types';
-import { cveSnoozedDescriptor } from '../filterChipDescriptor';
 import {
     attributeForClusterCveFixable,
     attributeForFixable,
     attributeForSeverity,
+    attributeForSnoozed,
 } from '../searchFilterConfig';
 
 import './AdvancedFiltersToolbar.css';
-
-function makeDefaultFilterDescriptor(
-    defaultFilters: DefaultFilters,
-    { displayName, searchFilterName }: { displayName: string; searchFilterName: string }
-) {
-    return {
-        displayName,
-        searchFilterName,
-        render: (filter: string) => (
-            <FilterChip
-                isGlobal={defaultFilters[searchFilterName]?.some((value) => value === filter)}
-                name={filter}
-            />
-        ),
-    };
-}
 
 const emptyDefaultFilters = {
     SEVERITY: [],
@@ -72,35 +55,18 @@ function AdvancedFiltersToolbar({
     additionalContextFilter,
     children,
 }: AdvancedFiltersToolbarProps): ReactElement {
-    const baseDescriptors = makeFilterChipDescriptors(searchFilterConfig);
+    const attributesSeparateFromConfig: CompoundSearchFilterAttribute[] = [attributeForSnoozed];
+    if (includeCveSeverityFilters) {
+        attributesSeparateFromConfig.push(attributeForSeverity);
+    }
+    if (includeCveStatusFilters) {
+        attributesSeparateFromConfig.push(attributeForFixable, attributeForClusterCveFixable);
+    }
 
-    const severityDescriptors = includeCveSeverityFilters
-        ? [
-              makeDefaultFilterDescriptor(
-                  defaultFilters,
-                  makeFilterChipDescriptorFromAttribute(attributeForSeverity)
-              ),
-          ]
-        : [];
-
-    const statusDescriptors = includeCveStatusFilters
-        ? [
-              makeDefaultFilterDescriptor(
-                  defaultFilters,
-                  makeFilterChipDescriptorFromAttribute(attributeForFixable)
-              ),
-              makeDefaultFilterDescriptor(
-                  defaultFilters,
-                  makeFilterChipDescriptorFromAttribute(attributeForClusterCveFixable)
-              ),
-          ]
-        : [];
-
-    const filterChipGroupDescriptors = baseDescriptors.concat(
-        cveSnoozedDescriptor,
-        severityDescriptors,
-        statusDescriptors
-    );
+    function isGlobalPredicate(category: string, value: string) {
+        const values = searchValueAsArray(defaultFilters[category]);
+        return values.some((valueDefault) => valueDefault === value);
+    }
 
     function onFilterApplied(payload: OnSearchPayload) {
         onFilterChange(updateSearchFilter(searchFilter, payload), payload);
@@ -148,10 +114,12 @@ function AdvancedFiltersToolbar({
                 {children}
                 {getHasSearchApplied(searchFilter) && (
                     <ToolbarGroup aria-label="applied search filters" className="pf-v5-u-w-100">
-                        <SearchFilterChips
-                            searchFilter={searchFilter}
+                        <CompoundSearchFilterLabels
+                            attributesSeparateFromConfig={attributesSeparateFromConfig}
+                            config={searchFilterConfig}
+                            isGlobalPredicate={isGlobalPredicate}
                             onFilterChange={onFilterChange}
-                            filterChipGroupDescriptors={filterChipGroupDescriptors}
+                            searchFilter={searchFilter}
                         />
                     </ToolbarGroup>
                 )}

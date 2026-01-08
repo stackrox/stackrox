@@ -7,6 +7,7 @@
 
 import type {
     CompoundSearchFilterEntity,
+    SelectExclusiveSingleSearchFilterAttribute,
     SelectSearchFilterAttribute,
     SelectSearchFilterOption,
 } from 'Components/CompoundSearchFilter/types';
@@ -125,6 +126,19 @@ export const virtualMachinesClusterSearchFilterConfig: CompoundSearchFilterEntit
 };
 
 // attributes for separate search filter elements in AdvancedFiltersToolbar.tsx file
+
+export const attributeForSnoozed: SelectExclusiveSingleSearchFilterAttribute = {
+    displayName: 'CVE snoozed',
+    filterChipLabel: 'CVE snoozed',
+    searchTerm: 'CVE Snoozed',
+    inputType: 'select-exclusive-single', // placeholder because interaction is Show snoozed CVEs button
+    inputProps: {
+        options: [
+            { label: 'true', value: 'true' }, // Snoozed
+            { label: 'false', value: 'false' }, // Observed
+        ],
+    },
+};
 
 const optionsForFixable: SelectSearchFilterOption[] = [
     { label: 'Fixable', value: 'Fixable' }, // true?
