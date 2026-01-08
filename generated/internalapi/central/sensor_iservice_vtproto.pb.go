@@ -187,6 +187,15 @@ func (m *MsgFromSensor_IssueSecuredClusterCertsRequest) CloneVT() isMsgFromSenso
 	return r
 }
 
+func (m *MsgFromSensor_RepoScanResponse) CloneVT() isMsgFromSensor_Msg {
+	if m == nil {
+		return (*MsgFromSensor_RepoScanResponse)(nil)
+	}
+	r := new(MsgFromSensor_RepoScanResponse)
+	r.RepoScanResponse = m.RepoScanResponse.CloneVT()
+	return r
+}
+
 func (m *ReprocessDeployments) CloneVT() *ReprocessDeployments {
 	if m == nil {
 		return (*ReprocessDeployments)(nil)
@@ -468,6 +477,24 @@ func (m *MsgToSensor_IssueSecuredClusterCertsResponse) CloneVT() isMsgToSensor_M
 	}
 	r := new(MsgToSensor_IssueSecuredClusterCertsResponse)
 	r.IssueSecuredClusterCertsResponse = m.IssueSecuredClusterCertsResponse.CloneVT()
+	return r
+}
+
+func (m *MsgToSensor_RepoScanRequest) CloneVT() isMsgToSensor_Msg {
+	if m == nil {
+		return (*MsgToSensor_RepoScanRequest)(nil)
+	}
+	r := new(MsgToSensor_RepoScanRequest)
+	r.RepoScanRequest = m.RepoScanRequest.CloneVT()
+	return r
+}
+
+func (m *MsgToSensor_RepoScanCancellation) CloneVT() isMsgToSensor_Msg {
+	if m == nil {
+		return (*MsgToSensor_RepoScanCancellation)(nil)
+	}
+	r := new(MsgToSensor_RepoScanCancellation)
+	r.RepoScanCancellation = m.RepoScanCancellation.CloneVT()
 	return r
 }
 
@@ -1066,6 +1093,31 @@ func (this *MsgFromSensor_IssueSecuredClusterCertsRequest) EqualVT(thatIface isM
 		}
 		if q == nil {
 			q = &IssueSecuredClusterCertsRequest{}
+		}
+		if !p.EqualVT(q) {
+			return false
+		}
+	}
+	return true
+}
+
+func (this *MsgFromSensor_RepoScanResponse) EqualVT(thatIface isMsgFromSensor_Msg) bool {
+	that, ok := thatIface.(*MsgFromSensor_RepoScanResponse)
+	if !ok {
+		return false
+	}
+	if this == that {
+		return true
+	}
+	if this == nil && that != nil || this != nil && that == nil {
+		return false
+	}
+	if p, q := this.RepoScanResponse, that.RepoScanResponse; p != q {
+		if p == nil {
+			p = &RepoScanResponse{}
+		}
+		if q == nil {
+			q = &RepoScanResponse{}
 		}
 		if !p.EqualVT(q) {
 			return false
@@ -1795,6 +1847,56 @@ func (this *MsgToSensor_IssueSecuredClusterCertsResponse) EqualVT(thatIface isMs
 	return true
 }
 
+func (this *MsgToSensor_RepoScanRequest) EqualVT(thatIface isMsgToSensor_Msg) bool {
+	that, ok := thatIface.(*MsgToSensor_RepoScanRequest)
+	if !ok {
+		return false
+	}
+	if this == that {
+		return true
+	}
+	if this == nil && that != nil || this != nil && that == nil {
+		return false
+	}
+	if p, q := this.RepoScanRequest, that.RepoScanRequest; p != q {
+		if p == nil {
+			p = &RepoScanRequest{}
+		}
+		if q == nil {
+			q = &RepoScanRequest{}
+		}
+		if !p.EqualVT(q) {
+			return false
+		}
+	}
+	return true
+}
+
+func (this *MsgToSensor_RepoScanCancellation) EqualVT(thatIface isMsgToSensor_Msg) bool {
+	that, ok := thatIface.(*MsgToSensor_RepoScanCancellation)
+	if !ok {
+		return false
+	}
+	if this == that {
+		return true
+	}
+	if this == nil && that != nil || this != nil && that == nil {
+		return false
+	}
+	if p, q := this.RepoScanCancellation, that.RepoScanCancellation; p != q {
+		if p == nil {
+			p = &RepoScanCancellation{}
+		}
+		if q == nil {
+			q = &RepoScanCancellation{}
+		}
+		if !p.EqualVT(q) {
+			return false
+		}
+	}
+	return true
+}
+
 func (this *DeduperState) EqualVT(that *DeduperState) bool {
 	if this == that {
 		return true
@@ -2466,6 +2568,33 @@ func (m *MsgFromSensor_IssueSecuredClusterCertsRequest) MarshalToSizedBufferVT(d
 		dAtA[i] = 0x1
 		i--
 		dAtA[i] = 0x9a
+	}
+	return len(dAtA) - i, nil
+}
+func (m *MsgFromSensor_RepoScanResponse) MarshalToVT(dAtA []byte) (int, error) {
+	size := m.SizeVT()
+	return m.MarshalToSizedBufferVT(dAtA[:size])
+}
+
+func (m *MsgFromSensor_RepoScanResponse) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	if m.RepoScanResponse != nil {
+		size, err := m.RepoScanResponse.MarshalToSizedBufferVT(dAtA[:i])
+		if err != nil {
+			return 0, err
+		}
+		i -= size
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+		i--
+		dAtA[i] = 0x1
+		i--
+		dAtA[i] = 0xa2
+	} else {
+		i = protohelpers.EncodeVarint(dAtA, i, 0)
+		i--
+		dAtA[i] = 0x1
+		i--
+		dAtA[i] = 0xa2
 	}
 	return len(dAtA) - i, nil
 }
@@ -3229,6 +3358,60 @@ func (m *MsgToSensor_IssueSecuredClusterCertsResponse) MarshalToSizedBufferVT(dA
 	}
 	return len(dAtA) - i, nil
 }
+func (m *MsgToSensor_RepoScanRequest) MarshalToVT(dAtA []byte) (int, error) {
+	size := m.SizeVT()
+	return m.MarshalToSizedBufferVT(dAtA[:size])
+}
+
+func (m *MsgToSensor_RepoScanRequest) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	if m.RepoScanRequest != nil {
+		size, err := m.RepoScanRequest.MarshalToSizedBufferVT(dAtA[:i])
+		if err != nil {
+			return 0, err
+		}
+		i -= size
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+		i--
+		dAtA[i] = 0x1
+		i--
+		dAtA[i] = 0xea
+	} else {
+		i = protohelpers.EncodeVarint(dAtA, i, 0)
+		i--
+		dAtA[i] = 0x1
+		i--
+		dAtA[i] = 0xea
+	}
+	return len(dAtA) - i, nil
+}
+func (m *MsgToSensor_RepoScanCancellation) MarshalToVT(dAtA []byte) (int, error) {
+	size := m.SizeVT()
+	return m.MarshalToSizedBufferVT(dAtA[:size])
+}
+
+func (m *MsgToSensor_RepoScanCancellation) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	if m.RepoScanCancellation != nil {
+		size, err := m.RepoScanCancellation.MarshalToSizedBufferVT(dAtA[:i])
+		if err != nil {
+			return 0, err
+		}
+		i -= size
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+		i--
+		dAtA[i] = 0x1
+		i--
+		dAtA[i] = 0xf2
+	} else {
+		i = protohelpers.EncodeVarint(dAtA, i, 0)
+		i--
+		dAtA[i] = 0x1
+		i--
+		dAtA[i] = 0xf2
+	}
+	return len(dAtA) - i, nil
+}
 func (m *DeduperState) MarshalVT() (dAtA []byte, err error) {
 	if m == nil {
 		return nil, nil
@@ -3869,6 +4052,20 @@ func (m *MsgFromSensor_IssueSecuredClusterCertsRequest) SizeVT() (n int) {
 	}
 	return n
 }
+func (m *MsgFromSensor_RepoScanResponse) SizeVT() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.RepoScanResponse != nil {
+		l = m.RepoScanResponse.SizeVT()
+		n += 2 + l + protohelpers.SizeOfVarint(uint64(l))
+	} else {
+		n += 3
+	}
+	return n
+}
 func (m *ReprocessDeployments) SizeVT() (n int) {
 	if m == nil {
 		return 0
@@ -4270,6 +4467,34 @@ func (m *MsgToSensor_IssueSecuredClusterCertsResponse) SizeVT() (n int) {
 	_ = l
 	if m.IssueSecuredClusterCertsResponse != nil {
 		l = m.IssueSecuredClusterCertsResponse.SizeVT()
+		n += 2 + l + protohelpers.SizeOfVarint(uint64(l))
+	} else {
+		n += 3
+	}
+	return n
+}
+func (m *MsgToSensor_RepoScanRequest) SizeVT() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.RepoScanRequest != nil {
+		l = m.RepoScanRequest.SizeVT()
+		n += 2 + l + protohelpers.SizeOfVarint(uint64(l))
+	} else {
+		n += 3
+	}
+	return n
+}
+func (m *MsgToSensor_RepoScanCancellation) SizeVT() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.RepoScanCancellation != nil {
+		l = m.RepoScanCancellation.SizeVT()
 		n += 2 + l + protohelpers.SizeOfVarint(uint64(l))
 	} else {
 		n += 3
@@ -5202,6 +5427,47 @@ func (m *MsgFromSensor) UnmarshalVT(dAtA []byte) error {
 					return err
 				}
 				m.Msg = &MsgFromSensor_IssueSecuredClusterCertsRequest{IssueSecuredClusterCertsRequest: v}
+			}
+			iNdEx = postIndex
+		case 20:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field RepoScanResponse", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if oneof, ok := m.Msg.(*MsgFromSensor_RepoScanResponse); ok {
+				if err := oneof.RepoScanResponse.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+			} else {
+				v := &RepoScanResponse{}
+				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+				m.Msg = &MsgFromSensor_RepoScanResponse{RepoScanResponse: v}
 			}
 			iNdEx = postIndex
 		default:
@@ -6427,6 +6693,88 @@ func (m *MsgToSensor) UnmarshalVT(dAtA []byte) error {
 					return err
 				}
 				m.Msg = &MsgToSensor_IssueSecuredClusterCertsResponse{IssueSecuredClusterCertsResponse: v}
+			}
+			iNdEx = postIndex
+		case 29:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field RepoScanRequest", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if oneof, ok := m.Msg.(*MsgToSensor_RepoScanRequest); ok {
+				if err := oneof.RepoScanRequest.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+			} else {
+				v := &RepoScanRequest{}
+				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+				m.Msg = &MsgToSensor_RepoScanRequest{RepoScanRequest: v}
+			}
+			iNdEx = postIndex
+		case 30:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field RepoScanCancellation", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if oneof, ok := m.Msg.(*MsgToSensor_RepoScanCancellation); ok {
+				if err := oneof.RepoScanCancellation.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+			} else {
+				v := &RepoScanCancellation{}
+				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+				m.Msg = &MsgToSensor_RepoScanCancellation{RepoScanCancellation: v}
 			}
 			iNdEx = postIndex
 		default:
@@ -8273,6 +8621,47 @@ func (m *MsgFromSensor) UnmarshalVTUnsafe(dAtA []byte) error {
 				m.Msg = &MsgFromSensor_IssueSecuredClusterCertsRequest{IssueSecuredClusterCertsRequest: v}
 			}
 			iNdEx = postIndex
+		case 20:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field RepoScanResponse", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if oneof, ok := m.Msg.(*MsgFromSensor_RepoScanResponse); ok {
+				if err := oneof.RepoScanResponse.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+			} else {
+				v := &RepoScanResponse{}
+				if err := v.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+				m.Msg = &MsgFromSensor_RepoScanResponse{RepoScanResponse: v}
+			}
+			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
 			skippy, err := protohelpers.Skip(dAtA[iNdEx:])
@@ -9496,6 +9885,88 @@ func (m *MsgToSensor) UnmarshalVTUnsafe(dAtA []byte) error {
 					return err
 				}
 				m.Msg = &MsgToSensor_IssueSecuredClusterCertsResponse{IssueSecuredClusterCertsResponse: v}
+			}
+			iNdEx = postIndex
+		case 29:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field RepoScanRequest", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if oneof, ok := m.Msg.(*MsgToSensor_RepoScanRequest); ok {
+				if err := oneof.RepoScanRequest.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+			} else {
+				v := &RepoScanRequest{}
+				if err := v.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+				m.Msg = &MsgToSensor_RepoScanRequest{RepoScanRequest: v}
+			}
+			iNdEx = postIndex
+		case 30:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field RepoScanCancellation", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if oneof, ok := m.Msg.(*MsgToSensor_RepoScanCancellation); ok {
+				if err := oneof.RepoScanCancellation.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+			} else {
+				v := &RepoScanCancellation{}
+				if err := v.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+				m.Msg = &MsgToSensor_RepoScanCancellation{RepoScanCancellation: v}
 			}
 			iNdEx = postIndex
 		default:

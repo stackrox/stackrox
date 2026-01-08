@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/stackrox/rox/central/baseimage/broker"
 	repoDS "github.com/stackrox/rox/central/baseimage/datastore/repository"
 	tagDS "github.com/stackrox/rox/central/baseimage/datastore/tag"
 	"github.com/stackrox/rox/generated/storage"
@@ -54,7 +55,7 @@ func New(
 		delegator:    delegator,
 		pollInterval: pollInterval,
 		batchSize:    batchSize,
-		localScanner: reposcan.NewLocalScanner(registries),
+		localScanner: reposcan.NewLocalScanner(reposcan.NewRegistryMatcher(registries)),
 		stopper:      concurrency.NewStopper(),
 	}
 }
@@ -199,7 +200,7 @@ func (w *watcherImpl) processRepository(ctx context.Context, repo *storage.BaseI
 	// Determine scanner based on delegation.
 	var scanner reposcan.Scanner
 	if shouldDelegate {
-		scanner = NewDelegatedScanner(w.delegator, clusterID)
+		scanner = NewDelegatedScanner(w.delegator, broker.Singleton(), clusterID)
 	} else {
 		scanner = w.localScanner
 	}

@@ -2,6 +2,7 @@ syntax = "proto3";
 
 package central;
 
+import "internalapi/central/base_image.proto";
 import "internalapi/central/baseline_sync.proto";
 import "internalapi/central/cluster_config.proto";
 import "internalapi/central/cluster_metrics.proto";
@@ -25,7 +26,7 @@ import "storage/image.proto";
 
 option go_package = "./internalapi/central;central";
 
-// next available tag: 20
+// next available tag: 21
 message MsgFromSensor {
   string hash_key = 7;
   string dedupe_key = 8;
@@ -47,12 +48,13 @@ message MsgFromSensor {
     ComplianceResponse compliance_response = 17;
     DeploymentEnhancementResponse deployment_enhancement_response = 18;
     IssueSecuredClusterCertsRequest issue_secured_cluster_certs_request = 19;
+    RepoScanResponse repo_scan_response = 20;
   }
 }
 
 message ReprocessDeployments {}
 
-// next available tag: 29
+// next available tag: 31
 message MsgToSensor {
   oneof msg {
     SensorEnforcement enforcement = 1;
@@ -83,6 +85,8 @@ message MsgToSensor {
     DeduperState deduper_state = 26;
     DeploymentEnhancementRequest deployment_enhancement_request = 27;
     IssueSecuredClusterCertsResponse issue_secured_cluster_certs_response = 28;
+    RepoScanRequest repo_scan_request = 29;
+    RepoScanCancellation repo_scan_cancellation = 30;
   }
 }
 

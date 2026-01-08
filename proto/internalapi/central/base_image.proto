@@ -1,0 +1,96 @@
+syntax = "proto3";
+
+package central;
+
+import "google/protobuf/timestamp.proto";
+
+option go_package = "./internalapi/central;central";
+
+// TagMetadata contains image metadata extracted from the registry.
+message TagMetadata {
+  // manifest_digest is the SHA256 digest of the manifest.
+  string manifest_digest = 1;
+
+  // created is the image creation timestamp.
+  google.protobuf.Timestamp created = 2;
+
+  // layer_digests contains SHA256 digests of all layers.
+  repeated string layer_digests = 3;
+}
+
+// RepoScanRequest is sent from Central to Sensor to request repository scanning for tags.
+message RepoScanRequest {
+  // request_id identifies one repo scan request, and is used to correlate responses from sensor.
+  string request_id = 1;
+
+  // repository is the full repository path (e.g., "registry.example.com/prod/base-image").
+  string repository = 2;
+
+  // tag_pattern is the glob pattern for tag filtering (e.g., "8.*").
+  string tag_pattern = 3;
+
+  // tags_to_ignore are tags that should be skipped entirely during scan.
+  // (eg. tags older than certain threshold).
+  repeated string tags_to_ignore = 4;
+
+  // tags_to_recheck are recent tags that need change detection.
+  map<string, TagMetadata> tags_to_recheck = 5;
+}
+
+// RepoScanCancellation allows Central to abort an in-progress scan.
+message RepoScanCancellation {
+  // request_id must match the request_id of the RepoScanRequest to cancel.
+  string request_id = 1;
+}
+
+// RepoScanResponse is the streaming response from Sensor to Central.
+message RepoScanResponse {
+  // request_id correlates this response to the original request.
+  string request_id = 1;
+
+  // Start acknowledges Sensor started processing the request.
+  message Start {
+  }
+
+  // End signals completion of the scan cycle.
+  message End {
+    // success is true if the scan completed normally.
+    bool success = 1;
+
+    // error is set if fatal error occurred (e.g., registry unreachable).
+    string error = 2;
+
+    // successful_count is the number of tags for which metadata was sent.
+    int32 successful_count = 3;
+
+    // skipped_count is the number of tags skipped (in tags_to_ignore or unchanged).
+    int32 skipped_count = 4;
+
+    // failed_count is the number of tags that failed metadata fetch.
+    int32 failed_count = 5;
+  }
+
+  // Update is sent for each tag that requires metadata reporting.
+  message Update {
+    // tag is the tag name this update is for.
+    string tag = 1;
+
+    oneof outcome {
+      // metadata contains the successfully fetched metadata.
+      TagMetadata metadata = 2;
+
+      // error is set if update operation failed for this particular
+      // tag (not the whole scan operation).
+      string error = 3;
+
+      // deleted indicates the tag was deleted from the registry.
+      bool deleted = 4;
+    }
+  }
+
+  oneof payload {
+    Start start = 2;
+    Update update = 3;
+    End end = 4;
+  }
+}
