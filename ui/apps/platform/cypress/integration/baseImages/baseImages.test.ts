@@ -49,7 +49,7 @@ describe('Base Images', () => {
         // Delete the base image
         cy.get('table tbody tr').contains('td', testBaseImage).parents('tr').as('targetRow');
         cy.get('@targetRow').find('button[aria-label="Kebab toggle"]').click();
-        cy.get('button:contains("Remove")').click();
+        cy.get('button:contains("Delete base image")').click();
         cy.get('[role="dialog"] button:contains("Delete")').click();
 
         // Wait for delete to complete
