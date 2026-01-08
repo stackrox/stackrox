@@ -38,14 +38,12 @@ function SearchFilterTypes({
             All types
         </SelectOption>,
         <Divider key="Divider" />,
-    ];
-    types.forEach((type) => {
-        options.push(
+        ...types.map((type) => (
             <SelectOption key={type} value={type}>
                 {getTypeText(type)}
             </SelectOption>
-        );
-    });
+        )),
+    ];
 
     return (
         <CheckboxSelect

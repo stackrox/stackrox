@@ -38,14 +38,12 @@ function SearchFilterStatuses({
             All statuses
         </SelectOption>,
         <Divider key="Divider" />,
-    ];
-    statuses.forEach((status) => {
-        options.push(
+        ...statuses.map((status) => (
             <SelectOption key={status} value={status}>
                 {getStatusText(status)}
             </SelectOption>
-        );
-    });
+        )),
+    ];
 
     return (
         <CheckboxSelect
