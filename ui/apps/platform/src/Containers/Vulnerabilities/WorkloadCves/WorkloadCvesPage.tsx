@@ -4,6 +4,7 @@ import { PageSection } from '@patternfly/react-core';
 
 import PageNotFound from 'Components/PageNotFound';
 import PageTitle from 'Components/PageTitle';
+import { Subnav } from 'Components/Navigation/SubnavContext';
 
 import {
     exceptionManagementPath,
@@ -28,6 +29,7 @@ import ImageCvePageRoute from './ImageCve/ImageCvePageRoute';
 import NamespaceViewPage from './NamespaceView/NamespaceViewPage';
 import { WorkloadCveViewContext } from './WorkloadCveViewContext';
 import type { WorkloadCveView } from './WorkloadCveViewContext';
+import VulnerabilitiesSubnav from '../VulnerabilitiesSubnav';
 
 import type { QuerySearchFilter, WorkloadEntityTab } from '../types';
 import { getOverviewPagePath, getWorkloadEntityPagePath } from '../utils/searchUtils';
@@ -185,6 +187,9 @@ function WorkloadCvesPage({ view }: WorkloadCvesPageProps) {
 
     return (
         <WorkloadCveViewContext.Provider value={context}>
+            <Subnav>
+                <VulnerabilitiesSubnav />
+            </Subnav>
             {hasReadAccessForIntegration && <ScannerV4IntegrationBanner />}
             <Routes>
                 {hasReadAccessForNamespaces && (

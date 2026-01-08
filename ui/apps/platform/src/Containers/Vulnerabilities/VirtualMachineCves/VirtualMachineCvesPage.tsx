@@ -4,9 +4,11 @@ import { PageSection } from '@patternfly/react-core';
 import PageNotFound from 'Components/PageNotFound';
 import PageTitle from 'Components/PageTitle';
 import ScannerV4IntegrationBanner from 'Components/ScannerV4IntegrationBanner';
+import { Subnav } from 'Components/Navigation/SubnavContext';
 import usePermissions from 'hooks/usePermissions';
 import VirtualMachineCvesOverviewPage from './Overview/VirtualMachineCvesOverviewPage';
 import VirtualMachinePage from './VirtualMachine/VirtualMachinePage';
+import VulnerabilitiesSubnav from '../VulnerabilitiesSubnav';
 
 function VirtualMachineCvesPage() {
     const { hasReadAccess } = usePermissions();
@@ -14,6 +16,9 @@ function VirtualMachineCvesPage() {
 
     return (
         <>
+            <Subnav>
+                <VulnerabilitiesSubnav />
+            </Subnav>
             {hasReadAccessForIntegration && <ScannerV4IntegrationBanner />}
             <Routes>
                 <Route index element={<VirtualMachineCvesOverviewPage />} />

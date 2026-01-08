@@ -1,28 +1,27 @@
 import ComponentTestProvider from 'test-utils/ComponentTestProvider';
 
-import HorizontalSubnav from './HorizontalSubnav';
+import HorizontalSubnav from 'Components/Navigation/HorizontalSubnav';
+import { Subnav, SubnavProvider } from 'Components/Navigation/SubnavContext';
 
-// Mock the permission and feature flag hooks
-const mockRoutePredicates = {
-    hasReadAccess: () => true,
-    isFeatureFlagEnabled: () => true,
-};
+import ViolationsSubnav from './ViolationsSubnav';
 
 function setup(pathname) {
     window.history.pushState({}, document.title, pathname);
 
     cy.mount(
         <ComponentTestProvider>
-            <HorizontalSubnav
-                hasReadAccess={mockRoutePredicates.hasReadAccess}
-                isFeatureFlagEnabled={mockRoutePredicates.isFeatureFlagEnabled}
-            />
+            <SubnavProvider>
+                <HorizontalSubnav />
+                <Subnav>
+                    <ViolationsSubnav />
+                </Subnav>
+            </SubnavProvider>
         </ComponentTestProvider>
     );
 }
 
 describe(Cypress.spec.relative, () => {
-    it('should render the violations subnav when on violations page', () => {
+    it('should render the violations subnav items', () => {
         setup('/main/violations');
 
         // Verify that the violations subnav items are rendered
@@ -31,14 +30,7 @@ describe(Cypress.spec.relative, () => {
         cy.contains('All Violations').should('exist');
     });
 
-    it('should not render subnav when not on a violations or vulnerabilities page', () => {
-        setup('/main/dashboard');
-
-        // The component should not render anything when not on a relevant page
-        cy.get('nav').should('not.exist');
-    });
-
-    describe('Violations active state behavior', () => {
+    describe('Active state behavior', () => {
         it('should default User Workloads to active when no filter is present', () => {
             setup('/main/violations');
 

@@ -4,10 +4,12 @@ import { PageSection } from '@patternfly/react-core';
 import PageNotFound from 'Components/PageNotFound';
 import PageTitle from 'Components/PageTitle';
 import ScannerV4IntegrationBanner from 'Components/ScannerV4IntegrationBanner';
+import { Subnav } from 'Components/Navigation/SubnavContext';
 import usePermissions from 'hooks/usePermissions';
 import NodeCvesOverviewPage from './Overview/NodeCvesOverviewPage';
 import NodeCvePage from './NodeCve/NodeCvePage';
 import NodePage from './Node/NodePage';
+import VulnerabilitiesSubnav from '../VulnerabilitiesSubnav';
 
 function NodeCvesPage() {
     const { hasReadAccess } = usePermissions();
@@ -15,6 +17,9 @@ function NodeCvesPage() {
 
     return (
         <>
+            <Subnav>
+                <VulnerabilitiesSubnav />
+            </Subnav>
             {hasReadAccessForIntegration && <ScannerV4IntegrationBanner />}
             <Routes>
                 <Route index element={<NodeCvesOverviewPage />} />

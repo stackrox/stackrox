@@ -14,11 +14,12 @@ import { actions } from 'reducers/feedback';
 import { getClustersForPermissions } from 'services/RolesService';
 import { clustersBasePath } from 'routePaths';
 
+import HorizontalSubnav from 'Components/Navigation/HorizontalSubnav';
+import { SubnavProvider } from 'Components/Navigation/SubnavContext';
+
 import Header from './Header/Header';
 import PublicConfigFooter from './PublicConfig/PublicConfigFooter';
 import NavigationSidebar from './Navigation/NavigationSidebar';
-import HorizontalSubnav from './Navigation/HorizontalSubnav';
-
 import Body from './Body';
 import AcsFeedbackModal from './AcsFeedbackModal';
 
@@ -105,14 +106,13 @@ function MainPage(): ReactElement {
                         />
                     }
                 >
-                    <HorizontalSubnav
-                        hasReadAccess={hasReadAccess}
-                        isFeatureFlagEnabled={isFeatureFlagEnabled}
-                    />
-                    <Body
-                        hasReadAccess={hasReadAccess}
-                        isFeatureFlagEnabled={isFeatureFlagEnabled}
-                    />
+                    <SubnavProvider>
+                        <HorizontalSubnav />
+                        <Body
+                            hasReadAccess={hasReadAccess}
+                            isFeatureFlagEnabled={isFeatureFlagEnabled}
+                        />
+                    </SubnavProvider>
                 </Page>
             </div>
             <footer>

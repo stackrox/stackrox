@@ -48,8 +48,8 @@ import {
     vulnerabilityReportsPath,
 } from 'routePaths';
 
+import NavigationItem from 'Components/Navigation/NavigationItem';
 import NavigationContent from './NavigationContent';
-import NavigationItem from './NavigationItem';
 import { filterNavDescriptions, isActiveLink } from './utils';
 import type { ChildDescription, NavDescription } from './utils';
 
