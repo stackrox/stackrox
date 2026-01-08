@@ -20,12 +20,14 @@ function SearchFilterTypes({
     setTypesSelected,
 }: SearchFilterTypesProps) {
     function onSelect(selections: string[]) {
-        const hadAllOption = (typesSelected ?? []).length === 0;
-        const isSelectAll = selections.includes(optionAll) && !hadAllOption;
+        const isAllCurrentlySelected = (typesSelected ?? []).length === 0;
         const validTypes = selections.filter((s) => s !== optionAll && isType(s));
-        const allOptionsSelected = validTypes.length === types.length;
 
-        if (isSelectAll || validTypes.length === 0 || allOptionsSelected) {
+        if (
+            (selections.includes(optionAll) && !isAllCurrentlySelected) ||
+            validTypes.length === 0 ||
+            validTypes.length === types.length
+        ) {
             setTypesSelected(undefined);
             return;
         }

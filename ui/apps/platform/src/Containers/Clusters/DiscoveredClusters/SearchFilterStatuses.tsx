@@ -20,12 +20,14 @@ function SearchFilterStatuses({
     setStatusesSelected,
 }: SearchFilterStatusesProps) {
     function onSelect(selections: string[]) {
-        const hadAllOption = (statusesSelected ?? []).length === 0;
-        const isSelectAll = selections.includes(optionAll) && !hadAllOption;
+        const isAllCurrentlySelected = (statusesSelected ?? []).length === 0;
         const validStatuses = selections.filter((s) => s !== optionAll && isStatus(s));
-        const allOptionsSelected = validStatuses.length === statuses.length;
 
-        if (isSelectAll || validStatuses.length === 0 || allOptionsSelected) {
+        if (
+            (selections.includes(optionAll) && !isAllCurrentlySelected) ||
+            validStatuses.length === 0 ||
+            validStatuses.length === statuses.length
+        ) {
             setStatusesSelected(undefined);
             return;
         }
