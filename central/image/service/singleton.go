@@ -1,7 +1,6 @@
 package service
 
 import (
-	baseImageDatastore "github.com/stackrox/rox/central/baseimage/datastore"
 	clusterDataStore "github.com/stackrox/rox/central/cluster/datastore"
 	"github.com/stackrox/rox/central/delegatedregistryconfig/scanwaiter"
 	"github.com/stackrox/rox/central/delegatedregistryconfig/scanwaiterv2"
@@ -27,7 +26,6 @@ func initialize() {
 	as = New(
 		datastore.Singleton(),
 		imageV2Datastore.Singleton(),
-		baseImageDatastore.Singleton(),
 		imageMapperDatastore.Singleton(),
 		watchedImageDataStore.Singleton(),
 		manager.Singleton(),
