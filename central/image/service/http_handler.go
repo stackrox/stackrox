@@ -98,7 +98,7 @@ func (h sbomHttpHandler) enrichByNameWithModelSwitch(
 ) (img *storage.Image, imgV2 *storage.ImageV2, err error) {
 	if features.FlattenImageData.Enabled() {
 		if h.enricherV2 == nil {
-			return nil, nil, fmt.Errorf("enricherV2 is nil when FlattenImageData is enabled")
+			return nil, nil, errors.New("enricherV2 is nil when FlattenImageData is enabled")
 		}
 		imgV2, err = enricher.EnrichImageV2ByName(ctx, h.enricherV2, enrichmentCtx, imgName)
 		if err != nil {
@@ -261,7 +261,7 @@ func (h sbomHttpHandler) saveImageV1(img *storage.Image) error {
 // saveImageV2 saves an Image V2 to Central's database.
 func (h sbomHttpHandler) saveImageV2(imgV2 *storage.ImageV2) error {
 	if imgV2 == nil {
-		return fmt.Errorf("imgV2 is nil when FlattenImageData is enabled")
+		return errors.New("imgV2 is nil when FlattenImageData is enabled")
 	}
 	imgV2.Digest = utils.GetSHAV2(imgV2)
 	var err error

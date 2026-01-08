@@ -330,7 +330,7 @@ func TestSBOMHandler_FlattenImageDataPaths(t *testing.T) {
 				// EnrichImageV2ByName calls EnrichImage on the V2 enricher with an ImageV2
 				v2Enricher.EXPECT().EnrichImage(gomock.Any(), gomock.Any(), gomock.Any()).DoAndReturn(func(ctx context.Context, enrichCtx enricher.EnrichmentContext, imgV2 *storage.ImageV2) (enricher.EnrichmentResult, error) {
 					// Set up the image V2 with scan data so scannedByScannerV4 works
-					if imgV2.Scan == nil {
+					if imgV2.GetScan() == nil {
 						imgV2.Scan = &storage.ImageScan{DataSource: &storage.DataSource{Id: iiStore.DefaultScannerV4Integration.GetId()}}
 					}
 					// Set digest for GetImageV2ID to compute a valid ID
