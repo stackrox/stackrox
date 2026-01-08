@@ -86,6 +86,23 @@ func (c *LocalScanner) ScanRepository(
 			toFetch = append(toFetch, tag)
 		}
 
+		// Emit deletion events as soon as possible, leaving potential stream
+		// failures to the end.
+		for tag := range req.CheckTags {
+			if !seen[tag] {
+				if !yield(TagEvent{Tag: tag, Type: TagEventDeleted}, nil) {
+					return
+				}
+			}
+		}
+		for tag := range req.SkipTags {
+			if !seen[tag] {
+				if !yield(TagEvent{Tag: tag, Type: TagEventDeleted}, nil) {
+					return
+				}
+			}
+		}
+
 		// Fetch metadata concurrently for tags that need it.
 		if len(toFetch) > 0 {
 			// Create fetcher for this repo, uses a list of cached digests and a shared the
@@ -116,22 +133,6 @@ func (c *LocalScanner) ScanRepository(
 				}
 
 				if !yield(event, nil) {
-					return
-				}
-			}
-		}
-
-		// Emit deletion events for tags in cache but not in registry.
-		for tag := range req.CheckTags {
-			if !seen[tag] {
-				if !yield(TagEvent{Tag: tag, Type: TagEventDeleted}, nil) {
-					return
-				}
-			}
-		}
-		for tag := range req.SkipTags {
-			if !seen[tag] {
-				if !yield(TagEvent{Tag: tag, Type: TagEventDeleted}, nil) {
 					return
 				}
 			}
