@@ -21,6 +21,7 @@ import useRestQuery from 'hooks/useRestQuery';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 
 import ConfirmationModal from 'Components/PatternFly/ConfirmationModal/ConfirmationModal';
+import PageTitle from 'Components/PageTitle';
 import BaseImagesModal from './BaseImagesModal';
 import BaseImagesTable from './BaseImagesTable';
 
@@ -77,6 +78,7 @@ function BaseImagesPage() {
 
     return (
         <>
+            <PageTitle title="Base Images" />
             <PageSection variant="light">
                 <Flex
                     alignItems={{ default: 'alignItemsCenter' }}

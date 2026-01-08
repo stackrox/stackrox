@@ -24,6 +24,7 @@ import {
     interceptAndOverridePermissions,
     interceptAndWatchRequests,
 } from '../../../helpers/request';
+import { addCheckboxSelectFilter } from '../../../helpers/compoundFilters';
 
 const visitFromMoreViewsDropdown = visitFromHorizontalNavExpandable('More Views');
 
@@ -340,6 +341,27 @@ describe('Workload CVE overview page tests', () => {
                     );
                 }
             );
+        });
+    });
+
+    describe('Layer type filter tests', () => {
+        it('should apply Layer type filter correctly', () => {
+            interceptAndOverrideFeatureFlags({ ROX_BASE_IMAGE_DETECTION: true });
+
+            visitWorkloadCveOverview();
+
+            addCheckboxSelectFilter('Image component', 'Layer type', 'Base image');
+
+            // Verify filter chip is applied
+            cy.get(selectors.filterChipGroupForCategory('Image component layer type')).should(
+                'be.visible'
+            );
+            cy.get(
+                selectors.filterChipGroupItem('Image component layer type', 'Base image')
+            ).should('be.visible');
+
+            // Verify filtered view label is shown
+            cy.get(selectors.filteredViewLabel).should('be.visible');
         });
     });
 });
