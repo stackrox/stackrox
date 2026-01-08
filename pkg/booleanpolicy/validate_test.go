@@ -654,7 +654,7 @@ func (s *PolicyValueValidator) TestValidateFileOperationRequiresFilePath() {
 				SectionName: "bad2",
 				PolicyGroups: []*storage.PolicyGroup{
 					{
-						FieldName: fieldnames.ActualFilePath,
+						FieldName: fieldnames.ActualPath,
 						Values:    []*storage.PolicyValue{{Value: "/etc/passwd"}},
 					},
 				},
@@ -675,7 +675,7 @@ func (s *PolicyValueValidator) TestValidateFileOperationRequiresFilePath() {
 						Values:    []*storage.PolicyValue{{Value: "CREATE"}},
 					},
 					{
-						FieldName: fieldnames.ActualFilePath,
+						FieldName: fieldnames.ActualPath,
 						Values:    []*storage.PolicyValue{{Value: "/etc/passwd"}},
 					},
 				},
@@ -696,7 +696,7 @@ func (s *PolicyValueValidator) TestValidateFileOperationRequiresFilePath() {
 						Values:    []*storage.PolicyValue{{Value: "CREATE"}},
 					},
 					{
-						FieldName: fieldnames.EffectiveFilePath,
+						FieldName: fieldnames.EffectivePath,
 						Values:    []*storage.PolicyValue{{Value: "/etc/passwd"}},
 					},
 				},
@@ -730,7 +730,7 @@ func (s *PolicyValueValidator) TestValidateFileOperationRequiresFilePath() {
 				SectionName: "bad",
 				PolicyGroups: []*storage.PolicyGroup{
 					{
-						FieldName: fieldnames.EffectiveFilePath,
+						FieldName: fieldnames.EffectivePath,
 						Values:    []*storage.PolicyValue{{Value: "/etc/passwd"}},
 					},
 				},

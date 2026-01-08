@@ -675,8 +675,8 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"timestamp: Time",
 	}))
 	utils.Must(builder.AddType("FileAccess_File", []string{
-		"actualFilePath: String!",
-		"effectiveFilePath: String!",
+		"actualPath: String!",
+		"effectivePath: String!",
 		"meta: FileAccess_FileMetadata",
 	}))
 	utils.Must(builder.AddType("FileAccess_FileMetadata", []string{
@@ -8130,13 +8130,13 @@ func (resolver *Resolver) wrapFileAccess_FilesWithContext(ctx context.Context, v
 	return output, nil
 }
 
-func (resolver *fileAccess_FileResolver) ActualFilePath(ctx context.Context) string {
-	value := resolver.data.GetActualFilePath()
+func (resolver *fileAccess_FileResolver) ActualPath(ctx context.Context) string {
+	value := resolver.data.GetActualPath()
 	return value
 }
 
-func (resolver *fileAccess_FileResolver) EffectiveFilePath(ctx context.Context) string {
-	value := resolver.data.GetEffectiveFilePath()
+func (resolver *fileAccess_FileResolver) EffectivePath(ctx context.Context) string {
+	value := resolver.data.GetEffectivePath()
 	return value
 }
 

@@ -49,14 +49,14 @@ export const policySectionValidators: PolicySectionValidator[] = [
             context.eventSource === 'DEPLOYMENT_EVENT',
         validate: ({ policyGroups }) => {
             const hasFileOperation = policyGroupsHasCriterion(policyGroups, 'File Operation');
-            const hasEffectiveFilePath = policyGroupsHasCriterion(
+            const hasEffectivePath = policyGroupsHasCriterion(
                 policyGroups,
-                'Effective File Path'
+                'Effective Path'
             );
-            const hasActualFilePath = policyGroupsHasCriterion(policyGroups, 'Actual File Path');
+            const hasActualPath = policyGroupsHasCriterion(policyGroups, 'Actual Path');
 
-            if (hasFileOperation && !hasEffectiveFilePath && !hasActualFilePath) {
-                return 'Criterion must be present with at least one value when using File operation: Effective File Path or Actual File Path';
+            if (hasFileOperation && !hasEffectivePath && !hasActualPath) {
+                return 'Criterion must be present with at least one value when using File operation: Effective Path or Actual Path';
             }
             return undefined;
         },
@@ -67,10 +67,10 @@ export const policySectionValidators: PolicySectionValidator[] = [
             context.lifecycleStages.includes('RUNTIME') && context.eventSource === 'NODE_EVENT',
         validate: ({ policyGroups }) => {
             const hasFileOperation = policyGroupsHasCriterion(policyGroups, 'File Operation');
-            const hasActualFilePath = policyGroupsHasCriterion(policyGroups, 'Actual File Path');
+            const hasActualPath = policyGroupsHasCriterion(policyGroups, 'Actual Path');
 
-            if (hasFileOperation && !hasActualFilePath) {
-                return 'Criterion must be present with at least one value when using File operation: Actual File Path';
+            if (hasFileOperation && !hasActualPath) {
+                return 'Criterion must be present with at least one value when using File operation: Actual Path';
             }
             return undefined;
         },

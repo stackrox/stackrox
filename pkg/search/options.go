@@ -224,8 +224,8 @@ var (
 	ProcessContainerStartTime = newFieldLabel("Process Container Start Time")
 
 	// FileActivity Search fields
-	EffectiveFilePath = newFieldLabel("Effective File Path")
-	ActualFilePath    = newFieldLabel("Actual File Path")
+	EffectivePath = newFieldLabel("Effective Path")
+	ActualPath    = newFieldLabel("Actual Path")
 	FileOperation     = newFieldLabel("File Operation")
 
 	// ProcessListeningOnPort Search fields

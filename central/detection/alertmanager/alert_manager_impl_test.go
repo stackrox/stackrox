@@ -86,8 +86,8 @@ func getProcessIndicator(processTime time.Time) *storage.ProcessIndicator {
 func getFileAccess(accessTime time.Time) *storage.FileAccess {
 	return &storage.FileAccess{
 		File: &storage.FileAccess_File{
-			ActualFilePath:    "/etc/passwd",
-			EffectiveFilePath: "/etc/passwd",
+			ActualPath:    "/etc/passwd",
+			EffectivePath: "/etc/passwd",
 		},
 		Operation: storage.FileAccess_OPEN,
 		Timestamp: protocompat.ConvertTimeToTimestampOrNil(&accessTime),

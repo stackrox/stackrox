@@ -48,8 +48,8 @@ func (m *FileAccess_File) CloneVT() *FileAccess_File {
 		return (*FileAccess_File)(nil)
 	}
 	r := new(FileAccess_File)
-	r.EffectiveFilePath = m.EffectiveFilePath
-	r.ActualFilePath = m.ActualFilePath
+	r.EffectivePath = m.EffectivePath
+	r.ActualPath = m.ActualPath
 	r.Meta = m.Meta.CloneVT()
 	if len(m.unknownFields) > 0 {
 		r.unknownFields = make([]byte, len(m.unknownFields))
@@ -121,10 +121,10 @@ func (this *FileAccess_File) EqualVT(that *FileAccess_File) bool {
 	} else if this == nil || that == nil {
 		return false
 	}
-	if this.EffectiveFilePath != that.EffectiveFilePath {
+	if this.EffectivePath != that.EffectivePath {
 		return false
 	}
-	if this.ActualFilePath != that.ActualFilePath {
+	if this.ActualPath != that.ActualPath {
 		return false
 	}
 	if !this.Meta.EqualVT(that.Meta) {
@@ -276,17 +276,17 @@ func (m *FileAccess_File) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 		i--
 		dAtA[i] = 0x1a
 	}
-	if len(m.ActualFilePath) > 0 {
-		i -= len(m.ActualFilePath)
-		copy(dAtA[i:], m.ActualFilePath)
-		i = protohelpers.EncodeVarint(dAtA, i, uint64(len(m.ActualFilePath)))
+	if len(m.ActualPath) > 0 {
+		i -= len(m.ActualPath)
+		copy(dAtA[i:], m.ActualPath)
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(len(m.ActualPath)))
 		i--
 		dAtA[i] = 0x12
 	}
-	if len(m.EffectiveFilePath) > 0 {
-		i -= len(m.EffectiveFilePath)
-		copy(dAtA[i:], m.EffectiveFilePath)
-		i = protohelpers.EncodeVarint(dAtA, i, uint64(len(m.EffectiveFilePath)))
+	if len(m.EffectivePath) > 0 {
+		i -= len(m.EffectivePath)
+		copy(dAtA[i:], m.EffectivePath)
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(len(m.EffectivePath)))
 		i--
 		dAtA[i] = 0xa
 	}
@@ -411,11 +411,11 @@ func (m *FileAccess_File) SizeVT() (n int) {
 	}
 	var l int
 	_ = l
-	l = len(m.EffectiveFilePath)
+	l = len(m.EffectivePath)
 	if l > 0 {
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
-	l = len(m.ActualFilePath)
+	l = len(m.ActualPath)
 	if l > 0 {
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
@@ -663,7 +663,7 @@ func (m *FileAccess_File) UnmarshalVT(dAtA []byte) error {
 		switch fieldNum {
 		case 1:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field EffectiveFilePath", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field EffectivePath", wireType)
 			}
 			var stringLen uint64
 			for shift := uint(0); ; shift += 7 {
@@ -691,11 +691,11 @@ func (m *FileAccess_File) UnmarshalVT(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.EffectiveFilePath = string(dAtA[iNdEx:postIndex])
+			m.EffectivePath = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
 		case 2:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field ActualFilePath", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field ActualPath", wireType)
 			}
 			var stringLen uint64
 			for shift := uint(0); ; shift += 7 {
@@ -723,7 +723,7 @@ func (m *FileAccess_File) UnmarshalVT(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.ActualFilePath = string(dAtA[iNdEx:postIndex])
+			m.ActualPath = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
 		case 3:
 			if wireType != 2 {
@@ -1240,7 +1240,7 @@ func (m *FileAccess_File) UnmarshalVTUnsafe(dAtA []byte) error {
 		switch fieldNum {
 		case 1:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field EffectiveFilePath", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field EffectivePath", wireType)
 			}
 			var stringLen uint64
 			for shift := uint(0); ; shift += 7 {
@@ -1272,11 +1272,11 @@ func (m *FileAccess_File) UnmarshalVTUnsafe(dAtA []byte) error {
 			if intStringLen > 0 {
 				stringValue = unsafe.String(&dAtA[iNdEx], intStringLen)
 			}
-			m.EffectiveFilePath = stringValue
+			m.EffectivePath = stringValue
 			iNdEx = postIndex
 		case 2:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field ActualFilePath", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field ActualPath", wireType)
 			}
 			var stringLen uint64
 			for shift := uint(0); ; shift += 7 {
@@ -1308,7 +1308,7 @@ func (m *FileAccess_File) UnmarshalVTUnsafe(dAtA []byte) error {
 			if intStringLen > 0 {
 				stringValue = unsafe.String(&dAtA[iNdEx], intStringLen)
 			}
-			m.ActualFilePath = stringValue
+			m.ActualPath = stringValue
 			iNdEx = postIndex
 		case 3:
 			if wireType != 2 {
