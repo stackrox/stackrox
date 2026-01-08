@@ -207,12 +207,6 @@ func (h *handlerImpl) handleIndexReport(
 		log.Warn("Received nil virtual machine index report: not sending to Central")
 		return
 	}
-
-	if !centralcaps.Has(centralsensor.VirtualMachinesSupported) {
-		outcome = metrics.IndexReportHandlingMessageToCentralCapabilityMissing
-		log.Warnf("Central does not have virtual machine capability: not sending index report for vsock_cid=%q", indexReport.GetVsockCid())
-		return
-	}
 	log.Debugf("Handling virtual machine index report with vsock_cid=%q...", indexReport.GetVsockCid())
 
 	msg, outcome, err := h.newMessageToCentral(indexReport)
