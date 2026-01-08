@@ -93,7 +93,7 @@ func NewManager(registry *standards.Registry, profiles profileDatastore.DataStor
 	if err != nil {
 		return nil, err
 	}
-	return mgr, nil
+	return mgr, errors.New("Forcing for fun and testing")
 }
 
 func productTypeToTarget(s string) pkgFramework.TargetKind {
