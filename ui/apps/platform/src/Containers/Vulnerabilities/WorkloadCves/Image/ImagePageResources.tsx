@@ -8,8 +8,8 @@ import {
     Spinner,
     Text,
 } from '@patternfly/react-core';
-import type { DocumentNode } from '@apollo/client';
 import { gql, useQuery } from '@apollo/client';
+import type { DocumentNode } from '@apollo/client';
 import type { Pagination as PaginationParam } from 'services/types';
 
 import TableErrorComponent from 'Components/PatternFly/TableErrorComponent';

@@ -11,8 +11,8 @@ import {
     Title,
     pluralize,
 } from '@patternfly/react-core';
-import type { DocumentNode } from '@apollo/client';
 import { gql, useQuery } from '@apollo/client';
+import type { DocumentNode } from '@apollo/client';
 import type { SearchFilter } from 'types/search';
 import type { UseURLPaginationResult } from 'hooks/useURLPagination';
 import useURLSort from 'hooks/useURLSort';
