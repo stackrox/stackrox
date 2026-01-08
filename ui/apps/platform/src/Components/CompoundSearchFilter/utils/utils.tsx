@@ -302,7 +302,10 @@ export function getCompoundSearchFilterLabelDescriptionOrNull(
             return {
                 group,
                 items: values.map((value) => ({
-                    label: getLabelForOption(options.find((option) => option.value === value)),
+                    label: getLabelForOption(
+                        options.find((option) => option.value === value),
+                        value
+                    ),
                     payload: [{ action: 'REMOVE', category, value }],
                     isGlobal: isGlobalPredicate(category, value),
                 })),
@@ -320,7 +323,10 @@ export function getCompoundSearchFilterLabelDescriptionOrNull(
                 group,
                 items: [
                     {
-                        label: getLabelForOption(options.find((option) => option.value === value)),
+                        label: getLabelForOption(
+                            options.find((option) => option.value === value),
+                            value
+                        ),
                         payload: payloadDeleteCategory,
                     },
                 ],
@@ -354,7 +360,8 @@ export function getCompoundSearchFilterLabelDescriptionOrNull(
                             options.find(
                                 (option) =>
                                     option.value === value && option.category === categoryOfValue
-                            )
+                            ),
+                            value
                         ),
                         payload: payloadDeleteCategories,
                     },
@@ -366,9 +373,9 @@ export function getCompoundSearchFilterLabelDescriptionOrNull(
     }
 }
 
-// Return consistent absence text if untrusted page address search query has bogus value.
-function getLabelForOption(option: SelectSearchFilterOption | undefined) {
-    return option ? option.label : 'N/A'; // N/A seems vague
+// Return internal value if untrusted page address search query does not have a valid option.
+function getLabelForOption(option: SelectSearchFilterOption | undefined, value: string) {
+    return option ? option.label : value;
 }
 
 // Given predicate function from useFeatureFlags hook in component
