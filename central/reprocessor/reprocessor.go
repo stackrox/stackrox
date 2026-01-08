@@ -6,6 +6,7 @@ import (
 
 	"github.com/pkg/errors"
 	administrationEvents "github.com/stackrox/rox/central/administration/events"
+	baseImageDatastore "github.com/stackrox/rox/central/baseimage/datastore"
 	deploymentDatastore "github.com/stackrox/rox/central/deployment/datastore"
 	"github.com/stackrox/rox/central/enrichment"
 	imageDatastore "github.com/stackrox/rox/central/image/datastore"
@@ -87,7 +88,7 @@ var (
 func Singleton() Loop {
 	once.Do(func() {
 		loop = NewLoop(connection.ManagerSingleton(), enrichment.ImageEnricherSingleton(), enrichment.ImageEnricherV2Singleton(),
-			enrichment.NodeEnricherSingleton(), deploymentDatastore.Singleton(), imageDatastore.Singleton(),
+			enrichment.NodeEnricherSingleton(), deploymentDatastore.Singleton(), baseImageDatastore.Singleton(), imageDatastore.Singleton(),
 			imageV2Datastore.Singleton(), nodeDatastore.Singleton(), manager.Singleton(), watchedImageDataStore.Singleton())
 	})
 	return loop
@@ -107,11 +108,11 @@ type Loop interface {
 
 // NewLoop returns a new instance of a Loop.
 func NewLoop(connManager connection.Manager, imageEnricher imageEnricher.ImageEnricher, imageEnricherV2 imageEnricher.ImageEnricherV2,
-	nodeEnricher nodeEnricher.NodeEnricher, deployments deploymentDatastore.DataStore, images imageDatastore.DataStore,
+	nodeEnricher nodeEnricher.NodeEnricher, deployments deploymentDatastore.DataStore, baseImages baseImageDatastore.DataStore, images imageDatastore.DataStore,
 	imagesV2 imageV2Datastore.DataStore, nodes nodeDatastore.DataStore, risk manager.Manager,
 	watchedImages watchedImageDataStore.DataStore) Loop {
 	return newLoopWithDuration(
-		connManager, imageEnricher, imageEnricherV2, nodeEnricher, deployments, images, imagesV2, nodes, risk,
+		connManager, imageEnricher, imageEnricherV2, nodeEnricher, deployments, baseImages, images, imagesV2, nodes, risk,
 		watchedImages, env.ReprocessInterval.DurationSetting(), env.RiskReprocessInterval.DurationSetting())
 }
 
@@ -119,7 +120,7 @@ func NewLoop(connManager connection.Manager, imageEnricher imageEnricher.ImageEn
 // It is NOT exported, since we don't want clients to control the duration; it only exists as a separate function
 // to enable testing.
 func newLoopWithDuration(connManager connection.Manager, imageEnricher imageEnricher.ImageEnricher, imageEnricherV2 imageEnricher.ImageEnricherV2,
-	nodeEnricher nodeEnricher.NodeEnricher, deployments deploymentDatastore.DataStore, images imageDatastore.DataStore,
+	nodeEnricher nodeEnricher.NodeEnricher, deployments deploymentDatastore.DataStore, baseImages baseImageDatastore.DataStore, images imageDatastore.DataStore,
 	imagesV2 imageV2Datastore.DataStore, nodes nodeDatastore.DataStore, risk manager.Manager,
 	watchedImages watchedImageDataStore.DataStore, enrichAndDetectDuration, deploymentRiskDuration time.Duration) *loopImpl {
 	return &loopImpl{
@@ -128,6 +129,7 @@ func newLoopWithDuration(connManager connection.Manager, imageEnricher imageEnri
 
 		imageEnricher:   imageEnricher,
 		imageEnricherV2: imageEnricherV2,
+		baseImages:      baseImages,
 		images:          images,
 		imagesV2:        imagesV2,
 		risk:            risk,
@@ -168,6 +170,7 @@ type loopImpl struct {
 	enrichAndDetectTickerDuration time.Duration
 	enrichAndDetectTicker         *time.Ticker
 
+	baseImages      baseImageDatastore.DataStore
 	images          imageDatastore.DataStore
 	imagesV2        imageV2Datastore.DataStore
 	risk            manager.Manager
