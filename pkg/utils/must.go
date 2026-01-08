@@ -3,7 +3,6 @@ package utils
 import (
 	"fmt"
 
-	"github.com/stackrox/rox/pkg/buildinfo"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/utils/panic"
 )
@@ -28,11 +27,11 @@ func CrashOnError(errs ...error) {
 func ShouldErr(errs ...error) error {
 	for _, err := range errs {
 		if err != nil {
-			if buildinfo.ReleaseBuild {
-				logging.Errorf("Unexpected Error: %+v", err)
-			} else {
-				panic.HardPanic(err)
-			}
+			//if buildinfo.ReleaseBuild {
+			logging.Errorf("Unexpected Error: %+v", err)
+			//} else {
+			//	panic.HardPanic(err)
+			//}
 			return err
 		}
 	}
