@@ -757,7 +757,7 @@ func (s *storeImpl) upsert(ctx context.Context, obj *storage.Image) error {
 		}
 		defer release()
 
-		tx, err := conn.Begin(ctx)
+		tx, ctx, err := conn.Begin(ctx)
 		if err != nil {
 			return err
 		}
@@ -835,7 +835,7 @@ func (s *storeImpl) retryableGet(ctx context.Context, id string) (*storage.Image
 	}
 	defer release()
 
-	tx, err := conn.Begin(ctx)
+	tx, ctx, err := conn.Begin(ctx)
 	if err != nil {
 		return nil, false, err
 	}
@@ -1082,7 +1082,7 @@ func (s *storeImpl) retryableDelete(ctx context.Context, id string) error {
 	}
 	defer release()
 
-	tx, err := conn.Begin(ctx)
+	tx, ctx, err := conn.Begin(ctx)
 	if err != nil {
 		return err
 	}
@@ -1151,7 +1151,7 @@ func (s *storeImpl) retryableGetByIDs(ctx context.Context, ids []string) ([]*sto
 	}
 	defer release()
 
-	tx, err := conn.Begin(ctx)
+	tx, ctx, err := conn.Begin(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -1191,7 +1191,7 @@ func (s *storeImpl) WalkByQuery(ctx context.Context, q *v1.Query, fn func(image 
 	}
 	defer release()
 
-	tx, err := conn.Begin(ctx)
+	tx, ctx, err := conn.Begin(ctx)
 	if err != nil {
 		return err
 	}
@@ -1386,7 +1386,7 @@ func (s *storeImpl) retryableUpdateVulnState(ctx context.Context, cve string, im
 	}
 	defer release()
 
-	tx, err := conn.Begin(ctx)
+	tx, ctx, err := conn.Begin(ctx)
 	if err != nil {
 		return err
 	}

@@ -22,7 +22,7 @@ func Singleton() Manager {
 	once.Do(func() {
 		var err error
 		manager, err = NewManager(standards.RegistrySingleton(), profileDatastore.Singleton(), scansDatastore.Singleton(), scanSettingBindingDatastore.Singleton(), rulesDatastore.Singleton(), checkResultsDatastore.Singleton(), complianceDatastore.Singleton())
-		utils.Must(err)
+		utils.Should(err)
 	})
 	return manager
 }
