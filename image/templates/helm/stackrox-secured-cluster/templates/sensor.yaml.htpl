@@ -281,7 +281,7 @@ spec:
           mountPath: /run/secrets/stackrox.io/monitoring-tls
           readOnly: true
         {{- end }}
-        {{- if and ._rox.env.openshift }}
+        {{- if ._rox.env.openshift }}
         - name: proxy-tls-volume
           mountPath: /run/secrets/stackrox.io/proxy-tls/
           readOnly: true
