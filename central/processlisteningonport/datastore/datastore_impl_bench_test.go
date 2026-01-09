@@ -56,7 +56,7 @@ func addIndicators(b *testing.B, ctx context.Context, ds DataStore, plops []*sto
 }
 
 // setupBenchmark sets up the necessary datastore and prerequisites for the benchmark.
-func setupBenchmark(b *testing.B) (context.Context, DataStore) {
+func setupBenchmark(b *testing.B) (context.Context, DataStore, *pgtest.TestPostgres) {
 	ctx := sac.WithAllAccess(sac.WithAllAccess(context.Background()))
 
 	postgres := pgtest.ForT(b)
@@ -79,7 +79,7 @@ func setupBenchmark(b *testing.B) (context.Context, DataStore) {
 		require.NoError(b, err)
 	}
 
-	return ctx, ds
+	return ctx, ds, postgres
 }
 
 // BenchmarkAddPLOPs measures the performance of adding PLOPs to the database
@@ -94,38 +94,26 @@ func benchmarkAddPLOPs(b *testing.B, nPort int, nProcess int, nPod int) func(*te
 		plopObjects := makeRandomPlops(nPort, nProcess, nPod, fixtureconsts.Deployment1)
 
 		// Setup database once before the benchmark loop
-		ctx, ds := setupBenchmark(b)
+		ctx, ds, postgres := setupBenchmark(b)
 
 		// Insert all indicators once before timing - they are relatively stable
 		addIndicators(b, ctx, ds, plopObjects)
-
-		// Extract pod UIDs for cleanup
-		podUIDs := make([]string, 0, nPod)
-		seenPods := make(map[string]bool)
-		for _, plop := range plopObjects {
-			uid := plop.GetPodUid()
-			if !seenPods[uid] {
-				seenPods[uid] = true
-				podUIDs = append(podUIDs, uid)
-			}
-		}
 
 		b.ReportAllocs()
 		b.ResetTimer()
 
 		for i := 0; i < b.N; i++ {
+			// Start timing for the operation we're benchmarking
+			b.StartTimer()
 			if err := ds.AddProcessListeningOnPort(ctx, fixtureconsts.Cluster1, plopObjects...); err != nil {
 				require.NoError(b, err)
 			}
-
-			// Clean up PLOPs for next iteration to avoid lock contention on updates
 			b.StopTimer()
-			for _, podUID := range podUIDs {
-				if err := ds.RemovePlopsByPod(ctx, podUID); err != nil {
-					require.NoError(b, err)
-				}
-			}
-			b.StartTimer()
+
+			// Clean up PLOPs for next iteration using TRUNCATE (faster than deleting by pod UID)
+			// This keeps process_indicators intact since they're added once before the benchmark
+			_, err := postgres.DB.Exec(ctx, "TRUNCATE listening_endpoints")
+			require.NoError(b, err)
 		}
 	}
 }
@@ -139,18 +127,18 @@ func BenchmarkRemovePlopsByPod(b *testing.B) {
 func benchmarkRemovePlopsByPod(b *testing.B, nPort int, nProcess int, nPod int) func(*testing.B) {
 	return func(b *testing.B) {
 		// Setup database once before the benchmark loop
-		ctx, ds := setupBenchmark(b)
+		ctx, ds, _ := setupBenchmark(b)
 
 		// Generate a dataset with nPod pods (background data)
 		allPodData := makeRandomPlops(nPort, nProcess, nPod, fixtureconsts.Deployment1)
-
+		
 		// Generate data for one additional pod that we'll repeatedly insert/delete
 		targetPodData := makeRandomPlops(nPort, nProcess, 1, fixtureconsts.Deployment1)
 		targetPodUID := targetPodData[0].GetPodUid()
 
 		// Insert indicators for all data once
 		addIndicators(b, ctx, ds, append(allPodData, targetPodData...))
-
+		
 		// Insert the background data once (stays for all iterations)
 		if err := ds.AddProcessListeningOnPort(ctx, fixtureconsts.Cluster1, allPodData...); err != nil {
 			require.NoError(b, err)
@@ -161,8 +149,8 @@ func benchmarkRemovePlopsByPod(b *testing.B, nPort int, nProcess int, nPod int) 
 
 		// Benchmark: insert target pod's PLOPs then delete them
 		for i := 0; i < b.N; i++ {
+			// Insert target pod's PLOPs (not timed)
 			b.StopTimer()
-			// Insert target pod's PLOPs
 			if err := ds.AddProcessListeningOnPort(ctx, fixtureconsts.Cluster1, targetPodData...); err != nil {
 				require.NoError(b, err)
 			}
