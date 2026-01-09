@@ -394,7 +394,11 @@ function ImageOverviewTable({
                                 <Tr>
                                     <Td className={getVisibilityClass('image')} dataLabel="Image">
                                         {name ? (
-                                            <ImageNameLink name={name} id={id} digest={image.digest} />
+                                            <ImageNameLink
+                                                name={name}
+                                                id={id}
+                                                digest={image.digest}
+                                            />
                                         ) : (
                                             'Image name not available'
                                         )}

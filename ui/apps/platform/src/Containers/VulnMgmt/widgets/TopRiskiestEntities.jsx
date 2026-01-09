@@ -334,7 +334,10 @@ const TopRiskiestEntities = ({ entityContext, search, limit }) => {
         setSelectedEntity(value);
     }
 
-    const entityContextObject = queryService.entityContextToQueryObject(entityContext, isNewImageDataModelEnabled); // deals with BE inconsistency
+    const entityContextObject = queryService.entityContextToQueryObject(
+        entityContext,
+        isNewImageDataModelEnabled
+    ); // deals with BE inconsistency
 
     const queryObject = {
         ...entityContextObject,

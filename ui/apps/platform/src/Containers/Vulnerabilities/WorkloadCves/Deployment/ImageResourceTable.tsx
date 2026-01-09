@@ -67,7 +67,11 @@ function ImageResourceTable({ data, getSortParams }: ImageResourceTableProps) {
                     >
                         <Tr>
                             <Td dataLabel="Name" width={50}>
-                                {name ? <ImageNameLink id={id} name={name} digest={digest} /> : 'NAME UNKNOWN'}
+                                {name ? (
+                                    <ImageNameLink id={id} name={name} digest={digest} />
+                                ) : (
+                                    'NAME UNKNOWN'
+                                )}
                             </Td>
                             {/* Given that this is in the context of a deployment, when would `deploymentCount` ever be less than zero? */}
                             <Td dataLabel="Image status">

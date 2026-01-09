@@ -77,7 +77,10 @@ const CvesByCvssScore = ({ entityContext, parentContext }) => {
 
     const { loading, data = {} } = useQuery(queryToUse, {
         variables: {
-            query: queryService.entityContextToQueryString(entityContext, isNewImageDataModelEnabled),
+            query: queryService.entityContextToQueryString(
+                entityContext,
+                isNewImageDataModelEnabled
+            ),
             scopeQuery: getScopeQuery(parentContext),
         },
     });
