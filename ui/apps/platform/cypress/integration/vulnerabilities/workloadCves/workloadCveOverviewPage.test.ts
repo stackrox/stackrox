@@ -92,10 +92,13 @@ describe('Workload CVE overview page tests', () => {
             // @ts-ignore
             selectEntityTab(entity);
 
-            // Ensure that only the correct filter chip is present
-            const filterChipGroupName = 'CVE severity';
-            cy.get(selectors.filterChipGroupItem(filterChipGroupName, 'Critical'));
-            cy.get(selectors.filterChipGroupItems(filterChipGroupName)).should('have.lengthOf', 1);
+            // Ensure that only the correct filter label is present
+            const filterLabelGroupName = 'CVE severity';
+            cy.get(selectors.filterLabelGroupItem(filterLabelGroupName, 'Critical'));
+            cy.get(selectors.filterLabelGroupItems(filterLabelGroupName)).should(
+                'have.lengthOf',
+                1
+            );
 
             // TODO - See if there is a clean way to re-enable this to handle both cases where the
             // feature flag is not enabled and not enabled

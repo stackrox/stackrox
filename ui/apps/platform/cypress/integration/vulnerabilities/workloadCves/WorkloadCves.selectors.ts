@@ -29,6 +29,17 @@ export const selectors = {
         `${selectors.filterChipGroupForCategory(category)} + ul li:contains("${item}")`,
     filterChipGroupItemRemove: (category, item) =>
         `${selectors.filterChipGroupItem(category, item)} button[aria-label="close"]`,
+    filterLabelGroup: `${filterChipSection} .pf-v5-c-label-group`,
+    filterLabelGroupForCategory: (category) =>
+        `${selectors.filterLabelGroup} *:contains("${category}")`,
+    filterLabelGroupRemove: (category) =>
+        `${selectors.filterLabelGroupForCategory(category)} button[aria-label="close"]`,
+    filterLabelGroupItems: (category) =>
+        `${selectors.filterLabelGroupForCategory(category)} + ul li`,
+    filterLabelGroupItem: (category, item) =>
+        `${selectors.filterLabelGroupForCategory(category)} + ul li:contains("${item}")`,
+    filterLabelGroupItemRemove: (category, item) =>
+        `${selectors.filterLabelGroupItem(category, item)} button[aria-label="close"]`,
 
     searchEntityDropdown:
         '.pf-v5-c-toolbar button[aria-label="compound search filter entity selector toggle"]',
