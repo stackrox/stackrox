@@ -53,7 +53,7 @@ function objectToWhereClause(query, delimiter = '+') {
         .slice(0, -delimiter.length);
 }
 
-function entityContextToQueryObject(entityContext) {
+function entityContextToQueryObject(entityContext, isNewImageDataModelEnabled = false) {
     if (!entityContext) {
         return {};
     }
@@ -61,7 +61,12 @@ function entityContextToQueryObject(entityContext) {
     return Object.keys(entityContext).reduce((acc, key) => {
         const entityQueryObj = {};
         if (key === entityTypes.IMAGE) {
-            entityQueryObj[`${key} SHA`] = entityContext[key];
+            // In v2 model, image IDs are UUIDs, so use IMAGE ID instead of IMAGE SHA
+            if (isNewImageDataModelEnabled) {
+                entityQueryObj[`${key} ID`] = entityContext[key];
+            } else {
+                entityQueryObj[`${key} SHA`] = entityContext[key];
+            }
         } else if (key === entityTypes.IMAGE_COMPONENT || key === entityTypes.NODE_COMPONENT) {
             entityQueryObj['COMPONENT ID'] = entityContext[key];
         } else if (
@@ -77,8 +82,8 @@ function entityContextToQueryObject(entityContext) {
     }, {});
 }
 
-function entityContextToQueryString(entityContext) {
-    const queryObject = entityContextToQueryObject(entityContext);
+function entityContextToQueryString(entityContext, isNewImageDataModelEnabled = false) {
+    const queryObject = entityContextToQueryObject(entityContext, isNewImageDataModelEnabled);
     return objectToWhereClause(queryObject);
 }
 
