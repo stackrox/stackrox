@@ -83,7 +83,7 @@ func toVirtualMachineScanComponentVulnerabilities(
 	vulnerabilitiesByID map[string]*v4.VulnerabilityReport_Vulnerability,
 	vulnerabilityIDs []string,
 ) []*storage.VirtualMachineVulnerability {
-	embeddedVulns := vulnerabilities(vulnerabilitiesByID, vulnerabilityIDs)
+	embeddedVulns := vulnerabilities(vulnerabilitiesByID, vulnerabilityIDs, "")
 	result := make([]*storage.VirtualMachineVulnerability, 0, len(embeddedVulns))
 	for _, vuln := range embeddedVulns {
 		resultVuln := &storage.VirtualMachineVulnerability{

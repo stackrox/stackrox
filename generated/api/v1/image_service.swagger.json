@@ -993,9 +993,13 @@
         },
         "epss": {
           "$ref": "#/definitions/storageEPSS"
+        },
+        "datasource": {
+          "type": "string",
+          "title": "datasource is for internal use only"
         }
       },
-      "title": "Next Tag: 26"
+      "title": "Next Tag: 27"
     },
     "storageEmbeddedVulnerabilityScoreVersion": {
       "type": "string",

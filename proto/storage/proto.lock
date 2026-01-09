@@ -19721,6 +19721,11 @@
                 "id": 23,
                 "name": "epss",
                 "type": "EPSS"
+              },
+              {
+                "id": 26,
+                "name": "datasource",
+                "type": "string"
               }
             ],
             "reserved_ids": [
