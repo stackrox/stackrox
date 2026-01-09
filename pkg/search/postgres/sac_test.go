@@ -222,7 +222,7 @@ func TestEnrichQueryWithSACFilter(t *testing.T) {
 		assert.Equal(t, "production", originalMfq.GetValue())
 
 		// SAC filter should have a base query (it's not nil and not a simple match field query)
-		assert.Equal(t, sacQuery, expectedMatchNoneQuery, "sacQuery must be a match none query")
+		protoassert.Equal(t, sacQuery, expectedMatchNoneQuery, "sacQuery must be a match none query")
 
 		// Verify Selects are preserved
 		assert.Len(t, enrichedQuery.GetSelects(), 3, "All 3 Selects should be preserved")
