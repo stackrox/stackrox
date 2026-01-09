@@ -35,7 +35,7 @@ export const selectors = {
     filterLabelGroupRemove: (category) =>
         `${selectors.filterLabelGroupForCategory(category)} button[aria-label="close"]`,
     filterLabelGroupItems: (category) =>
-        `${selectors.filterChipGroupForCategory(category)} + ul li`,
+        `${selectors.filterLabelGroupForCategory(category)} + ul li`,
     filterLabelGroupItem: (category, item) =>
         `${selectors.filterLabelGroupForCategory(category)} + ul li:contains("${item}")`,
     filterLabelGroupItemRemove: (category, item) =>
