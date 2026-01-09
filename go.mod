@@ -39,7 +39,7 @@ require (
 	github.com/cenkalti/backoff/v4 v4.3.0
 	github.com/cespare/xxhash v1.1.0
 	github.com/cloudflare/cfssl v1.6.5
-	github.com/cockroachdb/pebble/v2 v2.1.2
+	github.com/cockroachdb/pebble/v2 v2.1.3
 	github.com/containers/image/v5 v5.36.2
 	github.com/coreos/go-oidc/v3 v3.17.0
 	github.com/coreos/go-systemd/v22 v22.6.0
@@ -266,7 +266,7 @@ require (
 	github.com/cockroachdb/errors v1.12.0 // indirect
 	github.com/cockroachdb/logtags v0.0.0-20241215232642-bb51bb14a506 // indirect
 	github.com/cockroachdb/redact v1.1.6 // indirect
-	github.com/cockroachdb/swiss v0.0.0-20250624142022-d6e517c1d961 // indirect
+	github.com/cockroachdb/swiss v0.0.0-20251224182025-b0f6560f979b // indirect
 	github.com/cockroachdb/tokenbucket v0.0.0-20250429170803-42689b6311bb // indirect
 	github.com/coder/websocket v1.8.14 // indirect
 	github.com/common-nighthawk/go-figure v0.0.0-20210622060536-734e95fb86be // indirect
