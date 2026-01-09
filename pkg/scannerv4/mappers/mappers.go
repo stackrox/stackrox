@@ -689,6 +689,7 @@ func toProtoV4VulnerabilitiesMap(
 			FixedInVersion:     fixedInVersion(v),
 			Cvss:               preferredCVSS,
 			CvssMetrics:        metrics,
+			Updater:            v.Updater,
 		}
 		if vulnEPSS != nil {
 			vulnerabilities[k].EpssMetrics = &v4.VulnerabilityReport_Vulnerability_EPSS{
