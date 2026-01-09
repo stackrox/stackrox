@@ -175,6 +175,10 @@ spec:
           - containerPort: 9091
             name: monitoring-tls
           {{- end }}
+          {{- if ._rox.env.openshift }}
+          - containerPort: 9444
+            name: proxy-https
+          {{- end }}
         command:
           - kubernetes-sensor
         resources:
@@ -277,6 +281,11 @@ spec:
           mountPath: /run/secrets/stackrox.io/monitoring-tls
           readOnly: true
         {{- end }}
+        {{- if and ._rox.env.openshift }}
+        - name: proxy-tls-volume
+          mountPath: /run/secrets/stackrox.io/proxy-tls/
+          readOnly: true
+        {{- end }}
       volumes:
       {{- if ._rox._securedClusterCertRefresh }}
       - name: certs
@@ -353,6 +362,11 @@ spec:
         secret:
           secretName: sensor-monitoring-tls
       {{- end }}
+      {{- if ._rox.env.openshift }}
+      - name: proxy-tls-volume
+        secret:
+          secretName: sensor-proxy-tls
+      {{- end }}
 ---
 apiVersion: v1
 kind: Service
@@ -390,6 +404,28 @@ spec:
   type: ClusterIP
   sessionAffinity: None
 ---
+{{- if ._rox.env.openshift }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: sensor-proxy
+  namespace: {{ ._rox._namespace }}
+  labels:
+    {{- include "srox.labels" (list . "service" "sensor-proxy") | nindent 4 }}
+  annotations:
+    {{- include "srox.annotations" (list . "service" "sensor-proxy") | nindent 4 }}
+    service.beta.openshift.io/serving-cert-secret-name: sensor-proxy-tls
+spec:
+  ports:
+  - name: https
+    port: 443
+    targetPort: proxy-https
+    protocol: TCP
+  selector:
+    app: sensor
+  type: ClusterIP
+---
+{{- end }}
 
 {{- if ._rox.env.istio }}
 apiVersion: networking.istio.io/v1alpha3
