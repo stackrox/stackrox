@@ -4,7 +4,6 @@ import (
 	"context"
 
 	"github.com/stackrox/rox/central/administration/events"
-	baseImageDatastore "github.com/stackrox/rox/central/baseimage/datastore"
 	"github.com/stackrox/rox/central/image/datastore"
 	imageV2Datastore "github.com/stackrox/rox/central/imagev2/datastore"
 	"github.com/stackrox/rox/central/risk/manager"
@@ -40,7 +39,6 @@ type Service interface {
 func New(
 	datastore datastore.DataStore,
 	datastoreV2 imageV2Datastore.DataStore,
-	baseImageDatastore baseImageDatastore.DataStore,
 	mappingDatastore datastore.DataStore,
 	watchedImages watchedImageDataStore.DataStore,
 	riskManager manager.Manager,
@@ -56,7 +54,6 @@ func New(
 	return &serviceImpl{
 		datastore:             datastore,
 		datastoreV2:           datastoreV2,
-		baseImageDatastore:    baseImageDatastore,
 		mappingDatastore:      mappingDatastore,
 		watchedImages:         watchedImages,
 		riskManager:           riskManager,
