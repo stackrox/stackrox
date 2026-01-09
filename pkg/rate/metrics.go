@@ -17,6 +17,7 @@ func init() {
 		RequestsTotal,
 		RequestsAccepted,
 		RequestsRejected,
+		ActiveClients,
 		PerClientRate,
 		PerClientBucketCapacity,
 	)
@@ -54,6 +55,17 @@ var (
 			Help:      "Requests rejected by the rate limiter",
 		},
 		[]string{"workload", "client_id", "reason"},
+	)
+
+	// ActiveClients tracks the current number of active clients for each workload.
+	ActiveClients = prometheus.NewGaugeVec(
+		prometheus.GaugeOpts{
+			Namespace: metrics.PrometheusNamespace,
+			Subsystem: metrics.CentralSubsystem.String(),
+			Name:      "rate_limiter_active_clients",
+			Help:      "Current number of active clients being rate limited",
+		},
+		[]string{"workload"},
 	)
 
 	// PerClientRate tracks the current per-client rate limit (requests per second).
