@@ -97,70 +97,70 @@ func TestTryConsume_Disabled(t *testing.T) {
 	}
 }
 
-func TestTryConsume_SingleSensor(t *testing.T) {
+func TestTryConsume_SingleClient(t *testing.T) {
 	clock := NewTestClock(time.Now())
 	limiter := mustNewLimiterWithClock(t, "test", 10, 50, clock) // rate=10 req/s, bucket capacity=50
 
-	// With 1 sensor, per-sensor burst = 50/1 = 50 requests
+	// With 1 client, per-client burst = 50/1 = 50 requests
 	for i := range 50 {
-		allowed, reason := limiter.TryConsume("sensor-1")
+		allowed, reason := limiter.TryConsume("client-1")
 		assert.True(t, allowed, "request %d should be allowed within burst", i)
 		assert.Empty(t, reason)
 	}
 
 	// Time is frozen - no new tokens can be added between requests.
 	// 51st request should be rejected (burst exhausted)
-	allowed, reason := limiter.TryConsume("sensor-1")
+	allowed, reason := limiter.TryConsume("client-1")
 	assert.False(t, allowed, "request should be rejected after burst exhausted")
 	assert.Equal(t, "rate limit exceeded", reason)
 
 	// Advance time and verify tokens refill correctly
 	clock.Advance(500 * time.Millisecond) // At 10 req/s, expect ~5 tokens
 	for i := range 5 {
-		allowed, _ := limiter.TryConsume("sensor-1")
+		allowed, _ := limiter.TryConsume("client-1")
 		assert.True(t, allowed, "request %d should be allowed after time advance", i)
 	}
-	allowed, _ = limiter.TryConsume("sensor-1")
+	allowed, _ = limiter.TryConsume("client-1")
 	assert.False(t, allowed, "should be rejected after consuming refilled tokens")
 }
 
-func TestTryConsume_MultipleSensors_Fairness(t *testing.T) {
+func TestTryConsume_MultipleClients_Fairness(t *testing.T) {
 	clock := NewTestClock(time.Now())
 	limiter := mustNewLimiterWithClock(t, "test", 12, 60, clock) // rate=12 req/s, bucket capacity=60
 
-	sensor1 := "sensor-1"
-	sensor2 := "sensor-2"
-	sensor3 := "sensor-3"
+	client1 := "client-1"
+	client2 := "client-2"
+	client3 := "client-3"
 
-	// Create all sensors first to establish fair rates upfront
-	// With 3 sensors, each gets per-sensor burst = 60/3 = 20
-	limiter.getOrCreateLimiter(sensor1)
-	limiter.getOrCreateLimiter(sensor2)
-	limiter.getOrCreateLimiter(sensor3)
+	// Create all clients first to establish fair rates upfront
+	// With 3 clients, each gets per-client burst = 60/3 = 20
+	limiter.getOrCreateLimiter(client1)
+	limiter.getOrCreateLimiter(client2)
+	limiter.getOrCreateLimiter(client3)
 
-	// Exhaust burst for sensor-1 (20 requests)
+	// Exhaust burst for client-1 (20 requests)
 	for i := range 20 {
-		allowed, _ := limiter.TryConsume(sensor1)
-		assert.True(t, allowed, "sensor-1 request %d should be allowed", i)
+		allowed, _ := limiter.TryConsume(client1)
+		assert.True(t, allowed, "client-1 request %d should be allowed", i)
 	}
-	allowed, _ := limiter.TryConsume(sensor1)
-	assert.False(t, allowed, "sensor-1 should be rate limited after burst")
+	allowed, _ := limiter.TryConsume(client1)
+	assert.False(t, allowed, "client-1 should be rate limited after burst")
 
-	// Sensor-2 and sensor-3 should still have their full burst capacity
+	// client-2 and client-3 should still have their full burst capacity
 	for i := range 20 {
-		allowed, _ := limiter.TryConsume(sensor2)
-		assert.True(t, allowed, "sensor-2 request %d should be allowed", i)
+		allowed, _ := limiter.TryConsume(client2)
+		assert.True(t, allowed, "client-2 request %d should be allowed", i)
 	}
 	for i := range 20 {
-		allowed, _ := limiter.TryConsume(sensor3)
-		assert.True(t, allowed, "sensor-3 request %d should be allowed", i)
+		allowed, _ := limiter.TryConsume(client3)
+		assert.True(t, allowed, "client-3 request %d should be allowed", i)
 	}
 
-	// All sensors exhausted - time is frozen so no tokens refilled
-	allowed, _ = limiter.TryConsume(sensor2)
-	assert.False(t, allowed, "sensor-2 should be rate limited")
-	allowed, _ = limiter.TryConsume(sensor3)
-	assert.False(t, allowed, "sensor-3 should be rate limited")
+	// All clients exhausted - time is frozen so no tokens refilled
+	allowed, _ = limiter.TryConsume(client2)
+	assert.False(t, allowed, "client-2 should be rate limited")
+	allowed, _ = limiter.TryConsume(client3)
+	assert.False(t, allowed, "client-3 should be rate limited")
 }
 
 func TestTryConsume_Rebalancing(t *testing.T) {
@@ -168,33 +168,33 @@ func TestTryConsume_Rebalancing(t *testing.T) {
 	// rate=10 req/s, bucket capacity=100
 	limiter := mustNewLimiterWithClock(t, workloadName, 10, 100, clock)
 
-	// Start with sensor-1: per-sensor burst = 100/1 = 100
+	// Start with client-1: per-client burst = 100/1 = 100
 	for i := range 100 {
-		allowed, _ := limiter.TryConsume("sensor-1")
-		assert.True(t, allowed, "sensor-1 initial request %d should be allowed", i)
+		allowed, _ := limiter.TryConsume("client-1")
+		assert.True(t, allowed, "client-1 initial request %d should be allowed", i)
 	}
-	allowed, _ := limiter.TryConsume("sensor-1")
-	assert.False(t, allowed, "sensor-1 should be rate limited after initial burst")
+	allowed, _ := limiter.TryConsume("client-1")
+	assert.False(t, allowed, "client-1 should be rate limited after initial burst")
 
-	// Add sensor-2: rebalances to per-sensor burst = 100/2 = 50
-	// sensor-2 gets fresh bucket with capacity 50
+	// Add client-2: rebalances to per-client burst = 100/2 = 50
+	// client-2 gets fresh bucket with capacity 50
 	for i := range 50 {
-		allowed, _ := limiter.TryConsume("sensor-2")
-		assert.True(t, allowed, "sensor-2 request %d should be allowed after rebalancing", i)
+		allowed, _ := limiter.TryConsume("client-2")
+		assert.True(t, allowed, "client-2 request %d should be allowed after rebalancing", i)
 	}
-	allowed, _ = limiter.TryConsume("sensor-2")
-	assert.False(t, allowed, "sensor-2 should be rate limited after burst")
+	allowed, _ = limiter.TryConsume("client-2")
+	assert.False(t, allowed, "client-2 should be rate limited after burst")
 
-	// Advance time for token refill (at 5 req/s per sensor, 7 tokens refill in 1.4 seconds)
+	// Advance time for token refill (at 5 req/s per client, 7 tokens refill in 1.4 seconds)
 	clock.Advance(1500 * time.Millisecond)
 
-	// Both sensors should get ~7 tokens back (5 req/s * 1.5s)
+	// Both clients should get ~7 tokens back (5 req/s * 1.5s)
 	// Verify we can make a few requests
 	for range 5 {
-		allowed, _ := limiter.TryConsume("sensor-1")
-		assert.True(t, allowed, "sensor-1 should have refilled tokens")
-		allowed, _ = limiter.TryConsume("sensor-2")
-		assert.True(t, allowed, "sensor-2 should have refilled tokens")
+		allowed, _ := limiter.TryConsume("client-1")
+		assert.True(t, allowed, "client-1 should have refilled tokens")
+		allowed, _ = limiter.TryConsume("client-2")
+		assert.True(t, allowed, "client-2 should have refilled tokens")
 	}
 }
 
@@ -203,14 +203,14 @@ func TestTryConsume_BurstWindow(t *testing.T) {
 	// rate=10 req/s, bucket capacity=100
 	limiter := mustNewLimiterWithClock(t, "test", 10, 100, clock)
 
-	// With 1 sensor, per-sensor burst = 100/1 = 100
+	// With 1 client, per-client burst = 100/1 = 100
 	for i := range 100 {
-		allowed, _ := limiter.TryConsume("sensor-1")
+		allowed, _ := limiter.TryConsume("client-1")
 		assert.True(t, allowed, "request %d should be allowed within burst", i)
 	}
 
 	// 101st request rejected
-	allowed, _ := limiter.TryConsume("sensor-1")
+	allowed, _ := limiter.TryConsume("client-1")
 	assert.False(t, allowed, "request should be rejected after burst exhausted")
 
 	// Advance time for refill (at 10 req/s, 15 tokens refill in 1.5 seconds)
@@ -218,132 +218,132 @@ func TestTryConsume_BurstWindow(t *testing.T) {
 
 	// Should get ~15 tokens back - verify we can make at least 10 requests
 	for range 10 {
-		allowed, _ = limiter.TryConsume("sensor-1")
+		allowed, _ = limiter.TryConsume("client-1")
 		assert.True(t, allowed, "should have refilled tokens")
 	}
 }
 
-func TestPerSensorBurst(t *testing.T) {
+func TestPerClientBurst(t *testing.T) {
 	tests := map[string]struct {
 		bucketCapacity                  int
-		numSensors                      int
-		expectedPerSensorBucketCapacity int
+		numClients                      int
+		expectedPerClientBucketCapacity int
 	}{
-		"should calculate burst correctly for single sensor": {
+		"should calculate burst correctly for single client": {
 			bucketCapacity:                  50,
-			numSensors:                      1,
-			expectedPerSensorBucketCapacity: 50, // 50/1 = 50
+			numClients:                      1,
+			expectedPerClientBucketCapacity: 50, // 50/1 = 50
 		},
-		"should calculate burst correctly for multiple sensors": {
+		"should calculate burst correctly for multiple clients": {
 			bucketCapacity:                  60,
-			numSensors:                      3,
-			expectedPerSensorBucketCapacity: 20, // 60/3 = 20
+			numClients:                      3,
+			expectedPerClientBucketCapacity: 20, // 60/3 = 20
 		},
-		"should return minimum bucket capacity of 1 for many sensors": {
+		"should return minimum bucket capacity of 1 for many clients": {
 			bucketCapacity:                  5,
-			numSensors:                      10,
-			expectedPerSensorBucketCapacity: 1, // 5/10 = 0, but min is 1
+			numClients:                      10,
+			expectedPerClientBucketCapacity: 1, // 5/10 = 0, but min is 1
 		},
 	}
 
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
 			limiter := mustNewLimiter(t, "test", 10, tt.bucketCapacity)
-			burst := limiter.perSensorBucketCapacity(tt.numSensors)
-			assert.Equal(t, tt.expectedPerSensorBucketCapacity, burst)
+			burst := limiter.perClientBucketCapacity(tt.numClients)
+			assert.Equal(t, tt.expectedPerClientBucketCapacity, burst)
 		})
 	}
 }
 
-func TestRebalancing_DynamicSensorCount(t *testing.T) {
+func TestRebalancing_DynamicClientCount(t *testing.T) {
 	clock := NewTestClock(time.Now())
 	// rate=30 req/s, bucket capacity=300
 	limiter := mustNewLimiterWithClock(t, "test", 30, 300, clock)
 
-	// Sensor 1: gets 30/1 = 30 req/s, burst = 30*10s = 300
+	// Client 1: gets 30/1 = 30 req/s, burst = 30*10s = 300
 	for range 300 {
-		allowed, _ := limiter.TryConsume("sensor-1")
+		allowed, _ := limiter.TryConsume("client-1")
 		assert.True(t, allowed)
 	}
 
-	// Add sensor 2: rebalances to 30/2 = 15 req/s each, burst = 15*10s = 150
+	// Add client 2: rebalances to 30/2 = 15 req/s each, burst = 15*10s = 150
 	for range 150 {
-		allowed, _ := limiter.TryConsume("sensor-2")
+		allowed, _ := limiter.TryConsume("client-2")
 		assert.True(t, allowed)
 	}
 
-	// Add sensor 3: rebalances to 30/3 = 10 req/s each, burst = 10*10s = 100
+	// Add client 3: rebalances to 30/3 = 10 req/s each, burst = 10*10s = 100
 	for range 100 {
-		allowed, _ := limiter.TryConsume("sensor-3")
+		allowed, _ := limiter.TryConsume("client-3")
 		assert.True(t, allowed)
 	}
 
-	// All sensors should be limited now - time is frozen
-	allowed, _ := limiter.TryConsume("sensor-1")
+	// All clients should be limited now - time is frozen
+	allowed, _ := limiter.TryConsume("client-1")
 	assert.False(t, allowed)
-	allowed, _ = limiter.TryConsume("sensor-2")
+	allowed, _ = limiter.TryConsume("client-2")
 	assert.False(t, allowed)
-	allowed, _ = limiter.TryConsume("sensor-3")
+	allowed, _ = limiter.TryConsume("client-3")
 	assert.False(t, allowed)
 
-	// Advance time for token refill (at 10 req/s per sensor, 15 tokens refill in 1.5s)
+	// Advance time for token refill (at 10 req/s per client, 15 tokens refill in 1.5s)
 	clock.Advance(1500 * time.Millisecond)
 
-	// Each sensor should get ~15 tokens back - verify at least 10 work
+	// Each client should get ~15 tokens back - verify at least 10 work
 	for range 10 {
-		allowed, _ := limiter.TryConsume("sensor-1")
-		assert.True(t, allowed, "sensor-1 should get tokens after refill")
-		allowed, _ = limiter.TryConsume("sensor-2")
-		assert.True(t, allowed, "sensor-2 should get tokens after refill")
-		allowed, _ = limiter.TryConsume("sensor-3")
-		assert.True(t, allowed, "sensor-3 should get tokens after refill")
+		allowed, _ := limiter.TryConsume("client-1")
+		assert.True(t, allowed, "client-1 should get tokens after refill")
+		allowed, _ = limiter.TryConsume("client-2")
+		assert.True(t, allowed, "client-2 should get tokens after refill")
+		allowed, _ = limiter.TryConsume("client-3")
+		assert.True(t, allowed, "client-3 should get tokens after refill")
 	}
 }
 
-func TestOnSensorDisconnect(t *testing.T) {
+func TestOnClientDisconnect(t *testing.T) {
 	clock := NewTestClock(time.Now())
 	limiter := mustNewLimiterWithClock(t, "test", 20, 100, clock) // rate=20 req/s, bucket capacity=100
 
-	// Create 2 sensors: each gets 20/2 = 10 req/s, burst = 10*5s = 50
-	limiter.getOrCreateLimiter("sensor-1")
-	limiter.getOrCreateLimiter("sensor-2")
+	// Create 2 clients: each gets 20/2 = 10 req/s, burst = 10*5s = 50
+	limiter.getOrCreateLimiter("client-1")
+	limiter.getOrCreateLimiter("client-2")
 
-	// Exhaust sensor-1's burst
+	// Exhaust client-1's burst
 	for i := 0; i < 50; i++ {
-		allowed, _ := limiter.TryConsume("sensor-1")
+		allowed, _ := limiter.TryConsume("client-1")
 		assert.True(t, allowed)
 	}
-	allowed, _ := limiter.TryConsume("sensor-1")
-	assert.False(t, allowed, "sensor-1 should be limited after burst")
+	allowed, _ := limiter.TryConsume("client-1")
+	assert.False(t, allowed, "client-1 should be limited after burst")
 
-	// Disconnect sensor-2
-	limiter.OnSensorDisconnect("sensor-2")
+	// Disconnect client-2
+	limiter.OnClientDisconnect("client-2")
 
-	// sensor-1 should now get full rate: 20/1 = 20 req/s, burst = 20*5s = 100
+	// client-1 should now get full rate: 20/1 = 20 req/s, burst = 20*5s = 100
 	// The existing limiter's burst is updated to 100, but tokens were exhausted
-	// Just verify the sensor-2 is removed
-	assert.Equal(t, 1, limiter.countActiveSensors())
+	// Just verify the client-2 is removed
+	assert.Equal(t, 1, limiter.countActiveClients())
 
-	// Verify sensor-2 is no longer tracked
-	_, exists := limiter.buckets.Load("sensor-2")
-	assert.False(t, exists, "sensor-2 should be removed from buckets")
+	// Verify client-2 is no longer tracked
+	_, exists := limiter.buckets.Load("client-2")
+	assert.False(t, exists, "client-2 should be removed from buckets")
 }
 
-func TestOnSensorDisconnect_DisabledRateLimiter(t *testing.T) {
+func TestOnClientDisconnect_DisabledRateLimiter(t *testing.T) {
 	limiter := mustNewLimiter(t, "test", 0, 50)
 
 	// Should be a no-op when rate limiting is disabled
-	limiter.OnSensorDisconnect("sensor-1")
-	assert.Equal(t, 0, limiter.countActiveSensors())
+	limiter.OnClientDisconnect("client-1")
+	assert.Equal(t, 0, limiter.countActiveClients())
 }
 
-func TestOnSensorDisconnect_NonexistentSensor(t *testing.T) {
+func TestOnClientDisconnect_NonexistentClient(t *testing.T) {
 	limiter := mustNewLimiter(t, "test", 10, 50)
 
-	// Create one sensor
-	limiter.getOrCreateLimiter("sensor-1")
+	// Create one client
+	limiter.getOrCreateLimiter("client-1")
 
-	// Disconnect a sensor that was never connected - should be a no-op
-	limiter.OnSensorDisconnect("nonexistent-sensor")
-	assert.Equal(t, 1, limiter.countActiveSensors())
+	// Disconnect a client that was never connected - should be a no-op
+	limiter.OnClientDisconnect("nonexistent-client")
+	assert.Equal(t, 1, limiter.countActiveClients())
 }

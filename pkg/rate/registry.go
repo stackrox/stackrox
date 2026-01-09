@@ -35,14 +35,14 @@ func GetLimiter(workloadName string) *Limiter {
 	return registry[workloadName]
 }
 
-// OnSensorDisconnectAll notifies all registered limiters that a sensor has disconnected.
-// This should be called when a sensor connection is terminated.
-func OnSensorDisconnectAll(sensorID string) {
+// OnClientDisconnectAll notifies all registered limiters that a client has disconnected.
+// This should be called when a client connection is terminated.
+func OnClientDisconnectAll(clientID string) {
 	registryLock.RLock()
 	defer registryLock.RUnlock()
 
 	for _, limiter := range registry {
-		limiter.OnSensorDisconnect(sensorID)
+		limiter.OnClientDisconnect(clientID)
 	}
 }
 

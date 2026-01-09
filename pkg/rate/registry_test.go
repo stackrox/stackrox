@@ -47,36 +47,36 @@ func (s *RegistryTestSuite) TestGetLimiter() {
 	assert.Same(s.T(), registered, retrieved)
 }
 
-func (s *RegistryTestSuite) TestOnSensorDisconnectAll() {
+func (s *RegistryTestSuite) TestOnClientDisconnectAll() {
 	// Register two workload limiters
 	limiterA, err := RegisterLimiter("workload_a", 10.0, 50)
 	require.NoError(s.T(), err)
 	limiterB, err := RegisterLimiter("workload_b", 20.0, 100)
 	require.NoError(s.T(), err)
 
-	// Create sensors in both limiters
-	limiterA.TryConsume("sensor-1")
-	limiterA.TryConsume("sensor-2")
-	limiterB.TryConsume("sensor-1")
-	limiterB.TryConsume("sensor-3")
+	// Create clients in both limiters
+	limiterA.TryConsume("client-1")
+	limiterA.TryConsume("client-2")
+	limiterB.TryConsume("client-1")
+	limiterB.TryConsume("client-3")
 
-	assert.Equal(s.T(), 2, limiterA.countActiveSensors())
-	assert.Equal(s.T(), 2, limiterB.countActiveSensors())
+	assert.Equal(s.T(), 2, limiterA.countActiveClients())
+	assert.Equal(s.T(), 2, limiterB.countActiveClients())
 
-	// Disconnect sensor-1 from all limiters
-	OnSensorDisconnectAll("sensor-1")
+	// Disconnect client-1 from all limiters
+	OnClientDisconnectAll("client-1")
 
-	assert.Equal(s.T(), 1, limiterA.countActiveSensors())
-	assert.Equal(s.T(), 1, limiterB.countActiveSensors())
+	assert.Equal(s.T(), 1, limiterA.countActiveClients())
+	assert.Equal(s.T(), 1, limiterB.countActiveClients())
 
-	// Verify correct sensors remain
-	_, existsA1 := limiterA.buckets.Load("sensor-1")
-	_, existsA2 := limiterA.buckets.Load("sensor-2")
+	// Verify correct clients remain
+	_, existsA1 := limiterA.buckets.Load("client-1")
+	_, existsA2 := limiterA.buckets.Load("client-2")
 	assert.False(s.T(), existsA1)
 	assert.True(s.T(), existsA2)
 
-	_, existsB1 := limiterB.buckets.Load("sensor-1")
-	_, existsB3 := limiterB.buckets.Load("sensor-3")
+	_, existsB1 := limiterB.buckets.Load("client-1")
+	_, existsB3 := limiterB.buckets.Load("client-3")
 	assert.False(s.T(), existsB1)
 	assert.True(s.T(), existsB3)
 }
