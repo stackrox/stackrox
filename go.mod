@@ -162,14 +162,14 @@ require (
 	gopkg.in/yaml.v3 v3.0.1
 	gorm.io/driver/postgres v1.6.0
 	gorm.io/gorm v1.30.0
-	helm.sh/helm/v3 v3.18.1
+	helm.sh/helm/v3 v3.18.4
 	k8s.io/api v0.34.2
-	k8s.io/apiextensions-apiserver v0.33.0
+	k8s.io/apiextensions-apiserver v0.33.2
 	k8s.io/apimachinery v0.34.2
-	k8s.io/apiserver v0.33.0
-	k8s.io/cli-runtime v0.33.0
+	k8s.io/apiserver v0.33.2
+	k8s.io/cli-runtime v0.33.2
 	k8s.io/client-go v0.34.2
-	k8s.io/kubectl v0.33.0
+	k8s.io/kubectl v0.33.2
 	k8s.io/kubelet v0.29.15
 	k8s.io/utils v0.0.0-20250820121507-0af2bda4dd1d
 	sigs.k8s.io/controller-runtime v0.20.4
@@ -501,15 +501,15 @@ require (
 	gopkg.in/tomb.v1 v1.0.0-20141024135613-dd632973f1e7 // indirect
 	gopkg.in/warnings.v0 v0.1.2 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
-	k8s.io/component-base v0.33.0 // indirect
-	k8s.io/component-helpers v0.33.0 // indirect
+	k8s.io/component-base v0.33.2 // indirect
+	k8s.io/component-helpers v0.33.2 // indirect
 	k8s.io/klog/v2 v2.130.1 // indirect
 	k8s.io/kube-openapi v0.0.0-20250710124328-f3f2b991d03b // indirect
 	modernc.org/libc v1.65.7 // indirect
 	modernc.org/mathutil v1.7.1 // indirect
 	modernc.org/memory v1.11.0 // indirect
 	modernc.org/sqlite v1.37.1 // indirect
-	oras.land/oras-go/v2 v2.5.0 // indirect
+	oras.land/oras-go/v2 v2.6.0 // indirect
 	sigs.k8s.io/apiserver-network-proxy/konnectivity-client v0.31.2 // indirect
 	sigs.k8s.io/json v0.0.0-20241014173422-cfa47c3a1cc8 // indirect
 	sigs.k8s.io/kustomize/api v0.19.0 // indirect
