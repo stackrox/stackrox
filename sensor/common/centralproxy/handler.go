@@ -32,13 +32,13 @@ func NewProxyHandler(centralEndpoint string, centralCertificates []*x509.Certifi
 		return nil, errors.Wrap(err, "parsing endpoint")
 	}
 
-	transport, err := newHTTPTransportWithToken(centralBaseURL, centralCertificates, token)
+	proxy, err := newCentralReverseProxy(centralBaseURL, centralCertificates, token)
 	if err != nil {
-		return nil, errors.Wrap(err, "creating HTTP transport with token")
+		return nil, errors.Wrap(err, "creating central reverse proxy")
 	}
 
 	return &Handler{
-		proxy: newProxy(centralBaseURL, transport),
+		proxy: proxy,
 	}, nil
 }
 
@@ -55,7 +55,11 @@ func (h *Handler) Notify(e common.SensorComponentEvent) {
 
 // validateRequest validates the incoming request and writes appropriate error responses.
 func (h *Handler) validateRequest(writer http.ResponseWriter, request *http.Request) bool {
-	if request.Method != http.MethodGet && request.Method != http.MethodPost {
+	// Allow GET, POST, OPTIONS (for CORS preflight), and HEAD
+	switch request.Method {
+	case http.MethodGet, http.MethodPost, http.MethodOptions, http.MethodHead:
+		// allowed
+	default:
 		pkghttputil.WriteGRPCStyleErrorf(writer, codes.Unimplemented, "method %s not allowed", request.Method)
 		return false
 	}

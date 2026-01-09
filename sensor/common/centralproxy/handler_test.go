@@ -5,6 +5,7 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"net/http/httputil"
 	"net/url"
 	"strings"
 	"testing"
@@ -14,7 +15,21 @@ import (
 	"github.com/stackrox/rox/sensor/common"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"google.golang.org/grpc/codes"
 )
+
+// newProxyForTest creates a test proxy with a custom transport for testing purposes.
+func newProxyForTest(t *testing.T, baseURL *url.URL, transport http.RoundTripper) *httputil.ReverseProxy {
+	return &httputil.ReverseProxy{
+		Transport: transport,
+		Rewrite: func(r *httputil.ProxyRequest) {
+			r.SetURL(baseURL)
+		},
+		ErrorHandler: func(w http.ResponseWriter, r *http.Request, err error) {
+			pkghttputil.WriteGRPCStyleErrorf(w, codes.Internal, "failed to contact central: %v", err)
+		},
+	}
+}
 
 func TestValidateRequest(t *testing.T) {
 	tests := []struct {
@@ -33,6 +48,18 @@ func TestValidateRequest(t *testing.T) {
 		{
 			name:             "POST is allowed",
 			method:           http.MethodPost,
+			centralReachable: true,
+			wantStatusCode:   0,
+		},
+		{
+			name:             "OPTIONS is allowed (for CORS preflight)",
+			method:           http.MethodOptions,
+			centralReachable: true,
+			wantStatusCode:   0,
+		},
+		{
+			name:             "HEAD is allowed",
+			method:           http.MethodHead,
 			centralReachable: true,
 			wantStatusCode:   0,
 		},
@@ -86,7 +113,7 @@ func TestServeHTTP(t *testing.T) {
 		require.NoError(t, err)
 
 		h := &Handler{
-			proxy: newProxy(baseURL, nil),
+			proxy: newProxyForTest(t, baseURL, nil),
 		}
 		h.centralReachable.Store(false) // Will fail validation
 
@@ -114,7 +141,7 @@ func TestServeHTTP(t *testing.T) {
 		require.NoError(t, err)
 
 		h := &Handler{
-			proxy: newProxy(baseURL, mockTransport),
+			proxy: newProxyForTest(t, baseURL, mockTransport),
 		}
 		h.centralReachable.Store(true)
 
@@ -136,7 +163,7 @@ func TestServeHTTP(t *testing.T) {
 		require.NoError(t, err)
 
 		h := &Handler{
-			proxy: newProxy(baseURL, mockTransport),
+			proxy: newProxyForTest(t, baseURL, mockTransport),
 		}
 		h.centralReachable.Store(true)
 
@@ -207,7 +234,7 @@ func TestServeHTTP_ConstructsAbsoluteURLs(t *testing.T) {
 				}, nil
 			})
 
-			h := &Handler{proxy: newProxy(baseURL, mockTransport)}
+			h := &Handler{proxy: newProxyForTest(t, baseURL, mockTransport)}
 			h.centralReachable.Store(true)
 
 			req := httptest.NewRequest(http.MethodGet, tt.requestPath, nil)
