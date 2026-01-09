@@ -56,7 +56,7 @@ function RiskDetailsPage(): ReactElement {
                     <FlexItem>
                         {isRouteEnabledForNetworkGraph && data && (
                             <Button
-                                variant="secondary"
+                                variant="link"
                                 href={getLinkToDeploymentInNetworkGraph({
                                     cluster: data.deployment.clusterName,
                                     namespace: data.deployment.namespace,

@@ -12,12 +12,12 @@ const riskIndicatorsTab = 'Risk indicators';
 const deploymentDetailsTab = 'Deployment details';
 const processDiscoveryTab = 'Process discovery';
 
-export type RiskSidePanelTabsProps = {
+export type RiskDetailTabsProps = {
     deployment: Deployment;
     risk: Risk | null | undefined;
 };
 
-function RiskDetailTabs({ deployment, risk }) {
+function RiskDetailTabs({ deployment, risk }: RiskDetailTabsProps) {
     const { hasReadAccess } = usePermissions();
     const hasReadAccessForDeploymentExtension = hasReadAccess('DeploymentExtension');
 
@@ -38,18 +38,18 @@ function RiskDetailTabs({ deployment, risk }) {
                 >
                     <Tab
                         eventKey={riskIndicatorsTab}
-                        title={<TabTitleText>Risk indicators</TabTitleText>}
+                        title={<TabTitleText>{riskIndicatorsTab}</TabTitleText>}
                         tabContentId={riskIndicatorsTab}
                     />
                     <Tab
                         eventKey={deploymentDetailsTab}
-                        title={<TabTitleText>Deployment details</TabTitleText>}
+                        title={<TabTitleText>{deploymentDetailsTab}</TabTitleText>}
                         tabContentId={deploymentDetailsTab}
                     />
                     {hasReadAccessForDeploymentExtension && (
                         <Tab
                             eventKey={processDiscoveryTab}
-                            title={<TabTitleText>Process discovery</TabTitleText>}
+                            title={<TabTitleText>{processDiscoveryTab}</TabTitleText>}
                             tabContentId={processDiscoveryTab}
                         />
                     )}
