@@ -6,19 +6,14 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
-)
-
-const (
-	proxyCertPath = "/run/secrets/stackrox.io/proxy-tls/tls.crt"
-	proxyKeyPath  = "/run/secrets/stackrox.io/proxy-tls/tls.key"
-	proxyPort     = ":9444"
+	"github.com/stackrox/rox/pkg/env"
 )
 
 // StartProxyServer starts a dedicated HTTP server for the /proxy/central endpoint
 // using an OpenShift service CA signed certificate. Returns the server instance for
 // lifecycle management (e.g., graceful shutdown).
 func StartProxyServer(h http.Handler) (*http.Server, error) {
-	cert, err := tls.LoadX509KeyPair(proxyCertPath, proxyKeyPath)
+	cert, err := tls.LoadX509KeyPair(env.CentralProxyCertPath.Setting(), env.CentralProxyKeyPath.Setting())
 	if err != nil {
 		return nil, errors.Wrap(err, "loading proxy TLS certificate")
 	}
@@ -32,7 +27,7 @@ func StartProxyServer(h http.Handler) (*http.Server, error) {
 	mux.Handle("/proxy/central/", http.StripPrefix("/proxy/central", h))
 
 	server := &http.Server{
-		Addr:              proxyPort,
+		Addr:              env.CentralProxyPort.Setting(),
 		Handler:           mux,
 		TLSConfig:         tlsConfig,
 		ReadHeaderTimeout: 10 * time.Second,
@@ -42,7 +37,7 @@ func StartProxyServer(h http.Handler) (*http.Server, error) {
 	}
 
 	go func() {
-		log.Infof("Starting proxy server on %s with OpenShift service CA signed certificate", proxyPort)
+		log.Infof("Starting proxy server on %s with OpenShift service CA signed certificate", env.CentralProxyPort.Setting())
 		if err := server.ListenAndServeTLS("", ""); err != nil && err != http.ErrServerClosed {
 			log.Errorf("Proxy server failed: %v", err)
 		}
