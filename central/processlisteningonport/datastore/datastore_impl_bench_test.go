@@ -143,14 +143,14 @@ func benchmarkRemovePlopsByPod(b *testing.B, nPort int, nProcess int, nPod int) 
 
 		// Generate a dataset with nPod pods (background data)
 		allPodData := makeRandomPlops(nPort, nProcess, nPod, fixtureconsts.Deployment1)
-		
+
 		// Generate data for one additional pod that we'll repeatedly insert/delete
 		targetPodData := makeRandomPlops(nPort, nProcess, 1, fixtureconsts.Deployment1)
 		targetPodUID := targetPodData[0].GetPodUid()
 
 		// Insert indicators for all data once
 		addIndicators(b, ctx, ds, append(allPodData, targetPodData...))
-		
+
 		// Insert the background data once (stays for all iterations)
 		if err := ds.AddProcessListeningOnPort(ctx, fixtureconsts.Cluster1, allPodData...); err != nil {
 			require.NoError(b, err)
