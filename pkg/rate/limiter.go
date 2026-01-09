@@ -76,6 +76,15 @@ func NewLimiterWithClock(workloadName string, globalRate float64, bucketCapacity
 	if bucketCapacity < 1 {
 		return nil, ErrInvalidBucketCapacity
 	}
+
+	// Initialize metrics for this workload so they're visible in Prometheus immediately.
+	// Set per-client metrics to the maximum values (what a single client would get).
+	RequestsTotal.WithLabelValues(workloadName, OutcomeAccepted).Add(0)
+	RequestsTotal.WithLabelValues(workloadName, OutcomeRejected).Add(0)
+	ActiveClients.WithLabelValues(workloadName).Set(0)
+	PerClientRate.WithLabelValues(workloadName).Set(globalRate)
+	PerClientBucketCapacity.WithLabelValues(workloadName).Set(float64(bucketCapacity))
+
 	return &Limiter{
 		workloadName:   workloadName,
 		globalRate:     globalRate,
@@ -155,6 +164,7 @@ func (l *Limiter) perClientBucketCapacity(numClients int) int {
 // This is called when a new client connects to maintain fairness.
 func (l *Limiter) rebalanceLimiters() {
 	numClients := l.countActiveClients()
+	ActiveClients.WithLabelValues(l.workloadName).Set(float64(numClients))
 	if numClients == 0 {
 		PerClientRate.WithLabelValues(l.workloadName).Set(0)
 		PerClientBucketCapacity.WithLabelValues(l.workloadName).Set(0)
