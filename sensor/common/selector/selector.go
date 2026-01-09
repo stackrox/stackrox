@@ -6,8 +6,7 @@ import (
 
 // LabelsWithLen is label.Labels with added Len() function
 type LabelsWithLen interface {
-	Has(label string) (exists bool)
-	Get(label string) (value string)
+	labels.Labels
 	Len() uint
 }
 
@@ -29,6 +28,12 @@ func (l labelWithLenImpl) Has(label string) bool {
 // Get label
 func (l labelWithLenImpl) Get(label string) string {
 	return l.labels[label]
+}
+
+// Lookup returns the value for the provided label if it exists and whether the provided label exist
+func (l labelWithLenImpl) Lookup(label string) (value string, exists bool) {
+	value, exists = l.labels[label]
+	return value, exists
 }
 
 // Len returns length of labels
