@@ -27,7 +27,7 @@ import (
 )
 
 var (
-	// ccUpdaterSets represents Claircore updater sets to initialize.
+	// ccUpdaterSets represents ClairCore updater sets to initialize.
 	ccUpdaterSets = []string{
 		"alpine",
 		"aws",

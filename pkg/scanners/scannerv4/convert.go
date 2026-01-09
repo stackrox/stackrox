@@ -18,7 +18,7 @@ import (
 
 // vulnDataSourceDelimiter separates the parts of a vuln's datasource.
 // IMPORTANT: This delimiter was chosen because it does not appear in any known
-// Claircore or StackRox updater names.
+// ClairCore or StackRox updater names.
 const vulnDataSourceDelimiter = "::"
 
 func imageScan(metadata *storage.ImageMetadata, report *v4.VulnerabilityReport, scannerVersion string) *storage.ImageScan {
@@ -228,9 +228,8 @@ func vulnerabilities(vulnerabilities map[string]*v4.VulnerabilityReport_Vulnerab
 // The datasource represents CVE uniqueness and can be used to associate a CVE with
 // other data, such as fixed date.
 //
-// IMPORTANT: The datasource value MUST be treated as an opaque string because it contains
-// the Claircore updater which is an 'internal' field with no guarantee it will be stable
-// between releases - do not parse or extract components from it. It should only be used for:
+// IMPORTANT: The datasource value MUST be treated as an opaque string - do not parse or
+// extract components from it. It should only be used for:
 //   - Equality comparisons
 //   - Storage/retrieval as a database key
 //
@@ -238,7 +237,7 @@ func vulnerabilities(vulnerabilities map[string]*v4.VulnerabilityReport_Vulnerab
 // usage given additional fields are required to represent their uniqueness that are not currently
 // exposed to Scanner V4 clients.
 //
-// Examples:
+// Format (subject to change):
 //   - OS vulnerabilities: "updater::os" (e.g., "debian-bookworm-updater::debian:12")
 //   - Language vulnerabilities: "updater" (e.g., "osv/go", "nvd")
 //
