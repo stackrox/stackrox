@@ -421,8 +421,8 @@ metadata:
     {{- include "srox.labels" (list . "service" "sensor-proxy") | nindent 4 }}
   annotations:
     {{- $annotations := dict -}}
-    {{- $_ := include "srox.getAnnotationTemplate" (list . "sensor-proxy_service" $annotations) -}}
-    {{- include "srox.annotations" (list . "service" "sensor-proxy") | nindent 4 }}
+    {{- $_ := set $annotations "service.beta.openshift.io/serving-cert-secret-name" "sensor-proxy-tls" -}}
+    {{- include "srox.annotations" (list . "service" "sensor-proxy" $annotations) | nindent 4 }}
 spec:
   ports:
   - name: https
