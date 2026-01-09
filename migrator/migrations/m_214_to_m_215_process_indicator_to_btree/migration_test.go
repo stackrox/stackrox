@@ -81,7 +81,7 @@ func (s *migrationTestSuite) TestMigration() {
 }
 
 func (s *migrationTestSuite) verifyNewIndexes() {
-	// Verfiy hash indexes no longer exist.
+	// Verify hash indexes no longer exist.
 	exists, err := indexhelper.IndexExists(s.ctx, s.db, tableName, deploymentIndex, "hash")
 	s.Assert().NoError(err)
 	s.Assert().False(exists)

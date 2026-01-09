@@ -57,8 +57,7 @@ export function viewRiskDeploymentByName(deploymentName) {
             .click();
     }, routeMatcherMapForDeployment);
 
-    // Unlike some classic containers, risk list header has different data-testid attribute.
-    cy.get(`[data-testid="panel-header"]:contains("${deploymentName}")`);
+    cy.get(`h1:contains("${deploymentName}")`);
 }
 
 export function viewRiskDeploymentInNetworkGraph() {
@@ -153,7 +152,7 @@ export function clickFirstDrillDownButtonInEventTimeline(fixtureForPodEventTimel
 // interact
 
 export function clickTab(tabText) {
-    cy.get(`button[data-testid="tab"]:contains("${tabText}")`).click();
+    cy.get(`*[role="tablist"] button:contains("${tabText}")`).click();
 }
 
 export function filterEventsByType(eventType) {

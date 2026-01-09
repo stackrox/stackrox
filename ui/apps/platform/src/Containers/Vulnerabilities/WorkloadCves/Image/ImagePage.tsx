@@ -44,7 +44,10 @@ import ImagePageVulnerabilities from './ImagePageVulnerabilities';
 import ImagePageResources from './ImagePageResources';
 import ImagePageSignatureVerification from './ImagePageSignatureVerification';
 import { detailsTabValues } from '../../types';
-import ImageDetailBadges, { imageDetailsFragment } from '../components/ImageDetailBadges';
+import ImageDetailBadges, {
+    imageDetailsFragment,
+    imageV2DetailsFragment,
+} from '../components/ImageDetailBadges';
 import type { ImageDetails } from '../components/ImageDetailBadges';
 import getImageScanMessage from '../utils/getImageScanMessage';
 import { DEFAULT_VM_PAGE_SIZE } from '../../constants';
@@ -54,12 +57,29 @@ import useWorkloadCveViewContext from '../hooks/useWorkloadCveViewContext';
 import type { defaultColumns as deploymentResourcesDefaultColumns } from './DeploymentResourceTable';
 import CreateReportDropdown from '../components/CreateReportDropdown';
 import CreateViewBasedReportModal from '../components/CreateViewBasedReportModal';
+import useFeatureFlags from 'hooks/useFeatureFlags';
 
-export const imageDetailsQuery = gql`
+const imageDetailsQuery = gql`
     ${imageDetailsFragment}
     query getImageDetails($id: ID!) {
         image(id: $id) {
             id
+            name {
+                registry
+                remote
+                tag
+                fullName
+            }
+            ...ImageDetails
+        }
+    }
+`;
+
+const imageV2DetailsQuery = gql`
+    ${imageV2DetailsFragment}
+    query getImageDetails($id: ID!) {
+        image: imageV2(id: $id) {
+            id: digest
             name {
                 registry
                 remote
@@ -92,31 +112,38 @@ export type ImagePageProps = {
     >;
 };
 
+type ImageData = {
+    id: string;
+    name: {
+        registry: string;
+        remote: string;
+        tag: string;
+        fullName: string;
+    } | null;
+} & ImageDetails;
+
 function ImagePage({
     vulnerabilityState,
     showVulnerabilityStateTabs,
     deploymentResourceColumnOverrides,
 }: ImagePageProps) {
+    const { isFeatureFlagEnabled } = useFeatureFlags();
+    const isNewImageDataModelEnabled = isFeatureFlagEnabled('ROX_FLATTEN_IMAGE_DATA');
     const { urlBuilder, pageTitle, baseSearchFilter, viewContext } = useWorkloadCveViewContext();
     const { imageId } = useParams() as { imageId: string };
-    const { data, error } = useQuery<
-        {
-            image: {
-                id: string;
-                name: {
-                    registry: string;
-                    remote: string;
-                    tag: string;
-                    fullName: string;
-                } | null;
-            } & ImageDetails;
-        },
-        {
-            id: string;
-        }
-    >(imageDetailsQuery, {
+
+    const v1Query = useQuery<{ image: ImageData }, { id: string }>(imageDetailsQuery, {
         variables: { id: imageId },
+        skip: isNewImageDataModelEnabled,
     });
+
+    const v2Query = useQuery<{ image: ImageData }, { id: string }>(imageV2DetailsQuery, {
+        variables: { id: imageId },
+        skip: !isNewImageDataModelEnabled,
+    });
+
+    const data = isNewImageDataModelEnabled ? v2Query.data : v1Query.data;
+    const error = isNewImageDataModelEnabled ? v2Query.error : v1Query.error;
     const [activeTabKey, setActiveTabKey] = useURLStringUnion('detailsTab', detailsTabValues);
     const { invalidateAll: refetchAll } = useInvalidateVulnerabilityQueries();
 
@@ -153,7 +180,7 @@ function ImagePage({
         return getVulnStateScopedQueryString(combinedFilter, vulnerabilityState);
     }, [imageId, baseSearchFilter, querySearchFilter, vulnerabilityState]);
 
-    const imageData = data && data.image;
+    const imageData = data?.image;
     const imageName = imageData?.name;
     const imageDisplayName =
         imageData && imageName

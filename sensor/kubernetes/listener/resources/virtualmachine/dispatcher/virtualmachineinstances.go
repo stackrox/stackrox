@@ -2,8 +2,10 @@ package dispatcher
 
 import (
 	"github.com/stackrox/rox/generated/internalapi/central"
+	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/sensor/common/centralcaps"
 	"github.com/stackrox/rox/sensor/common/virtualmachine"
 	"github.com/stackrox/rox/sensor/kubernetes/eventpipeline/component"
 	k8sUtils "github.com/stackrox/rox/sensor/kubernetes/utils"
@@ -41,7 +43,7 @@ func (d *VirtualMachineInstanceDispatcher) ProcessEvent(
 	_ interface{},
 	action central.ResourceAction,
 ) *component.ResourceEvent {
-	if !features.VirtualMachines.Enabled() {
+	if !features.VirtualMachines.Enabled() || !centralcaps.Has(centralsensor.VirtualMachinesSupported) {
 		return nil
 	}
 	virtualMachineInstance := &kubeVirtV1.VirtualMachineInstance{}

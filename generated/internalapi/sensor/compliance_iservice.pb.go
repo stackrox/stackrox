@@ -24,6 +24,101 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
+type MsgToCompliance_ComplianceACK_Action int32
+
+const (
+	MsgToCompliance_ComplianceACK_ACK  MsgToCompliance_ComplianceACK_Action = 0
+	MsgToCompliance_ComplianceACK_NACK MsgToCompliance_ComplianceACK_Action = 1
+)
+
+// Enum value maps for MsgToCompliance_ComplianceACK_Action.
+var (
+	MsgToCompliance_ComplianceACK_Action_name = map[int32]string{
+		0: "ACK",
+		1: "NACK",
+	}
+	MsgToCompliance_ComplianceACK_Action_value = map[string]int32{
+		"ACK":  0,
+		"NACK": 1,
+	}
+)
+
+func (x MsgToCompliance_ComplianceACK_Action) Enum() *MsgToCompliance_ComplianceACK_Action {
+	p := new(MsgToCompliance_ComplianceACK_Action)
+	*p = x
+	return p
+}
+
+func (x MsgToCompliance_ComplianceACK_Action) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (MsgToCompliance_ComplianceACK_Action) Descriptor() protoreflect.EnumDescriptor {
+	return file_internalapi_sensor_compliance_iservice_proto_enumTypes[0].Descriptor()
+}
+
+func (MsgToCompliance_ComplianceACK_Action) Type() protoreflect.EnumType {
+	return &file_internalapi_sensor_compliance_iservice_proto_enumTypes[0]
+}
+
+func (x MsgToCompliance_ComplianceACK_Action) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use MsgToCompliance_ComplianceACK_Action.Descriptor instead.
+func (MsgToCompliance_ComplianceACK_Action) EnumDescriptor() ([]byte, []int) {
+	return file_internalapi_sensor_compliance_iservice_proto_rawDescGZIP(), []int{3, 3, 0}
+}
+
+type MsgToCompliance_ComplianceACK_MessageType int32
+
+const (
+	MsgToCompliance_ComplianceACK_NODE_INVENTORY    MsgToCompliance_ComplianceACK_MessageType = 0 // v2 node scanning (being deprecated)
+	MsgToCompliance_ComplianceACK_NODE_INDEX_REPORT MsgToCompliance_ComplianceACK_MessageType = 1 // v4 node scanning
+	MsgToCompliance_ComplianceACK_VM_INDEX_REPORT   MsgToCompliance_ComplianceACK_MessageType = 2 // VM vulnerability scanning
+)
+
+// Enum value maps for MsgToCompliance_ComplianceACK_MessageType.
+var (
+	MsgToCompliance_ComplianceACK_MessageType_name = map[int32]string{
+		0: "NODE_INVENTORY",
+		1: "NODE_INDEX_REPORT",
+		2: "VM_INDEX_REPORT",
+	}
+	MsgToCompliance_ComplianceACK_MessageType_value = map[string]int32{
+		"NODE_INVENTORY":    0,
+		"NODE_INDEX_REPORT": 1,
+		"VM_INDEX_REPORT":   2,
+	}
+)
+
+func (x MsgToCompliance_ComplianceACK_MessageType) Enum() *MsgToCompliance_ComplianceACK_MessageType {
+	p := new(MsgToCompliance_ComplianceACK_MessageType)
+	*p = x
+	return p
+}
+
+func (x MsgToCompliance_ComplianceACK_MessageType) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (MsgToCompliance_ComplianceACK_MessageType) Descriptor() protoreflect.EnumDescriptor {
+	return file_internalapi_sensor_compliance_iservice_proto_enumTypes[1].Descriptor()
+}
+
+func (MsgToCompliance_ComplianceACK_MessageType) Type() protoreflect.EnumType {
+	return &file_internalapi_sensor_compliance_iservice_proto_enumTypes[1]
+}
+
+func (x MsgToCompliance_ComplianceACK_MessageType) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use MsgToCompliance_ComplianceACK_MessageType.Descriptor instead.
+func (MsgToCompliance_ComplianceACK_MessageType) EnumDescriptor() ([]byte, []int) {
+	return file_internalapi_sensor_compliance_iservice_proto_rawDescGZIP(), []int{3, 3, 1}
+}
+
 type MsgToCompliance_NodeInventoryACK_Action int32
 
 const (
@@ -54,11 +149,11 @@ func (x MsgToCompliance_NodeInventoryACK_Action) String() string {
 }
 
 func (MsgToCompliance_NodeInventoryACK_Action) Descriptor() protoreflect.EnumDescriptor {
-	return file_internalapi_sensor_compliance_iservice_proto_enumTypes[0].Descriptor()
+	return file_internalapi_sensor_compliance_iservice_proto_enumTypes[2].Descriptor()
 }
 
 func (MsgToCompliance_NodeInventoryACK_Action) Type() protoreflect.EnumType {
-	return &file_internalapi_sensor_compliance_iservice_proto_enumTypes[0]
+	return &file_internalapi_sensor_compliance_iservice_proto_enumTypes[2]
 }
 
 func (x MsgToCompliance_NodeInventoryACK_Action) Number() protoreflect.EnumNumber {
@@ -67,7 +162,7 @@ func (x MsgToCompliance_NodeInventoryACK_Action) Number() protoreflect.EnumNumbe
 
 // Deprecated: Use MsgToCompliance_NodeInventoryACK_Action.Descriptor instead.
 func (MsgToCompliance_NodeInventoryACK_Action) EnumDescriptor() ([]byte, []int) {
-	return file_internalapi_sensor_compliance_iservice_proto_rawDescGZIP(), []int{3, 3, 0}
+	return file_internalapi_sensor_compliance_iservice_proto_rawDescGZIP(), []int{3, 4, 0}
 }
 
 type MsgToCompliance_NodeInventoryACK_MessageType int32
@@ -100,11 +195,11 @@ func (x MsgToCompliance_NodeInventoryACK_MessageType) String() string {
 }
 
 func (MsgToCompliance_NodeInventoryACK_MessageType) Descriptor() protoreflect.EnumDescriptor {
-	return file_internalapi_sensor_compliance_iservice_proto_enumTypes[1].Descriptor()
+	return file_internalapi_sensor_compliance_iservice_proto_enumTypes[3].Descriptor()
 }
 
 func (MsgToCompliance_NodeInventoryACK_MessageType) Type() protoreflect.EnumType {
-	return &file_internalapi_sensor_compliance_iservice_proto_enumTypes[1]
+	return &file_internalapi_sensor_compliance_iservice_proto_enumTypes[3]
 }
 
 func (x MsgToCompliance_NodeInventoryACK_MessageType) Number() protoreflect.EnumNumber {
@@ -113,7 +208,7 @@ func (x MsgToCompliance_NodeInventoryACK_MessageType) Number() protoreflect.Enum
 
 // Deprecated: Use MsgToCompliance_NodeInventoryACK_MessageType.Descriptor instead.
 func (MsgToCompliance_NodeInventoryACK_MessageType) EnumDescriptor() ([]byte, []int) {
-	return file_internalapi_sensor_compliance_iservice_proto_rawDescGZIP(), []int{3, 3, 1}
+	return file_internalapi_sensor_compliance_iservice_proto_rawDescGZIP(), []int{3, 4, 1}
 }
 
 type GetScrapeConfigRequest struct {
@@ -343,6 +438,7 @@ type MsgToCompliance struct {
 	//	*MsgToCompliance_Trigger
 	//	*MsgToCompliance_AuditLogCollectionRequest_
 	//	*MsgToCompliance_Ack
+	//	*MsgToCompliance_ComplianceAck
 	Msg           isMsgToCompliance_Msg `protobuf_oneof:"msg"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -421,6 +517,15 @@ func (x *MsgToCompliance) GetAck() *MsgToCompliance_NodeInventoryACK {
 	return nil
 }
 
+func (x *MsgToCompliance) GetComplianceAck() *MsgToCompliance_ComplianceACK {
+	if x != nil {
+		if x, ok := x.Msg.(*MsgToCompliance_ComplianceAck); ok {
+			return x.ComplianceAck
+		}
+	}
+	return nil
+}
+
 type isMsgToCompliance_Msg interface {
 	isMsgToCompliance_Msg()
 }
@@ -438,7 +543,11 @@ type MsgToCompliance_AuditLogCollectionRequest_ struct {
 }
 
 type MsgToCompliance_Ack struct {
-	Ack *MsgToCompliance_NodeInventoryACK `protobuf:"bytes,4,opt,name=ack,proto3,oneof"`
+	Ack *MsgToCompliance_NodeInventoryACK `protobuf:"bytes,4,opt,name=ack,proto3,oneof"` // Deprecated in favor of ComplianceACK.
+}
+
+type MsgToCompliance_ComplianceAck struct {
+	ComplianceAck *MsgToCompliance_ComplianceACK `protobuf:"bytes,5,opt,name=compliance_ack,json=complianceAck,proto3,oneof"`
 }
 
 func (*MsgToCompliance_Config) isMsgToCompliance_Msg() {}
@@ -448,6 +557,8 @@ func (*MsgToCompliance_Trigger) isMsgToCompliance_Msg() {}
 func (*MsgToCompliance_AuditLogCollectionRequest_) isMsgToCompliance_Msg() {}
 
 func (*MsgToCompliance_Ack) isMsgToCompliance_Msg() {}
+
+func (*MsgToCompliance_ComplianceAck) isMsgToCompliance_Msg() {}
 
 type MsgToCompliance_ScrapeConfig struct {
 	state            protoimpl.MessageState   `protogen:"open.v1"`
@@ -637,6 +748,80 @@ func (*MsgToCompliance_AuditLogCollectionRequest_StartReq) isMsgToCompliance_Aud
 func (*MsgToCompliance_AuditLogCollectionRequest_StopReq) isMsgToCompliance_AuditLogCollectionRequest_Req() {
 }
 
+// ComplianceACK is a generic acknowledgement message from Sensor to Compliance
+// for any compliance-originated message (node inventory, node index, VM index, etc.)
+type MsgToCompliance_ComplianceACK struct {
+	state         protoimpl.MessageState                    `protogen:"open.v1"`
+	Action        MsgToCompliance_ComplianceACK_Action      `protobuf:"varint,1,opt,name=action,proto3,enum=sensor.MsgToCompliance_ComplianceACK_Action" json:"action,omitempty"`
+	MessageType   MsgToCompliance_ComplianceACK_MessageType `protobuf:"varint,2,opt,name=message_type,json=messageType,proto3,enum=sensor.MsgToCompliance_ComplianceACK_MessageType" json:"message_type,omitempty"`
+	ResourceId    string                                    `protobuf:"bytes,3,opt,name=resource_id,json=resourceId,proto3" json:"resource_id,omitempty"` // Resource identifier (node name, VM ID, etc.)
+	Reason        string                                    `protobuf:"bytes,4,opt,name=reason,proto3" json:"reason,omitempty"`                           // Optional reason for NACK (e.g., "rate limit exceeded")
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *MsgToCompliance_ComplianceACK) Reset() {
+	*x = MsgToCompliance_ComplianceACK{}
+	mi := &file_internalapi_sensor_compliance_iservice_proto_msgTypes[7]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *MsgToCompliance_ComplianceACK) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*MsgToCompliance_ComplianceACK) ProtoMessage() {}
+
+func (x *MsgToCompliance_ComplianceACK) ProtoReflect() protoreflect.Message {
+	mi := &file_internalapi_sensor_compliance_iservice_proto_msgTypes[7]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use MsgToCompliance_ComplianceACK.ProtoReflect.Descriptor instead.
+func (*MsgToCompliance_ComplianceACK) Descriptor() ([]byte, []int) {
+	return file_internalapi_sensor_compliance_iservice_proto_rawDescGZIP(), []int{3, 3}
+}
+
+func (x *MsgToCompliance_ComplianceACK) GetAction() MsgToCompliance_ComplianceACK_Action {
+	if x != nil {
+		return x.Action
+	}
+	return MsgToCompliance_ComplianceACK_ACK
+}
+
+func (x *MsgToCompliance_ComplianceACK) GetMessageType() MsgToCompliance_ComplianceACK_MessageType {
+	if x != nil {
+		return x.MessageType
+	}
+	return MsgToCompliance_ComplianceACK_NODE_INVENTORY
+}
+
+func (x *MsgToCompliance_ComplianceACK) GetResourceId() string {
+	if x != nil {
+		return x.ResourceId
+	}
+	return ""
+}
+
+func (x *MsgToCompliance_ComplianceACK) GetReason() string {
+	if x != nil {
+		return x.Reason
+	}
+	return ""
+}
+
+// Deprecated: Use ComplianceACK instead. Kept for backward compatibility with Sensor 4.9 and earlier.
+// Keep for 4.10 and 4.11. Can be considered for removal in 4.12.
+//
+// Deprecated: Marked as deprecated in internalapi/sensor/compliance_iservice.proto.
 type MsgToCompliance_NodeInventoryACK struct {
 	state         protoimpl.MessageState                       `protogen:"open.v1"`
 	Action        MsgToCompliance_NodeInventoryACK_Action      `protobuf:"varint,1,opt,name=action,proto3,enum=sensor.MsgToCompliance_NodeInventoryACK_Action" json:"action,omitempty"`
@@ -647,7 +832,7 @@ type MsgToCompliance_NodeInventoryACK struct {
 
 func (x *MsgToCompliance_NodeInventoryACK) Reset() {
 	*x = MsgToCompliance_NodeInventoryACK{}
-	mi := &file_internalapi_sensor_compliance_iservice_proto_msgTypes[7]
+	mi := &file_internalapi_sensor_compliance_iservice_proto_msgTypes[8]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -659,7 +844,7 @@ func (x *MsgToCompliance_NodeInventoryACK) String() string {
 func (*MsgToCompliance_NodeInventoryACK) ProtoMessage() {}
 
 func (x *MsgToCompliance_NodeInventoryACK) ProtoReflect() protoreflect.Message {
-	mi := &file_internalapi_sensor_compliance_iservice_proto_msgTypes[7]
+	mi := &file_internalapi_sensor_compliance_iservice_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -672,7 +857,7 @@ func (x *MsgToCompliance_NodeInventoryACK) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use MsgToCompliance_NodeInventoryACK.ProtoReflect.Descriptor instead.
 func (*MsgToCompliance_NodeInventoryACK) Descriptor() ([]byte, []int) {
-	return file_internalapi_sensor_compliance_iservice_proto_rawDescGZIP(), []int{3, 3}
+	return file_internalapi_sensor_compliance_iservice_proto_rawDescGZIP(), []int{3, 4}
 }
 
 func (x *MsgToCompliance_NodeInventoryACK) GetAction() MsgToCompliance_NodeInventoryACK_Action {
@@ -699,7 +884,7 @@ type MsgToCompliance_AuditLogCollectionRequest_StartRequest struct {
 
 func (x *MsgToCompliance_AuditLogCollectionRequest_StartRequest) Reset() {
 	*x = MsgToCompliance_AuditLogCollectionRequest_StartRequest{}
-	mi := &file_internalapi_sensor_compliance_iservice_proto_msgTypes[8]
+	mi := &file_internalapi_sensor_compliance_iservice_proto_msgTypes[9]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -711,7 +896,7 @@ func (x *MsgToCompliance_AuditLogCollectionRequest_StartRequest) String() string
 func (*MsgToCompliance_AuditLogCollectionRequest_StartRequest) ProtoMessage() {}
 
 func (x *MsgToCompliance_AuditLogCollectionRequest_StartRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_internalapi_sensor_compliance_iservice_proto_msgTypes[8]
+	mi := &file_internalapi_sensor_compliance_iservice_proto_msgTypes[9]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -749,7 +934,7 @@ type MsgToCompliance_AuditLogCollectionRequest_StopRequest struct {
 
 func (x *MsgToCompliance_AuditLogCollectionRequest_StopRequest) Reset() {
 	*x = MsgToCompliance_AuditLogCollectionRequest_StopRequest{}
-	mi := &file_internalapi_sensor_compliance_iservice_proto_msgTypes[9]
+	mi := &file_internalapi_sensor_compliance_iservice_proto_msgTypes[10]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -761,7 +946,7 @@ func (x *MsgToCompliance_AuditLogCollectionRequest_StopRequest) String() string 
 func (*MsgToCompliance_AuditLogCollectionRequest_StopRequest) ProtoMessage() {}
 
 func (x *MsgToCompliance_AuditLogCollectionRequest_StopRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_internalapi_sensor_compliance_iservice_proto_msgTypes[9]
+	mi := &file_internalapi_sensor_compliance_iservice_proto_msgTypes[10]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -793,12 +978,13 @@ const file_internalapi_sensor_compliance_iservice_proto_rawDesc = "" +
 	"\faudit_events\x18\x03 \x01(\v2\x13.sensor.AuditEventsH\x00R\vauditEvents\x12?\n" +
 	"\x0enode_inventory\x18\x04 \x01(\v2\x16.storage.NodeInventoryH\x00R\rnodeInventory\x12<\n" +
 	"\findex_report\x18\x05 \x01(\v2\x17.scanner.v4.IndexReportH\x00R\vindexReportB\x05\n" +
-	"\x03msg\"\x88\t\n" +
+	"\x03msg\"\xaf\f\n" +
 	"\x0fMsgToCompliance\x12>\n" +
 	"\x06config\x18\x01 \x01(\v2$.sensor.MsgToCompliance.ScrapeConfigH\x00R\x06config\x12>\n" +
 	"\atrigger\x18\x02 \x01(\v2\".sensor.MsgToCompliance.TriggerRunH\x00R\atrigger\x12t\n" +
 	"\x1caudit_log_collection_request\x18\x03 \x01(\v21.sensor.MsgToCompliance.AuditLogCollectionRequestH\x00R\x19auditLogCollectionRequest\x12<\n" +
-	"\x03ack\x18\x04 \x01(\v2(.sensor.MsgToCompliance.NodeInventoryACKH\x00R\x03ack\x1a|\n" +
+	"\x03ack\x18\x04 \x01(\v2(.sensor.MsgToCompliance.NodeInventoryACKH\x00R\x03ack\x12N\n" +
+	"\x0ecompliance_ack\x18\x05 \x01(\v2%.sensor.MsgToCompliance.ComplianceACKH\x00R\rcomplianceAck\x1a|\n" +
 	"\fScrapeConfig\x12F\n" +
 	"\x11container_runtime\x18\x01 \x01(\x0e2\x19.storage.ContainerRuntimeR\x10containerRuntime\x12$\n" +
 	"\x0eis_master_node\x18\x02 \x01(\bR\fisMasterNode\x1aL\n" +
@@ -814,7 +1000,20 @@ const file_internalapi_sensor_compliance_iservice_proto_rawDesc = "" +
 	"cluster_id\x18\x01 \x01(\tR\tclusterId\x12J\n" +
 	"\x13collect_start_state\x18\x02 \x01(\v2\x1a.storage.AuditLogFileStateR\x11collectStartState\x1a\r\n" +
 	"\vStopRequestB\x05\n" +
-	"\x03req\x1a\x83\x02\n" +
+	"\x03req\x1a\xd0\x02\n" +
+	"\rComplianceACK\x12D\n" +
+	"\x06action\x18\x01 \x01(\x0e2,.sensor.MsgToCompliance.ComplianceACK.ActionR\x06action\x12T\n" +
+	"\fmessage_type\x18\x02 \x01(\x0e21.sensor.MsgToCompliance.ComplianceACK.MessageTypeR\vmessageType\x12\x1f\n" +
+	"\vresource_id\x18\x03 \x01(\tR\n" +
+	"resourceId\x12\x16\n" +
+	"\x06reason\x18\x04 \x01(\tR\x06reason\"\x1b\n" +
+	"\x06Action\x12\a\n" +
+	"\x03ACK\x10\x00\x12\b\n" +
+	"\x04NACK\x10\x01\"M\n" +
+	"\vMessageType\x12\x12\n" +
+	"\x0eNODE_INVENTORY\x10\x00\x12\x15\n" +
+	"\x11NODE_INDEX_REPORT\x10\x01\x12\x13\n" +
+	"\x0fVM_INDEX_REPORT\x10\x02\x1a\x87\x02\n" +
 	"\x10NodeInventoryACK\x12G\n" +
 	"\x06action\x18\x01 \x01(\x0e2/.sensor.MsgToCompliance.NodeInventoryACK.ActionR\x06action\x12V\n" +
 	"\vmessageType\x18\x02 \x01(\x0e24.sensor.MsgToCompliance.NodeInventoryACK.MessageTypeR\vmessageType\"\x1b\n" +
@@ -823,7 +1022,7 @@ const file_internalapi_sensor_compliance_iservice_proto_rawDesc = "" +
 	"\x04NACK\x10\x01\"1\n" +
 	"\vMessageType\x12\x11\n" +
 	"\rNodeInventory\x10\x00\x12\x0f\n" +
-	"\vNodeIndexer\x10\x01B\x05\n" +
+	"\vNodeIndexer\x10\x01:\x02\x18\x01B\x05\n" +
 	"\x03msg2Z\n" +
 	"\x11ComplianceService\x12E\n" +
 	"\vCommunicate\x12\x19.sensor.MsgFromCompliance\x1a\x17.sensor.MsgToCompliance(\x010\x01B\x1dZ\x1b./internalapi/sensor;sensorb\x06proto3"
@@ -840,51 +1039,57 @@ func file_internalapi_sensor_compliance_iservice_proto_rawDescGZIP() []byte {
 	return file_internalapi_sensor_compliance_iservice_proto_rawDescData
 }
 
-var file_internalapi_sensor_compliance_iservice_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
-var file_internalapi_sensor_compliance_iservice_proto_msgTypes = make([]protoimpl.MessageInfo, 10)
+var file_internalapi_sensor_compliance_iservice_proto_enumTypes = make([]protoimpl.EnumInfo, 4)
+var file_internalapi_sensor_compliance_iservice_proto_msgTypes = make([]protoimpl.MessageInfo, 11)
 var file_internalapi_sensor_compliance_iservice_proto_goTypes = []any{
-	(MsgToCompliance_NodeInventoryACK_Action)(0),                   // 0: sensor.MsgToCompliance.NodeInventoryACK.Action
-	(MsgToCompliance_NodeInventoryACK_MessageType)(0),              // 1: sensor.MsgToCompliance.NodeInventoryACK.MessageType
-	(*GetScrapeConfigRequest)(nil),                                 // 2: sensor.GetScrapeConfigRequest
-	(*AuditEvents)(nil),                                            // 3: sensor.AuditEvents
-	(*MsgFromCompliance)(nil),                                      // 4: sensor.MsgFromCompliance
-	(*MsgToCompliance)(nil),                                        // 5: sensor.MsgToCompliance
-	(*MsgToCompliance_ScrapeConfig)(nil),                           // 6: sensor.MsgToCompliance.ScrapeConfig
-	(*MsgToCompliance_TriggerRun)(nil),                             // 7: sensor.MsgToCompliance.TriggerRun
-	(*MsgToCompliance_AuditLogCollectionRequest)(nil),              // 8: sensor.MsgToCompliance.AuditLogCollectionRequest
-	(*MsgToCompliance_NodeInventoryACK)(nil),                       // 9: sensor.MsgToCompliance.NodeInventoryACK
-	(*MsgToCompliance_AuditLogCollectionRequest_StartRequest)(nil), // 10: sensor.MsgToCompliance.AuditLogCollectionRequest.StartRequest
-	(*MsgToCompliance_AuditLogCollectionRequest_StopRequest)(nil),  // 11: sensor.MsgToCompliance.AuditLogCollectionRequest.StopRequest
-	(*storage.KubernetesEvent)(nil),                                // 12: storage.KubernetesEvent
-	(*compliance.ComplianceReturn)(nil),                            // 13: compliance.ComplianceReturn
-	(*storage.NodeInventory)(nil),                                  // 14: storage.NodeInventory
-	(*v4.IndexReport)(nil),                                         // 15: scanner.v4.IndexReport
-	(storage.ContainerRuntime)(0),                                  // 16: storage.ContainerRuntime
-	(*storage.AuditLogFileState)(nil),                              // 17: storage.AuditLogFileState
+	(MsgToCompliance_ComplianceACK_Action)(0),                      // 0: sensor.MsgToCompliance.ComplianceACK.Action
+	(MsgToCompliance_ComplianceACK_MessageType)(0),                 // 1: sensor.MsgToCompliance.ComplianceACK.MessageType
+	(MsgToCompliance_NodeInventoryACK_Action)(0),                   // 2: sensor.MsgToCompliance.NodeInventoryACK.Action
+	(MsgToCompliance_NodeInventoryACK_MessageType)(0),              // 3: sensor.MsgToCompliance.NodeInventoryACK.MessageType
+	(*GetScrapeConfigRequest)(nil),                                 // 4: sensor.GetScrapeConfigRequest
+	(*AuditEvents)(nil),                                            // 5: sensor.AuditEvents
+	(*MsgFromCompliance)(nil),                                      // 6: sensor.MsgFromCompliance
+	(*MsgToCompliance)(nil),                                        // 7: sensor.MsgToCompliance
+	(*MsgToCompliance_ScrapeConfig)(nil),                           // 8: sensor.MsgToCompliance.ScrapeConfig
+	(*MsgToCompliance_TriggerRun)(nil),                             // 9: sensor.MsgToCompliance.TriggerRun
+	(*MsgToCompliance_AuditLogCollectionRequest)(nil),              // 10: sensor.MsgToCompliance.AuditLogCollectionRequest
+	(*MsgToCompliance_ComplianceACK)(nil),                          // 11: sensor.MsgToCompliance.ComplianceACK
+	(*MsgToCompliance_NodeInventoryACK)(nil),                       // 12: sensor.MsgToCompliance.NodeInventoryACK
+	(*MsgToCompliance_AuditLogCollectionRequest_StartRequest)(nil), // 13: sensor.MsgToCompliance.AuditLogCollectionRequest.StartRequest
+	(*MsgToCompliance_AuditLogCollectionRequest_StopRequest)(nil),  // 14: sensor.MsgToCompliance.AuditLogCollectionRequest.StopRequest
+	(*storage.KubernetesEvent)(nil),                                // 15: storage.KubernetesEvent
+	(*compliance.ComplianceReturn)(nil),                            // 16: compliance.ComplianceReturn
+	(*storage.NodeInventory)(nil),                                  // 17: storage.NodeInventory
+	(*v4.IndexReport)(nil),                                         // 18: scanner.v4.IndexReport
+	(storage.ContainerRuntime)(0),                                  // 19: storage.ContainerRuntime
+	(*storage.AuditLogFileState)(nil),                              // 20: storage.AuditLogFileState
 }
 var file_internalapi_sensor_compliance_iservice_proto_depIdxs = []int32{
-	12, // 0: sensor.AuditEvents.events:type_name -> storage.KubernetesEvent
-	13, // 1: sensor.MsgFromCompliance.return:type_name -> compliance.ComplianceReturn
-	3,  // 2: sensor.MsgFromCompliance.audit_events:type_name -> sensor.AuditEvents
-	14, // 3: sensor.MsgFromCompliance.node_inventory:type_name -> storage.NodeInventory
-	15, // 4: sensor.MsgFromCompliance.index_report:type_name -> scanner.v4.IndexReport
-	6,  // 5: sensor.MsgToCompliance.config:type_name -> sensor.MsgToCompliance.ScrapeConfig
-	7,  // 6: sensor.MsgToCompliance.trigger:type_name -> sensor.MsgToCompliance.TriggerRun
-	8,  // 7: sensor.MsgToCompliance.audit_log_collection_request:type_name -> sensor.MsgToCompliance.AuditLogCollectionRequest
-	9,  // 8: sensor.MsgToCompliance.ack:type_name -> sensor.MsgToCompliance.NodeInventoryACK
-	16, // 9: sensor.MsgToCompliance.ScrapeConfig.container_runtime:type_name -> storage.ContainerRuntime
-	10, // 10: sensor.MsgToCompliance.AuditLogCollectionRequest.start_req:type_name -> sensor.MsgToCompliance.AuditLogCollectionRequest.StartRequest
-	11, // 11: sensor.MsgToCompliance.AuditLogCollectionRequest.stop_req:type_name -> sensor.MsgToCompliance.AuditLogCollectionRequest.StopRequest
-	0,  // 12: sensor.MsgToCompliance.NodeInventoryACK.action:type_name -> sensor.MsgToCompliance.NodeInventoryACK.Action
-	1,  // 13: sensor.MsgToCompliance.NodeInventoryACK.messageType:type_name -> sensor.MsgToCompliance.NodeInventoryACK.MessageType
-	17, // 14: sensor.MsgToCompliance.AuditLogCollectionRequest.StartRequest.collect_start_state:type_name -> storage.AuditLogFileState
-	4,  // 15: sensor.ComplianceService.Communicate:input_type -> sensor.MsgFromCompliance
-	5,  // 16: sensor.ComplianceService.Communicate:output_type -> sensor.MsgToCompliance
-	16, // [16:17] is the sub-list for method output_type
-	15, // [15:16] is the sub-list for method input_type
-	15, // [15:15] is the sub-list for extension type_name
-	15, // [15:15] is the sub-list for extension extendee
-	0,  // [0:15] is the sub-list for field type_name
+	15, // 0: sensor.AuditEvents.events:type_name -> storage.KubernetesEvent
+	16, // 1: sensor.MsgFromCompliance.return:type_name -> compliance.ComplianceReturn
+	5,  // 2: sensor.MsgFromCompliance.audit_events:type_name -> sensor.AuditEvents
+	17, // 3: sensor.MsgFromCompliance.node_inventory:type_name -> storage.NodeInventory
+	18, // 4: sensor.MsgFromCompliance.index_report:type_name -> scanner.v4.IndexReport
+	8,  // 5: sensor.MsgToCompliance.config:type_name -> sensor.MsgToCompliance.ScrapeConfig
+	9,  // 6: sensor.MsgToCompliance.trigger:type_name -> sensor.MsgToCompliance.TriggerRun
+	10, // 7: sensor.MsgToCompliance.audit_log_collection_request:type_name -> sensor.MsgToCompliance.AuditLogCollectionRequest
+	12, // 8: sensor.MsgToCompliance.ack:type_name -> sensor.MsgToCompliance.NodeInventoryACK
+	11, // 9: sensor.MsgToCompliance.compliance_ack:type_name -> sensor.MsgToCompliance.ComplianceACK
+	19, // 10: sensor.MsgToCompliance.ScrapeConfig.container_runtime:type_name -> storage.ContainerRuntime
+	13, // 11: sensor.MsgToCompliance.AuditLogCollectionRequest.start_req:type_name -> sensor.MsgToCompliance.AuditLogCollectionRequest.StartRequest
+	14, // 12: sensor.MsgToCompliance.AuditLogCollectionRequest.stop_req:type_name -> sensor.MsgToCompliance.AuditLogCollectionRequest.StopRequest
+	0,  // 13: sensor.MsgToCompliance.ComplianceACK.action:type_name -> sensor.MsgToCompliance.ComplianceACK.Action
+	1,  // 14: sensor.MsgToCompliance.ComplianceACK.message_type:type_name -> sensor.MsgToCompliance.ComplianceACK.MessageType
+	2,  // 15: sensor.MsgToCompliance.NodeInventoryACK.action:type_name -> sensor.MsgToCompliance.NodeInventoryACK.Action
+	3,  // 16: sensor.MsgToCompliance.NodeInventoryACK.messageType:type_name -> sensor.MsgToCompliance.NodeInventoryACK.MessageType
+	20, // 17: sensor.MsgToCompliance.AuditLogCollectionRequest.StartRequest.collect_start_state:type_name -> storage.AuditLogFileState
+	6,  // 18: sensor.ComplianceService.Communicate:input_type -> sensor.MsgFromCompliance
+	7,  // 19: sensor.ComplianceService.Communicate:output_type -> sensor.MsgToCompliance
+	19, // [19:20] is the sub-list for method output_type
+	18, // [18:19] is the sub-list for method input_type
+	18, // [18:18] is the sub-list for extension type_name
+	18, // [18:18] is the sub-list for extension extendee
+	0,  // [0:18] is the sub-list for field type_name
 }
 
 func init() { file_internalapi_sensor_compliance_iservice_proto_init() }
@@ -903,6 +1108,7 @@ func file_internalapi_sensor_compliance_iservice_proto_init() {
 		(*MsgToCompliance_Trigger)(nil),
 		(*MsgToCompliance_AuditLogCollectionRequest_)(nil),
 		(*MsgToCompliance_Ack)(nil),
+		(*MsgToCompliance_ComplianceAck)(nil),
 	}
 	file_internalapi_sensor_compliance_iservice_proto_msgTypes[6].OneofWrappers = []any{
 		(*MsgToCompliance_AuditLogCollectionRequest_StartReq)(nil),
@@ -913,8 +1119,8 @@ func file_internalapi_sensor_compliance_iservice_proto_init() {
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_internalapi_sensor_compliance_iservice_proto_rawDesc), len(file_internalapi_sensor_compliance_iservice_proto_rawDesc)),
-			NumEnums:      2,
-			NumMessages:   10,
+			NumEnums:      4,
+			NumMessages:   11,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

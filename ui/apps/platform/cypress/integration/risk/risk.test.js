@@ -43,16 +43,16 @@ describe('Risk', () => {
             visitRiskDeployments();
             viewRiskDeploymentByName('collector');
 
-            cy.get('button[data-testid="tab"]:contains("Risk Indicators")');
-            cy.get('button[data-testid="tab"]:contains("Deployment Details")');
-            cy.get('button[data-testid="tab"]:contains("Process Discovery")');
+            cy.get('[role="tab"]:contains("Risk indicators")');
+            cy.get('[role="tab"]:contains("Deployment details")');
+            cy.get('[role="tab"]:contains("Process discovery")');
         });
 
         it('should navigate from Risk Page to Vulnerability Management Image Page', () => {
             visitRiskDeployments();
             viewRiskDeploymentByName('collector');
 
-            clickTab('Deployment Details');
+            clickTab('Deployment details');
             cy.get(RiskPageSelectors.imageLink).first().click();
 
             cy.location('pathname').should('contain', '/main/vulnerabilities/platform/image');

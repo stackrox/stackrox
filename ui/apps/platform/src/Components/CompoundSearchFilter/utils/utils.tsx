@@ -3,6 +3,7 @@ import type { IsFeatureFlagEnabled } from 'hooks/useFeatureFlags';
 import { searchValueAsArray } from 'utils/searchUtils';
 import { ensureExhaustive } from 'utils/type.utils';
 
+import { convertFromInternalToExternalConditionText } from '../components/SearchFilterConditionText';
 import type {
     CompoundSearchFilterAttribute,
     CompoundSearchFilterConfig,
@@ -12,6 +13,7 @@ import type {
     OnSearchPayloadItemAdd,
     SelectSearchFilterAttribute,
     SelectSearchFilterGroupedOptions,
+    SelectSearchFilterOption,
     SelectSearchFilterOptions,
 } from '../types';
 
@@ -217,6 +219,163 @@ export function payloadItemFiltererForTracking(
         default:
             return false;
     }
+}
+
+// Encapsulate inputType and payload for CompoundSearchFilteChips component.
+
+// Information and interaction to render the group of a LabelGroup element.
+export type CompoundSearchFilterLabelGroupDescription = {
+    label: string; // external text that corresponds to internal value
+    payload: OnSearchPayload; // to remove category or value from searchFilter
+};
+
+// Information and interaction to render a Label element.
+export type CompoundSearchFilterLabelItemDescription = {
+    isGlobal?: boolean; // for certain values in AdvancedFilterToolbar.tsx file
+} & CompoundSearchFilterLabelGroupDescription;
+
+// Information and interaction to render the label for one or more values of a search filter attribute.
+export type CompoundSearchFilterLabelDescription = {
+    group: CompoundSearchFilterLabelGroupDescription;
+    items: CompoundSearchFilterLabelItemDescription[];
+};
+
+export type IsGlobalPredicate = (category: string, value: string) => boolean;
+
+// If attribute has any values in search filter return description else null.
+export function getCompoundSearchFilterLabelDescriptionOrNull(
+    attribute: CompoundSearchFilterAttribute,
+    searchFilter: SearchFilter,
+    isGlobalPredicate: IsGlobalPredicate
+): CompoundSearchFilterLabelDescription | null {
+    const { filterChipLabel, inputType, searchTerm: category } = attribute;
+
+    const payloadItemDeleteCategory: OnSearchPayloadItem = { action: 'DELETE', category };
+    const payloadDeleteCategory: OnSearchPayload = [payloadItemDeleteCategory];
+    const group: CompoundSearchFilterLabelGroupDescription = {
+        label: filterChipLabel,
+        payload: payloadDeleteCategory,
+    };
+
+    const values = searchValueAsArray(searchFilter[category]);
+
+    switch (inputType) {
+        case 'autocomplete':
+        case 'condition-number':
+        case 'date-picker':
+        case 'text': {
+            if (values.length === 0) {
+                return null;
+            }
+
+            return {
+                group,
+                items: values.map((value) => ({
+                    label: value, // external text is same as internal value
+                    payload: [{ action: 'REMOVE', category, value }],
+                })),
+            };
+        }
+        case 'condition-text': {
+            if (values.length === 0) {
+                return null;
+            }
+
+            const { inputProps } = attribute;
+            return {
+                group,
+                items: values.map((value) => ({
+                    label: convertFromInternalToExternalConditionText(inputProps, value),
+                    payload: [{ action: 'REMOVE', category, value }],
+                })),
+            };
+        }
+        case 'select': {
+            if (values.length === 0) {
+                return null;
+            }
+
+            const options =
+                'groupOptions' in attribute.inputProps
+                    ? attribute.inputProps.groupOptions.flatMap((group) => group.options)
+                    : attribute.inputProps.options;
+            return {
+                group,
+                items: values.map((value) => ({
+                    label: getLabelForOption(
+                        options.find((option) => option.value === value),
+                        value
+                    ),
+                    payload: [{ action: 'REMOVE', category, value }],
+                    isGlobal: isGlobalPredicate(category, value),
+                })),
+            };
+        }
+        case 'select-exclusive-single': {
+            if (values.length === 0) {
+                return null;
+            }
+
+            const value = values[0];
+            const { inputProps } = attribute;
+            const { options } = inputProps;
+            return {
+                group,
+                items: [
+                    {
+                        label: getLabelForOption(
+                            options.find((option) => option.value === value),
+                            value
+                        ),
+                        payload: payloadDeleteCategory,
+                    },
+                ],
+            };
+        }
+        case 'select-exclusive-double': {
+            const { inputProps } = attribute;
+            const { category2 } = inputProps;
+            const values2 = searchValueAsArray(searchFilter[category2]);
+
+            if (values.length === 0 && values2.length === 0) {
+                return null;
+            }
+
+            // Assume a value for either category or category2 but not both.
+            const value = values.length !== 0 ? values[0] : values2[0];
+            const categoryOfValue = values.length !== 0 ? category : category2;
+            const { options } = inputProps;
+            const payloadDeleteCategories: OnSearchPayload = [
+                payloadItemDeleteCategory,
+                { action: 'DELETE', category: category2 },
+            ];
+            return {
+                group: {
+                    ...group,
+                    payload: payloadDeleteCategories,
+                },
+                items: [
+                    {
+                        label: getLabelForOption(
+                            options.find(
+                                (option) =>
+                                    option.value === value && option.category === categoryOfValue
+                            ),
+                            value
+                        ),
+                        payload: payloadDeleteCategories,
+                    },
+                ],
+            };
+        }
+        default:
+            return ensureExhaustive(inputType);
+    }
+}
+
+// Return internal value if untrusted page address search query does not have a valid option.
+function getLabelForOption(option: SelectSearchFilterOption | undefined, value: string) {
+    return option ? option.label : value;
 }
 
 // Given predicate function from useFeatureFlags hook in component

@@ -29,6 +29,7 @@ case "$github_login" in
 'Stringy')          slack_user='U02KJKREKPY' ;;
 'ajheflin')         slack_user='U087GT2H45Q' ;;
 'akameric')         slack_user='U076CG62KL4' ;;
+'AlexVulaj')        slack_user='U03M3QKBES2' ;;
 'alanonthegit')     slack_user='U01PZFFSZRB' ;;
 'alwayshooin')      slack_user='U01PLAWUU8N' ;;
 'bradr5')           slack_user='U03UQ9DM44U' ;;
