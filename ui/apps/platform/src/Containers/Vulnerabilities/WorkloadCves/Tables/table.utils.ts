@@ -107,7 +107,8 @@ export type DeploymentComponentVulnerability = Omit<
 
 export type TableDataRow = {
     image: {
-        id: string;
+        id: string; // UUID - used for linking
+        digest?: string; // For ImageV2, the SHA digest - used for display
         name: {
             remote: string;
             registry: string;
@@ -210,7 +211,11 @@ function extractCommonComponentFields(
         version,
         location,
         source,
-        image,
+        image: {
+            id: image.id,
+            digest: image.digest,
+            name: image.name,
+        },
         layer,
         severity,
         fixedByVersion,
