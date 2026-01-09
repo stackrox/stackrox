@@ -70,8 +70,8 @@ type pipelineImpl struct {
 }
 
 func (p *pipelineImpl) OnFinish(clusterID string) {
-	// Notify rate limiter that this sensor disconnected so it can rebalance
-	p.rateLimiter.OnSensorDisconnect(clusterID)
+	// Notify rate limiter that this client (Sensor) has disconnected so it can rebalance the limiters.
+	p.rateLimiter.OnClientDisconnect(clusterID)
 }
 
 func (p *pipelineImpl) Capabilities() []centralsensor.CentralCapability {
