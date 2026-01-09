@@ -409,7 +409,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: sensor-proxy
-  namespace: {{ ._rox._namespace }}
+  namespace: {{ ._rox._namespace | quote }}
   labels:
     {{- include "srox.labels" (list . "service" "sensor-proxy") | nindent 4 }}
   annotations:
