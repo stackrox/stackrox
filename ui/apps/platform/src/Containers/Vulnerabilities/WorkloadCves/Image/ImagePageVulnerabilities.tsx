@@ -103,7 +103,7 @@ export const imageV2VulnerabilitiesQuery = gql`
         $statusesForExceptionCount: [String!]
     ) {
         imageV2(id: $id) {
-            ...ImageMetadataContext
+            ...ImageV2MetadataContext
             imageVulnerabilityCount(query: $query)
             imageCVECountBySeverity(query: $query) {
                 ...ResourceCountsByCVESeverityAndStatus

@@ -10,7 +10,7 @@ type ContainerImageInfoProps = {
 };
 
 function ContainerImageInfo({ image }: ContainerImageInfoProps) {
-    const imageId = image.idV2 ?? image.id;
+    const imageId = image.idV2 && image.idV2 !== '' ? image.idV2 : image.id;
     const imageDetailsPageURL = `${vulnerabilitiesAllImagesPath}/${getWorkloadEntityPagePath('Image', imageId, 'OBSERVED')}`;
 
     if (imageId === '' || image.notPullable) {

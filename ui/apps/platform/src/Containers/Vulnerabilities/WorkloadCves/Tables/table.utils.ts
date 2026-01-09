@@ -51,7 +51,7 @@ export const imageMetadataContextFragment = gql`
 `;
 
 export const imageV2MetadataContextFragment = gql`
-    fragment ImageMetadataContext on ImageV2 {
+    fragment ImageV2MetadataContext on ImageV2 {
         id
         digest
         name {

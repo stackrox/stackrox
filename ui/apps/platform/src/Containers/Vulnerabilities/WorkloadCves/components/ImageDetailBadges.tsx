@@ -25,7 +25,7 @@ export type ImageDetails = {
 };
 
 export const imageDetailsFragment = gql`
-    fragment ImageDetails on ImageV2 {
+    fragment ImageDetails on Image {
         deploymentCount
         operatingSystem
         metadata {
@@ -53,7 +53,7 @@ export const imageDetailsFragment = gql`
 `;
 
 export const imageV2DetailsFragment = gql`
-    fragment ImageDetails on ImageV2 {
+    fragment ImageV2Details on ImageV2 {
         deploymentCount
         operatingSystem
         metadata {

@@ -10,7 +10,7 @@ type ContainerImageProps = {
 };
 
 function ContainerImage({ image, vulnMgmtBasePath }: ContainerImageProps): ReactElement {
-    const imageId = image.idV2 ?? image.id;
+    const imageId = image.idV2 && image.idV2 !== '' ? image.idV2 : image.id;
     const imageDetailsPageURL = `${vulnMgmtBasePath}/images/${imageId}`;
 
     if (imageId === '' || image.notPullable) {
