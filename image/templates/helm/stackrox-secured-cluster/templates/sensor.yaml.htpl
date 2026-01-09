@@ -175,10 +175,12 @@ spec:
           - containerPort: 9091
             name: monitoring-tls
           {{- end }}
+          [<- if .FeatureFlags.ROX_OCP_CONSOLE_INTEGRATION >]
           {{- if ._rox.env.openshift }}
           - containerPort: 9444
             name: proxy-https
           {{- end }}
+          [<- end >]
         command:
           - kubernetes-sensor
         resources:
@@ -281,11 +283,13 @@ spec:
           mountPath: /run/secrets/stackrox.io/monitoring-tls
           readOnly: true
         {{- end }}
+        [<- if .FeatureFlags.ROX_OCP_CONSOLE_INTEGRATION >]
         {{- if ._rox.env.openshift }}
         - name: proxy-tls-volume
           mountPath: /run/secrets/stackrox.io/proxy-tls/
           readOnly: true
         {{- end }}
+        [<- end >]
       volumes:
       {{- if ._rox._securedClusterCertRefresh }}
       - name: certs
@@ -362,11 +366,13 @@ spec:
         secret:
           secretName: sensor-monitoring-tls
       {{- end }}
+      [<- if .FeatureFlags.ROX_OCP_CONSOLE_INTEGRATION >]
       {{- if ._rox.env.openshift }}
       - name: proxy-tls-volume
         secret:
           secretName: sensor-proxy-tls
       {{- end }}
+      [<- end >]
 ---
 apiVersion: v1
 kind: Service
@@ -404,6 +410,7 @@ spec:
   type: ClusterIP
   sessionAffinity: None
 ---
+[<- if .FeatureFlags.ROX_OCP_CONSOLE_INTEGRATION >]
 {{- if ._rox.env.openshift }}
 apiVersion: v1
 kind: Service
@@ -413,8 +420,9 @@ metadata:
   labels:
     {{- include "srox.labels" (list . "service" "sensor-proxy") | nindent 4 }}
   annotations:
+    {{- $annotations := dict -}}
+    {{- $_ := include "srox.getAnnotationTemplate" (list . "sensor-proxy_service" $annotations) -}}
     {{- include "srox.annotations" (list . "service" "sensor-proxy") | nindent 4 }}
-    service.beta.openshift.io/serving-cert-secret-name: sensor-proxy-tls
 spec:
   ports:
   - name: https
@@ -426,6 +434,7 @@ spec:
   type: ClusterIP
 ---
 {{- end }}
+[<- end >]
 
 {{- if ._rox.env.istio }}
 apiVersion: networking.istio.io/v1alpha3

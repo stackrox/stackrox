@@ -1,0 +1,1 @@
+service.beta.openshift.io/serving-cert-secret-name: sensor-proxy-tls
