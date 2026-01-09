@@ -3,6 +3,7 @@ package centralproxy
 import (
 	"crypto/tls"
 	"net/http"
+	"time"
 
 	"github.com/pkg/errors"
 )
@@ -16,7 +17,7 @@ const (
 // StartProxyServer starts a dedicated HTTP server for the /proxy/central endpoint
 // using an OpenShift service CA signed certificate. Returns the server instance for
 // lifecycle management (e.g., graceful shutdown).
-func StartProxyServer(handler *Handler) (*http.Server, error) {
+func StartProxyServer(h http.Handler) (*http.Server, error) {
 	cert, err := tls.LoadX509KeyPair(proxyCertPath, proxyKeyPath)
 	if err != nil {
 		return nil, errors.Wrap(err, "loading proxy TLS certificate")
@@ -28,12 +29,16 @@ func StartProxyServer(handler *Handler) (*http.Server, error) {
 	}
 
 	mux := http.NewServeMux()
-	mux.Handle("/proxy/central/", http.StripPrefix("/proxy/central", handler))
+	mux.Handle("/proxy/central/", http.StripPrefix("/proxy/central", h))
 
 	server := &http.Server{
-		Addr:      proxyPort,
-		Handler:   mux,
-		TLSConfig: tlsConfig,
+		Addr:              proxyPort,
+		Handler:           mux,
+		TLSConfig:         tlsConfig,
+		ReadHeaderTimeout: 10 * time.Second,
+		ReadTimeout:       60 * time.Second,
+		WriteTimeout:      60 * time.Second,
+		IdleTimeout:       60 * time.Second,
 	}
 
 	go func() {
