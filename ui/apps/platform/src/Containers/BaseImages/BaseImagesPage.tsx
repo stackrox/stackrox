@@ -12,6 +12,7 @@ import {
 
 import { deleteBaseImage as deleteBaseImageFn, getBaseImages } from 'services/BaseImagesService';
 import type { BaseImageReference } from 'services/BaseImagesService';
+import usePermissions from 'hooks/usePermissions';
 import useAnalytics, {
     BASE_IMAGE_REFERENCE_ADD_MODAL_OPENED,
     BASE_IMAGE_REFERENCE_DELETED,
@@ -30,6 +31,9 @@ import BaseImagesTable from './BaseImagesTable';
  * and provides functionality to add, edit, and delete base images.
  */
 function BaseImagesPage() {
+    const { hasReadWriteAccess } = usePermissions();
+    const hasWriteAccess = hasReadWriteAccess('ImageAdministration');
+
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
     const [baseImageToEdit, setBaseImageToEdit] = useState<BaseImageReference | null>(null);
     const [baseImageToDelete, setBaseImageToDelete] = useState<BaseImageReference | null>(null);
@@ -91,15 +95,18 @@ function BaseImagesPage() {
                             layer-specific filtering
                         </Text>
                     </FlexItem>
-                    <Button variant="primary" onClick={onOpenAddModal}>
-                        Add base image
-                    </Button>
+                    {hasWriteAccess && (
+                        <Button variant="primary" onClick={onOpenAddModal}>
+                            Add base image
+                        </Button>
+                    )}
                 </Flex>
             </PageSection>
             <Divider component="div" />
             <PageSection>
                 <BaseImagesTable
                     baseImages={baseImages}
+                    hasWriteAccess={hasWriteAccess}
                     onEdit={setBaseImageToEdit}
                     onDelete={setBaseImageToDelete}
                     isActionInProgress={deleteBaseImageMutation.isLoading}

@@ -7,6 +7,7 @@ import TBodyUnified from 'Components/TableStateTemplates/TbodyUnified';
 
 export type BaseImagesTableProps = {
     baseImages: BaseImageReference[];
+    hasWriteAccess: boolean;
     onEdit: (baseImage: BaseImageReference) => void;
     onDelete: (baseImage: BaseImageReference) => void;
     isActionInProgress: boolean;
@@ -16,6 +17,7 @@ export type BaseImagesTableProps = {
 
 function BaseImagesTable({
     baseImages,
+    hasWriteAccess,
     onEdit,
     onDelete,
     isActionInProgress,
@@ -35,14 +37,16 @@ function BaseImagesTable({
                 <Tr>
                     <Th>Base image path</Th>
                     <Th>Added by</Th>
-                    <Th width={10}>
-                        <span className="pf-v5-screen-reader">Row actions</span>
-                    </Th>
+                    {hasWriteAccess && (
+                        <Th width={10}>
+                            <span className="pf-v5-screen-reader">Row actions</span>
+                        </Th>
+                    )}
                 </Tr>
             </Thead>
             <TBodyUnified<BaseImageReference>
                 tableState={tableState}
-                colSpan={3}
+                colSpan={hasWriteAccess ? 3 : 2}
                 renderer={({ data }) => (
                     <Tbody>
                         {data.map((baseImage) => (
@@ -51,21 +55,23 @@ function BaseImagesTable({
                                     {baseImage.baseImageRepoPath}:{baseImage.baseImageTagPattern}
                                 </Td>
                                 <Td>{baseImage.user.name}</Td>
-                                <Td isActionCell>
-                                    <ActionsColumn
-                                        isDisabled={isActionInProgress}
-                                        items={[
-                                            {
-                                                title: 'Edit tag pattern',
-                                                onClick: () => onEdit(baseImage),
-                                            },
-                                            {
-                                                title: 'Delete base image',
-                                                onClick: () => onDelete(baseImage),
-                                            },
-                                        ]}
-                                    />
-                                </Td>
+                                {hasWriteAccess && (
+                                    <Td isActionCell>
+                                        <ActionsColumn
+                                            isDisabled={isActionInProgress}
+                                            items={[
+                                                {
+                                                    title: 'Edit tag pattern',
+                                                    onClick: () => onEdit(baseImage),
+                                                },
+                                                {
+                                                    title: 'Delete base image',
+                                                    onClick: () => onDelete(baseImage),
+                                                },
+                                            ]}
+                                        />
+                                    </Td>
+                                )}
                             </Tr>
                         ))}
                     </Tbody>
