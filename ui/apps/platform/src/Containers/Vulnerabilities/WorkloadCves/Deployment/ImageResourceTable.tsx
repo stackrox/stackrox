@@ -9,7 +9,8 @@ import ImageNameLink from '../components/ImageNameLink';
 export type ImageResources = {
     imageCount: number;
     images: {
-        id: string;
+        id: string; // UUID - used for linking
+        digest?: string; // For ImageV2, the SHA digest - used for display
         name: {
             registry: string;
             remote: string;
@@ -26,6 +27,7 @@ export const imageResourcesFragment = gql`
         imageCount(query: $query)
         images(query: $query, pagination: $pagination) {
             id
+            digest
             name {
                 registry
                 remote
@@ -55,7 +57,7 @@ function ImageResourceTable({ data, getSortParams }: ImageResourceTableProps) {
                 </Tr>
             </Thead>
             {data.images.length === 0 && <EmptyTableResults colSpan={4} />}
-            {data.images.map(({ id, name, deploymentCount, operatingSystem, scanTime }) => {
+            {data.images.map(({ id, digest, name, deploymentCount, operatingSystem, scanTime }) => {
                 return (
                     <Tbody
                         key={id}
@@ -65,7 +67,7 @@ function ImageResourceTable({ data, getSortParams }: ImageResourceTableProps) {
                     >
                         <Tr>
                             <Td dataLabel="Name" width={50}>
-                                {name ? <ImageNameLink id={id} name={name} /> : 'NAME UNKNOWN'}
+                                {name ? <ImageNameLink id={id} name={name} digest={digest} /> : 'NAME UNKNOWN'}
                             </Td>
                             {/* Given that this is in the context of a deployment, when would `deploymentCount` ever be less than zero? */}
                             <Td dataLabel="Image status">

@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import type { ReactNode } from 'react';
 import { gql } from '@apollo/client';
+import type { DocumentNode } from '@apollo/client';
 import pluralize from 'pluralize';
 import { ActionsColumn, Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 import type { IAction } from '@patternfly/react-table';
@@ -120,8 +121,62 @@ export const imageListQuery = gql`
     }
 `;
 
+export const imageV2ListQuery = gql`
+    query getImageList($query: String, $pagination: Pagination) {
+        images: imageV2s(query: $query, pagination: $pagination) {
+            id
+            digest
+            name {
+                registry
+                remote
+                tag
+                fullName
+            }
+            imageCVECountBySeverity(query: $query) {
+                critical {
+                    total
+                }
+                important {
+                    total
+                }
+                moderate {
+                    total
+                }
+                low {
+                    total
+                }
+                unknown {
+                    total
+                }
+            }
+            operatingSystem
+            deploymentCount(query: $query)
+            watchStatus
+            metadata {
+                v1 {
+                    created
+                }
+            }
+            scanTime
+            scanNotes
+            notes
+            signatureVerificationData {
+                results {
+                    status
+                    verifiedImageReferences
+                    verifierId
+                }
+            }
+        }
+    }
+`;
+
+export const getImageListQuery = (isNewImageDataModelEnabled: boolean): DocumentNode =>
+    isNewImageDataModelEnabled ? imageV2ListQuery : imageListQuery;
+
 export type Image = {
-    id: string;
+    id: string; // UUID for linking
+    digest?: string; // For ImageV2, the actual SHA digest for display
     name: {
         registry: string;
         remote: string;
@@ -339,7 +394,7 @@ function ImageOverviewTable({
                                 <Tr>
                                     <Td className={getVisibilityClass('image')} dataLabel="Image">
                                         {name ? (
-                                            <ImageNameLink name={name} id={id} />
+                                            <ImageNameLink name={name} id={id} digest={image.digest} />
                                         ) : (
                                             'Image name not available'
                                         )}

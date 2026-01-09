@@ -14,8 +14,8 @@ import {
 } from '../../utils/vulnerabilityUtils';
 
 export type ImageMetadataContext = {
-    id: string;
-    digest?: string; // Only present in ImageV2
+    id: string; // UUID - used for linking
+    digest?: string; // For ImageV2, the SHA digest - used for display
     name: {
         registry: string;
         remote: string;

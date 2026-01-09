@@ -14,12 +14,8 @@ export type ImageNameLinkProps = {
         registry: string;
         tag: string;
     };
-    id: string;
-    /**
-     * Optional digest/SHA to use for display when tag is not present.
-     * For ImageV2, this should be the digest field; for legacy Image, id is used as fallback.
-     */
-    digest?: string;
+    id: string; // UUID - used for linking to the image detail page
+    digest?: string; // For ImageV2, the SHA digest - used for display when tag is not present
 };
 
 function ImageNameLink({ name, id, digest }: ImageNameLinkProps) {
@@ -30,7 +26,7 @@ function ImageNameLink({ name, id, digest }: ImageNameLinkProps) {
 
     const { registry } = name;
 
-    // If tag is not provided, use the digest (for ImageV2) or image hash (id for legacy Image) for the full image name
+    // For display: use digest (SHA) if available, otherwise use id (UUID)
     const imageShaForDisplay = digest || id;
     const baseName = getImageBaseNameDisplay(imageShaForDisplay, name);
 
