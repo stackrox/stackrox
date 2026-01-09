@@ -118,8 +118,7 @@ func (p *pipelineImpl) Run(ctx context.Context, clusterID string, msg *central.M
 	// Rate limit check. Drop message if rate limit exceeded and send NACK to Sensor if Sensor supports it.
 	allowed, reason := p.rateLimiter.TryConsume(clusterID)
 	if !allowed {
-		log.Infof("Rate limit %q exceeded for VM %s from cluster %s: %s",
-			p.rateLimiter.WorkloadName(), index.GetId(), clusterID, reason)
+		log.Infof("Dropping VM index report %s from cluster %s: %s", index.GetId(), clusterID, reason)
 		if conn != nil && conn.HasCapability(centralsensor.SensorACKSupport) {
 			sendVMIndexReportResponse(ctx, index.GetId(), central.SensorACK_NACK, reason, injector)
 		}
