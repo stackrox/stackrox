@@ -95,12 +95,12 @@
       },
       "targets": [
         {
-          "expr": "rox_central_rate_limiter_per_sensor_tokens_current{workload=\"vm-index-report\"}",
-          "legendFormat": "{{ sensor_id }}",
+          "expr": "rox_central_rate_limiter_per_client_tokens_current{workload=\"vm-index-report\"}",
+          "legendFormat": "{{ client_id }}",
           "refId": "A"
         }
       ],
-      "title": "Token Bucket - Current Tokens per Sensor",
+      "title": "Token Bucket - Current Tokens per Client",
       "type": "timeseries"
     },
     {
@@ -126,7 +126,7 @@
       },
       "targets": [
         {
-          "expr": "rox_central_rate_limiter_per_sensor_bucket_refill_rate_per_second{workload=\"vm-index-report\"}",
+          "expr": "rox_central_rate_limiter_per_client_bucket_refill_rate_per_second{workload=\"vm-index-report\"}",
           "legendFormat": "Refill Rate",
           "refId": "A"
         }
@@ -157,7 +157,7 @@
       },
       "targets": [
         {
-          "expr": "rox_central_rate_limiter_per_sensor_bucket_max_tokens{workload=\"vm-index-report\"}",
+          "expr": "rox_central_rate_limiter_per_client_bucket_max_tokens{workload=\"vm-index-report\"}",
           "legendFormat": "Max Tokens",
           "refId": "A"
         }
@@ -205,17 +205,103 @@
       },
       "targets": [
         {
-          "expr": "sum(rate(rox_central_rate_limiter_requests_rejected_total{workload=\"vm-index-report\"}[$__rate_interval])) by (sensor_id, reason)",
-          "legendFormat": "{{ sensor_id }} - {{ reason }}",
+          "expr": "sum(rate(rox_central_rate_limiter_requests_rejected_total{workload=\"vm-index-report\"}[$__rate_interval])) by (client_id, reason)",
+          "legendFormat": "{{ client_id }} - {{ reason }}",
           "refId": "A"
         }
       ],
-      "title": "Rejected Requests by Sensor & Reason",
+      "title": "Rejected Requests by Client & Reason",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 5 },
+              { "color": "orange", "value": 10 }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 4, "w": 6, "x": 0, "y": 13 },
+      "id": 6,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "textMode": "auto"
+      },
+      "targets": [
+        {
+          "expr": "rox_central_rate_limiter_active_clients{workload=\"vm-index-report\"}",
+          "legendFormat": "Active Clients",
+          "refId": "A"
+        }
+      ],
+      "title": "Active Clients (Sensors)",
+      "type": "stat"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": { "legend": false, "tooltip": false, "viz": false },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 2,
+            "pointSize": 5,
+            "scaleDistribution": { "type": "linear" },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": { "group": "A", "mode": "none" },
+            "thresholdsStyle": { "mode": "off" }
+          },
+          "mappings": [],
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] },
+          "unit": "reqps"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 17 },
+      "id": 7,
+      "options": {
+        "legend": { "calcs": ["sum"], "displayMode": "table", "placement": "bottom", "showLegend": true },
+        "tooltip": { "mode": "multi", "sort": "desc" }
+      },
+      "targets": [
+        {
+          "expr": "sum(rate(rox_central_rate_limiter_requests_accepted_total{workload=\"vm-index-report\"}[$__rate_interval])) by (client_id)",
+          "legendFormat": "{{ client_id }}",
+          "refId": "A"
+        }
+      ],
+      "title": "Accepted Requests by Client",
       "type": "timeseries"
     },
     {
       "collapsed": false,
-      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 17 },
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 25 },
       "id": 200,
       "panels": [],
       "title": "🔄 Compliance Relay",
@@ -253,7 +339,7 @@
         },
         "overrides": []
       },
-      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 18 },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 26 },
       "id": 10,
       "options": {
         "legend": { "calcs": ["mean", "max"], "displayMode": "table", "placement": "bottom", "showLegend": true },
@@ -311,7 +397,7 @@
           }
         ]
       },
-      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 18 },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 26 },
       "id": 11,
       "options": {
         "legend": { "calcs": ["mean", "max"], "displayMode": "table", "placement": "bottom", "showLegend": true },
@@ -359,7 +445,7 @@
         },
         "overrides": []
       },
-      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 26 },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 34 },
       "id": 12,
       "options": {
         "legend": { "calcs": ["mean", "max", "p99"], "displayMode": "table", "placement": "bottom", "showLegend": true },
@@ -417,7 +503,7 @@
         },
         "overrides": []
       },
-      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 26 },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 34 },
       "id": 13,
       "options": {
         "legend": { "calcs": ["mean", "max"], "displayMode": "table", "placement": "bottom", "showLegend": true },
@@ -456,7 +542,7 @@
         },
         "overrides": []
       },
-      "gridPos": { "h": 4, "w": 6, "x": 0, "y": 34 },
+      "gridPos": { "h": 4, "w": 6, "x": 0, "y": 42 },
       "id": 14,
       "options": {
         "colorMode": "value",
@@ -493,7 +579,7 @@
         },
         "overrides": []
       },
-      "gridPos": { "h": 4, "w": 6, "x": 6, "y": 34 },
+      "gridPos": { "h": 4, "w": 6, "x": 6, "y": 42 },
       "id": 15,
       "options": {
         "colorMode": "value",
@@ -554,7 +640,7 @@
           }
         ]
       },
-      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 38 },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 46 },
       "id": 16,
       "options": {
         "legend": { "calcs": ["sum"], "displayMode": "table", "placement": "bottom", "showLegend": true },
@@ -589,7 +675,7 @@
           }
         ]
       },
-      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 38 },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 46 },
       "id": 17,
       "options": {
         "displayLabels": ["name", "percent"],
@@ -619,7 +705,7 @@
         },
         "overrides": []
       },
-      "gridPos": { "h": 4, "w": 6, "x": 0, "y": 46 },
+      "gridPos": { "h": 4, "w": 6, "x": 0, "y": 54 },
       "id": 18,
       "options": {
         "colorMode": "value",
@@ -641,7 +727,7 @@
     },
     {
       "collapsed": false,
-      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 50 },
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 58 },
       "id": 300,
       "panels": [],
       "title": "📡 Sensor VM Index Handler",
@@ -666,7 +752,7 @@
           }
         ]
       },
-      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 51 },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 59 },
       "id": 20,
       "options": {
         "displayLabels": ["name", "percent"],
@@ -709,7 +795,7 @@
           }
         ]
       },
-      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 51 },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 59 },
       "id": 21,
       "options": {
         "displayLabels": ["name", "percent"],
@@ -760,7 +846,7 @@
         },
         "overrides": []
       },
-      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 59 },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 67 },
       "id": 22,
       "options": {
         "legend": { "calcs": ["mean", "max", "p99"], "displayMode": "table", "placement": "bottom", "showLegend": true },
@@ -818,7 +904,7 @@
         },
         "overrides": []
       },
-      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 59 },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 67 },
       "id": 23,
       "options": {
         "legend": { "calcs": ["mean", "max"], "displayMode": "table", "placement": "bottom", "showLegend": true },
@@ -866,7 +952,7 @@
         },
         "overrides": []
       },
-      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 67 },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 75 },
       "id": 24,
       "options": {
         "legend": { "calcs": ["mean", "max"], "displayMode": "table", "placement": "bottom", "showLegend": true },
@@ -905,7 +991,7 @@
         },
         "overrides": []
       },
-      "gridPos": { "h": 8, "w": 6, "x": 12, "y": 67 },
+      "gridPos": { "h": 8, "w": 6, "x": 12, "y": 75 },
       "id": 25,
       "options": {
         "colorMode": "value",
