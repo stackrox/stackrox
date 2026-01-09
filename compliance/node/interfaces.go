@@ -29,10 +29,12 @@ type NodeIndexer interface {
 	GetIntervals() *utils.NodeScanIntervals
 }
 
-// UnconfirmedMessageHandler handles the observation of sending, and ACK/NACK messages
+// UnconfirmedMessageHandler handles the observation of sending, and ACK/NACK messages.
+// Each resource (identified by resourceID) has independent retry state.
 type UnconfirmedMessageHandler interface {
-	HandleACK()
-	HandleNACK()
-	ObserveSending()
-	RetryCommand() <-chan struct{}
+	HandleACK(resourceID string)
+	HandleNACK(resourceID string)
+	ObserveSending(resourceID string)
+	RetryCommand() <-chan string // Returns resourceID to retry
+	OnACK(callback func(resourceID string))
 }

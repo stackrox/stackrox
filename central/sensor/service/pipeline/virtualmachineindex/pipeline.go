@@ -24,7 +24,7 @@ import (
 
 const (
 	// rateLimiterWorkload is the workload name used for rate limiting VM index reports.
-	rateLimiterWorkload = "vm_index_report"
+	rateLimiterWorkload = "vm-index-report"
 )
 
 // rateLimiter defines the interface for rate limiting operations used by this pipeline.

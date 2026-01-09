@@ -35,7 +35,7 @@ type Clock interface {
 // Each client gets an equal share (1/N) of the global capacity, with automatic
 // rebalancing when clients connect or disconnect.
 type Limiter struct {
-	workloadName   string  // name for logging/metrics (e.g., "vm_index_report")
+	workloadName   string  // name for logging/metrics (e.g., "vm-index-report")
 	globalRate     float64 // requests per second (0 = unlimited)
 	bucketCapacity int     // max tokens per client bucket (allows temporary bursts)
 

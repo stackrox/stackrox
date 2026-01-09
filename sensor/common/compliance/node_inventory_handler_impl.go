@@ -119,11 +119,23 @@ func (c *nodeInventoryHandlerImpl) Accepts(msg *central.MsgToSensor) bool {
 }
 
 func (c *nodeInventoryHandlerImpl) ProcessMessage(_ context.Context, msg *central.MsgToSensor) error {
-	ackMsg := msg.GetNodeInventoryAck()
-	if ackMsg == nil {
-		return nil
+	// Handle new SensorACK message (from Central 4.10+)
+	if sensorAck := msg.GetSensorAck(); sensorAck != nil {
+		return c.processSensorACK(sensorAck)
 	}
-	log.Debugf("Received node-scanning-ACK message of type %s, action %s for node %s",
+
+	// Handle legacy NodeInventoryACK message (from Central 4.9 and earlier)
+	if ackMsg := msg.GetNodeInventoryAck(); ackMsg != nil {
+		return c.processNodeInventoryACK(ackMsg)
+	}
+
+	return nil
+}
+
+// processNodeInventoryACK handles the legacy NodeInventoryACK message from Central 4.9 and earlier.
+// It forwards the ACK/NACK to Compliance using the legacy NodeInventoryACK message type.
+func (c *nodeInventoryHandlerImpl) processNodeInventoryACK(ackMsg *central.NodeInventoryACK) error {
+	log.Debugf("Received legacy node-scanning-ACK message of type %s, action %s for node %s",
 		ackMsg.GetMessageType(), ackMsg.GetAction(), ackMsg.GetNodeName())
 	metrics.ObserveNodeScanningAck(ackMsg.GetNodeName(),
 		ackMsg.GetAction().String(),

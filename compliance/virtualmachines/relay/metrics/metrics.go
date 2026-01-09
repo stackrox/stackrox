@@ -77,6 +77,63 @@ var SemaphoreQueueSize = prometheus.NewGauge(
 		Help:      "Number of connections waiting to be handled",
 	})
 
+// VMIndexReportSendAttempts counts send attempts to Sensor by result.
+var VMIndexReportSendAttempts = prometheus.NewCounterVec(
+	prometheus.CounterOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.ComplianceSubsystem.String(),
+		Name:      "virtual_machine_relay_index_report_send_attempts_total",
+		Help:      "Send attempts of VM index reports to Sensor partitioned by result",
+	},
+	[]string{"result"}, // success|retry
+)
+
+// VMIndexReportSendDurationSeconds observes per-attempt latency to Sensor by result.
+var VMIndexReportSendDurationSeconds = prometheus.NewHistogramVec(
+	prometheus.HistogramOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.ComplianceSubsystem.String(),
+		Name:      "virtual_machine_relay_index_report_send_duration_seconds",
+		Help:      "Duration of VM index report send attempts to Sensor",
+		Buckets:   prometheus.ExponentialBuckets(0.1, 2, 10),
+	},
+	[]string{"result"}, // success|retry
+)
+
+// ReportsRateLimited counts reports dropped by relay-side rate limiting.
+var ReportsRateLimited = prometheus.NewCounterVec(
+	prometheus.CounterOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.ComplianceSubsystem.String(),
+		Name:      "virtual_machine_relay_reports_rate_limited_total",
+		Help:      "Reports dropped due to relay-side rate limiting",
+	},
+	[]string{"reason"}, // "normal", "stale_ack"
+)
+
+// AcksReceived counts ACK confirmations received from Sensor for VM index reports.
+// NACKs are tracked separately in the main compliance component where they're handled.
+var AcksReceived = prometheus.NewCounter(
+	prometheus.CounterOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.ComplianceSubsystem.String(),
+		Name:      "virtual_machine_relay_acks_received_total",
+		Help:      "ACK confirmations received from Sensor for VM index reports",
+	},
+)
+
+// VMIndexACKsFromSensor counts ACK/NACK responses received from Sensor for VM index reports.
+// This metric is recorded when compliance.go handles ComplianceACK messages.
+var VMIndexACKsFromSensor = prometheus.NewCounterVec(
+	prometheus.CounterOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.ComplianceSubsystem.String(),
+		Name:      "virtual_machine_index_acks_from_sensor_total",
+		Help:      "ACK/NACK responses received from Sensor for VM index reports",
+	},
+	[]string{"action"}, // "ACK", "NACK"
+)
+
 func init() {
 	prometheus.MustRegister(
 		IndexReportsMismatchingVsockCID,
@@ -86,5 +143,10 @@ func init() {
 		SemaphoreAcquisitionFailures,
 		SemaphoreHoldingSize,
 		SemaphoreQueueSize,
+		VMIndexReportSendAttempts,
+		VMIndexReportSendDurationSeconds,
+		ReportsRateLimited,
+		AcksReceived,
+		VMIndexACKsFromSensor,
 	)
 }

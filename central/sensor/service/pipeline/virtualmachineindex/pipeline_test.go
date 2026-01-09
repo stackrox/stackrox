@@ -17,6 +17,7 @@ import (
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/rate"
 	"github.com/stackrox/rox/pkg/sync"
 	vmEnricherMocks "github.com/stackrox/rox/pkg/virtualmachine/enricher/mocks"
@@ -656,4 +657,67 @@ func (f *fakeRateLimiter) TryConsume(_ string) (bool, string) {
 
 func (f *fakeRateLimiter) OnClientDisconnect(clientID string) {
 	f.lastDisconnectedClientID = clientID
+}
+
+func TestSendVMIndexReportResponse_SensorACKAndLegacyFallback(t *testing.T) {
+	t.Setenv(features.VirtualMachines.EnvVar(), "true")
+
+	// Capability path: should send SensorACK
+	ackInjector := &vmRecordingInjector{hasAckCap: true}
+	sendVMIndexReportResponse(ctx, "vm-1", central.SensorACK_ACK, "", ackInjector)
+	require.Len(t, ackInjector.sensorAcks, 1)
+	protoassert.Equal(t, &central.SensorACK{
+		Action:      central.SensorACK_ACK,
+		MessageType: central.SensorACK_VM_INDEX_REPORT,
+		ResourceId:  "vm-1",
+	}, ackInjector.sensorAcks[0])
+
+	// No capability: should skip sending
+	noCapInjector := &vmRecordingInjector{hasAckCap: false}
+	sendVMIndexReportResponse(ctx, "vm-2", central.SensorACK_NACK, "rate limit", noCapInjector)
+	require.Len(t, noCapInjector.sensorAcks, 0)
+}
+
+func TestSendVMIndexReportResponse_SensorACKNACK(t *testing.T) {
+	t.Setenv(features.VirtualMachines.EnvVar(), "true")
+
+	ackInjector := &vmRecordingInjector{hasAckCap: true}
+	sendVMIndexReportResponse(ctx, "vm-nack-1", central.SensorACK_NACK, "validation failed", ackInjector)
+
+	require.Len(t, ackInjector.sensorAcks, 1)
+	protoassert.Equal(t, &central.SensorACK{
+		Action:      central.SensorACK_NACK,
+		MessageType: central.SensorACK_VM_INDEX_REPORT,
+		ResourceId:  "vm-nack-1",
+		Reason:      "validation failed",
+	}, ackInjector.sensorAcks[0])
+}
+
+func TestSendVMIndexReportResponse_SensorACKNACK_LegacyFallback(t *testing.T) {
+	t.Setenv(features.VirtualMachines.EnvVar(), "true")
+
+	noCapInjector := &vmRecordingInjector{hasAckCap: false}
+	sendVMIndexReportResponse(ctx, "vm-nack-2", central.SensorACK_NACK, "legacy path", noCapInjector)
+
+	require.Len(t, noCapInjector.sensorAcks, 0)
+}
+
+type vmRecordingInjector struct {
+	sensorAcks []*central.SensorACK
+	hasAckCap  bool
+}
+
+var _ common.MessageInjector = (*vmRecordingInjector)(nil)
+
+func (r *vmRecordingInjector) InjectMessage(_ concurrency.Waitable, msg *central.MsgToSensor) error {
+	if sa := msg.GetSensorAck(); sa != nil {
+		r.sensorAcks = append(r.sensorAcks, sa.CloneVT())
+	}
+	return nil
+}
+
+func (r *vmRecordingInjector) InjectMessageIntoQueue(_ *central.MsgFromSensor) {}
+
+func (r *vmRecordingInjector) HasCapability(cap centralsensor.SensorCapability) bool {
+	return cap == centralsensor.SensorACKSupport && r.hasAckCap
 }

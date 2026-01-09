@@ -220,7 +220,9 @@ func (s *virtualMachineHandlerSuite) TestStop() {
 
 func (s *virtualMachineHandlerSuite) TestCapabilities() {
 	caps := s.handler.Capabilities()
-	s.Require().Empty(caps)
+	s.Require().Equal([]centralsensor.SensorCapability{
+		centralsensor.SensorACKSupport,
+	}, caps)
 }
 
 func (s *virtualMachineHandlerSuite) TestProcessMessage() {
