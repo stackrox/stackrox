@@ -17,7 +17,7 @@ const iconGlobe = <Globe height="15px" />;
 export type CompoundSearchFilterLabelsProps = {
     attributesSeparateFromConfig: CompoundSearchFilterAttribute[];
     config: CompoundSearchFilterConfig;
-    isGlobalPredicate: IsGlobalPredicate; // for certain values in AdvancedFilterToolbar.tsx file
+    isGlobalPredicate?: IsGlobalPredicate; // for certain values in AdvancedFilterToolbar.tsx file
     onFilterChange?: (searchFilter: SearchFilter) => void; // omit for view-based report details
     searchFilter: SearchFilter;
 };
