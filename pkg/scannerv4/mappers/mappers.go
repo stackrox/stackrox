@@ -125,9 +125,10 @@ func ToProtoV4VulnerabilityReport(ctx context.Context, r *claircore.Vulnerabilit
 	if err != nil {
 		return nil, fmt.Errorf("internal error: parsing EPSS items: %w", err)
 	}
-	// TODO(ROX-26672): Remove reference to temporary solution below.
-	// The CSAF advisories are used to obtain fixed dates for RH vulns and
-	// as a temporary solution when showing top level advisories (instead of CVEs).
+
+	// CSAF advisories are used to obtain fixed dates for Red Hat vulnerabilities
+	// and to close the gap since CVE data does not provide
+	// top-level advisory information.
 	csafAdvisories, err := redhatCSAFAdvisories(ctx, r.Enrichments)
 	if err != nil {
 		return nil, fmt.Errorf("internal error: parsing Red Hat CSAF advisories: %w", err)
@@ -596,7 +597,7 @@ func toProtoV4VulnerabilitiesMap(
 		csafAdvisory, csafAdvisoryExists := csafAdvisories[v.ID]
 
 		normalizedSeverity := toProtoV4VulnerabilitySeverity(ctx, v.NormalizedSeverity)
-		if csafAdvisoryExists && !features.ScannerV4RedHatCVEs.Enabled() {
+		if shouldReplaceWithAdvisoryData(csafAdvisoryExists) {
 			// Replace the normalized severity for the CVE with the severity of the related Red Hat advisory.
 			normalizedSeverity = toProtoV4VulnerabilitySeverityFromString(ctx, csafAdvisory.Severity)
 		}
@@ -628,7 +629,7 @@ func toProtoV4VulnerabilitiesMap(
 		}
 
 		description := v.Description
-		if csafAdvisoryExists && !features.ScannerV4RedHatCVEs.Enabled() {
+		if shouldReplaceWithAdvisoryData(csafAdvisoryExists) {
 			// Replace the description for the CVE with the description of the related Red Hat advisory.
 			description = csafAdvisory.Description
 		}
@@ -640,7 +641,7 @@ func toProtoV4VulnerabilitiesMap(
 		}
 
 		vulnPublished := v.Issued
-		if csafAdvisoryExists && !features.ScannerV4RedHatCVEs.Enabled() {
+		if shouldReplaceWithAdvisoryData(csafAdvisoryExists) {
 			// Replace the published date for the CVE with the published date of the related Red Hat advisory.
 			vulnPublished = csafAdvisory.ReleaseDate
 		}
@@ -704,6 +705,14 @@ func toProtoV4VulnerabilitiesMap(
 		}
 	}
 	return vulnerabilities, nil
+}
+
+// shouldReplaceWithAdvisoryData determines whether CVE-level data should be replaced
+// with data from the associated Red Hat advisory.
+// Advisory data is used when an advisory exists and Red Hat advisories are configured
+// as the top-level vulnerability (i.e., CVEs are not the top-level).
+func shouldReplaceWithAdvisoryData(csafAdvisoryExists bool) bool {
+	return csafAdvisoryExists && !features.ScannerV4RedHatCVEs.Enabled()
 }
 
 // fixedTime returns the fixed time for a vulnerability as indicated by the
