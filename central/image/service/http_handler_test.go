@@ -22,6 +22,7 @@ import (
 	scannerMocks "github.com/stackrox/rox/pkg/scanners/mocks"
 	scannerTypes "github.com/stackrox/rox/pkg/scanners/types"
 	scannerTypesMocks "github.com/stackrox/rox/pkg/scanners/types/mocks"
+	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stretchr/testify/assert"
 	"go.uber.org/mock/gomock"
 )
@@ -83,68 +84,102 @@ func TestHttpHandler_ServeHTTP(t *testing.T) {
 
 	// Test case: valid json body and enricher returns error
 	t.Run("valid json body with error from enricher", func(t *testing.T) {
-		t.Setenv(features.ScannerV4.EnvVar(), "true")
-		ctrl := gomock.NewController(t)
-		defer ctrl.Finish()
-		// initialize mocks
-		mockEnricher := enricherMock.NewMockImageEnricher(ctrl)
-		mockEnricher.EXPECT().EnrichImage(gomock.Any(), gomock.Any(), gomock.Any()).Return(enricher.EnrichmentResult{ImageUpdated: false, ScanResult: enricher.ScanNotDone}, errors.New("Image enrichment failed")).AnyTimes()
-
-		reqBody := &apiparams.SBOMRequestBody{
-			ImageName: "test-image",
-			Force:     false,
+		testcases := []struct {
+			name                    string
+			flattenImageDataEnabled bool
+		}{
+			{name: "with flatten image data disabled", flattenImageDataEnabled: false},
+			{name: "with flatten image data enabled", flattenImageDataEnabled: true},
 		}
-		reqJson, err := json.Marshal(reqBody)
-		assert.NoError(t, err)
-		req := httptest.NewRequest(http.MethodPost, "/sbom", bytes.NewReader(reqJson))
-		recorder := httptest.NewRecorder()
 
-		handler := SBOMHandler(imageintegration.Set(), mockEnricher, nil, nil, nil)
-		handler.ServeHTTP(recorder, req)
+		for _, tc := range testcases {
+			t.Run(tc.name, func(t *testing.T) {
+				testutils.MustUpdateFeature(t, features.FlattenImageData, tc.flattenImageDataEnabled)
 
-		res := recorder.Result()
-		err = res.Body.Close()
-		assert.NoError(t, err)
-		assert.Equal(t, http.StatusInternalServerError, res.StatusCode)
+				t.Setenv(features.ScannerV4.EnvVar(), "true")
+
+				ctrl := gomock.NewController(t)
+				defer ctrl.Finish()
+				// initialize mocks
+				mockEnricher := enricherMock.NewMockImageEnricher(ctrl)
+				mockEnricher.EXPECT().EnrichImage(gomock.Any(), gomock.Any(), gomock.Any()).Return(enricher.EnrichmentResult{ImageUpdated: false, ScanResult: enricher.ScanNotDone}, errors.New("Image enrichment failed")).AnyTimes()
+
+				mockEnricherV2 := enricherMock.NewMockImageEnricherV2(ctrl)
+				mockEnricherV2.EXPECT().EnrichImage(gomock.Any(), gomock.Any(), gomock.Any()).Return(enricher.EnrichmentResult{ImageUpdated: false, ScanResult: enricher.ScanNotDone}, errors.New("Image enrichment failed")).AnyTimes()
+
+				reqBody := &apiparams.SBOMRequestBody{
+					ImageName: "test-image",
+					Force:     false,
+				}
+				reqJson, err := json.Marshal(reqBody)
+				assert.NoError(t, err)
+				req := httptest.NewRequest(http.MethodPost, "/sbom", bytes.NewReader(reqJson))
+				recorder := httptest.NewRecorder()
+
+				handler := SBOMHandler(imageintegration.Set(), mockEnricher, mockEnricherV2, nil, nil)
+				handler.ServeHTTP(recorder, req)
+
+				res := recorder.Result()
+				err = res.Body.Close()
+				assert.NoError(t, err)
+				assert.Equal(t, http.StatusInternalServerError, res.StatusCode)
+			})
+		}
 	})
 
 	// Test case: valid json body and validate enricher being called
 	t.Run("valid json body", func(t *testing.T) {
-		t.Setenv(features.ScannerV4.EnvVar(), "true")
-		ctrl := gomock.NewController(t)
-		defer ctrl.Finish()
-
-		// initialize mocks
-		scannerSet := scannerMocks.NewMockSet(ctrl)
-		set := intergrationMocks.NewMockSet(ctrl)
-		mockEnricher := enricherMock.NewMockImageEnricher(ctrl)
-		scanner := scannerTypesMocks.NewMockScannerSBOMer(ctrl)
-		fsr := scannerTypesMocks.NewMockImageScannerWithDataSource(ctrl)
-
-		mockEnricher.EXPECT().EnrichImage(gomock.Any(), gomock.Any(), gomock.Any()).Return(enricher.EnrichmentResult{ImageUpdated: true, ScanResult: enricher.ScanSucceeded}, nil).AnyTimes()
-		scanner.EXPECT().Type().Return(scannerTypes.ScannerV4).AnyTimes()
-		scanner.EXPECT().GetSBOM(gomock.Any()).DoAndReturn(getFakeSBOM).AnyTimes()
-		set.EXPECT().ScannerSet().Return(scannerSet).AnyTimes()
-		fsr.EXPECT().GetScanner().Return(scanner).AnyTimes()
-		scannerSet.EXPECT().GetAll().Return([]scannerTypes.ImageScannerWithDataSource{fsr}).AnyTimes()
-
-		reqBody := &apiparams.SBOMRequestBody{
-			ImageName: "quay.io/quay-qetest/nodejs-test-image:latest",
-			Force:     false,
+		testcases := []struct {
+			name                    string
+			flattenImageDataEnabled bool
+		}{
+			{name: "with flatten image data disabled", flattenImageDataEnabled: false},
+			{name: "with flatten image data enabled", flattenImageDataEnabled: true},
 		}
 
-		reqJson, err := json.Marshal(reqBody)
-		assert.NoError(t, err)
-		req := httptest.NewRequest(http.MethodPost, "/sbom", bytes.NewReader(reqJson))
-		recorder := httptest.NewRecorder()
+		for _, tc := range testcases {
+			t.Run(tc.name, func(t *testing.T) {
+				testutils.MustUpdateFeature(t, features.FlattenImageData, tc.flattenImageDataEnabled)
+				t.Setenv(features.ScannerV4.EnvVar(), "true")
 
-		handler := SBOMHandler(set, mockEnricher, nil, nil, nil)
-		handler.ServeHTTP(recorder, req)
+				ctrl := gomock.NewController(t)
+				defer ctrl.Finish()
 
-		res := recorder.Result()
-		err = res.Body.Close()
-		assert.NoError(t, err)
-		assert.Equal(t, http.StatusOK, res.StatusCode)
+				// initialize mocks
+				scannerSet := scannerMocks.NewMockSet(ctrl)
+				set := intergrationMocks.NewMockSet(ctrl)
+				mockEnricher := enricherMock.NewMockImageEnricher(ctrl)
+				mockEnricherV2 := enricherMock.NewMockImageEnricherV2(ctrl)
+				scanner := scannerTypesMocks.NewMockScannerSBOMer(ctrl)
+				fsr := scannerTypesMocks.NewMockImageScannerWithDataSource(ctrl)
+
+				mockEnricher.EXPECT().EnrichImage(gomock.Any(), gomock.Any(), gomock.Any()).Return(enricher.EnrichmentResult{ImageUpdated: true, ScanResult: enricher.ScanSucceeded}, nil).AnyTimes()
+				mockEnricherV2.EXPECT().EnrichImage(gomock.Any(), gomock.Any(), gomock.Any()).Return(enricher.EnrichmentResult{ImageUpdated: true, ScanResult: enricher.ScanSucceeded}, nil).AnyTimes()
+				scanner.EXPECT().Type().Return(scannerTypes.ScannerV4).AnyTimes()
+				scanner.EXPECT().GetSBOM(gomock.Any()).DoAndReturn(getFakeSBOM).AnyTimes()
+				set.EXPECT().ScannerSet().Return(scannerSet).AnyTimes()
+				fsr.EXPECT().GetScanner().Return(scanner).AnyTimes()
+				scannerSet.EXPECT().GetAll().Return([]scannerTypes.ImageScannerWithDataSource{fsr}).AnyTimes()
+
+				reqBody := &apiparams.SBOMRequestBody{
+					ImageName: "quay.io/quay-qetest/nodejs-test-image:latest",
+					Force:     false,
+				}
+
+				reqJson, err := json.Marshal(reqBody)
+				assert.NoError(t, err)
+				req := httptest.NewRequest(http.MethodPost, "/sbom", bytes.NewReader(reqJson))
+				recorder := httptest.NewRecorder()
+
+				handler := SBOMHandler(set, mockEnricher, mockEnricherV2, nil, nil)
+				handler.ServeHTTP(recorder, req)
+
+				res := recorder.Result()
+				err = res.Body.Close()
+				assert.NoError(t, err)
+				assert.Equal(t, http.StatusOK, res.StatusCode)
+			})
+		}
 	})
 
 	// Test case: invalid json body
@@ -217,69 +252,95 @@ func TestHttpHandler_ServeHTTP(t *testing.T) {
 	// but the Scanner V4 Indexer did not have the corresponding index report.
 	// A forced enrichment is expected and the result saved to Central DB.
 	t.Run("image saved to Central when index report did not exist", func(t *testing.T) {
-		t.Setenv(features.ScannerV4.EnvVar(), "true")
-
-		// enrichImageFunc will fake enrich an image by Scanner V4.
-		enrichImageFunc := func(ctx context.Context, enrichCtx enricher.EnrichmentContext, img *storage.Image) (enricher.EnrichmentResult, error) {
-			img.Id = "fake-id"
-			img.Scan = &storage.ImageScan{DataSource: &storage.DataSource{Id: iiStore.DefaultScannerV4Integration.GetId()}}
-			return enricher.EnrichmentResult{ImageUpdated: true, ScanResult: enricher.ScanSucceeded}, nil
+		testcases := []struct {
+			name                    string
+			flattenImageDataEnabled bool
+		}{
+			{name: "with flatten image data disabled", flattenImageDataEnabled: false},
+			{name: "with flatten image data enabled", flattenImageDataEnabled: true},
 		}
 
-		// getSBOMFunc will indicate an index report is missing on first invocation and found on subsequent invocations.
-		firstGetSBOMInvocation := true
-		getSBOMFunc := func(_ any) ([]byte, bool, error) {
-			if firstGetSBOMInvocation {
-				firstGetSBOMInvocation = false
-				return nil, false, nil
-			}
-			return getFakeSBOM(nil)
+		for _, tc := range testcases {
+			t.Run(tc.name, func(t *testing.T) {
+				testutils.MustUpdateFeature(t, features.FlattenImageData, tc.flattenImageDataEnabled)
+				t.Setenv(features.ScannerV4.EnvVar(), "true")
+
+				// enrichImageFunc will fake enrich an image by Scanner V4.
+				enrichImageFunc := func(ctx context.Context, enrichCtx enricher.EnrichmentContext, img *storage.Image) (enricher.EnrichmentResult, error) {
+					img.Id = "fake-id"
+					img.Scan = &storage.ImageScan{DataSource: &storage.DataSource{Id: iiStore.DefaultScannerV4Integration.GetId()}}
+					return enricher.EnrichmentResult{ImageUpdated: true, ScanResult: enricher.ScanSucceeded}, nil
+				}
+				enrichImageFuncV2 := func(ctx context.Context, enrichCtx enricher.EnrichmentContext, img *storage.ImageV2) (enricher.EnrichmentResult, error) {
+					img.Digest = "fake-digest"
+					img.Scan = &storage.ImageScan{DataSource: &storage.DataSource{Id: iiStore.DefaultScannerV4Integration.GetId()}}
+					return enricher.EnrichmentResult{ImageUpdated: true, ScanResult: enricher.ScanSucceeded}, nil
+				}
+
+				// getSBOMFunc will indicate an index report is missing on first invocation and found on subsequent invocations.
+				firstGetSBOMInvocation := true
+				getSBOMFunc := func(_ any) ([]byte, bool, error) {
+					if firstGetSBOMInvocation {
+						firstGetSBOMInvocation = false
+						return nil, false, nil
+					}
+					return getFakeSBOM(nil)
+				}
+
+				ctrl := gomock.NewController(t)
+				defer ctrl.Finish()
+
+				// Initialize mocks.
+				mockScanner := scannerTypesMocks.NewMockScannerSBOMer(ctrl)
+				mockScanner.EXPECT().GetSBOM(gomock.Any()).DoAndReturn(getSBOMFunc).AnyTimes()
+				mockScanner.EXPECT().Type().Return(scannerTypes.ScannerV4).AnyTimes()
+
+				mockImageScannerWithDS := scannerTypesMocks.NewMockImageScannerWithDataSource(ctrl)
+				mockImageScannerWithDS.EXPECT().GetScanner().Return(mockScanner).AnyTimes()
+
+				mockScannerSet := scannerMocks.NewMockSet(ctrl)
+				mockScannerSet.EXPECT().GetAll().Return([]scannerTypes.ImageScannerWithDataSource{mockImageScannerWithDS}).AnyTimes()
+
+				mockIntegrationSet := intergrationMocks.NewMockSet(ctrl)
+				mockIntegrationSet.EXPECT().ScannerSet().Return(mockScannerSet).AnyTimes()
+
+				mockEnricher := enricherMock.NewMockImageEnricher(ctrl)
+				mockEnricher.EXPECT().EnrichImage(gomock.Any(), gomock.Any(), gomock.Any()).DoAndReturn(enrichImageFunc).AnyTimes()
+
+				mockEnricherV2 := enricherMock.NewMockImageEnricherV2(ctrl)
+				mockEnricherV2.EXPECT().EnrichImage(gomock.Any(), gomock.Any(), gomock.Any()).DoAndReturn(enrichImageFuncV2).AnyTimes()
+
+				mockRiskManager := riskManagerMocks.NewMockManager(ctrl)
+				// Image is expected to be saved after each successful enrichment, for this edge case will
+				// be multiple successful enrichments.
+				if !features.FlattenImageData.Enabled() {
+					mockRiskManager.EXPECT().CalculateRiskAndUpsertImage(gomock.Any()).Times(2)
+
+				} else {
+					mockRiskManager.EXPECT().CalculateRiskAndUpsertImageV2(gomock.Any()).Times(2)
+				}
+
+				// Prepare the SBOM generation request.
+				reqBody := &apiparams.SBOMRequestBody{
+					ImageName: "quay.io/quay-qetest/nodejs-test-image:latest",
+					Force:     false,
+				}
+				reqJson, err := json.Marshal(reqBody)
+				assert.NoError(t, err)
+				req := httptest.NewRequest(http.MethodPost, "/sbom", bytes.NewReader(reqJson))
+				recorder := httptest.NewRecorder()
+				handler := SBOMHandler(mockIntegrationSet, mockEnricher, mockEnricherV2, nil, mockRiskManager)
+
+				// Make the SBOM generation request.
+				handler.ServeHTTP(recorder, req)
+
+				// Validate was successful.
+				res := recorder.Result()
+				err = res.Body.Close()
+				assert.NoError(t, err)
+				assert.Equal(t, http.StatusOK, res.StatusCode)
+			})
 		}
-
-		ctrl := gomock.NewController(t)
-		defer ctrl.Finish()
-
-		// Initialize mocks.
-		mockScanner := scannerTypesMocks.NewMockScannerSBOMer(ctrl)
-		mockScanner.EXPECT().GetSBOM(gomock.Any()).DoAndReturn(getSBOMFunc).AnyTimes()
-		mockScanner.EXPECT().Type().Return(scannerTypes.ScannerV4).AnyTimes()
-
-		mockImageScannerWithDS := scannerTypesMocks.NewMockImageScannerWithDataSource(ctrl)
-		mockImageScannerWithDS.EXPECT().GetScanner().Return(mockScanner).AnyTimes()
-
-		mockScannerSet := scannerMocks.NewMockSet(ctrl)
-		mockScannerSet.EXPECT().GetAll().Return([]scannerTypes.ImageScannerWithDataSource{mockImageScannerWithDS}).AnyTimes()
-
-		mockIntegrationSet := intergrationMocks.NewMockSet(ctrl)
-		mockIntegrationSet.EXPECT().ScannerSet().Return(mockScannerSet).AnyTimes()
-
-		mockEnricher := enricherMock.NewMockImageEnricher(ctrl)
-		mockEnricher.EXPECT().EnrichImage(gomock.Any(), gomock.Any(), gomock.Any()).DoAndReturn(enrichImageFunc).AnyTimes()
-
-		mockRiskManager := riskManagerMocks.NewMockManager(ctrl)
-		// Image is expected to be saved after each successful enrichment, for this edge case will
-		// be multiple successful enrichments.
-		mockRiskManager.EXPECT().CalculateRiskAndUpsertImage(gomock.Any()).Times(2)
-
-		// Prepare the SBOM generation request.
-		reqBody := &apiparams.SBOMRequestBody{
-			ImageName: "quay.io/quay-qetest/nodejs-test-image:latest",
-			Force:     false,
-		}
-		reqJson, err := json.Marshal(reqBody)
-		assert.NoError(t, err)
-		req := httptest.NewRequest(http.MethodPost, "/sbom", bytes.NewReader(reqJson))
-		recorder := httptest.NewRecorder()
-		handler := SBOMHandler(mockIntegrationSet, mockEnricher, nil, nil, mockRiskManager)
-
-		// Make the SBOM generation request.
-		handler.ServeHTTP(recorder, req)
-
-		// Validate was successful.
-		res := recorder.Result()
-		err = res.Body.Close()
-		assert.NoError(t, err)
-		assert.Equal(t, http.StatusOK, res.StatusCode)
 	})
 }
 
