@@ -70,6 +70,10 @@
           "type": "boolean",
           "description": "Bypass Central's cache for the image and force a new pull from the Scanner",
           "default": false
+        },
+        "digest": {
+          "type": "string",
+          "description": "Image digest if not already part of image name"
         }
       },
       "required": [
