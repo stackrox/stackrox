@@ -54,6 +54,14 @@
     "imageSBOMRequest": {
       "type": "object",
       "properties": {
+        "cluster": {
+          "type": "string",
+          "description": "Cluster to delegate scan to, may be the cluster's name or ID."
+        },
+        "namespace": {
+          "type": "string",
+          "description": "Namespace on the secured cluster from which to read context information when delegating image scans, specifically pull secrets to access the image registry."
+        },
         "imageName": {
           "type": "string",
           "description": "Image name and reference. (e.g. nginx:latest or nginx@sha256:...)"
