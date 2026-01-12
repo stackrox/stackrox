@@ -2,127 +2,215 @@ package queue
 
 import (
 	"testing"
+	"testing/synctest"
 	"time"
 
 	"github.com/stackrox/rox/pkg/concurrency"
-	"github.com/stretchr/testify/suite"
+	"github.com/stretchr/testify/assert"
 )
 
-type queueSuite struct {
-	suite.Suite
-}
-
-func TestQueue(t *testing.T) {
-	suite.Run(t, new(queueSuite))
-}
-
-func (s *queueSuite) createAndStartQueue(stopper concurrency.Stopper, size int) *Queue[*string] {
+func createAndStartQueue(t *testing.T, stopper concurrency.Stopper, size int) *Queue[*string] {
+	t.Helper()
 	q := NewQueue[*string](stopper, "queue", size, nil, nil)
 	q.Start()
 	return q
 }
 
-func (s *queueSuite) TestPauseAndResume() {
-	cases := map[string][]func(*Queue[*string], concurrency.Stopper){
-		"Pause":                              {s.push, s.pause, s.noPull},
-		"Pause, resume":                      {s.push, s.pause, s.push, s.resume, s.pull, s.pull},
-		"Pause, stop":                        {s.push, s.pause, s.noPull, s.stopPull},
-		"2 push, pull, pause, pull":          {s.push, s.push, s.resume, s.pull, s.wait, s.pause, s.pull, s.stopPull},
-		"2 Push, pull, pause, push, no pull": {s.push, s.push, s.resume, s.pull, s.wait, s.pause, s.pull, s.push, s.noPull, s.stopPull},
-		"Block until push":                   {s.resume, s.pushPullBlocking},
-	}
-	for name, tc := range cases {
-		s.Run(name, func() {
-			testStopper := concurrency.NewStopper()
-			queueStopper := concurrency.NewStopper()
-			q := s.createAndStartQueue(queueStopper, 0)
-			for _, fn := range tc {
-				fn(q, testStopper)
-			}
-			testStopper.Client().Stop()
-			select {
-			case <-time.After(2 * time.Second):
-				s.Fail("timeout waiting for the queue to be unblocked")
-			case <-testStopper.Flow().StopRequested():
-				queueStopper.Client().Stop()
-				return
-			}
-		})
-	}
-}
-
-func (s *queueSuite) wait(_ *Queue[*string], _ concurrency.Stopper) {
-	time.Sleep(time.Millisecond)
-}
-
-func (s *queueSuite) push(q *Queue[*string], _ concurrency.Stopper) {
+func push(t *testing.T, q *Queue[*string]) {
+	t.Helper()
 	old := q.queue.Len()
 	item := "item"
 	q.Push(&item)
-	s.Assert().Equal(old+1, q.queue.Len())
+	assert.Equal(t, old+1, q.queue.Len())
 }
 
-func (s *queueSuite) pause(q *Queue[*string], _ concurrency.Stopper) {
+func pause(_ *testing.T, q *Queue[*string]) {
 	q.Pause()
 }
 
-func (s *queueSuite) noPull(q *Queue[*string], stopper concurrency.Stopper) {
-	ch := make(chan *string)
-	go func() {
-		defer close(ch)
-		select {
-		case item := <-q.Pull():
-			ch <- item
-		case <-stopper.Flow().StopRequested():
-		}
-	}()
-	select {
-	case <-time.After(500 * time.Millisecond):
-		return
-	case item := <-ch:
-		s.Failf("should not pull from the queue", "%s was pulled", *item)
-	}
-}
-
-func (s *queueSuite) resume(q *Queue[*string], _ concurrency.Stopper) {
+func resume(_ *testing.T, q *Queue[*string]) {
 	q.Resume()
 }
 
-func (s *queueSuite) pull(q *Queue[*string], stopper concurrency.Stopper) {
+// noPull verifies that Pull() blocks when the queue is paused.
+// With synctest's fake clock, time advances only when all goroutines are durably blocked.
+func noPull(t *testing.T, q *Queue[*string], stopper concurrency.Stopper) {
+	t.Helper()
 	ch := make(chan *string)
 	go func() {
 		defer close(ch)
 		select {
 		case item := <-q.Pull():
-			ch <- item
+			// Pull returned - either got an item or queue was stopped (nil).
+			// Use nested select to avoid blocking if nobody reads from ch.
+			if item != nil {
+				select {
+				case ch <- item:
+				case <-stopper.Flow().StopRequested():
+				}
+			}
+		case <-stopper.Flow().StopRequested():
+		}
+	}()
+	// With fake clock, this advances time instantly when goroutines are blocked
+	select {
+	case <-time.After(500 * time.Millisecond):
+		return // Expected: timeout means Pull() is blocked
+	case item := <-ch:
+		t.Fatalf("should not pull from the queue, but %s was pulled", *item)
+	}
+}
+
+// pull verifies that Pull() succeeds within a timeout.
+func pull(t *testing.T, q *Queue[*string], stopper concurrency.Stopper) {
+	t.Helper()
+	ch := make(chan *string)
+	go func() {
+		defer close(ch)
+		select {
+		case item := <-q.Pull():
+			// Use nested select to avoid blocking if nobody reads from ch.
+			select {
+			case ch <- item:
+			case <-stopper.Flow().StopRequested():
+			}
 		case <-stopper.Flow().StopRequested():
 		}
 	}()
 	select {
 	case <-time.After(500 * time.Millisecond):
-		s.Fail("timeout waiting to pull from the queue")
+		t.Fatal("timeout waiting to pull from the queue")
 	case item := <-ch:
-		s.Assert().Equal("item", *item)
+		assert.Equal(t, "item", *item)
 	}
 }
 
-func (s *queueSuite) stopPull(q *Queue[*string], _ concurrency.Stopper) {
+// stopPull verifies that Pull() returns nil when the queue is stopped.
+func stopPull(t *testing.T, q *Queue[*string]) {
+	t.Helper()
+	// Schedule the stop after a delay - with fake clock this fires when goroutines block
 	time.AfterFunc(500*time.Millisecond, func() {
 		q.stopper.Client().Stop()
 	})
-	s.Assert().Eventually(func() bool {
-		item := <-q.Pull()
-		return nil == item
-	}, 1*time.Second, 100*time.Millisecond)
+	// Wait for the goroutine to be blocked, then time advances and AfterFunc fires
+	item := <-q.Pull()
+	assert.Nil(t, item, "Pull() should return nil after stop")
 }
 
-func (s *queueSuite) pushPullBlocking(q *Queue[*string], _ concurrency.Stopper) {
+// pushPullBlocking verifies that Pull() blocks until an item is pushed.
+func pushPullBlocking(t *testing.T, q *Queue[*string]) {
+	t.Helper()
+	// Schedule a push after a delay - with fake clock this fires when goroutines block
 	time.AfterFunc(500*time.Millisecond, func() {
 		item := "item"
 		q.Push(&item)
 	})
-	s.Assert().Eventually(func() bool {
-		item := <-q.Pull()
-		return "item" == *item
-	}, 1*time.Second, 100*time.Millisecond)
+	// Pull will block, time advances, AfterFunc fires, then Pull returns
+	item := <-q.Pull()
+	assert.NotNil(t, item)
+	assert.Equal(t, "item", *item)
+}
+
+// TestPauseAndResume tests various queue pause/resume scenarios using synctest
+// for deterministic concurrent testing with a fake clock.
+func TestPauseAndResume(t *testing.T) {
+	cases := map[string]func(t *testing.T){
+		"Pause": func(t *testing.T) {
+			testStopper := concurrency.NewStopper()
+			queueStopper := concurrency.NewStopper()
+			q := createAndStartQueue(t, queueStopper, 0)
+
+			push(t, q)
+			pause(t, q)
+			noPull(t, q, testStopper)
+
+			testStopper.Client().Stop()
+			synctest.Wait()
+			queueStopper.Client().Stop()
+		},
+		"Pause, resume": func(t *testing.T) {
+			testStopper := concurrency.NewStopper()
+			queueStopper := concurrency.NewStopper()
+			q := createAndStartQueue(t, queueStopper, 0)
+
+			push(t, q)
+			pause(t, q)
+			push(t, q)
+			resume(t, q)
+			pull(t, q, testStopper)
+			pull(t, q, testStopper)
+
+			testStopper.Client().Stop()
+			synctest.Wait()
+			queueStopper.Client().Stop()
+		},
+		"Pause, stop": func(t *testing.T) {
+			testStopper := concurrency.NewStopper()
+			queueStopper := concurrency.NewStopper()
+			q := createAndStartQueue(t, queueStopper, 0)
+
+			push(t, q)
+			pause(t, q)
+			noPull(t, q, testStopper)
+			stopPull(t, q)
+
+			testStopper.Client().Stop()
+			synctest.Wait()
+			queueStopper.Client().Stop()
+		},
+		"2 push, pull, pause, pull": func(t *testing.T) {
+			testStopper := concurrency.NewStopper()
+			queueStopper := concurrency.NewStopper()
+			q := createAndStartQueue(t, queueStopper, 0)
+
+			push(t, q)
+			push(t, q)
+			resume(t, q)
+			pull(t, q, testStopper)
+			synctest.Wait() // Replace time.Sleep - wait for goroutines to settle
+			pause(t, q)
+			pull(t, q, testStopper)
+			stopPull(t, q)
+
+			testStopper.Client().Stop()
+			synctest.Wait()
+			queueStopper.Client().Stop()
+		},
+		"2 Push, pull, pause, push, no pull": func(t *testing.T) {
+			testStopper := concurrency.NewStopper()
+			queueStopper := concurrency.NewStopper()
+			q := createAndStartQueue(t, queueStopper, 0)
+
+			push(t, q)
+			push(t, q)
+			resume(t, q)
+			pull(t, q, testStopper)
+			synctest.Wait() // Replace time.Sleep - wait for goroutines to settle
+			pause(t, q)
+			pull(t, q, testStopper)
+			push(t, q)
+			noPull(t, q, testStopper)
+			stopPull(t, q)
+
+			testStopper.Client().Stop()
+			synctest.Wait()
+			queueStopper.Client().Stop()
+		},
+		"Block until push": func(t *testing.T) {
+			queueStopper := concurrency.NewStopper()
+			q := createAndStartQueue(t, queueStopper, 0)
+
+			resume(t, q)
+			pushPullBlocking(t, q)
+
+			queueStopper.Client().Stop()
+		},
+	}
+
+	for name, testFn := range cases {
+		t.Run(name, func(t *testing.T) {
+			// Each subtest runs in its own synctest bubble
+			synctest.Test(t, testFn)
+		})
+	}
 }
