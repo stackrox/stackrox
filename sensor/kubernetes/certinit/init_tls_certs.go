@@ -41,7 +41,7 @@ func Run() error {
 		log.Warnf("Error checking %q: %v", legacySourceDir, err)
 	}
 	if !newCertsExist && !legacyCertsExist {
-		// this should only be the case for legacy manifest-based deployments
+		// This should only be the case for legacy manifest-based deployments.
 		log.Infof("Skipping TLS cert initialization: neither %q nor %q exist, assuming certs are mounted directly", newSourceDir, legacySourceDir)
 		return nil
 	}
