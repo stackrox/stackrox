@@ -75,7 +75,7 @@ const WorkflowEntityPageLayout = () => {
                 <PageHeader
                     header={entityName}
                     subHeader={subheaderText}
-                    classes="pr-0 ignore-react-onclickoutside"
+                    classes="pr-0"
                 >
                     <div className="flex flex-1 justify-end h-full">
                         <div className="flex items-center">
