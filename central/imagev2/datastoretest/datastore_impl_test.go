@@ -730,10 +730,10 @@ func (s *ImageV2DataStoreTestSuite) TestSearchListImages() {
 	s.NoError(err)
 	s.Len(listImages, 1)
 	s.Equal(imgWithStats.GetDigest(), listImages[0].GetId())
-	
+
 	// Verify the component count comes from ScanStats (fixture sets ComponentCount to 3)
 	s.Equal(int32(3), listImages[0].GetComponents(), "Expected component count to match fixture")
-	
+
 	// CVE and fixable CVE counts may be populated by the datastore during upsert
 	// We just verify they are non-negative (could be 0 if not populated)
 	s.GreaterOrEqual(listImages[0].GetCves(), int32(0))
