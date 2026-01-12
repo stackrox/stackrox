@@ -189,7 +189,6 @@ func (h sbomHttpHandler) getSBOM(ctx context.Context, params apiparams.SBOMReque
 	}
 
 	// Build a reference to the image that will be passed to the enricher.
-
 	ci, err := containerImage(params)
 	if err != nil {
 		return nil, err
@@ -237,9 +236,9 @@ func containerImage(params apiparams.SBOMRequestBody) (*storage.ContainerImage, 
 		return nil, errors.Wrap(errox.InvalidArgs, err.Error())
 	}
 
+	// Populate the image IDs if a digest was provided and the IDs
+	// have not already been derived from the image name.
 	if params.Digest != "" {
-		// Populate the image IDs if a digest was provided and the IDs
-		// have not already been derived from the image name.
 		if ci.GetId() == "" {
 			ci.Id = params.Digest
 		}
