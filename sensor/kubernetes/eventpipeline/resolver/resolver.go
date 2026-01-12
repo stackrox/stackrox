@@ -25,6 +25,9 @@ func New(outputQueue component.OutputQueue, provider store.Provider, queueSize i
 		deploymentRefQueue: nil,
 	}
 	if features.SensorInternalPubSub.Enabled() {
+		if pubsubDispatcher == nil {
+			return nil, errors.Errorf("pubsub dispatcher is null and the feature flag %q is enabled", features.SensorInternalPubSub.EnvVar())
+		}
 		if err := pubsubDispatcher.RegisterConsumerToLane(pubsub.KubernetesDispatcherEventTopic, pubsub.KubernetesDispatcherEventLane, res.ProcessResourceEvent); err != nil {
 			return nil, errors.Wrapf(err, "unable to register resolver as consumer of topic %q in lane %q", pubsub.KubernetesDispatcherEventTopic.String(), pubsub.KubernetesDispatcherEventLane.String())
 		}

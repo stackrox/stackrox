@@ -47,8 +47,8 @@ type dispatcher struct {
 }
 
 func (d *dispatcher) Publish(event pubsub.Event) error {
-	if d == nil && features.SensorInternalPubSub.Enabled() {
-		return errors.Errorf("calling Publish when the Pubsub is `nil` and %q is enabled", features.SensorInternalPubSub.EnvVar())
+	if err := d.ensureAvailable("Publish"); err != nil {
+		return err
 	}
 	if event == nil {
 		return errors.New("trying to publish a 'nil' event")
@@ -61,8 +61,8 @@ func (d *dispatcher) Publish(event pubsub.Event) error {
 }
 
 func (d *dispatcher) RegisterConsumer(topic pubsub.Topic, callback pubsub.EventCallback) error {
-	if d == nil && features.SensorInternalPubSub.Enabled() {
-		return errors.Errorf("calling RegisterConsumer when the Pubsub is `nil` and %q is enabled", features.SensorInternalPubSub.EnvVar())
+	if err := d.ensureAvailable("RegisterConsumer"); err != nil {
+		return err
 	}
 	if callback == nil {
 		return errors.New("cannot register a 'nil' callback")
@@ -79,8 +79,8 @@ func (d *dispatcher) RegisterConsumer(topic pubsub.Topic, callback pubsub.EventC
 }
 
 func (d *dispatcher) RegisterConsumerToLane(topic pubsub.Topic, laneID pubsub.LaneID, callback pubsub.EventCallback) error {
-	if d == nil && features.SensorInternalPubSub.Enabled() {
-		return errors.Errorf("calling RegisterConsumerToLane when the Pubsub is `nil` and %q is enabled", features.SensorInternalPubSub.EnvVar())
+	if err := d.ensureAvailable("RegisterConsumerToLane"); err != nil {
+		return err
 	}
 	if callback == nil {
 		return errors.New("cannot register a 'nil' callback")
@@ -93,8 +93,8 @@ func (d *dispatcher) RegisterConsumerToLane(topic pubsub.Topic, laneID pubsub.La
 }
 
 func (d *dispatcher) Stop() {
-	if d == nil && features.SensorInternalPubSub.Enabled() {
-		log.Errorf("calling Stop when the Pubsub is `nil` and %q is enabled", features.SensorInternalPubSub.EnvVar())
+	if err := d.ensureAvailable("Stop"); err != nil {
+		log.Errorf("unable to Stop %v", err)
 		return
 	}
 	d.laneLock.RLock()
@@ -135,4 +135,11 @@ func (d *dispatcher) createLanes() error {
 		d.lanes[config.LaneID()] = lane
 	}
 	return errList.ToError()
+}
+
+func (d *dispatcher) ensureAvailable(op string) error {
+	if d == nil && features.SensorInternalPubSub.Enabled() {
+		return errors.Errorf("calling %s when the PubSub is `nil` and %q is enabled", op, features.SensorInternalPubSub.EnvVar())
+	}
+	return nil
 }

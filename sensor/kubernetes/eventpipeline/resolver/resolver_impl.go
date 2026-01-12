@@ -59,14 +59,14 @@ func (r *resolverImpl) Start() error {
 
 // Stop the resolverImpl component
 func (r *resolverImpl) Stop() {
-	if features.SensorAggregateDeploymentReferenceOptimization.Enabled() {
+	if features.SensorAggregateDeploymentReferenceOptimization.Enabled() || !features.SensorInternalPubSub.Enabled() {
 		if !r.stopper.Client().Stopped().IsDone() {
 			defer func() {
 				_ = r.stopper.Client().Stopped().Wait()
 			}()
 		}
-		r.stopper.Client().Stop()
 	}
+	r.stopper.Client().Stop()
 }
 
 // Send a ResourceEvent message to the inner queue
