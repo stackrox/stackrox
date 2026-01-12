@@ -28,6 +28,7 @@ import ImageCvePageRoute from './ImageCve/ImageCvePageRoute';
 import NamespaceViewPage from './NamespaceView/NamespaceViewPage';
 import { WorkloadCveViewContext } from './WorkloadCveViewContext';
 import type { WorkloadCveView } from './WorkloadCveViewContext';
+import VulnerabilitiesSubnav from '../VulnerabilitiesSubnav';
 
 import type { QuerySearchFilter, WorkloadEntityTab } from '../types';
 import { getOverviewPagePath, getWorkloadEntityPagePath } from '../utils/searchUtils';
@@ -185,6 +186,7 @@ function WorkloadCvesPage({ view }: WorkloadCvesPageProps) {
 
     return (
         <WorkloadCveViewContext.Provider value={context}>
+            <VulnerabilitiesSubnav />
             {hasReadAccessForIntegration && <ScannerV4IntegrationBanner />}
             <Routes>
                 {hasReadAccessForNamespaces && (

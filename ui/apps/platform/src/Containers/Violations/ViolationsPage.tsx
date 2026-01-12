@@ -4,14 +4,18 @@ import { Route, Routes } from 'react-router-dom-v5-compat';
 import ViolationsTablePage from './ViolationsTablePage';
 import ViolationDetailsPage from './Details/ViolationDetailsPage';
 import ViolationNotFoundPage from './ViolationNotFoundPage';
+import ViolationsSubnav from './ViolationsSubnav';
 
 function ViolationsPage(): ReactElement {
     return (
-        <Routes>
-            <Route index element={<ViolationsTablePage />} />
-            <Route path=":alertId" element={<ViolationDetailsPage />} />
-            <Route path="*" element={<ViolationNotFoundPage />} />
-        </Routes>
+        <>
+            <ViolationsSubnav />
+            <Routes>
+                <Route index element={<ViolationsTablePage />} />
+                <Route path=":alertId" element={<ViolationDetailsPage />} />
+                <Route path="*" element={<ViolationNotFoundPage />} />
+            </Routes>
+        </>
     );
 }
 

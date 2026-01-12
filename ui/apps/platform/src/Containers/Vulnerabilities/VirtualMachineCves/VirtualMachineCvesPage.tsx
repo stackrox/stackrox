@@ -7,6 +7,7 @@ import ScannerV4IntegrationBanner from 'Components/ScannerV4IntegrationBanner';
 import usePermissions from 'hooks/usePermissions';
 import VirtualMachineCvesOverviewPage from './Overview/VirtualMachineCvesOverviewPage';
 import VirtualMachinePage from './VirtualMachine/VirtualMachinePage';
+import VulnerabilitiesSubnav from '../VulnerabilitiesSubnav';
 
 function VirtualMachineCvesPage() {
     const { hasReadAccess } = usePermissions();
@@ -14,6 +15,7 @@ function VirtualMachineCvesPage() {
 
     return (
         <>
+            <VulnerabilitiesSubnav />
             {hasReadAccessForIntegration && <ScannerV4IntegrationBanner />}
             <Routes>
                 <Route index element={<VirtualMachineCvesOverviewPage />} />

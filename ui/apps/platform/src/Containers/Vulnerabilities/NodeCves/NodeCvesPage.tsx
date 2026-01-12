@@ -8,6 +8,7 @@ import usePermissions from 'hooks/usePermissions';
 import NodeCvesOverviewPage from './Overview/NodeCvesOverviewPage';
 import NodeCvePage from './NodeCve/NodeCvePage';
 import NodePage from './Node/NodePage';
+import VulnerabilitiesSubnav from '../VulnerabilitiesSubnav';
 
 function NodeCvesPage() {
     const { hasReadAccess } = usePermissions();
@@ -15,6 +16,7 @@ function NodeCvesPage() {
 
     return (
         <>
+            <VulnerabilitiesSubnav />
             {hasReadAccessForIntegration && <ScannerV4IntegrationBanner />}
             <Routes>
                 <Route index element={<NodeCvesOverviewPage />} />

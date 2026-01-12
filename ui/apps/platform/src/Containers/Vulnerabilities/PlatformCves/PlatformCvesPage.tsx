@@ -9,6 +9,7 @@ import usePermissions from 'hooks/usePermissions';
 import PlatformCvesOverviewPage from './Overview/PlatformCvesOverviewPage';
 import PlatformCvePage from './PlatformCve/PlatformCvePage';
 import ClusterPage from './Cluster/ClusterPage';
+import VulnerabilitiesSubnav from '../VulnerabilitiesSubnav';
 
 function PlatformCvesPage() {
     const { hasReadAccess } = usePermissions();
@@ -16,6 +17,7 @@ function PlatformCvesPage() {
 
     return (
         <>
+            <VulnerabilitiesSubnav />
             {hasReadAccessForIntegration && <ScannerV4IntegrationBanner />}
             <Routes>
                 <Route index element={<PlatformCvesOverviewPage />} />
