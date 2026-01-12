@@ -135,8 +135,8 @@ func (s *GraphQLImageComponentV2TestSuite) TestImageComponents() {
 	for _, component := range comps {
 		verifyLocationAndLayerIndex(ctx, s.T(), component, emptyLocationMap[string(component.Id(ctx))])
 
-		fromBaseImage := component.FromBaseImage(ctx)
-		assert.True(s.T(), fromBaseImage)
+		inBaseImageLayer := component.InBaseImageLayer(ctx)
+		assert.True(s.T(), inBaseImageLayer)
 	}
 
 	count, err := s.resolver.ImageComponentCount(ctx, RawQuery{})
