@@ -65,7 +65,7 @@ export const detailsTabValues = [
     'Details',
     'Resources',
     'Signature verification',
-    'Packages',
+    'Components',
 ] as const;
 
 export type DetailsTab = (typeof detailsTabValues)[number];

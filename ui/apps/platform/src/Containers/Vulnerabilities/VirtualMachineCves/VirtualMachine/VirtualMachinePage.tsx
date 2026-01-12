@@ -32,11 +32,11 @@ import {
     CVSS_SORT_FIELD,
 } from '../../utils/sortFields';
 import VirtualMachinePageHeader from './VirtualMachinePageHeader';
-import VirtualMachinePagePackages from './VirtualMachinePagePackages';
+import VirtualMachinePageComponents from './VirtualMachinePageComponents';
 import VirtualMachinePageVulnerabilities from './VirtualMachinePageVulnerabilities';
 
 const VULNERABILITIES_TAB_ID = 'vulnerabilities-tab-content';
-const PACKAGES_TAB_ID = 'packages-tab-content';
+const COMPONENTS_TAB_ID = 'components-tab-content';
 
 const virtualMachineCveOverviewPath = getOverviewPagePath('VirtualMachine', {
     entityTab: 'VirtualMachine',
@@ -50,7 +50,7 @@ const sortFields = [
     CVSS_SORT_FIELD,
 ];
 
-const defaultPackagesSortOption = { field: COMPONENT_SORT_FIELD, direction: 'asc' } as const;
+const defaultComponentsSortOption = { field: COMPONENT_SORT_FIELD, direction: 'asc' } as const;
 
 const defaultVulnerabilitiesSortOption = {
     field: CVE_SEVERITY_SORT_FIELD,
@@ -77,13 +77,13 @@ function VirtualMachinePage() {
     const [activeTabKey, setActiveTabKey] = useURLStringUnion('detailsTab', detailsTabValues);
 
     const vulnTabKey = detailsTabValues[0];
-    const packagesTabKey = detailsTabValues[4];
+    const componentsTabKey = detailsTabValues[4];
 
     const virtualMachineName = virtualMachineData?.name;
 
     function onTabChange(value: string | number) {
-        if (value === packagesTabKey) {
-            urlSorting.setSortOption(defaultPackagesSortOption);
+        if (value === componentsTabKey) {
+            urlSorting.setSortOption(defaultComponentsSortOption);
         } else {
             urlSorting.setSortOption(defaultVulnerabilitiesSortOption);
         }
@@ -132,9 +132,9 @@ function VirtualMachinePage() {
                         title={vulnTabKey}
                     />
                     <Tab
-                        eventKey={packagesTabKey}
-                        tabContentId={PACKAGES_TAB_ID}
-                        title={packagesTabKey}
+                        eventKey={componentsTabKey}
+                        tabContentId={COMPONENTS_TAB_ID}
+                        title={componentsTabKey}
                     />
                 </Tabs>
             </PageSection>
@@ -143,8 +143,8 @@ function VirtualMachinePage() {
                     <Text>
                         {activeTabKey === vulnTabKey &&
                             'Prioritize and remediate observed CVEs for this virtual machine'}
-                        {activeTabKey === packagesTabKey &&
-                            'View all packages from this virtual machine'}
+                        {activeTabKey === componentsTabKey &&
+                            'View all components from this virtual machine'}
                     </Text>
                 </Text>
             </PageSection>
@@ -168,9 +168,9 @@ function VirtualMachinePage() {
                         />
                     </TabContent>
                 )}
-                {activeTabKey === packagesTabKey && (
-                    <TabContent id={PACKAGES_TAB_ID}>
-                        <VirtualMachinePagePackages
+                {activeTabKey === componentsTabKey && (
+                    <TabContent id={COMPONENTS_TAB_ID}>
+                        <VirtualMachinePageComponents
                             virtualMachineData={virtualMachineData}
                             isLoadingVirtualMachineData={isLoading}
                             errorVirtualMachineData={error}

@@ -4,20 +4,20 @@ import TbodyUnified from 'Components/TableStateTemplates/TbodyUnified';
 import type { UseURLSortResult } from 'hooks/useURLSort';
 import type { TableUIState } from 'utils/getTableUIState';
 
-import type { PackageTableRow } from '../aggregateUtils';
+import type { ComponentTableRow } from '../aggregateUtils';
 import { COMPONENT_SORT_FIELD } from '../../utils/sortFields';
 
-export type VirtualMachinePackagesTableProps = {
-    tableState: TableUIState<PackageTableRow>;
+export type VirtualMachineComponentsPageTableProps = {
+    tableState: TableUIState<ComponentTableRow>;
     getSortParams: UseURLSortResult['getSortParams'];
     onClearFilters: () => void;
 };
 
-function VirtualMachinePackagesTable({
+function VirtualMachineComponentsPageTable({
     tableState,
     getSortParams,
     onClearFilters,
-}: VirtualMachinePackagesTableProps) {
+}: VirtualMachineComponentsPageTableProps) {
     const colSpan = 3;
 
     return (
@@ -41,18 +41,18 @@ function VirtualMachinePackagesTable({
                     title: 'There was an error loading results',
                 }}
                 emptyProps={{
-                    message: 'No packages were detected for this virtual machine',
+                    message: 'No components were detected for this virtual machine',
                 }}
                 filteredEmptyProps={{ onClearFilters }}
                 renderer={({ data }) => (
                     <Tbody>
-                        {data.map((packageRow) => {
+                        {data.map((componentRow) => {
                             return (
-                                <Tr key={`${packageRow.name}-${packageRow.version}`}>
-                                    <Td dataLabel="Name">{packageRow.name} </Td>
-                                    <Td dataLabel="Version">{packageRow.version}</Td>
+                                <Tr key={`${componentRow.name}-${componentRow.version}`}>
+                                    <Td dataLabel="Name">{componentRow.name} </Td>
+                                    <Td dataLabel="Version">{componentRow.version}</Td>
                                     <Td dataLabel="Status">
-                                        {packageRow.isScannable ? 'Scanned' : 'Not scanned'}
+                                        {componentRow.isScannable ? 'Scanned' : 'Not scanned'}
                                     </Td>
                                 </Tr>
                             );
@@ -64,4 +64,5 @@ function VirtualMachinePackagesTable({
     );
 }
 
-export default VirtualMachinePackagesTable;
+export default VirtualMachineComponentsPageTable;
+

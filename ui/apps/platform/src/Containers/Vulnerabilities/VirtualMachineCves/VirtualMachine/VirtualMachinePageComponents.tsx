@@ -27,15 +27,15 @@ import { getTableUIState } from 'utils/getTableUIState';
 import { getHasSearchApplied } from 'utils/searchUtils';
 
 import {
-    applyVirtualMachinePackagesTableFilters,
-    applyVirtualMachinePackagesTableSort,
-    getVirtualMachinePackagesTableData,
+    applyVirtualMachineComponentsTableFilters,
+    applyVirtualMachineComponentsTableSort,
+    getVirtualMachineComponentsTableData,
 } from '../aggregateUtils';
 import ComponentScannableStatusDropdown from '../../components/ComponentScannableStatusDropdown';
 import { virtualMachineComponentSearchFilterConfig } from '../../searchFilterConfig';
-import VirtualMachinePackagesTable from './VirtualMachinePackagesTable';
+import VirtualMachineComponentsPageTable from './VirtualMachineComponentsPageTable';
 
-export type VirtualMachinePagePackagesProps = {
+export type VirtualMachinePageComponentsProps = {
     virtualMachineData: VirtualMachine | undefined;
     isLoadingVirtualMachineData: boolean;
     errorVirtualMachineData: Error | undefined;
@@ -46,54 +46,54 @@ export type VirtualMachinePagePackagesProps = {
 
 const searchFilterConfig = [virtualMachineComponentSearchFilterConfig];
 
-function VirtualMachinePagePackages({
+function VirtualMachinePageComponents({
     virtualMachineData,
     isLoadingVirtualMachineData,
     errorVirtualMachineData,
     urlSearch,
     urlSorting,
     urlPagination,
-}: VirtualMachinePagePackagesProps) {
+}: VirtualMachinePageComponentsProps) {
     const { searchFilter, setSearchFilter } = urlSearch;
     const { page, perPage, setPage, setPerPage } = urlPagination;
     const { sortOption, getSortParams } = urlSorting;
 
     const isFiltered = getHasSearchApplied(searchFilter);
 
-    const virtualMachinePackagesTableData = useMemo(
-        () => getVirtualMachinePackagesTableData(virtualMachineData),
+    const virtualMachineComponentsTableData = useMemo(
+        () => getVirtualMachineComponentsTableData(virtualMachineData),
         [virtualMachineData]
     );
 
-    const filteredVirtualMachinePackagesTableData = useMemo(
+    const filteredVirtualMachineComponentsTableData = useMemo(
         () =>
-            applyVirtualMachinePackagesTableFilters(virtualMachinePackagesTableData, searchFilter),
-        [virtualMachinePackagesTableData, searchFilter]
+            applyVirtualMachineComponentsTableFilters(virtualMachineComponentsTableData, searchFilter),
+        [virtualMachineComponentsTableData, searchFilter]
     );
 
-    const sortedVirtualMachinePackagesTableData = useMemo(
+    const sortedVirtualMachineComponentsTableData = useMemo(
         () =>
-            applyVirtualMachinePackagesTableSort(
-                filteredVirtualMachinePackagesTableData,
+            applyVirtualMachineComponentsTableSort(
+                filteredVirtualMachineComponentsTableData,
                 Array.isArray(sortOption) ? sortOption[0].field : sortOption.field,
                 Array.isArray(sortOption) ? sortOption[0].reversed : sortOption.reversed
             ),
-        [filteredVirtualMachinePackagesTableData, sortOption]
+        [filteredVirtualMachineComponentsTableData, sortOption]
     );
 
-    const paginatedVirtualMachinePackagesTableData = useMemo(() => {
-        const totalRows = sortedVirtualMachinePackagesTableData.length;
+    const paginatedVirtualMachineComponentsTableData = useMemo(() => {
+        const totalRows = sortedVirtualMachineComponentsTableData.length;
         const maxPage = Math.max(1, Math.ceil(totalRows / perPage) || 1);
         const safePage = Math.min(page, maxPage);
 
         const start = (safePage - 1) * perPage;
         const end = start + perPage;
-        return sortedVirtualMachinePackagesTableData.slice(start, end);
-    }, [sortedVirtualMachinePackagesTableData, page, perPage]);
+        return sortedVirtualMachineComponentsTableData.slice(start, end);
+    }, [sortedVirtualMachineComponentsTableData, page, perPage]);
 
     const tableState = getTableUIState({
         isLoading: isLoadingVirtualMachineData,
-        data: paginatedVirtualMachinePackagesTableData,
+        data: paginatedVirtualMachineComponentsTableData,
         error: errorVirtualMachineData,
         searchFilter,
     });
@@ -158,7 +158,7 @@ function VirtualMachinePagePackages({
                         <Flex alignItems={{ default: 'alignItemsCenter' }}>
                             <Title headingLevel="h2">
                                 {!isLoadingVirtualMachineData ? (
-                                    `${pluralize(filteredVirtualMachinePackagesTableData.length, 'result')} found`
+                                    `${pluralize(filteredVirtualMachineComponentsTableData.length, 'result')} found`
                                 ) : (
                                     <Skeleton screenreaderText="Loading virtual machine vulnerability count" />
                                 )}
@@ -168,7 +168,7 @@ function VirtualMachinePagePackages({
                     </SplitItem>
                     <SplitItem>
                         <Pagination
-                            itemCount={filteredVirtualMachinePackagesTableData.length}
+                            itemCount={filteredVirtualMachineComponentsTableData.length}
                             perPage={perPage}
                             page={page}
                             onSetPage={(_, newPage) => setPage(newPage)}
@@ -178,7 +178,7 @@ function VirtualMachinePagePackages({
                         />
                     </SplitItem>
                 </Split>
-                <VirtualMachinePackagesTable
+                <VirtualMachineComponentsPageTable
                     tableState={tableState}
                     getSortParams={getSortParams}
                     onClearFilters={onClearFilters}
@@ -188,4 +188,4 @@ function VirtualMachinePagePackages({
     );
 }
 
-export default VirtualMachinePagePackages;
+export default VirtualMachinePageComponents;
