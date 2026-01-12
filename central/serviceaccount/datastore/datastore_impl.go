@@ -2,6 +2,7 @@ package datastore
 
 import (
 	"context"
+	"strings"
 
 	"github.com/stackrox/rox/central/serviceaccount/internal/store"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -39,12 +40,48 @@ func (d *datastoreImpl) SearchRawServiceAccounts(ctx context.Context, q *v1.Quer
 }
 
 func (d *datastoreImpl) SearchServiceAccounts(ctx context.Context, q *v1.Query) ([]*v1.SearchResult, error) {
-	serviceAccounts, results, err := d.searchServiceAccounts(ctx, q)
+	if q == nil {
+		q = searchPkg.EmptyQuery()
+	}
+	qClone := q.CloneVT()
+
+	// Add service account name field to select columns.
+	qClone.Selects = append(qClone.GetSelects(), searchPkg.NewQuerySelect(searchPkg.ServiceAccountName).Proto())
+
+	results, err := d.Search(ctx, qClone)
 	if err != nil {
 		return nil, err
 	}
 
-	return convertMany(serviceAccounts, results), nil
+	// Extract name from FieldValues and populate Name in search results.
+	searchTag := strings.ToLower(searchPkg.ServiceAccountName.String())
+	for i := range results {
+		if results[i].FieldValues != nil {
+			if nameVal, ok := results[i].FieldValues[searchTag]; ok {
+				results[i].Name = nameVal
+			}
+		}
+	}
+
+	return searchPkg.ResultsToSearchResultProtos(results, &serviceAccountSearchResultConverter{}), nil
+}
+
+// serviceAccountSearchResultConverter implements searchPkg.SearchResultConverter for service accounts.
+// It extracts name from Result.Name and does not set a location.
+// Category is SERVICE_ACCOUNTS.
+
+type serviceAccountSearchResultConverter struct{}
+
+func (c *serviceAccountSearchResultConverter) BuildName(result *searchPkg.Result) string {
+	return result.Name
+}
+
+func (c *serviceAccountSearchResultConverter) BuildLocation(result *searchPkg.Result) string {
+	return ""
+}
+
+func (c *serviceAccountSearchResultConverter) GetCategory() v1.SearchCategory {
+	return v1.SearchCategory_SERVICE_ACCOUNTS
 }
 
 func (d *datastoreImpl) UpsertServiceAccount(ctx context.Context, request *storage.ServiceAccount) error {
@@ -75,22 +112,4 @@ func (d *datastoreImpl) searchServiceAccounts(ctx context.Context, q *v1.Query) 
 	}
 	results = searchPkg.RemoveMissingResults(results, missingIndices)
 	return serviceAccounts, results, nil
-}
-
-func convertMany(serviceAccounts []*storage.ServiceAccount, results []searchPkg.Result) []*v1.SearchResult {
-	outputResults := make([]*v1.SearchResult, len(serviceAccounts))
-	for index, sar := range serviceAccounts {
-		outputResults[index] = convertServiceAccount(sar, &results[index])
-	}
-	return outputResults
-}
-
-func convertServiceAccount(sa *storage.ServiceAccount, result *searchPkg.Result) *v1.SearchResult {
-	return &v1.SearchResult{
-		Category:       v1.SearchCategory_SERVICE_ACCOUNTS,
-		Id:             sa.GetId(),
-		Name:           sa.GetName(),
-		FieldToMatches: searchPkg.GetProtoMatchesMap(result.Matches),
-		Score:          result.Score,
-	}
 }
