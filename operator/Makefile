@@ -409,6 +409,11 @@ upgrade-via-olm: kuttl
 upgrade-dirty-tag-via-olm: kuttl
 	KUTTL=$(KUTTL) PATH="$(PROJECT_DIR)/hack:$${PATH}" ./hack/olm-operator-upgrade.sh --allow-dirty-tag $(TEST_NAMESPACE) $(INSTALL_VERSION)
 
+.PHONY: deploy-via-dist
+deploy-via-dist: ## Deploy current version of operator via distribution manifest file.
+	./hack/retry-kubectl.sh </dev/null apply -f dist.yaml
+	./hack/retry-kubectl.sh </dev/null rollout status deployment rhacs-operator-controller-manager -n rhacs-operator-system --timeout=300s
+
 ##@ Bundle and Index build
 
 # Commands to enter local Python virtual environment and get needed dependencies there.
@@ -509,6 +514,13 @@ index-build: bundle-post-process yq ## Build Index (a.k.a. Catalog) image with t
 		--bundle-tag "$(BUNDLE_IMG)" \
 		--replaced-version "$${replaced_version}" \
 		--clean-output-dir
+
+.PHONY: dist
+dist: ## Build a distribution manifest.
+	mkdir -p build/dist
+	cat config/dist/kustomization.yaml > build/dist/kustomization.yaml
+	echo -e "  newTag: $(VERSION)" >> build/dist/kustomization.yaml
+	$(KUSTOMIZE) build build/dist/ > dist.yaml
 
 ##@ Push images
 
