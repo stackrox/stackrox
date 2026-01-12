@@ -10,6 +10,7 @@ import (
 	postgresStore "github.com/stackrox/rox/central/imageintegration/store/postgres"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/sac"
@@ -841,8 +842,8 @@ func (suite *ImageIntegrationDataStoreTestSuite) TestSearchImageIntegrationsFiel
 	ctx := sac.WithGlobalAccessScopeChecker(context.Background(), sac.AllowAllAccessScopeChecker())
 
 	// Generate test cluster IDs
-	testCluster1ID := uuid.NewV4().String()
-	testCluster2ID := uuid.NewV4().String()
+	testCluster1ID := fixtureconsts.Cluster1
+	testCluster2ID := fixtureconsts.Cluster2
 
 	// Create test integrations
 	integration1 := &storage.ImageIntegration{
