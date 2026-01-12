@@ -16,7 +16,8 @@ func RegisterLimiter(workloadName string, globalRate float64, bucketCapacity int
 	registryLock.Lock()
 	defer registryLock.Unlock()
 
-	if existing, ok := registry[workloadName]; ok {
+	if existing, ok := registry[workloadName]; ok && existing != nil {
+		log.Infof("Using already already registered rate limiter for %s", workloadName)
 		return existing, nil
 	}
 
@@ -25,6 +26,7 @@ func RegisterLimiter(workloadName string, globalRate float64, bucketCapacity int
 		return nil, err
 	}
 	registry[workloadName] = limiter
+	log.Infof("Registered new rate limiter for %s", workloadName)
 	return limiter, nil
 }
 

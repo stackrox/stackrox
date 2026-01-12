@@ -37,12 +37,18 @@ var (
 func GetPipeline() pipeline.Fragment {
 	rateLimit, err := strconv.ParseFloat(env.VMIndexReportRateLimit.Setting(), 64)
 	if err != nil {
-		log.Panicf("Invalid %s value: %v", env.VMIndexReportRateLimit.EnvVar(), err)
+		log.Warnf("Invalid %s value: %v. Using fallback value of 1.0", env.VMIndexReportRateLimit.EnvVar(), err)
+		rateLimit = 1.0
+	}
+	bucketCapacity := env.VMIndexReportBucketCapacity.IntegerSetting()
+	if bucketCapacity < 1 {
+		log.Warnf("Invalid %s value: %d. Using fallback value of 1.", env.VMIndexReportBucketCapacity.EnvVar(), bucketCapacity)
+		bucketCapacity = 1
 	}
 	rateLimiter, err := rate.RegisterLimiter(
 		rateLimiterWorkload,
 		rateLimit,
-		env.VMIndexReportBucketCapacity.IntegerSetting(),
+		bucketCapacity,
 	)
 	if err != nil {
 		log.Panicf("Failed to create rate limiter for %s: %v", rateLimiterWorkload, err)
@@ -71,7 +77,9 @@ type pipelineImpl struct {
 
 func (p *pipelineImpl) OnFinish(clusterID string) {
 	// Notify rate limiter that this client (Sensor) has disconnected so it can rebalance the limiters.
-	p.rateLimiter.OnClientDisconnect(clusterID)
+	if p.rateLimiter != nil {
+		p.rateLimiter.OnClientDisconnect(clusterID)
+	}
 }
 
 func (p *pipelineImpl) Capabilities() []centralsensor.CentralCapability {
@@ -116,6 +124,14 @@ func (p *pipelineImpl) Run(ctx context.Context, clusterID string, msg *central.M
 	conn := connection.FromContext(ctx)
 
 	// Rate limit check. Drop message if rate limit exceeded and send NACK to Sensor if Sensor supports it.
+	if p.rateLimiter == nil {
+		log.Warnf("No rate limiter found for %s. Dropping VM index report %s from cluster %s", rateLimiterWorkload, index.GetId(), clusterID)
+		if conn != nil && conn.HasCapability(centralsensor.SensorACKSupport) {
+			sendVMIndexReportResponse(ctx, index.GetId(), central.SensorACK_NACK, "nil rate limiter", injector)
+		}
+		return nil // Don't return error - would cause pipeline retry
+	}
+
 	allowed, reason := p.rateLimiter.TryConsume(clusterID)
 	if !allowed {
 		log.Infof("Dropping VM index report %s from cluster %s: %s", index.GetId(), clusterID, reason)
