@@ -119,6 +119,7 @@ func (l *Limiter) TryConsume(clientID string) (allowed bool, reason string) {
 // getOrCreateLimiter returns the rate limiter for a given client, creating one if needed.
 // When a new client is added, all limiters are rebalanced to maintain fairness.
 func (l *Limiter) getOrCreateLimiter(clientID string) *gorate.Limiter {
+	// Fast path: check if limiter already exists
 	if val, ok := l.buckets.Load(clientID); ok {
 		return val.(*gorate.Limiter)
 	}
@@ -128,8 +129,12 @@ func (l *Limiter) getOrCreateLimiter(clientID string) *gorate.Limiter {
 	perClientRate := l.globalRate / float64(numClients)
 	bucketCapacity := l.perClientBucketCapacity(numClients)
 
-	limiter := gorate.NewLimiter(gorate.Limit(perClientRate), bucketCapacity)
-	l.buckets.Store(clientID, limiter)
+	newLimiter := gorate.NewLimiter(gorate.Limit(perClientRate), bucketCapacity)
+	actual, loaded := l.buckets.LoadOrStore(clientID, newLimiter)
+	if loaded {
+		// Another goroutine was faster - use the limiter that was already stored.
+		return actual.(*gorate.Limiter)
+	}
 
 	log.Infof("New client %s registered for %s rate limiting (clients: %d, rate: %.2f req/s, max bucket capacity: %d)",
 		clientID, l.workloadName, numClients, perClientRate, bucketCapacity)
@@ -137,7 +142,7 @@ func (l *Limiter) getOrCreateLimiter(clientID string) *gorate.Limiter {
 	// Rebalance all existing limiters with new client count
 	l.rebalanceLimiters()
 
-	return limiter
+	return newLimiter
 }
 
 // countActiveClients returns the number of currently active clients.
