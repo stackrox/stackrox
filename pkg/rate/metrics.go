@@ -15,8 +15,6 @@ const (
 func init() {
 	prometheus.MustRegister(
 		RequestsTotal,
-		RequestsAccepted,
-		RequestsRejected,
 		ActiveClients,
 		PerClientRate,
 		PerClientBucketCapacity,
@@ -25,6 +23,7 @@ func init() {
 
 var (
 	// RequestsTotal tracks all requests received by the rate limiter with outcome.
+	// Use this for overall volume visibility. Per-client detail is available in logs.
 	RequestsTotal = prometheus.NewCounterVec(
 		prometheus.CounterOpts{
 			Namespace: metrics.PrometheusNamespace,
@@ -33,28 +32,6 @@ var (
 			Help:      "Total requests received by the rate limiter",
 		},
 		[]string{"workload", "outcome"},
-	)
-
-	// RequestsAccepted tracks requests accepted by the rate limiter (per client).
-	RequestsAccepted = prometheus.NewCounterVec(
-		prometheus.CounterOpts{
-			Namespace: metrics.PrometheusNamespace,
-			Subsystem: metrics.CentralSubsystem.String(),
-			Name:      "rate_limiter_requests_accepted_total",
-			Help:      "Requests accepted by the rate limiter",
-		},
-		[]string{"workload", "client_id"},
-	)
-
-	// RequestsRejected tracks requests rejected by the rate limiter (per client).
-	RequestsRejected = prometheus.NewCounterVec(
-		prometheus.CounterOpts{
-			Namespace: metrics.PrometheusNamespace,
-			Subsystem: metrics.CentralSubsystem.String(),
-			Name:      "rate_limiter_requests_rejected_total",
-			Help:      "Requests rejected by the rate limiter",
-		},
-		[]string{"workload", "client_id", "reason"},
 	)
 
 	// ActiveClients tracks the current number of active clients for each workload.

@@ -108,12 +108,10 @@ func (l *Limiter) TryConsume(clientID string) (allowed bool, reason string) {
 	// Use AllowN with clock.Now() to support time injection for testing.
 	if limiter.AllowN(l.clock.Now(), 1) {
 		RequestsTotal.WithLabelValues(l.workloadName, OutcomeAccepted).Inc()
-		RequestsAccepted.WithLabelValues(l.workloadName, clientID).Inc()
 		return true, ""
 	}
 
 	RequestsTotal.WithLabelValues(l.workloadName, OutcomeRejected).Inc()
-	RequestsRejected.WithLabelValues(l.workloadName, clientID, ReasonRateLimitExceeded).Inc()
 	return false, ReasonRateLimitExceeded
 }
 
