@@ -30,7 +30,7 @@ var (
 	// across all sensors. Each sensor gets an equal share (1/N) of this global capacity.
 	// Supports fractional rates (e.g., "0.5" for one request every 2 seconds).
 	// Set to "0" to disable rate limiting (unlimited).
-	VMIndexReportRateLimit = RegisterSetting("ROX_VM_INDEX_REPORT_RATE_LIMIT", WithDefault("2.0"))
+	VMIndexReportRateLimit = RegisterSetting("ROX_VM_INDEX_REPORT_RATE_LIMIT", WithDefault("1.0"))
 
 	// VMIndexReportBucketCapacity defines the token bucket capacity for VM index report rate limiting.
 	// This is the maximum number of requests that can be accepted in a burst before rate limiting kicks in.
