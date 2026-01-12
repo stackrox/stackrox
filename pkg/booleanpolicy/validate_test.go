@@ -654,7 +654,7 @@ func (s *PolicyValueValidator) TestValidateFileOperationRequiresFilePath() {
 				SectionName: "bad2",
 				PolicyGroups: []*storage.PolicyGroup{
 					{
-						FieldName: fieldnames.NodeFilePath,
+						FieldName: fieldnames.ActualPath,
 						Values:    []*storage.PolicyValue{{Value: "/etc/passwd"}},
 					},
 				},
@@ -675,7 +675,7 @@ func (s *PolicyValueValidator) TestValidateFileOperationRequiresFilePath() {
 						Values:    []*storage.PolicyValue{{Value: "CREATE"}},
 					},
 					{
-						FieldName: fieldnames.NodeFilePath,
+						FieldName: fieldnames.ActualPath,
 						Values:    []*storage.PolicyValue{{Value: "/etc/passwd"}},
 					},
 				},
@@ -684,7 +684,7 @@ func (s *PolicyValueValidator) TestValidateFileOperationRequiresFilePath() {
 	}))
 
 	s.NoError(Validate(&storage.Policy{
-		Name:          "Valid Section with MountedFilePath",
+		Name:          "Valid Section with Effective Path",
 		PolicyVersion: policyversion.CurrentVersion().String(),
 		EventSource:   storage.EventSource_DEPLOYMENT_EVENT,
 		PolicySections: []*storage.PolicySection{
@@ -696,7 +696,7 @@ func (s *PolicyValueValidator) TestValidateFileOperationRequiresFilePath() {
 						Values:    []*storage.PolicyValue{{Value: "CREATE"}},
 					},
 					{
-						FieldName: fieldnames.MountedFilePath,
+						FieldName: fieldnames.EffectivePath,
 						Values:    []*storage.PolicyValue{{Value: "/etc/passwd"}},
 					},
 				},
@@ -722,7 +722,7 @@ func (s *PolicyValueValidator) TestValidateFileOperationRequiresFilePath() {
 	}))
 
 	s.Error(Validate(&storage.Policy{
-		Name:          "MountedFilePath with NODE_EVENT should error",
+		Name:          "Effective Path with NODE_EVENT should error",
 		PolicyVersion: policyversion.CurrentVersion().String(),
 		EventSource:   storage.EventSource_NODE_EVENT,
 		PolicySections: []*storage.PolicySection{
@@ -730,7 +730,7 @@ func (s *PolicyValueValidator) TestValidateFileOperationRequiresFilePath() {
 				SectionName: "bad",
 				PolicyGroups: []*storage.PolicyGroup{
 					{
-						FieldName: fieldnames.MountedFilePath,
+						FieldName: fieldnames.EffectivePath,
 						Values:    []*storage.PolicyValue{{Value: "/etc/passwd"}},
 					},
 				},

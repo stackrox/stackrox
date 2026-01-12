@@ -296,7 +296,7 @@ func (s *NodeDetectionTestSuite) TestNodeFileAccess() {
 
 func (s *NodeDetectionTestSuite) getNodeFileAccessEvent(path string, operation storage.FileAccess_Operation) *storage.FileAccess {
 	return &storage.FileAccess{
-		File:      &storage.FileAccess_File{NodePath: path},
+		File:      &storage.FileAccess_File{ActualPath: path},
 		Operation: operation,
 	}
 }
@@ -327,7 +327,7 @@ func (s *NodeDetectionTestSuite) getNodeFileAccessPolicyWithOperations(operation
 				SectionName: "section 1",
 				PolicyGroups: []*storage.PolicyGroup{
 					{
-						FieldName: fieldnames.NodeFilePath,
+						FieldName: fieldnames.ActualPath,
 						Values:    pathValues,
 					},
 					{
@@ -362,7 +362,7 @@ func (s *NodeDetectionTestSuite) getNodeFileAccessPolicy(paths ...string) *stora
 				SectionName: "section 1",
 				PolicyGroups: []*storage.PolicyGroup{
 					{
-						FieldName: "Node File Path",
+						FieldName: "Actual Path",
 						Values:    policyValues,
 					},
 				},

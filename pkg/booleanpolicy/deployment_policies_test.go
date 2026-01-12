@@ -44,7 +44,7 @@ func (s *DeploymentDetectionTestSuite) TestDeploymentFileAccess() {
 			),
 			events: []eventWrapper{
 				{
-					access:      s.getDeploymentNodeFileAccessEvent("/etc/passwd", storage.FileAccess_OPEN),
+					access:      s.getDeploymentActualFileAccessEvent("/etc/passwd", storage.FileAccess_OPEN),
 					expectAlert: true,
 				},
 			},
@@ -57,7 +57,7 @@ func (s *DeploymentDetectionTestSuite) TestDeploymentFileAccess() {
 			),
 			events: []eventWrapper{
 				{
-					access:      s.getDeploymentNodeFileAccessEvent("/etc/passwd", storage.FileAccess_UNLINK),
+					access:      s.getDeploymentActualFileAccessEvent("/etc/passwd", storage.FileAccess_UNLINK),
 					expectAlert: false,
 				},
 			},
@@ -70,7 +70,7 @@ func (s *DeploymentDetectionTestSuite) TestDeploymentFileAccess() {
 			),
 			events: []eventWrapper{
 				{
-					access:      s.getDeploymentNodeFileAccessEvent("/tmp/foo", storage.FileAccess_OPEN),
+					access:      s.getDeploymentActualFileAccessEvent("/tmp/foo", storage.FileAccess_OPEN),
 					expectAlert: false,
 				},
 			},
@@ -83,27 +83,27 @@ func (s *DeploymentDetectionTestSuite) TestDeploymentFileAccess() {
 			),
 			events: []eventWrapper{
 				{
-					access:      s.getDeploymentNodeFileAccessEvent("/etc/passwd", storage.FileAccess_OPEN),
+					access:      s.getDeploymentActualFileAccessEvent("/etc/passwd", storage.FileAccess_OPEN),
 					expectAlert: false, // open is the only event we should ignore
 				},
 				{
-					access:      s.getDeploymentNodeFileAccessEvent("/etc/passwd", storage.FileAccess_UNLINK),
+					access:      s.getDeploymentActualFileAccessEvent("/etc/passwd", storage.FileAccess_UNLINK),
 					expectAlert: true,
 				},
 				{
-					access:      s.getDeploymentNodeFileAccessEvent("/etc/passwd", storage.FileAccess_CREATE),
+					access:      s.getDeploymentActualFileAccessEvent("/etc/passwd", storage.FileAccess_CREATE),
 					expectAlert: true,
 				},
 				{
-					access:      s.getDeploymentNodeFileAccessEvent("/etc/passwd", storage.FileAccess_OWNERSHIP_CHANGE),
+					access:      s.getDeploymentActualFileAccessEvent("/etc/passwd", storage.FileAccess_OWNERSHIP_CHANGE),
 					expectAlert: true,
 				},
 				{
-					access:      s.getDeploymentNodeFileAccessEvent("/etc/passwd", storage.FileAccess_PERMISSION_CHANGE),
+					access:      s.getDeploymentActualFileAccessEvent("/etc/passwd", storage.FileAccess_PERMISSION_CHANGE),
 					expectAlert: true,
 				},
 				{
-					access:      s.getDeploymentNodeFileAccessEvent("/etc/passwd", storage.FileAccess_RENAME),
+					access:      s.getDeploymentActualFileAccessEvent("/etc/passwd", storage.FileAccess_RENAME),
 					expectAlert: true,
 				},
 			},
@@ -116,15 +116,15 @@ func (s *DeploymentDetectionTestSuite) TestDeploymentFileAccess() {
 			),
 			events: []eventWrapper{
 				{
-					access:      s.getDeploymentNodeFileAccessEvent("/etc/passwd", storage.FileAccess_OPEN),
+					access:      s.getDeploymentActualFileAccessEvent("/etc/passwd", storage.FileAccess_OPEN),
 					expectAlert: true,
 				},
 				{
-					access:      s.getDeploymentNodeFileAccessEvent("/etc/passwd", storage.FileAccess_CREATE),
+					access:      s.getDeploymentActualFileAccessEvent("/etc/passwd", storage.FileAccess_CREATE),
 					expectAlert: true,
 				},
 				{
-					access:      s.getDeploymentNodeFileAccessEvent("/etc/passwd", storage.FileAccess_RENAME),
+					access:      s.getDeploymentActualFileAccessEvent("/etc/passwd", storage.FileAccess_RENAME),
 					expectAlert: false,
 				},
 			},
@@ -137,27 +137,27 @@ func (s *DeploymentDetectionTestSuite) TestDeploymentFileAccess() {
 			),
 			events: []eventWrapper{
 				{
-					access:      s.getDeploymentNodeFileAccessEvent("/etc/passwd", storage.FileAccess_OPEN),
+					access:      s.getDeploymentActualFileAccessEvent("/etc/passwd", storage.FileAccess_OPEN),
 					expectAlert: false,
 				},
 				{
-					access:      s.getDeploymentNodeFileAccessEvent("/etc/passwd", storage.FileAccess_CREATE),
+					access:      s.getDeploymentActualFileAccessEvent("/etc/passwd", storage.FileAccess_CREATE),
 					expectAlert: false,
 				},
 				{
-					access:      s.getDeploymentNodeFileAccessEvent("/etc/passwd", storage.FileAccess_OWNERSHIP_CHANGE),
+					access:      s.getDeploymentActualFileAccessEvent("/etc/passwd", storage.FileAccess_OWNERSHIP_CHANGE),
 					expectAlert: true,
 				},
 				{
-					access:      s.getDeploymentNodeFileAccessEvent("/etc/passwd", storage.FileAccess_PERMISSION_CHANGE),
+					access:      s.getDeploymentActualFileAccessEvent("/etc/passwd", storage.FileAccess_PERMISSION_CHANGE),
 					expectAlert: true,
 				},
 				{
-					access:      s.getDeploymentNodeFileAccessEvent("/etc/passwd", storage.FileAccess_UNLINK),
+					access:      s.getDeploymentActualFileAccessEvent("/etc/passwd", storage.FileAccess_UNLINK),
 					expectAlert: true,
 				},
 				{
-					access:      s.getDeploymentNodeFileAccessEvent("/etc/passwd", storage.FileAccess_RENAME),
+					access:      s.getDeploymentActualFileAccessEvent("/etc/passwd", storage.FileAccess_RENAME),
 					expectAlert: true,
 				},
 			},
@@ -170,11 +170,11 @@ func (s *DeploymentDetectionTestSuite) TestDeploymentFileAccess() {
 			),
 			events: []eventWrapper{
 				{
-					access:      s.getDeploymentNodeFileAccessEvent("/etc/passwd", storage.FileAccess_OPEN),
+					access:      s.getDeploymentActualFileAccessEvent("/etc/passwd", storage.FileAccess_OPEN),
 					expectAlert: true,
 				},
 				{
-					access:      s.getDeploymentNodeFileAccessEvent("/etc/shadow", storage.FileAccess_OPEN),
+					access:      s.getDeploymentActualFileAccessEvent("/etc/shadow", storage.FileAccess_OPEN),
 					expectAlert: true,
 				},
 			},
@@ -187,27 +187,27 @@ func (s *DeploymentDetectionTestSuite) TestDeploymentFileAccess() {
 			),
 			events: []eventWrapper{
 				{
-					access:      s.getDeploymentNodeFileAccessEvent("/etc/passwd", storage.FileAccess_OPEN),
+					access:      s.getDeploymentActualFileAccessEvent("/etc/passwd", storage.FileAccess_OPEN),
 					expectAlert: true,
 				},
 				{
-					access:      s.getDeploymentNodeFileAccessEvent("/etc/passwd", storage.FileAccess_CREATE),
+					access:      s.getDeploymentActualFileAccessEvent("/etc/passwd", storage.FileAccess_CREATE),
 					expectAlert: true,
 				},
 				{
-					access:      s.getDeploymentNodeFileAccessEvent("/etc/shadow", storage.FileAccess_OPEN),
+					access:      s.getDeploymentActualFileAccessEvent("/etc/shadow", storage.FileAccess_OPEN),
 					expectAlert: true,
 				},
 				{
-					access:      s.getDeploymentNodeFileAccessEvent("/etc/shadow", storage.FileAccess_CREATE),
+					access:      s.getDeploymentActualFileAccessEvent("/etc/shadow", storage.FileAccess_CREATE),
 					expectAlert: true,
 				},
 				{
-					access:      s.getDeploymentNodeFileAccessEvent("/tmp/foo", storage.FileAccess_CREATE),
+					access:      s.getDeploymentActualFileAccessEvent("/tmp/foo", storage.FileAccess_CREATE),
 					expectAlert: false,
 				},
 				{
-					access:      s.getDeploymentNodeFileAccessEvent("/tmp/foo", storage.FileAccess_OPEN),
+					access:      s.getDeploymentActualFileAccessEvent("/tmp/foo", storage.FileAccess_OPEN),
 					expectAlert: false,
 				},
 			},
@@ -217,27 +217,27 @@ func (s *DeploymentDetectionTestSuite) TestDeploymentFileAccess() {
 			policy:      s.getDeploymentFileAccessPolicy("/etc/passwd"),
 			events: []eventWrapper{
 				{
-					access:      s.getDeploymentNodeFileAccessEvent("/etc/passwd", storage.FileAccess_OPEN),
+					access:      s.getDeploymentActualFileAccessEvent("/etc/passwd", storage.FileAccess_OPEN),
 					expectAlert: true,
 				},
 				{
-					access:      s.getDeploymentNodeFileAccessEvent("/etc/passwd", storage.FileAccess_CREATE),
+					access:      s.getDeploymentActualFileAccessEvent("/etc/passwd", storage.FileAccess_CREATE),
 					expectAlert: true,
 				},
 				{
-					access:      s.getDeploymentNodeFileAccessEvent("/etc/passwd", storage.FileAccess_OWNERSHIP_CHANGE),
+					access:      s.getDeploymentActualFileAccessEvent("/etc/passwd", storage.FileAccess_OWNERSHIP_CHANGE),
 					expectAlert: true,
 				},
 				{
-					access:      s.getDeploymentNodeFileAccessEvent("/etc/passwd", storage.FileAccess_PERMISSION_CHANGE),
+					access:      s.getDeploymentActualFileAccessEvent("/etc/passwd", storage.FileAccess_PERMISSION_CHANGE),
 					expectAlert: true,
 				},
 				{
-					access:      s.getDeploymentNodeFileAccessEvent("/etc/passwd", storage.FileAccess_UNLINK),
+					access:      s.getDeploymentActualFileAccessEvent("/etc/passwd", storage.FileAccess_UNLINK),
 					expectAlert: true,
 				},
 				{
-					access:      s.getDeploymentNodeFileAccessEvent("/etc/passwd", storage.FileAccess_RENAME),
+					access:      s.getDeploymentActualFileAccessEvent("/etc/passwd", storage.FileAccess_RENAME),
 					expectAlert: true,
 				},
 			},
@@ -247,19 +247,19 @@ func (s *DeploymentDetectionTestSuite) TestDeploymentFileAccess() {
 			policy:      s.getDeploymentFileAccessPolicy("/etc/passwd", "/etc/ssh/sshd_config", "/etc/shadow", "/etc/sudoers"),
 			events: []eventWrapper{
 				{
-					access:      s.getDeploymentNodeFileAccessEvent("/etc/passwd", storage.FileAccess_OPEN),
+					access:      s.getDeploymentActualFileAccessEvent("/etc/passwd", storage.FileAccess_OPEN),
 					expectAlert: true,
 				},
 				{
-					access:      s.getDeploymentNodeFileAccessEvent("/etc/shadow", storage.FileAccess_OPEN),
+					access:      s.getDeploymentActualFileAccessEvent("/etc/shadow", storage.FileAccess_OPEN),
 					expectAlert: true,
 				},
 				{
-					access:      s.getDeploymentNodeFileAccessEvent("/etc/ssh/sshd_config", storage.FileAccess_OPEN),
+					access:      s.getDeploymentActualFileAccessEvent("/etc/ssh/sshd_config", storage.FileAccess_OPEN),
 					expectAlert: true,
 				},
 				{
-					access:      s.getDeploymentNodeFileAccessEvent("/etc/sudoers", storage.FileAccess_OPEN),
+					access:      s.getDeploymentActualFileAccessEvent("/etc/sudoers", storage.FileAccess_OPEN),
 					expectAlert: true,
 				},
 			},
@@ -269,19 +269,19 @@ func (s *DeploymentDetectionTestSuite) TestDeploymentFileAccess() {
 			policy:      s.getDeploymentFileAccessPolicy("/etc/passwd", "/etc/ssh/sshd_config", "/etc/shadow", "/etc/sudoers"),
 			events: []eventWrapper{
 				{
-					access:      s.getDeploymentNodeFileAccessEvent("/etc/passwd-suffix", storage.FileAccess_OPEN),
+					access:      s.getDeploymentActualFileAccessEvent("/etc/passwd-suffix", storage.FileAccess_OPEN),
 					expectAlert: false,
 				},
 				{
-					access:      s.getDeploymentNodeFileAccessEvent("/etc/shadow-suffix", storage.FileAccess_OPEN),
+					access:      s.getDeploymentActualFileAccessEvent("/etc/shadow-suffix", storage.FileAccess_OPEN),
 					expectAlert: false,
 				},
 				{
-					access:      s.getDeploymentNodeFileAccessEvent("/etc/ssh/sshd_config-suffix", storage.FileAccess_OPEN),
+					access:      s.getDeploymentActualFileAccessEvent("/etc/ssh/sshd_config-suffix", storage.FileAccess_OPEN),
 					expectAlert: false,
 				},
 				{
-					access:      s.getDeploymentNodeFileAccessEvent("/etc/sudoers-suffix", storage.FileAccess_OPEN),
+					access:      s.getDeploymentActualFileAccessEvent("/etc/sudoers-suffix", storage.FileAccess_OPEN),
 					expectAlert: false,
 				},
 			},
@@ -321,7 +321,7 @@ func (s *DeploymentDetectionTestSuite) TestDeploymentFileAccess() {
 	}
 }
 
-func (s *DeploymentDetectionTestSuite) TestDeploymentMountedFileAccess() {
+func (s *DeploymentDetectionTestSuite) TestDeploymentEffectiveFileAccess() {
 	deployment := &storage.Deployment{
 		Name: "test-deployment",
 		Id:   "test-deployment-id",
@@ -338,229 +338,229 @@ func (s *DeploymentDetectionTestSuite) TestDeploymentMountedFileAccess() {
 		events      []eventWrapper
 	}{
 		{
-			description: "Deployment mounted file open policy with matching event",
-			policy: s.getMountedFileAccessPolicyWithOperations(
+			description: "Deployment effective file open policy with matching event",
+			policy: s.getEffectiveFileAccessPolicyWithOperations(
 				[]storage.FileAccess_Operation{storage.FileAccess_OPEN}, false,
 				"/etc/passwd",
 			),
 			events: []eventWrapper{
 				{
-					access:      s.getDeploymentMountedFileAccessEvent("/etc/passwd", storage.FileAccess_OPEN),
+					access:      s.getDeploymentEffectiveFileAccessEvent("/etc/passwd", storage.FileAccess_OPEN),
 					expectAlert: true,
 				},
 			},
 		},
 		{
-			description: "Deployment mounted file open policy with mismatching event (UNLINK)",
-			policy: s.getMountedFileAccessPolicyWithOperations(
+			description: "Deployment effective file open policy with mismatching event (UNLINK)",
+			policy: s.getEffectiveFileAccessPolicyWithOperations(
 				[]storage.FileAccess_Operation{storage.FileAccess_OPEN}, false,
 				"/etc/passwd",
 			),
 			events: []eventWrapper{
 				{
-					access:      s.getDeploymentMountedFileAccessEvent("/etc/passwd", storage.FileAccess_UNLINK),
+					access:      s.getDeploymentEffectiveFileAccessEvent("/etc/passwd", storage.FileAccess_UNLINK),
 					expectAlert: false,
 				},
 			},
 		},
 		{
-			description: "Deployment mounted file open policy with mismatching event (/etc/sudoers)",
-			policy: s.getMountedFileAccessPolicyWithOperations(
+			description: "Deployment effective file open policy with mismatching event (/etc/sudoers)",
+			policy: s.getEffectiveFileAccessPolicyWithOperations(
 				[]storage.FileAccess_Operation{storage.FileAccess_OPEN}, false,
 				"/etc/passwd",
 			),
 			events: []eventWrapper{
 				{
-					access:      s.getDeploymentMountedFileAccessEvent("/etc/sudoers", storage.FileAccess_OPEN),
+					access:      s.getDeploymentEffectiveFileAccessEvent("/etc/sudoers", storage.FileAccess_OPEN),
 					expectAlert: false,
 				},
 			},
 		},
 		{
-			description: "Deployment mounted file policy with negated file operation",
-			policy: s.getMountedFileAccessPolicyWithOperations(
+			description: "Deployment effective file policy with negated file operation",
+			policy: s.getEffectiveFileAccessPolicyWithOperations(
 				[]storage.FileAccess_Operation{storage.FileAccess_OPEN}, true,
 				"/etc/passwd",
 			),
 			events: []eventWrapper{
 				{
-					access:      s.getDeploymentMountedFileAccessEvent("/etc/passwd", storage.FileAccess_OPEN),
+					access:      s.getDeploymentEffectiveFileAccessEvent("/etc/passwd", storage.FileAccess_OPEN),
 					expectAlert: false, // open is the only event we should ignore
 				},
 				{
-					access:      s.getDeploymentMountedFileAccessEvent("/etc/passwd", storage.FileAccess_UNLINK),
+					access:      s.getDeploymentEffectiveFileAccessEvent("/etc/passwd", storage.FileAccess_UNLINK),
 					expectAlert: true,
 				},
 				{
-					access:      s.getDeploymentMountedFileAccessEvent("/etc/passwd", storage.FileAccess_CREATE),
+					access:      s.getDeploymentEffectiveFileAccessEvent("/etc/passwd", storage.FileAccess_CREATE),
 					expectAlert: true,
 				},
 				{
-					access:      s.getDeploymentMountedFileAccessEvent("/etc/passwd", storage.FileAccess_OWNERSHIP_CHANGE),
+					access:      s.getDeploymentEffectiveFileAccessEvent("/etc/passwd", storage.FileAccess_OWNERSHIP_CHANGE),
 					expectAlert: true,
 				},
 				{
-					access:      s.getDeploymentMountedFileAccessEvent("/etc/passwd", storage.FileAccess_PERMISSION_CHANGE),
+					access:      s.getDeploymentEffectiveFileAccessEvent("/etc/passwd", storage.FileAccess_PERMISSION_CHANGE),
 					expectAlert: true,
 				},
 				{
-					access:      s.getDeploymentMountedFileAccessEvent("/etc/passwd", storage.FileAccess_RENAME),
+					access:      s.getDeploymentEffectiveFileAccessEvent("/etc/passwd", storage.FileAccess_RENAME),
 					expectAlert: true,
 				},
 			},
 		},
 		{
-			description: "Deployment mounted file policy with multiple operations",
-			policy: s.getMountedFileAccessPolicyWithOperations(
+			description: "Deployment effective file policy with multiple operations",
+			policy: s.getEffectiveFileAccessPolicyWithOperations(
 				[]storage.FileAccess_Operation{storage.FileAccess_OPEN, storage.FileAccess_CREATE}, false,
 				"/etc/passwd",
 			),
 			events: []eventWrapper{
 				{
-					access:      s.getDeploymentMountedFileAccessEvent("/etc/passwd", storage.FileAccess_OPEN),
+					access:      s.getDeploymentEffectiveFileAccessEvent("/etc/passwd", storage.FileAccess_OPEN),
 					expectAlert: true,
 				},
 				{
-					access:      s.getDeploymentMountedFileAccessEvent("/etc/passwd", storage.FileAccess_CREATE),
+					access:      s.getDeploymentEffectiveFileAccessEvent("/etc/passwd", storage.FileAccess_CREATE),
 					expectAlert: true,
 				},
 				{
-					access:      s.getDeploymentMountedFileAccessEvent("/etc/passwd", storage.FileAccess_RENAME),
+					access:      s.getDeploymentEffectiveFileAccessEvent("/etc/passwd", storage.FileAccess_RENAME),
 					expectAlert: false,
 				},
 			},
 		},
 		{
-			description: "Deployment mounted file policy with multiple negated operations",
-			policy: s.getMountedFileAccessPolicyWithOperations(
+			description: "Deployment effective file policy with multiple negated operations",
+			policy: s.getEffectiveFileAccessPolicyWithOperations(
 				[]storage.FileAccess_Operation{storage.FileAccess_OPEN, storage.FileAccess_CREATE}, true,
 				"/etc/passwd",
 			),
 			events: []eventWrapper{
 				{
-					access:      s.getDeploymentMountedFileAccessEvent("/etc/passwd", storage.FileAccess_OPEN),
+					access:      s.getDeploymentEffectiveFileAccessEvent("/etc/passwd", storage.FileAccess_OPEN),
 					expectAlert: false,
 				},
 				{
-					access:      s.getDeploymentMountedFileAccessEvent("/etc/passwd", storage.FileAccess_CREATE),
+					access:      s.getDeploymentEffectiveFileAccessEvent("/etc/passwd", storage.FileAccess_CREATE),
 					expectAlert: false,
 				},
 				{
-					access:      s.getDeploymentMountedFileAccessEvent("/etc/passwd", storage.FileAccess_OWNERSHIP_CHANGE),
+					access:      s.getDeploymentEffectiveFileAccessEvent("/etc/passwd", storage.FileAccess_OWNERSHIP_CHANGE),
 					expectAlert: true,
 				},
 				{
-					access:      s.getDeploymentMountedFileAccessEvent("/etc/passwd", storage.FileAccess_PERMISSION_CHANGE),
+					access:      s.getDeploymentEffectiveFileAccessEvent("/etc/passwd", storage.FileAccess_PERMISSION_CHANGE),
 					expectAlert: true,
 				},
 				{
-					access:      s.getDeploymentMountedFileAccessEvent("/etc/passwd", storage.FileAccess_UNLINK),
+					access:      s.getDeploymentEffectiveFileAccessEvent("/etc/passwd", storage.FileAccess_UNLINK),
 					expectAlert: true,
 				},
 				{
-					access:      s.getDeploymentMountedFileAccessEvent("/etc/passwd", storage.FileAccess_RENAME),
+					access:      s.getDeploymentEffectiveFileAccessEvent("/etc/passwd", storage.FileAccess_RENAME),
 					expectAlert: true,
 				},
 			},
 		},
 		{
-			description: "Deployment mounted file policy with multiple files and single operation",
-			policy: s.getMountedFileAccessPolicyWithOperations(
+			description: "Deployment effective file policy with multiple files and single operation",
+			policy: s.getEffectiveFileAccessPolicyWithOperations(
 				[]storage.FileAccess_Operation{storage.FileAccess_OPEN}, false,
 				"/etc/passwd", "/etc/shadow",
 			),
 			events: []eventWrapper{
 				{
-					access:      s.getDeploymentMountedFileAccessEvent("/etc/passwd", storage.FileAccess_OPEN),
+					access:      s.getDeploymentEffectiveFileAccessEvent("/etc/passwd", storage.FileAccess_OPEN),
 					expectAlert: true,
 				},
 				{
-					access:      s.getDeploymentMountedFileAccessEvent("/etc/shadow", storage.FileAccess_OPEN),
+					access:      s.getDeploymentEffectiveFileAccessEvent("/etc/shadow", storage.FileAccess_OPEN),
 					expectAlert: true,
 				},
 			},
 		},
 		{
-			description: "Deployment mounted file policy with multiple files and multiple operations",
-			policy: s.getMountedFileAccessPolicyWithOperations(
+			description: "Deployment effective file policy with multiple files and multiple operations",
+			policy: s.getEffectiveFileAccessPolicyWithOperations(
 				[]storage.FileAccess_Operation{storage.FileAccess_OPEN, storage.FileAccess_CREATE}, false,
 				"/etc/passwd", "/etc/shadow",
 			),
 			events: []eventWrapper{
 				{
-					access:      s.getDeploymentMountedFileAccessEvent("/etc/passwd", storage.FileAccess_OPEN),
+					access:      s.getDeploymentEffectiveFileAccessEvent("/etc/passwd", storage.FileAccess_OPEN),
 					expectAlert: true,
 				},
 				{
-					access:      s.getDeploymentMountedFileAccessEvent("/etc/passwd", storage.FileAccess_CREATE),
+					access:      s.getDeploymentEffectiveFileAccessEvent("/etc/passwd", storage.FileAccess_CREATE),
 					expectAlert: true,
 				},
 				{
-					access:      s.getDeploymentMountedFileAccessEvent("/etc/shadow", storage.FileAccess_OPEN),
+					access:      s.getDeploymentEffectiveFileAccessEvent("/etc/shadow", storage.FileAccess_OPEN),
 					expectAlert: true,
 				},
 				{
-					access:      s.getDeploymentMountedFileAccessEvent("/etc/shadow", storage.FileAccess_CREATE),
+					access:      s.getDeploymentEffectiveFileAccessEvent("/etc/shadow", storage.FileAccess_CREATE),
 					expectAlert: true,
 				},
 				{
-					access:      s.getDeploymentMountedFileAccessEvent("/etc/sudoers", storage.FileAccess_CREATE),
+					access:      s.getDeploymentEffectiveFileAccessEvent("/etc/sudoers", storage.FileAccess_CREATE),
 					expectAlert: false,
 				},
 				{
-					access:      s.getDeploymentMountedFileAccessEvent("/etc/sudoers", storage.FileAccess_OPEN),
+					access:      s.getDeploymentEffectiveFileAccessEvent("/etc/sudoers", storage.FileAccess_OPEN),
 					expectAlert: false,
 				},
 			},
 		},
 		{
-			description: "Deployment mounted file policy with no operations",
-			policy:      s.getMountedFileAccessPolicy("/etc/passwd"),
+			description: "Deployment effective file policy with no operations",
+			policy:      s.getEffectiveFileAccessPolicy("/etc/passwd"),
 			events: []eventWrapper{
 				{
-					access:      s.getDeploymentMountedFileAccessEvent("/etc/passwd", storage.FileAccess_OPEN),
+					access:      s.getDeploymentEffectiveFileAccessEvent("/etc/passwd", storage.FileAccess_OPEN),
 					expectAlert: true,
 				},
 				{
-					access:      s.getDeploymentMountedFileAccessEvent("/etc/passwd", storage.FileAccess_CREATE),
+					access:      s.getDeploymentEffectiveFileAccessEvent("/etc/passwd", storage.FileAccess_CREATE),
 					expectAlert: true,
 				},
 				{
-					access:      s.getDeploymentMountedFileAccessEvent("/etc/passwd", storage.FileAccess_OWNERSHIP_CHANGE),
+					access:      s.getDeploymentEffectiveFileAccessEvent("/etc/passwd", storage.FileAccess_OWNERSHIP_CHANGE),
 					expectAlert: true,
 				},
 				{
-					access:      s.getDeploymentMountedFileAccessEvent("/etc/passwd", storage.FileAccess_PERMISSION_CHANGE),
+					access:      s.getDeploymentEffectiveFileAccessEvent("/etc/passwd", storage.FileAccess_PERMISSION_CHANGE),
 					expectAlert: true,
 				},
 				{
-					access:      s.getDeploymentMountedFileAccessEvent("/etc/passwd", storage.FileAccess_UNLINK),
+					access:      s.getDeploymentEffectiveFileAccessEvent("/etc/passwd", storage.FileAccess_UNLINK),
 					expectAlert: true,
 				},
 				{
-					access:      s.getDeploymentMountedFileAccessEvent("/etc/passwd", storage.FileAccess_RENAME),
+					access:      s.getDeploymentEffectiveFileAccessEvent("/etc/passwd", storage.FileAccess_RENAME),
 					expectAlert: true,
 				},
 			},
 		},
 		{
-			description: "Deployment mounted file policy with all allowed files",
-			policy:      s.getMountedFileAccessPolicy("/etc/passwd", "/etc/ssh/sshd_config", "/etc/shadow", "/etc/sudoers"),
+			description: "Deployment effective file policy with all allowed files",
+			policy:      s.getEffectiveFileAccessPolicy("/etc/passwd", "/etc/ssh/sshd_config", "/etc/shadow", "/etc/sudoers"),
 			events: []eventWrapper{
 				{
-					access:      s.getDeploymentMountedFileAccessEvent("/etc/passwd", storage.FileAccess_OPEN),
+					access:      s.getDeploymentEffectiveFileAccessEvent("/etc/passwd", storage.FileAccess_OPEN),
 					expectAlert: true,
 				},
 				{
-					access:      s.getDeploymentMountedFileAccessEvent("/etc/shadow", storage.FileAccess_OPEN),
+					access:      s.getDeploymentEffectiveFileAccessEvent("/etc/shadow", storage.FileAccess_OPEN),
 					expectAlert: true,
 				},
 				{
-					access:      s.getDeploymentMountedFileAccessEvent("/etc/ssh/sshd_config", storage.FileAccess_OPEN),
+					access:      s.getDeploymentEffectiveFileAccessEvent("/etc/ssh/sshd_config", storage.FileAccess_OPEN),
 					expectAlert: true,
 				},
 				{
-					access:      s.getDeploymentMountedFileAccessEvent("/etc/sudoers", storage.FileAccess_OPEN),
+					access:      s.getDeploymentEffectiveFileAccessEvent("/etc/sudoers", storage.FileAccess_OPEN),
 					expectAlert: true,
 				},
 			},
@@ -570,19 +570,19 @@ func (s *DeploymentDetectionTestSuite) TestDeploymentMountedFileAccess() {
 			policy:      s.getDeploymentFileAccessPolicy("/etc/passwd", "/etc/ssh/sshd_config", "/etc/shadow", "/etc/sudoers"),
 			events: []eventWrapper{
 				{
-					access:      s.getDeploymentMountedFileAccessEvent("/etc/passwd-suffix", storage.FileAccess_OPEN),
+					access:      s.getDeploymentEffectiveFileAccessEvent("/etc/passwd-suffix", storage.FileAccess_OPEN),
 					expectAlert: false,
 				},
 				{
-					access:      s.getDeploymentMountedFileAccessEvent("/etc/shadow-suffix", storage.FileAccess_OPEN),
+					access:      s.getDeploymentEffectiveFileAccessEvent("/etc/shadow-suffix", storage.FileAccess_OPEN),
 					expectAlert: false,
 				},
 				{
-					access:      s.getDeploymentMountedFileAccessEvent("/etc/ssh/sshd_config-suffix", storage.FileAccess_OPEN),
+					access:      s.getDeploymentEffectiveFileAccessEvent("/etc/ssh/sshd_config-suffix", storage.FileAccess_OPEN),
 					expectAlert: false,
 				},
 				{
-					access:      s.getDeploymentMountedFileAccessEvent("/etc/sudoers-suffix", storage.FileAccess_OPEN),
+					access:      s.getDeploymentEffectiveFileAccessEvent("/etc/sudoers-suffix", storage.FileAccess_OPEN),
 					expectAlert: false,
 				},
 			},
@@ -640,7 +640,7 @@ func (s *DeploymentDetectionTestSuite) TestDeploymentDualPathMatching() {
 	}{
 		// Valid test cases - expected behavior
 		{
-			description: "Event with both paths - policy matches node_path only",
+			description: "Event with both paths - policy matches actual path only",
 			policy: s.getDeploymentFileAccessPolicyWithOperations(
 				[]storage.FileAccess_Operation{storage.FileAccess_OPEN}, false,
 				"/etc/passwd",
@@ -653,8 +653,8 @@ func (s *DeploymentDetectionTestSuite) TestDeploymentDualPathMatching() {
 			},
 		},
 		{
-			description: "Event with both paths - policy matches mounted_path only",
-			policy: s.getMountedFileAccessPolicyWithOperations(
+			description: "Event with both paths - policy matches effective only",
+			policy: s.getEffectiveFileAccessPolicyWithOperations(
 				[]storage.FileAccess_Operation{storage.FileAccess_OPEN}, false,
 				"/etc/shadow",
 			),
@@ -682,7 +682,7 @@ func (s *DeploymentDetectionTestSuite) TestDeploymentDualPathMatching() {
 					SectionName: "section 1",
 					PolicyGroups: []*storage.PolicyGroup{
 						{
-							FieldName: fieldnames.NodeFilePath,
+							FieldName: fieldnames.ActualPath,
 							Values:    []*storage.PolicyValue{{Value: "/etc/passwd"}},
 						},
 						{
@@ -695,7 +695,7 @@ func (s *DeploymentDetectionTestSuite) TestDeploymentDualPathMatching() {
 					SectionName: "section 2",
 					PolicyGroups: []*storage.PolicyGroup{
 						{
-							FieldName: fieldnames.NodeFilePath,
+							FieldName: fieldnames.ActualPath,
 							Values:    []*storage.PolicyValue{{Value: "/etc/shadow"}},
 						},
 						{
@@ -719,7 +719,7 @@ func (s *DeploymentDetectionTestSuite) TestDeploymentDualPathMatching() {
 					SectionName: "section 1",
 					PolicyGroups: []*storage.PolicyGroup{
 						{
-							FieldName: fieldnames.NodeFilePath,
+							FieldName: fieldnames.ActualPath,
 							Values:    []*storage.PolicyValue{{Value: "/etc/shadow"}},
 						},
 						{
@@ -732,7 +732,7 @@ func (s *DeploymentDetectionTestSuite) TestDeploymentDualPathMatching() {
 					SectionName: "section 2",
 					PolicyGroups: []*storage.PolicyGroup{
 						{
-							FieldName: fieldnames.NodeFilePath,
+							FieldName: fieldnames.ActualPath,
 							Values:    []*storage.PolicyValue{{Value: "/etc/passwd"}},
 						},
 						{
@@ -750,13 +750,13 @@ func (s *DeploymentDetectionTestSuite) TestDeploymentDualPathMatching() {
 			},
 		},
 		{
-			description: "Multi-section with mixed path types - node path section matches",
+			description: "Multi-section with mixed path types - actual path section matches",
 			policy: s.getMultiSectionPolicy([]*storage.PolicySection{
 				{
 					SectionName: "section 1",
 					PolicyGroups: []*storage.PolicyGroup{
 						{
-							FieldName: fieldnames.NodeFilePath,
+							FieldName: fieldnames.ActualPath,
 							Values:    []*storage.PolicyValue{{Value: "/etc/passwd"}},
 						},
 					},
@@ -765,7 +765,7 @@ func (s *DeploymentDetectionTestSuite) TestDeploymentDualPathMatching() {
 					SectionName: "section 2",
 					PolicyGroups: []*storage.PolicyGroup{
 						{
-							FieldName: fieldnames.MountedFilePath,
+							FieldName: fieldnames.EffectivePath,
 							Values:    []*storage.PolicyValue{{Value: "/etc/sudoers"}},
 						},
 					},
@@ -779,13 +779,13 @@ func (s *DeploymentDetectionTestSuite) TestDeploymentDualPathMatching() {
 			},
 		},
 		{
-			description: "Multi-section with mixed path types - mounted path section matches",
+			description: "Multi-section with mixed path types - effective path section matches",
 			policy: s.getMultiSectionPolicy([]*storage.PolicySection{
 				{
 					SectionName: "section 1",
 					PolicyGroups: []*storage.PolicyGroup{
 						{
-							FieldName: fieldnames.NodeFilePath,
+							FieldName: fieldnames.ActualPath,
 							Values:    []*storage.PolicyValue{{Value: "/etc/sudoers"}},
 						},
 					},
@@ -794,7 +794,7 @@ func (s *DeploymentDetectionTestSuite) TestDeploymentDualPathMatching() {
 					SectionName: "section 2",
 					PolicyGroups: []*storage.PolicyGroup{
 						{
-							FieldName: fieldnames.MountedFilePath,
+							FieldName: fieldnames.EffectivePath,
 							Values:    []*storage.PolicyValue{{Value: "/etc/shadow"}},
 						},
 					},
@@ -814,11 +814,11 @@ func (s *DeploymentDetectionTestSuite) TestDeploymentDualPathMatching() {
 					SectionName: "section 1",
 					PolicyGroups: []*storage.PolicyGroup{
 						{
-							FieldName: fieldnames.NodeFilePath,
+							FieldName: fieldnames.ActualPath,
 							Values:    []*storage.PolicyValue{{Value: "/etc/passwd"}},
 						},
 						{
-							FieldName: fieldnames.MountedFilePath,
+							FieldName: fieldnames.EffectivePath,
 							Values:    []*storage.PolicyValue{{Value: "/etc/shadow"}},
 						},
 					},
@@ -827,7 +827,7 @@ func (s *DeploymentDetectionTestSuite) TestDeploymentDualPathMatching() {
 					SectionName: "section 2",
 					PolicyGroups: []*storage.PolicyGroup{
 						{
-							FieldName: fieldnames.NodeFilePath,
+							FieldName: fieldnames.ActualPath,
 							Values:    []*storage.PolicyValue{{Value: "/etc/ssh/sshd_config"}},
 						},
 					},
@@ -835,7 +835,7 @@ func (s *DeploymentDetectionTestSuite) TestDeploymentDualPathMatching() {
 			}),
 			events: []eventWrapper{
 				{
-					// Matches section 1 (both node and mounted paths match)
+					// Matches section 1 (both actual and effective paths match)
 					access:      s.getDualPathFileAccessEvent("/etc/passwd", "/etc/shadow", storage.FileAccess_OPEN),
 					expectAlert: true,
 				},
@@ -857,7 +857,7 @@ func (s *DeploymentDetectionTestSuite) TestDeploymentDualPathMatching() {
 			},
 		},
 		{
-			description: "Event with both paths - policy requires BOTH but only node_path matches",
+			description: "Event with both paths - policy requires BOTH but only actual path matches",
 			policy:      s.getDualPathPolicy("/etc/passwd", "/etc/sudoers", []storage.FileAccess_Operation{storage.FileAccess_OPEN}),
 			events: []eventWrapper{
 				{
@@ -867,7 +867,7 @@ func (s *DeploymentDetectionTestSuite) TestDeploymentDualPathMatching() {
 			},
 		},
 		{
-			description: "Event with both paths - policy requires BOTH but only mounted_path matches",
+			description: "Event with both paths - policy requires BOTH but only effective matches",
 			policy:      s.getDualPathPolicy("/etc/sudoers", "/etc/shadow", []storage.FileAccess_Operation{storage.FileAccess_OPEN}),
 			events: []eventWrapper{
 				{
@@ -893,7 +893,7 @@ func (s *DeploymentDetectionTestSuite) TestDeploymentDualPathMatching() {
 					SectionName: "section 1",
 					PolicyGroups: []*storage.PolicyGroup{
 						{
-							FieldName: fieldnames.NodeFilePath,
+							FieldName: fieldnames.ActualPath,
 							Values:    []*storage.PolicyValue{{Value: "/etc/ssh/sshd_config"}},
 						},
 					},
@@ -902,7 +902,7 @@ func (s *DeploymentDetectionTestSuite) TestDeploymentDualPathMatching() {
 					SectionName: "section 2",
 					PolicyGroups: []*storage.PolicyGroup{
 						{
-							FieldName: fieldnames.MountedFilePath,
+							FieldName: fieldnames.EffectivePath,
 							Values:    []*storage.PolicyValue{{Value: "/etc/sudoers"}},
 						},
 					},
@@ -922,11 +922,11 @@ func (s *DeploymentDetectionTestSuite) TestDeploymentDualPathMatching() {
 					SectionName: "section 1",
 					PolicyGroups: []*storage.PolicyGroup{
 						{
-							FieldName: fieldnames.NodeFilePath,
+							FieldName: fieldnames.ActualPath,
 							Values:    []*storage.PolicyValue{{Value: "/etc/passwd"}},
 						},
 						{
-							FieldName: fieldnames.MountedFilePath,
+							FieldName: fieldnames.EffectivePath,
 							Values:    []*storage.PolicyValue{{Value: "/etc/sudoers"}},
 						},
 					},
@@ -935,11 +935,11 @@ func (s *DeploymentDetectionTestSuite) TestDeploymentDualPathMatching() {
 					SectionName: "section 2",
 					PolicyGroups: []*storage.PolicyGroup{
 						{
-							FieldName: fieldnames.NodeFilePath,
+							FieldName: fieldnames.ActualPath,
 							Values:    []*storage.PolicyValue{{Value: "/etc/ssh/sshd_config"}},
 						},
 						{
-							FieldName: fieldnames.MountedFilePath,
+							FieldName: fieldnames.EffectivePath,
 							Values:    []*storage.PolicyValue{{Value: "/etc/shadow"}},
 						},
 					},
@@ -947,8 +947,8 @@ func (s *DeploymentDetectionTestSuite) TestDeploymentDualPathMatching() {
 			}),
 			events: []eventWrapper{
 				{
-					// Section 1: node matches, mounted doesn't (AND fails)
-					// Section 2: node doesn't match, mounted does (AND fails)
+					// Section 1: actual matches, effective doesn't (AND fails)
+					// Section 2: actual doesn't match, effective does (AND fails)
 					// Overall: no section fully matches (OR fails)
 					access:      s.getDualPathFileAccessEvent("/etc/passwd", "/etc/shadow", storage.FileAccess_OPEN),
 					expectAlert: false,
@@ -991,12 +991,12 @@ func (s *DeploymentDetectionTestSuite) TestDeploymentDualPathMatching() {
 }
 
 // getFileAccessEvent is a generic helper for creating file access events.
-func (s *DeploymentDetectionTestSuite) getFileAccessEvent(path string, operation storage.FileAccess_Operation, isNodePath bool) *storage.FileAccess {
+func (s *DeploymentDetectionTestSuite) getFileAccessEvent(path string, operation storage.FileAccess_Operation, isActualPath bool) *storage.FileAccess {
 	file := &storage.FileAccess_File{}
-	if isNodePath {
-		file.NodePath = path
+	if isActualPath {
+		file.ActualPath = path
 	} else {
-		file.MountedPath = path
+		file.EffectivePath = path
 	}
 	return &storage.FileAccess{
 		File:      file,
@@ -1004,16 +1004,16 @@ func (s *DeploymentDetectionTestSuite) getFileAccessEvent(path string, operation
 	}
 }
 
-func (s *DeploymentDetectionTestSuite) getDeploymentNodeFileAccessEvent(path string, operation storage.FileAccess_Operation) *storage.FileAccess {
+func (s *DeploymentDetectionTestSuite) getDeploymentActualFileAccessEvent(path string, operation storage.FileAccess_Operation) *storage.FileAccess {
 	return s.getFileAccessEvent(path, operation, true)
 }
 
-func (s *DeploymentDetectionTestSuite) getDeploymentMountedFileAccessEvent(path string, operation storage.FileAccess_Operation) *storage.FileAccess {
+func (s *DeploymentDetectionTestSuite) getDeploymentEffectiveFileAccessEvent(path string, operation storage.FileAccess_Operation) *storage.FileAccess {
 	return s.getFileAccessEvent(path, operation, false)
 }
 
 // getFileAccessPolicy is a generic helper for creating file access policies.
-func (s *DeploymentDetectionTestSuite) getFileAccessPolicy(isNodePath bool, operations []storage.FileAccess_Operation, negate bool, paths ...string) *storage.Policy {
+func (s *DeploymentDetectionTestSuite) getFileAccessPolicy(isActualPath bool, operations []storage.FileAccess_Operation, negate bool, paths ...string) *storage.Policy {
 	var pathValues []*storage.PolicyValue
 	for _, path := range paths {
 		pathValues = append(pathValues, &storage.PolicyValue{
@@ -1021,9 +1021,9 @@ func (s *DeploymentDetectionTestSuite) getFileAccessPolicy(isNodePath bool, oper
 		})
 	}
 
-	fieldName := fieldnames.NodeFilePath
-	if !isNodePath {
-		fieldName = fieldnames.MountedFilePath
+	fieldName := fieldnames.ActualPath
+	if !isActualPath {
+		fieldName = fieldnames.EffectivePath
 	}
 
 	policyGroups := []*storage.PolicyGroup{
@@ -1073,35 +1073,35 @@ func (s *DeploymentDetectionTestSuite) getDeploymentFileAccessPolicy(paths ...st
 	return s.getFileAccessPolicy(true, nil, false, paths...)
 }
 
-func (s *DeploymentDetectionTestSuite) getMountedFileAccessPolicyWithOperations(operations []storage.FileAccess_Operation, negate bool, paths ...string) *storage.Policy {
+func (s *DeploymentDetectionTestSuite) getEffectiveFileAccessPolicyWithOperations(operations []storage.FileAccess_Operation, negate bool, paths ...string) *storage.Policy {
 	return s.getFileAccessPolicy(false, operations, negate, paths...)
 }
 
-func (s *DeploymentDetectionTestSuite) getMountedFileAccessPolicy(paths ...string) *storage.Policy {
+func (s *DeploymentDetectionTestSuite) getEffectiveFileAccessPolicy(paths ...string) *storage.Policy {
 	return s.getFileAccessPolicy(false, nil, false, paths...)
 }
 
-// Helper to create file access events with BOTH node_path and mounted_path populated
-func (s *DeploymentDetectionTestSuite) getDualPathFileAccessEvent(nodePath, mountedPath string, operation storage.FileAccess_Operation) *storage.FileAccess {
+// Helper to create file access events with BOTH actual path and effective path populated
+func (s *DeploymentDetectionTestSuite) getDualPathFileAccessEvent(actualPath, effectivePath string, operation storage.FileAccess_Operation) *storage.FileAccess {
 	return &storage.FileAccess{
 		File: &storage.FileAccess_File{
-			NodePath:    nodePath,
-			MountedPath: mountedPath,
+			ActualPath:    actualPath,
+			EffectivePath: effectivePath,
 		},
 		Operation: operation,
 	}
 }
 
-// Helper to create a policy with both NodeFilePath AND MountedFilePath in the same section (AND behavior)
-func (s *DeploymentDetectionTestSuite) getDualPathPolicy(nodePath, mountedPath string, operations []storage.FileAccess_Operation) *storage.Policy {
+// Helper to create a policy with both ActualPath AND EffectivePath in the same section (AND behavior)
+func (s *DeploymentDetectionTestSuite) getDualPathPolicy(actualPath, effectivePath string, operations []storage.FileAccess_Operation) *storage.Policy {
 	policyGroups := []*storage.PolicyGroup{
 		{
-			FieldName: fieldnames.NodeFilePath,
-			Values:    []*storage.PolicyValue{{Value: nodePath}},
+			FieldName: fieldnames.ActualPath,
+			Values:    []*storage.PolicyValue{{Value: actualPath}},
 		},
 		{
-			FieldName: fieldnames.MountedFilePath,
-			Values:    []*storage.PolicyValue{{Value: mountedPath}},
+			FieldName: fieldnames.EffectivePath,
+			Values:    []*storage.PolicyValue{{Value: effectivePath}},
 		},
 	}
 
