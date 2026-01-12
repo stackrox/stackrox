@@ -52,7 +52,8 @@ type enricherV2Impl struct {
 	signatureVerifier          signatureVerifierForIntegrations
 	signatureFetcher           signatures.SignatureFetcher
 
-	imageGetter ImageGetterV2
+	baseImageGetter BaseImageGetterV2
+	imageGetter     ImageGetterV2
 
 	asyncRateLimiter *rate.Limiter
 
@@ -292,6 +293,10 @@ func (e *enricherV2Impl) EnrichImage(ctx context.Context, enrichContext Enrichme
 	updated = updated || didUpdateSigVerificationData
 
 	e.cvesSuppressor.EnrichImageV2WithSuppressedCVEs(imageV2)
+
+	if features.BaseImageDetection.Enabled() {
+		imageV2.BaseImageInfo = e.baseImageGetter(ctx, imageV2.GetMetadata().GetLayerShas(), imageV2.GetName().GetFullName(), imageV2.GetId())
+	}
 
 	if !errorList.Empty() {
 		errorList.AddError(delegateErr)

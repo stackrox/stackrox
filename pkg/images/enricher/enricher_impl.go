@@ -61,7 +61,8 @@ type enricherImpl struct {
 	signatureVerifier          signatureVerifierForIntegrations
 	signatureFetcher           signatures.SignatureFetcher
 
-	imageGetter ImageGetter
+	baseImageGetter BaseImageGetter
+	imageGetter     ImageGetter
 
 	asyncRateLimiter *rate.Limiter
 
@@ -306,6 +307,10 @@ func (e *enricherImpl) EnrichImage(ctx context.Context, enrichContext Enrichment
 
 	if !errorList.Empty() {
 		errorList.AddError(delegateErr)
+	}
+
+	if features.BaseImageDetection.Enabled() {
+		image.BaseImageInfo = e.baseImageGetter(ctx, image.GetMetadata().GetLayerShas(), image.GetName().GetFullName(), image.GetId())
 	}
 
 	return EnrichmentResult{
