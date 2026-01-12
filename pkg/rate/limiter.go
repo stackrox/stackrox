@@ -98,7 +98,8 @@ func NewLimiterWithClock(workloadName string, globalRate float64, bucketCapacity
 // Metrics are automatically recorded.
 func (l *Limiter) TryConsume(clientID string) (allowed bool, reason string) {
 	if l.globalRate <= 0 {
-		// Rate limiting disabled
+		// Rate limiting disabled, but still record metrics for visibility into request volume.
+		RequestsTotal.WithLabelValues(l.workloadName, OutcomeAccepted).Inc()
 		return true, ""
 	}
 
