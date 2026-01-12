@@ -23,20 +23,22 @@ function FileAccessCardContent({ event }: FileAccessCardContentProps): ReactElem
         <Flex direction={{ default: 'column' }} spaceItems={{ default: 'spaceItemsMd' }}>
             <Divider component="div" />
             <Title headingLevel="h3" className="pf-v5-u-pb-sm">
-                {file.nodePath}
+                {file.actualPath}
             </Title>
             <DescriptionList columnModifier={{ default: '2Col' }}>
                 <DescriptionListItem term="File operation" desc={formatOperation(operation)} />
                 <DescriptionListItem term="Time" desc={getDateTime(timestamp)} />
-                {file.nodePath && <DescriptionListItem term="Node path" desc={file.nodePath} />}
-                {file.mountedPath && (
-                    <DescriptionListItem term="Mounted path" desc={file.mountedPath} />
+                {file.actualPath && (
+                    <DescriptionListItem term="Actual path" desc={file.actualPath} />
+                )}
+                {file.effectivePath && (
+                    <DescriptionListItem term="Effective path" desc={file.effectivePath} />
                 )}
                 {moved && (
                     <DescriptionListItem
                         term="Moved to"
-                        // `mountedPath` is relevant to deployment-based events, `nodePath` is relevant to node-based events
-                        desc={moved.mountedPath || moved.nodePath}
+                        // `effectivePath` is relevant to deployment-based events, `actualPath` is relevant to node-based events
+                        desc={moved.effectivePath || moved.actualPath}
                     />
                 )}
                 {process?.signal?.execFilePath && (

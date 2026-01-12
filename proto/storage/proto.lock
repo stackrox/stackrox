@@ -8457,12 +8457,12 @@
                 "fields": [
                   {
                     "id": 1,
-                    "name": "mounted_path",
+                    "name": "effective_path",
                     "type": "string"
                   },
                   {
                     "id": 2,
-                    "name": "node_path",
+                    "name": "actual_path",
                     "type": "string"
                   },
                   {
