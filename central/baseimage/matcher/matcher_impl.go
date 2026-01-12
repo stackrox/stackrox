@@ -30,7 +30,6 @@ func New(
 
 func (m matcherImpl) MatchWithBaseImages(ctx context.Context, layers []string, imgName string, imgId string) []*storage.BaseImageInfo {
 	if len(layers) == 0 {
-		log.Infof("Base Image matching: not able to get image layers from %s", imgName)
 		return nil
 	}
 	firstLayer := layers[0]
@@ -52,10 +51,8 @@ func (m matcherImpl) MatchWithBaseImages(ctx context.Context, layers []string, i
 		if len(layers) <= len(candidateLayers) {
 			continue
 		}
-		log.Infof(">>>> Getting base images candidates: %s, %s", c.GetRepository(), c.GetTag())
 		match := true
 		for i, l := range candidateLayers {
-			log.Infof(">>>> Getting base image layer: %s, %s", layers[i], l.GetLayerDigest())
 			if layers[i] != l.GetLayerDigest() {
 				match = false
 				break

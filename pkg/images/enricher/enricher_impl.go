@@ -30,7 +30,6 @@ import (
 	"github.com/stackrox/rox/pkg/sync"
 	scannerV1 "github.com/stackrox/scanner/generated/scanner/api/v1"
 	"golang.org/x/time/rate"
-	"google.golang.org/protobuf/proto"
 )
 
 const (
@@ -311,26 +310,6 @@ func (e *enricherImpl) EnrichImage(ctx context.Context, enrichContext Enrichment
 	}
 
 	if features.BaseImageDetection.Enabled() {
-		// TODO Remove: base image entities are manually populated with serialized blobs
-		// to enable search-framework testing until a proper API is available.
-		sample := &storage.BaseImage{
-			Id:               "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11",
-			Repository:       "alpine",
-			Tag:              "3.20.3",
-			FirstLayerDigest: "sha256:da9db072f522755cbeb85be2b3f84059b70571b229512f1571d9217b77e1087f",
-			Layers: []*storage.BaseImageLayer{
-				{
-					Id:          "c4015846-71d4-4fc3-85c1-3765e951279c",
-					BaseImageId: "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11",
-					LayerDigest: "sha256:da9db072f522755cbeb85be2b3f84059b70571b229512f1571d9217b77e1087f",
-					Index:       0,
-				},
-			},
-		}
-		blob, _ := proto.Marshal(sample)
-		log.Info(">>>>")
-		log.Infof("UPDATE base_images SET serialized = '\\x%x' WHERE id = '%s';", blob, sample.Id)
-		// end of mocking, will delete the testing block later
 		image.BaseImageInfo = e.baseImageGetter(ctx, image.GetMetadata().GetLayerShas(), image.GetName().GetFullName(), image.GetId())
 	}
 
