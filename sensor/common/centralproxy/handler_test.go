@@ -43,7 +43,7 @@ func TestValidateRequest(t *testing.T) {
 			name:             "GET is allowed",
 			method:           http.MethodGet,
 			centralReachable: true,
-			wantStatusCode:   0, // validateRequest returns bool, doesn't write on success
+			wantStatusCode:   0, // validateRequest returns nil on success
 		},
 		{
 			name:             "POST is allowed",
@@ -64,17 +64,17 @@ func TestValidateRequest(t *testing.T) {
 			wantStatusCode:   0,
 		},
 		{
-			name:             "PUT returns 501",
+			name:             "PUT returns 405",
 			method:           http.MethodPut,
 			centralReachable: true,
-			wantStatusCode:   http.StatusNotImplemented,
+			wantStatusCode:   http.StatusMethodNotAllowed,
 			wantError:        "method PUT not allowed",
 		},
 		{
-			name:             "DELETE returns 501",
+			name:             "DELETE returns 405",
 			method:           http.MethodDelete,
 			centralReachable: true,
-			wantStatusCode:   http.StatusNotImplemented,
+			wantStatusCode:   http.StatusMethodNotAllowed,
 			wantError:        "method DELETE not allowed",
 		},
 		{
@@ -92,16 +92,16 @@ func TestValidateRequest(t *testing.T) {
 			h.centralReachable.Store(tt.centralReachable)
 
 			req := httptest.NewRequest(tt.method, "/v1/alerts", nil)
-			w := httptest.NewRecorder()
-
-			ok := h.validateRequest(w, req)
+			err := h.validateRequest(req)
 
 			if tt.wantStatusCode == 0 {
-				assert.True(t, ok)
+				assert.NoError(t, err)
 			} else {
-				assert.False(t, ok)
-				assert.Equal(t, tt.wantStatusCode, w.Code)
-				assert.Contains(t, w.Body.String(), tt.wantError)
+				require.Error(t, err)
+				httpErr, ok := err.(pkghttputil.HTTPError)
+				require.True(t, ok, "error should be an HTTPError")
+				assert.Equal(t, tt.wantStatusCode, httpErr.HTTPStatusCode())
+				assert.Contains(t, err.Error(), tt.wantError)
 			}
 		})
 	}

@@ -12,10 +12,13 @@ import (
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/urlfmt"
 	"github.com/stackrox/rox/sensor/common"
-	"google.golang.org/grpc/codes"
 )
 
-var log = logging.LoggerForModule()
+var (
+	log = logging.LoggerForModule()
+
+	_ common.Notifiable = (*Handler)(nil)
+)
 
 // Handler handles HTTP proxy requests to Central.
 type Handler struct {
@@ -53,28 +56,27 @@ func (h *Handler) Notify(e common.SensorComponentEvent) {
 	}
 }
 
-// validateRequest validates the incoming request and writes appropriate error responses.
-func (h *Handler) validateRequest(writer http.ResponseWriter, request *http.Request) bool {
-	// Allow GET, POST, OPTIONS (for CORS preflight), and HEAD
+// validateRequest validates the incoming request and returns an error if validation fails.
+func (h *Handler) validateRequest(request *http.Request) error {
+	// Allow GET, POST, OPTIONS (for CORS preflight), and HEAD.
 	switch request.Method {
 	case http.MethodGet, http.MethodPost, http.MethodOptions, http.MethodHead:
 		// allowed
 	default:
-		pkghttputil.WriteGRPCStyleErrorf(writer, codes.Unimplemented, "method %s not allowed", request.Method)
-		return false
+		return pkghttputil.Errorf(http.StatusMethodNotAllowed, "method %s not allowed", request.Method)
 	}
 
 	if !h.centralReachable.Load() {
-		pkghttputil.WriteGRPCStyleErrorf(writer, codes.Unavailable, "central not reachable")
-		return false
+		return pkghttputil.NewError(http.StatusServiceUnavailable, "central not reachable")
 	}
 
-	return true
+	return nil
 }
 
 // ServeHTTP handles incoming HTTP requests and proxies them to Central.
 func (h *Handler) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
-	if !h.validateRequest(writer, request) {
+	if err := h.validateRequest(request); err != nil {
+		pkghttputil.WriteError(writer, err)
 		return
 	}
 	h.proxy.ServeHTTP(writer, request)
