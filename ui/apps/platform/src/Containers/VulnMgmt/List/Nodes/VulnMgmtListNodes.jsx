@@ -11,10 +11,10 @@ import { LIST_PAGE_SIZE } from 'constants/workflowPages.constants';
 import { NODE_LIST_FRAGMENT_UPDATED } from 'Containers/VulnMgmt/VulnMgmt.fragments';
 import getNodeScanMessage from 'Containers/VulnMgmt/VulnMgmt.utils/getNodeScanMessage';
 import { workflowListPropTypes, workflowListDefaultProps } from 'constants/entityPageProps';
-import removeEntityContextColumns from 'utils/tableUtils';
 import { nodeSortFields } from 'constants/sortFields';
 
 import WorkflowListPage from '../WorkflowListPage';
+import removeEntityContextColumns from '../tableUtils';
 import { getVulnMgmtPathForEntitiesAndId } from '../../VulnMgmt.utils/entities';
 
 const nodeListUpdatedQuery = gql`

@@ -15,7 +15,7 @@ import { CLUSTER_LIST_FRAGMENT_UPDATED } from 'Containers/VulnMgmt/VulnMgmt.frag
 import { workflowListPropTypes, workflowListDefaultProps } from 'constants/entityPageProps';
 import { clusterSortFields } from 'constants/sortFields';
 import { LIST_PAGE_SIZE } from 'constants/workflowPages.constants';
-import removeEntityContextColumns from 'utils/tableUtils';
+import removeEntityContextColumns from '../tableUtils';
 import { vulMgmtPolicyQuery } from '../../Entity/VulnMgmtPolicyQueryUtil';
 import { getVulnMgmtPathForEntitiesAndId } from '../../VulnMgmt.utils/entities';
 import WorkflowListPage from '../WorkflowListPage';

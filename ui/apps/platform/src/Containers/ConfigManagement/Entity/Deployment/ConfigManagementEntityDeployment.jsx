@@ -11,12 +11,12 @@ import Metadata from 'Components/Metadata';
 import { getDateTime } from 'utils/dateUtils';
 import { entityComponentDefaultProps, entityComponentPropTypes } from 'constants/entityPageProps';
 import searchContext from 'Containers/searchContext';
-import getSubListFromEntity from 'utils/getSubListFromEntity';
 import isGQLLoading from 'utils/gqlLoading';
 import queryService from 'utils/queryService';
 
 import { getConfigMgmtCountQuery } from '../../ConfigMgmt.utils';
 import EntityList from '../../List/EntityList';
+import getSubListFromEntity from '../getSubListFromEntity';
 import DeploymentFindings from './DeploymentFindings';
 
 const ConfigManagementEntityDeployment = ({

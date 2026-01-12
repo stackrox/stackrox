@@ -11,13 +11,13 @@ import Metadata from 'Components/Metadata';
 import { entityComponentDefaultProps, entityComponentPropTypes } from 'constants/entityPageProps';
 import searchContext from 'Containers/searchContext';
 import { getDateTime } from 'utils/dateUtils';
-import getSubListFromEntity from 'utils/getSubListFromEntity';
 import isGQLLoading from 'utils/gqlLoading';
 import queryService from 'utils/queryService';
 
 import { getConfigMgmtCountQuery } from '../ConfigMgmt.utils';
 import EntityList from '../List/EntityList';
 import DeploymentsWithFailedPolicies from './widgets/DeploymentsWithFailedPolicies';
+import getSubListFromEntity from './getSubListFromEntity';
 
 const ConfigManagementEntityNamespace = ({
     id,

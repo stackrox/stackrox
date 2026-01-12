@@ -390,6 +390,31 @@ const rules = {
             };
         },
     },
+    'no-non-deprecated-JavaScript': {
+        // Distinguish which JavaScript files need rewrite in TypeScript.
+        // Less of a rule than a tool to document technical investment.
+        meta: {
+            type: 'problem',
+            docs: {
+                description: 'Distinguish which JavaScript files need rewrite in TypeScript',
+            },
+            schema: [],
+        },
+        create(context) {
+            return {
+                Program(node) {
+                    const { filename } = context;
+                    const extname = path.extname(filename);
+                    if (['.js', '.jsx'].includes(extname)) {
+                        context.report({
+                            node,
+                            message: 'Rewrite non-deprecated JavaScript file as TypeScript',
+                        });
+                    }
+                },
+            };
+        },
+    },
     'no-qualified-name-react': {
         // React.Whatever is possible with default import.
         // For consistency and as prerequisite to replace default import with JSX transform.
