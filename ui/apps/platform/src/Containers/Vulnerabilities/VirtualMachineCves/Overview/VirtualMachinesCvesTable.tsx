@@ -119,7 +119,7 @@ function VirtualMachinesCvesTable() {
                             <Th>Cluster</Th>
                             <Th>Namespace</Th>
                             <Th>Scanned components</Th>
-                            <Th>Last updated</Th>
+                            <Th>Scan time</Th>
                         </Tr>
                     </Thead>
                     <TbodyUnified
@@ -179,8 +179,14 @@ function VirtualMachinesCvesTable() {
                                                     virtualMachine
                                                 )}
                                             </Td>
-                                            <Td dataLabel="Last updated">
-                                                <DateDistance date={virtualMachine.lastUpdated} />
+                                            <Td dataLabel="Scan time">
+                                                {virtualMachine?.scan?.scanTime ? (
+                                                    <DateDistance
+                                                        date={virtualMachine?.scan?.scanTime}
+                                                    />
+                                                ) : (
+                                                    'Not available'
+                                                )}
                                             </Td>
                                         </Tr>
                                     );
