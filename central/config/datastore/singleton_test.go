@@ -5,14 +5,11 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 )
 
 func TestPlatformComponentLayeredProductsRegex(t *testing.T) {
 	// Compile the regex to ensure it's valid
-	regex, err := regexp.Compile(PlatformComponentLayeredProductsDefaultRegex)
-	require.NoError(t, err, "PlatformComponentLayeredProductsDefaultRegex should be a valid regex pattern")
-	require.NotNil(t, regex, "Compiled regex should not be nil")
+	regex := regexp.MustCompile(PlatformComponentLayeredProductsDefaultRegex)
 
 	// Array of namespaces that SHOULD match the regex
 	// These are all the exact namespace patterns defined in the constant
