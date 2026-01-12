@@ -30,6 +30,10 @@ var (
 	// across all sensors. Each sensor gets an equal share (1/N) of this global capacity.
 	// Supports fractional rates (e.g., "0.5" for one request every 2 seconds).
 	// Set to "0" to disable rate limiting (unlimited).
+	//
+	// As of ACS 4.9 & 4.10, the default size cluster should not exceed 1.0 requests per second.
+	// For larger clusters, the rate limit could be increased to up to 3.0 requests per second only if the
+	// scanner-v4-matcher and the scanner-v4-db are able to handle the load!
 	VMIndexReportRateLimit = RegisterSetting("ROX_VM_INDEX_REPORT_RATE_LIMIT", WithDefault("1.0"))
 
 	// VMIndexReportBucketCapacity defines the token bucket capacity for VM index report rate limiting.
