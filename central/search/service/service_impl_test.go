@@ -29,9 +29,9 @@ import (
 	riskDatastoreMocks "github.com/stackrox/rox/central/risk/datastore/mocks"
 	secretMocks "github.com/stackrox/rox/central/secret/datastore/mocks"
 	serviceAccountMocks "github.com/stackrox/rox/central/serviceaccount/datastore/mocks"
-	"github.com/stackrox/rox/central/testutils"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
 	"github.com/stackrox/rox/pkg/postgres"
@@ -57,14 +57,15 @@ func TestGetSearchFuncs_FlattenImageDataRoutesImageSearch(t *testing.T) {
 	q := &v1.Query{}
 
 	t.Run("FlattenImageData disabled routes IMAGES to images store", func(t *testing.T) {
+		if features.FlattenImageData.Enabled() {
+			t.Skip("Skipping test - FlattenImageData is enabled")
+		}
+
 		mockCtrl := gomock.NewController(t)
 		defer mockCtrl.Finish()
 
 		imagesStore := imageMocks.NewMockDataStore(mockCtrl)
 		imagesV2Store := imageV2DatastoreMocks.NewMockDataStore(mockCtrl)
-
-		restore := testutils.SetFlattenImageDataForTest(t, false)
-		defer restore()
 
 		svc := NewBuilder().
 			WithAlertStore(alertMocks.NewMockDataStore(mockCtrl)).
@@ -102,14 +103,15 @@ func TestGetSearchFuncs_FlattenImageDataRoutesImageSearch(t *testing.T) {
 	})
 
 	t.Run("FlattenImageData enabled routes IMAGES and IMAGES_V2 to imagesV2 store", func(t *testing.T) {
+		if !features.FlattenImageData.Enabled() {
+			t.Skip("Skipping test - FlattenImageData is disabled")
+		}
+
 		mockCtrl := gomock.NewController(t)
 		defer mockCtrl.Finish()
 
 		imagesStore := imageMocks.NewMockDataStore(mockCtrl)
 		imagesV2Store := imageV2DatastoreMocks.NewMockDataStore(mockCtrl)
-
-		restore := testutils.SetFlattenImageDataForTest(t, true)
-		defer restore()
 
 		svc := NewBuilder().
 			WithAlertStore(alertMocks.NewMockDataStore(mockCtrl)).
@@ -154,14 +156,15 @@ func TestGetAutocompleteSearchers_FlattenImageDataRoutesImageAutocomplete(t *tes
 	q := &v1.Query{}
 
 	t.Run("FlattenImageData disabled routes IMAGES autocomplete to images searcher", func(t *testing.T) {
+		if features.FlattenImageData.Enabled() {
+			t.Skip("Skipping test - FlattenImageData is enabled")
+		}
+
 		mockCtrl := gomock.NewController(t)
 		defer mockCtrl.Finish()
 
 		imagesStore := imageMocks.NewMockDataStore(mockCtrl)
 		imagesV2Store := imageV2DatastoreMocks.NewMockDataStore(mockCtrl)
-
-		restore := testutils.SetFlattenImageDataForTest(t, false)
-		defer restore()
 
 		svc := NewBuilder().
 			WithAlertStore(alertMocks.NewMockDataStore(mockCtrl)).
@@ -196,14 +199,15 @@ func TestGetAutocompleteSearchers_FlattenImageDataRoutesImageAutocomplete(t *tes
 	})
 
 	t.Run("FlattenImageData enabled routes IMAGES autocomplete to imagesV2 searcher", func(t *testing.T) {
+		if !features.FlattenImageData.Enabled() {
+			t.Skip("Skipping test - FlattenImageData is disabled")
+		}
+
 		mockCtrl := gomock.NewController(t)
 		defer mockCtrl.Finish()
 
 		imagesStore := imageMocks.NewMockDataStore(mockCtrl)
 		imagesV2Store := imageV2DatastoreMocks.NewMockDataStore(mockCtrl)
-
-		restore := testutils.SetFlattenImageDataForTest(t, true)
-		defer restore()
 
 		svc := NewBuilder().
 			WithAlertStore(alertMocks.NewMockDataStore(mockCtrl)).

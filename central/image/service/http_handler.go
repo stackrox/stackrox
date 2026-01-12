@@ -108,6 +108,9 @@ func (h sbomHttpHandler) enrichByNameWithModelSwitch(
 		return img, imgV2, nil
 	}
 
+	if h.enricher == nil {
+		return nil, nil, errors.New("enricherV1 is nil when FlattenImageData is disabled")
+	}
 	img, err = enricher.EnrichImageByName(ctx, h.enricher, enrichmentCtx, imgName)
 	return img, nil, err
 }

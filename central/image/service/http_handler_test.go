@@ -12,7 +12,6 @@ import (
 	"github.com/stackrox/rox/central/imageintegration"
 	iiStore "github.com/stackrox/rox/central/imageintegration/store"
 	riskManagerMocks "github.com/stackrox/rox/central/risk/manager/mocks"
-	"github.com/stackrox/rox/central/testutils"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/apiparams"
 	"github.com/stackrox/rox/pkg/env"
@@ -47,6 +46,23 @@ func createMockSBOM() map[string]interface{} {
 				"Tool: FOSSA v0.12.0",
 			},
 		},
+	}
+}
+
+// setFlattenImageDataForTest sets the FlattenImageData feature flag for testing and returns a restore function.
+// This may not be necessary if the environment is not persisted between tests.
+func setFlattenImageDataForTest(t *testing.T, enabled bool) func() {
+	originalValue := features.FlattenImageData.Enabled()
+	t.Setenv(features.FlattenImageData.EnvVar(), "false")
+	if enabled {
+		t.Setenv(features.FlattenImageData.EnvVar(), "true")
+	}
+	return func() {
+		if originalValue {
+			t.Setenv(features.FlattenImageData.EnvVar(), "true")
+		} else {
+			t.Setenv(features.FlattenImageData.EnvVar(), "false")
+		}
 	}
 }
 
@@ -298,7 +314,7 @@ func TestSBOMHandler_FlattenImageDataPaths(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			restore := testutils.SetFlattenImageDataForTest(t, tt.flattenImageData)
+			restore := setFlattenImageDataForTest(t, tt.flattenImageData)
 			defer restore()
 
 			ctrl := gomock.NewController(t)
