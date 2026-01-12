@@ -42,15 +42,16 @@ func (m *MockMatcher) EXPECT() *MockMatcherMockRecorder {
 }
 
 // MatchWithBaseImages mocks base method.
-func (m *MockMatcher) MatchWithBaseImages(ctx context.Context, layers []string, imgName, imgId string) []*storage.BaseImageInfo {
+func (m *MockMatcher) MatchWithBaseImages(ctx context.Context, layers []string) ([]*storage.BaseImageInfo, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "MatchWithBaseImages", ctx, layers, imgName, imgId)
+	ret := m.ctrl.Call(m, "MatchWithBaseImages", ctx, layers)
 	ret0, _ := ret[0].([]*storage.BaseImageInfo)
-	return ret0
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
 }
 
 // MatchWithBaseImages indicates an expected call of MatchWithBaseImages.
-func (mr *MockMatcherMockRecorder) MatchWithBaseImages(ctx, layers, imgName, imgId any) *gomock.Call {
+func (mr *MockMatcherMockRecorder) MatchWithBaseImages(ctx, layers any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "MatchWithBaseImages", reflect.TypeOf((*MockMatcher)(nil).MatchWithBaseImages), ctx, layers, imgName, imgId)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "MatchWithBaseImages", reflect.TypeOf((*MockMatcher)(nil).MatchWithBaseImages), ctx, layers)
 }

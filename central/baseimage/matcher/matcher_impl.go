@@ -5,19 +5,13 @@ import (
 	"fmt"
 	"slices"
 
-	"github.com/stackrox/rox/central/administration/events"
 	"github.com/stackrox/rox/central/baseimage/datastore"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/logging"
 )
 
 type matcherImpl struct {
 	datastore datastore.DataStore
 }
-
-var (
-	log = logging.LoggerForModule(events.EnableAdministrationEvents())
-)
 
 // New creates a new base image watcher.
 func New(
@@ -28,19 +22,14 @@ func New(
 	}
 }
 
-func (m matcherImpl) MatchWithBaseImages(ctx context.Context, layers []string, imgName string, imgId string) []*storage.BaseImageInfo {
+func (m matcherImpl) MatchWithBaseImages(ctx context.Context, layers []string) ([]*storage.BaseImageInfo, error) {
 	if len(layers) == 0 {
-		return nil
+		return nil, nil
 	}
 	firstLayer := layers[0]
 	candidates, err := m.datastore.ListCandidateBaseImages(ctx, firstLayer)
 	if err != nil {
-		log.Errorw("Matching image with base images",
-			logging.FromContext(ctx),
-			logging.ImageID(imgId),
-			logging.Err(err),
-			logging.String("request_image", imgName))
-		return nil
+		return nil, fmt.Errorf("listing candidates for layer %s: %w", firstLayer, err)
 	}
 	var baseImages []*storage.BaseImageInfo
 	for _, c := range candidates {
@@ -67,5 +56,5 @@ func (m matcherImpl) MatchWithBaseImages(ctx context.Context, layers []string, i
 			})
 		}
 	}
-	return baseImages
+	return baseImages, nil
 }

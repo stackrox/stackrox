@@ -121,7 +121,7 @@ func TestMatchWithBaseImages(t *testing.T) {
 		t.Run(tc.desc, func(t *testing.T) {
 			tc.mockSetup()
 
-			actual := m.MatchWithBaseImages(ctx, tc.imgLayers, "test-img", "test-id")
+			actual, _ := m.MatchWithBaseImages(ctx, tc.imgLayers)
 
 			if tc.expected == nil {
 				assert.Empty(t, actual)

@@ -8,5 +8,5 @@ import (
 
 //go:generate mockgen-wrapper
 type Matcher interface {
-	MatchWithBaseImages(ctx context.Context, layers []string, imgName string, imgId string) []*storage.BaseImageInfo
+	MatchWithBaseImages(ctx context.Context, layers []string) ([]*storage.BaseImageInfo, error)
 }

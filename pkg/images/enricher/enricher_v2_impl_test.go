@@ -1250,13 +1250,13 @@ func TestEnrichImageWithBaseImagesV2(t *testing.T) {
 	const expectedDigest = "sha256:abcdef123456"
 
 	// CHANGE: Define the mock function instead of the gomock matcher
-	mockBaseImageGetter := func(ctx context.Context, layers []string, name string, id string) []*storage.BaseImageInfo {
+	mockBaseImageGetter := func(ctx context.Context, layers []string) ([]*storage.BaseImageInfo, error) {
 		return []*storage.BaseImageInfo{
 			{
 				BaseImageFullName: expectedName,
 				BaseImageDigest:   expectedDigest,
 			},
-		}
+		}, nil
 	}
 
 	testImpl := &enricherV2Impl{
