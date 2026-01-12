@@ -1,4 +1,5 @@
 import { useContext } from 'react';
+import { useLocation } from 'react-router-dom-v5-compat';
 import PropTypes from 'prop-types';
 import capitalize from 'lodash/capitalize';
 
@@ -11,11 +12,10 @@ import CountWidget from 'Components/CountWidget';
 import useWorkflowMatch from 'hooks/useWorkflowMatch';
 import { SEARCH_WITH_CONTROLS as QUERY } from 'queries/search';
 import queryService from 'utils/queryService';
-import { getResourceCountFromAggregatedResults } from 'utils/complianceUtils';
-import { useLocation } from 'react-router-dom-v5-compat';
 import useCases from 'constants/useCaseTypes';
 import searchContext from 'Containers/searchContext';
 
+import { getResourceCountFromAggregatedResults } from '../complianceUtils';
 import { entityNounSentenceCaseSingular } from '../entitiesForCompliance';
 
 const ResourceCount = ({ entityType, relatedToResourceType, relatedToResource }) => {

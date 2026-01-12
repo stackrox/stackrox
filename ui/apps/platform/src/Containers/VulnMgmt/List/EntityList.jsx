@@ -10,12 +10,12 @@ import URLSearchInput from 'Components/URLSearchInput';
 import { searchCategories } from 'constants/entityTypes';
 import createPDFTable from 'utils/pdfUtils';
 import CheckboxTable from 'Components/CheckboxTable';
-import { toggleRow, toggleSelectAll } from 'utils/checkboxUtils';
 
 import {
     entityCountNounOrdinaryCase,
     entityNounOrdinaryCasePlural,
 } from '../entitiesForVulnerabilityManagement';
+import { toggleRow, toggleSelectAll } from './checkboxUtils';
 
 const EntityList = ({
     autoFocusSearchInput,
