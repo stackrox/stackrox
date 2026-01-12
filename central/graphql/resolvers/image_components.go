@@ -24,7 +24,7 @@ func init() {
 	utils.Must(schema.AddType("ImageComponentV2", []string{
 		"architecture: String!",
 		"fixedBy: String!",
-		"fromBaseImage: Boolean!",
+		"inBaseImageLayer: Boolean!",
 		"id: ID!",
 		"imageId: String!",
 		"name: String!",
@@ -41,7 +41,7 @@ func init() {
 			"deploymentCount(query: String, scopeQuery: String): Int!",
 			"deployments(query: String, scopeQuery: String, pagination: Pagination): [Deployment!]!",
 			"fixedBy: String!",
-			"fromBaseImage: Boolean!",
+			"inBaseImageLayer: Boolean!",
 			"id: ID!",
 			"imageCount(query: String, scopeQuery: String): Int!",
 			"images(query: String, scopeQuery: String, pagination: Pagination): [Image!]!",
@@ -97,7 +97,7 @@ type ImageComponentResolver interface {
 	TopImageVulnerability(ctx context.Context) (ImageVulnerabilityResolver, error)
 	UnusedVarSink(ctx context.Context, args RawQuery) *int32
 	Version(ctx context.Context) string
-	FromBaseImage(ctx context.Context) bool
+	InBaseImageLayer(ctx context.Context) bool
 
 	// deprecated functions
 
