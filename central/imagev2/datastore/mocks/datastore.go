@@ -215,6 +215,21 @@ func (mr *MockDataStoreMockRecorder) SearchImages(ctx, q any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SearchImages", reflect.TypeOf((*MockDataStore)(nil).SearchImages), ctx, q)
 }
 
+// SearchListImages mocks base method.
+func (m *MockDataStore) SearchListImages(ctx context.Context, q *v1.Query) ([]*storage.ListImage, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SearchListImages", ctx, q)
+	ret0, _ := ret[0].([]*storage.ListImage)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// SearchListImages indicates an expected call of SearchListImages.
+func (mr *MockDataStoreMockRecorder) SearchListImages(ctx, q any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SearchListImages", reflect.TypeOf((*MockDataStore)(nil).SearchListImages), ctx, q)
+}
+
 // SearchRawImages mocks base method.
 func (m *MockDataStore) SearchRawImages(ctx context.Context, q *v1.Query) ([]*storage.ImageV2, error) {
 	m.ctrl.T.Helper()
