@@ -39,9 +39,9 @@ func (ds *datastoreImpl) SearchImageComponents(ctx context.Context, q *v1.Query)
 	// Clone the query and ensure it includes Component in select fields to populate result names
 	if q == nil {
 		q = pkgSearch.EmptyQuery()
-	} else {
-		q = q.CloneVT()
 	}
+	q = q.CloneVT()
+
 	q.Selects = append(q.GetSelects(), pkgSearch.NewQuerySelect(pkgSearch.Component).Proto())
 
 	results, err := ds.Search(ctx, q)

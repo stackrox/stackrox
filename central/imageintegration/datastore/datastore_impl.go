@@ -117,9 +117,8 @@ func (ds *datastoreImpl) SearchImageIntegrations(ctx context.Context, q *v1.Quer
 	// Clone the query and ensure it includes IntegrationName in select fields to populate result names
 	if q == nil {
 		q = searchPkg.EmptyQuery()
-	} else {
-		q = q.CloneVT()
 	}
+	q = q.CloneVT()
 	q.Selects = append(q.GetSelects(), searchPkg.NewQuerySelect(searchPkg.IntegrationName).Proto())
 
 	results, err := ds.storage.Search(ctx, q)

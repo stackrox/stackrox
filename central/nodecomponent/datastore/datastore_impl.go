@@ -38,9 +38,8 @@ func (ds *datastoreImpl) Count(ctx context.Context, q *v1.Query) (int, error) {
 func (ds *datastoreImpl) SearchNodeComponents(ctx context.Context, q *v1.Query) ([]*v1.SearchResult, error) {
 	if q == nil {
 		q = pkgSearch.EmptyQuery()
-	} else {
-		q = q.CloneVT()
 	}
+	q = q.CloneVT()
 
 	q.Selects = append(q.GetSelects(), pkgSearch.NewQuerySelect(pkgSearch.Component).Proto())
 	results, err := ds.Search(ctx, q)
