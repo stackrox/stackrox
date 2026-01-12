@@ -17,6 +17,7 @@ Changes should still be described appropriately in JIRA/doc input pages, for inc
 - ROX-29582: A `kubectl get` on a Central CR now shows the following additional columns: Version, AdminPassword, Message, Available, Progressing.
 - ROX-32061: The `spec.configAsCode` field in the Central CR now supports `resources`, `nodeSelector`, `tolerations`, and `hostAliases` settings for the config-controller deployment.
 - ROX-31738: Added the `spec.customize.deploymentDefaults` field to Central and SecuredCluster CRDs, for configuring global default scheduling constraints for Deployments. This was previously possible on a per-component basis.
+- ROX-30094, ROX-30610, ROX-30740: Add new namespaces to Layered Products default config regex
 
 ### Removed Features
 - ROX-31727: `/v1/cve/requests` APIs (deprecated in 4.3.0) for managing vulnerability exceptions have been removed.
