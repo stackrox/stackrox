@@ -522,6 +522,13 @@ dist: ## Build a distribution manifest.
 	echo -e "  newTag: $(VERSION)" >> build/dist/kustomization.yaml
 	$(KUSTOMIZE) build build/dist/ > dist.yaml
 
+.PHONY: dist-community
+dist-community: ## Build a community distribution manifest.
+	mkdir -p build/dist-community
+	cat config/dist-community/kustomization.yaml > build/dist-community/kustomization.yaml
+	echo -e "  newTag: $(VERSION)" >> build/dist-community/kustomization.yaml
+	$(KUSTOMIZE) build build/dist-community/ > dist-community.yaml
+
 ##@ Push images
 
 .PHONY: docker-push
