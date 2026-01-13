@@ -25,9 +25,14 @@ func (s *IntegerArraySetting) EnvVar() string {
 	return s.envVar
 }
 
-// DefaultValue returns the default value for the setting
+// DefaultValue returns a copy of the default value for the setting
 func (s *IntegerArraySetting) DefaultValue() []int {
-	return s.defaultValue
+	if s.defaultValue == nil {
+		return nil
+	}
+	result := make([]int, len(s.defaultValue))
+	copy(result, s.defaultValue)
+	return result
 }
 
 // Setting returns the string form of the integer array environment variable
@@ -44,7 +49,7 @@ func (s *IntegerArraySetting) Setting() string {
 func (s *IntegerArraySetting) IntegerArraySetting() []int {
 	val := os.Getenv(s.envVar)
 	if val == "" {
-		return s.defaultValue
+		return s.DefaultValue()
 	}
 
 	// Strip brackets if present
@@ -61,7 +66,7 @@ func (s *IntegerArraySetting) IntegerArraySetting() []int {
 			return []int{}
 		} else {
 			// Empty array not allowed, return default
-			return s.defaultValue
+			return s.DefaultValue()
 		}
 	}
 
@@ -79,13 +84,13 @@ func (s *IntegerArraySetting) IntegerArraySetting() []int {
 		v, err := strconv.Atoi(trimmed)
 		if err != nil {
 			// Invalid format, return default
-			return s.defaultValue
+			return s.DefaultValue()
 		}
 
 		// Validate individual value
 		if v < s.minValue || v > s.maxValue {
 			// Out of bounds, return default
-			return s.defaultValue
+			return s.DefaultValue()
 		}
 
 		result = append(result, v)
@@ -93,7 +98,7 @@ func (s *IntegerArraySetting) IntegerArraySetting() []int {
 
 	// Validate array length
 	if len(result) < s.minLength || len(result) > s.maxLength {
-		return s.defaultValue
+		return s.DefaultValue()
 	}
 
 	return result
@@ -101,9 +106,16 @@ func (s *IntegerArraySetting) IntegerArraySetting() []int {
 
 // RegisterIntegerArraySetting globally registers and returns a new integer array setting.
 func RegisterIntegerArraySetting(envVar string, defaultValue []int) *IntegerArraySetting {
+	// Make a defensive copy of the input to ensure immutability
+	var defaultCopy []int
+	if defaultValue != nil {
+		defaultCopy = make([]int, len(defaultValue))
+		copy(defaultCopy, defaultValue)
+	}
+
 	s := &IntegerArraySetting{
 		envVar:       envVar,
-		defaultValue: defaultValue,
+		defaultValue: defaultCopy,
 		minValue:     math.MinInt,
 		maxValue:     math.MaxInt,
 		minLength:    0,

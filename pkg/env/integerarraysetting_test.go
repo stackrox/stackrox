@@ -289,6 +289,7 @@ func TestIntegerArraySetting(t *testing.T) {
 	for name, tc := range cases {
 		t.Run(name, func(t *testing.T) {
 			envVar := "ROX_TEST_INT_ARRAY_SETTING_" + name
+			defer unregisterSetting(envVar)
 			if tc.value != "" {
 				err := os.Setenv(envVar, tc.value)
 				assert.NoError(t, err)
