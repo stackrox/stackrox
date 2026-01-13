@@ -57,15 +57,15 @@ if [[ "$DEBUG_BUILD" != "yes" ]]; then
 fi
 
 if [[ "${CGO_ENABLED}" != 0 ]]; then
-  echo >&2 "CGO_ENABLED is not 0. Compiling with -linkmode=external"
-  ldflags+=('-linkmode=external')
+  echo >&2 "CGO_ENABLED is not 0. BUT NOT Compiling with -linkmode=external"
+  #ldflags+=('-linkmode=external')
 fi
 
 function invoke_go() {
   tool="$1"
   shift
   if [[ "$RACE" == "true" ]]; then
-    CGO_ENABLED=1 go "$tool" -race -ldflags="${ldflags[*]}" -tags "$(tr , ' ' <<<"$GOTAGS")" "$@"
+    CGO_ENABLED=0 go "$tool" -race -ldflags="${ldflags[*]}" -tags "$(tr , ' ' <<<"$GOTAGS")" "$@"
   else
     go "$tool" -ldflags="${ldflags[*]}" -tags "$(tr , ' ' <<<"$GOTAGS")" "$@"
   fi
