@@ -32,12 +32,15 @@ _EO_KUTTL_HELP_
 
     image_prefetcher_prebuilt_await
 
-    if [[ $operator_cluster_type == openshift4 ]]; then
+    # TODO(ROX-27191): Once there *is* a previous version shipping a non-OLM operator distribution,
+    # use it on other platforms too and run the upgrade test as well.
+     if [[ $operator_cluster_type == openshift4 ]]; then
         info "Deploying operator"
         junit_wrap deploy-previous-operator \
                    "Deploy previously released version of the operator." \
                    "${kuttl_help}" \
                    "make" "-C" "operator" "deploy-previous-via-olm"
+        operator_ns="stackrox-operator"
    fi
 
     image_prefetcher_system_await
@@ -60,13 +63,14 @@ _EO_KUTTL_HELP_
                    "Deploy current version of the operator." \
                    "${kuttl_help}" \
                    "make" "-C" "operator" "dist" "deploy-via-dist"
+        operator_ns="stackrox-operator-system"
     fi
 
     info "Executing operator e2e tests"
     junit_wrap test-e2e \
                "Run operator E2E tests." \
                "${kuttl_help}" \
-               "make" "-C" "operator" "test-e2e-deployed" || FAILED=1
+               "make" "-C" "operator" "test-e2e-deployed" TEST_NAMESPACE="${operator_ns}" || FAILED=1
     store_test_results "operator/build/kuttl-test-artifacts" "kuttl-test-artifacts"
     if junit_contains_failure "$(stored_test_results "kuttl-test-artifacts")"; then
         # Prevent double-reporting
