@@ -18,6 +18,7 @@ metadata:
     features.operators.openshift.io/token-auth-aws: "false"
     features.operators.openshift.io/token-auth-azure: "false"
     features.operators.openshift.io/token-auth-gcp: "false"
+    console.openshift.io/plugins: '["advanced-cluster-security"]'
     operatorframework.io/suggested-namespace: rhacs-operator
     operators.openshift.io/infrastructure-features: '["disconnected", "proxy-aware"]'
     operators.openshift.io/valid-subscription: '["OpenShift Platform Plus", "Red Hat

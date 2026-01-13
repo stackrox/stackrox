@@ -13,6 +13,7 @@ metadata:
       : \"my-cluster\"\n    }\n  }\n]"
     capabilities: Seamless Upgrades
     categories: Security
+    console.openshift.io/plugins: '["advanced-cluster-security"]'
     containerImage: quay.io/stackrox-io/stackrox-operator:0.0.1
     createdAt: ''
     description: Red Hat Advanced Cluster Security (RHACS) operator provisions the

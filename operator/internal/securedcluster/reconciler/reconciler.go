@@ -46,6 +46,7 @@ func RegisterNewReconciler(mgr ctrl.Manager, selector string) error {
 		pkgReconciler.WithPreExtension(extensions.ReconcileLocalScannerV4DBPasswordExtension(mgr.GetClient(), mgr.GetAPIReader())),
 		pkgReconciler.WithPreExtension(extensions.SensorCAHashExtension(mgr.GetClient(), mgr.GetAPIReader(), renderCache)),
 		pkgReconciler.WithPreExtension(commonExtensions.ReconcileProductVersionStatusExtension(version.GetMainVersion())),
+		pkgReconciler.WithPreExtension(extensions.ReconcileConsolePluginExtension(mgr.GetClient(), mgr.GetAPIReader())),
 	}
 
 	// Plug in custom event predicate to skip reconciliation for updates caused by the status controller.
