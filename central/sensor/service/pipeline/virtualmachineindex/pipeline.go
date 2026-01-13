@@ -27,6 +27,13 @@ const (
 	rateLimiterWorkload = "vm_index_report"
 )
 
+// rateLimiter defines the interface for rate limiting operations used by this pipeline.
+// This interface is satisfied by *rate.Limiter and allows for easier testing.
+type rateLimiter interface {
+	TryConsume(clientID string) (allowed bool, reason string)
+	OnClientDisconnect(clientID string)
+}
+
 var (
 	log = logging.LoggerForModule()
 
@@ -57,18 +64,18 @@ func GetPipeline() pipeline.Fragment {
 }
 
 // newPipeline returns a new instance of Pipeline.
-func newPipeline(vms vmDatastore.DataStore, enricher vmEnricher.VirtualMachineEnricher, rateLimiter *rate.Limiter) pipeline.Fragment {
+func newPipeline(vms vmDatastore.DataStore, enricher vmEnricher.VirtualMachineEnricher, rl rateLimiter) pipeline.Fragment {
 	return &pipelineImpl{
 		vmDatastore: vms,
 		enricher:    enricher,
-		rateLimiter: rateLimiter,
+		rateLimiter: rl,
 	}
 }
 
 type pipelineImpl struct {
 	vmDatastore vmDatastore.DataStore
 	enricher    vmEnricher.VirtualMachineEnricher
-	rateLimiter *rate.Limiter
+	rateLimiter rateLimiter
 }
 
 func (p *pipelineImpl) OnFinish(clusterID string) {

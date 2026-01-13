@@ -10,6 +10,7 @@ func FromContext(ctx context.Context) SensorConnection {
 	return conn
 }
 
-func withConnection(ctx context.Context, conn SensorConnection) context.Context {
+// WithConnection returns a context with the given sensor connection attached.
+func WithConnection(ctx context.Context, conn SensorConnection) context.Context {
 	return context.WithValue(ctx, contextKey{}, conn)
 }
