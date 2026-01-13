@@ -19,7 +19,7 @@ import (
 	"go.uber.org/mock/gomock"
 )
 
-// BenchmarkSearchListImages compares performance of legacy vs optimized paths
+// BenchmarkSearchListImages measures performance of optimized list queries
 func BenchmarkSearchListImages(b *testing.B) {
 	ctx := sac.WithAllAccess(context.Background())
 	testDB := pgtest.ForT(b)
@@ -55,39 +55,16 @@ func BenchmarkSearchListImages(b *testing.B) {
 
 			query := pkgSearch.EmptyQuery()
 
-			// Benchmark legacy path
-			b.Run("Legacy", func(b *testing.B) {
-				b.Setenv("ROX_IMAGE_LIST_OPTIMIZATION", "false")
-				// Feature flag controlled via b.Setenv above
-
-				b.ResetTimer()
-				for i := 0; i < b.N; i++ {
-					results, err := datastore.SearchListImages(ctx, query)
-					if err != nil {
-						b.Fatal(err)
-					}
-					if len(results) != count {
-						b.Fatalf("Expected %d results, got %d", count, len(results))
-					}
+			b.ResetTimer()
+			for i := 0; i < b.N; i++ {
+				results, err := datastore.SearchListImages(ctx, query)
+				if err != nil {
+					b.Fatal(err)
 				}
-			})
-
-			// Benchmark optimized path
-			b.Run("Optimized", func(b *testing.B) {
-				b.Setenv("ROX_IMAGE_LIST_OPTIMIZATION", "true")
-				// Feature flag controlled via b.Setenv above
-
-				b.ResetTimer()
-				for i := 0; i < b.N; i++ {
-					results, err := datastore.SearchListImages(ctx, query)
-					if err != nil {
-						b.Fatal(err)
-					}
-					if len(results) != count {
-						b.Fatalf("Expected %d results, got %d", count, len(results))
-					}
+				if len(results) != count {
+					b.Fatalf("Expected %d results, got %d", count, len(results))
 				}
-			})
+			}
 		})
 	}
 }
@@ -124,39 +101,16 @@ func BenchmarkSearchListImagesWithPagination(b *testing.B) {
 				WithPagination(pkgSearch.NewPagination().Limit(int32(pageSize))).
 				ProtoQuery()
 
-			// Benchmark legacy path
-			b.Run("Legacy", func(b *testing.B) {
-				b.Setenv("ROX_IMAGE_LIST_OPTIMIZATION", "false")
-				// Feature flag controlled via b.Setenv above
-
-				b.ResetTimer()
-				for i := 0; i < b.N; i++ {
-					results, err := datastore.SearchListImages(ctx, query)
-					if err != nil {
-						b.Fatal(err)
-					}
-					if len(results) > pageSize {
-						b.Fatalf("Expected max %d results, got %d", pageSize, len(results))
-					}
+			b.ResetTimer()
+			for i := 0; i < b.N; i++ {
+				results, err := datastore.SearchListImages(ctx, query)
+				if err != nil {
+					b.Fatal(err)
 				}
-			})
-
-			// Benchmark optimized path
-			b.Run("Optimized", func(b *testing.B) {
-				b.Setenv("ROX_IMAGE_LIST_OPTIMIZATION", "true")
-				// Feature flag controlled via b.Setenv above
-
-				b.ResetTimer()
-				for i := 0; i < b.N; i++ {
-					results, err := datastore.SearchListImages(ctx, query)
-					if err != nil {
-						b.Fatal(err)
-					}
-					if len(results) > pageSize {
-						b.Fatalf("Expected max %d results, got %d", pageSize, len(results))
-					}
+				if len(results) > pageSize {
+					b.Fatalf("Expected max %d results, got %d", pageSize, len(results))
 				}
-			})
+			}
 		})
 	}
 }
@@ -191,35 +145,14 @@ func BenchmarkSearchListImagesWithFilter(b *testing.B) {
 		AddStrings(pkgSearch.ImageName, "r/prefix0").
 		ProtoQuery()
 
-	// Benchmark legacy path
-	b.Run("Legacy", func(b *testing.B) {
-		b.Setenv("ROX_IMAGE_LIST_OPTIMIZATION", "false")
-		// Feature flag controlled via b.Setenv above
-
-		b.ResetTimer()
-		for i := 0; i < b.N; i++ {
-			results, err := datastore.SearchListImages(ctx, query)
-			if err != nil {
-				b.Fatal(err)
-			}
-			_ = results
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		results, err := datastore.SearchListImages(ctx, query)
+		if err != nil {
+			b.Fatal(err)
 		}
-	})
-
-	// Benchmark optimized path
-	b.Run("Optimized", func(b *testing.B) {
-		b.Setenv("ROX_IMAGE_LIST_OPTIMIZATION", "true")
-		// Feature flag controlled via b.Setenv above
-
-		b.ResetTimer()
-		for i := 0; i < b.N; i++ {
-			results, err := datastore.SearchListImages(ctx, query)
-			if err != nil {
-				b.Fatal(err)
-			}
-			_ = results
-		}
-	})
+		_ = results
+	}
 }
 
 // BenchmarkMemoryAllocation measures memory allocations
@@ -248,35 +181,13 @@ func BenchmarkMemoryAllocation(b *testing.B) {
 
 	query := pkgSearch.EmptyQuery()
 
-	// Benchmark legacy path memory
-	b.Run("Legacy", func(b *testing.B) {
-		b.Setenv("ROX_IMAGE_LIST_OPTIMIZATION", "false")
-		// Feature flag controlled via b.Setenv above
-
-		b.ReportAllocs()
-		b.ResetTimer()
-		for i := 0; i < b.N; i++ {
-			results, err := datastore.SearchListImages(ctx, query)
-			if err != nil {
-				b.Fatal(err)
-			}
-			_ = results
+	b.ReportAllocs()
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		results, err := datastore.SearchListImages(ctx, query)
+		if err != nil {
+			b.Fatal(err)
 		}
-	})
-
-	// Benchmark optimized path memory
-	b.Run("Optimized", func(b *testing.B) {
-		b.Setenv("ROX_IMAGE_LIST_OPTIMIZATION", "true")
-		// Feature flag controlled via b.Setenv above
-
-		b.ReportAllocs()
-		b.ResetTimer()
-		for i := 0; i < b.N; i++ {
-			results, err := datastore.SearchListImages(ctx, query)
-			if err != nil {
-				b.Fatal(err)
-			}
-			_ = results
-		}
-	})
+		_ = results
+	}
 }

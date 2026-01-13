@@ -16,7 +16,6 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/errorhelpers"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/images/enricher"
 	imageTypes "github.com/stackrox/rox/pkg/images/types"
 	"github.com/stackrox/rox/pkg/logging"
@@ -155,10 +154,12 @@ func convertListImageViewToListImage(view *views.ListImageView) *storage.ListIma
 	return listImg
 }
 
-// searchListImagesOptimized uses optimized field selection to fetch only ListImage fields.
-func (ds *datastoreImpl) searchListImagesOptimized(ctx context.Context, q *v1.Query) ([]*storage.ListImage, error) {
+func (ds *datastoreImpl) SearchListImages(ctx context.Context, q *v1.Query) ([]*storage.ListImage, error) {
+	defer metrics.SetDatastoreFunctionDuration(time.Now(), "Image", "SearchListImages")
+
 	var imgs []*storage.ListImage
 
+	// Use optimized field selection to fetch only ListImage fields
 	err := ds.storage.WalkListImagesByQuery(ctx, q, func(view *views.ListImageView) error {
 		listImg := convertListImageViewToListImage(view)
 		imgs = append(imgs, listImg)
@@ -169,29 +170,6 @@ func (ds *datastoreImpl) searchListImagesOptimized(ctx context.Context, q *v1.Qu
 	}
 
 	ds.updateListImagePriority(imgs...)
-	return imgs, nil
-}
-
-func (ds *datastoreImpl) SearchListImages(ctx context.Context, q *v1.Query) ([]*storage.ListImage, error) {
-	defer metrics.SetDatastoreFunctionDuration(time.Now(), "Image", "SearchListImages")
-
-	// Use optimized path if feature flag enabled
-	if features.ImageListOptimization.Enabled() {
-		return ds.searchListImagesOptimized(ctx, q)
-	}
-
-	// Legacy path: fetch full images and convert
-	var imgs []*storage.ListImage
-	err := ds.storage.WalkMetadataByQuery(ctx, q, func(img *storage.Image) error {
-		imgs = append(imgs, imageTypes.ConvertImageToListImage(img))
-		return nil
-	})
-	if err != nil {
-		return nil, err
-	}
-
-	ds.updateListImagePriority(imgs...)
-
 	return imgs, nil
 }
 

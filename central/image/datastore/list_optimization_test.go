@@ -14,7 +14,6 @@ import (
 	mockRisks "github.com/stackrox/rox/central/risk/datastore/mocks"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/protocompat"
@@ -58,8 +57,8 @@ func (s *ImageListOptimizationTestSuite) TearDownTest() {
 	s.Require().NoError(err)
 }
 
-// TestOptimizedVsLegacyEquivalence verifies that optimized and legacy paths produce identical results
-func (s *ImageListOptimizationTestSuite) TestOptimizedVsLegacyEquivalence() {
+// TestSearchListImagesWithVariousQueries verifies optimized queries work with different patterns
+func (s *ImageListOptimizationTestSuite) TestSearchListImagesWithVariousQueries() {
 	// Create test images with various scan states
 	images := []*storage.Image{
 		s.createImageWithScan("sha1", "image1:v1", 10, 5, 2),      // Full scan data
@@ -75,18 +74,21 @@ func (s *ImageListOptimizationTestSuite) TestOptimizedVsLegacyEquivalence() {
 	}
 
 	testCases := []struct {
-		name  string
-		query *v1.Query
+		name          string
+		query         *v1.Query
+		expectedCount int
 	}{
 		{
-			name:  "empty query (all images)",
-			query: pkgSearch.EmptyQuery(),
+			name:          "empty query (all images)",
+			query:         pkgSearch.EmptyQuery(),
+			expectedCount: 5,
 		},
 		{
 			name: "with pagination",
 			query: pkgSearch.NewQueryBuilder().
 				WithPagination(pkgSearch.NewPagination().Limit(3)).
 				ProtoQuery(),
+			expectedCount: 3,
 		},
 		{
 			name: "with sorting by name",
@@ -94,36 +96,27 @@ func (s *ImageListOptimizationTestSuite) TestOptimizedVsLegacyEquivalence() {
 				WithPagination(pkgSearch.NewPagination().
 					AddSortOption(pkgSearch.NewSortOption(pkgSearch.ImageName))).
 				ProtoQuery(),
+			expectedCount: 5,
 		},
 		{
 			name: "filtered by image name",
 			query: pkgSearch.NewQueryBuilder().
 				AddStrings(pkgSearch.ImageName, "image1").
 				ProtoQuery(),
+			expectedCount: 1,
 		},
 	}
 
 	for _, tc := range testCases {
 		s.Run(tc.name, func() {
-			// Get results with feature flag disabled (legacy path)
-			s.T().Setenv("ROX_IMAGE_LIST_OPTIMIZATION", "false")
-			// Feature flag controlled via s.T().Setenv above
-			legacyResults, err := s.datastore.SearchListImages(s.ctx, tc.query)
+			results, err := s.datastore.SearchListImages(s.ctx, tc.query)
 			s.Require().NoError(err)
+			s.Require().Len(results, tc.expectedCount, "Unexpected result count")
 
-			// Get results with feature flag enabled (optimized path)
-			s.T().Setenv("ROX_IMAGE_LIST_OPTIMIZATION", "true")
-			// Feature flag controlled via s.T().Setenv above
-			optimizedResults, err := s.datastore.SearchListImages(s.ctx, tc.query)
-			s.Require().NoError(err)
-
-			// Verify same number of results
-			s.Require().Equal(len(legacyResults), len(optimizedResults),
-				"Result count mismatch between legacy and optimized paths")
-
-			// Compare results field-by-field
-			for i := range legacyResults {
-				s.assertListImageEqual(legacyResults[i], optimizedResults[i])
+			// Verify all results have required fields
+			for _, img := range results {
+				s.NotEmpty(img.GetId(), "ID should be set")
+				s.NotEmpty(img.GetName(), "Name should be set")
 			}
 		})
 	}
@@ -131,9 +124,6 @@ func (s *ImageListOptimizationTestSuite) TestOptimizedVsLegacyEquivalence() {
 
 // TestNullHandling verifies proper handling of NULL scan stats
 func (s *ImageListOptimizationTestSuite) TestNullHandling() {
-	s.T().Setenv("ROX_IMAGE_LIST_OPTIMIZATION", "true")
-	// Feature flag controlled via s.T().Setenv above
-
 	testCases := []struct {
 		name                 string
 		image                *storage.Image
@@ -232,42 +222,8 @@ func (s *ImageListOptimizationTestSuite) TestNullHandling() {
 	}
 }
 
-// TestFeatureFlagToggle verifies feature flag controls routing
-func (s *ImageListOptimizationTestSuite) TestFeatureFlagToggle() {
-	// Insert a test image
-	img := s.createImageWithScan("sha-flag", "flag:v1", 10, 5, 2)
-	s.Require().NoError(s.datastore.UpsertImage(s.ctx, img))
-
-	query := pkgSearch.EmptyQuery()
-
-	// Test with flag disabled
-	s.T().Setenv("ROX_IMAGE_LIST_OPTIMIZATION", "false")
-	// Feature flag controlled via s.T().Setenv above
-	s.False(features.ImageListOptimization.Enabled(), "Feature flag should be disabled")
-
-	results, err := s.datastore.SearchListImages(s.ctx, query)
-	s.Require().NoError(err)
-	s.Require().Len(results, 1)
-	disabledResult := results[0]
-
-	// Test with flag enabled
-	s.T().Setenv("ROX_IMAGE_LIST_OPTIMIZATION", "true")
-	// Feature flag controlled via s.T().Setenv above
-	s.True(features.ImageListOptimization.Enabled(), "Feature flag should be enabled")
-
-	results, err = s.datastore.SearchListImages(s.ctx, query)
-	s.Require().NoError(err)
-	s.Require().Len(results, 1)
-	enabledResult := results[0]
-
-	// Results should be identical
-	s.assertListImageEqual(disabledResult, enabledResult)
-}
-
 // TestTimestampConversion verifies timestamp handling
 func (s *ImageListOptimizationTestSuite) TestTimestampConversion() {
-	s.T().Setenv("ROX_IMAGE_LIST_OPTIMIZATION", "true")
-	// Feature flag controlled via s.T().Setenv above
 
 	now := time.Now().Truncate(time.Microsecond) // Postgres precision
 	createdTime := protocompat.ConvertTimeToTimestampOrNil(&now)
@@ -389,9 +345,6 @@ func (s *ImageListOptimizationTestSuite) assertListImageEqual(expected, actual *
 
 // TestLargeResultSet verifies optimized query handles large result sets
 func (s *ImageListOptimizationTestSuite) TestLargeResultSet() {
-	s.T().Setenv("ROX_IMAGE_LIST_OPTIMIZATION", "true")
-	// Feature flag controlled via s.T().Setenv above
-
 	// Insert 100 test images
 	imageCount := 100
 	imageIDs := set.NewStringSet()
