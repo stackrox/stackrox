@@ -388,7 +388,7 @@ func TestPipelineRun_RateLimitDisabled(t *testing.T) {
 	msg := createVMIndexMessage(vmID, central.ResourceAction_SYNC_RESOURCE)
 
 	// Should process all 100 requests without rate limiting
-	for i := 0; i < 100; i++ {
+	for i := range 100 {
 		enricher.EXPECT().
 			EnrichVirtualMachineWithVulnerabilities(gomock.Any(), gomock.Any()).
 			Return(nil)
@@ -448,7 +448,7 @@ func TestPipelineRun_RateLimitEnabled(t *testing.T) {
 
 	// Send 6 requests - the first 5 should be processed successfully,
 	// the 6th should be rate-limited.
-	for i := 0; i < 6; i++ {
+	for i := range 6 {
 		err := pipeline.Run(ctxWithConn, testClusterID, msg, injector)
 		assert.NoError(t, err, "Run should not return an error even when rate-limited (request %d)", i+1)
 	}
@@ -467,6 +467,60 @@ func TestPipelineRun_RateLimitEnabled(t *testing.T) {
 	assert.Equal(t, central.SensorACK_NACK, acks[5].GetAction(), "request 6 should be NACKed (rate limited)")
 	assert.Equal(t, central.SensorACK_VM_INDEX_REPORT, acks[5].GetMessageType())
 	assert.Contains(t, acks[5].GetReason(), "rate limit exceeded")
+}
+
+// TestPipelineRun_RateLimitEnabled_NoACKSupport tests that when the connection
+// does not support SensorACKSupport, rate limiting still applies but no ACK/NACK
+// messages are sent.
+func TestPipelineRun_RateLimitEnabled_NoACKSupport(t *testing.T) {
+	t.Setenv(features.VirtualMachines.EnvVar(), "true")
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	vmDatastore := vmDatastoreMocks.NewMockDataStore(ctrl)
+	enricher := vmEnricherMocks.NewMockVirtualMachineEnricher(ctrl)
+	rateLimiter := mustNewLimiter(t, "test-no-ack", 5, 5) // 5 req/s, bucket capacity=5
+
+	// Recording injector to capture any ACK/NACK attempts - should remain empty.
+	injector := &recordingInjector{}
+
+	// Mock connection WITHOUT SensorACKSupport capability
+	mockConn := connMocks.NewMockSensorConnection(ctrl)
+	mockConn.EXPECT().HasCapability(centralsensor.SensorACKSupport).Return(false).AnyTimes()
+
+	pipeline := &pipelineImpl{
+		vmDatastore: vmDatastore,
+		enricher:    enricher,
+		rateLimiter: rateLimiter,
+	}
+
+	vmID := "vm-1"
+	msg := createVMIndexMessage(vmID, central.ResourceAction_SYNC_RESOURCE)
+
+	// Build a context with the mocked connection that does NOT have SensorACKSupport
+	ctxWithConn := connection.WithConnection(context.Background(), mockConn)
+
+	// Expect enrichment and datastore writes ONLY for the first 5 (non-rate-limited) requests.
+	enricher.EXPECT().
+		EnrichVirtualMachineWithVulnerabilities(gomock.Any(), gomock.Any()).
+		Return(nil).
+		Times(5)
+
+	vmDatastore.EXPECT().
+		UpdateVirtualMachineScan(gomock.Any(), vmID, gomock.Any()).
+		Return(nil).
+		Times(5)
+
+	// Send 6 requests - the first 5 should be processed successfully,
+	// the 6th should be rate-limited.
+	for i := range 6 {
+		err := pipeline.Run(ctxWithConn, testClusterID, msg, injector)
+		assert.NoError(t, err, "Run should not return an error even when rate-limited (request %d)", i+1)
+	}
+
+	// Verify NO ACK/NACK messages were sent (SensorACKSupport is not available)
+	acks := injector.getSentACKs()
+	assert.Empty(t, acks, "no ACK/NACKs should be sent when SensorACKSupport is not available")
 }
 
 // TestPipelineRun_NilRateLimiter_WithACKSupport tests behavior when the rateLimiter is nil and ACKs are supported.

@@ -130,7 +130,7 @@ func (p *pipelineImpl) Run(ctx context.Context, clusterID string, msg *central.M
 	if p.rateLimiter == nil {
 		log.Warnf("No rate limiter found for %s. Dropping VM index report %s from cluster %s", rateLimiterWorkload, index.GetId(), clusterID)
 		if conn != nil && conn.HasCapability(centralsensor.SensorACKSupport) {
-			sendVMIndexReportResponse(ctx, index.GetId(), central.SensorACK_NACK, "nil rate limiter", injector)
+			sendVMIndexReportResponse(ctx, clusterID, index.GetId(), central.SensorACK_NACK, "nil rate limiter", injector)
 		}
 		return nil // Don't return error - would cause pipeline retry
 	}
@@ -139,7 +139,7 @@ func (p *pipelineImpl) Run(ctx context.Context, clusterID string, msg *central.M
 	if !allowed {
 		log.Infof("Dropping VM index report %s from cluster %s: %s", index.GetId(), clusterID, reason)
 		if conn != nil && conn.HasCapability(centralsensor.SensorACKSupport) {
-			sendVMIndexReportResponse(ctx, index.GetId(), central.SensorACK_NACK, reason, injector)
+			sendVMIndexReportResponse(ctx, clusterID, index.GetId(), central.SensorACK_NACK, reason, injector)
 		}
 		return nil // Don't return error - would cause pipeline retry
 	}
@@ -169,15 +169,15 @@ func (p *pipelineImpl) Run(ctx context.Context, clusterID string, msg *central.M
 
 	// Send ACK to Sensor if Sensor supports it
 	if conn != nil && conn.HasCapability(centralsensor.SensorACKSupport) {
-		sendVMIndexReportResponse(ctx, index.GetId(), central.SensorACK_ACK, "", injector)
+		sendVMIndexReportResponse(ctx, clusterID, index.GetId(), central.SensorACK_ACK, "", injector)
 	}
 	return nil
 }
 
 // sendVMIndexReportResponse sends an ACK or NACK for a VM index report.
-func sendVMIndexReportResponse(ctx context.Context, vmID string, action central.SensorACK_Action, reason string, injector common.MessageInjector) {
+func sendVMIndexReportResponse(ctx context.Context, clusterID, vmID string, action central.SensorACK_Action, reason string, injector common.MessageInjector) {
 	if injector == nil {
-		log.Debugf("Cannot send %s to Sensor - no injector", action.String())
+		log.Debugf("Cannot send %s to Sensor for cluster %s - no injector", action.String(), clusterID)
 		return
 	}
 	msg := &central.MsgToSensor{
@@ -191,8 +191,8 @@ func sendVMIndexReportResponse(ctx context.Context, vmID string, action central.
 		},
 	}
 	if err := injector.InjectMessage(ctx, msg); err != nil {
-		log.Warnf("Failed sending VM index report %s for %s: %v", action.String(), vmID, err)
+		log.Warnf("Failed sending VM index report %s for VM %s in cluster %s: %v", action.String(), vmID, clusterID, err)
 	} else {
-		log.Debugf("Sent VM index report %s for %s (reason=%q)", action.String(), vmID, reason)
+		log.Debugf("Sent VM index report %s for VM %s in cluster %s (reason=%q)", action.String(), vmID, clusterID, reason)
 	}
 }
