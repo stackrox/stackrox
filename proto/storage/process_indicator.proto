@@ -13,13 +13,13 @@ message ProcessIndicator {
   // A unique UUID for the Indicator message
   string id = 1; // @gotags: search:"Process ID,hidden"  sql:"pk,type(uuid)"
 
-  string deployment_id = 2; // @gotags: search:"Deployment ID,hidden" policy:",prefer-parent" sql:"index=hash,fk(Deployment:id),no-fk-constraint,type(uuid)"
+  string deployment_id = 2; // @gotags: search:"Deployment ID,hidden" policy:",prefer-parent" sql:"index,fk(Deployment:id),no-fk-constraint,type(uuid)"
   reserved 10; // Previously deployment_state_ts
 
   string container_name = 3; // @gotags: search:"Container Name,hidden" policy:",prefer-parent"
   // Pod name
   string pod_id = 4; // @gotags: search:"Pod ID,hidden"
-  string pod_uid = 11; // @gotags: search:"Pod UID,hidden" sql:"index=hash,type(uuid)"
+  string pod_uid = 11; // @gotags: search:"Pod UID,hidden" sql:"index,type(uuid)"
 
   // The emit timestamp of the message. Used for measuring latency
   reserved 5;

@@ -122,6 +122,21 @@ func insertIntoTestSingleUUIDKeyStructs(batch *pgx.Batch, obj *storage.TestSingl
 	return nil
 }
 
+var copyColsTestSingleUUIDKeyStructs = []string{
+	"key",
+	"name",
+	"stringslice",
+	"bool",
+	"uint64",
+	"int64",
+	"float",
+	"labels",
+	"timestamp",
+	"enum",
+	"enums",
+	"serialized",
+}
+
 func copyFromTestSingleUUIDKeyStructs(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, objs ...*storage.TestSingleUUIDKeyStruct) error {
 	if len(objs) == 0 {
 		return nil
@@ -137,21 +152,6 @@ func copyFromTestSingleUUIDKeyStructs(ctx context.Context, s pgSearch.Deleter, t
 		if err := s.DeleteMany(ctx, deletes); err != nil {
 			return err
 		}
-	}
-
-	copyCols := []string{
-		"key",
-		"name",
-		"stringslice",
-		"bool",
-		"uint64",
-		"int64",
-		"float",
-		"labels",
-		"timestamp",
-		"enum",
-		"enums",
-		"serialized",
 	}
 
 	idx := 0
@@ -183,7 +183,7 @@ func copyFromTestSingleUUIDKeyStructs(ctx context.Context, s pgSearch.Deleter, t
 		}, nil
 	})
 
-	if _, err := tx.CopyFrom(ctx, pgx.Identifier{"test_single_uuid_key_structs"}, copyCols, inputRows); err != nil {
+	if _, err := tx.CopyFrom(ctx, pgx.Identifier{"test_single_uuid_key_structs"}, copyColsTestSingleUUIDKeyStructs, inputRows); err != nil {
 		return err
 	}
 

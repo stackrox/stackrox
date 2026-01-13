@@ -45,10 +45,6 @@ spec:
       hostAliases: {{ toYaml ._rox.collector.hostAliases | nindent 8 }}
       {{- end }}
       serviceAccountName: collector
-      initContainers:
-      {{- if ._rox._securedClusterCertRefresh }}
-      - {{ include "srox.tlsCertsInitContainer" (list .) | indent 8 | trim }}
-      {{- end }}
       containers:
       {{- if ne ._rox.collector.collectionMethod "NO_COLLECTION"}}
       - name: collector
@@ -293,7 +289,9 @@ spec:
           path: /dev
         name: dev-ro
       {{- if ._rox._securedClusterCertRefresh }}
-      {{- include "srox.tlsCertsInitContainerVolumes" (list "collector") | indent 6 }}
+      - name: certs
+        secret:
+          secretName: tls-cert-collector
       {{- else }}
       - name: certs
         secret:
@@ -333,3 +331,26 @@ spec:
         configMap:
           name: collector-config
           optional: true
+
+{{- if ._rox.collector.exposeMonitoring }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: compliance-metrics
+  namespace: {{ ._rox._namespace }}
+  labels:
+    {{- include "srox.labels" (list . "service" "compliance-metrics") | nindent 4 }}
+    auto-upgrade.stackrox.io/component: "sensor"
+  annotations:
+    {{- include "srox.annotations" (list . "service" "compliance-metrics") | nindent 4 }}
+spec:
+  clusterIP: None
+  ports:
+  - name: monitoring
+    port: 9091
+    targetPort: 9091
+    protocol: TCP
+  selector:
+    app: collector
+{{- end }}

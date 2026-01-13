@@ -52,7 +52,7 @@ message MsgFromSensor {
 
 message ReprocessDeployments {}
 
-// next available tag: 29
+// next available tag: 30
 message MsgToSensor {
   oneof msg {
     SensorEnforcement enforcement = 1;
@@ -74,7 +74,7 @@ message MsgToSensor {
     IssueLocalScannerCertsResponse issue_local_scanner_certs_response = 17;
     storage.Image updated_image = 18;
     ReprocessDeployments reprocess_deployments = 19;
-    NodeInventoryACK node_inventory_ack = 20;
+    NodeInventoryACK node_inventory_ack = 20; // Deprecated, use sensor_ack instead
     DelegatedRegistryConfig delegated_registry_config = 21;
     ScanImage scan_image = 22;
     ImageIntegrations image_integrations = 23;
@@ -83,6 +83,7 @@ message MsgToSensor {
     DeduperState deduper_state = 26;
     DeploymentEnhancementRequest deployment_enhancement_request = 27;
     IssueSecuredClusterCertsResponse issue_secured_cluster_certs_response = 28;
+    SensorACK sensor_ack = 29;
   }
 }
 
@@ -92,7 +93,31 @@ message DeduperState {
   int32 total = 3;
 }
 
+// SensorACK is a generic acknowledgement message from Central to Sensor
+// for any sensor-originated message (node inventory, node index, VM index, etc.)
+message SensorACK {
+  Action action = 1;
+  enum Action {
+    ACK = 0;
+    NACK = 1;
+  }
+
+  MessageType message_type = 2;
+  enum MessageType {
+    NODE_INVENTORY = 0; // v2 node scanning (being deprecated)
+    NODE_INDEX_REPORT = 1; // v4 node scanning
+    VM_INDEX_REPORT = 2; // VM vulnerability scanning
+  }
+
+  string resource_id = 3; // Resource identifier (node name, VM ID, etc.)
+  string reason = 4; // Optional reason for NACK (e.g., "rate limit exceeded")
+}
+
+// Deprecated: Use SensorACK instead. Kept for backward compatibility with Sensor 4.9 and earlier.
+// Keep for 4.10 and 4.11. Can be considered for removal in 4.12.
 message NodeInventoryACK {
+  option deprecated = true;
+
   string cluster_id = 1;
   string node_name = 2;
   Action action = 3;
@@ -133,6 +158,7 @@ message InvalidateImageCache {
   message ImageKey {
     string image_id = 1;
     string image_full_name = 2;
+    string image_id_v2 = 3;
   }
 
   repeated ImageKey image_keys = 1;

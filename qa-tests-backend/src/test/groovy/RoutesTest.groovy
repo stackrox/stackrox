@@ -34,6 +34,7 @@ class RoutesTest extends BaseSpecification {
         "Create the deployment"
         Deployment deployment = new Deployment()
                 .setName(deploymentName)
+                .setImagePrefetcherAffinity()
                 .setImage("quay.io/rhacs-eng/qa-multi-arch:nginx-1-19-alpine")
                 .addLabel("app", deploymentName)
                 .addPort(80)

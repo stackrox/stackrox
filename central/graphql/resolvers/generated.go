@@ -161,6 +161,11 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 	utils.Must(builder.AddType("AzureProviderMetadata", []string{
 		"subscriptionId: String!",
 	}))
+	utils.Must(builder.AddType("BaseImageInfo", []string{
+		"baseImageDigest: String!",
+		"baseImageFullName: String!",
+		"baseImageId: String!",
+	}))
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.BooleanOperator(0)))
 	utils.Must(builder.AddType("CSCC", []string{
 		"serviceAccount: String!",
@@ -670,9 +675,9 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"timestamp: Time",
 	}))
 	utils.Must(builder.AddType("FileAccess_File", []string{
+		"actualPath: String!",
+		"effectivePath: String!",
 		"meta: FileAccess_FileMetadata",
-		"mountedPath: String!",
-		"nodePath: String!",
 	}))
 	utils.Must(builder.AddType("FileAccess_FileMetadata", []string{
 		"gid: Int!",
@@ -718,6 +723,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"value: String!",
 	}))
 	utils.Must(builder.AddType("Image", []string{
+		"baseImageInfo: [BaseImageInfo]!",
 		"id: ID!",
 		"isClusterLocal: Boolean!",
 		"lastUpdated: Time",
@@ -781,6 +787,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 	}))
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.ImageSignatureVerificationResult_Status(0)))
 	utils.Must(builder.AddType("ImageV2", []string{
+		"baseImageInfo: [BaseImageInfo]!",
 		"digest: String!",
 		"id: ID!",
 		"isClusterLocal: Boolean!",
@@ -3056,6 +3063,63 @@ func (resolver *Resolver) wrapAzureProviderMetadatasWithContext(ctx context.Cont
 
 func (resolver *azureProviderMetadataResolver) SubscriptionId(ctx context.Context) string {
 	value := resolver.data.GetSubscriptionId()
+	return value
+}
+
+type baseImageInfoResolver struct {
+	ctx  context.Context
+	root *Resolver
+	data *storage.BaseImageInfo
+}
+
+func (resolver *Resolver) wrapBaseImageInfo(value *storage.BaseImageInfo, ok bool, err error) (*baseImageInfoResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &baseImageInfoResolver{root: resolver, data: value}, nil
+}
+
+func (resolver *Resolver) wrapBaseImageInfos(values []*storage.BaseImageInfo, err error) ([]*baseImageInfoResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*baseImageInfoResolver, len(values))
+	for i, v := range values {
+		output[i] = &baseImageInfoResolver{root: resolver, data: v}
+	}
+	return output, nil
+}
+
+func (resolver *Resolver) wrapBaseImageInfoWithContext(ctx context.Context, value *storage.BaseImageInfo, ok bool, err error) (*baseImageInfoResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &baseImageInfoResolver{ctx: ctx, root: resolver, data: value}, nil
+}
+
+func (resolver *Resolver) wrapBaseImageInfosWithContext(ctx context.Context, values []*storage.BaseImageInfo, err error) ([]*baseImageInfoResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*baseImageInfoResolver, len(values))
+	for i, v := range values {
+		output[i] = &baseImageInfoResolver{ctx: ctx, root: resolver, data: v}
+	}
+	return output, nil
+}
+
+func (resolver *baseImageInfoResolver) BaseImageDigest(ctx context.Context) string {
+	value := resolver.data.GetBaseImageDigest()
+	return value
+}
+
+func (resolver *baseImageInfoResolver) BaseImageFullName(ctx context.Context) string {
+	value := resolver.data.GetBaseImageFullName()
+	return value
+}
+
+func (resolver *baseImageInfoResolver) BaseImageId(ctx context.Context) string {
+	value := resolver.data.GetBaseImageId()
 	return value
 }
 
@@ -8066,19 +8130,19 @@ func (resolver *Resolver) wrapFileAccess_FilesWithContext(ctx context.Context, v
 	return output, nil
 }
 
+func (resolver *fileAccess_FileResolver) ActualPath(ctx context.Context) string {
+	value := resolver.data.GetActualPath()
+	return value
+}
+
+func (resolver *fileAccess_FileResolver) EffectivePath(ctx context.Context) string {
+	value := resolver.data.GetEffectivePath()
+	return value
+}
+
 func (resolver *fileAccess_FileResolver) Meta(ctx context.Context) (*fileAccess_FileMetadataResolver, error) {
 	value := resolver.data.GetMeta()
 	return resolver.root.wrapFileAccess_FileMetadata(value, true, nil)
-}
-
-func (resolver *fileAccess_FileResolver) MountedPath(ctx context.Context) string {
-	value := resolver.data.GetMountedPath()
-	return value
-}
-
-func (resolver *fileAccess_FileResolver) NodePath(ctx context.Context) string {
-	value := resolver.data.GetNodePath()
-	return value
 }
 
 type fileAccess_FileMetadataResolver struct {
@@ -8623,6 +8687,12 @@ func (resolver *imageResolver) ensureData(ctx context.Context) {
 	if resolver.data == nil {
 		resolver.data = resolver.root.getImage(ctx, resolver.list.GetId())
 	}
+}
+
+func (resolver *imageResolver) BaseImageInfo(ctx context.Context) ([]*baseImageInfoResolver, error) {
+	resolver.ensureData(ctx)
+	value := resolver.data.GetBaseImageInfo()
+	return resolver.root.wrapBaseImageInfos(value, nil)
 }
 
 func (resolver *imageResolver) Id(ctx context.Context) graphql.ID {
@@ -9320,6 +9390,12 @@ func (resolver *imageV2Resolver) ensureData(ctx context.Context) {
 	if resolver.data == nil {
 		resolver.data = resolver.root.getImageV2(ctx, resolver.list.GetId())
 	}
+}
+
+func (resolver *imageV2Resolver) BaseImageInfo(ctx context.Context) ([]*baseImageInfoResolver, error) {
+	resolver.ensureData(ctx)
+	value := resolver.data.GetBaseImageInfo()
+	return resolver.root.wrapBaseImageInfos(value, nil)
 }
 
 func (resolver *imageV2Resolver) Digest(ctx context.Context) string {

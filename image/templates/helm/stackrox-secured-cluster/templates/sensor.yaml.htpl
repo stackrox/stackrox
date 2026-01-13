@@ -119,6 +119,12 @@ spec:
               name: tls-cert-sensor
               key: cert.pem
               optional: true
+        {{- if ._rox._securedClusterCertRefresh }}
+        - name: ROX_CERTS_LEGACY_DIR
+          value: /run/secrets/stackrox.io/certs-legacy/
+        - name: ROX_CERTS_NEW_DIR
+          value: /run/secrets/stackrox.io/certs-new/
+        {{- end }}
         {{- include "srox.envVars" (list . "deployment" "sensor" "sensor") | nindent 8 }}
         volumeMounts:
         - name: sensor-etc-ssl-volume
@@ -146,9 +152,6 @@ spec:
           mountPath: /run/secrets/stackrox.io/helm-effective-cluster-name/
           readOnly: true
         {{- include "srox.injectedCABundleVolumeMount" . | nindent 8 }}
-      {{- end }}
-      {{- if ._rox._securedClusterCertRefresh }}
-      - {{ include "srox.tlsCertsInitContainer" (list .) | indent 8 | trim }}
       {{- end }}
       containers:
       - image: {{ quote ._rox.image.main.fullRef }}
@@ -240,7 +243,17 @@ spec:
           mountPath: /etc/pki/ca-trust/
         - name: certs
           mountPath: /run/secrets/stackrox.io/certs/
+          {{- if not ._rox._securedClusterCertRefresh }}
           readOnly: true
+          {{- end }}
+        {{- if ._rox._securedClusterCertRefresh }}
+        - name: certs-legacy
+          mountPath: /run/secrets/stackrox.io/certs-legacy/
+          readOnly: true
+        - name: certs-new
+          mountPath: /run/secrets/stackrox.io/certs-new/
+          readOnly: true
+        {{- end }}
         - name: additional-ca-volume
           mountPath: /usr/local/share/ca-certificates/
           readOnly: true
@@ -266,7 +279,23 @@ spec:
         {{- end }}
       volumes:
       {{- if ._rox._securedClusterCertRefresh }}
-      {{- include "srox.tlsCertsInitContainerVolumes" (list "sensor") | indent 6 }}
+      - name: certs
+        emptyDir: {}
+      - name: certs-legacy
+        secret:
+          secretName: sensor-tls
+          optional: true
+          items:
+          - key: sensor-cert.pem
+            path: cert.pem
+          - key: sensor-key.pem
+            path: key.pem
+          - key: ca.pem
+            path: ca.pem
+      - name: certs-new
+        secret:
+          secretName: tls-cert-sensor
+          optional: true
       {{- else }}
       - name: certs
         secret:

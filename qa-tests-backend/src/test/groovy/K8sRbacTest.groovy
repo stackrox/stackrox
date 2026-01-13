@@ -123,6 +123,7 @@ class K8sRbacTest extends BaseSpecification {
         Deployment deployment = new Deployment()
                 .setName(DEPLOYMENT_NAME)
                 .setNamespace(Constants.ORCHESTRATOR_NAMESPACE)
+                .setImagePrefetcherAffinity()
                 .setServiceAccountName(SERVICE_ACCOUNT_NAME)
                 .setImage("quay.io/rhacs-eng/qa-multi-arch:nginx-1-15-4-alpine")
                 .setSkipReplicaWait(true)

@@ -93,7 +93,7 @@ export function getReportConfigurationFromFormValues(
             hour: 0,
             minute: 0,
             daysOfWeek: {
-                days: formSchedule.daysOfWeek?.map((day) => Number(day)) || [],
+                days: formSchedule.daysOfWeek?.map((day) => Number(day)) ?? [],
             },
         };
     } else if (formSchedule.intervalType === 'MONTHLY') {
@@ -102,7 +102,7 @@ export function getReportConfigurationFromFormValues(
             hour: 0,
             minute: 0,
             daysOfMonth: {
-                days: formSchedule.daysOfMonth?.map((day) => Number(day)) || [],
+                days: formSchedule.daysOfMonth?.map((day) => Number(day)) ?? [],
             },
         };
     } else {

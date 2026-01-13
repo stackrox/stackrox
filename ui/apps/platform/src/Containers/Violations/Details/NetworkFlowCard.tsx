@@ -23,7 +23,7 @@ function NetworkFlowCard({ networkFlowInfo, message, time }: NetworkFlowCardProp
     const [isExpanded, setIsExpanded] = useState(true);
 
     function onExpand() {
-        setIsExpanded(!isExpanded);
+        setIsExpanded((prev) => !prev);
     }
 
     return (

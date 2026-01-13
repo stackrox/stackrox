@@ -190,7 +190,7 @@ jobs:
     - prepare-environment
     runs-on: ubuntu-latest
     container:
-      image: quay.io/stackrox-io/apollo-ci:scanner-test-0.4.9
+      image: quay.io/stackrox-io/apollo-ci:scanner-test-0.5.1
       volumes:
       # The updater makes heavy use of /tmp files.
       - /tmp:/tmp
@@ -264,7 +264,7 @@ jobs:
         zip definitions/"$SCANNER_BUNDLE_VERSION"/vulnerabilities.zip bundles/*.json.zst
 
     - name: Upload definitions artifacts
-      uses: actions/upload-artifact@v5
+      uses: actions/upload-artifact@v6
       with:
         name: artifact_${{ env.SCANNER_BUNDLE_VERSION }}
         path: definitions
@@ -282,7 +282,7 @@ jobs:
     - prepare-environment
     runs-on: ubuntu-latest
     container:
-      image: quay.io/stackrox-io/apollo-ci:scanner-test-0.4.9
+      image: quay.io/stackrox-io/apollo-ci:scanner-test-0.5.1
       volumes:
       # The updater makes heavy use of /tmp files.
       - /tmp:/tmp
@@ -375,7 +375,7 @@ jobs:
       with:
         fetch-depth: 0
 
-    - uses: actions/download-artifact@v6
+    - uses: actions/download-artifact@v7
       with:
         # Vulnerability bundles are named `artifact_${{ env.SCANNER_BUNDLE_VERSION }}`.
         pattern: "artifact_*"

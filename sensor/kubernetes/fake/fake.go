@@ -14,6 +14,7 @@ import (
 	routeVersioned "github.com/openshift/client-go/route/clientset/versioned"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/fixtures/vmindexreport"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sync"
 	vmPkg "github.com/stackrox/rox/pkg/virtualmachine"
@@ -44,6 +45,9 @@ const (
 	// Starting CID for VM population. This is used as a part of the name and its value does not matter
 	// as long as it is unique and different than 0, 1, and 2 (reserved values).
 	vmBaseVSOCKCID = uint32(1000)
+
+	// reportGeneratorSeed is the seed for deterministic package selection in VM index reports.
+	reportGeneratorSeed = int64(42)
 )
 
 // vmReadiness encapsulates the three readiness signals needed before VM workload can start
@@ -521,16 +525,15 @@ func (w *WorkloadManager) initializePreexistingResources() {
 	// Index reports are only sent while VMs are "alive" in the lifecycle.
 	if w.workload.VirtualMachineWorkload.PoolSize > 0 {
 		// Initialize report generator if index reports are enabled
-		var reportGen *reportGenerator
+		var reportGen *vmindexreport.Generator
 		if w.workload.VirtualMachineWorkload.ReportInterval > 0 {
-			reportGen = newReportGenerator(
+			reportGen = vmindexreport.NewGeneratorWithSeed(
 				w.workload.VirtualMachineWorkload.NumPackages,
-				w.workload.VirtualMachineWorkload.NumRepositories,
+				reportGeneratorSeed,
 			)
-			log.Infof("VM index reports enabled: interval=%s, packages=%d, repos=%d",
+			log.Infof("VM index reports enabled: interval=%s, packages=%d",
 				w.workload.VirtualMachineWorkload.ReportInterval,
-				w.workload.VirtualMachineWorkload.NumPackages,
-				w.workload.VirtualMachineWorkload.NumRepositories)
+				w.workload.VirtualMachineWorkload.NumPackages)
 		}
 
 		// Fork management of VM/VMI resources (including index reports if enabled)

@@ -135,6 +135,15 @@ func insertIntoVirtualMachines(batch *pgx.Batch, obj *storage.VirtualMachine) er
 	return nil
 }
 
+var copyColsVirtualMachines = []string{
+	"id",
+	"namespace",
+	"name",
+	"clusterid",
+	"clustername",
+	"serialized",
+}
+
 func copyFromVirtualMachines(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, objs ...*storage.VirtualMachine) error {
 	if len(objs) == 0 {
 		return nil
@@ -150,15 +159,6 @@ func copyFromVirtualMachines(ctx context.Context, s pgSearch.Deleter, tx *postgr
 		if err := s.DeleteMany(ctx, deletes); err != nil {
 			return err
 		}
-	}
-
-	copyCols := []string{
-		"id",
-		"namespace",
-		"name",
-		"clusterid",
-		"clustername",
-		"serialized",
 	}
 
 	idx := 0
@@ -184,7 +184,7 @@ func copyFromVirtualMachines(ctx context.Context, s pgSearch.Deleter, tx *postgr
 		}, nil
 	})
 
-	if _, err := tx.CopyFrom(ctx, pgx.Identifier{"virtual_machines"}, copyCols, inputRows); err != nil {
+	if _, err := tx.CopyFrom(ctx, pgx.Identifier{"virtual_machines"}, copyColsVirtualMachines, inputRows); err != nil {
 		return err
 	}
 

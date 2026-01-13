@@ -186,7 +186,7 @@ function PolicyCriteriaModal({
             <ModalBoxBody>
                 <Flex direction={{ default: 'column' }}>
                     <FlexItem>
-                        <Button variant="link" onClick={() => setAllExpanded(!allExpanded)}>
+                        <Button variant="link" onClick={() => setAllExpanded((prev) => !prev)}>
                             {allExpanded && 'Collapse all'}
                             {!allExpanded && 'Expand all'}
                         </Button>

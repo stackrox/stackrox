@@ -137,6 +137,14 @@ func insertIntoCollectionsEmbeddedCollections(batch *pgx.Batch, obj *storage.Res
 	return nil
 }
 
+var copyColsCollections = []string{
+	"id",
+	"name",
+	"createdby_name",
+	"updatedby_name",
+	"serialized",
+}
+
 func copyFromCollections(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, objs ...*storage.ResourceCollection) error {
 	if len(objs) == 0 {
 		return nil
@@ -152,14 +160,6 @@ func copyFromCollections(ctx context.Context, s pgSearch.Deleter, tx *postgres.T
 		if err := s.DeleteMany(ctx, deletes); err != nil {
 			return err
 		}
-	}
-
-	copyCols := []string{
-		"id",
-		"name",
-		"createdby_name",
-		"updatedby_name",
-		"serialized",
 	}
 
 	idx := 0
@@ -184,7 +184,7 @@ func copyFromCollections(ctx context.Context, s pgSearch.Deleter, tx *postgres.T
 		}, nil
 	})
 
-	if _, err := tx.CopyFrom(ctx, pgx.Identifier{"collections"}, copyCols, inputRows); err != nil {
+	if _, err := tx.CopyFrom(ctx, pgx.Identifier{"collections"}, copyColsCollections, inputRows); err != nil {
 		return err
 	}
 
@@ -197,15 +197,15 @@ func copyFromCollections(ctx context.Context, s pgSearch.Deleter, tx *postgres.T
 	return nil
 }
 
+var copyColsCollectionsEmbeddedCollections = []string{
+	"collections_id",
+	"idx",
+	"id",
+}
+
 func copyFromCollectionsEmbeddedCollections(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, collectionID string, objs ...*storage.ResourceCollection_EmbeddedResourceCollection) error {
 	if len(objs) == 0 {
 		return nil
-	}
-
-	copyCols := []string{
-		"collections_id",
-		"idx",
-		"id",
 	}
 
 	idx := 0
@@ -223,7 +223,7 @@ func copyFromCollectionsEmbeddedCollections(ctx context.Context, s pgSearch.Dele
 		}, nil
 	})
 
-	if _, err := tx.CopyFrom(ctx, pgx.Identifier{"collections_embedded_collections"}, copyCols, inputRows); err != nil {
+	if _, err := tx.CopyFrom(ctx, pgx.Identifier{"collections_embedded_collections"}, copyColsCollectionsEmbeddedCollections, inputRows); err != nil {
 		return err
 	}
 

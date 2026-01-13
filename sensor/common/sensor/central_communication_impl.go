@@ -12,7 +12,7 @@ import (
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/deduperkey"
-	"github.com/stackrox/rox/pkg/safe"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sliceutils"
 	"github.com/stackrox/rox/pkg/sync"
@@ -20,7 +20,6 @@ import (
 	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/centralcaps"
 	"github.com/stackrox/rox/sensor/common/centralid"
-	"github.com/stackrox/rox/sensor/common/certdistribution"
 	"github.com/stackrox/rox/sensor/common/config"
 	"github.com/stackrox/rox/sensor/common/detector"
 	"github.com/stackrox/rox/sensor/common/managedcentral"
@@ -153,6 +152,9 @@ func (s *centralCommunicationImpl) sendEvents(client central.SensorServiceClient
 		capsSet.AddAll(component.Capabilities()...)
 	}
 	capsSet.Add(centralsensor.SendDeduperStateOnReconnect)
+	if features.FlattenImageData.Enabled() {
+		capsSet.Add(centralsensor.FlattenImageData)
+	}
 	sensorHello.Capabilities = sliceutils.StringSlice(capsSet.AsSlice()...)
 
 	// Inject desired Helm configuration, if any.
@@ -264,12 +266,6 @@ func (s *centralCommunicationImpl) initialSync(ctx context.Context, stream centr
 		if err := helmconfig.StoreCachedClusterID(clusterID); err != nil {
 			log.Warnf("Could not cache cluster ID: %v", err)
 		}
-	}
-
-	if err := safe.RunE(func() error {
-		return certdistribution.PersistCertificates(centralHello.GetCertBundle())
-	}); err != nil {
-		log.Warnf("Failed to persist certificates for distribution: %v. This might cause issues with the admission control service.", err)
 	}
 
 	// DO NOT CHANGE THE ORDER. Please refer to `Run()` at `central/sensor/service/connection/connection_impl.go`

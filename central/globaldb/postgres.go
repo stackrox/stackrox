@@ -130,7 +130,6 @@ func InitializePostgres(ctx context.Context) postgres.DB {
 			log.Fatalf("Could not parse postgres config: %v", err)
 		}
 
-		// TODO(ROX-18005): remove this when we no longer have to worry about changing databases
 		if !pgconfig.IsExternalDatabase() {
 			// Get the active database name for the connection
 			activeDB := pgconfig.GetActiveDB()
@@ -265,7 +264,7 @@ func CollectPostgresDatabaseSizes(postgresConfig *postgres.Config) []*stats.Data
 
 		dbDetails := &stats.DatabaseDetailsStats{
 			DatabaseName: database,
-			DatabaseSize: int64(dbSize),
+			DatabaseSize: dbSize,
 		}
 		detailsSlice = append(detailsSlice, dbDetails)
 	}

@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import type { ReactElement } from 'react';
 import {
     Alert,
@@ -7,6 +8,7 @@ import {
     CardTitle,
     Flex,
     FlexItem,
+    Pagination,
 } from '@patternfly/react-core';
 
 import pluralize from 'pluralize';
@@ -27,9 +29,23 @@ const IntegrationHealthWidgetVisual = ({
     errorMessageFetching,
     isFetchingInitialRequest,
 }: IntegrationHealthWidgetVisualProps): ReactElement => {
+    const [page, setPage] = useState(1);
+    const [perPage, setPerPage] = useState(10);
+
+    function onSetPage(_, newPage) {
+        setPage(newPage);
+    }
+
+    function onPerPageSelect(_, newPerPage) {
+        setPerPage(newPerPage);
+    }
+
     const integrations = integrationsMerged.filter((integrationMergedItem) => {
         return integrationMergedItem.status === 'UNHEALTHY';
     });
+
+    const startIndex = (page - 1) * perPage;
+    const paginatedIntegrations = integrations.slice(startIndex, startIndex + perPage);
 
     const icon = isFetchingInitialRequest
         ? SpinnerIcon
@@ -59,6 +75,17 @@ const IntegrationHealthWidgetVisual = ({
                                           )}`}
                                 </FlexItem>
                             )}
+                            {integrations.length > 0 && (
+                                <FlexItem align={{ default: 'alignRight' }}>
+                                    <Pagination
+                                        itemCount={integrations.length}
+                                        perPage={perPage}
+                                        page={page}
+                                        onSetPage={onSetPage}
+                                        onPerPageSelect={onPerPageSelect}
+                                    />
+                                </FlexItem>
+                            )}
                         </Flex>
                     </>
                 }
@@ -73,7 +100,7 @@ const IntegrationHealthWidgetVisual = ({
                             component="p"
                         />
                     ) : (
-                        <IntegrationsHealth integrations={integrations} />
+                        <IntegrationsHealth integrations={paginatedIntegrations} />
                     )}
                 </CardBody>
             )}

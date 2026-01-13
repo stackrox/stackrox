@@ -6,6 +6,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stackrox/rox/pkg/fixtures/vmindexreport"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -151,14 +152,14 @@ func TestValidateVMWorkload(t *testing.T) {
 }
 
 func TestGenerateFakeIndexReport(t *testing.T) {
-	gen := newReportGenerator(10, 3) // 10 packages, 3 repos
+	gen := vmindexreport.NewGeneratorWithSeed(10, 42) // 10 packages, seed=42 for reproducibility
 	tests := map[string]uint32{
 		"basic report": 1234,
 		"different VM": 9999,
 	}
 	for name, vsockCID := range tests {
 		t.Run(name, func(t *testing.T) {
-			report := generateFakeIndexReport(gen, vsockCID)
+			report := gen.GenerateV1IndexReport(vsockCID)
 
 			// Verify vsockCID is set as string
 			assert.Equal(t, fmt.Sprintf("%d", vsockCID), report.GetVsockCid(), "vsockCID mismatch")
@@ -171,7 +172,7 @@ func TestGenerateFakeIndexReport(t *testing.T) {
 			// Verify contents
 			require.NotNil(t, report.GetIndexV4().GetContents(), "Contents should not be nil")
 			assert.Len(t, report.GetIndexV4().GetContents().GetPackages(), 10, "expected 10 packages")
-			assert.Len(t, report.GetIndexV4().GetContents().GetRepositories(), 3, "expected 3 repositories")
+			assert.Len(t, report.GetIndexV4().GetContents().GetRepositories(), 3, "expected 3 real repositories")
 
 			// Verify packages have valid CPEs (regression test for WFN error)
 			for _, pkg := range report.GetIndexV4().GetContents().GetPackages() {

@@ -18,6 +18,7 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/features"
@@ -66,6 +67,9 @@ var (
 
 	allImagesQuery = search.NewQueryBuilder().AddStringsHighlighted(search.ClusterID, search.WildcardString).
 			ProtoQuery()
+
+	// allV2ImagesQuery selects all deployment containers with a non-null and non-empty ImageID (V2 image ID).
+	allV2ImagesQuery = search.NewQueryBuilder().AddRegexes(search.ImageID, ".+").ProtoQuery()
 
 	imagesWithSignaturesQuery = search.NewQueryBuilder().
 		// We take all images into account irrespective whether they have a cluster associated with them
@@ -454,14 +458,41 @@ func (l *loopImpl) reprocessImagesAndResyncDeployments(fetchOpt imageEnricher.Fe
 	l.sendReprocessDeployments(skipClusterIDs)
 }
 
-func (l *loopImpl) reprocessImageV2(id string, fetchOpt imageEnricher.FetchOption,
+func (l *loopImpl) reprocessImageV2(id string, digest string, fetchOpt imageEnricher.FetchOption,
 	reprocessingFunc imageReprocessingFuncV2) (*storage.ImageV2, bool) {
 	image, exists, err := l.imagesV2.GetImage(allAccessCtx, id)
 	if err != nil {
 		log.Errorw("Error fetching image from database", logging.ImageID(id), logging.Err(err))
 		return nil, false
 	}
-	if image == nil || !exists || image.GetNotPullable() || image.GetIsClusterLocal() {
+	migrateToV2 := false
+	if !exists {
+		// The image was not found in ImageV2 store, but it might be in the legacy ImageV1 store
+		var legacyImage *storage.Image
+		legacyImage, exists, err = l.images.GetImageMetadata(allAccessCtx, digest)
+		if err != nil {
+			log.Errorw("Error fetching legacy image from database", logging.ImageID(id), logging.Err(err))
+			return nil, false
+		}
+		if !exists {
+			return nil, false
+		}
+		image = utils.ConvertToV2(legacyImage)
+		migrateToV2 = true
+	}
+
+	if image == nil {
+		return nil, false
+	}
+
+	if image.GetNotPullable() || image.GetIsClusterLocal() {
+		// Skip reprocessing. Sensor will handle cluster-local images. But we still need to migrate the image to V2.
+		if migrateToV2 {
+			if err := l.imagesV2.UpsertImage(allAccessCtx, image); err != nil {
+				log.Errorw("Error migrating image to imageV2 store", logging.ImageName(image.GetName().GetFullName()), logging.ImageID(image.GetId()), logging.Err(err))
+				return nil, false
+			}
+		}
 		return nil, false
 	}
 
@@ -501,7 +532,7 @@ func (l *loopImpl) reprocessImagesV2AndResyncDeployments(fetchOpt imageEnricher.
 	if l.stopSig.IsDone() {
 		return
 	}
-	results, err := l.imagesV2.Search(allAccessCtx, imageQuery)
+	results, err := l.deployments.GetContainerImageViews(allAccessCtx, imageQuery)
 	if err != nil {
 		log.Errorw("Error searching for active image IDs", logging.Err(err))
 		return
@@ -522,13 +553,12 @@ func (l *loopImpl) reprocessImagesV2AndResyncDeployments(fetchOpt imageEnricher.
 			log.Errorw("Reprocessing stopped", logging.Err(err))
 			return
 		}
-		// Duplicates can exist if the image is within multiple deployments
-		clusterIDSet := set.NewStringSet(result.Matches[imageClusterIDFieldPath]...)
-		go func(id string, clusterIDs set.StringSet) {
+		clusterIDSet := set.NewStringSet(result.GetClusterIDs()...)
+		go func(id string, digest string, clusterIDs set.StringSet) {
 			defer sema.Release(1)
 			defer wg.Add(-1)
 
-			image, successfullyProcessed := l.reprocessImageV2(id, fetchOpt, imgReprocessingFunc)
+			image, successfullyProcessed := l.reprocessImageV2(id, digest, fetchOpt, imgReprocessingFunc)
 			if !successfullyProcessed {
 				return
 			}
@@ -537,7 +567,23 @@ func (l *loopImpl) reprocessImagesV2AndResyncDeployments(fetchOpt imageEnricher.
 			utils.FilterSuppressedCVEsNoCloneV2(image)
 			utils.StripCVEDescriptionsNoCloneV2(image)
 
-			convertedImage := utils.ConvertToV1(image)
+			// Gather all known image names with the same SHA to ensure backward compatibility
+			// with sensors that don't have the FlattenImageData capability.
+			// Skip if all sensors have the capability.
+			var allNames []*storage.ImageName
+			if !l.connManager.AllSensorsHaveCapability(centralsensor.FlattenImageData) {
+				var err error
+				allNames, err = l.imagesV2.GetImageNames(allAccessCtx, image.GetDigest())
+				if err != nil {
+					log.Warnw("Failed to retrieve image names by digest",
+						logging.ImageName(image.GetName().GetFullName()),
+						logging.ImageID(image.GetId()),
+						logging.String("digest", image.GetDigest()),
+						logging.Err(err),
+					)
+				}
+			}
+			convertedImage := utils.ConvertToV1(image, allNames...)
 			// Send the updated image to relevant clusters.
 			for clusterID := range clusterIDs {
 				conn := l.connManager.GetConnection(clusterID)
@@ -573,7 +619,7 @@ func (l *loopImpl) reprocessImagesV2AndResyncDeployments(fetchOpt imageEnricher.
 					)
 				}
 			}
-		}(result.ID, clusterIDSet)
+		}(result.GetImageID(), result.GetImageDigest(), clusterIDSet)
 	}
 	select {
 	case <-wg.Done():
@@ -790,7 +836,7 @@ func (l *loopImpl) runReprocessing(imageFetchOpt imageEnricher.FetchOption) {
 	l.reprocessNodes()
 	l.reprocessWatchedImages()
 	if features.FlattenImageData.Enabled() {
-		l.reprocessImagesV2AndResyncDeployments(imageFetchOpt, l.enrichImageV2, allImagesQuery)
+		l.reprocessImagesV2AndResyncDeployments(imageFetchOpt, l.enrichImageV2, allV2ImagesQuery)
 	} else {
 		l.reprocessImagesAndResyncDeployments(imageFetchOpt, l.enrichImage, allImagesQuery)
 	}
@@ -809,7 +855,7 @@ func (l *loopImpl) runSignatureVerificationReprocessing() {
 
 	if features.FlattenImageData.Enabled() {
 		l.reprocessImagesV2AndResyncDeployments(imageEnricher.ForceRefetchSignaturesOnly,
-			l.forceEnrichImageSignatureVerificationResultsV2, query)
+			l.forceEnrichImageSignatureVerificationResultsV2, allV2ImagesQuery)
 	} else {
 		l.reprocessImagesAndResyncDeployments(imageEnricher.ForceRefetchSignaturesOnly,
 			l.forceEnrichImageSignatureVerificationResults, query)

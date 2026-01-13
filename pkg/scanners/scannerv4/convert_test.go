@@ -3,11 +3,14 @@ package scannerv4
 import (
 	"fmt"
 	"testing"
+	"time"
 
 	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/protoassert"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 const scannerVersion = "indexer=4.8.3"
@@ -43,6 +46,9 @@ func TestNoPanic(t *testing.T) {
 }
 
 func TestConvert(t *testing.T) {
+	protoNow, err := protocompat.ConvertTimeToTimestampOrError(time.Now())
+	require.NoError(t, err)
+
 	testcases := []struct {
 		name     string
 		metadata *storage.ImageMetadata
@@ -91,6 +97,7 @@ func TestConvert(t *testing.T) {
 						Id:                 "CVE1-ID",
 						Name:               "CVE1-Name",
 						FixedInVersion:     "v99",
+						FixedDate:          protoNow,
 						NormalizedSeverity: v4.VulnerabilityReport_Vulnerability_SEVERITY_IMPORTANT,
 					},
 				},
@@ -110,10 +117,11 @@ func TestConvert(t *testing.T) {
 						HasLayerIndex: &storage.EmbeddedImageScanComponent_LayerIndex{LayerIndex: 0},
 						Vulns: []*storage.EmbeddedVulnerability{
 							{
-								Cve:               "CVE1-Name",
-								VulnerabilityType: storage.EmbeddedVulnerability_IMAGE_VULNERABILITY,
-								Severity:          storage.VulnerabilitySeverity_IMPORTANT_VULNERABILITY_SEVERITY,
-								SetFixedBy:        &storage.EmbeddedVulnerability_FixedBy{FixedBy: "v99"},
+								Cve:                   "CVE1-Name",
+								VulnerabilityType:     storage.EmbeddedVulnerability_IMAGE_VULNERABILITY,
+								Severity:              storage.VulnerabilitySeverity_IMPORTANT_VULNERABILITY_SEVERITY,
+								SetFixedBy:            &storage.EmbeddedVulnerability_FixedBy{FixedBy: "v99"},
+								FixAvailableTimestamp: protoNow,
 							},
 						},
 					},
@@ -182,10 +190,11 @@ func TestConvert(t *testing.T) {
 						HasLayerIndex: &storage.EmbeddedImageScanComponent_LayerIndex{LayerIndex: 0},
 						Vulns: []*storage.EmbeddedVulnerability{
 							{
-								Cve:               "CVE1-Name",
-								VulnerabilityType: storage.EmbeddedVulnerability_IMAGE_VULNERABILITY,
-								Severity:          storage.VulnerabilitySeverity_IMPORTANT_VULNERABILITY_SEVERITY,
-								SetFixedBy:        &storage.EmbeddedVulnerability_FixedBy{FixedBy: "v99"},
+								Cve:                   "CVE1-Name",
+								VulnerabilityType:     storage.EmbeddedVulnerability_IMAGE_VULNERABILITY,
+								Severity:              storage.VulnerabilitySeverity_IMPORTANT_VULNERABILITY_SEVERITY,
+								SetFixedBy:            &storage.EmbeddedVulnerability_FixedBy{FixedBy: "v99"},
+								FixAvailableTimestamp: nil,
 							},
 						},
 					},

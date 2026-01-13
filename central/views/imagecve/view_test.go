@@ -10,8 +10,10 @@ import (
 	"testing"
 	"time"
 
+	imageCVEV2DS "github.com/stackrox/rox/central/cve/image/v2/datastore"
 	deploymentDS "github.com/stackrox/rox/central/deployment/datastore"
 	imageDS "github.com/stackrox/rox/central/image/datastore"
+	imageComponentV2DS "github.com/stackrox/rox/central/imagecomponent/v2/datastore"
 	"github.com/stackrox/rox/central/views"
 	"github.com/stackrox/rox/central/views/common"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -101,21 +103,28 @@ func TestImageCVEView(t *testing.T) {
 type ImageCVEViewTestSuite struct {
 	suite.Suite
 
-	testDB  *pgtest.TestPostgres
-	cveView CveView
+	testDB   *pgtest.TestPostgres
+	cveView  CveView
+	suiteCtx context.Context
 
 	testImages              []*storage.Image
 	testImagesToDeployments map[string][]*storage.Deployment
+
+	componentDatastore imageComponentV2DS.DataStore
+	cveDatastore       imageCVEV2DS.DataStore
 }
 
 func (s *ImageCVEViewTestSuite) SetupSuite() {
-	ctx := sac.WithAllAccess(context.Background())
+	s.suiteCtx = sac.WithAllAccess(context.Background())
+	ctx := s.suiteCtx
 	s.testDB = pgtest.ForT(s.T())
 
 	// Initialize the datastore.
 	imageStore := imageDS.GetTestPostgresDataStore(s.T(), s.testDB.DB)
 	deploymentStore, err := deploymentDS.GetTestPostgresDataStore(s.T(), s.testDB.DB)
 	s.Require().NoError(err)
+	s.componentDatastore = imageComponentV2DS.GetTestPostgresDataStore(s.T(), s.testDB)
+	s.cveDatastore = imageCVEV2DS.GetTestPostgresDataStore(s.T(), s.testDB)
 
 	// Upsert test images.
 	images, err := imageSamples.GetTestImages(s.T())
@@ -182,7 +191,7 @@ func (s *ImageCVEViewTestSuite) TestGetImageCVECore() {
 			}
 			assert.NoError(t, err)
 
-			expected := compileExpected(s.testImages, tc.matchFilter, tc.readOptions, tc.less)
+			expected := s.compileExpected(s.testImages, tc.matchFilter, tc.readOptions, tc.less)
 			assertResponsesAreEqual(t, expected, actual, tc.testOrder)
 
 			if tc.readOptions.SkipGetAffectedImages || tc.readOptions.SkipGetImagesBySeverity {
@@ -228,7 +237,7 @@ func (s *ImageCVEViewTestSuite) TestGetImageCVECoreSAC() {
 					return false
 				})
 
-				expected := compileExpected(s.testImages, &matchFilter, tc.readOptions, tc.less)
+				expected := s.compileExpected(s.testImages, &matchFilter, tc.readOptions, tc.less)
 				assertResponsesAreEqual(t, expected, actual, false)
 			})
 		}
@@ -340,7 +349,7 @@ func (s *ImageCVEViewTestSuite) TestGetImageCVECoreWithPagination() {
 				}
 				assert.NoError(t, err)
 
-				expected := compileExpected(s.testImages, tc.matchFilter, tc.readOptions, tc.less)
+				expected := s.compileExpected(s.testImages, tc.matchFilter, tc.readOptions, tc.less)
 				assertResponsesAreEqual(t, expected, actual, tc.testOrder)
 
 				if tc.readOptions.SkipGetAffectedImages || tc.readOptions.SkipGetImagesBySeverity {
@@ -375,7 +384,7 @@ func (s *ImageCVEViewTestSuite) TestCountImageCVECore() {
 			}
 			assert.NoError(t, err)
 
-			expected := compileExpected(s.testImages, tc.matchFilter, tc.readOptions, nil)
+			expected := s.compileExpected(s.testImages, tc.matchFilter, tc.readOptions, nil)
 			assert.Equal(t, len(expected), actual)
 		})
 	}
@@ -409,7 +418,7 @@ func (s *ImageCVEViewTestSuite) TestCountImageCVECoreSAC() {
 					return false
 				})
 
-				expected := compileExpected(s.testImages, &matchFilter, tc.readOptions, tc.less)
+				expected := s.compileExpected(s.testImages, &matchFilter, tc.readOptions, tc.less)
 				assert.Equal(t, len(expected), actual)
 			})
 		}
@@ -911,7 +920,7 @@ func applyPaginationProps(baseTc *testCase, paginationTc testCase) {
 	baseTc.less = paginationTc.less
 }
 
-func compileExpected(images []*storage.Image, filter *filterImpl, options views.ReadOptions, less lessFunc) []CveCore {
+func (s *ImageCVEViewTestSuite) compileExpected(images []*storage.Image, filter *filterImpl, options views.ReadOptions, less lessFunc) []CveCore {
 	cveMap := make(map[string]*imageCVECoreResponse)
 
 	for _, image := range images {
@@ -920,25 +929,44 @@ func compileExpected(images []*storage.Image, filter *filterImpl, options views.
 		}
 
 		var seenForImage set.Set[string]
-		for _, component := range image.GetScan().GetComponents() {
-			for _, vuln := range component.GetVulns() {
-				if !filter.matchVuln(vuln) {
+		// Instead of using embedded objects, grab components and CVEs from the datastores to get IDs
+		components, err := s.componentDatastore.SearchRawImageComponents(s.suiteCtx, search.NewQueryBuilder().AddExactMatches(search.ImageSHA, image.GetId()).ProtoQuery())
+		s.Require().NoError(err)
+		for _, component := range components {
+			dbVulns, err := s.cveDatastore.SearchRawImageCVEs(s.suiteCtx, search.NewQueryBuilder().AddExactMatches(search.ComponentID, component.GetId()).ProtoQuery())
+			s.Require().NoError(err)
+			for _, vuln := range dbVulns {
+				// Use embedded vuln for filter matching since the filter expects embedded type
+				embeddedVuln := &storage.EmbeddedVulnerability{
+					Cve:                   vuln.GetCveBaseInfo().GetCve(),
+					Cvss:                  vuln.GetCvss(),
+					Severity:              vuln.GetSeverity(),
+					FirstSystemOccurrence: vuln.GetCveBaseInfo().GetCreatedAt(),
+					PublishedOn:           vuln.GetCveBaseInfo().GetPublishedOn(),
+					CvssMetrics:           vuln.GetCveBaseInfo().GetCvssMetrics(),
+				}
+				if vuln.GetFixedBy() != "" {
+					embeddedVuln.SetFixedBy = &storage.EmbeddedVulnerability_FixedBy{
+						FixedBy: vuln.GetFixedBy(),
+					}
+				}
+				if !filter.matchVuln(embeddedVuln) {
 					continue
 				}
 
-				vulnTime, _ := protocompat.ConvertTimestampToTimeOrError(vuln.GetFirstSystemOccurrence())
+				vulnTime, _ := protocompat.ConvertTimestampToTimeOrError(vuln.GetCveBaseInfo().GetCreatedAt())
 				vulnTime = vulnTime.Round(time.Microsecond)
-				vulnPublishDate, _ := protocompat.ConvertTimestampToTimeOrError(vuln.GetPublishedOn())
+				vulnPublishDate, _ := protocompat.ConvertTimestampToTimeOrError(vuln.GetCveBaseInfo().GetPublishedOn())
 				vulnPublishDate = vulnPublishDate.Round(time.Microsecond)
-				val := cveMap[vuln.GetCve()]
+				val := cveMap[vuln.GetCveBaseInfo().GetCve()]
 				if val == nil {
 					val = &imageCVECoreResponse{
-						CVE:                     vuln.GetCve(),
+						CVE:                     vuln.GetCveBaseInfo().GetCve(),
 						TopCVSS:                 pointers.Float32(vuln.GetCvss()),
 						FirstDiscoveredInSystem: &vulnTime,
 						Published:               &vulnPublishDate,
 					}
-					for _, metric := range vuln.GetCvssMetrics() {
+					for _, metric := range vuln.GetCveBaseInfo().GetCvssMetrics() {
 						if metric.GetSource() == storage.Source_SOURCE_NVD {
 							if metric.GetCvssv2() != nil {
 								val.TopNVDCVSS = pointers.Float32(metric.GetCvssv2().GetScore())
@@ -948,6 +976,19 @@ func compileExpected(images []*storage.Image, filter *filterImpl, options views.
 						}
 					}
 					cveMap[val.CVE] = val
+				}
+
+				// Add CVE ID (V2 format) from database object
+				id := vuln.GetId()
+				var found bool
+				for _, seenID := range val.GetCVEIDs() {
+					if seenID == id {
+						found = true
+						break
+					}
+				}
+				if !found {
+					val.CVEIDs = append(val.CVEIDs, id)
 				}
 
 				val.TopCVSS = pointers.Float32(max(val.GetTopCVSS(), vuln.GetCvss()))
@@ -992,6 +1033,11 @@ func compileExpected(images []*storage.Image, filter *filterImpl, options views.
 
 	expected := make([]*imageCVECoreResponse, 0, len(cveMap))
 	for _, entry := range cveMap {
+		// Deduplicate and sort CVE IDs
+		entry.CVEIDs = set.NewStringSet(entry.CVEIDs...).AsSlice()
+		sort.SliceStable(entry.CVEIDs, func(i, j int) bool {
+			return entry.CVEIDs[i] < entry.CVEIDs[j]
+		})
 		expected = append(expected, entry)
 	}
 	if options.SkipGetImagesBySeverity {
@@ -1339,7 +1385,7 @@ func assertResponsesAreEqual(t *testing.T, expected []CveCore, actual []CveCore,
 		})
 	}
 	for i, flatCVE := range actual {
-		// TODO(ROX-29525) : Compare CVE IDs of expected and actual responses
+		assert.Equal(t, expected[i].GetCVEIDs(), flatCVE.GetCVEIDs())
 		assert.Equal(t, expected[i].GetCVE(), flatCVE.GetCVE())
 		assert.Equal(t, expected[i].GetTopCVSS(), flatCVE.GetTopCVSS())
 		assert.Equal(t, expected[i].GetTopNVDCVSS(), flatCVE.GetTopNVDCVSS())

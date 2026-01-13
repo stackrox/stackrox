@@ -1,0 +1,17 @@
+name: Retest Konflux Builds
+
+on:
+  check_run:
+    types: [completed]
+  pull_request:
+    types: [synchronize]
+
+jobs:
+  retest-failed-builds:
+    uses: stackrox/actions/.github/workflows/retest-konflux-builds.yml@v1
+    permissions:
+      pull-requests: write
+      issues: write
+    with:
+      max_retries: 3
+      check_name_suffix: '-on-push'

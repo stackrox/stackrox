@@ -186,7 +186,7 @@ export_test_environment() {
     ci_export ROX_CISA_KEV "${ROX_CISA_KEV:-true}"
     ci_export ROX_SENSITIVE_FILE_ACTIVITY "${ROX_SENSITIVE_FILE_ACTIVITY:-true}"
     ci_export ROX_CVE_FIX_TIMESTAMP "${ROX_CVE_FIX_TIMESTAMP:-true}"
-    ci_export ROX_BASE_IMAGE_DETECTION "${ROX_BASE_IMAGE_DETECTION:-false}"
+    ci_export ROX_BASE_IMAGE_DETECTION "${ROX_BASE_IMAGE_DETECTION:-true}"
 
     if is_in_PR_context && pr_has_label ci-fail-fast; then
         ci_export FAIL_FAST "true"
@@ -368,6 +368,7 @@ deploy_central_via_operator() {
 deploy_sensor() {
     local sensor_namespace=${1:-stackrox}
     local central_namespace=${2:-stackrox}
+    local validate=${3:-true}
 
     info "Deploying sensor into namespace ${sensor_namespace} (central is expected in namespace ${central_namespace})"
 
@@ -375,7 +376,7 @@ deploy_sensor() {
     ci_export ROX_COLLECTOR_INTROSPECTION_ENABLE "true"
 
     if [[ "${DEPLOY_STACKROX_VIA_OPERATOR}" == "true" ]]; then
-        deploy_sensor_via_operator "${sensor_namespace}" "${central_namespace}"
+        deploy_sensor_via_operator "${sensor_namespace}" "${central_namespace}" "${validate}"
     else
         if [[ "${OUTPUT_FORMAT:-}" == "helm" ]]; then
             echo "Preparing deployment of Sensor using Helm ..."
@@ -408,6 +409,7 @@ deploy_sensor() {
 deploy_sensor_via_operator() {
     local sensor_namespace=${1:-stackrox}
     local central_namespace=${2:-stackrox}
+    local validate=${3:-true}
     local scanner_component_setting="Disabled"
     local sfa_agent_setting="Disabled"
     local central_endpoint="central.${central_namespace}.svc:443"
@@ -446,7 +448,7 @@ deploy_sensor_via_operator() {
       sfa_agent_setting="$sfa_agent_setting" \
       central_endpoint="$central_endpoint" \
     "${envsubst}" \
-      < "${secured_cluster_yaml_path}" | kubectl apply -n "${sensor_namespace}" -f -
+      < "${secured_cluster_yaml_path}" | kubectl apply -n "${sensor_namespace}" --validate="${validate}" -f -
 
     wait_for_object_to_appear "${sensor_namespace}" deploy/sensor 300
     wait_for_object_to_appear "${sensor_namespace}" ds/collector 300
@@ -526,7 +528,7 @@ install_the_compliance_operator() {
         oc create -f "${ROOT}/tests/e2e/yaml/compliance-operator/catalog-source.yaml"
         oc create -f "${ROOT}/tests/e2e/yaml/compliance-operator/operator-group.yaml"
         oc create -f "${ROOT}/tests/e2e/yaml/compliance-operator/subscription.yaml"
-        wait_for_object_to_appear openshift-compliance deploy/compliance-operator
+        wait_for_object_to_appear openshift-compliance deploy/compliance-operator 900
     else
         info "Reusing existing compliance operator deployment from $csv subscription"
     fi
@@ -1578,8 +1580,8 @@ wait_for_log_line() {
 }
 
 wait_for_profile_bundles_to_be_ready() {
-    wait_for_object_to_appear openshift-compliance profilebundle/ocp4
-    wait_for_object_to_appear openshift-compliance profilebundle/rhcos4
+    wait_for_object_to_appear openshift-compliance profilebundle/ocp4 900
+    wait_for_object_to_appear openshift-compliance profilebundle/rhcos4 900
     for pb in $(oc get pb -n openshift-compliance -o jsonpath="{.items[*].metadata.name}"); do
         local delay="300"
         local waitInterval=10

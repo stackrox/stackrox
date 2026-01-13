@@ -67,7 +67,7 @@ function RuntimeMessages({
                     getTimestamp={(access) => access.timestamp}
                     ContentComponent={FileAccessCardContent}
                     getEventKey={(access) =>
-                        `${access.timestamp}-${access.operation}-${access.file.nodePath}`
+                        `${access.timestamp}-${access.operation}-${access.file.actualPath}`
                     }
                 />
             )}

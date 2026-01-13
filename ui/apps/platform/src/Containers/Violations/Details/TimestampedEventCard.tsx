@@ -31,7 +31,7 @@ function TimestampedEventCard<T>({
     const [isExpanded, setIsExpanded] = useState(true);
 
     function onExpand() {
-        setIsExpanded(!isExpanded);
+        setIsExpanded((prev) => !prev);
     }
 
     const timestamps = events

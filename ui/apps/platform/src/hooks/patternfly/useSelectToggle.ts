@@ -35,7 +35,7 @@ interface SelectToggleReturn {
  */
 function useSelectToggle(defaultExpanded = false): SelectToggleReturn {
     const [isOpen, setIsOpen] = useState<boolean>(defaultExpanded);
-    const onToggle = useCallback(() => setIsOpen(!isOpen), [isOpen, setIsOpen]);
+    const onToggle = useCallback(() => setIsOpen((prev) => !prev), [setIsOpen]);
     const toggleSelect = useCallback(setIsOpen, [setIsOpen]);
     const openSelect = useCallback(() => toggleSelect(true), [toggleSelect]);
     const closeSelect = useCallback(() => toggleSelect(false), [toggleSelect]);

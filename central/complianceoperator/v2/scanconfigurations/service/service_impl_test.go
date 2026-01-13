@@ -8,7 +8,6 @@ import (
 	"github.com/pkg/errors"
 	blobDSMocks "github.com/stackrox/rox/central/blob/datastore/mocks"
 	clusterDatastoreMocks "github.com/stackrox/rox/central/cluster/datastore/mocks"
-	benchmarkMocks "github.com/stackrox/rox/central/complianceoperator/v2/benchmarks/datastore/mocks"
 	managerMocks "github.com/stackrox/rox/central/complianceoperator/v2/compliancemanager/mocks"
 	profileDatastore "github.com/stackrox/rox/central/complianceoperator/v2/profiles/datastore/mocks"
 	"github.com/stackrox/rox/central/complianceoperator/v2/report"
@@ -100,7 +99,6 @@ type ComplianceScanConfigServiceTestSuite struct {
 	notifierDS                  *notifierDS.MockDataStore
 	profileDS                   *profileDatastore.MockDataStore
 	clusterDatastore            *clusterDatastoreMocks.MockDataStore
-	benchmarkDS                 *benchmarkMocks.MockDataStore
 	snapshotDS                  *snapshotMocks.MockDataStore
 	blobDS                      *blobDSMocks.MockDatastore
 	service                     Service
@@ -125,10 +123,9 @@ func (s *ComplianceScanConfigServiceTestSuite) SetupTest() {
 	s.suiteDataStore = suiteMocks.NewMockDataStore(s.mockCtrl)
 	s.profileDS = profileDatastore.NewMockDataStore(s.mockCtrl)
 	s.clusterDatastore = clusterDatastoreMocks.NewMockDataStore(s.mockCtrl)
-	s.benchmarkDS = benchmarkMocks.NewMockDataStore(s.mockCtrl)
 	s.snapshotDS = snapshotMocks.NewMockDataStore(s.mockCtrl)
 	s.blobDS = blobDSMocks.NewMockDatastore(s.mockCtrl)
-	s.service = New(s.scanConfigDatastore, s.scanSettingBindingDatastore, s.suiteDataStore, s.manager, s.reportManager, s.notifierDS, s.profileDS, s.benchmarkDS, s.clusterDatastore, s.snapshotDS, s.blobDS)
+	s.service = New(s.scanConfigDatastore, s.scanSettingBindingDatastore, s.suiteDataStore, s.manager, s.reportManager, s.notifierDS, s.profileDS, s.clusterDatastore, s.snapshotDS, s.blobDS)
 }
 
 func (s *ComplianceScanConfigServiceTestSuite) TearDownTest() {
@@ -610,15 +607,6 @@ func (s *ComplianceScanConfigServiceTestSuite) ListComplianceScanConfigProfiles(
 				},
 			}
 			s.profileDS.EXPECT().SearchProfiles(gomock.Any(), searchQuery).Return(profiles, nil).Times(1)
-
-			for _, profile := range profiles {
-				s.benchmarkDS.EXPECT().GetBenchmarksByProfileName(s.ctx, profile.GetName()).Return([]*storage.ComplianceOperatorBenchmarkV2{{
-					Id:        uuid.NewV4().String(),
-					Name:      "CIS",
-					ShortName: "OCP_CIS",
-					Version:   "1-5",
-				}}, nil).Times(1)
-			}
 
 			configProfiles, err := s.service.ListComplianceScanConfigProfiles(allAccessContext, tc.query)
 			s.Require().NoError(err)

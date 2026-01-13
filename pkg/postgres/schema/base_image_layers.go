@@ -55,10 +55,8 @@ const (
 
 // BaseImageLayers holds the Gorm model for Postgres table `base_image_layers`.
 type BaseImageLayers struct {
-	ID            string     `gorm:"column:id;type:uuid;primaryKey"`
-	BaseImageID   string     `gorm:"column:baseimageid;type:varchar;uniqueIndex:base_image_id_layer"`
-	LayerDigest   string     `gorm:"column:layerdigest;type:varchar;uniqueIndex:base_image_id_layer"`
-	Index         int32      `gorm:"column:index;type:integer"`
-	Serialized    []byte     `gorm:"column:serialized;type:bytea"`
-	BaseImagesRef BaseImages `gorm:"foreignKey:baseimageid;references:id;belongsTo;constraint:OnDelete:CASCADE"`
+	ID          string `gorm:"column:id;type:uuid;primaryKey"`
+	LayerDigest string `gorm:"column:layerdigest;type:varchar;uniqueIndex:base_image_id_layer"`
+	Index       int32  `gorm:"column:index;type:integer"`
+	Serialized  []byte `gorm:"column:serialized;type:bytea"`
 }

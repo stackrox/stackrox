@@ -40,8 +40,10 @@ func enrichQueryWithSACFilter(ctx context.Context, q *v1.Query, schema *walker.S
 			return q, nil
 		}
 		pagination := q.GetPagination()
+		selects := q.GetSelects()
 		query := searchPkg.ConjunctionQuery(sacFilter, q)
 		query.Pagination = pagination
+		query.Selects = selects
 		return query, nil
 	}
 }

@@ -76,7 +76,7 @@ function TypeaheadSelect({
     }
 
     function onToggle() {
-        setIsOpen(!isOpen);
+        setIsOpen((prev) => !prev);
     }
 
     function onInputChange(_event: FormEvent<HTMLInputElement>, text: string) {
