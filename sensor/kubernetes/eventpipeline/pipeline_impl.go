@@ -252,7 +252,12 @@ func (p *eventPipeline) processInvalidateImageCache(req *central.InvalidateImage
 func (p *eventPipeline) sendEvent(msg *component.ResourceEvent) {
 	if features.SensorInternalPubSub.Enabled() {
 		if err := p.pubsubDispatcher.Publish(msg); err != nil {
-			log.Errorf("unable to publish event: %v", err)
+			log.Errorf("unable to publish event: topic=%q, lane=%q, deploymentRefs=%d, forwardMsgs=%d: %v",
+				msg.Topic().String(),
+				msg.Lane().String(),
+				len(msg.DeploymentReferences),
+				len(msg.ForwardMessages),
+				err)
 		}
 		return
 	}

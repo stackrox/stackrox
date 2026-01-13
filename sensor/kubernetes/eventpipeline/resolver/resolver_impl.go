@@ -72,8 +72,7 @@ func (r *resolverImpl) Stop() {
 // Send a ResourceEvent message to the inner queue
 func (r *resolverImpl) Send(event *component.ResourceEvent) {
 	if features.SensorInternalPubSub.Enabled() {
-		log.Errorf("should not use Send if %q is enabled", features.SensorInternalPubSub.EnvVar())
-		return
+		panic(fmt.Sprintf("should not use Send if %q is enabled", features.SensorInternalPubSub.EnvVar()))
 	}
 	r.innerQueue <- event
 	metrics.IncResolverChannelSize()

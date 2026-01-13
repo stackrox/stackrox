@@ -452,7 +452,10 @@ func (k *listenerImpl) handleAllEvents() {
 
 	if features.SensorInternalPubSub.Enabled() {
 		if err := k.pubSubDispatcher.Publish(syncedEvent); err != nil {
-			log.Errorf("unable to publish synced event: %v", err)
+			log.Errorf("unable to publish synced event: topic=%q, lane=%q: %v",
+				syncedEvent.Topic().String(),
+				syncedEvent.Lane().String(),
+				err)
 			return
 		}
 	} else {
