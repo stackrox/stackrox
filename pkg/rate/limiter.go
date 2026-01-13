@@ -123,6 +123,10 @@ func (l *Limiter) getOrCreateLimiter(clientID string) *gorate.Limiter {
 		return val.(*gorate.Limiter)
 	}
 
+	if clientID == "" {
+		log.Warnf("getOrCreateLimiter called with empty clientID for workload %s; this may cause unfair rate limiting", l.workloadName)
+	}
+
 	// New client - create limiter and rebalance all
 	numClients := l.countActiveClients() + 1 // +1 for the new one
 	perClientRate := l.globalRate / float64(numClients)
@@ -135,7 +139,7 @@ func (l *Limiter) getOrCreateLimiter(clientID string) *gorate.Limiter {
 		return actual.(*gorate.Limiter)
 	}
 
-	log.Infof("New client %s registered for %s rate limiting (clients: %d, rate: %.2f req/s, max bucket capacity: %d)",
+	log.Debugf("New client %s registered for %s rate limiting (clients: %d, rate: %.2f req/s, max bucket capacity: %d)",
 		clientID, l.workloadName, numClients, perClientRate, bucketCapacity)
 
 	// Rebalance all existing limiters with new client count
