@@ -110,7 +110,7 @@ func getRole(ctx context.Context, req *central.GetTokenForPermissionsAndScopeReq
 
 func getExpiresAt(_ context.Context, req *central.GetTokenForPermissionsAndScopeRequest) time.Time {
 	duration, err := protocompat.DurationFromProto(req.GetValidFor())
-	if duration == nil || err != nil {
+	if err != nil {
 		duration = 1 * time.Minute
 	}
 	return time.Now().Add(duration)

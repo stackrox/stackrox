@@ -4,7 +4,6 @@ import (
 	"context"
 
 	"github.com/stackrox/rox/central/jwt"
-	"github.com/stackrox/rox/pkg/auth/tokens"
 	"github.com/stackrox/rox/pkg/grpc"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/utils"
@@ -25,7 +24,7 @@ type Service interface {
 // Singleton returns a new auth service instance.
 func Singleton() Service {
 	once.Do(func() {
-		source := tokens.NewRevocationLayer()
+		source := newSource()
 		issuer, err := jwt.IssuerFactorySingleton().CreateIssuer(source)
 		utils.Must(err)
 		s = &serviceImpl{
