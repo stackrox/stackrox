@@ -662,8 +662,9 @@ jobs:
           ./scripts/ci/lib.sh registry_rw_login "quay.io/${QUAY_ORG}"
 
       - name: Build Operator Bundle image
-        if: |
-          matrix.name != 'STACKROX_BRANDING'
+        # Not necessary for stackrox branding, but helps avoid the following:
+        # + protoc-gen-go
+        # go: cannot install cross-compiled binaries when GOBIN is set
         run: |
           make -C operator/ bundle bundle-build
 
