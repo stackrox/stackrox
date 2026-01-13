@@ -63,7 +63,7 @@ _EO_KUTTL_HELP_
                    "Deploy current version of the operator." \
                    "${kuttl_help}" \
                    "make" "-C" "operator" "dist" "deploy-via-dist"
-        operator_ns="stackrox-operator-system"
+        operator_ns="rhacs-operator-system"
     fi
 
     info "Executing operator e2e tests"
