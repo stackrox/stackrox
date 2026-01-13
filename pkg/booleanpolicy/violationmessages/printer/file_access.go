@@ -11,7 +11,8 @@ import (
 )
 
 const (
-	maxPaths = 10
+	maxPaths     = 10
+	UNKNOWN_FILE = "Unknown file"
 )
 
 func UpdateFileAccessAlertViolationMessage(v *storage.Alert_FileAccessViolation) {
@@ -25,6 +26,12 @@ func UpdateFileAccessAlertViolationMessage(v *storage.Alert_FileAccessViolation)
 	pathToOperation := make(map[string][]string, 0)
 	for _, fa := range v.GetAccesses() {
 		path := fa.GetFile().GetActualPath()
+		if path == "" {
+			path = fa.GetFile().GetEffectivePath()
+			if path == "" {
+				path = UNKNOWN_FILE
+			}
+		}
 		pathToOperation[path] = append(pathToOperation[path], fa.GetOperation().String())
 	}
 
