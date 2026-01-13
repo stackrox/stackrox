@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 	"reflect"
-	"sort"
+	"slices"
 	"strings"
 	"time"
 
@@ -241,7 +241,7 @@ func determineAvailableState(deployments []appsv1.Deployment) (platform.Conditio
 	}
 
 	// Sort to avoid updates merely due to ordering changes.
-	sort.Strings(notReadyNames)
+	slices.Sort(notReadyNames)
 
 	return platform.StatusFalse, "DeploymentsNotReady",
 		fmt.Sprintf("%d of %d deployments are not ready: %s", len(notReadyNames), len(deployments), strings.Join(notReadyNames, ", "))
