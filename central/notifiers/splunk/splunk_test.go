@@ -103,9 +103,6 @@ var (
 		"processViolation": {
 			"message": "This is a process violation"
 		},
-		"fileAccessViolation": {
-			"message": "This is a file access violation"
-		},
 		"violations": [
 			{
 				"message": "Deployment is affected by 'CVE-2017-15670'"
@@ -118,6 +115,16 @@ var (
 						{"key": "container", "value": "nginx"}
 					]
 				}
+			},
+			{
+				"message": "This is a file access violation",
+				"fileAccess": {
+					"file": {
+						"actualPath": "/etc/passwd",
+						"effectivePath": "/etc/passwd"
+					}
+				},
+				"type": "FILE_ACCESS"
 			}
 		]
 	}

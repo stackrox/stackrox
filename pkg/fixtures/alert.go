@@ -352,12 +352,21 @@ func GetSerializationTestAlert() *storage.Alert {
 					},
 				},
 			},
+			{
+				Message: "This is a file access violation",
+				MessageAttributes: &storage.Alert_Violation_FileAccess{
+					FileAccess: &storage.FileAccess{
+						File: &storage.FileAccess_File{
+							ActualPath:    "/etc/passwd",
+							EffectivePath: "/etc/passwd",
+						},
+					},
+				},
+				Type: storage.Alert_Violation_FILE_ACCESS,
+			},
 		},
 		ProcessViolation: &storage.Alert_ProcessViolation{
 			Message: "This is a process violation",
-		},
-		FileAccessViolation: &storage.Alert_FileAccessViolation{
-			Message: "This is a file access violation",
 		},
 		ClusterId:   fixtureconsts.Cluster1,
 		ClusterName: "prod cluster",
@@ -385,10 +394,6 @@ func GetJSONSerializedTestAlertWithDefaults() string {
 		"message": "This is a process violation",
 		"processes": []
 	},
-	"fileAccessViolation": {
-		"message": "This is a file access violation",
-		"accesses": []
-	},
 	"resolvedAt":null,
 	"state": "ACTIVE",
 	"time": null,
@@ -408,6 +413,23 @@ func GetJSONSerializedTestAlertWithDefaults() string {
 			},
 			"time": null,
 			"type": "GENERIC"
+		},
+		{
+			"message": "This is a file access violation",
+			"fileAccess": {
+				"file": {
+					"actualPath": "/etc/passwd",
+					"effectivePath": "/etc/passwd",
+					"meta": null
+				},
+				"hostname": "",
+				"moved": null,
+				"operation": "CREATE",
+				"process": null,
+				"timestamp": null
+			},
+			"time": null,
+			"type": "FILE_ACCESS"
 		}
 	]
 }`
@@ -424,9 +446,6 @@ func GetJSONSerializedTestAlert() string {
 	"processViolation": {
 		"message": "This is a process violation"
 	},
-	"fileAccessViolation": {
-		"message": "This is a file access violation"
-	},
 	"violations": [
 		{
 			"message": "Deployment is affected by 'CVE-2017-15670'"
@@ -439,6 +458,16 @@ func GetJSONSerializedTestAlert() string {
 					{"key": "container", "value": "nginx"}
 				]
 			}
+		},
+		{
+			"message": "This is a file access violation",
+			"fileAccess": {
+				"file": {
+					"actualPath": "/etc/passwd",
+					"effectivePath": "/etc/passwd"
+				}
+			},
+			"type": "FILE_ACCESS"
 		}
 	]
 }`

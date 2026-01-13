@@ -45,6 +45,19 @@ function RuntimeMessages({
                     time={time}
                 />
             );
+        } else if (violation.type === 'FILE_ACCESS') {
+            const { fileAccess } = violation;
+            plainViolations.push(
+                <TimestampedEventCard
+                    message={message}
+                    events={fileAccess}
+                    getTimestamp={(access) => access.timestamp}
+                    ContentComponent={FileAccessCardContent}
+                    getEventKey={(access) =>
+                        `${access.timestamp}-${access.operation}-${access.file.actualPath}`
+                    }
+                />
+            );
         }
     });
 
@@ -58,17 +71,6 @@ function RuntimeMessages({
                     getTimestamp={(process) => process.signal.time}
                     getEventKey={(process) => process.signal.id}
                     ContentComponent={ProcessCardContent}
-                />
-            )}
-            {!!fileAccessViolation?.accesses?.length && (
-                <TimestampedEventCard
-                    message={fileAccessViolation.message}
-                    events={fileAccessViolation.accesses}
-                    getTimestamp={(access) => access.timestamp}
-                    ContentComponent={FileAccessCardContent}
-                    getEventKey={(access) =>
-                        `${access.timestamp}-${access.operation}-${access.file.actualPath}`
-                    }
                 />
             )}
         </>

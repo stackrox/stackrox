@@ -239,50 +239,7 @@ func mergeNetworkFlowViolations(old, new *storage.Alert) bool {
 }
 
 func mergeFileAccessViolations(oldAlert, newAlert *storage.Alert) bool {
-	newViolations := newAlert.GetFileAccessViolation()
-	oldViolations := oldAlert.GetFileAccessViolation()
-
-	numNewAccesses := len(newViolations.GetAccesses())
-	numOldAccesses := len(oldViolations.GetAccesses())
-
-	if numNewAccesses == 0 || numOldAccesses >= maxRunTimeViolationsPerAlert {
-		return false
-	}
-
-	// start with old violations and merge with new
-	mergedFileAccesses := oldViolations.GetAccesses()
-	lastAccessTime, err := lastFileTime(mergedFileAccesses)
-	if err != nil {
-		log.Errorf(
-			"Failed to merge alerts. "+
-				"New alert %s (policy=%s) has %d file accesses and old alert %s (policy=%s) has %d file accesses: %v",
-			newAlert.GetId(), newAlert.GetPolicy().GetName(), numNewAccesses,
-			oldAlert.GetId(), oldAlert.GetPolicy().GetName(), numOldAccesses, err,
-		)
-		// At this point, we know that the new alert has non-zero file violations but it cannot be merged.
-		return true
-	}
-
-	hasNewAccesses := false
-	for _, access := range newViolations.GetAccesses() {
-		if protocompat.CompareTimestampToTime(access.GetTimestamp(), lastAccessTime) > 0 {
-			hasNewAccesses = true
-			mergedFileAccesses = append(mergedFileAccesses, access)
-		}
-	}
-	// If there are no new accesses, we'll just use the old alert.
-	if !hasNewAccesses {
-		return hasNewAccesses
-	}
-
-	if len(mergedFileAccesses) > maxRunTimeViolationsPerAlert {
-		// prioritize newer events over old ones
-		mergedFileAccesses = mergedFileAccesses[len(mergedFileAccesses)-maxRunTimeViolationsPerAlert:]
-	}
-
-	newAlert.FileAccessViolation.Accesses = mergedFileAccesses
-	printer.UpdateFileAccessAlertViolationMessage(newAlert.GetFileAccessViolation())
-	return true
+	return mergeAlertsByLatestFirst(oldAlert, newAlert, storage.Alert_Violation_FILE_ACCESS)
 }
 
 // mergeRunTimeAlerts merges run-time alerts, and returns true if new alert has at least one new run-time violation.
