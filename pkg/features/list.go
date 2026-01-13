@@ -115,6 +115,9 @@ var (
 
 	// BaseImageDetection enables base image detection and management functionality
 	BaseImageDetection = registerFeature("Enable base image detection and management functionality", "ROX_BASE_IMAGE_DETECTION")
+
+	// ImageListOptimization enables optimized ListImage queries that fetch only required fields
+	ImageListOptimization = registerFeature("Enables optimized ListImage queries that fetch only required fields", "ROX_IMAGE_LIST_OPTIMIZATION")
 )
 
 // The following feature flags are related to Scanner V4.
