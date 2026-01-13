@@ -29,15 +29,19 @@ type ImageEnricherV2 interface {
 	// EnrichWithSignatureVerificationData will enrich an image with signature verification results only.
 	// This will always force re-verification and not take existing values into account.
 	EnrichWithSignatureVerificationData(ctx context.Context, image *storage.ImageV2) (EnrichmentResult, error)
+	// EnrichWithCandidateBaseImages enriches a image if its foundation layers match with stored base images
+	EnrichWithBaseImages(ctx context.Context, layers []string, imgName string, imgId string) []*storage.BaseImageInfo
 }
 
 // ImageGetterV2 will be used to retrieve a specific image from the datastore.
 type ImageGetterV2 func(ctx context.Context, id string) (*storage.ImageV2, bool, error)
 
+type CandidateBaseImageGetter func(ctx context.Context, firstLayer string) ([]*storage.BaseImage, error)
+
 // NewV2 returns a new ImageEnricherV2 instance for the given subsystem.
 // (The subsystem is just used for Prometheus metrics.)
 func NewV2(cvesSuppressor CVESuppressor, is integration.Set, subsystem pkgMetrics.Subsystem, metadataCache cache.ImageMetadata,
-	imageGetter ImageGetterV2, healthReporter integrationhealth.Reporter,
+	candidateBaseImageGetter CandidateBaseImageGetter, imageGetter ImageGetterV2, healthReporter integrationhealth.Reporter,
 	signatureIntegrationGetter SignatureIntegrationGetter, scanDelegator delegatedregistry.Delegator) ImageEnricherV2 {
 	enricher := &enricherV2Impl{
 		cvesSuppressor: cvesSuppressor,
@@ -55,7 +59,8 @@ func NewV2(cvesSuppressor CVESuppressor, is integration.Set, subsystem pkgMetric
 		signatureVerifier:          signatures.VerifyAgainstSignatureIntegrations,
 		signatureFetcher:           signatures.NewSignatureFetcher(),
 
-		imageGetter: imageGetter,
+		candidateBaseImageGetter: candidateBaseImageGetter,
+		imageGetter:              imageGetter,
 
 		asyncRateLimiter: rate.NewLimiter(rate.Every(1*time.Second), 5),
 

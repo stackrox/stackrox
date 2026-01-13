@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	baseImageDS "github.com/stackrox/rox/central/baseimage/datastore"
 	clusterDataStore "github.com/stackrox/rox/central/cluster/datastore"
 	"github.com/stackrox/rox/central/cve/fetcher"
 	nodeCVEDataStore "github.com/stackrox/rox/central/cve/node/datastore"
@@ -63,7 +64,7 @@ func initialize() {
 			signatureIntegrationDataStore.Singleton().GetAllSignatureIntegrations, scanDelegator)
 	} else {
 		imgEnricherV2 = imageEnricher.NewV2(suppressor.Singleton(), imageintegration.Set(),
-			metrics.CentralSubsystem, cache.ImageMetadataCacheSingleton(), imageV2DataStore.Singleton().GetImage, reporter.Singleton(),
+			metrics.CentralSubsystem, cache.ImageMetadataCacheSingleton(), baseImageDS.Singleton().ListCandidateBaseImages, imageV2DataStore.Singleton().GetImage, reporter.Singleton(),
 			signatureIntegrationDataStore.Singleton().GetAllSignatureIntegrations, scanDelegator)
 	}
 

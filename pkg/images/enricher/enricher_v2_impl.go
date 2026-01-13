@@ -3,6 +3,7 @@ package enricher
 import (
 	"context"
 	"fmt"
+	"slices"
 	"sort"
 	"strings"
 	"time"
@@ -20,6 +21,7 @@ import (
 	"github.com/stackrox/rox/pkg/images/integration"
 	"github.com/stackrox/rox/pkg/images/utils"
 	"github.com/stackrox/rox/pkg/integrationhealth"
+	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/protoutils"
@@ -52,13 +54,59 @@ type enricherV2Impl struct {
 	signatureVerifier          signatureVerifierForIntegrations
 	signatureFetcher           signatures.SignatureFetcher
 
-	imageGetter ImageGetterV2
+	candidateBaseImageGetter CandidateBaseImageGetter
+	imageGetter              ImageGetterV2
 
 	asyncRateLimiter *rate.Limiter
 
 	metrics metrics
 
 	scanDelegator delegatedregistry.Delegator
+}
+
+func (e *enricherV2Impl) EnrichWithCandidateBaseImages(ctx context.Context, layers []string, imgName string, imgId string) []*storage.BaseImageInfo {
+	if len(layers) == 0 {
+		log.Infof("Base Image matching: not able to get image layers from %s", imgName)
+		return nil
+	}
+	firstLayer := layers[0]
+	candidates, err := e.candidateBaseImageGetter(ctx, firstLayer)
+	if err != nil {
+		log.Errorw("Matching image with base images",
+			logging.FromContext(ctx),
+			logging.ImageID(imgId),
+			logging.Err(err),
+			logging.String("request_image", imgName))
+		return nil
+	}
+	var baseImages []*storage.BaseImageInfo
+	for _, c := range candidates {
+		candidateLayers := c.GetLayers()
+		slices.SortFunc(candidateLayers, func(a, b *storage.BaseImageLayer) int {
+			return int(a.GetIndex() - b.GetIndex())
+		})
+		if len(layers) <= len(candidateLayers) {
+			continue
+		}
+		log.Infof(">>>> Getting base images candidates: %s, %s", c.GetRepository(), c.GetTag())
+		match := true
+		for i, l := range candidateLayers {
+			log.Infof(">>>> Getting base image layer: %s, %s", layers[i], l.GetLayerDigest())
+			if layers[i] != l.GetLayerDigest() {
+				match = false
+				break
+			}
+		}
+
+		if match {
+			baseImages = append(baseImages, &storage.BaseImageInfo{
+				BaseImageId:       c.GetId(),
+				BaseImageFullName: fmt.Sprintf("%s:%s", c.GetRepository(), c.GetTag()),
+				BaseImageDigest:   c.GetManifestDigest(),
+			})
+		}
+	}
+	return baseImages
 }
 
 // EnrichWithVulnerabilities enriches the given image with vulnerabilities.

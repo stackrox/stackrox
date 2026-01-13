@@ -450,6 +450,11 @@ func (s *serviceImpl) scanImageV2Internal(ctx context.Context, request *v1.ScanI
 		}
 	}
 
+	if features.BaseImageDetection.Enabled() {
+		baseImages := s.enricherV2.EnrichWithBaseImages(ctx, imgV2.GetMetadata().GetLayerShas(), request.GetImage().GetName().GetFullName(), request.GetImage().GetIdV2())
+		imgV2.BaseImageInfo = baseImages
+	}
+
 	if err := s.enrichImageV2(ctx, imgV2, fetchOpt, request); err != nil && imgExists {
 		// In case we hit an error during enriching, and the image previously existed, we will _not_ upsert it in
 		// central, since it could lead to us overriding an enriched image with a non-enriched image.
@@ -594,7 +599,6 @@ func (s *serviceImpl) ScanImage(ctx context.Context, request *v1.ScanImageReques
 
 		enrichmentCtx.ClusterID = clusterID
 	}
-
 	if features.FlattenImageData.Enabled() {
 		imgV2, err := enricher.EnrichImageV2ByName(ctx, s.enricherV2, enrichmentCtx, request.GetImageName())
 		if err != nil {
@@ -607,7 +611,9 @@ func (s *serviceImpl) ScanImage(ctx context.Context, request *v1.ScanImageReques
 			}
 			return nil, err
 		}
-
+		if features.BaseImageDetection.Enabled() {
+			imgV2.BaseImageInfo = s.enricherV2.EnrichWithBaseImages(ctx, imgV2.GetMetadata().GetLayerShas(), imgV2.GetName().GetFullName(), imgV2.GetId())
+		}
 		// Save the image
 		imgV2.Digest = utils.GetSHAV2(imgV2)
 		imgV2.Id, err = utils.GetImageV2ID(imgV2)
@@ -625,7 +631,6 @@ func (s *serviceImpl) ScanImage(ctx context.Context, request *v1.ScanImageReques
 
 		return utils.ConvertToV1(imgV2), nil
 	}
-
 	img, err := enricher.EnrichImageByName(ctx, s.enricher, enrichmentCtx, request.GetImageName())
 	if err != nil {
 		if env.AdministrationEventsAdHocScans.BooleanSetting() {
@@ -637,7 +642,6 @@ func (s *serviceImpl) ScanImage(ctx context.Context, request *v1.ScanImageReques
 		}
 		return nil, err
 	}
-
 	// Save the image
 	img.Id = utils.GetSHA(img)
 	if img.GetId() != "" {
@@ -1043,6 +1047,10 @@ func (s *serviceImpl) enrichLocalImageV2Internal(ctx context.Context, request *v
 
 	if !hasErrors {
 		if forceScanUpdate {
+			if features.BaseImageDetection.Enabled() {
+				baseImages := s.enricherV2.EnrichWithBaseImages(ctx, img.GetMetadata().GetLayerShas(), request.GetImageName().GetFullName(), request.GetImageId())
+				img.BaseImageInfo = baseImages
+			}
 			if err := s.enrichWithVulnerabilitiesV2(img, request); err != nil {
 				imgName := pkgUtils.IfThenElse(existingImg != nil, existingImg.GetName().GetFullName(), request.GetImageName().GetFullName())
 				log.Errorw("Enriching image with vulnerabilities",
@@ -1338,7 +1346,6 @@ func (s *serviceImpl) WatchImage(ctx context.Context, request *v1.WatchImageRequ
 			ErrorMessage: "could not get SHA after scanning image",
 		}, nil
 	}
-
 	if err := s.saveImage(img); err != nil {
 		return nil, errors.Errorf("failed to store image: %v", err)
 	}
