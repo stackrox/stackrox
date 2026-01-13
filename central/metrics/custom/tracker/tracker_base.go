@@ -207,19 +207,21 @@ func (tracker *TrackerBase[F]) track(ctx context.Context, gatherer *gatherer[F],
 	if len(cfg.metrics) == 0 {
 		return nil
 	}
-	gatherer.aggregator.reset()
+	aggregator := gatherer.aggregator
+	registry := gatherer.registry
+	aggregator.reset()
 	for finding, err := range tracker.generator(ctx, cfg.metrics) {
 		if err != nil {
 			return err
 		}
-		gatherer.aggregator.count(finding)
+		aggregator.count(finding)
 	}
-	gatherer.registry.Lock()
-	defer gatherer.registry.Unlock()
-	for metric, records := range gatherer.aggregator.result {
-		gatherer.registry.Reset(string(metric))
+	registry.Lock()
+	defer registry.Unlock()
+	for metric, records := range aggregator.result {
+		registry.Reset(string(metric))
 		for _, rec := range records {
-			gatherer.registry.SetTotal(string(metric), rec.labels, rec.total)
+			registry.SetTotal(string(metric), rec.labels, rec.total)
 		}
 	}
 	return nil
