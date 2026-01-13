@@ -22,6 +22,85 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
+// VsockMessage is the message sent over vsock from roxagent to relay.
+// It wraps IndexReport and includes VM metadata that stays in Sensor.
+type VsockMessage struct {
+	state       protoimpl.MessageState `protogen:"open.v1"`
+	IndexReport *IndexReport           `protobuf:"bytes,1,opt,name=index_report,json=indexReport,proto3" json:"index_report,omitempty"`
+	// VM metadata (not forwarded to Central)
+	DetectedOs           string            `protobuf:"bytes,2,opt,name=detected_os,json=detectedOs,proto3" json:"detected_os,omitempty"`
+	IsOsActivated        bool              `protobuf:"varint,3,opt,name=is_os_activated,json=isOsActivated,proto3" json:"is_os_activated,omitempty"`
+	DnfMetadataAvailable bool              `protobuf:"varint,4,opt,name=dnf_metadata_available,json=dnfMetadataAvailable,proto3" json:"dnf_metadata_available,omitempty"`
+	AuxData              map[string]string `protobuf:"bytes,5,rep,name=aux_data,json=auxData,proto3" json:"aux_data,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	unknownFields        protoimpl.UnknownFields
+	sizeCache            protoimpl.SizeCache
+}
+
+func (x *VsockMessage) Reset() {
+	*x = VsockMessage{}
+	mi := &file_internalapi_virtualmachine_v1_index_report_proto_msgTypes[0]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *VsockMessage) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*VsockMessage) ProtoMessage() {}
+
+func (x *VsockMessage) ProtoReflect() protoreflect.Message {
+	mi := &file_internalapi_virtualmachine_v1_index_report_proto_msgTypes[0]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use VsockMessage.ProtoReflect.Descriptor instead.
+func (*VsockMessage) Descriptor() ([]byte, []int) {
+	return file_internalapi_virtualmachine_v1_index_report_proto_rawDescGZIP(), []int{0}
+}
+
+func (x *VsockMessage) GetIndexReport() *IndexReport {
+	if x != nil {
+		return x.IndexReport
+	}
+	return nil
+}
+
+func (x *VsockMessage) GetDetectedOs() string {
+	if x != nil {
+		return x.DetectedOs
+	}
+	return ""
+}
+
+func (x *VsockMessage) GetIsOsActivated() bool {
+	if x != nil {
+		return x.IsOsActivated
+	}
+	return false
+}
+
+func (x *VsockMessage) GetDnfMetadataAvailable() bool {
+	if x != nil {
+		return x.DnfMetadataAvailable
+	}
+	return false
+}
+
+func (x *VsockMessage) GetAuxData() map[string]string {
+	if x != nil {
+		return x.AuxData
+	}
+	return nil
+}
+
 // The index report is collected from the virtual machine agent and contains
 // the package information.
 type IndexReport struct {
@@ -34,7 +113,7 @@ type IndexReport struct {
 
 func (x *IndexReport) Reset() {
 	*x = IndexReport{}
-	mi := &file_internalapi_virtualmachine_v1_index_report_proto_msgTypes[0]
+	mi := &file_internalapi_virtualmachine_v1_index_report_proto_msgTypes[1]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -46,7 +125,7 @@ func (x *IndexReport) String() string {
 func (*IndexReport) ProtoMessage() {}
 
 func (x *IndexReport) ProtoReflect() protoreflect.Message {
-	mi := &file_internalapi_virtualmachine_v1_index_report_proto_msgTypes[0]
+	mi := &file_internalapi_virtualmachine_v1_index_report_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -59,7 +138,7 @@ func (x *IndexReport) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use IndexReport.ProtoReflect.Descriptor instead.
 func (*IndexReport) Descriptor() ([]byte, []int) {
-	return file_internalapi_virtualmachine_v1_index_report_proto_rawDescGZIP(), []int{0}
+	return file_internalapi_virtualmachine_v1_index_report_proto_rawDescGZIP(), []int{1}
 }
 
 func (x *IndexReport) GetVsockCid() string {
@@ -90,7 +169,7 @@ type IndexReportEvent struct {
 
 func (x *IndexReportEvent) Reset() {
 	*x = IndexReportEvent{}
-	mi := &file_internalapi_virtualmachine_v1_index_report_proto_msgTypes[1]
+	mi := &file_internalapi_virtualmachine_v1_index_report_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -102,7 +181,7 @@ func (x *IndexReportEvent) String() string {
 func (*IndexReportEvent) ProtoMessage() {}
 
 func (x *IndexReportEvent) ProtoReflect() protoreflect.Message {
-	mi := &file_internalapi_virtualmachine_v1_index_report_proto_msgTypes[1]
+	mi := &file_internalapi_virtualmachine_v1_index_report_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -115,7 +194,7 @@ func (x *IndexReportEvent) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use IndexReportEvent.ProtoReflect.Descriptor instead.
 func (*IndexReportEvent) Descriptor() ([]byte, []int) {
-	return file_internalapi_virtualmachine_v1_index_report_proto_rawDescGZIP(), []int{1}
+	return file_internalapi_virtualmachine_v1_index_report_proto_rawDescGZIP(), []int{2}
 }
 
 func (x *IndexReportEvent) GetId() string {
@@ -136,7 +215,17 @@ var File_internalapi_virtualmachine_v1_index_report_proto protoreflect.FileDescr
 
 const file_internalapi_virtualmachine_v1_index_report_proto_rawDesc = "" +
 	"\n" +
-	"0internalapi/virtualmachine/v1/index_report.proto\x12\x11virtualmachine.v1\x1a)internalapi/scanner/v4/index_report.proto\"^\n" +
+	"0internalapi/virtualmachine/v1/index_report.proto\x12\x11virtualmachine.v1\x1a)internalapi/scanner/v4/index_report.proto\"\xd5\x02\n" +
+	"\fVsockMessage\x12A\n" +
+	"\findex_report\x18\x01 \x01(\v2\x1e.virtualmachine.v1.IndexReportR\vindexReport\x12\x1f\n" +
+	"\vdetected_os\x18\x02 \x01(\tR\n" +
+	"detectedOs\x12&\n" +
+	"\x0fis_os_activated\x18\x03 \x01(\bR\risOsActivated\x124\n" +
+	"\x16dnf_metadata_available\x18\x04 \x01(\bR\x14dnfMetadataAvailable\x12G\n" +
+	"\baux_data\x18\x05 \x03(\v2,.virtualmachine.v1.VsockMessage.AuxDataEntryR\aauxData\x1a:\n" +
+	"\fAuxDataEntry\x12\x10\n" +
+	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
+	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"^\n" +
 	"\vIndexReport\x12\x1b\n" +
 	"\tvsock_cid\x18\x01 \x01(\tR\bvsockCid\x122\n" +
 	"\bindex_v4\x18\x02 \x01(\v2\x17.scanner.v4.IndexReportR\aindexV4\"X\n" +
@@ -156,20 +245,24 @@ func file_internalapi_virtualmachine_v1_index_report_proto_rawDescGZIP() []byte 
 	return file_internalapi_virtualmachine_v1_index_report_proto_rawDescData
 }
 
-var file_internalapi_virtualmachine_v1_index_report_proto_msgTypes = make([]protoimpl.MessageInfo, 2)
+var file_internalapi_virtualmachine_v1_index_report_proto_msgTypes = make([]protoimpl.MessageInfo, 4)
 var file_internalapi_virtualmachine_v1_index_report_proto_goTypes = []any{
-	(*IndexReport)(nil),      // 0: virtualmachine.v1.IndexReport
-	(*IndexReportEvent)(nil), // 1: virtualmachine.v1.IndexReportEvent
-	(*v4.IndexReport)(nil),   // 2: scanner.v4.IndexReport
+	(*VsockMessage)(nil),     // 0: virtualmachine.v1.VsockMessage
+	(*IndexReport)(nil),      // 1: virtualmachine.v1.IndexReport
+	(*IndexReportEvent)(nil), // 2: virtualmachine.v1.IndexReportEvent
+	nil,                      // 3: virtualmachine.v1.VsockMessage.AuxDataEntry
+	(*v4.IndexReport)(nil),   // 4: scanner.v4.IndexReport
 }
 var file_internalapi_virtualmachine_v1_index_report_proto_depIdxs = []int32{
-	2, // 0: virtualmachine.v1.IndexReport.index_v4:type_name -> scanner.v4.IndexReport
-	0, // 1: virtualmachine.v1.IndexReportEvent.index:type_name -> virtualmachine.v1.IndexReport
-	2, // [2:2] is the sub-list for method output_type
-	2, // [2:2] is the sub-list for method input_type
-	2, // [2:2] is the sub-list for extension type_name
-	2, // [2:2] is the sub-list for extension extendee
-	0, // [0:2] is the sub-list for field type_name
+	1, // 0: virtualmachine.v1.VsockMessage.index_report:type_name -> virtualmachine.v1.IndexReport
+	3, // 1: virtualmachine.v1.VsockMessage.aux_data:type_name -> virtualmachine.v1.VsockMessage.AuxDataEntry
+	4, // 2: virtualmachine.v1.IndexReport.index_v4:type_name -> scanner.v4.IndexReport
+	1, // 3: virtualmachine.v1.IndexReportEvent.index:type_name -> virtualmachine.v1.IndexReport
+	4, // [4:4] is the sub-list for method output_type
+	4, // [4:4] is the sub-list for method input_type
+	4, // [4:4] is the sub-list for extension type_name
+	4, // [4:4] is the sub-list for extension extendee
+	0, // [0:4] is the sub-list for field type_name
 }
 
 func init() { file_internalapi_virtualmachine_v1_index_report_proto_init() }
@@ -183,7 +276,7 @@ func file_internalapi_virtualmachine_v1_index_report_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_internalapi_virtualmachine_v1_index_report_proto_rawDesc), len(file_internalapi_virtualmachine_v1_index_report_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   2,
+			NumMessages:   4,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

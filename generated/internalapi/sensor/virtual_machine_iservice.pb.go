@@ -23,10 +23,15 @@ const (
 )
 
 type UpsertVirtualMachineIndexReportRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	IndexReport   *v1.IndexReport        `protobuf:"bytes,1,opt,name=index_report,json=indexReport,proto3" json:"index_report,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state       protoimpl.MessageState `protogen:"open.v1"`
+	IndexReport *v1.IndexReport        `protobuf:"bytes,1,opt,name=index_report,json=indexReport,proto3" json:"index_report,omitempty"`
+	// VM metadata from roxagent
+	DetectedOs           string            `protobuf:"bytes,2,opt,name=detected_os,json=detectedOs,proto3" json:"detected_os,omitempty"`
+	IsOsActivated        bool              `protobuf:"varint,3,opt,name=is_os_activated,json=isOsActivated,proto3" json:"is_os_activated,omitempty"`
+	DnfMetadataAvailable bool              `protobuf:"varint,4,opt,name=dnf_metadata_available,json=dnfMetadataAvailable,proto3" json:"dnf_metadata_available,omitempty"`
+	AuxData              map[string]string `protobuf:"bytes,5,rep,name=aux_data,json=auxData,proto3" json:"aux_data,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	unknownFields        protoimpl.UnknownFields
+	sizeCache            protoimpl.SizeCache
 }
 
 func (x *UpsertVirtualMachineIndexReportRequest) Reset() {
@@ -62,6 +67,34 @@ func (*UpsertVirtualMachineIndexReportRequest) Descriptor() ([]byte, []int) {
 func (x *UpsertVirtualMachineIndexReportRequest) GetIndexReport() *v1.IndexReport {
 	if x != nil {
 		return x.IndexReport
+	}
+	return nil
+}
+
+func (x *UpsertVirtualMachineIndexReportRequest) GetDetectedOs() string {
+	if x != nil {
+		return x.DetectedOs
+	}
+	return ""
+}
+
+func (x *UpsertVirtualMachineIndexReportRequest) GetIsOsActivated() bool {
+	if x != nil {
+		return x.IsOsActivated
+	}
+	return false
+}
+
+func (x *UpsertVirtualMachineIndexReportRequest) GetDnfMetadataAvailable() bool {
+	if x != nil {
+		return x.DnfMetadataAvailable
+	}
+	return false
+}
+
+func (x *UpsertVirtualMachineIndexReportRequest) GetAuxData() map[string]string {
+	if x != nil {
+		return x.AuxData
 	}
 	return nil
 }
@@ -114,9 +147,17 @@ var File_internalapi_sensor_virtual_machine_iservice_proto protoreflect.FileDesc
 
 const file_internalapi_sensor_virtual_machine_iservice_proto_rawDesc = "" +
 	"\n" +
-	"1internalapi/sensor/virtual_machine_iservice.proto\x12\x06sensor\x1a0internalapi/virtualmachine/v1/index_report.proto\"k\n" +
+	"1internalapi/sensor/virtual_machine_iservice.proto\x12\x06sensor\x1a0internalapi/virtualmachine/v1/index_report.proto\"\xfe\x02\n" +
 	"&UpsertVirtualMachineIndexReportRequest\x12A\n" +
-	"\findex_report\x18\x01 \x01(\v2\x1e.virtualmachine.v1.IndexReportR\vindexReport\"C\n" +
+	"\findex_report\x18\x01 \x01(\v2\x1e.virtualmachine.v1.IndexReportR\vindexReport\x12\x1f\n" +
+	"\vdetected_os\x18\x02 \x01(\tR\n" +
+	"detectedOs\x12&\n" +
+	"\x0fis_os_activated\x18\x03 \x01(\bR\risOsActivated\x124\n" +
+	"\x16dnf_metadata_available\x18\x04 \x01(\bR\x14dnfMetadataAvailable\x12V\n" +
+	"\baux_data\x18\x05 \x03(\v2;.sensor.UpsertVirtualMachineIndexReportRequest.AuxDataEntryR\aauxData\x1a:\n" +
+	"\fAuxDataEntry\x12\x10\n" +
+	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
+	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"C\n" +
 	"'UpsertVirtualMachineIndexReportResponse\x12\x18\n" +
 	"\asuccess\x18\x01 \x01(\bR\asuccess2\xa9\x01\n" +
 	" VirtualMachineIndexReportService\x12\x84\x01\n" +
@@ -134,21 +175,23 @@ func file_internalapi_sensor_virtual_machine_iservice_proto_rawDescGZIP() []byte
 	return file_internalapi_sensor_virtual_machine_iservice_proto_rawDescData
 }
 
-var file_internalapi_sensor_virtual_machine_iservice_proto_msgTypes = make([]protoimpl.MessageInfo, 2)
+var file_internalapi_sensor_virtual_machine_iservice_proto_msgTypes = make([]protoimpl.MessageInfo, 3)
 var file_internalapi_sensor_virtual_machine_iservice_proto_goTypes = []any{
 	(*UpsertVirtualMachineIndexReportRequest)(nil),  // 0: sensor.UpsertVirtualMachineIndexReportRequest
 	(*UpsertVirtualMachineIndexReportResponse)(nil), // 1: sensor.UpsertVirtualMachineIndexReportResponse
-	(*v1.IndexReport)(nil),                          // 2: virtualmachine.v1.IndexReport
+	nil,                    // 2: sensor.UpsertVirtualMachineIndexReportRequest.AuxDataEntry
+	(*v1.IndexReport)(nil), // 3: virtualmachine.v1.IndexReport
 }
 var file_internalapi_sensor_virtual_machine_iservice_proto_depIdxs = []int32{
-	2, // 0: sensor.UpsertVirtualMachineIndexReportRequest.index_report:type_name -> virtualmachine.v1.IndexReport
-	0, // 1: sensor.VirtualMachineIndexReportService.UpsertVirtualMachineIndexReport:input_type -> sensor.UpsertVirtualMachineIndexReportRequest
-	1, // 2: sensor.VirtualMachineIndexReportService.UpsertVirtualMachineIndexReport:output_type -> sensor.UpsertVirtualMachineIndexReportResponse
-	2, // [2:3] is the sub-list for method output_type
-	1, // [1:2] is the sub-list for method input_type
-	1, // [1:1] is the sub-list for extension type_name
-	1, // [1:1] is the sub-list for extension extendee
-	0, // [0:1] is the sub-list for field type_name
+	3, // 0: sensor.UpsertVirtualMachineIndexReportRequest.index_report:type_name -> virtualmachine.v1.IndexReport
+	2, // 1: sensor.UpsertVirtualMachineIndexReportRequest.aux_data:type_name -> sensor.UpsertVirtualMachineIndexReportRequest.AuxDataEntry
+	0, // 2: sensor.VirtualMachineIndexReportService.UpsertVirtualMachineIndexReport:input_type -> sensor.UpsertVirtualMachineIndexReportRequest
+	1, // 3: sensor.VirtualMachineIndexReportService.UpsertVirtualMachineIndexReport:output_type -> sensor.UpsertVirtualMachineIndexReportResponse
+	3, // [3:4] is the sub-list for method output_type
+	2, // [2:3] is the sub-list for method input_type
+	2, // [2:2] is the sub-list for extension type_name
+	2, // [2:2] is the sub-list for extension extendee
+	0, // [0:2] is the sub-list for field type_name
 }
 
 func init() { file_internalapi_sensor_virtual_machine_iservice_proto_init() }
@@ -162,7 +205,7 @@ func file_internalapi_sensor_virtual_machine_iservice_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_internalapi_sensor_virtual_machine_iservice_proto_rawDesc), len(file_internalapi_sensor_virtual_machine_iservice_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   2,
+			NumMessages:   3,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

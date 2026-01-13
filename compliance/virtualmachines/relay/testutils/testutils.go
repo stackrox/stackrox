@@ -39,13 +39,21 @@ func (c *MockVsockConn) WithData(data []byte) *MockVsockConn {
 	return c
 }
 
-func (c *MockVsockConn) WithIndexReport(indexReport *v1.IndexReport) (*MockVsockConn, error) {
-	data, err := proto.Marshal(indexReport)
+func (c *MockVsockConn) WithVsockMessage(vsockMsg *v1.VsockMessage) (*MockVsockConn, error) {
+	data, err := proto.Marshal(vsockMsg)
 	if err != nil {
 		return nil, err
 	}
 	c.data = data
 	return c, nil
+}
+
+// Deprecated: Use WithVsockMessage instead
+func (c *MockVsockConn) WithIndexReport(indexReport *v1.IndexReport) (*MockVsockConn, error) {
+	vsockMsg := &v1.VsockMessage{
+		IndexReport: indexReport,
+	}
+	return c.WithVsockMessage(vsockMsg)
 }
 
 func (c *MockVsockConn) WithDelay(delay time.Duration) *MockVsockConn {

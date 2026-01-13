@@ -32,10 +32,19 @@ func (c *Client) SendIndexReport(report *v4.IndexReport) error {
 		IndexV4:  report,
 	}
 
+	// Create VsockMessage with placeholder metadata values
+	vsockMsg := &v1.VsockMessage{
+		IndexReport:          wrappedReport,
+		DetectedOs:           "unknown", // TODO: get proper values from VM.
+		IsOsActivated:        false,     // TODO: get proper values from VM.
+		DnfMetadataAvailable: false,     // TODO: get proper values from VM.
+		AuxData:              make(map[string]string),
+	}
+
 	if c.Verbose {
-		reportJson, err := jsonutil.ProtoToJSON(wrappedReport)
+		reportJson, err := jsonutil.ProtoToJSON(vsockMsg)
 		if err != nil {
-			log.Errorf("Failed to convert index report to JSON (vsockCid=%s): %v", wrappedReport.GetVsockCid(), err)
+			log.Errorf("Failed to convert vsock message to JSON (vsockCid=%s): %v", wrappedReport.GetVsockCid(), err)
 		} else {
 			fmt.Println(reportJson)
 		}
@@ -53,18 +62,18 @@ func (c *Client) SendIndexReport(report *v4.IndexReport) error {
 	if err := conn.SetDeadline(time.Now().Add(c.Timeout)); err != nil {
 		return fmt.Errorf("setting connection deadline: %w", err)
 	}
-	return c.writeIndexReport(conn, wrappedReport)
+	return c.writeVsockMessage(conn, vsockMsg)
 }
 
-func (c *Client) writeIndexReport(conn net.Conn, report *v1.IndexReport) error {
-	reportBytes, err := protocompat.Marshal(report)
+func (c *Client) writeVsockMessage(conn net.Conn, msg *v1.VsockMessage) error {
+	msgBytes, err := protocompat.Marshal(msg)
 	if err != nil {
-		return fmt.Errorf("marshalling index report: %w", err)
+		return fmt.Errorf("marshalling vsock message: %w", err)
 	}
-	if _, err := conn.Write(reportBytes); err != nil {
-		return fmt.Errorf("writing index report: %w", err)
+	if _, err := conn.Write(msgBytes); err != nil {
+		return fmt.Errorf("writing vsock message: %w", err)
 	}
-	numPackages := len(report.GetIndexV4().GetContents().GetPackages())
-	log.Infof("Sent index report with %d packages to host", numPackages)
+	numPackages := len(msg.GetIndexReport().GetIndexV4().GetContents().GetPackages())
+	log.Infof("Sent vsock message with index report (%d packages) to host", numPackages)
 	return nil
 }

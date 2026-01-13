@@ -16,31 +16,39 @@ type streamTestSuite struct {
 	suite.Suite
 }
 
-func (s *streamTestSuite) TestParseIndexReport() {
+func (s *streamTestSuite) TestParseVsockMessage() {
 	data := []byte("malformed-data")
-	parsedIndexReport, err := parseIndexReport(data)
+	parsedVsockMessage, err := parseVsockMessage(data)
 	s.Require().Error(err)
-	s.Require().Nil(parsedIndexReport)
+	s.Require().Nil(parsedVsockMessage)
 
-	validIndexReport := &v1.IndexReport{VsockCid: "42"}
-	data, err = proto.Marshal(validIndexReport)
+	validVsockMessage := &v1.VsockMessage{
+		IndexReport:          &v1.IndexReport{VsockCid: "42"},
+		DetectedOs:           "unknown",
+		IsOsActivated:        false,
+		DnfMetadataAvailable: false,
+		AuxData:              map[string]string{"key1": "value1", "key2": "value2"},
+	}
+	data, err = proto.Marshal(validVsockMessage)
 	s.Require().NoError(err)
-	parsedIndexReport, err = parseIndexReport(data)
+	parsedVsockMessage, err = parseVsockMessage(data)
 	s.Require().NoError(err)
-	s.Require().True(proto.Equal(validIndexReport, parsedIndexReport))
+	s.Require().True(proto.Equal(validVsockMessage, parsedVsockMessage))
 }
 
 func (s *streamTestSuite) TestValidateVsockCID() {
 	// Reported CID is 42
-	indexReport := v1.IndexReport{VsockCid: "42"}
+	vsockMessage := &v1.VsockMessage{
+		IndexReport: &v1.IndexReport{VsockCid: "42"},
+	}
 
 	// Real (connection) CID is 99 - does not match, should return error
 	connVsockCID := uint32(99)
-	err := validateReportedVsockCID(&indexReport, connVsockCID)
+	err := validateReportedVsockCID(vsockMessage, connVsockCID)
 	s.Require().Error(err)
 
 	// Real (connection) CID is 42 - matches, should return nil
 	connVsockCID = uint32(42)
-	err = validateReportedVsockCID(&indexReport, connVsockCID)
+	err = validateReportedVsockCID(vsockMessage, connVsockCID)
 	s.Require().NoError(err)
 }

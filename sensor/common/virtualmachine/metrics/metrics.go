@@ -104,6 +104,17 @@ var IndexReportEnqueueBlockedTotal = prometheus.NewCounter(
 	},
 )
 
+// VMMetadata is a counter for VM metadata with labels for detected OS, OS activation status, and DNF metadata availability.
+var VMMetadata = prometheus.NewCounterVec(
+	prometheus.CounterOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.SensorSubsystem.String(),
+		Name:      "virtual_machine_metadata_total",
+		Help:      "Total number of VM index reports received by Sensor grouped by detected OS, OS activation status, and DNF metadata availability",
+	},
+	[]string{"detected_os", "is_os_activated", "dnf_metadata_available"},
+)
+
 func init() {
 	prometheus.MustRegister(
 		IndexReportsReceived,
@@ -112,5 +123,6 @@ func init() {
 		IndexReportProcessingDurationMilliseconds,
 		IndexReportBlockingEnqueueDurationMilliseconds,
 		IndexReportEnqueueBlockedTotal,
+		VMMetadata,
 	)
 }

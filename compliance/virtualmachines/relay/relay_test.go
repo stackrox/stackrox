@@ -81,11 +81,11 @@ func (s *relayTestSuite) TestRelay_Integration() {
 		expectedCount: 2,
 	}
 
-	// Create mock stream that produces test reports
+	// Create mock stream that produces test messages
 	mockIndexReportStream := &mockIndexReportStream{
-		reports: []*v1.IndexReport{
-			{VsockCid: "100"},
-			{VsockCid: "200"},
+		reports: []*v1.VsockMessage{
+			{IndexReport: &v1.IndexReport{VsockCid: "100"}},
+			{IndexReport: &v1.IndexReport{VsockCid: "200"}},
 		},
 	}
 
@@ -111,11 +111,11 @@ func (s *relayTestSuite) TestRelay_Integration() {
 
 	cancel()
 
-	// Verify all reports were sent
+	// Verify all messages were sent
 	mockIndexReportSender.mu.Lock()
-	s.Require().Len(mockIndexReportSender.sentReports, 2)
-	s.Equal("100", mockIndexReportSender.sentReports[0].GetVsockCid())
-	s.Equal("200", mockIndexReportSender.sentReports[1].GetVsockCid())
+	s.Require().Len(mockIndexReportSender.sentMessages, 2)
+	s.Equal("100", mockIndexReportSender.sentMessages[0].GetIndexReport().GetVsockCid())
+	s.Equal("200", mockIndexReportSender.sentMessages[1].GetIndexReport().GetVsockCid())
 	mockIndexReportSender.mu.Unlock()
 
 	// Verify relay exited cleanly
@@ -134,10 +134,10 @@ func (s *relayTestSuite) TestRelay_SenderErrorsDoNotStopProcessing() {
 	}
 
 	mockIndexReportStream := &mockIndexReportStream{
-		reports: []*v1.IndexReport{
-			{VsockCid: "100"},
-			{VsockCid: "200"},
-			{VsockCid: "300"},
+		reports: []*v1.VsockMessage{
+			{IndexReport: &v1.IndexReport{VsockCid: "100"}},
+			{IndexReport: &v1.IndexReport{VsockCid: "200"}},
+			{IndexReport: &v1.IndexReport{VsockCid: "300"}},
 		},
 	}
 
@@ -161,9 +161,9 @@ func (s *relayTestSuite) TestRelay_SenderErrorsDoNotStopProcessing() {
 
 	cancel()
 
-	// All three reports should have been attempted
+	// All three messages should have been attempted
 	mockIndexReportSender.mu.Lock()
-	s.Require().Len(mockIndexReportSender.sentReports, 3)
+	s.Require().Len(mockIndexReportSender.sentMessages, 3)
 	mockIndexReportSender.mu.Unlock()
 
 	err := <-errChan
@@ -172,12 +172,12 @@ func (s *relayTestSuite) TestRelay_SenderErrorsDoNotStopProcessing() {
 
 // TestRelay_ContextCancellation verifies relay stops on context cancellation
 func (s *relayTestSuite) TestRelay_ContextCancellation() {
-	// The mocked stream signals when first report is sent
+	// The mocked stream signals when first message is sent
 	started := concurrency.NewSignal()
 	mockIndexReportStream := &mockIndexReportStream{
-		reports: []*v1.IndexReport{
-			{VsockCid: "100"},
-			{VsockCid: "200"}, // Second report will never be processed
+		reports: []*v1.VsockMessage{
+			{IndexReport: &v1.IndexReport{VsockCid: "100"}},
+			{IndexReport: &v1.IndexReport{VsockCid: "200"}}, // Second message will never be processed
 		},
 		started: &started,
 	}
@@ -221,18 +221,18 @@ type failingIndexReportStream struct {
 
 // Start implements IndexReportStream.Start. It always returns a nil channel
 // and errTestStreamStart to simulate a stream startup failure.
-func (f *failingIndexReportStream) Start(ctx context.Context) (<-chan *v1.IndexReport, error) {
+func (f *failingIndexReportStream) Start(ctx context.Context) (<-chan *v1.VsockMessage, error) {
 	f.startCalled++
 	return nil, errTestStreamStart
 }
 
 type mockIndexReportStream struct {
-	reports []*v1.IndexReport
+	reports []*v1.VsockMessage
 	started *concurrency.Signal // signals when first report is streamed
 }
 
-func (m *mockIndexReportStream) Start(ctx context.Context) (<-chan *v1.IndexReport, error) {
-	reportChan := make(chan *v1.IndexReport, len(m.reports))
+func (m *mockIndexReportStream) Start(ctx context.Context) (<-chan *v1.VsockMessage, error) {
+	reportChan := make(chan *v1.VsockMessage, len(m.reports))
 
 	go func() {
 		for i, report := range m.reports {
@@ -253,19 +253,19 @@ func (m *mockIndexReportStream) Start(ctx context.Context) (<-chan *v1.IndexRepo
 
 type mockIndexReportSender struct {
 	mu            sync.Mutex
-	sentReports   []*v1.IndexReport
+	sentMessages  []*v1.VsockMessage
 	failOnIndex   int                 // Index to fail on (0-based), use -1 to never fail
 	done          *concurrency.Signal // signals when expectedCount reports are sent
 	expectedCount int                 // number of reports expected before signaling done
 }
 
-func (m *mockIndexReportSender) Send(_ context.Context, report *v1.IndexReport) error {
+func (m *mockIndexReportSender) Send(_ context.Context, vsockMsg *v1.VsockMessage) error {
 	m.mu.Lock()
-	currentIndex := len(m.sentReports)
-	m.sentReports = append(m.sentReports, report)
+	currentIndex := len(m.sentMessages)
+	m.sentMessages = append(m.sentMessages, vsockMsg)
 
 	// Signal done when we've sent expected count
-	if m.done != nil && len(m.sentReports) == m.expectedCount {
+	if m.done != nil && len(m.sentMessages) == m.expectedCount {
 		m.done.Signal()
 	}
 	m.mu.Unlock()

@@ -21,7 +21,7 @@ var log = logging.LoggerForModule()
 
 // IndexReportSender sends index reports to Sensor.
 type IndexReportSender interface {
-	Send(ctx context.Context, report *v1.IndexReport) error
+	Send(ctx context.Context, vsockMsg *v1.VsockMessage) error
 }
 
 type sensorIndexReportSender struct {
@@ -37,9 +37,9 @@ func New(sensorClient sensor.VirtualMachineIndexReportServiceClient) IndexReport
 	}
 }
 
-// Send sends the report to Sensor, retrying on transient errors.
-func (s *sensorIndexReportSender) Send(ctx context.Context, report *v1.IndexReport) error {
-	log.Infof("Sending index report to sensor (vsockCID: %s)", report.GetVsockCid())
+// Send sends the vsock message to Sensor, retrying on transient errors.
+func (s *sensorIndexReportSender) Send(ctx context.Context, vsockMsg *v1.VsockMessage) error {
+	log.Infof("Sending vsock message to sensor (vsockCID: %s)", vsockMsg.GetIndexReport().GetVsockCid())
 
 	// This is the sending logic that will be retried if needed
 	sendFunc := func() error {
@@ -47,7 +47,11 @@ func (s *sensorIndexReportSender) Send(ctx context.Context, report *v1.IndexRepo
 		defer cancel()
 
 		req := &sensor.UpsertVirtualMachineIndexReportRequest{
-			IndexReport: report,
+			IndexReport:          vsockMsg.GetIndexReport(),
+			DetectedOs:           vsockMsg.GetDetectedOs(),
+			IsOsActivated:        vsockMsg.GetIsOsActivated(),
+			DnfMetadataAvailable: vsockMsg.GetDnfMetadataAvailable(),
+			AuxData:              vsockMsg.GetAuxData(),
 		}
 
 		resp, err := s.sensorClient.UpsertVirtualMachineIndexReport(sendToSensorCtx, req)

@@ -33,7 +33,7 @@ func (s *senderTestSuite) TestSend_HandlesContextCancellation() {
 	ctx, cancel := context.WithCancel(s.ctx)
 	cancel()
 
-	err := sender.Send(ctx, &v1.IndexReport{})
+	err := sender.Send(ctx, &v1.VsockMessage{IndexReport: &v1.IndexReport{VsockCid: "42"}, DetectedOs: "unknown", IsOsActivated: false, DnfMetadataAvailable: false, AuxData: make(map[string]string)})
 	s.Require().Error(err)
 	s.Contains(err.Error(), "context canceled")
 }
@@ -73,7 +73,7 @@ func (s *senderTestSuite) TestSend_RetriesOnRetryableErrors() {
 			ctx, cancel := context.WithTimeout(s.ctx, 500*time.Millisecond)
 			defer cancel()
 
-			err := sender.Send(ctx, &v1.IndexReport{})
+			err := sender.Send(ctx, &v1.VsockMessage{IndexReport: &v1.IndexReport{VsockCid: "42"}, DetectedOs: "unknown", IsOsActivated: false, DnfMetadataAvailable: false, AuxData: make(map[string]string)})
 			s.Require().Error(err)
 
 			retried := len(client.CapturedRequests()) > 1
@@ -86,7 +86,7 @@ func (s *senderTestSuite) TestReportSender_Send() {
 	client := relaytest.NewMockSensorClient(s.T())
 	sender := New(client)
 
-	err := sender.Send(s.ctx, &v1.IndexReport{VsockCid: "42"})
+	err := sender.Send(s.ctx, &v1.VsockMessage{IndexReport: &v1.IndexReport{VsockCid: "42"}, DetectedOs: "unknown", IsOsActivated: false, DnfMetadataAvailable: false, AuxData: make(map[string]string)})
 	s.Require().NoError(err)
 	s.Len(client.CapturedRequests(), 1)
 }
@@ -95,6 +95,6 @@ func (s *senderTestSuite) TestReportSender_SendHandlesErrors() {
 	client := relaytest.NewMockSensorClient(s.T()).WithError(errox.NotImplemented)
 	sender := New(client)
 
-	err := sender.Send(s.ctx, &v1.IndexReport{VsockCid: "42"})
+	err := sender.Send(s.ctx, &v1.VsockMessage{IndexReport: &v1.IndexReport{VsockCid: "42"}, DetectedOs: "unknown", IsOsActivated: false, DnfMetadataAvailable: false, AuxData: make(map[string]string)})
 	s.Require().Error(err)
 }

@@ -2,10 +2,12 @@ package index
 
 import (
 	"context"
+	"strconv"
 	"time"
 
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/pkg/errors"
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stackrox/rox/generated/internalapi/sensor"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/grpc/authz/idcheck"
@@ -59,6 +61,22 @@ func (s *serviceImpl) UpsertVirtualMachineIndexReport(ctx context.Context, req *
 	}
 
 	log.Debugf("Upserting virtual machine index report with vsock_cid=%q", ir.GetVsockCid())
+
+	// Log VM metadata
+	detectedOS := req.GetDetectedOs()
+	isOsActivated := req.GetIsOsActivated()
+	dnfMetadataAvailable := req.GetDnfMetadataAvailable()
+	auxData := req.GetAuxData()
+	log.Infof("VM metadata: detected_os=%q, is_os_activated=%v, dnf_metadata_available=%v, aux_data=%v",
+		detectedOS, isOsActivated, dnfMetadataAvailable, auxData)
+
+	// Record metric for VM metadata with all three labels
+	metrics.VMMetadata.With(prometheus.Labels{
+		"detected_os":            detectedOS,
+		"is_os_activated":        strconv.FormatBool(isOsActivated),
+		"dnf_metadata_available": strconv.FormatBool(dnfMetadataAvailable),
+	}).Inc()
+
 	metrics.IndexReportsReceived.Inc()
 	timeoutCtx, cancel := context.WithTimeout(ctx, indexReportSendTimeout)
 	defer cancel()
