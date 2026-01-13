@@ -6,10 +6,10 @@ import services.ImageIntegrationService
 import util.Env
 
 trait ImageIntegration {
-    abstract static ImageIntegrationOuterClass.ImageIntegration.Builder getCustomBuilder(Map customArgs = [:])
+    abstract static ImageIntegrationOuterClass.ImageIntegration.Builder getCustomBuilder(Map customArgs)
 
     static ImageIntegrationOuterClass.ImageIntegration.Builder getDefaultBuilder() {
-        getCustomBuilder()
+        getCustomBuilder([:])
     }
 
     static String createDefaultIntegration() {
