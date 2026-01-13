@@ -516,7 +516,7 @@ index-build: bundle-post-process yq ## Build Index (a.k.a. Catalog) image with t
 		--clean-output-dir
 
 .PHONY: dist
-dist: ## Build a distribution manifest.
+dist: kustomize ## Build a distribution manifest.
 	mkdir -p build/dist
 	cat config/dist/kustomization.yaml > build/dist/kustomization.yaml
 	echo -e "  newTag: $(VERSION)" >> build/dist/kustomization.yaml
