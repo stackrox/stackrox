@@ -13,23 +13,26 @@ func BenchmarkValueStreamWrite(b *testing.B) {
 
 	vs := NewValueStream(0)
 
-	for i := 0; b.Loop(); i++ {
-		vs.Push(i)
+	for b.Loop() {
+		vs.Push(1)
 	}
 }
 
 func BenchmarkBufChanWrite(b *testing.B) {
 
-	c := make(chan int, b.N)
+	c := make(chan struct{}, b.N)
 
-	for i := 0; b.Loop(); i++ {
-		c <- i
+	for b.Loop() {
+		c <- struct{}{}
 	}
 }
 
 func BenchmarkBuf1ChanWrite(b *testing.B) {
 
-	c := make(chan int, 1)
+	c := make(chan struct{}, 1)
+	b.Cleanup(func() {
+		close(c)
+	})
 
 	// Read from channel in a tight loop
 	go func() {
@@ -39,16 +42,17 @@ func BenchmarkBuf1ChanWrite(b *testing.B) {
 		}
 	}()
 
-	for i := 0; b.Loop(); i++ {
-		c <- i
+	for b.Loop() {
+		c <- struct{}{}
 	}
-	b.StopTimer()
-	close(c)
 }
 
 func BenchmarkUnbufChanWrite(b *testing.B) {
 
 	c := make(chan int)
+	b.Cleanup(func() {
+		close(c)
+	})
 
 	// Read from channel in a tight loop
 	go func() {
@@ -61,8 +65,6 @@ func BenchmarkUnbufChanWrite(b *testing.B) {
 	for i := 0; b.Loop(); i++ {
 		c <- i
 	}
-	b.StopTimer()
-	close(c)
 }
 
 func BenchmarkSliceAppend(b *testing.B) {
@@ -91,24 +93,21 @@ func BenchmarkValueStreamRead(b *testing.B) {
 	vs := NewValueStream(0)
 	it := vs.Iterator(true)
 
-	for i := 0; b.Loop(); i++ {
+	for i := 0; i < b.N; i++ {
 		vs.Push(i)
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(b.N)*time.Millisecond)
 	defer cancel()
 
-	b.StartTimer()
-
 	var err error
-	for i := 0; i < b.N && err == nil; i++ {
+	for b.Loop() && err == nil {
 		it, err = it.Next(ctx)
 	}
 	require.NoError(b, err)
 }
 
 func BenchmarkValueStreamReadAsync(b *testing.B) {
-	b.StopTimer()
 
 	vs := NewValueStream(0)
 	it := vs.Iterator(true)
@@ -122,10 +121,8 @@ func BenchmarkValueStreamReadAsync(b *testing.B) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(b.N)*time.Millisecond)
 	defer cancel()
 
-	b.StartTimer()
-
 	var err error
-	for i := 0; i < b.N && err == nil; i++ {
+	for b.Loop() && err == nil {
 		it, err = it.Next(ctx)
 	}
 	require.NoError(b, err)
@@ -134,17 +131,15 @@ func BenchmarkValueStreamReadAsync(b *testing.B) {
 func BenchmarkBufChanRead(b *testing.B) {
 
 	c := make(chan int, b.N)
-	for i := 0; b.Loop(); i++ {
+	for i := 0; i < b.N; i++ {
 		c <- i
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(b.N)*time.Millisecond)
 	defer cancel()
 
-	b.StartTimer()
-
 	var err error
-	for i := 0; i < b.N && err == nil; i++ {
+	for b.Loop() && err == nil {
 		select {
 		case <-c:
 		case <-ctx.Done():
@@ -155,7 +150,6 @@ func BenchmarkBufChanRead(b *testing.B) {
 }
 
 func BenchmarkBuf1ChanRead(b *testing.B) {
-	b.StopTimer()
 
 	c := make(chan int, 1)
 
@@ -169,10 +163,8 @@ func BenchmarkBuf1ChanRead(b *testing.B) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(b.N)*time.Millisecond)
 	defer cancel()
 
-	b.StartTimer()
-
 	var err error
-	for i := 0; i < b.N && err == nil; i++ {
+	for b.Loop() && err == nil {
 		select {
 		case <-c:
 		case <-ctx.Done():
@@ -182,7 +174,6 @@ func BenchmarkBuf1ChanRead(b *testing.B) {
 }
 
 func BenchmarkUnbufChanRead(b *testing.B) {
-	b.StopTimer()
 
 	c := make(chan int)
 
@@ -196,10 +187,8 @@ func BenchmarkUnbufChanRead(b *testing.B) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(b.N)*time.Millisecond)
 	defer cancel()
 
-	b.StartTimer()
-
 	var err error
-	for i := 0; i < b.N && err == nil; i++ {
+	for b.Loop() && err == nil {
 		select {
 		case <-c:
 		case <-ctx.Done():
@@ -211,7 +200,7 @@ func BenchmarkUnbufChanRead(b *testing.B) {
 func BenchmarkSliceRead(b *testing.B) {
 
 	slice := make([]int, 0, b.N)
-	for i := 0; b.Loop(); i++ {
+	for i := 0; i < b.N; i++ {
 		slice = append(slice, i)
 	}
 
@@ -224,7 +213,7 @@ func BenchmarkSliceRead(b *testing.B) {
 func BenchmarkSliceReadWithMutex(b *testing.B) {
 
 	slice := make([]int, 0, b.N)
-	for i := 0; b.Loop(); i++ {
+	for i := 0; i < b.N; i++ {
 		slice = append(slice, i)
 	}
 	var mutex sync.Mutex
