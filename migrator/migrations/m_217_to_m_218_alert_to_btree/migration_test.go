@@ -1,6 +1,6 @@
 //go:build sql_integration
 
-package m216tom217
+package m217tom218
 
 import (
 	"context"
@@ -8,7 +8,7 @@ import (
 	"testing"
 
 	"github.com/stackrox/rox/migrator/migrations/indexhelper"
-	oldSchema "github.com/stackrox/rox/migrator/migrations/m_216_to_m_217_alert_to_btree/test/schema"
+	"github.com/stackrox/rox/migrator/migrations/m_217_to_m_218_alert_to_btree/test/schema"
 	pghelper "github.com/stackrox/rox/migrator/migrations/postgreshelper"
 	"github.com/stackrox/rox/migrator/types"
 	"github.com/stackrox/rox/pkg/fixtures"
@@ -41,10 +41,10 @@ func (s *migrationTestSuite) TestMigration() {
 		DBCtx:      s.ctx,
 	}
 
-	pgutils.CreateTableFromModel(dbs.DBCtx, dbs.GormDB, oldSchema.CreateTableAlertsStmt)
+	pgutils.CreateTableFromModel(dbs.DBCtx, dbs.GormDB, schema.CreateTableAlertsStmt)
 
 	// Add some alerts
-	var convertedAlerts []oldSchema.Alerts
+	var convertedAlerts []schema.Alerts
 	numAlerts := 3000
 	batchSize := 50
 	for i := 0; i < numAlerts; i++ {
@@ -52,7 +52,7 @@ func (s *migrationTestSuite) TestMigration() {
 		alert := fixtures.GetAlertWithID(id)
 		alert.NamespaceId = uuid.NewV4().String()
 
-		converted, err := oldSchema.ConvertAlertFromProto(alert)
+		converted, err := schema.ConvertAlertFromProto(alert)
 		s.Require().NoError(err)
 		convertedAlerts = append(convertedAlerts, *converted)
 	}
