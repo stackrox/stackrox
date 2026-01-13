@@ -100,16 +100,3 @@ func (d *datastoreImpl) Search(ctx context.Context, q *v1.Query) ([]searchPkg.Re
 func (d *datastoreImpl) Count(ctx context.Context, q *v1.Query) (int, error) {
 	return d.storage.Count(ctx, q)
 }
-
-func (d *datastoreImpl) searchServiceAccounts(ctx context.Context, q *v1.Query) ([]*storage.ServiceAccount, []searchPkg.Result, error) {
-	results, err := d.Search(ctx, q)
-	if err != nil {
-		return nil, nil, err
-	}
-	serviceAccounts, missingIndices, err := d.storage.GetMany(ctx, searchPkg.ResultsToIDs(results))
-	if err != nil {
-		return nil, nil, err
-	}
-	results = searchPkg.RemoveMissingResults(results, missingIndices)
-	return serviceAccounts, results, nil
-}
