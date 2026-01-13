@@ -2,7 +2,7 @@
 // versions:
 // - protoc-gen-go-grpc v1.6.0
 // - protoc             v6.32.1
-// source: internalapi/central/token_iservice.proto
+// source: internalapi/central/token_service.proto
 
 package central
 
@@ -115,5 +115,5 @@ var TokenService_ServiceDesc = grpc.ServiceDesc{
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
-	Metadata: "internalapi/central/token_iservice.proto",
+	Metadata: "internalapi/central/token_service.proto",
 }

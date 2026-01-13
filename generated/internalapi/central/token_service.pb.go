@@ -2,7 +2,7 @@
 // versions:
 // 	protoc-gen-go v1.36.11
 // 	protoc        v6.32.1
-// source: internalapi/central/token_iservice.proto
+// source: internalapi/central/token_service.proto
 
 package central
 
@@ -35,7 +35,7 @@ type GetTokenForPermissionsAndScopeRequest struct {
 
 func (x *GetTokenForPermissionsAndScopeRequest) Reset() {
 	*x = GetTokenForPermissionsAndScopeRequest{}
-	mi := &file_internalapi_central_token_iservice_proto_msgTypes[0]
+	mi := &file_internalapi_central_token_service_proto_msgTypes[0]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -47,7 +47,7 @@ func (x *GetTokenForPermissionsAndScopeRequest) String() string {
 func (*GetTokenForPermissionsAndScopeRequest) ProtoMessage() {}
 
 func (x *GetTokenForPermissionsAndScopeRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_internalapi_central_token_iservice_proto_msgTypes[0]
+	mi := &file_internalapi_central_token_service_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -60,7 +60,7 @@ func (x *GetTokenForPermissionsAndScopeRequest) ProtoReflect() protoreflect.Mess
 
 // Deprecated: Use GetTokenForPermissionsAndScopeRequest.ProtoReflect.Descriptor instead.
 func (*GetTokenForPermissionsAndScopeRequest) Descriptor() ([]byte, []int) {
-	return file_internalapi_central_token_iservice_proto_rawDescGZIP(), []int{0}
+	return file_internalapi_central_token_service_proto_rawDescGZIP(), []int{0}
 }
 
 func (x *GetTokenForPermissionsAndScopeRequest) GetReadPermission() []string {
@@ -94,7 +94,7 @@ type RequestedRoleClusterScope struct {
 
 func (x *RequestedRoleClusterScope) Reset() {
 	*x = RequestedRoleClusterScope{}
-	mi := &file_internalapi_central_token_iservice_proto_msgTypes[1]
+	mi := &file_internalapi_central_token_service_proto_msgTypes[1]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -106,7 +106,7 @@ func (x *RequestedRoleClusterScope) String() string {
 func (*RequestedRoleClusterScope) ProtoMessage() {}
 
 func (x *RequestedRoleClusterScope) ProtoReflect() protoreflect.Message {
-	mi := &file_internalapi_central_token_iservice_proto_msgTypes[1]
+	mi := &file_internalapi_central_token_service_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -119,7 +119,7 @@ func (x *RequestedRoleClusterScope) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RequestedRoleClusterScope.ProtoReflect.Descriptor instead.
 func (*RequestedRoleClusterScope) Descriptor() ([]byte, []int) {
-	return file_internalapi_central_token_iservice_proto_rawDescGZIP(), []int{1}
+	return file_internalapi_central_token_service_proto_rawDescGZIP(), []int{1}
 }
 
 func (x *RequestedRoleClusterScope) GetClusterId() string {
@@ -150,7 +150,7 @@ type GetTokenForPermissionsAndScopeResponse struct {
 
 func (x *GetTokenForPermissionsAndScopeResponse) Reset() {
 	*x = GetTokenForPermissionsAndScopeResponse{}
-	mi := &file_internalapi_central_token_iservice_proto_msgTypes[2]
+	mi := &file_internalapi_central_token_service_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -162,7 +162,7 @@ func (x *GetTokenForPermissionsAndScopeResponse) String() string {
 func (*GetTokenForPermissionsAndScopeResponse) ProtoMessage() {}
 
 func (x *GetTokenForPermissionsAndScopeResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_internalapi_central_token_iservice_proto_msgTypes[2]
+	mi := &file_internalapi_central_token_service_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -175,7 +175,7 @@ func (x *GetTokenForPermissionsAndScopeResponse) ProtoReflect() protoreflect.Mes
 
 // Deprecated: Use GetTokenForPermissionsAndScopeResponse.ProtoReflect.Descriptor instead.
 func (*GetTokenForPermissionsAndScopeResponse) Descriptor() ([]byte, []int) {
-	return file_internalapi_central_token_iservice_proto_rawDescGZIP(), []int{2}
+	return file_internalapi_central_token_service_proto_rawDescGZIP(), []int{2}
 }
 
 func (x *GetTokenForPermissionsAndScopeResponse) GetTokenId() string {
@@ -220,11 +220,11 @@ func (x *GetTokenForPermissionsAndScopeResponse) GetRevoked() bool {
 	return false
 }
 
-var File_internalapi_central_token_iservice_proto protoreflect.FileDescriptor
+var File_internalapi_central_token_service_proto protoreflect.FileDescriptor
 
-const file_internalapi_central_token_iservice_proto_rawDesc = "" +
+const file_internalapi_central_token_service_proto_rawDesc = "" +
 	"\n" +
-	"(internalapi/central/token_iservice.proto\x12\acentral\x1a\x1cgoogle/api/annotations.proto\x1a\x1egoogle/protobuf/duration.proto\x1a\x1fgoogle/protobuf/timestamp.proto\"\xd3\x01\n" +
+	"'internalapi/central/token_service.proto\x12\acentral\x1a\x1cgoogle/api/annotations.proto\x1a\x1egoogle/protobuf/duration.proto\x1a\x1fgoogle/protobuf/timestamp.proto\"\xd3\x01\n" +
 	"%GetTokenForPermissionsAndScopeRequest\x12'\n" +
 	"\x0fread_permission\x18\x01 \x03(\tR\x0ereadPermission\x12I\n" +
 	"\x0ecluster_scopes\x18\x02 \x03(\v2\".central.RequestedRoleClusterScopeR\rclusterScopes\x126\n" +
@@ -245,26 +245,26 @@ const file_internalapi_central_token_iservice_proto_rawDesc = "" +
 	"\x1dGetTokenForPermissionAndScope\x12..central.GetTokenForPermissionsAndScopeRequest\x1a/.central.GetTokenForPermissionsAndScopeResponse\"\x17\x82\xd3\xe4\x93\x02\x11\x12\x0f/internal/tokenB\x1fZ\x1d./internalapi/central;centralX\x00b\x06proto3"
 
 var (
-	file_internalapi_central_token_iservice_proto_rawDescOnce sync.Once
-	file_internalapi_central_token_iservice_proto_rawDescData []byte
+	file_internalapi_central_token_service_proto_rawDescOnce sync.Once
+	file_internalapi_central_token_service_proto_rawDescData []byte
 )
 
-func file_internalapi_central_token_iservice_proto_rawDescGZIP() []byte {
-	file_internalapi_central_token_iservice_proto_rawDescOnce.Do(func() {
-		file_internalapi_central_token_iservice_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_internalapi_central_token_iservice_proto_rawDesc), len(file_internalapi_central_token_iservice_proto_rawDesc)))
+func file_internalapi_central_token_service_proto_rawDescGZIP() []byte {
+	file_internalapi_central_token_service_proto_rawDescOnce.Do(func() {
+		file_internalapi_central_token_service_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_internalapi_central_token_service_proto_rawDesc), len(file_internalapi_central_token_service_proto_rawDesc)))
 	})
-	return file_internalapi_central_token_iservice_proto_rawDescData
+	return file_internalapi_central_token_service_proto_rawDescData
 }
 
-var file_internalapi_central_token_iservice_proto_msgTypes = make([]protoimpl.MessageInfo, 3)
-var file_internalapi_central_token_iservice_proto_goTypes = []any{
+var file_internalapi_central_token_service_proto_msgTypes = make([]protoimpl.MessageInfo, 3)
+var file_internalapi_central_token_service_proto_goTypes = []any{
 	(*GetTokenForPermissionsAndScopeRequest)(nil),  // 0: central.GetTokenForPermissionsAndScopeRequest
 	(*RequestedRoleClusterScope)(nil),              // 1: central.RequestedRoleClusterScope
 	(*GetTokenForPermissionsAndScopeResponse)(nil), // 2: central.GetTokenForPermissionsAndScopeResponse
 	(*durationpb.Duration)(nil),                    // 3: google.protobuf.Duration
 	(*timestamppb.Timestamp)(nil),                  // 4: google.protobuf.Timestamp
 }
-var file_internalapi_central_token_iservice_proto_depIdxs = []int32{
+var file_internalapi_central_token_service_proto_depIdxs = []int32{
 	1, // 0: central.GetTokenForPermissionsAndScopeRequest.cluster_scopes:type_name -> central.RequestedRoleClusterScope
 	3, // 1: central.GetTokenForPermissionsAndScopeRequest.valid_for:type_name -> google.protobuf.Duration
 	4, // 2: central.GetTokenForPermissionsAndScopeResponse.issued_at:type_name -> google.protobuf.Timestamp
@@ -278,26 +278,26 @@ var file_internalapi_central_token_iservice_proto_depIdxs = []int32{
 	0, // [0:4] is the sub-list for field type_name
 }
 
-func init() { file_internalapi_central_token_iservice_proto_init() }
-func file_internalapi_central_token_iservice_proto_init() {
-	if File_internalapi_central_token_iservice_proto != nil {
+func init() { file_internalapi_central_token_service_proto_init() }
+func file_internalapi_central_token_service_proto_init() {
+	if File_internalapi_central_token_service_proto != nil {
 		return
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
-			RawDescriptor: unsafe.Slice(unsafe.StringData(file_internalapi_central_token_iservice_proto_rawDesc), len(file_internalapi_central_token_iservice_proto_rawDesc)),
+			RawDescriptor: unsafe.Slice(unsafe.StringData(file_internalapi_central_token_service_proto_rawDesc), len(file_internalapi_central_token_service_proto_rawDesc)),
 			NumEnums:      0,
 			NumMessages:   3,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
-		GoTypes:           file_internalapi_central_token_iservice_proto_goTypes,
-		DependencyIndexes: file_internalapi_central_token_iservice_proto_depIdxs,
-		MessageInfos:      file_internalapi_central_token_iservice_proto_msgTypes,
+		GoTypes:           file_internalapi_central_token_service_proto_goTypes,
+		DependencyIndexes: file_internalapi_central_token_service_proto_depIdxs,
+		MessageInfos:      file_internalapi_central_token_service_proto_msgTypes,
 	}.Build()
-	File_internalapi_central_token_iservice_proto = out.File
-	file_internalapi_central_token_iservice_proto_goTypes = nil
-	file_internalapi_central_token_iservice_proto_depIdxs = nil
+	File_internalapi_central_token_service_proto = out.File
+	file_internalapi_central_token_service_proto_goTypes = nil
+	file_internalapi_central_token_service_proto_depIdxs = nil
 }
