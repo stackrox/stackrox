@@ -27,7 +27,7 @@ func UpdateFileAccessAlertViolationMessage(v *storage.Alert_FileAccessViolation)
 	for _, fa := range v.GetAccesses() {
 		path := fa.GetFile().GetActualPath()
 		if path == "" {
-			path = fa.GetFile().GetMountedPath()
+			path = fa.GetFile().GetEffectivePath()
 			if path == "" {
 				path = UNKNOWN_FILE
 			}

@@ -235,10 +235,10 @@ func TestUpdateFileAccessMessage(t *testing.T) {
 			expected: "'" + UNKNOWN_FILE + "' accessed (OPEN)",
 		},
 		{
-			desc: "Use MountedPath if NodePath is empty",
+			desc: "Use EffectivePath if ActualPath is empty",
 			activity: []*storage.FileAccess{
 				{
-					File:      &storage.FileAccess_File{NodePath: "", MountedPath: "/test/file"},
+					File:      &storage.FileAccess_File{ActualPath: "", EffectivePath: "/test/file"},
 					Operation: storage.FileAccess_OPEN,
 					Process: &storage.ProcessIndicator{
 						Signal: &storage.ProcessSignal{Name: "test"},
