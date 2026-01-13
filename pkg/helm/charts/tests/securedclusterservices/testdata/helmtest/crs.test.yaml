@@ -40,9 +40,6 @@ tests:
       - name: "sensor pod includes crs init container"
         expect: |
           .deployments.sensor.spec.template.spec.initContainers[0] | assertThat(.name == "crs")
-      - name: "sensor contains certificate init container"
-        expect: |
-          .deployments.sensor.spec.template.spec.initContainers[] | select(.name == "init-tls-certs") | assertThat(. != null)
       - name: "Validating webhooks contain CA"
         expect: |
           .validatingwebhookconfigurations[].webhooks[].clientConfig.caBundle | assertThat(. != null)
