@@ -50,6 +50,7 @@ const (
 	Walk
 	WalkByQuery
 	WalkMetadataByQuery
+	WalkListImagesByQuery
 
 	Unset
 
