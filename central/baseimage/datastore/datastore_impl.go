@@ -159,3 +159,71 @@ func (ds *datastoreImpl) ListByRepository(ctx context.Context, repositoryID stri
 func (ds *datastoreImpl) DeleteMany(ctx context.Context, ids []string) error {
 	return ds.storage.DeleteMany(ctx, ids)
 }
+
+func (ds *datastoreImpl) ReplaceByRepository(
+	ctx context.Context,
+	repositoryID string,
+	images map[*storage.BaseImage][]string,
+) error {
+	// Get current base images for this repository (outside transaction, this is not
+	// safe for concurrent calls).
+	currentImages, err := ds.ListByRepository(ctx, repositoryID)
+	if err != nil {
+		return errors.Wrap(err, "listing current base images")
+	}
+
+	// Build set of new image IDs.
+	newIDs := make(map[string]struct{}, len(images))
+	for img := range images {
+		newIDs[img.GetId()] = struct{}{}
+	}
+
+	// Find IDs to delete (in current but not in new).
+	var toDelete []string
+	for _, img := range currentImages {
+		if _, keep := newIDs[img.GetId()]; !keep {
+			toDelete = append(toDelete, img.GetId())
+		}
+	}
+
+	// Prepare images for upsert.
+	batch := make([]*storage.BaseImage, 0, len(images))
+	for img, digests := range images {
+		if _, err := layers(img, digests); err != nil {
+			return fmt.Errorf("prepare layers for image %s: %w", img.GetId(), err)
+		}
+		batch = append(batch, img)
+	}
+
+	// Begin transaction for delete + upsert.
+	tx, err := ds.db.Begin(ctx)
+	if err != nil {
+		return errors.Wrap(err, "beginning transaction")
+	}
+
+	rollback := true
+	defer func() {
+		if rollback {
+			_ = tx.Rollback(ctx)
+		}
+	}()
+
+	txCtx := postgres.ContextWithTx(ctx, tx)
+
+	// Delete non-promoted entries.
+	if len(toDelete) > 0 {
+		if err := ds.storage.DeleteMany(txCtx, toDelete); err != nil {
+			return errors.Wrap(err, "deleting old base images")
+		}
+	}
+
+	// Upsert new entries.
+	if len(batch) > 0 {
+		if err := ds.storage.UpsertMany(txCtx, batch); err != nil {
+			return errors.Wrap(err, "upserting base images")
+		}
+	}
+
+	rollback = false
+	return tx.Commit(ctx)
+}

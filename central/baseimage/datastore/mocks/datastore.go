@@ -101,6 +101,20 @@ func (mr *MockDataStoreMockRecorder) ListCandidateBaseImages(ctx, firstLayer any
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListCandidateBaseImages", reflect.TypeOf((*MockDataStore)(nil).ListCandidateBaseImages), ctx, firstLayer)
 }
 
+// ReplaceByRepository mocks base method.
+func (m *MockDataStore) ReplaceByRepository(ctx context.Context, repositoryID string, images map[*storage.BaseImage][]string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ReplaceByRepository", ctx, repositoryID, images)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// ReplaceByRepository indicates an expected call of ReplaceByRepository.
+func (mr *MockDataStoreMockRecorder) ReplaceByRepository(ctx, repositoryID, images any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ReplaceByRepository", reflect.TypeOf((*MockDataStore)(nil).ReplaceByRepository), ctx, repositoryID, images)
+}
+
 // UpsertImage mocks base method.
 func (m *MockDataStore) UpsertImage(ctx context.Context, image *storage.BaseImage, digests []string) error {
 	m.ctrl.T.Helper()

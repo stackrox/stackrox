@@ -33,4 +33,9 @@ type DataStore interface {
 
 	// DeleteMany removes multiple base images by ID in a batch.
 	DeleteMany(ctx context.Context, ids []string) error
+
+	// ReplaceByRepository atomically replaces all base images for a repository.
+	// Images in the provided map are upserted; existing images not in the map are deleted.
+	// This operation is transactional - either all changes succeed or none do.
+	ReplaceByRepository(ctx context.Context, repositoryID string, images map[*storage.BaseImage][]string) error
 }

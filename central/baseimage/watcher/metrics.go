@@ -15,9 +15,6 @@ func init() {
 		tagsListedGauge,
 		metadataFetchErrors,
 		scanDuration,
-		promotionDurationHistogram,
-		promotionTotal,
-		cacheOnlyTagsGauge,
 	)
 }
 
@@ -74,35 +71,6 @@ var (
 		"source",
 		"error",
 	})
-
-	promotionDurationHistogram = prometheus.NewHistogramVec(prometheus.HistogramOpts{
-		Namespace: metrics.PrometheusNamespace,
-		Subsystem: "base_image_watcher",
-		Name:      "promotion_duration_seconds",
-		Help:      "Time taken to promote tags from cache to base_images",
-		Buckets:   prometheus.ExponentialBuckets(0.01, 2, 10), // 0.01s to ~10s
-	}, []string{
-		"repository_path",
-	})
-
-	promotionTotal = prometheus.NewCounterVec(prometheus.CounterOpts{
-		Namespace: metrics.PrometheusNamespace,
-		Subsystem: "base_image_watcher",
-		Name:      "promotion_total",
-		Help:      "Total number of promotion operations",
-	}, []string{
-		"repository_path",
-		"status", // success or failure
-	})
-
-	cacheOnlyTagsGauge = prometheus.NewGaugeVec(prometheus.GaugeOpts{
-		Namespace: metrics.PrometheusNamespace,
-		Subsystem: "base_image_watcher",
-		Name:      "cache_only_tags",
-		Help:      "Number of tags in cache but not in base_images (potential divergence indicator)",
-	}, []string{
-		"repository_path",
-	})
 )
 
 func recordPollDuration(seconds float64, err error) {
@@ -133,25 +101,4 @@ func recordScanDuration(registryDomain, repositoryPath, source string, startTime
 			"source":          source,
 		}).Set(float64(errorCount))
 	}
-}
-
-func recordPromotionDuration(repositoryPath string, startTime time.Time) {
-	duration := time.Since(startTime).Seconds()
-	promotionDurationHistogram.WithLabelValues(repositoryPath).Observe(duration)
-}
-
-func recordPromotionResult(repositoryPath string, err error) {
-	status := "success"
-	if err != nil {
-		status = "failure"
-	}
-	promotionTotal.WithLabelValues(repositoryPath, status).Inc()
-}
-
-func recordCacheOnlyTags(repositoryPath string, cacheCount, baseImageCount int) {
-	divergence := cacheCount - baseImageCount
-	if divergence < 0 {
-		divergence = 0
-	}
-	cacheOnlyTagsGauge.WithLabelValues(repositoryPath).Set(float64(divergence))
 }
