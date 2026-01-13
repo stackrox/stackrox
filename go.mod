@@ -3,7 +3,7 @@ module github.com/stackrox/rox
 go 1.25.0
 
 require (
-	cloud.google.com/go/artifactregistry v1.18.0
+	cloud.google.com/go/artifactregistry v1.19.0
 	cloud.google.com/go/compute/metadata v0.9.0
 	cloud.google.com/go/containeranalysis v0.14.2
 	cloud.google.com/go/securitycenter v1.38.1
