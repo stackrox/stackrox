@@ -1,6 +1,7 @@
 # This file will be used as a copy in operator/build/dist/
 resources:
 - ../../config/default
+- ../../../config-controller/config/crd
 images:
 - name: quay.io/stackrox-io/stackrox-operator
   newName: quay.io/rhacs-eng/stackrox-operator
