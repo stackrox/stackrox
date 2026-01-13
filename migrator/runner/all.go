@@ -9,4 +9,5 @@ import (
 	_ "github.com/stackrox/rox/migrator/migrations/m_213_to_m_214_populate_deployment_containers_imageidv2"
 	_ "github.com/stackrox/rox/migrator/migrations/m_214_to_m_215_process_indicator_to_btree"
 	_ "github.com/stackrox/rox/migrator/migrations/m_215_to_m_216_process_baseline_to_btree"
+	_ "github.com/stackrox/rox/migrator/migrations/m_216_to_m_217_remove_compliance_benchmark_table"
 )
