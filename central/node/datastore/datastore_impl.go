@@ -79,7 +79,7 @@ func (ds *datastoreImpl) SearchNodes(ctx context.Context, q *v1.Query) ([]*v1.Se
 		q = pkgSearch.EmptyQuery()
 	}
 	q = q.CloneVT()
-	
+
 	q.Selects = append(q.GetSelects(), pkgSearch.NewQuerySelect(pkgSearch.Node).Proto())
 
 	results, err := ds.Search(ctx, q)
