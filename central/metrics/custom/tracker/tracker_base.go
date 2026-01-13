@@ -62,11 +62,13 @@ type FindingErrorSequence[F Finding] = iter.Seq2[F, error]
 // FindingGenerator returns an iterator to the sequence of findings.
 type FindingGenerator[F Finding] func(context.Context, MetricDescriptors) FindingErrorSequence[F]
 
-type gatherer struct {
+type gatherer[F Finding] struct {
 	http.Handler
 	lastGather time.Time
 	running    atomic.Bool
 	registry   metrics.CustomRegistry
+	aggregator *aggregator[F]
+	config     *Configuration
 }
 
 // TrackerBase implements a generic finding tracker.
@@ -143,6 +145,8 @@ func (tracker *TrackerBase[F]) Reconfigure(cfg *Configuration) {
 		tracker.unregisterMetrics(cfg.toDelete)
 	}
 	tracker.registerMetrics(cfg, cfg.toAdd)
+	// Note: aggregators are recreated lazily in getGatherer() when config
+	// changes, to avoid race conditions with running gatherers.
 }
 
 func labelsAsStrings(labels []Label) []string {
@@ -153,25 +157,25 @@ func labelsAsStrings(labels []Label) []string {
 	return strings
 }
 
-func (tracker *TrackerBase[Finding]) unregisterMetrics(metrics []MetricName) {
+func (tracker *TrackerBase[F]) unregisterMetrics(metrics []MetricName) {
 	tracker.gatherers.Range(func(userID, g any) bool {
 		for _, metric := range metrics {
-			g.(*gatherer).registry.UnregisterMetric(string(metric))
+			g.(*gatherer[F]).registry.UnregisterMetric(string(metric))
 		}
 		return true
 	})
 }
 
-func (tracker *TrackerBase[Finding]) registerMetrics(cfg *Configuration, metrics []MetricName) {
+func (tracker *TrackerBase[F]) registerMetrics(cfg *Configuration, metrics []MetricName) {
 	tracker.gatherers.Range(func(userID, g any) bool {
 		for _, metric := range metrics {
-			tracker.registerMetric(g.(*gatherer), cfg, metric)
+			tracker.registerMetric(g.(*gatherer[F]), cfg, metric)
 		}
 		return true
 	})
 }
 
-func (tracker *TrackerBase[Finding]) registerMetric(gatherer *gatherer, cfg *Configuration, metric MetricName) {
+func (tracker *TrackerBase[F]) registerMetric(gatherer *gatherer[F], cfg *Configuration, metric MetricName) {
 	if err := gatherer.registry.RegisterMetric(
 		string(metric),
 		tracker.description,
@@ -184,13 +188,13 @@ func (tracker *TrackerBase[Finding]) registerMetric(gatherer *gatherer, cfg *Con
 	log.Debugf("Registered %s Prometheus metric %q", tracker.description, metric)
 }
 
-func (tracker *TrackerBase[Finding]) getConfiguration() *Configuration {
+func (tracker *TrackerBase[F]) getConfiguration() *Configuration {
 	tracker.metricsConfigMux.RLock()
 	defer tracker.metricsConfigMux.RUnlock()
 	return tracker.config
 }
 
-func (tracker *TrackerBase[Finding]) setConfiguration(config *Configuration) *Configuration {
+func (tracker *TrackerBase[F]) setConfiguration(config *Configuration) *Configuration {
 	tracker.metricsConfigMux.Lock()
 	defer tracker.metricsConfigMux.Unlock()
 	previous := tracker.config
@@ -199,11 +203,13 @@ func (tracker *TrackerBase[Finding]) setConfiguration(config *Configuration) *Co
 }
 
 // track aggregates the fetched findings and updates the gauges.
-func (tracker *TrackerBase[Finding]) track(ctx context.Context, registry metrics.CustomRegistry, cfg *Configuration) error {
+func (tracker *TrackerBase[F]) track(ctx context.Context, gatherer *gatherer[F], cfg *Configuration) error {
 	if len(cfg.metrics) == 0 {
 		return nil
 	}
-	aggregator := makeAggregator(cfg.metrics, cfg.filters, tracker.getters)
+	aggregator := gatherer.aggregator
+	registry := gatherer.registry
+	aggregator.reset()
 	for finding, err := range tracker.generator(ctx, cfg.metrics) {
 		if err != nil {
 			return err
@@ -222,7 +228,7 @@ func (tracker *TrackerBase[Finding]) track(ctx context.Context, registry metrics
 }
 
 // Gather the data not more often then maxAge.
-func (tracker *TrackerBase[Finding]) Gather(ctx context.Context) {
+func (tracker *TrackerBase[F]) Gather(ctx context.Context) {
 	id, err := authn.IdentityFromContext(ctx)
 	if err != nil {
 		return
@@ -244,7 +250,7 @@ func (tracker *TrackerBase[Finding]) Gather(ctx context.Context) {
 		return
 	}
 	begin := time.Now()
-	if err := tracker.track(ctx, gatherer.registry, cfg); err != nil {
+	if err := tracker.track(ctx, gatherer, cfg); err != nil {
 		log.Errorf("Failed to gather %s metrics: %v", tracker.description, err)
 	}
 	end := time.Now()
@@ -257,7 +263,7 @@ func (tracker *TrackerBase[Finding]) Gather(ctx context.Context) {
 		telemeter.WithNoDuplicates(tracker.metricPrefix))
 }
 
-func (tracker *TrackerBase[Finding]) makeProps(descriptionTitle string, duration time.Duration) map[string]any {
+func (tracker *TrackerBase[F]) makeProps(descriptionTitle string, duration time.Duration) map[string]any {
 	props := make(map[string]any, 3)
 	props["Total "+descriptionTitle+" metrics"] = len(tracker.config.metrics)
 	props[descriptionTitle+" metrics labels"] = getLabels(tracker.config.metrics)
@@ -276,18 +282,21 @@ func getLabels(metrics MetricDescriptors) []Label {
 // getGatherer returns the existing or a new gatherer for the given userID.
 // The returned gatherer will be set to a running state for synchronization
 // purposes. When creating a new gatherer, it also registers all known metrics
-// on the gatherer registry.
+// on the gatherer registry and creates the aggregator.
+// For existing gatherers, if the config has changed, the aggregator is recreated.
 // Returns nil on error, or if the gatherer for this userID is still running.
-func (tracker *TrackerBase[Finding]) getGatherer(userID string, cfg *Configuration) *gatherer {
-	var gr *gatherer
+func (tracker *TrackerBase[F]) getGatherer(userID string, cfg *Configuration) *gatherer[F] {
+	var gr *gatherer[F]
 	if g, ok := tracker.gatherers.Load(userID); !ok {
 		r, err := tracker.registryFactory(userID)
 		if err != nil {
 			log.Errorw("failed to create custom registry for user", userID, logging.Err(err))
 			return nil
 		}
-		gr = &gatherer{
-			registry: r,
+		gr = &gatherer[F]{
+			registry:   r,
+			aggregator: makeAggregator(cfg.metrics, cfg.filters, tracker.getters),
+			config:     cfg,
 		}
 		gr.running.Store(true)
 		tracker.gatherers.Store(userID, gr)
@@ -295,28 +304,33 @@ func (tracker *TrackerBase[Finding]) getGatherer(userID string, cfg *Configurati
 			tracker.registerMetric(gr, cfg, metricName)
 		}
 	} else {
-		gr = g.(*gatherer)
+		gr = g.(*gatherer[F])
 		// Return nil if this gatherer is still running.
 		// Otherwise mark it running.
 		if !gr.trySetRunning() {
 			return nil
 		}
+		// Recreate aggregator if config has changed since last run.
+		if gr.config != cfg {
+			gr.aggregator = makeAggregator(cfg.metrics, cfg.filters, tracker.getters)
+			gr.config = cfg
+		}
 	}
 	return gr
 }
 
-func (g *gatherer) trySetRunning() bool {
+func (g *gatherer[F]) trySetRunning() bool {
 	return g.running.CompareAndSwap(false, true)
 }
 
 // cleanupInactiveGatherers frees the registries for the userIDs, that haven't
 // shown up for inactiveGathererTTL.
-func (tracker *TrackerBase[Finding]) cleanupInactiveGatherers() {
+func (tracker *TrackerBase[F]) cleanupInactiveGatherers() {
 	tracker.cleanupWG.Add(1)
 	go func() {
 		defer tracker.cleanupWG.Done()
 		tracker.gatherers.Range(func(userID, gv any) bool {
-			g := gv.(*gatherer)
+			g := gv.(*gatherer[F])
 			// Try to make it running to not interfere with the normal gathering
 			// or otherwise do nothing.
 			if !g.trySetRunning() {

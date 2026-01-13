@@ -43,11 +43,11 @@ type aggregator[F Finding] struct {
 }
 
 func makeAggregator[F Finding](md MetricDescriptors, lf LabelFilters, getters LazyLabelGetters[F]) *aggregator[F] {
-	aggregated := make(map[MetricName]map[aggregationKey]*aggregatedRecord)
+	result := make(map[MetricName]map[aggregationKey]*aggregatedRecord)
 	for metric := range md {
-		aggregated[metric] = make(map[aggregationKey]*aggregatedRecord)
+		result[metric] = make(map[aggregationKey]*aggregatedRecord)
 	}
-	return &aggregator[F]{aggregated, md, lf, getters}
+	return &aggregator[F]{result, md, lf, getters}
 }
 
 // count the finding in the aggregation result.
@@ -81,6 +81,13 @@ func (a *aggregator[F]) pass(finding F, filters map[Label]*regexp.Regexp) bool {
 		}
 	}
 	return true
+}
+
+// reset clears the aggregation result without reallocating the maps.
+func (a *aggregator[F]) reset() {
+	for _, records := range a.result {
+		clear(records)
+	}
 }
 
 // makeAggregationKey computes an aggregation key according to the provided
