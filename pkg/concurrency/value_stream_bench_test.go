@@ -49,7 +49,7 @@ func BenchmarkBuf1ChanWrite(b *testing.B) {
 
 func BenchmarkUnbufChanWrite(b *testing.B) {
 
-	c := make(chan int)
+	c := make(chan struct{})
 	b.Cleanup(func() {
 		close(c)
 	})
@@ -62,28 +62,28 @@ func BenchmarkUnbufChanWrite(b *testing.B) {
 		}
 	}()
 
-	for i := 0; b.Loop(); i++ {
-		c <- i
+	for b.Loop() {
+		c <- struct{}{}
 	}
 }
 
 func BenchmarkSliceAppend(b *testing.B) {
 
-	var slice []int
+	var slice []struct{}
 
-	for i := 0; b.Loop(); i++ {
-		slice = append(slice, i) //nolint:staticcheck // SA4010 slice append without reading is intended
+	for b.Loop() {
+		slice = append(slice, struct{}{}) //nolint:staticcheck // SA4010 slice append without reading is intended
 	}
 }
 
 func BenchmarkSliceAppendWithMutex(b *testing.B) {
 
-	var slice []int
+	var slice []struct{}
 	var mutex sync.Mutex
 
-	for i := 0; b.Loop(); i++ {
+	for b.Loop() {
 		WithLock(&mutex, func() {
-			slice = append(slice, i)
+			slice = append(slice, struct{}{})
 		})
 	}
 }
