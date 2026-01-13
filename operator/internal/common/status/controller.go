@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"reflect"
+	"sort"
 	"strings"
 	"time"
 
@@ -228,18 +229,19 @@ func determineAvailableState(deployments []appsv1.Deployment) (platform.Conditio
 		return platform.StatusFalse, "NoDeployments", "No deployments found"
 	}
 
-	allReady := true
 	var notReadyNames []string
 	for _, dep := range deployments {
 		if !isDeploymentReady(&dep) {
-			allReady = false
 			notReadyNames = append(notReadyNames, dep.Name)
 		}
 	}
 
-	if allReady {
+	if len(notReadyNames) == 0 {
 		return platform.StatusTrue, "DeploymentsReady", "All deployments are ready"
 	}
+
+	// Sort to avoid updates merely due to ordering changes.
+	sort.Strings(notReadyNames)
 
 	return platform.StatusFalse, "DeploymentsNotReady",
 		fmt.Sprintf("%d of %d deployments are not ready: %s", len(notReadyNames), len(deployments), strings.Join(notReadyNames, ", "))
