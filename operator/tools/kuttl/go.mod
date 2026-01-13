@@ -1,6 +1,6 @@
 module github.com/stackrox/rox/operator/tools/kuttl
 
-go 1.25
+go 1.25.3
 
 require github.com/kudobuilder/kuttl v0.24.1-0.20251223085747-6c1c96eb4abd
 
