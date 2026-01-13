@@ -78,11 +78,11 @@ func (ds *datastoreImpl) SearchNodes(ctx context.Context, q *v1.Query) ([]*v1.Se
 	if q == nil {
 		q = pkgSearch.EmptyQuery()
 	}
-	q = q.CloneVT()
+	qClone := q.CloneVT()
 
-	q.Selects = append(q.GetSelects(), pkgSearch.NewQuerySelect(pkgSearch.Node).Proto())
+	qClone.Selects = append(qClone.GetSelects(), pkgSearch.NewQuerySelect(pkgSearch.Node).Proto())
 
-	results, err := ds.Search(ctx, q)
+	results, err := ds.Search(ctx, qClone)
 	if err != nil {
 		return nil, err
 	}

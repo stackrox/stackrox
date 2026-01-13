@@ -118,10 +118,10 @@ func (ds *datastoreImpl) SearchImageIntegrations(ctx context.Context, q *v1.Quer
 	if q == nil {
 		q = searchPkg.EmptyQuery()
 	}
-	q = q.CloneVT()
-	q.Selects = append(q.GetSelects(), searchPkg.NewQuerySelect(searchPkg.IntegrationName).Proto())
+	qClone := q.CloneVT()
+	qClone.Selects = append(qClone.GetSelects(), searchPkg.NewQuerySelect(searchPkg.IntegrationName).Proto())
 
-	results, err := ds.storage.Search(ctx, q)
+	results, err := ds.storage.Search(ctx, qClone)
 	if err != nil {
 		return nil, err
 	}

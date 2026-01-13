@@ -39,10 +39,10 @@ func (ds *datastoreImpl) SearchNodeComponents(ctx context.Context, q *v1.Query) 
 	if q == nil {
 		q = pkgSearch.EmptyQuery()
 	}
-	q = q.CloneVT()
+	qClone := q.CloneVT()
 
-	q.Selects = append(q.GetSelects(), pkgSearch.NewQuerySelect(pkgSearch.Component).Proto())
-	results, err := ds.Search(ctx, q)
+	qClone.Selects = append(qClone.GetSelects(), pkgSearch.NewQuerySelect(pkgSearch.Component).Proto())
+	results, err := ds.Search(ctx, qClone)
 	if err != nil {
 		return nil, err
 	}
