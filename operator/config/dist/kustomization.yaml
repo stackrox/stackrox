@@ -2,6 +2,21 @@
 resources:
 - ../../config/default
 - ../../../config-controller/config/crd
+
+# Use a test value for NO_PROXY. This will not have any impact
+# on the services at runtime, but we can test if it gets piped
+# through correctly.
+patches:
+- patch: |-
+    - op: add
+      path: "/spec/template/spec/containers/0/env/-"
+      value:
+        name: NO_PROXY
+        value: "127.1.2.3/8"
+  target:
+    kind: Deployment
+
 images:
 - name: quay.io/stackrox-io/stackrox-operator
   newName: quay.io/rhacs-eng/stackrox-operator
+# Do not add new lines below this one - the Makefile appends image newTag here.
