@@ -4,6 +4,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -322,10 +323,13 @@ func TestOnClientDisconnect(t *testing.T) {
 	// client-1 should now get full rate: 20/1 = 20 req/s, burst = 20*5s = 100
 	// The existing limiter's burst is updated to 100, but tokens were exhausted
 	// Just verify the client-2 is removed
-	assert.Equal(t, 1, limiter.countActiveClients())
+	assert.Equal(t, 1, limiter.numActiveClients())
 
 	// Verify client-2 is no longer tracked
-	_, exists := limiter.buckets.Load("client-2")
+	exists := concurrency.WithRLock1(&limiter.mu, func() bool {
+		_, ok := limiter.buckets["client-2"]
+		return ok
+	})
 	assert.False(t, exists, "client-2 should be removed from buckets")
 }
 
@@ -334,7 +338,7 @@ func TestOnClientDisconnect_DisabledRateLimiter(t *testing.T) {
 
 	// Should be a no-op when rate limiting is disabled
 	limiter.OnClientDisconnect("client-1")
-	assert.Equal(t, 0, limiter.countActiveClients())
+	assert.Equal(t, 0, limiter.numActiveClients())
 }
 
 func TestOnClientDisconnect_NonexistentClient(t *testing.T) {
@@ -345,5 +349,5 @@ func TestOnClientDisconnect_NonexistentClient(t *testing.T) {
 
 	// Disconnect a client that was never connected - should be a no-op
 	limiter.OnClientDisconnect("nonexistent-client")
-	assert.Equal(t, 1, limiter.countActiveClients())
+	assert.Equal(t, 1, limiter.numActiveClients())
 }
