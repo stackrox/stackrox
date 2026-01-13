@@ -40,7 +40,20 @@ sudo ./roxagent --daemon --index-interval 10m --host-path /custom/path --port 20
 
 The host receives these reports and forwards them to StackRox Central for vulnerability analysis.
 
-## Building
+## Deployment
+
+### Using Quadlet (Recommended for RHEL VMs)
+
+For RHEL 9 VMs, use Podman Quadlet to run roxagent as a periodic systemd service.
+See [quadlet/README.md](quadlet/README.md) for detailed instructions.
+
+```bash
+cd quadlet
+./install.sh              # Install locally
+./install.sh user@host    # Install on remote VM
+```
+
+### Building from Source
 
 ```bash
 go build -o roxagent .
