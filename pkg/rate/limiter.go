@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sync"
 	gorate "golang.org/x/time/rate"
@@ -38,8 +39,11 @@ type Limiter struct {
 	globalRate     float64 // requests per second (0 = unlimited)
 	bucketCapacity int     // max tokens per client bucket (allows temporary bursts)
 
-	buckets sync.Map // map[clientID]*gorate.Limiter
-	clock   Clock    // time source (injectable for testing)
+	mu         sync.RWMutex
+	buckets    map[string]*gorate.Limiter
+	numClients int
+
+	clock Clock // time source (injectable for testing)
 }
 
 // RealClock uses the system clock.
@@ -89,6 +93,7 @@ func NewLimiterWithClock(workloadName string, globalRate float64, bucketCapacity
 		workloadName:   workloadName,
 		globalRate:     globalRate,
 		bucketCapacity: bucketCapacity,
+		buckets:        make(map[string]*gorate.Limiter),
 		clock:          clock,
 	}, nil
 }
@@ -118,44 +123,48 @@ func (l *Limiter) TryConsume(clientID string) (allowed bool, reason string) {
 // getOrCreateLimiter returns the rate limiter for a given client, creating one if needed.
 // When a new client is added, all limiters are rebalanced to maintain fairness.
 func (l *Limiter) getOrCreateLimiter(clientID string) *gorate.Limiter {
-	// Fast path: check if limiter already exists
-	if val, ok := l.buckets.Load(clientID); ok {
-		return val.(*gorate.Limiter)
+	// Fast path: read lock to check if limiter exists
+	if limiter := concurrency.WithRLock1(&l.mu, func() *gorate.Limiter {
+		return l.buckets[clientID]
+	}); limiter != nil {
+		return limiter
+	}
+
+	// Slow path: write lock to create new limiter
+	l.mu.Lock()
+	defer l.mu.Unlock()
+
+	// Double-check after acquiring write lock to avoid race conditions.
+	if limiter, ok := l.buckets[clientID]; ok {
+		return limiter
 	}
 
 	if clientID == "" {
 		log.Warnf("getOrCreateLimiter called with empty clientID for workload %s; this may cause unfair rate limiting", l.workloadName)
 	}
 
-	// New client - create limiter and rebalance all
-	numClients := l.countActiveClients() + 1 // +1 for the new one
-	perClientRate := l.globalRate / float64(numClients)
-	bucketCapacity := l.perClientBucketCapacity(numClients)
+	l.numClients++
+	perClientRate := l.globalRate / float64(l.numClients)
+	bucketCapacity := l.perClientBucketCapacity(l.numClients)
 
+	// Create limiter for this client
 	newLimiter := gorate.NewLimiter(gorate.Limit(perClientRate), bucketCapacity)
-	actual, loaded := l.buckets.LoadOrStore(clientID, newLimiter)
-	if loaded {
-		// Another goroutine was faster - use the limiter that was already stored.
-		return actual.(*gorate.Limiter)
+	l.buckets[clientID] = newLimiter
+
+	// Rebalance all limiters (including the new one) and update metrics
+	for _, limiter := range l.buckets {
+		limiter.SetLimit(gorate.Limit(perClientRate))
+		limiter.SetBurst(bucketCapacity)
 	}
 
-	log.Debugf("New client %s registered for %s rate limiting (clients: %d, rate: %.2f req/s, max bucket capacity: %d)",
-		clientID, l.workloadName, numClients, perClientRate, bucketCapacity)
+	ActiveClients.WithLabelValues(l.workloadName).Set(float64(l.numClients))
+	PerClientRate.WithLabelValues(l.workloadName).Set(perClientRate)
+	PerClientBucketCapacity.WithLabelValues(l.workloadName).Set(float64(bucketCapacity))
 
-	// Rebalance all existing limiters with new client count
-	l.rebalanceLimiters()
+	log.Debugf("New client %s registered for %s rate limiting (clients: %d, rate: %.2f req/s, max bucket capacity: %d)",
+		clientID, l.workloadName, l.numClients, perClientRate, bucketCapacity)
 
 	return newLimiter
-}
-
-// countActiveClients returns the number of currently active clients.
-func (l *Limiter) countActiveClients() int {
-	count := 0
-	l.buckets.Range(func(_, _ interface{}) bool {
-		count++
-		return true
-	})
-	return count
 }
 
 // perClientBucketCapacity calculates the per-client burst capacity (max tokens in bucket).
@@ -168,34 +177,6 @@ func (l *Limiter) perClientBucketCapacity(numClients int) int {
 	return burst
 }
 
-// rebalanceLimiters updates all existing limiters with the new per-client rate.
-// This is called when a new client connects to maintain fairness.
-func (l *Limiter) rebalanceLimiters() {
-	numClients := l.countActiveClients()
-	ActiveClients.WithLabelValues(l.workloadName).Set(float64(numClients))
-	if numClients == 0 {
-		PerClientRate.WithLabelValues(l.workloadName).Set(0)
-		PerClientBucketCapacity.WithLabelValues(l.workloadName).Set(0)
-		return
-	}
-
-	perClientRate := l.globalRate / float64(numClients)
-	bucketCapacity := l.perClientBucketCapacity(numClients)
-
-	l.buckets.Range(func(key, val interface{}) bool {
-		limiter := val.(*gorate.Limiter)
-		limiter.SetLimit(gorate.Limit(perClientRate))
-		limiter.SetBurst(bucketCapacity)
-		return true
-	})
-
-	PerClientRate.WithLabelValues(l.workloadName).Set(perClientRate)
-	PerClientBucketCapacity.WithLabelValues(l.workloadName).Set(float64(bucketCapacity))
-
-	log.Debugf("Rebalanced %s rate limiters: %d clients, %.2f req/s each, burst %d",
-		l.workloadName, numClients, perClientRate, bucketCapacity)
-}
-
 // OnClientDisconnect removes a client from rate limiting and rebalances remaining limiters.
 // This should be called when a client connection is terminated.
 func (l *Limiter) OnClientDisconnect(clientID string) {
@@ -204,19 +185,44 @@ func (l *Limiter) OnClientDisconnect(clientID string) {
 		return
 	}
 
-	// Check if this client was tracked
-	if _, ok := l.buckets.Load(clientID); !ok {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+
+	if _, ok := l.buckets[clientID]; !ok {
 		return
 	}
 
-	l.buckets.Delete(clientID)
+	delete(l.buckets, clientID)
+	l.numClients--
 
-	numClients := l.countActiveClients()
 	log.Infof("Client %s disconnected from %s rate limiting (remaining clients: %d)",
-		clientID, l.workloadName, numClients)
+		clientID, l.workloadName, l.numClients)
 
-	// Rebalance remaining limiters to give them more capacity
-	l.rebalanceLimiters()
+	if l.numClients == 0 {
+		ActiveClients.WithLabelValues(l.workloadName).Set(0)
+		PerClientRate.WithLabelValues(l.workloadName).Set(l.globalRate)
+		PerClientBucketCapacity.WithLabelValues(l.workloadName).Set(float64(l.bucketCapacity))
+		return
+	}
+
+	perClientRate := l.globalRate / float64(l.numClients)
+	bucketCapacity := l.perClientBucketCapacity(l.numClients)
+
+	for _, limiter := range l.buckets {
+		limiter.SetLimit(gorate.Limit(perClientRate))
+		limiter.SetBurst(bucketCapacity)
+	}
+
+	ActiveClients.WithLabelValues(l.workloadName).Set(float64(l.numClients))
+	PerClientRate.WithLabelValues(l.workloadName).Set(perClientRate)
+	PerClientBucketCapacity.WithLabelValues(l.workloadName).Set(float64(bucketCapacity))
+}
+
+// numActiveClients returns the number of currently active clients.
+func (l *Limiter) numActiveClients() int {
+	l.mu.RLock()
+	defer l.mu.RUnlock()
+	return l.numClients
 }
 
 // GlobalRate returns the configured global rate limit.
