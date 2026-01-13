@@ -61,11 +61,11 @@ func (s *ImageListOptimizationTestSuite) TearDownTest() {
 func (s *ImageListOptimizationTestSuite) TestSearchListImagesWithVariousQueries() {
 	// Create test images with various scan states
 	images := []*storage.Image{
-		s.createImageWithScan("sha1", "image1:v1", 10, 5, 2),      // Full scan data
-		s.createImageWithScan("sha2", "image2:v2", 20, 10, 5),     // Different scan data
-		s.createImageWithScan("sha3", "image3:v3", 0, 0, 0),       // Scanned but no CVEs
-		s.createImageWithoutScan("sha4", "image4:v4"),             // No scan data (NULLs)
-		s.createImageWithPartialScan("sha5", "image5:v5", 15, 0),  // Only components, no CVEs
+		s.createImageWithScan("sha1", "image1:v1", 10, 5, 2),     // Full scan data
+		s.createImageWithScan("sha2", "image2:v2", 20, 10, 5),    // Different scan data
+		s.createImageWithScan("sha3", "image3:v3", 0, 0, 0),      // Scanned but no CVEs
+		s.createImageWithoutScan("sha4", "image4:v4"),            // No scan data (NULLs)
+		s.createImageWithPartialScan("sha5", "image5:v5", 15, 0), // Only components, no CVEs
 	}
 
 	// Insert test images
@@ -125,14 +125,14 @@ func (s *ImageListOptimizationTestSuite) TestSearchListImagesWithVariousQueries(
 // TestNullHandling verifies proper handling of NULL scan stats
 func (s *ImageListOptimizationTestSuite) TestNullHandling() {
 	testCases := []struct {
-		name                 string
-		image                *storage.Image
-		expectComponentsSet  bool
-		expectCvesSet        bool
-		expectFixableSet     bool
-		expectedComponents   int32
-		expectedCves         int32
-		expectedFixable      int32
+		name                string
+		image               *storage.Image
+		expectComponentsSet bool
+		expectCvesSet       bool
+		expectFixableSet    bool
+		expectedComponents  int32
+		expectedCves        int32
+		expectedFixable     int32
 	}{
 		{
 			name:                "image with full scan data",
@@ -293,54 +293,6 @@ func (s *ImageListOptimizationTestSuite) createImageWithPartialScan(sha, name st
 	img.SetCves = &storage.Image_Cves{Cves: cves}
 	img.SetFixable = nil // NULL fixable count
 	return img
-}
-
-func (s *ImageListOptimizationTestSuite) assertListImageEqual(expected, actual *storage.ListImage) {
-	s.Equal(expected.GetId(), actual.GetId(), "ID mismatch")
-	s.Equal(expected.GetName(), actual.GetName(), "Name mismatch")
-
-	// Compare oneof fields
-	if expected.GetSetComponents() != nil {
-		s.Require().NotNil(actual.GetSetComponents(), "SetComponents should be set")
-		s.Equal(expected.GetComponents(), actual.GetComponents(), "Components mismatch")
-	} else {
-		s.Nil(actual.GetSetComponents(), "SetComponents should be nil")
-	}
-
-	if expected.GetSetCves() != nil {
-		s.Require().NotNil(actual.GetSetCves(), "SetCves should be set")
-		s.Equal(expected.GetCves(), actual.GetCves(), "CVEs mismatch")
-	} else {
-		s.Nil(actual.GetSetCves(), "SetCves should be nil")
-	}
-
-	if expected.GetSetFixable() != nil {
-		s.Require().NotNil(actual.GetSetFixable(), "SetFixable should be set")
-		s.Equal(expected.GetFixableCves(), actual.GetFixableCves(), "Fixable CVEs mismatch")
-	} else {
-		s.Nil(actual.GetSetFixable(), "SetFixable should be nil")
-	}
-
-	// Compare timestamps
-	if expected.GetCreated() != nil {
-		s.Require().NotNil(actual.GetCreated(), "Created timestamp should be set")
-		s.True(protocompat.CompareTimestamps(expected.GetCreated(), actual.GetCreated()) == 0,
-			"Created timestamp mismatch")
-	} else {
-		s.Nil(actual.GetCreated(), "Created timestamp should be nil")
-	}
-
-	if expected.GetLastUpdated() != nil {
-		s.Require().NotNil(actual.GetLastUpdated(), "LastUpdated timestamp should be set")
-		s.True(protocompat.CompareTimestamps(expected.GetLastUpdated(), actual.GetLastUpdated()) == 0,
-			"LastUpdated timestamp mismatch")
-	} else {
-		s.Nil(actual.GetLastUpdated(), "LastUpdated timestamp should be nil")
-	}
-
-	// Priority is set by ranker, so both should have same priority
-	// (either both set or both unset)
-	s.Equal(expected.GetPriority(), actual.GetPriority(), "Priority mismatch")
 }
 
 // TestLargeResultSet verifies optimized query handles large result sets
