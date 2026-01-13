@@ -16,9 +16,11 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/images/enricher"
 	imageTypes "github.com/stackrox/rox/pkg/images/types"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/scancomponent"
@@ -115,9 +117,70 @@ func (ds *datastoreImpl) SearchRawImages(ctx context.Context, q *v1.Query) ([]*s
 	return imgs, nil
 }
 
+// convertListImageViewToListImage converts a ListImageView to a ListImage proto.
+// Handles oneof field logic for scan stats - only sets fields if non-NULL in database.
+func convertListImageViewToListImage(view *views.ListImageView) *storage.ListImage {
+	listImg := &storage.ListImage{
+		Id:       view.ID,
+		Name:     view.Name,
+		Priority: view.Priority, // Will be overwritten by ranker
+	}
+
+	// Convert timestamps from *time.Time to *timestamppb.Timestamp
+	if view.Created != nil {
+		listImg.Created = protocompat.ConvertTimeToTimestampOrNil(view.Created)
+	}
+	if view.LastUpdated != nil {
+		listImg.LastUpdated = protocompat.ConvertTimeToTimestampOrNil(view.LastUpdated)
+	}
+
+	// Only set oneof fields if non-NULL in database
+	// NULL means image has no scan data, so don't set the oneof
+	if view.ComponentCount != nil {
+		listImg.SetComponents = &storage.ListImage_Components{
+			Components: *view.ComponentCount,
+		}
+	}
+	if view.CveCount != nil {
+		listImg.SetCves = &storage.ListImage_Cves{
+			Cves: *view.CveCount,
+		}
+	}
+	if view.FixableCveCount != nil {
+		listImg.SetFixable = &storage.ListImage_FixableCves{
+			FixableCves: *view.FixableCveCount,
+		}
+	}
+
+	return listImg
+}
+
+// searchListImagesOptimized uses optimized field selection to fetch only ListImage fields.
+func (ds *datastoreImpl) searchListImagesOptimized(ctx context.Context, q *v1.Query) ([]*storage.ListImage, error) {
+	var imgs []*storage.ListImage
+
+	err := ds.storage.WalkListImagesByQuery(ctx, q, func(view *views.ListImageView) error {
+		listImg := convertListImageViewToListImage(view)
+		imgs = append(imgs, listImg)
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	ds.updateListImagePriority(imgs...)
+	return imgs, nil
+}
+
 func (ds *datastoreImpl) SearchListImages(ctx context.Context, q *v1.Query) ([]*storage.ListImage, error) {
 	defer metrics.SetDatastoreFunctionDuration(time.Now(), "Image", "SearchListImages")
 
+	// Use optimized path if feature flag enabled
+	if features.ImageListOptimization.Enabled() {
+		return ds.searchListImagesOptimized(ctx, q)
+	}
+
+	// Legacy path: fetch full images and convert
 	var imgs []*storage.ListImage
 	err := ds.storage.WalkMetadataByQuery(ctx, q, func(img *storage.Image) error {
 		imgs = append(imgs, imageTypes.ConvertImageToListImage(img))
