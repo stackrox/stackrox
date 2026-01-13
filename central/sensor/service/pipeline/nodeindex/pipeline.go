@@ -81,9 +81,9 @@ func (p *pipelineImpl) Run(ctx context.Context, _ string, msg *central.MsgFromSe
 	}
 
 	start := time.Now()
-	status := "error"
+	result := "error"
 	defer func() {
-		countMetrics.ObserveIndexReportProcessingDuration(start, "node", status)
+		countMetrics.ObserveIndexReportProcessingDuration(start, "node", result)
 		countMetrics.IncrementResourceProcessedCounter(pipeline.ActionToOperation(msg.GetEvent().GetAction()), metrics.NodeIndex)
 	}()
 
@@ -130,7 +130,7 @@ func (p *pipelineImpl) Run(ctx context.Context, _ string, msg *central.MsgFromSe
 	}
 
 	sendComplianceAck(ctx, node, injector)
-	status = "success"
+	result = "success"
 	return nil
 }
 

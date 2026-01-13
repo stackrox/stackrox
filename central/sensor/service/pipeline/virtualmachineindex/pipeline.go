@@ -67,9 +67,9 @@ func (p *pipelineImpl) Run(ctx context.Context, _ string, msg *central.MsgFromSe
 	}
 
 	start := time.Now()
-	status := "error"
+	result := "error"
 	defer func() {
-		countMetrics.ObserveIndexReportProcessingDuration(start, "vm", status)
+		countMetrics.ObserveIndexReportProcessingDuration(start, "vm", result)
 		countMetrics.IncrementResourceProcessedCounter(pipeline.ActionToOperation(msg.GetEvent().GetAction()), metrics.VirtualMachineIndex)
 	}()
 
@@ -112,6 +112,6 @@ func (p *pipelineImpl) Run(ctx context.Context, _ string, msg *central.MsgFromSe
 	log.Infof("Successfully enriched and stored VM %s with %d components",
 		vm.GetId(), len(vm.GetScan().GetComponents()))
 
-	status = "success"
+	result = "success"
 	return nil
 }

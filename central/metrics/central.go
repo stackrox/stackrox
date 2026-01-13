@@ -281,11 +281,11 @@ var (
 	indexReportProcessingDurationHistogramVec = prometheus.NewHistogramVec(prometheus.HistogramOpts{
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.CentralSubsystem.String(),
-		Name:      "index_report_processing_duration",
-		Help:      "Time taken to process an index report (VM or node)",
-		// Buckets from 500ms to ~256s (4.3 min), covering the expected range of 0.5s to 5min
-		Buckets: prometheus.ExponentialBuckets(500, 2, 10),
-	}, []string{"type", "status"})
+		Name:      "index_report_processing_duration_seconds",
+		Help:      "Time taken in seconds to process an index report (VM or node)",
+		// Buckets from 0.5s to ~128s
+		Buckets: prometheus.ExponentialBuckets(0.5, 2, 9),
+	}, []string{"index_type", "result"})
 )
 
 // Reasons for a message not being sent.
@@ -513,7 +513,8 @@ func SetSignatureVerificationReprocessorDuration(start time.Time) {
 }
 
 // ObserveIndexReportProcessingDuration records how long it took to process an index report (VM or node).
-func ObserveIndexReportProcessingDuration(start time.Time, indexType, status string) {
-	indexReportProcessingDurationHistogramVec.With(prometheus.Labels{"type": indexType, "status": status}).
-		Observe(startTimeToMS(start))
+// The duration is recorded in seconds, as indicated by the `_seconds` suffix in the metric name.
+func ObserveIndexReportProcessingDuration(start time.Time, indexType, result string) {
+	indexReportProcessingDurationHistogramVec.With(prometheus.Labels{"index_type": indexType, "result": result}).
+		Observe(time.Since(start).Seconds())
 }
