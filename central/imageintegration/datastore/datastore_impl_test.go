@@ -887,20 +887,6 @@ func (suite *ImageIntegrationDataStoreTestSuite) TestSearchImageIntegrationsFiel
 	_, err = suite.datastore.AddImageIntegration(ctx, integration3)
 	suite.NoError(err)
 
-	suite.Run("SearchImageIntegrations with empty query", func() {
-		searchResults, err := suite.datastore.SearchImageIntegrations(ctx, pkgSearch.EmptyQuery())
-		suite.NoError(err)
-		suite.Len(searchResults, 3)
-
-		// Verify all fields are properly populated
-		for _, result := range searchResults {
-			suite.NotEmpty(result.GetId(), "Integration ID should not be empty")
-			suite.NotEmpty(result.GetName(), "Integration name should not be empty")
-			suite.Equal(v1.SearchCategory_IMAGE_INTEGRATIONS, result.GetCategory(), "Result category should be IMAGE_INTEGRATIONS")
-			suite.NotNil(result.GetFieldToMatches(), "FieldToMatches should not be nil")
-		}
-	})
-
 	suite.Run("SearchImageIntegrations with exact field verification", func() {
 		searchResults, err := suite.datastore.SearchImageIntegrations(ctx, pkgSearch.EmptyQuery())
 		suite.NoError(err)
@@ -955,13 +941,15 @@ func (suite *ImageIntegrationDataStoreTestSuite) TestSearchImageIntegrationsFiel
 		suite.NoError(err)
 		suite.Len(searchResults, 2)
 
-		ids := make([]string, len(searchResults))
-		for i, result := range searchResults {
-			ids[i] = result.GetId()
-			suite.NotEmpty(result.GetName())
+		var actualIds []string
+		var actualNames []string
+		for _, result := range searchResults {
+			actualIds = append(actualIds, result.GetId())
+			actualNames = append(actualNames, result.GetName())
 			suite.Equal(v1.SearchCategory_IMAGE_INTEGRATIONS, result.GetCategory())
 		}
-		suite.ElementsMatch([]string{integration1.GetId(), integration2.GetId()}, ids)
+		suite.ElementsMatch([]string{integration1.GetId(), integration2.GetId()}, actualIds)
+		suite.ElementsMatch([]string{integration1.GetName(), integration2.GetName()}, actualNames)
 	})
 
 	suite.Run("SearchImageIntegrations with exact name and category verification", func() {

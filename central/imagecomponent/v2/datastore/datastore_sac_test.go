@@ -14,7 +14,6 @@ import (
 	"github.com/stackrox/rox/pkg/sac/resources"
 	sacTestUtils "github.com/stackrox/rox/pkg/sac/testutils"
 	"github.com/stackrox/rox/pkg/scancomponent"
-	pkgSearch "github.com/stackrox/rox/pkg/search"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -360,7 +359,7 @@ func (s *componentV2DataStoreSACTestSuite) TestSACImageComponentSearchImageCompo
 	s.runImageTest("TestSACImageComponentSearchImageComponents", func(c componentTestCase) {
 
 		testCtx := s.imageTestContexts[c.contextKey]
-		results, err := s.imageComponentStore.SearchImageComponents(testCtx, pkgSearch.EmptyQuery())
+		results, err := s.imageComponentStore.SearchImageComponents(testCtx, nil)
 		s.NoError(err)
 		expectedComponentIDs := make([]string, 0, len(c.expectedComponentFound))
 		actualNames := make([]string, 0, len(c.expectedComponentFound))

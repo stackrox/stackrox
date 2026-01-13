@@ -40,11 +40,12 @@ func (ds *datastoreImpl) SearchImageComponents(ctx context.Context, q *v1.Query)
 	if q == nil {
 		q = pkgSearch.EmptyQuery()
 	}
-	qClone = q.CloneVT()
+
+	qClone := q.CloneVT()
 
 	qClone.Selects = append(qClone.GetSelects(), pkgSearch.NewQuerySelect(pkgSearch.Component).Proto())
 
-	results, err := ds.Search(ctx, q)
+	results, err := ds.Search(ctx, qClone)
 	if err != nil {
 		return nil, err
 	}
