@@ -2,6 +2,7 @@ package nodeindex
 
 import (
 	"context"
+	"time"
 
 	"github.com/pkg/errors"
 	clusterDataStore "github.com/stackrox/rox/central/cluster/datastore"
@@ -78,7 +79,13 @@ func (p *pipelineImpl) Run(ctx context.Context, _ string, msg *central.MsgFromSe
 		sendComplianceAck(ctx, msg.GetEvent().GetNode(), injector)
 		return nil
 	}
-	defer countMetrics.IncrementResourceProcessedCounter(pipeline.ActionToOperation(msg.GetEvent().GetAction()), metrics.NodeIndex)
+
+	start := time.Now()
+	status := "error"
+	defer func() {
+		countMetrics.ObserveIndexReportProcessingDuration(start, "node", status)
+		countMetrics.IncrementResourceProcessedCounter(pipeline.ActionToOperation(msg.GetEvent().GetAction()), metrics.NodeIndex)
+	}()
 
 	event := msg.GetEvent()
 	report := event.GetIndexReport()
@@ -123,6 +130,7 @@ func (p *pipelineImpl) Run(ctx context.Context, _ string, msg *central.MsgFromSe
 	}
 
 	sendComplianceAck(ctx, node, injector)
+	status = "success"
 	return nil
 }
 

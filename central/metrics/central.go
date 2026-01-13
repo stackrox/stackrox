@@ -277,6 +277,15 @@ var (
 		Name:      "msg_to_sensor_not_sent_count",
 		Help:      "Total messages not sent to Sensor due to errors or other reasons",
 	}, []string{"ClusterID", "type", "reason"})
+
+	indexReportProcessingDurationHistogramVec = prometheus.NewHistogramVec(prometheus.HistogramOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.CentralSubsystem.String(),
+		Name:      "index_report_processing_duration",
+		Help:      "Time taken to process an index report (VM or node)",
+		// Buckets from 500ms to ~256s (4.3 min), covering the expected range of 0.5s to 5min
+		Buckets: prometheus.ExponentialBuckets(500, 2, 10),
+	}, []string{"type", "status"})
 )
 
 // Reasons for a message not being sent.
@@ -501,4 +510,10 @@ func IncrementMsgToSensorNotSentCounter(clusterID string, msg *central.MsgToSens
 // SetSignatureVerificationReprocessorDuration registers how long a signature verification reprocessing step took.
 func SetSignatureVerificationReprocessorDuration(start time.Time) {
 	signatureVerificationReprocessorDurationGauge.Set(time.Since(start).Seconds())
+}
+
+// ObserveIndexReportProcessingDuration records how long it took to process an index report (VM or node).
+func ObserveIndexReportProcessingDuration(start time.Time, indexType, status string) {
+	indexReportProcessingDurationHistogramVec.With(prometheus.Labels{"type": indexType, "status": status}).
+		Observe(startTimeToMS(start))
 }

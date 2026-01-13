@@ -2,6 +2,7 @@ package virtualmachineindex
 
 import (
 	"context"
+	"time"
 
 	"github.com/pkg/errors"
 	countMetrics "github.com/stackrox/rox/central/metrics"
@@ -61,11 +62,17 @@ func (p *pipelineImpl) Match(msg *central.MsgFromSensor) bool {
 }
 
 func (p *pipelineImpl) Run(ctx context.Context, _ string, msg *central.MsgFromSensor, _ common.MessageInjector) error {
-	defer countMetrics.IncrementResourceProcessedCounter(pipeline.ActionToOperation(msg.GetEvent().GetAction()), metrics.VirtualMachineIndex)
-
 	if !features.VirtualMachines.Enabled() {
 		return nil
 	}
+
+	start := time.Now()
+	status := "error"
+	defer func() {
+		countMetrics.ObserveIndexReportProcessingDuration(start, "vm", status)
+		countMetrics.IncrementResourceProcessedCounter(pipeline.ActionToOperation(msg.GetEvent().GetAction()), metrics.VirtualMachineIndex)
+	}()
+
 	event := msg.GetEvent()
 	index := event.GetVirtualMachineIndexReport()
 	if index == nil {
@@ -105,5 +112,6 @@ func (p *pipelineImpl) Run(ctx context.Context, _ string, msg *central.MsgFromSe
 	log.Infof("Successfully enriched and stored VM %s with %d components",
 		vm.GetId(), len(vm.GetScan().GetComponents()))
 
+	status = "success"
 	return nil
 }
