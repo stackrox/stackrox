@@ -279,7 +279,7 @@ func (m *manager) HandleConnection(ctx context.Context, sensorHello *central.Sen
 			m.complianceOperatorMgr,
 			m.initSyncMgr,
 		)
-	ctx = withConnection(ctx, conn)
+	ctx = WithConnection(ctx, conn)
 
 	oldConnection, err := m.replaceConnection(ctx, cluster, conn)
 	if err != nil {

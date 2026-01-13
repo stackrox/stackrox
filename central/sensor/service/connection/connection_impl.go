@@ -256,7 +256,7 @@ func (c *sensorConnection) Scrapes() scrape.Controller {
 }
 
 func (c *sensorConnection) InjectMessageIntoQueue(msg *central.MsgFromSensor) {
-	c.multiplexedPush(sac.WithAllAccess(withConnection(context.Background(), c)), msg, nil)
+	c.multiplexedPush(sac.WithAllAccess(WithConnection(context.Background(), c)), msg, nil)
 }
 
 func (c *sensorConnection) NetworkEntities() networkentities.Controller {
