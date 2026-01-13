@@ -13,10 +13,10 @@ const (
 
 var (
 	operationToString = map[Operation]string{
-		Published:     "published",
-		Processed:     "processed",
-		PublishError:  "publish_error",
-		ConsumerError: "consumer_error",
+		Published:     "success",
+		Processed:     "success",
+		PublishError:  "error",
+		ConsumerError: "error",
 		NoConsumers:   "no_consumers",
 	}
 )

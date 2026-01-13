@@ -1,25 +1,37 @@
 package metrics
 
 import (
+	"time"
+
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stackrox/rox/pkg/metrics"
+	"github.com/stackrox/rox/sensor/common/pubsub"
 )
 
 var (
-	// laneEventOperations tracks all event operations across lanes.
-	// Operations: published, processed, publish_error, consumer_error, no_consumers
-	laneEventOperations = prometheus.NewCounterVec(prometheus.CounterOpts{
+	// lanePublishOperations tracks all publish operations across lanes.
+	// Operations: success, error
+	lanePublishOperations = prometheus.NewCounterVec(prometheus.CounterOpts{
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.SensorSubsystem.String(),
-		Name:      "pubsub_lane_event_operations_total",
-		Help:      "Total number of pubsub lane event operations by lane, topic, and operation type",
+		Name:      "pubsub_lane_publish_operations_total",
+		Help:      "Total number of pubsub lane publish operations by lane, topic, and operation type",
+	}, []string{"lane_id", "topic", "operation"})
+
+	// laneConsumerOperations tracks all publish operations across lanes.
+	// Operations: success, error, no_consumers
+	laneConsumerOperations = prometheus.NewCounterVec(prometheus.CounterOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.SensorSubsystem.String(),
+		Name:      "pubsub_lane_consumer_operations_total",
+		Help:      "Total number of pubsub lane consumer operations by lane, topic, and operation type",
 	}, []string{"lane_id", "topic", "operation"})
 
 	// laneQueueSize tracks the current number of events in each lane's buffer.
 	laneQueueSize = prometheus.NewGaugeVec(prometheus.GaugeOpts{
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.SensorSubsystem.String(),
-		Name:      "pubsub_lane_queue_size",
+		Name:      "pubsub_lane_queue_size_current",
 		Help:      "Current number of events waiting in the lane buffer",
 	}, []string{"lane_id"})
 
@@ -40,3 +52,33 @@ var (
 		Help:      "Number of currently registered consumers per lane and topic",
 	}, []string{"lane_id", "topic"})
 )
+
+func RecordPublishOperation(laneID pubsub.LaneID, topic pubsub.Topic, operation Operation) {
+	lanePublishOperations.WithLabelValues(laneID.String(), topic.String(), operation.String()).Inc()
+}
+
+func RecordConsumerOperation(laneID pubsub.LaneID, topic pubsub.Topic, operation Operation) {
+	laneConsumerOperations.WithLabelValues(laneID.String(), topic.String(), operation.String()).Inc()
+}
+
+func SetQueueSize(laneID pubsub.LaneID, size int) {
+	laneQueueSize.WithLabelValues(laneID.String()).Set(float64(size))
+}
+
+func ObserveProcessingDuration(laneID pubsub.LaneID, topic pubsub.Topic, duration time.Duration) {
+	laneEventProcessingDuration.WithLabelValues(laneID.String(), topic.String()).Observe(duration.Seconds())
+}
+
+func RecordConsumerCount(laneID pubsub.LaneID, topic pubsub.Topic, count int) {
+	consumersCount.WithLabelValues(laneID.String(), topic.String()).Set(float64(count))
+}
+
+func init() {
+	prometheus.MustRegister(
+		lanePublishOperations,
+		laneConsumerOperations,
+		laneQueueSize,
+		laneEventProcessingDuration,
+		consumersCount,
+	)
+}
