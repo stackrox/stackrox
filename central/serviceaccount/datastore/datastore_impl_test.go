@@ -116,14 +116,17 @@ func (suite *ServiceAccountDataStoreTestSuite) TestSearchServiceAccounts_NameAnd
 	results, err := suite.datastore.SearchServiceAccounts(suite.ctx, nil)
 	suite.Require().NoError(err)
 	ids := make(map[string]struct{})
+	var actualNames []string
 	for _, r := range results {
 		if r.GetId() == sa1.GetId() || r.GetId() == sa2.GetId() {
 			ids[r.GetId()] = struct{}{}
 			suite.NotEmpty(r.GetName())
 		}
+		actualNames = append(actualNames, r.GetName())
 	}
 	suite.Contains(ids, sa1.GetId())
 	suite.Contains(ids, sa2.GetId())
+	suite.ElementsMatch([]string{sa1.GetName(), sa2.GetName()}, actualNames)
 
 	// 2. Exact name query should return the matching service account
 	nameQ := search.NewQueryBuilder().AddExactMatches(search.ServiceAccountName, sa1.GetName()).ProtoQuery()

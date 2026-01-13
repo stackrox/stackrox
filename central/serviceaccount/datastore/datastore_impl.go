@@ -66,6 +66,23 @@ func (d *datastoreImpl) SearchServiceAccounts(ctx context.Context, q *v1.Query) 
 	return searchPkg.ResultsToSearchResultProtos(results, &serviceAccountSearchResultConverter{}), nil
 }
 
+func (d *datastoreImpl) UpsertServiceAccount(ctx context.Context, request *storage.ServiceAccount) error {
+	return d.storage.Upsert(ctx, request)
+}
+
+func (d *datastoreImpl) RemoveServiceAccount(ctx context.Context, id string) error {
+	return d.storage.Delete(ctx, id)
+}
+
+func (d *datastoreImpl) Search(ctx context.Context, q *v1.Query) ([]searchPkg.Result, error) {
+	return d.storage.Search(ctx, q)
+}
+
+// Count returns the number of search results from the query
+func (d *datastoreImpl) Count(ctx context.Context, q *v1.Query) (int, error) {
+	return d.storage.Count(ctx, q)
+}
+
 // serviceAccountSearchResultConverter implements searchPkg.SearchResultConverter for service accounts.
 // It extracts name from Result.Name and does not set a location.
 // Category is SERVICE_ACCOUNTS.
@@ -82,21 +99,4 @@ func (c *serviceAccountSearchResultConverter) BuildLocation(result *searchPkg.Re
 
 func (c *serviceAccountSearchResultConverter) GetCategory() v1.SearchCategory {
 	return v1.SearchCategory_SERVICE_ACCOUNTS
-}
-
-func (d *datastoreImpl) UpsertServiceAccount(ctx context.Context, request *storage.ServiceAccount) error {
-	return d.storage.Upsert(ctx, request)
-}
-
-func (d *datastoreImpl) RemoveServiceAccount(ctx context.Context, id string) error {
-	return d.storage.Delete(ctx, id)
-}
-
-func (d *datastoreImpl) Search(ctx context.Context, q *v1.Query) ([]searchPkg.Result, error) {
-	return d.storage.Search(ctx, q)
-}
-
-// Count returns the number of search results from the query
-func (d *datastoreImpl) Count(ctx context.Context, q *v1.Query) (int, error) {
-	return d.storage.Count(ctx, q)
 }
