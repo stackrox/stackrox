@@ -252,16 +252,12 @@ function ImagePageVulnerabilities({
             <PageSection component="div" variant="light" className="pf-v5-u-py-md pf-v5-u-px-xl">
                 <Text>Review and triage vulnerability data scanned on this image</Text>
             </PageSection>
+            <Divider component="div" />
             {isBaseImageDetectionEnabled && baseImageInfo.length > 0 && (
-                <PageSection
-                    component="div"
-                    variant="light"
-                    className="pf-v5-u-py-md pf-v5-u-px-xl"
-                >
+                <PageSection component="div" className="pf-v5-u-p-lg">
                     <BaseImageAssessmentCard baseImageInfo={baseImageInfo} />
                 </PageSection>
             )}
-            <Divider component="div" />
             <PageSection
                 id={vulnStateTabContentId}
                 className="pf-v5-u-display-flex pf-v5-u-flex-direction-column pf-v5-u-flex-grow-1"

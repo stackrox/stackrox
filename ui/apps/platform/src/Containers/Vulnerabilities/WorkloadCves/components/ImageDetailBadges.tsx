@@ -10,8 +10,7 @@ export type BaseImageInfo = {
     baseImageId: string;
     baseImageFullName: string;
     baseImageDigest: string;
-    // TODO: Uncomment when backend adds 'baseImageCreated' field to BaseImageInfo GraphQL type
-    // baseImageCreated: string | null;
+    baseImageCreated?: string;
 };
 
 export type ImageDetails = {
