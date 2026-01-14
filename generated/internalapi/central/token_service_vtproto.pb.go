@@ -58,7 +58,8 @@ func (m *RequestedRoleClusterScope) CloneVT() *RequestedRoleClusterScope {
 		return (*RequestedRoleClusterScope)(nil)
 	}
 	r := new(RequestedRoleClusterScope)
-	r.ClusterId = m.ClusterId
+	r.ClusterName = m.ClusterName
+	r.FullClusterAccess = m.FullClusterAccess
 	if rhs := m.Namespace; rhs != nil {
 		tmpContainer := make([]string, len(rhs))
 		copy(tmpContainer, rhs)
@@ -152,7 +153,10 @@ func (this *RequestedRoleClusterScope) EqualVT(that *RequestedRoleClusterScope) 
 	} else if this == nil || that == nil {
 		return false
 	}
-	if this.ClusterId != that.ClusterId {
+	if this.ClusterName != that.ClusterName {
+		return false
+	}
+	if this.FullClusterAccess != that.FullClusterAccess {
 		return false
 	}
 	if len(this.Namespace) != len(that.Namespace) {
@@ -314,13 +318,23 @@ func (m *RequestedRoleClusterScope) MarshalToSizedBufferVT(dAtA []byte) (int, er
 			copy(dAtA[i:], m.Namespace[iNdEx])
 			i = protohelpers.EncodeVarint(dAtA, i, uint64(len(m.Namespace[iNdEx])))
 			i--
-			dAtA[i] = 0x12
+			dAtA[i] = 0x1a
 		}
 	}
-	if len(m.ClusterId) > 0 {
-		i -= len(m.ClusterId)
-		copy(dAtA[i:], m.ClusterId)
-		i = protohelpers.EncodeVarint(dAtA, i, uint64(len(m.ClusterId)))
+	if m.FullClusterAccess {
+		i--
+		if m.FullClusterAccess {
+			dAtA[i] = 1
+		} else {
+			dAtA[i] = 0
+		}
+		i--
+		dAtA[i] = 0x10
+	}
+	if len(m.ClusterName) > 0 {
+		i -= len(m.ClusterName)
+		copy(dAtA[i:], m.ClusterName)
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(len(m.ClusterName)))
 		i--
 		dAtA[i] = 0xa
 	}
@@ -445,9 +459,12 @@ func (m *RequestedRoleClusterScope) SizeVT() (n int) {
 	}
 	var l int
 	_ = l
-	l = len(m.ClusterId)
+	l = len(m.ClusterName)
 	if l > 0 {
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
+	}
+	if m.FullClusterAccess {
+		n += 2
 	}
 	if len(m.Namespace) > 0 {
 		for _, s := range m.Namespace {
@@ -678,7 +695,7 @@ func (m *RequestedRoleClusterScope) UnmarshalVT(dAtA []byte) error {
 		switch fieldNum {
 		case 1:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field ClusterId", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field ClusterName", wireType)
 			}
 			var stringLen uint64
 			for shift := uint(0); ; shift += 7 {
@@ -706,9 +723,29 @@ func (m *RequestedRoleClusterScope) UnmarshalVT(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.ClusterId = string(dAtA[iNdEx:postIndex])
+			m.ClusterName = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
 		case 2:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field FullClusterAccess", wireType)
+			}
+			var v int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				v |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			m.FullClusterAccess = bool(v != 0)
+		case 3:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field Namespace", wireType)
 			}
@@ -1189,7 +1226,7 @@ func (m *RequestedRoleClusterScope) UnmarshalVTUnsafe(dAtA []byte) error {
 		switch fieldNum {
 		case 1:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field ClusterId", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field ClusterName", wireType)
 			}
 			var stringLen uint64
 			for shift := uint(0); ; shift += 7 {
@@ -1221,9 +1258,29 @@ func (m *RequestedRoleClusterScope) UnmarshalVTUnsafe(dAtA []byte) error {
 			if intStringLen > 0 {
 				stringValue = unsafe.String(&dAtA[iNdEx], intStringLen)
 			}
-			m.ClusterId = stringValue
+			m.ClusterName = stringValue
 			iNdEx = postIndex
 		case 2:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field FullClusterAccess", wireType)
+			}
+			var v int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				v |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			m.FullClusterAccess = bool(v != 0)
+		case 3:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field Namespace", wireType)
 			}
