@@ -115,7 +115,16 @@ func (c *nodeInventoryHandlerImpl) Notify(e common.SensorComponentEvent) {
 }
 
 func (c *nodeInventoryHandlerImpl) Accepts(msg *central.MsgToSensor) bool {
-	return msg.GetNodeInventoryAck() != nil || msg.GetSensorAck() != nil
+	if msg.GetNodeInventoryAck() != nil {
+		return true
+	}
+	if sensorAck := msg.GetSensorAck(); sensorAck != nil {
+		switch sensorAck.GetMessageType() {
+		case central.SensorACK_NODE_INVENTORY, central.SensorACK_NODE_INDEX_REPORT:
+			return true
+		}
+	}
+	return false
 }
 
 func (c *nodeInventoryHandlerImpl) ProcessMessage(_ context.Context, msg *central.MsgToSensor) error {

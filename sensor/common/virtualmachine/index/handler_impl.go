@@ -111,7 +111,6 @@ func (h *handlerImpl) Notify(e common.SensorComponentEvent) {
 }
 
 func (h *handlerImpl) Accepts(msg *central.MsgToSensor) bool {
-	// Accept SensorACK messages for VM_INDEX_REPORT
 	if sensorAck := msg.GetSensorAck(); sensorAck != nil {
 		return sensorAck.GetMessageType() == central.SensorACK_VM_INDEX_REPORT
 	}
