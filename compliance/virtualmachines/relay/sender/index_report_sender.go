@@ -39,7 +39,12 @@ func New(sensorClient sensor.VirtualMachineIndexReportServiceClient) IndexReport
 
 // Send sends the vsock message to Sensor, retrying on transient errors.
 func (s *sensorIndexReportSender) Send(ctx context.Context, vsockMsg *v1.VsockMessage) error {
-	log.Infof("Sending vsock message to sensor (vsockCID: %s)", vsockMsg.GetIndexReport().GetVsockCid())
+	indexReport := vsockMsg.GetIndexReport()
+	if indexReport == nil {
+		return errors.New("vsock message missing required index_report field")
+	}
+
+	log.Infof("Sending vsock message to sensor (vsockCID: %s)", indexReport.GetVsockCid())
 
 	// This is the sending logic that will be retried if needed
 	sendFunc := func() error {
@@ -47,7 +52,7 @@ func (s *sensorIndexReportSender) Send(ctx context.Context, vsockMsg *v1.VsockMe
 		defer cancel()
 
 		req := &sensor.UpsertVirtualMachineIndexReportRequest{
-			IndexReport:          vsockMsg.GetIndexReport(),
+			IndexReport:          indexReport,
 			DetectedOs:           vsockMsg.GetDetectedOs(),
 			IsOsActivated:        vsockMsg.GetIsOsActivated(),
 			DnfMetadataAvailable: vsockMsg.GetDnfMetadataAvailable(),

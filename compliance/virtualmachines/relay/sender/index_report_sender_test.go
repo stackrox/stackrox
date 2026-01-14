@@ -33,7 +33,7 @@ func (s *senderTestSuite) TestSend_HandlesContextCancellation() {
 	ctx, cancel := context.WithCancel(s.ctx)
 	cancel()
 
-	err := sender.Send(ctx, &v1.VsockMessage{IndexReport: &v1.IndexReport{VsockCid: "42"}, DetectedOs: "unknown", IsOsActivated: false, DnfMetadataAvailable: false, AuxData: make(map[string]string)})
+	err := sender.Send(ctx, relaytest.NewTestVsockMessage("42"))
 	s.Require().Error(err)
 	s.Contains(err.Error(), "context canceled")
 }
@@ -73,7 +73,7 @@ func (s *senderTestSuite) TestSend_RetriesOnRetryableErrors() {
 			ctx, cancel := context.WithTimeout(s.ctx, 500*time.Millisecond)
 			defer cancel()
 
-			err := sender.Send(ctx, &v1.VsockMessage{IndexReport: &v1.IndexReport{VsockCid: "42"}, DetectedOs: "unknown", IsOsActivated: false, DnfMetadataAvailable: false, AuxData: make(map[string]string)})
+			err := sender.Send(ctx, relaytest.NewTestVsockMessage("42"))
 			s.Require().Error(err)
 
 			retried := len(client.CapturedRequests()) > 1
@@ -86,15 +86,31 @@ func (s *senderTestSuite) TestReportSender_Send() {
 	client := relaytest.NewMockSensorClient(s.T())
 	sender := New(client)
 
-	err := sender.Send(s.ctx, &v1.VsockMessage{IndexReport: &v1.IndexReport{VsockCid: "42"}, DetectedOs: "unknown", IsOsActivated: false, DnfMetadataAvailable: false, AuxData: make(map[string]string)})
+	auxData := map[string]string{"key": "value"}
+	msg := &v1.VsockMessage{
+		IndexReport:          &v1.IndexReport{VsockCid: "42"},
+		DetectedOs:           "linux",
+		IsOsActivated:        true,
+		DnfMetadataAvailable: true,
+		AuxData:              auxData,
+	}
+
+	err := sender.Send(s.ctx, msg)
 	s.Require().NoError(err)
-	s.Len(client.CapturedRequests(), 1)
+	s.Require().Len(client.CapturedRequests(), 1)
+
+	// Verify that metadata fields are correctly forwarded into the request
+	req := client.CapturedRequests()[0]
+	s.Equal(msg.GetDetectedOs(), req.GetDetectedOs())
+	s.Equal(msg.GetIsOsActivated(), req.GetIsOsActivated())
+	s.Equal(msg.GetDnfMetadataAvailable(), req.GetDnfMetadataAvailable())
+	s.Equal(msg.GetAuxData(), req.GetAuxData())
 }
 
 func (s *senderTestSuite) TestReportSender_SendHandlesErrors() {
 	client := relaytest.NewMockSensorClient(s.T()).WithError(errox.NotImplemented)
 	sender := New(client)
 
-	err := sender.Send(s.ctx, &v1.VsockMessage{IndexReport: &v1.IndexReport{VsockCid: "42"}, DetectedOs: "unknown", IsOsActivated: false, DnfMetadataAvailable: false, AuxData: make(map[string]string)})
+	err := sender.Send(s.ctx, relaytest.NewTestVsockMessage("42"))
 	s.Require().Error(err)
 }

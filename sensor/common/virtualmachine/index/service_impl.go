@@ -63,6 +63,8 @@ func (s *serviceImpl) UpsertVirtualMachineIndexReport(ctx context.Context, req *
 	log.Debugf("Upserting virtual machine index report with vsock_cid=%q", ir.GetVsockCid())
 
 	// Log VM metadata
+	// TODO: This is temporary. In a followup, aux_data logging will be moved to Debug level
+	// and sanitized to avoid potential sensitive data leakage.
 	detectedOS := req.GetDetectedOs()
 	isOsActivated := req.GetIsOsActivated()
 	dnfMetadataAvailable := req.GetDnfMetadataAvailable()
@@ -71,6 +73,8 @@ func (s *serviceImpl) UpsertVirtualMachineIndexReport(ctx context.Context, req *
 		detectedOS, isOsActivated, dnfMetadataAvailable, auxData)
 
 	// Record metric for VM metadata with all three labels
+	// TODO: This is temporary. In a followup, detected_os will be normalized to a small fixed set
+	// of OS categories (e.g., rhel, ubuntu, debian, suse, windows, unknown) to avoid high-cardinality metrics.
 	metrics.VMMetadata.With(prometheus.Labels{
 		"detected_os":            detectedOS,
 		"is_os_activated":        strconv.FormatBool(isOsActivated),

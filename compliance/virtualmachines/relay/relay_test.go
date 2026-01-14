@@ -6,6 +6,7 @@ import (
 	"testing"
 	"time"
 
+	relaytest "github.com/stackrox/rox/compliance/virtualmachines/relay/testutils"
 	v1 "github.com/stackrox/rox/generated/internalapi/virtualmachine/v1"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/sync"
@@ -81,11 +82,23 @@ func (s *relayTestSuite) TestRelay_Integration() {
 		expectedCount: 2,
 	}
 
-	// Create mock stream that produces test messages
+	// Create mock stream that produces test messages with metadata
 	mockIndexReportStream := &mockIndexReportStream{
 		reports: []*v1.VsockMessage{
-			{IndexReport: &v1.IndexReport{VsockCid: "100"}},
-			{IndexReport: &v1.IndexReport{VsockCid: "200"}},
+			{
+				IndexReport:          &v1.IndexReport{VsockCid: "100"},
+				DetectedOs:           "ubuntu-22.04",
+				IsOsActivated:        true,
+				DnfMetadataAvailable: true,
+				AuxData:              map[string]string{"vm_id": "vm-100"},
+			},
+			{
+				IndexReport:          &v1.IndexReport{VsockCid: "200"},
+				DetectedOs:           "rhel-9",
+				IsOsActivated:        false,
+				DnfMetadataAvailable: false,
+				AuxData:              map[string]string{"vm_id": "vm-200"},
+			},
 		},
 	}
 
@@ -111,11 +124,28 @@ func (s *relayTestSuite) TestRelay_Integration() {
 
 	cancel()
 
-	// Verify all messages were sent
+	// Verify all messages were sent with metadata preserved
 	mockIndexReportSender.mu.Lock()
 	s.Require().Len(mockIndexReportSender.sentMessages, 2)
-	s.Equal("100", mockIndexReportSender.sentMessages[0].GetIndexReport().GetVsockCid())
-	s.Equal("200", mockIndexReportSender.sentMessages[1].GetIndexReport().GetVsockCid())
+
+	first := mockIndexReportSender.sentMessages[0]
+	second := mockIndexReportSender.sentMessages[1]
+
+	// IndexReport fields are preserved
+	s.Equal("100", first.GetIndexReport().GetVsockCid())
+	s.Equal("200", second.GetIndexReport().GetVsockCid())
+
+	// VM metadata is preserved
+	s.Equal("ubuntu-22.04", first.GetDetectedOs())
+	s.True(first.GetIsOsActivated())
+	s.True(first.GetDnfMetadataAvailable())
+	s.Equal(map[string]string{"vm_id": "vm-100"}, first.GetAuxData())
+
+	s.Equal("rhel-9", second.GetDetectedOs())
+	s.False(second.GetIsOsActivated())
+	s.False(second.GetDnfMetadataAvailable())
+	s.Equal(map[string]string{"vm_id": "vm-200"}, second.GetAuxData())
+
 	mockIndexReportSender.mu.Unlock()
 
 	// Verify relay exited cleanly
@@ -135,9 +165,9 @@ func (s *relayTestSuite) TestRelay_SenderErrorsDoNotStopProcessing() {
 
 	mockIndexReportStream := &mockIndexReportStream{
 		reports: []*v1.VsockMessage{
-			{IndexReport: &v1.IndexReport{VsockCid: "100"}},
-			{IndexReport: &v1.IndexReport{VsockCid: "200"}},
-			{IndexReport: &v1.IndexReport{VsockCid: "300"}},
+			relaytest.NewTestVsockMessage("100"),
+			relaytest.NewTestVsockMessage("200"),
+			relaytest.NewTestVsockMessage("300"),
 		},
 	}
 
@@ -176,8 +206,8 @@ func (s *relayTestSuite) TestRelay_ContextCancellation() {
 	started := concurrency.NewSignal()
 	mockIndexReportStream := &mockIndexReportStream{
 		reports: []*v1.VsockMessage{
-			{IndexReport: &v1.IndexReport{VsockCid: "100"}},
-			{IndexReport: &v1.IndexReport{VsockCid: "200"}}, // Second message will never be processed
+			relaytest.NewTestVsockMessage("100"),
+			relaytest.NewTestVsockMessage("200"), // Second message will never be processed
 		},
 		started: &started,
 	}

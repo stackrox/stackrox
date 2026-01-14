@@ -56,6 +56,17 @@ func (c *MockVsockConn) WithIndexReport(indexReport *v1.IndexReport) (*MockVsock
 	return c.WithVsockMessage(vsockMsg)
 }
 
+// NewTestVsockMessage creates a VsockMessage with default test values.
+func NewTestVsockMessage(vsockCID string) *v1.VsockMessage {
+	return &v1.VsockMessage{
+		IndexReport:          &v1.IndexReport{VsockCid: vsockCID},
+		DetectedOs:           "unknown",
+		IsOsActivated:        false,
+		DnfMetadataAvailable: false,
+		AuxData:              make(map[string]string),
+	}
+}
+
 func (c *MockVsockConn) WithDelay(delay time.Duration) *MockVsockConn {
 	c.delay = delay
 	return c
