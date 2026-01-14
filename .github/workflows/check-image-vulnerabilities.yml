@@ -1,4 +1,4 @@
-name: "RELEASE: Check image vulnerabilities"
+name: "RELEASE: Scan image vulnerabilities"
 on:
   workflow_dispatch:
     inputs:
@@ -10,7 +10,7 @@ on:
   push:
     tags: ['*']
 
-run-name: ${{ format('Check image vulnerabilities for {0}', inputs.version || github.ref_name) }}
+run-name: ${{ format('Scan images for vulnerabilities for {0}', inputs.version || github.ref_name) }}
 
 jobs:
   run-parameters:
@@ -27,7 +27,7 @@ jobs:
             fi
           } >> "$GITHUB_STEP_SUMMARY"
 
-  check-image-vulnerabilities-upstream:
+  scan-image-vulnerabilities-upstream:
     name: "Upstream: ${{ matrix.image }}:${{ inputs.version || github.ref_name }}"
     runs-on: ubuntu-latest
     permissions:
@@ -51,8 +51,9 @@ jobs:
             "stackrox-operator",
           ]
     steps:
-      - name: Check image vulnerabilities
-        uses: stackrox/actions/release/scan-image-vulnerabilities@tm/ROX-image-vuln-check
+      - name: Scan image vulnerabilities
+        uses: stackrox/actions/release/scan-image-vulnerabilities@v1
+        id: scan-image
         with:
           image: rhacs-eng/${{ matrix.image }}
           version: ${{ inputs.version || github.ref_name }}
@@ -65,11 +66,11 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: scan-result-quay.io_rhacs-eng_${{ matrix.image }}_${{ inputs.version || github.ref_name }}.json
-          path: scan-result.json
+          name: upstream_quay_io_rhacs-eng_${{ matrix.image }}_${{ inputs.version || github.ref_name }}.json
+          path: ${{ steps.scan-image.outputs.result-path }}
           retention-days: 30
 
-  check-image-vulnerabilities-konflux:
+  scan-image-vulnerabilities-konflux:
     name: "Konflux: ${{ matrix.image }}:${{ inputs.version || github.ref_name }}"
     runs-on: ubuntu-latest
     permissions:
@@ -93,8 +94,9 @@ jobs:
             "release-operator",
           ]
     steps:
-      - name: Check image vulnerabilities
-        uses: stackrox/actions/release/scan-image-vulnerabilities@tm/ROX-image-vuln-check
+      - name: Scan image vulnerabilities
+        uses: stackrox/actions/release/scan-image-vulnerabilities@v1
+        id: scan-image
         with:
           image: rhacs-eng/${{ matrix.image }}
           version: ${{ inputs.version || github.ref_name }}
@@ -107,6 +109,6 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: scan-result-quay.io_rhacs-eng_${{ matrix.image }}_${{ inputs.version || github.ref_name }}.json
-          path: scan-result.json
+          name: konflux_quay_io_rhacs-eng_${{ matrix.image }}_${{ inputs.version || github.ref_name }}.json
+          path: ${{ steps.scan-image.outputs.result-path }}
           retention-days: 30
