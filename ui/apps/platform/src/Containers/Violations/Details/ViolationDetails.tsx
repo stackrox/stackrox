@@ -9,20 +9,17 @@ import RuntimeMessages from './RuntimeMessages';
 
 type ViolationDetailsProps = {
     processViolation: ProcessViolation | null;
-    fileAccessViolation: FileAccessViolation | null;
     lifecycleStage: LifecycleStage;
     violations: Violation[];
 };
 
 function ViolationDetails({
     processViolation,
-    fileAccessViolation,
     lifecycleStage,
     violations,
 }: ViolationDetailsProps): ReactElement {
     const showRuntimeMessages =
         processViolation?.processes?.length ||
-        fileAccessViolation?.accesses?.length ||
         lifecycleStage === 'RUNTIME';
     const showDeploytimeMessages = lifecycleStage === 'DEPLOY';
     return (
@@ -38,7 +35,6 @@ function ViolationDetails({
                     <FlexItem>
                         <RuntimeMessages
                             processViolation={processViolation}
-                            fileAccessViolation={fileAccessViolation}
                             violations={violations}
                         />
                     </FlexItem>

@@ -84,7 +84,7 @@ export type BaseAlert = {
     snoozeTill: string | null; // ISO 8601 date string
 };
 
-export type Violation = GenericViolation | K8sEventViolation | NetworkFlowViolation;
+export type Violation = GenericViolation | K8sEventViolation | NetworkFlowViolation | FileAccessViolation;
 
 export type GenericViolation = {
     type: 'GENERIC';

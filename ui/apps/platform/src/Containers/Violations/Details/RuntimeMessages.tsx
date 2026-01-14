@@ -9,13 +9,11 @@ import FileAccessCardContent from './FileAccessCardContent';
 
 type RuntimeMessagesProps = {
     processViolation: ProcessViolation | null;
-    fileAccessViolation: FileAccessViolation | null;
     violations?: Violation[];
 };
 
 function RuntimeMessages({
     processViolation,
-    fileAccessViolation,
     violations,
 }: RuntimeMessagesProps): ReactElement {
     const isPlainViolation = !!violations?.length;
@@ -48,16 +46,8 @@ function RuntimeMessages({
         } else if (violation.type === 'FILE_ACCESS') {
             const { fileAccess } = violation;
             plainViolations.push(
-                <TimestampedEventCard
-                    message={message}
-                    events={fileAccess}
-                    getTimestamp={(access) => access.timestamp}
-                    ContentComponent={FileAccessCardContent}
-                    getEventKey={(access) =>
-                        `${access.timestamp}-${access.operation}-${access.file.actualPath}`
-                    }
-                />
-            );
+                <FileAccessCardContent event={fileAccess}/>
+            )
         }
     });
 
