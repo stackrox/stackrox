@@ -25,12 +25,12 @@ const (
 )
 
 type GetTokenForPermissionsAndScopeRequest struct {
-	state          protoimpl.MessageState       `protogen:"open.v1"`
-	ReadPermission []string                     `protobuf:"bytes,1,rep,name=read_permission,json=readPermission,proto3" json:"read_permission,omitempty"`
-	ClusterScopes  []*RequestedRoleClusterScope `protobuf:"bytes,2,rep,name=cluster_scopes,json=clusterScopes,proto3" json:"cluster_scopes,omitempty"`
-	ValidFor       *durationpb.Duration         `protobuf:"bytes,3,opt,name=valid_for,json=validFor,proto3" json:"valid_for,omitempty"`
-	unknownFields  protoimpl.UnknownFields
-	sizeCache      protoimpl.SizeCache
+	state           protoimpl.MessageState       `protogen:"open.v1"`
+	ReadPermissions []string                     `protobuf:"bytes,1,rep,name=read_permissions,json=readPermissions,proto3" json:"read_permissions,omitempty"`
+	ClusterScopes   []*RequestedRoleClusterScope `protobuf:"bytes,2,rep,name=cluster_scopes,json=clusterScopes,proto3" json:"cluster_scopes,omitempty"`
+	ValidFor        *durationpb.Duration         `protobuf:"bytes,3,opt,name=valid_for,json=validFor,proto3" json:"valid_for,omitempty"`
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
 }
 
 func (x *GetTokenForPermissionsAndScopeRequest) Reset() {
@@ -63,9 +63,9 @@ func (*GetTokenForPermissionsAndScopeRequest) Descriptor() ([]byte, []int) {
 	return file_internalapi_central_token_service_proto_rawDescGZIP(), []int{0}
 }
 
-func (x *GetTokenForPermissionsAndScopeRequest) GetReadPermission() []string {
+func (x *GetTokenForPermissionsAndScopeRequest) GetReadPermissions() []string {
 	if x != nil {
-		return x.ReadPermission
+		return x.ReadPermissions
 	}
 	return nil
 }
@@ -88,7 +88,7 @@ type RequestedRoleClusterScope struct {
 	state             protoimpl.MessageState `protogen:"open.v1"`
 	ClusterName       string                 `protobuf:"bytes,1,opt,name=cluster_name,json=clusterName,proto3" json:"cluster_name,omitempty"`
 	FullClusterAccess bool                   `protobuf:"varint,2,opt,name=full_cluster_access,json=fullClusterAccess,proto3" json:"full_cluster_access,omitempty"`
-	Namespace         []string               `protobuf:"bytes,3,rep,name=namespace,proto3" json:"namespace,omitempty"`
+	Namespaces        []string               `protobuf:"bytes,3,rep,name=namespaces,proto3" json:"namespaces,omitempty"`
 	unknownFields     protoimpl.UnknownFields
 	sizeCache         protoimpl.SizeCache
 }
@@ -137,9 +137,9 @@ func (x *RequestedRoleClusterScope) GetFullClusterAccess() bool {
 	return false
 }
 
-func (x *RequestedRoleClusterScope) GetNamespace() []string {
+func (x *RequestedRoleClusterScope) GetNamespaces() []string {
 	if x != nil {
-		return x.Namespace
+		return x.Namespaces
 	}
 	return nil
 }
@@ -232,15 +232,17 @@ var File_internalapi_central_token_service_proto protoreflect.FileDescriptor
 
 const file_internalapi_central_token_service_proto_rawDesc = "" +
 	"\n" +
-	"'internalapi/central/token_service.proto\x12\acentral\x1a\x1cgoogle/api/annotations.proto\x1a\x1egoogle/protobuf/duration.proto\x1a\x1fgoogle/protobuf/timestamp.proto\"\xd3\x01\n" +
-	"%GetTokenForPermissionsAndScopeRequest\x12'\n" +
-	"\x0fread_permission\x18\x01 \x03(\tR\x0ereadPermission\x12I\n" +
+	"'internalapi/central/token_service.proto\x12\acentral\x1a\x1cgoogle/api/annotations.proto\x1a\x1egoogle/protobuf/duration.proto\x1a\x1fgoogle/protobuf/timestamp.proto\"\xd5\x01\n" +
+	"%GetTokenForPermissionsAndScopeRequest\x12)\n" +
+	"\x10read_permissions\x18\x01 \x03(\tR\x0freadPermissions\x12I\n" +
 	"\x0ecluster_scopes\x18\x02 \x03(\v2\".central.RequestedRoleClusterScopeR\rclusterScopes\x126\n" +
-	"\tvalid_for\x18\x03 \x01(\v2\x19.google.protobuf.DurationR\bvalidFor\"\x8c\x01\n" +
+	"\tvalid_for\x18\x03 \x01(\v2\x19.google.protobuf.DurationR\bvalidFor\"\x8e\x01\n" +
 	"\x19RequestedRoleClusterScope\x12!\n" +
 	"\fcluster_name\x18\x01 \x01(\tR\vclusterName\x12.\n" +
-	"\x13full_cluster_access\x18\x02 \x01(\bR\x11fullClusterAccess\x12\x1c\n" +
-	"\tnamespace\x18\x03 \x03(\tR\tnamespace\"\xfd\x01\n" +
+	"\x13full_cluster_access\x18\x02 \x01(\bR\x11fullClusterAccess\x12\x1e\n" +
+	"\n" +
+	"namespaces\x18\x03 \x03(\tR\n" +
+	"namespaces\"\xfd\x01\n" +
 	"&GetTokenForPermissionsAndScopeResponse\x12\x19\n" +
 	"\btoken_id\x18\x01 \x01(\tR\atokenId\x12\x14\n" +
 	"\x05token\x18\x02 \x01(\tR\x05token\x12\x14\n" +

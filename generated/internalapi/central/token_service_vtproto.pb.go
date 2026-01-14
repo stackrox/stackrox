@@ -30,10 +30,10 @@ func (m *GetTokenForPermissionsAndScopeRequest) CloneVT() *GetTokenForPermission
 	}
 	r := new(GetTokenForPermissionsAndScopeRequest)
 	r.ValidFor = (*durationpb.Duration)((*durationpb1.Duration)(m.ValidFor).CloneVT())
-	if rhs := m.ReadPermission; rhs != nil {
+	if rhs := m.ReadPermissions; rhs != nil {
 		tmpContainer := make([]string, len(rhs))
 		copy(tmpContainer, rhs)
-		r.ReadPermission = tmpContainer
+		r.ReadPermissions = tmpContainer
 	}
 	if rhs := m.ClusterScopes; rhs != nil {
 		tmpContainer := make([]*RequestedRoleClusterScope, len(rhs))
@@ -60,10 +60,10 @@ func (m *RequestedRoleClusterScope) CloneVT() *RequestedRoleClusterScope {
 	r := new(RequestedRoleClusterScope)
 	r.ClusterName = m.ClusterName
 	r.FullClusterAccess = m.FullClusterAccess
-	if rhs := m.Namespace; rhs != nil {
+	if rhs := m.Namespaces; rhs != nil {
 		tmpContainer := make([]string, len(rhs))
 		copy(tmpContainer, rhs)
-		r.Namespace = tmpContainer
+		r.Namespaces = tmpContainer
 	}
 	if len(m.unknownFields) > 0 {
 		r.unknownFields = make([]byte, len(m.unknownFields))
@@ -108,11 +108,11 @@ func (this *GetTokenForPermissionsAndScopeRequest) EqualVT(that *GetTokenForPerm
 	} else if this == nil || that == nil {
 		return false
 	}
-	if len(this.ReadPermission) != len(that.ReadPermission) {
+	if len(this.ReadPermissions) != len(that.ReadPermissions) {
 		return false
 	}
-	for i, vx := range this.ReadPermission {
-		vy := that.ReadPermission[i]
+	for i, vx := range this.ReadPermissions {
+		vy := that.ReadPermissions[i]
 		if vx != vy {
 			return false
 		}
@@ -159,11 +159,11 @@ func (this *RequestedRoleClusterScope) EqualVT(that *RequestedRoleClusterScope) 
 	if this.FullClusterAccess != that.FullClusterAccess {
 		return false
 	}
-	if len(this.Namespace) != len(that.Namespace) {
+	if len(this.Namespaces) != len(that.Namespaces) {
 		return false
 	}
-	for i, vx := range this.Namespace {
-		vy := that.Namespace[i]
+	for i, vx := range this.Namespaces {
+		vy := that.Namespaces[i]
 		if vx != vy {
 			return false
 		}
@@ -270,11 +270,11 @@ func (m *GetTokenForPermissionsAndScopeRequest) MarshalToSizedBufferVT(dAtA []by
 			dAtA[i] = 0x12
 		}
 	}
-	if len(m.ReadPermission) > 0 {
-		for iNdEx := len(m.ReadPermission) - 1; iNdEx >= 0; iNdEx-- {
-			i -= len(m.ReadPermission[iNdEx])
-			copy(dAtA[i:], m.ReadPermission[iNdEx])
-			i = protohelpers.EncodeVarint(dAtA, i, uint64(len(m.ReadPermission[iNdEx])))
+	if len(m.ReadPermissions) > 0 {
+		for iNdEx := len(m.ReadPermissions) - 1; iNdEx >= 0; iNdEx-- {
+			i -= len(m.ReadPermissions[iNdEx])
+			copy(dAtA[i:], m.ReadPermissions[iNdEx])
+			i = protohelpers.EncodeVarint(dAtA, i, uint64(len(m.ReadPermissions[iNdEx])))
 			i--
 			dAtA[i] = 0xa
 		}
@@ -312,11 +312,11 @@ func (m *RequestedRoleClusterScope) MarshalToSizedBufferVT(dAtA []byte) (int, er
 		i -= len(m.unknownFields)
 		copy(dAtA[i:], m.unknownFields)
 	}
-	if len(m.Namespace) > 0 {
-		for iNdEx := len(m.Namespace) - 1; iNdEx >= 0; iNdEx-- {
-			i -= len(m.Namespace[iNdEx])
-			copy(dAtA[i:], m.Namespace[iNdEx])
-			i = protohelpers.EncodeVarint(dAtA, i, uint64(len(m.Namespace[iNdEx])))
+	if len(m.Namespaces) > 0 {
+		for iNdEx := len(m.Namespaces) - 1; iNdEx >= 0; iNdEx-- {
+			i -= len(m.Namespaces[iNdEx])
+			copy(dAtA[i:], m.Namespaces[iNdEx])
+			i = protohelpers.EncodeVarint(dAtA, i, uint64(len(m.Namespaces[iNdEx])))
 			i--
 			dAtA[i] = 0x1a
 		}
@@ -433,8 +433,8 @@ func (m *GetTokenForPermissionsAndScopeRequest) SizeVT() (n int) {
 	}
 	var l int
 	_ = l
-	if len(m.ReadPermission) > 0 {
-		for _, s := range m.ReadPermission {
+	if len(m.ReadPermissions) > 0 {
+		for _, s := range m.ReadPermissions {
 			l = len(s)
 			n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 		}
@@ -466,8 +466,8 @@ func (m *RequestedRoleClusterScope) SizeVT() (n int) {
 	if m.FullClusterAccess {
 		n += 2
 	}
-	if len(m.Namespace) > 0 {
-		for _, s := range m.Namespace {
+	if len(m.Namespaces) > 0 {
+		for _, s := range m.Namespaces {
 			l = len(s)
 			n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 		}
@@ -542,7 +542,7 @@ func (m *GetTokenForPermissionsAndScopeRequest) UnmarshalVT(dAtA []byte) error {
 		switch fieldNum {
 		case 1:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field ReadPermission", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field ReadPermissions", wireType)
 			}
 			var stringLen uint64
 			for shift := uint(0); ; shift += 7 {
@@ -570,7 +570,7 @@ func (m *GetTokenForPermissionsAndScopeRequest) UnmarshalVT(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.ReadPermission = append(m.ReadPermission, string(dAtA[iNdEx:postIndex]))
+			m.ReadPermissions = append(m.ReadPermissions, string(dAtA[iNdEx:postIndex]))
 			iNdEx = postIndex
 		case 2:
 			if wireType != 2 {
@@ -747,7 +747,7 @@ func (m *RequestedRoleClusterScope) UnmarshalVT(dAtA []byte) error {
 			m.FullClusterAccess = bool(v != 0)
 		case 3:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Namespace", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field Namespaces", wireType)
 			}
 			var stringLen uint64
 			for shift := uint(0); ; shift += 7 {
@@ -775,7 +775,7 @@ func (m *RequestedRoleClusterScope) UnmarshalVT(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.Namespace = append(m.Namespace, string(dAtA[iNdEx:postIndex]))
+			m.Namespaces = append(m.Namespaces, string(dAtA[iNdEx:postIndex]))
 			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
@@ -1069,7 +1069,7 @@ func (m *GetTokenForPermissionsAndScopeRequest) UnmarshalVTUnsafe(dAtA []byte) e
 		switch fieldNum {
 		case 1:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field ReadPermission", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field ReadPermissions", wireType)
 			}
 			var stringLen uint64
 			for shift := uint(0); ; shift += 7 {
@@ -1101,7 +1101,7 @@ func (m *GetTokenForPermissionsAndScopeRequest) UnmarshalVTUnsafe(dAtA []byte) e
 			if intStringLen > 0 {
 				stringValue = unsafe.String(&dAtA[iNdEx], intStringLen)
 			}
-			m.ReadPermission = append(m.ReadPermission, stringValue)
+			m.ReadPermissions = append(m.ReadPermissions, stringValue)
 			iNdEx = postIndex
 		case 2:
 			if wireType != 2 {
@@ -1282,7 +1282,7 @@ func (m *RequestedRoleClusterScope) UnmarshalVTUnsafe(dAtA []byte) error {
 			m.FullClusterAccess = bool(v != 0)
 		case 3:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Namespace", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field Namespaces", wireType)
 			}
 			var stringLen uint64
 			for shift := uint(0); ; shift += 7 {
@@ -1314,7 +1314,7 @@ func (m *RequestedRoleClusterScope) UnmarshalVTUnsafe(dAtA []byte) error {
 			if intStringLen > 0 {
 				stringValue = unsafe.String(&dAtA[iNdEx], intStringLen)
 			}
-			m.Namespace = append(m.Namespace, stringValue)
+			m.Namespaces = append(m.Namespaces, stringValue)
 			iNdEx = postIndex
 		default:
 			iNdEx = preIndex

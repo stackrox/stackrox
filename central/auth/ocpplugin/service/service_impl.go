@@ -95,7 +95,7 @@ func (s *serviceImpl) getPermissionSet(ctx context.Context, req *central.GetToke
 		Traits:           &storage.Traits{Origin: storage.Traits_IMPERATIVE},
 	}
 	var b strings.Builder
-	readResources := req.GetReadPermission()
+	readResources := req.GetReadPermissions()
 	readAccessString := storage.Access_READ_ACCESS.String()
 	for ix, resource := range readResources {
 		if ix > 0 {
@@ -137,15 +137,15 @@ func (s *serviceImpl) getAccessScope(ctx context.Context, req *central.GetTokenF
 		} else {
 			b.WriteString(clusterScope.GetClusterName())
 			b.WriteString(":")
-			for nsix, ns := range clusterScope.GetNamespace() {
+			for namespaceIndex, namespace := range clusterScope.GetNamespaces() {
 				clusterNamespaces = append(clusterNamespaces, &storage.SimpleAccessScope_Rules_Namespace{
 					ClusterName:   clusterScope.GetClusterName(),
-					NamespaceName: ns,
+					NamespaceName: namespace,
 				})
-				if nsix > 0 {
+				if namespaceIndex > 0 {
 					b.WriteString(",")
 				}
-				b.WriteString(ns)
+				b.WriteString(namespace)
 			}
 		}
 	}

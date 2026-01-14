@@ -9,7 +9,7 @@ import "google/protobuf/timestamp.proto";
 option go_package = "./internalapi/central;central";
 
 message GetTokenForPermissionsAndScopeRequest {
-  repeated string read_permission = 1;
+  repeated string read_permissions = 1;
   repeated RequestedRoleClusterScope cluster_scopes = 2;
   google.protobuf.Duration valid_for = 3;
 }
@@ -17,7 +17,7 @@ message GetTokenForPermissionsAndScopeRequest {
 message RequestedRoleClusterScope {
   string cluster_name = 1;
   bool full_cluster_access = 2;
-  repeated string namespace = 3;
+  repeated string namespaces = 3;
 }
 
 message GetTokenForPermissionsAndScopeResponse {
