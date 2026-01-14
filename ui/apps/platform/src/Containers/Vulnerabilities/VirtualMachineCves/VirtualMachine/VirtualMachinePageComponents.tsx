@@ -67,7 +67,10 @@ function VirtualMachinePageComponents({
 
     const filteredVirtualMachineComponentsTableData = useMemo(
         () =>
-            applyVirtualMachineComponentsTableFilters(virtualMachineComponentsTableData, searchFilter),
+            applyVirtualMachineComponentsTableFilters(
+                virtualMachineComponentsTableData,
+                searchFilter
+            ),
         [virtualMachineComponentsTableData, searchFilter]
     );
 

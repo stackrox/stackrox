@@ -65,4 +65,3 @@ function VirtualMachineComponentsPageTable({
 }
 
 export default VirtualMachineComponentsPageTable;
-
