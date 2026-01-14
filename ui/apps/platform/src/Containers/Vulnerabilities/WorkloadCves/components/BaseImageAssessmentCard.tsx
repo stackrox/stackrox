@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { Fragment, useState } from 'react';
 import type { MouseEvent as ReactMouseEvent } from 'react';
 import {
     Card,
@@ -10,10 +10,7 @@ import {
     DescriptionListTerm,
     Divider,
     ExpandableSection,
-    Flex,
-    FlexItem,
     Stack,
-    StackItem,
 } from '@patternfly/react-core';
 import { Link } from 'react-router-dom-v5-compat';
 
@@ -26,17 +23,12 @@ export type BaseImageAssessmentCardProps = {
 };
 
 function BaseImageAssessmentCard({ baseImageInfo }: BaseImageAssessmentCardProps) {
-    const [isExpanded, setIsExpanded] = useState(true);
+    const [isExpanded, setIsExpanded] = useState(false);
     const { urlBuilder } = useWorkloadCveViewContext();
 
     const onToggle = (_event: ReactMouseEvent, expanded: boolean) => {
         setIsExpanded(expanded);
     };
-
-    // Only render if there's at least one base image
-    if (baseImageInfo.length === 0) {
-        return null;
-    }
 
     return (
         <Card isFlat isCompact>
@@ -53,8 +45,8 @@ function BaseImageAssessmentCard({ baseImageInfo }: BaseImageAssessmentCardProps
                                 'OBSERVED'
                             );
                             return (
-                                <StackItem key={baseImage.baseImageId}>
-                                    {index > 0 && <Divider className="pf-v5-u-mb-md" />}
+                                <Fragment key={baseImage.baseImageId}>
+                                    {index > 0 && <Divider />}
                                     <DescriptionList
                                         isCompact
                                         isHorizontal
@@ -64,16 +56,9 @@ function BaseImageAssessmentCard({ baseImageInfo }: BaseImageAssessmentCardProps
                                         <DescriptionListGroup>
                                             <DescriptionListTerm>Image name</DescriptionListTerm>
                                             <DescriptionListDescription>
-                                                <Flex
-                                                    spaceItems={{ default: 'spaceItemsSm' }}
-                                                    alignItems={{ default: 'alignItemsCenter' }}
-                                                >
-                                                    <FlexItem>
-                                                        <Link to={imageDetailPath}>
-                                                            {baseImage.baseImageFullName}
-                                                        </Link>
-                                                    </FlexItem>
-                                                </Flex>
+                                                <Link to={imageDetailPath}>
+                                                    {baseImage.baseImageFullName}
+                                                </Link>
                                             </DescriptionListDescription>
                                         </DescriptionListGroup>
                                         <DescriptionListGroup>
@@ -100,7 +85,7 @@ function BaseImageAssessmentCard({ baseImageInfo }: BaseImageAssessmentCardProps
                                             </DescriptionListGroup>
                                         )}
                                     </DescriptionList>
-                                </StackItem>
+                                </Fragment>
                             );
                         })}
                     </Stack>
