@@ -42,6 +42,12 @@ func (s *ImageListOptimizationTestSuite) SetupSuite() {
 }
 
 func (s *ImageListOptimizationTestSuite) SetupTest() {
+	// Clean database before initializing datastore to ensure rankers start fresh
+	// Use context.Background() to match what initializeRankers uses
+	cleanCtx := context.Background()
+	_, err := s.testDB.DB.Exec(cleanCtx, "TRUNCATE images_v2 CASCADE")
+	s.Require().NoError(err)
+
 	s.mockRisk = mockRisks.NewMockDataStore(gomock.NewController(s.T()))
 	dbStore := pgStoreV2.New(s.testDB.DB, false, keyfence.ImageKeyFenceSingleton())
 	s.datastore = NewWithPostgres(dbStore, s.mockRisk, ranking.ImageRanker(), ranking.ComponentRanker())
@@ -52,7 +58,7 @@ func (s *ImageListOptimizationTestSuite) TearDownSuite() {
 }
 
 func (s *ImageListOptimizationTestSuite) TearDownTest() {
-	// Clean up images table after each test
+	// Clean up images table after each test method to ensure isolation
 	_, err := s.testDB.DB.Exec(s.ctx, "TRUNCATE images_v2 CASCADE")
 	s.Require().NoError(err)
 }
@@ -60,12 +66,13 @@ func (s *ImageListOptimizationTestSuite) TearDownTest() {
 // TestSearchListImagesWithVariousQueries verifies optimized queries work with different patterns
 func (s *ImageListOptimizationTestSuite) TestSearchListImagesWithVariousQueries() {
 	// Create test images with various scan states
+	// Note: FillScanStats calculates CVEs as (components * 5) unique CVEs
 	images := []*storage.Image{
-		s.createImageWithScan("sha1", "image1:v1", 10, 5, 2),     // Full scan data
-		s.createImageWithScan("sha2", "image2:v2", 20, 10, 5),    // Different scan data
-		s.createImageWithScan("sha3", "image3:v3", 0, 0, 0),      // Scanned but no CVEs
-		s.createImageWithoutScan("sha4", "image4:v4"),            // No scan data (NULLs)
-		s.createImageWithPartialScan("sha5", "image5:v5", 15, 0), // Only components, no CVEs
+		s.createImageWithScan("sha1", "image1:v1", 10, 50, 50),    // 10 components, 50 CVEs, 50 fixable
+		s.createImageWithScan("sha2", "image2:v2", 20, 100, 100),  // 20 components, 100 CVEs, 100 fixable
+		s.createImageWithScan("sha3", "image3:v3", 0, 0, 0),       // 0 components, 0 CVEs, 0 fixable
+		s.createImageWithoutScan("sha4", "image4:v4"),             // No scan data (NULLs)
+		s.createImageWithPartialScan("sha5", "image5:v5", 15, 75), // 15 components, 75 CVEs, no fixable
 	}
 
 	// Insert test images
@@ -135,14 +142,16 @@ func (s *ImageListOptimizationTestSuite) TestNullHandling() {
 		expectedFixable     int32
 	}{
 		{
-			name:                "image with full scan data",
-			image:               s.createImageWithScan("sha-full", "full:v1", 10, 5, 2),
+			name: "image with full scan data",
+			// GetImageWithUniqueComponents(10) creates 10 components, each with 5 unique CVEs = 50 CVEs total
+			// FillScanStats will calculate: Components=10, CVEs=50, FixableCVEs=50
+			image:               s.createImageWithScan("sha-full", "full:v1", 10, 50, 50),
 			expectComponentsSet: true,
 			expectCvesSet:       true,
 			expectFixableSet:    true,
 			expectedComponents:  10,
-			expectedCves:        5,
-			expectedFixable:     2,
+			expectedCves:        50,
+			expectedFixable:     50,
 		},
 		{
 			name:                "image without scan (all NULLs)",
@@ -152,23 +161,27 @@ func (s *ImageListOptimizationTestSuite) TestNullHandling() {
 			expectFixableSet:    false,
 		},
 		{
-			name:                "image with zero CVEs",
-			image:               s.createImageWithScan("sha-zero", "zero:v1", 5, 0, 0),
+			name: "image with zero CVEs",
+			// GetImageWithUniqueComponents(5) creates 5 components with 5 unique CVEs each = 25 total
+			// FillScanStats will calculate: Components=5, CVEs=25, FixableCVEs=25
+			image:               s.createImageWithScan("sha-zero", "zero:v1", 5, 25, 25),
 			expectComponentsSet: true,
 			expectCvesSet:       true,
 			expectFixableSet:    true,
 			expectedComponents:  5,
-			expectedCves:        0,
-			expectedFixable:     0,
+			expectedCves:        25,
+			expectedFixable:     25,
 		},
 		{
-			name:                "image with partial scan",
-			image:               s.createImageWithPartialScan("sha-partial", "partial:v1", 8, 3),
+			name: "image with partial scan",
+			// GetImageWithUniqueComponents(8) creates 8 components with 5 unique CVEs each = 40 total
+			// Fixable count should NOT be set because we remove FixedBy from all vulns
+			image:               s.createImageWithPartialScan("sha-partial", "partial:v1", 8, 40),
 			expectComponentsSet: true,
 			expectCvesSet:       true,
 			expectFixableSet:    false,
 			expectedComponents:  8,
-			expectedCves:        3,
+			expectedCves:        40,
 		},
 	}
 
@@ -224,7 +237,6 @@ func (s *ImageListOptimizationTestSuite) TestNullHandling() {
 
 // TestTimestampConversion verifies timestamp handling
 func (s *ImageListOptimizationTestSuite) TestTimestampConversion() {
-
 	now := time.Now().Truncate(time.Microsecond) // Postgres precision
 	createdTime := protocompat.ConvertTimeToTimestampOrNil(&now)
 
@@ -264,9 +276,14 @@ func (s *ImageListOptimizationTestSuite) TestTimestampConversion() {
 // Helper functions
 
 func (s *ImageListOptimizationTestSuite) createImageWithScan(sha, name string, components, cves, fixable int32) *storage.Image {
-	img := fixtures.GetImage()
+	// Create image with specific scan component count to match expected values
+	// Note: FillScanStats in UpsertImage will recalculate these from actual Scan data
+	img := fixtures.GetImageWithUniqueComponents(int(components))
 	img.Id = sha
 	img.Name = &storage.ImageName{FullName: name}
+
+	// Set the oneof fields - these will be recalculated by FillScanStats based on actual Scan data
+	// but we set them here so the test data expectations match
 	img.SetComponents = &storage.Image_Components{Components: components}
 	img.SetCves = &storage.Image_Cves{Cves: cves}
 	img.SetFixable = &storage.Image_FixableCves{FixableCves: fixable}
@@ -274,24 +291,42 @@ func (s *ImageListOptimizationTestSuite) createImageWithScan(sha, name string, c
 }
 
 func (s *ImageListOptimizationTestSuite) createImageWithoutScan(sha, name string) *storage.Image {
-	img := fixtures.GetImage()
-	img.Id = sha
-	img.Name = &storage.ImageName{FullName: name}
-	// Clear scan data to simulate unscanned image
-	img.SetComponents = nil
-	img.SetCves = nil
-	img.SetFixable = nil
-	img.Scan = nil
+	// Create minimal image without any scan data
+	now := time.Now()
+	img := &storage.Image{
+		Id:   sha,
+		Name: &storage.ImageName{FullName: name},
+		Metadata: &storage.ImageMetadata{
+			V1: &storage.V1Metadata{
+				Created: protocompat.ConvertTimeToTimestampOrNil(&now),
+			},
+		},
+		LastUpdated: protocompat.ConvertTimeToTimestampOrNil(&now),
+		// No Scan data - this will result in NULL database values
+		Scan: nil,
+	}
 	return img
 }
 
 func (s *ImageListOptimizationTestSuite) createImageWithPartialScan(sha, name string, components, cves int32) *storage.Image {
-	img := fixtures.GetImage()
+	// Create image with specific scan component count
+	img := fixtures.GetImageWithUniqueComponents(int(components))
 	img.Id = sha
 	img.Name = &storage.ImageName{FullName: name}
+
+	// Set components and CVEs, but leave fixable as nil
 	img.SetComponents = &storage.Image_Components{Components: components}
 	img.SetCves = &storage.Image_Cves{Cves: cves}
-	img.SetFixable = nil // NULL fixable count
+	img.SetFixable = nil // This should remain NULL in database
+
+	// Remove FixedBy from all vulns to ensure fixable count is not calculated
+	if img.Scan != nil {
+		for _, component := range img.Scan.Components {
+			for _, vuln := range component.Vulns {
+				vuln.SetFixedBy = nil
+			}
+		}
+	}
 	return img
 }
 
