@@ -13,6 +13,7 @@ import (
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/delegatedregistry"
 	"github.com/stackrox/rox/pkg/errox"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
@@ -177,10 +178,13 @@ func (s *serviceImpl) validateBaseImageRepository(ctx context.Context, repoPath 
 		return errox.InvalidArgs.Newf("repository path '%s' must not include digest", repoPath)
 	}
 
-	// Check delegated registry config
-	_, shouldDelegate, err := s.delegator.GetDelegateClusterID(ctx, imageName)
-	if err != nil || !shouldDelegate {
-		// Check central registry config
+	// Check delegated registry config (only if feature is enabled).
+	var shouldDelegate bool
+	if features.DelegatedBaseImageScanning.Enabled() {
+		_, shouldDelegate, _ = s.delegator.GetDelegateClusterID(ctx, imageName)
+	}
+	if !shouldDelegate {
+		// Check central registry config.
 		if !s.integrationSet.RegistrySet().Match(imageName) {
 			return errox.InvalidArgs.Newf("no matching image integration found: please add an image integration for '%s'", repoPath)
 		}

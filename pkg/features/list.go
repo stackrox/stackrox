@@ -113,8 +113,11 @@ var (
 	// CVEFixTimestampCriteria enables the new CVE Fix timestamp criteria
 	CVEFixTimestampCriteria = registerFeature("Enable grace period criteria based on CVE fix timestamp", "ROX_CVE_FIX_TIMESTAMP")
 
-	// BaseImageDetection enables base image detection and management functionality
+	// BaseImageDetection enables base image detection and management functionality.
 	BaseImageDetection = registerFeature("Enable base image detection and management functionality", "ROX_BASE_IMAGE_DETECTION")
+
+	// DelegatedBaseImageScanning enables delegation of base image repository scanning to secured clusters.
+	DelegatedBaseImageScanning = registerFeature("Enable delegated base image scanning to secured clusters", "ROX_DELEGATED_BASE_IMAGE_SCANNING")
 
 	// OCPConsoleIntegration enables the /proxy/central API in Sensor that forwards requests to Central.
 	OCPConsoleIntegration = registerFeature("Enable features related to support the integration of ACS into the OpenShift console", "ROX_OCP_CONSOLE_INTEGRATION")
