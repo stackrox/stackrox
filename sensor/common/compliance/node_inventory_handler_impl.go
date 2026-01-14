@@ -346,6 +346,7 @@ func (c *nodeInventoryHandlerImpl) sendComplianceAckToCompliance(
 	messageType sensor.MsgToCompliance_ComplianceACK_MessageType,
 	reason string,
 ) {
+	sent := false
 	select {
 	case <-c.stopper.Flow().StopRequested():
 	case c.toCompliance <- common.MessageToComplianceWithAddress{
@@ -362,9 +363,15 @@ func (c *nodeInventoryHandlerImpl) sendComplianceAckToCompliance(
 		Hostname:  resourceID, // For node-based messages, resourceID is the node name
 		Broadcast: resourceID == "",
 	}:
+		sent = true
 	}
-	log.Debugf("Sent ComplianceACK to Compliance: type=%s, action=%s, resource_id=%s, reason=%s",
-		messageType, action, resourceID, reason)
+	if sent {
+		log.Debugf("Sent ComplianceACK to Compliance: type=%s, action=%s, resource_id=%s, reason=%s",
+			messageType, action, resourceID, reason)
+	} else {
+		log.Debugf("Skipped sending ComplianceACK (stop requested): type=%s, action=%s, resource_id=%s, reason=%s",
+			messageType, action, resourceID, reason)
+	}
 }
 
 func (c *nodeInventoryHandlerImpl) sendNodeInventory(toC chan<- *message.ExpiringMessage, inventory *storage.NodeInventory) {

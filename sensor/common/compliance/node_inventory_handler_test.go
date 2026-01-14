@@ -384,6 +384,9 @@ func (s *NodeInventoryHandlerTestSuite) TestHandlerSensorACKsToCompliance() {
 		shouldForward       bool // true if message should be forwarded to Compliance
 		expectedAction      sensor.MsgToCompliance_ComplianceACK_Action
 		expectedMessageType sensor.MsgToCompliance_ComplianceACK_MessageType
+		expectedReason      string
+		expectedHostname    string
+		expectedBroadcast   bool
 	}{
 		"NODE_INVENTORY ACK should be forwarded": {
 			sensorACK: &central.SensorACK{
@@ -395,6 +398,18 @@ func (s *NodeInventoryHandlerTestSuite) TestHandlerSensorACKsToCompliance() {
 			expectedAction:      sensor.MsgToCompliance_ComplianceACK_ACK,
 			expectedMessageType: sensor.MsgToCompliance_ComplianceACK_NODE_INVENTORY,
 		},
+		"NODE_INVENTORY NACK should be forwarded with reason": {
+			sensorACK: &central.SensorACK{
+				Action:      central.SensorACK_NACK,
+				MessageType: central.SensorACK_NODE_INVENTORY,
+				ResourceId:  "node-1",
+				Reason:      "some failure reason",
+			},
+			shouldForward:       true,
+			expectedAction:      sensor.MsgToCompliance_ComplianceACK_NACK,
+			expectedMessageType: sensor.MsgToCompliance_ComplianceACK_NODE_INVENTORY,
+			expectedReason:      "some failure reason",
+		},
 		"NODE_INDEX_REPORT ACK should be forwarded": {
 			sensorACK: &central.SensorACK{
 				Action:      central.SensorACK_ACK,
@@ -404,6 +419,30 @@ func (s *NodeInventoryHandlerTestSuite) TestHandlerSensorACKsToCompliance() {
 			shouldForward:       true,
 			expectedAction:      sensor.MsgToCompliance_ComplianceACK_ACK,
 			expectedMessageType: sensor.MsgToCompliance_ComplianceACK_NODE_INDEX_REPORT,
+		},
+		"NODE_INDEX_REPORT NACK should be forwarded with reason": {
+			sensorACK: &central.SensorACK{
+				Action:      central.SensorACK_NACK,
+				MessageType: central.SensorACK_NODE_INDEX_REPORT,
+				ResourceId:  "node-2",
+				Reason:      "index failure",
+			},
+			shouldForward:       true,
+			expectedAction:      sensor.MsgToCompliance_ComplianceACK_NACK,
+			expectedMessageType: sensor.MsgToCompliance_ComplianceACK_NODE_INDEX_REPORT,
+			expectedReason:      "index failure",
+		},
+		"Broadcast NODE_INVENTORY ACK should set broadcast": {
+			sensorACK: &central.SensorACK{
+				Action:      central.SensorACK_ACK,
+				MessageType: central.SensorACK_NODE_INVENTORY,
+				ResourceId:  "",
+			},
+			shouldForward:       true,
+			expectedAction:      sensor.MsgToCompliance_ComplianceACK_ACK,
+			expectedMessageType: sensor.MsgToCompliance_ComplianceACK_NODE_INVENTORY,
+			expectedHostname:    "",
+			expectedBroadcast:   true,
 		},
 		"VM_INDEX_REPORT ACK should be ignored": {
 			sensorACK: &central.SensorACK{
@@ -453,8 +492,14 @@ func (s *NodeInventoryHandlerTestSuite) TestHandlerSensorACKsToCompliance() {
 				s.Equal(tc.expectedAction, complianceAck.GetAction())
 				s.Equal(tc.expectedMessageType, complianceAck.GetMessageType())
 				s.Equal(tc.sensorACK.GetResourceId(), complianceAck.GetResourceId())
-				s.Equal(tc.sensorACK.GetReason(), complianceAck.GetReason())
-				s.Equal(tc.sensorACK.GetResourceId(), msg.Hostname)
+				s.Equal(tc.expectedReason, complianceAck.GetReason())
+				if tc.expectedHostname != "" || tc.expectedBroadcast {
+					s.Equal(tc.expectedHostname, msg.Hostname)
+					s.Equal(tc.expectedBroadcast, msg.Broadcast)
+				} else {
+					s.Equal(tc.sensorACK.GetResourceId(), msg.Hostname)
+					s.False(msg.Broadcast)
+				}
 			} else {
 				// Send the SensorACK message
 				err := handler.ProcessMessage(s.T().Context(), &central.MsgToSensor{
