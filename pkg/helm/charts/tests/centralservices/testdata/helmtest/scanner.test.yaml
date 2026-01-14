@@ -137,3 +137,7 @@ tests:
   expectError: true
   expect: |
     .error | assertThat(contains("set to full mode: scanner.mode=full"))
+
+- name: "Scanner deployment has secure container security context"
+  expect: |
+    .deployments["scanner"].spec.template.spec.containers[] | select(.name == "scanner") | .securityContext.allowPrivilegeEscalation | assertThat(. == false)
