@@ -41,6 +41,7 @@ func Singleton() Watcher {
 			scanDelegator,
 			env.BaseImageWatcherPollInterval.DurationSetting(),
 			env.BaseImageWatcherTagBatchSize.IntegerSetting(),
+			env.BaseImageWatcherPerRepoTagLimit.IntegerSetting(),
 		)
 	})
 	return watcher

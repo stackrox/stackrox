@@ -32,13 +32,15 @@ type watcherImpl struct {
 	tagDS        tagDS.DataStore
 	baseImageDS  baseImageDS.DataStore
 	delegator    delegatedregistry.Delegator
-	pollInterval time.Duration
 	localScanner reposcan.Scanner
 
 	stopper     concurrency.Stopper
 	startedOnce sync.Once
 	stoppedOnce sync.Once
-	batchSize   int
+
+	pollInterval time.Duration
+	batchSize    int
+	tagLimit     int
 }
 
 // New creates a new base image watcher.
@@ -50,16 +52,18 @@ func New(
 	delegator delegatedregistry.Delegator,
 	pollInterval time.Duration,
 	batchSize int,
+	tagLimit int,
 ) Watcher {
 	return &watcherImpl{
 		repoDS:       repoDS,
 		tagDS:        tagDS,
 		baseImageDS:  baseImageDS,
 		delegator:    delegator,
-		pollInterval: pollInterval,
-		batchSize:    batchSize,
 		localScanner: reposcan.NewLocalScanner(registries),
 		stopper:      concurrency.NewStopper(),
+		pollInterval: pollInterval,
+		batchSize:    batchSize,
+		tagLimit:     tagLimit,
 	}
 }
 
@@ -233,7 +237,6 @@ func (w *watcherImpl) processRepository(ctx context.Context, repo *storage.BaseI
 
 	// Scan repository: list tags, fetch metadata, and emit events.
 	start := time.Now()
-	tagLimit := env.BaseImageWatcherPerRepoTagLimit.IntegerSetting()
 
 	// Batch accumulators for tags.
 	var metadataCount, errorCount, deleteCount int
@@ -320,8 +323,8 @@ func (w *watcherImpl) processRepository(ctx context.Context, repo *storage.BaseI
 		}
 	}
 
-	if err := w.promoteTags(ctx, repo, tagLimit); err != nil {
-		log.Errorf("Failed to promote top-%d tags: repository=%q: %v", tagLimit, repo.GetRepositoryPath(), err)
+	if err := w.promoteTags(ctx, repo); err != nil {
+		log.Errorf("Failed to promote top-%d tags: repository=%q: %v", w.tagLimit, repo.GetRepositoryPath(), err)
 	}
 
 	recordScanDuration(name.GetRegistry(), repo.GetRepositoryPath(), scanner.Name(), start, metadataCount, errorCount, nil)
@@ -335,7 +338,6 @@ func (w *watcherImpl) processRepository(ctx context.Context, repo *storage.BaseI
 func (w *watcherImpl) promoteTags(
 	ctx context.Context,
 	repo *storage.BaseImageRepository,
-	limit int,
 ) error {
 	// Get top-N tags from cache ordered by created DESC.
 	tags, err := w.tagDS.ListTagsByRepository(ctx, repo.GetId())
@@ -343,8 +345,8 @@ func (w *watcherImpl) promoteTags(
 		return errors.Wrap(err, "listing tags from cache")
 	}
 
-	if len(tags) > limit {
-		tags = tags[:limit]
+	if len(tags) > w.tagLimit {
+		tags = tags[:w.tagLimit]
 	}
 
 	// Build base images from cached tags.

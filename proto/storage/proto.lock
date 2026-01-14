@@ -1556,6 +1556,12 @@
                 "id": 6,
                 "name": "created",
                 "type": "google.protobuf.Timestamp"
+              },
+              {
+                "id": 8,
+                "name": "layer_digests",
+                "type": "string",
+                "is_repeated": true
               }
             ],
             "maps": [

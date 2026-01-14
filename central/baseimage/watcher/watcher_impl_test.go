@@ -3,7 +3,6 @@ package watcher
 import (
 	"context"
 	"errors"
-	"iter"
 	"testing"
 	"time"
 
@@ -54,7 +53,7 @@ func createTestWatcher(
 	mockTagDS.EXPECT().ListTagsByRepository(gomock.Any(), gomock.Any()).Return([]*storage.BaseImageTag{}, nil).AnyTimes()
 	mockTagDS.EXPECT().UpsertMany(gomock.Any(), gomock.Any()).Return(nil).AnyTimes()
 
-	return New(mockRepoDS, mockTagDS, mockBaseImageDS, mockRegistrySet, mockDelegator, poll, 10)
+	return New(mockRepoDS, mockTagDS, mockBaseImageDS, mockRegistrySet, mockDelegator, poll, 10, 0)
 }
 
 func TestWatcher_StartsAndStops(t *testing.T) {
@@ -1365,28 +1364,4 @@ func TestTagUUID_InvalidRepoID(t *testing.T) {
 	require.Error(t, err)
 	assert.Empty(t, id)
 	assert.Contains(t, err.Error(), "invalid UUID")
-}
-
-// fakeScanner is a test scanner that emits controlled events.
-type fakeScanner struct {
-	events []eventOrError
-}
-
-type eventOrError struct {
-	event reposcan.TagEvent
-	err   error
-}
-
-func (f *fakeScanner) Name() string {
-	return "fake"
-}
-
-func (f *fakeScanner) ScanRepository(ctx context.Context, repo *storage.BaseImageRepository, req reposcan.ScanRequest) iter.Seq2[reposcan.TagEvent, error] {
-	return func(yield func(reposcan.TagEvent, error) bool) {
-		for _, item := range f.events {
-			if !yield(item.event, item.err) {
-				return
-			}
-		}
-	}
 }
