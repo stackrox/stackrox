@@ -55,7 +55,7 @@ func TestHttpHandler_ServeHTTP(t *testing.T) {
 		req := httptest.NewRequest(http.MethodGet, "/sbom", nil)
 		recorder := httptest.NewRecorder()
 
-		handler := SBOMHandler(imageintegration.Set(), nil, nil, nil)
+		handler := SBOMGenHandler(imageintegration.Set(), nil, nil, nil)
 		handler.ServeHTTP(recorder, req)
 
 		res := recorder.Result()
@@ -82,7 +82,7 @@ func TestHttpHandler_ServeHTTP(t *testing.T) {
 		req := httptest.NewRequest(http.MethodPost, "/sbom", bytes.NewReader(reqJson))
 		recorder := httptest.NewRecorder()
 
-		handler := SBOMHandler(imageintegration.Set(), mockEnricher, nil, nil)
+		handler := SBOMGenHandler(imageintegration.Set(), mockEnricher, nil, nil)
 		handler.ServeHTTP(recorder, req)
 
 		res := recorder.Result()
@@ -121,7 +121,7 @@ func TestHttpHandler_ServeHTTP(t *testing.T) {
 		req := httptest.NewRequest(http.MethodPost, "/sbom", bytes.NewReader(reqJson))
 		recorder := httptest.NewRecorder()
 
-		handler := SBOMHandler(set, mockEnricher, nil, nil)
+		handler := SBOMGenHandler(set, mockEnricher, nil, nil)
 		handler.ServeHTTP(recorder, req)
 
 		res := recorder.Result()
@@ -137,7 +137,7 @@ func TestHttpHandler_ServeHTTP(t *testing.T) {
 		req := httptest.NewRequest(http.MethodPost, "/sbom", bytes.NewBufferString(invalidJson))
 		recorder := httptest.NewRecorder()
 
-		handler := SBOMHandler(imageintegration.Set(), nil, nil, nil)
+		handler := SBOMGenHandler(imageintegration.Set(), nil, nil, nil)
 		handler.ServeHTTP(recorder, req)
 
 		res := recorder.Result()
@@ -154,7 +154,7 @@ func TestHttpHandler_ServeHTTP(t *testing.T) {
 		req := httptest.NewRequest(http.MethodPost, "/sbom", bytes.NewReader(reqBody))
 		recorder := httptest.NewRecorder()
 
-		handler := SBOMHandler(imageintegration.Set(), nil, nil, nil)
+		handler := SBOMGenHandler(imageintegration.Set(), nil, nil, nil)
 		handler.ServeHTTP(recorder, req)
 
 		res := recorder.Result()
@@ -170,7 +170,7 @@ func TestHttpHandler_ServeHTTP(t *testing.T) {
 		req := httptest.NewRequest(http.MethodPost, "/sbom", nil)
 		recorder := httptest.NewRecorder()
 
-		handler := SBOMHandler(imageintegration.Set(), nil, nil, nil)
+		handler := SBOMGenHandler(imageintegration.Set(), nil, nil, nil)
 		handler.ServeHTTP(recorder, req)
 
 		res := recorder.Result()
@@ -187,7 +187,7 @@ func TestHttpHandler_ServeHTTP(t *testing.T) {
 		req := httptest.NewRequest(http.MethodPost, "/sbom", bytes.NewReader(largeRequestBody))
 		recorder := httptest.NewRecorder()
 
-		handler := SBOMHandler(imageintegration.Set(), nil, nil, nil)
+		handler := SBOMGenHandler(imageintegration.Set(), nil, nil, nil)
 		handler.ServeHTTP(recorder, req)
 
 		res := recorder.Result()
@@ -253,7 +253,7 @@ func TestHttpHandler_ServeHTTP(t *testing.T) {
 		assert.NoError(t, err)
 		req := httptest.NewRequest(http.MethodPost, "/sbom", bytes.NewReader(reqJson))
 		recorder := httptest.NewRecorder()
-		handler := SBOMHandler(mockIntegrationSet, mockEnricher, nil, mockRiskManager)
+		handler := SBOMGenHandler(mockIntegrationSet, mockEnricher, nil, mockRiskManager)
 
 		// Make the SBOM generation request.
 		handler.ServeHTTP(recorder, req)
