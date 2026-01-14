@@ -316,7 +316,7 @@ func TestTrackerBase_Gather_resetBetweenRuns(t *testing.T) {
 
 	// Track all SetTotal calls with their totals.
 	var allTotals []int
-	rf.EXPECT().RegisterMetric(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Times(2)
+	rf.EXPECT().RegisterMetric(gomock.Any(), gomock.Any(), gomock.Any()).Times(2)
 	rf.EXPECT().SetTotal(gomock.Any(), gomock.Any(), gomock.Any()).
 		AnyTimes().Do(func(_ string, _ prometheus.Labels, total int) {
 		allTotals = append(allTotals, total)
@@ -368,7 +368,7 @@ func TestTrackerBase_Gather_afterReconfiguration(t *testing.T) {
 	tracker.registryFactory = func(string) (metrics.CustomRegistry, error) { return rf, nil }
 
 	var gatheredMetrics []string
-	rf.EXPECT().RegisterMetric(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
+	rf.EXPECT().RegisterMetric(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
 	rf.EXPECT().UnregisterMetric(gomock.Any()).AnyTimes()
 	rf.EXPECT().SetTotal(gomock.Any(), gomock.Any(), gomock.Any()).
 		AnyTimes().Do(func(metricName string, _ prometheus.Labels, _ int) {
