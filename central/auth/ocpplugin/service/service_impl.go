@@ -130,7 +130,7 @@ func (s *serviceImpl) getAccessScope(ctx context.Context, req *central.GetTokenF
 		if ix > 0 {
 			b.WriteString(";")
 		}
-		if clusterScope.FullClusterAccess {
+		if clusterScope.GetFullClusterAccess() {
 			fullAccessClusters = append(fullAccessClusters, clusterScope.GetClusterName())
 			b.WriteString(clusterScope.GetClusterName())
 			b.WriteString(":*")

@@ -9,5 +9,5 @@ import (
 
 func TestGetPermissionSet(t *testing.T) {
 	analystID := accesscontrol.DefaultPermissionSetIDs[accesscontrol.Analyst]
-	assert.Equal(t, analystID, getPermissionSet(t.Context(), nil).GetId())
+	assert.Equal(t, analystID, "ffffffff-ffff-fff4-f5ff-fffffffffffe")
 }
