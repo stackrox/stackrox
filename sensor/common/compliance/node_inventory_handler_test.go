@@ -551,7 +551,7 @@ func (s *NodeInventoryHandlerTestSuite) TestHandlerAcceptsBothAckTypes() {
 	}
 	s.True(handler.Accepts(nodeAckMsg), "Handler should accept SensorACK for node messages")
 
-	// Test SensorACK for VM messages (also accepted by Accepts, but ignored in ProcessMessage)
+	// Test SensorACK for VM messages (should be handled by VM handler, not accepted here)
 	vmAckMsg := &central.MsgToSensor{
 		Msg: &central.MsgToSensor_SensorAck{SensorAck: &central.SensorACK{
 			Action:      central.SensorACK_ACK,
@@ -559,7 +559,7 @@ func (s *NodeInventoryHandlerTestSuite) TestHandlerAcceptsBothAckTypes() {
 			ResourceId:  "vm-1",
 		}},
 	}
-	s.True(handler.Accepts(vmAckMsg), "Handler accepts SensorACK for VM messages (but ignores in ProcessMessage)")
+	s.False(handler.Accepts(vmAckMsg), "Handler should not accept SensorACK for VM messages")
 
 	// Test message without ACK
 	otherMsg := &central.MsgToSensor{
