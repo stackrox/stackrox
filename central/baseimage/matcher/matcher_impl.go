@@ -4,14 +4,20 @@ import (
 	"context"
 	"fmt"
 	"slices"
+	"time"
 
 	"github.com/stackrox/rox/central/baseimage/datastore"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/logging"
 )
 
 type matcherImpl struct {
 	datastore datastore.DataStore
 }
+
+var (
+	log = logging.LoggerForModule()
+)
 
 // New creates a new base image watcher.
 func New(
@@ -23,6 +29,14 @@ func New(
 }
 
 func (m matcherImpl) MatchWithBaseImages(ctx context.Context, layers []string) ([]*storage.BaseImageInfo, error) {
+	start := time.Now()
+
+	defer func() {
+		log.Debugw("MatchWithBaseImages execution complete",
+			"duration", time.Since(start),
+			"layer_count", len(layers))
+	}()
+
 	if len(layers) == 0 {
 		return nil, nil
 	}
