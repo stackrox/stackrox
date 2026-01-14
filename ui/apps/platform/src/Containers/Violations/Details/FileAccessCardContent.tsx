@@ -17,7 +17,7 @@ type FileAccessCardContentProps = {
 };
 
 function FileAccessCardContent({ event }: FileAccessCardContentProps): ReactElement {
-    const { file, moved, operation, timestamp, process } = event;
+    const { file, operation, moved, timestamp, process } = event;
 
     return (
         <Flex direction={{ default: 'column' }} spaceItems={{ default: 'spaceItemsMd' }}>
