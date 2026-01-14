@@ -100,7 +100,13 @@ jobs:
           set -euo pipefail
           tag="${{ inputs.version || github.ref_name }}"
           if [[ "${tag}" == *-nightly-* ]]; then
-            tag="${tag}-fast"
+            suffix="fast"
+            # Extract version part before -nightly- and replace patch version with 0
+            # Example: 0.1.x-nightly-20260114 -> 0.1.0-nightly-20260114-fast
+            version_part="${tag%%-nightly-*}"
+            rest_part="${tag#*-nightly-}"
+            version_part=$(echo "$version_part" | sed -E 's/([0-9]+\.[0-9]+\.)x/\10/')
+            tag="${version_part}-nightly-${rest_part}-${suffix}"
           fi
           echo "tag=${tag}" >> "${GITHUB_OUTPUT}"
 
