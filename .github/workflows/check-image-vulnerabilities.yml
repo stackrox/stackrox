@@ -10,7 +10,7 @@ on:
   push:
     tags: ['*']
 
-run-name: ${{ format('Scan images for vulnerabilities for {0}', inputs.version || github.ref_name) }}
+run-name: ${{ format('Scan image vulnerabilities for {0}', inputs.version || github.ref_name) }}
 
 jobs:
   run-parameters:
@@ -51,7 +51,7 @@ jobs:
             "stackrox-operator",
           ]
     steps:
-      - name: Determine image tag from version
+      - name: Determine image tag from input version
         id: determine-image-tag
         run: |
           set -euo pipefail
@@ -109,7 +109,7 @@ jobs:
             "release-operator",
           ]
     steps:
-      - name: Determine image tag from version
+      - name: Determine image tag from input version
         id: determine-image-tag
         run: |
           set -euo pipefail
