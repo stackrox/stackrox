@@ -314,8 +314,8 @@ func TestIntegerArraySetting(t *testing.T) {
 func testRegisterArraySetting(name string, defaultValue []int, minValue, maxValue, minLength, maxLength int) *IntegerArraySetting {
 	s := RegisterIntegerArraySetting(name, defaultValue)
 
-	s = s.WithMinimumValue(minValue)
-	s = s.WithMaximumValue(maxValue)
+	s = s.WithMinimumElementValue(minValue)
+	s = s.WithMaximumElementValue(maxValue)
 	s = s.WithMinLength(minLength)
 	s = s.WithMaxLength(maxLength)
 
