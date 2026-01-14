@@ -6,6 +6,7 @@ import "time"
 // This view maps directly to PostgreSQL columns, avoiding deserialization of
 // the serialized bytea column which contains the full Image proto (~100KB).
 // Only the fields needed for ListImage are fetched (~150 bytes).
+// Note: Priority is not fetched as it's a derived field and will be set by the ranker.
 type ListImageView struct {
 	ID              string     `db:"id"`
 	NameRegistry    string     `db:"name_registry"`
@@ -16,5 +17,4 @@ type ListImageView struct {
 	FixableCveCount *int32     `db:"fixablecves"`
 	Created         *time.Time `db:"metadata_v1_created"`
 	LastUpdated     *time.Time `db:"lastupdated"`
-	Priority        int64      `db:"priority"`
 }

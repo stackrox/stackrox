@@ -120,6 +120,7 @@ func (ds *datastoreImpl) SearchRawImages(ctx context.Context, q *v1.Query) ([]*s
 // Handles oneof field logic for scan stats - only sets fields if non-NULL in database.
 func convertListImageViewToListImage(view *views.ListImageView) *storage.ListImage {
 	// Construct full image name from components
+	// Handle both cases: components populated OR empty (fallback to Remote only)
 	fullName := view.NameRemote
 	if view.NameRegistry != "" {
 		fullName = view.NameRegistry + "/" + fullName
@@ -128,10 +129,16 @@ func convertListImageViewToListImage(view *views.ListImageView) *storage.ListIma
 		fullName = fullName + ":" + view.NameTag
 	}
 
+	// If fullName is still empty, it means all components were empty
+	// This shouldn't happen in practice, but handle it gracefully
+	if fullName == "" {
+		fullName = view.ID // Fallback to ID
+	}
+
 	listImg := &storage.ListImage{
 		Id:       view.ID,
 		Name:     fullName,
-		Priority: view.Priority, // Will be overwritten by ranker
+		Priority: 0, // Will be set by ranker via updateListImagePriority
 	}
 
 	// Convert timestamps from *time.Time to *timestamppb.Timestamp
