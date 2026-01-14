@@ -142,16 +142,29 @@ func sendComplianceAck(ctx context.Context, node *storage.Node, ninv *storage.No
 	if injector == nil {
 		return
 	}
-	reply := replyCompliance(node.GetClusterId(), ninv.GetNodeName(), central.NodeInventoryACK_ACK)
-	if err := injector.InjectMessage(ctx, reply); err != nil {
-		log.Warnf("Failed sending node-inventory-ACK to Sensor for %s: %v", nodeDatastore.NodeString(node), err)
-	} else {
-		log.Debugf("Sent node-inventory-ACK for %s", nodeDatastore.NodeString(node))
-	}
+	replyCompliance(ctx, node.GetClusterId(), ninv.GetNodeName(), central.NodeInventoryACK_ACK, injector)
 }
 
-func replyCompliance(clusterID, nodeName string, t central.NodeInventoryACK_Action) *central.MsgToSensor {
-	return &central.MsgToSensor{
+func replyCompliance(ctx context.Context, clusterID, nodeName string, t central.NodeInventoryACK_Action, injector common.MessageInjector) {
+	if injector == nil {
+		return
+	}
+
+	// Always send SensorACK (new path).
+	if err := injector.InjectMessage(ctx, &central.MsgToSensor{
+		Msg: &central.MsgToSensor_SensorAck{
+			SensorAck: &central.SensorACK{
+				Action:      convertLegacyActionToSensor(t),
+				MessageType: central.SensorACK_NODE_INVENTORY,
+				ResourceId:  nodeName,
+			},
+		},
+	}); err != nil {
+		log.Warnf("Failed injecting SensorACK for node inventory (clusterID=%s, nodeName=%s): %v", clusterID, nodeName, err)
+	}
+
+	// Always send legacy NodeInventoryACK for backward compatibility.
+	if err := injector.InjectMessage(ctx, &central.MsgToSensor{
 		Msg: &central.MsgToSensor_NodeInventoryAck{
 			NodeInventoryAck: &central.NodeInventoryACK{
 				ClusterId:   clusterID,
@@ -160,7 +173,16 @@ func replyCompliance(clusterID, nodeName string, t central.NodeInventoryACK_Acti
 				MessageType: central.NodeInventoryACK_NodeInventory,
 			},
 		},
+	}); err != nil {
+		log.Warnf("Failed injecting legacy NodeInventoryACK for node inventory (clusterID=%s, nodeName=%s): %v", clusterID, nodeName, err)
 	}
 }
 
 func (p *pipelineImpl) OnFinish(_ string) {}
+
+func convertLegacyActionToSensor(action central.NodeInventoryACK_Action) central.SensorACK_Action {
+	if action == central.NodeInventoryACK_ACK {
+		return central.SensorACK_ACK
+	}
+	return central.SensorACK_NACK
+}
