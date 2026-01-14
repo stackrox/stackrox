@@ -11,16 +11,22 @@ import { PublicConfigProvider } from 'providers/PublicConfigProvider';
 
 import consoleFetchAxiosAdapter from './consoleFetchAxiosAdapter';
 import PluginContent from './PluginContent';
+import { ScopeProvider, useScope } from './ScopeContext';
 
-// The console requires a custom fetch implementation via `consoleFetch` to correctly pass headers such
-// as X-CSRFToken to API requests. All of our current code uses `axios` to make API requests, so we need
-// to override the default adapter to use `consoleFetch` instead of XMLHttpRequest.
 const proxyBaseURL = '/api/proxy/plugin/advanced-cluster-security/api-service/proxy/central';
-axios.defaults.adapter = (config) => consoleFetchAxiosAdapter(proxyBaseURL, config);
-
 const apolloClient = configureApolloClient();
 
-export function PluginProvider({ children }: { children: ReactNode }) {
+function PluginProviderContent({ children }: { children: ReactNode }) {
+    const scopeRef = useScope();
+
+    // The console requires a custom fetch implementation via `consoleFetch` to correctly pass headers such
+    // as X-CSRFToken to API requests. All of our current code uses `axios` to make API requests, so we need
+    // to override the default adapter to use `consoleFetch` instead of XMLHttpRequest.
+    //
+    // Setup axios adapter to read scopeRef.current at request time
+    axios.defaults.adapter = (config) =>
+        consoleFetchAxiosAdapter(proxyBaseURL, config, () => scopeRef.current);
+
     return (
         <ApolloProvider client={apolloClient}>
             <UserPermissionProvider>
@@ -33,6 +39,14 @@ export function PluginProvider({ children }: { children: ReactNode }) {
                 </FeatureFlagsProvider>
             </UserPermissionProvider>
         </ApolloProvider>
+    );
+}
+
+export function PluginProvider({ children }: { children: ReactNode }) {
+    return (
+        <ScopeProvider>
+            <PluginProviderContent>{children}</PluginProviderContent>
+        </ScopeProvider>
     );
 }
 
