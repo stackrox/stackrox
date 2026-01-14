@@ -16,5 +16,5 @@ var (
 	ProcessFilterFanOutLevels = RegisterIntegerArraySetting(
 		"ROX_PROCESS_FILTER_FAN_OUT_LEVELS",
 		[]int{8, 6, 4, 2},
-	).WithMinimumValue(1).WithMaximumValue(1000).WithMinLength(0).WithMaxLength(10)
+	).WithMinimumElementValue(1).WithMaximumElementValue(1000).WithMinLength(0).WithMaxLength(10)
 )

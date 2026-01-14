@@ -133,14 +133,14 @@ func RegisterIntegerArraySetting(envVar string, defaultValue []int) *IntegerArra
 	return s
 }
 
-// WithMinimumValue specifies the minimal allowed value for each element in the array.
-func (s *IntegerArraySetting) WithMinimumValue(min int) *IntegerArraySetting {
+// WithMinimumElementValue specifies the minimal allowed value for each element in the array.
+func (s *IntegerArraySetting) WithMinimumElementValue(min int) *IntegerArraySetting {
 	s.minValue = min
 	return s.mustValidate()
 }
 
-// WithMaximumValue specifies the maximal allowed value for each element in the array.
-func (s *IntegerArraySetting) WithMaximumValue(max int) *IntegerArraySetting {
+// WithMaximumElementValue specifies the maximal allowed value for each element in the array.
+func (s *IntegerArraySetting) WithMaximumElementValue(max int) *IntegerArraySetting {
 	s.maxValue = max
 	return s.mustValidate()
 }
