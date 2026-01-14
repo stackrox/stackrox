@@ -45,4 +45,17 @@ var (
 	// then must wait for 5 seconds for tokens to refill at the rate limit.
 	// Default: 5 tokens
 	VMIndexReportBucketCapacity = RegisterIntegerSetting("ROX_VM_INDEX_REPORT_BUCKET_CAPACITY", 5).WithMinimum(1)
+
+	// VMRelayMaxReportsPerMinute defines the maximum number of reports per minute per VSOCK ID
+	// that the relay will forward to Sensor. Uses leaky bucket (no bursts).
+	// Supports fractional values for finer control (e.g., 0.5 = 1 report every 2 minutes).
+	// Set to "0" to disable rate limiting.
+	// Default: "1.0" report per minute per VM
+	VMRelayMaxReportsPerMinute = RegisterSetting("ROX_VM_RELAY_MAX_REPORTS_PER_MINUTE", WithDefault("1.0"))
+
+	// VMRelayStaleAckThreshold defines how long since the last ACK before considering it stale.
+	// If rate limited and ACK is stale, the report is dropped (not sent to Sensor).
+	// If rate limited and ACK is recent, the report is silently dropped to protect Sensor/Central.
+	// Default: 4 hours
+	VMRelayStaleAckThreshold = registerDurationSetting("ROX_VM_RELAY_STALE_ACK_THRESHOLD", 4*time.Hour)
 )
