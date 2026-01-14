@@ -13,7 +13,6 @@ import (
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
-	"github.com/stackrox/rox/pkg/search/postgres/mapping"
 )
 
 var (
@@ -25,15 +24,9 @@ var (
 
 	// AlertsSchema is the go schema for table `alerts`.
 	AlertsSchema = func() *walker.Schema {
-		schema := GetSchemaForTable("alerts")
-		if schema != nil {
-			return schema
-		}
-		schema = walker.Walk(reflect.TypeOf((*storage.Alert)(nil)), "alerts")
+		schema := walker.Walk(reflect.TypeOf((*storage.Alert)(nil)), "alerts")
 		schema.SetOptionsMap(search.Walk(v1.SearchCategory_ALERTS, "alert", (*storage.Alert)(nil)))
 		schema.ScopingResource = resources.Alert
-		RegisterTable(schema, CreateTableAlertsStmt)
-		mapping.RegisterCategoryToTable(v1.SearchCategory_ALERTS, schema)
 		return schema
 	}()
 )
@@ -62,7 +55,7 @@ type Alerts struct {
 	ClusterName              string                              `gorm:"column:clustername;type:varchar"`
 	Namespace                string                              `gorm:"column:namespace;type:varchar;index:alerts_sac_filter,type:btree"`
 	NamespaceID              string                              `gorm:"column:namespaceid;type:uuid"`
-	DeploymentID             string                              `gorm:"column:deployment_id;type:uuid;index:alerts_deployment_id,type:btree"`
+	DeploymentID             string                              `gorm:"column:deployment_id;type:uuid;index:alerts_deployment_id,type:hash"`
 	DeploymentName           string                              `gorm:"column:deployment_name;type:varchar"`
 	DeploymentInactive       bool                                `gorm:"column:deployment_inactive;type:bool"`
 	ImageID                  string                              `gorm:"column:image_id;type:varchar"`
