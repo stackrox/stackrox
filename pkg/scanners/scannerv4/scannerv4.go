@@ -3,6 +3,7 @@ package scannerv4
 import (
 	"context"
 	"fmt"
+	"io"
 	"time"
 
 	"github.com/google/go-containerregistry/pkg/authn"
@@ -130,6 +131,74 @@ func (s *scannerv4) GetSBOM(image *storage.Image) ([]byte, bool, error) {
 	defer cancel()
 	sbom, found, err := s.scannerClient.GetSBOM(ctx, image.GetName().GetFullName(), digest, uri, client.IncludeExternalIndexReports())
 	return sbom, found, err
+}
+
+// ScanSBOM scans an SBOM, the contentType (which would include media type, optionally version, etc.)
+// will be passed to the scanner to assist in parsing.
+func (s *scannerv4) ScanSBOM(sbomReader io.Reader, contentType string) (*v1.SBOMScanResponse, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), scanTimeout)
+	defer cancel()
+
+	var scannerVersion pkgscanner.Version
+
+	// TODO(ROX-30570): START Remove
+	// Read all data from the SBOM reader and throw it away (testing purposes only)
+	dataB, err := io.ReadAll(sbomReader)
+	if err != nil {
+		return nil, fmt.Errorf("reading sbom data: %w", err)
+	}
+	log.Debugf("Scanning SBOM: %s", dataB)
+	_ = ctx
+	// Create a fake vuln report for testing purposes
+	vr := &v4.VulnerabilityReport{
+		HashId: "fake HashId",
+		Vulnerabilities: map[string]*v4.VulnerabilityReport_Vulnerability{
+			"v1": {Name: "Fake Vuln #1"},
+			"v2": {Name: "Fake Vuln #2"},
+		},
+		PackageVulnerabilities: map[string]*v4.StringList{
+			"p1": {Values: []string{"v1", "v2"}},
+		},
+		Contents: &v4.Contents{
+			Packages: map[string]*v4.Package{
+				"p1": {Name: "Fake Package #1"},
+			},
+		},
+	}
+	// TODO(ROX-30570): END Remove
+
+	// TODO(ROX-30570): Replace with actual scanner client call
+	// vr, err := s.scannerClient.ScanSBOM(ctx, sbomReader, contentType, client.Version(&scannerVersion))
+	// if err != nil {
+	// 	return nil, fmt.Errorf("scanning sbom: %w", err)
+	// }
+
+	scannerVersionStr, err := scannerVersion.Encode()
+	if err != nil {
+		log.Warnf("Failed to encode Scanner version: %v", err)
+	}
+
+	return &v1.SBOMScanResponse{
+		Id:   vr.GetHashId(),
+		Scan: sbomScan(vr, scannerVersionStr),
+	}, nil
+}
+
+func sbomScan(vr *v4.VulnerabilityReport, scannerVersionStr string) *v1.SBOMScanResponse_SBOMScan {
+	imageScan := imageScan(nil, vr, scannerVersionStr)
+
+	for _, c := range imageScan.GetComponents() {
+		for _, v := range c.GetVulns() {
+			// With SBOMs we will not always know what the component represents.
+			v.VulnerabilityType = storage.EmbeddedVulnerability_UNKNOWN_VULNERABILITY
+		}
+	}
+
+	return &v1.SBOMScanResponse_SBOMScan{
+		ScanTime:        imageScan.GetScanTime(),
+		Components:      imageScan.GetComponents(),
+		OperatingSystem: imageScan.GetOperatingSystem(),
+	}
 }
 
 func (s *scannerv4) GetScan(image *storage.Image) (*storage.ImageScan, error) {
