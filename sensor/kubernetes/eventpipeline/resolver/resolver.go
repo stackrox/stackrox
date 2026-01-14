@@ -18,11 +18,12 @@ type pubSubRegister interface {
 // New instantiates a Resolver component.
 func New(outputQueue component.OutputQueue, provider store.Provider, queueSize int, pubsubDispatcher pubSubRegister) (component.Resolver, error) {
 	res := &resolverImpl{
-		outputQueue:        outputQueue,
-		innerQueue:         make(chan *component.ResourceEvent, queueSize),
-		storeProvider:      provider,
-		stopper:            concurrency.NewStopper(),
-		deploymentRefQueue: nil,
+		outputQueue:           outputQueue,
+		innerQueue:            make(chan *component.ResourceEvent, queueSize),
+		storeProvider:         provider,
+		stopper:               concurrency.NewStopper(),
+		pullAndResolveStopped: concurrency.NewSignal(),
+		deploymentRefQueue:    nil,
 	}
 	if features.SensorInternalPubSub.Enabled() {
 		if pubsubDispatcher == nil {

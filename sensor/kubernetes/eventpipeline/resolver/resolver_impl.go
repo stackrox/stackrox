@@ -40,8 +40,9 @@ type resolverImpl struct {
 	outputQueue component.OutputQueue
 	innerQueue  chan *component.ResourceEvent
 
-	storeProvider store.Provider
-	stopper       concurrency.Stopper
+	storeProvider         store.Provider
+	stopper               concurrency.Stopper
+	pullAndResolveStopped concurrency.Signal
 
 	deploymentRefQueue *dedupingqueue.DedupingQueue[string]
 }
@@ -59,7 +60,10 @@ func (r *resolverImpl) Start() error {
 
 // Stop the resolverImpl component
 func (r *resolverImpl) Stop() {
-	if features.SensorAggregateDeploymentReferenceOptimization.Enabled() || !features.SensorInternalPubSub.Enabled() {
+	if features.SensorAggregateDeploymentReferenceOptimization.Enabled() {
+		defer r.pullAndResolveStopped.Wait()
+	}
+	if !features.SensorInternalPubSub.Enabled() {
 		if !r.stopper.Client().Stopped().IsDone() {
 			defer func() {
 				_ = r.stopper.Client().Stopped().Wait()
@@ -173,6 +177,7 @@ func (r *resolverImpl) resolveDeployment(msg *component.ResourceEvent, ref *depl
 
 // runPullAndResolve pull the next deployment reference to be resolved out of the queue
 func (r *resolverImpl) runPullAndResolve() {
+	defer r.pullAndResolveStopped.Signal()
 	for {
 		item := r.deploymentRefQueue.PullBlocking(r.stopper.LowLevel().GetStopRequestSignal())
 		select {
