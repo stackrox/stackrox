@@ -27,15 +27,22 @@ func setupLocalTCPListener(t *testing.T) (net.Listener, uint64) {
 	return listener, port
 }
 
-func TestClient_writeIndexReport_LocalSocket(t *testing.T) {
+func TestClient_writeVsockMessage_LocalSocket(t *testing.T) {
 	listener, port := setupLocalTCPListener(t)
 	client := &Client{Port: uint32(port)}
-	testReport := &v1.IndexReport{
+	testIndexReport := &v1.IndexReport{
 		IndexV4: &v4.IndexReport{
 			HashId:  "test-hash-local",
 			State:   "completed",
 			Success: true,
 		},
+	}
+	testVsockMessage := &v1.VsockMessage{
+		IndexReport:          testIndexReport,
+		DetectedOs:           "unknown",
+		IsOsActivated:        false,
+		DnfMetadataAvailable: false,
+		AuxData:              make(map[string]string),
 	}
 
 	receivedData := make(chan []byte, 1)
@@ -67,15 +74,15 @@ func TestClient_writeIndexReport_LocalSocket(t *testing.T) {
 	require.NoError(t, err, "should be able to dial local TCP socket")
 	defer utils.IgnoreError(listener.Close)
 
-	err = client.writeIndexReport(conn, testReport)
-	require.NoError(t, err, "writeIndexReport should succeed")
+	err = client.writeVsockMessage(conn, testVsockMessage)
+	require.NoError(t, err, "writeVsockMessage should succeed")
 
 	select {
 	case data := <-receivedData:
-		var receivedReport v1.IndexReport
-		err = proto.Unmarshal(data, &receivedReport)
+		var receivedMessage v1.VsockMessage
+		err = proto.Unmarshal(data, &receivedMessage)
 		require.NoError(t, err, "should be able to unmarshal received data")
-		protoassert.Equal(t, testReport, &receivedReport)
+		protoassert.Equal(t, testVsockMessage, &receivedMessage)
 	case err := <-listenerErr:
 		require.NoError(t, err, "listener error")
 	case <-time.After(5 * time.Second):
