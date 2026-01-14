@@ -64,9 +64,31 @@ func TestSearchNodeComponents(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Len(t, searchResults, 3)
 
+		resultMap := make(map[string]*v1.SearchResult)
 		for _, result := range searchResults {
-			assert.Equal(t, v1.SearchCategory_NODE_COMPONENTS, result.GetCategory(), "Result category should be NODE_COMPONENTS")
+			resultMap[result.GetId()] = result
 		}
+
+		result1 := resultMap[nodeComponent1.GetId()]
+		require.NotNil(t, result1)
+		assert.Equal(t, nodeComponent1.GetId(), result1.GetId())
+		assert.Equal(t, nodeComponent1.GetName(), result1.GetName())
+		assert.Equal(t, v1.SearchCategory_NODE_COMPONENTS, result1.GetCategory())
+		assert.NotNil(t, result1.GetFieldToMatches())
+
+		result2 := resultMap[nodeComponent2.GetId()]
+		require.NotNil(t, result2)
+		assert.Equal(t, nodeComponent2.GetId(), result2.GetId())
+		assert.Equal(t, nodeComponent2.GetName(), result2.GetName())
+		assert.Equal(t, v1.SearchCategory_NODE_COMPONENTS, result2.GetCategory())
+		assert.NotNil(t, result2.GetFieldToMatches())
+
+		result3 := resultMap[nodeComponent3.GetId()]
+		require.NotNil(t, result3)
+		assert.Equal(t, nodeComponent3.GetId(), result3.GetId())
+		assert.Equal(t, nodeComponent3.GetName(), result3.GetName())
+		assert.Equal(t, v1.SearchCategory_NODE_COMPONENTS, result3.GetCategory())
+		assert.NotNil(t, result3.GetFieldToMatches())
 	})
 
 	t.Run("SearchNodeComponents with empty query", func(t *testing.T) {
