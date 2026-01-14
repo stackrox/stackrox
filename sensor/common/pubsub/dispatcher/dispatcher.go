@@ -3,13 +3,9 @@ package dispatcher
 import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/errorhelpers"
-	"github.com/stackrox/rox/pkg/features"
-	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/sensor/common/pubsub"
 )
-
-var log = logging.LoggerForModule()
 
 type Option func(*dispatcher)
 
@@ -47,9 +43,6 @@ type dispatcher struct {
 }
 
 func (d *dispatcher) Publish(event pubsub.Event) error {
-	if err := d.ensureAvailable("Publish"); err != nil {
-		return err
-	}
 	if event == nil {
 		return errors.New("trying to publish a 'nil' event")
 	}
@@ -61,9 +54,6 @@ func (d *dispatcher) Publish(event pubsub.Event) error {
 }
 
 func (d *dispatcher) RegisterConsumer(topic pubsub.Topic, callback pubsub.EventCallback) error {
-	if err := d.ensureAvailable("RegisterConsumer"); err != nil {
-		return err
-	}
 	if callback == nil {
 		return errors.New("cannot register a 'nil' callback")
 	}
@@ -79,9 +69,6 @@ func (d *dispatcher) RegisterConsumer(topic pubsub.Topic, callback pubsub.EventC
 }
 
 func (d *dispatcher) RegisterConsumerToLane(topic pubsub.Topic, laneID pubsub.LaneID, callback pubsub.EventCallback) error {
-	if err := d.ensureAvailable("RegisterConsumerToLane"); err != nil {
-		return err
-	}
 	if callback == nil {
 		return errors.New("cannot register a 'nil' callback")
 	}
@@ -93,10 +80,6 @@ func (d *dispatcher) RegisterConsumerToLane(topic pubsub.Topic, laneID pubsub.La
 }
 
 func (d *dispatcher) Stop() {
-	if err := d.ensureAvailable("Stop"); err != nil {
-		log.Errorf("unable to Stop %v", err)
-		return
-	}
 	d.laneLock.RLock()
 	defer d.laneLock.RUnlock()
 	for _, lane := range d.lanes {
@@ -135,11 +118,4 @@ func (d *dispatcher) createLanes() error {
 		d.lanes[config.LaneID()] = lane
 	}
 	return errList.ToError()
-}
-
-func (d *dispatcher) ensureAvailable(op string) error {
-	if d == nil && features.SensorInternalPubSub.Enabled() {
-		return errors.Errorf("calling %s when the PubSub is `nil` and %q is enabled", op, features.SensorInternalPubSub.EnvVar())
-	}
-	return nil
 }

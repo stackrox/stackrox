@@ -223,7 +223,7 @@ func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 			certrefresh.NewSecuredClusterTLSIssuer(cfg.introspectionK8sClient.Kubernetes(), sensorNamespace, podName))
 	}
 
-	s := sensor.NewSensor(
+	s, err := sensor.NewSensor(
 		clusterID,
 		configHandler,
 		policyDetector,
@@ -234,6 +234,9 @@ func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 		cfg.certLoader,
 		components...,
 	)
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to create sensor")
+	}
 
 	if cfg.workloadManager != nil {
 		cfg.workloadManager.SetSignalHandlers(processPipeline, networkFlowManager)

@@ -4,7 +4,9 @@ import (
 	"context"
 	"io"
 
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/sensor/common/awscredentials"
 	"github.com/stackrox/rox/sensor/common/config"
@@ -35,7 +37,10 @@ func New(clusterID clusterIDWaiter,
 	storeProvider *resources.StoreProvider,
 	pubSub *internalmessage.MessageSubscriber,
 	pubSubDispatcher pubSubPublisher,
-) component.ContextListener {
+) (component.ContextListener, error) {
+	if features.SensorInternalPubSub.Enabled() && pubSubDispatcher == nil {
+		return nil, errors.Errorf("unable to initialize the listener. %q is enabled but the PubSubDispatcher is `nil`", features.SensorInternalPubSub.EnvVar())
+	}
 	k := &listenerImpl{
 		client:             client,
 		stopSig:            concurrency.NewSignal(),
@@ -50,7 +55,7 @@ func New(clusterID clusterIDWaiter,
 		clusterID:          clusterID,
 	}
 	k.mayCreateHandlers.Signal()
-	return k
+	return k, nil
 }
 
 // createCredentialsManager retrieves Sensor's node provider ID and creates an AWS credentials manager.

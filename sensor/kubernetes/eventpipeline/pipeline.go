@@ -6,6 +6,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/config"
 	"github.com/stackrox/rox/sensor/common/detector"
@@ -47,11 +48,17 @@ func New(clusterID clusterIDWaiter,
 	pubSubDispatcher component.PubSubDispatcher,
 ) (common.SensorComponent, error) {
 	outputQueue := output.New(detector, queueSize)
+	if features.SensorInternalPubSub.Enabled() && pubSubDispatcher == nil {
+		return nil, errors.Errorf("unable to initialize the event pipeline. %q is enabled but the PubSubDispatcher is `nil`", features.SensorInternalPubSub.EnvVar())
+	}
 	depResolver, err := resolver.New(outputQueue, storeProvider, queueSize, pubSubDispatcher)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to initialize the event pipeline")
 	}
-	resourceListener := listener.New(clusterID, client, configHandler, nodeName, traceWriter, depResolver, storeProvider, pubSub, pubSubDispatcher)
+	resourceListener, err := listener.New(clusterID, client, configHandler, nodeName, traceWriter, depResolver, storeProvider, pubSub, pubSubDispatcher)
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to initialize the event pipeline")
+	}
 
 	offlineMode := &atomic.Bool{}
 	offlineMode.Store(true)

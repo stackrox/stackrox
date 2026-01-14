@@ -104,7 +104,10 @@ func NewSensor(
 	pubSubDispatcher common.PubSubDispatcher,
 	certLoader centralclient.CertLoader,
 	components ...common.SensorComponent,
-) *Sensor {
+) (*Sensor, error) {
+	if features.SensorInternalPubSub.Enabled() && pubSubDispatcher == nil {
+		return nil, errors.Errorf("%q is enabled but the PubSubDispatcher is `nil`", features.SensorInternalPubSub.EnvVar())
+	}
 	return &Sensor{
 		clusterID:          clusterID,
 		centralEndpoint:    env.CentralEndpoint.Setting(),
@@ -129,7 +132,7 @@ func NewSensor(
 		stoppedSig: concurrency.NewErrorSignal(),
 
 		reconnect: atomic.Bool{},
-	}
+	}, nil
 }
 
 // AddAPIServices adds the api services to the sensor. It should be called PRIOR to Start()

@@ -7,6 +7,7 @@ import (
 	osConfigExtVersions "github.com/openshift/client-go/config/informers/externalversions"
 	osOperatorExtVersions "github.com/openshift/client-go/operator/informers/externalversions"
 	osRouteExtVersions "github.com/openshift/client-go/route/informers/externalversions"
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/complianceoperator"
 	"github.com/stackrox/rox/pkg/concurrency"
@@ -481,6 +482,12 @@ func handle(
 	stopSignal *concurrency.Signal,
 	eventLock *sync.Mutex,
 ) {
+	utils.Should(func() error {
+		if features.SensorInternalPubSub.Enabled() && pubSubDispatcher == nil {
+			return errors.Errorf("informer `handle` was called with a `nil` PubSubDispatcher when %q is enabled", features.SensorInternalPubSub.EnvVar())
+		}
+		return nil
+	}())
 	handlerImpl := &resourceEventHandlerImpl{
 		context:          ctx,
 		eventLock:        eventLock,
