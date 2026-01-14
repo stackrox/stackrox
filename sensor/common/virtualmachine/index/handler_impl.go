@@ -7,6 +7,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/central"
+	"github.com/stackrox/rox/generated/internalapi/sensor"
 	v1 "github.com/stackrox/rox/generated/internalapi/virtualmachine/v1"
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/concurrency"
@@ -34,12 +35,22 @@ type handlerImpl struct {
 	lock         *sync.RWMutex
 	stopper      concurrency.Stopper
 	toCentral    <-chan *message.ExpiringMessage
+	toCompliance chan common.MessageToComplianceWithAddress
 	indexReports chan *v1.IndexReport
 	store        VirtualMachineStore
 }
 
 func (h *handlerImpl) Capabilities() []centralsensor.SensorCapability {
-	return nil
+	return []centralsensor.SensorCapability{centralsensor.SensorACKSupport}
+}
+
+func (h *handlerImpl) Stopped() concurrency.ReadOnlyErrorSignal {
+	return h.stopper.Client().Stopped()
+}
+
+// ComplianceC returns a channel with messages destined for Compliance.
+func (h *handlerImpl) ComplianceC() <-chan common.MessageToComplianceWithAddress {
+	return h.toCompliance
 }
 
 func (h *handlerImpl) Send(ctx context.Context, vm *v1.IndexReport) error {
@@ -127,17 +138,9 @@ func (h *handlerImpl) ProcessMessage(_ context.Context, msg *central.MsgToSensor
 	vmID := sensorAck.GetResourceId()
 	action := sensorAck.GetAction()
 	reason := sensorAck.GetReason()
+	h.forwardToCompliance(vmID, action, reason)
 
-	switch action {
-	case central.SensorACK_ACK:
-		log.Debugf("Received ACK from Central for VM index report: vm_id=%s", vmID)
-		metrics.IndexReportAcksReceived.WithLabelValues(action.String()).Inc()
-	case central.SensorACK_NACK:
-		log.Warnf("Received NACK from Central for VM index report: vm_id=%s, reason=%s", vmID, reason)
-		metrics.IndexReportAcksReceived.WithLabelValues(action.String()).Inc()
-		// TODO(ROX-xxxxx): Implement retry logic or notifying VM relay.
-		// Currently, the VM relay has its own retry mechanism, but it's not aware of Central's rate limiting.
-	}
+	metrics.IndexReportAcksReceived.WithLabelValues(action.String()).Inc()
 
 	return nil
 }
@@ -157,10 +160,11 @@ func (h *handlerImpl) Start() error {
 	log.Debug("Starting virtual machine handler")
 	h.lock.Lock()
 	defer h.lock.Unlock()
-	if h.toCentral != nil || h.indexReports != nil {
+	if h.toCentral != nil || h.indexReports != nil || h.toCompliance != nil {
 		return errStartMoreThanOnce
 	}
 	h.indexReports = make(chan *v1.IndexReport, env.VirtualMachinesIndexReportsBufferSize.IntegerSetting())
+	h.toCompliance = make(chan common.MessageToComplianceWithAddress)
 	h.toCentral = h.run(h.indexReports)
 	return nil
 }
@@ -210,6 +214,46 @@ func (h *handlerImpl) run(indexReports <-chan *v1.IndexReport) (toCentral <-chan
 		}
 	}()
 	return ch2Central
+}
+
+func (h *handlerImpl) forwardToCompliance(
+	resourceID string,
+	action central.SensorACK_Action,
+	reason string,
+) {
+	if h.toCompliance == nil {
+		log.Debug("Compliance channel not initialized; skipping forwarding VM ACK/NACK")
+		return
+	}
+
+	var complianceAction sensor.MsgToCompliance_ComplianceACK_Action
+	switch action {
+	case central.SensorACK_ACK:
+		complianceAction = sensor.MsgToCompliance_ComplianceACK_ACK
+	case central.SensorACK_NACK:
+		complianceAction = sensor.MsgToCompliance_ComplianceACK_NACK
+	default:
+		log.Warnf("Unknown SensorACK action for VM index report: %v", action)
+		return
+	}
+
+	select {
+	case <-h.stopper.Flow().StopRequested():
+	case h.toCompliance <- common.MessageToComplianceWithAddress{
+		Msg: &sensor.MsgToCompliance{
+			Msg: &sensor.MsgToCompliance_ComplianceAck{
+				ComplianceAck: &sensor.MsgToCompliance_ComplianceACK{
+					Action:      complianceAction,
+					MessageType: sensor.MsgToCompliance_ComplianceACK_VM_INDEX_REPORT,
+					ResourceId:  resourceID,
+					Reason:      reason,
+				},
+			},
+		},
+		Hostname:  resourceID,
+		Broadcast: resourceID == "",
+	}:
+	}
 }
 
 func (h *handlerImpl) handleIndexReport(
