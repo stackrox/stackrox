@@ -6869,12 +6869,12 @@
                 "type": "string"
               },
               {
-                "id": 4,
+                "id": 2,
                 "name": "fix_available_timestamp",
                 "type": "google.protobuf.Timestamp"
               },
               {
-                "id": 9,
+                "id": 3,
                 "name": "first_system_occurence",
                 "type": "google.protobuf.Timestamp"
               }

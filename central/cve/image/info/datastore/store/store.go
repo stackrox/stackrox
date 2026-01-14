@@ -9,8 +9,6 @@ import (
 )
 
 // Store provides storage functionality for ImageCVEInfos.
-//
-//go:generate mockgen-wrapper
 type Store interface {
 	Count(ctx context.Context, q *v1.Query) (int, error)
 	Search(ctx context.Context, q *v1.Query) ([]search.Result, error)

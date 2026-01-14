@@ -2711,7 +2711,7 @@ func (m *ImageCVEInfo) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 		i -= size
 		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
 		i--
-		dAtA[i] = 0x4a
+		dAtA[i] = 0x1a
 	}
 	if m.FixAvailableTimestamp != nil {
 		size, err := (*timestamppb1.Timestamp)(m.FixAvailableTimestamp).MarshalToSizedBufferVT(dAtA[:i])
@@ -2721,7 +2721,7 @@ func (m *ImageCVEInfo) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 		i -= size
 		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
 		i--
-		dAtA[i] = 0x22
+		dAtA[i] = 0x12
 	}
 	if len(m.Id) > 0 {
 		i -= len(m.Id)
@@ -7308,7 +7308,7 @@ func (m *ImageCVEInfo) UnmarshalVT(dAtA []byte) error {
 			}
 			m.Id = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
-		case 4:
+		case 2:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field FixAvailableTimestamp", wireType)
 			}
@@ -7344,7 +7344,7 @@ func (m *ImageCVEInfo) UnmarshalVT(dAtA []byte) error {
 				return err
 			}
 			iNdEx = postIndex
-		case 9:
+		case 3:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field FirstSystemOccurence", wireType)
 			}
@@ -11449,7 +11449,7 @@ func (m *ImageCVEInfo) UnmarshalVTUnsafe(dAtA []byte) error {
 			}
 			m.Id = stringValue
 			iNdEx = postIndex
-		case 4:
+		case 2:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field FixAvailableTimestamp", wireType)
 			}
@@ -11485,7 +11485,7 @@ func (m *ImageCVEInfo) UnmarshalVTUnsafe(dAtA []byte) error {
 				return err
 			}
 			iNdEx = postIndex
-		case 9:
+		case 3:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field FirstSystemOccurence", wireType)
 			}

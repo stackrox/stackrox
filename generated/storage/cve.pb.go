@@ -2344,8 +2344,8 @@ func (x *CVSSV3) GetSeverity() CVSSV3_Severity {
 type ImageCVEInfo struct {
 	state                 protoimpl.MessageState `protogen:"open.v1"`
 	Id                    string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" search:"CVE Info" sql:"pk"`                                                                      // @gotags: search:"CVE Info" sql:"pk"
-	FixAvailableTimestamp *timestamppb.Timestamp `protobuf:"bytes,4,opt,name=fix_available_timestamp,json=fixAvailableTimestamp,proto3" json:"fix_available_timestamp,omitempty" search:"CVE Fix Available Timestamp,hidden"` // @gotags: search:"CVE Fix Available Timestamp,hidden"
-	FirstSystemOccurence  *timestamppb.Timestamp `protobuf:"bytes,9,opt,name=first_system_occurence,json=firstSystemOccurence,proto3" json:"first_system_occurence,omitempty" search:"First System Occurrence Timestamp,hidden"`    // @gotags: search:"First System Occurrence Timestamp,hidden"
+	FixAvailableTimestamp *timestamppb.Timestamp `protobuf:"bytes,2,opt,name=fix_available_timestamp,json=fixAvailableTimestamp,proto3" json:"fix_available_timestamp,omitempty" search:"CVE Fix Available Timestamp,hidden"` // @gotags: search:"CVE Fix Available Timestamp,hidden"
+	FirstSystemOccurence  *timestamppb.Timestamp `protobuf:"bytes,3,opt,name=first_system_occurence,json=firstSystemOccurence,proto3" json:"first_system_occurence,omitempty" search:"First System Occurrence Timestamp,hidden"`    // @gotags: search:"First System Occurrence Timestamp,hidden"
 	unknownFields         protoimpl.UnknownFields
 	sizeCache             protoimpl.SizeCache
 }
@@ -2816,8 +2816,8 @@ const file_storage_cve_proto_rawDesc = "" +
 	"\bCRITICAL\x10\x05\"\xc4\x01\n" +
 	"\fImageCVEInfo\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12R\n" +
-	"\x17fix_available_timestamp\x18\x04 \x01(\v2\x1a.google.protobuf.TimestampR\x15fixAvailableTimestamp\x12P\n" +
-	"\x16first_system_occurence\x18\t \x01(\v2\x1a.google.protobuf.TimestampR\x14firstSystemOccurence*D\n" +
+	"\x17fix_available_timestamp\x18\x02 \x01(\v2\x1a.google.protobuf.TimestampR\x15fixAvailableTimestamp\x12P\n" +
+	"\x16first_system_occurence\x18\x03 \x01(\v2\x1a.google.protobuf.TimestampR\x14firstSystemOccurence*D\n" +
 	"\x12VulnerabilityState\x12\f\n" +
 	"\bOBSERVED\x10\x00\x12\f\n" +
 	"\bDEFERRED\x10\x01\x12\x12\n" +

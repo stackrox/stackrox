@@ -13,8 +13,6 @@ import (
 )
 
 // DataStore is an intermediary to the ImageCVEInfo storage.
-//
-//go:generate mockgen-wrapper
 type DataStore interface {
 	SearchRawImageCVEInfos(ctx context.Context, q *v1.Query) ([]*storage.ImageCVEInfo, error)
 

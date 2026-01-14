@@ -37,9 +37,9 @@ func (ds *datastoreImpl) Count(ctx context.Context, q *v1.Query) (int, error) {
 	return ds.storage.Count(ctx, q)
 }
 
-func (ds *datastoreImpl) GetBatch(ctx context.Context, ids []string) (infos []*storage.ImageCVEInfo, err error) {
-	infos, _, err = ds.storage.GetMany(ctx, ids)
-	return
+func (ds *datastoreImpl) GetBatch(ctx context.Context, ids []string) ([]*storage.ImageCVEInfo, error) {
+	infos, _, err := ds.storage.GetMany(ctx, ids)
+	return infos, err
 }
 
 func (ds *datastoreImpl) Upsert(ctx context.Context, info *storage.ImageCVEInfo) error {
@@ -86,6 +86,9 @@ func (ds *datastoreImpl) UpsertMany(ctx context.Context, infos []*storage.ImageC
 }
 
 func updateTimestamps(old, new *storage.ImageCVEInfo) *storage.ImageCVEInfo {
+	if old == nil {
+		return new
+	}
 	// Update timestamps to use the earlier of the two timestamps, where applicable.
 	if protocompat.IsZeroTimestamp(new.GetFirstSystemOccurence()) {
 		new.FirstSystemOccurence = old.GetFirstSystemOccurence()
