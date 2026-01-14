@@ -146,11 +146,13 @@ func TestServeHTTP(t *testing.T) {
 		require.NoError(t, err)
 
 		h := &Handler{
-			proxy: newProxyForTest(t, baseURL, mockTransport),
+			proxy:      newProxyForTest(t, baseURL, mockTransport),
+			authorizer: newAllowingAuthorizer(t),
 		}
 		h.centralReachable.Store(true)
 
 		req := httptest.NewRequest(http.MethodGet, "/v1/alerts", nil)
+		req.Header.Set("Authorization", "Bearer test-token")
 		w := httptest.NewRecorder()
 
 		h.ServeHTTP(w, req)
@@ -168,11 +170,13 @@ func TestServeHTTP(t *testing.T) {
 		require.NoError(t, err)
 
 		h := &Handler{
-			proxy: newProxyForTest(t, baseURL, mockTransport),
+			proxy:      newProxyForTest(t, baseURL, mockTransport),
+			authorizer: newAllowingAuthorizer(t),
 		}
 		h.centralReachable.Store(true)
 
 		req := httptest.NewRequest(http.MethodGet, "/v1/alerts", nil)
+		req.Header.Set("Authorization", "Bearer test-token")
 		w := httptest.NewRecorder()
 
 		h.ServeHTTP(w, req)
@@ -239,10 +243,14 @@ func TestServeHTTP_ConstructsAbsoluteURLs(t *testing.T) {
 				}, nil
 			})
 
-			h := &Handler{proxy: newProxyForTest(t, baseURL, mockTransport)}
+			h := &Handler{
+				proxy:      newProxyForTest(t, baseURL, mockTransport),
+				authorizer: newAllowingAuthorizer(t),
+			}
 			h.centralReachable.Store(true)
 
 			req := httptest.NewRequest(http.MethodGet, tt.requestPath, nil)
+			req.Header.Set("Authorization", "Bearer test-token")
 			if tt.requestQuery != "" {
 				req.URL.RawQuery = tt.requestQuery
 			}
@@ -358,7 +366,7 @@ func TestServeHTTP_AuthorizationIntegration(t *testing.T) {
 		require.NoError(t, err)
 
 		// Create a k8sAuthorizer with a fake client that denies access
-		denyingAuthorizer := newDenyingAuthorizer()
+		denyingAuthorizer := newDenyingAuthorizer(t)
 
 		h := &Handler{
 			proxy:      newProxyForTest(t, baseURL, mockTransport),
@@ -377,7 +385,7 @@ func TestServeHTTP_AuthorizationIntegration(t *testing.T) {
 		assert.Contains(t, w.Body.String(), "lacks")
 	})
 
-	t.Run("no authorizer skips authorization and allows proxy", func(t *testing.T) {
+	t.Run("no authorizer returns server error", func(t *testing.T) {
 		var proxyCalled bool
 		mockTransport := pkghttputil.RoundTripperFunc(func(req *http.Request) (*http.Response, error) {
 			proxyCalled = true
@@ -393,18 +401,18 @@ func TestServeHTTP_AuthorizationIntegration(t *testing.T) {
 
 		h := &Handler{
 			proxy:      newProxyForTest(t, baseURL, mockTransport),
-			authorizer: nil, // No authorizer - skips authorization
+			authorizer: nil, // No authorizer configured
 		}
 		h.centralReachable.Store(true)
 
 		req := httptest.NewRequest(http.MethodGet, "/v1/alerts", nil)
-		// No Authorization header - but authorization is skipped
 		w := httptest.NewRecorder()
 
 		h.ServeHTTP(w, req)
 
-		assert.True(t, proxyCalled, "proxy should be called when authorization is skipped")
-		assert.Equal(t, http.StatusOK, w.Code)
+		assert.False(t, proxyCalled, "proxy should not be called when authorizer is not configured")
+		assert.Equal(t, http.StatusInternalServerError, w.Code)
+		assert.Contains(t, w.Body.String(), "authorizer not configured")
 	})
 
 	t.Run("authorization success allows proxy call", func(t *testing.T) {
@@ -421,9 +429,9 @@ func TestServeHTTP_AuthorizationIntegration(t *testing.T) {
 		baseURL, err := url.Parse("https://central:443")
 		require.NoError(t, err)
 
-		// Use noop authorizer that always allows
 		h := &Handler{
-			proxy: newProxyForTest(t, baseURL, mockTransport),
+			proxy:      newProxyForTest(t, baseURL, mockTransport),
+			authorizer: newAllowingAuthorizer(t),
 		}
 		h.centralReachable.Store(true)
 
@@ -438,30 +446,322 @@ func TestServeHTTP_AuthorizationIntegration(t *testing.T) {
 	})
 }
 
-// newDenyingAuthorizer creates a k8sAuthorizer with a fake client that denies all authorization requests.
-func newDenyingAuthorizer() *k8sAuthorizer {
-	fakeClient := fake.NewClientset()
+func TestIsAuthzSkipPath(t *testing.T) {
+	tests := []struct {
+		path     string
+		skipsAz  bool
+		testName string // Optional custom test name for edge cases
+	}{
+		// Edge cases for root/empty paths - should never skip authorization
+		{path: "", skipsAz: false, testName: "empty string"},
+		{path: "/", skipsAz: false, testName: "root path"},
 
-	// Mock TokenReview to return authenticated
-	fakeClient.PrependReactor("create", "tokenreviews", func(action k8sTesting.Action) (bool, runtime.Object, error) {
-		return true, &authenticationv1.TokenReview{
-			Status: authenticationv1.TokenReviewStatus{
-				Authenticated: true,
-				User: authenticationv1.UserInfo{
-					Username: "test-user",
+		// Exact matches (skips authorization but still requires authentication)
+		{path: "/static", skipsAz: true},
+		{path: "/v1/config/public", skipsAz: true},
+		{path: "/v1/metadata", skipsAz: true},
+		{path: "/v1/featureflags", skipsAz: true},
+		{path: "/v1/mypermissions", skipsAz: true},
+
+		// Sub-path matches (with "/" separator)
+		{path: "/static/", skipsAz: true},
+		{path: "/static/css/main.css", skipsAz: true},
+		{path: "/static/js/bundle.js", skipsAz: true},
+		{path: "/static/images/logo.png", skipsAz: true},
+		{path: "/v1/config/public/extra", skipsAz: true},
+		{path: "/v1/metadata/extra", skipsAz: true},
+		{path: "/v1/featureflags/some-flag", skipsAz: true},
+		{path: "/v1/mypermissions/details", skipsAz: true},
+
+		// Segment-boundary enforcement: these should NOT skip authorization
+		{path: "/staticx", skipsAz: false},           // no "/" after prefix
+		{path: "/static-extra", skipsAz: false},      // no "/" after prefix
+		{path: "/v1/metadataExtra", skipsAz: false},  // no "/" after prefix
+		{path: "/v1/metadatax", skipsAz: false},      // no "/" after prefix
+		{path: "/v1/featureflagsx", skipsAz: false},  // no "/" after prefix
+		{path: "/v1/mypermissionsx", skipsAz: false}, // no "/" after prefix
+		{path: "/v1/config/publicx", skipsAz: false}, // no "/" after prefix
+
+		// Non-matches - require full authorization
+		{path: "/v1/alerts", skipsAz: false},
+		{path: "/v1/deployments", skipsAz: false},
+		{path: "/v1/config/private", skipsAz: false},
+		{path: "/v2/metadata", skipsAz: false},
+		{path: "/api/graphql", skipsAz: false},
+		{path: "/v1", skipsAz: false},
+
+		// Path normalization edge cases (path.Clean behavior)
+		// Double slashes are normalized
+		{path: "//v1//metadata", skipsAz: true, testName: "double slashes - normalized to /v1/metadata"},
+		{path: "/static///img.png", skipsAz: true, testName: "multiple slashes - normalized to /static/img.png"},
+		// Dot segments are normalized
+		{path: "/v1/./metadata", skipsAz: true, testName: "current dir dot segment - normalized to /v1/metadata"},
+		{path: "/v1/metadata/../metadata", skipsAz: true, testName: "parent dir dot segment - normalized to /v1/metadata"},
+		{path: "/v1/featureflags/./foo", skipsAz: true, testName: "dot in subpath - normalized to /v1/featureflags/foo"},
+		// Path manipulation attempts that should NOT bypass authorization
+		{path: "/v1/alerts/../metadata", skipsAz: true, testName: "traversal to allowlisted - normalized to /v1/metadata"},
+		{path: "/v1/metadata/../alerts", skipsAz: false, testName: "traversal away from allowlisted - normalized to /v1/alerts"},
+		{path: "//v1//alerts", skipsAz: false, testName: "double slashes non-allowlisted - normalized to /v1/alerts"},
+	}
+
+	for _, tt := range tests {
+		name := tt.testName
+		if name == "" {
+			name = tt.path
+		}
+		t.Run(name, func(t *testing.T) {
+			result := isAuthzSkipPath(tt.path)
+			assert.Equal(t, tt.skipsAz, result, "path %q authz skip status", tt.path)
+		})
+	}
+}
+
+func TestServeHTTP_Allowlist(t *testing.T) {
+	t.Run("allowlisted path skips authorization with token", func(t *testing.T) {
+		var proxyCalled bool
+		mockTransport := pkghttputil.RoundTripperFunc(func(req *http.Request) (*http.Response, error) {
+			proxyCalled = true
+			return &http.Response{
+				StatusCode: http.StatusOK,
+				Body:       io.NopCloser(strings.NewReader(`{"ok":true}`)),
+				Header:     http.Header{"Content-Type": []string{"application/json"}},
+			}, nil
+		})
+
+		baseURL, err := url.Parse("https://central:443")
+		require.NoError(t, err)
+
+		// Create authorizer that denies SAR but allows TokenReview
+		denyingAuthorizer := newDenyingAuthorizer(t)
+
+		h := &Handler{
+			proxy:      newProxyForTest(t, baseURL, mockTransport),
+			authorizer: denyingAuthorizer,
+		}
+		h.centralReachable.Store(true)
+
+		req := httptest.NewRequest(http.MethodGet, "/v1/metadata", nil)
+		req.Header.Set("Authorization", "Bearer test-token")
+		w := httptest.NewRecorder()
+
+		h.ServeHTTP(w, req)
+
+		assert.True(t, proxyCalled, "proxy should be called for allowlisted path")
+		assert.Equal(t, http.StatusOK, w.Code)
+	})
+
+	t.Run("allowlisted prefix path skips authorization with token", func(t *testing.T) {
+		var proxyCalled bool
+		mockTransport := pkghttputil.RoundTripperFunc(func(req *http.Request) (*http.Response, error) {
+			proxyCalled = true
+			return &http.Response{
+				StatusCode: http.StatusOK,
+				Body:       io.NopCloser(strings.NewReader(`{"ok":true}`)),
+				Header:     http.Header{"Content-Type": []string{"application/json"}},
+			}, nil
+		})
+
+		baseURL, err := url.Parse("https://central:443")
+		require.NoError(t, err)
+
+		denyingAuthorizer := newDenyingAuthorizer(t)
+
+		h := &Handler{
+			proxy:      newProxyForTest(t, baseURL, mockTransport),
+			authorizer: denyingAuthorizer,
+		}
+		h.centralReachable.Store(true)
+
+		req := httptest.NewRequest(http.MethodGet, "/static/css/main.css", nil)
+		req.Header.Set("Authorization", "Bearer test-token")
+		w := httptest.NewRecorder()
+
+		h.ServeHTTP(w, req)
+
+		assert.True(t, proxyCalled, "proxy should be called for allowlisted prefix path")
+		assert.Equal(t, http.StatusOK, w.Code)
+	})
+
+	t.Run("non-allowlisted path without token returns 401", func(t *testing.T) {
+		var proxyCalled bool
+		mockTransport := pkghttputil.RoundTripperFunc(func(req *http.Request) (*http.Response, error) {
+			proxyCalled = true
+			return &http.Response{
+				StatusCode: http.StatusOK,
+				Body:       io.NopCloser(strings.NewReader(`{"ok":true}`)),
+				Header:     http.Header{"Content-Type": []string{"application/json"}},
+			}, nil
+		})
+
+		baseURL, err := url.Parse("https://central:443")
+		require.NoError(t, err)
+
+		h := &Handler{
+			proxy:      newProxyForTest(t, baseURL, mockTransport),
+			authorizer: newAllowingAuthorizer(t),
+		}
+		h.centralReachable.Store(true)
+
+		req := httptest.NewRequest(http.MethodGet, "/v1/alerts", nil)
+		// No Authorization header set
+		w := httptest.NewRecorder()
+
+		h.ServeHTTP(w, req)
+
+		assert.False(t, proxyCalled, "proxy should not be called without authorization header")
+		assert.Equal(t, http.StatusUnauthorized, w.Code)
+		assert.Contains(t, w.Body.String(), "bearer token")
+	})
+
+	t.Run("non-allowlisted path requires authorization", func(t *testing.T) {
+		var proxyCalled bool
+		mockTransport := pkghttputil.RoundTripperFunc(func(req *http.Request) (*http.Response, error) {
+			proxyCalled = true
+			return &http.Response{
+				StatusCode: http.StatusOK,
+				Body:       io.NopCloser(strings.NewReader(`{"ok":true}`)),
+				Header:     http.Header{"Content-Type": []string{"application/json"}},
+			}, nil
+		})
+
+		baseURL, err := url.Parse("https://central:443")
+		require.NoError(t, err)
+
+		denyingAuthorizer := newDenyingAuthorizer(t)
+
+		h := &Handler{
+			proxy:      newProxyForTest(t, baseURL, mockTransport),
+			authorizer: denyingAuthorizer,
+		}
+		h.centralReachable.Store(true)
+
+		req := httptest.NewRequest(http.MethodGet, "/v1/alerts", nil)
+		req.Header.Set("Authorization", "Bearer test-token")
+		w := httptest.NewRecorder()
+
+		h.ServeHTTP(w, req)
+
+		assert.False(t, proxyCalled, "proxy should not be called when authorization fails")
+		assert.Equal(t, http.StatusForbidden, w.Code)
+		assert.Contains(t, w.Body.String(), "lacks")
+	})
+}
+
+func TestServeHTTP_Allowlist_RequiresAuthentication(t *testing.T) {
+	t.Run("allowlisted path without token returns 401", func(t *testing.T) {
+		var proxyCalled bool
+		mockTransport := pkghttputil.RoundTripperFunc(func(req *http.Request) (*http.Response, error) {
+			proxyCalled = true
+			return &http.Response{
+				StatusCode: http.StatusOK,
+				Body:       io.NopCloser(strings.NewReader(`{"ok":true}`)),
+				Header:     http.Header{"Content-Type": []string{"application/json"}},
+			}, nil
+		})
+
+		baseURL, err := url.Parse("https://central:443")
+		require.NoError(t, err)
+
+		h := &Handler{
+			proxy:      newProxyForTest(t, baseURL, mockTransport),
+			authorizer: newAllowingAuthorizer(t), // Would allow if authenticated
+		}
+		h.centralReachable.Store(true)
+
+		req := httptest.NewRequest(http.MethodGet, "/v1/metadata", nil)
+		// No Authorization header - simulating missing token
+		w := httptest.NewRecorder()
+
+		h.ServeHTTP(w, req)
+
+		assert.False(t, proxyCalled, "proxy should not be called when authentication fails")
+		assert.Equal(t, http.StatusUnauthorized, w.Code)
+		assert.Contains(t, w.Body.String(), "bearer token")
+	})
+
+	t.Run("allowlisted path with invalid token returns 401", func(t *testing.T) {
+		var proxyCalled bool
+		mockTransport := pkghttputil.RoundTripperFunc(func(req *http.Request) (*http.Response, error) {
+			proxyCalled = true
+			return &http.Response{
+				StatusCode: http.StatusOK,
+				Body:       io.NopCloser(strings.NewReader(`{"ok":true}`)),
+				Header:     http.Header{"Content-Type": []string{"application/json"}},
+			}, nil
+		})
+
+		baseURL, err := url.Parse("https://central:443")
+		require.NoError(t, err)
+
+		h := &Handler{
+			proxy:      newProxyForTest(t, baseURL, mockTransport),
+			authorizer: newUnauthenticatedAuthorizer(t),
+		}
+		h.centralReachable.Store(true)
+
+		req := httptest.NewRequest(http.MethodGet, "/v1/metadata", nil)
+		req.Header.Set("Authorization", "Bearer invalid-token")
+		w := httptest.NewRecorder()
+
+		h.ServeHTTP(w, req)
+
+		assert.False(t, proxyCalled, "proxy should not be called with unauthenticated token")
+		assert.Equal(t, http.StatusUnauthorized, w.Code)
+	})
+
+	t.Run("allowlisted path with valid token succeeds without SAR permissions", func(t *testing.T) {
+		var proxyCalled bool
+		mockTransport := pkghttputil.RoundTripperFunc(func(req *http.Request) (*http.Response, error) {
+			proxyCalled = true
+			return &http.Response{
+				StatusCode: http.StatusOK,
+				Body:       io.NopCloser(strings.NewReader(`{"ok":true}`)),
+				Header:     http.Header{"Content-Type": []string{"application/json"}},
+			}, nil
+		})
+
+		baseURL, err := url.Parse("https://central:443")
+		require.NoError(t, err)
+
+		fakeClient := fake.NewClientset()
+
+		// Mock TokenReview to return authenticated
+		fakeClient.PrependReactor("create", "tokenreviews", func(action k8sTesting.Action) (bool, runtime.Object, error) {
+			return true, &authenticationv1.TokenReview{
+				Status: authenticationv1.TokenReviewStatus{
+					Authenticated: true,
+					User: authenticationv1.UserInfo{
+						Username: "test-user",
+					},
 				},
-			},
-		}, nil
-	})
+			}, nil
+		})
 
-	// Mock SubjectAccessReview to deny all
-	fakeClient.PrependReactor("create", "subjectaccessreviews", func(action k8sTesting.Action) (bool, runtime.Object, error) {
-		return true, &authv1.SubjectAccessReview{
-			Status: authv1.SubjectAccessReviewStatus{
-				Allowed: false,
-			},
-		}, nil
-	})
+		// Mock SAR to deny (should not be called for allowlisted paths)
+		sarCallCount := 0
+		fakeClient.PrependReactor("create", "subjectaccessreviews", func(action k8sTesting.Action) (bool, runtime.Object, error) {
+			sarCallCount++
+			return true, &authv1.SubjectAccessReview{
+				Status: authv1.SubjectAccessReviewStatus{
+					Allowed: false, // Would deny if checked
+				},
+			}, nil
+		})
 
-	return newK8sAuthorizer(fakeClient)
+		h := &Handler{
+			proxy:      newProxyForTest(t, baseURL, mockTransport),
+			authorizer: newK8sAuthorizer(fakeClient),
+		}
+		h.centralReachable.Store(true)
+
+		req := httptest.NewRequest(http.MethodGet, "/v1/metadata", nil)
+		req.Header.Set("Authorization", "Bearer test-token")
+		w := httptest.NewRecorder()
+
+		h.ServeHTTP(w, req)
+
+		assert.True(t, proxyCalled, "proxy should be called with valid token")
+		assert.Equal(t, http.StatusOK, w.Code)
+		assert.Equal(t, 0, sarCallCount, "SAR should not be called for allowlisted paths")
+	})
 }

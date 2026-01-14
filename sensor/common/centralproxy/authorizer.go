@@ -90,35 +90,13 @@ func formatForbiddenErr(user, verb, resource, group, namespace string) error {
 	)
 }
 
-// authorize extracts authentication information from the request and verifies permissions.
-// It validates the bearer token and checks if the user has get and list permissions
-// for deployment-like resources in the specified namespace (or cluster-wide if no namespace).
-func (a *k8sAuthorizer) authorize(ctx context.Context, r *http.Request) error {
+// authenticate validates the bearer token using TokenReview and returns user information.
+func (a *k8sAuthorizer) authenticate(ctx context.Context, r *http.Request) (*authenticationv1.UserInfo, error) {
 	token, err := extractBearerToken(r)
 	if err != nil {
-		return err
+		return nil, err
 	}
-
-	userInfo, err := a.validateToken(ctx, token)
-	if err != nil {
-		return err
-	}
-
-	namespace := r.Header.Get(stackroxNamespaceHeader)
-
-	for _, resource := range a.resourcesToCheck {
-		for _, verb := range a.verbsToCheck {
-			allowed, err := a.performSubjectAccessReview(ctx, userInfo, verb, namespace, resource)
-			if err != nil {
-				return pkghttputil.Errorf(http.StatusInternalServerError, "checking %s permission for %s: %v", verb, resource.Resource, err)
-			}
-			if !allowed {
-				return formatForbiddenErr(userInfo.Username, verb, resource.Resource, resource.Group, namespace)
-			}
-		}
-	}
-
-	return nil
+	return a.validateToken(ctx, token)
 }
 
 func extractBearerToken(r *http.Request) (string, error) {
@@ -158,6 +136,26 @@ func (a *k8sAuthorizer) validateToken(ctx context.Context, token string) (*authe
 
 	a.tokenCache.Add(token, &result.Status.User)
 	return &result.Status.User, nil
+}
+
+// authorize checks if the authenticated user has required permissions.
+// It performs SubjectAccessReview checks for deployment-like resources.
+func (a *k8sAuthorizer) authorize(ctx context.Context, userInfo *authenticationv1.UserInfo, r *http.Request) error {
+	namespace := r.Header.Get(stackroxNamespaceHeader)
+
+	for _, resource := range a.resourcesToCheck {
+		for _, verb := range a.verbsToCheck {
+			allowed, err := a.performSubjectAccessReview(ctx, userInfo, verb, namespace, resource)
+			if err != nil {
+				return pkghttputil.Errorf(http.StatusInternalServerError, "checking %s permission for %s: %v", verb, resource.Resource, err)
+			}
+			if !allowed {
+				return formatForbiddenErr(userInfo.Username, verb, resource.Resource, resource.Group, namespace)
+			}
+		}
+	}
+
+	return nil
 }
 
 func (a *k8sAuthorizer) performSubjectAccessReview(ctx context.Context, userInfo *authenticationv1.UserInfo, verb, namespace string, resource struct {

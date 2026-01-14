@@ -5,6 +5,8 @@ import (
 	"net/http"
 	"net/http/httputil"
 	"net/url"
+	"path"
+	"strings"
 	"sync/atomic"
 
 	"github.com/pkg/errors"
@@ -21,6 +23,17 @@ var (
 	log = logging.LoggerForModule()
 
 	_ common.Notifiable = (*Handler)(nil)
+
+	// authzSkipPathPrefixes contains endpoint path prefixes that skip Central authorization checks
+	// but still require authentication. Matching enforces segment boundaries: exact match or path
+	// starting with prefix + "/".
+	authzSkipPathPrefixes = []string{
+		"/static",
+		"/v1/config/public",
+		"/v1/featureflags",
+		"/v1/metadata",
+		"/v1/mypermissions",
+	}
 )
 
 // Handler handles HTTP proxy requests to Central.
@@ -89,6 +102,23 @@ func (h *Handler) validateRequest(request *http.Request) error {
 	return nil
 }
 
+// isAuthzSkipPath checks if the request path matches any of the authorization-skip patterns.
+// These paths still require authentication but skip the authorization (SubjectAccessReview) check.
+// Matching enforces segment boundaries: path must equal pattern exactly or start with pattern + "/".
+// This prevents "/v1/metadata" from matching "/v1/metadataExtra".
+func isAuthzSkipPath(requestPath string) bool {
+	// Normalize the path before authorization checks to prevent bypass via path manipulation
+	// (e.g., double slashes, dot segments).
+	normalizedPath := path.Clean(requestPath)
+
+	for _, pattern := range authzSkipPathPrefixes {
+		if normalizedPath == pattern || strings.HasPrefix(normalizedPath, pattern+"/") {
+			return true
+		}
+	}
+	return false
+}
+
 // ServeHTTP handles incoming HTTP requests and proxies them to Central.
 func (h *Handler) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
 	if err := h.validateRequest(request); err != nil {
@@ -96,8 +126,21 @@ func (h *Handler) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
 		return
 	}
 
-	if h.authorizer != nil {
-		if err := h.authorizer.authorize(request.Context(), request); err != nil {
+	if h.authorizer == nil {
+		log.Error("Authorizer is nil - this indicates a misconfiguration in the central proxy handler")
+		pkghttputil.WriteError(writer, pkghttputil.NewError(http.StatusInternalServerError, "authorizer not configured"))
+		return
+	}
+
+	// Require authentication for all endpoints.
+	userInfo, err := h.authorizer.authenticate(request.Context(), request)
+	if err != nil {
+		pkghttputil.WriteError(writer, err)
+		return
+	}
+
+	if !isAuthzSkipPath(request.URL.Path) {
+		if err := h.authorizer.authorize(request.Context(), userInfo, request); err != nil {
 			pkghttputil.WriteError(writer, err)
 			return
 		}
