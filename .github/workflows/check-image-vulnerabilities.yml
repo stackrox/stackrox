@@ -7,6 +7,11 @@ on:
         required: true
         default: 0.0.0-test-rc.1
         type: string
+      wait-for-images:
+        description: Shall workflow wait for images?
+        required: false
+        default: true
+        type: boolean
   push:
     tags: ['*']
 
@@ -66,13 +71,22 @@ jobs:
           fi
           echo "tag=${tag}" >> "${GITHUB_OUTPUT}"
 
+      - name: Determine wait limit
+        id: determine-wait-limit
+        run: |
+          if [ "${{ inputs.wait-for-images }}" = "false" ]; then
+            echo "wait-limit=0" >> "${GITHUB_OUTPUT}"
+          else
+            echo "wait-limit=7200" >> "${GITHUB_OUTPUT}"
+          fi
+
       - name: Scan image vulnerabilities
         uses: stackrox/actions/release/scan-image-vulnerabilities@tm/fix-scan-image-vulnerabilities
         id: scan-image
         with:
           image: rhacs-eng/${{ matrix.image }}
           version: ${{ steps.determine-image-tag.outputs.tag }}
-          wait-limit: "7200"
+          wait-limit: ${{ steps.determine-wait-limit.outputs.wait-limit }}
           summary-prefix: "Upstream:"
           quay-bearer-token: ${{ secrets.QUAY_RHACS_ENG_BEARER_TOKEN }}
           central-url: ${{ vars.ACS_DOGFOODING_CENTRAL_URL }}
@@ -125,13 +139,22 @@ jobs:
           fi
           echo "tag=${tag}" >> "${GITHUB_OUTPUT}"
 
+      - name: Determine wait limit
+        id: determine-wait-limit
+        run: |
+          if [ "${{ inputs.wait-for-images }}" = "false" ]; then
+            echo "wait-limit=0" >> "${GITHUB_OUTPUT}"
+          else
+            echo "wait-limit=11400" >> "${GITHUB_OUTPUT}"
+          fi
+
       - name: Scan image vulnerabilities
         uses: stackrox/actions/release/scan-image-vulnerabilities@tm/fix-scan-image-vulnerabilities
         id: scan-image
         with:
           image: rhacs-eng/${{ matrix.image }}
           version: ${{ steps.determine-image-tag.outputs.tag }}
-          wait-limit: "11400"
+          wait-limit: ${{ steps.determine-wait-limit.outputs.wait-limit }}
           summary-prefix: "Konflux:"
           quay-bearer-token: ${{ secrets.QUAY_RHACS_ENG_BEARER_TOKEN }}
           central-url: ${{ vars.ACS_DOGFOODING_CENTRAL_URL }}
