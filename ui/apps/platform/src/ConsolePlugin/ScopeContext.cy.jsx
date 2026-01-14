@@ -1,10 +1,10 @@
 import { useEffect, useState } from 'react';
 
-import { ScopeProvider, useNamespaceScope, useScopeContext } from './ScopeContext';
+import { ScopeProvider, useNamespaceScope, useScope } from './ScopeContext';
 
 function ScopeTest({ namespace }) {
-    const { getScope } = useScopeContext();
-    const [scope, setScope] = useState(getScope());
+    const scopeRef = useScope();
+    const [scope, setScope] = useState(scopeRef.current);
 
     useNamespaceScope(namespace);
 
@@ -13,8 +13,8 @@ function ScopeTest({ namespace }) {
     // trigger re-renders. Real components just call useNamespaceScope to SET scope,
     // and the axios adapter reads it at request time.
     useEffect(() => {
-        setScope(getScope());
-    }, [namespace, getScope]);
+        setScope(scopeRef.current);
+    }, [namespace, scopeRef]);
 
     return (
         <div>
