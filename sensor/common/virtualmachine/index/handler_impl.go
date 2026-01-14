@@ -131,10 +131,10 @@ func (h *handlerImpl) ProcessMessage(_ context.Context, msg *central.MsgToSensor
 	switch action {
 	case central.SensorACK_ACK:
 		log.Debugf("Received ACK from Central for VM index report: vm_id=%s", vmID)
-		metrics.IndexReportAcksReceived.WithLabelValues("ACK").Inc()
+		metrics.IndexReportAcksReceived.WithLabelValues(action.String()).Inc()
 	case central.SensorACK_NACK:
 		log.Warnf("Received NACK from Central for VM index report: vm_id=%s, reason=%s", vmID, reason)
-		metrics.IndexReportAcksReceived.WithLabelValues("NACK").Inc()
+		metrics.IndexReportAcksReceived.WithLabelValues(action.String()).Inc()
 		// TODO(ROX-xxxxx): Implement retry logic or notifying VM relay.
 		// Currently, the VM relay has its own retry mechanism, but it's not aware of Central's rate limiting.
 	}
