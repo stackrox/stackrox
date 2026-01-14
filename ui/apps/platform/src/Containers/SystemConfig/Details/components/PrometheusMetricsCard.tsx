@@ -114,7 +114,7 @@ function filterGroup(labels: PrometheusMetricsLabels): ReactElement {
             {includeEntries.map(([label, pattern]) => {
                 return (
                     <Label isCompact key={`include-${label}`} color="green">
-                        &plus;{label}: <code>{pattern}</code>
+                        &#43;{label}: <code>{pattern}</code>
                     </Label>
                 );
             })}
