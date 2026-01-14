@@ -6875,7 +6875,7 @@
               },
               {
                 "id": 3,
-                "name": "first_system_occurence",
+                "name": "first_system_occurrence",
                 "type": "google.protobuf.Timestamp"
               }
             ]

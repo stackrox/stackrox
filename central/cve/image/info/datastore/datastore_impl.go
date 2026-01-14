@@ -90,14 +90,15 @@ func updateTimestamps(old, new *storage.ImageCVEInfo) *storage.ImageCVEInfo {
 		return new
 	}
 	// Update timestamps to use the earlier of the two timestamps, where applicable.
-	if protocompat.IsZeroTimestamp(new.GetFirstSystemOccurence()) {
-		new.FirstSystemOccurence = old.GetFirstSystemOccurence()
-	} else if protocompat.CompareTimestamps(old.GetFirstSystemOccurence(), new.GetFirstSystemOccurence()) < 0 {
-		new.FirstSystemOccurence = old.GetFirstSystemOccurence()
+	// Only use old's value if new is zero, or if old is non-zero and earlier than new.
+	if protocompat.IsZeroTimestamp(new.GetFirstSystemOccurrence()) {
+		new.FirstSystemOccurrence = old.GetFirstSystemOccurrence()
+	} else if !protocompat.IsZeroTimestamp(old.GetFirstSystemOccurrence()) && protocompat.CompareTimestamps(old.GetFirstSystemOccurrence(), new.GetFirstSystemOccurrence()) < 0 {
+		new.FirstSystemOccurrence = old.GetFirstSystemOccurrence()
 	}
 	if protocompat.IsZeroTimestamp(new.GetFixAvailableTimestamp()) {
 		new.FixAvailableTimestamp = old.GetFixAvailableTimestamp()
-	} else if protocompat.CompareTimestamps(old.GetFixAvailableTimestamp(), new.GetFixAvailableTimestamp()) < 0 {
+	} else if !protocompat.IsZeroTimestamp(old.GetFixAvailableTimestamp()) && protocompat.CompareTimestamps(old.GetFixAvailableTimestamp(), new.GetFixAvailableTimestamp()) < 0 {
 		new.FixAvailableTimestamp = old.GetFixAvailableTimestamp()
 	}
 	return new

@@ -107,14 +107,21 @@ func insertIntoImageCveInfos(batch *pgx.Batch, obj *storage.ImageCVEInfo) error 
 		// parent primary keys start
 		obj.GetId(),
 		protocompat.NilOrTime(obj.GetFixAvailableTimestamp()),
-		protocompat.NilOrTime(obj.GetFirstSystemOccurence()),
+		protocompat.NilOrTime(obj.GetFirstSystemOccurrence()),
 		serialized,
 	}
 
-	finalStr := "INSERT INTO image_cve_infos (Id, FixAvailableTimestamp, FirstSystemOccurence, serialized) VALUES($1, $2, $3, $4) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, FixAvailableTimestamp = EXCLUDED.FixAvailableTimestamp, FirstSystemOccurence = EXCLUDED.FirstSystemOccurence, serialized = EXCLUDED.serialized"
+	finalStr := "INSERT INTO image_cve_infos (Id, FixAvailableTimestamp, FirstSystemOccurrence, serialized) VALUES($1, $2, $3, $4) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, FixAvailableTimestamp = EXCLUDED.FixAvailableTimestamp, FirstSystemOccurrence = EXCLUDED.FirstSystemOccurrence, serialized = EXCLUDED.serialized"
 	batch.Queue(finalStr, values...)
 
 	return nil
+}
+
+var copyColsImageCveInfos = []string{
+	"id",
+	"fixavailabletimestamp",
+	"firstsystemoccurrence",
+	"serialized",
 }
 
 func copyFromImageCveInfos(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, objs ...*storage.ImageCVEInfo) error {
@@ -134,13 +141,6 @@ func copyFromImageCveInfos(ctx context.Context, s pgSearch.Deleter, tx *postgres
 		}
 	}
 
-	copyCols := []string{
-		"id",
-		"fixavailabletimestamp",
-		"firstsystemoccurence",
-		"serialized",
-	}
-
 	idx := 0
 	inputRows := pgx.CopyFromFunc(func() ([]any, error) {
 		if idx >= len(objs) {
@@ -157,12 +157,12 @@ func copyFromImageCveInfos(ctx context.Context, s pgSearch.Deleter, tx *postgres
 		return []interface{}{
 			obj.GetId(),
 			protocompat.NilOrTime(obj.GetFixAvailableTimestamp()),
-			protocompat.NilOrTime(obj.GetFirstSystemOccurence()),
+			protocompat.NilOrTime(obj.GetFirstSystemOccurrence()),
 			serialized,
 		}, nil
 	})
 
-	if _, err := tx.CopyFrom(ctx, pgx.Identifier{"image_cve_infos"}, copyCols, inputRows); err != nil {
+	if _, err := tx.CopyFrom(ctx, pgx.Identifier{"image_cve_infos"}, copyColsImageCveInfos, inputRows); err != nil {
 		return err
 	}
 
