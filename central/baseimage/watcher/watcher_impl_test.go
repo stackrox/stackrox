@@ -6,6 +6,7 @@ import (
 	"testing"
 	"time"
 
+	baseImageDSMocks "github.com/stackrox/rox/central/baseimage/datastore/mocks"
 	repoDSMocks "github.com/stackrox/rox/central/baseimage/datastore/repository/mocks"
 	tagDSMocks "github.com/stackrox/rox/central/baseimage/datastore/tag/mocks"
 	"github.com/stackrox/rox/generated/storage"
@@ -43,7 +44,16 @@ func createTestWatcher(
 	if mockDelegator == nil {
 		mockDelegator = delegatedRegistryMocks.NewMockDelegator(ctrl)
 	}
-	return New(mockRepoDS, mockTagDS, mockRegistrySet, mockDelegator, poll, 10)
+
+	// Create default baseImageDS mock.
+	mockBaseImageDS := baseImageDSMocks.NewMockDataStore(ctrl)
+	mockBaseImageDS.EXPECT().ReplaceByRepository(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil).AnyTimes()
+
+	// Allow tag datastore calls.
+	mockTagDS.EXPECT().ListTagsByRepository(gomock.Any(), gomock.Any()).Return([]*storage.BaseImageTag{}, nil).AnyTimes()
+	mockTagDS.EXPECT().UpsertMany(gomock.Any(), gomock.Any()).Return(nil).AnyTimes()
+
+	return New(mockRepoDS, mockTagDS, mockBaseImageDS, mockRegistrySet, mockDelegator, poll, 10, 0)
 }
 
 func TestWatcher_StartsAndStops(t *testing.T) {
