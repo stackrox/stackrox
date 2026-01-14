@@ -206,7 +206,7 @@ func (s *AlertDatastoreImplSuite) TestCountResolved() {
 	s.Equal(2, results)
 }
 
-// TestSearchAlerts tests the SearchAlerts functionality with real data
+// TestSearchAlerts tests the SearchAlerts functionality with deployment alert
 func (s *AlertDatastoreImplSuite) TestSearchAlerts() {
 	alert := fixtures.GetAlert()
 	alert.EntityType = storage.Alert_DEPLOYMENT
@@ -224,7 +224,52 @@ func (s *AlertDatastoreImplSuite) TestSearchAlerts() {
 	s.Len(searchResults, 1)
 	s.Equal(alert.GetId(), searchResults[0].GetId())
 	s.Equal(alert.GetPolicy().GetName(), searchResults[0].GetName())
-	expectedLocation := fmt.Sprintf("/%s/%s/Deployment/%s", alert.GetClusterName(), alert.GetNamespace(), alert.GetDeployment().GetName())
+	s.Equal(v1.SearchCategory_ALERTS, searchResults[0].GetCategory())
+	expectedLocation := "/prod cluster/stackrox/Deployment/nginx_server"
+	s.Equal(searchResults[0].GetLocation(), expectedLocation)
+}
+
+// TestSearchAlerts tests the SearchAlerts functionality with resource alert
+func (s *AlertDatastoreImplSuite) TestSearchResourceAlerts() {
+	alert := fixtures.GetResourceAlert()
+	alert.PlatformComponent = false
+
+	// Mock platform matcher to return false for platform component
+	s.matcher.EXPECT().MatchAlert(gomock.Any()).Return(false, nil)
+
+	// Upsert the alert
+	s.NoError(s.datastore.UpsertAlert(ctx, alert))
+
+	// Test SearchAlerts
+	searchResults, err := s.datastore.SearchAlerts(ctx, search.EmptyQuery())
+	s.NoError(err)
+	s.Len(searchResults, 1)
+	s.Equal(alert.GetId(), searchResults[0].GetId())
+	s.Equal(alert.GetPolicy().GetName(), searchResults[0].GetName())
+	s.Equal(v1.SearchCategory_ALERTS, searchResults[0].GetCategory())
+	expectedLocation := "/prod cluster/stackrox/Secrets/my-secret"
+	s.Equal(searchResults[0].GetLocation(), expectedLocation)
+}
+
+// Test non namespaced resource alert
+func (s *AlertDatastoreImplSuite) TestSearchNonNameSpacedAlerts() {
+	alert := fixtures.GetScopedResourceAlert(fixtureconsts.Alert1, fixtureconsts.Cluster1, "")
+	alert.PlatformComponent = false
+
+	// Mock platform matcher to return false for platform component
+	s.matcher.EXPECT().MatchAlert(gomock.Any()).Return(false, nil)
+
+	// Upsert the alert
+	s.NoError(s.datastore.UpsertAlert(ctx, alert))
+
+	// Test SearchAlerts
+	searchResults, err := s.datastore.SearchAlerts(ctx, search.EmptyQuery())
+	s.NoError(err)
+	s.Len(searchResults, 1)
+	s.Equal(alert.GetId(), searchResults[0].GetId())
+	s.Equal(alert.GetPolicy().GetName(), searchResults[0].GetName())
+	s.Equal(v1.SearchCategory_ALERTS, searchResults[0].GetCategory())
+	expectedLocation := "/prod cluster/Secrets/my-secret"
 	s.Equal(searchResults[0].GetLocation(), expectedLocation)
 }
 
