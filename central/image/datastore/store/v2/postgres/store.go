@@ -867,13 +867,16 @@ func (s *storeImpl) WalkListImagesByQuery(ctx context.Context, q *v1.Query, fn f
 
 	q = applyDefaultSort(q)
 
-	// Clone query and set explicit field selection to avoid fetching serialized bytea
+	// Clone query and set explicit field selection to avoid fetching serialized bytea.
+	// Select individual name components instead of composite "Image" field.
 	selectQuery := q.CloneVT()
 	selectQuery.Selects = []*v1.QuerySelect{
 		search.NewQuerySelect(search.ImageSHA).Proto(),
-		search.NewQuerySelect(search.ImageName).Proto(),
+		search.NewQuerySelect(search.ImageRegistry).Proto(),
+		search.NewQuerySelect(search.ImageRemote).Proto(),
+		search.NewQuerySelect(search.ImageTag).Proto(),
 		search.NewQuerySelect(search.ComponentCount).Proto(),
-		search.NewQuerySelect(search.CVECount).Proto(),
+		search.NewQuerySelect(search.ImageCVECount).Proto(),
 		search.NewQuerySelect(search.FixableCVECount).Proto(),
 		search.NewQuerySelect(search.ImageCreatedTime).Proto(),
 		search.NewQuerySelect(search.LastUpdatedTime).Proto(),

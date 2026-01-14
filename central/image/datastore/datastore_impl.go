@@ -119,9 +119,18 @@ func (ds *datastoreImpl) SearchRawImages(ctx context.Context, q *v1.Query) ([]*s
 // convertListImageViewToListImage converts a ListImageView to a ListImage proto.
 // Handles oneof field logic for scan stats - only sets fields if non-NULL in database.
 func convertListImageViewToListImage(view *views.ListImageView) *storage.ListImage {
+	// Construct full image name from components
+	fullName := view.NameRemote
+	if view.NameRegistry != "" {
+		fullName = view.NameRegistry + "/" + fullName
+	}
+	if view.NameTag != "" {
+		fullName = fullName + ":" + view.NameTag
+	}
+
 	listImg := &storage.ListImage{
 		Id:       view.ID,
-		Name:     view.Name,
+		Name:     fullName,
 		Priority: view.Priority, // Will be overwritten by ranker
 	}
 
