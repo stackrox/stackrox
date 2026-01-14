@@ -29,7 +29,7 @@ import (
 	"google.golang.org/grpc/codes"
 )
 
-type sbomHttpHandler struct {
+type sbomGenHttpHandler struct {
 	integration      integration.Set
 	enricher         enricher.ImageEnricher
 	enricherV2       enricher.ImageEnricherV2
@@ -37,11 +37,11 @@ type sbomHttpHandler struct {
 	riskManager      manager.Manager
 }
 
-var _ http.Handler = (*sbomHttpHandler)(nil)
+var _ http.Handler = (*sbomGenHttpHandler)(nil)
 
 // SBOMHandler returns a handler for get sbom http request.
-func SBOMHandler(integration integration.Set, enricher enricher.ImageEnricher, enricherV2 enricher.ImageEnricherV2, clusterSACHelper sachelper.ClusterSacHelper, riskManager manager.Manager) http.Handler {
-	return sbomHttpHandler{
+func SBOMGenHandler(integration integration.Set, enricher enricher.ImageEnricher, enricherV2 enricher.ImageEnricherV2, clusterSACHelper sachelper.ClusterSacHelper, riskManager manager.Manager) http.Handler {
+	return sbomGenHttpHandler{
 		integration:      integration,
 		enricher:         enricher,
 		enricherV2:       enricherV2,
@@ -50,7 +50,7 @@ func SBOMHandler(integration integration.Set, enricher enricher.ImageEnricher, e
 	}
 }
 
-func (h sbomHttpHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+func (h sbomGenHttpHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		w.WriteHeader(http.StatusMethodNotAllowed)
 		return
@@ -94,7 +94,7 @@ func (h sbomHttpHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 // enrichWithModelSwitch enriches an image by name, returning both V1 and V2 models based on the feature flag.
-func (h sbomHttpHandler) enrichWithModelSwitch(
+func (h sbomGenHttpHandler) enrichWithModelSwitch(
 	ctx context.Context,
 	enrichmentCtx enricher.EnrichmentContext,
 	ci *storage.ContainerImage,
@@ -121,7 +121,7 @@ func (h sbomHttpHandler) enrichWithModelSwitch(
 }
 
 // enrichImage enriches the image with the given name and based on the given enrichment context.
-func (h sbomHttpHandler) enrichImage(ctx context.Context, enrichmentCtx enricher.EnrichmentContext, ci *storage.ContainerImage) (*storage.Image, bool, error) {
+func (h sbomGenHttpHandler) enrichImage(ctx context.Context, enrichmentCtx enricher.EnrichmentContext, ci *storage.ContainerImage) (*storage.Image, bool, error) {
 	// forcedEnrichment is set to true when enrichImage forces an enrichment.
 	forcedEnrichment := false
 
@@ -167,7 +167,7 @@ func errorOrNotScanned(enrichmentResult enricher.EnrichmentResult, err error) er
 }
 
 // getSBOM generates an SBOM for the specified parameters.
-func (h sbomHttpHandler) getSBOM(ctx context.Context, params apiparams.SBOMRequestBody) ([]byte, error) {
+func (h sbomGenHttpHandler) getSBOM(ctx context.Context, params apiparams.SBOMRequestBody) ([]byte, error) {
 	enrichmentCtx := enricher.EnrichmentContext{
 		Delegable:       true,
 		FetchOpt:        enricher.UseCachesIfPossible,
@@ -268,7 +268,7 @@ func addForceToEnrichmentContext(enrichmentCtx *enricher.EnrichmentContext) {
 }
 
 // getScannerV4SBOMIntegration returns the SBOM interface of Scanner V4.
-func (h sbomHttpHandler) getScannerV4SBOMIntegration() (scannerTypes.SBOMer, error) {
+func (h sbomGenHttpHandler) getScannerV4SBOMIntegration() (scannerTypes.SBOMer, error) {
 	scanners := h.integration.ScannerSet()
 	for _, scanner := range scanners.GetAll() {
 		if scanner.GetScanner().Type() == scannerTypes.ScannerV4 {
@@ -281,12 +281,12 @@ func (h sbomHttpHandler) getScannerV4SBOMIntegration() (scannerTypes.SBOMer, err
 }
 
 // scannedByScannerV4 checks if image is scanned by Scanner V4.
-func (h sbomHttpHandler) scannedByScannerV4(scan *storage.ImageScan) bool {
+func (h sbomGenHttpHandler) scannedByScannerV4(scan *storage.ImageScan) bool {
 	return scan.GetDataSource().GetId() == iiStore.DefaultScannerV4Integration.GetId()
 }
 
 // saveImage saves the image to Central's database.
-func (h sbomHttpHandler) saveImage(img *storage.Image, imgV2 *storage.ImageV2) error {
+func (h sbomGenHttpHandler) saveImage(img *storage.Image, imgV2 *storage.ImageV2) error {
 	if features.FlattenImageData.Enabled() {
 		return h.saveImageV2(imgV2)
 	}
@@ -294,7 +294,7 @@ func (h sbomHttpHandler) saveImage(img *storage.Image, imgV2 *storage.ImageV2) e
 }
 
 // saveImageV1 saves an Image V1 to Central's database.
-func (h sbomHttpHandler) saveImageV1(img *storage.Image) error {
+func (h sbomGenHttpHandler) saveImageV1(img *storage.Image) error {
 	img.Id = utils.GetSHA(img)
 	if img.GetId() == "" {
 		return nil
@@ -308,7 +308,7 @@ func (h sbomHttpHandler) saveImageV1(img *storage.Image) error {
 }
 
 // saveImageV2 saves an Image V2 to Central's database.
-func (h sbomHttpHandler) saveImageV2(imgV2 *storage.ImageV2) error {
+func (h sbomGenHttpHandler) saveImageV2(imgV2 *storage.ImageV2) error {
 	if imgV2 == nil {
 		return errors.New("nil images cannot be saved")
 	}
