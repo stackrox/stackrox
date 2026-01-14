@@ -92,6 +92,7 @@ spec:
           containerPort: 9090
         {{- end}}
         securityContext:
+          allowPrivilegeEscalation: false
           capabilities:
             drop: ["NET_RAW"]
           runAsUser: 65534

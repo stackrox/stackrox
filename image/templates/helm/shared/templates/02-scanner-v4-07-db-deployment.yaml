@@ -107,6 +107,7 @@ spec:
         - name: shared-memory
           mountPath: /dev/shm
       securityContext:
+        allowPrivilegeEscalation: false
         fsGroup: 70
         runAsUser: 70
         runAsNonRoot: true
