@@ -139,7 +139,6 @@ func (l *defaultLane) handleEvent(event pubsub.Event) error {
 		// This will block if we have a slow consumer
 		case err := <-c.Consume(l.stopper.Client().Stopped(), event):
 			if err != nil {
-				metrics.RecordConsumerOperation(l.id, event.Topic(), metrics.ConsumerError)
 				errList.AddErrors(pubsubErrors.WrapConsumeErr(err, event.Topic(), l.id))
 			}
 		case <-l.stopper.Flow().StopRequested():
@@ -148,6 +147,8 @@ func (l *defaultLane) handleEvent(event pubsub.Event) error {
 
 	if errList.ToError() == nil {
 		metrics.RecordConsumerOperation(l.id, event.Topic(), metrics.Processed)
+	} else {
+		metrics.RecordConsumerOperation(l.id, event.Topic(), metrics.ConsumerError)
 	}
 
 	return errList.ToError()

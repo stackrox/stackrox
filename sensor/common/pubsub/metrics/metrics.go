@@ -44,11 +44,11 @@ var (
 		Buckets:   []float64{0.001, 0.005, 0.01, 0.05, 0.1, 0.5, 1, 5},
 	}, []string{"lane_id", "topic"})
 
-	// consumersCount tracks the number of registered consumers per lane/topic.
-	consumersCount = prometheus.NewGaugeVec(prometheus.GaugeOpts{
+	// consumersCurrent tracks the number of registered consumers per lane/topic.
+	consumersCurrent = prometheus.NewGaugeVec(prometheus.GaugeOpts{
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.SensorSubsystem.String(),
-		Name:      "pubsub_consumers_count",
+		Name:      "pubsub_consumers_current",
 		Help:      "Number of currently registered consumers per lane and topic",
 	}, []string{"lane_id", "topic"})
 )
@@ -70,7 +70,7 @@ func ObserveProcessingDuration(laneID pubsub.LaneID, topic pubsub.Topic, duratio
 }
 
 func RecordConsumerCount(laneID pubsub.LaneID, topic pubsub.Topic, count int) {
-	consumersCount.WithLabelValues(laneID.String(), topic.String()).Set(float64(count))
+	consumersCurrent.WithLabelValues(laneID.String(), topic.String()).Set(float64(count))
 }
 
 func init() {
@@ -79,6 +79,6 @@ func init() {
 		laneConsumerOperations,
 		laneQueueSize,
 		laneEventProcessingDuration,
-		consumersCount,
+		consumersCurrent,
 	)
 }
