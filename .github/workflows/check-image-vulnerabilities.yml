@@ -52,7 +52,7 @@ jobs:
           ]
     steps:
       - name: Scan image vulnerabilities
-        uses: stackrox/actions/release/scan-image-vulnerabilities@v1
+        uses: stackrox/actions/release/scan-image-vulnerabilities@tm/fix-scan-image-vulnerabilities
         id: scan-image
         with:
           image: rhacs-eng/${{ matrix.image }}
@@ -95,7 +95,7 @@ jobs:
           ]
     steps:
       - name: Scan image vulnerabilities
-        uses: stackrox/actions/release/scan-image-vulnerabilities@v1
+        uses: stackrox/actions/release/scan-image-vulnerabilities@tm/fix-scan-image-vulnerabilities
         id: scan-image
         with:
           image: rhacs-eng/${{ matrix.image }}
