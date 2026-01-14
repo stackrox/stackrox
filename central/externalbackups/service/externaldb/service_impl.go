@@ -15,7 +15,7 @@ import (
 
 func getCause() string {
 	if env.ManagedCentral.BooleanSetting() {
-		return "cloud backup integrations are not available in this environment"
+		return "cloud backup integrations are not available in this environment."
 	}
 	if pgconfig.IsExternalDatabase() {
 		return "the scheduled backup service is not applicable when using an external database. " +
