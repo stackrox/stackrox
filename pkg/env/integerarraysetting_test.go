@@ -304,7 +304,8 @@ func TestIntegerArraySetting(t *testing.T) {
 				})
 			} else {
 				s := testRegisterArraySetting(envVar, tc.defaultValue, tc.minValue, tc.maxValue, tc.minLength, tc.maxLength)
-				assert.Equal(t, tc.expectedValue, s.IntegerArraySetting())
+				value, _ := s.IntegerArraySetting()
+				assert.Equal(t, tc.expectedValue, value)
 			}
 		})
 	}

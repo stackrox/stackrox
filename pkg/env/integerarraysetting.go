@@ -35,21 +35,29 @@ func (s *IntegerArraySetting) DefaultValue() []int {
 	return result
 }
 
-// Setting returns the string form of the integer array environment variable
-func (s *IntegerArraySetting) Setting() string {
-	arr := s.IntegerArraySetting()
+func arrayToString(arr []int) string {
 	strArr := make([]string, len(arr))
 	for i, v := range arr {
 		strArr[i] = strconv.Itoa(v)
 	}
 	return "[" + strings.Join(strArr, ",") + "]"
+
+}
+
+// Setting returns the string form of the integer array environment variable
+func (s *IntegerArraySetting) Setting() string {
+	arr, _ := s.IntegerArraySetting()
+	return arrayToString(arr)
 }
 
 // IntegerArraySetting returns the integer slice represented by the environment variable
-func (s *IntegerArraySetting) IntegerArraySetting() []int {
+// and a warning message if there were any issues parsing the value.
+// The warning message is empty if parsing was successful.
+func (s *IntegerArraySetting) IntegerArraySetting() ([]int, string) {
 	val := os.Getenv(s.envVar)
+	originalVal := val
 	if val == "" {
-		return s.DefaultValue()
+		return s.DefaultValue(), fmt.Sprintf("Empty value for environment variable %s. Using default value of %s. If you intentionally did not set this environment variable there is nothing to worry about.", s.envVar, arrayToString(s.DefaultValue()))
 	}
 
 	// Strip brackets if present
@@ -63,10 +71,10 @@ func (s *IntegerArraySetting) IntegerArraySetting() []int {
 	if val == "" {
 		if s.minLength == 0 {
 			// Empty array "[]" is allowed when minLength is 0
-			return []int{}
+			return []int{}, ""
 		} else {
 			// Empty array not allowed, return default
-			return s.DefaultValue()
+			return s.DefaultValue(), fmt.Sprintf("Invalid value for environment variable %s. It cannot be empty. Using default value of %s", s.envVar, arrayToString(s.DefaultValue()))
 		}
 	}
 
@@ -84,13 +92,13 @@ func (s *IntegerArraySetting) IntegerArraySetting() []int {
 		v, err := strconv.Atoi(trimmed)
 		if err != nil {
 			// Invalid format, return default
-			return s.DefaultValue()
+			return s.DefaultValue(), fmt.Sprintf("Unable to parse environment variable %s with value %s. Using default value of %s", s.envVar, originalVal, arrayToString(s.DefaultValue()))
 		}
 
 		// Validate individual value
 		if v < s.minValue || v > s.maxValue {
 			// Out of bounds, return default
-			return s.DefaultValue()
+			return s.DefaultValue(), fmt.Sprintf("Element %d in environment variable %s with value %s is out of bounds. Min value %d. Max value %d. Using default value of %s", v, s.envVar, originalVal, s.minValue, s.maxValue, arrayToString(s.DefaultValue()))
 		}
 
 		result = append(result, v)
@@ -98,10 +106,10 @@ func (s *IntegerArraySetting) IntegerArraySetting() []int {
 
 	// Validate array length
 	if len(result) < s.minLength || len(result) > s.maxLength {
-		return s.DefaultValue()
+		return s.DefaultValue(), fmt.Sprintf("Array length %d for environment variable %s is out of bounds. Min length %d. Max length %d. Using default value of %s", len(result), s.envVar, s.minLength, s.maxLength, arrayToString(s.DefaultValue()))
 	}
 
-	return result
+	return result, ""
 }
 
 // RegisterIntegerArraySetting globally registers and returns a new integer array setting.
