@@ -114,7 +114,7 @@ function filterGroup(labels: PrometheusMetricsLabels): ReactElement {
             {includeEntries.map(([label, pattern]) => {
                 return (
                     <Label isCompact key={`include-${label}`} color="green">
-                        +{label}: <code>{pattern}</code>
+                        &plus;{label}: <code>{pattern}</code>
                     </Label>
                 );
             })}
@@ -178,6 +178,19 @@ function predefinedMetricTableRow(
     );
 }
 
+// recordsMatch returns true if two maps are equal.
+function recordsMatch(a: Record<string, string>, b: Record<string, string>): boolean {
+    return (
+        Object.keys(a).length === Object.keys(b).length &&
+        Object.entries(a).every(([key, val]) => b[key] === val)
+    );
+}
+
+// elementsMatch returns true if two arrays have same elements ignoring order.
+function elementsMatch(a: string[], b: string[]): boolean {
+    return a.length === b.length && a.every((value) => b.includes(value));
+}
+
 // hasMetric checks if the descriptors contain the given metric by looking at
 // the metric name and the labels (ignoring the order).
 function hasMetric(
@@ -185,27 +198,24 @@ function hasMetric(
     metric: string,
     labels: PrometheusMetricsLabels
 ): boolean {
-    const cfgLabels = descriptors?.[metric]?.labels ?? [];
-    const cfgIncludeFilters = descriptors?.[metric]?.includeFilters ?? {};
-    const cfgExcludeFilters = descriptors?.[metric]?.excludeFilters ?? {};
-    const ll = labels.labels;
-    const incFilters = labels.includeFilters;
-    const excFilters = labels.excludeFilters;
+    const base = {
+        labels: descriptors?.[metric]?.labels ?? [],
+        includeFilters: descriptors?.[metric]?.includeFilters ?? {},
+        excludeFilters: descriptors?.[metric]?.excludeFilters ?? {},
+    };
+    const given = {
+        labels: labels.labels,
+        includeFilters: labels.includeFilters ?? {},
+        excludeFilters: labels.excludeFilters ?? {},
+    };
     return (
-        cfgLabels.length === ll.length &&
-        cfgLabels.every((label) => ll.includes(label)) &&
-        Object.keys(cfgIncludeFilters).length === Object.keys(incFilters ?? {}).length &&
-        Object.entries(cfgIncludeFilters).every(
-            ([label, pattern]) => incFilters?.[label] === pattern
-        ) &&
-        Object.keys(cfgExcludeFilters).length === Object.keys(excFilters ?? {}).length &&
-        Object.entries(cfgExcludeFilters).every(
-            ([label, pattern]) => excFilters?.[label] === pattern
-        )
+        elementsMatch(base.labels, given.labels) &&
+        recordsMatch(base.includeFilters, given.includeFilters) &&
+        recordsMatch(base.excludeFilters, given.excludeFilters)
     );
 }
 
-function labelsHaveFilters(labels: PrometheusMetricsLabels): boolean {
+function hasFiltersInLabels(labels: PrometheusMetricsLabels): boolean {
     return (
         Object.keys(labels.includeFilters ?? {}).length > 0 ||
         Object.keys(labels.excludeFilters ?? {}).length > 0
@@ -220,12 +230,12 @@ function metricsHaveFilters(
     // In edit mode, check all predefined metrics.
     // In view mode, only check enabled metrics (those in descriptors).
     const hasFiltersInPredefined = editMode
-        ? Object.values(predefinedMetrics[category]).some(labelsHaveFilters)
+        ? Object.values(predefinedMetrics[category]).some(hasFiltersInLabels)
         : Object.entries(predefinedMetrics[category]).some(
               ([metric, labels]) =>
-                  hasMetric(descriptors, metric, labels) && labelsHaveFilters(labels)
+                  hasMetric(descriptors, metric, labels) && hasFiltersInLabels(labels)
           );
-    const hasFiltersInDescriptors = Object.values(descriptors ?? {}).some(labelsHaveFilters);
+    const hasFiltersInDescriptors = Object.values(descriptors ?? {}).some(hasFiltersInLabels);
     const showFilters = hasFiltersInPredefined || hasFiltersInDescriptors;
     return showFilters;
 }
