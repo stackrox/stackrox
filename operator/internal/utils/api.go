@@ -4,7 +4,6 @@ import (
 	"context"
 
 	"github.com/pkg/errors"
-	commonLabels "github.com/stackrox/rox/operator/internal/common/labels"
 	apiErrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	ctrlClient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -35,21 +34,4 @@ func GetWithFallbackToUncached(ctx context.Context, client ctrlClient.Client, un
 	}
 
 	return nil
-}
-
-// ShouldAdoptResource checks if a resource should be adopted by the operator.
-// A resource should be adopted if:
-// 1. It has no ownerReferences (might have been stripped during backup/restore)
-// 2. It has the "app.stackrox.io/managed-by: operator" label (indicating it was originally created by the operator)
-func ShouldAdoptResource(obj metav1.Object) bool {
-	labels := obj.GetLabels()
-	if labels == nil {
-		return false
-	}
-
-	if labels[commonLabels.ManagedByLabelKey] != commonLabels.ManagedByOperator {
-		return false
-	}
-
-	return len(obj.GetOwnerReferences()) == 0
 }

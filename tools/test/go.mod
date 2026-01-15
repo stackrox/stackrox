@@ -1,6 +1,8 @@
 module github.com/stackrox/stackrox/tools/test
 
-go 1.25
+go 1.23.0
+
+toolchain go1.23.6
 
 require (
 	github.com/jstemmer/go-junit-report/v2 v2.1.0
