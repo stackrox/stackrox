@@ -24,7 +24,8 @@ const (
 )
 
 // SBOMScanResponse wraps metadata and scan results for an SBOM.
-// The fields are intended to be similar to those from `storage.Node` and `storage.Image`
+//
+// Fields must be JSON marshal/unmarshal compatible with `storage.Image`
 // so that parsing scans are familiar to users.
 //
 // There is no service defined for this response as it is handled
@@ -83,13 +84,14 @@ func (x *SBOMScanResponse) GetScan() *SBOMScanResponse_SBOMScan {
 	return nil
 }
 
-// next available tag: 5
+// next available tag: 6
 type SBOMScanResponse_SBOMScan struct {
 	state           protoimpl.MessageState                `protogen:"open.v1"`
-	ScanTime        *timestamppb.Timestamp                `protobuf:"bytes,1,opt,name=scan_time,json=scanTime,proto3" json:"scan_time,omitempty"`
-	Components      []*storage.EmbeddedImageScanComponent `protobuf:"bytes,2,rep,name=components,proto3" json:"components,omitempty"`
-	OperatingSystem string                                `protobuf:"bytes,3,opt,name=operating_system,json=operatingSystem,proto3" json:"operating_system,omitempty"`
-	DataSource      *storage.DataSource                   `protobuf:"bytes,4,opt,name=data_source,json=dataSource,proto3" json:"data_source,omitempty"`
+	ScannerVersion  string                                `protobuf:"bytes,1,opt,name=scanner_version,json=scannerVersion,proto3" json:"scanner_version,omitempty"`
+	ScanTime        *timestamppb.Timestamp                `protobuf:"bytes,2,opt,name=scan_time,json=scanTime,proto3" json:"scan_time,omitempty"`
+	Components      []*storage.EmbeddedImageScanComponent `protobuf:"bytes,3,rep,name=components,proto3" json:"components,omitempty"`
+	OperatingSystem string                                `protobuf:"bytes,4,opt,name=operating_system,json=operatingSystem,proto3" json:"operating_system,omitempty"`
+	DataSource      *storage.DataSource                   `protobuf:"bytes,5,opt,name=data_source,json=dataSource,proto3" json:"data_source,omitempty"`
 	unknownFields   protoimpl.UnknownFields
 	sizeCache       protoimpl.SizeCache
 }
@@ -124,6 +126,13 @@ func (*SBOMScanResponse_SBOMScan) Descriptor() ([]byte, []int) {
 	return file_api_v1_sbom_proto_rawDescGZIP(), []int{0, 0}
 }
 
+func (x *SBOMScanResponse_SBOMScan) GetScannerVersion() string {
+	if x != nil {
+		return x.ScannerVersion
+	}
+	return ""
+}
+
 func (x *SBOMScanResponse_SBOMScan) GetScanTime() *timestamppb.Timestamp {
 	if x != nil {
 		return x.ScanTime
@@ -156,17 +165,18 @@ var File_api_v1_sbom_proto protoreflect.FileDescriptor
 
 const file_api_v1_sbom_proto_rawDesc = "" +
 	"\n" +
-	"\x11api/v1/sbom.proto\x12\x02v1\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x13storage/image.proto\"\xc1\x02\n" +
+	"\x11api/v1/sbom.proto\x12\x02v1\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x13storage/image.proto\"\xea\x02\n" +
 	"\x10SBOMScanResponse\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x121\n" +
-	"\x04scan\x18\x02 \x01(\v2\x1d.v1.SBOMScanResponse.SBOMScanR\x04scan\x1a\xe9\x01\n" +
-	"\bSBOMScan\x127\n" +
-	"\tscan_time\x18\x01 \x01(\v2\x1a.google.protobuf.TimestampR\bscanTime\x12C\n" +
+	"\x04scan\x18\x02 \x01(\v2\x1d.v1.SBOMScanResponse.SBOMScanR\x04scan\x1a\x92\x02\n" +
+	"\bSBOMScan\x12'\n" +
+	"\x0fscanner_version\x18\x01 \x01(\tR\x0escannerVersion\x127\n" +
+	"\tscan_time\x18\x02 \x01(\v2\x1a.google.protobuf.TimestampR\bscanTime\x12C\n" +
 	"\n" +
-	"components\x18\x02 \x03(\v2#.storage.EmbeddedImageScanComponentR\n" +
+	"components\x18\x03 \x03(\v2#.storage.EmbeddedImageScanComponentR\n" +
 	"components\x12)\n" +
-	"\x10operating_system\x18\x03 \x01(\tR\x0foperatingSystem\x124\n" +
-	"\vdata_source\x18\x04 \x01(\v2\x13.storage.DataSourceR\n" +
+	"\x10operating_system\x18\x04 \x01(\tR\x0foperatingSystem\x124\n" +
+	"\vdata_source\x18\x05 \x01(\v2\x13.storage.DataSourceR\n" +
 	"dataSourceB'\n" +
 	"\x18io.stackrox.proto.api.v1Z\v./api/v1;v1b\x06proto3"
 

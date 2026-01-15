@@ -140,6 +140,7 @@ func (s *scannerv4) ScanSBOM(sbomReader io.Reader, contentType string) (*v1.SBOM
 	defer cancel()
 
 	var scannerVersion pkgscanner.Version
+	scannerVersion.Matcher = "v7"
 
 	// TODO(ROX-30570): START Remove
 	// Read all data from the SBOM reader and throw it away (testing purposes only)
@@ -195,6 +196,7 @@ func sbomScan(vr *v4.VulnerabilityReport, scannerVersionStr string) *v1.SBOMScan
 	}
 
 	return &v1.SBOMScanResponse_SBOMScan{
+		ScannerVersion:  imageScan.GetScannerVersion(),
 		ScanTime:        imageScan.GetScanTime(),
 		Components:      imageScan.GetComponents(),
 		OperatingSystem: imageScan.GetOperatingSystem(),
