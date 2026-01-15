@@ -246,6 +246,8 @@ func (s *VirtualMachineStore) clearStatusNoLock(id virtualmachine.VMID) {
 	vm.VSOCKCID = nil
 	// If the instance is removed the VirtualMachine will transition to Stopped
 	vm.Running = false
+	vm.GuestOS = ""
+	vm.Description = ""
 	vm.NodeName = ""
 	vm.IPAddresses = nil
 	vm.ActivePods = nil
