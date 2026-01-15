@@ -10,6 +10,7 @@ import (
 	"github.com/stackrox/rox/pkg/expiringcache"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	pkghttputil "github.com/stackrox/rox/pkg/httputil"
+	"github.com/stackrox/rox/pkg/telemetry/phonehome"
 	authenticationv1 "k8s.io/api/authentication/v1"
 	authv1 "k8s.io/api/authorization/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -25,7 +26,6 @@ const (
 // It includes UID and groups to avoid over-permissive cache hits when different
 // tokens for the same username have different group memberships.
 type sarCacheKey struct {
-	username   string
 	uid        string
 	userGroups string // Joined group names
 	namespace  string
@@ -121,18 +121,9 @@ func (a *k8sAuthorizer) authorize(ctx context.Context, r *http.Request) error {
 	return nil
 }
 
-// headerGetter adapts http.Header to implement the getter interface required by authn.ExtractToken.
-type headerGetter struct {
-	header http.Header
-}
-
-func (h headerGetter) Get(key string) []string {
-	return h.header.Values(key)
-}
-
 func extractBearerToken(r *http.Request) (string, error) {
-	getter := headerGetter{header: r.Header}
-	token := authn.ExtractToken(&getter, "Bearer")
+	headers := phonehome.Headers(r.Header)
+	token := authn.ExtractToken(&headers, "Bearer")
 	if token == "" {
 		return "", pkghttputil.Errorf(http.StatusUnauthorized, "missing or invalid bearer token")
 	}
@@ -179,7 +170,6 @@ func (a *k8sAuthorizer) performSubjectAccessReview(ctx context.Context, userInfo
 	slices.Sort(sortedGroups)
 
 	cacheKey := sarCacheKey{
-		username:   userInfo.Username,
 		uid:        userInfo.UID,
 		userGroups: strings.Join(sortedGroups, "|"),
 		namespace:  namespace,
@@ -192,7 +182,7 @@ func (a *k8sAuthorizer) performSubjectAccessReview(ctx context.Context, userInfo
 	}
 	log.Debugf(
 		"Cache miss for subject access review to perform %s on %s.%s in %s (user=%q, uid=%q, userGroups=%q)",
-		cacheKey.verb, cacheKey.group, cacheKey.resource, cacheKey.namespace, cacheKey.username, cacheKey.uid, cacheKey.userGroups,
+		cacheKey.verb, cacheKey.group, cacheKey.resource, cacheKey.namespace, userInfo.Username, cacheKey.uid, cacheKey.userGroups,
 	)
 
 	sar := &authv1.SubjectAccessReview{
