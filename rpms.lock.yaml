@@ -1844,10 +1844,10 @@ arches:
     name: zstd
     evr: 1.4.4-1.el8
   module_metadata:
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/aarch64/appstream/os/repodata/0951060feeae60d5e7ffa7fc231d82cbce71f4d00a8180db49735be84fa66d16-modules.yaml.gz
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/aarch64/appstream/os/repodata/aaab13c5fd68803d7452f01b3929a9a2186f6f842330789338fad4b81c06200b-modules.yaml.gz
     repoid: rhel-8-for-aarch64-appstream-rpms
     size: 756439
-    checksum: sha256:0951060feeae60d5e7ffa7fc231d82cbce71f4d00a8180db49735be84fa66d16
+    checksum: sha256:aaab13c5fd68803d7452f01b3929a9a2186f6f842330789338fad4b81c06200b
 - arch: ppc64le
   packages:
   - url: https://cdn.redhat.com/content/dist/rhel8/8/ppc64le/appstream/os/Packages/j/jq-1.6-11.el8_10.ppc64le.rpm
@@ -3703,10 +3703,10 @@ arches:
     name: zstd
     evr: 1.4.4-1.el8
   module_metadata:
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/ppc64le/appstream/os/repodata/26fdc5fabf8bb878dc73a0dc561e6c10ccaeb1b6237175e98be15de9fb9f8fd9-modules.yaml.gz
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/ppc64le/appstream/os/repodata/2befc33e2f501e227d2db7a0882738ebc48eb73fdc31eafbc7677c0846e034b3-modules.yaml.gz
     repoid: rhel-8-for-ppc64le-appstream-rpms
     size: 754812
-    checksum: sha256:26fdc5fabf8bb878dc73a0dc561e6c10ccaeb1b6237175e98be15de9fb9f8fd9
+    checksum: sha256:2befc33e2f501e227d2db7a0882738ebc48eb73fdc31eafbc7677c0846e034b3
 - arch: s390x
   packages:
   - url: https://cdn.redhat.com/content/dist/rhel8/8/s390x/appstream/os/Packages/j/jq-1.6-11.el8_10.s390x.rpm
@@ -5918,10 +5918,10 @@ arches:
     name: zstd
     evr: 1.4.4-1.el8
   module_metadata:
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/s390x/appstream/os/repodata/ee9767f45e91c28b36f93c262da80185cba75b530b6fd4f4e8103b16be4e079b-modules.yaml.gz
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/s390x/appstream/os/repodata/1e443ec8275438953517e9328b2fc1930b299f2e6c4dfc1ed4463b8714491ebe-modules.yaml.gz
     repoid: rhel-8-for-s390x-appstream-rpms
     size: 756364
-    checksum: sha256:ee9767f45e91c28b36f93c262da80185cba75b530b6fd4f4e8103b16be4e079b
+    checksum: sha256:1e443ec8275438953517e9328b2fc1930b299f2e6c4dfc1ed4463b8714491ebe
 - arch: x86_64
   packages:
   - url: https://cdn.redhat.com/content/dist/rhel8/8/x86_64/appstream/os/Packages/j/jq-1.6-11.el8_10.x86_64.rpm
@@ -7764,7 +7764,7 @@ arches:
     name: zstd
     evr: 1.4.4-1.el8
   module_metadata:
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/x86_64/appstream/os/repodata/4f4dd2b3da4093890d352fbb8bc0953f32c6bb80367d50387512bbe7a5a96902-modules.yaml.gz
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/x86_64/appstream/os/repodata/014302642b55e11ae80efb4f656aab9af47bd7be486287c4121e40bb91d65238-modules.yaml.gz
     repoid: rhel-8-for-x86_64-appstream-rpms
     size: 780995
-    checksum: sha256:4f4dd2b3da4093890d352fbb8bc0953f32c6bb80367d50387512bbe7a5a96902
+    checksum: sha256:014302642b55e11ae80efb4f656aab9af47bd7be486287c4121e40bb91d65238
