@@ -54,10 +54,15 @@ func (s *IntegerArraySetting) Setting() string {
 // and a warning message if there were any issues parsing the value.
 // The warning message is empty if parsing was successful.
 func (s *IntegerArraySetting) IntegerArraySetting() ([]int, string) {
-	val := os.Getenv(s.envVar)
+	val, ok := os.LookupEnv(s.envVar)
 	originalVal := val
+
+	if !ok {
+		return s.DefaultValue(), ""
+	}
+
 	if val == "" {
-		return s.DefaultValue(), fmt.Sprintf("Empty value for environment variable %s. Using default value of %s. If you intentionally did not set this environment variable there is nothing to worry about.", s.envVar, arrayToString(s.DefaultValue()))
+		return s.DefaultValue(), fmt.Sprintf("Empty value for environment variable %s. Using default value of %s.", s.envVar, arrayToString(s.DefaultValue()))
 	}
 
 	// Strip brackets if present
