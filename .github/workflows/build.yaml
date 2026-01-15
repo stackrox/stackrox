@@ -674,10 +674,15 @@ jobs:
 
       - name: Build Operator image
         run: |
-          # The first invocation builds native deps, which helps avoid the following error which otherwise happens when cross-building.
-          # + protoc-gen-go
-          # go: cannot install cross-compiled binaries when GOBIN is set
-          CGO_ENABLED=0                           scripts/lib.sh retry 6 true make -C operator/ build docker-build
+          # The first invocation builds native architecture dependencies, which helps avoid the following error,
+          # which otherwise happens when cross-building. It also needlessly builds the operator binary for the
+          # native architecture, but this is quick and more robust than trying to repeat the dependencies here
+          # or in a separate intermediate target.
+          #   + protoc-gen-go
+          #   go: cannot install cross-compiled binaries when GOBIN is set
+          CGO_ENABLED=0                           scripts/lib.sh retry 6 true make -C operator/ build
+          # Once the native architecture dependencies are installed by the above command, the following one
+          # simply builds the actual operator binary for the correct target architecture.
           CGO_ENABLED=0 GOARCH=${{ matrix.arch }} scripts/lib.sh retry 6 true make -C operator/ build docker-build
 
       - name: Login to docker.io to mitigate rate limiting on downloading images
@@ -768,21 +773,6 @@ jobs:
         QUAY_STACKROX_IO_RW_USERNAME: ${{ secrets.QUAY_STACKROX_IO_RW_USERNAME }}
         QUAY_STACKROX_IO_RW_PASSWORD: ${{ secrets.QUAY_STACKROX_IO_RW_PASSWORD }}
     steps:
-    - name: Setup build env
-      run: |
-        case "${{ matrix.name }}" in
-          RHACS_BRANDING|STACKROX_BRANDING)
-            brand="${{ matrix.name }}"
-            ;;
-          *)
-            echo "Unsupported build: ${{ matrix.name }}"
-            exit 1
-        esac
-
-        {
-          echo "ROX_PRODUCT_BRANDING=${brand}"
-        } >> "$GITHUB_ENV"
-
     - name: Checkout
       uses: actions/checkout@v6
       with:
