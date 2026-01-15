@@ -98,11 +98,7 @@ func getFileAccess(accessTime time.Time) *storage.FileAccess {
 func getFakeFileAccessAlert(accesses ...*storage.FileAccess) *storage.Alert {
 	var violations []*storage.Alert_Violation
 	for _, access := range accesses {
-		violation, err := printer.GenerateFileAccessViolation(access)
-		if err != nil {
-			panic(err)
-		}
-		violations = append(violations, violation)
+		violations = append(violations, printer.GenerateFileAccessViolation(access))
 	}
 	return &storage.Alert{
 		LifecycleStage: storage.LifecycleStage_RUNTIME,

@@ -18,6 +18,7 @@ import (
 	"github.com/stackrox/rox/pkg/protoutils"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/set"
+	"github.com/stackrox/rox/pkg/sliceutils"
 )
 
 const maxRunTimeViolationsPerAlert = 40
@@ -244,19 +245,13 @@ func mergeNetworkFlowViolations(old, new *storage.Alert) bool {
 
 func mergeFileAccessViolations(oldAlert, newAlert *storage.Alert) bool {
 	// Extract FILE_ACCESS violations from both alerts
-	var newViolations []*storage.Alert_Violation
-	for _, v := range newAlert.GetViolations() {
-		if v.GetType() == storage.Alert_Violation_FILE_ACCESS {
-			newViolations = append(newViolations, v)
-		}
-	}
+	newViolations := sliceutils.Filter(newAlert.GetViolations(), func(v *storage.Alert_Violation) bool {
+		return v.GetType() == storage.Alert_Violation_FILE_ACCESS
+	})
 
-	var oldViolations []*storage.Alert_Violation
-	for _, v := range oldAlert.GetViolations() {
-		if v.GetType() == storage.Alert_Violation_FILE_ACCESS {
-			oldViolations = append(oldViolations, v)
-		}
-	}
+	oldViolations := sliceutils.Filter(oldAlert.GetViolations(), func(v *storage.Alert_Violation) bool {
+		return v.GetType() == storage.Alert_Violation_FILE_ACCESS
+	})
 
 	if len(newViolations) == 0 || len(oldViolations) >= maxRunTimeViolationsPerAlert {
 		return false
