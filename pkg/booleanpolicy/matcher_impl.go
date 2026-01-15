@@ -344,11 +344,7 @@ func (m *matcherImpl) getViolations(
 	} else if networkPolicyMatched {
 		v.AlertViolations = printer.EnhanceNetworkPolicyViolations(v.AlertViolations, networkPolicy)
 	} else if fileAccessMatched {
-		fileAccessViolation, err := printer.GenerateFileAccessViolation(fileAccess)
-		if err != nil {
-			return nil, errors.Wrap(err, "generating file access violation")
-		}
-		v.AlertViolations = append(v.AlertViolations, fileAccessViolation)
+		v.AlertViolations = append(v.AlertViolations, printer.GenerateFileAccessViolation(fileAccess))
 	}
 	return v, nil
 }

@@ -20,19 +20,17 @@ func UpdateFileAccessAlertViolationMessage(v *storage.Alert_Violation) {
 		return
 	}
 
-	path := access.GetFile().GetActualPath()
-	if path == "" {
+	path := UNKNOWN_FILE
+	if access.GetFile().GetActualPath() != "" {
+		path = access.GetFile().GetActualPath()
+	} else if access.GetFile().GetEffectivePath() != "" {
 		path = access.GetFile().GetEffectivePath()
-		if path == "" {
-			path = UNKNOWN_FILE
-		}
 	}
-	operation := access.GetOperation()
 
-	v.Message = fmt.Sprintf("'%v' accessed (%s)", path, operation)
+	v.Message = fmt.Sprintf("'%v' accessed (%s)", path, access.GetOperation())
 }
 
-func GenerateFileAccessViolation(access *storage.FileAccess) (*storage.Alert_Violation, error) {
+func GenerateFileAccessViolation(access *storage.FileAccess) *storage.Alert_Violation {
 	violation := &storage.Alert_Violation{
 		Type: storage.Alert_Violation_FILE_ACCESS,
 		MessageAttributes: &storage.Alert_Violation_FileAccess{
@@ -41,5 +39,5 @@ func GenerateFileAccessViolation(access *storage.FileAccess) (*storage.Alert_Vio
 	}
 
 	UpdateFileAccessAlertViolationMessage(violation)
-	return violation, nil
+	return violation
 }
