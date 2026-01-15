@@ -125,10 +125,10 @@ func ToProtoV4VulnerabilityReport(ctx context.Context, r *claircore.Vulnerabilit
 	if err != nil {
 		return nil, fmt.Errorf("internal error: parsing EPSS items: %w", err)
 	}
-	// TODO(ROX-26672): Remove this line.
-	// The CSAF advisories are currently a temporary solution
-	// until we start showing CVEs for fixed vulnerabilities affecting
-	// Red Hat products.
+
+	// CSAF advisories are used to obtain fixed dates for Red Hat vulnerabilities
+	// and to close the gap since CVE data does not provide
+	// top-level advisory information.
 	csafAdvisories, err := redhatCSAFAdvisories(ctx, r.Enrichments)
 	if err != nil {
 		return nil, fmt.Errorf("internal error: parsing Red Hat CSAF advisories: %w", err)
@@ -408,8 +408,8 @@ func toProtoV4PackageVulnerabilitiesMap(ccPkgVulnerabilities map[string][]string
 		// This may happen, for example, when we match the same vulnerability to multiple CPEs
 		// in Red Hat's OVAL or VEX data.
 		vulnIDs = dedupeVulns(vulnIDs, ccVulnerabilities)
-		// Only do the following if we want to use the CSAF enrichment data.
-		if features.ScannerV4RedHatCSAF.Enabled() {
+		// Only do the following if we want RH advisories to be top level.
+		if !features.ScannerV4RedHatCVEs.Enabled() {
 			// Next, sort by NVD CVSS score.
 			sortByNVDCVSS(vulnIDs, vulnerabilities)
 			// Next, deduplicate and vulnerabilities with the same Red Hat advisory name.
@@ -594,11 +594,10 @@ func toProtoV4VulnerabilitiesMap(
 		}
 
 		name := vulnerabilityName(v)
-		// TODO(ROX-26672): Remove this line.
 		csafAdvisory, csafAdvisoryExists := csafAdvisories[v.ID]
 
 		normalizedSeverity := toProtoV4VulnerabilitySeverity(ctx, v.NormalizedSeverity)
-		if csafAdvisoryExists {
+		if shouldReplaceWithAdvisoryData(csafAdvisoryExists) {
 			// Replace the normalized severity for the CVE with the severity of the related Red Hat advisory.
 			normalizedSeverity = toProtoV4VulnerabilitySeverityFromString(ctx, csafAdvisory.Severity)
 		}
@@ -630,7 +629,7 @@ func toProtoV4VulnerabilitiesMap(
 		}
 
 		description := v.Description
-		if csafAdvisoryExists {
+		if shouldReplaceWithAdvisoryData(csafAdvisoryExists) {
 			// Replace the description for the CVE with the description of the related Red Hat advisory.
 			description = csafAdvisory.Description
 		}
@@ -642,7 +641,7 @@ func toProtoV4VulnerabilitiesMap(
 		}
 
 		vulnPublished := v.Issued
-		if csafAdvisoryExists {
+		if shouldReplaceWithAdvisoryData(csafAdvisoryExists) {
 			// Replace the published date for the CVE with the published date of the related Red Hat advisory.
 			vulnPublished = csafAdvisory.ReleaseDate
 		}
@@ -652,6 +651,7 @@ func toProtoV4VulnerabilitiesMap(
 				Str("vuln_id", v.ID).
 				Str("vuln_name", v.Name).
 				Str("vuln_updater", v.Updater).
+				Bool("feature_rh_cves_enabled", features.ScannerV4RedHatCVEs.Enabled()).
 				Bool("csaf_advisory_exists", csafAdvisoryExists).
 				// Use Str instead of Time because the latter will format the time into
 				// RFC3339 form, which may not be valid for this.
@@ -660,6 +660,9 @@ func toProtoV4VulnerabilitiesMap(
 				Str("nvd_published", nvdVuln.Published).
 				Msg("issued time invalid: leaving empty")
 		}
+
+		fixed := fixedTime(csafAdvisory)
+
 		var vulnEPSS *epss.EPSSItem
 		if epssVulnItem, ok := epssItems[v.ID]; ok {
 			if v, ok := epssVulnItem[cve]; foundCVE && ok {
@@ -689,6 +692,8 @@ func toProtoV4VulnerabilitiesMap(
 			FixedInVersion:     fixedInVersion(v),
 			Cvss:               preferredCVSS,
 			CvssMetrics:        metrics,
+			Updater:            v.Updater,
+			FixedDate:          fixed,
 		}
 		if vulnEPSS != nil {
 			vulnerabilities[k].EpssMetrics = &v4.VulnerabilityReport_Vulnerability_EPSS{
@@ -700,6 +705,24 @@ func toProtoV4VulnerabilitiesMap(
 		}
 	}
 	return vulnerabilities, nil
+}
+
+// shouldReplaceWithAdvisoryData determines whether CVE-level data should be replaced
+// with data from the associated Red Hat advisory.
+// Advisory data is used when an advisory exists and Red Hat advisories are configured
+// as the top-level vulnerability (i.e., CVEs are not the top-level).
+func shouldReplaceWithAdvisoryData(csafAdvisoryExists bool) bool {
+	return csafAdvisoryExists && !features.ScannerV4RedHatCVEs.Enabled()
+}
+
+// fixedTime returns the fixed time for a vulnerability as indicated by the
+// associated advisory. Will return nil if not found or an error occurs.
+func fixedTime(advisory csaf.Advisory) *timestamppb.Timestamp {
+	if !advisory.ReleaseDate.IsZero() {
+		return protocompat.ConvertTimeToTimestampOrNil(&advisory.ReleaseDate)
+	}
+
+	return nil
 }
 
 // issuedTime attempts to return the issued time for the vulnerability.
@@ -965,16 +988,12 @@ func nvdVulnerabilities(enrichments map[string][]json.RawMessage) (map[string]ma
 	return ret, nil
 }
 
-// TODO(ROX-26672): Remove this function when we no longer require reading advisory data.
 func redhatCSAFAdvisories(ctx context.Context, enrichments map[string][]json.RawMessage) (map[string]csaf.Advisory, error) {
 	// Do not read CSAF data if it's not enabled.
 	if !features.ScannerV4RedHatCSAF.Enabled() {
 		return nil, nil
 	}
-	// No reason to read CSAF data when we want to only show CVEs.
-	if features.ScannerV4RedHatCVEs.Enabled() {
-		return nil, nil
-	}
+
 	enrichmentsList := enrichments[csaf.Type]
 	if len(enrichmentsList) == 0 {
 		return nil, nil
@@ -1205,8 +1224,8 @@ func cvssMetrics(_ context.Context, vuln *claircore.Vulnerability, vulnName stri
 	var preferredErr error
 	switch {
 	case strings.EqualFold(vuln.Updater, RedHatUpdaterName):
-		// If the Name is empty, then the whole advisory is.
-		if advisory.Name == "" {
+		// If the Name is empty, then the whole advisory is, also ignore advisory if CVEs are top level.
+		if advisory.Name == "" || features.ScannerV4RedHatCVEs.Enabled() {
 			preferredCVSS, preferredErr = vulnCVSS(vuln, v4.VulnerabilityReport_Vulnerability_CVSS_SOURCE_RED_HAT)
 		} else {
 			// Set the preferred CVSS metrics to the ones provided by the related Red Hat advisory.
@@ -1525,8 +1544,6 @@ func vulnsEqual(a, b *claircore.Vulnerability) bool {
 }
 
 // dedupeAdvisories deduplicates repeat advisories out of vulnIDs and returns the result.
-// This function will only filter if ROX_SCANNER_V4_RED_HAT_CSAF is enabled; otherwise,
-// it'll just return the original slice of vulnIDs.
 // This function does not guarantee order is preserved.
 func dedupeAdvisories(vulnIDs []string, protoVulns map[string]*v4.VulnerabilityReport_Vulnerability) []string {
 	filtered := make([]string, 0, len(vulnIDs))

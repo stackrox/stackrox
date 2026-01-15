@@ -2,7 +2,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.19.0
+    controller-gen.kubebuilder.io/version: v0.20.0
   creationTimestamp: null
   name: centrals.platform.stackrox.io
 spec:
@@ -151,8 +151,9 @@ spec:
                       nodeSelector:
                         additionalProperties:
                           type: string
-                        description: If you want this component to only run on specific
-                          nodes, you can configure a node selector here.
+                        description: |-
+                          If you want this component to only run on specific nodes, you can configure a node selector here.
+                          This setting overrides spec.customize.deploymentDefaults.nodeSelector.
                         type: object
                       passwordSecret:
                         description: |-
@@ -268,8 +269,9 @@ spec:
                             type: object
                         type: object
                       tolerations:
-                        description: If you want this component to only run on specific
-                          nodes, you can configure tolerations of tainted nodes.
+                        description: |-
+                          If you want this component to only run on specific nodes, you can configure tolerations of tainted nodes.
+                          This setting overrides spec.customize.deploymentDefaults.tolerations.
                         items:
                           description: |-
                             The pod this Toleration is attached to tolerates any taint that matches
@@ -288,9 +290,10 @@ spec:
                             operator:
                               description: |-
                                 Operator represents a key's relationship to the value.
-                                Valid operators are Exists and Equal. Defaults to Equal.
+                                Valid operators are Exists, Equal, Lt, and Gt. Defaults to Equal.
                                 Exists is equivalent to wildcard for value, so that a pod can
                                 tolerate all taints of a particular category.
+                                Lt and Gt perform numeric comparisons (requires feature gate TaintTolerationComparisonOperators).
                               type: string
                             tolerationSeconds:
                               description: |-
@@ -489,8 +492,9 @@ spec:
                   nodeSelector:
                     additionalProperties:
                       type: string
-                    description: If you want this component to only run on specific
-                      nodes, you can configure a node selector here.
+                    description: |-
+                      If you want this component to only run on specific nodes, you can configure a node selector here.
+                      This setting overrides spec.customize.deploymentDefaults.nodeSelector.
                     type: object
                   notifierSecretsEncryption:
                     description: Configures the encryption of notifier secrets stored
@@ -611,8 +615,9 @@ spec:
                         type: object
                     type: object
                   tolerations:
-                    description: If you want this component to only run on specific
-                      nodes, you can configure tolerations of tainted nodes.
+                    description: |-
+                      If you want this component to only run on specific nodes, you can configure tolerations of tainted nodes.
+                      This setting overrides spec.customize.deploymentDefaults.tolerations.
                     items:
                       description: |-
                         The pod this Toleration is attached to tolerates any taint that matches
@@ -631,9 +636,10 @@ spec:
                         operator:
                           description: |-
                             Operator represents a key's relationship to the value.
-                            Valid operators are Exists and Equal. Defaults to Equal.
+                            Valid operators are Exists, Equal, Lt, and Gt. Defaults to Equal.
                             Exists is equivalent to wildcard for value, so that a pod can
                             tolerate all taints of a particular category.
+                            Lt and Gt perform numeric comparisons (requires feature gate TaintTolerationComparisonOperators).
                           type: string
                         tolerationSeconds:
                           description: |-
@@ -686,8 +692,9 @@ spec:
                   nodeSelector:
                     additionalProperties:
                       type: string
-                    description: If you want this component to only run on specific
-                      nodes, you can configure a node selector here.
+                    description: |-
+                      If you want this component to only run on specific nodes, you can configure a node selector here.
+                      This setting overrides spec.customize.deploymentDefaults.nodeSelector.
                     type: object
                   resources:
                     description: |-
@@ -751,8 +758,9 @@ spec:
                         type: object
                     type: object
                   tolerations:
-                    description: If you want this component to only run on specific
-                      nodes, you can configure tolerations of tainted nodes.
+                    description: |-
+                      If you want this component to only run on specific nodes, you can configure tolerations of tainted nodes.
+                      This setting overrides spec.customize.deploymentDefaults.tolerations.
                     items:
                       description: |-
                         The pod this Toleration is attached to tolerates any taint that matches
@@ -771,9 +779,10 @@ spec:
                         operator:
                           description: |-
                             Operator represents a key's relationship to the value.
-                            Valid operators are Exists and Equal. Defaults to Equal.
+                            Valid operators are Exists, Equal, Lt, and Gt. Defaults to Equal.
                             Exists is equivalent to wildcard for value, so that a pod can
                             tolerate all taints of a particular category.
+                            Lt and Gt perform numeric comparisons (requires feature gate TaintTolerationComparisonOperators).
                           type: string
                         tolerationSeconds:
                           description: |-
@@ -798,6 +807,75 @@ spec:
                     additionalProperties:
                       type: string
                     description: Custom annotations to set on all managed objects.
+                    type: object
+                  deploymentDefaults:
+                    description: |-
+                      Global nodeSelector and tolerations for Deployment-based components. DaemonSets (Collector) are not affected.
+                      Component-level nodeSelector and tolerations settings override these defaults on a field-by-field basis.
+                    properties:
+                      nodeSelector:
+                        additionalProperties:
+                          type: string
+                        description: |-
+                          Default nodeSelector applied to all Deployment-based components. Use this for custom node
+                          selection criteria.
+                          Cannot be used together with pinToNodes.
+                        type: object
+                      pinToNodes:
+                        description: |-
+                          Pin all Deployment-based components to specific node types. This is a convenience setting
+                          that automatically configures both nodeSelector and tolerations with predefined values.
+                          Use this for common scenarios like running on OpenShift infrastructure nodes.
+                          For custom node selection, use the explicit nodeSelector and tolerations fields instead.
+                          Cannot be used together with nodeSelector or tolerations fields.
+                          The default is: None.
+                        enum:
+                        - None
+                        - InfraRole
+                        type: string
+                      tolerations:
+                        description: |-
+                          Default tolerations applied to all Deployment-based components. Use this when your target
+                          nodes have custom taints that pods must tolerate.
+                          Cannot be used together with pinToNodes.
+                        items:
+                          description: |-
+                            The pod this Toleration is attached to tolerates any taint that matches
+                            the triple <key,value,effect> using the matching operator <operator>.
+                          properties:
+                            effect:
+                              description: |-
+                                Effect indicates the taint effect to match. Empty means match all taint effects.
+                                When specified, allowed values are NoSchedule, PreferNoSchedule and NoExecute.
+                              type: string
+                            key:
+                              description: |-
+                                Key is the taint key that the toleration applies to. Empty means match all taint keys.
+                                If the key is empty, operator must be Exists; this combination means to match all values and all keys.
+                              type: string
+                            operator:
+                              description: |-
+                                Operator represents a key's relationship to the value.
+                                Valid operators are Exists, Equal, Lt, and Gt. Defaults to Equal.
+                                Exists is equivalent to wildcard for value, so that a pod can
+                                tolerate all taints of a particular category.
+                                Lt and Gt perform numeric comparisons (requires feature gate TaintTolerationComparisonOperators).
+                              type: string
+                            tolerationSeconds:
+                              description: |-
+                                TolerationSeconds represents the period of time the toleration (which must be
+                                of effect NoExecute, otherwise this field is ignored) tolerates the taint. By default,
+                                it is not set, which means tolerate the taint forever (do not evict). Zero and
+                                negative values will be treated as 0 (evict immediately) by the system.
+                              format: int64
+                              type: integer
+                            value:
+                              description: |-
+                                Value is the taint value the toleration matches to.
+                                If the operator is Exists, the value should be empty, otherwise just a regular string.
+                              type: string
+                          type: object
+                        type: array
                     type: object
                   envVars:
                     description: Custom environment variables to set on managed pods'
@@ -1133,8 +1211,9 @@ spec:
                       nodeSelector:
                         additionalProperties:
                           type: string
-                        description: If you want this component to only run on specific
-                          nodes, you can configure a node selector here.
+                        description: |-
+                          If you want this component to only run on specific nodes, you can configure a node selector here.
+                          This setting overrides spec.customize.deploymentDefaults.nodeSelector.
                         type: object
                       resources:
                         description: |-
@@ -1229,8 +1308,9 @@ spec:
                             type: integer
                         type: object
                       tolerations:
-                        description: If you want this component to only run on specific
-                          nodes, you can configure tolerations of tainted nodes.
+                        description: |-
+                          If you want this component to only run on specific nodes, you can configure tolerations of tainted nodes.
+                          This setting overrides spec.customize.deploymentDefaults.tolerations.
                         items:
                           description: |-
                             The pod this Toleration is attached to tolerates any taint that matches
@@ -1249,9 +1329,10 @@ spec:
                             operator:
                               description: |-
                                 Operator represents a key's relationship to the value.
-                                Valid operators are Exists and Equal. Defaults to Equal.
+                                Valid operators are Exists, Equal, Lt, and Gt. Defaults to Equal.
                                 Exists is equivalent to wildcard for value, so that a pod can
                                 tolerate all taints of a particular category.
+                                Lt and Gt perform numeric comparisons (requires feature gate TaintTolerationComparisonOperators).
                               type: string
                             tolerationSeconds:
                               description: |-
@@ -1297,8 +1378,9 @@ spec:
                       nodeSelector:
                         additionalProperties:
                           type: string
-                        description: If you want this component to only run on specific
-                          nodes, you can configure a node selector here.
+                        description: |-
+                          If you want this component to only run on specific nodes, you can configure a node selector here.
+                          This setting overrides spec.customize.deploymentDefaults.nodeSelector.
                         type: object
                       resources:
                         description: |-
@@ -1362,8 +1444,9 @@ spec:
                             type: object
                         type: object
                       tolerations:
-                        description: If you want this component to only run on specific
-                          nodes, you can configure tolerations of tainted nodes.
+                        description: |-
+                          If you want this component to only run on specific nodes, you can configure tolerations of tainted nodes.
+                          This setting overrides spec.customize.deploymentDefaults.tolerations.
                         items:
                           description: |-
                             The pod this Toleration is attached to tolerates any taint that matches
@@ -1382,9 +1465,10 @@ spec:
                             operator:
                               description: |-
                                 Operator represents a key's relationship to the value.
-                                Valid operators are Exists and Equal. Defaults to Equal.
+                                Valid operators are Exists, Equal, Lt, and Gt. Defaults to Equal.
                                 Exists is equivalent to wildcard for value, so that a pod can
                                 tolerate all taints of a particular category.
+                                Lt and Gt perform numeric comparisons (requires feature gate TaintTolerationComparisonOperators).
                               type: string
                             tolerationSeconds:
                               description: |-
@@ -1459,8 +1543,9 @@ spec:
                       nodeSelector:
                         additionalProperties:
                           type: string
-                        description: If you want this component to only run on specific
-                          nodes, you can configure a node selector here.
+                        description: |-
+                          If you want this component to only run on specific nodes, you can configure a node selector here.
+                          This setting overrides spec.customize.deploymentDefaults.nodeSelector.
                         type: object
                       persistence:
                         description: |-
@@ -1564,8 +1649,9 @@ spec:
                             type: object
                         type: object
                       tolerations:
-                        description: If you want this component to only run on specific
-                          nodes, you can configure tolerations of tainted nodes.
+                        description: |-
+                          If you want this component to only run on specific nodes, you can configure tolerations of tainted nodes.
+                          This setting overrides spec.customize.deploymentDefaults.tolerations.
                         items:
                           description: |-
                             The pod this Toleration is attached to tolerates any taint that matches
@@ -1584,9 +1670,10 @@ spec:
                             operator:
                               description: |-
                                 Operator represents a key's relationship to the value.
-                                Valid operators are Exists and Equal. Defaults to Equal.
+                                Valid operators are Exists, Equal, Lt, and Gt. Defaults to Equal.
                                 Exists is equivalent to wildcard for value, so that a pod can
                                 tolerate all taints of a particular category.
+                                Lt and Gt perform numeric comparisons (requires feature gate TaintTolerationComparisonOperators).
                               type: string
                             tolerationSeconds:
                               description: |-
@@ -1631,8 +1718,9 @@ spec:
                       nodeSelector:
                         additionalProperties:
                           type: string
-                        description: If you want this component to only run on specific
-                          nodes, you can configure a node selector here.
+                        description: |-
+                          If you want this component to only run on specific nodes, you can configure a node selector here.
+                          This setting overrides spec.customize.deploymentDefaults.nodeSelector.
                         type: object
                       resources:
                         description: |-
@@ -1727,8 +1815,9 @@ spec:
                             type: integer
                         type: object
                       tolerations:
-                        description: If you want this component to only run on specific
-                          nodes, you can configure tolerations of tainted nodes.
+                        description: |-
+                          If you want this component to only run on specific nodes, you can configure tolerations of tainted nodes.
+                          This setting overrides spec.customize.deploymentDefaults.tolerations.
                         items:
                           description: |-
                             The pod this Toleration is attached to tolerates any taint that matches
@@ -1747,9 +1836,10 @@ spec:
                             operator:
                               description: |-
                                 Operator represents a key's relationship to the value.
-                                Valid operators are Exists and Equal. Defaults to Equal.
+                                Valid operators are Exists, Equal, Lt, and Gt. Defaults to Equal.
                                 Exists is equivalent to wildcard for value, so that a pod can
                                 tolerate all taints of a particular category.
+                                Lt and Gt perform numeric comparisons (requires feature gate TaintTolerationComparisonOperators).
                               type: string
                             tolerationSeconds:
                               description: |-
@@ -1794,8 +1884,9 @@ spec:
                       nodeSelector:
                         additionalProperties:
                           type: string
-                        description: If you want this component to only run on specific
-                          nodes, you can configure a node selector here.
+                        description: |-
+                          If you want this component to only run on specific nodes, you can configure a node selector here.
+                          This setting overrides spec.customize.deploymentDefaults.nodeSelector.
                         type: object
                       resources:
                         description: |-
@@ -1890,8 +1981,9 @@ spec:
                             type: integer
                         type: object
                       tolerations:
-                        description: If you want this component to only run on specific
-                          nodes, you can configure tolerations of tainted nodes.
+                        description: |-
+                          If you want this component to only run on specific nodes, you can configure tolerations of tainted nodes.
+                          This setting overrides spec.customize.deploymentDefaults.tolerations.
                         items:
                           description: |-
                             The pod this Toleration is attached to tolerates any taint that matches
@@ -1910,9 +2002,10 @@ spec:
                             operator:
                               description: |-
                                 Operator represents a key's relationship to the value.
-                                Valid operators are Exists and Equal. Defaults to Equal.
+                                Valid operators are Exists, Equal, Lt, and Gt. Defaults to Equal.
                                 Exists is equivalent to wildcard for value, so that a pod can
                                 tolerate all taints of a particular category.
+                                Lt and Gt perform numeric comparisons (requires feature gate TaintTolerationComparisonOperators).
                               type: string
                             tolerationSeconds:
                               description: |-

@@ -839,8 +839,9 @@ EOT
     _begin "deploy-stackrox"
 
     # Install old version of the operator & deploy StackRox.
+
     VERSION="${OPERATOR_VERSION_TAG}" make -C operator deploy-previous-via-olm
-    _deploy_stackrox "" "${CUSTOM_CENTRAL_NAMESPACE}" "${CUSTOM_SENSOR_NAMESPACE}"
+    _deploy_stackrox "" "${CUSTOM_CENTRAL_NAMESPACE}" "${CUSTOM_SENSOR_NAMESPACE}" "false"
 
     _begin "verify"
 
@@ -1129,6 +1130,7 @@ _deploy_stackrox() {
     local tls_client_certs=${1:-}
     local central_namespace=${2:-stackrox}
     local sensor_namespace=${3:-stackrox}
+    local validate=${4:-true}
 
     _deploy_central "${central_namespace}"
     # shellcheck disable=SC2031
@@ -1141,7 +1143,7 @@ _deploy_stackrox() {
     setup_client_TLS_certs "${tls_client_certs}"
     record_build_info "${central_namespace}"
 
-    _deploy_sensor "${sensor_namespace}" "${central_namespace}"
+    _deploy_sensor "${sensor_namespace}" "${central_namespace}" "${validate}"
     echo "Sensor deployed. Waiting for sensor to be up"
     sensor_wait "${sensor_namespace}"
 
@@ -1491,8 +1493,9 @@ EOF
 _deploy_sensor() {
     local sensor_namespace=${1:-stackrox}
     local central_namespace=${2:-stackrox}
+    local validate=${3:-true}
     create_sensor_pull_secrets "$sensor_namespace"
-    deploy_sensor "${sensor_namespace}" "${central_namespace}"
+    deploy_sensor "${sensor_namespace}" "${central_namespace}" "${validate}"
     patch_down_sensor "${sensor_namespace}"
 }
 

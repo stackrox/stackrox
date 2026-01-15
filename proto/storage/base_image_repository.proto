@@ -3,13 +3,14 @@ syntax = "proto3";
 package storage;
 
 import "google/protobuf/timestamp.proto";
+import "storage/user.proto";
 
 option go_package = "./storage;storage";
 option java_package = "io.stackrox.proto.storage";
 
 // BaseImageRepository configures automatic tag discovery for a base image repository.
 // Defines which repository to watch, what tag patterns to match, and health tracking.
-// Next tag: 8
+// Next tag: 9
 message BaseImageRepository {
   // Unique identifier for this repository pattern configuration.
   string id = 1; // @gotags: sql:"pk,type(uuid)"
@@ -38,12 +39,15 @@ message BaseImageRepository {
   // SHA256 hash of tag_pattern for cache invalidation detection
   // (when pattern changes, hash differs, triggering cache flush).
   string pattern_hash = 7;
+
+  // User who created the base image repository.
+  SlimUser created_by = 8; // @gotags: sql:"ignore_labels(User ID)
 }
 
 // BaseImageTag stores cached base image tag metadata.
 // Persisting cache data across Central restarts avoids cold-start refetches during base
 // image repository scanning.
-// Next tag: 8
+// Next tag: 9
 message BaseImageTag {
   // Unique identifier.
   string id = 1; // @gotags: sql:"pk,type(uuid)"
@@ -63,9 +67,12 @@ message BaseImageTag {
   bool is_manifest_list = 5;
 
   // Image creation timestamp from config blob.
-  google.protobuf.Timestamp created = 6;
+  google.protobuf.Timestamp created = 6; // @gotags: sql:"index=btree"
 
   // Map of "os/arch" to platform-specific manifest digest,
   // to only refetch platforms whose digest changed.
   map<string, string> list_digests = 7;
+
+  // Layer digests for this tag, stored for promotion to base_images.
+  repeated string layer_digests = 8;
 }

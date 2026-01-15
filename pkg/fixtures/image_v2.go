@@ -77,6 +77,17 @@ func getImageWithComponentsV2(componentsPerImage []*storage.EmbeddedImageScanCom
 			Remote:   "srox/mongo",
 			Tag:      "latest",
 			FullName: imageName,
+		}, BaseImageInfo: []*storage.BaseImageInfo{
+			{
+				BaseImageId:       "some-id",
+				BaseImageFullName: "registry.example.com/ns/base:tag",
+				BaseImageDigest:   "sha256:...",
+			},
+			{
+				BaseImageId:       "another-id",
+				BaseImageFullName: "registry.example.com/ns/other:tag",
+				BaseImageDigest:   "sha256:...",
+			},
 		},
 		Metadata: &storage.ImageMetadata{
 			V1: &storage.V1Metadata{

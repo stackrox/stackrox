@@ -12,14 +12,14 @@ runs:
       shell: bash
 
     - name: Cache Go Dependencies
-      uses: actions/cache@v4
+      uses: actions/cache@v5
       with:
         path: |
           ${{ steps.cache-paths.outputs.GOMODCACHE }}
         key: go-mod-v1-${{ hashFiles('**/go.sum') }}
 
     - name: Cache Go Build
-      uses: actions/cache@v4
+      uses: actions/cache@v5
       with:
         path: |
           ${{ steps.cache-paths.outputs.GOCACHE }}

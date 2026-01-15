@@ -41,7 +41,7 @@ var (
 			v1.SearchCategory_BASE_IMAGES,
 			v1.SearchCategory_BASE_IMAGE_LAYERS,
 		}...)
-		schema.ScopingResource = resources.Administration
+		schema.ScopingResource = resources.ImageAdministration
 		RegisterTable(schema, CreateTableBaseImageLayersStmt)
 		mapping.RegisterCategoryToTable(v1.SearchCategory_BASE_IMAGE_LAYERS, schema)
 		return schema
@@ -55,9 +55,8 @@ const (
 
 // BaseImageLayers holds the Gorm model for Postgres table `base_image_layers`.
 type BaseImageLayers struct {
-	ID          string `gorm:"column:id;type:varchar;primaryKey"`
-	BaseImageID string `gorm:"column:baseimageid;type:varchar"`
-	LayerDigest string `gorm:"column:layerdigest;type:varchar"`
+	ID          string `gorm:"column:id;type:uuid;primaryKey"`
+	LayerDigest string `gorm:"column:layerdigest;type:varchar;uniqueIndex:base_image_id_layer"`
 	Index       int32  `gorm:"column:index;type:integer"`
 	Serialized  []byte `gorm:"column:serialized;type:bytea"`
 }

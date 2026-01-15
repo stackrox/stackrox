@@ -218,6 +218,7 @@ class PolicyFieldsTest extends BaseSpecification {
                     .setName("deployment-d")
                     .setImage("quay.io/rhacs-eng/qa:apache-dns")
                     .setNamespace(NAMESPACE_D)
+                    .setImagePrefetcherAffinity()
 
     static final private WITHOUT_ANNOTATIONS = DEP_D
     static final private WITH_COMPONENT_CPIO = DEP_D

@@ -20,7 +20,12 @@ var (
 	// CreateTableBaseImagesStmt holds the create statement for table `base_images`.
 	CreateTableBaseImagesStmt = &postgres.CreateStmts{
 		GormModel: (*BaseImages)(nil),
-		Children:  []*postgres.CreateStmts{},
+		Children: []*postgres.CreateStmts{
+			&postgres.CreateStmts{
+				GormModel: (*BaseImagesLayers)(nil),
+				Children:  []*postgres.CreateStmts{},
+			},
+		},
 	}
 
 	// BaseImagesSchema is the go schema for table `base_images`.
@@ -31,8 +36,9 @@ var (
 		}
 		schema = walker.Walk(reflect.TypeOf((*storage.BaseImage)(nil)), "base_images")
 		referencedSchemas := map[string]*walker.Schema{
-			"storage.Image":   ImagesSchema,
-			"storage.ImageV2": ImagesV2Schema,
+			"storage.BaseImageRepository": BaseImageRepositoriesSchema,
+			"storage.Image":               ImagesSchema,
+			"storage.ImageV2":             ImagesV2Schema,
 		}
 
 		schema.ResolveReferences(func(messageTypeName string) *walker.Schema {
@@ -47,7 +53,7 @@ var (
 			v1.SearchCategory_NAMESPACES,
 			v1.SearchCategory_CLUSTERS,
 		}...)
-		schema.ScopingResource = resources.Administration
+		schema.ScopingResource = resources.ImageAdministration
 		RegisterTable(schema, CreateTableBaseImagesStmt)
 		mapping.RegisterCategoryToTable(v1.SearchCategory_BASE_IMAGES, schema)
 		return schema
@@ -57,17 +63,29 @@ var (
 const (
 	// BaseImagesTableName specifies the name of the table in postgres.
 	BaseImagesTableName = "base_images"
+	// BaseImagesLayersTableName specifies the name of the table in postgres.
+	BaseImagesLayersTableName = "base_images_layers"
 )
 
 // BaseImages holds the Gorm model for Postgres table `base_images`.
 type BaseImages struct {
-	ID                    string     `gorm:"column:id;type:varchar;primaryKey"`
-	BaseImageRepositoryID string     `gorm:"column:baseimagerepositoryid;type:varchar"`
-	Repository            string     `gorm:"column:repository;type:varchar"`
-	Tag                   string     `gorm:"column:tag;type:varchar"`
-	ManifestDigest        string     `gorm:"column:manifestdigest;type:varchar"`
-	DiscoveredAt          *time.Time `gorm:"column:discoveredat;type:timestamp"`
-	Active                bool       `gorm:"column:active;type:bool"`
-	FirstLayerDigest      string     `gorm:"column:firstlayerdigest;type:varchar;index:baseimages_firstlayerdigest,type:btree"`
-	Serialized            []byte     `gorm:"column:serialized;type:bytea"`
+	ID                       string                `gorm:"column:id;type:uuid;primaryKey"`
+	BaseImageRepositoryID    string                `gorm:"column:baseimagerepositoryid;type:varchar"`
+	Repository               string                `gorm:"column:repository;type:varchar"`
+	Tag                      string                `gorm:"column:tag;type:varchar"`
+	ManifestDigest           string                `gorm:"column:manifestdigest;type:varchar"`
+	DiscoveredAt             *time.Time            `gorm:"column:discoveredat;type:timestamp"`
+	Active                   bool                  `gorm:"column:active;type:bool"`
+	FirstLayerDigest         string                `gorm:"column:firstlayerdigest;type:varchar;index:baseimages_firstlayerdigest,type:btree"`
+	Serialized               []byte                `gorm:"column:serialized;type:bytea"`
+	BaseImageRepositoriesRef BaseImageRepositories `gorm:"foreignKey:baseimagerepositoryid;references:id;belongsTo;constraint:OnDelete:CASCADE"`
+}
+
+// BaseImagesLayers holds the Gorm model for Postgres table `base_images_layers`.
+type BaseImagesLayers struct {
+	BaseImagesID  string     `gorm:"column:base_images_id;type:uuid;primaryKey"`
+	Idx           int        `gorm:"column:idx;type:integer;primaryKey;index:baseimageslayers_idx,type:btree"`
+	LayerDigest   string     `gorm:"column:layerdigest;type:varchar;uniqueIndex:base_image_id_layer"`
+	Index         int32      `gorm:"column:index;type:integer"`
+	BaseImagesRef BaseImages `gorm:"foreignKey:base_images_id;references:id;belongsTo;constraint:OnDelete:CASCADE"`
 }

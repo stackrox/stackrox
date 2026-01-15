@@ -702,37 +702,19 @@ type Central struct {
 
 // GetCondition returns a specific condition by type, or nil if not found.
 func (c *Central) GetCondition(condType ConditionType) *StackRoxCondition {
-	for i := range c.Status.Conditions {
-		if c.Status.Conditions[i].Type == condType {
-			return &c.Status.Conditions[i]
-		}
-	}
-	return nil
+	return getCondition(c.Status.Conditions, condType)
 }
 
 // SetCondition updates or adds a condition. Returns true if the condition changed.
 func (c *Central) SetCondition(updatedCond StackRoxCondition) bool {
-	for i, cond := range c.Status.Conditions {
-		if cond.Type == updatedCond.Type {
-			// Check if update is needed.
-			if cond.Status == updatedCond.Status &&
-				cond.Reason == updatedCond.Reason &&
-				cond.Message == updatedCond.Message {
-				return false
-			}
-			// Update existing condition.
-			c.Status.Conditions[i] = updatedCond
-			return true
-		}
-	}
-	// Condition doesn't exist, add it.
-	c.Status.Conditions = append(c.Status.Conditions, updatedCond)
-	return true
+	var updated bool
+	c.Status.Conditions, updated = updateCondition(c.Status.Conditions, updatedCond)
+	return updated
 }
 
 // GetGeneration returns the metadata.generation of the Central resource.
 func (c *Central) GetGeneration() int64 {
-	return c.ObjectMeta.Generation
+	return c.ObjectMeta.GetGeneration()
 }
 
 // GetObservedGeneration returns the observedGeneration of the Central status sub-resource.

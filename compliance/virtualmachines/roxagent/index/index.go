@@ -11,7 +11,6 @@ import (
 	"github.com/stackrox/rox/compliance/virtualmachines/roxagent/vsock"
 	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
 	"github.com/stackrox/rox/pkg/httputil/proxy"
-	"github.com/stackrox/rox/pkg/jsonutil"
 	"github.com/stackrox/rox/pkg/logging"
 )
 
@@ -46,14 +45,6 @@ func RunSingle(ctx context.Context, cfg *common.Config, client *vsock.Client) er
 	report, err := runIndexer(ctx, cfg)
 	if err != nil {
 		return fmt.Errorf("creating index report: %w", err)
-	}
-	if cfg.Verbose {
-		reportJson, err := jsonutil.ProtoToJSON(report)
-		if err != nil {
-			log.Error("failed to convert index report to json")
-		} else {
-			fmt.Println(reportJson)
-		}
 	}
 	if !report.GetSuccess() {
 		return fmt.Errorf("failed index report: %s", report.GetErr())

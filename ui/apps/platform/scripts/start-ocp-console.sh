@@ -40,7 +40,7 @@ if [ -n "$GITOPS_HOSTNAME" ]; then
     export BRIDGE_K8S_MODE_OFF_CLUSTER_GITOPS="https://$GITOPS_HOSTNAME"
 fi
 
-export BRIDGE_PLUGIN_PROXY='{"services":[{"consoleAPIPath":"/api/proxy/plugin/advanced-cluster-security/api-service/","endpoint":"'$ACS_API_SERVICE_URL'", "authorize":'$ACS_INJECT_OCP_AUTH_TOKEN'}]}'
+export BRIDGE_PLUGIN_PROXY='{"services":[{"consoleAPIPath":"/api/proxy/plugin/advanced-cluster-security/api-service/proxy/central","endpoint":"'$ACS_API_SERVICE_URL'", "authorize":'$ACS_INJECT_OCP_AUTH_TOKEN'}]}'
 
 echo "API Server: $BRIDGE_K8S_MODE_OFF_CLUSTER_ENDPOINT"
 echo "Console Image: $CONSOLE_IMAGE"

@@ -8,18 +8,17 @@ import (
 	"fmt"
 	"io"
 	"math"
-	"net/http"
 	"os"
 	"os/exec"
 	"strings"
 	"testing"
 	"time"
 
-	"github.com/hashicorp/go-retryablehttp"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/pointers"
 	"github.com/stackrox/rox/pkg/retry"
+	"github.com/stackrox/rox/pkg/retryablehttp"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stackrox/rox/pkg/testutils/centralgrpc"
@@ -676,7 +675,20 @@ func getConfig(t testutils.T) *rest.Config {
 	restCfg, err := clientcmd.NewDefaultClientConfig(*config, &clientcmd.ConfigOverrides{}).ClientConfig()
 	require.NoError(t, err, "could not get REST client config from kubernetes config")
 
+	configureRetryableTransport(t, restCfg)
+
 	return restCfg
+}
+
+// configureRetryableTransport configures a rest.Config to use retryable HTTP client
+// for network resilience. This adds automatic retry logic for transient network errors.
+func configureRetryableTransport(t testutils.T, restCfg *rest.Config) {
+	if restCfg.Timeout == 0 {
+		restCfg.Timeout = 30 * time.Second
+	}
+	retryablehttp.ConfigureRESTConfig(restCfg,
+		retryablehttp.WithLogger(&testutilsLogger{t}),
+	)
 }
 
 func createK8sClient(t testutils.T) kubernetes.Interface {
@@ -684,29 +696,6 @@ func createK8sClient(t testutils.T) kubernetes.Interface {
 }
 
 func createK8sClientWithConfig(t testutils.T, restCfg *rest.Config) kubernetes.Interface {
-	// Configure retryable HTTP client for network resilience
-	retryClient := retryablehttp.NewClient()
-	retryClient.RetryMax = 3
-	retryClient.RetryWaitMin = 500 * time.Millisecond
-	retryClient.RetryWaitMax = 2 * time.Second
-	retryClient.Logger = testutilsLogger{t}
-	if restCfg.Timeout == 0 {
-		restCfg.Timeout = 30 * time.Second
-	}
-	// Set retryable timeout to 90% of rest config timeout to allow retries
-	retryClient.HTTPClient.Timeout = (9 * restCfg.Timeout) / 10
-
-	// Wrap the transport with retryable client
-	oldWrapTransport := restCfg.WrapTransport
-	restCfg.WrapTransport = func(rt http.RoundTripper) http.RoundTripper {
-		if oldWrapTransport != nil {
-			rt = oldWrapTransport(rt)
-		}
-
-		retryClient.HTTPClient.Transport = rt
-		return retryClient.StandardClient().Transport
-	}
-
 	k8sClient, err := kubernetes.NewForConfig(restCfg)
 	require.NoError(t, err, "creating Kubernetes client from REST config")
 

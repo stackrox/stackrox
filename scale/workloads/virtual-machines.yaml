@@ -1,0 +1,57 @@
+# Virtual Machine Workload Profile
+# This workload generates fake VirtualMachine and VirtualMachineInstance CRD events
+# to simulate KubeVirt workloads arriving through Kubernetes informers.
+#
+# The unified VirtualMachineWorkload config handles both:
+# 1. VM/VMI informer events (always generated when poolSize > 0)
+# 2. VM index reports (only generated when reportInterval > 0)
+#
+# Index reports are tied to VM lifecycle: reports are only sent while the VM is "alive".
+# You can run just the informers (for testing k8s events) or informers + reports (full flow).
+#
+# Usage:
+#   ROX_VIRTUAL_MACHINES=true go run tools/local-sensor/main.go -no-mem-prof -no-cpu-prof -with-metrics -with-fakeworkload scale/workloads/virtual-machines.yaml
+#
+# After running for some time and hitting Ctrl-C, check central-out.json for VM/VMI events.
+
+nodeWorkload:
+  numNodes: 50
+
+numNamespaces: 20
+
+rbacWorkload:
+  numRoles: 100
+  numServiceAccounts: 100
+  numBindings: 100
+
+virtualMachineWorkload:
+  poolSize: 20000
+  updateInterval: 5m
+  lifecycleDuration: 2h
+  numLifecycles: 0
+  reportInterval: 5m # ±5% max deviation applied
+  numPackages: 700
+  initialReportDelay: 30s # ±20% max deviation applied
+
+deploymentWorkload:
+- deploymentType: Deployment
+  numDeployments: 10
+  numLabels: 5
+  numLifecycles: 0
+  lifecycleDuration: 30m
+  updateInterval: 5m
+  podWorkload:
+    numContainers: 1
+    numPods: 2
+    lifecycleDuration: 10m
+    containerWorkload:
+      numImages: 0
+    processWorkload:
+      processInterval: 60s
+      alertRate: 0.001
+
+networkWorkload:
+  flowInterval: 60s
+  batchSize: 50
+  generateUnclosedEndpoints: true
+  openPortReuseProbability: 0.05

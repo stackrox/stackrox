@@ -54,30 +54,30 @@ func (p *Pipeline) translate(fs *sensorAPI.FileActivity) *storage.FileAccess {
 	switch fs.GetFile().(type) {
 	case *sensorAPI.FileActivity_Creation:
 		access.File = &storage.FileAccess_File{
-			MountedPath: fs.GetCreation().GetActivity().GetPath(),
-			NodePath:    fs.GetCreation().GetActivity().GetHostPath(),
+			EffectivePath: fs.GetCreation().GetActivity().GetPath(),
+			ActualPath:    fs.GetCreation().GetActivity().GetHostPath(),
 		}
 		access.Operation = storage.FileAccess_CREATE
 	case *sensorAPI.FileActivity_Unlink:
 		access.File = &storage.FileAccess_File{
-			MountedPath: fs.GetUnlink().GetActivity().GetPath(),
-			NodePath:    fs.GetUnlink().GetActivity().GetHostPath(),
+			EffectivePath: fs.GetUnlink().GetActivity().GetPath(),
+			ActualPath:    fs.GetUnlink().GetActivity().GetHostPath(),
 		}
 		access.Operation = storage.FileAccess_UNLINK
 	case *sensorAPI.FileActivity_Rename:
 		access.File = &storage.FileAccess_File{
-			MountedPath: fs.GetRename().GetOld().GetPath(),
-			NodePath:    fs.GetRename().GetOld().GetHostPath(),
+			EffectivePath: fs.GetRename().GetOld().GetPath(),
+			ActualPath:    fs.GetRename().GetOld().GetHostPath(),
 		}
 		access.Moved = &storage.FileAccess_File{
-			MountedPath: fs.GetRename().GetNew().GetPath(),
-			NodePath:    fs.GetRename().GetNew().GetHostPath(),
+			EffectivePath: fs.GetRename().GetNew().GetPath(),
+			ActualPath:    fs.GetRename().GetNew().GetHostPath(),
 		}
 		access.Operation = storage.FileAccess_RENAME
 	case *sensorAPI.FileActivity_Permission:
 		access.File = &storage.FileAccess_File{
-			MountedPath: fs.GetPermission().GetActivity().GetPath(),
-			NodePath:    fs.GetPermission().GetActivity().GetHostPath(),
+			EffectivePath: fs.GetPermission().GetActivity().GetPath(),
+			ActualPath:    fs.GetPermission().GetActivity().GetHostPath(),
 			Meta: &storage.FileAccess_FileMetadata{
 				Mode: fs.GetPermission().GetMode(),
 			},
@@ -85,8 +85,8 @@ func (p *Pipeline) translate(fs *sensorAPI.FileActivity) *storage.FileAccess {
 		access.Operation = storage.FileAccess_PERMISSION_CHANGE
 	case *sensorAPI.FileActivity_Ownership:
 		access.File = &storage.FileAccess_File{
-			MountedPath: fs.GetOwnership().GetActivity().GetPath(),
-			NodePath:    fs.GetOwnership().GetActivity().GetHostPath(),
+			EffectivePath: fs.GetOwnership().GetActivity().GetPath(),
+			ActualPath:    fs.GetOwnership().GetActivity().GetHostPath(),
 			Meta: &storage.FileAccess_FileMetadata{
 				Uid:      fs.GetOwnership().GetUid(),
 				Gid:      fs.GetOwnership().GetGid(),
@@ -97,14 +97,14 @@ func (p *Pipeline) translate(fs *sensorAPI.FileActivity) *storage.FileAccess {
 		access.Operation = storage.FileAccess_OWNERSHIP_CHANGE
 	case *sensorAPI.FileActivity_Write:
 		access.File = &storage.FileAccess_File{
-			MountedPath: fs.GetWrite().GetActivity().GetPath(),
-			NodePath:    fs.GetWrite().GetActivity().GetHostPath(),
+			EffectivePath: fs.GetWrite().GetActivity().GetPath(),
+			ActualPath:    fs.GetWrite().GetActivity().GetHostPath(),
 		}
 		access.Operation = storage.FileAccess_WRITE
 	case *sensorAPI.FileActivity_Open:
 		access.File = &storage.FileAccess_File{
-			MountedPath: fs.GetOpen().GetActivity().GetPath(),
-			NodePath:    fs.GetOpen().GetActivity().GetHostPath(),
+			EffectivePath: fs.GetOpen().GetActivity().GetPath(),
+			ActualPath:    fs.GetOpen().GetActivity().GetHostPath(),
 		}
 		access.Operation = storage.FileAccess_OPEN
 	default:
@@ -114,27 +114,39 @@ func (p *Pipeline) translate(fs *sensorAPI.FileActivity) *storage.FileAccess {
 
 	if fsUtils.IsNodeFileAccess(access) {
 		// TODO: remove when full host path resolution is complete
-		access.File.NodePath = access.GetFile().GetMountedPath()
+		access.File.ActualPath = access.GetFile().GetEffectivePath()
 	}
 
 	return access
 }
 
 func (p *Pipeline) getIndicator(process *sensorAPI.ProcessSignal) *storage.ProcessIndicator {
+	signal := &storage.ProcessSignal{
+		Id:           process.GetId(),
+		Uid:          process.GetUid(),
+		Gid:          process.GetGid(),
+		Time:         process.GetCreationTime(),
+		Name:         process.GetName(),
+		Args:         process.GetArgs(),
+		ExecFilePath: process.GetExecFilePath(),
+		Pid:          process.GetPid(),
+		Scraped:      process.GetScraped(),
+		ContainerId:  process.GetContainerId(),
+		LineageInfo:  make([]*storage.ProcessSignal_LineageInfo, 0, len(process.GetLineageInfo())),
+	}
+
+	for _, lineage := range process.GetLineageInfo() {
+		signal.LineageInfo = append(signal.LineageInfo,
+			&storage.ProcessSignal_LineageInfo{
+				ParentUid:          lineage.GetParentUid(),
+				ParentExecFilePath: lineage.GetParentExecFilePath(),
+			},
+		)
+	}
+
 	pi := &storage.ProcessIndicator{
-		Id: uuid.NewV4().String(),
-		Signal: &storage.ProcessSignal{
-			Id:           process.GetId(),
-			Uid:          process.GetUid(),
-			Gid:          process.GetGid(),
-			Time:         process.GetCreationTime(),
-			Name:         process.GetName(),
-			Args:         process.GetArgs(),
-			ExecFilePath: process.GetExecFilePath(),
-			Pid:          process.GetPid(),
-			Scraped:      process.GetScraped(),
-			ContainerId:  process.GetContainerId(),
-		},
+		Id:     uuid.NewV4().String(),
+		Signal: signal,
 	}
 
 	if process.GetContainerId() == "" {

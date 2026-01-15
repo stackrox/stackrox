@@ -106,6 +106,11 @@ func insertIntoComplianceOperatorScanSettingBindings(batch *pgx.Batch, obj *stor
 	return nil
 }
 
+var copyColsComplianceOperatorScanSettingBindings = []string{
+	"id",
+	"serialized",
+}
+
 func copyFromComplianceOperatorScanSettingBindings(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, objs ...*storage.ComplianceOperatorScanSettingBinding) error {
 	if len(objs) == 0 {
 		return nil
@@ -121,11 +126,6 @@ func copyFromComplianceOperatorScanSettingBindings(ctx context.Context, s pgSear
 		if err := s.DeleteMany(ctx, deletes); err != nil {
 			return err
 		}
-	}
-
-	copyCols := []string{
-		"id",
-		"serialized",
 	}
 
 	idx := 0
@@ -147,7 +147,7 @@ func copyFromComplianceOperatorScanSettingBindings(ctx context.Context, s pgSear
 		}, nil
 	})
 
-	if _, err := tx.CopyFrom(ctx, pgx.Identifier{"compliance_operator_scan_setting_bindings"}, copyCols, inputRows); err != nil {
+	if _, err := tx.CopyFrom(ctx, pgx.Identifier{"compliance_operator_scan_setting_bindings"}, copyColsComplianceOperatorScanSettingBindings, inputRows); err != nil {
 		return err
 	}
 

@@ -18,6 +18,7 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/features"
@@ -66,6 +67,9 @@ var (
 
 	allImagesQuery = search.NewQueryBuilder().AddStringsHighlighted(search.ClusterID, search.WildcardString).
 			ProtoQuery()
+
+	// allV2ImagesQuery selects all deployment containers with a non-null and non-empty ImageID (V2 image ID).
+	allV2ImagesQuery = search.NewQueryBuilder().AddRegexes(search.ImageID, ".+").ProtoQuery()
 
 	imagesWithSignaturesQuery = search.NewQueryBuilder().
 		// We take all images into account irrespective whether they have a cluster associated with them
@@ -449,45 +453,46 @@ func (l *loopImpl) reprocessImagesAndResyncDeployments(fetchOpt imageEnricher.Fe
 		return
 	}
 	log.Infof("Successfully reprocessed %d/%d images", nReprocessed.Load(), len(results))
-	log.Info("Resyncing deployments now that images have been reprocessed...")
-	// Once the images have been rescanned, then reprocess the deployments.
-	// This should not take a particularly long period of time.
-	if !l.stopSig.IsDone() {
-		msg := &central.MsgToSensor{
-			Msg: &central.MsgToSensor_ReprocessDeployments{
-				ReprocessDeployments: &central.ReprocessDeployments{},
-			},
-		}
-		ctx := concurrency.AsContext(&l.stopSig)
-		for _, conn := range l.connManager.GetActiveConnections() {
-			clusterID := conn.ClusterID()
-			if skipClusterIDs.Contains(clusterID) {
-				metrics.IncrementMsgToSensorNotSentCounter(clusterID, msg, metrics.NotSentSkip)
-				log.Errorw("Not sending reprocess deployments to cluster due to prior errors",
-					logging.ClusterID(clusterID),
-				)
-				continue
-			}
 
-			err := l.injectMessage(ctx, conn, msg)
-			if err != nil {
-				log.Errorw("Error sending reprocess deployments message to cluster",
-					logging.ClusterID(clusterID),
-					logging.Err(err),
-				)
-			}
-		}
-	}
+	log.Info("Resyncing deployments now that images have been reprocessed...")
+	l.sendReprocessDeployments(skipClusterIDs)
 }
 
-func (l *loopImpl) reprocessImageV2(id string, fetchOpt imageEnricher.FetchOption,
+func (l *loopImpl) reprocessImageV2(id string, digest string, fetchOpt imageEnricher.FetchOption,
 	reprocessingFunc imageReprocessingFuncV2) (*storage.ImageV2, bool) {
 	image, exists, err := l.imagesV2.GetImage(allAccessCtx, id)
 	if err != nil {
 		log.Errorw("Error fetching image from database", logging.ImageID(id), logging.Err(err))
 		return nil, false
 	}
-	if image == nil || !exists || image.GetNotPullable() || image.GetIsClusterLocal() {
+	migrateToV2 := false
+	if !exists {
+		// The image was not found in ImageV2 store, but it might be in the legacy ImageV1 store
+		var legacyImage *storage.Image
+		legacyImage, exists, err = l.images.GetImageMetadata(allAccessCtx, digest)
+		if err != nil {
+			log.Errorw("Error fetching legacy image from database", logging.ImageID(id), logging.Err(err))
+			return nil, false
+		}
+		if !exists {
+			return nil, false
+		}
+		image = utils.ConvertToV2(legacyImage)
+		migrateToV2 = true
+	}
+
+	if image == nil {
+		return nil, false
+	}
+
+	if image.GetNotPullable() || image.GetIsClusterLocal() {
+		// Skip reprocessing. Sensor will handle cluster-local images. But we still need to migrate the image to V2.
+		if migrateToV2 {
+			if err := l.imagesV2.UpsertImage(allAccessCtx, image); err != nil {
+				log.Errorw("Error migrating image to imageV2 store", logging.ImageName(image.GetName().GetFullName()), logging.ImageID(image.GetId()), logging.Err(err))
+				return nil, false
+			}
+		}
 		return nil, false
 	}
 
@@ -527,7 +532,7 @@ func (l *loopImpl) reprocessImagesV2AndResyncDeployments(fetchOpt imageEnricher.
 	if l.stopSig.IsDone() {
 		return
 	}
-	results, err := l.imagesV2.Search(allAccessCtx, imageQuery)
+	results, err := l.deployments.GetContainerImageViews(allAccessCtx, imageQuery)
 	if err != nil {
 		log.Errorw("Error searching for active image IDs", logging.Err(err))
 		return
@@ -548,13 +553,12 @@ func (l *loopImpl) reprocessImagesV2AndResyncDeployments(fetchOpt imageEnricher.
 			log.Errorw("Reprocessing stopped", logging.Err(err))
 			return
 		}
-		// Duplicates can exist if the image is within multiple deployments
-		clusterIDSet := set.NewStringSet(result.Matches[imageClusterIDFieldPath]...)
-		go func(id string, clusterIDs set.StringSet) {
+		clusterIDSet := set.NewStringSet(result.GetClusterIDs()...)
+		go func(id string, digest string, clusterIDs set.StringSet) {
 			defer sema.Release(1)
 			defer wg.Add(-1)
 
-			image, successfullyProcessed := l.reprocessImageV2(id, fetchOpt, imgReprocessingFunc)
+			image, successfullyProcessed := l.reprocessImageV2(id, digest, fetchOpt, imgReprocessingFunc)
 			if !successfullyProcessed {
 				return
 			}
@@ -563,7 +567,23 @@ func (l *loopImpl) reprocessImagesV2AndResyncDeployments(fetchOpt imageEnricher.
 			utils.FilterSuppressedCVEsNoCloneV2(image)
 			utils.StripCVEDescriptionsNoCloneV2(image)
 
-			convertedImage := utils.ConvertToV1(image)
+			// Gather all known image names with the same SHA to ensure backward compatibility
+			// with sensors that don't have the FlattenImageData capability.
+			// Skip if all sensors have the capability.
+			var allNames []*storage.ImageName
+			if !l.connManager.AllSensorsHaveCapability(centralsensor.FlattenImageData) {
+				var err error
+				allNames, err = l.imagesV2.GetImageNames(allAccessCtx, image.GetDigest())
+				if err != nil {
+					log.Warnw("Failed to retrieve image names by digest",
+						logging.ImageName(image.GetName().GetFullName()),
+						logging.ImageID(image.GetId()),
+						logging.String("digest", image.GetDigest()),
+						logging.Err(err),
+					)
+				}
+			}
+			convertedImage := utils.ConvertToV1(image, allNames...)
 			// Send the updated image to relevant clusters.
 			for clusterID := range clusterIDs {
 				conn := l.connManager.GetConnection(clusterID)
@@ -599,7 +619,7 @@ func (l *loopImpl) reprocessImagesV2AndResyncDeployments(fetchOpt imageEnricher.
 					)
 				}
 			}
-		}(result.ID, clusterIDSet)
+		}(result.GetImageID(), result.GetImageDigest(), clusterIDSet)
 	}
 	select {
 	case <-wg.Done():
@@ -608,7 +628,14 @@ func (l *loopImpl) reprocessImagesV2AndResyncDeployments(fetchOpt imageEnricher.
 		return
 	}
 	log.Infof("Successfully reprocessed %d/%d images", nReprocessed.Load(), len(results))
+
 	log.Info("Resyncing deployments now that images have been reprocessed...")
+	l.sendReprocessDeployments(skipClusterIDs)
+}
+
+// sendReprocessDeployments sends a reprocess deployments message to every connected
+// secured cluster.
+func (l *loopImpl) sendReprocessDeployments(skipClusterIDs maputil.SyncMap[string, struct{}]) {
 	// Once the images have been rescanned, then reprocess the deployments.
 	// This should not take a particularly long period of time.
 	if !l.stopSig.IsDone() {
@@ -618,7 +645,16 @@ func (l *loopImpl) reprocessImagesV2AndResyncDeployments(fetchOpt imageEnricher.
 			},
 		}
 		ctx := concurrency.AsContext(&l.stopSig)
-		for _, conn := range l.connManager.GetActiveConnections() {
+
+		// Calculate the delay between sending reprocess messages to secured clusters.
+		conns := l.connManager.GetActiveConnections()
+		delay := env.ReprocessDeploymentsMsgDelay.DurationSetting()
+		if delay > 0 {
+			log.Infof("Sending reprocess deployments messages to %d clusters with %s delay between each message", len(conns), delay)
+		}
+
+		firstMessage := true
+		for i, conn := range conns {
 			clusterID := conn.ClusterID()
 			if skipClusterIDs.Contains(clusterID) {
 				metrics.IncrementMsgToSensorNotSentCounter(clusterID, msg, metrics.NotSentSkip)
@@ -628,6 +664,18 @@ func (l *loopImpl) reprocessImagesV2AndResyncDeployments(fetchOpt imageEnricher.
 				continue
 			}
 
+			// Sleep before sending if it is not the first message and a delay is specified.
+			if !firstMessage && delay > 0 {
+				log.Infof("Sleeping %s before sending reprocess deployments message to cluster %q [%d/%d]", delay, clusterID, i+1, len(conns))
+				select {
+				case <-time.After(delay):
+				case <-l.stopSig.Done():
+					log.Infof("Caught stop signal while waiting to send reprocess deployments to cluster %q", clusterID)
+					return
+				}
+			}
+
+			firstMessage = false
 			err := l.injectMessage(ctx, conn, msg)
 			if err != nil {
 				log.Errorw("Error sending reprocess deployments message to cluster",
@@ -637,6 +685,7 @@ func (l *loopImpl) reprocessImagesV2AndResyncDeployments(fetchOpt imageEnricher.
 			}
 		}
 	}
+	log.Info("Done sending reprocess deployments messages")
 }
 
 // injectMessage will inject a message onto connection, an error will be returned if the
@@ -787,7 +836,7 @@ func (l *loopImpl) runReprocessing(imageFetchOpt imageEnricher.FetchOption) {
 	l.reprocessNodes()
 	l.reprocessWatchedImages()
 	if features.FlattenImageData.Enabled() {
-		l.reprocessImagesV2AndResyncDeployments(imageFetchOpt, l.enrichImageV2, allImagesQuery)
+		l.reprocessImagesV2AndResyncDeployments(imageFetchOpt, l.enrichImageV2, allV2ImagesQuery)
 	} else {
 		l.reprocessImagesAndResyncDeployments(imageFetchOpt, l.enrichImage, allImagesQuery)
 	}
@@ -806,7 +855,7 @@ func (l *loopImpl) runSignatureVerificationReprocessing() {
 
 	if features.FlattenImageData.Enabled() {
 		l.reprocessImagesV2AndResyncDeployments(imageEnricher.ForceRefetchSignaturesOnly,
-			l.forceEnrichImageSignatureVerificationResultsV2, query)
+			l.forceEnrichImageSignatureVerificationResultsV2, allV2ImagesQuery)
 	} else {
 		l.reprocessImagesAndResyncDeployments(imageEnricher.ForceRefetchSignaturesOnly,
 			l.forceEnrichImageSignatureVerificationResults, query)

@@ -28,7 +28,7 @@ const (
 var (
 	log            = logging.LoggerForModule()
 	schema         = pkgSchema.BaseImageTagsSchema
-	targetResource = resources.Administration
+	targetResource = resources.ImageAdministration
 )
 
 type (
@@ -109,6 +109,13 @@ func insertIntoBaseImageTags(batch *pgx.Batch, obj *storage.BaseImageTag) error 
 	return nil
 }
 
+var copyColsBaseImageTags = []string{
+	"id",
+	"baseimagerepositoryid",
+	"tag",
+	"serialized",
+}
+
 func copyFromBaseImageTags(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, objs ...*storage.BaseImageTag) error {
 	if len(objs) == 0 {
 		return nil
@@ -124,13 +131,6 @@ func copyFromBaseImageTags(ctx context.Context, s pgSearch.Deleter, tx *postgres
 		if err := s.DeleteMany(ctx, deletes); err != nil {
 			return err
 		}
-	}
-
-	copyCols := []string{
-		"id",
-		"baseimagerepositoryid",
-		"tag",
-		"serialized",
 	}
 
 	idx := 0
@@ -154,7 +154,7 @@ func copyFromBaseImageTags(ctx context.Context, s pgSearch.Deleter, tx *postgres
 		}, nil
 	})
 
-	if _, err := tx.CopyFrom(ctx, pgx.Identifier{"base_image_tags"}, copyCols, inputRows); err != nil {
+	if _, err := tx.CopyFrom(ctx, pgx.Identifier{"base_image_tags"}, copyColsBaseImageTags, inputRows); err != nil {
 		return err
 	}
 

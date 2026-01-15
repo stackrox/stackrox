@@ -57,6 +57,7 @@ export type ComponentVulnerabilityBase = {
     location: string;
     source: SourceType;
     layerIndex: number | null;
+    inBaseImageLayer?: boolean;
     imageVulnerabilities: {
         severity: string;
         fixedByVersion: string;
@@ -105,6 +106,7 @@ export type TableDataRow = {
         value: string;
     } | null;
     pendingExceptionCount: number;
+    inBaseImageLayer?: boolean;
 };
 
 /**
@@ -159,7 +161,7 @@ function extractCommonComponentFields(
     component: ComponentVulnerabilityBase,
     vulnerability: ComponentVulnerabilityBase['imageVulnerabilities'][0] | undefined
 ): TableDataRow {
-    const { name, version, location, source, layerIndex } = component;
+    const { name, version, location, source, layerIndex, inBaseImageLayer } = component;
 
     let layer: TableDataRow['layer'] = null;
 
@@ -193,6 +195,7 @@ function extractCommonComponentFields(
         fixedByVersion,
         advisory,
         pendingExceptionCount,
+        inBaseImageLayer,
     };
 }
 

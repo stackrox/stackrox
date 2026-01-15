@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"reflect"
+	"slices"
 	"strings"
 	"time"
 
@@ -170,31 +171,19 @@ func (r *Reconciler[T]) updateProgressing(_ context.Context, obj T) *platform.St
 // determineProgressingState infers if Helm reconciliation is in progress.
 // Returns (isProgressing, reason, message).
 func (r *Reconciler[T]) determineProgressingState(obj T) (platform.ConditionStatus, platform.ConditionReason, string) {
-	// Check observedGeneration.
-	// If metadata.generation > status.observedGeneration, spec has changed and reconcile is pending
+	// Check observedGeneration. If metadata.generation > status.observedGeneration, spec has changed and reconcile
+	// is pending.
 	if obj.GetGeneration() > obj.GetObservedGeneration() {
-		return platform.StatusTrue, "Reconciling", "Spec changes pending reconciliation"
-	}
-
-	// If Deployed condition is Unknown, helm is working
-	cond := obj.GetCondition(platform.ConditionDeployed)
-	if cond.Type == platform.ConditionDeployed && cond.Status != platform.StatusTrue {
 		return platform.StatusTrue, "Reconciling", "Reconciliation in progress"
 	}
 
-	// If ReleaseFailed is True, reconciliation failed but might retry
-	cond = obj.GetCondition(platform.ConditionReleaseFailed)
-	if cond.Type == platform.ConditionReleaseFailed && cond.Status == platform.StatusTrue {
-		return platform.StatusTrue, "ReleaseFailed", cond.Message
-	}
+	// observedGeneration matches generation.
 
-	// If Irreconcilable is True, there's a problem
-	cond = obj.GetCondition(platform.ConditionIrreconcilable)
-	if cond.Type == platform.ConditionIrreconcilable && cond.Status == platform.StatusTrue {
+	// If Irreconcilable is True, surface it.
+	if cond := obj.GetCondition(platform.ConditionIrreconcilable); cond != nil && cond.Status == platform.StatusTrue {
 		return platform.StatusTrue, "Irreconcilable", cond.Message
 	}
 
-	// No signs of active reconciliation.
 	return platform.StatusFalse, "ReconcileSuccessful", "Reconciliation completed"
 }
 
@@ -240,21 +229,22 @@ func determineAvailableState(deployments []appsv1.Deployment) (platform.Conditio
 		return platform.StatusFalse, "NoDeployments", "No deployments found"
 	}
 
-	allReady := true
-	notReadyCount := 0
+	var notReadyNames []string
 	for _, dep := range deployments {
 		if !isDeploymentReady(&dep) {
-			allReady = false
-			notReadyCount++
+			notReadyNames = append(notReadyNames, dep.Name)
 		}
 	}
 
-	if allReady {
+	if len(notReadyNames) == 0 {
 		return platform.StatusTrue, "DeploymentsReady", "All deployments are ready"
 	}
 
+	// Sort to avoid updates merely due to ordering changes.
+	slices.Sort(notReadyNames)
+
 	return platform.StatusFalse, "DeploymentsNotReady",
-		fmt.Sprintf("%d of %d deployments are not ready", notReadyCount, len(deployments))
+		fmt.Sprintf("%d of %d deployments are not ready: %s", len(notReadyNames), len(deployments), strings.Join(notReadyNames, ", "))
 }
 
 // isDeploymentReady checks if a deployment has all replicas available.

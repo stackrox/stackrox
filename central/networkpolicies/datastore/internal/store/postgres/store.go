@@ -133,6 +133,13 @@ func insertIntoNetworkpolicies(batch *pgx.Batch, obj *storage.NetworkPolicy) err
 	return nil
 }
 
+var copyColsNetworkpolicies = []string{
+	"id",
+	"clusterid",
+	"namespace",
+	"serialized",
+}
+
 func copyFromNetworkpolicies(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, objs ...*storage.NetworkPolicy) error {
 	if len(objs) == 0 {
 		return nil
@@ -148,13 +155,6 @@ func copyFromNetworkpolicies(ctx context.Context, s pgSearch.Deleter, tx *postgr
 		if err := s.DeleteMany(ctx, deletes); err != nil {
 			return err
 		}
-	}
-
-	copyCols := []string{
-		"id",
-		"clusterid",
-		"namespace",
-		"serialized",
 	}
 
 	idx := 0
@@ -178,7 +178,7 @@ func copyFromNetworkpolicies(ctx context.Context, s pgSearch.Deleter, tx *postgr
 		}, nil
 	})
 
-	if _, err := tx.CopyFrom(ctx, pgx.Identifier{"networkpolicies"}, copyCols, inputRows); err != nil {
+	if _, err := tx.CopyFrom(ctx, pgx.Identifier{"networkpolicies"}, copyColsNetworkpolicies, inputRows); err != nil {
 		return err
 	}
 

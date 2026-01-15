@@ -1,4 +1,4 @@
-import React, { ReactElement } from 'react';
+import type { ReactElement } from 'react';
 import { Alert, Modal } from '@patternfly/react-core';
 
 export type ManageStandardsErrorProps = {

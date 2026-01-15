@@ -137,6 +137,14 @@ func insertIntoTestParent1Childrens(batch *pgx.Batch, obj *storage.TestParent1_C
 	return nil
 }
 
+var copyColsTestParent1 = []string{
+	"id",
+	"parentid",
+	"val",
+	"stringslice",
+	"serialized",
+}
+
 func copyFromTestParent1(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, objs ...*storage.TestParent1) error {
 	if len(objs) == 0 {
 		return nil
@@ -152,14 +160,6 @@ func copyFromTestParent1(ctx context.Context, s pgSearch.Deleter, tx *postgres.T
 		if err := s.DeleteMany(ctx, deletes); err != nil {
 			return err
 		}
-	}
-
-	copyCols := []string{
-		"id",
-		"parentid",
-		"val",
-		"stringslice",
-		"serialized",
 	}
 
 	idx := 0
@@ -184,7 +184,7 @@ func copyFromTestParent1(ctx context.Context, s pgSearch.Deleter, tx *postgres.T
 		}, nil
 	})
 
-	if _, err := tx.CopyFrom(ctx, pgx.Identifier{"test_parent1"}, copyCols, inputRows); err != nil {
+	if _, err := tx.CopyFrom(ctx, pgx.Identifier{"test_parent1"}, copyColsTestParent1, inputRows); err != nil {
 		return err
 	}
 
@@ -197,15 +197,15 @@ func copyFromTestParent1(ctx context.Context, s pgSearch.Deleter, tx *postgres.T
 	return nil
 }
 
+var copyColsTestParent1Childrens = []string{
+	"test_parent1_id",
+	"idx",
+	"childid",
+}
+
 func copyFromTestParent1Childrens(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, testParent1ID string, objs ...*storage.TestParent1_Child1Ref) error {
 	if len(objs) == 0 {
 		return nil
-	}
-
-	copyCols := []string{
-		"test_parent1_id",
-		"idx",
-		"childid",
 	}
 
 	idx := 0
@@ -223,7 +223,7 @@ func copyFromTestParent1Childrens(ctx context.Context, s pgSearch.Deleter, tx *p
 		}, nil
 	})
 
-	if _, err := tx.CopyFrom(ctx, pgx.Identifier{"test_parent1_childrens"}, copyCols, inputRows); err != nil {
+	if _, err := tx.CopyFrom(ctx, pgx.Identifier{"test_parent1_childrens"}, copyColsTestParent1Childrens, inputRows); err != nil {
 		return err
 	}
 

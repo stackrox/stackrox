@@ -41,7 +41,7 @@ func Test_getCentralAPIPort(t *testing.T) {
 		},
 	}
 	for name, tt := range tests {
-		assert.Equal(t, int32(tt.expectedPort), getCentralAPIPort(tt.pod), name)
+		assert.Equal(t, tt.expectedPort, getCentralAPIPort(tt.pod), name)
 	}
 }
 

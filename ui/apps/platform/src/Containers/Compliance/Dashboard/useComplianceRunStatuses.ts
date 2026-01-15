@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { DocumentNode, gql, useApolloClient, useQuery } from '@apollo/client';
+import { gql, useApolloClient, useQuery } from '@apollo/client';
+import type { DocumentNode } from '@apollo/client';
 
 export type ComplianceRunStatusResponse = {
     complianceRunStatuses: {

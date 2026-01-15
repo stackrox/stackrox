@@ -1,24 +1,25 @@
 package datastore
 
 import (
-	"github.com/stackrox/rox/central/baseimage/store/repository/postgres"
+	pgStore "github.com/stackrox/rox/central/baseimage/store/postgres"
 	"github.com/stackrox/rox/central/globaldb"
-	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sync"
 )
 
 var (
-	log  = logging.LoggerForModule()
 	once sync.Once
-	ds   DataStore
+
+	ad DataStore
 )
 
-// Singleton returns the global datastore instance for base image repositories.
+func initialize() {
+	storage := pgStore.New(globaldb.GetPostgres())
+	db := globaldb.GetPostgres()
+	ad = New(storage, db)
+}
+
+// Singleton provides the interface for non-service external interaction.
 func Singleton() DataStore {
-	once.Do(func() {
-		store := postgres.New(globaldb.GetPostgres())
-		ds = New(store)
-		log.Info("Initialized base image repository datastore with PostgreSQL backend")
-	})
-	return ds
+	once.Do(initialize)
+	return ad
 }

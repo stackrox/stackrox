@@ -6,7 +6,6 @@ import (
 	"context"
 	"fmt"
 	"testing"
-	"time"
 
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/migrator/clone/metadata"
@@ -71,7 +70,6 @@ func (s *PostgresExternalManagerSuite) SetupTest() {
 
 func (s *PostgresExternalManagerSuite) DestroyClones() {
 	// Clean up databases
-	pgtest.DropDatabase(s.T(), tempDB)
 	pgtest.DropDatabase(s.T(), externalDB)
 
 	for clone := range knownClones {
@@ -102,9 +100,8 @@ func (s *PostgresExternalManagerSuite) TestGetCloneFreshExternal() {
 	// Scan the clones
 	s.Nil(dbm.Scan())
 
-	clone, migrateRocks, err := dbm.GetCloneToMigrate(nil)
+	clone, err := dbm.GetCloneToMigrate()
 	s.Equal(externalDB, clone)
-	s.False(migrateRocks)
 	s.Nil(err)
 }
 
@@ -123,7 +120,6 @@ func (s *PostgresExternalManagerSuite) TestScanExternal() {
 		s.False(pgadmin.CheckIfDBExists(s.config, clone))
 	}
 
-	s.False(pgadmin.CheckIfDBExists(s.config, tempDB))
 	s.True(pgadmin.CheckIfDBExists(s.config, externalDB))
 }
 
@@ -139,61 +135,7 @@ func (s *PostgresExternalManagerSuite) TestScanIncompatibleExternal() {
 	}
 	migVer.SetVersionPostgres(s.ctx, externalDB, futureVersion)
 
-	// Drop previous
-	pgtest.DropDatabase(s.T(), migrations.PreviousDatabase)
-
 	// Scan the clones
-	errorMessage := fmt.Sprintf(metadata.ErrSoftwareNotCompatibleWithDatabase, migrations.CurrentDBVersionSeqNum(), futureVersion.GetMinSeqNum())
+	errorMessage := fmt.Sprintf(metadata.ErrSoftwareNotCompatibleWithDatabase, migrations.CurrentDBVersionSeqNum(), futureVersion.GetMinSeqNum(), migrations.MinimumSupportedDBVersion())
 	s.EqualError(dbm.Scan(), errorMessage)
-}
-
-func (s *PostgresExternalManagerSuite) TestExternalMigrateRocks() {
-	dbm := New("", s.config, s.sourceMap)
-
-	// Scan the clones
-	s.Nil(dbm.Scan())
-
-	rocksVersion := &migrations.MigrationVersion{
-		SeqNum:        currVer.seqNum,
-		MainVersion:   currVer.version,
-		LastPersisted: time.Now(),
-	}
-
-	// No central_active exists so we return the temp clone to use and migrate to rocks
-	clone, migrateRocks, err := dbm.GetCloneToMigrate(rocksVersion)
-	s.Equal(clone, externalDB)
-	s.True(migrateRocks)
-	s.Nil(err)
-
-	// Set central_active version to be in the middle of Rocks -> Postgres migrations
-	currVersion := &storage.Version{
-		SeqNum:        122,
-		Version:       currVer.version,
-		LastPersisted: protoconv.ConvertMicroTSToProtobufTS(timestamp.Now()),
-	}
-	migVer.SetVersionPostgres(s.ctx, externalDB, currVersion)
-
-	// Need to re-scan to get the updated clone version
-	s.Nil(dbm.Scan())
-	// Need to use the Postgres database so migrateRocks will be false.
-	clone, migrateRocks, err = dbm.GetCloneToMigrate(rocksVersion)
-	s.Equal(clone, externalDB)
-	s.True(migrateRocks)
-	s.Nil(err)
-
-	// Set central_active version
-	currVersion = &storage.Version{
-		SeqNum:        int32(migrations.CurrentDBVersionSeqNum()),
-		Version:       currVer.version,
-		LastPersisted: protoconv.ConvertMicroTSToProtobufTS(timestamp.Now()),
-	}
-	migVer.SetVersionPostgres(s.ctx, externalDB, currVersion)
-
-	// Need to re-scan to get the updated clone version
-	s.Nil(dbm.Scan())
-	// Need to use the Postgres database so migrateRocks will be false.
-	clone, migrateRocks, err = dbm.GetCloneToMigrate(rocksVersion)
-	s.Equal(clone, externalDB)
-	s.False(migrateRocks)
-	s.Nil(err)
 }

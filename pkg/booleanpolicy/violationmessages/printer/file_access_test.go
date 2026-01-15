@@ -35,7 +35,7 @@ func TestUpdateFileAccessMessage(t *testing.T) {
 			activity: []*storage.FileAccess{
 				{
 					File: &storage.FileAccess_File{
-						NodePath: "/etc/passwd",
+						ActualPath: "/etc/passwd",
 					},
 					Operation: storage.FileAccess_OPEN,
 					Process: &storage.ProcessIndicator{
@@ -52,7 +52,7 @@ func TestUpdateFileAccessMessage(t *testing.T) {
 			activity: []*storage.FileAccess{
 				{
 					File: &storage.FileAccess_File{
-						NodePath: "/etc/passwd",
+						ActualPath: "/etc/passwd",
 					},
 					Operation: storage.FileAccess_OPEN,
 					Process: &storage.ProcessIndicator{
@@ -63,7 +63,7 @@ func TestUpdateFileAccessMessage(t *testing.T) {
 				},
 				{
 					File: &storage.FileAccess_File{
-						NodePath: "/etc/passwd",
+						ActualPath: "/etc/passwd",
 					},
 					Operation: storage.FileAccess_WRITE,
 					Process: &storage.ProcessIndicator{
@@ -80,7 +80,7 @@ func TestUpdateFileAccessMessage(t *testing.T) {
 			activity: []*storage.FileAccess{
 				{
 					File: &storage.FileAccess_File{
-						NodePath: "/etc/passwd",
+						ActualPath: "/etc/passwd",
 					},
 					Operation: storage.FileAccess_OPEN,
 					Process: &storage.ProcessIndicator{
@@ -91,7 +91,7 @@ func TestUpdateFileAccessMessage(t *testing.T) {
 				},
 				{
 					File: &storage.FileAccess_File{
-						NodePath: "/etc/shadow",
+						ActualPath: "/etc/shadow",
 					},
 					Operation: storage.FileAccess_OPEN,
 					Process: &storage.ProcessIndicator{
@@ -106,50 +106,50 @@ func TestUpdateFileAccessMessage(t *testing.T) {
 		{
 			desc: "exactly 10 unique files - should use summary format",
 			activity: []*storage.FileAccess{
-				{File: &storage.FileAccess_File{NodePath: "/file1"}, Operation: storage.FileAccess_OPEN, Process: &storage.ProcessIndicator{Signal: &storage.ProcessSignal{Name: "proc1"}}},
-				{File: &storage.FileAccess_File{NodePath: "/file2"}, Operation: storage.FileAccess_OPEN, Process: &storage.ProcessIndicator{Signal: &storage.ProcessSignal{Name: "proc2"}}},
-				{File: &storage.FileAccess_File{NodePath: "/file3"}, Operation: storage.FileAccess_OPEN, Process: &storage.ProcessIndicator{Signal: &storage.ProcessSignal{Name: "proc3"}}},
-				{File: &storage.FileAccess_File{NodePath: "/file4"}, Operation: storage.FileAccess_OPEN, Process: &storage.ProcessIndicator{Signal: &storage.ProcessSignal{Name: "proc4"}}},
-				{File: &storage.FileAccess_File{NodePath: "/file5"}, Operation: storage.FileAccess_OPEN, Process: &storage.ProcessIndicator{Signal: &storage.ProcessSignal{Name: "proc5"}}},
-				{File: &storage.FileAccess_File{NodePath: "/file6"}, Operation: storage.FileAccess_OPEN, Process: &storage.ProcessIndicator{Signal: &storage.ProcessSignal{Name: "proc6"}}},
-				{File: &storage.FileAccess_File{NodePath: "/file7"}, Operation: storage.FileAccess_OPEN, Process: &storage.ProcessIndicator{Signal: &storage.ProcessSignal{Name: "proc7"}}},
-				{File: &storage.FileAccess_File{NodePath: "/file8"}, Operation: storage.FileAccess_OPEN, Process: &storage.ProcessIndicator{Signal: &storage.ProcessSignal{Name: "proc8"}}},
-				{File: &storage.FileAccess_File{NodePath: "/file9"}, Operation: storage.FileAccess_OPEN, Process: &storage.ProcessIndicator{Signal: &storage.ProcessSignal{Name: "proc9"}}},
-				{File: &storage.FileAccess_File{NodePath: "/file10"}, Operation: storage.FileAccess_OPEN, Process: &storage.ProcessIndicator{Signal: &storage.ProcessSignal{Name: "proc10"}}},
+				{File: &storage.FileAccess_File{ActualPath: "/file1"}, Operation: storage.FileAccess_OPEN, Process: &storage.ProcessIndicator{Signal: &storage.ProcessSignal{Name: "proc1"}}},
+				{File: &storage.FileAccess_File{ActualPath: "/file2"}, Operation: storage.FileAccess_OPEN, Process: &storage.ProcessIndicator{Signal: &storage.ProcessSignal{Name: "proc2"}}},
+				{File: &storage.FileAccess_File{ActualPath: "/file3"}, Operation: storage.FileAccess_OPEN, Process: &storage.ProcessIndicator{Signal: &storage.ProcessSignal{Name: "proc3"}}},
+				{File: &storage.FileAccess_File{ActualPath: "/file4"}, Operation: storage.FileAccess_OPEN, Process: &storage.ProcessIndicator{Signal: &storage.ProcessSignal{Name: "proc4"}}},
+				{File: &storage.FileAccess_File{ActualPath: "/file5"}, Operation: storage.FileAccess_OPEN, Process: &storage.ProcessIndicator{Signal: &storage.ProcessSignal{Name: "proc5"}}},
+				{File: &storage.FileAccess_File{ActualPath: "/file6"}, Operation: storage.FileAccess_OPEN, Process: &storage.ProcessIndicator{Signal: &storage.ProcessSignal{Name: "proc6"}}},
+				{File: &storage.FileAccess_File{ActualPath: "/file7"}, Operation: storage.FileAccess_OPEN, Process: &storage.ProcessIndicator{Signal: &storage.ProcessSignal{Name: "proc7"}}},
+				{File: &storage.FileAccess_File{ActualPath: "/file8"}, Operation: storage.FileAccess_OPEN, Process: &storage.ProcessIndicator{Signal: &storage.ProcessSignal{Name: "proc8"}}},
+				{File: &storage.FileAccess_File{ActualPath: "/file9"}, Operation: storage.FileAccess_OPEN, Process: &storage.ProcessIndicator{Signal: &storage.ProcessSignal{Name: "proc9"}}},
+				{File: &storage.FileAccess_File{ActualPath: "/file10"}, Operation: storage.FileAccess_OPEN, Process: &storage.ProcessIndicator{Signal: &storage.ProcessSignal{Name: "proc10"}}},
 			},
 			expected: "10 sensitive files accessed",
 		},
 		{
 			desc: "more than 10 unique files - should use summary format",
 			activity: []*storage.FileAccess{
-				{File: &storage.FileAccess_File{NodePath: "/file1"}, Operation: storage.FileAccess_OPEN, Process: &storage.ProcessIndicator{Signal: &storage.ProcessSignal{Name: "proc1"}}},
-				{File: &storage.FileAccess_File{NodePath: "/file2"}, Operation: storage.FileAccess_OPEN, Process: &storage.ProcessIndicator{Signal: &storage.ProcessSignal{Name: "proc2"}}},
-				{File: &storage.FileAccess_File{NodePath: "/file3"}, Operation: storage.FileAccess_OPEN, Process: &storage.ProcessIndicator{Signal: &storage.ProcessSignal{Name: "proc3"}}},
-				{File: &storage.FileAccess_File{NodePath: "/file4"}, Operation: storage.FileAccess_OPEN, Process: &storage.ProcessIndicator{Signal: &storage.ProcessSignal{Name: "proc4"}}},
-				{File: &storage.FileAccess_File{NodePath: "/file5"}, Operation: storage.FileAccess_OPEN, Process: &storage.ProcessIndicator{Signal: &storage.ProcessSignal{Name: "proc5"}}},
-				{File: &storage.FileAccess_File{NodePath: "/file6"}, Operation: storage.FileAccess_OPEN, Process: &storage.ProcessIndicator{Signal: &storage.ProcessSignal{Name: "proc6"}}},
-				{File: &storage.FileAccess_File{NodePath: "/file7"}, Operation: storage.FileAccess_OPEN, Process: &storage.ProcessIndicator{Signal: &storage.ProcessSignal{Name: "proc7"}}},
-				{File: &storage.FileAccess_File{NodePath: "/file8"}, Operation: storage.FileAccess_OPEN, Process: &storage.ProcessIndicator{Signal: &storage.ProcessSignal{Name: "proc8"}}},
-				{File: &storage.FileAccess_File{NodePath: "/file9"}, Operation: storage.FileAccess_OPEN, Process: &storage.ProcessIndicator{Signal: &storage.ProcessSignal{Name: "proc9"}}},
-				{File: &storage.FileAccess_File{NodePath: "/file10"}, Operation: storage.FileAccess_OPEN, Process: &storage.ProcessIndicator{Signal: &storage.ProcessSignal{Name: "proc10"}}},
-				{File: &storage.FileAccess_File{NodePath: "/file11"}, Operation: storage.FileAccess_OPEN, Process: &storage.ProcessIndicator{Signal: &storage.ProcessSignal{Name: "proc11"}}},
-				{File: &storage.FileAccess_File{NodePath: "/file12"}, Operation: storage.FileAccess_OPEN, Process: &storage.ProcessIndicator{Signal: &storage.ProcessSignal{Name: "proc12"}}},
+				{File: &storage.FileAccess_File{ActualPath: "/file1"}, Operation: storage.FileAccess_OPEN, Process: &storage.ProcessIndicator{Signal: &storage.ProcessSignal{Name: "proc1"}}},
+				{File: &storage.FileAccess_File{ActualPath: "/file2"}, Operation: storage.FileAccess_OPEN, Process: &storage.ProcessIndicator{Signal: &storage.ProcessSignal{Name: "proc2"}}},
+				{File: &storage.FileAccess_File{ActualPath: "/file3"}, Operation: storage.FileAccess_OPEN, Process: &storage.ProcessIndicator{Signal: &storage.ProcessSignal{Name: "proc3"}}},
+				{File: &storage.FileAccess_File{ActualPath: "/file4"}, Operation: storage.FileAccess_OPEN, Process: &storage.ProcessIndicator{Signal: &storage.ProcessSignal{Name: "proc4"}}},
+				{File: &storage.FileAccess_File{ActualPath: "/file5"}, Operation: storage.FileAccess_OPEN, Process: &storage.ProcessIndicator{Signal: &storage.ProcessSignal{Name: "proc5"}}},
+				{File: &storage.FileAccess_File{ActualPath: "/file6"}, Operation: storage.FileAccess_OPEN, Process: &storage.ProcessIndicator{Signal: &storage.ProcessSignal{Name: "proc6"}}},
+				{File: &storage.FileAccess_File{ActualPath: "/file7"}, Operation: storage.FileAccess_OPEN, Process: &storage.ProcessIndicator{Signal: &storage.ProcessSignal{Name: "proc7"}}},
+				{File: &storage.FileAccess_File{ActualPath: "/file8"}, Operation: storage.FileAccess_OPEN, Process: &storage.ProcessIndicator{Signal: &storage.ProcessSignal{Name: "proc8"}}},
+				{File: &storage.FileAccess_File{ActualPath: "/file9"}, Operation: storage.FileAccess_OPEN, Process: &storage.ProcessIndicator{Signal: &storage.ProcessSignal{Name: "proc9"}}},
+				{File: &storage.FileAccess_File{ActualPath: "/file10"}, Operation: storage.FileAccess_OPEN, Process: &storage.ProcessIndicator{Signal: &storage.ProcessSignal{Name: "proc10"}}},
+				{File: &storage.FileAccess_File{ActualPath: "/file11"}, Operation: storage.FileAccess_OPEN, Process: &storage.ProcessIndicator{Signal: &storage.ProcessSignal{Name: "proc11"}}},
+				{File: &storage.FileAccess_File{ActualPath: "/file12"}, Operation: storage.FileAccess_OPEN, Process: &storage.ProcessIndicator{Signal: &storage.ProcessSignal{Name: "proc12"}}},
 			},
 			expected: "12 sensitive files accessed",
 		},
 		{
 			desc: "9 unique files with multiple activities each - should use detailed format",
 			activity: []*storage.FileAccess{
-				{File: &storage.FileAccess_File{NodePath: "/file1"}, Operation: storage.FileAccess_OPEN, Process: &storage.ProcessIndicator{Signal: &storage.ProcessSignal{Name: "proc1"}}},
-				{File: &storage.FileAccess_File{NodePath: "/file1"}, Operation: storage.FileAccess_WRITE, Process: &storage.ProcessIndicator{Signal: &storage.ProcessSignal{Name: "proc1"}}},
-				{File: &storage.FileAccess_File{NodePath: "/file2"}, Operation: storage.FileAccess_OPEN, Process: &storage.ProcessIndicator{Signal: &storage.ProcessSignal{Name: "proc2"}}},
-				{File: &storage.FileAccess_File{NodePath: "/file3"}, Operation: storage.FileAccess_OPEN, Process: &storage.ProcessIndicator{Signal: &storage.ProcessSignal{Name: "proc3"}}},
-				{File: &storage.FileAccess_File{NodePath: "/file4"}, Operation: storage.FileAccess_OPEN, Process: &storage.ProcessIndicator{Signal: &storage.ProcessSignal{Name: "proc4"}}},
-				{File: &storage.FileAccess_File{NodePath: "/file5"}, Operation: storage.FileAccess_OPEN, Process: &storage.ProcessIndicator{Signal: &storage.ProcessSignal{Name: "proc5"}}},
-				{File: &storage.FileAccess_File{NodePath: "/file6"}, Operation: storage.FileAccess_OPEN, Process: &storage.ProcessIndicator{Signal: &storage.ProcessSignal{Name: "proc6"}}},
-				{File: &storage.FileAccess_File{NodePath: "/file7"}, Operation: storage.FileAccess_OPEN, Process: &storage.ProcessIndicator{Signal: &storage.ProcessSignal{Name: "proc7"}}},
-				{File: &storage.FileAccess_File{NodePath: "/file8"}, Operation: storage.FileAccess_OPEN, Process: &storage.ProcessIndicator{Signal: &storage.ProcessSignal{Name: "proc8"}}},
-				{File: &storage.FileAccess_File{NodePath: "/file9"}, Operation: storage.FileAccess_OPEN, Process: &storage.ProcessIndicator{Signal: &storage.ProcessSignal{Name: "proc9"}}},
+				{File: &storage.FileAccess_File{ActualPath: "/file1"}, Operation: storage.FileAccess_OPEN, Process: &storage.ProcessIndicator{Signal: &storage.ProcessSignal{Name: "proc1"}}},
+				{File: &storage.FileAccess_File{ActualPath: "/file1"}, Operation: storage.FileAccess_WRITE, Process: &storage.ProcessIndicator{Signal: &storage.ProcessSignal{Name: "proc1"}}},
+				{File: &storage.FileAccess_File{ActualPath: "/file2"}, Operation: storage.FileAccess_OPEN, Process: &storage.ProcessIndicator{Signal: &storage.ProcessSignal{Name: "proc2"}}},
+				{File: &storage.FileAccess_File{ActualPath: "/file3"}, Operation: storage.FileAccess_OPEN, Process: &storage.ProcessIndicator{Signal: &storage.ProcessSignal{Name: "proc3"}}},
+				{File: &storage.FileAccess_File{ActualPath: "/file4"}, Operation: storage.FileAccess_OPEN, Process: &storage.ProcessIndicator{Signal: &storage.ProcessSignal{Name: "proc4"}}},
+				{File: &storage.FileAccess_File{ActualPath: "/file5"}, Operation: storage.FileAccess_OPEN, Process: &storage.ProcessIndicator{Signal: &storage.ProcessSignal{Name: "proc5"}}},
+				{File: &storage.FileAccess_File{ActualPath: "/file6"}, Operation: storage.FileAccess_OPEN, Process: &storage.ProcessIndicator{Signal: &storage.ProcessSignal{Name: "proc6"}}},
+				{File: &storage.FileAccess_File{ActualPath: "/file7"}, Operation: storage.FileAccess_OPEN, Process: &storage.ProcessIndicator{Signal: &storage.ProcessSignal{Name: "proc7"}}},
+				{File: &storage.FileAccess_File{ActualPath: "/file8"}, Operation: storage.FileAccess_OPEN, Process: &storage.ProcessIndicator{Signal: &storage.ProcessSignal{Name: "proc8"}}},
+				{File: &storage.FileAccess_File{ActualPath: "/file9"}, Operation: storage.FileAccess_OPEN, Process: &storage.ProcessIndicator{Signal: &storage.ProcessSignal{Name: "proc9"}}},
 			},
 			expected: "'/file1' accessed (OPEN, WRITE); '/file2' accessed (OPEN); '/file3' accessed (OPEN); '/file4' accessed (OPEN); '/file5' accessed (OPEN); '/file6' accessed (OPEN); '/file7' accessed (OPEN); '/file8' accessed (OPEN); '/file9' accessed (OPEN)",
 		},
@@ -157,27 +157,27 @@ func TestUpdateFileAccessMessage(t *testing.T) {
 			desc: "different file operations",
 			activity: []*storage.FileAccess{
 				{
-					File:      &storage.FileAccess_File{NodePath: "/tmp/new_file"},
+					File:      &storage.FileAccess_File{ActualPath: "/tmp/new_file"},
 					Operation: storage.FileAccess_CREATE,
 					Process:   &storage.ProcessIndicator{Signal: &storage.ProcessSignal{Name: "touch"}},
 				},
 				{
-					File:      &storage.FileAccess_File{NodePath: "/tmp/old_file"},
+					File:      &storage.FileAccess_File{ActualPath: "/tmp/old_file"},
 					Operation: storage.FileAccess_UNLINK,
 					Process:   &storage.ProcessIndicator{Signal: &storage.ProcessSignal{Name: "rm"}},
 				},
 				{
-					File:      &storage.FileAccess_File{NodePath: "/tmp/renamed_file"},
+					File:      &storage.FileAccess_File{ActualPath: "/tmp/renamed_file"},
 					Operation: storage.FileAccess_RENAME,
 					Process:   &storage.ProcessIndicator{Signal: &storage.ProcessSignal{Name: "mv"}},
 				},
 				{
-					File:      &storage.FileAccess_File{NodePath: "/tmp/chmod_file"},
+					File:      &storage.FileAccess_File{ActualPath: "/tmp/chmod_file"},
 					Operation: storage.FileAccess_PERMISSION_CHANGE,
 					Process:   &storage.ProcessIndicator{Signal: &storage.ProcessSignal{Name: "chmod"}},
 				},
 				{
-					File:      &storage.FileAccess_File{NodePath: "/tmp/chown_file"},
+					File:      &storage.FileAccess_File{ActualPath: "/tmp/chown_file"},
 					Operation: storage.FileAccess_OWNERSHIP_CHANGE,
 					Process:   &storage.ProcessIndicator{Signal: &storage.ProcessSignal{Name: "chown"}},
 				},
@@ -185,7 +185,7 @@ func TestUpdateFileAccessMessage(t *testing.T) {
 			expected: "'/tmp/chmod_file' accessed (PERMISSION_CHANGE); '/tmp/chown_file' accessed (OWNERSHIP_CHANGE); '/tmp/new_file' accessed (CREATE); '/tmp/old_file' accessed (UNLINK); '/tmp/renamed_file' accessed (RENAME)",
 		},
 		{
-			desc: "nil file path handling",
+			desc: "nil file path handling - should not display empty path",
 			activity: []*storage.FileAccess{
 				{
 					File:      nil,
@@ -195,13 +195,13 @@ func TestUpdateFileAccessMessage(t *testing.T) {
 					},
 				},
 			},
-			expected: "'' accessed (OPEN)",
+			expected: "'" + UNKNOWN_FILE + "' accessed (OPEN)",
 		},
 		{
 			desc: "nil process handling",
 			activity: []*storage.FileAccess{
 				{
-					File:      &storage.FileAccess_File{NodePath: "/test/file"},
+					File:      &storage.FileAccess_File{ActualPath: "/test/file"},
 					Operation: storage.FileAccess_OPEN,
 					Process:   nil,
 				},
@@ -212,7 +212,7 @@ func TestUpdateFileAccessMessage(t *testing.T) {
 			desc: "nil process signal handling",
 			activity: []*storage.FileAccess{
 				{
-					File:      &storage.FileAccess_File{NodePath: "/test/file"},
+					File:      &storage.FileAccess_File{ActualPath: "/test/file"},
 					Operation: storage.FileAccess_OPEN,
 					Process: &storage.ProcessIndicator{
 						Signal: nil,
@@ -222,23 +222,36 @@ func TestUpdateFileAccessMessage(t *testing.T) {
 			expected: "'/test/file' accessed (OPEN)",
 		},
 		{
-			desc: "empty file path",
+			desc: "empty file path - should not display empty path",
 			activity: []*storage.FileAccess{
 				{
-					File:      &storage.FileAccess_File{NodePath: ""},
+					File:      &storage.FileAccess_File{ActualPath: ""},
 					Operation: storage.FileAccess_OPEN,
 					Process: &storage.ProcessIndicator{
 						Signal: &storage.ProcessSignal{Name: "test"},
 					},
 				},
 			},
-			expected: "'' accessed (OPEN)",
+			expected: "'" + UNKNOWN_FILE + "' accessed (OPEN)",
+		},
+		{
+			desc: "Use EffectivePath if ActualPath is empty",
+			activity: []*storage.FileAccess{
+				{
+					File:      &storage.FileAccess_File{ActualPath: "", EffectivePath: "/test/file"},
+					Operation: storage.FileAccess_OPEN,
+					Process: &storage.ProcessIndicator{
+						Signal: &storage.ProcessSignal{Name: "test"},
+					},
+				},
+			},
+			expected: "'/test/file' accessed (OPEN)",
 		},
 		{
 			desc: "empty process name",
 			activity: []*storage.FileAccess{
 				{
-					File:      &storage.FileAccess_File{NodePath: "/test/file"},
+					File:      &storage.FileAccess_File{ActualPath: "/test/file"},
 					Operation: storage.FileAccess_OPEN,
 					Process: &storage.ProcessIndicator{
 						Signal: &storage.ProcessSignal{Name: ""},
@@ -251,15 +264,15 @@ func TestUpdateFileAccessMessage(t *testing.T) {
 			desc: "same file, many opens",
 			activity: []*storage.FileAccess{
 				{
-					File:      &storage.FileAccess_File{NodePath: "/test/file"},
+					File:      &storage.FileAccess_File{ActualPath: "/test/file"},
 					Operation: storage.FileAccess_OPEN,
 				},
 				{
-					File:      &storage.FileAccess_File{NodePath: "/test/file"},
+					File:      &storage.FileAccess_File{ActualPath: "/test/file"},
 					Operation: storage.FileAccess_OPEN,
 				},
 				{
-					File:      &storage.FileAccess_File{NodePath: "/test/file"},
+					File:      &storage.FileAccess_File{ActualPath: "/test/file"},
 					Operation: storage.FileAccess_OPEN,
 				},
 			},

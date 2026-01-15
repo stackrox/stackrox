@@ -122,7 +122,7 @@ const createTableRows = (data) => data.policies;
 
 const ConfigManagementListPolicies = ({ className, onRowClick, query, selectedRowId, data }) => {
     const autoFocusSearchInput = !selectedRowId;
-    const { [SEARCH_OPTIONS.POLICY_STATUS.CATEGORY]: policyStatus, ...restQuery } = query || {};
+    const { [SEARCH_OPTIONS.POLICY_STATUS.CATEGORY]: policyStatus, ...restQuery } = query ?? {};
     const queryText = queryService.objectToWhereClause({
         'Lifecycle Stage': 'DEPLOY',
         ...restQuery,

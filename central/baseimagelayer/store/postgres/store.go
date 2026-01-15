@@ -13,6 +13,7 @@ import (
 	"github.com/stackrox/rox/pkg/logging"
 	ops "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/postgres"
+	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
@@ -27,7 +28,7 @@ const (
 var (
 	log            = logging.LoggerForModule()
 	schema         = pkgSchema.BaseImageLayersSchema
-	targetResource = resources.Administration
+	targetResource = resources.ImageAdministration
 )
 
 type (
@@ -99,17 +100,23 @@ func insertIntoBaseImageLayers(batch *pgx.Batch, obj *storage.BaseImageLayer) er
 
 	values := []interface{}{
 		// parent primary keys start
-		obj.GetId(),
-		obj.GetBaseImageId(),
+		pgutils.NilOrUUID(obj.GetId()),
 		obj.GetLayerDigest(),
 		obj.GetIndex(),
 		serialized,
 	}
 
-	finalStr := "INSERT INTO base_image_layers (Id, BaseImageId, LayerDigest, Index, serialized) VALUES($1, $2, $3, $4, $5) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, BaseImageId = EXCLUDED.BaseImageId, LayerDigest = EXCLUDED.LayerDigest, Index = EXCLUDED.Index, serialized = EXCLUDED.serialized"
+	finalStr := "INSERT INTO base_image_layers (Id, LayerDigest, Index, serialized) VALUES($1, $2, $3, $4) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, LayerDigest = EXCLUDED.LayerDigest, Index = EXCLUDED.Index, serialized = EXCLUDED.serialized"
 	batch.Queue(finalStr, values...)
 
 	return nil
+}
+
+var copyColsBaseImageLayers = []string{
+	"id",
+	"layerdigest",
+	"index",
+	"serialized",
 }
 
 func copyFromBaseImageLayers(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, objs ...*storage.BaseImageLayer) error {
@@ -129,14 +136,6 @@ func copyFromBaseImageLayers(ctx context.Context, s pgSearch.Deleter, tx *postgr
 		}
 	}
 
-	copyCols := []string{
-		"id",
-		"baseimageid",
-		"layerdigest",
-		"index",
-		"serialized",
-	}
-
 	idx := 0
 	inputRows := pgx.CopyFromFunc(func() ([]any, error) {
 		if idx >= len(objs) {
@@ -151,15 +150,14 @@ func copyFromBaseImageLayers(ctx context.Context, s pgSearch.Deleter, tx *postgr
 		}
 
 		return []interface{}{
-			obj.GetId(),
-			obj.GetBaseImageId(),
+			pgutils.NilOrUUID(obj.GetId()),
 			obj.GetLayerDigest(),
 			obj.GetIndex(),
 			serialized,
 		}, nil
 	})
 
-	if _, err := tx.CopyFrom(ctx, pgx.Identifier{"base_image_layers"}, copyCols, inputRows); err != nil {
+	if _, err := tx.CopyFrom(ctx, pgx.Identifier{"base_image_layers"}, copyColsBaseImageLayers, inputRows); err != nil {
 		return err
 	}
 

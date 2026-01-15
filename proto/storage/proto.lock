@@ -1402,6 +1402,12 @@
                 "id": 8,
                 "name": "first_layer_digest",
                 "type": "string"
+              },
+              {
+                "id": 9,
+                "name": "layers",
+                "type": "BaseImageLayer",
+                "is_repeated": true
               }
             ]
           },
@@ -1510,6 +1516,11 @@
                 "id": 7,
                 "name": "pattern_hash",
                 "type": "string"
+              },
+              {
+                "id": 8,
+                "name": "created_by",
+                "type": "SlimUser"
               }
             ]
           },
@@ -1545,6 +1556,12 @@
                 "id": 6,
                 "name": "created",
                 "type": "google.protobuf.Timestamp"
+              },
+              {
+                "id": 8,
+                "name": "layer_digests",
+                "type": "string",
+                "is_repeated": true
               }
             ],
             "maps": [
@@ -1562,6 +1579,9 @@
         "imports": [
           {
             "path": "google/protobuf/timestamp.proto"
+          },
+          {
+            "path": "storage/user.proto"
           }
         ],
         "package": {
@@ -5498,6 +5518,16 @@
                         "type": "string",
                         "is_repeated": true
                       }
+                    ],
+                    "maps": [
+                      {
+                        "key_type": "string",
+                        "field": {
+                          "id": 2,
+                          "name": "filters",
+                          "type": "string"
+                        }
+                      }
                     ]
                   }
                 ]
@@ -8433,12 +8463,12 @@
                 "fields": [
                   {
                     "id": 1,
-                    "name": "mounted_path",
+                    "name": "effective_path",
                     "type": "string"
                   },
                   {
                     "id": 2,
-                    "name": "node_path",
+                    "name": "actual_path",
                     "type": "string"
                   },
                   {
@@ -8904,6 +8934,12 @@
                 "id": 14,
                 "name": "notes",
                 "type": "Note",
+                "is_repeated": true
+              },
+              {
+                "id": 19,
+                "name": "base_image_info",
+                "type": "BaseImageInfo",
                 "is_repeated": true
               }
             ],
@@ -9406,6 +9442,26 @@
               {
                 "id": 1,
                 "name": "name",
+                "type": "string"
+              }
+            ]
+          },
+          {
+            "name": "BaseImageInfo",
+            "fields": [
+              {
+                "id": 1,
+                "name": "base_image_id",
+                "type": "string"
+              },
+              {
+                "id": 2,
+                "name": "base_image_full_name",
+                "type": "string"
+              },
+              {
+                "id": 3,
+                "name": "base_image_digest",
                 "type": "string"
               }
             ]
@@ -10170,6 +10226,12 @@
                 "id": 15,
                 "name": "notes",
                 "type": "Note",
+                "is_repeated": true
+              },
+              {
+                "id": 16,
+                "name": "base_image_info",
+                "type": "BaseImageInfo",
                 "is_repeated": true
               }
             ],

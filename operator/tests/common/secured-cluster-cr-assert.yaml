@@ -26,6 +26,9 @@ assertAll:
 - celExpr: "sc_cr.status.conditions.filter(c, c.type=='Irreconcilable').exists(c, c.status=='False')"
 - celExpr: "sc_cr.status.conditions.filter(c, c.type=='ProxyConfigFailed').exists(c, c.status=='False')"
 - celExpr: "sc_cr.status.conditions.filter(c, c.type=='ReleaseFailed').exists(c, c.status=='False')"
+- celExpr: "sc_cr.status.conditions.filter(c, c.type=='Deployed').exists(c, c.message.contains('installed'))"
+- celExpr: "sc_cr.status.conditions.filter(c, c.type=='Deployed').exists(c, !c.message.contains('\\n'))"
+# Note: sc_cr.status.productVersion is currently checked as part of the upgrade tests.
 timeout: 1500
 ---
 apiVersion: apps/v1

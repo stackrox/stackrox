@@ -516,11 +516,19 @@ type SecuredClusterStatus struct {
 	// cluster name, please delete and recreate this resource.
 	//+operator-sdk:csv:customresourcedefinitions:type=status,displayName="Cluster Name",order=2
 	ClusterName string `json:"clusterName,omitempty"`
+
+	// ObservedGeneration is the generation most recently observed by the controller.
+	//+operator-sdk:csv:customresourcedefinitions:type=status,order=3
+	ObservedGeneration int64 `json:"observedGeneration,omitempty"`
 }
 
 //+kubebuilder:object:root=true
 //+kubebuilder:subresource:status
 //+operator-sdk:csv:customresourcedefinitions:resources={{Deployment,v1,""},{DaemonSet,v1,""}}
+//+kubebuilder:printcolumn:name="Version",type=string,JSONPath=`.status.productVersion`
+//+kubebuilder:printcolumn:name="Message",type=string,JSONPath=`.status.conditions[?(@.type=="Deployed")].message`
+//+kubebuilder:printcolumn:name="Progressing",type=string,JSONPath=`.status.conditions[?(@.type=="Progressing")].status`
+//+kubebuilder:printcolumn:name="Available",type=string,JSONPath=`.status.conditions[?(@.type=="Available")].status`
 //+genclient
 
 // SecuredCluster is the configuration template for the secured cluster services. These include Sensor, which is
@@ -559,3 +567,25 @@ var (
 	LocalScannerV4AutoSense = LocalScannerV4ComponentAutoSense
 	LocalScannerV4Disabled  = LocalScannerV4ComponentDisabled
 )
+
+// GetCondition returns a specific condition by type, or nil if not found.
+func (c *SecuredCluster) GetCondition(condType ConditionType) *StackRoxCondition {
+	return getCondition(c.Status.Conditions, condType)
+}
+
+// SetCondition updates or adds a condition. Returns true if the condition changed.
+func (c *SecuredCluster) SetCondition(updatedCond StackRoxCondition) bool {
+	var updated bool
+	c.Status.Conditions, updated = updateCondition(c.Status.Conditions, updatedCond)
+	return updated
+}
+
+// GetGeneration returns the metadata.generation of the Central resource.
+func (c *SecuredCluster) GetGeneration() int64 {
+	return c.ObjectMeta.GetGeneration()
+}
+
+// GetObservedGeneration returns the observedGeneration of the Central status sub-resource.
+func (c *SecuredCluster) GetObservedGeneration() int64 {
+	return c.Status.ObservedGeneration
+}

@@ -31,6 +31,7 @@ import (
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/centralclient"
+	"github.com/stackrox/rox/sensor/common/centralproxy"
 	"github.com/stackrox/rox/sensor/common/chaos"
 	"github.com/stackrox/rox/sensor/common/config"
 	"github.com/stackrox/rox/sensor/common/detector"
@@ -236,6 +237,19 @@ func (s *Sensor) Start() {
 		s.AddNotifiable(scannerclient.ResetNotifiable())
 	}
 
+	// Enable proxy endpoint for forwarding requests to Central if the feature flag
+	// is enabled and token is configured.
+	if features.OCPConsoleIntegration.Enabled() {
+		if proxyToken := env.CentralProxyToken.Setting(); proxyToken != "" {
+			proxyRoute, err := s.newCentralProxyRoute(s.centralEndpoint, centralCertificates, proxyToken)
+			if err != nil {
+				utils.Should(errors.Wrap(err, "Failed to create proxy route"))
+			} else {
+				customRoutes = append(customRoutes, *proxyRoute)
+			}
+		}
+	}
+
 	// Create grpc server with custom routes
 	mtlsServiceIDExtractor, err := serviceAuthn.NewExtractor()
 	if err != nil {
@@ -298,7 +312,6 @@ func (s *Sensor) Start() {
 		log.Infof("Connection restart requested: %s", message.Text)
 		s.centralCommunication.Stop()
 	})
-
 	if err != nil {
 		log.Warnf("Failed to register subscription to sensor internal message: %q", err)
 	}
@@ -320,6 +333,24 @@ func (s *Sensor) newScannerDefinitionsRoute(centralEndpoint string, centralCerti
 		Route:         scannerDefinitionsRoute,
 		Authorizer:    or.Or(idcheck.ScannerOnly(), idcheck.ScannerV4IndexerOnly(), idcheck.CollectorOnly()),
 		ServerHandler: handler,
+	}, nil
+}
+
+// newCentralProxyRoute returns a custom route that proxies requests to Central.
+func (s *Sensor) newCentralProxyRoute(centralEndpoint string, centralCertificates []*x509.Certificate, token string) (*routes.CustomRoute, error) {
+	handler, err := centralproxy.NewProxyHandler(centralEndpoint, centralCertificates, token)
+	if err != nil {
+		return nil, errors.Wrap(err, "creating central proxy handler")
+	}
+	s.AddNotifiable(handler)
+	return &routes.CustomRoute{
+		Route: "/proxy/central/",
+		// Use allow.Anonymous() because the endpoint is meant for
+		// OpenShift Console integration. Authorization checks
+		// will be added as a follow up.
+		Authorizer:    allow.Anonymous(),
+		ServerHandler: http.StripPrefix("/proxy/central", handler),
+		Compression:   false,
 	}, nil
 }
 

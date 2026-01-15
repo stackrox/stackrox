@@ -126,6 +126,7 @@ function PolicyBehaviorForm({ hasActiveViolations }: PolicyBehaviorFormProps) {
         setValues({
             ...values,
             eventSource: 'NODE_EVENT',
+            policySections: cloneDeep(initialPolicy.policySections),
             scope: [],
             excludedImageNames: [],
             excludedDeploymentScopes: [],

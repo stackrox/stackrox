@@ -210,7 +210,7 @@ func BenchmarkBuildIndicatorFilterMemory(b *testing.B) {
 	if err != nil {
 		b.Fatal(err)
 	}
-	defer utils.Must(f.Close())
+	b.Cleanup(func() { utils.Must(f.Close()) })
 
 	err = pprof.Lookup("heap").WriteTo(f, 0)
 	if err != nil {

@@ -181,9 +181,10 @@ func vulnerabilities(vulnerabilities map[string]*v4.VulnerabilityReport_Vulnerab
 			Link:        link(ccVuln.GetLink()),
 			PublishedOn: ccVuln.GetIssued(),
 			// LastModified: ,
-			VulnerabilityType: storage.EmbeddedVulnerability_IMAGE_VULNERABILITY,
-			Severity:          normalizedSeverity(ccVuln.GetNormalizedSeverity()),
-			Epss:              epss(ccVuln.GetEpssMetrics()),
+			VulnerabilityType:     storage.EmbeddedVulnerability_IMAGE_VULNERABILITY,
+			Severity:              normalizedSeverity(ccVuln.GetNormalizedSeverity()),
+			Epss:                  epss(ccVuln.GetEpssMetrics()),
+			FixAvailableTimestamp: ccVuln.GetFixedDate(),
 		}
 		if err := setScoresAndScoreVersions(vuln, ccVuln.GetCvssMetrics()); err != nil {
 			utils.Should(err)

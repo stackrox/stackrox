@@ -4,6 +4,7 @@ package datastore
 
 import (
 	"context"
+	"fmt"
 	"testing"
 
 	imageDataStore "github.com/stackrox/rox/central/image/datastore"
@@ -23,6 +24,7 @@ import (
 	"github.com/stackrox/rox/pkg/search/postgres"
 	"github.com/stackrox/rox/pkg/search/postgres/aggregatefunc"
 	"github.com/stackrox/rox/pkg/search/scoped"
+	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -363,6 +365,27 @@ func (s *DeploymentPostgresDataStoreTestSuite) TestSearchWithPostgres() {
 				}
 			} else {
 				actual, err = s.deploymentDatastore.Search(tc.ctx, tc.query)
+				searchRes, errRes := s.deploymentDatastore.SearchDeployments(tc.ctx, tc.query)
+				assert.NoError(t, errRes)
+				assert.Len(t, searchRes, len(tc.expectedIDs))
+
+				// Verify SearchResult fields are properly populated with exact values
+				for _, result := range searchRes {
+					assert.Equal(t, v1.SearchCategory_DEPLOYMENTS, result.GetCategory(), "Result category should be DEPLOYMENTS")
+					assert.NotNil(t, result.GetFieldToMatches(), "FieldToMatches should not be nil")
+
+					// Fetch the actual deployment to verify exact name and location
+					deployment, found, fetchErr := s.deploymentDatastore.GetDeployment(tc.ctx, result.GetId())
+					assert.NoError(t, fetchErr, "Should be able to fetch deployment")
+					assert.True(t, found, "Deployment should exist")
+					assert.Equal(t, deployment.GetName(), result.GetName(), "SearchResult name should match deployment name")
+					// Verify exact location matches expected format "/ClusterName/Namespace"
+					expectedLocation := ""
+					if deployment.GetClusterName() != "" && deployment.GetNamespace() != "" {
+						expectedLocation = fmt.Sprintf("/%s/%s", deployment.GetClusterName(), deployment.GetNamespace())
+					}
+					assert.Equal(t, expectedLocation, result.GetLocation(), "SearchResult location should match /ClusterName/Namespace format")
+				}
 			}
 			assert.NoError(t, err)
 			assert.Len(t, actual, len(tc.expectedIDs))
@@ -426,4 +449,178 @@ func TestSelectQueryOnDeployments(t *testing.T) {
 	results, err := postgres.RunSelectRequestForSchema[deploymentCountByType](ctx, testDB.DB, schema.DeploymentsSchema, q)
 	assert.NoError(t, err)
 	assert.ElementsMatch(t, expected, results)
+}
+
+func TestContainerImagesView(t *testing.T) {
+	testutils.MustUpdateFeature(t, features.FlattenImageData, true)
+	ctx := sac.WithAllAccess(context.Background())
+	testDB := pgtest.ForT(t)
+
+	deploymentDS, err := GetTestPostgresDataStore(t, testDB.DB)
+	require.NoError(t, err)
+
+	// Define common image IDs that will be shared across deployments and containers
+	sharedImageIDV2_1 := "imagev2-id-shared-1"
+	sharedImageIDV2_2 := "imagev2-id-shared-2"
+	uniqueImageIDV2 := "imagev2-id-unique"
+
+	// Define image digests (SHA) for each image
+	sharedImageDigest_1 := "sha256:shared1digest"
+	sharedImageDigest_2 := "sha256:shared2digest"
+	uniqueImageDigest := "sha256:uniquedigest"
+
+	cluster1 := testconsts.Cluster1
+	cluster2 := testconsts.Cluster2
+
+	// Create deployments with multiple containers running the same images
+	deployments := []*storage.Deployment{
+		{
+			// Deployment 1 in cluster1 with 2 containers using the same shared image
+			Id:          uuid.NewV4().String(),
+			Name:        "dep1",
+			ClusterId:   cluster1,
+			ClusterName: cluster1,
+			Namespace:   "ns1",
+			NamespaceId: cluster1 + "ns1",
+			Containers: []*storage.Container{
+				{
+					Name: "container1",
+					Image: &storage.ContainerImage{
+						Id:   sharedImageDigest_1,
+						IdV2: sharedImageIDV2_1,
+						Name: &storage.ImageName{FullName: "nginx:1.0"},
+					},
+				},
+				{
+					Name: "container2",
+					Image: &storage.ContainerImage{
+						Id:   sharedImageDigest_1, // Same digest as container1
+						IdV2: sharedImageIDV2_1,   // Same image as container1
+						Name: &storage.ImageName{FullName: "nginx:1.0"},
+					},
+				},
+			},
+		},
+		{
+			// Deployment 2 in cluster1 with 1 container using the same shared image as dep1
+			Id:          uuid.NewV4().String(),
+			Name:        "dep2",
+			ClusterId:   cluster1,
+			ClusterName: cluster1,
+			Namespace:   "ns2",
+			NamespaceId: cluster1 + "ns2",
+			Containers: []*storage.Container{
+				{
+					Name: "container1",
+					Image: &storage.ContainerImage{
+						Id:   sharedImageDigest_1, // Same digest as dep1
+						IdV2: sharedImageIDV2_1,   // Same image as dep1
+						Name: &storage.ImageName{FullName: "nginx:1.0"},
+					},
+				},
+			},
+		},
+		{
+			// Deployment 3 in cluster2 with containers using shared and unique images
+			Id:          uuid.NewV4().String(),
+			Name:        "dep3",
+			ClusterId:   cluster2,
+			ClusterName: cluster2,
+			Namespace:   "ns1",
+			NamespaceId: cluster2 + "ns1",
+			Containers: []*storage.Container{
+				{
+					Name: "container1",
+					Image: &storage.ContainerImage{
+						Id:   sharedImageDigest_1, // Same digest as dep1
+						IdV2: sharedImageIDV2_1,   // Same image as dep1, but in cluster2
+						Name: &storage.ImageName{FullName: "nginx:1.0"},
+					},
+				},
+				{
+					Name: "container2",
+					Image: &storage.ContainerImage{
+						Id:   sharedImageDigest_2,
+						IdV2: sharedImageIDV2_2,
+						Name: &storage.ImageName{FullName: "redis:latest"},
+					},
+				},
+				{
+					Name: "container3",
+					Image: &storage.ContainerImage{
+						Id:   uniqueImageDigest,
+						IdV2: uniqueImageIDV2,
+						Name: &storage.ImageName{FullName: "postgres:15"},
+					},
+				},
+			},
+		},
+		{
+			// Deployment 4 in cluster2 with the second shared image
+			Id:          uuid.NewV4().String(),
+			Name:        "dep4",
+			ClusterId:   cluster2,
+			ClusterName: cluster2,
+			Namespace:   "ns2",
+			NamespaceId: cluster2 + "ns2",
+			Containers: []*storage.Container{
+				{
+					Name: "container1",
+					Image: &storage.ContainerImage{
+						Id:   sharedImageDigest_2, // Same digest as dep3.container2
+						IdV2: sharedImageIDV2_2,   // Same image as dep3.container2
+						Name: &storage.ImageName{FullName: "redis:latest"},
+					},
+				},
+			},
+		},
+	}
+
+	for _, dep := range deployments {
+		require.NoError(t, deploymentDS.UpsertDeployment(ctx, dep))
+	}
+
+	// Test GetContainerImageViews
+	responses, err := deploymentDS.GetContainerImageViews(ctx, pkgSearch.EmptyQuery())
+	require.NoError(t, err)
+
+	// Expected results:
+	// - sharedImageIDV2_1: deployed in cluster1 and cluster2
+	// - sharedImageIDV2_2: deployed in cluster2 only
+	// - uniqueImageIDV2: deployed in cluster2 only
+	assert.Len(t, responses, 3, "Should return 3 distinct responses")
+
+	// Build maps for easier assertion
+	type imageInfo struct {
+		digest     string
+		clusterIDs []string
+	}
+	responseMap := make(map[string]imageInfo)
+	for _, resp := range responses {
+		responseMap[resp.GetImageID()] = imageInfo{
+			digest:     resp.GetImageDigest(),
+			clusterIDs: resp.GetClusterIDs(),
+		}
+	}
+
+	// Verify sharedImageIDV2_1 is in both clusters with correct digest
+	assert.Contains(t, responseMap, sharedImageIDV2_1)
+	assert.Equal(t, sharedImageDigest_1, responseMap[sharedImageIDV2_1].digest,
+		"sharedImageIDV2_1 should have correct digest")
+	assert.ElementsMatch(t, []string{cluster1, cluster2}, responseMap[sharedImageIDV2_1].clusterIDs,
+		"sharedImageIDV2_1 should be in both cluster1 and cluster2")
+
+	// Verify sharedImageIDV2_2 is only in cluster2 with correct digest
+	assert.Contains(t, responseMap, sharedImageIDV2_2)
+	assert.Equal(t, sharedImageDigest_2, responseMap[sharedImageIDV2_2].digest,
+		"sharedImageIDV2_2 should have correct digest")
+	assert.ElementsMatch(t, []string{cluster2}, responseMap[sharedImageIDV2_2].clusterIDs,
+		"sharedImageIDV2_2 should be only in cluster2")
+
+	// Verify uniqueImageIDV2 is only in cluster2 with correct digest
+	assert.Contains(t, responseMap, uniqueImageIDV2)
+	assert.Equal(t, uniqueImageDigest, responseMap[uniqueImageIDV2].digest,
+		"uniqueImageIDV2 should have correct digest")
+	assert.ElementsMatch(t, []string{cluster2}, responseMap[uniqueImageIDV2].clusterIDs,
+		"uniqueImageIDV2 should be only in cluster2")
 }

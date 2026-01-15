@@ -15,9 +15,8 @@ import type { ClusterCheckStatus } from 'services/ComplianceResultsService';
 import type { TableUIState } from 'utils/getTableUIState';
 
 import CompoundSearchFilter from 'Components/CompoundSearchFilter/components/CompoundSearchFilter';
-import SearchFilterChips, {
-    makeFilterChipDescriptors,
-} from 'Components/CompoundSearchFilter/components/SearchFilterChips';
+import CompoundSearchFilterLabels from 'Components/CompoundSearchFilter/components/CompoundSearchFilterLabels';
+import SearchFilterSelectInclusive from 'Components/CompoundSearchFilter/components/SearchFilterSelectInclusive';
 import type {
     CompoundSearchFilterConfig,
     OnSearchCallback,
@@ -29,10 +28,9 @@ import {
     getClusterResultsStatusObject,
     getTimeDifferenceAsPhrase,
 } from './compliance.coverage.utils';
-import CheckStatusDropdown from './components/CheckStatusDropdown';
 import StatusIcon from './components/StatusIcon';
 import useScanConfigRouter from './hooks/useScanConfigRouter';
-import { complianceStatusFilterChipDescriptors } from '../searchFilterConfig';
+import { attributeForComplianceCheckStatus } from '../searchFilterConfig';
 
 export const tabContentIdForResults = 'check-details-Results-tab-section';
 
@@ -47,11 +45,6 @@ export type CheckDetailsTableProps = {
     searchFilter: SearchFilter;
     onFilterChange: (newFilter: SearchFilter) => void;
     onSearch: OnSearchCallback;
-    onCheckStatusSelect: (
-        filterType: 'Compliance Check Status',
-        checked: boolean,
-        selection: string
-    ) => void;
     onClearFilters: () => void;
 };
 
@@ -66,13 +59,10 @@ function CheckDetailsTable({
     searchFilter,
     onFilterChange,
     onSearch,
-    onCheckStatusSelect,
     onClearFilters,
 }: CheckDetailsTableProps) {
     const { generatePathWithScanConfig } = useScanConfigRouter();
     const { page, perPage, setPage, setPerPage } = pagination;
-
-    const filterChipGroupDescriptors = makeFilterChipDescriptors(searchFilterConfig);
 
     return (
         <div id={tabContentIdForResults}>
@@ -87,11 +77,23 @@ function CheckDetailsTable({
                             />
                         </ToolbarItem>
                         <ToolbarItem>
-                            <CheckStatusDropdown
+                            <SearchFilterSelectInclusive
+                                attribute={attributeForComplianceCheckStatus}
+                                isSeparate
+                                onSearch={onSearch}
                                 searchFilter={searchFilter}
-                                onSelect={onCheckStatusSelect}
                             />
                         </ToolbarItem>
+                    </ToolbarGroup>
+                    <ToolbarGroup className="pf-v5-u-w-100">
+                        <CompoundSearchFilterLabels
+                            attributesSeparateFromConfig={[attributeForComplianceCheckStatus]}
+                            config={searchFilterConfig}
+                            onFilterChange={onFilterChange}
+                            searchFilter={searchFilter}
+                        />
+                    </ToolbarGroup>
+                    <ToolbarGroup className="pf-v5-u-w-100">
                         <ToolbarItem variant="pagination" align={{ default: 'alignRight' }}>
                             <Pagination
                                 itemCount={checkResultsCount}
@@ -101,16 +103,6 @@ function CheckDetailsTable({
                                 onPerPageSelect={(_, newPerPage) => setPerPage(newPerPage)}
                             />
                         </ToolbarItem>
-                    </ToolbarGroup>
-                    <ToolbarGroup className="pf-v5-u-w-100">
-                        <SearchFilterChips
-                            searchFilter={searchFilter}
-                            onFilterChange={onFilterChange}
-                            filterChipGroupDescriptors={[
-                                ...filterChipGroupDescriptors,
-                                complianceStatusFilterChipDescriptors,
-                            ]}
-                        />
                     </ToolbarGroup>
                 </ToolbarContent>
             </Toolbar>

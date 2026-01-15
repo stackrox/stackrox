@@ -1,24 +1,32 @@
-import { useState } from 'react';
-import { useLocation, useParams } from 'react-router-dom-v5-compat';
 import { useQuery } from '@apollo/client';
+import { Flex, PageSection } from '@patternfly/react-core';
 
-import { PageBody } from 'Components/Panel';
 import { searchCategories } from 'constants/entityTypes';
 import { SEARCH_OPTIONS_QUERY } from 'queries/search';
-import workflowStateContext from 'Containers/workflowStateContext';
-import parseURL from 'utils/URLParser';
+import useURLPagination from 'hooks/useURLPagination';
+import useURLSort from 'hooks/useURLSort';
+import useURLSearch from 'hooks/useURLSearch';
+
+import SearchFilterInput from 'Components/SearchFilterInput';
+import searchOptionsToQuery from 'services/searchOptionsToQuery';
+import {
+    ORCHESTRATOR_COMPONENTS_KEY,
+    orchestratorComponentsOption,
+} from 'utils/orchestratorComponents';
+
+import RiskTablePanel, { sortFields, defaultSortOption } from './RiskTablePanel';
 import RiskPageHeader from './RiskPageHeader';
-import RiskTablePanel from './RiskTablePanel';
+
+const DEFAULT_RISK_PAGE_SIZE = 20;
 
 function RiskTablePage() {
-    const location = useLocation();
-    const params = useParams();
-    const { deploymentId } = params;
-    const { pathname, search } = location;
-    const workflowState = parseURL({ pathname, search });
-
-    // Handle changes to applied search options.
-    const [isViewFiltered, setIsViewFiltered] = useState(false);
+    const urlSort = useURLSort({
+        sortFields,
+        defaultSortOption,
+        onSort: () => urlPagination.setPage(1),
+    });
+    const urlPagination = useURLPagination(DEFAULT_RISK_PAGE_SIZE);
+    const urlSearch = useURLSearch();
 
     const searchQueryOptions = {
         variables: {
@@ -30,19 +38,49 @@ function RiskTablePage() {
     const filteredSearchOptions = searchOptions.filter(
         (option) => option !== 'Orchestrator Component'
     );
+
+    const autoCompleteCategory = searchCategories.DEPLOYMENT;
+
+    const orchestratorComponentShowState = localStorage.getItem(ORCHESTRATOR_COMPONENTS_KEY);
+    const prependAutocompleteQuery =
+        orchestratorComponentShowState !== 'true' ? orchestratorComponentsOption : [];
+
     return (
-        <workflowStateContext.Provider value={workflowState}>
-            <RiskPageHeader isViewFiltered={isViewFiltered} searchOptions={filteredSearchOptions} />
-            <PageBody>
-                <div className="flex-shrink-1 overflow-hidden w-full">
-                    <RiskTablePanel
-                        selectedDeploymentId={deploymentId}
-                        isViewFiltered={isViewFiltered}
-                        setIsViewFiltered={setIsViewFiltered}
-                    />
-                </div>
-            </PageBody>
-        </workflowStateContext.Provider>
+        <>
+            <RiskPageHeader />
+            {/* Nested PageSection here for visual consistency **as-is**. Once we move to Patternfly 6, we can remove this and clean up */}
+            <PageSection>
+                <PageSection variant="light" component="div">
+                    <Flex
+                        direction={{ default: 'column' }}
+                        spaceItems={{ default: 'spaceItemsMd' }}
+                    >
+                        <SearchFilterInput
+                            className="w-full"
+                            searchFilter={urlSearch.searchFilter}
+                            searchOptions={filteredSearchOptions}
+                            searchCategory={autoCompleteCategory}
+                            placeholder="Filter deployments"
+                            handleChangeSearchFilter={(newSearchFilter) => {
+                                urlSearch.setSearchFilter(newSearchFilter);
+                                urlPagination.setPage(1);
+                            }}
+                            autocompleteQueryPrefix={searchOptionsToQuery(prependAutocompleteQuery)}
+                        />
+                        <RiskTablePanel
+                            sortOption={urlSort.sortOption}
+                            getSortParams={urlSort.getSortParams}
+                            searchFilter={urlSearch.searchFilter}
+                            onSearchFilterChange={(newSearchFilter) => {
+                                urlSearch.setSearchFilter(newSearchFilter);
+                                urlPagination.setPage(1);
+                            }}
+                            pagination={urlPagination}
+                        />
+                    </Flex>
+                </PageSection>
+            </PageSection>
+        </>
     );
 }
 

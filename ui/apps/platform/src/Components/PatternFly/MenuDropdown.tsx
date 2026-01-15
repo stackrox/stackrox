@@ -40,7 +40,7 @@ function MenuDropdown({
     const [isOpen, setIsOpen] = useState(false);
 
     function onToggleClick() {
-        setIsOpen(!isOpen);
+        setIsOpen((prev) => !prev);
     }
 
     function onSelectHandler(
