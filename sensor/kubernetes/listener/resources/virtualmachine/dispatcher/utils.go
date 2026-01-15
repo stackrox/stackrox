@@ -1,6 +1,9 @@
 package dispatcher
 
 import (
+	"slices"
+	"strings"
+
 	"github.com/stackrox/rox/generated/internalapi/central"
 	virtualMachineV1 "github.com/stackrox/rox/generated/internalapi/virtualmachine/v1"
 	"github.com/stackrox/rox/pkg/virtualmachine"
@@ -46,7 +49,34 @@ func getFacts(vm *sensorVirtualMachine.Info) map[string]string {
 	if vm.GuestOS != "" {
 		facts[GuestOSKey] = vm.GuestOS
 	}
+	if vm.Description != "" {
+		facts[DescriptionKey] = vm.Description
+	}
+	if vm.NodeName != "" {
+		facts[NodeNameKey] = vm.NodeName
+	}
+	if value, ok := formatFactsList(vm.IPAddresses); ok {
+		facts[IPAddressesKey] = value
+	}
+	if value, ok := formatFactsList(vm.ActivePods); ok {
+		facts[ActivePodsKey] = value
+	}
+	if value, ok := formatFactsList(vm.BootOrder); ok {
+		facts[BootOrderKey] = value
+	}
+	if value, ok := formatFactsList(vm.CDRomDisks); ok {
+		facts[CDRomDisksKey] = value
+	}
 	return facts
+}
+
+func formatFactsList(values []string) (string, bool) {
+	if len(values) == 0 {
+		return "", false
+	}
+	sorted := append([]string(nil), values...)
+	slices.Sort(sorted)
+	return strings.Join(sorted, ", "), true
 }
 
 func createEvent(action central.ResourceAction, clusterID string, vm *sensorVirtualMachine.Info) *central.SensorEvent {
