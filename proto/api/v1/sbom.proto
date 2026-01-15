@@ -9,7 +9,7 @@ option go_package = "./api/v1;v1";
 option java_package = "io.stackrox.proto.api.v1";
 
 // SBOMScanResponse wraps metadata and scan results for an SBOM.
-// 
+//
 // Components must be JSON marshal/unmarshall compatible with `storage.Image`
 // so that output formatting via roxctl is consistent.
 //

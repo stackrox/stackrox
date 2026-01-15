@@ -25,8 +25,8 @@ const (
 
 // SBOMScanResponse wraps metadata and scan results for an SBOM.
 //
-// Fields must be JSON marshal/unmarshal compatible with `storage.Image`
-// so that parsing scans are familiar to users.
+// Components must be JSON marshal/unmarshall compatible with `storage.Image`
+// so that output formatting via roxctl is consistent.
 //
 // There is no service defined for this response as it is handled
 // by a custom route (non-gRPC).
