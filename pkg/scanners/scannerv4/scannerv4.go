@@ -148,24 +148,10 @@ func (s *scannerv4) ScanSBOM(sbomReader io.Reader, contentType string) (*v1.SBOM
 	if err != nil {
 		return nil, fmt.Errorf("reading sbom data: %w", err)
 	}
-	log.Debugf("Scanning SBOM: %s", dataB)
+	log.Debugf("Scanned SBOM: %s", dataB)
 	_ = ctx
 	// Create a fake vuln report for testing purposes
-	vr := &v4.VulnerabilityReport{
-		HashId: "fake HashId",
-		Vulnerabilities: map[string]*v4.VulnerabilityReport_Vulnerability{
-			"v1": {Name: "Fake Vuln #1"},
-			"v2": {Name: "Fake Vuln #2"},
-		},
-		PackageVulnerabilities: map[string]*v4.StringList{
-			"p1": {Values: []string{"v1", "v2"}},
-		},
-		Contents: &v4.Contents{
-			Packages: map[string]*v4.Package{
-				"p1": {Name: "Fake Package #1"},
-			},
-		},
-	}
+	vr := fakeVulnReport()
 	// TODO(ROX-30570): END Remove
 
 	// TODO(ROX-30570): Replace with actual scanner client call
@@ -183,6 +169,89 @@ func (s *scannerv4) ScanSBOM(sbomReader io.Reader, contentType string) (*v1.SBOM
 		Id:   vr.GetHashId(),
 		Scan: sbomScan(vr, scannerVersionStr),
 	}, nil
+}
+
+// fakeVulnReport generates a fake vuln report for testing purposes.
+//
+// TODO(ROX-30570): REMOVE
+func fakeVulnReport() *v4.VulnerabilityReport {
+	return &v4.VulnerabilityReport{
+		HashId: "fake HashId",
+		Vulnerabilities: map[string]*v4.VulnerabilityReport_Vulnerability{
+			"v1": {
+				Name:               "Fake Vuln #1",
+				NormalizedSeverity: v4.VulnerabilityReport_Vulnerability_SEVERITY_CRITICAL,
+				CvssMetrics: []*v4.VulnerabilityReport_Vulnerability_CVSS{
+					{
+						V3: &v4.VulnerabilityReport_Vulnerability_CVSS_V3{
+							Vector: "CVSS:3.1/AV:L/AC:H/PR:L/UI:R/S:U/C:L/I:L/A:N",
+						},
+						Source: v4.VulnerabilityReport_Vulnerability_CVSS_SOURCE_NVD,
+						Url:    "https://nvd.nist.gov/vuln/detail/CVE-5678-1234",
+					},
+				},
+			},
+			"v2": {
+				Name:               "Fake Vuln #2",
+				NormalizedSeverity: v4.VulnerabilityReport_Vulnerability_SEVERITY_IMPORTANT,
+				CvssMetrics: []*v4.VulnerabilityReport_Vulnerability_CVSS{
+					{
+						V3: &v4.VulnerabilityReport_Vulnerability_CVSS_V3{
+							Vector: "CVSS:3.1/AV:L/AC:H/PR:L/UI:R/S:U/C:L/I:L/A:N",
+						},
+						Source: v4.VulnerabilityReport_Vulnerability_CVSS_SOURCE_NVD,
+						Url:    "https://nvd.nist.gov/vuln/detail/CVE-5678-1234",
+					},
+				},
+			},
+			"v3": {
+				Name:               "Fake Vuln #3",
+				NormalizedSeverity: v4.VulnerabilityReport_Vulnerability_SEVERITY_MODERATE,
+
+				CvssMetrics: []*v4.VulnerabilityReport_Vulnerability_CVSS{
+					{
+						V3: &v4.VulnerabilityReport_Vulnerability_CVSS_V3{
+							BaseScore: 8.2,
+							Vector:    "CVSS:3.1/AV:A/AC:L/PR:N/UI:N/S:C/C:L/I:N/A:H",
+						},
+						Source: v4.VulnerabilityReport_Vulnerability_CVSS_SOURCE_RED_HAT,
+						Url:    "https://access.redhat.com/security/cve/CVE-1234-567",
+					},
+					{
+						V2: &v4.VulnerabilityReport_Vulnerability_CVSS_V2{
+							BaseScore: 6.4,
+							Vector:    "AV:N/AC:M/Au:M/C:C/I:N/A:P",
+						},
+						Source: v4.VulnerabilityReport_Vulnerability_CVSS_SOURCE_NVD,
+						Url:    "https://nvd.nist.gov/vuln/detail/CVE-1234-567",
+					},
+				},
+			},
+			"v4": {
+				Name:               "Fake Vuln #4",
+				NormalizedSeverity: v4.VulnerabilityReport_Vulnerability_SEVERITY_LOW,
+				CvssMetrics: []*v4.VulnerabilityReport_Vulnerability_CVSS{
+					{
+						V3: &v4.VulnerabilityReport_Vulnerability_CVSS_V3{
+							Vector: "CVSS:3.1/AV:L/AC:H/PR:L/UI:R/S:U/C:L/I:L/A:N",
+						},
+						Source: v4.VulnerabilityReport_Vulnerability_CVSS_SOURCE_NVD,
+						Url:    "https://nvd.nist.gov/vuln/detail/CVE-5678-1234",
+					},
+				},
+			},
+		},
+		PackageVulnerabilities: map[string]*v4.StringList{
+			"p1": {Values: []string{"v1", "v2", "v3", "v4"}},
+			"p2": {Values: []string{"v3", "v4"}},
+		},
+		Contents: &v4.Contents{
+			Packages: map[string]*v4.Package{
+				"p1": {Name: "Fake Package #1", Version: "v1.0.0"},
+				"p2": {Name: "Fake Package #2", Version: "v2.3.4"},
+			},
+		},
+	}
 }
 
 func sbomScan(vr *v4.VulnerabilityReport, scannerVersionStr string) *v1.SBOMScanResponse_SBOMScan {
