@@ -115,16 +115,6 @@ var (
 						{"key": "container", "value": "nginx"}
 					]
 				}
-			},
-			{
-				"message": "This is a file access violation",
-				"fileAccess": {
-					"file": {
-						"actualPath": "/etc/passwd",
-						"effectivePath": "/etc/passwd"
-					}
-				},
-				"type": "FILE_ACCESS"
 			}
 		]
 	}
