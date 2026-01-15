@@ -10,6 +10,7 @@ on:
       wait-for-images-limit:
         description: Duration to wait for images to be available (as Go duration string, set 0 to skip waiting)
         required: true
+        # When changing the default here, also update the default in run-parameters.
         default: 3h10m
         type: string
   push:
@@ -21,33 +22,44 @@ jobs:
   run-parameters:
     name: Run parameters
     runs-on: ubuntu-latest
+    outputs:
+      wait-for-images-limit: ${{ steps.run-parameters.outputs.wait-for-images-limit }}
+      version: ${{ steps.run-parameters.outputs.version }}
     steps:
-      - run: |
+      - name: Run parameters
+        id: run-parameters
+        run: |
+          wait_for_images_limit="${{ inputs.wait-for-images-limit || '3h10m' }}"
+          version="${{ inputs.version || github.ref_name }}"
+          echo "wait-for-images-limit=${wait_for_images_limit}" >> "${GITHUB_OUTPUT}"
+          echo "version=${version}" >> "${GITHUB_OUTPUT}"
           {
             echo "Event: ${{ github.event_name }}"
-            if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-              echo '```'
-              echo "${{ toJSON(inputs) }}"
-              echo '```'
-            fi
+            echo "Version: ${version}"
+            echo "Wait for images limit: ${wait_for_images_limit}"
+            echo "Inputs:"
+            echo '```'
+            echo "${{ toJSON(inputs) }}"
+            echo '```'
           } >> "$GITHUB_STEP_SUMMARY"
 
   parse-wait-for-images-limit:
     name: Parse wait-for-images-limit
     runs-on: ubuntu-latest
+    needs: [run-parameters]
     outputs:
       wait-limit: ${{ steps.parse-wait-limit.outputs.wait-limit }}
     steps:
       - name: Parse wait-for-images-limit
         id: parse-wait-limit
         run: |
-          wait_limit="$(sed 's/d/*24*3600 +/g; s/h/*3600 +/g; s/m/*60 +/g; s/s/\+/g; s/+[ ]*$//g' <<< "${{ inputs.wait-for-images-limit || '3h10m' }}" | bc)"
+          wait_limit="$(sed 's/d/*24*3600 +/g; s/h/*3600 +/g; s/m/*60 +/g; s/s/\+/g; s/+[ ]*$//g' <<< "${{ needs.run-parameters.outputs.wait-for-images-limit }}" | bc)"
           echo "wait-limit=${wait_limit}" >> "${GITHUB_OUTPUT}"
 
   scan-image-vulnerabilities-upstream:
-    name: "Upstream: ${{ matrix.image }}:${{ inputs.version || github.ref_name }}"
+    name: "Upstream: ${{ matrix.image }}:${{ needs.run-parameters.outputs.version }}"
     runs-on: ubuntu-latest
-    needs: [parse-wait-for-images-limit]
+    needs: [run-parameters, parse-wait-for-images-limit]
     permissions:
       # Needed for stackrox/central-login to create the JWT token.
       id-token: write
@@ -73,7 +85,7 @@ jobs:
         id: sanitize-nightly-version
         run: |
           set -euo pipefail
-          tag="${{ inputs.version || github.ref_name }}"
+          tag="${{ needs.run-parameters.outputs.version }}"
           if [[ "${{ matrix.image }}" = "stackrox-operator" && "${tag}" == *-nightly-* ]]; then
             # Extract version part before -nightly- and replace patch version with 0
             # Example: 0.1.x-nightly-20260114 -> 0.1.0-nightly-20260114
@@ -98,14 +110,14 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: upstream_quay_io_rhacs-eng_${{ matrix.image }}_${{ inputs.version || github.ref_name }}.json
+          name: upstream_quay_io_rhacs-eng_${{ matrix.image }}_${{ needs.run-parameters.outputs.version }}.json
           path: ${{ steps.scan-image.outputs.result-path }}
           retention-days: 30
 
   scan-image-vulnerabilities-konflux:
-    name: "Konflux: ${{ matrix.image }}:${{ inputs.version || github.ref_name }}"
+    name: "Konflux: ${{ matrix.image }}:${{ needs.run-parameters.outputs.version }}"
     runs-on: ubuntu-latest
-    needs: [parse-wait-for-images-limit]
+    needs: [run-parameters, parse-wait-for-images-limit]
     permissions:
       # Needed for stackrox/central-login to create the JWT token.
       id-token: write
@@ -131,7 +143,7 @@ jobs:
         id: sanitize-nightly-version
         run: |
           set -euo pipefail
-          tag="${{ inputs.version || github.ref_name }}"
+          tag="${{ needs.run-parameters.outputs.version }}"
           if [[ "${tag}" == *-nightly-* ]]; then
             suffix="fast"
             # Extract version part before -nightly- and replace patch version with 0
@@ -158,6 +170,6 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: konflux_quay_io_rhacs-eng_${{ matrix.image }}_${{ inputs.version || github.ref_name }}.json
+          name: konflux_quay_io_rhacs-eng_${{ matrix.image }}_${{ needs.run-parameters.outputs.version }}.json
           path: ${{ steps.scan-image.outputs.result-path }}
           retention-days: 30
