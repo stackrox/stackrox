@@ -108,6 +108,18 @@ func (s *violationSerializationTestSuite) TestViolationSerialization() {
 				"violationType": "GENERIC"
 			}
 		}
+		{
+			"alertInfo": {
+				"alertId": "aeaaaaaa-bbbb-4011-0000-111111111111"
+			},
+			"deploymentInfo": {},
+			"violationInfo": {
+				"violationId": "aeaaaaaa-bbbb-4011-0000-111111111111",
+				"violationMessage": "This is a file access violation",
+				"violationTime": "2024-06-14T20:00:00Z",
+				"violationType": "UNKNOWN"
+			}
+		}
 	]
 }`
 
