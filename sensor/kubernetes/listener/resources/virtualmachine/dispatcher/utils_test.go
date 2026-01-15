@@ -120,8 +120,18 @@ func TestGetFacts(t *testing.T) {
 				NodeNameKey:    "node-1",
 				IPAddressesKey: "10.0.0.1, 10.0.0.2",
 				ActivePodsKey:  "pod-1=node-a, pod-2=node-b",
-				BootOrderKey:   "disk1=1, disk2=2",
+				BootOrderKey:   "disk2=2, disk1=1",
 				CDRomDisksKey:  "cd1, cd2",
+			},
+		},
+		"should preserve boot order sequence": {
+			vm: &sensorVirtualMachine.Info{
+				GuestOS:   "Red Hat Enterprise Linux",
+				BootOrder: []string{"disk-b=1", "disk-a=1", "disk-c=2"},
+			},
+			expected: map[string]string{
+				GuestOSKey:   "Red Hat Enterprise Linux",
+				BootOrderKey: "disk-b=1, disk-a=1, disk-c=2",
 			},
 		},
 		"should return unknown guest os when optional data is missing": {

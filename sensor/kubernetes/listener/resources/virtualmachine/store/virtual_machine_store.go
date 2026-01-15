@@ -172,7 +172,9 @@ func (s *VirtualMachineStore) updateStatusOrCreateNoLock(updateInfo *virtualmach
 	prev.IPAddresses = copyStringSlice(updateInfo.IPAddresses)
 	prev.ActivePods = copyStringSlice(updateInfo.ActivePods)
 	prev.NodeName = updateInfo.NodeName
-	prev.Description = updateInfo.Description
+	if updateInfo.Description != "" {
+		prev.Description = updateInfo.Description
+	}
 	prev.BootOrder = copyStringSlice(updateInfo.BootOrder)
 	prev.CDRomDisks = copyStringSlice(updateInfo.CDRomDisks)
 }

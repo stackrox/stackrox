@@ -61,7 +61,7 @@ func getFacts(vm *sensorVirtualMachine.Info) map[string]string {
 	if value, ok := formatFactsList(vm.ActivePods); ok {
 		facts[ActivePodsKey] = value
 	}
-	if value, ok := formatFactsList(vm.BootOrder); ok {
+	if value, ok := formatFactsListPreserveOrder(vm.BootOrder); ok {
 		facts[BootOrderKey] = value
 	}
 	if value, ok := formatFactsList(vm.CDRomDisks); ok {
@@ -77,6 +77,13 @@ func formatFactsList(values []string) (string, bool) {
 	sorted := append([]string(nil), values...)
 	slices.Sort(sorted)
 	return strings.Join(sorted, ", "), true
+}
+
+func formatFactsListPreserveOrder(values []string) (string, bool) {
+	if len(values) == 0 {
+		return "", false
+	}
+	return strings.Join(values, ", "), true
 }
 
 func createEvent(action central.ResourceAction, clusterID string, vm *sensorVirtualMachine.Info) *central.SensorEvent {
