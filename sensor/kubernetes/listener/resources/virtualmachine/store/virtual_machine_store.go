@@ -49,6 +49,8 @@ func (s *VirtualMachineStore) AddOrUpdate(vm *virtualmachine.Info) *virtualmachi
 		vm.IPAddresses = copyStringSlice(oldVM.IPAddresses)
 		vm.ActivePods = copyStringSlice(oldVM.ActivePods)
 		vm.NodeName = oldVM.NodeName
+		// Description is derived from both VM and VMI annotations, so we only update the new value is not empty.
+		// This is to avoid removing the description when only one of the VM/VMI pair has a description.
 		if vm.Description == "" {
 			vm.Description = oldVM.Description
 		}
