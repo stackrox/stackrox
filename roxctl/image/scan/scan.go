@@ -12,7 +12,6 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/errox"
-	"github.com/stackrox/rox/pkg/gjson"
 	imageUtils "github.com/stackrox/rox/pkg/images/utils"
 	"github.com/stackrox/rox/pkg/jsonutil"
 	"github.com/stackrox/rox/pkg/printers"
@@ -24,6 +23,7 @@ import (
 	"github.com/stackrox/rox/roxctl/common/flags"
 	"github.com/stackrox/rox/roxctl/common/logger"
 	"github.com/stackrox/rox/roxctl/common/printer"
+	"github.com/stackrox/rox/roxctl/common/scan"
 	"github.com/stackrox/rox/roxctl/common/util"
 )
 
@@ -33,68 +33,13 @@ const (
 )
 
 var (
-	// JSON Path expressions to use for sarif report generation
-	sarifJSONPathExpressions = map[string]string{
-		printers.SarifRuleJSONPathExpressionKey: gjson.MultiPathExpression(
-			`@text:{"printKeys":"false","customSeparator":"_"}`,
-			gjson.Expression{
-				Expression: "result.vulnerabilities.#.cveId",
-			},
-			gjson.Expression{
-				Expression: "result.vulnerabilities.#.componentName",
-			},
-			gjson.Expression{
-				Expression: "result.vulnerabilities.#.componentVersion",
-			},
-		),
-		printers.SarifHelpJSONPathExpressionKey: gjson.MultiPathExpression(
-			"@text",
-			gjson.Expression{
-				Key:        "Vulnerability",
-				Expression: "result.vulnerabilities.#.cveId",
-			},
-			gjson.Expression{
-				Key:        "Link",
-				Expression: "result.vulnerabilities.#.cveInfo",
-			},
-			gjson.Expression{
-				Key:        "Severity",
-				Expression: "result.vulnerabilities.#.cveSeverity",
-			},
-			gjson.Expression{
-				Key:        "CVSS",
-				Expression: "result.vulnerabilities.#.cveCvss",
-			},
-			gjson.Expression{
-				Key:        "Component",
-				Expression: "result.vulnerabilities.#.componentName",
-			},
-			gjson.Expression{
-				Key:        "Version",
-				Expression: "result.vulnerabilities.#.componentVersion",
-			},
-			gjson.Expression{
-				Key:        "Fixed Version",
-				Expression: "result.vulnerabilities.#.componentFixedVersion",
-			},
-			gjson.Expression{
-				Key:        "Advisory",
-				Expression: "result.vulnerabilities.#.advisoryId",
-			},
-			gjson.Expression{
-				Key:        "Advisory Link",
-				Expression: "result.vulnerabilities.#.advisoryInfo",
-			},
-		),
-		printers.SarifSeverityJSONPathExpressionKey: "result.vulnerabilities.#.cveSeverity",
-		printers.SarifHelpLinkJSONPathExpressionKey: "result.vulnerabilities.#.cveInfo",
-	}
-
 	// supported output formats with default values
 	supportedObjectPrinters = []printer.CustomPrinterFactory{
 		printer.NewTabularPrinterFactoryWithAutoMerge(),
 		printer.NewJSONPrinterFactory(false, false),
 	}
+
+	validSeverities = scan.AllSeverities()
 )
 
 // Command checks the image against image build lifecycle policies
@@ -103,7 +48,7 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 
 	objectPrinterFactory, err := printer.NewObjectPrinterFactory("table",
 		append(supportedObjectPrinters,
-			printer.NewSarifPrinterFactory(printers.SarifVulnerabilityReport, sarifJSONPathExpressions, &imageScanCmd.image))...)
+			printer.NewSarifPrinterFactory(printers.SarifVulnerabilityReport, scan.SarifJSONPathExpressions, &imageScanCmd.image))...)
 	// should not happen when using default values, must be a programming error
 	utils.Must(err)
 	// Set the Output Format to empty, so by default the new output format will not be used and the legacy one will be
@@ -137,12 +82,7 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 	c.Flags().IntVarP(&imageScanCmd.retryCount, "retries", "r", 3, "Number of retries before exiting as error.")
 	c.Flags().StringVar(&imageScanCmd.cluster, "cluster", "", "Cluster name or ID to delegate image scan to.")
 	c.Flags().StringVar(&imageScanCmd.namespace, "namespace", "", "Namespace on the secured cluster from which to read context information when delegating image scans, specifically pull secrets to access the image registry.")
-	c.Flags().StringSliceVar(&imageScanCmd.severities, "severity", []string{
-		lowCVESeverity.String(),
-		moderateCVESeverity.String(),
-		importantCVESeverity.String(),
-		criticalCVESeverity.String(),
-	}, "List of severities to include in the output. Use this to filter for specific severities.")
+	c.Flags().StringSliceVar(&imageScanCmd.severities, "severity", validSeverities, "List of severities to include in the output. Use this to filter for specific severities.")
 	c.Flags().BoolVarP(&imageScanCmd.failOnFinding, "fail", "", false, "Fail if vulnerabilities have been found.")
 
 	// Deprecated flag
@@ -222,13 +162,6 @@ func (i *imageScanCommand) Validate() error {
 		}
 	}
 
-	validSeverities := []string{
-		lowCVESeverity.String(),
-		moderateCVESeverity.String(),
-		importantCVESeverity.String(),
-		criticalCVESeverity.String(),
-	}
-
 	for _, severity := range i.severities {
 		severity := strings.ToUpper(severity)
 		if !slices.Contains(validSeverities, severity) {
@@ -304,10 +237,10 @@ func (i *imageScanCommand) printImageResult(imageResult *storage.Image) error {
 		return legacyPrintFormat(imageResult, i.format, i.env.InputOutput().Out(), i.env.Logger())
 	}
 
-	cveSummary := newCVESummaryForPrinting(imageResult.GetScan(), i.severities)
+	cveSummary := scan.NewCVESummaryForPrinting(imageResult.GetScan(), i.severities)
 
 	if !i.standardizedFormat {
-		printCVESummary(i.image, cveSummary.Result.Summary, i.env.Logger())
+		scan.PrintCVESummary(i.image, cveSummary.Result.Summary, i.env.Logger())
 	}
 
 	if err := i.printer.Print(cveSummary, i.env.ColorWriter()); err != nil {
@@ -315,33 +248,14 @@ func (i *imageScanCommand) printImageResult(imageResult *storage.Image) error {
 	}
 
 	if !i.standardizedFormat {
-		printCVEWarning(cveSummary.CountVulnerabilities(), cveSummary.CountComponents(), i.env.Logger())
+		scan.PrintCVEWarning(cveSummary.CountVulnerabilities(), cveSummary.CountComponents(), i.env.Logger())
 	}
 
 	if cveCount := cveSummary.CountVulnerabilities(); i.failOnFinding && cveCount > 0 {
-		return newErrVulnerabilityFound(cveCount)
+		//nolint:wrapcheck // Preserving error message from scan package for consistent CLI output.
+		return scan.NewErrVulnerabilityFound(cveCount)
 	}
 	return nil
-}
-
-// print summary of amount of CVEs found
-func printCVESummary(image string, cveSummary map[string]int, out logger.Logger) {
-	out.PrintfLn("Scan results for image: %s", image)
-	out.PrintfLn("(%s: %d, %s: %d, %s: %d, %s: %d, %s: %d, %s: %d)\n",
-		totalComponentsMapKey, cveSummary[totalComponentsMapKey],
-		totalVulnerabilitiesMapKey, cveSummary[totalVulnerabilitiesMapKey],
-		lowCVESeverity, cveSummary[lowCVESeverity.String()],
-		moderateCVESeverity, cveSummary[moderateCVESeverity.String()],
-		importantCVESeverity, cveSummary[importantCVESeverity.String()],
-		criticalCVESeverity, cveSummary[criticalCVESeverity.String()])
-}
-
-// print warning with amount of CVEs found in components
-func printCVEWarning(numOfVulns int, numOfComponents int, out logger.Logger) {
-	if numOfVulns != 0 {
-		out.WarnfLn("A total of %d unique vulnerabilities were found in %d components",
-			numOfVulns, numOfComponents)
-	}
 }
 
 // TODO(ROX-8303): remove this once we have fully deprecated the legacy output format
