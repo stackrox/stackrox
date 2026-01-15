@@ -46,6 +46,37 @@ func TestVirtualMachine(t *testing.T) {
 				State:    storage.VirtualMachine_RUNNING,
 			},
 		},
+		{
+			name: "virtual machine with multiple facts",
+			input: &virtualMachineV1.VirtualMachine{
+				Id:        "VM-ID-2",
+				Namespace: "virtual-machine-namespace",
+				Name:      "virtual-machine-name-2",
+				ClusterId: uuid.NewTestUUID(2).String(),
+				Facts: map[string]string{
+					"Guest OS":    "Red Hat Enterprise Linux",
+					"Node Name":   "node-1",
+					"IP Address":  "10.0.0.1",
+					"Description": "test description",
+				},
+				VsockCid: 84,
+				State:    virtualMachineV1.VirtualMachine_STOPPED,
+			},
+			expected: &storage.VirtualMachine{
+				Id:        "VM-ID-2",
+				Namespace: "virtual-machine-namespace",
+				Name:      "virtual-machine-name-2",
+				ClusterId: uuid.NewTestUUID(2).String(),
+				Facts: map[string]string{
+					"Guest OS":    "Red Hat Enterprise Linux",
+					"Node Name":   "node-1",
+					"IP Address":  "10.0.0.1",
+					"Description": "test description",
+				},
+				VsockCid: 84,
+				State:    storage.VirtualMachine_STOPPED,
+			},
+		},
 	}
 
 	for _, tt := range tests {

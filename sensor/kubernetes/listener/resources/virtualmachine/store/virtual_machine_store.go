@@ -49,13 +49,6 @@ func (s *VirtualMachineStore) AddOrUpdate(vm *virtualmachine.Info) *virtualmachi
 		vm.IPAddresses = copyStringSlice(oldVM.IPAddresses)
 		vm.ActivePods = copyStringSlice(oldVM.ActivePods)
 		vm.NodeName = oldVM.NodeName
-		// Description is derived from both VM and VMI annotations, so we only update the new value is not empty.
-		// This is to avoid removing the description when only one of the VM/VMI pair has a description.
-		if vm.Description == "" {
-			vm.Description = oldVM.Description
-		}
-		vm.BootOrder = copyStringSlice(oldVM.BootOrder)
-		vm.CDRomDisks = copyStringSlice(oldVM.CDRomDisks)
 	}
 	s.addOrUpdateNoLock(vm)
 	return vm
@@ -174,9 +167,7 @@ func (s *VirtualMachineStore) updateStatusOrCreateNoLock(updateInfo *virtualmach
 	prev.IPAddresses = copyStringSlice(updateInfo.IPAddresses)
 	prev.ActivePods = copyStringSlice(updateInfo.ActivePods)
 	prev.NodeName = updateInfo.NodeName
-	if updateInfo.Description != "" {
-		prev.Description = updateInfo.Description
-	}
+	prev.Description = updateInfo.Description
 	prev.BootOrder = copyStringSlice(updateInfo.BootOrder)
 	prev.CDRomDisks = copyStringSlice(updateInfo.CDRomDisks)
 }
@@ -249,12 +240,9 @@ func (s *VirtualMachineStore) clearStatusNoLock(id virtualmachine.VMID) {
 	// If the instance is removed the VirtualMachine will transition to Stopped
 	vm.Running = false
 	vm.GuestOS = ""
-	vm.Description = ""
 	vm.NodeName = ""
 	vm.IPAddresses = nil
 	vm.ActivePods = nil
-	vm.BootOrder = nil
-	vm.CDRomDisks = nil
 }
 
 func copyStringSlice(values []string) []string {

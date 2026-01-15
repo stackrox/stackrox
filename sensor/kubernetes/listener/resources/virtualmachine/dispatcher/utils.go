@@ -1,7 +1,6 @@
 package dispatcher
 
 import (
-	"slices"
 	"strings"
 
 	"github.com/stackrox/rox/generated/internalapi/central"
@@ -55,35 +54,19 @@ func getFacts(vm *sensorVirtualMachine.Info) map[string]string {
 	if vm.NodeName != "" {
 		facts[NodeNameKey] = vm.NodeName
 	}
-	if value, ok := formatFactsList(vm.IPAddresses); ok {
-		facts[IPAddressesKey] = value
+	if len(vm.IPAddresses) > 0 {
+		facts[IPAddressesKey] = strings.Join(vm.IPAddresses, ", ")
 	}
-	if value, ok := formatFactsList(vm.ActivePods); ok {
-		facts[ActivePodsKey] = value
+	if len(vm.ActivePods) > 0 {
+		facts[ActivePodsKey] = strings.Join(vm.ActivePods, ", ")
 	}
-	if value, ok := formatFactsListPreserveOrder(vm.BootOrder); ok {
-		facts[BootOrderKey] = value
+	if len(vm.BootOrder) > 0 {
+		facts[BootOrderKey] = strings.Join(vm.BootOrder, ", ")
 	}
-	if value, ok := formatFactsList(vm.CDRomDisks); ok {
-		facts[CDRomDisksKey] = value
+	if len(vm.CDRomDisks) > 0 {
+		facts[CDRomDisksKey] = strings.Join(vm.CDRomDisks, ", ")
 	}
 	return facts
-}
-
-func formatFactsList(values []string) (string, bool) {
-	if len(values) == 0 {
-		return "", false
-	}
-	sorted := append([]string(nil), values...)
-	slices.Sort(sorted)
-	return strings.Join(sorted, ", "), true
-}
-
-func formatFactsListPreserveOrder(values []string) (string, bool) {
-	if len(values) == 0 {
-		return "", false
-	}
-	return strings.Join(values, ", "), true
 }
 
 func createEvent(action central.ResourceAction, clusterID string, vm *sensorVirtualMachine.Info) *central.SensorEvent {

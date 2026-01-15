@@ -122,12 +122,20 @@ func extractDisksFromVM(vm *kubeVirtV1.VirtualMachine) []kubeVirtV1.Disk {
 	if vm == nil || vm.Spec.Template == nil {
 		return nil
 	}
-	return vm.Spec.Template.Spec.Domain.Devices.Disks
+	disks := vm.Spec.Template.Spec.Domain.Devices.Disks
+	if len(disks) == 0 {
+		return nil
+	}
+	return append([]kubeVirtV1.Disk(nil), disks...)
 }
 
 func extractDisksFromVMI(vmi *kubeVirtV1.VirtualMachineInstance) []kubeVirtV1.Disk {
 	if vmi == nil {
 		return nil
 	}
-	return vmi.Spec.Domain.Devices.Disks
+	disks := vmi.Spec.Domain.Devices.Disks
+	if len(disks) == 0 {
+		return nil
+	}
+	return append([]kubeVirtV1.Disk(nil), disks...)
 }

@@ -118,10 +118,10 @@ func TestGetFacts(t *testing.T) {
 				GuestOSKey:     "Red Hat Enterprise Linux",
 				DescriptionKey: "test description",
 				NodeNameKey:    "node-1",
-				IPAddressesKey: "10.0.0.1, 10.0.0.2",
-				ActivePodsKey:  "pod-1=node-a, pod-2=node-b",
+				IPAddressesKey: "10.0.0.2, 10.0.0.1",
+				ActivePodsKey:  "pod-2=node-b, pod-1=node-a",
 				BootOrderKey:   "disk2=2, disk1=1",
-				CDRomDisksKey:  "cd1, cd2",
+				CDRomDisksKey:  "cd2, cd1",
 			},
 		},
 		"should preserve boot order sequence": {
