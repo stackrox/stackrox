@@ -25,4 +25,9 @@ var (
 	// index reports before they are sent to Central.
 	VirtualMachinesIndexReportsBufferSize = RegisterIntegerSetting("ROX_VIRTUAL_MACHINES_INDEX_REPORTS_BUFFER_SIZE", 100).
 						WithMinimum(0)
+
+	// VirtualMachinesIndexReportsQueueMaxSize defines the maximum size of the Central queue handling
+	// virtual machine index reports. When the queue is full, new reports for new VMs are dropped.
+	VirtualMachinesIndexReportsQueueMaxSize = RegisterIntegerSetting("ROX_VIRTUAL_MACHINES_INDEX_REPORTS_QUEUE_MAX_SIZE", 1000).
+						WithMinimum(0)
 )

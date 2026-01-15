@@ -13,6 +13,7 @@ func init() {
 		graphQLQueryHistogramVec,
 		indexOperationHistogramVec,
 		sensorEventQueueCounterVec,
+		sensorEventQueueSizeGaugeVec,
 		resourceProcessedCounterVec,
 		totalNetworkFlowsReceivedCounter,
 		totalNetworkEndpointsReceivedCounter,

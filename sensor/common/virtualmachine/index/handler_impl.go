@@ -232,6 +232,7 @@ func (h *handlerImpl) newMessageToCentral(indexReport *v1.IndexReport) (*message
 	}
 
 	return message.New(&central.MsgFromSensor{
+		DedupeKey: string(vmInfo.ID),
 		Msg: &central.MsgFromSensor_Event{
 			Event: &central.SensorEvent{
 				Id:     string(vmInfo.ID),
