@@ -120,7 +120,7 @@ var (
 	OCPConsoleIntegration = registerFeature("Enable features related to support the integration of ACS into the OpenShift console", "ROX_OCP_CONSOLE_INTEGRATION")
 
 	// SensorInternalPubSub enables the internal pubsub system in sensor
-	SensorInternalPubSub = registerFeature("Enables the internal PubSub system in Sensor", "ROX_SENSOR_PUBSUB", enabled)
+	SensorInternalPubSub = registerFeature("Enables the internal PubSub system in Sensor", "ROX_SENSOR_PUBSUB")
 )
 
 // The following feature flags are related to Scanner V4.
