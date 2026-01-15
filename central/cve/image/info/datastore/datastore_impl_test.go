@@ -39,12 +39,6 @@ func (s *ImageCVEInfoDataStoreSuite) SetupTest() {
 	s.NoError(err)
 }
 
-func (s *ImageCVEInfoDataStoreSuite) TearDownSuite() {
-	if s.testDB != nil {
-		s.testDB.Close()
-	}
-}
-
 // TestUpdateTimestamps_NilOld tests that when old is nil, new is returned unchanged.
 func (s *ImageCVEInfoDataStoreSuite) TestUpdateTimestamps_NilOld() {
 	now := time.Now()
@@ -180,10 +174,12 @@ func (s *ImageCVEInfoDataStoreSuite) TestUpsertMany_PreservesTimestamps() {
 		{
 			Id:                    "test-cve-1#test-pkg#test-ds",
 			FirstSystemOccurrence: timestamppb.New(earlier),
+			FixAvailableTimestamp: timestamppb.New(earlier),
 		},
 		{
 			Id:                    "test-cve-2#test-pkg#test-ds",
 			FirstSystemOccurrence: timestamppb.New(earlier),
+			FixAvailableTimestamp: timestamppb.New(earlier),
 		},
 	}
 	err := s.datastore.UpsertMany(s.ctx, firstInfos)
@@ -194,10 +190,12 @@ func (s *ImageCVEInfoDataStoreSuite) TestUpsertMany_PreservesTimestamps() {
 		{
 			Id:                    "test-cve-1#test-pkg#test-ds",
 			FirstSystemOccurrence: timestamppb.New(later),
+			FixAvailableTimestamp: timestamppb.New(later),
 		},
 		{
 			Id:                    "test-cve-2#test-pkg#test-ds",
 			FirstSystemOccurrence: timestamppb.New(later),
+			FixAvailableTimestamp: timestamppb.New(later),
 		},
 	}
 	err = s.datastore.UpsertMany(s.ctx, secondInfos)
@@ -210,6 +208,7 @@ func (s *ImageCVEInfoDataStoreSuite) TestUpsertMany_PreservesTimestamps() {
 
 	for _, result := range results {
 		s.Equal(earlier.Unix(), result.GetFirstSystemOccurrence().AsTime().Unix())
+		s.Equal(earlier.Unix(), result.GetFixAvailableTimestamp().AsTime().Unix())
 	}
 }
 

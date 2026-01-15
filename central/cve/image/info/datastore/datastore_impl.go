@@ -96,6 +96,7 @@ func updateTimestamps(old, new *storage.ImageCVEInfo) *storage.ImageCVEInfo {
 	} else if !protocompat.IsZeroTimestamp(old.GetFirstSystemOccurrence()) && protocompat.CompareTimestamps(old.GetFirstSystemOccurrence(), new.GetFirstSystemOccurrence()) < 0 {
 		new.FirstSystemOccurrence = old.GetFirstSystemOccurrence()
 	}
+
 	if protocompat.IsZeroTimestamp(new.GetFixAvailableTimestamp()) {
 		new.FixAvailableTimestamp = old.GetFixAvailableTimestamp()
 	} else if !protocompat.IsZeroTimestamp(old.GetFixAvailableTimestamp()) && protocompat.CompareTimestamps(old.GetFixAvailableTimestamp(), new.GetFixAvailableTimestamp()) < 0 {
