@@ -56,7 +56,8 @@ func (m *clusterMatcher) exclusionMatches(exclusion *storage.Exclusion) bool {
 		return false
 	}
 
-	if !cs.MatchesCluster(m.cluster.GetId()) {
+	// TODO(ROX-32667): Query cluster labels from cluster datastore and pass here
+	if !cs.MatchesCluster(m.cluster.GetId(), nil) {
 		return false
 	}
 
@@ -65,7 +66,8 @@ func (m *clusterMatcher) exclusionMatches(exclusion *storage.Exclusion) bool {
 	}
 
 	for _, namespace := range m.namespaces {
-		if !cs.MatchesNamespace(namespace.GetName()) {
+		// TODO(ROX-32667): Query namespace labels from namespace datastore and pass here
+		if !cs.MatchesNamespace(namespace.GetName(), nil) {
 			return false
 		}
 	}
@@ -92,7 +94,8 @@ func (m *clusterMatcher) scopeMatches(scope *storage.Scope) bool {
 		return false
 	}
 
-	if !cs.MatchesCluster(m.cluster.GetId()) {
+	// TODO(ROX-32667): Query cluster labels from cluster datastore and pass here
+	if !cs.MatchesCluster(m.cluster.GetId(), nil) {
 		return false
 	}
 
@@ -101,7 +104,8 @@ func (m *clusterMatcher) scopeMatches(scope *storage.Scope) bool {
 	}
 
 	for _, namespace := range m.namespaces {
-		if cs.MatchesNamespace(namespace.GetName()) {
+		// TODO(ROX-32667): Query namespace labels from namespace datastore and pass here
+		if cs.MatchesNamespace(namespace.GetName(), nil) {
 			return true
 		}
 	}

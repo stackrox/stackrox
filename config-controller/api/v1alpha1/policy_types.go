@@ -107,9 +107,11 @@ type Image struct {
 
 type Scope struct {
 	// Cluster is either the name or the ID of the cluster that this scope applies to
-	Cluster   string `json:"cluster,omitempty"`
-	Namespace string `json:"namespace,omitempty"`
-	Label     Label  `json:"label,omitempty"`
+	Cluster        string `json:"cluster,omitempty"`
+	Namespace      string `json:"namespace,omitempty"`
+	Label          Label  `json:"label,omitempty"`
+	ClusterLabel   Label  `json:"clusterLabel,omitempty"`
+	NamespaceLabel Label  `json:"namespaceLabel,omitempty"`
 }
 
 type Label struct {
@@ -301,12 +303,26 @@ func (p SecurityPolicySpec) ToProtobuf(caches map[CacheType]map[string]string) (
 					}
 					protoExclusion.Deployment.Scope.Cluster = clusterID
 				}
-			}
 
-			if scope.Label != (Label{}) {
-				protoExclusion.Deployment.Scope.Label = &storage.Scope_Label{
-					Key:   scope.Label.Key,
-					Value: scope.Label.Value,
+				if scope.Label != (Label{}) {
+					protoExclusion.Deployment.Scope.Label = &storage.Scope_Label{
+						Key:   scope.Label.Key,
+						Value: scope.Label.Value,
+					}
+				}
+
+				if scope.ClusterLabel != (Label{}) {
+					protoExclusion.Deployment.Scope.ClusterLabel = &storage.Scope_Label{
+						Key:   scope.ClusterLabel.Key,
+						Value: scope.ClusterLabel.Value,
+					}
+				}
+
+				if scope.NamespaceLabel != (Label{}) {
+					protoExclusion.Deployment.Scope.NamespaceLabel = &storage.Scope_Label{
+						Key:   scope.NamespaceLabel.Key,
+						Value: scope.NamespaceLabel.Value,
+					}
 				}
 			}
 
@@ -331,6 +347,20 @@ func (p SecurityPolicySpec) ToProtobuf(caches map[CacheType]map[string]string) (
 			protoScope.Label = &storage.Scope_Label{
 				Key:   scope.Label.Key,
 				Value: scope.Label.Value,
+			}
+		}
+
+		if scope.ClusterLabel != (Label{}) {
+			protoScope.ClusterLabel = &storage.Scope_Label{
+				Key:   scope.ClusterLabel.Key,
+				Value: scope.ClusterLabel.Value,
+			}
+		}
+
+		if scope.NamespaceLabel != (Label{}) {
+			protoScope.NamespaceLabel = &storage.Scope_Label{
+				Key:   scope.NamespaceLabel.Key,
+				Value: scope.NamespaceLabel.Value,
 			}
 		}
 

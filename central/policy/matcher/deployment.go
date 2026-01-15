@@ -80,5 +80,6 @@ func (m *deploymentMatcher) scopeMatches(scope *storage.Scope) bool {
 		return false
 	}
 
-	return cs.MatchesDeployment(m.deployment)
+	// TODO(ROX-32667): Query cluster labels from cluster datastore and namespace labels from namespace datastore
+	return cs.MatchesDeployment(m.deployment, nil, nil)
 }

@@ -40,6 +40,14 @@ func TestToProtobuf(t *testing.T) {
 					Scope: Scope{
 						Namespace: "stackrox",
 						Cluster:   "test-cluster",
+						ClusterLabel: Label{
+							Key:   "env",
+							Value: "dev",
+						},
+						NamespaceLabel: Label{
+							Key:   "excluded",
+							Value: "true",
+						},
 					},
 				},
 				Expiration: expirationTS,
@@ -64,6 +72,14 @@ func TestToProtobuf(t *testing.T) {
 		Scope: []Scope{
 			{
 				Cluster: "test-cluster",
+				ClusterLabel: Label{
+					Key:   "env",
+					Value: "prod",
+				},
+				NamespaceLabel: Label{
+					Key:   "team",
+					Value: "platform",
+				},
 			},
 		},
 	}
@@ -87,6 +103,14 @@ func TestToProtobuf(t *testing.T) {
 					Scope: &storage.Scope{
 						Namespace: "stackrox",
 						Cluster:   clusterID,
+						ClusterLabel: &storage.Scope_Label{
+							Key:   "env",
+							Value: "dev",
+						},
+						NamespaceLabel: &storage.Scope_Label{
+							Key:   "excluded",
+							Value: "true",
+						},
 					},
 				},
 				Expiration: protoconv.ConvertTimeString(expirationTS),
@@ -113,6 +137,14 @@ func TestToProtobuf(t *testing.T) {
 		Scope: []*storage.Scope{
 			{
 				Cluster: clusterID,
+				ClusterLabel: &storage.Scope_Label{
+					Key:   "env",
+					Value: "prod",
+				},
+				NamespaceLabel: &storage.Scope_Label{
+					Key:   "team",
+					Value: "platform",
+				},
 			},
 		},
 	}

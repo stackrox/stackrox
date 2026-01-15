@@ -38,12 +38,12 @@ func deploymentMatchesExclusions(deployment *storage.Deployment, exclusions []*c
 	return false
 }
 
-func deploymentMatchesScopes(deployment *storage.Deployment, scopes []*scopecomp.CompiledScope) bool {
+func deploymentMatchesScopes(deployment *storage.Deployment, scopes []*scopecomp.CompiledScope, clusterLabels, namespaceLabels map[string]string) bool {
 	if len(scopes) == 0 {
 		return true
 	}
 	for _, scope := range scopes {
-		if scope.MatchesDeployment(deployment) {
+		if scope.MatchesDeployment(deployment, clusterLabels, namespaceLabels) {
 			return true
 		}
 	}

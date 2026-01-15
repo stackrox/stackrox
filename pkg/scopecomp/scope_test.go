@@ -10,10 +10,12 @@ import (
 
 func TestWithinScope(t *testing.T) {
 	subtests := []struct {
-		name       string
-		scope      *storage.Scope
-		deployment *storage.Deployment
-		result     bool
+		name            string
+		scope           *storage.Scope
+		deployment      *storage.Deployment
+		clusterLabels   map[string]string
+		namespaceLabels map[string]string
+		result          bool
 	}{
 		{
 			name:       "empty scope",
@@ -140,10 +142,142 @@ func TestWithinScope(t *testing.T) {
 			},
 			result: true,
 		},
+		{
+			name: "cluster label key-value matches",
+			scope: &storage.Scope{
+				ClusterLabel: &storage.Scope_Label{
+					Key:   "env",
+					Value: "prod",
+				},
+			},
+			deployment: &storage.Deployment{
+				ClusterId: "cluster",
+			},
+			clusterLabels: map[string]string{
+				"env": "prod",
+			},
+			result: true,
+		},
+		{
+			name: "cluster label key-value does not match",
+			scope: &storage.Scope{
+				ClusterLabel: &storage.Scope_Label{
+					Key:   "env",
+					Value: "prod",
+				},
+			},
+			deployment: &storage.Deployment{
+				ClusterId: "cluster",
+			},
+			clusterLabels: map[string]string{
+				"env": "dev",
+			},
+			result: false,
+		},
+		{
+			name: "namespace label key-value matches",
+			scope: &storage.Scope{
+				NamespaceLabel: &storage.Scope_Label{
+					Key:   "team",
+					Value: "platform",
+				},
+			},
+			deployment: &storage.Deployment{
+				Namespace: "backend",
+			},
+			namespaceLabels: map[string]string{
+				"team": "platform",
+			},
+			result: true,
+		},
+		{
+			name: "namespace label key-value does not match",
+			scope: &storage.Scope{
+				NamespaceLabel: &storage.Scope_Label{
+					Key:   "team",
+					Value: "platform",
+				},
+			},
+			deployment: &storage.Deployment{
+				Namespace: "backend",
+			},
+			namespaceLabels: map[string]string{
+				"team": "frontend",
+			},
+			result: false,
+		},
+		{
+			name: "cluster label with regex matches",
+			scope: &storage.Scope{
+				ClusterLabel: &storage.Scope_Label{
+					Key:   "env",
+					Value: "prod|staging",
+				},
+			},
+			deployment: &storage.Deployment{
+				ClusterId: "cluster",
+			},
+			clusterLabels: map[string]string{
+				"env": "staging",
+			},
+			result: true,
+		},
+		{
+			name: "cluster label filter set but labels nil - fail closed",
+			scope: &storage.Scope{
+				ClusterLabel: &storage.Scope_Label{
+					Key: "env",
+				},
+			},
+			deployment: &storage.Deployment{
+				ClusterId: "cluster",
+			},
+			clusterLabels: nil,
+			result:        false,
+		},
+		{
+			name: "namespace label filter set but labels nil - fail closed",
+			scope: &storage.Scope{
+				NamespaceLabel: &storage.Scope_Label{
+					Key: "team",
+				},
+			},
+			deployment: &storage.Deployment{
+				Namespace: "backend",
+			},
+			namespaceLabels: nil,
+			result:          false,
+		},
+		{
+			name: "combined cluster and namespace labels match",
+			scope: &storage.Scope{
+				Cluster:   "cluster",
+				Namespace: "backend",
+				ClusterLabel: &storage.Scope_Label{
+					Key:   "env",
+					Value: "prod",
+				},
+				NamespaceLabel: &storage.Scope_Label{
+					Key:   "team",
+					Value: "platform",
+				},
+			},
+			deployment: &storage.Deployment{
+				ClusterId: "cluster",
+				Namespace: "backend",
+			},
+			clusterLabels: map[string]string{
+				"env": "prod",
+			},
+			namespaceLabels: map[string]string{
+				"team": "platform",
+			},
+			result: true,
+		},
 	}
 	for _, test := range subtests {
 		cs, err := CompileScope(test.scope)
 		require.NoError(t, err)
-		assert.Equalf(t, test.result, cs.MatchesDeployment(test.deployment), "Failed test '%s'", test.name)
+		assert.Equalf(t, test.result, cs.MatchesDeployment(test.deployment, test.clusterLabels, test.namespaceLabels), "Failed test '%s'", test.name)
 	}
 }

@@ -456,7 +456,8 @@ func (cw *compiledExclusion) MatchesDeployment(deployment *storage.Deployment) b
 		return false
 	}
 
-	return cw.cs.MatchesDeployment(deployment)
+	// Pass nil for labels - exclusions don't support label-based matching yet
+	return cw.cs.MatchesDeployment(deployment, nil, nil)
 }
 
 func (cw *compiledExclusion) MatchesAuditEvent(auditEvent *storage.KubernetesEvent) bool {
@@ -481,7 +482,10 @@ func (cp *deploymentPredicate) AppliesTo(input interface{}) bool {
 		return false
 	}
 
-	return deploymentMatchesScopes(deployment, cp.scopes) && !deploymentMatchesExclusions(deployment, cp.exclusions)
+	// Pass nil for labels - AppliesTo is for type filtering only.
+	// Actual label matching happens in enforcement paths (central/policy/matcher, sensor admission controller)
+	// where cluster/namespace labels are available from datastores.
+	return deploymentMatchesScopes(deployment, cp.scopes, nil, nil) && !deploymentMatchesExclusions(deployment, cp.exclusions)
 }
 
 // Predicate for images.

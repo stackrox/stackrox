@@ -71,9 +71,11 @@ func (m *namespaceMatcher) scopeMatches(scope *storage.Scope) bool {
 		return false
 	}
 
-	if !cs.MatchesCluster(m.namespace.GetClusterId()) {
+	// TODO(ROX-32667): Query cluster labels from cluster datastore and pass here
+	if !cs.MatchesCluster(m.namespace.GetClusterId(), nil) {
 		return false
 	}
 
-	return cs.MatchesNamespace(m.namespace.GetName())
+	// TODO(ROX-32667): Query namespace labels from namespace datastore and pass here
+	return cs.MatchesNamespace(m.namespace.GetName(), nil)
 }
