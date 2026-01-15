@@ -1,3 +1,8 @@
+// Package rate provides workload-level fair rate limiting across clients.
+// It manages per-client token buckets using golang.org/x/time/rate.Limiter.
+// In this package, Limiter is the higher-level manager that allocates and
+// rebalances per-client limiters; the underlying *rate.Limiter values are the
+// per-client buckets used for enforcement.
 package rate
 
 import (
