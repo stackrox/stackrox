@@ -147,6 +147,10 @@ jobs:
           # which will replace the patch version x with 0.
           set -euo pipefail
           tag="$(make --quiet --no-print-directory -C operator tag)"
+          if [[ "${tag}" == *-nightly-* ]]; then
+            # If the tag is a nightly tag, we add the '-fast' suffix.
+            tag="${tag}-fast"
+          fi
           echo "tag=${tag}" >> "${GITHUB_OUTPUT}"
 
       - name: Scan image vulnerabilities
