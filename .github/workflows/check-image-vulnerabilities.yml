@@ -1,4 +1,4 @@
-name: "RELEASE: Scan image vulnerabilities"
+name: "RELEASE: Scan images for vulnerabilities"
 on:
   workflow_dispatch:
     inputs:
@@ -7,15 +7,14 @@ on:
         required: true
         default: 0.0.0-test-rc.1
         type: string
-      wait-for-images:
-        description: Shall workflow wait for images?
-        required: false
-        default: true
-        type: boolean
+      wait-for-images-limit:
+        description: Duration to wait for images to be available (as Go duration string)
+        default: 3h10m
+        type: string
   push:
     tags: ['*']
 
-run-name: ${{ format('Scan image vulnerabilities for {0}', inputs.version || github.ref_name) }}
+run-name: ${{ format('Scan images for vulnerabilities ({0})', inputs.version || github.ref_name) }}
 
 jobs:
   run-parameters:
@@ -32,9 +31,22 @@ jobs:
             fi
           } >> "$GITHUB_STEP_SUMMARY"
 
+  parse-wait-for-images-limit:
+    name: Parse wait-for-images-limit
+    runs-on: ubuntu-latest
+    outputs:
+      wait-limit: ${{ steps.parse-wait-limit.outputs.wait-limit }}
+    steps:
+      - name: Parse wait-for-images-limit
+        id: parse-wait-limit
+        run: |
+          wait_limit="$(sed 's/d/*24*3600 +/g; s/h/*3600 +/g; s/m/*60 +/g; s/s/\+/g; s/+[ ]*$//g' <<< "${{ inputs.wait-for-images-limit }}" | bc)"
+          echo "wait-limit=${wait_limit}" >> "${GITHUB_OUTPUT}"
+
   scan-image-vulnerabilities-upstream:
     name: "Upstream: ${{ matrix.image }}:${{ inputs.version || github.ref_name }}"
     runs-on: ubuntu-latest
+    needs: [parse-wait-for-images-limit]
     permissions:
       # Needed for stackrox/central-login to create the JWT token.
       id-token: write
@@ -56,8 +68,8 @@ jobs:
             "stackrox-operator",
           ]
     steps:
-      - name: Determine image tag from input version
-        id: determine-image-tag
+      - name: Sanitize nightly version
+        id: sanitize-nightly-version
         run: |
           set -euo pipefail
           tag="${{ inputs.version || github.ref_name }}"
@@ -70,23 +82,13 @@ jobs:
             tag="${version_part}-nightly-${rest_part}"
           fi
           echo "tag=${tag}" >> "${GITHUB_OUTPUT}"
-
-      - name: Determine wait limit
-        id: determine-wait-limit
-        run: |
-          if [ "${{ inputs.wait-for-images }}" = "false" ]; then
-            echo "wait-limit=0" >> "${GITHUB_OUTPUT}"
-          else
-            echo "wait-limit=7200" >> "${GITHUB_OUTPUT}"
-          fi
-
       - name: Scan image vulnerabilities
-        uses: stackrox/actions/release/scan-image-vulnerabilities@tm/fix-scan-image-vulnerabilities
+        uses: stackrox/actions/release/scan-image-vulnerabilities@v1
         id: scan-image
         with:
           image: rhacs-eng/${{ matrix.image }}
-          version: ${{ steps.determine-image-tag.outputs.tag }}
-          wait-limit: ${{ steps.determine-wait-limit.outputs.wait-limit }}
+          version: ${{ steps.sanitize-nightly-version.outputs.tag }}
+          wait-limit: ${{ needs.parse-wait-for-images-limit.outputs.wait-limit }}
           summary-prefix: "Upstream:"
           quay-bearer-token: ${{ secrets.QUAY_RHACS_ENG_BEARER_TOKEN }}
           central-url: ${{ vars.ACS_DOGFOODING_CENTRAL_URL }}
@@ -102,6 +104,7 @@ jobs:
   scan-image-vulnerabilities-konflux:
     name: "Konflux: ${{ matrix.image }}:${{ inputs.version || github.ref_name }}"
     runs-on: ubuntu-latest
+    needs: [parse-wait-for-images-limit]
     permissions:
       # Needed for stackrox/central-login to create the JWT token.
       id-token: write
@@ -123,8 +126,8 @@ jobs:
             "release-operator",
           ]
     steps:
-      - name: Determine image tag from input version
-        id: determine-image-tag
+      - name: Sanitize nightly version
+        id: sanitize-nightly-version
         run: |
           set -euo pipefail
           tag="${{ inputs.version || github.ref_name }}"
@@ -139,22 +142,13 @@ jobs:
           fi
           echo "tag=${tag}" >> "${GITHUB_OUTPUT}"
 
-      - name: Determine wait limit
-        id: determine-wait-limit
-        run: |
-          if [ "${{ inputs.wait-for-images }}" = "false" ]; then
-            echo "wait-limit=0" >> "${GITHUB_OUTPUT}"
-          else
-            echo "wait-limit=11400" >> "${GITHUB_OUTPUT}"
-          fi
-
       - name: Scan image vulnerabilities
-        uses: stackrox/actions/release/scan-image-vulnerabilities@tm/fix-scan-image-vulnerabilities
+        uses: stackrox/actions/release/scan-image-vulnerabilities@v1
         id: scan-image
         with:
           image: rhacs-eng/${{ matrix.image }}
-          version: ${{ steps.determine-image-tag.outputs.tag }}
-          wait-limit: ${{ steps.determine-wait-limit.outputs.wait-limit }}
+          version: ${{ steps.sanitize-nightly-version.outputs.tag }}
+          wait-limit: ${{ needs.parse-wait-for-images-limit.outputs.wait-limit }}
           summary-prefix: "Konflux:"
           quay-bearer-token: ${{ secrets.QUAY_RHACS_ENG_BEARER_TOKEN }}
           central-url: ${{ vars.ACS_DOGFOODING_CENTRAL_URL }}
