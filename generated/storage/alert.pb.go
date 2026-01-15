@@ -1329,7 +1329,7 @@ type Alert_Violation_NetworkFlowInfo_ struct {
 }
 
 type Alert_Violation_FileAccess struct {
-	FileAccess *FileAccess `protobuf:"bytes,8,opt,name=file_access,json=fileAccess,proto3,oneof"`
+	FileAccess *FileAccess `protobuf:"bytes,8,opt,name=file_access,json=fileAccess,proto3,oneof" search:"-" sql:"-"` // @gotags: search:"-" sql:"-"
 }
 
 func (*Alert_Violation_KeyValueAttrs_) isAlert_Violation_MessageAttributes() {}

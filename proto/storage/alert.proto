@@ -94,7 +94,7 @@ message Alert {
     oneof MessageAttributes {
       KeyValueAttrs key_value_attrs = 4;
       NetworkFlowInfo network_flow_info = 7; // @gotags: search:"-" sql:"-"
-      FileAccess file_access = 8;
+      FileAccess file_access = 8; // @gotags: search:"-" sql:"-"
     }
     // 'type' is for internal use only.
     Type type = 5;
