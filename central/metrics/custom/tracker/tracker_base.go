@@ -199,7 +199,7 @@ func formatMetricHelp(description string, cfg *Configuration, metric MetricName)
 		help.WriteString(" aggregated by ")
 		for i, label := range cfg.metrics[metric] {
 			if i > 0 {
-				help.WriteRune(',')
+				help.WriteString(", ")
 			}
 			help.WriteString(string(label))
 		}
@@ -208,7 +208,7 @@ func formatMetricHelp(description string, cfg *Configuration, metric MetricName)
 		help.WriteString(", including only ")
 		for i, label := range slices.Sorted(maps.Keys(cfg.includeFilters[metric])) {
 			if i > 0 {
-				help.WriteRune(',')
+				help.WriteString(", ")
 			}
 			fmt.Fprintf(&help, "%s≈%q", label, cfg.includeFilters[metric][label].String())
 		}
@@ -217,7 +217,7 @@ func formatMetricHelp(description string, cfg *Configuration, metric MetricName)
 		help.WriteString(", excluding ")
 		for i, label := range slices.Sorted(maps.Keys(cfg.excludeFilters[metric])) {
 			if i > 0 {
-				help.WriteRune(',')
+				help.WriteString(", ")
 			}
 			fmt.Fprintf(&help, "%s≈%q", label, cfg.excludeFilters[metric][label].String())
 		}

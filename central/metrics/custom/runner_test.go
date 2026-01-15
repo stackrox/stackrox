@@ -165,11 +165,11 @@ func TestRunner_ServeHTTP(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Contains(t, string(body),
 			expectedBody("image_vuln_metric1", "image vulnerabilities",
-				"Cluster,Severity",
+				"Cluster, Severity",
 				`Cluster="cluster1",Severity="IMPORTANT_VULNERABILITY_SEVERITY"`))
 		assert.Contains(t, string(body),
 			expectedBody("policy_violation_metric2", "policy violations",
-				"Categories,Cluster,Policy",
+				"Categories, Cluster, Policy",
 				`Categories="catA,catB",Cluster="cluster1",Policy="Test Policy"`))
 	})
 }

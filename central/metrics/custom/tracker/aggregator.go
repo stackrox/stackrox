@@ -59,13 +59,11 @@ func (a *aggregator[F]) count(finding F) {
 	}
 
 	for metric, labels := range a.md {
-		// Apply include filters. It could, e.g., keep only "ACTIVE" alerts.
-		if !a.matchInclude(finding, a.includeFilters[metric]) {
-			// Ignore this finding for this metric.
-			continue
-		}
-		// Apply exclude filters. It could, e.g., drop "LOW_SEVERITY" alerts.
-		if a.matchExclude(finding, a.excludeFilters[metric]) {
+		// Apply include and exclude filters.
+		// It could, e.g., keep only "ACTIVE" alerts or drop "LOW_SEVERITY"
+		// alerts.
+		if !a.matchAll(finding, a.includeFilters[metric]) ||
+			a.matchAny(finding, a.excludeFilters[metric]) {
 			// Drop this finding for this metric.
 			continue
 		}
@@ -79,9 +77,8 @@ func (a *aggregator[F]) count(finding F) {
 	}
 }
 
-// matchInclude checks if the finding labels pass the include filters.
-// Returns true if all label values match the according filter patterns.
-func (a *aggregator[F]) matchInclude(finding F, filters map[Label]*regexp.Regexp) bool {
+// matchAll returns true if all label values match the according filters.
+func (a *aggregator[F]) matchAll(finding F, filters map[Label]*regexp.Regexp) bool {
 	for label, pattern := range filters {
 		if !pattern.MatchString(a.getters[label](finding)) {
 			return false
@@ -90,9 +87,8 @@ func (a *aggregator[F]) matchInclude(finding F, filters map[Label]*regexp.Regexp
 	return true
 }
 
-// matchExclude checks if the finding labels match any exclude filter.
-// Returns true if any label value matches its according filter pattern.
-func (a *aggregator[F]) matchExclude(finding F, filters map[Label]*regexp.Regexp) bool {
+// matchAny returns true if any label value matches the according filters.
+func (a *aggregator[F]) matchAny(finding F, filters map[Label]*regexp.Regexp) bool {
 	for label, pattern := range filters {
 		if pattern.MatchString(a.getters[label](finding)) {
 			return true
