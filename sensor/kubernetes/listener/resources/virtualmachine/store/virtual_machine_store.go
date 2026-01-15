@@ -49,6 +49,11 @@ func (s *VirtualMachineStore) AddOrUpdate(vm *virtualmachine.Info) *virtualmachi
 		vm.IPAddresses = copyStringSlice(oldVM.IPAddresses)
 		vm.ActivePods = copyStringSlice(oldVM.ActivePods)
 		vm.NodeName = oldVM.NodeName
+		if vm.Description == "" {
+			vm.Description = oldVM.Description
+		}
+		vm.BootOrder = copyStringSlice(oldVM.BootOrder)
+		vm.CDRomDisks = copyStringSlice(oldVM.CDRomDisks)
 	}
 	s.addOrUpdateNoLock(vm)
 	return vm
@@ -167,6 +172,9 @@ func (s *VirtualMachineStore) updateStatusOrCreateNoLock(updateInfo *virtualmach
 	prev.IPAddresses = copyStringSlice(updateInfo.IPAddresses)
 	prev.ActivePods = copyStringSlice(updateInfo.ActivePods)
 	prev.NodeName = updateInfo.NodeName
+	prev.Description = updateInfo.Description
+	prev.BootOrder = copyStringSlice(updateInfo.BootOrder)
+	prev.CDRomDisks = copyStringSlice(updateInfo.CDRomDisks)
 }
 
 func (s *VirtualMachineStore) addOrUpdateVSOCKInfoNoLock(id virtualmachine.VMID, vsockCID *uint32) *uint32 {
@@ -239,6 +247,8 @@ func (s *VirtualMachineStore) clearStatusNoLock(id virtualmachine.VMID) {
 	vm.NodeName = ""
 	vm.IPAddresses = nil
 	vm.ActivePods = nil
+	vm.BootOrder = nil
+	vm.CDRomDisks = nil
 }
 
 func copyStringSlice(values []string) []string {
