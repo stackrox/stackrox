@@ -28,16 +28,22 @@ func TestVirtualMachine(t *testing.T) {
 				Namespace: "virtual-machine-namespace",
 				Name:      "virtual-machine-name",
 				ClusterId: uuid.NewTestUUID(1).String(),
-				VsockCid:  42,
-				State:     virtualMachineV1.VirtualMachine_RUNNING,
+				Facts: map[string]string{
+					"Guest OS": "Red Hat Enterprise Linux",
+				},
+				VsockCid: 42,
+				State:    virtualMachineV1.VirtualMachine_RUNNING,
 			},
 			expected: &storage.VirtualMachine{
 				Id:        "VM-ID-1",
 				Namespace: "virtual-machine-namespace",
 				Name:      "virtual-machine-name",
 				ClusterId: uuid.NewTestUUID(1).String(),
-				VsockCid:  42,
-				State:     storage.VirtualMachine_RUNNING,
+				Facts: map[string]string{
+					"Guest OS": "Red Hat Enterprise Linux",
+				},
+				VsockCid: 42,
+				State:    storage.VirtualMachine_RUNNING,
 			},
 		},
 	}

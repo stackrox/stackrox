@@ -96,8 +96,11 @@ func TestPipelineRun(t *testing.T) {
 		Namespace: "test-namespace",
 		Name:      "test-virtual-machine",
 		ClusterId: testClusterID,
-		VsockCid:  0,
-		State:     virtualMachineV1.VirtualMachine_STOPPED,
+		Facts: map[string]string{
+			"Guest OS": "Red Hat Enterprise Linux",
+		},
+		VsockCid: 0,
+		State:    virtualMachineV1.VirtualMachine_STOPPED,
 	}
 	tests := []struct {
 		name             string
