@@ -41,6 +41,9 @@ func TestVirtualMachine(t *testing.T) {
 				Name:        "test-vm",
 				ClusterId:   "cluster-456",
 				ClusterName: "test-cluster",
+				Facts: map[string]string{
+					"Guest OS": "Red Hat Enterprise Linux",
+				},
 				VsockCid:    int32(42),
 				State:       storage.VirtualMachine_RUNNING,
 				LastUpdated: timestamp,
@@ -52,6 +55,9 @@ func TestVirtualMachine(t *testing.T) {
 				Name:        "test-vm",
 				ClusterId:   "cluster-456",
 				ClusterName: "test-cluster",
+				Facts: map[string]string{
+					"Guest OS": "Red Hat Enterprise Linux",
+				},
 				VsockCid:    int32(42),
 				State:       v2.VirtualMachine_RUNNING,
 				LastUpdated: timestamp,
