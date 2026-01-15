@@ -12,16 +12,16 @@ var (
 
 	singletonInstance sync.Once
 
-	maxExactPathMatches               = env.ProcessFilterMaxExactPathMatches.IntegerSetting()
-	maxUniqueProcesses                = env.ProcessFilterMaxProcessPaths.IntegerSetting()
-	fanOutLevels, fanOutLevelsWarning = env.ProcessFilterFanOutLevels.IntegerArraySetting()
-
 	singletonFilter filter.Filter
 )
 
 // Singleton returns a global, threadsafe process filter
 func Singleton() filter.Filter {
 	singletonInstance.Do(func() {
+		maxExactPathMatches := env.ProcessFilterMaxExactPathMatches.IntegerSetting()
+		maxUniqueProcesses := env.ProcessFilterMaxProcessPaths.IntegerSetting()
+		fanOutLevels, fanOutLevelsWarning := env.ProcessFilterFanOutLevels.IntegerArraySetting()
+
 		if fanOutLevelsWarning != "" {
 			log.Warn(fanOutLevelsWarning)
 		}
