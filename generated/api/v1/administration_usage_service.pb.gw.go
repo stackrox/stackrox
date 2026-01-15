@@ -40,9 +40,7 @@ func request_AdministrationUsageService_GetCurrentSecuredUnitsUsage_0(ctx contex
 		protoReq Empty
 		metadata runtime.ServerMetadata
 	)
-	if req.Body != nil {
-		_, _ = io.Copy(io.Discard, req.Body)
-	}
+	io.Copy(io.Discard, req.Body)
 	msg, err := client.GetCurrentSecuredUnitsUsage(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
 	return msg, metadata, err
 }
@@ -63,9 +61,7 @@ func request_AdministrationUsageService_GetMaxSecuredUnitsUsage_0(ctx context.Co
 		protoReq TimeRange
 		metadata runtime.ServerMetadata
 	)
-	if req.Body != nil {
-		_, _ = io.Copy(io.Discard, req.Body)
-	}
+	io.Copy(io.Discard, req.Body)
 	if err := req.ParseForm(); err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
