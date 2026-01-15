@@ -19,6 +19,9 @@ import (
 )
 
 func TestConvertWithRegistryOverride(t *testing.T) {
+	defaultSecurityContext := &storage.SecurityContext{
+		AllowPrivilegeEscalation: true,
+	}
 	base := struct {
 		inputObj           interface{}
 		deploymentType     string
@@ -125,7 +128,7 @@ func TestConvertWithRegistryOverride(t *testing.T) {
 					Config: &storage.ContainerConfig{
 						Env: []*storage.ContainerConfig_EnvironmentConfig{},
 					},
-					SecurityContext: &storage.SecurityContext{},
+					SecurityContext: defaultSecurityContext,
 					Resources:       &storage.Resources{},
 					Image: &storage.ContainerImage{
 						Id:          "sha256:aa561c3bb9fed1b028520cce3852e6c9a6a91161df9b92ca0c3a20ebecc0581a",
@@ -145,7 +148,7 @@ func TestConvertWithRegistryOverride(t *testing.T) {
 						Id:   "sha256:6b561c3bb9fed1b028520cce3852e6c9a6a91161df9b92ca0c3a20ebecc0581a",
 						Name: &storage.ImageName{},
 					},
-					SecurityContext: &storage.SecurityContext{},
+					SecurityContext: defaultSecurityContext,
 					Resources:       &storage.Resources{},
 					LivenessProbe:   &storage.LivenessProbe{Defined: false},
 					ReadinessProbe:  &storage.ReadinessProbe{Defined: false},
