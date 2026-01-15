@@ -8,7 +8,7 @@ on:
         default: 0.0.0-test-rc.1
         type: string
       wait-for-images-limit:
-        description: Duration to wait for images to be available (as Go duration string, set 0 to skip waiting)
+        description: Duration to wait for images to be available (as Go duration string or a number of seconds, set 0 to skip waiting)
         required: true
         # When changing the default here, also update the default in run-parameters.
         default: 3h10m
@@ -53,8 +53,8 @@ jobs:
       - name: Parse wait-for-images-limit
         id: parse-wait-limit
         run: |
-          wait_limit="$(sed 's/d/*24*3600 +/g; s/h/*3600 +/g; s/m/*60 +/g; s/s/\+/g; s/+[ ]*$//g' <<< "${{ needs.run-parameters.outputs.wait-for-images-limit }}" | bc)"
-          echo "wait-limit=${wait_limit}" >> "${GITHUB_OUTPUT}"
+          wait_limit="$(sed 's/h/*3600 +/g; s/m/*60 +/g; s/s/\+/g; s/+[ ]*$//g' <<< "${{ needs.run-parameters.outputs.wait-for-images-limit }}" | bc)"
+          echo "wait-limit=${wait_limit}" | tee -a "${GITHUB_OUTPUT}"
 
   scan-image-vulnerabilities-upstream:
     name: "Upstream: ${{ matrix.image }}:${{ needs.run-parameters.outputs.version }}"
