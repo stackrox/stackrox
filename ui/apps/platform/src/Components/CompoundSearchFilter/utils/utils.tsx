@@ -1,6 +1,6 @@
 import type { SearchFilter } from 'types/search';
 import type { IsFeatureFlagEnabled } from 'hooks/useFeatureFlags';
-import { searchValueAsArray } from 'utils/searchUtils';
+import { getValueByCaseInsensitiveKey, searchValueAsArray } from 'utils/searchUtils';
 import { ensureExhaustive } from 'utils/type.utils';
 
 import { convertFromInternalToExternalConditionText } from '../components/SearchFilterConditionText';
@@ -283,7 +283,8 @@ export function getCompoundSearchFilterLabelDescriptionOrNull(
         payload: payloadDeleteCategory,
     };
 
-    const values = searchValueAsArray(searchFilter[category]);
+    // For example, query might have FIXABLE as key but attribute might have Fixable as key.
+    const values = searchValueAsArray(getValueByCaseInsensitiveKey(searchFilter, category));
 
     switch (inputType) {
         case 'autocomplete':
@@ -392,6 +393,19 @@ export function getCompoundSearchFilterLabelDescriptionOrNull(
                         payload: payloadDeleteCategories,
                     },
                 ],
+            };
+        }
+        case 'unspecified': {
+            if (values.length !== 0) {
+                return null;
+            }
+
+            // payload is placeholder because only for certain attributes in view-based report
+            // For example, Image CVE discovered time: All time
+            const { label } = attribute;
+            return {
+                group,
+                items: [{ label, payload: payloadDeleteCategory }],
             };
         }
         default:

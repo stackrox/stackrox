@@ -1,32 +1,27 @@
 import {
-    Chip,
-    ChipGroup,
     DescriptionList,
     DescriptionListDescription,
     DescriptionListGroup,
     DescriptionListTerm,
     Flex,
-    Stack,
+    // Stack,
     Title,
 } from '@patternfly/react-core';
 
 import type { ViewBasedReportSnapshot } from 'services/ReportsService.types';
-import { makeFilterChipDescriptors } from 'Components/CompoundSearchFilter/components/SearchFilterChips';
-import VulnerabilitySeverityIconText from 'Components/PatternFly/IconText/VulnerabilitySeverityIconText';
+import CompoundSearchFilterLabels from 'Components/CompoundSearchFilter/components/CompoundSearchFilterLabels';
+// import VulnerabilitySeverityIconText from 'Components/PatternFly/IconText/VulnerabilitySeverityIconText';
 import {
     getSearchFilterFromSearchString,
-    getValueByCaseInsensitiveKey,
-    searchValueAsArray,
+    // getValueByCaseInsensitiveKey,
+    // searchValueAsArray,
 } from 'utils/searchUtils';
-import { isVulnerabilitySeverity } from 'types/cve.proto';
-import { formatCveDiscoveredTime } from '../../utils/vulnerabilityUtils';
-import { viewBasedReportSearchFilterConfigs } from '../../searchFilterConfig';
-import { viewBasedReportFilterChipDescriptors } from '../../filterChipDescriptor';
-
-// Create filter chip descriptors with proper display names and rendering
-const filterChipDescriptors = makeFilterChipDescriptors(viewBasedReportSearchFilterConfigs).concat(
-    viewBasedReportFilterChipDescriptors
-);
+// import { isVulnerabilitySeverity } from 'types/cve.proto';
+// import { formatCveDiscoveredTime } from '../../utils/vulnerabilityUtils';
+import {
+    attributesSeparateFromConfigForViewBasedReport,
+    configForViewBasedReport,
+} from '../../searchFilterConfig';
 
 export type ViewBasedReportJobDetailsProps = {
     reportSnapshot: ViewBasedReportSnapshot;
@@ -36,47 +31,16 @@ function ViewBasedReportJobDetails({ reportSnapshot }: ViewBasedReportJobDetails
     const query = getSearchFilterFromSearchString(reportSnapshot.viewBasedVulnReportFilters.query);
 
     // Extract vulnerability-specific filters
-    const severityValues = getValueByCaseInsensitiveKey(query, 'Severity');
-    const cveDiscoveredTimeValues = getValueByCaseInsensitiveKey(query, 'CVE Created Time');
+    // const severityValues = getValueByCaseInsensitiveKey(query, 'Severity');
+    // const cveDiscoveredTimeValues = getValueByCaseInsensitiveKey(query, 'CVE Created Time');
 
-    const validSeverities = severityValues
-        ? searchValueAsArray(severityValues).filter((severity) => isVulnerabilitySeverity(severity))
-        : [];
+    // const validSeverities = severityValues
+    //     ? searchValueAsArray(severityValues).filter((severity) => isVulnerabilitySeverity(severity))
+    //     : [];
 
-    const validCveDiscoveredTimes = cveDiscoveredTimeValues
-        ? searchValueAsArray(cveDiscoveredTimeValues)
-        : [];
-
-    // Create scope filters excluding vulnerability-specific ones
-    const scopeFilters = Object.fromEntries(
-        Object.entries(query).filter(
-            ([key]) => key.toLowerCase() !== 'severity' && key.toLowerCase() !== 'cve created time'
-        )
-    );
-
-    const scopeFilterChips = Object.entries(scopeFilters).map(([key, value]) => {
-        if (!value) {
-            return null;
-        }
-
-        // Find the descriptor for this filter to get proper display name and rendering
-        const descriptor = filterChipDescriptors.find(
-            (desc) => desc.searchFilterName.toLowerCase() === key.toLowerCase()
-        );
-        const categoryName = descriptor?.displayName || key;
-
-        const values = typeof value === 'string' ? [value] : value;
-
-        return (
-            <ChipGroup key={key} categoryName={categoryName}>
-                {values.map((currentValue) => (
-                    <Chip key={currentValue} isReadOnly>
-                        {descriptor?.render ? descriptor.render(currentValue) : currentValue}
-                    </Chip>
-                ))}
-            </ChipGroup>
-        );
-    });
+    // const validCveDiscoveredTimes = cveDiscoveredTimeValues
+    //     ? searchValueAsArray(cveDiscoveredTimeValues)
+    //     : [];
 
     return (
         <Flex direction={{ default: 'column' }} spaceItems={{ default: 'spaceItemsMd' }}>
@@ -114,10 +78,17 @@ function ViewBasedReportJobDetails({ reportSnapshot }: ViewBasedReportJobDetails
                 <DescriptionListGroup>
                     <DescriptionListTerm>Scope filters</DescriptionListTerm>
                     <DescriptionListDescription>
-                        <Flex spaceItems={{ default: 'spaceItemsSm' }}>{scopeFilterChips}</Flex>
+                        <CompoundSearchFilterLabels
+                            attributesSeparateFromConfig={
+                                attributesSeparateFromConfigForViewBasedReport
+                            }
+                            config={configForViewBasedReport}
+                            searchFilter={query}
+                        />
                     </DescriptionListDescription>
                 </DescriptionListGroup>
             </DescriptionList>
+            {/*
             <Title headingLevel="h2">Vulnerability parameters</Title>
             <DescriptionList
                 columnModifier={{
@@ -156,6 +127,7 @@ function ViewBasedReportJobDetails({ reportSnapshot }: ViewBasedReportJobDetails
                     </DescriptionListDescription>
                 </DescriptionListGroup>
             </DescriptionList>
+            */}
         </Flex>
     );
 }
