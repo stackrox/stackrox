@@ -296,6 +296,55 @@ func (s *storeSuite) Test_UpdateVirtualMachine() {
 	}
 }
 
+func (s *storeSuite) Test_AddOrUpdateShouldPreserveVMIRuntimeFields() {
+	tests := map[string]struct {
+		original *virtualmachine.Info
+		update   *virtualmachine.Info
+	}{
+		"should preserve VMI-derived fields on VM update": {
+			original: &virtualmachine.Info{
+				ID:          vmID,
+				Name:        vmName,
+				Namespace:   vmNamespace,
+				Running:     true,
+				GuestOS:     "Red Hat Enterprise Linux",
+				Description: "test description",
+				IPAddresses: []string{"10.0.0.1"},
+				ActivePods:  []string{"pod-1=node-a"},
+				NodeName:    "node-a",
+				BootOrder:   []string{"disk-b=1", "disk-a=1"},
+				CDRomDisks:  []string{"cd-1"},
+			},
+			update: &virtualmachine.Info{
+				ID:        vmID,
+				Name:      vmName,
+				Namespace: vmNamespace,
+				Running:   false,
+			},
+		},
+	}
+	for name, tt := range tests {
+		s.Run(name, func() {
+			s.store.AddOrUpdate(tt.original)
+			s.store.AddOrUpdate(tt.update)
+
+			actual := s.store.Get(tt.original.ID)
+			s.Require().NotNil(actual)
+			assert.Equal(s.T(), tt.original.ID, actual.ID)
+			assert.Equal(s.T(), tt.original.Name, actual.Name)
+			assert.Equal(s.T(), tt.original.Namespace, actual.Namespace)
+			assert.Equal(s.T(), tt.original.Running, actual.Running)
+			assert.Equal(s.T(), tt.original.GuestOS, actual.GuestOS)
+			assert.Equal(s.T(), tt.original.Description, actual.Description)
+			assert.Equal(s.T(), tt.original.IPAddresses, actual.IPAddresses)
+			assert.Equal(s.T(), tt.original.ActivePods, actual.ActivePods)
+			assert.Equal(s.T(), tt.original.NodeName, actual.NodeName)
+			assert.Equal(s.T(), tt.original.BootOrder, actual.BootOrder)
+			assert.Equal(s.T(), tt.original.CDRomDisks, actual.CDRomDisks)
+		})
+	}
+}
+
 func (s *storeSuite) Test_replaceVSOCKInfoNoLockCopiesIncomingPointer() {
 	s.store = NewVirtualMachineStore()
 
