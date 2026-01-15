@@ -28,6 +28,7 @@ func (m *SBOMScanResponse_SBOMScan) CloneVT() *SBOMScanResponse_SBOMScan {
 		return (*SBOMScanResponse_SBOMScan)(nil)
 	}
 	r := new(SBOMScanResponse_SBOMScan)
+	r.ScannerVersion = m.ScannerVersion
 	r.ScanTime = (*timestamppb.Timestamp)((*timestamppb1.Timestamp)(m.ScanTime).CloneVT())
 	r.OperatingSystem = m.OperatingSystem
 	if rhs := m.Components; rhs != nil {
@@ -83,6 +84,9 @@ func (this *SBOMScanResponse_SBOMScan) EqualVT(that *SBOMScanResponse_SBOMScan) 
 	if this == that {
 		return true
 	} else if this == nil || that == nil {
+		return false
+	}
+	if this.ScannerVersion != that.ScannerVersion {
 		return false
 	}
 	if !(*timestamppb1.Timestamp)(this.ScanTime).EqualVT((*timestamppb1.Timestamp)(that.ScanTime)) {
@@ -205,14 +209,14 @@ func (m *SBOMScanResponse_SBOMScan) MarshalToSizedBufferVT(dAtA []byte) (int, er
 			i = protohelpers.EncodeVarint(dAtA, i, uint64(len(encoded)))
 		}
 		i--
-		dAtA[i] = 0x22
+		dAtA[i] = 0x2a
 	}
 	if len(m.OperatingSystem) > 0 {
 		i -= len(m.OperatingSystem)
 		copy(dAtA[i:], m.OperatingSystem)
 		i = protohelpers.EncodeVarint(dAtA, i, uint64(len(m.OperatingSystem)))
 		i--
-		dAtA[i] = 0x1a
+		dAtA[i] = 0x22
 	}
 	if len(m.Components) > 0 {
 		for iNdEx := len(m.Components) - 1; iNdEx >= 0; iNdEx-- {
@@ -235,7 +239,7 @@ func (m *SBOMScanResponse_SBOMScan) MarshalToSizedBufferVT(dAtA []byte) (int, er
 				i = protohelpers.EncodeVarint(dAtA, i, uint64(len(encoded)))
 			}
 			i--
-			dAtA[i] = 0x12
+			dAtA[i] = 0x1a
 		}
 	}
 	if m.ScanTime != nil {
@@ -245,6 +249,13 @@ func (m *SBOMScanResponse_SBOMScan) MarshalToSizedBufferVT(dAtA []byte) (int, er
 		}
 		i -= size
 		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+		i--
+		dAtA[i] = 0x12
+	}
+	if len(m.ScannerVersion) > 0 {
+		i -= len(m.ScannerVersion)
+		copy(dAtA[i:], m.ScannerVersion)
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(len(m.ScannerVersion)))
 		i--
 		dAtA[i] = 0xa
 	}
@@ -307,6 +318,10 @@ func (m *SBOMScanResponse_SBOMScan) SizeVT() (n int) {
 	}
 	var l int
 	_ = l
+	l = len(m.ScannerVersion)
+	if l > 0 {
+		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
+	}
 	if m.ScanTime != nil {
 		l = (*timestamppb1.Timestamp)(m.ScanTime).SizeVT()
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
@@ -390,6 +405,38 @@ func (m *SBOMScanResponse_SBOMScan) UnmarshalVT(dAtA []byte) error {
 		switch fieldNum {
 		case 1:
 			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ScannerVersion", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.ScannerVersion = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field ScanTime", wireType)
 			}
 			var msglen int
@@ -424,7 +471,7 @@ func (m *SBOMScanResponse_SBOMScan) UnmarshalVT(dAtA []byte) error {
 				return err
 			}
 			iNdEx = postIndex
-		case 2:
+		case 3:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field Components", wireType)
 			}
@@ -466,7 +513,7 @@ func (m *SBOMScanResponse_SBOMScan) UnmarshalVT(dAtA []byte) error {
 				}
 			}
 			iNdEx = postIndex
-		case 3:
+		case 4:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field OperatingSystem", wireType)
 			}
@@ -498,7 +545,7 @@ func (m *SBOMScanResponse_SBOMScan) UnmarshalVT(dAtA []byte) error {
 			}
 			m.OperatingSystem = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
-		case 4:
+		case 5:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field DataSource", wireType)
 			}
@@ -714,6 +761,42 @@ func (m *SBOMScanResponse_SBOMScan) UnmarshalVTUnsafe(dAtA []byte) error {
 		switch fieldNum {
 		case 1:
 			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ScannerVersion", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			var stringValue string
+			if intStringLen > 0 {
+				stringValue = unsafe.String(&dAtA[iNdEx], intStringLen)
+			}
+			m.ScannerVersion = stringValue
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field ScanTime", wireType)
 			}
 			var msglen int
@@ -748,7 +831,7 @@ func (m *SBOMScanResponse_SBOMScan) UnmarshalVTUnsafe(dAtA []byte) error {
 				return err
 			}
 			iNdEx = postIndex
-		case 2:
+		case 3:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field Components", wireType)
 			}
@@ -790,7 +873,7 @@ func (m *SBOMScanResponse_SBOMScan) UnmarshalVTUnsafe(dAtA []byte) error {
 				}
 			}
 			iNdEx = postIndex
-		case 3:
+		case 4:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field OperatingSystem", wireType)
 			}
@@ -826,7 +909,7 @@ func (m *SBOMScanResponse_SBOMScan) UnmarshalVTUnsafe(dAtA []byte) error {
 			}
 			m.OperatingSystem = stringValue
 			iNdEx = postIndex
-		case 4:
+		case 5:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field DataSource", wireType)
 			}
