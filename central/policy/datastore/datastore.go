@@ -27,6 +27,7 @@ type DataStore interface {
 	GetAllPolicies(ctx context.Context) ([]*storage.Policy, error)
 	GetPolicies(ctx context.Context, ids []string) ([]*storage.Policy, []int, error)
 	GetPolicyByName(ctx context.Context, name string) (*storage.Policy, bool, error)
+	FillPolicyCategoryNames(ctx context.Context, policies ...*storage.Policy) error
 
 	AddPolicy(context.Context, *storage.Policy) (string, error)
 	UpdatePolicy(context.Context, *storage.Policy) error

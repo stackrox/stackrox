@@ -134,7 +134,7 @@ func (ds *datastoreImpl) SearchRawPolicies(ctx context.Context, q *v1.Query) ([]
 		return nil, err
 	}
 
-	err = ds.fillCategoryNames(ctx, policies...)
+	err = ds.FillPolicyCategoryNames(ctx, policies...)
 	if err != nil {
 		return nil, err
 	}
@@ -152,7 +152,7 @@ func (ds *datastoreImpl) GetPolicy(ctx context.Context, id string) (*storage.Pol
 		return nil, false, err
 	}
 
-	err = ds.fillCategoryNames(ctx, policy)
+	err = ds.FillPolicyCategoryNames(ctx, policy)
 	if err != nil {
 		return nil, true, err
 	}
@@ -160,9 +160,9 @@ func (ds *datastoreImpl) GetPolicy(ctx context.Context, id string) (*storage.Pol
 	return policy, true, nil
 }
 
-// fillCategoryNames presumes both policyCategoryEdgeDatastore and categoriesDatastore to be cachedStore
+// FillPolicyCategoryNames presumes both policyCategoryEdgeDatastore and categoriesDatastore to be cachedStore
 // if those stores are not cached anymore we're sending a DB query per PolicyCategoryEdge
-func (ds *datastoreImpl) fillCategoryNames(ctx context.Context, policies ...*storage.Policy) error {
+func (ds *datastoreImpl) FillPolicyCategoryNames(ctx context.Context, policies ...*storage.Policy) error {
 	allEdges, err := ds.policyCategoryEdgeDatastore.GetAll(ctx)
 	if err != nil {
 		return err
@@ -201,7 +201,7 @@ func (ds *datastoreImpl) GetPolicies(ctx context.Context, ids []string) ([]*stor
 		return nil, nil, err
 	}
 
-	err = ds.fillCategoryNames(ctx, policies...)
+	err = ds.FillPolicyCategoryNames(ctx, policies...)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -222,7 +222,7 @@ func (ds *datastoreImpl) GetAllPolicies(ctx context.Context) ([]*storage.Policy,
 		return nil, err
 	}
 
-	err = ds.fillCategoryNames(ctx, policies...)
+	err = ds.FillPolicyCategoryNames(ctx, policies...)
 	if err != nil {
 		return nil, errorsPkg.Wrap(err, "failed to fill category names")
 	}
@@ -243,7 +243,7 @@ func (ds *datastoreImpl) GetPolicyByName(ctx context.Context, name string) (*sto
 
 	for _, p := range policies {
 		if p.GetName() == name {
-			err = ds.fillCategoryNames(ctx, p)
+			err = ds.FillPolicyCategoryNames(ctx, p)
 			if err != nil {
 				return nil, true, err
 			}
