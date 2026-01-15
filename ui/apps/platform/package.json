@@ -1,7 +1,7 @@
 {
     "name": "@stackrox/platform-app",
     "version": "0.0.0",
-    "description": "StackRox Kubernetes Security Platform Web Application (UI)",
+    "description": "StackRox Kubernetes Security Platform Web Application (UI) - placeholder commit",
     "private": true,
     "engines": {
         "node": "^18.18.0 || >=20.0.0"
