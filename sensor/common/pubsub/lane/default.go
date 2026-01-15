@@ -121,8 +121,9 @@ func (l *defaultLane) run() {
 
 func (l *defaultLane) handleEvent(event pubsub.Event) error {
 	start := time.Now()
+	operation := metrics.Processed
 	defer func() {
-		metrics.ObserveProcessingDuration(l.id, event.Topic(), time.Since(start))
+		metrics.ObserveProcessingDuration(l.id, event.Topic(), time.Since(start), operation)
 		metrics.SetQueueSize(l.id, len(l.ch))
 	}()
 
@@ -145,11 +146,10 @@ func (l *defaultLane) handleEvent(event pubsub.Event) error {
 		}
 	}
 
-	if errList.ToError() == nil {
-		metrics.RecordConsumerOperation(l.id, event.Topic(), metrics.Processed)
-	} else {
-		metrics.RecordConsumerOperation(l.id, event.Topic(), metrics.ConsumerError)
+	if errList.ToError() != nil {
+		operation = metrics.ConsumerError
 	}
+	metrics.RecordConsumerOperation(l.id, event.Topic(), operation)
 
 	return errList.ToError()
 }

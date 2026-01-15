@@ -42,7 +42,7 @@ var (
 		Name:      "pubsub_lane_event_processing_duration_seconds",
 		Help:      "Time spent processing an event through all consumer callbacks",
 		Buckets:   []float64{0.001, 0.005, 0.01, 0.05, 0.1, 0.5, 1, 5},
-	}, []string{"lane_id", "topic"})
+	}, []string{"lane_id", "topic", "operation"})
 
 	// consumersCurrent tracks the number of registered consumers per lane/topic.
 	consumersCurrent = prometheus.NewGaugeVec(prometheus.GaugeOpts{
@@ -65,8 +65,8 @@ func SetQueueSize(laneID pubsub.LaneID, size int) {
 	laneQueueSize.WithLabelValues(laneID.String()).Set(float64(size))
 }
 
-func ObserveProcessingDuration(laneID pubsub.LaneID, topic pubsub.Topic, duration time.Duration) {
-	laneEventProcessingDuration.WithLabelValues(laneID.String(), topic.String()).Observe(duration.Seconds())
+func ObserveProcessingDuration(laneID pubsub.LaneID, topic pubsub.Topic, duration time.Duration, operation Operation) {
+	laneEventProcessingDuration.WithLabelValues(laneID.String(), topic.String(), operation.String()).Observe(duration.Seconds())
 }
 
 func RecordConsumerCount(laneID pubsub.LaneID, topic pubsub.Topic, count int) {
