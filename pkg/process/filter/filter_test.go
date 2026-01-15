@@ -261,6 +261,39 @@ func TestFilterWithSingleLevelFanOut1(t *testing.T) {
 	assert.False(t, filter.Add(pi))
 }
 
+func TestFilterWithTwoLevelFanOut(t *testing.T) {
+	// Single-level fanOut with limit of 2
+	filter := NewFilter(9, 5, []int{3, 2})
+
+	pi := &storage.ProcessIndicator{
+		PodId:         "pod",
+		ContainerName: "name",
+		DeploymentId:  "deployment",
+		Signal: &storage.ProcessSignal{
+			ContainerId:  "id",
+			ExecFilePath: "path",
+			Args:         "arg1a arg2a",
+		},
+	}
+
+	assert.True(t, filter.Add(pi))
+
+	pi.Signal.Args = "arg1b arg2a"
+	assert.True(t, filter.Add(pi))
+
+	pi.Signal.Args = "arg1c arg2a"
+	assert.True(t, filter.Add(pi))
+
+	pi.Signal.Args = "arg1d arg2a"
+	assert.False(t, filter.Add(pi))
+
+	pi.Signal.Args = "arg1a arg2b"
+	assert.True(t, filter.Add(pi))
+
+	pi.Signal.Args = "arg1a arg2c"
+	assert.False(t, filter.Add(pi))
+}
+
 func TestFilterWithSingleLevelFanOut1MaxExactPathMatches1(t *testing.T) {
 	filter := NewFilter(1, 5, []int{1})
 
