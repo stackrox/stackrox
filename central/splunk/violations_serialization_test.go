@@ -107,7 +107,7 @@ func (s *violationSerializationTestSuite) TestViolationSerialization() {
 				"violationTime": "2024-06-14T20:00:00Z",
 				"violationType": "GENERIC"
 			}
-		}
+		},
 		{
 			"alertInfo": {
 				"alertId": "aeaaaaaa-bbbb-4011-0000-111111111111"
