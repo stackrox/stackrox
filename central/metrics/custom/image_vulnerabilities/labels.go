@@ -4,50 +4,40 @@ import (
 	"strconv"
 
 	"github.com/stackrox/rox/central/metrics/custom/tracker"
-	"github.com/stackrox/rox/central/platform/matcher"
+	platformmatcher "github.com/stackrox/rox/central/platform/matcher"
+	"github.com/stackrox/rox/central/views/deploymentcve"
 	"github.com/stackrox/rox/generated/storage"
 )
 
 var lazyLabels = tracker.LazyLabelGetters[*finding]{
-	"Cluster":            func(f *finding) string { return f.deployment.GetClusterName() },
-	"Namespace":          func(f *finding) string { return f.deployment.GetNamespace() },
-	"Deployment":         func(f *finding) string { return f.deployment.GetName() },
-	"Type":               func(f *finding) string { return f.deployment.GetType() },
-	"IsActive":           func(f *finding) string { return strconv.FormatBool(!f.deployment.GetInactive()) },
+	"Cluster":            func(f *finding) string { return f.ClusterName },
+	"Namespace":          func(f *finding) string { return f.Namespace },
+	"Deployment":         func(f *finding) string { return f.DeploymentName },
 	"IsPlatformWorkload": isPlatformWorkload,
 
-	"ImageID":          func(f *finding) string { return f.image.GetId() },
-	"ImageRegistry":    func(f *finding) string { return f.name.GetRegistry() },
-	"ImageRemote":      func(f *finding) string { return f.name.GetRemote() },
-	"ImageTag":         func(f *finding) string { return f.name.GetTag() },
-	"Component":        func(f *finding) string { return f.component.GetName() },
-	"ComponentVersion": func(f *finding) string { return f.component.GetVersion() },
-	"OperatingSystem":  func(f *finding) string { return f.image.GetScan().GetOperatingSystem() },
+	"ImageID":          func(f *finding) string { return f.ImageID },
+	"ImageRegistry":    func(f *finding) string { return f.ImageRegistry },
+	"ImageRemote":      func(f *finding) string { return f.ImageRemote },
+	"ImageTag":         func(f *finding) string { return f.ImageTag },
+	"Component":        func(f *finding) string { return f.ComponentName },
+	"ComponentVersion": func(f *finding) string { return f.ComponentVersion },
+	"OperatingSystem":  func(f *finding) string { return f.OperatingSystem },
 
-	"CVE":      func(f *finding) string { return f.vuln.GetCve() },
-	"CVSS":     func(f *finding) string { return strconv.FormatFloat(float64(f.vuln.GetCvss()), 'f', 1, 32) },
-	"Severity": func(f *finding) string { return f.vuln.GetSeverity().String() },
-	"EPSSProbability": func(f *finding) string {
-		return strconv.FormatFloat(float64(f.vuln.GetEpss().GetEpssProbability()), 'f', 1, 32)
-	},
-	"EPSSPercentile": func(f *finding) string {
-		return strconv.FormatFloat(float64(f.vuln.GetEpss().GetEpssPercentile()), 'f', 1, 32)
-	},
-	"IsFixable": func(f *finding) string { return strconv.FormatBool(f.vuln.GetFixedBy() != "") },
-}
-
-// finding holds all information for computing any label in this category.
-// The aggregator calls the lazy label's Getter function with every finding to
-// compute the values for the list of defined labels.
-type finding struct {
-	deployment *storage.Deployment
-	image      *storage.Image
-	name       *storage.ImageName
-	component  *storage.EmbeddedImageScanComponent
-	vuln       *storage.EmbeddedVulnerability
+	"CVE":             func(f *finding) string { return f.CVE },
+	"CVSS":            func(f *finding) string { return strconv.FormatFloat(float64(f.CVSS), 'f', 1, 32) },
+	"Severity":        func(f *finding) string { return f.Severity.String() },
+	"EPSSProbability": func(f *finding) string { return strconv.FormatFloat(float64(f.EPSSProbability), 'f', 1, 32) },
+	// Note: EPSSPercentile not available in denormalized image_cves_v2 table
+	"IsFixable": func(f *finding) string { return strconv.FormatBool(f.FixedBy != "") },
 }
 
 func isPlatformWorkload(f *finding) string {
-	p, _ := matcher.Singleton().MatchDeployment(f.deployment)
-	return strconv.FormatBool(p)
+	// MatchDeployment only needs the Namespace field, which we have in the
+	// flattened finding.
+	isPlatform, _ := platformmatcher.Singleton().MatchDeployment(&storage.Deployment{
+		Namespace: f.Namespace,
+	})
+	return strconv.FormatBool(isPlatform)
 }
+
+type finding = deploymentcve.VulnFinding

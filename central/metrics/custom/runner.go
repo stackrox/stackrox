@@ -20,6 +20,7 @@ import (
 	nodeDS "github.com/stackrox/rox/central/node/datastore"
 	policyDS "github.com/stackrox/rox/central/policy/datastore"
 	"github.com/stackrox/rox/central/telemetry/centralclient"
+	"github.com/stackrox/rox/central/views/deploymentcve"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/httputil"
@@ -42,12 +43,13 @@ type trackerRunner []struct {
 type RunnerConfiguration []*tracker.Configuration
 
 type runnerDatastores struct {
-	deployments deploymentDS.DataStore
-	alerts      alertDS.DataStore
-	nodes       nodeDS.DataStore
-	clusters    clusterDS.DataStore
-	policies    policyDS.DataStore
-	expiry      expiryS.Service
+	deployments    deploymentDS.DataStore
+	alerts         alertDS.DataStore
+	nodes          nodeDS.DataStore
+	clusters       clusterDS.DataStore
+	policies       policyDS.DataStore
+	expiry         expiryS.Service
+	deploymentCves deploymentcve.CveView
 }
 
 func withHardcodedConfiguration(period uint32, descriptors map[string][]string) func(*storage.PrometheusMetrics) *storage.PrometheusMetrics_Group {
@@ -69,7 +71,7 @@ func withHardcodedConfiguration(period uint32, descriptors map[string][]string) 
 
 func makeRunner(ds *runnerDatastores) trackerRunner {
 	return trackerRunner{{
-		image_vulnerabilities.New(ds.deployments),
+		image_vulnerabilities.New(ds.deploymentCves),
 		(*storage.PrometheusMetrics).GetImageVulnerabilities,
 	}, {
 		policy_violations.New(ds.alerts),
