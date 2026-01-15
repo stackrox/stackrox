@@ -7,6 +7,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/mtls/verifier"
 )
 
 // StartProxyServer starts a dedicated HTTP server for the /proxy/central endpoint
@@ -18,10 +19,7 @@ func StartProxyServer(h http.Handler) (*http.Server, error) {
 		return nil, errors.Wrap(err, "loading proxy TLS certificate")
 	}
 
-	tlsConfig := &tls.Config{
-		Certificates: []tls.Certificate{cert},
-		MinVersion:   tls.VersionTLS12,
-	}
+	tlsConfig := verifier.DefaultTLSServerConfig(nil, []tls.Certificate{cert})
 
 	mux := http.NewServeMux()
 	mux.Handle("/proxy/central/", http.StripPrefix("/proxy/central", h))
