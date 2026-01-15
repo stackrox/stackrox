@@ -20,6 +20,7 @@ import {
     LabelGroup,
     TextInput,
 } from '@patternfly/react-core';
+import { MinusIcon, PlusIcon } from '@patternfly/react-icons';
 import { Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 import pluralize from 'pluralize';
 import type { FormikErrors, FormikValues } from 'formik';
@@ -102,6 +103,7 @@ function labelGroup(labels: PrometheusMetricsLabels): ReactElement {
     );
 }
 
+// TODO: refactor it in order to make it a proper react component.
 function filterGroup(labels: PrometheusMetricsLabels): ReactElement {
     const includeEntries = Object.entries(labels.includeFilters ?? {}).sort(([a], [b]) =>
         a.localeCompare(b)
@@ -113,15 +115,15 @@ function filterGroup(labels: PrometheusMetricsLabels): ReactElement {
         <LabelGroup isCompact numLabels={Infinity}>
             {includeEntries.map(([label, pattern]) => {
                 return (
-                    <Label isCompact key={`include-${label}`} color="green">
-                        &#43;{label}: <code>{pattern}</code>
+                    <Label isCompact key={`include-${label}`} color="green" icon={<PlusIcon />}>
+                        {label}: <code>{pattern}</code>
                     </Label>
                 );
             })}
             {excludeEntries.map(([label, pattern]) => {
                 return (
-                    <Label isCompact key={`exclude-${label}`} color="red">
-                        &minus;{label}: <code>{pattern}</code>
+                    <Label isCompact key={`exclude-${label}`} color="red" icon={<MinusIcon />}>
+                        {label}: <code>{pattern}</code>
                     </Label>
                 );
             })}
