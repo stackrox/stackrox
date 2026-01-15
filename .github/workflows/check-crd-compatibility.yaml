@@ -16,7 +16,7 @@ jobs:
   check-crd-compatibility:
     runs-on: ubuntu-latest
     container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.4.9
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.1
       volumes:  # job-preamble deletes unused host runner files under /mnt
       - /usr:/mnt/usr
       - /opt:/mnt/opt
@@ -38,7 +38,7 @@ jobs:
       with:
         repository: openshift/crd-schema-checker
         path: .crd-schema-checker
-        ref: 9c9f5f57c9f9ea4dba41d9eec5c365a622f08417 # 2025-04-08
+        ref: c313b6407231f6d1aabfb602f0823708f8c6b9fb # 2025-09-05
 
     - name: Build crd-schema-checker
       run: |
