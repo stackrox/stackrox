@@ -73,6 +73,10 @@ func RecordConsumerCount(laneID pubsub.LaneID, topic pubsub.Topic, count int) {
 	consumersCurrent.WithLabelValues(laneID.String(), topic.String()).Set(float64(count))
 }
 
+func GetConsumerOperationMetric() *prometheus.CounterVec {
+	return laneConsumerOperations
+}
+
 func init() {
 	prometheus.MustRegister(
 		lanePublishOperations,
