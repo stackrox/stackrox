@@ -73,7 +73,8 @@ type Sensor struct {
 	profilingServer *http.Server
 	proxyServer     *http.Server
 
-	pubSub *internalmessage.MessageSubscriber
+	pubSub           *internalmessage.MessageSubscriber
+	pubSubDispatcher common.PubSubDispatcher
 
 	currentState    common.SensorComponentEvent
 	currentStateMtx *sync.Mutex
@@ -101,15 +102,21 @@ func NewSensor(
 	imageService image.Service,
 	centralConnectionFactory centralclient.CentralConnectionFactory,
 	pubSub *internalmessage.MessageSubscriber,
+	pubSubDispatcher common.PubSubDispatcher,
 	certLoader centralclient.CertLoader,
 	components ...common.SensorComponent,
-) *Sensor {
+) (*Sensor, error) {
+	if features.SensorInternalPubSub.Enabled() && pubSubDispatcher == nil {
+		return nil, errors.Errorf("%q is enabled but the PubSubDispatcher is `nil`", features.SensorInternalPubSub.EnvVar())
+	}
 	return &Sensor{
 		clusterID:          clusterID,
 		centralEndpoint:    env.CentralEndpoint.Setting(),
 		advertisedEndpoint: env.AdvertisedEndpoint.Setting(),
 
-		pubSub:        pubSub,
+		pubSub:           pubSub,
+		pubSubDispatcher: pubSubDispatcher,
+
 		configHandler: configHandler,
 		detector:      detector,
 		imageService:  imageService,
@@ -126,7 +133,7 @@ func NewSensor(
 		stoppedSig: concurrency.NewErrorSignal(),
 
 		reconnect: atomic.Bool{},
-	}
+	}, nil
 }
 
 // AddAPIServices adds the api services to the sensor. It should be called PRIOR to Start()
@@ -369,6 +376,10 @@ func (s *Sensor) Stop() {
 
 	if s.webhookServer != nil && !s.webhookServer.Stop() {
 		log.Warnf("Sensor webhook server stop was called more than once")
+	}
+
+	if s.pubSubDispatcher != nil {
+		s.pubSubDispatcher.Stop()
 	}
 
 	log.Info("Sensor shutdown complete")

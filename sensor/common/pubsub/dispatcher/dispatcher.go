@@ -68,6 +68,17 @@ func (d *dispatcher) RegisterConsumer(topic pubsub.Topic, callback pubsub.EventC
 	return errList.ToError()
 }
 
+func (d *dispatcher) RegisterConsumerToLane(topic pubsub.Topic, laneID pubsub.LaneID, callback pubsub.EventCallback) error {
+	if callback == nil {
+		return errors.New("cannot register a 'nil' callback")
+	}
+	lane, err := d.getLane(laneID)
+	if err != nil {
+		return errors.Errorf("lane with ID %q not found: %v", laneID, err)
+	}
+	return d.registerConsumerToLane(topic, lane, callback)
+}
+
 func (d *dispatcher) Stop() {
 	d.laneLock.RLock()
 	defer d.laneLock.RUnlock()
