@@ -73,6 +73,25 @@ func (mr *MockDataStoreMockRecorder) Count(ctx, q any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Count", reflect.TypeOf((*MockDataStore)(nil).Count), ctx, q)
 }
 
+// FillPolicyCategoryNames mocks base method.
+func (m *MockDataStore) FillPolicyCategoryNames(ctx context.Context, policies ...*storage.Policy) error {
+	m.ctrl.T.Helper()
+	varargs := []any{ctx}
+	for _, a := range policies {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "FillPolicyCategoryNames", varargs...)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// FillPolicyCategoryNames indicates an expected call of FillPolicyCategoryNames.
+func (mr *MockDataStoreMockRecorder) FillPolicyCategoryNames(ctx any, policies ...any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]any{ctx}, policies...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FillPolicyCategoryNames", reflect.TypeOf((*MockDataStore)(nil).FillPolicyCategoryNames), varargs...)
+}
+
 // GetAllPolicies mocks base method.
 func (m *MockDataStore) GetAllPolicies(ctx context.Context) ([]*storage.Policy, error) {
 	m.ctrl.T.Helper()
