@@ -12,7 +12,8 @@ import (
 )
 
 const (
-	id       = "https://stackrox.io/jwt-sources#ocp-rox-tokens"
+	id = "https://stackrox.io/jwt-sources#ocp-rox-tokens"
+	//#nosec G101 -- This constant is only there as a source type name, not as a credential.
 	ocpToken = "ocp-plugin-token"
 )
 

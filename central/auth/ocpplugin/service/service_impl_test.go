@@ -1,6 +1,7 @@
 package service
 
 import (
+	"errors"
 	"fmt"
 	"strings"
 	"testing"
@@ -22,7 +23,7 @@ import (
 )
 
 var (
-	testErr = fmt.Errorf("test error")
+	testErr = errors.New("test error")
 
 	expectedExpiration = time.Date(1989, time.November, 9, 18, 10, 35, 987654321, time.UTC)
 )
@@ -499,7 +500,7 @@ func TestCreateRole(t *testing.T) {
 		}
 		expectedPermissionSet := testPermissionSet(deploymentPermission)
 		expectedAccessScope := testAccessScope([]*central.RequestedRoleClusterScope{requestSingleNamespace})
-		accessScopeCreationErr := fmt.Errorf("access scope creation error")
+		accessScopeCreationErr := errors.New("access scope creation error")
 		mockRoleStore.EXPECT().
 			UpsertPermissionSet(gomock.Any(), protomock.GoMockMatcherEqualMessage(expectedPermissionSet)).
 			Times(1).
@@ -528,7 +529,7 @@ func TestCreateRole(t *testing.T) {
 			roleStore: mockRoleStore,
 		}
 		expectedPermissionSet := testPermissionSet(deploymentPermission)
-		permissionSetCreationErr := fmt.Errorf("permission set creation error")
+		permissionSetCreationErr := errors.New("permission set creation error")
 		mockRoleStore.EXPECT().
 			UpsertPermissionSet(gomock.Any(), protomock.GoMockMatcherEqualMessage(expectedPermissionSet)).
 			Times(1).

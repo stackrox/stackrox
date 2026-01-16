@@ -1,7 +1,7 @@
 package tokenbasedsource
 
 import (
-	"fmt"
+	"errors"
 	"testing"
 	"time"
 
@@ -93,7 +93,7 @@ func TestTokenSourceWithRevocationLayerOnly(t *testing.T) {
 		Id:         uuid.NewTestUUID(1).String(),
 		Expiration: protoconv.ConvertTimeToTimestampOrNil(expiration1),
 	}
-	testErr := fmt.Errorf("test error")
+	testErr := errors.New("test error")
 	mockStore.EXPECT().GetTokens(gomock.Any(), gomock.Any()).Times(1).Return([]*storage.TokenMetadata{sampleToken1}, testErr)
 	assert.ErrorIs(t, source.InitFromStore(t.Context(), mockStore), testErr)
 	// Ensure InitFromStore feeds the revocation layer with data from the token store
