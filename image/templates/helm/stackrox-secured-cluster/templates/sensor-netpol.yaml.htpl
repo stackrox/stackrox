@@ -31,8 +31,8 @@ spec:
       - podSelector:
           matchLabels:
             app: scanner-v4-indexer
-     {{- end }}
-     {{- end }}
+      {{- end }}
+      {{- end }}
     ports:
     - port: 8443
       protocol: TCP
@@ -92,4 +92,36 @@ spec:
   policyTypes:
     - Ingress
 {{- end }}
+[<- if .FeatureFlags.ROX_OCP_CONSOLE_INTEGRATION >]
+{{- if ._rox.env.openshift }}
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: sensor-proxy
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "srox.labels" (list . "networkpolicy" "sensor-proxy") | nindent 4 }}
+    auto-upgrade.stackrox.io/component: "sensor"
+  annotations:
+    {{- include "srox.annotations" (list . "networkpolicy" "sensor-proxy") | nindent 4 }}
+spec:
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: openshift-console
+          podSelector:
+            matchLabels:
+              app: console
+      ports:
+        - port: 9444
+          protocol: TCP
+  podSelector:
+    matchLabels:
+      app: sensor
+  policyTypes:
+    - Ingress
+{{- end }}
+[<- end >]
 {{- end }}

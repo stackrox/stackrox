@@ -71,6 +71,7 @@ type Sensor struct {
 	server          pkgGRPC.API
 	webhookServer   pkgGRPC.API
 	profilingServer *http.Server
+	proxyServer     *http.Server
 
 	pubSub *internalmessage.MessageSubscriber
 
@@ -237,15 +238,19 @@ func (s *Sensor) Start() {
 		s.AddNotifiable(scannerclient.ResetNotifiable())
 	}
 
-	// Enable proxy endpoint for forwarding requests to Central if the feature flag
-	// is enabled and token is configured.
-	if features.OCPConsoleIntegration.Enabled() {
+	// Enable proxy endpoint for forwarding requests to Central on OpenShift.
+	// The proxy is served on a dedicated HTTPS server with a service CA signed certificate.
+	if features.OCPConsoleIntegration.Enabled() && env.OpenshiftAPI.Setting() != "" {
 		if proxyToken := env.CentralProxyToken.Setting(); proxyToken != "" {
-			proxyRoute, err := s.newCentralProxyRoute(s.centralEndpoint, centralCertificates, proxyToken)
+			handler, err := centralproxy.NewProxyHandler(s.centralEndpoint, centralCertificates, proxyToken)
 			if err != nil {
-				utils.Should(errors.Wrap(err, "Failed to create proxy route"))
+				utils.Should(errors.Wrap(err, "creating central proxy handler"))
 			} else {
-				customRoutes = append(customRoutes, *proxyRoute)
+				s.AddNotifiable(handler)
+				s.proxyServer, err = centralproxy.StartProxyServer(handler)
+				if err != nil {
+					utils.Should(errors.Wrap(err, "starting proxy server"))
+				}
 			}
 		}
 	}
@@ -336,24 +341,6 @@ func (s *Sensor) newScannerDefinitionsRoute(centralEndpoint string, centralCerti
 	}, nil
 }
 
-// newCentralProxyRoute returns a custom route that proxies requests to Central.
-func (s *Sensor) newCentralProxyRoute(centralEndpoint string, centralCertificates []*x509.Certificate, token string) (*routes.CustomRoute, error) {
-	handler, err := centralproxy.NewProxyHandler(centralEndpoint, centralCertificates, token)
-	if err != nil {
-		return nil, errors.Wrap(err, "creating central proxy handler")
-	}
-	s.AddNotifiable(handler)
-	return &routes.CustomRoute{
-		Route: "/proxy/central/",
-		// Use allow.Anonymous() because the endpoint is meant for
-		// OpenShift Console integration. Authorization checks
-		// will be added as a follow up.
-		Authorizer:    allow.Anonymous(),
-		ServerHandler: http.StripPrefix("/proxy/central", handler),
-		Compression:   false,
-	}, nil
-}
-
 // Stop shuts down background tasks.
 func (s *Sensor) Stop() {
 	s.stoppedSig.Signal()
@@ -367,6 +354,12 @@ func (s *Sensor) Stop() {
 	if s.profilingServer != nil {
 		if err := s.profilingServer.Close(); err != nil {
 			log.Errorf("Error closing profiling server: %v", err)
+		}
+	}
+
+	if s.proxyServer != nil {
+		if err := s.proxyServer.Close(); err != nil && err != http.ErrServerClosed {
+			log.Errorf("Error closing proxy server: %v", err)
 		}
 	}
 
