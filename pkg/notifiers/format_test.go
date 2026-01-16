@@ -332,7 +332,7 @@ Policy Definition:
 
 		Section Unnamed :
 
-			- Node File Path: /etc/passwd
+			- Actual Path: /etc/passwd
 
 Node:
 	 - Name: ` + fixtureconsts.Node1 + `
