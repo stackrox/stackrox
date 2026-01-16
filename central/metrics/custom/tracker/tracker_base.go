@@ -3,6 +3,7 @@ package tracker
 import (
 	"cmp"
 	"context"
+	"fmt"
 	"iter"
 	"maps"
 	"net/http"
@@ -111,7 +112,7 @@ func (tracker *TrackerBase[F]) NewConfiguration(cfg *storage.PrometheusMetrics_G
 		current = &Configuration{}
 	}
 
-	md, lf, err := tracker.translateStorageConfiguration(cfg.GetDescriptors())
+	md, incFilters, excFilters, err := tracker.translateStorageConfiguration(cfg.GetDescriptors())
 	if err != nil {
 		return nil, err
 	}
@@ -121,11 +122,12 @@ func (tracker *TrackerBase[F]) NewConfiguration(cfg *storage.PrometheusMetrics_G
 	}
 
 	return &Configuration{
-		metrics:  md,
-		filters:  lf,
-		toAdd:    toAdd,
-		toDelete: toDelete,
-		period:   time.Minute * time.Duration(cfg.GetGatheringPeriodMinutes()),
+		metrics:        md,
+		includeFilters: incFilters,
+		excludeFilters: excFilters,
+		toAdd:          toAdd,
+		toDelete:       toDelete,
+		period:         time.Minute * time.Duration(cfg.GetGatheringPeriodMinutes()),
 	}, nil
 }
 
@@ -176,16 +178,55 @@ func (tracker *TrackerBase[F]) registerMetrics(cfg *Configuration, metrics []Met
 }
 
 func (tracker *TrackerBase[F]) registerMetric(gatherer *gatherer[F], cfg *Configuration, metric MetricName) {
+	help := formatMetricHelp(tracker.description, cfg, metric)
+
 	if err := gatherer.registry.RegisterMetric(
 		string(metric),
-		tracker.description,
-		cfg.period,
+		help,
 		labelsAsStrings(cfg.metrics[metric]),
 	); err != nil {
 		log.Errorf("Failed to register %s metric %q: %v", tracker.description, metric, err)
 		return
 	}
 	log.Debugf("Registered %s Prometheus metric %q", tracker.description, metric)
+}
+
+func formatMetricHelp(description string, cfg *Configuration, metric MetricName) string {
+	var help strings.Builder
+	help.WriteString("The total number of ")
+	help.WriteString(description)
+	if len(cfg.metrics[metric]) > 0 {
+		help.WriteString(" aggregated by ")
+		for i, label := range cfg.metrics[metric] {
+			if i > 0 {
+				help.WriteString(", ")
+			}
+			help.WriteString(string(label))
+		}
+	}
+	if len(cfg.includeFilters[metric]) > 0 {
+		help.WriteString(", including only ")
+		for i, label := range slices.Sorted(maps.Keys(cfg.includeFilters[metric])) {
+			if i > 0 {
+				help.WriteString(", ")
+			}
+			fmt.Fprintf(&help, "%s≈%q", label, cfg.includeFilters[metric][label].String())
+		}
+	}
+	if len(cfg.excludeFilters[metric]) > 0 {
+		help.WriteString(", excluding ")
+		for i, label := range slices.Sorted(maps.Keys(cfg.excludeFilters[metric])) {
+			if i > 0 {
+				help.WriteString(", ")
+			}
+			fmt.Fprintf(&help, "%s≈%q", label, cfg.excludeFilters[metric][label].String())
+		}
+	}
+	if cfg.period > 0 {
+		help.WriteString(", and gathered every ")
+		help.WriteString(cfg.period.String())
+	}
+	return help.String()
 }
 
 func (tracker *TrackerBase[F]) getConfiguration() *Configuration {
@@ -295,7 +336,7 @@ func (tracker *TrackerBase[F]) getGatherer(userID string, cfg *Configuration) *g
 		}
 		gr = &gatherer[F]{
 			registry:   r,
-			aggregator: makeAggregator(cfg.metrics, cfg.filters, tracker.getters),
+			aggregator: makeAggregator(cfg.metrics, cfg.includeFilters, cfg.excludeFilters, tracker.getters),
 			config:     cfg,
 		}
 		gr.running.Store(true)
@@ -312,7 +353,7 @@ func (tracker *TrackerBase[F]) getGatherer(userID string, cfg *Configuration) *g
 		}
 		// Recreate aggregator if config has changed since last run.
 		if gr.config != cfg {
-			gr.aggregator = makeAggregator(cfg.metrics, cfg.filters, tracker.getters)
+			gr.aggregator = makeAggregator(cfg.metrics, cfg.includeFilters, cfg.excludeFilters, tracker.getters)
 			gr.config = cfg
 		}
 	}

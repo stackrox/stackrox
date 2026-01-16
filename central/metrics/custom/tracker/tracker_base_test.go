@@ -3,6 +3,7 @@ package tracker
 import (
 	"context"
 	"maps"
+	"regexp"
 	"slices"
 	"strings"
 	"testing"
@@ -80,9 +81,9 @@ func TestTrackerBase_Reconfigure(t *testing.T) {
 		tracker.registryFactory = func(string) (metrics.CustomRegistry, error) { return rf, nil }
 
 		var registered, unregistered []MetricName
-		rf.EXPECT().RegisterMetric(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
+		rf.EXPECT().RegisterMetric(gomock.Any(), gomock.Any(), gomock.Any()).
 			AnyTimes().Do(
-			func(metricName string, _ string, _ time.Duration, _ []string) {
+			func(metricName string, _ string, _ []string) {
 				registered = append(registered, MetricName(metricName))
 			})
 		rf.EXPECT().UnregisterMetric(gomock.Any()).
@@ -194,7 +195,7 @@ func TestTrackerBase_Track(t *testing.T) {
 	}
 	testGatherer := &gatherer[testFinding]{
 		registry:   rf,
-		aggregator: makeAggregator(tracker.config.metrics, tracker.config.filters, tracker.getters),
+		aggregator: makeAggregator(tracker.config.metrics, tracker.config.includeFilters, tracker.config.excludeFilters, tracker.getters),
 	}
 	assert.NoError(t, tracker.track(context.Background(), testGatherer, tracker.config))
 
@@ -258,7 +259,7 @@ func TestTrackerBase_error(t *testing.T) {
 	}
 	testGatherer := &gatherer[testFinding]{
 		registry:   rf,
-		aggregator: makeAggregator(tracker.config.metrics, tracker.config.filters, tracker.getters),
+		aggregator: makeAggregator(tracker.config.metrics, tracker.config.includeFilters, tracker.config.excludeFilters, tracker.getters),
 	}
 	assert.ErrorIs(t, tracker.track(context.Background(), testGatherer, tracker.config),
 		errox.InvariantViolation)
@@ -275,7 +276,7 @@ func TestTrackerBase_Gather(t *testing.T) {
 
 	result := make(map[string][]*aggregatedRecord)
 	{ // Capture result with a mock registry.
-		rf.EXPECT().RegisterMetric(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
+		rf.EXPECT().RegisterMetric(gomock.Any(), gomock.Any(), gomock.Any()).
 			Times(2)
 		rf.EXPECT().SetTotal(gomock.Any(), gomock.Any(), gomock.Any()).
 			AnyTimes().Do(
@@ -315,7 +316,7 @@ func TestTrackerBase_Gather_resetBetweenRuns(t *testing.T) {
 
 	// Track all SetTotal calls with their totals.
 	var allTotals []int
-	rf.EXPECT().RegisterMetric(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Times(2)
+	rf.EXPECT().RegisterMetric(gomock.Any(), gomock.Any(), gomock.Any()).Times(2)
 	rf.EXPECT().SetTotal(gomock.Any(), gomock.Any(), gomock.Any()).
 		AnyTimes().Do(func(_ string, _ prometheus.Labels, total int) {
 		allTotals = append(allTotals, total)
@@ -367,7 +368,7 @@ func TestTrackerBase_Gather_afterReconfiguration(t *testing.T) {
 	tracker.registryFactory = func(string) (metrics.CustomRegistry, error) { return rf, nil }
 
 	var gatheredMetrics []string
-	rf.EXPECT().RegisterMetric(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
+	rf.EXPECT().RegisterMetric(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
 	rf.EXPECT().UnregisterMetric(gomock.Any()).AnyTimes()
 	rf.EXPECT().SetTotal(gomock.Any(), gomock.Any(), gomock.Any()).
 		AnyTimes().Do(func(metricName string, _ prometheus.Labels, _ int) {
@@ -445,7 +446,7 @@ func TestTrackerBase_getGatherer(t *testing.T) {
 	})
 
 	cfg := tracker.getConfiguration()
-	rf.EXPECT().RegisterMetric(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
+	rf.EXPECT().RegisterMetric(gomock.Any(), gomock.Any(), gomock.Any()).
 		// each new gatherer, created by getGatherer, calls RegisterMetric
 		// for every metric.
 		Times(2 * len(cfg.metrics))
@@ -469,7 +470,7 @@ func TestTrackerBase_getGatherer(t *testing.T) {
 func TestTrackerBase_cleanup(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	rf := mocks.NewMockCustomRegistry(ctrl)
-	rf.EXPECT().RegisterMetric(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
+	rf.EXPECT().RegisterMetric(gomock.Any(), gomock.Any(), gomock.Any()).
 		Times(4).Return(nil)
 
 	// Test that cleanupInactiveGatherers removes gatherers that have been inactive for longer than inactiveGathererTTL.
@@ -554,4 +555,37 @@ func Test_makeProps(t *testing.T) {
 	assert.ElementsMatch(t, get("Telemetry test metrics labels"), []Label{"Cluster", "Namespace", "Severity"})
 	assert.Equal(t, len(md), get("Total Telemetry test metrics"))
 	assert.Equal(t, uint32(12), get("Telemetry test gathering seconds"))
+}
+
+func Test_formatMetricsHelp(t *testing.T) {
+	assert.Equal(t, "The total number of my metric",
+		formatMetricHelp("my metric", &Configuration{}, "my_metric"))
+
+	assert.Equal(t, `The total number of my metric aggregated by Label1, Label2, and gathered every 1h0m0s`,
+		formatMetricHelp("my metric", &Configuration{
+			metrics: MetricDescriptors{
+				"metric1": []Label{"Label1", "Label2"},
+			},
+			period: time.Hour,
+		}, "metric1"))
+
+	assert.Equal(t, `The total number of my metric aggregated by Label1, Label2, including only Label3≈"EXPR1", Label4≈"EXPR11", excluding Label4≈"EXPR2", Label5≈"EXPR2", and gathered every 1h0m0s`,
+		formatMetricHelp("my metric", &Configuration{
+			metrics: MetricDescriptors{
+				"metric1": []Label{"Label1", "Label2"},
+			},
+			includeFilters: LabelFilters{
+				"metric1": {
+					"Label3": regexp.MustCompile("EXPR1"),
+					"Label4": regexp.MustCompile("EXPR11"),
+				},
+			},
+			excludeFilters: LabelFilters{
+				"metric1": {
+					"Label4": regexp.MustCompile("EXPR2"),
+					"Label5": regexp.MustCompile("EXPR2"),
+				},
+			},
+			period: time.Hour,
+		}, "metric1"))
 }

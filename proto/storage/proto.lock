@@ -5513,7 +5513,15 @@
                         "key_type": "string",
                         "field": {
                           "id": 2,
-                          "name": "filters",
+                          "name": "include_filters",
+                          "type": "string"
+                        }
+                      },
+                      {
+                        "key_type": "string",
+                        "field": {
+                          "id": 3,
+                          "name": "exclude_filters",
                           "type": "string"
                         }
                       }
