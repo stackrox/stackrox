@@ -79,7 +79,7 @@ message PrometheusMetrics {
       // specified, a metric record is only counted if all label values match
       // the according label expression. Patterns are full-match only
       // (automatically wrapped with ^ and $).
-      map<string, string> include_filters = 2; // @gotags: crYaml:",omitempty"
+      map<string, string> include_filters = 2;
       // A map of label name to a filter regular expression for this label
       // value. See the RE2 syntax reference:
       // https://github.com/google/re2/wiki/Syntax. If exclude_filters are
@@ -96,9 +96,9 @@ message PrometheusMetrics {
     // labels.
     map<string, Labels> descriptors = 2;
   }
-  Group image_vulnerabilities = 1; // @gotags: crYaml:",omitempty"
-  Group policy_violations = 2; // @gotags: crYaml:",omitempty"
-  Group node_vulnerabilities = 3; // @gotags: crYaml:",omitempty"
+  Group image_vulnerabilities = 1;
+  Group policy_violations = 2;
+  Group node_vulnerabilities = 3;
 }
 
 // next available tag: 10
@@ -119,7 +119,7 @@ message PrivateConfig {
 
   // This field defines groups of custom Prometheus metrics to be exposed by the
   // backend on the API endpoint.
-  PrometheusMetrics metrics = 9; // @gotags: crYaml:",omitempty"
+  PrometheusMetrics metrics = 9;
 }
 
 message PlatformComponentConfig {
