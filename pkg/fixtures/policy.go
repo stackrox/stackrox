@@ -248,6 +248,32 @@ func GetAuditLogEventSourcePolicy() *storage.Policy {
 	return p
 }
 
+// GetNodePolicy returns a mock policy suitable for node file access alerts
+func GetNodePolicy() *storage.Policy {
+	return &storage.Policy{
+		Id:                 fixtureconsts.PolicyFake,
+		Name:               "Sensitive File Access",
+		Description:        "Alert on access to sensitive files on nodes",
+		Rationale:          "This is the rationale",
+		Remediation:        "This is the remediation",
+		Categories:         []string{"Security Best Practices"},
+		LifecycleStages:    []storage.LifecycleStage{storage.LifecycleStage_RUNTIME},
+		Severity:           storage.Severity_LOW_SEVERITY,
+		SORTName:           "Sensitive File Access",
+		SORTLifecycleStage: "RUNTIME",
+		PolicyVersion:      "1.1",
+		PolicySections: []*storage.PolicySection{{
+			PolicyGroups: []*storage.PolicyGroup{{
+				FieldName: "Actual Path",
+				Values: []*storage.PolicyValue{{
+					Value: "/etc/passwd",
+				}},
+			}},
+		}},
+		EventSource: storage.EventSource_NODE_EVENT,
+	}
+}
+
 // GetNetworkFlowPolicy returns a mock policy with criteria "Unexpected Network Flow Detected"
 func GetNetworkFlowPolicy() *storage.Policy {
 	return &storage.Policy{

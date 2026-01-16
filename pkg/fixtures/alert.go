@@ -2,6 +2,7 @@ package fixtures
 
 import (
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/booleanpolicy/violationmessages/printer"
 	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
 	"github.com/stackrox/rox/pkg/images/types"
 	"github.com/stackrox/rox/pkg/protocompat"
@@ -21,6 +22,9 @@ func copyScopingInfo(alert *storage.Alert) *storage.Alert {
 		alert.ClusterId = entity.Resource.GetClusterId()
 		alert.Namespace = entity.Resource.GetNamespace()
 		alert.NamespaceId = entity.Resource.GetNamespaceId()
+	case *storage.Alert_Node_:
+		alert.ClusterId = entity.Node.GetClusterId()
+		alert.ClusterName = entity.Node.GetClusterName()
 	}
 	return alert
 }
@@ -437,7 +441,9 @@ func GetJSONSerializedTestAlert() string {
 func GetNodeAlert() *storage.Alert {
 	return copyScopingInfo(&storage.Alert{
 		Id:             fixtureconsts.Alert1,
+		Violations:     []*storage.Alert_Violation{},
 		Time:           protocompat.TimestampNow(),
+		Policy:         GetNodePolicy(),
 		LifecycleStage: storage.LifecycleStage_RUNTIME,
 		Entity: &storage.Alert_Node_{
 			Node: &storage.Alert_Node{
@@ -448,4 +454,31 @@ func GetNodeAlert() *storage.Alert {
 			},
 		},
 	})
+}
+
+func WithFileAccessViolation(alert *storage.Alert) *storage.Alert {
+	alert.Violations = append(alert.Violations, []*storage.Alert_Violation{
+		printer.GenerateFileAccessViolation(&storage.FileAccess{
+			File: &storage.FileAccess_File{
+				ActualPath:    "/etc/passwd",
+				EffectivePath: "/etc/passwd",
+			},
+			Operation: storage.FileAccess_OPEN,
+			Timestamp: protocompat.TimestampNow(),
+			Process: &storage.ProcessIndicator{
+				Signal: &storage.ProcessSignal{
+					Name: "cp",
+				},
+			},
+		}),
+	}...)
+	return alert
+}
+
+func GetNodeFileAccessAlert() *storage.Alert {
+	return WithFileAccessViolation(GetNodeAlert())
+}
+
+func GetDeploymentFileAccessAlert() *storage.Alert {
+	return WithFileAccessViolation(GetScopedDeploymentAlert(fixtureconsts.Alert1, fixtureconsts.Cluster1, "stackrox"))
 }
