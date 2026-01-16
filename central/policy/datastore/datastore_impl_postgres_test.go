@@ -502,9 +502,12 @@ func (s *PolicyPostgresDataStoreTestSuite) TestAddDefaultsDeduplicatesCategoryNa
 
 	// Create categories with incorrect names directly using the store to bypass normalization
 	// These are the incorrect names: "Docker Cis" and "Devops Best Practices"
-	categoryStorage := categoryPostgres.New(s.db)
 	edgeStorage := edgePostgres.New(s.db)
 	edgeDS := policyCategoryEdgeDS.New(edgeStorage)
+	categoryStorage := categoryPostgres.New(s.db)
+	categoryDS := policyCategoryDS.New(categoryStorage, edgeDS)
+	policyStorage := policyStore.New(s.db)
+	policyDS := New(policyStorage, nil, nil, categoryDS, edgeDS)
 
 	dockerCisCategory := &storage.PolicyCategory{
 		Id:        uuid.NewV4().String(),
@@ -538,14 +541,13 @@ func (s *PolicyPostgresDataStoreTestSuite) TestAddDefaultsDeduplicatesCategoryNa
 	s.NoError(err)
 
 	// Verify the policy has the incorrect category names
-	err = s.datastore.FillPolicyCategoryNames(ctx, policy)
+	err = policyDS.FillPolicyCategoryNames(ctx, policy)
 	s.NoError(err)
 	categories := policy.GetCategories()
 	s.Len(categories, 2)
 	categoryNames := make([]string, len(categories))
-	for i, c := range categories {
-		categoryNames[i] = c
-	}
+	copy(categoryNames, categories)
+
 	s.Contains(categoryNames, "Docker Cis")
 	s.Contains(categoryNames, "Devops Best Practices")
 
@@ -556,18 +558,16 @@ func (s *PolicyPostgresDataStoreTestSuite) TestAddDefaultsDeduplicatesCategoryNa
 	s.Len(results, 2) // Both incorrect categories should exist
 
 	// Now call addDefaults which should fix the category names
-	policyStorage := policyStore.New(s.db)
-	addDefaults(policyStorage, s.categoryDS, s.datastore)
+	addDefaults(policyStorage, categoryDS, policyDS)
 
 	// Verify the policy now has the correct category names
-	err = s.datastore.FillPolicyCategoryNames(ctx, policy)
+	err = policyDS.FillPolicyCategoryNames(ctx, policy)
 	s.NoError(err)
 	categories = policy.GetCategories()
 	s.Len(categories, 2)
 	categoryNames = make([]string, len(categories))
-	for i, c := range categories {
-		categoryNames[i] = c
-	}
+	copy(categoryNames, categories)
+
 	s.Contains(categoryNames, "Docker CIS")
 	s.Contains(categoryNames, "DevOps Best Practices")
 	s.NotContains(categoryNames, "Docker Cis")
