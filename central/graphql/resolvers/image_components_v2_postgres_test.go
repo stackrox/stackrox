@@ -126,7 +126,14 @@ func (s *GraphQLImageComponentV2TestSuite) TestImageComponents() {
 		comp32: false,
 		comp42: true,
 	}
-
+	inBaseImageLayerMap := map[string]bool{
+		s.componentIDMap[comp11]: false,
+		s.componentIDMap[comp12]: true,
+		s.componentIDMap[comp21]: false,
+		s.componentIDMap[comp31]: false,
+		s.componentIDMap[comp32]: true,
+		s.componentIDMap[comp42]: true,
+	}
 	comps, err := s.resolver.ImageComponents(ctx, PaginatedQuery{})
 	assert.NoError(s.T(), err)
 	assert.Equal(s.T(), expectedCount, int32(len(comps)))
@@ -134,9 +141,8 @@ func (s *GraphQLImageComponentV2TestSuite) TestImageComponents() {
 
 	for _, component := range comps {
 		verifyLocationAndLayerIndex(ctx, s.T(), component, emptyLocationMap[string(component.Id(ctx))])
-
-		inBaseImageLayer := component.InBaseImageLayer(ctx)
-		assert.True(s.T(), inBaseImageLayer)
+		expectedInBaseImage := inBaseImageLayerMap[string(component.Id(ctx))]
+		assert.Equal(s.T(), expectedInBaseImage, component.InBaseImageLayer(ctx))
 	}
 
 	count, err := s.resolver.ImageComponentCount(ctx, RawQuery{})

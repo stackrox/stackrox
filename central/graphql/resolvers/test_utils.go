@@ -160,13 +160,6 @@ func testImages() []*storage.Image {
 				},
 				ScanTime: t1,
 			},
-			BaseImageInfo: []*storage.BaseImageInfo{
-				{
-					BaseImageId:       "base-sha1",
-					BaseImageFullName: "ubuntu:18.04",
-					BaseImageDigest:   "sha256:ubuntu18",
-				},
-			},
 		},
 		{
 			Id: "sha2",
