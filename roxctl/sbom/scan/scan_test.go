@@ -156,6 +156,7 @@ func (s *sbomScanTestSuite) TestConstruct() {
 func (s *sbomScanTestSuite) TestValidate() {
 	cases := map[string]struct {
 		setupFunc  func() string
+		severities []string
 		shouldFail bool
 		errorType  error
 	}{
@@ -163,14 +164,38 @@ func (s *sbomScanTestSuite) TestValidate() {
 			setupFunc: func() string {
 				return s.createTempFile("valid.json", `{"spdxVersion":"SPDX-2.3"}`)
 			},
+			severities: scan.AllSeverities,
 			shouldFail: false,
 		},
 		"SBOM file does not exist": {
 			setupFunc: func() string {
 				return filepath.Join(s.tempDir, "nonexistent.json")
 			},
+			severities: scan.AllSeverities,
 			shouldFail: true,
 			errorType:  errox.InvalidArgs,
+		},
+		"valid severities with mixed case": {
+			setupFunc: func() string {
+				return s.createTempFile("valid.json", `{"spdxVersion":"SPDX-2.3"}`)
+			},
+			severities: []string{"critical", "IMPORTANT", "low"},
+			shouldFail: false,
+		},
+		"invalid severity": {
+			setupFunc: func() string {
+				return s.createTempFile("valid.json", `{"spdxVersion":"SPDX-2.3"}`)
+			},
+			severities: []string{"CRITICAL", "INVALID_SEVERITY"},
+			shouldFail: true,
+			errorType:  errox.InvalidArgs,
+		},
+		"single valid severity": {
+			setupFunc: func() string {
+				return s.createTempFile("valid.json", `{"spdxVersion":"SPDX-2.3"}`)
+			},
+			severities: []string{"CRITICAL"},
+			shouldFail: false,
 		},
 	}
 
@@ -179,6 +204,7 @@ func (s *sbomScanTestSuite) TestValidate() {
 			sbomPath := c.setupFunc()
 			cmd := &sbomScanCommand{
 				sbomFilePath: sbomPath,
+				severities:   c.severities,
 			}
 
 			err := cmd.Validate()
