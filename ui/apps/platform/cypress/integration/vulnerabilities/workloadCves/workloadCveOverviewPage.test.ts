@@ -356,11 +356,11 @@ describe('Workload CVE overview page tests', () => {
             addCheckboxSelectFilter('Image component', 'Layer type', 'Base image');
 
             // Verify filter chip is applied
-            cy.get(selectors.filterChipGroupForCategory('Image component layer type')).should(
+            cy.get(selectors.filterLabelGroupForCategory('Image component layer type')).should(
                 'be.visible'
             );
             cy.get(
-                selectors.filterChipGroupItem('Image component layer type', 'Base image')
+                selectors.filterLabelGroupItem('Image component layer type', 'Base image')
             ).should('be.visible');
 
             // Verify filtered view label is shown

@@ -1,0 +1,43 @@
+package old
+
+import (
+	"github.com/stackrox/rox/pkg/postgres"
+)
+
+var (
+	// CreateTableComplianceOperatorBenchmarkV2Stmt holds the create statement for table `compliance_operator_benchmark_v2`.
+	CreateTableComplianceOperatorBenchmarkV2Stmt = &postgres.CreateStmts{
+		GormModel: (*ComplianceOperatorBenchmarkV2)(nil),
+		Children: []*postgres.CreateStmts{
+			{
+				GormModel: (*ComplianceOperatorBenchmarkV2Profiles)(nil),
+				Children:  []*postgres.CreateStmts{},
+			},
+		},
+	}
+)
+
+const (
+	// ComplianceOperatorBenchmarkV2TableName specifies the name of the table in postgres.
+	ComplianceOperatorBenchmarkV2TableName = "compliance_operator_benchmark_v2"
+	// ComplianceOperatorBenchmarkV2ProfilesTableName specifies the name of the table in postgres.
+	ComplianceOperatorBenchmarkV2ProfilesTableName = "compliance_operator_benchmark_v2_profiles"
+)
+
+// ComplianceOperatorBenchmarkV2 holds the Gorm model for Postgres table `compliance_operator_benchmark_v2`.
+type ComplianceOperatorBenchmarkV2 struct {
+	ID         string `gorm:"column:id;type:uuid;primaryKey"`
+	Name       string `gorm:"column:name;type:varchar"`
+	Version    string `gorm:"column:version;type:varchar"`
+	ShortName  string `gorm:"column:shortname;type:varchar"`
+	Serialized []byte `gorm:"column:serialized;type:bytea"`
+}
+
+// ComplianceOperatorBenchmarkV2Profiles holds the Gorm model for Postgres table `compliance_operator_benchmark_v2_profiles`.
+type ComplianceOperatorBenchmarkV2Profiles struct {
+	ComplianceOperatorBenchmarkV2ID  string                        `gorm:"column:compliance_operator_benchmark_v2_id;type:uuid;primaryKey"`
+	Idx                              int                           `gorm:"column:idx;type:integer;primaryKey;index:complianceoperatorbenchmarkv2profiles_idx,type:btree"`
+	ProfileName                      string                        `gorm:"column:profilename;type:varchar"`
+	ProfileVersion                   string                        `gorm:"column:profileversion;type:varchar"`
+	ComplianceOperatorBenchmarkV2Ref ComplianceOperatorBenchmarkV2 `gorm:"foreignKey:compliance_operator_benchmark_v2_id;references:id;belongsTo;constraint:OnDelete:CASCADE"`
+}

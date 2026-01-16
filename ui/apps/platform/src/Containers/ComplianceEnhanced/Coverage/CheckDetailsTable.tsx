@@ -15,10 +15,7 @@ import type { ClusterCheckStatus } from 'services/ComplianceResultsService';
 import type { TableUIState } from 'utils/getTableUIState';
 
 import CompoundSearchFilter from 'Components/CompoundSearchFilter/components/CompoundSearchFilter';
-import SearchFilterChips, {
-    makeFilterChipDescriptorFromAttribute,
-    makeFilterChipDescriptors,
-} from 'Components/CompoundSearchFilter/components/SearchFilterChips';
+import CompoundSearchFilterLabels from 'Components/CompoundSearchFilter/components/CompoundSearchFilterLabels';
 import SearchFilterSelectInclusive from 'Components/CompoundSearchFilter/components/SearchFilterSelectInclusive';
 import type {
     CompoundSearchFilterConfig,
@@ -67,8 +64,6 @@ function CheckDetailsTable({
     const { generatePathWithScanConfig } = useScanConfigRouter();
     const { page, perPage, setPage, setPerPage } = pagination;
 
-    const filterChipGroupDescriptors = makeFilterChipDescriptors(searchFilterConfig);
-
     return (
         <div id={tabContentIdForResults}>
             <Toolbar>
@@ -89,6 +84,16 @@ function CheckDetailsTable({
                                 searchFilter={searchFilter}
                             />
                         </ToolbarItem>
+                    </ToolbarGroup>
+                    <ToolbarGroup className="pf-v5-u-w-100">
+                        <CompoundSearchFilterLabels
+                            attributesSeparateFromConfig={[attributeForComplianceCheckStatus]}
+                            config={searchFilterConfig}
+                            onFilterChange={onFilterChange}
+                            searchFilter={searchFilter}
+                        />
+                    </ToolbarGroup>
+                    <ToolbarGroup className="pf-v5-u-w-100">
                         <ToolbarItem variant="pagination" align={{ default: 'alignRight' }}>
                             <Pagination
                                 itemCount={checkResultsCount}
@@ -98,18 +103,6 @@ function CheckDetailsTable({
                                 onPerPageSelect={(_, newPerPage) => setPerPage(newPerPage)}
                             />
                         </ToolbarItem>
-                    </ToolbarGroup>
-                    <ToolbarGroup className="pf-v5-u-w-100">
-                        <SearchFilterChips
-                            searchFilter={searchFilter}
-                            onFilterChange={onFilterChange}
-                            filterChipGroupDescriptors={[
-                                ...filterChipGroupDescriptors,
-                                makeFilterChipDescriptorFromAttribute(
-                                    attributeForComplianceCheckStatus
-                                ),
-                            ]}
-                        />
                     </ToolbarGroup>
                 </ToolbarContent>
             </Toolbar>

@@ -15,9 +15,7 @@ import {
 import MenuDropdown from 'Components/PatternFly/MenuDropdown';
 import CloseButton from 'Components/CloseButton';
 import CompoundSearchFilter from 'Components/CompoundSearchFilter/components/CompoundSearchFilter';
-import SearchFilterChips, {
-    makeFilterChipDescriptors,
-} from 'Components/CompoundSearchFilter/components/SearchFilterChips';
+import CompoundSearchFilterLabels from 'Components/CompoundSearchFilter/components/CompoundSearchFilterLabels';
 import { updateSearchFilter } from 'Components/CompoundSearchFilter/utils/utils';
 import Dialog from 'Components/Dialog';
 import LinkShim from 'Components/PatternFly/LinkShim';
@@ -58,8 +56,6 @@ import SecureClusterModal from './InitBundles/SecureClusterModal';
 import { clusterTablePollingInterval, getUpgradeableClusters } from './cluster.helpers';
 import NoClustersPage from './NoClustersPage';
 import { searchFilterConfig } from './searchFilterConfig';
-
-const filterChipGroupDescriptors = makeFilterChipDescriptors(searchFilterConfig);
 
 export type ClustersTablePanelProps = {
     selectedClusterId: string;
@@ -442,10 +438,11 @@ function ClustersTablePanel({ selectedClusterId }: ClustersTablePanelProps) {
                             )}
                         </ToolbarGroup>
                         <ToolbarGroup className="pf-v5-u-w-100">
-                            <SearchFilterChips
-                                searchFilter={searchFilter}
+                            <CompoundSearchFilterLabels
+                                attributesSeparateFromConfig={[]}
+                                config={searchFilterConfig}
                                 onFilterChange={setSearchFilter}
-                                filterChipGroupDescriptors={filterChipGroupDescriptors}
+                                searchFilter={searchFilter}
                             />
                         </ToolbarGroup>
                     </ToolbarContent>

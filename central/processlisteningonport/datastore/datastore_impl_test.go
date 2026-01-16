@@ -2340,6 +2340,13 @@ func makeRandomPlops(nport int, nprocess int, npod int, deployment string) []*st
 			}
 		}
 	}
+
+	// Shuffle the PLOPs to simulate realistic interleaved arrival from different pods
+	// rather than sequential insertion by pod which gives artificial locality benefits
+	rand.Shuffle(len(plops), func(i, j int) {
+		plops[i], plops[j] = plops[j], plops[i]
+	})
+
 	return plops
 }
 

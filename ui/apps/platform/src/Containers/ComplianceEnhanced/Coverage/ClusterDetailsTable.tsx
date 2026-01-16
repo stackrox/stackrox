@@ -12,10 +12,7 @@ import {
 import { ExpandableRowContent, Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 
 import CompoundSearchFilter from 'Components/CompoundSearchFilter/components/CompoundSearchFilter';
-import SearchFilterChips, {
-    makeFilterChipDescriptorFromAttribute,
-    makeFilterChipDescriptors,
-} from 'Components/CompoundSearchFilter/components/SearchFilterChips';
+import CompoundSearchFilterLabels from 'Components/CompoundSearchFilter/components/CompoundSearchFilterLabels';
 import SearchFilterSelectInclusive from 'Components/CompoundSearchFilter/components/SearchFilterSelectInclusive';
 import type {
     CompoundSearchFilterConfig,
@@ -77,8 +74,6 @@ function ClusterDetailsTable({
         setExpandedRows([]);
     }, [page, perPage, tableState]);
 
-    const filterChipGroupDescriptors = makeFilterChipDescriptors(searchFilterConfig);
-
     return (
         <>
             <Toolbar>
@@ -99,6 +94,16 @@ function ClusterDetailsTable({
                                 searchFilter={searchFilter}
                             />
                         </ToolbarItem>
+                    </ToolbarGroup>
+                    <ToolbarGroup className="pf-v5-u-w-100">
+                        <CompoundSearchFilterLabels
+                            attributesSeparateFromConfig={[attributeForComplianceCheckStatus]}
+                            config={searchFilterConfig}
+                            onFilterChange={onFilterChange}
+                            searchFilter={searchFilter}
+                        />
+                    </ToolbarGroup>
+                    <ToolbarGroup className="pf-v5-u-w-100">
                         <ToolbarItem variant="pagination" align={{ default: 'alignRight' }}>
                             <Pagination
                                 itemCount={checkResultsCount}
@@ -108,18 +113,6 @@ function ClusterDetailsTable({
                                 onPerPageSelect={(_, newPerPage) => setPerPage(newPerPage)}
                             />
                         </ToolbarItem>
-                    </ToolbarGroup>
-                    <ToolbarGroup className="pf-v5-u-w-100">
-                        <SearchFilterChips
-                            searchFilter={searchFilter}
-                            onFilterChange={onFilterChange}
-                            filterChipGroupDescriptors={[
-                                ...filterChipGroupDescriptors,
-                                makeFilterChipDescriptorFromAttribute(
-                                    attributeForComplianceCheckStatus
-                                ),
-                            ]}
-                        />
                     </ToolbarGroup>
                 </ToolbarContent>
             </Toolbar>

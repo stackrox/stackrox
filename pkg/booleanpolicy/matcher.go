@@ -51,9 +51,8 @@ type EnhancedDeployment struct {
 
 // Violations represents a list of violation sub-objects.
 type Violations struct {
-	ProcessViolation    *storage.Alert_ProcessViolation
-	FileAccessViolation *storage.Alert_FileAccessViolation
-	AlertViolations     []*storage.Alert_Violation
+	ProcessViolation *storage.Alert_ProcessViolation
+	AlertViolations  []*storage.Alert_Violation
 }
 
 // An ImageMatcher matches images against a policy.

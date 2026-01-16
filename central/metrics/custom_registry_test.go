@@ -3,7 +3,6 @@ package metrics
 import (
 	"strconv"
 	"testing"
-	"time"
 
 	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
@@ -31,9 +30,9 @@ func TestMakeCustomRegistry(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotSame(t, cr1, cr2)
 
-	assert.NoError(t, cr1.RegisterMetric("test", "test", 10*time.Minute, []string{"Test1", "Test2"}))
-	assert.NoError(t, cr1.RegisterMetric("test", "test", 10*time.Minute, []string{"Test1", "Test2"}))
-	assert.NoError(t, cr2.RegisterMetric("test", "test", 10*time.Minute, []string{"Test1", "Test2"}))
+	assert.NoError(t, cr1.RegisterMetric("test", "test", []string{"Test1", "Test2"}))
+	assert.NoError(t, cr1.RegisterMetric("test", "test", []string{"Test1", "Test2"}))
+	assert.NoError(t, cr2.RegisterMetric("test", "test", []string{"Test1", "Test2"}))
 
 	cr1.SetTotal("test", map[string]string{"Test1": "value1", "Test2": "value2"}, 42)
 	cr2.SetTotal("test", map[string]string{"Test1": "value1", "Test2": "value2"}, 24)
@@ -54,8 +53,8 @@ func TestMakeCustomRegistry(t *testing.T) {
 func TestCustomRegistry_Reset(t *testing.T) {
 	cr, err := GetCustomRegistry("user1")
 	assert.NoError(t, err)
-	assert.NoError(t, cr.RegisterMetric("test1", "test", 10*time.Minute, []string{"Test1", "Test2"}))
-	assert.NoError(t, cr.RegisterMetric("test2", "test", 10*time.Minute, []string{"Test1", "Test2"}))
+	assert.NoError(t, cr.RegisterMetric("test1", "test", []string{"Test1", "Test2"}))
+	assert.NoError(t, cr.RegisterMetric("test2", "test", []string{"Test1", "Test2"}))
 	cr.SetTotal("test1", map[string]string{"Test1": "value1", "Test2": "value2"}, 42)
 	cr.SetTotal("test2", map[string]string{"Test1": "value1", "Test2": "value2"}, 24)
 
@@ -75,8 +74,8 @@ func TestDeleteCustomRegistry(t *testing.T) {
 	assert.NoError(t, err)
 	cr2, err := GetCustomRegistry("user2")
 	assert.NoError(t, err)
-	_ = cr1.RegisterMetric("test", "test", time.Hour, []string{"Test1", "Test2"})
-	_ = cr2.RegisterMetric("test", "test", time.Hour, []string{"Test1", "Test2"})
+	_ = cr1.RegisterMetric("test", "test", []string{"Test1", "Test2"})
+	_ = cr2.RegisterMetric("test", "test", []string{"Test1", "Test2"})
 	cr1.SetTotal("test", map[string]string{"Test1": "value1", "Test2": "value2"}, 42)
 	cr2.SetTotal("test", map[string]string{"Test1": "value1", "Test2": "value2"}, 24)
 

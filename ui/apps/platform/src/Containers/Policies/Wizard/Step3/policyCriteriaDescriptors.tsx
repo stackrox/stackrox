@@ -1503,9 +1503,10 @@ export const policyCriteriaDescriptors: Descriptor[] = [
         lifecycleStages: ['DEPLOY', 'RUNTIME'],
     },
     {
-        label: 'Mounted file path',
-        name: 'Mounted File Path',
-        shortName: 'Mounted file path',
+        label: 'Effective path',
+        name: 'Effective Path',
+        shortName: 'Effective path',
+        longName: 'The file path as observed by the process',
         category: policyCriteriaCategories.FILE_ACTIVITY,
         type: 'select',
         placeholder: 'Select a file path',
@@ -1515,9 +1516,10 @@ export const policyCriteriaDescriptors: Descriptor[] = [
         featureFlagDependency: ['ROX_SENSITIVE_FILE_ACTIVITY'],
     },
     {
-        label: 'Node file path',
-        name: 'Node File Path',
-        shortName: 'Node file path',
+        label: 'Actual path',
+        name: 'Actual Path',
+        shortName: 'Actual path',
+        longName: 'The file path on the filesystem or volume mount',
         category: policyCriteriaCategories.FILE_ACTIVITY,
         type: 'select',
         placeholder: 'Select a file path',
@@ -1661,9 +1663,9 @@ export const auditLogDescriptor: Descriptor[] = [
 
 export const nodeEventDescriptor: Descriptor[] = [
     {
-        label: 'Node file path',
-        name: 'Node File Path',
-        shortName: 'Node file path',
+        label: 'Actual path',
+        name: 'Actual Path',
+        shortName: 'Actual path',
         category: policyCriteriaCategories.FILE_ACTIVITY,
         type: 'select',
         placeholder: 'Select a file path',

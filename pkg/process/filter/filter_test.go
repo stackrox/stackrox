@@ -156,3 +156,395 @@ func TestPodUpdateWithInstanceTruncation(t *testing.T) {
 	assert.Len(t, filter.containersInDeployment, 1)
 	assert.Len(t, filter.containersInDeployment[pi.GetDeploymentId()], 1)
 }
+
+func TestFilterWithEmptyFanOut(t *testing.T) {
+	// Empty fanOut array means only track unique processes, no argument tracking
+	// All calls to the same process share the same hit counter regardless of args
+	filter := NewFilter(2, 5, []int{})
+
+	pi := &storage.ProcessIndicator{
+		PodId:         "pod",
+		ContainerName: "name",
+		DeploymentId:  "deployment",
+		Signal: &storage.ProcessSignal{
+			ContainerId:  "id",
+			ExecFilePath: "path",
+			Args:         "arg1",
+		},
+	}
+
+	assert.True(t, filter.Add(pi))
+	assert.True(t, filter.Add(pi))
+	assert.False(t, filter.Add(pi))
+
+	pi.Signal.Args = "arg1 arg2"
+	assert.False(t, filter.Add(pi))
+
+	pi.Signal.Args = "arg2"
+	assert.False(t, filter.Add(pi))
+
+	pi.Signal.Args = "arg3"
+	assert.False(t, filter.Add(pi))
+
+	// But a different process should still work
+	pi.Signal.ExecFilePath = "different_path"
+	assert.True(t, filter.Add(pi))
+	assert.True(t, filter.Add(pi))
+	assert.False(t, filter.Add(pi))
+}
+
+func TestFilterWithEmptyFanOutMaxExactPathMatches1(t *testing.T) {
+	// Empty fanOut array means only track unique processes, no argument tracking
+	// All calls to the same process share the same hit counter regardless of args
+	filter := NewFilter(1, 5, []int{})
+
+	pi := &storage.ProcessIndicator{
+		PodId:         "pod",
+		ContainerName: "name",
+		DeploymentId:  "deployment",
+		Signal: &storage.ProcessSignal{
+			ContainerId:  "id",
+			ExecFilePath: "path",
+		},
+	}
+
+	assert.True(t, filter.Add(pi))
+	assert.False(t, filter.Add(pi))
+
+	pi.Signal.Args = "arg1"
+	assert.False(t, filter.Add(pi))
+
+	pi.Signal.Args = "arg1 arg2"
+	assert.False(t, filter.Add(pi))
+
+	pi.Signal.Args = "arg2"
+	assert.False(t, filter.Add(pi))
+
+	// But a different process should still work
+	pi.Signal.ExecFilePath = "different_path"
+	assert.True(t, filter.Add(pi))
+	assert.False(t, filter.Add(pi))
+}
+
+func TestFilterWithSingleLevelFanOut1(t *testing.T) {
+	// Single-level fanOut with limit of 2
+	filter := NewFilter(2, 5, []int{1})
+
+	pi := &storage.ProcessIndicator{
+		PodId:         "pod",
+		ContainerName: "name",
+		DeploymentId:  "deployment",
+		Signal: &storage.ProcessSignal{
+			ContainerId:  "id",
+			ExecFilePath: "path",
+			Args:         "arg1",
+		},
+	}
+
+	assert.True(t, filter.Add(pi))
+	assert.True(t, filter.Add(pi))
+	assert.False(t, filter.Add(pi))
+
+	pi.Signal.Args = "arg1 arg2"
+	assert.False(t, filter.Add(pi))
+
+	pi.Signal.Args = "arg2"
+	assert.False(t, filter.Add(pi))
+
+	pi.Signal.Args = "arg3"
+	assert.False(t, filter.Add(pi))
+
+	// But a different process should still work
+	pi.Signal.ExecFilePath = "different_path"
+	assert.True(t, filter.Add(pi))
+	assert.True(t, filter.Add(pi))
+	assert.False(t, filter.Add(pi))
+}
+
+func TestFilterWithTwoLevelFanOut(t *testing.T) {
+	// Single-level fanOut with limit of 2
+	filter := NewFilter(9, 5, []int{3, 2})
+
+	pi := &storage.ProcessIndicator{
+		PodId:         "pod",
+		ContainerName: "name",
+		DeploymentId:  "deployment",
+		Signal: &storage.ProcessSignal{
+			ContainerId:  "id",
+			ExecFilePath: "path",
+			Args:         "arg1a arg2a",
+		},
+	}
+
+	assert.True(t, filter.Add(pi))
+
+	pi.Signal.Args = "arg1b arg2a"
+	assert.True(t, filter.Add(pi))
+
+	pi.Signal.Args = "arg1c arg2a"
+	assert.True(t, filter.Add(pi))
+
+	pi.Signal.Args = "arg1d arg2a"
+	assert.False(t, filter.Add(pi))
+
+	pi.Signal.Args = "arg1a arg2b"
+	assert.True(t, filter.Add(pi))
+
+	pi.Signal.Args = "arg1a arg2c"
+	assert.False(t, filter.Add(pi))
+}
+
+func TestFilterWithSingleLevelFanOut1MaxExactPathMatches1(t *testing.T) {
+	filter := NewFilter(1, 5, []int{1})
+
+	pi := &storage.ProcessIndicator{
+		PodId:         "pod",
+		ContainerName: "name",
+		DeploymentId:  "deployment",
+		Signal: &storage.ProcessSignal{
+			ContainerId:  "id",
+			ExecFilePath: "path",
+		},
+	}
+
+	assert.True(t, filter.Add(pi))
+	assert.False(t, filter.Add(pi))
+
+	pi.Signal.Args = "arg1"
+	assert.True(t, filter.Add(pi))
+	assert.False(t, filter.Add(pi))
+
+	pi.Signal.Args = "arg1 arg2"
+	assert.False(t, filter.Add(pi))
+
+	pi.Signal.Args = "arg2"
+	assert.False(t, filter.Add(pi))
+
+	// But a different process should still work
+	pi.Signal.ExecFilePath = "different_path"
+	assert.True(t, filter.Add(pi))
+	assert.False(t, filter.Add(pi))
+}
+
+func TestFilterWithSingleLevelFanOut(t *testing.T) {
+	// Single-level fanOut with limit of 2
+	filter := NewFilter(2, 5, []int{2})
+
+	pi := &storage.ProcessIndicator{
+		PodId:         "pod",
+		ContainerName: "name",
+		DeploymentId:  "deployment",
+		Signal: &storage.ProcessSignal{
+			ContainerId:  "id",
+			ExecFilePath: "path",
+			Args:         "arg1",
+		},
+	}
+
+	assert.True(t, filter.Add(pi))
+
+	pi.Signal.Args = "arg1 arg2"
+	assert.True(t, filter.Add(pi))
+
+	pi.Signal.Args = "arg2"
+	assert.True(t, filter.Add(pi))
+
+	pi.Signal.Args = "arg3"
+	assert.False(t, filter.Add(pi))
+
+	// But a different process should still work
+	pi.Signal.ExecFilePath = "different_path"
+	assert.True(t, filter.Add(pi))
+	assert.True(t, filter.Add(pi))
+	assert.False(t, filter.Add(pi))
+}
+
+func TestFilterWithManyLevels(t *testing.T) {
+	// Many-level fanOut - note that deeper levels have smaller fanOut
+	// This tests that the filter can handle many levels correctly
+	filter := NewFilter(2, 5, []int{10, 8, 6, 4, 2, 2, 2})
+
+	pi := &storage.ProcessIndicator{
+		PodId:         "pod",
+		ContainerName: "name",
+		DeploymentId:  "deployment",
+		Signal: &storage.ProcessSignal{
+			ContainerId:  "id",
+			ExecFilePath: "path",
+			Args:         "a b c d e f g",
+		},
+	}
+
+	// Should handle deep argument trees
+	assert.True(t, filter.Add(pi))
+	assert.True(t, filter.Add(pi))
+	assert.False(t, filter.Add(pi))
+
+	// Different deep path should work because we have fanOut[6] = 2
+	pi.Signal.Args = "a b c d e f h"
+	assert.True(t, filter.Add(pi))
+}
+
+// TestEmptyFanOutVsFanOut1 demonstrates the key difference between empty fanOut and fanOut [1]
+func TestEmptyFanOutVsFanOut1(t *testing.T) {
+	t.Run("empty fanOut - all args share same counter", func(t *testing.T) {
+		// Empty fanOut: no argument tracking at all
+		// All invocations of the same process share one hit counter regardless of arguments
+		filter := NewFilter(3, 5, []int{})
+
+		pi1 := &storage.ProcessIndicator{
+			PodId:         "pod",
+			ContainerName: "name",
+			DeploymentId:  "deployment",
+			Signal: &storage.ProcessSignal{
+				ContainerId:  "id",
+				ExecFilePath: "bash",
+			},
+		}
+
+		pi2 := &storage.ProcessIndicator{
+			PodId:         "pod",
+			ContainerName: "name",
+			DeploymentId:  "deployment",
+			Signal: &storage.ProcessSignal{
+				ContainerId:  "id",
+				ExecFilePath: "bash",
+				Args:         "arg1",
+			},
+		}
+
+		assert.True(t, filter.Add(pi1))
+		assert.True(t, filter.Add(pi2))
+		assert.True(t, filter.Add(pi1))
+		assert.False(t, filter.Add(pi2))
+		assert.False(t, filter.Add(pi1))
+		assert.False(t, filter.Add(pi2))
+		assert.False(t, filter.Add(pi1))
+		assert.False(t, filter.Add(pi2))
+
+		pi1.Signal.Args = "arg2"
+		assert.False(t, filter.Add(pi1))
+
+		pi1.Signal.Args = "completely different args"
+		assert.False(t, filter.Add(pi1))
+
+		// Different process works fine
+		pi1.Signal.ExecFilePath = "python"
+		pi1.Signal.Args = "script.py"
+		assert.True(t, filter.Add(pi1)) // New process, new counter
+	})
+
+	t.Run("fanOut [1] - only one first-arg allowed, separate counters per arg", func(t *testing.T) {
+		// FanOut [1]: tracks first argument level with fanOut limit of 1
+		// Only 1 unique first argument allowed, but all paths starting with that arg share a counter
+		// (because fanOut only has 1 level - no second level to differentiate further)
+		filter := NewFilter(3, 5, []int{1})
+
+		pi1 := &storage.ProcessIndicator{
+			PodId:         "pod",
+			ContainerName: "name",
+			DeploymentId:  "deployment",
+			Signal: &storage.ProcessSignal{
+				ContainerId:  "id",
+				ExecFilePath: "bash",
+			},
+		}
+
+		pi2 := &storage.ProcessIndicator{
+			PodId:         "pod",
+			ContainerName: "name",
+			DeploymentId:  "deployment",
+			Signal: &storage.ProcessSignal{
+				ContainerId:  "id",
+				ExecFilePath: "bash",
+				Args:         "arg1",
+			},
+		}
+
+		// This is different from the previous test where only the first three process are accepted.
+		assert.True(t, filter.Add(pi1))
+		assert.True(t, filter.Add(pi2))
+		assert.True(t, filter.Add(pi1))
+		assert.True(t, filter.Add(pi2))
+		assert.True(t, filter.Add(pi1))
+		assert.True(t, filter.Add(pi2))
+		assert.False(t, filter.Add(pi1))
+		assert.False(t, filter.Add(pi2))
+
+		pi1.Signal.Args = "arg2"
+		assert.False(t, filter.Add(pi1))
+
+		pi1.Signal.Args = "completely different args"
+		assert.False(t, filter.Add(pi1))
+
+		// Different process works fine
+		pi1.Signal.ExecFilePath = "python"
+		pi1.Signal.Args = "script.py"
+		assert.True(t, filter.Add(pi1)) // New process, new counter
+	})
+}
+
+// TestFanOut1VsFanOut1_2 shows the difference between [1] and [1, 2]
+func TestFanOut1VsFanOut1_2(t *testing.T) {
+	t.Run("fanOut [1] - only tracks first arg, all variations share counter", func(t *testing.T) {
+		filter := NewFilter(3, 5, []int{1})
+
+		pi := &storage.ProcessIndicator{
+			PodId:         "pod",
+			ContainerName: "name",
+			DeploymentId:  "deployment",
+			Signal: &storage.ProcessSignal{
+				ContainerId:  "id",
+				ExecFilePath: "bash",
+				Args:         "arg1",
+			},
+		}
+
+		// "arg1" alone
+		assert.True(t, filter.Add(pi))  // hit 1
+		assert.True(t, filter.Add(pi))  // hit 2
+		assert.True(t, filter.Add(pi))  // hit 3
+		assert.False(t, filter.Add(pi)) // filtered
+
+		// "arg1 sub1" - shares counter with "arg1" alone
+		pi.Signal.Args = "arg1 sub1"
+		assert.False(t, filter.Add(pi)) // filtered - same counter
+	})
+
+	t.Run("fanOut [1, 2] - tracks two levels, separate counters", func(t *testing.T) {
+		filter := NewFilter(3, 5, []int{1, 2})
+
+		pi := &storage.ProcessIndicator{
+			PodId:         "pod",
+			ContainerName: "name",
+			DeploymentId:  "deployment",
+			Signal: &storage.ProcessSignal{
+				ContainerId:  "id",
+				ExecFilePath: "bash",
+				Args:         "arg1",
+			},
+		}
+
+		// "arg1" alone - creates its own path
+		assert.True(t, filter.Add(pi))  // hit 1 on "arg1" path (no second arg)
+		assert.True(t, filter.Add(pi))  // hit 2
+		assert.True(t, filter.Add(pi))  // hit 3
+		assert.False(t, filter.Add(pi)) // filtered
+
+		// "arg1 sub1" - DIFFERENT path! Has second-level child "sub1"
+		pi.Signal.Args = "arg1 sub1"
+		assert.True(t, filter.Add(pi))  // hit 1 on "arg1 sub1" path (NEW counter!)
+		assert.True(t, filter.Add(pi))  // hit 2
+		assert.True(t, filter.Add(pi))  // hit 3
+		assert.False(t, filter.Add(pi)) // filtered
+
+		// "arg1 sub2" - Another DIFFERENT path! Has second-level child "sub2"
+		pi.Signal.Args = "arg1 sub2"
+		assert.True(t, filter.Add(pi)) // hit 1 on "arg1 sub2" path (NEW counter!)
+		assert.True(t, filter.Add(pi)) // hit 2
+
+		// "arg1 sub3" - REJECTED: fanOut[1] = 2, already have "sub1" and "sub2"
+		pi.Signal.Args = "arg1 sub3"
+		assert.False(t, filter.Add(pi)) // fanOut limit reached at second level
+	})
+}

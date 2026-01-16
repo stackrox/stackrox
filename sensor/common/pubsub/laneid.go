@@ -4,11 +4,15 @@ type LaneID int
 
 const (
 	DefaultLane LaneID = iota
+	KubernetesDispatcherEventLane
+	FromCentralResolverEventLane
 )
 
 var (
 	laneToString = map[LaneID]string{
-		DefaultLane: "Default",
+		DefaultLane:                   "Default",
+		KubernetesDispatcherEventLane: "KubernetesDispatcherEvent",
+		FromCentralResolverEventLane:  "FromCentralResolverEvent",
 	}
 )
 

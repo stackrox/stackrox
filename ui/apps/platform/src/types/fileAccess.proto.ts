@@ -9,8 +9,8 @@ export type FileAccess = {
 };
 
 export type File = {
-    mountedPath: string; // Relevant to deployment-based events, the path in the container
-    nodePath: string; // The path on the node file system
+    effectivePath: string; // Relevant to deployment-based events, the path in the container
+    actualPath: string; // The path on the node file system
     meta: FileMetadata | null;
 };
 

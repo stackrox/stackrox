@@ -14,6 +14,7 @@ import (
 	reflect "reflect"
 
 	message "github.com/stackrox/rox/sensor/common/message"
+	pubsub "github.com/stackrox/rox/sensor/common/pubsub"
 	component "github.com/stackrox/rox/sensor/kubernetes/eventpipeline/component"
 	gomock "go.uber.org/mock/gomock"
 )
@@ -90,6 +91,20 @@ func NewMockResolver(ctrl *gomock.Controller) *MockResolver {
 // EXPECT returns an object that allows the caller to indicate expected use.
 func (m *MockResolver) EXPECT() *MockResolverMockRecorder {
 	return m.recorder
+}
+
+// ProcessResourceEvent mocks base method.
+func (m *MockResolver) ProcessResourceEvent(event pubsub.Event) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ProcessResourceEvent", event)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// ProcessResourceEvent indicates an expected call of ProcessResourceEvent.
+func (mr *MockResolverMockRecorder) ProcessResourceEvent(event any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ProcessResourceEvent", reflect.TypeOf((*MockResolver)(nil).ProcessResourceEvent), event)
 }
 
 // Send mocks base method.
@@ -268,4 +283,70 @@ func (m *MockContextListener) Stop() {
 func (mr *MockContextListenerMockRecorder) Stop() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Stop", reflect.TypeOf((*MockContextListener)(nil).Stop))
+}
+
+// MockPubSubDispatcher is a mock of PubSubDispatcher interface.
+type MockPubSubDispatcher struct {
+	ctrl     *gomock.Controller
+	recorder *MockPubSubDispatcherMockRecorder
+	isgomock struct{}
+}
+
+// MockPubSubDispatcherMockRecorder is the mock recorder for MockPubSubDispatcher.
+type MockPubSubDispatcherMockRecorder struct {
+	mock *MockPubSubDispatcher
+}
+
+// NewMockPubSubDispatcher creates a new mock instance.
+func NewMockPubSubDispatcher(ctrl *gomock.Controller) *MockPubSubDispatcher {
+	mock := &MockPubSubDispatcher{ctrl: ctrl}
+	mock.recorder = &MockPubSubDispatcherMockRecorder{mock}
+	return mock
+}
+
+// EXPECT returns an object that allows the caller to indicate expected use.
+func (m *MockPubSubDispatcher) EXPECT() *MockPubSubDispatcherMockRecorder {
+	return m.recorder
+}
+
+// Publish mocks base method.
+func (m *MockPubSubDispatcher) Publish(arg0 pubsub.Event) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Publish", arg0)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// Publish indicates an expected call of Publish.
+func (mr *MockPubSubDispatcherMockRecorder) Publish(arg0 any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Publish", reflect.TypeOf((*MockPubSubDispatcher)(nil).Publish), arg0)
+}
+
+// RegisterConsumer mocks base method.
+func (m *MockPubSubDispatcher) RegisterConsumer(arg0 pubsub.Topic, arg1 pubsub.EventCallback) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "RegisterConsumer", arg0, arg1)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// RegisterConsumer indicates an expected call of RegisterConsumer.
+func (mr *MockPubSubDispatcherMockRecorder) RegisterConsumer(arg0, arg1 any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RegisterConsumer", reflect.TypeOf((*MockPubSubDispatcher)(nil).RegisterConsumer), arg0, arg1)
+}
+
+// RegisterConsumerToLane mocks base method.
+func (m *MockPubSubDispatcher) RegisterConsumerToLane(arg0 pubsub.Topic, arg1 pubsub.LaneID, arg2 pubsub.EventCallback) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "RegisterConsumerToLane", arg0, arg1, arg2)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// RegisterConsumerToLane indicates an expected call of RegisterConsumerToLane.
+func (mr *MockPubSubDispatcherMockRecorder) RegisterConsumerToLane(arg0, arg1, arg2 any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RegisterConsumerToLane", reflect.TypeOf((*MockPubSubDispatcher)(nil).RegisterConsumerToLane), arg0, arg1, arg2)
 }

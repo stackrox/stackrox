@@ -8,9 +8,7 @@ import type {
     OnSearchCallback,
 } from 'Components/CompoundSearchFilter/types';
 import CompoundSearchFilter from 'Components/CompoundSearchFilter/components/CompoundSearchFilter';
-import SearchFilterChips, {
-    makeFilterChipDescriptors,
-} from 'Components/CompoundSearchFilter/components/SearchFilterChips';
+import CompoundSearchFilterLabels from 'Components/CompoundSearchFilter/components/CompoundSearchFilterLabels';
 import {
     Category as PolicyCategory,
     LifecycleStage as PolicyLifecycleStage,
@@ -96,8 +94,6 @@ function ViolationsTableSearchFilter({
     const { analyticsTrack } = useAnalytics();
     const trackAppliedFilter = createFilterTracker(analyticsTrack);
 
-    const filterChipGroupDescriptors = makeFilterChipDescriptors(searchFilterConfig);
-
     const onSearchHandler: OnSearchCallback = (payload) => {
         onSearch(payload);
         trackAppliedFilter('Policy Violations Filter Applied', payload);
@@ -117,10 +113,11 @@ function ViolationsTableSearchFilter({
                     </ToolbarItem>
                 </ToolbarGroup>
                 <ToolbarGroup className="pf-v5-u-w-100">
-                    <SearchFilterChips
-                        searchFilter={searchFilter}
+                    <CompoundSearchFilterLabels
+                        attributesSeparateFromConfig={[]}
+                        config={searchFilterConfig}
                         onFilterChange={onFilterChange}
-                        filterChipGroupDescriptors={filterChipGroupDescriptors}
+                        searchFilter={searchFilter}
                     />
                 </ToolbarGroup>
             </ToolbarContent>

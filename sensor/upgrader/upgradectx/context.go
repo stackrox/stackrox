@@ -12,6 +12,7 @@ import (
 	"github.com/stackrox/rox/pkg/k8sutil/k8sobjects"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/mtls"
+	"github.com/stackrox/rox/pkg/retryablehttp"
 	"github.com/stackrox/rox/sensor/upgrader/common"
 	"github.com/stackrox/rox/sensor/upgrader/config"
 	"github.com/stackrox/rox/sensor/upgrader/resources"
@@ -50,8 +51,11 @@ type UpgradeContext struct {
 
 // Create creates a new upgrader context from the given config.
 func Create(ctx context.Context, config *config.UpgraderConfig) (*UpgradeContext, error) {
-	// Ensure that the context lifetime has an effect.
 	restConfigShallowCopy := *config.K8sRESTConfig
+	// Add retry logic to Kubernetes clients for resilience against transient network errors.
+	// This applies to both the Kubernetes clientset and dynamic client.
+	retryablehttp.ConfigureRESTConfig(&restConfigShallowCopy)
+	// Ensure that the context lifetime has an effect.
 	oldWrapTransport := restConfigShallowCopy.WrapTransport
 	restConfigShallowCopy.WrapTransport = func(rt http.RoundTripper) http.RoundTripper {
 		if oldWrapTransport != nil {
