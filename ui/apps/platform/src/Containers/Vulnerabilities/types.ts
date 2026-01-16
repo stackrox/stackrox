@@ -20,7 +20,7 @@ export function isFixableStatus(value: unknown): value is FixableStatus {
     return fixableStatuses.some((status) => status === value);
 }
 
-const scannableStatuses = ['Scanned', 'Not scanned'] as const;
+export const scannableStatuses = ['Scanned', 'Not scanned'] as const;
 export type ScannableStatus = (typeof scannableStatuses)[number];
 export function isScannableStatus(value: unknown): value is ScannableStatus {
     return scannableStatuses.some((status) => status === value);
