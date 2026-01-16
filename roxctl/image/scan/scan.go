@@ -240,7 +240,8 @@ func (i *imageScanCommand) printImageResult(imageResult *storage.Image) error {
 	cveSummary := scan.NewCVESummaryForPrinting(imageResult.GetScan(), i.severities)
 
 	if !i.standardizedFormat {
-		scan.PrintCVESummary(i.image, cveSummary.Result.Summary, i.env.Logger())
+		i.env.Logger().PrintfLn("Scan results for image: %s", i.image)
+		scan.PrintCVESummary(cveSummary.Result.Summary, i.env.Logger())
 	}
 
 	if err := i.printer.Print(cveSummary, i.env.ColorWriter()); err != nil {
