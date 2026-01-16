@@ -456,7 +456,7 @@ func GetNodeAlert() *storage.Alert {
 	})
 }
 
-func GetFileAccessAlert(alert *storage.Alert) *storage.Alert {
+func WithFileAccessViolation(alert *storage.Alert) *storage.Alert {
 	alert.Violations = append(alert.Violations, []*storage.Alert_Violation{
 		printer.GenerateFileAccessViolation(&storage.FileAccess{
 			File: &storage.FileAccess_File{
@@ -476,9 +476,9 @@ func GetFileAccessAlert(alert *storage.Alert) *storage.Alert {
 }
 
 func GetNodeFileAccessAlert() *storage.Alert {
-	return GetFileAccessAlert(GetNodeAlert())
+	return WithFileAccessViolation(GetNodeAlert())
 }
 
 func GetDeploymentFileAccessAlert() *storage.Alert {
-	return GetFileAccessAlert(GetScopedDeploymentAlert(fixtureconsts.Alert1, fixtureconsts.Cluster1, "stackrox"))
+	return WithFileAccessViolation(GetScopedDeploymentAlert(fixtureconsts.Alert1, fixtureconsts.Cluster1, "stackrox"))
 }

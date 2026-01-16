@@ -49,12 +49,10 @@ const bplPolicyFormat = `
 					{{end}}
 				{{end}}
 			{{else if isFileAccess .MessageAttributes }}
-				{{ if .MessageAttributes.FileAccess }}
-					{{stringify "Effective Path:" .MessageAttributes.FileAccess.File.EffectivePath | nestedList}}
-					{{stringify "Actual Path:" .MessageAttributes.FileAccess.File.ActualPath | nestedList}}
-					{{stringify "Operation:" .MessageAttributes.FileAccess.Operation | nestedList}}
-					{{stringify "Process Name:" .MessageAttributes.FileAccess.Process.Signal.Name | nestedList}}
-				{{end}}
+				{{stringify "Effective Path:" .MessageAttributes.FileAccess.File.EffectivePath | nestedList}}
+				{{stringify "Actual Path:" .MessageAttributes.FileAccess.File.ActualPath | nestedList}}
+				{{stringify "Operation:" .MessageAttributes.FileAccess.Operation | nestedList}}
+				{{stringify "Process Name:" .MessageAttributes.FileAccess.Process.Signal.Name | nestedList}}
 			{{end}}
 		{{end}}
 	{{end}}
@@ -233,9 +231,14 @@ func isViolationKeyValue(src interface{}) bool {
 }
 
 // isFileAccess returns true if src is of type **storage.Alert_Violation_FileAccess
+// and that the underlying FileAccess is non-nil
 // Used to validate if a one-of is the right type within a template
 func isFileAccess(src interface{}) bool {
-	return reflect.TypeOf(src) == reflect.TypeOf((*storage.Alert_Violation_FileAccess)(nil))
+	fa, ok := src.(*storage.Alert_Violation_FileAccess)
+	if !ok {
+		return false
+	}
+	return fa.FileAccess != nil
 }
 
 // stringify converts a list of interfaces into a space separated string of their string representations
