@@ -538,12 +538,13 @@ func (s *PolicyPostgresDataStoreTestSuite) TestAddDefaultsDeduplicatesCategoryNa
 	s.NoError(err)
 
 	// Verify the policy has the incorrect category names
-	categories, err := s.categoryDS.GetPolicyCategoriesForPolicy(ctx, policy.GetId())
+	err = s.datastore.FillPolicyCategoryNames(ctx, policy)
 	s.NoError(err)
+	categories := policy.GetCategories()
 	s.Len(categories, 2)
 	categoryNames := make([]string, len(categories))
 	for i, c := range categories {
-		categoryNames[i] = c.GetName()
+		categoryNames[i] = c
 	}
 	s.Contains(categoryNames, "Docker Cis")
 	s.Contains(categoryNames, "Devops Best Practices")
@@ -559,12 +560,13 @@ func (s *PolicyPostgresDataStoreTestSuite) TestAddDefaultsDeduplicatesCategoryNa
 	addDefaults(policyStorage, s.categoryDS, s.datastore)
 
 	// Verify the policy now has the correct category names
-	categories, err = s.categoryDS.GetPolicyCategoriesForPolicy(ctx, policy.GetId())
+	err = s.datastore.FillPolicyCategoryNames(ctx, policy)
 	s.NoError(err)
+	categories = policy.GetCategories()
 	s.Len(categories, 2)
 	categoryNames = make([]string, len(categories))
 	for i, c := range categories {
-		categoryNames[i] = c.GetName()
+		categoryNames[i] = c
 	}
 	s.Contains(categoryNames, "Docker CIS")
 	s.Contains(categoryNames, "DevOps Best Practices")
