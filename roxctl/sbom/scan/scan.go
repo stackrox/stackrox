@@ -5,6 +5,7 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"slices"
 	"strings"
 
 	"github.com/pkg/errors"
@@ -120,6 +121,14 @@ func (s *sbomScanCommand) Validate() error {
 			return errox.InvalidArgs.Newf("SBOM file does not exist: %q", s.sbomFilePath)
 		}
 		return errors.Wrapf(err, "checking SBOM file %q", s.sbomFilePath)
+	}
+
+	for _, severity := range s.severities {
+		severity := strings.ToUpper(severity)
+		if !slices.Contains(scan.AllSeverities, severity) {
+			return errox.InvalidArgs.Newf("invalid severity %q used. Choose one of [%s]", severity,
+				strings.Join(scan.AllSeverities, ", "))
+		}
 	}
 
 	return nil
