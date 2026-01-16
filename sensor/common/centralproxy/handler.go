@@ -9,9 +9,12 @@ import (
 
 	"github.com/pkg/errors"
 	pkghttputil "github.com/stackrox/rox/pkg/httputil"
+	"github.com/stackrox/rox/pkg/k8sutil"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/retryablehttp"
 	"github.com/stackrox/rox/pkg/urlfmt"
 	"github.com/stackrox/rox/sensor/common"
+	"k8s.io/client-go/kubernetes"
 )
 
 var (
@@ -24,6 +27,7 @@ var (
 type Handler struct {
 	proxy            *httputil.ReverseProxy
 	centralReachable atomic.Bool
+	authorizer       *k8sAuthorizer
 }
 
 // NewProxyHandler creates a new proxy handler that forwards requests to Central.
@@ -40,8 +44,20 @@ func NewProxyHandler(centralEndpoint string, centralCertificates []*x509.Certifi
 		return nil, errors.Wrap(err, "creating central reverse proxy")
 	}
 
+	restConfig, err := k8sutil.GetK8sInClusterConfig()
+	if err != nil {
+		return nil, errors.Wrap(err, "getting in-cluster config")
+	}
+	retryablehttp.ConfigureRESTConfig(restConfig)
+
+	k8sClient, err := kubernetes.NewForConfig(restConfig)
+	if err != nil {
+		return nil, errors.Wrap(err, "creating kubernetes client")
+	}
+
 	return &Handler{
-		proxy: proxy,
+		proxy:      proxy,
+		authorizer: newK8sAuthorizer(k8sClient),
 	}, nil
 }
 
@@ -79,5 +95,13 @@ func (h *Handler) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
 		pkghttputil.WriteError(writer, err)
 		return
 	}
+
+	if h.authorizer != nil {
+		if err := h.authorizer.authorize(request.Context(), request); err != nil {
+			pkghttputil.WriteError(writer, err)
+			return
+		}
+	}
+
 	h.proxy.ServeHTTP(writer, request)
 }

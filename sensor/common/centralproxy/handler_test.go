@@ -16,6 +16,11 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc/codes"
+	authenticationv1 "k8s.io/api/authentication/v1"
+	authv1 "k8s.io/api/authorization/v1"
+	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/client-go/kubernetes/fake"
+	k8sTesting "k8s.io/client-go/testing"
 )
 
 // newProxyForTest creates a test proxy with a custom transport for testing purposes.
@@ -263,4 +268,200 @@ func TestNotify(t *testing.T) {
 		h.Notify(common.SensorComponentEventOfflineMode)
 		assert.False(t, h.centralReachable.Load())
 	})
+}
+
+func TestExtractBearerToken(t *testing.T) {
+	tests := []struct {
+		name        string
+		authHeader  string
+		wantToken   string
+		wantErr     bool
+		errContains string
+	}{
+		{
+			name:       "valid bearer token",
+			authHeader: "Bearer my-secret-token-123",
+			wantToken:  "my-secret-token-123",
+			wantErr:    false,
+		},
+		{
+			name:       "bearer token with spaces",
+			authHeader: "Bearer token-with-spaces   ",
+			wantToken:  "token-with-spaces   ",
+			wantErr:    false,
+		},
+		{
+			name:        "missing authorization header",
+			authHeader:  "",
+			wantErr:     true,
+			errContains: "missing or invalid bearer token",
+		},
+		{
+			name:        "invalid format - no Bearer prefix",
+			authHeader:  "Basic dXNlcjpwYXNz",
+			wantErr:     true,
+			errContains: "missing or invalid bearer token",
+		},
+		{
+			name:       "case-insensitive bearer prefix (lowercase)",
+			authHeader: "bearer my-token-123",
+			wantToken:  "my-token-123",
+			wantErr:    false,
+		},
+		{
+			name:       "case-insensitive bearer prefix (mixed case)",
+			authHeader: "BeArEr my-token-123",
+			wantToken:  "my-token-123",
+			wantErr:    false,
+		},
+		{
+			name:        "empty token after Bearer",
+			authHeader:  "Bearer ",
+			wantErr:     true,
+			errContains: "missing or invalid bearer token",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			req := httptest.NewRequest(http.MethodGet, "/test", nil)
+			if tt.authHeader != "" {
+				req.Header.Set("Authorization", tt.authHeader)
+			}
+
+			token, err := extractBearerToken(req)
+
+			if tt.wantErr {
+				assert.Error(t, err)
+				assert.Contains(t, err.Error(), tt.errContains)
+			} else {
+				assert.NoError(t, err)
+				assert.Equal(t, tt.wantToken, token)
+			}
+		})
+	}
+}
+
+func TestServeHTTP_AuthorizationIntegration(t *testing.T) {
+	t.Run("authorization failure prevents proxy call", func(t *testing.T) {
+		var proxyCalled bool
+		mockTransport := pkghttputil.RoundTripperFunc(func(req *http.Request) (*http.Response, error) {
+			proxyCalled = true
+			return &http.Response{
+				StatusCode: http.StatusOK,
+				Body:       io.NopCloser(strings.NewReader(`{"ok":true}`)),
+				Header:     http.Header{"Content-Type": []string{"application/json"}},
+			}, nil
+		})
+
+		baseURL, err := url.Parse("https://central:443")
+		require.NoError(t, err)
+
+		// Create a k8sAuthorizer with a fake client that denies access
+		denyingAuthorizer := newDenyingAuthorizer()
+
+		h := &Handler{
+			proxy:      newProxyForTest(t, baseURL, mockTransport),
+			authorizer: denyingAuthorizer,
+		}
+		h.centralReachable.Store(true)
+
+		req := httptest.NewRequest(http.MethodGet, "/v1/alerts", nil)
+		req.Header.Set("Authorization", "Bearer test-token")
+		w := httptest.NewRecorder()
+
+		h.ServeHTTP(w, req)
+
+		assert.False(t, proxyCalled, "proxy should not be called when authorization fails")
+		assert.Equal(t, http.StatusForbidden, w.Code)
+		assert.Contains(t, w.Body.String(), "lacks")
+	})
+
+	t.Run("no authorizer skips authorization and allows proxy", func(t *testing.T) {
+		var proxyCalled bool
+		mockTransport := pkghttputil.RoundTripperFunc(func(req *http.Request) (*http.Response, error) {
+			proxyCalled = true
+			return &http.Response{
+				StatusCode: http.StatusOK,
+				Body:       io.NopCloser(strings.NewReader(`{"ok":true}`)),
+				Header:     http.Header{"Content-Type": []string{"application/json"}},
+			}, nil
+		})
+
+		baseURL, err := url.Parse("https://central:443")
+		require.NoError(t, err)
+
+		h := &Handler{
+			proxy:      newProxyForTest(t, baseURL, mockTransport),
+			authorizer: nil, // No authorizer - skips authorization
+		}
+		h.centralReachable.Store(true)
+
+		req := httptest.NewRequest(http.MethodGet, "/v1/alerts", nil)
+		// No Authorization header - but authorization is skipped
+		w := httptest.NewRecorder()
+
+		h.ServeHTTP(w, req)
+
+		assert.True(t, proxyCalled, "proxy should be called when authorization is skipped")
+		assert.Equal(t, http.StatusOK, w.Code)
+	})
+
+	t.Run("authorization success allows proxy call", func(t *testing.T) {
+		var proxyCalled bool
+		mockTransport := pkghttputil.RoundTripperFunc(func(req *http.Request) (*http.Response, error) {
+			proxyCalled = true
+			return &http.Response{
+				StatusCode: http.StatusOK,
+				Body:       io.NopCloser(strings.NewReader(`{"ok":true}`)),
+				Header:     http.Header{"Content-Type": []string{"application/json"}},
+			}, nil
+		})
+
+		baseURL, err := url.Parse("https://central:443")
+		require.NoError(t, err)
+
+		// Use noop authorizer that always allows
+		h := &Handler{
+			proxy: newProxyForTest(t, baseURL, mockTransport),
+		}
+		h.centralReachable.Store(true)
+
+		req := httptest.NewRequest(http.MethodGet, "/v1/alerts", nil)
+		req.Header.Set("Authorization", "Bearer test-token")
+		w := httptest.NewRecorder()
+
+		h.ServeHTTP(w, req)
+
+		assert.True(t, proxyCalled, "proxy should be called when authorization succeeds")
+		assert.Equal(t, http.StatusOK, w.Code)
+	})
+}
+
+// newDenyingAuthorizer creates a k8sAuthorizer with a fake client that denies all authorization requests.
+func newDenyingAuthorizer() *k8sAuthorizer {
+	fakeClient := fake.NewClientset()
+
+	// Mock TokenReview to return authenticated
+	fakeClient.PrependReactor("create", "tokenreviews", func(action k8sTesting.Action) (bool, runtime.Object, error) {
+		return true, &authenticationv1.TokenReview{
+			Status: authenticationv1.TokenReviewStatus{
+				Authenticated: true,
+				User: authenticationv1.UserInfo{
+					Username: "test-user",
+				},
+			},
+		}, nil
+	})
+
+	// Mock SubjectAccessReview to deny all
+	fakeClient.PrependReactor("create", "subjectaccessreviews", func(action k8sTesting.Action) (bool, runtime.Object, error) {
+		return true, &authv1.SubjectAccessReview{
+			Status: authv1.SubjectAccessReviewStatus{
+				Allowed: false,
+			},
+		}, nil
+	})
+
+	return newK8sAuthorizer(fakeClient)
 }
