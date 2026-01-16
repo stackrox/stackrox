@@ -847,7 +847,6 @@ module.exports = [
             'src/Components/URLSearchInputWithAutocomplete.jsx', // deprecated
             'src/Containers/Compliance/**', // deprecated
             'src/Containers/VulnMgmt/**', // deprecated
-            'src/init/initializeAnalytics.js', // generated from segment api
             'src/sagas/authSagas.js', // deprecated
             'src/sagas/groupSagas.js', // deprecated
             'src/sagas/roleSagas.js', // deprecated
