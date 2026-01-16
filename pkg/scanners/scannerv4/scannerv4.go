@@ -135,8 +135,8 @@ func (s *scannerv4) GetSBOM(image *storage.Image) ([]byte, bool, error) {
 
 // ScanSBOM scans an SBOM, the contentType (which would include media type, optionally version, etc.)
 // will be passed to the scanner to assist in parsing.
-func (s *scannerv4) ScanSBOM(sbomReader io.Reader, contentType string) (*v1.SBOMScanResponse, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), scanTimeout)
+func (s *scannerv4) ScanSBOM(ctx context.Context, sbomReader io.Reader, contentType string) (*v1.SBOMScanResponse, error) {
+	ctx, cancel := context.WithTimeout(ctx, scanTimeout)
 	defer cancel()
 
 	var scannerVersion pkgscanner.Version
@@ -149,7 +149,6 @@ func (s *scannerv4) ScanSBOM(sbomReader io.Reader, contentType string) (*v1.SBOM
 		return nil, fmt.Errorf("reading sbom data: %w", err)
 	}
 	log.Debugf("Scanned SBOM: %s", dataB)
-	_ = ctx
 	// Create a fake vuln report for testing purposes
 	vr := fakeVulnReport()
 	// TODO(ROX-30570): END Remove
@@ -265,10 +264,9 @@ func sbomScan(vr *v4.VulnerabilityReport, scannerVersionStr string) *v1.SBOMScan
 	}
 
 	return &v1.SBOMScanResponse_SBOMScan{
-		ScannerVersion:  imageScan.GetScannerVersion(),
-		ScanTime:        imageScan.GetScanTime(),
-		Components:      imageScan.GetComponents(),
-		OperatingSystem: imageScan.GetOperatingSystem(),
+		ScannerVersion: imageScan.GetScannerVersion(),
+		ScanTime:       imageScan.GetScanTime(),
+		Components:     imageScan.GetComponents(),
 	}
 }
 

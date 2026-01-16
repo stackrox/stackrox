@@ -106,7 +106,7 @@ func TestScanSBOMHttpHandler_ServeHTTP(t *testing.T) {
 		ctrl := gomock.NewController(t)
 
 		mockSBOMScanner := scannerTypesMocks.NewMockScannerSBOMer(ctrl)
-		mockSBOMScanner.EXPECT().ScanSBOM(gomock.Any(), gomock.Any()).Return(nil, errors.New("fake error"))
+		mockSBOMScanner.EXPECT().ScanSBOM(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil, errors.New("fake error"))
 		mockSBOMScanner.EXPECT().Type().Return(scannerTypes.ScannerV4)
 
 		mockImageScannerWithDS := scannerTypesMocks.NewMockImageScannerWithDataSource(ctrl)
@@ -142,7 +142,7 @@ func TestScanSBOMHttpHandler_ServeHTTP(t *testing.T) {
 		ctrl := gomock.NewController(t)
 
 		mockSBOMScanner := scannerTypesMocks.NewMockScannerSBOMer(ctrl)
-		mockSBOMScanner.EXPECT().ScanSBOM(gomock.Any(), gomock.Any()).Return(&v1.SBOMScanResponse{Id: "fake-sbom-id"}, nil)
+		mockSBOMScanner.EXPECT().ScanSBOM(gomock.Any(), gomock.Any(), gomock.Any()).Return(&v1.SBOMScanResponse{Id: "fake-sbom-id"}, nil)
 		mockSBOMScanner.EXPECT().Type().Return(scannerTypes.ScannerV4)
 
 		mockImageScannerWithDS := scannerTypesMocks.NewMockImageScannerWithDataSource(ctrl)
