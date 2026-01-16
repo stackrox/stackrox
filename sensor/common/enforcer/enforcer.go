@@ -166,17 +166,28 @@ func (e *enforcer) Notify(common.SensorComponentEvent) {}
 
 func getRuntimePodId(alert *storage.Alert) (string, error) {
 	isProcessAlert := alert.GetProcessViolation() != nil && len(alert.GetProcessViolation().GetProcesses()) > 0
-	isFileAlert := alert.GetFileAccessViolation() != nil && len(alert.GetFileAccessViolation().GetAccesses()) > 0
+	fileAccessInfo := getFileAccessViolationInfo(alert)
 
-	if isProcessAlert && isFileAlert {
+	if isProcessAlert && fileAccessInfo != nil {
 		return "", errors.New("Invalid alert state: must contain one of process violation or file violation")
 	}
 
 	if isProcessAlert {
 		return alert.GetProcessViolation().GetProcesses()[0].GetPodId(), nil
-	} else if isFileAlert {
-		return alert.GetFileAccessViolation().GetAccesses()[0].GetProcess().GetPodId(), nil
+	} else if fileAccessInfo != nil {
+		return fileAccessInfo.GetProcess().GetPodId(), nil
 	}
 
 	return "", errors.New("Invalid alert state: does not contain enforcable violations")
+}
+
+func getFileAccessViolationInfo(alert *storage.Alert) *storage.FileAccess {
+	if alert.GetViolations() == nil || len(alert.GetViolations()) != 1 {
+		// at this point any more than one violation is invalid; this is
+		// an unmerged alert that has just triggered from a single event.
+		return nil
+	}
+
+	// if its the wrong type, GetFileAccessInfo will return nil
+	return alert.GetViolations()[0].GetFileAccess()
 }
