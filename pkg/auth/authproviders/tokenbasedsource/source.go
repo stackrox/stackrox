@@ -14,6 +14,7 @@ type TokenSource interface {
 
 	InitFromStore(ctx context.Context, tokenStore TokenStore) error
 	Revoke(tokenID string, expiry time.Time)
+	IsRevoked(tokenID string) bool
 }
 
 // NewTokenSource provides a token validator to support the creation of

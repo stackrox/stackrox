@@ -17,6 +17,7 @@ import (
 
 var _ authproviders.Provider = (*tokenSourceImpl)(nil)
 var _ TokenSource = (*tokenSourceImpl)(nil)
+var _ tokens.RevocationLayer = (*tokenSourceImpl)(nil)
 
 // tokenSource aims at implementing the common denominator for
 // the issuer sources or providers for all rox token generators
@@ -73,6 +74,13 @@ func (s *tokenSourceImpl) Revoke(tokenID string, expiry time.Time) {
 		return
 	}
 	s.revocationLayer.Revoke(tokenID, expiry)
+}
+
+func (s *tokenSourceImpl) IsRevoked(tokenID string) bool {
+	if s.revocationLayer == nil {
+		return false
+	}
+	return s.revocationLayer.IsRevoked(tokenID)
 }
 
 func (s *tokenSourceImpl) ID() string { return s.id }

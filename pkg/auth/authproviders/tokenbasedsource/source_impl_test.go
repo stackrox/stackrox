@@ -37,6 +37,7 @@ func TestBasicTokenSource(t *testing.T) {
 	// source without revocation layer does not validate claims
 	assert.NoError(t, source.Validate(t.Context(), nil))
 	assert.NotPanics(t, func() { source.Revoke("abcd", time.Now().Add(time.Second)) })
+	assert.False(t, source.IsRevoked("abcd"))
 	smokeTestUnimplementedFunctions(t, source)
 }
 
@@ -61,6 +62,7 @@ func TestTokenSourceWithRoleMapperOnly(t *testing.T) {
 	// source without revocation layer does not validate claims
 	assert.NoError(t, source.Validate(t.Context(), nil))
 	assert.NotPanics(t, func() { source.Revoke("abcd", time.Now().Add(time.Second)) })
+	assert.False(t, source.IsRevoked("abcd"))
 	smokeTestUnimplementedFunctions(t, source)
 }
 
@@ -123,6 +125,11 @@ func TestTokenSourceWithRevocationLayerOnly(t *testing.T) {
 	expiration := time.Now().Add(time.Minute)
 	mockRevocationLayer.EXPECT().Revoke(revokedTokenID, expiration).Times(1)
 	assert.NotPanics(t, func() { source.Revoke(revokedTokenID, expiration) })
+	// Ensure IsREvoked delegates the decision to the revocation layer
+	mockRevocationLayer.EXPECT().IsRevoked(revokedTokenID).Times(1).Return(true)
+	mockRevocationLayer.EXPECT().IsRevoked("efgh").Times(1).Return(false)
+	assert.True(t, source.IsRevoked(revokedTokenID))
+	assert.False(t, source.IsRevoked("efgh"))
 }
 
 // There is currently token source that relies on a combination of
