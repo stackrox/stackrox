@@ -23,6 +23,7 @@ func init() {
 	schema := getBuilder()
 	utils.Must(
 		schema.AddExtraResolvers("ImageV2", []string{
+			"baseImage: BaseImage",
 			"deploymentCount(query: String): Int!",
 			"deployments(query: String, pagination: Pagination): [Deployment!]!",
 			"imageComponentCount(query: String): Int!",
@@ -392,4 +393,10 @@ func (resolver *imageV2Resolver) LowCveCount(ctx context.Context) int32 {
 func (resolver *imageV2Resolver) FixableLowCveCount(ctx context.Context) int32 {
 	resolver.ensureData(ctx)
 	return resolver.data.GetScanStats().GetFixableLowCveCount()
+}
+
+func (resolver *imageV2Resolver) BaseImage(ctx context.Context) (*baseImageResolver, error) {
+	resolver.ensureData(ctx)
+	baseImageInfos := resolver.data.GetBaseImageInfo()
+	return resolver.root.wrapBaseImage(baseImageInfos)
 }

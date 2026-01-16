@@ -267,16 +267,32 @@ func (s *ImageResolversTestSuite) TestDeployments() {
 				assert.Equal(t, int32(expectedCVESevCount.moderate), moderate.Total(testCtx))
 				assert.Equal(t, int32(expectedCVESevCount.low), low.Total(testCtx))
 
-				// Test BaseImageInfo field for each image resolver.
-				expectedImage := expectedImages[imageID]
-				actualBaseImageInfo, err := image.BaseImageInfo(testCtx)
+				// Test BaseImage field
+				actualBaseImage, err := image.BaseImage(testCtx)
 				assert.NoError(t, err)
-				assert.Len(t, actualBaseImageInfo, len(expectedImage.GetBaseImageInfo()))
-				for i, baseInfo := range actualBaseImageInfo {
-					expectedBaseInfo := expectedImage.GetBaseImageInfo()[i]
-					assert.Equal(t, expectedBaseInfo.GetBaseImageId(), baseInfo.BaseImageId(testCtx))
-					assert.Equal(t, expectedBaseInfo.GetBaseImageFullName(), baseInfo.BaseImageFullName(testCtx))
-					assert.Equal(t, expectedBaseInfo.GetBaseImageDigest(), baseInfo.BaseImageDigest(testCtx))
+
+				expectedImage := expectedImages[imageID]
+				baseImageInfos := expectedImage.GetBaseImageInfo()
+				if len(baseImageInfos) == 0 {
+					assert.Nil(t, actualBaseImage)
+				} else {
+					require.NotNil(t, actualBaseImage)
+
+					// Test imageSha (should be the digest from the first base image info)
+					expectedSha := baseImageInfos[0].GetBaseImageDigest()
+					assert.Equal(t, expectedSha, actualBaseImage.ImageSha(testCtx))
+
+					// Test name array
+					expectedNames := make([]string, 0, len(baseImageInfos))
+					for _, info := range baseImageInfos {
+						expectedNames = append(expectedNames, info.GetBaseImageFullName())
+					}
+					assert.Equal(t, expectedNames, actualBaseImage.Names(testCtx))
+
+					// Test created timestamp (placeholder until actual data is available)
+					actualCreated, err := actualBaseImage.Created(testCtx)
+					assert.NoError(t, err)
+					assert.NotNil(t, actualCreated)
 				}
 
 				// Test image -> deployments -> images

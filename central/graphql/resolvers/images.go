@@ -48,9 +48,9 @@ type ImageResolver interface {
 	Signature(ctx context.Context) (*imageSignatureResolver, error)
 	SignatureVerificationData(ctx context.Context) (*imageSignatureVerificationDataResolver, error)
 	TopCvss(ctx context.Context) float64
-	BaseImageInfo(ctx context.Context) ([]*baseImageInfoResolver, error)
 	UnknownCveCount(ctx context.Context) int32
 
+	BaseImage(ctx context.Context) (*baseImageResolver, error)
 	Deployments(ctx context.Context, args PaginatedQuery) ([]*deploymentResolver, error)
 	DeploymentCount(ctx context.Context, args RawQuery) (int32, error)
 	TopImageVulnerability(ctx context.Context, args RawQuery) (ImageVulnerabilityResolver, error)
@@ -88,8 +88,14 @@ func registerImageWatchStatus(s string) string {
 func init() {
 	schema := getBuilder()
 	utils.Must(
+		schema.AddType("BaseImage", []string{
+			"imageSha: String!",
+			"names: [String!]!",
+			"created: Time",
+		}),
 		// NOTE: This list is and should remain alphabetically ordered
 		schema.AddExtraResolvers("Image", []string{
+			"baseImage: BaseImage",
 			"deploymentCount(query: String): Int!",
 			"deployments(query: String, pagination: Pagination): [Deployment!]!",
 			"imageComponentCount(query: String): Int!",
@@ -514,4 +520,63 @@ func (resolver *imageResolver) TopCvss(_ context.Context) float64 {
 		value = 0
 	}
 	return float64(value)
+}
+
+func (resolver *imageResolver) BaseImage(ctx context.Context) (*baseImageResolver, error) {
+	resolver.ensureData(ctx)
+	baseImageInfos := resolver.data.GetBaseImageInfo()
+	return resolver.root.wrapBaseImage(baseImageInfos)
+}
+
+// baseImageResolver resolves base image information
+type baseImageResolver struct {
+	root *Resolver
+	data *baseImageData
+}
+
+type baseImageData struct {
+	imageSha string
+	names    []string
+	created  *graphql.Time
+}
+
+func (resolver *Resolver) wrapBaseImage(baseImageInfos []*storage.BaseImageInfo) (*baseImageResolver, error) {
+	if len(baseImageInfos) == 0 {
+		return nil, nil
+	}
+
+	// All entries should have the same digest, take the first one
+	imageSha := baseImageInfos[0].GetBaseImageDigest()
+
+	// Collect all full names
+	names := make([]string, 0, len(baseImageInfos))
+	for _, info := range baseImageInfos {
+		names = append(names, info.GetBaseImageFullName())
+	}
+
+	// TODO: Use actual created timestamp when it becomes available from storage
+	created := graphql.Time{Time: time.Now()}
+
+	data := &baseImageData{
+		imageSha: imageSha,
+		names:    names,
+		created:  &created,
+	}
+
+	return &baseImageResolver{
+		root: resolver,
+		data: data,
+	}, nil
+}
+
+func (resolver *baseImageResolver) ImageSha(_ context.Context) string {
+	return resolver.data.imageSha
+}
+
+func (resolver *baseImageResolver) Names(_ context.Context) []string {
+	return resolver.data.names
+}
+
+func (resolver *baseImageResolver) Created(_ context.Context) (*graphql.Time, error) {
+	return resolver.data.created, nil
 }
