@@ -109,6 +109,7 @@ func TestHttpHandler_ServeHTTP(t *testing.T) {
 		scanner.EXPECT().GetSBOM(gomock.Any()).DoAndReturn(getFakeSBOM).AnyTimes()
 		set.EXPECT().ScannerSet().Return(scannerSet).AnyTimes()
 		fsr.EXPECT().GetScanner().Return(scanner).AnyTimes()
+		fsr.EXPECT().DataSource().Return(nil).AnyTimes()
 		scannerSet.EXPECT().GetAll().Return([]scannerTypes.ImageScannerWithDataSource{fsr}).AnyTimes()
 
 		reqBody := &apiparams.SBOMRequestBody{
@@ -229,6 +230,7 @@ func TestHttpHandler_ServeHTTP(t *testing.T) {
 
 		mockImageScannerWithDS := scannerTypesMocks.NewMockImageScannerWithDataSource(ctrl)
 		mockImageScannerWithDS.EXPECT().GetScanner().Return(mockScanner).AnyTimes()
+		mockImageScannerWithDS.EXPECT().DataSource().Return(nil).AnyTimes()
 
 		mockScannerSet := scannerMocks.NewMockSet(ctrl)
 		mockScannerSet.EXPECT().GetAll().Return([]scannerTypes.ImageScannerWithDataSource{mockImageScannerWithDS}).AnyTimes()
