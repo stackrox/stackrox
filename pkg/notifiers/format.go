@@ -48,14 +48,18 @@ const bplPolicyFormat = `
 						{{stringify .Key ":" .Value | nestedList}}
 					{{end}}
 				{{end}}
+			{{else if isFileAccess .MessageAttributes }}
+				{{ if .MessageAttributes.FileAccess }}
+					{{stringify "Effective Path:" .MessageAttributes.FileAccess.File.EffectivePath | nestedList}}
+					{{stringify "Actual Path:" .MessageAttributes.FileAccess.File.ActualPath | nestedList}}
+					{{stringify "Operation:" .MessageAttributes.FileAccess.Operation | nestedList}}
+					{{stringify "Process Name:" .MessageAttributes.FileAccess.Process.Signal.Name | nestedList}}
+				{{end}}
 			{{end}}
 		{{end}}
 	{{end}}
 	{{if .ProcessViolation}}
 		{{list .ProcessViolation.Message}}
-	{{end}}
-	{{if .FileAccessViolation}}
-		{{list .FileAccessViolation.Message}}
 	{{end}}
 {{header "Policy Definition:"}}
 	{{"Description:" | subheader}}
@@ -136,6 +140,7 @@ func FormatAlert(alert *storage.Alert, alertLink string, funcMap template.FuncMa
 	funcMap["stringify"] = stringify
 	funcMap["default"] = stringutils.OrDefault
 	funcMap["isViolationKeyValue"] = isViolationKeyValue
+	funcMap["isFileAccess"] = isFileAccess
 	if _, ok := funcMap["valuePrinter"]; !ok {
 		funcMap["valuePrinter"] = valuePrinter
 	}
@@ -225,6 +230,12 @@ func FormatNetworkPolicyYAML(yaml string, clusterName string, funcMap template.F
 // Used to validate if a one-of is of type KeyValueAttrs within a template
 func isViolationKeyValue(src interface{}) bool {
 	return reflect.TypeOf(src) == reflect.TypeOf((*storage.Alert_Violation_KeyValueAttrs_)(nil))
+}
+
+// isFileAccess returns true if src is of type **storage.Alert_Violation_FileAccess
+// Used to validate if a one-of is the right type within a template
+func isFileAccess(src interface{}) bool {
+	return reflect.TypeOf(src) == reflect.TypeOf((*storage.Alert_Violation_FileAccess)(nil))
 }
 
 // stringify converts a list of interfaces into a space separated string of their string representations

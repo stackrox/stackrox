@@ -2,6 +2,7 @@ package fixtures
 
 import (
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/booleanpolicy/violationmessages/printer"
 	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
 	"github.com/stackrox/rox/pkg/images/types"
 	"github.com/stackrox/rox/pkg/protocompat"
@@ -456,33 +457,21 @@ func GetNodeAlert() *storage.Alert {
 }
 
 func GetFileAccessAlert(alert *storage.Alert) *storage.Alert {
-	alert.FileAccessViolation = &storage.Alert_FileAccessViolation{
-		Message: "'/etc/passwd' accessed (OPEN); '/etc/shadow' accessed (OPEN, WRITE)",
-		Accesses: []*storage.FileAccess{
-			{
-				File: &storage.FileAccess_File{
-					NodePath: "/etc/passwd",
-				},
-				Operation: storage.FileAccess_OPEN,
-				Timestamp: protocompat.TimestampNow(),
+	alert.Violations = append(alert.Violations, []*storage.Alert_Violation{
+		printer.GenerateFileAccessViolation(&storage.FileAccess{
+			File: &storage.FileAccess_File{
+				ActualPath:    "/etc/passwd",
+				EffectivePath: "/etc/passwd",
 			},
-			{
-				File: &storage.FileAccess_File{
-					NodePath: "/etc/shadow",
+			Operation: storage.FileAccess_OPEN,
+			Timestamp: protocompat.TimestampNow(),
+			Process: &storage.ProcessIndicator{
+				Signal: &storage.ProcessSignal{
+					Name: "cp",
 				},
-				Operation: storage.FileAccess_OPEN,
-				Timestamp: protocompat.TimestampNow(),
 			},
-			{
-				File: &storage.FileAccess_File{
-					NodePath: "/etc/shadow",
-				},
-				Operation: storage.FileAccess_WRITE,
-				Timestamp: protocompat.TimestampNow(),
-			},
-		},
-	}
-
+		}),
+	}...)
 	return alert
 }
 

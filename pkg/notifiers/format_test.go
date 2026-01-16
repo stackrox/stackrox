@@ -311,7 +311,11 @@ Time (UTC): 2021-01-20 22:42:02
 Severity: Low
 
 Violations:
-	 - '/etc/passwd' accessed (OPEN); '/etc/shadow' accessed (OPEN, WRITE)
+	 - '/etc/passwd' accessed (OPEN)
+		 - Effective Path: /etc/passwd
+		 - Actual Path: /etc/passwd
+		 - Operation: OPEN
+		 - Process Name: cp
 
 Policy Definition:
 
@@ -347,8 +351,12 @@ Violations:
 	 - This is a kube event violation
 		 - pod : nginx
 		 - container : nginx
+	 - '/etc/passwd' accessed (OPEN)
+		 - Effective Path: /etc/passwd
+		 - Actual Path: /etc/passwd
+		 - Operation: OPEN
+		 - Process Name: cp
 	 - This is a process violation
-	 - '/etc/passwd' accessed (OPEN); '/etc/shadow' accessed (OPEN, WRITE)
 
 Policy Definition:
 
