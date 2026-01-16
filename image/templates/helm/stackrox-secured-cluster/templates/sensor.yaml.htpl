@@ -70,6 +70,7 @@ spec:
         args:
         - ensure-service-certificates
         securityContext:
+          allowPrivilegeEscalation: false
           runAsNonRoot: true
           readOnlyRootFilesystem: true
         env:

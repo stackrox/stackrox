@@ -68,6 +68,8 @@ spec:
         - name: scanner-v4-db-password
           mountPath: /run/secrets/stackrox.io/secrets
           readOnly: true
+        securityContext:
+          allowPrivilegeEscalation: false
         resources:
           {{- ._rox.scannerV4.db._resources | nindent 10 }}
       containers:
@@ -99,8 +101,6 @@ spec:
           {{- ._rox.scannerV4.db._resources | nindent 10 }}
         securityContext:
           allowPrivilegeEscalation: false
-          runAsUser: 70
-          runAsGroup: 70
         volumeMounts:
         - name: disk
           mountPath: /var/lib/postgresql/data

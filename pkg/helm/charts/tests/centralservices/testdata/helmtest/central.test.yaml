@@ -116,3 +116,11 @@ tests:
     container(.deployments["central"]; "central") | .securityContext.allowPrivilegeEscalation | assertThat(. == false)
     container(.deployments["central"]; "central") | .securityContext.readOnlyRootFilesystem | assertThat(. == true)
     container(.deployments["central"]; "central") | .securityContext.capabilities.drop | assertThat(contains(["NET_RAW"]))
+
+- name: Central DB init container has secure container security context
+  values:
+    central:
+      db:
+        enabled: true
+  expect: |
+    .deployments["central-db"].spec.template.spec.initContainers[] | select(.name == "init-db") | .securityContext.allowPrivilegeEscalation | assertThat(. == false)
