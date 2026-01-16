@@ -87,7 +87,7 @@ message PrometheusMetrics {
       // according label expression. Patterns are full-match only (automatically
       // wrapped with ^ and $). Exclude filters are applied after include
       // filters.
-      map<string, string> exclude_filters = 3; // @gotags: crYaml:",omitempty"
+      map<string, string> exclude_filters = 3;
     }
     // The gathering period for periodically gathered metrics. If set to zero,
     // gathering is disabled.

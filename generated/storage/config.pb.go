@@ -1014,7 +1014,7 @@ type PrometheusMetrics_Group_Labels struct {
 	// according label expression. Patterns are full-match only (automatically
 	// wrapped with ^ and $). Exclude filters are applied after include
 	// filters.
-	ExcludeFilters map[string]string `protobuf:"bytes,3,rep,name=exclude_filters,json=excludeFilters,proto3" json:"exclude_filters,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value" crYaml:",omitempty"` // @gotags: crYaml:",omitempty"
+	ExcludeFilters map[string]string `protobuf:"bytes,3,rep,name=exclude_filters,json=excludeFilters,proto3" json:"exclude_filters,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
 	unknownFields  protoimpl.UnknownFields
 	sizeCache      protoimpl.SizeCache
 }
