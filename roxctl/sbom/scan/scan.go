@@ -260,7 +260,8 @@ func (s *sbomScanCommand) printSBOMScanResults(reader io.Reader) error {
 
 	cveSummary := scan.NewCVESummaryForPrinting(image.GetScan(), s.severities)
 	if !s.standardizedFormat {
-		scan.PrintCVESummary(s.sbomFilePath, cveSummary.Result.Summary, s.env.Logger())
+		s.env.Logger().PrintfLn("Scan results for SBOM: %s", s.sbomFilePath)
+		scan.PrintCVESummary(cveSummary.Result.Summary, s.env.Logger())
 	}
 
 	if err := s.printer.Print(cveSummary, s.env.ColorWriter()); err != nil {
