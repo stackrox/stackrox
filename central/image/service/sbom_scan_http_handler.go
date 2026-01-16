@@ -50,7 +50,6 @@ func (s sbomScanHttpHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if !features.SBOMScanning.Enabled() {
 		httputil.WriteGRPCStyleError(w, codes.Unimplemented, errors.New("SBOM Scanning is disabled."))
 		return
-
 	}
 
 	// Only POST requests are supported.
@@ -83,12 +82,12 @@ func (s sbomScanHttpHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	defer cancel()
 	body = ioutils.NewContextBoundReader(readCtx, body)
 
-	sbomScanResponse, err := s.scanSBOM(body, contentType)
+	sbomScanResponse, err := s.scanSBOM(readCtx, body, contentType)
 	if err != nil {
 		// Check if error is due to request body exceeding size limit.
 		var maxBytesErr *http.MaxBytesError
 		if errors.As(err, &maxBytesErr) {
-			httputil.WriteGRPCStyleError(w, codes.InvalidArgument, fmt.Errorf("request body exceeds maximum size of %d bytes", maxReqSizeBytes))
+			httputil.WriteGRPCStyleError(w, codes.InvalidArgument, fmt.Errorf("request body exceeds maximum size of %d bytes", maxBytesErr.Limit))
 			return
 		}
 		httputil.WriteGRPCStyleError(w, codes.Internal, fmt.Errorf("scanning SBOM: %w", err))
@@ -112,7 +111,7 @@ func (s sbomScanHttpHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 // scanSBOM will request a scan of the SBOM from Scanner V4.
-func (s sbomScanHttpHandler) scanSBOM(limitedReader io.Reader, contentType string) (*v1.SBOMScanResponse, error) {
+func (s sbomScanHttpHandler) scanSBOM(ctx context.Context, limitedReader io.Reader, contentType string) (*v1.SBOMScanResponse, error) {
 	// Get reference to Scanner V4.
 	scannerV4, dataSource, err := s.getScannerV4Integration()
 	if err != nil {
@@ -120,7 +119,7 @@ func (s sbomScanHttpHandler) scanSBOM(limitedReader io.Reader, contentType strin
 	}
 
 	// Scan the SBOM.
-	sbomScanResponse, err := scannerV4.ScanSBOM(limitedReader, contentType)
+	sbomScanResponse, err := scannerV4.ScanSBOM(ctx, limitedReader, contentType)
 	if err != nil {
 		return nil, fmt.Errorf("scanning sbom: %w", err)
 	}
@@ -134,15 +133,8 @@ func (s sbomScanHttpHandler) scanSBOM(limitedReader io.Reader, contentType strin
 
 // getScannerV4Integration returns the SBOM interface of Scanner V4.
 func (s sbomScanHttpHandler) getScannerV4Integration() (scannerTypes.SBOMer, *storage.DataSource, error) {
-	scanners := s.integrations.ScannerSet()
-	for _, scanner := range scanners.GetAll() {
-		if scanner.GetScanner().Type() == scannerTypes.ScannerV4 {
-			if scannerv4, ok := scanner.GetScanner().(scannerTypes.SBOMer); ok {
-				return scannerv4, scanner.DataSource(), nil
-			}
-		}
-	}
-	return nil, nil, errors.New("Scanner V4 integration not found")
+	sbomer, dataSource, err := getScannerV4SBOMIntegration(s.integrations.ScannerSet())
+	return sbomer, dataSource, err
 }
 
 // validateMediaType validates the media type from the content type header is supported.

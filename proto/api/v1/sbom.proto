@@ -20,13 +20,12 @@ option java_package = "io.stackrox.proto.api.v1";
 message SBOMScanResponse {
   string id = 1;
 
-  // next available tag: 6
+  // next available tag: 5
   message SBOMScan {
     string scanner_version = 1;
     google.protobuf.Timestamp scan_time = 2;
     repeated storage.EmbeddedImageScanComponent components = 3;
-    string operating_system = 4;
-    storage.DataSource data_source = 5;
+    storage.DataSource data_source = 4;
   }
   SBOMScan scan = 2;
 }
