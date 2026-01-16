@@ -6,6 +6,19 @@ import Raven from 'raven-js';
 let analyticsInstance: AnalyticsBrowser | null =
     // @ts-expect-error - Cypress test mock is not typed
     (typeof window !== 'undefined' && window.CYPRESS_ANALYTICS_INSTANCE) ?? null;
+let analyticsSource: AnalyticsSource = 'standalone'; // Default to standalone
+
+export type AnalyticsSource = 'standalone' | 'console-plugin';
+
+/**
+ * Sets the module-level analytics source for the application
+ * Should be called once at the root of the application
+ *
+ * @param source - The source of the analytics (standalone or console-plugin)
+ */
+export function setAnalyticsSource(source: AnalyticsSource): void {
+    analyticsSource = source;
+}
 
 /**
  * Initializes Segment analytics once, encapsulate in module scope
@@ -46,6 +59,23 @@ export function initializeAnalytics(
             },
         }
     );
+
+    analyticsInstance
+        .addSourceMiddleware(({ payload, next }) => {
+            // Source is added as a property (not context) so it's available for segmentation in Amplitude
+            const eventType = payload.type();
+            if (eventType === 'track' || eventType === 'page') {
+                // eslint-disable-next-line no-param-reassign
+                payload.obj.properties = {
+                    ...payload.obj.properties,
+                    acsApplicationSource: analyticsSource,
+                };
+            }
+            next(payload);
+        })
+        .catch((error) => {
+            Raven.captureException(error);
+        });
 
     if (userId) {
         analyticsInstance.identify(userId).catch((error) => {
