@@ -203,9 +203,9 @@ const file_internalapi_central_token_service_proto_rawDesc = "" +
 	"namespaces\x18\x03 \x03(\tR\n" +
 	"namespaces\"@\n" +
 	"(IssueTokenForPermissionsAndScopeResponse\x12\x14\n" +
-	"\x05token\x18\x01 \x01(\tR\x05token2\xb3\x01\n" +
-	"\fTokenService\x12\xa2\x01\n" +
-	"\x1fIssueTokenForPermissionAndScope\x120.central.IssueTokenForPermissionsAndScopeRequest\x1a1.central.IssueTokenForPermissionsAndScopeResponse\"\x1a\x82\xd3\xe4\x93\x02\x14\x12\x12/internal/v1/tokenB\x1fZ\x1d./internalapi/central;centralX\x00b\x06proto3"
+	"\x05token\x18\x01 \x01(\tR\x05token2\xb4\x01\n" +
+	"\fTokenService\x12\xa3\x01\n" +
+	" IssueTokenForPermissionsAndScope\x120.central.IssueTokenForPermissionsAndScopeRequest\x1a1.central.IssueTokenForPermissionsAndScopeResponse\"\x1a\x82\xd3\xe4\x93\x02\x14\x12\x12/internal/v1/tokenB\x1fZ\x1d./internalapi/central;centralX\x00b\x06proto3"
 
 var (
 	file_internalapi_central_token_service_proto_rawDescOnce sync.Once
@@ -229,8 +229,8 @@ var file_internalapi_central_token_service_proto_goTypes = []any{
 var file_internalapi_central_token_service_proto_depIdxs = []int32{
 	1, // 0: central.IssueTokenForPermissionsAndScopeRequest.cluster_scopes:type_name -> central.RequestedRoleClusterScope
 	3, // 1: central.IssueTokenForPermissionsAndScopeRequest.valid_for:type_name -> google.protobuf.Duration
-	0, // 2: central.TokenService.IssueTokenForPermissionAndScope:input_type -> central.IssueTokenForPermissionsAndScopeRequest
-	2, // 3: central.TokenService.IssueTokenForPermissionAndScope:output_type -> central.IssueTokenForPermissionsAndScopeResponse
+	0, // 2: central.TokenService.IssueTokenForPermissionsAndScope:input_type -> central.IssueTokenForPermissionsAndScopeRequest
+	2, // 3: central.TokenService.IssueTokenForPermissionsAndScope:output_type -> central.IssueTokenForPermissionsAndScopeResponse
 	3, // [3:4] is the sub-list for method output_type
 	2, // [2:3] is the sub-list for method input_type
 	2, // [2:2] is the sub-list for extension type_name

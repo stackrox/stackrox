@@ -37,7 +37,7 @@ var (
 
 	authorizer = perrpc.FromMap(map[authz.Authorizer][]string{
 		idcheck.SensorsOnly(): {
-			central.TokenService_IssueTokenForPermissionAndScope_FullMethodName,
+			central.TokenService_IssueTokenForPermissionsAndScope_FullMethodName,
 		},
 	})
 )
@@ -133,7 +133,7 @@ func (s *serviceImpl) createPermissionSet(
 	permissionSet.Name = fmt.Sprintf(permissionSetNameFormat, permissionSetID)
 	err := s.roleStore.UpsertPermissionSet(ctx, permissionSet)
 	if err != nil {
-		return "", errors.Wrap(err, "storing target role")
+		return "", errors.Wrap(err, "storing permission set")
 	}
 	return permissionSet.GetId(), nil
 }
@@ -211,7 +211,7 @@ func (s *serviceImpl) createRole(
 		Description:     "Generated role for OCP console plugin",
 		PermissionSetId: permissionSetID,
 		AccessScopeId:   accessScopeID,
-		Traits:          &storage.Traits{Origin: storage.Traits_IMPERATIVE},
+		Traits:          generatedObjectTraits.CloneVT(),
 	}
 	err = s.roleStore.UpsertRole(ctx, resultRole)
 	if err != nil {

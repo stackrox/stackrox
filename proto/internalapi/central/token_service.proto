@@ -24,7 +24,7 @@ message IssueTokenForPermissionsAndScopeResponse {
 }
 
 service TokenService {
-  rpc IssueTokenForPermissionAndScope(IssueTokenForPermissionsAndScopeRequest) returns (IssueTokenForPermissionsAndScopeResponse) {
+  rpc IssueTokenForPermissionsAndScope(IssueTokenForPermissionsAndScopeRequest) returns (IssueTokenForPermissionsAndScopeResponse) {
     option (google.api.http) = {get: "/internal/v1/token"};
   }
 }
