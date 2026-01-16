@@ -3,8 +3,7 @@ package scan
 import "github.com/stackrox/rox/roxctl/common/logger"
 
 // PrintCVESummary print summary of amount of CVEs found.
-func PrintCVESummary(name string, cveSummary map[string]int, out logger.Logger) {
-	out.PrintfLn("Scan results for: %s", name)
+func PrintCVESummary(cveSummary map[string]int, out logger.Logger) {
 	out.PrintfLn("(%s: %d, %s: %d, %s: %d, %s: %d, %s: %d, %s: %d)\n",
 		totalComponentsMapKey, cveSummary[totalComponentsMapKey],
 		totalVulnerabilitiesMapKey, cveSummary[totalVulnerabilitiesMapKey],
