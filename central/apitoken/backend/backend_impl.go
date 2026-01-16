@@ -16,7 +16,7 @@ import (
 type backendImpl struct {
 	tokenStore datastore.DataStore
 	issuer     tokens.Issuer
-	source     *sourceImpl
+	source     tokens.RevocationLayer
 }
 
 func (c *backendImpl) GetTokenOrNil(ctx context.Context, tokenID string) (*storage.TokenMetadata, error) {

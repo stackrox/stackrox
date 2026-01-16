@@ -19,7 +19,7 @@ type Backend interface {
 	RevokeToken(ctx context.Context, tokenID string) (bool, error)
 }
 
-func newBackend(issuer tokens.Issuer, source *sourceImpl, tokenStore datastore.DataStore) Backend {
+func newBackend(issuer tokens.Issuer, source tokens.RevocationLayer, tokenStore datastore.DataStore) Backend {
 	return &backendImpl{
 		tokenStore: tokenStore,
 		source:     source,

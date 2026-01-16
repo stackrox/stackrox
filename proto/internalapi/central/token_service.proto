@@ -4,11 +4,10 @@ package central;
 
 import weak "google/api/annotations.proto";
 import "google/protobuf/duration.proto";
-import "google/protobuf/timestamp.proto";
 
 option go_package = "./internalapi/central;central";
 
-message GetTokenForPermissionsAndScopeRequest {
+message IssueTokenForPermissionsAndScopeRequest {
   repeated string read_permissions = 1;
   repeated RequestedRoleClusterScope cluster_scopes = 2;
   google.protobuf.Duration valid_for = 3;
@@ -20,17 +19,12 @@ message RequestedRoleClusterScope {
   repeated string namespaces = 3;
 }
 
-message GetTokenForPermissionsAndScopeResponse {
-  string token_id = 1;
-  string token = 2;
-  repeated string roles = 3;
-  google.protobuf.Timestamp issued_at = 4;
-  google.protobuf.Timestamp expires_at = 5;
-  bool revoked = 6;
+message IssueTokenForPermissionsAndScopeResponse {
+  string token = 1;
 }
 
 service TokenService {
-  rpc GetTokenForPermissionAndScope(GetTokenForPermissionsAndScopeRequest) returns (GetTokenForPermissionsAndScopeResponse) {
-    option (google.api.http) = {get: "/internal/token"};
+  rpc IssueTokenForPermissionAndScope(IssueTokenForPermissionsAndScopeRequest) returns (IssueTokenForPermissionsAndScopeResponse) {
+    option (google.api.http) = {get: "/internal/v1/token"};
   }
 }

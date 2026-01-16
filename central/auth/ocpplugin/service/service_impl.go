@@ -21,12 +21,23 @@ import (
 	"google.golang.org/grpc"
 )
 
+const (
+	permissionSetNameFormat = "Generated permission set for %s"
+	accessScopeNameFormat   = "Generated access scope for %s"
+	roleNameFormat          = "Generated role for PermissionSet %s and AccessScope %s"
+
+	primaryListSeparator   = ";"
+	keyValueSeparator      = ":"
+	secondaryListSeparator = ","
+	clusterWildCard        = "*"
+)
+
 var (
 	_ central.TokenServiceServer = (*serviceImpl)(nil)
 
 	authorizer = perrpc.FromMap(map[authz.Authorizer][]string{
 		idcheck.SensorsOnly(): {
-			central.TokenService_GetTokenForPermissionAndScope_FullMethodName,
+			central.TokenService_IssueTokenForPermissionAndScope_FullMethodName,
 		},
 	})
 )
@@ -34,6 +45,8 @@ var (
 type serviceImpl struct {
 	issuer    tokens.Issuer
 	roleStore roleDatastore.DataStore
+
+	now func() time.Time
 
 	central.UnimplementedTokenServiceServer
 }
@@ -53,97 +66,111 @@ func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName strin
 	return ctx, authorizer.Authorized(ctx, fullMethodName)
 }
 
-func (s *serviceImpl) GetTokenForPermissionsAndScope(
+func (s *serviceImpl) IssueTokenForPermissionsAndScope(
 	ctx context.Context,
-	req *central.GetTokenForPermissionsAndScopeRequest,
-) (*central.GetTokenForPermissionsAndScopeResponse, error) {
-	targetRole, err := s.getRole(ctx, req)
+	req *central.IssueTokenForPermissionsAndScopeRequest,
+) (*central.IssueTokenForPermissionsAndScopeResponse, error) {
+	roleName, err := s.createRole(ctx, req)
 	if err != nil {
 		return nil, errors.Wrap(err, "creating and storing target role")
 	}
-	roleName := targetRole.GetName()
-	expiresAt, err := getExpiresAt(ctx, req)
+	expiresAt, err := s.getExpiresAt(ctx, req)
 	if err != nil {
 		return nil, errors.Wrap(err, "getting expiration time")
 	}
+	claimName := fmt.Sprintf(
+		"Generated claims for role %s expiring at %s",
+		roleName,
+		expiresAt.Format(time.RFC3339Nano),
+	)
 	roxClaims := tokens.RoxClaims{
 		RoleNames: []string{roleName},
-		Name:      fmt.Sprintf("Generated claims for role %s expiring at %s", roleName, expiresAt.Format(time.RFC3339Nano)),
+		Name:      claimName,
 		ExpireAt:  &expiresAt,
 	}
 	tokenInfo, err := s.issuer.Issue(ctx, roxClaims)
 	if err != nil {
 		return nil, err
 	}
-	response := &central.GetTokenForPermissionsAndScopeResponse{
-		TokenId:   "",
-		Token:     tokenInfo.Token,
-		Roles:     []string{roleName},
-		IssuedAt:  protocompat.TimestampNow(),
-		ExpiresAt: protocompat.ConvertTimeToTimestampOrNil(&expiresAt),
-		Revoked:   false,
+	response := &central.IssueTokenForPermissionsAndScopeResponse{
+		Token: tokenInfo.Token,
 	}
 	return response, nil
 }
 
 // region helpers
 
-func (s *serviceImpl) getPermissionSet(ctx context.Context, req *central.GetTokenForPermissionsAndScopeRequest) (*storage.PermissionSet, error) {
+var (
+	generatedObjectTraits = &storage.Traits{Origin: storage.Traits_IMPERATIVE}
+)
+
+// createPermissionSet creates a dynamic permission set, granting the requested permissions.
+// The returned information is the ID of the created permission set, or an error if any occurred
+// in the creation process.
+func (s *serviceImpl) createPermissionSet(
+	ctx context.Context,
+	req *central.IssueTokenForPermissionsAndScopeRequest,
+) (string, error) {
 	// TODO: Consider pruning the generated permission sets after some idle time.
 	permissionSet := &storage.PermissionSet{
 		ResourceToAccess: make(map[string]storage.Access),
-		Traits:           &storage.Traits{Origin: storage.Traits_IMPERATIVE},
+		Traits:           generatedObjectTraits.CloneVT(),
 	}
 	var b strings.Builder
 	readResources := req.GetReadPermissions()
 	readAccessString := storage.Access_READ_ACCESS.String()
 	for ix, resource := range readResources {
 		if ix > 0 {
-			b.WriteString(",")
+			b.WriteString(primaryListSeparator)
 		}
 		b.WriteString(resource)
-		b.WriteString(":")
+		b.WriteString(keyValueSeparator)
 		b.WriteString(readAccessString)
 		permissionSet.ResourceToAccess[resource] = storage.Access_READ_ACCESS
 	}
 	permissionSetID := declarativeconfig.NewDeclarativePermissionSetUUID(b.String()).String()
 	permissionSet.Id = permissionSetID
-	permissionSet.Name = fmt.Sprintf("Generated permission set for %s", permissionSetID)
+	permissionSet.Name = fmt.Sprintf(permissionSetNameFormat, permissionSetID)
 	err := s.roleStore.UpsertPermissionSet(ctx, permissionSet)
 	if err != nil {
-		return nil, errors.Wrap(err, "storing target role")
+		return "", errors.Wrap(err, "storing target role")
 	}
-	return permissionSet, nil
+	return permissionSet.GetId(), nil
 }
 
-func (s *serviceImpl) getAccessScope(ctx context.Context, req *central.GetTokenForPermissionsAndScopeRequest) (*storage.SimpleAccessScope, error) {
+// createAccessScope creates a dynamic access scope, granting the requested scope.
+// The returned information is the identifier of the created access scope,
+// or an error if any occurred in the creation process.
+func (s *serviceImpl) createAccessScope(
+	ctx context.Context,
+	req *central.IssueTokenForPermissionsAndScopeRequest,
+) (string, error) {
 	// TODO: Consider pruning the generated access scopes after some idle time.
 	accessScope := &storage.SimpleAccessScope{
 		Description: "",
 		Rules:       &storage.SimpleAccessScope_Rules{},
-		Traits:      &storage.Traits{Origin: storage.Traits_IMPERATIVE},
+		Traits:      generatedObjectTraits.CloneVT(),
 	}
 	var b strings.Builder
 	fullAccessClusters := make([]string, 0)
 	clusterNamespaces := make([]*storage.SimpleAccessScope_Rules_Namespace, 0)
 	for ix, clusterScope := range req.GetClusterScopes() {
 		if ix > 0 {
-			b.WriteString(";")
+			b.WriteString(primaryListSeparator)
 		}
+		b.WriteString(clusterScope.GetClusterName())
+		b.WriteString(keyValueSeparator)
 		if clusterScope.GetFullClusterAccess() {
 			fullAccessClusters = append(fullAccessClusters, clusterScope.GetClusterName())
-			b.WriteString(clusterScope.GetClusterName())
-			b.WriteString(":*")
+			b.WriteString(clusterWildCard)
 		} else {
-			b.WriteString(clusterScope.GetClusterName())
-			b.WriteString(":")
 			for namespaceIndex, namespace := range clusterScope.GetNamespaces() {
 				clusterNamespaces = append(clusterNamespaces, &storage.SimpleAccessScope_Rules_Namespace{
 					ClusterName:   clusterScope.GetClusterName(),
 					NamespaceName: namespace,
 				})
 				if namespaceIndex > 0 {
-					b.WriteString(",")
+					b.WriteString(secondaryListSeparator)
 				}
 				b.WriteString(namespace)
 			}
@@ -153,40 +180,48 @@ func (s *serviceImpl) getAccessScope(ctx context.Context, req *central.GetTokenF
 	accessScope.Rules.IncludedNamespaces = clusterNamespaces
 	accessScopeID := declarativeconfig.NewDeclarativeAccessScopeUUID(b.String()).String()
 	accessScope.Id = accessScopeID
-	accessScope.Name = fmt.Sprintf("Generated access scope for %s", accessScopeID)
+	accessScope.Name = fmt.Sprintf(accessScopeNameFormat, accessScopeID)
 
 	err := s.roleStore.UpsertAccessScope(ctx, accessScope)
 	if err != nil {
-		return nil, errors.Wrap(err, "storing access scope")
+		return "", errors.Wrap(err, "storing access scope")
 	}
 
-	return accessScope, nil
+	return accessScope.GetId(), nil
 }
 
-func (s *serviceImpl) getRole(ctx context.Context, req *central.GetTokenForPermissionsAndScopeRequest) (*storage.Role, error) {
+// createRole creates a dynamic role, granting the requested permissions and scope.
+// The returned information is the name of the created role, or an error if any occurred
+// in the creation process.
+func (s *serviceImpl) createRole(
+	ctx context.Context,
+	req *central.IssueTokenForPermissionsAndScopeRequest,
+) (string, error) {
 	// TODO: Consider pruning the generated roles after some idle time.
-	ps, err := s.getPermissionSet(ctx, req)
+	permissionSetID, err := s.createPermissionSet(ctx, req)
 	if err != nil {
-		return nil, errors.Wrap(err, "creating permission set for role")
+		return "", errors.Wrap(err, "creating permission set for role")
 	}
-	as, err := s.getAccessScope(ctx, req)
+	accessScopeID, err := s.createAccessScope(ctx, req)
 	if err != nil {
-		return nil, errors.Wrap(err, "creating access scope for role")
+		return "", errors.Wrap(err, "creating access scope for role")
 	}
-	psID := ps.GetId()
-	asID := as.GetId()
 	resultRole := &storage.Role{
-		Name:            fmt.Sprintf("Generated role for PermissionSet %s and AccessScope %s", psID, asID),
+		Name:            fmt.Sprintf(roleNameFormat, permissionSetID, accessScopeID),
 		Description:     "Generated role for OCP console plugin",
-		PermissionSetId: psID,
-		AccessScopeId:   asID,
+		PermissionSetId: permissionSetID,
+		AccessScopeId:   accessScopeID,
 		Traits:          &storage.Traits{Origin: storage.Traits_IMPERATIVE},
 	}
-	// Store role in database
-	return resultRole, nil
+	err = s.roleStore.UpsertRole(ctx, resultRole)
+	if err != nil {
+		return "", errors.Wrap(err, "storing role")
+	}
+
+	return resultRole.GetName(), nil
 }
 
-func getExpiresAt(_ context.Context, req *central.GetTokenForPermissionsAndScopeRequest) (time.Time, error) {
+func (s *serviceImpl) getExpiresAt(_ context.Context, req *central.IssueTokenForPermissionsAndScopeRequest) (time.Time, error) {
 	duration, err := protocompat.DurationFromProto(req.GetValidFor())
 	if err != nil {
 		return time.Time{}, errors.Wrap(err, "converting requested token validity duration")
@@ -194,7 +229,7 @@ func getExpiresAt(_ context.Context, req *central.GetTokenForPermissionsAndScope
 	if duration <= 0 {
 		return time.Time{}, errox.InvalidArgs.CausedBy("token validity duration should be positive")
 	}
-	return time.Now().Add(duration), nil
+	return s.now().Add(duration), nil
 }
 
 // endregion helpers

@@ -11,7 +11,6 @@ import (
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	durationpb "google.golang.org/protobuf/types/known/durationpb"
-	timestamppb "google.golang.org/protobuf/types/known/timestamppb"
 	reflect "reflect"
 	sync "sync"
 	unsafe "unsafe"
@@ -24,7 +23,7 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-type GetTokenForPermissionsAndScopeRequest struct {
+type IssueTokenForPermissionsAndScopeRequest struct {
 	state           protoimpl.MessageState       `protogen:"open.v1"`
 	ReadPermissions []string                     `protobuf:"bytes,1,rep,name=read_permissions,json=readPermissions,proto3" json:"read_permissions,omitempty"`
 	ClusterScopes   []*RequestedRoleClusterScope `protobuf:"bytes,2,rep,name=cluster_scopes,json=clusterScopes,proto3" json:"cluster_scopes,omitempty"`
@@ -33,20 +32,20 @@ type GetTokenForPermissionsAndScopeRequest struct {
 	sizeCache       protoimpl.SizeCache
 }
 
-func (x *GetTokenForPermissionsAndScopeRequest) Reset() {
-	*x = GetTokenForPermissionsAndScopeRequest{}
+func (x *IssueTokenForPermissionsAndScopeRequest) Reset() {
+	*x = IssueTokenForPermissionsAndScopeRequest{}
 	mi := &file_internalapi_central_token_service_proto_msgTypes[0]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *GetTokenForPermissionsAndScopeRequest) String() string {
+func (x *IssueTokenForPermissionsAndScopeRequest) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*GetTokenForPermissionsAndScopeRequest) ProtoMessage() {}
+func (*IssueTokenForPermissionsAndScopeRequest) ProtoMessage() {}
 
-func (x *GetTokenForPermissionsAndScopeRequest) ProtoReflect() protoreflect.Message {
+func (x *IssueTokenForPermissionsAndScopeRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_internalapi_central_token_service_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -58,26 +57,26 @@ func (x *GetTokenForPermissionsAndScopeRequest) ProtoReflect() protoreflect.Mess
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use GetTokenForPermissionsAndScopeRequest.ProtoReflect.Descriptor instead.
-func (*GetTokenForPermissionsAndScopeRequest) Descriptor() ([]byte, []int) {
+// Deprecated: Use IssueTokenForPermissionsAndScopeRequest.ProtoReflect.Descriptor instead.
+func (*IssueTokenForPermissionsAndScopeRequest) Descriptor() ([]byte, []int) {
 	return file_internalapi_central_token_service_proto_rawDescGZIP(), []int{0}
 }
 
-func (x *GetTokenForPermissionsAndScopeRequest) GetReadPermissions() []string {
+func (x *IssueTokenForPermissionsAndScopeRequest) GetReadPermissions() []string {
 	if x != nil {
 		return x.ReadPermissions
 	}
 	return nil
 }
 
-func (x *GetTokenForPermissionsAndScopeRequest) GetClusterScopes() []*RequestedRoleClusterScope {
+func (x *IssueTokenForPermissionsAndScopeRequest) GetClusterScopes() []*RequestedRoleClusterScope {
 	if x != nil {
 		return x.ClusterScopes
 	}
 	return nil
 }
 
-func (x *GetTokenForPermissionsAndScopeRequest) GetValidFor() *durationpb.Duration {
+func (x *IssueTokenForPermissionsAndScopeRequest) GetValidFor() *durationpb.Duration {
 	if x != nil {
 		return x.ValidFor
 	}
@@ -144,32 +143,27 @@ func (x *RequestedRoleClusterScope) GetNamespaces() []string {
 	return nil
 }
 
-type GetTokenForPermissionsAndScopeResponse struct {
+type IssueTokenForPermissionsAndScopeResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	TokenId       string                 `protobuf:"bytes,1,opt,name=token_id,json=tokenId,proto3" json:"token_id,omitempty"`
-	Token         string                 `protobuf:"bytes,2,opt,name=token,proto3" json:"token,omitempty"`
-	Roles         []string               `protobuf:"bytes,3,rep,name=roles,proto3" json:"roles,omitempty"`
-	IssuedAt      *timestamppb.Timestamp `protobuf:"bytes,4,opt,name=issued_at,json=issuedAt,proto3" json:"issued_at,omitempty"`
-	ExpiresAt     *timestamppb.Timestamp `protobuf:"bytes,5,opt,name=expires_at,json=expiresAt,proto3" json:"expires_at,omitempty"`
-	Revoked       bool                   `protobuf:"varint,6,opt,name=revoked,proto3" json:"revoked,omitempty"`
+	Token         string                 `protobuf:"bytes,1,opt,name=token,proto3" json:"token,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *GetTokenForPermissionsAndScopeResponse) Reset() {
-	*x = GetTokenForPermissionsAndScopeResponse{}
+func (x *IssueTokenForPermissionsAndScopeResponse) Reset() {
+	*x = IssueTokenForPermissionsAndScopeResponse{}
 	mi := &file_internalapi_central_token_service_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *GetTokenForPermissionsAndScopeResponse) String() string {
+func (x *IssueTokenForPermissionsAndScopeResponse) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*GetTokenForPermissionsAndScopeResponse) ProtoMessage() {}
+func (*IssueTokenForPermissionsAndScopeResponse) ProtoMessage() {}
 
-func (x *GetTokenForPermissionsAndScopeResponse) ProtoReflect() protoreflect.Message {
+func (x *IssueTokenForPermissionsAndScopeResponse) ProtoReflect() protoreflect.Message {
 	mi := &file_internalapi_central_token_service_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -181,59 +175,24 @@ func (x *GetTokenForPermissionsAndScopeResponse) ProtoReflect() protoreflect.Mes
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use GetTokenForPermissionsAndScopeResponse.ProtoReflect.Descriptor instead.
-func (*GetTokenForPermissionsAndScopeResponse) Descriptor() ([]byte, []int) {
+// Deprecated: Use IssueTokenForPermissionsAndScopeResponse.ProtoReflect.Descriptor instead.
+func (*IssueTokenForPermissionsAndScopeResponse) Descriptor() ([]byte, []int) {
 	return file_internalapi_central_token_service_proto_rawDescGZIP(), []int{2}
 }
 
-func (x *GetTokenForPermissionsAndScopeResponse) GetTokenId() string {
-	if x != nil {
-		return x.TokenId
-	}
-	return ""
-}
-
-func (x *GetTokenForPermissionsAndScopeResponse) GetToken() string {
+func (x *IssueTokenForPermissionsAndScopeResponse) GetToken() string {
 	if x != nil {
 		return x.Token
 	}
 	return ""
 }
 
-func (x *GetTokenForPermissionsAndScopeResponse) GetRoles() []string {
-	if x != nil {
-		return x.Roles
-	}
-	return nil
-}
-
-func (x *GetTokenForPermissionsAndScopeResponse) GetIssuedAt() *timestamppb.Timestamp {
-	if x != nil {
-		return x.IssuedAt
-	}
-	return nil
-}
-
-func (x *GetTokenForPermissionsAndScopeResponse) GetExpiresAt() *timestamppb.Timestamp {
-	if x != nil {
-		return x.ExpiresAt
-	}
-	return nil
-}
-
-func (x *GetTokenForPermissionsAndScopeResponse) GetRevoked() bool {
-	if x != nil {
-		return x.Revoked
-	}
-	return false
-}
-
 var File_internalapi_central_token_service_proto protoreflect.FileDescriptor
 
 const file_internalapi_central_token_service_proto_rawDesc = "" +
 	"\n" +
-	"'internalapi/central/token_service.proto\x12\acentral\x1a\x1cgoogle/api/annotations.proto\x1a\x1egoogle/protobuf/duration.proto\x1a\x1fgoogle/protobuf/timestamp.proto\"\xd5\x01\n" +
-	"%GetTokenForPermissionsAndScopeRequest\x12)\n" +
+	"'internalapi/central/token_service.proto\x12\acentral\x1a\x1cgoogle/api/annotations.proto\x1a\x1egoogle/protobuf/duration.proto\"\xd7\x01\n" +
+	"'IssueTokenForPermissionsAndScopeRequest\x12)\n" +
 	"\x10read_permissions\x18\x01 \x03(\tR\x0freadPermissions\x12I\n" +
 	"\x0ecluster_scopes\x18\x02 \x03(\v2\".central.RequestedRoleClusterScopeR\rclusterScopes\x126\n" +
 	"\tvalid_for\x18\x03 \x01(\v2\x19.google.protobuf.DurationR\bvalidFor\"\x8e\x01\n" +
@@ -242,17 +201,11 @@ const file_internalapi_central_token_service_proto_rawDesc = "" +
 	"\x13full_cluster_access\x18\x02 \x01(\bR\x11fullClusterAccess\x12\x1e\n" +
 	"\n" +
 	"namespaces\x18\x03 \x03(\tR\n" +
-	"namespaces\"\xfd\x01\n" +
-	"&GetTokenForPermissionsAndScopeResponse\x12\x19\n" +
-	"\btoken_id\x18\x01 \x01(\tR\atokenId\x12\x14\n" +
-	"\x05token\x18\x02 \x01(\tR\x05token\x12\x14\n" +
-	"\x05roles\x18\x03 \x03(\tR\x05roles\x127\n" +
-	"\tissued_at\x18\x04 \x01(\v2\x1a.google.protobuf.TimestampR\bissuedAt\x129\n" +
-	"\n" +
-	"expires_at\x18\x05 \x01(\v2\x1a.google.protobuf.TimestampR\texpiresAt\x12\x18\n" +
-	"\arevoked\x18\x06 \x01(\bR\arevoked2\xaa\x01\n" +
-	"\fTokenService\x12\x99\x01\n" +
-	"\x1dGetTokenForPermissionAndScope\x12..central.GetTokenForPermissionsAndScopeRequest\x1a/.central.GetTokenForPermissionsAndScopeResponse\"\x17\x82\xd3\xe4\x93\x02\x11\x12\x0f/internal/tokenB\x1fZ\x1d./internalapi/central;centralX\x00b\x06proto3"
+	"namespaces\"@\n" +
+	"(IssueTokenForPermissionsAndScopeResponse\x12\x14\n" +
+	"\x05token\x18\x01 \x01(\tR\x05token2\xb3\x01\n" +
+	"\fTokenService\x12\xa2\x01\n" +
+	"\x1fIssueTokenForPermissionAndScope\x120.central.IssueTokenForPermissionsAndScopeRequest\x1a1.central.IssueTokenForPermissionsAndScopeResponse\"\x1a\x82\xd3\xe4\x93\x02\x14\x12\x12/internal/v1/tokenB\x1fZ\x1d./internalapi/central;centralX\x00b\x06proto3"
 
 var (
 	file_internalapi_central_token_service_proto_rawDescOnce sync.Once
@@ -268,24 +221,21 @@ func file_internalapi_central_token_service_proto_rawDescGZIP() []byte {
 
 var file_internalapi_central_token_service_proto_msgTypes = make([]protoimpl.MessageInfo, 3)
 var file_internalapi_central_token_service_proto_goTypes = []any{
-	(*GetTokenForPermissionsAndScopeRequest)(nil),  // 0: central.GetTokenForPermissionsAndScopeRequest
-	(*RequestedRoleClusterScope)(nil),              // 1: central.RequestedRoleClusterScope
-	(*GetTokenForPermissionsAndScopeResponse)(nil), // 2: central.GetTokenForPermissionsAndScopeResponse
-	(*durationpb.Duration)(nil),                    // 3: google.protobuf.Duration
-	(*timestamppb.Timestamp)(nil),                  // 4: google.protobuf.Timestamp
+	(*IssueTokenForPermissionsAndScopeRequest)(nil),  // 0: central.IssueTokenForPermissionsAndScopeRequest
+	(*RequestedRoleClusterScope)(nil),                // 1: central.RequestedRoleClusterScope
+	(*IssueTokenForPermissionsAndScopeResponse)(nil), // 2: central.IssueTokenForPermissionsAndScopeResponse
+	(*durationpb.Duration)(nil),                      // 3: google.protobuf.Duration
 }
 var file_internalapi_central_token_service_proto_depIdxs = []int32{
-	1, // 0: central.GetTokenForPermissionsAndScopeRequest.cluster_scopes:type_name -> central.RequestedRoleClusterScope
-	3, // 1: central.GetTokenForPermissionsAndScopeRequest.valid_for:type_name -> google.protobuf.Duration
-	4, // 2: central.GetTokenForPermissionsAndScopeResponse.issued_at:type_name -> google.protobuf.Timestamp
-	4, // 3: central.GetTokenForPermissionsAndScopeResponse.expires_at:type_name -> google.protobuf.Timestamp
-	0, // 4: central.TokenService.GetTokenForPermissionAndScope:input_type -> central.GetTokenForPermissionsAndScopeRequest
-	2, // 5: central.TokenService.GetTokenForPermissionAndScope:output_type -> central.GetTokenForPermissionsAndScopeResponse
-	5, // [5:6] is the sub-list for method output_type
-	4, // [4:5] is the sub-list for method input_type
-	4, // [4:4] is the sub-list for extension type_name
-	4, // [4:4] is the sub-list for extension extendee
-	0, // [0:4] is the sub-list for field type_name
+	1, // 0: central.IssueTokenForPermissionsAndScopeRequest.cluster_scopes:type_name -> central.RequestedRoleClusterScope
+	3, // 1: central.IssueTokenForPermissionsAndScopeRequest.valid_for:type_name -> google.protobuf.Duration
+	0, // 2: central.TokenService.IssueTokenForPermissionAndScope:input_type -> central.IssueTokenForPermissionsAndScopeRequest
+	2, // 3: central.TokenService.IssueTokenForPermissionAndScope:output_type -> central.IssueTokenForPermissionsAndScopeResponse
+	3, // [3:4] is the sub-list for method output_type
+	2, // [2:3] is the sub-list for method input_type
+	2, // [2:2] is the sub-list for extension type_name
+	2, // [2:2] is the sub-list for extension extendee
+	0, // [0:2] is the sub-list for field type_name
 }
 
 func init() { file_internalapi_central_token_service_proto_init() }

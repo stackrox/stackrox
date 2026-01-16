@@ -8,11 +8,9 @@ import (
 	fmt "fmt"
 	protohelpers "github.com/planetscale/vtprotobuf/protohelpers"
 	durationpb1 "github.com/planetscale/vtprotobuf/types/known/durationpb"
-	timestamppb1 "github.com/planetscale/vtprotobuf/types/known/timestamppb"
 	proto "google.golang.org/protobuf/proto"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	durationpb "google.golang.org/protobuf/types/known/durationpb"
-	timestamppb "google.golang.org/protobuf/types/known/timestamppb"
 	io "io"
 	unsafe "unsafe"
 )
@@ -24,11 +22,11 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-func (m *GetTokenForPermissionsAndScopeRequest) CloneVT() *GetTokenForPermissionsAndScopeRequest {
+func (m *IssueTokenForPermissionsAndScopeRequest) CloneVT() *IssueTokenForPermissionsAndScopeRequest {
 	if m == nil {
-		return (*GetTokenForPermissionsAndScopeRequest)(nil)
+		return (*IssueTokenForPermissionsAndScopeRequest)(nil)
 	}
-	r := new(GetTokenForPermissionsAndScopeRequest)
+	r := new(IssueTokenForPermissionsAndScopeRequest)
 	r.ValidFor = (*durationpb.Duration)((*durationpb1.Duration)(m.ValidFor).CloneVT())
 	if rhs := m.ReadPermissions; rhs != nil {
 		tmpContainer := make([]string, len(rhs))
@@ -49,7 +47,7 @@ func (m *GetTokenForPermissionsAndScopeRequest) CloneVT() *GetTokenForPermission
 	return r
 }
 
-func (m *GetTokenForPermissionsAndScopeRequest) CloneMessageVT() proto.Message {
+func (m *IssueTokenForPermissionsAndScopeRequest) CloneMessageVT() proto.Message {
 	return m.CloneVT()
 }
 
@@ -76,21 +74,12 @@ func (m *RequestedRoleClusterScope) CloneMessageVT() proto.Message {
 	return m.CloneVT()
 }
 
-func (m *GetTokenForPermissionsAndScopeResponse) CloneVT() *GetTokenForPermissionsAndScopeResponse {
+func (m *IssueTokenForPermissionsAndScopeResponse) CloneVT() *IssueTokenForPermissionsAndScopeResponse {
 	if m == nil {
-		return (*GetTokenForPermissionsAndScopeResponse)(nil)
+		return (*IssueTokenForPermissionsAndScopeResponse)(nil)
 	}
-	r := new(GetTokenForPermissionsAndScopeResponse)
-	r.TokenId = m.TokenId
+	r := new(IssueTokenForPermissionsAndScopeResponse)
 	r.Token = m.Token
-	r.IssuedAt = (*timestamppb.Timestamp)((*timestamppb1.Timestamp)(m.IssuedAt).CloneVT())
-	r.ExpiresAt = (*timestamppb.Timestamp)((*timestamppb1.Timestamp)(m.ExpiresAt).CloneVT())
-	r.Revoked = m.Revoked
-	if rhs := m.Roles; rhs != nil {
-		tmpContainer := make([]string, len(rhs))
-		copy(tmpContainer, rhs)
-		r.Roles = tmpContainer
-	}
 	if len(m.unknownFields) > 0 {
 		r.unknownFields = make([]byte, len(m.unknownFields))
 		copy(r.unknownFields, m.unknownFields)
@@ -98,11 +87,11 @@ func (m *GetTokenForPermissionsAndScopeResponse) CloneVT() *GetTokenForPermissio
 	return r
 }
 
-func (m *GetTokenForPermissionsAndScopeResponse) CloneMessageVT() proto.Message {
+func (m *IssueTokenForPermissionsAndScopeResponse) CloneMessageVT() proto.Message {
 	return m.CloneVT()
 }
 
-func (this *GetTokenForPermissionsAndScopeRequest) EqualVT(that *GetTokenForPermissionsAndScopeRequest) bool {
+func (this *IssueTokenForPermissionsAndScopeRequest) EqualVT(that *IssueTokenForPermissionsAndScopeRequest) bool {
 	if this == that {
 		return true
 	} else if this == nil || that == nil {
@@ -140,8 +129,8 @@ func (this *GetTokenForPermissionsAndScopeRequest) EqualVT(that *GetTokenForPerm
 	return string(this.unknownFields) == string(that.unknownFields)
 }
 
-func (this *GetTokenForPermissionsAndScopeRequest) EqualMessageVT(thatMsg proto.Message) bool {
-	that, ok := thatMsg.(*GetTokenForPermissionsAndScopeRequest)
+func (this *IssueTokenForPermissionsAndScopeRequest) EqualMessageVT(thatMsg proto.Message) bool {
+	that, ok := thatMsg.(*IssueTokenForPermissionsAndScopeRequest)
 	if !ok {
 		return false
 	}
@@ -178,47 +167,26 @@ func (this *RequestedRoleClusterScope) EqualMessageVT(thatMsg proto.Message) boo
 	}
 	return this.EqualVT(that)
 }
-func (this *GetTokenForPermissionsAndScopeResponse) EqualVT(that *GetTokenForPermissionsAndScopeResponse) bool {
+func (this *IssueTokenForPermissionsAndScopeResponse) EqualVT(that *IssueTokenForPermissionsAndScopeResponse) bool {
 	if this == that {
 		return true
 	} else if this == nil || that == nil {
 		return false
 	}
-	if this.TokenId != that.TokenId {
-		return false
-	}
 	if this.Token != that.Token {
-		return false
-	}
-	if len(this.Roles) != len(that.Roles) {
-		return false
-	}
-	for i, vx := range this.Roles {
-		vy := that.Roles[i]
-		if vx != vy {
-			return false
-		}
-	}
-	if !(*timestamppb1.Timestamp)(this.IssuedAt).EqualVT((*timestamppb1.Timestamp)(that.IssuedAt)) {
-		return false
-	}
-	if !(*timestamppb1.Timestamp)(this.ExpiresAt).EqualVT((*timestamppb1.Timestamp)(that.ExpiresAt)) {
-		return false
-	}
-	if this.Revoked != that.Revoked {
 		return false
 	}
 	return string(this.unknownFields) == string(that.unknownFields)
 }
 
-func (this *GetTokenForPermissionsAndScopeResponse) EqualMessageVT(thatMsg proto.Message) bool {
-	that, ok := thatMsg.(*GetTokenForPermissionsAndScopeResponse)
+func (this *IssueTokenForPermissionsAndScopeResponse) EqualMessageVT(thatMsg proto.Message) bool {
+	that, ok := thatMsg.(*IssueTokenForPermissionsAndScopeResponse)
 	if !ok {
 		return false
 	}
 	return this.EqualVT(that)
 }
-func (m *GetTokenForPermissionsAndScopeRequest) MarshalVT() (dAtA []byte, err error) {
+func (m *IssueTokenForPermissionsAndScopeRequest) MarshalVT() (dAtA []byte, err error) {
 	if m == nil {
 		return nil, nil
 	}
@@ -231,12 +199,12 @@ func (m *GetTokenForPermissionsAndScopeRequest) MarshalVT() (dAtA []byte, err er
 	return dAtA[:n], nil
 }
 
-func (m *GetTokenForPermissionsAndScopeRequest) MarshalToVT(dAtA []byte) (int, error) {
+func (m *IssueTokenForPermissionsAndScopeRequest) MarshalToVT(dAtA []byte) (int, error) {
 	size := m.SizeVT()
 	return m.MarshalToSizedBufferVT(dAtA[:size])
 }
 
-func (m *GetTokenForPermissionsAndScopeRequest) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
+func (m *IssueTokenForPermissionsAndScopeRequest) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	if m == nil {
 		return 0, nil
 	}
@@ -341,7 +309,7 @@ func (m *RequestedRoleClusterScope) MarshalToSizedBufferVT(dAtA []byte) (int, er
 	return len(dAtA) - i, nil
 }
 
-func (m *GetTokenForPermissionsAndScopeResponse) MarshalVT() (dAtA []byte, err error) {
+func (m *IssueTokenForPermissionsAndScopeResponse) MarshalVT() (dAtA []byte, err error) {
 	if m == nil {
 		return nil, nil
 	}
@@ -354,12 +322,12 @@ func (m *GetTokenForPermissionsAndScopeResponse) MarshalVT() (dAtA []byte, err e
 	return dAtA[:n], nil
 }
 
-func (m *GetTokenForPermissionsAndScopeResponse) MarshalToVT(dAtA []byte) (int, error) {
+func (m *IssueTokenForPermissionsAndScopeResponse) MarshalToVT(dAtA []byte) (int, error) {
 	size := m.SizeVT()
 	return m.MarshalToSizedBufferVT(dAtA[:size])
 }
 
-func (m *GetTokenForPermissionsAndScopeResponse) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
+func (m *IssueTokenForPermissionsAndScopeResponse) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	if m == nil {
 		return 0, nil
 	}
@@ -371,63 +339,17 @@ func (m *GetTokenForPermissionsAndScopeResponse) MarshalToSizedBufferVT(dAtA []b
 		i -= len(m.unknownFields)
 		copy(dAtA[i:], m.unknownFields)
 	}
-	if m.Revoked {
-		i--
-		if m.Revoked {
-			dAtA[i] = 1
-		} else {
-			dAtA[i] = 0
-		}
-		i--
-		dAtA[i] = 0x30
-	}
-	if m.ExpiresAt != nil {
-		size, err := (*timestamppb1.Timestamp)(m.ExpiresAt).MarshalToSizedBufferVT(dAtA[:i])
-		if err != nil {
-			return 0, err
-		}
-		i -= size
-		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
-		i--
-		dAtA[i] = 0x2a
-	}
-	if m.IssuedAt != nil {
-		size, err := (*timestamppb1.Timestamp)(m.IssuedAt).MarshalToSizedBufferVT(dAtA[:i])
-		if err != nil {
-			return 0, err
-		}
-		i -= size
-		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
-		i--
-		dAtA[i] = 0x22
-	}
-	if len(m.Roles) > 0 {
-		for iNdEx := len(m.Roles) - 1; iNdEx >= 0; iNdEx-- {
-			i -= len(m.Roles[iNdEx])
-			copy(dAtA[i:], m.Roles[iNdEx])
-			i = protohelpers.EncodeVarint(dAtA, i, uint64(len(m.Roles[iNdEx])))
-			i--
-			dAtA[i] = 0x1a
-		}
-	}
 	if len(m.Token) > 0 {
 		i -= len(m.Token)
 		copy(dAtA[i:], m.Token)
 		i = protohelpers.EncodeVarint(dAtA, i, uint64(len(m.Token)))
-		i--
-		dAtA[i] = 0x12
-	}
-	if len(m.TokenId) > 0 {
-		i -= len(m.TokenId)
-		copy(dAtA[i:], m.TokenId)
-		i = protohelpers.EncodeVarint(dAtA, i, uint64(len(m.TokenId)))
 		i--
 		dAtA[i] = 0xa
 	}
 	return len(dAtA) - i, nil
 }
 
-func (m *GetTokenForPermissionsAndScopeRequest) SizeVT() (n int) {
+func (m *IssueTokenForPermissionsAndScopeRequest) SizeVT() (n int) {
 	if m == nil {
 		return 0
 	}
@@ -476,42 +398,21 @@ func (m *RequestedRoleClusterScope) SizeVT() (n int) {
 	return n
 }
 
-func (m *GetTokenForPermissionsAndScopeResponse) SizeVT() (n int) {
+func (m *IssueTokenForPermissionsAndScopeResponse) SizeVT() (n int) {
 	if m == nil {
 		return 0
 	}
 	var l int
 	_ = l
-	l = len(m.TokenId)
-	if l > 0 {
-		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
-	}
 	l = len(m.Token)
 	if l > 0 {
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
-	}
-	if len(m.Roles) > 0 {
-		for _, s := range m.Roles {
-			l = len(s)
-			n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
-		}
-	}
-	if m.IssuedAt != nil {
-		l = (*timestamppb1.Timestamp)(m.IssuedAt).SizeVT()
-		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
-	}
-	if m.ExpiresAt != nil {
-		l = (*timestamppb1.Timestamp)(m.ExpiresAt).SizeVT()
-		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
-	}
-	if m.Revoked {
-		n += 2
 	}
 	n += len(m.unknownFields)
 	return n
 }
 
-func (m *GetTokenForPermissionsAndScopeRequest) UnmarshalVT(dAtA []byte) error {
+func (m *IssueTokenForPermissionsAndScopeRequest) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -534,10 +435,10 @@ func (m *GetTokenForPermissionsAndScopeRequest) UnmarshalVT(dAtA []byte) error {
 		fieldNum := int32(wire >> 3)
 		wireType := int(wire & 0x7)
 		if wireType == 4 {
-			return fmt.Errorf("proto: GetTokenForPermissionsAndScopeRequest: wiretype end group for non-group")
+			return fmt.Errorf("proto: IssueTokenForPermissionsAndScopeRequest: wiretype end group for non-group")
 		}
 		if fieldNum <= 0 {
-			return fmt.Errorf("proto: GetTokenForPermissionsAndScopeRequest: illegal tag %d (wire type %d)", fieldNum, wire)
+			return fmt.Errorf("proto: IssueTokenForPermissionsAndScopeRequest: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
 		case 1:
@@ -799,7 +700,7 @@ func (m *RequestedRoleClusterScope) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *GetTokenForPermissionsAndScopeResponse) UnmarshalVT(dAtA []byte) error {
+func (m *IssueTokenForPermissionsAndScopeResponse) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -822,45 +723,13 @@ func (m *GetTokenForPermissionsAndScopeResponse) UnmarshalVT(dAtA []byte) error 
 		fieldNum := int32(wire >> 3)
 		wireType := int(wire & 0x7)
 		if wireType == 4 {
-			return fmt.Errorf("proto: GetTokenForPermissionsAndScopeResponse: wiretype end group for non-group")
+			return fmt.Errorf("proto: IssueTokenForPermissionsAndScopeResponse: wiretype end group for non-group")
 		}
 		if fieldNum <= 0 {
-			return fmt.Errorf("proto: GetTokenForPermissionsAndScopeResponse: illegal tag %d (wire type %d)", fieldNum, wire)
+			return fmt.Errorf("proto: IssueTokenForPermissionsAndScopeResponse: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
 		case 1:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field TokenId", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return protohelpers.ErrIntOverflow
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return protohelpers.ErrInvalidLength
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex < 0 {
-				return protohelpers.ErrInvalidLength
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.TokenId = string(dAtA[iNdEx:postIndex])
-			iNdEx = postIndex
-		case 2:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field Token", wireType)
 			}
@@ -892,130 +761,6 @@ func (m *GetTokenForPermissionsAndScopeResponse) UnmarshalVT(dAtA []byte) error 
 			}
 			m.Token = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
-		case 3:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Roles", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return protohelpers.ErrIntOverflow
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return protohelpers.ErrInvalidLength
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex < 0 {
-				return protohelpers.ErrInvalidLength
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.Roles = append(m.Roles, string(dAtA[iNdEx:postIndex]))
-			iNdEx = postIndex
-		case 4:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field IssuedAt", wireType)
-			}
-			var msglen int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return protohelpers.ErrIntOverflow
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				msglen |= int(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			if msglen < 0 {
-				return protohelpers.ErrInvalidLength
-			}
-			postIndex := iNdEx + msglen
-			if postIndex < 0 {
-				return protohelpers.ErrInvalidLength
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			if m.IssuedAt == nil {
-				m.IssuedAt = &timestamppb.Timestamp{}
-			}
-			if err := (*timestamppb1.Timestamp)(m.IssuedAt).UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
-				return err
-			}
-			iNdEx = postIndex
-		case 5:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field ExpiresAt", wireType)
-			}
-			var msglen int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return protohelpers.ErrIntOverflow
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				msglen |= int(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			if msglen < 0 {
-				return protohelpers.ErrInvalidLength
-			}
-			postIndex := iNdEx + msglen
-			if postIndex < 0 {
-				return protohelpers.ErrInvalidLength
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			if m.ExpiresAt == nil {
-				m.ExpiresAt = &timestamppb.Timestamp{}
-			}
-			if err := (*timestamppb1.Timestamp)(m.ExpiresAt).UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
-				return err
-			}
-			iNdEx = postIndex
-		case 6:
-			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Revoked", wireType)
-			}
-			var v int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return protohelpers.ErrIntOverflow
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				v |= int(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			m.Revoked = bool(v != 0)
 		default:
 			iNdEx = preIndex
 			skippy, err := protohelpers.Skip(dAtA[iNdEx:])
@@ -1038,7 +783,7 @@ func (m *GetTokenForPermissionsAndScopeResponse) UnmarshalVT(dAtA []byte) error 
 	}
 	return nil
 }
-func (m *GetTokenForPermissionsAndScopeRequest) UnmarshalVTUnsafe(dAtA []byte) error {
+func (m *IssueTokenForPermissionsAndScopeRequest) UnmarshalVTUnsafe(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -1061,10 +806,10 @@ func (m *GetTokenForPermissionsAndScopeRequest) UnmarshalVTUnsafe(dAtA []byte) e
 		fieldNum := int32(wire >> 3)
 		wireType := int(wire & 0x7)
 		if wireType == 4 {
-			return fmt.Errorf("proto: GetTokenForPermissionsAndScopeRequest: wiretype end group for non-group")
+			return fmt.Errorf("proto: IssueTokenForPermissionsAndScopeRequest: wiretype end group for non-group")
 		}
 		if fieldNum <= 0 {
-			return fmt.Errorf("proto: GetTokenForPermissionsAndScopeRequest: illegal tag %d (wire type %d)", fieldNum, wire)
+			return fmt.Errorf("proto: IssueTokenForPermissionsAndScopeRequest: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
 		case 1:
@@ -1338,7 +1083,7 @@ func (m *RequestedRoleClusterScope) UnmarshalVTUnsafe(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *GetTokenForPermissionsAndScopeResponse) UnmarshalVTUnsafe(dAtA []byte) error {
+func (m *IssueTokenForPermissionsAndScopeResponse) UnmarshalVTUnsafe(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -1361,49 +1106,13 @@ func (m *GetTokenForPermissionsAndScopeResponse) UnmarshalVTUnsafe(dAtA []byte) 
 		fieldNum := int32(wire >> 3)
 		wireType := int(wire & 0x7)
 		if wireType == 4 {
-			return fmt.Errorf("proto: GetTokenForPermissionsAndScopeResponse: wiretype end group for non-group")
+			return fmt.Errorf("proto: IssueTokenForPermissionsAndScopeResponse: wiretype end group for non-group")
 		}
 		if fieldNum <= 0 {
-			return fmt.Errorf("proto: GetTokenForPermissionsAndScopeResponse: illegal tag %d (wire type %d)", fieldNum, wire)
+			return fmt.Errorf("proto: IssueTokenForPermissionsAndScopeResponse: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
 		case 1:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field TokenId", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return protohelpers.ErrIntOverflow
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return protohelpers.ErrInvalidLength
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex < 0 {
-				return protohelpers.ErrInvalidLength
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			var stringValue string
-			if intStringLen > 0 {
-				stringValue = unsafe.String(&dAtA[iNdEx], intStringLen)
-			}
-			m.TokenId = stringValue
-			iNdEx = postIndex
-		case 2:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field Token", wireType)
 			}
@@ -1439,134 +1148,6 @@ func (m *GetTokenForPermissionsAndScopeResponse) UnmarshalVTUnsafe(dAtA []byte) 
 			}
 			m.Token = stringValue
 			iNdEx = postIndex
-		case 3:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Roles", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return protohelpers.ErrIntOverflow
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return protohelpers.ErrInvalidLength
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex < 0 {
-				return protohelpers.ErrInvalidLength
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			var stringValue string
-			if intStringLen > 0 {
-				stringValue = unsafe.String(&dAtA[iNdEx], intStringLen)
-			}
-			m.Roles = append(m.Roles, stringValue)
-			iNdEx = postIndex
-		case 4:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field IssuedAt", wireType)
-			}
-			var msglen int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return protohelpers.ErrIntOverflow
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				msglen |= int(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			if msglen < 0 {
-				return protohelpers.ErrInvalidLength
-			}
-			postIndex := iNdEx + msglen
-			if postIndex < 0 {
-				return protohelpers.ErrInvalidLength
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			if m.IssuedAt == nil {
-				m.IssuedAt = &timestamppb.Timestamp{}
-			}
-			if err := (*timestamppb1.Timestamp)(m.IssuedAt).UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
-				return err
-			}
-			iNdEx = postIndex
-		case 5:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field ExpiresAt", wireType)
-			}
-			var msglen int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return protohelpers.ErrIntOverflow
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				msglen |= int(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			if msglen < 0 {
-				return protohelpers.ErrInvalidLength
-			}
-			postIndex := iNdEx + msglen
-			if postIndex < 0 {
-				return protohelpers.ErrInvalidLength
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			if m.ExpiresAt == nil {
-				m.ExpiresAt = &timestamppb.Timestamp{}
-			}
-			if err := (*timestamppb1.Timestamp)(m.ExpiresAt).UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
-				return err
-			}
-			iNdEx = postIndex
-		case 6:
-			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Revoked", wireType)
-			}
-			var v int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return protohelpers.ErrIntOverflow
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				v |= int(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			m.Revoked = bool(v != 0)
 		default:
 			iNdEx = preIndex
 			skippy, err := protohelpers.Skip(dAtA[iNdEx:])
