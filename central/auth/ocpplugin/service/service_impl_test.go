@@ -23,7 +23,7 @@ import (
 )
 
 var (
-	testErr = errors.New("test error")
+	errDummy = errors.New("test error")
 
 	expectedExpiration = time.Date(1989, time.November, 9, 18, 10, 35, 987654321, time.UTC)
 )
@@ -60,7 +60,7 @@ func TestCreatePermissionSet(t *testing.T) {
 		"nil request, failed storage (no access permissions)": {
 			input:                 nil,
 			expectedPermissionSet: testPermissionSet(nil),
-			expectedStoreError:    testErr,
+			expectedStoreError:    errDummy,
 		},
 		"request with nil permissions, successful storage (no access permissions)": {
 			input:                 requestWithoutPermissions,
@@ -70,7 +70,7 @@ func TestCreatePermissionSet(t *testing.T) {
 		"request with nil permissions, failed storage (no access permissions)": {
 			input:                 requestWithoutPermissions,
 			expectedPermissionSet: testPermissionSet(nil),
-			expectedStoreError:    testErr,
+			expectedStoreError:    errDummy,
 		},
 		"request for no permissions, successful storage (no access permissions)": {
 			input:                 requestForNoPermissions,
@@ -80,7 +80,7 @@ func TestCreatePermissionSet(t *testing.T) {
 		"request for no permissions, failed storage (no access permissions)": {
 			input:                 requestForNoPermissions,
 			expectedPermissionSet: testPermissionSet(make([]string, 0)),
-			expectedStoreError:    testErr,
+			expectedStoreError:    errDummy,
 		},
 		"request for one permissions, successful storage": {
 			input:                 requestForOnePermission,
@@ -90,7 +90,7 @@ func TestCreatePermissionSet(t *testing.T) {
 		"request for one permissions, failed storage": {
 			input:                 requestForOnePermission,
 			expectedPermissionSet: testPermissionSet(onePermission),
-			expectedStoreError:    testErr,
+			expectedStoreError:    errDummy,
 		},
 		"request for many permissions, successful storage": {
 			input:                 requestForManyPermissions,
@@ -100,7 +100,7 @@ func TestCreatePermissionSet(t *testing.T) {
 		"request for many permissions, failed storage": {
 			input:                 requestForManyPermissions,
 			expectedPermissionSet: testPermissionSet(manyPermissions),
-			expectedStoreError:    testErr,
+			expectedStoreError:    errDummy,
 		},
 	} {
 		t.Run(name, func(it *testing.T) {
@@ -188,7 +188,7 @@ func TestCreateAccessScope(t *testing.T) {
 		"nil input, failed storage (empty scope)": {
 			input:               nil,
 			expectedAccessScope: testAccessScope(nil),
-			expectedStoreError:  testErr,
+			expectedStoreError:  errDummy,
 		},
 		"input with nil scope, successful storage (empty scope)": {
 			input:               &central.IssueTokenForPermissionsAndScopeRequest{},
@@ -198,7 +198,7 @@ func TestCreateAccessScope(t *testing.T) {
 		"input with nil scope, failed storage (empty scope)": {
 			input:               &central.IssueTokenForPermissionsAndScopeRequest{},
 			expectedAccessScope: testAccessScope(nil),
-			expectedStoreError:  testErr,
+			expectedStoreError:  errDummy,
 		},
 		"input with empty scope, successful storage (empty scope)": {
 			input: &central.IssueTokenForPermissionsAndScopeRequest{
@@ -212,7 +212,7 @@ func TestCreateAccessScope(t *testing.T) {
 				ClusterScopes: make([]*central.RequestedRoleClusterScope, 0),
 			},
 			expectedAccessScope: testAccessScope(make([]*central.RequestedRoleClusterScope, 0)),
-			expectedStoreError:  testErr,
+			expectedStoreError:  errDummy,
 		},
 		"input with single full cluster scope, successful storage": {
 			input: &central.IssueTokenForPermissionsAndScopeRequest{
@@ -226,7 +226,7 @@ func TestCreateAccessScope(t *testing.T) {
 				ClusterScopes: []*central.RequestedRoleClusterScope{requestFullCluster},
 			},
 			expectedAccessScope: testAccessScope([]*central.RequestedRoleClusterScope{requestFullCluster}),
-			expectedStoreError:  testErr,
+			expectedStoreError:  errDummy,
 		},
 		"input with single namespace scope, successful storage": {
 			input: &central.IssueTokenForPermissionsAndScopeRequest{
@@ -240,7 +240,7 @@ func TestCreateAccessScope(t *testing.T) {
 				ClusterScopes: []*central.RequestedRoleClusterScope{requestSingleNamespace},
 			},
 			expectedAccessScope: testAccessScope([]*central.RequestedRoleClusterScope{requestSingleNamespace}),
-			expectedStoreError:  testErr,
+			expectedStoreError:  errDummy,
 		},
 		"input with multi namespace scope, successful storage": {
 			input: &central.IssueTokenForPermissionsAndScopeRequest{
@@ -254,7 +254,7 @@ func TestCreateAccessScope(t *testing.T) {
 				ClusterScopes: []*central.RequestedRoleClusterScope{requestMultipleNamespaces},
 			},
 			expectedAccessScope: testAccessScope([]*central.RequestedRoleClusterScope{requestMultipleNamespaces}),
-			expectedStoreError:  testErr,
+			expectedStoreError:  errDummy,
 		},
 		"input with multi cluster-namespace scope, successful storage": {
 			input: &central.IssueTokenForPermissionsAndScopeRequest{
@@ -280,7 +280,7 @@ func TestCreateAccessScope(t *testing.T) {
 				requestSingleNamespace,
 				requestMultipleNamespaces,
 			}),
-			expectedStoreError: testErr,
+			expectedStoreError: errDummy,
 		},
 		"input with complex scope mix, successful storage": {
 			input: &central.IssueTokenForPermissionsAndScopeRequest{
@@ -310,7 +310,7 @@ func TestCreateAccessScope(t *testing.T) {
 				requestSingleNamespace,
 				requestMultipleNamespaces,
 			}),
-			expectedStoreError: testErr,
+			expectedStoreError: errDummy,
 		},
 	} {
 		t.Run(name, func(it *testing.T) {
@@ -421,7 +421,7 @@ func TestCreateRole(t *testing.T) {
 			expectedPermissionSet:  testPermissionSet(make([]string, 0)),
 			expectedAccessScope:    testAccessScope(make([]*central.RequestedRoleClusterScope, 0)),
 			expectedRole:           testRole(make([]string, 0), make([]*central.RequestedRoleClusterScope, 0)),
-			expectedRoleStoreError: testErr,
+			expectedRoleStoreError: errDummy,
 		},
 		"request for single full cluster access to deployments, successful storage": {
 			input: &central.IssueTokenForPermissionsAndScopeRequest{
@@ -441,7 +441,7 @@ func TestCreateRole(t *testing.T) {
 			expectedPermissionSet:  testPermissionSet(deploymentPermission),
 			expectedAccessScope:    testAccessScope([]*central.RequestedRoleClusterScope{requestFullCluster}),
 			expectedRole:           testRole(deploymentPermission, []*central.RequestedRoleClusterScope{requestFullCluster}),
-			expectedRoleStoreError: testErr,
+			expectedRoleStoreError: errDummy,
 		},
 		"request for single namespace access to deployments, successful storage": {
 			input: &central.IssueTokenForPermissionsAndScopeRequest{
@@ -461,7 +461,7 @@ func TestCreateRole(t *testing.T) {
 			expectedPermissionSet:  testPermissionSet(deploymentPermission),
 			expectedAccessScope:    testAccessScope([]*central.RequestedRoleClusterScope{requestSingleNamespace}),
 			expectedRole:           testRole(deploymentPermission, []*central.RequestedRoleClusterScope{requestSingleNamespace}),
-			expectedRoleStoreError: testErr,
+			expectedRoleStoreError: errDummy,
 		},
 	} {
 		t.Run(name, func(it *testing.T) {
@@ -678,7 +678,7 @@ func TestIssueTokenForPermissionsAndScope(t *testing.T) {
 			UpsertPermissionSet(
 				gomock.Any(),
 				protomock.GoMockMatcherEqualMessage(deploymentPS),
-			).Times(1).Return(testErr)
+			).Times(1).Return(errDummy)
 
 		rsp, err := svc.IssueTokenForPermissionsAndScope(t.Context(), input)
 		assert.Nil(it, rsp)
@@ -707,7 +707,7 @@ func TestIssueTokenForPermissionsAndScope(t *testing.T) {
 		}
 		mockIssuer.EXPECT().
 			Issue(gomock.Any(), expectedClaims).
-			Times(1).Return(nil, testErr)
+			Times(1).Return(nil, errDummy)
 
 		rsp, err := svc.IssueTokenForPermissionsAndScope(t.Context(), input)
 		assert.Nil(it, rsp)
