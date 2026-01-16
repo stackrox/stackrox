@@ -49,8 +49,8 @@ func (s *migrationTestSuite) SetupSuite() {
 	s.db = pghelper.ForT(s.T(), false)
 
 	pgutils.CreateTableFromModel(context.Background(), s.db.GetGormDB(), schema.CreateTableNetworkFlowsStmt)
-	s.oldStore1 = store.New(s.db.DB, cluster1, nil)
-	s.oldStore2 = store.New(s.db.DB, cluster2, nil)
+	s.oldStore1 = store.New(s.db.DB, cluster1)
+	s.oldStore2 = store.New(s.db.DB, cluster2)
 }
 
 func (s *migrationTestSuite) TestMigration() {
