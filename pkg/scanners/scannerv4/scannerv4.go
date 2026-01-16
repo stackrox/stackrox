@@ -144,6 +144,7 @@ func (s *scannerv4) ScanSBOM(ctx context.Context, sbomReader io.Reader, contentT
 
 	// TODO(ROX-30570): START Remove
 	// Read all data from the SBOM reader and throw it away (testing purposes only)
+	_ = ctx
 	dataB, err := io.ReadAll(sbomReader)
 	if err != nil {
 		return nil, fmt.Errorf("reading sbom data: %w", err)
