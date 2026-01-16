@@ -10,6 +10,7 @@
 package mocks
 
 import (
+	context "context"
 	io "io"
 	reflect "reflect"
 
@@ -187,18 +188,18 @@ func (mr *MockSBOMerMockRecorder) GetSBOM(image any) *gomock.Call {
 }
 
 // ScanSBOM mocks base method.
-func (m *MockSBOMer) ScanSBOM(reader io.Reader, mediatype string) (*v1.SBOMScanResponse, error) {
+func (m *MockSBOMer) ScanSBOM(ctx context.Context, reader io.Reader, mediatype string) (*v1.SBOMScanResponse, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ScanSBOM", reader, mediatype)
+	ret := m.ctrl.Call(m, "ScanSBOM", ctx, reader, mediatype)
 	ret0, _ := ret[0].(*v1.SBOMScanResponse)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // ScanSBOM indicates an expected call of ScanSBOM.
-func (mr *MockSBOMerMockRecorder) ScanSBOM(reader, mediatype any) *gomock.Call {
+func (mr *MockSBOMerMockRecorder) ScanSBOM(ctx, reader, mediatype any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ScanSBOM", reflect.TypeOf((*MockSBOMer)(nil).ScanSBOM), reader, mediatype)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ScanSBOM", reflect.TypeOf((*MockSBOMer)(nil).ScanSBOM), ctx, reader, mediatype)
 }
 
 // MockScannerSBOMer is a mock of ScannerSBOMer interface.
@@ -314,18 +315,18 @@ func (mr *MockScannerSBOMerMockRecorder) Name() *gomock.Call {
 }
 
 // ScanSBOM mocks base method.
-func (m *MockScannerSBOMer) ScanSBOM(reader io.Reader, mediatype string) (*v1.SBOMScanResponse, error) {
+func (m *MockScannerSBOMer) ScanSBOM(ctx context.Context, reader io.Reader, mediatype string) (*v1.SBOMScanResponse, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ScanSBOM", reader, mediatype)
+	ret := m.ctrl.Call(m, "ScanSBOM", ctx, reader, mediatype)
 	ret0, _ := ret[0].(*v1.SBOMScanResponse)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // ScanSBOM indicates an expected call of ScanSBOM.
-func (mr *MockScannerSBOMerMockRecorder) ScanSBOM(reader, mediatype any) *gomock.Call {
+func (mr *MockScannerSBOMerMockRecorder) ScanSBOM(ctx, reader, mediatype any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ScanSBOM", reflect.TypeOf((*MockScannerSBOMer)(nil).ScanSBOM), reader, mediatype)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ScanSBOM", reflect.TypeOf((*MockScannerSBOMer)(nil).ScanSBOM), ctx, reader, mediatype)
 }
 
 // Test mocks base method.

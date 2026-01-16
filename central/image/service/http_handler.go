@@ -24,6 +24,7 @@ import (
 	"github.com/stackrox/rox/pkg/images/types"
 	"github.com/stackrox/rox/pkg/images/utils"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/scanners"
 	scannerTypes "github.com/stackrox/rox/pkg/scanners/types"
 	"github.com/stackrox/rox/pkg/zip"
 	"google.golang.org/grpc/codes"
@@ -269,15 +270,8 @@ func addForceToEnrichmentContext(enrichmentCtx *enricher.EnrichmentContext) {
 
 // getScannerV4SBOMIntegration returns the SBOM interface of Scanner V4.
 func (h sbomGenHttpHandler) getScannerV4SBOMIntegration() (scannerTypes.SBOMer, error) {
-	scanners := h.integration.ScannerSet()
-	for _, scanner := range scanners.GetAll() {
-		if scanner.GetScanner().Type() == scannerTypes.ScannerV4 {
-			if scannerv4, ok := scanner.GetScanner().(scannerTypes.SBOMer); ok {
-				return scannerv4, nil
-			}
-		}
-	}
-	return nil, errors.New("Scanner V4 integration not found")
+	sbomer, _, err := getScannerV4SBOMIntegration(h.integration.ScannerSet())
+	return sbomer, err
 }
 
 // scannedByScannerV4 checks if image is scanned by Scanner V4.
@@ -327,4 +321,15 @@ func (h sbomGenHttpHandler) saveImageV2(imgV2 *storage.ImageV2) error {
 		return fmt.Errorf("saving image: %w", err)
 	}
 	return nil
+}
+
+func getScannerV4SBOMIntegration(scanners scanners.Set) (scannerTypes.SBOMer, *storage.DataSource, error) {
+	for _, scanner := range scanners.GetAll() {
+		if scanner.GetScanner().Type() == scannerTypes.ScannerV4 {
+			if scannerv4, ok := scanner.GetScanner().(scannerTypes.SBOMer); ok {
+				return scannerv4, scanner.DataSource(), nil
+			}
+		}
+	}
+	return nil, nil, errors.New("Scanner V4 integration not found")
 }

@@ -1,6 +1,7 @@
 package types
 
 import (
+	"context"
 	"io"
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -40,7 +41,7 @@ type SBOMer interface {
 	GetSBOM(image *storage.Image) ([]byte, bool, error)
 
 	// ScanSBOM to match vulnerabilities to components found in an SBOM.
-	ScanSBOM(reader io.Reader, mediatype string) (*v1.SBOMScanResponse, error)
+	ScanSBOM(ctx context.Context, reader io.Reader, mediatype string) (*v1.SBOMScanResponse, error)
 }
 
 // ScannerSBOMer represents a Scanner with SBOM generation capabilities. This
