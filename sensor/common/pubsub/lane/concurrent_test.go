@@ -237,6 +237,10 @@ func (s *concurrentLaneSuite) TestErrorHandling() {
 			defer errorReturned.Signal()
 			return expectedErr
 		}))
+		initialCounter := testutil.ToFloat64(metrics.GetConsumerOperationMetric().WithLabelValues(
+			pubsub.DefaultLane.String(),
+			pubsub.DefaultTopic.String(),
+			metrics.ConsumerError.String()))
 		assert.NoError(s.T(), lane.Publish(&concurrentTestEvent{data: "error event"}))
 		// Give time for error to be handled
 		select {
@@ -249,22 +253,26 @@ func (s *concurrentLaneSuite) TestErrorHandling() {
 				pubsub.DefaultLane.String(),
 				pubsub.DefaultTopic.String(),
 				metrics.ConsumerError.String())
-			return testutil.ToFloat64(counter) == 1
+			return testutil.ToFloat64(counter) > initialCounter
 		}, 100*time.Millisecond, 10*time.Millisecond)
 		lane.Stop()
 	})
 	s.Run("publish to topic with no consumers should log error", func() {
 		lane := NewConcurrentLane(pubsub.DefaultLane).NewLane()
 		assert.NotNil(s.T(), lane)
-		// Publish to topic with no consumers
 		unknownTopic := pubsub.Topic(999)
+		initialCounter := testutil.ToFloat64(metrics.GetConsumerOperationMetric().WithLabelValues(
+			pubsub.DefaultLane.String(),
+			unknownTopic.String(),
+			metrics.ConsumerError.String()))
+		// Publish to topic with no consumers
 		assert.NoError(s.T(), lane.Publish(&concurrentTestEvent{customTopic: &unknownTopic}))
 		assert.Eventually(s.T(), func() bool {
 			counter := metrics.GetConsumerOperationMetric().WithLabelValues(
 				pubsub.DefaultLane.String(),
 				unknownTopic.String(),
 				metrics.NoConsumers.String())
-			return testutil.ToFloat64(counter) == 1
+			return testutil.ToFloat64(counter) > initialCounter
 		}, 100*time.Millisecond, 10*time.Millisecond)
 		lane.Stop()
 	})

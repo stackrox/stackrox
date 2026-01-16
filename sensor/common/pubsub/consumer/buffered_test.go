@@ -205,7 +205,7 @@ func (s *bufferedConsumerSuite) TestConsume() {
 		errC := consumer.Consume(&waitable, &testEvent{data: "test data"})
 
 		select {
-		case _ = <-errC:
+		case <-errC:
 			// error or nil are both acceptable because the select chooses a
 			// random case path when the stop signal and the writing in the
 			// channel are both eligible at the same time.

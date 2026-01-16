@@ -175,8 +175,10 @@ func (l *concurrentLane) handleEvent(event pubsub.Event) {
 			// TODO: Consider adding a timout here
 			select {
 			case err := <-errC:
-				consumerError.Store(true)
-				l.writeToErrChannel(err)
+				if err != nil {
+					consumerError.Store(true)
+					l.writeToErrChannel(err)
+				}
 			case <-l.stopper.Flow().StopRequested():
 			}
 		}()
