@@ -264,7 +264,7 @@ func GetNodePolicy() *storage.Policy {
 		PolicyVersion:      "1.1",
 		PolicySections: []*storage.PolicySection{{
 			PolicyGroups: []*storage.PolicyGroup{{
-				FieldName: "Node File Path",
+				FieldName: "Actual Path",
 				Values: []*storage.PolicyValue{{
 					Value: "/etc/passwd",
 				}},
