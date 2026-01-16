@@ -1881,6 +1881,53 @@ netpol:
       - server-name
       - token-file
       - use-current-k8s-context
+sbom:
+  PERSISTENT_FLAGS:
+    - timeout
+  INHERITED_FLAGS:
+    - ca
+    - direct-grpc
+    - endpoint
+    - force-http1
+    - help
+    - insecure
+    - insecure-skip-tls-verify
+    - no-color
+    - password
+    - plaintext
+    - server-name
+    - token-file
+    - use-current-k8s-context
+  scan:
+    LOCAL_FLAGS:
+      - content-type
+      - fail
+      - file
+      - severity
+    PERSISTENT_FLAGS:
+      - compact-output
+      - headers
+      - headers-as-comments
+      - merge-output
+      - no-header
+      - output
+      - required-headers
+      - row-jsonpath-expressions
+    INHERITED_FLAGS:
+      - ca
+      - direct-grpc
+      - endpoint
+      - force-http1
+      - help
+      - insecure
+      - insecure-skip-tls-verify
+      - no-color
+      - password
+      - plaintext
+      - server-name
+      - timeout
+      - token-file
+      - use-current-k8s-context
 scanner:
   INHERITED_FLAGS:
     - ca
