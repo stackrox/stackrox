@@ -8,6 +8,8 @@ import TbodyUnified from 'Components/TableStateTemplates/TbodyUnified';
 import type { UseURLSortResult } from 'hooks/useURLSort';
 import useSet from 'hooks/useSet';
 import type { TableUIState } from 'utils/getTableUIState';
+import { generateVisibilityForColumns, getHiddenColumnCount } from 'hooks/useManagedColumns';
+import type { ManagedColumns } from 'hooks/useManagedColumns';
 
 import type { CveTableRow } from '../aggregateUtils';
 import {
@@ -19,18 +21,56 @@ import {
 import { formatEpssProbabilityAsPercent } from '../../WorkloadCves/Tables/table.utils';
 import VirtualMachineComponentsTable from './VirtualMachineComponentsTable';
 
+export const tableId = 'VirtualMachineCvesVulnerabilitiesTable';
+export const defaultColumns = {
+    rowExpansion: {
+        title: 'Row expansion',
+        isShownByDefault: true,
+        isUntoggleAble: true,
+    },
+    cve: {
+        title: 'CVE',
+        isShownByDefault: true,
+        isUntoggleAble: true,
+    },
+    cveSeverity: {
+        title: 'CVE severity',
+        isShownByDefault: true,
+    },
+    cveStatus: {
+        title: 'CVE status',
+        isShownByDefault: true,
+    },
+    cvss: {
+        title: 'CVSS',
+        isShownByDefault: true,
+    },
+    epssProbability: {
+        title: 'EPSS probability',
+        isShownByDefault: true,
+    },
+    affectedComponents: {
+        title: 'Affected components',
+        isShownByDefault: true,
+    },
+} as const;
+
 export type VirtualMachineVulnerabilitiesTableProps = {
     tableState: TableUIState<CveTableRow>;
     getSortParams: UseURLSortResult['getSortParams'];
     onClearFilters: () => void;
+    tableConfig: ManagedColumns<keyof typeof defaultColumns>['columns'];
 };
 
 function VirtualMachineVulnerabilitiesTable({
     tableState,
     getSortParams,
     onClearFilters,
+    tableConfig,
 }: VirtualMachineVulnerabilitiesTableProps) {
-    const colSpan = 7;
+    const getVisibilityClass = generateVisibilityForColumns(tableConfig);
+    const hiddenColumnCount = getHiddenColumnCount(tableConfig);
+    const colSpan = Object.values(defaultColumns).length - hiddenColumnCount;
     const expandedRowSet = useSet<string>();
 
     return (
@@ -42,13 +82,32 @@ function VirtualMachineVulnerabilitiesTable({
         >
             <Thead>
                 <Tr>
-                    <ExpandRowTh />
-                    <Th sort={getSortParams(CVE_SORT_FIELD)}>CVE</Th>
-                    <Th sort={getSortParams(CVE_SEVERITY_SORT_FIELD)}>Severity</Th>
-                    <Th>CVE status</Th>
-                    <Th sort={getSortParams(CVSS_SORT_FIELD)}>CVSS</Th>
-                    <Th sort={getSortParams(CVE_EPSS_PROBABILITY_SORT_FIELD)}>EPSS probability</Th>
-                    <Th>Affected components</Th>
+                    <ExpandRowTh className={getVisibilityClass('rowExpansion')} />
+                    <Th className={getVisibilityClass('cve')} sort={getSortParams(CVE_SORT_FIELD)}>
+                        CVE
+                    </Th>
+                    <Th
+                        className={getVisibilityClass('cveSeverity')}
+                        sort={getSortParams(CVE_SEVERITY_SORT_FIELD)}
+                    >
+                        CVE severity
+                    </Th>
+                    <Th className={getVisibilityClass('cveStatus')}>CVE status</Th>
+                    <Th
+                        className={getVisibilityClass('cvss')}
+                        sort={getSortParams(CVSS_SORT_FIELD)}
+                    >
+                        CVSS
+                    </Th>
+                    <Th
+                        className={getVisibilityClass('epssProbability')}
+                        sort={getSortParams(CVE_EPSS_PROBABILITY_SORT_FIELD)}
+                    >
+                        EPSS probability
+                    </Th>
+                    <Th className={getVisibilityClass('affectedComponents')}>
+                        Affected components
+                    </Th>
                 </Tr>
             </Thead>
             <TbodyUnified
@@ -68,6 +127,7 @@ function VirtualMachineVulnerabilitiesTable({
                             <Tbody key={vulnerability.cve} isExpanded={isExpanded}>
                                 <Tr>
                                     <Td
+                                        className={getVisibilityClass('rowExpansion')}
                                         expand={{
                                             rowIndex,
                                             isExpanded,
@@ -75,36 +135,50 @@ function VirtualMachineVulnerabilitiesTable({
                                                 expandedRowSet.toggle(vulnerability.cve),
                                         }}
                                     />
-                                    <Td dataLabel="CVE">{vulnerability.cve} </Td>
-                                    <Td dataLabel="Severity">
+                                    <Td className={getVisibilityClass('cve')} dataLabel="CVE">
+                                        {vulnerability.cve}{' '}
+                                    </Td>
+                                    <Td
+                                        className={getVisibilityClass('cveSeverity')}
+                                        dataLabel="CVE severity"
+                                    >
                                         <VulnerabilitySeverityIconText
                                             severity={vulnerability.severity}
                                         />
                                     </Td>
-                                    <Td dataLabel="CVE status">
+                                    <Td
+                                        className={getVisibilityClass('cveStatus')}
+                                        dataLabel="CVE status"
+                                    >
                                         <VulnerabilityFixableIconText
                                             isFixable={vulnerability.isFixable}
                                         />
                                     </Td>
-                                    <Td dataLabel="CVSS">
+                                    <Td className={getVisibilityClass('cvss')} dataLabel="CVSS">
                                         <CvssFormatted
                                             cvss={vulnerability.cvss}
                                             scoreVersion="v3"
                                         />
                                     </Td>
-                                    <Td dataLabel="EPSS probability">
+                                    <Td
+                                        className={getVisibilityClass('epssProbability')}
+                                        dataLabel="EPSS probability"
+                                    >
                                         {formatEpssProbabilityAsPercent(
                                             vulnerability.epssProbability
                                         )}
                                     </Td>
-                                    <Td dataLabel="Affected components">
+                                    <Td
+                                        className={getVisibilityClass('affectedComponents')}
+                                        dataLabel="Affected components"
+                                    >
                                         {vulnerability.affectedComponents.length === 1
                                             ? vulnerability.affectedComponents[0].name
                                             : `${vulnerability.affectedComponents.length} components`}
                                     </Td>
                                 </Tr>
                                 <Tr isExpanded={isExpanded}>
-                                    <Td />
+                                    <Td className={getVisibilityClass('rowExpansion')} />
                                     <Td colSpan={colSpan - 1}>
                                         <ExpandableRowContent>
                                             <VirtualMachineComponentsTable

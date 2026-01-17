@@ -3,6 +3,8 @@ import {
     generateNameWithDate,
     getHelperElementByLabel,
     getInputByLabel,
+    getSelectButtonByLabel,
+    getSelectOption,
 } from '../../helpers/formHelpers';
 import sampleCert from '../../helpers/sampleCert';
 import fakeGCPServiceAccount from '../../helpers/fakeGCPServiceAccount';
@@ -44,7 +46,6 @@ describe('Notifier Integrations', () => {
             // Step 1, check empty fields
             getInputByLabel('Integration name').click().blur();
             getInputByLabel('AWS account number').click().blur();
-            getInputByLabel('AWS region').focus().blur(); // focus, then blur, select in order to trigger validation
             getInputByLabel('Access key ID').click().blur();
             getInputByLabel('Secret access key').click().blur();
 
@@ -52,7 +53,6 @@ describe('Notifier Integrations', () => {
             getHelperElementByLabel('AWS account number').contains(
                 'An AWS account number is required'
             );
-            getHelperElementByLabel('AWS region').contains('An AWS region is required');
             getHelperElementByLabel('Access key ID').contains('An access key ID is required');
             getHelperElementByLabel('Secret access key').contains(
                 'A secret access key is required'
@@ -77,7 +77,8 @@ describe('Notifier Integrations', () => {
 
             // Step 3, check fields for invalid formats
             getInputByLabel('Integration name').clear().type(integrationName);
-            getInputByLabel('AWS region').select('US East (N. Virginia) us-east-1');
+            getSelectButtonByLabel('AWS region').click();
+            getSelectOption('US East (N. Virginia) us-east-1').click();
             getInputByLabel('Access key ID').click().type('AKIA5VNQSYCDODH7VKMK');
             getInputByLabel('Secret access key')
                 .click()

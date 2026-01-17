@@ -58,10 +58,10 @@ jobs:
 
           matrix="$(jq '.push_main_multiarch_manifests.name += ["RHACS_BRANDING", "STACKROX_BRANDING"]' <<< "$matrix")"
 
-          matrix="$(jq '.build_and_push_operator.name += ["RHACS_BRANDING"]' <<< "$matrix")"
+          matrix="$(jq '.build_and_push_operator.name += ["RHACS_BRANDING", "STACKROX_BRANDING"]' <<< "$matrix")"
           matrix="$(jq '.build_and_push_operator.arch += ["amd64", "arm64"]' <<< "$matrix")"
 
-          matrix="$(jq '.push_operator_multiarch_manifests.name += ["RHACS_BRANDING"]' <<< "$matrix")"
+          matrix="$(jq '.push_operator_multiarch_manifests.name += ["RHACS_BRANDING", "STACKROX_BRANDING"]' <<< "$matrix")"
           matrix="$(jq '.push_operator_multiarch_manifests.archs = [.build_and_push_operator.arch | join(",")]' <<< "$matrix")"
 
           matrix="$(jq '.scan_images_with_roxctl.name += ["RHACS_BRANDING", "STACKROX_BRANDING"]' <<< "$matrix")"
@@ -607,6 +607,8 @@ jobs:
         QUAY_RHACS_ENG_RW_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RW_USERNAME }}
         QUAY_RHACS_ENG_RW_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RW_PASSWORD }}
         QUAY_RHACS_ENG_BEARER_TOKEN: ${{ secrets.QUAY_RHACS_ENG_BEARER_TOKEN }}
+        QUAY_STACKROX_IO_RW_USERNAME: ${{ secrets.QUAY_STACKROX_IO_RW_USERNAME }}
+        QUAY_STACKROX_IO_RW_PASSWORD: ${{ secrets.QUAY_STACKROX_IO_RW_PASSWORD }}
     strategy:
       fail-fast: false
       matrix: ${{ fromJson(needs.define-job-matrix.outputs.matrix).build_and_push_operator }}
@@ -640,18 +642,28 @@ jobs:
       - name: PR labels
         uses: joerick/pr-labels-action@v1.0.9
 
-      - name: Setup Go build environment
+      - name: Setup Go release build environment
         if: contains(github.event.pull_request.labels.*.name, 'ci-release-build')
         run: echo "GOTAGS=release" >> "$GITHUB_ENV"
+
+      - name: Setup Go RHACS build environment
+        if: matrix.name == 'RHACS_BRANDING'
+        run: echo "QUAY_ORG=rhacs-eng" >> "$GITHUB_ENV"
+
+      - name: Setup Go StackRox build environment
+        if: matrix.name == 'STACKROX_BRANDING'
+        run: echo "QUAY_ORG=stackrox-io" >> "$GITHUB_ENV"
 
       - name: Docker login
         # Skip for external contributions.
         if: |
           github.event_name == 'push' || !github.event.pull_request.head.repo.fork
         run: |
-          ./scripts/ci/lib.sh registry_rw_login "quay.io/rhacs-eng"
+          ./scripts/ci/lib.sh registry_rw_login "quay.io/${QUAY_ORG}"
 
       - name: Build Operator Bundle image
+        if: |
+          matrix.name != 'STACKROX_BRANDING'
         run: |
           make -C operator/ bundle bundle-build
 
@@ -662,6 +674,15 @@ jobs:
 
       - name: Build Operator image
         run: |
+          # The first invocation builds native architecture dependencies, which helps avoid the following error,
+          # which otherwise happens when cross-building. It also needlessly builds the operator binary for the
+          # native architecture, but this is quick and more robust than trying to repeat the dependencies here
+          # or in a separate intermediate target.
+          #   + protoc-gen-go
+          #   go: cannot install cross-compiled binaries when GOBIN is set
+          CGO_ENABLED=0                           scripts/lib.sh retry 6 true make -C operator/ build
+          # Once the native architecture dependencies are installed by the above command, the following one
+          # simply builds the actual operator binary for the correct target architecture.
           CGO_ENABLED=0 GOARCH=${{ matrix.arch }} scripts/lib.sh retry 6 true make -C operator/ build docker-build
 
       - name: Login to docker.io to mitigate rate limiting on downloading images
@@ -678,7 +699,7 @@ jobs:
         uses: docker/setup-qemu-action@v3
 
       - name: Check that Operator image is runnable
-        run: docker run --rm --platform linux/${{ matrix.arch }} "quay.io/rhacs-eng/stackrox-operator:$(make --quiet --no-print-directory -C operator tag)" --help
+        run: docker run --rm --platform linux/${{ matrix.arch }} "quay.io/${QUAY_ORG}/stackrox-operator:$(make --quiet --no-print-directory -C operator tag)" --help
 
       - name: Push image
         # Skip for external contributions.
@@ -699,24 +720,24 @@ jobs:
             echo "Operator image push completed successfully"
 
       - name: Push bundle image
-        # Skip for external contributions.
+        # Skip for external contributions, and for upstream.
         if: |
-          github.event_name == 'push' || !github.event.pull_request.head.repo.fork
+          matrix.name != 'STACKROX_BRANDING' && (github.event_name == 'push' || !github.event.pull_request.head.repo.fork)
         run: |
           make -C operator/ docker-push-bundle | cat
 
       # Index image can only be built once bundle was pushed
       - name: Build index
-        # Skip for external contributions as the build relies on the previous image to be pushed.
+        # Skip for external contributions and for upstream, as the build relies on the previous image to be pushed.
         if: |
-          github.event_name == 'push' || !github.event.pull_request.head.repo.fork
+          matrix.name != 'STACKROX_BRANDING' && (github.event_name == 'push' || !github.event.pull_request.head.repo.fork)
         run: |
           make -C operator/ index-build
 
       - name: Push index image
-        # Skip for external contributions.
+        # Skip for external contributions, and for upstream.
         if: |
-          github.event_name == 'push' || !github.event.pull_request.head.repo.fork
+          matrix.name != 'STACKROX_BRANDING' && (github.event_name == 'push' || !github.event.pull_request.head.repo.fork)
         run: |
           make -C operator/ docker-push-index | cat
 
@@ -734,10 +755,11 @@ jobs:
     strategy:
       # Supports image builds (see Setup build env):
       # RHACS_BRANDING
+      # STACKROX_BRANDING
       fail-fast: false
       matrix: ${{ fromJson(needs.define-job-matrix.outputs.matrix).push_operator_multiarch_manifests }}
     env:
-      ROX_PRODUCT_BRANDING: ""
+      ROX_PRODUCT_BRANDING: ${{ matrix.name }}
     container:
       image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.1
       volumes:
@@ -748,22 +770,9 @@ jobs:
         QUAY_RHACS_ENG_RO_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
         QUAY_RHACS_ENG_RW_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RW_USERNAME }}
         QUAY_RHACS_ENG_RW_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RW_PASSWORD }}
+        QUAY_STACKROX_IO_RW_USERNAME: ${{ secrets.QUAY_STACKROX_IO_RW_USERNAME }}
+        QUAY_STACKROX_IO_RW_PASSWORD: ${{ secrets.QUAY_STACKROX_IO_RW_PASSWORD }}
     steps:
-    - name: Setup build env
-      run: |
-        case "${{ matrix.name }}" in
-          RHACS_BRANDING)
-            brand="RHACS_BRANDING"
-            ;;
-          *)
-            echo "Unsupported build: ${{ matrix.name }}"
-            exit 1
-        esac
-
-        {
-          echo "ROX_PRODUCT_BRANDING=${brand}"
-        } >> "$GITHUB_ENV"
-
     - name: Checkout
       uses: actions/checkout@v6
       with:

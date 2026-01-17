@@ -25,7 +25,7 @@ function PartialReportModal({ failedClusters = [], onDownload }: PartialReportMo
     const [perPage, setPerPage] = useState(20);
 
     const handleModalToggle = () => {
-        setIsModalOpen(!isModalOpen);
+        setIsModalOpen((prev) => !prev);
     };
 
     const startIndex = (page - 1) * perPage;

@@ -68,6 +68,8 @@ var (
 	AdvisoryName       = newFieldLabel("Advisory Name")
 	AdvisoryLink       = newFieldLabel("Advisory Link")
 
+	CVEInfo = newFieldLabel("CVE Info")
+
 	Component                      = newFieldLabel("Component")
 	ComponentID                    = newFieldLabel("Component ID")
 	ComponentVersion               = newFieldLabel("Component Version")
@@ -224,9 +226,9 @@ var (
 	ProcessContainerStartTime = newFieldLabel("Process Container Start Time")
 
 	// FileActivity Search fields
-	MountedFilePath = newFieldLabel("Mounted File Path")
-	NodeFilePath    = newFieldLabel("Node File Path")
-	FileOperation   = newFieldLabel("File Operation")
+	EffectivePath = newFieldLabel("Effective Path")
+	ActualPath    = newFieldLabel("Actual Path")
+	FileOperation = newFieldLabel("File Operation")
 
 	// ProcessListeningOnPort Search fields
 	Closed     = newFieldLabel("Closed")

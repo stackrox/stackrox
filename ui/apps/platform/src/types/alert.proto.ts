@@ -84,7 +84,11 @@ export type BaseAlert = {
     snoozeTill: string | null; // ISO 8601 date string
 };
 
-export type Violation = GenericViolation | K8sEventViolation | NetworkFlowViolation;
+export type Violation =
+    | GenericViolation
+    | K8sEventViolation
+    | NetworkFlowViolation
+    | FileAccessViolation;
 
 export type GenericViolation = {
     type: 'GENERIC';
@@ -119,6 +123,11 @@ export type NetworkFlowInfoEntity = {
     port: string | number; // int32 TODO verify is it just number?
 };
 
+export type FileAccessViolation = {
+    type: 'FILE_ACCESS';
+    fileAccess: FileAccess;
+} & BaseViolation;
+
 type BaseViolation = {
     type: ViolationType;
     message: string;
@@ -128,16 +137,16 @@ type BaseViolation = {
     time: string | null; // ISO 8601 date string
 };
 
-export type ViolationType = 'GENERIC' | 'K8S_EVENT' | 'NETWORK_FLOW' | 'NETWORK_POLICY';
+export type ViolationType =
+    | 'GENERIC'
+    | 'K8S_EVENT'
+    | 'NETWORK_FLOW'
+    | 'NETWORK_POLICY'
+    | 'FILE_ACCESS';
 
 export type ProcessViolation = {
     message: string;
     processes: ProcessIndicator[];
-};
-
-export type FileAccessViolation = {
-    message: string;
-    accesses: FileAccess[];
 };
 
 export type AlertEnforcement = {

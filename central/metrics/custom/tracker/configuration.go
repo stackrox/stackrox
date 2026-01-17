@@ -34,9 +34,10 @@ func (md MetricDescriptors) diff(another MetricDescriptors) (toAdd []MetricName,
 }
 
 type Configuration struct {
-	metrics  MetricDescriptors
-	filters  LabelFilters
-	toAdd    []MetricName
-	toDelete []MetricName
-	period   time.Duration
+	metrics        MetricDescriptors
+	includeFilters LabelFilters
+	excludeFilters LabelFilters
+	toAdd          []MetricName
+	toDelete       []MetricName
+	period         time.Duration
 }

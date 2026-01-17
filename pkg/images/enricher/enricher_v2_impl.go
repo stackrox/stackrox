@@ -20,6 +20,7 @@ import (
 	"github.com/stackrox/rox/pkg/images/integration"
 	"github.com/stackrox/rox/pkg/images/utils"
 	"github.com/stackrox/rox/pkg/integrationhealth"
+	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/protoutils"
@@ -52,7 +53,8 @@ type enricherV2Impl struct {
 	signatureVerifier          signatureVerifierForIntegrations
 	signatureFetcher           signatures.SignatureFetcher
 
-	imageGetter ImageGetterV2
+	baseImageGetter BaseImageGetterV2
+	imageGetter     ImageGetterV2
 
 	asyncRateLimiter *rate.Limiter
 
@@ -292,6 +294,17 @@ func (e *enricherV2Impl) EnrichImage(ctx context.Context, enrichContext Enrichme
 	updated = updated || didUpdateSigVerificationData
 
 	e.cvesSuppressor.EnrichImageV2WithSuppressedCVEs(imageV2)
+
+	if features.BaseImageDetection.Enabled() {
+		imageV2.BaseImageInfo, err = e.baseImageGetter(ctx, imageV2.GetMetadata().GetLayerShas())
+		if err != nil {
+			log.Warnw("Matching image with base images",
+				logging.FromContext(ctx),
+				logging.ImageID(imageV2.GetId()),
+				logging.Err(err),
+				logging.String("request_image", imageV2.GetName().GetFullName()))
+		}
+	}
 
 	if !errorList.Empty() {
 		errorList.AddError(delegateErr)

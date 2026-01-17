@@ -36,18 +36,19 @@ type aggregatedRecord struct {
 //			{"Z": {labels: {L2="Z"}, total: 2}}
 //	}
 type aggregator[F Finding] struct {
-	result  map[MetricName]map[aggregationKey]*aggregatedRecord
-	md      MetricDescriptors
-	lf      LabelFilters
-	getters LazyLabelGetters[F]
+	result         map[MetricName]map[aggregationKey]*aggregatedRecord
+	md             MetricDescriptors
+	includeFilters LabelFilters
+	excludeFilters LabelFilters
+	getters        LazyLabelGetters[F]
 }
 
-func makeAggregator[F Finding](md MetricDescriptors, lf LabelFilters, getters LazyLabelGetters[F]) *aggregator[F] {
-	aggregated := make(map[MetricName]map[aggregationKey]*aggregatedRecord)
+func makeAggregator[F Finding](md MetricDescriptors, includeFilters, excludeFilters LabelFilters, getters LazyLabelGetters[F]) *aggregator[F] {
+	result := make(map[MetricName]map[aggregationKey]*aggregatedRecord)
 	for metric := range md {
-		aggregated[metric] = make(map[aggregationKey]*aggregatedRecord)
+		result[metric] = make(map[aggregationKey]*aggregatedRecord)
 	}
-	return &aggregator[F]{aggregated, md, lf, getters}
+	return &aggregator[F]{result, md, includeFilters, excludeFilters, getters}
 }
 
 // count the finding in the aggregation result.
@@ -58,9 +59,12 @@ func (a *aggregator[F]) count(finding F) {
 	}
 
 	for metric, labels := range a.md {
-		// Apply label filters. It could, e.g., keep only "ACTIVE" alerts.
-		if !a.pass(finding, a.lf[metric]) {
-			// Ignore this finding for this metric.
+		// Apply include and exclude filters.
+		// It could, e.g., keep only "ACTIVE" alerts or drop "LOW_SEVERITY"
+		// alerts.
+		if !a.matchAll(finding, a.includeFilters[metric]) ||
+			a.matchAny(finding, a.excludeFilters[metric]) {
+			// Drop this finding for this metric.
 			continue
 		}
 
@@ -73,14 +77,31 @@ func (a *aggregator[F]) count(finding F) {
 	}
 }
 
-// pass checks if the finding labels pass the filters.
-func (a *aggregator[F]) pass(finding F, filters map[Label]*regexp.Regexp) bool {
+// matchAll returns true if all label values match the according filters.
+func (a *aggregator[F]) matchAll(finding F, filters map[Label]*regexp.Regexp) bool {
 	for label, pattern := range filters {
 		if !pattern.MatchString(a.getters[label](finding)) {
 			return false
 		}
 	}
 	return true
+}
+
+// matchAny returns true if any label value matches the according filters.
+func (a *aggregator[F]) matchAny(finding F, filters map[Label]*regexp.Regexp) bool {
+	for label, pattern := range filters {
+		if pattern.MatchString(a.getters[label](finding)) {
+			return true
+		}
+	}
+	return false
+}
+
+// reset clears the aggregation result without reallocating the maps.
+func (a *aggregator[F]) reset() {
+	for _, records := range a.result {
+		clear(records)
+	}
 }
 
 // makeAggregationKey computes an aggregation key according to the provided

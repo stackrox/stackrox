@@ -5,7 +5,9 @@ import (
 
 	"github.com/stackrox/rox/generated/internalapi/central"
 	virtualMachineV1 "github.com/stackrox/rox/generated/internalapi/virtualmachine/v1"
+	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/sensor/common/centralcaps"
 	"github.com/stackrox/rox/sensor/common/virtualmachine"
 	"github.com/stackrox/rox/sensor/kubernetes/eventpipeline/component"
 	"github.com/stackrox/rox/sensor/kubernetes/listener/resources/virtualmachine/dispatcher/mocks"
@@ -39,6 +41,7 @@ var _ suite.TearDownSubTest = (*virtualMachineSuite)(nil)
 
 func (s *virtualMachineSuite) SetupSubTest() {
 	s.T().Setenv(features.VirtualMachines.EnvVar(), "true")
+	centralcaps.Set([]centralsensor.CentralCapability{centralsensor.VirtualMachinesSupported})
 
 	s.mockCtrl = gomock.NewController(s.T())
 	s.store = mocks.NewMockvirtualMachineStore(s.mockCtrl)
@@ -47,6 +50,7 @@ func (s *virtualMachineSuite) SetupSubTest() {
 
 func (s *virtualMachineSuite) TearDownSubTest() {
 	s.mockCtrl.Finish()
+	centralcaps.Set(nil)
 }
 
 func (s *virtualMachineSuite) Test_VirtualMachineEvents() {
@@ -260,6 +264,14 @@ func (s *virtualMachineSuite) Test_VirtualMachineEvents() {
 					},
 				},
 			}),
+		},
+		"capability not supported": {
+			action: central.ResourceAction_CREATE_RESOURCE,
+			obj:    toUnstructured(newVirtualMachine(vmUID, vmName, vmNamespace, v1.VirtualMachineStatusStopped)),
+			expectFn: func() {
+				centralcaps.Set(nil)
+			},
+			expectedMsg: nil,
 		},
 	}
 	for tName, tCase := range cases {

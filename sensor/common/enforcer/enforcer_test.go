@@ -157,3 +157,143 @@ func TestProcessAlertResults(t *testing.T) {
 		})
 	}
 }
+
+func TestFileAccessAlertResults(t *testing.T) {
+	alert1 := fixtures.GetAlert()
+	alert1.GetDeployment().Id = "dep1"
+	alert1.ProcessViolation = nil
+	alert1.Violations = []*storage.Alert_Violation{
+		{
+			Type: storage.Alert_Violation_FILE_ACCESS,
+			MessageAttributes: &storage.Alert_Violation_FileAccess{
+				FileAccess: &storage.FileAccess{
+					Process: &storage.ProcessIndicator{
+						Id:    "pid1",
+						PodId: "pod1",
+					},
+				},
+			},
+		},
+	}
+
+	alert2 := fixtures.GetAlert()
+	alert2.GetDeployment().Id = "dep2"
+	alert2.ProcessViolation = nil
+	alert2.Violations = []*storage.Alert_Violation{
+		{
+			Type: storage.Alert_Violation_FILE_ACCESS,
+			MessageAttributes: &storage.Alert_Violation_FileAccess{
+				FileAccess: &storage.FileAccess{
+					Process: &storage.ProcessIndicator{
+						Id:    "pid2",
+						PodId: "pod2",
+					},
+				},
+			},
+		},
+	}
+
+	cases := []struct {
+		name                 string
+		action               central.ResourceAction
+		stage                storage.LifecycleStage
+		alerts               []alertEnforcementPair
+		expectedEnforcements []*central.SensorEnforcement
+	}{
+		{
+			name:   "update action, runtime lifecycle - no enforcement",
+			action: central.ResourceAction_UPDATE_RESOURCE,
+			stage:  storage.LifecycleStage_RUNTIME,
+			alerts: []alertEnforcementPair{
+				{
+					alert:       alert1,
+					enforcement: storage.EnforcementAction_KILL_POD_ENFORCEMENT,
+				},
+			},
+		},
+		{
+			name:   "create action, runtime lifecycle - 1 file access alert is enforced",
+			action: central.ResourceAction_CREATE_RESOURCE,
+			stage:  storage.LifecycleStage_RUNTIME,
+			alerts: []alertEnforcementPair{
+				{
+					alert:       alert1,
+					enforcement: storage.EnforcementAction_KILL_POD_ENFORCEMENT,
+				},
+			},
+			expectedEnforcements: []*central.SensorEnforcement{
+				{
+					Enforcement: storage.EnforcementAction_KILL_POD_ENFORCEMENT,
+					Resource: &central.SensorEnforcement_ContainerInstance{
+						ContainerInstance: &central.ContainerInstanceEnforcement{
+							PodId:                 alert1.GetViolations()[0].GetFileAccess().GetProcess().GetPodId(),
+							DeploymentEnforcement: generateDeploymentEnforcement(alert1),
+						},
+					},
+				},
+			},
+		},
+		{
+			name:   "create action, runtime lifecycle - 2 file access alerts are enforced",
+			action: central.ResourceAction_CREATE_RESOURCE,
+			stage:  storage.LifecycleStage_RUNTIME,
+			alerts: []alertEnforcementPair{
+				{
+					alert:       alert1,
+					enforcement: storage.EnforcementAction_KILL_POD_ENFORCEMENT,
+				},
+				{
+					alert:       alert2,
+					enforcement: storage.EnforcementAction_KILL_POD_ENFORCEMENT,
+				},
+			},
+			expectedEnforcements: []*central.SensorEnforcement{
+				{
+					Enforcement: storage.EnforcementAction_KILL_POD_ENFORCEMENT,
+					Resource: &central.SensorEnforcement_ContainerInstance{
+						ContainerInstance: &central.ContainerInstanceEnforcement{
+							PodId:                 alert1.GetViolations()[0].GetFileAccess().GetProcess().GetPodId(),
+							DeploymentEnforcement: generateDeploymentEnforcement(alert1),
+						},
+					},
+				},
+				{
+					Enforcement: storage.EnforcementAction_KILL_POD_ENFORCEMENT,
+					Resource: &central.SensorEnforcement_ContainerInstance{
+						ContainerInstance: &central.ContainerInstanceEnforcement{
+							PodId:                 alert2.GetViolations()[0].GetFileAccess().GetProcess().GetPodId(),
+							DeploymentEnforcement: generateDeploymentEnforcement(alert2),
+						},
+					},
+				},
+			},
+		},
+	}
+
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			enforcer := CreateEnforcer(nil).(*enforcer)
+
+			results := &central.AlertResults{}
+			for _, pair := range c.alerts {
+				pair.alert.Enforcement = &storage.Alert_Enforcement{
+					Action: pair.enforcement,
+				}
+				results.Alerts = append(results.Alerts, pair.alert)
+			}
+
+			enforcer.ProcessAlertResults(c.action, c.stage, results)
+			var foundEnforcements []*central.SensorEnforcement
+		LOOP:
+			for {
+				select {
+				case enforcement := <-enforcer.actionsC:
+					foundEnforcements = append(foundEnforcements, enforcement)
+				default:
+					break LOOP
+				}
+			}
+			protoassert.SlicesEqual(t, c.expectedEnforcements, foundEnforcements)
+		})
+	}
+}

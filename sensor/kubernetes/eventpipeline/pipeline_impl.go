@@ -9,11 +9,13 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/detector"
 	"github.com/stackrox/rox/sensor/common/message"
+	pubsubDispatcher "github.com/stackrox/rox/sensor/common/pubsub"
 	"github.com/stackrox/rox/sensor/common/reprocessor"
 	"github.com/stackrox/rox/sensor/common/store/resolver"
 	"github.com/stackrox/rox/sensor/kubernetes/eventpipeline/component"
@@ -23,12 +25,18 @@ var (
 	log = logging.LoggerForModule()
 )
 
+type pubSubPublisher interface {
+	Publish(pubsubDispatcher.Event) error
+}
+
 type eventPipeline struct {
 	output      component.OutputQueue
 	resolver    component.Resolver
 	listener    component.ContextListener
 	detector    detector.Detector
 	reprocessor reprocessor.Handler
+
+	pubsubDispatcher pubSubPublisher
 
 	offlineMode *atomic.Bool
 
@@ -181,12 +189,12 @@ func (p *eventPipeline) processReprocessDeployments() error {
 	if err := p.detector.ProcessReprocessDeployments(); err != nil {
 		return errors.Wrap(err, "reprocessing deployments")
 	}
-	msg := component.NewEvent()
+	msg := component.NewEventWithTopicAndLane(pubsubDispatcher.FromCentralResolverEventTopic, pubsubDispatcher.FromCentralResolverEventLane)
 	// TODO(ROX-14310): Add WithSkipResolving to the DeploymentResolution (Revert: https://github.com/stackrox/stackrox/pull/5551)
 	msg.AddDeploymentReference(resolver.ResolveAllDeployments(),
 		component.WithForceDetection())
 	msg.Context = p.getCurrentContext()
-	p.resolver.Send(msg)
+	p.sendEvent(msg)
 	return nil
 }
 
@@ -195,12 +203,12 @@ func (p *eventPipeline) processUpdatedImage(image *storage.Image) error {
 	if err := p.detector.ProcessUpdatedImage(image); err != nil {
 		return errors.Wrap(err, "updating image")
 	}
-	msg := component.NewEvent()
+	msg := component.NewEventWithTopicAndLane(pubsubDispatcher.FromCentralResolverEventTopic, pubsubDispatcher.FromCentralResolverEventLane)
 	msg.AddDeploymentReference(resolver.ResolveDeploymentsByImages(image),
 		component.WithForceDetection(),
 		component.WithSkipResolving())
 	msg.Context = p.getCurrentContext()
-	p.resolver.Send(msg)
+	p.sendEvent(msg)
 	return nil
 }
 
@@ -209,12 +217,12 @@ func (p *eventPipeline) processReprocessDeployment(req *central.ReprocessDeploym
 	if err := p.reprocessor.ProcessReprocessDeployments(req); err != nil {
 		return errors.Wrap(err, "reprocessing deployment")
 	}
-	msg := component.NewEvent()
+	msg := component.NewEventWithTopicAndLane(pubsubDispatcher.FromCentralResolverEventTopic, pubsubDispatcher.FromCentralResolverEventLane)
 	msg.AddDeploymentReference(resolver.ResolveDeploymentIds(req.GetDeploymentIds()...),
 		component.WithForceDetection(),
 		component.WithSkipResolving())
 	msg.Context = p.getCurrentContext()
-	p.resolver.Send(msg)
+	p.sendEvent(msg)
 	return nil
 }
 
@@ -232,11 +240,26 @@ func (p *eventPipeline) processInvalidateImageCache(req *central.InvalidateImage
 			},
 		}
 	}
-	msg := component.NewEvent()
+	msg := component.NewEventWithTopicAndLane(pubsubDispatcher.FromCentralResolverEventTopic, pubsubDispatcher.FromCentralResolverEventLane)
 	msg.AddDeploymentReference(resolver.ResolveDeploymentsByImages(keys...),
 		component.WithForceDetection(),
 		component.WithSkipResolving())
 	msg.Context = p.getCurrentContext()
-	p.resolver.Send(msg)
+	p.sendEvent(msg)
 	return nil
+}
+
+func (p *eventPipeline) sendEvent(msg *component.ResourceEvent) {
+	if features.SensorInternalPubSub.Enabled() {
+		if err := p.pubsubDispatcher.Publish(msg); err != nil {
+			log.Errorf("unable to publish event: topic=%q, lane=%q, deploymentRefs=%d, forwardMsgs=%d: %v",
+				msg.Topic().String(),
+				msg.Lane().String(),
+				len(msg.DeploymentReferences),
+				len(msg.ForwardMessages),
+				err)
+		}
+		return
+	}
+	p.resolver.Send(msg)
 }

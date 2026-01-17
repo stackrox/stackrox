@@ -52,7 +52,7 @@ describe('Exception Management - Approved False Positives Table', () => {
 
                 // Verify correct CVE filter
                 cy.get('td[data-label="Request details"] a:contains("View")').click();
-                cy.get(workloadSelectors.filterChipGroupItem('CVE', cveName));
+                cy.get(workloadSelectors.filterLabelGroupItem('CVE', cveName));
 
                 // Verify a link in the table containing the request
                 cy.get('td a').contains(requestName);

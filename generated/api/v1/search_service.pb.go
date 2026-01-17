@@ -22,7 +22,7 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-// Next available tag: 78
+// Next available tag: 80
 type SearchCategory int32
 
 const (

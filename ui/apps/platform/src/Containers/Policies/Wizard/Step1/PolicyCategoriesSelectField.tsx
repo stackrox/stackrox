@@ -34,7 +34,7 @@ function PolicyCategoriesSelectField(): ReactElement {
     const selectedCategories: string[] = (field.value as string[]) ?? [];
 
     const onToggle = () => {
-        setIsOpen(!isOpen);
+        setIsOpen((prev) => !prev);
     };
 
     const onSelect = (

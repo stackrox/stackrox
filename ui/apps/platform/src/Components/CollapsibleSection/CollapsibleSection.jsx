@@ -20,7 +20,7 @@ const CollapsibleSection = ({
     const [isOpen, setIsOpen] = useState(defaultOpen);
 
     function toggleOpen() {
-        setIsOpen(!isOpen);
+        setIsOpen((prev) => !prev);
     }
 
     const Icon = isOpen ? (
