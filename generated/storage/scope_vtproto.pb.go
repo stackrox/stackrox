@@ -43,9 +43,13 @@ func (m *Scope) CloneVT() *Scope {
 		return (*Scope)(nil)
 	}
 	r := new(Scope)
-	r.Cluster = m.Cluster
-	r.Namespace = m.Namespace
 	r.Label = m.Label.CloneVT()
+	if m.ClusterScope != nil {
+		r.ClusterScope = m.ClusterScope.(interface{ CloneVT() isScope_ClusterScope }).CloneVT()
+	}
+	if m.NamespaceScope != nil {
+		r.NamespaceScope = m.NamespaceScope.(interface{ CloneVT() isScope_NamespaceScope }).CloneVT()
+	}
 	if len(m.unknownFields) > 0 {
 		r.unknownFields = make([]byte, len(m.unknownFields))
 		copy(r.unknownFields, m.unknownFields)
@@ -55,6 +59,42 @@ func (m *Scope) CloneVT() *Scope {
 
 func (m *Scope) CloneMessageVT() proto.Message {
 	return m.CloneVT()
+}
+
+func (m *Scope_Cluster) CloneVT() isScope_ClusterScope {
+	if m == nil {
+		return (*Scope_Cluster)(nil)
+	}
+	r := new(Scope_Cluster)
+	r.Cluster = m.Cluster
+	return r
+}
+
+func (m *Scope_ClusterLabel) CloneVT() isScope_ClusterScope {
+	if m == nil {
+		return (*Scope_ClusterLabel)(nil)
+	}
+	r := new(Scope_ClusterLabel)
+	r.ClusterLabel = m.ClusterLabel.CloneVT()
+	return r
+}
+
+func (m *Scope_Namespace) CloneVT() isScope_NamespaceScope {
+	if m == nil {
+		return (*Scope_Namespace)(nil)
+	}
+	r := new(Scope_Namespace)
+	r.Namespace = m.Namespace
+	return r
+}
+
+func (m *Scope_NamespaceLabel) CloneVT() isScope_NamespaceScope {
+	if m == nil {
+		return (*Scope_NamespaceLabel)(nil)
+	}
+	r := new(Scope_NamespaceLabel)
+	r.NamespaceLabel = m.NamespaceLabel.CloneVT()
+	return r
 }
 
 func (this *Scope_Label) EqualVT(that *Scope_Label) bool {
@@ -85,11 +125,29 @@ func (this *Scope) EqualVT(that *Scope) bool {
 	} else if this == nil || that == nil {
 		return false
 	}
-	if this.Cluster != that.Cluster {
+	if this.ClusterScope == nil && that.ClusterScope != nil {
 		return false
+	} else if this.ClusterScope != nil {
+		if that.ClusterScope == nil {
+			return false
+		}
+		if !this.ClusterScope.(interface {
+			EqualVT(isScope_ClusterScope) bool
+		}).EqualVT(that.ClusterScope) {
+			return false
+		}
 	}
-	if this.Namespace != that.Namespace {
+	if this.NamespaceScope == nil && that.NamespaceScope != nil {
 		return false
+	} else if this.NamespaceScope != nil {
+		if that.NamespaceScope == nil {
+			return false
+		}
+		if !this.NamespaceScope.(interface {
+			EqualVT(isScope_NamespaceScope) bool
+		}).EqualVT(that.NamespaceScope) {
+			return false
+		}
 	}
 	if !this.Label.EqualVT(that.Label) {
 		return false
@@ -104,6 +162,90 @@ func (this *Scope) EqualMessageVT(thatMsg proto.Message) bool {
 	}
 	return this.EqualVT(that)
 }
+func (this *Scope_Cluster) EqualVT(thatIface isScope_ClusterScope) bool {
+	that, ok := thatIface.(*Scope_Cluster)
+	if !ok {
+		return false
+	}
+	if this == that {
+		return true
+	}
+	if this == nil && that != nil || this != nil && that == nil {
+		return false
+	}
+	if this.Cluster != that.Cluster {
+		return false
+	}
+	return true
+}
+
+func (this *Scope_Namespace) EqualVT(thatIface isScope_NamespaceScope) bool {
+	that, ok := thatIface.(*Scope_Namespace)
+	if !ok {
+		return false
+	}
+	if this == that {
+		return true
+	}
+	if this == nil && that != nil || this != nil && that == nil {
+		return false
+	}
+	if this.Namespace != that.Namespace {
+		return false
+	}
+	return true
+}
+
+func (this *Scope_ClusterLabel) EqualVT(thatIface isScope_ClusterScope) bool {
+	that, ok := thatIface.(*Scope_ClusterLabel)
+	if !ok {
+		return false
+	}
+	if this == that {
+		return true
+	}
+	if this == nil && that != nil || this != nil && that == nil {
+		return false
+	}
+	if p, q := this.ClusterLabel, that.ClusterLabel; p != q {
+		if p == nil {
+			p = &Scope_Label{}
+		}
+		if q == nil {
+			q = &Scope_Label{}
+		}
+		if !p.EqualVT(q) {
+			return false
+		}
+	}
+	return true
+}
+
+func (this *Scope_NamespaceLabel) EqualVT(thatIface isScope_NamespaceScope) bool {
+	that, ok := thatIface.(*Scope_NamespaceLabel)
+	if !ok {
+		return false
+	}
+	if this == that {
+		return true
+	}
+	if this == nil && that != nil || this != nil && that == nil {
+		return false
+	}
+	if p, q := this.NamespaceLabel, that.NamespaceLabel; p != q {
+		if p == nil {
+			p = &Scope_Label{}
+		}
+		if q == nil {
+			q = &Scope_Label{}
+		}
+		if !p.EqualVT(q) {
+			return false
+		}
+	}
+	return true
+}
+
 func (m *Scope_Label) MarshalVT() (dAtA []byte, err error) {
 	if m == nil {
 		return nil, nil
@@ -181,6 +323,24 @@ func (m *Scope) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 		i -= len(m.unknownFields)
 		copy(dAtA[i:], m.unknownFields)
 	}
+	if vtmsg, ok := m.NamespaceScope.(interface {
+		MarshalToSizedBufferVT([]byte) (int, error)
+	}); ok {
+		size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
+		if err != nil {
+			return 0, err
+		}
+		i -= size
+	}
+	if vtmsg, ok := m.ClusterScope.(interface {
+		MarshalToSizedBufferVT([]byte) (int, error)
+	}); ok {
+		size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
+		if err != nil {
+			return 0, err
+		}
+		i -= size
+	}
 	if m.Label != nil {
 		size, err := m.Label.MarshalToSizedBufferVT(dAtA[:i])
 		if err != nil {
@@ -191,23 +351,83 @@ func (m *Scope) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 		i--
 		dAtA[i] = 0x1a
 	}
-	if len(m.Namespace) > 0 {
-		i -= len(m.Namespace)
-		copy(dAtA[i:], m.Namespace)
-		i = protohelpers.EncodeVarint(dAtA, i, uint64(len(m.Namespace)))
-		i--
-		dAtA[i] = 0x12
-	}
-	if len(m.Cluster) > 0 {
-		i -= len(m.Cluster)
-		copy(dAtA[i:], m.Cluster)
-		i = protohelpers.EncodeVarint(dAtA, i, uint64(len(m.Cluster)))
-		i--
-		dAtA[i] = 0xa
-	}
 	return len(dAtA) - i, nil
 }
 
+func (m *Scope_Cluster) MarshalToVT(dAtA []byte) (int, error) {
+	size := m.SizeVT()
+	return m.MarshalToSizedBufferVT(dAtA[:size])
+}
+
+func (m *Scope_Cluster) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	i -= len(m.Cluster)
+	copy(dAtA[i:], m.Cluster)
+	i = protohelpers.EncodeVarint(dAtA, i, uint64(len(m.Cluster)))
+	i--
+	dAtA[i] = 0xa
+	return len(dAtA) - i, nil
+}
+func (m *Scope_Namespace) MarshalToVT(dAtA []byte) (int, error) {
+	size := m.SizeVT()
+	return m.MarshalToSizedBufferVT(dAtA[:size])
+}
+
+func (m *Scope_Namespace) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	i -= len(m.Namespace)
+	copy(dAtA[i:], m.Namespace)
+	i = protohelpers.EncodeVarint(dAtA, i, uint64(len(m.Namespace)))
+	i--
+	dAtA[i] = 0x12
+	return len(dAtA) - i, nil
+}
+func (m *Scope_ClusterLabel) MarshalToVT(dAtA []byte) (int, error) {
+	size := m.SizeVT()
+	return m.MarshalToSizedBufferVT(dAtA[:size])
+}
+
+func (m *Scope_ClusterLabel) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	if m.ClusterLabel != nil {
+		size, err := m.ClusterLabel.MarshalToSizedBufferVT(dAtA[:i])
+		if err != nil {
+			return 0, err
+		}
+		i -= size
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+		i--
+		dAtA[i] = 0x22
+	} else {
+		i = protohelpers.EncodeVarint(dAtA, i, 0)
+		i--
+		dAtA[i] = 0x22
+	}
+	return len(dAtA) - i, nil
+}
+func (m *Scope_NamespaceLabel) MarshalToVT(dAtA []byte) (int, error) {
+	size := m.SizeVT()
+	return m.MarshalToSizedBufferVT(dAtA[:size])
+}
+
+func (m *Scope_NamespaceLabel) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	if m.NamespaceLabel != nil {
+		size, err := m.NamespaceLabel.MarshalToSizedBufferVT(dAtA[:i])
+		if err != nil {
+			return 0, err
+		}
+		i -= size
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+		i--
+		dAtA[i] = 0x2a
+	} else {
+		i = protohelpers.EncodeVarint(dAtA, i, 0)
+		i--
+		dAtA[i] = 0x2a
+	}
+	return len(dAtA) - i, nil
+}
 func (m *Scope_Label) SizeVT() (n int) {
 	if m == nil {
 		return 0
@@ -232,13 +452,11 @@ func (m *Scope) SizeVT() (n int) {
 	}
 	var l int
 	_ = l
-	l = len(m.Cluster)
-	if l > 0 {
-		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
+	if vtmsg, ok := m.ClusterScope.(interface{ SizeVT() int }); ok {
+		n += vtmsg.SizeVT()
 	}
-	l = len(m.Namespace)
-	if l > 0 {
-		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
+	if vtmsg, ok := m.NamespaceScope.(interface{ SizeVT() int }); ok {
+		n += vtmsg.SizeVT()
 	}
 	if m.Label != nil {
 		l = m.Label.SizeVT()
@@ -248,6 +466,54 @@ func (m *Scope) SizeVT() (n int) {
 	return n
 }
 
+func (m *Scope_Cluster) SizeVT() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = len(m.Cluster)
+	n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
+	return n
+}
+func (m *Scope_Namespace) SizeVT() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = len(m.Namespace)
+	n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
+	return n
+}
+func (m *Scope_ClusterLabel) SizeVT() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.ClusterLabel != nil {
+		l = m.ClusterLabel.SizeVT()
+		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
+	} else {
+		n += 2
+	}
+	return n
+}
+func (m *Scope_NamespaceLabel) SizeVT() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.NamespaceLabel != nil {
+		l = m.NamespaceLabel.SizeVT()
+		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
+	} else {
+		n += 2
+	}
+	return n
+}
 func (m *Scope_Label) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
@@ -422,7 +688,7 @@ func (m *Scope) UnmarshalVT(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.Cluster = string(dAtA[iNdEx:postIndex])
+			m.ClusterScope = &Scope_Cluster{Cluster: string(dAtA[iNdEx:postIndex])}
 			iNdEx = postIndex
 		case 2:
 			if wireType != 2 {
@@ -454,7 +720,7 @@ func (m *Scope) UnmarshalVT(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.Namespace = string(dAtA[iNdEx:postIndex])
+			m.NamespaceScope = &Scope_Namespace{Namespace: string(dAtA[iNdEx:postIndex])}
 			iNdEx = postIndex
 		case 3:
 			if wireType != 2 {
@@ -490,6 +756,88 @@ func (m *Scope) UnmarshalVT(dAtA []byte) error {
 			}
 			if err := m.Label.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
+			}
+			iNdEx = postIndex
+		case 4:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ClusterLabel", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if oneof, ok := m.ClusterScope.(*Scope_ClusterLabel); ok {
+				if err := oneof.ClusterLabel.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+			} else {
+				v := &Scope_Label{}
+				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+				m.ClusterScope = &Scope_ClusterLabel{ClusterLabel: v}
+			}
+			iNdEx = postIndex
+		case 5:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field NamespaceLabel", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if oneof, ok := m.NamespaceScope.(*Scope_NamespaceLabel); ok {
+				if err := oneof.NamespaceLabel.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+			} else {
+				v := &Scope_Label{}
+				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+				m.NamespaceScope = &Scope_NamespaceLabel{NamespaceLabel: v}
 			}
 			iNdEx = postIndex
 		default:
@@ -700,7 +1048,7 @@ func (m *Scope) UnmarshalVTUnsafe(dAtA []byte) error {
 			if intStringLen > 0 {
 				stringValue = unsafe.String(&dAtA[iNdEx], intStringLen)
 			}
-			m.Cluster = stringValue
+			m.ClusterScope = &Scope_Cluster{Cluster: stringValue}
 			iNdEx = postIndex
 		case 2:
 			if wireType != 2 {
@@ -736,7 +1084,7 @@ func (m *Scope) UnmarshalVTUnsafe(dAtA []byte) error {
 			if intStringLen > 0 {
 				stringValue = unsafe.String(&dAtA[iNdEx], intStringLen)
 			}
-			m.Namespace = stringValue
+			m.NamespaceScope = &Scope_Namespace{Namespace: stringValue}
 			iNdEx = postIndex
 		case 3:
 			if wireType != 2 {
@@ -772,6 +1120,88 @@ func (m *Scope) UnmarshalVTUnsafe(dAtA []byte) error {
 			}
 			if err := m.Label.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
 				return err
+			}
+			iNdEx = postIndex
+		case 4:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ClusterLabel", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if oneof, ok := m.ClusterScope.(*Scope_ClusterLabel); ok {
+				if err := oneof.ClusterLabel.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+			} else {
+				v := &Scope_Label{}
+				if err := v.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+				m.ClusterScope = &Scope_ClusterLabel{ClusterLabel: v}
+			}
+			iNdEx = postIndex
+		case 5:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field NamespaceLabel", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if oneof, ok := m.NamespaceScope.(*Scope_NamespaceLabel); ok {
+				if err := oneof.NamespaceLabel.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+			} else {
+				v := &Scope_Label{}
+				if err := v.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+				m.NamespaceScope = &Scope_NamespaceLabel{NamespaceLabel: v}
 			}
 			iNdEx = postIndex
 		default:

@@ -17,8 +17,8 @@ var (
 		LifecycleStages: []storage.LifecycleStage{storage.LifecycleStage_BUILD},
 		Scope: []*storage.Scope{
 			{
-				Cluster:   "prod cluster",
-				Namespace: "stackrox",
+				ClusterScope:   &storage.Scope_Cluster{Cluster: "prod cluster"},
+				NamespaceScope: &storage.Scope_Namespace{Namespace: "stackrox"},
 				Label: &storage.Scope_Label{
 					Key:   "com.docker.stack.namespace",
 					Value: "prevent",
@@ -228,8 +228,8 @@ func GetAuditLogEventSourcePolicy() *storage.Policy {
 	// Limit scope to things that are supported by audit log event source
 	p.Scope = []*storage.Scope{
 		{
-			Cluster:   "prod cluster",
-			Namespace: "stackrox",
+			ClusterScope:   &storage.Scope_Cluster{Cluster: "prod cluster"},
+			NamespaceScope: &storage.Scope_Namespace{Namespace: "stackrox"},
 		},
 	}
 	// Only runtime policies can have audit log event source

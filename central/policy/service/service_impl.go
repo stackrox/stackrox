@@ -990,11 +990,12 @@ func (s *serviceImpl) makeScopes(ctx context.Context, fieldMap map[search.FieldL
 		}
 		for _, clusterID := range clusterIDs {
 			for _, namespace := range namespaces {
-				scopes = append(scopes, &storage.Scope{
-					Cluster:   clusterID,
-					Namespace: namespace,
-					Label:     labelObject,
-				})
+				scope := &storage.Scope{
+					Label: labelObject,
+				}
+				scope.ClusterScope = &storage.Scope_Cluster{Cluster: clusterID}
+				scope.NamespaceScope = &storage.Scope_Namespace{Namespace: namespace}
+				scopes = append(scopes, scope)
 			}
 		}
 	}

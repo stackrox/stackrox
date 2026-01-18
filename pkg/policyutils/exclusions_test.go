@@ -58,7 +58,7 @@ func TestDeploymentExclusionToQuery_ScopedDeploymentExclusion(t *testing.T) {
 			Name: "myExcludedScope",
 			Deployment: &storage.Exclusion_Deployment{
 				Scope: &storage.Scope{
-					Cluster: "blessed-cluster-id",
+					ClusterScope: &storage.Scope_Cluster{Cluster: "blessed-cluster-id"},
 				},
 			},
 		},

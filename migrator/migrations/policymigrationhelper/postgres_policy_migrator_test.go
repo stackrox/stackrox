@@ -177,12 +177,12 @@ func (s *postgresPolicyMigratorTestSuite) TestExclusionAreAddedAndRemovedAsNeces
 
 	// Add a bunch of exclusions into the DB
 	policy.Exclusions = []*storage.Exclusion{
-		{Name: "exclusion0", Deployment: &storage.Exclusion_Deployment{Scope: &storage.Scope{Namespace: "namespace-0"}}},
-		{Name: "exclusion1", Deployment: &storage.Exclusion_Deployment{Scope: &storage.Scope{Namespace: "namespace 1"}}},
-		{Name: "exclusion0", Deployment: &storage.Exclusion_Deployment{Scope: &storage.Scope{Namespace: "namespace-0"}}},
-		{Name: "exclusion2", Deployment: &storage.Exclusion_Deployment{Scope: &storage.Scope{Namespace: "namespace-2"}}},
-		{Name: "exclusion3", Deployment: &storage.Exclusion_Deployment{Scope: &storage.Scope{Namespace: "namespace-3"}}},
-		{Name: "exclusion4", Deployment: &storage.Exclusion_Deployment{Scope: &storage.Scope{Namespace: "namespace-4"}}},
+		{Name: "exclusion0", Deployment: &storage.Exclusion_Deployment{Scope: &storage.Scope{NamespaceScope: &storage.Scope_Namespace{Namespace: "namespace-0"}}}},
+		{Name: "exclusion1", Deployment: &storage.Exclusion_Deployment{Scope: &storage.Scope{NamespaceScope: &storage.Scope_Namespace{Namespace: "namespace 1"}}}},
+		{Name: "exclusion0", Deployment: &storage.Exclusion_Deployment{Scope: &storage.Scope{NamespaceScope: &storage.Scope_Namespace{Namespace: "namespace-0"}}}},
+		{Name: "exclusion2", Deployment: &storage.Exclusion_Deployment{Scope: &storage.Scope{NamespaceScope: &storage.Scope_Namespace{Namespace: "namespace-2"}}}},
+		{Name: "exclusion3", Deployment: &storage.Exclusion_Deployment{Scope: &storage.Scope{NamespaceScope: &storage.Scope_Namespace{Namespace: "namespace-3"}}}},
+		{Name: "exclusion4", Deployment: &storage.Exclusion_Deployment{Scope: &storage.Scope{NamespaceScope: &storage.Scope_Namespace{Namespace: "namespace-4"}}}},
 	}
 
 	s.NoError(s.store.Upsert(s.ctx, policy))
@@ -196,14 +196,14 @@ func (s *postgresPolicyMigratorTestSuite) TestExclusionAreAddedAndRemovedAsNeces
 			FieldsToCompare: []FieldComparator{ExclusionComparator},
 			ToChange: PolicyUpdates{
 				ExclusionsToAdd: []*storage.Exclusion{
-					{Name: "exclusion1-changed", Deployment: &storage.Exclusion_Deployment{Scope: &storage.Scope{Namespace: "namespace-1"}}},
-					{Name: "NEW exclusion", Deployment: &storage.Exclusion_Deployment{Scope: &storage.Scope{Namespace: "namespace-NEW"}}},
-					{Name: "NEW exclusion2", Deployment: &storage.Exclusion_Deployment{Scope: &storage.Scope{Namespace: "namespace-NEW2"}}},
+					{Name: "exclusion1-changed", Deployment: &storage.Exclusion_Deployment{Scope: &storage.Scope{NamespaceScope: &storage.Scope_Namespace{Namespace: "namespace-1"}}}},
+					{Name: "NEW exclusion", Deployment: &storage.Exclusion_Deployment{Scope: &storage.Scope{NamespaceScope: &storage.Scope_Namespace{Namespace: "namespace-NEW"}}}},
+					{Name: "NEW exclusion2", Deployment: &storage.Exclusion_Deployment{Scope: &storage.Scope{NamespaceScope: &storage.Scope_Namespace{Namespace: "namespace-NEW2"}}}},
 				},
 				ExclusionsToRemove: []*storage.Exclusion{
-					{Name: "exclusion1", Deployment: &storage.Exclusion_Deployment{Scope: &storage.Scope{Namespace: "namespace 1"}}},
-					{Name: "exclusion4", Deployment: &storage.Exclusion_Deployment{Scope: &storage.Scope{Namespace: "namespace-4"}}},
-					{Name: "exclusion-NaN", Deployment: &storage.Exclusion_Deployment{Scope: &storage.Scope{Namespace: "namespace-NaN"}}}, // this exclusion doesn't exist so it shouldn't get removed
+					{Name: "exclusion1", Deployment: &storage.Exclusion_Deployment{Scope: &storage.Scope{NamespaceScope: &storage.Scope_Namespace{Namespace: "namespace 1"}}}},
+					{Name: "exclusion4", Deployment: &storage.Exclusion_Deployment{Scope: &storage.Scope{NamespaceScope: &storage.Scope_Namespace{Namespace: "namespace-4"}}}},
+					{Name: "exclusion-NaN", Deployment: &storage.Exclusion_Deployment{Scope: &storage.Scope{NamespaceScope: &storage.Scope_Namespace{Namespace: "namespace-NaN"}}}}, // this exclusion doesn't exist so it shouldn't get removed
 				},
 			},
 		},
@@ -221,13 +221,13 @@ func (s *postgresPolicyMigratorTestSuite) TestExclusionAreAddedAndRemovedAsNeces
 
 	// Policy exclusions should be updated
 	policy.Exclusions = []*storage.Exclusion{
-		{Name: "exclusion0", Deployment: &storage.Exclusion_Deployment{Scope: &storage.Scope{Namespace: "namespace-0"}}},
-		{Name: "exclusion0", Deployment: &storage.Exclusion_Deployment{Scope: &storage.Scope{Namespace: "namespace-0"}}},
-		{Name: "exclusion2", Deployment: &storage.Exclusion_Deployment{Scope: &storage.Scope{Namespace: "namespace-2"}}},
-		{Name: "exclusion3", Deployment: &storage.Exclusion_Deployment{Scope: &storage.Scope{Namespace: "namespace-3"}}},
-		{Name: "exclusion1-changed", Deployment: &storage.Exclusion_Deployment{Scope: &storage.Scope{Namespace: "namespace-1"}}},
-		{Name: "NEW exclusion", Deployment: &storage.Exclusion_Deployment{Scope: &storage.Scope{Namespace: "namespace-NEW"}}},
-		{Name: "NEW exclusion2", Deployment: &storage.Exclusion_Deployment{Scope: &storage.Scope{Namespace: "namespace-NEW2"}}},
+		{Name: "exclusion0", Deployment: &storage.Exclusion_Deployment{Scope: &storage.Scope{NamespaceScope: &storage.Scope_Namespace{Namespace: "namespace-0"}}}},
+		{Name: "exclusion0", Deployment: &storage.Exclusion_Deployment{Scope: &storage.Scope{NamespaceScope: &storage.Scope_Namespace{Namespace: "namespace-0"}}}},
+		{Name: "exclusion2", Deployment: &storage.Exclusion_Deployment{Scope: &storage.Scope{NamespaceScope: &storage.Scope_Namespace{Namespace: "namespace-2"}}}},
+		{Name: "exclusion3", Deployment: &storage.Exclusion_Deployment{Scope: &storage.Scope{NamespaceScope: &storage.Scope_Namespace{Namespace: "namespace-3"}}}},
+		{Name: "exclusion1-changed", Deployment: &storage.Exclusion_Deployment{Scope: &storage.Scope{NamespaceScope: &storage.Scope_Namespace{Namespace: "namespace-1"}}}},
+		{Name: "NEW exclusion", Deployment: &storage.Exclusion_Deployment{Scope: &storage.Scope{NamespaceScope: &storage.Scope_Namespace{Namespace: "namespace-NEW"}}}},
+		{Name: "NEW exclusion2", Deployment: &storage.Exclusion_Deployment{Scope: &storage.Scope{NamespaceScope: &storage.Scope_Namespace{Namespace: "namespace-NEW2"}}}},
 	}
 
 	s.comparePolicyWithDB(policyID, policy)
@@ -248,7 +248,7 @@ func testPolicy(id string) *storage.Policy {
 			},
 		},
 		Exclusions: []*storage.Exclusion{
-			{Name: "exclusion name", Deployment: &storage.Exclusion_Deployment{Scope: &storage.Scope{Namespace: "namespace name"}}},
+			{Name: "exclusion name", Deployment: &storage.Exclusion_Deployment{Scope: &storage.Scope{NamespaceScope: &storage.Scope_Namespace{Namespace: "namespace name"}}}},
 		},
 	}
 }

@@ -106,7 +106,7 @@ func TestMatchesDeploymentExclusion(t *testing.T) {
 			policy: &storage.Policy{
 				Exclusions: []*storage.Exclusion{
 					{
-						Deployment: &storage.Exclusion_Deployment{Scope: &storage.Scope{Namespace: fixtures.GetDeployment().GetNamespace()}},
+						Deployment: &storage.Exclusion_Deployment{Scope: &storage.Scope{NamespaceScope: &storage.Scope_Namespace{Namespace: fixtures.GetDeployment().GetNamespace()}}},
 					},
 				},
 			},
@@ -118,7 +118,7 @@ func TestMatchesDeploymentExclusion(t *testing.T) {
 			policy: &storage.Policy{
 				Exclusions: []*storage.Exclusion{
 					{
-						Deployment: &storage.Exclusion_Deployment{Scope: &storage.Scope{Namespace: uuid.NewV4().String()}},
+						Deployment: &storage.Exclusion_Deployment{Scope: &storage.Scope{NamespaceScope: &storage.Scope_Namespace{Namespace: uuid.NewV4().String()}}},
 					},
 				},
 			},
@@ -130,7 +130,7 @@ func TestMatchesDeploymentExclusion(t *testing.T) {
 			policy: &storage.Policy{
 				Exclusions: []*storage.Exclusion{
 					{
-						Deployment: &storage.Exclusion_Deployment{Name: uuid.NewV4().String(), Scope: &storage.Scope{Namespace: fixtures.GetDeployment().GetNamespace()}},
+						Deployment: &storage.Exclusion_Deployment{Name: uuid.NewV4().String(), Scope: &storage.Scope{NamespaceScope: &storage.Scope_Namespace{Namespace: fixtures.GetDeployment().GetNamespace()}}},
 					},
 				},
 			},

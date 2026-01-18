@@ -84,10 +84,10 @@ func TestToProtobuf(t *testing.T) {
 				Name: "Don't alert on deployment collector in namespace stackrox",
 				Deployment: &storage.Exclusion_Deployment{
 					Name: "collector",
-					Scope: &storage.Scope{
-						Namespace: "stackrox",
-						Cluster:   clusterID,
-					},
+				Scope: &storage.Scope{
+					NamespaceScope: &storage.Scope_Namespace{Namespace: "stackrox"},
+					ClusterScope:   &storage.Scope_Cluster{Cluster: clusterID},
+				},
 				},
 				Expiration: protoconv.ConvertTimeString(expirationTS),
 			},
@@ -112,7 +112,7 @@ func TestToProtobuf(t *testing.T) {
 		},
 		Scope: []*storage.Scope{
 			{
-				Cluster: clusterID,
+				ClusterScope: &storage.Scope_Cluster{Cluster: clusterID},
 			},
 		},
 	}

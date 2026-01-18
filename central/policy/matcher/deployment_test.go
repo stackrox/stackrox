@@ -22,7 +22,7 @@ func TestDeploymentMatcher(t *testing.T) {
 			policy: &storage.Policy{
 				Scope: []*storage.Scope{
 					{
-						Cluster: "cluster1",
+						ClusterScope: &storage.Scope_Cluster{Cluster: "cluster1"},
 					},
 				},
 			},
@@ -37,8 +37,8 @@ func TestDeploymentMatcher(t *testing.T) {
 			policy: &storage.Policy{
 				Scope: []*storage.Scope{
 					{
-						Cluster:   "cluster2",
-						Namespace: "ns1",
+						ClusterScope:   &storage.Scope_Cluster{Cluster: "cluster2"},
+						NamespaceScope: &storage.Scope_Namespace{Namespace: "ns1"},
 					},
 				},
 			},
@@ -53,7 +53,7 @@ func TestDeploymentMatcher(t *testing.T) {
 			policy: &storage.Policy{
 				Scope: []*storage.Scope{
 					{
-						Namespace: "ns1",
+						NamespaceScope: &storage.Scope_Namespace{Namespace: "ns1"},
 					},
 				},
 			},
@@ -91,14 +91,14 @@ func TestDeploymentWithExclusion(t *testing.T) {
 			policy: &storage.Policy{
 				Scope: []*storage.Scope{
 					{
-						Cluster: "cluster1",
+						ClusterScope: &storage.Scope_Cluster{Cluster: "cluster1"},
 					},
 				},
 				Exclusions: []*storage.Exclusion{
 					{
 						Deployment: &storage.Exclusion_Deployment{
 							Scope: &storage.Scope{
-								Namespace: "ns.*",
+								NamespaceScope: &storage.Scope_Namespace{Namespace: "ns.*"},
 							},
 						},
 					},
@@ -115,8 +115,8 @@ func TestDeploymentWithExclusion(t *testing.T) {
 			policy: &storage.Policy{
 				Scope: []*storage.Scope{
 					{
-						Cluster:   "cluster1",
-						Namespace: "ns1",
+						ClusterScope:   &storage.Scope_Cluster{Cluster: "cluster1"},
+						NamespaceScope: &storage.Scope_Namespace{Namespace: "ns1"},
 					},
 				},
 				Exclusions: []*storage.Exclusion{
@@ -124,7 +124,7 @@ func TestDeploymentWithExclusion(t *testing.T) {
 						Deployment: &storage.Exclusion_Deployment{
 							Name: "deployment2",
 							Scope: &storage.Scope{
-								Namespace: "ns.*",
+								NamespaceScope: &storage.Scope_Namespace{Namespace: "ns.*"},
 							},
 						},
 					},
@@ -141,7 +141,7 @@ func TestDeploymentWithExclusion(t *testing.T) {
 			policy: &storage.Policy{
 				Scope: []*storage.Scope{
 					{
-						Namespace: "ns1",
+						NamespaceScope: &storage.Scope_Namespace{Namespace: "ns1"},
 					},
 				},
 				Exclusions: []*storage.Exclusion{
@@ -149,7 +149,7 @@ func TestDeploymentWithExclusion(t *testing.T) {
 						Deployment: &storage.Exclusion_Deployment{
 							Name: "deployment2",
 							Scope: &storage.Scope{
-								Namespace: "ns1",
+								NamespaceScope: &storage.Scope_Namespace{Namespace: "ns1"},
 							},
 						},
 					},
@@ -171,7 +171,7 @@ func TestDeploymentWithExclusion(t *testing.T) {
 			policy: &storage.Policy{
 				Scope: []*storage.Scope{
 					{
-						Namespace: "ns1",
+						NamespaceScope: &storage.Scope_Namespace{Namespace: "ns1"},
 					},
 				},
 				Exclusions: []*storage.Exclusion{
@@ -179,14 +179,14 @@ func TestDeploymentWithExclusion(t *testing.T) {
 						Deployment: &storage.Exclusion_Deployment{
 							Name: "deployment2",
 							Scope: &storage.Scope{
-								Namespace: "ns1",
+								NamespaceScope: &storage.Scope_Namespace{Namespace: "ns1"},
 							},
 						},
 					},
 					{
 						Deployment: &storage.Exclusion_Deployment{
 							Scope: &storage.Scope{
-								Namespace: "ns1",
+								NamespaceScope: &storage.Scope_Namespace{Namespace: "ns1"},
 							},
 						},
 					},

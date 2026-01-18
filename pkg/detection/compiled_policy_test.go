@@ -30,8 +30,8 @@ func newDeployment(id string) *storage.Deployment {
 }
 
 func TestCompiledPolicyScopesAndExclusions(t *testing.T) {
-	stackRoxNSScope := &storage.Scope{Namespace: "stackr.*"}
-	defaultNSScope := &storage.Scope{Namespace: "default"}
+	stackRoxNSScope := &storage.Scope{NamespaceScope: &storage.Scope_Namespace{Namespace: "stackr.*"}}
+	defaultNSScope := &storage.Scope{NamespaceScope: &storage.Scope_Namespace{Namespace: "default"}}
 	appStackRoxScope := &storage.Scope{Label: &storage.Scope_Label{Key: "app", Value: "stackrox"}}
 
 	stackRoxNSDep := newDeployment("STACKROXDEP")

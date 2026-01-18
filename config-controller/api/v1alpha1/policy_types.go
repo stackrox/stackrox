@@ -291,40 +291,43 @@ func (p SecurityPolicySpec) ToProtobuf(caches map[CacheType]map[string]string) (
 
 			scope := exclusion.Deployment.Scope
 			if scope != (Scope{}) {
-				protoExclusion.Deployment.Scope = &storage.Scope{
-					Namespace: scope.Namespace,
+				protoExclusion.Deployment.Scope = &storage.Scope{}
+				if scope.Namespace != "" {
+					protoExclusion.Deployment.Scope.NamespaceScope = &storage.Scope_Namespace{Namespace: scope.Namespace}
 				}
 				if scope.Cluster != "" {
 					clusterID, err := getClusterID(scope.Cluster, caches)
 					if err != nil {
 						return nil, errors.New(fmt.Sprintf("Cluster '%s' does not exist", scope.Cluster))
 					}
-					protoExclusion.Deployment.Scope.Cluster = clusterID
+					protoExclusion.Deployment.Scope.ClusterScope = &storage.Scope_Cluster{Cluster: clusterID}
+				}
+				if scope.Label != (Label{}) {
+					if protoExclusion.GetDeployment().GetScope() == nil {
+						protoExclusion.Deployment.Scope = &storage.Scope{}
+					}
+					protoExclusion.GetDeployment().GetScope().Label = &storage.Scope_Label{
+						Key:   scope.Label.Key,
+						Value: scope.Label.Value,
+					}
 				}
 			}
-
-			if scope.Label != (Label{}) {
-				protoExclusion.Deployment.Scope.Label = &storage.Scope_Label{
-					Key:   scope.Label.Key,
-					Value: scope.Label.Value,
-				}
-			}
-
 		}
 
 		proto.Exclusions = append(proto.Exclusions, &protoExclusion)
 	}
 
 	for _, scope := range p.Scope {
-		protoScope := &storage.Scope{
-			Namespace: scope.Namespace,
+		protoScope := &storage.Scope{}
+		if scope.Namespace != "" {
+			protoScope.NamespaceScope = &storage.Scope_Namespace{Namespace: scope.Namespace}
 		}
 		if scope.Cluster != "" {
 			clusterID, err := getClusterID(scope.Cluster, caches)
 			if err != nil {
 				return nil, errors.New(fmt.Sprintf("Cluster '%s' does not exist", scope.Cluster))
 			}
-			protoScope.Cluster = clusterID
+			protoScope.ClusterScope = &storage.Scope_Cluster{Cluster: clusterID}
 		}
 
 		if scope.Label != (Label{}) {

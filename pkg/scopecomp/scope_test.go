@@ -24,7 +24,7 @@ func TestWithinScope(t *testing.T) {
 		{
 			name: "matching cluster",
 			scope: &storage.Scope{
-				Cluster: "cluster",
+				ClusterScope: &storage.Scope_Cluster{Cluster: "cluster"},
 			},
 			deployment: &storage.Deployment{
 				ClusterId: "cluster",
@@ -34,7 +34,7 @@ func TestWithinScope(t *testing.T) {
 		{
 			name: "not matching cluster",
 			scope: &storage.Scope{
-				Cluster: "cluster1",
+				ClusterScope: &storage.Scope_Cluster{Cluster: "cluster1"},
 			},
 			deployment: &storage.Deployment{
 				ClusterId: "cluster",
@@ -44,7 +44,7 @@ func TestWithinScope(t *testing.T) {
 		{
 			name: "matching namespace",
 			scope: &storage.Scope{
-				Namespace: "namespace",
+				NamespaceScope: &storage.Scope_Namespace{Namespace: "namespace"},
 			},
 			deployment: &storage.Deployment{
 				Namespace: "namespace",
@@ -54,7 +54,7 @@ func TestWithinScope(t *testing.T) {
 		{
 			name: "not matching namespace",
 			scope: &storage.Scope{
-				Namespace: "namespace1",
+				NamespaceScope: &storage.Scope_Namespace{Namespace: "namespace1"},
 			},
 			deployment: &storage.Deployment{
 				Namespace: "namespace",
@@ -64,7 +64,7 @@ func TestWithinScope(t *testing.T) {
 		{
 			name: "matching cluster with no namespace scope",
 			scope: &storage.Scope{
-				Cluster: "cluster",
+				ClusterScope: &storage.Scope_Cluster{Cluster: "cluster"},
 			},
 			deployment: &storage.Deployment{
 				ClusterId: "cluster",
@@ -123,8 +123,8 @@ func TestWithinScope(t *testing.T) {
 		{
 			name: "match all",
 			scope: &storage.Scope{
-				Cluster:   "cluster",
-				Namespace: "namespace",
+				ClusterScope:   &storage.Scope_Cluster{Cluster: "cluster"},
+				NamespaceScope: &storage.Scope_Namespace{Namespace: "namespace"},
 				Label: &storage.Scope_Label{
 					Key:   "key",
 					Value: "value",

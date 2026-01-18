@@ -440,7 +440,7 @@ func (s *PolicyServiceTestSuite) TestMalformedScopes() {
 
 func (s *PolicyServiceTestSuite) TestScopeWithMalformedLabel() {
 	expectedScope := &storage.Scope{
-		Namespace: "blah",
+		NamespaceScope: &storage.Scope_Namespace{Namespace: "blah"},
 	}
 	queryString := "Deployment Label:+Namespace:blah"
 	s.testScopes(queryString, nil, expectedScope)
@@ -470,8 +470,8 @@ func (s *PolicyServiceTestSuite) TestScopeWithMalformedCluster() {
 
 func (s *PolicyServiceTestSuite) TestScope() {
 	expectedScope := &storage.Scope{
-		Cluster:   "remoteID",
-		Namespace: "stackrox",
+		ClusterScope:   &storage.Scope_Cluster{Cluster: "remoteID"},
+		NamespaceScope: &storage.Scope_Namespace{Namespace: "stackrox"},
 		Label: &storage.Scope_Label{
 			Key:   "app",
 			Value: "collector",
@@ -490,64 +490,64 @@ func (s *PolicyServiceTestSuite) TestScope() {
 func (s *PolicyServiceTestSuite) TestManyScopes() {
 	expectedScopes := []*storage.Scope{
 		{
-			Cluster:   "remoteID",
-			Namespace: "stackrox",
+			ClusterScope:   &storage.Scope_Cluster{Cluster: "remoteID"},
+			NamespaceScope: &storage.Scope_Namespace{Namespace: "stackrox"},
 			Label: &storage.Scope_Label{
 				Key:   "app",
 				Value: "collector",
 			},
 		},
 		{
-			Cluster:   "remoteID",
-			Namespace: "hoops",
+			ClusterScope:   &storage.Scope_Cluster{Cluster: "remoteID"},
+			NamespaceScope: &storage.Scope_Namespace{Namespace: "hoops"},
 			Label: &storage.Scope_Label{
 				Key:   "app",
 				Value: "collector",
 			},
 		},
 		{
-			Cluster:   "marsID",
-			Namespace: "stackrox",
+			ClusterScope:   &storage.Scope_Cluster{Cluster: "marsID"},
+			NamespaceScope: &storage.Scope_Namespace{Namespace: "stackrox"},
 			Label: &storage.Scope_Label{
 				Key:   "app",
 				Value: "collector",
 			},
 		},
 		{
-			Cluster:   "marsID",
-			Namespace: "hoops",
+			ClusterScope:   &storage.Scope_Cluster{Cluster: "marsID"},
+			NamespaceScope: &storage.Scope_Namespace{Namespace: "hoops"},
 			Label: &storage.Scope_Label{
 				Key:   "app",
 				Value: "collector",
 			},
 		},
 		{
-			Cluster:   "remoteID",
-			Namespace: "stackrox",
+			ClusterScope:   &storage.Scope_Cluster{Cluster: "remoteID"},
+			NamespaceScope: &storage.Scope_Namespace{Namespace: "stackrox"},
 			Label: &storage.Scope_Label{
 				Key:   "dunk",
 				Value: "buckets",
 			},
 		},
 		{
-			Cluster:   "remoteID",
-			Namespace: "hoops",
+			ClusterScope:   &storage.Scope_Cluster{Cluster: "remoteID"},
+			NamespaceScope: &storage.Scope_Namespace{Namespace: "hoops"},
 			Label: &storage.Scope_Label{
 				Key:   "dunk",
 				Value: "buckets",
 			},
 		},
 		{
-			Cluster:   "marsID",
-			Namespace: "stackrox",
+			ClusterScope:   &storage.Scope_Cluster{Cluster: "marsID"},
+			NamespaceScope: &storage.Scope_Namespace{Namespace: "stackrox"},
 			Label: &storage.Scope_Label{
 				Key:   "dunk",
 				Value: "buckets",
 			},
 		},
 		{
-			Cluster:   "marsID",
-			Namespace: "hoops",
+			ClusterScope:   &storage.Scope_Cluster{Cluster: "marsID"},
+			NamespaceScope: &storage.Scope_Namespace{Namespace: "hoops"},
 			Label: &storage.Scope_Label{
 				Key:   "dunk",
 				Value: "buckets",
@@ -570,7 +570,7 @@ func (s *PolicyServiceTestSuite) TestManyScopes() {
 
 func (s *PolicyServiceTestSuite) TestScopeOnlyCluster() {
 	expectedScope := &storage.Scope{
-		Cluster: "remoteID",
+		ClusterScope: &storage.Scope_Cluster{Cluster: "remoteID"},
 	}
 	mockClusters := []*storage.Cluster{
 		{
@@ -584,7 +584,7 @@ func (s *PolicyServiceTestSuite) TestScopeOnlyCluster() {
 
 func (s *PolicyServiceTestSuite) TestScopeOnlyNamespace() {
 	expectedScope := &storage.Scope{
-		Namespace: "Joseph Rules",
+		NamespaceScope: &storage.Scope_Namespace{Namespace: "Joseph Rules"},
 	}
 	queryString := "Namespace:Joseph Rules"
 	s.testScopes(queryString, nil, expectedScope)
@@ -621,8 +621,8 @@ func (s *PolicyServiceTestSuite) TestScopeOddLabelFormats() {
 
 func (s *PolicyServiceTestSuite) TestScopeClusterNamespace() {
 	expectedScope := &storage.Scope{
-		Cluster:   "remoteID",
-		Namespace: "stackrox",
+		ClusterScope:   &storage.Scope_Cluster{Cluster: "remoteID"},
+		NamespaceScope: &storage.Scope_Namespace{Namespace: "stackrox"},
 	}
 	mockClusters := []*storage.Cluster{
 		{
@@ -636,7 +636,7 @@ func (s *PolicyServiceTestSuite) TestScopeClusterNamespace() {
 
 func (s *PolicyServiceTestSuite) TestScopeClusterLabel() {
 	expectedScope := &storage.Scope{
-		Cluster: "remoteID",
+		ClusterScope: &storage.Scope_Cluster{Cluster: "remoteID"},
 		Label: &storage.Scope_Label{
 			Key:   "Joseph",
 			Value: "Rules",
@@ -654,7 +654,7 @@ func (s *PolicyServiceTestSuite) TestScopeClusterLabel() {
 
 func (s *PolicyServiceTestSuite) TestScopeNamespaceLabel() {
 	expectedScope := &storage.Scope{
-		Namespace: "stackrox",
+		NamespaceScope: &storage.Scope_Namespace{Namespace: "stackrox"},
 		Label: &storage.Scope_Label{
 			Key:   "Joseph",
 			Value: "Rules",
@@ -667,10 +667,10 @@ func (s *PolicyServiceTestSuite) TestScopeNamespaceLabel() {
 func (s *PolicyServiceTestSuite) TestScopeClusterRegex() {
 	expectedScopes := []*storage.Scope{
 		{
-			Cluster: "remoteID",
+			ClusterScope: &storage.Scope_Cluster{Cluster: "remoteID"},
 		},
 		{
-			Cluster: "aDifferentCluster",
+			ClusterScope: &storage.Scope_Cluster{Cluster: "aDifferentCluster"},
 		},
 	}
 	mockClusters := []*storage.Cluster{

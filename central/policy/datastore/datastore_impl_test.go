@@ -314,14 +314,14 @@ func (s *PolicyDatastoreTestSuite) TestRemoveScopesAndNotifiers() {
 		SORTName: "Boo's policy",
 		Scope: []*storage.Scope{
 			{
-				Cluster: clusterName,
+				ClusterScope: &storage.Scope_Cluster{Cluster: clusterName},
 			},
 		},
 		Exclusions: []*storage.Exclusion{
 			{
 				Deployment: &storage.Exclusion_Deployment{
 					Scope: &storage.Scope{
-						Cluster: clusterName,
+						ClusterScope: &storage.Scope_Cluster{Cluster: clusterName},
 					},
 				},
 			},
@@ -365,14 +365,14 @@ func (s *PolicyDatastoreTestSuite) TestDoesNotRemoveScopesAndNotifiers() {
 		SORTName: "Some Name",
 		Scope: []*storage.Scope{
 			{
-				Cluster: clusterID,
+				ClusterScope: &storage.Scope_Cluster{Cluster: clusterID},
 			},
 		},
 		Exclusions: []*storage.Exclusion{
 			{
 				Deployment: &storage.Exclusion_Deployment{
 					Scope: &storage.Scope{
-						Cluster: clusterID,
+						ClusterScope: &storage.Scope_Cluster{Cluster: clusterID},
 					},
 				},
 			},

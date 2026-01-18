@@ -49,8 +49,8 @@ func getTestPolicy() *storage.Policy {
 			Deployment: &storage.Exclusion_Deployment{
 				Name: "deployment1",
 				Scope: &storage.Scope{
-					Cluster:   "cluster1",
-					Namespace: "label1",
+					ClusterScope:   &storage.Scope_Cluster{Cluster: "cluster1"},
+					NamespaceScope: &storage.Scope_Namespace{Namespace: "label1"},
 					Label: &storage.Scope_Label{
 						Key:   "key1",
 						Value: "value1",
@@ -64,8 +64,8 @@ func getTestPolicy() *storage.Policy {
 			Deployment: &storage.Exclusion_Deployment{
 				Name: "deployment2",
 				Scope: &storage.Scope{
-					Cluster:   "cluster2",
-					Namespace: "label2",
+					ClusterScope:   &storage.Scope_Cluster{Cluster: "cluster2"},
+					NamespaceScope: &storage.Scope_Namespace{Namespace: "label2"},
 					Label: &storage.Scope_Label{
 						Key:   "key2",
 						Value: "value2",

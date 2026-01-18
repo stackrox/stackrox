@@ -21,8 +21,8 @@ func convertScope(p *storage.Scope) *Scope {
 	}
 
 	return &Scope{
-		Cluster:   p.Cluster,
-		Namespace: p.Namespace,
+		Cluster:   p.GetCluster(),
+		Namespace: p.GetNamespace(),
 		Label:     p.Label,
 	}
 }

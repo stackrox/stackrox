@@ -1276,9 +1276,17 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"statusErrors: [String!]!",
 	}))
 	utils.Must(builder.AddType("Scope", []string{
-		"cluster: String!",
+		"clusterLabel: Scope_Label",
 		"label: Scope_Label",
-		"namespace: String!",
+		"namespaceLabel: Scope_Label",
+		"clusterScope: ScopeClusterScope",
+		"namespaceScope: ScopeNamespaceScope",
+	}))
+	utils.Must(builder.AddUnionType("ScopeClusterScope", []string{
+		"Scope_Label",
+	}))
+	utils.Must(builder.AddUnionType("ScopeNamespaceScope", []string{
+		"Scope_Label",
 	}))
 	utils.Must(builder.AddType("ScopeObject", []string{
 		"id: ID!",
@@ -13916,9 +13924,9 @@ func (resolver *Resolver) wrapScopesWithContext(ctx context.Context, values []*s
 	return output, nil
 }
 
-func (resolver *scopeResolver) Cluster(ctx context.Context) string {
-	value := resolver.data.GetCluster()
-	return value
+func (resolver *scopeResolver) ClusterLabel(ctx context.Context) (*scope_LabelResolver, error) {
+	value := resolver.data.GetClusterLabel()
+	return resolver.root.wrapScope_Label(value, true, nil)
 }
 
 func (resolver *scopeResolver) Label(ctx context.Context) (*scope_LabelResolver, error) {
@@ -13926,9 +13934,45 @@ func (resolver *scopeResolver) Label(ctx context.Context) (*scope_LabelResolver,
 	return resolver.root.wrapScope_Label(value, true, nil)
 }
 
-func (resolver *scopeResolver) Namespace(ctx context.Context) string {
-	value := resolver.data.GetNamespace()
-	return value
+func (resolver *scopeResolver) NamespaceLabel(ctx context.Context) (*scope_LabelResolver, error) {
+	value := resolver.data.GetNamespaceLabel()
+	return resolver.root.wrapScope_Label(value, true, nil)
+}
+
+type scopeClusterScopeResolver struct {
+	resolver interface{}
+}
+
+func (resolver *scopeResolver) ClusterScope() *scopeClusterScopeResolver {
+	if val := resolver.data.GetClusterLabel(); val != nil {
+		return &scopeClusterScopeResolver{
+			resolver: &scope_LabelResolver{root: resolver.root, data: val},
+		}
+	}
+	return nil
+}
+
+func (resolver *scopeClusterScopeResolver) ToScope_Label() (*scope_LabelResolver, bool) {
+	res, ok := resolver.resolver.(*scope_LabelResolver)
+	return res, ok
+}
+
+type scopeNamespaceScopeResolver struct {
+	resolver interface{}
+}
+
+func (resolver *scopeResolver) NamespaceScope() *scopeNamespaceScopeResolver {
+	if val := resolver.data.GetNamespaceLabel(); val != nil {
+		return &scopeNamespaceScopeResolver{
+			resolver: &scope_LabelResolver{root: resolver.root, data: val},
+		}
+	}
+	return nil
+}
+
+func (resolver *scopeNamespaceScopeResolver) ToScope_Label() (*scope_LabelResolver, bool) {
+	res, ok := resolver.resolver.(*scope_LabelResolver)
+	return res, ok
 }
 
 type scopeObjectResolver struct {

@@ -56,14 +56,14 @@ var (
 				Name: "Don't alert on kube-system namespace",
 				Deployment: &storage.Exclusion_Deployment{
 					Scope: &storage.Scope{
-						Namespace: "kube-system",
+						NamespaceScope: &storage.Scope_Namespace{Namespace: "kube-system"},
 					},
 				},
 			}, {
 				Name: "Don't alert on istio-system namespace",
 				Deployment: &storage.Exclusion_Deployment{
 					Scope: &storage.Scope{
-						Namespace: "istio-system",
+						NamespaceScope: &storage.Scope_Namespace{Namespace: "istio-system"},
 					},
 				},
 			}},

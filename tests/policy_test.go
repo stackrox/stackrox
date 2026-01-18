@@ -522,7 +522,7 @@ func verifyExclusionsRemoved(t *testing.T) {
 		{
 			Deployment: &storage.Exclusion_Deployment{
 				Scope: &storage.Scope{
-					Cluster: "This is not a cluster",
+					ClusterScope: &storage.Scope_Cluster{Cluster: "This is not a cluster"},
 				},
 			},
 		},
@@ -554,7 +554,7 @@ func verifyScopesRemoved(t *testing.T) {
 	policy.Name = "verifyScopesRemoved is a valid policy"
 	policy.Scope = []*storage.Scope{
 		{
-			Cluster: "This is not a cluster",
+			ClusterScope: &storage.Scope_Cluster{Cluster: "This is not a cluster"},
 		},
 	}
 

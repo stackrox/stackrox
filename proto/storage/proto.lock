@@ -16424,12 +16424,26 @@
               {
                 "id": 1,
                 "name": "cluster",
-                "type": "string"
+                "type": "string",
+                "oneof_parent": "ClusterScope"
+              },
+              {
+                "id": 4,
+                "name": "cluster_label",
+                "type": "Label",
+                "oneof_parent": "ClusterScope"
               },
               {
                 "id": 2,
                 "name": "namespace",
-                "type": "string"
+                "type": "string",
+                "oneof_parent": "NamespaceScope"
+              },
+              {
+                "id": 5,
+                "name": "namespace_label",
+                "type": "Label",
+                "oneof_parent": "NamespaceScope"
               },
               {
                 "id": 3,

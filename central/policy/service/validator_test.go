@@ -759,10 +759,10 @@ func (s *PolicyValidatorTestSuite) TestNoScopeLabelsForAuditEventSource() {
 		},
 		Scope: []*storage.Scope{
 			{
-				Cluster: "cluster-remote",
+				ClusterScope: &storage.Scope_Cluster{Cluster: "cluster-remote"},
 			},
 			{
-				Namespace: "cluster-namespace",
+				NamespaceScope: &storage.Scope_Namespace{Namespace: "cluster-namespace"},
 			},
 		},
 	}

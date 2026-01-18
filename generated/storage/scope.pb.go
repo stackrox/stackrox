@@ -22,12 +22,20 @@ const (
 )
 
 type Scope struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Cluster       string                 `protobuf:"bytes,1,opt,name=cluster,proto3" json:"cluster,omitempty" crYaml:",omitempty"`     // @gotags: crYaml:",omitempty"`
-	Namespace     string                 `protobuf:"bytes,2,opt,name=namespace,proto3" json:"namespace,omitempty" crYaml:",omitempty"` // @gotags: crYaml:",omitempty"`
-	Label         *Scope_Label           `protobuf:"bytes,3,opt,name=label,proto3" json:"label,omitempty" crYaml:",omitempty"`         // @gotags: crYaml:",omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Types that are valid to be assigned to ClusterScope:
+	//
+	//	*Scope_Cluster
+	//	*Scope_ClusterLabel
+	ClusterScope isScope_ClusterScope `protobuf_oneof:"ClusterScope"`
+	// Types that are valid to be assigned to NamespaceScope:
+	//
+	//	*Scope_Namespace
+	//	*Scope_NamespaceLabel
+	NamespaceScope isScope_NamespaceScope `protobuf_oneof:"NamespaceScope"`
+	Label          *Scope_Label           `protobuf:"bytes,3,opt,name=label,proto3" json:"label,omitempty" crYaml:",omitempty"` // @gotags: crYaml:",omitempty"`
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
 }
 
 func (x *Scope) Reset() {
@@ -60,18 +68,54 @@ func (*Scope) Descriptor() ([]byte, []int) {
 	return file_storage_scope_proto_rawDescGZIP(), []int{0}
 }
 
+func (x *Scope) GetClusterScope() isScope_ClusterScope {
+	if x != nil {
+		return x.ClusterScope
+	}
+	return nil
+}
+
 func (x *Scope) GetCluster() string {
 	if x != nil {
-		return x.Cluster
+		if x, ok := x.ClusterScope.(*Scope_Cluster); ok {
+			return x.Cluster
+		}
 	}
 	return ""
 }
 
+func (x *Scope) GetClusterLabel() *Scope_Label {
+	if x != nil {
+		if x, ok := x.ClusterScope.(*Scope_ClusterLabel); ok {
+			return x.ClusterLabel
+		}
+	}
+	return nil
+}
+
+func (x *Scope) GetNamespaceScope() isScope_NamespaceScope {
+	if x != nil {
+		return x.NamespaceScope
+	}
+	return nil
+}
+
 func (x *Scope) GetNamespace() string {
 	if x != nil {
-		return x.Namespace
+		if x, ok := x.NamespaceScope.(*Scope_Namespace); ok {
+			return x.Namespace
+		}
 	}
 	return ""
+}
+
+func (x *Scope) GetNamespaceLabel() *Scope_Label {
+	if x != nil {
+		if x, ok := x.NamespaceScope.(*Scope_NamespaceLabel); ok {
+			return x.NamespaceLabel
+		}
+	}
+	return nil
 }
 
 func (x *Scope) GetLabel() *Scope_Label {
@@ -80,6 +124,38 @@ func (x *Scope) GetLabel() *Scope_Label {
 	}
 	return nil
 }
+
+type isScope_ClusterScope interface {
+	isScope_ClusterScope()
+}
+
+type Scope_Cluster struct {
+	Cluster string `protobuf:"bytes,1,opt,name=cluster,proto3,oneof" crYaml:",omitempty"` // @gotags: crYaml:",omitempty"`
+}
+
+type Scope_ClusterLabel struct {
+	ClusterLabel *Scope_Label `protobuf:"bytes,4,opt,name=cluster_label,json=clusterLabel,proto3,oneof" crYaml:",omitempty"` // @gotags: crYaml:",omitempty"`
+}
+
+func (*Scope_Cluster) isScope_ClusterScope() {}
+
+func (*Scope_ClusterLabel) isScope_ClusterScope() {}
+
+type isScope_NamespaceScope interface {
+	isScope_NamespaceScope()
+}
+
+type Scope_Namespace struct {
+	Namespace string `protobuf:"bytes,2,opt,name=namespace,proto3,oneof" crYaml:",omitempty"` // @gotags: crYaml:",omitempty"`
+}
+
+type Scope_NamespaceLabel struct {
+	NamespaceLabel *Scope_Label `protobuf:"bytes,5,opt,name=namespace_label,json=namespaceLabel,proto3,oneof" crYaml:",omitempty"` // @gotags: crYaml:",omitempty"`
+}
+
+func (*Scope_Namespace) isScope_NamespaceScope() {}
+
+func (*Scope_NamespaceLabel) isScope_NamespaceScope() {}
 
 type Scope_Label struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
@@ -137,14 +213,18 @@ var File_storage_scope_proto protoreflect.FileDescriptor
 
 const file_storage_scope_proto_rawDesc = "" +
 	"\n" +
-	"\x13storage/scope.proto\x12\astorage\"\x9c\x01\n" +
-	"\x05Scope\x12\x18\n" +
-	"\acluster\x18\x01 \x01(\tR\acluster\x12\x1c\n" +
-	"\tnamespace\x18\x02 \x01(\tR\tnamespace\x12*\n" +
+	"\x13storage/scope.proto\x12\astorage\"\xc0\x02\n" +
+	"\x05Scope\x12\x1a\n" +
+	"\acluster\x18\x01 \x01(\tH\x00R\acluster\x12;\n" +
+	"\rcluster_label\x18\x04 \x01(\v2\x14.storage.Scope.LabelH\x00R\fclusterLabel\x12\x1e\n" +
+	"\tnamespace\x18\x02 \x01(\tH\x01R\tnamespace\x12?\n" +
+	"\x0fnamespace_label\x18\x05 \x01(\v2\x14.storage.Scope.LabelH\x01R\x0enamespaceLabel\x12*\n" +
 	"\x05label\x18\x03 \x01(\v2\x14.storage.Scope.LabelR\x05label\x1a/\n" +
 	"\x05Label\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
-	"\x05value\x18\x02 \x01(\tR\x05valueB.\n" +
+	"\x05value\x18\x02 \x01(\tR\x05valueB\x0e\n" +
+	"\fClusterScopeB\x10\n" +
+	"\x0eNamespaceScopeB.\n" +
 	"\x19io.stackrox.proto.storageZ\x11./storage;storageb\x06proto3"
 
 var (
@@ -165,18 +245,26 @@ var file_storage_scope_proto_goTypes = []any{
 	(*Scope_Label)(nil), // 1: storage.Scope.Label
 }
 var file_storage_scope_proto_depIdxs = []int32{
-	1, // 0: storage.Scope.label:type_name -> storage.Scope.Label
-	1, // [1:1] is the sub-list for method output_type
-	1, // [1:1] is the sub-list for method input_type
-	1, // [1:1] is the sub-list for extension type_name
-	1, // [1:1] is the sub-list for extension extendee
-	0, // [0:1] is the sub-list for field type_name
+	1, // 0: storage.Scope.cluster_label:type_name -> storage.Scope.Label
+	1, // 1: storage.Scope.namespace_label:type_name -> storage.Scope.Label
+	1, // 2: storage.Scope.label:type_name -> storage.Scope.Label
+	3, // [3:3] is the sub-list for method output_type
+	3, // [3:3] is the sub-list for method input_type
+	3, // [3:3] is the sub-list for extension type_name
+	3, // [3:3] is the sub-list for extension extendee
+	0, // [0:3] is the sub-list for field type_name
 }
 
 func init() { file_storage_scope_proto_init() }
 func file_storage_scope_proto_init() {
 	if File_storage_scope_proto != nil {
 		return
+	}
+	file_storage_scope_proto_msgTypes[0].OneofWrappers = []any{
+		(*Scope_Cluster)(nil),
+		(*Scope_ClusterLabel)(nil),
+		(*Scope_Namespace)(nil),
+		(*Scope_NamespaceLabel)(nil),
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{

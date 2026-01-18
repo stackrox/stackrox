@@ -1173,8 +1173,14 @@
         "cluster": {
           "type": "string"
         },
+        "clusterLabel": {
+          "$ref": "#/definitions/storageScopeLabel"
+        },
         "namespace": {
           "type": "string"
+        },
+        "namespaceLabel": {
+          "$ref": "#/definitions/storageScopeLabel"
         },
         "label": {
           "$ref": "#/definitions/storageScopeLabel"
