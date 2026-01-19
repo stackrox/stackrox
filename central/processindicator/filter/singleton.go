@@ -18,14 +18,17 @@ var (
 // Singleton returns a global, threadsafe process filter
 func Singleton() filter.Filter {
 	singletonInstance.Do(func() {
-		maxExactPathMatches := env.ProcessFilterMaxExactPathMatches.IntegerSetting()
-		maxUniqueProcesses := env.ProcessFilterMaxProcessPaths.IntegerSetting()
-		fanOutLevels, fanOutLevelsWarning := env.ProcessFilterFanOutLevels.IntegerArraySetting()
+		// Get effective configuration respecting both mode presets and individual overrides
+		config, warnStr := env.GetEffectiveProcessFilterConfig()
 
-		if fanOutLevelsWarning != "" {
-			log.Warn(fanOutLevelsWarning)
+		if warnStr != "" {
+			log.Warn(warnStr)
 		}
-		singletonFilter = filter.NewFilter(maxExactPathMatches, maxUniqueProcesses, fanOutLevels)
+
+		log.Infof("Process filter configuration: mode=%s, maxExactPathMatches=%d, fanOutLevels=%v, maxProcessPaths=%d",
+			env.ProcessFilterMode.Setting(), config.MaxExactPathMatches, config.FanOutLevels, config.MaxProcessPaths)
+
+		singletonFilter = filter.NewFilter(config.MaxExactPathMatches, config.MaxProcessPaths, config.FanOutLevels)
 	})
 	return singletonFilter
 }
