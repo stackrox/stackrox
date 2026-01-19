@@ -3,6 +3,7 @@ package orchestratormanager
 import static util.Helpers.withRetry
 
 import groovy.transform.CompileStatic
+import io.stackrox.annotations.Retry
 import groovy.util.logging.Slf4j
 import io.fabric8.kubernetes.client.KubernetesClientException
 import io.fabric8.openshift.api.model.ProjectRequest
@@ -29,6 +30,7 @@ class OpenShift extends Kubernetes {
     }
 
     @Override
+    @Retry()
     void ensureNamespaceExists(String ns) {
         ProjectRequest projectRequest = new ProjectRequestBuilder()
                 .withNewMetadata()
@@ -40,13 +42,14 @@ class OpenShift extends Kubernetes {
         try {
             oClient.projectrequests().create(projectRequest)
             log.info "Created namespace ${ns}"
-            provisionDefaultServiceAccount(ns)
         } catch (KubernetesClientException kce) {
             if (kce.code != 409) {
                 throw kce
             }
             log.debug("Namespace ${ns} already exists")
         }
+
+        provisionDefaultServiceAccount(ns)
 
         try {
             String sccName = "anyuid"
