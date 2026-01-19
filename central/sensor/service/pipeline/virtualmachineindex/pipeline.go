@@ -126,11 +126,12 @@ func (p *pipelineImpl) Run(ctx context.Context, clusterID string, msg *central.M
 	// Extract connection for capability checks; cluster ID is taken from the pipeline argument.
 	conn := connection.FromContext(ctx)
 
-	// Rate limit check. Drop message if rate limit exceeded and send NACK to Sensor if Sensor supports it.
+	// Rate limit check. Drop message if rate limiter is misconfigured (defensive behavior against misconfiguration)
+	// or rate limit exceeded. Afterwards, send NACK to Sensor if Sensor supports it.
 	if p.rateLimiter == nil {
 		log.Warnf("No rate limiter found for %s. Dropping VM index report %s from cluster %s", rateLimiterWorkload, index.GetId(), clusterID)
 		if conn != nil && conn.HasCapability(centralsensor.SensorACKSupport) {
-			sendVMIndexReportResponse(ctx, clusterID, index.GetId(), central.SensorACK_NACK, "nil rate limiter", injector)
+			sendVMIndexReportResponse(ctx, clusterID, index.GetId(), central.SensorACK_NACK, "rate limiter not configured", injector)
 		}
 		return nil // Don't return error - would cause pipeline retry
 	}
