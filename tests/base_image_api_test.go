@@ -9,6 +9,7 @@ import (
 
 	v2 "github.com/stackrox/rox/generated/api/v2"
 	"github.com/stackrox/rox/pkg/testutils/centralgrpc"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestBaseImageServicePing(t *testing.T) {
@@ -21,5 +22,5 @@ func TestBaseImageServicePing(t *testing.T) {
 
 	_, err := service.GetBaseImageReferences(ctx, &v2.Empty{})
 
-	require.NoError(t, err, "BaseImageServiceV2 should be reachable and implemented")
+	assert.NoError(t, err)
 }
