@@ -86,9 +86,8 @@ func (s *serviceImpl) IssueTokenForPermissionsAndScope(
 	roxClaims := tokens.RoxClaims{
 		RoleNames: []string{roleName},
 		Name:      claimName,
-		ExpireAt:  &expiresAt,
 	}
-	tokenInfo, err := s.issuer.Issue(ctx, roxClaims)
+	tokenInfo, err := s.issuer.Issue(ctx, roxClaims, tokens.WithExpiry(expiresAt))
 	if err != nil {
 		return nil, err
 	}
