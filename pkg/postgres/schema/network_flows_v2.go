@@ -37,7 +37,6 @@ var (
 			"CREATE INDEX IF NOT EXISTS network_flows_dst_v2 ON network_flows_v2 USING btree(props_dstentity_Id)",
 			"CREATE INDEX IF NOT EXISTS network_flows_lastseentimestamp_v2 ON network_flows_v2 USING brin (lastseentimestamp)",
 			"CREATE INDEX IF NOT EXISTS network_flows_updatedat_v2 ON network_flows_v2 USING brin (updatedat)",
-			"CREATE INDEX idx_network_flows_prune ON network_flows_v2 (Props_SrcEntity_Type, Props_SrcEntity_Id, Props_DstEntity_Type, Props_DstEntity_Id, Props_DstPort, Props_L4Protocol, ClusterId)",
 		},
 	}
 
