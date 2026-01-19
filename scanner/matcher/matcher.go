@@ -76,6 +76,8 @@ type Matcher interface {
 	GetLastVulnerabilityUpdate(ctx context.Context) (time.Time, error)
 	GetKnownDistributions(ctx context.Context) []claircore.Distribution
 	GetSBOM(ctx context.Context, ir *claircore.IndexReport, opts *sbom.Options) ([]byte, error)
+	// ScanSBOM decodes an SBOM and matches vulnerabilities against the parsed components.
+	ScanSBOM(ctx context.Context, sbomBytes []byte, mediaType string) (*claircore.VulnerabilityReport, error)
 	Ready(ctx context.Context) error
 	Initialized(ctx context.Context) error
 	Close(ctx context.Context) error
@@ -193,7 +195,7 @@ func NewMatcher(ctx context.Context, cfg config.MatcherConfig) (Matcher, error) 
 		return nil, fmt.Errorf("creating vuln updater: %w", err)
 	}
 
-	// SBOM generation capabilities are only avail via the matcher.
+	// SBOM generation and scanning capabilities are only avail via the matcher.
 	// SBOMs may optionally include vulnerabilities which aligns SBOM
 	// generation to matcher capabilities and reduces the complexity
 	// of routing requests differently based on if a user chooses to
@@ -236,6 +238,30 @@ func (m *matcherImpl) GetKnownDistributions(_ context.Context) []claircore.Distr
 
 func (m *matcherImpl) GetSBOM(ctx context.Context, ir *claircore.IndexReport, opts *sbom.Options) ([]byte, error) {
 	return m.sbomer.GetSBOM(ctx, ir, opts)
+}
+
+func (m *matcherImpl) ScanSBOM(ctx context.Context, sbomBytes []byte, mediaType string) (*claircore.VulnerabilityReport, error) {
+	ctx = zlog.ContextWithValues(ctx, "component", "scanner/backend/matcher.ScanSBOM")
+
+	// Decode the SBOM into an IndexReport.
+	ir, err := m.sbomer.Decode(ctx, sbomBytes, mediaType)
+	if err != nil {
+		return nil, fmt.Errorf("decoding SBOM: %w", err)
+	}
+
+	zlog.Info(ctx).
+		Int("packages", len(ir.Packages)).
+		Int("distributions", len(ir.Distributions)).
+		Int("repositories", len(ir.Repositories)).
+		Msg("decoded SBOM")
+
+	// Match vulnerabilities against the parsed components.
+	vr, err := m.libVuln.Scan(ctx, ir)
+	if err != nil {
+		return nil, fmt.Errorf("matching vulnerabilities: %w", err)
+	}
+
+	return vr, nil
 }
 
 // Close closes the matcher.

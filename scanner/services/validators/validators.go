@@ -94,6 +94,32 @@ func ValidateGetSBOMRequest(req *v4.GetSBOMRequest) error {
 	return nil
 }
 
+// supportedSBOMMediaTypes contains the media types supported for SBOM scanning.
+var supportedSBOMMediaTypes = map[string]struct{}{
+	"application/spdx+json": {},
+	"text/spdx+json":        {},
+}
+
+// ValidateScanSBOMRequest validates a ScanSBOMRequest.
+func ValidateScanSBOMRequest(req *v4.ScanSBOMRequest) error {
+	if req == nil {
+		return errox.InvalidArgs.New("empty request")
+	}
+	if len(req.GetSbom()) == 0 {
+		return errox.InvalidArgs.New("sbom is required")
+	}
+	mediaType := normalizeMediaType(req.GetMediaType())
+	if _, ok := supportedSBOMMediaTypes[mediaType]; !ok {
+		return errox.InvalidArgs.Newf("unsupported media type: %q", req.GetMediaType())
+	}
+	return nil
+}
+
+// normalizeMediaType strips any parameters from the media type (e.g., charset).
+func normalizeMediaType(mediaType string) string {
+	return strings.TrimSpace(strings.Split(mediaType, ";")[0])
+}
+
 func validateContents(contents *v4.Contents) error {
 	if contents == nil {
 		return nil
