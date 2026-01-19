@@ -876,7 +876,11 @@ func TestNoAddedResources(t *testing.T) {
 		resources.VulnerabilityRequest,
 	}
 
-	const failureMessage = "Please contact the Sensor & Ecosystems team to validate your addition of resource"
+	const failureMessage = "" +
+		"Please contact the Sensor & Ecosystems team to validate " +
+		"your addition of resource. For more information about " +
+		"the resource creation process, check " +
+		"https://github.com/stackrox/stackrox/tree/master/pkg/sac/resources/README.md ."
 
 	for _, metadata := range resources.ListAllMetadata() {
 		assert.Contains(
