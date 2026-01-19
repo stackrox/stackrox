@@ -336,7 +336,7 @@ deploy_central_via_operator() {
     customize_envVars+=$'\n      - name: ROX_CVE_FIX_TIMESTAMP'
     customize_envVars+=$'\n        value: "true"'
     customize_envVars+=$'\n      - name: ROX_BASE_IMAGE_DETECTION'
-    customize_envVars+=$'\n        value: "false"'
+    customize_envVars+=$'\n        value: "'"${ROX_BASE_IMAGE_DETECTION:-true}"'"'
 
     local scannerV4ScannerComponent="Default"
     case "${ROX_SCANNER_V4:-}" in
