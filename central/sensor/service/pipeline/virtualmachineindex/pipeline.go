@@ -48,10 +48,6 @@ func GetPipeline() pipeline.Fragment {
 		rateLimit = 0.3 // Keep in sync with the default value in env.VMIndexReportRateLimit.
 	}
 	bucketCapacity := env.VMIndexReportBucketCapacity.IntegerSetting()
-	if bucketCapacity < 1 {
-		log.Warnf("Invalid %s value: %d. Using fallback value of 1.", env.VMIndexReportBucketCapacity.EnvVar(), bucketCapacity)
-		bucketCapacity = 1
-	}
 	rateLimiter, err := rate.NewLimiter(rateLimiterWorkload, rateLimit, bucketCapacity)
 	if err != nil {
 		log.Panicf("Failed to create rate limiter for %s: %v", rateLimiterWorkload, err)
