@@ -9,7 +9,7 @@ import (
 	"github.com/pkg/errors"
 	blobDS "github.com/stackrox/rox/central/blob/datastore"
 	clusterDatastore "github.com/stackrox/rox/central/cluster/datastore"
-	benchmarksDS "github.com/stackrox/rox/central/complianceoperator/v2/benchmarks/datastore"
+	"github.com/stackrox/rox/central/complianceoperator/v2/benchmark"
 	"github.com/stackrox/rox/central/complianceoperator/v2/compliancemanager"
 	profileDS "github.com/stackrox/rox/central/complianceoperator/v2/profiles/datastore"
 	snapshotDS "github.com/stackrox/rox/central/complianceoperator/v2/report/datastore"
@@ -71,7 +71,7 @@ var (
 // New returns a service object for registering with grpc.
 func New(scanConfigDS scanConfigDS.DataStore, scanSettingBindingsDS scanSettingBindingsDS.DataStore,
 	suiteDS suiteDS.DataStore, manager compliancemanager.Manager, reportManager complianceReportManager.Manager, notifierDS notifierDS.DataStore, profileDS profileDS.DataStore,
-	benchmarkDS benchmarksDS.DataStore, clusterDS clusterDatastore.DataStore, snapshotDS snapshotDS.DataStore, blobDS blobDS.Datastore) Service {
+	clusterDS clusterDatastore.DataStore, snapshotDS snapshotDS.DataStore, blobDS blobDS.Datastore) Service {
 	return &serviceImpl{
 		scanConfigDS:                    scanConfigDS,
 		complianceScanSettingBindingsDS: scanSettingBindingsDS,
@@ -80,7 +80,6 @@ func New(scanConfigDS scanConfigDS.DataStore, scanSettingBindingsDS scanSettingB
 		reportManager:                   reportManager,
 		notifierDS:                      notifierDS,
 		profileDS:                       profileDS,
-		benchmarkDS:                     benchmarkDS,
 		clusterDS:                       clusterDS,
 		snapshotDS:                      snapshotDS,
 		blobDS:                          blobDS,
@@ -97,7 +96,6 @@ type serviceImpl struct {
 	reportManager                   complianceReportManager.Manager
 	notifierDS                      notifierDS.DataStore
 	profileDS                       profileDS.DataStore
-	benchmarkDS                     benchmarksDS.DataStore
 	clusterDS                       clusterDatastore.DataStore
 	snapshotDS                      snapshotDS.DataStore
 	blobDS                          blobDS.Datastore
@@ -532,16 +530,16 @@ func validateScanConfiguration(req *v2.ComplianceScanConfiguration) error {
 	return nil
 }
 
-func (s *serviceImpl) getBenchmarks(ctx context.Context, profileNames []string) (map[string][]*storage.ComplianceOperatorBenchmarkV2, error) {
+func (s *serviceImpl) getBenchmarks(ctx context.Context, profiles []*storage.ComplianceOperatorProfileV2) (map[string][]*storage.ComplianceOperatorBenchmarkV2, error) {
 	// Get the benchmarks
-	benchmarkMap := make(map[string][]*storage.ComplianceOperatorBenchmarkV2, len(profileNames))
-	for _, profileName := range profileNames {
-		if _, found := benchmarkMap[profileName]; !found {
-			benchmarks, err := s.benchmarkDS.GetBenchmarksByProfileName(ctx, profileName)
+	benchmarkMap := make(map[string][]*storage.ComplianceOperatorBenchmarkV2, len(profiles))
+	for _, profile := range profiles {
+		if _, found := benchmarkMap[profile.GetName()]; !found {
+			profileBenchmark, err := benchmark.GetBenchmarkFromProfile(profile)
 			if err != nil {
-				return nil, errors.Wrapf(err, "failed to retrieve benchmarks for profile %q.", profileName)
+				return nil, errors.Wrapf(err, "failed to retrieve benchmarks for profile %q.", profile.GetName())
 			}
-			benchmarkMap[profileName] = benchmarks
+			benchmarkMap[profile.GetName()] = []*storage.ComplianceOperatorBenchmarkV2{profileBenchmark}
 		}
 	}
 
@@ -562,7 +560,7 @@ func (s *serviceImpl) getProfiles(ctx context.Context, query *v1.Query, countQue
 	}
 
 	// Get the benchmarks
-	benchmarkMap, err := s.getBenchmarks(ctx, profileNames)
+	benchmarkMap, err := s.getBenchmarks(ctx, profiles)
 	if err != nil {
 		return nil, 0, err
 	}

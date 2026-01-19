@@ -5,7 +5,6 @@ import (
 	"testing"
 
 	"github.com/pkg/errors"
-	benchmarkMocks "github.com/stackrox/rox/central/complianceoperator/v2/benchmarks/datastore/mocks"
 	profileMocks "github.com/stackrox/rox/central/complianceoperator/v2/profiles/datastore/mocks"
 	convertUtils "github.com/stackrox/rox/central/convert/testutils"
 	apiV1 "github.com/stackrox/rox/generated/api/v1"
@@ -19,7 +18,6 @@ import (
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/paginated"
-	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
 )
@@ -36,10 +34,9 @@ type ComplianceProfilesServiceTestSuite struct {
 	suite.Suite
 	mockCtrl *gomock.Controller
 
-	ctx                context.Context
-	profileDatastore   *profileMocks.MockDataStore
-	benchmarkDatastore *benchmarkMocks.MockDataStore
-	service            Service
+	ctx              context.Context
+	profileDatastore *profileMocks.MockDataStore
+	service          Service
 }
 
 func (s *ComplianceProfilesServiceTestSuite) SetupSuite() {
@@ -55,9 +52,8 @@ func (s *ComplianceProfilesServiceTestSuite) SetupSuite() {
 func (s *ComplianceProfilesServiceTestSuite) SetupTest() {
 	s.mockCtrl = gomock.NewController(s.T())
 	s.profileDatastore = profileMocks.NewMockDataStore(s.mockCtrl)
-	s.benchmarkDatastore = benchmarkMocks.NewMockDataStore(s.mockCtrl)
 
-	s.service = New(s.profileDatastore, s.benchmarkDatastore)
+	s.service = New(s.profileDatastore)
 }
 
 func (s *ComplianceProfilesServiceTestSuite) TearDownTest() {
@@ -68,13 +64,6 @@ func (s *ComplianceProfilesServiceTestSuite) TestGetComplianceProfile() {
 	profileID := "ocp-cis-4.2"
 	testProfile := convertUtils.GetProfileV2Storage(s.T())
 	s.profileDatastore.EXPECT().GetProfile(s.ctx, profileID).Return(testProfile, true, nil)
-
-	s.benchmarkDatastore.EXPECT().GetBenchmarksByProfileName(s.ctx, testProfile.GetName()).Return([]*storage.ComplianceOperatorBenchmarkV2{{
-		Id:        uuid.NewV4().String(),
-		Name:      "CIS",
-		ShortName: "OCP_CIS",
-		Version:   "1-5",
-	}}, nil).Times(1)
 
 	profile, err := s.service.GetComplianceProfile(s.ctx, &apiV2.ResourceByID{Id: profileID})
 	s.Require().NoError(err)
@@ -127,15 +116,6 @@ func (s *ComplianceProfilesServiceTestSuite) TestListComplianceProfiles() {
 				profiles := convertUtils.GetProfilesV2Storage(s.T())
 				s.profileDatastore.EXPECT().SearchProfiles(gomock.Any(), profileQuery).Return(profiles, nil).Times(1)
 				s.profileDatastore.EXPECT().CountProfiles(gomock.Any(), countQuery).Return(1, nil).Times(1)
-
-				for _, profile := range profiles {
-					s.benchmarkDatastore.EXPECT().GetBenchmarksByProfileName(s.ctx, profile.GetName()).Return([]*storage.ComplianceOperatorBenchmarkV2{{
-						Id:        uuid.NewV4().String(),
-						Name:      "CIS",
-						ShortName: "OCP_CIS",
-						Version:   "1-5",
-					}}, nil).Times(1)
-				}
 			},
 		},
 	}
@@ -182,15 +162,16 @@ func (s *ComplianceProfilesServiceTestSuite) TestListProfileSummaries() {
 			expectedErr: nil,
 			expectedResp: []*apiV2.ComplianceProfileSummary{
 				{
-					Name:           "ocp4",
+					Name:           "ocp4-cis",
 					ProductType:    "platform",
 					Description:    "this is a test",
 					Title:          "A Title",
-					ProfileVersion: "version 1",
+					ProfileVersion: "1-5",
 					RuleCount:      5,
 					Standards: []*apiV2.ComplianceBenchmark{{
-						Name:      "CIS",
-						ShortName: "OCP_CIS",
+						Name:      "A Title",
+						Provider:  "CIS",
+						ShortName: "CIS-OCP",
 						Version:   "1-5",
 					}},
 				},
@@ -205,20 +186,20 @@ func (s *ComplianceProfilesServiceTestSuite) TestListProfileSummaries() {
 					},
 				}
 
-				s.profileDatastore.EXPECT().GetProfilesNames(gomock.Any(), profileQuery, []string{fixtureconsts.Cluster1}).Return([]string{"ocp4"}, nil).Times(1)
+				s.profileDatastore.EXPECT().GetProfilesNames(gomock.Any(), profileQuery, []string{fixtureconsts.Cluster1}).Return([]string{"ocp4-cis"}, nil).Times(1)
 				s.profileDatastore.EXPECT().CountDistinctProfiles(gomock.Any(), search.EmptyQuery(), []string{fixtureconsts.Cluster1}).Return(1, nil).Times(1)
 
-				searchQuery := search.NewQueryBuilder().AddSelectFields().AddExactMatches(search.ComplianceOperatorProfileName, "ocp4").ProtoQuery()
+				searchQuery := search.NewQueryBuilder().AddSelectFields().AddExactMatches(search.ComplianceOperatorProfileName, "ocp4-cis").ProtoQuery()
 				searchQuery.Pagination = &apiV1.QueryPagination{}
 				searchQuery.Pagination.SortOptions = profileQuery.GetPagination().GetSortOptions()
 
 				profiles := []*storage.ComplianceOperatorProfileV2{
 					{
-						Name:           "ocp4",
+						Name:           "ocp4-cis",
 						ProductType:    "platform",
 						Description:    "this is a test",
 						Title:          "A Title",
-						ProfileVersion: "version 1",
+						ProfileVersion: "1-5",
 						Rules: []*storage.ComplianceOperatorProfileV2_Rule{
 							{
 								RuleName: "test 1",
@@ -239,15 +220,6 @@ func (s *ComplianceProfilesServiceTestSuite) TestListProfileSummaries() {
 					},
 				}
 				s.profileDatastore.EXPECT().SearchProfiles(gomock.Any(), searchQuery).Return(profiles, nil).Times(1)
-
-				for _, profile := range profiles {
-					s.benchmarkDatastore.EXPECT().GetBenchmarksByProfileName(s.ctx, profile.GetName()).Return([]*storage.ComplianceOperatorBenchmarkV2{{
-						Id:        uuid.NewV4().String(),
-						Name:      "CIS",
-						ShortName: "OCP_CIS",
-						Version:   "1-5",
-					}}, nil).Times(1)
-				}
 			},
 		},
 	}

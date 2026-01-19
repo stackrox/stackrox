@@ -445,6 +445,9 @@ func (s *serviceImpl) scanImageV2Internal(ctx context.Context, request *v1.ScanI
 			fetchOpt = enricher.ForceRefetch
 		}
 		imgV2 = types.ToImageV2(request.GetImage())
+		if imgV2.GetId() == "" {
+			imgV2.Id = imgID
+		}
 	}
 
 	if err := s.enrichImageV2(ctx, imgV2, fetchOpt, request); err != nil && imgExists {

@@ -23,7 +23,7 @@ import { getTableUIState } from 'utils/getTableUIState';
 import { getHasSearchApplied } from 'utils/searchUtils';
 
 import {
-    getVirtualMachineScannedPackagesCount,
+    getVirtualMachineScannedComponentsCount,
     getVirtualMachineSeveritiesCount,
 } from '../aggregateUtils';
 import AdvancedFiltersToolbar from '../../components/AdvancedFiltersToolbar';
@@ -118,7 +118,7 @@ function VirtualMachinesCvesTable() {
                             <Th>CVEs by severity</Th>
                             <Th>Cluster</Th>
                             <Th>Namespace</Th>
-                            <Th>Scanned packages</Th>
+                            <Th>Scanned components</Th>
                             <Th>Last updated</Th>
                         </Tr>
                     </Thead>
@@ -174,8 +174,8 @@ function VirtualMachinesCvesTable() {
                                             <Td dataLabel="Namespace">
                                                 {virtualMachine.namespace}
                                             </Td>
-                                            <Td dataLabel="Scanned packages">
-                                                {getVirtualMachineScannedPackagesCount(
+                                            <Td dataLabel="Scanned components">
+                                                {getVirtualMachineScannedComponentsCount(
                                                     virtualMachine
                                                 )}
                                             </Td>

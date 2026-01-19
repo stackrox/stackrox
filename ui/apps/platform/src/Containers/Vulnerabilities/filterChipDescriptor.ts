@@ -35,11 +35,6 @@ export const cveStatusClusterFixableDescriptor: FilterChipGroupDescriptor = {
     render: renderFixableStatus,
 };
 
-export const cveSnoozedDescriptor: FilterChipGroupDescriptor = {
-    displayName: 'CVE snoozed',
-    searchFilterName: 'CVE Snoozed',
-};
-
 export const platformComponentDescriptor: FilterChipGroupDescriptor = {
     displayName: 'Platform component',
     searchFilterName: 'Platform Component',

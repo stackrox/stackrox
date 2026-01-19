@@ -261,12 +261,19 @@
           },
           "description": "A list of labels to aggregate on. The complete list of labels for the\ngiven metric group can be found in the documentation, or in the API\nerror message, returned when an invalid label is attempted to be added."
         },
-        "filters": {
+        "includeFilters": {
           "type": "object",
           "additionalProperties": {
             "type": "string"
           },
-          "description": "A map of label name to a filter regular expression for this label\nvalue. See the RE2 syntax reference:\nhttps://github.com/google/re2/wiki/Syntax. If filters are specified, a\nmetric record is only counted if all label values match the according\nlabel expression. Patterns are full-match only (automatically wrapped\nwith ^ and $)."
+          "description": "A map of label name to a filter regular expression for this label\nvalue. See the RE2 syntax reference:\nhttps://github.com/google/re2/wiki/Syntax. If include_filters are\nspecified, a metric record is only counted if all label values match\nthe according label expression. Patterns are full-match only\n(automatically wrapped with ^ and $)."
+        },
+        "excludeFilters": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          },
+          "description": "A map of label name to a filter regular expression for this label\nvalue. See the RE2 syntax reference:\nhttps://github.com/google/re2/wiki/Syntax. If exclude_filters are\nspecified, a metric record is dropped if any label value matches the\naccording label expression. Patterns are full-match only (automatically\nwrapped with ^ and $). Exclude filters are applied after include\nfilters."
         }
       }
     },

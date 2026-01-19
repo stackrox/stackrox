@@ -11,9 +11,11 @@ import {
 } from '@patternfly/react-core';
 
 import { DynamicTableLabel } from 'Components/DynamicIcon';
+import ColumnManagementButton from 'Components/ColumnManagementButton';
 import type { UseURLPaginationResult } from 'hooks/useURLPagination';
 import type { UseUrlSearchReturn } from 'hooks/useURLSearch';
 import type { UseURLSortResult } from 'hooks/useURLSort';
+import { useManagedColumns } from 'hooks/useManagedColumns';
 import type { VirtualMachine } from 'services/VirtualMachineService';
 import { getTableUIState } from 'utils/getTableUIState';
 
@@ -38,7 +40,10 @@ import {
     getHiddenStatuses,
     parseQuerySearchFilter,
 } from '../../utils/searchUtils';
-import VirtualMachineVulnerabilitiesTable from './VirtualMachineVulnerabilitiesTable';
+import VirtualMachineVulnerabilitiesTable, {
+    defaultColumns,
+    tableId,
+} from './VirtualMachineVulnerabilitiesTable';
 
 // Currently we need all vm info to be fetched in the root component, hence this being passed in
 // there will likely be a call specific to this table in the future that should be made here
@@ -71,6 +76,8 @@ function VirtualMachinePageVulnerabilities({
     const hiddenStatuses = getHiddenStatuses(querySearchFilter);
     const hiddenSeverities = getHiddenSeverities(querySearchFilter);
     const isFiltered = getHasSearchApplied(searchFilter);
+
+    const managedColumnState = useManagedColumns(tableId, defaultColumns);
 
     const virtualMachineTableData = useMemo(
         () => getVirtualMachineCveTableData(virtualMachineData),
@@ -167,6 +174,12 @@ function VirtualMachinePageVulnerabilities({
                         </Flex>
                     </SplitItem>
                     <SplitItem>
+                        <ColumnManagementButton
+                            columnConfig={managedColumnState.columns}
+                            onApplyColumns={managedColumnState.setVisibility}
+                        />
+                    </SplitItem>
+                    <SplitItem>
                         <Pagination
                             itemCount={filteredVirtualMachineTableData.length}
                             perPage={perPage}
@@ -182,6 +195,7 @@ function VirtualMachinePageVulnerabilities({
                     onClearFilters={onClearFilters}
                     getSortParams={getSortParams}
                     tableState={tableState}
+                    tableConfig={managedColumnState.columns}
                 />
             </div>
         </PageSection>

@@ -52,6 +52,34 @@ export const imageDetailsFragment = gql`
     }
 `;
 
+export const imageV2DetailsFragment = gql`
+    fragment ImageDetails on ImageV2 {
+        deploymentCount
+        operatingSystem
+        metadata {
+            v1 {
+                created
+            }
+        }
+        dataSource {
+            name
+        }
+        scanTime
+        scanNotes
+        notes
+        signatureCount
+        signatureVerificationData {
+            results {
+                description
+                status
+                verificationTime
+                verifiedImageReferences
+                verifierId
+            }
+        }
+    }
+`;
+
 export type ImageDetailBadgesProps = {
     imageData: ImageDetails;
 };

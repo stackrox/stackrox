@@ -6,7 +6,7 @@ import (
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/pkg/errors"
 	clusterDatastore "github.com/stackrox/rox/central/cluster/datastore"
-	benchmarksDS "github.com/stackrox/rox/central/complianceoperator/v2/benchmarks/datastore"
+	"github.com/stackrox/rox/central/complianceoperator/v2/benchmark"
 	complianceDS "github.com/stackrox/rox/central/complianceoperator/v2/checkresults/datastore"
 	"github.com/stackrox/rox/central/complianceoperator/v2/checkresults/utils"
 	complianceIntegrationDS "github.com/stackrox/rox/central/complianceoperator/v2/integration/datastore"
@@ -51,7 +51,7 @@ var (
 )
 
 // New returns a service object for registering with grpc.
-func New(complianceResultsDS complianceDS.DataStore, scanConfigDS complianceConfigDS.DataStore, integrationDS complianceIntegrationDS.DataStore, profileDS profileDatastore.DataStore, scanDS complianceScanDS.DataStore, benchmarkDS benchmarksDS.DataStore, ruleDS ruleDS.DataStore, clusterDS clusterDatastore.DataStore) Service {
+func New(complianceResultsDS complianceDS.DataStore, scanConfigDS complianceConfigDS.DataStore, integrationDS complianceIntegrationDS.DataStore, profileDS profileDatastore.DataStore, scanDS complianceScanDS.DataStore, ruleDS ruleDS.DataStore, clusterDS clusterDatastore.DataStore) Service {
 	return &serviceImpl{
 		complianceResultsDS: complianceResultsDS,
 		scanConfigDS:        scanConfigDS,
@@ -60,7 +60,6 @@ func New(complianceResultsDS complianceDS.DataStore, scanConfigDS complianceConf
 		scanDS:              scanDS,
 		ruleDS:              ruleDS,
 		clusterDS:           clusterDS,
-		benchmarkDS:         benchmarkDS,
 	}
 }
 
@@ -74,7 +73,6 @@ type serviceImpl struct {
 	scanDS              complianceScanDS.DataStore
 	ruleDS              ruleDS.DataStore
 	clusterDS           clusterDatastore.DataStore
-	benchmarkDS         benchmarksDS.DataStore
 }
 
 // RegisterServiceServer registers this service with the given gRPC Server.
@@ -211,11 +209,11 @@ func (s *serviceImpl) getProfileStats(ctx context.Context, parsedQuery *v1.Query
 
 		// Get the benchmarks
 		if _, found := profileBenchmarksMap[scan.ProfileName]; !found {
-			benchmarks, err := s.benchmarkDS.GetBenchmarksByProfileName(ctx, scan.ProfileName)
+			profileBenchmark, err := benchmark.GetBenchmarkFromProfile(profileMap[scan.ProfileName])
 			if err != nil {
 				return nil, 0, errors.Wrapf(err, "failed to retrieve benchmarks for profile %q.", scan.ProfileName)
 			}
-			profileBenchmarksMap[scan.ProfileName] = benchmarks
+			profileBenchmarksMap[scan.ProfileName] = []*storage.ComplianceOperatorBenchmarkV2{profileBenchmark}
 		}
 	}
 
@@ -412,7 +410,7 @@ func (s *serviceImpl) GetComplianceProfileCheckStats(ctx context.Context, reques
 		ruleNames = append(ruleNames, result.RuleName)
 	}
 
-	controls, err := utils.GetControlsForScanResults(ctx, s.ruleDS, ruleNames, request.GetProfileName(), s.benchmarkDS)
+	controls, err := utils.GetControlsForScanResults(ctx, s.ruleDS, ruleNames, request.GetProfileName())
 	if err != nil {
 		return nil, errors.Wrapf(err, "Unable to retrieve controls for compliance profile check stats for %+v", request)
 	}

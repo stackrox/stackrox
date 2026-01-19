@@ -6,7 +6,6 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/booleanpolicy/fieldnames"
 	"github.com/stackrox/rox/pkg/features"
-	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/suite"
@@ -280,14 +279,18 @@ func (s *NodeDetectionTestSuite) TestNodeFileAccess() {
 				s.Require().NoError(err)
 
 				if event.expectAlert {
-					s.Require().NotNil(violations.FileAccessViolation, "expected file access violation in alert")
+					s.Require().Len(violations.AlertViolations, 1, "expected one file access violation in alert")
+					s.Require().Equal(storage.Alert_Violation_FILE_ACCESS, violations.AlertViolations[0].GetType(), "expected FILE_ACCESS type")
 
-					fileAccessViolation := violations.FileAccessViolation
-					s.Require().Len(fileAccessViolation.GetAccesses(), 1, "expected one file access in alert")
+					fileAccess := violations.AlertViolations[0].GetFileAccess()
+					s.Require().NotNil(fileAccess, "expected file access info")
 
-					protoassert.Equal(s.T(), event.access, fileAccessViolation.GetAccesses()[0])
+					// Verify the file access details match
+					s.Require().Equal(event.access.GetFile().GetEffectivePath(), fileAccess.GetFile().GetEffectivePath())
+					s.Require().Equal(event.access.GetFile().GetActualPath(), fileAccess.GetFile().GetActualPath())
+					s.Require().Equal(event.access.GetOperation(), fileAccess.GetOperation())
 				} else {
-					s.Require().Nil(violations.FileAccessViolation, "expected no alerts")
+					s.Require().Empty(violations.AlertViolations, "expected no alerts")
 				}
 			}
 		})
@@ -296,7 +299,7 @@ func (s *NodeDetectionTestSuite) TestNodeFileAccess() {
 
 func (s *NodeDetectionTestSuite) getNodeFileAccessEvent(path string, operation storage.FileAccess_Operation) *storage.FileAccess {
 	return &storage.FileAccess{
-		File:      &storage.FileAccess_File{NodePath: path},
+		File:      &storage.FileAccess_File{ActualPath: path},
 		Operation: operation,
 	}
 }
@@ -327,7 +330,7 @@ func (s *NodeDetectionTestSuite) getNodeFileAccessPolicyWithOperations(operation
 				SectionName: "section 1",
 				PolicyGroups: []*storage.PolicyGroup{
 					{
-						FieldName: fieldnames.NodeFilePath,
+						FieldName: fieldnames.ActualPath,
 						Values:    pathValues,
 					},
 					{
@@ -362,7 +365,7 @@ func (s *NodeDetectionTestSuite) getNodeFileAccessPolicy(paths ...string) *stora
 				SectionName: "section 1",
 				PolicyGroups: []*storage.PolicyGroup{
 					{
-						FieldName: "Node File Path",
+						FieldName: "Actual Path",
 						Values:    policyValues,
 					},
 				},
