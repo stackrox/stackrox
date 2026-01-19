@@ -118,7 +118,6 @@ func (fds *flowDataStoreImpl) UpsertFlows(ctx context.Context, flows []*storage.
 	for flowBatch := range slices.Chunk(filtered, addBatchSize) {
 		err := fds.storage.UpsertFlows(ctx, flowBatch, lastUpdateTS)
 		if err != nil {
-			// TODO:  remove from the output.
 			log.Warnf("error adding a batch of network flows: %v", err)
 		} else {
 			log.Debugf("successfully added a batch of %d network flows", len(flowBatch))
