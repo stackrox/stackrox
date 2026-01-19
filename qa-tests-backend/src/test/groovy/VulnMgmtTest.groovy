@@ -26,8 +26,8 @@ class VulnMgmtTest extends BaseSpecification {
     query getImage(\$id: ID!, \$query: String) {
       result: fullImage(id: \$id) {
         scan {
-          components(query: \$query) {
-            vulns(query: \$query) {
+          imageComponents(query: \$query) {
+            imageVulnerabilities(query: \$query) {
               ...cveFields
             }
           }
@@ -35,7 +35,7 @@ class VulnMgmtTest extends BaseSpecification {
       }
     }
 
-fragment cveFields on EmbeddedVulnerability {
+fragment cveFields on ImageVulnerability {
   cve
   cvss
   severity
@@ -190,7 +190,7 @@ query getComponentId(\$imageId: ID!, \$componentQuery: String) {
             assert embeddedImageRes.getErrors().size() == 0
         }
 
-        def embeddedImageResVuln = embeddedImageRes.value.result.scan.components[0].vulns[0]
+        def embeddedImageResVuln = embeddedImageRes.value.result.scan.imageComponents[0].imageVulnerabilities[0]
 
         def topLevelImageRes = gqlService.Call(getTopLevelImageQuery(),
                 [id: imageDigest, query: query])
