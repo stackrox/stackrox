@@ -15,11 +15,6 @@ import (
 	"github.com/stackrox/rox/pkg/utils"
 )
 
-const (
-	id       = `https://stackrox.io/jwt-sources#api-tokens`
-	apiToken = "api-token"
-)
-
 var (
 	backendInstance     Backend
 	initBackendInstance sync.Once
@@ -35,13 +30,8 @@ func Singleton() Backend {
 				sac.ResourceScopeKeys(resources.Integration)))
 
 		// Create and initialize source.
-		src := tokenbasedsource.NewTokenSource(
-			id,
-			apiToken,
-			apiToken,
-			tokenbasedsource.WithRevocationLayer(tokens.NewRevocationLayer()),
-		)
-		err := src.InitFromStore(ctx, datastore.Singleton())
+		src := newSource()
+		err := src.initFromStore(ctx, datastore.Singleton())
 		utils.Should(errors.Wrap(err, "could not initialize API tokens source"))
 
 		// Create token issuer.

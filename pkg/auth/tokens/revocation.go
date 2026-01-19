@@ -10,8 +10,6 @@ import (
 )
 
 // RevocationLayer is a source layer that deals with token revocation.
-//
-//go:generate mockgen-wrapper
 type RevocationLayer interface {
 	SourceLayer
 
