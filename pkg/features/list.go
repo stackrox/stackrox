@@ -88,7 +88,7 @@ var (
 	NetworkFlowCacheLimiting = registerFeature("Enable limiting network flow cache size to prevent memory issues", "ROX_NETFLOW_CACHE_LIMITING")
 
 	// Flattens Image Data Model for improved accuracy and performance
-	FlattenImageData = registerFeature("Uses a flattened Image Data Model for improved accuracy and performance", "ROX_FLATTEN_IMAGE_DATA")
+	FlattenImageData = registerFeature("Uses a flattened Image Data Model for improved accuracy and performance", "ROX_FLATTEN_IMAGE_DATA", enabled)
 
 	// Adds the ability to generate view-based vulnerability reports
 	VulnerabilityViewBasedReports = registerFeature("Adds the ability to generate view-based vulnerability reports", "ROX_VULNERABILITY_VIEW_BASED_REPORTS", enabled)
