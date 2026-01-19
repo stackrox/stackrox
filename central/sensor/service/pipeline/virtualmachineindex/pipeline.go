@@ -45,7 +45,7 @@ func GetPipeline() pipeline.Fragment {
 	rateLimit, err := strconv.ParseFloat(env.VMIndexReportRateLimit.Setting(), 64)
 	if err != nil {
 		log.Warnf("Invalid %s value: %v. Using fallback value of 1.0", env.VMIndexReportRateLimit.EnvVar(), err)
-		rateLimit = 1.0
+		rateLimit = 0.3 // Keep in sync with the default value in env.VMIndexReportRateLimit.
 	}
 	bucketCapacity := env.VMIndexReportBucketCapacity.IntegerSetting()
 	if bucketCapacity < 1 {
