@@ -24,7 +24,7 @@ sudo ./roxagent --daemon --index-interval 10m --host-path /custom/path --port 20
 ## Flags
 
 - `--daemon` - Run continuously (default: false).
-- `--index-interval` - Time between scans in daemon mode (default: 5m).
+- `--index-interval` - Time between scans in daemon mode (default: 60m).
 - `--host-path` - Where to look for package databases (default: /).
 - `--port` - VSock port (default: 1024).
 - `--repo-cpe-url` - URL for the repository to CPE mapping.
