@@ -254,7 +254,7 @@ function ImagePageVulnerabilities({
             </PageSection>
             <Divider component="div" />
             {isBaseImageDetectionEnabled && baseImageInfo.length > 0 && (
-                <PageSection component="div" className="pf-v5-u-p-lg">
+                <PageSection component="div" className="pf-v5-u-pt-lg">
                     <BaseImageAssessmentCard baseImageInfo={baseImageInfo} />
                 </PageSection>
             )}
