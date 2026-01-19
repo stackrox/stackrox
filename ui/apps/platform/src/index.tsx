@@ -29,6 +29,7 @@ import AppPage from 'Containers/AppPage';
 import configureStore from 'init/configureStore';
 import installRaven from 'init/installRaven';
 import configureApollo from 'init/configureApolloClient';
+import { setAnalyticsSource } from 'init/initializeAnalytics';
 import { FeatureFlagsProvider } from 'providers/FeatureFlagProvider';
 import { PublicConfigProvider } from 'providers/PublicConfigProvider';
 import { TelemetryConfigProvider } from 'providers/TelemetryConfigProvider';
@@ -43,6 +44,7 @@ import { fetchCentralCapabilitiesThunk } from 'reducers/centralCapabilities';
 mobxConfigure({ isolateGlobalState: true });
 
 installRaven();
+setAnalyticsSource('standalone');
 
 const rootNode = document.getElementById('root');
 /* @ts-expect-error `createRoot` expects a non-null argument */
