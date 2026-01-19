@@ -569,7 +569,7 @@ func TestPipelineRun_NilRateLimiter_WithACKSupport(t *testing.T) {
 	assert.Equal(t, central.SensorACK_NACK, ack.GetAction(), "expected NACK action")
 	assert.Equal(t, central.SensorACK_VM_INDEX_REPORT, ack.GetMessageType(), "expected VM_INDEX_REPORT message type")
 	assert.Equal(t, vmID, ack.GetResourceId(), "expected resource ID to match VM ID")
-	assert.Equal(t, "nil rate limiter", ack.GetReason(), "expected reason to indicate nil rate limiter")
+	assert.Equal(t, "rate limiter not configured", ack.GetReason(), "expected reason to indicate nil rate limiter")
 }
 
 // recordingInjector is a test double that records all SensorACK messages sent via InjectMessage.
