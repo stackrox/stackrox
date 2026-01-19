@@ -99,6 +99,10 @@ func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 	log.Infof("Install method: %q", helmManagedConfig.GetManagedBy())
 	installmethod.Set(helmManagedConfig.GetManagedBy())
 
+	if features.LabelBasedPolicyScoping.Enabled() && helmManagedConfig != nil {
+		storeProvider.ClusterLabels().Set(helmManagedConfig.GetClusterConfig().GetClusterLabels())
+	}
+
 	if cfg.introspectionK8sClient == nil {
 		// This is used so we can still identify sensor's deployment with the fake-workloads.
 		cfg.introspectionK8sClient = cfg.k8sClient

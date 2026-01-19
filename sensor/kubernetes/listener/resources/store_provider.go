@@ -3,6 +3,7 @@ package resources
 import (
 	"github.com/stackrox/rox/pkg/registrymirror"
 	"github.com/stackrox/rox/sensor/common/clusterentities"
+	"github.com/stackrox/rox/sensor/common/clusterlabels"
 	"github.com/stackrox/rox/sensor/common/registry"
 	"github.com/stackrox/rox/sensor/common/store"
 	"github.com/stackrox/rox/sensor/kubernetes/listener/resources/rbac"
@@ -26,6 +27,7 @@ type StoreProvider struct {
 	registryMirrorStore    registrymirror.Store
 	nsStore                *namespaceStore
 	vmStore                *vmStore.VirtualMachineStore
+	clusterLabelsStore     *clusterlabels.Store
 
 	cleanableStores []CleanableStore
 }
@@ -67,6 +69,7 @@ func InitializeStore(hm clusterentities.HeritageManager) *StoreProvider {
 		registryMirrorStore:    registrymirror.NewFileStore(),
 		nsStore:                newNamespaceStore(),
 		vmStore:                vmStore.NewVirtualMachineStore(),
+		clusterLabelsStore:     clusterlabels.NewStore(),
 	}
 
 	p.cleanableStores = []CleanableStore{
@@ -153,4 +156,9 @@ func (p *StoreProvider) RegistryMirrors() registrymirror.Store {
 // VirtualMachines returns the VirtualMachine store
 func (p *StoreProvider) VirtualMachines() *vmStore.VirtualMachineStore {
 	return p.vmStore
+}
+
+// ClusterLabels returns the cluster labels store
+func (p *StoreProvider) ClusterLabels() *clusterlabels.Store {
+	return p.clusterLabelsStore
 }
