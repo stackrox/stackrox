@@ -25,8 +25,8 @@ var (
 )
 
 func migrate(database *types.Databases) error {
-	// Network_flows_v2 is a partitioned table.  As such we cannot change the indexes in
-	// a transaction.  Creating the indexes on each partition and waiting on them to
+	// Network_flows_v2 is a partitioned table.
+	// Creating the indexes on each partition and waiting on them to
 	// be done before adding the index to the owning table was considered.  But
 	// that would be a complicated migration and adds little value due to how our migrator
 	// locks everything anyway.  The same amount of work would have to be done before the migrator
