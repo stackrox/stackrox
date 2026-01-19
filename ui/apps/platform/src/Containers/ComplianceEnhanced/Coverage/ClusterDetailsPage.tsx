@@ -42,9 +42,6 @@ import ScanConfigurationSelect from './components/ScanConfigurationSelect';
 import useScanConfigRouter from './hooks/useScanConfigRouter';
 import { ScanConfigurationsContext } from './ScanConfigurationsProvider';
 import ProfilesToggleGroup from './ProfilesToggleGroup';
-import { profileCheckSearchFilterConfig } from '../searchFilterConfig';
-
-const searchFilterConfig = [profileCheckSearchFilterConfig];
 
 function ClusterDetailsPage() {
     const { scanConfigurationsQuery, selectedScanConfigName, setSelectedScanConfigName } =
@@ -216,7 +213,6 @@ function ClusterDetailsPage() {
                             tableState={tableState}
                             pagination={pagination}
                             getSortParams={getSortParams}
-                            searchFilterConfig={searchFilterConfig}
                             searchFilter={searchFilter}
                             onFilterChange={setSearchFilter}
                             onSearch={onSearch}

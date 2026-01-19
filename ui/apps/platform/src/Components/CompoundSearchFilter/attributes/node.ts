@@ -37,4 +37,4 @@ export const ScanTime: CompoundSearchFilterAttribute = {
     inputType: 'date-picker',
 };
 
-export const nodeAttributes = [Name, OperatingSystem, Label, Annotation, ScanTime];
+export const nodeAttributes = [Annotation, Label, Name, OperatingSystem, ScanTime];

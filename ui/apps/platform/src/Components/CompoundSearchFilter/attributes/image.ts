@@ -37,4 +37,4 @@ export const Registry: CompoundSearchFilterAttribute = {
     inputType: 'text',
 };
 
-export const imageAttributes = [Name, OperatingSystem, Tag, Label, Registry];
+export const imageAttributes = [Label, Name, OperatingSystem, Registry, Tag];

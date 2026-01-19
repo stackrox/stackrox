@@ -23,4 +23,4 @@ export const CVSS: CompoundSearchFilterAttribute = {
     inputType: 'condition-number',
 };
 
-export const nodeCVEAttributes = [Name, DiscoveredTime, CVSS];
+export const nodeCVEAttributes = [CVSS, DiscoveredTime, Name];

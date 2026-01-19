@@ -266,6 +266,7 @@ function ImagePageVulnerabilities({
                     <AdvancedFiltersToolbar
                         className="pf-v5-u-pt-lg pf-v5-u-pb-0"
                         searchFilterConfig={searchFilterConfig}
+                        defaultSearchFilterEntity="CVE"
                         searchFilter={searchFilter}
                         onFilterChange={(newFilter, searchPayload) => {
                             setSearchFilter(newFilter);

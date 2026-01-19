@@ -91,6 +91,7 @@ function NodePageVulnerabilities({ nodeId }: NodePageVulnerabilitiesProps) {
                     className="pf-v5-u-px-sm pf-v5-u-pb-0"
                     searchFilter={searchFilter}
                     searchFilterConfig={searchFilterConfig}
+                    defaultSearchFilterEntity="CVE"
                     onFilterChange={(newFilter, searchPayload) => {
                         setSearchFilter(newFilter);
                         setPage(1, 'replace');

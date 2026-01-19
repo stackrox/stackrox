@@ -285,12 +285,12 @@ function WorkloadCvesOverviewPage() {
 
     // Keep searchFilterConfigWithFeatureFlagDependency for ROX_SCANNER_V4.
     const searchFilterConfigWithFeatureFlagDependency = [
-        imageSearchFilterConfig,
-        imageCVESearchFilterConfig,
-        imageComponentSearchFilterConfig,
-        deploymentSearchFilterConfig,
-        namespaceSearchFilterConfig,
         clusterSearchFilterConfig,
+        imageCVESearchFilterConfig,
+        deploymentSearchFilterConfig,
+        imageSearchFilterConfig,
+        imageComponentSearchFilterConfig,
+        namespaceSearchFilterConfig,
     ];
 
     const searchFilterConfig = getSearchFilterConfigWithFeatureFlagDependency(

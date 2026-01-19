@@ -13,11 +13,11 @@ import useVulnerabilityState from '../hooks/useVulnerabilityState';
 
 function ImageCvePageRoute() {
     const searchFilterConfig = [
+        clusterSearchFilterConfig,
+        deploymentSearchFilterConfig,
         imageSearchFilterConfig,
         imageComponentSearchFilterConfig,
-        deploymentSearchFilterConfig,
         namespaceSearchFilterConfig,
-        clusterSearchFilterConfig,
     ];
 
     const vulnerabilityState = useVulnerabilityState();

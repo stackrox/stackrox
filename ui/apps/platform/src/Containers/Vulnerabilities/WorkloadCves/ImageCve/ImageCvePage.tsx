@@ -428,6 +428,7 @@ function ImageCvePage({
                         <AdvancedFiltersToolbar
                             className="pf-v5-u-py-md"
                             searchFilterConfig={searchFilterConfig}
+                            defaultSearchFilterEntity="Image"
                             searchFilter={searchFilter}
                             onFilterChange={(newFilter, searchPayload) => {
                                 setSearchFilter(newFilter);

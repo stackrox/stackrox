@@ -215,7 +215,6 @@ function PoliciesTable({
                                     );
                                 }}
                                 defaultEntity={'Policy'}
-                                defaultAttribute={'Name'}
                             />
                         </ToolbarItem>
                         <ToolbarItem className="pf-v5-u-w-100">

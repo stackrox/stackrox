@@ -1,32 +1,19 @@
 import { SelectOption } from '@patternfly/react-core';
 
-import { getEntity } from 'Components/CompoundSearchFilter/utils/utils';
-
 import SimpleSelect from './SimpleSelect';
-import type { CompoundSearchFilterConfig } from '../types';
+import type { CompoundSearchFilterConfig, CompoundSearchFilterEntity } from '../types';
 
 export type SelectedEntity = string | undefined;
 export type EntitySelectorOnChange = (value: string | number | undefined) => void;
 
 export type EntitySelectorProps = {
-    selectedEntity: SelectedEntity;
+    entity: CompoundSearchFilterEntity;
     onChange: EntitySelectorOnChange;
     config: CompoundSearchFilterConfig;
     menuToggleClassName?: string;
 };
 
-function EntitySelector({
-    selectedEntity = '',
-    onChange,
-    config,
-    menuToggleClassName,
-}: EntitySelectorProps) {
-    const entity = getEntity(config, selectedEntity);
-
-    if (!entity) {
-        return null;
-    }
-
+function EntitySelector({ entity, onChange, config, menuToggleClassName }: EntitySelectorProps) {
     return (
         <SimpleSelect
             menuToggleClassName={menuToggleClassName}

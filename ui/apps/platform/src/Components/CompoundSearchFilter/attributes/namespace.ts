@@ -30,4 +30,4 @@ export const Annotation: CompoundSearchFilterAttribute = {
     inputType: 'autocomplete',
 };
 
-export const namespaceAttributes = [ID, Name, Label, Annotation];
+export const namespaceAttributes = [Annotation, ID, Label, Name];

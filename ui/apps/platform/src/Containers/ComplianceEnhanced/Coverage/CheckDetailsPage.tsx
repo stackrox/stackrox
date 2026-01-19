@@ -10,10 +10,7 @@ import {
 import { useParams } from 'react-router-dom-v5-compat';
 
 import BreadcrumbItemLink from 'Components/BreadcrumbItemLink';
-import type {
-    CompoundSearchFilterConfig,
-    OnSearchCallback,
-} from 'Components/CompoundSearchFilter/types';
+import type { OnSearchCallback } from 'Components/CompoundSearchFilter/types';
 import { updateSearchFilter } from 'Components/CompoundSearchFilter/utils/utils';
 import PageTitle from 'Components/PageTitle';
 import useURLStringUnion from 'hooks/useURLStringUnion';
@@ -29,7 +26,6 @@ import {
 import { getTableUIState } from 'utils/getTableUIState';
 import { addRegexPrefixToFilters } from 'utils/searchUtils';
 
-import { clusterNameAttribute } from 'Components/CompoundSearchFilter/attributes/cluster';
 import CheckDetailsHeader from './CheckDetailsHeader';
 import CheckDetailsTable, { tabContentIdForResults } from './CheckDetailsTable';
 import {
@@ -52,14 +48,6 @@ const tabContentIdForDetails = 'check-details-Details-tab-section';
 
 export const TAB_NAV_QUERY = 'detailsTab';
 const TAB_NAV_VALUES = [RESULTS_TAB, DETAILS_TAB] as const;
-
-const searchFilterConfig: CompoundSearchFilterConfig = [
-    {
-        displayName: 'Cluster',
-        searchCategory: 'CLUSTERS',
-        attributes: [clusterNameAttribute],
-    },
-];
 
 function CheckDetailsPage() {
     const { scanConfigurationsQuery, selectedScanConfigName, setSelectedScanConfigName } =
@@ -205,7 +193,6 @@ function CheckDetailsPage() {
                         profileName={profileName}
                         tableState={tableState}
                         getSortParams={getSortParams}
-                        searchFilterConfig={searchFilterConfig}
                         searchFilter={searchFilter}
                         onFilterChange={setSearchFilter}
                         onSearch={onSearch}

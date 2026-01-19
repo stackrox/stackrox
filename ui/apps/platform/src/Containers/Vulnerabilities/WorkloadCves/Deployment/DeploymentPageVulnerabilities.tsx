@@ -189,7 +189,6 @@ function DeploymentPageVulnerabilities({
 
     // Keep searchFilterConfigWithFeatureFlagDependency for ROX_SCANNER_V4 also Advisory.
     const searchFilterConfigWithFeatureFlagDependency = [
-        imageSearchFilterConfig,
         // Omit EPSSProbability for 4.7 release until CVE/advisory separation is available in 4.8 release.
         // imageCVESearchFilterConfig,
         {
@@ -199,6 +198,7 @@ function DeploymentPageVulnerabilities({
                     searchTerm !== 'EPSS Probability' || isEpssProbabilityColumnEnabled
             ),
         },
+        imageSearchFilterConfig,
         imageComponentSearchFilterConfig,
     ];
 
@@ -252,6 +252,7 @@ function DeploymentPageVulnerabilities({
                     <AdvancedFiltersToolbar
                         className="pf-v5-u-pt-lg pf-v5-u-pb-0"
                         searchFilterConfig={searchFilterConfig}
+                        defaultSearchFilterEntity="CVE"
                         searchFilter={searchFilter}
                         onFilterChange={(newFilter, searchPayload) => {
                             setSearchFilter(newFilter);

@@ -43,4 +43,4 @@ export const Inactive: CompoundSearchFilterAttribute = {
     },
 };
 
-export const deploymentAttributes = [ID, Name, Label, Annotation, Inactive];
+export const deploymentAttributes = [Annotation, ID, Label, Name, Inactive];

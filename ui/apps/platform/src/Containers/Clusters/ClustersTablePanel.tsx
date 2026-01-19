@@ -397,6 +397,7 @@ function ClustersTablePanel({ selectedClusterId }: ClustersTablePanelProps) {
                             <ToolbarItem variant="search-filter" className="pf-v5-u-w-100">
                                 <CompoundSearchFilter
                                     config={searchFilterConfig}
+                                    defaultEntity="Cluster"
                                     searchFilter={searchFilter}
                                     onSearch={(payload) =>
                                         setSearchFilter(updateSearchFilter(searchFilter, payload))

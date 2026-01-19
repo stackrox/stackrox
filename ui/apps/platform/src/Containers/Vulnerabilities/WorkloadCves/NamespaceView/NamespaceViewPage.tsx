@@ -84,7 +84,7 @@ const defaultSearchFilters = {
     'Vulnerability State': 'OBSERVED',
 };
 
-const searchFilterConfig = [namespaceSearchFilterConfig, clusterSearchFilterConfig];
+const searchFilterConfig = [clusterSearchFilterConfig, namespaceSearchFilterConfig];
 
 const sortFields = ['Namespace Risk Priority', 'Namespace', 'Cluster', 'Deployment Count'];
 const defaultSortOption = {
@@ -172,6 +172,7 @@ function NamespaceViewPage() {
                     <ToolbarContent>
                         <CompoundSearchFilter
                             config={searchFilterConfig}
+                            defaultEntity="Namespace"
                             searchFilter={searchFilter}
                             onSearch={onSearch}
                         />

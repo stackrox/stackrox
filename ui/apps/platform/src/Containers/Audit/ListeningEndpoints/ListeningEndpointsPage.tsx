@@ -77,6 +77,7 @@ function ListeningEndpointsPage() {
                     <ToolbarContent>
                         <CompoundSearchFilter
                             config={searchFilterConfig}
+                            defaultEntity="Deployment"
                             searchFilter={searchFilter}
                             onSearch={(payload) =>
                                 onSearchFilterChange(updateSearchFilter(searchFilter, payload))

@@ -47,7 +47,7 @@ import {
     profileCheckSearchFilterConfig,
 } from '../searchFilterConfig';
 
-const searchFilterConfig = [profileCheckSearchFilterConfig, clusterSearchFilterConfig];
+const searchFilterConfig = [clusterSearchFilterConfig, profileCheckSearchFilterConfig];
 
 function CoveragesPage() {
     const [isDisclaimerAccepted, setIsDisclaimerAccepted] = useBooleanLocalStorage(
@@ -169,6 +169,7 @@ function CoveragesPage() {
                                         <ToolbarItem className="pf-v5-u-flex-1">
                                             <CompoundSearchFilter
                                                 config={searchFilterConfig}
+                                                defaultEntity="Profile check"
                                                 searchFilter={searchFilter}
                                                 onSearch={onSearch}
                                             />

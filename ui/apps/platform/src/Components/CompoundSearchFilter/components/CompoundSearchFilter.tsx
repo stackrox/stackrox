@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { Flex } from '@patternfly/react-core';
 
 import type { SearchFilter } from 'types/search';
@@ -6,10 +6,8 @@ import { ensureString } from 'utils/ensure';
 import { isOnSearchPayload } from '../types';
 import type { CompoundSearchFilterConfig, OnSearchCallback } from '../types';
 import {
-    getAttribute,
-    getDefaultAttributeName,
-    getDefaultEntityName,
-    getEntity,
+    getAttributeFromEntity,
+    getEntityFromConfig,
     payloadItemFiltererForUpdating,
 } from '../utils/utils';
 
@@ -31,53 +29,16 @@ export type CompoundSearchFilterProps = {
 function CompoundSearchFilter({
     config,
     defaultEntity,
-    defaultAttribute,
+    defaultAttribute = 'Name',
     searchFilter,
     additionalContextFilter,
     onSearch,
 }: CompoundSearchFilterProps) {
-    const [selectedEntity, setSelectedEntity] = useState<SelectedEntity>(() => {
-        if (defaultEntity) {
-            return defaultEntity;
-        }
-        return getDefaultEntityName(config);
-    });
+    const [selectedEntity, setSelectedEntity] = useState<SelectedEntity>(undefined);
+    const [selectedAttribute, setSelectedAttribute] = useState<SelectedAttribute>(undefined);
 
-    const [selectedAttribute, setSelectedAttribute] = useState<SelectedAttribute>(() => {
-        if (defaultAttribute) {
-            return defaultAttribute;
-        }
-        const defaultEntityName = getDefaultEntityName(config);
-        if (!defaultEntityName) {
-            return undefined;
-        }
-        return getDefaultAttributeName(config, defaultEntityName);
-    });
-
-    // If the selected entity/attribute is not in the config, use the default entity. This handles the case where the search config
-    // changes at runtime while the removed entity is still selected.
-    const entityConfig = config.find((entity) => entity.displayName === selectedEntity);
-    const currentEntity = entityConfig ? selectedEntity : getDefaultEntityName(config);
-    const currentAttribute = entityConfig?.attributes.find(
-        ({ displayName }) => displayName === selectedAttribute
-    )
-        ? selectedAttribute
-        : getDefaultAttributeName(config, currentEntity ?? '');
-
-    useEffect(() => {
-        if (defaultEntity) {
-            setSelectedEntity(defaultEntity);
-        }
-    }, [defaultEntity]);
-
-    useEffect(() => {
-        if (defaultAttribute) {
-            setSelectedAttribute(defaultAttribute);
-        }
-    }, [defaultAttribute]);
-
-    const entity = getEntity(config, currentEntity ?? '');
-    const attribute = getAttribute(config, currentEntity ?? '', currentAttribute ?? '');
+    const entity = getEntityFromConfig(config, selectedEntity, defaultEntity);
+    const attribute = getAttributeFromEntity(entity, selectedAttribute, defaultAttribute);
 
     return (
         <Flex
@@ -86,26 +47,30 @@ function CompoundSearchFilter({
             flexWrap={{ default: 'nowrap' }}
             className="pf-v5-u-w-100"
         >
-            <EntitySelector
-                menuToggleClassName="pf-v5-u-flex-shrink-0"
-                selectedEntity={currentEntity}
-                onChange={(value) => {
-                    const entityName = ensureString(value);
-                    const defaultAttributeName = getDefaultAttributeName(config, entityName);
-                    setSelectedEntity(entityName);
-                    setSelectedAttribute(defaultAttributeName);
-                }}
-                config={config}
-            />
-            <AttributeSelector
-                menuToggleClassName="pf-v5-u-flex-shrink-0"
-                selectedEntity={currentEntity}
-                selectedAttribute={currentAttribute}
-                onChange={(value) => {
-                    setSelectedAttribute(ensureString(value));
-                }}
-                config={config}
-            />
+            {entity && (
+                <EntitySelector
+                    menuToggleClassName="pf-v5-u-flex-shrink-0"
+                    entity={entity}
+                    onChange={(value) => {
+                        setSelectedEntity(ensureString(value));
+                        setSelectedAttribute(undefined);
+                    }}
+                    config={config}
+                />
+            )}
+            {entity &&
+                Array.isArray(entity.attributes) &&
+                entity.attributes.length !== 0 &&
+                attribute && (
+                    <AttributeSelector
+                        menuToggleClassName="pf-v5-u-flex-shrink-0"
+                        attributes={entity.attributes}
+                        attribute={attribute}
+                        onChange={(value) => {
+                            setSelectedAttribute(ensureString(value));
+                        }}
+                    />
+                )}
             {entity && attribute && (
                 <CompoundSearchFilterInputField
                     // Change in key causes React to instantiate a new input element,

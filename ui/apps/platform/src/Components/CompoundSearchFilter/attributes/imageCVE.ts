@@ -52,4 +52,4 @@ export const KnownExploit: CompoundSearchFilterAttribute = {
     featureFlagDependency: ['ROX_SCANNER_V4', 'ROX_CISA_KEV'],
 };
 
-export const imageCVEAttributes = [Name, DiscoveredTime, CVSS, EPSSProbability, KnownExploit];
+export const imageCVEAttributes = [CVSS, DiscoveredTime, EPSSProbability, KnownExploit, Name];
