@@ -27,7 +27,9 @@ var (
 						WithMinimum(0)
 
 	// VMIndexReportRateLimit defines the maximum number of VM index reports per second that Central will accept
-	// across all sensors. Each sensor gets an equal share (1/N) of this global capacity.
+	// across all sensors that actually send VM index reports. Each such sensor gets an equal share (1/N) of this
+	// global capacity. The split happens when a new client ID registers in the VM index report pipeline; there is
+	// no additional selection or weighting mechanism at the moment.
 	// Supports fractional rates (e.g., "0.5" for one request every 2 seconds).
 	// Set to "0" to disable rate limiting (unlimited).
 	//
