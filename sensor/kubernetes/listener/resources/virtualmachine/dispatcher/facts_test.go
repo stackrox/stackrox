@@ -214,6 +214,22 @@ func TestExtractDisksFromVM(t *testing.T) {
 			vm:       &kubeVirtV1.VirtualMachine{},
 			expected: nil,
 		},
+		"should return nil for empty disks": {
+			vm: &kubeVirtV1.VirtualMachine{
+				Spec: kubeVirtV1.VirtualMachineSpec{
+					Template: &kubeVirtV1.VirtualMachineInstanceTemplateSpec{
+						Spec: kubeVirtV1.VirtualMachineInstanceSpec{
+							Domain: kubeVirtV1.DomainSpec{
+								Devices: kubeVirtV1.Devices{
+									Disks: nil,
+								},
+							},
+						},
+					},
+				},
+			},
+			expected: nil,
+		},
 		"should return disks from template": {
 			vm: &kubeVirtV1.VirtualMachine{
 				Spec: kubeVirtV1.VirtualMachineSpec{
@@ -247,6 +263,18 @@ func TestExtractDisksFromVMI(t *testing.T) {
 	}{
 		"should return nil for nil vmi": {
 			vmi:      nil,
+			expected: nil,
+		},
+		"should return nil for empty disks": {
+			vmi: &kubeVirtV1.VirtualMachineInstance{
+				Spec: kubeVirtV1.VirtualMachineInstanceSpec{
+					Domain: kubeVirtV1.DomainSpec{
+						Devices: kubeVirtV1.Devices{
+							Disks: nil,
+						},
+					},
+				},
+			},
 			expected: nil,
 		},
 		"should return disks from vmi spec": {
