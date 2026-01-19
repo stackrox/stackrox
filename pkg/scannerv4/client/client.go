@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io"
 	"net/url"
 	"time"
 
@@ -91,6 +92,9 @@ type Scanner interface {
 
 	// GetSBOM to get sbom for an image
 	GetSBOM(ctx context.Context, name string, ref name.Digest, uri string, callOpts ...CallOption) ([]byte, bool, error)
+
+	// ScanSBOM decodes an SBOM and matches vulnerabilities against the parsed components.
+	ScanSBOM(ctx context.Context, sbom io.Reader, mediaType string, callOpts ...CallOption) (*v4.VulnerabilityReport, error)
 
 	// StoreImageIndex stores the contents provided. Particularly useful for
 	// storing contents from delegated Scanners. indexerVersion is used to
@@ -243,6 +247,43 @@ func (c *gRPCScanner) GetSBOM(ctx context.Context, imageFullName string, ref nam
 		Contents: ir.GetContents(),
 	})
 	return resp.GetSbom(), true, err
+}
+
+// ScanSBOM decodes an SBOM and matches vulnerabilities against the parsed components.
+func (c *gRPCScanner) ScanSBOM(ctx context.Context, sbom io.Reader, mediaType string, callOpts ...CallOption) (*v4.VulnerabilityReport, error) {
+	if c.matcher == nil {
+		return nil, errMatcherNotConfigured
+	}
+
+	ctx = zlog.ContextWithValues(ctx,
+		"component", "scanner/client",
+		"method", "ScanSBOM",
+	)
+
+	options := makeCallOptions(callOpts...)
+
+	sbomBytes, err := io.ReadAll(sbom)
+	if err != nil {
+		return nil, fmt.Errorf("reading SBOM: %w", err)
+	}
+
+	req := &v4.ScanSBOMRequest{
+		Sbom:      sbomBytes,
+		MediaType: mediaType,
+	}
+	var vr *v4.ScanSBOMResponse
+	var responseMetadata metadata.MD
+	err = retryWithBackoff(ctx, defaultBackoff(), "matcher.ScanSBOM", func() (err error) {
+		vr, err = c.matcher.ScanSBOM(ctx, req, grpc.Header(&responseMetadata))
+		return err
+	})
+	if err != nil {
+		return nil, fmt.Errorf("scan sbom: %w", err)
+	}
+
+	setMatcherVersion(options, responseMetadata)
+
+	return vr.GetVulnerabilityReport(), nil
 }
 
 // GetImageIndex calls the Indexer's gRPC endpoint GetIndexReport.

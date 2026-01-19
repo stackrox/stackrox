@@ -31,6 +31,7 @@ var matcherAuth = perrpc.FromMap(map[authz.Authorizer][]string{
 		v4.Matcher_GetVulnerabilities_FullMethodName,
 		v4.Matcher_GetMetadata_FullMethodName,
 		v4.Matcher_GetSBOM_FullMethodName,
+		v4.Matcher_ScanSBOM_FullMethodName,
 	},
 })
 
@@ -210,4 +211,37 @@ func (s *matcherService) GetSBOM(ctx context.Context, req *v4.GetSBOMRequest) (*
 	}
 
 	return &v4.GetSBOMResponse{Sbom: sbom}, nil
+}
+
+func (s *matcherService) ScanSBOM(ctx context.Context, req *v4.ScanSBOMRequest) (*v4.ScanSBOMResponse, error) {
+	ctx = zlog.ContextWithValues(ctx,
+		"component", "scanner/service/matcher.ScanSBOM",
+		"media_type", req.GetMediaType(),
+	)
+
+	if err := validators.ValidateScanSBOMRequest(req); err != nil {
+		return nil, errox.InvalidArgs.CausedBy(err)
+	}
+	if err := s.matcher.Initialized(ctx); err != nil {
+		return nil, status.Errorf(codes.FailedPrecondition, "the matcher is not initialized: %v", err)
+	}
+
+	zlog.Info(ctx).
+		Int("sbom_size", len(req.GetSbom())).
+		Msg("scanning SBOM")
+
+	ccReport, err := s.matcher.ScanSBOM(ctx, req.GetSbom(), req.GetMediaType())
+	if err != nil {
+		zlog.Error(ctx).Err(err).Msg("scanning SBOM failed")
+		return nil, fmt.Errorf("scanning SBOM: %w", err)
+	}
+
+	report, err := mappers.ToProtoV4VulnerabilityReport(ctx, ccReport)
+	if err != nil {
+		zlog.Error(ctx).Err(err).Msg("internal error: converting to v4.VulnerabilityReport")
+		return nil, fmt.Errorf("converting vulnerability report: %w", err)
+	}
+	report.Notes = s.notes(ctx, report)
+
+	return &v4.ScanSBOMResponse{VulnerabilityReport: report}, nil
 }
