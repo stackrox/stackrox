@@ -4,6 +4,7 @@ import {
     getHelperElementByLabel,
     getInputByLabel,
 } from '../../helpers/formHelpers';
+import fakeGCPServiceAccount from '../../helpers/fakeGCPServiceAccount';
 
 import {
     clickCreateNewIntegrationInTable,
@@ -205,9 +206,8 @@ describe('Backup Integrations', () => {
             getInputByLabel('Object prefix').clear().type('acs-');
             getInputByLabel('Backups to retain').clear().type(1).blur();
             getInputByLabel('Service account key (JSON)')
-                .type('{ "type": "service_account" }', {
-                    parseSpecialCharSequences: false,
-                })
+                .clear()
+                .type(JSON.stringify(fakeGCPServiceAccount), { parseSpecialCharSequences: false })
                 .blur(); // enter invalid JSON
 
             const staticResponseForTest = { body: {} };
