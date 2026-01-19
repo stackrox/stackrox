@@ -20,3 +20,7 @@ tests:
                           operator: Exists
         expect: |
           .deployments["sensor"].spec.template.spec.affinity.nodeAffinity.preferredDuringSchedulingIgnoredDuringExecution | assertThat(length == 1)
+
+  - name: "Sensor has secure container security context"
+    expect: |
+      .deployments["sensor"].spec.template.spec.containers[] | select(.name == "sensor") | .securityContext.allowPrivilegeEscalation | assertThat(. == false)

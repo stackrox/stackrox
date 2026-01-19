@@ -101,6 +101,7 @@ spec:
           name: monitoring-tls
         {{- end }}
         securityContext:
+          allowPrivilegeEscalation: false
           capabilities:
             drop: ["NET_RAW"]
           runAsNonRoot: true
