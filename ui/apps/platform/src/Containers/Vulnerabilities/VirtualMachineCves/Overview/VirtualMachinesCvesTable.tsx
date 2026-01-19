@@ -136,6 +136,8 @@ function VirtualMachinesCvesTable() {
                                 {data.map((virtualMachine) => {
                                     const virtualMachineSeverityCounts =
                                         getVirtualMachineSeveritiesCount(virtualMachine);
+
+                                    const scanTime = virtualMachine?.scan?.scanTime;
                                     return (
                                         <Tr key={virtualMachine.id}>
                                             <Td dataLabel="Virtual machine" modifier="nowrap">
@@ -180,10 +182,8 @@ function VirtualMachinesCvesTable() {
                                                 )}
                                             </Td>
                                             <Td dataLabel="Scan time">
-                                                {virtualMachine?.scan?.scanTime ? (
-                                                    <DateDistance
-                                                        date={virtualMachine?.scan?.scanTime}
-                                                    />
+                                                {typeof scanTime === 'string' ? (
+                                                    <DateDistance date={scanTime} />
                                                 ) : (
                                                     'Not available'
                                                 )}
