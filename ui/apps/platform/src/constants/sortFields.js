@@ -200,7 +200,7 @@ export const deploymentSortFields = {
     CPU_CORES_LIMIT: 'CPU Cores Limit',
     CPU_CORES_REQUEST: 'CPU Cores Request',
     CVE: 'CVE',
-    CVE_COUNT: 'CVE Count',
+    CVE_COUNT: 'Image CVE Count',
     LATEST_VIOLATION: 'Violation Time',
     CVSS: 'CVSS',
     CLUSTER: 'Cluster',
