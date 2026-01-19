@@ -22,11 +22,11 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-func (m *IssueTokenForPermissionsAndScopeRequest) CloneVT() *IssueTokenForPermissionsAndScopeRequest {
+func (m *GenerateTokenForPermissionsAndScopeRequest) CloneVT() *GenerateTokenForPermissionsAndScopeRequest {
 	if m == nil {
-		return (*IssueTokenForPermissionsAndScopeRequest)(nil)
+		return (*GenerateTokenForPermissionsAndScopeRequest)(nil)
 	}
-	r := new(IssueTokenForPermissionsAndScopeRequest)
+	r := new(GenerateTokenForPermissionsAndScopeRequest)
 	r.ValidFor = (*durationpb.Duration)((*durationpb1.Duration)(m.ValidFor).CloneVT())
 	if rhs := m.ReadPermissions; rhs != nil {
 		tmpContainer := make([]string, len(rhs))
@@ -47,7 +47,7 @@ func (m *IssueTokenForPermissionsAndScopeRequest) CloneVT() *IssueTokenForPermis
 	return r
 }
 
-func (m *IssueTokenForPermissionsAndScopeRequest) CloneMessageVT() proto.Message {
+func (m *GenerateTokenForPermissionsAndScopeRequest) CloneMessageVT() proto.Message {
 	return m.CloneVT()
 }
 
@@ -74,11 +74,11 @@ func (m *RequestedRoleClusterScope) CloneMessageVT() proto.Message {
 	return m.CloneVT()
 }
 
-func (m *IssueTokenForPermissionsAndScopeResponse) CloneVT() *IssueTokenForPermissionsAndScopeResponse {
+func (m *GenerateTokenForPermissionsAndScopeResponse) CloneVT() *GenerateTokenForPermissionsAndScopeResponse {
 	if m == nil {
-		return (*IssueTokenForPermissionsAndScopeResponse)(nil)
+		return (*GenerateTokenForPermissionsAndScopeResponse)(nil)
 	}
-	r := new(IssueTokenForPermissionsAndScopeResponse)
+	r := new(GenerateTokenForPermissionsAndScopeResponse)
 	r.Token = m.Token
 	if len(m.unknownFields) > 0 {
 		r.unknownFields = make([]byte, len(m.unknownFields))
@@ -87,11 +87,11 @@ func (m *IssueTokenForPermissionsAndScopeResponse) CloneVT() *IssueTokenForPermi
 	return r
 }
 
-func (m *IssueTokenForPermissionsAndScopeResponse) CloneMessageVT() proto.Message {
+func (m *GenerateTokenForPermissionsAndScopeResponse) CloneMessageVT() proto.Message {
 	return m.CloneVT()
 }
 
-func (this *IssueTokenForPermissionsAndScopeRequest) EqualVT(that *IssueTokenForPermissionsAndScopeRequest) bool {
+func (this *GenerateTokenForPermissionsAndScopeRequest) EqualVT(that *GenerateTokenForPermissionsAndScopeRequest) bool {
 	if this == that {
 		return true
 	} else if this == nil || that == nil {
@@ -129,8 +129,8 @@ func (this *IssueTokenForPermissionsAndScopeRequest) EqualVT(that *IssueTokenFor
 	return string(this.unknownFields) == string(that.unknownFields)
 }
 
-func (this *IssueTokenForPermissionsAndScopeRequest) EqualMessageVT(thatMsg proto.Message) bool {
-	that, ok := thatMsg.(*IssueTokenForPermissionsAndScopeRequest)
+func (this *GenerateTokenForPermissionsAndScopeRequest) EqualMessageVT(thatMsg proto.Message) bool {
+	that, ok := thatMsg.(*GenerateTokenForPermissionsAndScopeRequest)
 	if !ok {
 		return false
 	}
@@ -167,7 +167,7 @@ func (this *RequestedRoleClusterScope) EqualMessageVT(thatMsg proto.Message) boo
 	}
 	return this.EqualVT(that)
 }
-func (this *IssueTokenForPermissionsAndScopeResponse) EqualVT(that *IssueTokenForPermissionsAndScopeResponse) bool {
+func (this *GenerateTokenForPermissionsAndScopeResponse) EqualVT(that *GenerateTokenForPermissionsAndScopeResponse) bool {
 	if this == that {
 		return true
 	} else if this == nil || that == nil {
@@ -179,14 +179,14 @@ func (this *IssueTokenForPermissionsAndScopeResponse) EqualVT(that *IssueTokenFo
 	return string(this.unknownFields) == string(that.unknownFields)
 }
 
-func (this *IssueTokenForPermissionsAndScopeResponse) EqualMessageVT(thatMsg proto.Message) bool {
-	that, ok := thatMsg.(*IssueTokenForPermissionsAndScopeResponse)
+func (this *GenerateTokenForPermissionsAndScopeResponse) EqualMessageVT(thatMsg proto.Message) bool {
+	that, ok := thatMsg.(*GenerateTokenForPermissionsAndScopeResponse)
 	if !ok {
 		return false
 	}
 	return this.EqualVT(that)
 }
-func (m *IssueTokenForPermissionsAndScopeRequest) MarshalVT() (dAtA []byte, err error) {
+func (m *GenerateTokenForPermissionsAndScopeRequest) MarshalVT() (dAtA []byte, err error) {
 	if m == nil {
 		return nil, nil
 	}
@@ -199,12 +199,12 @@ func (m *IssueTokenForPermissionsAndScopeRequest) MarshalVT() (dAtA []byte, err 
 	return dAtA[:n], nil
 }
 
-func (m *IssueTokenForPermissionsAndScopeRequest) MarshalToVT(dAtA []byte) (int, error) {
+func (m *GenerateTokenForPermissionsAndScopeRequest) MarshalToVT(dAtA []byte) (int, error) {
 	size := m.SizeVT()
 	return m.MarshalToSizedBufferVT(dAtA[:size])
 }
 
-func (m *IssueTokenForPermissionsAndScopeRequest) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
+func (m *GenerateTokenForPermissionsAndScopeRequest) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	if m == nil {
 		return 0, nil
 	}
@@ -309,7 +309,7 @@ func (m *RequestedRoleClusterScope) MarshalToSizedBufferVT(dAtA []byte) (int, er
 	return len(dAtA) - i, nil
 }
 
-func (m *IssueTokenForPermissionsAndScopeResponse) MarshalVT() (dAtA []byte, err error) {
+func (m *GenerateTokenForPermissionsAndScopeResponse) MarshalVT() (dAtA []byte, err error) {
 	if m == nil {
 		return nil, nil
 	}
@@ -322,12 +322,12 @@ func (m *IssueTokenForPermissionsAndScopeResponse) MarshalVT() (dAtA []byte, err
 	return dAtA[:n], nil
 }
 
-func (m *IssueTokenForPermissionsAndScopeResponse) MarshalToVT(dAtA []byte) (int, error) {
+func (m *GenerateTokenForPermissionsAndScopeResponse) MarshalToVT(dAtA []byte) (int, error) {
 	size := m.SizeVT()
 	return m.MarshalToSizedBufferVT(dAtA[:size])
 }
 
-func (m *IssueTokenForPermissionsAndScopeResponse) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
+func (m *GenerateTokenForPermissionsAndScopeResponse) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	if m == nil {
 		return 0, nil
 	}
@@ -349,7 +349,7 @@ func (m *IssueTokenForPermissionsAndScopeResponse) MarshalToSizedBufferVT(dAtA [
 	return len(dAtA) - i, nil
 }
 
-func (m *IssueTokenForPermissionsAndScopeRequest) SizeVT() (n int) {
+func (m *GenerateTokenForPermissionsAndScopeRequest) SizeVT() (n int) {
 	if m == nil {
 		return 0
 	}
@@ -398,7 +398,7 @@ func (m *RequestedRoleClusterScope) SizeVT() (n int) {
 	return n
 }
 
-func (m *IssueTokenForPermissionsAndScopeResponse) SizeVT() (n int) {
+func (m *GenerateTokenForPermissionsAndScopeResponse) SizeVT() (n int) {
 	if m == nil {
 		return 0
 	}
@@ -412,7 +412,7 @@ func (m *IssueTokenForPermissionsAndScopeResponse) SizeVT() (n int) {
 	return n
 }
 
-func (m *IssueTokenForPermissionsAndScopeRequest) UnmarshalVT(dAtA []byte) error {
+func (m *GenerateTokenForPermissionsAndScopeRequest) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -435,10 +435,10 @@ func (m *IssueTokenForPermissionsAndScopeRequest) UnmarshalVT(dAtA []byte) error
 		fieldNum := int32(wire >> 3)
 		wireType := int(wire & 0x7)
 		if wireType == 4 {
-			return fmt.Errorf("proto: IssueTokenForPermissionsAndScopeRequest: wiretype end group for non-group")
+			return fmt.Errorf("proto: GenerateTokenForPermissionsAndScopeRequest: wiretype end group for non-group")
 		}
 		if fieldNum <= 0 {
-			return fmt.Errorf("proto: IssueTokenForPermissionsAndScopeRequest: illegal tag %d (wire type %d)", fieldNum, wire)
+			return fmt.Errorf("proto: GenerateTokenForPermissionsAndScopeRequest: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
 		case 1:
@@ -700,7 +700,7 @@ func (m *RequestedRoleClusterScope) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *IssueTokenForPermissionsAndScopeResponse) UnmarshalVT(dAtA []byte) error {
+func (m *GenerateTokenForPermissionsAndScopeResponse) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -723,10 +723,10 @@ func (m *IssueTokenForPermissionsAndScopeResponse) UnmarshalVT(dAtA []byte) erro
 		fieldNum := int32(wire >> 3)
 		wireType := int(wire & 0x7)
 		if wireType == 4 {
-			return fmt.Errorf("proto: IssueTokenForPermissionsAndScopeResponse: wiretype end group for non-group")
+			return fmt.Errorf("proto: GenerateTokenForPermissionsAndScopeResponse: wiretype end group for non-group")
 		}
 		if fieldNum <= 0 {
-			return fmt.Errorf("proto: IssueTokenForPermissionsAndScopeResponse: illegal tag %d (wire type %d)", fieldNum, wire)
+			return fmt.Errorf("proto: GenerateTokenForPermissionsAndScopeResponse: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
 		case 1:
@@ -783,7 +783,7 @@ func (m *IssueTokenForPermissionsAndScopeResponse) UnmarshalVT(dAtA []byte) erro
 	}
 	return nil
 }
-func (m *IssueTokenForPermissionsAndScopeRequest) UnmarshalVTUnsafe(dAtA []byte) error {
+func (m *GenerateTokenForPermissionsAndScopeRequest) UnmarshalVTUnsafe(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -806,10 +806,10 @@ func (m *IssueTokenForPermissionsAndScopeRequest) UnmarshalVTUnsafe(dAtA []byte)
 		fieldNum := int32(wire >> 3)
 		wireType := int(wire & 0x7)
 		if wireType == 4 {
-			return fmt.Errorf("proto: IssueTokenForPermissionsAndScopeRequest: wiretype end group for non-group")
+			return fmt.Errorf("proto: GenerateTokenForPermissionsAndScopeRequest: wiretype end group for non-group")
 		}
 		if fieldNum <= 0 {
-			return fmt.Errorf("proto: IssueTokenForPermissionsAndScopeRequest: illegal tag %d (wire type %d)", fieldNum, wire)
+			return fmt.Errorf("proto: GenerateTokenForPermissionsAndScopeRequest: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
 		case 1:
@@ -1083,7 +1083,7 @@ func (m *RequestedRoleClusterScope) UnmarshalVTUnsafe(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *IssueTokenForPermissionsAndScopeResponse) UnmarshalVTUnsafe(dAtA []byte) error {
+func (m *GenerateTokenForPermissionsAndScopeResponse) UnmarshalVTUnsafe(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -1106,10 +1106,10 @@ func (m *IssueTokenForPermissionsAndScopeResponse) UnmarshalVTUnsafe(dAtA []byte
 		fieldNum := int32(wire >> 3)
 		wireType := int(wire & 0x7)
 		if wireType == 4 {
-			return fmt.Errorf("proto: IssueTokenForPermissionsAndScopeResponse: wiretype end group for non-group")
+			return fmt.Errorf("proto: GenerateTokenForPermissionsAndScopeResponse: wiretype end group for non-group")
 		}
 		if fieldNum <= 0 {
-			return fmt.Errorf("proto: IssueTokenForPermissionsAndScopeResponse: illegal tag %d (wire type %d)", fieldNum, wire)
+			return fmt.Errorf("proto: GenerateTokenForPermissionsAndScopeResponse: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
 		case 1:

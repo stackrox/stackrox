@@ -19,14 +19,14 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	TokenService_IssueTokenForPermissionsAndScope_FullMethodName = "/central.TokenService/IssueTokenForPermissionsAndScope"
+	TokenService_GenerateTokenForPermissionsAndScope_FullMethodName = "/central.TokenService/GenerateTokenForPermissionsAndScope"
 )
 
 // TokenServiceClient is the client API for TokenService service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type TokenServiceClient interface {
-	IssueTokenForPermissionsAndScope(ctx context.Context, in *IssueTokenForPermissionsAndScopeRequest, opts ...grpc.CallOption) (*IssueTokenForPermissionsAndScopeResponse, error)
+	GenerateTokenForPermissionsAndScope(ctx context.Context, in *GenerateTokenForPermissionsAndScopeRequest, opts ...grpc.CallOption) (*GenerateTokenForPermissionsAndScopeResponse, error)
 }
 
 type tokenServiceClient struct {
@@ -37,10 +37,10 @@ func NewTokenServiceClient(cc grpc.ClientConnInterface) TokenServiceClient {
 	return &tokenServiceClient{cc}
 }
 
-func (c *tokenServiceClient) IssueTokenForPermissionsAndScope(ctx context.Context, in *IssueTokenForPermissionsAndScopeRequest, opts ...grpc.CallOption) (*IssueTokenForPermissionsAndScopeResponse, error) {
+func (c *tokenServiceClient) GenerateTokenForPermissionsAndScope(ctx context.Context, in *GenerateTokenForPermissionsAndScopeRequest, opts ...grpc.CallOption) (*GenerateTokenForPermissionsAndScopeResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(IssueTokenForPermissionsAndScopeResponse)
-	err := c.cc.Invoke(ctx, TokenService_IssueTokenForPermissionsAndScope_FullMethodName, in, out, cOpts...)
+	out := new(GenerateTokenForPermissionsAndScopeResponse)
+	err := c.cc.Invoke(ctx, TokenService_GenerateTokenForPermissionsAndScope_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -51,7 +51,7 @@ func (c *tokenServiceClient) IssueTokenForPermissionsAndScope(ctx context.Contex
 // All implementations should embed UnimplementedTokenServiceServer
 // for forward compatibility.
 type TokenServiceServer interface {
-	IssueTokenForPermissionsAndScope(context.Context, *IssueTokenForPermissionsAndScopeRequest) (*IssueTokenForPermissionsAndScopeResponse, error)
+	GenerateTokenForPermissionsAndScope(context.Context, *GenerateTokenForPermissionsAndScopeRequest) (*GenerateTokenForPermissionsAndScopeResponse, error)
 }
 
 // UnimplementedTokenServiceServer should be embedded to have
@@ -61,8 +61,8 @@ type TokenServiceServer interface {
 // pointer dereference when methods are called.
 type UnimplementedTokenServiceServer struct{}
 
-func (UnimplementedTokenServiceServer) IssueTokenForPermissionsAndScope(context.Context, *IssueTokenForPermissionsAndScopeRequest) (*IssueTokenForPermissionsAndScopeResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "method IssueTokenForPermissionsAndScope not implemented")
+func (UnimplementedTokenServiceServer) GenerateTokenForPermissionsAndScope(context.Context, *GenerateTokenForPermissionsAndScopeRequest) (*GenerateTokenForPermissionsAndScopeResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method GenerateTokenForPermissionsAndScope not implemented")
 }
 func (UnimplementedTokenServiceServer) testEmbeddedByValue() {}
 
@@ -84,20 +84,20 @@ func RegisterTokenServiceServer(s grpc.ServiceRegistrar, srv TokenServiceServer)
 	s.RegisterService(&TokenService_ServiceDesc, srv)
 }
 
-func _TokenService_IssueTokenForPermissionsAndScope_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(IssueTokenForPermissionsAndScopeRequest)
+func _TokenService_GenerateTokenForPermissionsAndScope_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GenerateTokenForPermissionsAndScopeRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(TokenServiceServer).IssueTokenForPermissionsAndScope(ctx, in)
+		return srv.(TokenServiceServer).GenerateTokenForPermissionsAndScope(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: TokenService_IssueTokenForPermissionsAndScope_FullMethodName,
+		FullMethod: TokenService_GenerateTokenForPermissionsAndScope_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(TokenServiceServer).IssueTokenForPermissionsAndScope(ctx, req.(*IssueTokenForPermissionsAndScopeRequest))
+		return srv.(TokenServiceServer).GenerateTokenForPermissionsAndScope(ctx, req.(*GenerateTokenForPermissionsAndScopeRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -110,8 +110,8 @@ var TokenService_ServiceDesc = grpc.ServiceDesc{
 	HandlerType: (*TokenServiceServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
-			MethodName: "IssueTokenForPermissionsAndScope",
-			Handler:    _TokenService_IssueTokenForPermissionsAndScope_Handler,
+			MethodName: "GenerateTokenForPermissionsAndScope",
+			Handler:    _TokenService_GenerateTokenForPermissionsAndScope_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

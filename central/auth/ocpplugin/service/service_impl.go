@@ -37,7 +37,7 @@ var (
 
 	authorizer = perrpc.FromMap(map[authz.Authorizer][]string{
 		idcheck.SensorsOnly(): {
-			central.TokenService_IssueTokenForPermissionsAndScope_FullMethodName,
+			central.TokenService_GenerateTokenForPermissionsAndScope_FullMethodName,
 		},
 	})
 )
@@ -66,10 +66,10 @@ func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName strin
 	return ctx, authorizer.Authorized(ctx, fullMethodName)
 }
 
-func (s *serviceImpl) IssueTokenForPermissionsAndScope(
+func (s *serviceImpl) GenerateTokenForPermissionsAndScope(
 	ctx context.Context,
-	req *central.IssueTokenForPermissionsAndScopeRequest,
-) (*central.IssueTokenForPermissionsAndScopeResponse, error) {
+	req *central.GenerateTokenForPermissionsAndScopeRequest,
+) (*central.GenerateTokenForPermissionsAndScopeResponse, error) {
 	roleName, err := s.createRole(ctx, req)
 	if err != nil {
 		return nil, errors.Wrap(err, "creating and storing target role")
@@ -91,7 +91,7 @@ func (s *serviceImpl) IssueTokenForPermissionsAndScope(
 	if err != nil {
 		return nil, err
 	}
-	response := &central.IssueTokenForPermissionsAndScopeResponse{
+	response := &central.GenerateTokenForPermissionsAndScopeResponse{
 		Token: tokenInfo.Token,
 	}
 	return response, nil
@@ -108,7 +108,7 @@ var (
 // in the creation process.
 func (s *serviceImpl) createPermissionSet(
 	ctx context.Context,
-	req *central.IssueTokenForPermissionsAndScopeRequest,
+	req *central.GenerateTokenForPermissionsAndScopeRequest,
 ) (string, error) {
 	// TODO: Consider pruning the generated permission sets after some idle time.
 	permissionSet := &storage.PermissionSet{
@@ -142,7 +142,7 @@ func (s *serviceImpl) createPermissionSet(
 // or an error if any occurred in the creation process.
 func (s *serviceImpl) createAccessScope(
 	ctx context.Context,
-	req *central.IssueTokenForPermissionsAndScopeRequest,
+	req *central.GenerateTokenForPermissionsAndScopeRequest,
 ) (string, error) {
 	// TODO: Consider pruning the generated access scopes after some idle time.
 	accessScope := &storage.SimpleAccessScope{
@@ -194,7 +194,7 @@ func (s *serviceImpl) createAccessScope(
 // in the creation process.
 func (s *serviceImpl) createRole(
 	ctx context.Context,
-	req *central.IssueTokenForPermissionsAndScopeRequest,
+	req *central.GenerateTokenForPermissionsAndScopeRequest,
 ) (string, error) {
 	// TODO: Consider pruning the generated roles after some idle time.
 	permissionSetID, err := s.createPermissionSet(ctx, req)
@@ -220,7 +220,10 @@ func (s *serviceImpl) createRole(
 	return resultRole.GetName(), nil
 }
 
-func (s *serviceImpl) getExpiresAt(_ context.Context, req *central.IssueTokenForPermissionsAndScopeRequest) (time.Time, error) {
+func (s *serviceImpl) getExpiresAt(
+	_ context.Context,
+	req *central.GenerateTokenForPermissionsAndScopeRequest,
+) (time.Time, error) {
 	duration, err := protocompat.DurationFromProto(req.GetValidFor())
 	if err != nil {
 		return time.Time{}, errors.Wrap(err, "converting requested token validity duration")

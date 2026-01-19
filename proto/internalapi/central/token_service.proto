@@ -7,7 +7,7 @@ import "google/protobuf/duration.proto";
 
 option go_package = "./internalapi/central;central";
 
-message IssueTokenForPermissionsAndScopeRequest {
+message GenerateTokenForPermissionsAndScopeRequest {
   repeated string read_permissions = 1;
   repeated RequestedRoleClusterScope cluster_scopes = 2;
   google.protobuf.Duration valid_for = 3;
@@ -19,12 +19,12 @@ message RequestedRoleClusterScope {
   repeated string namespaces = 3;
 }
 
-message IssueTokenForPermissionsAndScopeResponse {
+message GenerateTokenForPermissionsAndScopeResponse {
   string token = 1;
 }
 
 service TokenService {
-  rpc IssueTokenForPermissionsAndScope(IssueTokenForPermissionsAndScopeRequest) returns (IssueTokenForPermissionsAndScopeResponse) {
+  rpc GenerateTokenForPermissionsAndScope(GenerateTokenForPermissionsAndScopeRequest) returns (GenerateTokenForPermissionsAndScopeResponse) {
     option (google.api.http) = {get: "/internal/v1/token"};
   }
 }
