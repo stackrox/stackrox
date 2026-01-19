@@ -41,12 +41,9 @@ func extractIPAddresses(vmi *kubeVirtV1.VirtualMachineInstance) []string {
 			ips.Add(iface.IP)
 		}
 	}
-	if ips.Cardinality() == 0 {
-		return nil
-	}
-	out := ips.AsSlice()
-	slices.Sort(out)
-	return out
+	return ips.AsSortedSlice(func(i, j string) bool {
+		return i < j
+	})
 }
 
 func extractActivePods(vmi *kubeVirtV1.VirtualMachineInstance) []string {
@@ -61,12 +58,9 @@ func extractActivePods(vmi *kubeVirtV1.VirtualMachineInstance) []string {
 		}
 		pods.Add(fmt.Sprintf("%s=%s", podUID, nodeName))
 	}
-	if pods.Cardinality() == 0 {
-		return nil
-	}
-	out := pods.AsSlice()
-	slices.Sort(out)
-	return out
+	return pods.AsSortedSlice(func(i, j string) bool {
+		return i < j
+	})
 }
 
 func extractBootOrder(disks []kubeVirtV1.Disk) []string {
@@ -110,12 +104,9 @@ func extractCDRomDisks(disks []kubeVirtV1.Disk) []string {
 			names.Add(disk.Name)
 		}
 	}
-	if names.Cardinality() == 0 {
-		return nil
-	}
-	out := names.AsSlice()
-	slices.Sort(out)
-	return out
+	return names.AsSortedSlice(func(i, j string) bool {
+		return i < j
+	})
 }
 
 func extractDisksFromVM(vm *kubeVirtV1.VirtualMachine) []kubeVirtV1.Disk {
