@@ -3,9 +3,8 @@ import Raven from 'raven-js';
 
 // Module-level isolated analytics instance
 // In Cypress tests, check for test mock instance first
-let analyticsInstance: AnalyticsBrowser | null =
-    // @ts-expect-error - Cypress test mock is not typed
-    (typeof window !== 'undefined' && window.CYPRESS_ANALYTICS_INSTANCE) ?? null;
+// @ts-expect-error - Cypress test mock is not typed
+let analyticsInstance: AnalyticsBrowser | null = window?.CYPRESS_ANALYTICS_INSTANCE ?? null;
 
 /**
  * Initializes Segment analytics once, encapsulate in module scope
@@ -20,7 +19,7 @@ export function initializeAnalytics(
     userId?: string
 ): void {
     // Prevent duplicate initialization
-    if (analyticsInstance !== null) {
+    if (analyticsInstance) {
         return;
     }
 
@@ -37,11 +36,11 @@ export function initializeAnalytics(
     }
 
     analyticsInstance = AnalyticsBrowser.load(
-        { writeKey, ...(cdnURL && { cdnURL }) },
+        { writeKey, ...(cdnURL ? { cdnURL } : {}) },
         {
             integrations: {
                 'Segment.io': {
-                    ...(apiHost && { apiHost }),
+                    ...(apiHost ? { apiHost } : {}),
                 },
             },
         }
