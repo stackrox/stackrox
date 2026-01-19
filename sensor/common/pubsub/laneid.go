@@ -6,13 +6,15 @@ const (
 	DefaultLane LaneID = iota
 	KubernetesDispatcherEventLane
 	FromCentralResolverEventLane
+	EnrichedProcessIndicatorLane
 )
 
 var (
 	laneToString = map[LaneID]string{
-		DefaultLane:                   "Default",
-		KubernetesDispatcherEventLane: "KubernetesDispatcherEvent",
-		FromCentralResolverEventLane:  "FromCentralResolverEvent",
+		DefaultLane:                      "Default",
+		KubernetesDispatcherEventLane:    "KubernetesDispatcherEvent",
+		FromCentralResolverEventLane:     "FromCentralResolverEvent",
+		EnrichedProcessIndicatorLane:     "EnrichedProcessIndicator",
 	}
 )
 

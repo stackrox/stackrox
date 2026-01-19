@@ -7,7 +7,10 @@ import (
 	lru "github.com/hashicorp/golang-lru/v2"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/process/normalize"
 	"github.com/stackrox/rox/pkg/sync"
+	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/clusterentities"
 	"github.com/stackrox/rox/sensor/common/metrics"
 )
@@ -25,6 +28,7 @@ type enricher struct {
 	clusterEntities      *clusterentities.Store
 	indicators           chan *storage.ProcessIndicator
 	metadataCallbackChan <-chan clusterentities.ContainerMetadata
+	pubSubDispatcher     common.PubSubDispatcher
 	stopper              concurrency.Stopper
 }
 
@@ -53,7 +57,7 @@ func (cw *containerWrap) fetchAndClearProcesses() []*storage.ProcessIndicator {
 	return processes
 }
 
-func newEnricher(ctx context.Context, clusterEntities *clusterentities.Store) *enricher {
+func newEnricher(ctx context.Context, clusterEntities *clusterentities.Store, pubSubDispatcher common.PubSubDispatcher) *enricher {
 	evictfunc := func(key string, value *containerWrap) {
 		metrics.IncrementProcessEnrichmentDrops()
 	}
@@ -66,11 +70,19 @@ func newEnricher(ctx context.Context, clusterEntities *clusterentities.Store) *e
 	if oldC := clusterEntities.RegisterContainerMetadataCallbackChannel(callbackChan); oldC != nil {
 		log.Panic("Multiple container metadata callback channels registered on cluster entities store!")
 	}
+
+	// Only create indicators channel in legacy mode
+	var indicatorsChan chan *storage.ProcessIndicator
+	if !features.SensorInternalPubSub.Enabled() || pubSubDispatcher == nil {
+		indicatorsChan = make(chan *storage.ProcessIndicator)
+	}
+
 	e := &enricher{
 		lru:                  lru,
 		clusterEntities:      clusterEntities,
-		indicators:           make(chan *storage.ProcessIndicator),
+		indicators:           indicatorsChan,
 		metadataCallbackChan: callbackChan,
+		pubSubDispatcher:     pubSubDispatcher,
 		stopper:              concurrency.NewStopper(),
 	}
 	go e.processLoop(ctx)
@@ -106,7 +118,12 @@ func (e *enricher) Stopped() concurrency.ReadOnlyErrorSignal {
 
 func (e *enricher) processLoop(ctx context.Context) {
 	defer e.stopper.Flow().ReportStopped()
-	defer close(e.indicators)
+	// Only close indicators channel in legacy mode
+	defer func() {
+		if e.indicators != nil {
+			close(e.indicators)
+		}
+	}()
 	ticker := time.NewTicker(enrichInterval)
 	expirationTicker := time.NewTicker(pruneInterval)
 	for {
@@ -158,7 +175,19 @@ func (e *enricher) scanAndEnrich(metadata clusterentities.ContainerMetadata) {
 
 func (e *enricher) enrich(indicator *storage.ProcessIndicator, metadata clusterentities.ContainerMetadata) {
 	populateIndicatorFromCachedContainer(indicator, metadata)
-	e.indicators <- indicator
+	normalize.Indicator(indicator)
+
+	if features.SensorInternalPubSub.Enabled() && e.pubSubDispatcher != nil {
+		event := NewEnrichedProcessIndicatorEvent(context.Background(), indicator)
+		if err := e.pubSubDispatcher.Publish(event); err != nil {
+			log.Errorf("Failed to publish enriched process indicator from enricher for deployment %s with id %s: %v",
+				indicator.GetDeploymentId(), indicator.GetId(), err)
+			metrics.IncrementProcessEnrichmentDrops()
+		}
+	} else {
+		e.indicators <- indicator
+	}
+
 	metrics.IncrementProcessEnrichmentHits()
 	metrics.SetProcessEnrichmentCacheSize(float64(e.lru.Len()))
 }

@@ -6,13 +6,15 @@ const (
 	DefaultTopic Topic = iota
 	KubernetesDispatcherEventTopic
 	FromCentralResolverEventTopic
+	EnrichedProcessIndicatorTopic
 )
 
 var (
 	topicToString = map[Topic]string{
-		DefaultTopic:                   "Default",
-		KubernetesDispatcherEventTopic: "KubernetesDispatcherEvent",
-		FromCentralResolverEventTopic:  "FromCentralResolverEvent",
+		DefaultTopic:                      "Default",
+		KubernetesDispatcherEventTopic:    "KubernetesDispatcherEvent",
+		FromCentralResolverEventTopic:     "FromCentralResolverEvent",
+		EnrichedProcessIndicatorTopic:     "EnrichedProcessIndicator",
 	}
 )
 
