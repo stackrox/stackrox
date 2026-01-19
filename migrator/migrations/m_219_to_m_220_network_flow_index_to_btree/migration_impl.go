@@ -56,7 +56,7 @@ func migrate(database *types.Databases) error {
 
 	err = tx.Commit(ctx)
 	if err != nil {
-		return postgreshelper.WrapRollback(ctx, tx, errors.Wrapf(err, "unable to update Listening endpoint indexes in migration %d", startSeqNum))
+		return postgreshelper.WrapRollback(ctx, tx, errors.Wrapf(err, "unable to update network flows indexes in migration %d", startSeqNum))
 	}
 
 	log.Infof("Network flow indexes migration complete")
