@@ -201,7 +201,7 @@ func (w *watcherImpl) processRepository(ctx context.Context, repo *storage.BaseI
 	}
 
 	// Determine scanner based on delegation.
-	var scanner reposcan.Scanner
+	scanner := w.localScanner
 	if w.delegationEnabled {
 		// Check if scanning should be delegated to a secured cluster. On error, default
 		// to Central (same behavior as image enricher).
@@ -213,11 +213,7 @@ func (w *watcherImpl) processRepository(ctx context.Context, repo *storage.BaseI
 		}
 		if shouldDelegate {
 			scanner = NewDelegatedScanner(w.delegator, clusterID)
-		} else {
-			scanner = w.localScanner
 		}
-	} else {
-		scanner = w.localScanner
 	}
 
 	// Fetch existing tags from cache (sorted by created timestamp, newest first).
