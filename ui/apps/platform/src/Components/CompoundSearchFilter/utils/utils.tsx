@@ -395,19 +395,6 @@ export function getCompoundSearchFilterLabelDescriptionOrNull(
                 ],
             };
         }
-        case 'unspecified': {
-            if (values.length !== 0) {
-                return null;
-            }
-
-            // payload is placeholder because only for certain attributes in view-based report
-            // For example, Image CVE discovered time: All time
-            const { label } = attribute;
-            return {
-                group,
-                items: [{ label, payload: payloadDeleteCategory }],
-            };
-        }
         default:
             return ensureExhaustive(inputType);
     }

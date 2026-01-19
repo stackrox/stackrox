@@ -11,8 +11,7 @@ export type InputType =
     | 'condition-text'
     | 'select'
     | 'select-exclusive-double'
-    | 'select-exclusive-single'
-    | 'unspecified';
+    | 'select-exclusive-single';
 
 export type SelectSearchFilterOption = {
     label: string;
@@ -70,20 +69,12 @@ export type SelectExclusiveDoubleSearchFilterOption = {
     category: string;
 } & SelectSearchFilterOption;
 
-// Only for certain attributes in view-based report.
-// For example, Image CVE discovered time: All time
-export type UnspecifiedSearchFilterAttribute = {
-    inputType: 'unspecified';
-    label: string;
-} & BaseSearchFilterAttribute;
-
 export type CompoundSearchFilterAttribute =
     | ConditionTextFilterAttribute
     | GenericSearchFilterAttribute
     | SelectSearchFilterAttribute
     | SelectExclusiveDoubleSearchFilterAttribute
-    | SelectExclusiveSingleSearchFilterAttribute
-    | UnspecifiedSearchFilterAttribute;
+    | SelectExclusiveSingleSearchFilterAttribute;
 
 export type CompoundSearchFilterEntity = {
     displayName: string;

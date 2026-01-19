@@ -10,7 +10,6 @@ import type {
     SelectExclusiveSingleSearchFilterAttribute,
     SelectSearchFilterAttribute,
     SelectSearchFilterOption,
-    UnspecifiedSearchFilterAttribute,
 } from 'Components/CompoundSearchFilter/types';
 import {
     clusterIdAttribute,
@@ -250,19 +249,9 @@ export const attributeForVulnerabilityState: SelectSearchFilterAttribute = {
     },
 };
 
-export const attributeForUnspecifiedDiscoveredTime: UnspecifiedSearchFilterAttribute = {
-    displayName: 'Discovered time',
-    filterChipLabel: 'Image CVE discovered time',
-    searchTerm: 'CVE Created Time',
-    inputType: 'unspecified',
-    label: 'All time',
-};
-
 export const attributesSeparateFromConfigForViewBasedReport = [
     attributeForPlatformComponent,
     attributeForFixableInBackendAndViewBasedReport,
     attributeForVulnerabilityState,
-    // Formerly under Vulnerability parameters:
-    attributeForSeverityInBackendAndViewBasedReport,
-    attributeForUnspecifiedDiscoveredTime,
+    attributeForSeverityInBackendAndViewBasedReport, // Formerly under Vulnerability parameters
 ];

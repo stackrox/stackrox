@@ -74,10 +74,6 @@ function CompoundSearchFilterInputField({
                     searchFilter={searchFilter}
                 />
             );
-        case 'unspecified':
-            // placeholder because not for compound search filter but only for certain attributes in view-based report
-            // For example, Image CVE discovered time: All time
-            return <></>;
         default:
             return ensureExhaustive(inputType);
     }
