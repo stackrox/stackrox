@@ -77,15 +77,13 @@ jobs:
 
       - name: Resolve image tag
         id: resolve-image-tag
-        env:
-          BUILD_TAG: ${{ needs.run-parameters.outputs.version }}
         run: |
           set -euo pipefail
-          tag="$(make --quiet --no-print-directory tag)"
+          tag="$(make --quiet --no-print-directory tag BUILD_TAG=${{ needs.run-parameters.outputs.version }})"
           # The operator tag replaces the patch version x with 0,
           # so we need to override it here.
           if [[ "${{ matrix.image }}" = "stackrox-operator" ]]; then
-            tag="$(make --quiet --no-print-directory -C operator tag)"
+            tag="$(make --quiet --no-print-directory -C operator tag BUILD_TAG=${{ needs.run-parameters.outputs.version }})"
           fi
           echo "tag=${tag}" >> "${GITHUB_OUTPUT}"
 
@@ -140,13 +138,11 @@ jobs:
 
       - name: Resolve image tag
         id: resolve-image-tag
-        env:
-          BUILD_TAG: ${{ needs.run-parameters.outputs.version }}
         run: |
           # In Konflux, we use the operator tag for all images,
           # which will replace the patch version x with 0.
           set -euo pipefail
-          tag="$(make --quiet --no-print-directory -C operator tag)"
+          tag="$(make --quiet --no-print-directory -C operator tag BUILD_TAG=${{ needs.run-parameters.outputs.version }})"
           if [[ "${tag}" == *-nightly-* ]]; then
             # If the tag is a nightly tag, we add the '-fast' suffix.
             tag="${tag}-fast"
