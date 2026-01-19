@@ -2,15 +2,22 @@ package pipeline
 
 import (
 	"context"
+	"fmt"
+	"time"
 
 	sensorAPI "github.com/stackrox/rox/generated/internalapi/sensor"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/expiringcache"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/uuid"
+	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/clusterentities"
 	"github.com/stackrox/rox/sensor/common/detector"
+	"github.com/stackrox/rox/sensor/common/processsignal"
+	"github.com/stackrox/rox/sensor/common/pubsub"
 )
 
 var (
@@ -24,18 +31,36 @@ type Pipeline struct {
 	activityChan    chan *sensorAPI.FileActivity
 	clusterEntities *clusterentities.Store
 
+	// processCache avoids duplicate enrichment by reusing enriched indicators from the process pipeline.
+	// Key format: "containerID:processSignalID"
+	processCache expiringcache.Cache[string, *storage.ProcessIndicator]
+
+	pubSubDispatcher common.PubSubDispatcher
+
 	msgCtx context.Context
 }
 
-func NewFileSystemPipeline(detector detector.Detector, clusterEntities *clusterentities.Store, activityChan chan *sensorAPI.FileActivity) *Pipeline {
+func NewFileSystemPipeline(detector detector.Detector, clusterEntities *clusterentities.Store, activityChan chan *sensorAPI.FileActivity, pubSubDispatcher common.PubSubDispatcher) *Pipeline {
 	msgCtx := context.Background()
 
 	p := &Pipeline{
-		detector:        detector,
-		activityChan:    activityChan,
-		clusterEntities: clusterEntities,
-		stopper:         concurrency.NewStopper(),
-		msgCtx:          msgCtx,
+		detector:         detector,
+		activityChan:     activityChan,
+		clusterEntities:  clusterEntities,
+		pubSubDispatcher: pubSubDispatcher,
+		stopper:          concurrency.NewStopper(),
+		msgCtx:           msgCtx,
+	}
+
+	if features.SensorInternalPubSub.Enabled() && pubSubDispatcher != nil {
+		log.Info("File system pipeline using pub/sub mode for process enrichment")
+		p.processCache = expiringcache.NewExpiringCache[string, *storage.ProcessIndicator](5 * time.Minute)
+
+		if err := pubSubDispatcher.RegisterConsumerToLane(pubsub.EnrichedProcessIndicatorTopic, pubsub.EnrichedProcessIndicatorLane, p.cacheEnrichedIndicator); err != nil {
+			log.Errorf("Failed to register consumer for enriched process indicators in file system pipeline: %v", err)
+		}
+	} else {
+		log.Info("File system pipeline using legacy mode (direct enrichment)")
 	}
 
 	go p.run()
@@ -108,7 +133,37 @@ func (p *Pipeline) translate(fs *sensorAPI.FileActivity) *storage.FileAccess {
 	return access
 }
 
+func cacheKey(containerID, processSignalID string) string {
+	return fmt.Sprintf("%s:%s", containerID, processSignalID)
+}
+
+func (p *Pipeline) cacheEnrichedIndicator(event pubsub.Event) error {
+	enrichedEvent, ok := event.(*processsignal.EnrichedProcessIndicatorEvent)
+	if !ok {
+		log.Errorf("File system pipeline received unexpected event type: %T", event)
+		return fmt.Errorf("unexpected event type: %T", event)
+	}
+
+	indicator := enrichedEvent.Indicator
+	if indicator == nil || indicator.GetSignal() == nil {
+		return nil
+	}
+
+	key := cacheKey(indicator.GetSignal().GetContainerId(), indicator.GetSignal().GetId())
+	p.processCache.Add(key, indicator)
+
+	return nil
+}
+
 func (p *Pipeline) getIndicator(process *sensorAPI.ProcessSignal) *storage.ProcessIndicator {
+	if p.processCache != nil && process.GetContainerId() != "" {
+		key := cacheKey(process.GetContainerId(), process.GetId())
+		if cachedIndicator, ok := p.processCache.Get(key); ok {
+			log.Debugf("Using cached enriched indicator for process %s in container %s", process.GetId(), process.GetContainerId())
+			return cachedIndicator
+		}
+	}
+
 	signal := &storage.ProcessSignal{
 		Id:           process.GetId(),
 		Uid:          process.GetUid(),
