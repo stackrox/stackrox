@@ -4,6 +4,7 @@ import (
 	"cmp"
 	"fmt"
 	"slices"
+	"strings"
 
 	"github.com/stackrox/rox/pkg/set"
 	kubeVirtV1 "kubevirt.io/api/core/v1"
@@ -19,12 +20,19 @@ func descriptionFromAnnotations(annotations map[string]string) string {
 	if len(annotations) == 0 {
 		return ""
 	}
+	values := make([]string, 0, len(descriptionAnnotationKeys))
 	for _, key := range descriptionAnnotationKeys {
 		if value := annotations[key]; value != "" {
-			return value
+			values = append(values, value)
 		}
 	}
-	return ""
+	if len(values) == 0 {
+		return ""
+	}
+	if len(values) == 1 {
+		return values[0]
+	}
+	return strings.Join(values, "; ")
 }
 
 func extractIPAddresses(vmi *kubeVirtV1.VirtualMachineInstance) []string {

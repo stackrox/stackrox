@@ -30,13 +30,20 @@ func TestDescriptionFromAnnotations(t *testing.T) {
 			},
 			expected: "openshift description",
 		},
-		"should honor description key precedence": {
+		"should honor description key order when multiple values exist": {
 			annotations: map[string]string{
 				"kubevirt.io/description":  "kubevirt description",
 				"openshift.io/description": "openshift description",
 				"description":              "plain description",
 			},
-			expected: "plain description",
+			expected: "plain description; openshift description; kubevirt description",
+		},
+		"should return single description when exactly one is set": {
+			annotations: map[string]string{
+				"openshift.io/description": "openshift description",
+				"other":                    "value",
+			},
+			expected: "openshift description",
 		},
 	}
 	for name, tt := range tests {
