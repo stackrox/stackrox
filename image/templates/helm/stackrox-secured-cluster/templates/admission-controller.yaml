@@ -77,6 +77,7 @@ spec:
           resources:
             {{- ._rox.admissionControl._resources | nindent 12 }}
           securityContext:
+            allowPrivilegeEscalation: false
             runAsNonRoot: true
             readOnlyRootFilesystem: true
           env:
