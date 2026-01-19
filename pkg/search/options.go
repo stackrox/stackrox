@@ -68,6 +68,8 @@ var (
 	AdvisoryName       = newFieldLabel("Advisory Name")
 	AdvisoryLink       = newFieldLabel("Advisory Link")
 
+	CVEInfo = newFieldLabel("CVE Info")
+
 	Component                      = newFieldLabel("Component")
 	ComponentID                    = newFieldLabel("Component ID")
 	ComponentVersion               = newFieldLabel("Component Version")

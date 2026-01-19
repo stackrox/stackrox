@@ -127,7 +127,7 @@ func BenchmarkRemovePlopsByPod(b *testing.B) {
 func benchmarkRemovePlopsByPod(b *testing.B, nPort int, nProcess int, nPod int) func(*testing.B) {
 	return func(b *testing.B) {
 		// Setup database once before the benchmark loop
-		ctx, ds, _ := setupBenchmark(b)
+		ctx, ds, postgres := setupBenchmark(b)
 
 		// Generate a dataset with nPod pods (background data)
 		allPodData := makeRandomPlops(nPort, nProcess, nPod, fixtureconsts.Deployment1)
@@ -154,6 +154,10 @@ func benchmarkRemovePlopsByPod(b *testing.B, nPort int, nProcess int, nPod int) 
 			if err := ds.AddProcessListeningOnPort(ctx, fixtureconsts.Cluster1, targetPodData...); err != nil {
 				require.NoError(b, err)
 			}
+
+			_, err := postgres.DB.Exec(ctx, "ANALYZE listening_endpoints")
+			require.NoError(b, err)
+
 			b.StartTimer()
 
 			// Benchmark the deletion

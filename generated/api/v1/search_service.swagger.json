@@ -511,7 +511,7 @@
         "BASE_IMAGE_LAYERS"
       ],
       "default": "SEARCH_UNSET",
-      "title": "Next available tag: 78"
+      "title": "Next available tag: 80"
     },
     "v1SearchOptionsResponse": {
       "type": "object",

@@ -6862,6 +6862,26 @@
                 "type": "Severity"
               }
             ]
+          },
+          {
+            "name": "ImageCVEInfo",
+            "fields": [
+              {
+                "id": 1,
+                "name": "id",
+                "type": "string"
+              },
+              {
+                "id": 2,
+                "name": "fix_available_timestamp",
+                "type": "google.protobuf.Timestamp"
+              },
+              {
+                "id": 3,
+                "name": "first_system_occurrence",
+                "type": "google.protobuf.Timestamp"
+              }
+            ]
           }
         ],
         "imports": [

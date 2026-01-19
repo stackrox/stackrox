@@ -156,3 +156,10 @@ tests:
       expect: |
         .validatingwebhookconfigurations[].webhooks[].failurePolicy | assertThat(. == "Fail")
         .secrets["helm-cluster-config"].stringData["config.yaml"] | fromyaml | .clusterConfig.staticConfig | assertThat(.admissionControllerFailOnError == true)
+
+- name: "Admission Controller has secure container security context"
+  values:
+    admissionControl:
+      listenOnCreates: true
+  expect: |
+    .deployments["admission-control"].spec.template.spec.containers[] | select(.name == "admission-control") | .securityContext.allowPrivilegeEscalation | assertThat(. == false)
