@@ -3,7 +3,6 @@ import io.stackrox.proto.storage.Cve.VulnerabilitySeverity
 import services.GraphQLService
 import services.ImageService
 
-import spock.lang.Ignore
 import spock.lang.Tag
 import spock.lang.Unroll
 
@@ -115,6 +114,20 @@ fragment cveFields on ImageVulnerability {
 }
 """
 
+    // Query to fetch component ID by name from an image
+    private static final GET_COMPONENT_ID_QUERY = """
+query getComponentId(\$imageId: ID!, \$componentQuery: String) {
+  result: image(id: \$imageId) {
+    imageComponents(query: \$componentQuery) {
+      id
+      name
+      version
+      operatingSystem
+    }
+  }
+}
+"""
+
     def setupSpec() {
         ImageService.scanImage(RHEL_IMAGE)
         ImageService.scanImage(UBUNTU_IMAGE)
@@ -140,22 +153,32 @@ fragment cveFields on ImageVulnerability {
         return COMPONENT_SUBCVE_QUERY
     }
 
-    def getRHELComponentID() {
-        return "glib2#2.54.2-2.el7#centos:7"
-    }
-
-    def getUbuntuComponentID() {
-        return "glib2.0#2.40.2-0ubuntu1#ubuntu:14.04"
+    /**
+     * Fetches the component ID dynamically from the API by querying the image's components.
+     * Component IDs now include the image ID and index, so they cannot be constructed manually.
+     */
+    private String getComponentIDForImage(GraphQLService gqlService, String imageDigest, String componentName) {
+        def componentQuery = "Component:${componentName}"
+        def result = gqlService.Call(GET_COMPONENT_ID_QUERY,
+                [imageId: imageDigest, componentQuery: componentQuery])
+        assert result.code == 200
+        if (result.getErrors() != null) {
+            assert result.getErrors().size() == 0
+        }
+        def components = result.value.result.imageComponents
+        assert components != null && components.size() > 0 : "No component found with name ${componentName}"
+        return components[0].id
     }
 
     @Unroll
-    // TODO(ROX-29222): Fix the test for getting cves by component
-    @Ignore("ROX-29222: Fix the test for getting cves by component")
     def "Verify severities and CVSS #imageDigest #component #severity #cvss"() {
         when:
         def gqlService = new GraphQLService()
 
         def query="CVE:CVE-2019-13012"
+
+        // Fetch the component ID dynamically since IDs now include image ID and index
+        def componentID = getComponentIDForImage(gqlService, imageDigest, component)
 
         def embeddedImageRes = gqlService.Call(getEmbeddedImageQuery(),
                 [id: imageDigest, query: query])
@@ -207,10 +230,10 @@ fragment cveFields on ImageVulnerability {
 
         where:
         "Data inputs are: "
-        imageDigest | component | componentID | severity | cvss
-        RHEL_IMAGE_DIGEST   | "glib2" | getRHELComponentID()   |
+        imageDigest | component | severity | cvss
+        RHEL_IMAGE_DIGEST   | "glib2" |
                 VulnerabilitySeverity.LOW_VULNERABILITY_SEVERITY | 4.4
-        UBUNTU_IMAGE_DIGEST | "glib2.0"      | getUbuntuComponentID() |
-                VulnerabilitySeverity.MODERATE_VULNERABILITY_SEVERITY      | 7.5
+        UBUNTU_IMAGE_DIGEST | "glib2.0" |
+                VulnerabilitySeverity.MODERATE_VULNERABILITY_SEVERITY | 7.5
     }
 }
