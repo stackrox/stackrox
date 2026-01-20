@@ -32,6 +32,10 @@ class BaseService {
     static final String BASIC_AUTH_USERNAME = Env.mustGetUsername()
     static final String BASIC_AUTH_PASSWORD = Env.mustGetPassword()
 
+    // Max gRPC message size for receiving responses from Central.
+    // This matches the server's defaultMaxResponseMsgSize in pkg/grpc/server.go.
+    static final int MAX_GRPC_MESSAGE_SIZE = 256 * 1024 * 1024 // 256MB
+
     static final EmptyOuterClass.Empty EMPTY = EmptyOuterClass.Empty.newBuilder().build()
 
     static ResourceByID getResourceByID(String id) {
@@ -143,6 +147,7 @@ class BaseService {
                     .sslContext(sslContext)
                     .keepAliveTime(1, TimeUnit.SECONDS)
                     .idleTimeout(1, TimeUnit.MINUTES)
+                    .maxInboundMessageSize(MAX_GRPC_MESSAGE_SIZE)
                     .build()
             effectiveChannel = null
 
