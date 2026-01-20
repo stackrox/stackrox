@@ -927,7 +927,7 @@ func extractClusterConfig(hello *central.SensorHello) clusterConfigData {
 // shouldUpdateCluster determines if an existing cluster needs updating.
 // Returns true if any of: sensor capabilities, config fingerprint, init bundle ID, or manager type has changed.
 func shouldUpdateCluster(existing *storage.Cluster, config clusterConfigData, registrantID string) bool {
-	if !sensorCapabilitiesEqual(existing, config.capabilities) {
+	if !set.NewSet(existing.GetSensorCapabilities()...).Equal(set.NewSet(config.capabilities...)) {
 		return true
 	}
 	if existing.GetInitBundleId() != registrantID {
@@ -940,11 +940,6 @@ func shouldUpdateCluster(existing *storage.Cluster, config clusterConfigData, re
 		return true
 	}
 	return false
-}
-
-// sensorCapabilitiesEqual is a helper that compares capabilities from cluster and config.
-func sensorCapabilitiesEqual(cluster *storage.Cluster, capabilities []string) bool {
-	return set.NewSet(cluster.GetSensorCapabilities()...).Equal(set.NewSet(capabilities...))
 }
 
 // validateClusterConfig validates that the cluster name matches expectations.
