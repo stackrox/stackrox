@@ -40,6 +40,9 @@ tests:
       - name: "sensor pod includes crs init container"
         expect: |
           .deployments.sensor.spec.template.spec.initContainers[0] | assertThat(.name == "crs")
+      - name: "sensor crs init container has secure container security context"
+        expect: |
+          .deployments["sensor"].spec.template.spec.initContainers[] | select(.name == "crs") | .securityContext.allowPrivilegeEscalation | assertThat(. == false)
       - name: "Validating webhooks contain CA"
         expect: |
           .validatingwebhookconfigurations[].webhooks[].clientConfig.caBundle | assertThat(. != null)

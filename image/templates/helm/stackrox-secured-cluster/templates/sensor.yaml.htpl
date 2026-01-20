@@ -70,6 +70,7 @@ spec:
         args:
         - ensure-service-certificates
         securityContext:
+          allowPrivilegeEscalation: false
           runAsNonRoot: true
           readOnlyRootFilesystem: true
         env:
@@ -186,6 +187,7 @@ spec:
         resources:
           {{- ._rox.sensor._resources | nindent 10 }}
         securityContext:
+          allowPrivilegeEscalation: false
           runAsNonRoot: true
           readOnlyRootFilesystem: true
         env:

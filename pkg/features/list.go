@@ -121,6 +121,9 @@ var (
 
 	// SensorInternalPubSub enables the internal pubsub system in sensor
 	SensorInternalPubSub = registerFeature("Enables the internal PubSub system in Sensor", "ROX_SENSOR_PUBSUB", enabled)
+
+	// LabelBasedPolicyScoping enables policy scoping based on cluster and namespace labels
+	LabelBasedPolicyScoping = registerFeature("Enable cluster and namespace label-based policy scoping", "ROX_LABEL_BASED_POLICY_SCOPING")
 )
 
 // The following feature flags are related to Scanner V4.

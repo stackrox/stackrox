@@ -119,7 +119,7 @@ function VirtualMachinesCvesTable() {
                             <Th>Cluster</Th>
                             <Th>Namespace</Th>
                             <Th>Scanned components</Th>
-                            <Th>Last updated</Th>
+                            <Th>Scan time</Th>
                         </Tr>
                     </Thead>
                     <TbodyUnified
@@ -136,6 +136,8 @@ function VirtualMachinesCvesTable() {
                                 {data.map((virtualMachine) => {
                                     const virtualMachineSeverityCounts =
                                         getVirtualMachineSeveritiesCount(virtualMachine);
+
+                                    const scanTime = virtualMachine?.scan?.scanTime;
                                     return (
                                         <Tr key={virtualMachine.id}>
                                             <Td dataLabel="Virtual machine" modifier="nowrap">
@@ -179,8 +181,12 @@ function VirtualMachinesCvesTable() {
                                                     virtualMachine
                                                 )}
                                             </Td>
-                                            <Td dataLabel="Last updated">
-                                                <DateDistance date={virtualMachine.lastUpdated} />
+                                            <Td dataLabel="Scan time">
+                                                {typeof scanTime === 'string' ? (
+                                                    <DateDistance date={scanTime} />
+                                                ) : (
+                                                    'Not available'
+                                                )}
                                             </Td>
                                         </Tr>
                                     );
