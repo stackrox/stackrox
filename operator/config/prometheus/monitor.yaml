@@ -4,8 +4,6 @@ kind: ServiceMonitor
 metadata:
   labels:
     control-plane: controller-manager
-    app.kubernetes.io/name: rhacs-operator
-    app.kubernetes.io/managed-by: kustomize
   name: controller-manager-metrics-monitor
   namespace: system
 spec:
