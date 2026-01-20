@@ -6,9 +6,9 @@ import "internalapi/scanner/v4/index_report.proto";
 
 option go_package = "./internalapi/virtualmachine/v1;v1";
 
-// VsockMessage is the message sent over vsock from roxagent to relay.
+// VMReport is the message sent over vsock from roxagent to relay.
 // It wraps IndexReport and includes VM discovered data that stays in Sensor.
-message VsockMessage {
+message VMReport {
   IndexReport index_report = 1;
 
   // VM data discovered by roxagent (not forwarded to Central)

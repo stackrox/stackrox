@@ -16,7 +16,7 @@ type IndexReportStream interface {
 	// Start begins accepting connections and returns a channel of validated reports.
 	// The channel is currently not closed to avoid races during shutdown.
 	// TODO: Implement proper shutdown logic that closes the channel.
-	Start(ctx context.Context) (<-chan *v1.VsockMessage, error)
+	Start(ctx context.Context) (<-chan *v1.VMReport, error)
 }
 
 type Relay struct {
@@ -44,13 +44,13 @@ func (r *Relay) Run(ctx context.Context) error {
 		select {
 		case <-ctx.Done():
 			return ctx.Err()
-		case vsockMsg := <-reportChan:
-			if vsockMsg == nil {
-				log.Warn("Received nil vsock message, skipping")
+		case vmReport := <-reportChan:
+			if vmReport == nil {
+				log.Warn("Received nil VM report, skipping")
 				continue
 			}
-			if err := r.reportSender.Send(ctx, vsockMsg); err != nil {
-				log.Errorf("Failed to send vsock message (vsock CID: %s): %v", vsockMsg.GetIndexReport().GetVsockCid(), err)
+			if err := r.reportSender.Send(ctx, vmReport); err != nil {
+				log.Errorf("Failed to send VM report (vsock CID: %s): %v", vmReport.GetIndexReport().GetVsockCid(), err)
 			}
 		}
 	}

@@ -62,7 +62,7 @@ func New() (*VsockIndexReportStream, error) {
 // Start begins accepting vsock connections and returns a channel of validated reports.
 // The stream spawns goroutines to handle each connection concurrently (up to the
 // configured limit). Reports are validated before being sent to the channel.
-func (p *VsockIndexReportStream) Start(ctx context.Context) (<-chan *v1.VsockMessage, error) {
+func (p *VsockIndexReportStream) Start(ctx context.Context) (<-chan *v1.VMReport, error) {
 	log.Info("Starting report stream")
 
 	if p.listener == nil {
@@ -72,7 +72,7 @@ func (p *VsockIndexReportStream) Start(ctx context.Context) (<-chan *v1.VsockMes
 	// Buffer size = concurrency limit to allow stream goroutines to complete
 	// without blocking on sender. Use the already-derived maxConcurrentConnections
 	// to keep this as the single source of truth.
-	reportChan := make(chan *v1.VsockMessage, p.maxConcurrentConnections)
+	reportChan := make(chan *v1.VMReport, p.maxConcurrentConnections)
 
 	// Single place that shuts down the listener when the context is done.
 	go func() {
@@ -86,7 +86,7 @@ func (p *VsockIndexReportStream) Start(ctx context.Context) (<-chan *v1.VsockMes
 	return reportChan, nil
 }
 
-func (p *VsockIndexReportStream) acceptLoop(ctx context.Context, reportChan chan<- *v1.VsockMessage) {
+func (p *VsockIndexReportStream) acceptLoop(ctx context.Context, reportChan chan<- *v1.VMReport) {
 	for {
 		// Accept() is blocking, but it will return when ctx is cancelled and the goroutine in Start() calls p.stop()
 		conn, err := p.listener.Accept()
@@ -138,7 +138,7 @@ func (p *VsockIndexReportStream) acceptLoop(ctx context.Context, reportChan chan
 	}
 }
 
-func (p *VsockIndexReportStream) handleConnection(ctx context.Context, conn net.Conn, reportChan chan<- *v1.VsockMessage) {
+func (p *VsockIndexReportStream) handleConnection(ctx context.Context, conn net.Conn, reportChan chan<- *v1.VMReport) {
 	defer p.releaseSemaphore()
 
 	defer func(conn net.Conn) {
@@ -149,7 +149,7 @@ func (p *VsockIndexReportStream) handleConnection(ctx context.Context, conn net.
 
 	log.Infof("Handling connection from %s", conn.RemoteAddr())
 
-	vsockMsg, err := p.receiveAndValidateVsockMessage(conn)
+	vmReport, err := p.receiveAndValidateVMReport(conn)
 	if err != nil {
 		log.Errorf("Error handling connection from %v: %v", conn.RemoteAddr(), err)
 		return
@@ -160,7 +160,7 @@ func (p *VsockIndexReportStream) handleConnection(ctx context.Context, conn net.
 	// Send validated message to channel. Use select to avoid blocking during shutdown
 	// when the relay stops reading from the channel.
 	select {
-	case reportChan <- vsockMsg:
+	case reportChan <- vmReport:
 		// Report sent successfully
 	case <-ctx.Done():
 		// Context cancelled during send - exit without blocking to allow defers to execute
@@ -169,7 +169,7 @@ func (p *VsockIndexReportStream) handleConnection(ctx context.Context, conn net.
 	}
 }
 
-func (p *VsockIndexReportStream) receiveAndValidateVsockMessage(conn net.Conn) (*v1.VsockMessage, error) {
+func (p *VsockIndexReportStream) receiveAndValidateVMReport(conn net.Conn) (*v1.VMReport, error) {
 	vsockCID, err := vsock.ExtractVsockCIDFromConnection(conn)
 	if err != nil {
 		return nil, errors.Wrap(err, "extracting vsock CID")
@@ -181,12 +181,12 @@ func (p *VsockIndexReportStream) receiveAndValidateVsockMessage(conn net.Conn) (
 	}
 
 	log.Debugf("Parsing vsock message (vsock CID: %d)", vsockCID)
-	vsockMsg, err := parseVsockMessage(data)
+	vmReport, err := parseVMReport(data)
 	if err != nil {
 		return nil, errors.Wrapf(err, "parsing vsock message data (vsock CID: %d)", vsockCID)
 	}
 
-	err = validateReportedVsockCID(vsockMsg, vsockCID)
+	err = validateReportedVsockCID(vmReport, vsockCID)
 	if err != nil {
 		log.Debugf("Error validating reported vsock CID: %v", err)
 		return nil, errors.Wrap(err, "validating reported vsock CID")
@@ -194,11 +194,11 @@ func (p *VsockIndexReportStream) receiveAndValidateVsockMessage(conn net.Conn) (
 
 	metrics.IndexReportsReceived.Inc()
 
-	return vsockMsg, nil
+	return vmReport, nil
 }
 
-func parseVsockMessage(data []byte) (*v1.VsockMessage, error) {
-	msg := &v1.VsockMessage{}
+func parseVMReport(data []byte) (*v1.VMReport, error) {
+	msg := &v1.VMReport{}
 
 	if err := proto.Unmarshal(data, msg); err != nil {
 		return nil, errors.Wrap(err, "unmarshalling data")
@@ -207,8 +207,8 @@ func parseVsockMessage(data []byte) (*v1.VsockMessage, error) {
 }
 
 // validateReportedVsockCID ensures the message's vsock CID matches the connection.
-func validateReportedVsockCID(vsockMsg *v1.VsockMessage, connVsockCID uint32) error {
-	reportedCID := vsockMsg.GetIndexReport().GetVsockCid()
+func validateReportedVsockCID(vmReport *v1.VMReport, connVsockCID uint32) error {
+	reportedCID := vmReport.GetIndexReport().GetVsockCid()
 	if reportedCID != strconv.FormatUint(uint64(connVsockCID), 10) {
 		return errors.Errorf("mismatch between reported (%s) and real (%d) vsock CIDs", reportedCID, connVsockCID)
 	}

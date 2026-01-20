@@ -33,7 +33,7 @@ func (s *senderTestSuite) TestSend_HandlesContextCancellation() {
 	ctx, cancel := context.WithCancel(s.ctx)
 	cancel()
 
-	err := sender.Send(ctx, relaytest.NewTestVsockMessage("42"))
+	err := sender.Send(ctx, relaytest.NewTestVMReport("42"))
 	s.Require().Error(err)
 	s.Contains(err.Error(), "context canceled")
 }
@@ -73,7 +73,7 @@ func (s *senderTestSuite) TestSend_RetriesOnRetryableErrors() {
 			ctx, cancel := context.WithTimeout(s.ctx, 500*time.Millisecond)
 			defer cancel()
 
-			err := sender.Send(ctx, relaytest.NewTestVsockMessage("42"))
+			err := sender.Send(ctx, relaytest.NewTestVMReport("42"))
 			s.Require().Error(err)
 
 			retried := len(client.CapturedRequests()) > 1
@@ -86,7 +86,7 @@ func (s *senderTestSuite) TestReportSender_Send() {
 	client := relaytest.NewMockSensorClient(s.T())
 	sender := New(client)
 
-	msg := &v1.VsockMessage{
+	msg := &v1.VMReport{
 		IndexReport: &v1.IndexReport{VsockCid: "42"},
 		DiscoveredData: &v1.DiscoveredData{
 			DetectedOs:        v1.DetectedOS_RHEL,
@@ -111,7 +111,7 @@ func (s *senderTestSuite) TestReportSender_SendHandlesErrors() {
 	client := relaytest.NewMockSensorClient(s.T()).WithError(errox.NotImplemented)
 	sender := New(client)
 
-	err := sender.Send(s.ctx, relaytest.NewTestVsockMessage("42"))
+	err := sender.Send(s.ctx, relaytest.NewTestVMReport("42"))
 	s.Require().Error(err)
 }
 
@@ -119,7 +119,7 @@ func (s *senderTestSuite) TestReportSender_SendMissingIndexReport() {
 	client := relaytest.NewMockSensorClient(s.T())
 	sender := New(client)
 
-	msg := &v1.VsockMessage{
+	msg := &v1.VMReport{
 		DiscoveredData: &v1.DiscoveredData{
 			DetectedOs:        v1.DetectedOS_RHEL,
 			OsVersion:         "9.2",

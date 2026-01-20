@@ -170,9 +170,9 @@ func (DnfMetadataStatus) EnumDescriptor() ([]byte, []int) {
 	return file_internalapi_virtualmachine_v1_index_report_proto_rawDescGZIP(), []int{2}
 }
 
-// VsockMessage is the message sent over vsock from roxagent to relay.
+// VMReport is the message sent over vsock from roxagent to relay.
 // It wraps IndexReport and includes VM discovered data that stays in Sensor.
-type VsockMessage struct {
+type VMReport struct {
 	state       protoimpl.MessageState `protogen:"open.v1"`
 	IndexReport *IndexReport           `protobuf:"bytes,1,opt,name=index_report,json=indexReport,proto3" json:"index_report,omitempty"`
 	// VM data discovered by roxagent (not forwarded to Central)
@@ -181,20 +181,20 @@ type VsockMessage struct {
 	sizeCache      protoimpl.SizeCache
 }
 
-func (x *VsockMessage) Reset() {
-	*x = VsockMessage{}
+func (x *VMReport) Reset() {
+	*x = VMReport{}
 	mi := &file_internalapi_virtualmachine_v1_index_report_proto_msgTypes[0]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *VsockMessage) String() string {
+func (x *VMReport) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*VsockMessage) ProtoMessage() {}
+func (*VMReport) ProtoMessage() {}
 
-func (x *VsockMessage) ProtoReflect() protoreflect.Message {
+func (x *VMReport) ProtoReflect() protoreflect.Message {
 	mi := &file_internalapi_virtualmachine_v1_index_report_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -206,19 +206,19 @@ func (x *VsockMessage) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use VsockMessage.ProtoReflect.Descriptor instead.
-func (*VsockMessage) Descriptor() ([]byte, []int) {
+// Deprecated: Use VMReport.ProtoReflect.Descriptor instead.
+func (*VMReport) Descriptor() ([]byte, []int) {
 	return file_internalapi_virtualmachine_v1_index_report_proto_rawDescGZIP(), []int{0}
 }
 
-func (x *VsockMessage) GetIndexReport() *IndexReport {
+func (x *VMReport) GetIndexReport() *IndexReport {
 	if x != nil {
 		return x.IndexReport
 	}
 	return nil
 }
 
-func (x *VsockMessage) GetDiscoveredData() *DiscoveredData {
+func (x *VMReport) GetDiscoveredData() *DiscoveredData {
 	if x != nil {
 		return x.DiscoveredData
 	}
@@ -408,8 +408,8 @@ var File_internalapi_virtualmachine_v1_index_report_proto protoreflect.FileDescr
 
 const file_internalapi_virtualmachine_v1_index_report_proto_rawDesc = "" +
 	"\n" +
-	"0internalapi/virtualmachine/v1/index_report.proto\x12\x11virtualmachine.v1\x1a)internalapi/scanner/v4/index_report.proto\"\x9d\x01\n" +
-	"\fVsockMessage\x12A\n" +
+	"0internalapi/virtualmachine/v1/index_report.proto\x12\x11virtualmachine.v1\x1a)internalapi/scanner/v4/index_report.proto\"\x99\x01\n" +
+	"\bVMReport\x12A\n" +
 	"\findex_report\x18\x01 \x01(\v2\x1e.virtualmachine.v1.IndexReportR\vindexReport\x12J\n" +
 	"\x0fdiscovered_data\x18\x02 \x01(\v2!.virtualmachine.v1.DiscoveredDataR\x0ediscoveredData\"\x97\x02\n" +
 	"\x0eDiscoveredData\x12>\n" +
@@ -457,15 +457,15 @@ var file_internalapi_virtualmachine_v1_index_report_proto_goTypes = []any{
 	(DetectedOS)(0),          // 0: virtualmachine.v1.DetectedOS
 	(ActivationStatus)(0),    // 1: virtualmachine.v1.ActivationStatus
 	(DnfMetadataStatus)(0),   // 2: virtualmachine.v1.DnfMetadataStatus
-	(*VsockMessage)(nil),     // 3: virtualmachine.v1.VsockMessage
+	(*VMReport)(nil),         // 3: virtualmachine.v1.VMReport
 	(*DiscoveredData)(nil),   // 4: virtualmachine.v1.DiscoveredData
 	(*IndexReport)(nil),      // 5: virtualmachine.v1.IndexReport
 	(*IndexReportEvent)(nil), // 6: virtualmachine.v1.IndexReportEvent
 	(*v4.IndexReport)(nil),   // 7: scanner.v4.IndexReport
 }
 var file_internalapi_virtualmachine_v1_index_report_proto_depIdxs = []int32{
-	5, // 0: virtualmachine.v1.VsockMessage.index_report:type_name -> virtualmachine.v1.IndexReport
-	4, // 1: virtualmachine.v1.VsockMessage.discovered_data:type_name -> virtualmachine.v1.DiscoveredData
+	5, // 0: virtualmachine.v1.VMReport.index_report:type_name -> virtualmachine.v1.IndexReport
+	4, // 1: virtualmachine.v1.VMReport.discovered_data:type_name -> virtualmachine.v1.DiscoveredData
 	0, // 2: virtualmachine.v1.DiscoveredData.detected_os:type_name -> virtualmachine.v1.DetectedOS
 	1, // 3: virtualmachine.v1.DiscoveredData.activation_status:type_name -> virtualmachine.v1.ActivationStatus
 	2, // 4: virtualmachine.v1.DiscoveredData.dnf_metadata_status:type_name -> virtualmachine.v1.DnfMetadataStatus

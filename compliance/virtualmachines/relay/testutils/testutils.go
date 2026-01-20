@@ -39,8 +39,8 @@ func (c *MockVsockConn) WithData(data []byte) *MockVsockConn {
 	return c
 }
 
-func (c *MockVsockConn) WithVsockMessage(vsockMsg *v1.VsockMessage) (*MockVsockConn, error) {
-	data, err := proto.Marshal(vsockMsg)
+func (c *MockVsockConn) WithVMReport(vmReport *v1.VMReport) (*MockVsockConn, error) {
+	data, err := proto.Marshal(vmReport)
 	if err != nil {
 		return nil, err
 	}
@@ -48,17 +48,17 @@ func (c *MockVsockConn) WithVsockMessage(vsockMsg *v1.VsockMessage) (*MockVsockC
 	return c, nil
 }
 
-// Deprecated: Use WithVsockMessage instead
+// Deprecated: Use WithVMReport instead
 func (c *MockVsockConn) WithIndexReport(indexReport *v1.IndexReport) (*MockVsockConn, error) {
-	vsockMsg := &v1.VsockMessage{
+	vmReport := &v1.VMReport{
 		IndexReport: indexReport,
 	}
-	return c.WithVsockMessage(vsockMsg)
+	return c.WithVMReport(vmReport)
 }
 
-// NewTestVsockMessage creates a VsockMessage with default test values.
-func NewTestVsockMessage(vsockCID string) *v1.VsockMessage {
-	return &v1.VsockMessage{
+// NewTestVMReport creates a VMReport with default test values.
+func NewTestVMReport(vsockCID string) *v1.VMReport {
+	return &v1.VMReport{
 		IndexReport: &v1.IndexReport{VsockCid: vsockCID},
 		DiscoveredData: &v1.DiscoveredData{
 			DetectedOs:        v1.DetectedOS_UNKNOWN,

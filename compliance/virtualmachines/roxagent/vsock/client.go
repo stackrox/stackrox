@@ -32,8 +32,8 @@ func (c *Client) SendIndexReport(report *v4.IndexReport) error {
 		IndexV4:  report,
 	}
 
-	// Create VsockMessage with placeholder discovered data values.
-	vsockMsg := &v1.VsockMessage{
+	// Create VMReport with placeholder discovered data values.
+	vmReport := &v1.VMReport{
 		IndexReport: wrappedReport,
 		DiscoveredData: &v1.DiscoveredData{
 			DetectedOs:        v1.DetectedOS_UNKNOWN, // TODO: get proper values from VM.
@@ -44,9 +44,9 @@ func (c *Client) SendIndexReport(report *v4.IndexReport) error {
 	}
 
 	if c.Verbose {
-		reportJson, err := jsonutil.ProtoToJSON(vsockMsg)
+		reportJson, err := jsonutil.ProtoToJSON(vmReport)
 		if err != nil {
-			log.Errorf("Failed to convert vsock message to JSON (vsockCid=%s): %v", wrappedReport.GetVsockCid(), err)
+			log.Errorf("Failed to convert VM report to JSON (vsockCid=%s): %v", wrappedReport.GetVsockCid(), err)
 		} else {
 			fmt.Println(reportJson)
 		}
@@ -64,19 +64,19 @@ func (c *Client) SendIndexReport(report *v4.IndexReport) error {
 	if err := conn.SetDeadline(time.Now().Add(c.Timeout)); err != nil {
 		return fmt.Errorf("setting connection deadline: %w", err)
 	}
-	return c.writeVsockMessage(conn, vsockMsg)
+	return c.writeVMReport(conn, vmReport)
 }
 
-func (c *Client) writeVsockMessage(conn net.Conn, msg *v1.VsockMessage) error {
-	msgBytes, err := protocompat.Marshal(msg)
+func (c *Client) writeVMReport(conn net.Conn, report *v1.VMReport) error {
+	reportBytes, err := protocompat.Marshal(report)
 	if err != nil {
-		return fmt.Errorf("marshalling vsock message: %w", err)
+		return fmt.Errorf("marshalling VM report: %w", err)
 	}
-	if _, err := conn.Write(msgBytes); err != nil {
-		return fmt.Errorf("writing vsock message: %w", err)
+	if _, err := conn.Write(reportBytes); err != nil {
+		return fmt.Errorf("writing VM report: %w", err)
 	}
 
-	numPackages := len(msg.GetIndexReport().GetIndexV4().GetContents().GetPackages())
+	numPackages := len(report.GetIndexReport().GetIndexV4().GetContents().GetPackages())
 	log.Infof("Sent message with index report containing %d packages to host", numPackages)
 	return nil
 }

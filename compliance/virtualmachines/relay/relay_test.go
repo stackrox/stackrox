@@ -84,7 +84,7 @@ func (s *relayTestSuite) TestRelay_Integration() {
 
 	// Create mock stream that produces test messages with discovered data
 	mockIndexReportStream := &mockIndexReportStream{
-		reports: []*v1.VsockMessage{
+		reports: []*v1.VMReport{
 			{
 				IndexReport: &v1.IndexReport{VsockCid: "100"},
 				DiscoveredData: &v1.DiscoveredData{
@@ -168,10 +168,10 @@ func (s *relayTestSuite) TestRelay_SenderErrorsDoNotStopProcessing() {
 	}
 
 	mockIndexReportStream := &mockIndexReportStream{
-		reports: []*v1.VsockMessage{
-			relaytest.NewTestVsockMessage("100"),
-			relaytest.NewTestVsockMessage("200"),
-			relaytest.NewTestVsockMessage("300"),
+		reports: []*v1.VMReport{
+			relaytest.NewTestVMReport("100"),
+			relaytest.NewTestVMReport("200"),
+			relaytest.NewTestVMReport("300"),
 		},
 	}
 
@@ -209,9 +209,9 @@ func (s *relayTestSuite) TestRelay_ContextCancellation() {
 	// The mocked stream signals when first message is sent
 	started := concurrency.NewSignal()
 	mockIndexReportStream := &mockIndexReportStream{
-		reports: []*v1.VsockMessage{
-			relaytest.NewTestVsockMessage("100"),
-			relaytest.NewTestVsockMessage("200"), // Second message will never be processed
+		reports: []*v1.VMReport{
+			relaytest.NewTestVMReport("100"),
+			relaytest.NewTestVMReport("200"), // Second message will never be processed
 		},
 		started: &started,
 	}
@@ -255,18 +255,18 @@ type failingIndexReportStream struct {
 
 // Start implements IndexReportStream.Start. It always returns a nil channel
 // and errTestStreamStart to simulate a stream startup failure.
-func (f *failingIndexReportStream) Start(ctx context.Context) (<-chan *v1.VsockMessage, error) {
+func (f *failingIndexReportStream) Start(ctx context.Context) (<-chan *v1.VMReport, error) {
 	f.startCalled++
 	return nil, errTestStreamStart
 }
 
 type mockIndexReportStream struct {
-	reports []*v1.VsockMessage
+	reports []*v1.VMReport
 	started *concurrency.Signal // signals when first report is streamed
 }
 
-func (m *mockIndexReportStream) Start(ctx context.Context) (<-chan *v1.VsockMessage, error) {
-	reportChan := make(chan *v1.VsockMessage, len(m.reports))
+func (m *mockIndexReportStream) Start(ctx context.Context) (<-chan *v1.VMReport, error) {
+	reportChan := make(chan *v1.VMReport, len(m.reports))
 
 	go func() {
 		for i, report := range m.reports {
@@ -287,16 +287,16 @@ func (m *mockIndexReportStream) Start(ctx context.Context) (<-chan *v1.VsockMess
 
 type mockIndexReportSender struct {
 	mu            sync.Mutex
-	sentMessages  []*v1.VsockMessage
+	sentMessages  []*v1.VMReport
 	failOnIndex   int                 // Index to fail on (0-based), use -1 to never fail
 	done          *concurrency.Signal // signals when expectedCount reports are sent
 	expectedCount int                 // number of reports expected before signaling done
 }
 
-func (m *mockIndexReportSender) Send(_ context.Context, vsockMsg *v1.VsockMessage) error {
+func (m *mockIndexReportSender) Send(_ context.Context, vmReport *v1.VMReport) error {
 	m.mu.Lock()
 	currentIndex := len(m.sentMessages)
-	m.sentMessages = append(m.sentMessages, vsockMsg)
+	m.sentMessages = append(m.sentMessages, vmReport)
 
 	// Signal done when we've sent expected count
 	if m.done != nil && len(m.sentMessages) == m.expectedCount {
