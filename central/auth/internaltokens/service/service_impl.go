@@ -18,6 +18,8 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authz/idcheck"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/protocompat"
+	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/telemetry/phonehome/telemeter"
 	"google.golang.org/grpc"
 )
@@ -34,6 +36,13 @@ var (
 			v1.TokenService_GenerateTokenForPermissionsAndScope_FullMethodName,
 		},
 	})
+
+	clusterReadContext = sac.WithGlobalAccessScopeChecker(context.Background(),
+		sac.AllowFixedScopes(
+			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
+			sac.ResourceScopeKeys(resources.Cluster),
+		),
+	)
 )
 
 type serviceImpl struct {
@@ -90,20 +99,30 @@ func (s *serviceImpl) GenerateTokenForPermissionsAndScope(
 }
 
 func trackRequest(id authn.Identity, req *v1.GenerateTokenForPermissionsAndScopeRequest) {
+	if !centralclient.Singleton().IsActive() {
+		// Avoid unnecessary calculations if telemetry is not active.
+		return
+	}
 	var client telemeter.Option
-	// Track from the name of the secured cluster, if the caller is sensor.
-	switch id.Service().GetType() {
-	case storage.ServiceType_SENSOR_SERVICE:
-		clientID := id.Service().GetId()
-		cluster, _, _ := clusterDS.Singleton().GetCluster(context.Background(), clientID)
-		client = telemeter.WithClient(clientID, "Secured Cluster", cluster.GetMainImage())
-	case storage.ServiceType_UNKNOWN_SERVICE:
-		client = telemeter.WithClient(id.UID(), "OCP Token Client", "")
-	default:
-		client = telemeter.WithClient(id.Service().GetId(), id.Service().GetType().String(), "")
+	// ID cannot be nil normally.
+	if id != nil {
+		// Track from the name of the secured cluster, if the caller is sensor.
+		switch id.Service().GetType() {
+		case storage.ServiceType_SENSOR_SERVICE:
+			clientID := id.Service().GetId()
+			cluster, _, _ := clusterDS.Singleton().GetCluster(clusterReadContext, clientID)
+			client = telemeter.WithClient(clientID, "Secured Cluster", cluster.GetMainImage())
+		case storage.ServiceType_UNKNOWN_SERVICE:
+			client = telemeter.WithUserID(id.UID())
+		default:
+			client = telemeter.WithClient(id.Service().GetId(), id.Service().GetType().String(), "")
+		}
+	} else {
+		// The event will be reported from the central client in this case.
+		// WithTraits(nil) is a no-op option.
+		client = telemeter.WithTraits(nil)
 	}
 
-	req.GetClusterScopes()[0].GetNamespaces()
 	maxNamespaces := 0
 	fullClusterAccess := 0
 	for _, cs := range req.GetClusterScopes() {
@@ -119,7 +138,11 @@ func trackRequest(id authn.Identity, req *v1.GenerateTokenForPermissionsAndScope
 	for p, a := range req.GetPermissions() {
 		eventProps[p] = a.String()
 	}
-	centralclient.Singleton().Track("OCP Token Issued", eventProps, client)
+	centralclient.Singleton().Track("OCP Token Issued", eventProps, client,
+		// Client traits:
+		telemeter.WithTraits(map[string]any{
+			"Has OCP Plugin Users": true,
+		}))
 }
 
 func (s *serviceImpl) getExpiresAt(
