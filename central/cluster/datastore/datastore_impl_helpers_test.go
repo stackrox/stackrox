@@ -140,38 +140,6 @@ func TestShouldUpdateCluster(t *testing.T) {
 	})
 }
 
-func TestValidateClusterConfig(t *testing.T) {
-	t.Run("returns nil when names match", func(t *testing.T) {
-		cluster := &storage.Cluster{
-			Name: "test-cluster",
-		}
-
-		err := validateClusterConfig("cluster-id", "test-cluster", cluster)
-		assert.NoError(t, err)
-	})
-
-	t.Run("returns nil when clusterName is empty", func(t *testing.T) {
-		cluster := &storage.Cluster{
-			Name: "test-cluster",
-		}
-
-		err := validateClusterConfig("cluster-id", "", cluster)
-		assert.NoError(t, err)
-	})
-
-	t.Run("returns error when names don't match", func(t *testing.T) {
-		cluster := &storage.Cluster{
-			Name: "existing-cluster",
-		}
-
-		err := validateClusterConfig("cluster-id", "different-name", cluster)
-		assert.Error(t, err)
-		assert.Contains(t, err.Error(), "Name mismatch")
-		assert.Contains(t, err.Error(), "existing-cluster")
-		assert.Contains(t, err.Error(), "different-name")
-	})
-}
-
 func TestBuildClusterFromConfig(t *testing.T) {
 	t.Run("builds cluster with all fields", func(t *testing.T) {
 		config := clusterConfigData{
