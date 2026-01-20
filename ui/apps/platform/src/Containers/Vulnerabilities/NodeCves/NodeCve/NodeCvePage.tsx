@@ -49,9 +49,9 @@ import useNodeCveSummaryData from './useNodeCveSummaryData';
 const nodeCveOverviewCvePath = getOverviewPagePath('Node', { entityTab: 'CVE' });
 
 const searchFilterConfig = [
+    clusterSearchFilterConfig,
     nodeSearchFilterConfig,
     nodeComponentSearchFilterConfig,
-    clusterSearchFilterConfig,
 ];
 
 const defaultNodeCveSummary = {
@@ -132,6 +132,7 @@ function NodeCvePage() {
                     className="pf-v5-u-pt-lg pf-v5-u-pb-0 pf-v5-u-px-sm"
                     searchFilter={searchFilter}
                     searchFilterConfig={searchFilterConfig}
+                    defaultSearchFilterEntity="Node"
                     onFilterChange={(newFilter, searchPayload) => {
                         setSearchFilter(newFilter);
                         setPage(1, 'replace');

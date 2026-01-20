@@ -41,35 +41,35 @@ import { Name as ResourceName } from 'Components/CompoundSearchFilter/attributes
 
 const searchFilterConfig: CompoundSearchFilterConfig = [
     {
-        displayName: 'Policy',
-        searchCategory: 'ALERTS',
-        attributes: [PolicyName, PolicyCategory, PolicySeverity, PolicyLifecycleStage],
-    },
-    {
-        displayName: 'Policy violation',
-        searchCategory: 'ALERTS',
-        attributes: [AlertViolationTime, AlertEntityType],
-    },
-    {
         displayName: 'Cluster',
         searchCategory: 'ALERTS',
-        attributes: [clusterNameAttribute, clusterIdAttribute, clusterLabelAttribute],
-    },
-    {
-        displayName: 'Namespace',
-        searchCategory: 'ALERTS',
-        attributes: [NamespaceName, NamespaceID, NamespaceLabel, NamespaceAnnotation],
+        attributes: [clusterIdAttribute, clusterLabelAttribute, clusterNameAttribute],
     },
     {
         displayName: 'Deployment',
         searchCategory: 'ALERTS',
         attributes: [
-            DeploymentName,
+            DeploymentAnnotation,
             DeploymentID,
             DeploymentLabel,
-            DeploymentAnnotation,
-            DeploymentInactive,
+            DeploymentName,
+            DeploymentInactive, // Status
         ],
+    },
+    {
+        displayName: 'Namespace',
+        searchCategory: 'ALERTS',
+        attributes: [NamespaceAnnotation, NamespaceID, NamespaceLabel, NamespaceName],
+    },
+    {
+        displayName: 'Policy',
+        searchCategory: 'ALERTS',
+        attributes: [PolicyCategory, PolicyLifecycleStage, PolicyName, PolicySeverity],
+    },
+    {
+        displayName: 'Policy violation',
+        searchCategory: 'ALERTS',
+        attributes: [AlertViolationTime, AlertEntityType], // non-alphabetical because no Name
     },
     {
         displayName: 'Resource',
@@ -106,6 +106,7 @@ function ViolationsTableSearchFilter({
                     <ToolbarItem className="pf-v5-u-flex-1">
                         <CompoundSearchFilter
                             config={searchFilterConfig}
+                            defaultEntity="Policy"
                             searchFilter={searchFilter}
                             onSearch={onSearchHandler}
                             additionalContextFilter={additionalContextFilter}
