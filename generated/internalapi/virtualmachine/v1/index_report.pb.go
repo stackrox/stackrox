@@ -22,18 +22,115 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
+// ActivationStatus indicates whether the OS is activated.
+type ActivationStatus int32
+
+const (
+	ActivationStatus_ACTIVATION_STATUS_UNSPECIFIED ActivationStatus = 0
+	ActivationStatus_ACTIVATION_STATUS_ACTIVE      ActivationStatus = 1
+	ActivationStatus_ACTIVATION_STATUS_INACTIVE    ActivationStatus = 2
+)
+
+// Enum value maps for ActivationStatus.
+var (
+	ActivationStatus_name = map[int32]string{
+		0: "ACTIVATION_STATUS_UNSPECIFIED",
+		1: "ACTIVATION_STATUS_ACTIVE",
+		2: "ACTIVATION_STATUS_INACTIVE",
+	}
+	ActivationStatus_value = map[string]int32{
+		"ACTIVATION_STATUS_UNSPECIFIED": 0,
+		"ACTIVATION_STATUS_ACTIVE":      1,
+		"ACTIVATION_STATUS_INACTIVE":    2,
+	}
+)
+
+func (x ActivationStatus) Enum() *ActivationStatus {
+	p := new(ActivationStatus)
+	*p = x
+	return p
+}
+
+func (x ActivationStatus) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (ActivationStatus) Descriptor() protoreflect.EnumDescriptor {
+	return file_internalapi_virtualmachine_v1_index_report_proto_enumTypes[0].Descriptor()
+}
+
+func (ActivationStatus) Type() protoreflect.EnumType {
+	return &file_internalapi_virtualmachine_v1_index_report_proto_enumTypes[0]
+}
+
+func (x ActivationStatus) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use ActivationStatus.Descriptor instead.
+func (ActivationStatus) EnumDescriptor() ([]byte, []int) {
+	return file_internalapi_virtualmachine_v1_index_report_proto_rawDescGZIP(), []int{0}
+}
+
+// DnfMetadataStatus indicates whether DNF metadata is available.
+type DnfMetadataStatus int32
+
+const (
+	DnfMetadataStatus_DNF_METADATA_STATUS_UNSPECIFIED DnfMetadataStatus = 0
+	DnfMetadataStatus_DNF_METADATA_STATUS_AVAILABLE   DnfMetadataStatus = 1
+	DnfMetadataStatus_DNF_METADATA_STATUS_UNAVAILABLE DnfMetadataStatus = 2
+)
+
+// Enum value maps for DnfMetadataStatus.
+var (
+	DnfMetadataStatus_name = map[int32]string{
+		0: "DNF_METADATA_STATUS_UNSPECIFIED",
+		1: "DNF_METADATA_STATUS_AVAILABLE",
+		2: "DNF_METADATA_STATUS_UNAVAILABLE",
+	}
+	DnfMetadataStatus_value = map[string]int32{
+		"DNF_METADATA_STATUS_UNSPECIFIED": 0,
+		"DNF_METADATA_STATUS_AVAILABLE":   1,
+		"DNF_METADATA_STATUS_UNAVAILABLE": 2,
+	}
+)
+
+func (x DnfMetadataStatus) Enum() *DnfMetadataStatus {
+	p := new(DnfMetadataStatus)
+	*p = x
+	return p
+}
+
+func (x DnfMetadataStatus) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (DnfMetadataStatus) Descriptor() protoreflect.EnumDescriptor {
+	return file_internalapi_virtualmachine_v1_index_report_proto_enumTypes[1].Descriptor()
+}
+
+func (DnfMetadataStatus) Type() protoreflect.EnumType {
+	return &file_internalapi_virtualmachine_v1_index_report_proto_enumTypes[1]
+}
+
+func (x DnfMetadataStatus) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use DnfMetadataStatus.Descriptor instead.
+func (DnfMetadataStatus) EnumDescriptor() ([]byte, []int) {
+	return file_internalapi_virtualmachine_v1_index_report_proto_rawDescGZIP(), []int{1}
+}
+
 // VsockMessage is the message sent over vsock from roxagent to relay.
-// It wraps IndexReport and includes VM metadata that stays in Sensor.
+// It wraps IndexReport and includes VM discovered data that stays in Sensor.
 type VsockMessage struct {
 	state       protoimpl.MessageState `protogen:"open.v1"`
 	IndexReport *IndexReport           `protobuf:"bytes,1,opt,name=index_report,json=indexReport,proto3" json:"index_report,omitempty"`
-	// VM metadata (not forwarded to Central)
-	DetectedOs           string            `protobuf:"bytes,2,opt,name=detected_os,json=detectedOs,proto3" json:"detected_os,omitempty"`
-	IsOsActivated        bool              `protobuf:"varint,3,opt,name=is_os_activated,json=isOsActivated,proto3" json:"is_os_activated,omitempty"`
-	DnfMetadataAvailable bool              `protobuf:"varint,4,opt,name=dnf_metadata_available,json=dnfMetadataAvailable,proto3" json:"dnf_metadata_available,omitempty"`
-	AuxData              map[string]string `protobuf:"bytes,5,rep,name=aux_data,json=auxData,proto3" json:"aux_data,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
-	unknownFields        protoimpl.UnknownFields
-	sizeCache            protoimpl.SizeCache
+	// VM data discovered by roxagent (not forwarded to Central)
+	DiscoveredData *DiscoveredData `protobuf:"bytes,2,opt,name=discovered_data,json=discoveredData,proto3" json:"discovered_data,omitempty"`
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
 }
 
 func (x *VsockMessage) Reset() {
@@ -73,32 +170,72 @@ func (x *VsockMessage) GetIndexReport() *IndexReport {
 	return nil
 }
 
-func (x *VsockMessage) GetDetectedOs() string {
+func (x *VsockMessage) GetDiscoveredData() *DiscoveredData {
+	if x != nil {
+		return x.DiscoveredData
+	}
+	return nil
+}
+
+// DiscoveredData contains data discovered by roxagent.
+type DiscoveredData struct {
+	state             protoimpl.MessageState `protogen:"open.v1"`
+	DetectedOs        string                 `protobuf:"bytes,1,opt,name=detected_os,json=detectedOs,proto3" json:"detected_os,omitempty"`
+	ActivationStatus  ActivationStatus       `protobuf:"varint,2,opt,name=activation_status,json=activationStatus,proto3,enum=virtualmachine.v1.ActivationStatus" json:"activation_status,omitempty"`
+	DnfMetadataStatus DnfMetadataStatus      `protobuf:"varint,3,opt,name=dnf_metadata_status,json=dnfMetadataStatus,proto3,enum=virtualmachine.v1.DnfMetadataStatus" json:"dnf_metadata_status,omitempty"`
+	unknownFields     protoimpl.UnknownFields
+	sizeCache         protoimpl.SizeCache
+}
+
+func (x *DiscoveredData) Reset() {
+	*x = DiscoveredData{}
+	mi := &file_internalapi_virtualmachine_v1_index_report_proto_msgTypes[1]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *DiscoveredData) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*DiscoveredData) ProtoMessage() {}
+
+func (x *DiscoveredData) ProtoReflect() protoreflect.Message {
+	mi := &file_internalapi_virtualmachine_v1_index_report_proto_msgTypes[1]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use DiscoveredData.ProtoReflect.Descriptor instead.
+func (*DiscoveredData) Descriptor() ([]byte, []int) {
+	return file_internalapi_virtualmachine_v1_index_report_proto_rawDescGZIP(), []int{1}
+}
+
+func (x *DiscoveredData) GetDetectedOs() string {
 	if x != nil {
 		return x.DetectedOs
 	}
 	return ""
 }
 
-func (x *VsockMessage) GetIsOsActivated() bool {
+func (x *DiscoveredData) GetActivationStatus() ActivationStatus {
 	if x != nil {
-		return x.IsOsActivated
+		return x.ActivationStatus
 	}
-	return false
+	return ActivationStatus_ACTIVATION_STATUS_UNSPECIFIED
 }
 
-func (x *VsockMessage) GetDnfMetadataAvailable() bool {
+func (x *DiscoveredData) GetDnfMetadataStatus() DnfMetadataStatus {
 	if x != nil {
-		return x.DnfMetadataAvailable
+		return x.DnfMetadataStatus
 	}
-	return false
-}
-
-func (x *VsockMessage) GetAuxData() map[string]string {
-	if x != nil {
-		return x.AuxData
-	}
-	return nil
+	return DnfMetadataStatus_DNF_METADATA_STATUS_UNSPECIFIED
 }
 
 // The index report is collected from the virtual machine agent and contains
@@ -113,7 +250,7 @@ type IndexReport struct {
 
 func (x *IndexReport) Reset() {
 	*x = IndexReport{}
-	mi := &file_internalapi_virtualmachine_v1_index_report_proto_msgTypes[1]
+	mi := &file_internalapi_virtualmachine_v1_index_report_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -125,7 +262,7 @@ func (x *IndexReport) String() string {
 func (*IndexReport) ProtoMessage() {}
 
 func (x *IndexReport) ProtoReflect() protoreflect.Message {
-	mi := &file_internalapi_virtualmachine_v1_index_report_proto_msgTypes[1]
+	mi := &file_internalapi_virtualmachine_v1_index_report_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -138,7 +275,7 @@ func (x *IndexReport) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use IndexReport.ProtoReflect.Descriptor instead.
 func (*IndexReport) Descriptor() ([]byte, []int) {
-	return file_internalapi_virtualmachine_v1_index_report_proto_rawDescGZIP(), []int{1}
+	return file_internalapi_virtualmachine_v1_index_report_proto_rawDescGZIP(), []int{2}
 }
 
 func (x *IndexReport) GetVsockCid() string {
@@ -169,7 +306,7 @@ type IndexReportEvent struct {
 
 func (x *IndexReportEvent) Reset() {
 	*x = IndexReportEvent{}
-	mi := &file_internalapi_virtualmachine_v1_index_report_proto_msgTypes[2]
+	mi := &file_internalapi_virtualmachine_v1_index_report_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -181,7 +318,7 @@ func (x *IndexReportEvent) String() string {
 func (*IndexReportEvent) ProtoMessage() {}
 
 func (x *IndexReportEvent) ProtoReflect() protoreflect.Message {
-	mi := &file_internalapi_virtualmachine_v1_index_report_proto_msgTypes[2]
+	mi := &file_internalapi_virtualmachine_v1_index_report_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -194,7 +331,7 @@ func (x *IndexReportEvent) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use IndexReportEvent.ProtoReflect.Descriptor instead.
 func (*IndexReportEvent) Descriptor() ([]byte, []int) {
-	return file_internalapi_virtualmachine_v1_index_report_proto_rawDescGZIP(), []int{2}
+	return file_internalapi_virtualmachine_v1_index_report_proto_rawDescGZIP(), []int{3}
 }
 
 func (x *IndexReportEvent) GetId() string {
@@ -215,23 +352,29 @@ var File_internalapi_virtualmachine_v1_index_report_proto protoreflect.FileDescr
 
 const file_internalapi_virtualmachine_v1_index_report_proto_rawDesc = "" +
 	"\n" +
-	"0internalapi/virtualmachine/v1/index_report.proto\x12\x11virtualmachine.v1\x1a)internalapi/scanner/v4/index_report.proto\"\xd5\x02\n" +
+	"0internalapi/virtualmachine/v1/index_report.proto\x12\x11virtualmachine.v1\x1a)internalapi/scanner/v4/index_report.proto\"\x9d\x01\n" +
 	"\fVsockMessage\x12A\n" +
-	"\findex_report\x18\x01 \x01(\v2\x1e.virtualmachine.v1.IndexReportR\vindexReport\x12\x1f\n" +
-	"\vdetected_os\x18\x02 \x01(\tR\n" +
-	"detectedOs\x12&\n" +
-	"\x0fis_os_activated\x18\x03 \x01(\bR\risOsActivated\x124\n" +
-	"\x16dnf_metadata_available\x18\x04 \x01(\bR\x14dnfMetadataAvailable\x12G\n" +
-	"\baux_data\x18\x05 \x03(\v2,.virtualmachine.v1.VsockMessage.AuxDataEntryR\aauxData\x1a:\n" +
-	"\fAuxDataEntry\x12\x10\n" +
-	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
-	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"^\n" +
+	"\findex_report\x18\x01 \x01(\v2\x1e.virtualmachine.v1.IndexReportR\vindexReport\x12J\n" +
+	"\x0fdiscovered_data\x18\x02 \x01(\v2!.virtualmachine.v1.DiscoveredDataR\x0ediscoveredData\"\xd9\x01\n" +
+	"\x0eDiscoveredData\x12\x1f\n" +
+	"\vdetected_os\x18\x01 \x01(\tR\n" +
+	"detectedOs\x12P\n" +
+	"\x11activation_status\x18\x02 \x01(\x0e2#.virtualmachine.v1.ActivationStatusR\x10activationStatus\x12T\n" +
+	"\x13dnf_metadata_status\x18\x03 \x01(\x0e2$.virtualmachine.v1.DnfMetadataStatusR\x11dnfMetadataStatus\"^\n" +
 	"\vIndexReport\x12\x1b\n" +
 	"\tvsock_cid\x18\x01 \x01(\tR\bvsockCid\x122\n" +
 	"\bindex_v4\x18\x02 \x01(\v2\x17.scanner.v4.IndexReportR\aindexV4\"X\n" +
 	"\x10IndexReportEvent\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x124\n" +
-	"\x05index\x18\x02 \x01(\v2\x1e.virtualmachine.v1.IndexReportR\x05indexB$Z\"./internalapi/virtualmachine/v1;v1b\x06proto3"
+	"\x05index\x18\x02 \x01(\v2\x1e.virtualmachine.v1.IndexReportR\x05index*s\n" +
+	"\x10ActivationStatus\x12!\n" +
+	"\x1dACTIVATION_STATUS_UNSPECIFIED\x10\x00\x12\x1c\n" +
+	"\x18ACTIVATION_STATUS_ACTIVE\x10\x01\x12\x1e\n" +
+	"\x1aACTIVATION_STATUS_INACTIVE\x10\x02*\x80\x01\n" +
+	"\x11DnfMetadataStatus\x12#\n" +
+	"\x1fDNF_METADATA_STATUS_UNSPECIFIED\x10\x00\x12!\n" +
+	"\x1dDNF_METADATA_STATUS_AVAILABLE\x10\x01\x12#\n" +
+	"\x1fDNF_METADATA_STATUS_UNAVAILABLE\x10\x02B$Z\"./internalapi/virtualmachine/v1;v1b\x06proto3"
 
 var (
 	file_internalapi_virtualmachine_v1_index_report_proto_rawDescOnce sync.Once
@@ -245,24 +388,29 @@ func file_internalapi_virtualmachine_v1_index_report_proto_rawDescGZIP() []byte 
 	return file_internalapi_virtualmachine_v1_index_report_proto_rawDescData
 }
 
+var file_internalapi_virtualmachine_v1_index_report_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
 var file_internalapi_virtualmachine_v1_index_report_proto_msgTypes = make([]protoimpl.MessageInfo, 4)
 var file_internalapi_virtualmachine_v1_index_report_proto_goTypes = []any{
-	(*VsockMessage)(nil),     // 0: virtualmachine.v1.VsockMessage
-	(*IndexReport)(nil),      // 1: virtualmachine.v1.IndexReport
-	(*IndexReportEvent)(nil), // 2: virtualmachine.v1.IndexReportEvent
-	nil,                      // 3: virtualmachine.v1.VsockMessage.AuxDataEntry
-	(*v4.IndexReport)(nil),   // 4: scanner.v4.IndexReport
+	(ActivationStatus)(0),    // 0: virtualmachine.v1.ActivationStatus
+	(DnfMetadataStatus)(0),   // 1: virtualmachine.v1.DnfMetadataStatus
+	(*VsockMessage)(nil),     // 2: virtualmachine.v1.VsockMessage
+	(*DiscoveredData)(nil),   // 3: virtualmachine.v1.DiscoveredData
+	(*IndexReport)(nil),      // 4: virtualmachine.v1.IndexReport
+	(*IndexReportEvent)(nil), // 5: virtualmachine.v1.IndexReportEvent
+	(*v4.IndexReport)(nil),   // 6: scanner.v4.IndexReport
 }
 var file_internalapi_virtualmachine_v1_index_report_proto_depIdxs = []int32{
-	1, // 0: virtualmachine.v1.VsockMessage.index_report:type_name -> virtualmachine.v1.IndexReport
-	3, // 1: virtualmachine.v1.VsockMessage.aux_data:type_name -> virtualmachine.v1.VsockMessage.AuxDataEntry
-	4, // 2: virtualmachine.v1.IndexReport.index_v4:type_name -> scanner.v4.IndexReport
-	1, // 3: virtualmachine.v1.IndexReportEvent.index:type_name -> virtualmachine.v1.IndexReport
-	4, // [4:4] is the sub-list for method output_type
-	4, // [4:4] is the sub-list for method input_type
-	4, // [4:4] is the sub-list for extension type_name
-	4, // [4:4] is the sub-list for extension extendee
-	0, // [0:4] is the sub-list for field type_name
+	4, // 0: virtualmachine.v1.VsockMessage.index_report:type_name -> virtualmachine.v1.IndexReport
+	3, // 1: virtualmachine.v1.VsockMessage.discovered_data:type_name -> virtualmachine.v1.DiscoveredData
+	0, // 2: virtualmachine.v1.DiscoveredData.activation_status:type_name -> virtualmachine.v1.ActivationStatus
+	1, // 3: virtualmachine.v1.DiscoveredData.dnf_metadata_status:type_name -> virtualmachine.v1.DnfMetadataStatus
+	6, // 4: virtualmachine.v1.IndexReport.index_v4:type_name -> scanner.v4.IndexReport
+	4, // 5: virtualmachine.v1.IndexReportEvent.index:type_name -> virtualmachine.v1.IndexReport
+	6, // [6:6] is the sub-list for method output_type
+	6, // [6:6] is the sub-list for method input_type
+	6, // [6:6] is the sub-list for extension type_name
+	6, // [6:6] is the sub-list for extension extendee
+	0, // [0:6] is the sub-list for field type_name
 }
 
 func init() { file_internalapi_virtualmachine_v1_index_report_proto_init() }
@@ -275,13 +423,14 @@ func file_internalapi_virtualmachine_v1_index_report_proto_init() {
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_internalapi_virtualmachine_v1_index_report_proto_rawDesc), len(file_internalapi_virtualmachine_v1_index_report_proto_rawDesc)),
-			NumEnums:      0,
+			NumEnums:      2,
 			NumMessages:   4,
 			NumExtensions: 0,
 			NumServices:   0,
 		},
 		GoTypes:           file_internalapi_virtualmachine_v1_index_report_proto_goTypes,
 		DependencyIndexes: file_internalapi_virtualmachine_v1_index_report_proto_depIdxs,
+		EnumInfos:         file_internalapi_virtualmachine_v1_index_report_proto_enumTypes,
 		MessageInfos:      file_internalapi_virtualmachine_v1_index_report_proto_msgTypes,
 	}.Build()
 	File_internalapi_virtualmachine_v1_index_report_proto = out.File

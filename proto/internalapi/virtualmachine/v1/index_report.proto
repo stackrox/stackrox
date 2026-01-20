@@ -7,15 +7,33 @@ import "internalapi/scanner/v4/index_report.proto";
 option go_package = "./internalapi/virtualmachine/v1;v1";
 
 // VsockMessage is the message sent over vsock from roxagent to relay.
-// It wraps IndexReport and includes VM metadata that stays in Sensor.
+// It wraps IndexReport and includes VM discovered data that stays in Sensor.
 message VsockMessage {
   IndexReport index_report = 1;
 
-  // VM metadata (not forwarded to Central)
-  string detected_os = 2;
-  bool is_os_activated = 3;
-  bool dnf_metadata_available = 4;
-  map<string, string> aux_data = 5;
+  // VM data discovered by roxagent (not forwarded to Central)
+  DiscoveredData discovered_data = 2;
+}
+
+// DiscoveredData contains data discovered by roxagent.
+message DiscoveredData {
+  string detected_os = 1;
+  ActivationStatus activation_status = 2;
+  DnfMetadataStatus dnf_metadata_status = 3;
+}
+
+// ActivationStatus indicates whether the OS is activated.
+enum ActivationStatus {
+  ACTIVATION_STATUS_UNSPECIFIED = 0;
+  ACTIVATION_STATUS_ACTIVE = 1;
+  ACTIVATION_STATUS_INACTIVE = 2;
+}
+
+// DnfMetadataStatus indicates whether DNF metadata is available.
+enum DnfMetadataStatus {
+  DNF_METADATA_STATUS_UNSPECIFIED = 0;
+  DNF_METADATA_STATUS_AVAILABLE = 1;
+  DNF_METADATA_STATUS_UNAVAILABLE = 2;
 }
 
 // The index report is collected from the virtual machine agent and contains

@@ -86,25 +86,24 @@ func (s *senderTestSuite) TestReportSender_Send() {
 	client := relaytest.NewMockSensorClient(s.T())
 	sender := New(client)
 
-	auxData := map[string]string{"key": "value"}
 	msg := &v1.VsockMessage{
-		IndexReport:          &v1.IndexReport{VsockCid: "42"},
-		DetectedOs:           "linux",
-		IsOsActivated:        true,
-		DnfMetadataAvailable: true,
-		AuxData:              auxData,
+		IndexReport: &v1.IndexReport{VsockCid: "42"},
+		DiscoveredData: &v1.DiscoveredData{
+			DetectedOs:        "linux",
+			ActivationStatus:  v1.ActivationStatus_ACTIVATION_STATUS_ACTIVE,
+			DnfMetadataStatus: v1.DnfMetadataStatus_DNF_METADATA_STATUS_AVAILABLE,
+		},
 	}
 
 	err := sender.Send(s.ctx, msg)
 	s.Require().NoError(err)
 	s.Require().Len(client.CapturedRequests(), 1)
 
-	// Verify that metadata fields are correctly forwarded into the request
+	// Verify that discovered data fields are correctly forwarded into the request
 	req := client.CapturedRequests()[0]
-	s.Equal(msg.GetDetectedOs(), req.GetDetectedOs())
-	s.Equal(msg.GetIsOsActivated(), req.GetIsOsActivated())
-	s.Equal(msg.GetDnfMetadataAvailable(), req.GetDnfMetadataAvailable())
-	s.Equal(msg.GetAuxData(), req.GetAuxData())
+	s.Equal(msg.GetDiscoveredData().GetDetectedOs(), req.GetDiscoveredData().GetDetectedOs())
+	s.Equal(msg.GetDiscoveredData().GetActivationStatus(), req.GetDiscoveredData().GetActivationStatus())
+	s.Equal(msg.GetDiscoveredData().GetDnfMetadataStatus(), req.GetDiscoveredData().GetDnfMetadataStatus())
 }
 
 func (s *senderTestSuite) TestReportSender_SendHandlesErrors() {

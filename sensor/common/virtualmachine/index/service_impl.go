@@ -2,13 +2,13 @@ package index
 
 import (
 	"context"
-	"strconv"
 	"time"
 
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stackrox/rox/generated/internalapi/sensor"
+	vmv1 "github.com/stackrox/rox/generated/internalapi/virtualmachine/v1"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/grpc/authz/idcheck"
 	"github.com/stackrox/rox/pkg/logging"
@@ -62,23 +62,28 @@ func (s *serviceImpl) UpsertVirtualMachineIndexReport(ctx context.Context, req *
 
 	log.Debugf("Upserting virtual machine index report with vsock_cid=%q", ir.GetVsockCid())
 
-	// Log VM metadata
-	// TODO: This is temporary. In a followup, aux_data logging will be moved to Debug level
+	// Log VM discovered data.
+	// TODO: This is temporary. In a followup, logging will be reduced to Debug level
 	// and sanitized to avoid potential sensitive data leakage.
-	detectedOS := req.GetDetectedOs()
-	isOsActivated := req.GetIsOsActivated()
-	dnfMetadataAvailable := req.GetDnfMetadataAvailable()
-	auxData := req.GetAuxData()
-	log.Infof("VM metadata: detected_os=%q, is_os_activated=%v, dnf_metadata_available=%v, aux_data=%v",
-		detectedOS, isOsActivated, dnfMetadataAvailable, auxData)
+	discoveredData := req.GetDiscoveredData()
+	detectedOS := ""
+	activationStatus := vmv1.ActivationStatus_ACTIVATION_STATUS_UNSPECIFIED
+	dnfMetadataStatus := vmv1.DnfMetadataStatus_DNF_METADATA_STATUS_UNSPECIFIED
+	if discoveredData != nil {
+		detectedOS = discoveredData.GetDetectedOs()
+		activationStatus = discoveredData.GetActivationStatus()
+		dnfMetadataStatus = discoveredData.GetDnfMetadataStatus()
+	}
+	log.Infof("VM discovered data: detected_os=%q, activation_status=%s, dnf_metadata_status=%s",
+		detectedOS, activationStatus.String(), dnfMetadataStatus.String())
 
-	// Record metric for VM metadata with all three labels
+	// Record metric for VM discovered data with all labels.
 	// TODO: This is temporary. In a followup, detected_os will be normalized to a small fixed set
 	// of OS categories (e.g., rhel, ubuntu, debian, suse, windows, unknown) to avoid high-cardinality metrics.
-	metrics.VMMetadata.With(prometheus.Labels{
-		"detected_os":            detectedOS,
-		"is_os_activated":        strconv.FormatBool(isOsActivated),
-		"dnf_metadata_available": strconv.FormatBool(dnfMetadataAvailable),
+	metrics.VMDiscoveredData.With(prometheus.Labels{
+		"detected_os":         detectedOS,
+		"activation_status":   activationStatus.String(),
+		"dnf_metadata_status": dnfMetadataStatus.String(),
 	}).Inc()
 
 	metrics.IndexReportsReceived.Inc()

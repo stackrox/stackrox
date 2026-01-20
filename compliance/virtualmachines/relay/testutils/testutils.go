@@ -59,11 +59,12 @@ func (c *MockVsockConn) WithIndexReport(indexReport *v1.IndexReport) (*MockVsock
 // NewTestVsockMessage creates a VsockMessage with default test values.
 func NewTestVsockMessage(vsockCID string) *v1.VsockMessage {
 	return &v1.VsockMessage{
-		IndexReport:          &v1.IndexReport{VsockCid: vsockCID},
-		DetectedOs:           "unknown",
-		IsOsActivated:        false,
-		DnfMetadataAvailable: false,
-		AuxData:              make(map[string]string),
+		IndexReport: &v1.IndexReport{VsockCid: vsockCID},
+		DiscoveredData: &v1.DiscoveredData{
+			DetectedOs:        "unknown",
+			ActivationStatus:  v1.ActivationStatus_ACTIVATION_STATUS_UNSPECIFIED,
+			DnfMetadataStatus: v1.DnfMetadataStatus_DNF_METADATA_STATUS_UNSPECIFIED,
+		},
 	}
 }
 

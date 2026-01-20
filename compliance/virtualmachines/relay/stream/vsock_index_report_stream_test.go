@@ -23,11 +23,12 @@ func (s *streamTestSuite) TestParseVsockMessage() {
 	s.Require().Nil(parsedVsockMessage)
 
 	validVsockMessage := &v1.VsockMessage{
-		IndexReport:          &v1.IndexReport{VsockCid: "42"},
-		DetectedOs:           "unknown",
-		IsOsActivated:        false,
-		DnfMetadataAvailable: false,
-		AuxData:              map[string]string{"key1": "value1", "key2": "value2"},
+		IndexReport: &v1.IndexReport{VsockCid: "42"},
+		DiscoveredData: &v1.DiscoveredData{
+			DetectedOs:        "unknown",
+			ActivationStatus:  v1.ActivationStatus_ACTIVATION_STATUS_UNSPECIFIED,
+			DnfMetadataStatus: v1.DnfMetadataStatus_DNF_METADATA_STATUS_UNSPECIFIED,
+		},
 	}
 	data, err = proto.Marshal(validVsockMessage)
 	s.Require().NoError(err)

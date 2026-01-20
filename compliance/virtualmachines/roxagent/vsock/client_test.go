@@ -38,11 +38,12 @@ func TestClient_writeVsockMessage_LocalSocket(t *testing.T) {
 		},
 	}
 	testVsockMessage := &v1.VsockMessage{
-		IndexReport:          testIndexReport,
-		DetectedOs:           "unknown",
-		IsOsActivated:        false,
-		DnfMetadataAvailable: false,
-		AuxData:              make(map[string]string),
+		IndexReport: testIndexReport,
+		DiscoveredData: &v1.DiscoveredData{
+			DetectedOs:        "unknown",
+			ActivationStatus:  v1.ActivationStatus_ACTIVATION_STATUS_UNSPECIFIED,
+			DnfMetadataStatus: v1.DnfMetadataStatus_DNF_METADATA_STATUS_UNSPECIFIED,
+		},
 	}
 
 	receivedData := make(chan []byte, 1)

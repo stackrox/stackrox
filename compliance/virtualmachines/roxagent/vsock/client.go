@@ -32,13 +32,14 @@ func (c *Client) SendIndexReport(report *v4.IndexReport) error {
 		IndexV4:  report,
 	}
 
-	// Create VsockMessage with placeholder metadata values
+	// Create VsockMessage with placeholder discovered data values.
 	vsockMsg := &v1.VsockMessage{
-		IndexReport:          wrappedReport,
-		DetectedOs:           "unknown", // TODO: get proper values from VM.
-		IsOsActivated:        false,     // TODO: get proper values from VM.
-		DnfMetadataAvailable: false,     // TODO: get proper values from VM.
-		AuxData:              make(map[string]string),
+		IndexReport: wrappedReport,
+		DiscoveredData: &v1.DiscoveredData{
+			DetectedOs:        "unknown", // TODO: get proper values from VM.
+			ActivationStatus:  v1.ActivationStatus_ACTIVATION_STATUS_UNSPECIFIED,
+			DnfMetadataStatus: v1.DnfMetadataStatus_DNF_METADATA_STATUS_UNSPECIFIED,
+		},
 	}
 
 	if c.Verbose {

@@ -52,11 +52,8 @@ func (s *sensorIndexReportSender) Send(ctx context.Context, vsockMsg *v1.VsockMe
 		defer cancel()
 
 		req := &sensor.UpsertVirtualMachineIndexReportRequest{
-			IndexReport:          indexReport,
-			DetectedOs:           vsockMsg.GetDetectedOs(),
-			IsOsActivated:        vsockMsg.GetIsOsActivated(),
-			DnfMetadataAvailable: vsockMsg.GetDnfMetadataAvailable(),
-			AuxData:              vsockMsg.GetAuxData(),
+			IndexReport:    indexReport,
+			DiscoveredData: vsockMsg.GetDiscoveredData(),
 		}
 
 		resp, err := s.sensorClient.UpsertVirtualMachineIndexReport(sendToSensorCtx, req)

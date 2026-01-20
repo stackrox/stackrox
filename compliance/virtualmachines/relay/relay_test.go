@@ -82,22 +82,24 @@ func (s *relayTestSuite) TestRelay_Integration() {
 		expectedCount: 2,
 	}
 
-	// Create mock stream that produces test messages with metadata
+	// Create mock stream that produces test messages with discovered data
 	mockIndexReportStream := &mockIndexReportStream{
 		reports: []*v1.VsockMessage{
 			{
-				IndexReport:          &v1.IndexReport{VsockCid: "100"},
-				DetectedOs:           "ubuntu-22.04",
-				IsOsActivated:        true,
-				DnfMetadataAvailable: true,
-				AuxData:              map[string]string{"vm_id": "vm-100"},
+				IndexReport: &v1.IndexReport{VsockCid: "100"},
+				DiscoveredData: &v1.DiscoveredData{
+					DetectedOs:        "ubuntu-22.04",
+					ActivationStatus:  v1.ActivationStatus_ACTIVATION_STATUS_ACTIVE,
+					DnfMetadataStatus: v1.DnfMetadataStatus_DNF_METADATA_STATUS_AVAILABLE,
+				},
 			},
 			{
-				IndexReport:          &v1.IndexReport{VsockCid: "200"},
-				DetectedOs:           "rhel-9",
-				IsOsActivated:        false,
-				DnfMetadataAvailable: false,
-				AuxData:              map[string]string{"vm_id": "vm-200"},
+				IndexReport: &v1.IndexReport{VsockCid: "200"},
+				DiscoveredData: &v1.DiscoveredData{
+					DetectedOs:        "rhel-9",
+					ActivationStatus:  v1.ActivationStatus_ACTIVATION_STATUS_INACTIVE,
+					DnfMetadataStatus: v1.DnfMetadataStatus_DNF_METADATA_STATUS_UNAVAILABLE,
+				},
 			},
 		},
 	}
@@ -124,7 +126,7 @@ func (s *relayTestSuite) TestRelay_Integration() {
 
 	cancel()
 
-	// Verify all messages were sent with metadata preserved
+	// Verify all messages were sent with discovered data preserved
 	mockIndexReportSender.mu.Lock()
 	s.Require().Len(mockIndexReportSender.sentMessages, 2)
 
@@ -135,16 +137,14 @@ func (s *relayTestSuite) TestRelay_Integration() {
 	s.Equal("100", first.GetIndexReport().GetVsockCid())
 	s.Equal("200", second.GetIndexReport().GetVsockCid())
 
-	// VM metadata is preserved
-	s.Equal("ubuntu-22.04", first.GetDetectedOs())
-	s.True(first.GetIsOsActivated())
-	s.True(first.GetDnfMetadataAvailable())
-	s.Equal(map[string]string{"vm_id": "vm-100"}, first.GetAuxData())
+	// VM discovered data is preserved
+	s.Equal("ubuntu-22.04", first.GetDiscoveredData().GetDetectedOs())
+	s.Equal(v1.ActivationStatus_ACTIVATION_STATUS_ACTIVE, first.GetDiscoveredData().GetActivationStatus())
+	s.Equal(v1.DnfMetadataStatus_DNF_METADATA_STATUS_AVAILABLE, first.GetDiscoveredData().GetDnfMetadataStatus())
 
-	s.Equal("rhel-9", second.GetDetectedOs())
-	s.False(second.GetIsOsActivated())
-	s.False(second.GetDnfMetadataAvailable())
-	s.Equal(map[string]string{"vm_id": "vm-200"}, second.GetAuxData())
+	s.Equal("rhel-9", second.GetDiscoveredData().GetDetectedOs())
+	s.Equal(v1.ActivationStatus_ACTIVATION_STATUS_INACTIVE, second.GetDiscoveredData().GetActivationStatus())
+	s.Equal(v1.DnfMetadataStatus_DNF_METADATA_STATUS_UNAVAILABLE, second.GetDiscoveredData().GetDnfMetadataStatus())
 
 	mockIndexReportSender.mu.Unlock()
 
