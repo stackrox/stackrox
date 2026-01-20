@@ -4,6 +4,7 @@ import (
 	"context"
 	"testing"
 
+	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/logging"
@@ -282,6 +283,56 @@ func TestErrToGRPCStatus(t *testing.T) {
 			s := ErrToGrpcStatus(tt.err)
 			assert.Equal(t, tt.code, s.Code())
 			assert.Equal(t, tt.err.Error(), s.Message())
+		})
+	}
+}
+
+func TestSanitizeErrorMessage(t *testing.T) {
+	tests := []struct {
+		name     string
+		err      error
+		expected string
+	}{
+		{
+			name:     "nil error",
+			err:      nil,
+			expected: "",
+		},
+		{
+			name:     "PostgreSQL error should be sanitized",
+			err:      &pgconn.PgError{Code: "42P01", Message: "relation \"secret_table\" does not exist"},
+			expected: "Database operation failed",
+		},
+		{
+			name:     "Wrapped PostgreSQL error should be sanitized",
+			err:      errors.Wrap(&pgconn.PgError{Code: "23505", Message: "duplicate key value violates unique constraint"}, "failed to insert"),
+			expected: "Database operation failed",
+		},
+		{
+			name:     "nil pointer dereference should pass through",
+			err:      errors.New("runtime error: invalid memory address or nil pointer dereference"),
+			expected: "runtime error: invalid memory address or nil pointer dereference",
+		},
+		{
+			name:     "runtime error should pass through",
+			err:      errors.New("runtime error: index out of range"),
+			expected: "runtime error: index out of range",
+		},
+		{
+			name:     "normal error should pass through",
+			err:      errox.NotFound,
+			expected: "not found",
+		},
+		{
+			name:     "normal wrapped error should pass through",
+			err:      errors.Wrap(errox.InvalidArgs, "bad request"),
+			expected: "bad request: invalid arguments",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := sanitizeErrorMessage(tt.err)
+			assert.Equal(t, tt.expected, result)
 		})
 	}
 }
