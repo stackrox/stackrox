@@ -41,10 +41,10 @@ describe('utils', () => {
 
             expect(result).toStrictEqual([
                 {
-                    displayName: 'Name',
-                    filterChipLabel: 'Image CVE',
-                    searchTerm: 'CVE',
-                    inputType: 'autocomplete',
+                    displayName: 'CVSS',
+                    filterChipLabel: 'CVSS',
+                    searchTerm: 'CVSS',
+                    inputType: 'condition-number',
                 },
                 {
                     displayName: 'Discovered time',
@@ -53,10 +53,10 @@ describe('utils', () => {
                     inputType: 'date-picker',
                 },
                 {
-                    displayName: 'CVSS',
-                    filterChipLabel: 'CVSS',
-                    searchTerm: 'CVSS',
-                    inputType: 'condition-number',
+                    displayName: 'Name',
+                    filterChipLabel: 'Image CVE',
+                    searchTerm: 'CVE',
+                    inputType: 'autocomplete',
                 },
             ]);
         });
@@ -86,7 +86,7 @@ describe('utils', () => {
 
             const result = getDefaultAttributeName(config, 'Image CVE');
 
-            expect(result).toStrictEqual('Name');
+            expect(result).toStrictEqual('CVSS');
         });
     });
 
@@ -102,16 +102,16 @@ describe('utils', () => {
 
             expect(result).toStrictEqual([
                 {
-                    displayName: 'Image CVE',
-                    searchFilterName: 'CVE',
+                    displayName: 'CVSS',
+                    searchFilterName: 'CVSS',
                 },
                 {
                     displayName: 'Image CVE discovered time',
                     searchFilterName: 'CVE Created Time',
                 },
                 {
-                    displayName: 'CVSS',
-                    searchFilterName: 'CVSS',
+                    displayName: 'Image CVE',
+                    searchFilterName: 'CVE',
                 },
             ]);
         });
