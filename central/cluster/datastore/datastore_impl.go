@@ -894,131 +894,214 @@ func (ds *datastoreImpl) updateClusterNoLock(ctx context.Context, cluster *stora
 	return nil
 }
 
+// clusterConfigData holds extracted configuration from SensorHello.
+// This allows pure functions to work with structured data instead of raw protobuf messages.
+type clusterConfigData struct {
+	helmManagedConfigInit    *central.HelmManagedConfigInit
+	deploymentIdentification *storage.SensorDeploymentIdentification
+	capabilities             []string
+}
+
+func (c clusterConfigData) clusterName() string {
+	return c.helmManagedConfigInit.GetClusterName()
+}
+
+func (c clusterConfigData) manager() storage.ManagerType {
+	return c.helmManagedConfigInit.GetManagedBy()
+}
+
+func (c clusterConfigData) helmConfig() *storage.CompleteClusterConfig {
+	return c.helmManagedConfigInit.GetClusterConfig()
+}
+
+// extractClusterConfig extracts relevant configuration data from SensorHello.
+// This is a pure function that performs the extraction once.
+func extractClusterConfig(hello *central.SensorHello) clusterConfigData {
+	return clusterConfigData{
+		helmManagedConfigInit:    hello.GetHelmManagedConfigInit(),
+		deploymentIdentification: hello.GetDeploymentIdentification(),
+		capabilities:             hello.GetCapabilities(),
+	}
+}
+
+// shouldUpdateCluster determines if an existing cluster needs updating.
+// Returns true if any of: sensor capabilities, config fingerprint, init bundle ID, or manager type has changed.
+func shouldUpdateCluster(existing *storage.Cluster, config clusterConfigData, registrantID string) bool {
+	if !sensorCapabilitiesEqual(existing, config.capabilities) {
+		return true
+	}
+	if existing.GetInitBundleId() != registrantID {
+		return true
+	}
+	if existing.GetHelmConfig().GetConfigFingerprint() != config.helmConfig().GetConfigFingerprint() {
+		return true
+	}
+	if existing.GetManagedBy() != config.manager() {
+		return true
+	}
+	return false
+}
+
+// sensorCapabilitiesEqual is a helper that compares capabilities from cluster and config.
+func sensorCapabilitiesEqual(cluster *storage.Cluster, capabilities []string) bool {
+	return set.NewSet(cluster.GetSensorCapabilities()...).Equal(set.NewSet(capabilities...))
+}
+
+// validateClusterConfig validates that the cluster name matches expectations.
+// For existing clusters, ensures name consistency if a name is specified.
+func validateClusterConfig(clusterID, clusterName string, existing *storage.Cluster) error {
+	if clusterName != "" && clusterName != existing.GetName() {
+		return errors.Errorf("Name mismatch for cluster %q: expected %q, but %q was specified. Set the cluster.name/clusterName attribute in your Helm config to %q, or remove it",
+			clusterID, existing.GetName(), clusterName, existing.GetName())
+	}
+	return nil
+}
+
+// buildClusterFromConfig builds a new cluster object from configuration.
+// This does not persist the cluster, just constructs the object.
+func buildClusterFromConfig(clusterName, registrantID string, config clusterConfigData) *storage.Cluster {
+	cluster := &storage.Cluster{
+		Name:               clusterName,
+		InitBundleId:       registrantID,
+		MostRecentSensorId: config.deploymentIdentification.CloneVT(),
+		SensorCapabilities: sliceutils.CopySliceSorted(config.capabilities),
+	}
+	configureFromHelmConfig(cluster, config.helmConfig())
+
+	if centralsensor.SecuredClusterIsNotManagedManually(config.helmManagedConfigInit) {
+		cluster.HelmConfig = config.helmConfig().CloneVT()
+	}
+
+	return cluster
+}
+
+// applyConfigToCluster applies configuration updates to a cluster.
+// Returns a new cluster object with updates applied (immutable pattern).
+func applyConfigToCluster(cluster *storage.Cluster, config clusterConfigData, registrantID string) *storage.Cluster {
+	updated := cluster.CloneVT()
+	updated.ManagedBy = config.manager()
+	updated.InitBundleId = registrantID
+	updated.SensorCapabilities = sliceutils.CopySliceSorted(config.capabilities)
+
+	if centralsensor.SecuredClusterIsNotManagedManually(config.helmManagedConfigInit) {
+		configureFromHelmConfig(updated, config.helmConfig())
+		updated.HelmConfig = config.helmConfig().CloneVT()
+	} else {
+		updated.HelmConfig = nil
+	}
+
+	return updated
+}
+
+// checkGracePeriodForReconnect checks if reconnection is allowed based on grace period.
+// For Helm/Operator managed clusters, prevents cluster moves within the grace period.
+func checkGracePeriodForReconnect(cluster *storage.Cluster, deploymentID *storage.SensorDeploymentIdentification, manager storage.ManagerType) error {
+	lastContact := protoconv.ConvertTimestampToTimeOrDefault(cluster.GetHealthStatus().GetLastContact(), time.Time{})
+	timeLeftInGracePeriod := clusterMoveGracePeriod - time.Since(lastContact)
+
+	// In a scale test environment, allow Sensors to reconnect in under the time limit
+	if timeLeftInGracePeriod > 0 && !env.ScaleTestEnabled.BooleanSetting() {
+		if err := common.CheckConnReplace(deploymentID, cluster.GetMostRecentSensorId()); err != nil {
+			managerPretty := "non-manually" // Unless we extend the `ManagerType` and forget to extend the switch here, this should never surface to the user.
+			switch manager {
+			case storage.ManagerType_MANAGER_TYPE_HELM_CHART:
+				managerPretty = "Helm"
+			case storage.ManagerType_MANAGER_TYPE_KUBERNETES_OPERATOR:
+				managerPretty = "Operator"
+			}
+			return errors.Errorf("registering %s-managed cluster is not allowed: %s. If you recently re-deployed, please wait for another %v",
+				managerPretty, err, timeLeftInGracePeriod)
+		}
+	}
+	return nil
+}
+
+// lookupOrCreateCluster handles the lookup-or-create logic.
+// Returns the cluster, a bool indicating whether it was an existing cluster (true) or newly created (false), and an error.
+// The bool is important because existing clusters need grace period checks and update checks, while new clusters skip those.
+func (ds *datastoreImpl) lookupOrCreateCluster(ctx context.Context, clusterID, clusterName, registrantID string, config clusterConfigData) (*storage.Cluster, bool, error) {
+	// Try to resolve cluster ID from name if not provided
+	if clusterID == "" && clusterName != "" {
+		if cachedID, ok := ds.nameToIDCache.Get(clusterName); ok {
+			clusterID = cachedID.(string)
+		}
+	}
+
+	// Path 1: Lookup existing cluster by ID
+	if clusterID != "" {
+		cluster, exists, err := ds.GetCluster(ctx, clusterID)
+		if err != nil {
+			return nil, false, err
+		}
+		if !exists {
+			return nil, false, errors.Errorf("cluster with ID %q does not exist", clusterID)
+		}
+
+		// Validate name match
+		if err := validateClusterConfig(clusterID, clusterName, cluster); err != nil {
+			return nil, false, err
+		}
+
+		return cluster, true, nil
+	}
+
+	// Path 2: Create new cluster by name
+	if clusterName != "" {
+		cluster := buildClusterFromConfig(clusterName, registrantID, config)
+
+		if _, err := ds.addClusterNoLock(ctx, cluster); err != nil {
+			return nil, false, errors.Wrapf(err, "failed to dynamically add cluster with name %q", clusterName)
+		}
+
+		return cluster, false, nil
+	}
+
+	// Path 3: Neither ID nor name provided
+	return nil, false, errors.New("neither a cluster ID nor a cluster name was specified")
+}
+
 // registrantID can be the ID of an init bundle or of a CRS.
 func (ds *datastoreImpl) LookupOrCreateClusterFromConfig(ctx context.Context, clusterID, registrantID string, hello *central.SensorHello) (*storage.Cluster, error) {
 	if err := checkWriteSac(ctx, clusterID); err != nil {
 		return nil, err
 	}
 
-	helmConfig := hello.GetHelmManagedConfigInit()
-	manager := helmConfig.GetManagedBy()
+	// Extract configuration (pure function)
+	config := extractClusterConfig(hello)
 
 	ds.lock.Lock()
 	defer ds.lock.Unlock()
 
-	clusterName := helmConfig.GetClusterName()
-
-	if clusterID == "" && clusterName != "" {
-		// Try to look up cluster ID by name, if this is for an existing cluster
-		clusterIDVal, _ := ds.nameToIDCache.Get(clusterName)
-		clusterID, _ = clusterIDVal.(string)
+	// Lookup or create cluster
+	cluster, isExisting, err := ds.lookupOrCreateCluster(ctx, clusterID, config.clusterName(), registrantID, config)
+	if err != nil {
+		return nil, err
 	}
 
-	isExisting := false
-	var cluster *storage.Cluster
-	if clusterID != "" {
-		clusterByID, exist, err := ds.GetCluster(ctx, clusterID)
-		if err != nil {
+	// For existing clusters, check if update is needed
+	if isExisting && config.manager() != storage.ManagerType_MANAGER_TYPE_MANUAL {
+		// Check grace period
+		if err := checkGracePeriodForReconnect(cluster, config.deploymentIdentification, config.manager()); err != nil {
 			return nil, err
-		} else if !exist {
-			return nil, errors.Errorf("cluster with ID %q does not exist", clusterID)
 		}
 
-		isExisting = true
-
-		cluster = clusterByID
-
-		// If a name is specified, validate it (otherwise, accept any name)
-		if clusterName != "" && clusterName != clusterByID.GetName() {
-			return nil, errors.Errorf("Name mismatch for cluster %q: expected %q, but %q was specified. Set the cluster.name/clusterName attribute in your Helm config to %q, or remove it", clusterID, cluster.GetName(), clusterName, cluster.GetName())
-		}
-
-	} else if clusterName != "" {
-		// At this point, we can be sure that the cluster does not exist.
-		cluster = &storage.Cluster{
-			Name:               clusterName,
-			InitBundleId:       registrantID,
-			MostRecentSensorId: hello.GetDeploymentIdentification().CloneVT(),
-			SensorCapabilities: sliceutils.CopySliceSorted(hello.GetCapabilities()),
-		}
-		clusterConfig := helmConfig.GetClusterConfig()
-		configureFromHelmConfig(cluster, clusterConfig)
-
-		if centralsensor.SecuredClusterIsNotManagedManually(helmConfig) {
-			cluster.HelmConfig = clusterConfig.CloneVT()
-		}
-
-		if _, err := ds.addClusterNoLock(ctx, cluster); err != nil {
-			return nil, errors.Wrapf(err, "failed to dynamically add cluster with name %q", clusterName)
-		}
-	} else {
-		return nil, errors.New("neither a cluster ID nor a cluster name was specified")
-	}
-
-	if manager != storage.ManagerType_MANAGER_TYPE_MANUAL && isExisting {
-		// This is short-cut for clusters whose Helm config fingerprint and init bundle ID is unchanged.
-		// Applies to Helm- and Operator-managed clusters, not to manually managed clusters.
-
-		// Check if the newly incoming request may replace the old connection
-		lastContact := protoconv.ConvertTimestampToTimeOrDefault(cluster.GetHealthStatus().GetLastContact(), time.Time{})
-		timeLeftInGracePeriod := clusterMoveGracePeriod - time.Since(lastContact)
-
-		// In a scale test environment, allow Sensors to reconnect in under the time limit
-		if timeLeftInGracePeriod > 0 && !env.ScaleTestEnabled.BooleanSetting() {
-			if err := common.CheckConnReplace(hello.GetDeploymentIdentification(), cluster.GetMostRecentSensorId()); err != nil {
-				managerPretty := "non-manually" // Unless we extend the `ManagerType` and forget to extend the switch here, this should never surface to the user.
-				switch manager {
-				case storage.ManagerType_MANAGER_TYPE_HELM_CHART:
-					managerPretty = "Helm"
-				case storage.ManagerType_MANAGER_TYPE_KUBERNETES_OPERATOR:
-					managerPretty = "Operator"
-				}
-				return nil, errors.Errorf("registering %s-managed cluster is not allowed: %s. If you recently re-deployed, please wait for another %v",
-					managerPretty, err, timeLeftInGracePeriod)
-			}
-		}
-
-		if sensorCapabilitiesEqual(cluster, hello) &&
-			cluster.GetInitBundleId() == registrantID &&
-			cluster.GetHelmConfig().GetConfigFingerprint() == helmConfig.GetClusterConfig().GetConfigFingerprint() &&
-			cluster.GetManagedBy() == manager {
-			// No change in either of
-			// * sensor capabilities
-			// * fingerprint of the Helm configuration
-			// * in init bundle ID
-			// * manager type
-			//
-			// => there is no need to update the cluster, return immediately.
+		// Check if update needed
+		if !shouldUpdateCluster(cluster, config, registrantID) {
 			return cluster, nil
 		}
 	}
 
-	clusterConfig := helmConfig.GetClusterConfig()
-	currentCluster := cluster
+	// Apply configuration updates
+	updatedCluster := applyConfigToCluster(cluster, config, registrantID)
 
-	cluster = cluster.CloneVT()
-	cluster.ManagedBy = manager
-	cluster.InitBundleId = registrantID
-	cluster.SensorCapabilities = sliceutils.CopySliceSorted(hello.GetCapabilities())
-	if centralsensor.SecuredClusterIsNotManagedManually(helmConfig) {
-		configureFromHelmConfig(cluster, clusterConfig)
-		cluster.HelmConfig = clusterConfig.CloneVT()
-	} else {
-		cluster.HelmConfig = nil
-	}
-
-	if !currentCluster.EqualVT(cluster) {
-		// Cluster is dirty and needs to be updated in the DB.
-		if err := ds.updateClusterNoLock(ctx, cluster); err != nil {
+	// Persist if changed
+	if !cluster.EqualVT(updatedCluster) {
+		if err := ds.updateClusterNoLock(ctx, updatedCluster); err != nil {
 			return nil, err
 		}
 	}
 
-	return cluster, nil
-}
-
-func sensorCapabilitiesEqual(cluster *storage.Cluster, hello *central.SensorHello) bool {
-	return set.NewSet(cluster.GetSensorCapabilities()...).Equal(set.NewSet(hello.GetCapabilities()...))
+	return updatedCluster, nil
 }
 
 func normalizeCluster(cluster *storage.Cluster) error {
