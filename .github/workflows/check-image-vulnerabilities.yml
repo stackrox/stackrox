@@ -129,11 +129,6 @@ jobs:
             "release-operator",
           ]
     steps:
-      - name: Check out repository
-        uses: actions/checkout@v6
-        with:
-          ref: ${{ needs.run-parameters.outputs.version }}
-
       - name: Resolve image tag
         id: resolve-image-tag
         run: |
