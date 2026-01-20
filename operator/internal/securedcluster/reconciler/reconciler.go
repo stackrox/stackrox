@@ -46,7 +46,10 @@ func RegisterNewReconciler(mgr ctrl.Manager, selector string) error {
 		pkgReconciler.WithPreExtension(extensions.ReconcileLocalScannerV4DBPasswordExtension(mgr.GetClient(), mgr.GetAPIReader())),
 		pkgReconciler.WithPreExtension(extensions.SensorCAHashExtension(mgr.GetClient(), mgr.GetAPIReader(), renderCache)),
 		pkgReconciler.WithPreExtension(commonExtensions.ReconcileProductVersionStatusExtension(version.GetMainVersion())),
-		pkgReconciler.WithPreExtension(extensions.ReconcileConsolePluginExtension(mgr.GetClient(), mgr.GetAPIReader())),
+	}
+
+	postExtensions := []pkgReconciler.Option{
+		pkgReconciler.WithPostExtension(extensions.ReconcileConsolePluginExtension(mgr.GetClient(), mgr.GetAPIReader())),
 	}
 
 	// Plug in custom event predicate to skip reconciliation for updates caused by the status controller.
@@ -55,7 +58,7 @@ func RegisterNewReconciler(mgr ctrl.Manager, selector string) error {
 		pkgReconciler.WithPredicate(statusController.SkipStatusControllerUpdates[ctrlClient.Object]{}),
 	}
 
-	opts := make([]pkgReconciler.Option, 0, len(otherPreExtensions)+len(predicates)+8)
+	opts := make([]pkgReconciler.Option, 0, len(otherPreExtensions)+len(postExtensions)+len(predicates)+8)
 	opts = append(opts, extraEventWatcher)
 	// Watch the CABundle ConfigMap that Sensor creates
 	opts = append(opts, pkgReconciler.WithExtraWatch(
@@ -82,6 +85,7 @@ func RegisterNewReconciler(mgr ctrl.Manager, selector string) error {
 	opts = append(opts, pkgReconciler.WithPreExtension(extensions.VerifyCollisionFreeSecuredCluster(mgr.GetClient())))
 	opts = append(opts, pkgReconciler.WithPreExtension(extensions.FeatureDefaultingExtension(mgr.GetClient())))
 	opts = append(opts, otherPreExtensions...)
+	opts = append(opts, postExtensions...)
 	opts = append(opts, predicates...)
 	opts = append(opts, pkgReconciler.WithAggressiveConflictResolution(true))
 	opts = append(opts, pkgReconciler.WithPauseReconcileAnnotation(commonExtensions.PauseReconcileAnnotation))
