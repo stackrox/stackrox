@@ -1,8 +1,10 @@
 import { useCallback, useEffect, useMemo, useReducer, useState } from 'react';
-import { useNavigate } from 'react-router-dom-v5-compat';
+import { Link, useNavigate } from 'react-router-dom-v5-compat';
 import {
     Button,
     DropdownItem,
+    Flex,
+    FlexItem,
     PageSection,
     Text,
     Title,
@@ -18,7 +20,6 @@ import CompoundSearchFilter from 'Components/CompoundSearchFilter/components/Com
 import CompoundSearchFilterLabels from 'Components/CompoundSearchFilter/components/CompoundSearchFilterLabels';
 import { updateSearchFilter } from 'Components/CompoundSearchFilter/utils/utils';
 import Dialog from 'Components/Dialog';
-import LinkShim from 'Components/PatternFly/LinkShim';
 import useAnalytics, {
     LEGACY_SECURE_A_CLUSTER_LINK_CLICKED,
     SECURE_A_CLUSTER_LINK_CLICKED,
@@ -274,115 +275,97 @@ function ClustersTablePanel({ selectedClusterId }: ClustersTablePanelProps) {
     return (
         <>
             <PageSection variant="light" component="div">
-                <Toolbar inset={{ default: 'insetNone' }} className="pf-v5-u-pb-0">
-                    <ToolbarContent>
-                        <Title headingLevel="h1">Clusters</Title>
-                        <ToolbarGroup
-                            className="pf-v5-u-flex-wrap"
-                            variant="button-group"
-                            align={{ default: 'alignRight' }}
-                        >
-                            {hasReadAccessForAdministration && (
-                                <ToolbarItem>
-                                    <Button
-                                        variant="secondary"
-                                        component={LinkShim}
-                                        href={clustersDelegatedScanningPath}
-                                    >
-                                        Delegated image scanning
-                                    </Button>
-                                </ToolbarItem>
-                            )}
-                            {hasReadAccessForAdministration && (
-                                <ToolbarItem>
-                                    <Button
-                                        variant="secondary"
-                                        component={LinkShim}
-                                        href={clustersDiscoveredClustersPath}
-                                    >
-                                        Discovered clusters
-                                    </Button>
-                                </ToolbarItem>
-                            )}
-                            {hasAdminRole && (
-                                <ToolbarItem>
-                                    <Button
-                                        variant="secondary"
-                                        component={LinkShim}
-                                        href={clustersInitBundlesPath}
-                                    >
-                                        Init bundles
-                                    </Button>
-                                </ToolbarItem>
-                            )}
-                            {hasAdminRole && (
-                                <ToolbarItem>
-                                    <Button
-                                        variant="secondary"
-                                        component={LinkShim}
-                                        href={clustersClusterRegistrationSecretsPath}
-                                    >
-                                        Cluster registration secrets
-                                    </Button>
-                                </ToolbarItem>
-                            )}
-                            {hasWriteAccessForCluster && (
-                                <ToolbarItem>
-                                    <MenuDropdown
-                                        toggleText="Secure a cluster"
-                                        onSelect={onSelectInstallMenuItem}
-                                        popperProps={{
-                                            position: 'end',
+                <Flex
+                    direction={{ default: 'row' }}
+                    alignItems={{ default: 'alignItemsCenter' }}
+                    justifyContent={{ default: 'justifyContentSpaceBetween' }}
+                    spaceItems={{ default: 'spaceItemsMd' }}
+                >
+                    <Title headingLevel="h1">Clusters</Title>
+                    <Flex
+                        direction={{ default: 'row' }}
+                        alignItems={{ default: 'alignItemsCenter' }}
+                    >
+                        {hasReadAccessForAdministration && (
+                            <FlexItem>
+                                <Link to={clustersDelegatedScanningPath}>
+                                    Delegated image scanning
+                                </Link>
+                            </FlexItem>
+                        )}
+                        {hasReadAccessForAdministration && (
+                            <FlexItem>
+                                <Link to={clustersDiscoveredClustersPath}>Discovered clusters</Link>
+                            </FlexItem>
+                        )}
+                        {hasAdminRole && (
+                            <FlexItem>
+                                <Link to={clustersInitBundlesPath}>Init bundles</Link>
+                            </FlexItem>
+                        )}
+                        {hasAdminRole && (
+                            <FlexItem>
+                                <Link to={clustersClusterRegistrationSecretsPath}>
+                                    Cluster registration secrets
+                                </Link>
+                            </FlexItem>
+                        )}
+                        {hasWriteAccessForCluster && (
+                            <FlexItem>
+                                <MenuDropdown
+                                    toggleText="Secure a cluster"
+                                    onSelect={onSelectInstallMenuItem}
+                                    popperProps={{
+                                        position: 'end',
+                                    }}
+                                >
+                                    <DropdownItem
+                                        key="init-bundle"
+                                        onClick={() => {
+                                            analyticsTrack({
+                                                event: SECURE_A_CLUSTER_LINK_CLICKED,
+                                                properties: {
+                                                    source: 'Secure a Cluster Dropdown',
+                                                },
+                                            });
+                                            navigate(clustersSecureClusterPath);
                                         }}
                                     >
-                                        <DropdownItem
-                                            key="init-bundle"
-                                            onClick={() => {
-                                                analyticsTrack({
-                                                    event: SECURE_A_CLUSTER_LINK_CLICKED,
-                                                    properties: {
-                                                        source: 'Secure a Cluster Dropdown',
-                                                    },
-                                                });
-                                                navigate(clustersSecureClusterPath);
-                                            }}
-                                        >
-                                            Init bundle installation methods
-                                        </DropdownItem>
-                                        <DropdownItem
-                                            key="cluster-registration-secret"
-                                            onClick={() => {
-                                                analyticsTrack({
-                                                    event: CRS_SECURE_A_CLUSTER_LINK_CLICKED,
-                                                    properties: {
-                                                        source: 'Secure a Cluster Dropdown',
-                                                    },
-                                                });
-                                                navigate(clustersSecureClusterCrsPath);
-                                            }}
-                                        >
-                                            Cluster registration secret installation methods
-                                        </DropdownItem>
-                                        <DropdownItem
-                                            key="legacy"
-                                            onClick={() => {
-                                                analyticsTrack({
-                                                    event: LEGACY_SECURE_A_CLUSTER_LINK_CLICKED,
-                                                    properties: {
-                                                        source: 'Secure a Cluster Dropdown',
-                                                    },
-                                                });
-                                                navigate(`${clustersBasePath}/new`);
-                                            }}
-                                        >
-                                            Legacy installation method
-                                        </DropdownItem>
-                                    </MenuDropdown>
-                                </ToolbarItem>
-                            )}
-                        </ToolbarGroup>
-                    </ToolbarContent>
-                </Toolbar>
+                                        Init bundle installation methods
+                                    </DropdownItem>
+                                    <DropdownItem
+                                        key="cluster-registration-secret"
+                                        onClick={() => {
+                                            analyticsTrack({
+                                                event: CRS_SECURE_A_CLUSTER_LINK_CLICKED,
+                                                properties: {
+                                                    source: 'Secure a Cluster Dropdown',
+                                                },
+                                            });
+                                            navigate(clustersSecureClusterCrsPath);
+                                        }}
+                                    >
+                                        Cluster registration secret installation methods
+                                    </DropdownItem>
+                                    <DropdownItem
+                                        key="legacy"
+                                        onClick={() => {
+                                            analyticsTrack({
+                                                event: LEGACY_SECURE_A_CLUSTER_LINK_CLICKED,
+                                                properties: {
+                                                    source: 'Secure a Cluster Dropdown',
+                                                },
+                                            });
+                                            navigate(`${clustersBasePath}/new`);
+                                        }}
+                                    >
+                                        Legacy installation method
+                                    </DropdownItem>
+                                </MenuDropdown>
+                            </FlexItem>
+                        )}
+                    </Flex>
+                </Flex>
                 <Text className="pf-v5-u-font-size-md">
                     View the status of secured cluster services
                 </Text>
