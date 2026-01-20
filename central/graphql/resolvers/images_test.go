@@ -271,7 +271,8 @@ func (s *ImageResolversTestSuite) TestDeployments() {
 				actualBaseImage, err := image.BaseImage(testCtx)
 				assert.NoError(t, err)
 
-				expectedImage := expectedImages[imageID]
+				expectedImage, exists := expectedImages[imageID]
+				require.True(t, exists, "Expected image %s not found in expectedImages map", imageID)
 				baseImageInfos := expectedImage.GetBaseImageInfo()
 				if len(baseImageInfos) == 0 {
 					assert.Nil(t, actualBaseImage)
