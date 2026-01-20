@@ -17,7 +17,9 @@ message VMReport {
 
 // DiscoveredData contains data discovered by roxagent.
 message DiscoveredData {
+  // detected_os will be extracted from '/etc/os-release' or similar source.
   DetectedOS detected_os = 1;
+  // os_version will be extracted from '/etc/os-release' or similar source.
   string os_version = 2;
   ActivationStatus activation_status = 3;
   DnfMetadataStatus dnf_metadata_status = 4;

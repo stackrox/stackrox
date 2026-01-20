@@ -227,11 +227,13 @@ func (x *VMReport) GetDiscoveredData() *DiscoveredData {
 
 // DiscoveredData contains data discovered by roxagent.
 type DiscoveredData struct {
-	state             protoimpl.MessageState `protogen:"open.v1"`
-	DetectedOs        DetectedOS             `protobuf:"varint,1,opt,name=detected_os,json=detectedOs,proto3,enum=virtualmachine.v1.DetectedOS" json:"detected_os,omitempty"`
-	OsVersion         string                 `protobuf:"bytes,2,opt,name=os_version,json=osVersion,proto3" json:"os_version,omitempty"`
-	ActivationStatus  ActivationStatus       `protobuf:"varint,3,opt,name=activation_status,json=activationStatus,proto3,enum=virtualmachine.v1.ActivationStatus" json:"activation_status,omitempty"`
-	DnfMetadataStatus DnfMetadataStatus      `protobuf:"varint,4,opt,name=dnf_metadata_status,json=dnfMetadataStatus,proto3,enum=virtualmachine.v1.DnfMetadataStatus" json:"dnf_metadata_status,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// detected_os will be extracted from '/etc/os-release' or similar source.
+	DetectedOs DetectedOS `protobuf:"varint,1,opt,name=detected_os,json=detectedOs,proto3,enum=virtualmachine.v1.DetectedOS" json:"detected_os,omitempty"`
+	// os_version will be extracted from '/etc/os-release' or similar source.
+	OsVersion         string            `protobuf:"bytes,2,opt,name=os_version,json=osVersion,proto3" json:"os_version,omitempty"`
+	ActivationStatus  ActivationStatus  `protobuf:"varint,3,opt,name=activation_status,json=activationStatus,proto3,enum=virtualmachine.v1.ActivationStatus" json:"activation_status,omitempty"`
+	DnfMetadataStatus DnfMetadataStatus `protobuf:"varint,4,opt,name=dnf_metadata_status,json=dnfMetadataStatus,proto3,enum=virtualmachine.v1.DnfMetadataStatus" json:"dnf_metadata_status,omitempty"`
 	unknownFields     protoimpl.UnknownFields
 	sizeCache         protoimpl.SizeCache
 }
