@@ -70,18 +70,14 @@ jobs:
             "stackrox-operator",
           ]
     steps:
-      - name: Resolve image tag
-        id: resolve-image-tag
+      - name: Sanitize nightly tag
+        id: sanitize-nightly-tag
         run: |
           set -euo pipefail
           tag="${{ needs.run-parameters.outputs.version }}"
           if [[ "${{ matrix.image }}" = "stackrox-operator" && "${tag}" == *-nightly-* ]]; then
-            # Extract version part before -nightly- and replace patch version with 0
-            # Example: 0.1.x-nightly-20260114 -> 0.1.0-nightly-20260114
-            version_part="${tag%%-nightly-*}"
-            rest_part="${tag#*-nightly-}"
-            version_part=$(echo "$version_part" | sed -E 's/([0-9]+\.[0-9]+\.)x/\10/')
-            tag="${version_part}-nightly-${rest_part}"
+            # Replace '.x' in patch version with '.0'. Example: 0.1.x-nightly-20260114 -> 0.1.0-nightly-20260114
+            tag="$(echo "${tag}" | sed -E 's@^(([[:digit:]]+\.)+)x(-)?@\10\3@g')"
           fi
           echo "tag=${tag}" >> "${GITHUB_OUTPUT}"
 
@@ -90,7 +86,7 @@ jobs:
         id: scan-image
         with:
           image: rhacs-eng/${{ matrix.image }}
-          version: ${{ steps.resolve-image-tag.outputs.tag }}
+          version: ${{ steps.sanitize-nightly-tag.outputs.tag }}
           wait-limit: ${{ needs.run-parameters.outputs.wait-for-images-limit }}
           summary-prefix: "Upstream:"
           quay-bearer-token: ${{ secrets.QUAY_RHACS_ENG_BEARER_TOKEN }}
@@ -129,19 +125,14 @@ jobs:
             "release-operator",
           ]
     steps:
-      - name: Resolve image tag
-        id: resolve-image-tag
+      - name: Sanitize nightly tag
+        id: sanitize-nightly-tag
         run: |
           set -euo pipefail
           tag="${{ needs.run-parameters.outputs.version }}"
           if [[ "${tag}" == *-nightly-* ]]; then
-            suffix="fast"
-            # Extract version part before -nightly- and replace patch version with 0
-            # Example: 0.1.x-nightly-20260114 -> 0.1.0-nightly-20260114-fast
-            version_part="${tag%%-nightly-*}"
-            rest_part="${tag#*-nightly-}"
-            version_part=$(echo "$version_part" | sed -E 's/([0-9]+\.[0-9]+\.)x/\10/')
-            tag="${version_part}-nightly-${rest_part}-${suffix}"
+            # Replace '.x' in patch version with '.0'. Example: 0.1.x-nightly-20260114 -> 0.1.0-nightly-20260114
+            tag="$(echo "${tag}" | sed -E 's@^(([[:digit:]]+\.)+)x(-)?@\10\3@g')"
           fi
           echo "tag=${tag}" >> "${GITHUB_OUTPUT}"
 
@@ -150,7 +141,7 @@ jobs:
         id: scan-image
         with:
           image: rhacs-eng/${{ matrix.image }}
-          version: ${{ steps.resolve-image-tag.outputs.tag }}
+          version: ${{ steps.sanitize-nightly-tag.outputs.tag }}
           wait-limit: ${{ needs.run-parameters.outputs.wait-for-images-limit }}
           summary-prefix: "Konflux:"
           quay-bearer-token: ${{ secrets.QUAY_RHACS_ENG_BEARER_TOKEN }}
