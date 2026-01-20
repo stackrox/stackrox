@@ -131,8 +131,10 @@ jobs:
           set -euo pipefail
           tag="${{ needs.run-parameters.outputs.version }}"
           if [[ "${tag}" == *-nightly-* ]]; then
-            # Replace '.x' in patch version with '.0'. Example: 0.1.x-nightly-20260114 -> 0.1.0-nightly-20260114
-            tag="$(echo "${tag}" | sed -E 's@^(([[:digit:]]+\.)+)x(-)?@\10\3@g')"
+            # Replace '.x' in patch version with '.0' and append '-fast' suffix.
+            # Example: 0.1.x-nightly-20260114 -> 0.1.0-nightly-20260114-fast
+            suffix="fast"
+            tag="$(echo "${tag}" | sed -E 's@^(([[:digit:]]+\.)+)x(-)?@\10\3@g')-${suffix}"
           fi
           echo "tag=${tag}" >> "${GITHUB_OUTPUT}"
 
