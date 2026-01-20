@@ -279,7 +279,6 @@ function ClustersTablePanel({ selectedClusterId }: ClustersTablePanelProps) {
                     direction={{ default: 'row' }}
                     alignItems={{ default: 'alignItemsCenter' }}
                     justifyContent={{ default: 'justifyContentSpaceBetween' }}
-                    spaceItems={{ default: 'spaceItemsMd' }}
                 >
                     <Title headingLevel="h1">Clusters</Title>
                     <Flex
