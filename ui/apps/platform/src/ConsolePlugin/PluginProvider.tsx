@@ -13,7 +13,10 @@ import consoleFetchAxiosAdapter from './consoleFetchAxiosAdapter';
 import PluginContent from './PluginContent';
 import { ScopeProvider, useScope } from './ScopeContext';
 
-const proxyBaseURL = '/api/proxy/plugin/advanced-cluster-security/api-service/proxy/central';
+const proxyBasePath = process.env.ACS_PROXY_BASE_PATH ?? '/proxy/central';
+// Remove trailing slash if present, and _do not_ add it back when constructing the proxy URL on the client.
+const proxyBaseURL =
+    `/api/proxy/plugin/advanced-cluster-security/api-service${proxyBasePath}`.replace(/\/$/, '');
 const apolloClient = configureApolloClient();
 
 function PluginProviderContent({ children }: { children: ReactNode }) {
