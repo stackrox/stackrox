@@ -92,7 +92,13 @@ func createOrUpdateConsolePlugin(ctx context.Context, sc *platform.SecuredCluste
 	}
 
 	existing.Spec = desired.Spec
-	existing.Labels = desired.Labels
+	if existing.Labels == nil {
+		existing.Labels = make(map[string]string)
+	}
+	for k, v := range desired.Labels {
+		existing.Labels[k] = v
+	}
+
 	if err := client.Update(ctx, existing); err != nil {
 		return fmt.Errorf("updating ConsolePlugin: %w", err)
 	}
