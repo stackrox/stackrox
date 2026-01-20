@@ -236,7 +236,7 @@ describe(Cypress.spec.relative, () => {
         cy.get(selectors.entitySelectToggle).click();
         cy.get(selectors.entitySelectItem('Deployment')).click();
 
-        cy.get(selectors.attributeSelectToggle).should('contain.text', 'ID');
+        cy.get(selectors.attributeSelectToggle).should('contain.text', 'Name');
 
         cy.get(selectors.attributeSelectToggle).click();
 
