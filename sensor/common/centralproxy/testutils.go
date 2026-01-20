@@ -1,14 +1,111 @@
 package centralproxy
 
 import (
+	"fmt"
+	"net/http"
+	"net/http/httputil"
+	"net/url"
 	"testing"
 
+	"github.com/pkg/errors"
 	authenticationv1 "k8s.io/api/authentication/v1"
 	authv1 "k8s.io/api/authorization/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/kubernetes/fake"
 	k8sTesting "k8s.io/client-go/testing"
+
+	pkghttputil "github.com/stackrox/rox/pkg/httputil"
 )
+
+// testClusterIDGetter is a test implementation of clusterIDGetter.
+type testClusterIDGetter struct {
+	clusterID string
+}
+
+func (t *testClusterIDGetter) GetNoWait() string {
+	return t.clusterID
+}
+
+// mockTokenTransport is a test RoundTripper that injects a static token or returns an error.
+type mockTokenTransport struct {
+	base  http.RoundTripper
+	token string
+	err   error
+}
+
+func (m *mockTokenTransport) RoundTrip(req *http.Request) (*http.Response, error) {
+	if m.err != nil {
+		return nil, m.err
+	}
+	if m.base == nil {
+		return nil, errors.New("mockTokenTransport: base transport is nil")
+	}
+	reqCopy := req.Clone(req.Context())
+	reqCopy.Header.Set("Authorization", fmt.Sprintf("Bearer %s", m.token))
+	return m.base.RoundTrip(reqCopy) //nolint:wrapcheck
+}
+
+// newTestHandler creates a Handler for testing with the given components.
+func newTestHandler(t *testing.T, baseURL *url.URL, baseTransport http.RoundTripper, authorizer *k8sAuthorizer, token string) *Handler {
+	t.Helper()
+
+	transport := &mockTokenTransport{
+		base:  baseTransport,
+		token: token,
+	}
+
+	proxy := &httputil.ReverseProxy{
+		Transport: transport,
+		Rewrite: func(r *httputil.ProxyRequest) {
+			r.SetURL(baseURL)
+		},
+		ErrorHandler: func(w http.ResponseWriter, r *http.Request, err error) {
+			pkghttputil.WriteError(w,
+				pkghttputil.Errorf(http.StatusInternalServerError, "failed to contact central: %v", err),
+			)
+		},
+	}
+
+	return &Handler{
+		clusterIDGetter: &testClusterIDGetter{clusterID: "test-cluster-id"},
+		authorizer:      authorizer,
+		proxy:           proxy,
+	}
+}
+
+// newTestHandlerWithTransportError creates a Handler for testing where the transport returns an error.
+func newTestHandlerWithTransportError(t *testing.T, baseURL *url.URL, authorizer *k8sAuthorizer, transportErr error) *Handler {
+	t.Helper()
+
+	transport := &mockTokenTransport{
+		err: transportErr,
+	}
+
+	proxy := &httputil.ReverseProxy{
+		Transport: transport,
+		Rewrite: func(r *httputil.ProxyRequest) {
+			r.SetURL(baseURL)
+		},
+		ErrorHandler: func(w http.ResponseWriter, r *http.Request, err error) {
+			// Match production error handling: return 503 for initialization errors
+			if errors.Is(err, errServiceUnavailable) {
+				pkghttputil.WriteError(w,
+					pkghttputil.Errorf(http.StatusServiceUnavailable, "proxy temporarily unavailable: %v", err),
+				)
+				return
+			}
+			pkghttputil.WriteError(w,
+				pkghttputil.Errorf(http.StatusInternalServerError, "failed to contact central: %v", err),
+			)
+		},
+	}
+
+	return &Handler{
+		clusterIDGetter: &testClusterIDGetter{clusterID: "test-cluster-id"},
+		authorizer:      authorizer,
+		proxy:           proxy,
+	}
+}
 
 // newAllowingAuthorizer creates a k8sAuthorizer with a fake client that allows all authorization requests.
 func newAllowingAuthorizer(t testing.TB) *k8sAuthorizer {
@@ -86,3 +183,6 @@ func newUnauthenticatedAuthorizer(t testing.TB) *k8sAuthorizer {
 
 	return newK8sAuthorizer(fakeClient)
 }
+
+// errTransportError is a sentinel error for transport failures in tests.
+var errTransportError = errors.New("transport error")
