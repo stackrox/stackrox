@@ -34,7 +34,15 @@ func ReconcileConsolePluginExtension(client ctrlClient.Client, direct ctrlClient
 func reconcileConsolePlugin(ctx context.Context, sc *platform.SecuredCluster, client ctrlClient.Client, direct ctrlClient.Reader, _ func(statusFunc updateStatusFunc), log logr.Logger) error {
 	log = log.WithName("console-plugin")
 
-	if !features.OCPConsoleIntegration.Enabled() || !isConsolePluginAPIAvailable(ctx, direct, log) {
+	if !features.OCPConsoleIntegration.Enabled() {
+		return nil
+	}
+
+	available, err := isConsolePluginAPIAvailable(ctx, direct, log)
+	if err != nil {
+		return err
+	}
+	if !available {
 		return nil
 	}
 
@@ -45,17 +53,16 @@ func reconcileConsolePlugin(ctx context.Context, sc *platform.SecuredCluster, cl
 	return createOrUpdateConsolePlugin(ctx, sc, client, direct, log)
 }
 
-func isConsolePluginAPIAvailable(ctx context.Context, reader ctrlClient.Reader, log logr.Logger) bool {
+func isConsolePluginAPIAvailable(ctx context.Context, reader ctrlClient.Reader, log logr.Logger) (bool, error) {
 	list := &consolev1.ConsolePluginList{}
 	if err := reader.List(ctx, list); err != nil {
 		if meta.IsNoMatchError(err) {
-			log.V(1).Info("ConsolePlugin API not present in this cluster", "error", err.Error())
-		} else {
-			log.Error(err, "Failed to list ConsolePlugin resources; treating ConsolePlugin API as unavailable")
+			log.V(1).Info("ConsolePlugin API not present in this cluster")
+			return false, nil
 		}
-		return false
+		return false, fmt.Errorf("listing ConsolePlugin resources: %w", err)
 	}
-	return true
+	return true, nil
 }
 
 func deleteConsolePlugin(ctx context.Context, client ctrlClient.Client, log logr.Logger) error {

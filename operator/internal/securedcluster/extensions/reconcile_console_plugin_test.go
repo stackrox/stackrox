@@ -12,25 +12,44 @@ import (
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	ctrlClient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
+	"sigs.k8s.io/controller-runtime/pkg/client/interceptor"
 )
 
 func TestReconcileConsolePlugin_NotOnOpenShift(t *testing.T) {
 	t.Setenv(features.OCPConsoleIntegration.EnvVar(), "true")
 
 	sc := newTestSecuredCluster()
-	// Use a client that doesn't have the ConsolePlugin scheme registered
 	scheme := runtime.NewScheme()
 	require.NoError(t, platform.AddToScheme(scheme))
-	client := fake.NewClientBuilder().WithScheme(scheme).WithObjects(sc).Build()
+	require.NoError(t, consolev1.AddToScheme(scheme))
+
+	// Simulate a cluster where the ConsolePlugin CRD doesn't exist.
+	noMatchErr := &meta.NoKindMatchError{
+		GroupKind: schema.GroupKind{Group: "console.openshift.io", Kind: "ConsolePlugin"},
+	}
+	client := fake.NewClientBuilder().
+		WithScheme(scheme).
+		WithObjects(sc).
+		WithInterceptorFuncs(interceptor.Funcs{
+			List: func(ctx context.Context, client ctrlClient.WithWatch, list ctrlClient.ObjectList, opts ...ctrlClient.ListOption) error {
+				if _, ok := list.(*consolev1.ConsolePluginList); ok {
+					return noMatchErr
+				}
+				return client.List(ctx, list, opts...)
+			},
+		}).
+		Build()
 	u := toUnstructured(t, sc)
 
 	ext := ReconcileConsolePluginExtension(client, client)
 	err := ext(context.Background(), u, func(_ extensions.UpdateStatusFunc) {}, logr.Discard())
-	require.NoError(t, err)
+	require.NoError(t, err, "Extension should succeed hen ConsolePlugin API is not available")
 
 	plugin := &consolev1.ConsolePlugin{}
 	err = client.Get(context.Background(), ctrlClient.ObjectKey{Name: consolePluginName}, plugin)
