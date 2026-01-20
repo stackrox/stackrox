@@ -884,6 +884,18 @@ func (s *storeImpl) WalkByQuery(ctx context.Context, q *v1.Query, fn func(image 
 	return nil
 }
 
+func (s *storeImpl) WalkMetadataByQuery(ctx context.Context, q *v1.Query, fn func(image *storage.ImageV2) error) error {
+	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.WalkMetadataByQuery, "Image")
+
+	q = s.applyDefaultSort(q)
+
+	err := pgSearch.RunCursorQueryForSchemaFn(ctx, pkgSchema.ImagesV2Schema, q, s.db, fn)
+	if err != nil {
+		return errors.Wrap(err, "cursor by query")
+	}
+	return nil
+}
+
 // GetImageMetadata returns the image without scan/component data.
 func (s *storeImpl) GetImageMetadata(ctx context.Context, id string) (*storage.ImageV2, bool, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Get, "ImageV2Metadata")
