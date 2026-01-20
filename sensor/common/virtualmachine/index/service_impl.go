@@ -66,22 +66,24 @@ func (s *serviceImpl) UpsertVirtualMachineIndexReport(ctx context.Context, req *
 	// TODO: This is temporary. In a followup, logging will be reduced to Debug level
 	// and sanitized to avoid potential sensitive data leakage.
 	discoveredData := req.GetDiscoveredData()
-	detectedOS := ""
+	detectedOS := vmv1.DetectedOS_DETECTED_OS_UKNOWN
+	osVersion := ""
 	activationStatus := vmv1.ActivationStatus_ACTIVATION_STATUS_UNSPECIFIED
 	dnfMetadataStatus := vmv1.DnfMetadataStatus_DNF_METADATA_STATUS_UNSPECIFIED
 	if discoveredData != nil {
 		detectedOS = discoveredData.GetDetectedOs()
+		osVersion = discoveredData.GetOsVersion()
 		activationStatus = discoveredData.GetActivationStatus()
 		dnfMetadataStatus = discoveredData.GetDnfMetadataStatus()
 	}
-	log.Infof("VM discovered data: detected_os=%q, activation_status=%s, dnf_metadata_status=%s",
-		detectedOS, activationStatus.String(), dnfMetadataStatus.String())
+	log.Infof("VM discovered data: detected_os=%s, os_version=%q, activation_status=%s, dnf_metadata_status=%s",
+		detectedOS.String(), osVersion, activationStatus.String(), dnfMetadataStatus.String())
 
 	// Record metric for VM discovered data with all labels.
 	// TODO: This is temporary. In a followup, detected_os will be normalized to a small fixed set
 	// of OS categories (e.g., rhel, ubuntu, debian, suse, windows, unknown) to avoid high-cardinality metrics.
 	metrics.VMDiscoveredData.With(prometheus.Labels{
-		"detected_os":         detectedOS,
+		"detected_os":         detectedOS.String(),
 		"activation_status":   activationStatus.String(),
 		"dnf_metadata_status": dnfMetadataStatus.String(),
 	}).Inc()

@@ -17,23 +17,31 @@ message VsockMessage {
 
 // DiscoveredData contains data discovered by roxagent.
 message DiscoveredData {
-  string detected_os = 1;
-  ActivationStatus activation_status = 2;
-  DnfMetadataStatus dnf_metadata_status = 3;
+  DetectedOS detected_os = 1;
+  string os_version = 2;
+  ActivationStatus activation_status = 3;
+  DnfMetadataStatus dnf_metadata_status = 4;
+}
+
+// DetectedOS describes the OS detected by roxagent.
+// Limited selection for now, because we currently don't support other OSes.
+enum DetectedOS {
+  UNKNOWN = 0;
+  RHEL = 1;
 }
 
 // ActivationStatus indicates whether the OS is activated.
 enum ActivationStatus {
-  ACTIVATION_STATUS_UNSPECIFIED = 0;
-  ACTIVATION_STATUS_ACTIVE = 1;
-  ACTIVATION_STATUS_INACTIVE = 2;
+  ACTIVATION_UNSPECIFIED = 0;
+  ACTIVE = 1;
+  INACTIVE = 2;
 }
 
 // DnfMetadataStatus indicates whether DNF metadata is available.
 enum DnfMetadataStatus {
-  DNF_METADATA_STATUS_UNSPECIFIED = 0;
-  DNF_METADATA_STATUS_AVAILABLE = 1;
-  DNF_METADATA_STATUS_UNAVAILABLE = 2;
+  DNF_METADATA_UNSPECIFIED = 0;
+  AVAILABLE = 1;
+  UNAVAILABLE = 2;
 }
 
 // The index report is collected from the virtual machine agent and contains

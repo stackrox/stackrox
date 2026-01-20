@@ -89,9 +89,10 @@ func (s *senderTestSuite) TestReportSender_Send() {
 	msg := &v1.VsockMessage{
 		IndexReport: &v1.IndexReport{VsockCid: "42"},
 		DiscoveredData: &v1.DiscoveredData{
-			DetectedOs:        "linux",
-			ActivationStatus:  v1.ActivationStatus_ACTIVATION_STATUS_ACTIVE,
-			DnfMetadataStatus: v1.DnfMetadataStatus_DNF_METADATA_STATUS_AVAILABLE,
+			DetectedOs:        v1.DetectedOS_RHEL,
+			OsVersion:         "9.2",
+			ActivationStatus:  v1.ActivationStatus_ACTIVE,
+			DnfMetadataStatus: v1.DnfMetadataStatus_AVAILABLE,
 		},
 	}
 
@@ -120,9 +121,10 @@ func (s *senderTestSuite) TestReportSender_SendMissingIndexReport() {
 
 	msg := &v1.VsockMessage{
 		DiscoveredData: &v1.DiscoveredData{
-			DetectedOs:        "linux",
-			ActivationStatus:  v1.ActivationStatus_ACTIVATION_STATUS_ACTIVE,
-			DnfMetadataStatus: v1.DnfMetadataStatus_DNF_METADATA_STATUS_AVAILABLE,
+			DetectedOs:        v1.DetectedOS_RHEL,
+			OsVersion:         "9.2",
+			ActivationStatus:  v1.ActivationStatus_ACTIVE,
+			DnfMetadataStatus: v1.DnfMetadataStatus_AVAILABLE,
 		},
 	}
 

@@ -61,9 +61,10 @@ func NewTestVsockMessage(vsockCID string) *v1.VsockMessage {
 	return &v1.VsockMessage{
 		IndexReport: &v1.IndexReport{VsockCid: vsockCID},
 		DiscoveredData: &v1.DiscoveredData{
-			DetectedOs:        "unknown",
-			ActivationStatus:  v1.ActivationStatus_ACTIVATION_STATUS_UNSPECIFIED,
-			DnfMetadataStatus: v1.DnfMetadataStatus_DNF_METADATA_STATUS_UNSPECIFIED,
+			DetectedOs:        v1.DetectedOS_UNKNOWN,
+			OsVersion:         "",
+			ActivationStatus:  v1.ActivationStatus_ACTIVATION_UNSPECIFIED,
+			DnfMetadataStatus: v1.DnfMetadataStatus_DNF_METADATA_UNSPECIFIED,
 		},
 	}
 }

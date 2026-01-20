@@ -36,9 +36,10 @@ func (c *Client) SendIndexReport(report *v4.IndexReport) error {
 	vsockMsg := &v1.VsockMessage{
 		IndexReport: wrappedReport,
 		DiscoveredData: &v1.DiscoveredData{
-			DetectedOs:        "unknown", // TODO: get proper values from VM.
-			ActivationStatus:  v1.ActivationStatus_ACTIVATION_STATUS_UNSPECIFIED,
-			DnfMetadataStatus: v1.DnfMetadataStatus_DNF_METADATA_STATUS_UNSPECIFIED,
+			DetectedOs:        v1.DetectedOS_UNKNOWN, // TODO: get proper values from VM.
+			OsVersion:         "",
+			ActivationStatus:  v1.ActivationStatus_ACTIVATION_UNSPECIFIED,
+			DnfMetadataStatus: v1.DnfMetadataStatus_DNF_METADATA_UNSPECIFIED,
 		},
 	}
 

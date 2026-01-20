@@ -88,17 +88,19 @@ func (s *relayTestSuite) TestRelay_Integration() {
 			{
 				IndexReport: &v1.IndexReport{VsockCid: "100"},
 				DiscoveredData: &v1.DiscoveredData{
-					DetectedOs:        "ubuntu-22.04",
-					ActivationStatus:  v1.ActivationStatus_ACTIVATION_STATUS_ACTIVE,
-					DnfMetadataStatus: v1.DnfMetadataStatus_DNF_METADATA_STATUS_AVAILABLE,
+					DetectedOs:        v1.DetectedOS_RHEL,
+					OsVersion:         "9.3",
+					ActivationStatus:  v1.ActivationStatus_ACTIVE,
+					DnfMetadataStatus: v1.DnfMetadataStatus_AVAILABLE,
 				},
 			},
 			{
 				IndexReport: &v1.IndexReport{VsockCid: "200"},
 				DiscoveredData: &v1.DiscoveredData{
-					DetectedOs:        "rhel-9",
-					ActivationStatus:  v1.ActivationStatus_ACTIVATION_STATUS_INACTIVE,
-					DnfMetadataStatus: v1.DnfMetadataStatus_DNF_METADATA_STATUS_UNAVAILABLE,
+					DetectedOs:        v1.DetectedOS_UNKNOWN,
+					OsVersion:         "unknown",
+					ActivationStatus:  v1.ActivationStatus_INACTIVE,
+					DnfMetadataStatus: v1.DnfMetadataStatus_UNAVAILABLE,
 				},
 			},
 		},
@@ -138,13 +140,15 @@ func (s *relayTestSuite) TestRelay_Integration() {
 	s.Equal("200", second.GetIndexReport().GetVsockCid())
 
 	// VM discovered data is preserved
-	s.Equal("ubuntu-22.04", first.GetDiscoveredData().GetDetectedOs())
-	s.Equal(v1.ActivationStatus_ACTIVATION_STATUS_ACTIVE, first.GetDiscoveredData().GetActivationStatus())
-	s.Equal(v1.DnfMetadataStatus_DNF_METADATA_STATUS_AVAILABLE, first.GetDiscoveredData().GetDnfMetadataStatus())
+	s.Equal(v1.DetectedOS_RHEL, first.GetDiscoveredData().GetDetectedOs())
+	s.Equal("9.3", first.GetDiscoveredData().GetOsVersion())
+	s.Equal(v1.ActivationStatus_ACTIVE, first.GetDiscoveredData().GetActivationStatus())
+	s.Equal(v1.DnfMetadataStatus_AVAILABLE, first.GetDiscoveredData().GetDnfMetadataStatus())
 
-	s.Equal("rhel-9", second.GetDiscoveredData().GetDetectedOs())
-	s.Equal(v1.ActivationStatus_ACTIVATION_STATUS_INACTIVE, second.GetDiscoveredData().GetActivationStatus())
-	s.Equal(v1.DnfMetadataStatus_DNF_METADATA_STATUS_UNAVAILABLE, second.GetDiscoveredData().GetDnfMetadataStatus())
+	s.Equal(v1.DetectedOS_UNKNOWN, second.GetDiscoveredData().GetDetectedOs())
+	s.Equal("unknown", second.GetDiscoveredData().GetOsVersion())
+	s.Equal(v1.ActivationStatus_INACTIVE, second.GetDiscoveredData().GetActivationStatus())
+	s.Equal(v1.DnfMetadataStatus_UNAVAILABLE, second.GetDiscoveredData().GetDnfMetadataStatus())
 
 	mockIndexReportSender.mu.Unlock()
 

@@ -45,6 +45,7 @@ func (m *DiscoveredData) CloneVT() *DiscoveredData {
 	}
 	r := new(DiscoveredData)
 	r.DetectedOs = m.DetectedOs
+	r.OsVersion = m.OsVersion
 	r.ActivationStatus = m.ActivationStatus
 	r.DnfMetadataStatus = m.DnfMetadataStatus
 	if len(m.unknownFields) > 0 {
@@ -129,6 +130,9 @@ func (this *DiscoveredData) EqualVT(that *DiscoveredData) bool {
 		return false
 	}
 	if this.DetectedOs != that.DetectedOs {
+		return false
+	}
+	if this.OsVersion != that.OsVersion {
 		return false
 	}
 	if this.ActivationStatus != that.ActivationStatus {
@@ -281,19 +285,24 @@ func (m *DiscoveredData) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	if m.DnfMetadataStatus != 0 {
 		i = protohelpers.EncodeVarint(dAtA, i, uint64(m.DnfMetadataStatus))
 		i--
-		dAtA[i] = 0x18
+		dAtA[i] = 0x20
 	}
 	if m.ActivationStatus != 0 {
 		i = protohelpers.EncodeVarint(dAtA, i, uint64(m.ActivationStatus))
 		i--
-		dAtA[i] = 0x10
+		dAtA[i] = 0x18
 	}
-	if len(m.DetectedOs) > 0 {
-		i -= len(m.DetectedOs)
-		copy(dAtA[i:], m.DetectedOs)
-		i = protohelpers.EncodeVarint(dAtA, i, uint64(len(m.DetectedOs)))
+	if len(m.OsVersion) > 0 {
+		i -= len(m.OsVersion)
+		copy(dAtA[i:], m.OsVersion)
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(len(m.OsVersion)))
 		i--
-		dAtA[i] = 0xa
+		dAtA[i] = 0x12
+	}
+	if m.DetectedOs != 0 {
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(m.DetectedOs))
+		i--
+		dAtA[i] = 0x8
 	}
 	return len(dAtA) - i, nil
 }
@@ -434,7 +443,10 @@ func (m *DiscoveredData) SizeVT() (n int) {
 	}
 	var l int
 	_ = l
-	l = len(m.DetectedOs)
+	if m.DetectedOs != 0 {
+		n += 1 + protohelpers.SizeOfVarint(uint64(m.DetectedOs))
+	}
+	l = len(m.OsVersion)
 	if l > 0 {
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
@@ -643,8 +655,27 @@ func (m *DiscoveredData) UnmarshalVT(dAtA []byte) error {
 		}
 		switch fieldNum {
 		case 1:
-			if wireType != 2 {
+			if wireType != 0 {
 				return fmt.Errorf("proto: wrong wireType = %d for field DetectedOs", wireType)
+			}
+			m.DetectedOs = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.DetectedOs |= DetectedOS(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field OsVersion", wireType)
 			}
 			var stringLen uint64
 			for shift := uint(0); ; shift += 7 {
@@ -672,9 +703,9 @@ func (m *DiscoveredData) UnmarshalVT(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.DetectedOs = string(dAtA[iNdEx:postIndex])
+			m.OsVersion = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
-		case 2:
+		case 3:
 			if wireType != 0 {
 				return fmt.Errorf("proto: wrong wireType = %d for field ActivationStatus", wireType)
 			}
@@ -693,7 +724,7 @@ func (m *DiscoveredData) UnmarshalVT(dAtA []byte) error {
 					break
 				}
 			}
-		case 3:
+		case 4:
 			if wireType != 0 {
 				return fmt.Errorf("proto: wrong wireType = %d for field DnfMetadataStatus", wireType)
 			}
@@ -1133,8 +1164,27 @@ func (m *DiscoveredData) UnmarshalVTUnsafe(dAtA []byte) error {
 		}
 		switch fieldNum {
 		case 1:
-			if wireType != 2 {
+			if wireType != 0 {
 				return fmt.Errorf("proto: wrong wireType = %d for field DetectedOs", wireType)
+			}
+			m.DetectedOs = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.DetectedOs |= DetectedOS(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field OsVersion", wireType)
 			}
 			var stringLen uint64
 			for shift := uint(0); ; shift += 7 {
@@ -1166,9 +1216,9 @@ func (m *DiscoveredData) UnmarshalVTUnsafe(dAtA []byte) error {
 			if intStringLen > 0 {
 				stringValue = unsafe.String(&dAtA[iNdEx], intStringLen)
 			}
-			m.DetectedOs = stringValue
+			m.OsVersion = stringValue
 			iNdEx = postIndex
-		case 2:
+		case 3:
 			if wireType != 0 {
 				return fmt.Errorf("proto: wrong wireType = %d for field ActivationStatus", wireType)
 			}
@@ -1187,7 +1237,7 @@ func (m *DiscoveredData) UnmarshalVTUnsafe(dAtA []byte) error {
 					break
 				}
 			}
-		case 3:
+		case 4:
 			if wireType != 0 {
 				return fmt.Errorf("proto: wrong wireType = %d for field DnfMetadataStatus", wireType)
 			}
