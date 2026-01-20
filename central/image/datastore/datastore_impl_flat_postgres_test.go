@@ -8,6 +8,7 @@ import (
 	"sort"
 	"testing"
 
+	imageCVEInfoDS "github.com/stackrox/rox/central/cve/image/info/datastore"
 	imageCVEDS "github.com/stackrox/rox/central/cve/image/v2/datastore"
 	imageCVEPostgres "github.com/stackrox/rox/central/cve/image/v2/datastore/store/postgres"
 	"github.com/stackrox/rox/central/image/datastore/keyfence"
@@ -43,13 +44,14 @@ func TestImageFlatDataStoreWithPostgres(t *testing.T) {
 type ImageFlatPostgresDataStoreTestSuite struct {
 	suite.Suite
 
-	ctx                context.Context
-	testDB             *pgtest.TestPostgres
-	db                 postgres.DB
-	datastore          DataStore
-	mockRisk           *mockRisks.MockDataStore
-	componentDataStore imageComponentDS.DataStore
-	cveDataStore       imageCVEDS.DataStore
+	ctx                  context.Context
+	testDB               *pgtest.TestPostgres
+	db                   postgres.DB
+	datastore            DataStore
+	mockRisk             *mockRisks.MockDataStore
+	componentDataStore   imageComponentDS.DataStore
+	cveDataStore         imageCVEDS.DataStore
+	imageCVEInfoDatastore imageCVEInfoDS.DataStore
 }
 
 func (s *ImageFlatPostgresDataStoreTestSuite) SetupSuite() {
@@ -60,8 +62,9 @@ func (s *ImageFlatPostgresDataStoreTestSuite) SetupSuite() {
 
 func (s *ImageFlatPostgresDataStoreTestSuite) SetupTest() {
 	s.mockRisk = mockRisks.NewMockDataStore(gomock.NewController(s.T()))
+	s.imageCVEInfoDatastore = imageCVEInfoDS.GetTestPostgresDataStore(s.T(), s.db)
 	dbStore := pgStoreV2.New(s.db, false, keyfence.ImageKeyFenceSingleton())
-	s.datastore = NewWithPostgres(dbStore, s.mockRisk, ranking.ImageRanker(), ranking.ComponentRanker())
+	s.datastore = NewWithPostgres(dbStore, s.mockRisk, ranking.ImageRanker(), ranking.ComponentRanker(), s.imageCVEInfoDatastore)
 
 	componentStorage := imageComponentPostgres.New(s.db)
 	s.componentDataStore = imageComponentDS.New(componentStorage, s.mockRisk, ranking.NewRanker())
@@ -76,6 +79,7 @@ func (s *ImageFlatPostgresDataStoreTestSuite) TearDownTest() {
 	s.truncateTable(postgresSchema.ImagesTableName)
 	s.truncateTable(postgresSchema.ImageComponentV2TableName)
 	s.truncateTable(postgresSchema.ImageCvesV2TableName)
+	s.truncateTable(postgresSchema.ImageCveInfosTableName)
 }
 
 func (s *ImageFlatPostgresDataStoreTestSuite) TestSearchWithPostgres() {
