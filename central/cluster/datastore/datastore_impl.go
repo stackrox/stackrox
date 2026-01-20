@@ -32,7 +32,6 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/centralsensor"
 	clusterValidation "github.com/stackrox/rox/pkg/cluster"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/env"
@@ -897,28 +896,21 @@ func (ds *datastoreImpl) updateClusterNoLock(ctx context.Context, cluster *stora
 // clusterConfigData holds extracted configuration from SensorHello.
 // This allows pure functions to work with structured data instead of raw protobuf messages.
 type clusterConfigData struct {
-	helmManagedConfigInit    *central.HelmManagedConfigInit
+	clusterName              string
+	manager                  storage.ManagerType
+	helmConfig               *storage.CompleteClusterConfig
 	deploymentIdentification *storage.SensorDeploymentIdentification
 	capabilities             []string
-}
-
-func (c clusterConfigData) clusterName() string {
-	return c.helmManagedConfigInit.GetClusterName()
-}
-
-func (c clusterConfigData) manager() storage.ManagerType {
-	return c.helmManagedConfigInit.GetManagedBy()
-}
-
-func (c clusterConfigData) helmConfig() *storage.CompleteClusterConfig {
-	return c.helmManagedConfigInit.GetClusterConfig()
 }
 
 // extractClusterConfig extracts relevant configuration data from SensorHello.
 // This is a pure function that performs the extraction once.
 func extractClusterConfig(hello *central.SensorHello) clusterConfigData {
+	helmInit := hello.GetHelmManagedConfigInit()
 	return clusterConfigData{
-		helmManagedConfigInit:    hello.GetHelmManagedConfigInit(),
+		clusterName:              helmInit.GetClusterName(),
+		manager:                  helmInit.GetManagedBy(),
+		helmConfig:               helmInit.GetClusterConfig(),
 		deploymentIdentification: hello.GetDeploymentIdentification(),
 		capabilities:             hello.GetCapabilities(),
 	}
@@ -933,10 +925,10 @@ func shouldUpdateCluster(existing *storage.Cluster, config clusterConfigData, re
 	if existing.GetInitBundleId() != registrantID {
 		return true
 	}
-	if existing.GetHelmConfig().GetConfigFingerprint() != config.helmConfig().GetConfigFingerprint() {
+	if existing.GetHelmConfig().GetConfigFingerprint() != config.helmConfig.GetConfigFingerprint() {
 		return true
 	}
-	if existing.GetManagedBy() != config.manager() {
+	if existing.GetManagedBy() != config.manager {
 		return true
 	}
 	return false
@@ -961,10 +953,10 @@ func buildClusterFromConfig(clusterName, registrantID string, config clusterConf
 		MostRecentSensorId: config.deploymentIdentification.CloneVT(),
 		SensorCapabilities: sliceutils.CopySliceSorted(config.capabilities),
 	}
-	configureFromHelmConfig(cluster, config.helmConfig())
+	configureFromHelmConfig(cluster, config.helmConfig)
 
-	if centralsensor.SecuredClusterIsNotManagedManually(config.helmManagedConfigInit) {
-		cluster.HelmConfig = config.helmConfig().CloneVT()
+	if config.manager != storage.ManagerType_MANAGER_TYPE_MANUAL && config.manager != storage.ManagerType_MANAGER_TYPE_UNKNOWN {
+		cluster.HelmConfig = config.helmConfig.CloneVT()
 	}
 
 	return cluster
@@ -974,13 +966,13 @@ func buildClusterFromConfig(clusterName, registrantID string, config clusterConf
 // Returns a new cluster object with updates applied (immutable pattern).
 func applyConfigToCluster(cluster *storage.Cluster, config clusterConfigData, registrantID string) *storage.Cluster {
 	updated := cluster.CloneVT()
-	updated.ManagedBy = config.manager()
+	updated.ManagedBy = config.manager
 	updated.InitBundleId = registrantID
 	updated.SensorCapabilities = sliceutils.CopySliceSorted(config.capabilities)
 
-	if centralsensor.SecuredClusterIsNotManagedManually(config.helmManagedConfigInit) {
-		configureFromHelmConfig(updated, config.helmConfig())
-		updated.HelmConfig = config.helmConfig().CloneVT()
+	if config.manager != storage.ManagerType_MANAGER_TYPE_MANUAL && config.manager != storage.ManagerType_MANAGER_TYPE_UNKNOWN {
+		configureFromHelmConfig(updated, config.helmConfig)
+		updated.HelmConfig = config.helmConfig.CloneVT()
 	} else {
 		updated.HelmConfig = nil
 	}
@@ -1068,15 +1060,15 @@ func (ds *datastoreImpl) LookupOrCreateClusterFromConfig(ctx context.Context, cl
 	defer ds.lock.Unlock()
 
 	// Lookup or create cluster
-	cluster, isExisting, err := ds.lookupOrCreateCluster(ctx, clusterID, config.clusterName(), registrantID, config)
+	cluster, isExisting, err := ds.lookupOrCreateCluster(ctx, clusterID, config.clusterName, registrantID, config)
 	if err != nil {
 		return nil, err
 	}
 
 	// For existing clusters, check if update is needed
-	if isExisting && config.manager() != storage.ManagerType_MANAGER_TYPE_MANUAL {
+	if isExisting && config.manager != storage.ManagerType_MANAGER_TYPE_MANUAL {
 		// Check grace period
-		if err := checkGracePeriodForReconnect(cluster, config.deploymentIdentification, config.manager()); err != nil {
+		if err := checkGracePeriodForReconnect(cluster, config.deploymentIdentification, config.manager); err != nil {
 			return nil, err
 		}
 
