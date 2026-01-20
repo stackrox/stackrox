@@ -9,7 +9,8 @@ import {
     DescriptionListGroup,
     DescriptionListTerm,
     ExpandableSection,
-    Stack,
+    Label,
+    LabelGroup,
 } from '@patternfly/react-core';
 import { Link } from 'react-router-dom-v5-compat';
 
@@ -51,13 +52,22 @@ function BaseImageAssessmentCard({ baseImage }: BaseImageAssessmentCardProps) {
                                 {baseImage.names.length > 1 ? 'Image names' : 'Image name'}
                             </DescriptionListTerm>
                             <DescriptionListDescription>
-                                <Stack>
+                                <LabelGroup numLabels={3} isCompact>
                                     {baseImage.names.map((name) => (
-                                        <Link key={name} to={imageDetailPath}>
+                                        <Label
+                                            key={name}
+                                            color="blue"
+                                            isCompact
+                                            render={({ className, content }) => (
+                                                <Link to={imageDetailPath} className={className}>
+                                                    {content}
+                                                </Link>
+                                            )}
+                                        >
                                             {name}
-                                        </Link>
+                                        </Label>
                                     ))}
-                                </Stack>
+                                </LabelGroup>
                             </DescriptionListDescription>
                         </DescriptionListGroup>
                         <DescriptionListGroup>
