@@ -76,15 +76,7 @@ func (c *Client) writeVsockMessage(conn net.Conn, msg *v1.VsockMessage) error {
 		return fmt.Errorf("writing vsock message: %w", err)
 	}
 
-	// Safely count packages, handling potential nil values
-	numPackages := 0
-	if indexReport := msg.GetIndexReport(); indexReport != nil {
-		if indexV4 := indexReport.GetIndexV4(); indexV4 != nil {
-			if contents := indexV4.GetContents(); contents != nil {
-				numPackages = len(contents.GetPackages())
-			}
-		}
-	}
-	log.Infof("Sent vsock message with index report (%d packages) to host", numPackages)
+	numPackages := len(msg.GetIndexReport().GetIndexV4().GetContents().GetPackages())
+	log.Infof("Sent message with index report containing %d packages to host", numPackages)
 	return nil
 }

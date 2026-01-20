@@ -52,13 +52,13 @@ func (s *streamTestSuite) TestParseVsockMessage() {
 }
 
 func (s *streamTestSuite) TestValidateVsockCID() {
-	s.Run("should error when index report is missing", func() {
-		vsockMessage := &v1.VsockMessage{
-			IndexReport: nil,
-		}
+	s.Run("missing index report does not panic", func() {
+		vsockMessage := &v1.VsockMessage{}
 		connVsockCID := uint32(42)
-		err := validateReportedVsockCID(vsockMessage, connVsockCID)
-		s.Require().Error(err)
+		s.NotPanics(func() {
+			err := validateReportedVsockCID(vsockMessage, connVsockCID)
+			s.Require().Error(err)
+		})
 	})
 
 	// Reported CID is 42

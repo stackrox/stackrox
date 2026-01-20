@@ -50,11 +50,7 @@ func (r *Relay) Run(ctx context.Context) error {
 				continue
 			}
 			if err := r.reportSender.Send(ctx, vsockMsg); err != nil {
-				vsockCID := "unknown"
-				if indexReport := vsockMsg.GetIndexReport(); indexReport != nil {
-					vsockCID = indexReport.GetVsockCid()
-				}
-				log.Errorf("Failed to send vsock message (vsock CID: %s): %v", vsockCID, err)
+				log.Errorf("Failed to send vsock message (vsock CID: %s): %v", vsockMsg.GetIndexReport().GetVsockCid(), err)
 			}
 		}
 	}

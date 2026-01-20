@@ -207,16 +207,9 @@ func parseVsockMessage(data []byte) (*v1.VsockMessage, error) {
 }
 
 // validateReportedVsockCID ensures the message's vsock CID matches the connection.
-// It also validates that IndexReport is present.
 func validateReportedVsockCID(vsockMsg *v1.VsockMessage, connVsockCID uint32) error {
-	indexReport := vsockMsg.GetIndexReport()
-	if indexReport == nil {
-		return errors.New("index_report is required")
-	}
-
-	reportedCID := indexReport.GetVsockCid()
+	reportedCID := vsockMsg.GetIndexReport().GetVsockCid()
 	if reportedCID != strconv.FormatUint(uint64(connVsockCID), 10) {
-		metrics.IndexReportsMismatchingVsockCID.Inc()
 		return errors.Errorf("mismatch between reported (%s) and real (%d) vsock CIDs", reportedCID, connVsockCID)
 	}
 	return nil
