@@ -44,7 +44,7 @@ var (
 func GetPipeline() pipeline.Fragment {
 	rateLimit, err := strconv.ParseFloat(env.VMIndexReportRateLimit.Setting(), 64)
 	if err != nil {
-		log.Warnf("Invalid %s value: %v. Using fallback value of 1.0", env.VMIndexReportRateLimit.EnvVar(), err)
+		log.Warnf("Invalid %s value: %v. Using fallback value of 0.3", env.VMIndexReportRateLimit.EnvVar(), err)
 		rateLimit = 0.3 // Keep in sync with the default value in env.VMIndexReportRateLimit.
 	}
 	bucketCapacity := env.VMIndexReportBucketCapacity.IntegerSetting()
@@ -125,7 +125,7 @@ func (p *pipelineImpl) Run(ctx context.Context, clusterID string, msg *central.M
 	// Rate limit check. Drop message if rate limiter is misconfigured (defensive behavior against misconfiguration)
 	// or rate limit exceeded. Afterwards, send NACK to Sensor if Sensor supports it.
 	if p.rateLimiter == nil {
-		logging.GetRateLimitedLogger().WarnL(
+		logging.GetRateLimitedLogger().ErrorL(
 			"vm_index_report_nil_rate_limiter",
 			"No rate limiter found for workload %q. Dropping VM index report from cluster %s",
 			rateLimiterWorkload,
