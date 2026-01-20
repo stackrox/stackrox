@@ -337,7 +337,7 @@ func TestCheckGracePeriodForReconnect(t *testing.T) {
 
 		// New deployment from a DIFFERENT cluster (different SystemNamespaceId)
 		newDeploymentID := &storage.SensorDeploymentIdentification{
-			AppNamespace:      "stackrox",                     // Same namespace name
+			AppNamespace:      "stackrox",                    // Same namespace name
 			SystemNamespaceId: "new-cluster-kube-system-uid", // Different cluster!
 		}
 
