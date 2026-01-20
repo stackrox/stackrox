@@ -24,7 +24,7 @@ func Singleton() filter.Filter {
 		config, warnStr := env.GetEffectiveProcessFilterConfig()
 
 		if warnStr != "" {
-			log.Info(warnStr)
+			log.Warn(warnStr)
 		}
 
 		log.Infof("Process filter configuration: mode=%s, maxExactPathMatches=%d, fanOutLevels=%v",
