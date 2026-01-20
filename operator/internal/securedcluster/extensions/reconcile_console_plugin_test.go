@@ -16,7 +16,6 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrlClient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
-	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
 
 func TestReconcileConsolePlugin_NotOnOpenShift(t *testing.T) {
@@ -53,8 +52,6 @@ func TestReconcileConsolePlugin_OnOpenShift(t *testing.T) {
 	err = client.Get(context.Background(), ctrlClient.ObjectKey{Name: consolePluginName}, plugin)
 	require.NoError(t, err)
 	assert.Equal(t, testutils.TestNamespace, plugin.Spec.Backend.Service.Namespace)
-
-	assert.True(t, controllerutil.ContainsFinalizer(u, consolePluginFinalizer))
 }
 
 func TestReconcileConsolePlugin_UpdateExisting(t *testing.T) {
@@ -110,7 +107,7 @@ func TestReconcileConsolePlugin_Deletion(t *testing.T) {
 	sc := newTestSecuredCluster()
 	now := metav1.Now()
 	sc.DeletionTimestamp = &now
-	sc.Finalizers = []string{consolePluginFinalizer}
+	sc.Finalizers = []string{"test-finalizer"}
 
 	client := newFakeClientWithConsolePlugin(t, sc, existingPlugin)
 	u := toUnstructured(t, sc)
@@ -122,8 +119,6 @@ func TestReconcileConsolePlugin_Deletion(t *testing.T) {
 	plugin := &consolev1.ConsolePlugin{}
 	err = client.Get(context.Background(), ctrlClient.ObjectKey{Name: consolePluginName}, plugin)
 	assert.Error(t, err, "ConsolePlugin should be deleted")
-
-	assert.False(t, controllerutil.ContainsFinalizer(u, consolePluginFinalizer))
 }
 
 func TestReconcileConsolePlugin_DeletionWithoutPlugin(t *testing.T) {
@@ -132,7 +127,7 @@ func TestReconcileConsolePlugin_DeletionWithoutPlugin(t *testing.T) {
 	sc := newTestSecuredCluster()
 	now := metav1.Now()
 	sc.DeletionTimestamp = &now
-	sc.Finalizers = []string{consolePluginFinalizer}
+	sc.Finalizers = []string{"test-finalizer"}
 
 	client := newFakeClientWithConsolePlugin(t, sc)
 	u := toUnstructured(t, sc)
@@ -140,8 +135,6 @@ func TestReconcileConsolePlugin_DeletionWithoutPlugin(t *testing.T) {
 	ext := ReconcileConsolePluginExtension(client, client)
 	err := ext(context.Background(), u, func(_ extensions.UpdateStatusFunc) {}, logr.Discard())
 	require.NoError(t, err)
-
-	assert.False(t, controllerutil.ContainsFinalizer(u, consolePluginFinalizer))
 }
 
 func newTestSecuredCluster() *platform.SecuredCluster {
