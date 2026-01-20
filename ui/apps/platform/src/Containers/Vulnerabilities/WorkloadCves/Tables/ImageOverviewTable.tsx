@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import type { ReactNode } from 'react';
 import { gql } from '@apollo/client';
-import type { DocumentNode } from '@apollo/client';
 import pluralize from 'pluralize';
 import { ActionsColumn, Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 import type { IAction } from '@patternfly/react-table';
@@ -170,9 +169,6 @@ export const imageV2ListQuery = gql`
         }
     }
 `;
-
-export const getImageListQuery = (isNewImageDataModelEnabled: boolean): DocumentNode =>
-    isNewImageDataModelEnabled ? imageV2ListQuery : imageListQuery;
 
 export type Image = {
     id: string; // UUID for linking

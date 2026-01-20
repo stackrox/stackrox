@@ -5,7 +5,7 @@ import { getPaginationParams } from 'utils/searchUtils';
 import type { ApiSortOption } from 'types/search';
 import type useURLPagination from 'hooks/useURLPagination';
 import useFeatureFlags from 'hooks/useFeatureFlags';
-import { getImageListQuery } from '../Tables/ImageOverviewTable';
+import { imageListQuery, imageV2ListQuery } from '../Tables/ImageOverviewTable';
 import type { Image } from '../Tables/ImageOverviewTable';
 
 export function useImages({
@@ -24,7 +24,7 @@ export function useImages({
     const { page, perPage } = pagination;
     return useQuery<{
         images: Image[];
-    }>(getImageListQuery(isNewImageDataModelEnabled), {
+    }>(isNewImageDataModelEnabled ? imageV2ListQuery : imageListQuery, {
         variables: {
             query,
             pagination: getPaginationParams({ page, perPage, sortOption }),
