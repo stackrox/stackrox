@@ -8,13 +8,13 @@ import (
 	consolev1 "github.com/openshift/api/console/v1"
 	"github.com/operator-framework/helm-operator-plugins/pkg/extensions"
 	platform "github.com/stackrox/rox/operator/api/v1alpha1"
-	"github.com/stackrox/rox/operator/internal/utils"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/labels"
 	apiErrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	ctrlClient "sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
 
 const (
@@ -82,34 +82,34 @@ func deleteConsolePlugin(ctx context.Context, client ctrlClient.Client, log logr
 	return nil
 }
 
-func createOrUpdateConsolePlugin(ctx context.Context, sc *platform.SecuredCluster, client ctrlClient.Client, direct ctrlClient.Reader, log logr.Logger) error {
+func createOrUpdateConsolePlugin(ctx context.Context, sc *platform.SecuredCluster, client ctrlClient.Client, _ ctrlClient.Reader, log logr.Logger) error {
 	desired := buildConsolePlugin(sc)
 
-	existing := &consolev1.ConsolePlugin{}
-	err := utils.GetWithFallbackToUncached(ctx, client, direct, ctrlClient.ObjectKey{Name: consolePluginName}, existing)
-	if err != nil {
-		if apiErrors.IsNotFound(err) {
-			if err := client.Create(ctx, desired); err != nil {
-				return fmt.Errorf("creating ConsolePlugin: %w", err)
-			}
-			log.Info("Created ConsolePlugin", "name", consolePluginName)
-			return nil
+	plugin := &consolev1.ConsolePlugin{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: consolePluginName,
+		},
+	}
+
+	result, err := controllerutil.CreateOrUpdate(ctx, client, plugin, func() error {
+		// All fields with defaults values are explicitly set in buildConsolePlugin.
+		plugin.Spec = desired.Spec
+
+		if plugin.Labels == nil {
+			plugin.Labels = make(map[string]string)
 		}
-		return fmt.Errorf("getting ConsolePlugin: %w", err)
+		for k, v := range desired.Labels {
+			plugin.Labels[k] = v
+		}
+		return nil
+	})
+	if err != nil {
+		return fmt.Errorf("reconciling ConsolePlugin: %w", err)
 	}
 
-	existing.Spec = desired.Spec
-	if existing.Labels == nil {
-		existing.Labels = make(map[string]string)
+	if result != controllerutil.OperationResultNone {
+		log.Info("Reconciled ConsolePlugin", "name", consolePluginName, "operation", result)
 	}
-	for k, v := range desired.Labels {
-		existing.Labels[k] = v
-	}
-
-	if err := client.Update(ctx, existing); err != nil {
-		return fmt.Errorf("updating ConsolePlugin: %w", err)
-	}
-
 	return nil
 }
 
@@ -148,6 +148,7 @@ func buildConsolePlugin(sc *platform.SecuredCluster) *consolev1.ConsolePlugin {
 					},
 				},
 			},
+			I18n: consolev1.ConsolePluginI18n{LoadType: consolev1.Empty},
 		},
 	}
 }
