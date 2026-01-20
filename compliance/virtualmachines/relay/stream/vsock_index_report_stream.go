@@ -180,10 +180,10 @@ func (p *VsockIndexReportStream) receiveAndValidateVMReport(conn net.Conn) (*v1.
 		return nil, errors.Wrapf(err, "reading from connection (vsock CID: %d)", vsockCID)
 	}
 
-	log.Debugf("Parsing vsock message (vsock CID: %d)", vsockCID)
+	log.Debugf("Parsing VM report (vsock CID: %d)", vsockCID)
 	vmReport, err := parseVMReport(data)
 	if err != nil {
-		return nil, errors.Wrapf(err, "parsing vsock message data (vsock CID: %d)", vsockCID)
+		return nil, errors.Wrapf(err, "parsing VM report data (vsock CID: %d)", vsockCID)
 	}
 
 	err = validateReportedVsockCID(vmReport, vsockCID)
