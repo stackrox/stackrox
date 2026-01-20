@@ -27,7 +27,7 @@ type ProcessFilterModeConfig struct {
 }
 
 // GetProcessFilterModeConfig returns the configuration for the current filter mode.
-// Returns nil if the mode is invalid or not set.
+// Returns nil if the mode is not set, and the default if the mode is invalid.
 func GetProcessFilterModeConfig() (*ProcessFilterModeConfig, string) {
 	_, ok := os.LookupEnv(ProcessFilterMode.EnvVar())
 	if !ok {
