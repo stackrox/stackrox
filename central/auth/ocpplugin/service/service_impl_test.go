@@ -8,7 +8,7 @@ import (
 
 	roleDataStore "github.com/stackrox/rox/central/role/datastore"
 	roleDataStoreMocks "github.com/stackrox/rox/central/role/datastore/mocks"
-	"github.com/stackrox/rox/generated/internalapi/central"
+	v1 "github.com/stackrox/rox/generated/internalapi/central/v1"
 	"github.com/stackrox/rox/pkg/auth/tokens"
 	tokensMocks "github.com/stackrox/rox/pkg/auth/tokens/mocks"
 	"github.com/stackrox/rox/pkg/protoassert"
@@ -30,7 +30,7 @@ func testClock() time.Time {
 
 func TestGetExpiresAt(t *testing.T) {
 	for name, tc := range map[string]struct {
-		input              *central.GenerateTokenForPermissionsAndScopeRequest
+		input              *v1.GenerateTokenForPermissionsAndScopeRequest
 		expectsErr         bool
 		expectedExpiration time.Time
 	}{
@@ -39,14 +39,14 @@ func TestGetExpiresAt(t *testing.T) {
 			expectsErr: true,
 		},
 		"input without requested validity": {
-			input: &central.GenerateTokenForPermissionsAndScopeRequest{
-				ValidFor: nil,
+			input: &v1.GenerateTokenForPermissionsAndScopeRequest{
+				Lifetime: nil,
 			},
 			expectsErr: true,
 		},
 		"input with invalid requested validity": {
-			input: &central.GenerateTokenForPermissionsAndScopeRequest{
-				ValidFor: &durationpb.Duration{
+			input: &v1.GenerateTokenForPermissionsAndScopeRequest{
+				Lifetime: &durationpb.Duration{
 					Seconds: 60,
 					Nanos:   -654321987,
 				},
@@ -54,8 +54,8 @@ func TestGetExpiresAt(t *testing.T) {
 			expectsErr: true,
 		},
 		"input with negative requested validity": {
-			input: &central.GenerateTokenForPermissionsAndScopeRequest{
-				ValidFor: &durationpb.Duration{
+			input: &v1.GenerateTokenForPermissionsAndScopeRequest{
+				Lifetime: &durationpb.Duration{
 					Seconds: -60,
 					Nanos:   -654321987,
 				},
@@ -63,8 +63,8 @@ func TestGetExpiresAt(t *testing.T) {
 			expectsErr: true,
 		},
 		"valid input": {
-			input: &central.GenerateTokenForPermissionsAndScopeRequest{
-				ValidFor: &durationpb.Duration{
+			input: &v1.GenerateTokenForPermissionsAndScopeRequest{
+				Lifetime: &durationpb.Duration{
 					Seconds: 300,
 				},
 			},
@@ -87,19 +87,21 @@ func TestGetExpiresAt(t *testing.T) {
 }
 
 func TestGenerateTokenForPermissionsAndScope(t *testing.T) {
-	deploymentPermission := []string{"Deployment"}
-	requestSingleNamespace := &central.RequestedRoleClusterScope{
+	deploymentPermission := map[string]v1.Access{
+		"Deployment": v1.Access_READ_ACCESS,
+	}
+	requestSingleNamespace := &v1.ClusterScope{
 		ClusterName:       "cluster 1",
 		FullClusterAccess: false,
 		Namespaces:        []string{"namespace A"},
 	}
 	deploymentPS := testPermissionSet(deploymentPermission)
 	singleNSScope := testAccessScope(
-		[]*central.RequestedRoleClusterScope{requestSingleNamespace},
+		[]*v1.ClusterScope{requestSingleNamespace},
 	)
 	expectedRole := testRole(
 		deploymentPermission,
-		[]*central.RequestedRoleClusterScope{requestSingleNamespace},
+		[]*v1.ClusterScope{requestSingleNamespace},
 	)
 
 	createService := func(issuer tokens.Issuer, roleStore roleDataStore.DataStore) *serviceImpl {
@@ -111,10 +113,10 @@ func TestGenerateTokenForPermissionsAndScope(t *testing.T) {
 	}
 
 	t.Run("no requested validity", func(it *testing.T) {
-		input := &central.GenerateTokenForPermissionsAndScopeRequest{
-			ReadPermissions: deploymentPermission,
-			ClusterScopes:   []*central.RequestedRoleClusterScope{requestSingleNamespace},
-			ValidFor:        nil,
+		input := &v1.GenerateTokenForPermissionsAndScopeRequest{
+			Permissions:   deploymentPermission,
+			ClusterScopes: []*v1.ClusterScope{requestSingleNamespace},
+			Lifetime:      nil,
 		}
 
 		mockCtrl := gomock.NewController(it)
@@ -127,10 +129,10 @@ func TestGenerateTokenForPermissionsAndScope(t *testing.T) {
 		assert.Error(it, err)
 	})
 	t.Run("failed role creation", func(it *testing.T) {
-		input := &central.GenerateTokenForPermissionsAndScopeRequest{
-			ReadPermissions: deploymentPermission,
-			ClusterScopes:   []*central.RequestedRoleClusterScope{requestSingleNamespace},
-			ValidFor:        nil,
+		input := &v1.GenerateTokenForPermissionsAndScopeRequest{
+			Permissions:   deploymentPermission,
+			ClusterScopes: []*v1.ClusterScope{requestSingleNamespace},
+			Lifetime:      nil,
 		}
 
 		mockCtrl := gomock.NewController(it)
@@ -147,10 +149,10 @@ func TestGenerateTokenForPermissionsAndScope(t *testing.T) {
 		assert.Error(it, err)
 	})
 	t.Run("token issuer failure", func(it *testing.T) {
-		input := &central.GenerateTokenForPermissionsAndScopeRequest{
-			ReadPermissions: deploymentPermission,
-			ClusterScopes:   []*central.RequestedRoleClusterScope{requestSingleNamespace},
-			ValidFor:        &durationpb.Duration{Seconds: 300},
+		input := &v1.GenerateTokenForPermissionsAndScopeRequest{
+			Permissions:   deploymentPermission,
+			ClusterScopes: []*v1.ClusterScope{requestSingleNamespace},
+			Lifetime:      &durationpb.Duration{Seconds: 300},
 		}
 
 		mockCtrl := gomock.NewController(it)
@@ -175,10 +177,10 @@ func TestGenerateTokenForPermissionsAndScope(t *testing.T) {
 		assert.Error(it, err)
 	})
 	t.Run("success", func(it *testing.T) {
-		input := &central.GenerateTokenForPermissionsAndScopeRequest{
-			ReadPermissions: deploymentPermission,
-			ClusterScopes:   []*central.RequestedRoleClusterScope{requestSingleNamespace},
-			ValidFor:        &durationpb.Duration{Seconds: 300},
+		input := &v1.GenerateTokenForPermissionsAndScopeRequest{
+			Permissions:   deploymentPermission,
+			ClusterScopes: []*v1.ClusterScope{requestSingleNamespace},
+			Lifetime:      &durationpb.Duration{Seconds: 300},
 		}
 
 		mockCtrl := gomock.NewController(it)
@@ -202,7 +204,7 @@ func TestGenerateTokenForPermissionsAndScope(t *testing.T) {
 		assert.NotNil(it, rsp)
 		protoassert.Equal(
 			it,
-			&central.GenerateTokenForPermissionsAndScopeResponse{
+			&v1.GenerateTokenForPermissionsAndScopeResponse{
 				Token: "the quick brown fox jumps over the lazy dog",
 			},
 			rsp,

@@ -3,11 +3,12 @@ package service
 import (
 	"context"
 	"fmt"
+	"slices"
 	"strings"
 
 	"github.com/pkg/errors"
 	roleDatastore "github.com/stackrox/rox/central/role/datastore"
-	"github.com/stackrox/rox/generated/internalapi/central"
+	v1 "github.com/stackrox/rox/generated/internalapi/central/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/declarativeconfig"
 )
@@ -25,7 +26,7 @@ var (
 // in the creation process.
 func (rm *roleManager) createPermissionSet(
 	ctx context.Context,
-	req *central.GenerateTokenForPermissionsAndScopeRequest,
+	req *v1.GenerateTokenForPermissionsAndScopeRequest,
 ) (string, error) {
 	// TODO: Consider pruning the generated permission sets after some idle time.
 	permissionSet := &storage.PermissionSet{
@@ -33,16 +34,22 @@ func (rm *roleManager) createPermissionSet(
 		Traits:           generatedObjectTraits.CloneVT(),
 	}
 	var b strings.Builder
-	readResources := req.GetReadPermissions()
-	readAccessString := storage.Access_READ_ACCESS.String()
-	for ix, resource := range readResources {
+	permissions := req.GetPermissions()
+	resources := make([]string, 0, len(permissions))
+	for res := range permissions {
+		resources = append(resources, res)
+	}
+	slices.Sort(resources)
+	for ix, resource := range resources {
 		if ix > 0 {
 			b.WriteString(primaryListSeparator)
 		}
+		access := permissions[resource]
+		accessString := access.String()
 		b.WriteString(resource)
 		b.WriteString(keyValueSeparator)
-		b.WriteString(readAccessString)
-		permissionSet.ResourceToAccess[resource] = storage.Access_READ_ACCESS
+		b.WriteString(accessString)
+		permissionSet.ResourceToAccess[resource] = convertAccess(access)
 	}
 	permissionSetID := declarativeconfig.NewDeclarativePermissionSetUUID(b.String()).String()
 	permissionSet.Id = permissionSetID
@@ -54,12 +61,23 @@ func (rm *roleManager) createPermissionSet(
 	return permissionSet.GetId(), nil
 }
 
+func convertAccess(in v1.Access) storage.Access {
+	switch in {
+	case v1.Access_READ_ACCESS:
+		return storage.Access_READ_ACCESS
+	case v1.Access_READ_WRITE_ACCESS:
+		return storage.Access_READ_WRITE_ACCESS
+	default:
+		return storage.Access_NO_ACCESS
+	}
+}
+
 // createAccessScope creates a dynamic access scope, granting the requested scope.
 // The returned information is the identifier of the created access scope,
 // or an error if any occurred in the creation process.
 func (rm *roleManager) createAccessScope(
 	ctx context.Context,
-	req *central.GenerateTokenForPermissionsAndScopeRequest,
+	req *v1.GenerateTokenForPermissionsAndScopeRequest,
 ) (string, error) {
 	// TODO: Consider pruning the generated access scopes after some idle time.
 	accessScope := &storage.SimpleAccessScope{
@@ -111,7 +129,7 @@ func (rm *roleManager) createAccessScope(
 // in the creation process.
 func (rm *roleManager) createRole(
 	ctx context.Context,
-	req *central.GenerateTokenForPermissionsAndScopeRequest,
+	req *v1.GenerateTokenForPermissionsAndScopeRequest,
 ) (string, error) {
 	// TODO: Consider pruning the generated roles after some idle time.
 	permissionSetID, err := rm.createPermissionSet(ctx, req)

@@ -7,7 +7,7 @@ import (
 
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/generated/internalapi/central"
+	v1 "github.com/stackrox/rox/generated/internalapi/central/v1"
 	"github.com/stackrox/rox/pkg/auth/tokens"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/grpc/authz"
@@ -29,11 +29,11 @@ const (
 )
 
 var (
-	_ central.TokenServiceServer = (*serviceImpl)(nil)
+	_ v1.TokenServiceServer = (*serviceImpl)(nil)
 
 	authorizer = perrpc.FromMap(map[authz.Authorizer][]string{
 		idcheck.SensorsOnly(): {
-			central.TokenService_GenerateTokenForPermissionsAndScope_FullMethodName,
+			v1.TokenService_GenerateTokenForPermissionsAndScope_FullMethodName,
 		},
 	})
 )
@@ -45,17 +45,17 @@ type serviceImpl struct {
 
 	now func() time.Time
 
-	central.UnimplementedTokenServiceServer
+	v1.UnimplementedTokenServiceServer
 }
 
 // RegisterServiceServer registers this service with the given gRPC Server.
 func (s *serviceImpl) RegisterServiceServer(grpcServer *grpc.Server) {
-	central.RegisterTokenServiceServer(grpcServer, s)
+	v1.RegisterTokenServiceServer(grpcServer, s)
 }
 
 // RegisterServiceHandler registers this service with the given gRPC Gateway endpoint.
 func (s *serviceImpl) RegisterServiceHandler(ctx context.Context, mux *runtime.ServeMux, conn *grpc.ClientConn) error {
-	return central.RegisterTokenServiceHandler(ctx, mux, conn)
+	return v1.RegisterTokenServiceHandler(ctx, mux, conn)
 }
 
 // AuthFuncOverride specifies the auth criteria for this API.
@@ -65,8 +65,8 @@ func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName strin
 
 func (s *serviceImpl) GenerateTokenForPermissionsAndScope(
 	ctx context.Context,
-	req *central.GenerateTokenForPermissionsAndScopeRequest,
-) (*central.GenerateTokenForPermissionsAndScopeResponse, error) {
+	req *v1.GenerateTokenForPermissionsAndScopeRequest,
+) (*v1.GenerateTokenForPermissionsAndScopeResponse, error) {
 	roleName, err := s.roleManager.createRole(ctx, req)
 	if err != nil {
 		return nil, errors.Wrap(err, "creating and storing target role")
@@ -88,19 +88,17 @@ func (s *serviceImpl) GenerateTokenForPermissionsAndScope(
 	if err != nil {
 		return nil, err
 	}
-	response := &central.GenerateTokenForPermissionsAndScopeResponse{
+	response := &v1.GenerateTokenForPermissionsAndScopeResponse{
 		Token: tokenInfo.Token,
 	}
 	return response, nil
 }
 
-// region helpers
-
 func (s *serviceImpl) getExpiresAt(
 	_ context.Context,
-	req *central.GenerateTokenForPermissionsAndScopeRequest,
+	req *v1.GenerateTokenForPermissionsAndScopeRequest,
 ) (time.Time, error) {
-	duration, err := protocompat.DurationFromProto(req.GetValidFor())
+	duration, err := protocompat.DurationFromProto(req.GetLifetime())
 	if err != nil {
 		return time.Time{}, errors.Wrap(err, "converting requested token validity duration")
 	}
@@ -109,5 +107,3 @@ func (s *serviceImpl) getExpiresAt(
 	}
 	return s.now().Add(duration), nil
 }
-
-// endregion helpers
