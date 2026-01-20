@@ -156,14 +156,16 @@ func CreateTestImageV2Datastore(t testing.TB, testDB *pgtest.TestPostgres, ctrl 
 }
 
 // CreateTestImageV2V2Datastore creates image datastore for testing
-func CreateTestImageV2V2Datastore(_ testing.TB, testDB *pgtest.TestPostgres, ctrl *gomock.Controller) imageV2DS.DataStore {
+func CreateTestImageV2V2Datastore(t testing.TB, testDB *pgtest.TestPostgres, ctrl *gomock.Controller) imageV2DS.DataStore {
 	risks := mockRisks.NewMockDataStore(ctrl)
 	risks.EXPECT().RemoveRisk(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil).AnyTimes()
+	imageCVEInfo := imageCVEInfoDS.GetTestPostgresDataStore(t, testDB.DB)
 	return imageV2DS.NewWithPostgres(
 		imageV2Postgres.New(testDB.DB, false, concurrency.NewKeyFence()),
 		risks,
 		ranking.NewRanker(),
 		ranking.NewRanker(),
+		imageCVEInfo,
 	)
 }
 

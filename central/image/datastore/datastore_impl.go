@@ -449,7 +449,7 @@ func (ds *datastoreImpl) enrichCVEsFromImageCVEInfo(ctx context.Context, image *
 		infoMap[info.GetId()] = info
 	}
 
-	// Enrich CVEs
+	// Enrich CVEs and blank out datasource after using it
 	for _, component := range image.GetScan().GetComponents() {
 		for _, vuln := range component.GetVulns() {
 			id := cve.ImageCVEInfoID(vuln.GetCve(), component.GetName(), vuln.GetDatasource())
@@ -457,6 +457,8 @@ func (ds *datastoreImpl) enrichCVEsFromImageCVEInfo(ctx context.Context, image *
 				vuln.FixAvailableTimestamp = info.GetFixAvailableTimestamp()
 				vuln.FirstSystemOccurrence = info.GetFirstSystemOccurrence()
 			}
+			// Blank out datasource after using it - this is internal scanner data not meant for end users
+			vuln.Datasource = ""
 		}
 	}
 

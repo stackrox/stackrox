@@ -6,8 +6,8 @@ import (
 
 	clusterDataStore "github.com/stackrox/rox/central/cluster/datastore"
 	clusterCVEDataStore "github.com/stackrox/rox/central/cve/cluster/datastore"
-	imageCVEInfoDS "github.com/stackrox/rox/central/cve/image/info/datastore"
 	cveConverterV2 "github.com/stackrox/rox/central/cve/converter/v2"
+	imageCVEInfoDS "github.com/stackrox/rox/central/cve/image/info/datastore"
 	deploymentDataStore "github.com/stackrox/rox/central/deployment/datastore"
 	imageDataStore "github.com/stackrox/rox/central/image/datastore"
 	imagePostgresV2 "github.com/stackrox/rox/central/image/datastore/store/v2/postgres"
