@@ -119,3 +119,18 @@ func (s *virtualMachineServiceSuite) TestUpsertVirtualMachine_NilVirtualMachine(
 	s.Require().Equal(resp.GetSuccess(), false)
 	s.Require().ErrorIs(err, errox.InvalidArgs)
 }
+
+func (s *virtualMachineServiceSuite) TestUpsertVirtualMachine_ShouldNotPanicWhenDiscoveredDataMissing() {
+	ctx := context.Background()
+	req := &sensor.UpsertVirtualMachineIndexReportRequest{
+		IndexReport: &v1.IndexReport{
+			VsockCid: "test-vm-id",
+		},
+	}
+
+	s.NotPanics(func() {
+		resp, err := s.service.UpsertVirtualMachineIndexReport(ctx, req)
+		s.Require().NotNil(resp)
+		s.Require().Error(err)
+	})
+}
