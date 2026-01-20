@@ -70,20 +70,18 @@ jobs:
             "stackrox-operator",
           ]
     steps:
-      - name: Check out repository
-        uses: actions/checkout@v6
-        with:
-          ref: ${{ needs.run-parameters.outputs.version }}
-
       - name: Resolve image tag
         id: resolve-image-tag
         run: |
           set -euo pipefail
-          tag="$(make --quiet --no-print-directory tag BUILD_TAG=${{ needs.run-parameters.outputs.version }})"
-          # The operator tag replaces the patch version x with 0,
-          # so we need to override it here.
-          if [[ "${{ matrix.image }}" = "stackrox-operator" ]]; then
-            tag="$(make --quiet --no-print-directory -C operator tag BUILD_TAG=${{ needs.run-parameters.outputs.version }})"
+          tag="${{ needs.run-parameters.outputs.version }}"
+          if [[ "${{ matrix.image }}" = "stackrox-operator" && "${tag}" == *-nightly-* ]]; then
+            # Extract version part before -nightly- and replace patch version with 0
+            # Example: 0.1.x-nightly-20260114 -> 0.1.0-nightly-20260114
+            version_part="${tag%%-nightly-*}"
+            rest_part="${tag#*-nightly-}"
+            version_part=$(echo "$version_part" | sed -E 's/([0-9]+\.[0-9]+\.)x/\10/')
+            tag="${version_part}-nightly-${rest_part}"
           fi
           echo "tag=${tag}" >> "${GITHUB_OUTPUT}"
 
@@ -139,13 +137,16 @@ jobs:
       - name: Resolve image tag
         id: resolve-image-tag
         run: |
-          # In Konflux, we use the operator tag for all images,
-          # which will replace the patch version x with 0.
           set -euo pipefail
-          tag="$(make --quiet --no-print-directory -C operator tag BUILD_TAG=${{ needs.run-parameters.outputs.version }})"
+          tag="${{ needs.run-parameters.outputs.version }}"
           if [[ "${tag}" == *-nightly-* ]]; then
-            # If the tag is a nightly tag, we add the '-fast' suffix.
-            tag="${tag}-fast"
+            suffix="fast"
+            # Extract version part before -nightly- and replace patch version with 0
+            # Example: 0.1.x-nightly-20260114 -> 0.1.0-nightly-20260114-fast
+            version_part="${tag%%-nightly-*}"
+            rest_part="${tag#*-nightly-}"
+            version_part=$(echo "$version_part" | sed -E 's/([0-9]+\.[0-9]+\.)x/\10/')
+            tag="${version_part}-nightly-${rest_part}-${suffix}"
           fi
           echo "tag=${tag}" >> "${GITHUB_OUTPUT}"
 
