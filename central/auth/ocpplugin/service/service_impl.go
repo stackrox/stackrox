@@ -18,14 +18,7 @@ import (
 )
 
 const (
-	permissionSetNameFormat = "Generated permission set for %s"
-	accessScopeNameFormat   = "Generated access scope for %s"
-	roleNameFormat          = "Generated role for PermissionSet %s and AccessScope %s"
-
-	primaryListSeparator   = ";"
-	keyValueSeparator      = ":"
-	secondaryListSeparator = ","
-	clusterWildCard        = "*"
+	claimNameFormat = "Generated claims for role %s expiring at %s"
 )
 
 var (
@@ -75,11 +68,7 @@ func (s *serviceImpl) GenerateTokenForPermissionsAndScope(
 	if err != nil {
 		return nil, errors.Wrap(err, "getting expiration time")
 	}
-	claimName := fmt.Sprintf(
-		"Generated claims for role %s expiring at %s",
-		roleName,
-		expiresAt.Format(time.RFC3339Nano),
-	)
+	claimName := fmt.Sprintf(claimNameFormat, roleName, expiresAt.Format(time.RFC3339Nano))
 	roxClaims := tokens.RoxClaims{
 		RoleNames: []string{roleName},
 		Name:      claimName,
@@ -100,7 +89,7 @@ func (s *serviceImpl) getExpiresAt(
 ) (time.Time, error) {
 	duration, err := protocompat.DurationFromProto(req.GetLifetime())
 	if err != nil {
-		return time.Time{}, errors.Wrap(err, "converting requested token validity duration")
+		return time.Time{}, errox.InvalidArgs.CausedByf("converting requested token validity duration: %v", err)
 	}
 	if duration <= 0 {
 		return time.Time{}, errox.InvalidArgs.CausedBy("token validity duration should be positive")

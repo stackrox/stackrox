@@ -76,6 +76,7 @@ func TestGetExpiresAt(t *testing.T) {
 			svc := &serviceImpl{now: testClock}
 			expiresAt, err := svc.getExpiresAt(it.Context(), tc.input)
 			if tc.expectsErr {
+				fmt.Println(err.Error())
 				assert.Error(it, err)
 				assert.Zero(it, expiresAt)
 			} else {
@@ -163,7 +164,7 @@ func TestGenerateTokenForPermissionsAndScope(t *testing.T) {
 		expectedClaims := tokens.RoxClaims{
 			RoleNames: []string{expectedRole.GetName()},
 			Name: fmt.Sprintf(
-				"Generated claims for role %s expiring at %s",
+				claimNameFormat,
 				expectedRole.GetName(),
 				expectedExpiration.Format(time.RFC3339Nano),
 			),

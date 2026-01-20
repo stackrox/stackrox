@@ -13,6 +13,17 @@ import (
 	"github.com/stackrox/rox/pkg/declarativeconfig"
 )
 
+const (
+	permissionSetNameFormat = "Generated permission set for %s"
+	accessScopeNameFormat   = "Generated access scope for %s"
+	roleNameFormat          = "Generated role for permission set %s and access scope %s"
+
+	primaryListSeparator   = ";"
+	keyValueSeparator      = ":"
+	secondaryListSeparator = ","
+	clusterWildCard        = "*"
+)
+
 type roleManager struct {
 	roleStore roleDatastore.DataStore
 }

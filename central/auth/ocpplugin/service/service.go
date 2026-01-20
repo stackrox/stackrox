@@ -6,7 +6,7 @@ import (
 	"github.com/stackrox/rox/pkg/grpc"
 )
 
-// Service provides the interface to the microservice that serves tokens for the OCP plugin.
+// Service provides the interface to serve tokens for internal purposes.
 type Service interface {
 	grpc.APIService
 

@@ -12,9 +12,9 @@ import (
 )
 
 const (
-	id = "https://stackrox.io/jwt-sources#ocp-rox-tokens"
+	internalTokenId = "https://stackrox.io/jwt-sources#internal-rox-tokens"
 	//#nosec G101 -- This constant is only there as a source type name, not as a credential.
-	ocpToken = "ocp-plugin-token"
+	internalToken = "internal-token"
 )
 
 var (
@@ -32,9 +32,9 @@ func Singleton() Service {
 
 func getTokenSource() tokens.Source {
 	return tokenbasedsource.NewTokenSource(
-		id,
-		ocpToken,
-		ocpToken,
+		internalTokenId,
+		internalToken,
+		internalToken,
 		tokenbasedsource.WithRevocationLayer(tokens.NewRevocationLayer()),
 	)
 }
