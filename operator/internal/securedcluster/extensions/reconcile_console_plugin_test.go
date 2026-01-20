@@ -27,7 +27,7 @@ func TestReconcileConsolePlugin_NotOnOpenShift(t *testing.T) {
 	sc := newTestSecuredCluster()
 	scheme := runtime.NewScheme()
 	require.NoError(t, platform.AddToScheme(scheme))
-	require.NoError(t, consolev1.AddToScheme(scheme))
+	require.NoError(t, consolev1.Install(scheme))
 
 	// Simulate a cluster where the ConsolePlugin CRD doesn't exist.
 	noMatchErr := &meta.NoKindMatchError{
@@ -177,7 +177,7 @@ func newFakeClientWithConsolePlugin(t *testing.T, objects ...ctrlClient.Object) 
 	t.Helper()
 	scheme := runtime.NewScheme()
 	require.NoError(t, platform.AddToScheme(scheme))
-	require.NoError(t, consolev1.AddToScheme(scheme))
+	require.NoError(t, consolev1.Install(scheme))
 
 	return fake.NewClientBuilder().
 		WithScheme(scheme).

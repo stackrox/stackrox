@@ -98,7 +98,7 @@ var (
 func init() {
 	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
 	utilruntime.Must(platform.AddToScheme(scheme))
-	utilruntime.Must(consolev1.AddToScheme(scheme))
+	utilruntime.Must(consolev1.Install(scheme))
 	//+kubebuilder:scaffold:scheme
 }
 
