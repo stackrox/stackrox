@@ -78,6 +78,7 @@ func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 			[]pubsub.LaneConfig{
 				lane.NewDefaultLane(pubsub.KubernetesDispatcherEventLane),
 				lane.NewDefaultLane(pubsub.FromCentralResolverEventLane),
+				lane.NewDefaultLane(pubsub.UnenrichedProcessIndicatorLane),
 				lane.NewDefaultLane(pubsub.EnrichedProcessIndicatorLane),
 			},
 		))

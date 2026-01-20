@@ -11,7 +11,6 @@ import (
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/process/filter"
-	"github.com/stackrox/rox/pkg/process/normalize"
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stackrox/rox/sensor/common"
@@ -126,7 +125,6 @@ func (p *Pipeline) Notify(e common.SensorComponentEvent) {
 // Process defines processes to process a ProcessIndicator
 // If the pipeline is shutting down, the signal is dropped to prevent sending on closed channels.
 func (p *Pipeline) Process(signal *storage.ProcessSignal) {
-	// Check if shutdown has been requested before processing
 	select {
 	case <-p.stopper.Flow().StopRequested():
 		p.dropIndicator(signal, "pipeline shutting down before enrichment")
@@ -139,27 +137,15 @@ func (p *Pipeline) Process(signal *storage.ProcessSignal) {
 		Signal: signal,
 	}
 
-	// indicator.GetSignal() is never nil at this point
-	metadata, ok, _ := p.clusterEntities.LookupByContainerID(indicator.GetSignal().GetContainerId())
-	if !ok {
-		p.enricher.Add(indicator)
-		return
-	}
-	metrics.IncrementProcessEnrichmentHits()
-	populateIndicatorFromCachedContainer(indicator, metadata)
-	normalize.Indicator(indicator)
-
 	if features.SensorInternalPubSub.Enabled() && p.pubSubDispatcher != nil {
-		p.publishEnrichedIndicator(context.Background(), indicator)
-		return
-	}
-
-	// Use select to avoid sending on closed channel if shutdown happens between check and send
-	select {
-	case p.enrichedIndicators <- indicator:
-	case <-p.stopper.Flow().StopRequested():
-		p.dropIndicator(indicator.GetSignal(), "pipeline shutting down during send")
-		return
+		event := NewUnenrichedProcessIndicatorEvent(context.Background(), indicator)
+		if err := p.pubSubDispatcher.Publish(event); err != nil {
+			metrics.IncrementProcessSignalDroppedCount()
+			log.Errorf("Failed to publish unenriched process indicator for container %s with id %s: %v",
+				signal.GetContainerId(), indicator.GetId(), err)
+		}
+	} else {
+		p.enricher.add(indicator)
 	}
 }
 
