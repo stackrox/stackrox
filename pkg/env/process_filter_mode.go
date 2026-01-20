@@ -9,7 +9,7 @@ import (
 // ProcessFilterMode allows users to easily configure process filtering behavior
 // using predefined presets instead of individual settings.
 //
-// Available modes:
+// Available modes (case-insensitive):
 //   - "default": Standard filtering with balanced resource usage
 //   - "aggressive": Maximum filtering to minimize resource usage and data volume
 //   - "minimal": Minimal filtering to capture more process details
@@ -60,12 +60,13 @@ func GetProcessFilterModeConfig() (*ProcessFilterModeConfig, string) {
 		return defaultConfig, ""
 	} else if mode == "minimal" {
 		return minimalConfig, ""
-	} else if mode != "" {
-		return defaultConfig, fmt.Sprintf("Unrecognized mode for environment variable %s: %s. Will use the default.", ProcessFilterMode.EnvVar(), mode)
-	} else if mode == "" {
+	}
+
+	if mode == "" {
 		return defaultConfig, fmt.Sprintf("%s set to empty string. Will use the default.", ProcessFilterMode.EnvVar())
 	}
-	return nil, ""
+
+	return defaultConfig, fmt.Sprintf("Unrecognized mode for environment variable %s: %s. Will use the default.", ProcessFilterMode.EnvVar(), mode)
 }
 
 // GetEffectiveProcessFilterConfig returns the effective process filter configuration,

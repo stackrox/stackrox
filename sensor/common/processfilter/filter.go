@@ -1,6 +1,7 @@
 package processfilter
 
 import (
+	"fmt"
 	"math"
 
 	"github.com/stackrox/rox/pkg/env"
@@ -27,8 +28,12 @@ func Singleton() filter.Filter {
 			log.Warn(warnStr)
 		}
 
-		log.Infof("Process filter configuration: mode=%s, maxExactPathMatches=%d, fanOutLevels=%v",
-			env.ProcessFilterMode.Setting(), config.MaxExactPathMatches, config.FanOutLevels)
+		modeStr := ""
+		if modeConfig, _ := env.GetProcessFilterModeConfig(); modeConfig != nil {
+			modeStr = fmt.Sprintf("mode=%s, ", env.ProcessFilterMode.Setting())
+		}
+		log.Infof("Process filter configuration: %smaxExactPathMatches=%d, fanOutLevels=%v",
+			modeStr, config.MaxExactPathMatches, config.FanOutLevels)
 
 		// Set the maximum number of paths to the max integer in order to not filter out new processes in Sensor
 		singletonFilter = filter.NewFilter(config.MaxExactPathMatches, math.MaxInt, config.FanOutLevels)

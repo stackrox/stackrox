@@ -1,6 +1,8 @@
 package filter
 
 import (
+	"fmt"
+
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/process/filter"
@@ -25,8 +27,12 @@ func Singleton() filter.Filter {
 			log.Warn(warnStr)
 		}
 
-		log.Infof("Process filter configuration: mode=%s, maxExactPathMatches=%d, fanOutLevels=%v, maxProcessPaths=%d",
-			env.ProcessFilterMode.Setting(), config.MaxExactPathMatches, config.FanOutLevels, config.MaxProcessPaths)
+		modeStr := ""
+		if modeConfig, _ := env.GetProcessFilterModeConfig(); modeConfig != nil {
+			modeStr = fmt.Sprintf("mode=%s, ", env.ProcessFilterMode.Setting())
+		}
+		log.Infof("Process filter configuration: %smaxExactPathMatches=%d, fanOutLevels=%v, maxProcessPaths=%d",
+			modeStr, config.MaxExactPathMatches, config.FanOutLevels, config.MaxProcessPaths)
 
 		singletonFilter = filter.NewFilter(config.MaxExactPathMatches, config.MaxProcessPaths, config.FanOutLevels)
 	})
