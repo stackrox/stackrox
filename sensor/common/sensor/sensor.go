@@ -402,35 +402,27 @@ func (s *Sensor) notifyAllOnSignal(signal *concurrency.Signal, centralCommunicat
 	}
 }
 
-// handleBackoffOnConnectionStop resets backoff if connection was stable long enough, otherwise preserves it.
-func handleBackoffOnConnectionStop(exponential *backoff.ExponentialBackOff, connectionStart time.Time, stableDuration time.Duration, err error) bool {
-	elapsed := time.Since(connectionStart)
-
-	// Reset logic (includes legacy behavior when stableDuration == 0)
-	if stableDuration == 0 || elapsed >= stableDuration {
+// handleBackoffOnConnectionStop resets backoff if initial sync completed, otherwise preserves it.
+func handleBackoffOnConnectionStop(exponential *backoff.ExponentialBackOff, syncCompleted *concurrency.Signal, err error) bool {
+	// Check if sync completed
+	select {
+	case <-syncCompleted.Done():
+		// Sync completed successfully - connection is considered stable, reset backoff
 		exponential.Reset()
-		if stableDuration == 0 {
-			log.Info("Connection stable duration is 0, resetting exponential backoff immediately (legacy behavior)")
-		} else {
-			log.Infof("Connection stable for %s (threshold: %s), resetting exponential backoff",
-				elapsed.Round(time.Second), stableDuration)
-		}
+		log.Info("Initial sync completed successfully, resetting exponential backoff")
 		return true
-	}
-
-	// Preserve backoff to prevent rapid retries; distinguish intentional shutdowns from failures
-	switch {
-	case err != nil && errors.Is(err, context.Canceled):
-		log.Infof("Connection stopped after %s (before stable duration %s); intentional shutdown, preserving exponential backoff state",
-			elapsed.Round(time.Second), stableDuration)
-	case err != nil:
-		log.Warnf("Connection failed after %s (before stable duration %s), preserving exponential backoff to prevent rapid retries",
-			elapsed.Round(time.Second), stableDuration)
 	default:
-		log.Infof("Connection stopped after %s (before stable duration %s), preserving exponential backoff state",
-			elapsed.Round(time.Second), stableDuration)
+		// Sync never completed - preserve backoff to prevent rapid retries
+		switch {
+		case err != nil && errors.Is(err, context.Canceled):
+			log.Info("Connection stopped before initial sync completed; intentional shutdown, preserving exponential backoff state")
+		case err != nil:
+			log.Warn("Connection failed before initial sync completed, preserving exponential backoff to prevent rapid retries")
+		default:
+			log.Info("Connection stopped before initial sync completed, preserving exponential backoff state")
+		}
+		return false
 	}
-	return false
 }
 
 // handleReconnectionError logs reconnection errors and returns true if reconciliation should be disabled.
@@ -489,23 +481,31 @@ func (s *Sensor) communicationWithCentralWithRetries(centralReachable *concurren
 		// suddenly broke.
 		centralCommunication := NewCentralCommunication(s.clusterID, s.reconnect.Load(), s.reconcile.Load(), s.components...)
 		syncDone := concurrency.NewSignal()
+		syncCompleted := concurrency.NewSignal()
 		concurrency.WithLock(s.centralCommunicationLock, func() {
 			s.centralCommunication = centralCommunication
 		})
 		centralCommunication.Start(central.NewSensorServiceClient(s.centralConnection), centralReachable, &syncDone, s.configHandler, s.detector)
 		go s.notifySyncDone(&syncDone, centralCommunication)
 
-		// We only reset backoff after the connection has been stable for the configured duration.
+		// Track when initial sync (handshake + data exchange) completes successfully.
+		// We only reset backoff after sync completes.
 		// This prevents rapid retries when initial sync (config, policy, deduper state) fails.
 		// See ROX-29270: Sensor backoff reset DoS issue.
-		connectionStartTime := time.Now()
-		stableDuration := env.ConnectionStableDuration.DurationSetting()
+		go func() {
+			select {
+			case <-syncDone.Done():
+				syncCompleted.Signal()
+			case <-s.centralCommunication.Stopped().WaitC():
+				// Connection stopped before sync completed - syncCompleted will never fire
+			}
+		}()
 
 		select {
 		case <-s.centralCommunication.Stopped().WaitC():
 			err := s.centralCommunication.Stopped().Err()
 
-			handleBackoffOnConnectionStop(exponential, connectionStartTime, stableDuration, err)
+			handleBackoffOnConnectionStop(exponential, &syncCompleted, err)
 
 			if handleReconnectionError(err) {
 				s.reconcile.Store(false)

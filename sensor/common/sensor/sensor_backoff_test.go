@@ -6,52 +6,47 @@ import (
 	"time"
 
 	"github.com/cenkalti/backoff/v3"
+	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stretchr/testify/assert"
 )
 
 // TestHandleBackoffOnConnectionStop tests the backoff management logic on connection stop
 func TestHandleBackoffOnConnectionStop(t *testing.T) {
 	tests := []struct {
-		name            string
-		connectionStart time.Time
-		stableDuration  time.Duration
-		err             error
-		expectReset     bool
+		name        string
+		syncDone    bool
+		err         error
+		expectReset bool
 	}{
 		{
-			name:            "legacy mode - always resets",
-			connectionStart: time.Now().Add(-5 * time.Second),
-			stableDuration:  0,
-			err:             nil,
-			expectReset:     true,
+			name:        "sync completed - resets backoff",
+			syncDone:    true,
+			err:         nil,
+			expectReset: true,
 		},
 		{
-			name:            "stable connection - resets backoff",
-			connectionStart: time.Now().Add(-70 * time.Second),
-			stableDuration:  60 * time.Second,
-			err:             nil,
-			expectReset:     true,
+			name:        "sync completed with error - resets backoff",
+			syncDone:    true,
+			err:         assert.AnError,
+			expectReset: true,
 		},
 		{
-			name:            "early failure - preserves backoff",
-			connectionStart: time.Now().Add(-15 * time.Second),
-			stableDuration:  60 * time.Second,
-			err:             assert.AnError,
-			expectReset:     false,
+			name:        "sync not completed - preserves backoff",
+			syncDone:    false,
+			err:         assert.AnError,
+			expectReset: false,
 		},
 		{
-			name:            "early cancellation - preserves backoff",
-			connectionStart: time.Now().Add(-15 * time.Second),
-			stableDuration:  60 * time.Second,
-			err:             context.Canceled,
-			expectReset:     false,
+			name:        "sync not completed with cancellation - preserves backoff",
+			syncDone:    false,
+			err:         context.Canceled,
+			expectReset: false,
 		},
 		{
-			name:            "early stop without error - preserves backoff",
-			connectionStart: time.Now().Add(-15 * time.Second),
-			stableDuration:  60 * time.Second,
-			err:             nil,
-			expectReset:     false,
+			name:        "sync not completed without error - preserves backoff",
+			syncDone:    false,
+			err:         nil,
+			expectReset: false,
 		},
 	}
 
@@ -69,7 +64,13 @@ func TestHandleBackoffOnConnectionStop(t *testing.T) {
 			_ = exponential.NextBackOff()
 			interval2 := exponential.NextBackOff()
 
-			wasReset := handleBackoffOnConnectionStop(exponential, tt.connectionStart, tt.stableDuration, tt.err)
+			// Create syncCompleted signal
+			syncCompleted := concurrency.NewSignal()
+			if tt.syncDone {
+				syncCompleted.Signal()
+			}
+
+			wasReset := handleBackoffOnConnectionStop(exponential, &syncCompleted, tt.err)
 
 			assert.Equal(t, tt.expectReset, wasReset)
 
