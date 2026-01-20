@@ -28,9 +28,9 @@ func TestExtractClusterConfig(t *testing.T) {
 
 		config := extractClusterConfig(hello)
 
-		assert.Equal(t, "test-cluster", config.clusterName())
-		assert.Equal(t, storage.ManagerType_MANAGER_TYPE_HELM_CHART, config.manager())
-		assert.Equal(t, "fingerprint123", config.helmConfig().GetConfigFingerprint())
+		assert.Equal(t, "test-cluster", config.clusterName)
+		assert.Equal(t, storage.ManagerType_MANAGER_TYPE_HELM_CHART, config.manager)
+		assert.Equal(t, "fingerprint123", config.helmConfig.GetConfigFingerprint())
 		assert.Equal(t, "stackrox", config.deploymentIdentification.GetAppNamespace())
 		assert.Equal(t, []string{"cap1", "cap2"}, config.capabilities)
 	})
@@ -40,19 +40,17 @@ func TestExtractClusterConfig(t *testing.T) {
 
 		config := extractClusterConfig(hello)
 
-		assert.Empty(t, config.clusterName())
-		assert.Equal(t, storage.ManagerType_MANAGER_TYPE_UNKNOWN, config.manager())
-		assert.Nil(t, config.helmConfig())
+		assert.Empty(t, config.clusterName)
+		assert.Equal(t, storage.ManagerType_MANAGER_TYPE_UNKNOWN, config.manager)
+		assert.Nil(t, config.helmConfig)
 	})
 }
 
 func TestShouldUpdateCluster(t *testing.T) {
 	baseConfig := clusterConfigData{
-		helmManagedConfigInit: &central.HelmManagedConfigInit{
-			ManagedBy: storage.ManagerType_MANAGER_TYPE_HELM_CHART,
-			ClusterConfig: &storage.CompleteClusterConfig{
-				ConfigFingerprint: "fp123",
-			},
+		manager: storage.ManagerType_MANAGER_TYPE_HELM_CHART,
+		helmConfig: &storage.CompleteClusterConfig{
+			ConfigFingerprint: "fp123",
 		},
 		capabilities: []string{"cap1", "cap2"},
 	}
@@ -177,13 +175,11 @@ func TestValidateClusterConfig(t *testing.T) {
 func TestBuildClusterFromConfig(t *testing.T) {
 	t.Run("builds cluster with all fields", func(t *testing.T) {
 		config := clusterConfigData{
-			helmManagedConfigInit: &central.HelmManagedConfigInit{
-				ManagedBy: storage.ManagerType_MANAGER_TYPE_HELM_CHART,
-				ClusterConfig: &storage.CompleteClusterConfig{
-					StaticConfig: &storage.StaticClusterConfig{
-						Type:      storage.ClusterType_KUBERNETES_CLUSTER,
-						MainImage: "stackrox/main:latest",
-					},
+			manager: storage.ManagerType_MANAGER_TYPE_HELM_CHART,
+			helmConfig: &storage.CompleteClusterConfig{
+				StaticConfig: &storage.StaticClusterConfig{
+					Type:      storage.ClusterType_KUBERNETES_CLUSTER,
+					MainImage: "stackrox/main:latest",
 				},
 			},
 			deploymentIdentification: &storage.SensorDeploymentIdentification{
@@ -203,11 +199,9 @@ func TestBuildClusterFromConfig(t *testing.T) {
 
 	t.Run("does not set HelmConfig for manually managed clusters", func(t *testing.T) {
 		config := clusterConfigData{
-			helmManagedConfigInit: &central.HelmManagedConfigInit{
-				ManagedBy: storage.ManagerType_MANAGER_TYPE_MANUAL,
-				ClusterConfig: &storage.CompleteClusterConfig{
-					StaticConfig: &storage.StaticClusterConfig{},
-				},
+			manager: storage.ManagerType_MANAGER_TYPE_MANUAL,
+			helmConfig: &storage.CompleteClusterConfig{
+				StaticConfig: &storage.StaticClusterConfig{},
 			},
 			deploymentIdentification: &storage.SensorDeploymentIdentification{},
 			capabilities:             []string{},
@@ -220,11 +214,9 @@ func TestBuildClusterFromConfig(t *testing.T) {
 
 	t.Run("capabilities are sorted", func(t *testing.T) {
 		config := clusterConfigData{
-			helmManagedConfigInit: &central.HelmManagedConfigInit{
-				ManagedBy: storage.ManagerType_MANAGER_TYPE_HELM_CHART,
-				ClusterConfig: &storage.CompleteClusterConfig{
-					StaticConfig: &storage.StaticClusterConfig{},
-				},
+			manager: storage.ManagerType_MANAGER_TYPE_HELM_CHART,
+			helmConfig: &storage.CompleteClusterConfig{
+				StaticConfig: &storage.StaticClusterConfig{},
 			},
 			deploymentIdentification: &storage.SensorDeploymentIdentification{},
 			capabilities:             []string{"zzz", "aaa", "mmm"},
@@ -247,13 +239,11 @@ func TestApplyConfigToCluster(t *testing.T) {
 		}
 
 		config := clusterConfigData{
-			helmManagedConfigInit: &central.HelmManagedConfigInit{
-				ManagedBy: storage.ManagerType_MANAGER_TYPE_HELM_CHART,
-				ClusterConfig: &storage.CompleteClusterConfig{
-					ConfigFingerprint: "new-fp",
-					StaticConfig: &storage.StaticClusterConfig{
-						Type: storage.ClusterType_KUBERNETES_CLUSTER,
-					},
+			manager: storage.ManagerType_MANAGER_TYPE_HELM_CHART,
+			helmConfig: &storage.CompleteClusterConfig{
+				ConfigFingerprint: "new-fp",
+				StaticConfig: &storage.StaticClusterConfig{
+					Type: storage.ClusterType_KUBERNETES_CLUSTER,
 				},
 			},
 			capabilities: []string{"new-cap1", "new-cap2"},
@@ -280,10 +270,8 @@ func TestApplyConfigToCluster(t *testing.T) {
 		}
 
 		config := clusterConfigData{
-			helmManagedConfigInit: &central.HelmManagedConfigInit{
-				ManagedBy:     storage.ManagerType_MANAGER_TYPE_MANUAL,
-				ClusterConfig: &storage.CompleteClusterConfig{},
-			},
+			manager:      storage.ManagerType_MANAGER_TYPE_MANUAL,
+			helmConfig:   &storage.CompleteClusterConfig{},
 			capabilities: []string{},
 		}
 
@@ -302,10 +290,8 @@ func TestApplyConfigToCluster(t *testing.T) {
 		}
 
 		config := clusterConfigData{
-			helmManagedConfigInit: &central.HelmManagedConfigInit{
-				ManagedBy:     storage.ManagerType_MANAGER_TYPE_HELM_CHART,
-				ClusterConfig: &storage.CompleteClusterConfig{},
-			},
+			manager:      storage.ManagerType_MANAGER_TYPE_HELM_CHART,
+			helmConfig:   &storage.CompleteClusterConfig{},
 			capabilities: []string{"cap1"},
 		}
 
