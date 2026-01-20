@@ -926,11 +926,11 @@ func shouldUpdateCluster(existing *storage.Cluster, config clusterConfigData, re
 		return true
 	}
 	// Check fingerprint - both must be present to compare
-	existingFingerprint := ""
+	var existingFingerprint string
 	if existing.GetHelmConfig() != nil {
 		existingFingerprint = existing.GetHelmConfig().GetConfigFingerprint()
 	}
-	configFingerprint := ""
+	var configFingerprint string
 	if config.helmConfig != nil {
 		configFingerprint = config.helmConfig.GetConfigFingerprint()
 	}
