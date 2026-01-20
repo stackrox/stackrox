@@ -210,6 +210,7 @@ func parseVMReport(data []byte) (*v1.VMReport, error) {
 func validateReportedVsockCID(vmReport *v1.VMReport, connVsockCID uint32) error {
 	reportedCID := vmReport.GetIndexReport().GetVsockCid()
 	if reportedCID != strconv.FormatUint(uint64(connVsockCID), 10) {
+		metrics.IndexReportsMismatchingVsockCID.Inc()
 		return errors.Errorf("mismatch between reported (%s) and real (%d) vsock CIDs", reportedCID, connVsockCID)
 	}
 	return nil
