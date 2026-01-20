@@ -988,7 +988,9 @@ func checkGracePeriodForReconnect(cluster *storage.Cluster, deploymentID *storag
 	// In a scale test environment, allow Sensors to reconnect in under the time limit
 	if timeLeftInGracePeriod > 0 && !env.ScaleTestEnabled.BooleanSetting() {
 		if err := common.CheckConnReplace(deploymentID, cluster.GetMostRecentSensorId()); err != nil {
-			managerPretty := "non-manually" // Unless we extend the `ManagerType` and forget to extend the switch here, this should never surface to the user.
+			// Fallback value - should be overridden by switch unless ManagerType is extended.
+			// This should never surface to the user.
+			managerPretty := "non-manually"
 			switch manager {
 			case storage.ManagerType_MANAGER_TYPE_HELM_CHART:
 				managerPretty = "Helm"
@@ -1009,7 +1011,7 @@ func (ds *datastoreImpl) lookupOrCreateCluster(ctx context.Context, clusterID, c
 	// Try to resolve cluster ID from name if not provided
 	if clusterID == "" && clusterName != "" {
 		if cachedID, ok := ds.nameToIDCache.Get(clusterName); ok {
-			clusterID = cachedID.(string)
+			clusterID, _ = cachedID.(string)
 		}
 	}
 
