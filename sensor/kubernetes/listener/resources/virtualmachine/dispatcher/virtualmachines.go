@@ -13,6 +13,12 @@ import (
 
 const (
 	GuestOSKey     = "Guest OS"
+	DescriptionKey = "Description"
+	IPAddressesKey = "IP Addresses"
+	ActivePodsKey  = "Active Pods"
+	NodeNameKey    = "Node Name"
+	BootOrderKey   = "Boot Order"
+	CDRomDisksKey  = "CD-ROM Disks"
 	UnknownGuestOS = "unknown"
 )
 
@@ -46,11 +52,15 @@ func (d *VirtualMachineDispatcher) ProcessEvent(
 		return nil
 	}
 	isRunning := virtualMachine.Status.PrintableStatus == kubeVirtV1.VirtualMachineStatusRunning
+	disks := extractDisksFromVM(virtualMachine)
 	vm := &virtualmachine.Info{
-		ID:        virtualmachine.VMID(virtualMachine.GetUID()),
-		Name:      virtualMachine.GetName(),
-		Namespace: virtualMachine.GetNamespace(),
-		Running:   isRunning,
+		ID:          virtualmachine.VMID(virtualMachine.GetUID()),
+		Name:        virtualMachine.GetName(),
+		Namespace:   virtualMachine.GetNamespace(),
+		Running:     isRunning,
+		Description: descriptionFromAnnotations(virtualMachine.GetAnnotations()),
+		BootOrder:   extractBootOrder(disks),
+		CDRomDisks:  extractCDRomDisks(disks),
 	}
 	return processVirtualMachine(vm, action, d.clusterID, d.store)
 }

@@ -46,6 +46,9 @@ func (s *VirtualMachineStore) AddOrUpdate(vm *virtualmachine.Info) *virtualmachi
 			vm.VSOCKCID = &vSockCID
 		}
 		vm.GuestOS = oldVM.GuestOS
+		vm.IPAddresses = copyStringSlice(oldVM.IPAddresses)
+		vm.ActivePods = copyStringSlice(oldVM.ActivePods)
+		vm.NodeName = oldVM.NodeName
 	}
 	s.addOrUpdateNoLock(vm)
 	return vm
@@ -161,6 +164,12 @@ func (s *VirtualMachineStore) updateStatusOrCreateNoLock(updateInfo *virtualmach
 	prev.VSOCKCID = s.addOrUpdateVSOCKInfoNoLock(updateInfo.ID, updateInfo.VSOCKCID)
 	prev.Running = updateInfo.Running
 	prev.GuestOS = updateInfo.GuestOS
+	prev.IPAddresses = copyStringSlice(updateInfo.IPAddresses)
+	prev.ActivePods = copyStringSlice(updateInfo.ActivePods)
+	prev.NodeName = updateInfo.NodeName
+	prev.Description = updateInfo.Description
+	prev.BootOrder = copyStringSlice(updateInfo.BootOrder)
+	prev.CDRomDisks = copyStringSlice(updateInfo.CDRomDisks)
 }
 
 func (s *VirtualMachineStore) addOrUpdateVSOCKInfoNoLock(id virtualmachine.VMID, vsockCID *uint32) *uint32 {
@@ -230,4 +239,15 @@ func (s *VirtualMachineStore) clearStatusNoLock(id virtualmachine.VMID) {
 	vm.VSOCKCID = nil
 	// If the instance is removed the VirtualMachine will transition to Stopped
 	vm.Running = false
+	vm.GuestOS = ""
+	vm.NodeName = ""
+	vm.IPAddresses = nil
+	vm.ActivePods = nil
+}
+
+func copyStringSlice(values []string) []string {
+	if len(values) == 0 {
+		return nil
+	}
+	return append([]string(nil), values...)
 }

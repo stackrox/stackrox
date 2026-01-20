@@ -296,6 +296,133 @@ func (s *storeSuite) Test_UpdateVirtualMachine() {
 	}
 }
 
+func (s *storeSuite) Test_AddOrUpdateShouldHandleDerivedFields() {
+	tests := map[string]struct {
+		original *virtualmachine.Info
+		update   *virtualmachine.Info
+		expected *virtualmachine.Info
+	}{
+		"should preserve runtime fields and accept VM spec updates": {
+			original: &virtualmachine.Info{
+				ID:          vmID,
+				Name:        vmName,
+				Namespace:   vmNamespace,
+				Running:     true,
+				GuestOS:     "Red Hat Enterprise Linux 8",
+				Description: "old description",
+				IPAddresses: []string{"10.0.0.1"},
+				ActivePods:  []string{"pod-1=node-a"},
+				NodeName:    "node-a",
+				BootOrder:   []string{"disk-b=1", "disk-a=1"},
+				CDRomDisks:  []string{"cd-1"},
+			},
+			update: &virtualmachine.Info{
+				ID:          vmID,
+				Name:        vmName,
+				Namespace:   vmNamespace,
+				Running:     false,
+				Description: "new description",
+				BootOrder:   []string{"disk-c=1"},
+				CDRomDisks:  []string{"cd-2"},
+			},
+			expected: &virtualmachine.Info{
+				ID:          vmID,
+				Name:        vmName,
+				Namespace:   vmNamespace,
+				Running:     true,
+				GuestOS:     "Red Hat Enterprise Linux 8",
+				Description: "new description",
+				IPAddresses: []string{"10.0.0.1"},
+				ActivePods:  []string{"pod-1=node-a"},
+				NodeName:    "node-a",
+				BootOrder:   []string{"disk-c=1"},
+				CDRomDisks:  []string{"cd-2"},
+			},
+		},
+		"should allow clearing description from VM updates": {
+			original: &virtualmachine.Info{
+				ID:          vmID,
+				Name:        vmName,
+				Namespace:   vmNamespace,
+				Running:     true,
+				GuestOS:     "Red Hat Enterprise Linux 8",
+				Description: "old description",
+				IPAddresses: []string{"10.0.0.1"},
+				ActivePods:  []string{"pod-1=node-a"},
+				NodeName:    "node-a",
+			},
+			update: &virtualmachine.Info{
+				ID:          vmID,
+				Name:        vmName,
+				Namespace:   vmNamespace,
+				Running:     false,
+				Description: "",
+			},
+			expected: &virtualmachine.Info{
+				ID:          vmID,
+				Name:        vmName,
+				Namespace:   vmNamespace,
+				Running:     true,
+				GuestOS:     "Red Hat Enterprise Linux 8",
+				Description: "",
+				IPAddresses: []string{"10.0.0.1"},
+				ActivePods:  []string{"pod-1=node-a"},
+				NodeName:    "node-a",
+			},
+		},
+		"should clear boot order and cdroms when update omits them": {
+			original: &virtualmachine.Info{
+				ID:          vmID,
+				Name:        vmName,
+				Namespace:   vmNamespace,
+				Running:     true,
+				GuestOS:     "Red Hat Enterprise Linux 8",
+				BootOrder:   []string{"disk-b=1", "disk-a=1"},
+				CDRomDisks:  []string{"cd-1"},
+				IPAddresses: []string{"10.0.0.1"},
+				ActivePods:  []string{"pod-1=node-a"},
+				NodeName:    "node-a",
+			},
+			update: &virtualmachine.Info{
+				ID:        vmID,
+				Name:      vmName,
+				Namespace: vmNamespace,
+				Running:   false,
+			},
+			expected: &virtualmachine.Info{
+				ID:          vmID,
+				Name:        vmName,
+				Namespace:   vmNamespace,
+				Running:     true,
+				GuestOS:     "Red Hat Enterprise Linux 8",
+				IPAddresses: []string{"10.0.0.1"},
+				ActivePods:  []string{"pod-1=node-a"},
+				NodeName:    "node-a",
+			},
+		},
+	}
+	for name, tt := range tests {
+		s.Run(name, func() {
+			s.store.AddOrUpdate(tt.original)
+			s.store.AddOrUpdate(tt.update)
+
+			actual := s.store.Get(tt.original.ID)
+			s.Require().NotNil(actual)
+			assert.Equal(s.T(), tt.expected.ID, actual.ID)
+			assert.Equal(s.T(), tt.expected.Name, actual.Name)
+			assert.Equal(s.T(), tt.expected.Namespace, actual.Namespace)
+			assert.Equal(s.T(), tt.expected.Running, actual.Running)
+			assert.Equal(s.T(), tt.expected.GuestOS, actual.GuestOS)
+			assert.Equal(s.T(), tt.expected.Description, actual.Description)
+			assert.Equal(s.T(), tt.expected.IPAddresses, actual.IPAddresses)
+			assert.Equal(s.T(), tt.expected.ActivePods, actual.ActivePods)
+			assert.Equal(s.T(), tt.expected.NodeName, actual.NodeName)
+			assert.Equal(s.T(), tt.expected.BootOrder, actual.BootOrder)
+			assert.Equal(s.T(), tt.expected.CDRomDisks, actual.CDRomDisks)
+		})
+	}
+}
+
 func (s *storeSuite) Test_replaceVSOCKInfoNoLockCopiesIncomingPointer() {
 	s.store = NewVirtualMachineStore()
 
@@ -555,6 +682,50 @@ func (s *storeSuite) Test_UpdateStateOrCreate() {
 	}
 }
 
+func (s *storeSuite) Test_UpdateStateOrCreateShouldRefreshRuntimeFields() {
+	original := &virtualmachine.Info{
+		ID:          vmID,
+		Name:        vmName,
+		Namespace:   vmNamespace,
+		Description: "spec description",
+		BootOrder:   []string{"disk-a=1"},
+		CDRomDisks:  []string{"cd-1"},
+	}
+	update := &virtualmachine.Info{
+		ID:          vmID,
+		Name:        vmName,
+		Namespace:   vmNamespace,
+		Running:     true,
+		VSOCKCID:    newVSOCKCID(1),
+		GuestOS:     "Red Hat Enterprise Linux 9",
+		Description: "instance description",
+		IPAddresses: []string{"10.0.0.2"},
+		ActivePods:  []string{"pod-2=node-b"},
+		NodeName:    "node-b",
+		BootOrder:   []string{"disk-b=1"},
+		CDRomDisks:  []string{"cd-2"},
+	}
+
+	s.store.AddOrUpdate(original)
+	s.store.UpdateStateOrCreate(update)
+
+	actual := s.store.Get(vmID)
+	s.Require().NotNil(actual)
+	assert.Equal(s.T(), update.Running, actual.Running)
+	assert.Equal(s.T(), update.GuestOS, actual.GuestOS)
+	assert.Equal(s.T(), update.Description, actual.Description)
+	assert.Equal(s.T(), update.IPAddresses, actual.IPAddresses)
+	assert.Equal(s.T(), update.ActivePods, actual.ActivePods)
+	assert.Equal(s.T(), update.NodeName, actual.NodeName)
+	assert.Equal(s.T(), update.BootOrder, actual.BootOrder)
+	assert.Equal(s.T(), update.CDRomDisks, actual.CDRomDisks)
+	if update.VSOCKCID == nil {
+		assert.Nil(s.T(), actual.VSOCKCID)
+	} else {
+		assert.Equal(s.T(), *update.VSOCKCID, *actual.VSOCKCID)
+	}
+}
+
 func (s *storeSuite) Test_RemoveVirtualMachine() {
 	vsockCID1 := newVSOCKCID(1)
 	cases := map[string]struct {
@@ -775,6 +946,47 @@ func (s *storeSuite) Test_ClearState() {
 			}
 		})
 	}
+}
+
+func (s *storeSuite) Test_ClearStateShouldRetainSpecFields() {
+	original := &virtualmachine.Info{
+		ID:          vmID,
+		Name:        vmName,
+		Namespace:   vmNamespace,
+		Description: "instance description",
+		BootOrder:   []string{"disk-b=1"},
+		CDRomDisks:  []string{"cd-2"},
+	}
+	update := &virtualmachine.Info{
+		ID:          vmID,
+		Name:        vmName,
+		Namespace:   vmNamespace,
+		Running:     true,
+		VSOCKCID:    newVSOCKCID(1),
+		GuestOS:     "Red Hat Enterprise Linux 9",
+		Description: "instance description",
+		IPAddresses: []string{"10.0.0.2"},
+		ActivePods:  []string{"pod-2=node-b"},
+		NodeName:    "node-b",
+		BootOrder:   []string{"disk-b=1"},
+		CDRomDisks:  []string{"cd-2"},
+	}
+
+	s.store.AddOrUpdate(original)
+	s.store.UpdateStateOrCreate(update)
+	s.store.ClearState(vmID)
+
+	actual := s.store.Get(vmID)
+	s.Require().NotNil(actual)
+	assert.False(s.T(), actual.Running)
+	assert.Equal(s.T(), "", actual.GuestOS)
+	assert.Equal(s.T(), "", actual.NodeName)
+	assert.Nil(s.T(), actual.IPAddresses)
+	assert.Nil(s.T(), actual.ActivePods)
+	assert.Nil(s.T(), actual.VSOCKCID)
+	assert.Equal(s.T(), update.Description, actual.Description)
+	assert.Equal(s.T(), update.BootOrder, actual.BootOrder)
+	assert.Equal(s.T(), update.CDRomDisks, actual.CDRomDisks)
 }
 
 func (s *storeSuite) Test_Cleanup() {
