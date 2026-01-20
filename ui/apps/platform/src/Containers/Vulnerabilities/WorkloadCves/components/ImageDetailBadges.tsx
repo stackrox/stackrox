@@ -6,11 +6,10 @@ import type { SignatureVerificationResult } from '../../types';
 import SignatureCountLabel from './SignatureCountLabel';
 import VerifiedSignatureLabel, { getVerifiedSignatureInResults } from './VerifiedSignatureLabel';
 
-export type BaseImageInfo = {
-    baseImageId: string;
-    baseImageFullName: string;
-    baseImageDigest: string;
-    baseImageCreated?: string;
+export type BaseImage = {
+    imageSha: string;
+    names: string[];
+    created?: string;
 };
 
 export type ImageDetails = {
@@ -29,7 +28,7 @@ export type ImageDetails = {
     signatureVerificationData: {
         results: SignatureVerificationResult[];
     } | null;
-    baseImageInfo: BaseImageInfo[];
+    baseImage: BaseImage | null;
 };
 
 export const imageDetailsFragment = gql`
@@ -57,12 +56,10 @@ export const imageDetailsFragment = gql`
                 verifierId
             }
         }
-        baseImageInfo {
-            baseImageId
-            baseImageFullName
-            baseImageDigest
-            # TODO: Uncomment when backend adds 'baseImageCreated' field to BaseImageInfo GraphQL type
-            # baseImageCreated
+        baseImage {
+            imageSha
+            names
+            created
         }
     }
 `;
@@ -91,6 +88,11 @@ export const imageV2DetailsFragment = gql`
                 verifiedImageReferences
                 verifierId
             }
+        }
+        baseImage {
+            imageSha
+            names
+            created
         }
     }
 `;

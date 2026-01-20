@@ -65,7 +65,7 @@ import {
     imageComponentSearchFilterConfig,
 } from '../../searchFilterConfig';
 import BaseImageAssessmentCard from '../components/BaseImageAssessmentCard';
-import type { BaseImageInfo } from '../components/ImageDetailBadges';
+import type { BaseImage } from '../components/ImageDetailBadges';
 
 export const imageVulnerabilitiesQuery = gql`
     ${imageMetadataContextFragment}
@@ -99,7 +99,7 @@ export type ImagePageVulnerabilitiesProps = {
         remote: string;
         tag: string;
     };
-    baseImageInfo: BaseImageInfo[];
+    baseImage: BaseImage | null;
     refetchAll: () => void;
     pagination: UseURLPaginationResult;
     vulnerabilityState: VulnerabilityState;
@@ -112,7 +112,7 @@ export type ImagePageVulnerabilitiesProps = {
 function ImagePageVulnerabilities({
     imageId,
     imageName,
-    baseImageInfo,
+    baseImage,
     refetchAll,
     pagination,
     vulnerabilityState,
@@ -253,9 +253,9 @@ function ImagePageVulnerabilities({
                 <Text>Review and triage vulnerability data scanned on this image</Text>
             </PageSection>
             <Divider component="div" />
-            {isBaseImageDetectionEnabled && baseImageInfo.length > 0 && (
+            {isBaseImageDetectionEnabled && baseImage && (
                 <PageSection component="div" className="pf-v5-u-pt-lg">
-                    <BaseImageAssessmentCard baseImageInfo={baseImageInfo} />
+                    <BaseImageAssessmentCard baseImage={baseImage} />
                 </PageSection>
             )}
             <PageSection

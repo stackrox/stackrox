@@ -1,4 +1,4 @@
-import { Fragment, useState } from 'react';
+import { useState } from 'react';
 import type { MouseEvent as ReactMouseEvent } from 'react';
 import {
     Card,
@@ -8,7 +8,6 @@ import {
     DescriptionListDescription,
     DescriptionListGroup,
     DescriptionListTerm,
-    Divider,
     ExpandableSection,
     Stack,
 } from '@patternfly/react-core';
@@ -16,19 +15,22 @@ import { Link } from 'react-router-dom-v5-compat';
 
 import { getDistanceStrict } from 'utils/dateUtils';
 import useWorkloadCveViewContext from '../hooks/useWorkloadCveViewContext';
-import type { BaseImageInfo } from './ImageDetailBadges';
+import type { BaseImage } from './ImageDetailBadges';
 
 export type BaseImageAssessmentCardProps = {
-    baseImageInfo: BaseImageInfo[];
+    baseImage: BaseImage;
 };
 
-function BaseImageAssessmentCard({ baseImageInfo }: BaseImageAssessmentCardProps) {
+function BaseImageAssessmentCard({ baseImage }: BaseImageAssessmentCardProps) {
     const [isExpanded, setIsExpanded] = useState(false);
     const { urlBuilder } = useWorkloadCveViewContext();
 
     const onToggle = (_event: ReactMouseEvent, expanded: boolean) => {
         setIsExpanded(expanded);
     };
+
+    // Use the digest (imageSha) as the image ID for the detail link
+    const imageDetailPath = urlBuilder.imageDetails(baseImage.imageSha, 'OBSERVED');
 
     return (
         <Card isFlat isCompact>
@@ -38,57 +40,47 @@ function BaseImageAssessmentCard({ baseImageInfo }: BaseImageAssessmentCardProps
                     onToggle={onToggle}
                     isExpanded={isExpanded}
                 >
-                    <Stack hasGutter>
-                        {baseImageInfo.map((baseImage, index) => {
-                            const imageDetailPath = urlBuilder.imageDetails(
-                                baseImage.baseImageId,
-                                'OBSERVED'
-                            );
-                            return (
-                                <Fragment key={baseImage.baseImageId}>
-                                    {index > 0 && <Divider />}
-                                    <DescriptionList
-                                        isCompact
-                                        isHorizontal
-                                        columnModifier={{ default: '1Col' }}
-                                        termWidth="150px"
-                                    >
-                                        <DescriptionListGroup>
-                                            <DescriptionListTerm>Image name</DescriptionListTerm>
-                                            <DescriptionListDescription>
-                                                <Link to={imageDetailPath}>
-                                                    {baseImage.baseImageFullName}
-                                                </Link>
-                                            </DescriptionListDescription>
-                                        </DescriptionListGroup>
-                                        <DescriptionListGroup>
-                                            <DescriptionListTerm>Image digest</DescriptionListTerm>
-                                            <DescriptionListDescription>
-                                                <ClipboardCopy
-                                                    hoverTip="Copy digest"
-                                                    clickTip="Copied!"
-                                                    variant="inline-compact"
-                                                >
-                                                    {baseImage.baseImageDigest}
-                                                </ClipboardCopy>
-                                            </DescriptionListDescription>
-                                        </DescriptionListGroup>
-                                        {baseImage.baseImageCreated && (
-                                            <DescriptionListGroup>
-                                                <DescriptionListTerm>Image age</DescriptionListTerm>
-                                                <DescriptionListDescription>
-                                                    {getDistanceStrict(
-                                                        baseImage.baseImageCreated,
-                                                        new Date()
-                                                    )}
-                                                </DescriptionListDescription>
-                                            </DescriptionListGroup>
-                                        )}
-                                    </DescriptionList>
-                                </Fragment>
-                            );
-                        })}
-                    </Stack>
+                    <DescriptionList
+                        isCompact
+                        isHorizontal
+                        columnModifier={{ default: '1Col' }}
+                        termWidth="150px"
+                    >
+                        <DescriptionListGroup>
+                            <DescriptionListTerm>
+                                {baseImage.names.length > 1 ? 'Image names' : 'Image name'}
+                            </DescriptionListTerm>
+                            <DescriptionListDescription>
+                                <Stack>
+                                    {baseImage.names.map((name) => (
+                                        <Link key={name} to={imageDetailPath}>
+                                            {name}
+                                        </Link>
+                                    ))}
+                                </Stack>
+                            </DescriptionListDescription>
+                        </DescriptionListGroup>
+                        <DescriptionListGroup>
+                            <DescriptionListTerm>Image digest</DescriptionListTerm>
+                            <DescriptionListDescription>
+                                <ClipboardCopy
+                                    hoverTip="Copy digest"
+                                    clickTip="Copied!"
+                                    variant="inline-compact"
+                                >
+                                    {baseImage.imageSha}
+                                </ClipboardCopy>
+                            </DescriptionListDescription>
+                        </DescriptionListGroup>
+                        {baseImage.created && (
+                            <DescriptionListGroup>
+                                <DescriptionListTerm>Image age</DescriptionListTerm>
+                                <DescriptionListDescription>
+                                    {getDistanceStrict(baseImage.created, new Date())}
+                                </DescriptionListDescription>
+                            </DescriptionListGroup>
+                        )}
+                    </DescriptionList>
                 </ExpandableSection>
             </CardBody>
         </Card>
