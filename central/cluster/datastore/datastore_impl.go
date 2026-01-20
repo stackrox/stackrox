@@ -925,23 +925,22 @@ func shouldUpdateCluster(existing *storage.Cluster, config clusterConfigData, re
 	if existing.GetInitBundleId() != registrantID {
 		return true
 	}
-	if existing.GetHelmConfig().GetConfigFingerprint() != config.helmConfig.GetConfigFingerprint() {
+	// Check fingerprint - both must be present to compare
+	existingFingerprint := ""
+	if existing.GetHelmConfig() != nil {
+		existingFingerprint = existing.GetHelmConfig().GetConfigFingerprint()
+	}
+	configFingerprint := ""
+	if config.helmConfig != nil {
+		configFingerprint = config.helmConfig.GetConfigFingerprint()
+	}
+	if existingFingerprint != configFingerprint {
 		return true
 	}
 	if existing.GetManagedBy() != config.manager {
 		return true
 	}
 	return false
-}
-
-// validateClusterConfig validates that the cluster name matches expectations.
-// For existing clusters, ensures name consistency if a name is specified.
-func validateClusterConfig(clusterID, clusterName string, existing *storage.Cluster) error {
-	if clusterName != "" && clusterName != existing.GetName() {
-		return errors.Errorf("Name mismatch for cluster %q: expected %q, but %q was specified. Set the cluster.name/clusterName attribute in your Helm config to %q, or remove it",
-			clusterID, existing.GetName(), clusterName, existing.GetName())
-	}
-	return nil
 }
 
 // buildClusterFromConfig builds a new cluster object from configuration.
@@ -1024,9 +1023,10 @@ func (ds *datastoreImpl) lookupOrCreateCluster(ctx context.Context, clusterID, c
 			return nil, false, errors.Errorf("cluster with ID %q does not exist", clusterID)
 		}
 
-		// Validate name match
-		if err := validateClusterConfig(clusterID, clusterName, cluster); err != nil {
-			return nil, false, err
+		// Validate name matches if specified
+		if clusterName != "" && clusterName != cluster.GetName() {
+			return nil, false, errors.Errorf("Name mismatch for cluster %q: expected %q, but %q was specified. Set the cluster.name/clusterName attribute in your Helm config to %q, or remove it",
+				clusterID, cluster.GetName(), clusterName, cluster.GetName())
 		}
 
 		return cluster, true, nil
