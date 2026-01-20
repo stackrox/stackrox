@@ -79,6 +79,7 @@ func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 				lane.NewBlockingLane(pubsub.KubernetesDispatcherEventLane),
 				lane.NewBlockingLane(pubsub.FromCentralResolverEventLane),
 				lane.NewBlockingLane(pubsub.EnrichedProcessIndicatorLane),
+				lane.NewBlockingLane(pubsub.UnenrichedProcessIndicatorLane),
 			},
 		))
 		if err != nil {

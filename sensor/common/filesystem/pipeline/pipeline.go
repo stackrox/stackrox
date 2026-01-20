@@ -3,15 +3,14 @@ package pipeline
 import (
 	"context"
 	"fmt"
-	"time"
 
 	sensorAPI "github.com/stackrox/rox/generated/internalapi/sensor"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
-	"github.com/stackrox/rox/pkg/expiringcache"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/protocompat"
+	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/clusterentities"
@@ -31,9 +30,8 @@ type Pipeline struct {
 	activityChan    chan *sensorAPI.FileActivity
 	clusterEntities *clusterentities.Store
 
-	// processCache avoids duplicate enrichment by reusing enriched indicators from the process pipeline.
-	// Key format: "containerID:processSignalID"
-	processCache expiringcache.Cache[string, *storage.ProcessIndicator]
+	bufferedActivity map[string][]*sensorAPI.FileActivity
+	activityMutex    sync.Mutex
 
 	pubSubDispatcher common.PubSubDispatcher
 
@@ -50,13 +48,13 @@ func NewFileSystemPipeline(detector detector.Detector, clusterEntities *clustere
 		pubSubDispatcher: pubSubDispatcher,
 		stopper:          concurrency.NewStopper(),
 		msgCtx:           msgCtx,
+		bufferedActivity: make(map[string][]*sensorAPI.FileActivity),
 	}
 
 	if features.SensorInternalPubSub.Enabled() && pubSubDispatcher != nil {
 		log.Info("File system pipeline using pub/sub mode for process enrichment")
-		p.processCache = expiringcache.NewExpiringCache[string, *storage.ProcessIndicator](5 * time.Minute)
 
-		if err := pubSubDispatcher.RegisterConsumerToLane(pubsub.EnrichedProcessIndicatorTopic, pubsub.EnrichedProcessIndicatorLane, p.cacheEnrichedIndicator); err != nil {
+		if err := pubSubDispatcher.RegisterConsumerToLane(pubsub.EnrichedProcessIndicatorTopic, pubsub.EnrichedProcessIndicatorLane, p.processEnrichedIndicator); err != nil {
 			log.Errorf("Failed to register consumer for enriched process indicators in file system pipeline: %v", err)
 		}
 	} else {
@@ -67,10 +65,9 @@ func NewFileSystemPipeline(detector detector.Detector, clusterEntities *clustere
 	return p
 }
 
-func (p *Pipeline) translate(fs *sensorAPI.FileActivity) *storage.FileAccess {
-
+func (p *Pipeline) translateWithIndicator(fs *sensorAPI.FileActivity, indicator *storage.ProcessIndicator) *storage.FileAccess {
 	access := &storage.FileAccess{
-		Process:   p.getIndicator(fs.GetProcess()),
+		Process:   indicator,
 		Hostname:  fs.GetHostname(),
 		Timestamp: fs.GetTimestamp(),
 	}
@@ -133,11 +130,43 @@ func (p *Pipeline) translate(fs *sensorAPI.FileActivity) *storage.FileAccess {
 	return access
 }
 
+func (p *Pipeline) translate(fs *sensorAPI.FileActivity) *storage.FileAccess {
+	indicator := p.getIndicator(fs.GetProcess())
+	if indicator == nil {
+		p.bufferActivity(fs)
+		return nil
+	}
+
+	return p.translateWithIndicator(fs, indicator)
+}
+
 func cacheKey(containerID, processSignalID string) string {
 	return fmt.Sprintf("%s:%s", containerID, processSignalID)
 }
 
-func (p *Pipeline) cacheEnrichedIndicator(event pubsub.Event) error {
+func (p *Pipeline) bufferActivity(fs *sensorAPI.FileActivity) {
+	process := fs.GetProcess()
+	if process == nil {
+		return
+	}
+
+	key := cacheKey(process.GetContainerId(), process.GetId())
+	p.activityMutex.Lock()
+	defer p.activityMutex.Unlock()
+
+	p.bufferedActivity[key] = append(p.bufferedActivity[key], fs)
+}
+
+func (p *Pipeline) popBufferedActivity(key string) []*sensorAPI.FileActivity {
+	p.activityMutex.Lock()
+	defer p.activityMutex.Unlock()
+
+	buffered := p.bufferedActivity[key]
+	delete(p.bufferedActivity, key)
+	return buffered
+}
+
+func (p *Pipeline) processEnrichedIndicator(event pubsub.Event) error {
 	enrichedEvent, ok := event.(*processsignal.EnrichedProcessIndicatorEvent)
 	if !ok {
 		log.Errorf("File system pipeline received unexpected event type: %T", event)
@@ -150,20 +179,18 @@ func (p *Pipeline) cacheEnrichedIndicator(event pubsub.Event) error {
 	}
 
 	key := cacheKey(indicator.GetSignal().GetContainerId(), indicator.GetSignal().GetId())
-	p.processCache.Add(key, indicator)
+	buffered := p.popBufferedActivity(key)
+	for _, fs := range buffered {
+		access := p.translateWithIndicator(fs, indicator)
+		if access != nil {
+			p.detector.ProcessFileAccess(enrichedEvent.Context, access)
+		}
+	}
 
 	return nil
 }
 
 func (p *Pipeline) getIndicator(process *sensorAPI.ProcessSignal) *storage.ProcessIndicator {
-	if p.processCache != nil && process.GetContainerId() != "" {
-		key := cacheKey(process.GetContainerId(), process.GetId())
-		if cachedIndicator, ok := p.processCache.Get(key); ok {
-			log.Debugf("Using cached enriched indicator for process %s in container %s", process.GetId(), process.GetContainerId())
-			return cachedIndicator
-		}
-	}
-
 	signal := &storage.ProcessSignal{
 		Id:           process.GetId(),
 		Uid:          process.GetUid(),
@@ -195,6 +222,15 @@ func (p *Pipeline) getIndicator(process *sensorAPI.ProcessSignal) *storage.Proce
 	if process.GetContainerId() == "" {
 		// Process is running on the host (not in a container)
 		return pi
+	}
+
+	if features.SensorInternalPubSub.Enabled() && p.pubSubDispatcher != nil {
+		event := processsignal.NewUnenrichedProcessIndicatorEvent(p.msgCtx, pi)
+		if err := p.pubSubDispatcher.Publish(event); err != nil {
+			log.Errorf("Failed to publish unenriched process indicator for file activity: %v", err)
+			return nil
+		}
+		return nil
 	}
 
 	metadata, ok, _ := p.clusterEntities.LookupByContainerID(process.GetContainerId())
@@ -232,7 +268,9 @@ func (p *Pipeline) run() {
 				return
 			}
 			event := p.translate(fs)
-			p.detector.ProcessFileAccess(p.msgCtx, event)
+			if event != nil {
+				p.detector.ProcessFileAccess(p.msgCtx, event)
+			}
 		}
 	}
 }
