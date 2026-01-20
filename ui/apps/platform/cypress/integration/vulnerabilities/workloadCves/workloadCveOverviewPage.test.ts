@@ -240,12 +240,12 @@ describe('Workload CVE overview page tests', () => {
             visitWorkloadCveOverview();
 
             const cvesBySeverityHeader = 'th:contains("CVEs by severity")';
-            const prioritizeByNamespaceButton = 'a:contains("Prioritize by namespace view")';
+            const namespaceViewLink = 'a:contains("Namespace view")';
             const defaultFiltersButton = 'button:contains("Default filters")';
 
             function assertCveElementsArePresent() {
                 cy.get(cvesBySeverityHeader);
-                cy.get(prioritizeByNamespaceButton);
+                cy.get(namespaceViewLink);
                 cy.get(defaultFiltersButton);
                 cy.get(selectors.severityDropdown);
                 cy.get(selectors.fixabilityDropdown);
@@ -253,7 +253,7 @@ describe('Workload CVE overview page tests', () => {
 
             function assertCveElementsAreNotPresent() {
                 cy.get(cvesBySeverityHeader).should('not.be.visible');
-                cy.get(prioritizeByNamespaceButton).should('not.exist');
+                cy.get(namespaceViewLink).should('not.exist');
                 cy.get(defaultFiltersButton).should('not.exist');
                 cy.get(selectors.severityDropdown).should('not.exist');
                 cy.get(selectors.fixabilityDropdown).should('not.exist');

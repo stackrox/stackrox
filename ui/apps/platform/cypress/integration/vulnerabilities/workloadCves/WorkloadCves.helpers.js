@@ -476,7 +476,7 @@ export function interactAndWaitForDeploymentList(callback) {
 export function visitNamespaceView() {
     interactAndWaitForResponses(
         () => {
-            cy.get('a:contains("Prioritize by namespace view")').click();
+            cy.get('a:contains("Namespace view")').click();
         },
         getRouteMatcherMapForGraphQL(['getNamespaceViewNamespaces'])
     );
