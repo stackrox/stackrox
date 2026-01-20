@@ -186,18 +186,13 @@ func (p *VsockIndexReportStream) receiveAndValidateVsockMessage(conn net.Conn) (
 		return nil, errors.Wrapf(err, "parsing vsock message data (vsock CID: %d)", vsockCID)
 	}
 
-	// Validate that IndexReport is present
-	if vsockMsg.GetIndexReport() == nil {
-		return nil, errors.New("vsock message missing required index_report field")
-	}
-
-	metrics.IndexReportsReceived.Inc()
-
 	err = validateReportedVsockCID(vsockMsg, vsockCID)
 	if err != nil {
 		log.Debugf("Error validating reported vsock CID: %v", err)
 		return nil, errors.Wrap(err, "validating reported vsock CID")
 	}
+
+	metrics.IndexReportsReceived.Inc()
 
 	return vsockMsg, nil
 }
@@ -212,7 +207,7 @@ func parseVsockMessage(data []byte) (*v1.VsockMessage, error) {
 }
 
 // validateReportedVsockCID ensures the message's vsock CID matches the connection.
-// Caller must ensure vsockMsg.GetIndexReport() is non-nil before calling this function.
+// It also validates that IndexReport is present.
 func validateReportedVsockCID(vsockMsg *v1.VsockMessage, connVsockCID uint32) error {
 	indexReport := vsockMsg.GetIndexReport()
 	if indexReport == nil {

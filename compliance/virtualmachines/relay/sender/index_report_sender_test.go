@@ -113,3 +113,20 @@ func (s *senderTestSuite) TestReportSender_SendHandlesErrors() {
 	err := sender.Send(s.ctx, relaytest.NewTestVsockMessage("42"))
 	s.Require().Error(err)
 }
+
+func (s *senderTestSuite) TestReportSender_SendMissingIndexReport() {
+	client := relaytest.NewMockSensorClient(s.T())
+	sender := New(client)
+
+	msg := &v1.VsockMessage{
+		DiscoveredData: &v1.DiscoveredData{
+			DetectedOs:        "linux",
+			ActivationStatus:  v1.ActivationStatus_ACTIVATION_STATUS_ACTIVE,
+			DnfMetadataStatus: v1.DnfMetadataStatus_DNF_METADATA_STATUS_AVAILABLE,
+		},
+	}
+
+	err := sender.Send(s.ctx, msg)
+	s.Require().Error(err)
+	s.Require().Empty(client.CapturedRequests())
+}

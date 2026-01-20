@@ -22,6 +22,19 @@ func (s *streamTestSuite) TestParseVsockMessage() {
 	s.Require().Error(err)
 	s.Require().Nil(parsedVsockMessage)
 
+	s.Run("should parse message without discovered data", func() {
+		indexReportOnly := &v1.VsockMessage{
+			IndexReport: &v1.IndexReport{},
+		}
+		marshaledIndexReportOnly, err := proto.Marshal(indexReportOnly)
+		s.Require().NoError(err)
+
+		parsedVsockMessage, err := parseVsockMessage(marshaledIndexReportOnly)
+		s.Require().NoError(err)
+		s.Require().NotNil(parsedVsockMessage)
+		s.Require().Nil(parsedVsockMessage.GetDiscoveredData())
+	})
+
 	validVsockMessage := &v1.VsockMessage{
 		IndexReport: &v1.IndexReport{VsockCid: "42"},
 		DiscoveredData: &v1.DiscoveredData{
@@ -38,6 +51,15 @@ func (s *streamTestSuite) TestParseVsockMessage() {
 }
 
 func (s *streamTestSuite) TestValidateVsockCID() {
+	s.Run("should error when index report is missing", func() {
+		vsockMessage := &v1.VsockMessage{
+			IndexReport: nil,
+		}
+		connVsockCID := uint32(42)
+		err := validateReportedVsockCID(vsockMessage, connVsockCID)
+		s.Require().Error(err)
+	})
+
 	// Reported CID is 42
 	vsockMessage := &v1.VsockMessage{
 		IndexReport: &v1.IndexReport{VsockCid: "42"},
