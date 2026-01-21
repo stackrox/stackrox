@@ -173,7 +173,7 @@ func isChildSchema(childSchema *walker.Schema, parentSchema *walker.Schema) bool
 		return false
 	}
 	for _, child := range parentSchema.Children {
-		if child.Table == childSchema.Table {
+		if child != nil && child.Table == childSchema.Table {
 			return true
 		}
 	}
