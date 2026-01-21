@@ -24,19 +24,19 @@ const (
 type LayerType int32
 
 const (
-	LayerType_LAYER_TYPE_APPLICATION LayerType = 0
-	LayerType_LAYER_TYPE_BASE_IMAGE  LayerType = 1
+	LayerType_APPLICATION LayerType = 0
+	LayerType_BASE_IMAGE  LayerType = 1
 )
 
 // Enum value maps for LayerType.
 var (
 	LayerType_name = map[int32]string{
-		0: "LAYER_TYPE_APPLICATION",
-		1: "LAYER_TYPE_BASE_IMAGE",
+		0: "APPLICATION",
+		1: "BASE_IMAGE",
 	}
 	LayerType_value = map[string]int32{
-		"LAYER_TYPE_APPLICATION": 0,
-		"LAYER_TYPE_BASE_IMAGE":  1,
+		"APPLICATION": 0,
+		"BASE_IMAGE":  1,
 	}
 )
 
@@ -240,7 +240,7 @@ type ImageComponentV2 struct {
 	ImageIdV2     string                           `protobuf:"bytes,14,opt,name=image_id_v2,json=imageIdV2,proto3" json:"image_id_v2,omitempty" sql:"fk(ImageV2:id),index=btree,allow-null"` // @gotags: sql:"fk(ImageV2:id),index=btree,allow-null"
 	// Deprecated: Marked as deprecated in storage/image_component.proto.
 	FromBaseImage bool      `protobuf:"varint,15,opt,name=from_base_image,json=fromBaseImage,proto3" json:"from_base_image,omitempty"`
-	LayerType     LayerType `protobuf:"varint,16,opt,name=layer_type,json=layerType,proto3,enum=storage.LayerType" json:"layer_type,omitempty" search:"Component Layer Type,hidden"` //    @gotags: search:"Component Layer Type,hidden"
+	LayerType     LayerType `protobuf:"varint,16,opt,name=layer_type,json=layerType,proto3,enum=storage.LayerType" json:"layer_type,omitempty" search:"Component Layer Type,hidden"` // @gotags: search:"Component Layer Type,hidden"
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -404,7 +404,7 @@ func (x *ImageComponentV2) GetLayerType() LayerType {
 	if x != nil {
 		return x.LayerType
 	}
-	return LayerType_LAYER_TYPE_APPLICATION
+	return LayerType_APPLICATION
 }
 
 type isImageComponentV2_SetTopCvss interface {
@@ -468,10 +468,11 @@ const file_storage_image_component_proto_rawDesc = "" +
 	"\n" +
 	"layer_type\x18\x10 \x01(\x0e2\x12.storage.LayerTypeR\tlayerTypeB\x0e\n" +
 	"\fset_top_cvssB\x11\n" +
-	"\x0fhas_layer_index*B\n" +
-	"\tLayerType\x12\x1a\n" +
-	"\x16LAYER_TYPE_APPLICATION\x10\x00\x12\x19\n" +
-	"\x15LAYER_TYPE_BASE_IMAGE\x10\x01B.\n" +
+	"\x0fhas_layer_index*,\n" +
+	"\tLayerType\x12\x0f\n" +
+	"\vAPPLICATION\x10\x00\x12\x0e\n" +
+	"\n" +
+	"BASE_IMAGE\x10\x01B.\n" +
 	"\x19io.stackrox.proto.storageZ\x11./storage;storageb\x06proto3"
 
 var (

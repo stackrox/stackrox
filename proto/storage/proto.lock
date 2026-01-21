@@ -9526,10 +9526,10 @@
             "name": "LayerType",
             "enum_fields": [
               {
-                "name": "LAYER_TYPE_APPLICATION"
+                "name": "APPLICATION"
               },
               {
-                "name": "LAYER_TYPE_BASE_IMAGE",
+                "name": "BASE_IMAGE",
                 "integer": 1
               }
             ]

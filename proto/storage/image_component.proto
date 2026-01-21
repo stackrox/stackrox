@@ -53,10 +53,10 @@ message ImageComponentV2 {
   string image_id_v2 = 14; // @gotags: sql:"fk(ImageV2:id),index=btree,allow-null"
   bool from_base_image = 15 [deprecated = true];
 
-  LayerType  layer_type = 16; //    @gotags: search:"Component Layer Type,hidden"
+  LayerType layer_type = 16; // @gotags: search:"Component Layer Type,hidden"
 }
 
 enum LayerType {
-  LAYER_TYPE_APPLICATION = 0;
-  LAYER_TYPE_BASE_IMAGE = 1;
+  APPLICATION = 0;
+  BASE_IMAGE = 1;
 }
