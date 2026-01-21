@@ -122,42 +122,6 @@ func TestCreatePermissionSet(t *testing.T) {
 	}
 }
 
-func computePermissionSetIDV1(permissions map[string]v1.Access) string {
-	resources := make([]string, 0, len(permissions))
-	for res := range permissions {
-		resources = append(resources, res)
-	}
-	slices.Sort(resources)
-	individualPermissions := make([]string, 0, len(resources))
-	for _, resource := range resources {
-		access := permissions[resource]
-		individualPermissions = append(
-			individualPermissions,
-			fmt.Sprintf("%s%s%s", resource, keyValueSeparator, access.String()),
-		)
-	}
-	permissionString := strings.Join(individualPermissions, primaryListSeparator)
-	return declarativeconfig.NewDeclarativePermissionSetUUID(permissionString).String()
-}
-
-func testPermissionSet(permissions map[string]v1.Access) *storage.PermissionSet {
-	resources := make([]string, 0, len(permissions))
-	for res := range permissions {
-		resources = append(resources, res)
-	}
-	permissionSetID := computePermissionSetIDV1(permissions)
-	permissionSet := &storage.PermissionSet{
-		Id:               permissionSetID,
-		Name:             fmt.Sprintf(permissionSetNameFormat, permissionSetID),
-		ResourceToAccess: make(map[string]storage.Access),
-		Traits:           generatedObjectTraits.CloneVT(),
-	}
-	for _, resource := range resources {
-		permissionSet.ResourceToAccess[resource] = convertAccess(permissions[resource])
-	}
-	return permissionSet
-}
-
 func TestCreateAccessScope(t *testing.T) {
 	targetCluster1 := "cluster 1"
 	targetCluster2 := "cluster 2"
@@ -323,15 +287,10 @@ func TestCreateAccessScope(t *testing.T) {
 			mockClusterStore := clusterDataStoreMocks.NewMockDataStore(mockCtrl)
 			mockRoleStore := roleDataStoreMocks.NewMockDataStore(mockCtrl)
 			roleMgr := &roleManager{
-				roleStore: mockRoleStore,
+				clusterStore: mockClusterStore,
+				roleStore:    mockRoleStore,
 			}
-			for _, clusterScope := range tc.input.GetClusterScopes() {
-				clusterIdName := clusterScope.GetClusterId()
-				mockClusterStore.EXPECT().
-					GetClusterName(gomock.Any(), clusterIdName).
-					Times(1).
-					Return(clusterIdName, nil)
-			}
+			setClusterStoreExpectations(tc.input, mockClusterStore)
 			mockRoleStore.EXPECT().
 				UpsertAccessScope(gomock.Any(), protomock.GoMockMatcherEqualMessage(tc.expectedAccessScope)).
 				Times(1).
@@ -348,56 +307,58 @@ func TestCreateAccessScope(t *testing.T) {
 			}
 		})
 	}
-}
-
-func computeAccessScopeID(targetScopes []*v1.ClusterScope) string {
-	clusterScopes := make([]string, 0, len(targetScopes))
-	for _, targetScope := range targetScopes {
-		var namespaceScope string
-		if targetScope.GetFullClusterAccess() {
-			namespaceScope = clusterWildCard
-		} else {
-			namespaceScope = strings.Join(targetScope.GetNamespaces(), secondaryListSeparator)
+	t.Run("Cluster name lookup errors are propagated", func(it *testing.T) {
+		ctx := sac.WithAllAccess(it.Context())
+		mockCtrl := gomock.NewController(it)
+		mockClusterStore := clusterDataStoreMocks.NewMockDataStore(mockCtrl)
+		mockRoleStore := roleDataStoreMocks.NewMockDataStore(mockCtrl)
+		roleMgr := &roleManager{
+			clusterStore: mockClusterStore,
+			roleStore:    mockRoleStore,
 		}
-		clusterScopes = append(
-			clusterScopes,
-			fmt.Sprintf("%s%s%s", targetScope.GetClusterId(), keyValueSeparator, namespaceScope),
-		)
-	}
-	accessScopeString := strings.Join(clusterScopes, primaryListSeparator)
-	return declarativeconfig.NewDeclarativeAccessScopeUUID(accessScopeString).String()
-}
-
-func testAccessScope(targetScopes []*v1.ClusterScope) *storage.SimpleAccessScope {
-	accessScopeID := computeAccessScopeID(targetScopes)
-	accessScope := &storage.SimpleAccessScope{
-		Id:   accessScopeID,
-		Name: fmt.Sprintf(accessScopeNameFormat, accessScopeID),
-		Rules: &storage.SimpleAccessScope_Rules{
-			IncludedClusters:   make([]string, 0),
-			IncludedNamespaces: make([]*storage.SimpleAccessScope_Rules_Namespace, 0),
-		},
-		Traits: generatedObjectTraits.CloneVT(),
-	}
-	for _, targetScope := range targetScopes {
-		if targetScope.GetFullClusterAccess() {
-			accessScope.Rules.IncludedClusters = append(
-				accessScope.Rules.IncludedClusters,
-				targetScope.GetClusterId(),
-			)
-		} else {
-			for _, namespace := range targetScope.GetNamespaces() {
-				accessScope.Rules.IncludedNamespaces = append(
-					accessScope.Rules.IncludedNamespaces,
-					&storage.SimpleAccessScope_Rules_Namespace{
-						ClusterName:   targetScope.GetClusterId(),
-						NamespaceName: namespace,
-					},
-				)
-			}
+		input := &v1.GenerateTokenForPermissionsAndScopeRequest{
+			ClusterScopes: []*v1.ClusterScope{requestFullCluster},
 		}
-	}
-	return accessScope
+		mockClusterStore.EXPECT().
+			GetClusterName(gomock.Any(), requestFullCluster.GetClusterId()).
+			Times(1).
+			Return("", false, errDummy)
+
+		accessScopeId, err := roleMgr.createAccessScope(ctx, input)
+		assert.Empty(it, accessScopeId)
+		assert.ErrorIs(it, err, errDummy)
+	})
+	t.Run("Cluster name lookup misses are excluded from resulting scope", func(it *testing.T) {
+		ctx := sac.WithAllAccess(it.Context())
+		mockCtrl := gomock.NewController(it)
+		mockClusterStore := clusterDataStoreMocks.NewMockDataStore(mockCtrl)
+		mockRoleStore := roleDataStoreMocks.NewMockDataStore(mockCtrl)
+		roleMgr := &roleManager{
+			clusterStore: mockClusterStore,
+			roleStore:    mockRoleStore,
+		}
+		input := &v1.GenerateTokenForPermissionsAndScopeRequest{
+			ClusterScopes: []*v1.ClusterScope{requestFullCluster, requestSingleNamespace},
+		}
+
+		expectedAccessScope := testAccessScope([]*v1.ClusterScope{requestSingleNamespace})
+		mockClusterStore.EXPECT().
+			GetClusterName(gomock.Any(), requestFullCluster.GetClusterId()).
+			Times(1).
+			Return("", false, nil)
+		mockClusterStore.EXPECT().
+			GetClusterName(gomock.Any(), requestSingleNamespace.GetClusterId()).
+			Times(1).
+			Return(requestSingleNamespace.GetClusterId(), true, nil)
+		mockRoleStore.EXPECT().
+			UpsertAccessScope(gomock.Any(), protomock.GoMockMatcherEqualMessage(expectedAccessScope)).
+			Times(1).
+			Return(nil)
+
+		accessScopeId, err := roleMgr.createAccessScope(ctx, input)
+		assert.Equal(it, expectedAccessScope.GetId(), accessScopeId)
+		assert.ErrorIs(it, err, errDummy)
+	})
 }
 
 func TestCreateRole(t *testing.T) {
@@ -482,10 +443,13 @@ func TestCreateRole(t *testing.T) {
 		t.Run(name, func(it *testing.T) {
 			ctx := sac.WithAllAccess(it.Context())
 			mockCtrl := gomock.NewController(it)
+			mockClusterStore := clusterDataStoreMocks.NewMockDataStore(mockCtrl)
 			mockRoleStore := roleDataStoreMocks.NewMockDataStore(mockCtrl)
 			roleMgr := &roleManager{
-				roleStore: mockRoleStore,
+				clusterStore: mockClusterStore,
+				roleStore:    mockRoleStore,
 			}
+			setClusterStoreExpectations(tc.input, mockClusterStore)
 			setNormalRoleStoreExpectations(
 				tc.expectedPermissionSet,
 				tc.expectedAccessScope,
@@ -509,9 +473,11 @@ func TestCreateRole(t *testing.T) {
 	t.Run("access scope creation failure", func(it *testing.T) {
 		ctx := sac.WithAllAccess(it.Context())
 		mockCtrl := gomock.NewController(it)
+		mockClusterStore := clusterDataStoreMocks.NewMockDataStore(mockCtrl)
 		mockRoleStore := roleDataStoreMocks.NewMockDataStore(mockCtrl)
 		roleMgr := &roleManager{
-			roleStore: mockRoleStore,
+			clusterStore: mockClusterStore,
+			roleStore:    mockRoleStore,
 		}
 		expectedPermissionSet := testPermissionSet(deploymentPermission)
 		expectedAccessScope := testAccessScope([]*v1.ClusterScope{requestSingleNamespace})
@@ -529,6 +495,8 @@ func TestCreateRole(t *testing.T) {
 			Permissions:   deploymentPermission,
 			ClusterScopes: []*v1.ClusterScope{requestSingleNamespace},
 		}
+
+		setClusterStoreExpectations(input, mockClusterStore)
 
 		roleName, err := roleMgr.createRole(ctx, input)
 
@@ -562,14 +530,129 @@ func TestCreateRole(t *testing.T) {
 	})
 }
 
+func TestConvertAccess(t *testing.T) {
+	for name, tc := range map[string]struct {
+		in  v1.Access
+		out storage.Access
+	}{
+		v1.Access_NO_ACCESS.String(): {
+			in:  v1.Access_NO_ACCESS,
+			out: storage.Access_NO_ACCESS,
+		},
+		v1.Access_READ_ACCESS.String(): {
+			in:  v1.Access_READ_ACCESS,
+			out: storage.Access_READ_ACCESS,
+		},
+		v1.Access_READ_WRITE_ACCESS.String(): {
+			in:  v1.Access_READ_WRITE_ACCESS,
+			out: storage.Access_READ_WRITE_ACCESS,
+		},
+		"Out of range -> default no access": {
+			in:  v1.Access(-1),
+			out: storage.Access_NO_ACCESS,
+		},
+	} {
+		t.Run(name, func(it *testing.T) {
+			converted := convertAccess(tc.in)
+			assert.Equal(it, tc.out, converted)
+		})
+	}
+}
+
+func computePermissionSetID(permissions map[string]v1.Access) string {
+	resources := make([]string, 0, len(permissions))
+	for res := range permissions {
+		resources = append(resources, res)
+	}
+	slices.Sort(resources)
+	individualPermissions := make([]string, 0, len(resources))
+	for _, resource := range resources {
+		access := permissions[resource]
+		individualPermissions = append(
+			individualPermissions,
+			fmt.Sprintf("%s%s%s", resource, keyValueSeparator, access.String()),
+		)
+	}
+	permissionString := strings.Join(individualPermissions, primaryListSeparator)
+	return declarativeconfig.NewDeclarativePermissionSetUUID(permissionString).String()
+}
+
+func computeAccessScopeID(targetScopes []*v1.ClusterScope) string {
+	clusterScopes := make([]string, 0, len(targetScopes))
+	for _, targetScope := range targetScopes {
+		var namespaceScope string
+		if targetScope.GetFullClusterAccess() {
+			namespaceScope = clusterWildCard
+		} else {
+			namespaceScope = strings.Join(targetScope.GetNamespaces(), secondaryListSeparator)
+		}
+		clusterScopes = append(
+			clusterScopes,
+			fmt.Sprintf("%s%s%s", targetScope.GetClusterId(), keyValueSeparator, namespaceScope),
+		)
+	}
+	accessScopeString := strings.Join(clusterScopes, primaryListSeparator)
+	return declarativeconfig.NewDeclarativeAccessScopeUUID(accessScopeString).String()
+}
+
 func computeRoleName(permissions map[string]v1.Access, targetScopes []*v1.ClusterScope) string {
-	permissionSetID := computePermissionSetIDV1(permissions)
+	permissionSetID := computePermissionSetID(permissions)
 	accessScopeID := computeAccessScopeID(targetScopes)
 	return fmt.Sprintf(roleNameFormat, permissionSetID, accessScopeID)
 }
 
+func testPermissionSet(permissions map[string]v1.Access) *storage.PermissionSet {
+	resources := make([]string, 0, len(permissions))
+	for res := range permissions {
+		resources = append(resources, res)
+	}
+	permissionSetID := computePermissionSetID(permissions)
+	permissionSet := &storage.PermissionSet{
+		Id:               permissionSetID,
+		Name:             fmt.Sprintf(permissionSetNameFormat, permissionSetID),
+		ResourceToAccess: make(map[string]storage.Access),
+		Traits:           generatedObjectTraits.CloneVT(),
+	}
+	for _, resource := range resources {
+		permissionSet.ResourceToAccess[resource] = convertAccess(permissions[resource])
+	}
+	return permissionSet
+}
+
+func testAccessScope(targetScopes []*v1.ClusterScope) *storage.SimpleAccessScope {
+	accessScopeID := computeAccessScopeID(targetScopes)
+	accessScope := &storage.SimpleAccessScope{
+		Id:   accessScopeID,
+		Name: fmt.Sprintf(accessScopeNameFormat, accessScopeID),
+		Rules: &storage.SimpleAccessScope_Rules{
+			IncludedClusters:   make([]string, 0),
+			IncludedNamespaces: make([]*storage.SimpleAccessScope_Rules_Namespace, 0),
+		},
+		Traits: generatedObjectTraits.CloneVT(),
+	}
+	for _, targetScope := range targetScopes {
+		if targetScope.GetFullClusterAccess() {
+			accessScope.Rules.IncludedClusters = append(
+				accessScope.Rules.IncludedClusters,
+				targetScope.GetClusterId(),
+			)
+		} else {
+			for _, namespace := range targetScope.GetNamespaces() {
+				accessScope.Rules.IncludedNamespaces = append(
+					accessScope.Rules.IncludedNamespaces,
+					&storage.SimpleAccessScope_Rules_Namespace{
+						ClusterName:   targetScope.GetClusterId(),
+						NamespaceName: namespace,
+					},
+				)
+			}
+		}
+	}
+	return accessScope
+}
+
 func testRole(permissions map[string]v1.Access, targetScopes []*v1.ClusterScope) *storage.Role {
-	permissionSetID := computePermissionSetIDV1(permissions)
+	permissionSetID := computePermissionSetID(permissions)
 	accessScopeID := computeAccessScopeID(targetScopes)
 	role := &storage.Role{
 		Name:            computeRoleName(permissions, targetScopes),
@@ -579,6 +662,20 @@ func testRole(permissions map[string]v1.Access, targetScopes []*v1.ClusterScope)
 		Traits:          generatedObjectTraits.CloneVT(),
 	}
 	return role
+}
+
+func setClusterStoreExpectations(
+	input *v1.GenerateTokenForPermissionsAndScopeRequest,
+	mockClusterStore *clusterDataStoreMocks.MockDataStore,
+) {
+	for _, clusterScope := range input.GetClusterScopes() {
+		clusterIdName := clusterScope.GetClusterId()
+		fmt.Println("Expecting cluster name lookup for ID", clusterIdName)
+		mockClusterStore.EXPECT().
+			GetClusterName(gomock.Any(), clusterIdName).
+			Times(1).
+			Return(clusterIdName, true, nil)
+	}
 }
 
 func setNormalRoleStoreExpectations(

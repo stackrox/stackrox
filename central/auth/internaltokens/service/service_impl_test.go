@@ -6,6 +6,8 @@ import (
 	"testing"
 	"time"
 
+	clusterDataStore "github.com/stackrox/rox/central/cluster/datastore"
+	clusterDataStoreMocks "github.com/stackrox/rox/central/cluster/datastore/mocks"
 	roleDataStore "github.com/stackrox/rox/central/role/datastore"
 	roleDataStoreMocks "github.com/stackrox/rox/central/role/datastore/mocks"
 	v1 "github.com/stackrox/rox/generated/internalapi/central/v1"
@@ -92,7 +94,7 @@ func TestGenerateTokenForPermissionsAndScope(t *testing.T) {
 		"Deployment": v1.Access_READ_ACCESS,
 	}
 	requestSingleNamespace := &v1.ClusterScope{
-		ClusterName:       "cluster 1",
+		ClusterId:         "cluster 1",
 		FullClusterAccess: false,
 		Namespaces:        []string{"namespace A"},
 	}
@@ -105,11 +107,18 @@ func TestGenerateTokenForPermissionsAndScope(t *testing.T) {
 		[]*v1.ClusterScope{requestSingleNamespace},
 	)
 
-	createService := func(issuer tokens.Issuer, roleStore roleDataStore.DataStore) *serviceImpl {
+	createService := func(
+		issuer tokens.Issuer,
+		clusterStore clusterDataStore.DataStore,
+		roleStore roleDataStore.DataStore,
+	) *serviceImpl {
 		return &serviceImpl{
-			issuer:      issuer,
-			roleManager: &roleManager{roleStore: roleStore},
-			now:         testClock,
+			issuer: issuer,
+			roleManager: &roleManager{
+				clusterStore: clusterStore,
+				roleStore:    roleStore,
+			},
+			now: testClock,
 		}
 	}
 
@@ -121,8 +130,10 @@ func TestGenerateTokenForPermissionsAndScope(t *testing.T) {
 		}
 
 		mockCtrl := gomock.NewController(it)
+		mockClusterStore := clusterDataStoreMocks.NewMockDataStore(mockCtrl)
 		mockRoleStore := roleDataStoreMocks.NewMockDataStore(mockCtrl)
-		svc := createService(nil, mockRoleStore)
+		svc := createService(nil, mockClusterStore, mockRoleStore)
+		setClusterStoreExpectations(input, mockClusterStore)
 		setNormalRoleStoreExpectations(deploymentPS, singleNSScope, expectedRole, nil, mockRoleStore)
 
 		rsp, err := svc.GenerateTokenForPermissionsAndScope(t.Context(), input)
@@ -137,8 +148,9 @@ func TestGenerateTokenForPermissionsAndScope(t *testing.T) {
 		}
 
 		mockCtrl := gomock.NewController(it)
+		mockClusterStore := clusterDataStoreMocks.NewMockDataStore(mockCtrl)
 		mockRoleStore := roleDataStoreMocks.NewMockDataStore(mockCtrl)
-		svc := createService(nil, mockRoleStore)
+		svc := createService(nil, mockClusterStore, mockRoleStore)
 		mockRoleStore.EXPECT().
 			UpsertPermissionSet(
 				gomock.Any(),
@@ -157,9 +169,11 @@ func TestGenerateTokenForPermissionsAndScope(t *testing.T) {
 		}
 
 		mockCtrl := gomock.NewController(it)
+		mockClusterStore := clusterDataStoreMocks.NewMockDataStore(mockCtrl)
 		mockRoleStore := roleDataStoreMocks.NewMockDataStore(mockCtrl)
 		mockIssuer := tokensMocks.NewMockIssuer(mockCtrl)
-		svc := createService(mockIssuer, mockRoleStore)
+		svc := createService(mockIssuer, mockClusterStore, mockRoleStore)
+		setClusterStoreExpectations(input, mockClusterStore)
 		setNormalRoleStoreExpectations(deploymentPS, singleNSScope, expectedRole, nil, mockRoleStore)
 		expectedClaims := tokens.RoxClaims{
 			RoleNames: []string{expectedRole.GetName()},
@@ -185,9 +199,11 @@ func TestGenerateTokenForPermissionsAndScope(t *testing.T) {
 		}
 
 		mockCtrl := gomock.NewController(it)
+		mockClusterStore := clusterDataStoreMocks.NewMockDataStore(mockCtrl)
 		mockRoleStore := roleDataStoreMocks.NewMockDataStore(mockCtrl)
 		mockIssuer := tokensMocks.NewMockIssuer(mockCtrl)
-		svc := createService(mockIssuer, mockRoleStore)
+		svc := createService(mockIssuer, mockClusterStore, mockRoleStore)
+		setClusterStoreExpectations(input, mockClusterStore)
 		setNormalRoleStoreExpectations(deploymentPS, singleNSScope, expectedRole, nil, mockRoleStore)
 		expectedClaims := tokens.RoxClaims{
 			RoleNames: []string{expectedRole.GetName()},

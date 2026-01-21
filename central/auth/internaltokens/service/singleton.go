@@ -28,7 +28,7 @@ var (
 func Singleton() Service {
 	once.Do(func() {
 		s = &serviceImpl{
-			issuer: getTokenIssuer(),
+			issuer: getTokenIssuer(jwt.IssuerFactorySingleton()),
 			roleManager: &roleManager{
 				clusterStore: clusterStore.Singleton(),
 				roleStore:    roleStore.Singleton(),
@@ -48,8 +48,8 @@ func getTokenSource() tokens.Source {
 	)
 }
 
-func getTokenIssuer() tokens.Issuer {
-	issuer, err := jwt.IssuerFactorySingleton().CreateIssuer(getTokenSource())
+func getTokenIssuer(issuerFactory tokens.IssuerFactory) tokens.Issuer {
+	issuer, err := issuerFactory.CreateIssuer(getTokenSource())
 	utils.Must(err)
 	return issuer
 }

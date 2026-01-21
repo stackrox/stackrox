@@ -102,8 +102,10 @@ func (rm *roleManager) createAccessScope(
 	fullAccessClusters := make([]string, 0)
 	clusterNamespaces := make([]*storage.SimpleAccessScope_Rules_Namespace, 0)
 	for ix, clusterScope := range req.GetClusterScopes() {
-		clusterID := clusterScope.GetClusterID()
+		clusterID := clusterScope.GetClusterId()
+		fmt.Println("Looking up cluster name for ID", clusterID)
 		clusterName, found, err := rm.clusterStore.GetClusterName(ctx, clusterID)
+		fmt.Println("Got name", clusterName)
 		if err != nil {
 			return "", errors.Wrap(err, "retrieving cluster name")
 		}
