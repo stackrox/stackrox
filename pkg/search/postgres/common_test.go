@@ -742,9 +742,11 @@ func TestSelectQueries(t *testing.T) {
 			if c.ctx == nil {
 				ctx = sac.WithAllAccess(context.Background())
 			}
+
+			sacCtx := sac.WithAllAccess(ctx)
 			testSchema := c.schema
 			// No type info in test, so arrayFields is nil
-			actualQ, err := standardizeSelectQueryAndPopulatePath(ctx, c.q, testSchema, SELECT, nil)
+			actualQ, err := standardizeSelectQueryAndPopulatePath(sacCtx, c.q, testSchema, SELECT, nil)
 			if c.expectedError != "" {
 				assert.Error(t, err, c.expectedError)
 				return
