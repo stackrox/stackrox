@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"dario.cat/mergo"
 	"github.com/go-logr/logr"
 	consolev1 "github.com/openshift/api/console/v1"
 	"github.com/operator-framework/helm-operator-plugins/pkg/extensions"
@@ -92,8 +93,9 @@ func createOrUpdateConsolePlugin(ctx context.Context, sc *platform.SecuredCluste
 	}
 
 	result, err := controllerutil.CreateOrUpdate(ctx, client, plugin, func() error {
-		// All fields with defaults values are explicitly set in buildConsolePlugin.
-		plugin.Spec = desired.Spec
+		if err := mergo.Merge(&plugin.Spec, desired.Spec, mergo.WithOverride); err != nil {
+			return fmt.Errorf("merging ConsolePlugin spec: %w", err)
+		}
 
 		if plugin.Labels == nil {
 			plugin.Labels = make(map[string]string)
@@ -148,7 +150,6 @@ func buildConsolePlugin(sc *platform.SecuredCluster) *consolev1.ConsolePlugin {
 					},
 				},
 			},
-			I18n: consolev1.ConsolePluginI18n{LoadType: consolev1.Empty},
 		},
 	}
 }

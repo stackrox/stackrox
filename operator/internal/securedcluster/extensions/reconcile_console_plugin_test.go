@@ -10,6 +10,7 @@ import (
 	platform "github.com/stackrox/rox/operator/api/v1alpha1"
 	"github.com/stackrox/rox/operator/internal/utils/testutils"
 	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/labels"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"k8s.io/apimachinery/pkg/api/meta"
@@ -109,6 +110,10 @@ func TestReconcileConsolePlugin_UpdateExisting(t *testing.T) {
 	assert.Equal(t, consolePluginDisplayName, plugin.Spec.DisplayName)
 	assert.Equal(t, sensorProxyServiceName, plugin.Spec.Backend.Service.Name)
 	assert.Equal(t, testutils.TestNamespace, plugin.Spec.Backend.Service.Namespace)
+
+	assert.Equal(t, consolePluginName, plugin.Labels["app.kubernetes.io/name"])
+	assert.Equal(t, "stackrox-secured-cluster-services", plugin.Labels["app.kubernetes.io/part-of"])
+	assert.Equal(t, labels.ManagedByOperator, plugin.Labels[labels.ManagedByLabelKey])
 }
 
 func TestReconcileConsolePlugin_Deletion(t *testing.T) {
