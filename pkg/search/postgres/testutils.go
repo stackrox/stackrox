@@ -11,7 +11,8 @@ import (
 
 // AssertSQLQueryString a utility function for test purpose.
 func AssertSQLQueryString(t testing.TB, q *v1.Query, schema *walker.Schema, expected string) {
-	actual, err := standardizeSelectQueryAndPopulatePath(context.Background(), q, schema, SELECT)
+	// No type info in test utility, so arrayFields is nil
+	actual, err := standardizeSelectQueryAndPopulatePath(context.Background(), q, schema, SELECT, nil)
 	assert.NoError(t, err)
 	assert.Equal(t, expected, actual.AsSQL())
 }
