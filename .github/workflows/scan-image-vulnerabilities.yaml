@@ -59,6 +59,7 @@ jobs:
           [
             "central-db",
             "collector",
+            "fact",
             "main",
             "roxctl",
             "scanner",
@@ -114,6 +115,7 @@ jobs:
           [
             "release-central-db",
             "release-collector",
+            "fact",
             "release-main",
             "release-roxctl",
             "release-scanner",
