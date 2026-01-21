@@ -23,7 +23,7 @@ import (
 	apiTokenService "github.com/stackrox/rox/central/apitoken/service"
 	"github.com/stackrox/rox/central/audit"
 	authDS "github.com/stackrox/rox/central/auth/datastore"
-	ocpPluginAuthService "github.com/stackrox/rox/central/auth/ocpplugin/service"
+	internalTokenAuthService "github.com/stackrox/rox/central/auth/internaltokens/service"
 	authService "github.com/stackrox/rox/central/auth/service"
 	"github.com/stackrox/rox/central/auth/userpass"
 	authProviderRegistry "github.com/stackrox/rox/central/authprovider/registry"
@@ -434,6 +434,7 @@ func servicesToRegister() []pkgGRPC.APIService {
 		iiService.Singleton(),
 		imageService.Singleton(),
 		integrationHealthService.Singleton(),
+		internalTokenAuthService.Singleton(),
 		metadataService.New(),
 		mitreService.Singleton(),
 		namespaceService.Singleton(),
@@ -443,7 +444,6 @@ func servicesToRegister() []pkgGRPC.APIService {
 		nodeCVEService.Singleton(),
 		nodeService.Singleton(),
 		notifierService.Singleton(),
-		ocpPluginAuthService.Singleton(),
 		pingService.Singleton(),
 		podService.Singleton(),
 		policyCategoryService.Singleton(),
