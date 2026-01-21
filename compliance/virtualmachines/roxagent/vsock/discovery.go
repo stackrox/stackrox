@@ -91,7 +91,7 @@ func DiscoverVMData() *DiscoveredData {
 func discoverOSAndVersionWithPath(path string) (v1.DetectedOS, string, error) {
 	file, err := os.Open(path)
 	if err != nil {
-		discoveryLog.Warnf("Unsupported OS detected: missing %s", path)
+		logPathError(path, err)
 		return v1.DetectedOS_UNKNOWN, "", fmt.Errorf("opening %s: %w", path, err)
 	}
 	defer func() {
@@ -147,7 +147,7 @@ func discoverOSAndVersionWithPath(path string) (v1.DetectedOS, string, error) {
 func discoverActivationStatusWithPath(path string) (v1.ActivationStatus, error) {
 	entries, err := os.ReadDir(path)
 	if err != nil {
-		discoveryLog.Warnf("Unsupported OS detected: missing %s", path)
+		logPathError(path, err)
 		return v1.ActivationStatus_ACTIVATION_UNSPECIFIED, fmt.Errorf("reading %s: %w", path, err)
 	}
 
@@ -190,7 +190,7 @@ func discoverDnfMetadataStatusWithPaths(reposDirPath, cacheDirPath string) (v1.D
 	// Check for repo files in /etc/yum.repos.d
 	repoEntries, err := os.ReadDir(reposDirPath)
 	if err != nil {
-		discoveryLog.Warnf("Unsupported OS detected: missing %s", reposDirPath)
+		logPathError(reposDirPath, err)
 		return v1.DnfMetadataStatus_DNF_METADATA_UNSPECIFIED, fmt.Errorf("reading %s: %w", reposDirPath, err)
 	}
 
@@ -209,7 +209,7 @@ func discoverDnfMetadataStatusWithPaths(reposDirPath, cacheDirPath string) (v1.D
 	// Check for repo directories in /var/cache/dnf
 	cacheEntries, err := os.ReadDir(cacheDirPath)
 	if err != nil {
-		discoveryLog.Warnf("Unsupported OS detected: missing %s", cacheDirPath)
+		logPathError(cacheDirPath, err)
 		return v1.DnfMetadataStatus_DNF_METADATA_UNSPECIFIED, fmt.Errorf("reading %s: %w", cacheDirPath, err)
 	}
 
@@ -228,4 +228,12 @@ func discoverDnfMetadataStatusWithPaths(reposDirPath, cacheDirPath string) (v1.D
 		return v1.DnfMetadataStatus_AVAILABLE, nil
 	}
 	return v1.DnfMetadataStatus_UNAVAILABLE, nil
+}
+
+func logPathError(path string, err error) {
+	if os.IsNotExist(err) {
+		discoveryLog.Warnf("Unsupported OS detected: missing %s", path)
+		return
+	}
+	discoveryLog.Warnf("Failed to read %s: %v", path, err)
 }

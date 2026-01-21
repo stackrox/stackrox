@@ -54,6 +54,12 @@ VERSION_ID="12"`,
 			expectedVersion: "12",
 		},
 		{
+			name:            "Unknown OS with version only",
+			osRelease:       `VERSION_ID="10"`,
+			expectedOS:      v1.DetectedOS_UNKNOWN,
+			expectedVersion: "10",
+		},
+		{
 			name:            "Missing VERSION_ID",
 			osRelease:       `ID="rhel"`,
 			expectedOS:      v1.DetectedOS_RHEL,
@@ -93,7 +99,6 @@ func TestDiscoverActivationStatus(t *testing.T) {
 		name           string
 		files          []string
 		expectedStatus v1.ActivationStatus
-		expectError    bool
 	}{
 		{
 			name: "Activated - single pair",
@@ -160,12 +165,8 @@ func TestDiscoverActivationStatus(t *testing.T) {
 			}
 
 			activationStatus, err := discoverActivationStatusWithPath(tmpDir)
-			if tt.expectError {
-				assert.Error(t, err)
-			} else {
-				assert.NoError(t, err)
-				assert.Equal(t, tt.expectedStatus, activationStatus)
-			}
+			assert.NoError(t, err)
+			assert.Equal(t, tt.expectedStatus, activationStatus)
 		})
 	}
 }
@@ -185,7 +186,6 @@ func TestDiscoverDnfMetadataStatus(t *testing.T) {
 		repoFiles      []string
 		cacheDirs      []string
 		expectedStatus v1.DnfMetadataStatus
-		expectError    bool
 	}{
 		{
 			name:           "Available - repo file and cache dir",
@@ -250,12 +250,8 @@ func TestDiscoverDnfMetadataStatus(t *testing.T) {
 			}
 
 			dnfStatus, err := discoverDnfMetadataStatusWithPaths(reposDir, cacheDir)
-			if tt.expectError {
-				assert.Error(t, err)
-			} else {
-				assert.NoError(t, err)
-				assert.Equal(t, tt.expectedStatus, dnfStatus)
-			}
+			assert.NoError(t, err)
+			assert.Equal(t, tt.expectedStatus, dnfStatus)
 		})
 	}
 }
