@@ -64,13 +64,13 @@ func TestHandleBackoffOnConnectionStop(t *testing.T) {
 			_ = exponential.NextBackOff()
 			interval2 := exponential.NextBackOff()
 
-			// Create syncCompleted signal
-			syncCompleted := concurrency.NewSignal()
+			// Create syncDone signal
+			syncDone := concurrency.NewSignal()
 			if tt.syncDone {
-				syncCompleted.Signal()
+				syncDone.Signal()
 			}
 
-			wasReset := handleBackoffOnConnectionStop(exponential, &syncCompleted, tt.err)
+			wasReset := handleBackoffOnConnectionStop(exponential, &syncDone, tt.err)
 
 			assert.Equal(t, tt.expectReset, wasReset)
 

@@ -403,10 +403,10 @@ func (s *Sensor) notifyAllOnSignal(signal *concurrency.Signal, centralCommunicat
 }
 
 // handleBackoffOnConnectionStop resets backoff if initial sync completed, otherwise preserves it.
-func handleBackoffOnConnectionStop(exponential *backoff.ExponentialBackOff, syncCompleted *concurrency.Signal, err error) bool {
+func handleBackoffOnConnectionStop(exponential *backoff.ExponentialBackOff, syncDone *concurrency.Signal, err error) bool {
 	// Check if sync completed
 	select {
-	case <-syncCompleted.Done():
+	case <-syncDone.Done():
 		// Sync completed successfully - connection is considered stable, reset backoff
 		exponential.Reset()
 		log.Info("Initial sync completed successfully, resetting exponential backoff")
@@ -481,7 +481,6 @@ func (s *Sensor) communicationWithCentralWithRetries(centralReachable *concurren
 		// suddenly broke.
 		centralCommunication := NewCentralCommunication(s.clusterID, s.reconnect.Load(), s.reconcile.Load(), s.components...)
 		syncDone := concurrency.NewSignal()
-		syncCompleted := concurrency.NewSignal()
 		concurrency.WithLock(s.centralCommunicationLock, func() {
 			s.centralCommunication = centralCommunication
 		})
@@ -489,23 +488,15 @@ func (s *Sensor) communicationWithCentralWithRetries(centralReachable *concurren
 		go s.notifySyncDone(&syncDone, centralCommunication)
 
 		// Track when initial sync (handshake + data exchange) completes successfully.
-		// We only reset backoff after sync completes.
-		// This prevents rapid retries when initial sync (config, policy, deduper state) fails.
+		// We only reset backoff after sync completes to prevent rapid retries when
+		// initial sync (config, policy, deduper state) fails.
 		// See ROX-29270: Sensor backoff reset DoS issue.
-		go func() {
-			select {
-			case <-syncDone.Done():
-				syncCompleted.Signal()
-			case <-s.centralCommunication.Stopped().WaitC():
-				// Connection stopped before sync completed - syncCompleted will never fire
-			}
-		}()
 
 		select {
-		case <-s.centralCommunication.Stopped().WaitC():
-			err := s.centralCommunication.Stopped().Err()
+		case <-centralCommunication.Stopped().WaitC():
+			err := centralCommunication.Stopped().Err()
 
-			handleBackoffOnConnectionStop(exponential, &syncCompleted, err)
+			handleBackoffOnConnectionStop(exponential, &syncDone, err)
 
 			if handleReconnectionError(err) {
 				s.reconcile.Store(false)
@@ -518,7 +509,7 @@ func (s *Sensor) communicationWithCentralWithRetries(centralReachable *concurren
 		case <-s.stoppedSig.WaitC():
 			// This means sensor was signaled to finish, this error shouldn't be retried
 			log.Info("Received stop signal from Sensor. Stopping without retrying")
-			s.centralCommunication.Stop()
+			centralCommunication.Stop()
 			return backoff.Permanent(wrapOrNewError(s.stoppedSig.Err(), "received sensor stop signal"))
 		}
 	}, exponential, func(err error, d time.Duration) {
