@@ -1,4 +1,4 @@
-package tokenbasedsource
+package tokenbased
 
 import (
 	"errors"
@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/auth/authproviders/tokenbasedsource/mocks"
+	"github.com/stackrox/rox/pkg/auth/authproviders/tokenbased/mocks"
 	permissionsMocks "github.com/stackrox/rox/pkg/auth/permissions/mocks"
 	"github.com/stackrox/rox/pkg/auth/tokens"
 	tokensMocks "github.com/stackrox/rox/pkg/auth/tokens/mocks"
@@ -16,21 +16,20 @@ import (
 	"go.uber.org/mock/gomock"
 )
 
-func TestBasicTokenSource(t *testing.T) {
+func TestBasicTokenAuthProvider(t *testing.T) {
 	sourceID := "basic token source"
 	sourceName := "basic token source with no option applied"
 	sourceType := "basic-test"
-	source := NewTokenSource(sourceID, sourceName, sourceType)
+	source := NewTokenAuthProvider(sourceID, sourceName, sourceType)
 	assert.Equal(t, sourceID, source.ID())
 	assert.Equal(t, sourceName, source.Name())
 	assert.Equal(t, sourceType, source.Type())
 	assert.True(t, source.Enabled())
 	assert.True(t, source.Active())
-	// Ensure InitFromStore is a noop
 	assert.NoError(t, source.InitFromStore(t.Context(), nil))
 	ctrl := gomock.NewController(t)
 	mockStore := mocks.NewMockTokenStore(ctrl)
-	mockStore.EXPECT().GetTokens(gomock.Any(), gomock.Any()).Times(0)
+	mockStore.EXPECT().GetTokens(gomock.Any(), gomock.Any()).Times(1).Return(nil, nil)
 	assert.NoError(t, source.InitFromStore(t.Context(), mockStore))
 	assert.Nil(t, source.RoleMapper())
 	// source without revocation layer does not validate claims
@@ -49,7 +48,7 @@ func TestTokenSourceWithRoleMapperOnly(t *testing.T) {
 	defer controller.Finish()
 	mockRoleMapper := permissionsMocks.NewMockRoleMapper(controller)
 
-	source := NewTokenSource(sourceID, sourceName, sourceType, WithRoleMapper(mockRoleMapper))
+	source := NewTokenAuthProvider(sourceID, sourceName, sourceType, WithRoleMapper(mockRoleMapper))
 
 	assert.Equal(t, sourceID, source.ID())
 	assert.Equal(t, sourceName, source.Name())
@@ -74,7 +73,7 @@ func TestTokenSourceWithRevocationLayerOnly(t *testing.T) {
 	defer ctrl.Finish()
 	mockRevocationLayer := tokensMocks.NewMockRevocationLayer(ctrl)
 
-	source := NewTokenSource(sourceID, sourceName, sourceType, WithRevocationLayer(mockRevocationLayer))
+	source := NewTokenAuthProvider(sourceID, sourceName, sourceType, WithRevocationLayer(mockRevocationLayer))
 	assert.Equal(t, sourceID, source.ID())
 	assert.Equal(t, sourceName, source.Name())
 	assert.Equal(t, sourceType, source.Type())

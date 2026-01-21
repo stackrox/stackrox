@@ -1,4 +1,4 @@
-package tokenbasedsource
+package tokenbased
 
 import (
 	"context"
@@ -14,12 +14,12 @@ import (
 )
 
 var (
-	_ authproviders.Provider = (*tokenSourceImpl)(nil)
-	_ TokenSource            = (*tokenSourceImpl)(nil)
-	_ tokens.RevocationLayer = (*tokenSourceImpl)(nil)
+	_ authproviders.Provider = (*tokenAuthProviderImpl)(nil)
+	_ TokenAuthProvider      = (*tokenAuthProviderImpl)(nil)
+	_ tokens.RevocationLayer = (*tokenAuthProviderImpl)(nil)
 )
 
-// tokenSource aims at implementing the common denominator for
+// tokenAuthProviderImpl aims at implementing the common denominator for
 // the issuer sources or providers for all rox token generators
 // in the central codebase. The token authentication code requires
 // this token source to actually implement authproviders.Provider.
@@ -32,7 +32,7 @@ var (
 // for the backend-related interfaces. Cutting the complexity
 // at the tokens.Source or authproviders.Provider interface is
 // a better choice.
-type tokenSourceImpl struct {
+type tokenAuthProviderImpl struct {
 	*noopProvider
 
 	id         string
@@ -43,8 +43,8 @@ type tokenSourceImpl struct {
 	roleMapper      permissions.RoleMapper
 }
 
-func (s *tokenSourceImpl) InitFromStore(ctx context.Context, tokenStore TokenStore) error {
-	if s.revocationLayer == nil {
+func (s *tokenAuthProviderImpl) InitFromStore(ctx context.Context, tokenStore TokenStore) error {
+	if tokenStore == nil {
 		return nil
 	}
 	revokedTokenReq := &v1.GetAPITokensRequest{
@@ -64,35 +64,29 @@ func (s *tokenSourceImpl) InitFromStore(ctx context.Context, tokenStore TokenSto
 	return nil
 }
 
-func (s *tokenSourceImpl) Validate(ctx context.Context, claims *tokens.Claims) error {
-	if s.revocationLayer == nil {
-		return nil
-	}
+func (s *tokenAuthProviderImpl) Validate(ctx context.Context, claims *tokens.Claims) error {
 	return s.revocationLayer.Validate(ctx, claims)
 }
 
-func (s *tokenSourceImpl) Revoke(tokenID string, expiry time.Time) {
-	if s.revocationLayer == nil {
-		return
-	}
+func (s *tokenAuthProviderImpl) Revoke(tokenID string, expiry time.Time) {
 	s.revocationLayer.Revoke(tokenID, expiry)
 }
 
-func (s *tokenSourceImpl) IsRevoked(tokenID string) bool {
+func (s *tokenAuthProviderImpl) IsRevoked(tokenID string) bool {
 	if s.revocationLayer == nil {
 		return false
 	}
 	return s.revocationLayer.IsRevoked(tokenID)
 }
 
-func (s *tokenSourceImpl) ID() string { return s.id }
+func (s *tokenAuthProviderImpl) ID() string { return s.id }
 
-func (s *tokenSourceImpl) Name() string { return s.name }
+func (s *tokenAuthProviderImpl) Name() string { return s.name }
 
-func (s *tokenSourceImpl) Type() string { return s.sourceType }
+func (s *tokenAuthProviderImpl) Type() string { return s.sourceType }
 
-func (s *tokenSourceImpl) Enabled() bool { return true }
+func (s *tokenAuthProviderImpl) Enabled() bool { return true }
 
-func (s *tokenSourceImpl) Active() bool { return true }
+func (s *tokenAuthProviderImpl) Active() bool { return true }
 
-func (s *tokenSourceImpl) RoleMapper() permissions.RoleMapper { return s.roleMapper }
+func (s *tokenAuthProviderImpl) RoleMapper() permissions.RoleMapper { return s.roleMapper }

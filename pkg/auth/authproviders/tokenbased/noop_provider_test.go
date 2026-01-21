@@ -1,4 +1,4 @@
-package tokenbasedsource
+package tokenbased
 
 import (
 	"testing"
