@@ -44,13 +44,13 @@ func TestImageFlatDataStoreWithPostgres(t *testing.T) {
 type ImageFlatPostgresDataStoreTestSuite struct {
 	suite.Suite
 
-	ctx                  context.Context
-	testDB               *pgtest.TestPostgres
-	db                   postgres.DB
-	datastore            DataStore
-	mockRisk             *mockRisks.MockDataStore
-	componentDataStore   imageComponentDS.DataStore
-	cveDataStore         imageCVEDS.DataStore
+	ctx                   context.Context
+	testDB                *pgtest.TestPostgres
+	db                    postgres.DB
+	datastore             DataStore
+	mockRisk              *mockRisks.MockDataStore
+	componentDataStore    imageComponentDS.DataStore
+	cveDataStore          imageCVEDS.DataStore
 	imageCVEInfoDatastore imageCVEInfoDS.DataStore
 }
 
