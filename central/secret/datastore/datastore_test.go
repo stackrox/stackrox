@@ -78,6 +78,136 @@ func (suite *SecretDataStoreTestSuite) assertSearchResults(q *v1.Query, s *stora
 	}
 }
 
+func (suite *SecretDataStoreTestSuite) TestSearchListSecrets_SinglePass() {
+	// Test that SearchListSecrets uses single-pass query with correct field selections
+	secret1 := fixtures.GetSecret()
+	secret1.Id = uuid.NewV4().String()
+	secret1.Name = "test-secret-1"
+	secret1.Namespace = "default"
+	secret1.Files = []*storage.SecretDataFile{
+		{Type: storage.SecretType_PUBLIC_CERTIFICATE},
+		{Type: storage.SecretType_RSA_PRIVATE_KEY},
+	}
+
+	secret2 := fixtures.GetSecret()
+	secret2.Id = uuid.NewV4().String()
+	secret2.Name = "test-secret-2"
+	secret2.Namespace = "kube-system"
+	secret2.Files = []*storage.SecretDataFile{
+		{Type: storage.SecretType_IMAGE_PULL_SECRET},
+	}
+
+	suite.NoError(suite.datastore.UpsertSecret(suite.ctx, secret1))
+	suite.NoError(suite.datastore.UpsertSecret(suite.ctx, secret2))
+	defer suite.datastore.RemoveSecret(suite.ctx, secret1.Id)
+	defer suite.datastore.RemoveSecret(suite.ctx, secret2.Id)
+
+	// Test retrieval with empty query
+	results, err := suite.datastore.SearchListSecrets(suite.ctx, search.EmptyQuery())
+	suite.NoError(err)
+	suite.GreaterOrEqual(len(results), 2) // May have other secrets from other tests
+
+	// Find our test secrets
+	var found1, found2 *storage.ListSecret
+	for _, r := range results {
+		if r.Id == secret1.Id {
+			found1 = r
+		} else if r.Id == secret2.Id {
+			found2 = r
+		}
+	}
+
+	suite.NotNil(found1)
+	suite.Equal(secret1.Name, found1.Name)
+	suite.Equal(secret1.Namespace, found1.Namespace)
+	suite.ElementsMatch(
+		[]storage.SecretType{storage.SecretType_PUBLIC_CERTIFICATE, storage.SecretType_RSA_PRIVATE_KEY},
+		found1.Types,
+	)
+
+	suite.NotNil(found2)
+	suite.Equal([]storage.SecretType{storage.SecretType_IMAGE_PULL_SECRET}, found2.Types)
+}
+
+func (suite *SecretDataStoreTestSuite) TestSearchListSecrets_NoFiles() {
+	// Test secret with no files (should return UNDETERMINED type)
+	secret := fixtures.GetSecret()
+	secret.Id = uuid.NewV4().String()
+	secret.Name = "empty-secret"
+	secret.Files = nil // No files
+
+	suite.NoError(suite.datastore.UpsertSecret(suite.ctx, secret))
+	defer suite.datastore.RemoveSecret(suite.ctx, secret.Id)
+
+	query := search.NewQueryBuilder().AddStrings(search.SecretID, secret.Id).ProtoQuery()
+	results, err := suite.datastore.SearchListSecrets(suite.ctx, query)
+
+	suite.NoError(err)
+	suite.Len(results, 1)
+	suite.Equal([]storage.SecretType{storage.SecretType_UNDETERMINED}, results[0].Types)
+}
+
+func (suite *SecretDataStoreTestSuite) TestSearchListSecrets_WithFilter() {
+	// Test that search filters work correctly with single-pass query
+	secret1 := fixtures.GetSecret()
+	secret1.Id = uuid.NewV4().String()
+	secret1.Name = "filter-test-1"
+	secret1.Namespace = "default"
+
+	secret2 := fixtures.GetSecret()
+	secret2.Id = uuid.NewV4().String()
+	secret2.Name = "filter-test-2"
+	secret2.Namespace = "kube-system"
+
+	suite.NoError(suite.datastore.UpsertSecret(suite.ctx, secret1))
+	suite.NoError(suite.datastore.UpsertSecret(suite.ctx, secret2))
+	defer suite.datastore.RemoveSecret(suite.ctx, secret1.Id)
+	defer suite.datastore.RemoveSecret(suite.ctx, secret2.Id)
+
+	// Filter by namespace
+	query := search.NewQueryBuilder().AddExactMatches(search.Namespace, "kube-system").ProtoQuery()
+	results, err := suite.datastore.SearchListSecrets(suite.ctx, query)
+
+	suite.NoError(err)
+	// Find our test secret in results
+	var found *storage.ListSecret
+	for _, r := range results {
+		if r.Id == secret2.Id {
+			found = r
+			break
+		}
+	}
+	suite.NotNil(found)
+	suite.Equal("kube-system", found.Namespace)
+}
+
+func (suite *SecretDataStoreTestSuite) TestSearchListSecrets_DuplicateTypes() {
+	// Test that framework correctly deduplicates types via jsonb_agg
+	secret := fixtures.GetSecret()
+	secret.Id = uuid.NewV4().String()
+	secret.Name = "duplicate-types-secret"
+	secret.Files = []*storage.SecretDataFile{
+		{Type: storage.SecretType_PUBLIC_CERTIFICATE},
+		{Type: storage.SecretType_PUBLIC_CERTIFICATE}, // Duplicate
+		{Type: storage.SecretType_RSA_PRIVATE_KEY},
+	}
+
+	suite.NoError(suite.datastore.UpsertSecret(suite.ctx, secret))
+	defer suite.datastore.RemoveSecret(suite.ctx, secret.Id)
+
+	query := search.NewQueryBuilder().AddStrings(search.SecretID, secret.Id).ProtoQuery()
+	results, err := suite.datastore.SearchListSecrets(suite.ctx, query)
+
+	suite.NoError(err)
+	suite.Len(results, 1)
+	// Should have only 2 unique types
+	suite.Len(results[0].Types, 2)
+	suite.ElementsMatch(
+		[]storage.SecretType{storage.SecretType_PUBLIC_CERTIFICATE, storage.SecretType_RSA_PRIVATE_KEY},
+		results[0].Types,
+	)
+}
+
 func (suite *SecretDataStoreTestSuite) TestSecretsDataStore() {
 	secret := fixtures.GetSecret()
 	err := suite.datastore.UpsertSecret(suite.ctx, secret)

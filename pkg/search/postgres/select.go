@@ -3,6 +3,7 @@ package postgres
 import (
 	"context"
 	"fmt"
+	"reflect"
 	"runtime/debug"
 	"strings"
 	"time"
@@ -22,6 +23,39 @@ import (
 )
 
 var scanAPI = newScanAPI(newDBScanAPI(dbscan.WithAllowUnknownColumns(true)))
+
+// getArrayFieldsFromType inspects the type T and returns a map of db tag names to whether
+// the field is an array/slice type. This is used to automatically detect which fields should
+// be aggregated from child tables without requiring explicit flags.
+func getArrayFieldsFromType[T any]() map[string]bool {
+	var zero T
+	t := reflect.TypeOf(zero)
+
+	// Handle pointer types
+	if t != nil && t.Kind() == reflect.Ptr {
+		t = t.Elem()
+	}
+
+	// Only works with structs
+	if t == nil || t.Kind() != reflect.Struct {
+		return nil
+	}
+
+	arrayFields := make(map[string]bool)
+	for i := 0; i < t.NumField(); i++ {
+		field := t.Field(i)
+		dbTag := field.Tag.Get("db")
+		if dbTag == "" || dbTag == "-" {
+			continue
+		}
+
+		// Check if field type is array/slice
+		if field.Type.Kind() == reflect.Slice {
+			arrayFields[dbTag] = true
+		}
+	}
+	return arrayFields
+}
 
 func newScanAPI(dbscanAPI *dbscan.API) *pgxscan.API {
 	api, err := pgxscan.NewAPI(dbscanAPI)
@@ -73,7 +107,10 @@ func RunSelectRequestForSchemaFn[T any](ctx context.Context, db postgres.DB, sch
 		}
 	}()
 
-	query, err = standardizeSelectQueryAndPopulatePath(ctx, q, schema, SELECT)
+	// Extract array fields from destination type T to automatically detect child table aggregation
+	arrayFields := getArrayFieldsFromType[T]()
+
+	query, err = standardizeSelectQueryAndPopulatePath(ctx, q, schema, SELECT, arrayFields)
 	if err != nil {
 		return err
 	}
@@ -86,7 +123,7 @@ func RunSelectRequestForSchemaFn[T any](ctx context.Context, db postgres.DB, sch
 	})
 }
 
-func standardizeSelectQueryAndPopulatePath(ctx context.Context, q *v1.Query, schema *walker.Schema, queryType QueryType) (*query, error) {
+func standardizeSelectQueryAndPopulatePath(ctx context.Context, q *v1.Query, schema *walker.Schema, queryType QueryType, arrayFields map[string]bool) (*query, error) {
 	nowForQuery := time.Now()
 
 	var err error
@@ -101,7 +138,7 @@ func standardizeSelectQueryAndPopulatePath(ctx context.Context, q *v1.Query, sch
 	}
 
 	standardizeFieldNamesInQuery(q)
-	joins, dbFields := getJoinsAndFields(schema, q)
+	joins, dbFields := getJoinsAndFields(schema, q, arrayFields)
 	if len(q.GetSelects()) == 0 && q.GetQuery() == nil {
 		return nil, nil
 	}
@@ -113,7 +150,7 @@ func standardizeSelectQueryAndPopulatePath(ctx context.Context, q *v1.Query, sch
 		Joins:     joins,
 	}
 
-	if err = populateSelect(parsedQuery, schema, q.GetSelects(), dbFields, nowForQuery); err != nil {
+	if err = populateSelect(parsedQuery, schema, q.GetSelects(), dbFields, nowForQuery, arrayFields); err != nil {
 		return nil, errors.Wrapf(err, "failed to parse select portion of query -- %s --", q.String())
 	}
 
@@ -171,7 +208,7 @@ func retryableRunSelectRequestForSchemaFn[T any](ctx context.Context, db postgre
 	return rows.Err()
 }
 
-func populateSelect(querySoFar *query, schema *walker.Schema, querySelects []*v1.QuerySelect, queryFields map[string]searchFieldMetadata, nowForQuery time.Time) error {
+func populateSelect(querySoFar *query, schema *walker.Schema, querySelects []*v1.QuerySelect, queryFields map[string]searchFieldMetadata, nowForQuery time.Time, arrayFields map[string]bool) error {
 	if len(querySelects) == 0 {
 		return errors.New("select portion of the query cannot be empty")
 	}
@@ -183,16 +220,34 @@ func populateSelect(querySoFar *query, schema *walker.Schema, querySelects []*v1
 		if dbField == nil {
 			return errors.Errorf("field %s in select portion of query does not exist in table %s or connected tables", field, schema.Table)
 		}
-		// TODO(mandar): Add support for the following.
-		if dbField.DataType == postgres.StringArray || dbField.DataType == postgres.IntArray ||
-			dbField.DataType == postgres.EnumArray || dbField.DataType == postgres.Map {
-			return errors.Errorf("field %s in select portion of query is unsupported", field)
+
+		// Check if this is a child table field
+		isChildField := isChildTableField(dbField, schema)
+
+		// Array types are only supported for child table fields (which will be aggregated)
+		// Parent table arrays are still unsupported
+		if !isChildField && (dbField.DataType == postgres.StringArray || dbField.DataType == postgres.IntArray ||
+			dbField.DataType == postgres.EnumArray || dbField.DataType == postgres.Map) {
+			return errors.Errorf("array field %s in parent table is unsupported in select", field)
+		}
+
+		// Check if destination type expects array for this field
+		// Match against SQL alias (same format as db tag: lowercase with underscores)
+		shouldAggregate := false
+		if arrayFields != nil && isChildField {
+			// Compute the SQL alias that will be used (matches db tag format)
+			alias := strings.Join(strings.Fields(strings.ToLower(field.GetName())), "_")
+			shouldAggregate = arrayFields[alias]
 		}
 
 		if qs.GetFilter() == nil {
-			querySoFar.SelectedFields = append(querySoFar.SelectedFields,
-				selectQueryField(field.GetName(), dbField, field.GetDistinct(), aggregatefunc.GetAggrFunc(field.GetAggregateFunc()), ""),
-			)
+			selectField := selectQueryField(field.GetName(), dbField, field.GetDistinct(), aggregatefunc.GetAggrFunc(field.GetAggregateFunc()), "")
+			// Mark child table fields for aggregation if destination type is array
+			if shouldAggregate {
+				selectField.ChildTableAgg = true
+				querySoFar.HasChildTableFields = true
+			}
+			querySoFar.SelectedFields = append(querySoFar.SelectedFields, selectField)
 			querySoFar.DistinctAppliedToSelects = querySoFar.DistinctAppliedToSelects || field.GetDistinct()
 			continue
 		}
@@ -213,6 +268,11 @@ func populateSelect(querySoFar *query, schema *walker.Schema, querySelects []*v1
 		querySoFar.Data = append(querySoFar.Data, qe.Where.Values...)
 
 		selectField := selectQueryField(field.GetName(), dbField, field.GetDistinct(), aggregatefunc.GetAggrFunc(field.GetAggregateFunc()), qe.Where.Query)
+		// Mark child table fields for aggregation if destination type is array
+		if shouldAggregate {
+			selectField.ChildTableAgg = true
+			querySoFar.HasChildTableFields = true
+		}
 		querySoFar.DistinctAppliedToSelects = querySoFar.DistinctAppliedToSelects || field.GetDistinct()
 		if alias := filter.GetName(); alias != "" {
 			selectField.Alias = alias
