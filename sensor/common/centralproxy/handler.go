@@ -8,6 +8,7 @@ import (
 	"sync/atomic"
 
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/pkg/centralsensor"
 	pkghttputil "github.com/stackrox/rox/pkg/httputil"
 	"github.com/stackrox/rox/pkg/k8sutil"
 	"github.com/stackrox/rox/pkg/logging"
@@ -15,6 +16,7 @@ import (
 	"github.com/stackrox/rox/pkg/urlfmt"
 	"github.com/stackrox/rox/sensor/common"
 	"google.golang.org/grpc"
+	"github.com/stackrox/rox/sensor/common/centralcaps"
 	"k8s.io/client-go/kubernetes"
 )
 
@@ -122,8 +124,23 @@ func (h *Handler) validateRequest(request *http.Request) error {
 	return nil
 }
 
+// checkInternalTokenAPISupport checks if Central supports the internal token API capability.
+// The proxy requires this capability to function; all requests are rejected if unsupported.
+func checkInternalTokenAPISupport() error {
+	if !centralcaps.Has(centralsensor.InternalTokenAPISupported) {
+		return pkghttputil.NewError(http.StatusNotImplemented,
+			"proxy to Central is not available; Central does not support the internal token API required by this proxy")
+	}
+	return nil
+}
+
 // ServeHTTP handles incoming HTTP requests and proxies them to Central.
 func (h *Handler) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
+	if err := checkInternalTokenAPISupport(); err != nil {
+		pkghttputil.WriteError(writer, err)
+		return
+	}
+
 	if err := h.validateRequest(request); err != nil {
 		pkghttputil.WriteError(writer, err)
 		return
