@@ -11,9 +11,15 @@ import {
 } from '@patternfly/react-core';
 import { Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 
+import ColumnManagementButton from 'Components/ColumnManagementButton';
 import DateDistance from 'Components/DateDistance';
 import { DynamicTableLabel } from 'Components/DynamicIcon';
 import TbodyUnified from 'Components/TableStateTemplates/TbodyUnified';
+import {
+    generateVisibilityForColumns,
+    getHiddenColumnCount,
+    useManagedColumns,
+} from 'hooks/useManagedColumns';
 import useRestQuery from 'hooks/useRestQuery';
 import useURLPagination from 'hooks/useURLPagination';
 import useURLSearch from 'hooks/useURLSearch';
@@ -45,7 +51,36 @@ export const sortFields = [VIRTUAL_MACHINE_SORT_FIELD];
 
 export const defaultSortOption = { field: VIRTUAL_MACHINE_SORT_FIELD, direction: 'asc' } as const;
 
+export const defaultColumns = {
+    virtualMachine: {
+        title: 'Virtual machine',
+        isShownByDefault: true,
+        isUntoggleAble: true,
+    },
+    cvesBySeverity: {
+        title: 'CVEs by severity',
+        isShownByDefault: true,
+    },
+    cluster: {
+        title: 'Cluster',
+        isShownByDefault: true,
+    },
+    namespace: {
+        title: 'Namespace',
+        isShownByDefault: true,
+    },
+    scannedComponents: {
+        title: 'Scanned components',
+        isShownByDefault: true,
+    },
+    scanTime: {
+        title: 'Scan time',
+        isShownByDefault: true,
+    },
+} as const;
+
 function VirtualMachinesCvesTable() {
+    const managedColumnState = useManagedColumns('VirtualMachinesCvesTable', defaultColumns);
     const { page, perPage, setPage, setPerPage } = useURLPagination(DEFAULT_VM_PAGE_SIZE);
     const { searchFilter, setSearchFilter } = useURLSearch();
     const isFiltered = getHasSearchApplied(searchFilter);
@@ -54,6 +89,10 @@ function VirtualMachinesCvesTable() {
         defaultSortOption,
         onSort: () => setPage(1),
     });
+
+    const getVisibilityClass = generateVisibilityForColumns(managedColumnState.columns);
+    const hiddenColumnCount = getHiddenColumnCount(managedColumnState.columns);
+    const colSpan = Object.values(defaultColumns).length - hiddenColumnCount;
 
     const fetchVirtualMachines = useCallback(
         () => listVirtualMachines({ searchFilter, page, perPage, sortOption }),
@@ -95,6 +134,12 @@ function VirtualMachinesCvesTable() {
                         </Flex>
                     </SplitItem>
                     <SplitItem>
+                        <ColumnManagementButton
+                            columnConfig={managedColumnState.columns}
+                            onApplyColumns={managedColumnState.setVisibility}
+                        />
+                    </SplitItem>
+                    <SplitItem>
                         <Pagination
                             itemCount={data?.totalCount ?? 0}
                             perPage={perPage}
@@ -114,17 +159,26 @@ function VirtualMachinesCvesTable() {
                 >
                     <Thead>
                         <Tr>
-                            <Th sort={getSortParams('Virtual Machine Name')}>Virtual machine</Th>
-                            <Th>CVEs by severity</Th>
-                            <Th>Cluster</Th>
-                            <Th>Namespace</Th>
-                            <Th>Scanned components</Th>
-                            <Th>Last updated</Th>
+                            <Th
+                                className={getVisibilityClass('virtualMachine')}
+                                sort={getSortParams('Virtual Machine Name')}
+                            >
+                                Virtual machine
+                            </Th>
+                            <Th className={getVisibilityClass('cvesBySeverity')}>
+                                CVEs by severity
+                            </Th>
+                            <Th className={getVisibilityClass('cluster')}>Cluster</Th>
+                            <Th className={getVisibilityClass('namespace')}>Namespace</Th>
+                            <Th className={getVisibilityClass('scannedComponents')}>
+                                Scanned components
+                            </Th>
+                            <Th className={getVisibilityClass('scanTime')}>Scan time</Th>
                         </Tr>
                     </Thead>
                     <TbodyUnified
                         tableState={tableState}
-                        colSpan={7}
+                        colSpan={colSpan}
                         errorProps={{
                             title: 'There was an error loading results',
                         }}
@@ -136,9 +190,15 @@ function VirtualMachinesCvesTable() {
                                 {data.map((virtualMachine) => {
                                     const virtualMachineSeverityCounts =
                                         getVirtualMachineSeveritiesCount(virtualMachine);
+
+                                    const scanTime = virtualMachine?.scan?.scanTime;
                                     return (
                                         <Tr key={virtualMachine.id}>
-                                            <Td dataLabel="Virtual machine" modifier="nowrap">
+                                            <Td
+                                                className={getVisibilityClass('virtualMachine')}
+                                                dataLabel="Virtual machine"
+                                                modifier="nowrap"
+                                            >
                                                 <Link
                                                     to={getVirtualMachineEntityPagePath(
                                                         'VirtualMachine',
@@ -148,7 +208,10 @@ function VirtualMachinesCvesTable() {
                                                     {virtualMachine.name}
                                                 </Link>
                                             </Td>
-                                            <Td dataLabel="CVEs by severity">
+                                            <Td
+                                                className={getVisibilityClass('cvesBySeverity')}
+                                                dataLabel="CVEs by severity"
+                                            >
                                                 <SeverityCountLabels
                                                     criticalCount={
                                                         virtualMachineSeverityCounts.CRITICAL_VULNERABILITY_SEVERITY
@@ -168,19 +231,35 @@ function VirtualMachinesCvesTable() {
                                                     entity="virtual machine"
                                                 />
                                             </Td>
-                                            <Td dataLabel="Cluster">
+                                            <Td
+                                                className={getVisibilityClass('cluster')}
+                                                dataLabel="Cluster"
+                                            >
                                                 {virtualMachine.clusterName}
                                             </Td>
-                                            <Td dataLabel="Namespace">
+                                            <Td
+                                                className={getVisibilityClass('namespace')}
+                                                dataLabel="Namespace"
+                                            >
                                                 {virtualMachine.namespace}
                                             </Td>
-                                            <Td dataLabel="Scanned components">
+                                            <Td
+                                                className={getVisibilityClass('scannedComponents')}
+                                                dataLabel="Scanned components"
+                                            >
                                                 {getVirtualMachineScannedComponentsCount(
                                                     virtualMachine
                                                 )}
                                             </Td>
-                                            <Td dataLabel="Last updated">
-                                                <DateDistance date={virtualMachine.lastUpdated} />
+                                            <Td
+                                                className={getVisibilityClass('scanTime')}
+                                                dataLabel="Scan time"
+                                            >
+                                                {typeof scanTime === 'string' ? (
+                                                    <DateDistance date={scanTime} />
+                                                ) : (
+                                                    'Not available'
+                                                )}
                                             </Td>
                                         </Tr>
                                     );

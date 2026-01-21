@@ -103,10 +103,12 @@ to the command:
 
 ```sh
 # In a new terminal
-ACS_CONSOLE_DEV_TOKEN=<your-token> npm run start:ocp-plugin
+ACS_PROXY_BASE_PATH='/' ACS_CONSOLE_DEV_TOKEN=<your-token> npm run start:ocp-plugin
 ```
 
 This will run a webpack development server on http://localhost:9001 serving the plugin files and ensure the UI passes the token in the `Authorization` header of API requests.
+
+Note that the full end-to-end stack will proxy through sensor to central, and append `/proxy/central` to all API requests. The value of `ACS_PROXY_BASE_PATH` allows us to keep the URL bare, which is required in development environments when connecting directly to central. This variable must be set both in the terminal that runs webpack as well as the terminal that runs the console container, as shown below.
 
 Next, start a local development version of the console in another terminal:
 
@@ -116,10 +118,10 @@ oc login --web
 
 # Run the following script to start a local instance of the OCP console as a bridge for plugin development. Disable the console
 # token injection to ensure our API token from above is passed in all requests.
-ACS_INJECT_OCP_AUTH_TOKEN=false ./scripts/start-ocp-console.sh
+ACS_PROXY_BASE_PATH='/' ACS_INJECT_OCP_AUTH_TOKEN=false ./scripts/start-ocp-console.sh
 
 # By default, requests will be proxied to the detected central running in the cluster. If you wish to use an alternative central, instead run:
-ACS_INJECT_OCP_AUTH_TOKEN=false ACS_API_SERVICE_URL=<central-service-url> ./scripts/start-ocp-console.sh
+ACS_PROXY_BASE_PATH='/' ACS_INJECT_OCP_AUTH_TOKEN=false ACS_API_SERVICE_URL=<central-service-url> ./scripts/start-ocp-console.sh
 ```
 
 This will start the console on http://localhost:9000 with user authentication disabled; you will be logged in automatically as kubeadmin using the token retrieved via `oc login --web` above. With token injection disabled, all requests will include the central API token specified when running the plugin server. Visit http://localhost:9000 in

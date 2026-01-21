@@ -74,7 +74,7 @@ export const imageComponentSearchFilterConfig: CompoundSearchFilterEntity = {
 export const deploymentSearchFilterConfig: CompoundSearchFilterEntity = {
     displayName: 'Deployment',
     searchCategory: 'DEPLOYMENTS',
-    attributes: [ID, Name, Label, Annotation],
+    attributes: [Annotation, ID, Label, Name],
 };
 
 export const namespaceSearchFilterConfig: CompoundSearchFilterEntity = {
@@ -88,10 +88,10 @@ export const clusterSearchFilterConfig: CompoundSearchFilterEntity = {
     searchCategory: 'CLUSTERS',
     attributes: [
         clusterIdAttribute,
-        clusterNameAttribute,
         clusterLabelAttribute,
-        clusterTypeAttribute,
+        clusterNameAttribute,
         clusterPlatformTypeAttribute,
+        clusterTypeAttribute,
     ],
 };
 
@@ -104,7 +104,7 @@ export const platformCVESearchFilterConfig: CompoundSearchFilterEntity = {
 export const virtualMachinesSearchFilterConfig: CompoundSearchFilterEntity = {
     displayName: 'Virtual machine',
     searchCategory: 'VIRTUAL_MACHINES',
-    attributes: [VirtualMachineName, VirtualMachineID],
+    attributes: [VirtualMachineID, VirtualMachineName],
 };
 
 export const virtualMachineCVESearchFilterConfig: CompoundSearchFilterEntity = {
@@ -122,7 +122,7 @@ export const virtualMachineComponentSearchFilterConfig: CompoundSearchFilterEnti
 export const virtualMachinesClusterSearchFilterConfig: CompoundSearchFilterEntity = {
     displayName: 'Cluster',
     searchCategory: 'CLUSTERS',
-    attributes: [clusterIdAttribute, clusterNameAttribute],
+    attributes: [clusterNameAttribute, clusterIdAttribute],
 };
 
 // attributes for separate search filter elements in AdvancedFiltersToolbar.tsx file

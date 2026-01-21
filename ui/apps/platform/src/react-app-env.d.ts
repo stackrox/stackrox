@@ -15,10 +15,6 @@ declare global {
             [key: `--pf-v5-${string}`]: string | number | undefined;
         }
     }
-
-    interface Window {
-        analytics: SegmentAnalytics.AnalyticsJS;
-    }
 }
 
 export {};

@@ -230,6 +230,18 @@ func testImages() []*storage.Image {
 				},
 				ScanTime: t2,
 			},
+			BaseImageInfo: []*storage.BaseImageInfo{
+				{
+					BaseImageId:       "base-sha2",
+					BaseImageFullName: "alpine:3.12",
+					BaseImageDigest:   "sha256:alpine312",
+				},
+				{
+					BaseImageId:       "base-sha3",
+					BaseImageFullName: "busybox:latest",
+					BaseImageDigest:   "sha256:busybox1",
+				},
+			},
 		},
 	}
 }

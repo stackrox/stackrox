@@ -4,18 +4,33 @@ import { ApolloProvider } from '@apollo/client';
 
 import axios from 'services/instance';
 import configureApolloClient from 'init/configureApolloClient';
+import { setAnalyticsSource } from 'init/initializeAnalytics';
 import { UserPermissionProvider } from 'providers/UserPermissionProvider';
 import { FeatureFlagsProvider } from 'providers/FeatureFlagProvider';
 import { MetadataProvider } from 'providers/MetadataProvider';
 import { PublicConfigProvider } from 'providers/PublicConfigProvider';
+import { TelemetryConfigProvider } from 'providers/TelemetryConfigProvider';
 
 import consoleFetchAxiosAdapter from './consoleFetchAxiosAdapter';
 import PluginContent from './PluginContent';
 import { ScopeProvider, useScope } from './ScopeContext';
 
-const proxyBaseURL = '/api/proxy/plugin/advanced-cluster-security/api-service/proxy/central';
+const proxyBasePath = process.env.ACS_PROXY_BASE_PATH ?? '/proxy/central';
+// Remove trailing slash if present, and _do not_ add it back when constructing the proxy URL on the client.
+const proxyBaseURL =
+    `/api/proxy/plugin/advanced-cluster-security/api-service${proxyBasePath}`.replace(/\/$/, '');
 const apolloClient = configureApolloClient();
 
+setAnalyticsSource('console-plugin');
+
+/*
+ *******************NOTE************************
+ * It is important to note that this component will render frequently as the user navigates through
+ * the console UI, even * when the pages being visited do not contain any widgets related to our plugin.
+ * Side effects must not be executed unnecessarily, and instead should be performed only
+ * when the plugin is actually rendered.
+ ***********************************************
+ */
 function PluginProviderContent({ children }: { children: ReactNode }) {
     const scopeRef = useScope();
 
@@ -33,7 +48,9 @@ function PluginProviderContent({ children }: { children: ReactNode }) {
                 <FeatureFlagsProvider>
                     <MetadataProvider>
                         <PublicConfigProvider>
-                            <PluginContent>{children}</PluginContent>
+                            <TelemetryConfigProvider>
+                                <PluginContent>{children}</PluginContent>
+                            </TelemetryConfigProvider>
                         </PublicConfigProvider>
                     </MetadataProvider>
                 </FeatureFlagsProvider>

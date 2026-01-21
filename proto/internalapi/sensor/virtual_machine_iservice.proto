@@ -8,6 +8,9 @@ option go_package = "./internalapi/sensor;sensor";
 
 message UpsertVirtualMachineIndexReportRequest {
   virtualmachine.v1.IndexReport index_report = 1;
+
+  // VM data discovered by roxagent
+  virtualmachine.v1.DiscoveredData discovered_data = 2;
 }
 
 message UpsertVirtualMachineIndexReportResponse {

@@ -19,6 +19,8 @@ type clusterDataStoreImpl struct {
 	deletedDeploymentsCache cache.DeletedDeployments
 }
 
+var _ ClusterDataStore = (*clusterDataStoreImpl)(nil)
+
 func (cds *clusterDataStoreImpl) GetFlowStore(ctx context.Context, clusterID string) (FlowDataStore, error) {
 	if ok, err := networkGraphSAC.ReadAllowed(ctx, sac.ClusterScopeKey(clusterID)); err != nil || !ok {
 		return nil, err
@@ -61,6 +63,18 @@ func (cds *clusterDataStoreImpl) CreateFlowStore(ctx context.Context, clusterID 
 		hideDefaultExtSrcsManager: aggr,
 		deletedDeploymentsCache:   cds.deletedDeploymentsCache,
 	}, nil
+}
+
+// RemoveFlowStore unregisters the flow store for the target cluster from the cluster store
+// and drops the associated table partition.
+func (cds *clusterDataStoreImpl) RemoveFlowStore(ctx context.Context, clusterID string) error {
+	if ok, err := networkGraphSAC.WriteAllowed(ctx); err != nil {
+		return err
+	} else if !ok {
+		return sac.ErrResourceAccessDenied
+	}
+
+	return cds.storage.RemoveFlowStore(ctx, clusterID)
 }
 
 func (cds *clusterDataStoreImpl) getAggregator(ctx context.Context, clusterID string) (aggregator.NetworkConnsAggregator, error) {

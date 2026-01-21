@@ -6,6 +6,7 @@ import type { Telemetry } from 'types/config.proto';
 import { ensureExhaustive, tupleTypeGuard } from 'utils/type.utils';
 import type { UnionFrom } from 'utils/type.utils';
 import { getQueryObject, getQueryString } from 'utils/queryStringUtils';
+import { getAnalytics } from 'init/initializeAnalytics';
 import usePublicConfig from './usePublicConfig';
 
 // Event Name Constants
@@ -608,10 +609,14 @@ const useAnalytics = () => {
     const analyticsPageVisit = useCallback(
         (type: string, name: string, additionalProperties = {}): void => {
             if (isTelemetryEnabled !== false) {
-                window.analytics?.page(type, name, {
-                    ...additionalProperties,
-                    ...getRedactedOriginProperties(window.location.toString()),
-                });
+                getAnalytics()
+                    ?.page(type, name, {
+                        ...additionalProperties,
+                        ...getRedactedOriginProperties(window.location.toString()),
+                    })
+                    .catch((error) => {
+                        Raven.captureException(error);
+                    });
             }
         },
         [isTelemetryEnabled]
@@ -630,13 +635,17 @@ const useAnalytics = () => {
             };
 
             if (typeof analyticsEvent === 'string') {
-                window.analytics?.track(analyticsEvent, undefined, redactedEventContext);
+                getAnalytics()
+                    ?.track(analyticsEvent, undefined, redactedEventContext)
+                    .catch((error) => {
+                        Raven.captureException(error);
+                    });
             } else {
-                window.analytics?.track(
-                    analyticsEvent.event,
-                    analyticsEvent.properties,
-                    redactedEventContext
-                );
+                getAnalytics()
+                    ?.track(analyticsEvent.event, analyticsEvent.properties, redactedEventContext)
+                    .catch((error) => {
+                        Raven.captureException(error);
+                    });
             }
         },
         [isTelemetryEnabled]
