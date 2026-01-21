@@ -39,6 +39,11 @@ func TestFloatSetting(t *testing.T) {
 			defaultValue: 4.75,
 			wantValue:    4.75,
 		},
+		"should return default when value is -Inf": {
+			value:        "-Inf",
+			defaultValue: 4.75,
+			wantValue:    4.75,
+		},
 		"should pass validation with minimum": {
 			value:        "1.5",
 			defaultValue: 5.5,
@@ -149,10 +154,48 @@ func TestFloatSetting(t *testing.T) {
 			allowList:    func() []float64 { return []float64{math.NaN()} },
 			wantPanic:    true,
 		},
+		"should panic when allowList includes +Inf": {
+			value:        "1",
+			defaultValue: 1,
+			allowList:    func() []float64 { return []float64{math.Inf(1)} },
+			wantPanic:    true,
+		},
+		"should panic when allowList includes -Inf": {
+			value:        "1",
+			defaultValue: 1,
+			allowList:    func() []float64 { return []float64{math.Inf(-1)} },
+			wantPanic:    true,
+		},
 		"should panic when minimum is NaN": {
 			value:        "1",
 			defaultValue: 1,
 			minOpt:       func() float64 { return math.NaN() },
+			wantPanic:    true,
+		},
+		"should panic when minimum is +Inf": {
+			value:        "1",
+			defaultValue: 1,
+			minOpt:       func() float64 { return math.Inf(1) },
+			wantPanic:    true,
+		},
+		"should allow minimum as -Inf": {
+			value:        "1",
+			defaultValue: 1,
+			minOpt:       func() float64 { return math.Inf(-1) },
+			wantPanic:    false,
+			wantValue:    1,
+		},
+		"should allow maximum as +Inf": {
+			value:        "1",
+			defaultValue: 1,
+			maxOpt:       func() float64 { return math.Inf(1) },
+			wantPanic:    false,
+			wantValue:    1,
+		},
+		"should panic when maximum is -Inf": {
+			value:        "1",
+			defaultValue: 1,
+			maxOpt:       func() float64 { return math.Inf(-1) },
 			wantPanic:    true,
 		},
 		"should panic when maximum is NaN": {
@@ -186,6 +229,17 @@ func TestFloatSetting(t *testing.T) {
 			assert.Equal(t, tt.wantValue, s.FloatSetting())
 		})
 	}
+}
+
+func TestFloatSettingDisallowRestBeforeAllowExplicitly(t *testing.T) {
+	name := newRandomName()
+	defer unregisterSetting(name)
+
+	assert.Panics(t, func() {
+		RegisterFloatSetting(name, 1).
+			DisallowRest().
+			AllowExplicitly(1)
+	})
 }
 
 // testRegisterFloatSetting is a helper to the function-under-test with its options.
