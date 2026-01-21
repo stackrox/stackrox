@@ -17,9 +17,10 @@ import (
 var log = logging.LoggerForModule()
 
 type Client struct {
-	Port    uint32
-	Timeout time.Duration
-	Verbose bool
+	Port     uint32
+	HostPath string
+	Timeout  time.Duration
+	Verbose  bool
 }
 
 func (c *Client) SendIndexReport(report *v4.IndexReport) error {
@@ -33,7 +34,7 @@ func (c *Client) SendIndexReport(report *v4.IndexReport) error {
 	}
 
 	// Discover VM data from host system
-	discovered := DiscoverVMData()
+	discovered := DiscoverVMData(c.HostPath)
 
 	// Create VMReport with discovered data values.
 	vmReport := &v1.VMReport{

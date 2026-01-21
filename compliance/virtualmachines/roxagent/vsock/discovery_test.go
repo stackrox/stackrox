@@ -94,6 +94,45 @@ func TestDiscoverOSAndVersion_MissingFile(t *testing.T) {
 	assert.Equal(t, "", osVersion)
 }
 
+func TestHostPathFor(t *testing.T) {
+	tests := []struct {
+		name     string
+		hostPath string
+		path     string
+		expected string
+	}{
+		{
+			name:     "Empty host path uses original path",
+			hostPath: "",
+			path:     "/etc/os-release",
+			expected: "/etc/os-release",
+		},
+		{
+			name:     "Root host path uses original path",
+			hostPath: "/",
+			path:     "/etc/os-release",
+			expected: "/etc/os-release",
+		},
+		{
+			name:     "Prefix host path joins with absolute path",
+			hostPath: "/host",
+			path:     "/etc/os-release",
+			expected: "/host/etc/os-release",
+		},
+		{
+			name:     "Prefix host path joins with nested path",
+			hostPath: "/host/rootfs",
+			path:     "/var/cache/dnf",
+			expected: "/host/rootfs/var/cache/dnf",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			assert.Equal(t, tt.expected, hostPathFor(tt.hostPath, tt.path))
+		})
+	}
+}
 func TestDiscoverActivationStatus(t *testing.T) {
 	tests := []struct {
 		name           string

@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"fmt"
 	"os"
+	"path/filepath"
 	"strings"
 
 	v1 "github.com/stackrox/rox/generated/internalapi/virtualmachine/v1"
@@ -37,7 +38,7 @@ type DiscoveredData struct {
 
 // DiscoverVMData discovers VM metadata from the host system.
 // Returns discovered data with defaults (UNKNOWN/UNSPECIFIED) if discovery fails.
-func DiscoverVMData() *DiscoveredData {
+func DiscoverVMData(hostPath string) *DiscoveredData {
 	result := &DiscoveredData{
 		DetectedOS:        v1.DetectedOS_UNKNOWN,
 		OSVersion:         "",
@@ -50,7 +51,7 @@ func DiscoverVMData() *DiscoveredData {
 	// and extracts VERSION_ID field as the OS version. Falls back to UNKNOWN for non-RHEL systems.
 	// This behavior is based on assumptions about /etc/os-release format and RHEL-specific values.
 	// Future improvements may include support for other OS types and more robust version detection.
-	detectedOS, osVersion, err := discoverOSAndVersionWithPath(osReleasePath)
+	detectedOS, osVersion, err := discoverOSAndVersionWithPath(hostPathFor(hostPath, osReleasePath))
 	if err != nil {
 		discoveryLog.Warnf("Failed to discover OS and version: %v", err)
 	} else {
@@ -64,7 +65,7 @@ func DiscoverVMData() *DiscoveredData {
 	// otherwise INACTIVE. This behavior is based on assumptions about RHEL entitlement certificate naming
 	// conventions and file structure. Future improvements may include actual certificate validation and
 	// support for other activation mechanisms.
-	activationStatus, err := discoverActivationStatusWithPath(entitlementDirPath)
+	activationStatus, err := discoverActivationStatusWithPath(hostPathFor(hostPath, entitlementDirPath))
 	if err != nil {
 		discoveryLog.Warnf("Failed to discover activation status: %v", err)
 	} else {
@@ -77,7 +78,10 @@ func DiscoverVMData() *DiscoveredData {
 	// considered AVAILABLE only if both conditions are met. This behavior is based on assumptions about
 	// RHEL repository configuration and DNF cache directory naming patterns. Future improvements may
 	// include more accurate detection methods (e.g., checking actual cache contents or DNF database state).
-	dnfStatus, err := discoverDnfMetadataStatusWithPaths(yumReposDirPath, dnfCacheDirPath)
+	dnfStatus, err := discoverDnfMetadataStatusWithPaths(
+		hostPathFor(hostPath, yumReposDirPath),
+		hostPathFor(hostPath, dnfCacheDirPath),
+	)
 	if err != nil {
 		discoveryLog.Warnf("Failed to discover DNF metadata status: %v", err)
 	} else {
@@ -85,6 +89,16 @@ func DiscoverVMData() *DiscoveredData {
 	}
 
 	return result
+}
+
+func hostPathFor(hostPath, path string) string {
+	if hostPath == "" || hostPath == string(os.PathSeparator) {
+		return path
+	}
+	cleanHostPath := filepath.Clean(hostPath)
+	cleanPath := filepath.Clean(path)
+	trimmedPath := strings.TrimPrefix(cleanPath, string(os.PathSeparator))
+	return filepath.Join(cleanHostPath, trimmedPath)
 }
 
 // discoverOSAndVersionWithPath reads os-release from the given path and returns DetectedOS and OSVersion.
