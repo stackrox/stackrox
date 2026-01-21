@@ -302,6 +302,10 @@
         },
         "baseImageDigest": {
           "type": "string"
+        },
+        "created": {
+          "type": "string",
+          "format": "date-time"
         }
       }
     },

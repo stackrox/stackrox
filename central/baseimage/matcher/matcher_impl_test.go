@@ -3,9 +3,11 @@ package matcher
 import (
 	"context"
 	"testing"
+	"time"
 
 	"github.com/stackrox/rox/central/baseimage/datastore/mocks"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
@@ -18,6 +20,8 @@ func TestMatchWithBaseImages(t *testing.T) {
 	mockDS := mocks.NewMockDataStore(ctrl)
 	m := New(mockDS)
 	ctx := context.Background()
+
+	testCreatedTime := protoconv.ConvertTimeToTimestamp(time.Date(2025, 1, 15, 10, 0, 0, 0, time.UTC))
 
 	tcs := []struct {
 		desc      string
@@ -37,6 +41,7 @@ func TestMatchWithBaseImages(t *testing.T) {
 							Repository:     "rhel",
 							Tag:            "8",
 							ManifestDigest: "sha-base",
+							Created:        testCreatedTime,
 							Layers: []*storage.BaseImageLayer{
 								{LayerDigest: "layer-B", Index: 1}, // Index 1 comes first in slice
 								{LayerDigest: "layer-A", Index: 0}, // Index 0 comes second
@@ -49,6 +54,7 @@ func TestMatchWithBaseImages(t *testing.T) {
 					BaseImageId:       "base-1",
 					BaseImageFullName: "rhel:8",
 					BaseImageDigest:   "sha-base",
+					Created:           testCreatedTime,
 				},
 			},
 		},
@@ -131,6 +137,9 @@ func TestMatchWithBaseImages(t *testing.T) {
 					assert.Equal(t, tc.expected[i].GetBaseImageId(), actual[i].GetBaseImageId())
 					if tc.expected[i].GetBaseImageFullName() != "" {
 						assert.Equal(t, tc.expected[i].GetBaseImageFullName(), actual[i].GetBaseImageFullName())
+					}
+					if tc.expected[i].GetCreated() != nil {
+						assert.Equal(t, tc.expected[i].GetCreated(), actual[i].GetCreated())
 					}
 				}
 			}

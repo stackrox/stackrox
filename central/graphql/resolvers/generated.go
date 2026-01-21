@@ -162,6 +162,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"baseImageDigest: String!",
 		"baseImageFullName: String!",
 		"baseImageId: String!",
+		"created: Time",
 	}))
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.BooleanOperator(0)))
 	utils.Must(builder.AddType("CSCC", []string{
@@ -3075,6 +3076,11 @@ func (resolver *baseImageInfoResolver) BaseImageFullName(ctx context.Context) st
 func (resolver *baseImageInfoResolver) BaseImageId(ctx context.Context) string {
 	value := resolver.data.GetBaseImageId()
 	return value
+}
+
+func (resolver *baseImageInfoResolver) Created(ctx context.Context) (*graphql.Time, error) {
+	value := resolver.data.GetCreated()
+	return protocompat.ConvertTimestampToGraphqlTimeOrError(value)
 }
 
 func toBooleanOperator(value *string) storage.BooleanOperator {

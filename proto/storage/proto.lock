@@ -1397,6 +1397,11 @@
                 "name": "layers",
                 "type": "BaseImageLayer",
                 "is_repeated": true
+              },
+              {
+                "id": 10,
+                "name": "created",
+                "type": "google.protobuf.Timestamp"
               }
             ]
           },
@@ -9480,6 +9485,11 @@
                 "id": 3,
                 "name": "base_image_digest",
                 "type": "string"
+              },
+              {
+                "id": 4,
+                "name": "created",
+                "type": "google.protobuf.Timestamp"
               }
             ]
           }
