@@ -50,7 +50,7 @@ func GetPipeline() pipeline.Fragment {
 	bucketCapacity := env.VMIndexReportBucketCapacity.IntegerSetting()
 	rateLimiter, err := rate.NewLimiter(rateLimiterWorkload, rateLimit, bucketCapacity)
 	if err != nil {
-		log.Panicf("Failed to create rate limiter for %s: %v", rateLimiterWorkload, err)
+		log.Errorf("Failed to create rate limiter for %s: %v", rateLimiterWorkload, err)
 	}
 	return newPipeline(
 		vmDatastore.Singleton(),
