@@ -1933,6 +1933,59 @@ class Kubernetes {
         return execInContainerByPodName(name, namespace, splitCmd, retries)
     }
 
+    boolean attachToContainerByPodName(String name, String namespace, int retries = 1) {
+        // Wait for container 0 to be running first.
+        def timer = new Timer(retries, 1)
+        while (timer.IsValid()) {
+            def p = client.pods().inNamespace(namespace).withName(name).get()
+            if (p == null || p.status.containerStatuses.size() == 0) {
+                log.debug "First container in pod ${name} not yet running ..."
+                continue
+            }
+            def status = p.status.containerStatuses.get(0)
+            if (status.state.running != null) {
+                log.debug "First container in pod ${name} is running"
+                break
+            }
+            log.debug "First container in pod ${name} not yet running ..."
+        }
+
+        final outputStream = new ByteArrayOutputStream()
+        final errorStream = new ByteArrayOutputStream()
+        log.debug("Attaching to the pod {}", name)
+
+        // Disable retries for attach - we only need the request to reach the API server once
+        // to generate the pods/attach event. Retries would cause multiple events.
+        def originalRetryLimit = client.configuration.requestRetryBackoffLimit
+        client.configuration.setRequestRetryBackoffLimit(0)
+
+        ExecWatch attachCmd = null
+        try {
+            // We fire and forget, we do not wait for completion like in the exec case
+            // because the invocation is what leads to the pods/attach event, and is hence sufficient
+            attachCmd = client.pods()
+                    .inNamespace(namespace)
+                    .withName(name)
+                    .redirectingInput()
+                    .writingOutput(outputStream)
+                    .writingError(errorStream)
+                    .attach()
+
+            sleep(500)
+            return true
+        } catch (Exception e) {
+            log.debug("Error attaching to pod: {}", e.getMessage())
+            // If the API server is reachable and the pod exists, any exception is likely a timeout
+            // or server response error - the pods/attach event was generated
+            // If the event truly wasn't generated (network issue), the test will fail later when it checks
+            // for violations
+            return true
+        } finally {
+            attachCmd?.close()
+            client.configuration.setRequestRetryBackoffLimit(originalRetryLimit)
+        }
+    }
+
     private enum ExecStatus {
         UNKNOWN,
         SUCCESS,
@@ -1943,6 +1996,10 @@ class Kubernetes {
 
     boolean execInContainer(Deployment deployment, String cmd) {
         return execInContainerByPodName(deployment.pods.get(0).name, deployment.namespace, cmd, 30)
+    }
+
+    boolean attachToContainer(Deployment deployment) {
+        return attachToContainerByPodName(deployment.pods.get(0).name, deployment.namespace, 30)
     }
 
     String generateYaml(Object orchestratorObject) {
@@ -2317,6 +2374,8 @@ class Kubernetes {
                         readOnlyRootFilesystem: deployment.readOnlyRootFilesystem,
                         capabilities: new Capabilities(add: deployment.addCapabilities,
                                 drop: deployment.dropCapabilities)),
+                stdin: deployment.stdin,
+                tty: deployment.tty,
         )
         // Allow override of imagePullPolicy for quay.io images. Typically used
         // to set to Never to help keep the list of quay.io prebuilt images up

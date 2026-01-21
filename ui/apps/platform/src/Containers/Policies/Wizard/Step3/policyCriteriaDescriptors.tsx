@@ -1409,8 +1409,12 @@ export const policyCriteriaDescriptors: Descriptor[] = [
                 value: 'PODS_EXEC',
             },
             {
-                label: 'Pods port forward',
+                label: 'Pod port forward',
                 value: 'PODS_PORTFORWARD',
+            },
+            {
+                label: 'Pod attach',
+                value: 'PODS_ATTACH',
             },
         ],
         canBooleanLogic: false,
