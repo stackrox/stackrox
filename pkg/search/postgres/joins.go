@@ -180,59 +180,8 @@ func isChildSchema(childSchema *walker.Schema, parentSchema *walker.Schema) bool
 	return false
 }
 
-// shouldUseLeftJoinForChildren detects if we should use LEFT JOIN for child tables
-// based on arrayFields (destination type has array fields from child tables)
-func shouldUseLeftJoinForChildren(schema *walker.Schema, q *v1.Query, arrayFields map[string]bool) bool {
-	if q == nil || len(q.GetSelects()) == 0 || arrayFields == nil {
-		return false
-	}
-
-	hasParentFields := false
-	hasChildFieldsToAggregate := false
-
-	for _, sel := range q.GetSelects() {
-		fieldName := strings.ToLower(sel.GetField().GetName())
-
-		// Look up field in schema
-		for _, f := range schema.Fields {
-			if strings.ToLower(f.Search.FieldName) != fieldName {
-				continue
-			}
-
-			// Check if this is a child table field
-			if f.Schema.Table != schema.Table {
-				// Check if it's actually a child of this schema AND destination type is array
-				isChild := false
-				for _, child := range schema.Children {
-					if f.Schema.Table == child.Table {
-						isChild = true
-						break
-					}
-				}
-				// Match against SQL alias (same format as db tag: lowercase with underscores)
-				if isChild {
-					alias := strings.Join(strings.Fields(strings.ToLower(f.Search.FieldName)), "_")
-					if arrayFields[alias] {
-						hasChildFieldsToAggregate = true
-					}
-				}
-			} else {
-				// Parent table field
-				hasParentFields = true
-			}
-			break
-		}
-	}
-
-	return hasParentFields && hasChildFieldsToAggregate
-}
-
 func getJoinsAndFields(src *walker.Schema, q *v1.Query, arrayFields map[string]bool) ([]Join, map[string]searchFieldMetadata) {
 	unreachedFields, nullableFields := collectFields(q)
-
-	// Detect if we're using child table aggregation pattern based on destination type:
-	// If destination has array fields from child tables, use LEFT JOIN for optional 1:N relationships
-	useLeftJoinForChildren := shouldUseLeftJoinForChildren(src, q, arrayFields)
 
 	joinTreeRoot := &joinTreeNode{
 		currNode: src,
@@ -259,6 +208,14 @@ func getJoinsAndFields(src *walker.Schema, q *v1.Query, arrayFields map[string]b
 					if nullableFields.Remove(lowerCaseName) {
 						joinType = Left
 					}
+					// Check if this is a child table field that should be aggregated
+					// If so, use LEFT JOIN to include parent rows with no child rows
+					if arrayFields != nil && isChildSchema(currElem.schema, src) {
+						alias := strings.Join(strings.Fields(lowerCaseName), "_")
+						if arrayFields[alias] {
+							joinType = Left
+						}
+					}
 				}
 			}
 
@@ -279,10 +236,6 @@ func getJoinsAndFields(src *walker.Schema, q *v1.Query, arrayFields map[string]b
 
 		// We found a field in this schema; if this is not the root schema itself, we'll need to add it to the join tree.
 		if len(reachableFields) > numReachableFieldsBefore && len(currElem.pathFromRoot) > 0 {
-			// Force LEFT JOIN for child tables when using child table aggregation pattern
-			if useLeftJoinForChildren && isChildSchema(currElem.schema, src) {
-				joinType = Left
-			}
 			joinTreeRoot.addPathToTree(currElem.pathFromRoot, currElem.schema, joinType)
 		}
 
