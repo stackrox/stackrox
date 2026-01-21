@@ -39,12 +39,21 @@ import {
     virtualMachinesClusterSearchFilterConfig,
     virtualMachinesSearchFilterConfig,
 } from '../../searchFilterConfig';
+import { Name as NamespaceName } from 'Components/CompoundSearchFilter/attributes/namespace';
+import type { CompoundSearchFilterEntity } from 'Components/CompoundSearchFilter/types';
 import { getVirtualMachineEntityPagePath } from '../../utils/searchUtils';
 import { VIRTUAL_MACHINE_SORT_FIELD } from '../../utils/sortFields';
+
+const namespaceSearchFilterConfig: CompoundSearchFilterEntity = {
+    displayName: 'Namespace',
+    searchCategory: 'NAMESPACES',
+    attributes: [NamespaceName],
+};
 
 const searchFilterConfig = [
     virtualMachinesSearchFilterConfig,
     virtualMachinesClusterSearchFilterConfig,
+    namespaceSearchFilterConfig,
 ];
 
 export const sortFields = [VIRTUAL_MACHINE_SORT_FIELD];
