@@ -614,6 +614,7 @@ func testPermissionSet(permissions map[string]v1.Access) *storage.PermissionSet 
 	permissionSet := &storage.PermissionSet{
 		Id:               permissionSetID,
 		Name:             fmt.Sprintf(permissionSetNameFormat, permissionSetID),
+		Description:      permissionSetDescription,
 		ResourceToAccess: make(map[string]storage.Access),
 		Traits:           generatedObjectTraits.CloneVT(),
 	}
@@ -626,8 +627,9 @@ func testPermissionSet(permissions map[string]v1.Access) *storage.PermissionSet 
 func testAccessScope(targetScopes []*v1.ClusterScope) *storage.SimpleAccessScope {
 	accessScopeID := computeAccessScopeID(targetScopes)
 	accessScope := &storage.SimpleAccessScope{
-		Id:   accessScopeID,
-		Name: fmt.Sprintf(accessScopeNameFormat, accessScopeID),
+		Id:          accessScopeID,
+		Name:        fmt.Sprintf(accessScopeNameFormat, accessScopeID),
+		Description: accessScopeDescription,
 		Rules: &storage.SimpleAccessScope_Rules{
 			IncludedClusters:   make([]string, 0),
 			IncludedNamespaces: make([]*storage.SimpleAccessScope_Rules_Namespace, 0),
@@ -663,7 +665,7 @@ func testRole(permissions map[string]v1.Access, targetScopes []*v1.ClusterScope)
 	accessScopeID := computeAccessScopeID(targetScopes)
 	role := &storage.Role{
 		Name:            computeRoleName(permissions, targetScopes),
-		Description:     "Generated role for OCP console plugin",
+		Description:     roleDescription,
 		PermissionSetId: permissionSetID,
 		AccessScopeId:   accessScopeID,
 		Traits:          generatedObjectTraits.CloneVT(),

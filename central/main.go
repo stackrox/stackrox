@@ -434,7 +434,6 @@ func servicesToRegister() []pkgGRPC.APIService {
 		iiService.Singleton(),
 		imageService.Singleton(),
 		integrationHealthService.Singleton(),
-		internalTokenAuthService.Singleton(),
 		metadataService.New(),
 		mitreService.Singleton(),
 		namespaceService.Singleton(),
@@ -492,6 +491,10 @@ func servicesToRegister() []pkgGRPC.APIService {
 
 	if features.BaseImageDetection.Enabled() {
 		servicesToRegister = append(servicesToRegister, baseImageService.Singleton())
+	}
+
+	if features.OCPConsoleIntegration.Enabled() {
+		servicesToRegister = append(servicesToRegister, internalTokenAuthService.Singleton())
 	}
 
 	autoTriggerUpgrades := sensorUpgradeService.Singleton().AutoUpgradeSetting()

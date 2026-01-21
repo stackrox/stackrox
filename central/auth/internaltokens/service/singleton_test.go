@@ -1,9 +1,9 @@
 package service
 
 import (
-	tokensMocks "github.com/stackrox/rox/pkg/auth/tokens/mocks"
 	"testing"
 
+	tokensMocks "github.com/stackrox/rox/pkg/auth/tokens/mocks"
 	"github.com/stretchr/testify/assert"
 	"go.uber.org/mock/gomock"
 )

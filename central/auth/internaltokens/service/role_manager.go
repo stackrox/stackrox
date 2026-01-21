@@ -19,6 +19,10 @@ const (
 	accessScopeNameFormat   = "Generated access scope for %s"
 	roleNameFormat          = "Generated role for permission set %s and access scope %s"
 
+	accessScopeDescription   = "Generated access scope for internal authentication tokens"
+	permissionSetDescription = "Generated permission set for internal authentication tokens"
+	roleDescription          = "Generated role for internal authentication tokens"
+
 	primaryListSeparator   = ";"
 	keyValueSeparator      = ":"
 	secondaryListSeparator = ","
@@ -43,6 +47,7 @@ func (rm *roleManager) createPermissionSet(
 ) (string, error) {
 	// TODO: Consider pruning the generated permission sets after some idle time.
 	permissionSet := &storage.PermissionSet{
+		Description:      permissionSetDescription,
 		ResourceToAccess: make(map[string]storage.Access),
 		Traits:           generatedObjectTraits.CloneVT(),
 	}
@@ -94,7 +99,7 @@ func (rm *roleManager) createAccessScope(
 ) (string, error) {
 	// TODO: Consider pruning the generated access scopes after some idle time.
 	accessScope := &storage.SimpleAccessScope{
-		Description: "",
+		Description: accessScopeDescription,
 		Rules:       &storage.SimpleAccessScope_Rules{},
 		Traits:      generatedObjectTraits.CloneVT(),
 	}
@@ -163,7 +168,7 @@ func (rm *roleManager) createRole(
 	}
 	resultRole := &storage.Role{
 		Name:            fmt.Sprintf(roleNameFormat, permissionSetID, accessScopeID),
-		Description:     "Generated role for OCP console plugin",
+		Description:     roleDescription,
 		PermissionSetId: permissionSetID,
 		AccessScopeId:   accessScopeID,
 		Traits:          generatedObjectTraits.CloneVT(),
