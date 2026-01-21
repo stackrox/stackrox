@@ -3,6 +3,7 @@ package index
 import (
 	"context"
 	"fmt"
+	"math/rand"
 	"net/http"
 	"time"
 
@@ -17,12 +18,12 @@ import (
 var log = logging.LoggerForModule()
 
 const (
-	mappingClientTimeout = 30 * time.Second
+	mappingClientTimeout  = 30 * time.Second
+	maxInitialReportDelay = 20 * time.Minute
 )
 
 func RunDaemon(ctx context.Context, cfg *common.Config, client *vsock.Client) error {
-	// Create the initial index report immediately.
-	if err := RunSingle(ctx, cfg, client); err != nil {
+	if err := RunSingleWithInitialDelay(ctx, cfg, client); err != nil {
 		log.Errorf("Failed to run initial index: %v", err)
 	}
 
@@ -74,4 +75,36 @@ func runIndexer(ctx context.Context, cfg *common.Config) (*v4.IndexReport, error
 		return nil, err
 	}
 	return report, nil
+}
+
+// RunSingleWithInitialDelay applies a randomized startup delay before sending the first
+// index report unless explicitly bypassed via the SendNow flag.
+func RunSingleWithInitialDelay(ctx context.Context, cfg *common.Config, client *vsock.Client) error {
+	if err := maybeDelayInitialReport(ctx, cfg.SendNow); err != nil {
+		return fmt.Errorf("initial delay: %w", err)
+	}
+	return RunSingle(ctx, cfg, client)
+}
+
+func maybeDelayInitialReport(ctx context.Context, sendNow bool) error {
+	if sendNow {
+		log.Infof("Bypassing randomized initial delay (--now flag provided).")
+		return nil
+	}
+
+	delay := time.Duration(rand.New(rand.NewSource(time.Now().UnixNano())).Int63n(int64(maxInitialReportDelay) + 1))
+	log.Infof("Delaying initial index report by %s (use --now to send immediately).", delay)
+	if delay == 0 {
+		return nil
+	}
+
+	timer := time.NewTimer(delay)
+	defer timer.Stop()
+
+	select {
+	case <-ctx.Done():
+		return ctx.Err()
+	case <-timer.C:
+		return nil
+	}
 }

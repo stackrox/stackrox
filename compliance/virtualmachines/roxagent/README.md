@@ -21,6 +21,9 @@ sudo ./roxagent --daemon
 sudo ./roxagent --daemon --index-interval 10m --host-path /custom/path --port 2048
 ```
 
+On startup the agent adds a randomized delay (0–20 minutes) before sending the first
+report to reduce thundering-herd spikes. Use `--now` to skip this delay.
+
 ## Flags
 
 - `--daemon` - Run continuously (default: false).
@@ -30,6 +33,7 @@ sudo ./roxagent --daemon --index-interval 10m --host-path /custom/path --port 20
 - `--repo-cpe-url` - URL for the repository to CPE mapping.
 - `--timeout` - VSock client timeout when sending index reports.
 - `--verbose` - Prints the index reports to stdout.
+- `--now` - Send the first index report immediately (skip the randomized delay).
 
 ## How it works
 
@@ -51,16 +55,19 @@ GOOS=linux GOARCH=amd64 go build -o roxagent-linux .
 
 ## Troubleshooting
 
-**Can't connect to host**
+### Can't connect to host
+
 - Check if vsock is enabled in the VM.
 - Verify the port isn't in use.
 - Make sure vsock kernel modules are loaded.
 
-**No packages found**
+### No packages found
+
 - Check `--host-path` points to the right place.
 - Verify `rpm`/`dnf` databases exist and are readable.
 - Use `--verbose` to examine the index report and compare with the content from `rpm`/`dnf` databases.
 
-**Scan failures**
+### Scan failures
+
 - Check internet access for repo-to-CPE downloads.
 - Look at logs for specific errors.

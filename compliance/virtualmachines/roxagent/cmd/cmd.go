@@ -41,6 +41,9 @@ func RootCmd(ctx context.Context) *cobra.Command {
 	cmd.Flags().BoolVar(&cfg.Verbose, "verbose", false,
 		"Prints the index reports to stdout.",
 	)
+	cmd.Flags().BoolVar(&cfg.SendNow, "now", false,
+		"Send the initial index report immediately, bypassing the randomized startup delay.",
+	)
 	cmd.Flags().Uint32Var(&cfg.VsockPort, "port", 818,
 		"VSock port to connect with the virtual machine host.",
 	)
@@ -52,7 +55,7 @@ func RootCmd(ctx context.Context) *cobra.Command {
 			}
 			return
 		}
-		if err := index.RunSingle(ctx, cfg, client); err != nil {
+		if err := index.RunSingleWithInitialDelay(ctx, cfg, client); err != nil {
 			log.Errorf("Running indexer: %v", err)
 		}
 	}
