@@ -92,7 +92,10 @@ func maybeDelayInitialReport(ctx context.Context, sendNow bool) error {
 		return nil
 	}
 
-	delay := time.Duration(rand.New(rand.NewSource(time.Now().UnixNano())).Int63n(int64(maxInitialReportDelay) + 1))
+	r := rand.New(rand.NewSource(time.Now().UnixNano()))
+	delaySeconds := r.Intn(int(maxInitialReportDelay.Seconds()))
+	delay := time.Duration(delaySeconds) * time.Second
+
 	log.Infof("Delaying initial index report by %s (use --now to send immediately).", delay)
 	if delay == 0 {
 		return nil
