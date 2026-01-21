@@ -14,7 +14,7 @@ Scans the VM for installed packages (`rpm`/`dnf` databases), creates vulnerabili
 # Single scan
 sudo ./roxagent
 
-# Daemon mode (scans every 5 minutes)
+# Daemon mode (scans every 4 hours by default)
 sudo ./roxagent --daemon
 
 # Custom settings
