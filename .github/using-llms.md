@@ -45,6 +45,6 @@ information. Demand clarity and brevity just as you would with verbose human sub
 
 We recognize that software development methodologies are evolving. In the future, we may
 adopt new paradigms—such as spec-driven development where implementation details are
-entirely automated. Until some new process is formally
-adopted and documented, we continue to operate under the standard model where the
-contributor is the primary agent of understanding and quality.
+entirely automated. Until some new process is formally adopted and documented, we continue
+to operate under the standard model where the contributor is the primary agent of
+understanding and quality.
