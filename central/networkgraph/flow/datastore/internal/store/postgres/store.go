@@ -247,6 +247,10 @@ func (s *flowStoreImpl) copyFromNetworkflow(ctx context.Context, tx *postgres.Tx
 	return err
 }
 
+func getPartitionName(clusterID string) string {
+	return fmt.Sprintf("network_flows_v2_%s", strings.ReplaceAll(clusterID, "-", "_"))
+}
+
 // New returns a new Store instance using the provided sql instance.
 func New(db postgres.DB, clusterID string, networktreeMgr networktree.Manager) FlowStore {
 	clusterUUID, err := uuid.FromString(clusterID)
@@ -255,7 +259,7 @@ func New(db postgres.DB, clusterID string, networktreeMgr networktree.Manager) F
 		return nil
 	}
 
-	partitionName := fmt.Sprintf("network_flows_v2_%s", strings.ReplaceAll(clusterID, "-", "_"))
+	partitionName := getPartitionName(clusterID)
 	partitionCreate := `create table if not exists %s partition of network_flows_v2
 		for values in ('%s')`
 
@@ -275,6 +279,18 @@ func New(db postgres.DB, clusterID string, networktreeMgr networktree.Manager) F
 		partitionName:  partitionName,
 		networktreeMgr: networktreeMgr,
 	}
+}
+
+// dropPartition drops the partition from network_flows_v2 for the target cluster.
+func dropPartition(ctx context.Context, db postgres.DB, clusterID string) error {
+	partitionName := getPartitionName(clusterID)
+	partitionDrop := `drop table if exists %s restrict`
+
+	err := pgutils.Retry(ctx, func() error {
+		_, err := db.Exec(ctx, fmt.Sprintf(partitionDrop, partitionName))
+		return err
+	})
+	return err
 }
 
 func (s *flowStoreImpl) copyFrom(ctx context.Context, lastUpdateTS timestamp.MicroTS, objs ...*storage.NetworkFlow) error {
