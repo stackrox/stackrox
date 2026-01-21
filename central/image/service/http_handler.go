@@ -30,6 +30,7 @@ import (
 type sbomHttpHandler struct {
 	integration      integration.Set
 	enricher         enricher.ImageEnricher
+	enricherV2       enricher.ImageEnricherV2
 	clusterSACHelper sachelper.ClusterSacHelper
 	riskManager      manager.Manager
 }
@@ -37,10 +38,11 @@ type sbomHttpHandler struct {
 var _ http.Handler = (*sbomHttpHandler)(nil)
 
 // SBOMHandler returns a handler for get sbom http request.
-func SBOMHandler(integration integration.Set, enricher enricher.ImageEnricher, clusterSACHelper sachelper.ClusterSacHelper, riskManager manager.Manager) http.Handler {
+func SBOMHandler(integration integration.Set, enricher enricher.ImageEnricher, enricherV2 enricher.ImageEnricherV2, clusterSACHelper sachelper.ClusterSacHelper, riskManager manager.Manager) http.Handler {
 	return sbomHttpHandler{
 		integration:      integration,
 		enricher:         enricher,
+		enricherV2:       enricherV2,
 		clusterSACHelper: clusterSACHelper,
 		riskManager:      riskManager,
 	}
@@ -88,11 +90,31 @@ func (h sbomHttpHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	_, _ = w.Write(bytes)
 }
 
+// enrichByNameWithModelSwitch enriches an image by name, returning both V1 and V2 models based on the feature flag.
+func (h sbomHttpHandler) enrichByNameWithModelSwitch(
+	ctx context.Context,
+	enrichmentCtx enricher.EnrichmentContext,
+	imgName string,
+) (img *storage.Image, imgV2 *storage.ImageV2, err error) {
+	if features.FlattenImageData.Enabled() {
+		imgV2, err = enricher.EnrichImageV2ByName(ctx, h.enricherV2, enrichmentCtx, imgName)
+		if err != nil {
+			return nil, nil, err
+		}
+		img = utils.ConvertToV1(imgV2)
+		return img, imgV2, nil
+	}
+
+	img, err = enricher.EnrichImageByName(ctx, h.enricher, enrichmentCtx, imgName)
+	return img, nil, err
+}
+
 // enrichImage enriches the image with the given name and based on the given enrichment context.
 func (h sbomHttpHandler) enrichImage(ctx context.Context, enrichmentCtx enricher.EnrichmentContext, imgName string) (*storage.Image, bool, error) {
 	// forcedEnrichment is set to true when enrichImage forces an enrichment.
 	forcedEnrichment := false
-	img, err := enricher.EnrichImageByName(ctx, h.enricher, enrichmentCtx, imgName)
+
+	img, imgV2, err := h.enrichByNameWithModelSwitch(ctx, enrichmentCtx, imgName)
 	if err != nil {
 		return nil, forcedEnrichment, err
 	}
@@ -104,13 +126,14 @@ func (h sbomHttpHandler) enrichImage(ctx context.Context, enrichmentCtx enricher
 		// Force scan by Scanner V4.
 		addForceToEnrichmentContext(&enrichmentCtx)
 		forcedEnrichment = true
-		img, err = enricher.EnrichImageByName(ctx, h.enricher, enrichmentCtx, imgName)
+
+		img, imgV2, err = h.enrichByNameWithModelSwitch(ctx, enrichmentCtx, imgName)
 		if err != nil {
 			return nil, forcedEnrichment, err
 		}
 	}
 
-	err = h.saveImage(img)
+	err = h.saveImage(img, imgV2)
 	if err != nil {
 		return nil, forcedEnrichment, err
 	}
@@ -167,12 +190,14 @@ func (h sbomHttpHandler) getSBOM(ctx context.Context, params apiparams.SBOMReque
 	if !found && !params.Force && !alreadyForcedEnrichment {
 		// Since the Index Report for image does not exist, force scan by Scanner V4.
 		addForceToEnrichmentContext(&enrichmentCtx)
-		img, err = enricher.EnrichImageByName(ctx, h.enricher, enrichmentCtx, params.ImageName)
+
+		var imgV2 *storage.ImageV2
+		img, imgV2, err = h.enrichByNameWithModelSwitch(ctx, enrichmentCtx, params.ImageName)
 		if err != nil {
 			return nil, err
 		}
 
-		err = h.saveImage(img)
+		err = h.saveImage(img, imgV2)
 		if err != nil {
 			return nil, err
 		}
@@ -209,7 +234,15 @@ func (h sbomHttpHandler) scannedByScannerV4(img *storage.Image) bool {
 }
 
 // saveImage saves the image to Central's database.
-func (h sbomHttpHandler) saveImage(img *storage.Image) error {
+func (h sbomHttpHandler) saveImage(img *storage.Image, imgV2 *storage.ImageV2) error {
+	if features.FlattenImageData.Enabled() {
+		return h.saveImageV2(imgV2)
+	}
+	return h.saveImageV1(img)
+}
+
+// saveImageV1 saves an Image V1 to Central's database.
+func (h sbomHttpHandler) saveImageV1(img *storage.Image) error {
 	img.Id = utils.GetSHA(img)
 	if img.GetId() == "" {
 		return nil
@@ -217,6 +250,28 @@ func (h sbomHttpHandler) saveImage(img *storage.Image) error {
 
 	if err := h.riskManager.CalculateRiskAndUpsertImage(img); err != nil {
 		log.Errorw("Error upserting image", logging.ImageName(img.GetName().GetFullName()), logging.ImageID(img.GetId()), logging.Err(err))
+		return fmt.Errorf("saving image: %w", err)
+	}
+	return nil
+}
+
+// saveImageV2 saves an Image V2 to Central's database.
+func (h sbomHttpHandler) saveImageV2(imgV2 *storage.ImageV2) error {
+	if imgV2 == nil {
+		return errors.New("imgV2 is nil when FlattenImageData is enabled")
+	}
+	imgV2.Digest = utils.GetSHAV2(imgV2)
+	var err error
+	imgV2.Id, err = utils.GetImageV2ID(imgV2)
+	if err != nil {
+		return fmt.Errorf("getting image V2 ID: %w", err)
+	}
+	if imgV2.GetId() == "" {
+		return nil
+	}
+
+	if err := h.riskManager.CalculateRiskAndUpsertImageV2(imgV2); err != nil {
+		log.Errorw("Error upserting image", logging.ImageName(imgV2.GetName().GetFullName()), logging.ImageID(imgV2.GetId()), logging.Err(err))
 		return fmt.Errorf("saving image: %w", err)
 	}
 	return nil

@@ -249,7 +249,9 @@ describe(Cypress.spec.relative, () => {
         cy.get(selectors.attributeSelectItems).eq(4).should('have.text', 'Status');
     });
 
-    it('should display the text input and correctly search for image tags', () => {
+    it('should display the autocomplete input and correctly search for image tags', () => {
+        mockAutocompleteResponse();
+
         const config = [imageSearchFilterConfig, nodeComponentSearchFilterConfig];
         const onSearch = cy.stub().as('onSearch');
         const searchFilter = {};
@@ -263,15 +265,14 @@ describe(Cypress.spec.relative, () => {
 
         cy.get('input[aria-label="Filter results by Image tag"]').should('exist');
 
-        cy.get('input[aria-label="Filter results by Image tag"]').clear();
-        cy.get('input[aria-label="Filter results by Image tag"]').type('Tag 123');
-        cy.get('button[aria-label="Apply text input to search"]').click();
+        cy.get('input[aria-label="Filter results by Image tag"]').type('centos:7');
+        cy.get('button[aria-label="Apply autocomplete input to search"]').click();
 
         cy.get('@onSearch').should('have.been.calledWithExactly', [
             {
                 action: 'APPEND',
                 category: 'Image Tag',
-                value: 'Tag 123',
+                value: 'centos:7',
             },
         ]);
     });
