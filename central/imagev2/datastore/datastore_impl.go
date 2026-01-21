@@ -409,9 +409,17 @@ func (ds *datastoreImpl) upsertImageCVEInfos(ctx context.Context, image *storage
 
 	for _, component := range image.GetScan().GetComponents() {
 		for _, vuln := range component.GetVulns() {
+			// Determine fix available timestamp: use scanner-provided value if available,
+			// otherwise fabricate from scan time if the CVE is fixable (has a fix version).
+			// This handles non-Red Hat data sources that don't provide fix timestamps.
+			fixAvailableTimestamp := vuln.GetFixAvailableTimestamp()
+			if fixAvailableTimestamp == nil && vuln.GetFixedBy() != "" {
+				fixAvailableTimestamp = now
+			}
+
 			info := &storage.ImageCVEInfo{
 				Id:                    cve.ImageCVEInfoID(vuln.GetCve(), component.GetName(), vuln.GetDatasource()),
-				FixAvailableTimestamp: vuln.GetFixAvailableTimestamp(),
+				FixAvailableTimestamp: fixAvailableTimestamp,
 				FirstSystemOccurrence: now, // Smart upsert in ImageCVEInfo datastore preserves existing
 			}
 			infos = append(infos, info)

@@ -6593,6 +6593,11 @@
                 "id": 15,
                 "name": "image_id_v2",
                 "type": "string"
+              },
+              {
+                "id": 16,
+                "name": "fix_available_timestamp",
+                "type": "google.protobuf.Timestamp"
               }
             ]
           },
