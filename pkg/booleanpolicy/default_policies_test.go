@@ -3283,6 +3283,7 @@ func (suite *DefaultPoliciesTestSuite) TestProcessBaseline() {
 
 func (suite *DefaultPoliciesTestSuite) TestKubeEventConstraints() {
 	podExecGroup := policyGroupWithSingleKeyValue(fieldnames.KubeResource, "PODS_EXEC", false)
+	podAttachGroup := policyGroupWithSingleKeyValue(fieldnames.KubeResource, "PODS_ATTACH", false)
 
 	aptGetGroup := policyGroupWithSingleKeyValue(fieldnames.ProcessName, "apt-get", false)
 
@@ -3293,6 +3294,7 @@ func (suite *DefaultPoliciesTestSuite) TestKubeEventConstraints() {
 		builderErr         bool
 		withProcessSection bool
 	}{
+		// PODS_EXEC test cases
 		{
 			event:              podExecEvent("p1", "c1", "cmd"),
 			groups:             []*storage.PolicyGroup{podExecGroup},
@@ -3321,6 +3323,42 @@ func (suite *DefaultPoliciesTestSuite) TestKubeEventConstraints() {
 			groups:             []*storage.PolicyGroup{podExecGroup},
 			expectedViolations: []*storage.Alert_Violation{podExecViolationMsg("p1", "c1", "")},
 			withProcessSection: true,
+		},
+		// PODS_ATTACH test cases
+		{
+			event:              podAttachEvent("p1", "c1"),
+			groups:             []*storage.PolicyGroup{podAttachGroup},
+			expectedViolations: []*storage.Alert_Violation{podAttachViolationMsg("p1", "c1")},
+		},
+		{
+			event:              podAttachEvent("p1", ""),
+			groups:             []*storage.PolicyGroup{podAttachGroup},
+			expectedViolations: []*storage.Alert_Violation{podAttachViolationMsg("p1", "")},
+		},
+		{
+			// No event provided, should not match
+			groups: []*storage.PolicyGroup{podAttachGroup},
+		},
+		{
+			// Port forward event should not match attach policy
+			event:  podPortForwardEvent("p1", 8000),
+			groups: []*storage.PolicyGroup{podAttachGroup},
+		},
+		{
+			// Exec event should not match attach policy
+			event:  podExecEvent("p1", "c1", "cmd"),
+			groups: []*storage.PolicyGroup{podAttachGroup},
+		},
+		{
+			// Attach event should not match exec policy
+			event:  podAttachEvent("p1", "c1"),
+			groups: []*storage.PolicyGroup{podExecGroup},
+		},
+		{
+			// Attach policy with process group should fail builder
+			event:      podAttachEvent("p1", "c1"),
+			groups:     []*storage.PolicyGroup{podAttachGroup, aptGetGroup},
+			builderErr: true,
 		},
 	} {
 		suite.T().Run(fmt.Sprintf("%+v", c.groups), func(t *testing.T) {
@@ -4071,6 +4109,47 @@ func podPortForwardEvent(pod string, port int32) *storage.KubernetesEvent {
 		ObjectArgs: &storage.KubernetesEvent_PodPortForwardArgs_{
 			PodPortForwardArgs: &storage.KubernetesEvent_PodPortForwardArgs{
 				Ports: []int32{port},
+			},
+		},
+	}
+}
+
+func podAttachEvent(pod, container string) *storage.KubernetesEvent {
+	return &storage.KubernetesEvent{
+		Object: &storage.KubernetesEvent_Object{
+			Name:     pod,
+			Resource: storage.KubernetesEvent_Object_PODS_ATTACH,
+		},
+		ObjectArgs: &storage.KubernetesEvent_PodAttachArgs_{
+			PodAttachArgs: &storage.KubernetesEvent_PodAttachArgs{
+				Container: container,
+			},
+		},
+	}
+}
+
+func podAttachViolationMsg(pod, container string) *storage.Alert_Violation {
+	attrs := []*storage.Alert_Violation_KeyValueAttrs_KeyValueAttr{
+		{Key: "pod", Value: pod},
+	}
+	if container != "" {
+		attrs = append(attrs, &storage.Alert_Violation_KeyValueAttrs_KeyValueAttr{Key: "container", Value: container})
+	}
+
+	message := "Kubernetes API received attach request"
+	if pod != "" {
+		message = fmt.Sprintf("Kubernetes API received attach request to pod '%s'", pod)
+		if container != "" {
+			message = fmt.Sprintf("Kubernetes API received attach request to pod '%s' container '%s'", pod, container)
+		}
+	}
+
+	return &storage.Alert_Violation{
+		Message: message,
+		Type:    storage.Alert_Violation_K8S_EVENT,
+		MessageAttributes: &storage.Alert_Violation_KeyValueAttrs_{
+			KeyValueAttrs: &storage.Alert_Violation_KeyValueAttrs{
+				Attrs: attrs,
 			},
 		},
 	}

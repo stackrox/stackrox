@@ -34,6 +34,8 @@ class Deployment {
     Map<String, String> envValueFromResourceFieldRef = [:]
     Boolean isPrivileged = false
     Boolean readOnlyRootFilesystem = false
+    Boolean stdin = false
+    Boolean tty = false
     Map<String , String> limits = [:]
     Map<String , String> request = [:]
     Boolean hostNetwork = false
@@ -233,6 +235,16 @@ class Deployment {
 
     Deployment setReadOnlyRootFilesystem(boolean val) {
         this.readOnlyRootFilesystem = val
+        return this
+    }
+
+    Deployment setStdin(boolean val) {
+        this.stdin = val
+        return this
+    }
+
+    Deployment setTty(boolean val) {
+        this.tty = val
         return this
     }
 
