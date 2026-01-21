@@ -126,17 +126,18 @@ func (Traits_Visibility) EnumDescriptor() ([]byte, []int) {
 }
 
 // Origin specifies the origin of an object.
-// Objects can have four different origins:
+// Objects can have five different origins:
 // - IMPERATIVE: the object was created via the API. This is assumed by default.
 // - DEFAULT: the object is a default object, such as default roles, access scopes etc.
 // - DECLARATIVE: the object is created via declarative configuration.
 // - DECLARATIVE_ORPHANED: the object is created via declarative configuration and then unsuccessfully deleted(for example, because it is referenced by another object)
+// - DYNAMIC: the object is created via an internal API.
 // Based on the origin, different rules apply to the objects.
 // Objects with the DECLARATIVE origin are not allowed to be modified via API, only via declarative configuration.
-// Additionally, they may not reference objects with the IMPERATIVE origin.
+// Additionally, they may not reference objects with the IMPERATIVE or DYNAMIC origin.
 // Objects with the DEFAULT origin are not allowed to be modified via either API or declarative configuration.
 // They may be referenced by all other objects.
-// Objects with the IMPERATIVE origin are allowed to be modified via API, not via declarative configuration.
+// Objects with the IMPERATIVE or DYNAMIC origin are allowed to be modified via API, not via declarative configuration.
 // They may reference all other objects.
 // Objects with the DECLARATIVE_ORPHANED origin are not allowed to be modified via either API or declarative configuration.
 // DECLARATIVE_ORPHANED resource can become DECLARATIVE again if it is redefined in declarative configuration.
@@ -149,6 +150,7 @@ const (
 	Traits_DEFAULT              Traits_Origin = 1
 	Traits_DECLARATIVE          Traits_Origin = 2
 	Traits_DECLARATIVE_ORPHANED Traits_Origin = 3
+	Traits_DYNAMIC              Traits_Origin = 4
 )
 
 // Enum value maps for Traits_Origin.
@@ -158,12 +160,14 @@ var (
 		1: "DEFAULT",
 		2: "DECLARATIVE",
 		3: "DECLARATIVE_ORPHANED",
+		4: "DYNAMIC",
 	}
 	Traits_Origin_value = map[string]int32{
 		"IMPERATIVE":           0,
 		"DEFAULT":              1,
 		"DECLARATIVE":          2,
 		"DECLARATIVE_ORPHANED": 3,
+		"DYNAMIC":              4,
 	}
 )
 
@@ -258,7 +262,7 @@ var File_storage_traits_proto protoreflect.FileDescriptor
 
 const file_storage_traits_proto_rawDesc = "" +
 	"\n" +
-	"\x14storage/traits.proto\x12\astorage\"\xf3\x02\n" +
+	"\x14storage/traits.proto\x12\astorage\"\x80\x03\n" +
 	"\x06Traits\x12G\n" +
 	"\x0fmutability_mode\x18\x01 \x01(\x0e2\x1e.storage.Traits.MutabilityModeR\x0emutabilityMode\x12:\n" +
 	"\n" +
@@ -272,13 +276,14 @@ const file_storage_traits_proto_rawDesc = "" +
 	"Visibility\x12\v\n" +
 	"\aVISIBLE\x10\x00\x12\n" +
 	"\n" +
-	"\x06HIDDEN\x10\x01\"P\n" +
+	"\x06HIDDEN\x10\x01\"]\n" +
 	"\x06Origin\x12\x0e\n" +
 	"\n" +
 	"IMPERATIVE\x10\x00\x12\v\n" +
 	"\aDEFAULT\x10\x01\x12\x0f\n" +
 	"\vDECLARATIVE\x10\x02\x12\x18\n" +
-	"\x14DECLARATIVE_ORPHANED\x10\x03B.\n" +
+	"\x14DECLARATIVE_ORPHANED\x10\x03\x12\v\n" +
+	"\aDYNAMIC\x10\x04B.\n" +
 	"\x19io.stackrox.proto.storageZ\x11./storage;storageb\x06proto3"
 
 var (
