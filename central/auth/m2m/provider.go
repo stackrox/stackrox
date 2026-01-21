@@ -6,7 +6,6 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/authproviders"
 	"github.com/stackrox/rox/pkg/auth/authproviders/tokenbased"
-	"github.com/stackrox/rox/pkg/auth/authproviders/tokenbasedsource"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 )
 
