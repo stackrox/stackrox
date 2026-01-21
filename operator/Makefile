@@ -105,14 +105,14 @@ SCORECARD_ARGS ?= --storage-image="$(SCORECARD_STORAGE_IMAGE)" --wait-time="$(SC
 PROJECT_DIR := $(dir $(abspath $(lastword $(MAKEFILE_LIST))))
 
 # TEST_NAMESPACE is where the operator is installed for e2e tests by CI.
-TEST_NAMESPACE ?= stackrox-operator
+TEST_NAMESPACE ?= stackrox-operator-system
 
 # TEST_E2E_ENV_IS_OPENSHIFT is "true" when the cluster to run e2e tests on is an
 # OpenShift one, and "false" otherwise.
 TEST_E2E_ENV_IS_OPENSHIFT ?= $(shell $(PROJECT_DIR)/hack/retry-kubectl.sh < /dev/null get scc > /dev/null 2>&1 && echo true || echo false)
 
-# KUTTL_TEST_RUN_LABELS_ARGS specifies what label set to use for kuttl tests.
-KUTTL_TEST_RUN_LABELS_ARGS ?= --test-run-labels openshift=$(TEST_E2E_ENV_IS_OPENSHIFT)
+# KUTTL_TEST_RUN_ARGS specifies what label set and templating vars to use for kuttl tests.
+KUTTL_TEST_RUN_ARGS ?= --test-run-labels openshift=$(TEST_E2E_ENV_IS_OPENSHIFT) --template-var operator_ns=$(TEST_NAMESPACE)
 
 # ROX_IMAGE_FLAVOR is an ARG used in Dockerfiles that defines the default registries for main, scanner, and collector images.
 # ROX_IMAGE_FLAVOR valid values are: development_build, opensource, rhacs.
@@ -264,19 +264,19 @@ validate-crs: yq
 .PHONY: test-e2e
 test-e2e: build install validate-crs kuttl ensure-rox-main-image-exists ## Run e2e tests with local manager.
 	mkdir -p $(PROJECT_DIR)/build/kuttl-test-artifacts
-	KUTTL=$(KUTTL) PATH="$(PROJECT_DIR)/hack:$${PATH}" $(KUTTL) test $(KUTTL_TEST_RUN_LABELS_ARGS)
+	KUTTL=$(KUTTL) PATH="$(PROJECT_DIR)/hack:$${PATH}" $(KUTTL) test $(KUTTL_TEST_RUN_ARGS)
 
 .PHONY: test-e2e-deployed
 test-e2e-deployed: validate-crs kuttl ## Run e2e tests with manager deployed on cluster.
 	mkdir -p $(PROJECT_DIR)/build/kuttl-test-artifacts
-	KUTTL=$(KUTTL) PATH="$(PROJECT_DIR)/hack:$${PATH}" SKIP_MANAGER_START=1 $(KUTTL) test $(KUTTL_TEST_RUN_LABELS_ARGS)
+	KUTTL=$(KUTTL) PATH="$(PROJECT_DIR)/hack:$${PATH}" SKIP_MANAGER_START=1 $(KUTTL) test $(KUTTL_TEST_RUN_ARGS)
 
 .PHONY: test-upgrade
 test-upgrade: kuttl bundle-post-process ## Run OLM-based operator upgrade tests.
 	mkdir -p $(PROJECT_DIR)/build/kuttl-test-artifacts-upgrade
 	SKIP_MANAGER_START=1 \
 	NEW_PRODUCT_VERSION=$$(make --quiet --no-print-directory -C .. tag) \
-	KUTTL=$(KUTTL) PATH="$(PROJECT_DIR)/hack:$${PATH}" $(KUTTL) test --config kuttl-test.yaml --artifacts-dir build/kuttl-test-artifacts-upgrade $(KUTTL_TEST_RUN_LABELS_ARGS) tests/upgrade
+	KUTTL=$(KUTTL) PATH="$(PROJECT_DIR)/hack:$${PATH}" $(KUTTL) test --config kuttl-test.yaml --artifacts-dir build/kuttl-test-artifacts-upgrade $(KUTTL_TEST_RUN_ARGS) tests/upgrade
 
 .PHONY: test-bundle-helpers
 test-bundle-helpers: ## Run Python unit tests against helper scripts.

@@ -863,7 +863,7 @@ EOT
     # would confuse the kubectl wait invocation below, which notices pods
     # vanishing while actually waiting for them to become ready.
     sleep 60
-    "${ORCH_CMD}" </dev/null -n stackrox-operator wait --for=condition=Ready --timeout=3m pods -l app=rhacs-operator
+    "${ORCH_CMD}" </dev/null -n rhacs-operator-system wait --for=condition=Ready --timeout=3m pods -l app=rhacs-operator
 
     _begin "verify"
 
