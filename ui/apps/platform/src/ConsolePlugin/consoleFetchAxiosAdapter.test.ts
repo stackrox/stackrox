@@ -1,6 +1,7 @@
 import type { InternalAxiosRequestConfig } from 'axios';
 
 import consoleFetchAxiosAdapter from './consoleFetchAxiosAdapter';
+import { ALL_NAMESPACES_KEY } from './constants';
 
 const mockConsoleFetch = vi.hoisted(() => vi.fn());
 vi.mock('@openshift-console/dynamic-plugin-sdk', () => ({
@@ -10,8 +11,12 @@ vi.mock('@openshift-console/dynamic-plugin-sdk', () => ({
 describe('consoleFetchAxiosAdapter', () => {
     describe('auth scope header injection', () => {
         const baseUrl = 'http://base';
-        const defaultConfig = {
-            url: '/api/test',
+        const metadataConfig = {
+            url: '/v1/metadata',
+            headers: {},
+        } as InternalAxiosRequestConfig;
+        const graphqlConfig = {
+            url: '/api/graphql',
             headers: {},
         } as InternalAxiosRequestConfig;
 
@@ -25,11 +30,10 @@ describe('consoleFetchAxiosAdapter', () => {
             });
         });
 
-        it('should add namespace scope header when namespace is set', async () => {
-            const getScope = () => ({ namespace: 'test-namespace' });
-
-            await consoleFetchAxiosAdapter(baseUrl, defaultConfig, getScope);
-
+        it('should add namespace scope header when namespace is set for graphql requests', async () => {
+            await consoleFetchAxiosAdapter(baseUrl, graphqlConfig, () => ({
+                namespace: 'test-namespace',
+            }));
             expect(mockConsoleFetch).toHaveBeenCalledWith(
                 expect.any(String),
                 expect.objectContaining({
@@ -40,17 +44,45 @@ describe('consoleFetchAxiosAdapter', () => {
             );
         });
 
+        it('should add wildcard scope header when namespace is set to all namespaces for graphql requests', async () => {
+            await consoleFetchAxiosAdapter(baseUrl, graphqlConfig, () => ({
+                namespace: ALL_NAMESPACES_KEY,
+            }));
+            expect(mockConsoleFetch).toHaveBeenCalledWith(
+                expect.any(String),
+                expect.objectContaining({
+                    headers: expect.objectContaining({
+                        'ACS-AUTH-NAMESPACE-SCOPE': '*',
+                    }),
+                })
+            );
+        });
+
+        it('should not add namespace scope header when namespace is set for non-graphql requests', async () => {
+            await consoleFetchAxiosAdapter(baseUrl, metadataConfig, () => ({
+                namespace: 'test-namespace',
+            }));
+            expect(mockConsoleFetch).toHaveBeenCalledWith(
+                expect.any(String),
+                expect.objectContaining({
+                    headers: expect.not.objectContaining({
+                        'ACS-AUTH-NAMESPACE-SCOPE': expect.anything(),
+                    }),
+                })
+            );
+        });
+
         it('should not add scope headers when scope is empty', async () => {
             const getScope = () => ({});
 
-            await consoleFetchAxiosAdapter(baseUrl, defaultConfig, getScope);
+            await consoleFetchAxiosAdapter(baseUrl, metadataConfig, getScope);
 
             const { headers } = mockConsoleFetch.mock.calls[0][1];
             expect(headers['ACS-AUTH-NAMESPACE-SCOPE']).toBeUndefined();
         });
 
         it('should use default scope getter when none provided', async () => {
-            await consoleFetchAxiosAdapter(baseUrl, defaultConfig);
+            await consoleFetchAxiosAdapter(baseUrl, metadataConfig);
 
             const { headers } = mockConsoleFetch.mock.calls[0][1];
             expect(headers['ACS-AUTH-NAMESPACE-SCOPE']).toBeUndefined();
@@ -58,7 +90,7 @@ describe('consoleFetchAxiosAdapter', () => {
 
         it('should preserve existing headers', async () => {
             const configWithHeaders = {
-                url: '/api/test',
+                ...graphqlConfig,
                 headers: {
                     'Content-Type': 'application/json',
                     'Custom-Header': 'custom-value',
@@ -80,7 +112,7 @@ describe('consoleFetchAxiosAdapter', () => {
 
         it('should add scope headers alongside existing headers', async () => {
             const configWithHeaders = {
-                url: '/api/test',
+                ...graphqlConfig,
                 headers: {
                     'Content-Type': 'application/json',
                 },
