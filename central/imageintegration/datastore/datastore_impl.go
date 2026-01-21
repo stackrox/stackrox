@@ -2,6 +2,7 @@ package datastore
 
 import (
 	"context"
+	"strings"
 
 	"github.com/stackrox/rox/central/imageintegration/store"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -113,41 +114,45 @@ func (ds *datastoreImpl) RemoveImageIntegration(ctx context.Context, id string) 
 
 // SearchImageIntegrations
 func (ds *datastoreImpl) SearchImageIntegrations(ctx context.Context, q *v1.Query) ([]*v1.SearchResult, error) {
-	// TODO(ROX-29943): remove 2 pass database calls
-	results, err := ds.storage.Search(ctx, q)
+	// Clone the query and ensure it includes IntegrationName in select fields to populate result names
+	if q == nil {
+		q = searchPkg.EmptyQuery()
+	}
+	qClone := q.CloneVT()
+	qClone.Selects = append(qClone.GetSelects(), searchPkg.NewQuerySelect(searchPkg.IntegrationName).Proto())
+
+	results, err := ds.storage.Search(ctx, qClone)
 	if err != nil {
 		return nil, err
 	}
-	var imageIntegrationList []*storage.ImageIntegration
-	var trimmedResultsList []searchPkg.Result
-	for _, result := range results {
-		singleImageIntegration, exists, err := ds.storage.Get(ctx, result.ID)
-		if err != nil {
-			return nil, err
+	searchTag := strings.ToLower(searchPkg.IntegrationName.String())
+	for i := range results {
+		if results[i].FieldValues != nil {
+			if nameVal, ok := results[i].FieldValues[searchTag]; ok {
+				results[i].Name = nameVal
+			}
 		}
-		// The result may not exist if the object was deleted after the search
-		if !exists {
-			continue
-		}
-		imageIntegrationList = append(imageIntegrationList, singleImageIntegration)
-		// To ensure the records match up we need a sublist of results in case the 2 pass call missed any
-		trimmedResultsList = append(trimmedResultsList, result)
 	}
 
-	protoResults := make([]*v1.SearchResult, 0, len(imageIntegrationList))
-	for i, imageIntegration := range imageIntegrationList {
-		protoResults = append(protoResults, convertImageIntegration(imageIntegration, trimmedResultsList[i]))
-	}
-	return protoResults, nil
+	return searchPkg.ResultsToSearchResultProtos(results, &ImageIntegrationSearchResultConverter{}), nil
 }
 
-// convertImageIntegration returns proto search result from a image integration object and the internal search result
-func convertImageIntegration(imageIntegration *storage.ImageIntegration, result searchPkg.Result) *v1.SearchResult {
-	return &v1.SearchResult{
-		Category:       v1.SearchCategory_IMAGE_INTEGRATIONS,
-		Id:             imageIntegration.GetId(),
-		Name:           imageIntegration.GetName(),
-		FieldToMatches: searchPkg.GetProtoMatchesMap(result.Matches),
-		Score:          result.Score,
-	}
+// ImageIntegrationSearchResultConverter converts image integration search results to proto search results
+type ImageIntegrationSearchResultConverter struct{}
+
+func (c *ImageIntegrationSearchResultConverter) BuildName(result *searchPkg.Result) string {
+	return result.Name
+}
+
+func (c *ImageIntegrationSearchResultConverter) BuildLocation(result *searchPkg.Result) string {
+	// Image integrations do not have a location
+	return ""
+}
+
+func (c *ImageIntegrationSearchResultConverter) GetCategory() v1.SearchCategory {
+	return v1.SearchCategory_IMAGE_INTEGRATIONS
+}
+
+func (c *ImageIntegrationSearchResultConverter) GetScore(result *searchPkg.Result) float64 {
+	return result.Score
 }
