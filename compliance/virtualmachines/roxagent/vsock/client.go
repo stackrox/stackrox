@@ -32,14 +32,17 @@ func (c *Client) SendIndexReport(report *v4.IndexReport) error {
 		IndexV4:  report,
 	}
 
-	// Create VMReport with placeholder discovered data values.
+	// Discover VM data from host system
+	discovered := DiscoverVMData()
+
+	// Create VMReport with discovered data values.
 	vmReport := &v1.VMReport{
 		IndexReport: wrappedReport,
 		DiscoveredData: &v1.DiscoveredData{
-			DetectedOs:        v1.DetectedOS_UNKNOWN, // TODO: get proper values from VM.
-			OsVersion:         "",
-			ActivationStatus:  v1.ActivationStatus_ACTIVATION_UNSPECIFIED,
-			DnfMetadataStatus: v1.DnfMetadataStatus_DNF_METADATA_UNSPECIFIED,
+			DetectedOs:        discovered.DetectedOS,
+			OsVersion:         discovered.OSVersion,
+			ActivationStatus:  discovered.ActivationStatus,
+			DnfMetadataStatus: discovered.DnfMetadataStatus,
 		},
 	}
 
