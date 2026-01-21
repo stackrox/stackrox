@@ -53,7 +53,7 @@
         "object-resolve-path": "^1.1.1",
         "pluralize": "^8.0.0",
         "prop-types": "^15.7.2",
-        "qs": "6.14.1",
+        "qs": "^6.14.1",
         "raven-for-redux": "^1.3.1",
         "raven-js": "^3.27.0",
         "react": "^18.2.0",
@@ -202,8 +202,7 @@
         "connected-react-router": {
             "react": "^18.0.0"
         },
-        "react-dropzone": "14.3.2",
-        "qs": "6.14.1"
+        "react-dropzone": "14.3.2"
     },
     "browserslist": [
         "Chrome >= 80"
