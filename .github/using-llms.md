@@ -4,7 +4,7 @@
 
 The use of Large Language Models (LLMs) is treated as an implementation detail. Using an
 LLM to assist your work is viewed no differently than using a search engine, consulting
-StackOverflow, or asking a friend for advice.
+Stack Overflow, or asking a friend for advice.
 
 ## A note for contributors
 
