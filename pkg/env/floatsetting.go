@@ -111,6 +111,8 @@ func (s *FloatSetting) mustValidate() *FloatSetting {
 			panic(fmt.Errorf("programmer error: allow-list value %v is not finite for %q", v, s.envVar).Error())
 		}
 	}
+	// If the default value is in the allow list, we don't need to validate it further.
+	// The AllowExplicitly method should not be used with conjunction with WithMinimum, WithMaximum.
 	if slices.Contains(s.allowList, s.defaultValue) {
 		return s
 	}
