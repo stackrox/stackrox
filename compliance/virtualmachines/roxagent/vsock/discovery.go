@@ -94,7 +94,11 @@ func discoverOSAndVersionWithPath(path string) (v1.DetectedOS, string, error) {
 		discoveryLog.Warnf("Unsupported OS detected: missing %s", path)
 		return v1.DetectedOS_UNKNOWN, "", fmt.Errorf("opening %s: %w", path, err)
 	}
-	defer file.Close()
+	defer func() {
+		if err := file.Close(); err != nil {
+			discoveryLog.Warnf("Failed to close %s: %v", path, err)
+		}
+	}()
 
 	osRelease := make(map[string]string)
 	scanner := bufio.NewScanner(file)
