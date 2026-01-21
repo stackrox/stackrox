@@ -5,9 +5,12 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/logging"
 	ops "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/sync"
 )
+
+var log = logging.LoggerForModule()
 
 // Item defines the interface that the queue items need to implement
 type Item[K comparable] interface {
@@ -38,6 +41,14 @@ func WithQueueName[K comparable](name string) OptionFunc[K] {
 	}
 }
 
+// WithMaxSize sets a maximum size for the queue. When the queue is full,
+// new items with new dedupe keys are dropped.
+func WithMaxSize[K comparable](maxSize int) OptionFunc[K] {
+	return func(queue *DedupingQueue[K]) {
+		queue.maxSize = maxSize
+	}
+}
+
 // DedupingQueue a queue with unique values.
 type DedupingQueue[K comparable] struct {
 	lock            sync.Mutex
@@ -47,6 +58,7 @@ type DedupingQueue[K comparable] struct {
 	sizeMetric      prometheus.Gauge
 	operationMetric func(ops.Op, string)
 	name            string
+	maxSize         int
 }
 
 // NewDedupingQueue creates a new DedupingQueue
@@ -107,7 +119,6 @@ func (q *DedupingQueue[K]) pull() Item[K] {
 func (q *DedupingQueue[K]) Push(item Item[K]) {
 	q.lock.Lock()
 	defer q.lock.Unlock()
-	defer q.notEmpty.Signal()
 	defer func() {
 		if q.sizeMetric != nil {
 			q.sizeMetric.Set(float64(q.queue.Len()))
@@ -115,10 +126,18 @@ func (q *DedupingQueue[K]) Push(item Item[K]) {
 	}()
 	key := item.GetDedupeKey()
 	if key == *new(K) {
+		if q.maxSize > 0 && q.queue.Len() >= q.maxSize {
+			log.Warnf("Dropping item without dedupe key: queue=%s, len=%d, maxSize=%d", q.name, q.queue.Len(), q.maxSize)
+			if q.operationMetric != nil {
+				q.operationMetric(ops.Dropped, q.name)
+			}
+			return
+		}
 		if q.operationMetric != nil {
 			q.operationMetric(ops.Add, q.name)
 		}
 		q.queue.PushBack(item)
+		q.notEmpty.Signal()
 		return
 	}
 	var msgInserted *list.Element
@@ -128,11 +147,20 @@ func (q *DedupingQueue[K]) Push(item Item[K]) {
 		}
 		msgInserted = q.queue.InsertBefore(item, oldItem)
 		q.queue.Remove(oldItem)
+		q.notEmpty.Signal()
 	} else {
+		if q.maxSize > 0 && q.queue.Len() >= q.maxSize {
+			log.Warnf("Dropping item with NEW dedupe key: queue=%s, key=%v, len=%d, maxSize=%d", q.name, key, q.queue.Len(), q.maxSize)
+			if q.operationMetric != nil {
+				q.operationMetric(ops.Dropped, q.name)
+			}
+			return
+		}
 		if q.operationMetric != nil {
 			q.operationMetric(ops.Add, q.name)
 		}
 		msgInserted = q.queue.PushBack(item)
+		q.notEmpty.Signal()
 	}
 	q.indexer[key] = msgInserted
 }

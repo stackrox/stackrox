@@ -31,18 +31,36 @@ type workerQueue struct {
 	sync.WaitGroup
 }
 
-func newWorkerQueue(poolSize int, typ string, injector common.MessageInjector) *workerQueue {
-	totalSize := poolSize + 1
-	queues := make([]*dedupingqueue.DedupingQueue[string], totalSize)
-	for i := 0; i < totalSize; i++ {
-		queues[i] = dedupingqueue.NewDedupingQueue[string](
+func newWorkerQueue(poolSize int, typ string, injector common.MessageInjector, maxTotalSize int) *workerQueue {
+	totalQueues := poolSize + 1
+	queues := make([]*dedupingqueue.DedupingQueue[string], totalQueues)
+
+	var perQueueMaxSize int
+	if maxTotalSize > 0 {
+		if maxTotalSize < totalQueues {
+			maxTotalSize = totalQueues
+			log.Warnf("maxTotalSize is less than totalQueues, setting maxTotalSize to %d", maxTotalSize)
+		}
+		// For this PoC we intentionally ignore the remainder
+		perQueueMaxSize = maxTotalSize / totalQueues
+		log.Infof("Creating worker queue for %s with maxTotalSize=%d across %d queues (per-queue max size: %d)", typ, maxTotalSize, totalQueues, perQueueMaxSize)
+	}
+
+	for i := 0; i < totalQueues; i++ {
+		opts := []dedupingqueue.OptionFunc[string]{
 			dedupingqueue.WithQueueName[string](typ),
-			dedupingqueue.WithOperationMetricsFunc[string](metrics.IncrementSensorEventQueueCounter))
+			dedupingqueue.WithOperationMetricsFunc[string](metrics.IncrementSensorEventQueueCounter),
+			dedupingqueue.WithSizeMetrics[string](metrics.GetSensorEventQueueSizeGauge(typ, i)),
+		}
+		if perQueueMaxSize > 0 {
+			opts = append(opts, dedupingqueue.WithMaxSize[string](perQueueMaxSize))
+		}
+		queues[i] = dedupingqueue.NewDedupingQueue[string](opts...)
 	}
 
 	return &workerQueue{
 		poolSize:  poolSize,
-		totalSize: totalSize,
+		totalSize: totalQueues,
 		queues:    queues,
 		injector:  injector,
 	}

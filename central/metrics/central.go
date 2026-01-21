@@ -1,6 +1,7 @@
 package metrics
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
@@ -90,6 +91,13 @@ var (
 		Name:      "sensor_event_queue",
 		Help:      "Number of elements in removed from the queue",
 	}, []string{"Operation", "Type"})
+
+	sensorEventQueueSizeGaugeVec = prometheus.NewGaugeVec(prometheus.GaugeOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.CentralSubsystem.String(),
+		Name:      "sensor_event_queue_size",
+		Help:      "Current number of elements in the sensor event queue",
+	}, []string{"Type", "QueueIndex"})
 
 	resourceProcessedCounterVec = prometheus.NewCounterVec(prometheus.CounterOpts{
 		Namespace: metrics.PrometheusNamespace,
@@ -402,6 +410,11 @@ func IncrementSensorConnect(clusterID, state string) {
 // IncrementSensorEventQueueCounter increments the counter for the passed operation.
 func IncrementSensorEventQueueCounter(op metrics.Op, t string) {
 	sensorEventQueueCounterVec.With(prometheus.Labels{"Operation": op.String(), "Type": t}).Inc()
+}
+
+// GetSensorEventQueueSizeGauge returns the gauge for tracking queue size for the given type and queue index.
+func GetSensorEventQueueSizeGauge(t string, queueIndex int) prometheus.Gauge {
+	return sensorEventQueueSizeGaugeVec.With(prometheus.Labels{"Type": t, "QueueIndex": fmt.Sprintf("%d", queueIndex)})
 }
 
 // IncrementResourceProcessedCounter is a counter for how many times a resource has been processed in Central.

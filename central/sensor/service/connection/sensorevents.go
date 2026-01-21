@@ -14,6 +14,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/deduperkey"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/reflectutils"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/version"
@@ -127,6 +128,9 @@ func (s *sensorEventHandler) addMultiplexed(ctx context.Context, msg *central.Ms
 		// Node, NodeInventory and IndexReport dedupe on Node ID. We use a different dedupe key for
 		// IndexReport because the three should not dedupe between themselves.
 		msg.DedupeKey = fmt.Sprintf("NodeIndex:%s", msg.GetDedupeKey())
+	case *central.SensorEvent_VirtualMachineIndexReport:
+		workerType = reflectutils.Type(event.GetResource())
+		msg.DedupeKey = fmt.Sprintf("VMIndex:%s", msg.GetDedupeKey())
 	default:
 		if event.GetResource() == nil {
 			log.Errorf("Received event with unknown resource from cluster %s (%s). May be due to Sensor (%s) version mismatch with Central (%s)", s.cluster.GetName(), s.cluster.GetId(), s.sensorVersion, version.GetMainVersion())
@@ -157,11 +161,20 @@ func (s *sensorEventHandler) addMultiplexed(ctx context.Context, msg *central.Ms
 		concurrency.WithLock(&s.workerQueuesMutex, func() {
 			queue = s.workerQueues[workerType]
 			if queue == nil {
-				queue = newWorkerQueue(workerQueueSize, stripTypePrefix(workerType), s.injector)
+				queue = newWorkerQueue(workerQueueSize, stripTypePrefix(workerType), s.injector, maxQueueSizeForWorker(workerType))
 				s.workerQueues[workerType] = queue
 				go queue.run(ctx, s.stopSig, s.deduper, s.handleMessages)
 			}
 		})
 	}
 	queue.push(msg)
+}
+
+func maxQueueSizeForWorker(workerType string) int {
+	if workerType == reflectutils.Type((*central.SensorEvent_VirtualMachineIndexReport)(nil)) {
+		maxSize := env.VirtualMachinesIndexReportsQueueMaxSize.IntegerSetting()
+		log.Infof("VM Index Report queue max size from env: %d (env var: ROX_VIRTUAL_MACHINES_INDEX_REPORTS_QUEUE_MAX_SIZE)", maxSize)
+		return maxSize
+	}
+	return 0
 }
