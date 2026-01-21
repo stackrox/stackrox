@@ -21,6 +21,52 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
+type LayerType int32
+
+const (
+	LayerType_LAYER_TYPE_APPLICATION LayerType = 0
+	LayerType_LAYER_TYPE_BASE_IMAGE  LayerType = 1
+)
+
+// Enum value maps for LayerType.
+var (
+	LayerType_name = map[int32]string{
+		0: "LAYER_TYPE_APPLICATION",
+		1: "LAYER_TYPE_BASE_IMAGE",
+	}
+	LayerType_value = map[string]int32{
+		"LAYER_TYPE_APPLICATION": 0,
+		"LAYER_TYPE_BASE_IMAGE":  1,
+	}
+)
+
+func (x LayerType) Enum() *LayerType {
+	p := new(LayerType)
+	*p = x
+	return p
+}
+
+func (x LayerType) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (LayerType) Descriptor() protoreflect.EnumDescriptor {
+	return file_storage_image_component_proto_enumTypes[0].Descriptor()
+}
+
+func (LayerType) Type() protoreflect.EnumType {
+	return &file_storage_image_component_proto_enumTypes[0]
+}
+
+func (x LayerType) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use LayerType.Descriptor instead.
+func (LayerType) EnumDescriptor() ([]byte, []int) {
+	return file_storage_image_component_proto_rawDescGZIP(), []int{0}
+}
+
 // This proto is deprecated and replaced by ImageComponentV2
 //
 // Deprecated: Marked as deprecated in storage/image_component.proto.
@@ -191,8 +237,10 @@ type ImageComponentV2 struct {
 	HasLayerIndex isImageComponentV2_HasLayerIndex `protobuf_oneof:"has_layer_index"`
 	Location      string                           `protobuf:"bytes,12,opt,name=location,proto3" json:"location,omitempty" search:"Component Location,hidden"` // @gotags: search:"Component Location,hidden"
 	Architecture  string                           `protobuf:"bytes,13,opt,name=architecture,proto3" json:"architecture,omitempty"`
-	ImageIdV2     string                           `protobuf:"bytes,14,opt,name=image_id_v2,json=imageIdV2,proto3" json:"image_id_v2,omitempty" sql:"fk(ImageV2:id),index=btree,allow-null"`              // @gotags: sql:"fk(ImageV2:id),index=btree,allow-null"
-	FromBaseImage bool                             `protobuf:"varint,15,opt,name=from_base_image,json=fromBaseImage,proto3" json:"from_base_image,omitempty" search:"Component From Base Image,hidden"` //    @gotags: search:"Component From Base Image,hidden"
+	ImageIdV2     string                           `protobuf:"bytes,14,opt,name=image_id_v2,json=imageIdV2,proto3" json:"image_id_v2,omitempty" sql:"fk(ImageV2:id),index=btree,allow-null"` // @gotags: sql:"fk(ImageV2:id),index=btree,allow-null"
+	// Deprecated: Marked as deprecated in storage/image_component.proto.
+	FromBaseImage bool      `protobuf:"varint,15,opt,name=from_base_image,json=fromBaseImage,proto3" json:"from_base_image,omitempty"`
+	LayerType     LayerType `protobuf:"varint,16,opt,name=layer_type,json=layerType,proto3,enum=storage.LayerType" json:"layer_type,omitempty" search:"Component Layer Type,hidden"` //    @gotags: search:"Component Layer Type,hidden"
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -344,11 +392,19 @@ func (x *ImageComponentV2) GetImageIdV2() string {
 	return ""
 }
 
+// Deprecated: Marked as deprecated in storage/image_component.proto.
 func (x *ImageComponentV2) GetFromBaseImage() bool {
 	if x != nil {
 		return x.FromBaseImage
 	}
 	return false
+}
+
+func (x *ImageComponentV2) GetLayerType() LayerType {
+	if x != nil {
+		return x.LayerType
+	}
+	return LayerType_LAYER_TYPE_APPLICATION
 }
 
 type isImageComponentV2_SetTopCvss interface {
@@ -389,7 +445,7 @@ const file_storage_image_component_proto_rawDesc = "" +
 	"\bfixed_by\x18\t \x01(\tR\afixedBy\x12)\n" +
 	"\x10operating_system\x18\n" +
 	" \x01(\tR\x0foperatingSystem:\x02\x18\x01B\x0e\n" +
-	"\fset_top_cvss\"\x88\x04\n" +
+	"\fset_top_cvss\"\xbf\x04\n" +
 	"\x10ImageComponentV2\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12\x18\n" +
@@ -407,10 +463,15 @@ const file_storage_image_component_proto_rawDesc = "" +
 	"layerIndex\x12\x1a\n" +
 	"\blocation\x18\f \x01(\tR\blocation\x12\"\n" +
 	"\farchitecture\x18\r \x01(\tR\farchitecture\x12\x1e\n" +
-	"\vimage_id_v2\x18\x0e \x01(\tR\timageIdV2\x12&\n" +
-	"\x0ffrom_base_image\x18\x0f \x01(\bR\rfromBaseImageB\x0e\n" +
+	"\vimage_id_v2\x18\x0e \x01(\tR\timageIdV2\x12*\n" +
+	"\x0ffrom_base_image\x18\x0f \x01(\bB\x02\x18\x01R\rfromBaseImage\x121\n" +
+	"\n" +
+	"layer_type\x18\x10 \x01(\x0e2\x12.storage.LayerTypeR\tlayerTypeB\x0e\n" +
 	"\fset_top_cvssB\x11\n" +
-	"\x0fhas_layer_indexB.\n" +
+	"\x0fhas_layer_index*B\n" +
+	"\tLayerType\x12\x1a\n" +
+	"\x16LAYER_TYPE_APPLICATION\x10\x00\x12\x19\n" +
+	"\x15LAYER_TYPE_BASE_IMAGE\x10\x01B.\n" +
 	"\x19io.stackrox.proto.storageZ\x11./storage;storageb\x06proto3"
 
 var (
@@ -425,22 +486,25 @@ func file_storage_image_component_proto_rawDescGZIP() []byte {
 	return file_storage_image_component_proto_rawDescData
 }
 
+var file_storage_image_component_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
 var file_storage_image_component_proto_msgTypes = make([]protoimpl.MessageInfo, 2)
 var file_storage_image_component_proto_goTypes = []any{
-	(*ImageComponent)(nil),   // 0: storage.ImageComponent
-	(*ImageComponentV2)(nil), // 1: storage.ImageComponentV2
-	(*License)(nil),          // 2: storage.License
-	(SourceType)(0),          // 3: storage.SourceType
+	(LayerType)(0),           // 0: storage.LayerType
+	(*ImageComponent)(nil),   // 1: storage.ImageComponent
+	(*ImageComponentV2)(nil), // 2: storage.ImageComponentV2
+	(*License)(nil),          // 3: storage.License
+	(SourceType)(0),          // 4: storage.SourceType
 }
 var file_storage_image_component_proto_depIdxs = []int32{
-	2, // 0: storage.ImageComponent.license:type_name -> storage.License
-	3, // 1: storage.ImageComponent.source:type_name -> storage.SourceType
-	3, // 2: storage.ImageComponentV2.source:type_name -> storage.SourceType
-	3, // [3:3] is the sub-list for method output_type
-	3, // [3:3] is the sub-list for method input_type
-	3, // [3:3] is the sub-list for extension type_name
-	3, // [3:3] is the sub-list for extension extendee
-	0, // [0:3] is the sub-list for field type_name
+	3, // 0: storage.ImageComponent.license:type_name -> storage.License
+	4, // 1: storage.ImageComponent.source:type_name -> storage.SourceType
+	4, // 2: storage.ImageComponentV2.source:type_name -> storage.SourceType
+	0, // 3: storage.ImageComponentV2.layer_type:type_name -> storage.LayerType
+	4, // [4:4] is the sub-list for method output_type
+	4, // [4:4] is the sub-list for method input_type
+	4, // [4:4] is the sub-list for extension type_name
+	4, // [4:4] is the sub-list for extension extendee
+	0, // [0:4] is the sub-list for field type_name
 }
 
 func init() { file_storage_image_component_proto_init() }
@@ -461,13 +525,14 @@ func file_storage_image_component_proto_init() {
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_storage_image_component_proto_rawDesc), len(file_storage_image_component_proto_rawDesc)),
-			NumEnums:      0,
+			NumEnums:      1,
 			NumMessages:   2,
 			NumExtensions: 0,
 			NumServices:   0,
 		},
 		GoTypes:           file_storage_image_component_proto_goTypes,
 		DependencyIndexes: file_storage_image_component_proto_depIdxs,
+		EnumInfos:         file_storage_image_component_proto_enumTypes,
 		MessageInfos:      file_storage_image_component_proto_msgTypes,
 	}.Build()
 	File_storage_image_component_proto = out.File
