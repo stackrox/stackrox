@@ -58,7 +58,7 @@ func (m *ClusterScope) CloneVT() *ClusterScope {
 		return (*ClusterScope)(nil)
 	}
 	r := new(ClusterScope)
-	r.ClusterName = m.ClusterName
+	r.ClusterId = m.ClusterId
 	r.FullClusterAccess = m.FullClusterAccess
 	if rhs := m.Namespaces; rhs != nil {
 		tmpContainer := make([]string, len(rhs))
@@ -147,7 +147,7 @@ func (this *ClusterScope) EqualVT(that *ClusterScope) bool {
 	} else if this == nil || that == nil {
 		return false
 	}
-	if this.ClusterName != that.ClusterName {
+	if this.ClusterId != that.ClusterId {
 		return false
 	}
 	if this.FullClusterAccess != that.FullClusterAccess {
@@ -312,10 +312,10 @@ func (m *ClusterScope) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 		i--
 		dAtA[i] = 0x10
 	}
-	if len(m.ClusterName) > 0 {
-		i -= len(m.ClusterName)
-		copy(dAtA[i:], m.ClusterName)
-		i = protohelpers.EncodeVarint(dAtA, i, uint64(len(m.ClusterName)))
+	if len(m.ClusterId) > 0 {
+		i -= len(m.ClusterId)
+		copy(dAtA[i:], m.ClusterId)
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(len(m.ClusterId)))
 		i--
 		dAtA[i] = 0xa
 	}
@@ -396,7 +396,7 @@ func (m *ClusterScope) SizeVT() (n int) {
 	}
 	var l int
 	_ = l
-	l = len(m.ClusterName)
+	l = len(m.ClusterId)
 	if l > 0 {
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
@@ -692,7 +692,7 @@ func (m *ClusterScope) UnmarshalVT(dAtA []byte) error {
 		switch fieldNum {
 		case 1:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field ClusterName", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field ClusterId", wireType)
 			}
 			var stringLen uint64
 			for shift := uint(0); ; shift += 7 {
@@ -720,7 +720,7 @@ func (m *ClusterScope) UnmarshalVT(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.ClusterName = string(dAtA[iNdEx:postIndex])
+			m.ClusterId = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
 		case 2:
 			if wireType != 0 {
@@ -1148,7 +1148,7 @@ func (m *ClusterScope) UnmarshalVTUnsafe(dAtA []byte) error {
 		switch fieldNum {
 		case 1:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field ClusterName", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field ClusterId", wireType)
 			}
 			var stringLen uint64
 			for shift := uint(0); ; shift += 7 {
@@ -1180,7 +1180,7 @@ func (m *ClusterScope) UnmarshalVTUnsafe(dAtA []byte) error {
 			if intStringLen > 0 {
 				stringValue = unsafe.String(&dAtA[iNdEx], intStringLen)
 			}
-			m.ClusterName = stringValue
+			m.ClusterId = stringValue
 			iNdEx = postIndex
 		case 2:
 			if wireType != 0 {

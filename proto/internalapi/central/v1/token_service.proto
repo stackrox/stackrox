@@ -16,6 +16,22 @@ enum Access {
 }
 
 message GenerateTokenForPermissionsAndScopeRequest {
+  // permissions is the level access granted to the various resources.
+  // The map key is the resource name, and the map value is the granted
+  // access level.
+  //
+  // For example, to grant read access to deployment-like objects,
+  // create a message of the form (example in golang):
+  //
+  //   &v1.GenerateTokenForPermissionsAndScopeRequest {
+  //     Permissions: map[string]v1.Access{
+  //       "Deployment": v1.Access_READ_ACCESS,
+  //     },
+  //   }
+  //
+  // Resources are listed in pkg/sac/resources/list.go
+  // The resource names can either be passed as direct string, or
+  // using resource.Xyz.String().
   map<string, Access> permissions = 1;
   repeated ClusterScope cluster_scopes = 2;
   google.protobuf.Duration lifetime = 3;
@@ -23,14 +39,14 @@ message GenerateTokenForPermissionsAndScopeRequest {
 
 // ClusterScope represents the access scope of a role within a cluster.
 //
-// To request full cluster access, provide the cluster_name and
+// To request full cluster access, provide the cluster_id and
 // set full_cluster_access to true.
 //
-// To request access to specific namespaces, provide the cluster_name,
+// To request access to specific namespaces, provide the cluster_id,
 // set full_cluster_access to false or leave it empty, and
 // list the namespaces to grant access to in namespaces.
 message ClusterScope {
-  string cluster_name = 1;
+  string cluster_id = 1;
   bool full_cluster_access = 2;
   repeated string namespaces = 3;
 }

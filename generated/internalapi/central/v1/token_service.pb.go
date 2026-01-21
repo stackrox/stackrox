@@ -75,10 +75,26 @@ func (Access) EnumDescriptor() ([]byte, []int) {
 }
 
 type GenerateTokenForPermissionsAndScopeRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Permissions   map[string]Access      `protobuf:"bytes,1,rep,name=permissions,proto3" json:"permissions,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"varint,2,opt,name=value,enum=central.v1.Access"`
-	ClusterScopes []*ClusterScope        `protobuf:"bytes,2,rep,name=cluster_scopes,json=clusterScopes,proto3" json:"cluster_scopes,omitempty"`
-	Lifetime      *durationpb.Duration   `protobuf:"bytes,3,opt,name=lifetime,proto3" json:"lifetime,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// permissions is the level access granted to the various resources.
+	// The map key is the resource name, and the map value is the granted
+	// access level.
+	//
+	// For example, to grant read access to deployment-like objects,
+	// create a message of the form (example in golang):
+	//
+	//	&v1.GenerateTokenForPermissionsAndScopeRequest {
+	//	  Permissions: map[string]v1.Access{
+	//	    "Deployment": v1.Access_READ_ACCESS,
+	//	  },
+	//	}
+	//
+	// Resources are listed in pkg/sac/resources/list.go
+	// The resource names can either be passed as direct string, or
+	// using resource.Xyz.String().
+	Permissions   map[string]Access    `protobuf:"bytes,1,rep,name=permissions,proto3" json:"permissions,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"varint,2,opt,name=value,enum=central.v1.Access"`
+	ClusterScopes []*ClusterScope      `protobuf:"bytes,2,rep,name=cluster_scopes,json=clusterScopes,proto3" json:"cluster_scopes,omitempty"`
+	Lifetime      *durationpb.Duration `protobuf:"bytes,3,opt,name=lifetime,proto3" json:"lifetime,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -136,15 +152,15 @@ func (x *GenerateTokenForPermissionsAndScopeRequest) GetLifetime() *durationpb.D
 
 // ClusterScope represents the access scope of a role within a cluster.
 //
-// To request full cluster access, provide the cluster_name and
+// To request full cluster access, provide the cluster_id and
 // set full_cluster_access to true.
 //
-// To request access to specific namespaces, provide the cluster_name,
+// To request access to specific namespaces, provide the cluster_id,
 // set full_cluster_access to false or leave it empty, and
 // list the namespaces to grant access to in namespaces.
 type ClusterScope struct {
 	state             protoimpl.MessageState `protogen:"open.v1"`
-	ClusterName       string                 `protobuf:"bytes,1,opt,name=cluster_name,json=clusterName,proto3" json:"cluster_name,omitempty"`
+	ClusterId         string                 `protobuf:"bytes,1,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty"`
 	FullClusterAccess bool                   `protobuf:"varint,2,opt,name=full_cluster_access,json=fullClusterAccess,proto3" json:"full_cluster_access,omitempty"`
 	Namespaces        []string               `protobuf:"bytes,3,rep,name=namespaces,proto3" json:"namespaces,omitempty"`
 	unknownFields     protoimpl.UnknownFields
@@ -181,9 +197,9 @@ func (*ClusterScope) Descriptor() ([]byte, []int) {
 	return file_internalapi_central_v1_token_service_proto_rawDescGZIP(), []int{1}
 }
 
-func (x *ClusterScope) GetClusterName() string {
+func (x *ClusterScope) GetClusterId() string {
 	if x != nil {
-		return x.ClusterName
+		return x.ClusterId
 	}
 	return ""
 }
@@ -258,9 +274,10 @@ const file_internalapi_central_v1_token_service_proto_rawDesc = "" +
 	"\blifetime\x18\x03 \x01(\v2\x19.google.protobuf.DurationR\blifetime\x1aR\n" +
 	"\x10PermissionsEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12(\n" +
-	"\x05value\x18\x02 \x01(\x0e2\x12.central.v1.AccessR\x05value:\x028\x01\"\x81\x01\n" +
-	"\fClusterScope\x12!\n" +
-	"\fcluster_name\x18\x01 \x01(\tR\vclusterName\x12.\n" +
+	"\x05value\x18\x02 \x01(\x0e2\x12.central.v1.AccessR\x05value:\x028\x01\"}\n" +
+	"\fClusterScope\x12\x1d\n" +
+	"\n" +
+	"cluster_id\x18\x01 \x01(\tR\tclusterId\x12.\n" +
 	"\x13full_cluster_access\x18\x02 \x01(\bR\x11fullClusterAccess\x12\x1e\n" +
 	"\n" +
 	"namespaces\x18\x03 \x03(\tR\n" +
