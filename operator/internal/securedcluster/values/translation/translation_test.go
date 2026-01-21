@@ -2,18 +2,21 @@ package translation
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"regexp"
 	"strings"
 	"testing"
 
 	"github.com/jeremywohl/flatten"
+	consolev1 "github.com/openshift/api/console/v1"
 	platform "github.com/stackrox/rox/operator/api/v1alpha1"
 	"github.com/stackrox/rox/operator/internal/images"
 	"github.com/stackrox/rox/operator/internal/utils"
 	"github.com/stackrox/rox/operator/internal/utils/testutils"
 	testingUtils "github.com/stackrox/rox/operator/internal/values/testing"
 	"github.com/stackrox/rox/operator/internal/values/translation"
+	"github.com/stackrox/rox/pkg/features"
 	pkgKubernetes "github.com/stackrox/rox/pkg/kubernetes"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -21,12 +24,16 @@ import (
 	"helm.sh/helm/v3/pkg/chartutil"
 	v1 "k8s.io/api/core/v1"
 	storagev1 "k8s.io/api/storage/v1"
+	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/utils/ptr"
 	ctrlClient "sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/client/fake"
+	"sigs.k8s.io/controller-runtime/pkg/client/interceptor"
 )
 
 type TranslationTestSuite struct {
@@ -1512,4 +1519,64 @@ func TestDeploymentDefaults(t *testing.T) {
 			assert.Nil(t, flatValues["collector.tolerations"], "collector should not have tolerations from deployment defaults")
 		})
 	}
+}
+
+func TestConsolePluginValues(t *testing.T) {
+	t.Setenv(features.OCPConsoleIntegration.EnvVar(), "true")
+
+	t.Run("enabled when API available", func(t *testing.T) {
+		client := newFakeClientForConsolePluginTest(t, nil)
+		translator := Translator{client: client, direct: client}
+
+		v := translator.getConsolePluginValues(context.Background())
+		vals, err := v.Build()
+		require.NoError(t, err)
+
+		enabled, err := vals.PathValue("enabled")
+		require.NoError(t, err)
+		assert.Equal(t, true, enabled)
+	})
+
+	t.Run("disabled when API not available", func(t *testing.T) {
+		noMatchErr := &meta.NoKindMatchError{
+			GroupKind: schema.GroupKind{Group: "console.openshift.io", Kind: "ConsolePlugin"},
+		}
+		client := newFakeClientForConsolePluginTest(t, noMatchErr)
+		translator := Translator{client: client, direct: client}
+
+		v := translator.getConsolePluginValues(context.Background())
+		vals, err := v.Build()
+		require.NoError(t, err)
+
+		_, err = vals.PathValue("enabled")
+		assert.Error(t, err, "enabled should not be set when API is not available")
+	})
+
+	t.Run("error when API check fails", func(t *testing.T) {
+		client := newFakeClientForConsolePluginTest(t, errors.New("RBAC error"))
+		translator := Translator{client: client, direct: client}
+
+		v := translator.getConsolePluginValues(context.Background())
+		_, err := v.Build()
+		assert.Error(t, err, "should return error when API check fails")
+	})
+}
+
+func newFakeClientForConsolePluginTest(t *testing.T, listErr error) ctrlClient.Client {
+	scheme := runtime.NewScheme()
+	require.NoError(t, platform.AddToScheme(scheme))
+	require.NoError(t, consolev1.Install(scheme))
+
+	builder := fake.NewClientBuilder().WithScheme(scheme)
+	if listErr != nil {
+		builder = builder.WithInterceptorFuncs(interceptor.Funcs{
+			List: func(ctx context.Context, client ctrlClient.WithWatch, list ctrlClient.ObjectList, opts ...ctrlClient.ListOption) error {
+				if _, ok := list.(*consolev1.ConsolePluginList); ok {
+					return listErr
+				}
+				return client.List(ctx, list, opts...)
+			},
+		})
+	}
+	return builder.Build()
 }
