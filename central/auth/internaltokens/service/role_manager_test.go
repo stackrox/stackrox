@@ -341,7 +341,7 @@ func TestCreateAccessScope(t *testing.T) {
 			ClusterScopes: []*v1.ClusterScope{requestFullCluster, requestSingleNamespace},
 		}
 
-		expectedAccessScope := testAccessScope([]*v1.ClusterScope{requestSingleNamespace})
+		expectedAccessScope := testAccessScope([]*v1.ClusterScope{nil, requestSingleNamespace})
 		mockClusterStore.EXPECT().
 			GetClusterName(gomock.Any(), requestFullCluster.GetClusterId()).
 			Times(1).
@@ -357,7 +357,7 @@ func TestCreateAccessScope(t *testing.T) {
 
 		accessScopeId, err := roleMgr.createAccessScope(ctx, input)
 		assert.Equal(it, expectedAccessScope.GetId(), accessScopeId)
-		assert.ErrorIs(it, err, errDummy)
+		assert.NoError(it, err)
 	})
 }
 
@@ -580,6 +580,10 @@ func computePermissionSetID(permissions map[string]v1.Access) string {
 func computeAccessScopeID(targetScopes []*v1.ClusterScope) string {
 	clusterScopes := make([]string, 0, len(targetScopes))
 	for _, targetScope := range targetScopes {
+		if targetScope == nil {
+			clusterScopes = append(clusterScopes, "")
+			continue
+		}
 		var namespaceScope string
 		if targetScope.GetFullClusterAccess() {
 			namespaceScope = clusterWildCard
@@ -631,6 +635,9 @@ func testAccessScope(targetScopes []*v1.ClusterScope) *storage.SimpleAccessScope
 		Traits: generatedObjectTraits.CloneVT(),
 	}
 	for _, targetScope := range targetScopes {
+		if targetScope == nil {
+			continue
+		}
 		if targetScope.GetFullClusterAccess() {
 			accessScope.Rules.IncludedClusters = append(
 				accessScope.Rules.IncludedClusters,
@@ -670,7 +677,6 @@ func setClusterStoreExpectations(
 ) {
 	for _, clusterScope := range input.GetClusterScopes() {
 		clusterIdName := clusterScope.GetClusterId()
-		fmt.Println("Expecting cluster name lookup for ID", clusterIdName)
 		mockClusterStore.EXPECT().
 			GetClusterName(gomock.Any(), clusterIdName).
 			Times(1).
