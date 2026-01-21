@@ -261,8 +261,10 @@ func getJoinsAndFields(src *walker.Schema, q *v1.Query, arrayFields map[string]b
 			}
 			if src.SearchScope == nil {
 				queue = append(queue, newElem)
-			} else if _, foundInSearchScope := src.SearchScope[newElem.schema.OptionsMap.PrimaryCategory()]; foundInSearchScope {
-				queue = append(queue, newElem)
+			} else if newElem.schema.OptionsMap != nil {
+				if _, foundInSearchScope := src.SearchScope[newElem.schema.OptionsMap.PrimaryCategory()]; foundInSearchScope {
+					queue = append(queue, newElem)
+				}
 			}
 		}
 	}
