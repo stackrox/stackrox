@@ -1,4 +1,4 @@
-[<- if .FeatureFlags.ROX_OCP_CONSOLE_INTEGRATION >]
+[<- if and .FeatureFlags.ROX_OCP_CONSOLE_INTEGRATION (not .KubectlOutput) >]
 {{- include "srox.init" . -}}
 
 {{- if and (eq ._rox.env.installMethod "operator") ._rox.consolePlugin.enabled -}}
@@ -8,7 +8,6 @@ metadata:
   name: advanced-cluster-security
   labels:
     {{- include "srox.labels" (list . "consoleplugin" "advanced-cluster-security") | nindent 4 }}
-    auto-upgrade.stackrox.io/component: "sensor"
   annotations:
     {{- include "srox.annotations" (list . "consoleplugin" "advanced-cluster-security") | nindent 4 }}
 spec:

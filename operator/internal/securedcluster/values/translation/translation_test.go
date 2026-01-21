@@ -9,7 +9,6 @@ import (
 	"testing"
 
 	"github.com/jeremywohl/flatten"
-	consolev1 "github.com/openshift/api/console/v1"
 	platform "github.com/stackrox/rox/operator/api/v1alpha1"
 	"github.com/stackrox/rox/operator/internal/images"
 	"github.com/stackrox/rox/operator/internal/utils"
@@ -32,8 +31,6 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/utils/ptr"
 	ctrlClient "sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/client/fake"
-	"sigs.k8s.io/controller-runtime/pkg/client/interceptor"
 )
 
 type TranslationTestSuite struct {
@@ -1525,7 +1522,7 @@ func TestConsolePluginValues(t *testing.T) {
 	t.Setenv(features.OCPConsoleIntegration.EnvVar(), "true")
 
 	t.Run("enabled when API available", func(t *testing.T) {
-		client := newFakeClientForConsolePluginTest(t, nil)
+		client := testutils.NewFakeClientBuilderWithConsolePluginListError(t, nil).Build()
 		translator := Translator{client: client, direct: client}
 
 		v := translator.getConsolePluginValues(context.Background())
@@ -1541,7 +1538,7 @@ func TestConsolePluginValues(t *testing.T) {
 		noMatchErr := &meta.NoKindMatchError{
 			GroupKind: schema.GroupKind{Group: "console.openshift.io", Kind: "ConsolePlugin"},
 		}
-		client := newFakeClientForConsolePluginTest(t, noMatchErr)
+		client := testutils.NewFakeClientBuilderWithConsolePluginListError(t, noMatchErr).Build()
 		translator := Translator{client: client, direct: client}
 
 		v := translator.getConsolePluginValues(context.Background())
@@ -1553,30 +1550,11 @@ func TestConsolePluginValues(t *testing.T) {
 	})
 
 	t.Run("error when API check fails", func(t *testing.T) {
-		client := newFakeClientForConsolePluginTest(t, errors.New("RBAC error"))
+		client := testutils.NewFakeClientBuilderWithConsolePluginListError(t, errors.New("RBAC error")).Build()
 		translator := Translator{client: client, direct: client}
 
 		v := translator.getConsolePluginValues(context.Background())
 		_, err := v.Build()
 		assert.Error(t, err, "should return error when API check fails")
 	})
-}
-
-func newFakeClientForConsolePluginTest(t *testing.T, listErr error) ctrlClient.Client {
-	scheme := runtime.NewScheme()
-	require.NoError(t, platform.AddToScheme(scheme))
-	require.NoError(t, consolev1.Install(scheme))
-
-	builder := fake.NewClientBuilder().WithScheme(scheme)
-	if listErr != nil {
-		builder = builder.WithInterceptorFuncs(interceptor.Funcs{
-			List: func(ctx context.Context, client ctrlClient.WithWatch, list ctrlClient.ObjectList, opts ...ctrlClient.ListOption) error {
-				if _, ok := list.(*consolev1.ConsolePluginList); ok {
-					return listErr
-				}
-				return client.List(ctx, list, opts...)
-			},
-		})
-	}
-	return builder.Build()
 }
