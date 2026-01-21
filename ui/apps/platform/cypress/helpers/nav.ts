@@ -57,6 +57,10 @@ export function visitFromConsoleLeftNavExpandable(
     interactAndWaitForResponses(
         () => {
             cy.get(`${pf6.navExpandable}:contains("${expandableTitle}")`).click();
+            // The console nav has a "fade in" effect, so we need to wait for the list to be visible to prevent flakiness
+            cy.get(`${pf6.navExpandable}:contains("${expandableTitle}") ul[role="list"]`).should(
+                'be.visible'
+            );
             cy.get(
                 `${pf6.navExpandable}:contains("${expandableTitle}") ${pf6.navItem}:contains("${itemText}")`
             ).click();
