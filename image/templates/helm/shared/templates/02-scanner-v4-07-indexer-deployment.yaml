@@ -110,8 +110,10 @@ spec:
             scheme: HTTPS
             path: /health/readiness
             port: 9443
-          periodSeconds: 5
-          timeoutSeconds: 1
+          timeoutSeconds: 10
+          periodSeconds: 10
+          failureThreshold: 5
+          successThreshold: 1
         volumeMounts:
         - name: additional-ca-volume
           mountPath: /usr/local/share/ca-certificates/
