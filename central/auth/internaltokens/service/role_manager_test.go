@@ -7,6 +7,7 @@ import (
 	"strings"
 	"testing"
 
+	clusterDataStoreMocks "github.com/stackrox/rox/central/cluster/datastore/mocks"
 	roleDataStoreMocks "github.com/stackrox/rox/central/role/datastore/mocks"
 	v1 "github.com/stackrox/rox/generated/internalapi/central/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -319,9 +320,17 @@ func TestCreateAccessScope(t *testing.T) {
 		t.Run(name, func(it *testing.T) {
 			ctx := sac.WithAllAccess(it.Context())
 			mockCtrl := gomock.NewController(it)
+			mockClusterStore := clusterDataStoreMocks.NewMockDataStore(mockCtrl)
 			mockRoleStore := roleDataStoreMocks.NewMockDataStore(mockCtrl)
 			roleMgr := &roleManager{
 				roleStore: mockRoleStore,
+			}
+			for _, clusterScope := range tc.input.GetClusterScopes() {
+				clusterName := clusterScope.GetClusterName()
+				mockClusterStore.EXPECT().
+					GetClusterName(gomock.Any(), clusterName).
+					Times(1).
+					Return(clusterName, nil)
 			}
 			mockRoleStore.EXPECT().
 				UpsertAccessScope(gomock.Any(), protomock.GoMockMatcherEqualMessage(tc.expectedAccessScope)).

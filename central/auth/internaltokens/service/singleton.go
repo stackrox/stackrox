@@ -3,8 +3,9 @@ package service
 import (
 	"time"
 
+	clusterStore "github.com/stackrox/rox/central/cluster/datastore"
 	"github.com/stackrox/rox/central/jwt"
-	"github.com/stackrox/rox/central/role/datastore"
+	roleStore "github.com/stackrox/rox/central/role/datastore"
 	"github.com/stackrox/rox/pkg/auth/authproviders/tokenbased"
 	"github.com/stackrox/rox/pkg/auth/tokens"
 	"github.com/stackrox/rox/pkg/sync"
@@ -26,7 +27,14 @@ var (
 // Singleton returns a new auth service instance.
 func Singleton() Service {
 	once.Do(func() {
-		s = &serviceImpl{issuer: getTokenIssuer(), roleManager: &roleManager{roleStore: datastore.Singleton()}, now: time.Now}
+		s = &serviceImpl{
+			issuer: getTokenIssuer(),
+			roleManager: &roleManager{
+				clusterStore: clusterStore.Singleton(),
+				roleStore:    roleStore.Singleton(),
+			},
+			now: time.Now,
+		}
 	})
 	return s
 }

@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/pkg/errors"
+	clusterDatastore "github.com/stackrox/rox/central/cluster/datastore"
 	roleDatastore "github.com/stackrox/rox/central/role/datastore"
 	v1 "github.com/stackrox/rox/generated/internalapi/central/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -25,7 +26,8 @@ const (
 )
 
 type roleManager struct {
-	roleStore roleDatastore.DataStore
+	clusterStore clusterDatastore.DataStore
+	roleStore    roleDatastore.DataStore
 }
 
 var (
@@ -100,18 +102,26 @@ func (rm *roleManager) createAccessScope(
 	fullAccessClusters := make([]string, 0)
 	clusterNamespaces := make([]*storage.SimpleAccessScope_Rules_Namespace, 0)
 	for ix, clusterScope := range req.GetClusterScopes() {
+		clusterID := clusterScope.GetClusterID()
+		clusterName, found, err := rm.clusterStore.GetClusterName(ctx, clusterID)
+		if err != nil {
+			return "", errors.Wrap(err, "retrieving cluster name")
+		}
+		if !found {
+			continue
+		}
 		if ix > 0 {
 			b.WriteString(primaryListSeparator)
 		}
-		b.WriteString(clusterScope.GetClusterName())
+		b.WriteString(clusterName)
 		b.WriteString(keyValueSeparator)
 		if clusterScope.GetFullClusterAccess() {
-			fullAccessClusters = append(fullAccessClusters, clusterScope.GetClusterName())
+			fullAccessClusters = append(fullAccessClusters, clusterName)
 			b.WriteString(clusterWildCard)
 		} else {
 			for namespaceIndex, namespace := range clusterScope.GetNamespaces() {
 				clusterNamespaces = append(clusterNamespaces, &storage.SimpleAccessScope_Rules_Namespace{
-					ClusterName:   clusterScope.GetClusterName(),
+					ClusterName:   clusterName,
 					NamespaceName: namespace,
 				})
 				if namespaceIndex > 0 {
