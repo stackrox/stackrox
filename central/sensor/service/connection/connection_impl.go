@@ -19,6 +19,7 @@ import (
 	"github.com/stackrox/rox/central/sensor/service/common"
 	"github.com/stackrox/rox/central/sensor/service/connection/messagestream"
 	"github.com/stackrox/rox/central/sensor/service/pipeline"
+	vmindexratelimiter "github.com/stackrox/rox/central/sensor/service/virtualmachineindex/ratelimiter"
 	"github.com/stackrox/rox/central/sensor/telemetry"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/internalapi/central"
@@ -159,6 +160,37 @@ func (c *sensorConnection) multiplexedPush(ctx context.Context, msg *central.Msg
 		// This is likely because sensor is a newer version than central and is sending a message that this central doesn't know about
 		// This is already logged, so it's fine to just ignore it for now
 		return
+	}
+
+	// For VM index reports, enforce rate limiting before enqueueing to avoid unbounded queue growth.
+	if ev := msg.GetEvent(); ev != nil {
+		if vmIndex := ev.GetVirtualMachineIndexReport(); vmIndex != nil {
+			conn := FromContext(ctx)
+			if conn == nil {
+				log.Warn("Cannot rate limit VM index report: missing sensor connection in context")
+				return
+			}
+			clusterID := conn.ClusterID()
+			allowed, reason := vmindexratelimiter.Limiter().TryConsume(clusterID)
+			if !allowed {
+				if conn.HasCapability(centralsensor.SensorACKSupport) {
+					nack := &central.MsgToSensor{
+						Msg: &central.MsgToSensor_SensorAck{
+							SensorAck: &central.SensorACK{
+								Action:      central.SensorACK_NACK,
+								MessageType: central.SensorACK_VM_INDEX_REPORT,
+								ResourceId:  vmIndex.GetId(),
+								Reason:      reason,
+							},
+						},
+					}
+					if err := conn.InjectMessage(ctx, nack); err != nil {
+						log.Warnf("Failed to send VM index NACK for cluster %s: %v", clusterID, err)
+					}
+				}
+				return
+			}
+		}
 	}
 
 	typ := reflectutils.Type(msg.GetMsg())

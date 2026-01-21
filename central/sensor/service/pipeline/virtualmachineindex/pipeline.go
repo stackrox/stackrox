@@ -2,7 +2,6 @@ package virtualmachineindex
 
 import (
 	"context"
-	"strconv"
 
 	"github.com/pkg/errors"
 	countMetrics "github.com/stackrox/rox/central/metrics"
@@ -10,29 +9,16 @@ import (
 	"github.com/stackrox/rox/central/sensor/service/connection"
 	"github.com/stackrox/rox/central/sensor/service/pipeline"
 	"github.com/stackrox/rox/central/sensor/service/pipeline/reconciliation"
+	vmindexratelimiter "github.com/stackrox/rox/central/sensor/service/virtualmachineindex/ratelimiter"
 	vmDatastore "github.com/stackrox/rox/central/virtualmachine/datastore"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/centralsensor"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/metrics"
-	"github.com/stackrox/rox/pkg/rate"
 	vmEnricher "github.com/stackrox/rox/pkg/virtualmachine/enricher"
 )
-
-const (
-	// rateLimiterWorkload is the workload name used for rate limiting VM index reports.
-	rateLimiterWorkload = "vm_index_report"
-)
-
-// rateLimiter defines the interface for rate limiting operations used by this pipeline.
-// This interface is satisfied by *rate.Limiter and allows for easier testing.
-type rateLimiter interface {
-	TryConsume(clientID string) (allowed bool, reason string)
-	OnClientDisconnect(clientID string)
-}
 
 var (
 	log = logging.LoggerForModule()
@@ -42,43 +28,28 @@ var (
 
 // GetPipeline returns an instantiation of this particular pipeline
 func GetPipeline() pipeline.Fragment {
-	rateLimit, err := strconv.ParseFloat(env.VMIndexReportRateLimit.Setting(), 64)
-	if err != nil {
-		log.Warnf("Invalid %s value: %v. Using fallback value of 0.3", env.VMIndexReportRateLimit.EnvVar(), err)
-		rateLimit = 0.3 // Keep in sync with the default value in env.VMIndexReportRateLimit.
-	}
-	bucketCapacity := env.VMIndexReportBucketCapacity.IntegerSetting()
-	rateLimiter, err := rate.NewLimiter(rateLimiterWorkload, rateLimit, bucketCapacity)
-	if err != nil {
-		log.Errorf("Failed to create rate limiter for %s: %v", rateLimiterWorkload, err)
-	}
 	return newPipeline(
 		vmDatastore.Singleton(),
 		vmEnricher.Singleton(),
-		rateLimiter,
 	)
 }
 
 // newPipeline returns a new instance of Pipeline.
-func newPipeline(vms vmDatastore.DataStore, enricher vmEnricher.VirtualMachineEnricher, rl rateLimiter) pipeline.Fragment {
+func newPipeline(vms vmDatastore.DataStore, enricher vmEnricher.VirtualMachineEnricher) pipeline.Fragment {
 	return &pipelineImpl{
 		vmDatastore: vms,
 		enricher:    enricher,
-		rateLimiter: rl,
 	}
 }
 
 type pipelineImpl struct {
 	vmDatastore vmDatastore.DataStore
 	enricher    vmEnricher.VirtualMachineEnricher
-	rateLimiter rateLimiter
 }
 
 func (p *pipelineImpl) OnFinish(clusterID string) {
 	// Notify rate limiter that this client (Sensor) has disconnected so it can rebalance the limiters.
-	if p.rateLimiter != nil {
-		p.rateLimiter.OnClientDisconnect(clusterID)
-	}
+	vmindexratelimiter.OnClientDisconnect(clusterID)
 }
 
 func (p *pipelineImpl) Capabilities() []centralsensor.CentralCapability {
@@ -121,30 +92,6 @@ func (p *pipelineImpl) Run(ctx context.Context, clusterID string, msg *central.M
 
 	// Extract connection for capability checks; cluster ID is taken from the pipeline argument.
 	conn := connection.FromContext(ctx)
-
-	// Rate limit check. Drop message if rate limiter is misconfigured (defensive behavior against misconfiguration)
-	// or rate limit exceeded. Afterwards, send NACK to Sensor if Sensor supports it.
-	if p.rateLimiter == nil {
-		logging.GetRateLimitedLogger().ErrorL(
-			"vm_index_report_nil_rate_limiter",
-			"No rate limiter found for workload %q. Dropping VM index report from cluster %s",
-			rateLimiterWorkload,
-			clusterID,
-		)
-		if conn != nil && conn.HasCapability(centralsensor.SensorACKSupport) {
-			sendVMIndexReportResponse(ctx, clusterID, index.GetId(), central.SensorACK_NACK, "rate limiter not configured", injector)
-		}
-		return nil // Don't return error - would cause pipeline retry
-	}
-
-	allowed, reason := p.rateLimiter.TryConsume(clusterID)
-	if !allowed {
-		log.Infof("Dropping VM index report %s from cluster %s: %s", index.GetId(), clusterID, reason)
-		if conn != nil && conn.HasCapability(centralsensor.SensorACKSupport) {
-			sendVMIndexReportResponse(ctx, clusterID, index.GetId(), central.SensorACK_NACK, reason, injector)
-		}
-		return nil // Don't return error - would cause pipeline retry
-	}
 
 	// Get or create VM
 	vm := &storage.VirtualMachine{Id: index.GetId()}
