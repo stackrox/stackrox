@@ -4,6 +4,7 @@ import { AxiosError } from 'axios';
 import type { InternalAxiosRequestConfig } from 'axios';
 
 import type { AuthScope } from './ScopeContext';
+import { ALL_NAMESPACES_KEY } from './constants';
 
 export default function consoleFetchAxiosAdapter(
     baseUrl: string,
@@ -19,8 +20,14 @@ export default function consoleFetchAxiosAdapter(
 
     // Add scope headers to assist in authorization decisions
     const scope = getScope();
-    if (scope.namespace) {
-        updatedHeaders['ACS-AUTH-NAMESPACE-SCOPE'] = scope.namespace;
+    const isScopedDataRequest =
+        config.url?.includes('/api/graphql') || config.url?.includes('/v1/deployments');
+    if (scope.namespace && isScopedDataRequest) {
+        // A value of "all namespaces" is used by cluster admins to request data from all namespace
+        // which we represent as a wildcard in the API.
+        const acsAuthNamespaceScope =
+            scope.namespace === ALL_NAMESPACES_KEY ? '*' : scope.namespace;
+        updatedHeaders['ACS-AUTH-NAMESPACE-SCOPE'] = acsAuthNamespaceScope;
     }
 
     return consoleFetch(`${baseUrl}${config.url}`, {
