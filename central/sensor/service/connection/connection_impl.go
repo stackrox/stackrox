@@ -81,6 +81,12 @@ type sensorConnection struct {
 	capabilities set.Set[centralsensor.SensorCapability]
 
 	hashDeduper hashManager.Deduper
+
+	rl rateLimiter
+}
+
+type rateLimiter interface {
+	TryConsume(clientID string) (allowed bool, reason string)
 }
 
 func newConnection(ctx context.Context,
@@ -97,6 +103,7 @@ func newConnection(ctx context.Context,
 	hashMgr hashManager.Manager,
 	complianceOperatorMgr common.ComplianceOperatorManager,
 	initSyncMgr *initSyncManager,
+	rl rateLimiter,
 ) *sensorConnection {
 
 	conn := &sensorConnection{
@@ -120,6 +127,7 @@ func newConnection(ctx context.Context,
 		sensorHello: sensorHello,
 		capabilities: set.NewSet(sliceutils.
 			FromStringSlice[centralsensor.SensorCapability](sensorHello.GetCapabilities()...)...),
+		rl: rl,
 	}
 
 	// Need a reference to conn for injector
@@ -158,6 +166,15 @@ func (c *sensorConnection) multiplexedPush(ctx context.Context, msg *central.Msg
 	if msg.GetMsg() == nil {
 		// This is likely because sensor is a newer version than central and is sending a message that this central doesn't know about
 		// This is already logged, so it's fine to just ignore it for now
+		return
+	}
+
+	allowed, reason := c.rl.TryConsume(c.clusterID)
+	if !allowed {
+		logging.GetRateLimitedLogger().ErrorL(
+			"vm_index_reports_rate_limiter",
+			"Rate limit exceeded for cluster %s and event type %s: %v", c.clusterID, "vm_index_reports", reason,
+		)
 		return
 	}
 
