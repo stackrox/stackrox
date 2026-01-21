@@ -33,6 +33,11 @@ type SelectQueryField struct {
 	// Default: false (for selected-only fields); queryEntry fields set this to true.
 	IncludeInMatches bool
 
+	// ChildTableAgg indicates that this field comes from a child table and should be aggregated
+	// using array_agg() or jsonb_agg() when selected. This is used for single-pass queries that
+	// fetch both parent and child table data.
+	ChildTableAgg bool
+
 	// PostTransform is a function that will be applied to the returned rows from SQL before
 	// further processing.
 	// The input will be of the type directly returned from the postgres rows.Scan function.
