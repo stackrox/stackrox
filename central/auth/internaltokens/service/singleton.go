@@ -5,7 +5,7 @@ import (
 
 	"github.com/stackrox/rox/central/jwt"
 	"github.com/stackrox/rox/central/role/datastore"
-	"github.com/stackrox/rox/pkg/auth/authproviders/tokenbasedsource"
+	"github.com/stackrox/rox/pkg/auth/authproviders/tokenbased"
 	"github.com/stackrox/rox/pkg/auth/tokens"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/utils"
@@ -32,11 +32,11 @@ func Singleton() Service {
 }
 
 func getTokenSource() tokens.Source {
-	return tokenbasedsource.NewTokenSource(
+	return tokenbased.NewTokenAuthProvider(
 		internalTokenId,
 		internalToken,
 		internalToken,
-		tokenbasedsource.WithRevocationLayer(tokens.NewRevocationLayer()),
+		tokenbased.WithRevocationLayer(tokens.NewRevocationLayer()),
 	)
 }
 
