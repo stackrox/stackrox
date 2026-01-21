@@ -166,16 +166,16 @@ func TestCreateAccessScope(t *testing.T) {
 	targetNamespaceB := "namespace B"
 	targetNamespaceC := "namespace C"
 	requestFullCluster := &v1.ClusterScope{
-		ClusterName:       targetCluster1,
+		ClusterId:         targetCluster1,
 		FullClusterAccess: true,
 	}
 	requestSingleNamespace := &v1.ClusterScope{
-		ClusterName:       targetCluster2,
+		ClusterId:         targetCluster2,
 		FullClusterAccess: false,
 		Namespaces:        []string{targetNamespaceA},
 	}
 	requestMultipleNamespaces := &v1.ClusterScope{
-		ClusterName:       targetCluster3,
+		ClusterId:         targetCluster3,
 		FullClusterAccess: false,
 		Namespaces:        []string{targetNamespaceB, targetNamespaceC},
 	}
@@ -326,11 +326,11 @@ func TestCreateAccessScope(t *testing.T) {
 				roleStore: mockRoleStore,
 			}
 			for _, clusterScope := range tc.input.GetClusterScopes() {
-				clusterName := clusterScope.GetClusterName()
+				clusterIdName := clusterScope.GetClusterId()
 				mockClusterStore.EXPECT().
-					GetClusterName(gomock.Any(), clusterName).
+					GetClusterName(gomock.Any(), clusterIdName).
 					Times(1).
-					Return(clusterName, nil)
+					Return(clusterIdName, nil)
 			}
 			mockRoleStore.EXPECT().
 				UpsertAccessScope(gomock.Any(), protomock.GoMockMatcherEqualMessage(tc.expectedAccessScope)).
@@ -361,7 +361,7 @@ func computeAccessScopeID(targetScopes []*v1.ClusterScope) string {
 		}
 		clusterScopes = append(
 			clusterScopes,
-			fmt.Sprintf("%s%s%s", targetScope.GetClusterName(), keyValueSeparator, namespaceScope),
+			fmt.Sprintf("%s%s%s", targetScope.GetClusterId(), keyValueSeparator, namespaceScope),
 		)
 	}
 	accessScopeString := strings.Join(clusterScopes, primaryListSeparator)
@@ -383,14 +383,14 @@ func testAccessScope(targetScopes []*v1.ClusterScope) *storage.SimpleAccessScope
 		if targetScope.GetFullClusterAccess() {
 			accessScope.Rules.IncludedClusters = append(
 				accessScope.Rules.IncludedClusters,
-				targetScope.GetClusterName(),
+				targetScope.GetClusterId(),
 			)
 		} else {
 			for _, namespace := range targetScope.GetNamespaces() {
 				accessScope.Rules.IncludedNamespaces = append(
 					accessScope.Rules.IncludedNamespaces,
 					&storage.SimpleAccessScope_Rules_Namespace{
-						ClusterName:   targetScope.GetClusterName(),
+						ClusterName:   targetScope.GetClusterId(),
 						NamespaceName: namespace,
 					},
 				)
@@ -409,11 +409,11 @@ func TestCreateRole(t *testing.T) {
 	targetCluster2 := "cluster 2"
 	targetNamespaceA := "namespace A"
 	requestFullCluster := &v1.ClusterScope{
-		ClusterName:       targetCluster1,
+		ClusterId:         targetCluster1,
 		FullClusterAccess: true,
 	}
 	requestSingleNamespace := &v1.ClusterScope{
-		ClusterName:       targetCluster2,
+		ClusterId:         targetCluster2,
 		FullClusterAccess: false,
 		Namespaces:        []string{targetNamespaceA},
 	}
