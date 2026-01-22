@@ -118,7 +118,7 @@ require (
 	github.com/sergi/go-diff v1.4.0
 	github.com/sigstore/cosign/v3 v3.0.4
 	github.com/sigstore/rekor v1.5.0
-	github.com/sigstore/sigstore v1.10.3
+	github.com/sigstore/sigstore v1.10.4
 	github.com/sourcegraph/conc v0.3.1-0.20240121214520-5f936abd7ae8
 	github.com/spf13/cobra v1.10.2
 	github.com/spf13/pflag v1.0.10
