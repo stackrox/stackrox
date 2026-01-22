@@ -196,7 +196,7 @@ func (s *policyValidator) validateEventSource(policy *storage.Policy) error {
 }
 
 func validateNoLabelsInScopeForAuditEvent(scope *storage.Scope, context string) error {
-	if scope.GetLabel() != nil {
+	if scope.GetLabel() != nil || scope.GetClusterLabel() != nil || scope.GetNamespaceLabel() != nil {
 		return errors.Errorf("labels in `%s` section are not permitted for audit log events based policies", context)
 	}
 	return nil
@@ -321,8 +321,16 @@ func (s *policyValidator) validateDeploymentExclusion(exclusion *storage.Exclusi
 }
 
 func (s *policyValidator) validateScope(scope *storage.Scope) error {
-	if scope.GetCluster() == "" && scope.GetNamespace() == "" && scope.GetLabel() == nil {
+	if scope.GetCluster() == "" && scope.GetNamespace() == "" && scope.GetLabel() == nil && scope.GetClusterLabel() == nil && scope.GetNamespaceLabel() == nil {
 		return errors.New("scope must have at least one field populated")
+	}
+	// Cluster and cluster_label are mutually exclusive
+	if scope.GetCluster() != "" && scope.GetClusterLabel() != nil {
+		return errors.New("scope cannot have both 'cluster' and 'cluster_label' fields populated")
+	}
+	// Namespace and namespace_label are mutually exclusive
+	if scope.GetNamespace() != "" && scope.GetNamespaceLabel() != nil {
+		return errors.New("scope cannot have both 'namespace' and 'namespace_label' fields populated")
 	}
 	if _, err := scopecomp.CompileScope(scope); err != nil {
 		return errors.Wrap(err, "could not compile scope")

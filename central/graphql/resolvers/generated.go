@@ -1278,8 +1278,10 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 	}))
 	utils.Must(builder.AddType("Scope", []string{
 		"cluster: String!",
+		"clusterLabel: Scope_Label",
 		"label: Scope_Label",
 		"namespace: String!",
+		"namespaceLabel: Scope_Label",
 	}))
 	utils.Must(builder.AddType("ScopeObject", []string{
 		"id: ID!",
@@ -13927,6 +13929,11 @@ func (resolver *scopeResolver) Cluster(ctx context.Context) string {
 	return value
 }
 
+func (resolver *scopeResolver) ClusterLabel(ctx context.Context) (*scope_LabelResolver, error) {
+	value := resolver.data.GetClusterLabel()
+	return resolver.root.wrapScope_Label(value, true, nil)
+}
+
 func (resolver *scopeResolver) Label(ctx context.Context) (*scope_LabelResolver, error) {
 	value := resolver.data.GetLabel()
 	return resolver.root.wrapScope_Label(value, true, nil)
@@ -13935,6 +13942,11 @@ func (resolver *scopeResolver) Label(ctx context.Context) (*scope_LabelResolver,
 func (resolver *scopeResolver) Namespace(ctx context.Context) string {
 	value := resolver.data.GetNamespace()
 	return value
+}
+
+func (resolver *scopeResolver) NamespaceLabel(ctx context.Context) (*scope_LabelResolver, error) {
+	value := resolver.data.GetNamespaceLabel()
+	return resolver.root.wrapScope_Label(value, true, nil)
 }
 
 type scopeObjectResolver struct {
