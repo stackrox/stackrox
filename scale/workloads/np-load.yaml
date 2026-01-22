@@ -48,11 +48,3 @@ rbacWorkload:
   numBindings: 1000
   numRoles: 1000
   numServiceAccounts: 1000
-virtualMachineWorkload:
-  poolSize: 20000
-  updateInterval: 5m
-  lifecycleDuration: 2h
-  numLifecycles: 0
-  reportInterval: 5m # ±5% max deviation applied
-  numPackages: 700
-  initialReportDelay: 30s # ±20% max deviation applied
