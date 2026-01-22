@@ -3,12 +3,14 @@ package vsock
 import (
 	"bufio"
 	"bytes"
+	"errors"
 	"fmt"
 	"io"
 	"os"
 	"path/filepath"
 	"strings"
 
+	"github.com/hashicorp/go-multierror"
 	v1 "github.com/stackrox/rox/generated/internalapi/virtualmachine/v1"
 	"github.com/stackrox/rox/pkg/set"
 )
@@ -16,7 +18,6 @@ import (
 const (
 	osReleasePath         = "/etc/os-release"
 	entitlementDirPath    = "/etc/pki/entitlement"
-	yumReposDirPath       = "/etc/yum.repos.d"
 	dnfCacheDirPath       = "/var/cache/dnf"
 	entitlementKeySuffix  = "-key.pem"
 	entitlementCertSuffix = ".pem"
@@ -27,6 +28,12 @@ const (
 	// rhelOSID is the value of the ID field in /etc/os-release for Red Hat Enterprise Linux.
 	rhelOSID = "rhel"
 )
+
+var defaultReposDirs = []string{
+	"/etc/yum.repos.d",
+	"/etc/yum/repos.d",
+	"/etc/distro.repos.d",
+}
 
 // DiscoverVMData discovers VM metadata from the host system.
 // Returns discovered data with defaults (UNKNOWN/UNSPECIFIED) if discovery fails.
@@ -60,14 +67,10 @@ func DiscoverVMData(hostPath string) *v1.DiscoveredData {
 	}
 
 	// Discover DNF metadata status.
-	// Currently assumes RHEL DNF setup: checks for both (1) at least one *.repo file in /etc/yum.repos.d
-	// and (2) at least one directory in /var/cache/dnf containing "-rpms-" in its name. Metadata is
-	// considered AVAILABLE only if both conditions are met. This behavior is based on assumptions about
-	// RHEL repository configuration and DNF cache directory naming patterns. Future improvements may
-	// include more accurate detection methods (e.g., checking actual cache contents or DNF database state).
 	dnfStatus, err := discoverDnfMetadataStatusWithPaths(
-		hostPathFor(hostPath, yumReposDirPath),
-		hostPathFor(hostPath, dnfCacheDirPath),
+		hostPath,
+		defaultReposDirs,
+		dnfCacheDirPath,
 	)
 	if err != nil {
 		log.Warnf("Failed to discover DNF metadata status: %v", err)
@@ -228,35 +231,95 @@ func discoverActivationStatusWithPath(path string) (v1.ActivationStatus, error) 
 }
 
 // discoverDnfMetadataStatusWithPaths checks both repos and cache directories.
-func discoverDnfMetadataStatusWithPaths(reposDirPath, cacheDirPath string) (v1.DnfMetadataStatus, error) {
-	// Check for repo files in /etc/yum.repos.d
-	repoEntries, err := os.ReadDir(reposDirPath)
+// Currently assumes RHEL DNF setup: checks for both (1) at least one *.repo file in a default reposdir
+// (/etc/yum.repos.d, /etc/yum/repos.d, /etc/distro.repos.d) and (2) at least one directory in
+// /var/cache/dnf containing "-rpms-" in its name. Metadata is considered AVAILABLE only if both
+// conditions are met.
+func discoverDnfMetadataStatusWithPaths(hostPath string, reposDirPaths []string, cacheDirPath string) (v1.DnfMetadataStatus, error) {
+	hasRepoFile, err := discoverDnfRepoFilePresence(hostPath, reposDirPaths)
 	if err != nil {
-		if os.IsNotExist(err) {
-			return v1.DnfMetadataStatus_DNF_METADATA_UNSPECIFIED, fmt.Errorf("unsupported OS detected: missing %s: %w", reposDirPath, err)
-		}
-		return v1.DnfMetadataStatus_DNF_METADATA_UNSPECIFIED, fmt.Errorf("reading %s: %w", reposDirPath, err)
+		return v1.DnfMetadataStatus_DNF_METADATA_UNSPECIFIED, err
 	}
-
-	hasRepoFile := false
-	for _, entry := range repoEntries {
-		if !entry.IsDir() && strings.HasSuffix(entry.Name(), ".repo") {
-			hasRepoFile = true
-			break
-		}
-	}
-
 	if !hasRepoFile {
 		return v1.DnfMetadataStatus_UNAVAILABLE, nil
 	}
 
-	// Check for repo directories in /var/cache/dnf
-	cacheEntries, err := os.ReadDir(cacheDirPath)
+	hasRepoDir, err := discoverDnfCacheRepoDirPresence(hostPath, cacheDirPath)
+	if err != nil {
+		return v1.DnfMetadataStatus_DNF_METADATA_UNSPECIFIED, err
+	}
+
+	if hasRepoDir {
+		return v1.DnfMetadataStatus_AVAILABLE, nil
+	}
+	return v1.DnfMetadataStatus_UNAVAILABLE, nil
+}
+
+// discoverDnfRepoFilePresence reports whether any default reposdir contains a *.repo file.
+// Assumptions and behavior:
+//   - Uses the default DNF reposdir locations: /etc/yum.repos.d, /etc/yum/repos.d, /etc/distro.repos.d.
+//   - Returns true as soon as a *.repo file is found in any reposdir.
+//   - If all reposdirs are unreadable, returns an aggregated error describing each failure.
+//   - There is no support for DNF 5 defaults currently.
+//   - Tested against DNF 4 defaults (libdnf ConfigMain.cpp):
+//     https://github.com/rpm-software-management/libdnf/blob/53839f5bd88f378e57a1f1671b3db48d29984e24/libdnf/conf/ConfigMain.cpp
+//   - DNF 5 uses a different reposdir list (/etc/yum.repos.d, /etc/distro.repos.d, /usr/share/dnf5/repos.d),
+//     so this logic may miss repos configured only in the DNF 5 default path:
+//     https://github.com/rpm-software-management/dnf5/blob/185eaef1e0ad663bdb827a2179ab1df574a27d88/include/libdnf5/conf/const.hpp
+func discoverDnfRepoFilePresence(hostPath string, reposDirPaths []string) (bool, error) {
+	if len(reposDirPaths) == 0 {
+		return false, errors.New("missing repository directories")
+	}
+
+	// Check for repo files in default reposdir locations.
+	foundAnyRepoDir := false
+	var repoDirErrs *multierror.Error
+	for _, reposDirPath := range reposDirPaths {
+		reposPath := hostPathFor(hostPath, reposDirPath)
+		repoEntries, err := os.ReadDir(reposPath)
+		if err != nil {
+			if os.IsNotExist(err) {
+				repoDirErrs = multierror.Append(repoDirErrs, fmt.Errorf("missing %s: %w", reposPath, err))
+				continue
+			}
+			repoDirErrs = multierror.Append(repoDirErrs, fmt.Errorf("reading %s: %w", reposPath, err))
+			continue
+		}
+
+		foundAnyRepoDir = true
+		for _, entry := range repoEntries {
+			if !entry.IsDir() && strings.HasSuffix(entry.Name(), ".repo") {
+				return true, nil
+			}
+		}
+	}
+
+	if !foundAnyRepoDir {
+		return false, fmt.Errorf("failed to read repository directories: %w", repoDirErrs.ErrorOrNil())
+	}
+
+	return false, nil
+}
+
+// discoverDnfCacheRepoDirPresence reports whether the DNF cache contains repo directories.
+// Assumptions and behavior:
+//   - Uses the default system cachedir at /var/cache/dnf (libdnf Const.hpp):
+//     https://github.com/rpm-software-management/libdnf/blob/53839f5bd88f378e57a1f1671b3db48d29984e24/libdnf/conf/Const.hpp
+//   - Treats any subdirectory containing "-rpms-" as a repo cache directory.
+//   - Returns true as soon as a matching directory is found.
+//   - If the cache directory is missing, returns an "unsupported OS detected" error.
+//   - If the cache directory exists but cannot be read, returns a read error.
+//   - There is no support for DNF 5 defaults currently.
+//   - Tested against DNF 4 defaults; DNF 5 uses /var/cache/libdnf5:
+//     https://github.com/rpm-software-management/dnf5/blob/185eaef1e0ad663bdb827a2179ab1df574a27d88/include/libdnf5/conf/const.hpp
+func discoverDnfCacheRepoDirPresence(hostPath, cacheDirPath string) (bool, error) {
+	cachePath := hostPathFor(hostPath, cacheDirPath)
+	cacheEntries, err := os.ReadDir(cachePath)
 	if err != nil {
 		if os.IsNotExist(err) {
-			return v1.DnfMetadataStatus_DNF_METADATA_UNSPECIFIED, fmt.Errorf("unsupported OS detected: missing %s: %w", cacheDirPath, err)
+			return false, fmt.Errorf("unsupported OS detected: missing %s: %w", cachePath, err)
 		}
-		return v1.DnfMetadataStatus_DNF_METADATA_UNSPECIFIED, fmt.Errorf("reading %s: %w", cacheDirPath, err)
+		return false, fmt.Errorf("reading %s: %w", cachePath, err)
 	}
 
 	hasRepoDir := false
@@ -269,9 +332,5 @@ func discoverDnfMetadataStatusWithPaths(reposDirPath, cacheDirPath string) (v1.D
 			}
 		}
 	}
-
-	if hasRepoFile && hasRepoDir {
-		return v1.DnfMetadataStatus_AVAILABLE, nil
-	}
-	return v1.DnfMetadataStatus_UNAVAILABLE, nil
+	return hasRepoDir, nil
 }

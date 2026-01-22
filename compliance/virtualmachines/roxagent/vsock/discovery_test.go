@@ -260,66 +260,82 @@ func TestDiscoverActivationStatus_MissingDir(t *testing.T) {
 }
 
 func TestDiscoverDnfMetadataStatus(t *testing.T) {
-	tests := []struct {
-		name           string
-		repoFiles      []string
+	tests := map[string]struct {
+		reposDirs      []string
+		repoDirFiles   map[string][]string
 		cacheDirs      []string
 		expectedStatus v1.DnfMetadataStatus
 	}{
-		{
-			name:           "Available - repo file and cache dir",
-			repoFiles:      []string{"rhel9.repo"},
+		"should report available when repo file and cache dir exist": {
+			reposDirs:      []string{"yum.repos.d"},
+			repoDirFiles:   map[string][]string{"yum.repos.d": {"rhel9.repo"}},
 			cacheDirs:      []string{"rhel-9-for-x86_64-appstream-rpms-3dc6dc0880df5476"},
 			expectedStatus: v1.DnfMetadataStatus_AVAILABLE,
 		},
-		{
-			name:      "Available - multiple repo files and cache dirs",
-			repoFiles: []string{"baseos.repo", "appstream.repo"},
+		"should report available when repo file is in second reposdir": {
+			reposDirs: []string{"yum.repos.d", "yum/repos.d"},
+			repoDirFiles: map[string][]string{
+				"yum.repos.d": {},
+				"yum/repos.d": {"rhel9.repo"},
+			},
+			cacheDirs:      []string{"rhel-9-for-x86_64-appstream-rpms-3dc6dc0880df5476"},
+			expectedStatus: v1.DnfMetadataStatus_AVAILABLE,
+		},
+		"should report available with multiple repo files and cache dirs": {
+			reposDirs: []string{"yum.repos.d"},
+			repoDirFiles: map[string][]string{
+				"yum.repos.d": {"baseos.repo", "appstream.repo"},
+			},
 			cacheDirs: []string{
 				"rhel-9-for-x86_64-appstream-rpms-3dc6dc0880df5476",
 				"rhel-9-for-x86_64-baseos-rpms-a2cdae14f4ed6c20",
 			},
 			expectedStatus: v1.DnfMetadataStatus_AVAILABLE,
 		},
-		{
-			name:           "Unavailable - no repo files",
-			repoFiles:      []string{},
+		"should report unavailable when no repo files exist": {
+			reposDirs:      []string{"yum.repos.d"},
+			repoDirFiles:   map[string][]string{"yum.repos.d": {}},
 			cacheDirs:      []string{"rhel-9-for-x86_64-appstream-rpms-3dc6dc0880df5476"},
 			expectedStatus: v1.DnfMetadataStatus_UNAVAILABLE,
 		},
-		{
-			name:           "Unavailable - no cache dirs",
-			repoFiles:      []string{"rhel9.repo"},
+		"should report unavailable when no cache dirs exist": {
+			reposDirs:      []string{"yum.repos.d"},
+			repoDirFiles:   map[string][]string{"yum.repos.d": {"rhel9.repo"}},
 			cacheDirs:      []string{},
 			expectedStatus: v1.DnfMetadataStatus_UNAVAILABLE,
 		},
-		{
-			name:           "Unavailable - cache dir without -rpms- pattern",
-			repoFiles:      []string{"rhel9.repo"},
+		"should report unavailable when cache dir lacks -rpms- pattern": {
+			reposDirs:      []string{"yum.repos.d"},
+			repoDirFiles:   map[string][]string{"yum.repos.d": {"rhel9.repo"}},
 			cacheDirs:      []string{"some-other-dir"},
 			expectedStatus: v1.DnfMetadataStatus_UNAVAILABLE,
 		},
-		{
-			name:           "Unavailable - empty directories",
-			repoFiles:      []string{},
+		"should report unavailable for empty directories": {
+			reposDirs:      []string{"yum.repos.d"},
+			repoDirFiles:   map[string][]string{"yum.repos.d": {}},
 			cacheDirs:      []string{},
 			expectedStatus: v1.DnfMetadataStatus_UNAVAILABLE,
 		},
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
 			tmpDir := t.TempDir()
-			reposDir := filepath.Join(tmpDir, "yum.repos.d")
 			cacheDir := filepath.Join(tmpDir, "dnf")
-
-			require.NoError(t, os.MkdirAll(reposDir, 0755))
 			require.NoError(t, os.MkdirAll(cacheDir, 0755))
 
-			for _, filename := range tt.repoFiles {
-				filePath := filepath.Join(reposDir, filename)
-				err := os.WriteFile(filePath, []byte("[repo]\nname=test"), 0644)
-				require.NoError(t, err)
+			reposDirPaths := make([]string, 0, len(tt.reposDirs))
+			for _, dir := range tt.reposDirs {
+				dirPath := filepath.Join(tmpDir, dir)
+				reposDirPaths = append(reposDirPaths, dirPath)
+				if files, ok := tt.repoDirFiles[dir]; ok {
+					require.NoError(t, os.MkdirAll(dirPath, 0755))
+					for _, filename := range files {
+						filePath := filepath.Join(dirPath, filename)
+						err := os.WriteFile(filePath, []byte("[repo]\nname=test"), 0644)
+						require.NoError(t, err)
+					}
+				}
 			}
 
 			for _, dirname := range tt.cacheDirs {
@@ -328,7 +344,7 @@ func TestDiscoverDnfMetadataStatus(t *testing.T) {
 				require.NoError(t, err)
 			}
 
-			dnfStatus, err := discoverDnfMetadataStatusWithPaths(reposDir, cacheDir)
+			dnfStatus, err := discoverDnfMetadataStatusWithPaths("", reposDirPaths, cacheDir)
 			assert.NoError(t, err)
 			assert.Equal(t, tt.expectedStatus, dnfStatus)
 		})
@@ -336,28 +352,56 @@ func TestDiscoverDnfMetadataStatus(t *testing.T) {
 }
 
 func TestDiscoverDnfMetadataStatus_MissingDirs(t *testing.T) {
-	tmpDir := t.TempDir()
+	tests := map[string]struct {
+		reposDirs     []string
+		repoDirFiles  map[string][]string
+		cacheDir      string
+		setupCache    func(string) error
+		errorContains string
+	}{
+		"should return error when repos dir is missing": {
+			reposDirs:     []string{"nonexistent-repos"},
+			repoDirFiles:  map[string][]string{},
+			cacheDir:      "dnf",
+			setupCache:    func(path string) error { return os.MkdirAll(path, 0755) },
+			errorContains: "failed to read repository directories",
+		},
+		"should return error when cache dir is missing": {
+			reposDirs: []string{"yum.repos.d"},
+			repoDirFiles: map[string][]string{
+				"yum.repos.d": {"test.repo"},
+			},
+			cacheDir:      "nonexistent-cache",
+			setupCache:    nil,
+			errorContains: "unsupported OS detected: missing",
+		},
+	}
 
-	t.Run("missing repos dir", func(t *testing.T) {
-		missingReposDir := filepath.Join(tmpDir, "nonexistent-repos")
-		cacheDir := filepath.Join(tmpDir, "dnf")
-		require.NoError(t, os.MkdirAll(cacheDir, 0755))
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			tmpDir := t.TempDir()
+			cacheDirPath := filepath.Join(tmpDir, tt.cacheDir)
+			if tt.setupCache != nil {
+				require.NoError(t, tt.setupCache(cacheDirPath))
+			}
 
-		dnfStatus, err := discoverDnfMetadataStatusWithPaths(missingReposDir, cacheDir)
-		assert.Error(t, err)
-		assert.Equal(t, v1.DnfMetadataStatus_DNF_METADATA_UNSPECIFIED, dnfStatus)
-	})
+			reposDirPaths := make([]string, 0, len(tt.reposDirs))
+			for _, dir := range tt.reposDirs {
+				dirPath := filepath.Join(tmpDir, dir)
+				reposDirPaths = append(reposDirPaths, dirPath)
+				if files, ok := tt.repoDirFiles[dir]; ok {
+					require.NoError(t, os.MkdirAll(dirPath, 0755))
+					for _, filename := range files {
+						filePath := filepath.Join(dirPath, filename)
+						require.NoError(t, os.WriteFile(filePath, []byte("[repo]"), 0644))
+					}
+				}
+			}
 
-	t.Run("missing cache dir", func(t *testing.T) {
-		reposDir := filepath.Join(tmpDir, "yum.repos.d")
-		require.NoError(t, os.MkdirAll(reposDir, 0755))
-		repoFile := filepath.Join(reposDir, "test.repo")
-		require.NoError(t, os.WriteFile(repoFile, []byte("[repo]"), 0644))
-
-		missingCacheDir := filepath.Join(tmpDir, "nonexistent-cache")
-
-		dnfStatus, err := discoverDnfMetadataStatusWithPaths(reposDir, missingCacheDir)
-		assert.Error(t, err)
-		assert.Equal(t, v1.DnfMetadataStatus_DNF_METADATA_UNSPECIFIED, dnfStatus)
-	})
+			dnfStatus, err := discoverDnfMetadataStatusWithPaths("", reposDirPaths, cacheDirPath)
+			assert.Error(t, err)
+			assert.ErrorContains(t, err, tt.errorContains)
+			assert.Equal(t, v1.DnfMetadataStatus_DNF_METADATA_UNSPECIFIED, dnfStatus)
+		})
+	}
 }
