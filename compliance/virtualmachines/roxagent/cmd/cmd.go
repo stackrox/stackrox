@@ -32,8 +32,8 @@ func RootCmd(ctx context.Context) *cobra.Command {
 	cmd.Flags().StringVar(&cfg.IndexHostPath, "host-path", "/",
 		"Path where the indexer starts searching for the RPM and DNF databases.",
 	)
-	cmd.Flags().BoolVar(&cfg.SendNow, "now", false,
-		"Send the initial index report immediately, bypassing the randomized startup delay.",
+	cmd.Flags().DurationVar(&cfg.MaxInitialReportDelay, "max-initial-report-delay", 20*time.Minute,
+		"Maximum initial delay before sending the first index report.",
 	)
 	cmd.Flags().StringVar(&cfg.RepoToCPEMappingURL, "repo-cpe-url", repoToCPEMappingURL,
 		"URL for the repository to CPE mapping.",

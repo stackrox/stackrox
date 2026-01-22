@@ -80,26 +80,15 @@ func runIndexer(ctx context.Context, cfg *common.Config) (*v4.IndexReport, error
 // RunSingleWithInitialDelay applies a randomized startup delay before sending the first
 // index report unless explicitly bypassed via the SendNow flag.
 func RunSingleWithInitialDelay(ctx context.Context, cfg *common.Config, client *vsock.Client) error {
-	if err := maybeDelayInitialReport(ctx, cfg.SendNow); err != nil {
+	if err := delayInitialReport(ctx, cfg.MaxInitialReportDelay); err != nil {
 		return fmt.Errorf("initial delay: %w", err)
 	}
 	return RunSingle(ctx, cfg, client)
 }
 
-func maybeDelayInitialReport(ctx context.Context, sendNow bool) error {
-	if sendNow {
-		log.Infof("Bypassing randomized initial delay (--now flag provided).")
-		return nil
-	}
-
+func delayInitialReport(ctx context.Context, maxDelay time.Duration) error {
 	r := rand.New(rand.NewSource(time.Now().UnixNano()))
-	delaySeconds := r.Intn(int(maxInitialReportDelay.Seconds()))
-	delay := time.Duration(delaySeconds) * time.Second
-
-	log.Infof("Delaying initial index report by %s (use --now to send immediately).", delay)
-	if delay == 0 {
-		return nil
-	}
+	delay := time.Duration(r.Intn(int(maxDelay.Seconds()))) * time.Second
 
 	select {
 	case <-ctx.Done():
