@@ -93,7 +93,9 @@ func hostPathFor(hostPath, path string) string {
 func discoverOSAndVersionWithPath(path string) (v1.DetectedOS, string, error) {
 	file, err := os.Open(path)
 	if err != nil {
-		logPathError(path, err)
+		if os.IsNotExist(err) {
+			return v1.DetectedOS_UNKNOWN, "", fmt.Errorf("unsupported OS detected: missing %s: %w", path, err)
+		}
 		return v1.DetectedOS_UNKNOWN, "", fmt.Errorf("opening %s: %w", path, err)
 	}
 	defer func() {
@@ -230,7 +232,9 @@ func discoverDnfMetadataStatusWithPaths(reposDirPath, cacheDirPath string) (v1.D
 	// Check for repo files in /etc/yum.repos.d
 	repoEntries, err := os.ReadDir(reposDirPath)
 	if err != nil {
-		logPathError(reposDirPath, err)
+		if os.IsNotExist(err) {
+			return v1.DnfMetadataStatus_DNF_METADATA_UNSPECIFIED, fmt.Errorf("unsupported OS detected: missing %s: %w", reposDirPath, err)
+		}
 		return v1.DnfMetadataStatus_DNF_METADATA_UNSPECIFIED, fmt.Errorf("reading %s: %w", reposDirPath, err)
 	}
 
@@ -249,7 +253,9 @@ func discoverDnfMetadataStatusWithPaths(reposDirPath, cacheDirPath string) (v1.D
 	// Check for repo directories in /var/cache/dnf
 	cacheEntries, err := os.ReadDir(cacheDirPath)
 	if err != nil {
-		logPathError(cacheDirPath, err)
+		if os.IsNotExist(err) {
+			return v1.DnfMetadataStatus_DNF_METADATA_UNSPECIFIED, fmt.Errorf("unsupported OS detected: missing %s: %w", cacheDirPath, err)
+		}
 		return v1.DnfMetadataStatus_DNF_METADATA_UNSPECIFIED, fmt.Errorf("reading %s: %w", cacheDirPath, err)
 	}
 
@@ -268,12 +274,4 @@ func discoverDnfMetadataStatusWithPaths(reposDirPath, cacheDirPath string) (v1.D
 		return v1.DnfMetadataStatus_AVAILABLE, nil
 	}
 	return v1.DnfMetadataStatus_UNAVAILABLE, nil
-}
-
-func logPathError(path string, err error) {
-	if os.IsNotExist(err) {
-		log.Warnf("Unsupported OS detected: missing %s", path)
-		return
-	}
-	log.Warnf("Failed to read %s: %v", path, err)
 }
