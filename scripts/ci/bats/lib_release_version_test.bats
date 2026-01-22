@@ -111,6 +111,26 @@ function make() {
     assert_success
 }
 
+@test "spots fact tag is a master commit" {
+    declare -A tags=( [fact-tag]="0.2.x-23-g8a2e05d0ec")
+    run check_fact_version
+    assert_failure
+    assert_output --partial 'Fact tag does not look like a release tag'
+}
+
+@test "spots fact tag is a release candidate" {
+    declare -A tags=( [fact-tag]="0.2.1-rc.1")
+    run check_fact_version
+    assert_failure
+    assert_output --partial 'Fact tag does not look like a release tag'
+}
+
+@test "spots fact tag is a release" {
+    declare -A tags=( [fact-tag]="0.2.1")
+    run check_fact_version
+    assert_success
+}
+
 @test "spots scanner tag is a master commit" {
     declare -A tags=( [scanner-tag]="3.45.x-12-g8a2e05d0ec")
     run check_scanner_version
