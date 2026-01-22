@@ -360,6 +360,7 @@ func (w *watcherImpl) promoteTags(
 			ManifestDigest:        tag.GetManifestDigest(),
 			DiscoveredAt:          protocompat.TimestampNow(),
 			Active:                true,
+			Created:               tag.GetCreated(),
 		}
 		imgs[bi] = tag.GetLayerDigests()
 	}
