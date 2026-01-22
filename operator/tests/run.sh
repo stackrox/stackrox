@@ -61,7 +61,7 @@ _EO_KUTTL_HELP_
         junit_wrap deploy-operator \
                    "Deploy current version of the operator." \
                    "${kuttl_help}" \
-                   "make" "-C" "operator" "dist" "deploy-via-dist"
+                   "make" "-C" "operator" "build-installer" "deploy-via-installer"
     fi
 
     info "Executing operator e2e tests"
