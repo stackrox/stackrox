@@ -104,7 +104,12 @@ func (s *sbomScanCommand) Construct(_ []string, cmd *cobra.Command, f *printer.O
 		s.standardizedFormat = f.IsStandardizedFormat()
 	}
 
-	s.client, err = s.env.HTTPClient(flags.Timeout(cmd))
+	s.client, err = s.env.HTTPClient(
+		flags.Timeout(cmd),
+		// Do not retry. Otherwise the http client's default retry count and delay make the scan
+		// appear hung when timeout expires.
+		common.WithRetryCount(0),
+	)
 	if err != nil {
 		return errors.Wrap(err, "creating HTTP client")
 	}
