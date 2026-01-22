@@ -3,6 +3,7 @@ package vsock
 import (
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	v1 "github.com/stackrox/rox/generated/internalapi/virtualmachine/v1"
@@ -104,6 +105,33 @@ func TestDiscoverOSAndVersion_MissingFile(t *testing.T) {
 	assert.Error(t, err)
 	assert.Equal(t, v1.DetectedOS_UNKNOWN, detectedOS)
 	assert.Equal(t, "", osVersion)
+}
+
+func TestDiscoverOSAndVersion_MalformedOSRelease(t *testing.T) {
+	tmpDir := t.TempDir()
+	testOsReleasePath := filepath.Join(tmpDir, "os-release")
+
+	err := os.WriteFile(testOsReleasePath, []byte("ID=rhel\nMALFORMED_LINE"), 0644)
+	require.NoError(t, err)
+
+	detectedOS, osVersion, err := discoverOSAndVersionWithPath(testOsReleasePath)
+	assert.Error(t, err)
+	assert.Equal(t, v1.DetectedOS_UNKNOWN, detectedOS)
+	assert.Equal(t, "", osVersion)
+}
+
+func TestParseOSRelease_QuotedValues(t *testing.T) {
+	input := strings.NewReader(`# comment
+ID='rhel'
+VERSION_ID="9.4"
+NAME="Red Hat \$NAME"
+`)
+
+	values, err := parseOSRelease(input)
+	require.NoError(t, err)
+	assert.Equal(t, "rhel", values["ID"])
+	assert.Equal(t, "9.4", values["VERSION_ID"])
+	assert.Equal(t, "Red Hat $NAME", values["NAME"])
 }
 
 func TestHostPathFor(t *testing.T) {
