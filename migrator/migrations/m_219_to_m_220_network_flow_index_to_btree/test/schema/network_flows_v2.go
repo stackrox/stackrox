@@ -1,11 +1,7 @@
 package schema
 
 import (
-	"reflect"
-
-	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres"
-	"github.com/stackrox/rox/pkg/postgres/walker"
 )
 
 var (
@@ -33,26 +29,10 @@ var (
 			) PARTITION BY LIST (ClusterId)`,
 		Partition: true,
 		PostStmts: []string{
-			"CREATE INDEX IF NOT EXISTS network_flows_src_v2 ON network_flows_v2 USING btree(props_srcentity_Id)",
-			"CREATE INDEX IF NOT EXISTS network_flows_dst_v2 ON network_flows_v2 USING btree(props_dstentity_Id)",
+			"CREATE INDEX IF NOT EXISTS network_flows_src_v2 ON network_flows_v2 USING hash(props_srcentity_Id)",
+			"CREATE INDEX IF NOT EXISTS network_flows_dst_v2 ON network_flows_v2 USING hash(props_dstentity_Id)",
 			"CREATE INDEX IF NOT EXISTS network_flows_lastseentimestamp_v2 ON network_flows_v2 USING brin (lastseentimestamp)",
 			"CREATE INDEX IF NOT EXISTS network_flows_updatedat_v2 ON network_flows_v2 USING brin (updatedat)",
 		},
 	}
-
-	// NetworkFlowsSchema is the go schema for table `nodes`.
-	NetworkFlowsSchema = func() *walker.Schema {
-		schema := GetSchemaForTable("network_flows_v2")
-		if schema != nil {
-			return schema
-		}
-		schema = walker.Walk(reflect.TypeOf((*storage.NetworkFlow)(nil)), "network_flows_v2")
-		RegisterTable(schema, CreateTableNetworkFlowsStmt)
-		return schema
-	}()
-)
-
-const (
-	// NetworkFlowsTableName holds the database table name
-	NetworkFlowsTableName = "network_flows_v2"
 )
