@@ -39,7 +39,7 @@ _EO_KUTTL_HELP_
         junit_wrap deploy-previous-operator \
                    "Deploy previously released version of the operator." \
                    "${kuttl_help}" \
-                   "make" "-C" "operator" "deploy-previous-via-olm"
+                   "make" "-C" "operator" "deploy-previous-via-olm" TEST_NAMESPACE="rhacs-operator-system"
    fi
 
     image_prefetcher_system_await
@@ -49,7 +49,7 @@ _EO_KUTTL_HELP_
         junit_wrap test-upgrade \
                    "Test operator upgrade from previously released version to the current one." \
                    "${kuttl_help}" \
-                   "make" "-C" "operator" "test-upgrade" || FAILED=1
+                   "make" "-C" "operator" "test-upgrade" TEST_NAMESPACE="rhacs-operator-system" || FAILED=1
         store_test_results "operator/build/kuttl-test-artifacts-upgrade" "kuttl-test-artifacts-upgrade"
         if junit_contains_failure "$(stored_test_results "kuttl-test-artifacts-upgrade")"; then
             # Prevent double-reporting
@@ -61,7 +61,7 @@ _EO_KUTTL_HELP_
         junit_wrap deploy-operator \
                    "Deploy current version of the operator." \
                    "${kuttl_help}" \
-                   "make" "-C" "operator" "build-installer" "deploy-via-installer"
+                   "make" "-C" "operator" "build-installer" "deploy-via-installer" TEST_NAMESPACE="rhacs-operator-system"
     fi
 
     info "Executing operator e2e tests"
