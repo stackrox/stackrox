@@ -21,9 +21,10 @@ import { CloudSecurityIcon } from '@patternfly/react-icons';
 import LinkShim from 'Components/PatternFly/LinkShim';
 import { getProductBranding } from 'constants/productBranding';
 import useAnalytics, {
-    CREATE_INIT_BUNDLE_CLICKED,
+    CREATE_CLUSTER_REGISTRATION_SECRET_CLICKED,
     LEGACY_SECURE_A_CLUSTER_LINK_CLICKED,
     SECURE_A_CLUSTER_LINK_CLICKED,
+    VIEW_INIT_BUNDLES_CLICKED,
 } from 'hooks/useAnalytics';
 // import useAuthStatus from 'hooks/useAuthStatus'; // TODO after 4.4 release
 import { fetchClusterRegistrationSecrets } from 'services/ClustersService';
@@ -161,7 +162,7 @@ function NoClustersPage({ isModalOpen, setIsModalOpen }): ReactElement {
                                     href={`${clustersClusterRegistrationSecretsPath}?action=create`}
                                     onClick={() =>
                                         analyticsTrack({
-                                            event: CREATE_INIT_BUNDLE_CLICKED,
+                                            event: CREATE_CLUSTER_REGISTRATION_SECRET_CLICKED,
                                             properties: { source: 'No Clusters' },
                                         })
                                     }
@@ -188,7 +189,7 @@ function NoClustersPage({ isModalOpen, setIsModalOpen }): ReactElement {
                                     to={clustersInitBundlesPath}
                                     onClick={() => {
                                         analyticsTrack({
-                                            event: LEGACY_SECURE_A_CLUSTER_LINK_CLICKED,
+                                            event: VIEW_INIT_BUNDLES_CLICKED,
                                             properties: { source: 'No Clusters' },
                                         });
                                     }}
