@@ -35,7 +35,7 @@ spec:
       - name: name
         value: post-bigquery-metrics
       - name: bundle
-        value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:143219f2133c08c85c9faeb4239a6753568ac2605cb90a390cbdaeead33e69de
+        value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:28a5f657802a30bb0e301f9dcdae88181330905fb8341b761b5b31c7b6574ae7
       - name: kind
         value: task
       resolver: bundles
@@ -136,7 +136,7 @@ spec:
       - name: name
         value: determine-image-tag
       - name: bundle
-        value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:143219f2133c08c85c9faeb4239a6753568ac2605cb90a390cbdaeead33e69de
+        value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:28a5f657802a30bb0e301f9dcdae88181330905fb8341b761b5b31c7b6574ae7
       - name: kind
         value: task
       resolver: bundles
@@ -154,7 +154,7 @@ spec:
       - name: name
         value: determine-dependency-image-tag
       - name: bundle
-        value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:143219f2133c08c85c9faeb4239a6753568ac2605cb90a390cbdaeead33e69de
+        value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:28a5f657802a30bb0e301f9dcdae88181330905fb8341b761b5b31c7b6574ae7
       - name: kind
         value: task
       resolver: bundles
@@ -170,7 +170,7 @@ spec:
       - name: name
         value: wait-for-image
       - name: bundle
-        value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:143219f2133c08c85c9faeb4239a6753568ac2605cb90a390cbdaeead33e69de
+        value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:28a5f657802a30bb0e301f9dcdae88181330905fb8341b761b5b31c7b6574ae7
       - name: kind
         value: task
       resolver: bundles
@@ -195,7 +195,7 @@ spec:
       - name: name
         value: retag-image
       - name: bundle
-        value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:143219f2133c08c85c9faeb4239a6753568ac2605cb90a390cbdaeead33e69de
+        value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:28a5f657802a30bb0e301f9dcdae88181330905fb8341b761b5b31c7b6574ae7
       - name: kind
         value: task
       resolver: bundles
