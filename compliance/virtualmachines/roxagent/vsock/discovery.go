@@ -30,12 +30,7 @@ const (
 // DiscoverVMData discovers VM metadata from the host system.
 // Returns discovered data with defaults (UNKNOWN/UNSPECIFIED) if discovery fails.
 func DiscoverVMData(hostPath string) *v1.DiscoveredData {
-	result := &v1.DiscoveredData{
-		DetectedOs:        v1.DetectedOS_UNKNOWN,
-		OsVersion:         "",
-		ActivationStatus:  v1.ActivationStatus_ACTIVATION_UNSPECIFIED,
-		DnfMetadataStatus: v1.DnfMetadataStatus_DNF_METADATA_UNSPECIFIED,
-	}
+	result := &v1.DiscoveredData{}
 
 	// Discover OS and version from /etc/os-release.
 	// Currently assumes RHEL systems: reads /etc/os-release, checks if ID field equals "rhel" to detect RHEL,
