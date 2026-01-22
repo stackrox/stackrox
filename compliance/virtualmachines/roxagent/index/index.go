@@ -18,7 +18,7 @@ import (
 var log = logging.LoggerForModule()
 
 const (
-	mappingClientTimeout  = 30 * time.Second
+	mappingClientTimeout = 30 * time.Second
 )
 
 func RunDaemon(ctx context.Context, cfg *common.Config, client *vsock.Client) error {
@@ -88,6 +88,8 @@ func RunSingleWithInitialDelay(ctx context.Context, cfg *common.Config, client *
 func delayInitialReport(ctx context.Context, maxDelay time.Duration) error {
 	r := rand.New(rand.NewSource(time.Now().UnixNano()))
 	delay := time.Duration(r.Intn(int(maxDelay.Seconds()))) * time.Second
+
+	log.Infof("Delaying initial index report by %s (use --max-initial-report-delay to control this).", delay)
 
 	select {
 	case <-ctx.Done():
