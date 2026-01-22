@@ -76,8 +76,8 @@ func runIndexer(ctx context.Context, cfg *common.Config) (*v4.IndexReport, error
 	return report, nil
 }
 
-// RunSingleWithInitialDelay applies a randomized startup delay before sending the first
-// index report unless explicitly bypassed via the SendNow flag.
+// RunSingleWithInitialDelay applies a randomized startup delay (up to the value of MaxInitialReportDelay)
+// before sending the first index report
 func RunSingleWithInitialDelay(ctx context.Context, cfg *common.Config, client *vsock.Client) error {
 	if err := delayInitialReport(ctx, cfg.MaxInitialReportDelay); err != nil {
 		return fmt.Errorf("initial delay: %w", err)
