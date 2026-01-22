@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom-v5-compat';
 import {
     Button,
     Card,
@@ -36,7 +37,6 @@ import { useIsFirstRender } from 'hooks/useIsFirstRender';
 import { hideColumnIf } from 'hooks/useManagedColumns';
 import useURLSort from 'hooks/useURLSort';
 import type { VulnerabilityState } from 'types/cve.proto';
-import LinkShim from 'Components/PatternFly/LinkShim';
 
 import {
     clusterSearchFilterConfig,
@@ -426,18 +426,15 @@ function WorkloadCvesOverviewPage() {
                                                     <Flex
                                                         direction={{ default: 'row' }}
                                                         alignItems={{ default: 'alignItemsCenter' }}
-                                                        spaceItems={{ default: 'spaceItemsSm' }}
                                                     >
                                                         {hasReadAccessForNamespaces && (
-                                                            <Button
-                                                                variant="secondary"
-                                                                href={urlBuilder.vulnMgmtBase(
+                                                            <Link
+                                                                to={urlBuilder.vulnMgmtBase(
                                                                     getNamespaceViewPagePath()
                                                                 )}
-                                                                component={LinkShim}
                                                             >
-                                                                Prioritize by namespace view
-                                                            </Button>
+                                                                Namespace view
+                                                            </Link>
                                                         )}
                                                         <DefaultFilterModal
                                                             defaultFilters={
