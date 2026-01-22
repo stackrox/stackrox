@@ -163,13 +163,13 @@ jobs:
       run: make golangci-lint-cache-status
 
   check-collector-and-scanner-images-exist:
-    # This job ensures that COLLECTOR_VERSION or SCANNER_VERSION files cannot be updated to a version for which the
-    # image was not successfully built on Konflux (suffix "-fast"). It also verifies that GHA-built image is there (no
-    # suffix) so that the failure also happens in this job.
+    # This job ensures that COLLECTOR_VERSION, FACT_VERSION or SCANNER_VERSION files cannot be updated to a version
+    # for which the image was not successfully built on Konflux (suffix "-fast"). It also verifies that GHA-built image
+    # is there (no suffix) so that the failure also happens in this job.
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        image: ["collector", "scanner", "scanner-slim", "scanner-db", "scanner-db-slim"]
+        image: ["collector", "fact", "scanner", "scanner-slim", "scanner-db", "scanner-db-slim"]
     steps:
       - name: Checkout repo
         uses: actions/checkout@v6
@@ -178,11 +178,13 @@ jobs:
         with:
           gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
-      - name: Get image tag from COLLECTOR|SCANNER_VERSION file
+      - name: Get image tag from COLLECTOR|FACT|SCANNER_VERSION file
         id: image-tag
         run: |
           if [[ "${{ matrix.image }}" == "collector" ]]; then
             makefile_target="collector-tag"
+          elif [[ "${{ matrix.image }}" == "fact" ]]; then
+            makefile_target="fact-tag"
           else
             makefile_target="scanner-tag"
           fi
@@ -205,7 +207,7 @@ jobs:
           github.event_name == 'push' || !github.event.pull_request.head.repo.fork
         with:
           token: ${{ secrets.QUAY_RHACS_ENG_BEARER_TOKEN }}
-          image: rhacs-eng/release-${{ matrix.image }}:${{ steps.image-tag.outputs.image-tag }}-fast
+          image: rhacs-eng/release-${{ matrix.image }}:${{ steps.image-tag.outputs.image-tag }}${{ (matrix.image == 'fact' && '') || '-fast' }}
           limit: 300
 
   github-actions-lint:
