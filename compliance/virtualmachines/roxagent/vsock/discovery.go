@@ -122,6 +122,7 @@ func discoverOSAndVersionWithPath(path string) (v1.DetectedOS, string, error) {
 			continue
 		}
 
+		// Parsing all key=value pairs in the os-release file.
 		parts := strings.SplitN(line, "=", 2)
 		if len(parts) != 2 {
 			continue
@@ -142,7 +143,7 @@ func discoverOSAndVersionWithPath(path string) (v1.DetectedOS, string, error) {
 
 	// Determine DetectedOS based on ID field
 	var detectedOS v1.DetectedOS
-	if id, ok := osRelease[osReleaseIDKey]; ok && id == rhelOSID {
+	if id, ok := osRelease[osReleaseIDKey]; ok && strings.TrimSpace(id) == rhelOSID {
 		detectedOS = v1.DetectedOS_RHEL
 	} else {
 		detectedOS = v1.DetectedOS_UNKNOWN
@@ -151,7 +152,17 @@ func discoverOSAndVersionWithPath(path string) (v1.DetectedOS, string, error) {
 	// Get OS version from VERSION_ID
 	var osVersion string
 	if versionID, ok := osRelease[osReleaseVersionIDKey]; ok {
-		osVersion = versionID
+		if detectedOS != v1.DetectedOS_UNKNOWN {
+			return detectedOS, strings.TrimSpace(versionID), nil
+		}
+		// For non-RHEL systems, store the name of the OS (ID) and version (VERSION_ID) together.
+		// The version field is only informative and used for debugging in case of problems with scanning;
+		// we want to know which OS and version caused a potential issue.
+		osID := strings.TrimSpace(osRelease[osReleaseIDKey])
+		if osID == "" {
+			osID = "unknown-OS"
+		}
+		osVersion = fmt.Sprintf("%s %s", osID, versionID)
 	}
 
 	return detectedOS, osVersion, nil

@@ -51,13 +51,25 @@ VERSION_ID="9.2"`,
 			osRelease: `ID="debian"
 VERSION_ID="12"`,
 			expectedOS:      v1.DetectedOS_UNKNOWN,
-			expectedVersion: "12",
+			expectedVersion: "debian 12",
+		},
+		{
+			name:            "ID field missing but VERSION_ID is present",
+			osRelease:       `VERSION_ID="12"`,
+			expectedOS:      v1.DetectedOS_UNKNOWN,
+			expectedVersion: "unknown-OS 12",
+		},
+		{
+			name:            "ID and VERSION_ID fields missing",
+			osRelease:       ``,
+			expectedOS:      v1.DetectedOS_UNKNOWN,
+			expectedVersion: "",
 		},
 		{
 			name:            "Unknown OS with version only",
 			osRelease:       `VERSION_ID="10"`,
 			expectedOS:      v1.DetectedOS_UNKNOWN,
-			expectedVersion: "10",
+			expectedVersion: "unknown-OS 10",
 		},
 		{
 			name:            "Missing VERSION_ID",
