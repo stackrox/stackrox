@@ -10,6 +10,7 @@ import (
 	"strings"
 
 	v1 "github.com/stackrox/rox/generated/internalapi/virtualmachine/v1"
+	"github.com/stackrox/rox/pkg/set"
 )
 
 const (
@@ -188,14 +189,18 @@ var osReleaseDQReplacer = strings.NewReplacer(
 func discoverActivationStatusWithPath(path string) (v1.ActivationStatus, error) {
 	entries, err := os.ReadDir(path)
 	if err != nil {
-		logPathError(path, err)
+		if os.IsNotExist(err) {
+			return v1.ActivationStatus_ACTIVATION_UNSPECIFIED, fmt.Errorf("unsupported OS detected: missing %s: %w", path, err)
+		}
 		return v1.ActivationStatus_ACTIVATION_UNSPECIFIED, fmt.Errorf("reading %s: %w", path, err)
 	}
 
-	// Build maps of base names (without suffix) for keys and certs
-	keyBases := make(map[string]bool)
-	certBases := make(map[string]bool)
+	// Build sets of base names (without suffix) for keys and certs
+	keyBases := set.NewStringSet()
+	certBases := set.NewStringSet()
 
+	// The `entries` are already sorted by name, so optimistically we just need to check two files.
+	// We can stop when first matching pair is found.
 	for _, entry := range entries {
 		if entry.IsDir() {
 			continue
@@ -204,25 +209,19 @@ func discoverActivationStatusWithPath(path string) (v1.ActivationStatus, error) 
 		name := entry.Name()
 		if strings.HasSuffix(name, entitlementKeySuffix) {
 			base := strings.TrimSuffix(name, entitlementKeySuffix)
-			keyBases[base] = true
+			keyBases.Add(base)
+			if certBases.Contains(base) {
+				return v1.ActivationStatus_ACTIVE, nil
+			}
 		} else if strings.HasSuffix(name, entitlementCertSuffix) {
 			base := strings.TrimSuffix(name, entitlementCertSuffix)
-			certBases[base] = true
+			certBases.Add(base)
+			if keyBases.Contains(base) {
+				return v1.ActivationStatus_ACTIVE, nil
+			}
 		}
 	}
 
-	// Check if there's at least one matching pair
-	hasPair := false
-	for base := range keyBases {
-		if certBases[base] {
-			hasPair = true
-			break
-		}
-	}
-
-	if hasPair {
-		return v1.ActivationStatus_ACTIVE, nil
-	}
 	return v1.ActivationStatus_INACTIVE, nil
 }
 
