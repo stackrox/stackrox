@@ -37,6 +37,7 @@ import VirtualMachinePageVulnerabilities from './VirtualMachinePageVulnerabiliti
 
 const VULNERABILITIES_TAB_ID = 'vulnerabilities-tab-content';
 const COMPONENTS_TAB_ID = 'components-tab-content';
+const DETAILS_TAB_ID = 'details-tab-content';
 
 const virtualMachineCveOverviewPath = getOverviewPagePath('VirtualMachine', {
     entityTab: 'VirtualMachine',
@@ -78,6 +79,7 @@ function VirtualMachinePage() {
 
     const vulnTabKey = detailsTabValues[0];
     const componentsTabKey = detailsTabValues[4];
+    const detailsTabKey = detailsTabValues[1];
 
     const virtualMachineName = virtualMachineData?.name;
 
@@ -135,6 +137,11 @@ function VirtualMachinePage() {
                         eventKey={componentsTabKey}
                         tabContentId={COMPONENTS_TAB_ID}
                         title={componentsTabKey}
+                    />
+                    <Tab
+                        eventKey={detailsTabKey}
+                        tabContentId={DETAILS_TAB_ID}
+                        title={detailsTabKey}
                     />
                 </Tabs>
             </PageSection>

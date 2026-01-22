@@ -5,27 +5,26 @@ import { InfoCircleIcon } from '@patternfly/react-icons';
 import ExternalLink from 'Components/PatternFly/IconText/ExternalLink';
 import PopoverBodyContent from 'Components/PopoverBodyContent';
 
-export type DeveloperPreviewLabelProps = Omit<LabelProps, 'children'>;
+type PreviewLabelBaseProps = {
+    ariaLabel: string;
+    title: string;
+    body: string;
+    color: LabelProps['color'];
+};
 
-function DeveloperPreviewLabel({ className, ...props }: DeveloperPreviewLabelProps) {
+function PreviewLabelBase({ ariaLabel, title, body, color }: PreviewLabelBaseProps) {
     return (
         <Popover
-            aria-label="Developer preview info"
+            aria-label={ariaLabel}
             bodyContent={
                 <PopoverBodyContent
-                    headerContent="Developer preview"
+                    headerContent={title}
                     bodyContent={
                         <Flex
                             direction={{ default: 'column' }}
                             spaceItems={{ default: 'spaceItemsXs' }}
                         >
-                            <FlexItem>
-                                Developer preview features are not intended to be used in production
-                                environments. The clusters deployed with the developer preview
-                                features are considered to be development cluster and are not
-                                supported through the Red Hat Customer Portal case management
-                                system.
-                            </FlexItem>
+                            <FlexItem>{body}</FlexItem>
                             <FlexItem>
                                 <ExternalLink>
                                     <a
@@ -45,18 +44,11 @@ function DeveloperPreviewLabel({ className, ...props }: DeveloperPreviewLabelPro
             enableFlip
             position="top"
         >
-            <Label
-                isCompact
-                color="purple"
-                icon={<InfoCircleIcon />}
-                className={className}
-                style={{ cursor: 'pointer' }}
-                {...props}
-            >
-                Developer preview
+            <Label isCompact color={color} icon={<InfoCircleIcon />} style={{ cursor: 'pointer' }}>
+                {title}
             </Label>
         </Popover>
     );
 }
 
-export default DeveloperPreviewLabel;
+export default PreviewLabelBase;
