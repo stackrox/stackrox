@@ -7,7 +7,12 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/booleanpolicy/evaluator/pathutil"
+	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/utils"
+)
+
+var (
+	log = logging.LoggerForModule()
 )
 
 const (
@@ -282,6 +287,16 @@ func ConstructImage(image *storage.Image, imageFullName string) (*pathutil.Augme
 	// Since policies query for component and version as a single compound field, we simulate it by creating a
 	// "composite" component and version field.
 	for i, component := range image.GetScan().GetComponents() {
+		// DEBUG: Log vulnerability fix_available_timestamp for policy evaluation debugging
+		for _, vuln := range component.GetVulns() {
+			if vuln.GetFixAvailableTimestamp() != nil {
+				log.Infof("DEBUG: Image %s, Component %s, CVE %s has FixAvailableTimestamp: %v",
+					image.GetName().GetFullName(), component.GetName(), vuln.GetCve(), vuln.GetFixAvailableTimestamp().AsTime())
+			} else if vuln.GetFixedBy() != "" {
+				log.Infof("DEBUG: Image %s, Component %s, CVE %s is fixable (FixedBy=%s) but FixAvailableTimestamp is NIL",
+					image.GetName().GetFullName(), component.GetName(), vuln.GetCve(), vuln.GetFixedBy())
+			}
+		}
 		compAndVersionObj := &componentAndVersion{
 			ComponentAndVersion: fmt.Sprintf("%s%s%s", component.GetName(), CompositeFieldCharSep, component.GetVersion()),
 		}
