@@ -94,6 +94,9 @@ export const BASE_IMAGE_REFERENCE_ADD_SUCCESS = 'Base Image Reference Add Succes
 export const BASE_IMAGE_REFERENCE_ADD_FAILURE = 'Base Image Reference Add Failure';
 export const BASE_IMAGE_REFERENCE_DELETED = 'Base Image Reference Deleted';
 
+// error boundary
+export const PAGE_CRASH = 'Page Crash';
+
 /**
  * Boolean fields should be tracked with 0 or 1 instead of true/false. This
  * allows us to use the boolean fields in numeric aggregations in the
@@ -519,7 +522,20 @@ export type AnalyticsEvent =
           };
       }
     /** Tracks each time a base image is deleted */
-    | typeof BASE_IMAGE_REFERENCE_DELETED;
+    | typeof BASE_IMAGE_REFERENCE_DELETED
+    /**
+     * Tracks each time a page crash occurs (caught by error boundary).
+     * Includes error name, truncated message, and component location.
+     */
+    | {
+          event: typeof PAGE_CRASH;
+          properties: {
+              errorName: string;
+              errorMessage: string;
+              componentStack: string;
+              pathname: string;
+          };
+      };
 
 export const redactedHostReplacement = 'redacted.host.invalid';
 export const redactedSearchReplacement = '*****';
