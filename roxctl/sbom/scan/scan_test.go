@@ -128,9 +128,9 @@ func (s *sbomScanTestSuite) TestConstruct() {
 
 			// Mock the HTTPClient call.
 			if c.httpClientErr != nil {
-				mockEnv.EXPECT().HTTPClient(gomock.Any()).Return(nil, c.httpClientErr)
+				mockEnv.EXPECT().HTTPClient(gomock.Any(), gomock.Any()).Return(nil, c.httpClientErr)
 			} else {
-				mockEnv.EXPECT().HTTPClient(gomock.Any()).Return(mockClient, nil)
+				mockEnv.EXPECT().HTTPClient(gomock.Any(), gomock.Any()).Return(mockClient, nil)
 			}
 
 			// Create command with timeout flag to avoid panic.
