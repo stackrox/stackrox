@@ -16504,6 +16504,16 @@
                 "id": 3,
                 "name": "label",
                 "type": "Label"
+              },
+              {
+                "id": 4,
+                "name": "cluster_label",
+                "type": "Label"
+              },
+              {
+                "id": 5,
+                "name": "namespace_label",
+                "type": "Label"
               }
             ],
             "messages": [
