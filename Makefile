@@ -1,6 +1,8 @@
 include $(CURDIR)/make/env.mk
 
 PLATFORM ?= linux/amd64
+CONTAINER_RUNTIME ?= docker
+export CONTAINER_RUNTIME
 ROX_PROJECT=apollo
 TESTFLAGS=-race -p 4
 BASE_DIR=$(CURDIR)
@@ -9,12 +11,14 @@ BENCHTIMEOUT ?= 20m
 BENCHCOUNT ?= 1
 
 podman =
+# If CONTAINER_RUNTIME is explicitly set to podman, detect it
+ifeq ($(CONTAINER_RUNTIME),podman)
+	podman = yes
 # docker --version might not contain any traces of podman in the latest
 # version, search for more output
-ifneq (,$(findstring podman,$(shell docker --version 2>/dev/null)))
+else ifneq (,$(findstring podman,$(shell $(CONTAINER_RUNTIME) --version 2>/dev/null)))
 	podman = yes
-endif
-ifneq (,$(findstring Podman,$(shell docker version 2>/dev/null)))
+else ifneq (,$(findstring Podman,$(shell $(CONTAINER_RUNTIME) version 2>/dev/null)))
 	podman = yes
 endif
 
@@ -225,7 +229,7 @@ config-controller-build-nodeps:
 .PHONY: fast-central
 fast-central: deps
 	@echo "+ $@"
-	docker run $(DOCKER_OPTS) -e CGO_ENABLED --rm $(GOPATH_WD_OVERRIDES) $(LOCAL_VOLUME_ARGS) $(BUILD_IMAGE) make fast-central-build
+	$(CONTAINER_RUNTIME) run $(DOCKER_OPTS) -e CGO_ENABLED --rm $(GOPATH_WD_OVERRIDES) $(LOCAL_VOLUME_ARGS) $(BUILD_IMAGE) make fast-central-build
 	$(SILENT)$(BASE_DIR)/scripts/k8s/kill-pod.sh central
 
 # fast is a dev mode options when using local dev
@@ -243,7 +247,7 @@ fast-sensor-kubernetes: sensor-kubernetes-build-dockerized
 .PHONY: fast-migrator
 fast-migrator:
 	@echo "+ $@"
-	docker run $(DOCKER_OPTS) -e CGO_ENABLED --rm $(GOPATH_WD_OVERRIDES) $(LOCAL_VOLUME_ARGS) $(BUILD_IMAGE) make fast-migrator-build
+	$(CONTAINER_RUNTIME) run $(DOCKER_OPTS) -e CGO_ENABLED --rm $(GOPATH_WD_OVERRIDES) $(LOCAL_VOLUME_ARGS) $(BUILD_IMAGE) make fast-migrator-build
 
 .PHONY: fast-migrator-build
 fast-migrator-build: migrator-build-nodeps
@@ -451,8 +455,8 @@ bin/$(HOST_OS)_$(GOARCH)/admission-control: build-prep
 .PHONY: build-volumes
 build-volumes:
 	$(SILENT)mkdir -p $(CURDIR)/linux-gocache
-	$(SILENT)docker volume inspect $(GOPATH_VOLUME_NAME) >/dev/null 2>&1 || docker volume create $(GOPATH_VOLUME_NAME)
-	$(SILENT)docker volume inspect $(GOCACHE_VOLUME_NAME) >/dev/null 2>&1 || docker volume create $(GOCACHE_VOLUME_NAME)
+	$(SILENT)$(CONTAINER_RUNTIME) volume inspect $(GOPATH_VOLUME_NAME) >/dev/null 2>&1 || $(CONTAINER_RUNTIME) volume create $(GOPATH_VOLUME_NAME)
+	$(SILENT)$(CONTAINER_RUNTIME) volume inspect $(GOCACHE_VOLUME_NAME) >/dev/null 2>&1 || $(CONTAINER_RUNTIME) volume create $(GOCACHE_VOLUME_NAME)
 
 .PHONY: main-build
 main-build: build-prep main-build-dockerized
@@ -461,12 +465,12 @@ main-build: build-prep main-build-dockerized
 .PHONY: sensor-build-dockerized
 sensor-build-dockerized: build-volumes
 	@echo "+ $@"
-	docker run $(DOCKER_OPTS) --rm -e CI -e BUILD_TAG -e GOTAGS -e DEBUG_BUILD -e CGO_ENABLED $(GOPATH_WD_OVERRIDES) $(LOCAL_VOLUME_ARGS) $(BUILD_IMAGE) make sensor-build
+	$(CONTAINER_RUNTIME) run $(DOCKER_OPTS) --rm -e CI -e BUILD_TAG -e GOTAGS -e DEBUG_BUILD -e CGO_ENABLED $(GOPATH_WD_OVERRIDES) $(LOCAL_VOLUME_ARGS) $(BUILD_IMAGE) make sensor-build
 
 .PHONY: sensor-kubernetes-build-dockerized
 sensor-kubernetes-build-dockerized: build-volumes
 	@echo "+ $@"
-	docker run $(DOCKER_OPTS) -e CI -e BUILD_TAG -e GOTAGS -e DEBUG_BUILD -e CGO_ENABLED $(GOPATH_WD_OVERRIDES) $(LOCAL_VOLUME_ARGS) $(BUILD_IMAGE) make sensor-kubernetes-build
+	$(CONTAINER_RUNTIME) run $(DOCKER_OPTS) -e CI -e BUILD_TAG -e GOTAGS -e DEBUG_BUILD -e CGO_ENABLED $(GOPATH_WD_OVERRIDES) $(LOCAL_VOLUME_ARGS) $(BUILD_IMAGE) make sensor-kubernetes-build
 
 .PHONY: sensor-build
 sensor-build:
@@ -480,7 +484,7 @@ sensor-kubernetes-build:
 .PHONY: main-build-dockerized
 main-build-dockerized: build-volumes
 	@echo "+ $@"
-	docker run $(DOCKER_OPTS) -i -e RACE -e CI -e BUILD_TAG -e SHORTCOMMIT -e GOTAGS -e DEBUG_BUILD -e CGO_ENABLED --rm $(GOPATH_WD_OVERRIDES) $(LOCAL_VOLUME_ARGS) $(BUILD_IMAGE) make main-build-nodeps
+	$(CONTAINER_RUNTIME) run $(DOCKER_OPTS) -i -e RACE -e CI -e BUILD_TAG -e SHORTCOMMIT -e GOTAGS -e DEBUG_BUILD -e CGO_ENABLED --rm $(GOPATH_WD_OVERRIDES) $(LOCAL_VOLUME_ARGS) $(BUILD_IMAGE) make main-build-nodeps
 
 .PHONY: main-build-nodeps
 main-build-nodeps:
@@ -700,7 +704,7 @@ scale-image: scale-build clean-image
 	cp bin/linux_$(GOARCH)/profiler scale/image/rhel/bin/profiler
 	cp bin/linux_$(GOARCH)/chaos scale/image/rhel/bin/chaos
 	chmod +w scale/image/rhel/bin/*
-	docker build \
+	$(CONTAINER_RUNTIME) build \
 		-t stackrox/scale:$(TAG) \
 		-t quay.io/rhacs-eng/scale:$(TAG) \
 		-f scale/image/Dockerfile scale
@@ -709,7 +713,7 @@ webhookserver-image: webhookserver-build
 	-mkdir webhookserver/bin
 	cp bin/linux_$(GOARCH)/webhookserver webhookserver/bin/webhookserver
 	chmod +w webhookserver/bin/webhookserver
-	docker build \
+	$(CONTAINER_RUNTIME) build \
 		-t stackrox/webhookserver:1.2 \
 		-t quay.io/rhacs-eng/webhookserver:1.2 \
 		-f webhookserver/Dockerfile webhookserver
@@ -718,7 +722,7 @@ syslog-image: syslog-build
 	-mkdir qa-tests-backend/test-images/syslog/bin
 	cp bin/linux_$(GOARCH)/syslog qa-tests-backend/test-images/syslog/bin/syslog
 	chmod +w qa-tests-backend/test-images/syslog/bin/syslog
-	docker build \
+	$(CONTAINER_RUNTIME) build \
 		-t stackrox/qa:syslog_server_1_0 \
 		-t quay.io/rhacs-eng/qa:syslog_server_1_0 \
 		-f qa-tests-backend/test-images/syslog/Dockerfile qa-tests-backend/test-images/syslog
