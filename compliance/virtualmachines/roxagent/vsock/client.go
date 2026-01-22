@@ -38,13 +38,8 @@ func (c *Client) SendIndexReport(report *v4.IndexReport) error {
 
 	// Create VMReport with discovered data values.
 	vmReport := &v1.VMReport{
-		IndexReport: wrappedReport,
-		DiscoveredData: &v1.DiscoveredData{
-			DetectedOs:        discovered.DetectedOS,
-			OsVersion:         discovered.OSVersion,
-			ActivationStatus:  discovered.ActivationStatus,
-			DnfMetadataStatus: discovered.DnfMetadataStatus,
-		},
+		IndexReport:    wrappedReport,
+		DiscoveredData: discovered,
 	}
 
 	if c.Verbose {

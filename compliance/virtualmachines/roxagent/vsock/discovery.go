@@ -27,20 +27,12 @@ const (
 	rhelOSID = "rhel"
 )
 
-// DiscoveredData holds the result of VM discovery operations.
-type DiscoveredData struct {
-	DetectedOS        v1.DetectedOS
-	OSVersion         string
-	ActivationStatus  v1.ActivationStatus
-	DnfMetadataStatus v1.DnfMetadataStatus
-}
-
 // DiscoverVMData discovers VM metadata from the host system.
 // Returns discovered data with defaults (UNKNOWN/UNSPECIFIED) if discovery fails.
-func DiscoverVMData(hostPath string) *DiscoveredData {
-	result := &DiscoveredData{
-		DetectedOS:        v1.DetectedOS_UNKNOWN,
-		OSVersion:         "",
+func DiscoverVMData(hostPath string) *v1.DiscoveredData {
+	result := &v1.DiscoveredData{
+		DetectedOs:        v1.DetectedOS_UNKNOWN,
+		OsVersion:         "",
 		ActivationStatus:  v1.ActivationStatus_ACTIVATION_UNSPECIFIED,
 		DnfMetadataStatus: v1.DnfMetadataStatus_DNF_METADATA_UNSPECIFIED,
 	}
@@ -54,8 +46,8 @@ func DiscoverVMData(hostPath string) *DiscoveredData {
 	if err != nil {
 		log.Warnf("Failed to discover OS and version: %v", err)
 	} else {
-		result.DetectedOS = detectedOS
-		result.OSVersion = osVersion
+		result.DetectedOs = detectedOS
+		result.OsVersion = osVersion
 	}
 
 	// Discover activation status from /etc/pki/entitlement.
