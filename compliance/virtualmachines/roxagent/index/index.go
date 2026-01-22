@@ -101,13 +101,10 @@ func maybeDelayInitialReport(ctx context.Context, sendNow bool) error {
 		return nil
 	}
 
-	timer := time.NewTimer(delay)
-	defer timer.Stop()
-
 	select {
 	case <-ctx.Done():
 		return ctx.Err()
-	case <-timer.C:
+	case <-time.After(delay):
 		return nil
 	}
 }
