@@ -19,7 +19,6 @@ var log = logging.LoggerForModule()
 
 const (
 	mappingClientTimeout  = 30 * time.Second
-	maxInitialReportDelay = 20 * time.Minute
 )
 
 func RunDaemon(ctx context.Context, cfg *common.Config, client *vsock.Client) error {
