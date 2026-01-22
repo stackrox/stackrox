@@ -356,6 +356,7 @@ func copyFromImageComponentV2Cves(ctx context.Context, tx *postgres.Tx, iTime ti
 		"componentid",
 		"advisory_name",
 		"advisory_link",
+		"fixavailabletimestamp",
 		"serialized",
 	}
 
@@ -396,6 +397,7 @@ func copyFromImageComponentV2Cves(ctx context.Context, tx *postgres.Tx, iTime ti
 			obj.GetComponentId(),
 			obj.GetAdvisory().GetName(),
 			obj.GetAdvisory().GetLink(),
+			protocompat.NilOrTime(obj.GetFixAvailableTimestamp()),
 			serialized,
 		})
 
