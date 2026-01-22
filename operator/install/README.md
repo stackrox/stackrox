@@ -28,7 +28,7 @@ Before applying the `SecuredCluster` CR you need to retrieve from central and ap
 **Note** that currently the page where you can generate an init bundle requires you to select OpenShift as the platform
 Otherwise it is only possible to download an init bundle formatted for Helm installations.
 
-[Documentation for the custom resource schema](https://docs.redhat.com/en/documentation/red_hat_advanced_cluster_security_for_kubernetes/4.9/html/installing/installing-rhacs-on-red-hat-openshift#install-central-config-options-ocp) -
+[Documentation for the custom resource schema](https://docs.redhat.com/en/documentation/red_hat_advanced_cluster_security_for_kubernetes/latest/html/installing/installing-rhacs-on-red-hat-openshift#install-central-config-options-ocp) -
 the way to customize your StackRox deployment - is currently only available
 at the Red Hat documentation portal.
 
