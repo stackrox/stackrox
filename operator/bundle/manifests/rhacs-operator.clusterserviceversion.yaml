@@ -1806,6 +1806,9 @@ spec:
         displayName: Observed Generation
         path: observedGeneration
       version: v1alpha1
+    - kind: SecurityPolicy
+      name: securitypolicies.config.stackrox.io
+      version: v1alpha1
   description: "## Why use Red Hat Advanced Cluster Security for Kubernetes?\n\nProtecting\
     \ cloud-native applications requires significant changes in how we approach security\u2014\
     we must apply controls earlier in the application development life cycle, use\
