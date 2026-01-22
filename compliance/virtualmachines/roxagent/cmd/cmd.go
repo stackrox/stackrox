@@ -32,6 +32,9 @@ func RootCmd(ctx context.Context) *cobra.Command {
 	cmd.Flags().StringVar(&cfg.IndexHostPath, "host-path", "/",
 		"Path where the indexer starts searching for the RPM and DNF databases.",
 	)
+	cmd.Flags().BoolVar(&cfg.SendNow, "now", false,
+		"Send the initial index report immediately, bypassing the randomized startup delay.",
+	)
 	cmd.Flags().StringVar(&cfg.RepoToCPEMappingURL, "repo-cpe-url", repoToCPEMappingURL,
 		"URL for the repository to CPE mapping.",
 	)
@@ -40,9 +43,6 @@ func RootCmd(ctx context.Context) *cobra.Command {
 	)
 	cmd.Flags().BoolVar(&cfg.Verbose, "verbose", false,
 		"Prints the index reports to stdout.",
-	)
-	cmd.Flags().BoolVar(&cfg.SendNow, "now", false,
-		"Send the initial index report immediately, bypassing the randomized startup delay.",
 	)
 	cmd.Flags().Uint32Var(&cfg.VsockPort, "port", 818,
 		"VSock port to connect with the virtual machine host.",
