@@ -10,10 +10,7 @@ import (
 	"strings"
 
 	v1 "github.com/stackrox/rox/generated/internalapi/virtualmachine/v1"
-	"github.com/stackrox/rox/pkg/logging"
 )
-
-var discoveryLog = logging.LoggerForModule()
 
 const (
 	osReleasePath         = "/etc/os-release"
@@ -55,7 +52,7 @@ func DiscoverVMData(hostPath string) *DiscoveredData {
 	// Future improvements may include support for other OS types and more robust version detection.
 	detectedOS, osVersion, err := discoverOSAndVersionWithPath(hostPathFor(hostPath, osReleasePath))
 	if err != nil {
-		discoveryLog.Warnf("Failed to discover OS and version: %v", err)
+		log.Warnf("Failed to discover OS and version: %v", err)
 	} else {
 		result.DetectedOS = detectedOS
 		result.OSVersion = osVersion
@@ -69,7 +66,7 @@ func DiscoverVMData(hostPath string) *DiscoveredData {
 	// support for other activation mechanisms.
 	activationStatus, err := discoverActivationStatusWithPath(hostPathFor(hostPath, entitlementDirPath))
 	if err != nil {
-		discoveryLog.Warnf("Failed to discover activation status: %v", err)
+		log.Warnf("Failed to discover activation status: %v", err)
 	} else {
 		result.ActivationStatus = activationStatus
 	}
@@ -85,7 +82,7 @@ func DiscoverVMData(hostPath string) *DiscoveredData {
 		hostPathFor(hostPath, dnfCacheDirPath),
 	)
 	if err != nil {
-		discoveryLog.Warnf("Failed to discover DNF metadata status: %v", err)
+		log.Warnf("Failed to discover DNF metadata status: %v", err)
 	} else {
 		result.DnfMetadataStatus = dnfStatus
 	}
@@ -112,7 +109,7 @@ func discoverOSAndVersionWithPath(path string) (v1.DetectedOS, string, error) {
 	}
 	defer func() {
 		if err := file.Close(); err != nil {
-			discoveryLog.Warnf("Failed to close %s: %v", path, err)
+			log.Warnf("Failed to close %s: %v", path, err)
 		}
 	}()
 
@@ -288,8 +285,8 @@ func discoverDnfMetadataStatusWithPaths(reposDirPath, cacheDirPath string) (v1.D
 
 func logPathError(path string, err error) {
 	if os.IsNotExist(err) {
-		discoveryLog.Warnf("Unsupported OS detected: missing %s", path)
+		log.Warnf("Unsupported OS detected: missing %s", path)
 		return
 	}
-	discoveryLog.Warnf("Failed to read %s: %v", path, err)
+	log.Warnf("Failed to read %s: %v", path, err)
 }
