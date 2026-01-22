@@ -162,14 +162,14 @@ require (
 	gopkg.in/yaml.v3 v3.0.1
 	gorm.io/driver/postgres v1.6.0
 	gorm.io/gorm v1.31.1
-	helm.sh/helm/v3 v3.19.4
+	helm.sh/helm/v3 v3.20.0
 	k8s.io/api v0.35.0
 	k8s.io/apiextensions-apiserver v0.35.0
 	k8s.io/apimachinery v0.35.0
 	k8s.io/apiserver v0.35.0
-	k8s.io/cli-runtime v0.34.3
+	k8s.io/cli-runtime v0.35.0
 	k8s.io/client-go v0.35.0
-	k8s.io/kubectl v0.34.3
+	k8s.io/kubectl v0.35.0
 	k8s.io/kubelet v0.32.11
 	k8s.io/utils v0.0.0-20251002143259-bc988d571ff4
 	kubevirt.io/api v1.7.0
@@ -270,7 +270,7 @@ require (
 	github.com/cockroachdb/tokenbucket v0.0.0-20250429170803-42689b6311bb // indirect
 	github.com/coder/websocket v1.8.14 // indirect
 	github.com/common-nighthawk/go-figure v0.0.0-20210622060536-734e95fb86be // indirect
-	github.com/containerd/containerd v1.7.29 // indirect
+	github.com/containerd/containerd v1.7.30 // indirect
 	github.com/containerd/errdefs v1.0.0 // indirect
 	github.com/containerd/log v0.1.0 // indirect
 	github.com/containerd/platforms v0.2.1 // indirect
@@ -437,7 +437,7 @@ require (
 	github.com/quay/goval-parser v0.8.8 // indirect
 	github.com/remyoudompheng/bigfft v0.0.0-20230129092748-24d4a6f8daec // indirect
 	github.com/rogpeppe/go-internal v1.14.1 // indirect
-	github.com/rubenv/sql-migrate v1.8.0 // indirect
+	github.com/rubenv/sql-migrate v1.8.1 // indirect
 	github.com/russross/blackfriday/v2 v2.1.0 // indirect
 	github.com/sagikazarmark/locafero v0.11.0 // indirect
 	github.com/santhosh-tekuri/jsonschema/v6 v6.0.2 // indirect
@@ -513,7 +513,7 @@ require (
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	k8s.io/code-generator v0.35.0 // indirect
 	k8s.io/component-base v0.35.0 // indirect
-	k8s.io/component-helpers v0.34.3 // indirect
+	k8s.io/component-helpers v0.35.0 // indirect
 	k8s.io/gengo/v2 v2.0.0-20250922181213-ec3ebc5fd46b // indirect
 	k8s.io/klog/v2 v2.130.1 // indirect
 	k8s.io/kube-openapi v0.0.0-20250910181357-589584f1c912 // indirect
