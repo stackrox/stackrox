@@ -7,8 +7,7 @@ import (
 
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/pkg/errors"
-	clusterDS "github.com/stackrox/rox/central/cluster/datastore"
-	"github.com/stackrox/rox/central/telemetry/centralclient"
+
 	v1 "github.com/stackrox/rox/generated/internalapi/central/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/tokens"
@@ -20,7 +19,7 @@ import (
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
-	"github.com/stackrox/rox/pkg/telemetry/phonehome/telemeter"
+
 	"google.golang.org/grpc"
 )
 
@@ -96,53 +95,6 @@ func (s *serviceImpl) GenerateTokenForPermissionsAndScope(
 	}
 	go trackRequest(authn.IdentityFromContextOrNil(ctx), req)
 	return response, nil
-}
-
-func trackRequest(id authn.Identity, req *v1.GenerateTokenForPermissionsAndScopeRequest) {
-	if !centralclient.Singleton().IsActive() {
-		// Avoid unnecessary calculations if telemetry is not active.
-		return
-	}
-	var client telemeter.Option
-	// ID cannot be nil normally.
-	if id != nil {
-		// Track from the name of the secured cluster, if the caller is sensor.
-		switch id.Service().GetType() {
-		case storage.ServiceType_SENSOR_SERVICE:
-			clientID := id.Service().GetId()
-			cluster, _, _ := clusterDS.Singleton().GetCluster(clusterReadContext, clientID)
-			client = telemeter.WithClient(clientID, "Secured Cluster", cluster.GetMainImage())
-		case storage.ServiceType_UNKNOWN_SERVICE:
-			client = telemeter.WithUserID(id.UID())
-		default:
-			client = telemeter.WithClient(id.Service().GetId(), id.Service().GetType().String(), "")
-		}
-	} else {
-		// The event will be reported from the central client in this case.
-		// WithTraits(nil) is a no-op option.
-		client = telemeter.WithTraits(nil)
-	}
-
-	maxNamespaces := 0
-	fullClusterAccess := 0
-	for _, cs := range req.GetClusterScopes() {
-		maxNamespaces = max(maxNamespaces, len(cs.GetNamespaces()))
-		if cs.GetFullClusterAccess() {
-			fullClusterAccess++
-		}
-	}
-	eventProps := make(map[string]any)
-	eventProps["Total Cluster Scopes"] = len(req.GetClusterScopes())
-	eventProps["Cluster Scopes With Full Access"] = fullClusterAccess
-	eventProps["Max Namespaces In Scopes"] = maxNamespaces
-	for p, a := range req.GetPermissions() {
-		eventProps[p] = a.String()
-	}
-	centralclient.Singleton().Track("OCP Token Issued", eventProps, client,
-		// Client traits:
-		telemeter.WithTraits(map[string]any{
-			"Has OCP Plugin Users": true,
-		}))
 }
 
 func (s *serviceImpl) getExpiresAt(
