@@ -349,24 +349,33 @@ func TestSecurityContext(t *testing.T) {
 	trueBool := true
 	falseBool := false
 	for _, testCase := range []struct {
-		caseName                       string
-		allowPrivilegeEscalationInSpec *bool
-		result                         bool
+		caseName        string
+		securityContext *v1.SecurityContext
+		result          bool
 	}{
 		{
-			caseName:                       "Allow privilege escalation explicitly set to true",
-			allowPrivilegeEscalationInSpec: &trueBool,
-			result:                         true,
+			caseName: "Allow privilege escalation explicitly set to true",
+			securityContext: &v1.SecurityContext{
+				AllowPrivilegeEscalation: &trueBool,
+			},
+			result: true,
 		},
 		{
-			caseName:                       "Allow privilege escalation explicitly set to false",
-			allowPrivilegeEscalationInSpec: &falseBool,
-			result:                         false,
+			caseName: "Allow privilege escalation explicitly set to false",
+			securityContext: &v1.SecurityContext{
+				AllowPrivilegeEscalation: &falseBool,
+			},
+			result: false,
 		},
 		{
-			caseName:                       "Allow privilege escalation is nil",
-			allowPrivilegeEscalationInSpec: nil,
-			result:                         true,
+			caseName:        "Allow privilege escalation is nil, defaults to true",
+			securityContext: &v1.SecurityContext{},
+			result:          true,
+		},
+		{
+			caseName:        "SecurityContext is nil, Allow privilege escalation defaults to true",
+			securityContext: nil,
+			result:          true,
 		},
 	} {
 
@@ -375,9 +384,9 @@ func TestSecurityContext(t *testing.T) {
 			emptyContainer := &storage.Container{}
 			containers := []*storage.Container{emptyContainer}
 			deploymentWrap := &DeploymentWrap{Deployment: &storage.Deployment{Containers: containers}}
-			spec := v1.PodSpec{Containers: []v1.Container{{SecurityContext: &v1.SecurityContext{}}}}
-			if testCase.allowPrivilegeEscalationInSpec != nil {
-				spec.Containers[0].SecurityContext.AllowPrivilegeEscalation = testCase.allowPrivilegeEscalationInSpec
+			spec := v1.PodSpec{Containers: []v1.Container{{SecurityContext: testCase.securityContext}}}
+			if testCase.securityContext != nil && testCase.securityContext.AllowPrivilegeEscalation != nil {
+				spec.Containers[0].SecurityContext.AllowPrivilegeEscalation = testCase.securityContext.AllowPrivilegeEscalation
 			}
 			deploymentWrap.populateSecurityContext(spec)
 			actualAllowPrivilegeEscalationValue := deploymentWrap.GetContainers()[0].GetSecurityContext().GetAllowPrivilegeEscalation()
