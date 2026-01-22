@@ -10,7 +10,7 @@ import (
 )
 
 // telemetryServiceClient returns a telemetry client impersonation option.
-func telemetryServiceClient(id authn.Identity) telemeter.Option {
+func telemetryServiceClient(id authn.Identity, clusters clusterDS.DataStore) telemeter.Option {
 	// ID cannot be nil normally.
 	if id == nil {
 		// The event will be reported from the central client in this case.
@@ -21,7 +21,7 @@ func telemetryServiceClient(id authn.Identity) telemeter.Option {
 	switch id.Service().GetType() {
 	case storage.ServiceType_SENSOR_SERVICE:
 		clientID := id.Service().GetId()
-		cluster, _, _ := clusterDS.Singleton().GetCluster(clusterReadContext, clientID)
+		cluster, _, _ := clusters.GetCluster(clusterReadContext, clientID)
 		return telemeter.WithClient(clientID, "Secured Cluster", cluster.GetMainImage())
 	case storage.ServiceType_UNKNOWN_SERVICE:
 		return telemeter.WithUserID(id.UID())
@@ -50,9 +50,9 @@ func trackRequest(id authn.Identity, req *v1.GenerateTokenForPermissionsAndScope
 	for p, a := range req.GetPermissions() {
 		eventProps[p] = a.String()
 	}
-	centralclient.Singleton().Track("OCP Token Issued", eventProps, telemetryServiceClient(id),
+	centralclient.Singleton().Track("Internal Token Issued", eventProps, telemetryServiceClient(id, clusterDS.Singleton()),
 		// Client traits:
 		telemeter.WithTraits(map[string]any{
-			"Has OCP Plugin Users": true,
+			"Has Internal Token Users": true,
 		}))
 }
