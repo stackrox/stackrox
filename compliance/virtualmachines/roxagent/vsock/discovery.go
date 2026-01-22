@@ -81,10 +81,11 @@ func hostPathFor(hostPath, path string) string {
 	if hostPath == "" || hostPath == string(os.PathSeparator) {
 		return path
 	}
-	cleanHostPath := filepath.Clean(hostPath)
-	cleanPath := filepath.Clean(path)
-	trimmedPath := strings.TrimPrefix(cleanPath, string(os.PathSeparator))
-	return filepath.Join(cleanHostPath, trimmedPath)
+	// This join+clean approach is safe (no escape from hostPath) only when
+	// the input path is absolute (e.g., "/etc/os-release"). For example,
+	// hostPath="/host", path="/../etc/os-release" would clean to "/etc/os-release".
+	trimmedPath := strings.TrimPrefix(path, string(os.PathSeparator))
+	return filepath.Clean(filepath.Join(hostPath, trimmedPath))
 }
 
 // discoverOSAndVersionWithPath reads os-release from the given path and returns DetectedOS and OSVersion.
