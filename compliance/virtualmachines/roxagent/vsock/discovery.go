@@ -2,7 +2,9 @@ package vsock
 
 import (
 	"bufio"
+	"bytes"
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 	"strings"
@@ -114,30 +116,8 @@ func discoverOSAndVersionWithPath(path string) (v1.DetectedOS, string, error) {
 		}
 	}()
 
-	osRelease := make(map[string]string)
-	scanner := bufio.NewScanner(file)
-	for scanner.Scan() {
-		line := strings.TrimSpace(scanner.Text())
-		if line == "" || strings.HasPrefix(line, "#") {
-			continue
-		}
-
-		// Parsing all key=value pairs in the os-release file.
-		parts := strings.SplitN(line, "=", 2)
-		if len(parts) != 2 {
-			continue
-		}
-
-		key := strings.TrimSpace(parts[0])
-		value := strings.TrimSpace(parts[1])
-		// Remove quotes if present
-		if len(value) >= 2 && (value[0] == '"' && value[len(value)-1] == '"') {
-			value = value[1 : len(value)-1]
-		}
-		osRelease[key] = value
-	}
-
-	if err := scanner.Err(); err != nil {
+	osRelease, err := parseOSRelease(file)
+	if err != nil {
 		return v1.DetectedOS_UNKNOWN, "", fmt.Errorf("reading %s: %w", path, err)
 	}
 
@@ -167,6 +147,57 @@ func discoverOSAndVersionWithPath(path string) (v1.DetectedOS, string, error) {
 
 	return detectedOS, osVersion, nil
 }
+
+// parseOSRelease parses /etc/os-release key-value pairs.
+//
+// We copy ClairCore's os-release parser instead of importing it to avoid pulling
+// in heavy scanner/indexer dependencies into roxagent. As Rob Pike put it,
+// "a little bit of copying is better than a little bit of dependency."
+//
+// Source (copied, adapted to our usage):
+// https://github.com/quay/claircore/blob/9f69181a1555935c8840a9191c91567e55b9cf0c/osrelease/scanner.go
+func parseOSRelease(r io.Reader) (map[string]string, error) {
+	osRelease := make(map[string]string)
+	scanner := bufio.NewScanner(r)
+	scanner.Split(bufio.ScanLines)
+	for scanner.Scan() {
+		b := bytes.TrimSpace(scanner.Bytes())
+		switch {
+		case len(b) == 0:
+			continue
+		case b[0] == '#':
+			continue
+		}
+		if !bytes.ContainsRune(b, '=') {
+			return nil, fmt.Errorf("osrelease: malformed line %q", scanner.Text())
+		}
+		key, value, _ := strings.Cut(string(b), "=")
+		key = strings.TrimSpace(key)
+		value = strings.TrimSpace(value)
+		switch {
+		case len(value) == 0:
+		case value[0] == '\'':
+			value = strings.TrimFunc(value, func(r rune) bool { return r == '\'' })
+			value = strings.ReplaceAll(value, `'\''`, `'`)
+		case value[0] == '"':
+			value = strings.TrimFunc(value, func(r rune) bool { return r == '"' })
+			value = osReleaseDQReplacer.Replace(value)
+		default:
+		}
+		osRelease[key] = value
+	}
+	if err := scanner.Err(); err != nil {
+		return nil, err
+	}
+	return osRelease, nil
+}
+
+var osReleaseDQReplacer = strings.NewReplacer(
+	"\\`", "`",
+	`\\`, `\`,
+	`\"`, `"`,
+	`\$`, `$`,
+)
 
 // discoverActivationStatusWithPath checks the given path for matching cert/key pairs.
 func discoverActivationStatusWithPath(path string) (v1.ActivationStatus, error) {
