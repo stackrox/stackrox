@@ -5,8 +5,6 @@ import (
 	"net/http"
 	"net/http/httputil"
 	"net/url"
-	"path"
-	"strings"
 	"sync/atomic"
 
 	"github.com/pkg/errors"
@@ -16,36 +14,28 @@ import (
 	"github.com/stackrox/rox/pkg/retryablehttp"
 	"github.com/stackrox/rox/pkg/urlfmt"
 	"github.com/stackrox/rox/sensor/common"
+	"google.golang.org/grpc"
 	"k8s.io/client-go/kubernetes"
 )
 
 var (
 	log = logging.LoggerForModule()
 
-	_ common.Notifiable = (*Handler)(nil)
-
-	// authzSkipPathPrefixes contains endpoint path prefixes that skip Central authorization checks
-	// but still require authentication. Matching enforces segment boundaries: exact match or path
-	// starting with prefix + "/".
-	authzSkipPathPrefixes = []string{
-		"/static",
-		"/v1/config/public",
-		"/v1/featureflags",
-		"/v1/metadata",
-		"/v1/mypermissions",
-		"/v1/telemetry/config",
-	}
+	_ common.Notifiable           = (*Handler)(nil)
+	_ common.CentralGRPCConnAware = (*Handler)(nil)
 )
 
 // Handler handles HTTP proxy requests to Central.
 type Handler struct {
-	proxy            *httputil.ReverseProxy
 	centralReachable atomic.Bool
+	clusterIDGetter  clusterIDGetter
 	authorizer       *k8sAuthorizer
+	transport        *scopedTokenTransport
+	proxy            *httputil.ReverseProxy
 }
 
 // NewProxyHandler creates a new proxy handler that forwards requests to Central.
-func NewProxyHandler(centralEndpoint string, centralCertificates []*x509.Certificate, token string) (*Handler, error) {
+func NewProxyHandler(centralEndpoint string, centralCertificates []*x509.Certificate, clusterIDGetter clusterIDGetter) (*Handler, error) {
 	centralBaseURL, err := url.Parse(
 		urlfmt.FormatURL(centralEndpoint, urlfmt.HTTPS, urlfmt.NoTrailingSlash),
 	)
@@ -53,9 +43,30 @@ func NewProxyHandler(centralEndpoint string, centralCertificates []*x509.Certifi
 		return nil, errors.Wrap(err, "parsing endpoint")
 	}
 
-	proxy, err := newCentralReverseProxy(centralBaseURL, centralCertificates, token)
+	baseTransport, err := createBaseTransport(centralBaseURL, centralCertificates)
 	if err != nil {
-		return nil, errors.Wrap(err, "creating central reverse proxy")
+		return nil, errors.Wrap(err, "creating base transport")
+	}
+
+	transport := newScopedTokenTransport(baseTransport, clusterIDGetter)
+
+	proxy := &httputil.ReverseProxy{
+		Transport: transport,
+		Rewrite: func(r *httputil.ProxyRequest) {
+			r.SetURL(centralBaseURL)
+		},
+		ErrorHandler: func(w http.ResponseWriter, r *http.Request, err error) {
+			log.Errorf("Proxy error: %v", err)
+			if errors.Is(err, errServiceUnavailable) {
+				pkghttputil.WriteError(w,
+					pkghttputil.Errorf(http.StatusServiceUnavailable, "proxy temporarily unavailable: %v", err),
+				)
+				return
+			}
+			pkghttputil.WriteError(w,
+				pkghttputil.Errorf(http.StatusInternalServerError, "failed to contact central: %v", err),
+			)
+		},
 	}
 
 	restConfig, err := k8sutil.GetK8sInClusterConfig()
@@ -70,9 +81,17 @@ func NewProxyHandler(centralEndpoint string, centralCertificates []*x509.Certifi
 	}
 
 	return &Handler{
-		proxy:      proxy,
-		authorizer: newK8sAuthorizer(k8sClient),
+		clusterIDGetter: clusterIDGetter,
+		authorizer:      newK8sAuthorizer(k8sClient),
+		transport:       transport,
+		proxy:           proxy,
 	}, nil
+}
+
+// SetCentralGRPCClient implements common.CentralGRPCConnAware.
+// It sets the gRPC connection used by the token provider to request tokens from Central.
+func (h *Handler) SetCentralGRPCClient(cc grpc.ClientConnInterface) {
+	h.transport.SetClient(cc)
 }
 
 // Notify reacts to sensor going into online/offline mode.
@@ -103,23 +122,6 @@ func (h *Handler) validateRequest(request *http.Request) error {
 	return nil
 }
 
-// isAuthzSkipPath checks if the request path matches any of the authorization-skip patterns.
-// These paths still require authentication but skip the authorization (SubjectAccessReview) check.
-// Matching enforces segment boundaries: path must equal pattern exactly or start with pattern + "/".
-// This prevents "/v1/metadata" from matching "/v1/metadataExtra".
-func isAuthzSkipPath(requestPath string) bool {
-	// Normalize the path before authorization checks to prevent bypass via path manipulation
-	// (e.g., double slashes, dot segments).
-	normalizedPath := path.Clean(requestPath)
-
-	for _, pattern := range authzSkipPathPrefixes {
-		if normalizedPath == pattern || strings.HasPrefix(normalizedPath, pattern+"/") {
-			return true
-		}
-	}
-	return false
-}
-
 // ServeHTTP handles incoming HTTP requests and proxies them to Central.
 func (h *Handler) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
 	if err := h.validateRequest(request); err != nil {
@@ -133,18 +135,15 @@ func (h *Handler) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
 		return
 	}
 
-	// Require authentication for all endpoints.
 	userInfo, err := h.authorizer.authenticate(request.Context(), request)
 	if err != nil {
 		pkghttputil.WriteError(writer, err)
 		return
 	}
 
-	if !isAuthzSkipPath(request.URL.Path) {
-		if err := h.authorizer.authorize(request.Context(), userInfo, request); err != nil {
-			pkghttputil.WriteError(writer, err)
-			return
-		}
+	if err := h.authorizer.authorize(request.Context(), userInfo, request); err != nil {
+		pkghttputil.WriteError(writer, err)
+		return
 	}
 
 	h.proxy.ServeHTTP(writer, request)

@@ -248,16 +248,15 @@ func (s *Sensor) Start() {
 	// Enable proxy endpoint for forwarding requests to Central on OpenShift.
 	// The proxy is served on a dedicated HTTPS server with a service CA signed certificate.
 	if features.OCPConsoleIntegration.Enabled() && env.OpenshiftAPI.Setting() != "" {
-		if proxyToken := env.CentralProxyToken.Setting(); proxyToken != "" {
-			handler, err := centralproxy.NewProxyHandler(s.centralEndpoint, centralCertificates, proxyToken)
+		handler, err := centralproxy.NewProxyHandler(s.centralEndpoint, centralCertificates, s.clusterID)
+		if err != nil {
+			utils.Should(errors.Wrap(err, "creating central proxy handler"))
+		} else {
+			handler.SetCentralGRPCClient(s.centralConnection)
+			s.AddNotifiable(handler)
+			s.proxyServer, err = centralproxy.StartProxyServer(handler)
 			if err != nil {
-				utils.Should(errors.Wrap(err, "creating central proxy handler"))
-			} else {
-				s.AddNotifiable(handler)
-				s.proxyServer, err = centralproxy.StartProxyServer(handler)
-				if err != nil {
-					utils.Should(errors.Wrap(err, "starting proxy server"))
-				}
+				utils.Should(errors.Wrap(err, "starting proxy server"))
 			}
 		}
 	}
