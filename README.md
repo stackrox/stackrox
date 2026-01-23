@@ -317,12 +317,10 @@ Then go to https://localhost:8000/ in your web browser.
 ---
 ## Development
 
-- Start with [pull request guidelines](./.github/contributing.md) if you plan to make a contribution.
-- Look at [**shepherding**](./.github/shepherding.md) for non-trivial code submissions.
-- Check out our [**AI policy**](./.github/using-llms.md).
-- **UI Dev Docs**: Refer to [ui/README.md](./ui/README.md)
-- **E2E Dev Docs**: Refer to [qa-tests-backend/README.md](./qa-tests-backend/README.md)
-- **Go coding style guide**: [go-coding-style.md](./.github/go-coding-style.md)
+- Start with [**pull request guidelines**](./.github/contributing.md) if you plan to make a contribution
+- Look at [**shepherding**](./.github/shepherding.md) for non-trivial code submissions
+- Check out our [**AI policy**](./.github/using-llms.md)
+- We also have [**Go coding style guide](./.github/go-coding-style.md), [**UI dev docs](./ui/README.md), and [**E2E Dev Docs**](./qa-tests-backend/README.md)
 
 ### Quickstart
 
