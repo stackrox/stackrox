@@ -2,6 +2,7 @@ package resolvers
 
 import (
 	"context"
+	"slices"
 	"time"
 
 	"github.com/graph-gophers/graphql-go"
@@ -559,6 +560,8 @@ func (resolver *Resolver) wrapBaseImage(baseImageInfos []*storage.BaseImageInfo)
 		names = append(names, info.GetBaseImageFullName())
 	}
 
+	// Stablize the names
+	slices.Sort(names)
 	data := &baseImageData{
 		imageSha: imageSha,
 		names:    names,
