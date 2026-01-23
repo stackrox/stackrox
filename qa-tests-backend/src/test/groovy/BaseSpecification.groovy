@@ -209,7 +209,7 @@ class BaseSpecification extends Specification {
             TimeUnit.SECONDS
     )
     @Rule
-    private TestName testName = new TestName()
+    protected final TestName testName = new TestName()
 
     @Shared
     Logger log = LoggerFactory.getLogger("test." + this.getClass().getSimpleName())
