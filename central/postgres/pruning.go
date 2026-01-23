@@ -123,7 +123,7 @@ const (
 
 	pruneExpired = `DELETE FROM %s WHERE
 		(
-			traits.expires_at < now() at time zone 'utc' - INTERVAL '%d MINUTES'
+			traits_expires_at < now() at time zone 'utc' - INTERVAL '%d MINUTES'
 		)` // #nosec G101
 )
 
@@ -281,17 +281,20 @@ func PruneExpired(ctx context.Context, pool postgres.DB, retentionDuration time.
 		schema.PermissionSetsTableName,
 		schema.SimpleAccessScopesTableName,
 		schema.RolesTableName,
+		schema.GroupsTableName,
+		schema.AuthProvidersTableName,
+		schema.NotifiersTableName,
+		schema.SignatureIntegrationsTableName,
+		schema.AuthMachineToMachineConfigsTableName,
 	}
-
-	pruneCtx, cancel := contextutil.ContextWithTimeoutIfNotExists(ctx,
-		pruningTimeout*time.Duration(len(tablesWithTraits)))
-	defer cancel()
 
 	for _, table := range tablesWithTraits {
 		query := fmt.Sprintf(pruneExpired,
 			table,
 			int(retentionDuration.Minutes()),
 		)
+		pruneCtx, cancel := contextutil.ContextWithTimeoutIfNotExists(ctx, pruningTimeout)
+		defer cancel()
 		if _, err := pool.Exec(pruneCtx, query); err != nil {
 			log.Errorf("failed to prune %s: %v", table, err)
 		}
