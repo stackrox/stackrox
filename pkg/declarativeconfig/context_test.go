@@ -20,6 +20,7 @@ func TestContext(t *testing.T) {
 	imperativeResource := &resourceWithTraitsMock{origin: storage.Traits_IMPERATIVE}
 	declarativeResource := &resourceWithTraitsMock{origin: storage.Traits_DECLARATIVE}
 	defaultResource := &resourceWithTraitsMock{origin: storage.Traits_DEFAULT}
+	dynamicResource := &resourceWithTraitsMock{origin: storage.Traits_DYNAMIC}
 	ctx := context.Background()
 	declarativeCtx := WithModifyDeclarativeResource(ctx)
 	declarativeOrImperativeCtx := WithModifyDeclarativeOrImperative(ctx)
@@ -41,4 +42,10 @@ func TestContext(t *testing.T) {
 	assert.True(t, CanModifyResource(declarativeOrImperativeCtx, imperativeResource))
 	// 9. context.WithModifyDeclarativeOrImperative can't modify default origin
 	assert.False(t, CanModifyResource(declarativeOrImperativeCtx, defaultResource))
+	// 10. empty context can modify dynamic origin
+	assert.True(t, CanModifyResource(ctx, dynamicResource))
+	// 11. context.WithModifyDeclarativeResource can't modify dynamic origin
+	assert.False(t, CanModifyResource(declarativeCtx, dynamicResource))
+	// 12. context.WithModifyDeclarativeOrImperative can modify dynamic origin
+	assert.True(t, CanModifyResource(declarativeOrImperativeCtx, dynamicResource))
 }

@@ -1,12 +1,11 @@
 package status
 
 import (
+	platform "github.com/stackrox/rox/operator/api/v1alpha1"
+	"github.com/stackrox/rox/pkg/reflectutils"
 	ctrlClient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
-
-	platform "github.com/stackrox/rox/operator/api/v1alpha1"
-	"github.com/stackrox/rox/pkg/reflectutils"
 )
 
 // SkipStatusControllerUpdates filters events triggered by status controller updates to prevent unnecessary reconciliations.

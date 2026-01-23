@@ -81,8 +81,23 @@ func (*serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName string)
 	return ctx, authorizer.Authorized(ctx, fullMethodName)
 }
 
-func (s *serviceImpl) GetRoles(ctx context.Context, _ *v1.Empty) (*v1.GetRolesResponse, error) {
-	roles, err := s.roleDataStore.GetAllRoles(ctx)
+func (s *serviceImpl) GetRoles(ctx context.Context, req *v1.GetRolesRequest) (*v1.GetRolesResponse, error) {
+	var roles []*storage.Role
+	var err error
+
+	if len(req.GetOrigins()) > 0 {
+		originsSet := make(map[storage.Traits_Origin]struct{}, len(req.GetOrigins()))
+		for _, origin := range req.GetOrigins() {
+			originsSet[origin] = struct{}{}
+		}
+		roles, err = s.roleDataStore.GetRolesFiltered(ctx, func(role *storage.Role) bool {
+			_, ok := originsSet[role.GetTraits().GetOrigin()]
+			return ok
+		})
+	} else {
+		roles, err = s.roleDataStore.GetAllRoles(ctx)
+	}
+
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to retrieve roles")
 	}
@@ -182,8 +197,23 @@ func (s *serviceImpl) GetPermissionSet(ctx context.Context, id *v1.ResourceByID)
 	return permissionSet, nil
 }
 
-func (s *serviceImpl) ListPermissionSets(ctx context.Context, _ *v1.Empty) (*v1.ListPermissionSetsResponse, error) {
-	permissionSets, err := s.roleDataStore.GetAllPermissionSets(ctx)
+func (s *serviceImpl) ListPermissionSets(ctx context.Context, req *v1.ListPermissionSetsRequest) (*v1.ListPermissionSetsResponse, error) {
+	var permissionSets []*storage.PermissionSet
+	var err error
+
+	if len(req.GetOrigins()) > 0 {
+		originsSet := make(map[storage.Traits_Origin]struct{}, len(req.GetOrigins()))
+		for _, origin := range req.GetOrigins() {
+			originsSet[origin] = struct{}{}
+		}
+		permissionSets, err = s.roleDataStore.GetPermissionSetsFiltered(ctx, func(ps *storage.PermissionSet) bool {
+			_, ok := originsSet[ps.GetTraits().GetOrigin()]
+			return ok
+		})
+	} else {
+		permissionSets, err = s.roleDataStore.GetAllPermissionSets(ctx)
+	}
+
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to retrieve permission sets")
 	}
@@ -248,8 +278,23 @@ func (s *serviceImpl) GetSimpleAccessScope(ctx context.Context, id *v1.ResourceB
 	return scope, nil
 }
 
-func (s *serviceImpl) ListSimpleAccessScopes(ctx context.Context, _ *v1.Empty) (*v1.ListSimpleAccessScopesResponse, error) {
-	scopes, err := s.roleDataStore.GetAllAccessScopes(ctx)
+func (s *serviceImpl) ListSimpleAccessScopes(ctx context.Context, req *v1.ListSimpleAccessScopesRequest) (*v1.ListSimpleAccessScopesResponse, error) {
+	var scopes []*storage.SimpleAccessScope
+	var err error
+
+	if len(req.GetOrigins()) > 0 {
+		originsSet := make(map[storage.Traits_Origin]struct{}, len(req.GetOrigins()))
+		for _, origin := range req.GetOrigins() {
+			originsSet[origin] = struct{}{}
+		}
+		scopes, err = s.roleDataStore.GetAccessScopesFiltered(ctx, func(scope *storage.SimpleAccessScope) bool {
+			_, ok := originsSet[scope.GetTraits().GetOrigin()]
+			return ok
+		})
+	} else {
+		scopes, err = s.roleDataStore.GetAllAccessScopes(ctx)
+	}
+
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to retrieve access scopes")
 	}

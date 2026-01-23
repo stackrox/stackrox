@@ -4,7 +4,6 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
-
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/sync"

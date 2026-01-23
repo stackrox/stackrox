@@ -18,7 +18,7 @@ func WithModifyDeclarativeResource(ctx context.Context) context.Context {
 }
 
 // WithModifyDeclarativeOrImperative returns a context that is a child of the given context and allows to modify
-// proto messages with the traits origin == DECLARATIVE or DECLARATIVE_ORPHANED or IMPERATIVE
+// proto messages with the traits origin == DECLARATIVE or DECLARATIVE_ORPHANED or IMPERATIVE or DYNAMIC
 func WithModifyDeclarativeOrImperative(ctx context.Context) context.Context {
 	return context.WithValue(ctx, originCheckerKey{}, allowModifyDeclarativeOrImperative)
 }
@@ -40,8 +40,11 @@ func CanModifyResource(ctx context.Context, resource ResourceWithTraits) bool {
 	if ctx.Value(originCheckerKey{}) == allowOnlyDeclarativeOperations {
 		return IsDeclarativeOrigin(resource)
 	}
+	origin := resource.GetTraits().GetOrigin()
 	if ctx.Value(originCheckerKey{}) == allowModifyDeclarativeOrImperative {
-		return IsDeclarativeOrigin(resource) || resource.GetTraits().GetOrigin() == storage.Traits_IMPERATIVE
+		return IsDeclarativeOrigin(resource) ||
+			origin == storage.Traits_IMPERATIVE ||
+			origin == storage.Traits_DYNAMIC
 	}
-	return resource.GetTraits().GetOrigin() == storage.Traits_IMPERATIVE
+	return origin == storage.Traits_IMPERATIVE || origin == storage.Traits_DYNAMIC
 }

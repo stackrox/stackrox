@@ -1110,7 +1110,7 @@ func deletePermissionSet(t *testing.T, ctx context.Context, idOrName string) {
 	conn := centralgrpc.GRPCConnectionToCentral(t)
 	service := v1.NewRoleServiceClient(conn)
 
-	resp, err := service.ListPermissionSets(ctx, &v1.Empty{})
+	resp, err := service.ListPermissionSets(ctx, &v1.ListPermissionSetsRequest{})
 	require.NoError(t, err)
 
 	for _, ps := range resp.GetPermissionSets() {
@@ -1142,7 +1142,7 @@ func deleteRole(t *testing.T, ctx context.Context, name string) {
 	conn := centralgrpc.GRPCConnectionToCentral(t)
 	service := v1.NewRoleServiceClient(conn)
 
-	resp, err := service.GetRoles(ctx, &v1.Empty{})
+	resp, err := service.GetRoles(ctx, &v1.GetRolesRequest{})
 	require.NoError(t, err)
 
 	for _, role := range resp.GetRoles() {

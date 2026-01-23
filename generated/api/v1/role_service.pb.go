@@ -698,6 +698,147 @@ func (x *GetNamespaceForClusterAndPermissionsRequest) GetPermissions() []string 
 	return nil
 }
 
+// GetRolesRequest is wire-compatible with Empty.
+// If origins is empty, all roles are returned (default behavior).
+type GetRolesRequest struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Filter by origin. If empty, all roles are returned.
+	Origins       []storage.Traits_Origin `protobuf:"varint,1,rep,packed,name=origins,proto3,enum=storage.Traits_Origin" json:"origins,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetRolesRequest) Reset() {
+	*x = GetRolesRequest{}
+	mi := &file_api_v1_role_service_proto_msgTypes[13]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetRolesRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetRolesRequest) ProtoMessage() {}
+
+func (x *GetRolesRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_api_v1_role_service_proto_msgTypes[13]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetRolesRequest.ProtoReflect.Descriptor instead.
+func (*GetRolesRequest) Descriptor() ([]byte, []int) {
+	return file_api_v1_role_service_proto_rawDescGZIP(), []int{13}
+}
+
+func (x *GetRolesRequest) GetOrigins() []storage.Traits_Origin {
+	if x != nil {
+		return x.Origins
+	}
+	return nil
+}
+
+// ListPermissionSetsRequest is wire-compatible with Empty.
+// If origins is empty, all permission sets are returned (default behavior).
+type ListPermissionSetsRequest struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Filter by origin. If empty, all permission sets are returned.
+	Origins       []storage.Traits_Origin `protobuf:"varint,1,rep,packed,name=origins,proto3,enum=storage.Traits_Origin" json:"origins,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListPermissionSetsRequest) Reset() {
+	*x = ListPermissionSetsRequest{}
+	mi := &file_api_v1_role_service_proto_msgTypes[14]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListPermissionSetsRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListPermissionSetsRequest) ProtoMessage() {}
+
+func (x *ListPermissionSetsRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_api_v1_role_service_proto_msgTypes[14]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListPermissionSetsRequest.ProtoReflect.Descriptor instead.
+func (*ListPermissionSetsRequest) Descriptor() ([]byte, []int) {
+	return file_api_v1_role_service_proto_rawDescGZIP(), []int{14}
+}
+
+func (x *ListPermissionSetsRequest) GetOrigins() []storage.Traits_Origin {
+	if x != nil {
+		return x.Origins
+	}
+	return nil
+}
+
+// ListSimpleAccessScopesRequest is wire-compatible with Empty.
+// If origins is empty, all access scopes are returned (default behavior).
+type ListSimpleAccessScopesRequest struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Filter by origin. If empty, all access scopes are returned.
+	Origins       []storage.Traits_Origin `protobuf:"varint,1,rep,packed,name=origins,proto3,enum=storage.Traits_Origin" json:"origins,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListSimpleAccessScopesRequest) Reset() {
+	*x = ListSimpleAccessScopesRequest{}
+	mi := &file_api_v1_role_service_proto_msgTypes[15]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListSimpleAccessScopesRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListSimpleAccessScopesRequest) ProtoMessage() {}
+
+func (x *ListSimpleAccessScopesRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_api_v1_role_service_proto_msgTypes[15]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListSimpleAccessScopesRequest.ProtoReflect.Descriptor instead.
+func (*ListSimpleAccessScopesRequest) Descriptor() ([]byte, []int) {
+	return file_api_v1_role_service_proto_rawDescGZIP(), []int{15}
+}
+
+func (x *ListSimpleAccessScopesRequest) GetOrigins() []storage.Traits_Origin {
+	if x != nil {
+		return x.Origins
+	}
+	return nil
+}
+
 type ComputeEffectiveAccessScopeRequest_Payload struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// Other definitions of access scope rules is science fiction for now;
@@ -713,7 +854,7 @@ type ComputeEffectiveAccessScopeRequest_Payload struct {
 
 func (x *ComputeEffectiveAccessScopeRequest_Payload) Reset() {
 	*x = ComputeEffectiveAccessScopeRequest_Payload{}
-	mi := &file_api_v1_role_service_proto_msgTypes[14]
+	mi := &file_api_v1_role_service_proto_msgTypes[17]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -725,7 +866,7 @@ func (x *ComputeEffectiveAccessScopeRequest_Payload) String() string {
 func (*ComputeEffectiveAccessScopeRequest_Payload) ProtoMessage() {}
 
 func (x *ComputeEffectiveAccessScopeRequest_Payload) ProtoReflect() protoreflect.Message {
-	mi := &file_api_v1_role_service_proto_msgTypes[14]
+	mi := &file_api_v1_role_service_proto_msgTypes[17]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -772,7 +913,7 @@ var File_api_v1_role_service_proto protoreflect.FileDescriptor
 
 const file_api_v1_role_service_proto_rawDesc = "" +
 	"\n" +
-	"\x19api/v1/role_service.proto\x12\x02v1\x1a\x13api/v1/common.proto\x1a\x12api/v1/empty.proto\x1a\x17api/v1/pagination.proto\x1a\x1cgoogle/api/annotations.proto\x1a\x12storage/role.proto\"Q\n" +
+	"\x19api/v1/role_service.proto\x12\x02v1\x1a\x13api/v1/common.proto\x1a\x12api/v1/empty.proto\x1a\x17api/v1/pagination.proto\x1a\x1cgoogle/api/annotations.proto\x1a\x12storage/role.proto\x1a\x14storage/traits.proto\"Q\n" +
 	"\n" +
 	"Permission\x12\x1a\n" +
 	"\bresource\x18\x01 \x01(\tR\bresource\x12'\n" +
@@ -820,9 +961,15 @@ const file_api_v1_role_service_proto_rawDesc = "" +
 	"+GetNamespaceForClusterAndPermissionsRequest\x12\x1d\n" +
 	"\n" +
 	"cluster_id\x18\x02 \x01(\tR\tclusterId\x12 \n" +
-	"\vpermissions\x18\x03 \x03(\tR\vpermissionsJ\x04\b\x01\x10\x022\xca\x0f\n" +
-	"\vRoleService\x12>\n" +
-	"\bGetRoles\x12\t.v1.Empty\x1a\x14.v1.GetRolesResponse\"\x11\x82\xd3\xe4\x93\x02\v\x12\t/v1/roles\x12B\n" +
+	"\vpermissions\x18\x03 \x03(\tR\vpermissionsJ\x04\b\x01\x10\x02\"C\n" +
+	"\x0fGetRolesRequest\x120\n" +
+	"\aorigins\x18\x01 \x03(\x0e2\x16.storage.Traits.OriginR\aorigins\"M\n" +
+	"\x19ListPermissionSetsRequest\x120\n" +
+	"\aorigins\x18\x01 \x03(\x0e2\x16.storage.Traits.OriginR\aorigins\"Q\n" +
+	"\x1dListSimpleAccessScopesRequest\x120\n" +
+	"\aorigins\x18\x01 \x03(\x0e2\x16.storage.Traits.OriginR\aorigins2\x80\x10\n" +
+	"\vRoleService\x12H\n" +
+	"\bGetRoles\x12\x13.v1.GetRolesRequest\x1a\x14.v1.GetRolesResponse\"\x11\x82\xd3\xe4\x93\x02\v\x12\t/v1/roles\x12B\n" +
 	"\aGetRole\x12\x10.v1.ResourceByID\x1a\r.storage.Role\"\x16\x82\xd3\xe4\x93\x02\x10\x12\x0e/v1/roles/{id}\x12T\n" +
 	"\x10GetMyPermissions\x12\t.v1.Empty\x1a\x1a.v1.GetPermissionsResponse\"\x19\x82\xd3\xe4\x93\x02\x13\x12\x11/v1/mypermissions\x12N\n" +
 	"\n" +
@@ -832,13 +979,13 @@ const file_api_v1_role_service_proto_rawDesc = "" +
 	"\n" +
 	"DeleteRole\x12\x10.v1.ResourceByID\x1a\t.v1.Empty\"\x16\x82\xd3\xe4\x93\x02\x10*\x0e/v1/roles/{id}\x12J\n" +
 	"\fGetResources\x12\t.v1.Empty\x1a\x18.v1.GetResourcesResponse\"\x15\x82\xd3\xe4\x93\x02\x0f\x12\r/v1/resources\x12]\n" +
-	"\x10GetPermissionSet\x12\x10.v1.ResourceByID\x1a\x16.storage.PermissionSet\"\x1f\x82\xd3\xe4\x93\x02\x19\x12\x17/v1/permissionsets/{id}\x12[\n" +
-	"\x12ListPermissionSets\x12\t.v1.Empty\x1a\x1e.v1.ListPermissionSetsResponse\"\x1a\x82\xd3\xe4\x93\x02\x14\x12\x12/v1/permissionsets\x12b\n" +
+	"\x10GetPermissionSet\x12\x10.v1.ResourceByID\x1a\x16.storage.PermissionSet\"\x1f\x82\xd3\xe4\x93\x02\x19\x12\x17/v1/permissionsets/{id}\x12o\n" +
+	"\x12ListPermissionSets\x12\x1d.v1.ListPermissionSetsRequest\x1a\x1e.v1.ListPermissionSetsResponse\"\x1a\x82\xd3\xe4\x93\x02\x14\x12\x12/v1/permissionsets\x12b\n" +
 	"\x11PostPermissionSet\x12\x16.storage.PermissionSet\x1a\x16.storage.PermissionSet\"\x1d\x82\xd3\xe4\x93\x02\x17:\x01*\"\x12/v1/permissionsets\x12Y\n" +
 	"\x10PutPermissionSet\x12\x16.storage.PermissionSet\x1a\t.v1.Empty\"\"\x82\xd3\xe4\x93\x02\x1c:\x01*\x1a\x17/v1/permissionsets/{id}\x12S\n" +
 	"\x13DeletePermissionSet\x12\x10.v1.ResourceByID\x1a\t.v1.Empty\"\x1f\x82\xd3\xe4\x93\x02\x19*\x17/v1/permissionsets/{id}\x12i\n" +
-	"\x14GetSimpleAccessScope\x12\x10.v1.ResourceByID\x1a\x1a.storage.SimpleAccessScope\"#\x82\xd3\xe4\x93\x02\x1d\x12\x1b/v1/simpleaccessscopes/{id}\x12g\n" +
-	"\x16ListSimpleAccessScopes\x12\t.v1.Empty\x1a\".v1.ListSimpleAccessScopesResponse\"\x1e\x82\xd3\xe4\x93\x02\x18\x12\x16/v1/simpleaccessscopes\x12r\n" +
+	"\x14GetSimpleAccessScope\x12\x10.v1.ResourceByID\x1a\x1a.storage.SimpleAccessScope\"#\x82\xd3\xe4\x93\x02\x1d\x12\x1b/v1/simpleaccessscopes/{id}\x12\x7f\n" +
+	"\x16ListSimpleAccessScopes\x12!.v1.ListSimpleAccessScopesRequest\x1a\".v1.ListSimpleAccessScopesResponse\"\x1e\x82\xd3\xe4\x93\x02\x18\x12\x16/v1/simpleaccessscopes\x12r\n" +
 	"\x15PostSimpleAccessScope\x12\x1a.storage.SimpleAccessScope\x1a\x1a.storage.SimpleAccessScope\"!\x82\xd3\xe4\x93\x02\x1b:\x01*\"\x16/v1/simpleaccessscopes\x12e\n" +
 	"\x14PutSimpleAccessScope\x12\x1a.storage.SimpleAccessScope\x1a\t.v1.Empty\"&\x82\xd3\xe4\x93\x02 :\x01*\x1a\x1b/v1/simpleaccessscopes/{id}\x12[\n" +
 	"\x17DeleteSimpleAccessScope\x12\x10.v1.ResourceByID\x1a\t.v1.Empty\"#\x82\xd3\xe4\x93\x02\x1d*\x1b/v1/simpleaccessscopes/{id}\x12\x9b\x01\n" +
@@ -860,7 +1007,7 @@ func file_api_v1_role_service_proto_rawDescGZIP() []byte {
 }
 
 var file_api_v1_role_service_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
-var file_api_v1_role_service_proto_msgTypes = make([]protoimpl.MessageInfo, 15)
+var file_api_v1_role_service_proto_msgTypes = make([]protoimpl.MessageInfo, 18)
 var file_api_v1_role_service_proto_goTypes = []any{
 	(ComputeEffectiveAccessScopeRequest_Detail)(0), // 0: v1.ComputeEffectiveAccessScopeRequest.Detail
 	(*Permission)(nil),                                    // 1: v1.Permission
@@ -876,77 +1023,84 @@ var file_api_v1_role_service_proto_goTypes = []any{
 	(*CreateRoleRequest)(nil),                             // 11: v1.CreateRoleRequest
 	(*GetClustersForPermissionsRequest)(nil),              // 12: v1.GetClustersForPermissionsRequest
 	(*GetNamespaceForClusterAndPermissionsRequest)(nil),   // 13: v1.GetNamespaceForClusterAndPermissionsRequest
-	nil, // 14: v1.GetPermissionsResponse.ResourceToAccessEntry
-	(*ComputeEffectiveAccessScopeRequest_Payload)(nil), // 15: v1.ComputeEffectiveAccessScopeRequest.Payload
-	(storage.Access)(0),                     // 16: storage.Access
-	(*storage.Role)(nil),                    // 17: storage.Role
-	(*storage.PermissionSet)(nil),           // 18: storage.PermissionSet
-	(*storage.SimpleAccessScope)(nil),       // 19: storage.SimpleAccessScope
-	(*Pagination)(nil),                      // 20: v1.Pagination
-	(*storage.SimpleAccessScope_Rules)(nil), // 21: storage.SimpleAccessScope.Rules
-	(*Empty)(nil),                           // 22: v1.Empty
-	(*ResourceByID)(nil),                    // 23: v1.ResourceByID
-	(*storage.EffectiveAccessScope)(nil),    // 24: storage.EffectiveAccessScope
+	(*GetRolesRequest)(nil),                               // 14: v1.GetRolesRequest
+	(*ListPermissionSetsRequest)(nil),                     // 15: v1.ListPermissionSetsRequest
+	(*ListSimpleAccessScopesRequest)(nil),                 // 16: v1.ListSimpleAccessScopesRequest
+	nil,                                                   // 17: v1.GetPermissionsResponse.ResourceToAccessEntry
+	(*ComputeEffectiveAccessScopeRequest_Payload)(nil),    // 18: v1.ComputeEffectiveAccessScopeRequest.Payload
+	(storage.Access)(0),                                   // 19: storage.Access
+	(*storage.Role)(nil),                                  // 20: storage.Role
+	(*storage.PermissionSet)(nil),                         // 21: storage.PermissionSet
+	(*storage.SimpleAccessScope)(nil),                     // 22: storage.SimpleAccessScope
+	(*Pagination)(nil),                                    // 23: v1.Pagination
+	(storage.Traits_Origin)(0),                            // 24: storage.Traits.Origin
+	(*storage.SimpleAccessScope_Rules)(nil),               // 25: storage.SimpleAccessScope.Rules
+	(*ResourceByID)(nil),                                  // 26: v1.ResourceByID
+	(*Empty)(nil),                                         // 27: v1.Empty
+	(*storage.EffectiveAccessScope)(nil),                  // 28: storage.EffectiveAccessScope
 }
 var file_api_v1_role_service_proto_depIdxs = []int32{
-	16, // 0: v1.Permission.access:type_name -> storage.Access
-	17, // 1: v1.GetRolesResponse.roles:type_name -> storage.Role
-	14, // 2: v1.GetPermissionsResponse.resource_to_access:type_name -> v1.GetPermissionsResponse.ResourceToAccessEntry
-	18, // 3: v1.ListPermissionSetsResponse.permission_sets:type_name -> storage.PermissionSet
-	19, // 4: v1.ListSimpleAccessScopesResponse.access_scopes:type_name -> storage.SimpleAccessScope
+	19, // 0: v1.Permission.access:type_name -> storage.Access
+	20, // 1: v1.GetRolesResponse.roles:type_name -> storage.Role
+	17, // 2: v1.GetPermissionsResponse.resource_to_access:type_name -> v1.GetPermissionsResponse.ResourceToAccessEntry
+	21, // 3: v1.ListPermissionSetsResponse.permission_sets:type_name -> storage.PermissionSet
+	22, // 4: v1.ListSimpleAccessScopesResponse.access_scopes:type_name -> storage.SimpleAccessScope
 	7,  // 5: v1.GetClustersForPermissionsResponse.clusters:type_name -> v1.ScopeObject
 	7,  // 6: v1.GetNamespacesForClusterAndPermissionsResponse.namespaces:type_name -> v1.ScopeObject
 	0,  // 7: v1.ComputeEffectiveAccessScopeRequest.detail:type_name -> v1.ComputeEffectiveAccessScopeRequest.Detail
-	15, // 8: v1.ComputeEffectiveAccessScopeRequest.access_scope:type_name -> v1.ComputeEffectiveAccessScopeRequest.Payload
-	17, // 9: v1.CreateRoleRequest.role:type_name -> storage.Role
-	20, // 10: v1.GetClustersForPermissionsRequest.pagination:type_name -> v1.Pagination
-	16, // 11: v1.GetPermissionsResponse.ResourceToAccessEntry.value:type_name -> storage.Access
-	21, // 12: v1.ComputeEffectiveAccessScopeRequest.Payload.simple_rules:type_name -> storage.SimpleAccessScope.Rules
-	22, // 13: v1.RoleService.GetRoles:input_type -> v1.Empty
-	23, // 14: v1.RoleService.GetRole:input_type -> v1.ResourceByID
-	22, // 15: v1.RoleService.GetMyPermissions:input_type -> v1.Empty
-	11, // 16: v1.RoleService.CreateRole:input_type -> v1.CreateRoleRequest
-	17, // 17: v1.RoleService.UpdateRole:input_type -> storage.Role
-	23, // 18: v1.RoleService.DeleteRole:input_type -> v1.ResourceByID
-	22, // 19: v1.RoleService.GetResources:input_type -> v1.Empty
-	23, // 20: v1.RoleService.GetPermissionSet:input_type -> v1.ResourceByID
-	22, // 21: v1.RoleService.ListPermissionSets:input_type -> v1.Empty
-	18, // 22: v1.RoleService.PostPermissionSet:input_type -> storage.PermissionSet
-	18, // 23: v1.RoleService.PutPermissionSet:input_type -> storage.PermissionSet
-	23, // 24: v1.RoleService.DeletePermissionSet:input_type -> v1.ResourceByID
-	23, // 25: v1.RoleService.GetSimpleAccessScope:input_type -> v1.ResourceByID
-	22, // 26: v1.RoleService.ListSimpleAccessScopes:input_type -> v1.Empty
-	19, // 27: v1.RoleService.PostSimpleAccessScope:input_type -> storage.SimpleAccessScope
-	19, // 28: v1.RoleService.PutSimpleAccessScope:input_type -> storage.SimpleAccessScope
-	23, // 29: v1.RoleService.DeleteSimpleAccessScope:input_type -> v1.ResourceByID
-	10, // 30: v1.RoleService.ComputeEffectiveAccessScope:input_type -> v1.ComputeEffectiveAccessScopeRequest
-	12, // 31: v1.RoleService.GetClustersForPermissions:input_type -> v1.GetClustersForPermissionsRequest
-	13, // 32: v1.RoleService.GetNamespacesForClusterAndPermissions:input_type -> v1.GetNamespaceForClusterAndPermissionsRequest
-	2,  // 33: v1.RoleService.GetRoles:output_type -> v1.GetRolesResponse
-	17, // 34: v1.RoleService.GetRole:output_type -> storage.Role
-	3,  // 35: v1.RoleService.GetMyPermissions:output_type -> v1.GetPermissionsResponse
-	22, // 36: v1.RoleService.CreateRole:output_type -> v1.Empty
-	22, // 37: v1.RoleService.UpdateRole:output_type -> v1.Empty
-	22, // 38: v1.RoleService.DeleteRole:output_type -> v1.Empty
-	4,  // 39: v1.RoleService.GetResources:output_type -> v1.GetResourcesResponse
-	18, // 40: v1.RoleService.GetPermissionSet:output_type -> storage.PermissionSet
-	5,  // 41: v1.RoleService.ListPermissionSets:output_type -> v1.ListPermissionSetsResponse
-	18, // 42: v1.RoleService.PostPermissionSet:output_type -> storage.PermissionSet
-	22, // 43: v1.RoleService.PutPermissionSet:output_type -> v1.Empty
-	22, // 44: v1.RoleService.DeletePermissionSet:output_type -> v1.Empty
-	19, // 45: v1.RoleService.GetSimpleAccessScope:output_type -> storage.SimpleAccessScope
-	6,  // 46: v1.RoleService.ListSimpleAccessScopes:output_type -> v1.ListSimpleAccessScopesResponse
-	19, // 47: v1.RoleService.PostSimpleAccessScope:output_type -> storage.SimpleAccessScope
-	22, // 48: v1.RoleService.PutSimpleAccessScope:output_type -> v1.Empty
-	22, // 49: v1.RoleService.DeleteSimpleAccessScope:output_type -> v1.Empty
-	24, // 50: v1.RoleService.ComputeEffectiveAccessScope:output_type -> storage.EffectiveAccessScope
-	8,  // 51: v1.RoleService.GetClustersForPermissions:output_type -> v1.GetClustersForPermissionsResponse
-	9,  // 52: v1.RoleService.GetNamespacesForClusterAndPermissions:output_type -> v1.GetNamespacesForClusterAndPermissionsResponse
-	33, // [33:53] is the sub-list for method output_type
-	13, // [13:33] is the sub-list for method input_type
-	13, // [13:13] is the sub-list for extension type_name
-	13, // [13:13] is the sub-list for extension extendee
-	0,  // [0:13] is the sub-list for field type_name
+	18, // 8: v1.ComputeEffectiveAccessScopeRequest.access_scope:type_name -> v1.ComputeEffectiveAccessScopeRequest.Payload
+	20, // 9: v1.CreateRoleRequest.role:type_name -> storage.Role
+	23, // 10: v1.GetClustersForPermissionsRequest.pagination:type_name -> v1.Pagination
+	24, // 11: v1.GetRolesRequest.origins:type_name -> storage.Traits.Origin
+	24, // 12: v1.ListPermissionSetsRequest.origins:type_name -> storage.Traits.Origin
+	24, // 13: v1.ListSimpleAccessScopesRequest.origins:type_name -> storage.Traits.Origin
+	19, // 14: v1.GetPermissionsResponse.ResourceToAccessEntry.value:type_name -> storage.Access
+	25, // 15: v1.ComputeEffectiveAccessScopeRequest.Payload.simple_rules:type_name -> storage.SimpleAccessScope.Rules
+	14, // 16: v1.RoleService.GetRoles:input_type -> v1.GetRolesRequest
+	26, // 17: v1.RoleService.GetRole:input_type -> v1.ResourceByID
+	27, // 18: v1.RoleService.GetMyPermissions:input_type -> v1.Empty
+	11, // 19: v1.RoleService.CreateRole:input_type -> v1.CreateRoleRequest
+	20, // 20: v1.RoleService.UpdateRole:input_type -> storage.Role
+	26, // 21: v1.RoleService.DeleteRole:input_type -> v1.ResourceByID
+	27, // 22: v1.RoleService.GetResources:input_type -> v1.Empty
+	26, // 23: v1.RoleService.GetPermissionSet:input_type -> v1.ResourceByID
+	15, // 24: v1.RoleService.ListPermissionSets:input_type -> v1.ListPermissionSetsRequest
+	21, // 25: v1.RoleService.PostPermissionSet:input_type -> storage.PermissionSet
+	21, // 26: v1.RoleService.PutPermissionSet:input_type -> storage.PermissionSet
+	26, // 27: v1.RoleService.DeletePermissionSet:input_type -> v1.ResourceByID
+	26, // 28: v1.RoleService.GetSimpleAccessScope:input_type -> v1.ResourceByID
+	16, // 29: v1.RoleService.ListSimpleAccessScopes:input_type -> v1.ListSimpleAccessScopesRequest
+	22, // 30: v1.RoleService.PostSimpleAccessScope:input_type -> storage.SimpleAccessScope
+	22, // 31: v1.RoleService.PutSimpleAccessScope:input_type -> storage.SimpleAccessScope
+	26, // 32: v1.RoleService.DeleteSimpleAccessScope:input_type -> v1.ResourceByID
+	10, // 33: v1.RoleService.ComputeEffectiveAccessScope:input_type -> v1.ComputeEffectiveAccessScopeRequest
+	12, // 34: v1.RoleService.GetClustersForPermissions:input_type -> v1.GetClustersForPermissionsRequest
+	13, // 35: v1.RoleService.GetNamespacesForClusterAndPermissions:input_type -> v1.GetNamespaceForClusterAndPermissionsRequest
+	2,  // 36: v1.RoleService.GetRoles:output_type -> v1.GetRolesResponse
+	20, // 37: v1.RoleService.GetRole:output_type -> storage.Role
+	3,  // 38: v1.RoleService.GetMyPermissions:output_type -> v1.GetPermissionsResponse
+	27, // 39: v1.RoleService.CreateRole:output_type -> v1.Empty
+	27, // 40: v1.RoleService.UpdateRole:output_type -> v1.Empty
+	27, // 41: v1.RoleService.DeleteRole:output_type -> v1.Empty
+	4,  // 42: v1.RoleService.GetResources:output_type -> v1.GetResourcesResponse
+	21, // 43: v1.RoleService.GetPermissionSet:output_type -> storage.PermissionSet
+	5,  // 44: v1.RoleService.ListPermissionSets:output_type -> v1.ListPermissionSetsResponse
+	21, // 45: v1.RoleService.PostPermissionSet:output_type -> storage.PermissionSet
+	27, // 46: v1.RoleService.PutPermissionSet:output_type -> v1.Empty
+	27, // 47: v1.RoleService.DeletePermissionSet:output_type -> v1.Empty
+	22, // 48: v1.RoleService.GetSimpleAccessScope:output_type -> storage.SimpleAccessScope
+	6,  // 49: v1.RoleService.ListSimpleAccessScopes:output_type -> v1.ListSimpleAccessScopesResponse
+	22, // 50: v1.RoleService.PostSimpleAccessScope:output_type -> storage.SimpleAccessScope
+	27, // 51: v1.RoleService.PutSimpleAccessScope:output_type -> v1.Empty
+	27, // 52: v1.RoleService.DeleteSimpleAccessScope:output_type -> v1.Empty
+	28, // 53: v1.RoleService.ComputeEffectiveAccessScope:output_type -> storage.EffectiveAccessScope
+	8,  // 54: v1.RoleService.GetClustersForPermissions:output_type -> v1.GetClustersForPermissionsResponse
+	9,  // 55: v1.RoleService.GetNamespacesForClusterAndPermissions:output_type -> v1.GetNamespacesForClusterAndPermissionsResponse
+	36, // [36:56] is the sub-list for method output_type
+	16, // [16:36] is the sub-list for method input_type
+	16, // [16:16] is the sub-list for extension type_name
+	16, // [16:16] is the sub-list for extension extendee
+	0,  // [0:16] is the sub-list for field type_name
 }
 
 func init() { file_api_v1_role_service_proto_init() }
@@ -957,7 +1111,7 @@ func file_api_v1_role_service_proto_init() {
 	file_api_v1_common_proto_init()
 	file_api_v1_empty_proto_init()
 	file_api_v1_pagination_proto_init()
-	file_api_v1_role_service_proto_msgTypes[14].OneofWrappers = []any{
+	file_api_v1_role_service_proto_msgTypes[17].OneofWrappers = []any{
 		(*ComputeEffectiveAccessScopeRequest_Payload_SimpleRules)(nil),
 	}
 	type x struct{}
@@ -966,7 +1120,7 @@ func file_api_v1_role_service_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_api_v1_role_service_proto_rawDesc), len(file_api_v1_role_service_proto_rawDesc)),
 			NumEnums:      1,
-			NumMessages:   15,
+			NumMessages:   18,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

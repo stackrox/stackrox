@@ -7,6 +7,7 @@ import "api/v1/empty.proto";
 import "api/v1/pagination.proto";
 import weak "google/api/annotations.proto";
 import "storage/role.proto";
+import "storage/traits.proto";
 
 option go_package = "./api/v1;v1";
 option java_package = "io.stackrox.proto.api.v1";
@@ -94,8 +95,29 @@ message GetNamespaceForClusterAndPermissionsRequest {
   repeated string permissions = 3;
 }
 
+// GetRolesRequest is wire-compatible with Empty.
+// If origins is empty, all roles are returned (default behavior).
+message GetRolesRequest {
+  // Filter by origin. If empty, all roles are returned.
+  repeated storage.Traits.Origin origins = 1;
+}
+
+// ListPermissionSetsRequest is wire-compatible with Empty.
+// If origins is empty, all permission sets are returned (default behavior).
+message ListPermissionSetsRequest {
+  // Filter by origin. If empty, all permission sets are returned.
+  repeated storage.Traits.Origin origins = 1;
+}
+
+// ListSimpleAccessScopesRequest is wire-compatible with Empty.
+// If origins is empty, all access scopes are returned (default behavior).
+message ListSimpleAccessScopesRequest {
+  // Filter by origin. If empty, all access scopes are returned.
+  repeated storage.Traits.Origin origins = 1;
+}
+
 service RoleService {
-  rpc GetRoles(Empty) returns (GetRolesResponse) {
+  rpc GetRoles(GetRolesRequest) returns (GetRolesResponse) {
     option (google.api.http) = {get: "/v1/roles"};
   }
 
@@ -137,7 +159,7 @@ service RoleService {
     option (google.api.http) = {get: "/v1/permissionsets/{id}"};
   }
 
-  rpc ListPermissionSets(Empty) returns (ListPermissionSetsResponse) {
+  rpc ListPermissionSets(ListPermissionSetsRequest) returns (ListPermissionSetsResponse) {
     option (google.api.http) = {get: "/v1/permissionsets"};
   }
 
@@ -170,7 +192,7 @@ service RoleService {
     option (google.api.http) = {get: "/v1/simpleaccessscopes/{id}"};
   }
 
-  rpc ListSimpleAccessScopes(Empty) returns (ListSimpleAccessScopesResponse) {
+  rpc ListSimpleAccessScopes(ListSimpleAccessScopesRequest) returns (ListSimpleAccessScopesResponse) {
     option (google.api.http) = {get: "/v1/simpleaccessscopes"};
   }
 

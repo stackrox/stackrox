@@ -46,7 +46,7 @@ const (
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type RoleServiceClient interface {
-	GetRoles(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*GetRolesResponse, error)
+	GetRoles(ctx context.Context, in *GetRolesRequest, opts ...grpc.CallOption) (*GetRolesResponse, error)
 	GetRole(ctx context.Context, in *ResourceByID, opts ...grpc.CallOption) (*storage.Role, error)
 	GetMyPermissions(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*GetPermissionsResponse, error)
 	CreateRole(ctx context.Context, in *CreateRoleRequest, opts ...grpc.CallOption) (*Empty, error)
@@ -54,7 +54,7 @@ type RoleServiceClient interface {
 	DeleteRole(ctx context.Context, in *ResourceByID, opts ...grpc.CallOption) (*Empty, error)
 	GetResources(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*GetResourcesResponse, error)
 	GetPermissionSet(ctx context.Context, in *ResourceByID, opts ...grpc.CallOption) (*storage.PermissionSet, error)
-	ListPermissionSets(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*ListPermissionSetsResponse, error)
+	ListPermissionSets(ctx context.Context, in *ListPermissionSetsRequest, opts ...grpc.CallOption) (*ListPermissionSetsResponse, error)
 	// PostPermissionSet
 	//
 	// PermissionSet.id is disallowed in request and set in response.
@@ -62,7 +62,7 @@ type RoleServiceClient interface {
 	PutPermissionSet(ctx context.Context, in *storage.PermissionSet, opts ...grpc.CallOption) (*Empty, error)
 	DeletePermissionSet(ctx context.Context, in *ResourceByID, opts ...grpc.CallOption) (*Empty, error)
 	GetSimpleAccessScope(ctx context.Context, in *ResourceByID, opts ...grpc.CallOption) (*storage.SimpleAccessScope, error)
-	ListSimpleAccessScopes(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*ListSimpleAccessScopesResponse, error)
+	ListSimpleAccessScopes(ctx context.Context, in *ListSimpleAccessScopesRequest, opts ...grpc.CallOption) (*ListSimpleAccessScopesResponse, error)
 	// PostSimpleAccessScope
 	//
 	// SimpleAccessScope.id is disallowed in request and set in response.
@@ -133,7 +133,7 @@ func NewRoleServiceClient(cc grpc.ClientConnInterface) RoleServiceClient {
 	return &roleServiceClient{cc}
 }
 
-func (c *roleServiceClient) GetRoles(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*GetRolesResponse, error) {
+func (c *roleServiceClient) GetRoles(ctx context.Context, in *GetRolesRequest, opts ...grpc.CallOption) (*GetRolesResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(GetRolesResponse)
 	err := c.cc.Invoke(ctx, RoleService_GetRoles_FullMethodName, in, out, cOpts...)
@@ -213,7 +213,7 @@ func (c *roleServiceClient) GetPermissionSet(ctx context.Context, in *ResourceBy
 	return out, nil
 }
 
-func (c *roleServiceClient) ListPermissionSets(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*ListPermissionSetsResponse, error) {
+func (c *roleServiceClient) ListPermissionSets(ctx context.Context, in *ListPermissionSetsRequest, opts ...grpc.CallOption) (*ListPermissionSetsResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(ListPermissionSetsResponse)
 	err := c.cc.Invoke(ctx, RoleService_ListPermissionSets_FullMethodName, in, out, cOpts...)
@@ -263,7 +263,7 @@ func (c *roleServiceClient) GetSimpleAccessScope(ctx context.Context, in *Resour
 	return out, nil
 }
 
-func (c *roleServiceClient) ListSimpleAccessScopes(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*ListSimpleAccessScopesResponse, error) {
+func (c *roleServiceClient) ListSimpleAccessScopes(ctx context.Context, in *ListSimpleAccessScopesRequest, opts ...grpc.CallOption) (*ListSimpleAccessScopesResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(ListSimpleAccessScopesResponse)
 	err := c.cc.Invoke(ctx, RoleService_ListSimpleAccessScopes_FullMethodName, in, out, cOpts...)
@@ -337,7 +337,7 @@ func (c *roleServiceClient) GetNamespacesForClusterAndPermissions(ctx context.Co
 // All implementations should embed UnimplementedRoleServiceServer
 // for forward compatibility.
 type RoleServiceServer interface {
-	GetRoles(context.Context, *Empty) (*GetRolesResponse, error)
+	GetRoles(context.Context, *GetRolesRequest) (*GetRolesResponse, error)
 	GetRole(context.Context, *ResourceByID) (*storage.Role, error)
 	GetMyPermissions(context.Context, *Empty) (*GetPermissionsResponse, error)
 	CreateRole(context.Context, *CreateRoleRequest) (*Empty, error)
@@ -345,7 +345,7 @@ type RoleServiceServer interface {
 	DeleteRole(context.Context, *ResourceByID) (*Empty, error)
 	GetResources(context.Context, *Empty) (*GetResourcesResponse, error)
 	GetPermissionSet(context.Context, *ResourceByID) (*storage.PermissionSet, error)
-	ListPermissionSets(context.Context, *Empty) (*ListPermissionSetsResponse, error)
+	ListPermissionSets(context.Context, *ListPermissionSetsRequest) (*ListPermissionSetsResponse, error)
 	// PostPermissionSet
 	//
 	// PermissionSet.id is disallowed in request and set in response.
@@ -353,7 +353,7 @@ type RoleServiceServer interface {
 	PutPermissionSet(context.Context, *storage.PermissionSet) (*Empty, error)
 	DeletePermissionSet(context.Context, *ResourceByID) (*Empty, error)
 	GetSimpleAccessScope(context.Context, *ResourceByID) (*storage.SimpleAccessScope, error)
-	ListSimpleAccessScopes(context.Context, *Empty) (*ListSimpleAccessScopesResponse, error)
+	ListSimpleAccessScopes(context.Context, *ListSimpleAccessScopesRequest) (*ListSimpleAccessScopesResponse, error)
 	// PostSimpleAccessScope
 	//
 	// SimpleAccessScope.id is disallowed in request and set in response.
@@ -423,7 +423,7 @@ type RoleServiceServer interface {
 // pointer dereference when methods are called.
 type UnimplementedRoleServiceServer struct{}
 
-func (UnimplementedRoleServiceServer) GetRoles(context.Context, *Empty) (*GetRolesResponse, error) {
+func (UnimplementedRoleServiceServer) GetRoles(context.Context, *GetRolesRequest) (*GetRolesResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method GetRoles not implemented")
 }
 func (UnimplementedRoleServiceServer) GetRole(context.Context, *ResourceByID) (*storage.Role, error) {
@@ -447,7 +447,7 @@ func (UnimplementedRoleServiceServer) GetResources(context.Context, *Empty) (*Ge
 func (UnimplementedRoleServiceServer) GetPermissionSet(context.Context, *ResourceByID) (*storage.PermissionSet, error) {
 	return nil, status.Error(codes.Unimplemented, "method GetPermissionSet not implemented")
 }
-func (UnimplementedRoleServiceServer) ListPermissionSets(context.Context, *Empty) (*ListPermissionSetsResponse, error) {
+func (UnimplementedRoleServiceServer) ListPermissionSets(context.Context, *ListPermissionSetsRequest) (*ListPermissionSetsResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method ListPermissionSets not implemented")
 }
 func (UnimplementedRoleServiceServer) PostPermissionSet(context.Context, *storage.PermissionSet) (*storage.PermissionSet, error) {
@@ -462,7 +462,7 @@ func (UnimplementedRoleServiceServer) DeletePermissionSet(context.Context, *Reso
 func (UnimplementedRoleServiceServer) GetSimpleAccessScope(context.Context, *ResourceByID) (*storage.SimpleAccessScope, error) {
 	return nil, status.Error(codes.Unimplemented, "method GetSimpleAccessScope not implemented")
 }
-func (UnimplementedRoleServiceServer) ListSimpleAccessScopes(context.Context, *Empty) (*ListSimpleAccessScopesResponse, error) {
+func (UnimplementedRoleServiceServer) ListSimpleAccessScopes(context.Context, *ListSimpleAccessScopesRequest) (*ListSimpleAccessScopesResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method ListSimpleAccessScopes not implemented")
 }
 func (UnimplementedRoleServiceServer) PostSimpleAccessScope(context.Context, *storage.SimpleAccessScope) (*storage.SimpleAccessScope, error) {
@@ -504,7 +504,7 @@ func RegisterRoleServiceServer(s grpc.ServiceRegistrar, srv RoleServiceServer) {
 }
 
 func _RoleService_GetRoles_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(Empty)
+	in := new(GetRolesRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -516,7 +516,7 @@ func _RoleService_GetRoles_Handler(srv interface{}, ctx context.Context, dec fun
 		FullMethod: RoleService_GetRoles_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(RoleServiceServer).GetRoles(ctx, req.(*Empty))
+		return srv.(RoleServiceServer).GetRoles(ctx, req.(*GetRolesRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -648,7 +648,7 @@ func _RoleService_GetPermissionSet_Handler(srv interface{}, ctx context.Context,
 }
 
 func _RoleService_ListPermissionSets_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(Empty)
+	in := new(ListPermissionSetsRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -660,7 +660,7 @@ func _RoleService_ListPermissionSets_Handler(srv interface{}, ctx context.Contex
 		FullMethod: RoleService_ListPermissionSets_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(RoleServiceServer).ListPermissionSets(ctx, req.(*Empty))
+		return srv.(RoleServiceServer).ListPermissionSets(ctx, req.(*ListPermissionSetsRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -738,7 +738,7 @@ func _RoleService_GetSimpleAccessScope_Handler(srv interface{}, ctx context.Cont
 }
 
 func _RoleService_ListSimpleAccessScopes_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(Empty)
+	in := new(ListSimpleAccessScopesRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -750,7 +750,7 @@ func _RoleService_ListSimpleAccessScopes_Handler(srv interface{}, ctx context.Co
 		FullMethod: RoleService_ListSimpleAccessScopes_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(RoleServiceServer).ListSimpleAccessScopes(ctx, req.(*Empty))
+		return srv.(RoleServiceServer).ListSimpleAccessScopes(ctx, req.(*ListSimpleAccessScopesRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }

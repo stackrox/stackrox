@@ -5,11 +5,10 @@ import (
 	"math"
 
 	"github.com/stackrox/rox/central/cve/image/info/datastore/store"
-	"github.com/stackrox/rox/pkg/protocompat"
-	"github.com/stackrox/rox/pkg/sliceutils"
-
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/protocompat"
+	"github.com/stackrox/rox/pkg/sliceutils"
 )
 
 type datastoreImpl struct {
