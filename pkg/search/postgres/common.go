@@ -557,7 +557,7 @@ func standardizeQueryAndPopulatePath(ctx context.Context, q *v1.Query, schema *w
 	// If selects are provided in a SEARCH query, process them to enable single-pass SearchResult construction (ROX-29943)
 	if len(q.GetSelects()) > 0 && queryType == SEARCH {
 		// No type info available in this path (not using generic API), so arrayFields is nil
-		if err := populateSelect(parsedQuery, schema, q.GetSelects(), dbFields, nowForQuery, nil); err != nil {
+		if err := populateSelect(parsedQuery, schema, q, dbFields, nowForQuery, nil); err != nil {
 			return nil, errors.Wrapf(err, "failed to parse select portion of query -- %s --", q.String())
 		}
 	}

@@ -183,6 +183,10 @@ func isChildSchema(childSchema *walker.Schema, parentSchema *walker.Schema) bool
 func getJoinsAndFields(src *walker.Schema, q *v1.Query, arrayFields map[string]bool) ([]Join, map[string]searchFieldMetadata) {
 	unreachedFields, nullableFields := collectFields(q)
 
+	// Only enable automatic child table LEFT JOIN if there's NO GROUP BY
+	// When there's a GROUP BY, the existing framework uses INNER JOIN with jsonb_agg
+	hasGroupBy := len(q.GetGroupBy().GetFields()) > 0
+
 	joinTreeRoot := &joinTreeNode{
 		currNode: src,
 	}
@@ -210,7 +214,8 @@ func getJoinsAndFields(src *walker.Schema, q *v1.Query, arrayFields map[string]b
 					}
 					// Check if this is a child table field that should be aggregated
 					// If so, use LEFT JOIN to include parent rows with no child rows
-					if arrayFields != nil && isChildSchema(currElem.schema, src) {
+					// Only auto-aggregate when there's NO GROUP BY (existing GROUP BY logic uses INNER JOIN)
+					if arrayFields != nil && isChildSchema(currElem.schema, src) && !hasGroupBy {
 						alias := strings.Join(strings.Fields(lowerCaseName), "_")
 						if arrayFields[alias] {
 							joinType = Left

@@ -150,7 +150,7 @@ func standardizeSelectQueryAndPopulatePath(ctx context.Context, q *v1.Query, sch
 		Joins:     joins,
 	}
 
-	if err = populateSelect(parsedQuery, schema, q.GetSelects(), dbFields, nowForQuery, arrayFields); err != nil {
+	if err = populateSelect(parsedQuery, schema, q, dbFields, nowForQuery, arrayFields); err != nil {
 		return nil, errors.Wrapf(err, "failed to parse select portion of query -- %s --", q.String())
 	}
 
@@ -208,10 +208,15 @@ func retryableRunSelectRequestForSchemaFn[T any](ctx context.Context, db postgre
 	return rows.Err()
 }
 
-func populateSelect(querySoFar *query, schema *walker.Schema, querySelects []*v1.QuerySelect, queryFields map[string]searchFieldMetadata, nowForQuery time.Time, arrayFields map[string]bool) error {
+func populateSelect(querySoFar *query, schema *walker.Schema, q *v1.Query, queryFields map[string]searchFieldMetadata, nowForQuery time.Time, arrayFields map[string]bool) error {
+	querySelects := q.GetSelects()
 	if len(querySelects) == 0 {
 		return errors.New("select portion of the query cannot be empty")
 	}
+
+	// Only enable automatic child table aggregation if there's NO GROUP BY
+	// When there's a GROUP BY, the existing framework logic handles child table aggregation via jsonb_agg
+	hasGroupBy := len(q.GetGroupBy().GetFields()) > 0
 
 	for idx, qs := range querySelects {
 		field := qs.GetField()
@@ -233,8 +238,9 @@ func populateSelect(querySoFar *query, schema *walker.Schema, querySelects []*v1
 
 		// Check if destination type expects array for this field
 		// Match against SQL alias (same format as db tag: lowercase with underscores)
+		// Only auto-aggregate when there's NO GROUP BY (existing GROUP BY logic handles it via jsonb_agg)
 		shouldAggregate := false
-		if arrayFields != nil && isChildField {
+		if arrayFields != nil && isChildField && !hasGroupBy {
 			// Compute the SQL alias that will be used (matches db tag format)
 			alias := strings.Join(strings.Fields(strings.ToLower(field.GetName())), "_")
 			shouldAggregate = arrayFields[alias]
