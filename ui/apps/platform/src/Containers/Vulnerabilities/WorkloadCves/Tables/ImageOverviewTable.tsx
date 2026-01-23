@@ -19,6 +19,7 @@ import { generateVisibilityForColumns, getHiddenColumnCount } from 'hooks/useMan
 import type { ManagedColumns } from 'hooks/useManagedColumns';
 import useIsScannerV4Enabled from 'hooks/useIsScannerV4Enabled';
 import usePermissions from 'hooks/usePermissions';
+import type { GenerateSbomImageParams } from 'services/ImageSbomService';
 import GenerateSbomModal, {
     getSbomGenerationStatusMessage,
 } from '../../components/GenerateSbomModal';
@@ -233,7 +234,7 @@ function ImageOverviewTable({
     const hiddenColumnCount = getHiddenColumnCount(columnVisibilityState);
 
     const colSpan = Object.values(defaultColumns).length - hiddenColumnCount;
-    const [sbomTargetImage, setSbomTargetImage] = useState<{ name: string; digest?: string }>();
+    const [sbomTargetImage, setSbomTargetImage] = useState<GenerateSbomImageParams>();
 
     return (
         <Table borders={false} variant="compact">

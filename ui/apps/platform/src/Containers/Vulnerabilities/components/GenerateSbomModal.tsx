@@ -16,6 +16,7 @@ import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 import useAnalytics, { IMAGE_SBOM_GENERATED } from 'hooks/useAnalytics';
 import useRestMutation from 'hooks/useRestMutation';
 import { generateAndSaveSbom } from 'services/ImageSbomService';
+import type { GenerateSbomImageParams } from 'services/ImageSbomService';
 
 export function getSbomGenerationStatusMessage({
     isScannerV4Enabled,
@@ -37,7 +38,7 @@ export function getSbomGenerationStatusMessage({
 
 export type GenerateSbomModalProps = {
     onClose: () => void;
-    image: { name: string; digest?: string };
+    image: GenerateSbomImageParams;
 };
 
 function GenerateSbomModal(props: GenerateSbomModalProps) {
@@ -89,11 +90,14 @@ function GenerateSbomModal(props: GenerateSbomModalProps) {
                 <DescriptionList isHorizontal>
                     <DescriptionListGroup>
                         <DescriptionListTerm>Selected image:</DescriptionListTerm>
-                        <DescriptionListDescription>
-                            {image.name}
-                            {image.digest ? `@${image.digest}` : ''}
-                        </DescriptionListDescription>
+                        <DescriptionListDescription>{image.name}</DescriptionListDescription>
                     </DescriptionListGroup>
+                    {image.digest && (
+                        <DescriptionListGroup>
+                            <DescriptionListTerm>Image digest:</DescriptionListTerm>
+                            <DescriptionListDescription>{image.digest}</DescriptionListDescription>
+                        </DescriptionListGroup>
+                    )}
                 </DescriptionList>
                 {isSuccess && (
                     <Alert

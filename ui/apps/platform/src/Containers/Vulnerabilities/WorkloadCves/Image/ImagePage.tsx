@@ -28,11 +28,13 @@ import PageTitle from 'Components/PageTitle';
 import useURLStringUnion from 'hooks/useURLStringUnion';
 import EmptyStateTemplate from 'Components/EmptyStateTemplate';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
+import useFeatureFlags from 'hooks/useFeatureFlags';
 import useIsScannerV4Enabled from 'hooks/useIsScannerV4Enabled';
 import usePermissions from 'hooks/usePermissions';
 import useURLPagination from 'hooks/useURLPagination';
 import useURLSearch from 'hooks/useURLSearch';
 import type { ColumnConfigOverrides } from 'hooks/useManagedColumns';
+import type { GenerateSbomImageParams } from 'services/ImageSbomService';
 import type { VulnerabilityState } from 'types/cve.proto';
 
 import HeaderLoadingSkeleton from '../../components/HeaderLoadingSkeleton';
@@ -57,7 +59,6 @@ import useWorkloadCveViewContext from '../hooks/useWorkloadCveViewContext';
 import type { defaultColumns as deploymentResourcesDefaultColumns } from './DeploymentResourceTable';
 import CreateReportDropdown from '../components/CreateReportDropdown';
 import CreateViewBasedReportModal from '../components/CreateViewBasedReportModal';
-import useFeatureFlags from 'hooks/useFeatureFlags';
 
 const imageDetailsQuery = gql`
     ${imageDetailsFragment}
@@ -157,7 +158,7 @@ function ImagePage({
     const hasWriteAccessForImage = hasReadWriteAccess('Image'); // SBOM Generation mutates image scan state.
     const hasWorkflowAdminAccess = hasReadAccess('WorkflowAdministration');
     const isScannerV4Enabled = useIsScannerV4Enabled();
-    const [sbomTargetImage, setSbomTargetImage] = useState<{ name: string; digest?: string }>();
+    const [sbomTargetImage, setSbomTargetImage] = useState<GenerateSbomImageParams>();
 
     // Report-specific functionality
     const isViewBasedReportsEnabled =
