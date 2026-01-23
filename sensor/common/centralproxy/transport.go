@@ -26,7 +26,7 @@ const (
 
 	// tokenTTL is the requested token validity duration.
 	// Slightly longer than cache TTL to ensure tokens remain valid during cache lifetime.
-	tokenTTL = 4 * time.Minute
+	tokenTTL = tokenCacheTTL + 1 * time.Minute
 
 	// Required read permissions for proxy requests.
 	permissionDeployment = "Deployment"
