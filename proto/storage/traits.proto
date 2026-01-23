@@ -2,6 +2,8 @@ syntax = "proto3";
 
 package storage;
 
+import "google/protobuf/timestamp.proto";
+
 option go_package = "./storage;storage";
 option java_package = "io.stackrox.proto.storage";
 
@@ -55,4 +57,5 @@ message Traits {
     DECLARATIVE_ORPHANED = 3;
   }
   Origin origin = 3;
+  google.protobuf.Timestamp expires_at = 4; // @gotags: search:"Expires At,hidden"
 }

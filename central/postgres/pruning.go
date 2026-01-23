@@ -120,6 +120,11 @@ const (
 			revoked = TRUE OR
 			expiration < now() at time zone 'utc' - INTERVAL '%d MINUTES'
 		)` // #nosec G101
+
+	pruneExpired = `DELETE FROM %s WHERE
+		(
+			traits.expires_at < now() at time zone 'utc' - INTERVAL '%d MINUTES'
+		)` // #nosec G101
 )
 
 var (
@@ -267,5 +272,28 @@ func PruneInvalidAPITokens(ctx context.Context, pool postgres.DB, retentionDurat
 	)
 	if _, err := pool.Exec(pruneCtx, query); err != nil {
 		log.Errorf("failed to prune invalid api tokens: %v", err)
+	}
+}
+
+// PruneExpired prunes elements with expired traits.
+func PruneExpired(ctx context.Context, pool postgres.DB, retentionDuration time.Duration) {
+	tablesWithTraits := []string{
+		schema.PermissionSetsTableName,
+		schema.SimpleAccessScopesTableName,
+		schema.RolesTableName,
+	}
+
+	pruneCtx, cancel := contextutil.ContextWithTimeoutIfNotExists(ctx,
+		pruningTimeout*time.Duration(len(tablesWithTraits)))
+	defer cancel()
+
+	for _, table := range tablesWithTraits {
+		query := fmt.Sprintf(pruneExpired,
+			table,
+			int(retentionDuration.Minutes()),
+		)
+		if _, err := pool.Exec(pruneCtx, query); err != nil {
+			log.Errorf("failed to prune %s: %v", table, err)
+		}
 	}
 }

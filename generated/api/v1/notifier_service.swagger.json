@@ -880,6 +880,10 @@
         },
         "origin": {
           "$ref": "#/definitions/storageTraitsOrigin"
+        },
+        "expiresAt": {
+          "type": "string",
+          "format": "date-time"
         }
       }
     },

@@ -77,6 +77,13 @@
             "default": "IMPERATIVE"
           },
           {
+            "name": "traits.expiresAt",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "format": "date-time"
+          },
+          {
             "name": "authProviderId",
             "in": "query",
             "required": false,
@@ -379,6 +386,10 @@
         },
         "origin": {
           "$ref": "#/definitions/storageTraitsOrigin"
+        },
+        "expiresAt": {
+          "type": "string",
+          "format": "date-time"
         }
       }
     },
