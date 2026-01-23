@@ -29,21 +29,21 @@ func auditEventMatchesScopes(auditEvent *storage.KubernetesEvent, scopes []*scop
 	return false
 }
 
-func deploymentMatchesExclusions(deployment *storage.Deployment, exclusions []*compiledExclusion) bool {
+func deploymentMatchesExclusions(deployment *storage.Deployment, exclusions []*compiledExclusion, clusterLabels map[string]string, namespaceLabels map[string]string) bool {
 	for _, exclusion := range exclusions {
-		if exclusion.MatchesDeployment(deployment) {
+		if exclusion.MatchesDeployment(deployment, clusterLabels, namespaceLabels) {
 			return true
 		}
 	}
 	return false
 }
 
-func deploymentMatchesScopes(deployment *storage.Deployment, scopes []*scopecomp.CompiledScope) bool {
+func deploymentMatchesScopes(deployment *storage.Deployment, scopes []*scopecomp.CompiledScope, clusterLabels map[string]string, namespaceLabels map[string]string) bool {
 	if len(scopes) == 0 {
 		return true
 	}
 	for _, scope := range scopes {
-		if scope.MatchesDeployment(deployment) {
+		if scope.MatchesDeployment(deployment, clusterLabels, namespaceLabels) {
 			return true
 		}
 	}

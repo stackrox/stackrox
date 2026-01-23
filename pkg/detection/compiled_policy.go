@@ -447,7 +447,7 @@ func newCompiledExclusion(exclusion *storage.Exclusion) (*compiledExclusion, err
 	return cx, nil
 }
 
-func (cw *compiledExclusion) MatchesDeployment(deployment *storage.Deployment) bool {
+func (cw *compiledExclusion) MatchesDeployment(deployment *storage.Deployment, clusterLabels map[string]string, namespaceLabels map[string]string) bool {
 	if exclusionIsExpired(cw.exclusion) {
 		return false
 	}
@@ -456,7 +456,7 @@ func (cw *compiledExclusion) MatchesDeployment(deployment *storage.Deployment) b
 		return false
 	}
 
-	return cw.cs.MatchesDeployment(deployment)
+	return cw.cs.MatchesDeployment(deployment, clusterLabels, namespaceLabels)
 }
 
 func (cw *compiledExclusion) MatchesAuditEvent(auditEvent *storage.KubernetesEvent) bool {
@@ -481,7 +481,7 @@ func (cp *deploymentPredicate) AppliesTo(input interface{}) bool {
 		return false
 	}
 
-	return deploymentMatchesScopes(deployment, cp.scopes) && !deploymentMatchesExclusions(deployment, cp.exclusions)
+	return deploymentMatchesScopes(deployment, cp.scopes, nil, nil) && !deploymentMatchesExclusions(deployment, cp.exclusions, nil, nil)
 }
 
 // Predicate for images.
