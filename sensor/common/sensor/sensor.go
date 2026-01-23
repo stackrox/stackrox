@@ -8,7 +8,7 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/cenkalti/backoff/v3"
+	"github.com/cenkalti/backoff/v4"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/concurrency"
@@ -439,10 +439,13 @@ func (s *Sensor) communicationWithCentralWithRetries(centralReachable *concurren
 		centralCommunication.Start(central.NewSensorServiceClient(s.centralConnection), centralReachable, &syncDone, s.configHandler, s.detector)
 		go s.notifySyncDone(&syncDone, centralCommunication)
 
-		select {
-		case <-syncDone.Done():
-			log.Debug("Reset the exponential back-off if the connection sync succeeds")
+		defer func() {
+			<-syncDone.Done()
+			log.Debug("Reset the exponential back-off if the sync succeeds")
 			exponential.Reset()
+		}()
+
+		select {
 		case <-s.centralCommunication.Stopped().WaitC():
 			if err := s.centralCommunication.Stopped().Err(); err != nil {
 				if errors.Is(err, errCantReconcile) {
