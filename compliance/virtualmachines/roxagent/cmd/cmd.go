@@ -55,7 +55,7 @@ func RootCmd(ctx context.Context) *cobra.Command {
 			}
 			return
 		}
-		if err := index.RunSingleWithInitialDelay(ctx, cfg, client); err != nil {
+		if err := index.RunSingle(ctx, cfg, client); err != nil {
 			log.Errorf("Running indexer: %v", err)
 		}
 	}
