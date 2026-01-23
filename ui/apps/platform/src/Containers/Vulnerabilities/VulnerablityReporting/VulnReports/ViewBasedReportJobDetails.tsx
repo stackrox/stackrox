@@ -4,20 +4,12 @@ import {
     DescriptionListGroup,
     DescriptionListTerm,
     Flex,
-    // Stack,
     Title,
 } from '@patternfly/react-core';
 
 import type { ViewBasedReportSnapshot } from 'services/ReportsService.types';
 import CompoundSearchFilterLabels from 'Components/CompoundSearchFilter/components/CompoundSearchFilterLabels';
-// import VulnerabilitySeverityIconText from 'Components/PatternFly/IconText/VulnerabilitySeverityIconText';
-import {
-    getSearchFilterFromSearchString,
-    // getValueByCaseInsensitiveKey,
-    // searchValueAsArray,
-} from 'utils/searchUtils';
-// import { isVulnerabilitySeverity } from 'types/cve.proto';
-// import { formatCveDiscoveredTime } from '../../utils/vulnerabilityUtils';
+import { getSearchFilterFromSearchString } from 'utils/searchUtils';
 import {
     attributesSeparateFromConfigForViewBasedReport,
     configForViewBasedReport,
@@ -29,18 +21,6 @@ export type ViewBasedReportJobDetailsProps = {
 
 function ViewBasedReportJobDetails({ reportSnapshot }: ViewBasedReportJobDetailsProps) {
     const query = getSearchFilterFromSearchString(reportSnapshot.viewBasedVulnReportFilters.query);
-
-    // Extract vulnerability-specific filters
-    // const severityValues = getValueByCaseInsensitiveKey(query, 'Severity');
-    // const cveDiscoveredTimeValues = getValueByCaseInsensitiveKey(query, 'CVE Created Time');
-
-    // const validSeverities = severityValues
-    //     ? searchValueAsArray(severityValues).filter((severity) => isVulnerabilitySeverity(severity))
-    //     : [];
-
-    // const validCveDiscoveredTimes = cveDiscoveredTimeValues
-    //     ? searchValueAsArray(cveDiscoveredTimeValues)
-    //     : [];
 
     return (
         <Flex direction={{ default: 'column' }} spaceItems={{ default: 'spaceItemsMd' }}>
@@ -88,46 +68,6 @@ function ViewBasedReportJobDetails({ reportSnapshot }: ViewBasedReportJobDetails
                     </DescriptionListDescription>
                 </DescriptionListGroup>
             </DescriptionList>
-            {/*
-            <Title headingLevel="h2">Vulnerability parameters</Title>
-            <DescriptionList
-                columnModifier={{
-                    default: '3Col',
-                }}
-            >
-                <DescriptionListGroup>
-                    <DescriptionListTerm>CVE severity</DescriptionListTerm>
-                    <DescriptionListDescription>
-                        {validSeverities.length > 0 ? (
-                            <Stack>
-                                {validSeverities.map((severity) => (
-                                    <VulnerabilitySeverityIconText
-                                        key={severity}
-                                        severity={severity}
-                                    />
-                                ))}
-                            </Stack>
-                        ) : (
-                            'All severities'
-                        )}
-                    </DescriptionListDescription>
-                </DescriptionListGroup>
-                <DescriptionListGroup>
-                    <DescriptionListTerm>CVEs discovered time</DescriptionListTerm>
-                    <DescriptionListDescription>
-                        {validCveDiscoveredTimes.length > 0 ? (
-                            <Stack>
-                                {validCveDiscoveredTimes.map((timeValue) => (
-                                    <div key={timeValue}>{formatCveDiscoveredTime(timeValue)}</div>
-                                ))}
-                            </Stack>
-                        ) : (
-                            'All time'
-                        )}
-                    </DescriptionListDescription>
-                </DescriptionListGroup>
-            </DescriptionList>
-            */}
         </Flex>
     );
 }
