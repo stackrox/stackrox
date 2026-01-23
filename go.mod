@@ -68,7 +68,7 @@ require (
 	github.com/graph-gophers/graphql-go v1.5.0
 	github.com/grpc-ecosystem/go-grpc-middleware/v2 v2.3.3
 	github.com/grpc-ecosystem/go-grpc-prometheus v1.2.1-0.20210315223345-82c243799c99
-	github.com/grpc-ecosystem/grpc-gateway/v2 v2.27.4
+	github.com/grpc-ecosystem/grpc-gateway/v2 v2.27.5
 	github.com/hashicorp/go-multierror v1.1.1
 	github.com/hashicorp/go-retryablehttp v0.7.8
 	github.com/hashicorp/go-version v1.8.0
@@ -152,7 +152,7 @@ require (
 	golang.stackrox.io/grpc-http1 v0.5.1
 	google.golang.org/api v0.262.0
 	google.golang.org/genproto v0.0.0-20251202230838-ff82c1b0f217
-	google.golang.org/genproto/googleapis/api v0.0.0-20251222181119-0a764e51fe1b
+	google.golang.org/genproto/googleapis/api v0.0.0-20260120221211-b8f7ae30c516
 	google.golang.org/grpc v1.78.0
 	google.golang.org/grpc/examples v0.0.0-20250407062114-b368379ef8f6
 	google.golang.org/protobuf v1.36.11
@@ -504,7 +504,7 @@ require (
 	go.yaml.in/yaml/v2 v2.4.3 // indirect
 	golang.org/x/exp v0.0.0-20250813145105-42675adae3e6 // indirect
 	gomodules.xyz/jsonpatch/v2 v2.4.0 // indirect
-	google.golang.org/genproto/googleapis/rpc v0.0.0-20260120174246-409b4a993575 // indirect
+	google.golang.org/genproto/googleapis/rpc v0.0.0-20260120221211-b8f7ae30c516 // indirect
 	gopkg.in/evanphx/json-patch.v4 v4.13.0 // indirect
 	gopkg.in/inf.v0 v0.9.1 // indirect
 	gopkg.in/ini.v1 v1.67.1 // indirect
