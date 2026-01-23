@@ -432,6 +432,14 @@ func (s *NodeInventoryHandlerTestSuite) TestHandlerSensorACKsToCompliance() {
 			expectedMessageType: sensor.MsgToCompliance_ComplianceACK_NODE_INDEX_REPORT,
 			expectedReason:      "index failure",
 		},
+		"NODE_INDEX_REPORT with unknown action should be ignored": {
+			sensorACK: &central.SensorACK{
+				Action:      central.SensorACK_Action(999),
+				MessageType: central.SensorACK_NODE_INDEX_REPORT,
+				ResourceId:  "node-2",
+			},
+			shouldForward: false,
+		},
 		"Broadcast NODE_INVENTORY ACK should set broadcast": {
 			sensorACK: &central.SensorACK{
 				Action:      central.SensorACK_ACK,
@@ -467,14 +475,14 @@ func (s *NodeInventoryHandlerTestSuite) TestHandlerSensorACKsToCompliance() {
 			if tc.shouldForward {
 				// Start a goroutine to receive the ComplianceACK before sending
 				// (channel is unbuffered so we need a receiver ready)
-				var msg common.MessageToComplianceWithAddress
-				received := concurrency.NewSignal()
+				msgCh := make(chan common.MessageToComplianceWithAddress, 1)
+				errCh := make(chan error, 1)
 				go func() {
-					defer received.Signal()
 					select {
-					case msg = <-handler.ComplianceC():
+					case msg := <-handler.ComplianceC():
+						msgCh <- msg
 					case <-time.After(3 * time.Second):
-						s.Fail("ComplianceACK message not received within 3 seconds")
+						errCh <- errors.New("ComplianceACK message not received within 3 seconds")
 					}
 				}()
 
@@ -484,22 +492,26 @@ func (s *NodeInventoryHandlerTestSuite) TestHandlerSensorACKsToCompliance() {
 				})
 				s.NoError(err)
 
-				received.Wait()
-
-				// Verify ComplianceACK was sent to Compliance
-				complianceAck := msg.Msg.GetComplianceAck()
-				s.Require().NotNil(complianceAck, "Expected ComplianceACK message")
-				s.Equal(tc.expectedAction, complianceAck.GetAction())
-				s.Equal(tc.expectedMessageType, complianceAck.GetMessageType())
-				s.Equal(tc.sensorACK.GetResourceId(), complianceAck.GetResourceId())
-				s.Equal(tc.expectedReason, complianceAck.GetReason())
-				if tc.expectedHostname != "" || tc.expectedBroadcast {
-					s.Equal(tc.expectedHostname, msg.Hostname)
-					s.Equal(tc.expectedBroadcast, msg.Broadcast)
-				} else {
-					s.Equal(tc.sensorACK.GetResourceId(), msg.Hostname)
-					s.False(msg.Broadcast)
+				select {
+				case err := <-errCh:
+					s.Fail(err.Error())
+				case msg := <-msgCh:
+					// Verify ComplianceACK was sent to Compliance
+					complianceAck := msg.Msg.GetComplianceAck()
+					s.Require().NotNil(complianceAck, "Expected ComplianceACK message")
+					s.Equal(tc.expectedAction, complianceAck.GetAction())
+					s.Equal(tc.expectedMessageType, complianceAck.GetMessageType())
+					s.Equal(tc.sensorACK.GetResourceId(), complianceAck.GetResourceId())
+					s.Equal(tc.expectedReason, complianceAck.GetReason())
+					if tc.expectedHostname != "" || tc.expectedBroadcast {
+						s.Equal(tc.expectedHostname, msg.Hostname)
+						s.Equal(tc.expectedBroadcast, msg.Broadcast)
+					} else {
+						s.Equal(tc.sensorACK.GetResourceId(), msg.Hostname)
+						s.False(msg.Broadcast)
+					}
 				}
+
 			} else {
 				// Send the SensorACK message
 				err := handler.ProcessMessage(s.T().Context(), &central.MsgToSensor{

@@ -168,6 +168,10 @@ func (c *nodeInventoryHandlerImpl) processSensorACK(sensorAck *central.SensorACK
 		action = sensor.MsgToCompliance_ComplianceACK_ACK
 	case central.SensorACK_NACK:
 		action = sensor.MsgToCompliance_ComplianceACK_NACK
+	default:
+		log.Debugf("Ignoring SensorACK message with unknown action %s: type=%s, resource_id=%s, reason=%s",
+			sensorAck.GetAction(), sensorAck.GetMessageType(), sensorAck.GetResourceId(), sensorAck.GetReason())
+		return nil
 	}
 
 	c.sendComplianceAckToCompliance(sensorAck.GetResourceId(), action, messageType, sensorAck.GetReason())
