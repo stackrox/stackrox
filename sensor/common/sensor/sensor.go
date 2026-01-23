@@ -413,7 +413,19 @@ func (s *Sensor) communicationWithCentralWithRetries(centralReachable *concurren
 	exponential.MaxInterval = env.ConnectionRetryMaxInterval.DurationSetting()
 
 	s.reconcile.Store(true)
-	err := backoff.RetryNotify(func() error {
+	err := backoff.RetryNotify(s.communicationWithCentral(centralReachable, exponential), exponential, func(err error, d time.Duration) {
+		log.Infof("Central communication stopped: %s. Retrying after %s...", err, d.Round(time.Second))
+	})
+
+	log.Info("Stopping gRPC connection retry loop.")
+
+	if err != nil {
+		log.Warnf("Backoff returned error: %s", err)
+	}
+}
+
+func (s *Sensor) communicationWithCentral(centralReachable *concurrency.Flag, exponential *backoff.ExponentialBackOff) func() error {
+	return func() error {
 		log.Infof("Attempting connection setup (client reconciliation = %s)", strconv.FormatBool(s.reconcile.Load()))
 		select {
 		case <-s.centralConnectionFactory.OkSignal().WaitC():
@@ -440,9 +452,10 @@ func (s *Sensor) communicationWithCentralWithRetries(centralReachable *concurren
 		go s.notifySyncDone(&syncDone, centralCommunication)
 
 		defer func() {
-			<-syncDone.Done()
-			log.Debug("Reset the exponential back-off if the sync succeeds")
-			exponential.Reset()
+			if syncDone.IsDone() {
+				log.Debug("Reset the exponential back-off if the sync succeeds")
+				exponential.Reset()
+			}
 		}()
 
 		select {
@@ -476,14 +489,6 @@ func (s *Sensor) communicationWithCentralWithRetries(centralReachable *concurren
 			s.centralCommunication.Stop()
 			return backoff.Permanent(wrapOrNewError(s.stoppedSig.Err(), "received sensor stop signal"))
 		}
-	}, exponential, func(err error, d time.Duration) {
-		log.Infof("Central communication stopped: %s. Retrying after %s...", err, d.Round(time.Second))
-	})
-
-	log.Info("Stopping gRPC connection retry loop.")
-
-	if err != nil {
-		log.Warnf("Backoff returned error: %s", err)
 	}
 }
 
