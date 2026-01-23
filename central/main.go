@@ -23,6 +23,7 @@ import (
 	apiTokenService "github.com/stackrox/rox/central/apitoken/service"
 	"github.com/stackrox/rox/central/audit"
 	authDS "github.com/stackrox/rox/central/auth/datastore"
+	internalTokenAuthService "github.com/stackrox/rox/central/auth/internaltokens/service"
 	authService "github.com/stackrox/rox/central/auth/service"
 	"github.com/stackrox/rox/central/auth/userpass"
 	authProviderRegistry "github.com/stackrox/rox/central/authprovider/registry"
@@ -490,6 +491,10 @@ func servicesToRegister() []pkgGRPC.APIService {
 
 	if features.BaseImageDetection.Enabled() {
 		servicesToRegister = append(servicesToRegister, baseImageService.Singleton())
+	}
+
+	if features.OCPConsoleIntegration.Enabled() {
+		servicesToRegister = append(servicesToRegister, internalTokenAuthService.Singleton())
 	}
 
 	autoTriggerUpgrades := sensorUpgradeService.Singleton().AutoUpgradeSetting()
