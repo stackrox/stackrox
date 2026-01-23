@@ -164,14 +164,14 @@ func (s *sbomScanTestSuite) TestValidate() {
 			setupFunc: func() string {
 				return s.createTempFile("valid.json", `{"spdxVersion":"SPDX-2.3"}`)
 			},
-			severities: scan.AllSeverities,
+			severities: scan.AllSeverities(),
 			shouldFail: false,
 		},
 		"SBOM file does not exist": {
 			setupFunc: func() string {
 				return filepath.Join(s.tempDir, "nonexistent.json")
 			},
-			severities: scan.AllSeverities,
+			severities: scan.AllSeverities(),
 			shouldFail: true,
 			errorType:  errox.InvalidArgs,
 		},
@@ -255,7 +255,7 @@ func (s *sbomScanTestSuite) TestScanSBOM_Success() {
 		env:            env,
 		client:         mockClient,
 		noOutputFormat: true,
-		severities:     scan.AllSeverities,
+		severities:     scan.AllSeverities(),
 	}
 
 	err = cmd.ScanSBOM()
@@ -419,7 +419,7 @@ func (s *sbomScanTestSuite) TestScanSBOM_FailOnFinding() {
 		failOnFinding:      true,
 		printer:            jsonPrinter,
 		standardizedFormat: true,
-		severities:         scan.AllSeverities,
+		severities:         scan.AllSeverities(),
 	}
 
 	err = cmd.ScanSBOM()
@@ -605,7 +605,7 @@ func (s *sbomScanTestSuite) TestSBOMScanResponseCompatibilityWithStorageImage() 
 	s.Assert().Equal("1.0.1", fixedBy.FixedBy, "FixedBy version should be preserved (used by printer)")
 
 	// Test that the formatted output works correctly.
-	cveSummary := scan.NewCVESummaryForPrinting(image.GetScan(), scan.AllSeverities)
+	cveSummary := scan.NewCVESummaryForPrinting(image.GetScan(), scan.AllSeverities())
 	s.Assert().Equal(1, cveSummary.CountVulnerabilities(), "should count 1 vulnerability")
 	s.Assert().Equal(1, cveSummary.CountComponents(), "should count 1 component")
 }
@@ -625,7 +625,7 @@ func (s *sbomScanTestSuite) TestPrintSBOMScanResults_FormattedOutput() {
 		env:                env,
 		printer:            jsonPrinter,
 		standardizedFormat: true,
-		severities:         scan.AllSeverities,
+		severities:         scan.AllSeverities(),
 		sbomFilePath:       "test.json",
 	}
 
