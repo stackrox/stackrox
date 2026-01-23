@@ -51,7 +51,7 @@ func (s *relayTestSuite) TestRelay_StartFailure() {
 	}
 
 	// Construct the relay under test.
-	relay := New(stream, sender)
+	relay := New(stream, sender, &mockUMH{}, 0, 4*time.Hour)
 
 	// Run the relay in a goroutine so we can assert it returns promptly and
 	// does not block in its select loop.
@@ -107,7 +107,8 @@ func (s *relayTestSuite) TestRelay_Integration() {
 	}
 
 	// Create relay with mock dependencies using the public constructor
-	relay := New(mockIndexReportStream, mockIndexReportSender)
+	// Rate limiting disabled (0)
+	relay := New(mockIndexReportStream, mockIndexReportSender, &mockUMH{}, 0, 4*time.Hour)
 
 	// Run relay in background
 	ctx, cancel := context.WithTimeout(s.ctx, 5*time.Second)
@@ -175,7 +176,7 @@ func (s *relayTestSuite) TestRelay_SenderErrorsDoNotStopProcessing() {
 		},
 	}
 
-	relay := New(mockIndexReportStream, mockIndexReportSender)
+	relay := New(mockIndexReportStream, mockIndexReportSender, &mockUMH{}, 0, 4*time.Hour)
 
 	ctx, cancel := context.WithTimeout(s.ctx, 5*time.Second)
 	defer cancel()
@@ -220,7 +221,7 @@ func (s *relayTestSuite) TestRelay_ContextCancellation() {
 		failOnIndex: -1, // never fail
 	}
 
-	relay := New(mockIndexReportStream, mockIndexReportSender)
+	relay := New(mockIndexReportStream, mockIndexReportSender, &mockUMH{}, 0, 4*time.Hour)
 
 	ctx, cancel := context.WithCancel(s.ctx)
 
@@ -242,6 +243,113 @@ func (s *relayTestSuite) TestRelay_ContextCancellation() {
 	case <-time.After(100 * time.Millisecond):
 		s.Fail("Relay did not exit after context cancellation")
 	}
+}
+
+// TestRelay_RateLimiting verifies that rate limiting works
+func (s *relayTestSuite) TestRelay_RateLimiting() {
+	// Create mock sender
+	done := concurrency.NewSignal()
+	mockIndexReportSender := &mockIndexReportSender{
+		failOnIndex:   -1, // never fail
+		done:          &done,
+		expectedCount: 1, // only first should pass
+	}
+
+	// Send 3 reports from same VSOCK ID
+	mockIndexReportStream := &mockIndexReportStream{
+		reports: []*v1.IndexReport{
+			{VsockCid: "100"},
+			{VsockCid: "100"}, // Same ID - should be rate limited
+			{VsockCid: "100"}, // Same ID - should be rate limited
+		},
+	}
+
+	// Rate limit: 1 per minute (effectively blocks after first)
+	relay := New(mockIndexReportStream, mockIndexReportSender, &mockUMH{}, 1, 4*time.Hour)
+
+	ctx, cancel := context.WithTimeout(s.ctx, 1*time.Second)
+	defer cancel()
+
+	errChan := make(chan error, 1)
+	go func() {
+		errChan <- relay.Run(ctx)
+	}()
+
+	// Wait for first report
+	select {
+	case <-done.Done():
+		// First report processed
+	case <-time.After(500 * time.Millisecond):
+		s.Fail("Timeout waiting for first report")
+	}
+
+	// Give time for other reports to be processed (they should be rate limited)
+	time.Sleep(100 * time.Millisecond)
+
+	cancel()
+
+	// Only 1 report should have been sent (others rate limited)
+	mockIndexReportSender.mu.Lock()
+	s.Len(mockIndexReportSender.sentReports, 1)
+	mockIndexReportSender.mu.Unlock()
+
+	err := <-errChan
+	s.ErrorIs(err, context.Canceled)
+}
+
+// TestRelay_UMHInteraction verifies the relay observes UMH signals and marks ACKs.
+func (s *relayTestSuite) TestRelay_UMHInteraction() {
+	done := concurrency.NewSignal()
+	mockIndexReportSender := &mockIndexReportSender{
+		failOnIndex:   -1,
+		done:          &done,
+		expectedCount: 1,
+	}
+
+	mockIndexReportStream := &mockIndexReportStream{
+		reports: []*v1.IndexReport{
+			{VsockCid: "100"},
+		},
+	}
+
+	umh := &mockUMH{
+		retryCh: make(chan string, 1),
+	}
+
+	relay := New(mockIndexReportStream, mockIndexReportSender, umh, 0, 4*time.Hour)
+
+	ctx, cancel := context.WithTimeout(s.ctx, 2*time.Second)
+	defer cancel()
+
+	errChan := make(chan error, 1)
+	go func() {
+		errChan <- relay.Run(ctx)
+	}()
+
+	// Wait for the report to be sent.
+	select {
+	case <-done.Done():
+	case <-time.After(time.Second):
+		s.Fail("timeout waiting for report send")
+	}
+
+	// Verify ObserveSending recorded the VSOCK ID.
+	umh.mu.Lock()
+	s.Contains(umh.sends, "100")
+	umh.mu.Unlock()
+
+	// Send an ACK via UMH and ensure relay records it in cache.
+	umh.HandleACK("100")
+	time.Sleep(50 * time.Millisecond)
+
+	relay.mu.Lock()
+	cached := relay.cache["100"]
+	relay.mu.Unlock()
+	s.Require().NotNil(cached, "cached report should exist after ACK")
+	s.False(cached.lastAckedAt.IsZero(), "lastAckedAt should be recorded")
+
+	cancel()
+	<-errChan
 }
 
 // Mock implementations
@@ -309,4 +417,49 @@ func (m *mockIndexReportSender) Send(_ context.Context, vmReport *v1.VMReport) e
 		return errTest
 	}
 	return nil
+}
+
+// mockUMH is a mock UnconfirmedMessageHandler for testing
+type mockUMH struct {
+	mu      sync.Mutex
+	acks    []string
+	nacks   []string
+	sends   []string
+	retryCh chan string
+	onACKCb func(resourceID string)
+}
+
+func (m *mockUMH) HandleACK(resourceID string) {
+	m.mu.Lock()
+	m.acks = append(m.acks, resourceID)
+	cb := m.onACKCb
+	m.mu.Unlock()
+	if cb != nil {
+		cb(resourceID)
+	}
+}
+
+func (m *mockUMH) HandleNACK(resourceID string) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	m.nacks = append(m.nacks, resourceID)
+}
+
+func (m *mockUMH) ObserveSending(resourceID string) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	m.sends = append(m.sends, resourceID)
+}
+
+func (m *mockUMH) RetryCommand() <-chan string {
+	if m.retryCh == nil {
+		m.retryCh = make(chan string)
+	}
+	return m.retryCh
+}
+
+func (m *mockUMH) OnACK(callback func(resourceID string)) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	m.onACKCb = callback
 }
