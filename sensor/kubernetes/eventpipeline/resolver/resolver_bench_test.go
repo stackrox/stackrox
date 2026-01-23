@@ -7,6 +7,7 @@ import (
 
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/sensor/common/service"
 	"github.com/stackrox/rox/sensor/common/store"
 	mocksStore "github.com/stackrox/rox/sensor/common/store/mocks"
@@ -26,13 +27,14 @@ const (
 )
 
 var (
-	res                 component.Resolver
-	mockCtrl            *gomock.Controller
-	mockOutput          *mocksComponent.MockOutputQueue
-	mockDeploymentStore *mocksStore.MockDeploymentStore
-	mockServiceStore    *mocksStore.MockServiceStore
-	mockRBACStore       *mocksStore.MockRBACStore
-	mockEndpointManager *mocksStore.MockEndpointManager
+	res                  component.Resolver
+	mockCtrl             *gomock.Controller
+	mockOutput           *mocksComponent.MockOutputQueue
+	mockDeploymentStore  *mocksStore.MockDeploymentStore
+	mockServiceStore     *mocksStore.MockServiceStore
+	mockRBACStore        *mocksStore.MockRBACStore
+	mockEndpointManager  *mocksStore.MockEndpointManager
+	mockPubSubDispatcher *mocksComponent.MockPubSubDispatcher
 
 	cases = []struct {
 		numEvents      int
@@ -57,62 +59,82 @@ var (
 	}
 )
 
+func dispatchEvent(b *testing.B, event *component.ResourceEvent, resolver component.Resolver, pubsubEnabled bool) {
+	if pubsubEnabled {
+		if err := resolver.ProcessResourceEvent(event); err != nil {
+			b.Error(err)
+		}
+		return
+	}
+	res.Send(event)
+}
+
 func BenchmarkProcessDeploymentReferences(b *testing.B) {
-	for _, bc := range cases {
-		b.Run(fmt.Sprintf("Benchmark with %d events and %d deployments per event", bc.numEvents, bc.numDeployments), func(b *testing.B) {
-			for i := 0; i < b.N; i++ {
-				b.StopTimer()
-				doneSignal := concurrency.NewSignal()
-				setupMocks(b, &doneSignal)
-				events := createEvents(false, bc.numEvents, bc.numDeployments)
-				setupResolver(b)
-				b.StartTimer()
-				for _, event := range events {
-					res.Send(event)
+	for _, value := range []bool{true, false} {
+		b.Setenv(features.SensorInternalPubSub.EnvVar(), fmt.Sprintf("%t", value))
+		for _, bc := range cases {
+			b.Run(fmt.Sprintf("Benchmark with %d events and %d deployments per event and %q is %t", bc.numEvents, bc.numDeployments, features.SensorInternalPubSub.EnvVar(), value), func(b *testing.B) {
+				for i := 0; i < b.N; i++ {
+					b.StopTimer()
+					doneSignal := concurrency.NewSignal()
+					setupMocks(b, &doneSignal, value)
+					events := createEvents(false, bc.numEvents, bc.numDeployments)
+					setupResolver(b)
+					b.StartTimer()
+					for _, event := range events {
+						dispatchEvent(b, event, res, value)
+					}
+					doneSignal.Wait()
+					b.StopTimer()
+					res.Stop()
 				}
-				doneSignal.Wait()
-				b.StopTimer()
-				res.Stop()
-			}
-		})
+			})
+		}
 	}
 }
 
 func BenchmarkProcessRandomDeploymentReferences(b *testing.B) {
-	for _, bc := range cases {
-		b.Run(fmt.Sprintf("Benchmark with %d events and %d random deployments per event", bc.numEvents, bc.numDeployments), func(b *testing.B) {
-			for i := 0; i < b.N; i++ {
-				b.StopTimer()
-				doneSignal := concurrency.NewSignal()
-				setupMocks(b, &doneSignal)
-				events := createEvents(true, bc.numEvents, bc.numDeployments)
-				setupResolver(b)
-				b.StartTimer()
-				for _, event := range events {
-					res.Send(event)
+	for _, value := range []bool{true, false} {
+		b.Setenv(features.SensorInternalPubSub.EnvVar(), fmt.Sprintf("%t", value))
+		for _, bc := range cases {
+			b.Run(fmt.Sprintf("Benchmark with %d events and %d random deployments per event and %q is %t", bc.numEvents, bc.numDeployments, features.SensorInternalPubSub.EnvVar(), value), func(b *testing.B) {
+				for i := 0; i < b.N; i++ {
+					b.StopTimer()
+					doneSignal := concurrency.NewSignal()
+					setupMocks(b, &doneSignal, value)
+					events := createEvents(true, bc.numEvents, bc.numDeployments)
+					setupResolver(b)
+					b.StartTimer()
+					for _, event := range events {
+						dispatchEvent(b, event, res, value)
+					}
+					doneSignal.Wait()
+					b.StopTimer()
+					res.Stop()
 				}
-				doneSignal.Wait()
-				b.StopTimer()
-				res.Stop()
-			}
-		})
+			})
+		}
 	}
 }
 
 func setupResolver(b *testing.B) {
-	res = New(mockOutput, &fakeProvider{
+	var err error
+	res, err = New(mockOutput, &fakeProvider{
 		deploymentStore: mockDeploymentStore,
 		serviceStore:    mockServiceStore,
 		rbacStore:       mockRBACStore,
 		endpointManager: mockEndpointManager,
-	}, queueSize)
-	err := res.Start()
+	}, queueSize, mockPubSubDispatcher)
+	if err != nil {
+		b.Error(err)
+	}
+	err = res.Start()
 	if err != nil {
 		b.Error(err)
 	}
 }
 
-func setupMocks(b *testing.B, doneSignal *concurrency.Signal) {
+func setupMocks(b *testing.B, doneSignal *concurrency.Signal, pubsubEnabled bool) {
 	// Create the mocks
 	mockCtrl = gomock.NewController(b)
 	mockOutput = mocksComponent.NewMockOutputQueue(mockCtrl)
@@ -120,7 +142,11 @@ func setupMocks(b *testing.B, doneSignal *concurrency.Signal) {
 	mockServiceStore = mocksStore.NewMockServiceStore(mockCtrl)
 	mockRBACStore = mocksStore.NewMockRBACStore(mockCtrl)
 	mockEndpointManager = mocksStore.NewMockEndpointManager(mockCtrl)
+	mockPubSubDispatcher = mocksComponent.NewMockPubSubDispatcher(mockCtrl)
 	// Set up the EXPECT
+	if pubsubEnabled {
+		mockPubSubDispatcher.EXPECT().RegisterConsumerToLane(gomock.Any(), gomock.Any(), gomock.Any()).Times(2).Return(nil)
+	}
 	mockOutput.EXPECT().Send(gomock.Any()).AnyTimes().DoAndReturn(func(resourceEvent *component.ResourceEvent) {
 		for _, m := range resourceEvent.ForwardMessages {
 			if m.GetDeployment().GetId() == lastDeploymentID {

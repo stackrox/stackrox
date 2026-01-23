@@ -187,6 +187,7 @@ export_test_environment() {
     ci_export ROX_SENSITIVE_FILE_ACTIVITY "${ROX_SENSITIVE_FILE_ACTIVITY:-true}"
     ci_export ROX_CVE_FIX_TIMESTAMP "${ROX_CVE_FIX_TIMESTAMP:-true}"
     ci_export ROX_BASE_IMAGE_DETECTION "${ROX_BASE_IMAGE_DETECTION:-true}"
+    ci_export ROX_LABEL_BASED_POLICY_SCOPING "${ROX_LABEL_BASED_POLICY_SCOPING:-true}"
 
     if is_in_PR_context && pr_has_label ci-fail-fast; then
         ci_export FAIL_FAST "true"

@@ -12,6 +12,7 @@ import {
     pluralize,
 } from '@patternfly/react-core';
 import { gql, useQuery } from '@apollo/client';
+import type { DocumentNode } from '@apollo/client';
 import type { SearchFilter } from 'types/search';
 import type { UseURLPaginationResult } from 'hooks/useURLPagination';
 import useURLSort from 'hooks/useURLSort';
@@ -50,7 +51,10 @@ import {
     parseQuerySearchFilter,
 } from '../../utils/searchUtils';
 import BySeveritySummaryCard from '../../components/BySeveritySummaryCard';
-import { imageMetadataContextFragment } from '../Tables/table.utils';
+import {
+    imageMetadataContextFragment,
+    imageV2MetadataContextFragment,
+} from '../Tables/table.utils';
 import type { ImageMetadataContext } from '../Tables/table.utils';
 import VulnerabilityStateTabs, {
     vulnStateTabContentId,
@@ -88,6 +92,32 @@ export const imageVulnerabilitiesQuery = gql`
     }
 `;
 
+export const imageV2VulnerabilitiesQuery = gql`
+    ${imageV2MetadataContextFragment}
+    ${resourceCountByCveSeverityAndStatusFragment}
+    ${imageVulnerabilitiesFragment}
+    query getCVEsForImage(
+        $id: ID!
+        $query: String!
+        $pagination: Pagination!
+        $statusesForExceptionCount: [String!]
+    ) {
+        imageV2(id: $id) {
+            ...ImageV2MetadataContext
+            imageVulnerabilityCount(query: $query)
+            imageCVECountBySeverity(query: $query) {
+                ...ResourceCountsByCVESeverityAndStatus
+            }
+            imageVulnerabilities(query: $query, pagination: $pagination) {
+                ...ImageVulnerabilityFields
+            }
+        }
+    }
+`;
+
+export const getImageVulnerabilitiesQuery = (isNewImageDataModelEnabled: boolean): DocumentNode =>
+    isNewImageDataModelEnabled ? imageV2VulnerabilitiesQuery : imageVulnerabilitiesQuery;
+
 const defaultSortFields = ['CVE', 'CVSS', 'Severity'];
 
 export type ImagePageVulnerabilitiesProps = {
@@ -118,6 +148,7 @@ function ImagePageVulnerabilities({
     setSearchFilter,
 }: ImagePageVulnerabilitiesProps) {
     const { isFeatureFlagEnabled } = useFeatureFlags();
+    const isNewImageDataModelEnabled = isFeatureFlagEnabled('ROX_FLATTEN_IMAGE_DATA');
 
     const { analyticsTrack } = useAnalytics();
     const trackAppliedFilter = createFilterTracker(analyticsTrack);
@@ -140,11 +171,20 @@ function ImagePageVulnerabilities({
     // TODO Split metadata, counts, and vulnerabilities into separate queries
     const { data, loading, error } = useQuery<
         {
-            image: ImageMetadataContext & {
-                imageCVECountBySeverity: ResourceCountByCveSeverityAndStatus;
-                imageVulnerabilityCount: number;
-                imageVulnerabilities: ImageVulnerability[];
-            };
+            image:
+                | (ImageMetadataContext & {
+                      imageCVECountBySeverity: ResourceCountByCveSeverityAndStatus;
+                      imageVulnerabilityCount: number;
+                      imageVulnerabilities: ImageVulnerability[];
+                  })
+                | null; // Legacy image data model, will be null when ROX_FLATTEN_IMAGE_DATA is enabled
+            imageV2:
+                | (ImageMetadataContext & {
+                      imageCVECountBySeverity: ResourceCountByCveSeverityAndStatus;
+                      imageVulnerabilityCount: number;
+                      imageVulnerabilities: ImageVulnerability[];
+                  })
+                | null; // New image data model, will be null when ROX_FLATTEN_IMAGE_DATA is disabled
         },
         {
             id: string;
@@ -152,7 +192,7 @@ function ImagePageVulnerabilities({
             pagination: PaginationParam;
             statusesForExceptionCount: string[];
         }
-    >(imageVulnerabilitiesQuery, {
+    >(getImageVulnerabilitiesQuery(isNewImageDataModelEnabled), {
         variables: {
             id: imageId,
             query: getVulnStateScopedQueryString(
@@ -163,6 +203,9 @@ function ImagePageVulnerabilities({
             statusesForExceptionCount: getStatusesForExceptionCount(vulnerabilityState),
         },
     });
+
+    const imageData =
+        (data && (isNewImageDataModelEnabled ? data.imageV2 : data.image)) || undefined;
 
     const isFiltered = getHasSearchApplied(querySearchFilter);
 
@@ -182,7 +225,7 @@ function ImagePageVulnerabilities({
 
     const tableState = getTableUIState({
         isLoading: loading,
-        data: data?.image.imageVulnerabilities,
+        data: imageData?.imageVulnerabilities,
         error,
         searchFilter,
     });
@@ -221,7 +264,7 @@ function ImagePageVulnerabilities({
 
     const hiddenSeverities = getHiddenSeverities(querySearchFilter);
     const hiddenStatuses = getHiddenStatuses(querySearchFilter);
-    const totalVulnerabilityCount = data?.image?.imageVulnerabilityCount ?? 0;
+    const totalVulnerabilityCount = imageData?.imageVulnerabilityCount ?? 0;
 
     return (
         <>
@@ -266,6 +309,7 @@ function ImagePageVulnerabilities({
                     <AdvancedFiltersToolbar
                         className="pf-v5-u-pt-lg pf-v5-u-pb-0"
                         searchFilterConfig={searchFilterConfig}
+                        defaultSearchFilterEntity="CVE"
                         searchFilter={searchFilter}
                         onFilterChange={(newFilter, searchPayload) => {
                             setSearchFilter(newFilter);
@@ -283,7 +327,7 @@ function ImagePageVulnerabilities({
                 <div className="pf-v5-u-flex-grow-1 pf-v5-u-background-color-100">
                     <SummaryCardLayout error={error} isLoading={loading}>
                         <SummaryCard
-                            data={data?.image}
+                            data={imageData}
                             loadingText="Loading image vulnerability summary"
                             renderer={({ data }) => (
                                 <BySeveritySummaryCard
@@ -294,7 +338,7 @@ function ImagePageVulnerabilities({
                             )}
                         />
                         <SummaryCard
-                            data={data?.image}
+                            data={imageData}
                             loadingText="Loading image vulnerability summary"
                             renderer={({ data }) => (
                                 <CvesByStatusSummaryCard
@@ -377,7 +421,7 @@ function ImagePageVulnerabilities({
                             aria-busy={loading ? 'true' : 'false'}
                         >
                             <ImageVulnerabilitiesTable
-                                imageMetadata={data?.image}
+                                imageMetadata={imageData}
                                 tableState={tableState}
                                 getSortParams={getSortParams}
                                 isFiltered={isFiltered}

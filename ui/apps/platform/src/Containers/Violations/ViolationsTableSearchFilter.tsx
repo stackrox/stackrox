@@ -8,9 +8,7 @@ import type {
     OnSearchCallback,
 } from 'Components/CompoundSearchFilter/types';
 import CompoundSearchFilter from 'Components/CompoundSearchFilter/components/CompoundSearchFilter';
-import SearchFilterChips, {
-    makeFilterChipDescriptors,
-} from 'Components/CompoundSearchFilter/components/SearchFilterChips';
+import CompoundSearchFilterLabels from 'Components/CompoundSearchFilter/components/CompoundSearchFilterLabels';
 import {
     Category as PolicyCategory,
     LifecycleStage as PolicyLifecycleStage,
@@ -43,35 +41,35 @@ import { Name as ResourceName } from 'Components/CompoundSearchFilter/attributes
 
 const searchFilterConfig: CompoundSearchFilterConfig = [
     {
-        displayName: 'Policy',
-        searchCategory: 'ALERTS',
-        attributes: [PolicyName, PolicyCategory, PolicySeverity, PolicyLifecycleStage],
-    },
-    {
-        displayName: 'Policy violation',
-        searchCategory: 'ALERTS',
-        attributes: [AlertViolationTime, AlertEntityType],
-    },
-    {
         displayName: 'Cluster',
         searchCategory: 'ALERTS',
-        attributes: [clusterNameAttribute, clusterIdAttribute, clusterLabelAttribute],
-    },
-    {
-        displayName: 'Namespace',
-        searchCategory: 'ALERTS',
-        attributes: [NamespaceName, NamespaceID, NamespaceLabel, NamespaceAnnotation],
+        attributes: [clusterIdAttribute, clusterLabelAttribute, clusterNameAttribute],
     },
     {
         displayName: 'Deployment',
         searchCategory: 'ALERTS',
         attributes: [
-            DeploymentName,
+            DeploymentAnnotation,
             DeploymentID,
             DeploymentLabel,
-            DeploymentAnnotation,
-            DeploymentInactive,
+            DeploymentName,
+            DeploymentInactive, // Status
         ],
+    },
+    {
+        displayName: 'Namespace',
+        searchCategory: 'ALERTS',
+        attributes: [NamespaceAnnotation, NamespaceID, NamespaceLabel, NamespaceName],
+    },
+    {
+        displayName: 'Policy',
+        searchCategory: 'ALERTS',
+        attributes: [PolicyCategory, PolicyLifecycleStage, PolicyName, PolicySeverity],
+    },
+    {
+        displayName: 'Policy violation',
+        searchCategory: 'ALERTS',
+        attributes: [AlertViolationTime, AlertEntityType], // non-alphabetical because no Name
     },
     {
         displayName: 'Resource',
@@ -96,8 +94,6 @@ function ViolationsTableSearchFilter({
     const { analyticsTrack } = useAnalytics();
     const trackAppliedFilter = createFilterTracker(analyticsTrack);
 
-    const filterChipGroupDescriptors = makeFilterChipDescriptors(searchFilterConfig);
-
     const onSearchHandler: OnSearchCallback = (payload) => {
         onSearch(payload);
         trackAppliedFilter('Policy Violations Filter Applied', payload);
@@ -110,6 +106,7 @@ function ViolationsTableSearchFilter({
                     <ToolbarItem className="pf-v5-u-flex-1">
                         <CompoundSearchFilter
                             config={searchFilterConfig}
+                            defaultEntity="Policy"
                             searchFilter={searchFilter}
                             onSearch={onSearchHandler}
                             additionalContextFilter={additionalContextFilter}
@@ -117,10 +114,11 @@ function ViolationsTableSearchFilter({
                     </ToolbarItem>
                 </ToolbarGroup>
                 <ToolbarGroup className="pf-v5-u-w-100">
-                    <SearchFilterChips
-                        searchFilter={searchFilter}
+                    <CompoundSearchFilterLabels
+                        attributesSeparateFromConfig={[]}
+                        config={searchFilterConfig}
                         onFilterChange={onFilterChange}
-                        filterChipGroupDescriptors={filterChipGroupDescriptors}
+                        searchFilter={searchFilter}
                     />
                 </ToolbarGroup>
             </ToolbarContent>

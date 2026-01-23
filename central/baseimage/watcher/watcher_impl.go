@@ -2,10 +2,11 @@ package watcher
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"time"
 
+	"github.com/pkg/errors"
+	baseImageDS "github.com/stackrox/rox/central/baseimage/datastore"
 	repoDS "github.com/stackrox/rox/central/baseimage/datastore/repository"
 	tagDS "github.com/stackrox/rox/central/baseimage/datastore/tag"
 	"github.com/stackrox/rox/generated/storage"
@@ -29,33 +30,45 @@ var log = logging.LoggerForModule()
 type watcherImpl struct {
 	repoDS       repoDS.DataStore
 	tagDS        tagDS.DataStore
+	baseImageDS  baseImageDS.DataStore
 	delegator    delegatedregistry.Delegator
-	pollInterval time.Duration
-	localScanner *reposcan.LocalScanner
+	localScanner reposcan.Scanner
 
 	stopper     concurrency.Stopper
 	startedOnce sync.Once
 	stoppedOnce sync.Once
-	batchSize   int
+
+	pollInterval time.Duration
+	batchSize    int
+	tagLimit     int
+
+	delegationEnabled bool
 }
 
 // New creates a new base image watcher.
 func New(
 	repoDS repoDS.DataStore,
 	tagDS tagDS.DataStore,
+	baseImageDS baseImageDS.DataStore,
 	registries registries.Set,
 	delegator delegatedregistry.Delegator,
 	pollInterval time.Duration,
 	batchSize int,
+	tagLimit int,
+	delegationEnabled bool,
 ) Watcher {
 	return &watcherImpl{
 		repoDS:       repoDS,
 		tagDS:        tagDS,
+		baseImageDS:  baseImageDS,
 		delegator:    delegator,
-		pollInterval: pollInterval,
-		batchSize:    batchSize,
 		localScanner: reposcan.NewLocalScanner(registries),
 		stopper:      concurrency.NewStopper(),
+		pollInterval: pollInterval,
+		batchSize:    batchSize,
+		tagLimit:     tagLimit,
+
+		delegationEnabled: delegationEnabled,
 	}
 }
 
@@ -187,21 +200,20 @@ func (w *watcherImpl) processRepository(ctx context.Context, repo *storage.BaseI
 	default:
 	}
 
-	// Check if scanning should be delegated to a secured cluster. On error, default
-	// to Central (same behavior as image enricher).
-	clusterID, shouldDelegate, err := w.delegator.GetDelegateClusterID(ctx, name)
-	if err != nil {
-		log.Warnf("Error checking delegation for repository=%q: %v (continuing with Central-based processing)",
-			repo.GetRepositoryPath(), err)
-		shouldDelegate = false
-	}
-
 	// Determine scanner based on delegation.
-	var scanner reposcan.Scanner
-	if shouldDelegate {
-		scanner = NewDelegatedScanner(w.delegator, clusterID)
-	} else {
-		scanner = w.localScanner
+	scanner := w.localScanner
+	if w.delegationEnabled {
+		// Check if scanning should be delegated to a secured cluster. On error, default
+		// to Central (same behavior as image enricher).
+		clusterID, shouldDelegate, err := w.delegator.GetDelegateClusterID(ctx, name)
+		if err != nil {
+			log.Warnf("Error checking delegation for repository=%q: %v (continuing with Central-based processing)",
+				repo.GetRepositoryPath(), err)
+			shouldDelegate = false
+		}
+		if shouldDelegate {
+			scanner = NewDelegatedScanner(w.delegator, clusterID)
+		}
 	}
 
 	// Fetch existing tags from cache (sorted by created timestamp, newest first).
@@ -230,6 +242,7 @@ func (w *watcherImpl) processRepository(ctx context.Context, repo *storage.BaseI
 	// Scan repository: list tags, fetch metadata, and emit events.
 	start := time.Now()
 
+	// Batch accumulators for tags.
 	var metadataCount, errorCount, deleteCount int
 	var adds []*storage.BaseImageTag
 	var dels []string
@@ -257,21 +270,22 @@ func (w *watcherImpl) processRepository(ctx context.Context, repo *storage.BaseI
 		switch event.Type {
 		case reposcan.TagEventMetadata:
 			metadata := event.Metadata
-			adds = append(adds, &storage.BaseImageTag{
+			tag := &storage.BaseImageTag{
 				Id:                    tagID,
 				BaseImageRepositoryId: repo.GetId(),
 				Tag:                   event.Tag,
 				ManifestDigest:        metadata.ManifestDigest,
 				Created:               protocompat.ConvertTimeToTimestampOrNil(metadata.Created),
-			})
+				LayerDigests:          metadata.LayerDigests,
+			}
+			adds = append(adds, tag)
 			if len(adds) >= w.batchSize {
 				if err := w.tagDS.UpsertMany(ctx, adds); err != nil {
-					log.Errorf("Failed to upsert %d tags: repository=%q: %v", len(adds), repo.GetRepositoryPath(), err)
+					log.Errorf("Failed to flush %d tags: repository=%q: %v", len(adds), repo.GetRepositoryPath(), err)
 					errorCount += len(adds)
-					adds = adds[:0]
-					continue
+				} else {
+					metadataCount += len(adds)
 				}
-				metadataCount += len(adds)
 				adds = adds[:0]
 			}
 
@@ -295,15 +309,15 @@ func (w *watcherImpl) processRepository(ctx context.Context, repo *storage.BaseI
 
 	}
 
+	// Final flush of remaining batches.
 	if len(adds) > 0 {
 		if err := w.tagDS.UpsertMany(ctx, adds); err != nil {
-			log.Errorf("Failed to upsert %d tags: repository=%q: %v", len(adds), repo.GetRepositoryPath(), err)
+			log.Errorf("Failed to flush %d tags: repository=%q: %v", len(adds), repo.GetRepositoryPath(), err)
 			errorCount += len(adds)
 		} else {
 			metadataCount += len(adds)
 		}
 	}
-
 	if len(dels) > 0 {
 		if err := w.tagDS.DeleteMany(ctx, dels); err != nil {
 			log.Errorf("Failed to delete %d tags: repository=%q: %v", len(dels), repo.GetRepositoryPath(), err)
@@ -313,23 +327,50 @@ func (w *watcherImpl) processRepository(ctx context.Context, repo *storage.BaseI
 		}
 	}
 
+	if err := w.promoteTags(ctx, repo); err != nil {
+		log.Errorf("Failed to promote top-%d tags: repository=%q: %v", w.tagLimit, repo.GetRepositoryPath(), err)
+	}
+
 	recordScanDuration(name.GetRegistry(), repo.GetRepositoryPath(), scanner.Name(), start, metadataCount, errorCount, nil)
 
 	log.Infof("Repository scan completed: repository=%q pattern=%q processed=%d metadata=%d errors=%d deletes=%d",
 		repo.GetRepositoryPath(), repo.GetTagPattern(), metadataCount+errorCount+deleteCount, metadataCount, errorCount, deleteCount)
+}
 
-	// TODO(ROX-31923): Promote tags from cache to active base_images table.
-	// Algorithm:
-	// 1. Fetch all tags from base_image_tags cache for this repository (sorted by created timestamp, newest first)
-	// 2. Select top N tags (using ROX_BASE_IMAGE_WATCHER_PER_REPO_TAG_LIMIT, default 100)
-	// 3. For each tag in top N:
-	//    - If tag exists in base_images: UPDATE metadata (manifest_digest, created, discovered_at)
-	//    - If tag doesn't exist: INSERT new base_image entry
-	// 4. For tags in base_images but NOT in top N:
-	//    - DELETE from base_images (they aged out of the active list)
-	//
-	// This ensures base_images contains only the N most recent tags for matching against workload images.
-	log.Infof("Tag cache updated: repository=%q (promotion to base_images deferred)", repo.GetRepositoryPath())
+// promoteTags promotes the top-N tags by created timestamp from cache to base_images.
+// This replaces all base_images entries for the repository with the current top-N from cache.
+func (w *watcherImpl) promoteTags(
+	ctx context.Context,
+	repo *storage.BaseImageRepository,
+) error {
+	// Get top-N tags from cache ordered by created DESC.
+	tags, err := w.tagDS.ListTagsByRepository(ctx, repo.GetId())
+	if err != nil {
+		return errors.Wrap(err, "listing tags from cache")
+	}
+
+	if len(tags) > w.tagLimit {
+		tags = tags[:w.tagLimit]
+	}
+
+	// Build base images from cached tags.
+	imgs := make(map[*storage.BaseImage][]string, len(tags))
+	for _, tag := range tags {
+		bi := &storage.BaseImage{
+			Id:                    tag.GetId(),
+			BaseImageRepositoryId: tag.GetBaseImageRepositoryId(),
+			Repository:            repo.GetRepositoryPath(),
+			Tag:                   tag.GetTag(),
+			ManifestDigest:        tag.GetManifestDigest(),
+			DiscoveredAt:          protocompat.TimestampNow(),
+			Active:                true,
+			Created:               tag.GetCreated(),
+		}
+		imgs[bi] = tag.GetLayerDigests()
+	}
+
+	// Atomically replace base images for this repository.
+	return w.baseImageDS.ReplaceByRepository(ctx, repo.GetId(), imgs)
 }
 
 func validate(event reposcan.TagEvent) error {

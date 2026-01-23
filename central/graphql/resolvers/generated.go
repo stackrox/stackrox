@@ -54,7 +54,6 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"deployment: Alert_Deployment",
 		"enforcement: Alert_Enforcement",
 		"entityType: Alert_EntityType!",
-		"fileAccessViolation: Alert_FileAccessViolation",
 		"firstOccurred: Time",
 		"id: ID!",
 		"image: ContainerImage",
@@ -100,10 +99,6 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"message: String!",
 	}))
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.Alert_EntityType(0)))
-	utils.Must(builder.AddType("Alert_FileAccessViolation", []string{
-		"accesses: [FileAccess]!",
-		"message: String!",
-	}))
 	utils.Must(builder.AddType("Alert_Node", []string{
 		"clusterId: String!",
 		"clusterName: String!",
@@ -124,6 +119,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 	}))
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.Alert_Resource_ResourceType(0)))
 	utils.Must(builder.AddType("Alert_Violation", []string{
+		"fileAccess: FileAccess",
 		"keyValueAttrs: Alert_Violation_KeyValueAttrs",
 		"message: String!",
 		"networkFlowInfo: Alert_Violation_NetworkFlowInfo",
@@ -134,6 +130,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 	utils.Must(builder.AddUnionType("Alert_ViolationMessageAttributes", []string{
 		"Alert_Violation_KeyValueAttrs",
 		"Alert_Violation_NetworkFlowInfo",
+		"FileAccess",
 	}))
 	utils.Must(builder.AddType("Alert_Violation_KeyValueAttrs", []string{
 		"attrs: [Alert_Violation_KeyValueAttrs_KeyValueAttr]!",
@@ -165,6 +162,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"baseImageDigest: String!",
 		"baseImageFullName: String!",
 		"baseImageId: String!",
+		"created: Time",
 	}))
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.BooleanOperator(0)))
 	utils.Must(builder.AddType("CSCC", []string{
@@ -2009,12 +2007,6 @@ func (resolver *alertResolver) EntityType(ctx context.Context) string {
 	return value.String()
 }
 
-func (resolver *alertResolver) FileAccessViolation(ctx context.Context) (*alert_FileAccessViolationResolver, error) {
-	resolver.ensureData(ctx)
-	value := resolver.data.GetFileAccessViolation()
-	return resolver.root.wrapAlert_FileAccessViolation(value, true, nil)
-}
-
 func (resolver *alertResolver) FirstOccurred(ctx context.Context) (*graphql.Time, error) {
 	resolver.ensureData(ctx)
 	value := resolver.data.GetFirstOccurred()
@@ -2380,58 +2372,6 @@ func toAlert_EntityTypes(values *[]string) []storage.Alert_EntityType {
 	return output
 }
 
-type alert_FileAccessViolationResolver struct {
-	ctx  context.Context
-	root *Resolver
-	data *storage.Alert_FileAccessViolation
-}
-
-func (resolver *Resolver) wrapAlert_FileAccessViolation(value *storage.Alert_FileAccessViolation, ok bool, err error) (*alert_FileAccessViolationResolver, error) {
-	if !ok || err != nil || value == nil {
-		return nil, err
-	}
-	return &alert_FileAccessViolationResolver{root: resolver, data: value}, nil
-}
-
-func (resolver *Resolver) wrapAlert_FileAccessViolations(values []*storage.Alert_FileAccessViolation, err error) ([]*alert_FileAccessViolationResolver, error) {
-	if err != nil || len(values) == 0 {
-		return nil, err
-	}
-	output := make([]*alert_FileAccessViolationResolver, len(values))
-	for i, v := range values {
-		output[i] = &alert_FileAccessViolationResolver{root: resolver, data: v}
-	}
-	return output, nil
-}
-
-func (resolver *Resolver) wrapAlert_FileAccessViolationWithContext(ctx context.Context, value *storage.Alert_FileAccessViolation, ok bool, err error) (*alert_FileAccessViolationResolver, error) {
-	if !ok || err != nil || value == nil {
-		return nil, err
-	}
-	return &alert_FileAccessViolationResolver{ctx: ctx, root: resolver, data: value}, nil
-}
-
-func (resolver *Resolver) wrapAlert_FileAccessViolationsWithContext(ctx context.Context, values []*storage.Alert_FileAccessViolation, err error) ([]*alert_FileAccessViolationResolver, error) {
-	if err != nil || len(values) == 0 {
-		return nil, err
-	}
-	output := make([]*alert_FileAccessViolationResolver, len(values))
-	for i, v := range values {
-		output[i] = &alert_FileAccessViolationResolver{ctx: ctx, root: resolver, data: v}
-	}
-	return output, nil
-}
-
-func (resolver *alert_FileAccessViolationResolver) Accesses(ctx context.Context) ([]*fileAccessResolver, error) {
-	value := resolver.data.GetAccesses()
-	return resolver.root.wrapFileAccesses(value, nil)
-}
-
-func (resolver *alert_FileAccessViolationResolver) Message(ctx context.Context) string {
-	value := resolver.data.GetMessage()
-	return value
-}
-
 type alert_NodeResolver struct {
 	ctx  context.Context
 	root *Resolver
@@ -2678,6 +2618,11 @@ func (resolver *Resolver) wrapAlert_ViolationsWithContext(ctx context.Context, v
 	return output, nil
 }
 
+func (resolver *alert_ViolationResolver) FileAccess(ctx context.Context) (*fileAccessResolver, error) {
+	value := resolver.data.GetFileAccess()
+	return resolver.root.wrapFileAccess(value, true, nil)
+}
+
 func (resolver *alert_ViolationResolver) KeyValueAttrs(ctx context.Context) (*alert_Violation_KeyValueAttrsResolver, error) {
 	value := resolver.data.GetKeyValueAttrs()
 	return resolver.root.wrapAlert_Violation_KeyValueAttrs(value, true, nil)
@@ -2718,6 +2663,11 @@ func (resolver *alert_ViolationResolver) MessageAttributes() *alert_ViolationMes
 			resolver: &alert_Violation_NetworkFlowInfoResolver{root: resolver.root, data: val},
 		}
 	}
+	if val := resolver.data.GetFileAccess(); val != nil {
+		return &alert_ViolationMessageAttributesResolver{
+			resolver: &fileAccessResolver{root: resolver.root, data: val},
+		}
+	}
 	return nil
 }
 
@@ -2728,6 +2678,11 @@ func (resolver *alert_ViolationMessageAttributesResolver) ToAlert_Violation_KeyV
 
 func (resolver *alert_ViolationMessageAttributesResolver) ToAlert_Violation_NetworkFlowInfo() (*alert_Violation_NetworkFlowInfoResolver, bool) {
 	res, ok := resolver.resolver.(*alert_Violation_NetworkFlowInfoResolver)
+	return res, ok
+}
+
+func (resolver *alert_ViolationMessageAttributesResolver) ToFileAccess() (*fileAccessResolver, bool) {
+	res, ok := resolver.resolver.(*fileAccessResolver)
 	return res, ok
 }
 
@@ -3121,6 +3076,11 @@ func (resolver *baseImageInfoResolver) BaseImageFullName(ctx context.Context) st
 func (resolver *baseImageInfoResolver) BaseImageId(ctx context.Context) string {
 	value := resolver.data.GetBaseImageId()
 	return value
+}
+
+func (resolver *baseImageInfoResolver) Created(ctx context.Context) (*graphql.Time, error) {
+	value := resolver.data.GetCreated()
+	return protocompat.ConvertTimestampToGraphqlTimeOrError(value)
 }
 
 func toBooleanOperator(value *string) storage.BooleanOperator {

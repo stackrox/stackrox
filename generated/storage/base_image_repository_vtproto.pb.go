@@ -64,6 +64,11 @@ func (m *BaseImageTag) CloneVT() *BaseImageTag {
 		}
 		r.ListDigests = tmpContainer
 	}
+	if rhs := m.LayerDigests; rhs != nil {
+		tmpContainer := make([]string, len(rhs))
+		copy(tmpContainer, rhs)
+		r.LayerDigests = tmpContainer
+	}
 	if len(m.unknownFields) > 0 {
 		r.unknownFields = make([]byte, len(m.unknownFields))
 		copy(r.unknownFields, m.unknownFields)
@@ -147,6 +152,15 @@ func (this *BaseImageTag) EqualVT(that *BaseImageTag) bool {
 		if !ok {
 			return false
 		}
+		if vx != vy {
+			return false
+		}
+	}
+	if len(this.LayerDigests) != len(that.LayerDigests) {
+		return false
+	}
+	for i, vx := range this.LayerDigests {
+		vy := that.LayerDigests[i]
 		if vx != vy {
 			return false
 		}
@@ -281,6 +295,15 @@ func (m *BaseImageTag) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	if m.unknownFields != nil {
 		i -= len(m.unknownFields)
 		copy(dAtA[i:], m.unknownFields)
+	}
+	if len(m.LayerDigests) > 0 {
+		for iNdEx := len(m.LayerDigests) - 1; iNdEx >= 0; iNdEx-- {
+			i -= len(m.LayerDigests[iNdEx])
+			copy(dAtA[i:], m.LayerDigests[iNdEx])
+			i = protohelpers.EncodeVarint(dAtA, i, uint64(len(m.LayerDigests[iNdEx])))
+			i--
+			dAtA[i] = 0x42
+		}
 	}
 	if len(m.ListDigests) > 0 {
 		for k := range m.ListDigests {
@@ -427,6 +450,12 @@ func (m *BaseImageTag) SizeVT() (n int) {
 			_ = v
 			mapEntrySize := 1 + len(k) + protohelpers.SizeOfVarint(uint64(len(k))) + 1 + len(v) + protohelpers.SizeOfVarint(uint64(len(v)))
 			n += mapEntrySize + 1 + protohelpers.SizeOfVarint(uint64(mapEntrySize))
+		}
+	}
+	if len(m.LayerDigests) > 0 {
+		for _, s := range m.LayerDigests {
+			l = len(s)
+			n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 		}
 	}
 	n += len(m.unknownFields)
@@ -1061,6 +1090,38 @@ func (m *BaseImageTag) UnmarshalVT(dAtA []byte) error {
 				}
 			}
 			m.ListDigests[mapkey] = mapvalue
+			iNdEx = postIndex
+		case 8:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field LayerDigests", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.LayerDigests = append(m.LayerDigests, string(dAtA[iNdEx:postIndex]))
 			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
@@ -1752,6 +1813,42 @@ func (m *BaseImageTag) UnmarshalVTUnsafe(dAtA []byte) error {
 				}
 			}
 			m.ListDigests[mapkey] = mapvalue
+			iNdEx = postIndex
+		case 8:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field LayerDigests", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			var stringValue string
+			if intStringLen > 0 {
+				stringValue = unsafe.String(&dAtA[iNdEx], intStringLen)
+			}
+			m.LayerDigests = append(m.LayerDigests, stringValue)
 			iNdEx = postIndex
 		default:
 			iNdEx = preIndex

@@ -20,6 +20,7 @@ import (
 	"github.com/stackrox/rox/pkg/images/integration"
 	"github.com/stackrox/rox/pkg/images/utils"
 	"github.com/stackrox/rox/pkg/integrationhealth"
+	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/protoutils"
@@ -61,7 +62,8 @@ type enricherImpl struct {
 	signatureVerifier          signatureVerifierForIntegrations
 	signatureFetcher           signatures.SignatureFetcher
 
-	imageGetter ImageGetter
+	baseImageGetter BaseImageGetter
+	imageGetter     ImageGetter
 
 	asyncRateLimiter *rate.Limiter
 
@@ -306,6 +308,17 @@ func (e *enricherImpl) EnrichImage(ctx context.Context, enrichContext Enrichment
 
 	if !errorList.Empty() {
 		errorList.AddError(delegateErr)
+	}
+
+	if features.BaseImageDetection.Enabled() {
+		image.BaseImageInfo, err = e.baseImageGetter(ctx, image.GetMetadata().GetLayerShas())
+		if err != nil {
+			log.Warnw("Matching image with base images",
+				logging.FromContext(ctx),
+				logging.ImageID(image.GetId()),
+				logging.Err(err),
+				logging.String("request_image", image.GetName().GetFullName()))
+		}
 	}
 
 	return EnrichmentResult{

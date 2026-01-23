@@ -48,20 +48,25 @@ Cypress.Commands.add('checkAccessibility', (context = null) => {
  * @returns {Cypress.Chainable} - A chainable object that can be used to get the telemetry events.
  */
 Cypress.Commands.add('spyTelemetry', () => {
+    // Sets a mock analytics instance on window object before app code loads
+    // The analytics module will pick this up on initialization and use it instead of the real analytics instance
     function installMockAnalytics(win) {
         // eslint-disable-next-line no-param-reassign
         win.__cypress_telemetry_cache__ = { page: [], track: [] };
 
-        // eslint-disable-next-line no-param-reassign
-        win.analytics = {
-            initialize: true,
+        const mockAnalytics = {
             page: (type, name, properties) => {
                 win.__cypress_telemetry_cache__.page.push({ type, name, properties });
+                return Promise.resolve();
             },
             track: (event, properties, context) => {
                 win.__cypress_telemetry_cache__.track.push({ event, properties, context });
+                return Promise.resolve();
             },
         };
+
+        // eslint-disable-next-line no-param-reassign
+        win.CYPRESS_ANALYTICS_INSTANCE = mockAnalytics;
     }
 
     // Runs before ANY app scripts execute on every new page load

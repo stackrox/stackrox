@@ -115,7 +115,7 @@ func (s *PolicyValueValidator) TestRegex() {
 		},
 		{
 			name:    "file operation",
-			valid:   []string{"OPEN", "CREATE", "RENAME", "UNLINK", "OWNERSHIP_CHANGED", "PERMISSIONS_CHANGED", "open", "create", "rename", "unlink", "ownership_changed", "permissions_changed", "Open", "Create"},
+			valid:   []string{"OPEN", "CREATE", "RENAME", "UNLINK", "OWNERSHIP_CHANGE", "PERMISSION_CHANGE", "open", "create", "rename", "unlink", "ownership_change", "permission_change", "Open", "Create"},
 			invalid: []string{"", " ", "READ", "WRITE", "DELETE", "INVALID_OPERATION", "MODIFY", "ACCESS"},
 			r:       fileOperationRegex,
 		},
@@ -620,6 +620,7 @@ func (s *PolicyValueValidator) TestValidateFileOperationRequiresFilePath() {
 	defer ResetFieldMetadataSingleton(s.T())
 
 	s.Error(Validate(&storage.Policy{
+
 		Name:          "Operation Without Path",
 		PolicyVersion: policyversion.CurrentVersion().String(),
 		EventSource:   storage.EventSource_NODE_EVENT,

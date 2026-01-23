@@ -305,6 +305,103 @@ Resource:
 	 - Cluster: prod cluster
 	 - ClusterId: ` + fixtureconsts.Cluster3 + `
 `
+	expectedFormattedNodeAlertWithFileAccess = `Alert ID: ` + fixtureconsts.Alert1 + `
+Alert URL: https://localhost:8080/main/violations/` + fixtureconsts.Alert1 + `
+Time (UTC): 2021-01-20 22:42:02
+Severity: Low
+
+Violations:
+	 - '/etc/passwd' accessed (OPEN)
+		 - Effective Path: /etc/passwd
+		 - Actual Path: /etc/passwd
+		 - Operation: OPEN
+		 - Process Name: cp
+
+Policy Definition:
+
+	Description:
+	 - Alert on access to sensitive files on nodes
+
+	Rationale:
+	 - This is the rationale
+
+	Remediation:
+	 - This is the remediation
+
+	Policy Criteria:
+
+		Section Unnamed :
+
+			- Actual Path: /etc/passwd
+
+Node:
+	 - Name: ` + fixtureconsts.Node1 + `
+	 - Id: ` + fixtureconsts.Node1 + `
+	 - Cluster: ` + fixtureconsts.ClusterName1 + `
+	 - ClusterId: ` + fixtureconsts.Cluster1 + `
+`
+	expectedFormattedDeploymentAlertWithFileAccess = `Alert ID: ` + fixtureconsts.Alert1 + `
+Alert URL: https://localhost:8080/main/violations/` + fixtureconsts.Alert1 + `
+Time (UTC): 2021-01-20 22:42:02
+Severity: Low
+
+Violations:
+	 - Deployment is affected by 'CVE-2017-15804'
+	 - Deployment is affected by 'CVE-2017-15670'
+	 - This is a kube event violation
+		 - pod : nginx
+		 - container : nginx
+	 - '/etc/passwd' accessed (OPEN)
+		 - Effective Path: /etc/passwd
+		 - Actual Path: /etc/passwd
+		 - Operation: OPEN
+		 - Process Name: cp
+	 - This is a process violation
+
+Policy Definition:
+
+	Description:
+	 - Alert if the container contains vulnerabilities
+
+	Rationale:
+	 - This is the rationale
+
+	Remediation:
+	 - This is the remediation
+
+	Policy Criteria:
+
+		Section Unnamed :
+
+			- Image Registry: docker.io
+			- Image Remote: r/.*stackrox/nginx.*
+			- Image Tag: 1.10
+			- Image Age: 30
+			- Dockerfile Line: VOLUME=/etc/*
+			- CVE: CVE-1234
+			- Image Component: berkeley*=.*
+			- Image Scan Age: 10
+			- Environment Variable: UNSET=key=value
+			- Volume Name: name
+			- Volume Type: nfs
+			- Volume Destination: /etc/network
+			- Volume Source: 10.0.0.1/export
+			- Writable Mounted Volume: false
+			- Port: 8080
+			- Protocol: tcp
+			- Privileged: true
+			- CVSS: >= 5.000000
+			- Drop Capabilities: DROP1 OR DROP2
+			- Add Capabilities: ADD1 OR ADD2
+
+Deployment:
+	 - ID: ` + fixtureconsts.Deployment1 + `
+	 - Name: nginx_server
+	 - Cluster: prod cluster
+	 - ClusterId: ` + fixtureconsts.Cluster1 + `
+	 - Namespace: stackrox
+	 - Images: docker.io/library/nginx:1.10@sha256:SHA1
+`
 )
 
 func TestFormatAlert(t *testing.T) {
@@ -326,6 +423,14 @@ func TestResourceAlert(t *testing.T) {
 
 func TestFormatAlertWithMitre(t *testing.T) {
 	runFormatTest(t, fixtures.GetAlertWithMitre(), expectedFormattedDeploymentAlertWithMitre)
+}
+
+func TestNodeFileAccessAlert(t *testing.T) {
+	runFormatTest(t, fixtures.GetNodeFileAccessAlert(), expectedFormattedNodeAlertWithFileAccess)
+}
+
+func TestDeploymentFileAccessAlert(t *testing.T) {
+	runFormatTest(t, fixtures.GetDeploymentFileAccessAlert(), expectedFormattedDeploymentAlertWithFileAccess)
 }
 
 func runFormatTest(t *testing.T, alert *storage.Alert, expectedFormattedAlert string) {
@@ -393,6 +498,11 @@ func TestSummaryForAlert(t *testing.T) {
 			name:            "Network alert summary",
 			alert:           fixtures.GetNetworkAlert(),
 			expectedSummary: "Deployment central (in cluster remote) violates 'Unauthorized Network Flow' Policy",
+		},
+		{
+			name:            "Node alert summary",
+			alert:           fixtures.GetNodeAlert(),
+			expectedSummary: "Node " + fixtureconsts.Node1 + " (in cluster " + fixtureconsts.ClusterName1 + ") violates 'Sensitive File Access' Policy",
 		},
 		{
 			name:            "Unexpected entity alert summary",

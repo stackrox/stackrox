@@ -7,10 +7,12 @@ import (
 
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stackrox/rox/sensor/kubernetes/eventpipeline/component"
 	mocks2 "github.com/stackrox/rox/sensor/kubernetes/eventpipeline/component/mocks"
+	mocks3 "github.com/stackrox/rox/sensor/kubernetes/listener/mocks"
 	"github.com/stackrox/rox/sensor/kubernetes/listener/resources/mocks"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
@@ -33,6 +35,8 @@ type ResourceEventHandlerImplTestSuite struct {
 	dispatcher *mocks.MockDispatcher
 	resolver   *mocks2.MockResolver
 
+	pubsub *mocks3.MockpubSubPublisher
+
 	mockCtrl *gomock.Controller
 }
 
@@ -48,6 +52,7 @@ func (suite *ResourceEventHandlerImplTestSuite) SetupTest() {
 	suite.mockCtrl = gomock.NewController(suite.T())
 	suite.dispatcher = mocks.NewMockDispatcher(suite.mockCtrl)
 	suite.resolver = mocks2.NewMockResolver(suite.mockCtrl)
+	suite.pubsub = mocks3.NewMockpubSubPublisher(suite.mockCtrl)
 }
 
 func (suite *ResourceEventHandlerImplTestSuite) TearDownTest() {
@@ -69,7 +74,7 @@ func makeExpectedMap(expectedIDs ...*hasAnID) *map[types.UID]struct{} {
 func (suite *ResourceEventHandlerImplTestSuite) addObj(handler *resourceEventHandlerImpl, obj *hasAnID, expectedMap *map[types.UID]struct{}) {
 	suite.dispatcher.EXPECT().ProcessEvent(obj, nil, central.ResourceAction_SYNC_RESOURCE).
 		Return(&component.ResourceEvent{})
-	suite.resolver.EXPECT().Send(gomock.Any())
+	suite.expectResolverSend(gomock.Any())
 	handler.OnAdd(obj, false)
 	suite.Equal(*expectedMap, handler.seenIDs)
 }
@@ -98,6 +103,8 @@ func (suite *ResourceEventHandlerImplTestSuite) newHandlerImplWithContext(ctx co
 		hasSeenAllInitialIDsSignal: concurrency.NewSignal(),
 		seenIDs:                    make(map[types.UID]struct{}),
 		missingInitialIDs:          nil,
+
+		pubSubDispatcher: suite.pubsub,
 	}
 }
 
@@ -131,7 +138,7 @@ func (suite *ResourceEventHandlerImplTestSuite) TestContextIsPassed() {
 	obj := randomID()
 	suite.dispatcher.EXPECT().ProcessEvent(obj, nil, central.ResourceAction_SYNC_RESOURCE).
 		Return(&component.ResourceEvent{})
-	suite.resolver.EXPECT().Send(matchContextValue("abc"))
+	suite.expectResolverSend(matchContextValue("abc"))
 	handler.OnAdd(obj, false)
 }
 
@@ -205,7 +212,7 @@ func (suite *ResourceEventHandlerImplTestSuite) TestCompleteSync() {
 
 	suite.dispatcher.EXPECT().ProcessEvent(testMsgTwo, nil, central.ResourceAction_SYNC_RESOURCE).
 		Return(&component.ResourceEvent{})
-	suite.resolver.EXPECT().Send(gomock.Any())
+	suite.expectResolverSend(gomock.Any())
 	handler.OnAdd(testMsgTwo, false)
 	suite.assertFinished(handler)
 }
@@ -232,6 +239,14 @@ func (suite *ResourceEventHandlerImplTestSuite) TestEmptySeenAndEmptyPopulate() 
 	handlerTwo := suite.newHandlerImpl()
 	handlerTwo.PopulateInitialObjects([]interface{}{})
 	suite.assertFinished(handlerTwo)
+}
+
+func (suite *ResourceEventHandlerImplTestSuite) expectResolverSend(event any) {
+	if features.SensorInternalPubSub.Enabled() {
+		suite.pubsub.EXPECT().Publish(event).Return(nil)
+		return
+	}
+	suite.resolver.EXPECT().Send(event)
 }
 
 func matchContextValue(value string) gomock.Matcher {

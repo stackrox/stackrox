@@ -14,7 +14,8 @@ import {
 } from '../../utils/vulnerabilityUtils';
 
 export type ImageMetadataContext = {
-    id: string;
+    id: string; // UUID - used for linking
+    digest?: string; // For ImageV2, the SHA digest - used for display
     name: {
         registry: string;
         remote: string;
@@ -33,6 +34,26 @@ export type ImageMetadataContext = {
 export const imageMetadataContextFragment = gql`
     fragment ImageMetadataContext on Image {
         id
+        name {
+            registry
+            remote
+            tag
+        }
+        metadata {
+            v1 {
+                layers {
+                    instruction
+                    value
+                }
+            }
+        }
+    }
+`;
+
+export const imageV2MetadataContextFragment = gql`
+    fragment ImageV2MetadataContext on ImageV2 {
+        id
+        digest
         name {
             registry
             remote
@@ -86,7 +107,8 @@ export type DeploymentComponentVulnerability = Omit<
 
 export type TableDataRow = {
     image: {
-        id: string;
+        id: string; // UUID - used for linking
+        digest?: string; // For ImageV2, the SHA digest - used for display
         name: {
             remote: string;
             registry: string;
@@ -189,7 +211,11 @@ function extractCommonComponentFields(
         version,
         location,
         source,
-        image,
+        image: {
+            id: image.id,
+            digest: image.digest,
+            name: image.name,
+        },
         layer,
         severity,
         fixedByVersion,

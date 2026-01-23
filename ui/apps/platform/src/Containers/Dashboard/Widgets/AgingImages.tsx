@@ -1,6 +1,5 @@
-import { useLocation } from 'react-router-dom-v5-compat';
+import { Link, useLocation } from 'react-router-dom-v5-compat';
 import {
-    Button,
     Checkbox,
     Flex,
     FlexItem,
@@ -15,7 +14,6 @@ import cloneDeep from 'lodash/cloneDeep';
 import isEqual from 'lodash/isEqual';
 import pluralize from 'pluralize';
 
-import LinkShim from 'Components/PatternFly/LinkShim';
 import useURLSearch from 'hooks/useURLSearch';
 import useWidgetConfig from 'hooks/useWidgetConfig';
 import { getRequestQueryStringForSearchFilter } from 'utils/searchUtils';
@@ -201,72 +199,82 @@ function AgingImages() {
             errorTitle={errorTitle}
             errorMessage={errorMessage}
             header={
-                <Flex direction={{ default: 'row' }}>
-                    <FlexItem grow={{ default: 'grow' }}>
+                <Flex
+                    direction={{ default: 'row' }}
+                    alignItems={{ default: 'alignItemsCenter' }}
+                    justifyContent={{ default: 'justifyContentSpaceBetween' }}
+                >
+                    <FlexItem>
                         <Title headingLevel="h2">
                             {getWidgetTitle(searchFilter, timeRanges, timeRangeCounts)}
                         </Title>
                     </FlexItem>
-                    <FlexItem>
-                        {isOptionsChanged && (
-                            <WidgetOptionsResetButton onClick={() => dispatch({ type: 'reset' })} />
-                        )}
-                        <WidgetOptionsMenu
-                            bodyContent={
-                                <Form>
-                                    <FormGroup
-                                        fieldId={`${fieldIdPrefix}-time-range-0`}
-                                        label="Image age values"
-                                    >
-                                        {timeRangeTupleIndices.map((index) => (
-                                            <div key={index}>
-                                                <Checkbox
-                                                    aria-label="Toggle image time range"
-                                                    id={`${fieldIdPrefix}-time-range-${index}`}
-                                                    name={`${fieldIdPrefix}-time-range-${index}`}
-                                                    className="pf-v5-u-mb-sm pf-v5-u-display-flex pf-v5-u-align-items-center"
-                                                    isChecked={timeRanges[index].enabled}
-                                                    onChange={() =>
-                                                        dispatch({ type: 'toggle', index })
-                                                    }
-                                                    label={
-                                                        <TextInput
-                                                            aria-label="Image age in days"
-                                                            onChange={async (_event, val) => {
-                                                                const value = parseInt(val, 10);
-                                                                if (!(value >= maxTimeRange)) {
-                                                                    await dispatch({
-                                                                        type: 'update',
-                                                                        index,
-                                                                        value,
-                                                                    });
+                    <Flex
+                        direction={{ default: 'row' }}
+                        alignItems={{ default: 'alignItemsCenter' }}
+                    >
+                        <FlexItem>
+                            <Link to={getViewAllLink(searchFilter)}>View all</Link>
+                        </FlexItem>
+                        <FlexItem>
+                            {isOptionsChanged && (
+                                <WidgetOptionsResetButton
+                                    onClick={() => dispatch({ type: 'reset' })}
+                                />
+                            )}
+                            <WidgetOptionsMenu
+                                bodyContent={
+                                    <Form>
+                                        <FormGroup
+                                            fieldId={`${fieldIdPrefix}-time-range-0`}
+                                            label="Image age values"
+                                        >
+                                            {timeRangeTupleIndices.map((index) => (
+                                                <div key={index}>
+                                                    <Checkbox
+                                                        aria-label="Toggle image time range"
+                                                        id={`${fieldIdPrefix}-time-range-${index}`}
+                                                        name={`${fieldIdPrefix}-time-range-${index}`}
+                                                        className="pf-v5-u-mb-sm pf-v5-u-display-flex pf-v5-u-align-items-center"
+                                                        isChecked={timeRanges[index].enabled}
+                                                        onChange={() =>
+                                                            dispatch({ type: 'toggle', index })
+                                                        }
+                                                        label={
+                                                            <TextInput
+                                                                aria-label="Image age in days"
+                                                                onChange={async (_event, val) => {
+                                                                    const value = parseInt(val, 10);
+                                                                    if (!(value >= maxTimeRange)) {
+                                                                        await dispatch({
+                                                                            type: 'update',
+                                                                            index,
+                                                                            value,
+                                                                        });
+                                                                    }
+                                                                }}
+                                                                validated={
+                                                                    isNumberInRange(
+                                                                        timeRanges,
+                                                                        index
+                                                                    )
+                                                                        ? ValidatedOptions.default
+                                                                        : ValidatedOptions.error
                                                                 }
-                                                            }}
-                                                            validated={
-                                                                isNumberInRange(timeRanges, index)
-                                                                    ? ValidatedOptions.default
-                                                                    : ValidatedOptions.error
-                                                            }
-                                                            max={maxTimeRange}
-                                                            type="number"
-                                                            value={timeRanges[index].value}
-                                                        />
-                                                    }
-                                                />
-                                            </div>
-                                        ))}
-                                    </FormGroup>
-                                </Form>
-                            }
-                        />
-                        <Button
-                            variant="secondary"
-                            component={LinkShim}
-                            href={getViewAllLink(searchFilter)}
-                        >
-                            View all
-                        </Button>
-                    </FlexItem>
+                                                                max={maxTimeRange}
+                                                                type="number"
+                                                                value={timeRanges[index].value}
+                                                            />
+                                                        }
+                                                    />
+                                                </div>
+                                            ))}
+                                        </FormGroup>
+                                    </Form>
+                                }
+                            />
+                        </FlexItem>
+                    </Flex>
                 </Flex>
             }
         >

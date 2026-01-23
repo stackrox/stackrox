@@ -37,6 +37,32 @@ export const dateConditions = Object.keys(
     dateConditionMap
 ) as unknown as (keyof typeof dateConditionMap)[];
 
+export function getEntityFromConfig(
+    config: CompoundSearchFilterConfig,
+    entityNameSelected: string | undefined,
+    entityNameDefault: string | undefined // when no entity is selected
+): CompoundSearchFilterEntity | undefined {
+    const entityName = entityNameSelected ?? entityNameDefault;
+    const entityFound = config.find((entity) => {
+        return entity.displayName === entityName;
+    });
+
+    return entityFound ?? config[0]; // default to first entity
+}
+
+export function getAttributeFromEntity(
+    entity: CompoundSearchFilterEntity | undefined,
+    attributeNameSelected: string | undefined,
+    attributeNameDefault: string | undefined // when no attribute is selected
+): CompoundSearchFilterAttribute | undefined {
+    const attributeName = attributeNameSelected ?? attributeNameDefault;
+    const attributeFound = entity?.attributes?.find((attribute) => {
+        return attribute.displayName === attributeName;
+    });
+
+    return attributeFound ?? entity?.attributes?.[0]; // default to first attribute
+}
+
 export function getEntity(
     config: CompoundSearchFilterConfig,
     entityName: string

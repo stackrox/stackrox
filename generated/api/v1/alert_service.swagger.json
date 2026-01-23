@@ -625,21 +625,6 @@
       ],
       "default": "UNSET"
     },
-    "AlertFileAccessViolation": {
-      "type": "object",
-      "properties": {
-        "message": {
-          "type": "string"
-        },
-        "accesses": {
-          "type": "array",
-          "items": {
-            "type": "object",
-            "$ref": "#/definitions/storageFileAccess"
-          }
-        }
-      }
-    },
     "AlertGroupAlertCounts": {
       "type": "object",
       "properties": {
@@ -704,6 +689,9 @@
         "networkFlowInfo": {
           "$ref": "#/definitions/ViolationNetworkFlowInfo"
         },
+        "fileAccess": {
+          "$ref": "#/definitions/storageFileAccess"
+        },
         "type": {
           "$ref": "#/definitions/AlertViolationType",
           "description": "'type' is for internal use only."
@@ -721,7 +709,8 @@
         "GENERIC",
         "K8S_EVENT",
         "NETWORK_FLOW",
-        "NETWORK_POLICY"
+        "NETWORK_POLICY",
+        "FILE_ACCESS"
       ],
       "default": "GENERIC"
     },
@@ -1024,9 +1013,6 @@
         },
         "processViolation": {
           "$ref": "#/definitions/AlertProcessViolation"
-        },
-        "fileAccessViolation": {
-          "$ref": "#/definitions/AlertFileAccessViolation"
         },
         "enforcement": {
           "$ref": "#/definitions/AlertEnforcement"

@@ -6,6 +6,7 @@ import type { Telemetry } from 'types/config.proto';
 import { ensureExhaustive, tupleTypeGuard } from 'utils/type.utils';
 import type { UnionFrom } from 'utils/type.utils';
 import { getQueryObject, getQueryString } from 'utils/queryStringUtils';
+import { getAnalytics } from 'init/initializeAnalytics';
 import usePublicConfig from './usePublicConfig';
 
 // Event Name Constants
@@ -92,6 +93,9 @@ export const BASE_IMAGE_REFERENCE_ADD_SUBMITTED = 'Base Image Reference Add Subm
 export const BASE_IMAGE_REFERENCE_ADD_SUCCESS = 'Base Image Reference Add Success';
 export const BASE_IMAGE_REFERENCE_ADD_FAILURE = 'Base Image Reference Add Failure';
 export const BASE_IMAGE_REFERENCE_DELETED = 'Base Image Reference Deleted';
+
+// error boundary
+export const PAGE_CRASH = 'Page Crash';
 
 /**
  * Boolean fields should be tracked with 0 or 1 instead of true/false. This
@@ -518,7 +522,20 @@ export type AnalyticsEvent =
           };
       }
     /** Tracks each time a base image is deleted */
-    | typeof BASE_IMAGE_REFERENCE_DELETED;
+    | typeof BASE_IMAGE_REFERENCE_DELETED
+    /**
+     * Tracks each time a page crash occurs (caught by error boundary).
+     * Includes error name, truncated message, and component location.
+     */
+    | {
+          event: typeof PAGE_CRASH;
+          properties: {
+              errorName: string;
+              errorMessage: string;
+              componentStack: string;
+              pathname: string;
+          };
+      };
 
 export const redactedHostReplacement = 'redacted.host.invalid';
 export const redactedSearchReplacement = '*****';
@@ -608,10 +625,14 @@ const useAnalytics = () => {
     const analyticsPageVisit = useCallback(
         (type: string, name: string, additionalProperties = {}): void => {
             if (isTelemetryEnabled !== false) {
-                window.analytics?.page(type, name, {
-                    ...additionalProperties,
-                    ...getRedactedOriginProperties(window.location.toString()),
-                });
+                getAnalytics()
+                    ?.page(type, name, {
+                        ...additionalProperties,
+                        ...getRedactedOriginProperties(window.location.toString()),
+                    })
+                    .catch((error) => {
+                        Raven.captureException(error);
+                    });
             }
         },
         [isTelemetryEnabled]
@@ -630,13 +651,17 @@ const useAnalytics = () => {
             };
 
             if (typeof analyticsEvent === 'string') {
-                window.analytics?.track(analyticsEvent, undefined, redactedEventContext);
+                getAnalytics()
+                    ?.track(analyticsEvent, undefined, redactedEventContext)
+                    .catch((error) => {
+                        Raven.captureException(error);
+                    });
             } else {
-                window.analytics?.track(
-                    analyticsEvent.event,
-                    analyticsEvent.properties,
-                    redactedEventContext
-                );
+                getAnalytics()
+                    ?.track(analyticsEvent.event, analyticsEvent.properties, redactedEventContext)
+                    .catch((error) => {
+                        Raven.captureException(error);
+                    });
             }
         },
         [isTelemetryEnabled]

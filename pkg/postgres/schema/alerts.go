@@ -62,7 +62,7 @@ type Alerts struct {
 	ClusterName              string                              `gorm:"column:clustername;type:varchar"`
 	Namespace                string                              `gorm:"column:namespace;type:varchar;index:alerts_sac_filter,type:btree"`
 	NamespaceID              string                              `gorm:"column:namespaceid;type:uuid"`
-	DeploymentID             string                              `gorm:"column:deployment_id;type:uuid;index:alerts_deployment_id,type:hash"`
+	DeploymentID             string                              `gorm:"column:deployment_id;type:uuid;index:alerts_deployment_id,type:btree"`
 	DeploymentName           string                              `gorm:"column:deployment_name;type:varchar"`
 	DeploymentInactive       bool                                `gorm:"column:deployment_inactive;type:bool"`
 	ImageID                  string                              `gorm:"column:image_id;type:varchar"`

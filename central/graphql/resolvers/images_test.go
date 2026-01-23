@@ -267,6 +267,18 @@ func (s *ImageResolversTestSuite) TestDeployments() {
 				assert.Equal(t, int32(expectedCVESevCount.moderate), moderate.Total(testCtx))
 				assert.Equal(t, int32(expectedCVESevCount.low), low.Total(testCtx))
 
+				// Test BaseImageInfo field for each image resolver.
+				expectedImage := expectedImages[imageID]
+				actualBaseImageInfo, err := image.BaseImageInfo(testCtx)
+				assert.NoError(t, err)
+				assert.Len(t, actualBaseImageInfo, len(expectedImage.GetBaseImageInfo()))
+				for i, baseInfo := range actualBaseImageInfo {
+					expectedBaseInfo := expectedImage.GetBaseImageInfo()[i]
+					assert.Equal(t, expectedBaseInfo.GetBaseImageId(), baseInfo.BaseImageId(testCtx))
+					assert.Equal(t, expectedBaseInfo.GetBaseImageFullName(), baseInfo.BaseImageFullName(testCtx))
+					assert.Equal(t, expectedBaseInfo.GetBaseImageDigest(), baseInfo.BaseImageDigest(testCtx))
+				}
+
 				// Test image -> deployments -> images
 				imageDeployments, err := image.Deployments(testCtx, paginatedQ)
 				assert.NoError(t, err)

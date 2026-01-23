@@ -162,12 +162,15 @@ func TestFileAccessAlertResults(t *testing.T) {
 	alert1 := fixtures.GetAlert()
 	alert1.GetDeployment().Id = "dep1"
 	alert1.ProcessViolation = nil
-	alert1.FileAccessViolation = &storage.Alert_FileAccessViolation{
-		Accesses: []*storage.FileAccess{
-			{
-				Process: &storage.ProcessIndicator{
-					Id:    "pid1",
-					PodId: "pod1",
+	alert1.Violations = []*storage.Alert_Violation{
+		{
+			Type: storage.Alert_Violation_FILE_ACCESS,
+			MessageAttributes: &storage.Alert_Violation_FileAccess{
+				FileAccess: &storage.FileAccess{
+					Process: &storage.ProcessIndicator{
+						Id:    "pid1",
+						PodId: "pod1",
+					},
 				},
 			},
 		},
@@ -176,12 +179,15 @@ func TestFileAccessAlertResults(t *testing.T) {
 	alert2 := fixtures.GetAlert()
 	alert2.GetDeployment().Id = "dep2"
 	alert2.ProcessViolation = nil
-	alert2.FileAccessViolation = &storage.Alert_FileAccessViolation{
-		Accesses: []*storage.FileAccess{
-			{
-				Process: &storage.ProcessIndicator{
-					Id:    "pid2",
-					PodId: "pod2",
+	alert2.Violations = []*storage.Alert_Violation{
+		{
+			Type: storage.Alert_Violation_FILE_ACCESS,
+			MessageAttributes: &storage.Alert_Violation_FileAccess{
+				FileAccess: &storage.FileAccess{
+					Process: &storage.ProcessIndicator{
+						Id:    "pid2",
+						PodId: "pod2",
+					},
 				},
 			},
 		},
@@ -220,7 +226,7 @@ func TestFileAccessAlertResults(t *testing.T) {
 					Enforcement: storage.EnforcementAction_KILL_POD_ENFORCEMENT,
 					Resource: &central.SensorEnforcement_ContainerInstance{
 						ContainerInstance: &central.ContainerInstanceEnforcement{
-							PodId:                 alert1.GetFileAccessViolation().GetAccesses()[0].GetProcess().GetPodId(),
+							PodId:                 alert1.GetViolations()[0].GetFileAccess().GetProcess().GetPodId(),
 							DeploymentEnforcement: generateDeploymentEnforcement(alert1),
 						},
 					},
@@ -246,7 +252,7 @@ func TestFileAccessAlertResults(t *testing.T) {
 					Enforcement: storage.EnforcementAction_KILL_POD_ENFORCEMENT,
 					Resource: &central.SensorEnforcement_ContainerInstance{
 						ContainerInstance: &central.ContainerInstanceEnforcement{
-							PodId:                 alert1.GetFileAccessViolation().GetAccesses()[0].GetProcess().GetPodId(),
+							PodId:                 alert1.GetViolations()[0].GetFileAccess().GetProcess().GetPodId(),
 							DeploymentEnforcement: generateDeploymentEnforcement(alert1),
 						},
 					},
@@ -255,7 +261,7 @@ func TestFileAccessAlertResults(t *testing.T) {
 					Enforcement: storage.EnforcementAction_KILL_POD_ENFORCEMENT,
 					Resource: &central.SensorEnforcement_ContainerInstance{
 						ContainerInstance: &central.ContainerInstanceEnforcement{
-							PodId:                 alert2.GetFileAccessViolation().GetAccesses()[0].GetProcess().GetPodId(),
+							PodId:                 alert2.GetViolations()[0].GetFileAccess().GetProcess().GetPodId(),
 							DeploymentEnforcement: generateDeploymentEnforcement(alert2),
 						},
 					},

@@ -10,9 +10,11 @@ import (
 	v2 "github.com/stackrox/rox/generated/api/v2"
 	"github.com/stackrox/rox/generated/storage"
 	delegatorMocks "github.com/stackrox/rox/pkg/delegatedregistry/mocks"
+	"github.com/stackrox/rox/pkg/features"
 	integrationMocks "github.com/stackrox/rox/pkg/images/integration/mocks"
 	"github.com/stackrox/rox/pkg/pointers"
 	registryMocks "github.com/stackrox/rox/pkg/registries/mocks"
+	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
 )
@@ -58,7 +60,10 @@ func (suite *ServiceTestSuite) setupAllImageRegistriesMatch(matches bool) {
 
 // setupDelegatorExpectation sets up mocks for delegator behavior.
 // If shouldDelegate is true, expects delegation to succeed; if false, expects no delegation.
+// This also enables the DelegatedBaseImageScanning feature flag since the delegator is only
+// called when the feature is enabled.
 func (suite *ServiceTestSuite) setupDelegatorExpectation(shouldDelegate bool) {
+	testutils.MustUpdateFeature(suite.T(), features.DelegatedBaseImageScanning, true)
 	if shouldDelegate {
 		suite.mockDelegator.EXPECT().GetDelegateClusterID(gomock.Any(), gomock.Any()).Return("cluster-1", true, nil)
 	} else {
@@ -515,6 +520,76 @@ func (suite *ServiceTestSuite) TestDeleteBaseImageReference() {
 			if tt.expectedError {
 				suite.Error(err, "expected error")
 				suite.Contains(err.Error(), tt.errorContains, "error message should contain expected text")
+			} else {
+				suite.NoError(err, "expected no error")
+			}
+		})
+	}
+}
+
+func (suite *ServiceTestSuite) TestValidateBaseImageRepository_DelegatedFeatureFlag() {
+	tests := []struct {
+		description         string
+		featureEnabled      bool
+		expectDelegatorCall bool
+		registryMatch       bool
+		expectedError       bool
+	}{
+		{
+			description:         "feature disabled - delegator not called, central registry checked (match)",
+			featureEnabled:      false,
+			expectDelegatorCall: false,
+			registryMatch:       true,
+			expectedError:       false,
+		},
+		{
+			description:         "feature disabled - delegator not called, central registry checked (no match)",
+			featureEnabled:      false,
+			expectDelegatorCall: false,
+			registryMatch:       false,
+			expectedError:       true,
+		},
+		{
+			description:         "feature enabled - delegator called, delegation succeeds (skips central registry)",
+			featureEnabled:      true,
+			expectDelegatorCall: true,
+			registryMatch:       false, // irrelevant when delegated
+			expectedError:       false,
+		},
+		{
+			description:         "feature enabled - delegator called, not delegated, central registry checked",
+			featureEnabled:      true,
+			expectDelegatorCall: true,
+			registryMatch:       true,
+			expectedError:       false,
+		},
+	}
+
+	for _, tt := range tests {
+		suite.Run(tt.description, func() {
+			testutils.MustUpdateFeature(suite.T(), features.DelegatedBaseImageScanning, tt.featureEnabled)
+
+			if tt.expectDelegatorCall {
+				// When delegator is called, return shouldDelegate=true for the "skips central" case.
+				if !tt.registryMatch && !tt.expectedError {
+					// Delegation succeeds, so skip central registry check.
+					suite.mockDelegator.EXPECT().GetDelegateClusterID(gomock.Any(), gomock.Any()).Return("cluster-1", true, nil)
+				} else {
+					// Not delegated, so central registry check is performed.
+					suite.mockDelegator.EXPECT().GetDelegateClusterID(gomock.Any(), gomock.Any()).Return("", false, nil)
+					suite.mockIntegrationSet.EXPECT().RegistrySet().Return(suite.mockRegistrySet)
+					suite.mockRegistrySet.EXPECT().Match(gomock.Any()).Return(tt.registryMatch)
+				}
+			} else {
+				// Delegator should not be called, central registry is always checked.
+				suite.mockIntegrationSet.EXPECT().RegistrySet().Return(suite.mockRegistrySet)
+				suite.mockRegistrySet.EXPECT().Match(gomock.Any()).Return(tt.registryMatch)
+			}
+
+			err := suite.service.validateBaseImageRepository(context.Background(), "docker.io/library/nginx")
+
+			if tt.expectedError {
+				suite.Error(err, "expected error")
 			} else {
 				suite.NoError(err, "expected no error")
 			}

@@ -26,6 +26,21 @@ import (
 	_ "github.com/quay/claircore/updater/defaults"
 )
 
+var (
+	// ccUpdaterSets represents Claircore updater sets to initialize.
+	ccUpdaterSets = []string{
+		"alpine",
+		"aws",
+		"debian",
+		"oracle",
+		"osv",
+		"photon",
+		"rhel-vex",
+		"suse",
+		"ubuntu",
+	}
+)
+
 type ExportOptions struct {
 	ManualVulnURL string
 }
@@ -51,18 +66,7 @@ func Export(ctx context.Context, outputDir string, opts *ExportOptions) error {
 	bundles["epss"] = epssOpts()
 	bundles["stackrox-rhel-csaf"] = redhatCSAFOpts()
 
-	// ClairCore updaters.
-	for _, uSet := range []string{
-		"alpine",
-		"aws",
-		"debian",
-		"oracle",
-		"osv",
-		"photon",
-		"rhel-vex",
-		"suse",
-		"ubuntu",
-	} {
+	for _, uSet := range ccUpdaterSets {
 		bundles[uSet] = []updates.ManagerOption{updates.WithEnabled([]string{uSet})}
 	}
 

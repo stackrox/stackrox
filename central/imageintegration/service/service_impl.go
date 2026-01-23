@@ -12,6 +12,7 @@ import (
 	"github.com/stackrox/rox/central/delegatedregistryconfig/util/imageintegration"
 	"github.com/stackrox/rox/central/enrichment"
 	"github.com/stackrox/rox/central/imageintegration/datastore"
+	"github.com/stackrox/rox/central/metadata/centralcapabilities"
 	"github.com/stackrox/rox/central/reprocessor"
 	"github.com/stackrox/rox/central/sensor/service/connection"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -340,6 +341,11 @@ func (s *serviceImpl) validateIntegration(ctx context.Context, request *storage.
 		errorList.AddStrings("integrations require a category")
 	}
 
+	// Check if using container IAM role for ECR when the capability is disabled
+	if err := validateIAMRoleCapability(request); err != nil {
+		errorList.AddError(err)
+	}
+
 	// Validate if there is a name. If there isn't, then skip the DB name check by returning the accumulated errors
 	if request.GetName() == "" {
 		errorList.AddString("name for integration is required")
@@ -354,6 +360,22 @@ func (s *serviceImpl) validateIntegration(ctx context.Context, request *storage.
 		errorList.AddStringf("integration with name %q already exists", request.GetName())
 	}
 	return errorList.ToError()
+}
+
+func validateIAMRoleCapability(request *storage.ImageIntegration) error {
+	// Check if this is an ECR integration using IAM role
+	ecrConfig := request.GetEcr()
+	if ecrConfig == nil || !ecrConfig.GetUseIam() {
+		return nil
+	}
+
+	// Check if the capability is disabled
+	capabilities := centralcapabilities.GetCentralCapabilities()
+	if capabilities.GetCentralScanningCanUseContainerIamRoleForEcr() == v1.CentralServicesCapabilities_CapabilityDisabled {
+		return errors.New("using container IAM role for ECR scanning is not available in this environment")
+	}
+
+	return nil
 }
 
 func (s *serviceImpl) reconcileUpdateImageIntegrationRequest(ctx context.Context, updateRequest *v1.UpdateImageIntegrationRequest) error {
