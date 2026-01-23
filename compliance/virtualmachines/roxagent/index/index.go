@@ -81,12 +81,13 @@ func runIndexer(ctx context.Context, cfg *common.Config) (*v4.IndexReport, error
 }
 
 func randomDelay(ctx context.Context, maxDelay time.Duration) error {
+
 	if maxDelay <= 0 {
 		return nil
 	}
 
 	r := rand.New(rand.NewSource(time.Now().UnixNano()))
-	delay := time.Duration(r.Intn(int(maxDelay.Seconds()))) * time.Second
+	delay := time.Duration(r.Int63n(maxDelay.Nanoseconds() + 1))
 
 	log.Infof("Delaying initial index report by %s (use --max-initial-report-delay to control this).", delay)
 
