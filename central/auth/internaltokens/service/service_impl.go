@@ -8,12 +8,16 @@ import (
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/pkg/errors"
 	v1 "github.com/stackrox/rox/generated/internalapi/central/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/tokens"
 	"github.com/stackrox/rox/pkg/errox"
+	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/idcheck"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/protocompat"
+	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/sac/resources"
 	"google.golang.org/grpc"
 )
 
@@ -29,6 +33,13 @@ var (
 			v1.TokenService_GenerateTokenForPermissionsAndScope_FullMethodName,
 		},
 	})
+
+	clusterReadContext = sac.WithGlobalAccessScopeChecker(context.Background(),
+		sac.AllowFixedScopes(
+			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
+			sac.ResourceScopeKeys(resources.Cluster),
+		),
+	)
 )
 
 type serviceImpl struct {
@@ -80,6 +91,7 @@ func (s *serviceImpl) GenerateTokenForPermissionsAndScope(
 	response := &v1.GenerateTokenForPermissionsAndScopeResponse{
 		Token: tokenInfo.Token,
 	}
+	go trackRequest(authn.IdentityFromContextOrNil(ctx), req)
 	return response, nil
 }
 
