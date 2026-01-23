@@ -43,6 +43,18 @@ func (f *fakeTokenServiceClient) GenerateTokenForPermissionsAndScope(
 	return f.response, f.err
 }
 
+// newTestTokenProvider creates a tokenProvider for testing with the given client.
+func newTestTokenProvider(client centralv1.TokenServiceClient, clusterID string) *tokenProvider {
+	tp := &tokenProvider{
+		clusterIDGetter: &fakeClusterIDGetter{clusterID: clusterID},
+		tokenCache:      expiringcache.NewExpiringCache[string, string](tokenCacheTTL),
+	}
+	if client != nil {
+		tp.client.Store(&client)
+	}
+	return tp
+}
+
 func TestScopedTokenTransport_RoundTrip(t *testing.T) {
 	tests := []struct {
 		name           string
@@ -84,15 +96,9 @@ func TestScopedTokenTransport_RoundTrip(t *testing.T) {
 				},
 			}
 
-			tp := &tokenProvider{
-				client:          fakeClient,
-				clusterIDGetter: &fakeClusterIDGetter{clusterID: "test-cluster-id"},
-				tokenCache:      expiringcache.NewExpiringCache[string, string](tokenCacheTTL),
-			}
-
 			transport := &scopedTokenTransport{
 				base:          mockBase,
-				tokenProvider: tp,
+				tokenProvider: newTestTokenProvider(fakeClient, "test-cluster-id"),
 			}
 
 			req := httptest.NewRequest(http.MethodGet, "/v1/alerts", nil)
@@ -117,15 +123,9 @@ func TestScopedTokenTransport_RoundTrip_Error(t *testing.T) {
 		})
 
 		// Token provider with no client set - will return error
-		tp := &tokenProvider{
-			client:          nil, // Not initialized
-			clusterIDGetter: &fakeClusterIDGetter{clusterID: "test-cluster-id"},
-			tokenCache:      expiringcache.NewExpiringCache[string, string](tokenCacheTTL),
-		}
-
 		transport := &scopedTokenTransport{
 			base:          mockBase,
-			tokenProvider: tp,
+			tokenProvider: newTestTokenProvider(nil, "test-cluster-id"),
 		}
 
 		req := httptest.NewRequest(http.MethodGet, "/v1/alerts", nil)
@@ -150,15 +150,9 @@ func TestScopedTokenTransport_RoundTrip_Error(t *testing.T) {
 			},
 		}
 
-		tp := &tokenProvider{
-			client:          fakeClient,
-			clusterIDGetter: &fakeClusterIDGetter{clusterID: "test-cluster-id"},
-			tokenCache:      expiringcache.NewExpiringCache[string, string](tokenCacheTTL),
-		}
-
 		transport := &scopedTokenTransport{
 			base:          mockBase,
-			tokenProvider: tp,
+			tokenProvider: newTestTokenProvider(fakeClient, "test-cluster-id"),
 		}
 
 		req := httptest.NewRequest(http.MethodGet, "/v1/alerts", nil)
@@ -208,11 +202,7 @@ func TestTokenProvider_GetTokenForScope(t *testing.T) {
 				},
 			}
 
-			provider := &tokenProvider{
-				client:          fakeClient,
-				clusterIDGetter: &fakeClusterIDGetter{clusterID: tt.clusterID},
-				tokenCache:      expiringcache.NewExpiringCache[string, string](tokenCacheTTL),
-			}
+			provider := newTestTokenProvider(fakeClient, tt.clusterID)
 
 			token, err := provider.getTokenForScope(context.Background(), tt.namespaceScope)
 			require.NoError(t, err)
@@ -255,11 +245,7 @@ func TestTokenProvider_Caching(t *testing.T) {
 			},
 		}
 
-		provider := &tokenProvider{
-			client:          fakeClient,
-			clusterIDGetter: &fakeClusterIDGetter{clusterID: "test-cluster-id"},
-			tokenCache:      expiringcache.NewExpiringCache[string, string](tokenCacheTTL),
-		}
+		provider := newTestTokenProvider(fakeClient, "test-cluster-id")
 
 		// First call should hit the API
 		token1, err := provider.getTokenForScope(context.Background(), "namespace-a")
@@ -292,11 +278,7 @@ func TestTokenProvider_Caching(t *testing.T) {
 			},
 		}
 
-		provider := &tokenProvider{
-			client:          fakeClient,
-			clusterIDGetter: &fakeClusterIDGetter{clusterID: "test-cluster-id"},
-			tokenCache:      expiringcache.NewExpiringCache[string, string](tokenCacheTTL),
-		}
+		provider := newTestTokenProvider(fakeClient, "test-cluster-id")
 
 		// Request for scope A
 		tokenA, err := provider.getTokenForScope(context.Background(), "scope-a")
@@ -322,11 +304,7 @@ func TestTokenProvider_Caching(t *testing.T) {
 
 func TestTokenProvider_ErrorHandling(t *testing.T) {
 	t.Run("no client returns error", func(t *testing.T) {
-		provider := &tokenProvider{
-			client:          nil,
-			clusterIDGetter: &fakeClusterIDGetter{clusterID: "test-cluster-id"},
-			tokenCache:      expiringcache.NewExpiringCache[string, string](tokenCacheTTL),
-		}
+		provider := newTestTokenProvider(nil, "test-cluster-id")
 
 		_, err := provider.getTokenForScope(context.Background(), "namespace")
 		require.Error(t, err)
@@ -340,11 +318,7 @@ func TestTokenProvider_ErrorHandling(t *testing.T) {
 			},
 		}
 
-		provider := &tokenProvider{
-			client:          fakeClient,
-			clusterIDGetter: &fakeClusterIDGetter{clusterID: "test-cluster-id"},
-			tokenCache:      expiringcache.NewExpiringCache[string, string](tokenCacheTTL),
-		}
+		provider := newTestTokenProvider(fakeClient, "test-cluster-id")
 
 		_, err := provider.getTokenForScope(context.Background(), "namespace")
 		require.Error(t, err)
@@ -362,11 +336,7 @@ func TestTokenProvider_ErrorHandling(t *testing.T) {
 			err: fakeErr,
 		}
 
-		provider := &tokenProvider{
-			client:          fakeClient,
-			clusterIDGetter: &fakeClusterIDGetter{clusterID: "test-cluster-id"},
-			tokenCache:      expiringcache.NewExpiringCache[string, string](tokenCacheTTL),
-		}
+		provider := newTestTokenProvider(fakeClient, "test-cluster-id")
 
 		_, err := provider.getTokenForScope(context.Background(), "namespace-error")
 		require.Error(t, err)

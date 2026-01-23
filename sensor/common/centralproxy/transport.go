@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+	"sync/atomic"
 	"time"
 
 	"github.com/pkg/errors"
@@ -118,7 +119,9 @@ func (t *scopedTokenTransport) RoundTrip(req *http.Request) (*http.Response, err
 
 // tokenProvider manages dynamic token acquisition from Central.
 type tokenProvider struct {
-	client          centralv1.TokenServiceClient
+	// client holds the Central gRPC client. It is stored atomically to safeguard
+	// against data races.
+	client          atomic.Pointer[centralv1.TokenServiceClient]
 	clusterIDGetter clusterIDGetter
 	tokenCache      expiringcache.Cache[string, string]
 }
@@ -132,8 +135,13 @@ func newTokenProvider(clusterIDGetter clusterIDGetter) *tokenProvider {
 }
 
 // setClient sets the gRPC client connection to Central.
+// This method is safe to call concurrently with getTokenForScope.
 func (p *tokenProvider) setClient(conn grpc.ClientConnInterface) {
-	p.client = centralv1.NewTokenServiceClient(conn)
+	if conn == nil {
+		return
+	}
+	client := centralv1.NewTokenServiceClient(conn)
+	p.client.Store(&client)
 }
 
 // getTokenForScope returns a token for the given namespace scope.
@@ -142,7 +150,8 @@ func (p *tokenProvider) setClient(conn grpc.ClientConnInterface) {
 //   - "<namespace>": Token scoped to the specific namespace
 //   - FullClusterAccessScope ("*"): Token with full cluster access
 func (p *tokenProvider) getTokenForScope(ctx context.Context, namespaceScope string) (string, error) {
-	if p.client == nil {
+	client := p.client.Load()
+	if client == nil {
 		return "", errors.Wrap(errServiceUnavailable, "token provider not initialized: central connection not available")
 	}
 
@@ -156,7 +165,7 @@ func (p *tokenProvider) getTokenForScope(ctx context.Context, namespaceScope str
 	if err != nil {
 		return "", errors.Wrap(err, "building token request")
 	}
-	resp, err := p.client.GenerateTokenForPermissionsAndScope(ctx, req)
+	resp, err := (*client).GenerateTokenForPermissionsAndScope(ctx, req)
 	if err != nil {
 		return "", errors.Wrapf(err, "requesting token from Central for scope %q", namespaceScope)
 	}
