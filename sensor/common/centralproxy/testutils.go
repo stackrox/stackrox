@@ -8,13 +8,12 @@ import (
 	"testing"
 
 	"github.com/pkg/errors"
+	pkghttputil "github.com/stackrox/rox/pkg/httputil"
 	authenticationv1 "k8s.io/api/authentication/v1"
 	authv1 "k8s.io/api/authorization/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/kubernetes/fake"
 	k8sTesting "k8s.io/client-go/testing"
-
-	pkghttputil "github.com/stackrox/rox/pkg/httputil"
 )
 
 // testClusterIDGetter is a test implementation of clusterIDGetter.
