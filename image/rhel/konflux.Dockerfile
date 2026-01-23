@@ -56,16 +56,18 @@ RUN dnf install \
     bash \
     coreutils
 
-# Install PostgreSQL to /out/ with explicit module stream syntax
+# Enable PostgreSQL module in installroot context (after base packages created /out/etc/yum.repos.d/)
+RUN dnf -y --installroot=/out/ --releasever=8 module enable postgresql:${PG_VERSION}
+
+# Install PostgreSQL to /out/ (module now enabled in installroot)
 RUN dnf install \
     --installroot=/out/ \
     --releasever=8 \
     --setopt=install_weak_deps=0 \
-    --setopt=reposdir=/etc/yum.repos.d/ \
     --nodocs \
     --nogpgcheck \
     -y \
-    postgresql:${PG_VERSION}
+    postgresql
 
 RUN dnf --installroot=/out/ clean all
 RUN rm -rf /out/var/cache/dnf /out/var/cache/yum
