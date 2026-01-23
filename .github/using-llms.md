@@ -12,7 +12,7 @@ You are generally free to use any tools you choose, assuming they adhere to your
 corporate obligations. In any case, the expectations (e.g., code quality, testing,
 documentation, etc) for contributions remain unchanged:
 
-- understand what you submit;
+- understand entirely what you submit;
 - ensure that what you submit works (solves the problem, compiles, passes tests);
 - use your own judgement when addressing review comments.
 
