@@ -213,8 +213,8 @@ func TestTokenProvider_GetTokenForScope(t *testing.T) {
 			require.NotNil(t, req)
 
 			// Verify permissions
-			assert.Equal(t, centralv1.Access_READ_ACCESS, req.GetPermissions()[permissionImage])
-			assert.Equal(t, centralv1.Access_READ_ACCESS, req.GetPermissions()[permissionDeployment])
+			assert.Equal(t, centralv1.Access_READ_ACCESS, req.GetPermissions()["Image"])
+			assert.Equal(t, centralv1.Access_READ_ACCESS, req.GetPermissions()["Deployment"])
 
 			// Verify scopes
 			if tt.wantScopes {
@@ -356,8 +356,8 @@ func TestBuildTokenRequest(t *testing.T) {
 	t.Run("empty scope", func(t *testing.T) {
 		req, err := provider.buildTokenRequest("")
 		require.NoError(t, err)
-		assert.Equal(t, centralv1.Access_READ_ACCESS, req.GetPermissions()[permissionImage])
-		assert.Equal(t, centralv1.Access_READ_ACCESS, req.GetPermissions()[permissionDeployment])
+		assert.Equal(t, centralv1.Access_READ_ACCESS, req.GetPermissions()["Image"])
+		assert.Equal(t, centralv1.Access_READ_ACCESS, req.GetPermissions()["Deployment"])
 		assert.Empty(t, req.GetClusterScopes())
 		assert.NotNil(t, req.GetLifetime())
 	})

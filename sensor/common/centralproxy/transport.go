@@ -26,15 +26,17 @@ const (
 
 	// tokenTTL is the requested token validity duration.
 	// Slightly longer than cache TTL to ensure tokens remain valid during cache lifetime.
-	tokenTTL = tokenCacheTTL + 1 * time.Minute
-
-	// Required read permissions for proxy requests.
-	permissionDeployment = "Deployment"
-	permissionImage      = "Image"
+	tokenTTL = tokenCacheTTL + 1*time.Minute
 
 	// FullClusterAccessScope is the namespace scope value that indicates full cluster access.
 	FullClusterAccessScope = "*"
 )
+
+// tokenPermissions defines the required read permissions for proxy requests.
+var tokenPermissions = map[string]centralv1.Access{
+	"Deployment": centralv1.Access_READ_ACCESS,
+	"Image":      centralv1.Access_READ_ACCESS,
+}
 
 // errServiceUnavailable indicates the proxy is temporarily unavailable,
 // typically during sensor startup before Central connection is established.
@@ -189,25 +191,19 @@ func (p *tokenProvider) buildTokenRequest(namespaceScope string) (*centralv1.Gen
 	}
 
 	req := &centralv1.GenerateTokenForPermissionsAndScopeRequest{
-		Permissions: map[string]centralv1.Access{
-			permissionDeployment: centralv1.Access_READ_ACCESS,
-			permissionImage:      centralv1.Access_READ_ACCESS,
-		},
-		Lifetime: durationpb.New(tokenTTL),
+		Permissions: tokenPermissions,
+		Lifetime:    durationpb.New(tokenTTL),
 	}
 
 	switch namespaceScope {
 	case "":
 		// Empty scope: no cluster scopes (authentication only)
-		// ClusterScopes left nil
-
 	case FullClusterAccessScope:
 		// Cluster-wide access
 		req.ClusterScopes = []*centralv1.ClusterScope{{
 			ClusterId:         clusterID,
 			FullClusterAccess: true,
 		}}
-
 	default:
 		// Specific namespace
 		req.ClusterScopes = []*centralv1.ClusterScope{{
