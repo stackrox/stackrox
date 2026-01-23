@@ -8,7 +8,7 @@ import (
 var (
 	booleanPolicy = &storage.Policy{
 		Id:              "b3523d84-ac1a-4daa-a908-62d196c5a741",
-		Name:            "Vulnerable Container",
+		Name:            "Vulnerable Container (foo)",
 		Categories:      []string{"Image Assurance", "Privileges Capabilities", "Container Configuration"},
 		Description:     "Alert if the container contains vulnerabilities",
 		Severity:        storage.Severity_LOW_SEVERITY,
