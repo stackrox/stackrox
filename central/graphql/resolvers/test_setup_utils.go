@@ -145,13 +145,12 @@ func SetupTestResolver(t testing.TB, datastores ...interface{}) (*Resolver, *gra
 func CreateTestImageV2Datastore(t testing.TB, testDB *pgtest.TestPostgres, ctrl *gomock.Controller) imageDS.DataStore {
 	risks := mockRisks.NewMockDataStore(ctrl)
 	risks.EXPECT().RemoveRisk(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil).AnyTimes()
-	imageCVEInfo := imageCVEInfoDS.GetTestPostgresDataStore(t, testDB.DB)
 	return imageDS.NewWithPostgres(
 		imagePostgresV2.New(testDB.DB, false, concurrency.NewKeyFence()),
 		risks,
 		ranking.NewRanker(),
 		ranking.NewRanker(),
-		imageCVEInfo,
+		imageCVEInfoDS.GetTestPostgresDataStore(t, testDB.DB),
 	)
 }
 
@@ -159,13 +158,12 @@ func CreateTestImageV2Datastore(t testing.TB, testDB *pgtest.TestPostgres, ctrl 
 func CreateTestImageV2V2Datastore(t testing.TB, testDB *pgtest.TestPostgres, ctrl *gomock.Controller) imageV2DS.DataStore {
 	risks := mockRisks.NewMockDataStore(ctrl)
 	risks.EXPECT().RemoveRisk(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil).AnyTimes()
-	imageCVEInfo := imageCVEInfoDS.GetTestPostgresDataStore(t, testDB.DB)
 	return imageV2DS.NewWithPostgres(
 		imageV2Postgres.New(testDB.DB, false, concurrency.NewKeyFence()),
 		risks,
 		ranking.NewRanker(),
 		ranking.NewRanker(),
-		imageCVEInfo,
+		imageCVEInfoDS.GetTestPostgresDataStore(t, testDB.DB),
 	)
 }
 

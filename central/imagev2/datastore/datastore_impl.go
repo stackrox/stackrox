@@ -280,16 +280,18 @@ func (ds *datastoreImpl) UpsertImage(ctx context.Context, image *storage.ImageV2
 	ds.keyedMutex.Lock(image.GetId())
 	defer ds.keyedMutex.Unlock(image.GetId())
 
-	// Populate the ImageCVEInfo lookup table with CVE timing metadata (feature-gated)
-	if err := ds.upsertImageCVEInfos(ctx, image); err != nil {
-		log.Warnf("Failed to upsert ImageCVEInfo: %v", err)
-		// Non-fatal, continue with image upsert
-	}
+	if features.CVEFixTimestampCriteria.Enabled() {
+		// Populate the ImageCVEInfo lookup table with CVE timing metadata
+		if err := ds.upsertImageCVEInfos(ctx, image); err != nil {
+			log.Warnf("Failed to upsert ImageCVEInfo: %v", err)
+			// Non-fatal, continue with image upsert
+		}
 
-	// Enrich the CVEs with accurate timestamps from lookup table (feature-gated)
-	if err := ds.enrichCVEsFromImageCVEInfo(ctx, image); err != nil {
-		log.Warnf("Failed to enrich CVEs from ImageCVEInfo: %v", err)
-		// Non-fatal, continue with image upsert
+		// Enrich the CVEs with accurate timestamps from lookup table
+		if err := ds.enrichCVEsFromImageCVEInfo(ctx, image); err != nil {
+			log.Warnf("Failed to enrich CVEs from ImageCVEInfo: %v", err)
+			// Non-fatal, continue with image upsert
+		}
 	}
 
 	ds.updateComponentRisk(image)
@@ -398,7 +400,6 @@ func (ds *datastoreImpl) updateComponentRisk(image *storage.ImageV2) {
 }
 
 // upsertImageCVEInfos populates the ImageCVEInfo lookup table with CVE timing metadata.
-// This is gated behind the CVEFixTimestampCriteria feature flag.
 func (ds *datastoreImpl) upsertImageCVEInfos(ctx context.Context, image *storage.ImageV2) error {
 	if !features.CVEFixTimestampCriteria.Enabled() {
 		return nil
@@ -426,14 +427,10 @@ func (ds *datastoreImpl) upsertImageCVEInfos(ctx context.Context, image *storage
 		}
 	}
 
-	if len(infos) > 0 {
-		return ds.imageCVEInfoDS.UpsertMany(ctx, infos)
-	}
-	return nil
+	return ds.imageCVEInfoDS.UpsertMany(ctx, infos)
 }
 
 // enrichCVEsFromImageCVEInfo enriches the image's CVEs with accurate timestamps from the lookup table.
-// This is gated behind the CVEFixTimestampCriteria feature flag.
 func (ds *datastoreImpl) enrichCVEsFromImageCVEInfo(ctx context.Context, image *storage.ImageV2) error {
 	if !features.CVEFixTimestampCriteria.Enabled() {
 		return nil
