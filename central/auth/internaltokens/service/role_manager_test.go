@@ -6,6 +6,7 @@ import (
 	"slices"
 	"strings"
 	"testing"
+	"time"
 
 	clusterDataStoreMocks "github.com/stackrox/rox/central/cluster/datastore/mocks"
 	roleDataStoreMocks "github.com/stackrox/rox/central/role/datastore/mocks"
@@ -16,6 +17,12 @@ import (
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stretchr/testify/assert"
 	"go.uber.org/mock/gomock"
+)
+
+var (
+	// testExpiryTime is a fixed time used in tests for consistent trait generation.
+	// This matches the expectedExpiration used in service_impl_test.go (testClock + 5 minutes).
+	testExpiryTime = time.Date(1989, time.November, 9, 18, 10, 35, 987654321, time.UTC)
 )
 
 func TestCreatePermissionSet(t *testing.T) {
@@ -109,7 +116,7 @@ func TestCreatePermissionSet(t *testing.T) {
 				Times(1).
 				Return(tc.expectedStoreError)
 
-			psID, err := roleMgr.createPermissionSet(ctx, tc.input)
+			psID, err := roleMgr.createPermissionSet(ctx, tc.input, testExpiryTime)
 
 			if tc.expectedStoreError != nil {
 				assert.Empty(it, psID)
@@ -296,7 +303,7 @@ func TestCreateAccessScope(t *testing.T) {
 				Times(1).
 				Return(tc.expectedStoreError)
 
-			asID, err := roleMgr.createAccessScope(ctx, tc.input)
+			asID, err := roleMgr.createAccessScope(ctx, tc.input, testExpiryTime)
 
 			if tc.expectedStoreError != nil {
 				assert.Empty(it, asID)
@@ -324,7 +331,7 @@ func TestCreateAccessScope(t *testing.T) {
 			Times(1).
 			Return("", false, errDummy)
 
-		accessScopeId, err := roleMgr.createAccessScope(ctx, input)
+		accessScopeId, err := roleMgr.createAccessScope(ctx, input, testExpiryTime)
 		assert.Empty(it, accessScopeId)
 		assert.ErrorIs(it, err, errDummy)
 	})
@@ -355,7 +362,7 @@ func TestCreateAccessScope(t *testing.T) {
 			Times(1).
 			Return(nil)
 
-		accessScopeId, err := roleMgr.createAccessScope(ctx, input)
+		accessScopeId, err := roleMgr.createAccessScope(ctx, input, testExpiryTime)
 		assert.Equal(it, expectedAccessScope.GetId(), accessScopeId)
 		assert.NoError(it, err)
 	})
@@ -458,7 +465,7 @@ func TestCreateRole(t *testing.T) {
 				mockRoleStore,
 			)
 
-			roleName, err := roleMgr.createRole(ctx, tc.input)
+			roleName, err := roleMgr.createRole(ctx, tc.input, testExpiryTime)
 
 			if tc.expectedRoleStoreError != nil {
 				assert.Empty(it, roleName)
@@ -498,7 +505,7 @@ func TestCreateRole(t *testing.T) {
 
 		setClusterStoreExpectations(input, mockClusterStore)
 
-		roleName, err := roleMgr.createRole(ctx, input)
+		roleName, err := roleMgr.createRole(ctx, input, testExpiryTime)
 
 		assert.Empty(it, roleName)
 		assert.ErrorIs(it, err, accessScopeCreationErr)
@@ -523,7 +530,7 @@ func TestCreateRole(t *testing.T) {
 			ClusterScopes: []*v1.ClusterScope{requestSingleNamespace},
 		}
 
-		roleName, err := roleMgr.createRole(ctx, input)
+		roleName, err := roleMgr.createRole(ctx, input, testExpiryTime)
 
 		assert.Empty(it, roleName)
 		assert.ErrorIs(it, err, permissionSetCreationErr)
@@ -616,7 +623,7 @@ func testPermissionSet(permissions map[string]v1.Access) *storage.PermissionSet 
 		Name:             fmt.Sprintf(permissionSetNameFormat, permissionSetID),
 		Description:      permissionSetDescription,
 		ResourceToAccess: make(map[string]storage.Access),
-		Traits:           generatedObjectTraits.CloneVT(),
+		Traits:           generateTraitsWithExpiry(testExpiryTime),
 	}
 	for _, resource := range resources {
 		permissionSet.ResourceToAccess[resource] = convertAccess(permissions[resource])
@@ -634,7 +641,7 @@ func testAccessScope(targetScopes []*v1.ClusterScope) *storage.SimpleAccessScope
 			IncludedClusters:   make([]string, 0),
 			IncludedNamespaces: make([]*storage.SimpleAccessScope_Rules_Namespace, 0),
 		},
-		Traits: generatedObjectTraits.CloneVT(),
+		Traits: generateTraitsWithExpiry(testExpiryTime),
 	}
 	for _, targetScope := range targetScopes {
 		if targetScope == nil {
@@ -668,7 +675,7 @@ func testRole(permissions map[string]v1.Access, targetScopes []*v1.ClusterScope)
 		Description:     roleDescription,
 		PermissionSetId: permissionSetID,
 		AccessScopeId:   accessScopeID,
-		Traits:          generatedObjectTraits.CloneVT(),
+		Traits:          generateTraitsWithExpiry(testExpiryTime),
 	}
 	return role
 }

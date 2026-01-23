@@ -575,7 +575,7 @@ func (s *PruningTestSuite) TestImagePruning() {
 			gc := newGarbageCollector(alerts, nodes, images, imagesV2, nil, deployments, pods,
 				nil, nil, nil, config, nil, nil,
 				nil, nil, nil, nil, nil, nil, nil,
-				nil, nil).(*garbageCollectorImpl)
+				nil, nil, nil).(*garbageCollectorImpl)
 
 			// Add images, deployments, and pods into the datastores
 			if c.deployment != nil {
@@ -868,7 +868,7 @@ func (s *PruningTestSuite) TestClusterPruning() {
 			gc := newGarbageCollector(nil, nil, nil, nil, clusterDS, deploymentsDS, nil,
 				nil, nil, nil, nil, nil, nil,
 				nil, nil, nil, nil, nil, nil,
-				nil, nil, nil).(*garbageCollectorImpl)
+				nil, nil, nil, nil).(*garbageCollectorImpl)
 			gc.collectClusters(c.config)
 
 			// Now get all clusters and compare the names to ensure only the expected ones exist
@@ -995,7 +995,7 @@ func (s *PruningTestSuite) TestClusterPruningCentralCheck() {
 			gc := newGarbageCollector(nil, nil, nil, nil, clusterDS, deploymentsDS, nil,
 				nil, nil, nil, nil, nil, nil,
 				nil, nil, nil, nil, nil, nil,
-				nil, nil, nil).(*garbageCollectorImpl)
+				nil, nil, nil, nil).(*garbageCollectorImpl)
 			gc.collectClusters(getCluserRetentionConfig(60, 90, 72))
 
 			// Now get all clusters and compare the names to ensure only the expected ones exist
@@ -1173,7 +1173,7 @@ func (s *PruningTestSuite) TestAlertPruning() {
 			gc := newGarbageCollector(alerts, nodes, images, imagesV2, nil, deployments, nil,
 				nil, nil, nil, config, nil, nil,
 				nil, nil, nil, nil, nil, nil,
-				nil, nil, nil).(*garbageCollectorImpl)
+				nil, nil, nil, nil).(*garbageCollectorImpl)
 
 			// Add alerts into the datastores
 			for _, alert := range c.alerts {

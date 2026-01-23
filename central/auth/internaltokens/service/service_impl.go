@@ -71,13 +71,15 @@ func (s *serviceImpl) GenerateTokenForPermissionsAndScope(
 	ctx context.Context,
 	req *v1.GenerateTokenForPermissionsAndScopeRequest,
 ) (*v1.GenerateTokenForPermissionsAndScopeResponse, error) {
-	roleName, err := s.roleManager.createRole(ctx, req)
-	if err != nil {
-		return nil, errors.Wrap(err, "creating and storing target role")
-	}
+	// Calculate expiry first so we can set it on the RBAC objects
 	expiresAt, err := s.getExpiresAt(ctx, req)
 	if err != nil {
 		return nil, errors.Wrap(err, "getting expiration time")
+	}
+	// Create the role with the same expiry as the token, so pruning can clean it up
+	roleName, err := s.roleManager.createRole(ctx, req, expiresAt)
+	if err != nil {
+		return nil, errors.Wrap(err, "creating and storing target role")
 	}
 	claimName := fmt.Sprintf(claimNameFormat, roleName, expiresAt.Format(time.RFC3339Nano))
 	roxClaims := tokens.RoxClaims{

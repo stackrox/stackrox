@@ -133,8 +133,9 @@ func TestGenerateTokenForPermissionsAndScope(t *testing.T) {
 		mockClusterStore := clusterDataStoreMocks.NewMockDataStore(mockCtrl)
 		mockRoleStore := roleDataStoreMocks.NewMockDataStore(mockCtrl)
 		svc := createService(nil, mockClusterStore, mockRoleStore)
-		setClusterStoreExpectations(input, mockClusterStore)
-		setNormalRoleStoreExpectations(deploymentPS, singleNSScope, expectedRole, nil, mockRoleStore)
+		// Note: With the new code structure, getExpiresAt is called first.
+		// Since Lifetime is nil, getExpiresAt returns an error before createRole is called,
+		// so we don't set up any role store expectations.
 
 		rsp, err := svc.GenerateTokenForPermissionsAndScope(t.Context(), input)
 		assert.Nil(it, rsp)
@@ -144,7 +145,7 @@ func TestGenerateTokenForPermissionsAndScope(t *testing.T) {
 		input := &v1.GenerateTokenForPermissionsAndScopeRequest{
 			Permissions:   deploymentPermission,
 			ClusterScopes: []*v1.ClusterScope{requestSingleNamespace},
-			Lifetime:      nil,
+			Lifetime:      &durationpb.Duration{Seconds: 300},
 		}
 
 		mockCtrl := gomock.NewController(it)
