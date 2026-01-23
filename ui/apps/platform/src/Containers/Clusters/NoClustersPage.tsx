@@ -212,7 +212,7 @@ function NoClustersPage({ isModalOpen, setIsModalOpen }): ReactElement {
                                         If you misplaced your registration secret, we recommend
                                         locating the previously downloaded YAML on your device first
                                         by the name of the{' '}
-                                        <Link to={clustersInitBundlesPath}>
+                                        <Link to={clustersClusterRegistrationSecretsPath}>
                                             generated registration secret
                                         </Link>
                                         , or you may need to create a new registration secret.
