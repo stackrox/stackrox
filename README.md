@@ -317,9 +317,9 @@ Then go to https://localhost:8000/ in your web browser.
 ---
 ## Development
 
-If you plan to make a contribution, start with [pull request guidelines](./.github/contributing.md).
-For non-trivial code submissions, look at [**shepherding**](./.github/shepherding.md) and our [**AI policy**](./.github/using-llms.md). More resources on specific aspects and topics:
-
+- Start with [pull request guidelines](./.github/contributing.md) if you plan to make a contribution.
+- Look at [**shepherding**](./.github/shepherding.md) for non-trivial code submissions.
+- Check out our [**AI policy**](./.github/using-llms.md).
 - **UI Dev Docs**: Refer to [ui/README.md](./ui/README.md)
 - **E2E Dev Docs**: Refer to [qa-tests-backend/README.md](./qa-tests-backend/README.md)
 - **Go coding style guide**: [go-coding-style.md](./.github/go-coding-style.md)
