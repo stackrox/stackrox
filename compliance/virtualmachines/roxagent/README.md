@@ -21,19 +21,16 @@ sudo ./roxagent --daemon
 sudo ./roxagent --daemon --index-interval 10m --host-path /custom/path --port 2048
 ```
 
-On startup the agent adds a randomized delay (0–20 minutes) before sending the first
-report to reduce thundering-herd spikes. Use `--now` to skip this delay.
-
 ## Flags
 
 - `--daemon` - Run continuously (default: false).
 - `--index-interval` - Time between scans in daemon mode (default: 4h).
 - `--host-path` - Where to look for package databases (default: /).
+- `--max-initial-report-delay` - Max delay before starting to send in daemon mode (default: 20m).
 - `--port` - VSock port (default: 818).
 - `--repo-cpe-url` - URL for the repository to CPE mapping.
 - `--timeout` - VSock client timeout when sending index reports.
 - `--verbose` - Prints the index reports to stdout.
-- `--now` - Send the first index report immediately (skip the randomized delay).
 
 ## How it works
 
