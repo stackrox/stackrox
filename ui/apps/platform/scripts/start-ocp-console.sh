@@ -12,6 +12,10 @@ ACS_API_SERVICE_URL=${ACS_API_SERVICE_URL:=https://$(oc -n stackrox get route ce
 # Whether to inject the OCP auth token into the ACS backend service.
 ACS_INJECT_OCP_AUTH_TOKEN=${ACS_INJECT_OCP_AUTH_TOKEN:=true}
 
+# The base path to append onto the console proxy base URL. When following a true path via the sensor-proxy, default to `proxy/central`.
+ACS_PROXY_BASE_PATH=${ACS_PROXY_BASE_PATH:="/proxy/central"}
+ACS_PROXY_BASE_PATH="${ACS_PROXY_BASE_PATH%/}" # Remove trailing slash if present, we will add it back when constructing the proxy URL.
+
 # Plugin metadata is declared in package.json
 PLUGIN_NAME="advanced-cluster-security"
 
@@ -40,7 +44,8 @@ if [ -n "$GITOPS_HOSTNAME" ]; then
     export BRIDGE_K8S_MODE_OFF_CLUSTER_GITOPS="https://$GITOPS_HOSTNAME"
 fi
 
-export BRIDGE_PLUGIN_PROXY='{"services":[{"consoleAPIPath":"/api/proxy/plugin/advanced-cluster-security/api-service/proxy/central","endpoint":"'$ACS_API_SERVICE_URL'", "authorize":'$ACS_INJECT_OCP_AUTH_TOKEN'}]}'
+export BRIDGE_PLUGIN_PROXY='{"services":[{"consoleAPIPath":"/api/proxy/plugin/advanced-cluster-security/api-service'$ACS_PROXY_BASE_PATH'/","endpoint":"'$ACS_API_SERVICE_URL'", "authorize":'$ACS_INJECT_OCP_AUTH_TOKEN'}]}'
+
 
 echo "API Server: $BRIDGE_K8S_MODE_OFF_CLUSTER_ENDPOINT"
 echo "Console Image: $CONSOLE_IMAGE"

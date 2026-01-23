@@ -61,10 +61,10 @@ import NodesTable, {
 import { useNodeCveEntityCounts } from './useNodeCveEntityCounts';
 
 const searchFilterConfig = [
-    nodeSearchFilterConfig,
-    nodeCVESearchFilterConfig,
-    nodeComponentSearchFilterConfig,
     clusterSearchFilterConfig,
+    nodeCVESearchFilterConfig,
+    nodeSearchFilterConfig,
+    nodeComponentSearchFilterConfig,
 ];
 
 function NodeCvesOverviewPage() {
@@ -133,6 +133,7 @@ function NodeCvesOverviewPage() {
         <AdvancedFiltersToolbar
             searchFilter={searchFilter}
             searchFilterConfig={searchFilterConfig}
+            defaultSearchFilterEntity="Node"
             onFilterChange={(newFilter, searchPayload) => {
                 setSearchFilter(newFilter);
                 pagination.setPage(1);

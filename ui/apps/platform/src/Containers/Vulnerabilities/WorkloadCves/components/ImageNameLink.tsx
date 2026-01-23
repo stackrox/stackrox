@@ -14,10 +14,11 @@ export type ImageNameLinkProps = {
         registry: string;
         tag: string;
     };
-    id: string;
+    id: string; // UUID - used for linking to the image detail page
+    digest?: string; // For ImageV2, the SHA digest - used for display when tag is not present
 };
 
-function ImageNameLink({ name, id }: ImageNameLinkProps) {
+function ImageNameLink({ name, id, digest }: ImageNameLinkProps) {
     const { urlBuilder } = useWorkloadCveViewContext();
     const vulnerabilityState = useVulnerabilityState();
     const [copyIconTooltip, setCopyIconTooltip] = useState('Copy image name');
@@ -25,8 +26,9 @@ function ImageNameLink({ name, id }: ImageNameLinkProps) {
 
     const { registry } = name;
 
-    // If tag is not provided, use the image hash (id) full the full image name
-    const baseName = getImageBaseNameDisplay(id, name);
+    // For display: use digest (SHA) if available, otherwise use id (UUID)
+    const imageShaForDisplay = digest || id;
+    const baseName = getImageBaseNameDisplay(imageShaForDisplay, name);
 
     function copyImageName() {
         return copyToClipboard(`${registry}/${baseName}`).then(() => setCopyIconTooltip('Copied!'));

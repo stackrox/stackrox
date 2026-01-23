@@ -43,4 +43,4 @@ export const LayerType: CompoundSearchFilterAttribute = {
     },
 };
 
-export const imageComponentAttributes = [Name, Source, Version, LayerType];
+export const imageComponentAttributes = [LayerType, Name, Source, Version];

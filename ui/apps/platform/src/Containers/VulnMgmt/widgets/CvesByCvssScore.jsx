@@ -12,6 +12,7 @@ import workflowStateContext from 'Containers/workflowStateContext';
 import { vulnerabilitySeverityColorMap } from 'constants/severityColors';
 import { vulnerabilitySeverityLabels } from 'messages/common';
 import { getScopeQuery } from 'Containers/VulnMgmt/Entity/VulnMgmtPolicyQueryUtil';
+import useFeatureFlags from 'hooks/useFeatureFlags';
 
 import ViewAllButton from './ViewAllButton';
 
@@ -56,6 +57,8 @@ const vulnerabilitySeverities = [
 ];
 
 const CvesByCvssScore = ({ entityContext, parentContext }) => {
+    const { isFeatureFlagEnabled } = useFeatureFlags();
+    const isNewImageDataModelEnabled = isFeatureFlagEnabled('ROX_FLATTEN_IMAGE_DATA');
     let queryToUse = IMAGE_CVES_QUERY;
     let linkTypeToUse = entityTypes.IMAGE_CVE;
 
@@ -74,7 +77,10 @@ const CvesByCvssScore = ({ entityContext, parentContext }) => {
 
     const { loading, data = {} } = useQuery(queryToUse, {
         variables: {
-            query: queryService.entityContextToQueryString(entityContext),
+            query: queryService.entityContextToQueryString(
+                entityContext,
+                isNewImageDataModelEnabled
+            ),
             scopeQuery: getScopeQuery(parentContext),
         },
     });

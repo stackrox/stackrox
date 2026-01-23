@@ -26,7 +26,7 @@ func RootCmd(ctx context.Context) *cobra.Command {
 	cmd.Flags().BoolVar(&cfg.DaemonMode, "daemon", false,
 		"Run in daemon mode. Sends index reports continuously.",
 	)
-	cmd.Flags().DurationVar(&cfg.IndexInterval, "index-interval", 5*time.Minute,
+	cmd.Flags().DurationVar(&cfg.IndexInterval, "index-interval", 240*time.Minute,
 		"Interval duration in which index reports are sent in daemon mode.",
 	)
 	cmd.Flags().StringVar(&cfg.IndexHostPath, "host-path", "/",

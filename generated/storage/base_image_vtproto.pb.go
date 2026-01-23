@@ -35,6 +35,7 @@ func (m *BaseImage) CloneVT() *BaseImage {
 	r.DiscoveredAt = (*timestamppb.Timestamp)((*timestamppb1.Timestamp)(m.DiscoveredAt).CloneVT())
 	r.Active = m.Active
 	r.FirstLayerDigest = m.FirstLayerDigest
+	r.Created = (*timestamppb.Timestamp)((*timestamppb1.Timestamp)(m.Created).CloneVT())
 	if rhs := m.Layers; rhs != nil {
 		tmpContainer := make([]*BaseImageLayer, len(rhs))
 		for k, v := range rhs {
@@ -120,6 +121,9 @@ func (this *BaseImage) EqualVT(that *BaseImage) bool {
 			}
 		}
 	}
+	if !(*timestamppb1.Timestamp)(this.Created).EqualVT((*timestamppb1.Timestamp)(that.Created)) {
+		return false
+	}
 	return string(this.unknownFields) == string(that.unknownFields)
 }
 
@@ -187,6 +191,16 @@ func (m *BaseImage) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	if m.unknownFields != nil {
 		i -= len(m.unknownFields)
 		copy(dAtA[i:], m.unknownFields)
+	}
+	if m.Created != nil {
+		size, err := (*timestamppb1.Timestamp)(m.Created).MarshalToSizedBufferVT(dAtA[:i])
+		if err != nil {
+			return 0, err
+		}
+		i -= size
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+		i--
+		dAtA[i] = 0x52
 	}
 	if len(m.Layers) > 0 {
 		for iNdEx := len(m.Layers) - 1; iNdEx >= 0; iNdEx-- {
@@ -366,6 +380,10 @@ func (m *BaseImage) SizeVT() (n int) {
 			l = e.SizeVT()
 			n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 		}
+	}
+	if m.Created != nil {
+		l = (*timestamppb1.Timestamp)(m.Created).SizeVT()
+		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
 	n += len(m.unknownFields)
 	return n
@@ -704,6 +722,42 @@ func (m *BaseImage) UnmarshalVT(dAtA []byte) error {
 			}
 			m.Layers = append(m.Layers, &BaseImageLayer{})
 			if err := m.Layers[len(m.Layers)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 10:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Created", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.Created == nil {
+				m.Created = &timestamppb.Timestamp{}
+			}
+			if err := (*timestamppb1.Timestamp)(m.Created).UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -1227,6 +1281,42 @@ func (m *BaseImage) UnmarshalVTUnsafe(dAtA []byte) error {
 			}
 			m.Layers = append(m.Layers, &BaseImageLayer{})
 			if err := m.Layers[len(m.Layers)-1].UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 10:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Created", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.Created == nil {
+				m.Created = &timestamppb.Timestamp{}
+			}
+			if err := (*timestamppb1.Timestamp)(m.Created).UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex

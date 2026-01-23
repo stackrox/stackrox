@@ -115,6 +115,7 @@ function PlatformCvesOverviewPage() {
         <AdvancedFiltersToolbar
             searchFilter={searchFilter}
             searchFilterConfig={searchFilterConfig}
+            defaultSearchFilterEntity="CVE"
             cveStatusFilterField="CLUSTER CVE FIXABLE"
             onFilterChange={(newFilter, searchPayload) => {
                 setSearchFilter(newFilter);

@@ -19,6 +19,7 @@ import (
 type ClusterDataStore interface {
 	GetFlowStore(ctx context.Context, clusterID string) (FlowDataStore, error)
 	CreateFlowStore(ctx context.Context, clusterID string) (FlowDataStore, error)
+	RemoveFlowStore(ctx context.Context, clusterID string) error
 }
 
 // NewClusterDataStore returns a new instance of ClusterDataStore using the input storage underneath.

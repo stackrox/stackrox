@@ -9,15 +9,16 @@ namespace: rhacs-operator-system
 namePrefix: rhacs-operator-
 
 # Labels to add to all resources and selectors.
-#labels:
-#- includeSelectors: true
-#  pairs:
-#    someName: someValue
+labels:
+- includeSelectors: true
+  pairs:
+    app: rhacs-operator
 
 resources:
 - ../crd
 - ../rbac
 - ../manager
+- ../../../config-controller/config/crd
 # [WEBHOOK] To enable webhook, uncomment all the sections with [WEBHOOK] prefix including the one in
 # crd/kustomization.yaml
 #- ../webhook
