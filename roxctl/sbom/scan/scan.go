@@ -27,6 +27,10 @@ const (
 	sbomScanAPIPath = "/api/v1/sboms/scan"
 )
 
+var (
+	validSeverities = scan.AllSeverities()
+)
+
 // Command detects vulnerabilities from SBOM contents.
 func Command(cliEnvironment environment.Environment) *cobra.Command {
 	sbomScanCmd := &sbomScanCommand{env: cliEnvironment}
@@ -66,7 +70,7 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 
 	c.Flags().StringVarP(&sbomScanCmd.sbomFilePath, "file", "", "", "SBOM file to scan. Must be SPDX 2.3 JSON.")
 	c.Flags().StringVarP(&sbomScanCmd.contentType, "content-type", "", "", "Set the content-type for the SBOM file, if unset will be auto-detected.")
-	c.Flags().StringSliceVar(&sbomScanCmd.severities, "severity", scan.AllSeverities, "List of severities to include in the output. Use this to filter for specific severities.")
+	c.Flags().StringSliceVar(&sbomScanCmd.severities, "severity", validSeverities, "List of severities to include in the output. Use this to filter for specific severities.")
 	c.Flags().BoolVarP(&sbomScanCmd.failOnFinding, "fail", "", false, "Fail if vulnerabilities have been found.")
 
 	utils.Must(c.MarkFlagRequired("file"))
@@ -130,9 +134,9 @@ func (s *sbomScanCommand) Validate() error {
 
 	for _, severity := range s.severities {
 		severity := strings.ToUpper(severity)
-		if !slices.Contains(scan.AllSeverities, severity) {
+		if !slices.Contains(validSeverities, severity) {
 			return errox.InvalidArgs.Newf("invalid severity %q used. Choose one of [%s]", severity,
-				strings.Join(scan.AllSeverities, ", "))
+				strings.Join(validSeverities, ", "))
 		}
 	}
 
