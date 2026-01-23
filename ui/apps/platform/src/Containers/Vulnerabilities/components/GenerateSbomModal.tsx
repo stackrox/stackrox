@@ -37,19 +37,19 @@ export function getSbomGenerationStatusMessage({
 
 export type GenerateSbomModalProps = {
     onClose: () => void;
-    imageName: string;
+    image: { name: string; digest?: string };
 };
 
 function GenerateSbomModal(props: GenerateSbomModalProps) {
     const { analyticsTrack } = useAnalytics();
-    const { onClose, imageName } = props;
+    const { onClose, image } = props;
     const { mutate, isLoading, isSuccess, isError, error } = useRestMutation(generateAndSaveSbom, {
         onSuccess: () => analyticsTrack(IMAGE_SBOM_GENERATED),
         onError: (err) => Raven.captureException(err),
     });
 
     function onClickGenerateSbom() {
-        mutate({ imageName });
+        mutate({ image });
     }
 
     return (
@@ -89,7 +89,10 @@ function GenerateSbomModal(props: GenerateSbomModalProps) {
                 <DescriptionList isHorizontal>
                     <DescriptionListGroup>
                         <DescriptionListTerm>Selected image:</DescriptionListTerm>
-                        <DescriptionListDescription>{imageName}</DescriptionListDescription>
+                        <DescriptionListDescription>
+                            {image.name}
+                            {image.digest ? `@${image.digest}` : ''}
+                        </DescriptionListDescription>
                     </DescriptionListGroup>
                 </DescriptionList>
                 {isSuccess && (

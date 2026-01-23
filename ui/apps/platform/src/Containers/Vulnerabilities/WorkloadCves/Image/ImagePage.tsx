@@ -157,7 +157,7 @@ function ImagePage({
     const hasWriteAccessForImage = hasReadWriteAccess('Image'); // SBOM Generation mutates image scan state.
     const hasWorkflowAdminAccess = hasReadAccess('WorkflowAdministration');
     const isScannerV4Enabled = useIsScannerV4Enabled();
-    const [sbomTargetImage, setSbomTargetImage] = useState<string>();
+    const [sbomTargetImage, setSbomTargetImage] = useState<{ name: string; digest?: string }>();
 
     // Report-specific functionality
     const isViewBasedReportsEnabled =
@@ -245,10 +245,15 @@ function ImagePage({
                                             <Button
                                                 variant="secondary"
                                                 onClick={() => {
-                                                    setSbomTargetImage(imageData.name?.fullName);
+                                                    setSbomTargetImage({
+                                                        name: imageData.name?.fullName ?? '',
+                                                        digest: imageData.id,
+                                                    });
                                                 }}
                                                 isAriaDisabled={
-                                                    !isScannerV4Enabled || hasScanMessage
+                                                    !isScannerV4Enabled ||
+                                                    hasScanMessage ||
+                                                    !imageData.name?.fullName
                                                 }
                                             >
                                                 Generate SBOM
@@ -257,7 +262,7 @@ function ImagePage({
                                         {sbomTargetImage && (
                                             <GenerateSbomModal
                                                 onClose={() => setSbomTargetImage(undefined)}
-                                                imageName={sbomTargetImage}
+                                                image={sbomTargetImage}
                                             />
                                         )}
                                     </FlexItem>

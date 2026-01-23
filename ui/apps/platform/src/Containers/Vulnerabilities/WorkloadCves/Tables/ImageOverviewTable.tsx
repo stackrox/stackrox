@@ -75,6 +75,7 @@ export const imageListQuery = gql`
     query getImageList($query: String, $pagination: Pagination) {
         images(query: $query, pagination: $pagination) {
             id
+            digest: id
             name {
                 registry
                 remote
@@ -232,7 +233,7 @@ function ImageOverviewTable({
     const hiddenColumnCount = getHiddenColumnCount(columnVisibilityState);
 
     const colSpan = Object.values(defaultColumns).length - hiddenColumnCount;
-    const [sbomTargetImage, setSbomTargetImage] = useState<string>();
+    const [sbomTargetImage, setSbomTargetImage] = useState<{ name: string; digest?: string }>();
 
     return (
         <Table borders={false} variant="compact">
@@ -326,7 +327,8 @@ function ImageOverviewTable({
                         }
 
                         if (hasWriteAccessForImage) {
-                            const isAriaDisabled = !isScannerV4Enabled || hasScanMessage;
+                            const isAriaDisabled =
+                                !isScannerV4Enabled || hasScanMessage || !name?.fullName;
                             const description = getSbomGenerationStatusMessage({
                                 isScannerV4Enabled,
                                 hasScanMessage,
@@ -337,7 +339,10 @@ function ImageOverviewTable({
                                 isAriaDisabled,
                                 description,
                                 onClick: () => {
-                                    setSbomTargetImage(name?.fullName);
+                                    setSbomTargetImage({
+                                        name: name?.fullName ?? '',
+                                        digest: image.digest,
+                                    });
                                 },
                             });
                         }
@@ -475,7 +480,7 @@ function ImageOverviewTable({
             {sbomTargetImage && (
                 <GenerateSbomModal
                     onClose={() => setSbomTargetImage(undefined)}
-                    imageName={sbomTargetImage}
+                    image={sbomTargetImage}
                 />
             )}
         </Table>
