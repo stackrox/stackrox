@@ -41,9 +41,6 @@ FROM registry.access.redhat.com/ubi8/ubi:latest@sha256:7d7ca86d832d1dc7aba458341
 
 ARG PG_VERSION
 
-# Enable module on HOST system so modular packages are visible
-RUN dnf -y module enable postgresql:${PG_VERSION}
-
 # Install base packages to /out/
 RUN dnf install \
     --installroot=/out/ \
@@ -59,11 +56,12 @@ RUN dnf install \
     bash \
     coreutils
 
-# Install PostgreSQL to /out/ (module already enabled on host)
+# Install PostgreSQL to /out/ using module_hotfixes to bypass modular filtering
 RUN dnf install \
     --installroot=/out/ \
     --releasever=8 \
     --setopt=install_weak_deps=0 \
+    --setopt=module_hotfixes=1 \
     --setopt=reposdir=/etc/yum.repos.d/ \
     --nodocs \
     --nogpgcheck \
