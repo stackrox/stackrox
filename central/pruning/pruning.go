@@ -37,6 +37,7 @@ import (
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/contextutil"
 	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/maputil"
@@ -1164,102 +1165,107 @@ func (g *garbageCollectorImpl) removeExpiredDynamicRBACObjects() {
 
 	// First, remove expired roles (must be done before permission sets/access scopes
 	// because roles reference them and deletion will fail if still referenced)
-	expiredRoleCount := g.removeExpiredRoles(now)
-
+	expiredRoleCount, err := g.removeExpiredRoles(now)
+	if err != nil {
+		log.Error("Failed to remove expired roles: ", err)
+	}
 	// Then remove expired permission sets that are no longer referenced
-	expiredPSCount := g.removeExpiredPermissionSets(now)
+	expiredPSCount, err := g.removeExpiredPermissionSets(now)
+	if err != nil {
+		log.Error("Failed to remove expired permission sets: ", err)
+	}
 
 	// Finally remove expired access scopes that are no longer referenced
-	expiredASCount := g.removeExpiredAccessScopes(now)
+	expiredASCount, err := g.removeExpiredAccessScopes(now)
+	if err != nil {
+		log.Error("Failed to remove expired access scopes: ", err)
+	}
 
-	if expiredRoleCount > 0 || expiredPSCount > 0 || expiredASCount > 0 {
-		log.Infof("[Dynamic RBAC pruning] Removed %d roles, %d permission sets, %d access scopes",
+	if expiredRoleCount+expiredPSCount+expiredASCount > 0 {
+		log.Infof("[Expired objects pruning] Removed %d roles, %d permission sets, %d access scopes",
 			expiredRoleCount, expiredPSCount, expiredASCount)
 	}
 }
 
-func (g *garbageCollectorImpl) removeExpiredRoles(now time.Time) int {
-	roles, err := g.roleStore.GetRolesFiltered(pruningCtx, func(role *storage.Role) bool {
-		return isExpiredDynamicObject(role.GetTraits(), now)
+// traitsHolder is an interface for objects that have traits for expiration checking.
+type traitsHolder interface {
+	GetTraits() *storage.Traits
+}
+
+type objFuncs[T traitsHolder] struct {
+	getID  func(T) string
+	fetch  func(context.Context, func(T) bool) ([]T, error)
+	remove func(context.Context, string) error
+}
+
+// removeExpiredObjects is a generic function that removes expired dynamic RBAC objects.
+// It fetches objects using the provided fetch function, filters for expired ones,
+// and removes them using the provided remove function.
+func removeExpiredObjects[T traitsHolder](
+	now time.Time,
+	o objFuncs[T],
+) (int, error) {
+	objects, err := o.fetch(pruningCtx, func(obj T) bool {
+		return isExpiredObject(obj, now)
 	})
+	errs := errorhelpers.NewErrorList("removing expired objects")
 	if err != nil {
-		log.Errorf("[Dynamic RBAC pruning] Error fetching expired roles: %v", err)
-		return 0
+		errs.AddError(errors.Wrap(err, "failed to fetch"))
+		return 0, errs
 	}
 
 	var removedCount int
-	for _, role := range roles {
-		if err := g.roleStore.RemoveRole(pruningCtx, role.GetName()); err != nil {
-			log.Errorf("[Dynamic RBAC pruning] Failed to remove role %q: %v", role.GetName(), err)
+	for _, obj := range objects {
+		id := o.getID(obj)
+		if err := o.remove(pruningCtx, id); err != nil {
+			errs.AddError(errors.Wrapf(err, "failed to remove %q", id))
 			continue
 		}
 		removedCount++
 	}
-	return removedCount
+	return removedCount, errs
 }
 
-func (g *garbageCollectorImpl) removeExpiredPermissionSets(now time.Time) int {
-	permissionSets, err := g.roleStore.GetPermissionSetsFiltered(pruningCtx, func(ps *storage.PermissionSet) bool {
-		return isExpiredDynamicObject(ps.GetTraits(), now)
-	})
-	if err != nil {
-		log.Errorf("[Dynamic RBAC pruning] Error fetching expired permission sets: %v", err)
-		return 0
-	}
-
-	var removedCount int
-	for _, ps := range permissionSets {
-		if err := g.roleStore.RemovePermissionSet(pruningCtx, ps.GetId()); err != nil {
-			// This may fail if still referenced by a role - that's expected and OK
-			log.Debugf("[Dynamic RBAC pruning] Failed to remove permission set %q: %v", ps.GetId(), err)
-			continue
-		}
-		removedCount++
-	}
-	return removedCount
+func (g *garbageCollectorImpl) removeExpiredRoles(now time.Time) (int, error) {
+	return removeExpiredObjects(
+		now,
+		objFuncs[*storage.Role]{
+			(*storage.Role).GetName,
+			g.roleStore.GetRolesFiltered,
+			g.roleStore.RemoveRole,
+		},
+	)
 }
 
-func (g *garbageCollectorImpl) removeExpiredAccessScopes(now time.Time) int {
-	accessScopes, err := g.roleStore.GetAccessScopesFiltered(pruningCtx, func(as *storage.SimpleAccessScope) bool {
-		return isExpiredDynamicObject(as.GetTraits(), now)
-	})
-	if err != nil {
-		log.Errorf("[Dynamic RBAC pruning] Error fetching expired access scopes: %v", err)
-		return 0
-	}
-
-	var removedCount int
-	for _, as := range accessScopes {
-		if err := g.roleStore.RemoveAccessScope(pruningCtx, as.GetId()); err != nil {
-			// This may fail if still referenced by a role - that's expected and OK
-			log.Debugf("[Dynamic RBAC pruning] Failed to remove access scope %q: %v", as.GetId(), err)
-			continue
-		}
-		removedCount++
-	}
-	return removedCount
+func (g *garbageCollectorImpl) removeExpiredPermissionSets(now time.Time) (int, error) {
+	// Removal may fail if still referenced by a role - that's expected and OK.
+	return removeExpiredObjects(
+		now,
+		objFuncs[*storage.PermissionSet]{
+			(*storage.PermissionSet).GetId,
+			g.roleStore.GetPermissionSetsFiltered,
+			g.roleStore.RemovePermissionSet,
+		},
+	)
 }
 
-// isExpiredDynamicObject returns true if the object:
-// 1. Has IMPERATIVE origin (dynamically created via API)
-// 2. Has a non-nil expires_at timestamp
-// 3. The expires_at timestamp is in the past
-func isExpiredDynamicObject(traits *storage.Traits, now time.Time) bool {
-	if traits == nil {
-		return false
-	}
-	if traits.GetOrigin() != storage.Traits_IMPERATIVE {
-		return false
-	}
-	expiresAt := traits.GetExpiresAt()
-	if expiresAt == nil {
-		return false
-	}
-	expiryTime, err := protocompat.ConvertTimestampToTimeOrError(expiresAt)
-	if err != nil {
-		return false
-	}
-	return now.After(expiryTime)
+func (g *garbageCollectorImpl) removeExpiredAccessScopes(now time.Time) (int, error) {
+	// Removal may fail if still referenced by a role - that's expected and OK.
+	return removeExpiredObjects(
+		now,
+		objFuncs[*storage.SimpleAccessScope]{
+			(*storage.SimpleAccessScope).GetId,
+			g.roleStore.GetAccessScopesFiltered,
+			g.roleStore.RemoveAccessScope,
+		},
+	)
+}
+
+// isExpiredObject returns true if the object has a non-nil expires_at timestamp
+// in the past.
+func isExpiredObject(obj traitsHolder, now time.Time) bool {
+	expiresAt := obj.GetTraits().GetExpiresAt()
+	return expiresAt != nil && now.After(expiresAt.AsTime())
 }
 
 func (g *garbageCollectorImpl) Stop() {

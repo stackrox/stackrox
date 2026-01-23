@@ -21,8 +21,7 @@ import (
 
 var (
 	// testExpiryTime is a fixed time used in tests for consistent trait generation.
-	// This matches the expectedExpiration used in service_impl_test.go (testClock + 5 minutes).
-	testExpiryTime = time.Date(1989, time.November, 9, 18, 10, 35, 987654321, time.UTC)
+	testExpiryTime = testClock().Add(5 * time.Minute)
 )
 
 func TestCreatePermissionSet(t *testing.T) {
