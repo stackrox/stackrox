@@ -235,13 +235,13 @@ func testImages() []*storage.Image {
 			BaseImageInfo: []*storage.BaseImageInfo{
 				{
 					BaseImageId:       "base-sha2",
-					BaseImageFullName: "alpine:3.12",
+					BaseImageFullName: "busybox:latest",
 					BaseImageDigest:   "sha256:alpine312",
 					Created:           t3,
 				},
 				{
 					BaseImageId:       "base-sha3",
-					BaseImageFullName: "busybox:latest",
+					BaseImageFullName: "alpine:3.12",
 					BaseImageDigest:   "sha256:busybox1",
 					Created:           t3,
 				},

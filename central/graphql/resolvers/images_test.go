@@ -286,9 +286,9 @@ func (s *ImageResolversTestSuite) TestDeployments() {
 					assert.Equal(t, expectedSha, actualBaseImage.ImageSha(testCtx))
 
 					// Test name array
-					expectedNames := make([]string, 0, len(baseImageInfos))
-					for _, info := range baseImageInfos {
-						expectedNames = append(expectedNames, info.GetBaseImageFullName())
+					expectedNames := []string{
+						baseImageInfos[1].GetBaseImageFullName(),
+						baseImageInfos[0].GetBaseImageFullName(),
 					}
 					assert.Equal(t, expectedNames, actualBaseImage.Names(testCtx))
 
