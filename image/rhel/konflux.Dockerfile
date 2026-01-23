@@ -56,17 +56,16 @@ RUN dnf install \
     bash \
     coreutils
 
-# Install PostgreSQL to /out/ using module_hotfixes to bypass modular filtering
+# Install PostgreSQL to /out/ with explicit module stream syntax
 RUN dnf install \
     --installroot=/out/ \
     --releasever=8 \
     --setopt=install_weak_deps=0 \
-    --setopt=module_hotfixes=1 \
     --setopt=reposdir=/etc/yum.repos.d/ \
     --nodocs \
     --nogpgcheck \
     -y \
-    postgresql
+    postgresql:${PG_VERSION}
 
 RUN dnf --installroot=/out/ clean all
 RUN rm -rf /out/var/cache/dnf /out/var/cache/yum
