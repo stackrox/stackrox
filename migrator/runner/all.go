@@ -13,4 +13,5 @@ import (
 	_ "github.com/stackrox/rox/migrator/migrations/m_217_to_m_218_alert_to_btree"
 	_ "github.com/stackrox/rox/migrator/migrations/m_218_to_m_219_plop_index_to_btree"
 	_ "github.com/stackrox/rox/migrator/migrations/m_219_to_m_220_network_flow_index_to_btree"
+	_ "github.com/stackrox/rox/migrator/migrations/m_220_to_m_221_add_traits_expires_at_column"
 )
