@@ -545,8 +545,13 @@ func (resolver *Resolver) wrapBaseImage(baseImageInfos []*storage.BaseImageInfo)
 		return nil, nil
 	}
 
-	// All entries should have the same digest, take the first one
+	// All entries should have the same digest and create time, take the first one
 	imageSha := baseImageInfos[0].GetBaseImageDigest()
+	createTimestamp := baseImageInfos[0].GetCreated()
+	created, err := protocompat.ConvertTimestampToGraphqlTimeOrError(createTimestamp)
+	if err != nil {
+		return nil, err
+	}
 
 	// Collect all full names
 	names := make([]string, 0, len(baseImageInfos))
@@ -554,13 +559,10 @@ func (resolver *Resolver) wrapBaseImage(baseImageInfos []*storage.BaseImageInfo)
 		names = append(names, info.GetBaseImageFullName())
 	}
 
-	// TODO: Use actual created timestamp when it becomes available from storage
-	created := graphql.Time{Time: time.Now()}
-
 	data := &baseImageData{
 		imageSha: imageSha,
 		names:    names,
-		created:  &created,
+		created:  created,
 	}
 
 	return &baseImageResolver{
