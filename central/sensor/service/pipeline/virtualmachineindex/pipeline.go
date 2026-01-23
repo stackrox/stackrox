@@ -2,6 +2,7 @@ package virtualmachineindex
 
 import (
 	"context"
+	"fmt"
 	"strconv"
 
 	"github.com/pkg/errors"
@@ -13,6 +14,9 @@ import (
 	vmDatastore "github.com/stackrox/rox/central/virtualmachine/datastore"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/administration/events"
+	adminResources "github.com/stackrox/rox/pkg/administration/events/resources"
+	adminEventStream "github.com/stackrox/rox/pkg/administration/events/stream"
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/features"
@@ -56,22 +60,25 @@ func GetPipeline() pipeline.Fragment {
 		vmDatastore.Singleton(),
 		vmEnricher.Singleton(),
 		rateLimiter,
+		adminEventStream.Singleton(),
 	)
 }
 
 // newPipeline returns a new instance of Pipeline.
-func newPipeline(vms vmDatastore.DataStore, enricher vmEnricher.VirtualMachineEnricher, rl rateLimiter) pipeline.Fragment {
+func newPipeline(vms vmDatastore.DataStore, enricher vmEnricher.VirtualMachineEnricher, rl rateLimiter, adminEventsStream events.Stream) pipeline.Fragment {
 	return &pipelineImpl{
-		vmDatastore: vms,
-		enricher:    enricher,
-		rateLimiter: rl,
+		vmDatastore:       vms,
+		enricher:          enricher,
+		rateLimiter:       rl,
+		adminEventsStream: adminEventsStream,
 	}
 }
 
 type pipelineImpl struct {
-	vmDatastore vmDatastore.DataStore
-	enricher    vmEnricher.VirtualMachineEnricher
-	rateLimiter rateLimiter
+	vmDatastore       vmDatastore.DataStore
+	enricher          vmEnricher.VirtualMachineEnricher
+	rateLimiter       rateLimiter
+	adminEventsStream events.Stream
 }
 
 func (p *pipelineImpl) OnFinish(clusterID string) {
@@ -139,6 +146,7 @@ func (p *pipelineImpl) Run(ctx context.Context, clusterID string, msg *central.M
 
 	allowed, reason := p.rateLimiter.TryConsume(clusterID)
 	if !allowed {
+		p.emitRateLimitedAdminEvent(clusterID, reason)
 		log.Infof("Dropping VM index report %s from cluster %s: %s", index.GetId(), clusterID, reason)
 		if conn != nil && conn.HasCapability(centralsensor.SensorACKSupport) {
 			sendVMIndexReportResponse(ctx, clusterID, index.GetId(), central.SensorACK_NACK, reason, injector)
@@ -174,6 +182,27 @@ func (p *pipelineImpl) Run(ctx context.Context, clusterID string, msg *central.M
 		sendVMIndexReportResponse(ctx, clusterID, index.GetId(), central.SensorACK_ACK, "", injector)
 	}
 	return nil
+}
+
+func (p *pipelineImpl) emitRateLimitedAdminEvent(clusterID, reason string) {
+	if p.adminEventsStream == nil {
+		return
+	}
+
+	p.adminEventsStream.Produce(&events.AdministrationEvent{
+		Type:         storage.AdministrationEventType_ADMINISTRATION_EVENT_TYPE_GENERIC,
+		Level:        storage.AdministrationEventLevel_ADMINISTRATION_EVENT_LEVEL_WARNING,
+		Domain:       events.DefaultDomain,
+		Message:      fmt.Sprintf("VM index reports from cluster %s are being rate limited: %s", clusterID, reason),
+		ResourceType: adminResources.Cluster,
+		ResourceID:   clusterID,
+		Hint: fmt.Sprintf("VM index reports are being rate limited to avoid overwhelming the system. "+
+			"Consider either: (1) scaling up the Scanner V4 deployments and increasing values of %s or %s, "+
+			"or (2) reducing the index-report frequency in roxagents running in the Virtual Machines.",
+			env.VMIndexReportRateLimit.EnvVar(),
+			env.VMIndexReportBucketCapacity.EnvVar(),
+		),
+	})
 }
 
 // sendVMIndexReportResponse sends an ACK or NACK for a VM index report.

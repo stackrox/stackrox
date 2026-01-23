@@ -3,6 +3,7 @@ package virtualmachineindex
 import (
 	"context"
 	"testing"
+	"time"
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/sensor/service/common"
@@ -14,6 +15,9 @@ import (
 	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
 	v1 "github.com/stackrox/rox/generated/internalapi/virtualmachine/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/administration/events"
+	adminResources "github.com/stackrox/rox/pkg/administration/events/resources"
+	adminEventStream "github.com/stackrox/rox/pkg/administration/events/stream"
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/features"
@@ -194,7 +198,8 @@ func (suite *PipelineTestSuite) TestNewPipeline() {
 	mockDatastore := vmDatastoreMocks.NewMockDataStore(suite.mockCtrl)
 	mockEnricher := vmEnricherMocks.NewMockVirtualMachineEnricher(suite.mockCtrl)
 	rateLimiter := mustNewLimiter(suite.T(), "test", 0, 50)
-	pipeline := newPipeline(mockDatastore, mockEnricher, rateLimiter)
+	adminEventsStream := adminEventStream.GetStreamForTesting(suite.T())
+	pipeline := newPipeline(mockDatastore, mockEnricher, rateLimiter, adminEventsStream)
 	suite.NotNil(pipeline)
 
 	impl, ok := pipeline.(*pipelineImpl)
@@ -202,6 +207,7 @@ func (suite *PipelineTestSuite) TestNewPipeline() {
 	suite.Equal(mockDatastore, impl.vmDatastore)
 	suite.Equal(mockEnricher, impl.enricher)
 	suite.Equal(rateLimiter, impl.rateLimiter)
+	suite.Equal(adminEventsStream, impl.adminEventsStream)
 }
 
 // Test table-driven approach for different actions
@@ -523,6 +529,50 @@ func TestPipelineRun_RateLimitEnabled_NoACKSupport(t *testing.T) {
 	assert.Empty(t, acks, "no ACK/NACKs should be sent when SensorACKSupport is not available")
 }
 
+func TestPipelineRun_RateLimitEmitsAdminEvent(t *testing.T) {
+	tests := map[string]struct {
+		reason string
+	}{
+		"should emit admin event when rate limited": {
+			reason: rate.ReasonRateLimitExceeded,
+		},
+	}
+
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			t.Setenv(features.VirtualMachines.EnvVar(), "true")
+			ctrl := gomock.NewController(t)
+			defer ctrl.Finish()
+
+			vmDatastore := vmDatastoreMocks.NewMockDataStore(ctrl)
+			enricher := vmEnricherMocks.NewMockVirtualMachineEnricher(ctrl)
+			adminEventsStream := adminEventStream.GetStreamForTesting(t)
+
+			pipeline := &pipelineImpl{
+				vmDatastore:       vmDatastore,
+				enricher:          enricher,
+				rateLimiter:       &denyingRateLimiter{reason: tt.reason},
+				adminEventsStream: adminEventsStream,
+			}
+
+			msg := createVMIndexMessage("vm-1", central.ResourceAction_SYNC_RESOURCE)
+
+			err := pipeline.Run(ctx, testClusterID, msg, nil)
+			assert.NoError(t, err)
+
+			receivedEvent := consumeAdminEvent(t, adminEventsStream)
+			require.NotNil(t, receivedEvent, "expected an administration event to be emitted")
+			assert.Equal(t, storage.AdministrationEventType_ADMINISTRATION_EVENT_TYPE_GENERIC, receivedEvent.GetType())
+			assert.Equal(t, storage.AdministrationEventLevel_ADMINISTRATION_EVENT_LEVEL_WARNING, receivedEvent.GetLevel())
+			assert.Equal(t, events.DefaultDomain, receivedEvent.GetDomain())
+			assert.Equal(t, adminResources.Cluster, receivedEvent.GetResourceType())
+			assert.Equal(t, testClusterID, receivedEvent.GetResourceID())
+			assert.Contains(t, receivedEvent.GetMessage(), "VM index reports from cluster "+testClusterID)
+			assert.Contains(t, receivedEvent.GetMessage(), tt.reason)
+		})
+	}
+}
+
 // TestPipelineRun_NilRateLimiter_WithACKSupport tests behavior when the rateLimiter is nil and ACKs are supported.
 // This covers the nil-limiter branch and verifies that:
 // 1. No enrichment/datastore calls occur
@@ -656,4 +706,29 @@ func (f *fakeRateLimiter) TryConsume(_ string) (bool, string) {
 
 func (f *fakeRateLimiter) OnClientDisconnect(clientID string) {
 	f.lastDisconnectedClientID = clientID
+}
+
+type denyingRateLimiter struct {
+	reason string
+}
+
+func (d *denyingRateLimiter) TryConsume(_ string) (bool, string) {
+	return false, d.reason
+}
+
+func (d *denyingRateLimiter) OnClientDisconnect(string) {}
+
+func consumeAdminEvent(t *testing.T, stream events.Stream) *events.AdministrationEvent {
+	t.Helper()
+
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+	defer cancel()
+
+	var receivedEvent *events.AdministrationEvent
+	for event := range stream.Consume(ctx) {
+		receivedEvent = event
+		break
+	}
+
+	return receivedEvent
 }
