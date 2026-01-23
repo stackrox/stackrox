@@ -15,6 +15,7 @@ import (
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
 	pgSearch "github.com/stackrox/rox/pkg/search/postgres"
@@ -99,10 +100,11 @@ func insertIntoPermissionSets(batch *pgx.Batch, obj *storage.PermissionSet) erro
 		// parent primary keys start
 		pgutils.NilOrUUID(obj.GetId()),
 		obj.GetName(),
+		protocompat.NilOrTime(obj.GetTraits().GetExpiresAt()),
 		serialized,
 	}
 
-	finalStr := "INSERT INTO permission_sets (Id, Name, serialized) VALUES($1, $2, $3) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Name = EXCLUDED.Name, serialized = EXCLUDED.serialized"
+	finalStr := "INSERT INTO permission_sets (Id, Name, Traits_ExpiresAt, serialized) VALUES($1, $2, $3, $4) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Name = EXCLUDED.Name, Traits_ExpiresAt = EXCLUDED.Traits_ExpiresAt, serialized = EXCLUDED.serialized"
 	batch.Queue(finalStr, values...)
 
 	return nil
@@ -111,6 +113,7 @@ func insertIntoPermissionSets(batch *pgx.Batch, obj *storage.PermissionSet) erro
 var copyColsPermissionSets = []string{
 	"id",
 	"name",
+	"traits_expiresat",
 	"serialized",
 }
 
@@ -147,6 +150,7 @@ func copyFromPermissionSets(ctx context.Context, s pgSearch.Deleter, tx *postgre
 		return []interface{}{
 			pgutils.NilOrUUID(obj.GetId()),
 			obj.GetName(),
+			protocompat.NilOrTime(obj.GetTraits().GetExpiresAt()),
 			serialized,
 		}, nil
 	})

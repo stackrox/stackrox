@@ -4,6 +4,7 @@ package schema
 
 import (
 	"reflect"
+	"time"
 
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres"
@@ -38,6 +39,7 @@ const (
 
 // Roles holds the Gorm model for Postgres table `roles`.
 type Roles struct {
-	Name       string `gorm:"column:name;type:varchar;primaryKey"`
-	Serialized []byte `gorm:"column:serialized;type:bytea"`
+	Name            string     `gorm:"column:name;type:varchar;primaryKey"`
+	TraitsExpiresAt *time.Time `gorm:"column:traits_expiresat;type:timestamp"`
+	Serialized      []byte     `gorm:"column:serialized;type:bytea"`
 }

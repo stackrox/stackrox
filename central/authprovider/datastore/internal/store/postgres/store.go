@@ -14,6 +14,7 @@ import (
 	ops "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/postgres"
 	pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
 	pgSearch "github.com/stackrox/rox/pkg/search/postgres"
@@ -101,10 +102,11 @@ func insertIntoAuthProviders(batch *pgx.Batch, obj *storage.AuthProvider) error 
 		// parent primary keys start
 		obj.GetId(),
 		obj.GetName(),
+		protocompat.NilOrTime(obj.GetTraits().GetExpiresAt()),
 		serialized,
 	}
 
-	finalStr := "INSERT INTO auth_providers (Id, Name, serialized) VALUES($1, $2, $3) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Name = EXCLUDED.Name, serialized = EXCLUDED.serialized"
+	finalStr := "INSERT INTO auth_providers (Id, Name, Traits_ExpiresAt, serialized) VALUES($1, $2, $3, $4) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Name = EXCLUDED.Name, Traits_ExpiresAt = EXCLUDED.Traits_ExpiresAt, serialized = EXCLUDED.serialized"
 	batch.Queue(finalStr, values...)
 
 	return nil
@@ -113,6 +115,7 @@ func insertIntoAuthProviders(batch *pgx.Batch, obj *storage.AuthProvider) error 
 var copyColsAuthProviders = []string{
 	"id",
 	"name",
+	"traits_expiresat",
 	"serialized",
 }
 
@@ -149,6 +152,7 @@ func copyFromAuthProviders(ctx context.Context, s pgSearch.Deleter, tx *postgres
 		return []interface{}{
 			obj.GetId(),
 			obj.GetName(),
+			protocompat.NilOrTime(obj.GetTraits().GetExpiresAt()),
 			serialized,
 		}, nil
 	})

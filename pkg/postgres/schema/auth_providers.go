@@ -4,6 +4,7 @@ package schema
 
 import (
 	"reflect"
+	"time"
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -43,7 +44,8 @@ const (
 
 // AuthProviders holds the Gorm model for Postgres table `auth_providers`.
 type AuthProviders struct {
-	ID         string `gorm:"column:id;type:varchar;primaryKey"`
-	Name       string `gorm:"column:name;type:varchar;unique"`
-	Serialized []byte `gorm:"column:serialized;type:bytea"`
+	ID              string     `gorm:"column:id;type:varchar;primaryKey"`
+	Name            string     `gorm:"column:name;type:varchar;unique"`
+	TraitsExpiresAt *time.Time `gorm:"column:traits_expiresat;type:timestamp"`
+	Serialized      []byte     `gorm:"column:serialized;type:bytea"`
 }

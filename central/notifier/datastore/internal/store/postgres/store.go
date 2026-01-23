@@ -14,6 +14,7 @@ import (
 	ops "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/postgres"
 	pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
 	pgSearch "github.com/stackrox/rox/pkg/search/postgres"
@@ -98,10 +99,11 @@ func insertIntoNotifiers(batch *pgx.Batch, obj *storage.Notifier) error {
 		// parent primary keys start
 		obj.GetId(),
 		obj.GetName(),
+		protocompat.NilOrTime(obj.GetTraits().GetExpiresAt()),
 		serialized,
 	}
 
-	finalStr := "INSERT INTO notifiers (Id, Name, serialized) VALUES($1, $2, $3) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Name = EXCLUDED.Name, serialized = EXCLUDED.serialized"
+	finalStr := "INSERT INTO notifiers (Id, Name, Traits_ExpiresAt, serialized) VALUES($1, $2, $3, $4) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Name = EXCLUDED.Name, Traits_ExpiresAt = EXCLUDED.Traits_ExpiresAt, serialized = EXCLUDED.serialized"
 	batch.Queue(finalStr, values...)
 
 	return nil
@@ -110,6 +112,7 @@ func insertIntoNotifiers(batch *pgx.Batch, obj *storage.Notifier) error {
 var copyColsNotifiers = []string{
 	"id",
 	"name",
+	"traits_expiresat",
 	"serialized",
 }
 
@@ -146,6 +149,7 @@ func copyFromNotifiers(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx,
 		return []interface{}{
 			obj.GetId(),
 			obj.GetName(),
+			protocompat.NilOrTime(obj.GetTraits().GetExpiresAt()),
 			serialized,
 		}, nil
 	})

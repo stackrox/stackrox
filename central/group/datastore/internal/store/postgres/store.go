@@ -14,6 +14,7 @@ import (
 	ops "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/postgres"
 	pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
 	pgSearch "github.com/stackrox/rox/pkg/search/postgres"
@@ -97,6 +98,7 @@ func insertIntoGroups(batch *pgx.Batch, obj *storage.Group) error {
 	values := []interface{}{
 		// parent primary keys start
 		obj.GetProps().GetId(),
+		protocompat.NilOrTime(obj.GetProps().GetTraits().GetExpiresAt()),
 		obj.GetProps().GetAuthProviderId(),
 		obj.GetProps().GetKey(),
 		obj.GetProps().GetValue(),
@@ -104,7 +106,7 @@ func insertIntoGroups(batch *pgx.Batch, obj *storage.Group) error {
 		serialized,
 	}
 
-	finalStr := "INSERT INTO groups (Props_Id, Props_AuthProviderId, Props_Key, Props_Value, RoleName, serialized) VALUES($1, $2, $3, $4, $5, $6) ON CONFLICT(Props_Id) DO UPDATE SET Props_Id = EXCLUDED.Props_Id, Props_AuthProviderId = EXCLUDED.Props_AuthProviderId, Props_Key = EXCLUDED.Props_Key, Props_Value = EXCLUDED.Props_Value, RoleName = EXCLUDED.RoleName, serialized = EXCLUDED.serialized"
+	finalStr := "INSERT INTO groups (Props_Id, Props_Traits_ExpiresAt, Props_AuthProviderId, Props_Key, Props_Value, RoleName, serialized) VALUES($1, $2, $3, $4, $5, $6, $7) ON CONFLICT(Props_Id) DO UPDATE SET Props_Id = EXCLUDED.Props_Id, Props_Traits_ExpiresAt = EXCLUDED.Props_Traits_ExpiresAt, Props_AuthProviderId = EXCLUDED.Props_AuthProviderId, Props_Key = EXCLUDED.Props_Key, Props_Value = EXCLUDED.Props_Value, RoleName = EXCLUDED.RoleName, serialized = EXCLUDED.serialized"
 	batch.Queue(finalStr, values...)
 
 	return nil
@@ -112,6 +114,7 @@ func insertIntoGroups(batch *pgx.Batch, obj *storage.Group) error {
 
 var copyColsGroups = []string{
 	"props_id",
+	"props_traits_expiresat",
 	"props_authproviderid",
 	"props_key",
 	"props_value",
@@ -151,6 +154,7 @@ func copyFromGroups(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, ob
 
 		return []interface{}{
 			obj.GetProps().GetId(),
+			protocompat.NilOrTime(obj.GetProps().GetTraits().GetExpiresAt()),
 			obj.GetProps().GetAuthProviderId(),
 			obj.GetProps().GetKey(),
 			obj.GetProps().GetValue(),

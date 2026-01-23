@@ -4,6 +4,7 @@ package schema
 
 import (
 	"reflect"
+	"time"
 
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres"
@@ -38,7 +39,8 @@ const (
 
 // Notifiers holds the Gorm model for Postgres table `notifiers`.
 type Notifiers struct {
-	ID         string `gorm:"column:id;type:varchar;primaryKey"`
-	Name       string `gorm:"column:name;type:varchar;unique"`
-	Serialized []byte `gorm:"column:serialized;type:bytea"`
+	ID              string     `gorm:"column:id;type:varchar;primaryKey"`
+	Name            string     `gorm:"column:name;type:varchar;unique"`
+	TraitsExpiresAt *time.Time `gorm:"column:traits_expiresat;type:timestamp"`
+	Serialized      []byte     `gorm:"column:serialized;type:bytea"`
 }

@@ -15,6 +15,7 @@ import (
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
 	pgSearch "github.com/stackrox/rox/pkg/search/postgres"
@@ -99,10 +100,11 @@ func insertIntoAuthMachineToMachineConfigs(batch *pgx.Batch, obj *storage.AuthMa
 		// parent primary keys start
 		pgutils.NilOrUUID(obj.GetId()),
 		obj.GetIssuer(),
+		protocompat.NilOrTime(obj.GetTraits().GetExpiresAt()),
 		serialized,
 	}
 
-	finalStr := "INSERT INTO auth_machine_to_machine_configs (Id, Issuer, serialized) VALUES($1, $2, $3) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Issuer = EXCLUDED.Issuer, serialized = EXCLUDED.serialized"
+	finalStr := "INSERT INTO auth_machine_to_machine_configs (Id, Issuer, Traits_ExpiresAt, serialized) VALUES($1, $2, $3, $4) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Issuer = EXCLUDED.Issuer, Traits_ExpiresAt = EXCLUDED.Traits_ExpiresAt, serialized = EXCLUDED.serialized"
 	batch.Queue(finalStr, values...)
 
 	var query string
@@ -136,6 +138,7 @@ func insertIntoAuthMachineToMachineConfigsMappings(batch *pgx.Batch, obj *storag
 var copyColsAuthMachineToMachineConfigs = []string{
 	"id",
 	"issuer",
+	"traits_expiresat",
 	"serialized",
 }
 
@@ -172,6 +175,7 @@ func copyFromAuthMachineToMachineConfigs(ctx context.Context, s pgSearch.Deleter
 		return []interface{}{
 			pgutils.NilOrUUID(obj.GetId()),
 			obj.GetIssuer(),
+			protocompat.NilOrTime(obj.GetTraits().GetExpiresAt()),
 			serialized,
 		}, nil
 	})

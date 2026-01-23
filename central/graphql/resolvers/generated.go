@@ -1500,6 +1500,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"disabled: Boolean!",
 	}))
 	utils.Must(builder.AddType("Traits", []string{
+		"expiresAt: Time",
 		"mutabilityMode: Traits_MutabilityMode!",
 		"origin: Traits_Origin!",
 		"visibility: Traits_Visibility!",
@@ -16198,6 +16199,11 @@ func (resolver *Resolver) wrapTraitsesWithContext(ctx context.Context, values []
 		output[i] = &traitsResolver{ctx: ctx, root: resolver, data: v}
 	}
 	return output, nil
+}
+
+func (resolver *traitsResolver) ExpiresAt(ctx context.Context) (*graphql.Time, error) {
+	value := resolver.data.GetExpiresAt()
+	return protocompat.ConvertTimestampToGraphqlTimeOrError(value)
 }
 
 func (resolver *traitsResolver) MutabilityMode(ctx context.Context) string {
