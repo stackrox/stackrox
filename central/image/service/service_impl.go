@@ -432,6 +432,10 @@ func (s *serviceImpl) scanImageV2Internal(ctx context.Context, request *v1.ScanI
 				logging.Bool("cluster_local_scan_expired", clusterLocalScanExpired),
 			)
 
+			if clusterLocalScanExpired {
+				fetchOpt = enricher.IgnoreExistingImages
+			}
+
 			imgV2 = existingImgV2
 			imgExists = true
 		}
