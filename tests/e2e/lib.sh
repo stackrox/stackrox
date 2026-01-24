@@ -988,6 +988,9 @@ remove_existing_stackrox_resources() {
     if echo "${k8s_api_resources}" | grep -q "^securitycontextconstraints\.security\.openshift\.io$"; then
         resource_types="${resource_types},SecurityContextConstraints"
     fi
+    if echo "${k8s_api_resources}" | grep -q "^consoleplugins\.console\.openshift\.io$"; then
+        global_resource_types="${global_resource_types},consoleplugins.console.openshift.io"
+    fi
     if echo "${k8s_api_resources}" | grep -q "^podsecuritypolicies\.policy$"; then
         psps_supported=true
         global_resource_types="${global_resource_types},psp"
