@@ -293,6 +293,7 @@ func TestResetClusterLocal(t *testing.T) {
 	tcs := []struct {
 		desc              string
 		existingImg       *storage.Image
+		existingImgV2     *storage.ImageV2
 		expectedFetchOpt  enricher.FetchOption
 		enrichErr         error
 		finalClusterLocal bool
@@ -300,31 +301,37 @@ func TestResetClusterLocal(t *testing.T) {
 		{
 			"do not reset flag when scan not expired",
 			&storage.Image{IsClusterLocal: true, Name: name, Names: names, Scan: curScan},
+			&storage.ImageV2{IsClusterLocal: true, Name: name, Scan: curScan},
 			enricher.UseCachesIfPossible, nil, true,
 		},
 		{
 			"reset flag when scan expired",
 			&storage.Image{IsClusterLocal: true, Name: name, Names: names, Scan: expScan},
+			&storage.ImageV2{IsClusterLocal: true, Name: name, Scan: expScan},
 			enricher.IgnoreExistingImages, nil, false,
 		},
 		{
 			"do not reset flag when scan not expired and existing name not found",
 			&storage.Image{IsClusterLocal: true, Name: name, Names: nil, Scan: curScan},
+			&storage.ImageV2{IsClusterLocal: true, Name: name, Scan: curScan},
 			enricher.ForceRefetchSignaturesOnly, nil, true,
 		},
 		{
 			"reset flag when scan expired and existing name not found",
 			&storage.Image{IsClusterLocal: true, Name: name, Names: nil, Scan: expScan},
+			&storage.ImageV2{IsClusterLocal: true, Name: name, Scan: expScan},
 			enricher.IgnoreExistingImages, nil, false,
 		},
 		{
 			"do not reset flag when scan not expired and new scan fails",
 			&storage.Image{IsClusterLocal: true, Name: name, Names: names, Scan: curScan},
+			&storage.ImageV2{IsClusterLocal: true, Name: name, Scan: curScan},
 			enricher.IgnoreExistingImages, errors.New("broken"), true,
 		},
 		{
 			"reset flag when scan expired and new scan fails",
 			&storage.Image{IsClusterLocal: true, Name: name, Names: names, Scan: expScan},
+			&storage.ImageV2{IsClusterLocal: true, Name: name, Scan: expScan},
 			enricher.IgnoreExistingImages, errors.New("broken"), false,
 		},
 	}
@@ -335,26 +342,60 @@ func TestResetClusterLocal(t *testing.T) {
 			fetchOptMatcher := gomock.Cond(func(eCtx enricher.EnrichmentContext) bool {
 				return eCtx.FetchOpt == tc.expectedFetchOpt
 			})
-			imageEnricherMock := enricherMocks.NewMockImageEnricher(ctrl)
-			imageEnricherMock.EXPECT().
-				EnrichImage(gomock.Any(), fetchOptMatcher, gomock.Any()).
-				Return(enricher.EnrichmentResult{}, tc.enrichErr).AnyTimes()
 
 			riskManagerMock := riskManagerMocks.NewMockManager(ctrl)
-			riskManagerMock.EXPECT().
-				CalculateRiskAndUpsertImage(gomock.Any()).
-				Return(nil).AnyTimes()
 
-			imageDSMock := imageDSMocks.NewMockDataStore(ctrl)
-			imageDSMock.EXPECT().
-				GetImage(gomock.Any(), gomock.Any()).
-				Return(tc.existingImg, tc.existingImg != nil, nil).AnyTimes()
+			var s *serviceImpl
+			if features.FlattenImageData.Enabled() {
+				imageEnricherV2Mock := enricherMocks.NewMockImageEnricherV2(ctrl)
+				imageEnricherV2Mock.EXPECT().
+					EnrichImage(gomock.Any(), fetchOptMatcher, gomock.Any()).
+					Return(enricher.EnrichmentResult{}, tc.enrichErr).AnyTimes()
 
-			s := &serviceImpl{
-				internalScanSemaphore: semaphore.NewWeighted(int64(env.MaxParallelImageScanInternal.IntegerSetting())),
-				enricher:              imageEnricherMock,
-				datastore:             imageDSMock,
-				riskManager:           riskManagerMock,
+				riskManagerMock.EXPECT().
+					CalculateRiskAndUpsertImageV2(gomock.Any()).
+					Return(nil).AnyTimes()
+
+				imageV2DSMock := imageV2DSMocks.NewMockDataStore(ctrl)
+				imageV2DSMock.EXPECT().
+					GetImage(gomock.Any(), gomock.Any()).
+					Return(tc.existingImgV2, tc.existingImgV2 != nil, nil).AnyTimes()
+				imageV2DSMock.EXPECT().
+					GetImageNames(gomock.Any(), gomock.Any()).
+					Return(names, nil).AnyTimes()
+
+				connMgrMock := connMgrMocks.NewMockManager(ctrl)
+				connMgrMock.EXPECT().AllSensorsHaveCapability(gomock.Any()).AnyTimes().Return(false)
+
+				s = &serviceImpl{
+					internalScanSemaphore: semaphore.NewWeighted(int64(env.MaxParallelImageScanInternal.IntegerSetting())),
+					enricherV2:            imageEnricherV2Mock,
+					datastoreV2:           imageV2DSMock,
+					riskManager:           riskManagerMock,
+					connManager:           connMgrMock,
+				}
+			} else {
+				// TODO(ROX-30117): Remove this block when FlattenImageData feature flag is removed.
+				imageEnricherMock := enricherMocks.NewMockImageEnricher(ctrl)
+				imageEnricherMock.EXPECT().
+					EnrichImage(gomock.Any(), fetchOptMatcher, gomock.Any()).
+					Return(enricher.EnrichmentResult{}, tc.enrichErr).AnyTimes()
+
+				riskManagerMock.EXPECT().
+					CalculateRiskAndUpsertImage(gomock.Any()).
+					Return(nil).AnyTimes()
+
+				imageDSMock := imageDSMocks.NewMockDataStore(ctrl)
+				imageDSMock.EXPECT().
+					GetImage(gomock.Any(), gomock.Any()).
+					Return(tc.existingImg, tc.existingImg != nil, nil).AnyTimes()
+
+				s = &serviceImpl{
+					internalScanSemaphore: semaphore.NewWeighted(int64(env.MaxParallelImageScanInternal.IntegerSetting())),
+					enricher:              imageEnricherMock,
+					datastore:             imageDSMock,
+					riskManager:           riskManagerMock,
+				}
 			}
 
 			resp, err := s.ScanImageInternal(context.Background(), scanReq)
