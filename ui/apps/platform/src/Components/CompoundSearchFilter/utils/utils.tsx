@@ -1,6 +1,7 @@
 import type { SearchFilter } from 'types/search';
 import type { IsFeatureFlagEnabled } from 'hooks/useFeatureFlags';
-import { searchValueAsArray } from 'utils/searchUtils';
+import { getDate } from 'utils/dateUtils';
+import { getValueByCaseInsensitiveKey, searchValueAsArray } from 'utils/searchUtils';
 import { ensureExhaustive } from 'utils/type.utils';
 
 import { convertFromInternalToExternalConditionText } from '../components/SearchFilterConditionText';
@@ -36,6 +37,44 @@ export const conditions = Object.keys(conditionMap) as unknown as (keyof typeof 
 export const dateConditions = Object.keys(
     dateConditionMap
 ) as unknown as (keyof typeof dateConditionMap)[];
+
+/**
+ * Formats date picker value like CVE discovered time filter values into user-friendly text
+ * @param value - Filter value like ">2024-01-01" or "2024-01-01"
+ * @returns Formatted string like "After January 1, 2024"
+ */
+export function convertFromInternalToExternalDatePicker(value: string): string {
+    try {
+        // Parse the condition prefix and date
+        const match = value.match(/^([<>]?)(.+)$/);
+        if (!match) {
+            return value; // Return original if parsing fails
+        }
+
+        const [, condition, dateStr] = match;
+        const date = new Date(dateStr);
+
+        // Check if date is valid
+        if (Number.isNaN(date.getTime())) {
+            return value; // Return original if date is invalid
+        }
+
+        const formattedDate = getDate(date);
+
+        // Map conditions to user-friendly text
+        switch (condition) {
+            case '>':
+                return `After ${formattedDate}`;
+            case '<':
+                return `Before ${formattedDate}`;
+            default:
+                return `On ${formattedDate}`;
+        }
+    } catch {
+        // Return original value if any error occurs
+        return value;
+    }
+}
 
 export function getEntityFromConfig(
     config: CompoundSearchFilterConfig,
@@ -283,12 +322,12 @@ export function getCompoundSearchFilterLabelDescriptionOrNull(
         payload: payloadDeleteCategory,
     };
 
-    const values = searchValueAsArray(searchFilter[category]);
+    // For example, query might have FIXABLE as key but attribute might have Fixable as key.
+    const values = searchValueAsArray(getValueByCaseInsensitiveKey(searchFilter, category));
 
     switch (inputType) {
         case 'autocomplete':
         case 'condition-number':
-        case 'date-picker':
         case 'text': {
             if (values.length === 0) {
                 return null;
@@ -312,6 +351,19 @@ export function getCompoundSearchFilterLabelDescriptionOrNull(
                 group,
                 items: values.map((value) => ({
                     label: convertFromInternalToExternalConditionText(inputProps, value),
+                    payload: [{ action: 'REMOVE', category, value }],
+                })),
+            };
+        }
+        case 'date-picker': {
+            if (values.length === 0) {
+                return null;
+            }
+
+            return {
+                group,
+                items: values.map((value) => ({
+                    label: convertFromInternalToExternalDatePicker(value),
                     payload: [{ action: 'REMOVE', category, value }],
                 })),
             };
