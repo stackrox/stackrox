@@ -213,3 +213,5 @@ system:
   enablePodSecurityPolicies: null # bool
 crs:
   file: null # string
+consolePlugin:
+  enabled: null # bool
