@@ -26,7 +26,7 @@ const (
 	configControllerDeployment       = "config-controller"
 	configControllerContainer        = "manager"
 	configControllerCentralEndpoint  = "ROX_CENTRAL_ENDPOINT"
-	configControllerProxySecretName  = "quay" //nolint:gosec // G101
+	configControllerProxySecretName  = "quay"
 	configControllerAdditionalCAName = "additional-ca"
 )
 
@@ -48,11 +48,12 @@ func TestConfigControllerAdditionalCA(t *testing.T) {
 
 type ConfigControllerCASuite struct {
 	KubernetesSuite
-	ctx                     context.Context
-	cleanupCtx              context.Context
-	cancel                  func()
-	originalCentralEndpoint string
-	hadAdditionalCASecret   bool
+	ctx                         context.Context
+	cleanupCtx                  context.Context
+	cancel                      func()
+	originalCentralEndpoint     string
+	hadAdditionalCASecret       bool
+	originalAdditionalCAContent map[string][]byte
 }
 
 func (s *ConfigControllerCASuite) SetupSuite() {
@@ -69,9 +70,19 @@ func (s *ConfigControllerCASuite) SetupSuite() {
 	requireNoErrorOrEnvVarNotFound(s.T(), err)
 	s.logf("Original value is %q. (Will restore this value on cleanup.)", s.originalCentralEndpoint)
 
-	// Check if additional-ca secret already exists
-	_, err = s.k8s.CoreV1().Secrets(configControllerNs).Get(s.ctx, configControllerAdditionalCAName, metaV1.GetOptions{})
-	s.hadAdditionalCASecret = err == nil
+	// Save existing additional-ca secret content if it exists
+	existingSecret, err := s.k8s.CoreV1().Secrets(configControllerNs).Get(s.ctx, configControllerAdditionalCAName, metaV1.GetOptions{})
+	if err == nil {
+		s.hadAdditionalCASecret = true
+		s.originalAdditionalCAContent = existingSecret.Data
+		s.logf("Found existing additional-ca secret with %d certificate(s). Will restore after test.", len(existingSecret.Data))
+
+		// Delete the existing secret so we can create our test version
+		err = s.k8s.CoreV1().Secrets(configControllerNs).Delete(s.ctx, configControllerAdditionalCAName, metaV1.DeleteOptions{})
+		s.Require().NoError(err, "cannot delete existing additional-ca secret")
+	} else if !apiErrors.IsNotFound(err) {
+		s.Require().NoError(err, "error checking for existing additional-ca secret")
+	}
 
 	s.setupProxy()
 	s.createAdditionalCASecret()
@@ -314,11 +325,32 @@ func (s *ConfigControllerCASuite) cleanupProxy(ctx context.Context) {
 }
 
 func (s *ConfigControllerCASuite) cleanupAdditionalCASecret(ctx context.Context) {
-	// Only delete the secret if it didn't exist before the test
 	if s.hadAdditionalCASecret {
-		s.logf("Keeping existing additional-ca secret in namespace %q", configControllerNs)
+		// Restore original secret content
+		s.logf("Restoring original additional-ca secret with %d certificate(s) in namespace %q...", len(s.originalAdditionalCAContent), configControllerNs)
+
+		// First delete the test secret
+		err := s.k8s.CoreV1().Secrets(configControllerNs).Delete(ctx, configControllerAdditionalCAName, metaV1.DeleteOptions{})
+		if err != nil && !apiErrors.IsNotFound(err) {
+			s.Require().NoError(err, "cannot delete test additional-ca secret")
+		}
+
+		// Recreate with original content
+		secret := &v1.Secret{
+			ObjectMeta: metaV1.ObjectMeta{
+				Name:      configControllerAdditionalCAName,
+				Namespace: configControllerNs,
+			},
+			Type: v1.SecretTypeOpaque,
+			Data: s.originalAdditionalCAContent,
+		}
+		_, err = s.k8s.CoreV1().Secrets(configControllerNs).Create(ctx, secret, metaV1.CreateOptions{})
+		s.Require().NoError(err, "cannot restore original additional-ca secret in namespace %q", configControllerNs)
+		s.logf("Successfully restored original additional-ca secret")
 		return
 	}
+
+	// Delete the secret if it didn't exist before the test
 	s.logf("Cleaning up additional-ca secret in namespace %q...", configControllerNs)
 	err := s.k8s.CoreV1().Secrets(configControllerNs).Delete(ctx, configControllerAdditionalCAName, metaV1.DeleteOptions{})
 	if apiErrors.IsNotFound(err) {
