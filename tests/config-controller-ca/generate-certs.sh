@@ -12,7 +12,7 @@ SERVICE_NAME="nginx-proxy"
 
 echo "=== Generating Root CA ==="
 openssl genrsa -out root-ca.key 3072
-openssl req -x509 -nodes -sha256 -new -key root-ca.key -out root-ca.crt -days 18500 \
+openssl req -x509 -nodes -sha256 -new -key root-ca.key -out root-ca.crt -days $((50*365)) \
     -subj "/CN=Config Controller Test CA" \
     -addext "keyUsage = critical, keyCertSign" \
     -addext "basicConstraints = critical, CA:TRUE, pathlen:0" \
@@ -32,7 +32,7 @@ subjectAltName=DNS:${SERVICE_NAME}.${NAMESPACE},DNS:*.${NAMESPACE},DNS:${SERVICE
 EOF
 )
 
-openssl x509 -req -sha256 -in server.csr -out server.crt -days 18500 \
+openssl x509 -req -sha256 -in server.csr -out server.crt -days $((50*365)) \
     -CAkey root-ca.key -CA root-ca.crt -CAcreateserial \
     -extfile <(cat <<EOF
 subjectAltName = DNS:${SERVICE_NAME}.${NAMESPACE},DNS:*.${NAMESPACE},DNS:${SERVICE_NAME}.${NAMESPACE}.svc,DNS:${SERVICE_NAME}.${NAMESPACE}.svc.cluster.local,IP:127.0.0.1

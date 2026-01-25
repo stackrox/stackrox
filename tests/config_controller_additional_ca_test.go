@@ -58,24 +58,24 @@ func (s *ConfigControllerCASuite) SetupSuite() {
 	s.KubernetesSuite.SetupSuite()
 	s.ctx, s.cleanupCtx, s.cancel = testContexts(s.T(), "TestConfigControllerAdditionalCA", 10*time.Minute)
 
-	// Check if config-controller is running before test
+	// Check if config-controller is running before test.
 	s.waitUntilK8sDeploymentReady(s.ctx, configControllerNs, configControllerDeployment)
 
-	// Save original central endpoint (if any)
+	// Save original central endpoint (if any).
 	s.logf("Gathering original central endpoint value from config-controller...")
 	var err error
 	s.originalCentralEndpoint, err = s.getDeploymentEnvVal(s.ctx, configControllerNs, configControllerDeployment, configControllerContainer, configControllerCentralEndpoint)
 	requireNoErrorOrEnvVarNotFound(s.T(), err)
 	s.logf("Original value is %q. (Will restore this value on cleanup.)", s.originalCentralEndpoint)
 
-	// Save existing additional-ca secret content if it exists
+	// Save existing additional-ca secret content if it exists.
 	existingSecret, err := s.k8s.CoreV1().Secrets(configControllerNs).Get(s.ctx, configControllerAdditionalCAName, metaV1.GetOptions{})
 	if err == nil {
 		s.hadAdditionalCASecret = true
 		s.originalAdditionalCAContent = existingSecret.Data
 		s.logf("Found existing additional-ca secret with %d certificate(s). Will restore after test.", len(existingSecret.Data))
 
-		// Delete the existing secret so we can create our test version
+		// Delete the existing secret so we can create our test version.
 		err = s.k8s.CoreV1().Secrets(configControllerNs).Delete(s.ctx, configControllerAdditionalCAName, metaV1.DeleteOptions{})
 		s.Require().NoError(err, "cannot delete existing additional-ca secret")
 	} else if !apiErrors.IsNotFound(err) {
@@ -91,14 +91,14 @@ func (s *ConfigControllerCASuite) TearDownSuite() {
 	s.cleanupProxy(s.cleanupCtx)
 	s.cleanupAdditionalCASecret(s.cleanupCtx)
 
-	// Restore original central endpoint
+	// Restore original central endpoint.
 	if s.originalCentralEndpoint != "" {
 		_ = s.mustSetDeploymentEnvVal(s.cleanupCtx, configControllerNs, configControllerDeployment, configControllerContainer, configControllerCentralEndpoint, s.originalCentralEndpoint)
 	} else {
 		s.mustDeleteDeploymentEnvVar(s.cleanupCtx, configControllerNs, configControllerDeployment, configControllerCentralEndpoint)
 	}
 
-	// Restart to restore normal operation
+	// Restart to restore normal operation.
 	s.restartConfigController()
 	s.waitUntilK8sDeploymentReady(s.cleanupCtx, configControllerNs, configControllerDeployment)
 
@@ -107,7 +107,7 @@ func (s *ConfigControllerCASuite) TearDownSuite() {
 
 func (s *ConfigControllerCASuite) TestConfigControllerConnectsThroughProxyWithAdditionalCA() {
 	// The proxy is deployed in qa-config-controller-ca namespace using certs
-	// with SAN for *.qa-config-controller-ca
+	// with SAN for *.qa-config-controller-ca.
 	const (
 		proxyServiceName = "nginx-proxy"
 		proxyEndpoint    = proxyServiceName + "." + configControllerProxyNs + ":443"
@@ -118,8 +118,8 @@ func (s *ConfigControllerCASuite) TestConfigControllerConnectsThroughProxyWithAd
 	s.waitUntilK8sDeploymentGenerationReady(s.ctx, configControllerNs, configControllerDeployment, patchedDeploy.GetGeneration())
 	s.logf("Config-controller will now attempt connecting via the nginx proxy.")
 
-	// Wait for config-controller to successfully connect through the proxy
-	// The manager logs "Starting manager" when it successfully initializes
+	// Wait for config-controller to successfully connect through the proxy.
+	// The manager logs "Starting manager" when it successfully initializes.
 	s.waitUntilLog(s.ctx, configControllerNs,
 		map[string]string{"app": "config-controller"},
 		configControllerContainer,
@@ -127,14 +127,14 @@ func (s *ConfigControllerCASuite) TestConfigControllerConnectsThroughProxyWithAd
 		containsLineMatching(regexp.MustCompile(`(Starting manager|Reconciler started|successfully connected)`)),
 	)
 
-	// Verify config-controller is healthy (readiness probe passes)
+	// Verify config-controller is healthy (readiness probe passes).
 	s.waitUntilK8sDeploymentReady(s.ctx, configControllerNs, configControllerDeployment)
 	s.logf("Config-controller successfully connected through proxy with additional CA")
 }
 
 func (s *ConfigControllerCASuite) setupProxy() {
 	// Deploy nginx proxy in qa-config-controller-ca namespace using certs
-	// with SANs for *.qa-config-controller-ca
+	// with SANs for *.qa-config-controller-ca.
 	proxyNs := configControllerProxyNs
 	name := "nginx-proxy"
 	nginxLabels := map[string]string{"app": "nginx-proxy"}
@@ -175,7 +175,7 @@ func (s *ConfigControllerCASuite) createProxyTLSSecret(proxyNs, nginxTLSSecretNa
 }
 
 func (s *ConfigControllerCASuite) createProxyConfigMap(proxyNs, nginxConfigName string) {
-	// The proxy forwards gRPC traffic to the real Central
+	// The proxy forwards gRPC traffic to the real Central.
 	centralEndpoint := fmt.Sprintf("central.%s.svc:443", configControllerNs)
 	const nginxConfigTmpl = `
 server {
@@ -294,7 +294,7 @@ func (s *ConfigControllerCASuite) restartConfigController() {
 		metaV1.ListOptions{LabelSelector: "app=config-controller"})
 	s.Require().NoError(err, "cannot delete config-controller pods")
 
-	// Wait for new pod to be ready
+	// Wait for new pod to be ready.
 	s.waitUntilK8sDeploymentReady(s.ctx, configControllerNs, configControllerDeployment)
 }
 
@@ -315,16 +315,16 @@ func (s *ConfigControllerCASuite) cleanupProxy(ctx context.Context) {
 
 func (s *ConfigControllerCASuite) cleanupAdditionalCASecret(ctx context.Context) {
 	if s.hadAdditionalCASecret {
-		// Restore original secret content
+		// Restore original secret content.
 		s.logf("Restoring original additional-ca secret with %d certificate(s) in namespace %q...", len(s.originalAdditionalCAContent), configControllerNs)
 
-		// First delete the test secret
+		// First delete the test secret.
 		err := s.k8s.CoreV1().Secrets(configControllerNs).Delete(ctx, configControllerAdditionalCAName, metaV1.DeleteOptions{})
 		if err != nil && !apiErrors.IsNotFound(err) {
 			s.Require().NoError(err, "cannot delete test additional-ca secret")
 		}
 
-		// Recreate with original content
+		// Recreate with original content.
 		secret := &v1.Secret{
 			ObjectMeta: metaV1.ObjectMeta{
 				Name:      configControllerAdditionalCAName,
@@ -339,7 +339,7 @@ func (s *ConfigControllerCASuite) cleanupAdditionalCASecret(ctx context.Context)
 		return
 	}
 
-	// Delete the secret if it didn't exist before the test
+	// Delete the secret if it didn't exist before the test.
 	s.logf("Cleaning up additional-ca secret in namespace %q...", configControllerNs)
 	err := s.k8s.CoreV1().Secrets(configControllerNs).Delete(ctx, configControllerAdditionalCAName, metaV1.DeleteOptions{})
 	if apiErrors.IsNotFound(err) {
