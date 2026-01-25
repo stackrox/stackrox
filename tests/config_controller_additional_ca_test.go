@@ -5,13 +5,11 @@ package tests
 import (
 	"context"
 	_ "embed"
-	"encoding/json"
 	"fmt"
 	"regexp"
 	"testing"
 	"time"
 
-	"github.com/stackrox/rox/pkg/docker/config"
 	"github.com/stackrox/rox/pkg/namespaces"
 	"github.com/stretchr/testify/suite"
 	appsV1 "k8s.io/api/apps/v1"
@@ -163,16 +161,7 @@ func (s *ConfigControllerCASuite) createProxyNamespace(proxyNs string) {
 }
 
 func (s *ConfigControllerCASuite) installProxyImagePullSecret(proxyNs string) {
-	configBytes, err := json.Marshal(config.DockerConfigJSON{
-		Auths: map[string]config.DockerConfigEntry{
-			"https://quay.io": {
-				Username: mustGetEnv(s.T(), "REGISTRY_USERNAME"),
-				Password: mustGetEnv(s.T(), "REGISTRY_PASSWORD"),
-			},
-		},
-	})
-	s.Require().NoError(err, "cannot serialize docker config for image pull secret %q in namespace %q", configControllerProxySecretName, proxyNs)
-	s.ensureSecretExists(s.ctx, proxyNs, configControllerProxySecretName, v1.SecretTypeDockerConfigJson, map[string][]byte{v1.DockerConfigJsonKey: configBytes})
+	s.ensureQuayImagePullSecretExists(s.ctx, proxyNs, configControllerProxySecretName)
 }
 
 func (s *ConfigControllerCASuite) createProxyTLSSecret(proxyNs, nginxTLSSecretName string) {
