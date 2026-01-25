@@ -1,9 +1,10 @@
 [Unit]
-Description=Run StackRox VM Agent Hourly
+Description=Run StackRox VM Agent periodically
 
 [Timer]
 OnBootSec=5min
-OnUnitActiveSec=1h
+OnUnitActiveSec=3h40m
+RandomizedDelaySec=40min
 Persistent=true
 
 [Install]
