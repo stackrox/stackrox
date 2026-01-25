@@ -7,13 +7,14 @@ After=roxagent-prep.service
 [Container]
 # Replace with your StackRox main image tag
 Image=quay.io/stackrox-io/main:4.10.x-697-g3c843a274f
-Entrypoint=/stackrox/bin/roxagent
 Exec=--host-path /host
 Network=host
 
 # Privileged for vsock access
+# Use PodmanArgs for entrypoint (RHEL 8 Quadlet doesn't support Entrypoint key)
+# Run as root since image defaults to non-root user
 SecurityLabelDisable=true
-PodmanArgs=--privileged
+PodmanArgs=--privileged --user root --entrypoint /stackrox/bin/roxagent --device /dev/vsock
 
 # Mount copied RPM database (writable for SQLite WAL) and host config files (read-only)
 Volume=/tmp/roxagent-rpm:/host/var/lib/rpm:rw
