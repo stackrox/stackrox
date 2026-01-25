@@ -10,9 +10,10 @@ import {
     FlexItem,
     Form,
     FormGroup,
+    Popover,
     TextInput,
 } from '@patternfly/react-core';
-import { TrashIcon } from '@patternfly/react-icons';
+import { HelpIcon, TrashIcon } from '@patternfly/react-icons';
 import { useField } from 'formik';
 
 import AutocompleteSelect from 'Components/CompoundSearchFilter/components/AutocompleteSelect';
@@ -22,7 +23,7 @@ import type { ClusterScopeObject } from 'services/RolesService';
 import type { SearchFilter } from 'types/search';
 
 type PolicyScopeCardProps = {
-    type: 'exclusion' | 'inclusion';
+    type: 'scope' | 'exclusion';
     name: string;
     clusters: ClusterScopeObject[];
     onDelete: () => void;
@@ -46,8 +47,8 @@ function PolicyScopeCard({
         label: cluster.name,
     }));
 
-    // Note! Currently this filtering is only relevant to the exclusion scope, therefore accesses `value.scope` instead of `value`.
-    // If at some point the inclusion scope gains a deployment filter, this will need to be updated.
+    // Note! Currently this filtering is only relevant to the exclusion, therefore accesses `value.scope` instead of `value`.
+    // If at some point the scope type gains a deployment filter, this will need to be updated.
     const selectedNamespaceValue = scope?.namespace;
     const deploymentSearchFilter: SearchFilter = {
         'Cluster ID': scope?.cluster ? [scope.cluster] : undefined,
@@ -110,7 +111,7 @@ function PolicyScopeCard({
                                 variant="plain"
                                 className="pf-v5-u-mr-xs pf-v5-u-px-sm pf-v5-u-py-md"
                                 onClick={onDelete}
-                                title={`Delete ${type} scope`}
+                                title={`Delete ${type}`}
                             >
                                 <TrashIcon />
                             </Button>
@@ -121,7 +122,9 @@ function PolicyScopeCard({
                 }}
                 className="pf-v5-u-p-0"
             >
-                <CardTitle className="pf-v5-u-pl-lg">{type} scope</CardTitle>
+                <CardTitle className="pf-v5-u-pl-lg">
+                    {type === 'scope' ? 'Scope' : 'Exclusion'}
+                </CardTitle>
             </CardHeader>
             <Divider component="div" />
             <CardBody>
@@ -141,7 +144,25 @@ function PolicyScopeCard({
                             </FormGroup>
                         </FlexItem>
                         <FlexItem>
-                            <FormGroup label="Namespace" fieldId={`${name}-namespace`}>
+                            <FormGroup
+                                label="Namespace"
+                                fieldId={`${name}-namespace`}
+                                labelIcon={
+                                    <Popover
+                                        aria-label="Namespace help"
+                                        bodyContent="Use literals or regular expressions in RE2 syntax."
+                                    >
+                                        <button
+                                            type="button"
+                                            aria-label="More info for namespace field"
+                                            onClick={(e) => e.preventDefault()}
+                                            className="pf-v5-c-form__group-label-help"
+                                        >
+                                            <HelpIcon />
+                                        </button>
+                                    </Popover>
+                                }
+                            >
                                 <TextInput
                                     value={value.namespace || scope?.namespace}
                                     type="text"
@@ -153,7 +174,7 @@ function PolicyScopeCard({
                                 />
                             </FormGroup>
                         </FlexItem>
-                        {type === 'exclusion' && (
+                        {type === 'exclusion' && !hasAuditLogEventSource && (
                             <FlexItem>
                                 <FormGroup label="Deployment" fieldId={`${name}-deployment`}>
                                     <AutocompleteSelect
@@ -164,36 +185,53 @@ function PolicyScopeCard({
                                         onSearch={handleChangeDeployment}
                                         textLabel="Select a deployment"
                                         searchFilter={deploymentSearchFilter}
-                                        isDisabled={hasAuditLogEventSource}
                                     />
                                 </FormGroup>
                             </FlexItem>
                         )}
-                        <FlexItem>
-                            <FormGroup label="Deployment label" fieldId={`${name}-label`}>
-                                <Flex
-                                    direction={{ default: 'row' }}
-                                    flexWrap={{ default: 'nowrap' }}
+                        {!hasAuditLogEventSource && (
+                            <FlexItem>
+                                <FormGroup
+                                    label="Deployment label"
+                                    fieldId={`${name}-label`}
+                                    labelIcon={
+                                        <Popover
+                                            aria-label="Deployment label help"
+                                            bodyContent="Use literals or regular expressions in RE2 syntax."
+                                        >
+                                            <button
+                                                type="button"
+                                                aria-label="More info for deployment label field"
+                                                onClick={(e) => e.preventDefault()}
+                                                className="pf-v5-c-form__group-label-help"
+                                            >
+                                                <HelpIcon />
+                                            </button>
+                                        </Popover>
+                                    }
                                 >
-                                    <TextInput
-                                        value={value.label?.key || scope?.label?.key}
-                                        type="text"
-                                        id={`${name}-label-key`}
-                                        onChange={(_event, key) => handleChangeLabelKey(key)}
-                                        placeholder="Label key"
-                                        isDisabled={hasAuditLogEventSource}
-                                    />
-                                    <TextInput
-                                        value={value.label?.value || scope?.label?.value}
-                                        type="text"
-                                        id={`${name}-label-value`}
-                                        onChange={(_event, val) => handleChangeLabelValue(val)}
-                                        placeholder="Label value"
-                                        isDisabled={hasAuditLogEventSource}
-                                    />
-                                </Flex>
-                            </FormGroup>
-                        </FlexItem>
+                                    <Flex
+                                        direction={{ default: 'row' }}
+                                        flexWrap={{ default: 'nowrap' }}
+                                    >
+                                        <TextInput
+                                            value={value.label?.key || scope?.label?.key}
+                                            type="text"
+                                            id={`${name}-label-key`}
+                                            onChange={(_event, key) => handleChangeLabelKey(key)}
+                                            placeholder="Label key"
+                                        />
+                                        <TextInput
+                                            value={value.label?.value || scope?.label?.value}
+                                            type="text"
+                                            id={`${name}-label-value`}
+                                            onChange={(_event, val) => handleChangeLabelValue(val)}
+                                            placeholder="Label value"
+                                        />
+                                    </Flex>
+                                </FormGroup>
+                            </FlexItem>
+                        )}
                     </Flex>
                 </Form>
             </CardBody>
