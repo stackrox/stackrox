@@ -217,29 +217,58 @@ func (s *centralCommunicationImpl) initialSync(ctx context.Context, stream centr
 		return errors.Wrap(err, "receiving headers from central")
 	}
 
-	var centralHello *central.CentralHello
-
-	hdr := metautils.MD(rawHdr)
-	if hdr.Get(centralsensor.SensorHelloMetadataKey) == "true" {
+	if metautils.MD(rawHdr).Get(centralsensor.SensorHelloMetadataKey) == "true" {
 		// Yay, central supports the "sensor hello" protocol!
-		err := stream.Send(&central.MsgFromSensor{Msg: &central.MsgFromSensor_Hello{Hello: hello}})
+		err := s.hello(stream, hello)
 		if err != nil {
-			return errors.Wrap(err, "sending SensorHello message to central")
-		}
-
-		firstMsg, err := stream.Recv()
-		if err != nil {
-			return errors.Wrap(err, "receiving first message from central")
-		}
-		centralHello = firstMsg.GetHello()
-		if centralHello == nil {
-			return errors.Errorf("first message received from central was not CentralHello but of type %T", firstMsg.GetMsg())
+			return errors.Wrap(err, "error while executing the sensor hello protocol")
 		}
 	} else {
-		// No sensor hello :(
+		// No sensor hello - Central is running a legacy version.
 		log.Warn("Central is running a legacy version that might not support all current features")
+
+		// Without hello protocol, we can't receive cluster ID dynamically.
+		// We must have a real cluster ID in the certificate.
+		certClusterID := s.clusterID.GetNoWait()
+		if centralsensor.IsInitCertClusterID(certClusterID) || certClusterID == "" {
+			return errors.New("Central does not support sensor hello protocol, but sensor has a wildcard certificate and cannot determine cluster ID")
+		}
+
+		// Use the cluster ID from the certificate.
+		// This unblocks a waiting procedure in cluster_id.go.
+		s.clusterID.Set("")
+
+		// Disable features that require hello protocol.
+		s.clientReconcile = false
 	}
 
+	// DO NOT CHANGE THE ORDER. Please refer to `Run()` at `central/sensor/service/connection/connection_impl.go`
+	if err := s.initialConfigSync(ctx, stream, configHandler); err != nil {
+		return err
+	}
+
+	if err := s.initialPolicySync(ctx, stream, detector); err != nil {
+		return err
+	}
+
+	return s.initialDeduperSync(stream)
+}
+
+func (s *centralCommunicationImpl) hello(stream central.SensorService_CommunicateClient, hello *central.SensorHello) error {
+	var centralHello *central.CentralHello
+	err := stream.Send(&central.MsgFromSensor{Msg: &central.MsgFromSensor_Hello{Hello: hello}})
+	if err != nil {
+		return errors.Wrap(err, "sending SensorHello message to central")
+	}
+
+	firstMsg, err := stream.Recv()
+	if err != nil {
+		return errors.Wrap(err, "receiving first message from central")
+	}
+	centralHello = firstMsg.GetHello()
+	if centralHello == nil {
+		return errors.Errorf("first message received from central was not CentralHello but of type %T", firstMsg.GetMsg())
+	}
 	clusterID := centralHello.GetClusterId()
 	s.clusterID.Set(clusterID)
 
@@ -267,17 +296,7 @@ func (s *centralCommunicationImpl) initialSync(ctx context.Context, stream centr
 			log.Warnf("Could not cache cluster ID: %v", err)
 		}
 	}
-
-	// DO NOT CHANGE THE ORDER. Please refer to `Run()` at `central/sensor/service/connection/connection_impl.go`
-	if err := s.initialConfigSync(ctx, stream, configHandler); err != nil {
-		return err
-	}
-
-	if err := s.initialPolicySync(ctx, stream, detector); err != nil {
-		return err
-	}
-
-	return s.initialDeduperSync(stream)
+	return nil
 }
 
 func (s *centralCommunicationImpl) initialDeduperSync(stream central.SensorService_CommunicateClient) error {
