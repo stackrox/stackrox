@@ -146,7 +146,6 @@ func (c *sensorConnection) Stopped() concurrency.ReadOnlyErrorSignal {
 	return &c.stoppedSig
 }
 
-
 // multiplexedPush pushes the given message to a dedicated queue for the respective event type.
 // The queues parameter, if non-nil, will be used to look up the queue by event type. If the `queues`
 // map is nil or does not contain an entry for the respective type, a queue is retrieved from the
@@ -216,7 +215,6 @@ func (c *sensorConnection) shallRateLimit(ctx context.Context, msg *central.MsgF
 
 	allowed, reason := rateLimiter.TryConsume(c.clusterID)
 	if allowed {
-		log.Debugf("REMOVE THIS Rate limit not exceeded for cluster %s and event type %s", c.clusterID, rateLimiter.WorkloadName())
 		return false
 	}
 
