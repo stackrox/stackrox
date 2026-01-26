@@ -28,6 +28,17 @@ var (
 	_ common.CentralGRPCConnAware = (*Handler)(nil)
 )
 
+// proxyErrorHandler is the error handler for the reverse proxy.
+// It returns 503 for service unavailable errors and 500 for other errors.
+func proxyErrorHandler(w http.ResponseWriter, _ *http.Request, err error) {
+	log.Errorf("Proxy error: %v", err)
+	if errors.Is(err, errServiceUnavailable) {
+		http.Error(w, fmt.Sprintf("proxy temporarily unavailable: %v", err), http.StatusServiceUnavailable)
+		return
+	}
+	http.Error(w, fmt.Sprintf("failed to contact central: %v", err), http.StatusInternalServerError)
+}
+
 // Handler handles HTTP proxy requests to Central.
 type Handler struct {
 	centralReachable atomic.Bool
@@ -54,18 +65,9 @@ func NewProxyHandler(centralEndpoint string, centralCertificates []*x509.Certifi
 	transport := newScopedTokenTransport(baseTransport, clusterIDGetter)
 
 	proxy := &httputil.ReverseProxy{
-		Transport: transport,
-		Rewrite: func(r *httputil.ProxyRequest) {
-			r.SetURL(centralBaseURL)
-		},
-		ErrorHandler: func(w http.ResponseWriter, r *http.Request, err error) {
-			log.Errorf("Proxy error: %v", err)
-			if errors.Is(err, errServiceUnavailable) {
-				http.Error(w, fmt.Sprintf("proxy temporarily unavailable: %v", err), http.StatusServiceUnavailable)
-				return
-			}
-			http.Error(w, fmt.Sprintf("failed to contact central: %v", err), http.StatusInternalServerError)
-		},
+		Transport:    transport,
+		Rewrite:      func(r *httputil.ProxyRequest) { r.SetURL(centralBaseURL) },
+		ErrorHandler: proxyErrorHandler,
 	}
 
 	restConfig, err := k8sutil.GetK8sInClusterConfig()

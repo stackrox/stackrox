@@ -5,7 +5,6 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
-	"net/http/httputil"
 	"net/url"
 	"strings"
 	"testing"
@@ -16,7 +15,6 @@ import (
 	"github.com/stackrox/rox/sensor/common/centralcaps"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"google.golang.org/grpc/codes"
 	authenticationv1 "k8s.io/api/authentication/v1"
 	authv1 "k8s.io/api/authorization/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -35,18 +33,6 @@ func setupCentralCapsForTest(t *testing.T) {
 	})
 }
 
-// newProxyForTest creates a test proxy with a custom transport for testing purposes.
-func newProxyForTest(t *testing.T, baseURL *url.URL, transport http.RoundTripper) *httputil.ReverseProxy {
-	return &httputil.ReverseProxy{
-		Transport: transport,
-		Rewrite: func(r *httputil.ProxyRequest) {
-			r.SetURL(baseURL)
-		},
-		ErrorHandler: func(w http.ResponseWriter, r *http.Request, err error) {
-			pkghttputil.WriteGRPCStyleErrorf(w, codes.Internal, "failed to contact central: %v", err)
-		},
-	}
-}
 
 func TestValidateRequest(t *testing.T) {
 	tests := []struct {
@@ -192,8 +178,12 @@ func TestServeHTTP(t *testing.T) {
 	})
 
 	t.Run("request rejected when Central lacks internal token API capability", func(t *testing.T) {
-		// Do NOT set up central caps - this simulates an older Central without the capability
+		// Explicitly clear central caps to simulate an older Central without the capability.
+		// Use cleanup to restore state and avoid cross-test interference.
 		centralcaps.Set(nil)
+		t.Cleanup(func() {
+			centralcaps.Set(nil)
+		})
 
 		var proxyCalled bool
 		mockTransport := pkghttputil.RoundTripperFunc(func(req *http.Request) (*http.Response, error) {
@@ -209,7 +199,7 @@ func TestServeHTTP(t *testing.T) {
 		require.NoError(t, err)
 
 		h := &Handler{
-			proxy:      newProxyForTest(t, baseURL, mockTransport),
+			proxy:      newReverseProxyForTest(baseURL, mockTransport),
 			authorizer: newAllowingAuthorizer(t),
 		}
 		h.centralReachable.Store(true)
