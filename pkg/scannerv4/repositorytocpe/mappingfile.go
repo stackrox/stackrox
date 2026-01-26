@@ -1,7 +1,5 @@
 package repositorytocpe
 
-import "log/slog"
-
 // MappingFile is a data struct for mapping between repositories and CPEs.
 // This is used to map RHEL repositories to their corresponding CPEs for
 // vulnerability matching.
@@ -24,6 +22,5 @@ func (m *MappingFile) GetCPEs(repoid string) ([]string, bool) {
 	if repo, ok := m.Data[repoid]; ok {
 		return repo.CPEs, true
 	}
-	slog.Debug("repository not present in mapping file", "repository", repoid)
 	return nil, false
 }

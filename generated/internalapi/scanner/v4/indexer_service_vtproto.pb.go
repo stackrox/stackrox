@@ -195,6 +195,7 @@ func (m *GetRepositoryToCPEMappingRequest) CloneVT() *GetRepositoryToCPEMappingR
 		return (*GetRepositoryToCPEMappingRequest)(nil)
 	}
 	r := new(GetRepositoryToCPEMappingRequest)
+	r.IfModifiedSince = m.IfModifiedSince
 	if len(m.unknownFields) > 0 {
 		r.unknownFields = make([]byte, len(m.unknownFields))
 		copy(r.unknownFields, m.unknownFields)
@@ -232,6 +233,8 @@ func (m *GetRepositoryToCPEMappingResponse) CloneVT() *GetRepositoryToCPEMapping
 		return (*GetRepositoryToCPEMappingResponse)(nil)
 	}
 	r := new(GetRepositoryToCPEMappingResponse)
+	r.Modified = m.Modified
+	r.LastModified = m.LastModified
 	if rhs := m.Mapping; rhs != nil {
 		tmpContainer := make(map[string]*RepositoryCPEInfo, len(rhs))
 		for k, v := range rhs {
@@ -500,6 +503,9 @@ func (this *GetRepositoryToCPEMappingRequest) EqualVT(that *GetRepositoryToCPEMa
 	} else if this == nil || that == nil {
 		return false
 	}
+	if this.IfModifiedSince != that.IfModifiedSince {
+		return false
+	}
 	return string(this.unknownFields) == string(that.unknownFields)
 }
 
@@ -539,6 +545,12 @@ func (this *GetRepositoryToCPEMappingResponse) EqualVT(that *GetRepositoryToCPEM
 	if this == that {
 		return true
 	} else if this == nil || that == nil {
+		return false
+	}
+	if this.Modified != that.Modified {
+		return false
+	}
+	if this.LastModified != that.LastModified {
 		return false
 	}
 	if len(this.Mapping) != len(that.Mapping) {
@@ -1039,6 +1051,13 @@ func (m *GetRepositoryToCPEMappingRequest) MarshalToSizedBufferVT(dAtA []byte) (
 		i -= len(m.unknownFields)
 		copy(dAtA[i:], m.unknownFields)
 	}
+	if len(m.IfModifiedSince) > 0 {
+		i -= len(m.IfModifiedSince)
+		copy(dAtA[i:], m.IfModifiedSince)
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(len(m.IfModifiedSince)))
+		i--
+		dAtA[i] = 0xa
+	}
 	return len(dAtA) - i, nil
 }
 
@@ -1133,8 +1152,25 @@ func (m *GetRepositoryToCPEMappingResponse) MarshalToSizedBufferVT(dAtA []byte) 
 			dAtA[i] = 0xa
 			i = protohelpers.EncodeVarint(dAtA, i, uint64(baseI-i))
 			i--
-			dAtA[i] = 0xa
+			dAtA[i] = 0x1a
 		}
+	}
+	if len(m.LastModified) > 0 {
+		i -= len(m.LastModified)
+		copy(dAtA[i:], m.LastModified)
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(len(m.LastModified)))
+		i--
+		dAtA[i] = 0x12
+	}
+	if m.Modified {
+		i--
+		if m.Modified {
+			dAtA[i] = 1
+		} else {
+			dAtA[i] = 0
+		}
+		i--
+		dAtA[i] = 0x8
 	}
 	return len(dAtA) - i, nil
 }
@@ -1312,6 +1348,10 @@ func (m *GetRepositoryToCPEMappingRequest) SizeVT() (n int) {
 	}
 	var l int
 	_ = l
+	l = len(m.IfModifiedSince)
+	if l > 0 {
+		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
+	}
 	n += len(m.unknownFields)
 	return n
 }
@@ -1338,6 +1378,13 @@ func (m *GetRepositoryToCPEMappingResponse) SizeVT() (n int) {
 	}
 	var l int
 	_ = l
+	if m.Modified {
+		n += 2
+	}
+	l = len(m.LastModified)
+	if l > 0 {
+		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
+	}
 	if len(m.Mapping) > 0 {
 		for k, v := range m.Mapping {
 			_ = k
@@ -2290,6 +2337,38 @@ func (m *GetRepositoryToCPEMappingRequest) UnmarshalVT(dAtA []byte) error {
 			return fmt.Errorf("proto: GetRepositoryToCPEMappingRequest: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field IfModifiedSince", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.IfModifiedSince = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
 			skippy, err := protohelpers.Skip(dAtA[iNdEx:])
@@ -2425,6 +2504,58 @@ func (m *GetRepositoryToCPEMappingResponse) UnmarshalVT(dAtA []byte) error {
 		}
 		switch fieldNum {
 		case 1:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Modified", wireType)
+			}
+			var v int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				v |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			m.Modified = bool(v != 0)
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field LastModified", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.LastModified = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 3:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field Mapping", wireType)
 			}
@@ -3550,6 +3681,42 @@ func (m *GetRepositoryToCPEMappingRequest) UnmarshalVTUnsafe(dAtA []byte) error 
 			return fmt.Errorf("proto: GetRepositoryToCPEMappingRequest: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field IfModifiedSince", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			var stringValue string
+			if intStringLen > 0 {
+				stringValue = unsafe.String(&dAtA[iNdEx], intStringLen)
+			}
+			m.IfModifiedSince = stringValue
+			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
 			skippy, err := protohelpers.Skip(dAtA[iNdEx:])
@@ -3689,6 +3856,62 @@ func (m *GetRepositoryToCPEMappingResponse) UnmarshalVTUnsafe(dAtA []byte) error
 		}
 		switch fieldNum {
 		case 1:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Modified", wireType)
+			}
+			var v int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				v |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			m.Modified = bool(v != 0)
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field LastModified", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			var stringValue string
+			if intStringLen > 0 {
+				stringValue = unsafe.String(&dAtA[iNdEx], intStringLen)
+			}
+			m.LastModified = stringValue
+			iNdEx = postIndex
+		case 3:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field Mapping", wireType)
 			}

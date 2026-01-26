@@ -14,7 +14,6 @@ import (
 	reflect "reflect"
 
 	claircore "github.com/quay/claircore"
-	repositorytocpe "github.com/stackrox/rox/pkg/scannerv4/repositorytocpe"
 	indexer "github.com/stackrox/rox/scanner/indexer"
 	gomock "go.uber.org/mock/gomock"
 )
@@ -153,18 +152,18 @@ func (mr *MockIndexerMockRecorder) GetIndexReport(arg0, arg1, arg2 any) *gomock.
 }
 
 // GetRepositoryToCPEMapping mocks base method.
-func (m *MockIndexer) GetRepositoryToCPEMapping(arg0 context.Context) (*repositorytocpe.MappingFile, error) {
+func (m *MockIndexer) GetRepositoryToCPEMapping(ctx context.Context, ifModifiedSince string) (*indexer.FetchResult, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetRepositoryToCPEMapping", arg0)
-	ret0, _ := ret[0].(*repositorytocpe.MappingFile)
+	ret := m.ctrl.Call(m, "GetRepositoryToCPEMapping", ctx, ifModifiedSince)
+	ret0, _ := ret[0].(*indexer.FetchResult)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetRepositoryToCPEMapping indicates an expected call of GetRepositoryToCPEMapping.
-func (mr *MockIndexerMockRecorder) GetRepositoryToCPEMapping(arg0 any) *gomock.Call {
+func (mr *MockIndexerMockRecorder) GetRepositoryToCPEMapping(ctx, ifModifiedSince any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetRepositoryToCPEMapping", reflect.TypeOf((*MockIndexer)(nil).GetRepositoryToCPEMapping), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetRepositoryToCPEMapping", reflect.TypeOf((*MockIndexer)(nil).GetRepositoryToCPEMapping), ctx, ifModifiedSince)
 }
 
 // IndexContainerImage mocks base method.

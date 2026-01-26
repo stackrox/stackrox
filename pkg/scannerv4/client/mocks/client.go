@@ -17,7 +17,6 @@ import (
 	name "github.com/google/go-containerregistry/pkg/name"
 	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
 	client "github.com/stackrox/rox/pkg/scannerv4/client"
-	repositorytocpe "github.com/stackrox/rox/pkg/scannerv4/repositorytocpe"
 	gomock "go.uber.org/mock/gomock"
 )
 
@@ -121,18 +120,18 @@ func (mr *MockScannerMockRecorder) GetOrCreateImageIndex(ctx, ref, auth, opt any
 }
 
 // GetRepositoryToCPEMapping mocks base method.
-func (m *MockScanner) GetRepositoryToCPEMapping(ctx context.Context) (*repositorytocpe.MappingFile, error) {
+func (m *MockScanner) GetRepositoryToCPEMapping(ctx context.Context, ifModifiedSince string) (*client.Repo2CPEResult, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetRepositoryToCPEMapping", ctx)
-	ret0, _ := ret[0].(*repositorytocpe.MappingFile)
+	ret := m.ctrl.Call(m, "GetRepositoryToCPEMapping", ctx, ifModifiedSince)
+	ret0, _ := ret[0].(*client.Repo2CPEResult)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetRepositoryToCPEMapping indicates an expected call of GetRepositoryToCPEMapping.
-func (mr *MockScannerMockRecorder) GetRepositoryToCPEMapping(ctx any) *gomock.Call {
+func (mr *MockScannerMockRecorder) GetRepositoryToCPEMapping(ctx, ifModifiedSince any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetRepositoryToCPEMapping", reflect.TypeOf((*MockScanner)(nil).GetRepositoryToCPEMapping), ctx)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetRepositoryToCPEMapping", reflect.TypeOf((*MockScanner)(nil).GetRepositoryToCPEMapping), ctx, ifModifiedSince)
 }
 
 // GetSBOM mocks base method.

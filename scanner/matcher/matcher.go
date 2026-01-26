@@ -36,7 +36,9 @@ import (
 	"github.com/stackrox/rox/scanner/enricher/csaf"
 	"github.com/stackrox/rox/scanner/enricher/fixedby"
 	"github.com/stackrox/rox/scanner/enricher/nvd"
+	"github.com/stackrox/rox/scanner/indexer"
 	"github.com/stackrox/rox/scanner/internal/httputil"
+	"github.com/stackrox/rox/scanner/matcher/repo2cpe"
 	"github.com/stackrox/rox/scanner/matcher/updater/vuln"
 	"github.com/stackrox/rox/scanner/sbom"
 )
@@ -87,8 +89,9 @@ type matcherImpl struct {
 	metadataStore postgres.MatcherMetadataStore
 	pool          *pgxpool.Pool
 
-	vulnUpdater *vuln.Updater
-	sbomer      *sbom.SBOMer
+	vulnUpdater     *vuln.Updater
+	repo2cpeUpdater *repo2cpe.Updater
+	sbomer          *sbom.SBOMer
 
 	readyWithVulns bool
 }
@@ -201,6 +204,23 @@ func NewMatcher(ctx context.Context, cfg config.MatcherConfig) (Matcher, error) 
 	// include vulnerabilities vs. not.
 	sbomer := sbom.NewSBOMer()
 
+	// Create the repository-to-CPE mapping updater if SBOM scanning is enabled
+	// and a remote indexer is configured.
+	var repo2cpeUpdater *repo2cpe.Updater
+	if features.SBOMScanning.Enabled() && cfg.RemoteIndexerEnabled {
+		remoteIndexer, err := indexer.NewRemoteIndexer(ctx, cfg.IndexerAddr)
+		if err != nil {
+			zlog.Warn(ctx).Err(err).Msg("failed to create remote indexer for repo-to-CPE mapping; SBOM CPE data may be incomplete")
+		} else {
+			repo2cpeUpdater = repo2cpe.NewUpdater(remoteIndexer)
+			go func() {
+				if err := repo2cpeUpdater.Start(ctx); err != nil {
+					zlog.Error(ctx).Err(err).Msg("repo-to-CPE mapping updater failed")
+				}
+			}()
+		}
+	}
+
 	// Start the vulnerability updater.
 	go func() {
 		if err := vulnUpdater.Start(); err != nil {
@@ -214,8 +234,9 @@ func NewMatcher(ctx context.Context, cfg config.MatcherConfig) (Matcher, error) 
 		metadataStore: metadataStore,
 		pool:          pool,
 
-		vulnUpdater: vulnUpdater,
-		sbomer:      sbomer,
+		vulnUpdater:     vulnUpdater,
+		repo2cpeUpdater: repo2cpeUpdater,
+		sbomer:          sbomer,
 
 		readyWithVulns: cfg.Readiness == config.ReadinessVulnerability,
 	}, nil

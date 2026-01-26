@@ -221,25 +221,37 @@ func (s *indexerService) StoreIndexReport(ctx context.Context, req *v4.StoreInde
 	return resp, nil
 }
 
-func (s *indexerService) GetRepositoryToCPEMapping(ctx context.Context, _ *v4.GetRepositoryToCPEMappingRequest) (*v4.GetRepositoryToCPEMappingResponse, error) {
+func (s *indexerService) GetRepositoryToCPEMapping(ctx context.Context, req *v4.GetRepositoryToCPEMappingRequest) (*v4.GetRepositoryToCPEMappingResponse, error) {
 	ctx = zlog.ContextWithValues(ctx, "component", "scanner/service/indexer.GetRepositoryToCPEMapping")
 	zlog.Info(ctx).Msg("getting repository-to-CPE mapping")
 
-	mf, err := s.indexer.GetRepositoryToCPEMapping(ctx)
+	fetchResult, err := s.indexer.GetRepositoryToCPEMapping(ctx, req.GetIfModifiedSince())
 	if err != nil {
 		zlog.Error(ctx).Err(err).Msg("failed to get repository-to-CPE mapping")
 		return nil, err
 	}
 
+	// If not modified, return early.
+	if !fetchResult.Modified {
+		return &v4.GetRepositoryToCPEMappingResponse{
+			Modified:     false,
+			LastModified: fetchResult.LastModified,
+		}, nil
+	}
+
 	// Convert to proto format.
-	result := make(map[string]*v4.RepositoryCPEInfo, len(mf.Data))
-	for repo, info := range mf.Data {
+	result := make(map[string]*v4.RepositoryCPEInfo, len(fetchResult.Data.Data))
+	for repo, info := range fetchResult.Data.Data {
 		if len(info.CPEs) > 0 {
 			result[repo] = &v4.RepositoryCPEInfo{Cpes: info.CPEs}
 		}
 	}
 
-	return &v4.GetRepositoryToCPEMappingResponse{Mapping: result}, nil
+	return &v4.GetRepositoryToCPEMappingResponse{
+		Modified:     true,
+		LastModified: fetchResult.LastModified,
+		Mapping:      result,
+	}, nil
 }
 
 // RegisterServiceServer registers this service with the given gRPC Server.
