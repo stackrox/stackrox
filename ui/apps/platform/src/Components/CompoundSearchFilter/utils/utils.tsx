@@ -12,10 +12,7 @@ import type {
     OnSearchPayload,
     OnSearchPayloadItem,
     OnSearchPayloadItemAdd,
-    SelectSearchFilterAttribute,
-    SelectSearchFilterGroupedOptions,
     SelectSearchFilterOption,
-    SelectSearchFilterOptions,
 } from '../types';
 
 export const conditionMap = {
@@ -100,111 +97,6 @@ export function getAttributeFromEntity(
     });
 
     return attributeFound ?? entity?.attributes?.[0]; // default to first attribute
-}
-
-export function getEntity(
-    config: CompoundSearchFilterConfig,
-    entityName: string
-): CompoundSearchFilterEntity | undefined {
-    if (!config || !Array.isArray(config)) {
-        return undefined;
-    }
-    const entity = config.find((entity) => {
-        return entity.displayName === entityName;
-    });
-    return entity;
-}
-
-export function getAttribute(
-    config: CompoundSearchFilterConfig,
-    entityName: string,
-    attributeName: string
-): CompoundSearchFilterAttribute | undefined {
-    const entity = getEntity(config, entityName);
-    return entity?.attributes?.find((attribute) => {
-        return attribute.displayName === attributeName;
-    });
-}
-
-export function getDefaultEntityName(config: CompoundSearchFilterConfig): string | undefined {
-    if (!config || !Array.isArray(config)) {
-        return undefined;
-    }
-    return config?.[0]?.displayName;
-}
-
-export function getEntityAttributes(
-    config: CompoundSearchFilterConfig,
-    entityName: string
-): CompoundSearchFilterAttribute[] {
-    const entity = getEntity(config, entityName);
-    return entity?.attributes ?? [];
-}
-
-export function getDefaultAttributeName(
-    config: CompoundSearchFilterConfig,
-    entityName: string
-): string | undefined {
-    const attributes = getEntityAttributes(config, entityName);
-    return attributes?.[0]?.displayName;
-}
-
-export function ensureConditionNumber(value: unknown): { condition: string; number: number } {
-    if (
-        typeof value === 'object' &&
-        value !== null &&
-        'condition' in value &&
-        'number' in value &&
-        typeof value.condition === 'string' &&
-        typeof value.number === 'number'
-    ) {
-        return {
-            condition: value.condition,
-            number: value.number,
-        };
-    }
-    return {
-        condition: conditions[0],
-        number: 0,
-    };
-}
-
-export function ensureConditionDate(value: unknown): { condition: string; date: string } {
-    if (
-        typeof value === 'object' &&
-        value !== null &&
-        'condition' in value &&
-        'date' in value &&
-        typeof value.condition === 'string' &&
-        typeof value.date === 'string'
-    ) {
-        return {
-            condition: value.condition,
-            date: value.date,
-        };
-    }
-    return {
-        condition: dateConditions[1],
-        date: '',
-    };
-}
-
-export function isSelectType(
-    attribute: CompoundSearchFilterAttribute
-): attribute is SelectSearchFilterAttribute {
-    return attribute.inputType === 'select';
-}
-
-export function hasGroupedSelectOptions(
-    inputProps: SelectSearchFilterAttribute['inputProps']
-): inputProps is SelectSearchFilterGroupedOptions {
-    return 'groupOptions' in inputProps;
-}
-
-export function hasSelectOptions(
-    inputProps: SelectSearchFilterAttribute['inputProps']
-): inputProps is SelectSearchFilterOptions {
-    return 'options' in inputProps;
 }
 
 // Pure function returns searchFilter updated according to payload from interactions.
