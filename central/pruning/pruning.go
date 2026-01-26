@@ -1211,7 +1211,7 @@ func removeExpiredObjects[T traitsHolder](
 	errs := errorhelpers.NewErrorList("removing expired objects")
 	if err != nil {
 		errs.AddError(errors.Wrap(err, "failed to fetch"))
-		return 0, errs
+		return 0, errs.ToError()
 	}
 
 	var removedCount int
@@ -1223,7 +1223,7 @@ func removeExpiredObjects[T traitsHolder](
 		}
 		removedCount++
 	}
-	return removedCount, errs
+	return removedCount, errs.ToError()
 }
 
 func (g *garbageCollectorImpl) removeExpiredRoles(now time.Time) (int, error) {
