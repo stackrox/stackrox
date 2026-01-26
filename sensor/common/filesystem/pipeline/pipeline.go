@@ -112,11 +112,6 @@ func (p *Pipeline) translate(fs *sensorAPI.FileActivity) *storage.FileAccess {
 		return nil
 	}
 
-	if fsUtils.IsNodeFileAccess(access) {
-		// TODO: remove when full host path resolution is complete
-		access.File.ActualPath = access.GetFile().GetEffectivePath()
-	}
-
 	return access
 }
 

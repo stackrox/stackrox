@@ -133,7 +133,6 @@ const fileOperationOptions: DescriptorOption[] = [
     ['OPEN', 'Open'],
     ['CREATE', 'Create'],
     ['UNLINK', 'Delete'],
-    ['RENAME', 'Rename'],
     ['PERMISSION_CHANGE', 'Permission change'],
     ['OWNERSHIP_CHANGE', 'Ownership change'],
 ].map(([value, label]) => ({ value, label }));
