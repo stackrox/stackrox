@@ -197,4 +197,44 @@ func BenchmarkProcessIndicators(b *testing.B) {
 	for i, r := range d1Results {
 		d1DeleteIDs[i] = r.GetId()
 	}
+
+	d1PodID2Query := search.NewQueryBuilder().
+		AddExactMatches(search.PodUID, d1PodID2).
+		ProtoQuery()
+	d1PodID2Results, err := datastore.SearchRawProcessIndicators(ctx, d1PodID2Query)
+	require.NoError(b, err)
+	require.True(b, len(d1PodID2Results) > 0)
+
+	d1PodID2DeleteIDs := make([]string, len(d1PodID2Results))
+	for i, r := range d1PodID2Results {
+		d1PodID2DeleteIDs[i] = r.GetId()
+	}
+
+	b.Run("Delete/ByDeployment1", func(b *testing.B) {
+		for b.Loop() {
+			b.StopTimer()
+			// Re-add before each iteration
+			err := datastore.AddProcessIndicators(ctx, d1Results...)
+			require.NoError(b, err)
+			b.StartTimer()
+
+			// Delete
+			err = datastore.RemoveProcessIndicators(ctx, d1DeleteIDs)
+			require.NoError(b, err)
+		}
+	})
+
+	b.Run("Delete/ByD1PodID2", func(b *testing.B) {
+		for b.Loop() {
+			b.StopTimer()
+			// Re-add before each iteration
+			err := datastore.AddProcessIndicators(ctx, d1PodID2Results...)
+			require.NoError(b, err)
+			b.StartTimer()
+
+			// Delete
+			err = datastore.RemoveProcessIndicators(ctx, d1PodID2DeleteIDs)
+			require.NoError(b, err)
+		}
+	})
 }
