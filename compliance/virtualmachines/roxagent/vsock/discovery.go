@@ -278,11 +278,7 @@ func discoverDnfRepoFilePresence(hostPath string, reposDirPaths []string) (bool,
 		reposPath := hostPathFor(hostPath, reposDirPath)
 		repoEntries, err := os.ReadDir(reposPath)
 		if err != nil {
-			if os.IsNotExist(err) {
-				repoDirErrs = multierror.Append(repoDirErrs, fmt.Errorf("missing %s: %w", reposPath, err))
-				continue
-			}
-			repoDirErrs = multierror.Append(repoDirErrs, fmt.Errorf("reading %s: %w", reposPath, err))
+			repoDirErrs = multierror.Append(repoDirErrs, fmt.Errorf("reading %q: %w", reposPath, err))
 			continue
 		}
 
