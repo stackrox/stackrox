@@ -47,7 +47,7 @@ func DiscoverVMData(hostPath string) *v1.DiscoveredData {
 	// Future improvements may include support for other OS types and more robust version detection.
 	detectedOS, osVersion, err := discoverOSAndVersionWithPath(hostPathFor(hostPath, osReleasePath))
 	if err != nil {
-		log.Warnf("Failed to discover OS and version: %v", err)
+		log.Infof("Unable to discover OS and version: %v", err)
 	} else {
 		result.DetectedOs = detectedOS
 		result.OsVersion = osVersion
@@ -61,7 +61,7 @@ func DiscoverVMData(hostPath string) *v1.DiscoveredData {
 	// support for other activation mechanisms.
 	activationStatus, err := discoverActivationStatusWithPath(hostPathFor(hostPath, entitlementDirPath))
 	if err != nil {
-		log.Warnf("There were issues discovering activation status: %v", err)
+		log.Infof("Observations during discovering activation status: %v", err)
 	}
 	// Some errors are of a warning nature, so we still set the discovery result.
 	result.ActivationStatus = activationStatus
@@ -73,7 +73,7 @@ func DiscoverVMData(hostPath string) *v1.DiscoveredData {
 		dnfCacheDirPath,
 	)
 	if err != nil {
-		log.Warnf("There were issues discovering DNF metadata status: %v", err)
+		log.Infof("Observations during discovering DNF metadata status: %v", err)
 	}
 	// Some errors are of a warning nature, so we still set the discovery result.
 	result.DnfMetadataStatus = dnfStatus
