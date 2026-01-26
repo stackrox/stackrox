@@ -6,6 +6,7 @@ import (
 	pgStoreV2 "github.com/stackrox/rox/central/image/datastore/store/v2/postgres"
 	"github.com/stackrox/rox/central/ranking"
 	riskDS "github.com/stackrox/rox/central/risk/datastore"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/sync"
 )
 
@@ -22,6 +23,9 @@ func initialize() {
 
 // Singleton provides the interface for non-service external interaction.
 func Singleton() DataStore {
+	if !features.FlattenImageData.Enabled() {
+		return nil
+	}
 	once.Do(initialize)
 	return ad
 }

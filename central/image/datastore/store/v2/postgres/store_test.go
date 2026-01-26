@@ -12,6 +12,7 @@ import (
 	"github.com/stackrox/rox/central/image/datastore/store"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
@@ -41,7 +42,11 @@ type ImagesStoreSuite struct {
 	cvePgStore cveStore.Store
 }
 
+// TODO(ROX-30117): Remove this test when FlattenImageData feature flag is removed.
 func TestImagesStore(t *testing.T) {
+	if features.FlattenImageData.Enabled() {
+		t.Skip("Skipping test - FlattenImageData is enabled. Equivalent tests exist in imageV2 datastore.")
+	}
 	suite.Run(t, new(ImagesStoreSuite))
 }
 

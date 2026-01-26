@@ -12,6 +12,7 @@ import (
 	"github.com/stackrox/rox/central/image/datastore"
 	namespaceDataStore "github.com/stackrox/rox/central/namespace/datastore"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/images/types"
 	"github.com/stackrox/rox/pkg/logging"
@@ -30,7 +31,11 @@ var (
 	log = logging.LoggerForModule()
 )
 
+// TODO(ROX-30117): Remove this test when FlattenImageData feature flag is removed.
 func TestImageDataStoreFlatSAC(t *testing.T) {
+	if features.FlattenImageData.Enabled() {
+		t.Skip("Skipping test - FlattenImageData is enabled. Equivalent tests exist in imageV2 datastore.")
+	}
 	suite.Run(t, new(imageDatastoreFlatSACSuite))
 }
 

@@ -71,7 +71,7 @@ func TestK8sCVEEnvImpact(t *testing.T) {
 	clusterDataStore := clusterMocks.NewMockDataStore(ctrl)
 	nsDataStore := nsMocks.NewMockDataStore(ctrl)
 	imageDataStore := imageMocks.NewMockDataStore(ctrl)
-	cveMatcher, err := matcher.NewCVEMatcher(clusterDataStore, nsDataStore, imageDataStore)
+	cveMatcher, err := matcher.NewCVEMatcher(clusterDataStore, nsDataStore, imageDataStore, nil)
 	require.NoError(t, err)
 
 	clusterDataStore.EXPECT().GetClusters(gomock.Any()).Return(clusters, nil).AnyTimes()
