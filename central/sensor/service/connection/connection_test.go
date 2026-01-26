@@ -14,6 +14,7 @@ import (
 	clusterMgrMock "github.com/stackrox/rox/central/sensor/service/common/mocks"
 	pipelineMock "github.com/stackrox/rox/central/sensor/service/pipeline/mocks"
 	"github.com/stackrox/rox/generated/internalapi/central"
+	v1 "github.com/stackrox/rox/generated/internalapi/virtualmachine/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/booleanpolicy/policyversion"
 	"github.com/stackrox/rox/pkg/centralsensor"
@@ -24,8 +25,10 @@ import (
 	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/protoconv/schedule"
+	"github.com/stackrox/rox/pkg/rate"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/set"
+	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
 	"google.golang.org/grpc"
@@ -33,6 +36,84 @@ import (
 
 func TestHandler(t *testing.T) {
 	suite.Run(t, new(testSuite))
+}
+
+func TestSensorConnectionRateLimitVMIndexReports(t *testing.T) {
+	t.Setenv(env.VMIndexReportRateLimit.EnvVar(), "1")
+	t.Setenv(env.VMIndexReportBucketCapacity.EnvVar(), "1")
+
+	makeMsg := func(id string) *central.MsgFromSensor {
+		return &central.MsgFromSensor{
+			Msg: &central.MsgFromSensor_Event{
+				Event: &central.SensorEvent{
+					Resource: &central.SensorEvent_VirtualMachineIndexReport{
+						VirtualMachineIndexReport: &v1.IndexReportEvent{Id: id},
+					},
+				},
+			},
+		}
+	}
+
+	testCases := []struct {
+		name       string
+		clusterID  string
+		caps       set.Set[centralsensor.SensorCapability]
+		expectNack bool
+	}{
+		{
+			name:       "rate limited with ack support sends nack",
+			clusterID:  "cluster-ack",
+			caps:       set.NewSet(centralsensor.SensorACKSupport),
+			expectNack: true,
+		},
+		{
+			name:       "rate limited without ack support drops silently",
+			clusterID:  "cluster-no-ack",
+			caps:       set.NewSet[centralsensor.SensorCapability](),
+			expectNack: false,
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			conn := &sensorConnection{
+				clusterID:    tc.clusterID,
+				sendC:        make(chan *central.MsgToSensor, 1),
+				stopSig:      concurrency.NewErrorSignal(),
+				capabilities: tc.caps,
+			}
+
+			ctx := context.Background()
+			nonEventMsg := &central.MsgFromSensor{
+				Msg: &central.MsgFromSensor_ScrapeUpdate{
+					ScrapeUpdate: &central.ScrapeUpdate{},
+				},
+			}
+			require.False(t, conn.shallRateLimit(ctx, nonEventMsg), "non-event messages should not be rate limited")
+
+			msg := makeMsg("vm-1")
+
+			require.False(t, conn.shallRateLimit(ctx, msg), "first message should be allowed")
+			require.True(t, conn.shallRateLimit(ctx, msg), "second message should be rate limited")
+
+			select {
+			case sent := <-conn.sendC:
+				if !tc.expectNack {
+					t.Fatalf("unexpected NACK message sent: %v", sent)
+				}
+				ack := sent.GetSensorAck()
+				require.NotNil(t, ack)
+				require.Equal(t, central.SensorACK_NACK, ack.GetAction())
+				require.Equal(t, central.SensorACK_VM_INDEX_REPORT, ack.GetMessageType())
+				require.Equal(t, "vm-1", ack.GetResourceId())
+				require.Equal(t, rate.ReasonRateLimitExceeded, ack.GetReason())
+			default:
+				if tc.expectNack {
+					t.Fatal("expected NACK message to be sent")
+				}
+			}
+		})
+	}
 }
 
 type testSuite struct {
