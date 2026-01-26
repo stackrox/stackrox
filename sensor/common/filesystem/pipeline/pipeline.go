@@ -11,7 +11,6 @@ import (
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stackrox/rox/sensor/common/clusterentities"
 	"github.com/stackrox/rox/sensor/common/detector"
-	fsUtils "github.com/stackrox/rox/sensor/common/filesystem/utils"
 )
 
 var (
