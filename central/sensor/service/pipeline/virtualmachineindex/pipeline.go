@@ -9,7 +9,6 @@ import (
 	"github.com/stackrox/rox/central/sensor/service/connection"
 	"github.com/stackrox/rox/central/sensor/service/pipeline"
 	"github.com/stackrox/rox/central/sensor/service/pipeline/reconciliation"
-	vmindexratelimiter "github.com/stackrox/rox/central/sensor/service/virtualmachineindex/ratelimiter"
 	vmDatastore "github.com/stackrox/rox/central/virtualmachine/datastore"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
@@ -48,8 +47,6 @@ type pipelineImpl struct {
 }
 
 func (p *pipelineImpl) OnFinish(clusterID string) {
-	// Notify rate limiter that this client (Sensor) has disconnected so it can rebalance the limiters.
-	vmindexratelimiter.OnClientDisconnect(clusterID)
 }
 
 func (p *pipelineImpl) Capabilities() []centralsensor.CentralCapability {

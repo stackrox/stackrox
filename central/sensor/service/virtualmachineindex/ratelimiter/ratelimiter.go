@@ -6,23 +6,17 @@ import (
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/rate"
-	"github.com/stackrox/rox/pkg/sync"
 )
 
 const workloadName = "vm_index_report"
 
 var (
-	log      = logging.LoggerForModule()
-	once     sync.Once
-	instance *rate.Limiter
+	log = logging.LoggerForModule()
 )
 
-// Limiter returns a singleton rate limiter for VM index reports.
-func Limiter() *rate.Limiter {
-	once.Do(func() {
-		instance = buildLimiter()
-	})
-	return instance
+// NewFromEnv returns a rate limiter configured from env settings.
+func NewFromEnv() *rate.Limiter {
+	return buildLimiter()
 }
 
 func buildLimiter() *rate.Limiter {
@@ -37,9 +31,4 @@ func buildLimiter() *rate.Limiter {
 		log.Panicf("Failed to create rate limiter for %s: %v", workloadName, err)
 	}
 	return limiter
-}
-
-// OnClientDisconnect rebalances the limiter when a Sensor disconnects.
-func OnClientDisconnect(clusterID string) {
-	Limiter().OnClientDisconnect(clusterID)
 }

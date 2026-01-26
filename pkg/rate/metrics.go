@@ -18,6 +18,7 @@ func init() {
 		ActiveClients,
 		PerClientRate,
 		PerClientBucketCapacity,
+		PerClientBucketTokens,
 	)
 }
 
@@ -67,5 +68,18 @@ var (
 				"This is the maximum number of requests that can be accepted in a burst before rate limiting kicks in.",
 		},
 		[]string{"workload"},
+	)
+
+	// PerClientBucketTokens tracks the current number of tokens available in each client's bucket.
+	PerClientBucketTokens = prometheus.NewGaugeVec(
+		prometheus.GaugeOpts{
+			Namespace: metrics.PrometheusNamespace,
+			Subsystem: metrics.CentralSubsystem.String(),
+			Name:      "rate_limiter_per_client_bucket_tokens",
+			Help: "Current number of tokens available in each client's bucket. " +
+				"Tokens are consumed on each request and refilled at the configured rate. " +
+				"When tokens reach zero, requests are rejected until tokens are refilled.",
+		},
+		[]string{"workload", "cluster_id"},
 	)
 )

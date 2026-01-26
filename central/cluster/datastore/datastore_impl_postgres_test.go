@@ -28,6 +28,7 @@ import (
 	k8sRoleBindingDataStore "github.com/stackrox/rox/central/rbac/k8srolebinding/datastore"
 	secretDataStore "github.com/stackrox/rox/central/secret/datastore"
 	"github.com/stackrox/rox/central/sensor/service/connection"
+	vmindexratelimiter "github.com/stackrox/rox/central/sensor/service/virtualmachineindex/ratelimiter"
 	serviceAccountDataStore "github.com/stackrox/rox/central/serviceaccount/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/internalapi/central"
@@ -93,7 +94,7 @@ func (s *ClusterPostgresDataStoreTestSuite) SetupTest() {
 	clusterCVEStore, err := clusterCVEDataStore.GetTestPostgresDataStore(s.T(), s.db)
 	s.NoError(err)
 	hashStore := datastore.GetTestPostgresDataStore(s.T(), s.db)
-	sensorCnxMgr := connection.NewManager(hashManager.NewManager(hashStore))
+	sensorCnxMgr := connection.NewManager(hashManager.NewManager(hashStore), vmindexratelimiter.NewFromEnv())
 	clusterRanker := ranking.ClusterRanker()
 	compliancePruner := compliancePruning.GetTestPruner(s.T(), s.db)
 	s.nsDatastore, err = namespace.GetTestPostgresDataStore(s.T(), s.db.DB)

@@ -19,7 +19,6 @@ import (
 	"github.com/stackrox/rox/central/sensor/service/common"
 	"github.com/stackrox/rox/central/sensor/service/connection/messagestream"
 	"github.com/stackrox/rox/central/sensor/service/pipeline"
-	vmindexratelimiter "github.com/stackrox/rox/central/sensor/service/virtualmachineindex/ratelimiter"
 	"github.com/stackrox/rox/central/sensor/telemetry"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/internalapi/central"
@@ -83,12 +82,15 @@ type sensorConnection struct {
 	capabilities set.Set[centralsensor.SensorCapability]
 
 	hashDeduper hashManager.Deduper
+
+	vmIndexRateLimiter *rate.Limiter
 }
 
 func newConnection(ctx context.Context,
 	sensorHello *central.SensorHello,
 	cluster *storage.Cluster,
 	eventPipeline pipeline.ClusterPipeline,
+	vmIndexRateLimiter *rate.Limiter,
 	clusterMgr common.ClusterManager,
 	networkEntityMgr common.NetworkEntityManager,
 	policyMgr common.PolicyManager,
@@ -102,11 +104,12 @@ func newConnection(ctx context.Context,
 ) *sensorConnection {
 
 	conn := &sensorConnection{
-		stopSig:       concurrency.NewErrorSignal(),
-		stoppedSig:    concurrency.NewErrorSignal(),
-		sendC:         make(chan *central.MsgToSensor),
-		eventPipeline: eventPipeline,
-		queues:        make(map[string]*dedupingqueue.DedupingQueue[string]),
+		stopSig:            concurrency.NewErrorSignal(),
+		stoppedSig:         concurrency.NewErrorSignal(),
+		sendC:              make(chan *central.MsgToSensor),
+		eventPipeline:      eventPipeline,
+		vmIndexRateLimiter: vmIndexRateLimiter,
+		queues:             make(map[string]*dedupingqueue.DedupingQueue[string]),
 
 		clusterID:                  cluster.GetId(),
 		clusterMgr:                 clusterMgr,
@@ -200,7 +203,7 @@ func (c *sensorConnection) shallRateLimit(ctx context.Context, msg *central.MsgF
 
 	switch ev.GetResource().(type) {
 	case *central.SensorEvent_VirtualMachineIndexReport:
-		rateLimiter = vmindexratelimiter.Limiter()
+		rateLimiter = c.vmIndexRateLimiter
 		ackMessageType = central.SensorACK_VM_INDEX_REPORT
 		resourceIdGetter = func(ev *central.SensorEvent) string {
 			return ev.GetVirtualMachineIndexReport().GetId()
@@ -288,6 +291,9 @@ func (c *sensorConnection) handleMessages(ctx context.Context, queue *dedupingqu
 		}
 	}
 	c.eventPipeline.OnFinish(c.clusterID)
+	if c.vmIndexRateLimiter != nil {
+		c.vmIndexRateLimiter.OnClientDisconnect(c.clusterID)
+	}
 	c.stoppedSig.SignalWithError(c.stopSig.Err())
 }
 

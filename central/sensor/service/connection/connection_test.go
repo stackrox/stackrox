@@ -39,9 +39,6 @@ func TestHandler(t *testing.T) {
 }
 
 func TestSensorConnectionRateLimitVMIndexReports(t *testing.T) {
-	t.Setenv(env.VMIndexReportRateLimit.EnvVar(), "1")
-	t.Setenv(env.VMIndexReportBucketCapacity.EnvVar(), "1")
-
 	makeMsg := func(id string) *central.MsgFromSensor {
 		return &central.MsgFromSensor{
 			Msg: &central.MsgFromSensor_Event{
@@ -76,11 +73,14 @@ func TestSensorConnectionRateLimitVMIndexReports(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
+			limiter, err := rate.NewLimiter("vm_index_report", 1, 1)
+			require.NoError(t, err)
 			conn := &sensorConnection{
-				clusterID:    tc.clusterID,
-				sendC:        make(chan *central.MsgToSensor, 1),
-				stopSig:      concurrency.NewErrorSignal(),
-				capabilities: tc.caps,
+				clusterID:          tc.clusterID,
+				sendC:              make(chan *central.MsgToSensor, 1),
+				stopSig:            concurrency.NewErrorSignal(),
+				capabilities:       tc.caps,
+				vmIndexRateLimiter: limiter,
 			}
 
 			ctx := context.Background()

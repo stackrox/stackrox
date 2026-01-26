@@ -18,6 +18,7 @@ import (
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/protoconv"
+	"github.com/stackrox/rox/pkg/rate"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/sync"
@@ -73,14 +74,16 @@ type manager struct {
 	complianceOperatorMgr      common.ComplianceOperatorManager
 	initSyncMgr                *initSyncManager
 	autoTriggerUpgrades        *concurrency.Flag
+	vmIndexRateLimiter         *rate.Limiter
 }
 
 // NewManager returns a new connection manager
-func NewManager(mgr hashManager.Manager) Manager {
+func NewManager(mgr hashManager.Manager, vmIndexRateLimiter *rate.Limiter) Manager {
 	return &manager{
 		connectionsByClusterID: make(map[string]connectionAndUpgradeController),
 		manager:                mgr,
 		initSyncMgr:            NewInitSyncManager(),
+		vmIndexRateLimiter:     vmIndexRateLimiter,
 	}
 }
 
@@ -268,6 +271,7 @@ func (m *manager) HandleConnection(ctx context.Context, sensorHello *central.Sen
 			sensorHello,
 			cluster,
 			eventPipeline,
+			m.vmIndexRateLimiter,
 			m.clusters,
 			m.networkEntities,
 			m.policies,

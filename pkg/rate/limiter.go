@@ -118,10 +118,12 @@ func (l *Limiter) TryConsume(clientID string) (allowed bool, reason string) {
 	// Use AllowN with clock.Now() to support time injection for testing.
 	if limiter.AllowN(l.clock.Now(), 1) {
 		RequestsTotal.WithLabelValues(l.workloadName, OutcomeAccepted).Inc()
+		PerClientBucketTokens.WithLabelValues(l.workloadName, clientID).Set(limiter.Tokens())
 		return true, ""
 	}
 
 	RequestsTotal.WithLabelValues(l.workloadName, OutcomeRejected).Inc()
+	PerClientBucketTokens.WithLabelValues(l.workloadName, clientID).Set(limiter.Tokens())
 	return false, ReasonRateLimitExceeded
 }
 
@@ -199,6 +201,9 @@ func (l *Limiter) OnClientDisconnect(clientID string) {
 
 	delete(l.buckets, clientID)
 	l.numClients--
+
+	// Delete the per-client token metric for this client
+	PerClientBucketTokens.DeleteLabelValues(l.workloadName, clientID)
 
 	log.Infof("Client %s disconnected from %s rate limiting (remaining clients: %d)",
 		clientID, l.workloadName, l.numClients)
