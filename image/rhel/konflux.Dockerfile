@@ -56,11 +56,15 @@ RUN dnf install \
     bash \
     coreutils
 
-# Enable PostgreSQL module in installroot context (after base packages created /out/etc/yum.repos.d/)
-RUN dnf -y --installroot=/out/ --releasever=8 module enable postgresql:${PG_VERSION}
+# Copy subscription-manager script for RHEL repo access
+COPY .konflux/scripts/subscription-manager/subscription-manager-bro.sh /usr/local/bin/
 
-# Install PostgreSQL to /out/ (module now enabled in installroot)
-RUN dnf install \
+# Register with subscription-manager to access entitled RHEL repos
+RUN subscription-manager-bro.sh register /out
+
+# Enable PostgreSQL module and install PostgreSQL to /out/
+RUN dnf -y --installroot=/out/ --releasever=8 module enable postgresql:${PG_VERSION} && \
+    dnf install \
     --installroot=/out/ \
     --releasever=8 \
     --setopt=install_weak_deps=0 \
@@ -68,6 +72,9 @@ RUN dnf install \
     --nogpgcheck \
     -y \
     postgresql
+
+# Cleanup subscription-manager registration and entitlements
+RUN subscription-manager-bro.sh cleanup
 
 RUN dnf --installroot=/out/ clean all
 RUN rm -rf /out/var/cache/dnf /out/var/cache/yum
