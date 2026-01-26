@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"time"
@@ -155,11 +156,6 @@ func (l *localNodeIndexer) GetIntervals() *utils.NodeScanIntervals {
 
 // IndexNode indexes a node at the configured host path mount.
 func (l *localNodeIndexer) IndexNode(ctx context.Context) (*v4.IndexReport, error) {
-	// claircore no longer returns an error if the host path does not exist.
-	if _, err := os.Stat(l.cfg.HostPath); err != nil {
-		return nil, errors.Wrapf(err, "host path %q does not exist", l.cfg.HostPath)
-	}
-
 	layer, err := layer(ctx, layerDigest, l.cfg.HostPath)
 	if err != nil {
 		return nil, err
@@ -194,15 +190,30 @@ func (l *localNodeIndexer) IndexNode(ctx context.Context) (*v4.IndexReport, erro
 }
 
 func layer(ctx context.Context, digest string, hostPath string) (*claircore.Layer, error) {
-	log.Debugf("Realizing mount path: %s", hostPath)
+	// claircore no longer returns an error if the host path is empty.
+	if hostPath == "" {
+		return nil, errors.New("no URI provided: empty host path")
+	}
+
+	// claircore now requires an absolute path for the file URI
+	p, err := filepath.Abs(hostPath)
+	if err != nil {
+		return nil, errors.New(fmt.Sprintf("could not generate absolute path for host path: %q", hostPath))
+	}
+
+	// claircore no longer returns an error if the host path does not exist.
+	if _, err = os.Stat(p); err != nil {
+		return nil, errors.Wrapf(err, "host path %q does not exist", p)
+	}
+	log.Debugf("Realizing mount path: %s", p)
 	desc := &claircore.LayerDescription{
 		Digest:    digest,
-		URI:       hostPath,
+		URI:       fmt.Sprintf("file://%s", p),
 		MediaType: layerMediaType,
 	}
 
 	l := &claircore.Layer{}
-	err := l.Init(ctx, desc, nil)
+	err = l.Init(ctx, desc, nil)
 	return l, errors.Wrap(err, "failed to init layer")
 }
 
