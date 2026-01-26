@@ -7,6 +7,7 @@ import (
 	"testing"
 	"time"
 
+	imageCVEInfoDS "github.com/stackrox/rox/central/cve/image/info/datastore"
 	imageDatastore "github.com/stackrox/rox/central/image/datastore"
 	imagePostgresV2 "github.com/stackrox/rox/central/image/datastore/store/v2/postgres"
 	imageV2Datastore "github.com/stackrox/rox/central/imagev2/datastore"
@@ -34,7 +35,8 @@ func TestImagesWithSignaturesQuery(t *testing.T) {
 	pool := testingDB.DB
 	defer pool.Close()
 
-	imageDS := imageDatastore.NewWithPostgres(imagePostgresV2.New(pool, false, concurrency.NewKeyFence()), nil, ranking.ImageRanker(), ranking.ComponentRanker())
+	imageCVEInfo := imageCVEInfoDS.GetTestPostgresDataStore(t, pool)
+	imageDS := imageDatastore.NewWithPostgres(imagePostgresV2.New(pool, false, concurrency.NewKeyFence()), nil, ranking.ImageRanker(), ranking.ComponentRanker(), imageCVEInfo)
 
 	imgWithSignature := fixtures.GetImage()
 	imgWithoutSignature := fixtures.GetImageWithUniqueComponents(10)
@@ -80,7 +82,8 @@ func TestImagesWithSignaturesQueryV2(t *testing.T) {
 	pool := testingDB.DB
 	defer pool.Close()
 
-	imageDS := imageV2Datastore.NewWithPostgres(imageV2PG.New(pool, false, concurrency.NewKeyFence()), nil, ranking.ImageRanker(), ranking.ComponentRanker())
+	imageCVEInfo := imageCVEInfoDS.GetTestPostgresDataStore(t, pool)
+	imageDS := imageV2Datastore.NewWithPostgres(imageV2PG.New(pool, false, concurrency.NewKeyFence()), nil, ranking.ImageRanker(), ranking.ComponentRanker(), imageCVEInfo)
 
 	imgWithSignature := fixtures.GetImageV2()
 	imgWithoutSignature := fixtures.GetImageV2WithUniqueComponents(10)

@@ -1,6 +1,7 @@
 package datastore
 
 import (
+	imageCVEInfoDS "github.com/stackrox/rox/central/cve/image/info/datastore"
 	"github.com/stackrox/rox/central/globaldb"
 	"github.com/stackrox/rox/central/imagev2/datastore/keyfence"
 	pgStore "github.com/stackrox/rox/central/imagev2/datastore/store/postgres"
@@ -18,7 +19,7 @@ var (
 
 func initialize() {
 	storage := pgStore.New(globaldb.GetPostgres(), false, keyfence.ImageKeyFenceSingleton())
-	ad = NewWithPostgres(storage, riskDS.Singleton(), ranking.ImageRanker(), ranking.ComponentRanker())
+	ad = NewWithPostgres(storage, riskDS.Singleton(), ranking.ImageRanker(), ranking.ComponentRanker(), imageCVEInfoDS.Singleton())
 }
 
 // Singleton provides the interface for non-service external interaction.
