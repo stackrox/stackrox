@@ -95,12 +95,6 @@ func (p *Pipeline) translate(fs *sensorAPI.FileActivity) *storage.FileAccess {
 			},
 		}
 		access.Operation = storage.FileAccess_OWNERSHIP_CHANGE
-	case *sensorAPI.FileActivity_Write:
-		access.File = &storage.FileAccess_File{
-			EffectivePath: fs.GetWrite().GetActivity().GetPath(),
-			ActualPath:    fs.GetWrite().GetActivity().GetHostPath(),
-		}
-		access.Operation = storage.FileAccess_WRITE
 	case *sensorAPI.FileActivity_Open:
 		access.File = &storage.FileAccess_File{
 			EffectivePath: fs.GetOpen().GetActivity().GetPath(),

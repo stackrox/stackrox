@@ -8399,12 +8399,8 @@
                 "integer": 4
               },
               {
-                "name": "WRITE",
-                "integer": 5
-              },
-              {
                 "name": "OPEN",
-                "integer": 6
+                "integer": 5
               }
             ]
           }
