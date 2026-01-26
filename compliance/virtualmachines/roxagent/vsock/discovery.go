@@ -314,15 +314,13 @@ func discoverDnfCacheRepoDirPresence(hostPath, cacheDirPath string) (bool, error
 		return false, fmt.Errorf("reading %s: %w", cachePath, err)
 	}
 
-	hasRepoDir := false
 	for _, entry := range cacheEntries {
 		if entry.IsDir() {
 			// Check if it looks like a repo directory (contains "-rpms-" pattern)
 			if strings.Contains(entry.Name(), "-rpms-") {
-				hasRepoDir = true
-				break
+				return true, nil
 			}
 		}
 	}
-	return hasRepoDir, nil
+	return false, nil
 }

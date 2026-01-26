@@ -190,6 +190,59 @@ func TestDiscoverDnfRepoFilePresence(t *testing.T) {
 	}
 }
 
+func TestDiscoverDnfCacheRepoDirPresence(t *testing.T) {
+	tests := map[string]struct {
+		setup            func(t *testing.T) (string, string)
+		expectedFound    bool
+		expectedErrParts []string
+	}{
+		"should return true when cache dir contains repo directory": {
+			setup: func(t *testing.T) (string, string) {
+				hostPath := t.TempDir()
+				cacheDirPath := "/var/cache/dnf"
+				cachePath := hostPathFor(hostPath, cacheDirPath)
+				require.NoError(t, os.MkdirAll(filepath.Join(cachePath, "rhel-9-for-x86_64-appstream-rpms-123"), 0750))
+				return hostPath, cacheDirPath
+			},
+			expectedFound: true,
+		},
+		"should return false when cache dir has no repo directories": {
+			setup: func(t *testing.T) (string, string) {
+				hostPath := t.TempDir()
+				cacheDirPath := "/var/cache/dnf"
+				cachePath := hostPathFor(hostPath, cacheDirPath)
+				require.NoError(t, os.MkdirAll(filepath.Join(cachePath, "some-other-dir"), 0750))
+				return hostPath, cacheDirPath
+			},
+			expectedFound: false,
+		},
+		"should return error when cache dir is missing": {
+			setup: func(t *testing.T) (string, string) {
+				hostPath := t.TempDir()
+				return hostPath, "/var/cache/dnf"
+			},
+			expectedFound:    false,
+			expectedErrParts: []string{"unsupported OS detected: missing"},
+		},
+	}
+
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			hostPath, cacheDirPath := tt.setup(t)
+			found, err := discoverDnfCacheRepoDirPresence(hostPath, cacheDirPath)
+			assert.Equal(t, tt.expectedFound, found)
+			if len(tt.expectedErrParts) == 0 {
+				assert.NoError(t, err)
+				return
+			}
+			require.Error(t, err)
+			for _, part := range tt.expectedErrParts {
+				assert.Contains(t, err.Error(), part)
+			}
+		})
+	}
+}
+
 func TestParseOSRelease_QuotedValues(t *testing.T) {
 	input := strings.NewReader(`# comment
 ID='rhel'
