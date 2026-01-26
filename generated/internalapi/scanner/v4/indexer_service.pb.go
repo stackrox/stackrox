@@ -488,9 +488,12 @@ func (x *StoreIndexReportResponse) GetStatus() string {
 }
 
 type GetRepositoryToCPEMappingRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// If provided, indexer returns data only if modified since this timestamp.
+	// If empty, always returns the full data.
+	IfModifiedSince string `protobuf:"bytes,1,opt,name=if_modified_since,json=ifModifiedSince,proto3" json:"if_modified_since,omitempty"`
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
 }
 
 func (x *GetRepositoryToCPEMappingRequest) Reset() {
@@ -521,6 +524,13 @@ func (x *GetRepositoryToCPEMappingRequest) ProtoReflect() protoreflect.Message {
 // Deprecated: Use GetRepositoryToCPEMappingRequest.ProtoReflect.Descriptor instead.
 func (*GetRepositoryToCPEMappingRequest) Descriptor() ([]byte, []int) {
 	return file_internalapi_scanner_v4_indexer_service_proto_rawDescGZIP(), []int{8}
+}
+
+func (x *GetRepositoryToCPEMappingRequest) GetIfModifiedSince() string {
+	if x != nil {
+		return x.IfModifiedSince
+	}
+	return ""
 }
 
 type RepositoryCPEInfo struct {
@@ -569,8 +579,12 @@ func (x *RepositoryCPEInfo) GetCpes() []string {
 
 type GetRepositoryToCPEMappingResponse struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	// Maps repository names to their CPE information.
-	Mapping       map[string]*RepositoryCPEInfo `protobuf:"bytes,1,rep,name=mapping,proto3" json:"mapping,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	// True if data was returned, false if not modified since the requested time.
+	Modified bool `protobuf:"varint,1,opt,name=modified,proto3" json:"modified,omitempty"`
+	// Timestamp to use in the next request's if_modified_since field.
+	LastModified string `protobuf:"bytes,2,opt,name=last_modified,json=lastModified,proto3" json:"last_modified,omitempty"`
+	// Maps repository names to their CPE information (empty if modified=false).
+	Mapping       map[string]*RepositoryCPEInfo `protobuf:"bytes,3,rep,name=mapping,proto3" json:"mapping,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -603,6 +617,20 @@ func (x *GetRepositoryToCPEMappingResponse) ProtoReflect() protoreflect.Message 
 // Deprecated: Use GetRepositoryToCPEMappingResponse.ProtoReflect.Descriptor instead.
 func (*GetRepositoryToCPEMappingResponse) Descriptor() ([]byte, []int) {
 	return file_internalapi_scanner_v4_indexer_service_proto_rawDescGZIP(), []int{10}
+}
+
+func (x *GetRepositoryToCPEMappingResponse) GetModified() bool {
+	if x != nil {
+		return x.Modified
+	}
+	return false
+}
+
+func (x *GetRepositoryToCPEMappingResponse) GetLastModified() string {
+	if x != nil {
+		return x.LastModified
+	}
+	return ""
 }
 
 func (x *GetRepositoryToCPEMappingResponse) GetMapping() map[string]*RepositoryCPEInfo {
@@ -643,12 +671,15 @@ const file_internalapi_scanner_v4_indexer_service_proto_rawDesc = "" +
 	"\x0findexer_version\x18\x02 \x01(\tR\x0eindexerVersion\x120\n" +
 	"\bcontents\x18\x03 \x01(\v2\x14.scanner.v4.ContentsR\bcontents\"2\n" +
 	"\x18StoreIndexReportResponse\x12\x16\n" +
-	"\x06status\x18\x01 \x01(\tR\x06status\"\"\n" +
-	" GetRepositoryToCPEMappingRequest\"'\n" +
+	"\x06status\x18\x01 \x01(\tR\x06status\"N\n" +
+	" GetRepositoryToCPEMappingRequest\x12*\n" +
+	"\x11if_modified_since\x18\x01 \x01(\tR\x0fifModifiedSince\"'\n" +
 	"\x11RepositoryCPEInfo\x12\x12\n" +
-	"\x04cpes\x18\x01 \x03(\tR\x04cpes\"\xd4\x01\n" +
-	"!GetRepositoryToCPEMappingResponse\x12T\n" +
-	"\amapping\x18\x01 \x03(\v2:.scanner.v4.GetRepositoryToCPEMappingResponse.MappingEntryR\amapping\x1aY\n" +
+	"\x04cpes\x18\x01 \x03(\tR\x04cpes\"\x95\x02\n" +
+	"!GetRepositoryToCPEMappingResponse\x12\x1a\n" +
+	"\bmodified\x18\x01 \x01(\bR\bmodified\x12#\n" +
+	"\rlast_modified\x18\x02 \x01(\tR\flastModified\x12T\n" +
+	"\amapping\x18\x03 \x03(\v2:.scanner.v4.GetRepositoryToCPEMappingResponse.MappingEntryR\amapping\x1aY\n" +
 	"\fMappingEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x123\n" +
 	"\x05value\x18\x02 \x01(\v2\x1d.scanner.v4.RepositoryCPEInfoR\x05value:\x028\x012\xbb\x04\n" +
