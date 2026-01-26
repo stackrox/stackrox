@@ -26,26 +26,14 @@ var (
 )
 
 func centralEndpoint() string {
-	// Debug logging to diagnose namespace detection issues
-	podNamespace := env.Namespace.Setting()
-	roxEndpoint := env.CentralEndpoint.Setting()
-
-	// Also check the raw environment variable directly
-	rawPodNS, podNSExists := os.LookupEnv("POD_NAMESPACE")
-	rawRoxEndpoint, roxEndpointExists := os.LookupEnv("ROX_CENTRAL_ENDPOINT")
-
-	log.Infof("DEBUG centralEndpoint: POD_NAMESPACE=%q (exists=%v, raw=%q), ROX_CENTRAL_ENDPOINT=%q (exists=%v, raw=%q)",
-		podNamespace, podNSExists, rawPodNS, roxEndpoint, roxEndpointExists, rawRoxEndpoint)
-
-	// Use ROX_CENTRAL_ENDPOINT if set, otherwise default to central service in the same namespace
-	if roxEndpoint != "" {
-		log.Infof("DEBUG centralEndpoint: Using ROX_CENTRAL_ENDPOINT: %s", roxEndpoint)
-		return roxEndpoint
+	// Check if ROX_CENTRAL_ENDPOINT is explicitly set (not just the default value).
+	// This provides backwards compatibility for deployments that don't set ROX_CENTRAL_ENDPOINT.
+	endpoint, exists := os.LookupEnv("ROX_CENTRAL_ENDPOINT")
+	if exists && endpoint != "" {
+		return endpoint
 	}
-
-	endpoint := fmt.Sprintf("central.%s.svc:443", podNamespace)
-	log.Infof("DEBUG centralEndpoint: Using namespace-based endpoint: %s", endpoint)
-	return endpoint
+	// Fall back to namespace-based endpoint for backwards compatibility
+	return fmt.Sprintf("central.%s.svc:443", env.Namespace.Setting())
 }
 
 type perRPCCreds struct {
