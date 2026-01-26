@@ -36,6 +36,18 @@ message Metadata {
   google.protobuf.Timestamp LastVulnerabilityUpdate = 1;
 }
 
+message ScanSBOMRequest {
+  // Raw SBOM content.
+  bytes sbom = 1;
+  // Media type of the SBOM (e.g., "application/spdx+json").
+  string media_type = 2;
+}
+
+message ScanSBOMResponse {
+  // Vulnerability report including the parsed contents from the SBOM.
+  VulnerabilityReport vulnerability_report = 1;
+}
+
 // Matcher finds vulnerabilities in index reports.
 service Matcher {
   // GetVulnerabilities returns a VulnerabilityReport for a previously indexed manifest.
@@ -46,4 +58,7 @@ service Matcher {
 
   // GetSBOM returns an SBOM for a previously indexed manifest.
   rpc GetSBOM(GetSBOMRequest) returns (GetSBOMResponse);
+
+  // ScanSBOM decodes an SBOM and returns a VulnerabilityReport with matched vulnerabilities.
+  rpc ScanSBOM(ScanSBOMRequest) returns (ScanSBOMResponse);
 }

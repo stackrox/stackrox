@@ -31,14 +31,15 @@ var matcherAuth = perrpc.FromMap(map[authz.Authorizer][]string{
 		v4.Matcher_GetVulnerabilities_FullMethodName,
 		v4.Matcher_GetMetadata_FullMethodName,
 		v4.Matcher_GetSBOM_FullMethodName,
+		v4.Matcher_ScanSBOM_FullMethodName,
 	},
 })
 
 // matcherService represents a vulnerability matcher gRPC service.
 type matcherService struct {
 	v4.UnimplementedMatcherServer
-	// indexer is used to retrieve index reports.
-	indexer indexer.ReportGetter
+	// indexer is used to retrieve index reports and provide repo-to-CPE mappings for SBOM decoding.
+	indexer indexer.ReportProvider
 	// matcher is used to match vulnerabilities with index contents.
 	matcher matcher.Matcher
 	// sbomer is used to generate SBOMs from index reports.
@@ -49,13 +50,14 @@ type matcherService struct {
 	anonymousAuthEnabled bool
 }
 
-// NewMatcherService creates a new vulnerability matcher gRPC service, to enable
-// empty content in enrich requests, pass a non-nil indexer.
-func NewMatcherService(matcher matcher.Matcher, indexer indexer.ReportGetter) *matcherService {
+// NewMatcherService creates a new vulnerability matcher gRPC service.
+// The indexer is used to retrieve index reports and provide repo-to-CPE mappings for SBOM decoding.
+// To enable empty content in enrich requests, pass a non-nil indexer.
+func NewMatcherService(matcher matcher.Matcher, indexer indexer.ReportProvider) *matcherService {
 	return &matcherService{
 		matcher:              matcher,
 		indexer:              indexer,
-		sbomer:               sbom.NewSBOMer(),
+		sbomer:               sbom.NewSBOMer(indexer),
 		disableEmptyContents: indexer == nil,
 		anonymousAuthEnabled: env.ScannerV4AnonymousAuth.BooleanSetting(),
 	}
@@ -213,4 +215,49 @@ func (s *matcherService) GetSBOM(ctx context.Context, req *v4.GetSBOMRequest) (*
 	}
 
 	return &v4.GetSBOMResponse{Sbom: sbomBytes}, nil
+}
+
+func (s *matcherService) ScanSBOM(ctx context.Context, req *v4.ScanSBOMRequest) (*v4.ScanSBOMResponse, error) {
+	ctx = zlog.ContextWithValues(ctx,
+		"component", "scanner/service/matcher.ScanSBOM",
+		"media_type", req.GetMediaType(),
+	)
+
+	if err := validators.ValidateScanSBOMRequest(req); err != nil {
+		return nil, errox.InvalidArgs.CausedBy(err)
+	}
+	if err := s.matcher.Initialized(ctx); err != nil {
+		return nil, status.Errorf(codes.FailedPrecondition, "the matcher is not initialized: %v", err)
+	}
+
+	zlog.Info(ctx).
+		Int("sbom_size", len(req.GetSbom())).
+		Msg("scanning SBOM")
+
+	ir, err := s.sbomer.Decode(ctx, req.GetSbom(), req.GetMediaType())
+	if err != nil {
+		zlog.Error(ctx).Err(err).Msg("decoding SBOM failed")
+		return nil, fmt.Errorf("decoding SBOM: %w", err)
+	}
+
+	zlog.Debug(ctx).
+		Int("packages", len(ir.Packages)).
+		Int("distributions", len(ir.Distributions)).
+		Int("repositories", len(ir.Repositories)).
+		Msg("decoded SBOM")
+
+	ccReport, err := s.matcher.GetVulnerabilities(ctx, ir)
+	if err != nil {
+		zlog.Error(ctx).Err(err).Msg("matching vulnerabilities failed")
+		return nil, fmt.Errorf("matching vulnerabilities: %w", err)
+	}
+
+	report, err := mappers.ToProtoV4VulnerabilityReport(ctx, ccReport)
+	if err != nil {
+		zlog.Error(ctx).Err(err).Msg("internal error: converting to v4.VulnerabilityReport")
+		return nil, fmt.Errorf("converting vulnerability report: %w", err)
+	}
+	report.Notes = s.notes(ctx, report)
+
+	return &v4.ScanSBOMResponse{VulnerabilityReport: report}, nil
 }

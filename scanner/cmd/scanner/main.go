@@ -253,14 +253,13 @@ func (b *Backends) APIServices() []grpc.APIService {
 		srvs = append(srvs, services.NewIndexerService(b.Indexer))
 	}
 	if b.Matcher != nil {
-		// Set the index report getter to the remote indexer if available, otherwise the
-		// local indexer. A nil getter is ok, see implementation.
-		var getter indexer.ReportGetter
-		getter = b.RemoteIndexer
-		if getter == nil {
-			getter = b.Indexer
+		// Set the report provider to the remote indexer if available, otherwise the
+		// local indexer. A nil provider is ok, see implementation.
+		var provider indexer.ReportProvider
+		if b.RemoteIndexer != nil {
+			provider = b.RemoteIndexer
 		}
-		srvs = append(srvs, services.NewMatcherService(b.Matcher, getter))
+		srvs = append(srvs, services.NewMatcherService(b.Matcher, provider))
 	}
 	return srvs
 }

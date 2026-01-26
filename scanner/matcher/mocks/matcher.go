@@ -127,3 +127,18 @@ func (mr *MockMatcherMockRecorder) Ready(ctx any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Ready", reflect.TypeOf((*MockMatcher)(nil).Ready), ctx)
 }
+
+// ScanSBOM mocks base method.
+func (m *MockMatcher) ScanSBOM(ctx context.Context, sbomBytes []byte, mediaType string) (*claircore.VulnerabilityReport, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ScanSBOM", ctx, sbomBytes, mediaType)
+	ret0, _ := ret[0].(*claircore.VulnerabilityReport)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ScanSBOM indicates an expected call of ScanSBOM.
+func (mr *MockMatcherMockRecorder) ScanSBOM(ctx, sbomBytes, mediaType any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ScanSBOM", reflect.TypeOf((*MockMatcher)(nil).ScanSBOM), ctx, sbomBytes, mediaType)
+}

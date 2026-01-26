@@ -11,6 +11,7 @@ import (
 	"github.com/quay/claircore/toolkit/types/cpe"
 	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
 	"github.com/stackrox/rox/pkg/errox"
+	"github.com/stackrox/rox/scanner/sbom"
 )
 
 // hasIDAndCPE is the common interface offered by some proto definitions related
@@ -90,6 +91,26 @@ func ValidateGetSBOMRequest(req *v4.GetSBOMRequest) error {
 	}
 	if err := validateContents(req.GetContents()); err != nil {
 		return err
+	}
+	return nil
+}
+
+var supportedSBOMMediaTypes = map[string]struct{}{
+	sbom.MediaTypeSPDXJSON: {},
+	sbom.MediaTypeSPDXText: {},
+}
+
+// ValidateScanSBOMRequest validates a ScanSBOMRequest.
+func ValidateScanSBOMRequest(req *v4.ScanSBOMRequest) error {
+	if req == nil {
+		return errox.InvalidArgs.New("empty request")
+	}
+	if len(req.GetSbom()) == 0 {
+		return errox.InvalidArgs.New("sbom is required")
+	}
+	mediaType := strings.TrimSpace(strings.Split(req.GetMediaType(), ";")[0])
+	if _, ok := supportedSBOMMediaTypes[mediaType]; !ok {
+		return errox.InvalidArgs.Newf("unsupported media type: %q", req.GetMediaType())
 	}
 	return nil
 }

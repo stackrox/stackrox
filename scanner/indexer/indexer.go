@@ -50,6 +50,7 @@ import (
 	"github.com/stackrox/rox/scanner/indexer/manifest"
 	"github.com/stackrox/rox/scanner/internal/httputil"
 	"github.com/stackrox/rox/scanner/internal/version"
+	"github.com/stackrox/rox/scanner/sbom"
 )
 
 var (
@@ -137,6 +138,13 @@ func proxiedRemoteTransport(insecure bool) http.RoundTripper {
 // ReportGetter can get index reports from an Indexer.
 type ReportGetter interface {
 	GetIndexReport(context.Context, string, bool) (*claircore.IndexReport, bool, error)
+}
+
+// ReportProvider combines ReportGetter with repository-to-CPE mapping functionality (sbom.RepositoryToCPEProvider).
+// Both Indexer and RemoteIndexer implement this interface.
+type ReportProvider interface {
+	ReportGetter
+	sbom.RepositoryToCPEProvider
 }
 
 // ReportStorer stores a claircore.IndexReport.
