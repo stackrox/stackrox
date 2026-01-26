@@ -188,6 +188,10 @@ func (p *pipelineImpl) emitRateLimitedAdminEvent(clusterID, reason string) {
 	if p.adminEventsStream == nil {
 		return
 	}
+	// The texts are tuned for the rate.ReasonRateLimitExceeded, so skip adding log entry if the reason is different.
+	if reason != rate.ReasonRateLimitExceeded {
+		return
+	}
 
 	p.adminEventsStream.Produce(&events.AdministrationEvent{
 		Type:         storage.AdministrationEventType_ADMINISTRATION_EVENT_TYPE_GENERIC,
