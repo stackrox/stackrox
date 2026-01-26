@@ -54,6 +54,7 @@ type centralCommunicationImpl struct {
 type clusterIDPeekSetter interface {
 	Set(string)
 	GetNoWait() string
+	SetFromCert() error
 }
 
 var (
@@ -227,16 +228,10 @@ func (s *centralCommunicationImpl) initialSync(ctx context.Context, stream centr
 		// No sensor hello - Central is running a legacy version.
 		log.Warn("Central is running a legacy version that might not support all current features")
 
-		// Without hello protocol, we can't receive cluster ID dynamically.
-		// We must have a real cluster ID in the certificate.
-		certClusterID := s.clusterID.GetNoWait()
-		if centralsensor.IsInitCertClusterID(certClusterID) || certClusterID == "" {
-			return errors.New("Central does not support sensor hello protocol, but sensor has a wildcard certificate and cannot determine cluster ID")
+		// Without hello protocol, we must have a real cluster ID in the certificate.
+		if err := s.clusterID.SetFromCert(); err != nil {
+			return errors.Wrap(err, "Central does not support sensor hello protocol")
 		}
-
-		// Use the cluster ID from the certificate.
-		// This unblocks a waiting procedure in cluster_id.go.
-		s.clusterID.Set("")
 
 		// Disable features that require hello protocol.
 		s.clientReconcile = false

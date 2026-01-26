@@ -1,6 +1,7 @@
 package clusterid
 
 import (
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/clusterid"
@@ -77,6 +78,17 @@ func (c *handlerImpl) Set(value string) {
 	} else if c.clusterID != effectiveClusterID {
 		log.Panicf("Newly set cluster ID value %q conflicts with previous value %q", effectiveClusterID, c.clusterID)
 	}
+}
+
+// SetFromCert reads the cluster ID from the certificate, validates it's not a wildcard,
+// and signals availability. Returns an error if the certificate has a wildcard ID.
+func (c *handlerImpl) SetFromCert() error {
+	certClusterID := c.clusterIDFromCert()
+	if centralsensor.IsInitCertClusterID(certClusterID) || certClusterID == "" {
+		return errors.New("certificate has a wildcard cluster ID")
+	}
+	c.Set(certClusterID)
+	return nil
 }
 
 func (c *handlerImpl) clusterIDFromCert() string {
