@@ -87,6 +87,7 @@ export type EnvVarSource =
 
 export type ContainerImage = {
     id: string;
+    idV2?: string;
     name: ImageName;
     notPullable: boolean;
 };

@@ -41,6 +41,8 @@ type watcherImpl struct {
 	pollInterval time.Duration
 	batchSize    int
 	tagLimit     int
+
+	delegationEnabled bool
 }
 
 // New creates a new base image watcher.
@@ -53,6 +55,7 @@ func New(
 	pollInterval time.Duration,
 	batchSize int,
 	tagLimit int,
+	delegationEnabled bool,
 ) Watcher {
 	return &watcherImpl{
 		repoDS:       repoDS,
@@ -64,6 +67,8 @@ func New(
 		pollInterval: pollInterval,
 		batchSize:    batchSize,
 		tagLimit:     tagLimit,
+
+		delegationEnabled: delegationEnabled,
 	}
 }
 
@@ -195,21 +200,20 @@ func (w *watcherImpl) processRepository(ctx context.Context, repo *storage.BaseI
 	default:
 	}
 
-	// Check if scanning should be delegated to a secured cluster. On error, default
-	// to Central (same behavior as image enricher).
-	clusterID, shouldDelegate, err := w.delegator.GetDelegateClusterID(ctx, name)
-	if err != nil {
-		log.Warnf("Error checking delegation for repository=%q: %v (continuing with Central-based processing)",
-			repo.GetRepositoryPath(), err)
-		shouldDelegate = false
-	}
-
 	// Determine scanner based on delegation.
-	var scanner reposcan.Scanner
-	if shouldDelegate {
-		scanner = NewDelegatedScanner(w.delegator, clusterID)
-	} else {
-		scanner = w.localScanner
+	scanner := w.localScanner
+	if w.delegationEnabled {
+		// Check if scanning should be delegated to a secured cluster. On error, default
+		// to Central (same behavior as image enricher).
+		clusterID, shouldDelegate, err := w.delegator.GetDelegateClusterID(ctx, name)
+		if err != nil {
+			log.Warnf("Error checking delegation for repository=%q: %v (continuing with Central-based processing)",
+				repo.GetRepositoryPath(), err)
+			shouldDelegate = false
+		}
+		if shouldDelegate {
+			scanner = NewDelegatedScanner(w.delegator, clusterID)
+		}
 	}
 
 	// Fetch existing tags from cache (sorted by created timestamp, newest first).
@@ -360,6 +364,7 @@ func (w *watcherImpl) promoteTags(
 			ManifestDigest:        tag.GetManifestDigest(),
 			DiscoveredAt:          protocompat.TimestampNow(),
 			Active:                true,
+			Created:               tag.GetCreated(),
 		}
 		imgs[bi] = tag.GetLayerDigests()
 	}

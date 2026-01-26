@@ -1878,6 +1878,7 @@ type BaseImageInfo struct {
 	BaseImageId       string                 `protobuf:"bytes,1,opt,name=base_image_id,json=baseImageId,proto3" json:"base_image_id,omitempty"`
 	BaseImageFullName string                 `protobuf:"bytes,2,opt,name=base_image_full_name,json=baseImageFullName,proto3" json:"base_image_full_name,omitempty"`
 	BaseImageDigest   string                 `protobuf:"bytes,3,opt,name=base_image_digest,json=baseImageDigest,proto3" json:"base_image_digest,omitempty"`
+	Created           *timestamppb.Timestamp `protobuf:"bytes,4,opt,name=created,proto3" json:"created,omitempty"`
 	unknownFields     protoimpl.UnknownFields
 	sizeCache         protoimpl.SizeCache
 }
@@ -1931,6 +1932,13 @@ func (x *BaseImageInfo) GetBaseImageDigest() string {
 		return x.BaseImageDigest
 	}
 	return ""
+}
+
+func (x *BaseImageInfo) GetCreated() *timestamppb.Timestamp {
+	if x != nil {
+		return x.Created
+	}
+	return nil
 }
 
 type EmbeddedImageScanComponent_Executable struct {
@@ -2162,11 +2170,12 @@ const file_storage_image_proto_rawDesc = "" +
 	"\vset_fixableJ\x04\b\t\x10\n" +
 	"\"\"\n" +
 	"\fWatchedImage\x12\x12\n" +
-	"\x04name\x18\x01 \x01(\tR\x04name\"\x90\x01\n" +
+	"\x04name\x18\x01 \x01(\tR\x04name\"\xc6\x01\n" +
 	"\rBaseImageInfo\x12\"\n" +
 	"\rbase_image_id\x18\x01 \x01(\tR\vbaseImageId\x12/\n" +
 	"\x14base_image_full_name\x18\x02 \x01(\tR\x11baseImageFullName\x12*\n" +
-	"\x11base_image_digest\x18\x03 \x01(\tR\x0fbaseImageDigest*s\n" +
+	"\x11base_image_digest\x18\x03 \x01(\tR\x0fbaseImageDigest\x124\n" +
+	"\acreated\x18\x04 \x01(\v2\x1a.google.protobuf.TimestampR\acreated*s\n" +
 	"\n" +
 	"SourceType\x12\x06\n" +
 	"\x02OS\x10\x00\x12\n" +
@@ -2256,11 +2265,12 @@ var file_storage_image_proto_depIdxs = []int32{
 	24, // 29: storage.ImageLayer.created:type_name -> google.protobuf.Timestamp
 	24, // 30: storage.ListImage.created:type_name -> google.protobuf.Timestamp
 	24, // 31: storage.ListImage.last_updated:type_name -> google.protobuf.Timestamp
-	32, // [32:32] is the sub-list for method output_type
-	32, // [32:32] is the sub-list for method input_type
-	32, // [32:32] is the sub-list for extension type_name
-	32, // [32:32] is the sub-list for extension extendee
-	0,  // [0:32] is the sub-list for field type_name
+	24, // 32: storage.BaseImageInfo.created:type_name -> google.protobuf.Timestamp
+	33, // [33:33] is the sub-list for method output_type
+	33, // [33:33] is the sub-list for method input_type
+	33, // [33:33] is the sub-list for extension type_name
+	33, // [33:33] is the sub-list for extension extendee
+	0,  // [0:33] is the sub-list for field type_name
 }
 
 func init() { file_storage_image_proto_init() }

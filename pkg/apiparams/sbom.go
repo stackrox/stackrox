@@ -7,4 +7,5 @@ type SBOMRequestBody struct {
 	Namespace string `json:"namespace"`
 	ImageName string `json:"imageName"`
 	Force     bool   `json:"force"`
+	Digest    string `json:"digest"`
 }

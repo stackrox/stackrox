@@ -14,10 +14,7 @@ import { ExpandableRowContent, Table, Tbody, Td, Th, Thead, Tr } from '@patternf
 import CompoundSearchFilter from 'Components/CompoundSearchFilter/components/CompoundSearchFilter';
 import CompoundSearchFilterLabels from 'Components/CompoundSearchFilter/components/CompoundSearchFilterLabels';
 import SearchFilterSelectInclusive from 'Components/CompoundSearchFilter/components/SearchFilterSelectInclusive';
-import type {
-    CompoundSearchFilterConfig,
-    OnSearchCallback,
-} from 'Components/CompoundSearchFilter/types';
+import type { OnSearchCallback } from 'Components/CompoundSearchFilter/types';
 import TbodyUnified from 'Components/TableStateTemplates/TbodyUnified';
 import type { UseURLPaginationResult } from 'hooks/useURLPagination';
 import type { UseURLSortResult } from 'hooks/useURLSort';
@@ -32,7 +29,12 @@ import { getClusterResultsStatusObject } from './compliance.coverage.utils';
 import ControlLabels from './components/ControlLabels';
 import StatusIcon from './components/StatusIcon';
 import useScanConfigRouter from './hooks/useScanConfigRouter';
-import { attributeForComplianceCheckStatus } from '../searchFilterConfig';
+import {
+    attributeForComplianceCheckStatus,
+    profileCheckSearchFilterConfig,
+} from '../searchFilterConfig';
+
+const searchFilterConfig = [profileCheckSearchFilterConfig];
 
 export type ClusterDetailsTableProps = {
     checkResultsCount: number;
@@ -40,7 +42,6 @@ export type ClusterDetailsTableProps = {
     tableState: TableUIState<ComplianceCheckResult>;
     pagination: UseURLPaginationResult;
     getSortParams: UseURLSortResult['getSortParams'];
-    searchFilterConfig: CompoundSearchFilterConfig;
     searchFilter: SearchFilter;
     onFilterChange: (newFilter: SearchFilter) => void;
     onSearch: OnSearchCallback;
@@ -53,7 +54,6 @@ function ClusterDetailsTable({
     tableState,
     pagination,
     getSortParams,
-    searchFilterConfig,
     searchFilter,
     onFilterChange,
     onSearch,

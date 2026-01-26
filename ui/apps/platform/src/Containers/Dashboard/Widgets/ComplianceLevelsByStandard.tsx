@@ -1,7 +1,6 @@
 import { useMemo } from 'react';
-import { useLocation } from 'react-router-dom-v5-compat';
+import { Link, useLocation } from 'react-router-dom-v5-compat';
 import {
-    Button,
     EmptyState,
     EmptyStateBody,
     EmptyStateFooter,
@@ -20,7 +19,6 @@ import { useQuery } from '@apollo/client';
 import isEqual from 'lodash/isEqual';
 import sortBy from 'lodash/sortBy';
 
-import LinkShim from 'Components/PatternFly/LinkShim';
 import WidgetCard from 'Components/PatternFly/WidgetCard';
 import useURLSearch from 'hooks/useURLSearch';
 import useWidgetConfig from 'hooks/useWidgetConfig';
@@ -155,42 +153,58 @@ function ComplianceLevelsByStandard() {
             isLoading={loading && !complianceData}
             error={error}
             header={
-                <Flex direction={{ default: 'row' }}>
-                    <FlexItem grow={{ default: 'grow' }}>
+                <Flex
+                    direction={{ default: 'row' }}
+                    alignItems={{ default: 'alignItemsCenter' }}
+                    justifyContent={{ default: 'justifyContentSpaceBetween' }}
+                >
+                    <FlexItem>
                         <Title headingLevel="h2">Compliance by standard</Title>
                     </FlexItem>
-                    <FlexItem>
-                        {isOptionsChanged && (
-                            <WidgetOptionsResetButton onClick={() => updateConfig(defaultConfig)} />
-                        )}
-                        <WidgetOptionsMenu
-                            bodyContent={
-                                <Form>
-                                    <FormGroup fieldId={`${fieldIdPrefix}-sort-by`} label="Sort by">
-                                        <ToggleGroup aria-label="Sort coverage by ascending or descending percentage">
-                                            <ToggleGroupItem
-                                                text="Ascending"
-                                                buttonId={`${fieldIdPrefix}-sort-by-asc`}
-                                                isSelected={sortDataBy === 'asc'}
-                                                onChange={() => updateConfig({ sortDataBy: 'asc' })}
-                                            />
-                                            <ToggleGroupItem
-                                                text="Descending"
-                                                buttonId={`${fieldIdPrefix}-sort-by-desc`}
-                                                isSelected={sortDataBy === 'desc'}
-                                                onChange={() =>
-                                                    updateConfig({ sortDataBy: 'desc' })
-                                                }
-                                            />
-                                        </ToggleGroup>
-                                    </FormGroup>
-                                </Form>
-                            }
-                        />
-                        <Button variant="secondary" component={LinkShim} href={complianceBasePath}>
-                            View all
-                        </Button>
-                    </FlexItem>
+                    <Flex
+                        direction={{ default: 'row' }}
+                        alignItems={{ default: 'alignItemsCenter' }}
+                    >
+                        <FlexItem>
+                            <Link to={complianceBasePath}>View all</Link>
+                        </FlexItem>
+                        <FlexItem>
+                            {isOptionsChanged && (
+                                <WidgetOptionsResetButton
+                                    onClick={() => updateConfig(defaultConfig)}
+                                />
+                            )}
+                            <WidgetOptionsMenu
+                                bodyContent={
+                                    <Form>
+                                        <FormGroup
+                                            fieldId={`${fieldIdPrefix}-sort-by`}
+                                            label="Sort by"
+                                        >
+                                            <ToggleGroup aria-label="Sort coverage by ascending or descending percentage">
+                                                <ToggleGroupItem
+                                                    text="Ascending"
+                                                    buttonId={`${fieldIdPrefix}-sort-by-asc`}
+                                                    isSelected={sortDataBy === 'asc'}
+                                                    onChange={() =>
+                                                        updateConfig({ sortDataBy: 'asc' })
+                                                    }
+                                                />
+                                                <ToggleGroupItem
+                                                    text="Descending"
+                                                    buttonId={`${fieldIdPrefix}-sort-by-desc`}
+                                                    isSelected={sortDataBy === 'desc'}
+                                                    onChange={() =>
+                                                        updateConfig({ sortDataBy: 'desc' })
+                                                    }
+                                                />
+                                            </ToggleGroup>
+                                        </FormGroup>
+                                    </Form>
+                                }
+                            />
+                        </FlexItem>
+                    </Flex>
                 </Flex>
             }
         >
@@ -218,9 +232,7 @@ function ComplianceLevelsByStandard() {
                             : 'Run a scan on the Compliance page.'}
                     </EmptyStateBody>
                     <EmptyStateFooter>
-                        <Button component={LinkShim} href={complianceBasePath}>
-                            Go to compliance
-                        </Button>
+                        <Link to={complianceBasePath}>View Compliance Dashboard</Link>
                     </EmptyStateFooter>
                 </EmptyState>
             )}

@@ -4,6 +4,8 @@ metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.20.0
   creationTimestamp: null
+  labels:
+    app: rhacs-operator
   name: securedclusters.platform.stackrox.io
 spec:
   group: platform.stackrox.io
