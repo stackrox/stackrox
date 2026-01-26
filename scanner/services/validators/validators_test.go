@@ -260,6 +260,46 @@ func Test_validateGetVulnerabilitiesRequest(t *testing.T) {
 	}
 }
 
+func Test_validateScanSBOMRequest(t *testing.T) {
+	tests := map[string]struct {
+		req     *v4.ScanSBOMRequest
+		wantErr string
+	}{
+		"error on nil request": {
+			wantErr: "empty request",
+		},
+		"error on empty sbom": {
+			req:     &v4.ScanSBOMRequest{},
+			wantErr: "sbom is required",
+		},
+		"error on empty media type": {
+			req:     &v4.ScanSBOMRequest{Sbom: []byte("data")},
+			wantErr: "media type is required",
+		},
+		"error on unsupported media type": {
+			req:     &v4.ScanSBOMRequest{Sbom: []byte("data"), MediaType: "application/json"},
+			wantErr: "unsupported media type",
+		},
+		"no error with application/spdx+json": {
+			req: &v4.ScanSBOMRequest{Sbom: []byte("data"), MediaType: "application/spdx+json"},
+		},
+		"no error with text/spdx+json": {
+			req: &v4.ScanSBOMRequest{Sbom: []byte("data"), MediaType: "text/spdx+json"},
+		},
+	}
+
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			err := ValidateScanSBOMRequest(tt.req)
+			if tt.wantErr != "" {
+				assert.ErrorContains(t, err, tt.wantErr)
+			} else {
+				assert.NoError(t, err)
+			}
+		})
+	}
+}
+
 func Test_validateGetSBOMRequest(t *testing.T) {
 	tests := map[string]struct {
 		req     *v4.GetSBOMRequest

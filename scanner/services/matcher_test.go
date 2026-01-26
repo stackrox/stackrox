@@ -17,6 +17,8 @@ import (
 	matchermocks "github.com/stackrox/rox/scanner/matcher/mocks"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
 type matcherServiceTestSuite struct {
@@ -379,5 +381,77 @@ func (s *matcherServiceTestSuite) Test_matcherService_GetSBOM() {
 		})
 		s.Require().NoError(err)
 		s.Equal(res.GetSbom(), fakeSbomB)
+	})
+}
+
+func (s *matcherServiceTestSuite) Test_matcherService_ScanSBOM() {
+	// Minimal valid SPDX 2.3 JSON document.
+	validSPDX := []byte(`{
+		"spdxVersion": "SPDX-2.3",
+		"dataLicense": "CC0-1.0",
+		"SPDXID": "SPDXRef-DOCUMENT",
+		"name": "test",
+		"documentNamespace": "https://example.com/test",
+		"creationInfo": {
+			"created": "2024-01-01T00:00:00Z",
+			"creators": ["Tool: test"]
+		}
+	}`)
+
+	s.Run("error on nil request", func() {
+		srv := NewMatcherService(nil, nil)
+		_, err := srv.ScanSBOM(s.ctx, nil)
+		s.ErrorContains(err, "empty request")
+	})
+
+	s.Run("error on empty sbom", func() {
+		srv := NewMatcherService(nil, nil)
+		_, err := srv.ScanSBOM(s.ctx, &v4.ScanSBOMRequest{})
+		s.ErrorContains(err, "sbom is required")
+	})
+
+	s.Run("error on unsupported media type", func() {
+		srv := NewMatcherService(nil, nil)
+		_, err := srv.ScanSBOM(s.ctx, &v4.ScanSBOMRequest{
+			Sbom:      []byte("data"),
+			MediaType: "application/json",
+		})
+		s.ErrorContains(err, "unsupported media type")
+	})
+
+	s.Run("error when matcher not initialized", func() {
+		s.matcherMock.EXPECT().Initialized(gomock.Any()).Return(errors.New("not initialized"))
+		srv := NewMatcherService(s.matcherMock, nil)
+		_, err := srv.ScanSBOM(s.ctx, &v4.ScanSBOMRequest{
+			Sbom:      validSPDX,
+			MediaType: "application/spdx+json",
+		})
+		st, ok := status.FromError(err)
+		s.Require().True(ok)
+		s.Equal(codes.FailedPrecondition, st.Code())
+	})
+
+	s.Run("error on invalid sbom content", func() {
+		s.matcherMock.EXPECT().Initialized(gomock.Any()).Return(nil)
+		srv := NewMatcherService(s.matcherMock, nil)
+		_, err := srv.ScanSBOM(s.ctx, &v4.ScanSBOMRequest{
+			Sbom:      []byte("not valid json"),
+			MediaType: "application/spdx+json",
+		})
+		s.Error(err)
+	})
+
+	s.Run("success", func() {
+		s.matcherMock.EXPECT().Initialized(gomock.Any()).Return(nil)
+		s.matcherMock.EXPECT().
+			GetVulnerabilities(gomock.Any(), gomock.Any()).
+			Return(&claircore.VulnerabilityReport{}, nil)
+		srv := NewMatcherService(s.matcherMock, nil)
+		res, err := srv.ScanSBOM(s.ctx, &v4.ScanSBOMRequest{
+			Sbom:      validSPDX,
+			MediaType: "application/spdx+json",
+		})
+		s.Require().NoError(err)
+		s.NotNil(res.GetVulnerabilityReport())
 	})
 }
