@@ -42,6 +42,7 @@ func ConvertToV1(image *storage.ImageV2, names ...*storage.ImageName) *storage.I
 		},
 		Signature:                 image.GetSignature(),
 		SignatureVerificationData: image.GetSignatureVerificationData(),
+		BaseImageInfo:             image.GetBaseImageInfo(),
 	}
 }
 
@@ -87,6 +88,7 @@ func ConvertToV2(image *storage.Image) *storage.ImageV2 {
 		TopCvss:                   image.GetTopCvss(),
 		SignatureVerificationData: image.GetSignatureVerificationData(),
 		Signature:                 image.GetSignature(),
+		BaseImageInfo:             image.GetBaseImageInfo(),
 	}
 	FillScanStatsV2(ret)
 	return ret

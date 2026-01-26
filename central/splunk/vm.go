@@ -6,6 +6,7 @@ import (
 
 	"github.com/stackrox/rox/central/deployment/datastore"
 	imageDatastore "github.com/stackrox/rox/central/image/datastore"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/httputil"
 	"github.com/stackrox/rox/pkg/jsonutil"
 	"github.com/stackrox/rox/pkg/protoconv"
@@ -70,10 +71,17 @@ func NewVulnMgmtHandler(deployments datastore.DataStore, images imageDatastore.D
 				continue
 			}
 			for _, c := range deployment.GetContainers() {
-				if c.GetImage().GetId() == "" {
-					continue
+				if features.FlattenImageData.Enabled() {
+					if c.GetImage().GetIdV2() == "" {
+						continue
+					}
+					imageSet.Add(c.GetImage().GetIdV2())
+				} else {
+					if c.GetImage().GetId() == "" {
+						continue
+					}
+					imageSet.Add(c.GetImage().GetId())
 				}
-				imageSet.Add(c.GetImage().GetId())
 
 				err := arrayWriter.WriteObject(&splunkDeploymentEvent{
 					Type:        "deployment",
