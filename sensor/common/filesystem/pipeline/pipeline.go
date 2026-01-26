@@ -142,7 +142,6 @@ func (p *Pipeline) getIndicator(process *sensorAPI.ProcessSignal) *storage.Proce
 		return pi
 	}
 
-	// TODO(ROX-30798): Enrich file system events with deployment details
 	metadata, ok, _ := p.clusterEntities.LookupByContainerID(process.GetContainerId())
 	if !ok {
 		// unexpected - process should exist before file activity is
