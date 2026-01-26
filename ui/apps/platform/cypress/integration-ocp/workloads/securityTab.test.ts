@@ -2,6 +2,7 @@ import { visitFromConsoleLeftNavExpandable } from '../../helpers/nav';
 import { withOcpAuth } from '../../helpers/ocpAuth';
 import { selectProject } from '../../helpers/ocpConsole';
 import { interceptAndWatchRequests } from '../../helpers/request';
+import pf6 from '../../selectors/pf6';
 import {
     acsAuthNamespaceHeader,
     deploymentListRoute,
@@ -24,7 +25,7 @@ describe('Workloads - Security tab', () => {
 
             cy.get('input[aria-label="Name filter"]').type('central-db');
             cy.get('[title="Deployment"] + a').contains('central-db').click();
-            cy.get('[role="tab"]').contains('Security').click();
+            cy.get(pf6.tabButton).contains('Security').click();
 
             waitForRequests([]).then(
                 ([

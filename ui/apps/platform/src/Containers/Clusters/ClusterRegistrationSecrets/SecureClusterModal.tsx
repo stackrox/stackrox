@@ -42,7 +42,7 @@ function SecureClusterModal({ isModalOpen, setIsModalOpen }): ReactElement {
     return (
         <Modal
             variant="medium"
-            title="Review installation methods"
+            title="View installation methods"
             isOpen={isModalOpen}
             onClose={onClose}
             actions={[
@@ -79,7 +79,7 @@ function SecureClusterModal({ isModalOpen, setIsModalOpen }): ReactElement {
                 <Alert
                     variant="info"
                     isInline
-                    title="You can use one bundle to secure multiple clusters that have the same installation method."
+                    title="You can use one registration secret to secure multiple clusters that have the same installation method."
                     component="p"
                 />
             </Flex>
