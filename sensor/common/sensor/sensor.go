@@ -8,7 +8,7 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/cenkalti/backoff/v3"
+	"github.com/cenkalti/backoff/v4"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/concurrency"
@@ -447,7 +447,19 @@ func (s *Sensor) communicationWithCentralWithRetries(centralReachable *concurren
 	exponential.MaxInterval = env.ConnectionRetryMaxInterval.DurationSetting()
 
 	s.reconcile.Store(true)
-	err := backoff.RetryNotify(func() error {
+	err := backoff.RetryNotify(s.communicationWithCentral(centralReachable, exponential), exponential, func(err error, d time.Duration) {
+		log.Infof("Central communication stopped: %s. Retrying after %s...", err, d.Round(time.Second))
+	})
+
+	log.Info("Stopping gRPC connection retry loop.")
+
+	if err != nil {
+		log.Warnf("Backoff returned error: %s", err)
+	}
+}
+
+func (s *Sensor) communicationWithCentral(centralReachable *concurrency.Flag, exponential *backoff.ExponentialBackOff) func() error {
+	return func() error {
 		log.Infof("Attempting connection setup (client reconciliation = %s)", strconv.FormatBool(s.reconcile.Load()))
 		select {
 		case <-s.centralConnectionFactory.OkSignal().WaitC():
@@ -472,8 +484,14 @@ func (s *Sensor) communicationWithCentralWithRetries(centralReachable *concurren
 		})
 		centralCommunication.Start(central.NewSensorServiceClient(s.centralConnection), centralReachable, &syncDone, s.configHandler, s.detector)
 		go s.notifySyncDone(&syncDone, centralCommunication)
-		// Reset the exponential back-off if the connection succeeds
-		exponential.Reset()
+
+		defer func() {
+			if syncDone.IsDone() {
+				log.Debug("Reset the exponential back-off if the sync succeeds")
+				exponential.Reset()
+			}
+		}()
+
 		select {
 		case <-s.centralCommunication.Stopped().WaitC():
 			if err := s.centralCommunication.Stopped().Err(); err != nil {
@@ -505,14 +523,6 @@ func (s *Sensor) communicationWithCentralWithRetries(centralReachable *concurren
 			s.centralCommunication.Stop()
 			return backoff.Permanent(wrapOrNewError(s.stoppedSig.Err(), "received sensor stop signal"))
 		}
-	}, exponential, func(err error, d time.Duration) {
-		log.Infof("Central communication stopped: %s. Retrying after %s...", err, d.Round(time.Second))
-	})
-
-	log.Info("Stopping gRPC connection retry loop.")
-
-	if err != nil {
-		log.Warnf("Backoff returned error: %s", err)
 	}
 }
 
