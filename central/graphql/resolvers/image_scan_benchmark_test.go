@@ -79,7 +79,7 @@ func BenchmarkImageResolver(b *testing.B) {
 		imagesView.NewImageView(testDB.DB),
 		CreateTestImageComponentV2Datastore(b, testDB, mockCtrl),
 		CreateTestImageCVEV2Datastore(b, testDB),
-		CreateTestImageV2Datastore(b, testDB, mockCtrl),
+		CreateTestImageDatastore(b, testDB, mockCtrl),
 		imagecveflat.NewCVEFlatView(testDB.DB),
 		imagecomponentflat.NewComponentFlatView(testDB.DB),
 	)

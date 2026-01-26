@@ -77,7 +77,7 @@ func (s *GraphQLImageVulnerabilityV2TestSuite) SetupSuite() {
 	s.Require().NoError(err)
 	resolver, _ := SetupTestResolver(s.T(),
 		imagesView.NewImageView(s.testDB.DB),
-		CreateTestImageV2Datastore(s.T(), s.testDB, mockCtrl),
+		CreateTestImageDatastore(s.T(), s.testDB, mockCtrl),
 		CreateTestImageComponentV2Datastore(s.T(), s.testDB, mockCtrl),
 		CreateTestImageCVEV2Datastore(s.T(), s.testDB),
 		vulnReqDatastore,

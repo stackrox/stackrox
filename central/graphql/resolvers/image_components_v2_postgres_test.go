@@ -14,8 +14,10 @@ import (
 	"github.com/stackrox/rox/central/views/imagecveflat"
 	imagesView "github.com/stackrox/rox/central/views/images"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
 	"github.com/stackrox/rox/pkg/grpc/authz/allow"
+	imageUtils "github.com/stackrox/rox/pkg/images/utils"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stretchr/testify/assert"
@@ -61,17 +63,33 @@ func (s *GraphQLImageComponentV2TestSuite) SetupSuite() {
 	s.ctx = loaders.WithLoaderContext(sac.WithAllAccess(context.Background()))
 	mockCtrl := gomock.NewController(s.T())
 	s.testDB = pgtest.ForT(s.T())
-	imageDataStore := CreateTestImageV2Datastore(s.T(), s.testDB, mockCtrl)
-	resolver, _ := SetupTestResolver(s.T(),
-		imagesView.NewImageView(s.testDB.DB),
-		imageDataStore,
-		CreateTestImageComponentV2Datastore(s.T(), s.testDB, mockCtrl),
-		CreateTestImageCVEV2Datastore(s.T(), s.testDB),
-		CreateTestDeploymentDatastore(s.T(), s.testDB, mockCtrl, imageDataStore),
-		deploymentsView.NewDeploymentView(s.testDB.DB),
-		imagecveflat.NewCVEFlatView(s.testDB.DB),
-		imagecomponentflat.NewComponentFlatView(s.testDB.DB),
-	)
+	// TODO(ROX-30117): Remove conditional when FlattenImageData feature flag is removed.
+	var resolver *Resolver
+	if features.FlattenImageData.Enabled() {
+		imgV2DataStore := CreateTestImageV2Datastore(s.T(), s.testDB, mockCtrl)
+		resolver, _ = SetupTestResolver(s.T(),
+			imagesView.NewImageView(s.testDB.DB),
+			imgV2DataStore,
+			CreateTestImageComponentV2Datastore(s.T(), s.testDB, mockCtrl),
+			CreateTestImageCVEV2Datastore(s.T(), s.testDB),
+			CreateTestDeploymentDatastoreWithImageV2(s.T(), s.testDB, mockCtrl, imgV2DataStore),
+			deploymentsView.NewDeploymentView(s.testDB.DB),
+			imagecveflat.NewCVEFlatView(s.testDB.DB),
+			imagecomponentflat.NewComponentFlatView(s.testDB.DB),
+		)
+	} else {
+		imageDataStore := CreateTestImageDatastore(s.T(), s.testDB, mockCtrl)
+		resolver, _ = SetupTestResolver(s.T(),
+			imagesView.NewImageView(s.testDB.DB),
+			imageDataStore,
+			CreateTestImageComponentV2Datastore(s.T(), s.testDB, mockCtrl),
+			CreateTestImageCVEV2Datastore(s.T(), s.testDB),
+			CreateTestDeploymentDatastore(s.T(), s.testDB, mockCtrl, imageDataStore),
+			deploymentsView.NewDeploymentView(s.testDB.DB),
+			imagecveflat.NewCVEFlatView(s.testDB.DB),
+			imagecomponentflat.NewComponentFlatView(s.testDB.DB),
+		)
+	}
 	s.resolver = resolver
 
 	// Add Test Data to DataStores
@@ -82,9 +100,17 @@ func (s *GraphQLImageComponentV2TestSuite) SetupSuite() {
 	}
 
 	testImages := testImagesWithOperatingSystems()
-	for _, image := range testImages {
-		err := s.resolver.ImageDataStore.UpsertImage(s.ctx, image)
-		s.NoError(err)
+	// TODO(ROX-30117): Remove conditional when FlattenImageData feature flag is removed.
+	if features.FlattenImageData.Enabled() {
+		for _, image := range testImages {
+			err := s.resolver.ImageV2DataStore.UpsertImage(s.ctx, imageUtils.ConvertToV2(image))
+			s.NoError(err)
+		}
+	} else {
+		for _, image := range testImages {
+			err := s.resolver.ImageDataStore.UpsertImage(s.ctx, image)
+			s.NoError(err)
+		}
 	}
 
 	s.componentIDMap = s.getComponentIDMap()

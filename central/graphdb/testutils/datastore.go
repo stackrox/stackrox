@@ -10,12 +10,15 @@ import (
 	deploymentDataStore "github.com/stackrox/rox/central/deployment/datastore"
 	imageDataStore "github.com/stackrox/rox/central/image/datastore"
 	imagePostgresV2 "github.com/stackrox/rox/central/image/datastore/store/v2/postgres"
+	imageV2DataStore "github.com/stackrox/rox/central/imagev2/datastore"
+	imageV2Postgres "github.com/stackrox/rox/central/imagev2/datastore/store/postgres"
 	namespaceDataStore "github.com/stackrox/rox/central/namespace/datastore"
 	nodeDataStore "github.com/stackrox/rox/central/node/datastore"
 	"github.com/stackrox/rox/central/ranking"
 	riskDS "github.com/stackrox/rox/central/risk/datastore"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
@@ -50,6 +53,7 @@ type testGraphDataStoreImpl struct {
 	namespaceStore  namespaceDataStore.DataStore
 	deploymentStore deploymentDataStore.DataStore
 	imageStore      imageDataStore.DataStore
+	imageV2Store    imageV2DataStore.DataStore
 	nodeStore       nodeDataStore.DataStore
 	clusterStore    clusterDataStore.DataStore
 	clusterCVEStore clusterCVEDataStore.DataStore
@@ -168,8 +172,6 @@ func (s *testGraphDataStoreImpl) PushImageToVulnerabilitiesGraph() (err error) {
 	ctx := sac.WithAllAccess(context.Background())
 	testNamespace1 := fixtures.GetNamespace(testconsts.Cluster1, testconsts.Cluster1, testconsts.NamespaceA)
 	testNamespace2 := fixtures.GetNamespace(testconsts.Cluster2, testconsts.Cluster2, testconsts.NamespaceB)
-	testImage1 := fixtures.GetImageSherlockHolmes1()
-	testImage2 := fixtures.GetImageDoctorJekyll2()
 	testDeployment1 := fixtures.GetDeploymentSherlockHolmes1(uuid.NewV4().String(), testNamespace1)
 	testDeployment2 := fixtures.GetDeploymentDoctorJekyll2(uuid.NewV4().String(), testNamespace2)
 	err = s.namespaceStore.AddNamespace(ctx, testNamespace1)
@@ -182,16 +184,36 @@ func (s *testGraphDataStoreImpl) PushImageToVulnerabilitiesGraph() (err error) {
 		return err
 	}
 	s.storedNamespaces = append(s.storedNamespaces, testNamespace2.GetId())
-	err = s.imageStore.UpsertImage(ctx, testImage1)
-	if err != nil {
-		return err
+
+	// TODO(ROX-30117): Remove conditional when FlattenImageData feature flag is removed.
+	if features.FlattenImageData.Enabled() {
+		testImageV2_1 := fixtures.GetImageV2SherlockHolmes1()
+		testImageV2_2 := fixtures.GetImageV2DoctorJekyll2()
+		err = s.imageV2Store.UpsertImage(ctx, testImageV2_1)
+		if err != nil {
+			return err
+		}
+		s.storedImages = append(s.storedImages, testImageV2_1.GetId())
+		err = s.imageV2Store.UpsertImage(ctx, testImageV2_2)
+		if err != nil {
+			return err
+		}
+		s.storedImages = append(s.storedImages, testImageV2_2.GetId())
+	} else {
+		testImage1 := fixtures.GetImageSherlockHolmes1()
+		testImage2 := fixtures.GetImageDoctorJekyll2()
+		err = s.imageStore.UpsertImage(ctx, testImage1)
+		if err != nil {
+			return err
+		}
+		s.storedImages = append(s.storedImages, testImage1.GetId())
+		err = s.imageStore.UpsertImage(ctx, testImage2)
+		if err != nil {
+			return err
+		}
+		s.storedImages = append(s.storedImages, testImage2.GetId())
 	}
-	s.storedImages = append(s.storedImages, testImage1.GetId())
-	err = s.imageStore.UpsertImage(ctx, testImage2)
-	if err != nil {
-		return err
-	}
-	s.storedImages = append(s.storedImages, testImage2.GetId())
+
 	err = s.deploymentStore.UpsertDeployment(ctx, testDeployment1)
 	if err != nil {
 		return err
@@ -268,7 +290,12 @@ func (s *testGraphDataStoreImpl) CleanImageToVulnerabilitiesGraph() (err error) 
 	s.storedDeployments = s.storedDeployments[:0]
 	storedImages := s.storedImages
 	for _, imageID := range storedImages {
-		err = s.imageStore.DeleteImages(ctx, imageID)
+		// TODO(ROX-30117): Remove conditional when FlattenImageData feature flag is removed.
+		if features.FlattenImageData.Enabled() {
+			err = s.imageV2Store.DeleteImages(ctx, imageID)
+		} else {
+			err = s.imageStore.DeleteImages(ctx, imageID)
+		}
 		if err != nil {
 			return err
 		}
@@ -307,9 +334,16 @@ func NewTestGraphDataStore(t *testing.T) (TestGraphDataStore, error) {
 
 	s.pgtestbase = pgtest.ForT(t)
 	s.nodeStore = nodeDataStore.GetTestPostgresDataStore(t, s.GetPostgresPool())
+	riskStore := riskDS.GetTestPostgresDataStore(t, s.GetPostgresPool())
 	s.imageStore = imageDataStore.NewWithPostgres(
 		imagePostgresV2.New(s.GetPostgresPool(), false, concurrency.NewKeyFence()),
-		riskDS.GetTestPostgresDataStore(t, s.GetPostgresPool()),
+		riskStore,
+		ranking.NewRanker(),
+		ranking.NewRanker(),
+	)
+	s.imageV2Store = imageV2DataStore.NewWithPostgres(
+		imageV2Postgres.New(s.GetPostgresPool(), false, concurrency.NewKeyFence()),
+		riskStore,
 		ranking.NewRanker(),
 		ranking.NewRanker(),
 	)
