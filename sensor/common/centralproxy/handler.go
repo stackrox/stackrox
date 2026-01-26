@@ -2,6 +2,7 @@ package centralproxy
 
 import (
 	"crypto/x509"
+	"fmt"
 	"net/http"
 	"net/http/httputil"
 	"net/url"
@@ -15,8 +16,8 @@ import (
 	"github.com/stackrox/rox/pkg/retryablehttp"
 	"github.com/stackrox/rox/pkg/urlfmt"
 	"github.com/stackrox/rox/sensor/common"
-	"google.golang.org/grpc"
 	"github.com/stackrox/rox/sensor/common/centralcaps"
+	"google.golang.org/grpc"
 	"k8s.io/client-go/kubernetes"
 )
 
@@ -60,14 +61,10 @@ func NewProxyHandler(centralEndpoint string, centralCertificates []*x509.Certifi
 		ErrorHandler: func(w http.ResponseWriter, r *http.Request, err error) {
 			log.Errorf("Proxy error: %v", err)
 			if errors.Is(err, errServiceUnavailable) {
-				pkghttputil.WriteError(w,
-					pkghttputil.Errorf(http.StatusServiceUnavailable, "proxy temporarily unavailable: %v", err),
-				)
+				http.Error(w, fmt.Sprintf("proxy temporarily unavailable: %v", err), http.StatusServiceUnavailable)
 				return
 			}
-			pkghttputil.WriteError(w,
-				pkghttputil.Errorf(http.StatusInternalServerError, "failed to contact central: %v", err),
-			)
+			http.Error(w, fmt.Sprintf("failed to contact central: %v", err), http.StatusInternalServerError)
 		},
 	}
 
@@ -137,29 +134,29 @@ func checkInternalTokenAPISupport() error {
 // ServeHTTP handles incoming HTTP requests and proxies them to Central.
 func (h *Handler) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
 	if err := checkInternalTokenAPISupport(); err != nil {
-		pkghttputil.WriteError(writer, err)
+		http.Error(writer, err.Error(), pkghttputil.StatusFromError(err))
 		return
 	}
 
 	if err := h.validateRequest(request); err != nil {
-		pkghttputil.WriteError(writer, err)
+		http.Error(writer, err.Error(), pkghttputil.StatusFromError(err))
 		return
 	}
 
 	if h.authorizer == nil {
 		log.Error("Authorizer is nil - this indicates a misconfiguration in the central proxy handler")
-		pkghttputil.WriteError(writer, pkghttputil.NewError(http.StatusInternalServerError, "authorizer not configured"))
+		http.Error(writer, "authorizer not configured", http.StatusInternalServerError)
 		return
 	}
 
 	userInfo, err := h.authorizer.authenticate(request.Context(), request)
 	if err != nil {
-		pkghttputil.WriteError(writer, err)
+		http.Error(writer, err.Error(), pkghttputil.StatusFromError(err))
 		return
 	}
 
 	if err := h.authorizer.authorize(request.Context(), userInfo, request); err != nil {
-		pkghttputil.WriteError(writer, err)
+		http.Error(writer, err.Error(), pkghttputil.StatusFromError(err))
 		return
 	}
 

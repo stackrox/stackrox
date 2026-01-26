@@ -649,6 +649,7 @@ func TestServeHTTP_TransportFailure(t *testing.T) {
 	})
 
 	t.Run("initialization error returns 503", func(t *testing.T) {
+		setupCentralCapsForTest(t)
 		baseURL, err := url.Parse("https://central:443")
 		require.NoError(t, err)
 

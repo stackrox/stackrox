@@ -8,7 +8,6 @@ import (
 	"testing"
 
 	"github.com/pkg/errors"
-	pkghttputil "github.com/stackrox/rox/pkg/httputil"
 	authenticationv1 "k8s.io/api/authentication/v1"
 	authv1 "k8s.io/api/authorization/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -59,9 +58,7 @@ func newTestHandler(t *testing.T, baseURL *url.URL, baseTransport http.RoundTrip
 			r.SetURL(baseURL)
 		},
 		ErrorHandler: func(w http.ResponseWriter, r *http.Request, err error) {
-			pkghttputil.WriteError(w,
-				pkghttputil.Errorf(http.StatusInternalServerError, "failed to contact central: %v", err),
-			)
+			http.Error(w, fmt.Sprintf("failed to contact central: %v", err), http.StatusInternalServerError)
 		},
 	}
 
@@ -88,14 +85,10 @@ func newTestHandlerWithTransportError(t *testing.T, baseURL *url.URL, authorizer
 		ErrorHandler: func(w http.ResponseWriter, r *http.Request, err error) {
 			// Match production error handling: return 503 for initialization errors
 			if errors.Is(err, errServiceUnavailable) {
-				pkghttputil.WriteError(w,
-					pkghttputil.Errorf(http.StatusServiceUnavailable, "proxy temporarily unavailable: %v", err),
-				)
+				http.Error(w, fmt.Sprintf("proxy temporarily unavailable: %v", err), http.StatusServiceUnavailable)
 				return
 			}
-			pkghttputil.WriteError(w,
-				pkghttputil.Errorf(http.StatusInternalServerError, "failed to contact central: %v", err),
-			)
+			http.Error(w, fmt.Sprintf("failed to contact central: %v", err), http.StatusInternalServerError)
 		},
 	}
 
