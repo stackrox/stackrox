@@ -194,9 +194,6 @@ var osReleaseDQReplacer = strings.NewReplacer(
 func discoverActivationStatusWithPath(path string) (v1.ActivationStatus, error) {
 	entries, err := os.ReadDir(path)
 	if err != nil {
-		if os.IsNotExist(err) {
-			return v1.ActivationStatus_ACTIVATION_UNSPECIFIED, fmt.Errorf("unsupported OS detected: missing %s: %w", path, err)
-		}
 		return v1.ActivationStatus_ACTIVATION_UNSPECIFIED, fmt.Errorf("reading %s: %w", path, err)
 	}
 
