@@ -27,7 +27,7 @@ func RunDaemon(ctx context.Context, cfg *common.Config, client *vsock.Client) er
 	}
 
 	if err := RunSingle(ctx, cfg, client); err != nil {
-		return fmt.Errorf("running initial index: %w", err)
+		return fmt.Errorf("handling initial index: %w", err)
 	}
 
 	ticker := time.NewTicker(cfg.IndexInterval)
@@ -39,7 +39,7 @@ func RunDaemon(ctx context.Context, cfg *common.Config, client *vsock.Client) er
 			return ctx.Err()
 		case <-ticker.C:
 			if err := RunSingle(ctx, cfg, client); err != nil {
-				log.Errorf("Failed to run index: %v", err)
+				log.Errorf("Failed to handle index: %v", err)
 			}
 		}
 	}
