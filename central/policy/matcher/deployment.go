@@ -80,5 +80,5 @@ func (m *deploymentMatcher) scopeMatches(scope *storage.Scope) bool {
 		return false
 	}
 
-	return cs.MatchesDeployment(m.deployment)
+	return cs.MatchesDeployment(m.deployment, nil, nil)
 }

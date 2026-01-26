@@ -3,13 +3,21 @@ package scopecomp
 import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/regexutils"
 )
 
 // CompiledScope a transformed scope into the relevant regexes
 type CompiledScope struct {
 	ClusterID string
+
+	ClusterLabelKey   regexutils.StringMatcher
+	ClusterLabelValue regexutils.StringMatcher
+
 	Namespace regexutils.StringMatcher
+
+	NamespaceLabelKey   regexutils.StringMatcher
+	NamespaceLabelValue regexutils.StringMatcher
 
 	LabelKey   regexutils.StringMatcher
 	LabelValue regexutils.StringMatcher
@@ -25,6 +33,36 @@ func CompileScope(scope *storage.Scope) (*CompiledScope, error) {
 	cs := &CompiledScope{
 		ClusterID: scope.GetCluster(),
 		Namespace: namespaceReg,
+	}
+
+	if scope.GetClusterLabel() != nil {
+		cs.ClusterLabelKey, err = regexutils.CompileWholeStringMatcher(scope.GetClusterLabel().GetKey(), regexutils.Flags{CaseInsensitive: true})
+		if err != nil {
+			return nil, errors.Errorf("cluster label key regex %q could not be compiled", err)
+		}
+		if cs.ClusterLabelKey == nil {
+			return nil, errors.Errorf("cluster label %q=%q is invalid", scope.GetClusterLabel().GetKey(), scope.GetClusterLabel().GetValue())
+		}
+
+		cs.ClusterLabelValue, err = regexutils.CompileWholeStringMatcher(scope.GetClusterLabel().GetValue(), regexutils.Flags{CaseInsensitive: true})
+		if err != nil {
+			return nil, errors.Errorf("cluster label value regex %q could not be compiled", err)
+		}
+	}
+
+	if scope.GetNamespaceLabel() != nil {
+		cs.NamespaceLabelKey, err = regexutils.CompileWholeStringMatcher(scope.GetNamespaceLabel().GetKey(), regexutils.Flags{CaseInsensitive: true})
+		if err != nil {
+			return nil, errors.Errorf("namespace label key regex %q could not be compiled", err)
+		}
+		if cs.NamespaceLabelKey == nil {
+			return nil, errors.Errorf("namespace label %q=%q is invalid", scope.GetNamespaceLabel().GetKey(), scope.GetNamespaceLabel().GetValue())
+		}
+
+		cs.NamespaceLabelValue, err = regexutils.CompileWholeStringMatcher(scope.GetNamespaceLabel().GetValue(), regexutils.Flags{CaseInsensitive: true})
+		if err != nil {
+			return nil, errors.Errorf("namespace label value regex %q could not be compiled", err)
+		}
 	}
 
 	if scope.GetLabel() != nil {
@@ -45,29 +83,42 @@ func CompileScope(scope *storage.Scope) (*CompiledScope, error) {
 }
 
 // MatchesDeployment evaluates a compiled scope against a deployment
-func (c *CompiledScope) MatchesDeployment(deployment *storage.Deployment) bool {
+func (c *CompiledScope) MatchesDeployment(deployment *storage.Deployment, clusterLabels map[string]string, namespaceLabels map[string]string) bool {
 	if c == nil {
 		return true
 	}
 	if !c.MatchesCluster(deployment.GetClusterId()) {
 		return false
 	}
+	if features.LabelBasedPolicyScoping.Enabled() {
+		if !c.MatchesLabels(c.ClusterLabelKey, c.ClusterLabelValue, clusterLabels) {
+			return false
+		}
+	}
 	if !c.MatchesNamespace(deployment.GetNamespace()) {
 		return false
 	}
-
-	if c.LabelKey == nil {
-		return true
-	}
-
-	var matched bool
-	for key, value := range deployment.GetLabels() {
-		if c.LabelKey.MatchString(key) && c.LabelValue.MatchString(value) {
-			matched = true
-			break
+	if features.LabelBasedPolicyScoping.Enabled() {
+		if !c.MatchesLabels(c.NamespaceLabelKey, c.NamespaceLabelValue, namespaceLabels) {
+			return false
 		}
 	}
-	return matched
+	if !c.MatchesLabels(c.LabelKey, c.LabelValue, deployment.GetLabels()) {
+		return false
+	}
+	return true
+}
+
+func (c *CompiledScope) MatchesLabels(keyMatcher regexutils.StringMatcher, valueMatcher regexutils.StringMatcher, labels map[string]string) bool {
+	if keyMatcher == nil {
+		return true
+	}
+	for key, value := range labels {
+		if keyMatcher.MatchString(key) && valueMatcher.MatchString(value) {
+			return true
+		}
+	}
+	return false
 }
 
 // MatchesNamespace evaluates a compiled scope against a namespace
