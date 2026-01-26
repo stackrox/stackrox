@@ -1,4 +1,4 @@
-# This file is meant to be used by the kustomizations in the branded/ subdirectories.
+# This file is meant to be used by the kustomizations in the flavors/ subdirectories.
 
 resources:
 - ../crd
