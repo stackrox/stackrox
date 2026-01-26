@@ -14,8 +14,10 @@ import (
 	"github.com/stackrox/rox/central/views/imagecveflat"
 	imagesView "github.com/stackrox/rox/central/views/images"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
 	"github.com/stackrox/rox/pkg/grpc/authz/allow"
+	imageUtils "github.com/stackrox/rox/pkg/images/utils"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stretchr/testify/assert"
@@ -54,6 +56,7 @@ type GraphQLImageComponentV2TestSuite struct {
 	ctx            context.Context
 	testDB         *pgtest.TestPostgres
 	resolver       *Resolver
+	testImages     []*storage.Image
 	componentIDMap map[string]string
 }
 
@@ -61,17 +64,33 @@ func (s *GraphQLImageComponentV2TestSuite) SetupSuite() {
 	s.ctx = loaders.WithLoaderContext(sac.WithAllAccess(context.Background()))
 	mockCtrl := gomock.NewController(s.T())
 	s.testDB = pgtest.ForT(s.T())
-	imageDataStore := CreateTestImageV2Datastore(s.T(), s.testDB, mockCtrl)
-	resolver, _ := SetupTestResolver(s.T(),
-		imagesView.NewImageView(s.testDB.DB),
-		imageDataStore,
-		CreateTestImageComponentV2Datastore(s.T(), s.testDB, mockCtrl),
-		CreateTestImageCVEV2Datastore(s.T(), s.testDB),
-		CreateTestDeploymentDatastore(s.T(), s.testDB, mockCtrl, imageDataStore),
-		deploymentsView.NewDeploymentView(s.testDB.DB),
-		imagecveflat.NewCVEFlatView(s.testDB.DB),
-		imagecomponentflat.NewComponentFlatView(s.testDB.DB),
-	)
+	// TODO(ROX-30117): Remove conditional when FlattenImageData feature flag is removed.
+	var resolver *Resolver
+	if features.FlattenImageData.Enabled() {
+		imgV2DataStore := CreateTestImageV2Datastore(s.T(), s.testDB, mockCtrl)
+		resolver, _ = SetupTestResolver(s.T(),
+			imagesView.NewImageView(s.testDB.DB),
+			imgV2DataStore,
+			CreateTestImageComponentV2Datastore(s.T(), s.testDB, mockCtrl),
+			CreateTestImageCVEV2Datastore(s.T(), s.testDB),
+			CreateTestDeploymentDatastoreWithImageV2(s.T(), s.testDB, mockCtrl, imgV2DataStore),
+			deploymentsView.NewDeploymentView(s.testDB.DB),
+			imagecveflat.NewCVEFlatView(s.testDB.DB),
+			imagecomponentflat.NewComponentFlatView(s.testDB.DB),
+		)
+	} else {
+		imageDataStore := CreateTestImageDatastore(s.T(), s.testDB, mockCtrl)
+		resolver, _ = SetupTestResolver(s.T(),
+			imagesView.NewImageView(s.testDB.DB),
+			imageDataStore,
+			CreateTestImageComponentV2Datastore(s.T(), s.testDB, mockCtrl),
+			CreateTestImageCVEV2Datastore(s.T(), s.testDB),
+			CreateTestDeploymentDatastore(s.T(), s.testDB, mockCtrl, imageDataStore),
+			deploymentsView.NewDeploymentView(s.testDB.DB),
+			imagecveflat.NewCVEFlatView(s.testDB.DB),
+			imagecomponentflat.NewComponentFlatView(s.testDB.DB),
+		)
+	}
 	s.resolver = resolver
 
 	// Add Test Data to DataStores
@@ -81,13 +100,21 @@ func (s *GraphQLImageComponentV2TestSuite) SetupSuite() {
 		s.NoError(err)
 	}
 
-	testImages := testImagesWithOperatingSystems()
-	for _, image := range testImages {
-		err := s.resolver.ImageDataStore.UpsertImage(s.ctx, image)
-		s.NoError(err)
+	s.testImages = testImagesWithOperatingSystems()
+	// TODO(ROX-30117): Remove conditional when FlattenImageData feature flag is removed.
+	if features.FlattenImageData.Enabled() {
+		for _, image := range s.testImages {
+			err := s.resolver.ImageV2DataStore.UpsertImage(s.ctx, imageUtils.ConvertToV2(image))
+			s.NoError(err)
+		}
+	} else {
+		for _, image := range s.testImages {
+			err := s.resolver.ImageDataStore.UpsertImage(s.ctx, image)
+			s.NoError(err)
+		}
 	}
 
-	s.componentIDMap = s.getComponentIDMap()
+	s.componentIDMap = s.getComponentIDMap(s.testImages)
 }
 
 func (s *GraphQLImageComponentV2TestSuite) TestUnauthorizedImageComponentEndpoint() {
@@ -159,8 +186,8 @@ func (s *GraphQLImageComponentV2TestSuite) TestImageComponentsScoped() {
 		expectedComponentIDs []string
 	}{
 		{
-			"sha1",
-			"sha1",
+			"image1",
+			s.getImageID(s.testImages[0]),
 			[]string{
 				s.componentIDMap[comp11],
 				s.componentIDMap[comp21],
@@ -168,8 +195,8 @@ func (s *GraphQLImageComponentV2TestSuite) TestImageComponentsScoped() {
 			},
 		},
 		{
-			"sha2",
-			"sha2",
+			"image2",
+			s.getImageID(s.testImages[1]),
 			[]string{
 				s.componentIDMap[comp12],
 				s.componentIDMap[comp32],
@@ -208,8 +235,8 @@ func (s *GraphQLImageComponentV2TestSuite) TestImageComponentsScopeTree() {
 		cveToExpectedComponentIDs map[string][]string
 	}{
 		{
-			"sha1",
-			"sha1",
+			"image1",
+			s.getImageID(s.testImages[0]),
 			map[string][]string{
 				"cve-2018-1": {
 					s.componentIDMap[comp11],
@@ -224,8 +251,8 @@ func (s *GraphQLImageComponentV2TestSuite) TestImageComponentsScopeTree() {
 			},
 		},
 		{
-			"sha2",
-			"sha2",
+			"image2",
+			s.getImageID(s.testImages[1]),
 			map[string][]string{
 				"cve-2018-1": {
 					s.componentIDMap[comp12],
@@ -296,6 +323,9 @@ func (s *GraphQLImageComponentV2TestSuite) TestImageComponentHit() {
 func (s *GraphQLImageComponentV2TestSuite) TestImageComponentImages() {
 	ctx := SetAuthorizerOverride(s.ctx, allow.Anonymous())
 
+	imageID1 := s.getImageID(s.testImages[0])
+	imageID2 := s.getImageID(s.testImages[1])
+
 	imageCompTests := []struct {
 		name             string
 		id               string
@@ -304,32 +334,32 @@ func (s *GraphQLImageComponentV2TestSuite) TestImageComponentImages() {
 		{
 			"comp1image1",
 			s.componentIDMap[comp11],
-			[]string{"sha1"},
+			[]string{imageID1},
 		},
 		{
 			"comp1image2",
 			s.componentIDMap[comp12],
-			[]string{"sha2"},
+			[]string{imageID2},
 		},
 		{
 			"comp2image1",
 			s.componentIDMap[comp21],
-			[]string{"sha1"},
+			[]string{imageID1},
 		},
 		{
 			"comp3image1",
 			s.componentIDMap[comp31],
-			[]string{"sha1"},
+			[]string{imageID1},
 		},
 		{
 			"comp3image2",
 			s.componentIDMap[comp32],
-			[]string{"sha2"},
+			[]string{imageID2},
 		},
 		{
 			"comp4image2",
 			s.componentIDMap[comp42],
-			[]string{"sha2"},
+			[]string{imageID2},
 		},
 	}
 
@@ -592,14 +622,24 @@ func (s *GraphQLImageComponentV2TestSuite) getImageComponentResolver(ctx context
 	return vuln
 }
 
-func (s *GraphQLImageComponentV2TestSuite) getComponentIDMap() map[string]string {
+// TODO(ROX-30117): Remove conditional when FlattenImageData feature flag is removed.
+func (s *GraphQLImageComponentV2TestSuite) getImageID(image *storage.Image) string {
+	if features.FlattenImageData.Enabled() {
+		return imageUtils.ConvertToV2(image).GetId()
+	}
+	return image.GetId()
+}
+
+func (s *GraphQLImageComponentV2TestSuite) getComponentIDMap(images []*storage.Image) map[string]string {
+	imageID1 := s.getImageID(images[0])
+	imageID2 := s.getImageID(images[1])
 	return map[string]string{
-		comp11: getTestComponentID(testImages()[0].GetScan().GetComponents()[0], "sha1", 0),
-		comp12: getTestComponentID(testImages()[1].GetScan().GetComponents()[0], "sha2", 0),
-		comp21: getTestComponentID(testImages()[0].GetScan().GetComponents()[1], "sha1", 1),
-		comp31: getTestComponentID(testImages()[0].GetScan().GetComponents()[2], "sha1", 2),
-		comp32: getTestComponentID(testImages()[1].GetScan().GetComponents()[1], "sha2", 1),
-		comp42: getTestComponentID(testImages()[1].GetScan().GetComponents()[2], "sha2", 2),
+		comp11: getTestComponentID(images[0].GetScan().GetComponents()[0], imageID1, 0),
+		comp12: getTestComponentID(images[1].GetScan().GetComponents()[0], imageID2, 0),
+		comp21: getTestComponentID(images[0].GetScan().GetComponents()[1], imageID1, 1),
+		comp31: getTestComponentID(images[0].GetScan().GetComponents()[2], imageID1, 2),
+		comp32: getTestComponentID(images[1].GetScan().GetComponents()[1], imageID2, 1),
+		comp42: getTestComponentID(images[1].GetScan().GetComponents()[2], imageID2, 2),
 	}
 }
 

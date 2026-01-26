@@ -3,6 +3,7 @@ package matcher
 import (
 	clusterDataStore "github.com/stackrox/rox/central/cluster/datastore"
 	imageDataStore "github.com/stackrox/rox/central/image/datastore"
+	imageV2DataStore "github.com/stackrox/rox/central/imagev2/datastore"
 	nsDataStore "github.com/stackrox/rox/central/namespace/datastore"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/utils"
@@ -15,7 +16,7 @@ var (
 
 func initialize() {
 	var err error
-	cveMatcher, err = NewCVEMatcher(clusterDataStore.Singleton(), nsDataStore.Singleton(), imageDataStore.Singleton())
+	cveMatcher, err = NewCVEMatcher(clusterDataStore.Singleton(), nsDataStore.Singleton(), imageDataStore.Singleton(), imageV2DataStore.Singleton())
 	utils.CrashOnError(err)
 }
 

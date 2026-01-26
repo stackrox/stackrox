@@ -62,6 +62,10 @@ func TestNewImage(t *testing.T) {
 		t.Run(c.ImageString, func(t *testing.T) {
 			img, err := utils.GenerateImageFromString(c.ImageString)
 			assert.NoError(t, err)
+			// When FlattenImageData is enabled, IdV2 is set for images with a digest.
+			if features.FlattenImageData.Enabled() && c.ExpectedImage.GetId() != "" {
+				c.ExpectedImage.IdV2 = utils.NewImageV2ID(c.ExpectedImage.GetName(), c.ExpectedImage.GetId())
+			}
 			protoassert.Equal(t, c.ExpectedImage, img)
 		})
 	}

@@ -5,6 +5,7 @@ import (
 
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/cve"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/scancomponent"
@@ -152,7 +153,11 @@ var (
 	}
 )
 
+// TODO(ROX-30117): Remove this test when FlattenImageData feature flag is removed.
 func TestSplitAndMergeImage(t *testing.T) {
+	if features.FlattenImageData.Enabled() {
+		t.Skip("Skipping test - FlattenImageData is enabled")
+	}
 	image := &storage.Image{
 		Id: "sha",
 		Name: &storage.ImageName{

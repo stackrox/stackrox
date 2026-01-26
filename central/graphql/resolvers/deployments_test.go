@@ -13,7 +13,9 @@ import (
 	"github.com/stackrox/rox/central/views/imagecveflat"
 	imagesView "github.com/stackrox/rox/central/views/images"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/grpc/authz/allow"
+	imageUtils "github.com/stackrox/rox/pkg/images/utils"
 	"github.com/stackrox/rox/pkg/pointers"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/sac"
@@ -42,16 +44,31 @@ func (s *DeploymentResolversTestSuite) SetupSuite() {
 	s.ctx = loaders.WithLoaderContext(sac.WithAllAccess(context.Background()))
 	mockCtrl := gomock.NewController(s.T())
 	s.testDB = SetupTestPostgresConn(s.T())
-	imgDataStore := CreateTestImageV2Datastore(s.T(), s.testDB, mockCtrl)
-	resolver, _ := SetupTestResolver(s.T(),
-		CreateTestDeploymentDatastore(s.T(), s.testDB, mockCtrl, imgDataStore),
-		deploymentsView.NewDeploymentView(s.testDB.DB),
-		imagesView.NewImageView(s.testDB.DB),
-		imgDataStore,
-		CreateTestImageComponentV2Datastore(s.T(), s.testDB, mockCtrl),
-		imagecve.NewCVEView(s.testDB.DB),
-		imagecveflat.NewCVEFlatView(s.testDB.DB),
-	)
+	// TODO(ROX-30117): Remove conditional when FlattenImageData feature flag is removed.
+	var resolver *Resolver
+	if features.FlattenImageData.Enabled() {
+		imgV2DataStore := CreateTestImageV2Datastore(s.T(), s.testDB, mockCtrl)
+		resolver, _ = SetupTestResolver(s.T(),
+			CreateTestDeploymentDatastoreWithImageV2(s.T(), s.testDB, mockCtrl, imgV2DataStore),
+			deploymentsView.NewDeploymentView(s.testDB.DB),
+			imagesView.NewImageView(s.testDB.DB),
+			imgV2DataStore,
+			CreateTestImageComponentV2Datastore(s.T(), s.testDB, mockCtrl),
+			imagecve.NewCVEView(s.testDB.DB),
+			imagecveflat.NewCVEFlatView(s.testDB.DB),
+		)
+	} else {
+		imgDataStore := CreateTestImageDatastore(s.T(), s.testDB, mockCtrl)
+		resolver, _ = SetupTestResolver(s.T(),
+			CreateTestDeploymentDatastore(s.T(), s.testDB, mockCtrl, imgDataStore),
+			deploymentsView.NewDeploymentView(s.testDB.DB),
+			imagesView.NewImageView(s.testDB.DB),
+			imgDataStore,
+			CreateTestImageComponentV2Datastore(s.T(), s.testDB, mockCtrl),
+			imagecve.NewCVEView(s.testDB.DB),
+			imagecveflat.NewCVEFlatView(s.testDB.DB),
+		)
+	}
 	s.resolver = resolver
 
 	// Add Test Data.
@@ -60,8 +77,15 @@ func (s *DeploymentResolversTestSuite) SetupSuite() {
 		s.NoError(s.resolver.DeploymentDataStore.UpsertDeployment(s.ctx, deployment))
 	}
 	s.testImages = testImages()
-	for _, image := range testImages() {
-		s.NoError(s.resolver.ImageDataStore.UpsertImage(s.ctx, image))
+	// TODO(ROX-30117): Remove conditional when FlattenImageData feature flag is removed.
+	if features.FlattenImageData.Enabled() {
+		for _, image := range s.testImages {
+			s.NoError(s.resolver.ImageV2DataStore.UpsertImage(s.ctx, imageUtils.ConvertToV2(image)))
+		}
+	} else {
+		for _, image := range s.testImages {
+			s.NoError(s.resolver.ImageDataStore.UpsertImage(s.ctx, image))
+		}
 	}
 }
 

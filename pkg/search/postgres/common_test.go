@@ -7,6 +7,7 @@ import (
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
 	"github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/postgres/walker"
@@ -496,12 +497,13 @@ func TestCountQueries(t *testing.T) {
 func TestSelectQueries(t *testing.T) {
 
 	for _, c := range []struct {
-		desc          string
-		ctx           context.Context
-		q             *v1.Query
-		schema        *walker.Schema
-		expectedError string
-		expectedQuery string
+		desc                   string
+		ctx                    context.Context
+		q                      *v1.Query
+		schema                 *walker.Schema
+		expectedError          string
+		expectedQuery          string
+		expectedFlattenedQuery string // TODO(ROX-30117): Remove when FlattenImageData feature flag is removed.
 	}{
 		{
 			desc: "base schema; no select",
@@ -722,6 +724,15 @@ func TestSelectQueries(t *testing.T) {
 				"left join deployments_containers on images.Id = deployments_containers.Image_Id " +
 				"left join deployments on deployments_containers.deployments_Id = deployments.Id " +
 				"where ((deployments.PlatformComponent = $1 or deployments.PlatformComponent is null) and image_cves_v2.State = $2)",
+			expectedFlattenedQuery: "select image_cves_v2.CveBaseInfo_Cve as cve, " +
+				"distinct(image_cves_v2.Id) as cve_id, max(image_cves_v2.Cvss) as cvss_max, " +
+				"count(distinct(images_v2.Digest)) as image_sha_count " +
+				"from image_component_v2 " +
+				"inner join image_cves_v2 on image_component_v2.Id = image_cves_v2.ComponentId " +
+				"inner join images_v2 on image_component_v2.ImageIdV2 = images_v2.Id " +
+				"left join deployments_containers on images_v2.Id = deployments_containers.Image_IdV2 " +
+				"left join deployments on deployments_containers.deployments_Id = deployments.Id " +
+				"where ((deployments.PlatformComponent = $1 or deployments.PlatformComponent is null) and image_cves_v2.State = $2)",
 		},
 		{
 			desc: "select with multiple enum values with IN operator",
@@ -757,6 +768,9 @@ func TestSelectQueries(t *testing.T) {
 			}
 
 			expectedQuery := c.expectedQuery
+			if features.FlattenImageData.Enabled() && c.expectedFlattenedQuery != "" {
+				expectedQuery = c.expectedFlattenedQuery
+			}
 			actual := actualQ.AsSQL()
 			assert.Equal(t, expectedQuery, actual)
 		})

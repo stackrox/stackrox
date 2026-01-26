@@ -50,7 +50,7 @@ func (s *cveMatcherTestSuite) SetupTest() {
 	s.images = mockImagesDataStore.NewMockDataStore(s.mockCtrl)
 
 	var err error
-	s.cveMatcher, err = NewCVEMatcher(s.clusters, s.namespaces, s.images)
+	s.cveMatcher, err = NewCVEMatcher(s.clusters, s.namespaces, s.images, nil)
 	s.Require().NoError(err)
 }
 

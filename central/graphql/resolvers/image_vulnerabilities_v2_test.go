@@ -13,8 +13,10 @@ import (
 	imagesView "github.com/stackrox/rox/central/views/images"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/grpc/authz/allow"
+	imageUtils "github.com/stackrox/rox/pkg/images/utils"
 	"github.com/stackrox/rox/pkg/pointers"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/sac"
@@ -65,6 +67,7 @@ type GraphQLImageVulnerabilityV2TestSuite struct {
 	testDB   *pgtest.TestPostgres
 	resolver *Resolver
 
+	testImages     []*storage.Image
 	cveIDMap       map[string]string
 	componentIDMap map[string]string
 }
@@ -75,22 +78,44 @@ func (s *GraphQLImageVulnerabilityV2TestSuite) SetupSuite() {
 	s.testDB = pgtest.ForT(s.T())
 	vulnReqDatastore, err := TestVulnReqDatastore(s.T(), s.testDB)
 	s.Require().NoError(err)
-	resolver, _ := SetupTestResolver(s.T(),
-		imagesView.NewImageView(s.testDB.DB),
-		CreateTestImageV2Datastore(s.T(), s.testDB, mockCtrl),
-		CreateTestImageComponentV2Datastore(s.T(), s.testDB, mockCtrl),
-		CreateTestImageCVEV2Datastore(s.T(), s.testDB),
-		vulnReqDatastore,
-		imagecveflat.NewCVEFlatView(s.testDB.DB),
-		imagecomponentflat.NewComponentFlatView(s.testDB.DB),
-	)
+	// TODO(ROX-30117): Remove conditional when FlattenImageData feature flag is removed.
+	var resolver *Resolver
+	if features.FlattenImageData.Enabled() {
+		resolver, _ = SetupTestResolver(s.T(),
+			imagesView.NewImageView(s.testDB.DB),
+			CreateTestImageV2Datastore(s.T(), s.testDB, mockCtrl),
+			CreateTestImageComponentV2Datastore(s.T(), s.testDB, mockCtrl),
+			CreateTestImageCVEV2Datastore(s.T(), s.testDB),
+			vulnReqDatastore,
+			imagecveflat.NewCVEFlatView(s.testDB.DB),
+			imagecomponentflat.NewComponentFlatView(s.testDB.DB),
+		)
+	} else {
+		resolver, _ = SetupTestResolver(s.T(),
+			imagesView.NewImageView(s.testDB.DB),
+			CreateTestImageDatastore(s.T(), s.testDB, mockCtrl),
+			CreateTestImageComponentV2Datastore(s.T(), s.testDB, mockCtrl),
+			CreateTestImageCVEV2Datastore(s.T(), s.testDB),
+			vulnReqDatastore,
+			imagecveflat.NewCVEFlatView(s.testDB.DB),
+			imagecomponentflat.NewComponentFlatView(s.testDB.DB),
+		)
+	}
 	s.resolver = resolver
 
 	// Add Test Data to DataStores
-	testImages := testImages()
-	for _, image := range testImages {
-		err := s.resolver.ImageDataStore.UpsertImage(s.ctx, image)
-		s.NoError(err)
+	s.testImages = testImages()
+	// TODO(ROX-30117): Remove conditional when FlattenImageData feature flag is removed.
+	if features.FlattenImageData.Enabled() {
+		for _, image := range s.testImages {
+			err := s.resolver.ImageV2DataStore.UpsertImage(s.ctx, imageUtils.ConvertToV2(image))
+			s.NoError(err)
+		}
+	} else {
+		for _, image := range s.testImages {
+			err := s.resolver.ImageDataStore.UpsertImage(s.ctx, image)
+			s.NoError(err)
+		}
 	}
 
 	// Add test vulnerability exceptions
@@ -273,7 +298,10 @@ func (s *GraphQLImageVulnerabilityV2TestSuite) TestImageVulnerabilitiesFixedByVe
 func (s *GraphQLImageVulnerabilityV2TestSuite) TestImageVulnerabilitiesScoped() {
 	ctx := SetAuthorizerOverride(s.ctx, allow.Anonymous())
 
-	image := s.getImageResolver(ctx, "sha1")
+	imageID1 := s.getImageID(s.testImages[0])
+	imageID2 := s.getImageID(s.testImages[1])
+
+	image := s.getImageResolver(ctx, imageID1)
 	expected := int32(3)
 	expectedCVEs := []string{"cve-2019-1", "cve-2019-2", "cve-2018-1"}
 
@@ -292,7 +320,7 @@ func (s *GraphQLImageVulnerabilityV2TestSuite) TestImageVulnerabilitiesScoped() 
 	s.NoError(err)
 	checkVulnerabilityCounter(s.T(), counter, expected, 1, 1, 0, 1, 1)
 
-	image = s.getImageResolver(ctx, "sha2")
+	image = s.getImageResolver(ctx, imageID2)
 	expected = int32(5)
 	expectedCVEs = []string{"cve-2019-1", "cve-2019-2", "cve-2018-1", "cve-2017-1", "cve-2017-2"}
 
@@ -340,7 +368,8 @@ func (s *GraphQLImageVulnerabilityV2TestSuite) TestTopImageVulnerabilityUnscoped
 func (s *GraphQLImageVulnerabilityV2TestSuite) TestTopImageVulnerability() {
 	ctx := SetAuthorizerOverride(s.ctx, allow.Anonymous())
 
-	image := s.getImageResolver(ctx, "sha1")
+	imageID1 := s.getImageID(s.testImages[0])
+	image := s.getImageResolver(ctx, imageID1)
 
 	expected := graphql.ID(s.cveIDMap[cve231])
 	topVuln, err := image.TopImageVulnerability(ctx, RawQuery{})
@@ -351,13 +380,16 @@ func (s *GraphQLImageVulnerabilityV2TestSuite) TestTopImageVulnerability() {
 func (s *GraphQLImageVulnerabilityV2TestSuite) TestImageVulnerabilityImages() {
 	ctx := SetAuthorizerOverride(s.ctx, allow.Anonymous())
 
+	imageID1 := s.getImageID(s.testImages[0])
+	imageID2 := s.getImageID(s.testImages[1])
+
 	vuln := s.getImageVulnerabilityResolver(ctx, s.cveIDMap[cve111])
 
 	images, err := vuln.Images(ctx, PaginatedQuery{})
 	s.NoError(err)
 	s.Equal(2, len(images))
 	idList := getIDList(ctx, images)
-	s.ElementsMatch([]string{"sha1", "sha2"}, idList)
+	s.ElementsMatch([]string{imageID1, imageID2}, idList)
 
 	count, err := vuln.ImageCount(ctx, RawQuery{})
 	s.NoError(err)
@@ -369,7 +401,7 @@ func (s *GraphQLImageVulnerabilityV2TestSuite) TestImageVulnerabilityImages() {
 	s.NoError(err)
 	s.Equal(1, len(images))
 	idList = getIDList(ctx, images)
-	s.ElementsMatch([]string{"sha2"}, idList)
+	s.ElementsMatch([]string{imageID2}, idList)
 
 	count, err = vuln.ImageCount(ctx, RawQuery{})
 	s.NoError(err)
@@ -523,9 +555,10 @@ func (s *GraphQLImageVulnerabilityV2TestSuite) TestImageVulnerabilityExceptionCo
 
 func (s *GraphQLImageVulnerabilityV2TestSuite) TestImageVulnerabilityExceptionCountAllWithImageScope() {
 	ctx := SetAuthorizerOverride(s.ctx, allow.Anonymous())
+	imageID1 := s.getImageID(s.testImages[0])
 	ctx = scoped.Context(ctx, scoped.Scope{
-		IDs:   []string{"sha1"},
-		Level: v1.SearchCategory_IMAGES,
+		IDs:   []string{imageID1},
+		Level: s.getImagesSearchCategory(),
 	})
 	args := struct {
 		RequestStatus *[]*string
@@ -556,9 +589,10 @@ func (s *GraphQLImageVulnerabilityV2TestSuite) TestImageVulnerabilityExceptionCo
 func (s *GraphQLImageVulnerabilityV2TestSuite) TestImageVulnerabilityExceptionCountPendingWithImageScope() {
 	ctx := SetAuthorizerOverride(s.ctx, allow.Anonymous())
 	status := []*string{pointers.String(storage.RequestStatus_PENDING.String())}
+	imageID1 := s.getImageID(s.testImages[0])
 	ctx = scoped.Context(ctx, scoped.Scope{
-		IDs:   []string{"sha1"},
-		Level: v1.SearchCategory_IMAGES,
+		IDs:   []string{imageID1},
+		Level: s.getImagesSearchCategory(),
 	})
 	args := struct {
 		RequestStatus *[]*string
@@ -591,9 +625,10 @@ func (s *GraphQLImageVulnerabilityV2TestSuite) TestImageVulnerabilityExceptionCo
 func (s *GraphQLImageVulnerabilityV2TestSuite) TestImageVulnerabilityExceptionCountApprovedWithImageScope() {
 	ctx := SetAuthorizerOverride(s.ctx, allow.Anonymous())
 	status := []*string{pointers.String(storage.RequestStatus_APPROVED.String())}
+	imageID1 := s.getImageID(s.testImages[0])
 	ctx = scoped.Context(ctx, scoped.Scope{
-		IDs:   []string{"sha1"},
-		Level: v1.SearchCategory_IMAGES,
+		IDs:   []string{imageID1},
+		Level: s.getImagesSearchCategory(),
 	})
 	args := struct {
 		RequestStatus *[]*string
@@ -619,9 +654,10 @@ func (s *GraphQLImageVulnerabilityV2TestSuite) TestImageVulnerabilityExceptionCo
 func (s *GraphQLImageVulnerabilityV2TestSuite) TestImageVulnerabilityExceptionCountPendingUpdateWithImageScope() {
 	ctx := SetAuthorizerOverride(s.ctx, allow.Anonymous())
 	status := []*string{pointers.String(storage.RequestStatus_APPROVED_PENDING_UPDATE.String())}
+	imageID2 := s.getImageID(s.testImages[1])
 	ctx = scoped.Context(ctx, scoped.Scope{
-		IDs:   []string{"sha2"},
-		Level: v1.SearchCategory_IMAGES,
+		IDs:   []string{imageID2},
+		Level: s.getImagesSearchCategory(),
 	})
 	args := struct {
 		RequestStatus *[]*string
@@ -639,15 +675,29 @@ func (s *GraphQLImageVulnerabilityV2TestSuite) TestImageVulnerabilityExceptionCo
 func (s *GraphQLImageVulnerabilityV2TestSuite) TestImageVulnerabilityExceptionCountTagless() {
 	s.T().Skip("Need to figure this one out.")
 
-	taglessImage := testImages()[1]
+	taglessImage := s.testImages[1].CloneVT()
 	taglessImage.Id = "sha3"
 	taglessImage.Name.Tag = ""
-	err := s.resolver.ImageDataStore.UpsertImage(s.ctx, taglessImage)
-	s.NoError(err)
-	// Revert the upsert so that other tests are not affected.
-	defer func() {
-		s.NoError(s.resolver.ImageDataStore.DeleteImages(s.ctx, "sha3"))
-	}()
+	// TODO(ROX-30117): Remove conditional when FlattenImageData feature flag is removed.
+	var taglessImageID string
+	if features.FlattenImageData.Enabled() {
+		taglessImageV2 := imageUtils.ConvertToV2(taglessImage)
+		taglessImageID = taglessImageV2.GetId()
+		err := s.resolver.ImageV2DataStore.UpsertImage(s.ctx, taglessImageV2)
+		s.NoError(err)
+		defer func() {
+			s.NoError(s.resolver.ImageV2DataStore.DeleteImages(s.ctx, taglessImageID))
+		}()
+	} else {
+		taglessImageID = taglessImage.GetId()
+		err := s.resolver.ImageDataStore.UpsertImage(s.ctx, taglessImage)
+		s.NoError(err)
+		defer func() {
+			s.NoError(s.resolver.ImageDataStore.DeleteImages(s.ctx, taglessImageID))
+		}()
+	}
+
+	imageID1 := s.getImageID(s.testImages[0])
 
 	ctx := SetAuthorizerOverride(s.ctx, allow.Anonymous())
 	args := struct {
@@ -662,8 +712,8 @@ func (s *GraphQLImageVulnerabilityV2TestSuite) TestImageVulnerabilityExceptionCo
 	s.Equal(int32(1), count)
 
 	ctx = scoped.Context(ctx, scoped.Scope{
-		IDs:   []string{"sha1"},
-		Level: v1.SearchCategory_IMAGES,
+		IDs:   []string{imageID1},
+		Level: s.getImagesSearchCategory(),
 	})
 
 	vuln = s.getImageVulnerabilityResolver(ctx, "cve-2017-1#")
@@ -673,8 +723,8 @@ func (s *GraphQLImageVulnerabilityV2TestSuite) TestImageVulnerabilityExceptionCo
 
 	ctx = SetAuthorizerOverride(s.ctx, allow.Anonymous())
 	ctx = scoped.Context(ctx, scoped.Scope{
-		IDs:   []string{"sha3"},
-		Level: v1.SearchCategory_IMAGES,
+		IDs:   []string{taglessImageID},
+		Level: s.getImagesSearchCategory(),
 	})
 
 	// Deferral:
@@ -756,13 +806,31 @@ func (s *GraphQLImageVulnerabilityV2TestSuite) getIDMap() map[string]string {
 	}
 }
 
+// TODO(ROX-30117): Remove conditional when FlattenImageData feature flag is removed.
+func (s *GraphQLImageVulnerabilityV2TestSuite) getImageID(image *storage.Image) string {
+	if features.FlattenImageData.Enabled() {
+		return imageUtils.ConvertToV2(image).GetId()
+	}
+	return image.GetId()
+}
+
+// TODO(ROX-30117): Remove conditional when FlattenImageData feature flag is removed.
+func (s *GraphQLImageVulnerabilityV2TestSuite) getImagesSearchCategory() v1.SearchCategory {
+	if features.FlattenImageData.Enabled() {
+		return v1.SearchCategory_IMAGES_V2
+	}
+	return v1.SearchCategory_IMAGES
+}
+
 func (s *GraphQLImageVulnerabilityV2TestSuite) getComponentIDMap() map[string]string {
+	imageID1 := s.getImageID(s.testImages[0])
+	imageID2 := s.getImageID(s.testImages[1])
 	return map[string]string{
-		comp11: getTestComponentID(testImages()[0].GetScan().GetComponents()[0], "sha1", 0),
-		comp12: getTestComponentID(testImages()[1].GetScan().GetComponents()[0], "sha2", 0),
-		comp21: getTestComponentID(testImages()[0].GetScan().GetComponents()[1], "sha1", 1),
-		comp31: getTestComponentID(testImages()[0].GetScan().GetComponents()[2], "sha1", 2),
-		comp32: getTestComponentID(testImages()[1].GetScan().GetComponents()[1], "sha2", 1),
-		comp42: getTestComponentID(testImages()[1].GetScan().GetComponents()[2], "sha2", 2),
+		comp11: getTestComponentID(s.testImages[0].GetScan().GetComponents()[0], imageID1, 0),
+		comp12: getTestComponentID(s.testImages[1].GetScan().GetComponents()[0], imageID2, 0),
+		comp21: getTestComponentID(s.testImages[0].GetScan().GetComponents()[1], imageID1, 1),
+		comp31: getTestComponentID(s.testImages[0].GetScan().GetComponents()[2], imageID1, 2),
+		comp32: getTestComponentID(s.testImages[1].GetScan().GetComponents()[1], imageID2, 1),
+		comp42: getTestComponentID(s.testImages[1].GetScan().GetComponents()[2], imageID2, 2),
 	}
 }
