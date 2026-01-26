@@ -259,7 +259,7 @@ func discoverDnfMetadataStatusWithPaths(hostPath string, reposDirPaths []string,
 // Assumptions and behavior:
 //   - Uses the default DNF reposdir locations: /etc/yum.repos.d, /etc/yum/repos.d, /etc/distro.repos.d.
 //   - Returns true as soon as a *.repo file is found in any reposdir.
-//   - If all reposdirs are unreadable, returns an aggregated error describing each failure.
+//   - If reposdirs are unreadable, or contain no *.repo files, returns an aggregated error describing each failure.
 //   - There is no support for DNF 5 defaults currently.
 //   - Tested against DNF 4 defaults (libdnf ConfigMain.cpp):
 //     https://github.com/rpm-software-management/libdnf/blob/53839f5bd88f378e57a1f1671b3db48d29984e24/libdnf/conf/ConfigMain.cpp
@@ -272,7 +272,6 @@ func discoverDnfRepoFilePresence(hostPath string, reposDirPaths []string) (bool,
 	}
 
 	// Check for repo files in default reposdir locations.
-	foundAnyRepoDir := false
 	var repoDirErrs *multierror.Error
 	for _, reposDirPath := range reposDirPaths {
 		reposPath := hostPathFor(hostPath, reposDirPath)
@@ -282,19 +281,16 @@ func discoverDnfRepoFilePresence(hostPath string, reposDirPaths []string) (bool,
 			continue
 		}
 
-		foundAnyRepoDir = true
 		for _, entry := range repoEntries {
 			if !entry.IsDir() && strings.HasSuffix(entry.Name(), ".repo") {
 				return true, nil
 			}
 		}
+		repoDirErrs = multierror.Append(repoDirErrs, fmt.Errorf("no .repo files found in %q", reposPath))
+
 	}
 
-	if !foundAnyRepoDir {
-		return false, fmt.Errorf("failed to read repository directories: %w", repoDirErrs.ErrorOrNil())
-	}
-
-	return false, nil
+	return false, repoDirErrs.ErrorOrNil()
 }
 
 // discoverDnfCacheRepoDirPresence reports whether the DNF cache contains repo directories.

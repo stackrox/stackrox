@@ -120,6 +120,76 @@ func TestDiscoverOSAndVersion_MalformedOSRelease(t *testing.T) {
 	assert.Equal(t, "", osVersion)
 }
 
+func TestDiscoverDnfRepoFilePresence(t *testing.T) {
+	tests := map[string]struct {
+		setup            func(t *testing.T) (string, []string)
+		expectedFound    bool
+		expectedErrParts []string
+	}{
+		"should return true when repo file exists in reposdir": {
+			setup: func(t *testing.T) (string, []string) {
+				hostPath := t.TempDir()
+				reposDirPath := "/etc/yum.repos.d"
+				reposPath := hostPathFor(hostPath, reposDirPath)
+				require.NoError(t, os.MkdirAll(reposPath, 0750))
+				repoFilePath := filepath.Join(reposPath, "test.repo")
+				require.NoError(t, os.WriteFile(repoFilePath, []byte("content"), 0600))
+				return hostPath, []string{reposDirPath}
+			},
+			expectedFound: true,
+		},
+		"should return error when all reposdirs are unreadable": {
+			setup: func(t *testing.T) (string, []string) {
+				hostPath := t.TempDir()
+				return hostPath, []string{"/etc/yum.repos.d", "/etc/yum/repos.d"}
+			},
+			expectedFound:    false,
+			expectedErrParts: []string{"reading", "no such file or directory"},
+		},
+		"should return error when reposdirs are readable but no repo files exist": {
+			setup: func(t *testing.T) (string, []string) {
+				hostPath := t.TempDir()
+				reposDirPaths := []string{"/etc/yum.repos.d", "/etc/yum/repos.d"}
+				for _, reposDirPath := range reposDirPaths {
+					reposPath := hostPathFor(hostPath, reposDirPath)
+					require.NoError(t, os.MkdirAll(reposPath, 0750))
+					require.NoError(t, os.WriteFile(filepath.Join(reposPath, "not-a-repo.txt"), []byte("content"), 0600))
+				}
+				return hostPath, reposDirPaths
+			},
+			expectedFound:    false,
+			expectedErrParts: []string{"no .repo files found"},
+		},
+		"should return true when repo file exists even if other reposdir is missing": {
+			setup: func(t *testing.T) (string, []string) {
+				hostPath := t.TempDir()
+				reposDirPaths := []string{"/etc/yum.repos.d", "/etc/yum/repos.d"}
+				reposPath := hostPathFor(hostPath, reposDirPaths[0])
+				require.NoError(t, os.MkdirAll(reposPath, 0750))
+				require.NoError(t, os.WriteFile(filepath.Join(reposPath, "example.repo"), []byte("content"), 0600))
+				return hostPath, reposDirPaths
+			},
+			expectedFound: true,
+		},
+	}
+
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			hostPath, reposDirPaths := tt.setup(t)
+			found, err := discoverDnfRepoFilePresence(hostPath, reposDirPaths)
+			assert.Equal(t, tt.expectedFound, found)
+			if len(tt.expectedErrParts) == 0 {
+				assert.NoError(t, err)
+				return
+			}
+			require.Error(t, err)
+			for _, part := range tt.expectedErrParts {
+				assert.Contains(t, err.Error(), part)
+			}
+		})
+	}
+}
+
 func TestParseOSRelease_QuotedValues(t *testing.T) {
 	input := strings.NewReader(`# comment
 ID='rhel'
@@ -278,6 +348,7 @@ func TestDiscoverDnfMetadataStatus(t *testing.T) {
 		repoDirFiles   map[string][]string
 		cacheDirs      []string
 		expectedStatus v1.DnfMetadataStatus
+		expectedErrs   []string
 	}{
 		"should report available when repo file and cache dir exist": {
 			reposDirs:      []string{"yum.repos.d"},
@@ -309,7 +380,8 @@ func TestDiscoverDnfMetadataStatus(t *testing.T) {
 			reposDirs:      []string{"yum.repos.d"},
 			repoDirFiles:   map[string][]string{"yum.repos.d": {}},
 			cacheDirs:      []string{"rhel-9-for-x86_64-appstream-rpms-3dc6dc0880df5476"},
-			expectedStatus: v1.DnfMetadataStatus_UNAVAILABLE,
+			expectedStatus: v1.DnfMetadataStatus_DNF_METADATA_UNSPECIFIED,
+			expectedErrs:   []string{"no .repo files found"},
 		},
 		"should report unavailable when no cache dirs exist": {
 			reposDirs:      []string{"yum.repos.d"},
@@ -327,7 +399,8 @@ func TestDiscoverDnfMetadataStatus(t *testing.T) {
 			reposDirs:      []string{"yum.repos.d"},
 			repoDirFiles:   map[string][]string{"yum.repos.d": {}},
 			cacheDirs:      []string{},
-			expectedStatus: v1.DnfMetadataStatus_UNAVAILABLE,
+			expectedStatus: v1.DnfMetadataStatus_DNF_METADATA_UNSPECIFIED,
+			expectedErrs:   []string{"no .repo files found"},
 		},
 	}
 
@@ -358,7 +431,14 @@ func TestDiscoverDnfMetadataStatus(t *testing.T) {
 			}
 
 			dnfStatus, err := discoverDnfMetadataStatusWithPaths("", reposDirPaths, cacheDir)
-			assert.NoError(t, err)
+			if len(tt.expectedErrs) == 0 {
+				assert.NoError(t, err)
+			} else {
+				require.Error(t, err)
+				for _, expectedErr := range tt.expectedErrs {
+					assert.ErrorContains(t, err, expectedErr)
+				}
+			}
 			assert.Equal(t, tt.expectedStatus, dnfStatus)
 		})
 	}
@@ -377,7 +457,7 @@ func TestDiscoverDnfMetadataStatus_MissingDirs(t *testing.T) {
 			repoDirFiles:  map[string][]string{},
 			cacheDir:      "dnf",
 			setupCache:    func(path string) error { return os.MkdirAll(path, 0755) },
-			errorContains: "failed to read repository directories",
+			errorContains: "reading",
 		},
 		"should return error when cache dir is missing": {
 			reposDirs: []string{"yum.repos.d"},
