@@ -38,27 +38,26 @@ type roleManager struct {
 
 // generateTraitsWithExpiry creates traits for dynamically generated RBAC objects with an expiry time.
 // The expiry time determines when these objects are eligible for pruning by the garbage collector.
-func generateTraitsWithExpiry(expiresAt time.Time) *storage.Traits {
-	ts, _ := protocompat.ConvertTimeToTimestampOrError(expiresAt)
+func generateTraitsWithExpiry(expiresAt time.Time) (*storage.Traits, error) {
+	ts, err := protocompat.ConvertTimeToTimestampOrError(expiresAt)
 	return &storage.Traits{
 		Origin:    storage.Traits_DYNAMIC,
 		ExpiresAt: ts,
-	}
+	}, err
 }
 
 // createPermissionSet creates a dynamic permission set, granting the requested permissions.
-// The expiresAt parameter specifies when the permission set should expire and be eligible for pruning.
 // The returned information is the ID of the created permission set, or an error if any occurred
 // in the creation process.
 func (rm *roleManager) createPermissionSet(
 	ctx context.Context,
 	req *v1.GenerateTokenForPermissionsAndScopeRequest,
-	expiresAt time.Time,
+	traits *storage.Traits,
 ) (string, error) {
 	permissionSet := &storage.PermissionSet{
 		Description:      permissionSetDescription,
 		ResourceToAccess: make(map[string]storage.Access),
-		Traits:           generateTraitsWithExpiry(expiresAt),
+		Traits:           traits,
 	}
 	var b strings.Builder
 	permissions := req.GetPermissions()
@@ -100,18 +99,17 @@ func convertAccess(in v1.Access) storage.Access {
 }
 
 // createAccessScope creates a dynamic access scope, granting the requested scope.
-// The expiresAt parameter specifies when the access scope should expire and be eligible for pruning.
 // The returned information is the identifier of the created access scope,
 // or an error if any occurred in the creation process.
 func (rm *roleManager) createAccessScope(
 	ctx context.Context,
 	req *v1.GenerateTokenForPermissionsAndScopeRequest,
-	expiresAt time.Time,
+	traits *storage.Traits,
 ) (string, error) {
 	accessScope := &storage.SimpleAccessScope{
 		Description: accessScopeDescription,
 		Rules:       &storage.SimpleAccessScope_Rules{},
-		Traits:      generateTraitsWithExpiry(expiresAt),
+		Traits:      traits,
 	}
 	var b strings.Builder
 	fullAccessClusters := make([]string, 0)
@@ -161,20 +159,20 @@ func (rm *roleManager) createAccessScope(
 }
 
 // createRole creates a dynamic role, granting the requested permissions and scope.
-// The expiresAt parameter specifies when the role and its associated objects should expire
+// The expiresAt parameter specifies when the role and its associated objects should expire.
 // and be eligible for pruning by the garbage collector.
 // The returned information is the name of the created role, or an error if any occurred
 // in the creation process.
 func (rm *roleManager) createRole(
 	ctx context.Context,
 	req *v1.GenerateTokenForPermissionsAndScopeRequest,
-	expiresAt time.Time,
+	traits *storage.Traits,
 ) (string, error) {
-	permissionSetID, err := rm.createPermissionSet(ctx, req, expiresAt)
+	permissionSetID, err := rm.createPermissionSet(ctx, req, traits)
 	if err != nil {
 		return "", errors.Wrap(err, "creating permission set for role")
 	}
-	accessScopeID, err := rm.createAccessScope(ctx, req, expiresAt)
+	accessScopeID, err := rm.createAccessScope(ctx, req, traits)
 	if err != nil {
 		return "", errors.Wrap(err, "creating access scope for role")
 	}
@@ -183,7 +181,7 @@ func (rm *roleManager) createRole(
 		Description:     roleDescription,
 		PermissionSetId: permissionSetID,
 		AccessScopeId:   accessScopeID,
-		Traits:          generateTraitsWithExpiry(expiresAt),
+		Traits:          traits,
 	}
 	err = rm.roleStore.UpsertRole(ctx, resultRole)
 	if err != nil {

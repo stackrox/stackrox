@@ -23,7 +23,7 @@ import (
 var (
 	errDummy = errors.New("test error")
 
-	expectedExpiration = time.Date(1989, time.November, 9, 18, 10, 35, 987654321, time.UTC)
+	expectedExpiration = testExpiry.Add(300 * time.Second)
 )
 
 func testClock() time.Time {
@@ -67,11 +67,11 @@ func TestGetExpiresAt(t *testing.T) {
 		"valid input": {
 			input: &v1.GenerateTokenForPermissionsAndScopeRequest{
 				Lifetime: &durationpb.Duration{
-					Seconds: 300,
+					Seconds: int64(testExpiry.Second()),
 				},
 			},
 			expectsErr:         false,
-			expectedExpiration: expectedExpiration,
+			expectedExpiration: testExpiry,
 		},
 	} {
 		t.Run(name, func(it *testing.T) {

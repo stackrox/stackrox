@@ -23,6 +23,10 @@ import (
 
 const (
 	claimNameFormat = "Generated claims for role %s expiring at %s"
+
+	// rbacObjectsGraceExpiration expands expired RBAC objects lifetime to allow
+	// requests complete even if the token expires during requests handling.
+	rbacObjectsGraceExpiration = 2 * time.Minute
 )
 
 var (
@@ -40,6 +44,8 @@ var (
 			sac.ResourceScopeKeys(resources.Cluster),
 		),
 	)
+
+	errBadExpirationValue = errox.InvalidArgs.New("bad expiration timestamp")
 )
 
 type serviceImpl struct {
@@ -71,13 +77,18 @@ func (s *serviceImpl) GenerateTokenForPermissionsAndScope(
 	ctx context.Context,
 	req *v1.GenerateTokenForPermissionsAndScopeRequest,
 ) (*v1.GenerateTokenForPermissionsAndScopeResponse, error) {
-	// Calculate expiry first so we can set it on the RBAC objects
+	// Calculate expiry first so we can set it on the RBAC objects.
 	expiresAt, err := s.getExpiresAt(ctx, req)
 	if err != nil {
 		return nil, errors.Wrap(err, "getting expiration time")
 	}
-	// Create the role with the same expiry as the token, so pruning can clean it up
-	roleName, err := s.roleManager.createRole(ctx, req, expiresAt)
+	traits, err := generateTraitsWithExpiry(expiresAt.Add(rbacObjectsGraceExpiration))
+	if err != nil {
+		return nil, errBadExpirationValue.CausedBy(err)
+	}
+	// Create the role with the same expiry as the token, so pruning can clean
+	// it up.
+	roleName, err := s.roleManager.createRole(ctx, req, traits)
 	if err != nil {
 		return nil, errors.Wrap(err, "creating and storing target role")
 	}
