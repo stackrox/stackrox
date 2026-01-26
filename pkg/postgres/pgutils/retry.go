@@ -6,12 +6,9 @@ import (
 	"time"
 
 	"github.com/jackc/pgx/v5"
+	"github.com/stackrox/rox/pkg/env"
 )
 
-const (
-	interval = 5 * time.Second
-	timeout  = 5 * time.Minute
-)
 
 // Retry is used to specify how long to retry to successfully run a query with 1 return value
 // that fails with transient errors
@@ -52,7 +49,8 @@ func Retry3[T any, U any](ctx context.Context, fn func() (T, U, error)) (T, U, e
 	}
 
 	// Run query immediately
-	if val1, val2, err := fn(); err == nil || !IsTransientError(err) {
+	val1, val2, err := fn()
+	if err == nil || !IsTransientError(err) {
 		if err != nil && err != pgx.ErrNoRows {
 			log.Debugf("UNEXPECTED: found non-retryable error: %+v", err)
 			return ret1, ret2, fmt.Errorf("found non-retryable error: %w", err)
@@ -61,13 +59,17 @@ func Retry3[T any, U any](ctx context.Context, fn func() (T, U, error)) (T, U, e
 		return val1, val2, err
 	}
 
-	expirationTimer := time.NewTimer(timeout)
+	// If retries are disabled, fail fast after single attempt
+	if env.PostgresDisableQueryRetries.BooleanSetting() {
+		return ret1, ret2, err
+	}
+
+	expirationTimer := time.NewTimer(env.PostgresQueryRetryTimeout.DurationSetting())
 	defer expirationTimer.Stop()
 
-	intervalTicker := time.NewTicker(interval)
+	intervalTicker := time.NewTicker(env.PostgresQueryRetryInterval.DurationSetting())
 	defer intervalTicker.Stop()
 
-	var err error
 	for {
 		select {
 		case <-ctx.Done():
