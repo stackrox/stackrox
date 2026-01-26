@@ -81,8 +81,8 @@ spec:
                   enforcement:
                     description: |-
                       Set to Disabled to disable policy enforcement for the admission controller. This is not recommended.
-                      On new deployments starting with version 4.9, defaults to Enabled.
-                      On old deployments, defaults to Enabled if at least one of listenOnCreates or listenOnUpdates is true.
+                      On for upgrades to 4.9 from previous releases, defaults to Enabled only if at least one of listenOnCreates or listenOnUpdates is true.
+                      On new deployments starting with version 4.9, the default is: Enabled.
                     enum:
                     - Enabled
                     - Disabled
@@ -1687,10 +1687,14 @@ spec:
                     type: object
                   scannerComponent:
                     description: |-
-                      If you want to enable the Scanner V4 component set this to "AutoSense"
+                      If you want to enable the Scanner V4 component set this to "AutoSense".
+                      A value of "AutoSense" means that Scanner V4 should be installed,
+                      unless there is a Central resource in the same namespace.
+                      In that case typically a central Scanner V4 will be deployed as a component of Central.
+                      A value of "Disabled" means that Scanner V4 should not be installed.
                       If this field is not specified or set to "Default", the following defaulting takes place:
-                      * for new installations, Scanner V4 is enabled starting with ACS 4.8;
-                      * for upgrades to 4.8 from previous releases, Scanner V4 is disabled.
+                      * for upgrades to 4.8 from previous releases, the default is: Disabled;
+                      * for new installations starting with ACS 4.8, the default is: AutoSense.
                     enum:
                     - Default
                     - AutoSense
