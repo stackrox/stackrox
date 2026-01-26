@@ -165,6 +165,18 @@ func TestHostPathFor(t *testing.T) {
 			path:     "/var/cache/dnf",
 			expected: "/host/rootfs/var/cache/dnf",
 		},
+		{
+			name:     "Cleaned path removes dot segments",
+			hostPath: "/root/../host",
+			path:     "/var/lib/../cache//dnf/",
+			expected: "/host/var/cache/dnf",
+		},
+		{
+			name:     "Cleaned path collapses extra slashes",
+			hostPath: "/host//",
+			path:     "/etc/os-release",
+			expected: "/host/etc/os-release",
+		},
 	}
 
 	for _, tt := range tests {
@@ -173,6 +185,7 @@ func TestHostPathFor(t *testing.T) {
 		})
 	}
 }
+
 func TestDiscoverActivationStatus(t *testing.T) {
 	tests := []struct {
 		name           string
