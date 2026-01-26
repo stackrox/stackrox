@@ -7,11 +7,13 @@ import (
 	"github.com/quay/zlog"
 	"github.com/stackrox/rox/pkg/scannerv4/client"
 	"github.com/stackrox/rox/pkg/scannerv4/mappers"
+	"github.com/stackrox/rox/pkg/scannerv4/repositorytocpe"
 )
 
 // RemoteIndexer represents the interface offered by remote indexers.
 type RemoteIndexer interface {
 	ReportGetter
+	GetRepositoryToCPEMapping(ctx context.Context) (*repositorytocpe.MappingFile, error)
 	Close(context.Context) error
 }
 
@@ -59,4 +61,11 @@ func (r *remoteIndexer) GetIndexReport(ctx context.Context, hashID string, _ boo
 	ir.Success = resp.GetSuccess()
 	ir.Err = resp.GetErr()
 	return ir, true, nil
+}
+
+// GetRepositoryToCPEMapping fetches the repository-to-CPE mapping from the remote indexer.
+func (r *remoteIndexer) GetRepositoryToCPEMapping(ctx context.Context) (*repositorytocpe.MappingFile, error) {
+	ctx = zlog.ContextWithValues(ctx, "component", "scanner/backend/remoteIndexer.GetRepositoryToCPEMapping")
+	zlog.Info(ctx).Msg("fetching repo-to-CPE mapping from remote indexer")
+	return r.indexer.GetRepositoryToCPEMapping(ctx)
 }

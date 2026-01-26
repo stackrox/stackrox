@@ -487,6 +487,131 @@ func (x *StoreIndexReportResponse) GetStatus() string {
 	return ""
 }
 
+type GetRepositoryToCPEMappingRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetRepositoryToCPEMappingRequest) Reset() {
+	*x = GetRepositoryToCPEMappingRequest{}
+	mi := &file_internalapi_scanner_v4_indexer_service_proto_msgTypes[8]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetRepositoryToCPEMappingRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetRepositoryToCPEMappingRequest) ProtoMessage() {}
+
+func (x *GetRepositoryToCPEMappingRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_internalapi_scanner_v4_indexer_service_proto_msgTypes[8]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetRepositoryToCPEMappingRequest.ProtoReflect.Descriptor instead.
+func (*GetRepositoryToCPEMappingRequest) Descriptor() ([]byte, []int) {
+	return file_internalapi_scanner_v4_indexer_service_proto_rawDescGZIP(), []int{8}
+}
+
+type RepositoryCPEInfo struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Cpes          []string               `protobuf:"bytes,1,rep,name=cpes,proto3" json:"cpes,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *RepositoryCPEInfo) Reset() {
+	*x = RepositoryCPEInfo{}
+	mi := &file_internalapi_scanner_v4_indexer_service_proto_msgTypes[9]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *RepositoryCPEInfo) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*RepositoryCPEInfo) ProtoMessage() {}
+
+func (x *RepositoryCPEInfo) ProtoReflect() protoreflect.Message {
+	mi := &file_internalapi_scanner_v4_indexer_service_proto_msgTypes[9]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use RepositoryCPEInfo.ProtoReflect.Descriptor instead.
+func (*RepositoryCPEInfo) Descriptor() ([]byte, []int) {
+	return file_internalapi_scanner_v4_indexer_service_proto_rawDescGZIP(), []int{9}
+}
+
+func (x *RepositoryCPEInfo) GetCpes() []string {
+	if x != nil {
+		return x.Cpes
+	}
+	return nil
+}
+
+type GetRepositoryToCPEMappingResponse struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Maps repository names to their CPE information.
+	Mapping       map[string]*RepositoryCPEInfo `protobuf:"bytes,1,rep,name=mapping,proto3" json:"mapping,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetRepositoryToCPEMappingResponse) Reset() {
+	*x = GetRepositoryToCPEMappingResponse{}
+	mi := &file_internalapi_scanner_v4_indexer_service_proto_msgTypes[10]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetRepositoryToCPEMappingResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetRepositoryToCPEMappingResponse) ProtoMessage() {}
+
+func (x *GetRepositoryToCPEMappingResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_internalapi_scanner_v4_indexer_service_proto_msgTypes[10]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetRepositoryToCPEMappingResponse.ProtoReflect.Descriptor instead.
+func (*GetRepositoryToCPEMappingResponse) Descriptor() ([]byte, []int) {
+	return file_internalapi_scanner_v4_indexer_service_proto_rawDescGZIP(), []int{10}
+}
+
+func (x *GetRepositoryToCPEMappingResponse) GetMapping() map[string]*RepositoryCPEInfo {
+	if x != nil {
+		return x.Mapping
+	}
+	return nil
+}
+
 var File_internalapi_scanner_v4_indexer_service_proto protoreflect.FileDescriptor
 
 const file_internalapi_scanner_v4_indexer_service_proto_rawDesc = "" +
@@ -518,13 +643,22 @@ const file_internalapi_scanner_v4_indexer_service_proto_rawDesc = "" +
 	"\x0findexer_version\x18\x02 \x01(\tR\x0eindexerVersion\x120\n" +
 	"\bcontents\x18\x03 \x01(\v2\x14.scanner.v4.ContentsR\bcontents\"2\n" +
 	"\x18StoreIndexReportResponse\x12\x16\n" +
-	"\x06status\x18\x01 \x01(\tR\x06status2\xc1\x03\n" +
+	"\x06status\x18\x01 \x01(\tR\x06status\"\"\n" +
+	" GetRepositoryToCPEMappingRequest\"'\n" +
+	"\x11RepositoryCPEInfo\x12\x12\n" +
+	"\x04cpes\x18\x01 \x03(\tR\x04cpes\"\xd4\x01\n" +
+	"!GetRepositoryToCPEMappingResponse\x12T\n" +
+	"\amapping\x18\x01 \x03(\v2:.scanner.v4.GetRepositoryToCPEMappingResponse.MappingEntryR\amapping\x1aY\n" +
+	"\fMappingEntry\x12\x10\n" +
+	"\x03key\x18\x01 \x01(\tR\x03key\x123\n" +
+	"\x05value\x18\x02 \x01(\v2\x1d.scanner.v4.RepositoryCPEInfoR\x05value:\x028\x012\xbb\x04\n" +
 	"\aIndexer\x12R\n" +
 	"\x11CreateIndexReport\x12$.scanner.v4.CreateIndexReportRequest\x1a\x17.scanner.v4.IndexReport\x12L\n" +
 	"\x0eGetIndexReport\x12!.scanner.v4.GetIndexReportRequest\x1a\x17.scanner.v4.IndexReport\x12\\\n" +
 	"\x16GetOrCreateIndexReport\x12).scanner.v4.GetOrCreateIndexReportRequest\x1a\x17.scanner.v4.IndexReport\x12W\n" +
 	"\x0eHasIndexReport\x12!.scanner.v4.HasIndexReportRequest\x1a\".scanner.v4.HasIndexReportResponse\x12]\n" +
-	"\x10StoreIndexReport\x12#.scanner.v4.StoreIndexReportRequest\x1a$.scanner.v4.StoreIndexReportResponseB\x1dZ\x1b./internalapi/scanner/v4;v4b\x06proto3"
+	"\x10StoreIndexReport\x12#.scanner.v4.StoreIndexReportRequest\x1a$.scanner.v4.StoreIndexReportResponse\x12x\n" +
+	"\x19GetRepositoryToCPEMapping\x12,.scanner.v4.GetRepositoryToCPEMappingRequest\x1a-.scanner.v4.GetRepositoryToCPEMappingResponseB\x1dZ\x1b./internalapi/scanner/v4;v4b\x06proto3"
 
 var (
 	file_internalapi_scanner_v4_indexer_service_proto_rawDescOnce sync.Once
@@ -538,38 +672,46 @@ func file_internalapi_scanner_v4_indexer_service_proto_rawDescGZIP() []byte {
 	return file_internalapi_scanner_v4_indexer_service_proto_rawDescData
 }
 
-var file_internalapi_scanner_v4_indexer_service_proto_msgTypes = make([]protoimpl.MessageInfo, 8)
+var file_internalapi_scanner_v4_indexer_service_proto_msgTypes = make([]protoimpl.MessageInfo, 12)
 var file_internalapi_scanner_v4_indexer_service_proto_goTypes = []any{
-	(*ContainerImageLocator)(nil),         // 0: scanner.v4.ContainerImageLocator
-	(*CreateIndexReportRequest)(nil),      // 1: scanner.v4.CreateIndexReportRequest
-	(*GetIndexReportRequest)(nil),         // 2: scanner.v4.GetIndexReportRequest
-	(*HasIndexReportRequest)(nil),         // 3: scanner.v4.HasIndexReportRequest
-	(*HasIndexReportResponse)(nil),        // 4: scanner.v4.HasIndexReportResponse
-	(*GetOrCreateIndexReportRequest)(nil), // 5: scanner.v4.GetOrCreateIndexReportRequest
-	(*StoreIndexReportRequest)(nil),       // 6: scanner.v4.StoreIndexReportRequest
-	(*StoreIndexReportResponse)(nil),      // 7: scanner.v4.StoreIndexReportResponse
-	(*Contents)(nil),                      // 8: scanner.v4.Contents
-	(*IndexReport)(nil),                   // 9: scanner.v4.IndexReport
+	(*ContainerImageLocator)(nil),             // 0: scanner.v4.ContainerImageLocator
+	(*CreateIndexReportRequest)(nil),          // 1: scanner.v4.CreateIndexReportRequest
+	(*GetIndexReportRequest)(nil),             // 2: scanner.v4.GetIndexReportRequest
+	(*HasIndexReportRequest)(nil),             // 3: scanner.v4.HasIndexReportRequest
+	(*HasIndexReportResponse)(nil),            // 4: scanner.v4.HasIndexReportResponse
+	(*GetOrCreateIndexReportRequest)(nil),     // 5: scanner.v4.GetOrCreateIndexReportRequest
+	(*StoreIndexReportRequest)(nil),           // 6: scanner.v4.StoreIndexReportRequest
+	(*StoreIndexReportResponse)(nil),          // 7: scanner.v4.StoreIndexReportResponse
+	(*GetRepositoryToCPEMappingRequest)(nil),  // 8: scanner.v4.GetRepositoryToCPEMappingRequest
+	(*RepositoryCPEInfo)(nil),                 // 9: scanner.v4.RepositoryCPEInfo
+	(*GetRepositoryToCPEMappingResponse)(nil), // 10: scanner.v4.GetRepositoryToCPEMappingResponse
+	nil,                 // 11: scanner.v4.GetRepositoryToCPEMappingResponse.MappingEntry
+	(*Contents)(nil),    // 12: scanner.v4.Contents
+	(*IndexReport)(nil), // 13: scanner.v4.IndexReport
 }
 var file_internalapi_scanner_v4_indexer_service_proto_depIdxs = []int32{
-	0, // 0: scanner.v4.CreateIndexReportRequest.container_image:type_name -> scanner.v4.ContainerImageLocator
-	0, // 1: scanner.v4.GetOrCreateIndexReportRequest.container_image:type_name -> scanner.v4.ContainerImageLocator
-	8, // 2: scanner.v4.StoreIndexReportRequest.contents:type_name -> scanner.v4.Contents
-	1, // 3: scanner.v4.Indexer.CreateIndexReport:input_type -> scanner.v4.CreateIndexReportRequest
-	2, // 4: scanner.v4.Indexer.GetIndexReport:input_type -> scanner.v4.GetIndexReportRequest
-	5, // 5: scanner.v4.Indexer.GetOrCreateIndexReport:input_type -> scanner.v4.GetOrCreateIndexReportRequest
-	3, // 6: scanner.v4.Indexer.HasIndexReport:input_type -> scanner.v4.HasIndexReportRequest
-	6, // 7: scanner.v4.Indexer.StoreIndexReport:input_type -> scanner.v4.StoreIndexReportRequest
-	9, // 8: scanner.v4.Indexer.CreateIndexReport:output_type -> scanner.v4.IndexReport
-	9, // 9: scanner.v4.Indexer.GetIndexReport:output_type -> scanner.v4.IndexReport
-	9, // 10: scanner.v4.Indexer.GetOrCreateIndexReport:output_type -> scanner.v4.IndexReport
-	4, // 11: scanner.v4.Indexer.HasIndexReport:output_type -> scanner.v4.HasIndexReportResponse
-	7, // 12: scanner.v4.Indexer.StoreIndexReport:output_type -> scanner.v4.StoreIndexReportResponse
-	8, // [8:13] is the sub-list for method output_type
-	3, // [3:8] is the sub-list for method input_type
-	3, // [3:3] is the sub-list for extension type_name
-	3, // [3:3] is the sub-list for extension extendee
-	0, // [0:3] is the sub-list for field type_name
+	0,  // 0: scanner.v4.CreateIndexReportRequest.container_image:type_name -> scanner.v4.ContainerImageLocator
+	0,  // 1: scanner.v4.GetOrCreateIndexReportRequest.container_image:type_name -> scanner.v4.ContainerImageLocator
+	12, // 2: scanner.v4.StoreIndexReportRequest.contents:type_name -> scanner.v4.Contents
+	11, // 3: scanner.v4.GetRepositoryToCPEMappingResponse.mapping:type_name -> scanner.v4.GetRepositoryToCPEMappingResponse.MappingEntry
+	9,  // 4: scanner.v4.GetRepositoryToCPEMappingResponse.MappingEntry.value:type_name -> scanner.v4.RepositoryCPEInfo
+	1,  // 5: scanner.v4.Indexer.CreateIndexReport:input_type -> scanner.v4.CreateIndexReportRequest
+	2,  // 6: scanner.v4.Indexer.GetIndexReport:input_type -> scanner.v4.GetIndexReportRequest
+	5,  // 7: scanner.v4.Indexer.GetOrCreateIndexReport:input_type -> scanner.v4.GetOrCreateIndexReportRequest
+	3,  // 8: scanner.v4.Indexer.HasIndexReport:input_type -> scanner.v4.HasIndexReportRequest
+	6,  // 9: scanner.v4.Indexer.StoreIndexReport:input_type -> scanner.v4.StoreIndexReportRequest
+	8,  // 10: scanner.v4.Indexer.GetRepositoryToCPEMapping:input_type -> scanner.v4.GetRepositoryToCPEMappingRequest
+	13, // 11: scanner.v4.Indexer.CreateIndexReport:output_type -> scanner.v4.IndexReport
+	13, // 12: scanner.v4.Indexer.GetIndexReport:output_type -> scanner.v4.IndexReport
+	13, // 13: scanner.v4.Indexer.GetOrCreateIndexReport:output_type -> scanner.v4.IndexReport
+	4,  // 14: scanner.v4.Indexer.HasIndexReport:output_type -> scanner.v4.HasIndexReportResponse
+	7,  // 15: scanner.v4.Indexer.StoreIndexReport:output_type -> scanner.v4.StoreIndexReportResponse
+	10, // 16: scanner.v4.Indexer.GetRepositoryToCPEMapping:output_type -> scanner.v4.GetRepositoryToCPEMappingResponse
+	11, // [11:17] is the sub-list for method output_type
+	5,  // [5:11] is the sub-list for method input_type
+	5,  // [5:5] is the sub-list for extension type_name
+	5,  // [5:5] is the sub-list for extension extendee
+	0,  // [0:5] is the sub-list for field type_name
 }
 
 func init() { file_internalapi_scanner_v4_indexer_service_proto_init() }
@@ -591,7 +733,7 @@ func file_internalapi_scanner_v4_indexer_service_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_internalapi_scanner_v4_indexer_service_proto_rawDesc), len(file_internalapi_scanner_v4_indexer_service_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   8,
+			NumMessages:   12,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
