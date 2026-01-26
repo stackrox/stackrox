@@ -33,7 +33,6 @@ func setupCentralCapsForTest(t *testing.T) {
 	})
 }
 
-
 func TestValidateRequest(t *testing.T) {
 	tests := []struct {
 		name             string
