@@ -3,39 +3,29 @@ import type { ScanComponent } from 'types/scanComponent.proto';
 import type { SearchQueryOptions } from 'types/search';
 import { buildNestedRawQueryParams } from './ComplianceCommon';
 
+type VirtualMachineState = 'UNKNOWN' | 'STOPPED' | 'RUNNING';
+
 export type VirtualMachine = {
     id: string;
     namespace: string;
     name: string;
     clusterId: string;
     clusterName: string;
-    facts: Record<string, string>;
+    facts?: Record<string, string>;
     scan?: VirtualMachineScan;
     lastUpdated: string; // ISO 8601 date string
+    vsockCid: number;
+    state: VirtualMachineState;
 };
 
 type VirtualMachineScan = {
-    scannerVersion: string;
     scanTime: string; // ISO 8601 date string
+    operatingSystem: string;
     components: ScanComponent[];
-    dataSource: DataSource;
     notes: VirtualMachineScanNote[];
 };
 
-type VirtualMachineScanNote =
-    | 'UNSET'
-    | 'OS_UNAVAILABLE'
-    | 'PARTIAL_SCAN_DATA'
-    | 'OS_CVES_UNAVAILABLE'
-    | 'OS_CVES_STALE'
-    | 'LANGUAGE_CVES_UNAVAILABLE'
-    | 'CERTIFIED_RHEL_SCAN_UNAVAILABLE';
-
-type DataSource = {
-    id: string;
-    name: string;
-    mirror: string;
-};
+type VirtualMachineScanNote = 'UNSET' | 'OS_UNKNOWN' | 'OS_UNSUPPORTED';
 
 export type ListVirtualMachinesResponse = {
     virtualMachines: VirtualMachine[];
