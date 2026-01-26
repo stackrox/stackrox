@@ -134,6 +134,7 @@ func BenchmarkPruneOrphanedFlowsForDeployment(b *testing.B) {
 	b.Run("1000 flows to be pruned", benchmarkPruneOrphanedFlowsForDeployment(flowStore, eStore, fixtureconsts.Deployment1, 1000))
 	b.Run("10000 flows to be pruned", benchmarkPruneOrphanedFlowsForDeployment(flowStore, eStore, fixtureconsts.Deployment1, 10000))
 	b.Run("100000 flows to be pruned", benchmarkPruneOrphanedFlowsForDeployment(flowStore, eStore, fixtureconsts.Deployment1, 100000))
+	b.Run("900000 flows to be pruned", benchmarkPruneOrphanedFlowsForDeployment(flowStore, eStore, fixtureconsts.Deployment1, 900000))
 }
 
 func BenchmarkRemoveOrphanedFlows(b *testing.B) {
@@ -160,6 +161,7 @@ func BenchmarkRemoveOrphanedFlows(b *testing.B) {
 
 	// 1 deployment and 100000 entities. Simultaneously pruning and adding flows and entities
 	b.Run("100000 flows and 100000 entities to be pruned and added simultaneously", benchmarkRemoveOrphanedFlowsWhileAddingFlows(flowStore, eStore, fixtureconsts.Deployment1, 1, 100000))
+	b.Run("900000 flows and 900000 entities to be pruned and added simultaneously", benchmarkRemoveOrphanedFlowsWhileAddingFlows(flowStore, eStore, fixtureconsts.Deployment1, 1, 900000))
 }
 
 func BenchmarkGetFlowsForDeployment(b *testing.B) {
