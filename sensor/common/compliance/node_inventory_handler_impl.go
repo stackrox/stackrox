@@ -148,6 +148,12 @@ func (c *nodeInventoryHandlerImpl) processSensorACK(sensorAck *central.SensorACK
 	log.Debugf("Received SensorACK message: type=%s, action=%s, resource_id=%s, reason=%s",
 		sensorAck.GetMessageType(), sensorAck.GetAction(), sensorAck.GetResourceId(), sensorAck.GetReason())
 
+	metrics.ObserveNodeScanningAck(sensorAck.GetResourceId(),
+		sensorAck.GetAction().String(),
+		sensorAck.GetMessageType().String(),
+		metrics.AckOperationReceive,
+		"", metrics.AckOriginSensor)
+
 	// Only handle node-related message types - all others are handled by their respective handlers
 	var messageType sensor.MsgToCompliance_ComplianceACK_MessageType
 	switch sensorAck.GetMessageType() {
@@ -350,9 +356,10 @@ func (c *nodeInventoryHandlerImpl) sendComplianceAckToCompliance(
 	messageType sensor.MsgToCompliance_ComplianceACK_MessageType,
 	reason string,
 ) {
-	sent := false
 	select {
 	case <-c.stopper.Flow().StopRequested():
+		log.Debugf("Skipped sending ComplianceACK (stop requested): type=%s, action=%s, resource_id=%s, reason=%s",
+			messageType, action, resourceID, reason)
 	case c.toCompliance <- common.MessageToComplianceWithAddress{
 		Msg: &sensor.MsgToCompliance{
 			Msg: &sensor.MsgToCompliance_ComplianceAck{
@@ -367,14 +374,18 @@ func (c *nodeInventoryHandlerImpl) sendComplianceAckToCompliance(
 		Hostname:  resourceID, // For node-based messages, resourceID is the node name
 		Broadcast: resourceID == "",
 	}:
-		sent = true
-	}
-	if sent {
 		log.Debugf("Sent ComplianceACK to Compliance: type=%s, action=%s, resource_id=%s, reason=%s",
 			messageType, action, resourceID, reason)
-	} else {
-		log.Debugf("Skipped sending ComplianceACK (stop requested): type=%s, action=%s, resource_id=%s, reason=%s",
-			messageType, action, resourceID, reason)
+
+		// Record old metric for compatiblity.
+		// Note the new 'reason' is set in Central and is a string, not an enum, thus hardcoding here to 'forward'.
+		// The new metric for the SensorACK records the reason fully (as a string).
+		metrics.ObserveNodeScanningAck(resourceID,
+			action.String(),
+			messageType.String(),
+			metrics.AckOperationSend,
+			metrics.AckReasonForwardingFromCentral,
+			metrics.AckOriginSensor)
 	}
 }
 
