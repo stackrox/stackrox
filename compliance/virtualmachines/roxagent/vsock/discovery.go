@@ -61,10 +61,10 @@ func DiscoverVMData(hostPath string) *v1.DiscoveredData {
 	// support for other activation mechanisms.
 	activationStatus, err := discoverActivationStatusWithPath(hostPathFor(hostPath, entitlementDirPath))
 	if err != nil {
-		log.Warnf("Failed to discover activation status: %v", err)
-	} else {
-		result.ActivationStatus = activationStatus
+		log.Warnf("There were issues discovering activation status: %v", err)
 	}
+	// Some errors are of a warning nature, so we still set the discovery result.
+	result.ActivationStatus = activationStatus
 
 	// Discover DNF metadata status.
 	dnfStatus, err := discoverDnfMetadataStatusWithPaths(
@@ -73,10 +73,10 @@ func DiscoverVMData(hostPath string) *v1.DiscoveredData {
 		dnfCacheDirPath,
 	)
 	if err != nil {
-		log.Warnf("Failed to discover DNF metadata status: %v", err)
-	} else {
-		result.DnfMetadataStatus = dnfStatus
+		log.Warnf("There were issues discovering DNF metadata status: %v", err)
 	}
+	// Some errors are of a warning nature, so we still set the discovery result.
+	result.DnfMetadataStatus = dnfStatus
 
 	return result
 }
