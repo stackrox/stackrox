@@ -234,9 +234,8 @@ func vulnerabilities(vulnerabilities map[string]*v4.VulnerabilityReport_Vulnerab
 //   - Equality comparisons
 //   - Storage/retrieval as a database key
 //
-// The datasource will NOT be populated for Red Hat sourced vulnerabilities to discourage
-// usage given additional fields are required to represent their uniqueness that are not currently
-// exposed to Scanner V4 clients.
+// For Red Hat vulns the product (repo, cpe, etc.) is also needed to uniquely represent the
+// vuln which is NOT included in the returned datasource.
 //
 // Examples:
 //   - OS vulnerabilities: "updater::os" (e.g., "debian-bookworm-updater::debian:12")
@@ -245,11 +244,6 @@ func vulnerabilities(vulnerabilities map[string]*v4.VulnerabilityReport_Vulnerab
 // When this format changes or ClairCore updater names change, a database migration may be required.
 func vulnDataSource(ccVuln *v4.VulnerabilityReport_Vulnerability, os string) string {
 	if ccVuln.GetUpdater() == "" {
-		return ""
-	}
-
-	// Do not populate datasource if vuln comes from Red Hat.
-	if strings.HasPrefix(ccVuln.GetUpdater(), "rhel") {
 		return ""
 	}
 
