@@ -29,5 +29,4 @@ export type FileOperation =
     | 'RENAME'
     | 'PERMISSION_CHANGE'
     | 'OWNERSHIP_CHANGE'
-    | 'WRITE'
     | 'OPEN';
