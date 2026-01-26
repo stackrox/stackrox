@@ -9,7 +9,6 @@ import (
 	"github.com/stackrox/rox/pkg/env"
 )
 
-
 // Retry is used to specify how long to retry to successfully run a query with 1 return value
 // that fails with transient errors
 func Retry(ctx context.Context, fn func() error) error {
