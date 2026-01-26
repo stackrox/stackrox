@@ -22,7 +22,7 @@ const (
 )
 
 func RunDaemon(ctx context.Context, cfg *common.Config, client *vsock.Client) error {
-	if err := randomDelay(ctx, cfg.MaxInitialReportDelay); err != nil {
+	if err := applyRandomDelay(ctx, cfg.MaxInitialReportDelay); err != nil {
 		return fmt.Errorf("delaying initial index: %w", err)
 	}
 
