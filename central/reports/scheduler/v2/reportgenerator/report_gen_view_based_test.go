@@ -60,7 +60,7 @@ func (s *ViewBasedReportingTestSuite) SetupTest() {
 	s.mockCtrl = gomock.NewController(s.T())
 
 	// Create data stores based on feature flag
-	imageDataStore := resolvers.CreateTestImageV2Datastore(s.T(), s.testDB, s.mockCtrl)
+	imageDataStore := resolvers.CreateTestImageDatastore(s.T(), s.testDB, s.mockCtrl)
 	s.resolver, _ = resolvers.SetupTestResolver(s.T(),
 		imagesView.NewImageView(s.testDB.DB),
 		imageDataStore,

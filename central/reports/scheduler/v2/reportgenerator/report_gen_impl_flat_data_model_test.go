@@ -65,7 +65,7 @@ func (s *NewDataModelEnhancedReportingTestSuite) SetupSuite() {
 	s.testDB = pgtest.ForT(s.T())
 
 	// set up tables
-	imageDataStore := resolvers.CreateTestImageV2Datastore(s.T(), s.testDB, mockCtrl)
+	imageDataStore := resolvers.CreateTestImageDatastore(s.T(), s.testDB, mockCtrl)
 	s.watchedImageDatastore = watchedImageDS.GetTestPostgresDataStore(s.T(), s.testDB.DB)
 	resolver, schema := resolvers.SetupTestResolver(s.T(),
 		imagesView.NewImageView(s.testDB.DB),
