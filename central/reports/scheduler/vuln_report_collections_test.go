@@ -20,6 +20,7 @@ import (
 	"github.com/stackrox/rox/central/views/imagecveflat"
 	imagesView "github.com/stackrox/rox/central/views/images"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/grpc/authz/allow"
 	types2 "github.com/stackrox/rox/pkg/images/types"
@@ -34,7 +35,11 @@ import (
 	"go.uber.org/mock/gomock"
 )
 
+// TODO(ROX-30117): Remove this test when FlattenImageData feature flag is removed.
 func TestReportingWithCollections(t *testing.T) {
+	if features.FlattenImageData.Enabled() {
+		t.Skip("Skipping test - FlattenImageData is enabled")
+	}
 	suite.Run(t, new(ReportingWithCollectionsTestSuite))
 }
 
@@ -64,7 +69,7 @@ func (s *ReportingWithCollectionsTestSuite) SetupSuite() {
 	mockCtrl := gomock.NewController(s.T())
 	s.testDB = resolvers.SetupTestPostgresConn(s.T())
 
-	imgDataStore := resolvers.CreateTestImageV2Datastore(s.T(), s.testDB, mockCtrl)
+	imgDataStore := resolvers.CreateTestImageDatastore(s.T(), s.testDB, mockCtrl)
 	s.resolver, s.schema = resolvers.SetupTestResolver(s.T(),
 		imgDataStore,
 		imagesView.NewImageView(s.testDB.DB),
