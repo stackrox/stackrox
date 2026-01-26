@@ -907,7 +907,7 @@ func (d *detectorImpl) processFileAccess() {
 				continue
 			}
 
-			log.Debug("%d violations for '%v' (%s)", len(alerts), item.Access.GetFile().GetEffectivePath(), item.Access.GetOperation())
+			log.Debugf("%d violations for '%v' (%s)", len(alerts), item.Access.GetFile().GetEffectivePath(), item.Access.GetOperation())
 			alertResults := &central.AlertResults{
 				DeploymentId: item.Access.GetProcess().GetDeploymentId(),
 				Alerts:       alerts,
