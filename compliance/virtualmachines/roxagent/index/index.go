@@ -81,7 +81,6 @@ func runIndexer(ctx context.Context, cfg *common.Config) (*v4.IndexReport, error
 }
 
 func randomDelay(ctx context.Context, maxDelay time.Duration) error {
-
 	if maxDelay <= 0 {
 		return nil
 	}
