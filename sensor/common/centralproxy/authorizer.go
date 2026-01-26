@@ -90,35 +90,13 @@ func formatForbiddenErr(user, verb, resource, group, namespace string) error {
 	)
 }
 
-// authorize extracts authentication information from the request and verifies permissions.
-// It validates the bearer token and checks if the user has get and list permissions
-// for deployment-like resources in the specified namespace (or cluster-wide if no namespace).
-func (a *k8sAuthorizer) authorize(ctx context.Context, r *http.Request) error {
+// authenticate validates the bearer token using TokenReview and returns user information.
+func (a *k8sAuthorizer) authenticate(ctx context.Context, r *http.Request) (*authenticationv1.UserInfo, error) {
 	token, err := extractBearerToken(r)
 	if err != nil {
-		return err
+		return nil, err
 	}
-
-	userInfo, err := a.validateToken(ctx, token)
-	if err != nil {
-		return err
-	}
-
-	namespace := r.Header.Get(stackroxNamespaceHeader)
-
-	for _, resource := range a.resourcesToCheck {
-		for _, verb := range a.verbsToCheck {
-			allowed, err := a.performSubjectAccessReview(ctx, userInfo, verb, namespace, resource)
-			if err != nil {
-				return pkghttputil.Errorf(http.StatusInternalServerError, "checking %s permission for %s: %v", verb, resource.Resource, err)
-			}
-			if !allowed {
-				return formatForbiddenErr(userInfo.Username, verb, resource.Resource, resource.Group, namespace)
-			}
-		}
-	}
-
-	return nil
+	return a.validateToken(ctx, token)
 }
 
 func extractBearerToken(r *http.Request) (string, error) {
@@ -160,6 +138,35 @@ func (a *k8sAuthorizer) validateToken(ctx context.Context, token string) (*authe
 	return &result.Status.User, nil
 }
 
+// authorize checks if the authenticated user has required permissions.
+// Authorization behavior is determined by the namespace header:
+//   - Empty: No SubjectAccessReview and minimal rox token with empty access scope.
+//   - Specific namespace: SubjectAccessReview for the namespace and rox token with
+//     access scope limited to the namespace.
+//   - FullClusterAccessScope ("*"): SubjectAccessReview for all namespaces and rox token
+//     with cluster-wide access scope.
+func (a *k8sAuthorizer) authorize(ctx context.Context, userInfo *authenticationv1.UserInfo, r *http.Request) error {
+	namespace := r.Header.Get(stackroxNamespaceHeader)
+	// Skip authorization if the namespace header is empty or not set.
+	if namespace == "" {
+		return nil
+	}
+
+	for _, resource := range a.resourcesToCheck {
+		for _, verb := range a.verbsToCheck {
+			allowed, err := a.performSubjectAccessReview(ctx, userInfo, verb, namespace, resource)
+			if err != nil {
+				return pkghttputil.Errorf(http.StatusInternalServerError, "checking %s permission for %s: %v", verb, resource.Resource, err)
+			}
+			if !allowed {
+				return formatForbiddenErr(userInfo.Username, verb, resource.Resource, resource.Group, namespace)
+			}
+		}
+	}
+
+	return nil
+}
+
 func (a *k8sAuthorizer) performSubjectAccessReview(ctx context.Context, userInfo *authenticationv1.UserInfo, verb, namespace string, resource struct {
 	Resource string
 	Group    string
@@ -185,13 +192,18 @@ func (a *k8sAuthorizer) performSubjectAccessReview(ctx context.Context, userInfo
 		cacheKey.verb, cacheKey.group, cacheKey.resource, cacheKey.namespace, userInfo.Username, cacheKey.uid, cacheKey.userGroups,
 	)
 
+	// In SubjectAccessReview an empty namespace means full cluster access.
+	namespaceScope := namespace
+	if namespace == FullClusterAccessScope {
+		namespaceScope = ""
+	}
 	sar := &authv1.SubjectAccessReview{
 		Spec: authv1.SubjectAccessReviewSpec{
 			User:   userInfo.Username,
 			Groups: userInfo.Groups,
 			UID:    userInfo.UID,
 			ResourceAttributes: &authv1.ResourceAttributes{
-				Namespace: namespace, // Empty for cluster-wide
+				Namespace: namespaceScope,
 				Verb:      verb,
 				Resource:  resource.Resource,
 				Group:     resource.Group,

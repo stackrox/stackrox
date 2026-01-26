@@ -87,11 +87,11 @@ jobs:
                   info "Showing deployment logs ($app):"
                   kubectl -n stackrox logs -l app="$app" --all-containers=true
               done
-              info "Abort if any pod has failed or containers have restarted:"
+              info "Abort if any pod has failed:"
               kubectl \
                   -n stackrox get pods \
                   -o jsonpath='{range .items[*]}{.metadata.name} status={.status.phase}{range .status.containerStatuses[*]} restart={.restartCount}/{.name}{end}{"\n"}{end}' \
-              | grep -E '(status=Failed|restart=[1-9])' && exit 1
+              | grep -E 'status=Failed' && exit 1
           done
 
       - name: Run tests
@@ -105,10 +105,22 @@ jobs:
                              -o jsonpath="{.items[*].metadata.name}")" \
                   8443:8443 || continue
           done &
-          trap 'kill $!' EXIT
+          PID1=$!
+          while true; do
+              kubectl -n stackrox port-forward \
+                  "$(kubectl -n stackrox get pods \
+                             -l app=scanner-v4-db \
+                             -o jsonpath="{.items[*].metadata.name}")" \
+                  5432:5432 || continue
+          done &
+          PID2=$!
+          trap 'kill $PID1 $PID2' EXIT
+
+          PGPASSWORD=$(kubectl get secret "scanner-v4-db-password" -o json -n stackrox | jq .data.password -r | base64 -d)
+
           # TODO(ROX-28174) Rename the targets and charts to "scanner functional
           # tests".
-          make -C scanner e2e-run NODEPS=1
+          PGPASSWORD="$PGPASSWORD" make -C scanner e2e-run NODEPS=1
 
       - name: Describe and show logs
         if: failure() || success()

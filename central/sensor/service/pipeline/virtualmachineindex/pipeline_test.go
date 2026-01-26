@@ -3,18 +3,29 @@ package virtualmachineindex
 import (
 	"context"
 	"testing"
+	"time"
 
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/central/sensor/service/common"
+	"github.com/stackrox/rox/central/sensor/service/connection"
+	connMocks "github.com/stackrox/rox/central/sensor/service/connection/mocks"
 	"github.com/stackrox/rox/central/sensor/service/pipeline/reconciliation"
 	vmDatastoreMocks "github.com/stackrox/rox/central/virtualmachine/datastore/mocks"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
 	v1 "github.com/stackrox/rox/generated/internalapi/virtualmachine/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/administration/events"
+	adminResources "github.com/stackrox/rox/pkg/administration/events/resources"
+	adminEventStream "github.com/stackrox/rox/pkg/administration/events/stream"
 	"github.com/stackrox/rox/pkg/centralsensor"
+	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/rate"
+	"github.com/stackrox/rox/pkg/sync"
 	vmEnricherMocks "github.com/stackrox/rox/pkg/virtualmachine/enricher/mocks"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
 )
@@ -24,6 +35,13 @@ const (
 )
 
 var ctx = context.Background()
+
+// mustNewLimiter creates a rate limiter or fails the test.
+func mustNewLimiter(t require.TestingT, workloadName string, globalRate float64, bucketCapacity int) *rate.Limiter {
+	limiter, err := rate.NewLimiter(workloadName, globalRate, bucketCapacity)
+	require.NoError(t, err)
+	return limiter
+}
 
 func TestPipeline(t *testing.T) {
 	suite.Run(t, new(PipelineTestSuite))
@@ -43,9 +61,12 @@ func (suite *PipelineTestSuite) SetupTest() {
 	suite.mockCtrl = gomock.NewController(suite.T())
 	suite.vmDatastore = vmDatastoreMocks.NewMockDataStore(suite.mockCtrl)
 	suite.enricher = vmEnricherMocks.NewMockVirtualMachineEnricher(suite.mockCtrl)
+	// Use unlimited rate limiter for tests (rate=0)
+	rateLimiter := mustNewLimiter(suite.T(), "test", 0, 50)
 	suite.pipeline = &pipelineImpl{
 		vmDatastore: suite.vmDatastore,
 		enricher:    suite.enricher,
+		rateLimiter: rateLimiter,
 	}
 }
 
@@ -176,13 +197,17 @@ func (suite *PipelineTestSuite) TestGetPipeline() {
 func (suite *PipelineTestSuite) TestNewPipeline() {
 	mockDatastore := vmDatastoreMocks.NewMockDataStore(suite.mockCtrl)
 	mockEnricher := vmEnricherMocks.NewMockVirtualMachineEnricher(suite.mockCtrl)
-	pipeline := newPipeline(mockDatastore, mockEnricher)
+	rateLimiter := mustNewLimiter(suite.T(), "test", 0, 50)
+	adminEventsStream := adminEventStream.GetStreamForTesting(suite.T())
+	pipeline := newPipeline(mockDatastore, mockEnricher, rateLimiter, adminEventsStream)
 	suite.NotNil(pipeline)
 
 	impl, ok := pipeline.(*pipelineImpl)
 	suite.True(ok, "Should return pipelineImpl instance")
 	suite.Equal(mockDatastore, impl.vmDatastore)
 	suite.Equal(mockEnricher, impl.enricher)
+	suite.Equal(rateLimiter, impl.rateLimiter)
+	suite.Equal(adminEventsStream, impl.adminEventsStream)
 }
 
 // Test table-driven approach for different actions
@@ -229,9 +254,11 @@ func TestPipelineRun_DifferentActions(t *testing.T) {
 
 			vmDatastore := vmDatastoreMocks.NewMockDataStore(ctrl)
 			enricher := vmEnricherMocks.NewMockVirtualMachineEnricher(ctrl)
+			rateLimiter := mustNewLimiter(t, "test", 0, 50)
 			pipeline := &pipelineImpl{
 				vmDatastore: vmDatastore,
 				enricher:    enricher,
+				rateLimiter: rateLimiter,
 			}
 
 			vmID := "vm-1"
@@ -272,7 +299,11 @@ func TestPipelineEdgeCases(t *testing.T) {
 	defer ctrl.Finish()
 
 	vmDatastore := vmDatastoreMocks.NewMockDataStore(ctrl)
-	pipeline := &pipelineImpl{vmDatastore: vmDatastore}
+	rateLimiter := mustNewLimiter(t, "test", 0, 50)
+	pipeline := &pipelineImpl{
+		vmDatastore: vmDatastore,
+		rateLimiter: rateLimiter,
+	}
 
 	t.Run("nil message", func(t *testing.T) {
 		result := pipeline.Match(nil)
@@ -328,9 +359,11 @@ func TestPipelineRun_DisabledFeature(t *testing.T) {
 
 	vmDatastore := vmDatastoreMocks.NewMockDataStore(ctrl)
 	enricher := vmEnricherMocks.NewMockVirtualMachineEnricher(ctrl)
+	rateLimiter := mustNewLimiter(t, "test", 0, 50)
 	pipeline := &pipelineImpl{
 		vmDatastore: vmDatastore,
 		enricher:    enricher,
+		rateLimiter: rateLimiter,
 	}
 
 	vmID := "vm-1"
@@ -339,4 +372,363 @@ func TestPipelineRun_DisabledFeature(t *testing.T) {
 	err := pipeline.Run(ctx, testClusterID, msg, nil)
 
 	assert.NoError(t, err)
+}
+
+// TestPipelineRun_RateLimitDisabled tests that rate limiting is disabled when configured with 0
+func TestPipelineRun_RateLimitDisabled(t *testing.T) {
+	t.Setenv(features.VirtualMachines.EnvVar(), "true")
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	vmDatastore := vmDatastoreMocks.NewMockDataStore(ctrl)
+	enricher := vmEnricherMocks.NewMockVirtualMachineEnricher(ctrl)
+	rateLimiter := mustNewLimiter(t, "test", 0, 50) // Disabled
+
+	pipeline := &pipelineImpl{
+		vmDatastore: vmDatastore,
+		enricher:    enricher,
+		rateLimiter: rateLimiter,
+	}
+
+	vmID := "vm-1"
+	msg := createVMIndexMessage(vmID, central.ResourceAction_SYNC_RESOURCE)
+
+	// Should process all 100 requests without rate limiting
+	for i := range 100 {
+		enricher.EXPECT().
+			EnrichVirtualMachineWithVulnerabilities(gomock.Any(), gomock.Any()).
+			Return(nil)
+		vmDatastore.EXPECT().
+			UpdateVirtualMachineScan(ctx, vmID, gomock.Any()).
+			Return(nil)
+
+		err := pipeline.Run(ctx, testClusterID, msg, nil)
+		assert.NoError(t, err, "request %d should succeed with rate limiting disabled", i)
+	}
+}
+
+// TestPipelineRun_RateLimitEnabled tests that rate limiting rejects requests when enabled.
+// This test verifies that:
+// 1. First N requests (within burst) succeed and perform enrichment/datastore writes
+// 2. Rate-limited request does NOT perform enrichment or datastore writes
+// 3. A NACK is sent for rate-limited requests when ACK support is enabled
+func TestPipelineRun_RateLimitEnabled(t *testing.T) {
+	t.Setenv(features.VirtualMachines.EnvVar(), "true")
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	vmDatastore := vmDatastoreMocks.NewMockDataStore(ctrl)
+	enricher := vmEnricherMocks.NewMockVirtualMachineEnricher(ctrl)
+	rateLimiter := mustNewLimiter(t, "test", 5, 5) // 5 req/s, bucket capacity=5
+
+	// Recording injector to capture sent messages
+	injector := &recordingInjector{}
+
+	// Mock connection with SensorACKSupport capability
+	mockConn := connMocks.NewMockSensorConnection(ctrl)
+	mockConn.EXPECT().HasCapability(centralsensor.SensorACKSupport).Return(true).AnyTimes()
+
+	pipeline := &pipelineImpl{
+		vmDatastore: vmDatastore,
+		enricher:    enricher,
+		rateLimiter: rateLimiter,
+	}
+
+	vmID := "vm-1"
+	msg := createVMIndexMessage(vmID, central.ResourceAction_SYNC_RESOURCE)
+
+	// Build a context with the mocked connection that has SensorACKSupport
+	ctxWithConn := connection.WithConnection(context.Background(), mockConn)
+
+	// Expect enrichment and datastore writes ONLY for the first 5 (non-rate-limited) requests.
+	// The 6th request should be rate-limited and these methods should NOT be called.
+	enricher.EXPECT().
+		EnrichVirtualMachineWithVulnerabilities(gomock.Any(), gomock.Any()).
+		Return(nil).
+		Times(5)
+
+	vmDatastore.EXPECT().
+		UpdateVirtualMachineScan(gomock.Any(), vmID, gomock.Any()).
+		Return(nil).
+		Times(5)
+
+	// Send 6 requests - the first 5 should be processed successfully,
+	// the 6th should be rate-limited.
+	for i := range 6 {
+		err := pipeline.Run(ctxWithConn, testClusterID, msg, injector)
+		assert.NoError(t, err, "Run should not return an error even when rate-limited (request %d)", i+1)
+	}
+
+	// Verify ACKs were sent for successful requests and NACK for rate-limited request
+	acks := injector.getSentACKs()
+	require.Len(t, acks, 6, "expected 6 ACK/NACK messages (5 ACKs + 1 NACK)")
+
+	// First 5 should be ACKs
+	for i := range 5 {
+		assert.Equal(t, central.SensorACK_ACK, acks[i].GetAction(), "request %d should be ACKed", i+1)
+		assert.Equal(t, central.SensorACK_VM_INDEX_REPORT, acks[i].GetMessageType())
+	}
+
+	// 6th should be NACK
+	assert.Equal(t, central.SensorACK_NACK, acks[5].GetAction(), "request 6 should be NACKed (rate limited)")
+	assert.Equal(t, central.SensorACK_VM_INDEX_REPORT, acks[5].GetMessageType())
+	assert.Contains(t, acks[5].GetReason(), "rate limit exceeded")
+}
+
+// TestPipelineRun_RateLimitEnabled_NoACKSupport tests that when the connection
+// does not support SensorACKSupport, rate limiting still applies but no ACK/NACK
+// messages are sent.
+func TestPipelineRun_RateLimitEnabled_NoACKSupport(t *testing.T) {
+	t.Setenv(features.VirtualMachines.EnvVar(), "true")
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	vmDatastore := vmDatastoreMocks.NewMockDataStore(ctrl)
+	enricher := vmEnricherMocks.NewMockVirtualMachineEnricher(ctrl)
+	rateLimiter := mustNewLimiter(t, "test-no-ack", 5, 5) // 5 req/s, bucket capacity=5
+
+	// Recording injector to capture any ACK/NACK attempts - should remain empty.
+	injector := &recordingInjector{}
+
+	// Mock connection WITHOUT SensorACKSupport capability
+	mockConn := connMocks.NewMockSensorConnection(ctrl)
+	mockConn.EXPECT().HasCapability(centralsensor.SensorACKSupport).Return(false).AnyTimes()
+
+	pipeline := &pipelineImpl{
+		vmDatastore: vmDatastore,
+		enricher:    enricher,
+		rateLimiter: rateLimiter,
+	}
+
+	vmID := "vm-1"
+	msg := createVMIndexMessage(vmID, central.ResourceAction_SYNC_RESOURCE)
+
+	// Build a context with the mocked connection that does NOT have SensorACKSupport
+	ctxWithConn := connection.WithConnection(context.Background(), mockConn)
+
+	// Expect enrichment and datastore writes ONLY for the first 5 (non-rate-limited) requests.
+	enricher.EXPECT().
+		EnrichVirtualMachineWithVulnerabilities(gomock.Any(), gomock.Any()).
+		Return(nil).
+		Times(5)
+
+	vmDatastore.EXPECT().
+		UpdateVirtualMachineScan(gomock.Any(), vmID, gomock.Any()).
+		Return(nil).
+		Times(5)
+
+	// Send 6 requests - the first 5 should be processed successfully,
+	// the 6th should be rate-limited.
+	for i := range 6 {
+		err := pipeline.Run(ctxWithConn, testClusterID, msg, injector)
+		assert.NoError(t, err, "Run should not return an error even when rate-limited (request %d)", i+1)
+	}
+
+	// Verify NO ACK/NACK messages were sent (SensorACKSupport is not available)
+	acks := injector.getSentACKs()
+	assert.Empty(t, acks, "no ACK/NACKs should be sent when SensorACKSupport is not available")
+}
+
+func TestPipelineRun_RateLimitEmitsAdminEvent(t *testing.T) {
+	tests := map[string]struct {
+		reason string
+	}{
+		"should emit admin event when rate limited": {
+			reason: rate.ReasonRateLimitExceeded,
+		},
+	}
+
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			t.Setenv(features.VirtualMachines.EnvVar(), "true")
+			ctrl := gomock.NewController(t)
+			defer ctrl.Finish()
+
+			vmDatastore := vmDatastoreMocks.NewMockDataStore(ctrl)
+			enricher := vmEnricherMocks.NewMockVirtualMachineEnricher(ctrl)
+			adminEventsStream := adminEventStream.GetStreamForTesting(t)
+
+			pipeline := &pipelineImpl{
+				vmDatastore:       vmDatastore,
+				enricher:          enricher,
+				rateLimiter:       &denyingRateLimiter{reason: tt.reason},
+				adminEventsStream: adminEventsStream,
+			}
+
+			msg := createVMIndexMessage("vm-1", central.ResourceAction_SYNC_RESOURCE)
+
+			err := pipeline.Run(ctx, testClusterID, msg, nil)
+			assert.NoError(t, err)
+
+			receivedEvent := consumeAdminEvent(t, adminEventsStream)
+			require.NotNil(t, receivedEvent, "expected an administration event to be emitted")
+			assert.Equal(t, storage.AdministrationEventType_ADMINISTRATION_EVENT_TYPE_GENERIC, receivedEvent.GetType())
+			assert.Equal(t, storage.AdministrationEventLevel_ADMINISTRATION_EVENT_LEVEL_WARNING, receivedEvent.GetLevel())
+			assert.Equal(t, events.DefaultDomain, receivedEvent.GetDomain())
+			assert.Equal(t, adminResources.Cluster, receivedEvent.GetResourceType())
+			assert.Equal(t, testClusterID, receivedEvent.GetResourceID())
+			assert.Contains(t, receivedEvent.GetMessage(), "VM index reports from cluster "+testClusterID)
+			assert.Contains(t, receivedEvent.GetMessage(), tt.reason)
+		})
+	}
+}
+
+// TestPipelineRun_NilRateLimiter_WithACKSupport tests behavior when the rateLimiter is nil and ACKs are supported.
+// This covers the nil-limiter branch and verifies that:
+// 1. No enrichment/datastore calls occur
+// 2. A NACK with MessageType=VM_INDEX_REPORT is sent
+func TestPipelineRun_NilRateLimiter_WithACKSupport(t *testing.T) {
+	t.Setenv(features.VirtualMachines.EnvVar(), "true")
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	// Mocks for datastore and enricher - no expectations should be set on these,
+	// because the pipeline must short-circuit before doing any work.
+	vmDatastore := vmDatastoreMocks.NewMockDataStore(ctrl)
+	enricher := vmEnricherMocks.NewMockVirtualMachineEnricher(ctrl)
+
+	// Recording injector to capture sent messages
+	injector := &recordingInjector{}
+
+	// Mock connection with SensorACKSupport capability
+	mockConn := connMocks.NewMockSensorConnection(ctrl)
+	mockConn.EXPECT().HasCapability(centralsensor.SensorACKSupport).Return(true).AnyTimes()
+
+	pipeline := &pipelineImpl{
+		vmDatastore: vmDatastore,
+		enricher:    enricher,
+		rateLimiter: nil, // nil rate limiter to cover the nil-limiter branch
+	}
+
+	vmID := "vm-1"
+	msg := createVMIndexMessage(vmID, central.ResourceAction_SYNC_RESOURCE)
+
+	// Build a context with the mocked connection that has SensorACKSupport
+	ctxWithConn := connection.WithConnection(context.Background(), mockConn)
+
+	// Run the pipeline - it should short-circuit due to nil rateLimiter,
+	// emit a NACK, and not call any datastore/enricher methods.
+	err := pipeline.Run(ctxWithConn, testClusterID, msg, injector)
+	assert.NoError(t, err, "pipeline Run should not error when rateLimiter is nil")
+
+	// Verify exactly one NACK was sent
+	acks := injector.getSentACKs()
+	require.Len(t, acks, 1, "expected exactly one ACK/NACK to be sent")
+
+	ack := acks[0]
+	assert.Equal(t, central.SensorACK_NACK, ack.GetAction(), "expected NACK action")
+	assert.Equal(t, central.SensorACK_VM_INDEX_REPORT, ack.GetMessageType(), "expected VM_INDEX_REPORT message type")
+	assert.Equal(t, vmID, ack.GetResourceId(), "expected resource ID to match VM ID")
+	assert.Equal(t, "rate limiter not configured", ack.GetReason(), "expected reason to indicate nil rate limiter")
+}
+
+// recordingInjector is a test double that records all SensorACK messages sent via InjectMessage.
+var _ common.MessageInjector = (*recordingInjector)(nil)
+
+type recordingInjector struct {
+	lock     sync.Mutex
+	messages []*central.SensorACK
+}
+
+func (r *recordingInjector) InjectMessage(_ concurrency.Waitable, msg *central.MsgToSensor) error {
+	r.lock.Lock()
+	defer r.lock.Unlock()
+	if ack := msg.GetSensorAck(); ack != nil {
+		r.messages = append(r.messages, ack.CloneVT())
+	}
+	return nil
+}
+
+func (r *recordingInjector) InjectMessageIntoQueue(_ *central.MsgFromSensor) {}
+
+func (r *recordingInjector) getSentACKs() []*central.SensorACK {
+	r.lock.Lock()
+	defer r.lock.Unlock()
+	copied := make([]*central.SensorACK, 0, len(r.messages))
+	copied = append(copied, r.messages...)
+	return copied
+}
+
+// TestOnFinishPropagatesClusterDisconnect verifies that OnFinish propagates the cluster ID
+// to the rate limiter's OnClientDisconnect method.
+func TestOnFinishPropagatesClusterDisconnect(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	vmDatastore := vmDatastoreMocks.NewMockDataStore(ctrl)
+	enricher := vmEnricherMocks.NewMockVirtualMachineEnricher(ctrl)
+
+	// Use a fake limiter so we can observe calls to OnClientDisconnect.
+	fakeLimiter := &fakeRateLimiter{}
+
+	p := &pipelineImpl{
+		vmDatastore: vmDatastore,
+		enricher:    enricher,
+		rateLimiter: fakeLimiter,
+	}
+
+	const clusterID = "cluster-1"
+
+	p.OnFinish(clusterID)
+
+	assert.Equal(t, clusterID, fakeLimiter.lastDisconnectedClientID, "OnFinish should propagate cluster disconnect to the rate limiter")
+}
+
+// TestOnFinishWithNilRateLimiter verifies that OnFinish doesn't panic when rateLimiter is nil.
+func TestOnFinishWithNilRateLimiter(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	vmDatastore := vmDatastoreMocks.NewMockDataStore(ctrl)
+	enricher := vmEnricherMocks.NewMockVirtualMachineEnricher(ctrl)
+
+	p := &pipelineImpl{
+		vmDatastore: vmDatastore,
+		enricher:    enricher,
+		rateLimiter: nil,
+	}
+
+	// Should not panic
+	assert.NotPanics(t, func() {
+		p.OnFinish("cluster-1")
+	})
+}
+
+// fakeRateLimiter is a test double that records the last client ID passed to OnClientDisconnect.
+// It satisfies the interface used by pipelineImpl.rateLimiter.
+type fakeRateLimiter struct {
+	lastDisconnectedClientID string
+}
+
+func (f *fakeRateLimiter) TryConsume(_ string) (bool, string) {
+	return true, ""
+}
+
+func (f *fakeRateLimiter) OnClientDisconnect(clientID string) {
+	f.lastDisconnectedClientID = clientID
+}
+
+type denyingRateLimiter struct {
+	reason string
+}
+
+func (d *denyingRateLimiter) TryConsume(_ string) (bool, string) {
+	return false, d.reason
+}
+
+func (d *denyingRateLimiter) OnClientDisconnect(string) {}
+
+func consumeAdminEvent(t *testing.T, stream events.Stream) *events.AdministrationEvent {
+	t.Helper()
+
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+	defer cancel()
+
+	var receivedEvent *events.AdministrationEvent
+	for event := range stream.Consume(ctx) {
+		receivedEvent = event
+		break
+	}
+
+	return receivedEvent
 }

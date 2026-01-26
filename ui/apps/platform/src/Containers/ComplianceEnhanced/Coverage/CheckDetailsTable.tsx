@@ -17,10 +17,7 @@ import type { TableUIState } from 'utils/getTableUIState';
 import CompoundSearchFilter from 'Components/CompoundSearchFilter/components/CompoundSearchFilter';
 import CompoundSearchFilterLabels from 'Components/CompoundSearchFilter/components/CompoundSearchFilterLabels';
 import SearchFilterSelectInclusive from 'Components/CompoundSearchFilter/components/SearchFilterSelectInclusive';
-import type {
-    CompoundSearchFilterConfig,
-    OnSearchCallback,
-} from 'Components/CompoundSearchFilter/types';
+import type { OnSearchCallback } from 'Components/CompoundSearchFilter/types';
 import type { SearchFilter } from 'types/search';
 
 import { coverageClusterDetailsPath } from './compliance.coverage.routes';
@@ -30,7 +27,12 @@ import {
 } from './compliance.coverage.utils';
 import StatusIcon from './components/StatusIcon';
 import useScanConfigRouter from './hooks/useScanConfigRouter';
-import { attributeForComplianceCheckStatus } from '../searchFilterConfig';
+import {
+    attributeForComplianceCheckStatus,
+    clusterSearchFilterConfig,
+} from '../searchFilterConfig';
+
+const searchFilterConfig = [clusterSearchFilterConfig];
 
 export const tabContentIdForResults = 'check-details-Results-tab-section';
 
@@ -41,7 +43,6 @@ export type CheckDetailsTableProps = {
     profileName: string;
     tableState: TableUIState<ClusterCheckStatus>;
     getSortParams: UseURLSortResult['getSortParams'];
-    searchFilterConfig: CompoundSearchFilterConfig;
     searchFilter: SearchFilter;
     onFilterChange: (newFilter: SearchFilter) => void;
     onSearch: OnSearchCallback;
@@ -55,7 +56,6 @@ function CheckDetailsTable({
     profileName,
     tableState,
     getSortParams,
-    searchFilterConfig,
     searchFilter,
     onFilterChange,
     onSearch,

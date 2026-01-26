@@ -1397,6 +1397,11 @@
                 "name": "layers",
                 "type": "BaseImageLayer",
                 "is_repeated": true
+              },
+              {
+                "id": 10,
+                "name": "created",
+                "type": "google.protobuf.Timestamp"
               }
             ]
           },
@@ -6862,6 +6867,26 @@
                 "type": "Severity"
               }
             ]
+          },
+          {
+            "name": "ImageCVEInfo",
+            "fields": [
+              {
+                "id": 1,
+                "name": "id",
+                "type": "string"
+              },
+              {
+                "id": 2,
+                "name": "fix_available_timestamp",
+                "type": "google.protobuf.Timestamp"
+              },
+              {
+                "id": 3,
+                "name": "first_system_occurrence",
+                "type": "google.protobuf.Timestamp"
+              }
+            ]
           }
         ],
         "imports": [
@@ -9460,6 +9485,11 @@
                 "id": 3,
                 "name": "base_image_digest",
                 "type": "string"
+              },
+              {
+                "id": 4,
+                "name": "created",
+                "type": "google.protobuf.Timestamp"
               }
             ]
           }
@@ -19701,6 +19731,11 @@
                 "id": 23,
                 "name": "epss",
                 "type": "EPSS"
+              },
+              {
+                "id": 26,
+                "name": "datasource",
+                "type": "string"
               }
             ],
             "reserved_ids": [

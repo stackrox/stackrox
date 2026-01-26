@@ -95,6 +95,7 @@ spec:
         resources:
           {{- ._rox.central.db._resources | nindent 10 }}
         securityContext:
+          allowPrivilegeEscalation: false
           runAsUser: 70
           runAsGroup: 70
       containers:
@@ -124,6 +125,7 @@ spec:
         resources:
           {{- ._rox.central.db._resources | nindent 10 }}
         securityContext:
+          allowPrivilegeEscalation: false
           runAsUser: 70
           runAsGroup: 70
         volumeMounts:

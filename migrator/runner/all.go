@@ -11,4 +11,6 @@ import (
 	_ "github.com/stackrox/rox/migrator/migrations/m_215_to_m_216_process_baseline_to_btree"
 	_ "github.com/stackrox/rox/migrator/migrations/m_216_to_m_217_remove_compliance_benchmark_table"
 	_ "github.com/stackrox/rox/migrator/migrations/m_217_to_m_218_alert_to_btree"
+	_ "github.com/stackrox/rox/migrator/migrations/m_218_to_m_219_plop_index_to_btree"
+	_ "github.com/stackrox/rox/migrator/migrations/m_219_to_m_220_network_flow_index_to_btree"
 )

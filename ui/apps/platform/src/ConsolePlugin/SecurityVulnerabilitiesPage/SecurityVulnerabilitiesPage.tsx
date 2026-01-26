@@ -8,8 +8,11 @@ import { deleteKeysCaseInsensitive } from 'utils/searchUtils';
 
 import { VulnerabilitiesOverviewContainer } from '../Components/VulnerabilitiesOverviewContainer';
 import { useDefaultWorkloadCveViewContext } from '../hooks/useDefaultWorkloadCveViewContext';
+import { useAnalyticsPageView } from '../hooks/useAnalyticsPageView';
 
 export function SecurityVulnerabilitiesPage() {
+    useAnalyticsPageView();
+
     const { searchFilter, setSearchFilter } = useURLSearch();
     const context = useDefaultWorkloadCveViewContext();
 

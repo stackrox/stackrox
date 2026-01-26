@@ -23,7 +23,7 @@ func TestK8sAuthorizer_MissingToken(t *testing.T) {
 	req := httptest.NewRequest(http.MethodGet, "/test", nil)
 	// No Authorization header
 
-	err := authorizer.authorize(context.Background(), req)
+	_, err := authorizer.authenticate(context.Background(), req)
 
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "missing or invalid bearer token")
@@ -36,7 +36,7 @@ func TestK8sAuthorizer_InvalidToken(t *testing.T) {
 	req := httptest.NewRequest(http.MethodGet, "/test", nil)
 	req.Header.Set("Authorization", "Basic dXNlcjpwYXNz") // Not Bearer token
 
-	err := authorizer.authorize(context.Background(), req)
+	_, err := authorizer.authenticate(context.Background(), req)
 
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "missing or invalid bearer token")
@@ -59,7 +59,7 @@ func TestK8sAuthorizer_TokenAuthenticationFailed(t *testing.T) {
 	req := httptest.NewRequest(http.MethodGet, "/test", nil)
 	req.Header.Set("Authorization", "Bearer test-token")
 
-	err := authorizer.authorize(context.Background(), req)
+	_, err := authorizer.authenticate(context.Background(), req)
 
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "token authentication failed")
@@ -78,7 +78,7 @@ func TestK8sAuthorizer_TokenReviewAPIError(t *testing.T) {
 	req := httptest.NewRequest(http.MethodGet, "/test", nil)
 	req.Header.Set("Authorization", "Bearer test-token")
 
-	err := authorizer.authorize(context.Background(), req)
+	_, err := authorizer.authenticate(context.Background(), req)
 
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "performing token review")
@@ -103,7 +103,7 @@ func TestK8sAuthorizer_TokenReviewStatusError(t *testing.T) {
 	req := httptest.NewRequest(http.MethodGet, "/test", nil)
 	req.Header.Set("Authorization", "Bearer test-token")
 
-	err := authorizer.authorize(context.Background(), req)
+	_, err := authorizer.authenticate(context.Background(), req)
 
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "token validation error")
@@ -113,19 +113,6 @@ func TestK8sAuthorizer_TokenReviewStatusError(t *testing.T) {
 func TestK8sAuthorizer_AllPermissionsGranted_Namespace(t *testing.T) {
 	fakeClient := fake.NewClientset()
 
-	// Mock TokenReview
-	fakeClient.PrependReactor("create", "tokenreviews", func(action k8sTesting.Action) (bool, runtime.Object, error) {
-		return true, &authenticationv1.TokenReview{
-			Status: authenticationv1.TokenReviewStatus{
-				Authenticated: true,
-				User: authenticationv1.UserInfo{
-					Username: "test-user",
-					Groups:   []string{"test-group"},
-				},
-			},
-		}, nil
-	})
-
 	// Mock SubjectAccessReview - allow all
 	fakeClient.PrependReactor("create", "subjectaccessreviews", func(action k8sTesting.Action) (bool, runtime.Object, error) {
 		return true, &authv1.SubjectAccessReview{
@@ -137,11 +124,15 @@ func TestK8sAuthorizer_AllPermissionsGranted_Namespace(t *testing.T) {
 
 	authorizer := newK8sAuthorizer(fakeClient)
 
+	userInfo := &authenticationv1.UserInfo{
+		Username: "test-user",
+		Groups:   []string{"test-group"},
+	}
+
 	req := httptest.NewRequest(http.MethodGet, "/test", nil)
-	req.Header.Set("Authorization", "Bearer test-token")
 	req.Header.Set(stackroxNamespaceHeader, "test-namespace")
 
-	err := authorizer.authorize(context.Background(), req)
+	err := authorizer.authorize(context.Background(), userInfo, req)
 
 	assert.NoError(t, err)
 }
@@ -149,19 +140,6 @@ func TestK8sAuthorizer_AllPermissionsGranted_Namespace(t *testing.T) {
 func TestK8sAuthorizer_AllPermissionsGranted_ClusterWide(t *testing.T) {
 	fakeClient := fake.NewClientset()
 
-	// Mock TokenReview
-	fakeClient.PrependReactor("create", "tokenreviews", func(action k8sTesting.Action) (bool, runtime.Object, error) {
-		return true, &authenticationv1.TokenReview{
-			Status: authenticationv1.TokenReviewStatus{
-				Authenticated: true,
-				User: authenticationv1.UserInfo{
-					Username: "cluster-admin",
-					Groups:   []string{"system:masters"},
-				},
-			},
-		}, nil
-	})
-
 	// Mock SubjectAccessReview - allow all
 	fakeClient.PrependReactor("create", "subjectaccessreviews", func(action k8sTesting.Action) (bool, runtime.Object, error) {
 		return true, &authv1.SubjectAccessReview{
@@ -173,30 +151,22 @@ func TestK8sAuthorizer_AllPermissionsGranted_ClusterWide(t *testing.T) {
 
 	authorizer := newK8sAuthorizer(fakeClient)
 
-	req := httptest.NewRequest(http.MethodGet, "/test", nil)
-	req.Header.Set("Authorization", "Bearer test-token")
-	// No namespace header = cluster-wide
+	userInfo := &authenticationv1.UserInfo{
+		Username: "cluster-admin",
+		Groups:   []string{"system:masters"},
+	}
 
-	err := authorizer.authorize(context.Background(), req)
+	req := httptest.NewRequest(http.MethodGet, "/test", nil)
+	// Set cluster-wide scope header to trigger cluster-wide authorization check
+	req.Header.Set(stackroxNamespaceHeader, FullClusterAccessScope)
+
+	err := authorizer.authorize(context.Background(), userInfo, req)
 
 	assert.NoError(t, err)
 }
 
 func TestK8sAuthorizer_MissingPermission_Namespace(t *testing.T) {
 	fakeClient := fake.NewClientset()
-
-	// Mock TokenReview
-	fakeClient.PrependReactor("create", "tokenreviews", func(action k8sTesting.Action) (bool, runtime.Object, error) {
-		return true, &authenticationv1.TokenReview{
-			Status: authenticationv1.TokenReviewStatus{
-				Authenticated: true,
-				User: authenticationv1.UserInfo{
-					Username: "limited-user",
-					Groups:   []string{"developers"},
-				},
-			},
-		}, nil
-	})
 
 	// Mock SubjectAccessReview - deny "list"
 	fakeClient.PrependReactor("create", "subjectaccessreviews", func(action k8sTesting.Action) (bool, runtime.Object, error) {
@@ -215,11 +185,15 @@ func TestK8sAuthorizer_MissingPermission_Namespace(t *testing.T) {
 
 	authorizer := newK8sAuthorizer(fakeClient)
 
+	userInfo := &authenticationv1.UserInfo{
+		Username: "limited-user",
+		Groups:   []string{"developers"},
+	}
+
 	req := httptest.NewRequest(http.MethodGet, "/test", nil)
-	req.Header.Set("Authorization", "Bearer test-token")
 	req.Header.Set(stackroxNamespaceHeader, "my-namespace")
 
-	err := authorizer.authorize(context.Background(), req)
+	err := authorizer.authorize(context.Background(), userInfo, req)
 
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "lacks list permission for resource")
@@ -228,19 +202,6 @@ func TestK8sAuthorizer_MissingPermission_Namespace(t *testing.T) {
 
 func TestK8sAuthorizer_MissingPermission_ClusterWide(t *testing.T) {
 	fakeClient := fake.NewClientset()
-
-	// Mock TokenReview
-	fakeClient.PrependReactor("create", "tokenreviews", func(action k8sTesting.Action) (bool, runtime.Object, error) {
-		return true, &authenticationv1.TokenReview{
-			Status: authenticationv1.TokenReviewStatus{
-				Authenticated: true,
-				User: authenticationv1.UserInfo{
-					Username: "namespace-admin",
-					Groups:   []string{"admins"},
-				},
-			},
-		}, nil
-	})
 
 	// Mock SubjectAccessReview - allow "get", deny "list"
 	fakeClient.PrependReactor("create", "subjectaccessreviews", func(action k8sTesting.Action) (bool, runtime.Object, error) {
@@ -259,30 +220,23 @@ func TestK8sAuthorizer_MissingPermission_ClusterWide(t *testing.T) {
 
 	authorizer := newK8sAuthorizer(fakeClient)
 
-	req := httptest.NewRequest(http.MethodGet, "/test", nil)
-	req.Header.Set("Authorization", "Bearer test-token")
-	// No namespace header = cluster-wide
+	userInfo := &authenticationv1.UserInfo{
+		Username: "namespace-admin",
+		Groups:   []string{"admins"},
+	}
 
-	err := authorizer.authorize(context.Background(), req)
+	req := httptest.NewRequest(http.MethodGet, "/test", nil)
+	// Set cluster-wide scope header to trigger cluster-wide authorization check
+	req.Header.Set(stackroxNamespaceHeader, FullClusterAccessScope)
+
+	err := authorizer.authorize(context.Background(), userInfo, req)
 
 	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "lacks cluster-wide list permission")
+	assert.Contains(t, err.Error(), "lacks list permission")
 }
 
 func TestK8sAuthorizer_SubjectAccessReviewError(t *testing.T) {
 	fakeClient := fake.NewClientset()
-
-	// Mock TokenReview
-	fakeClient.PrependReactor("create", "tokenreviews", func(action k8sTesting.Action) (bool, runtime.Object, error) {
-		return true, &authenticationv1.TokenReview{
-			Status: authenticationv1.TokenReviewStatus{
-				Authenticated: true,
-				User: authenticationv1.UserInfo{
-					Username: "test-user",
-				},
-			},
-		}, nil
-	})
 
 	// Mock SubjectAccessReview to return error
 	fakeClient.PrependReactor("create", "subjectaccessreviews", func(action k8sTesting.Action) (bool, runtime.Object, error) {
@@ -291,10 +245,14 @@ func TestK8sAuthorizer_SubjectAccessReviewError(t *testing.T) {
 
 	authorizer := newK8sAuthorizer(fakeClient)
 
-	req := httptest.NewRequest(http.MethodGet, "/test", nil)
-	req.Header.Set("Authorization", "Bearer test-token")
+	userInfo := &authenticationv1.UserInfo{
+		Username: "test-user",
+	}
 
-	err := authorizer.authorize(context.Background(), req)
+	req := httptest.NewRequest(http.MethodGet, "/test", nil)
+	req.Header.Set(stackroxNamespaceHeader, "test-namespace")
+
+	err := authorizer.authorize(context.Background(), userInfo, req)
 
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "checking get permission")
@@ -303,19 +261,6 @@ func TestK8sAuthorizer_SubjectAccessReviewError(t *testing.T) {
 
 func TestK8sAuthorizer_SubjectAccessReviewEvaluationError(t *testing.T) {
 	fakeClient := fake.NewClientset()
-
-	// Mock TokenReview
-	fakeClient.PrependReactor("create", "tokenreviews", func(action k8sTesting.Action) (bool, runtime.Object, error) {
-		return true, &authenticationv1.TokenReview{
-			Status: authenticationv1.TokenReviewStatus{
-				Authenticated: true,
-				User: authenticationv1.UserInfo{
-					Username: "test-user",
-					Groups:   []string{"test-group"},
-				},
-			},
-		}, nil
-	})
 
 	// Mock SubjectAccessReview: Allowed = true but with an EvaluationError.
 	// performSubjectAccessReview should return a 500 error instead of treating it as denial.
@@ -330,10 +275,15 @@ func TestK8sAuthorizer_SubjectAccessReviewEvaluationError(t *testing.T) {
 
 	authorizer := newK8sAuthorizer(fakeClient)
 
-	req := httptest.NewRequest(http.MethodGet, "/test", nil)
-	req.Header.Set("Authorization", "Bearer test-token")
+	userInfo := &authenticationv1.UserInfo{
+		Username: "test-user",
+		Groups:   []string{"test-group"},
+	}
 
-	err := authorizer.authorize(context.Background(), req)
+	req := httptest.NewRequest(http.MethodGet, "/test", nil)
+	req.Header.Set(stackroxNamespaceHeader, "test-namespace")
+
+	err := authorizer.authorize(context.Background(), userInfo, req)
 
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "authorization evaluation error")
@@ -359,6 +309,7 @@ func TestK8sAuthorizer_CachingBehavior(t *testing.T) {
 				Authenticated: true,
 				User: authenticationv1.UserInfo{
 					Username: "test-user",
+					UID:      "test-uid",
 					Groups:   []string{"test-group"},
 				},
 			},
@@ -381,8 +332,10 @@ func TestK8sAuthorizer_CachingBehavior(t *testing.T) {
 	req.Header.Set("Authorization", "Bearer test-token")
 	req.Header.Set(stackroxNamespaceHeader, "test-namespace")
 
-	// First request - should perform all SAR checks
-	err := authorizer.authorize(context.Background(), req)
+	// First request - should perform TokenReview and SAR checks
+	userInfo, err := authorizer.authenticate(context.Background(), req)
+	assert.NoError(t, err)
+	err = authorizer.authorize(context.Background(), userInfo, req)
 	assert.NoError(t, err)
 
 	firstSARCallCount := sarCallCount
@@ -392,7 +345,9 @@ func TestK8sAuthorizer_CachingBehavior(t *testing.T) {
 	assert.Greater(t, firstSARCallCount, 0, "First authorization should perform at least one SAR call")
 
 	// Second request with same token and namespace - should use cache
-	err = authorizer.authorize(context.Background(), req)
+	userInfo, err = authorizer.authenticate(context.Background(), req)
+	assert.NoError(t, err)
+	err = authorizer.authorize(context.Background(), userInfo, req)
 	assert.NoError(t, err)
 
 	// Both SAR and TokenReview calls should NOT increase (all cached)
@@ -414,6 +369,7 @@ func TestK8sAuthorizer_CachingBehavior_Denied(t *testing.T) {
 				Authenticated: true,
 				User: authenticationv1.UserInfo{
 					Username: "test-user",
+					UID:      "test-uid",
 					Groups:   []string{"test-group"},
 				},
 			},
@@ -436,8 +392,10 @@ func TestK8sAuthorizer_CachingBehavior_Denied(t *testing.T) {
 	req.Header.Set("Authorization", "Bearer test-token")
 	req.Header.Set(stackroxNamespaceHeader, "test-namespace")
 
-	// First request - should perform all SAR checks and be denied
-	err := authorizer.authorize(context.Background(), req)
+	// First request - should perform TokenReview and SAR checks, then be denied
+	userInfo, err := authorizer.authenticate(context.Background(), req)
+	assert.NoError(t, err)
+	err = authorizer.authorize(context.Background(), userInfo, req)
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "lacks")
 
@@ -448,7 +406,9 @@ func TestK8sAuthorizer_CachingBehavior_Denied(t *testing.T) {
 	assert.Greater(t, firstSARCallCount, 0, "First authorization should perform at least one SAR call")
 
 	// Second request with same token and namespace - should use cached denial
-	err = authorizer.authorize(context.Background(), req)
+	userInfo, err = authorizer.authenticate(context.Background(), req)
+	assert.NoError(t, err)
+	err = authorizer.authorize(context.Background(), userInfo, req)
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "lacks")
 
@@ -476,27 +436,18 @@ func TestK8sAuthorizer_TokenReviewCaching(t *testing.T) {
 			}, nil
 		})
 
-		// Mock SubjectAccessReview - allow all
-		fakeClient.PrependReactor("create", "subjectaccessreviews", func(action k8sTesting.Action) (bool, runtime.Object, error) {
-			return true, &authv1.SubjectAccessReview{
-				Status: authv1.SubjectAccessReviewStatus{
-					Allowed: true,
-				},
-			}, nil
-		})
-
 		authorizer := newK8sAuthorizer(fakeClient)
 
 		req := httptest.NewRequest(http.MethodGet, "/test", nil)
 		req.Header.Set("Authorization", "Bearer test-token")
 
 		// First request
-		err := authorizer.authorize(context.Background(), req)
+		_, err := authorizer.authenticate(context.Background(), req)
 		assert.NoError(t, err)
 		assert.Equal(t, 1, tokenReviewCallCount, "First request should perform TokenReview")
 
 		// Second request with same token - should use cached TokenReview
-		err = authorizer.authorize(context.Background(), req)
+		_, err = authorizer.authenticate(context.Background(), req)
 		assert.NoError(t, err)
 		assert.Equal(t, 1, tokenReviewCallCount, "Second request should use cached TokenReview")
 	})
@@ -521,13 +472,13 @@ func TestK8sAuthorizer_TokenReviewCaching(t *testing.T) {
 		req.Header.Set("Authorization", "Bearer invalid-token")
 
 		// First request - should fail
-		err := authorizer.authorize(context.Background(), req)
+		_, err := authorizer.authenticate(context.Background(), req)
 		assert.Error(t, err)
 		assert.Contains(t, err.Error(), "token authentication failed")
 		assert.Equal(t, 1, tokenReviewCallCount, "First request should perform TokenReview")
 
 		// Second request with same token - should perform TokenReview again (not cached)
-		err = authorizer.authorize(context.Background(), req)
+		_, err = authorizer.authenticate(context.Background(), req)
 		assert.Error(t, err)
 		assert.Contains(t, err.Error(), "token authentication failed")
 		assert.Equal(t, 2, tokenReviewCallCount, "Second request should perform TokenReview again (failures not cached)")

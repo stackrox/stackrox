@@ -359,6 +359,7 @@ func (s *PruningTestSuite) generateClusterDataStructures() (configDatastore.Data
 
 	// A bunch of these get called when a cluster is deleted
 	flowsDataStore.EXPECT().CreateFlowStore(gomock.Any(), gomock.Any()).AnyTimes().Return(networkFlowDatastoreMocks.NewMockFlowDataStore(mockCtrl), nil)
+	flowsDataStore.EXPECT().RemoveFlowStore(gomock.Any(), gomock.Any()).AnyTimes().Return(nil)
 	connMgr.EXPECT().CloseConnection(gomock.Any()).AnyTimes().Return()
 	namespaceDataStore.EXPECT().Search(gomock.Any(), gomock.Any()).AnyTimes().Return([]search.Result{}, nil)
 	podDataStore.EXPECT().Search(gomock.Any(), gomock.Any()).AnyTimes().Return(nil, nil)

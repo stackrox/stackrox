@@ -15,6 +15,7 @@ import (
 	deploymentMocks "github.com/stackrox/rox/central/deployment/datastore/mocks"
 	imageMocks "github.com/stackrox/rox/central/image/datastore/mocks"
 	imageIntegrationDataStoreMocks "github.com/stackrox/rox/central/imageintegration/datastore/mocks"
+	imageV2DatastoreMocks "github.com/stackrox/rox/central/imagev2/datastore/mocks"
 	namespaceMocks "github.com/stackrox/rox/central/namespace/datastore/mocks"
 	nodeMocks "github.com/stackrox/rox/central/node/datastore/mocks"
 	platformmatcher "github.com/stackrox/rox/central/platform/matcher"
@@ -30,6 +31,7 @@ import (
 	serviceAccountMocks "github.com/stackrox/rox/central/serviceaccount/datastore/mocks"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
 	"github.com/stackrox/rox/pkg/postgres"
@@ -44,11 +46,199 @@ import (
 )
 
 func TestSearchCategoryToOptionsMultiMap(t *testing.T) {
-
 	for cat := range autocompleteCategories {
 		_, ok := categoryToOptionsMultimap[cat]
 		assert.True(t, ok, "no options multimap for category", cat)
 	}
+}
+
+func TestGetSearchFuncs_FlattenImageDataRoutesImageSearch(t *testing.T) {
+	ctx := context.Background()
+	q := &v1.Query{}
+
+	t.Run("FlattenImageData disabled routes IMAGES to images store", func(t *testing.T) {
+		if features.FlattenImageData.Enabled() {
+			t.Skip("Skipping test - FlattenImageData is enabled")
+		}
+
+		mockCtrl := gomock.NewController(t)
+		defer mockCtrl.Finish()
+
+		imagesStore := imageMocks.NewMockDataStore(mockCtrl)
+		imagesV2Store := imageV2DatastoreMocks.NewMockDataStore(mockCtrl)
+
+		svc := NewBuilder().
+			WithAlertStore(alertMocks.NewMockDataStore(mockCtrl)).
+			WithDeploymentStore(deploymentMocks.NewMockDataStore(mockCtrl)).
+			WithImageStore(imagesStore).
+			WithImageV2Store(imagesV2Store).
+			WithPolicyStore(policyMocks.NewMockDataStore(mockCtrl)).
+			WithSecretStore(secretMocks.NewMockDataStore(mockCtrl)).
+			WithServiceAccountStore(serviceAccountMocks.NewMockDataStore(mockCtrl)).
+			WithNodeStore(nodeMocks.NewMockDataStore(mockCtrl)).
+			WithNamespaceStore(namespaceMocks.NewMockDataStore(mockCtrl)).
+			WithRiskStore(riskDatastoreMocks.NewMockDataStore(mockCtrl)).
+			WithRoleStore(roleMocks.NewMockDataStore(mockCtrl)).
+			WithRoleBindingStore(roleBindingsMocks.NewMockDataStore(mockCtrl)).
+			WithClusterDataStore(clusterDataStoreMocks.NewMockDataStore(mockCtrl)).
+			WithImageIntegrationStore(imageIntegrationDataStoreMocks.NewMockDataStore(mockCtrl)).
+			WithAggregator(nil).
+			WithPolicyCategoryDataStore(categoryDataStoreMocks.NewMockDataStore(mockCtrl)).
+			Build().(*serviceImpl)
+
+		searchFuncs := svc.getSearchFuncs()
+
+		imageSearchFunc, ok := searchFuncs[v1.SearchCategory_IMAGES]
+		assert.True(t, ok, "expected search func for IMAGES category")
+
+		// Verify IMAGES_V2 category is not exposed when FlattenImageData is disabled
+		_, v2Ok := searchFuncs[v1.SearchCategory_IMAGES_V2]
+		assert.False(t, v2Ok, "IMAGES_V2 category should not be registered when FlattenImageData is disabled")
+
+		imagesStore.EXPECT().SearchImages(ctx, q).Return(nil, nil).Times(1)
+		imagesV2Store.EXPECT().SearchImages(ctx, q).Times(0)
+
+		_, err := imageSearchFunc(ctx, q)
+		assert.NoError(t, err)
+	})
+
+	t.Run("FlattenImageData enabled routes IMAGES and IMAGES_V2 to imagesV2 store", func(t *testing.T) {
+		if !features.FlattenImageData.Enabled() {
+			t.Skip("Skipping test - FlattenImageData is disabled")
+		}
+
+		mockCtrl := gomock.NewController(t)
+		defer mockCtrl.Finish()
+
+		imagesStore := imageMocks.NewMockDataStore(mockCtrl)
+		imagesV2Store := imageV2DatastoreMocks.NewMockDataStore(mockCtrl)
+
+		svc := NewBuilder().
+			WithAlertStore(alertMocks.NewMockDataStore(mockCtrl)).
+			WithDeploymentStore(deploymentMocks.NewMockDataStore(mockCtrl)).
+			WithImageStore(imagesStore).
+			WithImageV2Store(imagesV2Store).
+			WithPolicyStore(policyMocks.NewMockDataStore(mockCtrl)).
+			WithSecretStore(secretMocks.NewMockDataStore(mockCtrl)).
+			WithServiceAccountStore(serviceAccountMocks.NewMockDataStore(mockCtrl)).
+			WithNodeStore(nodeMocks.NewMockDataStore(mockCtrl)).
+			WithNamespaceStore(namespaceMocks.NewMockDataStore(mockCtrl)).
+			WithRiskStore(riskDatastoreMocks.NewMockDataStore(mockCtrl)).
+			WithRoleStore(roleMocks.NewMockDataStore(mockCtrl)).
+			WithRoleBindingStore(roleBindingsMocks.NewMockDataStore(mockCtrl)).
+			WithClusterDataStore(clusterDataStoreMocks.NewMockDataStore(mockCtrl)).
+			WithImageIntegrationStore(imageIntegrationDataStoreMocks.NewMockDataStore(mockCtrl)).
+			WithAggregator(nil).
+			WithPolicyCategoryDataStore(categoryDataStoreMocks.NewMockDataStore(mockCtrl)).
+			Build().(*serviceImpl)
+
+		searchFuncs := svc.getSearchFuncs()
+
+		imageSearchFunc, ok := searchFuncs[v1.SearchCategory_IMAGES]
+		assert.True(t, ok, "expected search func for IMAGES category")
+
+		imageV2SearchFunc, ok := searchFuncs[v1.SearchCategory_IMAGES_V2]
+		assert.True(t, ok, "expected search func for IMAGES_V2 category")
+
+		imagesStore.EXPECT().SearchImages(ctx, q).Times(0)
+		imagesV2Store.EXPECT().SearchImages(ctx, q).Return(nil, nil).Times(2)
+
+		_, err := imageSearchFunc(ctx, q)
+		assert.NoError(t, err)
+
+		_, err = imageV2SearchFunc(ctx, q)
+		assert.NoError(t, err)
+	})
+}
+
+func TestGetAutocompleteSearchers_FlattenImageDataRoutesImageAutocomplete(t *testing.T) {
+	ctx := context.Background()
+	q := &v1.Query{}
+
+	t.Run("FlattenImageData disabled routes IMAGES autocomplete to images searcher", func(t *testing.T) {
+		if features.FlattenImageData.Enabled() {
+			t.Skip("Skipping test - FlattenImageData is enabled")
+		}
+
+		mockCtrl := gomock.NewController(t)
+		defer mockCtrl.Finish()
+
+		imagesStore := imageMocks.NewMockDataStore(mockCtrl)
+		imagesV2Store := imageV2DatastoreMocks.NewMockDataStore(mockCtrl)
+
+		svc := NewBuilder().
+			WithAlertStore(alertMocks.NewMockDataStore(mockCtrl)).
+			WithDeploymentStore(deploymentMocks.NewMockDataStore(mockCtrl)).
+			WithImageStore(imagesStore).
+			WithImageV2Store(imagesV2Store).
+			WithPolicyStore(policyMocks.NewMockDataStore(mockCtrl)).
+			WithSecretStore(secretMocks.NewMockDataStore(mockCtrl)).
+			WithServiceAccountStore(serviceAccountMocks.NewMockDataStore(mockCtrl)).
+			WithNodeStore(nodeMocks.NewMockDataStore(mockCtrl)).
+			WithNamespaceStore(namespaceMocks.NewMockDataStore(mockCtrl)).
+			WithRiskStore(riskDatastoreMocks.NewMockDataStore(mockCtrl)).
+			WithRoleStore(roleMocks.NewMockDataStore(mockCtrl)).
+			WithRoleBindingStore(roleBindingsMocks.NewMockDataStore(mockCtrl)).
+			WithClusterDataStore(clusterDataStoreMocks.NewMockDataStore(mockCtrl)).
+			WithImageIntegrationStore(imageIntegrationDataStoreMocks.NewMockDataStore(mockCtrl)).
+			WithAggregator(nil).
+			WithPolicyCategoryDataStore(categoryDataStoreMocks.NewMockDataStore(mockCtrl)).
+			Build().(*serviceImpl)
+
+		searchers := svc.getAutocompleteSearchers()
+
+		imageSearcher, ok := searchers[v1.SearchCategory_IMAGES]
+		assert.True(t, ok, "expected autocomplete searcher for IMAGES category")
+
+		// The images store implements the Searcher interface via its Search method
+		imagesStore.EXPECT().Search(ctx, q).Return(nil, nil).Times(1)
+		imagesV2Store.EXPECT().Search(ctx, q).Times(0)
+
+		_, err := imageSearcher.Search(ctx, q)
+		assert.NoError(t, err)
+	})
+
+	t.Run("FlattenImageData enabled routes IMAGES autocomplete to imagesV2 searcher", func(t *testing.T) {
+		if !features.FlattenImageData.Enabled() {
+			t.Skip("Skipping test - FlattenImageData is disabled")
+		}
+
+		mockCtrl := gomock.NewController(t)
+		defer mockCtrl.Finish()
+
+		imagesStore := imageMocks.NewMockDataStore(mockCtrl)
+		imagesV2Store := imageV2DatastoreMocks.NewMockDataStore(mockCtrl)
+
+		svc := NewBuilder().
+			WithAlertStore(alertMocks.NewMockDataStore(mockCtrl)).
+			WithDeploymentStore(deploymentMocks.NewMockDataStore(mockCtrl)).
+			WithImageStore(imagesStore).
+			WithImageV2Store(imagesV2Store).
+			WithPolicyStore(policyMocks.NewMockDataStore(mockCtrl)).
+			WithSecretStore(secretMocks.NewMockDataStore(mockCtrl)).
+			WithServiceAccountStore(serviceAccountMocks.NewMockDataStore(mockCtrl)).
+			WithNodeStore(nodeMocks.NewMockDataStore(mockCtrl)).
+			WithNamespaceStore(namespaceMocks.NewMockDataStore(mockCtrl)).
+			WithRiskStore(riskDatastoreMocks.NewMockDataStore(mockCtrl)).
+			WithRoleStore(roleMocks.NewMockDataStore(mockCtrl)).
+			WithRoleBindingStore(roleBindingsMocks.NewMockDataStore(mockCtrl)).
+			WithClusterDataStore(clusterDataStoreMocks.NewMockDataStore(mockCtrl)).
+			WithImageIntegrationStore(imageIntegrationDataStoreMocks.NewMockDataStore(mockCtrl)).
+			WithAggregator(nil).
+			WithPolicyCategoryDataStore(categoryDataStoreMocks.NewMockDataStore(mockCtrl)).
+			Build().(*serviceImpl)
+
+		searchers := svc.getAutocompleteSearchers()
+
+		imageSearcher, ok := searchers[v1.SearchCategory_IMAGES]
+		assert.True(t, ok, "expected autocomplete searcher for IMAGES category")
+
+		imagesStore.EXPECT().Search(ctx, q).Times(0)
+		imagesV2Store.EXPECT().Search(ctx, q).Return(nil, nil).Times(1)
+
+		_, err := imageSearcher.Search(ctx, q)
+		assert.NoError(t, err)
+	})
 }
 
 func TestSearchFuncs(t *testing.T) {

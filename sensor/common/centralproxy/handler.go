@@ -14,24 +14,28 @@ import (
 	"github.com/stackrox/rox/pkg/retryablehttp"
 	"github.com/stackrox/rox/pkg/urlfmt"
 	"github.com/stackrox/rox/sensor/common"
+	"google.golang.org/grpc"
 	"k8s.io/client-go/kubernetes"
 )
 
 var (
 	log = logging.LoggerForModule()
 
-	_ common.Notifiable = (*Handler)(nil)
+	_ common.Notifiable           = (*Handler)(nil)
+	_ common.CentralGRPCConnAware = (*Handler)(nil)
 )
 
 // Handler handles HTTP proxy requests to Central.
 type Handler struct {
-	proxy            *httputil.ReverseProxy
 	centralReachable atomic.Bool
+	clusterIDGetter  clusterIDGetter
 	authorizer       *k8sAuthorizer
+	transport        *scopedTokenTransport
+	proxy            *httputil.ReverseProxy
 }
 
 // NewProxyHandler creates a new proxy handler that forwards requests to Central.
-func NewProxyHandler(centralEndpoint string, centralCertificates []*x509.Certificate, token string) (*Handler, error) {
+func NewProxyHandler(centralEndpoint string, centralCertificates []*x509.Certificate, clusterIDGetter clusterIDGetter) (*Handler, error) {
 	centralBaseURL, err := url.Parse(
 		urlfmt.FormatURL(centralEndpoint, urlfmt.HTTPS, urlfmt.NoTrailingSlash),
 	)
@@ -39,9 +43,30 @@ func NewProxyHandler(centralEndpoint string, centralCertificates []*x509.Certifi
 		return nil, errors.Wrap(err, "parsing endpoint")
 	}
 
-	proxy, err := newCentralReverseProxy(centralBaseURL, centralCertificates, token)
+	baseTransport, err := createBaseTransport(centralBaseURL, centralCertificates)
 	if err != nil {
-		return nil, errors.Wrap(err, "creating central reverse proxy")
+		return nil, errors.Wrap(err, "creating base transport")
+	}
+
+	transport := newScopedTokenTransport(baseTransport, clusterIDGetter)
+
+	proxy := &httputil.ReverseProxy{
+		Transport: transport,
+		Rewrite: func(r *httputil.ProxyRequest) {
+			r.SetURL(centralBaseURL)
+		},
+		ErrorHandler: func(w http.ResponseWriter, r *http.Request, err error) {
+			log.Errorf("Proxy error: %v", err)
+			if errors.Is(err, errServiceUnavailable) {
+				pkghttputil.WriteError(w,
+					pkghttputil.Errorf(http.StatusServiceUnavailable, "proxy temporarily unavailable: %v", err),
+				)
+				return
+			}
+			pkghttputil.WriteError(w,
+				pkghttputil.Errorf(http.StatusInternalServerError, "failed to contact central: %v", err),
+			)
+		},
 	}
 
 	restConfig, err := k8sutil.GetK8sInClusterConfig()
@@ -56,9 +81,17 @@ func NewProxyHandler(centralEndpoint string, centralCertificates []*x509.Certifi
 	}
 
 	return &Handler{
-		proxy:      proxy,
-		authorizer: newK8sAuthorizer(k8sClient),
+		clusterIDGetter: clusterIDGetter,
+		authorizer:      newK8sAuthorizer(k8sClient),
+		transport:       transport,
+		proxy:           proxy,
 	}, nil
+}
+
+// SetCentralGRPCClient implements common.CentralGRPCConnAware.
+// It sets the gRPC connection used by the token provider to request tokens from Central.
+func (h *Handler) SetCentralGRPCClient(cc grpc.ClientConnInterface) {
+	h.transport.SetClient(cc)
 }
 
 // Notify reacts to sensor going into online/offline mode.
@@ -96,11 +129,21 @@ func (h *Handler) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
 		return
 	}
 
-	if h.authorizer != nil {
-		if err := h.authorizer.authorize(request.Context(), request); err != nil {
-			pkghttputil.WriteError(writer, err)
-			return
-		}
+	if h.authorizer == nil {
+		log.Error("Authorizer is nil - this indicates a misconfiguration in the central proxy handler")
+		pkghttputil.WriteError(writer, pkghttputil.NewError(http.StatusInternalServerError, "authorizer not configured"))
+		return
+	}
+
+	userInfo, err := h.authorizer.authenticate(request.Context(), request)
+	if err != nil {
+		pkghttputil.WriteError(writer, err)
+		return
+	}
+
+	if err := h.authorizer.authorize(request.Context(), userInfo, request); err != nil {
+		pkghttputil.WriteError(writer, err)
+		return
 	}
 
 	h.proxy.ServeHTTP(writer, request)

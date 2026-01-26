@@ -5,6 +5,7 @@ import (
 	"github.com/stackrox/rox/central/compliance/standards/index"
 	subjectMapping "github.com/stackrox/rox/central/rbac/service/mapping"
 	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/search"
 )
@@ -23,10 +24,14 @@ func GetEntityOptionsMap() map[v1.SearchCategory]search.OptionsMap {
 		schema.ProcessIndicatorsSchema.OptionsMap,
 	)
 
+	imageOptionsMap := schema.ImagesSchema.OptionsMap
+	if features.FlattenImageData.Enabled() {
+		imageOptionsMap = schema.ImagesV2Schema.OptionsMap
+	}
 	imageToVulnerabilityV2SearchOptions := search.CombineOptionsMaps(
 		schema.ImageCvesV2Schema.OptionsMap,
 		schema.ImageComponentV2Schema.OptionsMap,
-		schema.ImagesSchema.OptionsMap,
+		imageOptionsMap,
 		schema.DeploymentsSchema.OptionsMap,
 	)
 
@@ -88,7 +93,11 @@ func GetEntityOptionsMap() map[v1.SearchCategory]search.OptionsMap {
 
 	entityOptionsMap[v1.SearchCategory_IMAGE_COMPONENTS_V2] = imageToVulnerabilityV2SearchOptions
 	entityOptionsMap[v1.SearchCategory_IMAGE_VULNERABILITIES_V2] = imageToVulnerabilityV2SearchOptions
-	entityOptionsMap[v1.SearchCategory_IMAGES] = imageToVulnerabilityV2SearchOptions
+	if features.FlattenImageData.Enabled() {
+		entityOptionsMap[v1.SearchCategory_IMAGES_V2] = imageToVulnerabilityV2SearchOptions
+	} else {
+		entityOptionsMap[v1.SearchCategory_IMAGES] = imageToVulnerabilityV2SearchOptions
+	}
 
 	return entityOptionsMap
 }

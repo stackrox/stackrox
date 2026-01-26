@@ -299,16 +299,20 @@ func (tracker *TrackerBase[F]) Gather(ctx context.Context) {
 
 	descriptionTitle := strings.ToTitle(tracker.description[0:1]) + tracker.description[1:]
 	centralclient.Singleton().Telemeter().Track(
-		descriptionTitle+" metrics gathered", nil,
-		telemeter.WithTraits(tracker.makeProps(descriptionTitle, end.Sub(begin))),
+		descriptionTitle+" metrics gathered",
+		// Event property:
+		map[string]any{
+			descriptionTitle + " gathering seconds": uint32(end.Sub(begin).Round(time.Second).Seconds()),
+		},
+		// Central traits:
+		telemeter.WithTraits(tracker.makeProps(descriptionTitle)),
 		telemeter.WithNoDuplicates(tracker.metricPrefix))
 }
 
-func (tracker *TrackerBase[F]) makeProps(descriptionTitle string, duration time.Duration) map[string]any {
+func (tracker *TrackerBase[F]) makeProps(descriptionTitle string) map[string]any {
 	props := make(map[string]any, 3)
 	props["Total "+descriptionTitle+" metrics"] = len(tracker.config.metrics)
 	props[descriptionTitle+" metrics labels"] = getLabels(tracker.config.metrics)
-	props[descriptionTitle+" gathering seconds"] = uint32(duration.Round(time.Second).Seconds())
 	return props
 }
 

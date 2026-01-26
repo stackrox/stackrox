@@ -14,13 +14,13 @@ export function isVulnerabilitySeverityLabel(value: unknown): value is Vulnerabi
     return vulnerabilitySeverityLabels.some((severity) => severity === value);
 }
 
-const fixableStatuses = ['Fixable', 'Not fixable'] as const;
+export const fixableStatuses = ['Fixable', 'Not fixable'] as const;
 export type FixableStatus = (typeof fixableStatuses)[number];
 export function isFixableStatus(value: unknown): value is FixableStatus {
     return fixableStatuses.some((status) => status === value);
 }
 
-const scannableStatuses = ['Scanned', 'Not scanned'] as const;
+export const scannableStatuses = ['Scanned', 'Not scanned'] as const;
 export type ScannableStatus = (typeof scannableStatuses)[number];
 export function isScannableStatus(value: unknown): value is ScannableStatus {
     return scannableStatuses.some((status) => status === value);

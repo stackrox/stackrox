@@ -9,6 +9,7 @@ import {
     Text,
 } from '@patternfly/react-core';
 import { gql, useQuery } from '@apollo/client';
+import type { DocumentNode } from '@apollo/client';
 import type { Pagination as PaginationParam } from 'services/types';
 
 import TableErrorComponent from 'Components/PatternFly/TableErrorComponent';
@@ -17,6 +18,7 @@ import type { ColumnConfigOverrides } from 'hooks/useManagedColumns';
 import type { UseURLPaginationResult } from 'hooks/useURLPagination';
 import useURLSort from 'hooks/useURLSort';
 import useSelectToggle from 'hooks/patternfly/useSelectToggle';
+import useFeatureFlags from 'hooks/useFeatureFlags';
 
 import { getPaginationParams, getRequestQueryStringForSearchFilter } from 'utils/searchUtils';
 import DeploymentResourceTable, {
@@ -45,11 +47,27 @@ const imageResourcesQuery = gql`
     }
 `;
 
+const imageV2ResourcesQuery = gql`
+    ${deploymentResourcesFragment}
+    query getImageResources($id: ID!, $query: String, $pagination: Pagination) {
+        imageV2(id: $id) {
+            id
+            digest
+            ...DeploymentResources
+        }
+    }
+`;
+
+export const getImageResourcesQuery = (isNewImageDataModelEnabled: boolean): DocumentNode =>
+    isNewImageDataModelEnabled ? imageV2ResourcesQuery : imageResourcesQuery;
+
 function ImagePageResources({
     imageId,
     pagination,
     deploymentResourceColumnOverrides,
 }: ImagePageResourcesProps) {
+    const { isFeatureFlagEnabled } = useFeatureFlags();
+    const isNewImageDataModelEnabled = isFeatureFlagEnabled('ROX_FLATTEN_IMAGE_DATA');
     const { baseSearchFilter } = useWorkloadCveViewContext();
     const { page, perPage, setPage, setPerPage } = pagination;
     const { sortOption, getSortParams } = useURLSort({
@@ -61,9 +79,12 @@ function ImagePageResources({
     const deploymentTableToggle = useSelectToggle(true);
 
     const { data, previousData, loading, error } = useQuery<
-        { image: DeploymentResources | null },
+        {
+            image: DeploymentResources | null; // Legacy image data model, will be null when ROX_FLATTEN_IMAGE_DATA is enabled
+            imageV2: DeploymentResources | null; // New image data model, will be null when ROX_FLATTEN_IMAGE_DATA is disabled
+        },
         { id: string; query: string; pagination: PaginationParam }
-    >(imageResourcesQuery, {
+    >(getImageResourcesQuery(isNewImageDataModelEnabled), {
         variables: {
             id: imageId,
             query: getRequestQueryStringForSearchFilter(baseSearchFilter),
@@ -71,7 +92,9 @@ function ImagePageResources({
         },
     });
 
-    const imageResourcesData = data?.image ?? previousData?.image;
+    const imageResourcesData =
+        (data && (isNewImageDataModelEnabled ? data.imageV2 : data.image)) ??
+        (previousData && (isNewImageDataModelEnabled ? previousData.imageV2 : previousData.image));
     const deploymentCount = imageResourcesData?.deploymentCount ?? 0;
 
     const deploymentResourceColumnState = useManagedColumns(

@@ -543,7 +543,7 @@ func Test_makeProps(t *testing.T) {
 		period:  time.Hour,
 	})
 	descriptionTitle := strings.ToTitle(tracker.description[0:1]) + tracker.description[1:]
-	props := tracker.makeProps(descriptionTitle, 12345*time.Millisecond)
+	props := tracker.makeProps(descriptionTitle)
 	get := func(key string) any {
 		if v, ok := props[key]; ok {
 			return v
@@ -551,10 +551,9 @@ func Test_makeProps(t *testing.T) {
 		return nil
 	}
 
-	assert.Len(t, props, 3)
+	assert.Len(t, props, 2)
 	assert.ElementsMatch(t, get("Telemetry test metrics labels"), []Label{"Cluster", "Namespace", "Severity"})
 	assert.Equal(t, len(md), get("Total Telemetry test metrics"))
-	assert.Equal(t, uint32(12), get("Telemetry test gathering seconds"))
 }
 
 func Test_formatMetricsHelp(t *testing.T) {

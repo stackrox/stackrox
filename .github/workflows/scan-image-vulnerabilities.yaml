@@ -1,0 +1,158 @@
+name: "RELEASE: Scan images for vulnerabilities"
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Full version tag
+        required: true
+        default: 0.0.0-test-rc.1
+        type: string
+      wait-for-images-limit:
+        description: Duration to wait for images to be available (as Go duration string or a number of seconds, set 0 to skip waiting)
+        required: true
+        # When changing the default here, also update the default in run-parameters.
+        default: 3h10m
+        type: string
+  push:
+    tags: ['*']
+
+run-name: ${{ format('Scan images for vulnerabilities ({0})', inputs.version || github.ref_name) }}
+
+jobs:
+  run-parameters:
+    name: Run parameters
+    runs-on: ubuntu-latest
+    outputs:
+      wait-for-images-limit: ${{ steps.run-parameters.outputs.wait-for-images-limit }}
+      version: ${{ steps.run-parameters.outputs.version }}
+    steps:
+      - name: Run parameters
+        id: run-parameters
+        run: |
+          wait_for_images_limit="${{ inputs.wait-for-images-limit || '3h10m' }}"
+          wait_for_images_limit="$(sed 's/h/*3600 +/g; s/m/*60 +/g; s/s/\+/g; s/+[ ]*$//g' <<< "${wait_for_images_limit}" | bc)"
+          version="${{ inputs.version || github.ref_name }}"
+
+          echo "wait-for-images-limit=${wait_for_images_limit}" >> "${GITHUB_OUTPUT}"
+          echo "version=${version}" >> "${GITHUB_OUTPUT}"
+          {
+            echo "Event: ${{ github.event_name }}"
+            echo "Version: ${version}"
+            echo "Wait for images limit: ${wait_for_images_limit}"
+            echo "Inputs:"
+            echo '```'
+            echo "${{ toJSON(inputs) }}"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  scan-image-vulnerabilities-upstream:
+    name: "Upstream: ${{ matrix.image }}:${{ needs.run-parameters.outputs.version }}"
+    runs-on: ubuntu-latest
+    needs: [run-parameters]
+    permissions:
+      # Needed for stackrox/central-login to create the JWT token.
+      id-token: write
+    strategy:
+      fail-fast: false
+      matrix:
+        image:
+          [
+            "central-db",
+            "collector",
+            "main",
+            "roxctl",
+            "scanner",
+            "scanner-db",
+            "scanner-db-slim",
+            "scanner-slim",
+            "scanner-v4",
+            "scanner-v4-db",
+            "stackrox-operator",
+          ]
+    steps:
+      - name: Sanitize nightly tag
+        id: sanitize-nightly-tag
+        run: |
+          set -euo pipefail
+          tag="${{ needs.run-parameters.outputs.version }}"
+          if [[ "${{ matrix.image }}" = "stackrox-operator" && "${tag}" == *-nightly-* ]]; then
+            # Replace '.x' in patch version with '.0'. Example: 0.1.x-nightly-20260114 -> 0.1.0-nightly-20260114
+            tag="$(echo "${tag}" | sed -E 's@^(([[:digit:]]+\.)+)x(-)?@\10\3@g')"
+          fi
+          echo "tag=${tag}" >> "${GITHUB_OUTPUT}"
+
+      - name: Scan image vulnerabilities
+        uses: stackrox/actions/release/scan-image-vulnerabilities@v1
+        id: scan-image
+        with:
+          image: rhacs-eng/${{ matrix.image }}
+          version: ${{ steps.sanitize-nightly-tag.outputs.tag }}
+          wait-limit: ${{ needs.run-parameters.outputs.wait-for-images-limit }}
+          summary-prefix: "Upstream:"
+          quay-bearer-token: ${{ secrets.QUAY_RHACS_ENG_BEARER_TOKEN }}
+          central-url: ${{ vars.ACS_DOGFOODING_CENTRAL_URL }}
+
+      - name: Upload scan result artifact
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: upstream_quay_io_rhacs-eng_${{ matrix.image }}_${{ needs.run-parameters.outputs.version }}.json
+          path: ${{ steps.scan-image.outputs.result-path }}
+          retention-days: 30
+
+  scan-image-vulnerabilities-konflux:
+    name: "Konflux: ${{ matrix.image }}:${{ needs.run-parameters.outputs.version }}"
+    runs-on: ubuntu-latest
+    needs: [run-parameters]
+    permissions:
+      # Needed for stackrox/central-login to create the JWT token.
+      id-token: write
+    strategy:
+      fail-fast: false
+      matrix:
+        image:
+          [
+            "release-central-db",
+            "release-collector",
+            "release-main",
+            "release-roxctl",
+            "release-scanner",
+            "release-scanner-db",
+            "release-scanner-db-slim",
+            "release-scanner-slim",
+            "release-scanner-v4",
+            "release-scanner-v4-db",
+            "release-operator",
+          ]
+    steps:
+      - name: Sanitize nightly tag
+        id: sanitize-nightly-tag
+        run: |
+          set -euo pipefail
+          tag="${{ needs.run-parameters.outputs.version }}"
+          if [[ "${tag}" == *-nightly-* ]]; then
+            # Replace '.x' in patch version with '.0' and append '-fast' suffix.
+            # Example: 0.1.x-nightly-20260114 -> 0.1.0-nightly-20260114-fast
+            suffix="fast"
+            tag="$(echo "${tag}" | sed -E 's@^(([[:digit:]]+\.)+)x(-)?@\10\3@g')-${suffix}"
+          fi
+          echo "tag=${tag}" >> "${GITHUB_OUTPUT}"
+
+      - name: Scan image vulnerabilities
+        uses: stackrox/actions/release/scan-image-vulnerabilities@v1
+        id: scan-image
+        with:
+          image: rhacs-eng/${{ matrix.image }}
+          version: ${{ steps.sanitize-nightly-tag.outputs.tag }}
+          wait-limit: ${{ needs.run-parameters.outputs.wait-for-images-limit }}
+          summary-prefix: "Konflux:"
+          quay-bearer-token: ${{ secrets.QUAY_RHACS_ENG_BEARER_TOKEN }}
+          central-url: ${{ vars.ACS_DOGFOODING_CENTRAL_URL }}
+
+      - name: Upload scan result artifact
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: konflux_quay_io_rhacs-eng_${{ matrix.image }}_${{ needs.run-parameters.outputs.version }}.json
+          path: ${{ steps.scan-image.outputs.result-path }}
+          retention-days: 30

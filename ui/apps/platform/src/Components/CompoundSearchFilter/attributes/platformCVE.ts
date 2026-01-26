@@ -37,4 +37,4 @@ export const Type: CompoundSearchFilterAttribute = {
     },
 };
 
-export const platformCVEAttributes = [Name, DiscoveredTime, CVSS, Type];
+export const platformCVEAttributes = [CVSS, DiscoveredTime, Name, Type];

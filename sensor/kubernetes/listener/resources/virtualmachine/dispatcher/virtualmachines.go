@@ -11,8 +11,15 @@ import (
 	kubeVirtV1 "kubevirt.io/api/core/v1"
 )
 
+// Keep the facts keys camelCase to match the style used elsewhere in the UI.
 const (
-	GuestOSKey     = "Guest OS"
+	GuestOSKey     = "guestOS"
+	DescriptionKey = "description"
+	IPAddressesKey = "ipAddresses"
+	ActivePodsKey  = "activePods"
+	NodeNameKey    = "nodeName"
+	BootOrderKey   = "bootOrder"
+	CDRomDisksKey  = "cdRomDisks"
 	UnknownGuestOS = "unknown"
 )
 
@@ -46,11 +53,15 @@ func (d *VirtualMachineDispatcher) ProcessEvent(
 		return nil
 	}
 	isRunning := virtualMachine.Status.PrintableStatus == kubeVirtV1.VirtualMachineStatusRunning
+	disks := extractDisksFromVM(virtualMachine)
 	vm := &virtualmachine.Info{
-		ID:        virtualmachine.VMID(virtualMachine.GetUID()),
-		Name:      virtualMachine.GetName(),
-		Namespace: virtualMachine.GetNamespace(),
-		Running:   isRunning,
+		ID:          virtualmachine.VMID(virtualMachine.GetUID()),
+		Name:        virtualMachine.GetName(),
+		Namespace:   virtualMachine.GetNamespace(),
+		Running:     isRunning,
+		Description: descriptionFromAnnotations(virtualMachine.GetAnnotations()),
+		BootOrder:   extractBootOrder(disks),
+		CDRomDisks:  extractCDRomDisks(disks),
 	}
 	return processVirtualMachine(vm, action, d.clusterID, d.store)
 }
