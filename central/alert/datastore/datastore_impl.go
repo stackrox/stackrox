@@ -429,10 +429,11 @@ func (c *AlertSearchResultConverter) BuildLocation(result *search.Result) string
 	resourceType := fv[strings.ToLower(search.ResourceType.String())]
 
 	var entityName string
-	if entityType == "DEPLOYMENT" {
+	switch entityType {
+	case "DEPLOYMENT":
 		entityName = deploymentName
 		resourceType = entityType
-	} else if entityType == "RESOURCE" {
+	case "RESOURCE":
 		entityName = resourceName
 	}
 
