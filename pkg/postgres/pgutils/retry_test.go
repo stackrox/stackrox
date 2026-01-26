@@ -124,8 +124,6 @@ func TestRetry_ContextCancellation(t *testing.T) {
 	// Set shorter intervals for faster testing
 	require.NoError(t, os.Setenv("ROX_POSTGRES_QUERY_RETRY_INTERVAL", "100ms"))
 	require.NoError(t, os.Setenv("ROX_POSTGRES_QUERY_RETRY_TIMEOUT", "5s"))
-	defer os.Unsetenv("ROX_POSTGRES_QUERY_RETRY_INTERVAL")
-	defer os.Unsetenv("ROX_POSTGRES_QUERY_RETRY_TIMEOUT")
 
 	ctx, cancel := context.WithCancel(context.Background())
 	attempts := 0
