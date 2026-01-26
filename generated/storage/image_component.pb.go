@@ -240,7 +240,7 @@ type ImageComponentV2 struct {
 	ImageIdV2     string                           `protobuf:"bytes,14,opt,name=image_id_v2,json=imageIdV2,proto3" json:"image_id_v2,omitempty" sql:"fk(ImageV2:id),index=btree,allow-null"` // @gotags: sql:"fk(ImageV2:id),index=btree,allow-null"
 	// Deprecated: Marked as deprecated in storage/image_component.proto.
 	FromBaseImage bool      `protobuf:"varint,15,opt,name=from_base_image,json=fromBaseImage,proto3" json:"from_base_image,omitempty"`
-	LayerType     LayerType `protobuf:"varint,16,opt,name=layer_type,json=layerType,proto3,enum=storage.LayerType" json:"layer_type,omitempty" search:"Component Layer Type,hidden"` // @gotags: search:"Component Layer Type,hidden"
+	LayerType     LayerType `protobuf:"varint,16,opt,name=layer_type,json=layerType,proto3,enum=storage.LayerType" json:"layer_type,omitempty" search:"Component Layer Type"` // @gotags: search:"Component Layer Type"
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
