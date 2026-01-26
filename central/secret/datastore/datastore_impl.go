@@ -84,10 +84,10 @@ func (d *datastoreImpl) SearchListSecrets(ctx context.Context, request *v1.Query
 		pkgSearch.NewQuerySelect(pkgSearch.SecretID).Proto(),
 		pkgSearch.NewQuerySelect(pkgSearch.SecretName).Proto(),
 		pkgSearch.NewQuerySelect(pkgSearch.ClusterID).Proto(),
-		pkgSearch.NewQuerySelect(pkgSearch.Cluster).Proto(),       // ClusterName
+		pkgSearch.NewQuerySelect(pkgSearch.Cluster).Proto(),
 		pkgSearch.NewQuerySelect(pkgSearch.Namespace).Proto(),
 		pkgSearch.NewQuerySelect(pkgSearch.CreatedTime).Proto(),
-		pkgSearch.NewQuerySelect(pkgSearch.SecretType).Proto(),    // Child table field - will use array_agg
+		pkgSearch.NewQuerySelect(pkgSearch.SecretType).Proto(),
 	}
 
 	// Execute single database query using search framework
