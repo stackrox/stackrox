@@ -37,13 +37,15 @@ message Traits {
   // - DEFAULT: the object is a default object, such as default roles, access scopes etc.
   // - DECLARATIVE: the object is created via declarative configuration.
   // - DECLARATIVE_ORPHANED: the object is created via declarative configuration and then unsuccessfully deleted(for example, because it is referenced by another object)
-  // - DYNAMIC: the object is created via an internal API.
+  // - DYNAMIC: the object is created via an internal API, generated on the fly and meant to be ephemeral.
   // Based on the origin, different rules apply to the objects.
   // Objects with the DECLARATIVE origin are not allowed to be modified via API, only via declarative configuration.
   // Additionally, they may not reference objects with the IMPERATIVE or DYNAMIC origin.
   // Objects with the DEFAULT origin are not allowed to be modified via either API or declarative configuration.
   // They may be referenced by all other objects.
-  // Objects with the IMPERATIVE or DYNAMIC origin are allowed to be modified via API, not via declarative configuration.
+  // Objects with the IMPERATIVE origin are allowed to be modified via API, not via declarative configuration.
+  // They may reference all other objects.
+  // Objects with the DYNAMIC origin are neither allowed to be modified via API, nor via declarative configuration.
   // They may reference all other objects.
   // Objects with the DECLARATIVE_ORPHANED origin are not allowed to be modified via either API or declarative configuration.
   // DECLARATIVE_ORPHANED resource can become DECLARATIVE again if it is redefined in declarative configuration.

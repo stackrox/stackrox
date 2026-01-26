@@ -9,12 +9,12 @@ import (
 
 	clusterDataStore "github.com/stackrox/rox/central/cluster/datastore"
 	namespaceDataStore "github.com/stackrox/rox/central/namespace/datastore"
-	roleDatastore "github.com/stackrox/rox/central/role/datastore"
+	rolePkg "github.com/stackrox/rox/central/role"
+	roleDataStore "github.com/stackrox/rox/central/role/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/declarativeconfig"
-	"github.com/stackrox/rox/pkg/defaults/accesscontrol"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/uuid"
@@ -41,6 +41,7 @@ type serviceImplTester struct {
 	postgres *pgtest.TestPostgres
 	service  Service
 
+	roleStore      roleDataStore.DataStore
 	clusterStore   clusterDataStore.DataStore
 	namespaceStore namespaceDataStore.DataStore
 
@@ -61,7 +62,7 @@ func (s *serviceImplTester) Setup(t *testing.T) {
 	var err error
 	s.postgres = pgtest.ForT(t)
 	require.NotNil(t, s.postgres)
-	roleStore := roleDatastore.GetTestPostgresDataStore(t, s.postgres.DB)
+	s.roleStore = roleDataStore.GetTestPostgresDataStore(t, s.postgres.DB)
 	clusterStore, err := clusterDataStore.GetTestPostgresDataStore(t, s.postgres.DB)
 	require.NoError(t, err)
 	s.clusterStore = clusterStore
@@ -69,7 +70,7 @@ func (s *serviceImplTester) Setup(t *testing.T) {
 	require.NoError(t, err)
 	s.namespaceStore = namespaceStore
 
-	s.service = New(roleStore, clusterStore, namespaceStore)
+	s.service = New(s.roleStore, s.clusterStore, s.namespaceStore)
 }
 
 func (s *serviceImplTester) SetupTest(t *testing.T) {
@@ -143,23 +144,18 @@ func (s *serviceImplTester) createRole(t *testing.T, roleName string, traits *st
 	ps := s.createPermissionSet(t, roleName, traits)
 	scope := s.createAccessScope(t, roleName, traits)
 
-	createRoleRequest := &v1.CreateRoleRequest{
-		Name: roleName,
-		Role: getValidRole(roleName),
+	role := &storage.Role{
+		Name:            roleName,
+		Description:     fmt.Sprintf("Test role for %s", roleName),
+		PermissionSetId: ps.GetId(),
+		AccessScopeId:   scope.GetId(),
+		Traits:          traits,
 	}
-	createRoleRequest.Role.PermissionSetId = ps.GetId()
-	createRoleRequest.Role.AccessScopeId = scope.GetId()
-	createRoleRequest.Role.Traits = traits
 
-	_, createErr := s.service.CreateRole(ctx, createRoleRequest)
-	require.NoError(t, createErr)
+	err := s.roleStore.AddRole(ctx, role)
+	require.NoError(t, err)
 	s.storedRoleNames = append(s.storedRoleNames, roleName)
 
-	readRoleRequest := &v1.ResourceByID{
-		Id: roleName,
-	}
-	role, readErr := s.service.GetRole(ctx, readRoleRequest)
-	require.NoError(t, readErr)
 	return role
 }
 
@@ -186,10 +182,11 @@ func (s *serviceImplTester) createPermissionSet(t *testing.T, name string, trait
 		ResourceToAccess: nil,
 		Traits:           traits,
 	}
-	ps, postErr := s.service.PostPermissionSet(ctx, permissionSet)
-	require.NoError(t, postErr)
-	s.storedPermissionSetIDs = append(s.storedPermissionSetIDs, ps.GetId())
-	return ps
+	permissionSet.Id = rolePkg.GeneratePermissionSetID()
+	err := s.roleStore.UpsertPermissionSet(ctx, permissionSet)
+	require.NoError(t, err)
+	s.storedPermissionSetIDs = append(s.storedPermissionSetIDs, permissionSet.GetId())
+	return permissionSet
 }
 
 func (s *serviceImplTester) deletePermissionSet(t *testing.T, permissionSetID string) {
@@ -217,10 +214,11 @@ func (s *serviceImplTester) createAccessScope(t *testing.T, name string, traits 
 		},
 		Traits: traits,
 	}
-	postedScope, postErr := s.service.PostSimpleAccessScope(ctx, scope)
-	require.NoError(t, postErr)
-	s.storedAccessScopeIDs = append(s.storedAccessScopeIDs, postedScope.GetId())
-	return postedScope
+	scope.Id = rolePkg.GenerateAccessScopeID()
+	err := s.roleStore.UpsertAccessScope(ctx, scope)
+	require.NoError(t, err)
+	s.storedAccessScopeIDs = append(s.storedAccessScopeIDs, scope.GetId())
+	return scope
 }
 
 func (s *serviceImplTester) deleteAccessScope(t *testing.T, accessScopeID string) {
@@ -235,18 +233,6 @@ func (s *serviceImplTester) deleteAccessScope(t *testing.T, accessScopeID string
 	}
 	_, deleteErr := s.service.DeleteSimpleAccessScope(ctx, request)
 	require.NoError(t, deleteErr)
-}
-
-func getValidRole(name string) *storage.Role {
-	permissionSetID := accesscontrol.DefaultPermissionSetIDs[accesscontrol.Admin]
-	scopeID := accesscontrol.DefaultAccessScopeIDs[accesscontrol.UnrestrictedAccessScope]
-	return &storage.Role{
-		Name:            name,
-		Description:     fmt.Sprintf("Test role for %s", name),
-		PermissionSetId: permissionSetID,
-		AccessScopeId:   scopeID,
-		Traits:          nil,
-	}
 }
 
 func getNamespaceID(namespaceName string) string {

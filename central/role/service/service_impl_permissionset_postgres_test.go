@@ -6,6 +6,8 @@ import (
 	"testing"
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stretchr/testify/suite"
@@ -61,4 +63,47 @@ func (s *serviceImplPermissionSetTestSuite) TestListPermissionSets() {
 	protoassert.SliceContains(s.T(), permissionSets.GetPermissionSets(), permissionSet4)
 	// Roles with dynamic origin are filtered out.
 	protoassert.SliceNotContains(s.T(), permissionSets.GetPermissionSets(), permissionSet5)
+}
+
+func (s *serviceImplPermissionSetTestSuite) TestPostPermissionSet() {
+	s.Run("Permission set without specified origin can be created by API", func() {
+		inputPermissionSet := &storage.PermissionSet{
+			Name: "Test basic permission set",
+		}
+		ctx := sac.WithAllAccess(s.T().Context())
+		permissionSet, err := s.tester.service.PostPermissionSet(ctx, inputPermissionSet)
+		s.NoError(err)
+		inputPermissionSet.Id = permissionSet.GetId()
+		protoassert.Equal(s.T(), inputPermissionSet, permissionSet)
+	})
+	s.Run("Dynamic scopes cannot be created by API", func() {
+		inputScope := &storage.SimpleAccessScope{
+			Traits: dynamicOriginTraits,
+		}
+		ctx := sac.WithAllAccess(s.T().Context())
+		scope, err := s.tester.service.PostSimpleAccessScope(ctx, inputScope)
+		s.ErrorIs(err, errox.InvalidArgs)
+		s.Nil(scope)
+	})
+}
+
+func (s *serviceImplPermissionSetTestSuite) TestPutPermissionSet() {
+	s.Run("Permission set without specified origin can be updated by API", func() {
+		permissionSetName := "Permission set without origin"
+		inputPermissionSet := s.tester.createPermissionSet(s.T(), permissionSetName, nilTraits)
+		updatedPermissionSet := inputPermissionSet.CloneVT()
+		updatedPermissionSet.Description = "Updated description"
+		ctx := sac.WithAllAccess(s.T().Context())
+		_, err := s.tester.service.PutPermissionSet(ctx, updatedPermissionSet)
+		s.NoError(err)
+	})
+	s.Run("Dynamic scopes cannot be created by API", func() {
+		permissionSetName := "Dynamic permission set"
+		inputPermissionSet := s.tester.createPermissionSet(s.T(), permissionSetName, dynamicOriginTraits)
+		updatedPermissionSet := inputPermissionSet.CloneVT()
+		updatedPermissionSet.Description = "Updated description"
+		ctx := sac.WithAllAccess(s.T().Context())
+		_, err := s.tester.service.PutPermissionSet(ctx, updatedPermissionSet)
+		s.ErrorIs(err, errox.InvalidArgs)
+	})
 }

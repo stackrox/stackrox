@@ -3,9 +3,12 @@
 package service
 
 import (
+	"fmt"
 	"testing"
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/defaults/accesscontrol"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/sac"
@@ -146,4 +149,79 @@ func (s *serviceImplRoleTestSuite) TestGetRoles() {
 	protoassert.SliceContains(s.T(), roles.GetRoles(), role4)
 	// Roles with dynamic origin are filtered out.
 	protoassert.SliceNotContains(s.T(), roles.GetRoles(), role5)
+}
+
+func (s *serviceImplRoleTestSuite) TestCreateRole() {
+	s.Run("Role without specified origin can be created by API", func() {
+		roleName := "Basic test role"
+		ps := s.tester.createPermissionSet(s.T(), roleName, nilTraits)
+		as := s.tester.createAccessScope(s.T(), roleName, nilTraits)
+		roleCreationRequest := &v1.CreateRoleRequest{
+			Name: roleName,
+			Role: &storage.Role{
+				Name:            roleName,
+				PermissionSetId: ps.GetId(),
+				AccessScopeId:   as.GetId(),
+				Traits:          nilTraits,
+			},
+		}
+		ctx := sac.WithAllAccess(s.T().Context())
+		_, err := s.tester.service.CreateRole(ctx, roleCreationRequest)
+		s.NoError(err)
+		s.tester.storedRoleNames = append(s.tester.storedRoleNames, roleName)
+		roleLookupRequest := &v1.ResourceByID{Id: roleName}
+		role, fetchErr := s.tester.service.GetRole(ctx, roleLookupRequest)
+		s.NoError(fetchErr)
+		protoassert.Equal(s.T(), roleCreationRequest.GetRole(), role)
+	})
+	s.Run("Dynamic roles cannot be created by API", func() {
+		roleName := "Dynamic test role"
+		roleCreationRequest := &v1.CreateRoleRequest{
+			Name: roleName,
+			Role: &storage.Role{
+				Name:            roleName,
+				PermissionSetId: accesscontrol.DefaultPermissionSetIDs[accesscontrol.Admin],
+				AccessScopeId:   accesscontrol.DefaultAccessScopeIDs[accesscontrol.UnrestrictedAccessScope],
+				Traits:          dynamicOriginTraits,
+			},
+		}
+		ctx := sac.WithAllAccess(s.T().Context())
+		_, err := s.tester.service.CreateRole(ctx, roleCreationRequest)
+		s.ErrorIs(err, errox.InvalidArgs)
+	})
+}
+
+func (s *serviceImplRoleTestSuite) TestUpdateRole() {
+	s.Run("Roles without specified origin can be updated by API", func() {
+		roleName := "Test Update of basic role"
+		role := s.tester.createRole(s.T(), roleName, nilTraits)
+		updatedRole := role.CloneVT()
+		updatedRole.Description = "Updated description"
+		ctx := sac.WithAllAccess(s.T().Context())
+		_, err := s.tester.service.UpdateRole(ctx, role)
+		s.NoError(err)
+	})
+	s.Run("Dynamic roles cannot be updated by API", func() {
+		roleName := "Test update of dynamic role"
+		role := s.tester.createRole(s.T(), roleName, dynamicOriginTraits)
+		s.tester.storedRoleNames = append(s.tester.storedRoleNames, roleName)
+		updatedRole := role.CloneVT()
+		updatedRole.Description = "Updated description"
+		ctx := sac.WithAllAccess(s.T().Context())
+		updated, err := s.tester.service.UpdateRole(ctx, role)
+		s.ErrorIs(err, errox.InvalidArgs)
+		s.Nil(updated)
+	})
+}
+
+func getValidRole(name string) *storage.Role {
+	permissionSetID := accesscontrol.DefaultPermissionSetIDs[accesscontrol.Admin]
+	scopeID := accesscontrol.DefaultAccessScopeIDs[accesscontrol.UnrestrictedAccessScope]
+	return &storage.Role{
+		Name:            name,
+		Description:     fmt.Sprintf("Test role for %s", name),
+		PermissionSetId: permissionSetID,
+		AccessScopeId:   scopeID,
+		Traits:          nil,
+	}
 }

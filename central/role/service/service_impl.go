@@ -124,6 +124,9 @@ func (s *serviceImpl) CreateRole(ctx context.Context, roleRequest *v1.CreateRole
 	if role.GetName() != "" && role.GetName() != roleRequest.GetName() {
 		return nil, errox.InvalidArgs.CausedBy("different role names in path and body")
 	}
+	if role.GetTraits().GetOrigin() == storage.Traits_DYNAMIC {
+		return nil, errox.InvalidArgs.CausedBy("dynamic roles can only be created by internal services")
+	}
 	role.Name = roleRequest.GetName()
 
 	err := s.roleDataStore.AddRole(ctx, role)
@@ -134,6 +137,9 @@ func (s *serviceImpl) CreateRole(ctx context.Context, roleRequest *v1.CreateRole
 }
 
 func (s *serviceImpl) UpdateRole(ctx context.Context, role *storage.Role) (*v1.Empty, error) {
+	if role.GetTraits().GetOrigin() == storage.Traits_DYNAMIC {
+		return nil, errox.InvalidArgs.CausedBy("dynamic roles cannot be modified by API")
+	}
 	err := s.roleDataStore.UpdateRole(ctx, role)
 	if err != nil {
 		return nil, err
@@ -216,6 +222,10 @@ func (s *serviceImpl) PostPermissionSet(ctx context.Context, permissionSet *stor
 	}
 	permissionSet.Id = rolePkg.GeneratePermissionSetID()
 
+	if permissionSet.GetTraits().GetOrigin() == storage.Traits_DYNAMIC {
+		return nil, errox.InvalidArgs.CausedBy("dynamic permission sets can only be created by internal services")
+	}
+
 	// Store the augmented permission set; report back on error. Note the
 	// permission set is referenced by its name because that's what the caller
 	// knows.
@@ -229,6 +239,9 @@ func (s *serviceImpl) PostPermissionSet(ctx context.Context, permissionSet *stor
 }
 
 func (s *serviceImpl) PutPermissionSet(ctx context.Context, permissionSet *storage.PermissionSet) (*v1.Empty, error) {
+	if permissionSet.GetTraits().GetOrigin() == storage.Traits_DYNAMIC {
+		return nil, errox.InvalidArgs.CausedBy("dynamic permission sets cannot be modified by API")
+	}
 	err := s.roleDataStore.UpdatePermissionSet(ctx, permissionSet)
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to update permission set %s", permissionSet.GetId())
@@ -288,6 +301,9 @@ func (s *serviceImpl) PostSimpleAccessScope(ctx context.Context, scope *storage.
 		return nil, errox.InvalidArgs.CausedBy("setting id field is not allowed")
 	}
 	scope.Id = rolePkg.GenerateAccessScopeID()
+	if scope.GetTraits().GetOrigin() == storage.Traits_DYNAMIC {
+		return nil, errox.InvalidArgs.CausedBy("dynamic access scopes can only be created by internal services")
+	}
 
 	// Store the augmented access scope; report back on error. Note the access
 	// scope is referenced by its name because that's what the caller knows.
@@ -301,6 +317,9 @@ func (s *serviceImpl) PostSimpleAccessScope(ctx context.Context, scope *storage.
 }
 
 func (s *serviceImpl) PutSimpleAccessScope(ctx context.Context, scope *storage.SimpleAccessScope) (*v1.Empty, error) {
+	if scope.GetTraits().GetOrigin() == storage.Traits_DYNAMIC {
+		return nil, errox.InvalidArgs.CausedBy("dynamic access scopes cannot be modified by API")
+	}
 	err := s.roleDataStore.UpdateAccessScope(ctx, scope)
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to update access scope %s", scope.GetId())
