@@ -46,7 +46,7 @@ func (s *ImageResolversTestSuite) SetupSuite() {
 	mockCtrl := gomock.NewController(s.T())
 	s.testDB = SetupTestPostgresConn(s.T())
 
-	imgDataStore := CreateTestImageV2Datastore(s.T(), s.testDB, mockCtrl)
+	imgDataStore := CreateTestImageDatastore(s.T(), s.testDB, mockCtrl)
 	s.resolver, _ = SetupTestResolver(s.T(),
 		CreateTestDeploymentDatastore(s.T(), s.testDB, mockCtrl, imgDataStore),
 		deploymentsView.NewDeploymentView(s.testDB.DB),

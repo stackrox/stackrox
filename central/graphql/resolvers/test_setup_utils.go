@@ -140,8 +140,9 @@ func SetupTestResolver(t testing.TB, datastores ...interface{}) (*Resolver, *gra
 	return resolver, schema
 }
 
-// CreateTestImageV2Datastore creates image datastore for testing
-func CreateTestImageV2Datastore(_ testing.TB, testDB *pgtest.TestPostgres, ctrl *gomock.Controller) imageDS.DataStore {
+// CreateTestImageDatastore creates image datastore for testing
+// TODO(ROX-30117): Remove when FlattenImageData feature flag is removed.
+func CreateTestImageDatastore(_ testing.TB, testDB *pgtest.TestPostgres, ctrl *gomock.Controller) imageDS.DataStore {
 	risks := mockRisks.NewMockDataStore(ctrl)
 	risks.EXPECT().RemoveRisk(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil).AnyTimes()
 	return imageDS.NewWithPostgres(
@@ -152,8 +153,8 @@ func CreateTestImageV2Datastore(_ testing.TB, testDB *pgtest.TestPostgres, ctrl 
 	)
 }
 
-// CreateTestImageV2V2Datastore creates image datastore for testing
-func CreateTestImageV2V2Datastore(_ testing.TB, testDB *pgtest.TestPostgres, ctrl *gomock.Controller) imageV2DS.DataStore {
+// CreateTestImageV2Datastore creates imageV2 datastore for testing
+func CreateTestImageV2Datastore(_ testing.TB, testDB *pgtest.TestPostgres, ctrl *gomock.Controller) imageV2DS.DataStore {
 	risks := mockRisks.NewMockDataStore(ctrl)
 	risks.EXPECT().RemoveRisk(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil).AnyTimes()
 	return imageV2DS.NewWithPostgres(
@@ -181,6 +182,7 @@ func CreateTestImageCVEV2Datastore(_ testing.TB, testDB *pgtest.TestPostgres) im
 }
 
 // CreateTestDeploymentDatastore creates deployment datastore for testing
+// TODO(ROX-30117): Remove when FlattenImageData feature flag is removed.
 func CreateTestDeploymentDatastore(t testing.TB, testDB *pgtest.TestPostgres, ctrl *gomock.Controller, imageDatastore imageDS.DataStore) deploymentDatastore.DataStore {
 	mockRisk := mockRisks.NewMockDataStore(ctrl)
 	ds, err := deploymentDatastore.NewTestDataStore(

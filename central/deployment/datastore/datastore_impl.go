@@ -411,8 +411,14 @@ func (ds *datastoreImpl) RemoveDeployment(ctx context.Context, clusterID, id str
 func (ds *datastoreImpl) GetImagesForDeployment(ctx context.Context, deployment *storage.Deployment) ([]*storage.Image, error) {
 	imageIDs := make([]string, 0, len(deployment.GetContainers()))
 	for _, c := range deployment.GetContainers() {
-		if c.GetImage().GetId() != "" {
-			imageIDs = append(imageIDs, c.GetImage().GetId())
+		if features.FlattenImageData.Enabled() {
+			if c.GetImage().GetIdV2() != "" {
+				imageIDs = append(imageIDs, c.GetImage().GetIdV2())
+			}
+		} else {
+			if c.GetImage().GetId() != "" {
+				imageIDs = append(imageIDs, c.GetImage().GetId())
+			}
 		}
 	}
 	if features.FlattenImageData.Enabled() {

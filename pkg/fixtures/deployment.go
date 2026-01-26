@@ -16,6 +16,7 @@ func LightweightDeploymentImage() *storage.Image {
 			Registry: "docker.io",
 			Remote:   "library/nginx",
 			Tag:      "1.10",
+			FullName: "docker.io/library/nginx:1.10",
 		},
 		Metadata: &storage.ImageMetadata{
 			V1: &storage.V1Metadata{
