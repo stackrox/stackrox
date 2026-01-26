@@ -42,6 +42,7 @@ import (
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/httputil/proxy"
+	"github.com/stackrox/rox/pkg/scannerv4/repositorytocpe"
 	"github.com/stackrox/rox/pkg/utils"
 	pkgversion "github.com/stackrox/rox/pkg/version"
 	"github.com/stackrox/rox/scanner/config"
@@ -150,6 +151,7 @@ type Indexer interface {
 	ReportGetter
 	ReportStorer
 	IndexContainerImage(context.Context, string, string, ...Option) (*claircore.IndexReport, error)
+	GetRepositoryToCPEMapping(context.Context) (*repositorytocpe.MappingFile, error)
 	Close(context.Context) error
 	Ready(context.Context) error
 }
@@ -167,6 +169,8 @@ type localIndexer struct {
 	manifestManager        *manifest.Manager
 	deleteIntervalStart    int64
 	deleteIntervalDuration int64
+
+	repositoryToCPEUpdater *RepositoryToCPEUpdater
 }
 
 // NewIndexer creates a new indexer.
@@ -282,6 +286,19 @@ func NewIndexer(ctx context.Context, cfg config.IndexerConfig) (Indexer, error) 
 		deleteIntervalDuration = minManifestDeleteDuration
 	}
 
+	var repo2cpeUpdater *RepositoryToCPEUpdater
+	if cfg.RepositoryToCPEURL != "" {
+		repo2cpeUpdater, err = NewUpdater(ctx, client, cfg.RepositoryToCPEURL, cfg.RepositoryToCPEFile)
+		if err != nil {
+			if features.SBOMScanning.Enabled() {
+				return nil, fmt.Errorf("creating repository-to-cpe updater: %w", err)
+			}
+			slog.DebugContext(ctx, "failed to create repository-to-cpe updater", "reason", err)
+		}
+	} else if features.SBOMScanning.Enabled() {
+		slog.WarnContext(ctx, "unconfigured repository_to_cpe_url will lead to inaccurate SBOM scanning results")
+	}
+
 	success = true
 	return &localIndexer{
 		libIndex:        indexer,
@@ -295,6 +312,8 @@ func NewIndexer(ctx context.Context, cfg config.IndexerConfig) (Indexer, error) 
 		manifestManager:        manifestManager,
 		deleteIntervalStart:    int64(deleteIntervalStart.Seconds()),
 		deleteIntervalDuration: int64(deleteIntervalDuration.Seconds()),
+
+		repositoryToCPEUpdater: repo2cpeUpdater,
 	}, nil
 }
 
@@ -379,6 +398,14 @@ func (i *localIndexer) Ready(ctx context.Context) error {
 		return fmt.Errorf("indexer DB ping failed: %w", err)
 	}
 	return nil
+}
+
+// GetRepositoryToCPEMapping returns the repository-to-CPE mapping file.
+func (i *localIndexer) GetRepositoryToCPEMapping(ctx context.Context) (*repositorytocpe.MappingFile, error) {
+	if i.repositoryToCPEUpdater == nil {
+		return nil, errors.New("unsupported repository_to_cpe_url configuration")
+	}
+	return i.repositoryToCPEUpdater.Get(ctx)
 }
 
 // IndexContainerImage creates a ClairCore index report for a given container

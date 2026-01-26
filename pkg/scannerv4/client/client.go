@@ -19,6 +19,7 @@ import (
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/scannerv4"
+	"github.com/stackrox/rox/pkg/scannerv4/repositorytocpe"
 	"github.com/stackrox/rox/pkg/utils"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -99,6 +100,9 @@ type Scanner interface {
 	// hint to the Scanner whether it should overwrite the contents of ref
 	// if ref already exists in its datastore.
 	StoreImageIndex(ctx context.Context, ref name.Digest, indexerVersion string, contents *v4.Contents, callOpts ...CallOption) error
+
+	// GetRepositoryToCPEMapping returns the repository-to-CPE mapping from the indexer.
+	GetRepositoryToCPEMapping(ctx context.Context) (*repositorytocpe.MappingFile, error)
 
 	// Close cleans up any resources used by the implementation.
 	Close() error
@@ -435,6 +439,32 @@ func (c *gRPCScanner) StoreImageIndex(ctx context.Context, ref name.Digest, inde
 	slog.DebugContext(ctx, "received response from StoreIndexReport", "status", r.GetStatus())
 
 	return nil
+}
+
+// GetRepositoryToCPEMapping calls the Indexer's gRPC endpoint GetRepositoryToCPEMapping.
+func (c *gRPCScanner) GetRepositoryToCPEMapping(ctx context.Context) (*repositorytocpe.MappingFile, error) {
+	if c.indexer == nil {
+		return nil, errIndexerNotConfigured
+	}
+
+	var resp *v4.GetRepositoryToCPEMappingResponse
+	err := retryWithBackoff(ctx, defaultBackoff(), "indexer.GetRepositoryToCPEMapping", func() error {
+		var err error
+		resp, err = c.indexer.GetRepositoryToCPEMapping(ctx, &v4.GetRepositoryToCPEMappingRequest{})
+		return err
+	})
+	if err != nil {
+		return nil, fmt.Errorf("getting repository-to-CPE mapping: %w", err)
+	}
+
+	// Convert proto response to MappingFile.
+	data := make(map[string]repositorytocpe.Repo, len(resp.GetMapping()))
+	for repo, info := range resp.GetMapping() {
+		data[repo] = repositorytocpe.Repo{CPEs: info.GetCpes()}
+	}
+
+	slog.DebugContext(ctx, "received repo-to-CPE mapping", "entries", len(data))
+	return &repositorytocpe.MappingFile{Data: data}, nil
 }
 
 func getImageManifestID(ref name.Digest) string {

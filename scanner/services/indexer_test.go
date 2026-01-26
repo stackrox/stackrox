@@ -10,6 +10,8 @@ import (
 	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
 	"github.com/stackrox/rox/pkg/grpc/testutils"
 	"github.com/stackrox/rox/pkg/protoassert"
+	"github.com/stackrox/rox/pkg/scannerv4/repositorytocpe"
+	"github.com/stackrox/rox/scanner/indexer"
 	"github.com/stackrox/rox/scanner/indexer/mocks"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
@@ -292,6 +294,81 @@ func (s *indexerServiceTestSuite) Test_GetOrCreateIndexReport() {
 		// Just make sure something is returned. Other tests ensure the conversion is correct.
 		s.NotNil(got)
 	})
+}
+
+func (s *indexerServiceTestSuite) Test_GetRepositoryToCPEMapping_success() {
+	s.indexerMock.
+		EXPECT().
+		GetRepositoryToCPEMapping(gomock.Any(), gomock.Eq("")).
+		Return(&indexer.FetchResult{
+			Modified:     true,
+			LastModified: "Tue, 01 Jan 2025 00:00:00 GMT",
+			Data: &repositorytocpe.MappingFile{
+				Data: map[string]repositorytocpe.Repo{
+					"rhel-8-server": {CPEs: []string{"cpe:/o:redhat:rhel:8"}},
+					"rhel-9-server": {CPEs: []string{"cpe:/o:redhat:rhel:9", "cpe:/o:redhat:rhel:9::server"}},
+				},
+			},
+		}, nil)
+
+	resp, err := s.service.GetRepositoryToCPEMapping(s.ctx, &v4.GetRepositoryToCPEMappingRequest{})
+	s.NoError(err)
+	s.True(resp.GetModified())
+	s.Equal("Tue, 01 Jan 2025 00:00:00 GMT", resp.GetLastModified())
+	s.Len(resp.GetMapping(), 2)
+	s.Equal([]string{"cpe:/o:redhat:rhel:8"}, resp.GetMapping()["rhel-8-server"].GetCpes())
+	s.Equal([]string{"cpe:/o:redhat:rhel:9", "cpe:/o:redhat:rhel:9::server"}, resp.GetMapping()["rhel-9-server"].GetCpes())
+}
+
+func (s *indexerServiceTestSuite) Test_GetRepositoryToCPEMapping_notModified() {
+	s.indexerMock.
+		EXPECT().
+		GetRepositoryToCPEMapping(gomock.Any(), gomock.Eq("Mon, 01 Jan 2024 00:00:00 GMT")).
+		Return(&indexer.FetchResult{
+			Modified:     false,
+			LastModified: "Mon, 01 Jan 2024 00:00:00 GMT",
+		}, nil)
+
+	resp, err := s.service.GetRepositoryToCPEMapping(s.ctx, &v4.GetRepositoryToCPEMappingRequest{
+		IfModifiedSince: "Mon, 01 Jan 2024 00:00:00 GMT",
+	})
+	s.NoError(err)
+	s.False(resp.GetModified())
+	s.Equal("Mon, 01 Jan 2024 00:00:00 GMT", resp.GetLastModified())
+	s.Empty(resp.GetMapping())
+}
+
+func (s *indexerServiceTestSuite) Test_GetRepositoryToCPEMapping_error() {
+	s.indexerMock.
+		EXPECT().
+		GetRepositoryToCPEMapping(gomock.Any(), gomock.Any()).
+		Return(nil, errors.New("upstream error"))
+
+	resp, err := s.service.GetRepositoryToCPEMapping(s.ctx, &v4.GetRepositoryToCPEMappingRequest{})
+	s.ErrorContains(err, "upstream error")
+	s.Nil(resp)
+}
+
+func (s *indexerServiceTestSuite) Test_GetRepositoryToCPEMapping_filtersEmptyCPEs() {
+	s.indexerMock.
+		EXPECT().
+		GetRepositoryToCPEMapping(gomock.Any(), gomock.Any()).
+		Return(&indexer.FetchResult{
+			Modified:     true,
+			LastModified: "now",
+			Data: &repositorytocpe.MappingFile{
+				Data: map[string]repositorytocpe.Repo{
+					"has-cpes": {CPEs: []string{"cpe:1"}},
+					"no-cpes":  {CPEs: []string{}},
+					"nil-cpes": {},
+				},
+			},
+		}, nil)
+
+	resp, err := s.service.GetRepositoryToCPEMapping(s.ctx, &v4.GetRepositoryToCPEMappingRequest{})
+	s.NoError(err)
+	s.Len(resp.GetMapping(), 1)
+	s.Contains(resp.GetMapping(), "has-cpes")
 }
 
 func (s *indexerServiceTestSuite) Test_HasIndexReport() {
