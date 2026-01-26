@@ -5,7 +5,7 @@ export type Traits = {
 };
 
 export type TraitsMutabilityMode = 'ALLOW_MUTATE' | 'ALLOW_MUTATE_FORCED';
-export type TraitsOrigin = 
+export type TraitsOrigin =
     | 'IMPERATIVE'
     | 'DECLARATIVE'
     | 'DEFAULT'

@@ -204,7 +204,6 @@ func (s *serviceImplRoleTestSuite) TestUpdateRole() {
 	s.Run("Dynamic roles cannot be updated by API", func() {
 		roleName := "Test update of dynamic role"
 		role := s.tester.createRole(s.T(), roleName, dynamicOriginTraits)
-		s.tester.storedRoleNames = append(s.tester.storedRoleNames, roleName)
 		updatedRole := role.CloneVT()
 		updatedRole.Description = "Updated description"
 		ctx := sac.WithAllAccess(s.T().Context())
