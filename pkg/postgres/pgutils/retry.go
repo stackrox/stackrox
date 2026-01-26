@@ -60,6 +60,7 @@ func Retry3[T any, U any](ctx context.Context, fn func() (T, U, error)) (T, U, e
 
 	// If retries are disabled, fail fast after single attempt
 	if env.PostgresDisableQueryRetries.BooleanSetting() {
+		log.Debugf("retry disabled:  found error: %+v", err)
 		return ret1, ret2, err
 	}
 
