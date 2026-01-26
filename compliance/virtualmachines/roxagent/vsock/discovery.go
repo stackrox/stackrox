@@ -233,20 +233,20 @@ func discoverActivationStatusWithPath(path string) (v1.ActivationStatus, error) 
 // /var/cache/dnf containing "-rpms-" in its name. Metadata is considered AVAILABLE only if both
 // conditions are met.
 func discoverDnfMetadataStatusWithPaths(hostPath string, reposDirPaths []string, cacheDirPath string) (v1.DnfMetadataStatus, error) {
-	hasRepoFile, err := discoverDnfRepoFilePresence(hostPath, reposDirPaths)
-	if err != nil {
+	hasRepoDir, hasRepoFile, err := discoverDnfRepoFilePresence(hostPath, reposDirPaths)
+	if !hasRepoDir {
 		return v1.DnfMetadataStatus_DNF_METADATA_UNSPECIFIED, err
 	}
 	if !hasRepoFile {
-		return v1.DnfMetadataStatus_UNAVAILABLE, nil
+		return v1.DnfMetadataStatus_UNAVAILABLE, err
 	}
 
-	hasRepoDir, err := discoverDnfCacheRepoDirPresence(hostPath, cacheDirPath)
+	hasCacheRepoDir, err := discoverDnfCacheRepoDirPresence(hostPath, cacheDirPath)
 	if err != nil {
 		return v1.DnfMetadataStatus_DNF_METADATA_UNSPECIFIED, err
 	}
 
-	if hasRepoDir {
+	if hasCacheRepoDir {
 		return v1.DnfMetadataStatus_AVAILABLE, nil
 	}
 	return v1.DnfMetadataStatus_UNAVAILABLE, nil
@@ -255,7 +255,8 @@ func discoverDnfMetadataStatusWithPaths(hostPath string, reposDirPaths []string,
 // discoverDnfRepoFilePresence reports whether any default reposdir contains a *.repo file.
 // Assumptions and behavior:
 //   - Uses the default DNF reposdir locations: /etc/yum.repos.d, /etc/yum/repos.d, /etc/distro.repos.d.
-//   - Returns true as soon as a *.repo file is found in any reposdir.
+//   - Returns hasDir=true when at least one reposdir is readable.
+//   - Returns hasRepo=true as soon as a *.repo file is found in any reposdir.
 //   - If reposdirs are unreadable, or contain no *.repo files, returns an aggregated error describing each failure.
 //   - There is no support for DNF 5 defaults currently.
 //   - Tested against DNF 4 defaults (libdnf ConfigMain.cpp):
@@ -263,9 +264,9 @@ func discoverDnfMetadataStatusWithPaths(hostPath string, reposDirPaths []string,
 //   - DNF 5 uses a different reposdir list (/etc/yum.repos.d, /etc/distro.repos.d, /usr/share/dnf5/repos.d),
 //     so this logic may miss repos configured only in the DNF 5 default path:
 //     https://github.com/rpm-software-management/dnf5/blob/185eaef1e0ad663bdb827a2179ab1df574a27d88/include/libdnf5/conf/const.hpp
-func discoverDnfRepoFilePresence(hostPath string, reposDirPaths []string) (bool, error) {
+func discoverDnfRepoFilePresence(hostPath string, reposDirPaths []string) (hasDir, hasRepo bool, err error) {
 	if len(reposDirPaths) == 0 {
-		return false, errors.New("missing repository directories")
+		return false, false, errors.New("missing repository directories")
 	}
 
 	// Check for repo files in default reposdir locations.
@@ -277,17 +278,19 @@ func discoverDnfRepoFilePresence(hostPath string, reposDirPaths []string) (bool,
 			repoDirErrs = multierror.Append(repoDirErrs, fmt.Errorf("reading %q: %w", reposPath, err))
 			continue
 		}
+		// If at least one directory exists and is readable, we don't need to return DNF_METADATA_UNSPECIFIED.
+		hasDir = true
 
 		for _, entry := range repoEntries {
 			if !entry.IsDir() && strings.HasSuffix(entry.Name(), ".repo") {
-				return true, nil
+				return true, true, nil
 			}
 		}
 		repoDirErrs = multierror.Append(repoDirErrs, fmt.Errorf("no .repo files found in %q", reposPath))
 
 	}
 
-	return false, repoDirErrs.ErrorOrNil()
+	return hasDir, hasRepo, repoDirErrs.ErrorOrNil()
 }
 
 // discoverDnfCacheRepoDirPresence reports whether the DNF cache contains repo directories.
