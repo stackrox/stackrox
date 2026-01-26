@@ -4,6 +4,7 @@ package tests
 
 import (
 	"context"
+	"net/http"
 	"testing"
 	"time"
 
