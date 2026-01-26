@@ -102,6 +102,9 @@ type Scanner interface {
 	// GetRepositoryToCPEMapping returns the repository-to-CPE mapping from the indexer.
 	GetRepositoryToCPEMapping(ctx context.Context) (*repositorytocpe.MappingFile, error)
 
+	// ScanSBOM decodes an SBOM and returns a vulnerability report.
+	ScanSBOM(ctx context.Context, sbom []byte, mediaType string, callOpts ...CallOption) (*v4.VulnerabilityReport, error)
+
 	// Close cleans up any resources used by the implementation.
 	Close() error
 }
@@ -483,6 +486,36 @@ func (c *gRPCScanner) GetRepositoryToCPEMapping(ctx context.Context) (*repositor
 
 	zlog.Debug(ctx).Int("entries", len(data)).Msg("received repo-to-CPE mapping")
 	return &repositorytocpe.MappingFile{Data: data}, nil
+}
+
+// ScanSBOM calls the Matcher's gRPC endpoint ScanSBOM to decode an SBOM and return vulnerabilities.
+func (c *gRPCScanner) ScanSBOM(ctx context.Context, sbom []byte, mediaType string, callOpts ...CallOption) (*v4.VulnerabilityReport, error) {
+	if c.matcher == nil {
+		return nil, errMatcherNotConfigured
+	}
+
+	ctx = zlog.ContextWithValues(ctx, "component", "scanner/client", "method", "ScanSBOM")
+
+	options := makeCallOptions(callOpts...)
+
+	req := &v4.ScanSBOMRequest{
+		Sbom:      sbom,
+		MediaType: mediaType,
+	}
+	var resp *v4.ScanSBOMResponse
+	var responseMetadata metadata.MD
+	err := retryWithBackoff(ctx, defaultBackoff(), "matcher.ScanSBOM", func() error {
+		var err error
+		resp, err = c.matcher.ScanSBOM(ctx, req, grpc.Header(&responseMetadata))
+		return err
+	})
+	if err != nil {
+		return nil, fmt.Errorf("scan SBOM: %w", err)
+	}
+
+	setMatcherVersion(options, responseMetadata)
+
+	return resp.GetVulnerabilityReport(), nil
 }
 
 func getImageManifestID(ref name.Digest) string {
