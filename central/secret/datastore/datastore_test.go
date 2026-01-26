@@ -99,8 +99,6 @@ func (suite *SecretDataStoreTestSuite) TestSearchListSecrets_SinglePass() {
 
 	suite.NoError(suite.datastore.UpsertSecret(suite.ctx, secret1))
 	suite.NoError(suite.datastore.UpsertSecret(suite.ctx, secret2))
-	defer suite.datastore.RemoveSecret(suite.ctx, secret1.Id)
-	defer suite.datastore.RemoveSecret(suite.ctx, secret2.Id)
 
 	// Test retrieval with empty query
 	results, err := suite.datastore.SearchListSecrets(suite.ctx, search.EmptyQuery())
@@ -110,23 +108,26 @@ func (suite *SecretDataStoreTestSuite) TestSearchListSecrets_SinglePass() {
 	// Find our test secrets
 	var found1, found2 *storage.ListSecret
 	for _, r := range results {
-		if r.Id == secret1.Id {
+		if r.GetId() == secret1.GetId() {
 			found1 = r
-		} else if r.Id == secret2.Id {
+		} else if r.GetId() == secret2.GetId() {
 			found2 = r
 		}
 	}
 
 	suite.NotNil(found1)
-	suite.Equal(secret1.Name, found1.Name)
-	suite.Equal(secret1.Namespace, found1.Namespace)
+	suite.Equal(secret1.GetName(), found1.GetName())
+	suite.Equal(secret1.GetNamespace(), found1.GetNamespace())
 	suite.ElementsMatch(
 		[]storage.SecretType{storage.SecretType_PUBLIC_CERTIFICATE, storage.SecretType_RSA_PRIVATE_KEY},
-		found1.Types,
+		found1.GetTypes(),
 	)
 
 	suite.NotNil(found2)
-	suite.Equal([]storage.SecretType{storage.SecretType_IMAGE_PULL_SECRET}, found2.Types)
+	suite.Equal([]storage.SecretType{storage.SecretType_IMAGE_PULL_SECRET}, found2.GetTypes())
+
+	suite.NoError(suite.datastore.RemoveSecret(suite.ctx, secret1.GetId()))
+	suite.NoError(suite.datastore.RemoveSecret(suite.ctx, secret2.GetId()))
 }
 
 func (suite *SecretDataStoreTestSuite) TestSearchListSecrets_NoFiles() {
@@ -137,14 +138,15 @@ func (suite *SecretDataStoreTestSuite) TestSearchListSecrets_NoFiles() {
 	secret.Files = nil // No files
 
 	suite.NoError(suite.datastore.UpsertSecret(suite.ctx, secret))
-	defer suite.datastore.RemoveSecret(suite.ctx, secret.Id)
 
-	query := search.NewQueryBuilder().AddStrings(search.SecretID, secret.Id).ProtoQuery()
+	query := search.NewQueryBuilder().AddStrings(search.SecretID, secret.GetId()).ProtoQuery()
 	results, err := suite.datastore.SearchListSecrets(suite.ctx, query)
 
 	suite.NoError(err)
 	suite.Len(results, 1)
-	suite.Equal([]storage.SecretType{storage.SecretType_UNDETERMINED}, results[0].Types)
+	suite.Equal([]storage.SecretType{storage.SecretType_UNDETERMINED}, results[0].GetTypes())
+
+	suite.NoError(suite.datastore.RemoveSecret(suite.ctx, secret.GetId()))
 }
 
 func (suite *SecretDataStoreTestSuite) TestSearchListSecrets_WithFilter() {
@@ -161,8 +163,6 @@ func (suite *SecretDataStoreTestSuite) TestSearchListSecrets_WithFilter() {
 
 	suite.NoError(suite.datastore.UpsertSecret(suite.ctx, secret1))
 	suite.NoError(suite.datastore.UpsertSecret(suite.ctx, secret2))
-	defer suite.datastore.RemoveSecret(suite.ctx, secret1.Id)
-	defer suite.datastore.RemoveSecret(suite.ctx, secret2.Id)
 
 	// Filter by namespace
 	query := search.NewQueryBuilder().AddExactMatches(search.Namespace, "kube-system").ProtoQuery()
@@ -172,13 +172,16 @@ func (suite *SecretDataStoreTestSuite) TestSearchListSecrets_WithFilter() {
 	// Find our test secret in results
 	var found *storage.ListSecret
 	for _, r := range results {
-		if r.Id == secret2.Id {
+		if r.GetId() == secret2.GetId() {
 			found = r
 			break
 		}
 	}
 	suite.NotNil(found)
-	suite.Equal("kube-system", found.Namespace)
+	suite.Equal("kube-system", found.GetNamespace())
+
+	suite.NoError(suite.datastore.RemoveSecret(suite.ctx, secret1.GetId()))
+	suite.NoError(suite.datastore.RemoveSecret(suite.ctx, secret2.GetId()))
 }
 
 func (suite *SecretDataStoreTestSuite) TestSearchListSecrets_DuplicateTypes() {
@@ -193,19 +196,20 @@ func (suite *SecretDataStoreTestSuite) TestSearchListSecrets_DuplicateTypes() {
 	}
 
 	suite.NoError(suite.datastore.UpsertSecret(suite.ctx, secret))
-	defer suite.datastore.RemoveSecret(suite.ctx, secret.Id)
 
-	query := search.NewQueryBuilder().AddStrings(search.SecretID, secret.Id).ProtoQuery()
+	query := search.NewQueryBuilder().AddStrings(search.SecretID, secret.GetId()).ProtoQuery()
 	results, err := suite.datastore.SearchListSecrets(suite.ctx, query)
 
 	suite.NoError(err)
 	suite.Len(results, 1)
 	// Should have only 2 unique types
-	suite.Len(results[0].Types, 2)
+	suite.Len(results[0].GetTypes(), 2)
 	suite.ElementsMatch(
 		[]storage.SecretType{storage.SecretType_PUBLIC_CERTIFICATE, storage.SecretType_RSA_PRIVATE_KEY},
-		results[0].Types,
+		results[0].GetTypes(),
 	)
+
+	suite.NoError(suite.datastore.RemoveSecret(suite.ctx, secret.GetId()))
 }
 
 func (suite *SecretDataStoreTestSuite) TestSecretsDataStore() {
