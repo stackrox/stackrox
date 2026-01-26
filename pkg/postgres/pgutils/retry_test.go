@@ -3,13 +3,11 @@ package pgutils
 import (
 	"context"
 	"errors"
-	"os"
 	"testing"
 	"time"
 
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 )
 
 // transientErr creates a transient PostgreSQL error that will trigger retries
@@ -53,8 +51,8 @@ func TestRetry_NonTransientErrorFailsFast(t *testing.T) {
 
 func TestRetry_TransientErrorRetries(t *testing.T) {
 	// Set shorter intervals for faster testing
-	require.NoError(t, os.Setenv("ROX_POSTGRES_QUERY_RETRY_INTERVAL", "100ms"))
-	require.NoError(t, os.Setenv("ROX_POSTGRES_QUERY_RETRY_TIMEOUT", "1s"))
+	t.Setenv("ROX_POSTGRES_QUERY_RETRY_INTERVAL", "100ms")
+	t.Setenv("ROX_POSTGRES_QUERY_RETRY_TIMEOUT", "1s")
 
 	ctx := context.Background()
 	attempts := 0
@@ -70,15 +68,12 @@ func TestRetry_TransientErrorRetries(t *testing.T) {
 
 	assert.NoError(t, err)
 	assert.Equal(t, maxAttempts, attempts, "should retry until success")
-
-	require.NoError(t, os.Unsetenv("ROX_POSTGRES_QUERY_RETRY_INTERVAL"))
-	require.NoError(t, os.Unsetenv("ROX_POSTGRES_QUERY_RETRY_TIMEOUT"))
 }
 
 func TestRetry_TransientErrorTimeout(t *testing.T) {
 	// Set very short timeout for faster testing
-	require.NoError(t, os.Setenv("ROX_POSTGRES_QUERY_RETRY_INTERVAL", "50ms"))
-	require.NoError(t, os.Setenv("ROX_POSTGRES_QUERY_RETRY_TIMEOUT", "200ms"))
+	t.Setenv("ROX_POSTGRES_QUERY_RETRY_INTERVAL", "50ms")
+	t.Setenv("ROX_POSTGRES_QUERY_RETRY_TIMEOUT", "200ms")
 
 	ctx := context.Background()
 	attempts := 0
@@ -94,14 +89,11 @@ func TestRetry_TransientErrorTimeout(t *testing.T) {
 	assert.Contains(t, err.Error(), "retry timer is expired")
 	assert.Greater(t, attempts, 1, "should retry at least once before timeout")
 	assert.GreaterOrEqual(t, elapsed, 200*time.Millisecond, "should respect timeout")
-
-	require.NoError(t, os.Unsetenv("ROX_POSTGRES_QUERY_RETRY_INTERVAL"))
-	require.NoError(t, os.Unsetenv("ROX_POSTGRES_QUERY_RETRY_TIMEOUT"))
 }
 
 func TestRetry_DisabledRetriesFailFast(t *testing.T) {
 	// Enable disable flag
-	require.NoError(t, os.Setenv("ROX_POSTGRES_DISABLE_QUERY_RETRIES", "true"))
+	t.Setenv("ROX_POSTGRES_DISABLE_QUERY_RETRIES", "true")
 
 	ctx := context.Background()
 	attempts := 0
@@ -116,14 +108,12 @@ func TestRetry_DisabledRetriesFailFast(t *testing.T) {
 	assert.Error(t, err)
 	assert.Equal(t, 1, attempts, "should only attempt once when retries disabled")
 	assert.Less(t, elapsed, 100*time.Millisecond, "should fail fast without waiting")
-
-	require.NoError(t, os.Unsetenv("ROX_POSTGRES_DISABLE_QUERY_RETRIES"))
 }
 
 func TestRetry_ContextCancellation(t *testing.T) {
 	// Set shorter intervals for faster testing
-	require.NoError(t, os.Setenv("ROX_POSTGRES_QUERY_RETRY_INTERVAL", "100ms"))
-	require.NoError(t, os.Setenv("ROX_POSTGRES_QUERY_RETRY_TIMEOUT", "5s"))
+	t.Setenv("ROX_POSTGRES_QUERY_RETRY_INTERVAL", "100ms")
+	t.Setenv("ROX_POSTGRES_QUERY_RETRY_TIMEOUT", "5s")
 
 	ctx, cancel := context.WithCancel(context.Background())
 	attempts := 0
@@ -141,9 +131,6 @@ func TestRetry_ContextCancellation(t *testing.T) {
 
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "retry context is done")
-
-	require.NoError(t, os.Unsetenv("ROX_POSTGRES_QUERY_RETRY_INTERVAL"))
-	require.NoError(t, os.Unsetenv("ROX_POSTGRES_QUERY_RETRY_TIMEOUT"))
 }
 
 func TestRetryIfPostgres_DelegatesToRetry(t *testing.T) {
@@ -161,7 +148,7 @@ func TestRetryIfPostgres_DelegatesToRetry(t *testing.T) {
 
 func TestRetry_CustomIntervalIsRespected(t *testing.T) {
 	// Set custom interval
-	require.NoError(t, os.Setenv("ROX_POSTGRES_QUERY_RETRY_INTERVAL", "200ms"))
+	t.Setenv("ROX_POSTGRES_QUERY_RETRY_INTERVAL", "200ms")
 
 	ctx := context.Background()
 	attempts := 0
@@ -186,7 +173,4 @@ func TestRetry_CustomIntervalIsRespected(t *testing.T) {
 		assert.Greater(t, interval1, 150*time.Millisecond)
 		assert.Less(t, interval1, 300*time.Millisecond)
 	}
-
-	require.NoError(t, os.Unsetenv("ROX_POSTGRES_QUERY_RETRY_INTERVAL"))
-	require.NoError(t, os.Unsetenv("ROX_POSTGRES_QUERY_RETRY_TIMEOUT"))
 }
