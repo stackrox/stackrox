@@ -103,7 +103,7 @@ func extractBearerToken(r *http.Request) (string, error) {
 	headers := phonehome.Headers(r.Header)
 	token := authn.ExtractToken(&headers, "Bearer")
 	if token == "" {
-		return "", pkghttputil.Errorf(http.StatusUnauthorized, "missing or invalid bearer token")
+		return "", pkghttputil.NewError(http.StatusUnauthorized, "missing or invalid bearer token")
 	}
 	return token, nil
 }
@@ -131,7 +131,7 @@ func (a *k8sAuthorizer) validateToken(ctx context.Context, token string) (*authe
 	}
 
 	if !result.Status.Authenticated {
-		return nil, pkghttputil.Errorf(http.StatusUnauthorized, "token authentication failed")
+		return nil, pkghttputil.NewError(http.StatusUnauthorized, "token authentication failed")
 	}
 
 	a.tokenCache.Add(token, &result.Status.User)

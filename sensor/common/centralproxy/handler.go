@@ -2,18 +2,21 @@ package centralproxy
 
 import (
 	"crypto/x509"
+	"fmt"
 	"net/http"
 	"net/http/httputil"
 	"net/url"
 	"sync/atomic"
 
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/pkg/centralsensor"
 	pkghttputil "github.com/stackrox/rox/pkg/httputil"
 	"github.com/stackrox/rox/pkg/k8sutil"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/retryablehttp"
 	"github.com/stackrox/rox/pkg/urlfmt"
 	"github.com/stackrox/rox/sensor/common"
+	"github.com/stackrox/rox/sensor/common/centralcaps"
 	"google.golang.org/grpc"
 	"k8s.io/client-go/kubernetes"
 )
@@ -24,6 +27,17 @@ var (
 	_ common.Notifiable           = (*Handler)(nil)
 	_ common.CentralGRPCConnAware = (*Handler)(nil)
 )
+
+// proxyErrorHandler is the error handler for the reverse proxy.
+// It returns 503 for service unavailable errors and 500 for other errors.
+func proxyErrorHandler(w http.ResponseWriter, _ *http.Request, err error) {
+	log.Errorf("Proxy error: %v", err)
+	if errors.Is(err, errServiceUnavailable) {
+		http.Error(w, fmt.Sprintf("proxy temporarily unavailable: %v", err), http.StatusServiceUnavailable)
+		return
+	}
+	http.Error(w, fmt.Sprintf("failed to contact central: %v", err), http.StatusInternalServerError)
+}
 
 // Handler handles HTTP proxy requests to Central.
 type Handler struct {
@@ -51,22 +65,9 @@ func NewProxyHandler(centralEndpoint string, centralCertificates []*x509.Certifi
 	transport := newScopedTokenTransport(baseTransport, clusterIDGetter)
 
 	proxy := &httputil.ReverseProxy{
-		Transport: transport,
-		Rewrite: func(r *httputil.ProxyRequest) {
-			r.SetURL(centralBaseURL)
-		},
-		ErrorHandler: func(w http.ResponseWriter, r *http.Request, err error) {
-			log.Errorf("Proxy error: %v", err)
-			if errors.Is(err, errServiceUnavailable) {
-				pkghttputil.WriteError(w,
-					pkghttputil.Errorf(http.StatusServiceUnavailable, "proxy temporarily unavailable: %v", err),
-				)
-				return
-			}
-			pkghttputil.WriteError(w,
-				pkghttputil.Errorf(http.StatusInternalServerError, "failed to contact central: %v", err),
-			)
-		},
+		Transport:    transport,
+		Rewrite:      func(r *httputil.ProxyRequest) { r.SetURL(centralBaseURL) },
+		ErrorHandler: proxyErrorHandler,
 	}
 
 	restConfig, err := k8sutil.GetK8sInClusterConfig()
@@ -122,27 +123,42 @@ func (h *Handler) validateRequest(request *http.Request) error {
 	return nil
 }
 
+// checkInternalTokenAPISupport checks if Central supports the internal token API capability.
+// The proxy requires this capability to function; all requests are rejected if unsupported.
+func checkInternalTokenAPISupport() error {
+	if !centralcaps.Has(centralsensor.InternalTokenAPISupported) {
+		return pkghttputil.NewError(http.StatusNotImplemented,
+			"proxy to Central is not available; Central does not support the internal token API required by this proxy")
+	}
+	return nil
+}
+
 // ServeHTTP handles incoming HTTP requests and proxies them to Central.
 func (h *Handler) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
+	if err := checkInternalTokenAPISupport(); err != nil {
+		http.Error(writer, err.Error(), pkghttputil.StatusFromError(err))
+		return
+	}
+
 	if err := h.validateRequest(request); err != nil {
-		pkghttputil.WriteError(writer, err)
+		http.Error(writer, err.Error(), pkghttputil.StatusFromError(err))
 		return
 	}
 
 	if h.authorizer == nil {
 		log.Error("Authorizer is nil - this indicates a misconfiguration in the central proxy handler")
-		pkghttputil.WriteError(writer, pkghttputil.NewError(http.StatusInternalServerError, "authorizer not configured"))
+		http.Error(writer, "authorizer not configured", http.StatusInternalServerError)
 		return
 	}
 
 	userInfo, err := h.authorizer.authenticate(request.Context(), request)
 	if err != nil {
-		pkghttputil.WriteError(writer, err)
+		http.Error(writer, err.Error(), pkghttputil.StatusFromError(err))
 		return
 	}
 
 	if err := h.authorizer.authorize(request.Context(), userInfo, request); err != nil {
-		pkghttputil.WriteError(writer, err)
+		http.Error(writer, err.Error(), pkghttputil.StatusFromError(err))
 		return
 	}
 
