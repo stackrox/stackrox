@@ -196,7 +196,7 @@ func (s *policyValidator) validateEventSource(policy *storage.Policy) error {
 }
 
 func validateNoLabelsInScopeForAuditEvent(scope *storage.Scope, context string) error {
-	if scope.GetLabel() != nil || scope.GetClusterLabel() != nil || scope.GetNamespaceLabel() != nil {
+	if scope.GetLabel() != nil || (features.LabelBasedPolicyScoping.Enabled() && (scope.GetClusterLabel() != nil || scope.GetNamespaceLabel() != nil)) {
 		return errors.Errorf("labels in `%s` section are not permitted for audit log events based policies", context)
 	}
 	return nil
@@ -323,6 +323,15 @@ func (s *policyValidator) validateDeploymentExclusion(exclusion *storage.Exclusi
 func (s *policyValidator) validateScope(scope *storage.Scope) error {
 	if scope.GetCluster() == "" && scope.GetNamespace() == "" && scope.GetLabel() == nil && scope.GetClusterLabel() == nil && scope.GetNamespaceLabel() == nil {
 		return errors.New("scope must have at least one field populated")
+	}
+	// Reject cluster_label and namespace_label if feature flag is disabled
+	if !features.LabelBasedPolicyScoping.Enabled() {
+		if scope.GetClusterLabel() != nil {
+			return errors.New("cluster_label field requires feature flag ROX_LABEL_BASED_POLICY_SCOPING to be enabled")
+		}
+		if scope.GetNamespaceLabel() != nil {
+			return errors.New("namespace_label field requires feature flag ROX_LABEL_BASED_POLICY_SCOPING to be enabled")
+		}
 	}
 	// Cluster and cluster_label are mutually exclusive
 	if scope.GetCluster() != "" && scope.GetClusterLabel() != nil {

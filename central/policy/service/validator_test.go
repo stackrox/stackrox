@@ -1229,6 +1229,9 @@ func (s *PolicyValidatorTestSuite) TestValidateNodeEventSource() {
 }
 
 func (s *PolicyValidatorTestSuite) TestValidateScope() {
+	testutils.MustUpdateFeature(s.T(), features.LabelBasedPolicyScoping, true)
+	defer testutils.MustUpdateFeature(s.T(), features.LabelBasedPolicyScoping, false)
+
 	testCases := []struct {
 		description string
 		scope       *storage.Scope
