@@ -130,7 +130,7 @@ const APIVerbs: DescriptorOption[] = ['CREATE', 'DELETE', 'GET', 'PATCH', 'UPDAT
 }));
 
 const fileOperationOptions: DescriptorOption[] = [
-    ['OPEN', 'Open'],
+    ['OPEN', 'Open (Writable)'],
     ['CREATE', 'Create'],
     ['UNLINK', 'Delete'],
     ['PERMISSION_CHANGE', 'Permission change'],
