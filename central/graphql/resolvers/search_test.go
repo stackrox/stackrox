@@ -19,6 +19,7 @@ import (
 	imageDS "github.com/stackrox/rox/central/image/datastore"
 	imageMocks "github.com/stackrox/rox/central/image/datastore/mocks"
 	imageComponentV2Mocks "github.com/stackrox/rox/central/imagecomponent/v2/datastore/mocks"
+	imageV2DS "github.com/stackrox/rox/central/imagev2/datastore"
 	imageV2Mocks "github.com/stackrox/rox/central/imagev2/datastore/mocks"
 	namespaceMocks "github.com/stackrox/rox/central/namespace/datastore/mocks"
 	npsMocks "github.com/stackrox/rox/central/networkpolicies/datastore/mocks"
@@ -34,8 +35,11 @@ import (
 	serviceAccountMocks "github.com/stackrox/rox/central/serviceaccount/datastore/mocks"
 	imagesView "github.com/stackrox/rox/central/views/images"
 	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/grpc/authz/allow"
+	imageUtils "github.com/stackrox/rox/pkg/images/utils"
 	"github.com/stackrox/rox/pkg/pointers"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/protoassert"
@@ -440,17 +444,31 @@ func TestImageLabelAutoCompleteSearch(t *testing.T) {
 	testGormDB := testDB.GetGormDB(t)
 	defer pgtest.CloseGormDB(t, testGormDB)
 
-	imageDatastore := imageDS.GetTestPostgresDataStore(t, testDB.DB)
 	ctx := loaders.WithLoaderContext(sac.WithAllAccess(context.Background()))
 
-	resolver, _ := SetupTestResolver(t, imageDatastore, imagesView.NewImageView(testDB.DB))
+	// TODO(ROX-30117): Remove conditional when FlattenImageData feature flag is removed.
+	var resolver *Resolver
+	if features.FlattenImageData.Enabled() {
+		imageV2Datastore := imageV2DS.GetTestPostgresDataStore(t, testDB.DB)
+		resolver, _ = SetupTestResolver(t, imageV2Datastore, imagesView.NewImageView(testDB.DB))
+	} else {
+		imageDatastore := imageDS.GetTestPostgresDataStore(t, testDB.DB)
+		resolver, _ = SetupTestResolver(t, imageDatastore, imagesView.NewImageView(testDB.DB))
+	}
 	allowAllCtx := SetAuthorizerOverride(ctx, allow.Anonymous())
+
+	upsertImage := func(img *storage.Image) error {
+		if features.FlattenImageData.Enabled() {
+			return resolver.ImageV2DataStore.UpsertImage(ctx, imageUtils.ConvertToV2(img))
+		}
+		return resolver.ImageDataStore.UpsertImage(ctx, img)
+	}
 
 	// Case: nil labels
 	image := fixtures.GetImage()
 	image.GetMetadata().GetV1().Labels = nil
 
-	require.NoError(t, imageDatastore.UpsertImage(ctx, image))
+	require.NoError(t, upsertImage(image))
 
 	request := searchRequest{
 		Query:      "Image Label:",
@@ -466,7 +484,7 @@ func TestImageLabelAutoCompleteSearch(t *testing.T) {
 		"k2": "v2",
 	}
 
-	require.NoError(t, imageDatastore.UpsertImage(ctx, image))
+	require.NoError(t, upsertImage(image))
 
 	request = searchRequest{
 		Query:      "Image Label:",

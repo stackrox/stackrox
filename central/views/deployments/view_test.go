@@ -10,13 +10,17 @@ import (
 	deploymentDS "github.com/stackrox/rox/central/deployment/datastore"
 	imageDS "github.com/stackrox/rox/central/image/datastore"
 	imagePostgresV2 "github.com/stackrox/rox/central/image/datastore/store/v2/postgres"
+	imageV2DS "github.com/stackrox/rox/central/imagev2/datastore"
+	imageV2Postgres "github.com/stackrox/rox/central/imagev2/datastore/store/postgres"
 	"github.com/stackrox/rox/central/ranking"
 	mockRisks "github.com/stackrox/rox/central/risk/datastore/mocks"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/fixtures"
 	imageSamples "github.com/stackrox/rox/pkg/fixtures/image"
+	imageUtils "github.com/stackrox/rox/pkg/images/utils"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
@@ -100,47 +104,85 @@ func (s *DeploymentViewTestSuite) SetupSuite() {
 
 	mockRisk := mockRisks.NewMockDataStore(mockCtrl)
 
-	// Initialize the datastore.
-	imageStore := imageDS.NewWithPostgres(
-		imagePostgresV2.New(s.testDB.DB, false, concurrency.NewKeyFence()),
-		mockRisk,
-		ranking.ImageRanker(),
-		ranking.ComponentRanker(),
-	)
-	deploymentStore, err := deploymentDS.NewTestDataStore(
-		s.T(),
-		s.testDB,
-		&deploymentDS.DeploymentTestStoreParams{
-			ImagesDataStore:  imageStore,
-			RisksDataStore:   mockRisk,
-			ClusterRanker:    ranking.ClusterRanker(),
-			NamespaceRanker:  ranking.NamespaceRanker(),
-			DeploymentRanker: ranking.DeploymentRanker(),
-		},
-	)
-	s.Require().NoError(err)
-
 	// Upsert test images.
 	images, err := imageSamples.GetTestImages(s.T())
 	s.Require().NoError(err)
-	// set cvss metrics list with one nvd cvss score
-	for _, image := range images {
-		s.Require().NoError(imageStore.UpsertImage(ctx, image))
-	}
 
-	// Ensure that the image is stored and constructed as expected.
-	for idx, image := range images {
-		actual, found, err := imageStore.GetImage(ctx, image.GetId())
+	// TODO(ROX-30117): Remove conditional when FlattenImageData feature flag is removed.
+	var deploymentStore deploymentDS.DataStore
+	if features.FlattenImageData.Enabled() {
+		imageV2Store := imageV2DS.NewWithPostgres(
+			imageV2Postgres.New(s.testDB.DB, false, concurrency.NewKeyFence()),
+			mockRisk,
+			ranking.ImageRanker(),
+			ranking.ComponentRanker(),
+		)
+		deploymentStore, err = deploymentDS.NewTestDataStore(
+			s.T(),
+			s.testDB,
+			&deploymentDS.DeploymentTestStoreParams{
+				ImagesV2DataStore: imageV2Store,
+				RisksDataStore:    mockRisk,
+				ClusterRanker:     ranking.ClusterRanker(),
+				NamespaceRanker:   ranking.NamespaceRanker(),
+				DeploymentRanker:  ranking.DeploymentRanker(),
+			},
+		)
 		s.Require().NoError(err)
-		s.Require().True(found)
 
-		cloned := actual.CloneVT()
-		// Adjust dynamic fields and ensure images in ACS are as expected.
-		standardizeImages(image, cloned)
+		for _, image := range images {
+			s.Require().NoError(imageV2Store.UpsertImage(ctx, imageUtils.ConvertToV2(image)))
+		}
 
-		// Now that we confirmed that images match, use stored image to establish the expected test results.
-		// This makes dynamic fields matching (e.g. created at) straightforward.
-		images[idx] = actual
+		// Ensure that the image is stored and constructed as expected.
+		for idx, image := range images {
+			imageV2ID := imageUtils.ConvertToV2(image).GetId()
+			_, found, getErr := imageV2Store.GetImage(ctx, imageV2ID)
+			s.Require().NoError(getErr)
+			s.Require().True(found)
+
+			// Standardize the original image for test verification.
+			standardizeImages(image)
+			images[idx] = image
+		}
+	} else {
+		imageStore := imageDS.NewWithPostgres(
+			imagePostgresV2.New(s.testDB.DB, false, concurrency.NewKeyFence()),
+			mockRisk,
+			ranking.ImageRanker(),
+			ranking.ComponentRanker(),
+		)
+		deploymentStore, err = deploymentDS.NewTestDataStore(
+			s.T(),
+			s.testDB,
+			&deploymentDS.DeploymentTestStoreParams{
+				ImagesDataStore:  imageStore,
+				RisksDataStore:   mockRisk,
+				ClusterRanker:    ranking.ClusterRanker(),
+				NamespaceRanker:  ranking.NamespaceRanker(),
+				DeploymentRanker: ranking.DeploymentRanker(),
+			},
+		)
+		s.Require().NoError(err)
+
+		for _, image := range images {
+			s.Require().NoError(imageStore.UpsertImage(ctx, image))
+		}
+
+		// Ensure that the image is stored and constructed as expected.
+		for idx, image := range images {
+			actual, found, getErr := imageStore.GetImage(ctx, image.GetId())
+			s.Require().NoError(getErr)
+			s.Require().True(found)
+
+			cloned := actual.CloneVT()
+			// Adjust dynamic fields and ensure images in ACS are as expected.
+			standardizeImages(image, cloned)
+
+			// Now that we confirmed that images match, use stored image to establish the expected test results.
+			// This makes dynamic fields matching (e.g. created at) straightforward.
+			images[idx] = actual
+		}
 	}
 	s.testImages = images
 	s.deploymentView = NewDeploymentView(s.testDB.DB)

@@ -2,6 +2,7 @@ package search
 
 import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/set"
 )
 
@@ -24,5 +25,8 @@ func GetGlobalSearchCategories() set.Set[v1.SearchCategory] {
 		v1.SearchCategory_IMAGE_INTEGRATIONS,
 		v1.SearchCategory_POLICY_CATEGORIES,
 	)
+	if features.FlattenImageData.Enabled() {
+		globalSearchCategories.Add(v1.SearchCategory_IMAGES_V2)
+	}
 	return globalSearchCategories
 }

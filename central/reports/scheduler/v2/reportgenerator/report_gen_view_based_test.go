@@ -16,6 +16,8 @@ import (
 	imagesView "github.com/stackrox/rox/central/views/images"
 	watchedImageDS "github.com/stackrox/rox/central/watchedimage/datastore"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/features"
+	imageUtils "github.com/stackrox/rox/pkg/images/utils"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	postgresSchema "github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/sac"
@@ -59,16 +61,28 @@ func (s *ViewBasedReportingTestSuite) SetupSuite() {
 func (s *ViewBasedReportingTestSuite) SetupTest() {
 	s.mockCtrl = gomock.NewController(s.T())
 
-	// Create data stores based on feature flag
-	imageDataStore := resolvers.CreateTestImageDatastore(s.T(), s.testDB, s.mockCtrl)
-	s.resolver, _ = resolvers.SetupTestResolver(s.T(),
-		imagesView.NewImageView(s.testDB.DB),
-		imageDataStore,
-		resolvers.CreateTestImageComponentV2Datastore(s.T(), s.testDB, s.mockCtrl),
-		resolvers.CreateTestImageCVEV2Datastore(s.T(), s.testDB),
-		resolvers.CreateTestDeploymentDatastore(s.T(), s.testDB, s.mockCtrl, imageDataStore),
-		deploymentsView.NewDeploymentView(s.testDB.DB),
-	)
+	// TODO(ROX-30117): Remove conditional when FlattenImageData feature flag is removed.
+	if features.FlattenImageData.Enabled() {
+		imgV2DataStore := resolvers.CreateTestImageV2Datastore(s.T(), s.testDB, s.mockCtrl)
+		s.resolver, _ = resolvers.SetupTestResolver(s.T(),
+			imagesView.NewImageView(s.testDB.DB),
+			imgV2DataStore,
+			resolvers.CreateTestImageComponentV2Datastore(s.T(), s.testDB, s.mockCtrl),
+			resolvers.CreateTestImageCVEV2Datastore(s.T(), s.testDB),
+			resolvers.CreateTestDeploymentDatastoreWithImageV2(s.T(), s.testDB, s.mockCtrl, imgV2DataStore),
+			deploymentsView.NewDeploymentView(s.testDB.DB),
+		)
+	} else {
+		imageDataStore := resolvers.CreateTestImageDatastore(s.T(), s.testDB, s.mockCtrl)
+		s.resolver, _ = resolvers.SetupTestResolver(s.T(),
+			imagesView.NewImageView(s.testDB.DB),
+			imageDataStore,
+			resolvers.CreateTestImageComponentV2Datastore(s.T(), s.testDB, s.mockCtrl),
+			resolvers.CreateTestImageCVEV2Datastore(s.T(), s.testDB),
+			resolvers.CreateTestDeploymentDatastore(s.T(), s.testDB, s.mockCtrl, imageDataStore),
+			deploymentsView.NewDeploymentView(s.testDB.DB),
+		)
+	}
 
 	s.watchedImageDatastore = watchedImageDS.GetTestPostgresDataStore(s.T(), s.testDB.DB)
 	s.clusterDatastore = clusterDSMocks.NewMockDataStore(s.mockCtrl)
@@ -592,9 +606,17 @@ func (s *ViewBasedReportingTestSuite) truncateTable(name string) {
 }
 
 func (s *ViewBasedReportingTestSuite) upsertManyImages(images []*storage.Image) {
-	for _, img := range images {
-		err := s.resolver.ImageDataStore.UpsertImage(s.ctx, img)
-		s.NoError(err)
+	// TODO(ROX-30117): Remove conditional when FlattenImageData feature flag is removed.
+	if features.FlattenImageData.Enabled() {
+		for _, img := range images {
+			err := s.resolver.ImageV2DataStore.UpsertImage(s.ctx, imageUtils.ConvertToV2(img))
+			s.NoError(err)
+		}
+	} else {
+		for _, img := range images {
+			err := s.resolver.ImageDataStore.UpsertImage(s.ctx, img)
+			s.NoError(err)
+		}
 	}
 }
 
