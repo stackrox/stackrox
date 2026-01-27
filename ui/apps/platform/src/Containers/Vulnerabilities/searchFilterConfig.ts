@@ -121,7 +121,7 @@ export const virtualMachineCVESearchFilterConfig: CompoundSearchFilterEntity = {
 };
 
 export const virtualMachineComponentSearchFilterConfig: CompoundSearchFilterEntity = {
-    displayName: 'Component',
+    displayName: 'Virtual machine component',
     searchCategory: 'SEARCH_UNSET', // we don't have autocomplete for virtual machines
     attributes: [VirtualMachineComponentName, VirtualMachineComponentVersion],
 };
@@ -129,7 +129,7 @@ export const virtualMachineComponentSearchFilterConfig: CompoundSearchFilterEnti
 export const virtualMachinesClusterSearchFilterConfig: CompoundSearchFilterEntity = {
     displayName: 'Cluster',
     searchCategory: 'CLUSTERS',
-    attributes: [clusterNameAttribute, clusterIdAttribute],
+    attributes: [clusterIdAttribute, clusterNameAttribute],
 };
 
 export const virtualMachinesNamespaceSearchFilterConfig: CompoundSearchFilterEntity = {
