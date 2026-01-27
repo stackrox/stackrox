@@ -76,6 +76,9 @@ func newK8sAuthorizer(client kubernetes.Interface) *k8sAuthorizer {
 
 // formatForbiddenErr creates a consistent forbidden error message for authorization failures.
 func formatForbiddenErr(user, verb, resource, group, namespace string) error {
+	// Uppercase the verb for readability.
+	verb = strings.ToUpper(verb)
+
 	// Format as resource.group using "core" for empty group.
 	qualifiedResource := resource + "." + group
 	if group == "" {
