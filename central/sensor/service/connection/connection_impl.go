@@ -176,7 +176,7 @@ func (c *sensorConnection) multiplexedPush(ctx context.Context, msg *central.Msg
 
 	allowed, reason := c.rl.TryConsume(c.clusterID, msg)
 	if !allowed {
-		logging.GetRateLimitedLogger().ErrorL(
+		logging.GetRateLimitedLogger().WarnL(
 			"vm_index_reports_rate_limiter",
 			"Request is rate-limited for cluster %s and event type %s. Reason: %s",
 			c.clusterID,
