@@ -13,6 +13,7 @@ import (
 	"github.com/stackrox/rox/central/hash/manager/mocks"
 	clusterMgrMock "github.com/stackrox/rox/central/sensor/service/common/mocks"
 	pipelineMock "github.com/stackrox/rox/central/sensor/service/pipeline/mocks"
+	vmindexratelimiter "github.com/stackrox/rox/central/sensor/service/virtualmachineindex/ratelimiter"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	v1 "github.com/stackrox/rox/generated/internalapi/virtualmachine/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -39,6 +40,7 @@ func TestHandler(t *testing.T) {
 }
 
 func TestSensorConnectionRateLimitVMIndexReports(t *testing.T) {
+	vmindexratelimiter.ResetLimiterForTest()
 	t.Setenv(env.VMIndexReportRateLimit.EnvVar(), "1")
 	t.Setenv(env.VMIndexReportBucketCapacity.EnvVar(), "1")
 
@@ -89,12 +91,12 @@ func TestSensorConnectionRateLimitVMIndexReports(t *testing.T) {
 					ScrapeUpdate: &central.ScrapeUpdate{},
 				},
 			}
-			require.False(t, conn.shallRateLimit(ctx, nonEventMsg), "non-event messages should not be rate limited")
+			require.False(t, conn.rateLimitVMIndexReport(ctx, nonEventMsg), "non-event messages should not be rate limited")
 
 			msg := makeMsg("vm-1")
 
-			require.False(t, conn.shallRateLimit(ctx, msg), "first message should be allowed")
-			require.True(t, conn.shallRateLimit(ctx, msg), "second message should be rate limited")
+			require.False(t, conn.rateLimitVMIndexReport(ctx, msg), "first message should be allowed")
+			require.True(t, conn.rateLimitVMIndexReport(ctx, msg), "second message should be rate limited")
 
 			select {
 			case sent := <-conn.sendC:

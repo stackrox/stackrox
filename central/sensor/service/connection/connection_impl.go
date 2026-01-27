@@ -33,7 +33,6 @@ import (
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stackrox/rox/pkg/protoconv/schedule"
-	"github.com/stackrox/rox/pkg/rate"
 	"github.com/stackrox/rox/pkg/reflectutils"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/safe"
@@ -163,7 +162,7 @@ func (c *sensorConnection) multiplexedPush(ctx context.Context, msg *central.Msg
 		return
 	}
 
-	if c.shallRateLimit(ctx, msg) {
+	if c.rateLimitVMIndexReport(ctx, msg) {
 		return
 	}
 
@@ -187,28 +186,18 @@ func (c *sensorConnection) multiplexedPush(ctx context.Context, msg *central.Msg
 	queue.Push(msg)
 }
 
-func (c *sensorConnection) shallRateLimit(ctx context.Context, msg *central.MsgFromSensor) bool {
+func (c *sensorConnection) rateLimitVMIndexReport(ctx context.Context, msg *central.MsgFromSensor) bool {
 	ev := msg.GetEvent()
 	if ev == nil {
 		return false
 	}
 
-	// Get the rate limiter for the message type. If not present, don't rate limit.
-	var rateLimiter *rate.Limiter
-	var ackMessageType central.SensorACK_MessageType
-	var resourceIdGetter func(msg *central.SensorEvent) string
-
-	switch ev.GetResource().(type) {
-	case *central.SensorEvent_VirtualMachineIndexReport:
-		rateLimiter = vmindexratelimiter.Limiter()
-		ackMessageType = central.SensorACK_VM_INDEX_REPORT
-		resourceIdGetter = func(ev *central.SensorEvent) string {
-			return ev.GetVirtualMachineIndexReport().GetId()
-		}
-	default:
+	vmReport := ev.GetVirtualMachineIndexReport()
+	if vmReport == nil {
 		return false
 	}
 
+	rateLimiter := vmindexratelimiter.Limiter()
 	if rateLimiter == nil {
 		return false
 	}
@@ -219,27 +208,31 @@ func (c *sensorConnection) shallRateLimit(ctx context.Context, msg *central.MsgF
 	}
 
 	logging.GetRateLimitedLogger().ErrorL(
-		"sensor conn rate limiter for "+rateLimiter.WorkloadName(),
+		"sensor_conn_vm_index_rate_limiter",
 		"Rate limit exceeded for cluster %s and event type %s: %v", c.clusterID, rateLimiter.WorkloadName(), reason,
 	)
 
 	if c.HasCapability(centralsensor.SensorACKSupport) {
-		nack := &central.MsgToSensor{
-			Msg: &central.MsgToSensor_SensorAck{
-				SensorAck: &central.SensorACK{
-					Action:      central.SensorACK_NACK,
-					MessageType: ackMessageType,
-					ResourceId:  resourceIdGetter(ev),
-					Reason:      reason,
-				},
-			},
-		}
-		if err := c.InjectMessage(ctx, nack); err != nil {
-			log.Warnf("Failed to send NACK for cluster %s and event type %s: %v", c.clusterID, rateLimiter.WorkloadName(), err)
-		}
+		c.sendNACK(ctx, central.SensorACK_VM_INDEX_REPORT, vmReport.GetId(), reason, rateLimiter.WorkloadName())
 	}
 
 	return true
+}
+
+func (c *sensorConnection) sendNACK(ctx context.Context, messageType central.SensorACK_MessageType, resourceID, reason, workloadName string) {
+	nack := &central.MsgToSensor{
+		Msg: &central.MsgToSensor_SensorAck{
+			SensorAck: &central.SensorACK{
+				Action:      central.SensorACK_NACK,
+				MessageType: messageType,
+				ResourceId:  resourceID,
+				Reason:      reason,
+			},
+		},
+	}
+	if err := c.InjectMessage(ctx, nack); err != nil {
+		log.Warnf("Failed to send NACK for cluster %s and event type %s: %v", c.clusterID, workloadName, err)
+	}
 }
 
 func getSensorMessageTypeString(msg *central.MsgFromSensor) string {
