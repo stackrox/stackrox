@@ -11,6 +11,8 @@ import (
 	"github.com/stackrox/rox/central/sensor/service/pipeline"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/administration/events"
+	adminEventStream "github.com/stackrox/rox/pkg/administration/events/stream"
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/clusterhealth"
 	"github.com/stackrox/rox/pkg/concurrency"
@@ -76,6 +78,7 @@ type manager struct {
 	initSyncMgr                *initSyncManager
 	autoTriggerUpgrades        *concurrency.Flag
 	rateLimiter                *rate.Limiter
+	adminEventsStream          events.Stream
 }
 
 // NewManager returns a new connection manager
@@ -85,6 +88,7 @@ func NewManager(mgr hashManager.Manager) Manager {
 		manager:                mgr,
 		initSyncMgr:            NewInitSyncManager(),
 		rateLimiter:            newVMIndexReportRateLimiter(),
+		adminEventsStream:      adminEventStream.Singleton(),
 	}
 }
 
@@ -301,6 +305,7 @@ func (m *manager) HandleConnection(ctx context.Context, sensorHello *central.Sen
 			m.complianceOperatorMgr,
 			m.initSyncMgr,
 			m.rateLimiter,
+			m.adminEventsStream,
 		)
 
 	defer m.rateLimiter.OnClientDisconnect(clusterID)

@@ -23,6 +23,8 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/administration/events"
+	adminResources "github.com/stackrox/rox/pkg/administration/events/resources"
 	"github.com/stackrox/rox/pkg/booleanpolicy/policyversion"
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/concurrency"
@@ -32,6 +34,7 @@ import (
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stackrox/rox/pkg/protoconv/schedule"
+	"github.com/stackrox/rox/pkg/rate"
 	"github.com/stackrox/rox/pkg/reflectutils"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/safe"
@@ -82,7 +85,8 @@ type sensorConnection struct {
 
 	hashDeduper hashManager.Deduper
 
-	rl rateLimiter
+	rl                rateLimiter
+	adminEventsStream events.Stream
 }
 
 type rateLimiter interface {
@@ -104,6 +108,7 @@ func newConnection(ctx context.Context,
 	complianceOperatorMgr common.ComplianceOperatorManager,
 	initSyncMgr *initSyncManager,
 	rl rateLimiter,
+	adminEventsStream events.Stream,
 ) *sensorConnection {
 
 	conn := &sensorConnection{
@@ -169,17 +174,18 @@ func (c *sensorConnection) multiplexedPush(ctx context.Context, msg *central.Msg
 		return
 	}
 
-	if c.rl != nil {
-		allowed, reason := c.rl.TryConsume(c.clusterID, msg)
-		if !allowed {
-			logging.GetRateLimitedLogger().ErrorL(
-				"vm_index_reports_rate_limiter",
-				"Rate limit exceeded for cluster %s and event type %s: %v", c.clusterID, "vm_index_reports", reason,
-			)
-			return
-		}
+	allowed, reason := c.rl.TryConsume(c.clusterID, msg)
+	if !allowed {
+		logging.GetRateLimitedLogger().ErrorL(
+			"vm_index_reports_rate_limiter",
+			"Request is rate-limited for cluster %s and event type %s. Reason: %s",
+			c.clusterID,
+			event.GetEventTypeWithoutPrefix(msg.GetEvent().GetResource()),
+			reason,
+		)
+		c.emitRateLimitedAdminEvent(c.clusterID, reason)
+		return
 	}
-
 
 	typ := reflectutils.Type(msg.GetMsg())
 	queue := queues[typ]
@@ -199,6 +205,31 @@ func (c *sensorConnection) multiplexedPush(ctx context.Context, msg *central.Msg
 		}
 	}
 	queue.Push(msg)
+}
+
+func (c *sensorConnection) emitRateLimitedAdminEvent(clusterID, reason string) {
+	if c.adminEventsStream == nil {
+		return
+	}
+	// The texts are tuned for the rate.ReasonRateLimitExceeded, so skip adding log entry if the reason is different.
+	if reason != rate.ReasonRateLimitExceeded {
+		return
+	}
+
+	c.adminEventsStream.Produce(&events.AdministrationEvent{
+		Type:         storage.AdministrationEventType_ADMINISTRATION_EVENT_TYPE_GENERIC,
+		Level:        storage.AdministrationEventLevel_ADMINISTRATION_EVENT_LEVEL_WARNING,
+		Domain:       events.DefaultDomain,
+		Message:      fmt.Sprintf("VM index reports from cluster %s are being rate limited: %s", clusterID, reason),
+		ResourceType: adminResources.Cluster,
+		ResourceID:   clusterID,
+		Hint: fmt.Sprintf("VM index reports are being rate limited to avoid overwhelming the system. "+
+			"Consider either: (1) scaling up the Scanner V4 deployments and increasing values of %s or %s, "+
+			"or (2) reducing the index-report frequency in roxagents running in the Virtual Machines.",
+			env.VMIndexReportRateLimit.EnvVar(),
+			env.VMIndexReportBucketCapacity.EnvVar(),
+		),
+	})
 }
 
 func getSensorMessageTypeString(msg *central.MsgFromSensor) string {
