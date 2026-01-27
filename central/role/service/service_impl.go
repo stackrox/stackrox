@@ -82,24 +82,19 @@ func (*serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName string)
 }
 
 func (s *serviceImpl) GetRoles(ctx context.Context, _ *v1.Empty) (*v1.GetRolesResponse, error) {
-	roles, err := s.roleDataStore.GetAllRoles(ctx)
+	roles, err := s.roleDataStore.GetRolesFiltered(ctx, func(role *storage.Role) bool {
+		return role.GetTraits().GetOrigin() != storage.Traits_DYNAMIC
+	})
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to retrieve roles")
 	}
-	// filter out dynamic roles created to back Rox tokens issued for internal purposes.
-	filteredRoles := make([]*storage.Role, 0, len(roles))
-	for _, role := range roles {
-		if role.GetTraits().GetOrigin() != storage.Traits_DYNAMIC {
-			filteredRoles = append(filteredRoles, role)
-		}
-	}
 
 	// List roles in the same order for consistency across requests.
-	sort.Slice(filteredRoles, func(i, j int) bool {
-		return filteredRoles[i].GetName() < filteredRoles[j].GetName()
+	sort.Slice(roles, func(i, j int) bool {
+		return roles[i].GetName() < roles[j].GetName()
 	})
 
-	return &v1.GetRolesResponse{Roles: filteredRoles}, nil
+	return &v1.GetRolesResponse{Roles: roles}, nil
 }
 
 func (s *serviceImpl) GetRole(ctx context.Context, id *v1.ResourceByID) (*storage.Role, error) {
@@ -196,24 +191,19 @@ func (s *serviceImpl) GetPermissionSet(ctx context.Context, id *v1.ResourceByID)
 }
 
 func (s *serviceImpl) ListPermissionSets(ctx context.Context, _ *v1.Empty) (*v1.ListPermissionSetsResponse, error) {
-	permissionSets, err := s.roleDataStore.GetAllPermissionSets(ctx)
+	permissionSets, err := s.roleDataStore.GetPermissionSetsFiltered(ctx, func(permissionSet *storage.PermissionSet) bool {
+		return permissionSet.GetTraits().GetOrigin() != storage.Traits_DYNAMIC
+	})
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to retrieve permission sets")
 	}
-	// filter out dynamic permission sets created to back Rox tokens issued for internal purposes.
-	filteredPermissionSets := make([]*storage.PermissionSet, 0, len(permissionSets))
-	for _, permissionSet := range permissionSets {
-		if permissionSet.GetTraits().GetOrigin() != storage.Traits_DYNAMIC {
-			filteredPermissionSets = append(filteredPermissionSets, permissionSet)
-		}
-	}
 
 	// List permission sets in the same order for consistency across requests.
-	sort.Slice(filteredPermissionSets, func(i, j int) bool {
-		return filteredPermissionSets[i].GetName() < filteredPermissionSets[j].GetName()
+	sort.Slice(permissionSets, func(i, j int) bool {
+		return permissionSets[i].GetName() < permissionSets[j].GetName()
 	})
 
-	return &v1.ListPermissionSetsResponse{PermissionSets: filteredPermissionSets}, nil
+	return &v1.ListPermissionSetsResponse{PermissionSets: permissionSets}, nil
 }
 
 func (s *serviceImpl) PostPermissionSet(ctx context.Context, permissionSet *storage.PermissionSet) (*storage.PermissionSet, error) {
@@ -276,24 +266,19 @@ func (s *serviceImpl) GetSimpleAccessScope(ctx context.Context, id *v1.ResourceB
 }
 
 func (s *serviceImpl) ListSimpleAccessScopes(ctx context.Context, _ *v1.Empty) (*v1.ListSimpleAccessScopesResponse, error) {
-	scopes, err := s.roleDataStore.GetAllAccessScopes(ctx)
+	scopes, err := s.roleDataStore.GetAccessScopesFiltered(ctx, func(scope *storage.SimpleAccessScope) bool {
+		return scope.GetTraits().GetOrigin() != storage.Traits_DYNAMIC
+	})
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to retrieve access scopes")
 	}
-	// filter out dynamic access scopes created to back Rox tokens issued for internal purposes.
-	filteredScopes := make([]*storage.SimpleAccessScope, 0, len(scopes))
-	for _, scope := range scopes {
-		if scope.GetTraits().GetOrigin() != storage.Traits_DYNAMIC {
-			filteredScopes = append(filteredScopes, scope)
-		}
-	}
 
 	// List access scopes in the same order for consistency across requests.
-	sort.Slice(filteredScopes, func(i, j int) bool {
-		return filteredScopes[i].GetName() < filteredScopes[j].GetName()
+	sort.Slice(scopes, func(i, j int) bool {
+		return scopes[i].GetName() < scopes[j].GetName()
 	})
 
-	return &v1.ListSimpleAccessScopesResponse{AccessScopes: filteredScopes}, nil
+	return &v1.ListSimpleAccessScopesResponse{AccessScopes: scopes}, nil
 }
 
 func (s *serviceImpl) PostSimpleAccessScope(ctx context.Context, scope *storage.SimpleAccessScope) (*storage.SimpleAccessScope, error) {
