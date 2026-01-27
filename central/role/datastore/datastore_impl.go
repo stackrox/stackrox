@@ -62,8 +62,7 @@ func (ds *dataStoreImpl) UpsertRole(ctx context.Context, newRole *storage.Role) 
 		return err
 	}
 
-	// Constraints ok, write the object. We expect the underlying store to
-	// verify there is no role with the same name.
+	// Constraints ok, upsert the object (create if new, update if exists).
 	if err := ds.roleStorage.Upsert(ctx, newRole); err != nil {
 		return err
 	}
@@ -95,8 +94,7 @@ func (ds *dataStoreImpl) UpsertPermissionSet(ctx context.Context, newPS *storage
 		return err
 	}
 
-	// Constraints ok, write the object. We expect the underlying store to
-	// verify there is no permission set with the same name.
+	// Constraints ok, upsert the object (create if new, update if exists).
 	if err := ds.permissionSetStorage.Upsert(ctx, newPS); err != nil {
 		return err
 	}
@@ -128,8 +126,7 @@ func (ds *dataStoreImpl) UpsertAccessScope(ctx context.Context, newScope *storag
 		return err
 	}
 
-	// Constraints ok, write the object. We expect the underlying store to
-	// verify there is no access scope with the same name.
+	// Constraints ok, upsert the object (create if new, update if exists).
 	if err := ds.accessScopeStorage.Upsert(ctx, newScope); err != nil {
 		return err
 	}
