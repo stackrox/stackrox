@@ -5,8 +5,8 @@ import { interceptAndWatchRequests } from '../../helpers/request';
 import pf6 from '../../selectors/pf6';
 import {
     acsAuthNamespaceHeader,
-    deploymentListRoute,
     deploymentListRouteMatcher,
+    deploymentsRoute,
     getCVEsForDeploymentRoute,
     getCVEsForDeploymentRouteMatcher,
     routeMatcherMapForBasePlugin,
@@ -16,7 +16,7 @@ describe('Workloads - Security tab', () => {
     it('should send the correct auth headers for namespace scoped requests on workload security tab', () => {
         interceptAndWatchRequests({
             ...routeMatcherMapForBasePlugin,
-            [deploymentListRoute]: deploymentListRouteMatcher,
+            [deploymentsRoute]: deploymentListRouteMatcher,
             [getCVEsForDeploymentRoute]: getCVEsForDeploymentRouteMatcher,
         }).then(({ waitForRequests }) => {
             withOcpAuth();
