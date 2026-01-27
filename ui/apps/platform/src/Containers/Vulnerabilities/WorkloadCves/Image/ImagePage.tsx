@@ -86,7 +86,7 @@ const imageV2DetailsQuery = gql`
                 tag
                 fullName
             }
-            ...ImageDetails
+            ...ImageV2Details
         }
     }
 `;

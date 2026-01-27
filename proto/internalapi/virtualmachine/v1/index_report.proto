@@ -6,6 +6,46 @@ import "internalapi/scanner/v4/index_report.proto";
 
 option go_package = "./internalapi/virtualmachine/v1;v1";
 
+// VMReport is the message sent over vsock from roxagent to relay.
+// It wraps IndexReport and includes VM discovered data that stays in Sensor.
+message VMReport {
+  IndexReport index_report = 1;
+
+  // VM data discovered by roxagent (not forwarded to Central)
+  DiscoveredData discovered_data = 2;
+}
+
+// DiscoveredData contains data discovered by roxagent.
+message DiscoveredData {
+  // detected_os will be extracted from '/etc/os-release' or similar source.
+  DetectedOS detected_os = 1;
+  // os_version will be extracted from '/etc/os-release' or similar source.
+  string os_version = 2;
+  ActivationStatus activation_status = 3;
+  DnfMetadataStatus dnf_metadata_status = 4;
+}
+
+// DetectedOS describes the OS detected by roxagent.
+// Limited selection for now, because we currently don't support other OSes.
+enum DetectedOS {
+  UNKNOWN = 0;
+  RHEL = 1;
+}
+
+// ActivationStatus indicates whether the OS is activated.
+enum ActivationStatus {
+  ACTIVATION_UNSPECIFIED = 0;
+  ACTIVE = 1;
+  INACTIVE = 2;
+}
+
+// DnfMetadataStatus indicates whether DNF metadata is available.
+enum DnfMetadataStatus {
+  DNF_METADATA_UNSPECIFIED = 0;
+  AVAILABLE = 1;
+  UNAVAILABLE = 2;
+}
+
 // The index report is collected from the virtual machine agent and contains
 // the package information.
 message IndexReport {

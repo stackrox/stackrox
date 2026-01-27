@@ -1,7 +1,6 @@
-import { useLocation } from 'react-router-dom-v5-compat';
+import { Link, useLocation } from 'react-router-dom-v5-compat';
 import { gql, useQuery } from '@apollo/client';
 import {
-    Button,
     Flex,
     FlexItem,
     Form,
@@ -18,7 +17,6 @@ import useWidgetConfig from 'hooks/useWidgetConfig';
 import type { SearchFilter } from 'types/search';
 import { getQueryString } from 'utils/queryStringUtils';
 import { getRequestQueryStringForSearchFilter } from 'utils/searchUtils';
-import LinkShim from 'Components/PatternFly/LinkShim';
 import WidgetCard from 'Components/PatternFly/WidgetCard';
 
 import ImagesAtMostRiskTable from './ImagesAtMostRiskTable';
@@ -117,78 +115,87 @@ function ImagesAtMostRisk() {
             isLoading={loading || !imageData}
             error={error}
             header={
-                <Flex direction={{ default: 'row' }}>
-                    <FlexItem grow={{ default: 'grow' }}>
+                <Flex
+                    direction={{ default: 'row' }}
+                    alignItems={{ default: 'alignItemsCenter' }}
+                    justifyContent={{ default: 'justifyContentSpaceBetween' }}
+                >
+                    <FlexItem>
                         <Title headingLevel="h2">{getTitle(searchFilter, imageStatus)}</Title>
                     </FlexItem>
-                    <FlexItem>
-                        {isOptionsChanged && (
-                            <WidgetOptionsResetButton onClick={() => updateConfig(defaultConfig)} />
-                        )}
-                        <WidgetOptionsMenu
-                            bodyContent={
-                                <Form>
-                                    <FormGroup
-                                        fieldId={`${fieldIdPrefix}-fixable`}
-                                        label="Image vulnerabilities"
-                                    >
-                                        <ToggleGroup aria-label="Show all CVEs or fixable CVEs only">
-                                            <ToggleGroupItem
-                                                className="pf-v5-u-font-weight-normal"
-                                                text="Fixable CVEs"
-                                                buttonId={`${fieldIdPrefix}-fixable-only`}
-                                                isSelected={cveStatus === 'Fixable'}
-                                                onChange={() =>
-                                                    updateConfig({ cveStatus: 'Fixable' })
-                                                }
-                                            />
-                                            <ToggleGroupItem
-                                                text="All CVEs"
-                                                buttonId={`${fieldIdPrefix}-all-cves`}
-                                                isSelected={cveStatus === 'All'}
-                                                onChange={() => updateConfig({ cveStatus: 'All' })}
-                                            />
-                                        </ToggleGroup>
-                                    </FormGroup>
-                                    <FormGroup
-                                        fieldId={`${fieldIdPrefix}-lifecycle`}
-                                        label="Image status"
-                                    >
-                                        <ToggleGroup aria-label="Show all images or active images only">
-                                            <ToggleGroupItem
-                                                text="Active images"
-                                                buttonId={`${fieldIdPrefix}-status-active`}
-                                                isSelected={
-                                                    imageStatus === 'Active' || isScopeApplied
-                                                }
-                                                onChange={() =>
-                                                    updateConfig({ imageStatus: 'Active' })
-                                                }
-                                            />
-                                            <ToggleGroupItem
-                                                text="All images"
-                                                buttonId={`${fieldIdPrefix}-status-all`}
-                                                isSelected={
-                                                    imageStatus === 'All' && !isScopeApplied
-                                                }
-                                                isDisabled={isScopeApplied}
-                                                onChange={() =>
-                                                    updateConfig({ imageStatus: 'All' })
-                                                }
-                                            />
-                                        </ToggleGroup>
-                                    </FormGroup>
-                                </Form>
-                            }
-                        />
-                        <Button
-                            variant="secondary"
-                            component={LinkShim}
-                            href={getViewAllLink(searchFilter)}
-                        >
-                            View all
-                        </Button>
-                    </FlexItem>
+                    <Flex
+                        direction={{ default: 'row' }}
+                        alignItems={{ default: 'alignItemsCenter' }}
+                    >
+                        <FlexItem>
+                            <Link to={getViewAllLink(searchFilter)}>View all</Link>
+                        </FlexItem>
+                        <FlexItem>
+                            {isOptionsChanged && (
+                                <WidgetOptionsResetButton
+                                    onClick={() => updateConfig(defaultConfig)}
+                                />
+                            )}
+                            <WidgetOptionsMenu
+                                bodyContent={
+                                    <Form>
+                                        <FormGroup
+                                            fieldId={`${fieldIdPrefix}-fixable`}
+                                            label="Image vulnerabilities"
+                                        >
+                                            <ToggleGroup aria-label="Show all CVEs or fixable CVEs only">
+                                                <ToggleGroupItem
+                                                    className="pf-v5-u-font-weight-normal"
+                                                    text="Fixable CVEs"
+                                                    buttonId={`${fieldIdPrefix}-fixable-only`}
+                                                    isSelected={cveStatus === 'Fixable'}
+                                                    onChange={() =>
+                                                        updateConfig({ cveStatus: 'Fixable' })
+                                                    }
+                                                />
+                                                <ToggleGroupItem
+                                                    text="All CVEs"
+                                                    buttonId={`${fieldIdPrefix}-all-cves`}
+                                                    isSelected={cveStatus === 'All'}
+                                                    onChange={() =>
+                                                        updateConfig({ cveStatus: 'All' })
+                                                    }
+                                                />
+                                            </ToggleGroup>
+                                        </FormGroup>
+                                        <FormGroup
+                                            fieldId={`${fieldIdPrefix}-lifecycle`}
+                                            label="Image status"
+                                        >
+                                            <ToggleGroup aria-label="Show all images or active images only">
+                                                <ToggleGroupItem
+                                                    text="Active images"
+                                                    buttonId={`${fieldIdPrefix}-status-active`}
+                                                    isSelected={
+                                                        imageStatus === 'Active' || isScopeApplied
+                                                    }
+                                                    onChange={() =>
+                                                        updateConfig({ imageStatus: 'Active' })
+                                                    }
+                                                />
+                                                <ToggleGroupItem
+                                                    text="All images"
+                                                    buttonId={`${fieldIdPrefix}-status-all`}
+                                                    isSelected={
+                                                        imageStatus === 'All' && !isScopeApplied
+                                                    }
+                                                    isDisabled={isScopeApplied}
+                                                    onChange={() =>
+                                                        updateConfig({ imageStatus: 'All' })
+                                                    }
+                                                />
+                                            </ToggleGroup>
+                                        </FormGroup>
+                                    </Form>
+                                }
+                            />
+                        </FlexItem>
+                    </Flex>
                 </Flex>
             }
         >

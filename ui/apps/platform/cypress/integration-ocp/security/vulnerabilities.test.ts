@@ -5,6 +5,14 @@ import { assertVisibleTableColumns } from '../../helpers/tableHelpers';
 import { selectors } from '../../integration/vulnerabilities/vulnerabilities.selectors';
 import { selectProject } from '../../helpers/ocpConsole';
 import { assertSearchEntities } from '../../integration/vulnerabilities/workloadCves/WorkloadCves.helpers';
+import { interceptAndWatchRequests } from '../../helpers/request';
+import {
+    acsAuthNamespaceHeader,
+    getImageCVEListRoute,
+    getImageCVEListRouteMatcher,
+    metadataRoute,
+    routeMatcherMapForBasePlugin,
+} from '../routes';
 
 describe('Security vulnerabilities page', () => {
     it('should display only the expected table columns for each entity type', () => {
@@ -69,5 +77,55 @@ describe('Security vulnerabilities page', () => {
         ];
         cy.get(selectors.entityTypeToggleItem('Deployment')).click();
         assertVisibleTableColumns('table', expectedDeploymentTableColumns);
+
+        // Return to the default "All Projects" view
+        selectProject('All Projects');
+    });
+
+    it('should send the correct auth headers for namespace scoped requests on vuln dashboard', () => {
+        interceptAndWatchRequests({
+            ...routeMatcherMapForBasePlugin,
+            [getImageCVEListRoute]: getImageCVEListRouteMatcher,
+        }).then(({ waitForRequests }) => {
+            withOcpAuth();
+            visitFromConsoleLeftNavExpandable('Security', 'Vulnerabilities');
+
+            waitForRequests().then(
+                ([
+                    metadataRequest,
+                    featureFlagsRequest,
+                    publicConfigRequest,
+                    getImageCVEListRequest,
+                ]) => {
+                    expect(metadataRequest.request.headers).not.to.have.property(
+                        acsAuthNamespaceHeader
+                    );
+                    expect(featureFlagsRequest.request.headers).not.to.have.property(
+                        acsAuthNamespaceHeader
+                    );
+                    expect(publicConfigRequest.request.headers).not.to.have.property(
+                        acsAuthNamespaceHeader
+                    );
+                    expect(getImageCVEListRequest.request.headers[acsAuthNamespaceHeader]).to.equal(
+                        '*'
+                    );
+                }
+            );
+
+            selectProject('stackrox');
+
+            waitForRequests([metadataRoute, getImageCVEListRoute]).then(
+                ([metadataRequest, getImageCVEListRequest]) => {
+                    expect(metadataRequest.request.headers).not.to.have.property(
+                        acsAuthNamespaceHeader
+                    );
+                    expect(getImageCVEListRequest.request.headers[acsAuthNamespaceHeader]).to.equal(
+                        'stackrox'
+                    );
+                }
+            );
+
+            selectProject('All Projects');
+        });
     });
 });

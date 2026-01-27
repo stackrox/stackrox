@@ -15,8 +15,12 @@ import {
 } from '@patternfly/react-core';
 
 import CompoundSearchFilter from 'Components/CompoundSearchFilter/components/CompoundSearchFilter';
-import SearchFilterChips from 'Components/CompoundSearchFilter/components/SearchFilterChips';
-import type { OnSearchCallback } from 'Components/CompoundSearchFilter/types';
+import CompoundSearchFilterLabels from 'Components/CompoundSearchFilter/components/CompoundSearchFilterLabels';
+import type {
+    OnSearchCallback,
+    SelectSearchFilterAttribute,
+} from 'Components/CompoundSearchFilter/types';
+import SearchFilterSelectInclusive from 'Components/CompoundSearchFilter/components/SearchFilterSelectInclusive';
 import { updateSearchFilter } from 'Components/CompoundSearchFilter/utils/utils';
 import { DynamicTableLabel } from 'Components/DynamicIcon';
 import type { UseURLPaginationResult } from 'hooks/useURLPagination';
@@ -31,9 +35,20 @@ import {
     applyVirtualMachineComponentsTableSort,
     getVirtualMachineComponentsTableData,
 } from '../aggregateUtils';
-import ComponentScannableStatusDropdown from '../../components/ComponentScannableStatusDropdown';
 import { virtualMachineComponentSearchFilterConfig } from '../../searchFilterConfig';
+import { scannableStatuses } from '../../types';
 import VirtualMachineComponentsPageTable from './VirtualMachineComponentsPageTable';
+
+export const attributeForScannable: SelectSearchFilterAttribute = {
+    displayName: 'Scan status',
+    filterChipLabel: 'Scan status',
+    searchTerm: 'SCANNABLE', // TODO can it become 'Scannable' instead of ALL CAPS before GA?
+    inputType: 'select',
+    inputProps: {
+        // TODO can value become true and file instead of Scanned and Not scanned before GA?
+        options: scannableStatuses.map((label) => ({ label, value: label })),
+    },
+};
 
 export type VirtualMachinePageComponentsProps = {
     virtualMachineData: VirtualMachine | undefined;
@@ -111,15 +126,8 @@ function VirtualMachinePageComponents({
         setPage(1);
     };
 
-    const onScannableStatusSelect = (
-        filterType: 'SCANNABLE',
-        checked: boolean,
-        selection: string
-    ) => {
-        const action = checked ? 'SELECT_INCLUSIVE' : 'REMOVE';
-        const category = filterType;
-        const value = selection;
-        setSearchFilter(updateSearchFilter(searchFilter, [{ action, category, value }]));
+    const onSearchScannable: OnSearchCallback = (payload) => {
+        setSearchFilter(updateSearchFilter(searchFilter, payload));
         setPage(1);
     };
 
@@ -136,21 +144,20 @@ function VirtualMachinePageComponents({
                             />
                         </ToolbarItem>
                         <ToolbarItem>
-                            <ComponentScannableStatusDropdown
+                            <SearchFilterSelectInclusive
+                                attribute={attributeForScannable}
+                                isSeparate
+                                onSearch={onSearchScannable}
                                 searchFilter={searchFilter}
-                                onSelect={onScannableStatusSelect}
                             />
                         </ToolbarItem>
                     </ToolbarGroup>
                     <ToolbarGroup className="pf-v5-u-w-100">
-                        <SearchFilterChips
+                        <CompoundSearchFilterLabels
+                            attributesSeparateFromConfig={[attributeForScannable]}
+                            config={searchFilterConfig}
                             searchFilter={searchFilter}
                             onFilterChange={setSearchFilter}
-                            filterChipGroupDescriptors={[
-                                { displayName: 'Scannable Status', searchFilterName: 'SCANNABLE' },
-                                { displayName: 'Component', searchFilterName: 'Component' },
-                                { displayName: 'Version', searchFilterName: 'Component Version' },
-                            ]}
                         />
                     </ToolbarGroup>
                 </ToolbarContent>

@@ -218,11 +218,12 @@ describe(Cypress.spec.relative, () => {
         cy.get(selectors.attributeSelectToggle).click();
 
         cy.get(selectors.attributeSelectItems).should('have.length', 5);
-        cy.get(selectors.attributeSelectItems).eq(0).should('have.text', 'Name');
-        cy.get(selectors.attributeSelectItems).eq(1).should('have.text', 'Operating system');
-        cy.get(selectors.attributeSelectItems).eq(2).should('have.text', 'Tag');
-        cy.get(selectors.attributeSelectItems).eq(3).should('have.text', 'Label');
-        cy.get(selectors.attributeSelectItems).eq(4).should('have.text', 'Registry');
+        // Attributes are in alphabetical order by displayName property.
+        cy.get(selectors.attributeSelectItems).eq(0).should('have.text', 'Label');
+        cy.get(selectors.attributeSelectItems).eq(1).should('have.text', 'Name');
+        cy.get(selectors.attributeSelectItems).eq(2).should('have.text', 'Operating system');
+        cy.get(selectors.attributeSelectItems).eq(3).should('have.text', 'Registry');
+        cy.get(selectors.attributeSelectItems).eq(4).should('have.text', 'Tag');
     });
 
     it('should display Deployment attributes in the attribute selector', () => {
@@ -235,19 +236,22 @@ describe(Cypress.spec.relative, () => {
         cy.get(selectors.entitySelectToggle).click();
         cy.get(selectors.entitySelectItem('Deployment')).click();
 
-        cy.get(selectors.attributeSelectToggle).should('contain.text', 'ID');
+        cy.get(selectors.attributeSelectToggle).should('contain.text', 'Name');
 
         cy.get(selectors.attributeSelectToggle).click();
 
         cy.get(selectors.attributeSelectItems).should('have.length', 5);
-        cy.get(selectors.attributeSelectItems).eq(0).should('have.text', 'ID');
-        cy.get(selectors.attributeSelectItems).eq(1).should('have.text', 'Name');
+        // Attributes are in alphabetical order by displayName property.
+        cy.get(selectors.attributeSelectItems).eq(0).should('have.text', 'Annotation');
+        cy.get(selectors.attributeSelectItems).eq(1).should('have.text', 'ID');
         cy.get(selectors.attributeSelectItems).eq(2).should('have.text', 'Label');
-        cy.get(selectors.attributeSelectItems).eq(3).should('have.text', 'Annotation');
+        cy.get(selectors.attributeSelectItems).eq(3).should('have.text', 'Name');
         cy.get(selectors.attributeSelectItems).eq(4).should('have.text', 'Status');
     });
 
-    it('should display the text input and correctly search for image tags', () => {
+    it('should display the autocomplete input and correctly search for image tags', () => {
+        mockAutocompleteResponse();
+
         const config = [imageSearchFilterConfig, nodeComponentSearchFilterConfig];
         const onSearch = cy.stub().as('onSearch');
         const searchFilter = {};
@@ -261,15 +265,14 @@ describe(Cypress.spec.relative, () => {
 
         cy.get('input[aria-label="Filter results by Image tag"]').should('exist');
 
-        cy.get('input[aria-label="Filter results by Image tag"]').clear();
-        cy.get('input[aria-label="Filter results by Image tag"]').type('Tag 123');
-        cy.get('button[aria-label="Apply text input to search"]').click();
+        cy.get('input[aria-label="Filter results by Image tag"]').type('centos:7');
+        cy.get('button[aria-label="Apply autocomplete input to search"]').click();
 
         cy.get('@onSearch').should('have.been.calledWithExactly', [
             {
                 action: 'APPEND',
                 category: 'Image Tag',
-                value: 'Tag 123',
+                value: 'centos:7',
             },
         ]);
     });
@@ -535,7 +538,7 @@ describe(Cypress.spec.relative, () => {
         cy.get(selectors.entitySelectToggle).click();
         cy.get(selectors.entitySelectItem('Cluster')).click();
         cy.get(selectors.entitySelectToggle).should('contain.text', 'Cluster');
-        cy.get(selectors.attributeSelectToggle).should('contain.text', 'ID');
+        cy.get(selectors.attributeSelectToggle).should('contain.text', 'Name');
 
         // Click swap config button and verify the default entity and attribute are displayed
         cy.get('button:contains("Trim config")').click();

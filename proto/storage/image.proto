@@ -259,4 +259,5 @@ message BaseImageInfo {
   string base_image_id = 1;
   string base_image_full_name = 2;
   string base_image_digest = 3;
+  google.protobuf.Timestamp created = 4;
 }

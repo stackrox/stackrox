@@ -16,31 +16,63 @@ type streamTestSuite struct {
 	suite.Suite
 }
 
-func (s *streamTestSuite) TestParseIndexReport() {
+func (s *streamTestSuite) TestParseVMReport() {
 	data := []byte("malformed-data")
-	parsedIndexReport, err := parseIndexReport(data)
+	parsedVMReport, err := parseVMReport(data)
 	s.Require().Error(err)
-	s.Require().Nil(parsedIndexReport)
+	s.Require().Nil(parsedVMReport)
 
-	validIndexReport := &v1.IndexReport{VsockCid: "42"}
-	data, err = proto.Marshal(validIndexReport)
+	s.Run("should parse message without discovered data", func() {
+		indexReportOnly := &v1.VMReport{
+			IndexReport: &v1.IndexReport{},
+		}
+		marshaledIndexReportOnly, err := proto.Marshal(indexReportOnly)
+		s.Require().NoError(err)
+
+		parsedVMReport, err := parseVMReport(marshaledIndexReportOnly)
+		s.Require().NoError(err)
+		s.Require().NotNil(parsedVMReport)
+		s.Require().Nil(parsedVMReport.GetDiscoveredData())
+	})
+
+	validVMReport := &v1.VMReport{
+		IndexReport: &v1.IndexReport{VsockCid: "42"},
+		DiscoveredData: &v1.DiscoveredData{
+			DetectedOs:        v1.DetectedOS_UNKNOWN,
+			OsVersion:         "",
+			ActivationStatus:  v1.ActivationStatus_ACTIVATION_UNSPECIFIED,
+			DnfMetadataStatus: v1.DnfMetadataStatus_DNF_METADATA_UNSPECIFIED,
+		},
+	}
+	data, err = proto.Marshal(validVMReport)
 	s.Require().NoError(err)
-	parsedIndexReport, err = parseIndexReport(data)
+	parsedVMReport, err = parseVMReport(data)
 	s.Require().NoError(err)
-	s.Require().True(proto.Equal(validIndexReport, parsedIndexReport))
+	s.Require().True(proto.Equal(validVMReport, parsedVMReport))
 }
 
 func (s *streamTestSuite) TestValidateVsockCID() {
+	s.Run("missing index report does not panic", func() {
+		vmReport := &v1.VMReport{}
+		connVsockCID := uint32(42)
+		s.NotPanics(func() {
+			err := validateReportedVsockCID(vmReport, connVsockCID)
+			s.Require().Error(err)
+		})
+	})
+
 	// Reported CID is 42
-	indexReport := v1.IndexReport{VsockCid: "42"}
+	vmReport := &v1.VMReport{
+		IndexReport: &v1.IndexReport{VsockCid: "42"},
+	}
 
 	// Real (connection) CID is 99 - does not match, should return error
 	connVsockCID := uint32(99)
-	err := validateReportedVsockCID(&indexReport, connVsockCID)
+	err := validateReportedVsockCID(vmReport, connVsockCID)
 	s.Require().Error(err)
 
 	// Real (connection) CID is 42 - matches, should return nil
 	connVsockCID = uint32(42)
-	err = validateReportedVsockCID(&indexReport, connVsockCID)
+	err = validateReportedVsockCID(vmReport, connVsockCID)
 	s.Require().NoError(err)
 }

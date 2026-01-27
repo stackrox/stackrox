@@ -14,6 +14,7 @@ import (
 	"github.com/stackrox/rox/central/role/sachelper"
 	"github.com/stackrox/rox/central/sensor/service/connection"
 	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/sync"
 )
 
@@ -42,6 +43,7 @@ func Singleton() Watcher {
 			env.BaseImageWatcherPollInterval.DurationSetting(),
 			env.BaseImageWatcherTagBatchSize.IntegerSetting(),
 			env.BaseImageWatcherPerRepoTagLimit.IntegerSetting(),
+			features.DelegatedBaseImageScanning.Enabled(),
 		)
 	})
 	return watcher

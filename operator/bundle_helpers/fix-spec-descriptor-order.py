@@ -29,6 +29,8 @@ def allow_relative_field_dependencies(descriptors):
 def main():
     csv_doc = yaml.safe_load(sys.stdin)
     for crd in csv_doc['spec']['customresourcedefinitions']['owned']:
+        if 'specDescriptors' not in crd:
+            continue
         descs = crd['specDescriptors']
         fix_descriptor_order(descs)
         allow_relative_field_dependencies(descs)

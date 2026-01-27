@@ -91,7 +91,7 @@ def patch_csv(csv_doc, version, operator_image, first_version, related_images_mo
         # Ref https://osbs.readthedocs.io/en/latest/users.html?highlight=relatedImages#creating-the-relatedimages-section
         del csv_doc['spec']['relatedImages']
 
-    # Add SecurityPolicy CRD to ACS operator CSV
+    # Improve SecurityPolicy CRD metadata in ACS operator CSV
     policy_crd = {
         "name": "securitypolicies.config.stackrox.io",
         "version": "v1alpha1",
@@ -105,7 +105,9 @@ def patch_csv(csv_doc, version, operator_image, first_version, related_images_mo
         }],
     }
 
-    csv_doc["spec"]["customresourcedefinitions"]["owned"].append(policy_crd)
+    owned_crds = [crd for crd in csv_doc["spec"]["customresourcedefinitions"]["owned"] if crd["kind"] != "SecurityPolicy"]
+    owned_crds.append(policy_crd)
+    csv_doc["spec"]["customresourcedefinitions"]["owned"] = owned_crds
 
 def construct_related_images(manager_image):
     related_images = []

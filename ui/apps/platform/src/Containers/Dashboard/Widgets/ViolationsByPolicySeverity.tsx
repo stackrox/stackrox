@@ -1,7 +1,7 @@
+import { Link } from 'react-router-dom-v5-compat';
 import { gql, useQuery } from '@apollo/client';
-import { Button, Divider, Flex, FlexItem, Stack, StackItem, Title } from '@patternfly/react-core';
+import { Divider, Flex, FlexItem, Stack, StackItem, Title } from '@patternfly/react-core';
 
-import LinkShim from 'Components/PatternFly/LinkShim';
 import WidgetCard from 'Components/PatternFly/WidgetCard';
 import { filteredWorkflowViewKey } from 'Components/FilteredWorkflowViewSelector/useFilteredWorkflowViewURLState';
 import { fullWorkflowView } from 'Components/FilteredWorkflowViewSelector/types';
@@ -124,8 +124,12 @@ function ViolationsByPolicySeverity() {
             }
             error={alertCountError || recentAlertsError}
             header={
-                <Flex direction={{ default: 'row' }}>
-                    <FlexItem grow={{ default: 'grow' }}>
+                <Flex
+                    direction={{ default: 'row' }}
+                    alignItems={{ default: 'alignItemsCenter' }}
+                    justifyContent={{ default: 'justifyContentSpaceBetween' }}
+                >
+                    <FlexItem>
                         <Title headingLevel="h2">
                             {`${totalCount} policy ${pluralize(
                                 'violation',
@@ -134,13 +138,7 @@ function ViolationsByPolicySeverity() {
                         </Title>
                     </FlexItem>
                     <FlexItem>
-                        <Button
-                            variant="secondary"
-                            component={LinkShim}
-                            href={getViewAllLink(searchFilter)}
-                        >
-                            View all
-                        </Button>
+                        <Link to={getViewAllLink(searchFilter)}>View all</Link>
                     </FlexItem>
                 </Flex>
             }

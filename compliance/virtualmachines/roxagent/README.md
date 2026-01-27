@@ -14,7 +14,7 @@ Scans the VM for installed packages (`rpm`/`dnf` databases), creates vulnerabili
 # Single scan
 sudo ./roxagent
 
-# Daemon mode (scans every 5 minutes)
+# Daemon mode (scans every 4 hours by default)
 sudo ./roxagent --daemon
 
 # Custom settings
@@ -24,9 +24,9 @@ sudo ./roxagent --daemon --index-interval 10m --host-path /custom/path --port 20
 ## Flags
 
 - `--daemon` - Run continuously (default: false).
-- `--index-interval` - Time between scans in daemon mode (default: 5m).
+- `--index-interval` - Time between scans in daemon mode (default: 4h).
 - `--host-path` - Where to look for package databases (default: /).
-- `--port` - VSock port (default: 1024).
+- `--port` - VSock port (default: 818).
 - `--repo-cpe-url` - URL for the repository to CPE mapping.
 - `--timeout` - VSock client timeout when sending index reports.
 - `--verbose` - Prints the index reports to stdout.
