@@ -37,7 +37,7 @@ func (d *detectorImpl) Detect(image *storage.Image, policyFilters ...detection.F
 				return nil
 			}
 		}
-		if !compiled.AppliesTo(image) {
+		if !compiled.AppliesTo(image, nil, nil) {
 			return nil
 		}
 		violations, err := compiled.MatchAgainstImage(&cacheReceptacle, image)

@@ -89,7 +89,7 @@ func (d *detectorImpl) DetectForNodeAndFileAccess(node *storage.Node, access *st
 
 		if access != nil {
 			// Check predicate on file access.
-			if !compiled.AppliesTo(access) {
+			if !compiled.AppliesTo(access, nil, nil) {
 				return nil
 			}
 
@@ -137,7 +137,7 @@ func (d *detectorImpl) detectForDeployment(
 		}
 
 		// Check predicate on deployment.
-		if !compiled.AppliesTo(deployment) {
+		if !compiled.AppliesTo(deployment, nil, nil) {
 			return nil
 		}
 
@@ -209,7 +209,7 @@ func (d *detectorImpl) detectForAuditEvent(auditEvent *storage.KubernetesEvent) 
 
 		if auditEvent != nil {
 			// Check predicate on audit event.
-			if !compiled.AppliesTo(auditEvent) {
+			if !compiled.AppliesTo(auditEvent, nil, nil) {
 				return nil
 			}
 

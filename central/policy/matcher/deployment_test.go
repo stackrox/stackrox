@@ -71,7 +71,7 @@ func TestDeploymentMatcher(t *testing.T) {
 	}
 
 	for _, c := range cases {
-		actual := NewDeploymentMatcher(c.deployment).IsPolicyApplicable(c.policy)
+		actual := NewDeploymentMatcher(c.deployment, nil, nil).IsPolicyApplicable(c.policy)
 		assert.Equal(t, c.matches, actual)
 	}
 }
@@ -206,7 +206,7 @@ func TestDeploymentWithExclusion(t *testing.T) {
 	}
 
 	for _, c := range cases {
-		actual := NewDeploymentMatcher(c.deployment).IsPolicyApplicable(c.policy)
+		actual := NewDeploymentMatcher(c.deployment, nil, nil).IsPolicyApplicable(c.policy)
 		assert.Equal(t, c.matches, actual)
 	}
 }

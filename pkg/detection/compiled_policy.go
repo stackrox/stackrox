@@ -392,9 +392,9 @@ func (cp *compiledPolicy) Policy() *storage.Policy {
 }
 
 // AppliesTo returns if the compiled policy applies to the input object.
-func (cp *compiledPolicy) AppliesTo(input interface{}) bool {
+func (cp *compiledPolicy) AppliesTo(input interface{}, clusterLabels map[string]string, namespaceLabels map[string]string) bool {
 	for _, predicate := range cp.predicates {
-		if predicate.AppliesTo(input) {
+		if predicate.AppliesTo(input, clusterLabels, namespaceLabels) {
 			return true
 		}
 	}
@@ -403,7 +403,7 @@ func (cp *compiledPolicy) AppliesTo(input interface{}) bool {
 
 // Predicate says whether or not a compiled policy applies to an object.
 type Predicate interface {
-	AppliesTo(interface{}) bool
+	AppliesTo(obj interface{}, clusterLabels map[string]string, namespaceLabels map[string]string) bool
 }
 
 type compiledExclusion struct {
@@ -475,13 +475,13 @@ type deploymentPredicate struct {
 	scopes     []*scopecomp.CompiledScope
 }
 
-func (cp *deploymentPredicate) AppliesTo(input interface{}) bool {
+func (cp *deploymentPredicate) AppliesTo(input interface{}, clusterLabels map[string]string, namespaceLabels map[string]string) bool {
 	deployment, isDeployment := input.(*storage.Deployment)
 	if !isDeployment {
 		return false
 	}
 
-	return deploymentMatchesScopes(deployment, cp.scopes, nil, nil) && !deploymentMatchesExclusions(deployment, cp.exclusions, nil, nil)
+	return deploymentMatchesScopes(deployment, cp.scopes, clusterLabels, namespaceLabels) && !deploymentMatchesExclusions(deployment, cp.exclusions, clusterLabels, namespaceLabels)
 }
 
 // Predicate for images.
@@ -489,7 +489,7 @@ type imagePredicate struct {
 	policy *storage.Policy
 }
 
-func (cp *imagePredicate) AppliesTo(input interface{}) bool {
+func (cp *imagePredicate) AppliesTo(input interface{}, _ map[string]string, _ map[string]string) bool {
 	image, isImage := input.(*storage.Image)
 	if !isImage {
 		return false
@@ -503,7 +503,7 @@ type auditEventPredicate struct {
 	scopes     []*scopecomp.CompiledScope
 }
 
-func (cp *auditEventPredicate) AppliesTo(input interface{}) bool {
+func (cp *auditEventPredicate) AppliesTo(input interface{}, _ map[string]string, _ map[string]string) bool {
 	auditEvent, isAuditEvent := input.(*storage.KubernetesEvent)
 	if !isAuditEvent {
 		return false
@@ -515,7 +515,7 @@ func (cp *auditEventPredicate) AppliesTo(input interface{}) bool {
 // Predicate for file access events on nodes.
 type fileAccessPredicate struct{}
 
-func (cp *fileAccessPredicate) AppliesTo(input interface{}) bool {
+func (cp *fileAccessPredicate) AppliesTo(input interface{}, _ map[string]string, _ map[string]string) bool {
 	_, isFileAccess := input.(*storage.FileAccess)
 	return isFileAccess
 }
