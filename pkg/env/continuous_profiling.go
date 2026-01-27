@@ -24,7 +24,7 @@ var (
 	// Parsing behavior:
 	// - Whitespace around keys, values, and commas is trimmed
 	// - Empty entries (consecutive commas) are ignored
-	// - Values can contain equals signs (e.g., "url=https://example.com" is valid)
+	// - Values can contain equals signs (e.g., "token=abc=123" is valid)
 	// - Both keys and values must be non-empty after trimming
 	//
 	// Error handling:
@@ -34,7 +34,7 @@ var (
 	// Examples:
 	//   Valid:   "app=central,env=prod"
 	//   Valid:   " key1 = value1 , key2 = value2 "  (whitespace is trimmed)
-	//   Valid:   "url=https://example.com"           (values can contain '=')
+	//   Valid:   "token=abc=123"                    (values can contain '=')
 	//   Invalid: "key="                              (empty value)
 	//   Invalid: "=value"                            (empty key)
 	//   Invalid: "noequals"                          (missing '=' separator)
