@@ -20,6 +20,7 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	pkgCVE "github.com/stackrox/rox/pkg/cve"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/fixtures"
 	imageTypes "github.com/stackrox/rox/pkg/images/types"
 	"github.com/stackrox/rox/pkg/postgres"
@@ -352,9 +353,14 @@ func (s *ImageFlatPostgresDataStoreTestSuite) TestImageDeletes() {
 	storedImage, found, err := s.datastore.GetImage(ctx, testImage.GetId())
 	s.NoError(err)
 	s.True(found)
-	for _, component := range testImage.GetScan().GetComponents() {
-		for _, cve := range component.GetVulns() {
-			cve.FirstSystemOccurrence = storedImage.GetLastUpdated()
+	for compI, component := range testImage.GetScan().GetComponents() {
+		for cveI, cve := range component.GetVulns() {
+			if features.CVEFixTimestampCriteria.Enabled() {
+				cve.FirstSystemOccurrence = storedImage.GetScan().GetComponents()[compI].GetVulns()[cveI].GetFirstSystemOccurrence()
+				cve.FixAvailableTimestamp = storedImage.GetScan().GetComponents()[compI].GetVulns()[cveI].GetFixAvailableTimestamp()
+			} else {
+				cve.FirstSystemOccurrence = storedImage.GetLastUpdated()
+			}
 			cve.FirstImageOccurrence = storedImage.GetLastUpdated()
 			cve.VulnerabilityTypes = []storage.EmbeddedVulnerability_VulnerabilityType{storage.EmbeddedVulnerability_IMAGE_VULNERABILITY}
 		}
@@ -406,7 +412,7 @@ func (s *ImageFlatPostgresDataStoreTestSuite) TestImageDeletes() {
 	s.True(found)
 	for _, component := range testImage2.GetScan().GetComponents() {
 		for _, cve := range component.GetVulns() {
-			// System Occurrence remains unchanged.
+			// System Occurrence and fix available times remain unchanged.
 			cve.FirstImageOccurrence = storedImage.GetLastUpdated()
 			cve.VulnerabilityTypes = []storage.EmbeddedVulnerability_VulnerabilityType{storage.EmbeddedVulnerability_IMAGE_VULNERABILITY}
 		}
@@ -440,10 +446,15 @@ func (s *ImageFlatPostgresDataStoreTestSuite) TestImageDeletes() {
 	storedImage, found, err = s.datastore.GetImage(ctx, testImage2.GetId())
 	s.NoError(err)
 	s.True(found)
-	for _, component := range testImage2.GetScan().GetComponents() {
+	for compI, component := range testImage2.GetScan().GetComponents() {
 		// Components and Vulns are deduped, therefore, update testImage structure.
-		for _, cve := range component.GetVulns() {
-			cve.FirstSystemOccurrence = storedImage.GetLastUpdated()
+		for cveI, cve := range component.GetVulns() {
+			if features.CVEFixTimestampCriteria.Enabled() {
+				cve.FirstSystemOccurrence = storedImage.GetScan().GetComponents()[compI].GetVulns()[cveI].GetFirstSystemOccurrence()
+				cve.FixAvailableTimestamp = storedImage.GetScan().GetComponents()[compI].GetVulns()[cveI].GetFixAvailableTimestamp()
+			} else {
+				cve.FirstSystemOccurrence = storedImage.GetLastUpdated()
+			}
 			cve.FirstImageOccurrence = storedImage.GetLastUpdated()
 		}
 	}
