@@ -126,6 +126,7 @@ function VirtualMachinePageVulnerabilities({
             <VirtualMachineScanScopeAlert />
             <AdvancedFiltersToolbar
                 className="pf-v5-u-px-sm pf-v5-u-pb-0"
+                defaultSearchFilterEntity="CVE"
                 searchFilter={searchFilter}
                 searchFilterConfig={searchFilterConfig}
                 onFilterChange={(newFilter) => {
