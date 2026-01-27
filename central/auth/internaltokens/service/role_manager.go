@@ -35,7 +35,7 @@ type roleManager struct {
 }
 
 var (
-	generatedObjectTraits = &storage.Traits{Origin: storage.Traits_IMPERATIVE}
+	generatedObjectTraits = &storage.Traits{Origin: storage.Traits_DYNAMIC}
 )
 
 // createPermissionSet creates a dynamic permission set, granting the requested permissions.

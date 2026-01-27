@@ -96,7 +96,10 @@ func GenerateImageComponentV2(os string, image *storage.Image, index int, from *
 			LayerIndex: from.GetLayerIndex(),
 		}
 	}
-	// TODO ROX-31847 compute image component base image layer type
-	ret.FromBaseImage = len(image.GetBaseImageInfo()) > 0
+
+	ret.LayerType = storage.LayerType_APPLICATION
+	if len(image.GetBaseImageInfo()) > 0 {
+		ret.LayerType = storage.LayerType_BASE_IMAGE
+	}
 	return ret, nil
 }

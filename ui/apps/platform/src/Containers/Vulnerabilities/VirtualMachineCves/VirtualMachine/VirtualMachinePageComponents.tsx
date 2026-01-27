@@ -51,9 +51,9 @@ export const attributeForScannable: SelectSearchFilterAttribute = {
 };
 
 export type VirtualMachinePageComponentsProps = {
-    virtualMachineData: VirtualMachine | undefined;
-    isLoadingVirtualMachineData: boolean;
-    errorVirtualMachineData: Error | undefined;
+    virtualMachine: VirtualMachine | undefined;
+    isLoadingVirtualMachine: boolean;
+    errorVirtualMachine: Error | undefined;
     urlSearch: UseUrlSearchReturn;
     urlSorting: UseURLSortResult;
     urlPagination: UseURLPaginationResult;
@@ -62,9 +62,9 @@ export type VirtualMachinePageComponentsProps = {
 const searchFilterConfig = [virtualMachineComponentSearchFilterConfig];
 
 function VirtualMachinePageComponents({
-    virtualMachineData,
-    isLoadingVirtualMachineData,
-    errorVirtualMachineData,
+    virtualMachine,
+    isLoadingVirtualMachine,
+    errorVirtualMachine,
     urlSearch,
     urlSorting,
     urlPagination,
@@ -76,8 +76,8 @@ function VirtualMachinePageComponents({
     const isFiltered = getHasSearchApplied(searchFilter);
 
     const virtualMachineComponentsTableData = useMemo(
-        () => getVirtualMachineComponentsTableData(virtualMachineData),
-        [virtualMachineData]
+        () => getVirtualMachineComponentsTableData(virtualMachine),
+        [virtualMachine]
     );
 
     const filteredVirtualMachineComponentsTableData = useMemo(
@@ -110,9 +110,9 @@ function VirtualMachinePageComponents({
     }, [sortedVirtualMachineComponentsTableData, page, perPage]);
 
     const tableState = getTableUIState({
-        isLoading: isLoadingVirtualMachineData,
+        isLoading: isLoadingVirtualMachine,
         data: paginatedVirtualMachineComponentsTableData,
-        error: errorVirtualMachineData,
+        error: errorVirtualMachine,
         searchFilter,
     });
 
@@ -167,7 +167,7 @@ function VirtualMachinePageComponents({
                     <SplitItem isFilled>
                         <Flex alignItems={{ default: 'alignItemsCenter' }}>
                             <Title headingLevel="h2">
-                                {!isLoadingVirtualMachineData ? (
+                                {!isLoadingVirtualMachine ? (
                                     `${pluralize(filteredVirtualMachineComponentsTableData.length, 'result')} found`
                                 ) : (
                                     <Skeleton screenreaderText="Loading virtual machine vulnerability count" />

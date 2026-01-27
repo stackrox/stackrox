@@ -11,7 +11,6 @@ import (
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stackrox/rox/sensor/common/clusterentities"
 	"github.com/stackrox/rox/sensor/common/detector"
-	fsUtils "github.com/stackrox/rox/sensor/common/filesystem/utils"
 )
 
 var (
@@ -95,12 +94,6 @@ func (p *Pipeline) translate(fs *sensorAPI.FileActivity) *storage.FileAccess {
 			},
 		}
 		access.Operation = storage.FileAccess_OWNERSHIP_CHANGE
-	case *sensorAPI.FileActivity_Write:
-		access.File = &storage.FileAccess_File{
-			EffectivePath: fs.GetWrite().GetActivity().GetPath(),
-			ActualPath:    fs.GetWrite().GetActivity().GetHostPath(),
-		}
-		access.Operation = storage.FileAccess_WRITE
 	case *sensorAPI.FileActivity_Open:
 		access.File = &storage.FileAccess_File{
 			EffectivePath: fs.GetOpen().GetActivity().GetPath(),
@@ -110,11 +103,6 @@ func (p *Pipeline) translate(fs *sensorAPI.FileActivity) *storage.FileAccess {
 	default:
 		log.Warn("Not implemented file activity type")
 		return nil
-	}
-
-	if fsUtils.IsNodeFileAccess(access) {
-		// TODO: remove when full host path resolution is complete
-		access.File.ActualPath = access.GetFile().GetEffectivePath()
 	}
 
 	return access
@@ -154,7 +142,6 @@ func (p *Pipeline) getIndicator(process *sensorAPI.ProcessSignal) *storage.Proce
 		return pi
 	}
 
-	// TODO(ROX-30798): Enrich file system events with deployment details
 	metadata, ok, _ := p.clusterEntities.LookupByContainerID(process.GetContainerId())
 	if !ok {
 		// unexpected - process should exist before file activity is

@@ -44,9 +44,9 @@ import { getVirtualMachineEntityPagePath } from '../../utils/searchUtils';
 import { VIRTUAL_MACHINE_SORT_FIELD } from '../../utils/sortFields';
 
 const searchFilterConfig = [
-    virtualMachinesSearchFilterConfig,
     virtualMachinesClusterSearchFilterConfig,
     virtualMachinesNamespaceSearchFilterConfig,
+    virtualMachinesSearchFilterConfig,
 ];
 
 export const sortFields = [VIRTUAL_MACHINE_SORT_FIELD];
@@ -112,6 +112,7 @@ function VirtualMachinesCvesTable() {
         <>
             <AdvancedFiltersToolbar
                 className="pf-v5-u-px-sm pf-v5-u-pb-0"
+                defaultSearchFilterEntity="Virtual machine"
                 includeCveSeverityFilters={false}
                 includeCveStatusFilters={false}
                 searchFilter={searchFilter}
