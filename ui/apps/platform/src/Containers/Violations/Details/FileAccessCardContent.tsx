@@ -51,7 +51,10 @@ function FileAccessCardContent({ event }: FileAccessCardContentProps): ReactElem
                     <DescriptionListItem term="Process name" desc={process.signal.name} />
                 )}
                 {process?.signal?.execFilePath && (
-                    <DescriptionListItem term="Process executable" desc={process.signal.execFilePath} />
+                    <DescriptionListItem
+                        term="Process executable"
+                        desc={process.signal.execFilePath}
+                    />
                 )}
                 {Number.isInteger(process?.signal?.uid) && (
                     <DescriptionListItem term="Process UID" desc={process.signal.uid} />
