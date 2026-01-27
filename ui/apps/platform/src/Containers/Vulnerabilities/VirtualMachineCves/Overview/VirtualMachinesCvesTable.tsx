@@ -1,19 +1,10 @@
 import { useCallback } from 'react';
 import { Link } from 'react-router-dom-v5-compat';
-import {
-    Flex,
-    Pagination,
-    Skeleton,
-    Split,
-    SplitItem,
-    Title,
-    pluralize,
-} from '@patternfly/react-core';
-import { Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
+import { Flex, FlexItem, Pagination } from '@patternfly/react-core';
+import { InnerScrollContainer, Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 
 import ColumnManagementButton from 'Components/ColumnManagementButton';
 import DateDistance from 'Components/DateDistance';
-import { DynamicTableLabel } from 'Components/DynamicIcon';
 import TbodyUnified from 'Components/TableStateTemplates/TbodyUnified';
 import {
     generateVisibilityForColumns,
@@ -26,7 +17,6 @@ import useURLSearch from 'hooks/useURLSearch';
 import useURLSort from 'hooks/useURLSort';
 import { listVirtualMachines } from 'services/VirtualMachineService';
 import { getTableUIState } from 'utils/getTableUIState';
-import { getHasSearchApplied } from 'utils/searchUtils';
 
 import {
     getVirtualMachineScannedComponentsCount,
@@ -85,7 +75,6 @@ function VirtualMachinesCvesTable() {
     const managedColumnState = useManagedColumns('VirtualMachinesCvesTable', defaultColumns);
     const { page, perPage, setPage, setPerPage } = useURLPagination(DEFAULT_VM_PAGE_SIZE);
     const { searchFilter, setSearchFilter } = useURLSearch();
-    const isFiltered = getHasSearchApplied(searchFilter);
     const { sortOption, getSortParams } = useURLSort({
         sortFields,
         defaultSortOption,
@@ -110,50 +99,35 @@ function VirtualMachinesCvesTable() {
 
     return (
         <>
-            <AdvancedFiltersToolbar
-                className="pf-v5-u-px-sm pf-v5-u-pb-0"
-                defaultSearchFilterEntity="Virtual machine"
-                includeCveSeverityFilters={false}
-                includeCveStatusFilters={false}
-                searchFilter={searchFilter}
-                searchFilterConfig={searchFilterConfig}
-                onFilterChange={(newFilter) => {
-                    setSearchFilter(newFilter);
-                    setPage(1, 'replace');
-                }}
-            />
-            <div className="pf-v5-u-flex-grow-1 pf-v5-u-background-color-100 pf-v5-u-p-lg">
-                <Split className="pf-v5-u-pb-lg pf-v5-u-align-items-baseline">
-                    <SplitItem isFilled>
-                        <Flex alignItems={{ default: 'alignItemsCenter' }}>
-                            <Title headingLevel="h2">
-                                {!isLoading ? (
-                                    `${pluralize(data?.totalCount ?? 0, 'result')} found`
-                                ) : (
-                                    <Skeleton screenreaderText="Loading virtual machine count" />
-                                )}
-                            </Title>
-                            {isFiltered && <DynamicTableLabel />}
-                        </Flex>
-                    </SplitItem>
-                    <SplitItem>
-                        <ColumnManagementButton
-                            columnConfig={managedColumnState.columns}
-                            onApplyColumns={managedColumnState.setVisibility}
-                        />
-                    </SplitItem>
-                    <SplitItem>
-                        <Pagination
-                            itemCount={data?.totalCount ?? 0}
-                            perPage={perPage}
-                            page={page}
-                            onSetPage={(_, newPage) => setPage(newPage)}
-                            onPerPageSelect={(_, newPerPage) => {
-                                setPerPage(newPerPage);
-                            }}
-                        />
-                    </SplitItem>
-                </Split>
+            <Flex justifyContent={{ default: 'justifyContentFlexEnd' }}>
+                <FlexItem fullWidth={{ default: 'fullWidth' }}>
+                    <AdvancedFiltersToolbar
+                        defaultSearchFilterEntity="Virtual Machine"
+                        includeCveSeverityFilters={false}
+                        includeCveStatusFilters={false}
+                        searchFilter={searchFilter}
+                        searchFilterConfig={searchFilterConfig}
+                        onFilterChange={(newFilter) => {
+                            setSearchFilter(newFilter);
+                            setPage(1, 'replace');
+                        }}
+                    />
+                </FlexItem>
+                <ColumnManagementButton
+                    columnConfig={managedColumnState.columns}
+                    onApplyColumns={managedColumnState.setVisibility}
+                />
+                <Pagination
+                    itemCount={data?.totalCount ?? 0}
+                    perPage={perPage}
+                    page={page}
+                    onSetPage={(_, newPage) => setPage(newPage)}
+                    onPerPageSelect={(_, newPerPage) => {
+                        setPerPage(newPerPage);
+                    }}
+                />
+            </Flex>
+            <InnerScrollContainer>
                 <Table
                     borders={tableState.type === 'COMPLETE'}
                     variant="compact"
@@ -165,6 +139,7 @@ function VirtualMachinesCvesTable() {
                             <Th
                                 className={getVisibilityClass('virtualMachine')}
                                 sort={getSortParams('Virtual Machine Name')}
+                                modifier="fitContent"
                             >
                                 Virtual machine
                             </Th>
@@ -271,7 +246,7 @@ function VirtualMachinesCvesTable() {
                         )}
                     />
                 </Table>
-            </div>
+            </InnerScrollContainer>
         </>
     );
 }
