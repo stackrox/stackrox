@@ -94,7 +94,7 @@ jobs:
 
       - name: Upload scan result artifact
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: upstream_quay_io_rhacs-eng_${{ matrix.image }}_${{ needs.run-parameters.outputs.version }}.json
           path: ${{ steps.scan-image.outputs.result-path }}
@@ -151,7 +151,7 @@ jobs:
 
       - name: Upload scan result artifact
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: konflux_quay_io_rhacs-eng_${{ matrix.image }}_${{ needs.run-parameters.outputs.version }}.json
           path: ${{ steps.scan-image.outputs.result-path }}

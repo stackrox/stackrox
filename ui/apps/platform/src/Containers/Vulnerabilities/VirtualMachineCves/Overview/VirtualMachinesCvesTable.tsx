@@ -37,6 +37,7 @@ import SeverityCountLabels from '../../components/SeverityCountLabels';
 import { DEFAULT_VM_PAGE_SIZE } from '../../constants';
 import {
     virtualMachinesClusterSearchFilterConfig,
+    virtualMachinesNamespaceSearchFilterConfig,
     virtualMachinesSearchFilterConfig,
 } from '../../searchFilterConfig';
 import { getVirtualMachineEntityPagePath } from '../../utils/searchUtils';
@@ -45,6 +46,7 @@ import { VIRTUAL_MACHINE_SORT_FIELD } from '../../utils/sortFields';
 const searchFilterConfig = [
     virtualMachinesSearchFilterConfig,
     virtualMachinesClusterSearchFilterConfig,
+    virtualMachinesNamespaceSearchFilterConfig,
 ];
 
 export const sortFields = [VIRTUAL_MACHINE_SORT_FIELD];

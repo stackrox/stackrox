@@ -95,15 +95,6 @@ func TestUpdateFileAccessMessage(t *testing.T) {
 			expected: "'/tmp/chown_file' accessed (OWNERSHIP_CHANGE)",
 		},
 		{
-			desc: "file WRITE operation",
-			activity: &storage.FileAccess{
-				File:      &storage.FileAccess_File{ActualPath: "/etc/passwd"},
-				Operation: storage.FileAccess_WRITE,
-				Process:   &storage.ProcessIndicator{Signal: &storage.ProcessSignal{Name: "vim"}},
-			},
-			expected: "'/etc/passwd' accessed (WRITE)",
-		},
-		{
 			desc: "nil file path handling",
 			activity: &storage.FileAccess{
 				File:      nil,

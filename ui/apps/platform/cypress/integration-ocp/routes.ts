@@ -5,7 +5,7 @@ export const featureFlagsRoute = 'featureFlags';
 export const publicConfigRoute = 'publicConfig';
 export const getImageCVEListRoute = 'getImageCVEList';
 
-export const deploymentListRoute = 'deploymentList';
+export const deploymentsRoute = 'deployments';
 export const getCVEsForDeploymentRoute = 'getCVEsForDeployment';
 
 export const metadataRouteMatcher = { method: 'GET', url: '**/api-service/**/v1/metadata' };

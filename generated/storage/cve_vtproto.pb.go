@@ -269,6 +269,7 @@ func (m *ImageCVEV2) CloneVT() *ImageCVEV2 {
 	r.ComponentId = m.ComponentId
 	r.Advisory = m.Advisory.CloneVT()
 	r.ImageIdV2 = m.ImageIdV2
+	r.FixAvailableTimestamp = (*timestamppb.Timestamp)((*timestamppb1.Timestamp)(m.FixAvailableTimestamp).CloneVT())
 	if m.HasFixedBy != nil {
 		r.HasFixedBy = m.HasFixedBy.(interface {
 			CloneVT() isImageCVEV2_HasFixedBy
@@ -905,6 +906,9 @@ func (this *ImageCVEV2) EqualVT(that *ImageCVEV2) bool {
 		return false
 	}
 	if this.ImageIdV2 != that.ImageIdV2 {
+		return false
+	}
+	if !(*timestamppb1.Timestamp)(this.FixAvailableTimestamp).EqualVT((*timestamppb1.Timestamp)(that.FixAvailableTimestamp)) {
 		return false
 	}
 	return string(this.unknownFields) == string(that.unknownFields)
@@ -2033,6 +2037,18 @@ func (m *ImageCVEV2) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 		}
 		i -= size
 	}
+	if m.FixAvailableTimestamp != nil {
+		size, err := (*timestamppb1.Timestamp)(m.FixAvailableTimestamp).MarshalToSizedBufferVT(dAtA[:i])
+		if err != nil {
+			return 0, err
+		}
+		i -= size
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+		i--
+		dAtA[i] = 0x1
+		i--
+		dAtA[i] = 0x82
+	}
 	if len(m.ImageIdV2) > 0 {
 		i -= len(m.ImageIdV2)
 		copy(dAtA[i:], m.ImageIdV2)
@@ -3100,6 +3116,10 @@ func (m *ImageCVEV2) SizeVT() (n int) {
 	l = len(m.ImageIdV2)
 	if l > 0 {
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
+	}
+	if m.FixAvailableTimestamp != nil {
+		l = (*timestamppb1.Timestamp)(m.FixAvailableTimestamp).SizeVT()
+		n += 2 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
 	n += len(m.unknownFields)
 	return n
@@ -5893,6 +5913,42 @@ func (m *ImageCVEV2) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.ImageIdV2 = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 16:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field FixAvailableTimestamp", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.FixAvailableTimestamp == nil {
+				m.FixAvailableTimestamp = &timestamppb.Timestamp{}
+			}
+			if err := (*timestamppb1.Timestamp)(m.FixAvailableTimestamp).UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
 			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
@@ -10006,6 +10062,42 @@ func (m *ImageCVEV2) UnmarshalVTUnsafe(dAtA []byte) error {
 				stringValue = unsafe.String(&dAtA[iNdEx], intStringLen)
 			}
 			m.ImageIdV2 = stringValue
+			iNdEx = postIndex
+		case 16:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field FixAvailableTimestamp", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.FixAvailableTimestamp == nil {
+				m.FixAvailableTimestamp = &timestamppb.Timestamp{}
+			}
+			if err := (*timestamppb1.Timestamp)(m.FixAvailableTimestamp).UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
 			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
