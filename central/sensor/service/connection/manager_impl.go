@@ -92,7 +92,10 @@ func newVMIndexReportRateLimiter() *rate.Limiter {
 	rl, err := rate.NewLimiter(
 		"vm_index_reports",
 		env.VMIndexReportRateLimit.FloatSetting(),
-		env.VMIndexReportBucketCapacity.IntegerSetting())
+		env.VMIndexReportBucketCapacity.IntegerSetting()).
+		ForWorkload(func(msg *central.MsgFromSensor) bool {
+			return msg.GetEvent().GetVirtualMachineIndexReport() != nil
+		})
 
 	if err != nil {
 		panic("Could not create rate limiter for VM index reports: " + err.Error())

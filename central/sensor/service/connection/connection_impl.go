@@ -86,7 +86,7 @@ type sensorConnection struct {
 }
 
 type rateLimiter interface {
-	TryConsume(clientID string) (allowed bool, reason string)
+	TryConsume(clientID string, msg *central.MsgFromSensor) (allowed bool, reason string)
 }
 
 func newConnection(ctx context.Context,
@@ -169,7 +169,7 @@ func (c *sensorConnection) multiplexedPush(ctx context.Context, msg *central.Msg
 		return
 	}
 
-	allowed, reason := c.rl.TryConsume(c.clusterID)
+	allowed, reason := c.rl.TryConsume(c.clusterID, msg)
 	if !allowed {
 		logging.GetRateLimitedLogger().ErrorL(
 			"vm_index_reports_rate_limiter",
