@@ -81,7 +81,7 @@ spec:
                   enforcement:
                     description: |-
                       Set to Disabled to disable policy enforcement for the admission controller. This is not recommended.
-                      On for upgrades to 4.9 from previous releases, defaults to Enabled only if at least one of listenOnCreates or listenOnUpdates is true.
+                      On upgrades to 4.9 from previous releases, defaults to Enabled only if at least one of listenOnCreates or listenOnUpdates is true.
                       On new deployments starting with version 4.9, the default is: Enabled.
                     enum:
                     - Enabled
