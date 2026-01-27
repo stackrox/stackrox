@@ -132,7 +132,8 @@ func newConnection(ctx context.Context,
 		sensorHello: sensorHello,
 		capabilities: set.NewSet(sliceutils.
 			FromStringSlice[centralsensor.SensorCapability](sensorHello.GetCapabilities()...)...),
-		rl: rl,
+		rl:                rl,
+		adminEventsStream: adminEventsStream,
 	}
 
 	// Need a reference to conn for injector
