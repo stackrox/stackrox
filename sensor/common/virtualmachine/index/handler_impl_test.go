@@ -261,8 +261,8 @@ func (s *virtualMachineHandlerSuite) TestProcessMessage() {
 	}
 
 	cases := map[string]struct {
-		msg       *central.MsgToSensor
-		expectAck int
+		msg        *central.MsgToSensor
+		expectAck  int
 		expectNack int
 	}{
 		"ack increments ack metric": {
