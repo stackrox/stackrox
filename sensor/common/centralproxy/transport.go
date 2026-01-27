@@ -1,9 +1,11 @@
 package centralproxy
 
 import (
+	"bytes"
 	"context"
 	"crypto/x509"
 	"fmt"
+	"io"
 	"net/http"
 	"net/url"
 	"sync/atomic"
@@ -16,6 +18,7 @@ import (
 	pkghttputil "github.com/stackrox/rox/pkg/httputil"
 	"github.com/stackrox/rox/pkg/mtls"
 	"github.com/stackrox/rox/pkg/mtls/verifier"
+	"github.com/stackrox/rox/pkg/utils"
 	"google.golang.org/grpc"
 	"google.golang.org/protobuf/types/known/durationpb"
 )
@@ -104,9 +107,50 @@ func (t *scopedTokenTransport) SetClient(conn grpc.ClientConnInterface) {
 // RoundTrip implements http.RoundTripper.
 // It reads the namespace scope from the request, obtains an appropriate token,
 // and injects it into the Authorization header before forwarding the request.
+// If Central returns 401 or 403, the cached token is invalidated and the request
+// is retried once with a fresh token.
 func (t *scopedTokenTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 	scope := req.Header.Get(stackroxNamespaceHeader)
 
+	// Buffer the request body upfront so we can replay it on retry.
+	var bodyBytes []byte
+	if req.Body != nil && req.Body != http.NoBody {
+		var err error
+		bodyBytes, err = io.ReadAll(req.Body)
+		if err != nil {
+			return nil, errors.Wrap(err, "reading request body")
+		}
+		req.Body = io.NopCloser(bytes.NewBuffer(bodyBytes))
+	}
+
+	resp, err := t.doRoundTrip(req, scope)
+	if err != nil {
+		return nil, err
+	}
+
+	// If Central returns Unauthorized or Forbidden, invalidate the cached token
+	// and retry once with a fresh token.
+	if resp.StatusCode == http.StatusUnauthorized || resp.StatusCode == http.StatusForbidden {
+		// Consume and close the first response body to reuse the connection.
+		if resp.Body != nil {
+			_, _ = io.Copy(io.Discard, resp.Body)
+			utils.IgnoreError(resp.Body.Close)
+		}
+
+		// Restore the request body for retry.
+		if bodyBytes != nil {
+			req.Body = io.NopCloser(bytes.NewBuffer(bodyBytes))
+		}
+
+		t.tokenProvider.invalidateToken(scope)
+		return t.doRoundTrip(req, scope)
+	}
+
+	return resp, nil
+}
+
+// doRoundTrip performs a single round trip with token injection.
+func (t *scopedTokenTransport) doRoundTrip(req *http.Request, scope string) (*http.Response, error) {
 	token, err := t.tokenProvider.getTokenForScope(req.Context(), scope)
 	if err != nil {
 		return nil, errors.Wrap(err, "obtaining authorization token")
@@ -114,7 +158,7 @@ func (t *scopedTokenTransport) RoundTrip(req *http.Request) (*http.Response, err
 
 	// Clone the request to avoid modifying the original.
 	reqCopy := req.Clone(req.Context())
-	reqCopy.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
+	reqCopy.Header.Set("Authorization", fmt.Sprintf("Bearerxxx %s", token))
 
 	return t.base.RoundTrip(reqCopy) //nolint:wrapcheck
 }
@@ -180,6 +224,12 @@ func (p *tokenProvider) getTokenForScope(ctx context.Context, namespaceScope str
 	p.tokenCache.Add(namespaceScope, token)
 
 	return token, nil
+}
+
+// invalidateToken removes the cached token for the given scope.
+func (p *tokenProvider) invalidateToken(scope string) {
+	log.Infof("token cache invalidated for %q", scope)
+	p.tokenCache.Remove(scope)
 }
 
 // buildTokenRequest creates the token request based on the namespace scope.
