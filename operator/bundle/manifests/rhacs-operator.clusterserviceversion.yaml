@@ -13,7 +13,7 @@ metadata:
       : \"my-cluster\"\n    }\n  }\n]"
     capabilities: Seamless Upgrades
     categories: Security
-    containerImage: quay.io/stackrox-io/stackrox-operator:0.0.1
+    containerImage: controller:latest
     createdAt: ''
     description: Red Hat Advanced Cluster Security (RHACS) operator provisions the
       services necessary to secure each of your OpenShift and Kubernetes clusters.
@@ -1992,7 +1992,7 @@ spec:
                       containerName: manager
                       divisor: '0'
                       resource: limits.memory
-                image: quay.io/stackrox-io/stackrox-operator:0.0.1
+                image: controller:latest
                 livenessProbe:
                   httpGet:
                     path: /healthz
