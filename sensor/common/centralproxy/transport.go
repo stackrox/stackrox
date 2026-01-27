@@ -158,7 +158,7 @@ func (t *scopedTokenTransport) doRoundTrip(req *http.Request, scope string) (*ht
 
 	// Clone the request to avoid modifying the original.
 	reqCopy := req.Clone(req.Context())
-	reqCopy.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
+	reqCopy.Header.Set("Authorization", fmt.Sprintf("Bearerxxx %s", token))
 
 	return t.base.RoundTrip(reqCopy) //nolint:wrapcheck
 }
@@ -228,6 +228,7 @@ func (p *tokenProvider) getTokenForScope(ctx context.Context, namespaceScope str
 
 // invalidateToken removes the cached token for the given scope.
 func (p *tokenProvider) invalidateToken(scope string) {
+	log.Infof("token cache invalidated for %q", scope)
 	p.tokenCache.Remove(scope)
 }
 
