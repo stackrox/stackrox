@@ -8,6 +8,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/graph-gophers/graphql-go"
 	blobDS "github.com/stackrox/rox/central/blob/datastore"
 	clusterDSMocks "github.com/stackrox/rox/central/cluster/datastore/mocks"
 	"github.com/stackrox/rox/central/graphql/resolvers"
@@ -19,6 +20,8 @@ import (
 	imagesView "github.com/stackrox/rox/central/views/images"
 	watchedImageDS "github.com/stackrox/rox/central/watchedimage/datastore"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/features"
+	imageUtils "github.com/stackrox/rox/pkg/images/utils"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	postgresSchema "github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/sac"
@@ -65,16 +68,32 @@ func (s *NewDataModelEnhancedReportingTestSuite) SetupSuite() {
 	s.testDB = pgtest.ForT(s.T())
 
 	// set up tables
-	imageDataStore := resolvers.CreateTestImageDatastore(s.T(), s.testDB, mockCtrl)
 	s.watchedImageDatastore = watchedImageDS.GetTestPostgresDataStore(s.T(), s.testDB.DB)
-	resolver, schema := resolvers.SetupTestResolver(s.T(),
-		imagesView.NewImageView(s.testDB.DB),
-		imageDataStore,
-		resolvers.CreateTestImageComponentV2Datastore(s.T(), s.testDB, mockCtrl),
-		resolvers.CreateTestImageCVEV2Datastore(s.T(), s.testDB),
-		resolvers.CreateTestDeploymentDatastore(s.T(), s.testDB, mockCtrl, imageDataStore),
-		deploymentsView.NewDeploymentView(s.testDB.DB),
-	)
+
+	// TODO(ROX-30117): Remove conditional when FlattenImageData feature flag is removed.
+	var resolver *resolvers.Resolver
+	var schema *graphql.Schema
+	if features.FlattenImageData.Enabled() {
+		imgV2DataStore := resolvers.CreateTestImageV2Datastore(s.T(), s.testDB, mockCtrl)
+		resolver, schema = resolvers.SetupTestResolver(s.T(),
+			imagesView.NewImageView(s.testDB.DB),
+			imgV2DataStore,
+			resolvers.CreateTestImageComponentV2Datastore(s.T(), s.testDB, mockCtrl),
+			resolvers.CreateTestImageCVEV2Datastore(s.T(), s.testDB),
+			resolvers.CreateTestDeploymentDatastoreWithImageV2(s.T(), s.testDB, mockCtrl, imgV2DataStore),
+			deploymentsView.NewDeploymentView(s.testDB.DB),
+		)
+	} else {
+		imageDataStore := resolvers.CreateTestImageDatastore(s.T(), s.testDB, mockCtrl)
+		resolver, schema = resolvers.SetupTestResolver(s.T(),
+			imagesView.NewImageView(s.testDB.DB),
+			imageDataStore,
+			resolvers.CreateTestImageComponentV2Datastore(s.T(), s.testDB, mockCtrl),
+			resolvers.CreateTestImageCVEV2Datastore(s.T(), s.testDB),
+			resolvers.CreateTestDeploymentDatastore(s.T(), s.testDB, mockCtrl, imageDataStore),
+			deploymentsView.NewDeploymentView(s.testDB.DB),
+		)
+	}
 	collectionStore := collectionPostgres.New(s.testDB)
 	_, collectionQueryResolver, err := collectionDS.New(collectionStore)
 	s.NoError(err)
@@ -95,16 +114,32 @@ func (s *NewDataModelEnhancedReportingTestSuite) SetupSuite() {
 		s.NoError(err)
 	}
 	// upsert deployed image in image table
-	for _, image := range images {
-		err := resolver.ImageDataStore.UpsertImage(s.ctx, image)
-		s.NoError(err)
+	// TODO(ROX-30117): Remove conditional when FlattenImageData feature flag is removed.
+	if features.FlattenImageData.Enabled() {
+		for _, image := range images {
+			err := resolver.ImageV2DataStore.UpsertImage(s.ctx, imageUtils.ConvertToV2(image))
+			s.NoError(err)
+		}
+	} else {
+		for _, image := range images {
+			err := resolver.ImageDataStore.UpsertImage(s.ctx, image)
+			s.NoError(err)
+		}
 	}
 
 	// upsert watched images
 	watchedImages := testWatchedImages(2)
-	for _, image := range watchedImages {
-		err := resolver.ImageDataStore.UpsertImage(s.ctx, image)
-		s.NoError(err)
+	// TODO(ROX-30117): Remove conditional when FlattenImageData feature flag is removed.
+	if features.FlattenImageData.Enabled() {
+		for _, image := range watchedImages {
+			err := resolver.ImageV2DataStore.UpsertImage(s.ctx, imageUtils.ConvertToV2(image))
+			s.NoError(err)
+		}
+	} else {
+		for _, image := range watchedImages {
+			err := resolver.ImageDataStore.UpsertImage(s.ctx, image)
+			s.NoError(err)
+		}
 	}
 	s.upsertManyWatchedImages(watchedImages)
 
