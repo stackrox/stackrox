@@ -36,8 +36,9 @@ type roleManager struct {
 	roleStore    roleDatastore.DataStore
 }
 
-// generateTraitsWithExpiry creates traits for dynamically generated RBAC objects with an expiry time.
-// The expiry time determines when these objects are eligible for pruning by the garbage collector.
+// generateTraitsWithExpiry creates traits for dynamically generated RBAC
+// objects with an expiry time. The expiry time determines when these objects
+// are eligible for pruning by the garbage collector.
 func generateTraitsWithExpiry(expiresAt time.Time) (*storage.Traits, error) {
 	ts, err := protocompat.ConvertTimeToTimestampOrError(expiresAt)
 	return &storage.Traits{
@@ -46,9 +47,9 @@ func generateTraitsWithExpiry(expiresAt time.Time) (*storage.Traits, error) {
 	}, err
 }
 
-// createPermissionSet creates a dynamic permission set, granting the requested permissions.
-// The returned information is the ID of the created permission set, or an error if any occurred
-// in the creation process.
+// createPermissionSet creates a dynamic permission set, granting the requested
+// permissions. The returned information is the ID of the created permission
+// set, or an error if any occurred in the creation process.
 func (rm *roleManager) createPermissionSet(
 	ctx context.Context,
 	req *v1.GenerateTokenForPermissionsAndScopeRequest,
@@ -98,9 +99,9 @@ func convertAccess(in v1.Access) storage.Access {
 	}
 }
 
-// createAccessScope creates a dynamic access scope, granting the requested scope.
-// The returned information is the identifier of the created access scope,
-// or an error if any occurred in the creation process.
+// createAccessScope creates a dynamic access scope, granting the requested
+// scope. The returned information is the identifier of the created access
+// scope, or an error if any occurred in the creation process.
 func (rm *roleManager) createAccessScope(
 	ctx context.Context,
 	req *v1.GenerateTokenForPermissionsAndScopeRequest,
@@ -158,11 +159,9 @@ func (rm *roleManager) createAccessScope(
 	return accessScope.GetId(), nil
 }
 
-// createRole creates a dynamic role, granting the requested permissions and scope.
-// The expiresAt parameter specifies when the role and its associated objects should expire.
-// and be eligible for pruning by the garbage collector.
-// The returned information is the name of the created role, or an error if any occurred
-// in the creation process.
+// createRole creates a dynamic role, granting the requested permissions and
+// scope. The returned information is the name of the created role, or an error
+// if any occurred in the creation process.
 func (rm *roleManager) createRole(
 	ctx context.Context,
 	req *v1.GenerateTokenForPermissionsAndScopeRequest,

@@ -51,6 +51,7 @@ import (
 	roleBindingMocks "github.com/stackrox/rox/central/rbac/k8srolebinding/datastore/mocks"
 	riskDatastore "github.com/stackrox/rox/central/risk/datastore"
 	riskDatastoreMocks "github.com/stackrox/rox/central/risk/datastore/mocks"
+	roleDataStore "github.com/stackrox/rox/central/role/datastore"
 	secretMocks "github.com/stackrox/rox/central/secret/datastore/mocks"
 	connectionMocks "github.com/stackrox/rox/central/sensor/service/connection/mocks"
 	serviceAccountDataStore "github.com/stackrox/rox/central/serviceaccount/datastore"
@@ -2325,6 +2326,218 @@ func (s *PruningTestSuite) TestPruneOrphanedNodeCVEs() {
 			}
 
 			assert.ElementsMatch(t, tc.remainingNodeCVEIDs, ids)
+		})
+	}
+}
+
+func (s *PruningTestSuite) TestRemoveExpiredDynamicRBACObjects() {
+	now := time.Now()
+	yesterday := now.Add(-24 * time.Hour)
+	tomorrow := now.Add(24 * time.Hour)
+	twoDaysAgo := now.Add(-48 * time.Hour)
+
+	cases := []struct {
+		name                  string
+		roles                 []*storage.Role
+		permissionSets        []*storage.PermissionSet
+		accessScopes          []*storage.SimpleAccessScope
+		expectedRoleDeletions set.FrozenStringSet
+		expectedPSDeletions   set.FrozenStringSet
+		expectedASDeletions   set.FrozenStringSet
+	}{
+		{
+			name: "remove expired roles only",
+			roles: []*storage.Role{
+				{
+					Name: "role-1",
+					Traits: &storage.Traits{
+						ExpiresAt: timestamppb.New(yesterday),
+					},
+				},
+				{
+					Name: "role-2",
+					Traits: &storage.Traits{
+						ExpiresAt: timestamppb.New(tomorrow),
+					},
+				},
+				{
+					Name:   "role-3",
+					Traits: &storage.Traits{},
+				},
+			},
+			expectedRoleDeletions: set.NewFrozenStringSet("role-1"),
+			expectedPSDeletions:   set.NewFrozenStringSet(),
+			expectedASDeletions:   set.NewFrozenStringSet(),
+		},
+		{
+			name: "remove expired permission sets only",
+			permissionSets: []*storage.PermissionSet{
+				{
+					Id: "ps-1",
+					Traits: &storage.Traits{
+						ExpiresAt: timestamppb.New(twoDaysAgo),
+					},
+				},
+				{
+					Id: "ps-2",
+					Traits: &storage.Traits{
+						ExpiresAt: timestamppb.New(tomorrow),
+					},
+				},
+				{
+					Id:     "ps-3",
+					Traits: &storage.Traits{},
+				},
+			},
+			expectedRoleDeletions: set.NewFrozenStringSet(),
+			expectedPSDeletions:   set.NewFrozenStringSet("ps-1"),
+			expectedASDeletions:   set.NewFrozenStringSet(),
+		},
+		{
+			name: "remove expired access scopes only",
+			accessScopes: []*storage.SimpleAccessScope{
+				{
+					Id: "as-1",
+					Traits: &storage.Traits{
+						ExpiresAt: timestamppb.New(yesterday),
+					},
+				},
+				{
+					Id: "as-2",
+					Traits: &storage.Traits{
+						ExpiresAt: timestamppb.New(tomorrow),
+					},
+				},
+				{
+					Id:     "as-3",
+					Traits: &storage.Traits{},
+				},
+			},
+			expectedRoleDeletions: set.NewFrozenStringSet(),
+			expectedPSDeletions:   set.NewFrozenStringSet(),
+			expectedASDeletions:   set.NewFrozenStringSet("as-1"),
+		},
+		{
+			name: "remove expired objects of all types",
+			roles: []*storage.Role{
+				{
+					Name: "role-expired",
+					Traits: &storage.Traits{
+						ExpiresAt: timestamppb.New(yesterday),
+					},
+				},
+				{
+					Name: "role-active",
+					Traits: &storage.Traits{
+						ExpiresAt: timestamppb.New(tomorrow),
+					},
+				},
+			},
+			permissionSets: []*storage.PermissionSet{
+				{
+					Id: "ps-expired",
+					Traits: &storage.Traits{
+						ExpiresAt: timestamppb.New(twoDaysAgo),
+					},
+				},
+				{
+					Id:     "ps-no-expiry",
+					Traits: &storage.Traits{},
+				},
+			},
+			accessScopes: []*storage.SimpleAccessScope{
+				{
+					Id: "as-expired",
+					Traits: &storage.Traits{
+						ExpiresAt: timestamppb.New(yesterday),
+					},
+				},
+				{
+					Id: "as-active",
+					Traits: &storage.Traits{
+						ExpiresAt: timestamppb.New(tomorrow),
+					},
+				},
+			},
+			expectedRoleDeletions: set.NewFrozenStringSet("role-expired"),
+			expectedPSDeletions:   set.NewFrozenStringSet("ps-expired"),
+			expectedASDeletions:   set.NewFrozenStringSet("as-expired"),
+		},
+		{
+			name: "nothing to remove when all unexpired",
+			roles: []*storage.Role{
+				{
+					Name: "role-1",
+					Traits: &storage.Traits{
+						ExpiresAt: timestamppb.New(tomorrow),
+					},
+				},
+			},
+			permissionSets: []*storage.PermissionSet{
+				{
+					Id:     "ps-1",
+					Traits: &storage.Traits{},
+				},
+			},
+			accessScopes: []*storage.SimpleAccessScope{
+				{
+					Id: "as-1",
+					Traits: &storage.Traits{
+						ExpiresAt: timestamppb.New(tomorrow),
+					},
+				},
+			},
+			expectedRoleDeletions: set.NewFrozenStringSet(),
+			expectedPSDeletions:   set.NewFrozenStringSet(),
+			expectedASDeletions:   set.NewFrozenStringSet(),
+		},
+		{
+			name:                  "nothing to remove when no objects exist",
+			expectedRoleDeletions: set.NewFrozenStringSet(),
+			expectedPSDeletions:   set.NewFrozenStringSet(),
+			expectedASDeletions:   set.NewFrozenStringSet(),
+		},
+	}
+
+	for _, c := range cases {
+		s.T().Run(c.name, func(t *testing.T) {
+			roleStore := roleDataStore.GetTestPostgresDataStore(t, s.pool)
+
+			for _, role := range c.roles {
+				assert.NoError(t, roleStore.AddRole(pruningCtx, role))
+			}
+
+			for _, ps := range c.permissionSets {
+				assert.NoError(t, roleStore.AddPermissionSet(pruningCtx, ps))
+			}
+
+			for _, as := range c.accessScopes {
+				assert.NoError(t, roleStore.AddAccessScope(pruningCtx, as))
+			}
+
+			gc := &garbageCollectorImpl{
+				roleStore: roleStore,
+			}
+
+			gc.removeExpiredDynamicRBACObjects()
+
+			for _, role := range c.roles {
+				_, ok, err := roleStore.GetRole(pruningCtx, role.GetName())
+				assert.NoError(t, err)
+				assert.Equal(t, !c.expectedRoleDeletions.Contains(role.GetName()), ok)
+			}
+
+			for _, ps := range c.permissionSets {
+				_, ok, err := roleStore.GetPermissionSet(pruningCtx, ps.GetId())
+				assert.NoError(t, err)
+				assert.Equal(t, !c.expectedPSDeletions.Contains(ps.GetId()), ok)
+			}
+
+			for _, as := range c.accessScopes {
+				_, ok, err := roleStore.GetAccessScope(pruningCtx, as.GetId())
+				assert.NoError(t, err)
+				assert.Equal(t, !c.expectedASDeletions.Contains(as.GetId()), ok)
+			}
 		})
 	}
 }
