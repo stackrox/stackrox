@@ -636,6 +636,7 @@ func cloneAndUpdateRiskPriority(image *storage.Image) *storage.Image {
 	for _, component := range cloned.GetScan().GetComponents() {
 		component.Priority = 1
 	}
+	cloned.LastUpdated = image.GetLastUpdated()
 	return cloned
 }
 

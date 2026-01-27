@@ -9521,6 +9521,20 @@
     {
       "protopath": "image_component.proto",
       "def": {
+        "enums": [
+          {
+            "name": "LayerType",
+            "enum_fields": [
+              {
+                "name": "APPLICATION"
+              },
+              {
+                "name": "BASE_IMAGE",
+                "integer": 1
+              }
+            ]
+          }
+        ],
         "messages": [
           {
             "name": "ImageComponent",
@@ -9668,7 +9682,18 @@
               {
                 "id": 15,
                 "name": "from_base_image",
-                "type": "bool"
+                "type": "bool",
+                "options": [
+                  {
+                    "name": "deprecated",
+                    "value": "true"
+                  }
+                ]
+              },
+              {
+                "id": 16,
+                "name": "layer_type",
+                "type": "LayerType"
               }
             ]
           }

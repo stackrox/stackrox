@@ -130,5 +130,5 @@ func (resolver *imageComponentV2Resolver) Version(_ context.Context) string {
 }
 
 func (resolver *imageComponentV2Resolver) InBaseImageLayer(ctx context.Context) bool {
-	return resolver.data.GetFromBaseImage()
+	return resolver.data.GetLayerType() == storage.LayerType_BASE_IMAGE
 }

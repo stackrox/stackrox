@@ -332,7 +332,7 @@ func TestSplitAndMergeImage(t *testing.T) {
 					HasLayerIndex: &storage.ImageComponentV2_LayerIndex{
 						LayerIndex: 1,
 					},
-					FromBaseImage: true,
+					LayerType: storage.LayerType_BASE_IMAGE,
 				},
 				Children: []CVEParts{},
 			},
@@ -345,7 +345,7 @@ func TestSplitAndMergeImage(t *testing.T) {
 					HasLayerIndex: &storage.ImageComponentV2_LayerIndex{
 						LayerIndex: 3,
 					},
-					FromBaseImage: true,
+					LayerType: storage.LayerType_BASE_IMAGE,
 				},
 				Children: []CVEParts{
 					{
@@ -406,7 +406,7 @@ func TestSplitAndMergeImage(t *testing.T) {
 					HasLayerIndex: &storage.ImageComponentV2_LayerIndex{
 						LayerIndex: 2,
 					},
-					FromBaseImage: true,
+					LayerType: storage.LayerType_BASE_IMAGE,
 				},
 				Children: []CVEParts{
 					{
@@ -450,7 +450,7 @@ func TestSplitAndMergeImage(t *testing.T) {
 					HasLayerIndex: &storage.ImageComponentV2_LayerIndex{
 						LayerIndex: 2,
 					},
-					FromBaseImage: true,
+					LayerType: storage.LayerType_BASE_IMAGE,
 				},
 				Children: []CVEParts{
 					{
