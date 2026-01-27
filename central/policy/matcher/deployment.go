@@ -8,13 +8,17 @@ import (
 )
 
 type deploymentMatcher struct {
-	deployment *storage.Deployment
+	deployment      *storage.Deployment
+	clusterLabels   map[string]string
+	namespaceLabels map[string]string
 }
 
 // NewDeploymentMatcher creates a new policy matcher for deployment data.
-func NewDeploymentMatcher(deployment *storage.Deployment) Matcher {
+func NewDeploymentMatcher(deployment *storage.Deployment, clusterLabels map[string]string, namespaceLabels map[string]string) Matcher {
 	return &deploymentMatcher{
-		deployment: deployment,
+		deployment:      deployment,
+		clusterLabels:   clusterLabels,
+		namespaceLabels: namespaceLabels,
 	}
 }
 
@@ -80,5 +84,5 @@ func (m *deploymentMatcher) scopeMatches(scope *storage.Scope) bool {
 		return false
 	}
 
-	return cs.MatchesDeployment(m.deployment, nil, nil)
+	return cs.MatchesDeployment(m.deployment, m.clusterLabels, m.namespaceLabels)
 }
