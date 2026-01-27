@@ -17,7 +17,7 @@ This deployment uses [Podman Quadlet](https://docs.podman.io/en/latest/markdown/
 
 ## Prerequisites
 
-* RHEL 9 VM running on KubeVirt with vsock enabled
+* RHEL 8, 9, or 10 VM running on KubeVirt with vsock enabled
 * Podman installed (`dnf install -y podman`)
 * StackRox deployed with VM scanning enabled (`ROX_VIRTUAL_MACHINES=true`)
 * Network access to pull the StackRox main image
@@ -99,7 +99,7 @@ sudo journalctl -u roxagent.service -f
 
 The `roxagent-prep.service` copies `/var/lib/rpm` to `/tmp/roxagent-rpm` before each scan. This is required because:
 
-1. **SQLite WAL Mode**: RHEL 9 uses SQLite for its RPM database. SQLite's Write-Ahead Logging (WAL) requires write access even for read-only queries.
+1. **SQLite WAL Mode**: RHEL 9 and 10 use SQLite for the RPM database. SQLite's Write-Ahead Logging (WAL) requires write access even for read-only queries. RHEL 8 uses BerkeleyDB, which also benefits from copying.
 
 2. **Safety**: Copying protects the host's RPM database from any potential issues during scanning.
 
