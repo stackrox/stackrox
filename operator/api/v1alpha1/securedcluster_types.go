@@ -158,7 +158,7 @@ type AdmissionControlComponentSpec struct {
 	ListenOnEvents *bool `json:"listenOnEvents,omitempty"`
 
 	// Set to Disabled to disable policy enforcement for the admission controller. This is not recommended.
-	// On for upgrades to 4.9 from previous releases, defaults to Enabled only if at least one of listenOnCreates or listenOnUpdates is true.
+	// On upgrades to 4.9 from previous releases, defaults to Enabled only if at least one of listenOnCreates or listenOnUpdates is true.
 	// On new deployments starting with version 4.9, the default is: Enabled.
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=1
 	Enforcement *PolicyEnforcement `json:"enforcement,omitempty"`
