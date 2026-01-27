@@ -316,6 +316,42 @@ Violations:
 		 - Actual Path: /etc/passwd
 		 - Operation: OPEN
 		 - Process Name: cp
+		 - Process Executable: /bin/cp
+
+Policy Definition:
+
+	Description:
+	 - Alert on access to sensitive files on nodes
+
+	Rationale:
+	 - This is the rationale
+
+	Remediation:
+	 - This is the remediation
+
+	Policy Criteria:
+
+		Section Unnamed :
+
+			- Actual Path: /etc/passwd
+
+Node:
+	 - Name: ` + fixtureconsts.Node1 + `
+	 - Id: ` + fixtureconsts.Node1 + `
+	 - Cluster: ` + fixtureconsts.ClusterName1 + `
+	 - ClusterId: ` + fixtureconsts.Cluster1 + `
+`
+	expectedFormattedNodeAlertWithFileAccessEmptyActualPath = `Alert ID: ` + fixtureconsts.Alert1 + `
+Alert URL: https://localhost:8080/main/violations/` + fixtureconsts.Alert1 + `
+Time (UTC): 2021-01-20 22:42:02
+Severity: Low
+
+Violations:
+	 - '/etc/passwd' accessed (OPEN)
+		 - Effective Path: /etc/passwd
+		 - Operation: OPEN
+		 - Process Name: cp
+		 - Process Executable: /bin/cp
 
 Policy Definition:
 
@@ -356,6 +392,7 @@ Violations:
 		 - Actual Path: /etc/passwd
 		 - Operation: OPEN
 		 - Process Name: cp
+		 - Process Executable: /bin/cp
 	 - This is a process violation
 
 Policy Definition:
@@ -431,6 +468,12 @@ func TestNodeFileAccessAlert(t *testing.T) {
 
 func TestDeploymentFileAccessAlert(t *testing.T) {
 	runFormatTest(t, fixtures.GetDeploymentFileAccessAlert(), expectedFormattedDeploymentAlertWithFileAccess)
+}
+
+func TestNodeFileAccessEmptyActualPath(t *testing.T) {
+	alert := fixtures.GetNodeFileAccessAlert()
+	alert.Violations[0].GetFileAccess().GetFile().ActualPath = ""
+	runFormatTest(t, alert, expectedFormattedNodeAlertWithFileAccessEmptyActualPath)
 }
 
 func runFormatTest(t *testing.T, alert *storage.Alert, expectedFormattedAlert string) {
