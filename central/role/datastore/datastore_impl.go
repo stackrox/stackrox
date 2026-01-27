@@ -937,3 +937,129 @@ func getGroupIDs(groups []*storage.Group) []string {
 	}
 	return groupIDs
 }
+
+////////////////////////////////////////////////////////////////////////////////
+// Removal of filtered objects                                               //
+//                                                                            //
+
+func (ds *dataStoreImpl) RemoveFilteredRoles(ctx context.Context, filter func(*storage.Role) bool) (int, error) {
+	if err := sac.VerifyAuthzOK(roleSAC.WriteAllowed(ctx)); err != nil {
+		return 0, err
+	}
+
+	ds.lock.Lock()
+	defer ds.lock.Unlock()
+
+	var rolesToDelete []string
+	walkFn := func() error {
+		rolesToDelete = rolesToDelete[:0]
+		return ds.roleStorage.Walk(ctx, func(role *storage.Role) error {
+			if filter(role) {
+				rolesToDelete = append(rolesToDelete, role.GetName())
+			}
+			return nil
+		})
+	}
+	if err := pgutils.RetryIfPostgres(ctx, walkFn); err != nil {
+		return 0, err
+	}
+
+	deletedCount := 0
+	for _, name := range rolesToDelete {
+		if err := ds.roleStorage.Delete(ctx, name); err != nil {
+			log.Errorf("Failed to delete filtered role %q: %v", name, err)
+		} else {
+			deletedCount++
+		}
+	}
+
+	return deletedCount, nil
+}
+
+func (ds *dataStoreImpl) RemoveFilteredPermissionSets(ctx context.Context, filter func(*storage.PermissionSet) bool) (int, error) {
+	if err := sac.VerifyAuthzOK(roleSAC.WriteAllowed(ctx)); err != nil {
+		return 0, err
+	}
+
+	ds.lock.Lock()
+	defer ds.lock.Unlock()
+
+	roles, err := ds.getAllRolesNoScopeCheck(ctx)
+	if err != nil {
+		return 0, err
+	}
+
+	referencedPermissionSets := make(map[string]bool)
+	for _, role := range roles {
+		referencedPermissionSets[role.GetPermissionSetId()] = true
+	}
+
+	var permissionSetsToDelete []string
+	walkFn := func() error {
+		permissionSetsToDelete = permissionSetsToDelete[:0]
+		return ds.permissionSetStorage.Walk(ctx, func(permissionSet *storage.PermissionSet) error {
+			if filter(permissionSet) && !referencedPermissionSets[permissionSet.GetId()] {
+				permissionSetsToDelete = append(permissionSetsToDelete, permissionSet.GetId())
+			}
+			return nil
+		})
+	}
+	if err := pgutils.RetryIfPostgres(ctx, walkFn); err != nil {
+		return 0, err
+	}
+
+	deletedCount := 0
+	for _, id := range permissionSetsToDelete {
+		if err := ds.permissionSetStorage.Delete(ctx, id); err != nil {
+			log.Errorf("Failed to delete filtered permission set %q: %v", id, err)
+		} else {
+			deletedCount++
+		}
+	}
+
+	return deletedCount, nil
+}
+
+func (ds *dataStoreImpl) RemoveFilteredAccessScopes(ctx context.Context, filter func(*storage.SimpleAccessScope) bool) (int, error) {
+	if err := sac.VerifyAuthzOK(roleSAC.WriteAllowed(ctx)); err != nil {
+		return 0, err
+	}
+
+	ds.lock.Lock()
+	defer ds.lock.Unlock()
+
+	roles, err := ds.getAllRolesNoScopeCheck(ctx)
+	if err != nil {
+		return 0, err
+	}
+
+	referencedAccessScopes := make(map[string]bool)
+	for _, role := range roles {
+		referencedAccessScopes[role.GetAccessScopeId()] = true
+	}
+
+	var accessScopesToDelete []string
+	walkFn := func() error {
+		accessScopesToDelete = accessScopesToDelete[:0]
+		return ds.accessScopeStorage.Walk(ctx, func(accessScope *storage.SimpleAccessScope) error {
+			if filter(accessScope) && !referencedAccessScopes[accessScope.GetId()] {
+				accessScopesToDelete = append(accessScopesToDelete, accessScope.GetId())
+			}
+			return nil
+		})
+	}
+	if err := pgutils.RetryIfPostgres(ctx, walkFn); err != nil {
+		return 0, err
+	}
+
+	deletedCount := 0
+	for _, id := range accessScopesToDelete {
+		if err := ds.accessScopeStorage.Delete(ctx, id); err != nil {
+			log.Errorf("Failed to delete filtered access scope %q: %v", id, err)
+		} else {
+			deletedCount++
+		}
+	}
+
+	return deletedCount, nil
+}
