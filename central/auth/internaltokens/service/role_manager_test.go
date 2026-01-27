@@ -6,7 +6,6 @@ import (
 	"slices"
 	"strings"
 	"testing"
-	"time"
 
 	clusterDataStoreMocks "github.com/stackrox/rox/central/cluster/datastore/mocks"
 	roleDataStoreMocks "github.com/stackrox/rox/central/role/datastore/mocks"
@@ -17,13 +16,6 @@ import (
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stretchr/testify/assert"
 	"go.uber.org/mock/gomock"
-)
-
-var (
-	// testExpiry is a fixed time used in tests for consistent trait generation.
-	testExpiry = testClock().Add(5 * time.Minute)
-	// testExpiredTraits includes the expired trait.
-	testExpiredTraits, _ = generateTraitsWithExpiry(testExpiry.Add(rbacObjectsGraceExpiration))
 )
 
 func TestCreatePermissionSet(t *testing.T) {

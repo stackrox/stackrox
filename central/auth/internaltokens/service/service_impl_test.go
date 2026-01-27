@@ -22,13 +22,7 @@ import (
 
 var (
 	errDummy = errors.New("test error")
-
-	expectedExpiration = testExpiry.Add(300 * time.Second)
 )
-
-func testClock() time.Time {
-	return time.Date(1989, time.November, 9, 18, 05, 35, 987654321, time.UTC)
-}
 
 func TestGetExpiresAt(t *testing.T) {
 	for name, tc := range map[string]struct {
@@ -67,11 +61,11 @@ func TestGetExpiresAt(t *testing.T) {
 		"valid input": {
 			input: &v1.GenerateTokenForPermissionsAndScopeRequest{
 				Lifetime: &durationpb.Duration{
-					Seconds: int64(testExpiry.Second()),
+					Seconds: 300,
 				},
 			},
 			expectsErr:         false,
-			expectedExpiration: testExpiry,
+			expectedExpiration: testTokenExpiry,
 		},
 	} {
 		t.Run(name, func(it *testing.T) {
@@ -145,7 +139,7 @@ func TestGenerateTokenForPermissionsAndScope(t *testing.T) {
 		input := &v1.GenerateTokenForPermissionsAndScopeRequest{
 			Permissions:   deploymentPermission,
 			ClusterScopes: []*v1.ClusterScope{requestSingleNamespace},
-			Lifetime:      &durationpb.Duration{Seconds: 300},
+			Lifetime:      testExpirationDuration,
 		}
 
 		mockCtrl := gomock.NewController(it)
@@ -166,7 +160,7 @@ func TestGenerateTokenForPermissionsAndScope(t *testing.T) {
 		input := &v1.GenerateTokenForPermissionsAndScopeRequest{
 			Permissions:   deploymentPermission,
 			ClusterScopes: []*v1.ClusterScope{requestSingleNamespace},
-			Lifetime:      &durationpb.Duration{Seconds: 300},
+			Lifetime:      testExpirationDuration,
 		}
 
 		mockCtrl := gomock.NewController(it)
@@ -181,7 +175,7 @@ func TestGenerateTokenForPermissionsAndScope(t *testing.T) {
 			Name: fmt.Sprintf(
 				claimNameFormat,
 				expectedRole.GetName(),
-				expectedExpiration.Format(time.RFC3339Nano),
+				testTokenExpiry.Format(time.RFC3339Nano),
 			),
 		}
 		mockIssuer.EXPECT().
@@ -196,7 +190,7 @@ func TestGenerateTokenForPermissionsAndScope(t *testing.T) {
 		input := &v1.GenerateTokenForPermissionsAndScopeRequest{
 			Permissions:   deploymentPermission,
 			ClusterScopes: []*v1.ClusterScope{requestSingleNamespace},
-			Lifetime:      &durationpb.Duration{Seconds: 300},
+			Lifetime:      testExpirationDuration,
 		}
 
 		mockCtrl := gomock.NewController(it)
@@ -211,7 +205,7 @@ func TestGenerateTokenForPermissionsAndScope(t *testing.T) {
 			Name: fmt.Sprintf(
 				"Generated claims for role %s expiring at %s",
 				expectedRole.GetName(),
-				expectedExpiration.Format(time.RFC3339Nano),
+				testTokenExpiry.Format(time.RFC3339Nano),
 			),
 		}
 		mockIssuer.EXPECT().
