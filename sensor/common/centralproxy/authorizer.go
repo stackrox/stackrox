@@ -76,17 +76,23 @@ func newK8sAuthorizer(client kubernetes.Interface) *k8sAuthorizer {
 
 // formatForbiddenErr creates a consistent forbidden error message for authorization failures.
 func formatForbiddenErr(user, verb, resource, group, namespace string) error {
-	if namespace == "" {
+	// Format as resource.group using "core" for empty group.
+	qualifiedResource := resource + "." + group
+	if group == "" {
+		qualifiedResource = resource + ".core"
+	}
+
+	if namespace == FullClusterAccessScope {
 		return pkghttputil.Errorf(
 			http.StatusForbidden,
-			"user %s lacks cluster-wide %s permission for resource %s in group %s",
-			user, verb, resource, group,
+			"user %q lacks cluster-wide %s permission for resource %q",
+			user, verb, qualifiedResource,
 		)
 	}
 	return pkghttputil.Errorf(
 		http.StatusForbidden,
-		"user %s lacks %s permission for resource %s in group %s in namespace %s",
-		user, verb, resource, group, namespace,
+		"user %q lacks %s permission for resource %q in namespace %q",
+		user, verb, qualifiedResource, namespace,
 	)
 }
 
