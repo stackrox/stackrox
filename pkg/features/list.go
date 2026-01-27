@@ -114,7 +114,7 @@ var (
 	CVEFixTimestampCriteria = registerFeature("Enable grace period criteria based on CVE fix timestamp", "ROX_CVE_FIX_TIMESTAMP", enabled)
 
 	// BaseImageDetection enables base image detection and management functionality.
-	BaseImageDetection = registerFeature("Enable base image detection and management functionality", "ROX_BASE_IMAGE_DETECTION")
+	BaseImageDetection = registerFeature("Enable base image detection and management functionality", "ROX_BASE_IMAGE_DETECTION", enabled)
 
 	// DelegatedBaseImageScanning enables delegation of base image repository scanning to secured clusters.
 	DelegatedBaseImageScanning = registerFeature("Enable delegated base image scanning to secured clusters", "ROX_DELEGATED_BASE_IMAGE_SCANNING")
