@@ -375,7 +375,7 @@ deploy: check-ci-setup manifests kustomize ## Deploy operator image to the K8s c
 		mkdir config/local-deploy-versioned && \
 		cd config/local-deploy-versioned && \
 		$(KUSTOMIZE) create --resources ../default && \
-		$(KUSTOMIZE) edit set image quay.io/stackrox-io/stackrox-operator=$(IMG)
+		$(KUSTOMIZE) edit set image controller=$(IMG)
 	$(KUSTOMIZE) build config/local-deploy-versioned | $(PROJECT_DIR)/hack/retry-kubectl.sh apply -f -
 
 .PHONY: undeploy
@@ -423,9 +423,6 @@ bundle: yq manifests kustomize operator-sdk ## Generate bundle manifests and met
 # The operator-sdk command both reads and writes config/manifests by default.
 # We re-generate it from scratch each time based on a minimal set of inputs, to be able to catch cases when operator-sdk stops working (ROX-25872)
 	rm -rf config/manifests/bases && $(OPERATOR_SDK) generate kustomize manifests --input-dir=config/ui-metadata
-# We hardcode the image reference to quay.io/stackrox-io/stackrox-operator. If this is overridden via
-# the IMG_REPO environment variable, the final reference will be injected in the bundle-post-process step.
-	cd config/manager && $(KUSTOMIZE) edit set image controller=quay.io/stackrox-io/stackrox-operator:0.0.1
 	cd config/scorecard-versioned && $(KUSTOMIZE) edit set image quay.io/operator-framework/scorecard-test=quay.io/operator-framework/scorecard-test:$(OPERATOR_SDK_VERSION)
 	$(KUSTOMIZE) build config/manifests | $(OPERATOR_SDK) generate bundle $(BUNDLE_GEN_FLAGS)
 # Fix the createdAt annotation

@@ -45,7 +45,12 @@ func RootCmd(ctx context.Context) *cobra.Command {
 		"VSock port to connect with the virtual machine host.",
 	)
 	cmd.Run = func(cmd *cobra.Command, _ []string) {
-		client := &vsock.Client{Port: cfg.VsockPort, Timeout: cfg.Timeout, Verbose: cfg.Verbose}
+		client := &vsock.Client{
+			Port:     cfg.VsockPort,
+			HostPath: cfg.IndexHostPath,
+			Timeout:  cfg.Timeout,
+			Verbose:  cfg.Verbose,
+		}
 		if cfg.DaemonMode {
 			if err := index.RunDaemon(ctx, cfg, client); err != nil {
 				log.Errorf("Running indexer daemon: %v", err)

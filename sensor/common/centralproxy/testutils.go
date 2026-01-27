@@ -8,13 +8,23 @@ import (
 	"testing"
 
 	"github.com/pkg/errors"
-	pkghttputil "github.com/stackrox/rox/pkg/httputil"
 	authenticationv1 "k8s.io/api/authentication/v1"
 	authv1 "k8s.io/api/authorization/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/kubernetes/fake"
 	k8sTesting "k8s.io/client-go/testing"
 )
+
+// newReverseProxyForTest creates a reverse proxy with the given transport and base URL.
+// It uses the shared proxyErrorHandler from handler.go to ensure consistent error handling
+// between production and test code.
+func newReverseProxyForTest(baseURL *url.URL, transport http.RoundTripper) *httputil.ReverseProxy {
+	return &httputil.ReverseProxy{
+		Transport:    transport,
+		Rewrite:      func(r *httputil.ProxyRequest) { r.SetURL(baseURL) },
+		ErrorHandler: proxyErrorHandler,
+	}
+}
 
 // testClusterIDGetter is a test implementation of clusterIDGetter.
 type testClusterIDGetter struct {
@@ -53,22 +63,10 @@ func newTestHandler(t *testing.T, baseURL *url.URL, baseTransport http.RoundTrip
 		token: token,
 	}
 
-	proxy := &httputil.ReverseProxy{
-		Transport: transport,
-		Rewrite: func(r *httputil.ProxyRequest) {
-			r.SetURL(baseURL)
-		},
-		ErrorHandler: func(w http.ResponseWriter, r *http.Request, err error) {
-			pkghttputil.WriteError(w,
-				pkghttputil.Errorf(http.StatusInternalServerError, "failed to contact central: %v", err),
-			)
-		},
-	}
-
 	return &Handler{
 		clusterIDGetter: &testClusterIDGetter{clusterID: "test-cluster-id"},
 		authorizer:      authorizer,
-		proxy:           proxy,
+		proxy:           newReverseProxyForTest(baseURL, transport),
 	}
 }
 
@@ -80,29 +78,10 @@ func newTestHandlerWithTransportError(t *testing.T, baseURL *url.URL, authorizer
 		err: transportErr,
 	}
 
-	proxy := &httputil.ReverseProxy{
-		Transport: transport,
-		Rewrite: func(r *httputil.ProxyRequest) {
-			r.SetURL(baseURL)
-		},
-		ErrorHandler: func(w http.ResponseWriter, r *http.Request, err error) {
-			// Match production error handling: return 503 for initialization errors
-			if errors.Is(err, errServiceUnavailable) {
-				pkghttputil.WriteError(w,
-					pkghttputil.Errorf(http.StatusServiceUnavailable, "proxy temporarily unavailable: %v", err),
-				)
-				return
-			}
-			pkghttputil.WriteError(w,
-				pkghttputil.Errorf(http.StatusInternalServerError, "failed to contact central: %v", err),
-			)
-		},
-	}
-
 	return &Handler{
 		clusterIDGetter: &testClusterIDGetter{clusterID: "test-cluster-id"},
 		authorizer:      authorizer,
-		proxy:           proxy,
+		proxy:           newReverseProxyForTest(baseURL, transport),
 	}
 }
 

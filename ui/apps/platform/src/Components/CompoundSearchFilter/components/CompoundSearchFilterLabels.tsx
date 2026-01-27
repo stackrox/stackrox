@@ -8,7 +8,7 @@ import type { CompoundSearchFilterAttribute, CompoundSearchFilterConfig } from '
 import { getCompoundSearchFilterLabelDescriptionOrNull, updateSearchFilter } from '../utils/utils';
 import type { CompoundSearchFilterLabelDescription, IsGlobalPredicate } from '../utils/utils';
 
-import './SearchFilterChips.css';
+import './CompoundSearchFilterLabels.css';
 
 const isGlobalPredicateFalse: IsGlobalPredicate = () => false;
 
@@ -47,7 +47,7 @@ function CompoundSearchFilterLabels({
     });
 
     return (
-        <Flex className="search-filter-chips" spaceItems={{ default: 'spaceItemsXs' }}>
+        <Flex className="search-filter-labels" spaceItems={{ default: 'spaceItemsXs' }}>
             {labelGroupDescriptions.map(({ group, items }) => {
                 return (
                     <FlexItem key={group.label}>

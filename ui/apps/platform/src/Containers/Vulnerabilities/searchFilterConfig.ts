@@ -22,7 +22,10 @@ import { Annotation, ID, Label, Name } from 'Components/CompoundSearchFilter/att
 import { imageAttributes } from 'Components/CompoundSearchFilter/attributes/image';
 import { imageCVEAttributes } from 'Components/CompoundSearchFilter/attributes/imageCVE';
 import { imageComponentAttributes } from 'Components/CompoundSearchFilter/attributes/imageComponent';
-import { namespaceAttributes } from 'Components/CompoundSearchFilter/attributes/namespace';
+import {
+    Name as namespaceName,
+    namespaceAttributes,
+} from 'Components/CompoundSearchFilter/attributes/namespace';
 import { nodeAttributes } from 'Components/CompoundSearchFilter/attributes/node';
 import { nodeCVEAttributes } from 'Components/CompoundSearchFilter/attributes/nodeCVE';
 import { nodeComponentAttributes } from 'Components/CompoundSearchFilter/attributes/nodeComponent';
@@ -113,13 +116,13 @@ export const virtualMachinesSearchFilterConfig: CompoundSearchFilterEntity = {
 
 export const virtualMachineCVESearchFilterConfig: CompoundSearchFilterEntity = {
     displayName: 'CVE',
-    searchCategory: 'SEARCH_UNSET', // doesn't matter since we don't have autocomplete for virtual machines
+    searchCategory: 'SEARCH_UNSET', // we don't have autocomplete for virtual machines
     attributes: [VirtualMachineCVEName],
 };
 
 export const virtualMachineComponentSearchFilterConfig: CompoundSearchFilterEntity = {
     displayName: 'Component',
-    searchCategory: 'SEARCH_UNSET', // doesn't matter since we don't have autocomplete for virtual machines
+    searchCategory: 'SEARCH_UNSET', // we don't have autocomplete for virtual machines
     attributes: [VirtualMachineComponentName, VirtualMachineComponentVersion],
 };
 
@@ -127,6 +130,12 @@ export const virtualMachinesClusterSearchFilterConfig: CompoundSearchFilterEntit
     displayName: 'Cluster',
     searchCategory: 'CLUSTERS',
     attributes: [clusterNameAttribute, clusterIdAttribute],
+};
+
+export const virtualMachinesNamespaceSearchFilterConfig: CompoundSearchFilterEntity = {
+    displayName: 'Namespace',
+    searchCategory: 'SEARCH_UNSET', // virtual machine pipeline doesn't add namespace
+    attributes: [namespaceName],
 };
 
 // attributes for separate search filter elements in AdvancedFiltersToolbar.tsx file

@@ -9,8 +9,10 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/stackrox/rox/pkg/centralsensor"
 	pkghttputil "github.com/stackrox/rox/pkg/httputil"
 	"github.com/stackrox/rox/sensor/common"
+	"github.com/stackrox/rox/sensor/common/centralcaps"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	authenticationv1 "k8s.io/api/authentication/v1"
@@ -19,6 +21,17 @@ import (
 	"k8s.io/client-go/kubernetes/fake"
 	k8sTesting "k8s.io/client-go/testing"
 )
+
+// setupCentralCapsForTest sets the Central capabilities required for the proxy to function.
+// It returns a cleanup function that clears the capabilities.
+func setupCentralCapsForTest(t *testing.T) {
+	centralcaps.Set([]centralsensor.CentralCapability{
+		centralsensor.InternalTokenAPISupported,
+	})
+	t.Cleanup(func() {
+		centralcaps.Set(nil)
+	})
+}
 
 func TestValidateRequest(t *testing.T) {
 	tests := []struct {
@@ -100,6 +113,7 @@ func TestValidateRequest(t *testing.T) {
 
 func TestServeHTTP(t *testing.T) {
 	t.Run("validation fails, proxy not called", func(t *testing.T) {
+		setupCentralCapsForTest(t)
 		baseURL, err := url.Parse("https://central:443")
 		require.NoError(t, err)
 
@@ -116,6 +130,7 @@ func TestServeHTTP(t *testing.T) {
 	})
 
 	t.Run("validation passes, request proxied", func(t *testing.T) {
+		setupCentralCapsForTest(t)
 		var proxyCalled bool
 		mockTransport := pkghttputil.RoundTripperFunc(func(req *http.Request) (*http.Response, error) {
 			proxyCalled = true
@@ -143,6 +158,8 @@ func TestServeHTTP(t *testing.T) {
 	})
 
 	t.Run("proxy error handled by ErrorHandler", func(t *testing.T) {
+		setupCentralCapsForTest(t)
+
 		baseURL, err := url.Parse("https://central:443")
 		require.NoError(t, err)
 
@@ -157,6 +174,45 @@ func TestServeHTTP(t *testing.T) {
 
 		assert.Equal(t, http.StatusInternalServerError, w.Code)
 		assert.Contains(t, w.Body.String(), "failed to contact central")
+	})
+
+	t.Run("request rejected when Central lacks internal token API capability", func(t *testing.T) {
+		// Explicitly clear central caps to simulate an older Central without the capability.
+		// Use cleanup to restore state and avoid cross-test interference.
+		centralcaps.Set(nil)
+		t.Cleanup(func() {
+			centralcaps.Set(nil)
+		})
+
+		var proxyCalled bool
+		mockTransport := pkghttputil.RoundTripperFunc(func(req *http.Request) (*http.Response, error) {
+			proxyCalled = true
+			return &http.Response{
+				StatusCode: http.StatusOK,
+				Body:       io.NopCloser(strings.NewReader(`{"ok":true}`)),
+				Header:     http.Header{"Content-Type": []string{"application/json"}},
+			}, nil
+		})
+
+		baseURL, err := url.Parse("https://central:443")
+		require.NoError(t, err)
+
+		h := &Handler{
+			proxy:      newReverseProxyForTest(baseURL, mockTransport),
+			authorizer: newAllowingAuthorizer(t),
+		}
+		h.centralReachable.Store(true)
+
+		req := httptest.NewRequest(http.MethodGet, "/v1/alerts", nil)
+		req.Header.Set("Authorization", "Bearer test-token")
+		w := httptest.NewRecorder()
+
+		h.ServeHTTP(w, req)
+
+		assert.False(t, proxyCalled, "proxy should not be called when capability is missing")
+		assert.Equal(t, http.StatusNotImplemented, w.Code)
+		assert.Contains(t, w.Body.String(), "proxy to Central is not available")
+		assert.Contains(t, w.Body.String(), "internal token API")
 	})
 }
 
@@ -197,6 +253,7 @@ func TestServeHTTP_ConstructsAbsoluteURLs(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			setupCentralCapsForTest(t)
 			baseURL, err := url.Parse(tt.baseURL)
 			assert.NoError(t, err)
 
@@ -322,6 +379,7 @@ func TestExtractBearerToken(t *testing.T) {
 
 func TestServeHTTP_AuthorizationIntegration(t *testing.T) {
 	t.Run("authorization failure prevents proxy call", func(t *testing.T) {
+		setupCentralCapsForTest(t)
 		var proxyCalled bool
 		mockTransport := pkghttputil.RoundTripperFunc(func(req *http.Request) (*http.Response, error) {
 			proxyCalled = true
@@ -355,6 +413,7 @@ func TestServeHTTP_AuthorizationIntegration(t *testing.T) {
 	})
 
 	t.Run("no authorizer returns server error", func(t *testing.T) {
+		setupCentralCapsForTest(t)
 		var proxyCalled bool
 		mockTransport := pkghttputil.RoundTripperFunc(func(req *http.Request) (*http.Response, error) {
 			proxyCalled = true
@@ -382,6 +441,7 @@ func TestServeHTTP_AuthorizationIntegration(t *testing.T) {
 	})
 
 	t.Run("authorization success allows proxy call", func(t *testing.T) {
+		setupCentralCapsForTest(t)
 		var proxyCalled bool
 		mockTransport := pkghttputil.RoundTripperFunc(func(req *http.Request) (*http.Response, error) {
 			proxyCalled = true
@@ -411,6 +471,7 @@ func TestServeHTTP_AuthorizationIntegration(t *testing.T) {
 
 func TestServeHTTP_NamespaceScopeBasedAuthorization(t *testing.T) {
 	t.Run("empty namespace scope skips SAR check", func(t *testing.T) {
+		setupCentralCapsForTest(t)
 		var proxyCalled bool
 		mockTransport := pkghttputil.RoundTripperFunc(func(req *http.Request) (*http.Response, error) {
 			proxyCalled = true
@@ -443,6 +504,7 @@ func TestServeHTTP_NamespaceScopeBasedAuthorization(t *testing.T) {
 	})
 
 	t.Run("specific namespace scope triggers SAR check", func(t *testing.T) {
+		setupCentralCapsForTest(t)
 		var proxyCalled bool
 		mockTransport := pkghttputil.RoundTripperFunc(func(req *http.Request) (*http.Response, error) {
 			proxyCalled = true
@@ -473,6 +535,7 @@ func TestServeHTTP_NamespaceScopeBasedAuthorization(t *testing.T) {
 	})
 
 	t.Run("cluster-wide scope (*) triggers SAR check", func(t *testing.T) {
+		setupCentralCapsForTest(t)
 		var proxyCalled bool
 		mockTransport := pkghttputil.RoundTripperFunc(func(req *http.Request) (*http.Response, error) {
 			proxyCalled = true
@@ -503,6 +566,7 @@ func TestServeHTTP_NamespaceScopeBasedAuthorization(t *testing.T) {
 	})
 
 	t.Run("namespace scope with valid permissions succeeds", func(t *testing.T) {
+		setupCentralCapsForTest(t)
 		var proxyCalled bool
 		mockTransport := pkghttputil.RoundTripperFunc(func(req *http.Request) (*http.Response, error) {
 			proxyCalled = true
@@ -556,6 +620,7 @@ func TestServeHTTP_NamespaceScopeBasedAuthorization(t *testing.T) {
 
 func TestServeHTTP_TransportFailure(t *testing.T) {
 	t.Run("transport failure returns 500", func(t *testing.T) {
+		setupCentralCapsForTest(t)
 		baseURL, err := url.Parse("https://central:443")
 		require.NoError(t, err)
 
@@ -573,6 +638,7 @@ func TestServeHTTP_TransportFailure(t *testing.T) {
 	})
 
 	t.Run("initialization error returns 503", func(t *testing.T) {
+		setupCentralCapsForTest(t)
 		baseURL, err := url.Parse("https://central:443")
 		require.NoError(t, err)
 
@@ -593,6 +659,7 @@ func TestServeHTTP_TransportFailure(t *testing.T) {
 
 func TestServeHTTP_TokenInjection(t *testing.T) {
 	t.Run("token is injected into proxied request", func(t *testing.T) {
+		setupCentralCapsForTest(t)
 		expectedToken := "dynamic-central-token-123"
 		var capturedAuthHeader string
 
@@ -624,6 +691,7 @@ func TestServeHTTP_TokenInjection(t *testing.T) {
 
 func TestServeHTTP_RequiresAuthentication(t *testing.T) {
 	t.Run("missing token returns 401", func(t *testing.T) {
+		setupCentralCapsForTest(t)
 		var proxyCalled bool
 		mockTransport := pkghttputil.RoundTripperFunc(func(req *http.Request) (*http.Response, error) {
 			proxyCalled = true
@@ -652,6 +720,7 @@ func TestServeHTTP_RequiresAuthentication(t *testing.T) {
 	})
 
 	t.Run("invalid token returns 401", func(t *testing.T) {
+		setupCentralCapsForTest(t)
 		var proxyCalled bool
 		mockTransport := pkghttputil.RoundTripperFunc(func(req *http.Request) (*http.Response, error) {
 			proxyCalled = true
