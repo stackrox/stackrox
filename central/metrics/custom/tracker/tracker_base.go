@@ -229,15 +229,6 @@ func formatMetricHelp(description string, cfg *Configuration, metric MetricName)
 	return help.String()
 }
 
-func (tracker *TrackerBase[Finding]) getConfigurationIfEnabled() *Configuration {
-	tracker.metricsConfigMux.RLock()
-	defer tracker.metricsConfigMux.RUnlock()
-	if !tracker.config.isEnabled() {
-		return nil
-	}
-	return tracker.config
-}
-
 func (tracker *TrackerBase[F]) getConfiguration() *Configuration {
 	tracker.metricsConfigMux.RLock()
 	defer tracker.metricsConfigMux.RUnlock()
@@ -256,7 +247,6 @@ func (tracker *TrackerBase[F]) setConfiguration(config *Configuration) *Configur
 
 // track aggregates the fetched findings and updates the gauges.
 func (tracker *TrackerBase[F]) track(ctx context.Context, gatherer *gatherer[F], cfg *Configuration) error {
-	
 	aggregator := gatherer.aggregator
 	registry := gatherer.registry
 	aggregator.reset()
@@ -279,8 +269,8 @@ func (tracker *TrackerBase[F]) track(ctx context.Context, gatherer *gatherer[F],
 
 // Gather the data not more often then maxAge.
 func (tracker *TrackerBase[F]) Gather(ctx context.Context) {
-	cfg := tracker.getConfigurationIfEnabled()
-	if cfg == nil {
+	cfg := tracker.getConfiguration()
+	if !cfg.isEnabled() {
 		return
 	}
 	id, err := authn.IdentityFromContext(ctx)
