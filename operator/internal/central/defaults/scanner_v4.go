@@ -91,7 +91,10 @@ func centralScannerV4Defaulting(logger logr.Logger, status *platform.CentralStat
 		annotations[common.FeatureDefaultKeyScannerV4] = string(componentPolicy)
 	}
 
-	defaults.ScannerV4 = &platform.ScannerV4Spec{ScannerComponent: &componentPolicy}
+	if defaults.ScannerV4 == nil {
+		defaults.ScannerV4 = &platform.ScannerV4Spec{}
+	}
+	defaults.ScannerV4.ScannerComponent = &componentPolicy
 	return nil
 }
 

@@ -91,6 +91,11 @@ var staticDefaults = platform.CentralSpec{
 	ConfigAsCode: &platform.ConfigAsCodeSpec{
 		ComponentPolicy: ptr.To(platform.ConfigAsCodeComponentEnabled),
 	},
+	Customize: &platform.CustomizeSpec{
+		DeploymentDefaults: &platform.DeploymentDefaultsSpec{
+			PinToNodes: ptr.To(platform.PinToNodesNone),
+		},
+	},
 }
 
 var CentralStaticDefaults = CentralDefaultingFlow{
