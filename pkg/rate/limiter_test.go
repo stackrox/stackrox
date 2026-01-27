@@ -378,6 +378,18 @@ func TestRebalancing_DynamicClientCount(t *testing.T) {
 	}
 }
 
+func TestOnClientDisconnect_Nil(t *testing.T) {
+	clock := NewTestClock(time.Now())
+	// intentionally broken rate-limiter
+	limiter, err := NewLimiterWithClock(workloadName, -1.0, -2.0, clock).ForAllWorkloads()
+	assert.Error(t, err)
+	assert.Nil(t, limiter)
+	assert.NotPanics(t, func() {
+		limiter.OnClientDisconnect("client-2")
+		limiter.TryConsume("client-2", nil)
+	})
+}
+
 func TestOnClientDisconnect(t *testing.T) {
 	clock := NewTestClock(time.Now())
 	limiter := mustNewLimiterWithClock(t, "test", 20, 100, clock) // rate=20 req/s, bucket capacity=100
