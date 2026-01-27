@@ -15,6 +15,8 @@ var (
 	log      = logging.LoggerForModule()
 	once     sync.Once
 	instance *rate.Limiter
+
+	onClientDisconnectHook func(clusterID string)
 )
 
 // Limiter returns a singleton rate limiter for VM index reports.
@@ -23,6 +25,12 @@ func Limiter() *rate.Limiter {
 		instance = buildLimiter()
 	})
 	return instance
+}
+
+// ResetLimiterForTest resets the singleton limiter so tests can set env vars deterministically.
+func ResetLimiterForTest() {
+	once = sync.Once{}
+	instance = nil
 }
 
 func buildLimiter() *rate.Limiter {
@@ -42,4 +50,12 @@ func buildLimiter() *rate.Limiter {
 // OnClientDisconnect rebalances the limiter when a Sensor disconnects.
 func OnClientDisconnect(clusterID string) {
 	Limiter().OnClientDisconnect(clusterID)
+	if onClientDisconnectHook != nil {
+		onClientDisconnectHook(clusterID)
+	}
+}
+
+// SetOnClientDisconnectHookForTest registers a test-only callback for OnClientDisconnect.
+func SetOnClientDisconnectHookForTest(hook func(clusterID string)) {
+	onClientDisconnectHook = hook
 }
