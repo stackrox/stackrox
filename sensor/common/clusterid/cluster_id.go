@@ -80,11 +80,15 @@ func (c *handlerImpl) Set(value string) {
 	}
 }
 
-// SetFromCert reads the cluster ID from the certificate, validates it's not a wildcard,
-// and signals availability. Returns an error if the certificate has a wildcard ID.
+// SetFromCert reads the cluster ID from the certificate, validates it's neither
+// a wildcard nor empty, and signals availability. Returns an error describing
+// the invalid cluster ID.
 func (c *handlerImpl) SetFromCert() error {
 	certClusterID := c.clusterIDFromCert()
-	if centralsensor.IsInitCertClusterID(certClusterID) || certClusterID == "" {
+	if certClusterID == "" {
+		return errors.New("certificate has an empty cluster ID")
+	}
+	if centralsensor.IsInitCertClusterID(certClusterID) {
 		return errors.New("certificate has a wildcard cluster ID")
 	}
 	c.Set(certClusterID)

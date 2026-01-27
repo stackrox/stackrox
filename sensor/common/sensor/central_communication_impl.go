@@ -275,7 +275,7 @@ func (s *centralCommunicationImpl) initialSync(ctx context.Context, stream centr
 
 		// Without hello protocol, we must have a real cluster ID in the certificate.
 		if err := s.clusterID.SetFromCert(); err != nil {
-			return errors.Wrap(err, "Central does not support sensor hello protocol")
+			return errors.Wrap(err, "failed to derive cluster ID from Central certificate in legacy mode (no sensor hello)")
 		}
 
 		// Disable features that require hello protocol.
