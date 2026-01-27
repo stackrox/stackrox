@@ -48,9 +48,9 @@ import VirtualMachineVulnerabilitiesTable, {
 // Currently we need all vm info to be fetched in the root component, hence this being passed in
 // there will likely be a call specific to this table in the future that should be made here
 export type VirtualMachinePageVulnerabilitiesProps = {
-    virtualMachineData: VirtualMachine | undefined;
-    isLoadingVirtualMachineData: boolean;
-    errorVirtualMachineData: Error | undefined;
+    virtualMachine: VirtualMachine | undefined;
+    isLoadingVirtualMachine: boolean;
+    errorVirtualMachine: Error | undefined;
     urlSearch: UseUrlSearchReturn;
     urlSorting: UseURLSortResult;
     urlPagination: UseURLPaginationResult;
@@ -62,9 +62,9 @@ const searchFilterConfig = [
 ];
 
 function VirtualMachinePageVulnerabilities({
-    virtualMachineData,
-    isLoadingVirtualMachineData,
-    errorVirtualMachineData,
+    virtualMachine,
+    isLoadingVirtualMachine,
+    errorVirtualMachine,
     urlSearch,
     urlSorting,
     urlPagination,
@@ -80,8 +80,8 @@ function VirtualMachinePageVulnerabilities({
     const managedColumnState = useManagedColumns(tableId, defaultColumns);
 
     const virtualMachineTableData = useMemo(
-        () => getVirtualMachineCveTableData(virtualMachineData),
-        [virtualMachineData]
+        () => getVirtualMachineCveTableData(virtualMachine),
+        [virtualMachine]
     );
 
     const filteredVirtualMachineTableData = useMemo(
@@ -110,9 +110,9 @@ function VirtualMachinePageVulnerabilities({
     }, [sortedVirtualMachineTableData, page, perPage]);
 
     const tableState = getTableUIState({
-        isLoading: isLoadingVirtualMachineData,
+        isLoading: isLoadingVirtualMachine,
         data: paginatedVirtualMachineTableData,
-        error: errorVirtualMachineData,
+        error: errorVirtualMachine,
         searchFilter,
     });
 
@@ -133,10 +133,7 @@ function VirtualMachinePageVulnerabilities({
                     setPage(1, 'replace');
                 }}
             />
-            <SummaryCardLayout
-                isLoading={isLoadingVirtualMachineData}
-                error={errorVirtualMachineData}
-            >
+            <SummaryCardLayout isLoading={isLoadingVirtualMachine} error={errorVirtualMachine}>
                 <SummaryCard
                     loadingText={'Loading virtual machine CVEs by severity summary'}
                     data={filteredVirtualMachineTableData}
@@ -164,7 +161,7 @@ function VirtualMachinePageVulnerabilities({
                     <SplitItem isFilled>
                         <Flex alignItems={{ default: 'alignItemsCenter' }}>
                             <Title headingLevel="h2">
-                                {!isLoadingVirtualMachineData ? (
+                                {!isLoadingVirtualMachine ? (
                                     `${pluralize(filteredVirtualMachineTableData.length, 'result')} found`
                                 ) : (
                                     <Skeleton screenreaderText="Loading virtual machine vulnerability count" />

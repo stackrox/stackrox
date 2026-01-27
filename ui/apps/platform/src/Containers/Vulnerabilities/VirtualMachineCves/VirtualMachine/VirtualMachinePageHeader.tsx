@@ -8,13 +8,13 @@ import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 import HeaderLoadingSkeleton from '../../components/HeaderLoadingSkeleton';
 
 export type VirtualMachinePageHeaderProps = {
-    virtualMachineData: VirtualMachine | undefined;
+    virtualMachine: VirtualMachine | undefined;
     isLoading: boolean;
     error: Error | undefined;
 };
 
 function VirtualMachinePageHeader({
-    virtualMachineData,
+    virtualMachine,
     isLoading,
     error,
 }: VirtualMachinePageHeaderProps) {
@@ -40,22 +40,22 @@ function VirtualMachinePageHeader({
         );
     }
 
-    if (!virtualMachineData) {
+    if (!virtualMachine) {
         return null;
     }
 
     return (
         <Flex direction={{ default: 'column' }} alignItems={{ default: 'alignItemsFlexStart' }}>
             <Flex alignItems={{ default: 'alignItemsCenter' }}>
-                <Title headingLevel="h1">{virtualMachineData.name}</Title>
+                <Title headingLevel="h1">{virtualMachine.name}</Title>
                 <TechnologyPreviewLabel />
             </Flex>
             <LabelGroup numLabels={5}>
                 <Label>
-                    In: {virtualMachineData.clusterName}/{virtualMachineData.namespace}
+                    In: {virtualMachine.clusterName}/{virtualMachine.namespace}
                 </Label>
-                {virtualMachineData.scan?.scanTime && (
-                    <Label>Scan time: {getDateTime(virtualMachineData.scan.scanTime)}</Label>
+                {virtualMachine.scan?.scanTime && (
+                    <Label>Scan time: {getDateTime(virtualMachine.scan.scanTime)}</Label>
                 )}
             </LabelGroup>
         </Flex>
