@@ -6,6 +6,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/sensor/service/pipeline/reconciliation"
+	vmindexratelimiter "github.com/stackrox/rox/central/sensor/service/virtualmachineindex/ratelimiter"
 	vmDatastoreMocks "github.com/stackrox/rox/central/virtualmachine/datastore/mocks"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
@@ -15,6 +16,7 @@ import (
 	"github.com/stackrox/rox/pkg/features"
 	vmEnricherMocks "github.com/stackrox/rox/pkg/virtualmachine/enricher/mocks"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
 )
@@ -157,6 +159,24 @@ func (suite *PipelineTestSuite) TestOnFinish() {
 	suite.NotPanics(func() {
 		suite.pipeline.OnFinish(testClusterID)
 	})
+}
+
+func TestOnFinishPropagatesClusterDisconnect(t *testing.T) {
+	const clusterID = "test-cluster-id"
+	var calledWith []string
+
+	vmindexratelimiter.SetOnClientDisconnectHookForTest(func(id string) {
+		calledWith = append(calledWith, id)
+	})
+	t.Cleanup(func() {
+		vmindexratelimiter.SetOnClientDisconnectHookForTest(nil)
+	})
+
+	pipeline := &pipelineImpl{}
+	pipeline.OnFinish(clusterID)
+
+	require.Len(t, calledWith, 1, "expected exactly one OnClientDisconnect call")
+	require.Equal(t, clusterID, calledWith[0])
 }
 
 func (suite *PipelineTestSuite) TestReconcile() {
