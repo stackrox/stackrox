@@ -16,6 +16,7 @@ import (
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sync"
 )
 
@@ -963,7 +964,7 @@ func (ds *dataStoreImpl) RemoveFilteredRoles(ctx context.Context, filter func(*s
 
 	deletedCount := 0
 	for _, name := range rolesToDelete {
-		if err := ds.roleStorage.Delete(ctx, name); err != nil {
+		if err := ds.RemoveRole(ctx, name); err != nil {
 			log.Errorf("Failed to delete filtered role %q: %v", name, err)
 		} else {
 			deletedCount++
@@ -981,32 +982,38 @@ func (ds *dataStoreImpl) RemoveFilteredPermissionSets(ctx context.Context, filte
 	ds.lock.Lock()
 	defer ds.lock.Unlock()
 
-	roles, err := ds.getAllRolesNoScopeCheck(ctx)
-	if err != nil {
-		return 0, err
-	}
-
-	referencedPermissionSets := make(map[string]bool)
-	for _, role := range roles {
-		referencedPermissionSets[role.GetPermissionSetId()] = true
-	}
-
-	var permissionSetsToDelete []string
-	walkFn := func() error {
-		permissionSetsToDelete = permissionSetsToDelete[:0]
+	// First, identify permission sets that match the filter.
+	candidateSet := set.NewStringSet()
+	walkPSFn := func() error {
 		return ds.permissionSetStorage.Walk(ctx, func(permissionSet *storage.PermissionSet) error {
-			if filter(permissionSet) && !referencedPermissionSets[permissionSet.GetId()] {
-				permissionSetsToDelete = append(permissionSetsToDelete, permissionSet.GetId())
+			if filter(permissionSet) {
+				candidateSet.Add(permissionSet.GetId())
 			}
 			return nil
 		})
 	}
-	if err := pgutils.RetryIfPostgres(ctx, walkFn); err != nil {
+	if err := pgutils.RetryIfPostgres(ctx, walkPSFn); err != nil {
 		return 0, err
 	}
 
+	if candidateSet.Cardinality() == 0 {
+		return 0, nil
+	}
+
+	// Walk through roles to find which candidate permission sets are referenced.
+	walkRolesFn := func() error {
+		return ds.roleStorage.Walk(ctx, func(role *storage.Role) error {
+			candidateSet.Remove(role.GetPermissionSetId())
+			return nil
+		})
+	}
+	if err := pgutils.RetryIfPostgres(ctx, walkRolesFn); err != nil {
+		return 0, err
+	}
+
+	// Delete permission sets that are not referenced.
 	deletedCount := 0
-	for _, id := range permissionSetsToDelete {
+	for _, id := range candidateSet.AsSlice() {
 		if err := ds.permissionSetStorage.Delete(ctx, id); err != nil {
 			log.Errorf("Failed to delete filtered permission set %q: %v", id, err)
 		} else {
@@ -1025,32 +1032,38 @@ func (ds *dataStoreImpl) RemoveFilteredAccessScopes(ctx context.Context, filter 
 	ds.lock.Lock()
 	defer ds.lock.Unlock()
 
-	roles, err := ds.getAllRolesNoScopeCheck(ctx)
-	if err != nil {
-		return 0, err
-	}
-
-	referencedAccessScopes := make(map[string]bool)
-	for _, role := range roles {
-		referencedAccessScopes[role.GetAccessScopeId()] = true
-	}
-
-	var accessScopesToDelete []string
-	walkFn := func() error {
-		accessScopesToDelete = accessScopesToDelete[:0]
+	// First, identify access scopes that match the filter.
+	candidateSet := set.NewStringSet()
+	walkASFn := func() error {
 		return ds.accessScopeStorage.Walk(ctx, func(accessScope *storage.SimpleAccessScope) error {
-			if filter(accessScope) && !referencedAccessScopes[accessScope.GetId()] {
-				accessScopesToDelete = append(accessScopesToDelete, accessScope.GetId())
+			if filter(accessScope) {
+				candidateSet.Add(accessScope.GetId())
 			}
 			return nil
 		})
 	}
-	if err := pgutils.RetryIfPostgres(ctx, walkFn); err != nil {
+	if err := pgutils.RetryIfPostgres(ctx, walkASFn); err != nil {
 		return 0, err
 	}
 
+	if candidateSet.Cardinality() == 0 {
+		return 0, nil
+	}
+
+	// Walk through roles to find which candidate access scopes are referenced.
+	walkRolesFn := func() error {
+		return ds.roleStorage.Walk(ctx, func(role *storage.Role) error {
+			candidateSet.Remove(role.GetAccessScopeId())
+			return nil
+		})
+	}
+	if err := pgutils.RetryIfPostgres(ctx, walkRolesFn); err != nil {
+		return 0, err
+	}
+
+	// Delete access scopes that are not referenced.
 	deletedCount := 0
-	for _, id := range accessScopesToDelete {
+	for _, id := range candidateSet.AsSlice() {
 		if err := ds.accessScopeStorage.Delete(ctx, id); err != nil {
 			log.Errorf("Failed to delete filtered access scope %q: %v", id, err)
 		} else {

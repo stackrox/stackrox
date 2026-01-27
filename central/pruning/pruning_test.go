@@ -2336,6 +2336,32 @@ func (s *PruningTestSuite) TestRemoveExpiredDynamicRBACObjects() {
 	tomorrow := now.Add(24 * time.Hour)
 	twoDaysAgo := now.Add(-48 * time.Hour)
 
+	// Create classic (non-expiring) access scope and permission set for roles to reference.
+	classicPS := &storage.PermissionSet{
+		Id:                 uuid.NewV4().String(),
+		Name:               "classic-ps",
+		ResourceToAccess:   map[string]storage.Access{"Cluster": storage.Access_READ_ACCESS},
+		Traits:             nil,
+	}
+	classicAS := &storage.SimpleAccessScope{
+		Id:     uuid.NewV4().String(),
+		Name:   "classic-as",
+		Rules:  &storage.SimpleAccessScope_Rules{},
+		Traits: nil,
+	}
+
+	// Pre-generate UUIDs for test cases where we need to reference them in expected deletions.
+	ps1ID := uuid.NewV4().String()
+	ps2ID := uuid.NewV4().String()
+	ps3ID := uuid.NewV4().String()
+	as1ID := uuid.NewV4().String()
+	as2ID := uuid.NewV4().String()
+	as3ID := uuid.NewV4().String()
+	psExpiredID := uuid.NewV4().String()
+	psNoExpiryID := uuid.NewV4().String()
+	asExpiredID := uuid.NewV4().String()
+	asActiveID := uuid.NewV4().String()
+
 	cases := []struct {
 		name                  string
 		roles                 []*storage.Role
@@ -2349,20 +2375,26 @@ func (s *PruningTestSuite) TestRemoveExpiredDynamicRBACObjects() {
 			name: "remove expired roles only",
 			roles: []*storage.Role{
 				{
-					Name: "role-1",
+					Name:            "role-1",
+					PermissionSetId: classicPS.Id,
+					AccessScopeId:   classicAS.Id,
 					Traits: &storage.Traits{
 						ExpiresAt: timestamppb.New(yesterday),
 					},
 				},
 				{
-					Name: "role-2",
+					Name:            "role-2",
+					PermissionSetId: classicPS.Id,
+					AccessScopeId:   classicAS.Id,
 					Traits: &storage.Traits{
 						ExpiresAt: timestamppb.New(tomorrow),
 					},
 				},
 				{
-					Name:   "role-3",
-					Traits: &storage.Traits{},
+					Name:            "role-3",
+					PermissionSetId: classicPS.Id,
+					AccessScopeId:   classicAS.Id,
+					Traits:          &storage.Traits{},
 				},
 			},
 			expectedRoleDeletions: set.NewFrozenStringSet("role-1"),
@@ -2373,61 +2405,71 @@ func (s *PruningTestSuite) TestRemoveExpiredDynamicRBACObjects() {
 			name: "remove expired permission sets only",
 			permissionSets: []*storage.PermissionSet{
 				{
-					Id: "ps-1",
+					Id:   ps1ID,
+					Name: "ps-1",
 					Traits: &storage.Traits{
 						ExpiresAt: timestamppb.New(twoDaysAgo),
 					},
 				},
 				{
-					Id: "ps-2",
+					Id:   ps2ID,
+					Name: "ps-2",
 					Traits: &storage.Traits{
 						ExpiresAt: timestamppb.New(tomorrow),
 					},
 				},
 				{
-					Id:     "ps-3",
+					Id:     ps3ID,
+					Name:   "ps-3",
 					Traits: &storage.Traits{},
 				},
 			},
 			expectedRoleDeletions: set.NewFrozenStringSet(),
-			expectedPSDeletions:   set.NewFrozenStringSet("ps-1"),
+			expectedPSDeletions:   set.NewFrozenStringSet(ps1ID),
 			expectedASDeletions:   set.NewFrozenStringSet(),
 		},
 		{
 			name: "remove expired access scopes only",
 			accessScopes: []*storage.SimpleAccessScope{
 				{
-					Id: "as-1",
+					Id:   as1ID,
+					Name: "as-1",
 					Traits: &storage.Traits{
 						ExpiresAt: timestamppb.New(yesterday),
 					},
 				},
 				{
-					Id: "as-2",
+					Id:   as2ID,
+					Name: "as-2",
 					Traits: &storage.Traits{
 						ExpiresAt: timestamppb.New(tomorrow),
 					},
 				},
 				{
-					Id:     "as-3",
+					Id:     as3ID,
+					Name:   "as-3",
 					Traits: &storage.Traits{},
 				},
 			},
 			expectedRoleDeletions: set.NewFrozenStringSet(),
 			expectedPSDeletions:   set.NewFrozenStringSet(),
-			expectedASDeletions:   set.NewFrozenStringSet("as-1"),
+			expectedASDeletions:   set.NewFrozenStringSet(as1ID),
 		},
 		{
 			name: "remove expired objects of all types",
 			roles: []*storage.Role{
 				{
-					Name: "role-expired",
+					Name:            "role-expired",
+					PermissionSetId: classicPS.Id,
+					AccessScopeId:   classicAS.Id,
 					Traits: &storage.Traits{
 						ExpiresAt: timestamppb.New(yesterday),
 					},
 				},
 				{
-					Name: "role-active",
+					Name:            "role-active",
+					PermissionSetId: classicPS.Id,
+					AccessScopeId:   classicAS.Id,
 					Traits: &storage.Traits{
 						ExpiresAt: timestamppb.New(tomorrow),
 					},
@@ -2435,39 +2477,45 @@ func (s *PruningTestSuite) TestRemoveExpiredDynamicRBACObjects() {
 			},
 			permissionSets: []*storage.PermissionSet{
 				{
-					Id: "ps-expired",
+					Id:   psExpiredID,
+					Name: "ps-expired",
 					Traits: &storage.Traits{
 						ExpiresAt: timestamppb.New(twoDaysAgo),
 					},
 				},
 				{
-					Id:     "ps-no-expiry",
+					Id:     psNoExpiryID,
+					Name:   "ps-no-expiry",
 					Traits: &storage.Traits{},
 				},
 			},
 			accessScopes: []*storage.SimpleAccessScope{
 				{
-					Id: "as-expired",
+					Id:   asExpiredID,
+					Name: "as-expired",
 					Traits: &storage.Traits{
 						ExpiresAt: timestamppb.New(yesterday),
 					},
 				},
 				{
-					Id: "as-active",
+					Id:   asActiveID,
+					Name: "as-active",
 					Traits: &storage.Traits{
 						ExpiresAt: timestamppb.New(tomorrow),
 					},
 				},
 			},
 			expectedRoleDeletions: set.NewFrozenStringSet("role-expired"),
-			expectedPSDeletions:   set.NewFrozenStringSet("ps-expired"),
-			expectedASDeletions:   set.NewFrozenStringSet("as-expired"),
+			expectedPSDeletions:   set.NewFrozenStringSet(psExpiredID),
+			expectedASDeletions:   set.NewFrozenStringSet(asExpiredID),
 		},
 		{
 			name: "nothing to remove when all unexpired",
 			roles: []*storage.Role{
 				{
-					Name: "role-1",
+					Name:            "role-1",
+					PermissionSetId: classicPS.Id,
+					AccessScopeId:   classicAS.Id,
 					Traits: &storage.Traits{
 						ExpiresAt: timestamppb.New(tomorrow),
 					},
@@ -2475,13 +2523,15 @@ func (s *PruningTestSuite) TestRemoveExpiredDynamicRBACObjects() {
 			},
 			permissionSets: []*storage.PermissionSet{
 				{
-					Id:     "ps-1",
+					Id:     uuid.NewV4().String(),
+					Name:   "ps-1",
 					Traits: &storage.Traits{},
 				},
 			},
 			accessScopes: []*storage.SimpleAccessScope{
 				{
-					Id: "as-1",
+					Id:   uuid.NewV4().String(),
+					Name: "as-1",
 					Traits: &storage.Traits{
 						ExpiresAt: timestamppb.New(tomorrow),
 					},
@@ -2502,6 +2552,10 @@ func (s *PruningTestSuite) TestRemoveExpiredDynamicRBACObjects() {
 	for _, c := range cases {
 		s.T().Run(c.name, func(t *testing.T) {
 			roleStore := roleDataStore.GetTestPostgresDataStore(t, s.pool)
+
+			// Add classic permission set and access scope for roles to reference.
+			assert.NoError(t, roleStore.AddPermissionSet(pruningCtx, classicPS))
+			assert.NoError(t, roleStore.AddAccessScope(pruningCtx, classicAS))
 
 			for _, role := range c.roles {
 				assert.NoError(t, roleStore.AddRole(pruningCtx, role))

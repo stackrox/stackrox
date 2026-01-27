@@ -24,6 +24,6 @@ func testClock() time.Time {
 
 func Test_clock(t *testing.T) {
 	now := testClock()
-	assert.Equal(t, testExpirationDuration.Seconds, int64(testTokenExpiry.Sub(now).Seconds()))
-	assert.Equal(t, rbacObjectsGraceExpiration, testExpiredTraits.ExpiresAt.AsTime().Sub(testTokenExpiry))
+	assert.Equal(t, testExpirationDuration.GetSeconds(), int64(testTokenExpiry.Sub(now).Seconds()))
+	assert.Equal(t, rbacObjectsGraceExpiration, testExpiredTraits.GetExpiresAt().AsTime().Sub(testTokenExpiry))
 }
