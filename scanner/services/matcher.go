@@ -41,6 +41,8 @@ type matcherService struct {
 	indexer indexer.ReportGetter
 	// matcher is used to match vulnerabilities with index contents.
 	matcher matcher.Matcher
+	// sbomer is used to generate SBOMs from index reports.
+	sbomer *sbom.SBOMer
 	// disableEmptyContents allows the vulnerability matching API to reject requests with empty contents.
 	disableEmptyContents bool
 	// anonymousAuthEnabled specifies if the service should allow for traffic from anonymous users.
@@ -53,6 +55,7 @@ func NewMatcherService(matcher matcher.Matcher, indexer indexer.ReportGetter) *m
 	return &matcherService{
 		matcher:              matcher,
 		indexer:              indexer,
+		sbomer:               sbom.NewSBOMer(),
 		disableEmptyContents: indexer == nil,
 		anonymousAuthEnabled: env.ScannerV4AnonymousAuth.BooleanSetting(),
 	}
@@ -199,7 +202,7 @@ func (s *matcherService) GetSBOM(ctx context.Context, req *v4.GetSBOMRequest) (*
 		return nil, err
 	}
 
-	sbom, err := s.matcher.GetSBOM(ctx, ir, &sbom.Options{
+	sbomBytes, err := s.sbomer.GetSBOM(ctx, ir, &sbom.Options{
 		Name:      req.GetId(),
 		Namespace: req.GetUri(),
 		Comment:   fmt.Sprintf("Generated for '%s'", req.GetName()),
@@ -209,5 +212,5 @@ func (s *matcherService) GetSBOM(ctx context.Context, req *v4.GetSBOMRequest) (*
 		return nil, err
 	}
 
-	return &v4.GetSBOMResponse{Sbom: sbom}, nil
+	return &v4.GetSBOMResponse{Sbom: sbomBytes}, nil
 }

@@ -354,21 +354,7 @@ func (s *matcherServiceTestSuite) Test_matcherService_GetSBOM() {
 
 	})
 
-	s.Run("error when sbom generation fails", func() {
-		s.matcherMock.EXPECT().GetSBOM(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil, errors.New("broken"))
-		srv := NewMatcherService(s.matcherMock, nil)
-		_, err := srv.GetSBOM(s.ctx, &v4.GetSBOMRequest{
-			Id:       "id",
-			Name:     "name",
-			Uri:      "uri",
-			Contents: &v4.Contents{},
-		})
-		s.ErrorContains(err, "broken")
-	})
-
 	s.Run("success", func() {
-		fakeSbomB := []byte("fake sbom")
-		s.matcherMock.EXPECT().GetSBOM(gomock.Any(), gomock.Any(), gomock.Any()).Return(fakeSbomB, nil)
 		srv := NewMatcherService(s.matcherMock, nil)
 		res, err := srv.GetSBOM(s.ctx, &v4.GetSBOMRequest{
 			Id:       "id",
@@ -377,6 +363,6 @@ func (s *matcherServiceTestSuite) Test_matcherService_GetSBOM() {
 			Contents: &v4.Contents{},
 		})
 		s.Require().NoError(err)
-		s.Equal(res.GetSbom(), fakeSbomB)
+		s.NotEmpty(res.GetSbom())
 	})
 }
