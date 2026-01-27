@@ -276,7 +276,14 @@ func (ds *dataStoreImpl) RemoveRole(ctx context.Context, name string) error {
 		return err
 	}
 
-	if err := ds.verifyRoleForDeletion(ctx, name); err != nil {
+	role, found, err := ds.roleStorage.Get(ctx, name)
+	if err != nil {
+		return err
+	}
+	if !found {
+		return errors.Wrapf(errox.NotFound, "name = %q", name)
+	}
+	if err := ds.verifyRoleForDeletion(ctx, role); err != nil {
 		return err
 	}
 
@@ -854,15 +861,7 @@ func (ds *dataStoreImpl) verifyRoleNameExists(ctx context.Context, name string) 
 // It will:
 // - verify that the role is not a default role
 // - verify that the role exists
-func (ds *dataStoreImpl) verifyRoleForDeletion(ctx context.Context, name string) error {
-	role, found, err := ds.roleStorage.Get(ctx, name)
-
-	if err != nil {
-		return err
-	}
-	if !found {
-		return errors.Wrapf(errox.NotFound, "name = %q", name)
-	}
+func (ds *dataStoreImpl) verifyRoleForDeletion(ctx context.Context, role *storage.Role) error {
 	if err := verifyRoleOrigin(ctx, role); err != nil {
 		return err
 	}
@@ -952,9 +951,14 @@ func (ds *dataStoreImpl) RemoveFilteredRoles(ctx context.Context, filter func(*s
 	walkFn := func() error {
 		rolesToDelete = rolesToDelete[:0]
 		return ds.roleStorage.Walk(ctx, func(role *storage.Role) error {
-			if filter(role) {
-				rolesToDelete = append(rolesToDelete, role.GetName())
+			if !filter(role) {
+				return nil
 			}
+			if err := ds.verifyRoleForDeletion(ctx, role); err != nil {
+				log.Debugf("Skipping role %q: %v", role.GetName(), err)
+				return nil
+			}
+			rolesToDelete = append(rolesToDelete, role.GetName())
 			return nil
 		})
 	}
@@ -964,7 +968,7 @@ func (ds *dataStoreImpl) RemoveFilteredRoles(ctx context.Context, filter func(*s
 
 	deletedCount := 0
 	for _, name := range rolesToDelete {
-		if err := ds.RemoveRole(ctx, name); err != nil {
+		if err := ds.roleStorage.Delete(ctx, name); err != nil {
 			log.Errorf("Failed to delete filtered role %q: %v", name, err)
 		} else {
 			deletedCount++
