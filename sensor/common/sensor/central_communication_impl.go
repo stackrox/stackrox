@@ -210,45 +210,6 @@ func (s *centralCommunicationImpl) sendEvents(client central.SensorServiceClient
 	log.Info("Communication with central ended.")
 }
 
-func (s *centralCommunicationImpl) initialSync(ctx context.Context, stream central.SensorService_CommunicateClient,
-	hello *central.SensorHello, configHandler config.Handler, detector detector.Detector,
-) error {
-	rawHdr, err := stream.Header()
-	if err != nil {
-		return errors.Wrap(err, "receiving headers from central")
-	}
-
-	if metautils.MD(rawHdr).Get(centralsensor.SensorHelloMetadataKey) == "true" {
-		// Yay, central supports the "sensor hello" protocol!
-		err := s.hello(stream, hello)
-		if err != nil {
-			return errors.Wrap(err, "error while executing the sensor hello protocol")
-		}
-	} else {
-		// No sensor hello - Central is running a legacy version.
-		log.Warn("Central is running a legacy version that might not support all current features")
-
-		// Without hello protocol, we must have a real cluster ID in the certificate.
-		if err := s.clusterID.SetFromCert(); err != nil {
-			return errors.Wrap(err, "Central does not support sensor hello protocol")
-		}
-
-		// Disable features that require hello protocol.
-		s.clientReconcile = false
-	}
-
-	// DO NOT CHANGE THE ORDER. Please refer to `Run()` at `central/sensor/service/connection/connection_impl.go`
-	if err := s.initialConfigSync(ctx, stream, configHandler); err != nil {
-		return err
-	}
-
-	if err := s.initialPolicySync(ctx, stream, detector); err != nil {
-		return err
-	}
-
-	return s.initialDeduperSync(stream)
-}
-
 func (s *centralCommunicationImpl) hello(stream central.SensorService_CommunicateClient, hello *central.SensorHello) error {
 	var centralHello *central.CentralHello
 	err := stream.Send(&central.MsgFromSensor{Msg: &central.MsgFromSensor_Hello{Hello: hello}})
@@ -292,6 +253,45 @@ func (s *centralCommunicationImpl) hello(stream central.SensorService_Communicat
 		}
 	}
 	return nil
+}
+
+func (s *centralCommunicationImpl) initialSync(ctx context.Context, stream central.SensorService_CommunicateClient,
+	hello *central.SensorHello, configHandler config.Handler, detector detector.Detector,
+) error {
+	rawHdr, err := stream.Header()
+	if err != nil {
+		return errors.Wrap(err, "receiving headers from central")
+	}
+
+	if metautils.MD(rawHdr).Get(centralsensor.SensorHelloMetadataKey) == "true" {
+		// Yay, central supports the "sensor hello" protocol!
+		err := s.hello(stream, hello)
+		if err != nil {
+			return errors.Wrap(err, "error while executing the sensor hello protocol")
+		}
+	} else {
+		// No sensor hello - Central is running a legacy version.
+		log.Warn("Central is running a legacy version that might not support all current features")
+
+		// Without hello protocol, we must have a real cluster ID in the certificate.
+		if err := s.clusterID.SetFromCert(); err != nil {
+			return errors.Wrap(err, "Central does not support sensor hello protocol")
+		}
+
+		// Disable features that require hello protocol.
+		s.clientReconcile = false
+	}
+
+	// DO NOT CHANGE THE ORDER. Please refer to `Run()` at `central/sensor/service/connection/connection_impl.go`
+	if err := s.initialConfigSync(ctx, stream, configHandler); err != nil {
+		return err
+	}
+
+	if err := s.initialPolicySync(ctx, stream, detector); err != nil {
+		return err
+	}
+
+	return s.initialDeduperSync(stream)
 }
 
 func (s *centralCommunicationImpl) initialDeduperSync(stream central.SensorService_CommunicateClient) error {
