@@ -142,6 +142,9 @@ func NewLimiterWithClock(workloadName string, globalRate float64, bucketCapacity
 // Returns true if allowed, false if rate limit exceeded.
 // Metrics are automatically recorded.
 func (l *Limiter) TryConsume(clientID string, msg *central.MsgFromSensor) (allowed bool, reason string) {
+	if l == nil {
+		return true, "nil rate limiter"
+	}
 	if !l.accepts(msg) {
 		// This is not the correct rateLimiter to evaluate this request - allow request to pass.
 		return true, ""
@@ -232,6 +235,9 @@ func (l *Limiter) perClientBucketCapacity(numClients int) int {
 // OnClientDisconnect removes a client from rate limiting and rebalances remaining limiters.
 // This should be called when a client connection is terminated.
 func (l *Limiter) OnClientDisconnect(clientID string) {
+	if l == nil {
+		return
+	}
 	if l.globalRate <= 0 {
 		// Rate limiting disabled
 		return

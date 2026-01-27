@@ -98,7 +98,7 @@ func newVMIndexReportRateLimiter() *rate.Limiter {
 		})
 
 	if err != nil {
-		panic("Could not create rate limiter for VM index reports: " + err.Error())
+		utils.Should(errors.Wrap(err, "Creating rate-limiter for VM index reports"))
 	}
 
 	return rl

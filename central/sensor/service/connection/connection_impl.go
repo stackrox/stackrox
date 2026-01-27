@@ -169,14 +169,17 @@ func (c *sensorConnection) multiplexedPush(ctx context.Context, msg *central.Msg
 		return
 	}
 
-	allowed, reason := c.rl.TryConsume(c.clusterID, msg)
-	if !allowed {
-		logging.GetRateLimitedLogger().ErrorL(
-			"vm_index_reports_rate_limiter",
-			"Rate limit exceeded for cluster %s and event type %s: %v", c.clusterID, "vm_index_reports", reason,
-		)
-		return
+	if c.rl != nil {
+		allowed, reason := c.rl.TryConsume(c.clusterID, msg)
+		if !allowed {
+			logging.GetRateLimitedLogger().ErrorL(
+				"vm_index_reports_rate_limiter",
+				"Rate limit exceeded for cluster %s and event type %s: %v", c.clusterID, "vm_index_reports", reason,
+			)
+			return
+		}
 	}
+
 
 	typ := reflectutils.Type(msg.GetMsg())
 	queue := queues[typ]
