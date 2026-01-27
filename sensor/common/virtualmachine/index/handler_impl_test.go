@@ -260,47 +260,58 @@ func (s *virtualMachineHandlerSuite) TestProcessMessage() {
 		return testutil.ToFloat64(vmmetrics.IndexReportAcksReceived.WithLabelValues(label))
 	}
 
-	initialAck := getMetric(central.SensorACK_ACK.String())
-	initialNack := getMetric(central.SensorACK_NACK.String())
-
-	ackMsg := &central.MsgToSensor{
-		Msg: &central.MsgToSensor_SensorAck{SensorAck: &central.SensorACK{
-			Action:      central.SensorACK_ACK,
-			MessageType: central.SensorACK_VM_INDEX_REPORT,
-			ResourceId:  "vm-ack",
-		}},
+	cases := map[string]struct {
+		msg       *central.MsgToSensor
+		expectAck int
+		expectNack int
+	}{
+		"ack increments ack metric": {
+			msg: &central.MsgToSensor{
+				Msg: &central.MsgToSensor_SensorAck{SensorAck: &central.SensorACK{
+					Action:      central.SensorACK_ACK,
+					MessageType: central.SensorACK_VM_INDEX_REPORT,
+					ResourceId:  "vm-ack",
+				}},
+			},
+			expectAck:  1,
+			expectNack: 0,
+		},
+		"nack increments nack metric": {
+			msg: &central.MsgToSensor{
+				Msg: &central.MsgToSensor_SensorAck{SensorAck: &central.SensorACK{
+					Action:      central.SensorACK_NACK,
+					MessageType: central.SensorACK_VM_INDEX_REPORT,
+					ResourceId:  "vm-nack",
+					Reason:      "rate limited",
+				}},
+			},
+			expectAck:  0,
+			expectNack: 1,
+		},
+		"non-VM message does not change metrics": {
+			msg: &central.MsgToSensor{
+				Msg: &central.MsgToSensor_SensorAck{SensorAck: &central.SensorACK{
+					Action:      central.SensorACK_ACK,
+					MessageType: central.SensorACK_NODE_INDEX_REPORT,
+					ResourceId:  "node-1",
+				}},
+			},
+			expectAck:  0,
+			expectNack: 0,
+		},
 	}
-	err := s.handler.ProcessMessage(ctx, ackMsg)
-	s.Require().NoError(err)
-	s.Equal(initialAck+1, getMetric(central.SensorACK_ACK.String()))
-	s.Equal(initialNack, getMetric(central.SensorACK_NACK.String()))
 
-	nackMsg := &central.MsgToSensor{
-		Msg: &central.MsgToSensor_SensorAck{SensorAck: &central.SensorACK{
-			Action:      central.SensorACK_NACK,
-			MessageType: central.SensorACK_VM_INDEX_REPORT,
-			ResourceId:  "vm-nack",
-			Reason:      "rate limited",
-		}},
-	}
-	err = s.handler.ProcessMessage(ctx, nackMsg)
-	s.Require().NoError(err)
-	s.Equal(initialAck+1, getMetric(central.SensorACK_ACK.String()))
-	s.Equal(initialNack+1, getMetric(central.SensorACK_NACK.String()))
+	for name, tc := range cases {
+		s.Run(name, func() {
+			initialAck := getMetric(central.SensorACK_ACK.String())
+			initialNack := getMetric(central.SensorACK_NACK.String())
 
-	nonVMMsg := &central.MsgToSensor{
-		Msg: &central.MsgToSensor_SensorAck{SensorAck: &central.SensorACK{
-			Action:      central.SensorACK_ACK,
-			MessageType: central.SensorACK_NODE_INDEX_REPORT,
-			ResourceId:  "node-1",
-		}},
+			err := s.handler.ProcessMessage(ctx, tc.msg)
+			s.Require().NoError(err)
+			s.Equal(initialAck+float64(tc.expectAck), getMetric(central.SensorACK_ACK.String()))
+			s.Equal(initialNack+float64(tc.expectNack), getMetric(central.SensorACK_NACK.String()))
+		})
 	}
-	currentAck := getMetric(central.SensorACK_ACK.String())
-	currentNack := getMetric(central.SensorACK_NACK.String())
-	err = s.handler.ProcessMessage(ctx, nonVMMsg)
-	s.Require().NoError(err)
-	s.Equal(currentAck, getMetric(central.SensorACK_ACK.String()))
-	s.Equal(currentNack, getMetric(central.SensorACK_NACK.String()))
 }
 
 func (s *virtualMachineHandlerSuite) TestResponsesC_BeforeStart() {
