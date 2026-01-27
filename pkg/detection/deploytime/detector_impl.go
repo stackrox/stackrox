@@ -30,7 +30,7 @@ func (d *detectorImpl) Detect(ctx DetectionContext, enhancedDeployment booleanpo
 			}
 		}
 		// Check predicate on deployment.
-		if !compiled.AppliesTo(enhancedDeployment.Deployment) {
+		if !compiled.AppliesTo(enhancedDeployment.Deployment, nil, nil) {
 			return nil
 		}
 
