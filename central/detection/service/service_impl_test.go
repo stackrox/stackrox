@@ -761,15 +761,15 @@ spec:
 `
 
 	cases := map[string]struct {
-		clusterID     string
+		clusterID         string
 		expectedClusterID string
 	}{
 		"empty cluster ID": {
-			clusterID:     "",
+			clusterID:         "",
 			expectedClusterID: "",
 		},
 		"non-empty cluster ID": {
-			clusterID:     "test-cluster-id",
+			clusterID:         "test-cluster-id",
 			expectedClusterID: "test-cluster-id",
 		},
 	}
