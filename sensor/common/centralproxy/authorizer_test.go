@@ -196,7 +196,7 @@ func TestK8sAuthorizer_MissingPermission_Namespace(t *testing.T) {
 	err := authorizer.authorize(context.Background(), userInfo, req)
 
 	assert.Error(t, err)
-	assert.Contains(t, err.Error(), `user "limited-user" lacks list permission for resource "pods.core" in namespace "my-namespace"`)
+	assert.Contains(t, err.Error(), `user "limited-user" lacks LIST permission for resource "pods.core" in namespace "my-namespace"`)
 }
 
 func TestK8sAuthorizer_MissingPermission_ClusterWide(t *testing.T) {
@@ -231,7 +231,7 @@ func TestK8sAuthorizer_MissingPermission_ClusterWide(t *testing.T) {
 	err := authorizer.authorize(context.Background(), userInfo, req)
 
 	assert.Error(t, err)
-	assert.Contains(t, err.Error(), `user "namespace-admin" lacks cluster-wide list permission for resource "pods.core"`)
+	assert.Contains(t, err.Error(), `user "namespace-admin" lacks cluster-wide LIST permission for resource "pods.core"`)
 }
 
 func TestK8sAuthorizer_SubjectAccessReviewError(t *testing.T) {
