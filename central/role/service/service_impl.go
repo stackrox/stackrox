@@ -83,6 +83,7 @@ func (*serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName string)
 
 func (s *serviceImpl) GetRoles(ctx context.Context, _ *v1.Empty) (*v1.GetRolesResponse, error) {
 	roles, err := s.roleDataStore.GetRolesFiltered(ctx, func(role *storage.Role) bool {
+		// filter out dynamic roles created to back Rox tokens issued for internal purposes.
 		return role.GetTraits().GetOrigin() != storage.Traits_DYNAMIC
 	})
 	if err != nil {
@@ -192,6 +193,7 @@ func (s *serviceImpl) GetPermissionSet(ctx context.Context, id *v1.ResourceByID)
 
 func (s *serviceImpl) ListPermissionSets(ctx context.Context, _ *v1.Empty) (*v1.ListPermissionSetsResponse, error) {
 	permissionSets, err := s.roleDataStore.GetPermissionSetsFiltered(ctx, func(permissionSet *storage.PermissionSet) bool {
+		// filter out dynamic permission sets created to back Rox tokens issued for internal purposes.
 		return permissionSet.GetTraits().GetOrigin() != storage.Traits_DYNAMIC
 	})
 	if err != nil {
@@ -267,6 +269,7 @@ func (s *serviceImpl) GetSimpleAccessScope(ctx context.Context, id *v1.ResourceB
 
 func (s *serviceImpl) ListSimpleAccessScopes(ctx context.Context, _ *v1.Empty) (*v1.ListSimpleAccessScopesResponse, error) {
 	scopes, err := s.roleDataStore.GetAccessScopesFiltered(ctx, func(scope *storage.SimpleAccessScope) bool {
+		// filter out dynamic access scopes created to back Rox tokens issued for internal purposes.
 		return scope.GetTraits().GetOrigin() != storage.Traits_DYNAMIC
 	})
 	if err != nil {
