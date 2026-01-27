@@ -3,6 +3,7 @@ package centralproxy
 import (
 	"context"
 	"errors"
+	"fmt"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -404,6 +405,396 @@ func (d *dynamicFakeTokenServiceClient) GenerateTokenForPermissionsAndScope(
 	return &centralv1.GenerateTokenForPermissionsAndScopeResponse{
 		Token: d.getToken(),
 	}, nil
+}
+
+func TestScopedTokenTransport_InvalidateOnUnauthorized(t *testing.T) {
+	t.Run("401 response triggers retry with fresh token", func(t *testing.T) {
+		tokenCallCount := 0
+		fakeClient := &dynamicFakeTokenServiceClient{
+			getToken: func() string {
+				tokenCallCount++
+				return fmt.Sprintf("token-%d", tokenCallCount)
+			},
+		}
+
+		requestCount := 0
+		mockBase := roundTripperFunc(func(req *http.Request) (*http.Response, error) {
+			requestCount++
+			// First request returns 401, retry returns 200
+			if req.Header.Get("Authorization") == "Bearer token-1" {
+				return &http.Response{
+					StatusCode: http.StatusUnauthorized,
+					Body:       io.NopCloser(strings.NewReader(`{"error":"unauthorized"}`)),
+					Header:     http.Header{"Content-Type": []string{"application/json"}},
+				}, nil
+			}
+			return &http.Response{
+				StatusCode: http.StatusOK,
+				Body:       io.NopCloser(strings.NewReader(`{"ok":true}`)),
+				Header:     http.Header{"Content-Type": []string{"application/json"}},
+			}, nil
+		})
+
+		transport := &scopedTokenTransport{
+			base:          mockBase,
+			tokenProvider: newTestTokenProvider(fakeClient, "test-cluster-id"),
+		}
+
+		req := httptest.NewRequest(http.MethodGet, "/v1/alerts", nil)
+		req.Header.Set(stackroxNamespaceHeader, "test-namespace")
+
+		// Single RoundTrip should retry internally and return success
+		resp, err := transport.RoundTrip(req)
+		require.NoError(t, err)
+		assert.Equal(t, http.StatusOK, resp.StatusCode, "should return success after retry")
+		assert.Equal(t, 2, tokenCallCount, "should have requested two tokens (original + retry)")
+		assert.Equal(t, 2, requestCount, "should have made two requests (original + retry)")
+	})
+
+	t.Run("403 response triggers retry with fresh token", func(t *testing.T) {
+		tokenCallCount := 0
+		fakeClient := &dynamicFakeTokenServiceClient{
+			getToken: func() string {
+				tokenCallCount++
+				return fmt.Sprintf("token-%d", tokenCallCount)
+			},
+		}
+
+		requestCount := 0
+		mockBase := roundTripperFunc(func(req *http.Request) (*http.Response, error) {
+			requestCount++
+			// First request returns 403, retry returns 200
+			if req.Header.Get("Authorization") == "Bearer token-1" {
+				return &http.Response{
+					StatusCode: http.StatusForbidden,
+					Body:       io.NopCloser(strings.NewReader(`{"error":"forbidden"}`)),
+					Header:     http.Header{"Content-Type": []string{"application/json"}},
+				}, nil
+			}
+			return &http.Response{
+				StatusCode: http.StatusOK,
+				Body:       io.NopCloser(strings.NewReader(`{"ok":true}`)),
+				Header:     http.Header{"Content-Type": []string{"application/json"}},
+			}, nil
+		})
+
+		transport := &scopedTokenTransport{
+			base:          mockBase,
+			tokenProvider: newTestTokenProvider(fakeClient, "test-cluster-id"),
+		}
+
+		req := httptest.NewRequest(http.MethodGet, "/v1/alerts", nil)
+		req.Header.Set(stackroxNamespaceHeader, "test-namespace")
+
+		// Single RoundTrip should retry internally and return success
+		resp, err := transport.RoundTrip(req)
+		require.NoError(t, err)
+		assert.Equal(t, http.StatusOK, resp.StatusCode, "should return success after retry")
+		assert.Equal(t, 2, tokenCallCount, "should have requested two tokens (original + retry)")
+		assert.Equal(t, 2, requestCount, "should have made two requests (original + retry)")
+	})
+
+	t.Run("retry only happens once", func(t *testing.T) {
+		tokenCallCount := 0
+		fakeClient := &dynamicFakeTokenServiceClient{
+			getToken: func() string {
+				tokenCallCount++
+				return fmt.Sprintf("token-%d", tokenCallCount)
+			},
+		}
+
+		requestCount := 0
+		mockBase := roundTripperFunc(func(req *http.Request) (*http.Response, error) {
+			requestCount++
+			// Always return 401
+			return &http.Response{
+				StatusCode: http.StatusUnauthorized,
+				Body:       io.NopCloser(strings.NewReader(`{"error":"unauthorized"}`)),
+				Header:     http.Header{"Content-Type": []string{"application/json"}},
+			}, nil
+		})
+
+		transport := &scopedTokenTransport{
+			base:          mockBase,
+			tokenProvider: newTestTokenProvider(fakeClient, "test-cluster-id"),
+		}
+
+		req := httptest.NewRequest(http.MethodGet, "/v1/alerts", nil)
+		req.Header.Set(stackroxNamespaceHeader, "test-namespace")
+
+		// Should retry once and then return the 401
+		resp, err := transport.RoundTrip(req)
+		require.NoError(t, err)
+		assert.Equal(t, http.StatusUnauthorized, resp.StatusCode, "should return 401 after retry fails")
+		assert.Equal(t, 2, tokenCallCount, "should have requested exactly two tokens")
+		assert.Equal(t, 2, requestCount, "should have made exactly two requests")
+	})
+
+	t.Run("other error responses do not invalidate cache", func(t *testing.T) {
+		statusCodes := []int{
+			http.StatusOK,
+			http.StatusNotFound,
+			http.StatusInternalServerError,
+		}
+
+		for _, statusCode := range statusCodes {
+			t.Run(fmt.Sprintf("status %d", statusCode), func(t *testing.T) {
+				callCount := 0
+				fakeClient := &dynamicFakeTokenServiceClient{
+					getToken: func() string {
+						callCount++
+						return "cached-token"
+					},
+				}
+
+				mockBase := roundTripperFunc(func(req *http.Request) (*http.Response, error) {
+					return &http.Response{
+						StatusCode: statusCode,
+						Body:       io.NopCloser(strings.NewReader(`{}`)),
+						Header:     http.Header{"Content-Type": []string{"application/json"}},
+					}, nil
+				})
+
+				transport := &scopedTokenTransport{
+					base:          mockBase,
+					tokenProvider: newTestTokenProvider(fakeClient, "test-cluster-id"),
+				}
+
+				req := httptest.NewRequest(http.MethodGet, "/v1/alerts", nil)
+				req.Header.Set(stackroxNamespaceHeader, "test-namespace")
+
+				// First request
+				_, err := transport.RoundTrip(req)
+				require.NoError(t, err)
+				assert.Equal(t, 1, callCount)
+
+				// Second request - should use cached token
+				_, err = transport.RoundTrip(req)
+				require.NoError(t, err)
+				assert.Equal(t, 1, callCount, "token should still be cached for status %d", statusCode)
+			})
+		}
+	})
+
+	t.Run("transport error does not invalidate cache", func(t *testing.T) {
+		callCount := 0
+		fakeClient := &dynamicFakeTokenServiceClient{
+			getToken: func() string {
+				callCount++
+				return "cached-token"
+			},
+		}
+
+		transportErr := errors.New("connection refused")
+		mockBase := roundTripperFunc(func(req *http.Request) (*http.Response, error) {
+			return nil, transportErr
+		})
+
+		transport := &scopedTokenTransport{
+			base:          mockBase,
+			tokenProvider: newTestTokenProvider(fakeClient, "test-cluster-id"),
+		}
+
+		req := httptest.NewRequest(http.MethodGet, "/v1/alerts", nil)
+		req.Header.Set(stackroxNamespaceHeader, "test-namespace")
+
+		// First request - transport error
+		_, err := transport.RoundTrip(req)
+		require.Error(t, err)
+		assert.Equal(t, 1, callCount)
+
+		// Second request - should use cached token (error didn't invalidate)
+		_, err = transport.RoundTrip(req)
+		require.Error(t, err)
+		assert.Equal(t, 1, callCount, "token should still be cached after transport error")
+	})
+}
+
+func TestTokenProvider_InvalidateToken(t *testing.T) {
+	t.Run("invalidateToken removes token from cache", func(t *testing.T) {
+		callCount := 0
+		fakeClient := &dynamicFakeTokenServiceClient{
+			getToken: func() string {
+				callCount++
+				return fmt.Sprintf("token-%d", callCount)
+			},
+		}
+
+		provider := newTestTokenProvider(fakeClient, "test-cluster-id")
+
+		// Get token (causes cache)
+		token1, err := provider.getTokenForScope(context.Background(), "my-scope")
+		require.NoError(t, err)
+		assert.Equal(t, "token-1", token1)
+		assert.Equal(t, 1, callCount)
+
+		// Get again - should be cached
+		token2, err := provider.getTokenForScope(context.Background(), "my-scope")
+		require.NoError(t, err)
+		assert.Equal(t, "token-1", token2)
+		assert.Equal(t, 1, callCount)
+
+		// Invalidate
+		provider.invalidateToken("my-scope")
+
+		// Get again - should fetch new token
+		token3, err := provider.getTokenForScope(context.Background(), "my-scope")
+		require.NoError(t, err)
+		assert.Equal(t, "token-2", token3)
+		assert.Equal(t, 2, callCount)
+	})
+
+	t.Run("invalidateToken only affects specified scope", func(t *testing.T) {
+		callCount := 0
+		fakeClient := &dynamicFakeTokenServiceClient{
+			getToken: func() string {
+				callCount++
+				return fmt.Sprintf("token-%d", callCount)
+			},
+		}
+
+		provider := newTestTokenProvider(fakeClient, "test-cluster-id")
+
+		// Cache tokens for two scopes
+		_, err := provider.getTokenForScope(context.Background(), "scope-a")
+		require.NoError(t, err)
+		_, err = provider.getTokenForScope(context.Background(), "scope-b")
+		require.NoError(t, err)
+		assert.Equal(t, 2, callCount)
+
+		// Invalidate only scope-a
+		provider.invalidateToken("scope-a")
+
+		// scope-a should get new token
+		tokenA, err := provider.getTokenForScope(context.Background(), "scope-a")
+		require.NoError(t, err)
+		assert.Equal(t, "token-3", tokenA)
+		assert.Equal(t, 3, callCount)
+
+		// scope-b should still be cached
+		tokenB, err := provider.getTokenForScope(context.Background(), "scope-b")
+		require.NoError(t, err)
+		assert.Equal(t, "token-2", tokenB)
+		assert.Equal(t, 3, callCount)
+	})
+}
+
+func TestScopedTokenTransport_RetryWithRequestBody(t *testing.T) {
+	t.Run("POST request with body retries successfully", func(t *testing.T) {
+		tokenCallCount := 0
+		fakeClient := &dynamicFakeTokenServiceClient{
+			getToken: func() string {
+				tokenCallCount++
+				return fmt.Sprintf("token-%d", tokenCallCount)
+			},
+		}
+
+		bodiesReceived := []string{}
+		requestCount := 0
+		mockBase := roundTripperFunc(func(req *http.Request) (*http.Response, error) {
+			requestCount++
+			// Read the body to verify it's available
+			body, _ := io.ReadAll(req.Body)
+			bodiesReceived = append(bodiesReceived, string(body))
+
+			if req.Header.Get("Authorization") == "Bearer token-1" {
+				return &http.Response{
+					StatusCode: http.StatusUnauthorized,
+					Body:       io.NopCloser(strings.NewReader(`{"error":"unauthorized"}`)),
+					Header:     http.Header{"Content-Type": []string{"application/json"}},
+				}, nil
+			}
+			return &http.Response{
+				StatusCode: http.StatusOK,
+				Body:       io.NopCloser(strings.NewReader(`{"ok":true}`)),
+				Header:     http.Header{"Content-Type": []string{"application/json"}},
+			}, nil
+		})
+
+		transport := &scopedTokenTransport{
+			base:          mockBase,
+			tokenProvider: newTestTokenProvider(fakeClient, "test-cluster-id"),
+		}
+
+		// Create request with body (body is buffered upfront, so retry works).
+		bodyContent := `{"data":"test"}`
+		req := httptest.NewRequest(http.MethodPost, "/v1/alerts", strings.NewReader(bodyContent))
+		req.Header.Set(stackroxNamespaceHeader, "test-namespace")
+
+		resp, err := transport.RoundTrip(req)
+		require.NoError(t, err)
+		assert.Equal(t, http.StatusOK, resp.StatusCode, "should return success after retry")
+		assert.Equal(t, 2, tokenCallCount, "should have requested two tokens")
+		assert.Equal(t, 2, requestCount, "should have made two requests")
+		// Both requests should have received the body
+		assert.Equal(t, []string{bodyContent, bodyContent}, bodiesReceived, "both requests should receive the body")
+	})
+
+	t.Run("first response body is drained and closed before retry", func(t *testing.T) {
+		tokenCallCount := 0
+		fakeClient := &dynamicFakeTokenServiceClient{
+			getToken: func() string {
+				tokenCallCount++
+				return fmt.Sprintf("token-%d", tokenCallCount)
+			},
+		}
+
+		firstBodyDrained := false
+		firstBodyClosed := false
+		mockBase := roundTripperFunc(func(req *http.Request) (*http.Response, error) {
+			if req.Header.Get("Authorization") == "Bearer token-1" {
+				return &http.Response{
+					StatusCode: http.StatusUnauthorized,
+					Body: &trackingReadCloser{
+						ReadCloser: io.NopCloser(strings.NewReader(`{"error":"unauthorized"}`)),
+						onRead:     func() { firstBodyDrained = true },
+						onClose:    func() { firstBodyClosed = true },
+					},
+					Header: http.Header{"Content-Type": []string{"application/json"}},
+				}, nil
+			}
+			return &http.Response{
+				StatusCode: http.StatusOK,
+				Body:       io.NopCloser(strings.NewReader(`{"ok":true}`)),
+				Header:     http.Header{"Content-Type": []string{"application/json"}},
+			}, nil
+		})
+
+		transport := &scopedTokenTransport{
+			base:          mockBase,
+			tokenProvider: newTestTokenProvider(fakeClient, "test-cluster-id"),
+		}
+
+		req := httptest.NewRequest(http.MethodGet, "/v1/alerts", nil)
+		req.Header.Set(stackroxNamespaceHeader, "test-namespace")
+
+		resp, err := transport.RoundTrip(req)
+		require.NoError(t, err)
+		assert.Equal(t, http.StatusOK, resp.StatusCode)
+		assert.True(t, firstBodyDrained, "first response body should be drained before retry")
+		assert.True(t, firstBodyClosed, "first response body should be closed before retry")
+	})
+}
+
+// trackingReadCloser wraps an io.ReadCloser and tracks read/close operations.
+type trackingReadCloser struct {
+	io.ReadCloser
+	onRead  func()
+	onClose func()
+}
+
+func (t *trackingReadCloser) Read(p []byte) (n int, err error) {
+	if t.onRead != nil {
+		t.onRead()
+	}
+	return t.ReadCloser.Read(p)
+}
+
+func (t *trackingReadCloser) Close() error {
+	if t.onClose != nil {
+		t.onClose()
+	}
+	return t.ReadCloser.Close()
 }
 
 // roundTripperFunc is a helper to create RoundTripper from a function.
