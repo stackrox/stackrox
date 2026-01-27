@@ -84,6 +84,9 @@ func (lo *limiterOption) ForAllWorkloads() (*Limiter, error) {
 // the rate-limiter (and later accepted or rejected) and `false` if the rate-limiter should ignore this message
 // (allowing it to pass). This function must handle `nil` arguments and execute quickly.
 func (lo *limiterOption) ForWorkload(acceptsFn func(msg *central.MsgFromSensor) bool) (*Limiter, error) {
+	if lo.l == nil {
+		return nil, lo.err
+	}
 	if acceptsFn == nil {
 		return nil, errors.New("acceptsFn must not be nil")
 	}

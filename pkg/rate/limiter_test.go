@@ -4,6 +4,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stretchr/testify/assert"
@@ -87,6 +88,82 @@ func TestNewLimiter(t *testing.T) {
 		_, err := NewLimiter(workloadName, 10.0, 0).ForAllWorkloads()
 		assert.ErrorIs(t, err, ErrInvalidBucketCapacity)
 	})
+}
+
+func TestLimiterOption_ForWorkload(t *testing.T) {
+	tests := map[string]struct {
+		workloadName    string
+		globalRate      float64
+		bucketCapacity  int
+		acceptsFn       func(msg *central.MsgFromSensor) bool
+		expectedErr     error
+		expectedErrText string
+		expectLimiter   bool
+		shouldSkipCheck bool
+	}{
+		"should return error when acceptsFn is nil": {
+			workloadName:    workloadName,
+			globalRate:      1,
+			bucketCapacity:  1,
+			acceptsFn:       nil,
+			expectedErrText: "acceptsFn must not be nil",
+		},
+		"should return error when limiter creation fails": {
+			workloadName:   "",
+			globalRate:     1,
+			bucketCapacity: 1,
+			acceptsFn: func(msg *central.MsgFromSensor) bool {
+				return msg != nil
+			},
+			expectedErr: ErrEmptyWorkloadName,
+		},
+		"should allow configuring a workload filter": {
+			workloadName:   workloadName,
+			globalRate:     1,
+			bucketCapacity: 1,
+			acceptsFn: func(msg *central.MsgFromSensor) bool {
+				return msg != nil
+			},
+			expectLimiter:   true,
+			shouldSkipCheck: true,
+		},
+	}
+
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			limiter, err := NewLimiter(tt.workloadName, tt.globalRate, tt.bucketCapacity).ForWorkload(tt.acceptsFn)
+			if tt.expectedErr != nil || tt.expectedErrText != "" {
+				require.Error(t, err)
+				if tt.expectedErr != nil {
+					assert.ErrorIs(t, err, tt.expectedErr)
+				}
+				if tt.expectedErrText != "" {
+					assert.EqualError(t, err, tt.expectedErrText)
+				}
+				assert.Nil(t, limiter)
+				return
+			}
+			require.NoError(t, err)
+			if tt.expectLimiter {
+				assert.NotNil(t, limiter)
+			}
+			if !tt.shouldSkipCheck {
+				return
+			}
+
+			allowed, reason := limiter.TryConsume("client-1", &central.MsgFromSensor{})
+			require.True(t, allowed)
+			assert.Empty(t, reason)
+
+			allowed, reason = limiter.TryConsume("client-1", &central.MsgFromSensor{})
+			assert.False(t, allowed)
+			assert.Equal(t, ReasonRateLimitExceeded, reason)
+
+			allowed, reason = limiter.TryConsume("client-1", nil)
+			assert.True(t, allowed)
+			assert.Empty(t, reason)
+		})
+	}
 }
 
 func TestTryConsume_Disabled(t *testing.T) {
