@@ -519,12 +519,12 @@ func (s *NodeInventoryHandlerTestSuite) TestHandlerSensorACKsToCompliance() {
 				})
 				s.NoError(err)
 
-				// Verify nothing was sent to Compliance (non-blocking check)
+				// Verify no message arrives within the timeout.
 				select {
 				case msg := <-handler.ComplianceC():
 					s.Failf("Message should not be forwarded to Compliance", "got: %v", msg)
-				default:
-					// Expected - nothing should be sent
+				case <-time.After(20 * time.Millisecond):
+					// Expected: nothing received.
 				}
 			}
 
