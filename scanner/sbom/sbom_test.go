@@ -10,7 +10,7 @@ import (
 
 func TestGetSBOM(t *testing.T) {
 	t.Run("error on nil index report", func(t *testing.T) {
-		s := NewSBOMer()
+		s := NewSBOMer(nil)
 		_, err := s.GetSBOM(context.Background(), nil, nil)
 
 		assert.ErrorContains(t, err, "index report is required")
@@ -18,7 +18,7 @@ func TestGetSBOM(t *testing.T) {
 
 	t.Run("error on nil opts", func(t *testing.T) {
 		ir := &claircore.IndexReport{}
-		s := NewSBOMer()
+		s := NewSBOMer(nil)
 		_, err := s.GetSBOM(context.Background(), ir, nil)
 
 		assert.ErrorContains(t, err, "opts is required")
@@ -26,7 +26,7 @@ func TestGetSBOM(t *testing.T) {
 
 	t.Run("success", func(t *testing.T) {
 		ir := &claircore.IndexReport{}
-		s := NewSBOMer()
+		s := NewSBOMer(nil)
 
 		sbom, err := s.GetSBOM(context.Background(), ir, &Options{})
 		assert.NoError(t, err)

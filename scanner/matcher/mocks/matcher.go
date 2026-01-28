@@ -15,7 +15,6 @@ import (
 	time "time"
 
 	claircore "github.com/quay/claircore"
-	sbom "github.com/stackrox/rox/scanner/sbom"
 	gomock "go.uber.org/mock/gomock"
 )
 
@@ -86,21 +85,6 @@ func (mr *MockMatcherMockRecorder) GetLastVulnerabilityUpdate(ctx any) *gomock.C
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetLastVulnerabilityUpdate", reflect.TypeOf((*MockMatcher)(nil).GetLastVulnerabilityUpdate), ctx)
 }
 
-// GetSBOM mocks base method.
-func (m *MockMatcher) GetSBOM(ctx context.Context, ir *claircore.IndexReport, opts *sbom.Options) ([]byte, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetSBOM", ctx, ir, opts)
-	ret0, _ := ret[0].([]byte)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// GetSBOM indicates an expected call of GetSBOM.
-func (mr *MockMatcherMockRecorder) GetSBOM(ctx, ir, opts any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetSBOM", reflect.TypeOf((*MockMatcher)(nil).GetSBOM), ctx, ir, opts)
-}
-
 // GetVulnerabilities mocks base method.
 func (m *MockMatcher) GetVulnerabilities(ctx context.Context, ir *claircore.IndexReport) (*claircore.VulnerabilityReport, error) {
 	m.ctrl.T.Helper()
@@ -142,4 +126,19 @@ func (m *MockMatcher) Ready(ctx context.Context) error {
 func (mr *MockMatcherMockRecorder) Ready(ctx any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Ready", reflect.TypeOf((*MockMatcher)(nil).Ready), ctx)
+}
+
+// ScanSBOM mocks base method.
+func (m *MockMatcher) ScanSBOM(ctx context.Context, sbomBytes []byte, mediaType string) (*claircore.VulnerabilityReport, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ScanSBOM", ctx, sbomBytes, mediaType)
+	ret0, _ := ret[0].(*claircore.VulnerabilityReport)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ScanSBOM indicates an expected call of ScanSBOM.
+func (mr *MockMatcherMockRecorder) ScanSBOM(ctx, sbomBytes, mediaType any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ScanSBOM", reflect.TypeOf((*MockMatcher)(nil).ScanSBOM), ctx, sbomBytes, mediaType)
 }

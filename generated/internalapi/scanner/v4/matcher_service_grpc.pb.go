@@ -23,6 +23,7 @@ const (
 	Matcher_GetVulnerabilities_FullMethodName = "/scanner.v4.Matcher/GetVulnerabilities"
 	Matcher_GetMetadata_FullMethodName        = "/scanner.v4.Matcher/GetMetadata"
 	Matcher_GetSBOM_FullMethodName            = "/scanner.v4.Matcher/GetSBOM"
+	Matcher_ScanSBOM_FullMethodName           = "/scanner.v4.Matcher/ScanSBOM"
 )
 
 // MatcherClient is the client API for Matcher service.
@@ -37,6 +38,8 @@ type MatcherClient interface {
 	GetMetadata(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*Metadata, error)
 	// GetSBOM returns an SBOM for a previously indexed manifest.
 	GetSBOM(ctx context.Context, in *GetSBOMRequest, opts ...grpc.CallOption) (*GetSBOMResponse, error)
+	// ScanSBOM decodes an SBOM and returns a VulnerabilityReport with matched vulnerabilities.
+	ScanSBOM(ctx context.Context, in *ScanSBOMRequest, opts ...grpc.CallOption) (*ScanSBOMResponse, error)
 }
 
 type matcherClient struct {
@@ -77,6 +80,16 @@ func (c *matcherClient) GetSBOM(ctx context.Context, in *GetSBOMRequest, opts ..
 	return out, nil
 }
 
+func (c *matcherClient) ScanSBOM(ctx context.Context, in *ScanSBOMRequest, opts ...grpc.CallOption) (*ScanSBOMResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ScanSBOMResponse)
+	err := c.cc.Invoke(ctx, Matcher_ScanSBOM_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // MatcherServer is the server API for Matcher service.
 // All implementations should embed UnimplementedMatcherServer
 // for forward compatibility.
@@ -89,6 +102,8 @@ type MatcherServer interface {
 	GetMetadata(context.Context, *emptypb.Empty) (*Metadata, error)
 	// GetSBOM returns an SBOM for a previously indexed manifest.
 	GetSBOM(context.Context, *GetSBOMRequest) (*GetSBOMResponse, error)
+	// ScanSBOM decodes an SBOM and returns a VulnerabilityReport with matched vulnerabilities.
+	ScanSBOM(context.Context, *ScanSBOMRequest) (*ScanSBOMResponse, error)
 }
 
 // UnimplementedMatcherServer should be embedded to have
@@ -106,6 +121,9 @@ func (UnimplementedMatcherServer) GetMetadata(context.Context, *emptypb.Empty) (
 }
 func (UnimplementedMatcherServer) GetSBOM(context.Context, *GetSBOMRequest) (*GetSBOMResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method GetSBOM not implemented")
+}
+func (UnimplementedMatcherServer) ScanSBOM(context.Context, *ScanSBOMRequest) (*ScanSBOMResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ScanSBOM not implemented")
 }
 func (UnimplementedMatcherServer) testEmbeddedByValue() {}
 
@@ -181,6 +199,24 @@ func _Matcher_GetSBOM_Handler(srv interface{}, ctx context.Context, dec func(int
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Matcher_ScanSBOM_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ScanSBOMRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MatcherServer).ScanSBOM(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Matcher_ScanSBOM_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MatcherServer).ScanSBOM(ctx, req.(*ScanSBOMRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // Matcher_ServiceDesc is the grpc.ServiceDesc for Matcher service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -199,6 +235,10 @@ var Matcher_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetSBOM",
 			Handler:    _Matcher_GetSBOM_Handler,
+		},
+		{
+			MethodName: "ScanSBOM",
+			Handler:    _Matcher_ScanSBOM_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

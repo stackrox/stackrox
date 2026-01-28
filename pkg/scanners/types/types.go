@@ -35,7 +35,7 @@ type Scanner interface {
 	GetVulnDefinitionsInfo() (*v1.VulnDefinitionsInfo, error)
 }
 
-// SBOM is the interface that contains the StackRox SBOM methods
+// SBOMer is the interface that contains the StackRox SBOM methods
 type SBOMer interface {
 	// GetSBOM to get SBOM for an image.
 	GetSBOM(image *storage.Image) ([]byte, bool, error)
