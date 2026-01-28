@@ -2331,6 +2331,8 @@ func (s *PruningTestSuite) TestPruneOrphanedNodeCVEs() {
 }
 
 func (s *PruningTestSuite) TestRemoveExpiredDynamicRBACObjects() {
+	EnableDynamicRBACPruning()
+
 	now := time.Now()
 	yesterday := now.Add(-24 * time.Hour)
 	tomorrow := now.Add(24 * time.Hour)
