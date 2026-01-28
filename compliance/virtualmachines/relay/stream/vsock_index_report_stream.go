@@ -207,7 +207,11 @@ func parseVMReport(data []byte) (*v1.VMReport, error) {
 }
 
 // validateReportedVsockCID ensures the message's vsock CID matches the connection.
+// In test mode, validation is bypassed to allow load testing with simulated VMs.
 func validateReportedVsockCID(vmReport *v1.VMReport, connVsockCID uint32) error {
+	if env.IsVMTestModeEnabled() {
+		return nil
+	}
 	reportedCID := vmReport.GetIndexReport().GetVsockCid()
 	if reportedCID != strconv.FormatUint(uint64(connVsockCID), 10) {
 		metrics.IndexReportsMismatchingVsockCID.Inc()
