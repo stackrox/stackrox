@@ -23,11 +23,12 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	Indexer_CreateIndexReport_FullMethodName      = "/scanner.v4.Indexer/CreateIndexReport"
-	Indexer_GetIndexReport_FullMethodName         = "/scanner.v4.Indexer/GetIndexReport"
-	Indexer_GetOrCreateIndexReport_FullMethodName = "/scanner.v4.Indexer/GetOrCreateIndexReport"
-	Indexer_HasIndexReport_FullMethodName         = "/scanner.v4.Indexer/HasIndexReport"
-	Indexer_StoreIndexReport_FullMethodName       = "/scanner.v4.Indexer/StoreIndexReport"
+	Indexer_CreateIndexReport_FullMethodName         = "/scanner.v4.Indexer/CreateIndexReport"
+	Indexer_GetIndexReport_FullMethodName            = "/scanner.v4.Indexer/GetIndexReport"
+	Indexer_GetOrCreateIndexReport_FullMethodName    = "/scanner.v4.Indexer/GetOrCreateIndexReport"
+	Indexer_HasIndexReport_FullMethodName            = "/scanner.v4.Indexer/HasIndexReport"
+	Indexer_StoreIndexReport_FullMethodName          = "/scanner.v4.Indexer/StoreIndexReport"
+	Indexer_GetRepositoryToCPEMapping_FullMethodName = "/scanner.v4.Indexer/GetRepositoryToCPEMapping"
 )
 
 // IndexerClient is the client API for Indexer service.
@@ -48,6 +49,8 @@ type IndexerClient interface {
 	HasIndexReport(ctx context.Context, in *HasIndexReportRequest, opts ...grpc.CallOption) (*HasIndexReportResponse, error)
 	// StoreIndexReport stores an external index report to the datastore.
 	StoreIndexReport(ctx context.Context, in *StoreIndexReportRequest, opts ...grpc.CallOption) (*StoreIndexReportResponse, error)
+	// GetRepositoryToCPEMapping returns the repository-to-CPE mapping used for RHEL package matching.
+	GetRepositoryToCPEMapping(ctx context.Context, in *GetRepositoryToCPEMappingRequest, opts ...grpc.CallOption) (*GetRepositoryToCPEMappingResponse, error)
 }
 
 type indexerClient struct {
@@ -108,6 +111,16 @@ func (c *indexerClient) StoreIndexReport(ctx context.Context, in *StoreIndexRepo
 	return out, nil
 }
 
+func (c *indexerClient) GetRepositoryToCPEMapping(ctx context.Context, in *GetRepositoryToCPEMappingRequest, opts ...grpc.CallOption) (*GetRepositoryToCPEMappingResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetRepositoryToCPEMappingResponse)
+	err := c.cc.Invoke(ctx, Indexer_GetRepositoryToCPEMapping_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // IndexerServer is the server API for Indexer service.
 // All implementations should embed UnimplementedIndexerServer
 // for forward compatibility.
@@ -126,6 +139,8 @@ type IndexerServer interface {
 	HasIndexReport(context.Context, *HasIndexReportRequest) (*HasIndexReportResponse, error)
 	// StoreIndexReport stores an external index report to the datastore.
 	StoreIndexReport(context.Context, *StoreIndexReportRequest) (*StoreIndexReportResponse, error)
+	// GetRepositoryToCPEMapping returns the repository-to-CPE mapping used for RHEL package matching.
+	GetRepositoryToCPEMapping(context.Context, *GetRepositoryToCPEMappingRequest) (*GetRepositoryToCPEMappingResponse, error)
 }
 
 // UnimplementedIndexerServer should be embedded to have
@@ -149,6 +164,9 @@ func (UnimplementedIndexerServer) HasIndexReport(context.Context, *HasIndexRepor
 }
 func (UnimplementedIndexerServer) StoreIndexReport(context.Context, *StoreIndexReportRequest) (*StoreIndexReportResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method StoreIndexReport not implemented")
+}
+func (UnimplementedIndexerServer) GetRepositoryToCPEMapping(context.Context, *GetRepositoryToCPEMappingRequest) (*GetRepositoryToCPEMappingResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetRepositoryToCPEMapping not implemented")
 }
 func (UnimplementedIndexerServer) testEmbeddedByValue() {}
 
@@ -260,6 +278,24 @@ func _Indexer_StoreIndexReport_Handler(srv interface{}, ctx context.Context, dec
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Indexer_GetRepositoryToCPEMapping_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetRepositoryToCPEMappingRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(IndexerServer).GetRepositoryToCPEMapping(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Indexer_GetRepositoryToCPEMapping_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(IndexerServer).GetRepositoryToCPEMapping(ctx, req.(*GetRepositoryToCPEMappingRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // Indexer_ServiceDesc is the grpc.ServiceDesc for Indexer service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -286,6 +322,10 @@ var Indexer_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "StoreIndexReport",
 			Handler:    _Indexer_StoreIndexReport_Handler,
+		},
+		{
+			MethodName: "GetRepositoryToCPEMapping",
+			Handler:    _Indexer_GetRepositoryToCPEMapping_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
