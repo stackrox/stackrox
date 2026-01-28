@@ -170,4 +170,7 @@ var (
 
 	// ScannerV4StoreExternalIndexReports enables storing index reports from delegated scans to Central's Scanner V4 Indexer.
 	ScannerV4StoreExternalIndexReports = registerFeature("Enables storing index reports from delegated scans to Central's Scanner V4 Indexer", "ROX_SCANNER_V4_STORE_EXTERNAL_INDEX_REPORTS", enabled)
+
+	// SBOMScanning enables matching vulnerabilities to components found in Red Hat produced SBOMs.
+	SBOMScanning = registerFeature("Enables matching vulnerabilities to components found in Red Hat produced SBOMs", "ROX_SBOM_SCANNING")
 )
