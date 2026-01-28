@@ -129,6 +129,9 @@ function run_workload() {
 
     go run ../../metadata-collector/main.go "${metadata[@]}"
 
+    echo "-- Fix k8sVersion"
+    yq --inplace '.k8sVersion = 1.28' "${metadata_path}"
+
     echo "--- Starting kube-burner"
     "${kube_burner_path}" init \
         --uuid="${run_uuid}" \
