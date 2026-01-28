@@ -149,7 +149,7 @@ EOF
 "${OPM}" validate "${BUILD_INDEX_DIR}"
 
 if (( RUN_BUILD )); then
-  docker build --quiet --file "${BUILD_INDEX_DIR}.Dockerfile" --tag "${INDEX_TAG}" "${BUILD_INDEX_DIR}/.."
+  docker build --platform linux/amd64 --load --quiet --file "${BUILD_INDEX_DIR}.Dockerfile" --tag "${INDEX_TAG}" "${BUILD_INDEX_DIR}/.."
 
   echo "Index image ${INDEX_TAG} is successfully created."
 else
