@@ -12,6 +12,10 @@ CSV_VERSION ?= v$(VERSION)
 # Set to empty string to echo some command lines which are hidden by default.
 SILENT ?= @
 
+# Python binary to use for bundle helpers. Can be overridden to use a specific version (e.g., python3.9).
+# The Konflux build uses Python 3.9, so using python3.9 locally ensures compatibility.
+PYTHON ?= python3
+
 # This can be adjusted if deploying into non-standard namespaces. For example, as in
 #
 #   NAMESPACE=... make -C operator stackrox-image-pull-secret
@@ -344,6 +348,7 @@ build/Dockerfile.gen: Dockerfile
 .PHONY: docker-build
 docker-build: build/Dockerfile.gen smuggled-status-sh ## Build docker image with the operator.
 	DOCKER_BUILDKIT=1 BUILDKIT_PROGRESS=plain docker build \
+		$(if $(DOCKER_BUILD_LOAD),--load) \
 		-t ${IMG} \
 		$(if $(GOARCH),--build-arg TARGET_ARCH=$(GOARCH)) \
 		-f $< \
@@ -426,7 +431,7 @@ upgrade-dirty-tag-via-olm: kuttl
 ##@ Bundle and Index build
 
 # Commands to enter local Python virtual environment and get needed dependencies there.
-ACTIVATE_PYTHON = python3 -m venv bundle_helpers/.venv ;\
+ACTIVATE_PYTHON = $(PYTHON) -m venv bundle_helpers/.venv ;\
 	. bundle_helpers/.venv/bin/activate ;\
 	pip3 install --upgrade pip==21.3.1 setuptools==59.6.0 ;\
 	pip3 install -r bundle_helpers/requirements-gha.txt
@@ -497,7 +502,7 @@ bundle-post-process: test-bundle-helpers operator-sdk ## Post-process CSV file t
 
 .PHONY: bundle-build
 bundle-build: bundle.Dockerfile bundle-post-process ## Build the bundle image.
-	docker build -f $< -t $(BUNDLE_IMG) .
+	docker build $(if $(DOCKER_BUILD_LOAD),--load) -f $< -t $(BUNDLE_IMG) .
 
 .PHONY: bundle-test
 bundle-test: operator-sdk bundle-post-process ## Run scorecard tests against bundle files.
