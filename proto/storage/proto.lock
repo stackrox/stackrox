@@ -9735,6 +9735,10 @@
               {
                 "name": "NODE_SCANNER",
                 "integer": 2
+              },
+              {
+                "name": "VIRTUAL_MACHINE_SCANNER",
+                "integer": 3
               }
             ]
           }
