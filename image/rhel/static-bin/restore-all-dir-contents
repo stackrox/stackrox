@@ -6,4 +6,12 @@ set -euo pipefail
 
 [ -d /.init-dirs ] || exit 0
 
+# On container restart, the saved copy's extracted/pem/directory-hash is read-only
+# (permissions preserved by cp). Make it writable so cp can update symlinks inside.
+# On fresh pod start this directory doesn't exist yet, so the check is necessary.
+# See: https://bugzilla.redhat.com/show_bug.cgi?id=2241240
+if [ -d /etc/pki/ca-trust/extracted/pem/directory-hash ]; then
+    chmod u+w /etc/pki/ca-trust/extracted/pem/directory-hash
+fi
+
 cp -rfP /.init-dirs/* /
