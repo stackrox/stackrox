@@ -15,6 +15,6 @@ type Service interface {
 }
 
 // NewService returns the VirtualMachineIndexReportServiceServer API for Sensor to use.
-func NewService(handler Handler) Service {
-	return &serviceImpl{handler: handler}
+func NewService(handler Handler, store VirtualMachineStore) Service {
+	return &serviceImpl{handler: handler, store: store}
 }

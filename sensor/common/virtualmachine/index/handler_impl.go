@@ -17,6 +17,7 @@ import (
 	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/centralcaps"
 	"github.com/stackrox/rox/sensor/common/message"
+	"github.com/stackrox/rox/sensor/common/virtualmachine"
 	"github.com/stackrox/rox/sensor/common/virtualmachine/metrics"
 )
 
@@ -35,6 +36,8 @@ type handlerImpl struct {
 	stopper      concurrency.Stopper
 	toCentral    <-chan *message.ExpiringMessage
 	indexReports chan *v1.IndexReport
+	vmUpdates    chan *virtualmachine.Info
+	clusterID    clusterIDGetter
 	store        VirtualMachineStore
 }
 
@@ -49,14 +52,16 @@ func (h *handlerImpl) Send(ctx context.Context, vm *v1.IndexReport) error {
 	if !centralcaps.Has(centralsensor.VirtualMachinesSupported) {
 		return errox.NotImplemented.CausedBy(errCapabilityNotSupported)
 	}
+	h.lock.RLock()
+	defer h.lock.RUnlock()
+	if h.indexReports == nil {
+		return errox.InvariantViolation.CausedBy(errInputChanClosed)
+	}
 	if !h.centralReady.IsDone() {
 		log.Warnf("Cannot send index report for virtual machine with vsock_cid=%q to Central because Central is not reachable", vm.GetVsockCid())
 		metrics.IndexReportsSent.With(metrics.StatusCentralNotReadyLabels).Inc()
 		return errox.ResourceExhausted.CausedBy(errCentralNotReachable)
 	}
-
-	h.lock.RLock()
-	defer h.lock.RUnlock()
 
 	blockingStart := time.Now()
 	blocked := false
@@ -90,6 +95,42 @@ func (h *handlerImpl) Send(ctx context.Context, vm *v1.IndexReport) error {
 		outcome = metrics.IndexReportEnqueueOutcomeCanceled
 		return ctx.Err() //nolint:wrapcheck
 	case h.indexReports <- vm:
+		return nil
+	}
+}
+
+func (h *handlerImpl) SendVirtualMachineUpdate(ctx context.Context, vmID virtualmachine.VMID) error {
+	if h.stopper.Client().Stopped().IsDone() {
+		return errox.InvariantViolation.CausedBy(errInputChanClosed)
+	}
+	if !centralcaps.Has(centralsensor.VirtualMachinesSupported) {
+		return errox.NotImplemented.CausedBy(errCapabilityNotSupported)
+	}
+	if !h.centralReady.IsDone() {
+		log.Warnf("Cannot send virtual machine update for vm_id=%q to Central because Central is not reachable", vmID)
+		return errox.ResourceExhausted.CausedBy(errCentralNotReachable)
+	}
+
+	vmInfo := h.store.Get(vmID)
+	if vmInfo == nil {
+		return errors.Wrapf(errVirtualMachineNotFound, "VirtualMachine with ID %q not found", vmID)
+	}
+
+	h.lock.RLock()
+	defer h.lock.RUnlock()
+	updatesCh := h.vmUpdates
+	if updatesCh == nil {
+		return errox.InvariantViolation.CausedBy(errInputChanClosed)
+	}
+	select {
+	case <-h.stopper.Flow().StopRequested():
+		return errox.InvariantViolation.CausedBy(errInputChanClosed)
+	case <-ctx.Done():
+		if err := ctx.Err(); errors.Is(err, context.DeadlineExceeded) {
+			return err //nolint:wrapcheck
+		}
+		return ctx.Err() //nolint:wrapcheck
+	case updatesCh <- vmInfo:
 		return nil
 	}
 }
@@ -157,11 +198,12 @@ func (h *handlerImpl) Start() error {
 	log.Debug("Starting virtual machine handler")
 	h.lock.Lock()
 	defer h.lock.Unlock()
-	if h.toCentral != nil || h.indexReports != nil {
+	if h.toCentral != nil || h.indexReports != nil || h.vmUpdates != nil {
 		return errStartMoreThanOnce
 	}
 	h.indexReports = make(chan *v1.IndexReport, env.VirtualMachinesIndexReportsBufferSize.IntegerSetting())
-	h.toCentral = h.run(h.indexReports)
+	h.vmUpdates = make(chan *virtualmachine.Info, env.VirtualMachinesIndexReportsBufferSize.IntegerSetting())
+	h.toCentral = h.run(h.indexReports, h.vmUpdates)
 	return nil
 }
 
@@ -183,12 +225,19 @@ func (h *handlerImpl) Stop() {
 		close(h.indexReports)
 		h.indexReports = nil
 	}
+	if h.vmUpdates != nil {
+		close(h.vmUpdates)
+		h.vmUpdates = nil
+	}
 }
 
 // run handles the virtual machine data and forwards it to Central.
 // This is the only goroutine that writes into the toCentral channel, thus it is
 // responsible for creating and closing that chan.
-func (h *handlerImpl) run(indexReports <-chan *v1.IndexReport) (toCentral <-chan *message.ExpiringMessage) {
+func (h *handlerImpl) run(
+	indexReports <-chan *v1.IndexReport,
+	vmUpdates <-chan *virtualmachine.Info,
+) (toCentral <-chan *message.ExpiringMessage) {
 	ch2Central := make(chan *message.ExpiringMessage)
 	go func() {
 		defer func() {
@@ -206,6 +255,12 @@ func (h *handlerImpl) run(indexReports <-chan *v1.IndexReport) (toCentral <-chan
 					return
 				}
 				h.handleIndexReport(ch2Central, indexReport)
+			case vmInfo, ok := <-vmUpdates:
+				if !ok {
+					h.stopper.Flow().StopWithError(errInputChanClosed)
+					return
+				}
+				h.handleVirtualMachineUpdate(ch2Central, vmInfo)
 			}
 		}
 	}()
@@ -237,8 +292,20 @@ func (h *handlerImpl) handleIndexReport(
 		log.Warnf("unable to send index report message for the virtual machine with vsock cid %q to central: %v", indexReport.GetVsockCid(), err)
 		return
 	}
-	h.sendIndexReportEvent(toCentral, msg)
+	h.sendToCentral(toCentral, msg)
 	metrics.IndexReportsSent.With(metrics.StatusSuccessLabels).Inc()
+}
+
+func (h *handlerImpl) handleVirtualMachineUpdate(
+	toCentral chan *message.ExpiringMessage,
+	vmInfo *virtualmachine.Info,
+) {
+	if vmInfo == nil {
+		log.Warn("Received nil virtual machine update request: not sending to Central")
+		return
+	}
+	msg := h.newVirtualMachineUpdateMessage(vmInfo)
+	h.sendToCentral(toCentral, msg)
 }
 
 func (h *handlerImpl) newMessageToCentral(indexReport *v1.IndexReport) (*message.ExpiringMessage, string, error) {
@@ -269,10 +336,39 @@ func (h *handlerImpl) newMessageToCentral(indexReport *v1.IndexReport) (*message
 	}), metrics.IndexReportHandlingMessageToCentralSuccess, nil
 }
 
-func (h *handlerImpl) sendIndexReportEvent(
+func (h *handlerImpl) newVirtualMachineUpdateMessage(vmInfo *virtualmachine.Info) *message.ExpiringMessage {
+	clusterID := ""
+	if h.clusterID != nil {
+		clusterID = h.clusterID.Get()
+	}
+	vSockCID, vSockCIDSet := virtualmachine.VSockCIDFromInfo(vmInfo)
+	return message.New(&central.MsgFromSensor{
+		Msg: &central.MsgFromSensor_Event{
+			Event: &central.SensorEvent{
+				Id:     string(vmInfo.ID),
+				Action: central.ResourceAction_UPDATE_RESOURCE,
+				Resource: &central.SensorEvent_VirtualMachine{
+					VirtualMachine: &v1.VirtualMachine{
+						Id:          string(vmInfo.ID),
+						Namespace:   vmInfo.Namespace,
+						Name:        vmInfo.Name,
+						ClusterId:   clusterID,
+						VsockCid:    vSockCID,
+						VsockCidSet: vSockCIDSet,
+						State:       virtualmachine.StateFromInfo(vmInfo),
+						Facts:       virtualmachine.BuildFacts(vmInfo, h.store.GetDiscoveredFacts(vmInfo.ID)),
+					},
+				},
+			},
+		},
+	})
+}
+
+func (h *handlerImpl) sendToCentral(
 	toCentral chan<- *message.ExpiringMessage,
 	msg *message.ExpiringMessage,
 ) {
+	// The `toCentral` is closed in the same goroutine, so it will be still open when stop is requested.
 	select {
 	case <-h.stopper.Flow().StopRequested():
 	case toCentral <- msg:

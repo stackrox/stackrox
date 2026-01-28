@@ -11,6 +11,7 @@ import (
 	v1 "github.com/stackrox/rox/generated/internalapi/virtualmachine/v1"
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/testutils/goleak"
 	"github.com/stackrox/rox/sensor/common"
@@ -172,6 +173,143 @@ func (s *virtualMachineHandlerSuite) TestVirtualMachineNotFound() {
 	case <-s.handler.ResponsesC():
 		s.Fail("Unexpected message to be sent to central")
 	case <-time.After(500 * time.Millisecond):
+	}
+}
+
+func (s *virtualMachineHandlerSuite) TestSendVirtualMachineUpdate() {
+	err := s.handler.Start()
+	s.Require().NoError(err)
+	s.handler.Notify(common.SensorComponentEventCentralReachable)
+	defer s.handler.Stop()
+
+	vmID := virtualmachine.VMID("vm-update")
+	vmInfo := &virtualmachine.Info{
+		ID:        vmID,
+		Name:      "vm-name",
+		Namespace: "vm-namespace",
+		Running:   true,
+		GuestOS:   "Red Hat Enterprise Linux",
+	}
+	s.store.EXPECT().Get(vmID).Times(1).Return(vmInfo)
+	s.store.EXPECT().GetDiscoveredFacts(vmID).Times(1).Return(map[string]string{
+		virtualmachine.FactsDetectedOSKey: "RHEL",
+	})
+
+	go func() {
+		err := s.handler.SendVirtualMachineUpdate(context.Background(), vmID)
+		s.Require().NoError(err)
+	}()
+
+	select {
+	case msg := <-s.handler.ResponsesC():
+		s.Require().NotNil(msg)
+		s.Require().NotNil(msg.MsgFromSensor)
+
+		sensorEvent := msg.GetEvent()
+		s.Require().NotNil(sensorEvent)
+		s.Assert().Equal(string(vmID), sensorEvent.GetId())
+		s.Assert().Equal(central.ResourceAction_UPDATE_RESOURCE, sensorEvent.GetAction())
+
+		vm := sensorEvent.GetVirtualMachine()
+		s.Require().NotNil(vm)
+		s.Assert().Equal(string(vmID), vm.GetId())
+		s.Assert().Equal("Red Hat Enterprise Linux", vm.GetFacts()[virtualmachine.FactsGuestOSKey])
+		s.Assert().Equal("RHEL", vm.GetFacts()[virtualmachine.FactsDetectedOSKey])
+	case <-time.After(time.Second):
+		s.Fail("Expected update message to be sent to central")
+	}
+}
+
+func (s *virtualMachineHandlerSuite) TestSendVirtualMachineUpdate_ErrorPaths() {
+	newHandler := func(t *testing.T) (*gomock.Controller, *handlerImpl, *mocks.MockVirtualMachineStore) {
+		ctrl := gomock.NewController(t)
+		store := mocks.NewMockVirtualMachineStore(ctrl)
+		handler := &handlerImpl{
+			centralReady: concurrency.NewSignal(),
+			lock:         &sync.RWMutex{},
+			stopper:      concurrency.NewStopper(),
+			store:        store,
+		}
+		return ctrl, handler, store
+	}
+
+	cases := map[string]struct {
+		setup   func(t *testing.T, h *handlerImpl, store *mocks.MockVirtualMachineStore) (context.Context, virtualmachine.VMID)
+		wantErr error
+	}{
+		"vm not found": {
+			setup: func(t *testing.T, h *handlerImpl, store *mocks.MockVirtualMachineStore) (context.Context, virtualmachine.VMID) {
+				h.Notify(common.SensorComponentEventCentralReachable)
+				vmID := virtualmachine.VMID("vm-missing")
+				store.EXPECT().Get(vmID).Times(1).Return(nil)
+				return context.Background(), vmID
+			},
+			wantErr: errVirtualMachineNotFound,
+		},
+		"input channel closed": {
+			setup: func(t *testing.T, h *handlerImpl, store *mocks.MockVirtualMachineStore) (context.Context, virtualmachine.VMID) {
+				h.Notify(common.SensorComponentEventCentralReachable)
+				vmID := virtualmachine.VMID("vm-updates-nil")
+				store.EXPECT().Get(vmID).Times(1).Return(&virtualmachine.Info{ID: vmID})
+				return context.Background(), vmID
+			},
+			wantErr: errox.InvariantViolation,
+		},
+		"capability missing": {
+			setup: func(t *testing.T, h *handlerImpl, store *mocks.MockVirtualMachineStore) (context.Context, virtualmachine.VMID) {
+				centralcaps.Set(nil)
+				vmID := virtualmachine.VMID("vm-cap-missing")
+				return context.Background(), vmID
+			},
+			wantErr: errox.NotImplemented,
+		},
+		"central not ready": {
+			setup: func(t *testing.T, h *handlerImpl, store *mocks.MockVirtualMachineStore) (context.Context, virtualmachine.VMID) {
+				vmID := virtualmachine.VMID("vm-central-not-ready")
+				return context.Background(), vmID
+			},
+			wantErr: errox.ResourceExhausted,
+		},
+		"context canceled does not enqueue": {
+			setup: func(t *testing.T, h *handlerImpl, store *mocks.MockVirtualMachineStore) (context.Context, virtualmachine.VMID) {
+				h.Notify(common.SensorComponentEventCentralReachable)
+				concurrency.WithLock(h.lock, func() {
+					h.vmUpdates = make(chan *virtualmachine.Info)
+				})
+				vmID := virtualmachine.VMID("vm-context-canceled")
+				store.EXPECT().Get(vmID).Times(1).Return(&virtualmachine.Info{ID: vmID})
+				ctx, cancel := context.WithCancel(context.Background())
+				cancel()
+				return ctx, vmID
+			},
+			wantErr: context.Canceled,
+		},
+	}
+
+	for name, tc := range cases {
+		s.Run(name, func() {
+			ctrl, handler, store := newHandler(s.T())
+			defer ctrl.Finish()
+			defer centralcaps.Set([]centralsensor.CentralCapability{centralsensor.VirtualMachinesSupported})
+
+			ctx, vmID := tc.setup(s.T(), handler, store)
+			err := handler.SendVirtualMachineUpdate(ctx, vmID)
+			s.Require().Error(err)
+			s.ErrorIs(err, tc.wantErr)
+			if handler.vmUpdates != nil {
+				select {
+				case <-handler.vmUpdates:
+					s.T().Fatalf("expected no virtual machine update enqueued")
+				default:
+				}
+			}
+			concurrency.WithLock(handler.lock, func() {
+				if handler.vmUpdates != nil {
+					close(handler.vmUpdates)
+					handler.vmUpdates = nil
+				}
+			})
+		})
 	}
 }
 

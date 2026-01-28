@@ -27,6 +27,10 @@ func (s *storeSuite) SetupSubTest() {
 	s.store = NewVirtualMachineStore()
 }
 
+func (s *storeSuite) SetupTest() {
+	s.store = NewVirtualMachineStore()
+}
+
 var _ suite.SetupSubTest = (*storeSuite)(nil)
 
 func (s *storeSuite) Test_AddVirtualMachine() {
@@ -1226,4 +1230,129 @@ func assertVMs(t *testing.T, expected *virtualmachine.Info, actual *virtualmachi
 
 func newVSOCKCID(val uint32) *uint32 {
 	return &val
+}
+
+func (s *storeSuite) Test_UpsertDiscoveredFacts() {
+	vm := &virtualmachine.Info{
+		ID:        vmID,
+		Name:      vmName,
+		Namespace: vmNamespace,
+		Running:   true,
+	}
+	s.store.AddOrUpdate(vm)
+
+	facts := map[string]string{
+		virtualmachine.FactsDetectedOSKey:        "RHEL",
+		virtualmachine.FactsOSVersionKey:         "9.0",
+		virtualmachine.FactsActivationStatusKey:  "ACTIVE",
+		virtualmachine.FactsDNFMetadataStatusKey: "AVAILABLE",
+	}
+
+	s.store.UpsertDiscoveredFacts(vmID, facts)
+
+	retrieved := s.store.GetDiscoveredFacts(vmID)
+	s.Assert().NotNil(retrieved)
+	s.Assert().Equal(facts, retrieved)
+	// Verify it's a copy by mutating the original map
+	facts[virtualmachine.FactsDetectedOSKey] = "MODIFIED"
+	s.Assert().Equal("RHEL", retrieved[virtualmachine.FactsDetectedOSKey])
+	retrieved2 := s.store.GetDiscoveredFacts(vmID)
+	retrieved[virtualmachine.FactsDetectedOSKey] = "MODIFIED_AGAIN"
+	s.Assert().Equal("RHEL", retrieved2[virtualmachine.FactsDetectedOSKey])
+}
+
+func (s *storeSuite) Test_UpsertDiscoveredFacts_NilFacts() {
+	vm := &virtualmachine.Info{
+		ID:        vmID,
+		Name:      vmName,
+		Namespace: vmNamespace,
+		Running:   true,
+	}
+	s.store.AddOrUpdate(vm)
+
+	s.store.UpsertDiscoveredFacts(vmID, nil)
+
+	retrieved := s.store.GetDiscoveredFacts(vmID)
+	s.Assert().Nil(retrieved)
+}
+
+func (s *storeSuite) Test_GetDiscoveredFacts_NotExists() {
+	retrieved := s.store.GetDiscoveredFacts(vmID)
+	s.Assert().Nil(retrieved)
+}
+
+func (s *storeSuite) Test_DiscoveredFactsLifecycleCleanup() {
+	facts := map[string]string{
+		virtualmachine.FactsDetectedOSKey: "RHEL",
+	}
+	tests := map[string]struct {
+		vm     *virtualmachine.Info
+		action func()
+	}{
+		"explicit remove": {
+			vm: &virtualmachine.Info{
+				ID:        vmID,
+				Name:      vmName,
+				Namespace: vmNamespace,
+				Running:   true,
+			},
+			action: func() {
+				s.store.RemoveDiscoveredFacts(vmID)
+			},
+		},
+		"remove vm": {
+			vm: &virtualmachine.Info{
+				ID:        vmID,
+				Name:      vmName,
+				Namespace: vmNamespace,
+				Running:   true,
+			},
+			action: func() {
+				s.store.Remove(vmID)
+			},
+		},
+		"cleanup store": {
+			vm: &virtualmachine.Info{
+				ID:        vmID,
+				Name:      vmName,
+				Namespace: vmNamespace,
+				Running:   true,
+			},
+			action: func() {
+				s.store.Cleanup()
+			},
+		},
+		"clear state": {
+			vm: &virtualmachine.Info{
+				ID:        vmID,
+				Name:      vmName,
+				Namespace: vmNamespace,
+				Running:   true,
+				VSOCKCID:  newVSOCKCID(1),
+			},
+			action: func() {
+				s.store.ClearState(vmID)
+			},
+		},
+		"namespace deleted": {
+			vm: &virtualmachine.Info{
+				ID:        vmID,
+				Name:      vmName,
+				Namespace: vmNamespace,
+				Running:   true,
+			},
+			action: func() {
+				s.store.OnNamespaceDeleted(vmNamespace)
+			},
+		},
+	}
+	for name, tt := range tests {
+		s.Run(name, func() {
+			s.store.AddOrUpdate(tt.vm)
+			s.store.UpsertDiscoveredFacts(vmID, facts)
+			s.Assert().NotNil(s.store.GetDiscoveredFacts(vmID))
+			tt.action()
+			s.Assert().Nil(s.store.GetDiscoveredFacts(vmID))
+		})
+	}
 }
