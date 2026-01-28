@@ -43,6 +43,6 @@ var (
 	// This is the maximum number of requests that can be accepted in a burst before rate limiting kicks in.
 	// For example, with capacity=15 and rate=3 req/sec, a sensor can send up to 15 requests instantly,
 	// then must wait for 5 seconds for tokens to refill at the rate limit.
-	// Default: 5 tokens
-	VMIndexReportBucketCapacity = RegisterIntegerSetting("ROX_VM_INDEX_REPORT_BUCKET_CAPACITY", 5).WithMinimum(1)
+	// Default: 200 tokens
+	VMIndexReportBucketCapacity = RegisterIntegerSetting("ROX_VM_INDEX_REPORT_BUCKET_CAPACITY", 200).WithMinimum(1)
 )
