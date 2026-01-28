@@ -192,7 +192,7 @@ func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 
 	var virtualMachineHandler vmIndex.Handler
 	if features.VirtualMachines.Enabled() {
-		virtualMachineHandler = vmIndex.NewHandler(storeProvider.VirtualMachines())
+		virtualMachineHandler = vmIndex.NewHandler(clusterID, storeProvider.VirtualMachines())
 		components = append(components, virtualMachineHandler)
 	}
 
@@ -276,7 +276,7 @@ func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 	}
 
 	if features.VirtualMachines.Enabled() {
-		apiServices = append(apiServices, vmIndex.NewService(virtualMachineHandler))
+		apiServices = append(apiServices, vmIndex.NewService(virtualMachineHandler, storeProvider.VirtualMachines()))
 	}
 
 	if admCtrlSettingsMgr != nil {

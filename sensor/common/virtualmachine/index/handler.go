@@ -15,6 +15,11 @@ type Handler interface {
 	common.SensorComponent
 
 	Send(ctx context.Context, vm *v1.IndexReport) error
+	SendVirtualMachineUpdate(ctx context.Context, vmID virtualmachine.VMID) error
+}
+
+type clusterIDGetter interface {
+	Get() string
 }
 
 // VirtualMachineStore interface to the VirtualMachine store
@@ -22,12 +27,16 @@ type Handler interface {
 //go:generate mockgen-wrapper
 type VirtualMachineStore interface {
 	GetFromCID(cid uint32) *virtualmachine.Info
+	Get(id virtualmachine.VMID) *virtualmachine.Info
+	GetDiscoveredFacts(id virtualmachine.VMID) map[string]string
+	UpsertDiscoveredFacts(id virtualmachine.VMID, facts map[string]string)
 }
 
 // NewHandler returns the virtual machine component for Sensor to use.
-func NewHandler(store VirtualMachineStore) Handler {
+func NewHandler(clusterID clusterIDGetter, store VirtualMachineStore) Handler {
 	return &handlerImpl{
 		centralReady: concurrency.NewSignal(),
+		clusterID:    clusterID,
 		lock:         &sync.RWMutex{},
 		stopper:      concurrency.NewStopper(),
 		store:        store,

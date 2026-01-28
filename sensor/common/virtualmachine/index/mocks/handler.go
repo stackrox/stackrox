@@ -142,6 +142,20 @@ func (mr *MockHandlerMockRecorder) Send(ctx, vm any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Send", reflect.TypeOf((*MockHandler)(nil).Send), ctx, vm)
 }
 
+// SendVirtualMachineUpdate mocks base method.
+func (m *MockHandler) SendVirtualMachineUpdate(ctx context.Context, vmID virtualmachine.VMID) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SendVirtualMachineUpdate", ctx, vmID)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// SendVirtualMachineUpdate indicates an expected call of SendVirtualMachineUpdate.
+func (mr *MockHandlerMockRecorder) SendVirtualMachineUpdate(ctx, vmID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SendVirtualMachineUpdate", reflect.TypeOf((*MockHandler)(nil).SendVirtualMachineUpdate), ctx, vmID)
+}
+
 // Start mocks base method.
 func (m *MockHandler) Start() error {
 	m.ctrl.T.Helper()
@@ -168,6 +182,44 @@ func (mr *MockHandlerMockRecorder) Stop() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Stop", reflect.TypeOf((*MockHandler)(nil).Stop))
 }
 
+// MockclusterIDGetter is a mock of clusterIDGetter interface.
+type MockclusterIDGetter struct {
+	ctrl     *gomock.Controller
+	recorder *MockclusterIDGetterMockRecorder
+	isgomock struct{}
+}
+
+// MockclusterIDGetterMockRecorder is the mock recorder for MockclusterIDGetter.
+type MockclusterIDGetterMockRecorder struct {
+	mock *MockclusterIDGetter
+}
+
+// NewMockclusterIDGetter creates a new mock instance.
+func NewMockclusterIDGetter(ctrl *gomock.Controller) *MockclusterIDGetter {
+	mock := &MockclusterIDGetter{ctrl: ctrl}
+	mock.recorder = &MockclusterIDGetterMockRecorder{mock}
+	return mock
+}
+
+// EXPECT returns an object that allows the caller to indicate expected use.
+func (m *MockclusterIDGetter) EXPECT() *MockclusterIDGetterMockRecorder {
+	return m.recorder
+}
+
+// Get mocks base method.
+func (m *MockclusterIDGetter) Get() string {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Get")
+	ret0, _ := ret[0].(string)
+	return ret0
+}
+
+// Get indicates an expected call of Get.
+func (mr *MockclusterIDGetterMockRecorder) Get() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Get", reflect.TypeOf((*MockclusterIDGetter)(nil).Get))
+}
+
 // MockVirtualMachineStore is a mock of VirtualMachineStore interface.
 type MockVirtualMachineStore struct {
 	ctrl     *gomock.Controller
@@ -192,6 +244,34 @@ func (m *MockVirtualMachineStore) EXPECT() *MockVirtualMachineStoreMockRecorder 
 	return m.recorder
 }
 
+// Get mocks base method.
+func (m *MockVirtualMachineStore) Get(id virtualmachine.VMID) *virtualmachine.Info {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Get", id)
+	ret0, _ := ret[0].(*virtualmachine.Info)
+	return ret0
+}
+
+// Get indicates an expected call of Get.
+func (mr *MockVirtualMachineStoreMockRecorder) Get(id any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Get", reflect.TypeOf((*MockVirtualMachineStore)(nil).Get), id)
+}
+
+// GetDiscoveredFacts mocks base method.
+func (m *MockVirtualMachineStore) GetDiscoveredFacts(id virtualmachine.VMID) map[string]string {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetDiscoveredFacts", id)
+	ret0, _ := ret[0].(map[string]string)
+	return ret0
+}
+
+// GetDiscoveredFacts indicates an expected call of GetDiscoveredFacts.
+func (mr *MockVirtualMachineStoreMockRecorder) GetDiscoveredFacts(id any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetDiscoveredFacts", reflect.TypeOf((*MockVirtualMachineStore)(nil).GetDiscoveredFacts), id)
+}
+
 // GetFromCID mocks base method.
 func (m *MockVirtualMachineStore) GetFromCID(cid uint32) *virtualmachine.Info {
 	m.ctrl.T.Helper()
@@ -204,4 +284,16 @@ func (m *MockVirtualMachineStore) GetFromCID(cid uint32) *virtualmachine.Info {
 func (mr *MockVirtualMachineStoreMockRecorder) GetFromCID(cid any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetFromCID", reflect.TypeOf((*MockVirtualMachineStore)(nil).GetFromCID), cid)
+}
+
+// UpsertDiscoveredFacts mocks base method.
+func (m *MockVirtualMachineStore) UpsertDiscoveredFacts(id virtualmachine.VMID, facts map[string]string) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "UpsertDiscoveredFacts", id, facts)
+}
+
+// UpsertDiscoveredFacts indicates an expected call of UpsertDiscoveredFacts.
+func (mr *MockVirtualMachineStoreMockRecorder) UpsertDiscoveredFacts(id, facts any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpsertDiscoveredFacts", reflect.TypeOf((*MockVirtualMachineStore)(nil).UpsertDiscoveredFacts), id, facts)
 }

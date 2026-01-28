@@ -2,15 +2,20 @@ package index
 
 import (
 	"context"
+	"maps"
+	"strconv"
 	"time"
 
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stackrox/rox/generated/internalapi/sensor"
+	v1 "github.com/stackrox/rox/generated/internalapi/virtualmachine/v1"
 	"github.com/stackrox/rox/pkg/errox"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/grpc/authz/idcheck"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/sensor/common/virtualmachine"
 	"github.com/stackrox/rox/sensor/common/virtualmachine/metrics"
 	"google.golang.org/grpc"
 )
@@ -22,6 +27,7 @@ const indexReportSendTimeout = 10 * time.Second
 type serviceImpl struct {
 	sensor.UnimplementedVirtualMachineIndexReportServiceServer
 	handler Handler
+	store   VirtualMachineStore
 }
 
 var _ Service = (*serviceImpl)(nil)
@@ -58,25 +64,40 @@ func (s *serviceImpl) UpsertVirtualMachineIndexReport(ctx context.Context, req *
 			Success: false,
 		}, errox.InvalidArgs.CausedBy("index report in request cannot be nil")
 	}
+	cid, err := strconv.ParseUint(ir.GetVsockCid(), 10, 32)
+	if err != nil {
+		return &sensor.UpsertVirtualMachineIndexReportResponse{
+			Success: false,
+		}, errox.InvalidArgs.CausedBy(errors.Wrapf(err, "invalid vsock CID: %q", ir.GetVsockCid()))
+	}
 
 	log.Debugf("Upserting virtual machine index report with vsock_cid=%q", ir.GetVsockCid())
 
-	// Log VM discovered data.
-	// This is temporary. In a followup, the data will be passed to Central instead of being logged.
 	data := req.GetDiscoveredData()
-	detectedOS := data.GetDetectedOs()
-	osVersion := data.GetOsVersion()
-	activationStatus := data.GetActivationStatus()
-	dnfMetadataStatus := data.GetDnfMetadataStatus()
-	log.Infof("VM discovered data: detected_os=%s, os_version=%q, activation_status=%s, dnf_metadata_status=%s",
-		detectedOS.String(), osVersion, activationStatus.String(), dnfMetadataStatus.String())
-
-	// Record metric for VM discovered data for cusomer data debugging purposes.
-	metrics.VMDiscoveredData.With(prometheus.Labels{
-		"detected_os":         detectedOS.String(),
-		"activation_status":   activationStatus.String(),
-		"dnf_metadata_status": dnfMetadataStatus.String(),
-	}).Inc()
+	// Store discovered facts if feature is enabled and we have discovered data
+	if features.VirtualMachines.Enabled() && data != nil {
+		if s.store != nil {
+			vmInfo := s.store.GetFromCID(uint32(cid))
+			if vmInfo == nil {
+				log.Debugf("VM with vsock_cid=%q not found, skipping discovered facts storage", ir.GetVsockCid())
+				metrics.IndexReportsForUnknownVMCID.Inc()
+			} else if err := s.storeDiscoveredFacts(ctx, vmInfo.ID, data); err != nil {
+				log.Warnf("Failed to store discovered facts for vm_id=%q: %v", vmInfo.ID, err)
+			}
+		}
+		detectedOS := data.GetDetectedOs()
+		osVersion := data.GetOsVersion()
+		activationStatus := data.GetActivationStatus()
+		dnfMetadataStatus := data.GetDnfMetadataStatus()
+		log.Debugf("VM discovered data: detectedOS=%s, osVersion=%q, activationStatus=%s, dnfMetadataStatus=%s",
+			detectedOS.String(), osVersion, activationStatus.String(), dnfMetadataStatus.String())
+		// Record metric for VM discovered data for customer data debugging purposes.
+		metrics.VMDiscoveredData.With(prometheus.Labels{
+			"detected_os":         detectedOS.String(),
+			"activation_status":   activationStatus.String(),
+			"dnf_metadata_status": dnfMetadataStatus.String(),
+		}).Inc()
+	}
 
 	metrics.IndexReportsReceived.Inc()
 	timeoutCtx, cancel := context.WithTimeout(ctx, indexReportSendTimeout)
@@ -89,4 +110,43 @@ func (s *serviceImpl) UpsertVirtualMachineIndexReport(ctx context.Context, req *
 	return &sensor.UpsertVirtualMachineIndexReportResponse{
 		Success: true,
 	}, nil
+}
+
+// storeDiscoveredFacts converts DiscoveredData to a map[string]string and stores it by VM ID.
+func (s *serviceImpl) storeDiscoveredFacts(ctx context.Context, vmID virtualmachine.VMID, data *v1.DiscoveredData) error {
+	if data == nil {
+		return nil
+	}
+
+	// Convert DiscoveredData to map[string]string with machine-readable keys
+	facts := factsFromDiscoveredData(data)
+	if len(facts) == 0 {
+		return nil
+	}
+	previousFacts := s.store.GetDiscoveredFacts(vmID)
+	s.store.UpsertDiscoveredFacts(vmID, facts)
+	if !maps.Equal(previousFacts, facts) {
+		if err := s.handler.SendVirtualMachineUpdate(ctx, vmID); err != nil {
+			log.Warnf("Failed to emit virtual machine update after discovered facts upsert for vm_id=%q: %v", vmID, err)
+		}
+	}
+
+	return nil
+}
+
+func factsFromDiscoveredData(data *v1.DiscoveredData) map[string]string {
+	facts := make(map[string]string)
+	if data.GetDetectedOs() != v1.DetectedOS_UNKNOWN {
+		facts[virtualmachine.FactsDetectedOSKey] = data.GetDetectedOs().String()
+	}
+	if data.GetOsVersion() != "" {
+		facts[virtualmachine.FactsOSVersionKey] = data.GetOsVersion()
+	}
+	if data.GetActivationStatus() != v1.ActivationStatus_ACTIVATION_UNSPECIFIED {
+		facts[virtualmachine.FactsActivationStatusKey] = data.GetActivationStatus().String()
+	}
+	if data.GetDnfMetadataStatus() != v1.DnfMetadataStatus_DNF_METADATA_UNSPECIFIED {
+		facts[virtualmachine.FactsDNFMetadataStatusKey] = data.GetDnfMetadataStatus().String()
+	}
+	return facts
 }
