@@ -3,8 +3,10 @@ package runtime
 import (
 	"context"
 
-	"github.com/stackrox/rox/central/deployment/datastore"
+	clusterDataStore "github.com/stackrox/rox/central/cluster/datastore"
+	deploymentDataStore "github.com/stackrox/rox/central/deployment/datastore"
 	"github.com/stackrox/rox/central/detection"
+	namespaceDataStore "github.com/stackrox/rox/central/namespace/datastore"
 	detectionPkg "github.com/stackrox/rox/pkg/detection"
 	"github.com/stackrox/rox/pkg/sac"
 )
@@ -15,7 +17,9 @@ var (
 
 type detectorImpl struct {
 	policySet   detection.PolicySet
-	deployments datastore.DataStore
+	deployments deploymentDataStore.DataStore
+	clusters    clusterDataStore.DataStore
+	namespaces  namespaceDataStore.DataStore
 }
 
 // PolicySet retrieves the policy set.
@@ -40,7 +44,20 @@ func (d *detectorImpl) DeploymentWhitelistedForPolicy(deploymentID, policyID str
 			result = false
 			return nil
 		}
-		result = !compiled.AppliesTo(dep, nil, nil)
+
+		// Fetch cluster labels
+		var clusterLabels map[string]string
+		if cluster, exists, err := d.clusters.GetCluster(detectorCtx, dep.GetClusterId()); err == nil && exists {
+			clusterLabels = cluster.GetLabels()
+		}
+
+		// Fetch namespace labels
+		var namespaceLabels map[string]string
+		if namespace, exists, err := d.namespaces.GetNamespace(detectorCtx, dep.GetNamespaceId()); err == nil && exists {
+			namespaceLabels = namespace.GetLabels()
+		}
+
+		result = !compiled.AppliesTo(dep, clusterLabels, namespaceLabels)
 		return nil
 	})
 	if err != nil {

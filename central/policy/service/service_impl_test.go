@@ -10,7 +10,10 @@ import (
 
 	"github.com/pkg/errors"
 	clusterMocks "github.com/stackrox/rox/central/cluster/datastore/mocks"
+	deploymentMocks "github.com/stackrox/rox/central/deployment/datastore/mocks"
 	lifecycleMocks "github.com/stackrox/rox/central/detection/lifecycle/mocks"
+	namespaceMocks "github.com/stackrox/rox/central/namespace/datastore/mocks"
+	networkPolicyMocks "github.com/stackrox/rox/central/networkpolicies/datastore/mocks"
 	"github.com/stackrox/rox/central/policy/datastore/mocks"
 	connectionMocks "github.com/stackrox/rox/central/sensor/service/connection/mocks"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -45,6 +48,9 @@ type PolicyServiceTestSuite struct {
 	suite.Suite
 	policies              *mocks.MockDataStore
 	clusters              *clusterMocks.MockDataStore
+	deployments           *deploymentMocks.MockDataStore
+	namespaces            *namespaceMocks.MockDataStore
+	networkPolicies       *networkPolicyMocks.MockDataStore
 	mitreVectorStore      *mitreMocks.MockAttackReadOnlyDataStore
 	mockLifecycleManager  *lifecycleMocks.MockManager
 	mockConnectionManager *connectionMocks.MockManager
@@ -61,6 +67,12 @@ func (s *PolicyServiceTestSuite) SetupTest() {
 
 	s.clusters = clusterMocks.NewMockDataStore(s.mockCtrl)
 
+	s.deployments = deploymentMocks.NewMockDataStore(s.mockCtrl)
+
+	s.namespaces = namespaceMocks.NewMockDataStore(s.mockCtrl)
+
+	s.networkPolicies = networkPolicyMocks.NewMockDataStore(s.mockCtrl)
+
 	s.mockLifecycleManager = lifecycleMocks.NewMockManager(s.mockCtrl)
 	s.mockConnectionManager = connectionMocks.NewMockManager(s.mockCtrl)
 	s.mitreVectorStore = mitreMocks.NewMockAttackReadOnlyDataStore(s.mockCtrl)
@@ -68,8 +80,9 @@ func (s *PolicyServiceTestSuite) SetupTest() {
 	s.tested = New(
 		s.policies,
 		s.clusters,
-		nil,
-		nil,
+		s.deployments,
+		s.namespaces,
+		s.networkPolicies,
 		nil,
 		s.mitreVectorStore,
 		nil,
@@ -228,6 +241,91 @@ func (s *PolicyServiceTestSuite) TestDryRunRuntime() {
 	resp, err := s.tested.DryRunPolicy(ctx, runtimePolicy)
 	s.Nil(err)
 	s.Nil(resp.GetAlerts())
+}
+
+func (s *PolicyServiceTestSuite) TestDryRunDeployFetchesLabels() {
+	ctx := context.Background()
+
+	deployPolicy := &storage.Policy{
+		Id:              "deploy-1",
+		Name:            "DeployPolicy",
+		Severity:        storage.Severity_HIGH_SEVERITY,
+		Categories:      []string{"Test Category"},
+		LifecycleStages: []storage.LifecycleStage{storage.LifecycleStage_DEPLOY},
+		PolicySections: []*storage.PolicySection{
+			{
+				PolicyGroups: []*storage.PolicyGroup{
+					{
+						FieldName: fieldnames.ImageTag,
+						Values:    []*storage.PolicyValue{{Value: "latest"}},
+					},
+				},
+			},
+		},
+		PolicyVersion: policyversion.CurrentVersion().String(),
+	}
+
+	testDeployment := &storage.Deployment{
+		Id:          "deployment-1",
+		ClusterId:   "cluster-1",
+		Namespace:   "namespace-1",
+		NamespaceId: "namespace-1",
+	}
+
+	cases := []struct {
+		name            string
+		clusterLabels   map[string]string
+		namespaceLabels map[string]string
+	}{
+		{
+			name:            "with labels",
+			clusterLabels:   map[string]string{"env": "prod"},
+			namespaceLabels: map[string]string{"team": "backend"},
+		},
+		{
+			name:            "with empty labels",
+			clusterLabels:   map[string]string{},
+			namespaceLabels: map[string]string{},
+		},
+	}
+
+	for _, c := range cases {
+		s.T().Run(c.name, func(t *testing.T) {
+			s.deployments.EXPECT().
+				GetDeploymentIDs(gomock.Any()).
+				Return([]string{"deployment-1"}, nil)
+
+			s.deployments.EXPECT().
+				GetDeployment(gomock.Any(), "deployment-1").
+				Return(testDeployment, true, nil)
+
+			s.deployments.EXPECT().
+				GetImagesForDeployment(gomock.Any(), testDeployment).
+				Return(nil, nil)
+
+			s.networkPolicies.EXPECT().
+				GetNetworkPolicies(gomock.Any(), "cluster-1", "namespace-1").
+				Return(nil, nil)
+
+			s.clusters.EXPECT().
+				GetCluster(gomock.Any(), "cluster-1").
+				Return(&storage.Cluster{
+					Id:     "cluster-1",
+					Labels: c.clusterLabels,
+				}, true, nil)
+
+			s.namespaces.EXPECT().
+				GetNamespace(gomock.Any(), "namespace-1").
+				Return(&storage.NamespaceMetadata{
+					Id:     "namespace-1",
+					Labels: c.namespaceLabels,
+				}, true, nil)
+
+			resp, err := s.tested.DryRunPolicy(ctx, deployPolicy)
+			s.NoError(err)
+			s.NotNil(resp)
+		})
+	}
 }
 
 func (s *PolicyServiceTestSuite) TestListPoliciesHandlesQueryAndPagination() {

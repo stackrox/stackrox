@@ -226,7 +226,19 @@ func (resolver *deploymentResolver) Policies(ctx context.Context, args Paginated
 		SortOptions: pagination.GetSortOptions(),
 	}
 
-	policyResolvers, err := resolver.root.wrapPolicies(resolver.getApplicablePolicies(ctx, q))
+	// Fetch cluster labels
+	var clusterLabels map[string]string
+	if cluster, exists, err := resolver.root.ClusterDataStore.GetCluster(ctx, resolver.data.GetClusterId()); err == nil && exists {
+		clusterLabels = cluster.GetLabels()
+	}
+
+	// Fetch namespace labels
+	var namespaceLabels map[string]string
+	if namespace, exists, err := resolver.root.NamespaceDataStore.GetNamespace(ctx, resolver.data.GetNamespaceId()); err == nil && exists {
+		namespaceLabels = namespace.GetLabels()
+	}
+
+	policyResolvers, err := resolver.root.wrapPolicies(resolver.getApplicablePolicies(ctx, q, clusterLabels, namespaceLabels))
 	if err != nil {
 		return nil, err
 	}
@@ -248,7 +260,19 @@ func (resolver *deploymentResolver) PolicyCount(ctx context.Context, args RawQue
 		return 0, err
 	}
 
-	policies, err := resolver.getApplicablePolicies(ctx, q)
+	// Fetch cluster labels
+	var clusterLabels map[string]string
+	if cluster, exists, err := resolver.root.ClusterDataStore.GetCluster(ctx, resolver.data.GetClusterId()); err == nil && exists {
+		clusterLabels = cluster.GetLabels()
+	}
+
+	// Fetch namespace labels
+	var namespaceLabels map[string]string
+	if namespace, exists, err := resolver.root.NamespaceDataStore.GetNamespace(ctx, resolver.data.GetNamespaceId()); err == nil && exists {
+		namespaceLabels = namespace.GetLabels()
+	}
+
+	policies, err := resolver.getApplicablePolicies(ctx, q, clusterLabels, namespaceLabels)
 	if err != nil {
 		return 0, err
 	}
@@ -256,7 +280,7 @@ func (resolver *deploymentResolver) PolicyCount(ctx context.Context, args RawQue
 	return int32(len(policies)), nil
 }
 
-func (resolver *deploymentResolver) getApplicablePolicies(ctx context.Context, q *v1.Query) ([]*storage.Policy, error) {
+func (resolver *deploymentResolver) getApplicablePolicies(ctx context.Context, q *v1.Query, clusterLabels map[string]string, namespaceLabels map[string]string) ([]*storage.Policy, error) {
 	policyLoader, err := loaders.GetPolicyLoader(ctx)
 	if err != nil {
 		return nil, err
@@ -267,7 +291,7 @@ func (resolver *deploymentResolver) getApplicablePolicies(ctx context.Context, q
 		return nil, err
 	}
 
-	applicable, _ := matcher.NewDeploymentMatcher(resolver.data, nil, nil).FilterApplicablePolicies(policies)
+	applicable, _ := matcher.NewDeploymentMatcher(resolver.data, clusterLabels, namespaceLabels).FilterApplicablePolicies(policies)
 	return applicable, nil
 }
 
