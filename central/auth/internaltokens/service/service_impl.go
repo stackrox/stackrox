@@ -15,6 +15,7 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/idcheck"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
+	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
@@ -26,6 +27,8 @@ const (
 )
 
 var (
+	log = logging.LoggerForModule()
+
 	_ v1.TokenServiceServer = (*serviceImpl)(nil)
 
 	authorizer = perrpc.FromMap(map[authz.Authorizer][]string{
@@ -91,6 +94,7 @@ func (s *serviceImpl) GenerateTokenForPermissionsAndScope(
 	response := &v1.GenerateTokenForPermissionsAndScopeResponse{
 		Token: tokenInfo.Token,
 	}
+	log.Info("Issued token", tokenInfo.Token)
 	go trackRequest(authn.IdentityFromContextOrNil(ctx), req)
 	return response, nil
 }
