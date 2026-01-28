@@ -43,8 +43,8 @@ func TestMatchWithBaseImages(t *testing.T) {
 							ManifestDigest: "sha-base",
 							Created:        testCreatedTime,
 							Layers: []*storage.BaseImageLayer{
-								{LayerDigest: "layer-B", Index: 1}, // Index 1 comes first in slice
-								{LayerDigest: "layer-A", Index: 0}, // Index 0 comes second
+								{LayerDigest: "layer-B", Index: 1},
+								{LayerDigest: "layer-A", Index: 0},
 							},
 						},
 					}, nil)
@@ -55,6 +55,7 @@ func TestMatchWithBaseImages(t *testing.T) {
 					BaseImageFullName: "rhel:8",
 					BaseImageDigest:   "sha-base",
 					Created:           testCreatedTime,
+					Layers:            []string{"layer-A", "layer-B"}, // Sorted layers
 				},
 			},
 		},
@@ -100,11 +101,14 @@ func TestMatchWithBaseImages(t *testing.T) {
 					}, nil)
 			},
 			expected: []*storage.BaseImageInfo{
-				{BaseImageId: "match"},
+				{
+					BaseImageId: "match",
+					Layers:      []string{"L1", "L2"},
+				},
 			},
 		},
 		{
-			desc:      "Self-match prevention: Exact layer count and content",
+			desc:      "Identical match: Exact layer count and content (Now allowed with < check)",
 			imgLayers: []string{"L1", "L2"},
 			mockSetup: func() {
 				mockDS.EXPECT().
@@ -119,7 +123,12 @@ func TestMatchWithBaseImages(t *testing.T) {
 						},
 					}, nil)
 			},
-			expected: nil,
+			expected: []*storage.BaseImageInfo{ // Updated: This now returns a match
+				{
+					BaseImageId: "identical",
+					Layers:      []string{"L1", "L2"},
+				},
+			},
 		},
 	}
 
