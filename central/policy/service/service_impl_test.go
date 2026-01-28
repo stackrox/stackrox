@@ -248,6 +248,14 @@ func (s *PolicyServiceTestSuite) TestListPoliciesHandlesQueryAndPagination() {
 		},
 	}
 
+	policyNameBaseQuery := &v1.Query_BaseQuery{
+		BaseQuery: &v1.BaseQuery{
+			Query: &v1.BaseQuery_MatchFieldQuery{
+				MatchFieldQuery: &v1.MatchFieldQuery{Field: search.PolicyName.String(), Value: basePolicy.GetName()},
+			},
+		},
+	}
+
 	cases := []struct {
 		name          string
 		request       *v1.RawQuery
@@ -295,6 +303,17 @@ func (s *PolicyServiceTestSuite) TestListPoliciesHandlesQueryAndPagination() {
 			},
 			expectedQuery: &v1.Query{
 				Query:      policyDisabledBaseQuery,
+				Pagination: &v1.QueryPagination{Limit: 1000, Offset: 50},
+			},
+		},
+		{
+			name: "Non-empty by name query gets parsed properly, limit pagination to max and offset",
+			request: &v1.RawQuery{
+				Query:      search.NewQueryBuilder().AddStrings(search.PolicyName, basePolicy.GetName()).Query(),
+				Pagination: &v1.Pagination{Limit: 2000, Offset: 50},
+			},
+			expectedQuery: &v1.Query{
+				Query:      policyNameBaseQuery,
 				Pagination: &v1.QueryPagination{Limit: 1000, Offset: 50},
 			},
 		},
