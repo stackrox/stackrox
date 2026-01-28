@@ -1,9 +1,10 @@
 ARG PG_VERSION=15
 
 
-FROM brew.registry.redhat.io/rh-osbs/openshift-golang-builder:rhel_8_golang_1.25@sha256:527782f4a0270f786192281f68d0374f4a21b3ab759643eee4bfcafb6f539468 AS go-builder
+FROM brew.registry.redhat.io/rh-osbs/openshift-golang-builder:rhel_9_golang_1.25@sha256:8f41beafefbb37e6c260a14cdd0f40c21c59dedb611c8851368243d06da982da AS go-builder
 
-RUN dnf -y install --allowerasing jq
+# jq is required by scripts/mergeswag.sh and will be installed via RPM prefetch
+RUN dnf install -y jq
 
 WORKDIR /go/src/github.com/stackrox/rox/app
 
@@ -37,7 +38,7 @@ RUN mkdir -p image/rhel/docs/api/v1 && \
 RUN make copy-go-binaries-to-image-dir
 
 
-FROM registry.access.redhat.com/ubi9/nodejs-20:latest@sha256:71a3810707370f30bc0958aea14c3a5af564a3962ae0819bf16fdde7df9b4378 AS ui-builder
+FROM registry.redhat.io/ubi9/nodejs-22:9.6-1755075210 AS ui-builder
 
 WORKDIR /go/src/github.com/stackrox/rox/app
 
@@ -59,9 +60,9 @@ ENV UI_PKG_INSTALL_EXTRA_ARGS="--ignore-scripts"
 RUN make -C ui build
 
 
-FROM registry.access.redhat.com/ubi8/ubi-minimal:latest@sha256:a670c5b613280e17a666c858c9263a50aafe1a023a8d5730c7a83cb53771487b
+FROM registry.access.redhat.com/ubi9/ubi-minimal:latest@sha256:2ddd6e10383981c7d10e4966a7c0edce7159f8ca91b1691cafabc78bae79d8f8
 
-ARG PG_VERSION
+ARG PG_VERSION=15
 
 RUN microdnf -y module enable postgresql:${PG_VERSION} && \
     # find is used in /stackrox/import-additional-cas \
