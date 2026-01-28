@@ -21,8 +21,24 @@ var (
 		Help:      "Duration of internal token requests to Central",
 		Buckets:   prometheus.DefBuckets,
 	})
+
+	authenticationDuration = prometheus.NewHistogramVec(prometheus.HistogramOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.SensorSubsystem.String(),
+		Name:      "central_proxy_authentication_duration_seconds",
+		Help:      "Duration of K8s TokenReview authentication requests",
+		Buckets:   prometheus.DefBuckets,
+	}, []string{"cached"})
+
+	authorizationDuration = prometheus.NewHistogramVec(prometheus.HistogramOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.SensorSubsystem.String(),
+		Name:      "central_proxy_authorization_duration_seconds",
+		Help:      "Duration of K8s SubjectAccessReview authorization requests",
+		Buckets:   prometheus.DefBuckets,
+	}, []string{"allowed"})
 )
 
 func init() {
-	prometheus.MustRegister(proxyRequestDuration, tokenRequestDuration)
+	prometheus.MustRegister(proxyRequestDuration, tokenRequestDuration, authenticationDuration, authorizationDuration)
 }

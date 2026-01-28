@@ -87,10 +87,6 @@ func (s *serviceImpl) GenerateTokenForPermissionsAndScope(
 		log.Infof("Generated internal token: cluster_scopes=%d duration=%s", len(req.GetClusterScopes()), duration)
 	}()
 
-	roleName, err := s.roleManager.createRole(ctx, req)
-	if err != nil {
-		return nil, errors.Wrap(err, "creating and storing target role")
-	}
 	expiresAt, err := s.getExpiresAt(ctx, req)
 	if err != nil {
 		return nil, errors.Wrap(err, "getting expiration time")
