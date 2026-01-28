@@ -86,6 +86,7 @@ func setupBenchmark(b *testing.B) (context.Context, DataStore, *pgtest.TestPostg
 func BenchmarkAddPLOPs(b *testing.B) {
 	b.Run("2K PLOPs", benchmarkAddPLOPs(b, 10, 10, 10))
 	b.Run("16K PLOPs", benchmarkAddPLOPs(b, 20, 20, 20))
+	b.Run("250K PLOPs", benchmarkAddPLOPs(b, 50, 50, 50))
 }
 
 func benchmarkAddPLOPs(b *testing.B, nPort int, nProcess int, nPod int) func(*testing.B) {
