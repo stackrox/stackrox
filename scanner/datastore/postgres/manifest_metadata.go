@@ -18,7 +18,7 @@ func (i *indexerMetadataStore) MigrateManifests(ctx context.Context, expiration 
 		return nil, errors.New("indexer store not defined")
 	}
 
-	ctx = zlog.ContextWithValues(ctx, "component", "datastore/postgres/indexerMetadataStore.MigrateManifests")
+	ctx = zlog.ContextWithValues(ctx, "component", "datastore/postgres/indexerMetadataStore.migrateManifests")
 
 	// insertMissingManifests inserts missing manifests from the manifest table into manifest_metadata,
 	// and it sets the expiration time to the given expiration.
