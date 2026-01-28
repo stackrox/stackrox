@@ -1178,6 +1178,12 @@
         },
         "label": {
           "$ref": "#/definitions/storageScopeLabel"
+        },
+        "clusterLabel": {
+          "$ref": "#/definitions/storageScopeLabel"
+        },
+        "namespaceLabel": {
+          "$ref": "#/definitions/storageScopeLabel"
         }
       }
     },

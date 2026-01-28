@@ -1227,3 +1227,95 @@ func (s *PolicyValidatorTestSuite) TestValidateNodeEventSource() {
 		})
 	}
 }
+
+func (s *PolicyValidatorTestSuite) TestValidateScope() {
+	testutils.MustUpdateFeature(s.T(), features.LabelBasedPolicyScoping, true)
+	defer testutils.MustUpdateFeature(s.T(), features.LabelBasedPolicyScoping, false)
+
+	testCases := []struct {
+		description string
+		scope       *storage.Scope
+		errExpected bool
+	}{
+		{
+			description: "cluster and cluster_label are mutually exclusive",
+			scope: &storage.Scope{
+				Cluster: "cluster1",
+				ClusterLabel: &storage.Scope_Label{
+					Key:   "env",
+					Value: "prod",
+				},
+			},
+			errExpected: true,
+		},
+		{
+			description: "namespace and namespace_label are mutually exclusive",
+			scope: &storage.Scope{
+				Namespace: "default",
+				NamespaceLabel: &storage.Scope_Label{
+					Key:   "team",
+					Value: "backend",
+				},
+			},
+			errExpected: true,
+		},
+		{
+			description: "cluster_label alone is valid",
+			scope: &storage.Scope{
+				ClusterLabel: &storage.Scope_Label{
+					Key:   "env",
+					Value: "prod",
+				},
+			},
+			errExpected: false,
+		},
+		{
+			description: "namespace_label alone is valid",
+			scope: &storage.Scope{
+				NamespaceLabel: &storage.Scope_Label{
+					Key:   "team",
+					Value: "backend",
+				},
+			},
+			errExpected: false,
+		},
+		{
+			description: "cluster and namespace_label together is valid",
+			scope: &storage.Scope{
+				Cluster: "cluster1",
+				NamespaceLabel: &storage.Scope_Label{
+					Key:   "team",
+					Value: "backend",
+				},
+			},
+			errExpected: false,
+		},
+		{
+			description: "cluster_label and namespace together is valid",
+			scope: &storage.Scope{
+				ClusterLabel: &storage.Scope_Label{
+					Key:   "env",
+					Value: "prod",
+				},
+				Namespace: "default",
+			},
+			errExpected: false,
+		},
+		{
+			description: "empty scope is invalid",
+			scope:       &storage.Scope{},
+			errExpected: true,
+		},
+	}
+
+	for _, tc := range testCases {
+		s.T().Run(tc.description, func(t *testing.T) {
+			err := s.validator.validateScope(tc.scope)
+			if tc.errExpected {
+				assert.Error(t, err)
+			} else {
+				assert.NoError(t, err)
+			}
+		})
+	}
+}
